@@ -116,7 +116,14 @@ end
 
 local function CanMutateFrame(frame)
 	if QuestTogether and QuestTogether.CanAccessForeignFrame then
-		return QuestTogether:CanAccessForeignFrame(frame)
+		if not QuestTogether:CanAccessForeignFrame(frame) then
+			return false
+		end
+		local isProtected = QuestTogether.IsProtectedFrame and QuestTogether:IsProtectedFrame(frame) or false
+		if isProtected and QuestTogether.IsRuntimeRestricted and QuestTogether:IsRuntimeRestricted() then
+			return false
+		end
+		return true
 	end
 	return frame ~= nil and not IsFrameForbidden(frame)
 end
@@ -219,8 +226,12 @@ local function GetAnnouncementBubbleUnitFrame(hostFrame)
 		return nil
 	end
 
-	local unitFrame = hostFrame.UnitFrame or hostFrame
-	if IsFrameForbidden(unitFrame) then
+	local unitFrame, memberReadable = QuestTogether:GetAccessibleFrameMember(hostFrame, "UnitFrame")
+	if not memberReadable then
+		return nil
+	end
+	unitFrame = unitFrame or hostFrame
+	if not QuestTogether:CanAccessForeignFrame(unitFrame) then
 		return nil
 	end
 	return unitFrame
@@ -260,6 +271,43 @@ local function ClearAnnouncementBubbleState(bubble)
 		return
 	end
 	QuestTogether.nameplateBubbleStateByFrame[bubble] = nil
+end
+
+function QuestTogether:CompleteAnnouncementBubblePlayback(bubble)
+	local bubbleState = GetAnnouncementBubbleState(bubble)
+	local unitToken = bubbleState and bubbleState.unitToken or nil
+	ClearAnnouncementBubbleState(bubble)
+	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(unitToken) then
+		return false
+	end
+	if not CanMutateFrame(bubble) then
+		return false
+	end
+
+	bubble:SetAlpha(0)
+	bubble:Hide()
+	return true
+end
+
+function QuestTogether:StopAndHideAnnouncementBubblePlayback(bubble)
+	local bubbleState = GetAnnouncementBubbleState(bubble)
+	local unitToken = bubbleState and bubbleState.unitToken or nil
+	ClearAnnouncementBubbleState(bubble)
+	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(unitToken) then
+		return false
+	end
+	if not CanMutateFrame(bubble) then
+		return false
+	end
+	if
+		bubble.animationGroup
+		and type(bubble.animationGroup.IsPlaying) == "function"
+		and bubble.animationGroup:IsPlaying()
+	then
+		bubble.animationGroup:Stop()
+		return true
+	end
+	return self:CompleteAnnouncementBubblePlayback(bubble)
 end
 
 local function ScaleBubbleMetric(baseValue, sizeScale, minimumValue)
@@ -704,6 +752,11 @@ local function GetAnnouncementBubbleScreenHostFrame()
 	if QuestTogether.announcementBubbleScreenHostFrame then
 		return QuestTogether.announcementBubbleScreenHostFrame
 	end
+	if QuestTogether.IsRuntimeRestricted and QuestTogether:IsRuntimeRestricted() then
+		-- Constructing and laying out UI can wait; do not create even addon-owned
+		-- frames for the first time from a restricted callback path.
+		return nil
+	end
 
 	local parentFrame = UIParent or (C_UI and C_UI.GetUIParent and C_UI.GetUIParent()) or nil
 	if not parentFrame then
@@ -1132,20 +1185,18 @@ function QuestTogether:GetAccessibleNameplateFrameForUnit(unitToken, requireShow
 	end
 
 	local namePlateFrameBase = self.API.GetNamePlateForUnit(unitToken)
-	if not namePlateFrameBase or not namePlateFrameBase.UnitFrame then
+	if not self:CanAccessForeignFrame(namePlateFrameBase) then
 		return nil, nil
 	end
-	if IsFrameForbidden(namePlateFrameBase) or IsFrameForbidden(namePlateFrameBase.UnitFrame) then
+	local unitFrame, memberReadable = self:GetAccessibleFrameMember(namePlateFrameBase, "UnitFrame")
+	if not memberReadable or not unitFrame or not self:CanAccessForeignFrame(unitFrame) then
 		return nil, nil
 	end
-	if requireShown and namePlateFrameBase.IsShown then
-		local okShown, isShown = pcall(namePlateFrameBase.IsShown, namePlateFrameBase)
-		if not okShown or not isShown then
-			return nil, nil
-		end
+	if requireShown and not self:CanAccessForeignFrame(namePlateFrameBase, true) then
+		return nil, nil
 	end
 
-	return namePlateFrameBase, namePlateFrameBase.UnitFrame
+	return namePlateFrameBase, unitFrame
 end
 
 -- Quest objective detection is explicitly open-world-only. The tooltip-driven
@@ -1173,12 +1224,13 @@ function QuestTogether:GetNameplateContextInfo()
 	}
 end
 
--- Announcement bubbles only depend on visible mutable host frames plus
--- addon-owned bubble state, so they do not inherit the quest-tooltip instance
--- gate. Keep this policy split explicit instead of coupling bubbles to quest
--- objective detection.
-function QuestTogether:IsAnnouncementBubbleAugmentationBlockedInCurrentContext()
-	return false
+-- Personal bubbles are fully addon-owned. Nearby-player bubbles attach to
+-- foreign nameplates, so keep them out of every restricted runtime state.
+function QuestTogether:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(unitToken)
+	if unitToken == "player" then
+		return false
+	end
+	return self.IsWorkBlocked and self:IsWorkBlocked("foreign_frame_mutation") or false
 end
 
 function QuestTogether:IsNearbyPlayerAnnouncementBubbleAugmentationBlockedInCurrentContext()
@@ -1220,7 +1272,9 @@ function QuestTogether:GetNameplateCapabilityNoticeReport()
 	local nearbyPlayerBubblesBlocked = wantsNearbyPlayerBubbles
 		and self:IsNearbyPlayerAnnouncementBubbleAugmentationBlockedInCurrentContext()
 		or false
-	local personalBubbleBlocked = wantsPersonalBubble and self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext() or false
+	local personalBubbleBlocked = wantsPersonalBubble
+		and self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext("player")
+		or false
 
 	local lines = {}
 	local keyParts = {}
@@ -2942,30 +2996,44 @@ local function GetNameplateNameTextAnchor(unitFrame)
 end
 
 ResolveNameplateUnitToken = function(namePlateFrameBase, unitFrame)
-	local plateFrameToken =
-		namePlateFrameBase and not IsFrameForbidden(namePlateFrameBase) and namePlateFrameBase.namePlateUnitToken or nil
+	local plateFrameToken = namePlateFrameBase
+		and select(1, QuestTogether:GetAccessibleFrameMember(namePlateFrameBase, "namePlateUnitToken"))
+		or nil
 	if QuestTogether:IsNameplateUnitToken(plateFrameToken) then
 		return plateFrameToken
 	end
 
-	local plateFrameGetUnitToken =
-		namePlateFrameBase and not IsFrameForbidden(namePlateFrameBase) and namePlateFrameBase.GetUnit and namePlateFrameBase:GetUnit()
-			or nil
+	local plateFrameGetUnitToken = nil
+	local getUnitMethod = namePlateFrameBase
+		and select(1, QuestTogether:GetAccessibleFrameMember(namePlateFrameBase, "GetUnit"))
+		or nil
+	if type(getUnitMethod) == "function" then
+		local okUnit, resolvedUnitToken = pcall(getUnitMethod, namePlateFrameBase)
+		if okUnit and QuestTogether:CanAccessValue(resolvedUnitToken) then
+			plateFrameGetUnitToken = resolvedUnitToken
+		end
+	end
 	if QuestTogether:IsNameplateUnitToken(plateFrameGetUnitToken) then
 		return plateFrameGetUnitToken
 	end
 
-	local unitFrameNamePlateToken = unitFrame and unitFrame.namePlateUnitToken or nil
+	local unitFrameNamePlateToken = unitFrame
+		and select(1, QuestTogether:GetAccessibleFrameMember(unitFrame, "namePlateUnitToken"))
+		or nil
 	if QuestTogether:IsNameplateUnitToken(unitFrameNamePlateToken) then
 		return unitFrameNamePlateToken
 	end
 
-	local unitFrameUnitToken = unitFrame and unitFrame.unit or nil
+	local unitFrameUnitToken = unitFrame
+		and select(1, QuestTogether:GetAccessibleFrameMember(unitFrame, "unit"))
+		or nil
 	if QuestTogether:IsNameplateUnitToken(unitFrameUnitToken) then
 		return unitFrameUnitToken
 	end
 
-	local displayedUnitToken = unitFrame and unitFrame.displayedUnit or nil
+	local displayedUnitToken = unitFrame
+		and select(1, QuestTogether:GetAccessibleFrameMember(unitFrame, "displayedUnit"))
+		or nil
 	if QuestTogether:IsNameplateUnitToken(displayedUnitToken) then
 		return displayedUnitToken
 	end
@@ -3240,8 +3308,26 @@ local function ApplyAnnouncementBubbleLayering(hostFrame, unitFrame, bubble)
 		return
 	end
 
-	local frameStrata = hostFrame:GetFrameStrata() or "LOW"
-	local frameLevel = SafeUiNumber(unitFrame:GetFrameLevel(), 0) + 20
+	local frameStrata = "LOW"
+	local getFrameStrata = select(1, QuestTogether:GetAccessibleFrameMember(hostFrame, "GetFrameStrata"))
+	if type(getFrameStrata) == "function" then
+		local okStrata, resolvedStrata = pcall(getFrameStrata, hostFrame)
+		if okStrata then
+			frameStrata = SafeTrimText(resolvedStrata)
+			if frameStrata == "" then
+				frameStrata = "LOW"
+			end
+		end
+	end
+
+	local frameLevel = 20
+	local getFrameLevel = select(1, QuestTogether:GetAccessibleFrameMember(unitFrame, "GetFrameLevel"))
+	if type(getFrameLevel) == "function" then
+		local okLevel, resolvedLevel = pcall(getFrameLevel, unitFrame)
+		if okLevel then
+			frameLevel = SafeUiNumber(resolvedLevel, 0) + 20
+		end
+	end
 	bubble:SetFrameStrata(frameStrata)
 	bubble:SetFrameLevel(frameLevel)
 end
@@ -3324,13 +3410,10 @@ local function EnsureAnnouncementBubble(hostFrame)
 	fadeOut:SetToAlpha(0)
 
 	animationGroup:SetScript("OnFinished", function()
-		bubble:SetAlpha(0)
-		bubble:Hide()
+		QuestTogether:CompleteAnnouncementBubblePlayback(bubble)
 	end)
 	animationGroup:SetScript("OnStop", function()
-		ClearAnnouncementBubbleState(bubble)
-		bubble:SetAlpha(0)
-		bubble:Hide()
+		QuestTogether:CompleteAnnouncementBubblePlayback(bubble)
 	end)
 	bubble.animationGroup = animationGroup
 	bubble.fadeInAnimation = fadeIn
@@ -3351,53 +3434,45 @@ function QuestTogether:HideAnnouncementBubble(hostFrame)
 	if not bubble then
 		return
 	end
-	ClearAnnouncementBubbleState(bubble)
-
-	if bubble.animationGroup and bubble.animationGroup:IsPlaying() then
-		bubble.animationGroup:Stop()
-	elseif CanMutateFrame(bubble) then
-		bubble:SetAlpha(0)
-		bubble:Hide()
-	end
+	self:StopAndHideAnnouncementBubblePlayback(bubble)
 end
 
 function QuestTogether:RefreshActiveAnnouncementBubbles()
-	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext() then
-		for _, bubble in pairs(self.nameplateBubbleByUnitFrame) do
-			if bubble then
-				if bubble.animationGroup and bubble.animationGroup:IsPlaying() then
-					bubble.animationGroup:Stop()
-				elseif CanMutateFrame(bubble) then
-					bubble:SetAlpha(0)
-					bubble:Hide()
-				end
-			end
-		end
-		return
-	end
 	for unitFrame, bubble in pairs(self.nameplateBubbleByUnitFrame) do
 		local bubbleState = GetAnnouncementBubbleState(bubble)
 		if bubble and bubbleState and bubbleState.text and bubbleState.text ~= "" then
-			local hostFrame = bubbleState.unitToken and self:GetAnnouncementBubbleHostFrameForUnit(bubbleState.unitToken) or nil
-			if hostFrame and self:GetOption("showChatBubbles") then
-				if hostFrame == self.announcementBubbleScreenHostFrame or (hostFrame.IsShown and hostFrame:IsShown()) then
-					if not (bubble.animationGroup and bubble.animationGroup:IsPlaying()) then
-						self:ShowAnnouncementBubbleOnNameplate(
-							hostFrame,
-							bubbleState.text,
-							bubbleState.eventType,
-							bubbleState.iconAsset,
-							bubbleState.iconKind
-						)
+			if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(bubbleState.unitToken) then
+				-- Side-table cleanup is safe while restricted. Do not mutate a
+				-- potentially protected visual; its fade can finish naturally.
+				-- Retain only the owner token so the animation callback also
+				-- knows it must fail closed, without retaining replayable text.
+				SetAnnouncementBubbleState(bubble, {
+					unitToken = bubbleState.unitToken,
+				})
+			else
+				local hostFrame = bubbleState.unitToken
+						and self:GetAnnouncementBubbleHostFrameForUnit(bubbleState.unitToken)
+					or nil
+				if hostFrame and self:GetOption("showChatBubbles") then
+					if hostFrame == self.announcementBubbleScreenHostFrame or self:CanAccessForeignFrame(hostFrame, true) then
+						if not (bubble.animationGroup and bubble.animationGroup:IsPlaying()) then
+							self:ShowAnnouncementBubbleOnNameplate(
+								hostFrame,
+								bubbleState.text,
+								bubbleState.eventType,
+								bubbleState.iconAsset,
+								bubbleState.iconKind
+							)
+						end
+					else
+						self:StopAndHideAnnouncementBubblePlayback(bubble)
 					end
-				else
-					self:HideAnnouncementBubble(hostFrame)
+				elseif hostFrame then
+					self:StopAndHideAnnouncementBubblePlayback(bubble)
+				elseif unitFrame then
+					self:StopAndHideAnnouncementBubblePlayback(bubble)
+					self.nameplateBubbleByUnitFrame[unitFrame] = nil
 				end
-			elseif hostFrame then
-				self:HideAnnouncementBubble(hostFrame)
-			elseif unitFrame then
-				ClearAnnouncementBubbleState(bubble)
-				self.nameplateBubbleByUnitFrame[unitFrame] = nil
 			end
 		end
 	end
@@ -3430,6 +3505,12 @@ function QuestTogether:TryShowAnnouncementBubbleOnUnitNameplate(unitToken, text,
 end
 
 function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, text, eventType, iconAsset, iconKind)
+	local isPersonalBubble = namePlateFrameBase == self.announcementBubbleScreenHostFrame
+	local policyUnitToken = isPersonalBubble and "player" or "nameplate"
+	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(policyUnitToken) then
+		return false
+	end
+
 	local unitFrame = GetAnnouncementBubbleUnitFrame(namePlateFrameBase)
 	if not namePlateFrameBase or not unitFrame then
 		return false
@@ -3437,10 +3518,6 @@ function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, tex
 	if not CanMutateFrame(namePlateFrameBase) or not CanMutateFrame(unitFrame) then
 		return false
 	end
-	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext() then
-		return false
-	end
-
 	local message = SafeTrimText(text)
 	if message == "" then
 		return false
@@ -3456,7 +3533,7 @@ function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, tex
 	end
 
 	local bubbleUnitToken = nil
-	if namePlateFrameBase == self.announcementBubbleScreenHostFrame then
+	if isPersonalBubble then
 		bubbleUnitToken = "player"
 	else
 		bubbleUnitToken = ResolveNameplateUnitToken(namePlateFrameBase, unitFrame)
@@ -3467,19 +3544,16 @@ function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, tex
 	if bubble.animationGroup and bubble.animationGroup:IsPlaying() then
 		bubble.animationGroup:Stop()
 	end
-	SetAnnouncementBubbleState(bubble, {
-		text = message,
-		eventType = type(eventType) == "string" and eventType ~= "" and eventType or nil,
-		iconAsset = type(iconAsset) == "string" and iconAsset ~= "" and iconAsset or nil,
-		iconKind = type(iconKind) == "string" and iconKind ~= "" and iconKind or nil,
-		unitToken = bubbleUnitToken,
-	})
 
-	local anchorFrame = unitFrame.HealthBarsContainer or unitFrame
-	if IsFrameForbidden(anchorFrame) then
+	local anchorFrame, anchorReadable = self:GetAccessibleFrameMember(unitFrame, "HealthBarsContainer")
+	if not anchorReadable then
+		return false
+	end
+	anchorFrame = anchorFrame or unitFrame
+	if not self:CanAccessForeignFrame(anchorFrame) then
 		anchorFrame = unitFrame
 	end
-	if IsFrameForbidden(anchorFrame) then
+	if not self:CanAccessForeignFrame(anchorFrame) then
 		return false
 	end
 	local visualConfig = GetAnnouncementBubbleVisualConfig()
@@ -3555,6 +3629,13 @@ function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, tex
 		bubble:SetClampRectInsets(0, 0, 0, 0)
 	end
 
+	SetAnnouncementBubbleState(bubble, {
+		text = message,
+		eventType = type(eventType) == "string" and eventType ~= "" and eventType or nil,
+		iconAsset = type(iconAsset) == "string" and iconAsset ~= "" and iconAsset or nil,
+		iconKind = type(iconKind) == "string" and iconKind ~= "" and iconKind or nil,
+		unitToken = bubbleUnitToken,
+	})
 	bubble:SetAlpha(0)
 	bubble:Show()
 	if bubble.Tail then
@@ -3570,7 +3651,7 @@ function QuestTogether:ShowAnnouncementBubbleOnUnitNameplate(unitToken, text, ev
 	if type(unitToken) ~= "string" or unitToken == "" then
 		return false, "No unit token was provided."
 	end
-	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext() then
+	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(unitToken) then
 		return false, "Announcement bubbles are unavailable in the current context."
 	end
 
@@ -3584,25 +3665,26 @@ function QuestTogether:ShowAnnouncementBubbleOnUnitNameplate(unitToken, text, ev
 end
 
 function QuestTogether:ShowAnnouncementBubbleOnRandomVisiblePlayer(text)
-	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext() then
+	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext("nameplate") then
 		return false, "Announcement bubbles are unavailable in the current context."
 	end
 
 	local candidateNameplates = {}
 
 	self:ForEachVisibleNamePlate(function(frame)
-		if not frame or not frame.UnitFrame then
+		local unitFrame, memberReadable = self:GetAccessibleFrameMember(frame, "UnitFrame")
+		if not memberReadable or not unitFrame or not self:CanAccessForeignFrame(unitFrame) then
 			return
 		end
 
-		local unitToken = (frame.GetUnit and frame:GetUnit()) or nil
+		local unitToken = ResolveNameplateUnitToken(frame, unitFrame)
 		if not unitToken or not self:IsNameplateUnitToken(unitToken) then
 			return
 		end
 		if not self:IsNameplateUnitPlayer(unitToken) then
 			return
 		end
-		if UnitIsUnit and UnitIsUnit(unitToken, "player") then
+		if self.API.UnitIsUnit and self.API.UnitIsUnit(unitToken, "player") then
 			return
 		end
 
@@ -3619,7 +3701,8 @@ function QuestTogether:ShowAnnouncementBubbleOnRandomVisiblePlayer(text)
 		return false, "Unable to show a bubble on the selected nameplate."
 	end
 
-	local unitToken = (namePlateFrameBase.GetUnit and namePlateFrameBase:GetUnit()) or nil
+	local unitFrame = select(1, self:GetAccessibleFrameMember(namePlateFrameBase, "UnitFrame"))
+	local unitToken = unitFrame and ResolveNameplateUnitToken(namePlateFrameBase, unitFrame) or nil
 	local unitName = unitToken and self.API.UnitName(unitToken) or nil
 	return true, unitName or "Unknown"
 end
@@ -3696,14 +3779,14 @@ function QuestTogether:RestoreNameplateHealthColor(unitFrame)
 end
 
 function QuestTogether:RefreshNameplateHealthTint(namePlateFrameBase, isQuestObjective)
-	if not namePlateFrameBase or not namePlateFrameBase.UnitFrame then
+	if not self:CanAccessForeignFrame(namePlateFrameBase) then
 		return
 	end
-	if IsFrameForbidden(namePlateFrameBase) or IsFrameForbidden(namePlateFrameBase.UnitFrame) then
+	local unitFrame, memberReadable = self:GetAccessibleFrameMember(namePlateFrameBase, "UnitFrame")
+	if not memberReadable or not unitFrame or not self:CanAccessForeignFrame(unitFrame) then
 		return
 	end
 
-	local unitFrame = namePlateFrameBase.UnitFrame
 	local unitToken = ResolveNameplateUnitToken(namePlateFrameBase, unitFrame)
 	local shouldTint = self:ShouldApplyQuestHealthTint(unitFrame, isQuestObjective)
 	if shouldTint then
@@ -3817,13 +3900,13 @@ function QuestTogether:ScheduleNameplateRefresh(unitToken)
 end
 
 function QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
-	if not namePlateFrameBase or not namePlateFrameBase.UnitFrame then
+	if not self:CanAccessForeignFrame(namePlateFrameBase) then
 		return
 	end
-	if IsFrameForbidden(namePlateFrameBase) or IsFrameForbidden(namePlateFrameBase.UnitFrame) then
+	local unitFrame, memberReadable = self:GetAccessibleFrameMember(namePlateFrameBase, "UnitFrame")
+	if not memberReadable or not unitFrame or not self:CanAccessForeignFrame(unitFrame) then
 		return
 	end
-	local unitFrame = namePlateFrameBase.UnitFrame
 	local unitToken = ResolveNameplateUnitToken(namePlateFrameBase, unitFrame)
 	local hasResolvedQuestState, isQuestObjective, resolvedUnitGuid = self:TryResolveNameplateQuestObjectiveState(
 		unitToken,
@@ -3856,32 +3939,30 @@ function QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
 end
 
 function QuestTogether:HideNameplateIcon(namePlateFrameBase)
-	if not namePlateFrameBase or not namePlateFrameBase.UnitFrame then
+	if not self:CanAccessForeignFrame(namePlateFrameBase) then
 		return
 	end
-	if IsFrameForbidden(namePlateFrameBase) or IsFrameForbidden(namePlateFrameBase.UnitFrame) then
+	local unitFrame, memberReadable = self:GetAccessibleFrameMember(namePlateFrameBase, "UnitFrame")
+	if not memberReadable or not unitFrame or not self:CanAccessForeignFrame(unitFrame) then
 		return
 	end
 
-	local icon = self.nameplateIconByUnitFrame[namePlateFrameBase.UnitFrame]
-	if icon and not IsFrameForbidden(icon) then
+	local icon = self.nameplateIconByUnitFrame[unitFrame]
+	if icon and CanMutateFrame(icon) then
 		icon:Hide()
 	end
-	local bubble = self.nameplateBubbleByUnitFrame[namePlateFrameBase.UnitFrame]
-	if bubble then
-		ClearAnnouncementBubbleState(bubble)
-	end
+	local bubble = self.nameplateBubbleByUnitFrame[unitFrame]
 	self:HideAnnouncementBubble(namePlateFrameBase)
-	self:RestoreNameplateHealthColor(namePlateFrameBase.UnitFrame)
+	self:RestoreNameplateHealthColor(unitFrame)
 end
 
 function QuestTogether:ForEachVisibleNamePlate(callback)
-	if type(callback) ~= "function" or not C_NamePlate or not C_NamePlate.GetNamePlates then
+	if type(callback) ~= "function" or not (self.API and type(self.API.GetNamePlates) == "function") then
 		return
 	end
 
-	local ok, nameplates = pcall(C_NamePlate.GetNamePlates, false)
-	if not ok or type(nameplates) ~= "table" then
+	local nameplates = self.API.GetNamePlates()
+	if type(nameplates) ~= "table" then
 		return
 	end
 
@@ -3893,15 +3974,23 @@ function QuestTogether:ForEachVisibleNamePlate(callback)
 end
 
 function QuestTogether:FindVisiblePlayerNameplateForSender(senderGUID, senderName)
+	if self.IsWorkBlocked and self:IsWorkBlocked("foreign_frame_mutation") then
+		return nil
+	end
+
 	local normalizedSenderName = self:NormalizeMemberName(senderName)
 	local matchedFrame = nil
 
 	self:ForEachVisibleNamePlate(function(frame)
-		if matchedFrame or not frame or not frame.UnitFrame then
+		if matchedFrame or not frame then
+			return
+		end
+		local unitFrame, memberReadable = self:GetAccessibleFrameMember(frame, "UnitFrame")
+		if not memberReadable or not unitFrame or not self:CanAccessForeignFrame(unitFrame) then
 			return
 		end
 
-		local unitToken = (frame.GetUnit and frame:GetUnit()) or nil
+		local unitToken = ResolveNameplateUnitToken(frame, unitFrame)
 		if not unitToken or not self:IsNameplateUnitToken(unitToken) then
 			return
 		end
@@ -3910,27 +3999,40 @@ function QuestTogether:FindVisiblePlayerNameplateForSender(senderGUID, senderNam
 		end
 
 		local unitGUID = self:GetNameplateUnitGuid(unitToken)
-			if senderGUID and senderGUID ~= "" and unitGUID == senderGUID then
-				matchedFrame = frame
-				return
-			end
+		local unitName, unitRealm = self.API.UnitFullName and self.API.UnitFullName(unitToken)
+		local fullUnitName = nil
+		if unitName then
+			local realmName = self:SafeStripWhitespace(unitRealm or self.API.GetRealmName() or "", "")
+			fullUnitName = SafeText(unitName, "") .. "-" .. SafeText(realmName, "")
+		else
+			fullUnitName = self:NormalizeMemberName(self.API.UnitName and self.API.UnitName(unitToken) or nil)
+		end
+		local normalizedUnitName = fullUnitName and self:NormalizeMemberName(fullUnitName) or nil
 
-			if normalizedSenderName then
-				local unitName, unitRealm = self.API.UnitFullName(unitToken)
-				local fullUnitName = nil
-				if unitName then
-					local realmName = self:SafeStripWhitespace(unitRealm or self.API.GetRealmName() or "", "")
-					fullUnitName = SafeText(unitName, "") .. "-" .. SafeText(realmName, "")
-				else
-					fullUnitName = self:NormalizeMemberName(self.API.UnitName(unitToken))
-				end
-				if fullUnitName and self:NormalizeMemberName(fullUnitName) == normalizedSenderName then
-					matchedFrame = frame
-				end
-			end
-		end)
+		if self:DoesResolvedUnitIdentityMatchSender(unitGUID, normalizedUnitName, senderGUID, normalizedSenderName) then
+			matchedFrame = frame
+			return
+		end
+	end)
 
 	return matchedFrame
+end
+
+function QuestTogether:DoesResolvedUnitIdentityMatchSender(unitGUID, normalizedUnitName, senderGUID, normalizedSenderName)
+	local hasUnitGUID = type(unitGUID) == "string" and unitGUID ~= ""
+	local hasSenderGUID = type(senderGUID) == "string" and senderGUID ~= ""
+
+	-- If both sides expose a GUID, a mismatch is definitive. Falling back to the
+	-- name here can attach an announcement to an unrelated recycled nameplate.
+	if hasUnitGUID and hasSenderGUID and unitGUID ~= senderGUID then
+		return false
+	end
+
+	if normalizedSenderName then
+		return normalizedUnitName ~= nil and normalizedUnitName == normalizedSenderName
+	end
+
+	return hasUnitGUID and hasSenderGUID and unitGUID == senderGUID
 end
 
 function QuestTogether:DoesUnitTokenMatchSender(unitToken, senderGUID, senderName)
@@ -3951,14 +4053,7 @@ function QuestTogether:DoesUnitTokenMatchSender(unitToken, senderGUID, senderNam
 			unitGUID = guidValue
 		end
 	end
-	if senderGUID and senderGUID ~= "" and unitGUID == senderGUID then
-		return true
-	end
-
 	local normalizedSenderName = self:NormalizeMemberName(senderName)
-	if not normalizedSenderName then
-		return false
-	end
 
 	local unitName, unitRealm = self.API.UnitFullName and self.API.UnitFullName(unitToken)
 	local fullUnitName = nil
@@ -3969,7 +4064,8 @@ function QuestTogether:DoesUnitTokenMatchSender(unitToken, senderGUID, senderNam
 		fullUnitName = self:NormalizeMemberName(self.API.UnitName and self.API.UnitName(unitToken) or nil)
 	end
 
-	return fullUnitName ~= nil and self:NormalizeMemberName(fullUnitName) == normalizedSenderName
+	local normalizedUnitName = fullUnitName and self:NormalizeMemberName(fullUnitName) or nil
+	return self:DoesResolvedUnitIdentityMatchSender(unitGUID, normalizedUnitName, senderGUID, normalizedSenderName)
 end
 
 function QuestTogether:FindNearbyPlayerUnitTokenForSender(senderGUID, senderName)
@@ -4072,10 +4168,6 @@ function QuestTogether:FullRefreshVisibleNameplates(reason)
 
 	self:ClearNameplateResolvedQuestState()
 	self:ForEachVisibleNamePlate(function(frame)
-		if not frame or not frame.UnitFrame then
-			return
-		end
-
 		self:RefreshNameplateIcon(frame)
 	end)
 

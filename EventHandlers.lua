@@ -97,7 +97,36 @@ local function ResolveObjectiveProgressValue(objectiveText, currentValue)
 	return ParseObjectiveProgressFromText(objectiveText)
 end
 
-local function DidObjectiveProgressIncrease(oldText, oldValue, newText, newValue)
+function QuestTogether:GetObjectiveProgressIdentity(objectiveText)
+	local normalizedText = self:SafeTrimString(objectiveText, "")
+	if normalizedText == "" then
+		return nil
+	end
+
+	local okAmounts, withoutAmounts = pcall(string.gsub, normalizedText, "%d+%s*/%s*%d+", "#/#")
+	if not okAmounts or type(withoutAmounts) ~= "string" then
+		return nil
+	end
+	local okPercents, withoutPercents = pcall(string.gsub, withoutAmounts, "%d+%.?%d*%%", "#%%")
+	if not okPercents or type(withoutPercents) ~= "string" then
+		return nil
+	end
+
+	local identity = self:SafeTrimString(withoutPercents, "")
+	local okLabel, label = pcall(string.gsub, identity, "[%s%p]+", "")
+	if not okLabel or type(label) ~= "string" or label == "" then
+		return nil
+	end
+	return identity
+end
+
+function QuestTogether:DidObjectiveProgressIncrease(oldText, oldValue, newText, newValue)
+	local oldIdentity = self:GetObjectiveProgressIdentity(oldText)
+	local newIdentity = self:GetObjectiveProgressIdentity(newText)
+	if not oldIdentity or not newIdentity or oldIdentity ~= newIdentity then
+		return false
+	end
+
 	local previousValue = QuestTogether:SafeToNumber(oldValue)
 	if previousValue == nil then
 		previousValue = ParseObjectiveProgressFromText(oldText)
@@ -410,11 +439,10 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 			local normalizedQuestId = NormalizeQuestId(self, questId)
 			if normalizedQuestId then
 				questId = normalizedQuestId
-					local questLogIndex = self.GetQuestLogIndexForQuest and self:GetQuestLogIndexForQuest(questId)
-					if questLogIndex then
-						local changedObjectives = {}
-						local numObjectives = self.API.GetNumQuestLeaderBoards and self.API.GetNumQuestLeaderBoards(questLogIndex)
-							or 0
+				local questLogIndex = self.GetQuestLogIndexForQuest and self:GetQuestLogIndexForQuest(questId)
+				if questLogIndex then
+					local numObjectives = self.API.GetNumQuestLeaderBoards and self.API.GetNumQuestLeaderBoards(questLogIndex)
+						or 0
 
 					for objectiveIndex = 1, numObjectives do
 						local objectiveText, _, _, currentValue =
@@ -422,27 +450,28 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 
 						questData.objectiveValues = questData.objectiveValues or {}
 						local oldObjectiveText = questData.objectives[objectiveIndex]
-							local oldObjectiveValue = questData.objectiveValues[objectiveIndex]
-							if oldObjectiveText ~= objectiveText then
-								local isInitialObjectiveBaseline = oldObjectiveText == nil and oldObjectiveValue == nil
-								local hasForwardProgress =
-									DidObjectiveProgressIncrease(oldObjectiveText, oldObjectiveValue, objectiveText, currentValue)
-								local resolvedProgressValue = ResolveObjectiveProgressValue(objectiveText, currentValue)
-								if (not isInitialObjectiveBaseline) and hasForwardProgress and self:ShouldPublishObjectiveProgress(
-									resolvedProgressValue
-								) then
+						local oldObjectiveValue = questData.objectiveValues[objectiveIndex]
+						if oldObjectiveText ~= objectiveText then
+							local isInitialObjectiveBaseline = oldObjectiveText == nil and oldObjectiveValue == nil
+							local hasForwardProgress =
+								self:DidObjectiveProgressIncrease(oldObjectiveText, oldObjectiveValue, objectiveText, currentValue)
+							local resolvedProgressValue = ResolveObjectiveProgressValue(objectiveText, currentValue)
+							if
+								(not isInitialObjectiveBaseline)
+								and hasForwardProgress
+								and self:ShouldPublishObjectiveProgress(resolvedProgressValue)
+							then
 								local taskAnnouncementType = self:GetTaskAnnouncementType(questId)
 								local eventType = "QUEST_PROGRESS"
-									if taskAnnouncementType == "world" then
-										eventType = "WORLD_QUEST_PROGRESS"
-									elseif taskAnnouncementType == "bonus" then
-										eventType = "BONUS_OBJECTIVE_PROGRESS"
-									end
-									self:PublishAnnouncementEvent(eventType, objectiveText, questId)
+								if taskAnnouncementType == "world" then
+									eventType = "WORLD_QUEST_PROGRESS"
+								elseif taskAnnouncementType == "bonus" then
+									eventType = "BONUS_OBJECTIVE_PROGRESS"
 								end
+								self:PublishAnnouncementEvent(eventType, objectiveText, questId)
+							end
 							questData.objectives[objectiveIndex] = objectiveText
 							questData.objectiveValues[objectiveIndex] = resolvedProgressValue
-							changedObjectives[objectiveIndex] = objectiveText
 						else
 							questData.objectiveValues[objectiveIndex] =
 								ResolveObjectiveProgressValue(objectiveText, currentValue)
@@ -457,36 +486,34 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 							if questData.objectiveValues then
 								questData.objectiveValues[objectiveIndex] = nil
 							end
-							changedObjectives[objectiveIndex] = ""
 						end
 					end
 
 					local statusState = self.GetTrackedQuestStatusState
 						and self:GetTrackedQuestStatusState(questId, true)
 						or nil
-						local currentIsComplete = statusState and statusState.isComplete == true or false
-						local completionChanged = questData.isComplete ~= currentIsComplete
-						if completionChanged then
-							questData.isComplete = currentIsComplete
-						end
+					local currentIsComplete = statusState and statusState.isComplete == true or false
+					local completionChanged = questData.isComplete ~= currentIsComplete
+					if completionChanged then
+						questData.isComplete = currentIsComplete
+					end
 
 					local currentReadyForTurnIn = statusState and statusState.isReadyForTurnIn == true or false
 					local readyForTurnInChanged = questData.isReadyForTurnIn ~= currentReadyForTurnIn
-						if readyForTurnInChanged then
-							questData.isReadyForTurnIn = currentReadyForTurnIn
-							if currentReadyForTurnIn and not self:GetTaskAnnouncementType(questId) then
-								local questTitle = questData.title or self:GetQuestTitle(questId)
-								self:PublishAnnouncementEvent(
+					if readyForTurnInChanged then
+						questData.isReadyForTurnIn = currentReadyForTurnIn
+						if currentReadyForTurnIn and not self:GetTaskAnnouncementType(questId) then
+							local questTitle = questData.title or self:GetQuestTitle(questId)
+							self:PublishAnnouncementEvent(
 								"QUEST_READY_TO_TURN_IN",
 								"Ready to Turn In: " .. SafeText(questTitle, "Unknown"),
 								questId
 							)
 						end
 					end
-
-					end
 				end
 			end
+		end
 	end)
 end
 

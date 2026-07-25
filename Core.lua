@@ -817,12 +817,19 @@ QuestTogether.API = QuestTogether.API or {
 			local ok, exists = pcall(UnitExists, unitToken)
 			return ok and exists and true or false
 		end,
+		UnitIsUnit = function(leftUnitToken, rightUnitToken)
+			if type(UnitIsUnit) ~= "function" then
+				return false
+			end
+			local ok, isSameUnit = pcall(UnitIsUnit, leftUnitToken, rightUnitToken)
+			if not ok or not CanAccessForeignValue(isSameUnit) then
+				return false
+			end
+			return isSameUnit and true or false
+		end,
 	UnitGUID = function(unitToken)
 		local ok, guidValue = pcall(UnitGUID, unitToken)
-		if not ok then
-			return nil
-		end
-		if QuestTogether and QuestTogether.IsSecretValue and QuestTogether:IsSecretValue(guidValue) then
+		if not ok or not CanAccessForeignValue(guidValue) then
 			return nil
 		end
 		return guidValue
@@ -832,13 +839,11 @@ QuestTogether.API = QuestTogether.API or {
 		if not ok then
 			return nil, nil
 		end
-		if QuestTogether and QuestTogether.IsSecretValue then
-			if QuestTogether:IsSecretValue(unitName) then
-				unitName = nil
-			end
-			if QuestTogether:IsSecretValue(unitRealm) then
-				unitRealm = nil
-			end
+		if not CanAccessForeignValue(unitName) then
+			unitName = nil
+		end
+		if not CanAccessForeignValue(unitRealm) then
+			unitRealm = nil
 		end
 		return unitName, unitRealm
 	end,
@@ -879,10 +884,7 @@ QuestTogether.API = QuestTogether.API or {
 	end,
 	UnitName = function(unitToken)
 		local ok, unitName = pcall(UnitName, unitToken)
-		if not ok then
-			return nil
-		end
-		if QuestTogether and QuestTogether.IsSecretValue and QuestTogether:IsSecretValue(unitName) then
+		if not ok or not CanAccessForeignValue(unitName) then
 			return nil
 		end
 		return unitName
@@ -1305,13 +1307,33 @@ QuestTogether.API = QuestTogether.API or {
 			end
 
 			local ok, namePlateFrameBase = pcall(C_NamePlate.GetNamePlateForUnit, unitToken, false)
-			if not ok then
-				return nil
-			end
-			if QuestTogether and QuestTogether.IsSecretValue and QuestTogether:IsSecretValue(namePlateFrameBase) then
+			if not ok or not CanAccessForeignValue(namePlateFrameBase) then
 				return nil
 			end
 			return namePlateFrameBase
+		end,
+		GetNamePlates = function()
+			if not (C_NamePlate and C_NamePlate.GetNamePlates) then
+				return {}
+			end
+
+			local ok, rawNameplates = pcall(C_NamePlate.GetNamePlates, false)
+			if not ok or not CanAccessForeignTable(rawNameplates) then
+				return {}
+			end
+
+			local nameplates = {}
+			local okCopy = pcall(function()
+				for _, frame in pairs(rawNameplates) do
+					if CanAccessForeignValue(frame) then
+						nameplates[#nameplates + 1] = frame
+					end
+				end
+			end)
+			if not okCopy then
+				return {}
+			end
+			return nameplates
 		end,
 		GetPlayerMapID = function(unitToken)
 			if not (C_Map and C_Map.GetBestMapForUnit) then
@@ -1661,19 +1683,17 @@ QuestTogether.API = QuestTogether.API or {
 			if not ok then
 				return nil, nil, nil, nil
 			end
-			if QuestTogether and QuestTogether.IsSecretValue then
-				if QuestTogether:IsSecretValue(text) then
-					text = nil
-				end
-				if QuestTogether:IsSecretValue(objectiveType) then
-					objectiveType = nil
-				end
-				if QuestTogether:IsSecretValue(finished) then
-					finished = nil
-				end
-				if QuestTogether:IsSecretValue(currentValue) then
-					currentValue = nil
-				end
+			if not CanAccessForeignValue(text) then
+				text = nil
+			end
+			if not CanAccessForeignValue(objectiveType) then
+				objectiveType = nil
+			end
+			if not CanAccessForeignValue(finished) then
+				finished = nil
+			end
+			if not CanAccessForeignValue(currentValue) then
+				currentValue = nil
 			end
 			return text, objectiveType, finished, currentValue
 		end,
@@ -1966,7 +1986,8 @@ function QuestTogether:IsSecretValue(value)
 		return false
 	end
 
-	return raw_issecretvalue(value) and true or false
+	local ok, isSecret = pcall(raw_issecretvalue, value)
+	return not ok or (isSecret and true or false)
 end
 
 function QuestTogether:CanAccessValue(value)
@@ -1982,6 +2003,9 @@ function QuestTogether:IsForbiddenFrame(frame)
 	if not frame or (frameType ~= "table" and frameType ~= "userdata") then
 		return false
 	end
+	if not CanAccessForeignValue(frame) then
+		return true
+	end
 	if type(frame.IsForbidden) ~= "function" then
 		return false
 	end
@@ -1990,9 +2014,32 @@ function QuestTogether:IsForbiddenFrame(frame)
 	return ok and forbidden and true or false
 end
 
+function QuestTogether:IsProtectedFrame(frame)
+	if not self:CanAccessValue(frame) then
+		return true, false
+	end
+
+	local frameType = type(frame)
+	if not frame or (frameType ~= "table" and frameType ~= "userdata") then
+		return false, false
+	end
+	if type(frame.IsProtected) ~= "function" then
+		return false, false
+	end
+
+	local ok, isProtected, isProtectedExplicitly = pcall(frame.IsProtected, frame)
+	if not ok then
+		return true, false
+	end
+	return isProtected and true or false, isProtectedExplicitly and true or false
+end
+
 function QuestTogether:CanAccessForeignFrame(frame, requireShown)
 	local frameType = type(frame)
 	if not frame or (frameType ~= "table" and frameType ~= "userdata") then
+		return false
+	end
+	if not CanAccessForeignValue(frame) then
 		return false
 	end
 	if self:IsForbiddenFrame(frame) then
@@ -2012,6 +2059,20 @@ function QuestTogether:CanAccessForeignFrame(frame, requireShown)
 	return true
 end
 
+function QuestTogether:GetAccessibleFrameMember(frame, memberName)
+	if not self:CanAccessForeignFrame(frame) or type(memberName) ~= "string" or memberName == "" then
+		return nil, false
+	end
+
+	local ok, value = pcall(function()
+		return frame[memberName]
+	end)
+	if not ok or not self:CanAccessValue(value) then
+		return nil, false
+	end
+	return value, true
+end
+
 function QuestTogether:TryAddMessageToChatFrame(chatFrame, message)
 	if not self:CanAccessForeignFrame(chatFrame) or type(chatFrame.AddMessage) ~= "function" then
 		return false
@@ -2022,7 +2083,7 @@ function QuestTogether:TryAddMessageToChatFrame(chatFrame, message)
 end
 
 function QuestTogether:SafeToNumber(value)
-	if self:IsSecretValue(value) then
+	if not self:CanAccessValue(value) then
 		return nil
 	end
 
@@ -2066,7 +2127,7 @@ function QuestTogether:NormalizeQuestID(questId)
 end
 
 function QuestTogether:SafeToString(value, fallback)
-	if self:IsSecretValue(value) then
+	if not self:CanAccessValue(value) then
 		if fallback ~= nil then
 			return fallback
 		end
@@ -2095,12 +2156,12 @@ end
 
 function QuestTogether:SafeTrimString(value, fallback)
 	local fallbackValue = fallback or ""
-	if type(value) ~= "string" or self:IsSecretValue(value) then
+	if type(value) ~= "string" or not self:CanAccessValue(value) then
 		return fallbackValue
 	end
 
 	local trimmedValue = string.match(value, "^%s*(.-)%s*$")
-	if type(trimmedValue) ~= "string" or self:IsSecretValue(trimmedValue) then
+	if type(trimmedValue) ~= "string" or not self:CanAccessValue(trimmedValue) then
 		return fallbackValue
 	end
 	return trimmedValue
@@ -2108,12 +2169,12 @@ end
 
 function QuestTogether:SafeStripWhitespace(value, fallback)
 	local fallbackValue = fallback or ""
-	if type(value) ~= "string" or self:IsSecretValue(value) then
+	if type(value) ~= "string" or not self:CanAccessValue(value) then
 		return fallbackValue
 	end
 
 	local stripped = string.gsub(value, "%s+", "")
-	if type(stripped) ~= "string" or self:IsSecretValue(stripped) then
+	if type(stripped) ~= "string" or not self:CanAccessValue(stripped) then
 		return fallbackValue
 	end
 	return stripped
@@ -4589,11 +4650,11 @@ function QuestTogether:SetValue(infoOrKey, value)
 end
 
 function QuestTogether:GetPlayerTracker()
-	local playerName = self:GetPlayerName()
-	if not self.db.global.questTrackers[playerName] then
-		self.db.global.questTrackers[playerName] = {}
+	local characterKey = self.activeCharacterKey or self:GetCurrentCharacterKey() or self:GetPlayerName() or "Unknown"
+	if not self.db.global.questTrackers[characterKey] then
+		self.db.global.questTrackers[characterKey] = {}
 	end
-	return self.db.global.questTrackers[playerName]
+	return self.db.global.questTrackers[characterKey]
 end
 
 function QuestTogether:QueueQuestLogTask(taskFn)

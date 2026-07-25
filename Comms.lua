@@ -1591,10 +1591,16 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		return
 	end
 	local safeMessage = SafeAddonString(self, message, "")
-	if self:IsSelfSender(sender) then
+	local safeTransportSender = SafeTrimAddonString(self, sender or "", "")
+	local transportSenderName = safeTransportSender ~= "" and self:NormalizeMemberName(safeTransportSender) or nil
+	if not transportSenderName then
+		self:Debug("Rejected comm payload without an accessible transport sender", "comms")
 		return
 	end
-	if self.IsIgnoredPlayerName and self:IsIgnoredPlayerName(self:NormalizeMemberName(sender) or sender) then
+	if self:IsSelfSender(safeTransportSender) then
+		return
+	end
+	if self.IsIgnoredPlayerName and self:IsIgnoredPlayerName(transportSenderName) then
 		return
 	end
 	if not self:IsAnnouncementChannelEvent(channel, localID, name) then
@@ -1606,7 +1612,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		self:Debug("Failed to deserialize incoming comm payload", "comms")
 		return
 	end
-	if self:ShouldSuppressDuplicateCommMessage(sender, safeMessage) then
+	if self:ShouldSuppressDuplicateCommMessage(safeTransportSender, safeMessage) then
 		return
 	end
 
@@ -1617,9 +1623,9 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 			return
 		end
 
-		if not eventData.senderName or eventData.senderName == "" then
-			eventData.senderName = self:NormalizeMemberName(sender) or sender
-		end
+		-- CHAT_MSG_ADDON supplies the authoritative sender. Never let a payload
+		-- choose which visible player's nameplate receives the announcement.
+		eventData.senderName = transportSenderName
 
 		self:HandleAnnouncementEvent(eventData, false)
 		return
@@ -1631,6 +1637,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 			self:Debug("Failed to decode ping request payload", "comms")
 			return
 		end
+		requestData.requesterName = transportSenderName or requestData.requesterName
 		self:HandlePingRequest(requestData)
 		return
 	end
@@ -1641,6 +1648,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 			self:Debug("Failed to decode ping response payload", "comms")
 			return
 		end
+		responseData.senderName = transportSenderName
 		self:HandlePingResponse(responseData)
 		return
 	end
@@ -1651,6 +1659,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 			self:Debug("Failed to decode quest compare request payload", "comms")
 			return
 		end
+		requestData.requesterName = transportSenderName or requestData.requesterName
 		self:HandleQuestCompareRequest(requestData)
 		return
 	end
@@ -1661,6 +1670,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 			self:Debug("Failed to decode quest compare entry payload", "comms")
 			return
 		end
+		entryData.senderName = transportSenderName
 		self:HandleQuestCompareEntry(entryData)
 		return
 	end
@@ -1671,6 +1681,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 			self:Debug("Failed to decode quest compare done payload", "comms")
 			return
 		end
+		doneData.senderName = transportSenderName
 		self:HandleQuestCompareDone(doneData)
 		return
 	end

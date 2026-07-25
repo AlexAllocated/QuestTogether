@@ -142,6 +142,7 @@ local function WithIsolatedState(testFn)
 	local originalCopyableWindow = QuestTogether.copyableWindow
 	local originalPendingPingRequests = QuestTogether.pendingPingRequests
 	local originalPendingQuestCompareRequests = QuestTogether.pendingQuestCompareRequests
+	local originalRecentCommMessageSignatures = QuestTogether.recentCommMessageSignatures
 	local originalPendingQuestRemovals = QuestTogether.pendingQuestRemovals
 	local originalIsLoggingOut = QuestTogether.isLoggingOut
 	local originalQuestLogChatFrameID = QuestTogether.db.profile.questLogChatFrameID
@@ -205,6 +206,7 @@ local function WithIsolatedState(testFn)
 	QuestTogether.copyableWindow = nil
 	QuestTogether.pendingPingRequests = {}
 	QuestTogether.pendingQuestCompareRequests = {}
+	QuestTogether.recentCommMessageSignatures = {}
 	QuestTogether.pendingQuestRemovals = {}
 	QuestTogether.isLoggingOut = false
 
@@ -263,6 +265,7 @@ local function WithIsolatedState(testFn)
 	QuestTogether.copyableWindow = originalCopyableWindow
 	QuestTogether.pendingPingRequests = originalPendingPingRequests
 	QuestTogether.pendingQuestCompareRequests = originalPendingQuestCompareRequests
+	QuestTogether.recentCommMessageSignatures = originalRecentCommMessageSignatures
 	QuestTogether.pendingQuestRemovals = originalPendingQuestRemovals
 	QuestTogether.isLoggingOut = originalIsLoggingOut
 	if QuestTogether.SetRuntimeFlag then
@@ -470,6 +473,20 @@ QuestTogether:RegisterTest("WatchQuest stores tracker entries under normalized n
 	AssertEquals(tracker["bad-id"], nil)
 end)
 
+QuestTogether:RegisterTest("quest trackers are isolated by full character key", function()
+	QuestTogether.activeCharacterKey = "SameName-FirstRealm"
+	local firstTracker = QuestTogether:GetPlayerTracker()
+	firstTracker[12345] = {
+		title = "First Character Quest",
+	}
+
+	QuestTogether.activeCharacterKey = "SameName-SecondRealm"
+	local secondTracker = QuestTogether:GetPlayerTracker()
+
+	AssertTrue(firstTracker ~= secondTracker)
+	AssertEquals(secondTracker[12345], nil)
+end)
+
 QuestTogether:RegisterTest("WatchQuest seeds ready-to-turn-in baseline from live status", function()
 	local tracker = QuestTogether:GetPlayerTracker()
 
@@ -556,6 +573,89 @@ QuestTogether:RegisterTest("UNIT_QUEST_LOG_CHANGED does not refresh announcement
 	end)
 end)
 
+QuestTogether:RegisterTest("objective progress identity follows the objective label instead of its count", function()
+	AssertEquals(
+		QuestTogether:GetObjectiveProgressIdentity("1/3 Gather Apples"),
+		QuestTogether:GetObjectiveProgressIdentity("2/3 Gather Apples")
+	)
+	AssertEquals(
+		QuestTogether:GetObjectiveProgressIdentity("34% Fill the vial"),
+		QuestTogether:GetObjectiveProgressIdentity("80% Fill the vial")
+	)
+	AssertTrue(
+		QuestTogether:GetObjectiveProgressIdentity("1/3 Gather Apples")
+			~= QuestTogether:GetObjectiveProgressIdentity("5/8 Rescue Villagers")
+	)
+end)
+
+QuestTogether:RegisterTest("objective progress rejects increases from a replaced objective slot", function()
+	AssertTrue(
+		QuestTogether:DidObjectiveProgressIncrease(
+			"1/3 Gather Apples",
+			1,
+			"2/3 Gather Apples",
+			2
+		)
+	)
+	AssertFalse(
+		QuestTogether:DidObjectiveProgressIncrease(
+			"1/3 Gather Apples",
+			1,
+			"5/8 Rescue Villagers",
+			5
+		)
+	)
+end)
+
+QuestTogether:RegisterTest("UNIT_QUEST_LOG_CHANGED does not announce a replaced objective slot", function()
+	local tracker = QuestTogether:GetPlayerTracker()
+	tracker[12345] = {
+		title = "Changing Objectives",
+		objectives = {
+			"1/3 Gather Apples",
+		},
+		objectiveValues = {
+			1,
+		},
+		isComplete = false,
+		isReadyForTurnIn = false,
+	}
+	local published = 0
+
+	QuestTogether.API = CreateApiWithOverrides({
+		GetQuestLogIndexForQuestID = function()
+			return 1
+		end,
+		GetNumQuestLeaderBoards = function()
+			return 1
+		end,
+		GetQuestObjectiveInfo = function()
+			return "5/8 Rescue Villagers", "monster", false, 5
+		end,
+	})
+
+	WithPatchedMethod(QuestTogether, "QueueQuestLogTask", function(_, taskFn)
+		taskFn()
+	end, function()
+		WithPatchedMethod(QuestTogether, "GetTrackedQuestStatusState", function()
+			return {
+				isComplete = false,
+				isReadyForTurnIn = false,
+			}
+		end, function()
+			WithPatchedMethod(QuestTogether, "PublishAnnouncementEvent", function()
+				published = published + 1
+			end, function()
+				QuestTogether:UNIT_QUEST_LOG_CHANGED(nil, "player")
+			end)
+		end)
+	end)
+
+	AssertEquals(published, 0)
+	AssertEquals(tracker[12345].objectives[1], "5/8 Rescue Villagers")
+	AssertEquals(tracker[12345].objectiveValues[1], 5)
+end)
+
 QuestTogether:RegisterTest("Safe conversions short-circuit values marked secret", function()
 	WithPatchedMethod(QuestTogether, "IsSecretValue", function(_, value)
 		return value == "secret-text" or value == 99
@@ -565,6 +665,26 @@ QuestTogether:RegisterTest("Safe conversions short-circuit values marked secret"
 		AssertEquals(QuestTogether:SafeToString("secret-text", "fallback"), "fallback")
 		AssertEquals(QuestTogether:SafeTrimString("secret-text", "fallback"), "fallback")
 		AssertEquals(QuestTogether:SafeStripWhitespace("secret-text", "fallback"), "fallback")
+	end)
+end)
+
+QuestTogether:RegisterTest("safe conversions and frame reads reject inaccessible values", function()
+	local inaccessibleValue = "inaccessible-value"
+	local fakeFrame = {
+		UnitFrame = inaccessibleValue,
+	}
+
+	WithPatchedMethod(QuestTogether, "CanAccessValue", function(_, value)
+		return value ~= inaccessibleValue
+	end, function()
+		AssertEquals(QuestTogether:SafeToNumber(inaccessibleValue), nil)
+		AssertEquals(QuestTogether:SafeToString(inaccessibleValue, "fallback"), "fallback")
+		AssertEquals(QuestTogether:SafeTrimString(inaccessibleValue, "fallback"), "fallback")
+		AssertEquals(QuestTogether:SafeStripWhitespace(inaccessibleValue, "fallback"), "fallback")
+
+		local memberValue, memberReadable = QuestTogether:GetAccessibleFrameMember(fakeFrame, "UnitFrame")
+		AssertEquals(memberValue, nil)
+		AssertFalse(memberReadable)
 	end)
 end)
 
@@ -2108,10 +2228,14 @@ QuestTogether:RegisterTest("chat bubble option validation rejects unknown values
 			AddMessage = function() end,
 		}, 3
 	end, function()
-		AssertTrue(QuestTogether:SetOption("chatLogDestination", "separate"))
-		AssertEquals(QuestTogether:GetOption("chatLogDestination"), "separate")
-		AssertFalse(QuestTogether:SetOption("chatLogDestination", "guild"))
-		AssertEquals(QuestTogether:GetOption("chatLogDestination"), "separate")
+		WithPatchedMethod(QuestTogether, "GetResolvedChatLogDestination", function()
+			return QuestTogether.db.profile.chatLogDestination
+		end, function()
+			AssertTrue(QuestTogether:SetOption("chatLogDestination", "separate"))
+			AssertEquals(QuestTogether:GetOption("chatLogDestination"), "separate")
+			AssertFalse(QuestTogether:SetOption("chatLogDestination", "guild"))
+			AssertEquals(QuestTogether:GetOption("chatLogDestination"), "separate")
+		end)
 	end)
 end)
 
@@ -3728,6 +3852,26 @@ QuestTogether:RegisterTest("announcement bubbles can still be blocked by their o
 	AssertEquals(delegated, 0)
 end)
 
+QuestTogether:RegisterTest("nearby bubbles honor runtime restrictions while personal bubbles remain addon-owned", function()
+	WithPatchedMethod(QuestTogether, "IsWorkBlocked", function(_, workClass)
+		AssertEquals(workClass, "foreign_frame_mutation")
+		return true
+	end, function()
+		AssertTrue(QuestTogether:IsAnnouncementBubbleAugmentationBlockedInCurrentContext("nameplate1"))
+		AssertFalse(QuestTogether:IsAnnouncementBubbleAugmentationBlockedInCurrentContext("player"))
+	end)
+end)
+
+QuestTogether:RegisterTest("personal bubble host construction waits until runtime restrictions end", function()
+	QuestTogether.announcementBubbleScreenHostFrame = nil
+	WithPatchedMethod(QuestTogether, "IsRuntimeRestricted", function()
+		return true
+	end, function()
+		AssertEquals(QuestTogether:GetAnnouncementBubbleHostFrameForUnit("player"), nil)
+	end)
+	AssertEquals(QuestTogether.announcementBubbleScreenHostFrame, nil)
+end)
+
 QuestTogether:RegisterTest("nameplate capability notice reports quest plates unavailable while quest bubbles remain available in scenario-like instances", function()
 	QuestTogether.isEnabled = true
 	QuestTogether.db.profile.nameplateQuestIconEnabled = true
@@ -4896,7 +5040,11 @@ QuestTogether:RegisterTest("console announcements use separate QuestTogether cha
 	WithPatchedMethod(QuestTogether, "EnsureQuestLogChatFrame", function()
 		return fakeFrame, 3
 	end, function()
-		QuestTogether:PrintConsoleAnnouncement("hello there", "MyPlayer-Realm", "MAGE")
+		WithPatchedMethod(QuestTogether, "GetResolvedChatLogDestination", function()
+			return "separate"
+		end, function()
+			QuestTogether:PrintConsoleAnnouncement("hello there", "MyPlayer-Realm", "MAGE")
+		end)
 	end)
 
 	AssertEquals(#printedToFrame, 1)
@@ -6776,6 +6924,52 @@ QuestTogether:RegisterTest("announcement comm filter accepts grouped distributio
 	AssertFalse(QuestTogether:IsAnnouncementChannelEvent("SAY"))
 end)
 
+QuestTogether:RegisterTest("incoming announcements use the transport sender name", function()
+	local handledEvent = nil
+	local payload = QuestTogether:EncodeAnnouncementPayload({
+		version = 3,
+		eventType = "QUEST_PROGRESS",
+		senderGUID = "Player-2-DEF",
+		classFile = "WARRIOR",
+		senderName = "Forged-Realm",
+		text = "2/3 Gather Apples",
+		questId = "12345",
+		iconAsset = "",
+		iconKind = "",
+		zoneName = "",
+		coordX = "",
+		coordY = "",
+		warMode = "0",
+		emoteToken = "",
+	})
+	local wireMessage = QuestTogether:SerializeWireMessage("ANN", payload)
+
+	WithPatchedMethod(QuestTogether, "IsSelfSender", function()
+		return false
+	end, function()
+		WithPatchedMethod(QuestTogether, "IsIgnoredPlayerName", function()
+			return false
+		end, function()
+			WithPatchedMethod(QuestTogether, "HandleAnnouncementEvent", function(_, eventData)
+				handledEvent = eventData
+				return true
+			end, function()
+				QuestTogether:OnCommReceived(
+					QuestTogether.commPrefix,
+					wireMessage,
+					"PARTY",
+					"Actual-Realm",
+					nil,
+					nil
+				)
+			end)
+		end)
+	end)
+
+	AssertTrue(handledEvent ~= nil)
+	AssertEquals(handledEvent.senderName, "Actual-Realm")
+end)
+
 QuestTogether:RegisterTest("publish announcement sends even when local option is disabled", function()
 	local sent = {}
 	local printed = {}
@@ -7597,9 +7791,45 @@ QuestTogether:RegisterTest("local announcement hides own bubble when configured"
 			text = "Quest Accepted: Test Quest",
 		}, true)
 
-	AssertTrue(handled)
-	AssertEquals(#printed, 1)
-	AssertEquals(bubbleCalls, 0)
+		AssertTrue(handled)
+		AssertEquals(#printed, 1)
+		AssertEquals(bubbleCalls, 0)
+	end)
+end)
+
+QuestTogether:RegisterTest("resolved sender identity rejects a conflicting guid", function()
+	AssertFalse(
+		QuestTogether:DoesResolvedUnitIdentityMatchSender(
+			"Player-1-LIVE",
+			"Nearby-Realm",
+			"Player-2-PAYLOAD",
+			"Nearby-Realm"
+		)
+	)
+	AssertTrue(
+		QuestTogether:DoesResolvedUnitIdentityMatchSender(
+			"Player-1-LIVE",
+			"Nearby-Realm",
+			"Player-1-LIVE",
+			"Nearby-Realm"
+		)
+	)
+end)
+
+QuestTogether:RegisterTest("restricted sender lookup does not enumerate foreign nameplates", function()
+	WithPatchedMethod(QuestTogether, "IsWorkBlocked", function(_, workClass)
+		AssertEquals(workClass, "foreign_frame_mutation")
+		return true
+	end, function()
+		WithPatchedMethod(QuestTogether, "ForEachVisibleNamePlate", function()
+			error("restricted sender lookup must not enumerate nameplates")
+		end, function()
+			AssertEquals(
+				QuestTogether:FindVisiblePlayerNameplateForSender("Player-1-LIVE", "Nearby-Realm"),
+				nil
+			)
+		end)
+	end)
 end)
 
 QuestTogether:RegisterTest("refresh active announcement bubbles does not replay an already playing personal bubble", function()
@@ -7643,6 +7873,49 @@ QuestTogether:RegisterTest("refresh active announcement bubbles does not replay 
 	AssertEquals(showCalls, 0)
 end)
 
+QuestTogether:RegisterTest("restricted bubble refresh clears side-table state without mutating the visual", function()
+	local unitFrame = {}
+	local bubble = {
+		animationGroup = {
+			IsPlaying = function()
+				error("restricted refresh must not inspect the animation")
+			end,
+			Stop = function()
+				error("restricted refresh must not stop the animation")
+			end,
+		},
+		SetAlpha = function()
+			error("restricted refresh must not change visual alpha")
+		end,
+		Hide = function()
+			error("restricted refresh must not hide the visual")
+		end,
+	}
+	QuestTogether.nameplateBubbleByUnitFrame[unitFrame] = bubble
+	QuestTogether.nameplateBubbleStateByFrame[bubble] = {
+		text = "2/3 Gather Apples",
+		eventType = "QUEST_PROGRESS",
+		unitToken = "nameplate1",
+	}
+
+	WithPatchedMethod(QuestTogether, "IsAnnouncementBubbleAugmentationBlockedInCurrentContext", function(_, unitToken)
+		AssertEquals(unitToken, "nameplate1")
+		return true
+	end, function()
+		QuestTogether:RefreshActiveAnnouncementBubbles()
+		local quiescedState = QuestTogether.nameplateBubbleStateByFrame[bubble]
+		AssertTrue(quiescedState ~= nil)
+		AssertEquals(quiescedState.unitToken, "nameplate1")
+		AssertEquals(quiescedState.text, nil)
+
+		-- The animation can finish while restrictions are still active. It must
+		-- clear the final side-table marker without touching the visual.
+		AssertFalse(QuestTogether:CompleteAnnouncementBubblePlayback(bubble))
+	end)
+
+	AssertEquals(QuestTogether.nameplateBubbleStateByFrame[bubble], nil)
+end)
+
 QuestTogether:RegisterTest("hide announcement bubble clears stored bubble state", function()
 	local unitFrame = {}
 	local bubble = {
@@ -7669,4 +7942,67 @@ QuestTogether:RegisterTest("hide announcement bubble clears stored bubble state"
 
 	AssertEquals(QuestTogether.nameplateBubbleStateByFrame[bubble], nil)
 end)
+
+QuestTogether:RegisterTest("completed announcement bubble playback clears stored bubble state", function()
+	local hidden = false
+	local alpha = 1
+	local showCalls = 0
+	local unitFrame = {}
+	local bubble = {
+		SetAlpha = function(_, value)
+			alpha = value
+		end,
+		Hide = function()
+			hidden = true
+		end,
+	}
+	QuestTogether.nameplateBubbleByUnitFrame[unitFrame] = bubble
+	QuestTogether.nameplateBubbleStateByFrame[bubble] = {
+		text = "2/3 Gather Apples",
+		eventType = "QUEST_PROGRESS",
+		unitToken = "nameplate1",
+	}
+
+	AssertTrue(QuestTogether:CompleteAnnouncementBubblePlayback(bubble))
+	AssertEquals(QuestTogether.nameplateBubbleStateByFrame[bubble], nil)
+	AssertEquals(alpha, 0)
+	AssertTrue(hidden)
+
+	WithPatchedMethod(QuestTogether, "IsAnnouncementBubbleAugmentationBlockedInCurrentContext", function()
+		return false
+	end, function()
+		WithPatchedMethod(QuestTogether, "ShowAnnouncementBubbleOnNameplate", function()
+			showCalls = showCalls + 1
+		end, function()
+			QuestTogether:RefreshActiveAnnouncementBubbles()
+		end)
+	end)
+	AssertEquals(showCalls, 0)
+end)
+
+QuestTogether:RegisterTest("completed protected bubble playback avoids visual mutation while restricted", function()
+	local bubble = {
+		IsProtected = function()
+			return true, false
+		end,
+		SetAlpha = function()
+			error("restricted protected bubble must not change alpha")
+		end,
+		Hide = function()
+			error("restricted protected bubble must not hide")
+		end,
+	}
+	QuestTogether.nameplateBubbleStateByFrame[bubble] = {
+		text = "2/3 Gather Apples",
+		eventType = "QUEST_PROGRESS",
+		unitToken = "nameplate1",
+	}
+
+	WithPatchedMethod(QuestTogether, "IsRuntimeRestricted", function()
+		return true
+	end, function()
+		AssertFalse(QuestTogether:CompleteAnnouncementBubblePlayback(bubble))
+	end)
+
+	AssertEquals(QuestTogether.nameplateBubbleStateByFrame[bubble], nil)
 end)
