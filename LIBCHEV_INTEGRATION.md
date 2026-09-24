@@ -2,7 +2,7 @@
 
 QuestTogether embeds a private, pinned copy of [libchev](https://github.com/AlexAllocated/libchev). No separate addon installation is required. The embedded manifest records the exact source revision and file hashes. Another addon's library version cannot replace QT's implementation or share its stores.
 
-libchev v1.1 owns the complete debug controller and console: bounded categorized logs, safe formatting, fuzzy/quoted search, filtering, batching, metrics, tail following, copy controls, report export, test presentation, and debug command behavior. QT's `Debug.lua` supplies private stores, persisted filter settings, cached quest diagnostics, test isolation, and restriction policy through thin adapters. Console windows and controls are created and guarded by the library. The old QT console, dropdown, scroll helpers, and generic formatting/filter/test-presentation implementations have been removed.
+libchev v1.1 owns the complete debug controller and console: bounded categorized logs, safe formatting, fuzzy/quoted search, filtering, batching, metrics, tail following, copy controls, report export, test presentation, and debug command behavior. QT's `Debug.lua` supplies private stores, persisted filter settings, cached quest diagnostics, test isolation, and restriction policy through thin adapters. Console windows and controls are created and guarded by the library. The old QT console, dropdown, scroll helpers, and generic formatting/filter/test-presentation implementations have been removed. Library 1.1.1 restores native WoW panel/button textures on the existing owned controls and emits a single test summary, including the offline harness output.
 
 QT still owns quest snapshots, progress decisions, party/comms identity, nameplate state, restriction decisions, SavedVariables migration, and live-session test isolation. Deferred work, callback guards, assertions and weak-key helpers also come from libchev. Explicit clicks on old coordinate links can execute while QT is disabled if waypoint restrictions permit the action; background work stays paused.
 
@@ -25,7 +25,7 @@ Use the library's `scripts/vendor.py` with an immutable reviewed revision. Do no
 python3 ../LibChev/scripts/vendor.py . --check
 ```
 
-Version `5.7.6-beta.2` pins libchev `1.1.0` at `1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6`.
+Version `5.7.6-beta.3` pins libchev `1.1.1` at `2feea04bab60ba1c1b91bd01ab8a58ce02e091a9`.
 
 Run normal and reverse suites under Lua 5.1 and 5.2, Lua parsing, TOC validation, and package checks after updating. Offline mocks remain excluded from the TOC.
 
@@ -35,4 +35,6 @@ The common-console migration adds consumer regressions for current test-result p
 
 All 324 cases pass in normal and reverse order under actual Lua 5.1.5 and Lua 5.2.4. All 23 Lua files parse under both versions; all 22 TOC entries are unique, present, and ordered correctly; the embedded revision/hash manifest verifies.
 
-Offline success does not prove live Retail/Forever rendering or taint safety. Before a stable release, run `/qt test` and `/qt diagnostics` in each available client. Exercise select/copy, category/search, scrolling away from and back to the tail, resize, clear, repeated test runs, and switching between report and log modes. Check opening and interacting across restrictions, then quests, progress bubbles, nameplates and coordinate links across combat, zoning, disable/re-enable and reload with the ordinary addon set. Earlier live validation of v5.7.5 does not validate this extraction.
+The user reported all 324 tests passing in Forever 1.60.1 build 70009 with QT `5.7.6-beta.2`. This confirms test execution in that session; it does not establish every UI/restriction path or validate subsequent library revisions. A source audit of all seven TOC-loaded test files found no NaN generation, division, exponentiation, or invalid math-domain fixtures. The only modulo checks use a fixed divisor of three.
+
+Offline success does not prove live Retail/Forever rendering or taint safety. Before a stable release, run `/qt test` and `/qt diagnostics` in each available client. Exercise select/copy, category/search, scrolling away from and back to the tail, resize, clear, repeated test runs, and switching between report and log modes. Check opening and interacting across restrictions, then quests, progress bubbles, nameplates and coordinate links across combat, zoning, disable/re-enable and reload with the ordinary addon set.
