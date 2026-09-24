@@ -1,7 +1,8 @@
 local QuestTogether = _G.QuestTogether
+local LibChev = QuestTogether.LibChev
 
 local function NewWeakKeyTable()
-	return setmetatable({}, { __mode = "k" })
+	return LibChev.WeakKeys()
 end
 
 local function EnsureWeakKeyTable(value)
@@ -311,10 +312,7 @@ function QuestTogether:ResetRuntimeWorkStateStore()
 	runtimeState.pendingDeferredNameplateQuestStateRefresh = false
 	runtimeState.deferredNameplateQuestStateRefreshGeneration = 0
 	runtimeState.nameplateFullRefreshGeneration = 0
-	runtimeState.deferredWorkState = {
-		generations = {},
-		entries = {},
-	}
+	runtimeState.deferredWorkState = LibChev.NewWorkState()
 	BindRuntimeReferenceAliases(self, self:EnsureRuntimeStateStore())
 	return runtimeState
 end
