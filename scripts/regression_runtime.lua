@@ -29,6 +29,101 @@ local function NewRuntime()
 	return addon
 end
 
+-- The console contract is exercised with private stores and a recording view;
+-- these tests never construct a live frame or replace a Blizzard API.
+local function NewDebugSession()
+	local addon = setmetatable({
+		isInitialized = true,
+		isRunningTests = false,
+		suppressLocalAnnouncementDisplayDuringTests = false,
+		db = { global = { debugLogCategoryFilter = "ALL", debugLogSearchFilter = "" } },
+		debugLogLines = {},
+		debugLogStoreNormalized = true,
+		debugLogTextLengthSum = 0,
+		diagnosticLogSequence = 0,
+		diagnosticDroppedLogLines = 0,
+		debugLogRefreshBatchDepth = 0,
+		debugLogRefreshPending = false,
+		API = {},
+		tests = {},
+		opened = {},
+	}, { __index = QT })
+	function addon:RefreshCopyableWindow() end
+	function addon:ShowDebugWindow()
+		self.opened[#self.opened + 1] = {
+			text = self:GetDebugLogText(self:GetDebugLogCategoryFilter(), self:GetDebugLogSearchFilter()),
+			category = self:GetDebugLogCategoryFilter(),
+			search = self:GetDebugLogSearchFilter(),
+		}
+		return true
+	end
+	return addon
+end
+
+QT:RegisterTest("debug test command presents fresh results and preserves unrelated history", function()
+	local addon = NewDebugSession()
+	addon:LogDebugLine("keep domain event", { category = "QUEST" })
+	addon:LogDebugLine("obsolete test result", { category = "TEST" })
+	addon:SetDebugLogSearchFilter("hide all results")
+	addon.tests = { { name = "private passing fixture", fn = function() end } }
+	addon:HandleSlashCommand("test")
+	Equal(#addon.opened, 1)
+	Equal(addon.opened[1].category, "TEST")
+	Equal(addon.opened[1].search, "")
+	assert(addon.opened[1].text:find("1 passed, 0 failed", 1, true))
+	assert(not addon:GetDebugLogText("ALL", ""):find("obsolete test result", 1, true))
+	assert(addon:GetDebugLogText("QUEST", ""):find("keep domain event", 1, true))
+	addon.tests = { {
+		name = "private failing fixture",
+		fn = function()
+			error("fixture failure")
+		end,
+	} }
+	Equal(addon:RunTests(), false)
+	Equal(#addon.opened, 2)
+	assert(addon.opened[2].text:find("0 passed, 1 failed", 1, true))
+	assert(addon.opened[2].text:find("private failing fixture", 1, true))
+	assert(not addon.opened[2].text:find("1 passed, 0 failed", 1, true))
+	Equal(addon.isRunningTests, false)
+	Equal(addon.suppressLocalAnnouncementDisplayDuringTests, false)
+	Equal(addon.debugLogRefreshBatchDepth, 0)
+end)
+
+QT:RegisterTest("debug test presentation preserves a visible ALL view but clears its search", function()
+	local addon = NewDebugSession()
+	addon.copyableWindow = {
+		copyableTitle = "QuestTogether Debug Window",
+		IsShown = function()
+			return true
+		end,
+	}
+	addon:LogDebugLine("domain event", { category = "QUEST" })
+	addon:SetDebugLogSearchFilter("obsolete search")
+	addon.tests = { { name = "private fixture", fn = function() end } }
+	Equal(addon:RunTests(), true)
+	Equal(addon.opened[1].category, "ALL")
+	Equal(addon.opened[1].search, "")
+	assert(addon.opened[1].text:find("domain event", 1, true))
+	assert(addon.opened[1].text:find("1 passed, 0 failed", 1, true))
+end)
+
+QT:RegisterTest("debug slash aliases display selected category and clear resets the view", function()
+	local addon = NewDebugSession()
+	addon:LogDebugLine("quest event", { category = "QUEST" })
+	addon:LogDebugLine("comms event", { category = "COMMS" })
+	addon:HandleSlashCommand("dump quest")
+	Equal(addon.opened[1].category, "QUEST")
+	assert(not addon.opened[1].text:find("comms event", 1, true))
+	addon:HandleSlashCommand("debug ALL")
+	Equal(addon.opened[2].category, "ALL")
+	assert(addon.opened[2].text:find("comms event", 1, true))
+	addon:SetDebugLogSearchFilter("quest")
+	addon:HandleSlashCommand("debuglog clear")
+	Equal(addon.opened[3].category, "ALL")
+	Equal(addon.opened[3].search, "")
+	Equal(addon.opened[3].text, "")
+end)
+
 QT:RegisterTest("audit reset invalidates scheduled callbacks even after reenable", function()
 	local addon, calls = NewRuntime(), 0
 	addon:ScheduleDeferredWork("nameplate_refresh", "plate", function()
