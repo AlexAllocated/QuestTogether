@@ -126,7 +126,7 @@ local function BuildQuestLogQuestInfoIndex(addon)
 	local questInfoByQuestId = {}
 
 	if not (addon and addon.API and addon.API.GetNumQuestLogEntries and addon.API.GetQuestLogInfo) then
-		return questInfoByQuestId
+		return nil, "api_unavailable"
 	end
 
 	if addon.EnsureQuestSnapshotStore then
@@ -134,12 +134,25 @@ local function BuildQuestLogQuestInfoIndex(addon)
 	end
 	local snapshotByQuestID = addon.GetQuestSnapshotByQuestID and addon:GetQuestSnapshotByQuestID() or nil
 
-	local totalEntries = addon:SafeToNumber(addon.API.GetNumQuestLogEntries()) or 0
+	local totalEntries = addon:SafeToNumber(addon.API.GetNumQuestLogEntries())
+	if totalEntries == nil or totalEntries < 0 then
+		return nil, "count"
+	end
+	totalEntries = math.floor(totalEntries + 0.5)
 	for entryIndex = 1, totalEntries do
 		local liveQuestInfo = addon.API.GetQuestLogInfo(entryIndex)
+		if type(liveQuestInfo) ~= "table" then
+			return nil, "row:" .. tostring(entryIndex)
+		end
 		if type(liveQuestInfo) == "table" then
 			local normalizedQuestId = NormalizeQuestId(addon, liveQuestInfo.questID)
-			if normalizedQuestId and not questInfoByQuestId[normalizedQuestId] then
+			if liveQuestInfo.isHeader ~= true and not normalizedQuestId then
+				return nil, "row:" .. tostring(entryIndex)
+			end
+			if normalizedQuestId
+				and not questInfoByQuestId[normalizedQuestId]
+				and not (addon.retiredQuestIds and addon.retiredQuestIds[normalizedQuestId])
+			then
 				local snapshotInfo = snapshotByQuestID and snapshotByQuestID[normalizedQuestId] or nil
 				local mergedQuestInfo = BuildMergedTaskAreaQuestInfo(addon, normalizedQuestId, liveQuestInfo, snapshotInfo)
 				if mergedQuestInfo.isHeader ~= true and mergedQuestInfo.isHidden ~= true then
@@ -238,21 +251,6 @@ local function BuildTaskAreaResolution(addon, normalizedQuestId, questInfo)
 	local includeWorld = isTask and worldSignals.areaActive == true and isWorldQuest == true
 	local includeBonus = isTask and bonusSignals.areaActive == true and isWorldQuest ~= true
 
-	if taskAnnouncementType == "world" and addon and addon.Debugf then
-		addon:Debugf(
-			"DEBUG",
-			"world_area_resolve questId=%s title=%s task=%s onMap=%s poi=%s explicitWorld=%s fallbackWorld=%s includeWorld=%s",
-			tostring(normalizedQuestId),
-			SafeText(title, "Unknown"),
-			tostring(explicitTask),
-			tostring(questInfo and questInfo.isOnMap == true or false),
-			tostring(questInfo and questInfo.hasLocalPOI == true or false),
-			tostring(explicitWorld),
-			tostring(fallbackWorld),
-			tostring(includeWorld)
-		)
-	end
-
 	return {
 		questID = normalizedQuestId,
 		title = title,
@@ -275,35 +273,54 @@ end
 function QuestTogether:RebuildTaskAreaResolverStore()
 	local taskAreaState = self.GetTaskAreaSubsystemStateStore and self:GetTaskAreaSubsystemStateStore() or nil
 	if type(taskAreaState) ~= "table" then
-		return nil
+		return nil, false
 	end
 
-	local resolvedByQuestID = taskAreaState.resolvedByQuestID or {}
-	local resolutionOrder = taskAreaState.resolutionOrder or {}
-	wipe(resolvedByQuestID)
-	wipe(resolutionOrder)
+	-- Keep the last complete resolver snapshot if a transient read fails.
+	local previousResolved = taskAreaState.resolvedByQuestID or {}
+	local resolvedByQuestID = {}
+	local resolutionOrder = {}
 
-	local questInfoByQuestId = BuildQuestLogQuestInfoIndex(self)
+	local scanOK, questInfoByQuestId, failureReason = pcall(BuildQuestLogQuestInfoIndex, self)
+	if not scanOK or not questInfoByQuestId then
+		local reason = scanOK and failureReason or ("read_error:" .. SafeText(questInfoByQuestId, "unknown"))
+		if taskAreaState.lastScanFailure ~= reason then
+			self:Debugf("QUEST", "task_area_deferred reason=%s generation=%d", reason, taskAreaState.generation or 0)
+		end
+		taskAreaState.lastScanFailure = reason
+		return taskAreaState, false
+	end
 	local candidateQuestIds = BuildTaskAreaCandidateQuestIds(self, questInfoByQuestId)
 
-	self:Debugf(
-		"DEBUG",
-		"task_area_scan rows=%d candidates=%d",
-		CountKeys(questInfoByQuestId),
-		CountKeys(candidateQuestIds)
-	)
+	local candidateOrder = SortedQuestIdKeys(candidateQuestIds)
+	local scanSignature = table.concat(candidateOrder, ",")
+	if taskAreaState.lastScanSignature ~= scanSignature then
+		self:Debugf("DEBUG", "task_area_scan rows=%d candidates=%d", CountKeys(questInfoByQuestId), #candidateOrder)
+	end
 
-	for _, normalizedQuestId in ipairs(SortedQuestIdKeys(candidateQuestIds)) do
+	for _, normalizedQuestId in ipairs(candidateOrder) do
 		local questInfo = questInfoByQuestId[normalizedQuestId]
 		local resolution = BuildTaskAreaResolution(self, normalizedQuestId, questInfo)
+		local previous = previousResolved[normalizedQuestId]
+		if resolution.taskAnnouncementType and (
+			not previous or previous.includeWorld ~= resolution.includeWorld
+			or previous.includeBonus ~= resolution.includeBonus
+			or previous.taskAnnouncementType ~= resolution.taskAnnouncementType
+		) then
+			self:Debugf("DEBUG", "task_area_resolve questId=%s type=%s includeWorld=%s includeBonus=%s title=%s",
+				tostring(normalizedQuestId), resolution.taskAnnouncementType,
+				tostring(resolution.includeWorld), tostring(resolution.includeBonus), SafeText(resolution.title, "Unknown"))
+		end
 		resolvedByQuestID[normalizedQuestId] = resolution
 		resolutionOrder[#resolutionOrder + 1] = normalizedQuestId
 	end
 
+	taskAreaState.lastScanSignature = scanSignature
+	taskAreaState.lastScanFailure = nil
 	taskAreaState.resolvedByQuestID = resolvedByQuestID
 	taskAreaState.resolutionOrder = resolutionOrder
 	taskAreaState.generation = (taskAreaState.generation or 0) + 1
-	return taskAreaState
+	return taskAreaState, true
 end
 
 function QuestTogether:GetTaskAreaSnapshot(taskType)
@@ -375,7 +392,9 @@ function QuestTogether:RefreshTaskAreaState(taskType, shouldAnnounce)
 		end
 	end
 
-	if taskType == "world" then
+	local worldSignature = table.concat(SortedQuestIdKeys(currentState), ",")
+	if taskType == "world" and taskAreaState and taskAreaState.lastWorldAreaDebugSignature ~= worldSignature then
+		taskAreaState.lastWorldAreaDebugSignature = worldSignature
 		self:Debugf(
 			"DEBUG",
 			"world_area_state announce=%s prev=%d curr=%d current=%s",
@@ -460,9 +479,14 @@ function QuestTogether:RefreshTaskAreaStates(shouldAnnounce)
 
 	local pendingAnnounce = self:GetRuntimeFlag("pendingScheduledTaskAreaRefreshShouldAnnounce", false)
 	local resolvedShouldAnnounce = shouldAnnounce or (pendingAnnounce and true or false)
+	local _, rebuilt = self:RebuildTaskAreaResolverStore()
+	if rebuilt == false then
+		-- Keep the last confirmed state and announcement intent for a later normal
+		-- quest event. Do not turn an unreadable log into synthetic exits or loop.
+		self:SetRuntimeFlag("pendingScheduledTaskAreaRefreshShouldAnnounce", resolvedShouldAnnounce and true or false)
+		return false
+	end
 	self:SetRuntimeFlag("pendingScheduledTaskAreaRefreshShouldAnnounce", false)
-
-	self:RebuildTaskAreaResolverStore()
 	self:RefreshWorldQuestAreaState(resolvedShouldAnnounce)
 	self:RefreshBonusObjectiveAreaState(resolvedShouldAnnounce)
 	return true

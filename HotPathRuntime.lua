@@ -1,11 +1,13 @@
 local QuestTogether = _G.QuestTogether
 
-QuestTogether.runtimeRestrictionTypes = QuestTogether.runtimeRestrictionTypes or {
-	combat = true,
-	encounter = true,
-	challenge = true,
-	pvp = true,
-}
+QuestTogether.runtimeRestrictionTypes = QuestTogether.runtimeRestrictionTypes
+	or {
+		combat = true,
+		encounter = true,
+		challenge = true,
+		pvp = true,
+		map = true,
+	}
 
 if not QuestTogether.GetDeferredWorkStateStore then
 	QuestTogether.deferredWorkState = QuestTogether.deferredWorkState or {
@@ -14,16 +16,17 @@ if not QuestTogether.GetDeferredWorkStateStore then
 	}
 end
 
-QuestTogether.runtimeWorkDelayByClass = QuestTogether.runtimeWorkDelayByClass or {
-	quest_log_drain = 0,
-	task_area_refresh = 0.1,
-	quest_snapshot_refresh = 1,
-	nameplate_quest_refresh = 0,
-	nameplate_refresh = 0,
-	nameplate_tint_refresh = 0.05,
-	nameplate_tooltip_resolve = 0,
-	waypoint_mutation = 0.2,
-}
+QuestTogether.runtimeWorkDelayByClass = QuestTogether.runtimeWorkDelayByClass
+	or {
+		quest_log_drain = 0,
+		task_area_refresh = 0.1,
+		quest_snapshot_refresh = 1,
+		nameplate_quest_refresh = 0,
+		nameplate_refresh = 0,
+		nameplate_tint_refresh = 0.05,
+		nameplate_tooltip_resolve = 0,
+		waypoint_mutation = 0.2,
+	}
 
 local function SafeText(value, fallback)
 	if QuestTogether and QuestTogether.SafeToString then
@@ -59,6 +62,8 @@ function QuestTogether:IsRuntimeRestrictionTypeActive(restrictionType)
 		restrictionEnum = restrictionTypes.ChallengeMode
 	elseif normalizedType == "pvp" then
 		restrictionEnum = restrictionTypes.PvPMatch
+	elseif normalizedType == "chat" then
+		restrictionEnum = restrictionTypes.Chat
 	elseif normalizedType == "map" then
 		restrictionEnum = restrictionTypes.Map
 	end
@@ -68,7 +73,10 @@ function QuestTogether:IsRuntimeRestrictionTypeActive(restrictionType)
 	end
 
 	local ok, state = pcall(restrictedActions.GetAddOnRestrictionState, restrictionEnum)
-	return ok and state == 2
+	local numericState = ok and self:SafeToNumber(state) or nil
+	-- Activating is dispatched before enforcement. Do not flush work into the
+	-- boundary while it is being raised, or assume an unreadable state is safe.
+	return numericState ~= 0
 end
 
 function QuestTogether:IsRuntimeRestricted()
@@ -107,7 +115,7 @@ function QuestTogether:IsWorkBlocked(workClass)
 		if self:IsMapTooltipSensitiveStateActive() then
 			return true
 		end
-		return false
+		return self:IsRuntimeRestricted()
 	end
 
 	if workClass == "quest_log_drain" or workClass == "task_area_refresh" or workClass == "quest_snapshot_refresh" then
@@ -117,7 +125,11 @@ function QuestTogether:IsWorkBlocked(workClass)
 		return self:IsRuntimeRestricted()
 	end
 
-	if workClass == "nameplate_quest_refresh" or workClass == "nameplate_refresh" or workClass == "nameplate_tint_refresh" then
+	if
+		workClass == "nameplate_quest_refresh"
+		or workClass == "nameplate_refresh"
+		or workClass == "nameplate_tint_refresh"
+	then
 		return self:IsRuntimeRestricted()
 	end
 
@@ -152,8 +164,13 @@ function QuestTogether:ScheduleDeferredWork(workClass, key, callback, delaySecon
 	end
 
 	local function runEntry()
+		-- Timers retain the old store after disable/profile resets. Checking only
+		-- its generation lets those callbacks run again after a later enable.
+		if self:GetDeferredWorkStateStore() ~= state then
+			return
+		end
 		local liveEntry = state.entries[workKey]
-		if not liveEntry or liveEntry.generation ~= generation then
+		if liveEntry ~= entry or liveEntry.generation ~= generation then
 			return
 		end
 		if not self.isEnabled then
@@ -166,7 +183,23 @@ function QuestTogether:ScheduleDeferredWork(workClass, key, callback, delaySecon
 		end
 
 		state.entries[workKey] = nil
-		callback()
+		state.generations[workKey] = nil
+		local ok, err
+		if self.RunGuardedCallback then
+			ok, err = self:RunGuardedCallback("work:" .. workClass, callback)
+		else
+			ok, err = pcall(callback)
+		end
+		if not ok then
+			self:Debugf(
+				"runtime",
+				"work_failed class=%s key=%s reason=%s error=%s",
+				workClass,
+				SafeText(key),
+				SafeText(reason),
+				SafeText(err)
+			)
+		end
 	end
 
 	if not hasDelayFn or scheduledDelay <= 0 then
@@ -188,13 +221,18 @@ function QuestTogether:RunOrDeferWork(workClass, key, callback, delaySeconds, re
 		return false
 	end
 
+	-- Immediate work supersedes the same parked request too.
+	local state = self:GetDeferredWorkStateStore()
+	local workKey = BuildDeferredWorkKey(workClass, key)
+	state.entries[workKey] = nil
+	state.generations[workKey] = nil
 	callback()
 	return true
 end
 
 function QuestTogether:FlushDeferredWork(reason)
 	local state = self:GetDeferredWorkStateStore()
-	if not state or self:IsWorkBlocked("quest_log_drain") then
+	if not state or not self.isEnabled then
 		return false
 	end
 
@@ -210,7 +248,12 @@ function QuestTogether:FlushDeferredWork(reason)
 		local pending = pendingEntries[index]
 		local workKey = pending and pending.workKey or nil
 		local entry = pending and pending.entry or nil
-		if entry and type(entry.callback) == "function" then
+		if self:GetDeferredWorkStateStore() ~= state then
+			break
+		end
+		if state.entries[workKey] ~= entry then
+			-- An earlier callback replaced or consumed this entry while flushing.
+		elseif entry and type(entry.callback) == "function" then
 			self:ScheduleDeferredWork(entry.workClass, entry.key, entry.callback, 0, reason or entry.reason)
 		else
 			state.entries[workKey] = nil

@@ -247,6 +247,21 @@ local function IsColorOptionAtDefault(optionKey, fallbackColor)
 		and ColorsNearlyEqual(current.b, fallbackColor.b)
 end
 
+function QuestTogether:CreateProfileOptionEditCallback(optionKey)
+	local profile = self.db and self.db.profile
+	local editToken = {}
+	self.profileOptionEditToken = editToken
+	return function(value)
+		-- A picker can outlive a profile switch, copy/reset, or another picker.
+		-- Table identity also catches replacement of a profile with the same name.
+		if type(profile) ~= "table" or not self.db or self.db.profile ~= profile
+			or self.profileOptionEditToken ~= editToken then
+			return false
+		end
+		return self:SetOption(optionKey, value)
+	end
+end
+
 local function CreateColorSwatch(parent, optionKey, labelText, tooltipText, fallbackColor, x, y)
 	local swatchButton = CreateFrame("Button", nil, parent)
 	swatchButton:SetSize(22, 22)
@@ -270,19 +285,20 @@ local function CreateColorSwatch(parent, optionKey, labelText, tooltipText, fall
 		swatchButton.tooltipText = tooltipText
 	end
 
-	local function SetColorOption(r, g, b)
-		QuestTogether:SetOption(optionKey, {
-			r = ClampColorComponent(r, fallbackColor.r),
-			g = ClampColorComponent(g, fallbackColor.g),
-			b = ClampColorComponent(b, fallbackColor.b),
-		})
-		QuestTogether:RefreshOptionsWindow()
-	end
-
 	swatchButton:SetScript("OnClick", function()
 		if not (ColorPickerFrame and ColorPickerFrame.SetupColorPickerAndShow) then
 			QuestTogether:Print("Color picker is unavailable right now.")
 			return
+		end
+		local applyOption = QuestTogether:CreateProfileOptionEditCallback(optionKey)
+		local function SetColorOption(r, g, b)
+			if applyOption({
+				r = ClampColorComponent(r, fallbackColor.r),
+				g = ClampColorComponent(g, fallbackColor.g),
+				b = ClampColorComponent(b, fallbackColor.b),
+			}) then
+				QuestTogether:RefreshOptionsWindow()
+			end
 		end
 
 		local currentColor = GetColorOption(optionKey, fallbackColor)

@@ -48,12 +48,12 @@ function QuestTogether:EnsureRuntimeStateStore()
 	end
 	if type(state.taskArea.worldByQuestID) ~= "table" then
 		state.taskArea.worldByQuestID = type(self.worldQuestAreaStateByQuestID) == "table"
-			and self.worldQuestAreaStateByQuestID
+				and self.worldQuestAreaStateByQuestID
 			or {}
 	end
 	if type(state.taskArea.bonusByQuestID) ~= "table" then
 		state.taskArea.bonusByQuestID = type(self.bonusObjectiveAreaStateByQuestID) == "table"
-			and self.bonusObjectiveAreaStateByQuestID
+				and self.bonusObjectiveAreaStateByQuestID
 			or {}
 	end
 	if type(state.taskArea.resolvedByQuestID) ~= "table" then
@@ -73,14 +73,11 @@ function QuestTogether:EnsureRuntimeStateStore()
 		state.questSnapshot = {}
 	end
 	if type(state.questSnapshot.byQuestID) ~= "table" then
-		state.questSnapshot.byQuestID = type(self.questSnapshotByQuestID) == "table"
-			and self.questSnapshotByQuestID
+		state.questSnapshot.byQuestID = type(self.questSnapshotByQuestID) == "table" and self.questSnapshotByQuestID
 			or {}
 	end
 	if type(state.questSnapshot.order) ~= "table" then
-		state.questSnapshot.order = type(self.questSnapshotOrder) == "table"
-			and self.questSnapshotOrder
-			or {}
+		state.questSnapshot.order = type(self.questSnapshotOrder) == "table" and self.questSnapshotOrder or {}
 	end
 	if type(state.questSnapshot.generation) ~= "number" then
 		state.questSnapshot.generation = 0
@@ -91,45 +88,43 @@ function QuestTogether:EnsureRuntimeStateStore()
 	end
 	if type(state.nameplate.questStateByGuid) ~= "table" then
 		state.nameplate.questStateByGuid = type(self.nameplateQuestStateByGuid) == "table"
-			and self.nameplateQuestStateByGuid
+				and self.nameplateQuestStateByGuid
 			or {}
 	end
 	if type(state.nameplate.questStateByUnitToken) ~= "table" then
 		state.nameplate.questStateByUnitToken = type(self.nameplateQuestStateByUnitToken) == "table"
-			and self.nameplateQuestStateByUnitToken
+				and self.nameplateQuestStateByUnitToken
 			or {}
 	end
 	if type(state.nameplate.questGuidByUnitToken) ~= "table" then
 		state.nameplate.questGuidByUnitToken = type(self.nameplateQuestGuidByUnitToken) == "table"
-			and self.nameplateQuestGuidByUnitToken
+				and self.nameplateQuestGuidByUnitToken
 			or {}
 	end
 	if type(state.nameplate.textCache) ~= "table" then
-		state.nameplate.textCache = type(self.nameplateQuestTextCache) == "table"
-			and self.nameplateQuestTextCache
-			or {}
+		state.nameplate.textCache = type(self.nameplateQuestTextCache) == "table" and self.nameplateQuestTextCache or {}
 	end
 	if type(state.nameplate.refreshGenerationByUnitToken) ~= "table" then
 		state.nameplate.refreshGenerationByUnitToken = type(self.nameplateRefreshGenerationByUnitToken) == "table"
-			and self.nameplateRefreshGenerationByUnitToken
+				and self.nameplateRefreshGenerationByUnitToken
 			or {}
 	end
 	if type(state.nameplate.refreshPendingByUnitToken) ~= "table" then
 		state.nameplate.refreshPendingByUnitToken = type(self.nameplateRefreshPendingByUnitToken) == "table"
-			and self.nameplateRefreshPendingByUnitToken
+				and self.nameplateRefreshPendingByUnitToken
 			or {}
 	end
 	if type(state.nameplate.healthTintRefreshPendingByUnitToken) ~= "table" then
-		state.nameplate.healthTintRefreshPendingByUnitToken =
-			type(self.nameplateHealthTintRefreshPendingByUnitToken) == "table"
+		state.nameplate.healthTintRefreshPendingByUnitToken = type(self.nameplateHealthTintRefreshPendingByUnitToken)
+					== "table"
 				and self.nameplateHealthTintRefreshPendingByUnitToken
-				or {}
+			or {}
 	end
 	if type(state.nameplate.tooltipResolveRetryCountByUnitToken) ~= "table" then
-		state.nameplate.tooltipResolveRetryCountByUnitToken =
-			type(self.nameplateTooltipResolveRetryCountByUnitToken) == "table"
+		state.nameplate.tooltipResolveRetryCountByUnitToken = type(self.nameplateTooltipResolveRetryCountByUnitToken)
+					== "table"
 				and self.nameplateTooltipResolveRetryCountByUnitToken
-				or {}
+			or {}
 	end
 	if type(state.nameplate.iconByUnitFrame) ~= "table" then
 		state.nameplate.iconByUnitFrame = EnsureWeakKeyTable(self.nameplateIconByUnitFrame)
@@ -257,20 +252,17 @@ function QuestTogether:GetNameplateStateStore()
 	return self:EnsureRuntimeStateStore().nameplate
 end
 
+-- Visual handles survive cache resets so restricted teardown can finish later.
 function QuestTogether:ResetNameplateStateStore()
 	local state = self:EnsureRuntimeStateStore()
 	wipe(state.nameplate.questStateByGuid)
 	wipe(state.nameplate.questStateByUnitToken)
 	wipe(state.nameplate.questGuidByUnitToken)
 	wipe(state.nameplate.textCache)
-	wipe(state.nameplate.refreshGenerationByUnitToken)
+	state.nameplate.refreshGenerationByUnitToken = {}
 	wipe(state.nameplate.refreshPendingByUnitToken)
 	wipe(state.nameplate.healthTintRefreshPendingByUnitToken)
 	wipe(state.nameplate.tooltipResolveRetryCountByUnitToken)
-	state.nameplate.iconByUnitFrame = NewWeakKeyTable()
-	state.nameplate.healthOverlayByUnitFrame = NewWeakKeyTable()
-	state.nameplate.bubbleByUnitFrame = NewWeakKeyTable()
-	state.nameplate.bubbleStateByFrame = NewWeakKeyTable()
 	BindRuntimeReferenceAliases(self, state)
 	return state.nameplate
 end

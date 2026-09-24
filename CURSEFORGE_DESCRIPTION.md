@@ -74,13 +74,14 @@ In `Options > AddOns > QuestTogether`, you can configure:
 - `/qt` or `/qt options` - Open QuestTogether options
 - `/qt enable` - Enable addon runtime behavior
 - `/qt disable` - Disable addon runtime behavior
-- `/qt debug on|off|toggle` - Toggle debug mode
+- `/qt debug` - Open the debug log
+- `/qt diagnostics [questID]` - Copy client, runtime, and recent-event diagnostics
 - `/qt devlogall on|off|toggle` - Toggle developer all-announcements logging
 - `/qt set <option> <value>` - Set boolean options
 - `/qt get <option>` - Read option values
 - `/qt scan` - Rescan your quest log now
 - `/qt ping` - Request metadata pings from QuestTogether users
-- `/qt bubbletest <text>` - Send a local bubble test
+- `/qt bubbletest <text>` - Send a synthetic progress announcement using your targeted player
 - `/qt bubbletest <player> <text>` - Send bubble test as a specific nearby player name
 - `/qt test` - Run in-game addon tests
 

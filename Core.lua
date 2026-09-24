@@ -187,17 +187,17 @@ local function MergeSanitizedQuestLogInfo(primaryInfo, fallbackInfo)
 	return mergedInfo
 end
 
-local function GetSnapshotBuilderQuestLogInfo(questLogIndex)
-	local numericQuestLogIndex = QuestTogether and QuestTogether.SafeToNumber
-		and QuestTogether:SafeToNumber(questLogIndex)
+local function GetSnapshotBuilderQuestLogInfo(addon, questLogIndex)
+	local numericQuestLogIndex = addon and addon.SafeToNumber
+		and addon:SafeToNumber(questLogIndex)
 		or nil
 	if not numericQuestLogIndex or numericQuestLogIndex <= 0 then
 		return nil
 	end
 	numericQuestLogIndex = math.floor(numericQuestLogIndex + 0.5)
 
-	local questInfo = QuestTogether and QuestTogether.API and QuestTogether.API.GetQuestLogInfo
-		and QuestTogether.API.GetQuestLogInfo(numericQuestLogIndex)
+	local questInfo = addon and addon.API and addon.API.GetQuestLogInfo
+		and addon.API.GetQuestLogInfo(numericQuestLogIndex)
 		or nil
 	return questInfo
 end
@@ -274,7 +274,7 @@ QuestTogether.debugLogStoreNormalized = QuestTogether.debugLogStoreNormalized or
 QuestTogether.debugLogRefreshBatchDepth = QuestTogether.debugLogRefreshBatchDepth or 0
 QuestTogether.debugLogRefreshPending = QuestTogether.debugLogRefreshPending or false
 QuestTogether.isRunningTests = QuestTogether.isRunningTests or false
-QuestTogether.DEBUG_LOG_MAX_LINES = 400
+QuestTogether.DEBUG_LOG_MAX_LINES = 1000
 QuestTogether.DEBUG_LOG_MAX_CHARS = 200000
 QuestTogether.DEBUG_DEFAULT_CATEGORY = "DEBUG"
 QuestTogether.DEBUG_ALL_CATEGORIES = "ALL"
@@ -945,7 +945,11 @@ QuestTogether.API = QuestTogether.API or {
 					and QuestTogether:SafeToNumber(snapshot.questLogIndex)
 					or nil
 				if snapshotQuestLogIndex and snapshotQuestLogIndex > 0 then
-					return math.floor(snapshotQuestLogIndex + 0.5)
+					local rowIndex = math.floor(snapshotQuestLogIndex + 0.5)
+					local row = QuestTogether.API.GetQuestLogInfo(rowIndex)
+					if row and QuestTogether:NormalizeQuestID(row.questID) == numericQuestID then
+						return rowIndex
+					end
 				end
 			end
 			local numericCount = QuestTogether and QuestTogether.API and QuestTogether.API.GetNumQuestLogEntries
@@ -974,37 +978,46 @@ QuestTogether.API = QuestTogether.API or {
 			local numericQuestID = QuestTogether and QuestTogether.NormalizeQuestID and QuestTogether:NormalizeQuestID(questID)
 				or nil
 			if not numericQuestID then
-				return false
+				return nil
 			end
 			if C_QuestLog and C_QuestLog.IsQuestFlaggedCompleted then
 				local ok, isCompleted = pcall(C_QuestLog.IsQuestFlaggedCompleted, numericQuestID)
-				return ok and isCompleted and true or false
+				if ok and CanAccessForeignValue(isCompleted) and type(isCompleted) == "boolean" then
+					return isCompleted
+				end
+				return nil
 			end
-			return false
+			return nil
 		end,
 		IsQuestReadyForTurnIn = function(questID)
 			local numericQuestID = QuestTogether and QuestTogether.NormalizeQuestID and QuestTogether:NormalizeQuestID(questID)
 				or nil
 			if not numericQuestID then
-				return false
+				return nil
 			end
 			if C_QuestLog and C_QuestLog.ReadyForTurnIn then
 				local ok, isReady = pcall(C_QuestLog.ReadyForTurnIn, numericQuestID)
-				return ok and isReady and true or false
+				if ok and CanAccessForeignValue(isReady) and type(isReady) == "boolean" then
+					return isReady
+				end
+				return nil
 			end
-			return false
+			return nil
 		end,
 		IsQuestComplete = function(questID)
 			local numericQuestID = QuestTogether and QuestTogether.NormalizeQuestID and QuestTogether:NormalizeQuestID(questID)
 				or nil
 			if not numericQuestID then
-				return false
+				return nil
 			end
 			if C_QuestLog and C_QuestLog.IsComplete then
 				local ok, isComplete = pcall(C_QuestLog.IsComplete, numericQuestID)
-				return ok and isComplete and true or false
+				if ok and CanAccessForeignValue(isComplete) and type(isComplete) == "boolean" then
+					return isComplete
+				end
+				return nil
 			end
-			return false
+			return nil
 		end,
 		GetQuestClassification = function(questID)
 			local numericQuestID = QuestTogether and QuestTogether.NormalizeQuestID and QuestTogether:NormalizeQuestID(questID)
@@ -1525,54 +1538,40 @@ QuestTogether.API = QuestTogether.API or {
 			local numericQuestID = QuestTogether and QuestTogether.NormalizeQuestID and QuestTogether:NormalizeQuestID(questID)
 				or nil
 			if not numericQuestID then
-				return false
+				return nil
 			end
 			if C_QuestLog and C_QuestLog.IsOnQuest then
 				local ok, isOnQuest = pcall(C_QuestLog.IsOnQuest, numericQuestID)
-				return ok and isOnQuest and true or false
+				if ok and CanAccessForeignValue(isOnQuest) and type(isOnQuest) == "boolean" then
+					return isOnQuest
+				end
+				return nil
 			end
-			return false
+			return nil
 		end,
 		IsPushableQuest = function(questID)
 			local numericQuestID = QuestTogether and QuestTogether.NormalizeQuestID and QuestTogether:NormalizeQuestID(questID)
 				or nil
 			if not numericQuestID then
-				return false
+				return nil
 			end
 			if C_QuestLog and C_QuestLog.IsPushableQuest then
 				local ok, isPushable = pcall(C_QuestLog.IsPushableQuest, numericQuestID)
-				return ok and isPushable and true or false
+				if ok and CanAccessForeignValue(isPushable) and type(isPushable) == "boolean" then
+					return isPushable
+				end
+				return nil
 			end
-			return false
+			return nil
 		end,
 		GetNumQuestLogEntries = function()
-			if type(GetNumQuestLogEntries) == "function" then
-				local ok, count = pcall(GetNumQuestLogEntries)
-				if ok and not (QuestTogether and QuestTogether.IsSecretValue and QuestTogether:IsSecretValue(count)) then
-					local numericCount = QuestTogether and QuestTogether.SafeToNumber and QuestTogether:SafeToNumber(count) or nil
-					if numericCount and numericCount > 0 then
-						return math.floor(numericCount + 0.5)
-					end
-				end
-			end
-			if C_QuestLog and C_QuestLog.GetNumQuestLogEntries then
-				local ok, count = pcall(C_QuestLog.GetNumQuestLogEntries)
-				if not ok then
-					return 0
-				end
-				if QuestTogether and QuestTogether.IsSecretValue and QuestTogether:IsSecretValue(count) then
-					return 0
-				end
-				local numericCount = QuestTogether and QuestTogether.SafeToNumber and QuestTogether:SafeToNumber(count) or nil
-				if numericCount == nil then
-					return 0
-				end
-				if numericCount <= 0 then
-					return 0
-				end
-				return math.floor(numericCount + 0.5)
-			end
-			return 0
+			local getter = type(GetNumQuestLogEntries) == "function" and GetNumQuestLogEntries
+				or (C_QuestLog and C_QuestLog.GetNumQuestLogEntries)
+			if type(getter) ~= "function" then return nil end
+			local ok, count = pcall(getter)
+			local numericCount = ok and QuestTogether:SafeToNumber(count) or nil
+			if numericCount == nil or numericCount < 0 then return nil end
+			return math.floor(numericCount + 0.5)
 		end,
 		GetQuestLogInfo = function(questLogIndex)
 			local numericQuestLogIndex = QuestTogether and QuestTogether.SafeToNumber
@@ -1923,25 +1922,9 @@ QuestTogether.API = QuestTogether.API or {
 			return nil
 		end,
 		SurfaceTooltipDataArgs = function(tooltipData)
-			if type(tooltipData) ~= "table" then
-				return tooltipData
-			end
-			if not (TooltipUtil and type(TooltipUtil.SurfaceArgs) == "function") then
-				return tooltipData
-			end
-
-			local ok, surfacedTooltipData = pcall(TooltipUtil.SurfaceArgs, tooltipData)
-			if not ok then
-				return tooltipData
-			end
-			if QuestTogether and QuestTogether.IsSecretValue and QuestTogether:IsSecretValue(surfacedTooltipData) then
-				return tooltipData
-			end
-			if type(surfacedTooltipData) == "table" then
-				return surfacedTooltipData
-			end
-
-			return tooltipData
+			-- SurfaceArgs writes into Blizzard's tables. The tooltip reader already
+			-- understands nested args; leave foreign data untouched.
+			return CanAccessForeignTable(tooltipData) and tooltipData or nil
 		end,
 		IsWarModeActive = function()
 			if C_PvP and C_PvP.IsWarModeDesired then
@@ -1998,20 +1981,34 @@ function QuestTogether:CanAccessTable(tableValue)
 	return CanAccessForeignTable(tableValue)
 end
 
+local function ReadForeignFrameMethod(frame, memberName)
+	local ok, method = pcall(function()
+		return frame[memberName]
+	end)
+	if not ok or not CanAccessForeignValue(method) then
+		return nil, false
+	end
+	return method, true
+end
+
 function QuestTogether:IsForbiddenFrame(frame)
 	local frameType = type(frame)
 	if not frame or (frameType ~= "table" and frameType ~= "userdata") then
 		return false
 	end
-	if not CanAccessForeignValue(frame) then
+	if not CanAccessForeignValue(frame) or (frameType == "table" and not CanAccessForeignTable(frame)) then
 		return true
 	end
-	if type(frame.IsForbidden) ~= "function" then
+	local method, readable = ReadForeignFrameMethod(frame, "IsForbidden")
+	if not readable then
+		return true
+	end
+	if type(method) ~= "function" then
 		return false
 	end
 
-	local ok, forbidden = pcall(frame.IsForbidden, frame)
-	return ok and forbidden and true or false
+	local ok, forbidden = pcall(method, frame)
+	return not ok or not CanAccessForeignValue(forbidden) or forbidden == true
 end
 
 function QuestTogether:IsProtectedFrame(frame)
@@ -2023,12 +2020,19 @@ function QuestTogether:IsProtectedFrame(frame)
 	if not frame or (frameType ~= "table" and frameType ~= "userdata") then
 		return false, false
 	end
-	if type(frame.IsProtected) ~= "function" then
+	if self:IsForbiddenFrame(frame) then
+		return true, false
+	end
+	local method, readable = ReadForeignFrameMethod(frame, "IsProtected")
+	if not readable then
+		return true, false
+	end
+	if type(method) ~= "function" then
 		return false, false
 	end
 
-	local ok, isProtected, isProtectedExplicitly = pcall(frame.IsProtected, frame)
-	if not ok then
+	local ok, isProtected, isProtectedExplicitly = pcall(method, frame)
+	if not ok or not CanAccessForeignValue(isProtected) or not CanAccessForeignValue(isProtectedExplicitly) then
 		return true, false
 	end
 	return isProtected and true or false, isProtectedExplicitly and true or false
@@ -2047,11 +2051,12 @@ function QuestTogether:CanAccessForeignFrame(frame, requireShown)
 	end
 
 	if requireShown then
-		if type(frame.IsShown) ~= "function" then
+		local method, readable = ReadForeignFrameMethod(frame, "IsShown")
+		if not readable or type(method) ~= "function" then
 			return false
 		end
-		local okShown, isShown = pcall(frame.IsShown, frame)
-		if not okShown or not isShown then
+		local okShown, isShown = pcall(method, frame)
+		if not okShown or not CanAccessForeignValue(isShown) or not isShown then
 			return false
 		end
 	end
@@ -3094,19 +3099,37 @@ function QuestTogether:RebuildQuestSnapshotStore()
 	if type(snapshotState) ~= "table" then
 		return nil
 	end
+	if self.IsWorkBlocked and self:IsWorkBlocked("quest_snapshot_refresh") then
+		return snapshotState
+	end
 
-	local snapshotByQuestID = snapshotState.byQuestID or {}
-	local snapshotOrder = snapshotState.order or {}
-	wipe(snapshotByQuestID)
-	wipe(snapshotOrder)
+	-- Build privately, then publish atomically. An unreadable row must not erase
+	-- the previous snapshot or make an active quest look removed.
+	local snapshotByQuestID = {}
+	local snapshotOrder = {}
 
-	local totalEntries = self.API and self.API.GetNumQuestLogEntries and self.API.GetNumQuestLogEntries() or 0
-	totalEntries = self:SafeToNumber(totalEntries) or 0
+	local totalEntries = self.API and self.API.GetNumQuestLogEntries and self.API.GetNumQuestLogEntries()
+	totalEntries = self:SafeToNumber(totalEntries)
+	if totalEntries == nil then
+		if snapshotState.lastUnreadableRow ~= "count" then
+			self:Debug("snapshot_deferred reason=unknown_count", "QUEST")
+		end
+		snapshotState.lastUnreadableRow = "count"
+		return snapshotState
+	end
 	totalEntries = math.max(0, math.floor(totalEntries + 0.5))
 	local sampleRows = {}
 
 	for questLogIndex = 1, totalEntries do
-		local questInfo = GetSnapshotBuilderQuestLogInfo(questLogIndex)
+		local questInfo = GetSnapshotBuilderQuestLogInfo(self, questLogIndex)
+		if not questInfo or (questInfo.isHeader ~= true and not self:NormalizeQuestID(questInfo.questID)) then
+			if snapshotState.lastUnreadableRow ~= questLogIndex then
+				self:Debugf("quest", "snapshot_deferred unreadable_row=%d rows=%d generation=%d",
+					questLogIndex, totalEntries, snapshotState.generation or 0)
+			end
+			snapshotState.lastUnreadableRow = questLogIndex
+			return snapshotState
+		end
 		if questLogIndex <= 5 then
 			sampleRows[#sampleRows + 1] = {
 				index = questLogIndex,
@@ -3156,8 +3179,15 @@ function QuestTogether:RebuildQuestSnapshotStore()
 		end
 	end
 
-	snapshotState.byQuestID = snapshotByQuestID
-	snapshotState.order = snapshotOrder
+	wipe(snapshotState.byQuestID)
+	wipe(snapshotState.order)
+	for questID, snapshot in pairs(snapshotByQuestID) do
+		snapshotState.byQuestID[questID] = snapshot
+	end
+	for index, questID in ipairs(snapshotOrder) do
+		snapshotState.order[index] = questID
+	end
+	snapshotState.lastUnreadableRow = nil
 	snapshotState.generation = (snapshotState.generation or 0) + 1
 
 	if totalEntries > 0 and #snapshotOrder == 0 and not snapshotState.didLogEmptyBuildDiagnostics then
@@ -3628,14 +3658,18 @@ function QuestTogether:GetTrackedQuestStatusState(questId, allowLiveFallback)
 		return state
 	end
 
-	if self.API and self.API.IsQuestFlaggedCompleted and self.API.IsQuestFlaggedCompleted(numericQuestId) then
-		state.isFlaggedCompleted = true
-	end
-	if self.API and self.API.IsQuestReadyForTurnIn and self.API.IsQuestReadyForTurnIn(numericQuestId) then
-		state.isReadyForTurnIn = true
-	end
-	if not state.isComplete and self.API and self.API.IsQuestComplete and self.API.IsQuestComplete(numericQuestId) then
-		state.isComplete = true
+	for field, method in pairs({
+		isFlaggedCompleted = "IsQuestFlaggedCompleted",
+		isReadyForTurnIn = "IsQuestReadyForTurnIn",
+		isComplete = "IsQuestComplete",
+		isOnQuest = "IsOnQuest",
+	}) do
+		if self.API and type(self.API[method]) == "function" then
+			local value = self.API[method](numericQuestId)
+			if self:CanAccessValue(value) and type(value) == "boolean" then
+				state[field] = value
+			end
+		end
 	end
 	if not state.isOnQuest then
 		local questLogIndex = self.API and self.API.GetQuestLogIndexForQuestID and self.API.GetQuestLogIndexForQuestID(numericQuestId)
@@ -3976,18 +4010,20 @@ function QuestTogether:CreateBlizzardWaypoint(mapID, coordX, coordY)
 			coordX = numericX,
 			coordY = numericY,
 		})
+		local applied = false
 		local ranNow = self:RunOrDeferWork("waypoint_mutation", "user_waypoint", function()
 			local pending = self.GetRuntimeWorkStateStore
 				and self:GetRuntimeWorkStateStore().pendingWaypointIntent
 				or nil
 			self:SetPendingWaypointIntent(nil)
 			if pending then
-				applyWaypoint()
+				applied = applyWaypoint()
 			end
 		end, 0.2, "CreateBlizzardWaypoint")
 		if not ranNow then
 			return true
 		end
+		return applied
 	end
 
 	return applyWaypoint()
@@ -4238,7 +4274,7 @@ function QuestTogether:PrintChatLogDestinationMessage()
 end
 
 function QuestTogether:Debug(message, category)
-	self:LogDebugLine(tostring(message), {
+	self:LogDebugLine(self:SafeToString(message, "<inaccessible>"), {
 		category = category,
 	})
 	return true
@@ -4254,15 +4290,26 @@ function QuestTogether:Debugf(category, formatString, ...)
 	end
 
 	-- Debug formatting should never crash addon logic due to bad format strings.
-	local ok, formatted = pcall(string.format, tostring(formatString), ...)
+	local arguments = {}
+	for index = 1, select("#", ...) do
+		local value = select(index, ...)
+		if not self:CanAccessValue(value) then
+			value = "<inaccessible>"
+		elseif type(value) ~= "string" and type(value) ~= "number" then
+			value = self:SafeToString(value, "<inaccessible>")
+		end
+		arguments[index] = value
+	end
+	local safeFormat = self:SafeToString(formatString, "<inaccessible>")
+	local ok, formatted = pcall(string.format, safeFormat, (unpack or table.unpack)(arguments, 1, select("#", ...)))
 	if not ok then
-		formatted = tostring(formatString)
+		formatted = safeFormat
 	end
 	return self:Debug(formatted, category)
 end
 
 function QuestTogether:DebugState(category, label, value)
-	return self:Debug(tostring(label or "state") .. "=" .. FormatDebugValue(value), category)
+	return self:Debug(self:SafeToString(label, "state") .. "=" .. self:SafeToString(value, "<inaccessible>"), category)
 end
 
 function QuestTogether:RemoveDebugLogEntriesByCategory(category)
@@ -4291,11 +4338,11 @@ function QuestTogether:GetPlayerName()
 end
 
 function QuestTogether:IsSelfSender(sender)
-	if not sender then
+	if not self:CanAccessValue(sender) or type(sender) ~= "string" or sender == "" then
 		return false
 	end
-	local shortName = self.API and self.API.Ambiguate and self.API.Ambiguate(sender, "short") or nil
-	return shortName == self:GetPlayerName()
+	local playerName = self:GetPlayerFullName()
+	return playerName ~= nil and self:NormalizeMemberName(sender) == self:NormalizeMemberName(playerName)
 end
 
 function QuestTogether:GetAnnouncementOptionKey(eventType)
@@ -4450,10 +4497,18 @@ function QuestTogether:StripTrailingParentheticalPercent(objectiveText)
 end
 
 function QuestTogether:GetQuestLogIndexForQuest(questId, questInfo)
+	if self.IsWorkBlocked and self:IsWorkBlocked("quest_snapshot_refresh") then return nil end
 	local questLogIndex = questInfo and self:SafeToNumber(questInfo.questLogIndex) or nil
 	if questLogIndex ~= nil then
 		questLogIndex = math.floor(questLogIndex + 0.5)
 		if questLogIndex <= 0 then
+			questLogIndex = nil
+		end
+	end
+
+	if questLogIndex then
+		local row = self.API and self.API.GetQuestLogInfo and self.API.GetQuestLogInfo(questLogIndex)
+		if not row or self:NormalizeQuestID(row.questID) ~= self:NormalizeQuestID(questId) then
 			questLogIndex = nil
 		end
 	end
@@ -4606,6 +4661,7 @@ function QuestTogether:SetOption(key, value)
 	end
 	if
 		key == "showChatBubbles"
+		or key == "hideMyOwnChatBubbles"
 		or key == "chatBubbleSize"
 		or key == "chatBubbleDuration"
 	then
@@ -4664,6 +4720,14 @@ function QuestTogether:QueueQuestLogTask(taskFn)
 			self:ScheduleQuestLogTaskDrain("QueueQuestLogTask")
 		end
 	end
+end
+
+function QuestTogether:ResetQuestEventState()
+	self.onQuestLogUpdate = {}
+	self.questsCompleted = {}
+	self.pendingQuestRemovals = {}
+	self.pendingQuestAcceptances = {}
+	self.retiredQuestIds = {}
 end
 
 -- SavedVariables initializer.
@@ -4756,6 +4820,10 @@ function QuestTogether:Enable()
 	self:RegisterRuntimeEvents()
 	self.API.RegisterAddonPrefix(self.commPrefix)
 	self.isEnabled = true
+	self:ResetQuestEventState()
+	-- Events may have been missed while disabled/offline, including a repeatable
+	-- quest being accepted again. Start a fresh observation lifetime on enable.
+	wipe(self:GetPlayerTracker())
 	if self.ResetTaskAreaStateStore then
 		self:ResetTaskAreaStateStore()
 	end
@@ -4786,8 +4854,9 @@ function QuestTogether:Enable()
 	end
 
 	-- Delay initial scan briefly so quest log APIs are stable right after login/reload.
+	local enabledWorkState = self:GetDeferredWorkStateStore()
 	self.API.Delay(0.25, function()
-		if self.isEnabled then
+		if self.isEnabled and self:GetDeferredWorkStateStore() == enabledWorkState then
 			self:ScanQuestLog()
 		end
 	end)
@@ -4804,6 +4873,7 @@ function QuestTogether:Disable()
 
 	self:UnregisterRuntimeEvents()
 	self.isEnabled = false
+	self:ResetQuestEventState()
 	if self.ResetTaskAreaStateStore then
 		self:ResetTaskAreaStateStore()
 	end
@@ -5106,6 +5176,9 @@ function QuestTogether:GetDebugLogEntryDisplayText(entry)
 
 	local category = self:NormalizeDebugCategory(entry.category)
 	local text = type(entry.text) == "string" and entry.text or tostring(entry.text or "")
+	if entry.elapsed then
+		return string.format("[%s] [%.3f #%d] %s", category, entry.elapsed, entry.sequence or 0, text)
+	end
 	return string.format("[%s] %s", category, text)
 end
 
@@ -5270,11 +5343,16 @@ function QuestTogether:UpdateCopyableWindowTailPinned(frame)
 end
 
 function QuestTogether:LogDebugLine(line, options)
-	local normalizedLine = tostring(line or "")
+	local normalizedLine = self:SafeToString(line, "<inaccessible>")
+	if #normalizedLine > 4096 then normalizedLine = string.sub(normalizedLine, 1, 4096) .. " [truncated]" end
 	options = type(options) == "table" and options or {}
 	local debugLogLines = self:GetDebugLogStore()
 	local normalizedCategory = self:NormalizeDebugCategory(options.category or self.DEBUG_DEFAULT_CATEGORY)
+	local now = self.API and self.API.GetTime and self:SafeToNumber(self.API.GetTime()) or nil
+	self.diagnosticLogSequence = (self.diagnosticLogSequence or 0) + 1
 	debugLogLines[#debugLogLines + 1] = {
+		elapsed = now,
+		sequence = self.diagnosticLogSequence,
 		text = normalizedLine,
 		category = normalizedCategory,
 	}
@@ -5282,6 +5360,7 @@ function QuestTogether:LogDebugLine(line, options)
 	local maxLines = self.DEBUG_LOG_MAX_LINES or 400
 	while #debugLogLines > maxLines do
 		local removedEntry = table.remove(debugLogLines, 1)
+		self.diagnosticDroppedLogLines = (self.diagnosticDroppedLogLines or 0) + 1
 		if type(removedEntry) == "table" and type(removedEntry.text) == "string" then
 			self.debugLogTextLengthSum = math.max(0, (self.debugLogTextLengthSum or 0) - string.len(removedEntry.text))
 		end
@@ -5290,6 +5369,7 @@ function QuestTogether:LogDebugLine(line, options)
 	local currentCharCount = (self.debugLogTextLengthSum or 0) + math.max(0, #debugLogLines - 1)
 	while currentCharCount > maxChars and #debugLogLines > 1 do
 		local removedEntry = table.remove(debugLogLines, 1)
+		self.diagnosticDroppedLogLines = (self.diagnosticDroppedLogLines or 0) + 1
 		if type(removedEntry) == "table" and type(removedEntry.text) == "string" then
 			self.debugLogTextLengthSum = math.max(0, (self.debugLogTextLengthSum or 0) - string.len(removedEntry.text))
 		end
@@ -5825,6 +5905,7 @@ function QuestTogether:PrintHelp()
 	self:Print("/qt bubbletest <player> <text> - Send a QUEST_PROGRESS test event as a nearby visible player")
 	self:Print("/qt test - Run in-game unit tests, then open /qt dump filtered to TEST")
 	self:Print("/qt dump [clear|CATEGORY] - Open the shared QuestTogether debug window")
+	self:Print("/qt diagnostics [questID] - Copy client, runtime, and recent event diagnostics")
 	self:Print("/qtd - Shortcut for /qt dump")
 end
 
@@ -5834,6 +5915,11 @@ function QuestTogether:HandleSlashCommand(input)
 
 	if command == "" or command == "options" then
 		self:OpenOptionsWindow()
+		return
+	end
+
+	if command == "diagnostics" or command == "diag" then
+		self:ShowDiagnostics(rest)
 		return
 	end
 
@@ -5994,12 +6080,19 @@ function QuestTogether:ScanQuestLog()
 		return
 	end
 
-	if self.EnsureQuestSnapshotStore then
-		self:EnsureQuestSnapshotStore()
+	if self.IsWorkBlocked and self:IsWorkBlocked("quest_log_drain") then
+		self:ScheduleDeferredWork("quest_log_drain", "full_scan", function() self:ScanQuestLog() end)
+		return
+	end
+	if self.RebuildQuestSnapshotStore then
+		local snapshot = self:RebuildQuestSnapshotStore()
+		if snapshot and snapshot.lastUnreadableRow then
+			return
+		end
 	end
 
 	local tracker = self:GetPlayerTracker()
-	wipe(tracker)
+	local seenQuestIDs = {}
 	local questsTracked = 0
 
 	local snapshotByQuestID = self.GetQuestSnapshotByQuestID and self:GetQuestSnapshotByQuestID() or nil
@@ -6007,8 +6100,9 @@ function QuestTogether:ScanQuestLog()
 	for index = 1, #(snapshotOrder or {}) do
 		local questID = snapshotOrder[index]
 		local questInfo = snapshotByQuestID and snapshotByQuestID[questID] or nil
-		if questInfo and questInfo.isHidden ~= true then
+		if questInfo and questInfo.isHidden ~= true and not (self.retiredQuestIds and self.retiredQuestIds[questID]) then
 			self:WatchQuest(questID, questInfo)
+			seenQuestIDs[questID] = true
 			questsTracked = questsTracked + 1
 		end
 	end
@@ -6021,6 +6115,7 @@ function QuestTogether:ScanQuestLog()
 	-- Add them explicitly so progress announcements can still operate on them.
 	if self.GetActiveWorldQuestAreaSnapshot then
 		for questId, questTitle in pairs(self:GetActiveWorldQuestAreaSnapshot()) do
+			seenQuestIDs[questId] = true
 			if not tracker[questId] then
 				self:WatchQuest(questId, { title = questTitle })
 				if tracker[questId] then
@@ -6031,6 +6126,7 @@ function QuestTogether:ScanQuestLog()
 	end
 	if self.GetActiveBonusObjectiveAreaSnapshot then
 		for questId, questTitle in pairs(self:GetActiveBonusObjectiveAreaSnapshot()) do
+			seenQuestIDs[questId] = true
 			if not tracker[questId] then
 				self:WatchQuest(questId, { title = questTitle })
 				if tracker[questId] then
@@ -6040,6 +6136,11 @@ function QuestTogether:ScanQuestLog()
 		end
 	end
 
+	for questID in pairs(tracker) do
+		if not seenQuestIDs[questID] then
+			tracker[questID] = nil
+		end
+	end
 	local scanMessage = questsTracked .. " quests are being monitored by QuestTogether."
 	self:PrintConsoleAnnouncement(scanMessage)
 	if self.BuildLocalAnnouncementEvent and self.SendAnnouncementWireEvent then
@@ -6054,7 +6155,7 @@ end
 function QuestTogether:WatchQuest(questId, questInfo)
 	local numericQuestId = self:NormalizeQuestID(questId)
 
-	if not numericQuestId then
+	if not numericQuestId or (self.retiredQuestIds and self.retiredQuestIds[numericQuestId]) then
 		return
 	end
 
@@ -6084,9 +6185,8 @@ function QuestTogether:WatchQuest(questId, questInfo)
 		-- Cached numeric objective values used to gate progress announcements.
 		-- This avoids noisy chat lines caused by text-only objective rewrites.
 		objectiveValues = {},
-		isComplete = (questInfo and questInfo.isComplete == true)
-			or (initialStatusState and initialStatusState.isComplete == true)
-			or false,
+		objectiveProgressHighWater = existingTrackedQuest and existingTrackedQuest.objectiveProgressHighWater or {},
+		isComplete = initialStatusState and initialStatusState.isComplete == true or false,
 		isReadyForTurnIn = initialStatusState and initialStatusState.isReadyForTurnIn == true or false,
 	}
 
@@ -6098,8 +6198,12 @@ function QuestTogether:WatchQuest(questId, questInfo)
 		or 0
 	for objectiveIndex = 1, numObjectives do
 		local objectiveText, _, _, currentValue = self:GetNormalizedQuestObjectiveInfo(numericQuestId, objectiveIndex, false)
-		tracker[numericQuestId].objectives[objectiveIndex] = objectiveText
-		tracker[numericQuestId].objectiveValues[objectiveIndex] = self:SafeToNumber(currentValue)
+		if self.UpdateTrackedObjectiveProgress then
+			self:UpdateTrackedObjectiveProgress(tracker[numericQuestId], objectiveIndex, objectiveText, currentValue)
+		else
+			tracker[numericQuestId].objectives[objectiveIndex] = objectiveText
+			tracker[numericQuestId].objectiveValues[objectiveIndex] = self:SafeToNumber(currentValue)
+		end
 	end
 end
 
@@ -6178,7 +6282,15 @@ local function DispatchEvent(_, eventName, ...)
 		return
 	end
 
-	handler(QuestTogether, eventName, ...)
+	local ok, err
+	if QuestTogether.RunGuardedCallback then
+		ok, err = QuestTogether:RunGuardedCallback(eventName, handler, QuestTogether, eventName, ...)
+	else
+		ok, err = pcall(handler, QuestTogether, eventName, ...)
+	end
+	if not ok then
+		if type(geterrorhandler) == "function" then geterrorhandler()(err) end
+	end
 end
 
 QuestTogether.eventFrame = QuestTogether.eventFrame or CreateFrame("Frame")
@@ -6188,3 +6300,6 @@ QuestTogether.eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 QuestTogether.eventFrame:RegisterEvent("PLAYER_LEAVING_WORLD")
 QuestTogether.eventFrame:RegisterEvent("PLAYER_LOGIN")
 QuestTogether.eventFrame:RegisterEvent("PLAYER_LOGOUT")
+
+QuestTogether.eventFrame:RegisterEvent("ADDON_ACTION_BLOCKED")
+QuestTogether.eventFrame:RegisterEvent("ADDON_ACTION_FORBIDDEN")

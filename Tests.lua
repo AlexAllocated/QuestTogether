@@ -127,16 +127,21 @@ local function WithIsolatedState(testFn)
 	local originalPartyMembers = QuestTogether.partyMembers
 	local originalPartyMemberOrder = QuestTogether.partyMemberOrder
 	local originalPartyRosterFingerprint = QuestTogether.partyRosterFingerprint
+	local originalDiagnostics = {}
+	local diagnosticFields = {"diagnosticLogSequence", "diagnosticDroppedLogLines", "diagnosticErrorCount", "diagnosticLastError"}
+	for _, key in ipairs(diagnosticFields) do originalDiagnostics[key] = QuestTogether[key]; QuestTogether[key] = nil end
 	local originalDebugLogLines = QuestTogether.debugLogLines
 	local originalDebugLogTextLengthSum = QuestTogether.debugLogTextLengthSum
 	local originalDebugLogStoreNormalized = QuestTogether.debugLogStoreNormalized
 	local originalDebugLogRefreshBatchDepth = QuestTogether.debugLogRefreshBatchDepth
 	local originalDebugLogRefreshPending = QuestTogether.debugLogRefreshPending
 	local originalIsEnabled = QuestTogether.isEnabled
+	local originalSuppressLocalAnnouncementDisplayDuringTests = QuestTogether.suppressLocalAnnouncementDisplayDuringTests
 	local originalProfileEnabled = QuestTogether.db.profile.enabled
 	local originalRuntimeStateStore = QuestTogether.runtimeStateStore
 	local originalNameplateTooltipGuidByUnitToken = QuestTogether.nameplateTooltipGuidByUnitToken
 	local originalNameplateScanTooltip = QuestTogether.nameplateScanTooltip
+	local originalPendingNameplateVisualCleanup = QuestTogether.pendingNameplateVisualCleanup
 	local originalAnnouncementBubbleScreenHostFrame = QuestTogether.announcementBubbleScreenHostFrame
 	local originalAnnouncementChannelLocalID = QuestTogether.announcementChannelLocalID
 	local originalCopyableWindow = QuestTogether.copyableWindow
@@ -144,6 +149,11 @@ local function WithIsolatedState(testFn)
 	local originalPendingQuestCompareRequests = QuestTogether.pendingQuestCompareRequests
 	local originalRecentCommMessageSignatures = QuestTogether.recentCommMessageSignatures
 	local originalPendingQuestRemovals = QuestTogether.pendingQuestRemovals
+	local originalQuestEventState = {}
+	for _, key in ipairs({"onQuestLogUpdate", "questsCompleted", "pendingQuestAcceptances", "retiredQuestIds"}) do
+		originalQuestEventState[key] = QuestTogether[key]
+		QuestTogether[key] = {}
+	end
 	local originalIsLoggingOut = QuestTogether.isLoggingOut
 	local originalQuestLogChatFrameID = QuestTogether.db.profile.questLogChatFrameID
 	local originalPendingScheduledTaskAreaRefreshShouldAnnounce =
@@ -183,6 +193,10 @@ local function WithIsolatedState(testFn)
 	QuestTogether.partyMembers = {}
 	QuestTogether.partyMemberOrder = {}
 	QuestTogether.partyRosterFingerprint = ""
+	-- Detach every compatibility alias before building private test state.
+	for _, key in ipairs({"worldQuestAreaStateByQuestID", "bonusObjectiveAreaStateByQuestID", "questSnapshotByQuestID", "questSnapshotOrder", "nameplateQuestTextCache", "nameplateQuestStateByGuid", "nameplateQuestStateByUnitToken", "nameplateQuestGuidByUnitToken", "nameplateIconByUnitFrame", "nameplateHealthOverlayByUnitFrame", "nameplateBubbleByUnitFrame", "nameplateBubbleStateByFrame", "nameplateRefreshPendingByUnitToken", "nameplateRefreshGenerationByUnitToken", "nameplateHealthTintRefreshPendingByUnitToken", "nameplateTooltipResolveRetryCountByUnitToken", "personalBubbleSliderHandlesByFrame", "personalBubbleDialogPositionByFrame", "deferredWorkState"}) do
+		QuestTogether[key] = nil
+	end
 	QuestTogether.runtimeStateStore = nil
 	if QuestTogether.EnsureRuntimeStateStore then
 		QuestTogether:EnsureRuntimeStateStore()
@@ -201,6 +215,7 @@ local function WithIsolatedState(testFn)
 	end
 	QuestTogether.nameplateTooltipGuidByUnitToken = nil
 	QuestTogether.nameplateScanTooltip = nil
+	QuestTogether.pendingNameplateVisualCleanup = false
 	QuestTogether.announcementBubbleScreenHostFrame = nil
 	QuestTogether.announcementChannelLocalID = nil
 	QuestTogether.copyableWindow = nil
@@ -243,6 +258,7 @@ local function WithIsolatedState(testFn)
 	QuestTogether.PrintRaw = originalPrintRaw
 	QuestTogether.PrintChatLogRaw = originalPrintChatLogRaw
 	QuestTogether.debugLogLines = originalDebugLogLines
+	for _, key in ipairs(diagnosticFields) do QuestTogether[key] = originalDiagnostics[key] end
 	QuestTogether.debugLogTextLengthSum = originalDebugLogTextLengthSum
 	QuestTogether.debugLogStoreNormalized = originalDebugLogStoreNormalized
 	QuestTogether.debugLogRefreshBatchDepth = originalDebugLogRefreshBatchDepth
@@ -254,12 +270,14 @@ local function WithIsolatedState(testFn)
 		QuestTogether.db.profile.enabled = originalProfileEnabled
 	end
 	QuestTogether.isEnabled = originalIsEnabled
+	QuestTogether.suppressLocalAnnouncementDisplayDuringTests = originalSuppressLocalAnnouncementDisplayDuringTests
 	QuestTogether.runtimeStateStore = originalRuntimeStateStore
 	if QuestTogether.EnsureRuntimeStateStore then
 		QuestTogether:EnsureRuntimeStateStore()
 	end
 	QuestTogether.nameplateTooltipGuidByUnitToken = originalNameplateTooltipGuidByUnitToken
 	QuestTogether.nameplateScanTooltip = originalNameplateScanTooltip
+	QuestTogether.pendingNameplateVisualCleanup = originalPendingNameplateVisualCleanup
 	QuestTogether.announcementBubbleScreenHostFrame = originalAnnouncementBubbleScreenHostFrame
 	QuestTogether.announcementChannelLocalID = originalAnnouncementChannelLocalID
 	QuestTogether.copyableWindow = originalCopyableWindow
@@ -267,6 +285,9 @@ local function WithIsolatedState(testFn)
 	QuestTogether.pendingQuestCompareRequests = originalPendingQuestCompareRequests
 	QuestTogether.recentCommMessageSignatures = originalRecentCommMessageSignatures
 	QuestTogether.pendingQuestRemovals = originalPendingQuestRemovals
+	for _, key in ipairs({"onQuestLogUpdate", "questsCompleted", "pendingQuestAcceptances", "retiredQuestIds"}) do
+		QuestTogether[key] = originalQuestEventState[key]
+	end
 	QuestTogether.isLoggingOut = originalIsLoggingOut
 	if QuestTogether.SetRuntimeFlag then
 		QuestTogether:SetRuntimeFlag(
@@ -782,6 +803,9 @@ QuestTogether:RegisterTest("task area refresh defers during combat and resumes o
 	QuestTogether.isEnabled = true
 
 	QuestTogether.API = CreateApiWithOverrides({
+		GetNumQuestLogEntries = function()
+			return 0
+		end,
 		InCombatLockdown = function()
 			return true
 		end,
@@ -819,6 +843,9 @@ QuestTogether:RegisterTest("task area refresh defers through runtime gate and re
 
 	QuestTogether.isEnabled = true
 	QuestTogether.API = CreateApiWithOverrides({
+		GetNumQuestLogEntries = function()
+			return 0
+		end,
 		Delay = function(_, callback)
 			callback()
 		end,
@@ -1877,6 +1904,9 @@ end)
 
 QuestTogether:RegisterTest("quest completion preserves cached quest icon metadata", function()
 	local published = nil
+	QuestTogether.API = CreateApiWithOverrides({
+		DoEmote = function() end,
+	})
 
 	WithPatchedMethod(QuestTogether, "PickRandomCompletionEmote", function()
 		return "cheer"
@@ -1905,6 +1935,9 @@ end)
 
 QuestTogether:RegisterTest("quest completion strips non allowlisted announcement metadata", function()
 	local published = nil
+	QuestTogether.API = CreateApiWithOverrides({
+		DoEmote = function() end,
+	})
 
 	WithPatchedMethod(QuestTogether, "PickRandomCompletionEmote", function()
 		return "cheer"
@@ -2496,7 +2529,7 @@ QuestTogether:RegisterTest("tooltip quest detection blocks live scans while map-
 	end)
 end)
 
-QuestTogether:RegisterTest("tooltip quest detection allows live scans in combat when map is closed", function()
+QuestTogether:RegisterTest("tooltip quest detection defers live scans in combat even when map is closed", function()
 	local hiddenScanCount = 0
 	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
 	QuestTogether.API = CreateApiWithOverrides({
@@ -2534,7 +2567,7 @@ QuestTogether:RegisterTest("tooltip quest detection allows live scans in combat 
 								},
 							}
 						end, function()
-							AssertTrue(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
+							AssertFalse(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
 						end)
 					end)
 				end)
@@ -2542,7 +2575,7 @@ QuestTogether:RegisterTest("tooltip quest detection allows live scans in combat 
 		end)
 	end)
 
-	AssertEquals(hiddenScanCount, 1)
+	AssertEquals(hiddenScanCount, 0)
 end)
 
 QuestTogether:RegisterTest("tooltip quest detection reuses cached state while runtime gate blocks live scans", function()
@@ -2876,28 +2909,28 @@ QuestTogether:RegisterTest("quest objective detection ignores false frame flags 
 	AssertTrue(tooltipChecked)
 end)
 
-QuestTogether:RegisterTest("tooltip quest detection prefers frame guid over live UnitGUID lookup", function()
+QuestTogether:RegisterTest("tooltip quest detection prefers current unit identity over a recycled frame hint", function()
 	local unitFrame = {
 		namePlateUnitGUID = "Creature-0-0-0-0-12345-0000000000",
 	}
 
 	WithPatchedMethod(QuestTogether, "GetNameplateUnitGuid", function()
-		error("should not fall back to UnitGUID when frame guid is available")
+		return "Creature-0-0-0-0-67890-0000000000"
 	end, function()
 		AssertEquals(
 			QuestTogether:GetNameplateTooltipScanGuid("nameplate1", unitFrame),
-			"Creature-0-0-0-0-12345-0000000000"
+			"Creature-0-0-0-0-67890-0000000000"
 		)
 			end)
 end)
 
-QuestTogether:RegisterTest("tooltip quest detection falls back to alternate unit-frame guid fields before UnitGUID lookup", function()
+QuestTogether:RegisterTest("tooltip quest detection falls back to frame identity when live identity is unavailable", function()
 	local unitFrame = {
 		unitGUID = "Creature-0-0-0-0-12345-0000000000",
 	}
 
 	WithPatchedMethod(QuestTogether, "GetNameplateUnitGuid", function()
-		error("should not fall back to UnitGUID when an alternate frame guid field is available")
+		return nil
 	end, function()
 		AssertEquals(
 			QuestTogether:GetNameplateTooltipScanGuid("nameplate1", unitFrame),
@@ -3325,6 +3358,10 @@ QuestTogether:RegisterTest("nameplate quest text cache includes live unfinished 
 		IsInInstance = function()
 			return false
 		end,
+		GetQuestLogInfo = function(questLogIndex)
+			AssertEquals(questLogIndex, 7)
+			return snapshotState.byQuestID[30303]
+		end,
 		GetNumQuestLeaderBoards = function(questLogIndex)
 			AssertEquals(questLogIndex, 7)
 			return 2
@@ -3498,60 +3535,28 @@ QuestTogether:RegisterTest("structured tooltip extraction surfaces tooltip args 
 	AssertTrue(QuestTogether:EvaluateTooltipQuestObjectiveLines(tooltipLines))
 end)
 
-QuestTogether:RegisterTest("announcement bubble refresh uses addon-owned side-table state", function()
-	local bubble = {}
+QuestTogether:RegisterTest("announcement refresh discards stopped addon-owned playback state without replay", function()
+	local hidden, shows = false, 0
 	local unitFrame = {}
-	local hostFrame = {
-		IsShown = function()
-			return true
-		end,
+	local bubble = {
+		SetAlpha = function() end,
+		Hide = function() hidden = true end,
 	}
-	local shown = nil
-
+	local host = { UnitFrame = unitFrame }
+	QuestTogether.isEnabled = true
+	QuestTogether.announcementBubbleScreenHostFrame = host
 	QuestTogether.nameplateBubbleByUnitFrame[unitFrame] = bubble
 	QuestTogether.nameplateBubbleStateByFrame[bubble] = {
-		unitToken = "player",
-		text = "Quest Completed: Widgets",
-		eventType = "QUEST_COMPLETED",
-		iconAsset = "Interface\\Icons\\INV_Misc_QuestionMark",
-		iconKind = "texture",
+		unitToken = "player", text = "Quest Completed: Widgets", eventType = "QUEST_COMPLETED",
 	}
-
-	WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
-		return false
-	end, function()
-		WithPatchedMethod(QuestTogether, "GetOption", function(_, key)
-			if key == "showChatBubbles" then
-				return true
-			end
-			return QuestTogether.DEFAULTS.profile[key]
-		end, function()
-			WithPatchedMethod(QuestTogether, "GetAnnouncementBubbleHostFrameForUnit", function(_, unitToken)
-				AssertEquals(unitToken, "player")
-				return hostFrame
-			end, function()
-				WithPatchedMethod(QuestTogether, "ShowAnnouncementBubbleOnNameplate", function(_, frame, text, eventType, iconAsset, iconKind)
-					shown = {
-						frame = frame,
-						text = text,
-						eventType = eventType,
-						iconAsset = iconAsset,
-						iconKind = iconKind,
-					}
-					return true
-				end, function()
-					QuestTogether:RefreshActiveAnnouncementBubbles()
-				end)
-			end)
+	WithPatchedMethod(QuestTogether, "GetAnnouncementBubbleHostFrameForUnit", function() return host end, function()
+		WithPatchedMethod(QuestTogether, "ShowAnnouncementBubbleOnNameplate", function() shows = shows + 1 end, function()
+			QuestTogether:RefreshActiveAnnouncementBubbles()
 		end)
 	end)
-
-	AssertTrue(shown ~= nil)
-	AssertEquals(shown.frame, hostFrame)
-	AssertEquals(shown.text, "Quest Completed: Widgets")
-	AssertEquals(shown.eventType, "QUEST_COMPLETED")
-	AssertEquals(shown.iconAsset, "Interface\\Icons\\INV_Misc_QuestionMark")
-	AssertEquals(shown.iconKind, "texture")
+	AssertTrue(hidden)
+	AssertEquals(shows, 0)
+	AssertEquals(QuestTogether.nameplateBubbleStateByFrame[bubble], nil)
 	AssertEquals(bubble.qtCurrentText, nil)
 	AssertEquals(bubble.qtHostFrame, nil)
 end)
@@ -4422,7 +4427,7 @@ QuestTogether:RegisterTest("announcement decode rejects nonnumeric version witho
 	end)
 end)
 
-QuestTogether:RegisterTest("quest compare done decode treats nonnumeric count as zero safely", function()
+QuestTogether:RegisterTest("quest compare done rejects invalid counts instead of completing an empty result", function()
 	WithPatchedMethod(QuestTogether, "SafeToNumber", function(_, value)
 		if value == "1" then
 			return 1
@@ -4433,8 +4438,7 @@ QuestTogether:RegisterTest("quest compare done decode treats nonnumeric count as
 		return tonumber(value)
 	end, function()
 		local decoded = QuestTogether:DecodeQuestCompareDonePayload("1,req,Remote-Realm,secret")
-		AssertTrue(decoded ~= nil)
-		AssertEquals(decoded.count, 0)
+		AssertEquals(decoded, nil)
 	end)
 end)
 
@@ -4587,6 +4591,7 @@ QuestTogether:RegisterTest("request quest compare sends compare request for remo
 				channel = channel,
 				target = target,
 			}
+			return 0
 		end,
 		Delay = function() end,
 		UnitFullName = function(unitToken)
@@ -5225,6 +5230,7 @@ QuestTogether:RegisterTest("nameplate health tint helpers use overlays without t
 	local setColorCalls = 0
 	local createdTextures = {}
 	local liveFillTexture = {
+		IsShown = function() return true end,
 		points = {},
 		SetPoint = function(self, ...)
 			self.points[#self.points + 1] = { ... }
@@ -5236,6 +5242,7 @@ QuestTogether:RegisterTest("nameplate health tint helpers use overlays without t
 	local unitFrame = {
 		unit = "nameplate1",
 		healthBar = {
+			IsShown = function() return true end,
 			SetStatusBarColor = function()
 				setColorCalls = setColorCalls + 1
 			end,
@@ -5824,6 +5831,7 @@ QuestTogether:RegisterTest("nameplate icon hide restores stale health tint when 
 end)
 
 QuestTogether:RegisterTest("nameplate threat events schedule tint refresh for nameplate units", function()
+	QuestTogether.isEnabled = true
 	local scheduled = {}
 
 	WithPatchedMethod(QuestTogether, "IsNameplateUnitToken", function(_, unitToken)
@@ -5945,11 +5953,12 @@ QuestTogether:RegisterTest("combat nameplate remove clears cached quest state", 
 	AssertEquals(QuestTogether.nameplateQuestStateByUnitToken["nameplate13"], nil)
 	AssertEquals(QuestTogether.nameplateQuestGuidByUnitToken["nameplate13"], nil)
 	AssertEquals(QuestTogether.nameplateRefreshPendingByUnitToken["nameplate13"], nil)
-	AssertEquals(QuestTogether.nameplateRefreshGenerationByUnitToken["nameplate13"], nil)
+	AssertEquals(QuestTogether.nameplateRefreshGenerationByUnitToken["nameplate13"], 8)
 	AssertEquals(QuestTogether.nameplateHealthTintRefreshPendingByUnitToken["nameplate13"], nil)
 end)
 
 QuestTogether:RegisterTest("combat enter and leave schedule full nameplate refreshes", function()
+	QuestTogether.isEnabled = true
 	local scheduled = {}
 
 	WithPatchedMethod(QuestTogether, "ScheduleNameplatePresentationRefresh", function(_, reason, delaySeconds)
@@ -5958,8 +5967,10 @@ QuestTogether:RegisterTest("combat enter and leave schedule full nameplate refre
 			delaySeconds = delaySeconds,
 		}
 	end, function()
-		QuestTogether:HandleNameplateEvent("PLAYER_REGEN_DISABLED")
-		QuestTogether:HandleNameplateEvent("PLAYER_REGEN_ENABLED")
+		WithPatchedMethod(QuestTogether, "TryInstallPersonalBubbleEditModeHooks", function() end, function()
+			QuestTogether:HandleNameplateEvent("PLAYER_REGEN_DISABLED")
+			QuestTogether:HandleNameplateEvent("PLAYER_REGEN_ENABLED")
+		end)
 	end)
 
 	AssertEquals(scheduled[1].reason, "PLAYER_REGEN_DISABLED")
@@ -6046,6 +6057,7 @@ QuestTogether:RegisterTest("visible nameplate refresh clears cache and refreshes
 end)
 
 QuestTogether:RegisterTest("zone changed new area schedules nameplate presentation refresh through shared runtime", function()
+	QuestTogether.isEnabled = true
 	local scheduledReason = nil
 	local scheduledDelay = nil
 
@@ -6716,6 +6728,7 @@ QuestTogether:RegisterTest("ping response uses both party and channel routes whe
 				channel = channel,
 				target = target,
 			}
+			return 0
 		end,
 	})
 
@@ -6780,6 +6793,7 @@ QuestTogether:RegisterTest("quest compare request uses both party and channel ro
 				channel = channel,
 				target = target,
 			}
+			return 0
 		end,
 		Delay = function() end,
 		UnitFullName = function(unitToken)
@@ -6833,6 +6847,7 @@ QuestTogether:RegisterTest("quest compare request still sends to group when chan
 				channel = channel,
 				target = target,
 			}
+			return 0
 		end,
 		Delay = function() end,
 		UnitFullName = function(unitToken)
@@ -6925,6 +6940,7 @@ QuestTogether:RegisterTest("announcement comm filter accepts grouped distributio
 end)
 
 QuestTogether:RegisterTest("incoming announcements use the transport sender name", function()
+	QuestTogether.isEnabled = true
 	local handledEvent = nil
 	local payload = QuestTogether:EncodeAnnouncementPayload({
 		version = 3,
@@ -7833,6 +7849,7 @@ QuestTogether:RegisterTest("restricted sender lookup does not enumerate foreign 
 end)
 
 QuestTogether:RegisterTest("refresh active announcement bubbles does not replay an already playing personal bubble", function()
+	QuestTogether.isEnabled = true
 	local showCalls = 0
 	local unitFrame = {}
 	local bubble = {

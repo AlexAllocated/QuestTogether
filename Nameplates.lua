@@ -58,7 +58,7 @@ local function ClampColorComponent(value, fallback)
 end
 
 local function IsNonEmptyString(value)
-	return type(value) == "string" and value ~= ""
+	return QuestTogether:CanAccessValue(value) and type(value) == "string" and value ~= ""
 end
 
 local function PrintOneShotNameplateDebug(addon, key, message)
@@ -109,9 +109,9 @@ local function IsFrameForbidden(frame)
 		return false
 	end
 
-	-- Forbidden checks can be unavailable on some userdata-backed frames; fail open.
+	-- An unreadable permission check cannot authorize a foreign-frame write.
 	local ok, forbidden = pcall(frame.IsForbidden, frame)
-	return ok and forbidden and true or false
+	return not ok or forbidden == true
 end
 
 local function CanMutateFrame(frame)
@@ -126,6 +126,26 @@ local function CanMutateFrame(frame)
 		return true
 	end
 	return frame ~= nil and not IsFrameForbidden(frame)
+end
+
+local function GetAccessibleChildFrame(frame, memberName)
+	local child = select(1, QuestTogether:GetAccessibleFrameMember(frame, memberName))
+	if QuestTogether:CanAccessForeignFrame(child) then
+		return child
+	end
+	return nil
+end
+
+local function CallAccessibleFrameMethod(frame, methodName)
+	local method = select(1, QuestTogether:GetAccessibleFrameMember(frame, methodName))
+	if type(method) ~= "function" then
+		return nil
+	end
+	local ok, value = pcall(method, frame)
+	if ok and QuestTogether:CanAccessValue(value) then
+		return value
+	end
+	return nil
 end
 
 function SafeText(value, fallback)
@@ -276,6 +296,9 @@ end
 function QuestTogether:CompleteAnnouncementBubblePlayback(bubble)
 	local bubbleState = GetAnnouncementBubbleState(bubble)
 	local unitToken = bubbleState and bubbleState.unitToken or nil
+	if bubbleState and bubbleState.text then
+		self:Debugf("bubble", "playback_complete unit=%s event=%s", SafeText(unitToken, ""), SafeText(bubbleState.eventType, ""))
+	end
 	ClearAnnouncementBubbleState(bubble)
 	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(unitToken) then
 		return false
@@ -289,14 +312,19 @@ function QuestTogether:CompleteAnnouncementBubblePlayback(bubble)
 	return true
 end
 
-function QuestTogether:StopAndHideAnnouncementBubblePlayback(bubble)
+function QuestTogether:StopAndHideAnnouncementBubblePlayback(bubble, reason)
 	local bubbleState = GetAnnouncementBubbleState(bubble)
 	local unitToken = bubbleState and bubbleState.unitToken or nil
-	ClearAnnouncementBubbleState(bubble)
+	if bubbleState and bubbleState.text then
+		self:Debugf("bubble", "playback_stop unit=%s event=%s reason=%s", SafeText(unitToken, ""),
+			SafeText(bubbleState.eventType, ""), SafeText(reason, "hide"))
+	end
 	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(unitToken) then
+		ClearAnnouncementBubbleState(bubble)
 		return false
 	end
 	if not CanMutateFrame(bubble) then
+		ClearAnnouncementBubbleState(bubble)
 		return false
 	end
 	if
@@ -305,9 +333,14 @@ function QuestTogether:StopAndHideAnnouncementBubblePlayback(bubble)
 		and bubble.animationGroup:IsPlaying()
 	then
 		bubble.animationGroup:Stop()
-		return true
 	end
-	return self:CompleteAnnouncementBubblePlayback(bubble)
+	-- Stop can invoke OnStop synchronously and clear the state. Use the policy
+	-- decision above, so a personal bubble does not become a foreign one when
+	-- its owner token disappears during that callback.
+	ClearAnnouncementBubbleState(bubble)
+	bubble:SetAlpha(0)
+	bubble:Hide()
+	return true
 end
 
 local function ScaleBubbleMetric(baseValue, sizeScale, minimumValue)
@@ -424,7 +457,7 @@ local function EnsurePersonalBubbleAnchorSelection(hostFrame)
 end
 
 local function GetPersonalBubbleAnchorDialogAttachPoint()
-	if EditModeManagerFrame and EditModeManagerFrame:IsShown() then
+	if QuestTogether:CanAccessForeignFrame(EditModeManagerFrame, true) then
 		return "TOPLEFT", EditModeManagerFrame, "TOPRIGHT", 16, -40
 	end
 	return "CENTER", UIParent, "CENTER", 420, 40
@@ -448,16 +481,28 @@ local function SavePersonalBubbleDialogPosition(dialog)
 	})
 end
 
+function QuestTogether:GetPersonalBubbleEditSession()
+	local session = self.personalBubbleEditSession
+	if session and session.profile ~= (self.db and self.db.profile) then
+		self.personalBubbleEditSession = nil
+		self.personalBubbleEditSessionRestoring = false
+		return nil
+	end
+	return session
+end
+
 local function GetPersonalBubbleEditSession()
-	return QuestTogether.personalBubbleEditSession
+	return QuestTogether:GetPersonalBubbleEditSession()
 end
 
 local function EnsurePersonalBubbleEditSession()
-	if QuestTogether.personalBubbleEditSession then
-		return QuestTogether.personalBubbleEditSession
+	local currentSession = GetPersonalBubbleEditSession()
+	if currentSession then
+		return currentSession
 	end
 
 	local session = {
+		profile = QuestTogether.db and QuestTogether.db.profile,
 		saved = {
 			chatBubbleSize = QuestTogether:NormalizeChatBubbleSizeValue(QuestTogether:GetOption("chatBubbleSize"))
 				or QuestTogether.DEFAULTS.profile.chatBubbleSize,
@@ -472,21 +517,6 @@ local function EnsurePersonalBubbleEditSession()
 	return session
 end
 
-local function SyncPersonalBubbleEditModeDirtyState()
-	local session = GetPersonalBubbleEditSession()
-	local isPending = session and session.pending or false
-	if not EditModeManagerFrame then
-		return
-	end
-
-	if isPending then
-		if EditModeManagerFrame.SetHasActiveChanges then
-			EditModeManagerFrame:SetHasActiveChanges(true)
-		end
-	elseif EditModeManagerFrame.CheckForSystemActiveChanges then
-		EditModeManagerFrame:CheckForSystemActiveChanges()
-	end
-end
 
 local function IsPersonalBubbleEditSnapshotEqual(snapshot)
 	if type(snapshot) ~= "table" then
@@ -535,7 +565,6 @@ local function UpdatePersonalBubbleEditSessionDirtyState()
 		QuestTogether.personalBubbleEditModeDialog.RevertButton:SetEnabled(session.pending)
 		QuestTogether.personalBubbleEditModeDialog.ResetButton:SetEnabled(not IsPersonalBubbleAtDefaultState())
 	end
-	SyncPersonalBubbleEditModeDirtyState()
 end
 
 local function ConfigureEditModeSlider(settingFrame, settingData, onValueChanged)
@@ -619,21 +648,19 @@ end
 function QuestTogether:CommitPersonalBubbleEditSession()
 	self.personalBubbleEditSession = nil
 	self.personalBubbleEditSessionRestoring = false
-	SyncPersonalBubbleEditModeDirtyState()
 	if self.personalBubbleEditModeDialog and self.personalBubbleEditModeDialog.RevertButton then
 		self.personalBubbleEditModeDialog.RevertButton:SetEnabled(false)
 	end
 end
 
 function QuestTogether:RevertPersonalBubbleEditSession()
-	local session = GetPersonalBubbleEditSession()
+	local session = self:GetPersonalBubbleEditSession()
 	if not session then
 		return
 	end
 
 	self:ApplyPersonalBubbleEditSnapshot(session.saved)
 	session.pending = false
-	SyncPersonalBubbleEditModeDirtyState()
 	if self.personalBubbleEditModeDialog and self.personalBubbleEditModeDialog.RevertButton then
 		self.personalBubbleEditModeDialog.RevertButton:SetEnabled(false)
 	end
@@ -836,7 +863,7 @@ local function GetAnnouncementBubbleScreenHostFrame()
 end
 
 function QuestTogether:IsPersonalBubbleAnchorInEditMode()
-	return self.isEnabled and EditModeManagerFrame and EditModeManagerFrame:IsShown() and self:GetOption("showChatBubbles")
+	return self.isEnabled and self:CanAccessForeignFrame(EditModeManagerFrame, true) and self:GetOption("showChatBubbles")
 end
 
 function QuestTogether:ApplySavedPersonalBubbleAnchor()
@@ -1098,7 +1125,11 @@ function QuestTogether:TryInstallPersonalBubbleEditModeHooks()
 		return
 	end
 
-	if not EditModeManagerFrame or not EditModeManagerFrame.HookScript then
+	if self:IsWorkBlocked("foreign_frame_mutation") or not CanMutateFrame(EditModeManagerFrame) then
+		return
+	end
+	local hookScript = select(1, self:GetAccessibleFrameMember(EditModeManagerFrame, "HookScript"))
+	if type(hookScript) ~= "function" then
 		return
 	end
 
@@ -1112,6 +1143,9 @@ function QuestTogether:TryInstallPersonalBubbleEditModeHooks()
 	end)
 	EditModeManagerFrame:HookScript("OnHide", function()
 		QuestTogether:DeselectPersonalBubbleAnchor()
+		-- Addon settings persist immediately. Keep dirty/revert state entirely
+		-- addon-owned instead of writing Blizzard's shared layout manager.
+		QuestTogether:CommitPersonalBubbleEditSession()
 	end)
 
 	hooksecurefunc(EditModeManagerFrame, "SelectSystem", function(_, systemFrame)
@@ -1129,8 +1163,9 @@ function QuestTogether:TryInstallPersonalBubbleEditModeHooks()
 	hooksecurefunc(EditModeManagerFrame, "RevertAllChanges", function()
 		QuestTogether:RevertPersonalBubbleEditSession()
 	end)
-	if EditModeManagerFrame.RevertAllChangesButton and EditModeManagerFrame.RevertAllChangesButton.HookScript then
-		EditModeManagerFrame.RevertAllChangesButton:HookScript("OnClick", function()
+	local revertButton = GetAccessibleChildFrame(EditModeManagerFrame, "RevertAllChangesButton")
+	if CanMutateFrame(revertButton) and type(select(1, self:GetAccessibleFrameMember(revertButton, "HookScript"))) == "function" then
+		revertButton:HookScript("OnClick", function()
 			QuestTogether:RevertPersonalBubbleEditSession()
 		end)
 	end
@@ -1140,7 +1175,7 @@ end
 
 -- Returns true only for the dynamic nameplate unit tokens (nameplate1, nameplate2, ...).
 function QuestTogether:IsNameplateUnitToken(unitToken)
-	if type(unitToken) ~= "string" then
+	if not self:CanAccessValue(unitToken) or type(unitToken) ~= "string" then
 		return false
 	end
 
@@ -1409,22 +1444,22 @@ function QuestTogether:IsNameplateUnitPlayer(unitToken)
 		return self.API.UnitIsPlayer(unitToken)
 	end
 	local ok, isPlayer = pcall(UnitIsPlayer, unitToken)
-	return ok and isPlayer and true or false
+	return ok and self:CanAccessValue(isPlayer) and isPlayer == true
 end
 
 function QuestTogether:IsNameplateUnitConnected(unitToken)
 	local ok, isConnected = pcall(UnitIsConnected, unitToken)
-	return ok and isConnected and true or false
+	return ok and self:CanAccessValue(isConnected) and isConnected == true
 end
 
 function QuestTogether:IsNameplateUnitDead(unitToken)
 	local ok, isDead = pcall(UnitIsDead, unitToken)
-	return ok and isDead and true or false
+	return ok and self:CanAccessValue(isDead) and isDead == true
 end
 
 function QuestTogether:IsNameplateUnitTapDenied(unitToken)
 	local ok, isTapDenied = pcall(UnitIsTapDenied, unitToken)
-	return ok and isTapDenied and true or false
+	return not ok or not self:CanAccessValue(isTapDenied) or isTapDenied == true
 end
 
 function QuestTogether:GetNameplateQuestHealthColor()
@@ -1442,15 +1477,16 @@ function QuestTogether:GetNameplateQuestHealthColor()
 end
 
 function QuestTogether:CreateNameplateHealthOverlayTexture(parentFrame, drawLayer, subLevel)
-	if not parentFrame or not parentFrame.CreateTexture then
+	if not CanMutateFrame(parentFrame) then
 		return nil
 	end
-	if IsFrameForbidden(parentFrame) then
+	local createTexture = select(1, self:GetAccessibleFrameMember(parentFrame, "CreateTexture"))
+	if type(createTexture) ~= "function" then
 		return nil
 	end
 
-	local texture = parentFrame:CreateTexture(nil, drawLayer or "ARTWORK", nil, subLevel or 0)
-	if not texture then
+	local ok, texture = pcall(createTexture, parentFrame, nil, drawLayer or "ARTWORK", nil, subLevel or 0)
+	if not ok or not CanMutateFrame(texture) then
 		return nil
 	end
 
@@ -1508,7 +1544,7 @@ local function IsKnownNameplateQuestText(text)
 end
 
 local function IsTooltipQuestObjectiveLineType(lineType)
-	if QuestTogether and QuestTogether.IsSecretValue and QuestTogether:IsSecretValue(lineType) then
+	if not QuestTogether:CanAccessValue(lineType) then
 		return false
 	end
 
@@ -1525,7 +1561,7 @@ local function IsTooltipQuestObjectiveLineType(lineType)
 end
 
 local function IsTooltipQuestPlayerLineType(lineType)
-	if QuestTogether and QuestTogether.IsSecretValue and QuestTogether:IsSecretValue(lineType) then
+	if not QuestTogether:CanAccessValue(lineType) then
 		return false
 	end
 
@@ -1542,7 +1578,7 @@ local function IsTooltipQuestPlayerLineType(lineType)
 end
 
 local function IsTooltipQuestTitleLineType(lineType)
-	if QuestTogether and QuestTogether.IsSecretValue and QuestTogether:IsSecretValue(lineType) then
+	if not QuestTogether:CanAccessValue(lineType) then
 		return false
 	end
 
@@ -1575,6 +1611,7 @@ local function TryGetTooltipCandidateText(addon, candidateText)
 end
 
 local function GetTooltipStructuredArgText(addon, argData, depth)
+	addon = addon or QuestTogether
 	depth = SafeUiNumber(depth, 0) or 0
 	if depth > 2 then
 		return nil
@@ -1586,7 +1623,7 @@ local function GetTooltipStructuredArgText(addon, argData, depth)
 	if type(argData) == "string" then
 		return TryGetTooltipCandidateText(addon, argData)
 	end
-	if type(argData) ~= "table" then
+	if not addon:CanAccessTable(argData) then
 		return nil
 	end
 
@@ -1623,16 +1660,8 @@ local function GetTooltipStructuredArgText(addon, argData, depth)
 		return candidateText
 	end
 
-	local declaredField = SafeText(argData.field or argData.key, "")
-	if declaredField ~= "" then
-		local declaredValue = TryGetTooltipCandidateText(addon, argData.stringVal)
-		if declaredValue then
-			return declaredValue
-		end
-	end
-
 	for key, value in pairs(argData) do
-		if key ~= "field" and key ~= "key" then
+		if addon:CanAccessValue(key) and key ~= "field" and key ~= "key" then
 			local directValue = TryGetTooltipCandidateText(addon, value)
 			if directValue then
 				return directValue
@@ -1650,7 +1679,8 @@ local function GetTooltipStructuredArgText(addon, argData, depth)
 end
 
 local function GetTooltipQuestLinePrimaryText(lineData, addon)
-	if type(lineData) ~= "table" then
+	addon = addon or QuestTogether
+	if not addon:CanAccessTable(lineData) then
 		return nil
 	end
 
@@ -1763,6 +1793,9 @@ end
 -- Mirrors Plater's tooltip-driven objective detection while broadening the
 -- addon-owned known-text cache to include active quest objective texts.
 function QuestTogether:TooltipLineHasUnfinishedObjectiveEvidence(lineData)
+	if not self:CanAccessTable(lineData) then
+		return false
+	end
 	local leftText = GetTooltipQuestLeftText(self, lineData)
 	local progressState = leftText ~= "" and GetObjectiveProgressState(leftText) or "unknown"
 	if leftText ~= "" and progressState == "unfinished" then
@@ -1771,7 +1804,7 @@ function QuestTogether:TooltipLineHasUnfinishedObjectiveEvidence(lineData)
 
 	if
 		leftText ~= ""
-		and IsTooltipQuestObjectiveLineType(lineData and lineData.type or nil)
+		and IsTooltipQuestObjectiveLineType(lineData.type)
 		and progressState ~= "complete"
 		and GetKnownTooltipQuestText(leftText) ~= nil
 	then
@@ -1782,7 +1815,7 @@ function QuestTogether:TooltipLineHasUnfinishedObjectiveEvidence(lineData)
 end
 
 function QuestTogether:ShouldKeepTooltipLineForQuestDetection(lineData)
-	if type(lineData) ~= "table" or self:IsSecretValue(lineData) then
+	if not self:CanAccessTable(lineData) then
 		return false
 	end
 
@@ -1798,19 +1831,19 @@ function QuestTogether:ShouldKeepTooltipLineForQuestDetection(lineData)
 end
 
 function QuestTogether:EvaluateTooltipQuestObjectiveLines(tooltipLines)
-	if type(tooltipLines) ~= "table" then
+	if not self:CanAccessTable(tooltipLines) then
 		return false
 	end
 
 	local matchedQuestBlock = false
 
 	for _, lineData in ipairs(tooltipLines) do
-		if self:IsSecretValue(lineData) then
+		if not self:CanAccessTable(lineData) then
 			break
 		end
 
-		local lineType = lineData and lineData.type or nil
-		if self:IsSecretValue(lineType) then
+		local lineType = lineData.type
+		if not self:CanAccessValue(lineType) then
 			break
 		end
 
@@ -2049,78 +2082,33 @@ function QuestTogether:TryGetReusableCachedNameplateQuestState(unitToken, unitGu
 	return true, cachedQuestState
 end
 
--- Plater.IsQuestObjective starts from the plate GUID at local retail
--- Plater.lua:11170-11180. QuestTogether keeps that same GUID-first entry point,
--- but routes the read through guarded helpers instead of touching foreign frames directly.
+-- Unit tokens and frames are recycled independently. Prefer the live API GUID
+-- whenever readable, then use guarded frame hints while the API catches up.
 function QuestTogether:GetNameplateTooltipScanGuid(unitToken, unitFrame)
-	if IsFrameForbidden(unitFrame) then
-		unitFrame = nil
-	end
-
-	local plateFrame = unitFrame and unitFrame.PlateFrame or nil
-	if (not plateFrame) and unitFrame and unitFrame.GetParent then
-		local okParent, parentFrame = pcall(unitFrame.GetParent, unitFrame)
-		if okParent and not IsFrameForbidden(parentFrame) then
-			plateFrame = parentFrame
-		end
-	end
-	if IsFrameForbidden(plateFrame) then
-		plateFrame = nil
-	end
-
-	local candidateGuid = unitFrame and unitFrame.namePlateUnitGUID or nil
-	if self:IsSecretValue(candidateGuid) then
-		candidateGuid = nil
-	end
-	if IsNonEmptyString(candidateGuid) then
-		return candidateGuid
-	end
-
-	candidateGuid = unitFrame and unitFrame.unitGUID or nil
-	if self:IsSecretValue(candidateGuid) then
-		candidateGuid = nil
-	end
-	if IsNonEmptyString(candidateGuid) then
-		return candidateGuid
-	end
-
-	candidateGuid = unitFrame and unitFrame.guid or nil
-	if self:IsSecretValue(candidateGuid) then
-		candidateGuid = nil
-	end
-	if IsNonEmptyString(candidateGuid) then
-		return candidateGuid
-	end
-
-	candidateGuid = plateFrame and plateFrame.namePlateUnitGUID or nil
-	if self:IsSecretValue(candidateGuid) then
-		candidateGuid = nil
-	end
-	if IsNonEmptyString(candidateGuid) then
-		return candidateGuid
-	end
-
-	candidateGuid = plateFrame and plateFrame.unitGUID or nil
-	if self:IsSecretValue(candidateGuid) then
-		candidateGuid = nil
-	end
-	if IsNonEmptyString(candidateGuid) then
-		return candidateGuid
-	end
-
-	candidateGuid = plateFrame and plateFrame.guid or nil
-	if self:IsSecretValue(candidateGuid) then
-		candidateGuid = nil
-	end
-	if IsNonEmptyString(candidateGuid) then
-		return candidateGuid
-	end
-
 	local liveGuid = self:GetNameplateUnitGuid(unitToken)
 	if IsNonEmptyString(liveGuid) then
 		return liveGuid
 	end
+	if not self:CanAccessForeignFrame(unitFrame) then
+		return nil
+	end
 
+	local plateFrame = GetAccessibleChildFrame(unitFrame, "PlateFrame")
+	if not plateFrame then
+		local parentFrame = CallAccessibleFrameMethod(unitFrame, "GetParent")
+		if self:CanAccessForeignFrame(parentFrame) then
+			plateFrame = parentFrame
+		end
+	end
+
+	for _, frame in ipairs({ unitFrame, plateFrame }) do
+		for _, memberName in ipairs({ "namePlateUnitGUID", "unitGUID", "guid" }) do
+			local candidateGuid = select(1, self:GetAccessibleFrameMember(frame, memberName))
+			if IsNonEmptyString(candidateGuid) then
+				return candidateGuid
+			end
+		end
+	end
 	return nil
 end
 
@@ -2178,12 +2166,12 @@ end
 -- that default filter, but also preserves generic lines that already look like
 -- quest titles or objective progress after addon-owned normalization.
 function QuestTogether:SanitizeTooltipLineForQuestDetection(lineData)
-	if type(lineData) ~= "table" or self:IsSecretValue(lineData) then
+	if not self:CanAccessTable(lineData) then
 		return nil
 	end
 
 	local lineType = lineData.type
-	if self:IsSecretValue(lineType) then
+	if not self:CanAccessValue(lineType) then
 		return nil
 	end
 	if
@@ -2207,18 +2195,18 @@ function QuestTogether:SanitizeTooltipLineForQuestDetection(lineData)
 end
 
 function QuestTogether:ExtractQuestObjectiveTooltipLinesFromTooltipData(tooltipData)
-	if type(tooltipData) ~= "table" or self:IsSecretValue(tooltipData) then
+	if not self:CanAccessTable(tooltipData) then
 		return nil
 	end
 	if self.API and type(self.API.SurfaceTooltipDataArgs) == "function" then
 		local surfacedTooltipData = self.API.SurfaceTooltipDataArgs(tooltipData)
-		if type(surfacedTooltipData) == "table" and not self:IsSecretValue(surfacedTooltipData) then
+		if self:CanAccessTable(surfacedTooltipData) then
 			tooltipData = surfacedTooltipData
 		end
 	end
 
 	local tooltipLineData = tooltipData.lines
-	if type(tooltipLineData) ~= "table" or self:IsSecretValue(tooltipLineData) then
+	if not self:CanAccessTable(tooltipLineData) then
 		return nil
 	end
 
@@ -2267,17 +2255,17 @@ function QuestTogether:GetQuestieQuestObjectiveTooltipLines(unitGuid)
 	end
 
 	local questieLoader = _G and _G.QuestieLoader or nil
-	if type(questieLoader) ~= "table" or self:IsSecretValue(questieLoader) then
+	if not self:CanAccessTable(questieLoader) then
 		return nil
 	end
 
 	local modules = questieLoader._modules
-	if type(modules) ~= "table" or self:IsSecretValue(modules) then
+	if not self:CanAccessTable(modules) then
 		return nil
 	end
 
 	local questieTooltips = modules["QuestieTooltips"]
-	if type(questieTooltips) ~= "table" or self:IsSecretValue(questieTooltips) then
+	if not self:CanAccessTable(questieTooltips) then
 		return nil
 	end
 	if type(questieTooltips.GetTooltip) ~= "function" then
@@ -2285,7 +2273,7 @@ function QuestTogether:GetQuestieQuestObjectiveTooltipLines(unitGuid)
 	end
 
 	local ok, tooltipData = pcall(questieTooltips.GetTooltip, "m_" .. tostring(npcId))
-	if not ok or type(tooltipData) ~= "table" or self:IsSecretValue(tooltipData) then
+	if not ok or not self:CanAccessTable(tooltipData) then
 		return nil
 	end
 
@@ -2341,12 +2329,6 @@ function QuestTogether:GetStructuredQuestObjectiveTooltipLines(unitToken, unitGu
 		end
 
 		if tooltipData ~= nil then
-			if self.API and type(self.API.SurfaceTooltipDataArgs) == "function" then
-				local surfacedTooltipData = self.API.SurfaceTooltipDataArgs(tooltipData)
-				if type(surfacedTooltipData) == "table" and not self:IsSecretValue(surfacedTooltipData) then
-					tooltipData = surfacedTooltipData
-				end
-			end
 			local tooltipLines = self:ExtractQuestObjectiveTooltipLinesFromTooltipData(tooltipData)
 			if type(tooltipLines) == "table" and #tooltipLines > 0 then
 				return tooltipLines
@@ -2859,11 +2841,11 @@ function QuestTogether:ApplyResolvedQuestStateToNameplate(
 		if not icon then
 			return
 		end
-		if not IsFrameForbidden(icon) then
+		if CanMutateFrame(icon) then
 			icon:Show()
 		end
 	elseif icon then
-		if not IsFrameForbidden(icon) then
+		if CanMutateFrame(icon) then
 			icon:Hide()
 		end
 		if isQuestObjective ~= true then
@@ -2898,10 +2880,7 @@ function QuestTogether:ShouldApplyResolvedQuestVisualState(unitToken, unitFrame,
 		return false
 	end
 
-	if not unitFrame.healthBar then
-		return false
-	end
-	if IsFrameForbidden(unitFrame.healthBar) then
+	if not GetAccessibleChildFrame(unitFrame, "healthBar") then
 		return false
 	end
 
@@ -2962,37 +2941,17 @@ function QuestTogether:ShouldApplyQuestHealthTint(frame, isQuestObjective)
 end
 
 local function GetIconBarAnchor(unitFrame)
-	if unitFrame.healthBar and not IsFrameForbidden(unitFrame.healthBar) then
-		return unitFrame.healthBar
-	end
-	if unitFrame.HealthBarsContainer and not IsFrameForbidden(unitFrame.HealthBarsContainer) then
-		return unitFrame.HealthBarsContainer
-	end
-	return unitFrame
+	return GetAccessibleChildFrame(unitFrame, "healthBar")
+		or GetAccessibleChildFrame(unitFrame, "HealthBarsContainer")
+		or unitFrame
 end
 
 local function GetNameplateNameTextAnchor(unitFrame)
-	local unitFrameName = unitFrame and unitFrame.unitName or nil
-	if unitFrameName and not IsFrameForbidden(unitFrameName) then
-		return unitFrameName
-	end
-
-	local unitFrameFallbackName = unitFrame and unitFrame.name or nil
-	if unitFrameFallbackName and not IsFrameForbidden(unitFrameFallbackName) then
-		return unitFrameFallbackName
-	end
-
-	local healthBarName = unitFrame and unitFrame.healthBar and unitFrame.healthBar.unitName or nil
-	if healthBarName and not IsFrameForbidden(healthBarName) then
-		return healthBarName
-	end
-
-	local healthBarFallbackName = unitFrame and unitFrame.healthBar and unitFrame.healthBar.name or nil
-	if healthBarFallbackName and not IsFrameForbidden(healthBarFallbackName) then
-		return healthBarFallbackName
-	end
-
-	return nil
+	local healthBar = GetAccessibleChildFrame(unitFrame, "healthBar")
+	return GetAccessibleChildFrame(unitFrame, "unitName")
+		or GetAccessibleChildFrame(unitFrame, "name")
+		or GetAccessibleChildFrame(healthBar, "unitName")
+		or GetAccessibleChildFrame(healthBar, "name")
 end
 
 ResolveNameplateUnitToken = function(namePlateFrameBase, unitFrame)
@@ -3045,11 +3004,12 @@ function QuestTogether:ApplyNameplateQuestIconStyle(iconFrame, unitFrame)
 	if not iconFrame or not unitFrame then
 		return
 	end
-	if not CanMutateFrame(iconFrame) or IsFrameForbidden(unitFrame) then
+	if not CanMutateFrame(iconFrame) or not self:CanAccessForeignFrame(unitFrame) then
 		return
 	end
 
 	local icon = iconFrame.Icon or iconFrame
+	local healthBarsContainer = GetAccessibleChildFrame(unitFrame, "HealthBarsContainer")
 	local style = self:GetNameplateQuestIconStyle()
 	local width = self.NAMEPLATE_QUEST_ICON_WIDTH
 	local height = self.NAMEPLATE_QUEST_ICON_HEIGHT
@@ -3075,14 +3035,14 @@ function QuestTogether:ApplyNameplateQuestIconStyle(iconFrame, unitFrame)
 			width = math.max(14, math.floor(width * 0.8 + 0.5))
 			height = math.max(14, math.floor(height * 0.8 + 0.5))
 			iconFrame:SetPoint("RIGHT", nameText, "LEFT", -2, 0)
-		elseif unitFrame.HealthBarsContainer then
-			iconFrame:SetPoint("BOTTOM", unitFrame.HealthBarsContainer, "TOP", 0, 11)
+		elseif healthBarsContainer then
+			iconFrame:SetPoint("BOTTOM", healthBarsContainer, "TOP", 0, 11)
 		else
 			iconFrame:SetPoint("TOP", unitFrame, "TOP", 0, 7)
 		end
 	else
-		if unitFrame.HealthBarsContainer then
-			iconFrame:SetPoint("BOTTOM", unitFrame.HealthBarsContainer, "TOP", 0, 11)
+		if healthBarsContainer then
+			iconFrame:SetPoint("BOTTOM", healthBarsContainer, "TOP", 0, 11)
 		else
 			iconFrame:SetPoint("TOP", unitFrame, "TOP", 0, 7)
 		end
@@ -3109,8 +3069,8 @@ EnsureQuestIcon = function(unitFrame)
 	end
 
 	local iconFrame = CreateFrame("Frame", nil, unitFrame)
-	iconFrame:SetFrameStrata(unitFrame:GetFrameStrata() or "LOW")
-	iconFrame:SetFrameLevel(((unitFrame.GetFrameLevel and unitFrame:GetFrameLevel()) or 0) + 30)
+	iconFrame:SetFrameStrata(CallAccessibleFrameMethod(unitFrame, "GetFrameStrata") or "LOW")
+	iconFrame:SetFrameLevel(SafeUiNumber(CallAccessibleFrameMethod(unitFrame, "GetFrameLevel"), 0) + 30)
 
 	local icon = iconFrame:CreateTexture(nil, "ARTWORK")
 	iconFrame.Icon = icon
@@ -3135,10 +3095,11 @@ EnsureQuestIcon = function(unitFrame)
 end
 
 local function EnsureQuestHealthOverlay(unitFrame)
-	if not unitFrame or not unitFrame.healthBar then
+	local healthBar = GetAccessibleChildFrame(unitFrame, "healthBar")
+	if not healthBar then
 		return nil
 	end
-	if not CanMutateFrame(unitFrame) or not CanMutateFrame(unitFrame.healthBar) then
+	if not CanMutateFrame(unitFrame) or not CanMutateFrame(healthBar) then
 		return nil
 	end
 
@@ -3147,7 +3108,6 @@ local function EnsureQuestHealthOverlay(unitFrame)
 		return existingOverlay
 	end
 
-	local healthBar = unitFrame.healthBar
 	local fillTexture = QuestTogether:CreateNameplateHealthOverlayTexture(healthBar, "ARTWORK", 0)
 	local highlight = healthBar:CreateTexture(nil, "ARTWORK", nil, 1)
 	if not fillTexture or not highlight then
@@ -3190,26 +3150,15 @@ local function AnchorQuestHealthFillTexture(texture, anchorTarget)
 end
 
 local function GetQuestHealthOverlayAnchorTarget(unitFrame)
-	if not unitFrame or not unitFrame.healthBar then
-		return false
-	end
-	if IsFrameForbidden(unitFrame) or IsFrameForbidden(unitFrame.healthBar) then
-		return false
-	end
-
-	local healthBar = unitFrame.healthBar
-	if healthBar.IsShown and not healthBar:IsShown() then
+	local healthBar = GetAccessibleChildFrame(unitFrame, "healthBar")
+	if not healthBar or not QuestTogether:CanAccessForeignFrame(healthBar, true) then
 		return nil
 	end
 
-	local liveFillTexture = healthBar.GetStatusBarTexture and healthBar:GetStatusBarTexture() or nil
-	if not liveFillTexture then
+	local liveFillTexture = CallAccessibleFrameMethod(healthBar, "GetStatusBarTexture")
+	if not QuestTogether:CanAccessForeignFrame(liveFillTexture, true) then
 		return nil
 	end
-	if liveFillTexture.IsShown and not liveFillTexture:IsShown() then
-		return nil
-	end
-
 	return liveFillTexture
 end
 
@@ -3440,39 +3389,41 @@ end
 function QuestTogether:RefreshActiveAnnouncementBubbles()
 	for unitFrame, bubble in pairs(self.nameplateBubbleByUnitFrame) do
 		local bubbleState = GetAnnouncementBubbleState(bubble)
-		if bubble and bubbleState and bubbleState.text and bubbleState.text ~= "" then
-			if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(bubbleState.unitToken) then
-				-- Side-table cleanup is safe while restricted. Do not mutate a
-				-- potentially protected visual; its fade can finish naturally.
-				-- Retain only the owner token so the animation callback also
-				-- knows it must fail closed, without retaining replayable text.
-				SetAnnouncementBubbleState(bubble, {
-					unitToken = bubbleState.unitToken,
-				})
-			else
-				local hostFrame = bubbleState.unitToken
-						and self:GetAnnouncementBubbleHostFrameForUnit(bubbleState.unitToken)
-					or nil
-				if hostFrame and self:GetOption("showChatBubbles") then
-					if hostFrame == self.announcementBubbleScreenHostFrame or self:CanAccessForeignFrame(hostFrame, true) then
-						if not (bubble.animationGroup and bubble.animationGroup:IsPlaying()) then
-							self:ShowAnnouncementBubbleOnNameplate(
-								hostFrame,
-								bubbleState.text,
-								bubbleState.eventType,
-								bubbleState.iconAsset,
-								bubbleState.iconKind
-							)
-						end
-					else
-						self:StopAndHideAnnouncementBubblePlayback(bubble)
-					end
-				elseif hostFrame then
-					self:StopAndHideAnnouncementBubblePlayback(bubble)
-				elseif unitFrame then
-					self:StopAndHideAnnouncementBubblePlayback(bubble)
-					self.nameplateBubbleByUnitFrame[unitFrame] = nil
+		local unitToken = bubbleState and bubbleState.unitToken or nil
+		if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(unitToken) then
+			if bubbleState then
+				if bubbleState.text then
+					self:Debugf("bubble", "playback_discard unit=%s reason=restricted", SafeText(unitToken, ""))
 				end
+				-- Discard replayable data immediately; the addon-owned side tables
+				-- are safe even when the attached visual cannot be touched yet.
+				SetAnnouncementBubbleState(bubble, { unitToken = unitToken })
+			end
+		else
+			local shouldHide = not self.isEnabled
+				or not self:GetOption("showChatBubbles")
+				or not bubbleState
+				or not IsNonEmptyString(bubbleState.text)
+				or (unitToken == "player" and self:GetOption("hideMyOwnChatBubbles"))
+			if not shouldHide and bubbleState.senderName and self.ShouldShowAnnouncementsForRemoteSender then
+				shouldHide = not self:ShouldShowAnnouncementsForRemoteSender(bubbleState.senderName, true)
+			end
+			if not shouldHide then
+				local hostFrame = unitToken and self:GetAnnouncementBubbleHostFrameForUnit(unitToken) or nil
+				shouldHide = not hostFrame or GetAnnouncementBubbleUnitFrame(hostFrame) ~= unitFrame
+				if not shouldHide and unitToken ~= "player" then
+					shouldHide = not self:CanAccessForeignFrame(hostFrame, true)
+						or not bubbleState.unitGUID
+						or self:GetNameplateUnitGuid(unitToken) ~= bubbleState.unitGUID
+				end
+			end
+			if not shouldHide then
+				-- A settings/context refresh is never a new announcement. A stopped
+				-- animation or a lost completion callback must not replay old text.
+				shouldHide = not (bubble.animationGroup and bubble.animationGroup:IsPlaying())
+			end
+			if shouldHide then
+				self:StopAndHideAnnouncementBubblePlayback(bubble, "refresh_policy_identity_or_finished")
 			end
 		end
 	end
@@ -3504,10 +3455,19 @@ function QuestTogether:TryShowAnnouncementBubbleOnUnitNameplate(unitToken, text,
 	return false, "Your personal bubble anchor is unavailable."
 end
 
-function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, text, eventType, iconAsset, iconKind)
+function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, text, eventType, iconAsset, iconKind, senderName)
 	local isPersonalBubble = namePlateFrameBase == self.announcementBubbleScreenHostFrame
 	local policyUnitToken = isPersonalBubble and "player" or "nameplate"
+	if not self.isEnabled or not self:GetOption("showChatBubbles") then
+		self:Debug("show_suppressed reason=bubbles_disabled", "bubble")
+		return false
+	end
+	if isPersonalBubble and self:GetOption("hideMyOwnChatBubbles") then
+		self:Debug("show_suppressed unit=player reason=hide_own", "bubble")
+		return false
+	end
 	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(policyUnitToken) then
+		self:Debugf("bubble", "show_suppressed unit=%s reason=restricted", policyUnitToken)
 		return false
 	end
 
@@ -3539,6 +3499,10 @@ function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, tex
 		bubbleUnitToken = ResolveNameplateUnitToken(namePlateFrameBase, unitFrame)
 	end
 	if not IsNonEmptyString(bubbleUnitToken) then
+		return false
+	end
+	local bubbleUnitGUID = not isPersonalBubble and self:GetNameplateUnitGuid(bubbleUnitToken) or nil
+	if not isPersonalBubble and not bubbleUnitGUID then
 		return false
 	end
 	if bubble.animationGroup and bubble.animationGroup:IsPlaying() then
@@ -3635,6 +3599,8 @@ function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, tex
 		iconAsset = type(iconAsset) == "string" and iconAsset ~= "" and iconAsset or nil,
 		iconKind = type(iconKind) == "string" and iconKind ~= "" and iconKind or nil,
 		unitToken = bubbleUnitToken,
+		unitGUID = bubbleUnitGUID,
+		senderName = not isPersonalBubble and self:NormalizeMemberName(senderName) or nil,
 	})
 	bubble:SetAlpha(0)
 	bubble:Show()
@@ -3644,6 +3610,8 @@ function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, tex
 	if bubble.animationGroup then
 		bubble.animationGroup:Play()
 	end
+	self:Debugf("bubble", "playback_start unit=%s guid=%s event=%s duration=%.1f text=%s",
+		bubbleUnitToken, SafeText(bubbleUnitGUID, ""), SafeText(eventType, ""), lifetimeSeconds, message)
 	return true
 end
 
@@ -3711,7 +3679,8 @@ function QuestTogether:ApplyQuestTintToNameplate(unitFrame)
 	if not unitFrame then
 		return false
 	end
-	if IsFrameForbidden(unitFrame) or IsFrameForbidden(unitFrame.healthBar) then
+	local healthBar = GetAccessibleChildFrame(unitFrame, "healthBar")
+	if not healthBar or not CanMutateFrame(unitFrame) or not CanMutateFrame(healthBar) then
 		return false
 	end
 
@@ -3720,7 +3689,6 @@ function QuestTogether:ApplyQuestTintToNameplate(unitFrame)
 		return false
 	end
 
-	local healthBar = unitFrame.healthBar
 	local color = self:GetNameplateQuestHealthColor()
 	local highlightRed = math.min(1, color.r + 0.18)
 	local highlightGreen = math.min(1, color.g + 0.18)
@@ -3734,24 +3702,24 @@ function QuestTogether:ApplyQuestTintToNameplate(unitFrame)
 	AnchorQuestHealthFillTexture(overlay.Highlight, anchorTarget)
 
 	if overlay.FillTexture then
-		if overlay.FillTexture.SetVertexColor and not IsFrameForbidden(overlay.FillTexture) then
+		if overlay.FillTexture.SetVertexColor and CanMutateFrame(overlay.FillTexture) then
 			overlay.FillTexture:SetVertexColor(color.r, color.g, color.b, 1)
 		end
-		if not IsFrameForbidden(overlay.FillTexture) then
+		if CanMutateFrame(overlay.FillTexture) then
 			overlay.FillTexture:Show()
 		end
 	end
-	if overlay.Highlight and not IsFrameForbidden(overlay.Highlight) then
+	if overlay.Highlight and CanMutateFrame(overlay.Highlight) then
 		overlay.Highlight:SetColorTexture(highlightRed, highlightGreen, highlightBlue, 0.14)
 		overlay.Highlight:Show()
 	end
 
-	if healthBar and healthBar.GetAlpha then
-		local alpha = healthBar:GetAlpha() or 1
-		if overlay.FillTexture and overlay.FillTexture.SetAlpha and not IsFrameForbidden(overlay.FillTexture) then
+	if healthBar then
+		local alpha = SafeUiNumber(CallAccessibleFrameMethod(healthBar, "GetAlpha"), 1)
+		if overlay.FillTexture and overlay.FillTexture.SetAlpha and CanMutateFrame(overlay.FillTexture) then
 			overlay.FillTexture:SetAlpha(alpha)
 		end
-		if overlay.Highlight and overlay.Highlight.SetAlpha and not IsFrameForbidden(overlay.Highlight) then
+		if overlay.Highlight and overlay.Highlight.SetAlpha and CanMutateFrame(overlay.Highlight) then
 			overlay.Highlight:SetAlpha(alpha)
 		end
 	end
@@ -3769,10 +3737,10 @@ function QuestTogether:RestoreNameplateHealthColor(unitFrame)
 
 	local overlay = self.nameplateHealthOverlayByUnitFrame[unitFrame]
 	if overlay then
-		if overlay.FillTexture and overlay.FillTexture.Hide and not IsFrameForbidden(overlay.FillTexture) then
+		if overlay.FillTexture and overlay.FillTexture.Hide and CanMutateFrame(overlay.FillTexture) then
 			overlay.FillTexture:Hide()
 		end
-		if overlay.Highlight and overlay.Highlight.Hide and not IsFrameForbidden(overlay.Highlight) then
+		if overlay.Highlight and overlay.Highlight.Hide and CanMutateFrame(overlay.Highlight) then
 			overlay.Highlight:Hide()
 		end
 	end
@@ -3866,6 +3834,7 @@ function QuestTogether:ScheduleNameplateRefresh(unitToken)
 	end
 
 	local delayFn = self.API and self.API.Delay
+	local generations = self.nameplateRefreshGenerationByUnitToken
 	local generation = (self.nameplateRefreshGenerationByUnitToken[unitToken] or 0) + 1
 	self.nameplateRefreshGenerationByUnitToken[unitToken] = generation
 	self.nameplateRefreshPendingByUnitToken[unitToken] = true
@@ -3873,7 +3842,8 @@ function QuestTogether:ScheduleNameplateRefresh(unitToken)
 	-- Mirrors Plater.ScheduleUpdateForNameplate() (local retail Plater.lua:1461-1481):
 	-- schedule one update for the unit instead of retry-bursting tooltip refreshes.
 	local function refreshScheduledNameplate()
-		if self.nameplateRefreshGenerationByUnitToken[unitToken] ~= generation then
+		if self.nameplateRefreshGenerationByUnitToken ~= generations
+			or generations[unitToken] ~= generation then
 			return
 		end
 		self.nameplateRefreshPendingByUnitToken[unitToken] = nil
@@ -3951,8 +3921,6 @@ function QuestTogether:HideNameplateIcon(namePlateFrameBase)
 	if icon and CanMutateFrame(icon) then
 		icon:Hide()
 	end
-	local bubble = self.nameplateBubbleByUnitFrame[unitFrame]
-	self:HideAnnouncementBubble(namePlateFrameBase)
 	self:RestoreNameplateHealthColor(unitFrame)
 end
 
@@ -3962,12 +3930,12 @@ function QuestTogether:ForEachVisibleNamePlate(callback)
 	end
 
 	local nameplates = self.API.GetNamePlates()
-	if type(nameplates) ~= "table" then
+	if not self:CanAccessTable(nameplates) then
 		return
 	end
 
 	for _, frame in pairs(nameplates) do
-		if frame and not IsFrameForbidden(frame) then
+		if self:CanAccessForeignFrame(frame) then
 			callback(frame)
 		end
 	end
@@ -3999,7 +3967,8 @@ function QuestTogether:FindVisiblePlayerNameplateForSender(senderGUID, senderNam
 		end
 
 		local unitGUID = self:GetNameplateUnitGuid(unitToken)
-		local unitName, unitRealm = self.API.UnitFullName and self.API.UnitFullName(unitToken)
+		local unitName, unitRealm
+	if self.API.UnitFullName then unitName, unitRealm = self.API.UnitFullName(unitToken) end
 		local fullUnitName = nil
 		if unitName then
 			local realmName = self:SafeStripWhitespace(unitRealm or self.API.GetRealmName() or "", "")
@@ -4055,7 +4024,8 @@ function QuestTogether:DoesUnitTokenMatchSender(unitToken, senderGUID, senderNam
 	end
 	local normalizedSenderName = self:NormalizeMemberName(senderName)
 
-	local unitName, unitRealm = self.API.UnitFullName and self.API.UnitFullName(unitToken)
+	local unitName, unitRealm
+	if self.API.UnitFullName then unitName, unitRealm = self.API.UnitFullName(unitToken) end
 	local fullUnitName = nil
 	if unitName then
 		local realmName = self:SafeStripWhitespace(unitRealm or self.API.GetRealmName() or "", "")
@@ -4086,6 +4056,7 @@ end
 
 function QuestTogether:RefreshNameplateAugmentation()
 	self:MaybeAnnounceNameplateCapabilityContextChange()
+	self:RefreshActiveAnnouncementBubbles()
 
 	if self:IsNameplateAugmentationBlockedInCurrentContext() then
 		self:ClearNameplateQuestDetectionCache()
@@ -4094,7 +4065,6 @@ function QuestTogether:RefreshNameplateAugmentation()
 		self:ForEachVisibleNamePlate(function(frame)
 			self:HideNameplateIcon(frame)
 		end)
-		self:RefreshActiveAnnouncementBubbles()
 		return
 	end
 
@@ -4135,13 +4105,14 @@ function QuestTogether:SchedulePlaterStartupNameplateRefreshes()
 	if not self.API or type(self.API.Delay) ~= "function" then
 		return false
 	end
+	local startupState = self.nameplateRefreshGenerationByUnitToken
 
 	-- Mirrors Plater startup bootstrap in local retail Plater.lua:6357-6362:
 	-- queue QuestLogUpdated() after 4.1 seconds, which then waits the standard
 	-- 1-second quest-cache throttle, and separately trigger FullRefreshAllPlates()
 	-- at 5.1 seconds after initialization.
 	self.API.Delay(PLATER_INITIAL_QUEST_LOG_UPDATED_DELAY_SECONDS, function()
-		if not QuestTogether.isEnabled then
+		if not self.isEnabled or self.nameplateRefreshGenerationByUnitToken ~= startupState then
 			return
 		end
 		QuestTogether:ScheduleDeferredNameplateQuestStateRefresh(
@@ -4150,7 +4121,7 @@ function QuestTogether:SchedulePlaterStartupNameplateRefreshes()
 		)
 	end)
 	self.API.Delay(PLATER_INITIAL_FULL_REFRESH_DELAY_SECONDS, function()
-		if not QuestTogether.isEnabled then
+		if not self.isEnabled or self.nameplateRefreshGenerationByUnitToken ~= startupState then
 			return
 		end
 		QuestTogether:FullRefreshVisibleNameplates("EnableNameplateAugmentationStartupFullRefresh")
@@ -4191,6 +4162,10 @@ function QuestTogether:OnNameplateAdded(unitToken)
 	if not self:IsNameplateUnitToken(unitToken) then
 		return
 	end
+	self.nameplateRefreshGenerationByUnitToken[unitToken] =
+		(self.nameplateRefreshGenerationByUnitToken[unitToken] or 0) + 1
+	self.nameplateRefreshPendingByUnitToken[unitToken] = nil
+	self:ClearNameplateTooltipResolveRetryCount(unitToken)
 	if self:IsNameplateAugmentationBlockedInCurrentContext() then
 		self:ForgetResolvedNameplateQuestState(unitToken)
 		local namePlateFrameBase = self:GetAccessibleNameplateFrameForUnit(unitToken, false)
@@ -4198,6 +4173,7 @@ function QuestTogether:OnNameplateAdded(unitToken)
 			-- Nameplate frames are recycled across zone and instance transitions.
 			-- In blocked contexts like arenas, clear any stale quest visuals immediately.
 			self:HideNameplateIcon(namePlateFrameBase)
+			self:HideAnnouncementBubble(namePlateFrameBase)
 		end
 		return
 	end
@@ -4210,6 +4186,7 @@ function QuestTogether:OnNameplateAdded(unitToken)
 		-- Nameplate frames are recycled. Clear any stale icon/tint immediately so visuals
 		-- from a previous unit cannot carry over before the live refresh resolves.
 		self:HideNameplateIcon(namePlateFrameBase)
+		self:HideAnnouncementBubble(namePlateFrameBase)
 		self:RefreshNameplateIcon(namePlateFrameBase)
 		return
 	end
@@ -4225,12 +4202,22 @@ function QuestTogether:OnNameplateRemoved(unitToken)
 	self:ForgetResolvedNameplateQuestState(unitToken)
 	self:ClearNameplateTooltipResolveRetryCount(unitToken)
 	self.nameplateRefreshPendingByUnitToken[unitToken] = nil
-	self.nameplateRefreshGenerationByUnitToken[unitToken] = nil
+	-- Never reuse a generation after a token is removed and assigned again.
+	self.nameplateRefreshGenerationByUnitToken[unitToken] =
+		(self.nameplateRefreshGenerationByUnitToken[unitToken] or 0) + 1
 	self.nameplateHealthTintRefreshPendingByUnitToken[unitToken] = nil
 
 	local namePlateFrameBase = self.API and self.API.GetNamePlateForUnit and self.API.GetNamePlateForUnit(unitToken) or nil
 	if namePlateFrameBase then
 		self:HideNameplateIcon(namePlateFrameBase)
+		self:HideAnnouncementBubble(namePlateFrameBase)
+	end
+	-- The public lookup may already be empty by NAME_PLATE_UNIT_REMOVED.
+	-- Find playback through addon-owned state, without reading the old frame.
+	for bubble, state in pairs(self.nameplateBubbleStateByFrame) do
+		if state.unitToken == unitToken then
+			self:StopAndHideAnnouncementBubblePlayback(bubble)
+		end
 	end
 end
 
@@ -4258,6 +4245,19 @@ function QuestTogether:TryInstallNameplateHooks()
 end
 
 function QuestTogether:HandleNameplateEvent(eventName, ...)
+	if self.pendingNameplateVisualCleanup then
+		self.pendingNameplateVisualCleanup = not self:HideAllNameplateVisuals()
+		if not self.isEnabled then
+			if not self.pendingNameplateVisualCleanup and self.nameplateEventFrame then
+				self.nameplateEventFrame:UnregisterAllEvents()
+				wipe(self.nameplateRegisteredEvents)
+			end
+			return
+		end
+	end
+	if not self.isEnabled then
+		return
+	end
 	if eventName == "NAME_PLATE_UNIT_ADDED" then
 		self:OnNameplateAdded(...)
 	elseif eventName == "NAME_PLATE_UNIT_REMOVED" then
@@ -4271,6 +4271,9 @@ function QuestTogether:HandleNameplateEvent(eventName, ...)
 	then
 		self:ScheduleNameplatePresentationRefresh(eventName, 0)
 	elseif eventName == "PLAYER_REGEN_DISABLED" or eventName == "PLAYER_REGEN_ENABLED" then
+		if eventName == "PLAYER_REGEN_ENABLED" then
+			self:TryInstallPersonalBubbleEditModeHooks()
+		end
 		self:ScheduleNameplatePresentationRefresh(eventName, 0)
 	elseif
 			eventName == "QUEST_LOG_UPDATE"
@@ -4315,7 +4318,12 @@ function QuestTogether:EnableNameplateAugmentation()
 		self.nameplateEventFrame = CreateFrame("Frame")
 		self.nameplateRegisteredEvents = self.nameplateRegisteredEvents or {}
 		self.nameplateEventFrame:SetScript("OnEvent", function(_, eventName, ...)
-			self:HandleNameplateEvent(eventName, ...)
+			if self.RunGuardedCallback then
+				local ok, err = self:RunGuardedCallback("nameplate:" .. eventName, self.HandleNameplateEvent, self, eventName, ...)
+				if not ok and type(geterrorhandler) == "function" then geterrorhandler()(err) end
+			else
+				self:HandleNameplateEvent(eventName, ...)
+			end
 		end)
 	end
 
@@ -4363,7 +4371,37 @@ function QuestTogether:EnableNameplateAugmentation()
 	self:SchedulePlaterStartupNameplateRefreshes()
 end
 
+function QuestTogether:HideAllNameplateVisuals()
+	local complete = true
+	for _, bubble in pairs(self.nameplateBubbleByUnitFrame) do
+		if not self:StopAndHideAnnouncementBubblePlayback(bubble, "disable") then
+			complete = false
+		end
+	end
+	for _, icon in pairs(self.nameplateIconByUnitFrame) do
+		if CanMutateFrame(icon) then
+			icon:Hide()
+		else
+			complete = false
+		end
+	end
+	for _, overlay in pairs(self.nameplateHealthOverlayByUnitFrame) do
+		for _, texture in pairs(overlay) do
+			if CanMutateFrame(texture) then
+				texture:Hide()
+			else
+				complete = false
+			end
+		end
+	end
+	return complete
+end
+
 function QuestTogether:DisableNameplateAugmentation()
+	self.pendingNameplateVisualCleanup = not self:HideAllNameplateVisuals()
+	if self.pendingNameplateVisualCleanup then
+		self:Debug("visual_cleanup deferred until restrictions end", "nameplate")
+	end
 	if not self.nameplateEventFrame then
 		return
 	end
@@ -4374,6 +4412,15 @@ function QuestTogether:DisableNameplateAugmentation()
 	end
 	if self.nameplateRegisteredEvents then
 		wipe(self.nameplateRegisteredEvents)
+	end
+	if self.pendingNameplateVisualCleanup then
+		-- The normal runtime scheduler is stopped while disabled. Keep only
+		-- event-driven teardown until protected visuals can be hidden safely.
+		for _, eventName in ipairs({ "PLAYER_REGEN_ENABLED", "ADDON_RESTRICTION_STATE_CHANGED", "PLAYER_ENTERING_WORLD" }) do
+			if pcall(self.nameplateEventFrame.RegisterEvent, self.nameplateEventFrame, eventName) then
+				self.nameplateRegisteredEvents[eventName] = true
+			end
+		end
 	end
 
 	-- Hide our icon overlays and clear cached quest objective state.

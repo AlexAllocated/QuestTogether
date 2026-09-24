@@ -21,6 +21,7 @@ local QUEST_COMPARE_ENTRY_COMMAND = "QCQE"
 local QUEST_COMPARE_DONE_VERSION = 1
 local QUEST_COMPARE_DONE_COMMAND = "QCDN"
 local ANNOUNCEMENT_MAX_TEXT_LENGTH = 220
+local ADDON_MESSAGE_MAX_BYTES = 255
 local PING_REQUEST_TIMEOUT_SECONDS = 10
 local QUEST_COMPARE_TIMEOUT_SECONDS = 10
 local ANNOUNCEMENT_CHANNEL_FILTER_EVENTS = {
@@ -87,12 +88,12 @@ local function SafeAddonString(addon, value, fallback)
 end
 
 local function SafePrimitiveString(addon, value, fallback)
-	if addon and addon.IsSecretValue and addon:IsSecretValue(value) then
+	if addon and addon.CanAccessValue and not addon:CanAccessValue(value) then
 		return fallback or ""
 	end
 
 	local valueType = type(value)
-	if valueType == "string" or valueType == "number" or valueType == "boolean" or valueType == "nil" then
+	if valueType == "string" or valueType == "number" or valueType == "boolean" then
 		return tostring(value)
 	end
 
@@ -124,7 +125,8 @@ local function SafeChannelNumber(addon, value)
 end
 
 local function MatchesAnnouncementChannelName(addon, value)
-	if type(value) ~= "string" or value == "" then
+	value = SafeTrimAddonString(addon, value, "")
+	if value == "" then
 		return false
 	end
 
@@ -137,8 +139,7 @@ local function MatchesAnnouncementChannelName(addon, value)
 		return true
 	end
 
-	local ok, found = pcall(string.find, value, channelName, 1, true)
-	return ok and found ~= nil
+	return string.match(value, "^%d+%.%s+(.+)$") == channelName
 end
 
 local function SplitByDelimiter(text, delimiter)
@@ -190,8 +191,8 @@ local function SafeNumber(addon, value)
 end
 
 local function NormalizeRealmName(addon, realmName)
-	local sourceRealm = realmName
-	if sourceRealm == nil or sourceRealm == "" then
+	local sourceRealm = SafeTrimAddonString(addon, realmName, "")
+	if sourceRealm == "" then
 		sourceRealm = addon and addon.API and addon.API.GetRealmName and addon.API.GetRealmName() or ""
 	end
 	if addon and addon.SafeStripWhitespace then
@@ -203,8 +204,36 @@ local function NormalizeRealmName(addon, realmName)
 	return string.gsub(tostring(sourceRealm), "%s+", "")
 end
 
+-- Lua's substring limit is measured in bytes. Preserve complete UTF-8 code
+-- points when shortening local text or fitting escaped text into a wire packet.
+local function TruncateUtf8(text, maxBytes)
+	if #text <= maxBytes then
+		return text
+	end
+	local nextIndex = math.max(0, maxBytes) + 1
+	while nextIndex > 1 do
+		local byte = string.byte(text, nextIndex)
+		if not byte or byte < 128 or byte >= 192 then
+			break
+		end
+		nextIndex = nextIndex - 1
+	end
+	return string.sub(text, 1, nextIndex - 1)
+end
+
+local function FitPayloadText(addon, fields, textIndex, command)
+	local originalText = addon:UnescapePayload(fields[textIndex])
+	local payload = table.concat(fields, ",")
+	while #payload + #command + 1 > ADDON_MESSAGE_MAX_BYTES and originalText ~= "" do
+		originalText = TruncateUtf8(originalText, #originalText - 1)
+		fields[textIndex] = addon:EscapePayload(originalText)
+		payload = table.concat(fields, ",")
+	end
+	return payload
+end
+
 function QuestTogether:EscapePayload(value)
-	local text = SafeAddonString(self, value or "", "")
+	local text = SafePrimitiveString(self, value, "")
 	local ok, escaped = pcall(string.gsub, text, "([^%w%-_%.~])", function(character)
 		local okByte, byteValue = pcall(string.byte, character)
 		if not okByte or not byteValue then
@@ -219,7 +248,7 @@ function QuestTogether:EscapePayload(value)
 end
 
 function QuestTogether:UnescapePayload(value)
-	local text = SafeAddonString(self, value or "", "")
+	local text = SafePrimitiveString(self, value, "")
 	local ok, unescaped = pcall(string.gsub, text, "%%(%x%x)", function(hex)
 		local safeHex = SafeAddonString(self, hex or "", "")
 		local okFirst, firstChar = pcall(string.sub, safeHex, 1, 1)
@@ -278,27 +307,19 @@ function QuestTogether:DeserializeWireMessage(message)
 end
 
 function QuestTogether:SanitizeAnnouncementText(text)
-	local sanitized = SafeTrimAddonString(self, text or "", "")
-	if #sanitized > ANNOUNCEMENT_MAX_TEXT_LENGTH then
-		local okSub, shortened = pcall(string.sub, sanitized, 1, ANNOUNCEMENT_MAX_TEXT_LENGTH)
-		if okSub and type(shortened) == "string" then
-			sanitized = shortened
-		else
-			sanitized = ""
-		end
-	end
-	return sanitized
+	local sanitized = SafeTrimAddonString(self, text, "")
+	return TruncateUtf8(sanitized, ANNOUNCEMENT_MAX_TEXT_LENGTH)
 end
 
 function QuestTogether:SanitizeAnnouncementExtraData(extraData)
 	local sanitized = {}
-	if type(extraData) ~= "table" or self:IsSecretValue(extraData) then
+	if type(extraData) ~= "table" or not self:CanAccessTable(extraData) then
 		return sanitized
 	end
 
-	local iconAsset = SafePrimitiveString(self, extraData.iconAsset or "", "")
-	local iconKind = SafePrimitiveString(self, extraData.iconKind or "", "")
-	local emoteToken = SafePrimitiveString(self, extraData.emoteToken or "", "")
+	local iconAsset = SafePrimitiveString(self, extraData.iconAsset, "")
+	local iconKind = SafePrimitiveString(self, extraData.iconKind, "")
+	local emoteToken = SafePrimitiveString(self, extraData.emoteToken, "")
 	if iconAsset ~= "" then
 		sanitized.iconAsset = iconAsset
 	end
@@ -313,12 +334,12 @@ function QuestTogether:SanitizeAnnouncementExtraData(extraData)
 end
 
 function QuestTogether:SanitizeAnnouncementEventData(eventData)
-	if type(eventData) ~= "table" or self:IsSecretValue(eventData) then
+	if type(eventData) ~= "table" or not self:CanAccessTable(eventData) then
 		return nil
 	end
 
-	local eventType = SafePrimitiveString(self, eventData.eventType or "", "")
-	local senderName = SafePrimitiveString(self, eventData.senderName or "", "")
+	local eventType = SafePrimitiveString(self, eventData.eventType, "")
+	local senderName = SafePrimitiveString(self, eventData.senderName, "")
 	local text = self:SanitizeAnnouncementText(eventData.text)
 	if eventType == "" or senderName == "" or text == "" then
 		return nil
@@ -336,14 +357,14 @@ function QuestTogether:SanitizeAnnouncementEventData(eventData)
 	return {
 		version = SafeNumber(self, eventData.version) or ANNOUNCEMENT_WIRE_VERSION,
 		eventType = SafePrimitiveString(self, eventType, ""),
-		senderGUID = SafePrimitiveString(self, eventData.senderGUID or "", ""),
-		classFile = SafePrimitiveString(self, eventData.classFile or "", ""),
+		senderGUID = SafePrimitiveString(self, eventData.senderGUID, ""),
+		classFile = SafePrimitiveString(self, eventData.classFile, ""),
 		senderName = senderName,
 		text = text,
 		questId = normalizedQuestId and SafePrimitiveString(self, normalizedQuestId, "") or "",
 		iconAsset = sanitizedExtraData.iconAsset or "",
 		iconKind = sanitizedExtraData.iconKind or "",
-		zoneName = SafePrimitiveString(self, eventData.zoneName or "", ""),
+		zoneName = SafePrimitiveString(self, eventData.zoneName, ""),
 		coordX = numericCoordX and string.format("%.1f", numericCoordX) or "",
 		coordY = numericCoordY and string.format("%.1f", numericCoordY) or "",
 		warMode = normalizedWarMode == nil and "" or (normalizedWarMode and "1" or "0"),
@@ -362,7 +383,8 @@ function QuestTogether:EncodePingRequestPayload(requestData)
 end
 
 function QuestTogether:DecodePingRequestPayload(payload)
-	if not payload or payload == "" then
+	payload = SafePrimitiveString(self, payload, "")
+	if payload == "" then
 		return nil
 	end
 
@@ -407,7 +429,8 @@ function QuestTogether:EncodePingResponsePayload(responseData)
 end
 
 function QuestTogether:DecodePingResponsePayload(payload)
-	if not payload or payload == "" then
+	payload = SafePrimitiveString(self, payload, "")
+	if payload == "" then
 		return nil
 	end
 
@@ -464,7 +487,8 @@ function QuestTogether:EncodeQuestCompareRequestPayload(requestData)
 end
 
 function QuestTogether:DecodeQuestCompareRequestPayload(payload)
-	if not payload or payload == "" then
+	payload = SafePrimitiveString(self, payload, "")
+	if payload == "" then
 		return nil
 	end
 
@@ -501,11 +525,12 @@ function QuestTogether:EncodeQuestCompareEntryPayload(entryData)
 		self:EscapePayload(entryData.isPushable and "1" or "0"),
 	}
 
-	return table.concat(fields, ",")
+	return FitPayloadText(self, fields, 6, QUEST_COMPARE_ENTRY_COMMAND)
 end
 
 function QuestTogether:DecodeQuestCompareEntryPayload(payload)
-	if not payload or payload == "" then
+	payload = SafePrimitiveString(self, payload, "")
+	if payload == "" then
 		return nil
 	end
 
@@ -564,7 +589,8 @@ function QuestTogether:EncodeQuestCompareDonePayload(doneData)
 end
 
 function QuestTogether:DecodeQuestCompareDonePayload(payload)
-	if not payload or payload == "" then
+	payload = SafePrimitiveString(self, payload, "")
+	if payload == "" then
 		return nil
 	end
 
@@ -588,12 +614,16 @@ function QuestTogether:DecodeQuestCompareDonePayload(payload)
 		return nil
 	end
 
+	local numericCount = SafeNumber(self, count)
+	if not numericCount or numericCount < 0 or numericCount ~= math.floor(numericCount) then
+		return nil
+	end
 	return {
 		version = version,
 		requestId = requestId,
 		senderName = senderName,
 		classFile = classFile,
-		count = SafeNumber(self, count) or 0,
+		count = numericCount,
 	}
 end
 
@@ -615,11 +645,12 @@ function QuestTogether:EncodeAnnouncementPayload(eventData)
 		self:EscapePayload(eventData.emoteToken or ""),
 	}
 
-	return table.concat(fields, ",")
+	return FitPayloadText(self, fields, 6, ANNOUNCEMENT_COMMAND)
 end
 
 function QuestTogether:DecodeAnnouncementPayload(payload)
-	if not payload or payload == "" then
+	payload = SafePrimitiveString(self, payload, "")
+	if payload == "" then
 		return nil
 	end
 
@@ -719,8 +750,29 @@ function QuestTogether:GetAnnouncementWireRoutes()
 	return routes
 end
 
+function QuestTogether:GetCommsDiagnostics()
+	local runtime = self:GetRuntimeWorkStateStore()
+	runtime.commsDiagnostics = runtime.commsDiagnostics or {}
+	return runtime.commsDiagnostics
+end
+
+function QuestTogether:RecordCommsDiagnostic(kind, detail)
+	local diagnostics = self:GetCommsDiagnostics()
+	diagnostics[kind] = (diagnostics[kind] or 0) + 1
+	if kind == "failedRoutes" or kind == "invalidMessages" then
+		diagnostics.lastFailure = detail
+	end
+	-- Keep every display decision: these are needed to explain a user's bubble.
+	-- Sample transport chatter, while retaining its exact aggregate counters.
+	local count = diagnostics[kind]
+	if kind == "acceptedAnnouncements" or kind == "suppressedAnnouncements" or count <= 5 or count % 100 == 0 then
+		self:Debugf("comms", "%s count=%d %s", kind, count, detail or "")
+	end
+end
+
 function QuestTogether:SendWireMessageToAnnouncementRoutes(wireMessage, debugContext)
-	if type(wireMessage) ~= "string" or wireMessage == "" then
+	wireMessage = SafePrimitiveString(self, wireMessage, "")
+	if wireMessage == "" or not self.isEnabled then
 		return false
 	end
 	if not self.API or not self.API.SendAddonMessage then
@@ -728,23 +780,52 @@ function QuestTogether:SendWireMessageToAnnouncementRoutes(wireMessage, debugCon
 	end
 
 	local contextLabel = SafeAddonString(self, debugContext or "wire message", "wire message")
+	if #wireMessage > ADDON_MESSAGE_MAX_BYTES or string.find(wireMessage, "\0", 1, true) then
+		self:RecordCommsDiagnostic(
+			"invalidMessages",
+			string.format("send rejected bytes=%d %s", #wireMessage, contextLabel)
+		)
+		return false
+	end
 	local routes = self:GetAnnouncementWireRoutes()
 	local sentCount = 0
 
 	for _, route in ipairs(routes) do
 		if route.requiresChannelJoin and not self:EnsureAnnouncementChannelJoined() then
-			self:Debugf("comms", "Skipping %s route=%s because channel join failed", contextLabel, route.distribution or "")
+			self:RecordCommsDiagnostic("failedRoutes", "channel join failed " .. contextLabel)
 		else
-			self.API.SendAddonMessage(self.commPrefix, wireMessage, route.distribution, route.target)
-			sentCount = sentCount + 1
+			-- Joining can replace a channel ID. Resolve its target after the join,
+			-- never from the cached route assembled before it.
+			local target = route.requiresChannelJoin and self:GetAnnouncementChannelTarget() or route.target
+			local ok, result =
+				pcall(self.API.SendAddonMessage, self.commPrefix, wireMessage, route.distribution, target)
+			if ok and self:CanAccessValue(result) and (result == 0 or result == true) then
+				sentCount = sentCount + 1
+				self:RecordCommsDiagnostic(
+					"sentRoutes",
+					string.format("route=%s bytes=%d %s", route.distribution, #wireMessage, contextLabel)
+				)
+			else
+				self:RecordCommsDiagnostic(
+					"failedRoutes",
+					string.format(
+						"route=%s bytes=%d result=%s %s",
+						route.distribution,
+						#wireMessage,
+						SafeDebugString(result),
+						contextLabel
+					)
+				)
+			end
 		end
 	end
 
 	return sentCount > 0
 end
 
-function QuestTogether:ShouldSuppressDuplicateCommMessage(sender, message)
+function QuestTogether:ShouldSuppressDuplicateCommMessage(sender, message, duplicateWindow)
 	local nowSeconds = self.API and self.API.GetTime and self.API.GetTime() or 0
+	duplicateWindow = duplicateWindow or COMM_DUPLICATE_WINDOW_SECONDS
 	self.recentCommMessageSignatures = self.recentCommMessageSignatures or {}
 
 	local signatures = self.recentCommMessageSignatures
@@ -754,15 +835,15 @@ function QuestTogether:ShouldSuppressDuplicateCommMessage(sender, message)
 	end
 	if signatureCount > COMM_DUPLICATE_PRUNE_THRESHOLD then
 		for signature, seenAt in pairs(signatures) do
-			if (nowSeconds - (seenAt or 0)) > COMM_DUPLICATE_WINDOW_SECONDS then
+			if (nowSeconds - (seenAt or 0)) > QUEST_COMPARE_TIMEOUT_SECONDS then
 				signatures[signature] = nil
 			end
 		end
 	end
 
-	local signature = SafeAddonString(self, sender or "", "") .. "|" .. SafeAddonString(self, message or "", "")
+	local signature = (self:NormalizeMemberName(sender) or "") .. "|" .. SafeAddonString(self, message or "", "")
 	local seenAt = signatures[signature]
-	if seenAt and (nowSeconds - seenAt) <= COMM_DUPLICATE_WINDOW_SECONDS then
+	if seenAt and nowSeconds >= seenAt and (nowSeconds - seenAt) <= duplicateWindow then
 		return true
 	end
 
@@ -771,13 +852,9 @@ function QuestTogether:ShouldSuppressDuplicateCommMessage(sender, message)
 end
 
 function QuestTogether:AnnouncementChannelChatFilter(_, _, ...)
-	for argumentIndex = 1, select("#", ...) do
-		if MatchesAnnouncementChannelName(self, select(argumentIndex, ...)) then
-			return true
-		end
-	end
-
-	return false
+	-- Only channel metadata identifies this channel. Scanning message text and
+	-- player names both hides unrelated conversations and touches secret data.
+	return MatchesAnnouncementChannelName(self, select(4, ...)) or MatchesAnnouncementChannelName(self, select(9, ...))
 end
 
 function QuestTogether:RegisterAnnouncementChannelChatFilters()
@@ -815,7 +892,12 @@ function QuestTogether:UnregisterAnnouncementChannelChatFilters()
 end
 
 function QuestTogether:HideAnnouncementChannelFromChatWindows()
-	if not self.API or not self.API.GetNumChatWindows or not self.API.GetChatFrameByID or not self.API.RemoveChatWindowChannel then
+	if
+		not self.API
+		or not self.API.GetNumChatWindows
+		or not self.API.GetChatFrameByID
+		or not self.API.RemoveChatWindowChannel
+	then
 		return
 	end
 
@@ -843,6 +925,7 @@ function QuestTogether:EnsureAnnouncementChannelJoined()
 		end
 		return true
 	end
+	self.announcementChannelLocalID = nil
 
 	if not self.API or not self.API.JoinPermanentChannel then
 		self:Debug("JoinPermanentChannel API unavailable", "comms")
@@ -878,21 +961,42 @@ end
 
 function QuestTogether:LeaveAnnouncementChannel()
 	if self.API and self.API.LeaveChannelByName then
-		self:Debugf("comms", "Leaving announcement channel name=%s", SafeAddonString(self, self.announcementChannelName))
+		self:Debugf(
+			"comms",
+			"Leaving announcement channel name=%s",
+			SafeAddonString(self, self.announcementChannelName)
+		)
 		-- Channel leave can fail if Blizzard already removed it; no need to hard fail disable.
 		pcall(self.API.LeaveChannelByName, self.announcementChannelName)
 	end
 	self.announcementChannelLocalID = nil
+	self:ResetCommsState()
 	if self.UnregisterAnnouncementChannelChatFilters then
 		self:UnregisterAnnouncementChannelChatFilters()
 	end
 end
 
+function QuestTogether:ResetCommsState()
+	self.pendingPingRequests = {}
+	self.pendingQuestCompareRequests = {}
+	self.recentCommMessageSignatures = {}
+end
+
 function QuestTogether:GetPlayerPingMetadata()
 	local fullName = self:GetPlayerFullName() or self:GetPlayerName() or "Unknown"
-	local unitName, unitRealm = self.API.UnitFullName and self.API.UnitFullName("player")
-	local realmName = unitRealm or (self.API.GetRealmName and self.API.GetRealmName()) or ""
-	local className, classFile = self.API.UnitClass and self.API.UnitClass("player")
+	local unitRealm
+	if self.API.UnitFullName then
+		local unitName
+		unitName, unitRealm = self.API.UnitFullName("player")
+	end
+	local realmName = SafeTrimAddonString(self, unitRealm, "")
+	if realmName == "" then
+		realmName = self.API.GetRealmName and self.API.GetRealmName() or ""
+	end
+	local className, classFile
+	if self.API.UnitClass then
+		className, classFile = self.API.UnitClass("player")
+	end
 	local raceName = nil
 	if self.API.UnitRace then
 		raceName = self.API.UnitRace("player")
@@ -981,7 +1085,8 @@ function QuestTogether:BuildAnnouncementEventForUnit(unitToken, eventType, text)
 	end
 
 	local unitName, unitRealm = self.API.UnitFullName(unitToken)
-	if not unitName or unitName == "" then
+	unitName = SafeTrimAddonString(self, unitName, "")
+	if unitName == "" then
 		return nil
 	end
 
@@ -993,7 +1098,9 @@ function QuestTogether:BuildAnnouncementEventForUnit(unitToken, eventType, text)
 			senderGUID = SafeAddonString(self, guidValue or "", "")
 		end
 	end
-	local senderName = SafeAddonString(self, unitName, "") .. "-" .. SafeAddonString(self, NormalizeRealmName(self, unitRealm), "")
+	local senderName = SafeAddonString(self, unitName, "")
+		.. "-"
+		.. SafeAddonString(self, NormalizeRealmName(self, unitRealm), "")
 
 	return self:SanitizeAnnouncementEventData({
 		version = ANNOUNCEMENT_WIRE_VERSION,
@@ -1025,7 +1132,8 @@ end
 
 function QuestTogether:BuildQuestCompareEntries()
 	local entries = {}
-	local numQuestLogEntries = SafeNumber(self, self.API.GetNumQuestLogEntries and self.API.GetNumQuestLogEntries()) or 0
+	local numQuestLogEntries = SafeNumber(self, self.API.GetNumQuestLogEntries and self.API.GetNumQuestLogEntries())
+		or 0
 
 	for questLogIndex = 1, numQuestLogEntries do
 		local questInfo = self.API.GetQuestLogInfo and self.API.GetQuestLogInfo(questLogIndex)
@@ -1120,6 +1228,15 @@ function QuestTogether:HandleQuestCompareEntry(entryData)
 	if pending.targetName ~= senderName then
 		return false
 	end
+	local questId = self:NormalizeQuestID(entryData.questId)
+	if not questId then
+		return false
+	end
+	pending.entriesByQuestId = pending.entriesByQuestId or {}
+	if pending.entriesByQuestId[questId] then
+		return false
+	end
+	pending.entriesByQuestId[questId] = true
 
 	if type(entryData.classFile) == "string" and entryData.classFile ~= "" then
 		pending.classFile = entryData.classFile
@@ -1127,6 +1244,19 @@ function QuestTogether:HandleQuestCompareEntry(entryData)
 	pending.count = (pending.count or 0) + 1
 	if self.PrintQuestCompareMessage then
 		self:PrintQuestCompareMessage(senderName, entryData, pending.classFile)
+	end
+	self:TryCompleteQuestCompare(entryData.requestId)
+	return true
+end
+
+function QuestTogether:TryCompleteQuestCompare(requestId)
+	local pending = self.pendingQuestCompareRequests and self.pendingQuestCompareRequests[requestId]
+	if not pending or pending.expectedCount == nil or (pending.count or 0) < pending.expectedCount then
+		return false
+	end
+	self.pendingQuestCompareRequests[requestId] = nil
+	if self.PrintQuestCompareDone then
+		self:PrintQuestCompareDone(pending.targetName, pending.count or 0, pending.classFile)
 	end
 	return true
 end
@@ -1146,14 +1276,18 @@ function QuestTogether:HandleQuestCompareDone(doneData)
 	if pending.targetName ~= senderName then
 		return false
 	end
+	local expectedCount = SafeNumber(self, doneData.count)
+	if not expectedCount or expectedCount < 0 or expectedCount ~= math.floor(expectedCount) then
+		return false
+	end
 
 	if type(doneData.classFile) == "string" and doneData.classFile ~= "" then
 		pending.classFile = doneData.classFile
 	end
-	self.pendingQuestCompareRequests[doneData.requestId] = nil
-	if self.PrintQuestCompareDone then
-		self:PrintQuestCompareDone(senderName, doneData.count, pending.classFile)
-	end
+	-- The completion marker can arrive on one route before entries from the
+	-- other. Retain the request until the advertised unique entries arrive.
+	pending.expectedCount = expectedCount
+	self:TryCompleteQuestCompare(doneData.requestId)
 	return true
 end
 
@@ -1188,15 +1322,25 @@ function QuestTogether:RequestQuestCompare(speakerName)
 
 	local requestId = self:BuildChannelRequestId("qcmp")
 	self.pendingQuestCompareRequests = self.pendingQuestCompareRequests or {}
-	self.pendingQuestCompareRequests[requestId] = {
+	local pendingRequest = {
 		targetName = targetName,
 		classFile = self:GetGroupedSenderClassFile(targetName),
 		count = 0,
+		entriesByQuestId = {},
 	}
+	self.pendingQuestCompareRequests[requestId] = pendingRequest
 	self.API.Delay(QUEST_COMPARE_TIMEOUT_SECONDS, function()
-		local pending = QuestTogether.pendingQuestCompareRequests and QuestTogether.pendingQuestCompareRequests[requestId]
-		if pending then
-			QuestTogether.pendingQuestCompareRequests[requestId] = nil
+		local pending = self.pendingQuestCompareRequests and self.pendingQuestCompareRequests[requestId]
+		if pending == pendingRequest then
+			self.pendingQuestCompareRequests[requestId] = nil
+			if self.isEnabled and self.PrintConsoleAnnouncement then
+				self:PrintConsoleAnnouncement(
+					string.format("Quest comparison timed out (%d quests received).", pending.count or 0),
+					pending.targetName,
+					pending.classFile,
+					"QUEST_PROGRESS"
+				)
+			end
 		end
 	end)
 
@@ -1222,6 +1366,8 @@ function QuestTogether:RequestQuestCompare(speakerName)
 end
 
 function QuestTogether:IsAnnouncementChannelEvent(channel, localID, name)
+	channel = SafePrimitiveString(self, channel, "")
+	name = SafePrimitiveString(self, name, "")
 	if GROUP_ANNOUNCEMENT_DISTRIBUTIONS[channel] then
 		return true
 	end
@@ -1230,8 +1376,8 @@ function QuestTogether:IsAnnouncementChannelEvent(channel, localID, name)
 		return false
 	end
 
-	if type(name) == "string" and name ~= "" and name == self.announcementChannelName then
-		return true
+	if name ~= "" then
+		return name == self.announcementChannelName
 	end
 
 	local expectedLocalID = SafeChannelNumber(self, self.announcementChannelLocalID)
@@ -1246,7 +1392,11 @@ function QuestTogether:SendAnnouncementEvent(eventType, text, questId, extraData
 
 	local eventData = self:BuildLocalAnnouncementEvent(eventType, text, questId, extraData)
 	if not eventData then
-		self:Debugf("comms", "Failed to build local announcement event eventType=%s", SafeAddonString(self, eventType, ""))
+		self:Debugf(
+			"comms",
+			"Failed to build local announcement event eventType=%s",
+			SafeAddonString(self, eventType, "")
+		)
 		return false
 	end
 
@@ -1322,7 +1472,14 @@ function QuestTogether:SendAnnouncementWireEvent(eventData)
 		return false
 	end
 
-	local wireMessage = self:SerializeWireMessage(ANNOUNCEMENT_COMMAND, self:EncodeAnnouncementPayload(eventData))
+	local payload = self:EncodeAnnouncementPayload(eventData)
+	-- Metadata itself can exhaust the packet. Do not report a successful send
+	-- for an announcement that the receiver must reject for having no text.
+	if not self:DecodeAnnouncementPayload(payload) then
+		self:RecordCommsDiagnostic("invalidMessages", "announcement metadata leaves no room for text")
+		return false
+	end
+	local wireMessage = self:SerializeWireMessage(ANNOUNCEMENT_COMMAND, payload)
 	return self:SendWireMessageToAnnouncementRoutes(
 		wireMessage,
 		"announcement eventType="
@@ -1340,10 +1497,11 @@ function QuestTogether:SendPingRequest()
 	local requestId = self:BuildChannelRequestId("ping")
 	local requesterName = self:GetPlayerFullName() or self:GetPlayerName() or ""
 	self.pendingPingRequests = self.pendingPingRequests or {}
-	self.pendingPingRequests[requestId] = true
+	local pendingRequest = { responders = {} }
+	self.pendingPingRequests[requestId] = pendingRequest
 	self.API.Delay(PING_REQUEST_TIMEOUT_SECONDS, function()
-		if QuestTogether.pendingPingRequests then
-			QuestTogether.pendingPingRequests[requestId] = nil
+		if self.pendingPingRequests and self.pendingPingRequests[requestId] == pendingRequest then
+			self.pendingPingRequests[requestId] = nil
 		end
 	end)
 
@@ -1352,7 +1510,12 @@ function QuestTogether:SendPingRequest()
 		requesterName = requesterName,
 	}
 	local wireMessage = self:SerializeWireMessage(PING_REQUEST_COMMAND, self:EncodePingRequestPayload(requestData))
-	if not self:SendWireMessageToAnnouncementRoutes(wireMessage, "ping request id=" .. SafeAddonString(self, requestId, "")) then
+	if
+		not self:SendWireMessageToAnnouncementRoutes(
+			wireMessage,
+			"ping request id=" .. SafeAddonString(self, requestId, "")
+		)
+	then
 		self.pendingPingRequests[requestId] = nil
 		return false, "Unable to send ping request over any QuestTogether comm route."
 	end
@@ -1391,9 +1554,23 @@ function QuestTogether:HandlePingResponse(responseData)
 	end
 
 	self.pendingPingRequests = self.pendingPingRequests or {}
-	if not self.pendingPingRequests[responseData.requestId] then
+	local pending = self.pendingPingRequests[responseData.requestId]
+	if not pending then
 		return false
 	end
+	local senderName = self:NormalizeMemberName(responseData.senderName)
+	if not senderName then
+		return false
+	end
+	if type(pending) ~= "table" then
+		pending = { responders = {} }
+		self.pendingPingRequests[responseData.requestId] = pending
+	end
+	pending.responders = pending.responders or {}
+	if pending.responders[senderName] then
+		return false
+	end
+	pending.responders[senderName] = true
 
 	if self.PrintPingResponse then
 		self:PrintPingResponse(responseData)
@@ -1474,6 +1651,10 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
 	end
 	local allowedByOption = self:ShouldDisplayAnnouncementType(eventData.eventType)
 	if not allowedByOption then
+		self:RecordCommsDiagnostic(
+			"suppressedAnnouncements",
+			"option event=" .. eventData.eventType .. " quest=" .. eventData.questId
+		)
 		return false
 	end
 
@@ -1496,17 +1677,24 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
 	if not isLocal and not hasNearbyNameplate and self.FindNearbyPlayerUnitTokenForSender then
 		nearbyUnitToken = self:FindNearbyPlayerUnitTokenForSender(eventData.senderGUID, senderName)
 	end
-	if not isLocal and not hasNearbyNameplate and nearbyUnitToken == nil and self.IsAnnouncementSenderNearbyByLocation then
+	if
+		not isLocal
+		and not hasNearbyNameplate
+		and nearbyUnitToken == nil
+		and self.IsAnnouncementSenderNearbyByLocation
+	then
 		nearbyByLocation = self:IsAnnouncementSenderNearbyByLocation(eventData)
 	end
 	hasNearbySignal = hasNearbyNameplate or nearbyUnitToken ~= nil or nearbyByLocation
 	isGrouped = self:IsGroupedSender(senderName)
-	local forceAllChatLogs = not isLocal
-		and self:GetOption("showChatLogs")
-		and self:GetOption("devLogAllAnnouncements")
+	local forceAllChatLogs = not isLocal and self:GetOption("showChatLogs") and self:GetOption("devLogAllAnnouncements")
 	local allowRemoteDisplay = isLocal or self:ShouldShowAnnouncementsForRemoteSender(senderName, hasNearbySignal)
 
 	if not allowRemoteDisplay and not forceAllChatLogs then
+		self:RecordCommsDiagnostic(
+			"suppressedAnnouncements",
+			"scope sender=" .. senderName .. " event=" .. eventData.eventType .. " quest=" .. eventData.questId
+		)
 		return false
 	end
 
@@ -1530,13 +1718,13 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
 		and allowRemoteDisplay
 		and hasNearbySignal
 		and self:ShouldPlayRemoteEmoteForAnnouncement(eventData)
-		then
-			local emoteTarget = nearbyUnitToken
-			if not emoteTarget and hasNearbyNameplate and nearbyNameplate and nearbyNameplate.GetUnit then
-				emoteTarget = nearbyNameplate:GetUnit()
-			end
-			self:PlayRemoteCompletionEmote(eventData, emoteTarget, senderName)
+	then
+		local emoteTarget = nearbyUnitToken
+		if not emoteTarget and hasNearbyNameplate and nearbyNameplate and nearbyNameplate.GetUnit then
+			emoteTarget = nearbyNameplate:GetUnit()
 		end
+		self:PlayRemoteCompletionEmote(eventData, emoteTarget, senderName)
+	end
 
 	if self:GetOption("showChatBubbles") then
 		if isLocal then
@@ -1555,10 +1743,24 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
 				eventData.text,
 				eventData.eventType,
 				eventData.iconAsset,
-				eventData.iconKind
+				eventData.iconKind,
+				senderName
 			)
 		end
 	end
+	self:RecordCommsDiagnostic(
+		"acceptedAnnouncements",
+		string.format(
+			"local=%s sender=%s event=%s quest=%s bubbles=%s hideOwn=%s text=%s",
+			tostring(isLocal == true),
+			senderName,
+			eventData.eventType,
+			eventData.questId,
+			tostring(self:GetOption("showChatBubbles")),
+			tostring(self:GetOption("hideMyOwnChatBubbles")),
+			string.sub(eventData.text, 1, 220)
+		)
+	)
 
 	return true
 end
@@ -1570,7 +1772,11 @@ function QuestTogether:PublishAnnouncementEvent(eventType, text, questId, extraD
 
 	local eventData = self:BuildLocalAnnouncementEvent(eventType, text, questId, extraData)
 	if not eventData then
-		self:Debugf("comms", "PublishAnnouncementEvent dropped eventType=%s due to empty payload", SafeAddonString(self, eventType, ""))
+		self:Debugf(
+			"comms",
+			"PublishAnnouncementEvent dropped eventType=%s due to empty payload",
+			SafeAddonString(self, eventType, "")
+		)
 		return false
 	end
 
@@ -1587,11 +1793,11 @@ function QuestTogether:CHAT_MSG_ADDON(_, prefix, message, channel, sender, _, _,
 end
 
 function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID, name)
-	if prefix ~= self.commPrefix then
+	if not self.isEnabled or SafePrimitiveString(self, prefix, "") ~= self.commPrefix then
 		return
 	end
-	local safeMessage = SafeAddonString(self, message, "")
-	local safeTransportSender = SafeTrimAddonString(self, sender or "", "")
+	local safeMessage = SafePrimitiveString(self, message, "")
+	local safeTransportSender = SafeTrimAddonString(self, sender, "")
 	local transportSenderName = safeTransportSender ~= "" and self:NormalizeMemberName(safeTransportSender) or nil
 	if not transportSenderName then
 		self:Debug("Rejected comm payload without an accessible transport sender", "comms")
@@ -1606,13 +1812,26 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 	if not self:IsAnnouncementChannelEvent(channel, localID, name) then
 		return
 	end
+	self:RecordCommsDiagnostic(
+		"receivedMessages",
+		string.format(
+			"sender=%s route=%s bytes=%d",
+			transportSenderName,
+			SafePrimitiveString(self, channel, ""),
+			#safeMessage
+		)
+	)
 
 	local command, payload = self:DeserializeWireMessage(safeMessage)
 	if not command then
 		self:Debug("Failed to deserialize incoming comm payload", "comms")
 		return
 	end
-	if self:ShouldSuppressDuplicateCommMessage(safeTransportSender, safeMessage) then
+	local duplicateWindow = (command == PING_REQUEST_COMMAND or command == QUEST_COMPARE_REQUEST_COMMAND)
+			and QUEST_COMPARE_TIMEOUT_SECONDS
+		or COMM_DUPLICATE_WINDOW_SECONDS
+	if self:ShouldSuppressDuplicateCommMessage(safeTransportSender, safeMessage, duplicateWindow) then
+		self:RecordCommsDiagnostic("duplicateMessages", "sender=" .. transportSenderName .. " command=" .. command)
 		return
 	end
 
@@ -1685,5 +1904,4 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		self:HandleQuestCompareDone(doneData)
 		return
 	end
-
 end

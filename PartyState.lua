@@ -32,7 +32,10 @@ local function SafeMatch(text, pattern)
 end
 
 local function NormalizeRealmName(addon, realmName)
-	if not realmName or realmName == "" then
+	if not addon:CanAccessValue(realmName) then
+		return nil
+	end
+	if realmName == nil or realmName == "" then
 		realmName = addon.API.GetRealmName() or ""
 	end
 	if addon and addon.SafeStripWhitespace then
@@ -57,7 +60,8 @@ local function SortNames(nameList)
 end
 
 function QuestTogether:NormalizeMemberName(name)
-	if not name or name == "" then
+	name = self:SafeTrimString(name, "")
+	if name == "" then
 		return nil
 	end
 
@@ -68,17 +72,22 @@ function QuestTogether:NormalizeMemberName(name)
 	else
 		realmName = NormalizeRealmName(self, realmName)
 	end
+	if not realmName or realmName == "" then
+		return nil
+	end
 
-	local normalized = SafeText(baseName, "") .. "-" .. SafeText(realmName, "")
+	local normalized = baseName .. "-" .. realmName
 	return normalized
 end
 
 function QuestTogether:GetPlayerFullName()
 	local name, realm = self.API.UnitFullName("player")
-	if not name then
+	name = self:SafeTrimString(name, "")
+	realm = NormalizeRealmName(self, realm)
+	if name == "" or not realm or realm == "" then
 		return nil
 	end
-	return SafeText(name, "") .. "-" .. SafeText(NormalizeRealmName(self, realm), "")
+	return name .. "-" .. realm
 end
 
 function QuestTogether:InitializePartyState()
@@ -94,8 +103,12 @@ local function AddUnitToRoster(addon, unitToken, membersByName, orderedNames)
 
 	local fullName
 	local unitName, unitRealm = addon.API.UnitFullName(unitToken)
-	if unitName then
-		fullName = SafeText(unitName, "") .. "-" .. SafeText(NormalizeRealmName(addon, unitRealm), "")
+	unitName = addon:SafeTrimString(unitName, "")
+	if unitName ~= "" then
+		unitRealm = NormalizeRealmName(addon, unitRealm)
+		if unitRealm and unitRealm ~= "" then
+			fullName = unitName .. "-" .. unitRealm
+		end
 	else
 		fullName = addon:NormalizeMemberName(addon.API.UnitName(unitToken))
 	end
@@ -105,10 +118,11 @@ local function AddUnitToRoster(addon, unitToken, membersByName, orderedNames)
 	end
 
 	local _, classFile = addon.API.UnitClass(unitToken)
+	classFile = addon:SafeTrimString(classFile, "")
 	membersByName[fullName] = {
 		fullName = fullName,
 		displayName = addon:GetShortDisplayName(fullName),
-		classFile = classFile,
+		classFile = classFile ~= "" and classFile or nil,
 	}
 	orderedNames[#orderedNames + 1] = fullName
 end

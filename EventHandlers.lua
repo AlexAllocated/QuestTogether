@@ -60,7 +60,16 @@ DrainQueuedQuestLogTasks = function(addon)
 	for index = 1, #queuedTasks do
 		local taskFn = queuedTasks[index]
 		if type(taskFn) == "function" then
-			taskFn()
+			-- One transient API failure must not discard the rest of this batch.
+			local ok, err
+			if addon.RunGuardedCallback then
+				ok, err = addon:RunGuardedCallback("quest_log_task", taskFn)
+			else
+				ok, err = pcall(taskFn)
+			end
+			if not ok and addon.Debugf then
+				addon:Debugf("QUEST", "Quest log task failed: %s", SafeText(err, "unknown error"))
+			end
 		end
 	end
 
@@ -103,7 +112,8 @@ function QuestTogether:GetObjectiveProgressIdentity(objectiveText)
 		return nil
 	end
 
-	local okAmounts, withoutAmounts = pcall(string.gsub, normalizedText, "%d+%s*/%s*%d+", "#/#")
+	-- A changed target can be a new quest stage even when its label is reused.
+	local okAmounts, withoutAmounts = pcall(string.gsub, normalizedText, "%d+%s*/%s*(%d+)", "#/%1")
 	if not okAmounts or type(withoutAmounts) ~= "string" then
 		return nil
 	end
@@ -138,6 +148,62 @@ function QuestTogether:DidObjectiveProgressIncrease(oldText, oldValue, newText, 
 	end
 
 	return currentValue > previousValue
+end
+
+function QuestTogether:UpdateTrackedObjectiveProgress(questData, objectiveIndex, objectiveText, currentValue, questId)
+	questData.objectives = questData.objectives or {}
+	questData.objectiveValues = questData.objectiveValues or {}
+	questData.objectiveProgressHighWater = questData.objectiveProgressHighWater or {}
+
+	local oldText = questData.objectives[objectiveIndex]
+	local oldValue = ResolveObjectiveProgressValue(oldText, questData.objectiveValues[objectiveIndex])
+	local oldIdentity = self:GetObjectiveProgressIdentity(oldText)
+	local identity = self:GetObjectiveProgressIdentity(objectiveText)
+	local progressValue = ResolveObjectiveProgressValue(objectiveText, currentValue)
+	local highWaterByIdentity = questData.objectiveProgressHighWater[objectiveIndex] or {}
+	questData.objectiveProgressHighWater[objectiveIndex] = highWaterByIdentity
+
+	if oldIdentity and oldValue ~= nil then
+		highWaterByIdentity[oldIdentity] = math.max(highWaterByIdentity[oldIdentity] or oldValue, oldValue)
+	end
+	local previousHighWater = identity and highWaterByIdentity[identity] or nil
+	local shouldAnnounce = oldText ~= objectiveText
+		and oldIdentity ~= nil
+		and oldIdentity == identity
+		and oldValue ~= nil
+		and progressValue ~= nil
+		and previousHighWater ~= nil
+		and progressValue > previousHighWater
+		and self:ShouldPublishObjectiveProgress(progressValue)
+
+	if identity and progressValue ~= nil then
+		highWaterByIdentity[identity] = math.max(previousHighWater or progressValue, progressValue)
+	end
+	if oldText ~= nil and oldText ~= objectiveText and self.Debugf then
+		local reason
+		if shouldAnnounce then
+			reason = "advanced"
+		elseif oldIdentity ~= identity then
+			reason = "identity_changed"
+		elseif progressValue ~= nil and oldValue ~= nil and progressValue < oldValue then
+			reason = "regressed"
+		elseif progressValue ~= nil and oldValue ~= nil and progressValue > oldValue then
+			reason = "replayed_milestone"
+		end
+		if reason then
+			self:Debugf(
+				"QUEST", "objective_state questId=%s slot=%d reason=%s previous=%s current=%s highWater=%s identity=%s",
+				SafeText(questId, "?"), objectiveIndex, reason, SafeText(oldValue, "?"),
+				SafeText(progressValue, "?"), SafeText(previousHighWater, "?"), SafeText(identity, "?")
+			)
+		end
+	end
+	-- Keep the displayed snapshot current, but never replay a milestone after an
+	-- API rollback, disappearing objective row, or temporary objective rewrite.
+	-- A newly accepted quest gets a new tracker and a fresh milestone history.
+	questData.objectives[objectiveIndex] = objectiveText
+	questData.objectiveValues[objectiveIndex] = progressValue
+	return shouldAnnounce and true or false
 end
 
 function QuestTogether:PickRandomCompletionEmote()
@@ -262,7 +328,19 @@ function QuestTogether:BuildTrackedQuestCompletionData(questId)
 		return nil
 	end
 
-	local completionData = self:BuildTrackedQuestRemovalData(questId) or {
+	local completionData = self:BuildTrackedQuestRemovalData(questId)
+	local retiredData = self.retiredQuestIds and self.retiredQuestIds[questId]
+	local previousRemoval = type(retiredData) == "table" and retiredData.removalData or nil
+	if not completionData and previousRemoval then
+		completionData = {
+			questId = questId,
+			title = previousRemoval.title,
+			taskAnnouncementType = previousRemoval.taskAnnouncementType,
+			iconAsset = previousRemoval.iconAsset,
+			iconKind = previousRemoval.iconKind,
+		}
+	end
+	completionData = completionData or {
 		questId = questId,
 		title = self:GetQuestTitle(questId),
 		taskAnnouncementType = self:GetTaskAnnouncementType(questId),
@@ -293,6 +371,12 @@ function QuestTogether:ClearTrackedQuestState(questId)
 	local tracker = self:GetPlayerTracker()
 	tracker[questId] = nil
 	self.pendingQuestRemovals[questId] = nil
+	if self.questsCompleted[questId] and self.GetTaskAreaStateStore then
+		-- This is addon-owned state, so it is safe to clear while refresh work is
+		-- restricted. Otherwise the deferred refresh mistakes completion for exit.
+		self:GetTaskAreaStateStore("world")[questId] = nil
+		self:GetTaskAreaStateStore("bonus")[questId] = nil
+	end
 	self:RefreshTaskAreaStates(true)
 	self.questsCompleted[questId] = nil
 end
@@ -315,6 +399,10 @@ function QuestTogether:ResolvePendingQuestRemoval(questId)
 	local iconKind = (completionData and completionData.iconKind) or removalData.iconKind
 
 	if completed then
+		local retiredData = self.retiredQuestIds and self.retiredQuestIds[questId]
+		if type(retiredData) == "table" then
+			retiredData.completionAnnounced = true
+		end
 		self:HandleQuestCompleted(questTitle, questId, {
 			iconAsset = iconAsset,
 			iconKind = iconKind,
@@ -347,7 +435,26 @@ function QuestTogether:QUEST_ACCEPTED(_, questId)
 		return
 	end
 
+	-- A repeatable quest can be accepted before the previous removal timer runs.
+	-- Finish the old lifecycle before installing the new acceptance token.
+	if self.pendingQuestRemovals[normalizedQuestId] then
+		self:ResolvePendingQuestRemoval(normalizedQuestId)
+	end
+	if self.retiredQuestIds and self.retiredQuestIds[normalizedQuestId] then
+		self:GetPlayerTracker()[normalizedQuestId] = nil
+		self.retiredQuestIds[normalizedQuestId] = nil
+	end
+	self.questsCompleted[normalizedQuestId] = nil
+	self.pendingQuestAcceptances = self.pendingQuestAcceptances or {}
+	local acceptance = {}
+	self.pendingQuestAcceptances[normalizedQuestId] = acceptance
+	self:Debugf("QUEST", "quest_lifecycle questId=%s transition=acceptance_queued", tostring(normalizedQuestId))
+
 	self:QueueQuestLogTask(function()
+		if not self.pendingQuestAcceptances or self.pendingQuestAcceptances[normalizedQuestId] ~= acceptance then
+			return
+		end
+		self.pendingQuestAcceptances[normalizedQuestId] = nil
 		local tracker = self:GetPlayerTracker()
 		if tracker[normalizedQuestId] ~= nil then
 			return
@@ -355,38 +462,42 @@ function QuestTogether:QUEST_ACCEPTED(_, questId)
 
 		local taskAnnouncementType = self:GetTaskAnnouncementType(normalizedQuestId)
 		local questLogIndex = self.API.GetQuestLogIndexForQuestID
-			and self.API.GetQuestLogIndexForQuestID(normalizedQuestId)
-				if not questLogIndex then
-					if taskAnnouncementType then
-						local taskQuestTitle = self:GetQuestTitle(normalizedQuestId)
-						self:WatchQuest(normalizedQuestId, { title = taskQuestTitle })
-						self:RefreshTaskAreaStates(true)
-					end
-					return
+			and self:SafeToNumber(self.API.GetQuestLogIndexForQuestID(normalizedQuestId))
+		if not questLogIndex or questLogIndex <= 0 then
+			if taskAnnouncementType then
+				local taskQuestTitle = self:GetQuestTitle(normalizedQuestId)
+				self:WatchQuest(normalizedQuestId, { title = taskQuestTitle })
+				self:RefreshTaskAreaStates(true)
 			end
+			return
+		end
 
 		local questInfo = self.API.GetQuestLogInfo and self.API.GetQuestLogInfo(questLogIndex)
 		if not questInfo then
 			return
 		end
-
+		-- A quest-log slot may have been reused since the cached index was read.
+		if questInfo.questID ~= nil and NormalizeQuestId(self, questInfo.questID) ~= normalizedQuestId then
+			return
+		end
 		if questInfo.isHidden and not taskAnnouncementType then
 			return
 		end
 
-			if not taskAnnouncementType then
-				self:PublishAnnouncementEvent(
-					"QUEST_ACCEPTED",
-					"Quest Accepted: " .. SafeText(questInfo.title, "Unknown"),
+		if not taskAnnouncementType then
+			self:PublishAnnouncementEvent(
+				"QUEST_ACCEPTED",
+				"Quest Accepted: " .. SafeText(questInfo.title, "Unknown"),
 				normalizedQuestId
 			)
 		end
 
-			self:WatchQuest(normalizedQuestId, questInfo)
-			if taskAnnouncementType then
-				self:RefreshTaskAreaStates(true)
-			end
-		end)
+		self:WatchQuest(normalizedQuestId, questInfo)
+		self:Debugf("QUEST", "quest_lifecycle questId=%s transition=accepted title=%s", tostring(normalizedQuestId), SafeText(questInfo.title))
+		if taskAnnouncementType then
+			self:RefreshTaskAreaStates(true)
+		end
+	end)
 end
 
 function QuestTogether:QUEST_TURNED_IN(_, questId)
@@ -395,9 +506,25 @@ function QuestTogether:QUEST_TURNED_IN(_, questId)
 		return
 	end
 
+	self.retiredQuestIds = self.retiredQuestIds or {}
+	local retiredData = self.retiredQuestIds[questId] or {}
+	self.retiredQuestIds[questId] = retiredData
+	if self.pendingQuestAcceptances then
+		self.pendingQuestAcceptances[questId] = nil
+	end
+	if retiredData.completionAnnounced then
+		return
+	end
+	self:Debugf("QUEST", "quest_lifecycle questId=%s transition=turned_in pendingRemoval=%s", tostring(questId), tostring(self.pendingQuestRemovals[questId] ~= nil))
+
 	local completionData = self:BuildTrackedQuestCompletionData(questId)
 	self.questsCompleted[questId] = completionData
 	if self.pendingQuestRemovals[questId] then
+		self:ResolvePendingQuestRemoval(questId)
+	elseif not self:GetPlayerTracker()[questId] and retiredData.removalData then
+		-- QUEST_TURNED_IN can arrive after the one-frame removal fallback has
+		-- already drained. Keep enough owned data to still publish completion.
+		self.pendingQuestRemovals[questId] = retiredData.removalData
 		self:ResolvePendingQuestRemoval(questId)
 	end
 end
@@ -408,15 +535,25 @@ function QuestTogether:QUEST_REMOVED(_, questId)
 		return
 	end
 
+	if self.pendingQuestAcceptances then
+		self.pendingQuestAcceptances[questId] = nil
+	end
+	self.retiredQuestIds = self.retiredQuestIds or {}
+	local retiredData = self.retiredQuestIds[questId] or {}
+	self.retiredQuestIds[questId] = retiredData
 	local removalData = self:BuildTrackedQuestRemovalData(questId)
-	if not removalData then
+	self:Debugf("QUEST", "quest_lifecycle questId=%s transition=removed tracked=%s", tostring(questId), tostring(removalData ~= nil))
+	if not removalData or retiredData.completionAnnounced then
 		return
 	end
 
+	retiredData.removalData = removalData
 	self.pendingQuestRemovals[questId] = removalData
 	self.API.Delay(0, function()
-		if QuestTogether.pendingQuestRemovals and QuestTogether.pendingQuestRemovals[questId] then
-			QuestTogether:ResolvePendingQuestRemoval(questId)
+		-- Compare the actual removal instance: an older timer must not consume a
+		-- new acceptance/removal cycle for the same repeatable quest ID.
+		if self.pendingQuestRemovals and self.pendingQuestRemovals[questId] == removalData then
+			self:ResolvePendingQuestRemoval(questId)
 		end
 	end)
 end
@@ -437,7 +574,11 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 
 		for questId, questData in pairs(tracker) do
 			local normalizedQuestId = NormalizeQuestId(self, questId)
-			if normalizedQuestId then
+			if normalizedQuestId
+				and not self.pendingQuestRemovals[normalizedQuestId]
+				and not self.questsCompleted[normalizedQuestId]
+				and not (self.retiredQuestIds and self.retiredQuestIds[normalizedQuestId])
+			then
 				questId = normalizedQuestId
 				local questLogIndex = self.GetQuestLogIndexForQuest and self:GetQuestLogIndexForQuest(questId)
 				if questLogIndex then
@@ -448,37 +589,21 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 						local objectiveText, _, _, currentValue =
 							self:GetNormalizedQuestObjectiveInfo(questId, objectiveIndex, false)
 
-						questData.objectiveValues = questData.objectiveValues or {}
-						local oldObjectiveText = questData.objectives[objectiveIndex]
-						local oldObjectiveValue = questData.objectiveValues[objectiveIndex]
-						if oldObjectiveText ~= objectiveText then
-							local isInitialObjectiveBaseline = oldObjectiveText == nil and oldObjectiveValue == nil
-							local hasForwardProgress =
-								self:DidObjectiveProgressIncrease(oldObjectiveText, oldObjectiveValue, objectiveText, currentValue)
-							local resolvedProgressValue = ResolveObjectiveProgressValue(objectiveText, currentValue)
-							if
-								(not isInitialObjectiveBaseline)
-								and hasForwardProgress
-								and self:ShouldPublishObjectiveProgress(resolvedProgressValue)
-							then
-								local taskAnnouncementType = self:GetTaskAnnouncementType(questId)
-								local eventType = "QUEST_PROGRESS"
-								if taskAnnouncementType == "world" then
-									eventType = "WORLD_QUEST_PROGRESS"
-								elseif taskAnnouncementType == "bonus" then
-									eventType = "BONUS_OBJECTIVE_PROGRESS"
-								end
-								self:PublishAnnouncementEvent(eventType, objectiveText, questId)
+						if self:UpdateTrackedObjectiveProgress(questData, objectiveIndex, objectiveText, currentValue, questId) then
+							local taskAnnouncementType = self:GetTaskAnnouncementType(questId)
+							local eventType = "QUEST_PROGRESS"
+							if taskAnnouncementType == "world" then
+								eventType = "WORLD_QUEST_PROGRESS"
+							elseif taskAnnouncementType == "bonus" then
+								eventType = "BONUS_OBJECTIVE_PROGRESS"
 							end
-							questData.objectives[objectiveIndex] = objectiveText
-							questData.objectiveValues[objectiveIndex] = resolvedProgressValue
-						else
-							questData.objectiveValues[objectiveIndex] =
-								ResolveObjectiveProgressValue(objectiveText, currentValue)
+							self:PublishAnnouncementEvent(eventType, objectiveText, questId)
 						end
 					end
 
-					-- Objective list can shrink; emit explicit empty values for removed indices.
+					-- Retain milestone history when objective rows temporarily disappear.
+					-- Only the current snapshot should shrink.
+					questData.objectives = questData.objectives or {}
 					local previousObjectiveCount = #questData.objectives
 					if previousObjectiveCount > numObjectives then
 						for objectiveIndex = numObjectives + 1, previousObjectiveCount do
@@ -554,7 +679,9 @@ function QuestTogether:ZONE_CHANGED_NEW_AREA()
 end
 
 function QuestTogether:PLAYER_ENTERING_WORLD()
+	self.isLoggingOut = false
 	-- Refresh state after loading screens without emitting synthetic enter/leave lines.
+	self:SetRuntimeFlag("pendingScheduledTaskAreaRefreshShouldAnnounce", false)
 	self:RefreshTaskAreaStates(false)
 	if self.EnsureAnnouncementChannelJoined and self.isEnabled then
 		self:EnsureAnnouncementChannelJoined()
