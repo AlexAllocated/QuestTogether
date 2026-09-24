@@ -111,46 +111,11 @@ function QuestTogether:BuildDiagnosticReport(questId)
 end
 
 function QuestTogether:BuildDiagnosticExport(questId)
-	local report = self:BuildDiagnosticReport(questId)
-	local heading = "\n\nRecent events (older entries may be omitted; /qt dump shows the full history):\n"
-	-- The common copy window is bounded. Retain the newest events instead of
-	-- filling its budget with the oldest lines and dropping the failure itself.
-	local remaining = 32768 - #report - #heading
-	if remaining <= 0 then
-		return report
-	end
-	local entries, tail = self:GetDebugLogStore(), {}
-	for index = #entries, 1, -1 do
-		local text = self:GetDebugLogEntryDisplayText(entries[index])
-		local cost = #text + (#tail > 0 and 1 or 0)
-		if cost > remaining then
-			break
-		end
-		tail[#tail + 1] = text
-		remaining = remaining - cost
-	end
-	local lines = {}
-	for index = #tail, 1, -1 do
-		lines[#lines + 1] = tail[index]
-	end
-	return report .. heading .. table.concat(lines, "\n")
+	return self:GetDebugController():BuildDiagnosticExport(questId)
 end
 
 function QuestTogether:ShowDiagnostics(questId)
-	local text = self:BuildDiagnosticExport(questId)
-	if
-		not LibChev.OpenReportWindow(self, text, {
-			title = "QuestTogether Diagnostics",
-			parent = UIParent,
-			createFrame = CreateFrame,
-			restricted = function()
-				return self:IsRuntimeRestricted()
-			end,
-			canMutate = LibChev.CanMutateOwnedRegion,
-		})
-	then
-		self:Print("Diagnostics window unavailable while restricted; /qt dump retains the event history.")
-	end
+	return self:GetDebugController():ShowDiagnostics(questId)
 end
 
 function QuestTogether:RecordDiagnosticError(context, errorValue)

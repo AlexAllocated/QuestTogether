@@ -134,8 +134,6 @@ local function WithIsolatedState(testFn)
 	local originalDebugLogLines = QuestTogether.debugLogLines
 	local originalDebugLogTextLengthSum = QuestTogether.debugLogTextLengthSum
 	local originalDebugLogStoreNormalized = QuestTogether.debugLogStoreNormalized
-	local originalDebugLogRefreshBatchDepth = QuestTogether.debugLogRefreshBatchDepth
-	local originalDebugLogRefreshPending = QuestTogether.debugLogRefreshPending
 	local originalIsEnabled = QuestTogether.isEnabled
 	local originalSuppressLocalAnnouncementDisplayDuringTests = QuestTogether.suppressLocalAnnouncementDisplayDuringTests
 	local originalProfileEnabled = QuestTogether.db.profile.enabled
@@ -145,7 +143,9 @@ local function WithIsolatedState(testFn)
 	local originalPendingNameplateVisualCleanup = QuestTogether.pendingNameplateVisualCleanup
 	local originalAnnouncementBubbleScreenHostFrame = QuestTogether.announcementBubbleScreenHostFrame
 	local originalAnnouncementChannelLocalID = QuestTogether.announcementChannelLocalID
-	local originalCopyableWindow = QuestTogether.copyableWindow
+	local originalDebugController = QuestTogether.debugController
+	-- Detach the live console before teardown can emit logs or refresh a view.
+	QuestTogether.debugController = nil
 	local originalPendingPingRequests = QuestTogether.pendingPingRequests
 	local originalPendingQuestCompareRequests = QuestTogether.pendingQuestCompareRequests
 	local originalRecentCommMessageSignatures = QuestTogether.recentCommMessageSignatures
@@ -189,8 +189,6 @@ local function WithIsolatedState(testFn)
 	QuestTogether.debugLogLines = {}
 	QuestTogether.debugLogTextLengthSum = 0
 	QuestTogether.debugLogStoreNormalized = true
-	QuestTogether.debugLogRefreshBatchDepth = 0
-	QuestTogether.debugLogRefreshPending = false
 	QuestTogether.partyMembers = {}
 	QuestTogether.partyMemberOrder = {}
 	QuestTogether.partyRosterFingerprint = ""
@@ -219,7 +217,7 @@ local function WithIsolatedState(testFn)
 	QuestTogether.pendingNameplateVisualCleanup = false
 	QuestTogether.announcementBubbleScreenHostFrame = nil
 	QuestTogether.announcementChannelLocalID = nil
-	QuestTogether.copyableWindow = nil
+	QuestTogether.debugController = nil
 	QuestTogether.pendingPingRequests = {}
 	QuestTogether.pendingQuestCompareRequests = {}
 	QuestTogether.recentCommMessageSignatures = {}
@@ -262,8 +260,6 @@ local function WithIsolatedState(testFn)
 	for _, key in ipairs(diagnosticFields) do QuestTogether[key] = originalDiagnostics[key] end
 	QuestTogether.debugLogTextLengthSum = originalDebugLogTextLengthSum
 	QuestTogether.debugLogStoreNormalized = originalDebugLogStoreNormalized
-	QuestTogether.debugLogRefreshBatchDepth = originalDebugLogRefreshBatchDepth
-	QuestTogether.debugLogRefreshPending = originalDebugLogRefreshPending
 	QuestTogether.partyMembers = originalPartyMembers
 	QuestTogether.partyMemberOrder = originalPartyMemberOrder
 	QuestTogether.partyRosterFingerprint = originalPartyRosterFingerprint
@@ -281,7 +277,7 @@ local function WithIsolatedState(testFn)
 	QuestTogether.pendingNameplateVisualCleanup = originalPendingNameplateVisualCleanup
 	QuestTogether.announcementBubbleScreenHostFrame = originalAnnouncementBubbleScreenHostFrame
 	QuestTogether.announcementChannelLocalID = originalAnnouncementChannelLocalID
-	QuestTogether.copyableWindow = originalCopyableWindow
+	QuestTogether.debugController = originalDebugController
 	QuestTogether.pendingPingRequests = originalPendingPingRequests
 	QuestTogether.pendingQuestCompareRequests = originalPendingQuestCompareRequests
 	QuestTogether.recentCommMessageSignatures = originalRecentCommMessageSignatures
@@ -322,67 +318,12 @@ local function WithIsolatedState(testFn)
 	end
 end
 
-function QuestTogether:RunTests()
-	if not self.isInitialized then
-		self:OnInitialize()
-	end
+function QuestTogether:GetDebugTestOptions()
+	return { run = WithIsolatedState }
+end
 
-	local total = #self.tests
-	local resultLines = {
-		"QuestTogether in-game test results",
-		"Total tests: " .. tostring(total),
-	}
-
-	local originalSuppressLocalAnnouncementDisplayDuringTests = self.suppressLocalAnnouncementDisplayDuringTests
-	local originalIsRunningTests = self.isRunningTests
-	local preserveAllCategory = self.IsDebugWindowShowingAllCategory and self:IsDebugWindowShowingAllCategory() or false
-	self.suppressLocalAnnouncementDisplayDuringTests = true
-	self.isRunningTests = true
-	if self.BeginDebugLogBatchUpdate then
-		self:BeginDebugLogBatchUpdate()
-	end
-	if self.RemoveDebugLogEntriesByCategory then
-		self:RemoveDebugLogEntriesByCategory("test")
-	end
-
-	if self.LogDebugLine then
-		self:LogDebugLine("Running " .. tostring(total) .. " in-game tests...", {
-			category = "test",
-		})
-	end
-
-	local result = LibChev.RunTests(self.tests, {
-		run = WithIsolatedState,
-		onFailure = function(failure)
-			resultLines[#resultLines + 1] = "[FAIL] " .. failure.name .. " -> " .. failure.error
-		end,
-	})
-
-	resultLines[#resultLines + 1] = LibChev.TestSummary(result)
-
-	if self.LogDebugLine then
-		for index = 1, #resultLines do
-			self:LogDebugLine(resultLines[index], {
-				category = "test",
-			})
-		end
-	end
-
-	self.suppressLocalAnnouncementDisplayDuringTests = originalSuppressLocalAnnouncementDisplayDuringTests
-	self.isRunningTests = originalIsRunningTests
-	if self.EndDebugLogBatchUpdate then
-		self:EndDebugLogBatchUpdate()
-	end
-	if self.SetDebugLogCategoryFilter and not preserveAllCategory then
-		self:SetDebugLogCategoryFilter("TEST")
-	end
-	if self.SetDebugLogSearchFilter then
-		self:SetDebugLogSearchFilter("")
-	end
-	if self.ShowDebugWindow then
-		self:ShowDebugWindow()
-	end
-	return result.failed == 0
+function QuestTogether:RunTests(reverse, present)
+	return self:GetDebugController():RunTests(reverse, present)
 end
 
 QuestTogether:RegisterTest("debug window category filter and search support fuzzy and quoted exact matches", function()
@@ -464,8 +405,11 @@ end)
 QuestTogether:RegisterTest("debug window ALL category stays selected when already open during test runs", function()
 	WithIsolatedState(function()
 		QuestTogether.db.global.debugLogCategoryFilter = QuestTogether.DEBUG_ALL_CATEGORIES
-		QuestTogether.copyableWindow = {
-			copyableTitle = "QuestTogether Debug Window",
+		local controller = QuestTogether:GetDebugController()
+		controller.policy.ui.restricted = function() return false end
+		controller.window = {
+			IsForbidden = function() return false end,
+			IsProtected = function() return false end,
 			IsShown = function()
 				return true
 			end,
