@@ -100,9 +100,12 @@ UIParent = setmetatable({}, Frame)
 local namespace = {}
 for _, file in ipairs({
 	"Libs/libchev/libchev.lua",
+	"Libs/libchev/Debug.lua",
+	"Libs/libchev/DebugWindow.lua",
 	"Libs/libchev/ReportWindow.lua",
 	"Libs/libchev/SelfTests.lua",
 	"Core.lua",
+	"Debug.lua",
 	"HotPathState.lua",
 	"HotPathRuntime.lua",
 	"TaskArea.lua",
@@ -117,13 +120,9 @@ for _, file in ipairs({
 	assert(chunk, err)
 	chunk("QuestTogether", namespace)
 end
-local testsFile = assert(io.open(addonRoot .. "/Tests.lua", "r"))
-local testsSource = testsFile:read("*a")
-testsFile:close()
-testsSource = assert(testsSource:gsub("local function WithIsolatedState", "function WithIsolatedState", 1))
-local testsChunk, testsErr = (loadstring or load)(testsSource, "@Tests.lua")
+local testsChunk, testsErr = loadfile(addonRoot .. "/Tests.lua")
 assert(testsChunk, testsErr)
-testsChunk("QuestTogether", {})
+testsChunk("QuestTogether", namespace)
 QuestTogether:InitializeDatabase()
 QuestTogether:EnsureRuntimeStateStore()
 QuestTogether.isInitialized = true
@@ -141,19 +140,12 @@ for _, file in ipairs({
 		assert(loadfile(path))()
 	end
 end
--- Reverse order helps expose state leaking between otherwise independent tests.
-if arg[2] == "reverse" then
-	local cases = QuestTogether.tests
-	for index = 1, math.floor(#cases / 2) do
-		cases[index], cases[#cases - index + 1] = cases[#cases - index + 1], cases[index]
-	end
+-- Exercise the same controller and QT-owned isolation used by the live command.
+local success, passed, failed, result = QuestTogether:RunTests(arg[2] == "reverse", false)
+assert(result, "Shared debug controller did not return a test result")
+for _, failure in ipairs(result.failures) do
+	print("[FAIL] " .. failure.name .. " -> " .. failure.error)
 end
-local result = QuestTogether.LibChev.RunTests(QuestTogether.tests, {
-	run = WithIsolatedState,
-	onFailure = function(failure)
-		print("[FAIL] " .. failure.name .. " -> " .. failure.error)
-	end,
-})
 print("registered=" .. tostring(result.total))
-print("Test summary: " .. result.passed .. " passed, " .. result.failed .. " failed.")
-os.exit(result.failed == 0 and 0 or 1)
+print(QuestTogether.LibChev.TestSummary(result))
+os.exit(success and 0 or 1)

@@ -1,6 +1,6 @@
 ## Interface: 120001, 120005, 120100, 16001
 ## Title: QuestTogether
-## Version: 5.7.6-beta.1
+## Version: 5.7.6-beta.2
 ## Notes: Quest progress chat bubbles and logs for party and nearby players.
 ## SavedVariables: QuestTogetherDB
 ## Author: Chev
@@ -10,9 +10,12 @@
 ## X-License: MIT License
 
 Libs/libchev/libchev.lua
+Libs/libchev/Debug.lua
+Libs/libchev/DebugWindow.lua
 Libs/libchev/ReportWindow.lua
 Libs/libchev/SelfTests.lua
 Core.lua
+Debug.lua
 HotPathState.lua
 HotPathRuntime.lua
 TaskArea.lua

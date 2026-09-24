@@ -42,18 +42,20 @@ local function NewDebugSession()
 		debugLogTextLengthSum = 0,
 		diagnosticLogSequence = 0,
 		diagnosticDroppedLogLines = 0,
-		debugLogRefreshBatchDepth = 0,
-		debugLogRefreshPending = false,
 		API = {},
 		tests = {},
 		opened = {},
 	}, { __index = QT })
-	function addon:RefreshCopyableWindow() end
-	function addon:ShowDebugWindow()
-		self.opened[#self.opened + 1] = {
-			text = self:GetDebugLogText(self:GetDebugLogCategoryFilter(), self:GetDebugLogSearchFilter()),
-			category = self:GetDebugLogCategoryFilter(),
-			search = self:GetDebugLogSearchFilter(),
+	function addon:IsRuntimeRestricted()
+		return false
+	end
+	local controller = addon:GetDebugController()
+	function controller:Refresh() end
+	function controller:ShowLog()
+		addon.opened[#addon.opened + 1] = {
+			text = self:GetText(),
+			category = self:GetCategory(),
+			search = self:GetSearch(),
 		}
 		return true
 	end
@@ -79,20 +81,24 @@ QT:RegisterTest("debug test command presents fresh results and preserves unrelat
 			error("fixture failure")
 		end,
 	} }
-	Equal(addon:RunTests(), false)
+	Equal(addon:RunTests(false, true), false)
 	Equal(#addon.opened, 2)
 	assert(addon.opened[2].text:find("0 passed, 1 failed", 1, true))
 	assert(addon.opened[2].text:find("private failing fixture", 1, true))
 	assert(not addon.opened[2].text:find("1 passed, 0 failed", 1, true))
 	Equal(addon.isRunningTests, false)
 	Equal(addon.suppressLocalAnnouncementDisplayDuringTests, false)
-	Equal(addon.debugLogRefreshBatchDepth, 0)
 end)
 
 QT:RegisterTest("debug test presentation preserves a visible ALL view but clears its search", function()
 	local addon = NewDebugSession()
-	addon.copyableWindow = {
-		copyableTitle = "QuestTogether Debug Window",
+	addon:GetDebugController().window = {
+		IsForbidden = function()
+			return false
+		end,
+		IsProtected = function()
+			return false
+		end,
 		IsShown = function()
 			return true
 		end,
@@ -100,7 +106,7 @@ QT:RegisterTest("debug test presentation preserves a visible ALL view but clears
 	addon:LogDebugLine("domain event", { category = "QUEST" })
 	addon:SetDebugLogSearchFilter("obsolete search")
 	addon.tests = { { name = "private fixture", fn = function() end } }
-	Equal(addon:RunTests(), true)
+	Equal(addon:RunTests(false, true), true)
 	Equal(addon.opened[1].category, "ALL")
 	Equal(addon.opened[1].search, "")
 	assert(addon.opened[1].text:find("domain event", 1, true))
@@ -122,6 +128,65 @@ QT:RegisterTest("debug slash aliases display selected category and clear resets 
 	Equal(addon.opened[3].category, "ALL")
 	Equal(addon.opened[3].search, "")
 	Equal(addon.opened[3].text, "")
+end)
+
+QT:RegisterTest("headless debug tests leave visible history and filters untouched", function()
+	local addon = NewDebugSession()
+	function addon:Print() end
+	addon:LogDebugLine("keep history", { category = "QUEST" })
+	addon:SetDebugLogCategoryFilter("QUEST")
+	addon:SetDebugLogSearchFilter("history")
+	local log, sequence = addon:GetDebugLogText("ALL", ""), addon.diagnosticLogSequence
+	addon.tests = { { name = "headless fixture", fn = function() end } }
+	local success, passed, failed, result = addon:RunTests()
+	Equal(success, true)
+	Equal(passed, 1)
+	Equal(failed, 0)
+	Equal(result.total, 1)
+	Equal(#addon.opened, 0)
+	Equal(addon:GetDebugLogText("ALL", ""), log)
+	Equal(addon.diagnosticLogSequence, sequence)
+	Equal(addon:GetDebugLogCategoryFilter(), "QUEST")
+	Equal(addon:GetDebugLogSearchFilter(), "history")
+end)
+
+QT:RegisterTest("diagnostic slash aliases rebuild the current domain report in the shared view", function()
+	local addon = NewDebugSession()
+	local reports, calls = {}, 0
+	function addon:BuildDiagnosticReport(questId)
+		calls = calls + 1
+		return "fixture.quest=" .. questId .. "\nfixture.generation=" .. calls
+	end
+	local controller = addon:GetDebugController()
+	function controller:ShowReport(text)
+		reports[#reports + 1] = text
+		return true
+	end
+	addon:LogDebugLine("recent fixture event", { category = "QUEST" })
+	addon:HandleSlashCommand("diag 42")
+	addon:HandleSlashCommand("diagnostics 43")
+	Equal(#reports, 2)
+	assert(reports[1]:find("fixture.quest=42", 1, true))
+	assert(reports[2]:find("fixture.quest=43", 1, true))
+	assert(reports[2]:find("fixture.generation=2", 1, true))
+	assert(reports[2]:find("recent fixture event", 1, true))
+end)
+
+QT:RegisterTest("QT isolation detaches and restores the debug controller after a failing case", function()
+	local controller = QT:GetDebugController()
+	QT:LogDebugLine("outer private fixture history", { category = "QUEST" })
+	local entries = QT:GetDebugLogStore()
+	local originalText = QT:GetDebugLogText("ALL", "")
+	local ok = pcall(QT:GetDebugTestOptions().run, function()
+		assert(QT:GetDebugController() ~= controller)
+		assert(QT:GetDebugLogStore() ~= entries)
+		QT:LogDebugLine("inner private fixture history", { category = "TEST" })
+		error("intentional private fixture failure")
+	end)
+	Equal(ok, false)
+	Equal(QT:GetDebugController(), controller)
+	Equal(QT:GetDebugLogStore(), entries)
+	Equal(QT:GetDebugLogText("ALL", ""), originalText)
 end)
 
 QT:RegisterTest("audit reset invalidates scheduled callbacks even after reenable", function()
