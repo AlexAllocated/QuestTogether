@@ -1,6 +1,6 @@
 ## Interface: 120001, 120005, 120100, 16001
 ## Title: QuestTogether
-## Version: 5.7.6-beta.2
+## Version: 5.7.6-beta.3
 ## Notes: Quest progress chat bubbles and logs for party and nearby players.
 ## SavedVariables: QuestTogetherDB
 ## Author: Chev

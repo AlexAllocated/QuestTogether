@@ -73,6 +73,8 @@ QT:RegisterTest("debug test command presents fresh results and preserves unrelat
 	Equal(addon.opened[1].category, "TEST")
 	Equal(addon.opened[1].search, "")
 	assert(addon.opened[1].text:find("1 passed, 0 failed", 1, true))
+	local _, firstSummaryCount = addon.opened[1].text:gsub("Test summary:", "")
+	Equal(firstSummaryCount, 1)
 	assert(not addon:GetDebugLogText("ALL", ""):find("obsolete test result", 1, true))
 	assert(addon:GetDebugLogText("QUEST", ""):find("keep domain event", 1, true))
 	addon.tests = { {
@@ -84,6 +86,8 @@ QT:RegisterTest("debug test command presents fresh results and preserves unrelat
 	Equal(addon:RunTests(false, true), false)
 	Equal(#addon.opened, 2)
 	assert(addon.opened[2].text:find("0 passed, 1 failed", 1, true))
+	local _, secondSummaryCount = addon.opened[2].text:gsub("Test summary:", "")
+	Equal(secondSummaryCount, 1)
 	assert(addon.opened[2].text:find("private failing fixture", 1, true))
 	assert(not addon.opened[2].text:find("1 passed, 0 failed", 1, true))
 	Equal(addon.isRunningTests, false)

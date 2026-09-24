@@ -143,9 +143,7 @@ end
 -- Exercise the same controller and QT-owned isolation used by the live command.
 local success, passed, failed, result = QuestTogether:RunTests(arg[2] == "reverse", false)
 assert(result, "Shared debug controller did not return a test result")
-for _, failure in ipairs(result.failures) do
-	print("[FAIL] " .. failure.name .. " -> " .. failure.error)
-end
+-- The shared headless runner already prints failures and the summary through
+-- QT's console adapter; avoid duplicating its presentation here.
 print("registered=" .. tostring(result.total))
-print(QuestTogether.LibChev.TestSummary(result))
 os.exit(success and 0 or 1)
