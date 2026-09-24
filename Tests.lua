@@ -3,6 +3,7 @@ QuestTogether In-Game Test Runner
 ]]
 
 local QuestTogether = _G.QuestTogether
+local LibChev = QuestTogether.LibChev
 
 QuestTogether.tests = QuestTogether.tests or {}
 
@@ -11,6 +12,10 @@ function QuestTogether:RegisterTest(name, fn)
 		name = name,
 		fn = fn,
 	}
+end
+
+for _, case in ipairs(LibChev.SelfTests()) do
+	QuestTogether:RegisterTest(case.name, case.run)
 end
 
 local function AssertTrue(value, message)
@@ -25,11 +30,7 @@ local function AssertFalse(value, message)
 	end
 end
 
-local function AssertEquals(actual, expected, message)
-	if actual ~= expected then
-		error((message or "Values differ") .. " (expected=" .. tostring(expected) .. ", actual=" .. tostring(actual) .. ")")
-	end
-end
+local AssertEquals = LibChev.AssertEqual
 
 local function CreateApiWithOverrides(overrides)
 	local merged = {}
@@ -327,8 +328,6 @@ function QuestTogether:RunTests()
 	end
 
 	local total = #self.tests
-	local passed = 0
-	local failed = 0
 	local resultLines = {
 		"QuestTogether in-game test results",
 		"Total tests: " .. tostring(total),
@@ -352,21 +351,14 @@ function QuestTogether:RunTests()
 		})
 	end
 
-	for _, testCase in ipairs(self.tests) do
-		local ok, err = pcall(function()
-			WithIsolatedState(testCase.fn)
-		end)
+	local result = LibChev.RunTests(self.tests, {
+		run = WithIsolatedState,
+		onFailure = function(failure)
+			resultLines[#resultLines + 1] = "[FAIL] " .. failure.name .. " -> " .. failure.error
+		end,
+	})
 
-		if ok then
-			passed = passed + 1
-		else
-			failed = failed + 1
-			resultLines[#resultLines + 1] = "[FAIL] " .. testCase.name .. " -> " .. tostring(err)
-		end
-	end
-
-	resultLines[#resultLines + 1] =
-		"Test summary: " .. tostring(passed) .. " passed, " .. tostring(failed) .. " failed."
+	resultLines[#resultLines + 1] = LibChev.TestSummary(result)
 
 	if self.LogDebugLine then
 		for index = 1, #resultLines do
@@ -390,7 +382,7 @@ function QuestTogether:RunTests()
 	if self.ShowDebugWindow then
 		self:ShowDebugWindow()
 	end
-	return failed == 0
+	return result.failed == 0
 end
 
 QuestTogether:RegisterTest("debug window category filter and search support fuzzy and quoted exact matches", function()
@@ -819,7 +811,10 @@ QuestTogether:RegisterTest("task area refresh defers during combat and resumes o
 		end, function()
 			AssertFalse(QuestTogether:RefreshTaskAreaStates(true))
 			AssertEquals(#refreshCalls, 0)
-			deferredEntry = QuestTogether:GetDeferredWorkStateStore().entries["task_area_refresh::task_area_refresh"]
+			deferredEntry = QuestTogether:GetDeferredWorkStateStore().entries[LibChev.WorkKey(
+				"task_area_refresh",
+				"task_area_refresh"
+			)]
 			AssertTrue(deferredEntry ~= nil)
 			AssertTrue(QuestTogether:GetRuntimeFlag("pendingScheduledTaskAreaRefreshShouldAnnounce", false))
 
@@ -832,7 +827,13 @@ QuestTogether:RegisterTest("task area refresh defers during combat and resumes o
 			QuestTogether:PLAYER_REGEN_ENABLED()
 			AssertEquals(refreshCalls[1], "world:true")
 			AssertEquals(refreshCalls[2], "bonus:true")
-			AssertEquals(QuestTogether:GetDeferredWorkStateStore().entries["task_area_refresh::task_area_refresh"], nil)
+			AssertEquals(
+				QuestTogether:GetDeferredWorkStateStore().entries[LibChev.WorkKey(
+					"task_area_refresh",
+					"task_area_refresh"
+				)],
+				nil
+			)
 			AssertFalse(QuestTogether:GetRuntimeFlag("pendingScheduledTaskAreaRefreshShouldAnnounce", false))
 		end)
 	end)

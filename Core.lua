@@ -13,10 +13,12 @@ Key responsibilities in this file:
 ]]
 
 local addonName, addonTable = ...
+local LibChev = assert(addonTable and addonTable.LibChev, "libchev must load before Core.lua")
 
 -- Reuse an existing global table if it already exists (for safety), otherwise use the loader table.
 local QuestTogether = _G.QuestTogether or addonTable or {}
 _G.QuestTogether = QuestTogether
+QuestTogether.LibChev = LibChev
 
 local raw_tostring = tostring
 local raw_string_match = string.match
@@ -4957,22 +4959,7 @@ function QuestTogether:IsDebugWindowShowingAllCategory()
 end
 
 function QuestTogether:NormalizeDebugCategory(category)
-	if type(category) ~= "string" then
-		return self.DEBUG_DEFAULT_CATEGORY
-	end
-
-	local normalized = string.upper(self:SafeTrimString(category, ""))
-	if normalized == "" then
-		return self.DEBUG_DEFAULT_CATEGORY
-	end
-
-	normalized = string.gsub(normalized, "%s+", "_")
-	normalized = string.gsub(normalized, "[^%w_%-]", "")
-	if normalized == "" then
-		return self.DEBUG_DEFAULT_CATEGORY
-	end
-
-	return normalized
+	return LibChev.Category(category, self.DEBUG_DEFAULT_CATEGORY)
 end
 
 function QuestTogether:NormalizeDebugLogStoreEntries(debugLogLines)
@@ -5177,7 +5164,7 @@ function QuestTogether:GetDebugLogEntryDisplayText(entry)
 	local category = self:NormalizeDebugCategory(entry.category)
 	local text = type(entry.text) == "string" and entry.text or tostring(entry.text or "")
 	if entry.elapsed then
-		return string.format("[%s] [%.3f #%d] %s", category, entry.elapsed, entry.sequence or 0, text)
+		return LibChev.FormatEntry(entry)
 	end
 	return string.format("[%s] %s", category, text)
 end
@@ -5343,38 +5330,22 @@ function QuestTogether:UpdateCopyableWindowTailPinned(frame)
 end
 
 function QuestTogether:LogDebugLine(line, options)
-	local normalizedLine = self:SafeToString(line, "<inaccessible>")
-	if #normalizedLine > 4096 then normalizedLine = string.sub(normalizedLine, 1, 4096) .. " [truncated]" end
 	options = type(options) == "table" and options or {}
-	local debugLogLines = self:GetDebugLogStore()
-	local normalizedCategory = self:NormalizeDebugCategory(options.category or self.DEBUG_DEFAULT_CATEGORY)
-	local now = self.API and self.API.GetTime and self:SafeToNumber(self.API.GetTime()) or nil
-	self.diagnosticLogSequence = (self.diagnosticLogSequence or 0) + 1
-	debugLogLines[#debugLogLines + 1] = {
-		elapsed = now,
-		sequence = self.diagnosticLogSequence,
-		text = normalizedLine,
-		category = normalizedCategory,
+	local entries = self:GetDebugLogStore()
+	local store = {
+		entries = entries,
+		chars = self.debugLogTextLengthSum or 0,
+		sequence = self.diagnosticLogSequence or 0,
+		dropped = self.diagnosticDroppedLogLines or 0,
 	}
-	self.debugLogTextLengthSum = (self.debugLogTextLengthSum or 0) + string.len(normalizedLine)
-	local maxLines = self.DEBUG_LOG_MAX_LINES or 400
-	while #debugLogLines > maxLines do
-		local removedEntry = table.remove(debugLogLines, 1)
-		self.diagnosticDroppedLogLines = (self.diagnosticDroppedLogLines or 0) + 1
-		if type(removedEntry) == "table" and type(removedEntry.text) == "string" then
-			self.debugLogTextLengthSum = math.max(0, (self.debugLogTextLengthSum or 0) - string.len(removedEntry.text))
-		end
-	end
-	local maxChars = self.DEBUG_LOG_MAX_CHARS or 200000
-	local currentCharCount = (self.debugLogTextLengthSum or 0) + math.max(0, #debugLogLines - 1)
-	while currentCharCount > maxChars and #debugLogLines > 1 do
-		local removedEntry = table.remove(debugLogLines, 1)
-		self.diagnosticDroppedLogLines = (self.diagnosticDroppedLogLines or 0) + 1
-		if type(removedEntry) == "table" and type(removedEntry.text) == "string" then
-			self.debugLogTextLengthSum = math.max(0, (self.debugLogTextLengthSum or 0) - string.len(removedEntry.text))
-		end
-		currentCharCount = (self.debugLogTextLengthSum or 0) + math.max(0, #debugLogLines - 1)
-	end
+	local now = self.API and self.API.GetTime and self:SafeToNumber(self.API.GetTime()) or nil
+	LibChev.AppendLog(store, line, self:NormalizeDebugCategory(options.category), now, {
+		maxLines = self.DEBUG_LOG_MAX_LINES,
+		maxChars = self.DEBUG_LOG_MAX_CHARS,
+	})
+	self.debugLogTextLengthSum = store.chars
+	self.diagnosticLogSequence = store.sequence
+	self.diagnosticDroppedLogLines = store.dropped
 	self:RequestDebugLogWindowRefresh()
 end
 

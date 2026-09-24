@@ -54,6 +54,70 @@ QT:RegisterTest("audit immediate work replaces parked work with the same key", f
 	Equal(fresh, 1)
 end)
 
+QT:RegisterTest("shared runtime permits explicit waypoint clicks while disabled but parks background work", function()
+	local addon, waypointCalls, backgroundCalls = NewRuntime(), 0, 0
+	addon.isEnabled = false
+	Equal(
+		addon:RunOrDeferWork("waypoint_mutation", "user_waypoint", function()
+			waypointCalls = waypointCalls + 1
+		end),
+		true
+	)
+	Equal(
+		addon:RunOrDeferWork("quest_snapshot_refresh", "snapshot", function()
+			backgroundCalls = backgroundCalls + 1
+		end),
+		false
+	)
+	Equal(waypointCalls, 1)
+	Equal(backgroundCalls, 0)
+	Equal(addon:FlushDeferredWork(), false)
+	addon.isEnabled = true
+	addon:FlushDeferredWork()
+	Equal(backgroundCalls, 1)
+end)
+
+QT:RegisterTest("shared runtime disabled waypoint exception does not bypass restrictions", function()
+	local addon, calls = NewRuntime(), 0
+	addon.isEnabled, addon.blocked = false, true
+	Equal(
+		addon:RunOrDeferWork("waypoint_mutation", "user_waypoint", function()
+			calls = calls + 1
+		end),
+		false
+	)
+	Equal(calls, 0)
+	addon.isEnabled = true
+	addon:FlushDeferredWork()
+	Equal(calls, 0)
+	addon.blocked = false
+	addon:FlushDeferredWork()
+	Equal(calls, 1)
+end)
+
+QT:RegisterTest("shared runtime immediate waypoint consumes an older timer while disabled", function()
+	local addon, calls = NewRuntime(), 0
+	addon:ScheduleDeferredWork("waypoint_mutation", "user_waypoint", function()
+		calls = calls + 100
+	end, 1)
+	addon.isEnabled = false
+	addon:RunOrDeferWork("waypoint_mutation", "user_waypoint", function()
+		calls = calls + 1
+	end)
+	addon.isEnabled = true
+	addon.delayed[1]()
+	Equal(calls, 1)
+end)
+
+QT:RegisterTest("shared runtime tolerates unavailable timer adapter", function()
+	local addon, calls = NewRuntime(), 0
+	addon.API.Delay = false
+	addon:ScheduleDeferredWork("quest_log_drain", "scan", function()
+		calls = calls + 1
+	end, 1)
+	Equal(calls, 1)
+end)
+
 QT:RegisterTest("audit flush does not resurrect entries consumed by another callback", function()
 	local addon, stale, replacement = NewRuntime(), 0, 0
 	addon.blocked = true
@@ -114,7 +178,7 @@ QT:RegisterTest("audit flush honors restrictions separately for each work class"
 	end, 1)
 	addon:FlushDeferredWork()
 	Equal(calls, 1)
-	assert(addon.state.entries["quest_log_drain::scan"] ~= nil)
+	assert(addon.state.entries[QT.LibChev.WorkKey("quest_log_drain", "scan")] ~= nil)
 end)
 
 QT:RegisterTest("audit inaccessible frame methods fail closed", function()
@@ -157,34 +221,43 @@ QT:RegisterTest("audit same character name on another realm is not the local sen
 end)
 
 QT:RegisterTest("audit nearby unit identity retains the remote realm return", function()
-	local addon = setmetatable({ API = {
-		UnitExists = function() return true end,
-		UnitGUID = function() return "Player-1-FRIEND" end,
-		UnitFullName = function() return "Friend", "OtherRealm" end,
-		GetRealmName = function() return "HomeRealm" end,
-	} }, { __index = QT })
-	function addon:IsNameplateUnitPlayer() return true end
+	local addon = setmetatable({
+		API = {
+			UnitExists = function()
+				return true
+			end,
+			UnitGUID = function()
+				return "Player-1-FRIEND"
+			end,
+			UnitFullName = function()
+				return "Friend", "OtherRealm"
+			end,
+			GetRealmName = function()
+				return "HomeRealm"
+			end,
+		},
+	}, { __index = QT })
+	function addon:IsNameplateUnitPlayer()
+		return true
+	end
 	Equal(addon:DoesUnitTokenMatchSender("target", "Player-1-FRIEND", "Friend-OtherRealm"), true)
 	Equal(addon:DoesUnitTokenMatchSender("target", "Player-1-FRIEND", "Friend-HomeRealm"), false)
 end)
 
 QT:RegisterTest("audit log entries are timestamped bounded and report dropped history", function()
-	local addon = setmetatable(
-		{
-			logs = {},
-			DEBUG_LOG_MAX_LINES = 3,
-			DEBUG_LOG_MAX_CHARS = 20000,
-			diagnosticLogSequence = 0,
-			diagnosticDroppedLogLines = 0,
-			debugLogTextLengthSum = 0,
-			API = {
-				GetTime = function()
-					return 123.5
-				end,
-			},
+	local addon = setmetatable({
+		logs = {},
+		DEBUG_LOG_MAX_LINES = 3,
+		DEBUG_LOG_MAX_CHARS = 20000,
+		diagnosticLogSequence = 0,
+		diagnosticDroppedLogLines = 0,
+		debugLogTextLengthSum = 0,
+		API = {
+			GetTime = function()
+				return 123.5
+			end,
 		},
-		{ __index = QT }
-	)
+	}, { __index = QT })
 	function addon:GetDebugLogStore()
 		return self.logs
 	end
@@ -201,22 +274,19 @@ QT:RegisterTest("audit log entries are timestamped bounded and report dropped hi
 end)
 
 QT:RegisterTest("audit diagnostic report uses cached quest state without live quest reads", function()
-	local addon = setmetatable(
-		{
-			runtime = {
-				questSnapshot = { byQuestID = {}, generation = 7 },
-				taskArea = {},
-				nameplate = {},
-				runtime = { deferredWorkState = { entries = {} } },
-			},
-			API = {
-				GetQuestLogInfo = function()
-					error("must not read live quests")
-				end,
-			},
+	local addon = setmetatable({
+		runtime = {
+			questSnapshot = { byQuestID = {}, generation = 7 },
+			taskArea = {},
+			nameplate = {},
+			runtime = { deferredWorkState = { entries = {} } },
 		},
-		{ __index = QT }
-	)
+		API = {
+			GetQuestLogInfo = function()
+				error("must not read live quests")
+			end,
+		},
+	}, { __index = QT })
 	function addon:GetDiagnosticEnvironment()
 		return { version = "1.60.1", build = "69977", interface = "16001", locale = "enUS" }
 	end
@@ -250,6 +320,26 @@ QT:RegisterTest("audit diagnostic report uses cached quest state without live qu
 	local report = addon:BuildDiagnosticReport(12)
 	assert(report:find("build=69977", 1, true))
 	assert(report:find("objective.1=80% Photos", 1, true))
+	assert(report:find("addon=QuestTogether", 1, true))
+	assert(report:find("client.interface=16001", 1, true))
+end)
+
+QT:RegisterTest("shared diagnostic window export retains newest events within its copy budget", function()
+	local addon = setmetatable({ entries = {} }, { __index = QT })
+	function addon:GetDebugLogStore()
+		return self.entries
+	end
+	function addon:BuildDiagnosticReport()
+		return "addon=QuestTogether\nfixture=true"
+	end
+	for index = 1, 600 do
+		addon.entries[index] = { category = "TEST", text = "event-" .. index .. ":" .. string.rep("x", 100) }
+	end
+	local exported = addon:BuildDiagnosticExport()
+	assert(#exported <= 32768)
+	assert(exported:find("event-600:", 1, true))
+	assert(not exported:find("event-1:", 1, true))
+	assert(exported:find("event-599:", 1, true) < exported:find("event-600:", 1, true))
 end)
 
 QT:RegisterTest("audit guarded callback records failures without replacing global handlers", function()

@@ -1,6 +1,7 @@
 -- Diagnostics read addon-owned snapshots. They never inspect live nameplates,
 -- tooltip tables, or quest data to fill a report during a restricted state.
 local QuestTogether = _G.QuestTogether
+local LibChev = QuestTogether.LibChev
 
 local function Count(entries)
 	local count = 0
@@ -11,54 +12,22 @@ local function Count(entries)
 end
 
 function QuestTogether:RunGuardedCallback(context, callback, ...)
-	local arguments, count = { ... }, select("#", ...)
-	local function Capture(err)
-		local detail = self:SafeToString(err, "<inaccessible>")
-		if type(debugstack) == "function" then
-			local ok, stack = pcall(debugstack, 2, 12, 12)
-			if ok then
-				detail = detail .. "\n" .. self:SafeToString(stack, "<inaccessible>")
-			end
-		end
+	return LibChev.GuardCall(callback, function(detail)
 		self:RecordDiagnosticError(context, detail)
-		return err
-	end
-	return xpcall(function()
-		return callback((unpack or table.unpack)(arguments, 1, count))
-	end, Capture)
+	end, ...)
 end
 
 function QuestTogether:GetDiagnosticEnvironment()
-	local environment = {}
-	if type(GetBuildInfo) == "function" then
-		local ok, version, build, date, interface = pcall(GetBuildInfo)
-		if ok then
-			environment.version = self:SafeToString(version, "unknown")
-			environment.build = self:SafeToString(build, "unknown")
-			environment.interface = self:SafeToString(interface, "unknown")
-		end
-	end
-	if type(GetLocale) == "function" then
-		local ok, locale = pcall(GetLocale)
-		if ok then
-			environment.locale = self:SafeToString(locale, "unknown")
-		end
-	end
-	return environment
+	return LibChev.ReadEnvironment({ GetBuildInfo = GetBuildInfo, GetLocale = GetLocale })
 end
 
 function QuestTogether:BuildDiagnosticReport(questId)
 	local environment = self:GetDiagnosticEnvironment()
 	local runtime = self:EnsureRuntimeStateStore()
-	local lines = {}
+	local report = LibChev.DiagnosticReport("QuestTogether", self:GetAddonVersion(), environment)
 	local function Add(label, value)
-		lines[#lines + 1] = label .. "=" .. self:SafeToString(value, "unknown")
+		report:Add(label, value)
 	end
-	Add("QuestTogether", self:GetAddonVersion())
-	Add("client", environment.version)
-	Add("build", environment.build)
-	Add("interface", environment.interface)
-	Add("locale", environment.locale)
 	Add("enabled", self.isEnabled == true)
 	Add("leavingWorld", self.isLoggingOut == true)
 	Add("profile", self.activeProfileKey)
@@ -138,16 +107,50 @@ function QuestTogether:BuildDiagnosticReport(questId)
 			end
 		end
 	end
-	return table.concat(lines, "\n")
+	return report:Text()
+end
+
+function QuestTogether:BuildDiagnosticExport(questId)
+	local report = self:BuildDiagnosticReport(questId)
+	local heading = "\n\nRecent events (older entries may be omitted; /qt dump shows the full history):\n"
+	-- The common copy window is bounded. Retain the newest events instead of
+	-- filling its budget with the oldest lines and dropping the failure itself.
+	local remaining = 32768 - #report - #heading
+	if remaining <= 0 then
+		return report
+	end
+	local entries, tail = self:GetDebugLogStore(), {}
+	for index = #entries, 1, -1 do
+		local text = self:GetDebugLogEntryDisplayText(entries[index])
+		local cost = #text + (#tail > 0 and 1 or 0)
+		if cost > remaining then
+			break
+		end
+		tail[#tail + 1] = text
+		remaining = remaining - cost
+	end
+	local lines = {}
+	for index = #tail, 1, -1 do
+		lines[#lines + 1] = tail[index]
+	end
+	return report .. heading .. table.concat(lines, "\n")
 end
 
 function QuestTogether:ShowDiagnostics(questId)
-	local report = self:BuildDiagnosticReport(questId)
-	self:ShowCopyableWindow({
-		title = "QuestTogether Diagnostics",
-		hint = "Copy this report and /qt dump when reporting a problem. Quest details use the existing cache.",
-		text = report .. "\n\nRecent events:\n" .. self:GetDebugLogText("ALL", ""),
-	})
+	local text = self:BuildDiagnosticExport(questId)
+	if
+		not LibChev.OpenReportWindow(self, text, {
+			title = "QuestTogether Diagnostics",
+			parent = UIParent,
+			createFrame = CreateFrame,
+			restricted = function()
+				return self:IsRuntimeRestricted()
+			end,
+			canMutate = LibChev.CanMutateOwnedRegion,
+		})
+	then
+		self:Print("Diagnostics window unavailable while restricted; /qt dump retains the event history.")
+	end
 end
 
 function QuestTogether:RecordDiagnosticError(context, errorValue)

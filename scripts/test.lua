@@ -97,7 +97,11 @@ CreateFrame = function()
 	return setmetatable({}, Frame)
 end
 UIParent = setmetatable({}, Frame)
+local namespace = {}
 for _, file in ipairs({
+	"Libs/libchev/libchev.lua",
+	"Libs/libchev/ReportWindow.lua",
+	"Libs/libchev/SelfTests.lua",
 	"Core.lua",
 	"HotPathState.lua",
 	"HotPathRuntime.lua",
@@ -111,7 +115,7 @@ for _, file in ipairs({
 }) do
 	local chunk, err = loadfile(addonRoot .. "/" .. file)
 	assert(chunk, err)
-	chunk("QuestTogether", {})
+	chunk("QuestTogether", namespace)
 end
 local testsFile = assert(io.open(addonRoot .. "/Tests.lua", "r"))
 local testsSource = testsFile:read("*a")
@@ -144,18 +148,12 @@ if arg[2] == "reverse" then
 		cases[index], cases[#cases - index + 1] = cases[#cases - index + 1], cases[index]
 	end
 end
-local passed, failed = 0, 0
-for _, testCase in ipairs(QuestTogether.tests) do
-	local ok, err = pcall(function()
-		WithIsolatedState(testCase.fn)
-	end)
-	if ok then
-		passed = passed + 1
-	else
-		failed = failed + 1
-		print("[FAIL] " .. testCase.name .. " -> " .. tostring(err))
-	end
-end
-print("registered=" .. tostring(#QuestTogether.tests))
-print("Test summary: " .. passed .. " passed, " .. failed .. " failed.")
-os.exit(failed == 0 and 0 or 1)
+local result = QuestTogether.LibChev.RunTests(QuestTogether.tests, {
+	run = WithIsolatedState,
+	onFailure = function(failure)
+		print("[FAIL] " .. failure.name .. " -> " .. failure.error)
+	end,
+})
+print("registered=" .. tostring(result.total))
+print("Test summary: " .. result.passed .. " passed, " .. result.failed .. " failed.")
+os.exit(result.failed == 0 and 0 or 1)

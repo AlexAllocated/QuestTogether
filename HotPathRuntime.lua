@@ -1,4 +1,5 @@
 local QuestTogether = _G.QuestTogether
+local LibChev = QuestTogether.LibChev
 
 QuestTogether.runtimeRestrictionTypes = QuestTogether.runtimeRestrictionTypes
 	or {
@@ -39,10 +40,6 @@ local function SafeText(value, fallback)
 	end
 
 	return fallback or ""
-end
-
-local function BuildDeferredWorkKey(workClass, key)
-	return tostring(workClass or "work") .. "::" .. tostring(key or "global")
 end
 
 function QuestTogether:IsRuntimeRestrictionTypeActive(restrictionType)
@@ -136,131 +133,57 @@ function QuestTogether:IsWorkBlocked(workClass)
 	return self:IsRuntimeRestricted()
 end
 
-function QuestTogether:ScheduleDeferredWork(workClass, key, callback, delaySeconds, reason)
-	if type(callback) ~= "function" then
-		return false
-	end
-
-	local state = self:GetDeferredWorkStateStore()
-	local workKey = BuildDeferredWorkKey(workClass, key)
-	local generation = (state.generations[workKey] or 0) + 1
-	state.generations[workKey] = generation
-
-	local entry = {
-		workClass = workClass,
-		key = key,
-		callback = callback,
-		delaySeconds = delaySeconds,
-		reason = reason,
-		generation = generation,
+local function WorkPolicy(owner)
+	local delay = owner.API and owner.API.Delay
+	return {
+		getState = function()
+			return owner:GetDeferredWorkStateStore()
+		end,
+		enabled = function()
+			return owner.isEnabled == true
+		end,
+		blocked = function(workClass)
+			return owner:IsWorkBlocked(workClass)
+		end,
+		delay = type(delay) == "function" and delay or nil,
+		defaultDelay = function(workClass)
+			return owner.runtimeWorkDelayByClass[workClass] or 0
+		end,
+		invoke = function(workClass, key, reason, callback)
+			local ok, err
+			if owner.RunGuardedCallback then
+				ok, err = owner:RunGuardedCallback("work:" .. workClass, callback)
+			else
+				ok, err = LibChev.GuardCall(callback)
+			end
+			if not ok then
+				owner:Debugf(
+					"runtime",
+					"work_failed class=%s key=%s reason=%s error=%s",
+					workClass,
+					SafeText(key),
+					SafeText(reason),
+					SafeText(err)
+				)
+			end
+		end,
 	}
-	state.entries[workKey] = entry
+end
 
-	local delayFn = self.API and self.API.Delay
-	local hasDelayFn = type(delayFn) == "function"
-	local scheduledDelay = delaySeconds
-	if scheduledDelay == nil then
-		scheduledDelay = self.runtimeWorkDelayByClass[workClass] or 0
-	end
-
-	local function runEntry()
-		-- Timers retain the old store after disable/profile resets. Checking only
-		-- its generation lets those callbacks run again after a later enable.
-		if self:GetDeferredWorkStateStore() ~= state then
-			return
-		end
-		local liveEntry = state.entries[workKey]
-		if liveEntry ~= entry or liveEntry.generation ~= generation then
-			return
-		end
-		if not self.isEnabled then
-			return
-		end
-		if self:IsWorkBlocked(workClass) then
-			-- Keep the latest entry parked until an explicit flush or later enqueue retries it.
-			-- Immediate Delay stubs in tests would otherwise recurse indefinitely here.
-			return
-		end
-
-		state.entries[workKey] = nil
-		state.generations[workKey] = nil
-		local ok, err
-		if self.RunGuardedCallback then
-			ok, err = self:RunGuardedCallback("work:" .. workClass, callback)
-		else
-			ok, err = pcall(callback)
-		end
-		if not ok then
-			self:Debugf(
-				"runtime",
-				"work_failed class=%s key=%s reason=%s error=%s",
-				workClass,
-				SafeText(key),
-				SafeText(reason),
-				SafeText(err)
-			)
-		end
-	end
-
-	if not hasDelayFn or scheduledDelay <= 0 then
-		runEntry()
-		return true
-	end
-
-	delayFn(scheduledDelay, runEntry)
-	return true
+function QuestTogether:ScheduleDeferredWork(workClass, key, callback, delaySeconds, reason)
+	return LibChev.ScheduleWork(WorkPolicy(self), workClass, key, callback, delaySeconds, reason)
 end
 
 function QuestTogether:RunOrDeferWork(workClass, key, callback, delaySeconds, reason)
-	if type(callback) ~= "function" then
-		return false
-	end
-
-	if self:IsWorkBlocked(workClass) then
-		self:ScheduleDeferredWork(workClass, key, callback, delaySeconds, reason)
-		return false
-	end
-
-	-- Immediate work supersedes the same parked request too.
-	local state = self:GetDeferredWorkStateStore()
-	local workKey = BuildDeferredWorkKey(workClass, key)
-	state.entries[workKey] = nil
-	state.generations[workKey] = nil
-	callback()
-	return true
+	local policy = WorkPolicy(self)
+	-- Explicit clicks on existing waypoint links remain usable while QT is disabled.
+	-- Background/deferred work still requires the enabled lifetime.
+	policy.allowImmediateWhenDisabled = workClass == "waypoint_mutation"
+	return LibChev.RunOrDeferWork(policy, workClass, key, callback, delaySeconds, reason)
 end
 
 function QuestTogether:FlushDeferredWork(reason)
-	local state = self:GetDeferredWorkStateStore()
-	if not state or not self.isEnabled then
-		return false
-	end
-
-	local pendingEntries = {}
-	for workKey, entry in pairs(state.entries or {}) do
-		pendingEntries[#pendingEntries + 1] = {
-			workKey = workKey,
-			entry = entry,
-		}
-	end
-
-	for index = 1, #pendingEntries do
-		local pending = pendingEntries[index]
-		local workKey = pending and pending.workKey or nil
-		local entry = pending and pending.entry or nil
-		if self:GetDeferredWorkStateStore() ~= state then
-			break
-		end
-		if state.entries[workKey] ~= entry then
-			-- An earlier callback replaced or consumed this entry while flushing.
-		elseif entry and type(entry.callback) == "function" then
-			self:ScheduleDeferredWork(entry.workClass, entry.key, entry.callback, 0, reason or entry.reason)
-		else
-			state.entries[workKey] = nil
-		end
-	end
-
-	return true
+	return LibChev.FlushWork(WorkPolicy(self), reason)
 end
 
 function QuestTogether:ADDON_RESTRICTION_STATE_CHANGED()
