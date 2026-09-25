@@ -429,7 +429,12 @@ function QuestTogether:PLAYER_REGEN_ENABLED()
 end
 
 -- QUEST_ACCEPTED fires early; defer reads until QUEST_LOG_UPDATE.
-function QuestTogether:QUEST_ACCEPTED(_, questId)
+function QuestTogether:QUEST_ACCEPTED(_, questIndexOrId, classicQuestId)
+	-- Retail/Forever pass a quest ID; Classic also supplies the log index first.
+	-- A present but unreadable second argument must not turn the index into an ID.
+	if not self:CanAccessValue(classicQuestId) then return end
+	local questId = questIndexOrId
+	if classicQuestId ~= nil then questId = classicQuestId end
 	local normalizedQuestId = NormalizeQuestId(self, questId)
 	if not normalizedQuestId then
 		return
