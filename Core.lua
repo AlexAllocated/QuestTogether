@@ -5295,6 +5295,7 @@ function QuestTogether:OnLogin()
 	if self.db.profile.enabled then
 		self:Enable()
 	end
+	self:PrintWelcomeMessage()
 end
 
 -- Bootstrap event handlers always registered.

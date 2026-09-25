@@ -111,6 +111,7 @@ for _, file in ipairs({
 	"Libs/libchev/ReportWindow.lua",
 	"Libs/libchev/SelfTests.lua",
 	"Core.lua",
+	"Welcome.lua",
 	"Debug.lua",
 	"HotPathState.lua",
 	"HotPathRuntime.lua",

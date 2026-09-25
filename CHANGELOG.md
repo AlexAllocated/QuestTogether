@@ -1,5 +1,11 @@
 # QuestTogether changelog
 
+## 5.8.3 — 2026-09-24
+
+Announce the installed version, supported clients and settings command once per login or UI reload. Include addon-specific CurseForge and GitHub feedback links; clicking a link opens a native-style copy window. Share message behavior and safe copy UI through private libchev 1.2.0. If link registration or the copy window is unavailable, show the full URL in chat. An unavailable welcome helper cannot interrupt normal addon startup.
+
+Validation: 334 tests pass in both orders on Lua 5.1 and 5.2, with client API checks, Lua parsing and exact library vendor verification. NoPoizen smoke simulations exercise both feedback links on all seven client/ruleset profiles. Live rendering remains a separate check.
+
 ## 5.8.2 — 2026-09-24
 
 Isolate test fixture GUID lookups from nearby players. Fix two false failures in `/qt test` when a real unit occupies the nameplate token used by the tooltip and cached-icon checks. Gameplay nameplate behavior is unchanged.
