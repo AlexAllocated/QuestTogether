@@ -1,5 +1,11 @@
 # QuestTogether changelog
 
+## 5.8.2 — 2026-09-24
+
+Isolate test fixture GUID lookups from nearby players. Fix two false failures in `/qt test` when a real unit occupies the nameplate token used by the tooltip and cached-icon checks. Gameplay nameplate behavior is unchanged.
+
+The offline environment now includes that token collision and reproduces both failures without the fixture fix. All 333 tests pass in both orders on Lua 5.1 and 5.2 after the fix; six client API profiles also pass. In-game confirmation remains separate.
+
 ## 5.8.1 — 2026-09-24
 
 Show Blizzard's quest marker beside QuestTogether in the AddOns list instead of the default question mark.
