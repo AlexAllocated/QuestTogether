@@ -1,5 +1,9 @@
 # QuestTogether changelog
 
+## 5.8.1 — 2026-09-24
+
+Show Blizzard's quest marker beside QuestTogether in the AddOns list instead of the default question mark.
+
 ## 5.8.0 — 2026-09-24
 
 Support current Classic clients with correct quest-acceptance payloads, guarded objective API fallbacks, honest unknown shareability, flavor metadata and six-client API regression checks. Preserve Retail/Forever behavior and shared debug utilities.
