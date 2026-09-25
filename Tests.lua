@@ -37,7 +37,12 @@ local function CreateApiWithOverrides(overrides)
 	for key, value in pairs(QuestTogether.API) do
 		merged[key] = value
 	end
-	local safeTaskAreaDefaults = {
+	local safeFixtureDefaults = {
+		-- Fixture tokens can also identify real nearby players. Tests must supply
+		-- their own GUIDs instead of inheriting the live client's unit identities.
+		UnitGUID = function()
+			return nil
+		end,
 		-- Existing fixtures use retail Name-Realm identities independently of
 		-- the live client's naming mode or the user's surname preference.
 		RegionalUniqueNamesEnabled = function()
@@ -95,7 +100,7 @@ local function CreateApiWithOverrides(overrides)
 			return false
 		end,
 	}
-	for key, value in pairs(safeTaskAreaDefaults) do
+	for key, value in pairs(safeFixtureDefaults) do
 		merged[key] = value
 	end
 	for key, value in pairs(overrides or {}) do

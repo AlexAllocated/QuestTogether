@@ -31,7 +31,12 @@ end
 UnitExists = function()
 	return false
 end
-UnitGUID = function()
+UnitGUID = function(unit)
+	-- A real client can have a player on the token used by creature fixtures.
+	-- Keep that collision present so missing fixture overrides fail offline too.
+	if unit == "nameplate9" then
+		return "Player-0-OFFLINE-NEARBY"
+	end
 	return nil
 end
 UnitFullName = function(unit)
