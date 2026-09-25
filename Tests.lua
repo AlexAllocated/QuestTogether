@@ -2148,6 +2148,35 @@ QuestTogether:RegisterTest("quest removal without turn in announces removal", fu
 	end)
 end)
 
+QuestTogether:RegisterTest("quest acceptance keeps Classic quest ID separate from log index", function()
+	local addon = setmetatable({ pendingQuestRemovals = {}, questsCompleted = {}, pendingQuestAcceptances = {} }, { __index = QuestTogether })
+	function addon:QueueQuestLogTask() end
+	function addon:Debugf() end
+	addon:QUEST_ACCEPTED("QUEST_ACCEPTED", 7, 12345)
+	AssertTrue(addon.pendingQuestAcceptances[12345] ~= nil)
+	AssertEquals(addon.pendingQuestAcceptances[7], nil)
+	addon:QUEST_ACCEPTED("QUEST_ACCEPTED", 54321)
+	AssertTrue(addon.pendingQuestAcceptances[54321] ~= nil)
+	local secret = {}
+	addon.CanAccessValue = function(_, value) return value ~= secret end
+	addon:QUEST_ACCEPTED("QUEST_ACCEPTED", 8, secret)
+	AssertEquals(addon.pendingQuestAcceptances[8], nil)
+	addon:QUEST_ACCEPTED("QUEST_ACCEPTED", 9, false)
+	AssertEquals(addon.pendingQuestAcceptances[9], nil)
+end)
+
+QuestTogether:RegisterTest("quest sharing distinguishes unavailable from not shareable", function()
+	local addon = setmetatable({ API = {} }, { __index = QuestTogether })
+	function addon:GetTrackedQuestStatusState() return { isOnQuest = true } end
+	function addon:IsWorkBlocked() return false end
+	addon.API.IsPushableQuest = function() return nil end
+	AssertEquals(addon:GetQuestShareableStatusLabel(12345), "Unknown")
+	addon.API.IsPushableQuest = function() return false end
+	AssertEquals(addon:GetQuestShareableStatusLabel(12345), "No")
+	addon.API.IsPushableQuest = function() return true end
+	AssertEquals(addon:GetQuestShareableStatusLabel(12345), "Yes")
+end)
+
 QuestTogether:RegisterTest("quest accepted task refresh uses combat-safe wrapper", function()
 	local wrappedRefreshCalls = 0
 

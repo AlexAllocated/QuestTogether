@@ -97,6 +97,7 @@ CreateFrame = function()
 	return setmetatable({}, Frame)
 end
 UIParent = setmetatable({}, Frame)
+local clientChecks = arg[3] and assert(loadfile(addonRoot .. "/scripts/client_profiles.lua"))()(arg[3])
 local namespace = {}
 for _, file in ipairs({
 	"Libs/libchev/libchev.lua",
@@ -126,6 +127,10 @@ testsChunk("QuestTogether", namespace)
 QuestTogether:InitializeDatabase()
 QuestTogether:EnsureRuntimeStateStore()
 QuestTogether.isInitialized = true
+if clientChecks then
+	clientChecks(QuestTogether)
+	os.exit(0)
+end
 for _, file in ipairs({
 	"regression_runtime",
 	"regression_core_state",

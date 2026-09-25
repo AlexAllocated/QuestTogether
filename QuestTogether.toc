@@ -1,6 +1,12 @@
-## Interface: 120001, 120005, 120100, 16001
+## Interface: 120001, 120005, 120100, 16001, 11509, 20506, 50504, 38001, 38002
+## Interface-Mainline: 120001, 120005, 120100
+## Interface-Camelot: 16001
+## Interface-Vanilla: 11509
+## Interface-TBC: 20506
+## Interface-Mists: 50504
+## Interface-Titan: 38001, 38002
 ## Title: QuestTogether
-## Version: 5.7.7
+## Version: 5.8.0
 ## Notes: Quest progress chat bubbles and logs for party and nearby players.
 ## SavedVariables: QuestTogetherDB
 ## Author: Chev

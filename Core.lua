@@ -1582,6 +1582,17 @@ QuestTogether.API = QuestTogether.API or {
 				end
 				return nil
 			end
+			-- Classic's legacy query applies to the selected quest. Read it only
+			-- when selection already matches; never move the user's selection.
+			if type(GetQuestLogSelection) == "function" and type(GetQuestLogPushable) == "function" then
+				local selectionOK, selection = pcall(GetQuestLogSelection)
+				local index = selectionOK and QuestTogether:SafeToNumber(selection) or nil
+				local row = index and index > 0 and QuestTogether.API.GetQuestLogInfo(index) or nil
+				if row and QuestTogether:NormalizeQuestID(row.questID) == numericQuestID then
+					local ok, pushable = pcall(GetQuestLogPushable)
+					if ok and CanAccessForeignValue(pushable) and type(pushable) == "boolean" then return pushable end
+				end
+			end
 			return nil
 		end,
 		GetNumQuestLogEntries = function()
@@ -1694,11 +1705,21 @@ QuestTogether.API = QuestTogether.API or {
 				return nil, nil, nil, nil
 			end
 
-			if type(GetQuestObjectiveInfo) ~= "function" then
-				return nil, nil, nil, nil
+			local ok, text, objectiveType, finished, currentValue
+			if type(GetQuestObjectiveInfo) == "function" then
+				ok, text, objectiveType, finished, currentValue =
+					pcall(GetQuestObjectiveInfo, numericQuestID, numericObjectiveIndex, displayComplete)
+			elseif C_QuestLog and type(C_QuestLog.GetQuestObjectives) == "function" then
+				local queryOK, objectives = pcall(C_QuestLog.GetQuestObjectives, numericQuestID)
+				if not queryOK or not CanAccessForeignTable(objectives) then return nil, nil, nil, nil end
+				local objective = objectives[numericObjectiveIndex]
+				if not CanAccessForeignTable(objective) then return nil, nil, nil, nil end
+				ok, text, objectiveType, finished, currentValue = true, objective.text, objective.type, objective.finished, objective.numFulfilled
+			elseif type(GetQuestLogLeaderBoard) == "function" then
+				local index = QuestTogether.API.GetQuestLogIndexForQuestID(numericQuestID)
+				if not index then return nil, nil, nil, nil end
+				ok, text, objectiveType, finished = pcall(GetQuestLogLeaderBoard, numericObjectiveIndex, index)
 			end
-			local ok, text, objectiveType, finished, currentValue =
-				pcall(GetQuestObjectiveInfo, numericQuestID, numericObjectiveIndex, displayComplete)
 			if not ok then
 				return nil, nil, nil, nil
 			end
@@ -3743,11 +3764,9 @@ function QuestTogether:GetQuestShareableStatusLabel(questId)
 		return "Unknown"
 	end
 
-	if self.API and self.API.IsPushableQuest and self.API.IsPushableQuest(numericQuestId) then
-		return "Yes"
-	end
-
-	return "No"
+	local pushable = self.API and self.API.IsPushableQuest and self.API.IsPushableQuest(numericQuestId)
+	if not self:CanAccessValue(pushable) or type(pushable) ~= "boolean" then return "Unknown" end
+	return pushable and "Yes" or "No"
 end
 
 function QuestTogether:NormalizeQuestLinkTitleText(titleText)
