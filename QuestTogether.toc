@@ -6,7 +6,8 @@
 ## Interface-Mists: 50504
 ## Interface-Titan: 38001, 38002
 ## Title: QuestTogether
-## Version: 5.8.0
+## IconTexture: Interface\GossipFrame\AvailableQuestIcon
+## Version: 5.8.1
 ## Notes: Quest progress chat bubbles and logs for party and nearby players.
 ## SavedVariables: QuestTogetherDB
 ## Author: Chev
