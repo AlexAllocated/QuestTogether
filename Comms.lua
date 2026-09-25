@@ -190,20 +190,6 @@ local function SafeNumber(addon, value)
 	return numberValue
 end
 
-local function NormalizeRealmName(addon, realmName)
-	local sourceRealm = SafeTrimAddonString(addon, realmName, "")
-	if sourceRealm == "" then
-		sourceRealm = addon and addon.API and addon.API.GetRealmName and addon.API.GetRealmName() or ""
-	end
-	if addon and addon.SafeStripWhitespace then
-		return addon:SafeStripWhitespace(sourceRealm, "")
-	end
-	if IsSecretValue(sourceRealm) then
-		return ""
-	end
-	return string.gsub(tostring(sourceRealm), "%s+", "")
-end
-
 -- Lua's substring limit is measured in bytes. Preserve complete UTF-8 code
 -- points when shortening local text or fitting escaped text into a wire packet.
 local function TruncateUtf8(text, maxBytes)
@@ -985,7 +971,7 @@ end
 function QuestTogether:GetPlayerPingMetadata()
 	local fullName = self:GetPlayerFullName() or self:GetPlayerName() or "Unknown"
 	local unitRealm
-	if self.API.UnitFullName then
+	if self.API.UnitFullName and not self:UsesRegionalPlayerNames() then
 		local unitName
 		unitName, unitRealm = self.API.UnitFullName("player")
 	end
@@ -1084,9 +1070,8 @@ function QuestTogether:BuildAnnouncementEventForUnit(unitToken, eventType, text)
 		return nil
 	end
 
-	local unitName, unitRealm = self.API.UnitFullName(unitToken)
-	unitName = SafeTrimAddonString(self, unitName, "")
-	if unitName == "" then
+	local senderName = self:GetUnitFullName(unitToken)
+	if not senderName then
 		return nil
 	end
 
@@ -1098,10 +1083,6 @@ function QuestTogether:BuildAnnouncementEventForUnit(unitToken, eventType, text)
 			senderGUID = SafeAddonString(self, guidValue or "", "")
 		end
 	end
-	local senderName = SafeAddonString(self, unitName, "")
-		.. "-"
-		.. SafeAddonString(self, NormalizeRealmName(self, unitRealm), "")
-
 	return self:SanitizeAnnouncementEventData({
 		version = ANNOUNCEMENT_WIRE_VERSION,
 		eventType = SafeAddonString(self, eventType or "", ""),

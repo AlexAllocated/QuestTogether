@@ -25,7 +25,7 @@ Use the library's `scripts/vendor.py` with an immutable reviewed revision. Do no
 python3 ../LibChev/scripts/vendor.py . --check
 ```
 
-Version `5.7.6` pins libchev `1.1.2` at `484a7f54aaf46c0ec042ff813b06f69bba94628f`.
+Version `5.7.7` pins libchev `1.1.3` at `445c0cf5b3dd40d36461f6e0b9adc2feb8dfb16b`. This includes the console stacking fix; 331 addon tests pass in both orders under Lua 5.1/5.2.
 
 Run normal and reverse suites under Lua 5.1 and 5.2, Lua parsing, TOC validation, and package checks after updating. Offline mocks remain excluded from the TOC.
 
@@ -40,3 +40,5 @@ The user reported all 324 tests passing in Forever 1.60.1 build 70009 with QT `5
 Offline success does not prove live Retail/Forever rendering or taint safety. Before a stable release, run `/qt test` and `/qt diagnostics` in each available client. Exercise select/copy, category/search, scrolling away from and back to the tail, resize, clear, repeated test runs, and switching between report and log modes. Check opening and interacting across restrictions, then quests, progress bubbles, nameplates and coordinate links across combat, zoning, disable/re-enable and reload with the ordinary addon set.
 
 For the stable release, the user confirmed the shared frame appearance after the texture-bounds correction. This visual confirmation does not establish every gameplay or restriction path.
+
+The 1.1.3 console keeps each window and its child controls in one native stacking group; its category menu stays inside that group. Live interaction with overlapping windows remains a separate client check.

@@ -3445,7 +3445,7 @@ function QuestTogether:TryShowAnnouncementBubbleOnUnitNameplate(unitToken, text,
 			self:Debugf("bubble", "Failed to show bubble on host for unit=%s", SafeText(unitToken, ""))
 			return false, "Unable to show a bubble on that nameplate."
 		end
-		local unitName = self.API.UnitName and self.API.UnitName(unitToken) or nil
+		local unitName = self:GetUnitFullName(unitToken)
 		return true, unitName or unitToken
 	end
 
@@ -3671,7 +3671,7 @@ function QuestTogether:ShowAnnouncementBubbleOnRandomVisiblePlayer(text)
 
 	local unitFrame = select(1, self:GetAccessibleFrameMember(namePlateFrameBase, "UnitFrame"))
 	local unitToken = unitFrame and ResolveNameplateUnitToken(namePlateFrameBase, unitFrame) or nil
-	local unitName = unitToken and self.API.UnitName(unitToken) or nil
+	local unitName = unitToken and self:GetUnitFullName(unitToken) or nil
 	return true, unitName or "Unknown"
 end
 
@@ -3967,15 +3967,7 @@ function QuestTogether:FindVisiblePlayerNameplateForSender(senderGUID, senderNam
 		end
 
 		local unitGUID = self:GetNameplateUnitGuid(unitToken)
-		local unitName, unitRealm
-	if self.API.UnitFullName then unitName, unitRealm = self.API.UnitFullName(unitToken) end
-		local fullUnitName = nil
-		if unitName then
-			local realmName = self:SafeStripWhitespace(unitRealm or self.API.GetRealmName() or "", "")
-			fullUnitName = SafeText(unitName, "") .. "-" .. SafeText(realmName, "")
-		else
-			fullUnitName = self:NormalizeMemberName(self.API.UnitName and self.API.UnitName(unitToken) or nil)
-		end
+		local fullUnitName = self:GetUnitFullName(unitToken)
 		local normalizedUnitName = fullUnitName and self:NormalizeMemberName(fullUnitName) or nil
 
 		if self:DoesResolvedUnitIdentityMatchSender(unitGUID, normalizedUnitName, senderGUID, normalizedSenderName) then
@@ -4024,15 +4016,7 @@ function QuestTogether:DoesUnitTokenMatchSender(unitToken, senderGUID, senderNam
 	end
 	local normalizedSenderName = self:NormalizeMemberName(senderName)
 
-	local unitName, unitRealm
-	if self.API.UnitFullName then unitName, unitRealm = self.API.UnitFullName(unitToken) end
-	local fullUnitName = nil
-	if unitName then
-		local realmName = self:SafeStripWhitespace(unitRealm or self.API.GetRealmName() or "", "")
-		fullUnitName = SafeText(unitName, "") .. "-" .. SafeText(realmName, "")
-	else
-		fullUnitName = self:NormalizeMemberName(self.API.UnitName and self.API.UnitName(unitToken) or nil)
-	end
+	local fullUnitName = self:GetUnitFullName(unitToken)
 
 	local normalizedUnitName = fullUnitName and self:NormalizeMemberName(fullUnitName) or nil
 	return self:DoesResolvedUnitIdentityMatchSender(unitGUID, normalizedUnitName, senderGUID, normalizedSenderName)

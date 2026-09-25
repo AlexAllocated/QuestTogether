@@ -38,6 +38,14 @@ local function CreateApiWithOverrides(overrides)
 		merged[key] = value
 	end
 	local safeTaskAreaDefaults = {
+		-- Existing fixtures use retail Name-Realm identities independently of
+		-- the live client's naming mode or the user's surname preference.
+		RegionalUniqueNamesEnabled = function()
+			return false
+		end,
+		ShouldDisplaySurname = function()
+			return true
+		end,
 		GetTaskInfo = function()
 			return nil, nil, nil, nil, nil
 		end,
@@ -223,6 +231,7 @@ local function WithIsolatedState(testFn)
 	QuestTogether.recentCommMessageSignatures = {}
 	QuestTogether.pendingQuestRemovals = {}
 	QuestTogether.isLoggingOut = false
+	QuestTogether.API = CreateApiWithOverrides({})
 
 	local ok, err = pcall(testFn)
 

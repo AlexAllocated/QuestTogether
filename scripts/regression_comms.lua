@@ -104,6 +104,193 @@ local function Event(text)
 	}
 end
 
+local function NewRegionalNameFixture()
+	local addon = NewCommsFixture()
+	addon.showSurname = false
+	addon.suppressLocalAnnouncementDisplayDuringTests = false
+	addon.API.RegionalUniqueNamesEnabled = function()
+		return true
+	end
+	addon.API.ShouldDisplaySurname = function()
+		return addon.showSurname
+	end
+	addon.API.UnitFullName = function(unit)
+		return "Anakin", unit == "player" and "Ofthesea" or "Othername"
+	end
+	addon.API.UnitName = function()
+		return "Anakin"
+	end
+	addon.API.UnitGUID = function()
+		return "Player-fixture-self"
+	end
+	addon.API.UnitExists = function(unit)
+		return unit == "player" or unit == "party1"
+	end
+	addon.API.IsInRaid = function()
+		return false
+	end
+	function addon:GetOption(key)
+		return key == "showChatLogs"
+	end
+	function addon:ShouldDisplayAnnouncementType()
+		return true
+	end
+	function addon:GetAnnouncementIconInfo()
+		return "", ""
+	end
+	function addon:FindVisiblePlayerNameplateForSender()
+		return nil
+	end
+	function addon:FindNearbyPlayerUnitTokenForSender()
+		return nil
+	end
+	function addon:IsAnnouncementSenderNearbyByLocation()
+		return true
+	end
+	function addon:ShouldShowAnnouncementsForRemoteSender()
+		return true
+	end
+	function addon:PrintConsoleAnnouncement(text, sender)
+		self.printed[#self.printed + 1] = { text = text, sender = sender, label = self:GetShortDisplayName(sender) }
+	end
+	return addon
+end
+
+QuestTogether:RegisterTest("Forever local announcements reject their own channel and party echoes", function()
+	local addon = NewRegionalNameFixture()
+	Equal(addon:PublishAnnouncementEvent("QUEST_PROGRESS", "1/5 objectives", 123), true)
+	Equal(#addon.printed, 1)
+	Equal(addon.printed[1].label, "Anakin")
+	local packet = addon.wire[1][2]
+	addon:OnCommReceived(addon.commPrefix, packet, "CHANNEL", "Anakin Ofthesea", 7, addon.announcementChannelName)
+	addon:OnCommReceived(addon.commPrefix, packet, "PARTY", "Anakin-Ofthesea")
+	Equal(#addon.printed, 1)
+	Equal(addon:GetCommsDiagnostics().acceptedAnnouncements, 1)
+	-- A different character sharing the first name must still be accepted,
+	-- even if the payload claims our GUID. Only transport identity is trusted.
+	addon:OnCommReceived(addon.commPrefix, packet, "CHANNEL", "Anakin Othername", 7, addon.announcementChannelName)
+	Equal(#addon.printed, 2)
+	Equal(addon.printed[2].sender, "Anakin Othername")
+	Equal(addon.printed[2].label, "Anakin Othername")
+end)
+
+QuestTogether:RegisterTest(
+	"Forever surname setting changes labels without changing identity or profile keys",
+	function()
+		local addon = NewRegionalNameFixture()
+		for _, show in ipairs({ false, true, false }) do
+			addon.showSurname = show
+			Equal(addon:GetPlayerFullName(), "Anakin Ofthesea")
+			Equal(addon:GetCurrentCharacterKey(), "Anakin-Ofthesea")
+			Equal(addon:GetPersonalBubbleAnchorKey(), "Anakin-Ofthesea")
+			Equal(addon:GetShortDisplayName("Anakin Ofthesea"), show and "Anakin Ofthesea" or "Anakin")
+			Equal(addon:GetShortDisplayName("Anakin-Ofthesea"), show and "Anakin Ofthesea" or "Anakin")
+			Equal(addon:GetShortDisplayName("Anakin Othername"), "Anakin Othername")
+			Equal(addon:IsSelfSender("Anakin Ofthesea"), true)
+			Equal(addon:IsSelfSender("Anakin-Ofthesea"), true)
+			Equal(addon:IsSelfSender("Anakin Othername"), false)
+			Equal(addon:IsSelfSender("Anakin"), false)
+			Equal(addon:BuildLocalAnnouncementEvent("QUEST_PROGRESS", "progress", 123).senderName, "Anakin Ofthesea")
+		end
+	end
+)
+
+QuestTogether:RegisterTest("Forever roster unit announcements and ping metadata preserve full names", function()
+	local addon = NewRegionalNameFixture()
+	addon:RefreshPartyRoster()
+	Equal(addon.partyMembers["Anakin Ofthesea"].displayName, "Anakin")
+	Equal(addon.partyMembers["Anakin Othername"].displayName, "Anakin Othername")
+	Equal(addon:IsGroupedSender("Anakin-Othername"), true)
+	Equal(addon:BuildAnnouncementEventForUnit("party1", "QUEST_PROGRESS", "progress").senderName, "Anakin Othername")
+	Equal(addon:GetPlayerPingMetadata().realmName, "Realm")
+	Equal(addon:GetPlayerPingMetadata().senderName, "Anakin Ofthesea")
+	addon.API.UnitFullName = function()
+		return "Anakin Ofthesea", nil
+	end
+	Equal(addon:GetPlayerFullName(), "Anakin Ofthesea")
+end)
+
+QuestTogether:RegisterTest("Forever hidden surnames never become social interaction targets", function()
+	local addon = NewRegionalNameFixture()
+	local queried = {}
+	addon.API.IsOnIgnoredList = function(name)
+		queried[#queried + 1] = name
+		return false
+	end
+	Equal(QuestTogether.IsIgnoredPlayerName(addon, "Anakin Ofthesea"), false)
+	Equal(#queried, 1)
+	Equal(queried[1], "Anakin Ofthesea")
+	addon.API.InviteUnit = function(name)
+		queried[#queried + 1] = name
+	end
+	addon:InviteChatLogSpeaker("Anakin Ofthesea")
+	Equal(queried[2], "Anakin Ofthesea")
+end)
+
+QuestTogether:RegisterTest("Forever nameplate matching preserves surnames and rejects conflicting GUIDs", function()
+	local addon = NewRegionalNameFixture()
+	function addon:IsNameplateUnitPlayer()
+		return true
+	end
+	addon.API.UnitGUID = function()
+		return nil
+	end
+	Equal(addon:DoesUnitTokenMatchSender("party1", nil, "Anakin Othername"), true)
+	Equal(addon:DoesUnitTokenMatchSender("party1", nil, "Anakin-Othername"), true)
+	Equal(addon:DoesUnitTokenMatchSender("party1", nil, "Anakin Ofthesea"), false)
+	Equal(addon:DoesUnitTokenMatchSender("party1", nil, "Anakin"), false)
+	addon.API.UnitGUID = function()
+		return "Player-fixture-other"
+	end
+	Equal(addon:DoesUnitTokenMatchSender("party1", "Player-fixture-self", "Anakin Othername"), false)
+	Equal(addon:DoesUnitTokenMatchSender("party1", "Player-fixture-other", "Anakin Othername"), true)
+end)
+
+QuestTogether:RegisterTest("Forever display settings fail closed and inaccessible names stay unread", function()
+	local addon = NewRegionalNameFixture()
+	local inaccessible = setmetatable({}, {
+		__tostring = function()
+			error("foreign name traversed")
+		end,
+	})
+	function addon:CanAccessValue(value)
+		return value ~= inaccessible
+	end
+	Equal(addon:GetShortDisplayName(inaccessible), "Unknown")
+	addon.API.ShouldDisplaySurname = function()
+		return inaccessible
+	end
+	Equal(addon:GetShortDisplayName("Anakin Ofthesea"), "Anakin")
+	addon.API.ShouldDisplaySurname = function()
+		error("unknown setting")
+	end
+	Equal(addon:GetShortDisplayName("Anakin Ofthesea"), "Anakin")
+	Equal(addon:GetShortDisplayName("Anakin Othername"), "Anakin Othername")
+	addon.API.UnitFullName = function()
+		return "Anakin", inaccessible
+	end
+	Equal(addon:GetPlayerFullName(), nil)
+end)
+
+QuestTogether:RegisterTest("retail names keep realm identity and native short display", function()
+	local addon = NewCommsFixture()
+	addon.API.RegionalUniqueNamesEnabled = function()
+		return false
+	end
+	addon.API.Ambiguate = function(name, context)
+		Equal(context, "short")
+		return name:match("^[^-]+")
+	end
+	addon.API.ShouldDisplaySurname = function()
+		error("not a regional name")
+	end
+	Equal(addon:GetPlayerFullName(), "MyPlayer-Realm")
+	Equal(addon:GetShortDisplayName("MyPlayer-Realm"), "MyPlayer")
+	Equal(addon:NormalizeMemberName("Other-Other Realm"), "Other-OtherRealm")
+	Equal(addon:IsSelfSender("MyPlayer-Realm"), true)
+	Equal(addon:IsSelfSender("MyPlayer-OtherRealm"), false)
+end)
+
 QuestTogether:RegisterTest("comms reports rejected or throwing send results as failure", function()
 	local addon = NewCommsFixture()
 	for _, result in ipairs({ 1, 2, 3, 7, 8, 11, false }) do
