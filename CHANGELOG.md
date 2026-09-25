@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+Default quest objective icons to the left of the nameplate. Existing saved icon positions remain unchanged.
+
 Respect Forever's “My Last Name” setting when displaying your character's name. Keep other players' surnames visible, matching the native setting's scope. Use full names consistently for communications, group membership, nameplate matching, and social actions while preserving existing profile and personal bubble position keys.
 
 Fix duplicate local quest announcements caused by receiving your own channel message under a different full-name format. Regression coverage exercises the local announcement followed by its channel and party echoes, including another character with the same first name.
