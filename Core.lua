@@ -494,6 +494,9 @@ function QuestTogether:GetChatBubbleDurationLabel(durationValue)
 end
 
 function QuestTogether:GetPersonalBubbleAnchorKey()
+	if self:UsesRegionalPlayerNames() then
+		return self:GetCurrentCharacterKey()
+	end
 	if self.GetPlayerFullName then
 		local fullName = self:GetPlayerFullName()
 		if fullName and fullName ~= "" then
@@ -839,6 +842,30 @@ QuestTogether.API = QuestTogether.API or {
 			unitRealm = nil
 		end
 		return unitName, unitRealm
+	end,
+	RegionalUniqueNamesEnabled = function()
+		if type(RegionalUniqueNamesEnabled) ~= "function" then
+			return false
+		end
+		local ok, enabled = pcall(RegionalUniqueNamesEnabled)
+		if ok and CanAccessForeignValue(enabled) and type(enabled) == "boolean" then
+			return enabled
+		end
+		return nil
+	end,
+	ShouldDisplaySurname = function()
+		if not CanAccessForeignTable(C_PlayerInfo) then
+			return nil
+		end
+		local getter = C_PlayerInfo.ShouldDisplaySurname
+		if not CanAccessForeignValue(getter) or type(getter) ~= "function" then
+			return nil
+		end
+		local ok, display = pcall(getter)
+		if ok and CanAccessForeignValue(display) and type(display) == "boolean" then
+			return display
+		end
+		return nil
 	end,
 	UnitClass = function(unitToken)
 		local ok, className, classFile = pcall(UnitClass, unitToken)
@@ -2275,6 +2302,17 @@ local function NormalizeProfileKey(profileKey)
 end
 
 function QuestTogether:GetCurrentCharacterKey()
+	-- Keep existing Forever profile assignments: earlier versions interpreted
+	-- UnitFullName's second return as a realm and stored First-Surname keys.
+	-- This legacy storage key must not become a display or transport identity.
+	if self:UsesRegionalPlayerNames() then
+		local first, last = self.API.UnitFullName("player")
+		first = self:SafeTrimString(first, "")
+		last = self:SafeStripWhitespace(last, "")
+		if first ~= "" and last ~= "" then
+			return first .. "-" .. last
+		end
+	end
 	local fullName = self.GetPlayerFullName and self:GetPlayerFullName() or nil
 	if type(fullName) == "string" and fullName ~= "" then
 		return fullName
@@ -3059,16 +3097,33 @@ function QuestTogether:GetAddonVersion()
 end
 
 function QuestTogether:GetShortDisplayName(name)
-	if not name or name == "" then
+	name = self:SafeTrimString(name, "")
+	if name == "" then
 		return "Unknown"
+	end
+	if self:UsesRegionalPlayerNames() then
+		local fullName = self:NormalizeMemberName(name) or name
+		if self:IsSelfSender(fullName) then
+			local getter = self.API and self.API.ShouldDisplaySurname
+			local ok, showSurname = false, nil
+			if type(getter) == "function" then
+				ok, showSurname = pcall(getter)
+			end
+			if not ok or not self:CanAccessValue(showSurname) or showSurname ~= true then
+				return SafeMatch(fullName, "^(%S+)") or fullName
+			end
+		end
+		return fullName
 	end
 
 	local ambiguate = self.API.Ambiguate or Ambiguate
 	if type(ambiguate) == "function" then
-		return ambiguate(name, "short")
+		local ok, displayName = pcall(ambiguate, name, "short")
+		if ok then
+			return self:SafeTrimString(displayName, name)
+		end
 	end
-
-	return tostring(name)
+	return name
 end
 
 function QuestTogether:NormalizeAnnouncementWarModeValue(warMode)
@@ -4034,7 +4089,7 @@ function QuestTogether:PrintConsoleAnnouncement(message, targetName, classFile, 
 	local speakerName = targetName
 	local isRemoteSpeaker = false
 	if speakerName == nil or speakerName == "" then
-		speakerName = self:GetPlayerName()
+		speakerName = self:GetPlayerFullName() or self:GetPlayerName()
 	end
 	local resolvedClassFile = classFile
 	if not resolvedClassFile or resolvedClassFile == "" then
@@ -4082,6 +4137,11 @@ function QuestTogether:IsIgnoredPlayerName(playerName)
 
 	if self.API.IsOnIgnoredList(fullName) then
 		return true
+	end
+	-- Hiding our surname is presentation only; never query social identity
+	-- using a first-name-only label that could identify somebody else.
+	if self:UsesRegionalPlayerNames() then
+		return false
 	end
 
 	local shortName = self:GetShortDisplayName(fullName)

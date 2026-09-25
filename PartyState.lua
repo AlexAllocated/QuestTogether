@@ -59,10 +59,29 @@ local function SortNames(nameList)
 	end)
 end
 
+function QuestTogether:UsesRegionalPlayerNames()
+	local getter = self.API and self.API.RegionalUniqueNamesEnabled
+	if type(getter) ~= "function" then
+		return false
+	end
+	local ok, enabled = pcall(getter)
+	return ok and self:CanAccessValue(enabled) and enabled == true
+end
+
 function QuestTogether:NormalizeMemberName(name)
 	name = self:SafeTrimString(name, "")
 	if name == "" then
 		return nil
+	end
+	if self:UsesRegionalPlayerNames() then
+		-- Forever transports First Surname, while old QT payloads used
+		-- First-Surname. Normalize both to the native full identity. Never
+		-- append a realm or remove a surname because of a display setting.
+		local first, surname = SafeMatch(name, "^([^%s%-]+)%-(.+)$")
+		if first and surname then
+			return first .. " " .. surname
+		end
+		return name
 	end
 
 	local baseName, realmName = SafeMatch(name, "^([^%-]+)%-(.+)$")
@@ -80,14 +99,34 @@ function QuestTogether:NormalizeMemberName(name)
 	return normalized
 end
 
-function QuestTogether:GetPlayerFullName()
-	local name, realm = self.API.UnitFullName("player")
+function QuestTogether:GetUnitFullName(unitToken)
+	local name, realm
+	if self.API.UnitFullName then
+		name, realm = self.API.UnitFullName(unitToken)
+	end
 	name = self:SafeTrimString(name, "")
+	if name == "" then
+		return self:NormalizeMemberName(self.API.UnitName and self.API.UnitName(unitToken) or nil)
+	end
+	if self:UsesRegionalPlayerNames() then
+		if not self:CanAccessValue(realm) then
+			return nil
+		end
+		local surname = self:SafeTrimString(realm, "")
+		if surname ~= "" and not name:find(" ", 1, true) then
+			name = name .. " " .. surname
+		end
+		return self:NormalizeMemberName(name)
+	end
 	realm = NormalizeRealmName(self, realm)
 	if name == "" or not realm or realm == "" then
 		return nil
 	end
 	return name .. "-" .. realm
+end
+
+function QuestTogether:GetPlayerFullName()
+	return self:GetUnitFullName("player")
 end
 
 function QuestTogether:InitializePartyState()
@@ -101,17 +140,7 @@ local function AddUnitToRoster(addon, unitToken, membersByName, orderedNames)
 		return
 	end
 
-	local fullName
-	local unitName, unitRealm = addon.API.UnitFullName(unitToken)
-	unitName = addon:SafeTrimString(unitName, "")
-	if unitName ~= "" then
-		unitRealm = NormalizeRealmName(addon, unitRealm)
-		if unitRealm and unitRealm ~= "" then
-			fullName = unitName .. "-" .. unitRealm
-		end
-	else
-		fullName = addon:NormalizeMemberName(addon.API.UnitName(unitToken))
-	end
+	local fullName = addon:GetUnitFullName(unitToken)
 
 	if not fullName or membersByName[fullName] then
 		return
