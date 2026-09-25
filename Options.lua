@@ -757,7 +757,7 @@ function QuestTogether:RefreshWhereToAnnounceWindow()
 		)
 	end
 
-	local showBubbleControls = self:GetOption("showChatBubbles")
+	local showBubbleControls = self:GetOption("showChatBubbles") and true or false
 	if controls.hideMyOwnChatBubbles then
 		controls.hideMyOwnChatBubbles:SetShown(showBubbleControls)
 		if controls.hideMyOwnChatBubbles.Label then
@@ -1075,9 +1075,9 @@ function QuestTogether:InitializeProfilesWindow(parentCategory)
 	end
 
 	createProfileButton:SetScript("OnClick", CreateAndActivateProfile)
-	createProfileEdit:SetScript("OnEnterPressed", function(self)
+	createProfileEdit:SetScript("OnEnterPressed", function(editBox)
 		CreateAndActivateProfile()
-		self:ClearFocus()
+		editBox:ClearFocus()
 	end)
 
 	local resetButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")

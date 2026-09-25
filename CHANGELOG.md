@@ -1,5 +1,13 @@
 # QuestTogether changelog
 
+## 5.8.6 — 2026-09-25
+
+Harden character names, class names, quest titles and custom class colors against inaccessible or malformed API values. Validate optional TomTom and Questie integration data before using it, and stop reading Questie tooltip lines at inaccessible data. Normalize bubble visibility and edit-mode state to booleans before passing them to UI controls.
+
+Consolidate the loading-screen event handler, remove unused private arguments and an unused restriction-enum branch, and clarify callback and return-value handling. Keep modern/legacy client fallbacks and the exact private library revision intact.
+
+Validation: 336 tests pass in normal and reverse order on Lua 5.1 and 5.2, with expanded adapter checks across six client profiles. New regressions fail against the previous implementation. Lua parsing, exact library verification and diff checks pass. Reviewed the remaining Ketho WoW API/LuaLS diagnostics, including a separate pass without offline client mocks; retained findings have specific compatibility, guard, callback, library or fixture reasons. Live Retail and Forever gameplay validation remains separate.
+
 ## 5.8.5 — 2026-09-25
 
 Fix task/world-quest map discovery on modern clients by reading `questID` from `C_TaskQuest.GetQuestsOnMap`, while retaining the legacy API and `questId` field for older clients. Prefer `C_ChatInfo.PerformEmote` so completion emotes work when deprecated globals are disabled; safely handle missing or failing emote APIs.

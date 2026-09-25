@@ -69,6 +69,14 @@ local function CanAccessForeignTable(rawTable)
 	return CanAccessForeignValue(rawTable)
 end
 
+---@return string?
+local function ReadOptionalString(value)
+	if not CanAccessForeignValue(value) or type(value) ~= "string" then
+		return nil
+	end
+	return value
+end
+
 local function SanitizeQuestInfoEnumValue(rawValue)
 	if not CanAccessForeignValue(rawValue) then
 		return nil
@@ -839,17 +847,11 @@ QuestTogether.API = QuestTogether.API or {
 		return guidValue
 	end,
 	UnitFullName = function(unitToken)
-		local ok, unitName, unitRealm = pcall(UnitFullName, unitToken)
+		local ok, rawUnitName, rawUnitRealm = pcall(UnitFullName, unitToken)
 		if not ok then
 			return nil, nil
 		end
-		if not CanAccessForeignValue(unitName) then
-			unitName = nil
-		end
-		if not CanAccessForeignValue(unitRealm) then
-			unitRealm = nil
-		end
-		return unitName, unitRealm
+		return ReadOptionalString(rawUnitName), ReadOptionalString(rawUnitRealm)
 	end,
 	RegionalUniqueNamesEnabled = function()
 		if type(RegionalUniqueNamesEnabled) ~= "function" then
@@ -876,19 +878,11 @@ QuestTogether.API = QuestTogether.API or {
 		return nil
 	end,
 	UnitClass = function(unitToken)
-		local ok, className, classFile = pcall(UnitClass, unitToken)
+		local ok, rawClassName, rawClassFile = pcall(UnitClass, unitToken)
 		if not ok then
 			return nil, nil
 		end
-		if QuestTogether and QuestTogether.IsSecretValue then
-			if QuestTogether:IsSecretValue(className) then
-				className = nil
-			end
-			if QuestTogether:IsSecretValue(classFile) then
-				classFile = nil
-			end
-		end
-		return className, classFile
+		return ReadOptionalString(rawClassName), ReadOptionalString(rawClassFile)
 	end,
 	UnitRace = function(unitToken)
 		local ok, raceName = pcall(UnitRace, unitToken)
@@ -980,10 +974,10 @@ QuestTogether.API = QuestTogether.API or {
 					end
 				end
 			end
-			local numericCount = QuestTogether and QuestTogether.API and QuestTogether.API.GetNumQuestLogEntries
+			local rawCount = QuestTogether and QuestTogether.API and QuestTogether.API.GetNumQuestLogEntries
 				and QuestTogether.API.GetNumQuestLogEntries()
 				or 0
-			numericCount = QuestTogether and QuestTogether.SafeToNumber and QuestTogether:SafeToNumber(numericCount) or nil
+			local numericCount = QuestTogether and QuestTogether.SafeToNumber and QuestTogether:SafeToNumber(rawCount) or nil
 			if numericCount and numericCount > 0 then
 				numericCount = math.floor(numericCount + 0.5)
 				for questLogIndex = 1, numericCount do
@@ -1242,7 +1236,7 @@ QuestTogether.API = QuestTogether.API or {
 				return nil
 			end
 
-			local ok, questTitle, factionID, capped, displayAsObjective =
+			local ok, rawQuestTitle, factionID, capped, displayAsObjective =
 				pcall(C_TaskQuest.GetQuestInfoByQuestID, numericQuestID)
 			if not ok then
 				return nil
@@ -1262,10 +1256,8 @@ QuestTogether.API = QuestTogether.API or {
 				return nil
 			end
 
-			if QuestTogether and QuestTogether.IsSecretValue and QuestTogether:IsSecretValue(questTitle) then
-				questTitle = nil
-			end
-			if type(questTitle) ~= "string" or questTitle == "" then
+			local questTitle = ReadOptionalString(rawQuestTitle)
+			if questTitle == "" then
 				questTitle = nil
 			end
 
@@ -1813,17 +1805,17 @@ QuestTogether.API = QuestTogether.API or {
 		end
 		return false
 	end,
-		IsAddOnLoaded = function(addonName)
+		IsAddOnLoaded = function(requestedAddonName)
 			if C_AddOns and C_AddOns.IsAddOnLoaded then
-				local ok, isLoaded = pcall(C_AddOns.IsAddOnLoaded, addonName)
+				local ok, isLoaded = pcall(C_AddOns.IsAddOnLoaded, requestedAddonName)
 				return ok and isLoaded and true or false
 			end
-			local ok, isLoaded = pcall(IsAddOnLoaded, addonName)
+			local ok, isLoaded = pcall(IsAddOnLoaded, requestedAddonName)
 			return ok and isLoaded and true or false
 		end,
-		GetAddOnMetadata = function(addonName, fieldName)
+		GetAddOnMetadata = function(requestedAddonName, fieldName)
 			if C_AddOns and C_AddOns.GetAddOnMetadata then
-				local ok, metadata = pcall(C_AddOns.GetAddOnMetadata, addonName, fieldName)
+				local ok, metadata = pcall(C_AddOns.GetAddOnMetadata, requestedAddonName, fieldName)
 				if not ok then
 					return nil
 				end
@@ -1833,7 +1825,7 @@ QuestTogether.API = QuestTogether.API or {
 				return metadata
 			end
 			if type(GetAddOnMetadata) == "function" then
-				local ok, metadata = pcall(GetAddOnMetadata, addonName, fieldName)
+				local ok, metadata = pcall(GetAddOnMetadata, requestedAddonName, fieldName)
 				if not ok then
 					return nil
 				end
@@ -3097,18 +3089,33 @@ function QuestTogether:GetIconChatTagFromAsset(iconAsset, iconKind, size)
 end
 
 function QuestTogether:GetClassColorCode(classFile)
-	local colorTable = nil
-	if CUSTOM_CLASS_COLORS and classFile and CUSTOM_CLASS_COLORS[classFile] then
-		colorTable = CUSTOM_CLASS_COLORS[classFile]
-	elseif RAID_CLASS_COLORS and classFile and RAID_CLASS_COLORS[classFile] then
-		colorTable = RAID_CLASS_COLORS[classFile]
-	end
-
-	if not colorTable or not colorTable.colorStr then
+	if not CanAccessForeignValue(classFile) or type(classFile) ~= "string" then
 		return "|cffffffff"
 	end
+	-- CUSTOM_CLASS_COLORS is an optional addon integration, not a Blizzard API.
+	-- Validate both the registry and its entry before reading display values.
+	local colorTable = nil
+	if CanAccessForeignTable(CUSTOM_CLASS_COLORS) then
+		local customColor = CUSTOM_CLASS_COLORS[classFile]
+		if CanAccessForeignTable(customColor) then
+			colorTable = customColor
+		end
+	end
+	if not colorTable and CanAccessForeignTable(RAID_CLASS_COLORS) then
+		local defaultColor = RAID_CLASS_COLORS[classFile]
+		if CanAccessForeignTable(defaultColor) then
+			colorTable = defaultColor
+		end
+	end
 
-	return "|c" .. tostring(colorTable.colorStr)
+	if not colorTable then
+		return "|cffffffff"
+	end
+	local colorString = ReadOptionalString(colorTable.colorStr)
+	if not colorString or not colorString:match("^%x%x%x%x%x%x%x%x$") then
+		return "|cffffffff"
+	end
+	return "|c" .. colorString
 end
 
 function QuestTogether:GetPlayerClassFile()
@@ -3839,7 +3846,7 @@ function QuestTogether:GetTrackedQuestAnnouncementIcon(questData)
 
 	local iconKind = tostring(questData.iconKind or "")
 	if iconKind == "" then
-		iconKind = nil
+		return iconAsset, nil
 	end
 
 	return iconAsset, iconKind
@@ -3890,7 +3897,7 @@ function QuestTogether:GetQuestCompareShareableToYouLabel(isPushable)
 	return "Unknown"
 end
 
-function QuestTogether:BuildQuestCompareMessage(remoteName, compareEntry)
+function QuestTogether:BuildQuestCompareMessage(_remoteName, compareEntry)
 	if type(compareEntry) ~= "table" then
 		return "Quest comparison unavailable."
 	end
@@ -4045,12 +4052,16 @@ function QuestTogether:CreateTomTomWaypoint(mapID, coordX, coordY)
 	end
 
 	local tomTom = _G.TomTom
-	if not (tomTom and tomTom.AddWaypoint) then
+	if not self:CanAccessTable(tomTom) then
+		return false
+	end
+	local addWaypoint = tomTom.AddWaypoint
+	if not self:CanAccessValue(addWaypoint) or type(addWaypoint) ~= "function" then
 		return false
 	end
 
 	-- TomTom may reject waypoint creation during transient map states; keep fallback path alive.
-	local ok = pcall(tomTom.AddWaypoint, tomTom, numericMapID, numericX / 100, numericY / 100, {
+	local ok = pcall(addWaypoint, tomTom, numericMapID, numericX / 100, numericY / 100, {
 		title = string.format("QuestTogether %.1f, %.1f", numericX, numericY),
 		from = "QuestTogether/ping",
 	})
@@ -4285,7 +4296,7 @@ function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, s
 	return true
 end
 
-function QuestTogether:HandleChatLogSpeakerLink(link, text, linkData, contextData)
+function QuestTogether:HandleChatLogSpeakerLink(_link, _text, linkData, contextData)
 	local speakerName = linkData and linkData.options
 	if not speakerName or speakerName == "" then
 		return LinkProcessorResponse.Handled
@@ -4297,7 +4308,7 @@ function QuestTogether:HandleChatLogSpeakerLink(link, text, linkData, contextDat
 		or LinkProcessorResponse.Handled
 end
 
-function QuestTogether:HandleChatLogQuestLink(link, text, linkData, contextData)
+function QuestTogether:HandleChatLogQuestLink(_link, text, linkData, _contextData)
 	local questId = linkData and linkData.options
 	if not questId or questId == "" then
 		return LinkProcessorResponse.Handled
@@ -4310,7 +4321,7 @@ function QuestTogether:HandleChatLogQuestLink(link, text, linkData, contextData)
 	return LinkProcessorResponse.Handled
 end
 
-function QuestTogether:HandleChatLogCoordLink(link, text, linkData, contextData)
+function QuestTogether:HandleChatLogCoordLink(_link, _text, linkData, _contextData)
 	local options = tostring(linkData and linkData.options or "")
 	local mapID, coordX, coordY = SafeMatch(options, "^([^:]+):([^:]+):([^:]+)$")
 	if not mapID or not coordX or not coordY then
@@ -5166,8 +5177,8 @@ function QuestTogether:ScanQuestLog()
 	local questsTracked = 0
 
 	local snapshotByQuestID = self.GetQuestSnapshotByQuestID and self:GetQuestSnapshotByQuestID() or nil
-	local snapshotOrder = self.GetQuestSnapshotOrder and self:GetQuestSnapshotOrder() or nil
-	for index = 1, #(snapshotOrder or {}) do
+	local snapshotOrder = self.GetQuestSnapshotOrder and self:GetQuestSnapshotOrder() or {}
+	for index = 1, #snapshotOrder do
 		local questID = snapshotOrder[index]
 		local questInfo = snapshotByQuestID and snapshotByQuestID[questID] or nil
 		if questInfo and questInfo.isHidden ~= true and not (self.retiredQuestIds and self.retiredQuestIds[questID]) then
@@ -5336,6 +5347,12 @@ end
 
 function QuestTogether:PLAYER_ENTERING_WORLD()
 	self.isLoggingOut = false
+	-- Refresh after loading screens without synthetic enter/leave announcements.
+	self:SetRuntimeFlag("pendingScheduledTaskAreaRefreshShouldAnnounce", false)
+	self:RefreshTaskAreaStates(false)
+	if self.EnsureAnnouncementChannelJoined and self.isEnabled then
+		self:EnsureAnnouncementChannelJoined()
+	end
 end
 
 function QuestTogether:PLAYER_LEAVING_WORLD()

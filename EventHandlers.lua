@@ -415,7 +415,7 @@ function QuestTogether:ResolvePendingQuestRemoval(questId)
 	return true
 end
 
-function QuestTogether:HandleGroupRosterChanged(reason)
+function QuestTogether:HandleGroupRosterChanged(_reason)
 	if self.RefreshPartyRoster then
 		self:RefreshPartyRoster()
 	end
@@ -680,16 +680,6 @@ end
 
 function QuestTogether:ZONE_CHANGED_NEW_AREA()
 	self:ScheduleTaskAreaRefresh(true, 0)
-end
-
-function QuestTogether:PLAYER_ENTERING_WORLD()
-	self.isLoggingOut = false
-	-- Refresh state after loading screens without emitting synthetic enter/leave lines.
-	self:SetRuntimeFlag("pendingScheduledTaskAreaRefreshShouldAnnounce", false)
-	self:RefreshTaskAreaStates(false)
-	if self.EnsureAnnouncementChannelJoined and self.isEnabled then
-		self:EnsureAnnouncementChannelJoined()
-	end
 end
 
 function QuestTogether:GROUP_JOINED()

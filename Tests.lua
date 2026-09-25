@@ -5636,7 +5636,6 @@ QuestTogether:RegisterTest("nameplate icon refresh queues resolver when cached s
 				end, function()
 					QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
 				end)
-			end, function()
 			end)
 		end)
 	end)

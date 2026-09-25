@@ -972,8 +972,8 @@ function QuestTogether:GetPlayerPingMetadata()
 	local fullName = self:GetPlayerFullName() or self:GetPlayerName() or "Unknown"
 	local unitRealm
 	if self.API.UnitFullName and not self:UsesRegionalPlayerNames() then
-		local unitName
-		unitName, unitRealm = self.API.UnitFullName("player")
+		local _
+		_, unitRealm = self.API.UnitFullName("player")
 	end
 	local realmName = SafeTrimAddonString(self, unitRealm, "")
 	if realmName == "" then

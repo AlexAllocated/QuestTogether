@@ -59,8 +59,6 @@ function QuestTogether:IsRuntimeRestrictionTypeActive(restrictionType)
 		restrictionEnum = restrictionTypes.ChallengeMode
 	elseif normalizedType == "pvp" then
 		restrictionEnum = restrictionTypes.PvPMatch
-	elseif normalizedType == "chat" then
-		restrictionEnum = restrictionTypes.Chat
 	elseif normalizedType == "map" then
 		restrictionEnum = restrictionTypes.Map
 	end

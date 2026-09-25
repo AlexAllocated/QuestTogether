@@ -863,7 +863,8 @@ local function GetAnnouncementBubbleScreenHostFrame()
 end
 
 function QuestTogether:IsPersonalBubbleAnchorInEditMode()
-	return self.isEnabled and self:CanAccessForeignFrame(EditModeManagerFrame, true) and self:GetOption("showChatBubbles")
+	return (self.isEnabled and self:CanAccessForeignFrame(EditModeManagerFrame, true) and self:GetOption("showChatBubbles"))
+		and true or false
 end
 
 function QuestTogether:ApplySavedPersonalBubbleAnchor()
@@ -2016,8 +2017,8 @@ local function AddLiveQuestObjectiveTextsToNameplateCache(addon, cache, questID,
 		return
 	end
 
-	local objectiveCount = api.GetNumQuestLeaderBoards and api.GetNumQuestLeaderBoards(questLogIndex) or 0
-	objectiveCount = addon.SafeToNumber and addon:SafeToNumber(objectiveCount) or nil
+	local rawObjectiveCount = api.GetNumQuestLeaderBoards and api.GetNumQuestLeaderBoards(questLogIndex) or 0
+	local objectiveCount = addon.SafeToNumber and addon:SafeToNumber(rawObjectiveCount) or nil
 	if objectiveCount == nil then
 		return
 	end
@@ -2268,11 +2269,12 @@ function QuestTogether:GetQuestieQuestObjectiveTooltipLines(unitGuid)
 	if not self:CanAccessTable(questieTooltips) then
 		return nil
 	end
-	if type(questieTooltips.GetTooltip) ~= "function" then
+	local getTooltip = questieTooltips.GetTooltip
+	if not self:CanAccessValue(getTooltip) or type(getTooltip) ~= "function" then
 		return nil
 	end
 
-	local ok, tooltipData = pcall(questieTooltips.GetTooltip, "m_" .. tostring(npcId))
+	local ok, tooltipData = pcall(getTooltip, "m_" .. tostring(npcId))
 	if not ok or not self:CanAccessTable(tooltipData) then
 		return nil
 	end
@@ -2280,7 +2282,7 @@ function QuestTogether:GetQuestieQuestObjectiveTooltipLines(unitGuid)
 	local tooltipLines = {}
 	for lineIndex = 1, #tooltipData do
 		local rawLine = tooltipData[lineIndex]
-		if self:IsSecretValue(rawLine) then
+		if not self:CanAccessValue(rawLine) then
 			break
 		end
 
@@ -2601,7 +2603,7 @@ function QuestTogether:TryEvaluateQuestObjectiveViaTooltip(unitToken, unitFrame,
 	local resolvedAnyTooltipLines = false
 	local nextSourceIndex = 1
 	while true do
-		local tooltipLines, sourceName, resolvedSourceIndex =
+		local tooltipLines, _sourceName, resolvedSourceIndex =
 			self:GetQuestObjectiveTooltipLines(unitToken, unitGuid, nextSourceIndex)
 		if type(tooltipLines) ~= "table" or #tooltipLines == 0 then
 			break
@@ -2721,8 +2723,7 @@ function QuestTogether:ResolveNameplateQuestStateForUnitToken(unitToken, unitGui
 	if not self:IsNameplateUnitToken(liveUnitToken) then
 		liveUnitToken = unitToken
 	end
-	local tokenMatchesExpectedGuid, liveUnitGuid =
-		self:DoesNameplateUnitTokenMatchExpectedGuid(liveUnitToken, unitGuid)
+	local tokenMatchesExpectedGuid = self:DoesNameplateUnitTokenMatchExpectedGuid(liveUnitToken, unitGuid)
 	if not tokenMatchesExpectedGuid then
 		return false
 	end
@@ -3402,10 +3403,10 @@ function QuestTogether:RefreshActiveAnnouncementBubbles()
 				or not bubbleState
 				or not IsNonEmptyString(bubbleState.text)
 				or (unitToken == "player" and self:GetOption("hideMyOwnChatBubbles"))
-			if not shouldHide and bubbleState.senderName and self.ShouldShowAnnouncementsForRemoteSender then
+			if not shouldHide and bubbleState and bubbleState.senderName and self.ShouldShowAnnouncementsForRemoteSender then
 				shouldHide = not self:ShouldShowAnnouncementsForRemoteSender(bubbleState.senderName, true)
 			end
-			if not shouldHide then
+			if not shouldHide and bubbleState then
 				local hostFrame = unitToken and self:GetAnnouncementBubbleHostFrameForUnit(unitToken) or nil
 				shouldHide = not hostFrame or GetAnnouncementBubbleUnitFrame(hostFrame) ~= unitFrame
 				if not shouldHide and unitToken ~= "player" then
@@ -4056,13 +4057,13 @@ end
 
 -- Mirrors Plater.UpdateAllPlates() (Plater.lua:6681-6692): refresh all visible plates
 -- against the current quest cache without rebuilding quest-log title inputs.
-function QuestTogether:RefreshVisibleNameplates(reason)
+function QuestTogether:RefreshVisibleNameplates(_reason)
 	self:ClearNameplateResolvedQuestState()
 	self:RefreshNameplateAugmentation()
 	return true
 end
 
-function QuestTogether:RefreshNameplatesForQuestStateChange(reason)
+function QuestTogether:RefreshNameplatesForQuestStateChange(_reason)
 	self:SetRuntimeFlag("pendingDeferredNameplateQuestStateRefresh", false)
 	self:RebuildNameplateQuestTextCache()
 	self:ClearNameplateQuestDetectionCache()

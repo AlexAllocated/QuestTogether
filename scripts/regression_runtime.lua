@@ -29,6 +29,45 @@ local function NewRuntime()
 	return addon
 end
 
+QT:RegisterTest("personal bubble edit state always supplies a boolean", function()
+	local addon = setmetatable({ isEnabled = true }, { __index = QT })
+	function addon:CanAccessForeignFrame() return true end
+	for _, case in ipairs({ { nil, false }, { false, false }, { true, true }, { "legacy", true }, { 0, true } }) do
+		function addon:GetOption() return case[1] end
+		Equal(addon:IsPersonalBubbleAnchorInEditMode(), case[2])
+	end
+	addon.isEnabled = nil
+	Equal(addon:IsPersonalBubbleAnchorInEditMode(), false)
+	addon.isEnabled = true
+	function addon:CanAccessForeignFrame() return false end
+	Equal(addon:IsPersonalBubbleAnchorInEditMode(), false)
+end)
+
+QT:RegisterTest("bubble option controls receive boolean visibility values", function()
+	local shown = {}
+	local function NewControl()
+		return { SetShown = function(_, value)
+			assert(type(value) == "boolean", "widget visibility must be boolean")
+			shown[#shown + 1] = value
+		end }
+	end
+	local addon = setmetatable({
+		whereToAnnounceFrame = {},
+		whereToAnnounceControls = {
+			personalBubbleEditHint = NewControl(),
+			openHudEditMode = NewControl(),
+		},
+	}, { __index = QT })
+	for _, case in ipairs({ { nil, false }, { false, false }, { true, true }, { "legacy", true } }) do
+		shown = {}
+		function addon:GetOption(key) return key == "showChatBubbles" and case[1] or nil end
+		addon:RefreshWhereToAnnounceWindow()
+		Equal(#shown, 2)
+		Equal(shown[1], case[2])
+		Equal(shown[2], case[2])
+	end
+end)
+
 -- The console contract is exercised with private stores and a recording view;
 -- these tests never construct a live frame or replace a Blizzard API.
 local function NewDebugSession()

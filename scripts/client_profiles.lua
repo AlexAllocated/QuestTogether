@@ -4,8 +4,14 @@ return function(client)
 	assert(profiles[client], "unknown client profile")
 	local classic = client ~= "retail" and client ~= "forever"
 	local selected, pushable, secret = 7, true, {}
+	local inaccessible = setmetatable({}, {
+		__index = function() error("inaccessible fixture must not be indexed") end,
+		__tostring = function() error("inaccessible fixture must not be formatted") end,
+	})
 	local objective = { text = "Wolves slain: 2/5", type = "monster", finished = false, numFulfilled = 2, numRequired = 5 }
 	issecretvalue = function(value) return value == secret end
+	canaccessvalue = function(value) return value ~= inaccessible end
+	canaccesstable = function(value) return value ~= inaccessible end
 	GetBuildInfo = function() return profiles[client], "fixture", "", 0 end
 	local function Info(index)
 		if index == 7 then return { questID = 12345, title = "Wolf Hunt", isHeader = false, isComplete = false } end
@@ -106,6 +112,72 @@ return function(client)
 		assert(addon.API.DoEmote("CHEER", "MyPlayer") == true and legacyEmotes == 1)
 		DoEmote = nil
 		assert(addon.API.DoEmote("CHEER", "MyPlayer") == false)
+
+		local className, classFile = "Priest", "PRIEST"
+		UnitClass = function() return className, classFile end
+		local safeName, safeFile = addon.API.UnitClass("player")
+		assert(safeName == "Priest" and safeFile == "PRIEST")
+		className, classFile = secret, inaccessible
+		safeName, safeFile = addon.API.UnitClass("player")
+		assert(safeName == nil and safeFile == nil)
+		className, classFile = 42, false
+		safeName, safeFile = addon.API.UnitClass("player")
+		assert(safeName == nil and safeFile == nil)
+		UnitFullName = function() return className, classFile end
+		safeName, safeFile = addon.API.UnitFullName("player")
+		assert(safeName == nil and safeFile == nil, "names must be strings")
+		className, classFile = secret, inaccessible
+		safeName, safeFile = addon.API.UnitFullName("player")
+		assert(safeName == nil and safeFile == nil)
+		className, classFile = "Torres Sky", "Realm"
+		safeName, safeFile = addon.API.UnitFullName("player")
+		assert(safeName == "Torres Sky" and safeFile == "Realm")
+		local taskTitle = "World Quest"
+		C_TaskQuest = { GetQuestInfoByQuestID = function() return taskTitle end }
+		assert(addon.API.GetTaskQuestInfoByQuestID(12345).questTitle == "World Quest")
+		for _, value in ipairs({ secret, inaccessible, 42, "" }) do
+			taskTitle = value
+			assert(addon.API.GetTaskQuestInfoByQuestID(12345).questTitle == nil)
+		end
+
+		RAID_CLASS_COLORS = { PRIEST = { colorStr = "ffffffff" } }
+		CUSTOM_CLASS_COLORS = { PRIEST = { colorStr = "ff123456" } }
+		assert(addon:GetClassColorCode("PRIEST") == "|cff123456")
+		CUSTOM_CLASS_COLORS = inaccessible
+		assert(addon:GetClassColorCode("PRIEST") == "|cffffffff")
+		CUSTOM_CLASS_COLORS = { PRIEST = inaccessible }
+		assert(addon:GetClassColorCode("PRIEST") == "|cffffffff")
+		CUSTOM_CLASS_COLORS = { PRIEST = { colorStr = inaccessible } }
+		assert(addon:GetClassColorCode("PRIEST") == "|cffffffff")
+		CUSTOM_CLASS_COLORS.PRIEST.colorStr = "not a color"
+		assert(addon:GetClassColorCode("PRIEST") == "|cffffffff")
+		assert(addon:GetClassColorCode(secret) == "|cffffffff")
+		assert(addon:GetClassColorCode(inaccessible) == "|cffffffff")
+
+		local waypointAddon = setmetatable({ API = { IsAddOnLoaded = function() return true end } }, { __index = addon })
+		TomTom = inaccessible
+		assert(waypointAddon:CreateTomTomWaypoint(84, 25, 50) == false)
+		TomTom = { AddWaypoint = inaccessible }
+		assert(waypointAddon:CreateTomTomWaypoint(84, 25, 50) == false)
+		local waypointCalls = 0
+		TomTom = { AddWaypoint = function(owner, mapID, x, y, options)
+			assert(owner == TomTom and mapID == 84 and x == 0.25 and y == 0.5)
+			assert(options.from == "QuestTogether/ping")
+			waypointCalls = waypointCalls + 1
+		end }
+		assert(waypointAddon:CreateTomTomWaypoint(84, 25, 50) == true and waypointCalls == 1)
+		TomTom = nil
+		assert(waypointAddon:CreateTomTomWaypoint(84, 25, 50) == false)
+		QuestieLoader = { _modules = { QuestieTooltips = { GetTooltip = inaccessible } } }
+		assert(addon:GetQuestieQuestObjectiveTooltipLines("Creature-0-0-0-0-12345-0000000000") == nil)
+		QuestieLoader = inaccessible
+		assert(addon:GetQuestieQuestObjectiveTooltipLines("Creature-0-0-0-0-12345-0000000000") == nil)
+		QuestieLoader = { _modules = { QuestieTooltips = { GetTooltip = function(key)
+			assert(key == "m_12345")
+			return { "|cffffffffWolf Hunt|r", inaccessible, "must not read past inaccessible data" }
+		end } } }
+		local questieLines = addon:GetQuestieQuestObjectiveTooltipLines("Creature-0-0-0-0-12345-0000000000")
+		assert(#questieLines == 1 and questieLines[1].leftText == "Wolf Hunt")
 		print("Offline " .. client .. " quest API contract checks passed.")
 	end
 end

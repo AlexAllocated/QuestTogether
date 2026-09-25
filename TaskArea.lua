@@ -165,7 +165,7 @@ local function BuildQuestLogQuestInfoIndex(addon)
 	return questInfoByQuestId
 end
 
-local function BuildTaskAreaCandidateQuestIds(addon, questInfoByQuestId)
+local function BuildTaskAreaCandidateQuestIds(questInfoByQuestId)
 	local candidateQuestIds = {}
 
 	for normalizedQuestId in pairs(questInfoByQuestId or {}) do
@@ -200,7 +200,7 @@ local function BuildActiveTaskAreaSnapshot(taskAreaState, taskType)
 	return activeByQuestId
 end
 
-local function ResolveQuestAreaSignals(addon, taskType, questInfo, normalizedQuestId, isBonusObjective)
+local function ResolveQuestAreaSignals(taskType, questInfo, isBonusObjective)
 	local isOnMap = questInfo and questInfo.isOnMap == true or false
 	local hasLocalPOI = questInfo and questInfo.hasLocalPOI == true or false
 	local mapFlags = (isOnMap or hasLocalPOI) and true or false
@@ -231,8 +231,8 @@ local function BuildTaskAreaResolution(addon, normalizedQuestId, questInfo)
 	local taskAnnouncementType = isWorldQuest and "world" or (isBonusObjective and "bonus" or nil)
 	local isTask = explicitTask or isWorldQuest or isBonusObjective
 
-	local worldSignals = ResolveQuestAreaSignals(addon, "world", questInfo, normalizedQuestId, isBonusObjective)
-	local bonusSignals = ResolveQuestAreaSignals(addon, "bonus", questInfo, normalizedQuestId, isBonusObjective)
+	local worldSignals = ResolveQuestAreaSignals("world", questInfo, isBonusObjective)
+	local bonusSignals = ResolveQuestAreaSignals("bonus", questInfo, isBonusObjective)
 
 	local isWorldQuestByActiveTaskFallback = false
 	if not isWorldQuest and worldSignals.canUseTaskActiveWorldFallback and not isBonusObjective then
@@ -290,7 +290,7 @@ function QuestTogether:RebuildTaskAreaResolverStore()
 		taskAreaState.lastScanFailure = reason
 		return taskAreaState, false
 	end
-	local candidateQuestIds = BuildTaskAreaCandidateQuestIds(self, questInfoByQuestId)
+	local candidateQuestIds = BuildTaskAreaCandidateQuestIds(questInfoByQuestId)
 
 	local candidateOrder = SortedQuestIdKeys(candidateQuestIds)
 	local scanSignature = table.concat(candidateOrder, ",")
