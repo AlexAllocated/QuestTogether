@@ -780,7 +780,15 @@ QuestTogether.API = QuestTogether.API or {
 		return false
 	end,
 	DoEmote = function(emoteToken, target)
-		DoEmote(emoteToken, target)
+		local performEmote = C_ChatInfo and C_ChatInfo.PerformEmote
+		if type(performEmote) ~= "function" then
+			performEmote = DoEmote
+		end
+		if type(performEmote) ~= "function" then
+			return false
+		end
+		local ok = pcall(performEmote, emoteToken, target)
+		return ok
 	end,
 	IsMounted = function()
 		return IsMounted()
@@ -1443,7 +1451,12 @@ QuestTogether.API = QuestTogether.API or {
 			if not C_TaskQuest then
 				return nil
 			end
-			local getTaskQuestsForMap = C_TaskQuest.GetQuestsForPlayerByMapID or C_TaskQuest.GetQuestsOnMap
+			local getTaskQuestsForMap = C_TaskQuest.GetQuestsOnMap
+			local questIDField = "questID"
+			if type(getTaskQuestsForMap) ~= "function" then
+				getTaskQuestsForMap = C_TaskQuest.GetQuestsForPlayerByMapID
+				questIDField = "questId"
+			end
 			if type(getTaskQuestsForMap) ~= "function" then
 				return nil
 			end
@@ -1457,7 +1470,7 @@ QuestTogether.API = QuestTogether.API or {
 			for index = 1, #tasks do
 				local taskInfo = tasks[index]
 				if CanAccessForeignTable(taskInfo) then
-					local questID = taskInfo.questId
+					local questID = taskInfo[questIDField]
 					if CanAccessForeignValue(questID) then
 						local numericQuestID = QuestTogether and QuestTogether.SafeToNumber and QuestTogether:SafeToNumber(questID)
 							or nil
@@ -4620,7 +4633,6 @@ function QuestTogether:SetOption(key, value)
 	if not self.db or not self.db.profile then
 		return false
 	end
-	local oldValue = self.db.profile[key]
 	if key == "showProgressFor" and not self:IsShowProgressFor(value) then
 		self:Debugf("options", "Rejected option change key=%s invalidValue=%s", tostring(key), FormatDebugValue(value))
 		return false

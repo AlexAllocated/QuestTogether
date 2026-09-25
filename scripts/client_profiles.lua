@@ -48,6 +48,64 @@ return function(client)
 		local pending = setmetatable({ pendingQuestRemovals = {}, questsCompleted = {}, pendingQuestAcceptances = {}, QueueQuestLogTask = function() end, Debugf = function() end }, { __index = addon })
 		if classic then pending:QUEST_ACCEPTED("QUEST_ACCEPTED", 7, 12345) else pending:QUEST_ACCEPTED("QUEST_ACCEPTED", 12345) end
 		assert(pending.pendingQuestAcceptances[12345] and not pending.pendingQuestAcceptances[7])
+
+		-- Exercise the real adapters, not injected addon.API replacements. These
+		-- globals exist only in this standalone Lua process, never in live tests.
+		local taskCalls = 0
+		local taskRows = { { questID = 12345 }, { questID = secret }, { questID = -1 }, {} }
+		C_TaskQuest = {
+			GetQuestsOnMap = function(mapID)
+				assert(mapID == 84)
+				taskCalls = taskCalls + 1
+				return taskRows
+			end,
+			GetQuestsForPlayerByMapID = function()
+				error("modern task API must take precedence")
+			end,
+		}
+		local ids = addon.API.GetTaskQuestsOnMap(84)
+		assert(#ids == 1 and ids[1] == 12345, "modern questID rows must survive")
+		assert(addon.API.GetTaskQuestsOnMap(secret) == nil)
+		assert(addon.API.GetTaskQuestsOnMap(-1) == nil and taskCalls == 1)
+		taskRows = secret
+		assert(addon.API.GetTaskQuestsOnMap(84) == nil, "secret task table must be rejected")
+		taskRows = { secret, { questID = 54321 } }
+		ids = addon.API.GetTaskQuestsOnMap(84)
+		assert(#ids == 1 and ids[1] == 54321, "secret rows must be skipped")
+		C_TaskQuest.GetQuestsOnMap = function() error("task API unavailable") end
+		assert(addon.API.GetTaskQuestsOnMap(84) == nil)
+		C_TaskQuest = {
+			GetQuestsForPlayerByMapID = function(mapID)
+				assert(mapID == 84)
+				return { { questId = 12345 }, { questId = secret }, { questId = 0 } }
+			end,
+		}
+		ids = addon.API.GetTaskQuestsOnMap(84)
+		assert(#ids == 1 and ids[1] == 12345, "legacy questId rows must still work")
+		C_TaskQuest = {}
+		assert(addon.API.GetTaskQuestsOnMap(84) == nil)
+		C_TaskQuest = nil
+		assert(addon.API.GetTaskQuestsOnMap(84) == nil)
+
+		local modernEmotes, legacyEmotes = 0, 0
+		C_ChatInfo = { PerformEmote = function(token, target)
+			assert(token == "CHEER" and target == "MyPlayer")
+			modernEmotes = modernEmotes + 1
+		end }
+		DoEmote = nil -- Current clients can disable deprecated compatibility globals.
+		assert(addon.API.DoEmote("CHEER", "MyPlayer") == true and modernEmotes == 1)
+		DoEmote = function(token, target)
+			assert(token == "CHEER" and target == "MyPlayer")
+			legacyEmotes = legacyEmotes + 1
+		end
+		assert(addon.API.DoEmote("CHEER", "MyPlayer") == true)
+		assert(modernEmotes == 2 and legacyEmotes == 0, "prefer modern emotes")
+		C_ChatInfo.PerformEmote = function() error("emote unavailable") end
+		assert(addon.API.DoEmote("CHEER", "MyPlayer") == false and legacyEmotes == 0)
+		C_ChatInfo = nil
+		assert(addon.API.DoEmote("CHEER", "MyPlayer") == true and legacyEmotes == 1)
+		DoEmote = nil
+		assert(addon.API.DoEmote("CHEER", "MyPlayer") == false)
 		print("Offline " .. client .. " quest API contract checks passed.")
 	end
 end

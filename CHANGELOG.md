@@ -1,5 +1,11 @@
 # QuestTogether changelog
 
+## 5.8.5 — 2026-09-25
+
+Fix task/world-quest map discovery on modern clients by reading `questID` from `C_TaskQuest.GetQuestsOnMap`, while retaining the legacy API and `questId` field for older clients. Prefer `C_ChatInfo.PerformEmote` so completion emotes work when deprecated globals are disabled; safely handle missing or failing emote APIs.
+
+Remove an unused party-roster fingerprint calculation and unused local variables. Extend offline client checks to cover modern and legacy task/emote APIs, API precedence, inaccessible quest data, and missing/failing APIs. Validation: 334 tests pass in normal and reverse order on Lua 5.1 and 5.2, plus the expanded API checks on six client profiles, Lua parsing and exact library verification. Gameplay validation in Retail and Forever remains separate from offline checks.
+
 ## 5.8.4 — 2026-09-25
 
 Repository housekeeping: keep local development notes outside the tracked source and release packages. Gameplay behavior is unchanged.

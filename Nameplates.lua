@@ -2522,7 +2522,6 @@ function QuestTogether:ReadNameplateScanTooltipLines(scanTooltip, unitToken, uni
 		pcall(scanTooltip.SetOwner, scanTooltip, ownerFrame, "ANCHOR_NONE")
 	end
 	local ok = false
-	local scanSource = nil
 	if
 		type(unitToken) == "string"
 		and unitToken ~= ""
@@ -2530,11 +2529,9 @@ function QuestTogether:ReadNameplateScanTooltipLines(scanTooltip, unitToken, uni
 		and scanTooltip.SetUnit
 	then
 		ok = pcall(scanTooltip.SetUnit, scanTooltip, unitToken)
-		scanSource = "unit"
 	end
 	if (not ok) and type(unitGuid) == "string" and unitGuid ~= "" and scanTooltip.SetHyperlink then
 		ok = pcall(scanTooltip.SetHyperlink, scanTooltip, "unit:" .. unitGuid)
-		scanSource = "hyperlink"
 	end
 	if not ok then
 		if scanTooltip.Hide then

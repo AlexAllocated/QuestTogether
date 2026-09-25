@@ -416,7 +416,6 @@ function QuestTogether:ResolvePendingQuestRemoval(questId)
 end
 
 function QuestTogether:HandleGroupRosterChanged(reason)
-	local previousFingerprint = self:GetPartyRosterFingerprint()
 	if self.RefreshPartyRoster then
 		self:RefreshPartyRoster()
 	end
