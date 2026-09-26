@@ -142,6 +142,7 @@ for _, file in ipairs({
 	"regression_core_state",
 	"regression_quest_state",
 	"regression_nameplates",
+	"regression_nameplate_discovery",
 	"regression_comms",
 }) do
 	local path = addonRoot .. "/scripts/" .. file .. ".lua"

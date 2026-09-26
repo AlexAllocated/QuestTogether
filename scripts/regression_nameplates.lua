@@ -16,6 +16,196 @@ local function Patch(replacements, fn)
 	end
 	assert(ok, err)
 end
+
+local function WithTapFixture(fn)
+	local state = { denied = false, restricted = true, protected = false, forbidden = false, tapReads = 0 }
+	local guid = "Creature-0-0-0-0-11111-0000000000"
+	local function Visual()
+		return {
+			shown = true,
+			IsProtected = function() return state.protected end,
+			Show = function(self) self.shown = true end,
+			Hide = function(self) self.shown = false end,
+		}
+	end
+	local unitFrame = { unit = "nameplate1", healthBar = {} }
+	local plate = {
+		UnitFrame = unitFrame,
+		IsShown = function() return true end,
+		IsForbidden = function() return state.forbidden end,
+	}
+	local icon, fill, highlight = Visual(), Visual(), Visual()
+	state.icon, state.fill, state.highlight = icon, fill, highlight
+	state.drain = function()
+		local count = 0
+		while #state.callbacks > 0 do
+			count = count + 1
+			assert(count < 20, "tap refresh must not repeatedly reschedule itself")
+			table.remove(state.callbacks, 1)()
+		end
+	end
+	state.callbacks = {}
+	QT.isEnabled = true
+	QT.db.profile.nameplateQuestIconEnabled = true
+	QT.db.profile.nameplateQuestHealthColorEnabled = true
+	QT.nameplateIconByUnitFrame[unitFrame] = icon
+	QT.nameplateHealthOverlayByUnitFrame[unitFrame] = { FillTexture = fill, Highlight = highlight }
+	QT:StoreResolvedNameplateQuestState("nameplate1", guid, true)
+	Patch({
+		API = {
+			GetNamePlates = function() return { plate } end,
+			GetNamePlateForUnit = function(token)
+				Equal(token, "nameplate1")
+				return plate
+			end,
+			UnitGUID = function() return guid end,
+			UnitExists = function() return true end,
+			UnitIsPlayer = function() return false end,
+			Delay = function(_, callback) state.callbacks[#state.callbacks + 1] = callback end,
+		},
+		IsRuntimeRestricted = function() return state.restricted end,
+		IsRuntimeRestrictionTypeActive = function() return false end,
+		IsNameplateUnitTapDenied = function(_, token)
+			Equal(token, "nameplate1")
+			state.tapReads = state.tapReads + 1
+			return state.denied
+		end,
+		TryEvaluateQuestObjectiveViaTooltip = function() error("tap changes must reuse quest detection") end,
+		ApplyNameplateQuestIconStyle = function()
+			Equal(state.restricted and state.protected, false, "protected icon layout must remain deferred")
+		end,
+		ApplyQuestTintToNameplate = function()
+			Equal(state.restricted and state.protected, false, "protected tint layout must remain deferred")
+			fill:Show()
+			highlight:Show()
+			return true
+		end,
+	}, function()
+		fn(state)
+		Equal(QT.nameplateQuestStateByGuid[guid], true, "tap changes must preserve quest relevance")
+	end)
+end
+
+QT:RegisterTest("tap denial clears the quest icon and both tint textures during combat", function()
+	WithTapFixture(function(state)
+		for _, event in ipairs({
+			"UNIT_FACTION", "UNIT_FLAGS", "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_CONNECTION",
+			"UNIT_THREAT_LIST_UPDATE", "UNIT_THREAT_SITUATION_UPDATE",
+		}) do
+			state.icon.shown, state.fill.shown, state.highlight.shown = true, true, true
+			state.denied = true
+			QT:HandleNameplateEvent(event, "nameplate1")
+			Equal(state.icon.shown, false, event .. " must immediately hide the icon")
+			Equal(state.fill.shown, false, event .. " must immediately hide the fill")
+			Equal(state.highlight.shown, false, event .. " must immediately hide the highlight")
+			state.drain()
+		end
+		state.restricted = false
+		QT:FlushDeferredWork("tap regression")
+		state.drain()
+		Equal(state.icon.shown, false, "deferred refresh must not restore a denied tap")
+		Equal(state.fill.shown, false)
+		Equal(state.highlight.shown, false)
+	end)
+end)
+
+QT:RegisterTest("eligible taps retain decorations and regain them when tap denial clears", function()
+	WithTapFixture(function(state)
+		-- Untapped, player-owned and shared group taps all report denial=false.
+		QT:HandleNameplateEvent("UNIT_FACTION", "nameplate1")
+		state.drain()
+		Equal(state.icon.shown, true)
+		Equal(state.fill.shown, true)
+		Equal(state.highlight.shown, true)
+		state.denied = true
+		QT:HandleNameplateEvent("UNIT_FACTION", "nameplate1")
+		Equal(state.icon.shown, false)
+		state.denied, state.restricted = false, false
+		QT:HandleNameplateEvent("UNIT_FLAGS", "nameplate1")
+		state.drain()
+		Equal(state.icon.shown, true)
+		Equal(state.fill.shown, true)
+		Equal(state.highlight.shown, true)
+	end)
+end)
+
+QT:RegisterTest("tap cleanup respects protected visuals and retries after combat", function()
+	WithTapFixture(function(state)
+		state.denied, state.protected = true, true
+		QT:HandleNameplateEvent("UNIT_FACTION", "nameplate1")
+		state.drain()
+		Equal(state.icon.shown, true)
+		Equal(state.fill.shown, true)
+		Equal(state.highlight.shown, true)
+		state.restricted = false
+		QT:HandleNameplateEvent("PLAYER_REGEN_ENABLED")
+		QT:FlushDeferredWork("tap regression")
+		state.drain()
+		Equal(state.icon.shown, false)
+		Equal(state.fill.shown, false)
+		Equal(state.highlight.shown, false)
+	end)
+end)
+
+QT:RegisterTest("tap cleanup leaves forbidden plates untouched", function()
+	WithTapFixture(function(state)
+		state.denied, state.forbidden = true, true
+		QT:HandleNameplateEvent("UNIT_FACTION", "nameplate1")
+		state.restricted = false
+		QT:FlushDeferredWork("tap regression")
+		state.drain()
+		Equal(state.icon.shown, true)
+		Equal(state.fill.shown, true)
+		Equal(state.highlight.shown, true)
+	end)
+end)
+
+QT:RegisterTest("tap events ignore units that are not nameplate tokens", function()
+	WithTapFixture(function(state)
+		for _, event in ipairs({ "UNIT_FACTION", "UNIT_FLAGS", "UNIT_HEALTH" }) do
+			QT:HandleNameplateEvent(event, "target")
+			QT:HandleNameplateEvent(event, "player")
+			QT:HandleNameplateEvent(event, {})
+			QT:HandleNameplateEvent(event)
+		end
+		Equal(state.tapReads, 0)
+		Equal(#state.callbacks, 0)
+	end)
+end)
+
+QT:RegisterTest("nameplate augmentation subscribes to tap ownership changes", function()
+	local registered = {}
+	Patch({
+		nameplateEventFrame = { RegisterEvent = function(_, event) registered[event] = true end },
+		nameplateRegisteredEvents = {},
+		TryInstallNameplateHooks = function() end,
+		ScheduleDeferredNameplateQuestStateRefresh = function() end,
+		SchedulePlaterStartupNameplateRefreshes = function() end,
+	}, function()
+		QT:EnableNameplateAugmentation()
+		Equal(registered.UNIT_FACTION, true)
+		Equal(registered.UNIT_FLAGS, true)
+		Equal(registered.NAME_PLATE_UNIT_BEHIND_CAMERA_CHANGED, true)
+		Equal(registered.PLAYER_TARGET_CHANGED, true)
+		Equal(registered.UPDATE_MOUSEOVER_UNIT, true)
+	end)
+end)
+
+QT:RegisterTest("deferred tap refresh cannot decorate a removed nameplate", function()
+	WithTapFixture(function(state)
+		state.denied = true
+		QT:HandleNameplateEvent("UNIT_FACTION", "nameplate1")
+		state.drain()
+		QT:OnNameplateRemoved("nameplate1")
+		state.denied, state.restricted = false, false
+		QT:FlushDeferredWork("tap regression")
+		state.drain()
+		Equal(state.icon.shown, false)
+		Equal(state.fill.shown, false)
+		Equal(state.highlight.shown, false)
+	end)
+end)
+
 local function Bubble(playing)
 	local bubble = { hidden = false, stops = 0 }
 	bubble.SetAlpha = function(self, alpha)

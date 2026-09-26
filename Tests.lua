@@ -2725,18 +2725,20 @@ QuestTogether:RegisterTest("deferred nameplate resolution ignores recycled token
 	end)
 end)
 
-QuestTogether:RegisterTest("nameplate guid retry schedules a delayed visible refresh even before the unit token is queryable", function()
+QuestTogether:RegisterTest("nameplate retry schedules only the affected unit even before its guid is queryable", function()
 	local scheduledReason = nil
 	local scheduledDelay = nil
 
 	WithPatchedMethod(QuestTogether, "IsNameplateUnitToken", function(_, unitToken)
 		return unitToken == "nameplate1"
 	end, function()
-		WithPatchedMethod(QuestTogether, "ScheduleNameplatePresentationRefresh", function(_, reason, delaySeconds)
+		WithPatchedMethod(QuestTogether, "ScheduleNameplateTooltipResolution", function(_, unitToken, unitGuid, delaySeconds, reason)
+			AssertEquals(unitToken, "nameplate1")
+			AssertEquals(unitGuid, nil)
 			scheduledReason = reason
 			scheduledDelay = delaySeconds
 		end, function()
-			AssertTrue(QuestTogether:MaybeScheduleNameplateTooltipGuidRetry("nameplate1", "RefreshNameplateIcon"))
+			AssertTrue(QuestTogether:MaybeScheduleNameplateTooltipRetry("nameplate1", "RefreshNameplateIcon"))
 		end)
 	end)
 
@@ -5831,9 +5833,13 @@ QuestTogether:RegisterTest("nameplate threat events schedule tint refresh for na
 				preferCachedQuestState = preferCachedQuestState,
 			}
 		end, function()
-			QuestTogether:HandleNameplateEvent("UNIT_THREAT_SITUATION_UPDATE", "nameplate7")
-			QuestTogether:HandleNameplateEvent("UNIT_THREAT_LIST_UPDATE", "nameplate8")
-			QuestTogether:HandleNameplateEvent("UNIT_THREAT_SITUATION_UPDATE", "target")
+			WithPatchedMethod(QuestTogether, "IsNameplateUnitTapDenied", function()
+				return false
+			end, function()
+				QuestTogether:HandleNameplateEvent("UNIT_THREAT_SITUATION_UPDATE", "nameplate7")
+				QuestTogether:HandleNameplateEvent("UNIT_THREAT_LIST_UPDATE", "nameplate8")
+				QuestTogether:HandleNameplateEvent("UNIT_THREAT_SITUATION_UPDATE", "target")
+			end)
 		end)
 	end)
 
@@ -6262,7 +6268,7 @@ QuestTogether:RegisterTest("scheduled nameplate tint refresh ignores cached ques
 		end)
 	end)
 
-	AssertEquals(liveObjectiveChecks, 1)
+	AssertEquals(liveObjectiveChecks, 5)
 	AssertEquals(restoredUnitFrame, unitFrame)
 	AssertEquals(QuestTogether.nameplateQuestStateByUnitToken["nameplate10"], false)
 	AssertEquals(QuestTogether.nameplateQuestGuidByUnitToken["nameplate10"], "Creature-0-0-0-0-22222-0000000000")

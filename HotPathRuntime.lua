@@ -106,25 +106,30 @@ function QuestTogether:IsWorkBlocked(workClass)
 		return self:IsRuntimeRestricted()
 	end
 
-	if workClass == "nameplate_tooltip_resolve" then
+	if
+		workClass == "nameplate_tooltip_resolve"
+		or workClass == "nameplate_quest_refresh"
+		or workClass == "nameplate_refresh"
+		or workClass == "nameplate_tint_refresh"
+	then
 		if self:IsMapTooltipSensitiveStateActive() then
 			return true
 		end
-		return self:IsRuntimeRestricted()
+		-- Ordinary open-world combat does not prohibit readable unit tooltip
+		-- data or our unprotected overlays. Keep other restriction contexts
+		-- blocked; each frame operation still checks its own protection state.
+		for restrictionType in pairs(self.runtimeRestrictionTypes or {}) do
+			if restrictionType ~= "combat" and self:IsRuntimeRestrictionTypeActive(restrictionType) then
+				return true
+			end
+		end
+		return false
 	end
 
 	if workClass == "quest_log_drain" or workClass == "task_area_refresh" or workClass == "quest_snapshot_refresh" then
 		if self:IsMapTooltipSensitiveStateActive() then
 			return true
 		end
-		return self:IsRuntimeRestricted()
-	end
-
-	if
-		workClass == "nameplate_quest_refresh"
-		or workClass == "nameplate_refresh"
-		or workClass == "nameplate_tint_refresh"
-	then
 		return self:IsRuntimeRestricted()
 	end
 
@@ -231,13 +236,24 @@ function QuestTogether:ScheduleNameplatePresentationRefresh(reason, delaySeconds
 end
 
 function QuestTogether:ScheduleNameplateTooltipResolution(unitToken, unitGuid, delaySeconds, reason)
-	local resolvedUnitToken = type(unitToken) == "string" and unitToken or "unknown"
+	if not self:IsNameplateUnitToken(unitToken) then
+		return false
+	end
+	local resolvedUnitToken = unitToken
+	if not self:CanAccessValue(unitGuid) or type(unitGuid) ~= "string" or unitGuid == "" then
+		unitGuid = nil
+	end
+	local generations = self.nameplateRefreshGenerationByUnitToken
+	local generation = generations[unitToken]
 	local workKey = resolvedUnitToken
-	if type(unitGuid) == "string" and unitGuid ~= "" then
+	if unitGuid then
 		workKey = unitGuid
 	end
 
 	return self:ScheduleDeferredWork("nameplate_tooltip_resolve", workKey, function()
+		if self.nameplateRefreshGenerationByUnitToken ~= generations or generations[unitToken] ~= generation then
+			return
+		end
 		if not self.ResolveNameplateQuestStateForUnitToken then
 			return
 		end

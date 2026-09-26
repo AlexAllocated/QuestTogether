@@ -92,6 +92,9 @@ function QuestTogether:EnsureRuntimeStateStore()
 				and self.nameplateQuestStateByGuid
 			or {}
 	end
+	if type(state.nameplate.completedByNpcID) ~= "table" then
+		state.nameplate.completedByNpcID = {}
+	end
 	if type(state.nameplate.questStateByUnitToken) ~= "table" then
 		state.nameplate.questStateByUnitToken = type(self.nameplateQuestStateByUnitToken) == "table"
 				and self.nameplateQuestStateByUnitToken
@@ -257,6 +260,7 @@ end
 function QuestTogether:ResetNameplateStateStore()
 	local state = self:EnsureRuntimeStateStore()
 	wipe(state.nameplate.questStateByGuid)
+	wipe(state.nameplate.completedByNpcID)
 	wipe(state.nameplate.questStateByUnitToken)
 	wipe(state.nameplate.questGuidByUnitToken)
 	wipe(state.nameplate.textCache)

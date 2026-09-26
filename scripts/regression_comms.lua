@@ -537,3 +537,177 @@ QuestTogether:RegisterTest("quest compare done rejects invalid or fractional cou
 		Equal(addon:DecodeQuestCompareDonePayload("1,test,Friend-Realm,MAGE," .. count), nil)
 	end
 end)
+
+local function NewLevelUpFixture()
+	local addon = NewCommsFixture()
+	addon.db = { profile = addon:DeepCopy(addon.DEFAULTS.profile) }
+	addon.suppressLocalAnnouncementDisplayDuringTests = false
+	addon.emotes = {}
+	addon.API.Random = function() return 1 end
+	addon.API.DoEmote = function(token, target)
+		addon.emotes[#addon.emotes + 1] = { token = token, target = target }
+	end
+	function addon:FindVisiblePlayerNameplateForSender() return nil end
+	function addon:FindNearbyPlayerUnitTokenForSender() return "target" end
+	function addon:IsAnnouncementSenderNearbyByLocation() return false end
+	function addon:ShowAnnouncementBubbleOnUnitNameplate() error("level-up should only play an emote") end
+	function addon:ShowAnnouncementBubbleOnNameplate() error("level-up should only play an emote") end
+	return addon
+end
+
+local function LevelUpEvent()
+	local event = Event("Level 20")
+	event.eventType = "PLAYER_LEVEL_UP"
+	event.questId = ""
+	event.emoteToken = "cheer"
+	return event
+end
+
+QuestTogether:RegisterTest("level-up sends one shared emote token on party and nearby routes", function()
+	local addon = NewLevelUpFixture()
+	addon.db.profile.emoteOnQuestCompletion = false
+	addon.API.IsInParty = function() return true end
+	Equal(addon:PLAYER_LEVEL_UP("PLAYER_LEVEL_UP", 20), true)
+	Equal(#addon.wire, 2)
+	Equal(addon.wire[1][3], "PARTY")
+	Equal(addon.wire[2][3], "CHANNEL")
+	Equal(addon.wire[1][2], addon.wire[2][2])
+	local command, payload = addon:DeserializeWireMessage(addon.wire[1][2])
+	Equal(command, "LVL")
+	local event = addon:DecodeAnnouncementPayload(payload)
+	Equal(event.eventType, "PLAYER_LEVEL_UP")
+	Equal(event.text, "Level 20")
+	Equal(event.questId, "")
+	Equal(#addon.emotes, 1)
+	Equal(addon.emotes[1].token, event.emoteToken)
+	Equal(addon.emotes[1].target, "MyPlayer")
+	Equal(#addon.printed, 0)
+end)
+
+QuestTogether:RegisterTest("local level-up toggle and test suppression still publish to peers", function()
+	for _, suppressTests in ipairs({ false, true }) do
+		local addon = NewLevelUpFixture()
+		addon.db.profile.emoteOnLevelUp = suppressTests
+		addon.suppressLocalAnnouncementDisplayDuringTests = suppressTests
+		Equal(addon:PLAYER_LEVEL_UP("PLAYER_LEVEL_UP", 20), true)
+		Equal(#addon.wire, 1)
+		Equal(#addon.emotes, 0)
+	end
+end)
+
+QuestTogether:RegisterTest("disabled addon and invalid level-up payloads cannot celebrate or publish", function()
+	local addon = NewLevelUpFixture()
+	for _, level in ipairs({ 0, -1, 1.5, false, {}, "invalid", math.huge, 0 / 0 }) do
+		Equal(addon:PLAYER_LEVEL_UP("PLAYER_LEVEL_UP", level), false)
+	end
+	Equal(addon:PLAYER_LEVEL_UP("PLAYER_LEVEL_UP", nil), false)
+	addon.CanAccessValue = function() return false end
+	Equal(addon:PLAYER_LEVEL_UP("PLAYER_LEVEL_UP", 20), false)
+	addon.CanAccessValue = nil
+	addon.isEnabled = false
+	Equal(addon:PLAYER_LEVEL_UP("PLAYER_LEVEL_UP", 20), false)
+	Equal(#addon.emotes, 0)
+	Equal(#addon.wire, 0)
+end)
+
+QuestTogether:RegisterTest("remote level-up obeys its own toggle independently of quest and chat options", function()
+	for _, enabled in ipairs({ false, true }) do
+		local addon = NewLevelUpFixture()
+		addon.db.profile.emoteOnNearbyPlayerLevelUp = enabled
+		addon.db.profile.emoteOnNearbyPlayerQuestCompletion = not enabled
+		addon.db.profile.emoteOnLevelUp = false
+		addon.db.profile.showChatLogs = false
+		addon.db.profile.showChatBubbles = false
+		Equal(addon:HandleAnnouncementEvent(LevelUpEvent(), false), true)
+		Equal(#addon.emotes, enabled and 1 or 0)
+		if enabled then
+			Equal(addon.emotes[1].token, "cheer")
+			Equal(addon.emotes[1].target, "target")
+		end
+	end
+end)
+
+QuestTogether:RegisterTest("level-up reactions require proximity and obey party-only scope", function()
+	local addon = NewLevelUpFixture()
+	addon.db.profile.showProgressFor = "party_only"
+	addon:HandleAnnouncementEvent(LevelUpEvent(), false)
+	Equal(#addon.emotes, 0)
+	addon.partyMembers["Friend-Realm"] = { fullName = "Friend-Realm", classFile = "MAGE" }
+	addon:HandleAnnouncementEvent(LevelUpEvent(), false)
+	Equal(#addon.emotes, 1)
+	addon.FindNearbyPlayerUnitTokenForSender = function() return nil end
+	addon:HandleAnnouncementEvent(LevelUpEvent(), false)
+	Equal(#addon.emotes, 1)
+	addon.db.profile.showProgressFor = "party_nearby"
+	addon.partyMembers = {}
+	addon.db.profile.devLogAllAnnouncements = true
+	addon:HandleAnnouncementEvent(LevelUpEvent(), false)
+	Equal(#addon.emotes, 1)
+	addon.IsAnnouncementSenderNearbyByLocation = function() return true end
+	addon:HandleAnnouncementEvent(LevelUpEvent(), false)
+	Equal(#addon.emotes, 2)
+	Equal(addon.emotes[2].target, "Friend-Realm")
+	addon.FindVisiblePlayerNameplateForSender = function()
+		return { GetUnit = function() return "nameplate1" end }
+	end
+	addon:HandleAnnouncementEvent(LevelUpEvent(), false)
+	Equal(#addon.emotes, 3)
+	Equal(addon.emotes[3].target, "nameplate1")
+	Equal(#addon.printed, 0)
+end)
+
+QuestTogether:RegisterTest("level-up wire uses transport identity and suppresses duplicates self and ignored senders", function()
+	local addon = NewLevelUpFixture()
+	addon.FindNearbyPlayerUnitTokenForSender = function(_, _, senderName)
+		Equal(senderName, "Friend-Realm")
+		return "target"
+	end
+	local event = LevelUpEvent()
+	event.senderName = "Spoofed-Realm"
+	local wire = "LVL|" .. addon:EncodeAnnouncementPayload(event)
+	addon:OnCommReceived(addon.commPrefix, wire, "PARTY", "Friend-Realm")
+	addon:OnCommReceived(addon.commPrefix, wire, "CHANNEL", "Friend-Realm", 7, addon.announcementChannelName)
+	Equal(#addon.emotes, 1)
+	Equal(#addon.printed, 0)
+	addon:OnCommReceived(addon.commPrefix, wire, "PARTY", "MyPlayer-Realm")
+	addon.IsIgnoredPlayerName = function() return true end
+	addon:OnCommReceived(addon.commPrefix, wire, "PARTY", "Ignored-Realm")
+	Equal(#addon.emotes, 1)
+end)
+
+QuestTogether:RegisterTest("level-up wire rejects other event types", function()
+	local addon = NewLevelUpFixture()
+	local event = LevelUpEvent()
+	event.eventType = "QUEST_COMPLETED"
+	addon:OnCommReceived(addon.commPrefix, "LVL|" .. addon:EncodeAnnouncementPayload(event), "PARTY", "Friend-Realm")
+	Equal(#addon.emotes, 0)
+	Equal(#addon.printed, 0)
+end)
+
+QuestTogether:RegisterTest("level-up options migrate existing profiles and preserve disabled values", function()
+	local addon = NewLevelUpFixture()
+	addon.db.profile.emoteOnLevelUp = nil
+	addon.db.profile.emoteOnNearbyPlayerLevelUp = nil
+	addon:NormalizeAnnouncementDisplayOptions()
+	Equal(addon:GetOption("emoteOnLevelUp"), true)
+	Equal(addon:GetOption("emoteOnNearbyPlayerLevelUp"), true)
+	addon:SetOption("emoteOnLevelUp", false)
+	addon:SetOption("emoteOnNearbyPlayerLevelUp", false)
+	addon:NormalizeAnnouncementDisplayOptions()
+	Equal(addon:GetOption("emoteOnLevelUp"), false)
+	Equal(addon:GetOption("emoteOnNearbyPlayerLevelUp"), false)
+end)
+
+QuestTogether:RegisterTest("level-up event registration follows addon enable and disable", function()
+	local addon = NewLevelUpFixture()
+	local registered = {}
+	addon.registeredRuntimeEvents = {}
+	addon.eventFrame = {
+		RegisterEvent = function(_, name) registered[name] = true end,
+		UnregisterEvent = function(_, name) registered[name] = nil end,
+	}
+	addon:RegisterRuntimeEvents()
+	Equal(registered.PLAYER_LEVEL_UP, true)
+	addon:UnregisterRuntimeEvents()
+	Equal(registered.PLAYER_LEVEL_UP, nil)
+end)

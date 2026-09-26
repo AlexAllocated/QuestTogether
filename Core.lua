@@ -315,6 +315,8 @@ QuestTogether.DEFAULTS = {
 		chatBubbleDuration = 3,
 		emoteOnQuestCompletion = true,
 		emoteOnNearbyPlayerQuestCompletion = true,
+		emoteOnLevelUp = true,
+		emoteOnNearbyPlayerLevelUp = true,
 		nameplateQuestIconEnabled = true,
 		nameplateQuestIconStyle = "left",
 		nameplateQuestHealthColorEnabled = true,
@@ -607,7 +609,7 @@ function QuestTogether:ResetPersonalBubbleAnchor()
 	return true
 end
 
--- Emotes used when celebrating completed quests.
+-- Emotes used when celebrating completed quests and level-ups.
 QuestTogether.completionEmotes = {
 	"applaud",
 	"bow",
@@ -634,6 +636,7 @@ QuestTogether.completionEmotes = {
 -- The runtime event list that should only be registered while the addon is enabled.
 QuestTogether.runtimeEvents = {
 	"CHAT_MSG_ADDON",
+	"PLAYER_LEVEL_UP",
 	"QUEST_ACCEPTED",
 	"QUEST_TURNED_IN",
 	"QUEST_REMOVED",
@@ -4614,6 +4617,12 @@ function QuestTogether:NormalizeAnnouncementDisplayOptions()
 	end
 	if profile.emoteOnNearbyPlayerQuestCompletion == nil then
 		profile.emoteOnNearbyPlayerQuestCompletion = self.DEFAULTS.profile.emoteOnNearbyPlayerQuestCompletion
+	end
+	if profile.emoteOnLevelUp == nil then
+		profile.emoteOnLevelUp = self.DEFAULTS.profile.emoteOnLevelUp
+	end
+	if profile.emoteOnNearbyPlayerLevelUp == nil then
+		profile.emoteOnNearbyPlayerLevelUp = self.DEFAULTS.profile.emoteOnNearbyPlayerLevelUp
 	end
 	if not self:IsChatLogDestination(profile.chatLogDestination) then
 		profile.chatLogDestination = self.DEFAULTS.profile.chatLogDestination

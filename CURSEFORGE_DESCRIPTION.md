@@ -67,7 +67,7 @@ In `Options > AddOns > QuestTogether`, you can configure:
   - Party only
   - Party + nearby visible players
 - Nameplate quest icon style and quest health color
-- Emote behavior for quest completion
+- Separate emote toggles for your own and nearby players' quest completions and level-ups
 
 ## Slash Commands
 

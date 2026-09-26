@@ -15,8 +15,8 @@ local QuestTogether = _G.QuestTogether
 local PLATER_QUEST_STATE_REFRESH_DELAY_SECONDS = 1.0
 local PLATER_INITIAL_QUEST_LOG_UPDATED_DELAY_SECONDS = 4.1
 local PLATER_INITIAL_FULL_REFRESH_DELAY_SECONDS = 5.1
-local NAMEPLATE_TOOLTIP_GUID_RETRY_DELAY_SECONDS = 0.2
-local NAMEPLATE_TOOLTIP_GUID_RETRY_MAX_ATTEMPTS = 4
+local NAMEPLATE_TOOLTIP_RETRY_DELAY_SECONDS = 0.2
+local NAMEPLATE_TOOLTIP_RETRY_MAX_ATTEMPTS = 4
 local NAMEPLATE_SCAN_TOOLTIP_NAME = "QuestTogetherNameplateScanTooltip"
 local ANNOUNCEMENT_BUBBLE_Y_OFFSET = 22
 local ANNOUNCEMENT_BUBBLE_FADE_IN_SECONDS = 0.2
@@ -1837,19 +1837,30 @@ function QuestTogether:EvaluateTooltipQuestObjectiveLines(tooltipLines)
 	end
 
 	local matchedQuestBlock = false
+	local hasCompletedObjective = false
+	local canConfirmCompletion = tooltipLines.hasIncompleteQuestData ~= true
 
 	for _, lineData in ipairs(tooltipLines) do
 		if not self:CanAccessTable(lineData) then
+			canConfirmCompletion = false
 			break
 		end
 
 		local lineType = lineData.type
 		if not self:CanAccessValue(lineType) then
+			canConfirmCompletion = false
 			break
 		end
 
 		local primaryText = GetTooltipQuestLinePrimaryText(lineData)
 		local matchedQuestText = GetKnownTooltipQuestText(primaryText)
+		local progressState = GetObjectiveProgressState(primaryText)
+		if (matchedQuestBlock or matchedQuestText ~= nil) and progressState == "complete" then
+			hasCompletedObjective = true
+		end
+		if IsTooltipQuestObjectiveLineType(lineType) and progressState == "unknown" then
+			canConfirmCompletion = false
+		end
 		if not matchedQuestBlock and matchedQuestText ~= nil and self:TooltipLineHasUnfinishedObjectiveEvidence(lineData) then
 			return true
 		end
@@ -1866,7 +1877,7 @@ function QuestTogether:EvaluateTooltipQuestObjectiveLines(tooltipLines)
 		end
 	end
 
-	return false
+	return false, hasCompletedObjective and canConfirmCompletion
 end
 
 function QuestTogether:ClearNameplateResolvedQuestState()
@@ -1874,10 +1885,12 @@ function QuestTogether:ClearNameplateResolvedQuestState()
 	wipe(self.nameplateQuestGuidByUnitToken)
 end
 
--- Keep detection state GUID-owned so recycled unit tokens only mirror the
--- current render state instead of acting as the source of truth.
+-- Invalidate both spawn and NPC completion evidence when quest state changes,
+-- so new/reaccepted quests can make the same creature relevant again.
 function QuestTogether:ClearNameplateQuestDetectionCache()
 	wipe(self.nameplateQuestStateByGuid)
+	wipe(self:GetNameplateStateStore().completedByNpcID)
+	wipe(self.nameplateTooltipResolveRetryCountByUnitToken)
 end
 
 function QuestTogether:ForgetResolvedNameplateQuestState(unitToken)
@@ -1913,36 +1926,50 @@ function QuestTogether:ClearNameplateTooltipResolveRetryCount(unitToken)
 	end
 end
 
-function QuestTogether:MaybeScheduleNameplateTooltipGuidRetry(unitToken, reason)
+function QuestTogether:MaybeScheduleNameplateTooltipRetry(unitToken, reason, unitGuid)
 	if not self:IsNameplateUnitToken(unitToken) then
 		return false
 	end
 
 	local retryCount = self:GetNameplateTooltipResolveRetryCount(unitToken)
-	if retryCount >= NAMEPLATE_TOOLTIP_GUID_RETRY_MAX_ATTEMPTS then
-		self:ClearNameplateTooltipResolveRetryCount(unitToken)
+	if retryCount >= NAMEPLATE_TOOLTIP_RETRY_MAX_ATTEMPTS then
 		return false
 	end
 
 	self.nameplateTooltipResolveRetryCountByUnitToken[unitToken] = retryCount + 1
-	if self.ScheduleNameplatePresentationRefresh then
-		self:ScheduleNameplatePresentationRefresh(
-			reason or "NameplateTooltipGuidRetry",
-			NAMEPLATE_TOOLTIP_GUID_RETRY_DELAY_SECONDS
-		)
-		return true
-	end
 	if self.ScheduleNameplateTooltipResolution then
 		self:ScheduleNameplateTooltipResolution(
 			unitToken,
-			nil,
-			NAMEPLATE_TOOLTIP_GUID_RETRY_DELAY_SECONDS,
-			reason or "NameplateTooltipGuidRetry"
+			unitGuid,
+			NAMEPLATE_TOOLTIP_RETRY_DELAY_SECONDS,
+			reason or "NameplateTooltipRetry"
 		)
-			return true
+		return true
 	end
 
 	return false
+end
+
+-- Derive creature identity from a readable GUID, never from a recycled frame.
+-- Completion applies to other spawns of this NPC, not to players or pets.
+local function GetNpcIdFromUnitGuid(unitGuid)
+	if not QuestTogether:CanAccessValue(unitGuid) or type(unitGuid) ~= "string" then
+		return nil
+	end
+	local kind = SafeMatch(unitGuid, "^([^-]+)%-")
+	if kind ~= "Creature" and kind ~= "Vehicle" then
+		return nil
+	end
+	local npcIdText = SafeMatch(unitGuid, "^[^-]+%-[^-]*%-[^-]*%-[^-]*%-[^-]*%-(%d+)%-")
+	local npcId = SafeUiNumber(npcIdText, nil)
+	return npcId and npcId > 0 and npcId or nil
+end
+
+function QuestTogether:RememberNameplateNpcCompletion(unitGuid, completed)
+	local npcID = GetNpcIdFromUnitGuid(unitGuid)
+	if npcID then
+		self:GetNameplateStateStore().completedByNpcID[npcID] = completed and true or nil
+	end
 end
 
 function QuestTogether:StoreResolvedNameplateQuestState(unitToken, unitGuid, isQuestObjective)
@@ -1950,21 +1977,24 @@ function QuestTogether:StoreResolvedNameplateQuestState(unitToken, unitGuid, isQ
 		return
 	end
 
-	if isQuestObjective then
-		self.nameplateQuestStateByGuid[unitGuid] = true
-	else
-		self.nameplateQuestStateByGuid[unitGuid] = nil
-	end
+	self.nameplateQuestStateByGuid[unitGuid] = isQuestObjective and true or false
 	if self:IsNameplateUnitToken(unitToken) then
 		self.nameplateQuestStateByUnitToken[unitToken] = isQuestObjective and true or false
 		self.nameplateQuestGuidByUnitToken[unitToken] = unitGuid
-		self:ClearNameplateTooltipResolveRetryCount(unitToken)
+		if isQuestObjective then
+			self:ClearNameplateTooltipResolveRetryCount(unitToken)
+		end
 	end
 end
 
 function QuestTogether:TryGetCachedQuestObjectiveStateForGuid(unitGuid)
 	if not IsNonEmptyString(unitGuid) then
 		return false, nil
+	end
+	local npcID = GetNpcIdFromUnitGuid(unitGuid)
+	if npcID and self:GetNameplateStateStore().completedByNpcID[npcID] then
+		-- Confirmed completion takes precedence over an older positive spawn.
+		return true, false
 	end
 
 	local cachedQuestObjective = self.nameplateQuestStateByGuid[unitGuid]
@@ -2090,6 +2120,11 @@ function QuestTogether:GetNameplateTooltipScanGuid(unitToken, unitFrame)
 	if IsNonEmptyString(liveGuid) then
 		return liveGuid
 	end
+	if self:IsRuntimeRestricted() then
+		-- A recycled frame's old GUID is not evidence for an unreadable live
+		-- identity. Query the accessible token and retry instead of reusing it.
+		return nil
+	end
 	if not self:CanAccessForeignFrame(unitFrame) then
 		return nil
 	end
@@ -2110,23 +2145,6 @@ function QuestTogether:GetNameplateTooltipScanGuid(unitToken, unitFrame)
 			end
 		end
 	end
-	return nil
-end
-
--- Plater reads MEMBER_NPCID directly when calling QuestieTooltips.GetTooltip
--- in local retail Plater.lua:11191-11196. QuestTogether derives the same NPC id
--- from the unit GUID so the Questie source can stay frame-agnostic and guarded.
-local function GetNpcIdFromUnitGuid(unitGuid)
-	if type(unitGuid) ~= "string" or unitGuid == "" then
-		return nil
-	end
-
-	local npcIdText = SafeMatch(unitGuid, "^[^-]+%-[^-]*%-[^-]*%-[^-]*%-[^-]*%-(%d+)%-")
-	local npcId = SafeUiNumber(npcIdText, nil)
-	if npcId and npcId > 0 then
-		return npcId
-	end
-
 	return nil
 end
 
@@ -2213,9 +2231,18 @@ function QuestTogether:ExtractQuestObjectiveTooltipLinesFromTooltipData(tooltipD
 
 	local tooltipLines = {}
 	for lineIndex = 1, #tooltipLineData do
-		local sanitizedLine = self:SanitizeTooltipLineForQuestDetection(tooltipLineData[lineIndex])
+		local rawLine = tooltipLineData[lineIndex]
+		local sanitizedLine = self:SanitizeTooltipLineForQuestDetection(rawLine)
 		if sanitizedLine then
 			tooltipLines[#tooltipLines + 1] = sanitizedLine
+		elseif not self:CanAccessTable(rawLine) or not self:CanAccessValue(rawLine.type) then
+			tooltipLines.hasIncompleteQuestData = true
+		elseif
+			IsTooltipQuestObjectiveLineType(rawLine.type)
+			or IsTooltipQuestTitleLineType(rawLine.type)
+			or IsTooltipQuestPlayerLineType(rawLine.type)
+		then
+			tooltipLines.hasIncompleteQuestData = true
 		end
 	end
 
@@ -2363,6 +2390,16 @@ function QuestTogether:GetQuestObjectiveTooltipLineSources(unitToken, unitGuid)
 	end
 
 	local sourceOrder = {}
+	if self:IsRuntimeRestricted() then
+		-- During combat use only the data API for the accessible live token.
+		-- Questie callbacks and hidden GameTooltip scans can mutate shared UI.
+		return { {
+			name = "structured_unit",
+			resolve = function()
+				return self:GetStructuredQuestObjectiveTooltipLines(unitToken, unitGuid, "unit")
+			end,
+		} }
+	end
 
 	sourceOrder[#sourceOrder + 1] = {
 		name = "questie",
@@ -2601,6 +2638,7 @@ function QuestTogether:TryEvaluateQuestObjectiveViaTooltip(unitToken, unitFrame,
 	end
 
 	local resolvedAnyTooltipLines = false
+	local hasCompletedObjective = false
 	local nextSourceIndex = 1
 	while true do
 		local tooltipLines, _sourceName, resolvedSourceIndex =
@@ -2610,10 +2648,12 @@ function QuestTogether:TryEvaluateQuestObjectiveViaTooltip(unitToken, unitFrame,
 		end
 
 		resolvedAnyTooltipLines = true
-		local isQuestObjective = self:EvaluateTooltipQuestObjectiveLines(tooltipLines)
+		local isQuestObjective, allObjectivesComplete = self:EvaluateTooltipQuestObjectiveLines(tooltipLines)
 		if isQuestObjective then
+			self:RememberNameplateNpcCompletion(unitGuid, false)
 			return true, true, unitGuid
 		end
+		hasCompletedObjective = hasCompletedObjective or allObjectivesComplete == true
 		if type(resolvedSourceIndex) ~= "number" then
 			break
 		end
@@ -2622,6 +2662,9 @@ function QuestTogether:TryEvaluateQuestObjectiveViaTooltip(unitToken, unitFrame,
 
 	if not resolvedAnyTooltipLines then
 		return false, false, unitGuid
+	end
+	if hasCompletedObjective then
+		self:RememberNameplateNpcCompletion(unitGuid, true)
 	end
 
 	return true, false, unitGuid
@@ -2667,9 +2710,10 @@ function QuestTogether:TryResolveNameplateQuestObjectiveState(unitToken, unitFra
 		return false, false, nil
 	end
 
+	local hasCachedQuestState, cachedQuestState = false, nil
 	if unitGuid then
-		local hasCachedQuestState, cachedQuestState = self:TryGetReusableCachedNameplateQuestState(unitToken, unitGuid)
-		if hasCachedQuestState then
+		hasCachedQuestState, cachedQuestState = self:TryGetReusableCachedNameplateQuestState(unitToken, unitGuid)
+		if hasCachedQuestState and (cachedQuestState or not allowLiveScan) then
 			return true, cachedQuestState, unitGuid
 		end
 	end
@@ -2685,6 +2729,9 @@ function QuestTogether:TryResolveNameplateQuestObjectiveState(unitToken, unitFra
 			self:StoreResolvedNameplateQuestState(unitToken, resolvedUnitGuid or unitGuid, isQuestObjective)
 		end
 		return true, isQuestObjective, resolvedUnitGuid or unitGuid
+	end
+	if hasCachedQuestState then
+		return true, cachedQuestState, unitGuid
 	end
 
 	return false, false, resolvedUnitGuid or unitGuid
@@ -2716,6 +2763,7 @@ function QuestTogether:ResolveNameplateQuestStateForUnitToken(unitToken, unitGui
 
 	local namePlateFrameBase, unitFrame = self:GetAccessibleNameplateFrameForUnit(unitToken, true)
 	if not namePlateFrameBase or not unitFrame then
+		self:MaybeScheduleNameplateTooltipRetry(unitToken, reason, unitGuid)
 		return false
 	end
 
@@ -2731,16 +2779,12 @@ function QuestTogether:ResolveNameplateQuestStateForUnitToken(unitToken, unitGui
 	local hasResolvedQuestState, isQuestObjective, resolvedUnitGuid =
 		self:TryResolveNameplateQuestObjectiveState(liveUnitToken, unitFrame, true)
 	if not hasResolvedQuestState then
-		local hasGuidRetryScheduled = false
-		if not IsNonEmptyString(resolvedUnitGuid or unitGuid) then
-			hasGuidRetryScheduled = self:MaybeScheduleNameplateTooltipGuidRetry(
-				liveUnitToken,
-				reason or "ResolveNameplateQuestStateForUnitToken"
-			)
-		end
+		local hasRetryScheduled = self:MaybeScheduleNameplateTooltipRetry(
+			liveUnitToken, reason or "ResolveNameplateQuestStateForUnitToken", resolvedUnitGuid or unitGuid
+		)
 		self:ForgetResolvedNameplateQuestState(liveUnitToken)
 		self:HideNameplateIcon(namePlateFrameBase)
-		if not hasGuidRetryScheduled then
+		if not hasRetryScheduled then
 			PrintOneShotNameplateDebug(
 				self,
 				string.format(
@@ -2749,10 +2793,10 @@ function QuestTogether:ResolveNameplateQuestStateForUnitToken(unitToken, unitGui
 					SafeText(reason or "ResolveNameplateQuestStateForUnitToken", "<nil>")
 				),
 				string.format(
-					"resolver_unresolved unit=%s reason=%s guidRetry=%s",
+					"resolver_unresolved unit=%s reason=%s retry=%s",
 					SafeText(liveUnitToken, ""),
 					SafeText(reason, ""),
-					tostring(hasGuidRetryScheduled)
+					tostring(hasRetryScheduled)
 				)
 			)
 		end
@@ -2767,6 +2811,11 @@ function QuestTogether:ResolveNameplateQuestStateForUnitToken(unitToken, unitGui
 		true,
 		resolvedUnitGuid or unitGuid
 	)
+	if not isQuestObjective or not IsNonEmptyString(resolvedUnitGuid or unitGuid) then
+		-- Quest lines can arrive after the name/GUID. A negative first read is
+		-- retried briefly, without turning non-quest mobs into an endless poll.
+		self:MaybeScheduleNameplateTooltipRetry(liveUnitToken, reason, resolvedUnitGuid or unitGuid)
+	end
 	return true
 end
 
@@ -2825,8 +2874,9 @@ function QuestTogether:ApplyResolvedQuestStateToNameplate(
 		self:StoreResolvedNameplateQuestState(resolvedUnitToken, resolvedUnitGuid, isQuestObjective)
 	end
 
-	self:RefreshNameplateHealthTint(namePlateFrameBase, isQuestObjective)
-	if scheduleTintFollowUp and isQuestObjective and type(resolvedUnitToken) == "string" and resolvedUnitToken ~= "" then
+	local canScheduleTintFollowUp = scheduleTintFollowUp and IsNonEmptyString(resolvedUnitGuid)
+	self:RefreshNameplateHealthTint(namePlateFrameBase, isQuestObjective, canScheduleTintFollowUp == true)
+	if canScheduleTintFollowUp and isQuestObjective and type(resolvedUnitToken) == "string" and resolvedUnitToken ~= "" then
 		self:ScheduleNameplateHealthTintRefresh(resolvedUnitToken, 0.05, true)
 	end
 
@@ -3744,7 +3794,7 @@ function QuestTogether:RestoreNameplateHealthColor(unitFrame)
 	end
 end
 
-function QuestTogether:RefreshNameplateHealthTint(namePlateFrameBase, isQuestObjective)
+function QuestTogether:RefreshNameplateHealthTint(namePlateFrameBase, isQuestObjective, retryOnFailure)
 	if not self:CanAccessForeignFrame(namePlateFrameBase) then
 		return
 	end
@@ -3757,7 +3807,7 @@ function QuestTogether:RefreshNameplateHealthTint(namePlateFrameBase, isQuestObj
 	local shouldTint = self:ShouldApplyQuestHealthTint(unitFrame, isQuestObjective)
 	if shouldTint then
 		local applied = self:ApplyQuestTintToNameplate(unitFrame)
-		if not applied and type(unitToken) == "string" and unitToken ~= "" then
+		if not applied and retryOnFailure ~= false and type(unitToken) == "string" and unitToken ~= "" then
 			self:ScheduleNameplateHealthTintRefresh(unitToken, 0.05, true)
 		end
 	else
@@ -3765,7 +3815,7 @@ function QuestTogether:RefreshNameplateHealthTint(namePlateFrameBase, isQuestObj
 	end
 end
 
-function QuestTogether:ScheduleNameplateHealthTintRefresh(unitToken, delaySeconds, preferCachedQuestState)
+function QuestTogether:ScheduleNameplateHealthTintRefresh(unitToken, delaySeconds, _preferCachedQuestState)
 	if not self:IsNameplateUnitToken(unitToken) then
 		return
 	end
@@ -3787,35 +3837,23 @@ function QuestTogether:ScheduleNameplateHealthTintRefresh(unitToken, delaySecond
 			self:ForgetResolvedNameplateQuestState(unitToken)
 		end
 
-		local allowLiveScan = not preferCachedQuestState
-		if not allowLiveScan then
-			local cachedUnitGuid = self.nameplateQuestGuidByUnitToken[liveUnitToken]
-			local liveUnitGuid = self:GetNameplateTooltipScanGuid(liveUnitToken, unitFrame)
-			if not IsNonEmptyString(cachedUnitGuid) or not IsNonEmptyString(liveUnitGuid) or cachedUnitGuid ~= liveUnitGuid then
-				allowLiveScan = true
-			end
-		end
-
-		local hasResolvedQuestState, isQuestObjective = self:TryResolveNameplateQuestObjectiveState(
+		local hasResolvedQuestState, isQuestObjective, unitGuid = self:TryResolveNameplateQuestObjectiveState(
 			liveUnitToken,
 			unitFrame,
-			allowLiveScan
+			false
 		)
 		if not hasResolvedQuestState then
 			self:ForgetResolvedNameplateQuestState(liveUnitToken)
-			self:RestoreNameplateHealthColor(unitFrame)
+			self:HideNameplateIcon(namePlateFrameBase)
 			if self.ScheduleNameplateTooltipResolution then
 				self:ScheduleNameplateTooltipResolution(liveUnitToken, self:GetNameplateTooltipScanGuid(liveUnitToken, unitFrame), 0, "ScheduleNameplateHealthTintRefresh")
 			end
 			return
 		end
 
-		local shouldTint = self:ShouldApplyQuestHealthTint(unitFrame, isQuestObjective)
-		if shouldTint then
-			self:ApplyQuestTintToNameplate(unitFrame)
-		else
-			self:RestoreNameplateHealthColor(unitFrame)
-		end
+		-- Both visuals follow the same result. Health/threat events may be the
+		-- first opportunity to repair a newly visible plate's missing icon.
+		self:ApplyResolvedQuestStateToNameplate(namePlateFrameBase, liveUnitToken, unitFrame, isQuestObjective, false, unitGuid)
 	end
 
 	if self.ScheduleDeferredWork then
@@ -3837,8 +3875,8 @@ function QuestTogether:ScheduleNameplateRefresh(unitToken)
 	self.nameplateRefreshGenerationByUnitToken[unitToken] = generation
 	self.nameplateRefreshPendingByUnitToken[unitToken] = true
 
-	-- Mirrors Plater.ScheduleUpdateForNameplate() (local retail Plater.lua:1461-1481):
-	-- schedule one update for the unit instead of retry-bursting tooltip refreshes.
+	-- Give Blizzard one frame to finish building/restyling the plate. The
+	-- generation check also cancels work for removed or recycled unit tokens.
 	local function refreshScheduledNameplate()
 		if self.nameplateRefreshGenerationByUnitToken ~= generations
 			or generations[unitToken] ~= generation then
@@ -3848,9 +3886,14 @@ function QuestTogether:ScheduleNameplateRefresh(unitToken)
 		if not self.isEnabled then
 			return
 		end
+		if self.IsWorkBlocked and self:IsWorkBlocked("nameplate_refresh") then
+			self:ScheduleDeferredWork("nameplate_refresh", unitToken, refreshScheduledNameplate, 0, "ScheduleNameplateRefresh")
+			return
+		end
 
 		local namePlateFrameBase = self:GetAccessibleNameplateFrameForUnit(unitToken, true)
 		if not namePlateFrameBase then
+			self:MaybeScheduleNameplateTooltipRetry(unitToken, "ScheduleNameplateRefresh")
 			return
 		end
 
@@ -3894,7 +3937,13 @@ function QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
 		end
 		return
 	end
-	self:ClearNameplateTooltipResolveRetryCount(unitToken)
+	if isQuestObjective then
+		self:ClearNameplateTooltipResolveRetryCount(unitToken)
+	else
+		-- Keep the negative fallback, but let fresh tooltip evidence reveal a
+		-- newly relevant quest or unfinished party objective. Retries stay bounded.
+		self:MaybeScheduleNameplateTooltipRetry(unitToken, "RefreshNameplateIcon", resolvedUnitGuid)
+	end
 
 	self:ApplyResolvedQuestStateToNameplate(
 		namePlateFrameBase,
@@ -3920,6 +3969,36 @@ function QuestTogether:HideNameplateIcon(namePlateFrameBase)
 		icon:Hide()
 	end
 	self:RestoreNameplateHealthColor(unitFrame)
+end
+
+function QuestTogether:HideTapDeniedNameplateVisuals(unitToken)
+	if not self:IsNameplateUnitToken(unitToken) or not self:IsNameplateUnitTapDenied(unitToken) then
+		return
+	end
+
+	-- Tap ownership can change after quest detection and while combat defers
+	-- normal plate refreshes. Hide our existing visuals without a tooltip scan
+	-- or layout work; HideNameplateIcon guards forbidden/protected objects.
+	local namePlateFrameBase = self:GetAccessibleNameplateFrameForUnit(unitToken, false)
+	if namePlateFrameBase then
+		self:HideNameplateIcon(namePlateFrameBase)
+	end
+end
+
+function QuestTogether:RefreshNameplateForUnitAlias(unitAlias)
+	local unitGuid = self:GetNameplateUnitGuid(unitAlias)
+	if not IsNonEmptyString(unitGuid) then
+		return
+	end
+
+	self:ForEachVisibleNamePlate(function(frame)
+		local unitFrame = GetAccessibleChildFrame(frame, "UnitFrame")
+		local unitToken = ResolveNameplateUnitToken(frame, unitFrame)
+		if self:IsNameplateUnitToken(unitToken) and self:GetNameplateUnitGuid(unitToken) == unitGuid then
+			self:ClearNameplateTooltipResolveRetryCount(unitToken)
+			self:ScheduleNameplateRefresh(unitToken)
+		end
+	end)
 end
 
 function QuestTogether:ForEachVisibleNamePlate(callback)
@@ -4244,6 +4323,16 @@ function QuestTogether:HandleNameplateEvent(eventName, ...)
 		self:OnNameplateAdded(...)
 	elseif eventName == "NAME_PLATE_UNIT_REMOVED" then
 		self:OnNameplateRemoved(...)
+	elseif eventName == "NAME_PLATE_UNIT_BEHIND_CAMERA_CHANGED" then
+		local unitToken, isBehindCamera = ...
+		if self:IsNameplateUnitToken(unitToken) and self:CanAccessValue(isBehindCamera) and isBehindCamera == false then
+			self:ClearNameplateTooltipResolveRetryCount(unitToken)
+			self:ScheduleNameplateRefresh(unitToken)
+		end
+	elseif eventName == "PLAYER_TARGET_CHANGED" then
+		self:RefreshNameplateForUnitAlias("target")
+	elseif eventName == "UPDATE_MOUSEOVER_UNIT" then
+		self:RefreshNameplateForUnitAlias("mouseover")
 	elseif eventName == "PLAYER_ENTERING_WORLD" then
 		self:ScheduleNameplatePresentationRefresh("PLAYER_ENTERING_WORLD", 1)
 	elseif
@@ -4283,12 +4372,21 @@ function QuestTogether:HandleNameplateEvent(eventName, ...)
 		or eventName == "UNIT_CONNECTION"
 		or eventName == "UNIT_THREAT_LIST_UPDATE"
 		or eventName == "UNIT_THREAT_SITUATION_UPDATE"
+		or eventName == "UNIT_FACTION"
+		or eventName == "UNIT_FLAGS"
 	then
 		-- Combat threat styling can swap the live health-fill texture on Blizzard nameplates.
 		-- Re-anchor our overlay on the same unit-token events so the tint survives combat.
 		local unitToken = ...
 		if self:IsNameplateUnitToken(unitToken) then
-			self:ScheduleNameplateHealthTintRefresh(unitToken, nil, true)
+			self:HideTapDeniedNameplateVisuals(unitToken)
+			if eventName == "UNIT_FACTION" or eventName == "UNIT_FLAGS" then
+				-- Refresh both decorations when ownership changes, including when
+				-- a previously denied tap becomes eligible again.
+				self:ScheduleNameplateRefresh(unitToken)
+			else
+				self:ScheduleNameplateHealthTintRefresh(unitToken, nil, true)
+			end
 		end
 	elseif eventName == "UNIT_QUEST_LOG_CHANGED" then
 		self:ScheduleQuestStateRefreshWork(eventName, PLATER_QUEST_STATE_REFRESH_DELAY_SECONDS)
@@ -4322,6 +4420,9 @@ function QuestTogether:EnableNameplateAugmentation()
 	self:TryInstallNameplateHooks()
 	RegisterNameplateEvent(self, "NAME_PLATE_UNIT_ADDED")
 	RegisterNameplateEvent(self, "NAME_PLATE_UNIT_REMOVED")
+	RegisterNameplateEvent(self, "NAME_PLATE_UNIT_BEHIND_CAMERA_CHANGED")
+	RegisterNameplateEvent(self, "PLAYER_TARGET_CHANGED")
+	RegisterNameplateEvent(self, "UPDATE_MOUSEOVER_UNIT")
 	RegisterNameplateEvent(self, "QUEST_LOG_UPDATE")
 	RegisterNameplateEvent(self, "QUEST_REMOVED")
 	RegisterNameplateEvent(self, "QUEST_ACCEPTED")
@@ -4338,6 +4439,8 @@ function QuestTogether:EnableNameplateAugmentation()
 	RegisterNameplateEvent(self, "UNIT_CONNECTION")
 	RegisterNameplateEvent(self, "UNIT_THREAT_LIST_UPDATE")
 	RegisterNameplateEvent(self, "UNIT_THREAT_SITUATION_UPDATE")
+	RegisterNameplateEvent(self, "UNIT_FACTION")
+	RegisterNameplateEvent(self, "UNIT_FLAGS")
 	RegisterNameplateEvent(self, "PLAYER_ENTERING_WORLD")
 	RegisterNameplateEvent(self, "ZONE_CHANGED_NEW_AREA")
 	RegisterNameplateEvent(self, "ZONE_CHANGED_INDOORS")

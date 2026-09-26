@@ -466,6 +466,8 @@ local CHECKBOX_OPTION_KEYS = {
 	"nameplateQuestHealthColorEnabled",
 	"emoteOnQuestCompletion",
 	"emoteOnNearbyPlayerQuestCompletion",
+	"emoteOnLevelUp",
+	"emoteOnNearbyPlayerLevelUp",
 }
 
 local function RefreshCheckboxOptions(controls)
@@ -1602,9 +1604,25 @@ function QuestTogether:InitializeMiscWindow(parentCategory)
 		16,
 		-110
 	)
+	local emoteOnLevelUp = CreateCheckbox(
+		content,
+		"emoteOnLevelUp",
+		"Emote On Level Up",
+		"Perform a celebration emote when this character levels up.",
+		16,
+		-138
+	)
+	local emoteOnNearbyPlayerLevelUp = CreateCheckbox(
+		content,
+		"emoteOnNearbyPlayerLevelUp",
+		"Emote On Nearby Player Level Up",
+		"Mirror nearby QuestTogether players' level-up emotes, respecting your player scope setting.",
+		16,
+		-166
+	)
 	local debugButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
 	debugButton:SetSize(180, 24)
-	debugButton:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -146)
+	debugButton:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -202)
 	debugButton:SetText("Open Debug Window")
 	debugButton:SetScript("OnClick", function()
 		QuestTogether:ShowDebugWindow()
@@ -1621,6 +1639,8 @@ function QuestTogether:InitializeMiscWindow(parentCategory)
 	self.miscControls = {
 		emoteOnQuestCompletion = emoteOnQuestCompletion,
 		emoteOnNearbyPlayerQuestCompletion = emoteOnNearbyPlayerQuestCompletion,
+		emoteOnLevelUp = emoteOnLevelUp,
+		emoteOnNearbyPlayerLevelUp = emoteOnNearbyPlayerLevelUp,
 	}
 	self.miscFrame = frame
 

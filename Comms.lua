@@ -10,6 +10,9 @@ local QuestTogether = _G.QuestTogether
 
 local ANNOUNCEMENT_WIRE_VERSION = 3
 local ANNOUNCEMENT_COMMAND = "ANN"
+-- Same payload and command length as ANN; older clients safely ignore this
+-- emote-only event instead of displaying it as a quest announcement.
+local LEVEL_UP_COMMAND = "LVL"
 local PING_REQUEST_VERSION = 1
 local PING_REQUEST_COMMAND = "PING"
 local PING_RESPONSE_VERSION = 2
@@ -1425,8 +1428,13 @@ function QuestTogether:GetSafeRemoteCompletionEmote(emoteToken)
 	return token
 end
 
-function QuestTogether:PlayRemoteCompletionEmote(eventData, nearbyUnitToken, senderName)
-	if type(eventData) ~= "table" or not self:GetOption("emoteOnNearbyPlayerQuestCompletion") then
+function QuestTogether:PlayRemoteCelebrationEmote(eventData, nearbyUnitToken, senderName)
+	if type(eventData) ~= "table" then
+		return false
+	end
+	local optionKey = eventData.eventType == "PLAYER_LEVEL_UP" and "emoteOnNearbyPlayerLevelUp"
+		or "emoteOnNearbyPlayerQuestCompletion"
+	if not self:GetOption(optionKey) then
 		return false
 	end
 
@@ -1460,7 +1468,8 @@ function QuestTogether:SendAnnouncementWireEvent(eventData)
 		self:RecordCommsDiagnostic("invalidMessages", "announcement metadata leaves no room for text")
 		return false
 	end
-	local wireMessage = self:SerializeWireMessage(ANNOUNCEMENT_COMMAND, payload)
+	local command = eventData.eventType == "PLAYER_LEVEL_UP" and LEVEL_UP_COMMAND or ANNOUNCEMENT_COMMAND
+	local wireMessage = self:SerializeWireMessage(command, payload)
 	return self:SendWireMessageToAnnouncementRoutes(
 		wireMessage,
 		"announcement eventType="
@@ -1622,6 +1631,7 @@ function QuestTogether:ShouldPlayRemoteEmoteForAnnouncement(eventData)
 	return eventData.eventType == "QUEST_COMPLETED"
 		or eventData.eventType == "WORLD_QUEST_COMPLETED"
 		or eventData.eventType == "BONUS_OBJECTIVE_COMPLETED"
+		or eventData.eventType == "PLAYER_LEVEL_UP"
 end
 
 function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
@@ -1679,7 +1689,8 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
 		return false
 	end
 
-	if self:GetOption("showChatLogs") then
+	local isLevelUp = eventData.eventType == "PLAYER_LEVEL_UP"
+	if not isLevelUp and self:GetOption("showChatLogs") then
 		local shouldPrint = isLocal or isGrouped or hasNearbySignal or forceAllChatLogs
 		if shouldPrint then
 			self:PrintConsoleAnnouncement(
@@ -1704,10 +1715,10 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
 		if not emoteTarget and hasNearbyNameplate and nearbyNameplate and nearbyNameplate.GetUnit then
 			emoteTarget = nearbyNameplate:GetUnit()
 		end
-		self:PlayRemoteCompletionEmote(eventData, emoteTarget, senderName)
+		self:PlayRemoteCelebrationEmote(eventData, emoteTarget, senderName)
 	end
 
-	if self:GetOption("showChatBubbles") then
+	if not isLevelUp and self:GetOption("showChatBubbles") then
 		if isLocal then
 			if not self:GetOption("hideMyOwnChatBubbles") and self.ShowAnnouncementBubbleOnUnitNameplate then
 				self:ShowAnnouncementBubbleOnUnitNameplate(
@@ -1816,9 +1827,9 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		return
 	end
 
-	if command == ANNOUNCEMENT_COMMAND then
+	if command == ANNOUNCEMENT_COMMAND or command == LEVEL_UP_COMMAND then
 		local eventData = self:DecodeAnnouncementPayload(payload)
-		if not eventData then
+		if not eventData or (command == LEVEL_UP_COMMAND and eventData.eventType ~= "PLAYER_LEVEL_UP") then
 			self:Debug("Failed to decode announcement payload", "comms")
 			return
 		end

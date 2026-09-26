@@ -214,14 +214,34 @@ function QuestTogether:PickRandomCompletionEmote()
 	return self.completionEmotes[randomIndex]
 end
 
-function QuestTogether:PlayLocalCompletionEmote(emoteToken)
-	if not self:GetOption("emoteOnQuestCompletion") then
+function QuestTogether:PlayLocalCelebrationEmote(emoteToken, optionKey)
+	if not self:GetOption(optionKey) then
 		return false
 	end
 	if self.suppressLocalAnnouncementDisplayDuringTests then
 		return false
 	end
 	self.API.DoEmote(emoteToken, self:GetPlayerName())
+	return true
+end
+
+function QuestTogether:PlayLocalCompletionEmote(emoteToken)
+	return self:PlayLocalCelebrationEmote(emoteToken, "emoteOnQuestCompletion")
+end
+
+function QuestTogether:PLAYER_LEVEL_UP(_, newLevel)
+	if not self.isEnabled then
+		return false
+	end
+	local level = self:SafeToNumber(newLevel)
+	if not level or level <= 0 or level ~= math.floor(level) then
+		return false
+	end
+
+	local emoteToken = self:PickRandomCompletionEmote()
+	-- Publish even when our own emotes are disabled; receivers choose whether to react.
+	self:PublishAnnouncementEvent("PLAYER_LEVEL_UP", "Level " .. tostring(level), nil, { emoteToken = emoteToken })
+	self:PlayLocalCelebrationEmote(emoteToken, "emoteOnLevelUp")
 	return true
 end
 
