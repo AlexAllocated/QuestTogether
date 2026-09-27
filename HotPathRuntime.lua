@@ -182,7 +182,8 @@ function QuestTogether:IsWorkBlocked(workClass)
 		return false
 	end
 
-	if workClass == "quest_log_drain" or workClass == "task_area_refresh" or workClass == "quest_snapshot_refresh" then
+	if workClass == "quest_log_drain" or workClass == "task_area_refresh" or workClass == "quest_snapshot_refresh"
+		or workClass == "quest_share" then
 		if self:IsMapTooltipSensitiveStateActive() then
 			return true
 		end

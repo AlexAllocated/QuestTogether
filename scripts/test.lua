@@ -147,6 +147,8 @@ C_AddOns.LoadAddOn = RejectEngineCall("C_AddOns.LoadAddOn")
 LoadAddOn = RejectEngineCall("LoadAddOn")
 UIParentLoadAddOn = RejectEngineCall("UIParentLoadAddOn")
 ShowUIPanel = RejectEngineCall("ShowUIPanel")
+QuestLogPushQuest = RejectEngineCall("QuestLogPushQuest")
+MenuUtil = { CreateContextMenu = RejectEngineCall("CreateContextMenu") }
 -- Exercise the same controller and QT-owned isolation used by the live command.
 local success, passed, failed, result = QuestTogether:RunTests(arg[2] == "reverse", false)
 assert(result, "Shared debug controller did not return a test result")

@@ -1,5 +1,13 @@
 # QuestTogether changelog
 
+## 5.9.2 — 2026-09-27
+
+Left- or right-click a quest name in the QuestTogether log to open its menu, with Status first and Share second. Share uses the current quest-log entry without changing Blizzard's selected quest, and is unavailable when solo, restricted, or the quest cannot be shared. After a separator, the final option moves QuestTogether logs between the main and separate windows, matching QT's player-name menu.
+
+Make quest names in status messages clickable, including fallback titles from other players' logs. Preserve existing quest links when formatting completed quest comparisons so status details do not become part of a second, broken link.
+
+Validation: 521 tests pass in normal and reverse order on Lua 5.1 and 5.2. All six client API profiles, Lua and shell syntax checks, exact libchev verification, and diff checks pass. Live-client menu behavior, quest-share delivery, and engine-level taint validation remain separate.
+
 ## 5.9.1 — 2026-09-27
 
 Keep shared objective wording from reopening an unrelated raw tooltip quest block. Later owned quest titles, party progress and genuinely titleless sources still work.

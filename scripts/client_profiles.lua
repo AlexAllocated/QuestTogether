@@ -29,6 +29,8 @@ return function(client)
 	C_QuestLog = {
 		GetQuestObjectives = function(id) assert(id == 12345); return { objective } end,
 		GetInfo = not classic and Info or nil,
+		GetLogIndexForQuestID = not classic and function(id) assert(id == 12345); return 7 end or nil,
+		SetSelectedQuest = function() error("addon must not move selected quest") end,
 		GetNumQuestLogEntries = not classic and function() return 7 end or nil,
 		IsPushableQuest = not classic and function(id) assert(id == 12345); return pushable end or nil,
 	}
@@ -37,6 +39,84 @@ return function(client)
 		return objective.text, objective.type, objective.finished, objective.numFulfilled
 	end or nil
 	return function(addon)
+		-- Native sharing/menu contracts stay offline: these are fake globals in
+		-- this process, never monkeypatches in /qt test.
+		do
+			local rawIndex, rawRow = 7, { questID = 12345, isHeader = false }
+			local sends, throws = {}, false
+			QuestLogPushQuest = function(...)
+				assert(select("#", ...) == 1 and (...) == rawIndex, "share must pass an explicit live index")
+				if throws then error("native sharing unavailable") end
+				sends[#sends + 1] = (...)
+				-- The native API has no acknowledgement return value.
+			end
+			assert(addon.API.CanShareQuests() == not classic)
+			local originalIndex, originalInfo = C_QuestLog.GetLogIndexForQuestID, C_QuestLog.GetInfo
+			if classic then
+				assert(addon.API.GetQuestLogIndexForSharing(12345) == nil)
+				assert(addon.API.PushQuestToParty(7) == false, "legacy sharing must not change selection")
+			else
+				C_QuestLog.GetLogIndexForQuestID = function(id) assert(id == 12345); return rawIndex end
+				C_QuestLog.GetInfo = function(index) assert(index == rawIndex); return rawRow end
+				assert(addon.API.GetQuestLogIndexForSharing("12345") == 7)
+				assert(addon.API.PushQuestToParty(7) == true, "no native return still means the call was attempted")
+				rawIndex = 9
+				assert(addon.API.GetQuestLogIndexForSharing(12345) == 9, "must resolve the current index")
+				for _, invalid in ipairs({ 0, -1, 0.5, math.huge, secret, inaccessible }) do
+					rawIndex = invalid
+					assert(addon.API.GetQuestLogIndexForSharing(12345) == nil)
+					assert(addon.API.PushQuestToParty(invalid) == false)
+				end
+				rawIndex = nil
+				assert(addon.API.GetQuestLogIndexForSharing(12345) == nil)
+				assert(addon.API.PushQuestToParty(nil) == false, "nil must not share the selected quest")
+				rawIndex = 7
+				for _, row in ipairs({ secret, inaccessible, {}, { questID = 54321 },
+					{ questID = 12345, isHeader = true }, { questID = 12345, isHeader = secret }, { questID = secret } }) do
+					rawRow = row
+					assert(addon.API.GetQuestLogIndexForSharing(12345) == nil)
+				end
+				for _, invalid in ipairs({ 0, -1, 12345.5, math.huge, secret, inaccessible }) do
+					assert(addon.API.GetQuestLogIndexForSharing(invalid) == nil)
+				end
+				C_QuestLog.GetInfo = function() error("native row unavailable") end
+				assert(addon.API.GetQuestLogIndexForSharing(12345) == nil)
+				C_QuestLog.GetLogIndexForQuestID = function() error("native index unavailable") end
+				assert(addon.API.GetQuestLogIndexForSharing(12345) == nil)
+				throws = true
+				assert(addon.API.PushQuestToParty(7) == false)
+				assert(#sends == 1)
+			end
+			C_QuestLog.GetLogIndexForQuestID, C_QuestLog.GetInfo = originalIndex, originalInfo
+			QuestLogPushQuest = nil
+			assert(addon.API.CanShareQuests() == false)
+			local grouped
+			IsInGroup = function() return grouped end
+			for _, value in ipairs({ false, secret, inaccessible, "true", 1 }) do
+				grouped = value
+				assert(addon.API.IsInGroup() == false)
+			end
+			grouped = true
+			assert(addon.API.IsInGroup() == true)
+			IsInGroup = nil
+			assert(addon.API.IsInGroup() == false)
+			local opens = 0
+			MenuUtil = { CreateContextMenu = function(owner, generator)
+				opens = opens + 1
+				generator(owner, {})
+				return {}
+			end }
+			local owner = {}
+			assert(addon.API.CreateContextMenu(owner, function(actual) assert(actual == owner) end))
+			local forbidden = setmetatable({ IsForbidden = function() return true end }, {
+				__index = function() error("forbidden owner must not be inspected further") end,
+			})
+			assert(addon.API.CreateContextMenu(forbidden, function() error("must not open") end) == false)
+			assert(addon.API.CreateContextMenu(inaccessible, function() error("must not open") end) == false)
+			assert(opens == 1)
+			MenuUtil = nil
+			assert(addon.API.CreateContextMenu(owner, function() end) == false)
+		end
 		-- Standalone Lua can construct NaN; Forever's arithmetic raises instead.
 		-- Keep this boundary check offline so /qt test never attempts 0 / 0.
 		local notANumber = 0 / 0

@@ -830,6 +830,11 @@ QuestTogether.API = QuestTogether.API or {
 	IsInInstanceGroup = function()
 		return IsInGroup(LE_PARTY_CATEGORY_INSTANCE)
 	end,
+	IsInGroup = function()
+		if type(IsInGroup) ~= "function" then return false end
+		local ok, grouped = pcall(IsInGroup)
+		return ok and CanAccessForeignValue(grouped) and grouped == true
+	end,
 	IsInParty = function()
 		return UnitInParty("player")
 	end,
@@ -1661,6 +1666,47 @@ QuestTogether.API = QuestTogether.API or {
 				end
 			end
 			return nil
+		end,
+		CanShareQuests = function()
+			-- Retail/Forever share by log index. Do not fall back to moving the
+			-- selected quest on clients with only the legacy sharing API.
+			return type(QuestLogPushQuest) == "function" and C_QuestLog ~= nil
+				and type(C_QuestLog.GetLogIndexForQuestID) == "function"
+				and type(C_QuestLog.GetInfo) == "function"
+				and type(C_QuestLog.IsPushableQuest) == "function"
+		end,
+		GetQuestLogIndexForSharing = function(questID)
+			local id = QuestTogether:SafeToNumber(questID)
+			if not id or id <= 0 or id ~= math.floor(id) or not QuestTogether.API.CanShareQuests() then
+				return nil
+			end
+			-- Resolve live data, not a cached index or the currently selected quest.
+			local ok, rawIndex = pcall(C_QuestLog.GetLogIndexForQuestID, id)
+			local index = ok and QuestTogether:SafeToNumber(rawIndex) or nil
+			if not index or index <= 0 or index ~= math.floor(index) then return nil end
+			local rowOK, row = pcall(C_QuestLog.GetInfo, index)
+			if not rowOK or not CanAccessForeignTable(row) then return nil end
+			if not CanAccessForeignValue(row.isHeader) or row.isHeader == true
+				or QuestTogether:SafeToNumber(row.questID) ~= id then return nil end
+			return index
+		end,
+		PushQuestToParty = function(questLogIndex)
+			local index = QuestTogether:SafeToNumber(questLogIndex)
+			if not index or index <= 0 or index ~= math.floor(index) or not QuestTogether.API.CanShareQuests() then
+				return false
+			end
+			-- The caller rechecks eligibility and restrictions immediately before
+			-- dispatch. A successful invocation is an attempt, not acceptance.
+			local ok = pcall(QuestLogPushQuest, index)
+			return ok
+		end,
+		CreateContextMenu = function(ownerFrame, generator)
+			if not MenuUtil or type(MenuUtil.CreateContextMenu) ~= "function" then return false end
+			if not CanAccessForeignValue(ownerFrame) then return false end
+			ownerFrame = ownerFrame or UIParent
+			if not QuestTogether:CanAccessForeignFrame(ownerFrame) then return false end
+			local ok, menu = pcall(MenuUtil.CreateContextMenu, ownerFrame, generator)
+			return ok and CanAccessForeignValue(menu) and menu ~= nil
 		end,
 		GetNumQuestLogEntries = function()
 			local getter = type(GetNumQuestLogEntries) == "function" and GetNumQuestLogEntries
@@ -3801,6 +3847,9 @@ function QuestTogether:DecorateAnnouncementMessageWithQuestLink(message, eventTy
 	end
 
 	local messageText = self:SafeToString(message, "")
+	if string.find(messageText, "|H" .. (self.chatLogQuestLinkType or "questtogetherquest") .. ":", 1, true) then
+		return messageText
+	end
 	local prefixText, questTitle = SafeMatch(messageText, "^(.-:%s+)(.+)$")
 	if not prefixText or not questTitle or questTitle == "" then
 		return messageText
@@ -3940,7 +3989,8 @@ function QuestTogether:BuildQuestStatusMessage(questId, fallbackTitle)
 	end
 	local statusLabel = self:GetQuestStatusLabel(numericQuestId)
 	local shareableLabel = self:GetQuestShareableStatusLabel(numericQuestId)
-	return "Quest Status: " .. tostring(questTitle) .. " - " .. tostring(statusLabel) .. " | Shareable: " .. tostring(shareableLabel)
+	local questLabel = self:BuildChatLogQuestLabel(numericQuestId, questTitle)
+	return "Quest Status: " .. questLabel .. " - " .. tostring(statusLabel) .. " | Shareable: " .. tostring(shareableLabel)
 end
 
 function QuestTogether:GetQuestStatusAnnouncementEventType(questId)
@@ -4386,7 +4436,6 @@ function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, s
 
 	local fullName = tostring(speakerName or "")
 	local shortName = self:GetShortDisplayName(fullName)
-	local isSeparate = self:GetOption("chatLogDestination") == "separate"
 	local isIgnored = false
 	-- Context menus should stay usable even if ignored-list lookups fail for edge-case names.
 	local ignoredOk, ignoredResult = pcall(function()
@@ -4416,10 +4465,16 @@ function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, s
 		end)
 	end
 
+	self:PopulateChatLogDestinationMenu(rootDescription)
+	return true
+end
+
+function QuestTogether:PopulateChatLogDestinationMenu(rootDescription)
 	if rootDescription.CreateDivider then
 		rootDescription:CreateDivider()
 	end
 
+	local isSeparate = self:GetOption("chatLogDestination") == "separate"
 	local buttonText = isSeparate and "Move QuestTogether Logs to Main Window" or "Move QuestTogether Logs to Separate Window"
 	rootDescription:CreateButton(buttonText, function()
 		self:SetOption("chatLogDestination", isSeparate and "main" or "separate")
@@ -4427,8 +4482,6 @@ function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, s
 			self:RefreshOptionsWindow()
 		end
 	end)
-
-	return true
 end
 
 function QuestTogether:HandleChatLogSpeakerLink(_link, _text, linkData, contextData)
@@ -4443,17 +4496,83 @@ function QuestTogether:HandleChatLogSpeakerLink(_link, _text, linkData, contextD
 		or LinkProcessorResponse.Handled
 end
 
-function QuestTogether:HandleChatLogQuestLink(_link, text, linkData, _contextData)
-	local questId = linkData and linkData.options
-	if not questId or questId == "" then
+function QuestTogether:HandleChatLogQuestLink(_link, text, linkData, contextData)
+	if not self:CanAccessTable(linkData) then return LinkProcessorResponse.Handled end
+	local questId = self:SafeToNumber(linkData.options)
+	if not questId or questId <= 0 or questId ~= math.floor(questId) then
 		return LinkProcessorResponse.Handled
 	end
 	if self.API and self.API.IsModifiedClick and self.API.IsModifiedClick("CHATLINK") then
 		return LinkProcessorResponse.Handled
 	end
 
-	self:PrintQuestStatus(questId, text)
+	if not self:CanAccessValue(contextData) then return LinkProcessorResponse.Handled end
+	if contextData ~= nil and not self:CanAccessTable(contextData) then return LinkProcessorResponse.Handled end
+	if not self:ShowChatLogQuestMenu(contextData and contextData.frame, questId, self:SafeTrimString(text, "")) then
+		self:Print("Quest menu is unavailable.")
+	end
 	return LinkProcessorResponse.Handled
+end
+
+function QuestTogether:GetQuestShareAvailability(questId)
+	local id = self:SafeToNumber(questId)
+	if not id or id <= 0 or id ~= math.floor(id) then return nil, "Invalid quest." end
+	if not self.isEnabled then return nil, "Enable QuestTogether to share quests." end
+	if self:IsWorkBlocked("quest_share") then return nil, "Quest sharing is unavailable while restricted." end
+	if not self.API.CanShareQuests or self.API.CanShareQuests() ~= true then
+		return nil, "Quest sharing is unavailable on this client."
+	end
+	if not self.API.IsInGroup or self.API.IsInGroup() ~= true then
+		return nil, "Join a party to share quests."
+	end
+	local index = self:SafeToNumber(self.API.GetQuestLogIndexForSharing(id))
+	if not index or index <= 0 or index ~= math.floor(index) then
+		return nil, "This quest is not available in your quest log."
+	end
+	local pushable = self.API.IsPushableQuest(id)
+	if not self:CanAccessValue(pushable) or type(pushable) ~= "boolean" then
+		return nil, "Quest shareability is unavailable."
+	end
+	if not pushable then return nil, "This quest cannot be shared." end
+	return index
+end
+
+function QuestTogether:ShareQuestFromChatLog(questId)
+	-- A menu can outlive its initial eligibility check. Never retain its index
+	-- or queue this manual action for a later party/restriction state.
+	local index, reason = self:GetQuestShareAvailability(questId)
+	if not index then
+		self:Print(reason)
+		return false
+	end
+	if not self.API.PushQuestToParty(index) then
+		self:Print("Unable to share that quest.")
+		return false
+	end
+	return true
+end
+
+function QuestTogether:PopulateChatLogQuestMenu(rootDescription, questId, fallbackTitle)
+	rootDescription:CreateButton("Status", function()
+		self:PrintQuestStatus(questId, fallbackTitle)
+	end)
+	local share = rootDescription:CreateButton("Share", function()
+		self:ShareQuestFromChatLog(questId)
+	end)
+	local index, reason = self:GetQuestShareAvailability(questId)
+	share:SetEnabled(index ~= nil)
+	share:SetTooltip(function(tooltip)
+		if self:CanAccessForeignFrame(tooltip) then
+			tooltip:SetText(reason or "Share this quest with your party.")
+		end
+	end)
+	self:PopulateChatLogDestinationMenu(rootDescription)
+end
+
+function QuestTogether:ShowChatLogQuestMenu(ownerFrame, questId, fallbackTitle)
+	return self.API.CreateContextMenu(ownerFrame, function(_, rootDescription)
+		self:PopulateChatLogQuestMenu(rootDescription, questId, fallbackTitle)
+	end)
 end
 
 function QuestTogether:HandleChatLogCoordLink(_link, _text, linkData, _contextData)
