@@ -63,6 +63,12 @@ function QuestTogether:EnsureRuntimeStateStore()
 	if type(state.taskArea.resolutionOrder) ~= "table" then
 		state.taskArea.resolutionOrder = {}
 	end
+	if type(state.taskArea.displayAsObjectiveByQuestID) ~= "table" then
+		state.taskArea.displayAsObjectiveByQuestID = {}
+	end
+	if type(state.taskArea.isWorldQuestByQuestID) ~= "table" then
+		state.taskArea.isWorldQuestByQuestID = {}
+	end
 	if type(state.taskArea.generation) ~= "number" then
 		state.taskArea.generation = 0
 	end
@@ -247,6 +253,8 @@ function QuestTogether:ResetTaskAreaStateStore()
 	wipe(state.taskArea.bonusByQuestID)
 	wipe(state.taskArea.resolvedByQuestID)
 	wipe(state.taskArea.resolutionOrder)
+	wipe(state.taskArea.displayAsObjectiveByQuestID)
+	wipe(state.taskArea.isWorldQuestByQuestID)
 	state.taskArea.generation = 0
 	state.taskArea.pendingAnnounce = false
 	return state.taskArea
@@ -310,8 +318,12 @@ function QuestTogether:SetPendingWaypointIntent(intent)
 end
 
 function QuestTogether:ResetRuntimeWorkStateStore()
+	if self.StopMapWorkWakeup then
+		self:StopMapWorkWakeup()
+	end
 	local runtimeState = self:GetRuntimeWorkStateStore()
 	runtimeState.pendingWaypointIntent = nil
+	runtimeState.pendingQuestLogScan = false
 	runtimeState.pendingScheduledTaskAreaRefreshShouldAnnounce = false
 	runtimeState.pendingDeferredNameplateQuestStateRefresh = false
 	runtimeState.deferredNameplateQuestStateRefreshGeneration = 0

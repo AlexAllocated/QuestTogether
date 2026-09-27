@@ -28,5 +28,8 @@ jobs:
             lua${{ matrix.lua }} scripts/test.lua . normal "$client"
           done
       - run: python3 ../library/scripts/vendor.py . --check
-      - run: find . -name '*.lua' -exec luac${{ matrix.lua }} -p {} \;
+      - run: |
+          while IFS= read -r -d '' file; do
+            luac${{ matrix.lua }} -p "$file" || exit "$?"
+          done < <(find . -name '*.lua' -print0)
       - run: bash -n scripts/bump_version.sh && git diff --check

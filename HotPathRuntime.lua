@@ -61,6 +61,8 @@ function QuestTogether:IsRuntimeRestrictionTypeActive(restrictionType)
 		restrictionEnum = restrictionTypes.PvPMatch
 	elseif normalizedType == "map" then
 		restrictionEnum = restrictionTypes.Map
+	elseif normalizedType == "chat" then
+		restrictionEnum = restrictionTypes.Chat
 	end
 
 	if restrictionEnum == nil then
@@ -94,7 +96,61 @@ function QuestTogether:IsMapTooltipSensitiveStateActive()
 	end
 
 	local ok, isVisible = pcall(self.API.IsWorldMapVisible)
-	return ok and isVisible and true or false
+	-- Unknown visibility is not permission to read map-sensitive tooltip data.
+	if not ok or not self:CanAccessValue(isVisible) or type(isVisible) ~= "boolean" then
+		return true
+	end
+	return isVisible
+end
+
+function QuestTogether:CreateMapWorkWakeFrame()
+	-- No foreign parent, hooks, callback registry, or protected template. This
+	-- frame observes visibility through the existing read-only API wrapper.
+	return CreateFrame("Frame")
+end
+
+function QuestTogether:StopMapWorkWakeup()
+	local frame = rawget(self, "mapWorkWakeFrame")
+	if frame then
+		frame:SetScript("OnUpdate", nil)
+	end
+	self.mapWorkWakeState = nil
+end
+
+function QuestTogether:EnsureMapWorkWakeup()
+	if not self.isEnabled then
+		return
+	end
+	local workState = self:GetDeferredWorkStateStore()
+	if rawget(self, "mapWorkWakeState") == workState then
+		return
+	end
+	local frame = rawget(self, "mapWorkWakeFrame")
+	if not frame then
+		frame = self:CreateMapWorkWakeFrame()
+		self.mapWorkWakeFrame = frame
+	end
+	self.mapWorkWakeState = workState
+	local elapsedSinceCheck = 0
+	frame:SetScript("OnUpdate", function(_, elapsed)
+		if rawget(self, "mapWorkWakeState") ~= workState then
+			return
+		end
+		if not self.isEnabled or self:GetDeferredWorkStateStore() ~= workState or not next(workState.entries) then
+			self:StopMapWorkWakeup()
+			return
+		end
+		elapsedSinceCheck = elapsedSinceCheck + (self:SafeToNumber(elapsed) or 0)
+		if elapsedSinceCheck < 0.2 then
+			return
+		end
+		elapsedSinceCheck = 0
+		if not self:IsMapTooltipSensitiveStateActive() then
+			self:StopMapWorkWakeup()
+			-- Every work class rechecks its own combat/encounter/frame policy.
+			self:FlushDeferredWork("WORLD_MAP_CLOSED")
+		end
+	end)
 end
 
 function QuestTogether:IsWorkBlocked(workClass)
@@ -146,7 +202,11 @@ local function WorkPolicy(owner)
 			return owner.isEnabled == true
 		end,
 		blocked = function(workClass)
-			return owner:IsWorkBlocked(workClass)
+			local blocked = owner:IsWorkBlocked(workClass)
+			if blocked and owner:IsMapTooltipSensitiveStateActive() then
+				owner:EnsureMapWorkWakeup()
+			end
+			return blocked
 		end,
 		delay = type(delay) == "function" and delay or nil,
 		defaultDelay = function(workClass)

@@ -1,5 +1,51 @@
 # QuestTogether changelog
 
+## 5.9.1 — 2026-09-27
+
+Keep shared objective wording from reopening an unrelated raw tooltip quest block. Later owned quest titles, party progress and genuinely titleless sources still work.
+
+Preserve unknown task location flags without announcing false exits or re-entries. Explicit false and real quest removal remain authoritative; fresh acceptance resets retained observations, while duplicate acceptance preserves the current task lifetime.
+
+Honor native waypoint rejection before tracking a pin. Disabled, restricted clicks are declined rather than queued without a wakeup; unrestricted clicks still work while disabled. Coordinate links report immediate failures.
+
+Accept full Forever player names and quoted names in local bubble previews. Correct preview/debug instructions, native API test return values, forbidden-read assertions and restriction/deferral test timing. Make the CI syntax step propagate compiler failures.
+
+Keep newly accepted quests pending until a real quest-log update supplies the matching row. Retry unreadable data without losing the acceptance, and cancel pending work when a quest is removed. Treat Classic's failed completion value (`-1`) as incomplete and preserve an explicit modern incomplete result.
+
+Retain the last usable objective observation across missing rows and quest-log rescans so the next new milestone still announces. Preserve stage-change and replay suppression, and start fresh history when a quest is accepted again.
+
+Invalidate cached nameplate relevance when quest state changes, including during combat. Stop tooltip objective matching at every new quest-title block, and reparent reused announcement bubbles to their current nameplate. Resume map-blocked work when the map closes while preserving combat, encounter and other restrictions.
+
+Keep untyped tooltip quest blocks separate while retaining recognized party progress. Preserve incomplete-data signals from hidden tooltips and Questie so unreadable objectives cannot mark an entire mob type completed.
+
+Retry disabled nameplate cleanup only for the handles that could not be hidden; new icon, tint and bubble presentations cancel their previous cleanup. Invalidate party-dependent quest relevance on actual roster changes, require a readable live GUID for cached relevance, and prevent explicit unrelated quest titles from borrowing another quest's objective text.
+
+Treat a missing progress-bar percentage as unknown even when its separate objective counter remains readable. Complete authoritative turn-ins that arrive before initial quest tracking becomes readable. Share the latest confirmed bonus-objective classification between snapshot and area readers, preserving unknown reads without overriding an explicit false or carrying classification into a new quest lifetime.
+
+Resolve newly accepted tasks from current metadata before discarding hidden rows or announcing ordinary acceptance. Preserve confirmed world-quest classification through temporarily unavailable reads, and carry captured world, bonus or ordinary quest types into late completion announcements.
+
+Rebuild quest text cleared inside instances when returning outdoors, using the existing restricted-work scheduler. Coalesce exit events and cancel obsolete recovery work when disabled.
+
+Keep localized announcement and presence metadata within the wire limit without losing sender identity. Pace quest comparison responses, retry transport failures, and stop canceled or expired replies without reporting incomplete data as a finished comparison. Wait through known restrictions without consuming failed-read retries. Preserve Yes, No and Unknown shareability through comparison messages.
+
+Include an optional map ID in announcements so nearby detection compares the same coordinate system across locales, retaining the zone-label fallback for older peers. Keep numeric location when a long zone label cannot fit. Make `/qt bubbletest` a local preview of the selected visible player, with no network impersonation or transport dependency.
+
+Accept only approved celebration emotes from nearby players, with guarded mounted and faction-specific handling. Open HUD Edit Mode through Blizzard's eligible panel-opening path and report success only when its manager is visible.
+
+Apply `/qt set enabled on|off` through the normal enable/disable lifecycle. Deleting another character's assigned profile now clears its assignment without immediately recreating the deleted profile; the character's default is resolved on its next login.
+
+Correct the test harness to preserve live addon state and use private frame, API and timer fixtures. Load the same regression modules offline and in-game, including nameplate discovery tests. Add regressions for real quest-log event sequencing, inherited bubble visibility, first-time combat discovery, map recovery, legacy completion and localized or interrupted communications.
+
+Avoid division by zero in the live invalid-level test, which Forever rejects before the addon handler runs. Keep NaN rejection coverage in the offline client contracts.
+
+Preserve typed quest-title boundaries when the title text is unreadable, so a following objective cannot borrow an unrelated tracked quest's title. Keep independently readable positive evidence and prevent incomplete tooltip data from establishing completion.
+
+Retry an unreadable initial quest scan on a later quest-log event through the existing restricted-work scheduler. Keep pending acceptances in control of their own tracking, preserve area-entry announcements as task metadata recovers, and cancel obsolete recovery work on disable.
+
+Read the Chat restriction enum in diagnostics without adding it to general quest or UI restriction gates. Exercise the actual reader and report against supported, unavailable and inaccessible API results in offline client contracts.
+
+Validation: 516 tests pass in normal and reverse order on Lua 5.1 and 5.2. All six client API profiles, Lua and shell syntax, exact library verification and diff checks pass. Repaired tests reject deliberately inserted forbidden reads and restriction bypasses. Offline tripwires detect accidental engine frame, timer, hook, restriction, tap, Questie, addon loader or native panel calls from live-test fixtures. Live-client rendering, two-client delivery and engine-level taint validation remain separate from these checks.
+
 ## 5.9.0 — 2026-09-26
 
 Celebrate your own and nearby QuestTogether players' level-ups with synchronized emotes. Add separate, enabled-by-default level-up emote toggles beside the quest completion emote settings in Miscellaneous. Nearby reactions respect the existing player scope and proximity rules.

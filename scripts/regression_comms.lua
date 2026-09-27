@@ -13,6 +13,7 @@ local function NewCommsFixture()
 		partyMembers = {},
 		pendingPingRequests = {},
 		pendingQuestCompareRequests = {},
+		questCompareResponseQueue = false,
 		recentCommMessageSignatures = {},
 		delayed = {},
 		printed = {},
@@ -563,6 +564,130 @@ local function LevelUpEvent()
 	return event
 end
 
+local function NewRemoteCelebrationFixture()
+	local addon = NewLevelUpFixture()
+	addon.db.profile.showChatBubbles = false
+	addon.db.profile.showChatLogs = false
+	addon.db.profile.showProgressFor = "party_nearby"
+	addon.API.UnitFullName = function(unit) return unit == "player" and "MyPlayer" or "Friend", "Realm" end
+	addon.API.UnitName = function(unit) return unit == "player" and "MyPlayer" or "Friend" end
+	addon.API.UnitExists = function(unit) return unit == "player" or unit == "target" end
+	addon.API.UnitIsPlayer = function() return true end
+	addon.API.UnitGUID = function(unit) return unit == "player" and "Player-self" or "Player-friend" end
+	addon.API.IsMounted = function() return false end
+	addon.API.GetFaction = function() return "Neutral" end
+	addon.FindVisiblePlayerNameplateForSender = nil
+	addon.FindNearbyPlayerUnitTokenForSender = nil
+	addon.ForEachVisibleNamePlate = function() end
+	return addon
+end
+
+local function ReceiveCelebration(addon, eventType, token, sender)
+	local event = Event("Quest Completed: Wolves")
+	event.eventType = eventType
+	event.senderGUID = "Player-friend"
+	event.emoteToken = token
+	local command = eventType == "PLAYER_LEVEL_UP" and "LVL" or "ANN"
+	local wire = command .. "|" .. addon:EncodeAnnouncementPayload(event)
+	Equal(#wire <= 255, true)
+	addon:OnCommReceived(addon.commPrefix, wire, "CHANNEL", sender or "Friend-Realm", 7, addon.announcementChannelName)
+end
+
+QuestTogether:RegisterTest("received celebrations reject unsupported and malformed emote tokens", function()
+	for _, eventType in ipairs({ "QUEST_COMPLETED", "PLAYER_LEVEL_UP" }) do
+		for _, token in ipairs({ "rude", "not-an-emote", "cheer rude", "cheer\nrude", "|Hplayer:Friend|hcheer|h", "\0cheer", "123", "true", "" }) do
+			local addon = NewRemoteCelebrationFixture()
+			ReceiveCelebration(addon, eventType, token)
+			Equal(addon:GetCommsDiagnostics().acceptedAnnouncements, 1)
+			Equal(#addon.emotes, 0)
+		end
+	end
+end)
+
+QuestTogether:RegisterTest("received celebrations canonicalize every approved local emote", function()
+	for _, eventType in ipairs({ "QUEST_COMPLETED", "PLAYER_LEVEL_UP" }) do
+		for _, token in ipairs(QuestTogether.completionEmotes) do
+			local addon = NewRemoteCelebrationFixture()
+			ReceiveCelebration(addon, eventType, " \t" .. string.upper(token) .. " \n")
+			Equal(#addon.emotes, 1)
+			Equal(addon.emotes[1].token, token)
+			Equal(addon.emotes[1].target, "target")
+		end
+	end
+end)
+
+QuestTogether:RegisterTest("received special celebrations retain mounted and faction handling", function()
+	local cases = {
+		{ token = " MOUNTSPECIAL ", mounted = true, expected = "mountspecial" },
+		{ token = "mountspecial", expected = "applaud" },
+		{ token = " FORTHEHORDE ", faction = "Alliance", expected = "forthealliance" },
+		{ token = " FORTHEALLIANCE ", faction = "Horde", expected = "forthehorde" },
+		{ token = "forthealliance", expected = "applaud" },
+	}
+	for _, eventType in ipairs({ "QUEST_COMPLETED", "PLAYER_LEVEL_UP" }) do
+		for _, case in ipairs(cases) do
+			local addon = NewRemoteCelebrationFixture()
+			addon.API.IsMounted = function() return case.mounted == true end
+			addon.API.GetFaction = function() return case.faction or "Neutral" end
+			ReceiveCelebration(addon, eventType, case.token)
+			Equal(#addon.emotes, 1)
+			Equal(addon.emotes[1].token, case.expected)
+			Equal(addon.emotes[1].target, "target")
+		end
+	end
+end)
+
+QuestTogether:RegisterTest("received celebration validation retains identity scope and option checks", function()
+	for _, eventType in ipairs({ "QUEST_COMPLETED", "PLAYER_LEVEL_UP" }) do
+		for _, blockedBy in ipairs({ "option", "scope", "ignored", "self", "identity" }) do
+			local addon = NewRemoteCelebrationFixture()
+			if blockedBy == "option" then
+				local option = eventType == "PLAYER_LEVEL_UP" and "emoteOnNearbyPlayerLevelUp" or "emoteOnNearbyPlayerQuestCompletion"
+				addon.db.profile[option] = false
+			elseif blockedBy == "scope" then
+				addon.db.profile.showProgressFor = "party_only"
+			elseif blockedBy == "ignored" then
+				addon.IsIgnoredPlayerName = function() return true end
+			end
+			local sender = blockedBy == "self" and "MyPlayer-Realm" or (blockedBy == "identity" and "Other-Realm" or "Friend-Realm")
+			ReceiveCelebration(addon, eventType, "CHEER", sender)
+			Equal(#addon.emotes, 0)
+		end
+	end
+end)
+
+QuestTogether:RegisterTest("remote celebration validation never stringifies inaccessible or non-string tokens", function()
+	local addon = NewRemoteCelebrationFixture()
+	local inaccessible = setmetatable({}, { __tostring = function() error("inaccessible token stringified") end })
+	local accessible = setmetatable({}, { __tostring = function() error("non-string token stringified") end })
+	addon.CanAccessValue = function(_, value) return value ~= inaccessible end
+	for _, token in ipairs({ inaccessible, accessible, 123, true, false }) do
+		Equal(addon:GetSafeRemoteCompletionEmote(token), nil)
+	end
+	Equal(addon:GetSafeRemoteCompletionEmote(nil), nil)
+end)
+
+QuestTogether:RegisterTest("remote celebration fallback cannot expand its approved token set", function()
+	local addon = NewRemoteCelebrationFixture()
+	addon.completionEmotes = { "rude" }
+	local attempts = 0
+	addon.API.Random = function() attempts = attempts + 1; return 1 end
+	ReceiveCelebration(addon, "QUEST_COMPLETED", "mountspecial")
+	Equal(#addon.emotes, 0)
+	Equal(attempts > 0 and attempts <= 20, true)
+end)
+
+QuestTogether:RegisterTest("remote special celebrations use approved fallback when local state is inaccessible", function()
+	local addon = NewRemoteCelebrationFixture()
+	local inaccessible = {}
+	addon.CanAccessValue = function(_, value) return value ~= inaccessible end
+	addon.API.IsMounted = function() return inaccessible end
+	addon.API.GetFaction = function() return inaccessible end
+	for _, token in ipairs({ "mountspecial", "forthealliance", "forthehorde" }) do
+		Equal(addon:GetSafeRemoteCompletionEmote(token), "applaud")
+	end
+end)
+
 QuestTogether:RegisterTest("level-up sends one shared emote token on party and nearby routes", function()
 	local addon = NewLevelUpFixture()
 	addon.db.profile.emoteOnQuestCompletion = false
@@ -597,7 +722,9 @@ end)
 
 QuestTogether:RegisterTest("disabled addon and invalid level-up payloads cannot celebrate or publish", function()
 	local addon = NewLevelUpFixture()
-	for _, level in ipairs({ 0, -1, 1.5, false, {}, "invalid", math.huge, 0 / 0 }) do
+	-- Forever traps division by zero, so constructing NaN here aborts the fixture
+	-- before the handler runs. NaN coverage belongs to the offline contracts.
+	for _, level in ipairs({ 0, -1, 1.5, false, {}, "invalid", math.huge }) do
 		Equal(addon:PLAYER_LEVEL_UP("PLAYER_LEVEL_UP", level), false)
 	end
 	Equal(addon:PLAYER_LEVEL_UP("PLAYER_LEVEL_UP", nil), false)
@@ -710,4 +837,861 @@ QuestTogether:RegisterTest("level-up event registration follows addon enable and
 	Equal(registered.PLAYER_LEVEL_UP, true)
 	addon:UnregisterRuntimeEvents()
 	Equal(registered.PLAYER_LEVEL_UP, nil)
+end)
+
+QuestTogether:RegisterTest("localized announcement metadata and default icon fit a real send", function()
+	local addon = NewCommsFixture()
+	addon.API.UnitFullName = function() return "Алесандра", "Гордунни" end
+	addon.API.UnitGUID = function() return "Player-1602-12345678" end
+	function addon:GetPlayerClassFile() return "DEATHKNIGHT" end
+	function addon:GetPlayerAnnouncementLocationInfo()
+		return { mapID = 2248, zoneName = "Остров Дорн", coordX = 50.1, coordY = 40.2, warMode = false }
+	end
+	local event = addon:BuildLocalAnnouncementEvent("QUEST_ACCEPTED", "Quest accepted: A normal quest", 12345)
+	Equal(event.iconAsset, "Interface/GossipFrame/AvailableQuestIcon")
+	Equal(addon:SendAnnouncementWireEvent(event), true)
+	local command, payload = addon:DeserializeWireMessage(addon.wire[1][2])
+	local decoded = addon:DecodeAnnouncementPayload(payload)
+	Equal(command, "ANN")
+	Equal(#addon.wire[1][2] <= 255, true)
+	Equal(decoded.senderName, "Алесандра-Гордунни")
+	Equal(decoded.text, event.text)
+	Equal(decoded.zoneName, "Остров Дорн")
+	-- Optional decoration must yield to identity and useful text for larger
+	-- localized metadata, rather than producing an undecodable empty message.
+	event.zoneName = string.rep("Долина", 30)
+	event.iconAsset = string.rep("Icon", 40)
+	Equal(addon:SendAnnouncementWireEvent(event), true)
+	_, payload = addon:DeserializeWireMessage(addon.wire[2][2])
+	decoded = addon:DecodeAnnouncementPayload(payload)
+	Equal(#addon.wire[2][2] <= 255, true)
+	Equal(decoded.senderName, event.senderName)
+	Equal(decoded.text, event.text)
+	Equal(decoded.zoneName, "")
+	Equal(decoded.mapID, "2248")
+	Equal(decoded.coordX, "50.1")
+	Equal(decoded.coordY, "40.2")
+end)
+
+QuestTogether:RegisterTest("localized ping metadata sends without shortening player identity", function()
+	local addon = NewCommsFixture()
+	addon.API.UnitFullName = function() return "Алесандра", "Гордунни" end
+	addon.API.UnitRace = function() return "Ночная эльфийка" end
+	addon.API.UnitClass = function() return "Рыцарь смерти", "DEATHKNIGHT" end
+	addon.API.UnitLevel = function() return 80 end
+	function addon:GetPlayerAnnouncementLocationInfo()
+		return { zoneName = "Остров Дорн", mapID = 2248, coordX = 50.1, coordY = 40.2, warMode = false }
+	end
+	local requestId = "ping-Character-12345678-1234"
+	Equal(addon:SendPingResponse(requestId), true)
+	local _, payload = addon:DeserializeWireMessage(addon.wire[1][2])
+	local response = addon:DecodePingResponsePayload(payload)
+	Equal(#addon.wire[1][2] <= 255, true)
+	Equal(response.senderName, "Алесандра-Гордунни")
+	Equal(response.requestId, requestId)
+	Equal(response.raceName, "Ночная эльфийка")
+	-- Long optional labels can be omitted, but mandatory identity survives.
+	function addon:GetPlayerAnnouncementLocationInfo() return { zoneName = string.rep("Долина", 40) } end
+	Equal(addon:SendPingResponse(requestId), true)
+	_, payload = addon:DeserializeWireMessage(addon.wire[2][2])
+	response = addon:DecodePingResponsePayload(payload)
+	Equal(#addon.wire[2][2] <= 255, true)
+	Equal(response.senderName, "Алесандра-Гордунни")
+	Equal(response.requestId, requestId)
+	Equal(response.zoneName, "")
+end)
+
+QuestTogether:RegisterTest("wire escaping preserves UTF8 and legacy percent encoded payloads", function()
+	local addon = NewCommsFixture()
+	local original = "Дорн, 100% | test\0\n"
+	local escaped = addon:EscapePayload(original)
+	Equal(addon:UnescapePayload(escaped), original)
+	Equal(escaped:find(",", 1, true), nil)
+	Equal(escaped:find("|", 1, true), nil)
+	Equal(escaped:find("\0", 1, true), nil)
+	Equal(addon:UnescapePayload("%D0%94%D0%BE%D1%80%D0%BD%2C%20test"), "Дорн, test")
+end)
+
+local function InstallResponseClock(addon)
+	addon.delayed = {}
+	addon.API.Delay = function(seconds, callback)
+		addon.delayed[#addon.delayed + 1] = { seconds = seconds, callback = callback }
+	end
+end
+
+local function RunResponseTimer(addon)
+	local timer = table.remove(addon.delayed, 1)
+	if not timer then return false end
+	addon.now = addon.now + timer.seconds
+	timer.callback()
+	return true
+end
+
+local function SetComparisonEntries(addon, count)
+	function addon:BuildQuestCompareEntries()
+		local entries = {}
+		for index = 1, count do
+			entries[index] = { questId = tostring(index), questTitle = "Quest " .. index, isComplete = false }
+		end
+		return entries
+	end
+end
+
+QuestTogether:RegisterTest("quest comparison paces and retries delivery before completing the real receiver", function()
+	local sender, receiver = NewCommsFixture(), NewCommsFixture()
+	InstallResponseClock(sender)
+	InstallResponseClock(receiver)
+	sender.API.UnitFullName = function() return "Friend", "Realm" end
+	sender.API.UnitName = function() return "Friend" end
+	sender.partyMembers["MyPlayer-Realm"] = {}
+	SetComparisonEntries(sender, 12)
+	Equal(receiver:RequestQuestCompare("Friend-Realm"), true)
+	local requestId = next(receiver.pendingQuestCompareRequests)
+	Equal(receiver.delayed[1].seconds >= 120, true)
+	local attempts, rejected, lastAttemptAt = 0, false, nil
+	sender.API.SendAddonMessage = function(prefix, message, route)
+		Equal(route, "PARTY")
+		if lastAttemptAt then Equal(sender.now - lastAttemptAt >= 0.099, true) end
+		lastAttemptAt = sender.now
+		attempts = attempts + 1
+		if attempts == 2 then rejected = true; return 3 end
+		receiver.now = sender.now
+		receiver:OnCommReceived(prefix, message, route, "Friend-Realm")
+		return 0
+	end
+	sender:OnCommReceived(sender.commPrefix, receiver.wire[1][2], "PARTY", "MyPlayer-Realm")
+	Equal(attempts, 1)
+	Equal(receiver.pendingQuestCompareRequests[requestId].count, 1)
+	for _ = 1, 20 do if not RunResponseTimer(sender) then break end end
+	Equal(rejected, true)
+	Equal(attempts, 14)
+	Equal(receiver.pendingQuestCompareRequests[requestId], nil)
+	Equal(#receiver.printed, 13)
+	Equal(receiver.printed[13], "done:12")
+	Equal(#sender.questCompareResponseQueue.jobs, 0)
+	Equal(sender.questCompareResponseQueue.packets, 0)
+end)
+
+QuestTogether:RegisterTest("quest comparison retry exhaustion never advertises a partial result as complete", function()
+	local addon = NewCommsFixture()
+	InstallResponseClock(addon)
+	SetComparisonEntries(addon, 3)
+	local attempts, donePackets = 0, 0
+	addon.API.SendAddonMessage = function(_, message)
+		attempts = attempts + 1
+		if message:find("^QCDN|") then donePackets = donePackets + 1 end
+		return attempts == 1 and 0 or 3
+	end
+	Equal(addon:HandleQuestCompareRequest({ requestId = "retry", targetName = "MyPlayer-Realm", replyDistribution = "PARTY" }), true)
+	for _ = 1, 10 do if not RunResponseTimer(addon) then break end end
+	Equal(attempts, 6)
+	Equal(donePackets, 0)
+	Equal(#addon.questCompareResponseQueue.jobs, 0)
+	Equal(addon.questCompareResponseQueue.packets, 0)
+	Equal(addon:GetCommsDiagnostics().failedComparisons, 1)
+end)
+
+QuestTogether:RegisterTest("quest comparison queues expire and old callbacks cannot send after reset", function()
+	local addon = NewCommsFixture()
+	InstallResponseClock(addon)
+	SetComparisonEntries(addon, 3)
+	local request = { requestId = "old", targetName = "MyPlayer-Realm", replyDistribution = "PARTY" }
+	Equal(addon:HandleQuestCompareRequest(request), true)
+	local expiredCount = #addon.wire
+	addon.now = addon.now + 151
+	RunResponseTimer(addon)
+	Equal(#addon.wire, expiredCount)
+	Equal(#addon.questCompareResponseQueue.jobs, 0)
+	request.requestId = "reset"
+	Equal(addon:HandleQuestCompareRequest(request), true)
+	local oldTimer = table.remove(addon.delayed, 1)
+	addon:ResetCommsState()
+	request.requestId = "replacement"
+	Equal(addon:HandleQuestCompareRequest(request), true)
+	local replacementQueue, before = addon.questCompareResponseQueue, #addon.wire
+	oldTimer.callback()
+	Equal(addon.questCompareResponseQueue, replacementQueue)
+	Equal(#addon.wire, before)
+	addon.isEnabled = false
+	RunResponseTimer(addon)
+	Equal(#addon.wire, before)
+end)
+
+QuestTogether:RegisterTest("quest comparison response memory has job and packet bounds", function()
+	local addon = NewCommsFixture()
+	InstallResponseClock(addon)
+	SetComparisonEntries(addon, 1)
+	for index = 1, 4 do
+		Equal(addon:HandleQuestCompareRequest({ requestId = tostring(index), targetName = "MyPlayer-Realm" }), true)
+	end
+	Equal(addon:HandleQuestCompareRequest({ requestId = "overflow", targetName = "MyPlayer-Realm" }), false)
+	Equal(#addon.questCompareResponseQueue.jobs, 4)
+	addon:ResetCommsState()
+	SetComparisonEntries(addon, 40)
+	for index = 1, 3 do
+		Equal(addon:HandleQuestCompareRequest({ requestId = tostring(index), targetName = "MyPlayer-Realm" }), true)
+	end
+	Equal(addon:HandleQuestCompareRequest({ requestId = "overflow", targetName = "MyPlayer-Realm" }), false)
+	Equal(addon.questCompareResponseQueue.packets <= 128, true)
+	addon:ResetCommsState()
+	SetComparisonEntries(addon, 101)
+	Equal(addon:HandleQuestCompareRequest({ requestId = "large", targetName = "MyPlayer-Realm" }), false)
+	Equal(#addon.questCompareResponseQueue.jobs, 0)
+end)
+
+QuestTogether:RegisterTest("oversized mandatory wire identity is rejected rather than truncated", function()
+	local addon = NewCommsFixture()
+	local identity = string.rep("Длинное", 50) .. "-Realm"
+	local event = Event("1/5 objectives")
+	event.senderName = identity
+	Equal(addon:SendAnnouncementWireEvent(event), false)
+	local payload = addon:EncodePingResponsePayload({ requestId = "test", senderName = identity })
+	Equal(addon:DecodePingResponsePayload(payload).senderName, identity)
+	Equal(addon:SendWireMessageToAnnouncementRoutes("PONG|" .. payload), false)
+	Equal(#addon.wire, 0)
+end)
+
+QuestTogether:RegisterTest("empty quest comparisons share the response packet cooldown", function()
+	local addon = NewCommsFixture()
+	InstallResponseClock(addon)
+	SetComparisonEntries(addon, 0)
+	Equal(addon:HandleQuestCompareRequest({ requestId = "first", targetName = "MyPlayer-Realm" }), true)
+	Equal(#addon.wire, 1)
+	Equal(addon:HandleQuestCompareRequest({ requestId = "second", targetName = "MyPlayer-Realm" }), true)
+	Equal(#addon.wire, 1)
+	RunResponseTimer(addon)
+	Equal(#addon.wire, 2)
+	local _, payload = addon:DeserializeWireMessage(addon.wire[2][2])
+	Equal(addon:DecodeQuestCompareDonePayload(payload).count, 0)
+end)
+
+QuestTogether:RegisterTest("paced successful comparisons finish within legacy ten second window", function()
+	local addon = NewCommsFixture()
+	InstallResponseClock(addon)
+	SetComparisonEntries(addon, 25)
+	local startedAt, lastAttemptAt = addon.now, nil
+	local completedAt, sentCount = nil, 0
+	addon.API.SendAddonMessage = function(_, message, route)
+		Equal(route, "PARTY")
+		if lastAttemptAt then Equal(addon.now - lastAttemptAt >= 0.099, true) end
+		lastAttemptAt = addon.now
+		sentCount = sentCount + 1
+		if message:find("^QCDN|") then
+			local _, payload = addon:DeserializeWireMessage(message)
+			Equal(addon:DecodeQuestCompareDonePayload(payload).count, 25)
+			completedAt = addon.now
+		end
+		return 0
+	end
+	Equal(addon:HandleQuestCompareRequest({ requestId = "legacy", targetName = "MyPlayer-Realm", replyDistribution = "PARTY" }), true)
+	Equal(sentCount, 1)
+	for _ = 1, 30 do if not RunResponseTimer(addon) then break end end
+	Equal(sentCount, 26)
+	Equal(completedAt ~= nil and completedAt - startedAt < 10, true)
+end)
+
+QuestTogether:RegisterTest("failed comparison sends back off longer than successful packet pacing", function()
+	local addon = NewCommsFixture()
+	InstallResponseClock(addon)
+	SetComparisonEntries(addon, 2)
+	local attempts = 0
+	addon.API.SendAddonMessage = function()
+		attempts = attempts + 1
+		return attempts == 2 and 3 or 0
+	end
+	Equal(addon:HandleQuestCompareRequest({ requestId = "backoff", targetName = "MyPlayer-Realm" }), true)
+	local normalDelay = addon.delayed[1].seconds
+	RunResponseTimer(addon)
+	Equal(addon.delayed[1].seconds >= 1, true)
+	Equal(addon.delayed[1].seconds > normalDelay, true)
+	RunResponseTimer(addon)
+	Equal(addon.delayed[1].seconds, normalDelay)
+end)
+
+QuestTogether:RegisterTest("queued group comparisons stop when requester leaves the roster", function()
+	local addon = NewCommsFixture()
+	InstallResponseClock(addon)
+	SetComparisonEntries(addon, 3)
+	addon.partyMembers["Friend-Realm"] = {}
+	Equal(addon:HandleQuestCompareRequest({ requestId = "group", requesterName = "Friend-Realm", targetName = "MyPlayer-Realm", replyDistribution = "PARTY" }), true)
+	Equal(#addon.wire, 1)
+	addon.partyMembers = { ["NewFriend-Realm"] = {} }
+	RunResponseTimer(addon)
+	Equal(#addon.wire, 1)
+	Equal(#addon.questCompareResponseQueue.jobs, 0)
+	Equal(addon.questCompareResponseQueue.packets, 0)
+end)
+
+QuestTogether:RegisterTest("queued channel comparisons resolve changed channel identifiers per packet", function()
+	local addon = NewCommsFixture()
+	InstallResponseClock(addon)
+	SetComparisonEntries(addon, 2)
+	Equal(addon:HandleQuestCompareRequest({ requestId = "channel", targetName = "MyPlayer-Realm", replyDistribution = "CHANNEL" }), true)
+	Equal(addon.wire[1][4], 7)
+	addon.channelID = 9
+	RunResponseTimer(addon)
+	Equal(addon.wire[2][4], 9)
+end)
+
+QuestTogether:RegisterTest("queued group comparisons follow a still grouped requester into raid transport", function()
+	local addon = NewCommsFixture()
+	InstallResponseClock(addon)
+	SetComparisonEntries(addon, 2)
+	addon.partyMembers["Friend-Realm"] = {}
+	addon.API.IsInParty = function() return true end
+	Equal(addon:HandleQuestCompareRequest({ requestId = "raid", requesterName = "Friend-Realm", targetName = "MyPlayer-Realm", replyDistribution = "PARTY" }), true)
+	Equal(addon.wire[1][3], "PARTY")
+	addon.API.IsInRaid = function() return true end
+	RunResponseTimer(addon)
+	Equal(addon.wire[2][3], "RAID")
+end)
+
+QuestTogether:RegisterTest("comparison snapshots wait for both quest count and every row before sending", function()
+	local addon = NewCommsFixture()
+	InstallResponseClock(addon)
+	local phase = 0
+	addon.IsWorkBlocked = function() return false end
+	addon.API.GetNumQuestLogEntries = function() return phase > 0 and 2 or nil end
+	addon.API.GetQuestLogInfo = function(index)
+		if index == 2 and phase < 2 then return nil end
+		return { questID = index, title = "Quest " .. index, isComplete = false }
+	end
+	addon.GetQuestShareableStatusLabel = function() return "No" end
+	Equal(addon:HandleQuestCompareRequest({ requestId = "loading", targetName = "MyPlayer-Realm" }), true)
+	Equal(#addon.wire, 0)
+	Equal(addon.questCompareResponseQueue.packets, 1)
+	phase = 1
+	RunResponseTimer(addon)
+	Equal(#addon.wire, 0)
+	phase = 2
+	RunResponseTimer(addon)
+	Equal(#addon.wire, 1)
+	for _ = 1, 5 do if not RunResponseTimer(addon) then break end end
+	Equal(#addon.wire, 3)
+	local command, payload = addon:DeserializeWireMessage(addon.wire[3][2])
+	Equal(command, "QCDN")
+	Equal(addon:DecodeQuestCompareDonePayload(payload).count, 2)
+	Equal(addon.questCompareResponseQueue.packets, 0)
+end)
+
+QuestTogether:RegisterTest("unavailable comparison count exhausts bounded snapshot retries without completion", function()
+	local addon = NewCommsFixture()
+	InstallResponseClock(addon)
+	local reads = 0
+	addon.IsWorkBlocked = function() return false end
+	addon.API.GetNumQuestLogEntries = function() reads = reads + 1; return nil end
+	Equal(addon:HandleQuestCompareRequest({ requestId = "unavailable", targetName = "MyPlayer-Realm" }), true)
+	for _ = 1, 10 do if not RunResponseTimer(addon) then break end end
+	Equal(reads, 5)
+	Equal(#addon.wire, 0)
+	Equal(#addon.delayed, 0)
+	Equal(#addon.questCompareResponseQueue.jobs, 0)
+	Equal(addon.questCompareResponseQueue.packets, 0)
+	Equal(addon:GetCommsDiagnostics().failedComparisons, 1)
+end)
+
+QuestTogether:RegisterTest("missing comparison rows cannot become a certified partial quest log", function()
+	local addon = NewCommsFixture()
+	InstallResponseClock(addon)
+	local missingReads = 0
+	addon.IsWorkBlocked = function() return false end
+	addon.API.GetNumQuestLogEntries = function() return 2 end
+	addon.API.GetQuestLogInfo = function(index)
+		if index == 2 then missingReads = missingReads + 1; return nil end
+		return { questID = 123, title = "Readable quest" }
+	end
+	addon.GetQuestShareableStatusLabel = function() return "No" end
+	Equal(addon:HandleQuestCompareRequest({ requestId = "partial", targetName = "MyPlayer-Realm" }), true)
+	for _ = 1, 10 do if not RunResponseTimer(addon) then break end end
+	Equal(missingReads, 5)
+	Equal(#addon.wire, 0)
+	Equal(#addon.questCompareResponseQueue.jobs, 0)
+end)
+
+QuestTogether:RegisterTest("a readable empty quest log still completes a comparison", function()
+	local addon = NewCommsFixture()
+	InstallResponseClock(addon)
+	addon.IsWorkBlocked = function() return false end
+	addon.API.GetNumQuestLogEntries = function() return 0 end
+	Equal(addon:HandleQuestCompareRequest({ requestId = "empty", targetName = "MyPlayer-Realm" }), true)
+	Equal(#addon.wire, 1)
+	local command, payload = addon:DeserializeWireMessage(addon.wire[1][2])
+	Equal(command, "QCDN")
+	Equal(addon:DecodeQuestCompareDonePayload(payload).count, 0)
+end)
+
+QuestTogether:RegisterTest("comparison snapshots defer restricted reads and reject changing counts", function()
+	local addon = NewCommsFixture()
+	local blocked, reads = true, 0
+	addon.IsWorkBlocked = function() return blocked end
+	addon.API.GetNumQuestLogEntries = function() reads = reads + 1; return reads == 1 and 0 or 1 end
+	Equal(addon:BuildQuestCompareEntries(), nil)
+	Equal(reads, 0)
+	blocked = false
+	Equal(addon:BuildQuestCompareEntries(), nil)
+	Equal(reads, 2)
+end)
+
+QuestTogether:RegisterTest("self comparison reports an unavailable snapshot without claiming completion", function()
+	local addon = NewCommsFixture()
+	addon.IsWorkBlocked = function() return false end
+	addon.API.GetNumQuestLogEntries = function() return nil end
+	Equal(addon:RequestQuestCompare("MyPlayer-Realm"), false)
+	Equal(#addon.printed, 1)
+	Equal(addon.printed[1], "Quest comparison unavailable while the quest log is updating.")
+end)
+
+QuestTogether:RegisterTest("comparison snapshots wait for missing blank and inaccessible visible quest titles", function()
+	local addon = NewCommsFixture()
+	InstallResponseClock(addon)
+	local phase = 0
+	addon.IsWorkBlocked = function() return false end
+	addon.API.GetNumQuestLogEntries = function() return 1 end
+	addon.API.GetQuestLogInfo = function()
+		local titles = { [1] = "   ", [2] = "inaccessible title", [3] = "Loaded quest" }
+		return { questID = 123, title = titles[phase] }
+	end
+	addon.CanAccessValue = function(_, value) return value ~= "inaccessible title" end
+	addon.GetQuestShareableStatusLabel = function() return "No" end
+	Equal(addon:HandleQuestCompareRequest({ requestId = "title", targetName = "MyPlayer-Realm" }), true)
+	Equal(#addon.wire, 0)
+	for index = 1, 2 do
+		phase = index
+		RunResponseTimer(addon)
+		Equal(#addon.wire, 0)
+	end
+	phase = 3
+	RunResponseTimer(addon)
+	Equal(#addon.wire, 1)
+	local _, payload = addon:DeserializeWireMessage(addon.wire[1][2])
+	Equal(addon:DecodeQuestCompareEntryPayload(payload).questTitle, "Loaded quest")
+	RunResponseTimer(addon)
+	Equal(#addon.wire, 2)
+end)
+
+QuestTogether:RegisterTest("comparison snapshots can omit explicitly known header and hidden rows", function()
+	local addon = NewCommsFixture()
+	addon.IsWorkBlocked = function() return false end
+	addon.API.GetNumQuestLogEntries = function() return 2 end
+	addon.API.GetQuestLogInfo = function(index)
+		if index == 1 then return { isHeader = true } end
+		return { questID = 123, isHidden = true }
+	end
+	local entries = addon:BuildQuestCompareEntries()
+	Equal(type(entries), "table")
+	Equal(#entries, 0)
+end)
+
+local function NewSnapshotComparisonFixture()
+	local addon = NewCommsFixture()
+	local clock = addon:CreateTestClock(100)
+	addon.restrictions = {}
+	addon.questReads = 0
+	addon.API.GetTime = function() return clock:GetTime() end
+	addon.API.Delay = function(seconds, callback) clock:After(seconds, callback) end
+	addon.API.InCombatLockdown = function() return addon.restrictions.combat == true end
+	addon.API.IsWorldMapVisible = function() return addon.restrictions.map == true end
+	addon.IsRuntimeRestrictionTypeActive = function(_, restrictionType)
+		return addon.restrictions[restrictionType] == true
+	end
+	addon.API.GetNumQuestLogEntries = function()
+		Equal(addon:IsWorkBlocked("quest_snapshot_refresh"), false)
+		addon.questReads = addon.questReads + 1
+		if addon.snapshotUnavailable then return nil end
+		return 1
+	end
+	addon.API.GetQuestLogInfo = function()
+		Equal(addon:IsWorkBlocked("quest_snapshot_refresh"), false)
+		return { questID = 123, title = "Readable quest", isComplete = false }
+	end
+	addon.GetTrackedQuestStatusState = function() return { isOnQuest = true } end
+	addon.API.IsPushableQuest = function() return nil end
+	addon.partyMembers["Friend-Realm"] = {}
+	return addon, clock
+end
+
+local function ReceiveSnapshotComparisonRequest(addon, requestId)
+	local payload = addon:EncodeQuestCompareRequestPayload({
+		requestId = requestId,
+		requesterName = "Friend-Realm",
+		targetName = "MyPlayer-Realm",
+	})
+	addon:OnCommReceived(addon.commPrefix, addon:SerializeWireMessage("QCMP", payload), "PARTY", "Friend-Realm")
+end
+
+QuestTogether:RegisterTest("queued comparisons recover after long combat map and encounter restrictions", function()
+	for _, restriction in ipairs({ "combat", "map", "encounter" }) do
+		local addon, clock = NewSnapshotComparisonFixture()
+		addon.restrictions[restriction] = true
+		ReceiveSnapshotComparisonRequest(addon, restriction)
+		for _ = 1, 12 do clock:Advance(1) end
+		Equal(#addon.questCompareResponseQueue.jobs, 1)
+		Equal(addon.questCompareResponseQueue.jobs[1].snapshotAttempts, 0)
+		Equal(addon.questCompareResponseQueue.packets, 1)
+		Equal(addon.questReads, 0)
+		Equal(#addon.wire, 0)
+		addon.restrictions[restriction] = nil
+		clock:Advance(1)
+		Equal(#addon.wire, 1)
+		local command, payload = addon:DeserializeWireMessage(addon.wire[1][2])
+		Equal(command, "QCQE")
+		Equal(addon:DecodeQuestCompareEntryPayload(payload).questId, "123")
+		clock:Drain()
+		Equal(#addon.wire, 2)
+		command, payload = addon:DeserializeWireMessage(addon.wire[2][2])
+		Equal(command, "QCDN")
+		Equal(addon:DecodeQuestCompareDonePayload(payload).count, 1)
+		Equal(#addon.questCompareResponseQueue.jobs, 0)
+		Equal(addon.questCompareResponseQueue.packets, 0)
+	end
+end)
+
+QuestTogether:RegisterTest("restriction deferrals preserve the bounded unavailable snapshot retry budget", function()
+	local addon, clock = NewSnapshotComparisonFixture()
+	addon.snapshotUnavailable = true
+	ReceiveSnapshotComparisonRequest(addon, "unavailable-around-combat")
+	clock:Advance(1)
+	clock:Advance(1)
+	Equal(addon.questReads, 3)
+	addon.restrictions.combat = true
+	for _ = 1, 12 do clock:Advance(1) end
+	Equal(addon.questReads, 3)
+	Equal(addon.questCompareResponseQueue.jobs[1].snapshotAttempts, 3)
+	addon.restrictions.combat = nil
+	clock:Advance(1)
+	Equal(#addon.questCompareResponseQueue.jobs, 1)
+	clock:Advance(1)
+	Equal(addon.questReads, 5)
+	Equal(#addon.questCompareResponseQueue.jobs, 0)
+	Equal(addon.questCompareResponseQueue.packets, 0)
+	Equal(#addon.wire, 0)
+	Equal(#clock.timers, 0)
+end)
+
+QuestTogether:RegisterTest("restricted comparison jobs still expire without reading or sending", function()
+	local addon, clock = NewSnapshotComparisonFixture()
+	addon.restrictions.map = true
+	ReceiveSnapshotComparisonRequest(addon, "expired-map")
+	for _ = 1, 149 do clock:Advance(1) end
+	Equal(#addon.questCompareResponseQueue.jobs, 1)
+	clock:Advance(1)
+	Equal(#addon.questCompareResponseQueue.jobs, 0)
+	Equal(addon.questCompareResponseQueue.packets, 0)
+	Equal(addon:GetCommsDiagnostics().failedComparisons, 1)
+	addon.restrictions.map = nil
+	clock:Advance(10)
+	Equal(addon.questReads, 0)
+	Equal(#addon.wire, 0)
+	Equal(#clock.timers, 0)
+end)
+
+QuestTogether:RegisterTest("restricted comparison callbacks cannot revive canceled or disabled work", function()
+	local addon, clock = NewSnapshotComparisonFixture()
+	addon.restrictions.combat = true
+	ReceiveSnapshotComparisonRequest(addon, "old-combat")
+	local oldCallback = clock.timers[1].callback
+	addon:ResetCommsState()
+	ReceiveSnapshotComparisonRequest(addon, "replacement-combat")
+	local replacementQueue = addon.questCompareResponseQueue
+	oldCallback()
+	Equal(addon.questCompareResponseQueue, replacementQueue)
+	Equal(#replacementQueue.jobs, 1)
+	Equal(replacementQueue.scheduled, true)
+	addon.isEnabled = false
+	addon.restrictions.combat = nil
+	clock:Advance(10)
+	Equal(addon.questReads, 0)
+	Equal(#addon.wire, 0)
+	addon:ResetCommsState()
+	addon.isEnabled = true
+	clock:Advance(10)
+	Equal(addon.questCompareResponseQueue, nil)
+	Equal(#addon.wire, 0)
+end)
+
+QuestTogether:RegisterTest("comparison source wire and display preserve all three shareability states", function()
+	for _, expected in ipairs({ "Yes", "No", "Unknown" }) do
+		local addon = NewSnapshotComparisonFixture()
+		addon.API.IsPushableQuest = function()
+			if expected == "Yes" then return true end
+			if expected == "No" then return false end
+		end
+		addon.GetQuestStatusLabel = function() return "Not Started" end
+		addon.BuildChatLogQuestLabel = function(_, _, title) return title end
+		Equal(addon:GetQuestShareableStatusLabel(123), expected)
+		local entry = addon:BuildQuestCompareEntries()[1]
+		Equal(addon:GetQuestCompareShareableToYouLabel(entry.isPushable), expected)
+		Equal(addon:SendQuestCompareEntry("shareability", entry), true)
+		local command, payload = addon:DeserializeWireMessage(addon.wire[1][2])
+		Equal(command, "QCQE")
+		local received = addon:DecodeQuestCompareEntryPayload(payload)
+		Equal(received.questId, "123")
+		Equal(received.classFile, "MAGE")
+		Equal(addon:GetQuestCompareShareableToYouLabel(received.isPushable), expected)
+		Equal(addon:BuildQuestCompareMessage("Friend-Realm", received),
+			"Readable quest | Them: In Progress | You: Not Started | Shareable to You: " .. expected)
+	end
+end)
+
+QuestTogether:RegisterTest("legacy comparison layouts retain known booleans and unknown shareability", function()
+	local addon = NewCommsFixture()
+	for _, hasClass in ipairs({ false, true }) do
+		for _, token in ipairs({ "1", "0", "", "invalid" }) do
+			local payload = "1,legacy,Friend-Realm," .. (hasClass and "MAGE," or "") .. "123,Old quest,0," .. token
+			local entry = addon:DecodeQuestCompareEntryPayload(payload)
+			Equal(entry.questId, "123")
+			Equal(entry.classFile, hasClass and "MAGE" or "")
+			Equal(entry.isComplete, false)
+			Equal(addon:GetQuestCompareShareableToYouLabel(entry.isPushable),
+				token == "1" and "Yes" or (token == "0" and "No" or "Unknown"))
+		end
+	end
+end)
+
+local function NewLocationReceiver()
+	local addon = NewCommsFixture()
+	addon.API.UnitFullName = function() return "Receiver", "Realm" end
+	addon.API.UnitName = function() return "Receiver" end
+	addon.db = { profile = addon:DeepCopy(addon.DEFAULTS.profile) }
+	addon.db.profile.showProgressFor = "party_nearby"
+	addon.db.profile.showChatLogs = true
+	addon.db.profile.showChatBubbles = false
+	addon.FindVisiblePlayerNameplateForSender = function() return nil end
+	addon.FindNearbyPlayerUnitTokenForSender = function() return nil end
+	return addon
+end
+
+QuestTogether:RegisterTest("announcement map identity survives local construction and wire round trip", function()
+	local addon = NewCommsFixture()
+	addon.GetPlayerAnnouncementLocationInfo = function()
+		return { mapID = 37, zoneName = "Elwynn Forest", coordX = 50, coordY = 50, warMode = false }
+	end
+	local event = addon:BuildLocalAnnouncementEvent("QUEST_PROGRESS", "Wolves: 1/8", 123, { emoteToken = "CHEER" })
+	Equal(event.mapID, "37")
+	Equal(addon:SendAnnouncementWireEvent(event), true)
+	local command, payload = addon:DeserializeWireMessage(addon.wire[1][2])
+	local received = addon:DecodeAnnouncementPayload(payload)
+	Equal(command, "ANN")
+	Equal(received.mapID, "37")
+	Equal(received.emoteToken, "CHEER", "appending map identity must not move old fields")
+	Equal(#addon.wire[1][2] <= 255, true)
+end)
+
+QuestTogether:RegisterTest("received nearby announcements use map identity across localized labels", function()
+	local cases = {
+		{ remoteID = 37, localID = 37, remoteName = "Elwynn Forest", localName = "Wald von Elwynn", visible = true },
+		{ remoteID = 37, localID = 99999, remoteName = "Same label", localName = "Same label", visible = false },
+		{ remoteID = 37, localID = 37, remoteName = "", localName = "", visible = true },
+		{ remoteID = 37, localID = 37, remoteName = "Same label", localName = "Same label", far = true, visible = false },
+		{ remoteID = 37, localID = 37, remoteName = "Same label", localName = "Same label", differentWarMode = true, visible = false },
+		{ localID = 37, remoteName = "Legacy label", localName = "Legacy label", visible = true },
+		{ remoteID = 37, remoteName = "Legacy label", localName = "Legacy label", visible = true },
+		{ remoteName = "Different label", localName = "Legacy label", visible = false },
+	}
+	for _, case in ipairs(cases) do
+		local sender, receiver = NewCommsFixture(), NewLocationReceiver()
+		sender.GetPlayerAnnouncementLocationInfo = function()
+			return { mapID = case.remoteID, zoneName = case.remoteName, coordX = 50, coordY = 50, warMode = false }
+		end
+		receiver.GetPlayerAnnouncementLocationInfo = function()
+			return { mapID = case.localID, zoneName = case.localName, coordX = case.far and 90 or 50,
+				coordY = 50, warMode = case.differentWarMode == true }
+		end
+		local event = sender:BuildLocalAnnouncementEvent("QUEST_PROGRESS", "Wolves: 1/8", 123)
+		Equal(sender:SendAnnouncementWireEvent(event), true)
+		receiver:OnCommReceived(receiver.commPrefix, sender.wire[1][2], "CHANNEL", "MyPlayer-Realm", 7, receiver.announcementChannelName)
+		Equal(#receiver.printed, case.visible and 1 or 0)
+	end
+end)
+
+QuestTogether:RegisterTest("announcement map extension preserves legacy layouts and rejects invalid IDs", function()
+	local addon = NewCommsFixture()
+	local function Payload(version, suffix)
+		return tostring(version) .. ",QUEST_PROGRESS,Player-1-ID,MAGE,Friend-Realm,Wolves: 1/8,123,,,Zone,50,50,0,CHEER" .. suffix
+	end
+	for _, version in ipairs({ 1, 2, 3 }) do
+		local legacy = addon:DecodeAnnouncementPayload(Payload(version, ""))
+		Equal(legacy.mapID, "")
+		Equal(legacy.zoneName, "Zone")
+		Equal(legacy.emoteToken, "CHEER")
+		Equal(addon:DecodeAnnouncementPayload(Payload(version, ",37")).mapID, "37")
+	end
+	for _, invalid in ipairs({ "0", "-1", "1.5", "nan", "inf", "garbage", "" }) do
+		Equal(addon:DecodeAnnouncementPayload(Payload(3, "," .. invalid)).mapID, "")
+	end
+	local secret = setmetatable({}, { __tostring = function() error("secret map ID stringified") end })
+	addon.CanAccessValue = function(_, value) return value ~= secret end
+	local event = Event()
+	event.mapID = secret
+	Equal(addon:SanitizeAnnouncementEventData(event).mapID, "")
+end)
+
+QuestTogether:RegisterTest("announcement packet fitting retains numeric location when display labels are too large", function()
+	local sender, receiver = NewCommsFixture(), NewLocationReceiver()
+	sender.GetPlayerAnnouncementLocationInfo = function()
+		return { mapID = 2248, zoneName = string.rep("Долина", 40), coordX = 50, coordY = 50, warMode = false }
+	end
+	receiver.GetPlayerAnnouncementLocationInfo = function()
+		return { mapID = 2248, zoneName = "Isle of Dorn", coordX = 50, coordY = 50, warMode = false }
+	end
+	local event = sender:BuildLocalAnnouncementEvent("QUEST_PROGRESS", "Wolves: 1/8", 123)
+	Equal(sender:SendAnnouncementWireEvent(event), true)
+	local wire = sender.wire[1][2]
+	Equal(#wire <= 255, true)
+	local _, payload = sender:DeserializeWireMessage(wire)
+	local received = sender:DecodeAnnouncementPayload(payload)
+	Equal(received.zoneName, "")
+	Equal(received.mapID, "2248")
+	Equal(received.coordX, "50.0")
+	Equal(received.coordY, "50.0")
+	Equal(received.warMode, "0")
+	receiver:OnCommReceived(receiver.commPrefix, wire, "CHANNEL", "MyPlayer-Realm", 7, receiver.announcementChannelName)
+	Equal(#receiver.printed, 1)
+end)
+
+local function NewBubblePreviewFixture()
+	local addon = NewCommsFixture()
+	addon.db = { profile = addon:DeepCopy(addon.DEFAULTS.profile) }
+	addon.db.profile.showChatBubbles = true
+	addon.db.profile.showChatLogs = false
+	addon.partyMembers["Target-Realm"] = {}
+	addon.API.UnitFullName = function(unit)
+		return unit == "player" and "MyPlayer" or "Target", "Realm"
+	end
+	addon.API.UnitGUID = function(unit) return unit == "player" and "Player-self" or "Player-target" end
+	addon.API.UnitExists = function(unit) return unit == "target" or unit == "nameplate1" or unit == "player" end
+	addon.API.UnitIsPlayer = function() return true end
+	addon.IsWorkBlocked = function() return false end
+	local plate = { UnitFrame = { unit = "nameplate1" }, GetUnit = function() return "nameplate1" end }
+	addon.ForEachVisibleNamePlate = function(_, callback) callback(plate) end
+	addon.bubbles = {}
+	addon.ShowAnnouncementBubbleOnNameplate = function(_, frame, text)
+		Equal(frame, plate)
+		addon.bubbles[#addon.bubbles + 1] = text
+		return true
+	end
+	return addon
+end
+
+QuestTogether:RegisterTest("bubbletest previews target locally without broadcasting another identity", function()
+	local addon = NewBubblePreviewFixture()
+	local ok, name = addon:SendBubbleAnnouncementTest("Local target preview")
+	Equal(ok, true)
+	Equal(name, "Target-Realm")
+	Equal(#addon.wire, 0)
+	Equal(#addon.bubbles, 1)
+	Equal(addon.bubbles[1], "Local target preview")
+	addon.API.UnitExists = function(unit) return unit == "nameplate1" or unit == "player" end
+	ok, name = addon:SendBubbleAnnouncementTest("Explicit player preview", "Target-Realm")
+	Equal(ok, true)
+	Equal(name, "Target-Realm")
+	Equal(#addon.wire, 0)
+	Equal(#addon.bubbles, 2)
+end)
+
+QuestTogether:RegisterTest("local bubble previews do not depend on transport and report suppression", function()
+	local addon = NewBubblePreviewFixture()
+	addon.SendAnnouncementWireEvent = function() error("a local preview must not use the network") end
+	Equal(addon:SendBubbleAnnouncementTest("Local preview"), true)
+	addon.db.profile.announceProgress = false
+	local ok, message = addon:SendBubbleAnnouncementTest("Suppressed preview")
+	Equal(ok, false)
+	Equal(message, "The local preview was suppressed by your announcement settings.")
+	Equal(#addon.bubbles, 1)
+end)
+
+local function NewBubbleSlashFixture(regional, hasTarget)
+	local addon = NewBubblePreviewFixture()
+	addon.messages = {}
+	addon.Print = function(_, message) addon.messages[#addon.messages + 1] = message end
+	addon.GetDebugController = function() return { HandleCommand = function() return false end } end
+	addon.API.RegionalUniqueNamesEnabled = function() return regional end
+	addon.API.ShouldDisplaySurname = function() return false end
+	addon.API.UnitExists = function(unit)
+		return unit == "player" or unit == "nameplate1" or unit == "nameplate2" or (hasTarget and unit == "target")
+	end
+	addon.API.UnitFullName = function(unit)
+		if not regional then return unit == "player" and "MyPlayer" or "Target", "Realm" end
+		if unit == "player" then return "MyPlayer", "Selfname" end
+		return "Anakin", unit == "nameplate2" and "Elsewhere" or "Othername"
+	end
+	addon.API.UnitName = function(unit) return unit == "player" and "MyPlayer" or (regional and "Anakin" or "Target") end
+	addon.API.UnitGUID = function(unit)
+		return unit == "player" and "Player-self" or (unit == "nameplate2" and "Player-other" or "Player-target")
+	end
+	if regional then
+		-- The other character with the same first name appears first, so a
+		-- weakened first-name lookup would render on the wrong private frame.
+		local firstPlate = addon.ForEachVisibleNamePlate
+		local otherPlate = { UnitFrame = { unit = "nameplate2" }, GetUnit = function() return "nameplate2" end }
+		addon.ForEachVisibleNamePlate = function(self, callback)
+			callback(otherPlate)
+			firstPlate(self, callback)
+		end
+	end
+	return addon
+end
+
+QuestTogether:RegisterTest("bubbletest slash accepts full regional quoted and legacy identities", function()
+	for _, command in ipairs({
+		"bubbletest Anakin Othername hello there",
+		"bubbletest Anakin   Othername hello there",
+		'bubbletest "Anakin Othername" hello there',
+		"bubbletest Anakin-Othername hello there",
+	}) do
+		local addon = NewBubbleSlashFixture(true, false)
+		addon:HandleSlashCommand(command)
+		Equal(#addon.bubbles, 1)
+		Equal(addon.bubbles[1], "hello there")
+		Equal(#addon.wire, 0)
+		Equal(addon.messages[#addon.messages], "Ran local bubble preview for Anakin Othername")
+	end
+	local addon = NewBubbleSlashFixture(true, false)
+	Equal(addon:SendBubbleAnnouncementTest("Direct preview", "Anakin Othername"), true)
+	Equal(#addon.bubbles, 1)
+	Equal(addon.bubbles[1], "Direct preview")
+end)
+
+QuestTogether:RegisterTest("bubbletest slash retains retail single-token and quoted player names", function()
+	for _, command in ipairs({
+		"bubbletest Target hello there",
+		"bubbletest Target-Realm hello there",
+		'bubbletest "Target-Realm" hello there',
+	}) do
+		local addon = NewBubbleSlashFixture(false, false)
+		addon:HandleSlashCommand(command)
+		Equal(#addon.bubbles, 1)
+		Equal(addon.bubbles[1], "hello there")
+		Equal(#addon.wire, 0)
+	end
+end)
+
+QuestTogether:RegisterTest("bubbletest slash keeps complete target text including quotes and player-like words", function()
+	for _, regional in ipairs({ false, true }) do
+		local addon = NewBubbleSlashFixture(regional, true)
+		local text = '"Anakin Othername" hello there'
+		addon:HandleSlashCommand("bubbletest " .. text)
+		Equal(#addon.bubbles, 1)
+		Equal(addon.bubbles[1], text)
+		Equal(#addon.wire, 0)
+	end
+end)
+
+QuestTogether:RegisterTest("bubbletest slash rejects malformed names empty text and ambiguous first names", function()
+	for _, regional in ipairs({ false, true }) do
+		for _, arguments in ipairs({ '"" hello', '"   " hello', '"Anakin Othername hello', '"Anakin Othername"hello', '"Anakin Othername"', '"Anakin Othername"   ', "Target-Realm" }) do
+			local addon = NewBubbleSlashFixture(regional, false)
+			addon:HandleSlashCommand("bubbletest " .. arguments)
+			Equal(#addon.bubbles, 0)
+			Equal(#addon.wire, 0)
+			Equal(addon.messages[#addon.messages], 'Usage without a target: /qt bubbletest "<player>" <text>')
+		end
+	end
+	for _, arguments in ipairs({ '"Anakin" hello there', "Anakin hello there" }) do
+		local addon = NewBubbleSlashFixture(true, false)
+		addon:HandleSlashCommand("bubbletest " .. arguments)
+		Equal(#addon.bubbles, 0)
+		Equal(#addon.wire, 0)
+		Equal(addon.messages[#addon.messages], "No visible nearby player matched that name.")
+	end
 end)

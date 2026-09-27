@@ -81,9 +81,11 @@ In `Options > AddOns > QuestTogether`, you can configure:
 - `/qt get <option>` - Read option values
 - `/qt scan` - Rescan your quest log now
 - `/qt ping` - Request metadata pings from QuestTogether users
-- `/qt bubbletest <text>` - Send a synthetic progress announcement using your targeted player
-- `/qt bubbletest <player> <text>` - Send bubble test as a specific nearby player name
+- `/qt bubbletest <text>` - Run a local bubble preview for your targeted player
+- `/qt bubbletest "<player>" <text>` - With no target, preview a nearby visible player using their full name; for example, `/qt bubbletest "Anakin Othername" hello`
 - `/qt test` - Run in-game addon tests
+
+Bubble previews stay on your client. Player names can also be unquoted: `Name-Realm`, or `First Surname` on Forever. When you have a target, everything after `bubbletest` is preview text.
 
 ## Notes
 
@@ -104,6 +106,6 @@ If you run into issues, include:
 - Game version
 - QuestTogether version
 - Steps to reproduce
-- Any relevant debug output (`/qt debug on`)
+- Any relevant debug output (open `/qt debug`, choose **Select All**, then press Ctrl+C to copy)
 
 That makes fixes much faster and more accurate.

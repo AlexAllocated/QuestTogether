@@ -280,24 +280,6 @@ QT:RegisterTest("shared runtime permits explicit waypoint clicks while disabled 
 	Equal(backgroundCalls, 1)
 end)
 
-QT:RegisterTest("shared runtime disabled waypoint exception does not bypass restrictions", function()
-	local addon, calls = NewRuntime(), 0
-	addon.isEnabled, addon.blocked = false, true
-	Equal(
-		addon:RunOrDeferWork("waypoint_mutation", "user_waypoint", function()
-			calls = calls + 1
-		end),
-		false
-	)
-	Equal(calls, 0)
-	addon.isEnabled = true
-	addon:FlushDeferredWork()
-	Equal(calls, 0)
-	addon.blocked = false
-	addon:FlushDeferredWork()
-	Equal(calls, 1)
-end)
-
 QT:RegisterTest("shared runtime immediate waypoint consumes an older timer while disabled", function()
 	local addon, calls = NewRuntime(), 0
 	addon:ScheduleDeferredWork("waypoint_mutation", "user_waypoint", function()
@@ -597,4 +579,93 @@ QT:RegisterTest("welcome login keeps startup active announces once and routes ad
 	addon:OnLogin()
 	Equal(addon.isEnabled, true)
 	Equal(#messages, 3)
+end)
+
+-- Map closure is observed by an addon-owned frame. No Blizzard frame or
+-- callback registry is modified by this fixture or the production watcher.
+local function NewMapWakeFixture()
+	local addon = NewRuntime()
+	addon.mapVisible, addon.combat, addon.encounter = true, false, false
+	addon.createdFrames = 0
+	addon.API.IsWorldMapVisible = function() return addon.mapVisible end
+	addon.API.InCombatLockdown = function() return addon.combat end
+	addon.IsWorkBlocked = QT.IsWorkBlocked
+	function addon:IsRuntimeRestrictionTypeActive(kind)
+		return kind == "encounter" and self.encounter
+	end
+	function addon:CreateMapWorkWakeFrame()
+		self.createdFrames = self.createdFrames + 1
+		return { SetScript = function(frame, name, callback) frame[name] = callback end }
+	end
+	function addon:Tick(elapsed)
+		local frame = self.mapWorkWakeFrame
+		if frame and frame.OnUpdate then frame.OnUpdate(frame, elapsed or 0.2) end
+	end
+	return addon
+end
+
+QT:RegisterTest("closing the map resumes parked work through the actual watcher", function()
+	local addon, calls = NewMapWakeFixture(), 0
+	addon:ScheduleDeferredWork("nameplate_tooltip_resolve", "plate", function() calls = calls + 1 end, 0)
+	Equal(calls, 0)
+	Equal(addon.createdFrames, 1)
+	addon:Tick(1)
+	Equal(calls, 0, "map-visible work must stay blocked")
+	addon.mapVisible = false
+	addon:Tick(0.1)
+	Equal(calls, 0, "watcher respects its polling interval")
+	addon:Tick(0.1)
+	Equal(calls, 1)
+	Equal(addon.mapWorkWakeFrame.OnUpdate, nil)
+	Equal(next(addon.state.entries), nil)
+end)
+
+QT:RegisterTest("map-close recovery keeps combat and encounter restrictions intact", function()
+	local addon, scans, plates = NewMapWakeFixture(), 0, 0
+	addon.combat, addon.encounter = true, true
+	addon:ScheduleDeferredWork("quest_log_drain", "scan", function() scans = scans + 1 end, 0)
+	addon:ScheduleDeferredWork("nameplate_refresh", "plates", function() plates = plates + 1 end, 0)
+	Equal(addon.createdFrames, 1, "many blocked jobs share a watcher")
+	addon.mapVisible = false
+	addon:Tick()
+	Equal(scans, 0)
+	Equal(plates, 0)
+	addon.encounter = false
+	addon:ADDON_RESTRICTION_STATE_CHANGED()
+	Equal(plates, 1)
+	Equal(scans, 0)
+	addon.combat = false
+	addon:PLAYER_REGEN_ENABLED()
+	Equal(scans, 1)
+end)
+
+QT:RegisterTest("map watcher stops on disable and cannot revive another work lifetime", function()
+	local addon, calls = NewMapWakeFixture(), 0
+	addon:ScheduleDeferredWork("nameplate_refresh", "plates", function() calls = calls + 1 end, 0)
+	local oldUpdate = addon.mapWorkWakeFrame.OnUpdate
+	addon.isEnabled = false
+	addon:Tick()
+	Equal(addon.mapWorkWakeFrame.OnUpdate, nil)
+	addon.isEnabled = true
+	addon.state = { entries = {}, generations = {} }
+	addon:ScheduleDeferredWork("nameplate_refresh", "new", function() calls = calls + 1 end, 0)
+	oldUpdate(addon.mapWorkWakeFrame, 1)
+	assert(addon.mapWorkWakeFrame.OnUpdate, "stale callback must not stop current watcher")
+	addon.mapVisible = false
+	addon:Tick()
+	Equal(calls, 1, "only new lifetime may run")
+end)
+
+QT:RegisterTest("unreadable map visibility keeps deferred tooltip work blocked", function()
+	local addon, calls = NewMapWakeFixture(), 0
+	addon.API.IsWorldMapVisible = function() error("inaccessible visibility") end
+	addon:ScheduleDeferredWork("nameplate_tooltip_resolve", "plate", function() calls = calls + 1 end, 0)
+	addon:Tick()
+	Equal(calls, 0)
+	addon.API.IsWorldMapVisible = function() return nil end
+	addon:Tick()
+	Equal(calls, 0, "unknown visibility must not release pending work")
+	addon.API.IsWorldMapVisible = function() return false end
+	addon:Tick()
+	Equal(calls, 1)
 end)

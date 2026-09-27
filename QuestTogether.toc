@@ -7,7 +7,7 @@
 ## Interface-Titan: 38001, 38002
 ## Title: QuestTogether
 ## IconTexture: Interface\GossipFrame\AvailableQuestIcon
-## Version: 5.9.0
+## Version: 5.9.1
 ## Notes: Quest progress chat bubbles and logs for party and nearby players.
 ## SavedVariables: QuestTogetherDB
 ## Author: Chev
@@ -38,4 +38,5 @@ scripts/regression_runtime.lua
 scripts/regression_quest_state.lua
 scripts/regression_core_state.lua
 scripts/regression_nameplates.lua
+scripts/regression_nameplate_discovery.lua
 scripts/regression_comms.lua

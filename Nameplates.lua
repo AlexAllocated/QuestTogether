@@ -1555,7 +1555,7 @@ local function IsTooltipQuestObjectiveLineType(lineType)
 	end
 
 	if Enum and Enum.TooltipDataLineType then
-		return lineType == Enum.TooltipDataLineType.QuestObjective
+		return Enum.TooltipDataLineType.QuestObjective ~= nil and lineType == Enum.TooltipDataLineType.QuestObjective
 	end
 
 	return false
@@ -1572,7 +1572,7 @@ local function IsTooltipQuestPlayerLineType(lineType)
 	end
 
 	if Enum and Enum.TooltipDataLineType then
-		return lineType == Enum.TooltipDataLineType.QuestPlayer
+		return Enum.TooltipDataLineType.QuestPlayer ~= nil and lineType == Enum.TooltipDataLineType.QuestPlayer
 	end
 
 	return false
@@ -1589,120 +1589,94 @@ local function IsTooltipQuestTitleLineType(lineType)
 	end
 
 	if Enum and Enum.TooltipDataLineType then
-		return lineType == Enum.TooltipDataLineType.QuestTitle
+		return Enum.TooltipDataLineType.QuestTitle ~= nil and lineType == Enum.TooltipDataLineType.QuestTitle
 	end
 
 	return false
 end
 
 local function TryGetTooltipCandidateText(addon, candidateText)
-	if addon and addon.IsSecretValue and addon:IsSecretValue(candidateText) then
-		return nil
+	if not addon:CanAccessValue(candidateText) then
+		return nil, true
 	end
 	if type(candidateText) ~= "string" then
-		return nil
+		return nil, false
 	end
 
 	candidateText = SafeTrimText(candidateText)
 	if candidateText == "" then
-		return nil
+		return nil, false
 	end
 
-	return candidateText
+	return candidateText, false
 end
 
+local TOOLTIP_ARGUMENT_TEXT_FIELDS = { "leftText", "text", "rightText", "stringVal", "name", "unitName", "title", "value" }
+local TOOLTIP_LINE_TEXT_FIELDS = { "leftText", "text", "rightText" }
 local function GetTooltipStructuredArgText(addon, argData, depth)
 	addon = addon or QuestTogether
 	depth = SafeUiNumber(depth, 0) or 0
-	if depth > 2 then
-		return nil
-	end
-
-	if addon and addon.IsSecretValue and addon:IsSecretValue(argData) then
-		return nil
+	if depth > 2 or not addon:CanAccessValue(argData) then
+		return nil, true
 	end
 	if type(argData) == "string" then
 		return TryGetTooltipCandidateText(addon, argData)
 	end
+	if type(argData) ~= "table" then
+		return nil, false
+	end
 	if not addon:CanAccessTable(argData) then
-		return nil
+		return nil, true
 	end
 
-	local candidateText = TryGetTooltipCandidateText(addon, argData.leftText)
-	if candidateText then
-		return candidateText
-	end
-	candidateText = TryGetTooltipCandidateText(addon, argData.text)
-	if candidateText then
-		return candidateText
-	end
-	candidateText = TryGetTooltipCandidateText(addon, argData.rightText)
-	if candidateText then
-		return candidateText
-	end
-	candidateText = TryGetTooltipCandidateText(addon, argData.stringVal)
-	if candidateText then
-		return candidateText
-	end
-	candidateText = TryGetTooltipCandidateText(addon, argData.name)
-	if candidateText then
-		return candidateText
-	end
-	candidateText = TryGetTooltipCandidateText(addon, argData.unitName)
-	if candidateText then
-		return candidateText
-	end
-	candidateText = TryGetTooltipCandidateText(addon, argData.title)
-	if candidateText then
-		return candidateText
-	end
-	candidateText = TryGetTooltipCandidateText(addon, argData.value)
-	if candidateText then
-		return candidateText
+	local hasUnavailableText = false
+	for _, field in ipairs(TOOLTIP_ARGUMENT_TEXT_FIELDS) do
+		local candidateText, unavailable = TryGetTooltipCandidateText(addon, argData[field])
+		hasUnavailableText = hasUnavailableText or unavailable
+		if candidateText then
+			return candidateText, hasUnavailableText
+		end
 	end
 
 	for key, value in pairs(argData) do
-		if addon:CanAccessValue(key) and key ~= "field" and key ~= "key" then
-			local directValue = TryGetTooltipCandidateText(addon, value)
+		if not addon:CanAccessValue(key) then
+			hasUnavailableText = true
+		elseif key ~= "field" and key ~= "key" then
+			local directValue, unavailable = TryGetTooltipCandidateText(addon, value)
+			hasUnavailableText = hasUnavailableText or unavailable
 			if directValue then
-				return directValue
+				return directValue, hasUnavailableText
 			end
-			if type(value) == "table" and not (addon and addon.IsSecretValue and addon:IsSecretValue(value)) then
-				local nestedText = GetTooltipStructuredArgText(addon, value, depth + 1)
+			if not unavailable and type(value) == "table" then
+				local nestedText, nestedUnavailable = GetTooltipStructuredArgText(addon, value, depth + 1)
+				hasUnavailableText = hasUnavailableText or nestedUnavailable
 				if nestedText then
-					return nestedText
+					return nestedText, hasUnavailableText
 				end
 			end
 		end
 	end
 
-	return nil
+	return nil, hasUnavailableText
 end
 
 local function GetTooltipQuestLinePrimaryText(lineData, addon)
 	addon = addon or QuestTogether
 	if not addon:CanAccessTable(lineData) then
-		return nil
+		return nil, true
 	end
 
-	local candidateText = TryGetTooltipCandidateText(addon, lineData.leftText)
-	if candidateText then
-		return candidateText
-	end
-	candidateText = TryGetTooltipCandidateText(addon, lineData.text)
-	if candidateText then
-		return candidateText
-	end
-	candidateText = TryGetTooltipCandidateText(addon, lineData.rightText)
-	if candidateText then
-		return candidateText
+	local hasUnavailableText = false
+	for _, field in ipairs(TOOLTIP_LINE_TEXT_FIELDS) do
+		local candidateText, unavailable = TryGetTooltipCandidateText(addon, lineData[field])
+		hasUnavailableText = hasUnavailableText or unavailable
+		if candidateText then
+			return candidateText, hasUnavailableText
+		end
 	end
 
-	local args = lineData.args
-	if addon and addon.IsSecretValue and addon:IsSecretValue(args) then
-		return nil
-	end
-	return GetTooltipStructuredArgText(addon, args, 0)
+	local argsText, argsUnavailable = GetTooltipStructuredArgText(addon, lineData.args, 0)
+	return argsText, hasUnavailableText or argsUnavailable
 end
 
 local function IsThreatTooltipMarkerText(text)
@@ -1791,6 +1765,55 @@ local function GetKnownTooltipQuestText(text)
 	return nil
 end
 
+local function IsKnownTooltipQuestTitle(addon, text)
+	-- The text cache also contains objective labels. Only an actual title may
+	-- reopen a terminated raw block; use owned quest records, never live APIs.
+	local function ContainsTitle(quests)
+		if type(quests) ~= "table" then
+			return false
+		end
+		for _, quest in pairs(quests) do
+			if type(quest) == "table" and SafeTrimText(quest.title) == text then
+				return true
+			end
+		end
+		return false
+	end
+	local snapshot = addon.GetQuestSnapshotByQuestID and addon:GetQuestSnapshotByQuestID() or nil
+	if ContainsTitle(snapshot) then
+		return true
+	end
+	-- A captured character key keeps GetPlayerTracker on its owned-data path.
+	local tracker = addon.activeCharacterKey and addon.GetPlayerTracker and addon:GetPlayerTracker() or nil
+	return ContainsTitle(tracker)
+end
+
+local function IsKnownTooltipQuestPlayerText(addon, text)
+	-- Raw tooltip sources do not identify player rows. Only a current, copied
+	-- roster identity may carry a quest block across an otherwise unknown label.
+	-- Do not query unit APIs or shared tooltip state while interpreting text.
+	if type(text) ~= "string" or text == "" then
+		return false
+	end
+	local playerText = SafeTrimText((text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")))
+	for fullName, member in pairs(addon.partyMembers or {}) do
+		if type(fullName) == "string" then
+			local shortName = SafeMatch(fullName, "^([^%-]+)%-") or fullName
+			if playerText == fullName or playerText == shortName
+				or (type(member) == "table" and playerText == member.displayName) then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+local function AddTooltipQuestBoundary(tooltipLines)
+	if #tooltipLines > 0 and tooltipLines[#tooltipLines].type ~= "QuestBoundary" then
+		tooltipLines[#tooltipLines + 1] = { type = "QuestBoundary" }
+	end
+end
+
 -- Mirrors Plater's tooltip-driven objective detection while broadening the
 -- addon-owned known-text cache to include active quest objective texts.
 function QuestTogether:TooltipLineHasUnfinishedObjectiveEvidence(lineData)
@@ -1837,6 +1860,7 @@ function QuestTogether:EvaluateTooltipQuestObjectiveLines(tooltipLines)
 	end
 
 	local matchedQuestBlock = false
+	local hasQuestBlockBoundary = false
 	local hasCompletedObjective = false
 	local canConfirmCompletion = tooltipLines.hasIncompleteQuestData ~= true
 
@@ -1855,29 +1879,56 @@ function QuestTogether:EvaluateTooltipQuestObjectiveLines(tooltipLines)
 		local primaryText = GetTooltipQuestLinePrimaryText(lineData)
 		local matchedQuestText = GetKnownTooltipQuestText(primaryText)
 		local progressState = GetObjectiveProgressState(primaryText)
-		if (matchedQuestBlock or matchedQuestText ~= nil) and progressState == "complete" then
-			hasCompletedObjective = true
-		end
-		if IsTooltipQuestObjectiveLineType(lineType) and progressState == "unknown" then
-			canConfirmCompletion = false
-		end
-		if not matchedQuestBlock and matchedQuestText ~= nil and self:TooltipLineHasUnfinishedObjectiveEvidence(lineData) then
-			return true
-		end
-		if matchedQuestBlock then
-			if IsThreatTooltipMarkerText(primaryText) then
-				matchedQuestBlock = false
-			elseif self:TooltipLineHasUnfinishedObjectiveEvidence(lineData) then
-				return true
-			elseif matchedQuestText ~= nil then
+		if lineType == "QuestBoundary" then
+			matchedQuestBlock = false
+			hasQuestBlockBoundary = true
+		elseif IsTooltipQuestTitleLineType(lineType) then
+			-- Party progress belongs to the current quest, not every quest below
+			-- the first recognized title in the tooltip.
+			matchedQuestBlock = matchedQuestText ~= nil
+			hasQuestBlockBoundary = true
+		else
+			if hasQuestBlockBoundary and not matchedQuestBlock and matchedQuestText ~= nil
+				and progressState == "unknown"
+				and not IsTooltipQuestObjectiveLineType(lineType)
+				and not IsTooltipQuestPlayerLineType(lineType)
+				and IsKnownTooltipQuestTitle(self, primaryText) then
 				matchedQuestBlock = true
 			end
-		elseif matchedQuestText ~= nil then
-			matchedQuestBlock = true
+			-- Objective wording is shared across quests. A known objective can
+			-- stand alone, but cannot reopen an explicit or raw unmatched block.
+			local matchesTitlelessQuestText = not hasQuestBlockBoundary and matchedQuestText ~= nil
+			if (matchedQuestBlock or matchesTitlelessQuestText) and progressState == "complete" then
+				hasCompletedObjective = true
+			end
+			if IsTooltipQuestObjectiveLineType(lineType) and progressState == "unknown" then
+				canConfirmCompletion = false
+			end
+			if not matchedQuestBlock and matchesTitlelessQuestText and self:TooltipLineHasUnfinishedObjectiveEvidence(lineData) then
+				return true
+			end
+			if matchedQuestBlock then
+				if IsThreatTooltipMarkerText(primaryText) then
+					matchedQuestBlock = false
+					hasQuestBlockBoundary = true
+				elseif self:TooltipLineHasUnfinishedObjectiveEvidence(lineData) then
+					return true
+				elseif progressState == "unknown" and matchedQuestText == nil
+					and not IsTooltipQuestObjectiveLineType(lineType)
+					and not IsTooltipQuestPlayerLineType(lineType)
+					and not IsKnownTooltipQuestPlayerText(self, primaryText) then
+					-- An untyped unknown title must not donate its progress to the
+					-- preceding known quest. Typed/roster-backed player rows survive.
+					matchedQuestBlock = false
+					hasQuestBlockBoundary = true
+				end
+			elseif matchesTitlelessQuestText then
+				matchedQuestBlock = true
+			end
 		end
 	end
 
-	return false, hasCompletedObjective and canConfirmCompletion
+	return false, hasCompletedObjective and canConfirmCompletion, canConfirmCompletion
 end
 
 function QuestTogether:ClearNameplateResolvedQuestState()
@@ -2074,6 +2125,7 @@ function QuestTogether:RebuildNameplateQuestTextCache()
 
 	local isInInstance = self.API and self.API.IsInInstance and self.API.IsInInstance()
 	if isInInstance then
+		self:SetRuntimeFlag("nameplateQuestTextCacheSuppressed", true)
 		return
 	end
 
@@ -2097,6 +2149,7 @@ function QuestTogether:RebuildNameplateQuestTextCache()
 	end
 
 	AddTrackedQuestObjectiveTextsToNameplateCache(self, self.nameplateQuestTextCache)
+	self:SetRuntimeFlag("nameplateQuestTextCacheSuppressed", false)
 end
 
 function QuestTogether:TryGetReusableCachedNameplateQuestState(unitToken, unitGuid)
@@ -2113,37 +2166,12 @@ function QuestTogether:TryGetReusableCachedNameplateQuestState(unitToken, unitGu
 	return true, cachedQuestState
 end
 
--- Unit tokens and frames are recycled independently. Prefer the live API GUID
--- whenever readable, then use guarded frame hints while the API catches up.
-function QuestTogether:GetNameplateTooltipScanGuid(unitToken, unitFrame)
+-- Unit tokens and frames are recycled independently. Only a readable live GUID
+-- owns cached quest state. Token tooltip scans can still resolve without it.
+function QuestTogether:GetNameplateTooltipScanGuid(unitToken, _unitFrame)
 	local liveGuid = self:GetNameplateUnitGuid(unitToken)
 	if IsNonEmptyString(liveGuid) then
 		return liveGuid
-	end
-	if self:IsRuntimeRestricted() then
-		-- A recycled frame's old GUID is not evidence for an unreadable live
-		-- identity. Query the accessible token and retry instead of reusing it.
-		return nil
-	end
-	if not self:CanAccessForeignFrame(unitFrame) then
-		return nil
-	end
-
-	local plateFrame = GetAccessibleChildFrame(unitFrame, "PlateFrame")
-	if not plateFrame then
-		local parentFrame = CallAccessibleFrameMethod(unitFrame, "GetParent")
-		if self:CanAccessForeignFrame(parentFrame) then
-			plateFrame = parentFrame
-		end
-	end
-
-	for _, frame in ipairs({ unitFrame, plateFrame }) do
-		for _, memberName in ipairs({ "namePlateUnitGUID", "unitGUID", "guid" }) do
-			local candidateGuid = select(1, self:GetAccessibleFrameMember(frame, memberName))
-			if IsNonEmptyString(candidateGuid) then
-				return candidateGuid
-			end
-		end
 	end
 	return nil
 end
@@ -2199,10 +2227,15 @@ function QuestTogether:SanitizeTooltipLineForQuestDetection(lineData)
 		and not IsTooltipQuestPlayerLineType(lineType)
 		and not self:ShouldKeepTooltipLineForQuestDetection(lineData)
 	then
-		return nil
+		local playerText = self:SanitizeTooltipQuestLineText(GetTooltipQuestLinePrimaryText(lineData, self))
+		if not IsKnownTooltipQuestPlayerText(self, playerText) then
+			return nil
+		end
+		lineType = "QuestPlayer"
 	end
 
-	local leftText = self:SanitizeTooltipQuestLineText(GetTooltipQuestLinePrimaryText(lineData, self))
+	local primaryText, unavailable = GetTooltipQuestLinePrimaryText(lineData, self)
+	local leftText = self:SanitizeTooltipQuestLineText(primaryText)
 	if not leftText then
 		return nil
 	end
@@ -2210,7 +2243,7 @@ function QuestTogether:SanitizeTooltipLineForQuestDetection(lineData)
 	return {
 		type = lineType,
 		leftText = leftText,
-	}
+	}, unavailable
 end
 
 function QuestTogether:ExtractQuestObjectiveTooltipLinesFromTooltipData(tooltipData)
@@ -2232,17 +2265,37 @@ function QuestTogether:ExtractQuestObjectiveTooltipLinesFromTooltipData(tooltipD
 	local tooltipLines = {}
 	for lineIndex = 1, #tooltipLineData do
 		local rawLine = tooltipLineData[lineIndex]
-		local sanitizedLine = self:SanitizeTooltipLineForQuestDetection(rawLine)
+		local sanitizedLine, unavailable = self:SanitizeTooltipLineForQuestDetection(rawLine)
 		if sanitizedLine then
+			if unavailable then
+				tooltipLines.hasIncompleteQuestData = true
+				AddTooltipQuestBoundary(tooltipLines)
+			end
 			tooltipLines[#tooltipLines + 1] = sanitizedLine
 		elseif not self:CanAccessTable(rawLine) or not self:CanAccessValue(rawLine.type) then
 			tooltipLines.hasIncompleteQuestData = true
+			AddTooltipQuestBoundary(tooltipLines)
+		elseif IsTooltipQuestTitleLineType(rawLine.type) then
+			-- Even a first unreadable title owns the following objectives. Retain
+			-- an unmatched title without copying inaccessible text, so shared
+			-- objective wording cannot be mistaken for titleless quest evidence.
+			tooltipLines.hasIncompleteQuestData = true
+			tooltipLines[#tooltipLines + 1] = { type = "QuestTitle" }
 		elseif
 			IsTooltipQuestObjectiveLineType(rawLine.type)
-			or IsTooltipQuestTitleLineType(rawLine.type)
 			or IsTooltipQuestPlayerLineType(rawLine.type)
 		then
 			tooltipLines.hasIncompleteQuestData = true
+			AddTooltipQuestBoundary(tooltipLines)
+		else
+			local primaryText, unavailable = GetTooltipQuestLinePrimaryText(rawLine, self)
+			if unavailable then
+				tooltipLines.hasIncompleteQuestData = true
+				AddTooltipQuestBoundary(tooltipLines)
+			elseif self:SanitizeTooltipQuestLineText(primaryText) then
+				-- Filtering a generic unknown title must not join two quest blocks.
+				AddTooltipQuestBoundary(tooltipLines)
+			end
 		end
 	end
 
@@ -2276,12 +2329,7 @@ end
 
 -- Questie is Plater's first quest-tooltip source in local retail Plater.lua:11191-11196.
 -- We mirror that source order, but read the Questie module through guarded accessors.
-function QuestTogether:GetQuestieQuestObjectiveTooltipLines(unitGuid)
-	local npcId = GetNpcIdFromUnitGuid(unitGuid)
-	if not npcId then
-		return nil
-	end
-
+function QuestTogether:GetQuestieTooltipDataForNpc(npcId)
 	local questieLoader = _G and _G.QuestieLoader or nil
 	if not self:CanAccessTable(questieLoader) then
 		return nil
@@ -2305,23 +2353,34 @@ function QuestTogether:GetQuestieQuestObjectiveTooltipLines(unitGuid)
 	if not ok or not self:CanAccessTable(tooltipData) then
 		return nil
 	end
+	return tooltipData
+end
+
+function QuestTogether:GetQuestieQuestObjectiveTooltipLines(unitGuid)
+	local npcId = GetNpcIdFromUnitGuid(unitGuid)
+	if not npcId then
+		return nil
+	end
+	local tooltipData = self:GetQuestieTooltipDataForNpc(npcId)
+	if not self:CanAccessTable(tooltipData) then
+		return nil
+	end
 
 	local tooltipLines = {}
 	for lineIndex = 1, #tooltipData do
 		local rawLine = tooltipData[lineIndex]
-		if not self:CanAccessValue(rawLine) then
-			break
-		end
-
-		local normalizedText = NormalizeQuestieTooltipQuestLineText(rawLine)
-		if normalizedText then
-			tooltipLines[#tooltipLines + 1] = {
-				leftText = normalizedText,
-			}
+		if not self:CanAccessValue(rawLine) or type(rawLine) ~= "string" then
+			tooltipLines.hasIncompleteQuestData = true
+			AddTooltipQuestBoundary(tooltipLines)
+		else
+			local normalizedText = NormalizeQuestieTooltipQuestLineText(rawLine)
+			if normalizedText then
+				tooltipLines[#tooltipLines + 1] = { leftText = normalizedText }
+			end
 		end
 	end
 
-	if #tooltipLines > 0 then
+	if #tooltipLines > 0 or tooltipLines.hasIncompleteQuestData then
 		return tooltipLines
 	end
 
@@ -2342,11 +2401,11 @@ function QuestTogether:GetStructuredQuestObjectiveTooltipLines(unitToken, unitGu
 	end
 	if not self.API then
 		return nil
-		end
+	end
 
-		local tooltipData = nil
-		local sourceLabel = structuredSource
-		if sourceLabel == "unit" then
+	local tooltipData = nil
+	local sourceLabel = structuredSource
+	if sourceLabel == "unit" then
 		tooltipData = self:GetStructuredQuestObjectiveTooltipLinesFromUnit(unitToken)
 	elseif sourceLabel == "hyperlink" or sourceLabel == nil then
 		tooltipData = self:GetStructuredQuestObjectiveTooltipLinesFromHyperlink(unitGuid)
@@ -2355,13 +2414,13 @@ function QuestTogether:GetStructuredQuestObjectiveTooltipLines(unitToken, unitGu
 		end
 	else
 		return nil
-		end
+	end
 
-		if tooltipData ~= nil then
-			local tooltipLines = self:ExtractQuestObjectiveTooltipLinesFromTooltipData(tooltipData)
-			if type(tooltipLines) == "table" and #tooltipLines > 0 then
-				return tooltipLines
-			end
+	if tooltipData ~= nil then
+		local tooltipLines = self:ExtractQuestObjectiveTooltipLinesFromTooltipData(tooltipData)
+		if type(tooltipLines) == "table" and (#tooltipLines > 0 or tooltipLines.hasIncompleteQuestData) then
+			return tooltipLines
+		end
 	end
 
 	return nil
@@ -2459,7 +2518,7 @@ function QuestTogether:GetQuestObjectiveTooltipLines(unitToken, unitGuid, startI
 				tooltipLines = source.lines
 			end
 		end
-		if type(tooltipLines) == "table" and #tooltipLines > 0 then
+		if type(tooltipLines) == "table" and (#tooltipLines > 0 or tooltipLines.hasIncompleteQuestData) then
 			return tooltipLines, source.name, index
 		end
 	end
@@ -2504,18 +2563,18 @@ end
 
 function QuestTogether:GetNameplateScanTooltipLineCount(scanTooltip)
 	if not scanTooltip or IsFrameForbidden(scanTooltip) or not scanTooltip.NumLines then
-		return 0
+		return nil
 	end
 
 	local ok, lineCount = pcall(scanTooltip.NumLines, scanTooltip)
 	if not ok or self:IsSecretValue(lineCount) then
-		return 0
+		return nil
 	end
 
-	return SafeUiNumber(lineCount, 0) or 0
+	return SafeUiNumber(lineCount, nil)
 end
 
-function QuestTogether:GetNameplateScanTooltipLeftText(scanTooltip, lineIndex)
+function QuestTogether:GetNameplateScanTooltipFontString(scanTooltip, lineIndex)
 	if not scanTooltip or IsFrameForbidden(scanTooltip) or type(lineIndex) ~= "number" then
 		return nil
 	end
@@ -2531,13 +2590,17 @@ function QuestTogether:GetNameplateScanTooltipLeftText(scanTooltip, lineIndex)
 		return nil
 	end
 
-	local fontString = _G and _G[tooltipName .. "TextLeft" .. tostring(lineIndex)] or nil
-	if not fontString or IsFrameForbidden(fontString) or self:IsSecretValue(fontString) or not fontString.GetText then
+	return _G and _G[tooltipName .. "TextLeft" .. tostring(lineIndex)] or nil
+end
+
+function QuestTogether:GetNameplateScanTooltipLeftText(scanTooltip, lineIndex)
+	local fontString = self:GetNameplateScanTooltipFontString(scanTooltip, lineIndex)
+	if not self:CanAccessValue(fontString) or not fontString or IsFrameForbidden(fontString) or not fontString.GetText then
 		return nil
 	end
 
 	local ok, textValue = pcall(fontString.GetText, fontString)
-	if not ok or self:IsSecretValue(textValue) or type(textValue) ~= "string" then
+	if not ok or not self:CanAccessValue(textValue) or type(textValue) ~= "string" then
 		return nil
 	end
 
@@ -2584,13 +2647,20 @@ function QuestTogether:ReadNameplateScanTooltipLines(scanTooltip, unitToken, uni
 
 	local tooltipLines = {}
 	local lineCount = self:GetNameplateScanTooltipLineCount(scanTooltip)
-	for lineIndex = 1, lineCount do
-		local leftText = SafeTrimText(self:GetNameplateScanTooltipLeftText(scanTooltip, lineIndex))
-		if leftText ~= "" then
-			tooltipLines[#tooltipLines + 1] = {
-				type = nil,
-				leftText = leftText,
-			}
+	if lineCount == nil then
+		tooltipLines.hasIncompleteQuestData = true
+	else
+		for lineIndex = 1, lineCount do
+			local rawText = self:GetNameplateScanTooltipLeftText(scanTooltip, lineIndex)
+			if not self:CanAccessValue(rawText) or type(rawText) ~= "string" then
+				tooltipLines.hasIncompleteQuestData = true
+				AddTooltipQuestBoundary(tooltipLines)
+			else
+				local leftText = SafeTrimText(rawText)
+				if leftText ~= "" then
+					tooltipLines[#tooltipLines + 1] = { leftText = leftText }
+				end
+			end
 		end
 	end
 
@@ -2639,28 +2709,30 @@ function QuestTogether:TryEvaluateQuestObjectiveViaTooltip(unitToken, unitFrame,
 
 	local resolvedAnyTooltipLines = false
 	local hasCompletedObjective = false
+	local canConfirmCompletion = true
 	local nextSourceIndex = 1
 	while true do
 		local tooltipLines, _sourceName, resolvedSourceIndex =
 			self:GetQuestObjectiveTooltipLines(unitToken, unitGuid, nextSourceIndex)
-		if type(tooltipLines) ~= "table" or #tooltipLines == 0 then
+		if type(tooltipLines) ~= "table" or (#tooltipLines == 0 and not tooltipLines.hasIncompleteQuestData) then
 			break
 		end
 
 		resolvedAnyTooltipLines = true
-		local isQuestObjective, allObjectivesComplete = self:EvaluateTooltipQuestObjectiveLines(tooltipLines)
+		local isQuestObjective, allObjectivesComplete, hasCompleteData = self:EvaluateTooltipQuestObjectiveLines(tooltipLines)
 		if isQuestObjective then
 			self:RememberNameplateNpcCompletion(unitGuid, false)
 			return true, true, unitGuid
 		end
 		hasCompletedObjective = hasCompletedObjective or allObjectivesComplete == true
+		canConfirmCompletion = canConfirmCompletion and hasCompleteData ~= false
 		if type(resolvedSourceIndex) ~= "number" then
 			break
 		end
 		nextSourceIndex = resolvedSourceIndex + 1
 	end
 
-	if not resolvedAnyTooltipLines then
+	if not resolvedAnyTooltipLines or not canConfirmCompletion then
 		return false, false, unitGuid
 	end
 	if hasCompletedObjective then
@@ -2890,6 +2962,7 @@ function QuestTogether:ApplyResolvedQuestStateToNameplate(
 			return
 		end
 		if CanMutateFrame(icon) then
+			self:CancelNameplateVisualCleanup(icon)
 			icon:Show()
 		end
 	elseif icon then
@@ -3102,6 +3175,17 @@ function QuestTogether:ApplyNameplateQuestIconStyle(iconFrame, unitFrame)
 	end
 end
 
+function QuestTogether:CreateNameplateQuestIconFrame(unitFrame)
+	if not CanMutateFrame(unitFrame) then
+		return nil
+	end
+	local ok, iconFrame = pcall(CreateFrame, "Frame", nil, unitFrame)
+	if not ok or not CanMutateFrame(iconFrame) then
+		return nil
+	end
+	return iconFrame
+end
+
 EnsureQuestIcon = function(unitFrame)
 	if not unitFrame then
 		return nil
@@ -3116,7 +3200,10 @@ EnsureQuestIcon = function(unitFrame)
 		return existingIcon
 	end
 
-	local iconFrame = CreateFrame("Frame", nil, unitFrame)
+	local iconFrame = QuestTogether:CreateNameplateQuestIconFrame(unitFrame)
+	if not iconFrame or not CanMutateFrame(iconFrame) then
+		return nil
+	end
 	iconFrame:SetFrameStrata(CallAccessibleFrameMethod(unitFrame, "GetFrameStrata") or "LOW")
 	iconFrame:SetFrameLevel(SafeUiNumber(CallAccessibleFrameMethod(unitFrame, "GetFrameLevel"), 0) + 30)
 
@@ -3341,6 +3428,21 @@ local function EnsureAnnouncementBubble(hostFrame)
 
 	local existingBubble = QuestTogether.nameplateBubbleByUnitFrame[unitFrame]
 	if existingBubble then
+		if not CanMutateFrame(existingBubble) then
+			return nil
+		end
+		-- Blizzard pools UnitFrames independently from the base nameplates.
+		-- Our cache follows the UnitFrame; our bubble must follow its new host.
+		if CallAccessibleFrameMethod(existingBubble, "GetParent") ~= hostFrame then
+			local setParent = select(1, QuestTogether:GetAccessibleFrameMember(existingBubble, "SetParent"))
+			if type(setParent) ~= "function" then
+				return nil
+			end
+			local ok = pcall(setParent, existingBubble, hostFrame)
+			if not ok or not CanMutateFrame(existingBubble) then
+				return nil
+			end
+		end
 		ApplyAnnouncementBubbleLayering(hostFrame, unitFrame, existingBubble)
 		return existingBubble
 	end
@@ -3349,7 +3451,7 @@ local function EnsureAnnouncementBubble(hostFrame)
 	if not bubble or not bubble.String then
 		return nil
 	end
-	if not CanMutateFrame(bubble) then
+	if not CanMutateFrame(bubble) or not CanMutateFrame(bubble.String) then
 		return nil
 	end
 
@@ -3536,7 +3638,7 @@ function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, tex
 		self:Debug("Failed to create or resolve bubble frame", "bubble")
 		return false
 	end
-	if IsFrameForbidden(bubble) or IsFrameForbidden(bubble.String) then
+	if not CanMutateFrame(bubble) or not CanMutateFrame(bubble.String) then
 		return false
 	end
 
@@ -3651,6 +3753,7 @@ function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, tex
 		senderName = not isPersonalBubble and self:NormalizeMemberName(senderName) or nil,
 	})
 	bubble:SetAlpha(0)
+	self:CancelNameplateVisualCleanup(bubble)
 	bubble:Show()
 	if bubble.Tail then
 		bubble.Tail:Show()
@@ -3754,11 +3857,13 @@ function QuestTogether:ApplyQuestTintToNameplate(unitFrame)
 			overlay.FillTexture:SetVertexColor(color.r, color.g, color.b, 1)
 		end
 		if CanMutateFrame(overlay.FillTexture) then
+			self:CancelNameplateVisualCleanup(overlay.FillTexture)
 			overlay.FillTexture:Show()
 		end
 	end
 	if overlay.Highlight and CanMutateFrame(overlay.Highlight) then
 		overlay.Highlight:SetColorTexture(highlightRed, highlightGreen, highlightBlue, 0.14)
+		self:CancelNameplateVisualCleanup(overlay.Highlight)
 		overlay.Highlight:Show()
 	end
 
@@ -4151,6 +4256,21 @@ function QuestTogether:RefreshNameplatesForQuestStateChange(_reason)
 	return true
 end
 
+function QuestTogether:InvalidateNameplateQuestState(reason)
+	-- These are addon-owned caches. Retire stale positives immediately, even
+	-- when rebuilding the quest log must wait for a restricted context to end.
+	self:ClearNameplateQuestDetectionCache()
+	self:ClearNameplateResolvedQuestState()
+	self:ScheduleDeferredWork("nameplate_quest_refresh", "quest_relevance", function()
+		-- This work class permits readable structured unit tooltips in ordinary
+		-- combat. Map/encounter/PvP restrictions and per-frame guards still apply.
+		-- Health events may have repopulated the cache before new quest tooltip
+		-- lines arrived, so the delayed pass must discard that interim evidence.
+		self:ClearNameplateQuestDetectionCache()
+		self:RefreshVisibleNameplates(reason)
+	end, PLATER_QUEST_STATE_REFRESH_DELAY_SECONDS, reason)
+end
+
 function QuestTogether:ScheduleDeferredNameplateQuestStateRefresh(reason, delaySeconds)
 	self:SetRuntimeFlag("pendingDeferredNameplateQuestStateRefresh", true)
 	if self.ScheduleQuestStateRefreshWork then
@@ -4160,6 +4280,20 @@ function QuestTogether:ScheduleDeferredNameplateQuestStateRefresh(reason, delayS
 
 	self:SetRuntimeFlag("pendingDeferredNameplateQuestStateRefresh", false)
 	self:RefreshNameplatesForQuestStateChange(reason)
+end
+
+function QuestTogether:ScheduleNameplateContextRefresh(reason, delaySeconds)
+	if self:GetRuntimeFlag("nameplateQuestTextCacheSuppressed", false)
+		and not self:IsNameplateAugmentationBlockedInCurrentContext() then
+		-- Instance policy discarded the known quest text. Presentation alone
+		-- cannot recover it, even with readable outdoor tooltips. Reuse the
+		-- guarded snapshot work and coalesce world/zone events until it runs.
+		if not self:GetRuntimeFlag("pendingDeferredNameplateQuestStateRefresh", false) then
+			self:ScheduleDeferredNameplateQuestStateRefresh(reason, delaySeconds)
+		end
+		return
+	end
+	self:ScheduleNameplatePresentationRefresh(reason, delaySeconds)
 end
 
 function QuestTogether:SchedulePlaterStartupNameplateRefreshes()
@@ -4307,7 +4441,7 @@ end
 
 function QuestTogether:HandleNameplateEvent(eventName, ...)
 	if self.pendingNameplateVisualCleanup then
-		self.pendingNameplateVisualCleanup = not self:HideAllNameplateVisuals()
+		self:RetryPendingNameplateVisualCleanup()
 		if not self.isEnabled then
 			if not self.pendingNameplateVisualCleanup and self.nameplateEventFrame then
 				self.nameplateEventFrame:UnregisterAllEvents()
@@ -4334,13 +4468,13 @@ function QuestTogether:HandleNameplateEvent(eventName, ...)
 	elseif eventName == "UPDATE_MOUSEOVER_UNIT" then
 		self:RefreshNameplateForUnitAlias("mouseover")
 	elseif eventName == "PLAYER_ENTERING_WORLD" then
-		self:ScheduleNameplatePresentationRefresh("PLAYER_ENTERING_WORLD", 1)
+		self:ScheduleNameplateContextRefresh("PLAYER_ENTERING_WORLD", 1)
 	elseif
 			eventName == "ZONE_CHANGED_NEW_AREA"
 			or eventName == "ZONE_CHANGED_INDOORS"
 			or eventName == "ZONE_CHANGED"
 	then
-		self:ScheduleNameplatePresentationRefresh(eventName, 0)
+		self:ScheduleNameplateContextRefresh(eventName, 0)
 	elseif eventName == "PLAYER_REGEN_DISABLED" or eventName == "PLAYER_REGEN_ENABLED" then
 		if eventName == "PLAYER_REGEN_ENABLED" then
 			self:TryInstallPersonalBubbleEditModeHooks()
@@ -4358,6 +4492,7 @@ function QuestTogether:HandleNameplateEvent(eventName, ...)
 			or eventName == "QUEST_FINISHED"
 			or eventName == "QUEST_GREETING"
 	then
+		self:InvalidateNameplateQuestState(eventName)
 		self:ScheduleQuestStateRefreshWork(eventName, PLATER_QUEST_STATE_REFRESH_DELAY_SECONDS)
 	elseif eventName == "DISPLAY_SIZE_CHANGED" then
 		self:ScheduleFullNameplateRefresh(0.05)
@@ -4389,11 +4524,13 @@ function QuestTogether:HandleNameplateEvent(eventName, ...)
 			end
 		end
 	elseif eventName == "UNIT_QUEST_LOG_CHANGED" then
+		self:InvalidateNameplateQuestState(eventName)
 		self:ScheduleQuestStateRefreshWork(eventName, PLATER_QUEST_STATE_REFRESH_DELAY_SECONDS)
 	end
 end
 
 function QuestTogether:EnableNameplateAugmentation()
+	self:SetRuntimeFlag("nameplateQuestTextCacheSuppressed", false)
 	if not self.nameplateEventFrame then
 		self.nameplateEventFrame = CreateFrame("Frame")
 		self.nameplateRegisteredEvents = self.nameplateRegisteredEvents or {}
@@ -4456,33 +4593,49 @@ function QuestTogether:EnableNameplateAugmentation()
 	self:SchedulePlaterStartupNameplateRefreshes()
 end
 
+function QuestTogether:CancelNameplateVisualCleanup(visual)
+	local state = self.runtimeStateStore and self.runtimeStateStore.nameplate
+	local pending = state and state.pendingVisualCleanupByFrame
+	if pending then
+		-- This handle now presents a new live state. A previous disabled
+		-- lifetime must never hide it after its protection/forbidden state clears.
+		pending[visual] = nil
+		self.pendingNameplateVisualCleanup = next(pending) ~= nil
+	end
+end
+
+function QuestTogether:RetryPendingNameplateVisualCleanup()
+	local pending = self:GetNameplateStateStore().pendingVisualCleanupByFrame
+	for visual, kind in pairs(pending or {}) do
+		local hidden = false
+		if kind == "bubble" then
+			hidden = self:StopAndHideAnnouncementBubblePlayback(visual, "disable")
+		elseif CanMutateFrame(visual) then
+			visual:Hide()
+			hidden = true
+		end
+		if hidden then pending[visual] = nil end
+	end
+	self.pendingNameplateVisualCleanup = pending ~= nil and next(pending) ~= nil
+	return not self.pendingNameplateVisualCleanup
+end
+
 function QuestTogether:HideAllNameplateVisuals()
-	local complete = true
-	for _, bubble in pairs(self.nameplateBubbleByUnitFrame) do
-		if not self:StopAndHideAnnouncementBubblePlayback(bubble, "disable") then
-			complete = false
-		end
-	end
-	for _, icon in pairs(self.nameplateIconByUnitFrame) do
-		if CanMutateFrame(icon) then
-			icon:Hide()
-		else
-			complete = false
-		end
-	end
+	local state = self:GetNameplateStateStore()
+	state.pendingVisualCleanupByFrame = state.pendingVisualCleanupByFrame or {}
+	local pending = state.pendingVisualCleanupByFrame
+	-- Capture the disabled lifetime once. Subsequent events retry only failed
+	-- handles, so one quarantined frame cannot hide unrelated current visuals.
+	for _, bubble in pairs(self.nameplateBubbleByUnitFrame) do pending[bubble] = "bubble" end
+	for _, icon in pairs(self.nameplateIconByUnitFrame) do pending[icon] = "icon" end
 	for _, overlay in pairs(self.nameplateHealthOverlayByUnitFrame) do
-		for _, texture in pairs(overlay) do
-			if CanMutateFrame(texture) then
-				texture:Hide()
-			else
-				complete = false
-			end
-		end
+		for _, texture in pairs(overlay) do pending[texture] = "texture" end
 	end
-	return complete
+	return self:RetryPendingNameplateVisualCleanup()
 end
 
 function QuestTogether:DisableNameplateAugmentation()
+	self:SetRuntimeFlag("nameplateQuestTextCacheSuppressed", false)
 	self.pendingNameplateVisualCleanup = not self:HideAllNameplateVisuals()
 	if self.pendingNameplateVisualCleanup then
 		self:Debug("visual_cleanup deferred until restrictions end", "nameplate")

@@ -26,7 +26,14 @@ local QUEST_COMPARE_DONE_COMMAND = "QCDN"
 local ANNOUNCEMENT_MAX_TEXT_LENGTH = 220
 local ADDON_MESSAGE_MAX_BYTES = 255
 local PING_REQUEST_TIMEOUT_SECONDS = 10
-local QUEST_COMPARE_TIMEOUT_SECONDS = 10
+local QUEST_COMPARE_TIMEOUT_SECONDS = 180
+local QUEST_COMPARE_SEND_INTERVAL_SECONDS = 0.1
+local QUEST_COMPARE_RETRY_INTERVAL_SECONDS = 1
+local QUEST_COMPARE_RESPONSE_LIFETIME_SECONDS = 150
+local QUEST_COMPARE_MAX_SEND_ATTEMPTS = 5
+local QUEST_COMPARE_MAX_QUEUED_RESPONSES = 4
+local QUEST_COMPARE_MAX_QUEUED_PACKETS = 128
+local QUEST_COMPARE_MAX_ENTRIES = 100
 local ANNOUNCEMENT_CHANNEL_FILTER_EVENTS = {
 	"CHAT_MSG_CHANNEL",
 	"CHAT_MSG_CHANNEL_NOTICE",
@@ -38,7 +45,17 @@ local GROUP_ANNOUNCEMENT_DISTRIBUTIONS = {
 	INSTANCE_CHAT = true,
 }
 local COMM_DUPLICATE_WINDOW_SECONDS = 0.75
+local COMM_REQUEST_DUPLICATE_WINDOW_SECONDS = 10
 local COMM_DUPLICATE_PRUNE_THRESHOLD = 200
+-- Receiving an addon message grants no authority to choose an arbitrary local
+-- emote. Keep the approved celebration set private, independent of the mutable
+-- local selection list; special celebrations are checked against local state.
+local REMOTE_CELEBRATION_EMOTES = {
+	applaud = true, bow = true, cheer = true, clap = true, commend = true,
+	congratulate = true, curtsey = true, dance = true, golfclap = true, happy = true,
+	highfive = true, huzzah = true, impressed = true, praise = true, proud = true,
+	roar = true, sexy = true, smirk = true, strut = true, victory = true,
+}
 local raw_issecretvalue = type(issecretvalue) == "function" and issecretvalue or nil
 
 local function IsSecretValue(value)
@@ -210,8 +227,18 @@ local function TruncateUtf8(text, maxBytes)
 	return string.sub(text, 1, nextIndex - 1)
 end
 
-local function FitPayloadText(addon, fields, textIndex, command)
+local function FitPayloadText(addon, fields, textIndex, command, optionalGroups)
 	local originalText = addon:UnescapePayload(fields[textIndex])
+	-- Retain a useful amount of text before spending the packet on optional
+	-- decoration/location metadata. Identity and quest IDs are never shortened.
+	if optionalGroups then
+		fields[textIndex] = addon:EscapePayload(TruncateUtf8(originalText, 64))
+		for _, group in ipairs(optionalGroups) do
+			if #table.concat(fields, ",") + #command + 1 <= ADDON_MESSAGE_MAX_BYTES then break end
+			for _, index in ipairs(group) do fields[index] = "" end
+		end
+		fields[textIndex] = addon:EscapePayload(originalText)
+	end
 	local payload = table.concat(fields, ",")
 	while #payload + #command + 1 > ADDON_MESSAGE_MAX_BYTES and originalText ~= "" do
 		originalText = TruncateUtf8(originalText, #originalText - 1)
@@ -223,7 +250,9 @@ end
 
 function QuestTogether:EscapePayload(value)
 	local text = SafePrimitiveString(self, value, "")
-	local ok, escaped = pcall(string.gsub, text, "([^%w%-_%.~])", function(character)
+	-- UTF-8 and spaces are legal addon-message bytes, and old receivers already
+	-- accept them. Escape only framing/escape bytes and control characters.
+	local ok, escaped = pcall(string.gsub, text, "([%%,|%z\1-\31\127])", function(character)
 		local okByte, byteValue = pcall(string.byte, character)
 		if not okByte or not byteValue then
 			return ""
@@ -338,6 +367,10 @@ function QuestTogether:SanitizeAnnouncementEventData(eventData)
 	local normalizedQuestId = self.NormalizeQuestID and self:NormalizeQuestID(eventData.questId) or nil
 	local numericCoordX = self.SafeToNumber and self:SafeToNumber(eventData.coordX) or nil
 	local numericCoordY = self.SafeToNumber and self:SafeToNumber(eventData.coordY) or nil
+	local numericMapID = SafeNumber(self, eventData.mapID)
+	if numericMapID and (numericMapID <= 0 or numericMapID ~= math.floor(numericMapID)) then
+		numericMapID = nil
+	end
 	local normalizedWarMode = nil
 	if self.NormalizeAnnouncementWarModeValue then
 		normalizedWarMode = self:NormalizeAnnouncementWarModeValue(eventData.warMode)
@@ -358,6 +391,7 @@ function QuestTogether:SanitizeAnnouncementEventData(eventData)
 		coordY = numericCoordY and string.format("%.1f", numericCoordY) or "",
 		warMode = normalizedWarMode == nil and "" or (normalizedWarMode and "1" or "0"),
 		emoteToken = sanitizedExtraData.emoteToken or "",
+		mapID = numericMapID and SafePrimitiveString(self, numericMapID, "") or "",
 	}
 end
 
@@ -414,6 +448,12 @@ function QuestTogether:EncodePingResponsePayload(responseData)
 		self:EscapePayload(responseData.addonVersion or ""),
 	}
 
+	-- All descriptive fields are optional to old receivers. Drop whole labels,
+	-- not fragments of a player's name or a localized place/race/class name.
+	for _, group in ipairs({ { 5, 7 }, { 4 }, { 9 }, { 14 }, { 10, 11, 12, 13 }, { 6, 8 } }) do
+		if #table.concat(fields, ",") + #PING_RESPONSE_COMMAND + 1 <= ADDON_MESSAGE_MAX_BYTES then break end
+		for _, index in ipairs(group) do fields[index] = "" end
+	end
 	return table.concat(fields, ",")
 end
 
@@ -503,6 +543,12 @@ function QuestTogether:DecodeQuestCompareRequestPayload(payload)
 end
 
 function QuestTogether:EncodeQuestCompareEntryPayload(entryData)
+	-- Empty means unavailable. Keep the existing 1/0 representation for known
+	-- values so both historical entry layouts remain readable.
+	local pushable = ""
+	if self:CanAccessValue(entryData.isPushable) and type(entryData.isPushable) == "boolean" then
+		pushable = entryData.isPushable and "1" or "0"
+	end
 	local fields = {
 		SafeAddonString(self, QUEST_COMPARE_ENTRY_VERSION),
 		self:EscapePayload(entryData.requestId or ""),
@@ -511,7 +557,7 @@ function QuestTogether:EncodeQuestCompareEntryPayload(entryData)
 		self:EscapePayload(entryData.questId or ""),
 		self:EscapePayload(entryData.questTitle or ""),
 		self:EscapePayload(entryData.isComplete and "1" or "0"),
-		self:EscapePayload(entryData.isPushable and "1" or "0"),
+		pushable,
 	}
 
 	return FitPayloadText(self, fields, 6, QUEST_COMPARE_ENTRY_COMMAND)
@@ -535,19 +581,25 @@ function QuestTogether:DecodeQuestCompareEntryPayload(payload)
 	local questId = ""
 	local questTitle = ""
 	local isComplete = false
-	local isPushable = false
+	local pushableToken
 
 	if fields[8] ~= nil then
 		classFile = self:UnescapePayload(fields[4] or "")
 		questId = self:UnescapePayload(fields[5] or "")
 		questTitle = self:UnescapePayload(fields[6] or "")
 		isComplete = self:UnescapePayload(fields[7] or "") == "1"
-		isPushable = self:UnescapePayload(fields[8] or "") == "1"
+		pushableToken = self:UnescapePayload(fields[8] or "")
 	else
 		questId = self:UnescapePayload(fields[4] or "")
 		questTitle = self:UnescapePayload(fields[5] or "")
 		isComplete = self:UnescapePayload(fields[6] or "") == "1"
-		isPushable = self:UnescapePayload(fields[7] or "") == "1"
+		pushableToken = self:UnescapePayload(fields[7] or "")
+	end
+	local isPushable
+	if pushableToken == "1" then
+		isPushable = true
+	elseif pushableToken == "0" then
+		isPushable = false
 	end
 	if requestId == "" or senderName == "" or questId == "" then
 		return nil
@@ -632,9 +684,14 @@ function QuestTogether:EncodeAnnouncementPayload(eventData)
 		self:EscapePayload(eventData.coordY or ""),
 		self:EscapePayload(eventData.warMode or ""),
 		self:EscapePayload(eventData.emoteToken or ""),
+		-- Append optional fields: v1-v3 receivers continue reading their original
+		-- slots, and new receivers can still use zone labels from older packets.
+		self:EscapePayload(eventData.mapID or ""),
 	}
 
-	return FitPayloadText(self, fields, 6, ANNOUNCEMENT_COMMAND)
+	-- Numeric location is useful even when a long localized display label cannot
+	-- fit. Keep the coordinate system, coordinates and war mode together.
+	return FitPayloadText(self, fields, 6, ANNOUNCEMENT_COMMAND, { { 8, 9 }, { 10 }, { 3 }, { 4 }, { 11, 12, 13, 15 } })
 end
 
 function QuestTogether:DecodeAnnouncementPayload(payload)
@@ -662,6 +719,7 @@ function QuestTogether:DecodeAnnouncementPayload(payload)
 	local coordY = self:UnescapePayload(fields[12] or "")
 	local warMode = self:UnescapePayload(fields[13] or "")
 	local emoteToken = self:UnescapePayload(fields[14] or "")
+	local mapID = self:UnescapePayload(fields[15] or "")
 
 	if eventType == "" or senderName == "" or text == "" then
 		return nil
@@ -682,6 +740,7 @@ function QuestTogether:DecodeAnnouncementPayload(payload)
 		coordY = coordY,
 		warMode = warMode,
 		emoteToken = emoteToken,
+		mapID = mapID,
 	})
 end
 
@@ -759,7 +818,7 @@ function QuestTogether:RecordCommsDiagnostic(kind, detail)
 	end
 end
 
-function QuestTogether:SendWireMessageToAnnouncementRoutes(wireMessage, debugContext)
+function QuestTogether:SendWireMessageToAnnouncementRoutes(wireMessage, debugContext, selectedRoutes)
 	wireMessage = SafePrimitiveString(self, wireMessage, "")
 	if wireMessage == "" or not self.isEnabled then
 		return false
@@ -776,7 +835,7 @@ function QuestTogether:SendWireMessageToAnnouncementRoutes(wireMessage, debugCon
 		)
 		return false
 	end
-	local routes = self:GetAnnouncementWireRoutes()
+	local routes = selectedRoutes or self:GetAnnouncementWireRoutes()
 	local sentCount = 0
 
 	for _, route in ipairs(routes) do
@@ -824,7 +883,7 @@ function QuestTogether:ShouldSuppressDuplicateCommMessage(sender, message, dupli
 	end
 	if signatureCount > COMM_DUPLICATE_PRUNE_THRESHOLD then
 		for signature, seenAt in pairs(signatures) do
-			if (nowSeconds - (seenAt or 0)) > QUEST_COMPARE_TIMEOUT_SECONDS then
+			if (nowSeconds - (seenAt or 0)) > COMM_REQUEST_DUPLICATE_WINDOW_SECONDS then
 				signatures[signature] = nil
 			end
 		end
@@ -969,6 +1028,9 @@ function QuestTogether:ResetCommsState()
 	self.pendingPingRequests = {}
 	self.pendingQuestCompareRequests = {}
 	self.recentCommMessageSignatures = {}
+	-- Pending timer closures retain the old state only; they cannot send after
+	-- disable/re-enable or remove work from a replacement queue.
+	self.questCompareResponseQueue = nil
 end
 
 function QuestTogether:GetPlayerPingMetadata()
@@ -1060,6 +1122,7 @@ function QuestTogether:BuildLocalAnnouncementEvent(eventType, text, questId, ext
 		coordY = numericCoordY and string.format("%.1f", numericCoordY) or "",
 		warMode = locationInfo and SafeAddonString(self, locationInfo.warMode and "1" or "0", "") or "",
 		emoteToken = sanitizedExtraData.emoteToken or "",
+		mapID = locationInfo and locationInfo.mapID or nil,
 	})
 end
 
@@ -1115,26 +1178,51 @@ function QuestTogether:BuildPingResponse(requestId)
 end
 
 function QuestTogether:BuildQuestCompareEntries()
+	if self.IsWorkBlocked and self:IsWorkBlocked("quest_snapshot_refresh") then return nil, "restricted" end
 	local entries = {}
 	local numQuestLogEntries = SafeNumber(self, self.API.GetNumQuestLogEntries and self.API.GetNumQuestLogEntries())
-		or 0
+	if not numQuestLogEntries or numQuestLogEntries < 0 or numQuestLogEntries ~= math.floor(numQuestLogEntries) then return nil end
+	-- Bound reads as well as retained packets. Headers count as rows, so leave
+	-- ample room above the maximum number of shareable quest entries.
+	if numQuestLogEntries > QUEST_COMPARE_MAX_ENTRIES * 5 then return nil, "limit" end
+	local seenQuestIds = {}
 
 	for questLogIndex = 1, numQuestLogEntries do
 		local questInfo = self.API.GetQuestLogInfo and self.API.GetQuestLogInfo(questLogIndex)
-		if questInfo and not questInfo.isHeader and not questInfo.isHidden and questInfo.questID then
+		if type(questInfo) ~= "table" or not self:CanAccessTable(questInfo) then return nil end
+		if not self:CanAccessValue(questInfo.isHeader) or not self:CanAccessValue(questInfo.isHidden) then return nil end
+		local questId = self:NormalizeQuestID(questInfo.questID)
+		if not questInfo.isHeader and not questId then return nil end
+		if not questInfo.isHeader and not questInfo.isHidden then
+			local questTitle = self:SafeTrimString(questInfo.title, "")
+			if questTitle == "" then return nil end
+			-- Duplicate IDs can indicate rows shifted during the scan. A receiver
+			-- deduplicates IDs, so advertising duplicates would never complete.
+			if seenQuestIds[questId] then return nil end
+			seenQuestIds[questId] = true
+			if #entries >= QUEST_COMPARE_MAX_ENTRIES then return nil, "limit" end
+			local shareableLabel = self:GetQuestShareableStatusLabel(questId)
+			local isPushable
+			if shareableLabel == "Yes" then
+				isPushable = true
+			elseif shareableLabel == "No" then
+				isPushable = false
+			end
 			entries[#entries + 1] = {
-				questId = SafeAddonString(self, questInfo.questID, ""),
-				questTitle = self:GetQuestTitle(questInfo.questID, questInfo),
-				isComplete = questInfo.isComplete and true or false,
-				isPushable = self:GetQuestShareableStatusLabel(questInfo.questID) == "Yes",
+				questId = SafeAddonString(self, questId, ""),
+				questTitle = questTitle,
+				isComplete = self:CanAccessValue(questInfo.isComplete) and questInfo.isComplete == true or false,
+				isPushable = isPushable,
 			}
 		end
 	end
+	local finalCount = SafeNumber(self, self.API.GetNumQuestLogEntries and self.API.GetNumQuestLogEntries())
+	if finalCount ~= numQuestLogEntries then return nil end
 
 	return entries
 end
 
-function QuestTogether:SendQuestCompareEntry(requestId, entryData)
+function QuestTogether:SendQuestCompareEntry(requestId, entryData, selectedRoutes)
 	if type(requestId) ~= "string" or requestId == "" or type(entryData) ~= "table" then
 		return false
 	end
@@ -1148,16 +1236,17 @@ function QuestTogether:SendQuestCompareEntry(requestId, entryData)
 			questId = entryData.questId or "",
 			questTitle = entryData.questTitle or "",
 			isComplete = entryData.isComplete and true or false,
-			isPushable = entryData.isPushable and true or false,
+			isPushable = entryData.isPushable,
 		})
 	)
 	return self:SendWireMessageToAnnouncementRoutes(
 		wireMessage,
-		"quest compare entry requestId=" .. SafeAddonString(self, requestId, "")
+		"quest compare entry requestId=" .. SafeAddonString(self, requestId, ""),
+		selectedRoutes
 	)
 end
 
-function QuestTogether:SendQuestCompareDone(requestId, count)
+function QuestTogether:SendQuestCompareDone(requestId, count, selectedRoutes)
 	if type(requestId) ~= "string" or requestId == "" then
 		return false
 	end
@@ -1173,12 +1262,102 @@ function QuestTogether:SendQuestCompareDone(requestId, count)
 	)
 	return self:SendWireMessageToAnnouncementRoutes(
 		wireMessage,
-		"quest compare done requestId=" .. SafeAddonString(self, requestId, "")
+		"quest compare done requestId=" .. SafeAddonString(self, requestId, ""),
+		selectedRoutes
 	)
 end
 
+function QuestTogether:DrainQuestCompareResponses()
+	local queue = self.questCompareResponseQueue
+	if not self.isEnabled or not queue or queue.scheduled then return end
+	local job = queue.jobs[1]
+	if not job then return end
+	local now = self.API.GetTime()
+	local finished = false
+	local attemptedSend = false
+	local nextDelay = QUEST_COMPARE_SEND_INTERVAL_SECONDS
+	local distribution = job.routes[1].distribution
+	if GROUP_ANNOUNCEMENT_DISTRIBUTIONS[distribution] and job.requesterName and not self:IsGroupedSender(job.requesterName) then
+		-- A delayed reply belongs to the requesting group member. Do not send it
+		-- into a replacement group after that player leaves.
+		finished = true
+		self:RecordCommsDiagnostic("failedComparisons", "requester left group requestId=" .. job.requestId)
+	elseif now >= job.expiresAt then
+		finished = true
+		self:RecordCommsDiagnostic("failedComparisons", "response expired requestId=" .. job.requestId)
+	else
+		if GROUP_ANNOUNCEMENT_DISTRIBUTIONS[distribution] and job.requesterName then
+			-- Group promotion or instance entry can change the valid transport
+			-- while the same requester is still present in the current roster.
+			job.routes[1].distribution = self:GetGroupAnnouncementDistribution() or distribution
+		end
+		if not job.entries then
+			nextDelay = QUEST_COMPARE_RETRY_INTERVAL_SECONDS
+			if now >= job.snapshotRetryAt then
+				local entries, reason = self:BuildQuestCompareEntries()
+				-- Combat/map/encounter deferrals have not attempted a quest read.
+				-- Keep the job until its deadline without spending read retries.
+				if reason ~= "restricted" then job.snapshotAttempts = job.snapshotAttempts + 1 end
+				job.snapshotRetryAt = now + QUEST_COMPARE_RETRY_INTERVAL_SECONDS
+				if reason == "limit" or (entries and (#entries > QUEST_COMPARE_MAX_ENTRIES or queue.packets + #entries > QUEST_COMPARE_MAX_QUEUED_PACKETS)) then
+					finished = true
+					self:RecordCommsDiagnostic("failedComparisons", "response snapshot exceeds queue limits requestId=" .. job.requestId)
+				elseif entries then
+					job.entries = entries
+					queue.packets = queue.packets + #entries
+					job.remaining = #entries + 1
+					nextDelay = QUEST_COMPARE_SEND_INTERVAL_SECONDS
+				elseif job.snapshotAttempts >= QUEST_COMPARE_MAX_SEND_ATTEMPTS then
+					finished = true
+					self:RecordCommsDiagnostic("failedComparisons", "response snapshot unavailable requestId=" .. job.requestId)
+				end
+			end
+		end
+		if job.entries and not finished then
+			attemptedSend = true
+			local entry = job.entries[job.nextEntry]
+			local sent
+			if entry then
+				sent = self:SendQuestCompareEntry(job.requestId, entry, job.routes)
+			else
+				-- Advertise the full count only after every entry has been accepted by
+				-- the transport on the requester's route. Never certify a partial log.
+				sent = self:SendQuestCompareDone(job.requestId, #job.entries, job.routes)
+			end
+			if sent then
+				queue.packets = queue.packets - 1
+				job.remaining = job.remaining - 1
+				job.attempts = 0
+				job.nextEntry = job.nextEntry + 1
+				finished = entry == nil
+			else
+				job.attempts = job.attempts + 1
+				nextDelay = QUEST_COMPARE_RETRY_INTERVAL_SECONDS
+				if job.attempts >= QUEST_COMPARE_MAX_SEND_ATTEMPTS then
+					finished = true
+					self:RecordCommsDiagnostic("failedComparisons", "response retries exhausted requestId=" .. job.requestId)
+				end
+			end
+		end
+	end
+	if finished then
+		queue.packets = queue.packets - job.remaining
+		table.remove(queue.jobs, 1)
+	end
+	-- Keep the cooldown even after an empty/small response finishes, so a new
+	-- request arriving in the same frame cannot start another unpaced burst.
+	if #queue.jobs > 0 or attemptedSend then
+		queue.scheduled = true
+		self.API.Delay(nextDelay, function()
+			if self.questCompareResponseQueue ~= queue or not self.isEnabled then return end
+			queue.scheduled = false
+			self:DrainQuestCompareResponses()
+		end)
+	end
+end
+
 function QuestTogether:HandleQuestCompareRequest(requestData)
-	if type(requestData) ~= "table" or type(requestData.requestId) ~= "string" or requestData.requestId == "" then
+	if not self.isEnabled or type(requestData) ~= "table" or type(requestData.requestId) ~= "string" or requestData.requestId == "" then
 		return false
 	end
 
@@ -1189,11 +1368,41 @@ function QuestTogether:HandleQuestCompareRequest(requestData)
 		return false
 	end
 
-	local entries = self:BuildQuestCompareEntries()
-	for _, entryData in ipairs(entries) do
-		self:SendQuestCompareEntry(requestData.requestId, entryData)
+	local queue = self.questCompareResponseQueue
+	if not queue then
+		queue = { jobs = {}, packets = 0 }
+		self.questCompareResponseQueue = queue
 	end
-	self:SendQuestCompareDone(requestData.requestId, #entries)
+	for _, job in ipairs(queue.jobs) do
+		if job.requestId == requestData.requestId and job.requesterName == requestData.requesterName then return true end
+	end
+	if #queue.jobs >= QUEST_COMPARE_MAX_QUEUED_RESPONSES then return false end
+	local entries, reason = self:BuildQuestCompareEntries()
+	local packetCount = entries and #entries + 1 or 1
+	if reason == "limit" or (entries and #entries > QUEST_COMPARE_MAX_ENTRIES) or queue.packets + packetCount > QUEST_COMPARE_MAX_QUEUED_PACKETS then
+		self:RecordCommsDiagnostic("failedComparisons", "response queue full")
+		return false
+	end
+	-- Reply on the route that actually delivered the request, so cross-realm
+	-- party members do not depend on a realm-local channel or duplicate traffic.
+	local distribution = requestData.replyDistribution
+	if distribution ~= "CHANNEL" and not GROUP_ANNOUNCEMENT_DISTRIBUTIONS[distribution] then
+		distribution = self:GetGroupAnnouncementDistribution() or "CHANNEL"
+	end
+	queue.jobs[#queue.jobs + 1] = {
+		requestId = requestData.requestId,
+		requesterName = requestData.requesterName,
+		entries = entries,
+		nextEntry = 1,
+		remaining = packetCount,
+		attempts = 0,
+		snapshotAttempts = (entries or reason == "restricted") and 0 or 1,
+		snapshotRetryAt = self.API.GetTime() + QUEST_COMPARE_RETRY_INTERVAL_SECONDS,
+		expiresAt = self.API.GetTime() + QUEST_COMPARE_RESPONSE_LIFETIME_SECONDS,
+		routes = { { distribution = distribution, requiresChannelJoin = distribution == "CHANNEL" } },
+	}
+	queue.packets = queue.packets + packetCount
+	self:DrainQuestCompareResponses()
 	return true
 end
 
@@ -1289,6 +1498,10 @@ function QuestTogether:RequestQuestCompare(speakerName)
 	local normalizedPlayerName = self:NormalizeMemberName(playerName) or playerName
 	if targetName == normalizedPlayerName then
 		local localEntries = self:BuildQuestCompareEntries()
+		if not localEntries then
+			self:PrintConsoleAnnouncement("Quest comparison unavailable while the quest log is updating.", targetName)
+			return false
+		end
 		for _, entryData in ipairs(localEntries) do
 			if self.PrintQuestCompareMessage then
 				self:PrintQuestCompareMessage(targetName, entryData, self:GetPlayerClassFile())
@@ -1392,40 +1605,49 @@ function QuestTogether:IsSpecialCompletionEmote(emoteToken)
 end
 
 function QuestTogether:GetSafeRemoteCompletionEmote(emoteToken)
-	local token = SafeAddonString(self, emoteToken or "", "")
-	if token == "" then
+	if not self:CanAccessValue(emoteToken) or type(emoteToken) ~= "string" then
+		return nil
+	end
+	local token = string.lower(self:SafeTrimString(emoteToken, ""))
+	if REMOTE_CELEBRATION_EMOTES[token] then
+		return token
+	end
+	if not self:IsSpecialCompletionEmote(token) then
 		return nil
 	end
 
-	if not self:IsSpecialCompletionEmote(token) then
-		return token
-	end
-
-	if token == "mountspecial" and self.API and self.API.IsMounted and self.API.IsMounted() then
-		return token
+	if token == "mountspecial" and self.API and self.API.IsMounted then
+		local mounted = self.API.IsMounted()
+		if self:CanAccessValue(mounted) and mounted == true then
+			return token
+		end
 	end
 
 	if token == "forthealliance" or token == "forthehorde" then
-		local faction = self.API and self.API.GetFaction and self.API.GetFaction() or nil
-		if faction == "Alliance" then
-			return "forthealliance"
+		local faction
+		if self.API and self.API.GetFaction then
+			faction = self.API.GetFaction()
 		end
-		if faction == "Horde" then
-			return "forthehorde"
+		if self:CanAccessValue(faction) then
+			if faction == "Alliance" then
+				return "forthealliance"
+			end
+			if faction == "Horde" then
+				return "forthehorde"
+			end
 		end
 	end
 
-	local safetyCounter = 0
-	repeat
-		safetyCounter = safetyCounter + 1
+	for _ = 1, 20 do
 		token = self:PickRandomCompletionEmote()
-	until not self:IsSpecialCompletionEmote(token) or safetyCounter > 20
-
-	if self:IsSpecialCompletionEmote(token) then
-		return nil
+		if self:CanAccessValue(token) and type(token) == "string" then
+			token = string.lower(self:SafeTrimString(token, ""))
+			if REMOTE_CELEBRATION_EMOTES[token] then
+				return token
+			end
+		end
 	end
-
-	return token
+	return nil
 end
 
 function QuestTogether:PlayRemoteCelebrationEmote(eventData, nearbyUnitToken, senderName)
@@ -1604,11 +1826,12 @@ function QuestTogether:SendBubbleAnnouncementTest(text, senderName)
 		end
 	end
 
-	if not self:SendAnnouncementWireEvent(eventData) then
-		return false, "Unable to send the bubble test announcement."
+	-- This is a local preview of the selected player. A network packet claiming
+	-- that identity cannot pass the receiver's authoritative transport check.
+	if not self:HandleAnnouncementEvent(eventData, false) then
+		return false, "The local preview was suppressed by your announcement settings."
 	end
 
-	self:HandleAnnouncementEvent(eventData, false)
 	return true, eventData.senderName
 end
 
@@ -1820,7 +2043,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		return
 	end
 	local duplicateWindow = (command == PING_REQUEST_COMMAND or command == QUEST_COMPARE_REQUEST_COMMAND)
-			and QUEST_COMPARE_TIMEOUT_SECONDS
+			and COMM_REQUEST_DUPLICATE_WINDOW_SECONDS
 		or COMM_DUPLICATE_WINDOW_SECONDS
 	if self:ShouldSuppressDuplicateCommMessage(safeTransportSender, safeMessage, duplicateWindow) then
 		self:RecordCommsDiagnostic("duplicateMessages", "sender=" .. transportSenderName .. " command=" .. command)
@@ -1871,6 +2094,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 			return
 		end
 		requestData.requesterName = transportSenderName or requestData.requesterName
+		requestData.replyDistribution = SafePrimitiveString(self, channel, "")
 		self:HandleQuestCompareRequest(requestData)
 		return
 	end

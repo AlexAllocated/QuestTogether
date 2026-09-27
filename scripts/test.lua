@@ -69,9 +69,12 @@ end
 GetInstanceInfo = function()
 	return nil, "none"
 end
+-- A client timer never executes inside C_Timer.After. Live-safe fixtures use
+-- their own controllable clocks; accidental engine timers remain queued here.
+local engineTimers = {}
 C_Timer = {
-	After = function(_, callback)
-		callback()
+	After = function(delay, callback)
+		engineTimers[#engineTimers + 1] = { delay = delay, callback = callback }
 	end,
 }
 C_NamePlate = {}
@@ -104,32 +107,18 @@ end
 UIParent = setmetatable({}, Frame)
 local clientChecks = arg[3] and assert(loadfile(addonRoot .. "/scripts/client_profiles.lua"))()(arg[3])
 local namespace = {}
-for _, file in ipairs({
-	"Libs/libchev/libchev.lua",
-	"Libs/libchev/Debug.lua",
-	"Libs/libchev/DebugWindow.lua",
-	"Libs/libchev/ReportWindow.lua",
-	"Libs/libchev/SelfTests.lua",
-	"Core.lua",
-	"Welcome.lua",
-	"Debug.lua",
-	"HotPathState.lua",
-	"HotPathRuntime.lua",
-	"TaskArea.lua",
-	"Nameplates.lua",
-	"PartyState.lua",
-	"Comms.lua",
-	"EventHandlers.lua",
-	"Options.lua",
-	"Diagnostics.lua",
-}) do
-	local chunk, err = loadfile(addonRoot .. "/" .. file)
-	assert(chunk, err)
-	chunk("QuestTogether", namespace)
+-- Load the exact live manifest. Missing/omitted test modules must not be hidden
+-- by a second, independently maintained offline file list.
+for line in io.lines(addonRoot .. "/QuestTogether.toc") do
+	local file = line:match("^%s*(.-)%s*$")
+	if file ~= "" and not file:match("^#") then
+		assert(file:match("%.lua$"), "unsupported manifest entry: " .. file)
+		local path = addonRoot .. "/" .. file:gsub("\\", "/")
+		local chunk, err = loadfile(path)
+		assert(chunk, err)
+		chunk("QuestTogether", namespace)
+	end
 end
-local testsChunk, testsErr = loadfile(addonRoot .. "/Tests.lua")
-assert(testsChunk, testsErr)
-testsChunk("QuestTogether", namespace)
 QuestTogether:InitializeDatabase()
 QuestTogether:EnsureRuntimeStateStore()
 QuestTogether.isInitialized = true
@@ -137,24 +126,31 @@ if clientChecks then
 	clientChecks(QuestTogether)
 	os.exit(0)
 end
-for _, file in ipairs({
-	"regression_runtime",
-	"regression_core_state",
-	"regression_quest_state",
-	"regression_nameplates",
-	"regression_nameplate_discovery",
-	"regression_comms",
-}) do
-	local path = addonRoot .. "/scripts/" .. file .. ".lua"
-	local probe = io.open(path, "r")
-	if probe then
-		probe:close()
-		assert(loadfile(path))()
+-- Offline-only tripwires: live tests must use their private adapters and frames.
+-- Count even protected calls whose error is swallowed by production pcall.
+local engineBoundaryCalls = {}
+local function RejectEngineCall(name)
+	return function()
+		engineBoundaryCalls[#engineBoundaryCalls + 1] = name
+		error("test crossed engine boundary: " .. name)
 	end
 end
+CreateFrame = RejectEngineCall("CreateFrame")
+hooksecurefunc = RejectEngineCall("hooksecurefunc")
+C_Timer.After = RejectEngineCall("C_Timer.After")
+C_RestrictedActions.GetAddOnRestrictionState = RejectEngineCall("GetAddOnRestrictionState")
+Enum.AddOnRestrictionType = { Combat = 1, Encounter = 2, ChallengeMode = 3, PvPMatch = 4, Map = 5 }
+UnitIsTapDenied = RejectEngineCall("UnitIsTapDenied")
+QuestieLoader = { _modules = { QuestieTooltips = { GetTooltip = RejectEngineCall("Questie.GetTooltip") } } }
+C_AddOns = C_AddOns or {}
+C_AddOns.LoadAddOn = RejectEngineCall("C_AddOns.LoadAddOn")
+LoadAddOn = RejectEngineCall("LoadAddOn")
+UIParentLoadAddOn = RejectEngineCall("UIParentLoadAddOn")
+ShowUIPanel = RejectEngineCall("ShowUIPanel")
 -- Exercise the same controller and QT-owned isolation used by the live command.
 local success, passed, failed, result = QuestTogether:RunTests(arg[2] == "reverse", false)
 assert(result, "Shared debug controller did not return a test result")
+assert(#engineBoundaryCalls == 0, "live-test isolation failure: " .. table.concat(engineBoundaryCalls, ", "))
 -- The shared headless runner already prints failures and the summary through
 -- QT's console adapter; avoid duplicating its presentation here.
 print("registered=" .. tostring(result.total))

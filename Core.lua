@@ -56,6 +56,37 @@ local function CanAccessForeignValue(rawValue)
 	return true
 end
 
+local function NormalizeQuestLocationFlag(rawValue)
+	if not CanAccessForeignValue(rawValue) then
+		return nil
+	end
+	return NormalizeQuestInfoFlagValue(rawValue)
+end
+
+local function MergeQuestLocationFlag(primaryValue, fallbackValue)
+	if primaryValue ~= nil then
+		return primaryValue
+	end
+	return fallbackValue
+end
+
+local function NormalizeQuestCompletionValue(rawValue)
+	if not CanAccessForeignValue(rawValue) then
+		return nil
+	end
+	if type(rawValue) == "boolean" then
+		return rawValue
+	end
+	local numericValue = QuestTogether and QuestTogether.SafeToNumber
+		and QuestTogether:SafeToNumber(rawValue)
+		or nil
+	if numericValue ~= nil then
+		-- GetQuestLogTitle returns 1 for completed and -1 for failed quests.
+		return numericValue == 1
+	end
+	return nil
+end
+
 local function CanAccessForeignTable(rawTable)
 	if type(rawTable) ~= "table" then
 		return false
@@ -107,9 +138,9 @@ local function BuildSanitizedQuestLogInfoRecord(questLogIndex, titleValue, isHea
 		isHeader = NormalizeQuestInfoFlagValue(isHeaderValue) == true,
 		isHidden = NormalizeQuestInfoFlagValue(isHiddenValue) == true,
 		isTask = NormalizeQuestInfoFlagValue(isTaskValue) == true,
-		isOnMap = NormalizeQuestInfoFlagValue(isOnMapValue) == true,
-		hasLocalPOI = NormalizeQuestInfoFlagValue(hasLocalPOIValue) == true,
-		isComplete = NormalizeQuestInfoFlagValue(isCompleteValue) == true,
+		isOnMap = NormalizeQuestLocationFlag(isOnMapValue),
+		hasLocalPOI = NormalizeQuestLocationFlag(hasLocalPOIValue),
+		isComplete = NormalizeQuestCompletionValue(isCompleteValue) == true,
 	}
 
 	local numericQuestID = QuestTogether and QuestTogether.SafeToNumber
@@ -154,6 +185,9 @@ local function BuildSanitizedQuestLogInfoFromRawInfo(questLogIndex, rawInfo)
 		return nil
 	end
 
+	-- Some modern records omit completion altogether. Preserve that absence
+	-- until the legacy fallback is merged, while retaining explicit false.
+	sanitizedInfo.isComplete = NormalizeQuestCompletionValue(rawInfo.isComplete)
 	sanitizedInfo.campaignID = SanitizeQuestInfoEnumValue(rawInfo.campaignID)
 	sanitizedInfo.frequency = SanitizeQuestInfoEnumValue(rawInfo.frequency)
 	sanitizedInfo.questClassification = SanitizeQuestInfoEnumValue(rawInfo.questClassification)
@@ -165,6 +199,7 @@ local function MergeSanitizedQuestLogInfo(primaryInfo, fallbackInfo)
 		return type(fallbackInfo) == "table" and fallbackInfo or nil
 	end
 	if type(fallbackInfo) ~= "table" then
+		primaryInfo.isComplete = primaryInfo.isComplete == true
 		return primaryInfo
 	end
 
@@ -175,9 +210,13 @@ local function MergeSanitizedQuestLogInfo(primaryInfo, fallbackInfo)
 	mergedInfo.isHeader = primaryInfo.isHeader == true or fallbackInfo.isHeader == true
 	mergedInfo.isHidden = primaryInfo.isHidden == true or fallbackInfo.isHidden == true
 	mergedInfo.isTask = primaryInfo.isTask == true or fallbackInfo.isTask == true
-	mergedInfo.isOnMap = primaryInfo.isOnMap == true or fallbackInfo.isOnMap == true
-	mergedInfo.hasLocalPOI = primaryInfo.hasLocalPOI == true or fallbackInfo.hasLocalPOI == true
-	mergedInfo.isComplete = primaryInfo.isComplete == true or fallbackInfo.isComplete == true
+	mergedInfo.isOnMap = MergeQuestLocationFlag(primaryInfo.isOnMap, fallbackInfo.isOnMap)
+	mergedInfo.hasLocalPOI = MergeQuestLocationFlag(primaryInfo.hasLocalPOI, fallbackInfo.hasLocalPOI)
+	if primaryInfo.isComplete ~= nil then
+		mergedInfo.isComplete = primaryInfo.isComplete == true
+	else
+		mergedInfo.isComplete = fallbackInfo.isComplete == true
+	end
 	mergedInfo.campaignID = primaryInfo.campaignID or fallbackInfo.campaignID
 	mergedInfo.frequency = primaryInfo.frequency or fallbackInfo.frequency
 	mergedInfo.questClassification = primaryInfo.questClassification or fallbackInfo.questClassification
@@ -669,6 +708,23 @@ Why this exists:
 QuestTogether.API = QuestTogether.API or {
 	Delay = function(seconds, callback)
 		C_Timer.After(seconds, callback)
+	end,
+	GetEditModeManagerFrame = function()
+		return EditModeManagerFrame
+	end,
+	LoadEditMode = function()
+		local loader = C_AddOns and C_AddOns.LoadAddOn or LoadAddOn
+		if type(loader) ~= "function" then
+			return false
+		end
+		local ok, loaded = pcall(loader, "Blizzard_EditMode")
+		return ok and CanAccessForeignValue(loaded) and loaded == true
+	end,
+	ShowUIPanel = function(frame)
+		if not QuestTogether:CanAccessForeignFrame(frame) or type(ShowUIPanel) ~= "function" then
+			return false
+		end
+		return pcall(ShowUIPanel, frame)
 	end,
 	JoinPermanentChannel = function(name, password, chatFrameId, hasVoice)
 		return JoinPermanentChannel(name, password, chatFrameId, hasVoice)
@@ -1391,20 +1447,23 @@ QuestTogether.API = QuestTogether.API or {
 			return math.floor(numericMapID + 0.5)
 		end,
 		IsWorldMapVisible = function()
-			if not WorldMapFrame then
+			local frame = WorldMapFrame
+			if not CanAccessForeignValue(frame) then
+				return true
+			end
+			if not frame then
 				return false
 			end
-			if WorldMapFrame.IsForbidden then
-				local okForbidden, isForbidden = pcall(WorldMapFrame.IsForbidden, WorldMapFrame)
-				if okForbidden and isForbidden then
-					return false
-				end
+			local isShown = QuestTogether:GetAccessibleFrameMember(frame, "IsShown")
+			if type(isShown) ~= "function" then
+				-- Forbidden/unreadable map state must not permit sensitive reads.
+				return true
 			end
-			if not WorldMapFrame.IsShown then
-				return false
+			local okShown, shown = pcall(isShown, frame)
+			if not okShown or not CanAccessForeignValue(shown) or type(shown) ~= "boolean" then
+				return true
 			end
-			local okShown, isShown = pcall(WorldMapFrame.IsShown, WorldMapFrame)
-			return okShown and isShown and true or false
+			return shown
 		end,
 		GetLocalTaskQuests = function()
 			if type(GetTasksTable) ~= "function" then
@@ -1993,16 +2052,16 @@ QuestTogether.API = QuestTogether.API or {
 		CanSetUserWaypointOnMap = function(mapID)
 			if C_Map and C_Map.CanSetUserWaypointOnMap then
 				local ok, canSet = pcall(C_Map.CanSetUserWaypointOnMap, mapID)
-				return ok and canSet and true or false
+				return ok and CanAccessForeignValue(canSet) and canSet == true
 			end
 			return false
 		end,
 		SetUserWaypoint = function(point)
 			if C_Map and C_Map.SetUserWaypoint then
 				local ok, result = pcall(C_Map.SetUserWaypoint, point)
-				return ok and result or nil
+				return ok and CanAccessForeignValue(result) and result == true
 			end
-			return nil
+			return false
 		end,
 		SetSuperTrackedUserWaypoint = function(shouldSuperTrack)
 			if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
@@ -2572,9 +2631,9 @@ function QuestTogether:DeleteProfile(profileKey)
 
 	for characterKey, mappedProfileKey in pairs(self.db.profileKeys) do
 		if mappedProfileKey == normalizedKey then
-			local fallbackProfileKey = NormalizeProfileKey(characterKey) or tostring(characterKey)
-			self.db.profileKeys[characterKey] = fallbackProfileKey
-			self:EnsureProfile(fallbackProfileKey, self.DEFAULTS.profile)
+			-- The character's default key can be the profile just deleted.
+			-- Resolve its default lazily on that character's next initialization.
+			self.db.profileKeys[characterKey] = nil
 		end
 	end
 
@@ -3042,7 +3101,7 @@ function QuestTogether:GetChatLogFrame()
 		self:Debug("Separate QuestTogether chat window unavailable; falling back to main chat", "chat")
 	end
 
-	return DEFAULT_CHAT_FRAME
+	return self:GetMainChatFrame()
 end
 
 function QuestTogether:TryAddMessageToConfiguredChatLogFrames(message)
@@ -3186,6 +3245,58 @@ function QuestTogether:NormalizeAnnouncementWarModeValue(warMode)
 	return nil
 end
 
+function QuestTogether:ResolveTaskQuestIsWorldQuest(questId, questInfo)
+	local classifications = self:GetTaskAreaSubsystemStateStore().isWorldQuestByQuestID
+	local retired = self.retiredQuestIds and self.retiredQuestIds[questId]
+	if retired then
+		classifications[questId] = nil
+	end
+	local isWorldQuest = questInfo and questInfo.isWorldQuest
+	if not self:CanAccessValue(isWorldQuest) or type(isWorldQuest) ~= "boolean" then
+		isWorldQuest = self.API and self.API.IsWorldQuest and self.API.IsWorldQuest(questId)
+	end
+	if self:CanAccessValue(isWorldQuest) and type(isWorldQuest) == "boolean" then
+		if not retired then classifications[questId] = isWorldQuest end
+		return isWorldQuest
+	end
+	return classifications[questId]
+end
+
+function QuestTogether:ResolveTaskQuestDisplayAsObjective(questId)
+	local classifications = self:GetTaskAreaSubsystemStateStore().displayAsObjectiveByQuestID
+	if self.retiredQuestIds and self.retiredQuestIds[questId] then
+		classifications[questId] = nil
+		return nil
+	end
+	local taskInfo = self.API and self.API.GetTaskQuestInfoByQuestID and self.API.GetTaskQuestInfoByQuestID(questId)
+	if self:CanAccessTable(taskInfo) and type(taskInfo) == "table" then
+		local displayAsObjective = taskInfo.displayAsObjective
+		if self:CanAccessValue(displayAsObjective) and type(displayAsObjective) == "boolean" then
+			classifications[questId] = displayAsObjective
+		end
+	end
+	-- Both readers share the latest confirmed value, including explicit false.
+	return classifications[questId]
+end
+
+function QuestTogether:PruneTaskQuestClassifications(questInfoByQuestID)
+	local state = self:GetTaskAreaSubsystemStateStore()
+	for _, classifications in ipairs({ state.displayAsObjectiveByQuestID, state.isWorldQuestByQuestID }) do
+		for questId in pairs(classifications) do
+			if not questInfoByQuestID[questId] or (self.retiredQuestIds and self.retiredQuestIds[questId]) then
+				classifications[questId] = nil
+			end
+		end
+	end
+	-- A complete log scan also ends retained location observations for removed
+	-- quests. Leave announced-area state intact until the normal exit diff runs.
+	for questId in pairs(state.resolvedByQuestID) do
+		if not questInfoByQuestID[questId] or (self.retiredQuestIds and self.retiredQuestIds[questId]) then
+			state.resolvedByQuestID[questId] = nil
+		end
+	end
+end
+
 function QuestTogether:RebuildQuestSnapshotStore()
 	local snapshotState = self.GetQuestSnapshotStateStore and self:GetQuestSnapshotStateStore() or nil
 	if type(snapshotState) ~= "table" then
@@ -3229,23 +3340,19 @@ function QuestTogether:RebuildQuestSnapshotStore()
 				isHeader = questInfo and questInfo.isHeader == true or false,
 				questID = questInfo and questInfo.questID or nil,
 				isTask = questInfo and questInfo.isTask == true or false,
-				isOnMap = questInfo and questInfo.isOnMap == true or false,
-				hasLocalPOI = questInfo and questInfo.hasLocalPOI == true or false,
+				isOnMap = NormalizeQuestLocationFlag(questInfo and questInfo.isOnMap),
+				hasLocalPOI = NormalizeQuestLocationFlag(questInfo and questInfo.hasLocalPOI),
 			}
 		end
 		if questInfo and questInfo.isHeader ~= true then
 			local numericQuestID = self:NormalizeQuestID(questInfo.questID)
 			if numericQuestID then
-				local isWorldQuest = questInfo.isWorldQuest == true
-				if not isWorldQuest and self.API and self.API.IsWorldQuest then
-					isWorldQuest = self.API.IsWorldQuest(numericQuestID) == true
-				end
+				local isWorldQuest = self:ResolveTaskQuestIsWorldQuest(numericQuestID, questInfo)
 				local isTaskQuest = questInfo.isTask == true or isWorldQuest == true
-				local taskQuestInfo = nil
-				if isTaskQuest and not isWorldQuest and self.API and self.API.GetTaskQuestInfoByQuestID then
-					taskQuestInfo = self.API.GetTaskQuestInfoByQuestID(numericQuestID)
+				local displayAsObjective = false
+				if isTaskQuest and not isWorldQuest then
+					displayAsObjective = self:ResolveTaskQuestDisplayAsObjective(numericQuestID)
 				end
-				local displayAsObjective = taskQuestInfo and taskQuestInfo.displayAsObjective == true or false
 
 				local snapshot = {
 					questID = numericQuestID,
@@ -3253,10 +3360,10 @@ function QuestTogether:RebuildQuestSnapshotStore()
 					title = type(questInfo.title) == "string" and questInfo.title or nil,
 					isHidden = questInfo.isHidden == true,
 					isTask = isTaskQuest and true or false,
-					isOnMap = questInfo.isOnMap == true,
-					hasLocalPOI = questInfo.hasLocalPOI == true,
+					isOnMap = NormalizeQuestLocationFlag(questInfo.isOnMap),
+					hasLocalPOI = NormalizeQuestLocationFlag(questInfo.hasLocalPOI),
 					isComplete = questInfo.isComplete == true,
-					isWorldQuest = isWorldQuest and true or false,
+					isWorldQuest = isWorldQuest,
 					displayAsObjective = displayAsObjective,
 					isBonusObjective = displayAsObjective,
 					tagInfo = nil,
@@ -3271,6 +3378,7 @@ function QuestTogether:RebuildQuestSnapshotStore()
 		end
 	end
 
+	self:PruneTaskQuestClassifications(snapshotByQuestID)
 	wipe(snapshotState.byQuestID)
 	wipe(snapshotState.order)
 	for questID, snapshot in pairs(snapshotByQuestID) do
@@ -3586,10 +3694,26 @@ function QuestTogether:IsAnnouncementSenderNearbyByLocation(locationInfo)
 		return false
 	end
 
-	local localZoneName = type(localInfo.zoneName) == "string" and localInfo.zoneName or ""
-	local remoteZoneName = type(locationInfo.zoneName) == "string" and locationInfo.zoneName or ""
-	if localZoneName == "" or remoteZoneName == "" or localZoneName ~= remoteZoneName then
-		return false
+	local function ReadMapID(value)
+		local mapID = self:SafeToNumber(value)
+		if mapID and mapID > 0 and mapID == math.floor(mapID) then
+			return mapID
+		end
+		return nil
+	end
+	local localMapID = ReadMapID(localInfo.mapID)
+	local remoteMapID = ReadMapID(locationInfo.mapID)
+	if localMapID and remoteMapID then
+		if localMapID ~= remoteMapID then
+			return false
+		end
+	else
+		-- Legacy announcements have no map ID; retain their zone-label fallback.
+		local localZoneName = type(localInfo.zoneName) == "string" and localInfo.zoneName or ""
+		local remoteZoneName = type(locationInfo.zoneName) == "string" and locationInfo.zoneName or ""
+		if localZoneName == "" or remoteZoneName == "" or localZoneName ~= remoteZoneName then
+			return false
+		end
 	end
 
 	local localWarMode = self:NormalizeAnnouncementWarModeValue(localInfo.warMode)
@@ -4078,6 +4202,12 @@ function QuestTogether:CreateBlizzardWaypoint(mapID, coordX, coordY)
 	if not numericMapID or not numericX or not numericY then
 		return false
 	end
+	-- Disabled runtime has no restriction-release wakeups, and enabling resets
+	-- its deferred lifetime. Reject a blocked click instead of accepting work
+	-- that cannot run. Unrestricted explicit clicks remain available.
+	if self.isEnabled ~= true and self.IsWorkBlocked and self:IsWorkBlocked("waypoint_mutation") then
+		return false
+	end
 
 	local function applyWaypoint()
 		if not (self.API and self.API.CanSetUserWaypointOnMap and self.API.CanSetUserWaypointOnMap(numericMapID)) then
@@ -4089,8 +4219,10 @@ function QuestTogether:CreateBlizzardWaypoint(mapID, coordX, coordY)
 			return false
 		end
 
-		if self.API.SetUserWaypoint then
-			self.API.SetUserWaypoint(point)
+		if not self.API.SetUserWaypoint then return false end
+		local ok, wasSet = pcall(self.API.SetUserWaypoint, point)
+		if not ok or not self:CanAccessValue(wasSet) or wasSet ~= true then
+			return false
 		end
 		if self.API.SetSuperTrackedUserWaypoint then
 			pcall(self.API.SetSuperTrackedUserWaypoint, true)
@@ -4334,7 +4466,9 @@ function QuestTogether:HandleChatLogCoordLink(_link, _text, linkData, _contextDa
 		return LinkProcessorResponse.Handled
 	end
 
-	self:OpenPingWaypoint(mapID, coordX, coordY)
+	if not self:OpenPingWaypoint(mapID, coordX, coordY) then
+		self:Print("Unable to set that waypoint.")
+	end
 	return LinkProcessorResponse.Handled
 end
 
@@ -4433,11 +4567,9 @@ function QuestTogether:IsWorldQuest(questId)
 		return false
 	end
 
-	if self.API and self.API.IsWorldQuest then
-		local apiResult = self.API.IsWorldQuest(numericQuestId)
-		if apiResult ~= nil then
-			return apiResult == true
-		end
+	local classification = self:ResolveTaskQuestIsWorldQuest(numericQuestId)
+	if classification ~= nil then
+		return classification == true
 	end
 
 	if self.EnsureQuestSnapshotStore then
@@ -4465,6 +4597,10 @@ function QuestTogether:IsBonusObjective(questId)
 
 	if self.EnsureQuestSnapshotStore then
 		self:EnsureQuestSnapshotStore()
+	end
+	local classification = self:GetTaskAreaSubsystemStateStore().displayAsObjectiveByQuestID[numericQuestId]
+	if classification ~= nil then
+		return classification == true
 	end
 	local bonusState = self.GetTaskAreaStateStore and self:GetTaskAreaStateStore("bonus") or nil
 	if type(bonusState) == "table" and bonusState[numericQuestId] then
@@ -4597,6 +4733,8 @@ function QuestTogether:GetNormalizedQuestObjectiveInfo(questId, objectiveIndex, 
 			currentValue = roundedProgress
 		else
 			objectiveText = baseObjectiveText
+			-- The objective counter is not a percentage when the percent read is unavailable.
+			currentValue = nil
 		end
 	end
 
@@ -4652,6 +4790,17 @@ end
 function QuestTogether:SetOption(key, value)
 	if not self.db or not self.db.profile then
 		return false
+	end
+	if key == "enabled" then
+		if not self:CanAccessValue(value) or type(value) ~= "boolean" then
+			return false
+		end
+		-- Use the same guarded lifecycle as the dedicated slash commands.
+		-- Enable also retains the pre-login deferral of runtime work.
+		if value then
+			return self:Enable()
+		end
+		return self:Disable()
 	end
 	if key == "showProgressFor" and not self:IsShowProgressFor(value) then
 		self:Debugf("options", "Rejected option change key=%s invalidValue=%s", tostring(key), FormatDebugValue(value))
@@ -4761,9 +4910,8 @@ end
 function QuestTogether:QueueQuestLogTask(taskFn)
 	if type(taskFn) == "function" then
 		table.insert(self.onQuestLogUpdate, taskFn)
-		if self.ScheduleQuestLogTaskDrain then
-			self:ScheduleQuestLogTaskDrain("QueueQuestLogTask")
-		end
+		-- QUEST_ACCEPTED and UNIT_QUEST_LOG_CHANGED can precede readable log
+		-- data. Only QUEST_LOG_UPDATE may release this batch into the scheduler.
 	end
 end
 
@@ -4776,11 +4924,16 @@ function QuestTogether:ResetQuestEventState()
 end
 
 -- SavedVariables initializer.
-function QuestTogether:InitializeDatabase()
-	if type(_G.QuestTogetherDB) ~= "table" then
-		_G.QuestTogetherDB = {}
+function QuestTogether:InitializeDatabase(savedDatabase)
+	if type(savedDatabase) == "table" then
+		-- Private fixtures exercise normalization without rebinding SavedVariables.
+		self.db = savedDatabase
+	else
+		if type(_G.QuestTogetherDB) ~= "table" then
+			_G.QuestTogetherDB = {}
+		end
+		self.db = _G.QuestTogetherDB
 	end
-	self.db = _G.QuestTogetherDB
 
 	if type(self.db.global) ~= "table" then
 		self.db.global = {}
@@ -4941,27 +5094,39 @@ function QuestTogether:Disable()
 end
 
 function QuestTogether:OpenHudEditMode()
-	if not EditModeManagerFrame then
-		pcall(UIParentLoadAddOn, "Blizzard_EditMode")
+	-- This explicit UI action must not initialize or open Blizzard panels while
+	-- restrictions are active, including encounter/map states outside combat.
+	if self:IsRuntimeRestricted() or not self.API or type(self.API.GetEditModeManagerFrame) ~= "function" then
+		return false
 	end
-
-	if self.API and self.API.InCombatLockdown and self.API.InCombatLockdown() then
+	local manager = self.API.GetEditModeManagerFrame()
+	if not self:CanAccessValue(manager) then
+		return false
+	end
+	if manager == nil then
+		if type(self.API.LoadEditMode) ~= "function" or self.API.LoadEditMode() ~= true then
+			return false
+		end
+		manager = self.API.GetEditModeManagerFrame()
+	end
+	if not self:CanAccessForeignFrame(manager) or self:IsRuntimeRestricted() then
+		return false
+	end
+	local canEnter = self:GetAccessibleFrameMember(manager, "CanEnterEditMode")
+	if type(canEnter) ~= "function" then
+		return false
+	end
+	local ok, allowed = pcall(canEnter, manager)
+	if not ok or not self:CanAccessValue(allowed) or allowed ~= true or self:IsRuntimeRestricted() then
 		return false
 	end
 
-	if not EditModeManagerFrame then
+	-- ShowUIPanel owns the panel lifecycle; its OnShow initializes Edit Mode.
+	-- Calling EnterEditMode directly activates editing with no visible manager.
+	if type(self.API.ShowUIPanel) ~= "function" or self.API.ShowUIPanel(manager) ~= true then
 		return false
 	end
-	if not self:CanAccessForeignFrame(EditModeManagerFrame) then
-		return false
-	end
-
-	if type(EditModeManagerFrame.EnterEditMode) ~= "function" then
-		return false
-	end
-
-	local ok = pcall(EditModeManagerFrame.EnterEditMode, EditModeManagerFrame)
-	return ok
+	return self:CanAccessForeignFrame(manager, true)
 end
 
 function QuestTogether:InitializeSlashCommands()
@@ -5008,8 +5173,9 @@ function QuestTogether:PrintHelp()
 	self:Print("/qt get <option> - Read an option value")
 	self:Print("/qt scan - Rescan your quest log now")
 	self:Print("/qt ping - Request pong metadata from all QuestTogether clients in the shared channel")
-	self:Print("/qt bubbletest <text> - Send a QUEST_PROGRESS test event as your current target")
-	self:Print("/qt bubbletest <player> <text> - Send a QUEST_PROGRESS test event as a nearby visible player")
+	self:Print("/qt bubbletest <text> - Run a local bubble preview for your current target")
+	self:Print('/qt bubbletest "<player>" <text> - Run a local bubble preview for a nearby visible player (no target)')
+	self:Print("Player names can be unquoted: Name-Realm, or First Surname on Forever.")
 	self:Print("/qt test - Run in-game unit tests, then open /qt dump filtered to TEST")
 	self:Print("/qt dump [clear|CATEGORY] - Open the shared QuestTogether debug window")
 	self:Print("/qt diagnostics [questID] - Copy client, runtime, and recent event diagnostics")
@@ -5130,7 +5296,7 @@ function QuestTogether:HandleSlashCommand(input)
 	if command == "bubbletest" then
 		if rest == nil or rest == "" then
 			self:Print("Usage: /qt bubbletest <text>")
-			self:Print("   or: /qt bubbletest <player> <text>")
+			self:Print('   or: /qt bubbletest "<player>" <text> (without a target)')
 			return
 		end
 		if not self.SendBubbleAnnouncementTest then
@@ -5141,13 +5307,26 @@ function QuestTogether:HandleSlashCommand(input)
 		local senderName = nil
 		local testText = rest
 		if not (self.API.UnitExists and self.API.UnitExists("target")) then
-			local explicitSenderName, explicitText = SafeMatch(rest, "^(%S+)%s+(.+)$")
-			if not explicitSenderName or not explicitText then
-				self:Print("Usage without a target: /qt bubbletest <player> <text>")
+			local explicitSenderName, explicitText
+			if string.sub(rest, 1, 1) == '"' then
+				-- Quotes delimit a complete identity without consuming preview text.
+				explicitSenderName, explicitText = SafeMatch(rest, '^"([^"]+)"%s+(.+)$')
+			else
+				explicitSenderName, explicitText = SafeMatch(rest, "^(%S+)%s+(.+)$")
+				if explicitSenderName and self:UsesRegionalPlayerNames() and not string.find(explicitSenderName, "-", 1, true) then
+					-- Native regional names have a first name and surname. Preserve
+					-- legacy First-Surname inputs as a single identity token.
+					local surname
+					surname, explicitText = SafeMatch(explicitText, "^(%S+)%s+(.+)$")
+					explicitSenderName = surname and (explicitSenderName .. " " .. surname) or nil
+				end
+			end
+			senderName = self:SafeTrimString(explicitSenderName, "")
+			testText = self:SafeTrimString(explicitText, "")
+			if senderName == "" or testText == "" then
+				self:Print('Usage without a target: /qt bubbletest "<player>" <text>')
 				return
 			end
-			senderName = explicitSenderName
-			testText = explicitText
 		end
 
 		local ok, senderNameOrError = self:SendBubbleAnnouncementTest(testText, senderName)
@@ -5155,7 +5334,7 @@ function QuestTogether:HandleSlashCommand(input)
 			self:Print(senderNameOrError)
 			return
 		end
-		self:Print("Sent bubble test announcement for " .. tostring(self:GetShortDisplayName(senderNameOrError)))
+		self:Print("Ran local bubble preview for " .. tostring(self:GetShortDisplayName(senderNameOrError)))
 		return
 	end
 
@@ -5165,23 +5344,28 @@ function QuestTogether:HandleSlashCommand(input)
 end
 
 -- Full quest log scan to build local objective snapshots.
-function QuestTogether:ScanQuestLog()
+function QuestTogether:ScanQuestLog(shouldAnnounceTaskAreas)
 	if not self.db or not self.db.global then
 		return
 	end
 
 	if self.IsWorkBlocked and self:IsWorkBlocked("quest_log_drain") then
-		self:ScheduleDeferredWork("quest_log_drain", "full_scan", function() self:ScanQuestLog() end)
+		self:ScheduleDeferredWork("quest_log_drain", "full_scan", function() self:ScanQuestLog(shouldAnnounceTaskAreas) end)
 		return
 	end
 	if self.RebuildQuestSnapshotStore then
 		local snapshot = self:RebuildQuestSnapshotStore()
 		if snapshot and snapshot.lastUnreadableRow then
+			-- Keep one retry intent for the next real log update. A successful
+			-- snapshot refresh alone does not initialize objective tracking.
+			self:SetRuntimeFlag("pendingQuestLogScan", true)
 			return
 		end
 	end
+	self:SetRuntimeFlag("pendingQuestLogScan", false)
 
 	local tracker = self:GetPlayerTracker()
+	local pendingAcceptances = self.pendingQuestAcceptances or {}
 	local seenQuestIDs = {}
 	local questsTracked = 0
 
@@ -5191,14 +5375,18 @@ function QuestTogether:ScanQuestLog()
 		local questID = snapshotOrder[index]
 		local questInfo = snapshotByQuestID and snapshotByQuestID[questID] or nil
 		if questInfo and questInfo.isHidden ~= true and not (self.retiredQuestIds and self.retiredQuestIds[questID]) then
-			self:WatchQuest(questID, questInfo)
 			seenQuestIDs[questID] = true
-			questsTracked = questsTracked + 1
+			-- Acceptance owns its readiness checks and announcement. A readable
+			-- snapshot ID alone must not consume its still-unreadable title/type.
+			if not pendingAcceptances[questID] then
+				self:WatchQuest(questID, questInfo)
+				questsTracked = questsTracked + 1
+			end
 		end
 	end
 
 	if self.RefreshTaskAreaStates then
-		self:RefreshTaskAreaStates(false)
+		self:RefreshTaskAreaStates(shouldAnnounceTaskAreas == true)
 	end
 
 	-- Area task quests can exist outside normal quest-log rows.
@@ -5206,7 +5394,7 @@ function QuestTogether:ScanQuestLog()
 	if self.GetActiveWorldQuestAreaSnapshot then
 		for questId, questTitle in pairs(self:GetActiveWorldQuestAreaSnapshot()) do
 			seenQuestIDs[questId] = true
-			if not tracker[questId] then
+			if not tracker[questId] and not pendingAcceptances[questId] then
 				self:WatchQuest(questId, { title = questTitle })
 				if tracker[questId] then
 					questsTracked = questsTracked + 1
@@ -5217,7 +5405,7 @@ function QuestTogether:ScanQuestLog()
 	if self.GetActiveBonusObjectiveAreaSnapshot then
 		for questId, questTitle in pairs(self:GetActiveBonusObjectiveAreaSnapshot()) do
 			seenQuestIDs[questId] = true
-			if not tracker[questId] then
+			if not tracker[questId] and not pendingAcceptances[questId] then
 				self:WatchQuest(questId, { title = questTitle })
 				if tracker[questId] then
 					questsTracked = questsTracked + 1
@@ -5276,6 +5464,7 @@ function QuestTogether:WatchQuest(questId, questInfo)
 		-- This avoids noisy chat lines caused by text-only objective rewrites.
 		objectiveValues = {},
 		objectiveProgressHighWater = existingTrackedQuest and existingTrackedQuest.objectiveProgressHighWater or {},
+		objectiveProgressObservations = existingTrackedQuest and existingTrackedQuest.objectiveProgressObservations or {},
 		isComplete = initialStatusState and initialStatusState.isComplete == true or false,
 		isReadyForTurnIn = initialStatusState and initialStatusState.isReadyForTurnIn == true or false,
 	}

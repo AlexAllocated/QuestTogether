@@ -498,7 +498,8 @@ QT:RegisterTest("audit disabled cleanup hides cached offscreen visuals after res
 			hidden = hidden + 1
 		end,
 	}
-	QT.nameplateIconByUnitFrame[{}] = icon
+	local unitFrame = {}
+	QT.nameplateIconByUnitFrame[unitFrame] = icon
 	local originalPending = QT.pendingNameplateVisualCleanup
 	Patch({
 		IsRuntimeRestricted = function()
@@ -544,5 +545,111 @@ QT:RegisterTest("audit startup timers from a previous enable do not refresh curr
 		callbacks[4]()
 		Equal(questRefreshes, 1)
 		Equal(fullRefreshes, 1)
+	end)
+end)
+
+local function WithRecycledBubble(fn)
+	local state = { restricted = false, mutations = 0, reparents = 0 }
+	local function Region(parent)
+		local region = { parent = parent, shown = true }
+		function region:IsForbidden() return self.forbidden == true end
+		function region:IsProtected()
+			return self.protected == true or (self.parent and self.parent:IsProtected()) or false
+		end
+		function region:IsShown() return self.shown end
+		function region:IsVisible()
+			return self.shown and (not self.parent or self.parent:IsVisible())
+		end
+		function region:GetParent() return self.parent end
+		local function Mutate(self)
+			assert(not self:IsForbidden(), "forbidden bubble mutated")
+			assert(not (self:IsProtected() and state.restricted), "protected bubble mutated during restrictions")
+			state.mutations = state.mutations + 1
+		end
+		function region:SetParent(newParent)
+			Mutate(self)
+			state.reparents = state.reparents + 1
+			if state.rejectParent then error("client rejected reparent") end
+			self.parent = newParent
+		end
+		function region:Show() Mutate(self); self.shown = true end
+		function region:Hide() Mutate(self); self.shown = false end
+		function region:GetFrameStrata() return "LOW" end
+		function region:GetFrameLevel() return 1 end
+		for _, name in ipairs({ "SetFrameStrata", "SetFrameLevel", "SetAlpha", "ClearAllPoints", "SetPoint", "SetSize", "SetClampRectInsets", "SetWidth", "SetText", "SetFont", "SetAtlas", "SetTexCoord" }) do
+			region[name] = Mutate
+		end
+		return region
+	end
+	local oldBase, newBase = Region(), Region()
+	oldBase.shown = false
+	local unitFrame = Region(newBase)
+	unitFrame.unit = "nameplate2"
+	newBase.UnitFrame = unitFrame
+	local bubble = Region(oldBase)
+	bubble.String = Region(bubble)
+	function bubble.String:GetFont() return "font", 14, "" end
+	function bubble.String:GetUnboundedStringWidth() return 100 end
+	function bubble.String:GetStringHeight() return 14 end
+	bubble.animationGroup = { IsPlaying = function() return false end, Play = function() end }
+	state.oldBase, state.newBase, state.unitFrame, state.bubble = oldBase, newBase, unitFrame, bubble
+	QT.nameplateBubbleByUnitFrame[unitFrame] = bubble
+	QT.isEnabled = true
+	QT.db.profile.showChatBubbles = true
+	Patch({
+		API = { UnitGUID = function() return "Player-1-NEW" end },
+		IsRuntimeRestricted = function() return state.restricted end,
+	}, function() fn(state) end)
+end
+
+QT:RegisterTest("recycled unit frame reparents its cached bubble to the current visible base", function()
+	WithRecycledBubble(function(state)
+		Equal(state.bubble:IsShown(), true)
+		Equal(state.bubble:IsVisible(), false, "shown is not sufficient under the old hidden base")
+		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "New sender quest progress"), true)
+		Equal(state.bubble:GetParent(), state.newBase)
+		Equal(state.bubble:IsVisible(), true)
+		Equal(state.reparents, 1)
+		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Another update"), true)
+		Equal(state.reparents, 1, "unchanged bubble hosts should not be reparented")
+	end)
+end)
+
+QT:RegisterTest("bubble reuse never reparents forbidden bubbles or during restricted playback", function()
+	WithRecycledBubble(function(state)
+		state.bubble.forbidden = true
+		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Forbidden"), false)
+		Equal(state.mutations, 0)
+		state.bubble.forbidden, state.restricted, state.oldBase.protected = false, true, true
+		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Restricted"), false)
+		Equal(state.mutations, 0)
+		Equal(state.reparents, 0)
+	end)
+end)
+
+QT:RegisterTest("bubble reuse does not report success when the client rejects the new parent", function()
+	WithRecycledBubble(function(state)
+		state.rejectParent = true
+		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Rejected parent"), false)
+		Equal(state.bubble:GetParent(), state.oldBase)
+		Equal(state.bubble:IsVisible(), false)
+		Equal(QT.nameplateBubbleStateByFrame[state.bubble], nil)
+	end)
+end)
+
+QT:RegisterTest("new bubble playback supersedes protected cleanup from the disabled lifetime", function()
+	WithRecycledBubble(function(state)
+		state.restricted, state.oldBase.protected = true, true
+		QT.isEnabled = false
+		Equal(QT:HideAllNameplateVisuals(), false)
+		Equal(state.mutations, 0, "restricted old playback must remain untouched")
+		QT:ResetNameplateStateStore()
+		Equal(QT:GetNameplateStateStore().pendingVisualCleanupByFrame[state.bubble], "bubble")
+		state.restricted, state.oldBase.protected, QT.isEnabled = false, false, true
+		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "New lifetime announcement"), true)
+		Equal(QT.pendingNameplateVisualCleanup, false)
+		Equal(QT:RetryPendingNameplateVisualCleanup(), true)
+		Equal(state.bubble:IsVisible(), true)
+		Equal(QT.nameplateBubbleStateByFrame[state.bubble].text, "New lifetime announcement")
 	end)
 end)
