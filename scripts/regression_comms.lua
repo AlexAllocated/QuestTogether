@@ -1695,3 +1695,165 @@ QuestTogether:RegisterTest("bubbletest slash rejects malformed names empty text 
 		Equal(addon.messages[#addon.messages], "No visible nearby player matched that name.")
 	end
 end)
+
+QuestTogether:RegisterTest("rapid party comparison refreshes supersede obsolete peer responses and complete the newest session", function()
+	local peer, requester = NewCommsFixture(), NewCommsFixture()
+	local clock = QuestTogether:CreateTestClock(100)
+	for _, addon in ipairs({ peer, requester }) do
+		addon.API.GetTime = function() return clock:GetTime() end
+		addon.API.IsInParty = function() return true end
+		addon.API.Delay = function(delay, callback) clock:After(delay, callback) end
+		addon.runtime.deferredWorkState = { entries = {}, generations = {} }
+		addon.IsWorkBlocked = function() return false end
+		addon.QueuePartyQuestCompareRender = function() end
+		addon.partyQuestCompareSession = false
+	end
+	peer.API.UnitFullName = function() return "Friend", "Realm" end
+	peer.API.UnitName = function() return "Friend" end
+	peer.GetPlayerClassFile = function() return "" end -- Classless peers still reply.
+	peer.partyMembers["MyPlayer-Realm"] = {}
+	requester.partyMembers["Friend-Realm"] = {}
+	requester.partyMemberOrder = { "Friend-Realm" }
+	SetComparisonEntries(peer, 35)
+	SetComparisonEntries(requester, 0)
+	local timers = {}
+	peer.API.Delay = function(delay, callback)
+		timers[#timers + 1] = callback
+		clock:After(delay, callback)
+	end
+	local ids = {}
+	for index = 1, 4 do
+		Equal(requester:RefreshPartyQuestCompare(), true)
+		ids[index] = requester.partyQuestCompareSession.byName["Friend-Realm"].requestId
+		peer:OnCommReceived(peer.commPrefix, requester.wire[#requester.wire][2], "PARTY", "MyPlayer-Realm")
+	end
+	local queue = peer.questCompareResponseQueue
+	Equal(#queue.jobs, 1)
+	Equal(queue.jobs[1].requestId, ids[4])
+	Equal(queue.packets, 36)
+	Equal(#peer.wire, 1) -- The first response packet was already sent before Refresh.
+	Equal(#timers, 1) -- Supersession retains the existing cooldown callback.
+	for index = 1, 3 do Equal(requester.pendingQuestCompareRequests[ids[index]], nil) end
+	requester:OnCommReceived(requester.commPrefix, peer.wire[1][2], "PARTY", "Friend-Realm")
+	local member = requester.partyQuestCompareSession.byName["Friend-Realm"]
+	Equal(next(member.entries), nil) -- Delayed old packets cannot enter the new session.
+	Equal(member.state, "loading")
+	local delivered = 1
+	for _ = 1, 40 do
+		clock:Advance(0.1) -- The first tick is the callback created for the old response.
+		while delivered < #peer.wire do
+			delivered = delivered + 1
+			local packet = peer.wire[delivered]
+			local command, payload = peer:DeserializeWireMessage(packet[2])
+			local data = command == "QCQE" and peer:DecodeQuestCompareEntryPayload(payload)
+				or peer:DecodeQuestCompareDonePayload(payload)
+			Equal(data.requestId, ids[4])
+			Equal(packet[3], "PARTY")
+			requester:OnCommReceived(requester.commPrefix, packet[2], packet[3], "Friend-Realm")
+		end
+	end
+	Equal(member.state, "ready")
+	Equal(member.supportsShareRequests, true)
+	Equal(requester.pendingQuestCompareRequests[ids[4]], nil)
+	local count = 0
+	for _ in pairs(member.entries) do count = count + 1 end
+	Equal(count, 35)
+	Equal(#peer.wire, 37) -- One unavoidable old entry, then all 35 new entries and done.
+	Equal(#queue.jobs, 0)
+	Equal(queue.packets, 0)
+	clock:Advance(181)
+	Equal(member.state, "ready")
+	Equal(#peer.wire, 37)
+end)
+
+QuestTogether:RegisterTest("comparison supersession uses transport identity and preserves unrelated queue jobs and bounds", function()
+	local addon = NewCommsFixture()
+	InstallResponseClock(addon)
+	SetComparisonEntries(addon, 1)
+	local function Receive(id, transportSender, claimedSender, route)
+		addon.partyMembers[transportSender] = {}
+		local wire = addon:SerializeWireMessage("QCMP", addon:EncodeQuestCompareRequestPayload({
+			requestId = id, requesterName = claimedSender or transportSender, targetName = "MyPlayer-Realm",
+		}))
+		addon:OnCommReceived(addon.commPrefix, wire, route or "PARTY", transportSender)
+	end
+	Receive("a-old", "Alpha-Realm")
+	Receive("b", "Beta-Realm", "Alpha-Realm") -- Payload cannot cancel Alpha's authenticated job.
+	Receive("c", "Gamma-Realm")
+	Receive("d", "Delta-Realm")
+	local queue = addon.questCompareResponseQueue
+	Equal(#queue.jobs, 4)
+	Equal(queue.jobs[1].requestId, "a-old")
+	Equal(queue.jobs[2].requesterName, "Beta-Realm")
+	local beta, gamma, delta = queue.jobs[2], queue.jobs[3], queue.jobs[4]
+	Receive("a-new", "Alpha-Realm", "Beta-Realm", "RAID")
+	Equal(#queue.jobs, 4)
+	Equal(queue.jobs[1], beta)
+	Equal(queue.jobs[2], gamma)
+	Equal(queue.jobs[3], delta)
+	Equal(queue.jobs[4].requestId, "a-new")
+	Equal(queue.jobs[4].routes[1].distribution, "RAID")
+	Equal(queue.packets, 8)
+	local latest = queue.jobs[4]
+	Receive("a-new", "Alpha-Realm", "Beta-Realm", "PARTY") -- Duplicate route delivery keeps the same job.
+	Equal(queue.jobs[4], latest)
+	Receive("overflow", "Epsilon-Realm")
+	Equal(#queue.jobs, 4)
+	Equal(queue.packets, 8)
+	for _ = 1, 12 do if not RunResponseTimer(addon) then break end end
+	Equal(#queue.jobs, 0)
+	Equal(queue.packets, 0)
+
+	addon:ResetCommsState()
+	SetComparisonEntries(addon, 60)
+	Receive("large-a", "Alpha-Realm")
+	Receive("large-b", "Beta-Realm")
+	queue = addon.questCompareResponseQueue
+	local old, other = queue.jobs[1], queue.jobs[2]
+	Equal(queue.packets, 121) -- One Alpha entry has already left the queue.
+	SetComparisonEntries(addon, 100)
+	Receive("too-large-replacement", "Alpha-Realm")
+	Equal(queue.jobs[1], old) -- Failed admission must not discard the valid old job.
+	Equal(queue.jobs[2], other)
+	Equal(queue.packets, 121)
+	SetComparisonEntries(addon, 1)
+	Receive("small-replacement", "Alpha-Realm")
+	Equal(queue.jobs[1], other)
+	Equal(queue.jobs[2].requestId, "small-replacement")
+	Equal(queue.packets, 63)
+	for _ = 1, 70 do if not RunResponseTimer(addon) then break end end
+	Equal(#queue.jobs, 0)
+	Equal(queue.packets, 0)
+end)
+
+QuestTogether:RegisterTest("restricted comparison refreshes replace pending snapshots without extra timers or stale replies", function()
+	local addon, clock = NewSnapshotComparisonFixture()
+	addon.restrictions.combat = true
+	ReceiveSnapshotComparisonRequest(addon, "restricted-old")
+	local oldTimer = clock.timers[1].callback
+	clock:Advance(1)
+	ReceiveSnapshotComparisonRequest(addon, "restricted-new")
+	local queue = addon.questCompareResponseQueue
+	Equal(#queue.jobs, 1)
+	Equal(queue.jobs[1].requestId, "restricted-new")
+	Equal(queue.jobs[1].snapshotAttempts, 0)
+	Equal(queue.packets, 1)
+	Equal(#clock.timers, 1)
+	Equal(addon.questReads, 0)
+	addon.restrictions.combat = nil
+	clock:Advance(1)
+	clock:Advance(0.1)
+	Equal(#addon.wire, 2)
+	for _, packet in ipairs(addon.wire) do
+		local command, payload = addon:DeserializeWireMessage(packet[2])
+		local data = command == "QCQE" and addon:DecodeQuestCompareEntryPayload(payload)
+			or addon:DecodeQuestCompareDonePayload(payload)
+		Equal(data.requestId, "restricted-new")
+	end
+	Equal(#queue.jobs, 0)
+	Equal(queue.packets, 0)
+	addon:ResetCommsState()
+	oldTimer()
+	Equal(addon.questCompareResponseQueue, nil)
+	Equal(#addon.wire, 2)
+end)

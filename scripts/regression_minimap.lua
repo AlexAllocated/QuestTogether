@@ -1,0 +1,560 @@
+-- Private fixtures only: this module also runs inside a live /qt test session.
+local QuestTogether = _G.QuestTogether
+local function Equal(actual, expected)
+	assert(actual == expected, "expected " .. tostring(expected) .. ", got " .. tostring(actual))
+end
+local function Near(actual, expected)
+	assert(type(actual) == "number" and math.abs(actual - expected) < 0.00001)
+end
+
+local function Frame(parent)
+	local frame = { parent = parent, shown = true, scripts = {}, events = {}, textures = {}, points = {}, layouts = 0 }
+	function frame:IsForbidden()
+		return self.forbidden == true or (self.parent and self.parent:IsForbidden()) or false
+	end
+	function frame:IsShown()
+		return self.shown
+	end
+	function frame:SetScript(name, callback)
+		assert(not self:IsForbidden())
+		self.scripts[name] = callback
+	end
+	function frame:RegisterEvent(name)
+		self.events[name] = true
+	end
+	function frame:Show()
+		assert(not self:IsForbidden())
+		local changed = not self.shown
+		self.shown = true
+		if changed and self.scripts.OnShow then
+			self.scripts.OnShow(self)
+		end
+	end
+	function frame:Hide()
+		assert(not self:IsForbidden())
+		local changed = self.shown
+		self.shown = false
+		if changed and self.scripts.OnHide then
+			self.scripts.OnHide(self)
+		end
+	end
+	function frame:SetSize(width, height)
+		self.width, self.height = width, height
+	end
+	function frame:GetWidth()
+		assert(not self.forbidden)
+		return self.width
+	end
+	function frame:GetHeight()
+		assert(not self.forbidden)
+		return self.height
+	end
+	function frame:GetCenter()
+		assert(not self.forbidden)
+		return self.cx, self.cy
+	end
+	function frame:GetEffectiveScale()
+		assert(not self.forbidden)
+		return self.scale
+	end
+	function frame:SetPoint(...)
+		assert(not self:IsForbidden())
+		self.layouts = self.layouts + 1
+		self.points[#self.points + 1] = { ... }
+	end
+	function frame:ClearAllPoints()
+		assert(not self:IsForbidden())
+		self.points = {}
+	end
+	function frame:SetFrameStrata(value)
+		self.strata = value
+	end
+	function frame:SetFrameLevel(value)
+		self.level = value
+	end
+	function frame:RegisterForClicks(...)
+		self.clicks = { ... }
+	end
+	function frame:RegisterForDrag(...)
+		self.drags = { ... }
+	end
+	function frame:SetHighlightTexture(value)
+		self.highlight = value
+	end
+	function frame:SetClampedToScreen(value)
+		self.clamped = value
+	end
+	function frame:SetBackdrop(value)
+		self.backdrop = value
+	end
+	function frame:SetBackdropColor(...)
+		self.color = { ... }
+	end
+	function frame:SetTexture(value)
+		self.texture = value
+	end
+	function frame:SetText(value)
+		self.text = value
+	end
+	function frame:CreateTexture()
+		local texture = Frame(self)
+		self.textures[#self.textures + 1] = texture
+		return texture
+	end
+	function frame:CreateFontString()
+		return Frame(self)
+	end
+	return frame
+end
+
+local function Menu()
+	local menu = { entries = {} }
+	function menu:CreateButton(label, callback)
+		local entry = { label = label, callback = callback, enabled = true }
+		function entry:SetEnabled(value)
+			self.enabled = value
+		end
+		self.entries[#self.entries + 1] = entry
+		return entry
+	end
+	function menu:CreateDivider()
+		self.entries[#self.entries + 1] = { divider = true }
+	end
+	return menu
+end
+
+local function Fixture()
+	local addon = setmetatable({
+		hasLoggedIn = true,
+		isEnabled = true,
+		db = { profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile) },
+		frames = {},
+		messages = {},
+		menus = {},
+		settings = 0,
+		compares = 0,
+		journals = 0,
+	}, { __index = QuestTogether })
+	local anchor = Frame()
+	anchor.width, anchor.height, anchor.cx, anchor.cy, anchor.scale = 140, 140, 100, 200, 2
+	addon.anchor, addon.cursorX, addon.cursorY = anchor, 200, 556
+	addon.API = {
+		GetMinimapAnchor = function()
+			return addon.anchor
+		end,
+		CanOpenQuestJournalWindow = function()
+			return addon.journalAvailable ~= false
+		end,
+		OpenQuestJournalWindow = function()
+			addon.journals = addon.journals + 1
+			return addon.journalSucceeds ~= false
+		end,
+		CreateContextMenu = function(owner, generator)
+			local menu = Menu()
+			menu.owner = owner
+			generator(owner, menu)
+			addon.menus[#addon.menus + 1] = menu
+			return true
+		end,
+	}
+	function addon:CreateMinimapUIFrame(kind, name, parent)
+		local frame = Frame(parent)
+		frame.kind, frame.name = kind, name
+		self.frames[#self.frames + 1] = frame
+		return frame
+	end
+	function addon:GetMinimapCursorPosition()
+		return self.cursorX, self.cursorY
+	end
+	function addon:GetMinimapShapeName()
+		return self.shape or "ROUND"
+	end
+	function addon:IsRuntimeRestricted()
+		return self.blocked == true
+	end
+	function addon:CanAccessValue(value)
+		return value ~= self.unreadable
+	end
+	function addon:Print(message)
+		self.messages[#self.messages + 1] = message
+	end
+	function addon:OpenOptionsWindow()
+		self.settings = self.settings + 1
+	end
+	function addon:OpenPartyQuestCompare()
+		self.compares = self.compares + 1
+	end
+	function addon:OpenReleaseNotes()
+		self.notes = (self.notes or 0) + 1
+	end
+	function addon:NormalizeAnnouncementDisplayOptions() end
+	-- The existing menu reports visible chat windows, not only the saved option.
+	function addon:GetResolvedChatLogDestination()
+		return self.separateOpened and "separate" or "main"
+	end
+	function addon:EnsureQuestLogChatFrame()
+		self.separateOpened = true
+	end
+	function addon:CloseQuestLogChatFrame()
+		self.separateOpened = false
+	end
+	function addon:RefreshOptionsWindow() end
+	return addon
+end
+
+QuestTogether:RegisterTest(
+	"minimap creates one owned launcher with the scroll texture and exact menu actions",
+	function()
+		local a = Fixture()
+		a:InitializeMinimapLauncher()
+		a:InitializeMinimapLauncher()
+		Equal(#a.frames, 2)
+		local button = a.minimapButton
+		assert(button.shown and button.parent == a.anchor)
+		Equal(button.textures[1].texture, "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon")
+		Equal(a.anchor.layouts, 0)
+		Equal(next(a.anchor.scripts), nil)
+		Equal(button.clicks[1], "LeftButtonUp")
+		Equal(button.clicks[2], "RightButtonUp")
+		for _, click in ipairs({ "LeftButton", "RightButton" }) do
+			button.scripts.OnClick(button, click)
+		end
+		Equal(#a.menus, 2)
+		local entries = a.menus[1].entries
+		Equal(#entries, 7)
+		Equal(entries[1].label, "Settings")
+		Equal(entries[2].label, "Compare Party Quests")
+		Equal(entries[3].label, "Open Quest Journal")
+		Equal(entries[4].label, "Patch Notes")
+		assert(entries[5].divider)
+		Equal(entries[6].label, "Move QuestTogether Logs to Separate Window")
+		Equal(entries[7].label, "Hide Minimap Icon")
+		for _, index in ipairs({ 1, 2, 3, 4, 6 }) do
+			entries[index].callback()
+		end
+		Equal(a.settings, 1)
+		Equal(a.compares, 1)
+		Equal(a.journals, 1)
+		Equal(a.notes, 1)
+		Equal(a:GetOption("chatLogDestination"), "separate")
+		assert(a.separateOpened)
+		local menu = Menu()
+		a:PopulateMinimapMenu(menu)
+		Equal(menu.entries[6].label, "Move QuestTogether Logs to Main Window")
+		menu.entries[6].callback()
+		Equal(a:GetOption("chatLogDestination"), "main")
+		Equal(a.separateOpened, false)
+	end
+)
+
+QuestTogether:RegisterTest("minimap stale menu actions recheck restrictions and disabled compare", function()
+	local a = Fixture()
+	a:InitializeMinimapLauncher()
+	a:ShowMinimapMenu(a.minimapButton)
+	local menu = a.menus[1]
+	a.blocked = true
+	for index = 1, 4 do
+		menu.entries[index].callback()
+	end
+	menu.entries[6].callback()
+	local messages = #a.messages
+	menu.entries[7].callback()
+	Equal(#a.messages, messages)
+	Equal(a:GetOption("showMinimapButton"), true)
+	assert(a.minimapButton.shown)
+	Equal(a:GetOption("chatLogDestination"), "main")
+	Equal(a.separateOpened, nil)
+	Equal(a.settings + a.compares + a.journals, 0)
+	Equal(a.notes, nil)
+	Equal(a:ShowMinimapMenu(a.minimapButton), false)
+	Equal(#a.menus, 1)
+	a.blocked, a.isEnabled = false, false
+	menu.entries[2].callback()
+	Equal(a.compares, 0)
+	local disabled = Menu()
+	a:PopulateMinimapMenu(disabled)
+	Equal(disabled.entries[2].enabled, false)
+	assert(disabled.entries[1].enabled and disabled.entries[3].enabled)
+	disabled.entries[1].callback()
+	disabled.entries[3].callback()
+	Equal(a.settings, 1)
+	Equal(a.journals, 1)
+	a.journalAvailable = false
+	menu.entries[3].callback()
+	Equal(a.journals, 1)
+	local unavailable = Menu()
+	a:PopulateMinimapMenu(unavailable)
+	Equal(unavailable.entries[3].enabled, false)
+	a.journalAvailable, a.journalSucceeds = true, false
+	Equal(a:OpenQuestJournalFromMinimap(), false)
+	Equal(a.journals, 2)
+end)
+
+QuestTogether:RegisterTest(
+	"minimap hide shortcut saves visibility and explains how to restore it in settings",
+	function()
+		local a = Fixture()
+		local refreshed = 0
+		function a:RefreshOptionsWindow()
+			refreshed = refreshed + 1
+		end
+		a:InitializeMinimapLauncher()
+		a:ShowMinimapMenu(a.minimapButton)
+		a:ShowMinimapTooltip(a.minimapButton)
+		a.menus[1].entries[7].callback()
+		Equal(a:GetOption("showMinimapButton"), false)
+		Equal(a.minimapButton.shown, false)
+		Equal(a.minimapTooltip.shown, false)
+		Equal(refreshed, 1)
+		Equal(#a.messages, 1)
+		assert(a.messages[1]:find("Settings > Miscellaneous > Show minimap icon", 1, true))
+		assert(a.messages[1]:find("/qt options", 1, true))
+		-- Restoring through the same option used by the settings checkbox reuses the button.
+		assert(a:SetOption("showMinimapButton", true))
+		assert(a.minimapButton.shown)
+		Equal(#a.frames, 3)
+		Equal(#a.messages, 1)
+		function a:SetOption()
+			return false
+		end
+		a.menus[1].entries[7].callback()
+		Equal(#a.messages, 1)
+		Equal(refreshed, 1)
+	end
+)
+
+QuestTogether:RegisterTest("minimap initial hidden or restricted state recovers without runtime enable", function()
+	local a = Fixture()
+	a.hasLoggedIn = false
+	a:InitializeMinimapLauncher()
+	Equal(#a.frames, 0)
+	a.hasLoggedIn, a.isEnabled, a.blocked = true, false, true
+	a:InitializeMinimapLauncher()
+	Equal(#a.frames, 1)
+	Equal(rawget(a, "minimapButton"), nil)
+	assert(a.minimapLauncherFrame.events.PLAYER_REGEN_ENABLED)
+	assert(a.minimapLauncherFrame.events.ADDON_RESTRICTION_STATE_CHANGED)
+	a:SetOption("showMinimapButton", false)
+	a.blocked = false
+	a.minimapLauncherFrame.scripts.OnEvent()
+	Equal(rawget(a, "minimapButton"), nil)
+	a:SetOption("showMinimapButton", true)
+	assert(a.minimapButton.shown)
+	local layouts = a.minimapButton.layouts
+	a.blocked = true
+	a:SetOption("showMinimapButton", false)
+	assert(a.minimapButton.shown)
+	Equal(a.minimapButton.layouts, layouts)
+	a.blocked = false
+	a.minimapLauncherFrame.scripts.OnEvent()
+	Equal(a.minimapButton.shown, false)
+	a:SetOption("showMinimapButton", true)
+	assert(a.minimapButton.shown)
+	Equal(#a.frames, 2)
+end)
+
+QuestTogether:RegisterTest("minimap invalid anchor geometry stays hidden and recovers on layout events", function()
+	local a = Fixture()
+	a.anchor.width = 0
+	a:InitializeMinimapLauncher()
+	Equal(a.minimapButton.shown, false)
+	Equal(a.minimapButton.layouts, 0)
+	a.anchor.width = 140
+	a.minimapLauncherFrame.scripts.OnEvent()
+	assert(a.minimapButton.shown)
+	local button, layouts = a.minimapButton, a.minimapButton.layouts
+	a.anchor.forbidden = true
+	Equal(a:PositionMinimapButton(0), false)
+	Equal(button.layouts, layouts)
+	a.anchor.forbidden, a.anchor.height = false, "unavailable"
+	Equal(a:RefreshMinimapButton(), false)
+	Equal(button.shown, false)
+	a.anchor.height = 200
+	a.minimapLauncherFrame.scripts.OnEvent()
+	assert(button.shown)
+end)
+
+QuestTogether:RegisterTest("minimap offsets follow round and square edges and reject unreadable dimensions", function()
+	local a = Fixture()
+	local x, y = a:GetMinimapButtonOffset(0, 140, 140, "ROUND")
+	Near(x, 78)
+	Near(y, 0)
+	x, y = a:GetMinimapButtonOffset(90, 140, 200, "ROUND")
+	Near(x, 0)
+	Near(y, 108)
+	x, y = a:GetMinimapButtonOffset(45, 140, 140, "SQUARE")
+	Near(x, 78)
+	Near(y, 78)
+	x, y = a:GetMinimapButtonOffset(-90, 140, 140, "ROUND")
+	Near(x, 0)
+	Near(y, -78)
+	Equal(a:GetMinimapButtonOffset(0, -1, 140), nil)
+	Equal(a:GetMinimapButtonOffset(0, math.huge, 140), nil)
+	a.unreadable = 140
+	Equal(a:GetMinimapButtonOffset(0, 140, 140), nil)
+end)
+
+QuestTogether:RegisterTest(
+	"minimap drag uses effective scale saves each quadrant and suppresses release clicks",
+	function()
+		local a = Fixture()
+		a:InitializeMinimapLauncher()
+		local button = a.minimapButton
+		for _, item in ipairs({ { 356, 400, 0 }, { 200, 556, 90 }, { 44, 400, 180 }, { 200, 244, 270 } }) do
+			a.cursorX, a.cursorY = item[1], item[2]
+			button.scripts.OnMouseDown()
+			button.scripts.OnDragStart()
+			assert(button.scripts.OnUpdate)
+			button.scripts.OnUpdate()
+			button.scripts.OnDragStop()
+			Near(a:GetOption("minimapButtonPosition"), item[3])
+			Equal(button.scripts.OnUpdate, nil)
+			button.scripts.OnClick(button, "LeftButton")
+			Equal(#a.menus, 0)
+		end
+		button.scripts.OnMouseDown()
+		button.scripts.OnClick(button, "RightButton")
+		Equal(#a.menus, 1)
+	end
+)
+
+QuestTogether:RegisterTest("minimap interrupted drags cannot save a stale angle or touch restricted layout", function()
+	for _, interruption in ipairs({ "restricted", "profile", "hidden", "scale", "cursor", "forbidden", "width" }) do
+		local a = Fixture()
+		a:InitializeMinimapLauncher()
+		local button, profile = a.minimapButton, a.db.profile
+		a:StartMinimapButtonDrag(button)
+		Near(a.minimapDragState.angle, 90)
+		local layouts = button.layouts
+		if interruption == "restricted" then
+			a.blocked = true
+		elseif interruption == "profile" then
+			a.db.profile = QuestTogether:DeepCopy(profile)
+		elseif interruption == "hidden" then
+			a.db.profile.showMinimapButton = false
+		elseif interruption == "scale" then
+			a.anchor.scale = 0
+		elseif interruption == "cursor" then
+			a.unreadable = a.cursorY
+		elseif interruption == "forbidden" then
+			a.anchor.forbidden = true
+		elseif interruption == "width" then
+			a.anchor.width = 0
+		end
+		a:UpdateMinimapButtonDrag()
+		a:StopMinimapButtonDrag(false)
+		Equal(rawget(a, "minimapDragState"), nil)
+		Equal(button.layouts, layouts)
+		Equal(profile.minimapButtonPosition, 225)
+		Equal(a.db.profile.minimapButtonPosition, 225)
+		if interruption == "forbidden" then
+			a:HideMinimapTooltip()
+			a:SetOption("showMinimapButton", false)
+			a.anchor.forbidden = false
+			a:RefreshMinimapButton()
+		end
+		Equal(button.scripts.OnUpdate, nil)
+	end
+end)
+
+QuestTogether:RegisterTest(
+	"minimap profile refresh applies visibility and position without recreating frames",
+	function()
+		local a = Fixture()
+		a:InitializeMinimapLauncher()
+		local button = a.minimapButton
+		a:StartMinimapButtonDrag(button)
+		a.db.profile = { showMinimapButton = false, minimapButtonPosition = 0 }
+		a:RefreshMinimapButton()
+		Equal(button.shown, false)
+		Equal(button.scripts.OnUpdate, nil)
+		a.db.profile = { showMinimapButton = true, minimapButtonPosition = 180 }
+		a:RefreshMinimapButton()
+		assert(button.shown)
+		Near(button.points[1][4], -78)
+		Near(button.points[1][5], 0)
+		Equal(#a.frames, 2)
+		Equal(a:SetOption("showMinimapButton", "false"), false)
+		Equal(a:SetOption("minimapButtonPosition", math.huge), false)
+		assert(a:SetOption("minimapButtonPosition", -90))
+		Near(a:GetOption("minimapButtonPosition"), 270)
+	end
+)
+
+QuestTogether:RegisterTest("minimap tooltip is addon owned reused and hidden for drags and clicks", function()
+	local a = Fixture()
+	a:InitializeMinimapLauncher()
+	local button = a.minimapButton
+	button.scripts.OnEnter()
+	local tooltip = a.minimapTooltip
+	assert(tooltip.shown and tooltip.parent == button)
+	button.scripts.OnLeave()
+	Equal(tooltip.shown, false)
+	button.scripts.OnEnter()
+	Equal(a.minimapTooltip, tooltip)
+	Equal(#a.frames, 3)
+	button.scripts.OnClick(button, "LeftButton")
+	Equal(tooltip.shown, false)
+	button.scripts.OnEnter()
+	button.scripts.OnDragStart()
+	Equal(tooltip.shown, false)
+	button.scripts.OnEnter()
+	Equal(tooltip.shown, false)
+	button:Hide()
+	Equal(button.scripts.OnUpdate, nil)
+	Equal(a:GetOption("minimapButtonPosition"), 225)
+end)
+
+QuestTogether:RegisterTest("misc settings refresh minimap visibility after profile switches", function()
+	local checkbox = {
+		SetChecked = function(self, value)
+			self.checked = value
+		end,
+	}
+	QuestTogether.miscFrame = {}
+	QuestTogether.miscControls = { showMinimapButton = checkbox }
+	QuestTogether.db.profile.showMinimapButton = true
+	QuestTogether:RefreshMiscWindow()
+	Equal(checkbox.checked, true)
+	QuestTogether.db.profile = { showMinimapButton = false }
+	QuestTogether:RefreshMiscWindow()
+	Equal(checkbox.checked, false)
+end)
+
+QuestTogether:RegisterTest("minimap forbidden parents recover through the independent launcher frame", function()
+	local a = Fixture()
+	a.anchor.forbidden = true
+	a:InitializeMinimapLauncher()
+	Equal(#a.frames, 1)
+	Equal(a.minimapLauncherFrame.parent, nil)
+	Equal(rawget(a, "minimapButton"), nil)
+	a.anchor.forbidden = false
+	a.minimapLauncherFrame.scripts.OnEvent()
+	a:ShowMinimapTooltip(a.minimapButton)
+	local tooltip = a.minimapTooltip
+	a:StartMinimapButtonDrag(a.minimapButton)
+	a.anchor.forbidden = true
+	a:UpdateMinimapButtonDrag()
+	Equal(rawget(a, "minimapDragState"), nil)
+	a:HideMinimapTooltip()
+	a:ShowMinimapTooltip(a.minimapButton)
+	a:SetOption("showMinimapButton", false)
+	Equal(tooltip.shown, false)
+	a.anchor.forbidden = false
+	a.minimapLauncherFrame.scripts.OnEvent()
+	Equal(a.minimapButton.shown, false)
+	Equal(a.minimapButton.scripts.OnUpdate, nil)
+	Equal(a:GetOption("minimapButtonPosition"), 225)
+end)
+
+QuestTogether:RegisterTest("minimap drag release rechecks restrictions before the next animation tick", function()
+	local a = Fixture()
+	a:InitializeMinimapLauncher()
+	a:StartMinimapButtonDrag(a.minimapButton)
+	Near(a.minimapDragState.angle, 90)
+	a.blocked = true
+	-- Restriction can start between the last OnUpdate and OnDragStop.
+	a:StopMinimapButtonDrag(false)
+	Equal(a:GetOption("minimapButtonPosition"), 225)
+	Equal(rawget(a, "minimapDragState"), nil)
+end)

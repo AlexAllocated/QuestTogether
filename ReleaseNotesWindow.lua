@@ -1,0 +1,310 @@
+local QuestTogether = _G.QuestTogether
+local LibChev = QuestTogether.LibChev
+local LOGO = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon"
+local LOGO_SIZE, LOGO_GAP = 80, 16
+
+-- These factories are addon-owned seams. Tests supply private frames instead
+-- of replacing CreateFrame, UIParent, or any shared Blizzard state.
+function QuestTogether:GetReleaseNotesUIParent()
+	return UIParent
+end
+
+function QuestTogether:CreateReleaseNotesUIFrame(...)
+	return CreateFrame(...)
+end
+
+local function Guard(addon, region)
+	return not addon:IsRuntimeRestricted() and LibChev.CanMutateOwnedRegion(region)
+end
+
+local function Call(addon, region, method, ...)
+	if not Guard(addon, region) then
+		error("release notes region unavailable", 0)
+	end
+	return region[method](region, ...)
+end
+
+local function ParentDimension(addon, parent, methodName)
+	local method = addon:GetAccessibleFrameMember(parent, methodName)
+	if type(method) ~= "function" then
+		return nil
+	end
+	local ok, value = pcall(method, parent)
+	value = ok and addon:SafeToNumber(value) or nil
+	return value and value > 0 and value or nil
+end
+
+local function New(addon, kind, parent)
+	if addon:IsRuntimeRestricted() or not addon:CanAccessForeignFrame(parent) then
+		error("release notes parent unavailable", 0)
+	end
+	local frame = addon:CreateReleaseNotesUIFrame(kind, nil, parent)
+	if not Guard(addon, frame) then
+		error("release notes frame unavailable", 0)
+	end
+	return frame
+end
+
+local function Texture(addon, parent, template, layer, width, height)
+	local texture = Call(addon, parent, "CreateTexture", nil, layer or "BORDER", template)
+	Call(addon, texture, "ClearAllPoints")
+	if width then
+		Call(addon, texture, "SetSize", width, height)
+	end
+	return texture
+end
+
+local function Label(addon, parent, font)
+	local label = Call(addon, parent, "CreateFontString", nil, "OVERLAY", font or "GameFontHighlight")
+	Call(addon, label, "SetJustifyH", "LEFT")
+	Call(addon, label, "SetJustifyV", "TOP")
+	Call(addon, label, "SetWordWrap", true)
+	return label
+end
+
+local function Script(addon, frame, region, event, callback)
+	Call(addon, region, "SetScript", event, function(_, ...)
+		-- Ignore the callback's self; only captured addon-owned objects are used.
+		if Guard(addon, frame) and Guard(addon, region) then
+			pcall(callback, ...)
+		end
+	end)
+end
+
+local function SetScroll(addon, frame, value)
+	value = addon:SafeToNumber(value)
+	if not value then
+		return
+	end
+	value = math.max(0, math.min(frame.maximumScroll or 0, value))
+	Call(addon, frame.scroll, "SetVerticalScroll", value)
+	frame.scrollOffset = value
+	frame.syncScroll = true
+	local ok, err = pcall(Call, addon, frame.slider, "SetValue", value)
+	frame.syncScroll = false
+	if not ok then
+		error(err, 0)
+	end
+end
+
+local function Create(addon, parent)
+	local frame = New(addon, "Frame", parent)
+	Call(addon, frame, "Hide")
+	-- Cache immediately so an interrupted build can be hidden and retried.
+	addon.releaseNotesWindow = frame
+	Call(addon, frame, "SetPoint", "CENTER")
+	Call(addon, frame, "SetFrameStrata", "DIALOG")
+	Call(addon, frame, "SetToplevel", true)
+	Call(addon, frame, "SetFlattensRenderLayers", true)
+	Call(addon, frame, "SetClampedToScreen", true)
+	Call(addon, frame, "EnableMouse", true)
+	local background = Texture(addon, frame, nil, "BACKGROUND")
+	Call(addon, background, "SetAllPoints")
+	Call(addon, background, "SetTexture", "Interface\\FrameGeneral\\UI-Background-Marble", "REPEAT", "REPEAT")
+	Call(addon, background, "SetHorizTile", true)
+	Call(addon, background, "SetVertTile", true)
+	local topLeft = Texture(addon, frame, "UI-Frame-TopLeftCorner", "OVERLAY", 33, 33)
+	Call(addon, topLeft, "SetPoint", "TOPLEFT", -6, 1)
+	local topRight = Texture(addon, frame, "UI-Frame-TopCornerRight", "OVERLAY", 33, 33)
+	Call(addon, topRight, "SetPoint", "TOPRIGHT", 0, 1)
+	local bottomLeft = Texture(addon, frame, "UI-Frame-BotCornerLeft", "BORDER", 14, 14)
+	Call(addon, bottomLeft, "SetPoint", "BOTTOMLEFT", -6, -5)
+	local bottomRight = Texture(addon, frame, "UI-Frame-BotCornerRight", "BORDER", 11, 11)
+	Call(addon, bottomRight, "SetPoint", "BOTTOMRIGHT", 0, -5)
+	for _, edge in ipairs({
+		{ "_UI-Frame-TitleTile", "TOPLEFT", topLeft, "TOPRIGHT", "TOPRIGHT", topRight, "TOPLEFT", 256, 28 },
+		{ "_UI-Frame-Bot", "BOTTOMLEFT", bottomLeft, "BOTTOMRIGHT", "BOTTOMRIGHT", bottomRight, "BOTTOMLEFT", 256, 9 },
+		{ "!UI-Frame-LeftTile", "TOPLEFT", topLeft, "BOTTOMLEFT", "BOTTOMLEFT", bottomLeft, "TOPLEFT", 16, 256 },
+		{ "!UI-Frame-RightTile", "TOPRIGHT", topRight, "BOTTOMRIGHT", "BOTTOMRIGHT", bottomRight, "TOPRIGHT", 10, 256 },
+	}) do
+		local texture = Texture(addon, frame, edge[1], "BORDER", edge[8], edge[9])
+		Call(addon, texture, "SetPoint", edge[2], edge[3], edge[4])
+		Call(addon, texture, "SetPoint", edge[5], edge[6], edge[7])
+	end
+	local titleBackground = Texture(addon, frame, "_UI-Frame-TitleTileBg", "BACKGROUND", 256, 18)
+	Call(addon, titleBackground, "SetPoint", "TOPLEFT", 2, -1)
+	Call(addon, titleBackground, "SetPoint", "TOPRIGHT", -25, -1)
+	frame.title = Label(addon, frame, "GameFontNormal")
+	Call(addon, frame.title, "SetPoint", "TOPLEFT", 16, -5)
+	frame.close = New(addon, "Button", frame)
+	Call(addon, frame.close, "SetSize", 32, 32)
+	Call(addon, frame.close, "SetPoint", "TOPRIGHT", 2, 1)
+	for _, art in ipairs({
+		{ "SetNormalTexture", "Up" },
+		{ "SetPushedTexture", "Down" },
+		{ "SetHighlightTexture", "Highlight" },
+	}) do
+		local texture = Texture(addon, frame.close, nil, "ARTWORK")
+		Call(addon, texture, "SetAllPoints")
+		Call(addon, texture, "SetTexture", "Interface\\Buttons\\UI-Panel-MinimizeButton-" .. art[2])
+		if art[2] == "Highlight" then
+			Call(addon, texture, "SetBlendMode", "ADD")
+		end
+		Call(addon, frame.close, art[1], texture)
+	end
+	Script(addon, frame, frame.close, "OnClick", function()
+		Call(addon, frame, "Hide")
+	end)
+	frame.settings = New(addon, "Button", frame)
+	Call(addon, frame.settings, "SetSize", 100, 24)
+	Call(addon, frame.settings, "SetPoint", "BOTTOMRIGHT", -20, 17)
+	for _, art in ipairs({
+		{ "SetNormalTexture", "DialogButtonNormalTexture" },
+		{ "SetPushedTexture", "DialogButtonPushedTexture" },
+		{ "SetHighlightTexture", "DialogButtonHighlightTexture" },
+	}) do
+		local texture = Texture(addon, frame.settings, art[2], "ARTWORK")
+		Call(addon, texture, "SetAllPoints")
+		Call(addon, frame.settings, art[1], texture)
+	end
+	local settingsLabel = Label(addon, frame.settings, "GameFontNormalSmall")
+	Call(addon, settingsLabel, "SetPoint", "CENTER")
+	Call(addon, settingsLabel, "SetText", "Settings")
+	Script(addon, frame, frame.settings, "OnClick", function()
+		if addon:OpenOptionsWindow() == true then
+			Call(addon, frame, "Hide")
+		end
+	end)
+	frame.footer = Label(addon, frame, "GameFontHighlightSmall")
+	Call(addon, frame.footer, "SetPoint", "BOTTOMLEFT", 22, 22)
+	Call(addon, frame.footer, "SetText", "Read this again: /qt notes")
+	frame.scroll = New(addon, "ScrollFrame", frame)
+	Call(addon, frame.scroll, "SetPoint", "TOPLEFT", 22, -45)
+	Call(addon, frame.scroll, "EnableMouseWheel", true)
+	frame.content = New(addon, "Frame", frame.scroll)
+	Call(addon, frame.scroll, "SetScrollChild", frame.content)
+	frame.logo = Texture(addon, frame.content, nil, "ARTWORK", LOGO_SIZE, LOGO_SIZE)
+	Call(addon, frame.logo, "SetPoint", "TOP", frame.content, "TOP", 0, 0)
+	Call(addon, frame.logo, "SetTexture", LOGO)
+	frame.slider = New(addon, "Slider", frame)
+	Call(addon, frame.slider, "Hide")
+	Call(addon, frame.slider, "SetPoint", "TOPLEFT", frame.scroll, "TOPRIGHT", 8, 0)
+	Call(addon, frame.slider, "SetWidth", 14)
+	Call(addon, frame.slider, "SetOrientation", "VERTICAL")
+	Call(addon, frame.slider, "SetMinMaxValues", 0, 0)
+	Call(addon, frame.slider, "SetValueStep", 1)
+	Call(addon, frame.slider, "EnableMouseWheel", true)
+	local track = Texture(addon, frame.slider, nil, "BACKGROUND")
+	Call(addon, track, "SetAllPoints")
+	Call(addon, track, "SetColorTexture", 0.12, 0.12, 0.12, 0.85)
+	local thumb = Texture(addon, frame.slider, nil, "OVERLAY", 18, 30)
+	Call(addon, thumb, "SetTexture", "Interface\\Buttons\\UI-ScrollBar-Knob")
+	Call(addon, frame.slider, "SetThumbTexture", thumb)
+	Script(addon, frame, frame.slider, "OnValueChanged", function(value)
+		if not frame.syncScroll then
+			SetScroll(addon, frame, value)
+		end
+	end)
+	local function Wheel(delta)
+		delta = addon:SafeToNumber(delta)
+		if delta then
+			SetScroll(addon, frame, (frame.scrollOffset or 0) - delta * 36)
+		end
+	end
+	Script(addon, frame, frame.scroll, "OnMouseWheel", Wheel)
+	Script(addon, frame, frame.slider, "OnMouseWheel", Wheel)
+	frame.labels, frame.ready = {}, true
+	return frame
+end
+
+local function Render(addon, notes, version, isFirstUse)
+	if addon:IsRuntimeRestricted() or not addon:CanAccessTable(notes) then
+		return false
+	end
+	local parent = addon:GetReleaseNotesUIParent()
+	if not addon:CanAccessForeignFrame(parent) then
+		return false
+	end
+	local parentWidth = ParentDimension(addon, parent, "GetWidth")
+	local parentHeight = ParentDimension(addon, parent, "GetHeight")
+	if not parentWidth or not parentHeight then
+		return false
+	end
+	local frame = rawget(addon, "releaseNotesWindow")
+	if frame and not Guard(addon, frame) then
+		return false
+	end
+	if frame and not frame.ready then
+		Call(addon, frame, "Hide")
+		addon.releaseNotesWindow = nil
+		frame = nil
+	end
+	frame = frame or Create(addon, parent)
+	local width = math.max(360, math.min(660, parentWidth * 0.88))
+	local scale = math.min(1, parentWidth * 0.92 / width, parentHeight * 0.92 / 260)
+	local maximumHeight = math.max(260, math.min(650, parentHeight * 0.88 / scale))
+	local contentWidth, offset, count = width - 68, LOGO_SIZE + LOGO_GAP, 0
+	Call(addon, frame, "SetScale", scale)
+	Call(addon, frame.title, "SetWidth", width - 70)
+	Call(addon, frame.title, "SetText", "QuestTogether " .. addon:SafeTrimString(version, ""))
+	Call(addon, frame.footer, "SetWidth", width - 156)
+	local function Add(text, font, gap)
+		text = addon:SafeTrimString(text, "")
+		if text == "" then
+			return
+		end
+		count = count + 1
+		local label = frame.labels[count]
+		if not label then
+			label = Label(addon, frame.content, font)
+			frame.labels[count] = label
+		end
+		Call(addon, label, "SetFontObject", font)
+		Call(addon, label, "ClearAllPoints")
+		Call(addon, label, "SetPoint", "TOPLEFT", 0, -offset)
+		Call(addon, label, "SetWidth", contentWidth)
+		Call(addon, label, "SetText", text)
+		Call(addon, label, "Show")
+		local height = addon:SafeToNumber(Call(addon, label, "GetStringHeight"))
+		if not height or height <= 0 then
+			error("release notes text measurement unavailable", 0)
+		end
+		offset = offset + height + gap
+	end
+	Add(isFirstUse and "Welcome to QuestTogether" or "What's new", "GameFontNormalLarge", 14)
+	Add(notes.welcome, "GameFontHighlight", 18)
+	if addon:CanAccessTable(notes.sections) then
+		for _, section in ipairs(notes.sections) do
+			if addon:CanAccessTable(section) then
+				Add(section.title, "GameFontNormal", 8)
+				if addon:CanAccessTable(section.items) then
+					for _, item in ipairs(section.items) do
+						local text = addon:SafeTrimString(item, "")
+						if text ~= "" then
+							Add("• " .. text, "GameFontHighlight", 9)
+						end
+					end
+				end
+				offset = offset + 10
+			end
+		end
+	end
+	for index = count + 1, #frame.labels do
+		Call(addon, frame.labels[index], "Hide")
+	end
+	local contentHeight = math.max(1, offset)
+	local height = math.min(maximumHeight, math.max(260, contentHeight + 105))
+	local viewportHeight = height - 105
+	Call(addon, frame, "SetSize", width, height)
+	Call(addon, frame.scroll, "SetSize", contentWidth, viewportHeight)
+	Call(addon, frame.content, "SetSize", contentWidth, math.max(contentHeight, viewportHeight))
+	Call(addon, frame.slider, "SetHeight", viewportHeight)
+	frame.maximumScroll = math.max(0, contentHeight - viewportHeight)
+	Call(addon, frame.slider, "SetMinMaxValues", 0, frame.maximumScroll)
+	Call(addon, frame.slider, frame.maximumScroll > 0 and "Show" or "Hide")
+	SetScroll(addon, frame, 0)
+	Call(addon, frame, "Show")
+	local visible = Call(addon, frame, "IsVisible")
+	return addon:CanAccessValue(visible) and visible == true
+end
+
+function QuestTogether:RenderReleaseNotesWindow(notes, version, isFirstUse)
+	local ok, visible = pcall(Render, self, notes, version, isFirstUse)
+	if not ok then
+		local frame = rawget(self, "releaseNotesWindow")
+		if Guard(self, frame) then
+			pcall(Call, self, frame, "Hide")
+		end
+	end
+	return ok and visible == true
+end

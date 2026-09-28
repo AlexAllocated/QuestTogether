@@ -473,6 +473,9 @@ function QuestTogether:HandleGroupRosterChanged(reason)
 	if self.RefreshPartyRoster then
 		self:RefreshPartyRoster()
 	end
+	if self.isEnabled and self.partyRosterFingerprint ~= previousFingerprint and self.OnPartyQuestRosterChanged then
+		self:OnPartyQuestRosterChanged()
+	end
 	if self.isEnabled and self.partyRosterFingerprint ~= previousFingerprint and self.InvalidateNameplateQuestState then
 		-- Tooltip quest evidence includes unfinished objectives owned by grouped
 		-- players. A membership change invalidates both positive and negative
@@ -756,6 +759,7 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 end
 
 function QuestTogether:QUEST_LOG_UPDATE()
+	if self.OnPartyQuestLogChanged then self:OnPartyQuestLogChanged() end
 	if (type(self.onQuestLogUpdate) == "table" and #self.onQuestLogUpdate > 0)
 		or self:GetRuntimeFlag("pendingQuestLogScan", false) then
 		if self.ScheduleQuestLogTaskDrain then

@@ -2,11 +2,12 @@
 set -euo pipefail
 
 usage() {
-	echo "Usage: $0 <major|minor|patch> [stable|beta|alpha]"
+	echo "Usage: $0 <major|minor|patch> [stable|beta|alpha] [--check]"
+	echo "--check validates the planned release without writes, network, commits, or tags."
 	exit 1
 }
 
-if [[ $# -lt 1 || $# -gt 2 ]]; then
+if [[ $# -lt 1 || $# -gt 3 ]]; then
 	usage
 fi
 
@@ -15,8 +16,21 @@ if [[ "$bump_type" != "major" && "$bump_type" != "minor" && "$bump_type" != "pat
 	usage
 fi
 
-release_channel="${2:-stable}"
+shift
+release_channel="stable"
+if [[ $# -gt 0 && "$1" != "--check" ]]; then
+	release_channel="$1"
+	shift
+fi
 if [[ "$release_channel" != "stable" && "$release_channel" != "beta" && "$release_channel" != "alpha" ]]; then
+	usage
+fi
+check_only=false
+if [[ $# -gt 0 && "$1" == "--check" ]]; then
+	check_only=true
+	shift
+fi
+if [[ $# -gt 0 ]]; then
 	usage
 fi
 
@@ -30,6 +44,22 @@ cd "$repo_root"
 toc_file="QuestTogether.toc"
 if [[ ! -f "$toc_file" ]]; then
 	echo "Error: $toc_file not found at repo root."
+	exit 1
+fi
+
+# Validate the authored files before any repository mutation or remote access.
+python3 scripts/check_release_notes.py --check
+toc_version="$(sed -n 's/^## Version:[[:space:]]*//p' "$toc_file" | head -n 1)"
+notes_baseline_ref="refs/tags/v${toc_version}"
+if ! git rev-parse -q --verify "${notes_baseline_ref}^{commit}" >/dev/null; then
+	echo "Error: release-note baseline v${toc_version} is missing. Fetch full history and tags before releasing."
+	exit 1
+fi
+python3 scripts/check_release_notes.py --check --baseline-ref "$notes_baseline_ref"
+
+current_branch="$(git rev-parse --abbrev-ref HEAD)"
+if [[ -z "$current_branch" || "$current_branch" == "HEAD" ]]; then
+	echo "Error: a release must be prepared on a branch."
 	exit 1
 fi
 
@@ -105,16 +135,22 @@ if git rev-parse -q --verify "refs/tags/${new_tag}" >/dev/null; then
 	exit 1
 fi
 
-if git ls-remote --tags origin "refs/tags/${new_tag}" | grep -q .; then
-	echo "Error: remote tag '${new_tag}' already exists on origin."
-	exit 1
-fi
-
 echo "Stable base version: ${stable_base_version} (from ${stable_base_version_source})"
 echo "Release channel: ${release_channel}"
 echo "Bump type: ${bump_type}"
 echo "Target base version: ${target_base_version}"
 echo "New version: ${new_version}"
+
+if [[ "$check_only" == true ]]; then
+	echo "Release preflight passed; no files, refs, or remotes changed."
+	exit 0
+fi
+
+remote_tag="$(git ls-remote --tags origin "refs/tags/${new_tag}")"
+if [[ -n "$remote_tag" ]]; then
+	echo "Error: remote tag '${new_tag}' already exists on origin."
+	exit 1
+fi
 
 echo "Updating ${toc_file} to version ${new_version}..."
 tmp_file="$(mktemp)"
@@ -134,20 +170,18 @@ END {
 ' "$toc_file" > "$tmp_file"
 mv "$tmp_file" "$toc_file"
 
-echo "Committing ${toc_file}..."
-git add "$toc_file"
+python3 scripts/check_release_notes.py --write --set-version "$new_version" --baseline-ref "$notes_baseline_ref"
+python3 scripts/check_release_notes.py --check --baseline-ref "$notes_baseline_ref"
+
+echo "Committing ${toc_file}, release_notes.json, and ReleaseNotes.lua..."
+git add "$toc_file" release_notes.json ReleaseNotes.lua
 if git diff --cached --quiet -- "$toc_file"; then
 	echo "Error: ${toc_file} did not change; nothing to commit."
 	exit 1
 fi
-git commit -m "Bump version to ${new_version}" -- "$toc_file"
+git commit -m "Bump version to ${new_version}" -- "$toc_file" release_notes.json ReleaseNotes.lua
 
 release_commit="$(git rev-parse --short HEAD)"
-current_branch="$(git rev-parse --abbrev-ref HEAD)"
-if [[ -z "$current_branch" || "$current_branch" == "HEAD" ]]; then
-	echo "Error: release commit ${release_commit} is not on a branch; cannot push commit."
-	exit 1
-fi
 echo "Pushing commit ${release_commit} to origin/${current_branch}..."
 git push origin "${current_branch}"
 
@@ -161,4 +195,4 @@ echo "Done."
 echo "Committed: ${release_commit}"
 echo "Commit pushed: origin/${current_branch}"
 echo "Tag pushed: ${new_tag}"
-echo "Updated file: ${toc_file}"
+echo "Updated files: ${toc_file}, release_notes.json, ReleaseNotes.lua"

@@ -355,6 +355,10 @@ QuestTogether.DEFAULTS = {
 		emoteOnQuestCompletion = true,
 		emoteOnNearbyPlayerQuestCompletion = true,
 		emoteOnLevelUp = true,
+		compareHideOtherQuests = false,
+		autoAcceptPartyShareRequests = false,
+		showMinimapButton = true,
+		minimapButtonPosition = 225,
 		emoteOnNearbyPlayerLevelUp = true,
 		nameplateQuestIconEnabled = true,
 		nameplateQuestIconStyle = "left",
@@ -368,6 +372,7 @@ QuestTogether.DEFAULTS = {
 		questLogChatFrameID = nil,
 	},
 		global = {
+			releaseNotesSeenVersion = "",
 			questTrackers = {},
 			personalBubbleAnchors = {},
 			debugLogCategoryFilter = "ALL",
@@ -1700,6 +1705,44 @@ QuestTogether.API = QuestTogether.API or {
 			local ok = pcall(QuestLogPushQuest, index)
 			return ok
 		end,
+		GetMinimapAnchor = function() return Minimap end,
+		CanOpenQuestJournal = function()
+			if type(QuestMapFrame_OpenToQuestDetails) ~= "function"
+				or type(QuestMapFrame_GetDetailQuestID) ~= "function"
+				or not QuestTogether:CanAccessForeignFrame(QuestMapFrame) then return false end
+			local details = QuestTogether:GetAccessibleFrameMember(QuestMapFrame, "DetailsFrame")
+			return QuestTogether:CanAccessForeignFrame(details)
+				and (WorldMapFrame == nil or QuestTogether:CanAccessForeignFrame(WorldMapFrame))
+		end,
+		OpenQuestJournal = function(questID)
+			local id = QuestTogether:SafeToNumber(questID)
+			if not id or id <= 0 or id ~= math.floor(id) or QuestTogether:IsRuntimeRestricted()
+				or not QuestTogether.API.CanOpenQuestJournal() then return false end
+			-- Use the same quest-by-ID entry point as Blizzard's tracker. It opens
+			-- the journal and selects the details without writing our own frame state.
+			local ok = pcall(QuestMapFrame_OpenToQuestDetails, id)
+			if not ok or not QuestTogether:CanAccessForeignFrame(WorldMapFrame, true)
+				or not QuestTogether:CanAccessForeignFrame(QuestMapFrame, true)
+				or not QuestTogether.API.CanOpenQuestJournal() then return false end
+			local selectedOK, selectedID = pcall(QuestMapFrame_GetDetailQuestID)
+			return selectedOK and QuestTogether:SafeToNumber(selectedID) == id
+		end,
+		CanOpenQuestJournalWindow = function()
+			return type(OpenQuestLog) == "function"
+				and QuestTogether:CanAccessForeignFrame(WorldMapFrame)
+				and QuestTogether:CanAccessForeignFrame(QuestMapFrame)
+		end,
+		OpenQuestJournalWindow = function()
+			if QuestTogether:IsRuntimeRestricted() or not QuestTogether.API.CanOpenQuestJournalWindow() then
+				return false
+			end
+			-- Retail/Forever expose this non-toggle opener with the world map.
+			-- Leave the user's selected quest and journal tab to the native UI.
+			local ok = pcall(OpenQuestLog)
+			-- The native opener returns nil and can decline to show its panel.
+			return ok and QuestTogether:CanAccessForeignFrame(WorldMapFrame, true)
+				and QuestTogether:CanAccessForeignFrame(QuestMapFrame, true)
+		end,
 		CreateContextMenu = function(ownerFrame, generator)
 			if not MenuUtil or type(MenuUtil.CreateContextMenu) ~= "function" then return false end
 			if not CanAccessForeignValue(ownerFrame) then return false end
@@ -2559,6 +2602,7 @@ function QuestTogether:ApplyActiveProfileState(changeReason)
 	if self.RefreshPersonalBubbleEditModeDialog then
 		self:RefreshPersonalBubbleEditModeDialog()
 	end
+	if self.RefreshMinimapButton then self:RefreshMinimapButton() end
 	if self.RefreshOptionsWindow then
 		self:RefreshOptionsWindow()
 	end
@@ -3965,8 +4009,32 @@ function QuestTogether:GetQuestShareableStatusLabel(questId)
 	return pushable and "Yes" or "No"
 end
 
-function QuestTogether:NormalizeQuestLinkTitleText(titleText)
+function QuestTogether:NormalizeQuestLinkTitleText(titleText, questId)
 	local normalizedText = self:SafeTrimString(titleText, "")
+	if string.find(normalizedText, "|H", 1, true) then
+		-- Chat hyperlink callbacks may supply the complete formatted message,
+		-- including speaker, quest and coordinate links. Only the clicked quest's
+		-- display text is a title; never wrap the whole message in another link.
+		local numericQuestId = self:SafeToNumber(questId)
+		local questLinkType = self.chatLogQuestLinkType or "questtogetherquest"
+		local matchedTitle
+		for linkType, options, displayStart in string.gmatch(normalizedText, "|H([^:|]+):([^|]*)|h()") do
+			if linkType == questLinkType and numericQuestId and self:SafeToNumber(options) == numericQuestId then
+				local displayEnd = string.find(normalizedText, "|h", displayStart, true)
+				local display = displayEnd and string.sub(normalizedText, displayStart, displayEnd - 1)
+				-- Skip malformed outer wrappers from older status messages, but
+				-- keep scanning their inner links to recover the actual quest title.
+				if display and not string.find(display, "|H", 1, true) then
+					matchedTitle = display
+					break
+				end
+			end
+		end
+		if not matchedTitle then return "" end
+		normalizedText = matchedTitle
+	end
+	normalizedText = normalizedText:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+	normalizedText = self:SafeTrimString(normalizedText, "")
 	if SafeMatch(normalizedText, "^%[.+%]$") then
 		normalizedText = string.sub(normalizedText, 2, -2)
 	end
@@ -3980,7 +4048,7 @@ function QuestTogether:BuildQuestStatusMessage(questId, fallbackTitle)
 	end
 
 	local questTitle = self:GetQuestTitle(numericQuestId)
-	local normalizedFallbackTitle = self:NormalizeQuestLinkTitleText(fallbackTitle)
+	local normalizedFallbackTitle = self:NormalizeQuestLinkTitleText(fallbackTitle, numericQuestId)
 	if
 		normalizedFallbackTitle ~= ""
 		and (questTitle == nil or questTitle == "" or questTitle == ("Quest " .. tostring(numericQuestId)))
@@ -4422,11 +4490,11 @@ end
 
 function QuestTogether:CompareQuestsWithChatLogSpeaker(speakerName)
 	local fullName = self:NormalizeMemberName(speakerName) or tostring(speakerName or "")
-	if fullName == "" or not self.RequestQuestCompare then
+	if fullName == "" or not self.OpenPartyQuestCompare then
 		return false
 	end
 
-	return self:RequestQuestCompare(fullName)
+	return self:OpenPartyQuestCompare(fullName)
 end
 
 function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, speakerName)
@@ -4460,7 +4528,7 @@ function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, s
 		rootDescription:CreateButton(isIgnored and "Unignore" or "Ignore", function()
 			self:ToggleIgnoreChatLogSpeaker(fullName)
 		end)
-		rootDescription:CreateButton("Compare Quests", function()
+		rootDescription:CreateButton("Compare Party Quests", function()
 			self:CompareQuestsWithChatLogSpeaker(fullName)
 		end)
 	end
@@ -4477,6 +4545,7 @@ function QuestTogether:PopulateChatLogDestinationMenu(rootDescription)
 	local isSeparate = self:GetOption("chatLogDestination") == "separate"
 	local buttonText = isSeparate and "Move QuestTogether Logs to Main Window" or "Move QuestTogether Logs to Separate Window"
 	rootDescription:CreateButton(buttonText, function()
+		if self:IsRuntimeRestricted() then return end
 		self:SetOption("chatLogDestination", isSeparate and "main" or "separate")
 		if self.RefreshOptionsWindow then
 			self:RefreshOptionsWindow()
@@ -4552,6 +4621,37 @@ function QuestTogether:ShareQuestFromChatLog(questId)
 	return true
 end
 
+function QuestTogether:GetQuestJournalAvailability(questId)
+	local id = self:SafeToNumber(questId)
+	if not id or id <= 0 or id ~= math.floor(id) then return nil, "Invalid quest." end
+	if self:IsWorkBlocked("foreign_frame_mutation") then
+		return nil, "Opening the quest journal is unavailable while restricted."
+	end
+	if not self.API.CanOpenQuestJournal or self.API.CanOpenQuestJournal() ~= true then
+		return nil, "Opening the quest journal is unavailable on this client."
+	end
+	local index = self:SafeToNumber(self.API.GetQuestLogIndexForQuestID(id))
+	if not index or index <= 0 or index ~= math.floor(index) then
+		return nil, "This quest is not in your quest journal."
+	end
+	return id
+end
+
+function QuestTogether:OpenQuestJournalFromChatLog(questId)
+	-- Recheck the quest and restrictions when clicked; never open stale or
+	-- deferred journal entries after the player has moved on.
+	local id, reason = self:GetQuestJournalAvailability(questId)
+	if not id then
+		self:Print(reason)
+		return false
+	end
+	if self.API.OpenQuestJournal(id) ~= true then
+		self:Print("Unable to open that quest in your quest journal.")
+		return false
+	end
+	return true
+end
+
 function QuestTogether:PopulateChatLogQuestMenu(rootDescription, questId, fallbackTitle)
 	rootDescription:CreateButton("Status", function()
 		self:PrintQuestStatus(questId, fallbackTitle)
@@ -4566,6 +4666,20 @@ function QuestTogether:PopulateChatLogQuestMenu(rootDescription, questId, fallba
 			tooltip:SetText(reason or "Share this quest with your party.")
 		end
 	end)
+	local journal = rootDescription:CreateButton("Open in Quest Journal", function()
+		self:OpenQuestJournalFromChatLog(questId)
+	end)
+	local journalID, journalReason = self:GetQuestJournalAvailability(questId)
+	journal:SetEnabled(journalID ~= nil)
+	journal:SetTooltip(function(tooltip)
+		if self:CanAccessForeignFrame(tooltip) then
+			tooltip:SetText(journalReason or "Open this quest in your quest journal.")
+		end
+	end)
+	local compare = rootDescription:CreateButton("Compare Party Quests", function()
+		if self.isEnabled and not self:IsRuntimeRestricted() then self:OpenPartyQuestCompare() end
+	end)
+	compare:SetEnabled(self.isEnabled == true)
 	self:PopulateChatLogDestinationMenu(rootDescription)
 end
 
@@ -4910,6 +5024,14 @@ function QuestTogether:SetOption(key, value)
 	if not self.db or not self.db.profile then
 		return false
 	end
+	if key == "showMinimapButton" and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
+		return false
+	end
+	if key == "minimapButtonPosition" then
+		value = self:SafeToNumber(value)
+		if not value then return false end
+		value = value % 360
+	end
 	if key == "enabled" then
 		if not self:CanAccessValue(value) or type(value) ~= "boolean" then
 			return false
@@ -4948,6 +5070,9 @@ function QuestTogether:SetOption(key, value)
 		return false
 	end
 	self.db.profile[key] = value
+	if (key == "showMinimapButton" or key == "minimapButtonPosition") and self.RefreshMinimapButton then
+		self:RefreshMinimapButton()
+	end
 	if key == "nameplateQuestIconStyle" then
 		self:NormalizeNameplateOptions()
 	end
@@ -5286,11 +5411,19 @@ function QuestTogether:PrintHelp()
 	self:Print("Commands:")
 	self:Print("/qt options - Open the QuestTogether options window")
 	self:Print("/qt enable | disable - Enable or disable runtime behavior")
-	self:Print("/qt debug - Open the shared QuestTogether debug window")
-	self:Print("/qt devlogall [on|off|toggle] - Show or control dev all-announcements logging")
 	self:Print("/qt set <option> <value> - Set a boolean option (e.g. emoteOnQuestCompletion off)")
 	self:Print("/qt get <option> - Read an option value")
+	self:Print("/qt compare - Open Party Quest Compare")
+	self:Print("/qt notes | changelog | patchnotes - Open the latest welcome and patch notes")
 	self:Print("/qt scan - Rescan your quest log now")
+	self:Print("/qt help debug - Show debugging and developer commands")
+end
+
+function QuestTogether:PrintDebugHelp()
+	self:Print("Debugging and developer commands:")
+	self:Print("/qt debug - Open the shared QuestTogether debug window")
+	self:Print("/qt devlogall [on|off|toggle] - Show or control dev all-announcements logging")
+	self:Print("/qt compare debug - Preview Party Quest Compare with mock data (no sharing)")
 	self:Print("/qt ping - Request pong metadata from all QuestTogether clients in the shared channel")
 	self:Print("/qt bubbletest <text> - Run a local bubble preview for your current target")
 	self:Print('/qt bubbletest "<player>" <text> - Run a local bubble preview for a nearby visible player (no target)')
@@ -5302,11 +5435,31 @@ function QuestTogether:PrintHelp()
 end
 
 function QuestTogether:HandleSlashCommand(input)
-	local command, rest = SafeMatch(input, "^(%S*)%s*(.-)$")
+	local compareCommand = string.lower(self:SafeTrimString(input, ""))
+	if compareCommand == "compare" then
+		self:ClosePartyQuestComparePreview()
+		return self:OpenPartyQuestCompare()
+	elseif compareCommand:match("^compare%s+debug$") then
+		return self:OpenPartyQuestComparePreview()
+	end
+	local command, rest = SafeMatch(input, "^%s*(%S*)%s*(.-)$")
 	command = string.lower(command or "")
 
 	if command == "" or command == "options" then
 		self:OpenOptionsWindow()
+		return
+	end
+	if command == "notes" or command == "changelog" or command == "patchnotes" then
+		return self:OpenReleaseNotes()
+	end
+
+	-- Help is presentation only; do not delegate topics to executable debug commands.
+	if command == "help" then
+		if string.lower(self:SafeTrimString(rest, "")) == "debug" then
+			self:PrintDebugHelp()
+		else
+			self:PrintHelp()
+		end
 		return
 	end
 
@@ -5317,11 +5470,6 @@ function QuestTogether:HandleSlashCommand(input)
 	end
 	local handled = self:GetDebugController():HandleCommand(debugCommand, rest)
 	if handled then
-		return
-	end
-
-	if command == "help" then
-		self:PrintHelp()
 		return
 	end
 
@@ -5635,7 +5783,8 @@ function QuestTogether:OnLogin()
 	if self.db.profile.enabled then
 		self:Enable()
 	end
-	self:PrintWelcomeMessage()
+	if self.InitializeMinimapLauncher then self:InitializeMinimapLauncher() end
+	self:InitializeReleaseNotes()
 end
 
 -- Bootstrap event handlers always registered.

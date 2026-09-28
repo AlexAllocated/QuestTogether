@@ -391,7 +391,7 @@ local function NewEnabledOptionFixture()
 	addon.Print = function(_, message) addon.messages[#addon.messages + 1] = message end
 	addon.RefreshOptionsWindow = Noop
 	addon.ReconcileQuestLogChatDestination = Noop
-	addon.PrintWelcomeMessage = Noop
+	addon.InitializeReleaseNotes = Noop
 	addon.visualsEnabled = true
 	addon:RegisterRuntimeEvents()
 	return addon

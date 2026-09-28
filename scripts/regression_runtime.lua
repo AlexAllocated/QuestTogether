@@ -537,48 +537,24 @@ QT:RegisterTest("audit guarded callback records failures without replacing globa
 	Equal(addon.errors[1], "fixture")
 end)
 
-QT:RegisterTest("welcome login keeps startup active announces once and routes addon feedback", function()
-	local addon = setmetatable({ addonName = "QuestTogether", db = { profile = { enabled = true } } }, { __index = QT })
-	local messages, handler = {}, nil
-	function addon:Print(text)
-		messages[#messages + 1] = text
-	end
-	function addon:GetAddonVersion()
-		return "fixture-version"
-	end
+QT:RegisterTest("login initializes release notes without the old chat welcome", function()
+	local addon = setmetatable({ db = { profile = { enabled = true } } }, { __index = QT })
+	local initializations = 0
+	function addon:Print() error("login must not print a welcome message") end
 	function addon:ReconcileQuestLogChatDestination() end
-	function addon:Enable()
-		self.isEnabled = true
-	end
-	function addon:GetWelcomeUIPolicy()
-		return {
-			restricted = function()
-				return true
-			end,
-		}
-	end
-	function addon:RegisterWelcomeLink(kind, callback)
-		Equal(kind, "questtogetherfeedback")
-		handler = callback
-		return true
-	end
-	addon:OnLogin()
-	addon:OnLogin()
-	Equal(addon.hasLoggedIn, true)
-	Equal(addon.isEnabled, true)
-	Equal(#messages, 1)
-	assert(messages[1]:find("vfixture-version loaded!", 1, true))
-	assert(messages[1]:find("Type /qt for settings.", 1, true))
-	handler("questtogetherfeedback:curseforge")
-	Equal(messages[2], "Feedback: https://www.curseforge.com/wow/addons/questtogether")
-	handler("questtogetherfeedback:github")
-	Equal(messages[3], "Feedback: https://github.com/AlexAllocated/QuestTogether")
-	function addon:GetWelcomeController()
-		error("welcome unavailable")
+	function addon:InitializeMinimapLauncher() end
+	function addon:Enable() self.isEnabled = true end
+	function addon:InitializeReleaseNotes()
+		assert(self.hasLoggedIn)
+		initializations = initializations + 1
 	end
 	addon:OnLogin()
 	Equal(addon.isEnabled, true)
-	Equal(#messages, 3)
+	Equal(initializations, 1)
+	addon.db.profile.enabled, addon.isEnabled = false, false
+	addon:OnLogin()
+	Equal(addon.isEnabled, false)
+	Equal(initializations, 2)
 end)
 
 -- Map closure is observed by an addon-owned frame. No Blizzard frame or

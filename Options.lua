@@ -468,6 +468,8 @@ local CHECKBOX_OPTION_KEYS = {
 	"emoteOnNearbyPlayerQuestCompletion",
 	"emoteOnLevelUp",
 	"emoteOnNearbyPlayerLevelUp",
+	"autoAcceptPartyShareRequests",
+	"showMinimapButton",
 }
 
 local function RefreshCheckboxOptions(controls)
@@ -1576,7 +1578,7 @@ function QuestTogether:InitializeMiscWindow(parentCategory)
 	frame.name = "Miscellaneous"
 	frame.parent = "QuestTogether"
 
-	local _, content = CreateScrollablePanelContent(frame, 280)
+	local _, content = CreateScrollablePanelContent(frame, 350)
 
 	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -16)
@@ -1620,9 +1622,19 @@ function QuestTogether:InitializeMiscWindow(parentCategory)
 		16,
 		-166
 	)
+	local autoAcceptPartyShareRequests = CreateCheckbox(
+		content, "autoAcceptPartyShareRequests", "Always allow party share requests",
+		"Automatically share eligible quests when a party member requests them. Otherwise, ask first.",
+		16, -202
+	)
+	local showMinimapButton = CreateCheckbox(
+		content, "showMinimapButton", "Show minimap icon",
+		"Show the QuestTogether minimap menu. Drag the button to move it around the minimap.",
+		16, -234
+	)
 	local debugButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
 	debugButton:SetSize(180, 24)
-	debugButton:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -202)
+	debugButton:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -270)
 	debugButton:SetText("Open Debug Window")
 	debugButton:SetScript("OnClick", function()
 		QuestTogether:ShowDebugWindow()
@@ -1637,6 +1649,8 @@ function QuestTogether:InitializeMiscWindow(parentCategory)
 	end)
 
 	self.miscControls = {
+		showMinimapButton = showMinimapButton,
+		autoAcceptPartyShareRequests = autoAcceptPartyShareRequests,
 		emoteOnQuestCompletion = emoteOnQuestCompletion,
 		emoteOnNearbyPlayerQuestCompletion = emoteOnNearbyPlayerQuestCompletion,
 		emoteOnLevelUp = emoteOnLevelUp,
@@ -1659,10 +1673,11 @@ function QuestTogether:OpenOptionsWindow()
 
 	if not (Settings and Settings.OpenToCategory and self.optionsCategory and self.optionsCategory.GetID) then
 		self:Print("Settings API is unavailable; unable to open options.")
-		return
+		return false
 	end
 
 	Settings.OpenToCategory(self.optionsCategory:GetID())
+	return true
 end
 
 function QuestTogether:InitializeOptionsWindow()
@@ -1672,7 +1687,7 @@ function QuestTogether:InitializeOptionsWindow()
 	local frame = CreateFrame("Frame", "QuestTogetherHomePanel")
 	frame.name = "QuestTogether"
 
-	local _, content = CreateScrollablePanelContent(frame, 420)
+	local _, content = CreateScrollablePanelContent(frame, 450)
 
 	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -16)
@@ -1688,7 +1703,7 @@ function QuestTogether:InitializeOptionsWindow()
 
 	local statusPanel = CreateFrame("Frame", nil, content)
 	statusPanel:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -18)
-	statusPanel:SetSize(360, 220)
+	statusPanel:SetSize(360, 246)
 
 	local statusPanelBackground = statusPanel:CreateTexture(nil, "BACKGROUND")
 	statusPanelBackground:SetAllPoints()
@@ -1713,7 +1728,7 @@ function QuestTogether:InitializeOptionsWindow()
 
 	local actionsPanel = CreateFrame("Frame", nil, content)
 	actionsPanel:SetPoint("TOPLEFT", statusPanel, "TOPRIGHT", 16, 0)
-	actionsPanel:SetSize(260, 220)
+	actionsPanel:SetSize(260, 246)
 
 	local actionsPanelBackground = actionsPanel:CreateTexture(nil, "BACKGROUND")
 	actionsPanelBackground:SetAllPoints()
@@ -1759,6 +1774,9 @@ function QuestTogether:InitializeOptionsWindow()
 	local printHelp = CreateHomeActionButton(actionsPanel, "Print /qt Help", 12, -190, function()
 		QuestTogether:PrintHelp()
 	end)
+	local patchNotes = CreateHomeActionButton(actionsPanel, "Patch Notes", 12, -216, function()
+		QuestTogether:OpenReleaseNotes()
+	end)
 
 	local tipsHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	tipsHeader:SetPoint("TOPLEFT", statusPanel, "BOTTOMLEFT", 0, -18)
@@ -1786,6 +1804,7 @@ function QuestTogether:InitializeOptionsWindow()
 		openHudEditMode = openHudEditMode,
 		rescanQuestLog = rescanQuestLog,
 		printHelp = printHelp,
+		patchNotes = patchNotes,
 	}
 
 	frame:SetScript("OnShow", function()

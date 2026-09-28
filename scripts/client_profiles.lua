@@ -117,6 +117,150 @@ return function(client)
 			MenuUtil = nil
 			assert(addon.API.CreateContextMenu(owner, function() end) == false)
 		end
+		-- Journal navigation uses Blizzard's quest-ID entry point and verifies
+		-- visible details. All native frames/functions here exist only offline.
+		do
+			assert(addon.API.CanOpenQuestJournal() == false)
+			if not classic then
+				local shown, selectedID, opens, restricted, throws, wrongQuest, keepHidden = false, nil, 0, false, false, false, false
+				local originalRestricted = addon.IsRuntimeRestricted
+				addon.IsRuntimeRestricted = function() return restricted end
+				local details = {}
+				local map = { IsShown = function() return shown end }
+				QuestMapFrame = { DetailsFrame = details, IsShown = function() return shown end }
+				QuestMapFrame_GetDetailQuestID = function() return selectedID end
+				QuestMapFrame_OpenToQuestDetails = function(id)
+					assert(id == 12345, "journal requires quest ID, not log index")
+					opens = opens + 1
+					if throws then error("journal unavailable") end
+					WorldMapFrame = map -- The native entry point may load the map lazily.
+					shown, selectedID = not keepHidden, wrongQuest and 54321 or id
+				end
+				assert(addon.API.CanOpenQuestJournal() == true)
+				assert(addon.API.OpenQuestJournal("12345") == true)
+				assert(opens == 1)
+				for _, id in ipairs({ 0, -1, 12345.5, math.huge, secret, inaccessible }) do
+					assert(addon.API.OpenQuestJournal(id) == false)
+				end
+				assert(addon.API.OpenQuestJournal(nil) == false)
+				restricted = true
+				assert(addon.API.OpenQuestJournal(12345) == false)
+				restricted = false
+				local forbidden = setmetatable({ IsForbidden = function() return true end }, {
+					__index = function() error("forbidden journal must not be inspected") end,
+				})
+				local questMap = QuestMapFrame
+				for _, frame in ipairs({ forbidden, inaccessible }) do
+					QuestMapFrame = frame
+					assert(addon.API.OpenQuestJournal(12345) == false)
+					QuestMapFrame = questMap
+					QuestMapFrame.DetailsFrame = frame
+					assert(addon.API.OpenQuestJournal(12345) == false)
+					QuestMapFrame.DetailsFrame = details
+					WorldMapFrame = frame
+					assert(addon.API.OpenQuestJournal(12345) == false)
+					WorldMapFrame = map
+				end
+				assert(opens == 1, "invalid or restricted opens must stop before the native call")
+				wrongQuest = true
+				assert(addon.API.OpenQuestJournal(12345) == false)
+				wrongQuest, keepHidden = false, true
+				assert(addon.API.OpenQuestJournal(12345) == false)
+				keepHidden, throws = false, true
+				assert(addon.API.OpenQuestJournal(12345) == false)
+				addon.IsRuntimeRestricted = originalRestricted
+			end
+			QuestMapFrame, WorldMapFrame = nil, nil
+			QuestMapFrame_OpenToQuestDetails, QuestMapFrame_GetDetailQuestID = nil, nil
+			assert(addon.API.CanOpenQuestJournal() == false)
+		end
+		-- Generic journal navigation uses the public opener, which returns no
+		-- acknowledgement and never toggles an already-open journal closed.
+		-- Only Retail/Forever exports are sourced; other profiles stay unavailable.
+		do
+			assert(addon.API.CanOpenQuestJournalWindow() == false)
+			assert(addon.API.OpenQuestJournalWindow() == false)
+			if not classic then
+				local originalRestricted = addon.IsRuntimeRestricted
+				local restricted, throws, disabled, calls = false, false, false, 0
+				local mapShown, journalShown, mapResult, journalResult = false, false, true, true
+				addon.IsRuntimeRestricted = function() return restricted end
+				local readOnly = {
+					__index = function(_, key) error("generic journal must not inspect " .. key) end,
+					__newindex = function() error("addon must not store state on journal frames") end,
+				}
+				local map = setmetatable({
+					IsForbidden = function() return false end,
+					IsShown = function() return mapShown end,
+				}, readOnly)
+				local journal = setmetatable({
+					IsForbidden = function() return false end,
+					IsShown = function() return journalShown end,
+				}, readOnly)
+				WorldMapFrame, QuestMapFrame = map, journal
+				local function OpenNativeJournal(...)
+					assert(select("#", ...) == 0, "generic opener must not select a quest or map")
+					calls = calls + 1
+					if throws then error("native journal unavailable") end
+					if disabled then return end -- Native WorldMapDisabled guard.
+					mapShown, journalShown = mapResult, journalResult
+					-- Native OpenQuestLog returns nil even after opening successfully.
+				end
+				OpenQuestLog = OpenNativeJournal
+				assert(addon.API.CanOpenQuestJournalWindow() == true, "generic journal needs no DetailsFrame")
+				assert(addon.API.OpenQuestJournalWindow() == true)
+				assert(addon.API.OpenQuestJournalWindow() == true, "reopening must not toggle the journal closed")
+				assert(calls == 2 and selected == 7, "opening must preserve quest selection")
+				restricted = true
+				assert(addon.API.OpenQuestJournalWindow() == false)
+				restricted = false
+				local forbidden = setmetatable({ IsForbidden = function() return true end }, readOnly)
+				for _, frame in ipairs({ forbidden, inaccessible, secret }) do
+					WorldMapFrame = frame
+					assert(addon.API.CanOpenQuestJournalWindow() == false)
+					assert(addon.API.OpenQuestJournalWindow() == false)
+					WorldMapFrame, QuestMapFrame = map, frame
+					assert(addon.API.CanOpenQuestJournalWindow() == false)
+					assert(addon.API.OpenQuestJournalWindow() == false)
+					QuestMapFrame = journal
+				end
+				WorldMapFrame = nil
+				assert(addon.API.OpenQuestJournalWindow() == false)
+				WorldMapFrame, QuestMapFrame = map, nil
+				assert(addon.API.OpenQuestJournalWindow() == false)
+				QuestMapFrame, OpenQuestLog = journal, nil
+				assert(addon.API.CanOpenQuestJournalWindow() == false)
+				assert(addon.API.OpenQuestJournalWindow() == false)
+				assert(calls == 2, "restricted/unavailable frames must stop before the native call")
+				OpenQuestLog, throws = OpenNativeJournal, true
+				assert(addon.API.OpenQuestJournalWindow() == false)
+				throws, disabled, mapShown, journalShown = false, true, false, false
+				assert(addon.API.OpenQuestJournalWindow() == false, "a silent native decline is not an opened journal")
+				disabled = false
+				for _, visibility in ipairs({ false, secret, inaccessible }) do
+					mapResult, journalResult = visibility, true
+					assert(addon.API.OpenQuestJournalWindow() == false)
+					mapResult, journalResult = true, visibility
+					assert(addon.API.OpenQuestJournalWindow() == false)
+				end
+				mapResult, journalResult = nil, true
+				assert(addon.API.OpenQuestJournalWindow() == false)
+				mapResult, journalResult = true, nil
+				assert(addon.API.OpenQuestJournalWindow() == false)
+				mapResult, journalResult = true, true
+				OpenQuestLog = function()
+					OpenNativeJournal()
+					QuestMapFrame = forbidden
+				end
+				assert(addon.API.OpenQuestJournalWindow() == false, "post-open frame access must also be guarded")
+				QuestMapFrame, OpenQuestLog = journal, OpenNativeJournal
+				assert(addon.API.OpenQuestJournalWindow() == true, "a later safe click can recover")
+				addon.IsRuntimeRestricted = originalRestricted
+			end
+			WorldMapFrame, QuestMapFrame, OpenQuestLog = nil, nil, nil
+			assert(addon.API.CanOpenQuestJournalWindow() == false)
+			assert(addon.API.OpenQuestJournalWindow() == false)
+		end
 		-- Standalone Lua can construct NaN; Forever's arithmetic raises instead.
 		-- Keep this boundary check offline so /qt test never attempts 0 / 0.
 		local notANumber = 0 / 0

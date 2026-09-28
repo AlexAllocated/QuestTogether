@@ -216,7 +216,7 @@ local function WithIsolatedState(testFn)
 	local original = {}
 	for key, value in pairs(QuestTogether) do original[key] = value end
 	local sharedTables = {
-		LibChev = true, tests = true, DEFAULTS = true, API = true,
+		LibChev = true, tests = true, DEFAULTS = true, API = true, releaseNotes = true,
 		nameplateQuestIconStyleLabels = true, nameplateQuestIconStyleOrder = true,
 		showProgressForLabels = true, showProgressForOrder = true,
 		chatLogDestinationLabels = true, chatLogDestinationOrder = true,
@@ -236,6 +236,9 @@ local function WithIsolatedState(testFn)
 			"announcementBubbleScreenHostFrame", "personalBubbleEditModeDialog", "mapWorkWakeFrame", "mapWorkWakeState",
 			"optionsFrame", "whereToAnnounceFrame", "questPlatesFrame", "miscFrame", "announcementsFrame", "profilesFrame",
 			"personalBubbleEditSession", "announcementChannelLocalID", "questCompareResponseQueue",
+			"partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
+			"minimapButton", "minimapTooltip", "minimapLauncherFrame", "minimapDragState", "minimapSuppressClick",
+			"releaseNotesWindow", "releaseNotesWakeFrame", "pendingReleaseNotes",
 			"worldQuestAreaStateByQuestID", "bonusObjectiveAreaStateByQuestID", "questSnapshotByQuestID", "questSnapshotOrder",
 			"nameplateQuestTextCache", "nameplateQuestStateByGuid", "nameplateQuestStateByUnitToken", "nameplateQuestGuidByUnitToken",
 			"nameplateIconByUnitFrame", "nameplateHealthOverlayByUnitFrame", "nameplateBubbleByUnitFrame", "nameplateBubbleStateByFrame",
@@ -298,6 +301,91 @@ end
 function QuestTogether:RunTests(reverse, present)
 	return self:GetDebugController():RunTests(reverse, present)
 end
+
+QuestTogether:RegisterTest("misc options refresh saved automatic sharing and later profile changes", function()
+	local profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
+	profile.autoAcceptPartyShareRequests = true
+	QuestTogether:InitializeDatabase({
+		global = {},
+		profiles = { ["MyPlayer-Realm"] = profile },
+		profileKeys = { ["MyPlayer-Realm"] = "MyPlayer-Realm" },
+	})
+	local checkbox = { checked = false, writes = 0 }
+	function checkbox:SetChecked(value)
+		self.checked, self.writes = value, self.writes + 1
+	end
+	QuestTogether.miscFrame = {}
+	QuestTogether.miscControls = { autoAcceptPartyShareRequests = checkbox }
+	QuestTogether:RefreshOptionsWindow()
+	AssertTrue(checkbox.checked, "saved automatic sharing must appear checked when settings open")
+	AssertEquals(checkbox.writes, 1)
+
+	-- Profile switches and resets replace the active profile before refreshing.
+	QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
+	QuestTogether:RefreshOptionsWindow()
+	AssertFalse(checkbox.checked, "a profile without automatic sharing must clear the old check")
+	AssertEquals(checkbox.writes, 2)
+	AssertTrue(QuestTogether:SetOption("autoAcceptPartyShareRequests", true))
+	QuestTogether:RefreshMiscWindow()
+	AssertTrue(checkbox.checked, "consent changes must be reflected when the panel reopens")
+end)
+
+local function NewHelpFixture()
+	local addon = setmetatable({ messages = {}, debugCommands = {} }, { __index = QuestTogether })
+	function addon:Print(message) self.messages[#self.messages + 1] = message end
+	local controller = { HandleCommand = function(_, command)
+		addon.debugCommands[#addon.debugCommands + 1] = command
+		return false
+	end }
+	function addon:GetDebugController() return controller end
+	return addon
+end
+
+QuestTogether:RegisterTest("normal help lists user commands without developer command listings", function()
+	local addon = NewHelpFixture()
+	addon:PrintHelp()
+	local text = table.concat(addon.messages, "\n")
+	for _, command in ipairs({ "options", "enable | disable", "compare -", "notes | changelog | patchnotes", "set", "get", "scan", "help debug" }) do
+		AssertTrue(text:find("/qt " .. command, 1, true), "normal help must include " .. command)
+	end
+	for _, command in ipairs({ "debug", "devlogall", "compare debug", "ping", "bubbletest", "test", "dump", "diagnostics" }) do
+		AssertFalse(text:find("/qt " .. command, 1, true), "normal help must omit " .. command)
+	end
+	AssertFalse(text:find("/qtd", 1, true))
+	AssertEquals(#addon.debugCommands, 0)
+end)
+
+QuestTogether:RegisterTest("help slash dispatch requires the explicit debug topic", function()
+	local addon = NewHelpFixture()
+	for _, command in ipairs({ "help", " HELP ", "help unknown", "help debug extra" }) do
+		addon.messages = {}
+		addon:HandleSlashCommand(command)
+		local text = table.concat(addon.messages, "\n")
+		AssertTrue(text:find("/qt options", 1, true))
+		AssertFalse(text:find("/qt devlogall", 1, true))
+	end
+	AssertEquals(#addon.debugCommands, 0, "help must not be delegated to the debug command controller")
+	addon.messages = {}
+	addon:HandleSlashCommand("  HeLp   DeBuG  ")
+	local text = table.concat(addon.messages, "\n")
+	for _, command in ipairs({ "debug", "devlogall", "compare debug", "ping", "bubbletest", "test", "dump", "diagnostics" }) do
+		AssertTrue(text:find("/qt " .. command, 1, true), "debug help must include " .. command)
+	end
+	AssertTrue(text:find("/qtd", 1, true))
+	AssertFalse(text:find("/qt options", 1, true), "debug help must show its own command list")
+	AssertEquals(#addon.debugCommands, 0, "displaying debug help must not execute debug commands")
+end)
+
+QuestTogether:RegisterTest("unknown slash commands fall back to normal help", function()
+	local addon = NewHelpFixture()
+	addon:HandleSlashCommand("unknown-command")
+	local text = table.concat(addon.messages, "\n")
+	AssertTrue(text:find("Unknown command: unknown-command", 1, true))
+	AssertTrue(text:find("/qt options", 1, true))
+	AssertFalse(text:find("/qt devlogall", 1, true))
+	AssertEquals(#addon.debugCommands, 1)
+	AssertEquals(addon.debugCommands[1], "unknown-command")
+end)
 
 local function NewHudEditModeFixture()
 	local state = { available = true, eligible = true, loads = 0, gets = 0, shows = 0, eligibilityChecks = 0 }
@@ -4406,6 +4494,7 @@ end)
 
 local function NewQuestShareMenuFixture()
 	local state = { index = 7, grouped = true, capable = true, pushable = true, sends = {}, messages = {}, statuses = {}, reads = 0 }
+	state.journalCapable, state.journalReads, state.opened = true, 0, {}
 	local addon = setmetatable({ isEnabled = true }, { __index = QuestTogether })
 	local root = { buttons = {}, dividers = {} }
 	function root:CreateDivider()
@@ -4434,6 +4523,16 @@ local function NewQuestShareMenuFixture()
 			state.sends[#state.sends + 1] = index
 			return not state.sendFails
 		end,
+		CanOpenQuestJournal = function() return state.journalCapable end,
+		GetQuestLogIndexForQuestID = function(id)
+			AssertEquals(id, 12345)
+			state.journalReads = state.journalReads + 1
+			return state.index
+		end,
+		OpenQuestJournal = function(id)
+			state.opened[#state.opened + 1] = id
+			return not state.journalFails
+		end,
 		CreateContextMenu = function(owner, generator)
 			state.owner = owner
 			generator(owner, root)
@@ -4443,6 +4542,7 @@ local function NewQuestShareMenuFixture()
 	function addon:IsRuntimeRestrictionTypeActive(kind) return state.restriction == kind end
 	function addon:Print(message) state.messages[#state.messages + 1] = message end
 	function addon:PrintQuestStatus(id, title) state.statuses[#state.statuses + 1] = { id, title } end
+	function addon:OpenPartyQuestCompare() state.compares = (state.compares or 0) + 1 end
 	state.destination = "main"
 	function addon:GetOption(key)
 		AssertEquals(key, "chatLogDestination")
@@ -4456,7 +4556,7 @@ local function NewQuestShareMenuFixture()
 	return addon, state, root
 end
 
-QuestTogether:RegisterTest("quest clicks open Status then Share and a separated log destination action", function()
+QuestTogether:RegisterTest("quest clicks open Status Share journal party compare and a separated log destination action", function()
 	local addon, state, root = NewQuestShareMenuFixture()
 	local owner = {}
 	for _, button in ipairs({ "LeftButton", "RightButton" }) do
@@ -4465,11 +4565,17 @@ QuestTogether:RegisterTest("quest clicks open Status then Share and a separated 
 		AssertEquals(response, LinkProcessorResponse.Handled)
 		AssertEquals(state.owner, owner)
 		AssertEquals(#state.statuses, 0, "opening a menu must not print status")
-		AssertEquals(#root.buttons, 3)
+		AssertEquals(#root.buttons, 5)
 		AssertEquals(root.buttons[1].label, "Status")
 		AssertEquals(root.buttons[2].label, "Share")
-		AssertEquals(root.dividers[1], 2)
-		AssertEquals(root.buttons[3].label, "Move QuestTogether Logs to Separate Window")
+		AssertEquals(root.buttons[3].label, "Open in Quest Journal")
+		AssertTrue(root.buttons[3].enabled)
+		AssertEquals(#state.opened, 0, "opening a menu must not open the journal")
+		AssertEquals(root.buttons[4].label, "Compare Party Quests")
+		AssertTrue(root.buttons[4].enabled)
+		AssertEquals(state.compares, nil, "opening a menu must not open party compare")
+		AssertEquals(root.dividers[1], 4)
+		AssertEquals(root.buttons[5].label, "Move QuestTogether Logs to Separate Window")
 		AssertEquals(state.destination, "main", "opening a menu must not move logs")
 		AssertTrue(root.buttons[2].enabled)
 		AssertEquals(#state.sends, 0, "opening a menu must not share")
@@ -4485,13 +4591,18 @@ QuestTogether:RegisterTest("quest clicks open Status then Share and a separated 
 	AssertEquals(state.sends[1], 9)
 	AssertEquals(#state.messages, 0, "a native attempt is not a confirmed acceptance")
 	root.buttons[3].callback()
+	AssertEquals(#state.opened, 1)
+	AssertEquals(state.opened[1], 12345, "journal uses quest ID, not its changed log index")
+	root.buttons[4].callback()
+	AssertEquals(state.compares, 1)
+	root.buttons[5].callback()
 	AssertEquals(state.destination, "separate")
 	AssertTrue(state.optionsRefreshed)
 	root.buttons, root.dividers = {}, {}
 	addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
-	AssertEquals(root.dividers[1], 2)
-	AssertEquals(root.buttons[3].label, "Move QuestTogether Logs to Main Window")
-	root.buttons[3].callback()
+	AssertEquals(root.dividers[1], 4)
+	AssertEquals(root.buttons[5].label, "Move QuestTogether Logs to Main Window")
+	root.buttons[5].callback()
 	AssertEquals(state.destination, "main")
 end)
 
@@ -4515,6 +4626,7 @@ QuestTogether:RegisterTest("quest menu preserves modified clicks and rejects mal
 	AssertEquals(#state.statuses, 0)
 	AssertEquals(#state.sends, 0)
 	AssertEquals(state.reads, 0)
+	AssertEquals(state.journalReads, 0)
 end)
 
 QuestTogether:RegisterTest("quest share menu disables unavailable actions and rechecks stale clicks", function()
@@ -4542,10 +4654,84 @@ QuestTogether:RegisterTest("quest share menu disables unavailable actions and re
 		root.buttons[2].callback()
 		AssertEquals(#state.sends, 0, "stale menu must not authorize sharing")
 		AssertEquals(#state.messages, 1)
+		root.buttons, root.dividers = {}, {}
 		addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
-		AssertFalse(root.buttons[5].enabled)
+		AssertFalse(root.buttons[2].enabled)
 		local tooltip = { SetText = function(_, message) AssertEquals(message, state.messages[1]) end }
-		root.buttons[5].tooltip(tooltip)
+		root.buttons[2].tooltip(tooltip)
+	end
+end)
+
+QuestTogether:RegisterTest("quest menu party compare rechecks disabled and restricted clicks", function()
+	local addon, state, root = NewQuestShareMenuFixture()
+	addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
+	local compare = root.buttons[4]
+	addon.isEnabled = false
+	compare.callback()
+	AssertEquals(state.compares, nil)
+	root.buttons = {}
+	addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
+	AssertFalse(root.buttons[4].enabled)
+	addon.isEnabled, state.combat = true, true
+	compare.callback()
+	AssertEquals(state.compares, nil)
+	state.combat = false
+	compare.callback()
+	AssertEquals(state.compares, 1)
+end)
+
+QuestTogether:RegisterTest("quest journal rechecks stale entries and reports unavailable or failed opens", function()
+	for _, change in ipairs({
+		function(s) s.index = nil end,
+		function(s) s.index = 0 end,
+		function(s) s.index = 1.5 end,
+		function(s) s.journalCapable = false end,
+	}) do
+		local addon, state, root = NewQuestShareMenuFixture()
+		addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
+		AssertTrue(root.buttons[3].enabled)
+		change(state)
+		root.buttons[3].callback()
+		AssertEquals(#state.opened, 0)
+		AssertEquals(#state.messages, 1)
+		root.buttons = {}
+		addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
+		AssertFalse(root.buttons[3].enabled)
+		root.buttons[3].tooltip({ SetText = function(_, reason) AssertEquals(reason, state.messages[1]) end })
+	end
+	local addon, state = NewQuestShareMenuFixture()
+	state.journalFails = true
+	AssertFalse(addon:OpenQuestJournalFromChatLog(12345))
+	AssertEquals(state.messages[1], "Unable to open that quest in your quest journal.")
+	for _, id in ipairs({ 0, -1, 1.5, math.huge, "invalid", false }) do
+		AssertEquals(addon:GetQuestJournalAvailability(id), nil)
+	end
+	AssertEquals(#state.opened, 1)
+end)
+
+QuestTogether:RegisterTest("quest journal works solo and with an open map but never queues restricted clicks", function()
+	local addon, state, root = NewQuestShareMenuFixture()
+	addon.isEnabled = false
+	state.grouped, state.pushable, state.mapVisible = false, false, true
+	addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
+	AssertFalse(root.buttons[2].enabled)
+	AssertTrue(root.buttons[3].enabled)
+	root.buttons[3].callback()
+	AssertEquals(state.opened[1], 12345)
+	for _, kind in ipairs({ "combat", "encounter", "challenge", "pvp", "map" }) do
+		local restrictedAddon, restrictedState, restrictedRoot = NewQuestShareMenuFixture()
+		restrictedAddon:PopulateChatLogQuestMenu(restrictedRoot, 12345, nil)
+		local reads = restrictedState.journalReads
+		restrictedState.combat = kind == "combat"
+		restrictedState.restriction = kind
+		restrictedRoot.buttons[3].callback()
+		AssertEquals(#restrictedState.opened, 0)
+		AssertEquals(restrictedState.journalReads, reads)
+		AssertEquals(restrictedAddon:GetQuestJournalAvailability(12345), nil)
+		restrictedState.combat, restrictedState.restriction = false, nil
+		AssertEquals(next(restrictedAddon:GetDeferredWorkStateStore().entries), nil)
+		AssertEquals(#restrictedState.opened, 0)
+		AssertTrue(restrictedAddon:OpenQuestJournalFromChatLog(12345))
 	end
 end)
 
@@ -4629,6 +4815,60 @@ QuestTogether:RegisterTest("chat log quest status action falls back to clicked q
 	AssertTrue(string.find(printed[1] or "", questLink .. " - Not Started", 1, true) ~= nil)
 	AssertFalse(string.find(printed[1] or "", "Quest 28831", 1, true) ~= nil)
 	AssertTrue(string.find(printed[1] or "", "Not Started", 1, true) ~= nil)
+end)
+
+QuestTogether:RegisterTest("quest status selects the clicked quest from full chat messages without nested brackets", function()
+	local addon, _, root = NewQuestShareMenuFixture()
+	local printed = {}
+	addon.PrintQuestStatus = QuestTogether.PrintQuestStatus
+	function addon:GetQuestTitle(id) return "Quest " .. tostring(id) end
+	function addon:GetQuestStatusLabel() return "Not Started" end
+	function addon:GetQuestShareableStatusLabel() return "Unknown" end
+	function addon:PrintConsoleAnnouncement(message) printed[#printed + 1] = message end
+	local questLink = "|Hquesttogetherquest:12345|h[Rude Awakening]|h"
+	local speaker = "|cffffffff|Hquesttogetherlog:Joe Bucket|h[Joe Bucket]|h|r|cffffd200: "
+	for _, text in ipairs({
+		"|TInterface\\GossipFrame\\AvailableQuestIcon:14|t" .. speaker .. "Quest Removed: " .. questLink .. "|r",
+		speaker .. "Quest Status: " .. questLink .. " - Not Started | Shareable: Unknown|r",
+		"|Hquesttogetherquest:12345|h[" .. speaker .. "Quest Removed: " .. questLink .. "]|h",
+		"|Hquesttogetherquest:99|h[Another Quest]|h then " .. questLink
+			.. " |Hquesttogethercoord:1:10:20|h[10, 20]|h",
+	}) do
+		root.buttons, root.dividers = {}, {}
+		addon:HandleChatLogQuestLink("questtogetherquest:12345", text, { options = "12345" }, { button = "LeftButton" })
+		root.buttons[1].callback()
+		-- Exercise the real label builder. Offline it also supports clients
+		-- without LinkUtil; live it uses the native, read-only link formatter.
+		AssertEquals(printed[#printed], "Quest Status: " .. addon:BuildChatLogQuestLabel(12345, "Rude Awakening")
+			.. " - Not Started | Shareable: Unknown")
+		AssertFalse(string.find(printed[#printed], "Quest Removed", 1, true))
+		AssertFalse(string.find(printed[#printed], "]]", 1, true))
+	end
+end)
+
+QuestTogether:RegisterTest("quest link title fallback preserves punctuation and rejects unrelated or incomplete hyperlinks", function()
+	local addon = setmetatable({}, { __index = QuestTogether })
+	AssertEquals(addon:NormalizeQuestLinkTitleText("[Rude Awakening]", 12345), "Rude Awakening")
+	AssertEquals(addon:NormalizeQuestLinkTitleText("Plain Title: Part Two", 12345), "Plain Title: Part Two")
+	AssertEquals(addon:NormalizeQuestLinkTitleText("|cffffd200|Hquesttogetherquest:12345|h[Title: [Part Two]]|h|r", 12345), "Title: [Part Two]")
+	AssertEquals(addon:NormalizeQuestLinkTitleText("|Hquesttogetherquest:12345|h[|cffffd200Rude Awakening|r]|h", 12345), "Rude Awakening")
+	for _, text in ipairs({
+		"|Hquesttogetherquest:99|h[Other quest]|h",
+		"|Hquesttogetherlog:12345|h[Player]|h",
+		"|Hquesttogetherquest:12345|h[Unfinished]",
+		"|Hquesttogetherquest:12345|h[Unfinished] |Hquesttogetherquest:99|h[Other quest]|h",
+	}) do
+		AssertEquals(addon:NormalizeQuestLinkTitleText(text, 12345), "")
+	end
+	function addon:GetQuestTitle(id) return self.knownTitle or "Quest " .. tostring(id) end
+	function addon:GetQuestStatusLabel() return "Not Started" end
+	function addon:GetQuestShareableStatusLabel() return "Unknown" end
+	local unrelated = "|Hquesttogetherquest:99|h[Other quest]|h"
+	AssertEquals(addon:BuildQuestStatusMessage(12345, unrelated), "Quest Status: " .. addon:BuildChatLogQuestLabel(12345, "Quest 12345")
+		.. " - Not Started | Shareable: Unknown")
+	addon.knownTitle = "Current title"
+	AssertEquals(addon:BuildQuestStatusMessage(12345, "|Hquesttogetherquest:12345|h[Old title]|h"),
+		"Quest Status: " .. addon:BuildChatLogQuestLabel(12345, "Current title") .. " - Not Started | Shareable: Unknown")
 end)
 
 QuestTogether:RegisterTest("chat log coord link handler opens ping waypoint", function()
@@ -4824,14 +5064,14 @@ QuestTogether:RegisterTest("chat log speaker menu includes player actions", func
 	AssertEquals(buttons[2].text, "Whisper")
 	AssertEquals(buttons[3].text, "Add Friend")
 	AssertEquals(buttons[4].text, "Ignore")
-	AssertEquals(buttons[5].text, "Compare Quests")
+	AssertEquals(buttons[5].text, "Compare Party Quests")
 	AssertEquals(buttons[6].text, "Move QuestTogether Logs to Separate Window")
 	AssertEquals(dividers, 1)
 end)
 
 QuestTogether:RegisterTest("chat log speaker menu compare quests action uses full speaker name", function()
 	local comparedName = nil
-	WithPatchedMethod(QuestTogether, "RequestQuestCompare", function(_, speakerName)
+	WithPatchedMethod(QuestTogether, "OpenPartyQuestCompare", function(_, speakerName)
 		comparedName = speakerName
 		return true
 	end, function()

@@ -1,5 +1,23 @@
 # QuestTogether changelog
 
+## 5.10.0 — 2026-09-27
+
+- Replace the chat welcome with an addon-owned welcome and patch notes window, with the scroll logo above the welcome heading. Show it once on first use and on major/minor upgrades, across characters and profiles; patch upgrades stay quiet. Reopen it with `/qt notes`, `/qt changelog`, `/qt patchnotes`, Patch Notes in the minimap menu, or the main Settings screen.
+- Require current, regenerated in-game notes for every release. CI and the release script validate the version, generated data and changed content against the previous release; document the workflow in `RELEASING.md`.
+- Fix quest Status links taking the full chat line as a fallback title, which duplicated closing brackets and announcement text after a quest was removed. Match the clicked quest link and recover titles from older malformed status lines.
+
+- Add a draggable minimap button using the SVG scroll emblem. Left- or right-click for Settings, Compare Party Quests, Open Quest Journal, Patch Notes and the shared log-window destination action. Position and visibility are saved per profile. Use Hide Minimap Icon in its menu or Show minimap icon in Miscellaneous settings; the shortcut prints instructions for restoring it.
+- Keep `/qt help` focused on normal commands; show debugging and developer commands with `/qt help debug`.
+- Recover compare snapshots after map/combat restrictions, preserve sessions when the game UI hides, and replace obsolete peer replies during rapid refreshes. Synchronize the automatic-sharing setting, explain request cooldowns/rejections, and keep terminal feedback visible beside retry actions.
+
+- `/qt compare debug` opens the full compare window with a realistic three-player party, 16 quests, overlapping progress and simulated actions. Filters and Refresh work without sending messages, sharing real quests or changing saved settings.
+- Compare Party Quests in the minimap, player-name and quest-name menus opens Party Quest Compare, styled to match the WoW artwork in the debug window, with ownership and completion columns and Share buttons. All party quests appear by default; checking “Hide quests I don't have” limits the list to your quests. Also available with `/qt compare`.
+- Request shareable quests from party members using the updated addon. Incoming requests ask by default, with an “Always allow party share requests” checkbox and a matching Miscellaneous setting. Requests expire and eligibility is checked again before sharing.
+
+Add Open in Quest Journal to the quest-name menu after Share. It opens the selected quest's journal details, remains available while solo, and explains when a quest is not in your journal. Recheck the quest and restrictions on click without queueing delayed journal actions.
+
+Validation: 595 addon tests pass in normal and reverse order on Lua 5.1 and 5.2, along with all six client API profiles and 20 release-tooling tests. Generated notes, Lua and shell syntax, exact libchev verification, and diff checks pass. Native sharing, recipient eligibility, final window rendering, and engine-level taint behavior require separate live-client validation.
+
 ## 5.9.2 — 2026-09-27
 
 Left- or right-click a quest name in the QuestTogether log to open its menu, with Status first and Share second. Share uses the current quest-log entry without changing Blizzard's selected quest, and is unavailable when solo, restricted, or the quest cannot be shared. After a separator, the final option moves QuestTogether logs between the main and separate windows, matching QT's player-name menu.

@@ -1,0 +1,544 @@
+local QuestTogether = _G.QuestTogether
+
+local SHARE_LIFETIME = 60
+local SHARE_COOLDOWN = 5
+local GROUP_ROUTES = { PARTY = true, RAID = true, INSTANCE_CHAT = true }
+local SHARE_STATUS = {
+	request = true,
+	pending = true,
+	sent = true,
+	declined = true,
+	unavailable = true,
+	expired = true,
+}
+local STATUS_TEXT = {
+	pending = "Awaiting confirmation",
+	sent = "Share attempted",
+	declined = "Request declined",
+	unavailable = "Sharing unavailable",
+	expired = "Request expired",
+	request = "Request sent",
+}
+
+local function PlayerName(addon)
+	return addon:NormalizeMemberName(addon:GetPlayerFullName())
+end
+
+local function EntryMap(addon, entries)
+	local result = {}
+	for _, entry in ipairs(entries or {}) do
+		local id = addon:NormalizeQuestID(entry.questId)
+		if id then
+			result[id] = entry
+		end
+	end
+	return result
+end
+
+function QuestTogether:CancelPartyQuestCompare()
+	local session = self.partyQuestCompareSession
+	self.partyQuestCompareSession = nil
+	for _, member in ipairs(session and session.members or {}) do
+		if member.requestId and self.pendingQuestCompareRequests then
+			self.pendingQuestCompareRequests[member.requestId] = nil
+		end
+	end
+end
+
+function QuestTogether:ResetPartyQuestCompare()
+	self:ClosePartyQuestComparePreview()
+	self:CancelPartyQuestCompare()
+	self.partyQuestShareState = nil
+	if self.partyQuestCompareWindow then
+		self.partyQuestCompareWindow:Hide()
+	end
+	if self.partyQuestSharePrompt then
+		self.partyQuestSharePrompt:Hide()
+	end
+end
+
+function QuestTogether:OpenPartyQuestCompare(preferredName)
+	if not self.isEnabled then
+		self:Print("Enable QuestTogether to compare party quests.")
+		return false
+	end
+	if self:IsWorkBlocked("foreign_frame_mutation") then
+		self:Print("Quest comparison is unavailable while restricted. Try again when restrictions end.")
+		return false
+	end
+	self:RefreshPartyRoster()
+	if not self:CreatePartyQuestCompareWindow() then
+		return false
+	end
+	self:RefreshPartyQuestCompare(preferredName)
+	self.partyQuestCompareWindow:Show()
+	return true
+end
+
+function QuestTogether:RefreshPartyQuestCompare(preferredName)
+	self:CancelPartyQuestCompare()
+	if not self.isEnabled then
+		return false
+	end
+	local ownName = PlayerName(self)
+	if not ownName then
+		return false
+	end
+	local session = { playerName = ownName, members = {}, byName = {}, offset = 0 }
+	self.partyQuestCompareSession = session
+	local names = { ownName }
+	if preferredName ~= ownName and self.partyMembers[preferredName] then
+		names[#names + 1] = preferredName
+	end
+	for _, name in ipairs(self.partyMemberOrder or {}) do
+		if name ~= ownName and name ~= preferredName then
+			names[#names + 1] = name
+		end
+	end
+	for _, name in ipairs(names) do
+		local member = { name = name, entries = {}, state = "loading", isLocal = name == ownName }
+		session.members[#session.members + 1] = member
+		session.byName[name] = member
+	end
+	self:RefreshLocalPartyQuestCompare()
+	local route = self:GetGroupAnnouncementDistribution()
+	for _, member in ipairs(session.members) do
+		if not member.isLocal then
+			local function Current()
+				return self.isEnabled and self.partyQuestCompareSession == session and self:IsGroupedSender(member.name)
+			end
+			local sent, requestId
+			if route then
+				sent, requestId = self:RequestQuestCompare(member.name, {
+					routes = { { distribution = route } },
+					onEntry = function(entry)
+						if not Current() then
+							return
+						end
+						member.entries[self:NormalizeQuestID(entry.questId)] = entry
+						self:QueuePartyQuestCompareRender()
+					end,
+					onDone = function(supportsShareRequests)
+						if not Current() then
+							return
+						end
+						member.state = "ready"
+						member.supportsShareRequests = supportsShareRequests
+						self:QueuePartyQuestCompareRender()
+					end,
+					onTimeout = function()
+						if not Current() then
+							return
+						end
+						member.state = "timeout"
+						self:QueuePartyQuestCompareRender()
+					end,
+				})
+			end
+			member.requestId = requestId
+			if not sent then
+				member.state = "unavailable"
+			end
+		end
+	end
+	self:QueuePartyQuestCompareRender()
+	return true
+end
+
+function QuestTogether:RefreshLocalPartyQuestCompare(delaySeconds)
+	local session = self.partyQuestCompareSession
+	if not session or not self.isEnabled then
+		return
+	end
+	local member = session.byName[session.playerName]
+	member.state = "loading"
+	self:QueuePartyQuestCompareRender()
+	-- Keep this read in the map-sensitive work class. A render alone cannot
+	-- wake an unavailable local snapshot when the map or combat restriction ends.
+	self:ScheduleDeferredWork("quest_snapshot_refresh", "party_compare_local", function()
+		if self.partyQuestCompareSession ~= session or not self.isEnabled then
+			return
+		end
+		local entries = self:BuildQuestCompareEntries()
+		member.entries = EntryMap(self, entries)
+		member.state = entries and "ready" or "unavailable"
+		self:QueuePartyQuestCompareRender()
+	end, delaySeconds or 0, "party compare local snapshot")
+end
+
+function QuestTogether:OnPartyQuestLogChanged()
+	self:RefreshLocalPartyQuestCompare(0.2)
+end
+
+function QuestTogether:OnPartyQuestRosterChanged()
+	if self.partyQuestCompareSession then
+		self:RefreshPartyQuestCompare()
+	end
+	local state = self.partyQuestShareState
+	for key, request in pairs(state and state.incoming or {}) do
+		if not self:IsGroupedSender(request.sender) then
+			state.incoming[key] = nil
+		end
+	end
+	for _, request in pairs(state and state.outgoing or {}) do
+		if not self:IsGroupedSender(request.target) then
+			request.status = "unavailable"
+		end
+	end
+	self:QueuePartyQuestSharePrompt()
+end
+
+-- Absence is evidence only after the complete snapshot arrives. Partial lists,
+-- timeouts and restricted local reads must never become a false "Missing".
+function QuestTogether:BuildPartyQuestDiffRows()
+	local session = self.partyQuestCompareSession
+	if not session then
+		return {}
+	end
+	local own = session.byName[session.playerName]
+	local union, rows = {}, {}
+	for _, member in ipairs(session.members) do
+		if member.isLocal or self:GetOption("compareHideOtherQuests") ~= true then
+			for id, entry in pairs(member.entries) do
+				if not union[id] or member.isLocal then
+					union[id] = entry
+				end
+			end
+		end
+	end
+	for id, entry in pairs(union) do
+		local row = { questId = id, title = entry.questTitle, cells = {}, missing = 0 }
+		for i, member in ipairs(session.members) do
+			local quest = member.entries[id]
+			row.cells[i] = quest and (quest.isComplete and "Ready" or "Have")
+				or (member.state == "ready" and "Missing" or (member.state == "loading" and "Loading" or "Unknown"))
+			if row.cells[i] == "Missing" then
+				row.missing = row.missing + 1
+			end
+		end
+		if own.entries[id] then
+			if row.missing > 0 and own.entries[id].isPushable == true then
+				row.action = "share"
+			end
+		elseif own.state == "ready" then
+			for _, member in ipairs(session.members) do
+				if member.state == "ready" and member.entries[id] and member.entries[id].isPushable == true then
+					row.hint = "Owner needs an update"
+					if member.supportsShareRequests then
+						row.action, row.owner, row.hint = "request", member.name, nil
+						break
+					end
+				end
+			end
+		end
+		rows[#rows + 1] = row
+	end
+	table.sort(rows, function(a, b)
+		if (a.missing > 0) ~= (b.missing > 0) then
+			return a.missing > 0
+		end
+		if a.title ~= b.title then
+			return a.title < b.title
+		end
+		return a.questId < b.questId
+	end)
+	return rows
+end
+
+function QuestTogether:SharePartyDiffQuest(questId)
+	local index, reason = self:GetQuestShareAvailability(questId)
+	local ok = index and self.API.PushQuestToParty(index) == true
+	local session = self.partyQuestCompareSession
+	if session then
+		session.message = ok and "Share attempted. WoW checks each player's eligibility."
+			or reason
+			or "Unable to share that quest."
+	end
+	self:QueuePartyQuestCompareRender()
+	return ok == true
+end
+
+function QuestTogether:GetPartyQuestShareState()
+	if not self.partyQuestShareState then
+		self.partyQuestShareState = {
+			incoming = {},
+			outgoing = {},
+			recent = {},
+			peers = {},
+			outgoingCooldowns = {},
+			sequence = 0,
+		}
+	end
+	return self.partyQuestShareState
+end
+
+function QuestTogether:SendPartyQuestShareMessage(target, questId, requestId, status)
+	local route = self:GetGroupAnnouncementDistribution()
+	if not route or not self:IsGroupedSender(target) then
+		return false
+	end
+	local fields = { "1", requestId, target, tostring(questId), status }
+	for i = 2, #fields do
+		fields[i] = self:EscapePayload(fields[i])
+	end
+	return self:SendWireMessageToAnnouncementRoutes(
+		self:SerializeWireMessage("QSHR", table.concat(fields, ",")),
+		"party quest share",
+		{ { distribution = route } }
+	)
+end
+
+function QuestTogether:GetPartyQuestShareRequestCooldown(target)
+	local state = self.partyQuestShareState
+	local expires = state and state.outgoingCooldowns and state.outgoingCooldowns[target]
+	return expires and math.max(0, expires - self.API.GetTime()) or 0
+end
+
+function QuestTogether:RequestPartyQuestShare(questId, target)
+	if not self.isEnabled or not self:IsGroupedSender(target) or self:IsWorkBlocked("quest_share") then
+		return false
+	end
+	if self:GetPartyQuestShareRequestCooldown(target) > 0 then
+		if self.partyQuestCompareSession then
+			self.partyQuestCompareSession.message = "Please wait before requesting another quest from this player."
+		end
+		self:QueuePartyQuestCompareRender()
+		return false
+	end
+	local eligible = false
+	for _, row in ipairs(self:BuildPartyQuestDiffRows()) do
+		if row.questId == questId and row.action == "request" and row.owner == target then
+			eligible = true
+		end
+	end
+	-- Re-read local ownership: the user may already have accepted this quest.
+	local entries = self:BuildQuestCompareEntries()
+	if not eligible or not entries or EntryMap(self, entries)[questId] then
+		return false
+	end
+	local state, now = self:GetPartyQuestShareState(), self.API.GetTime()
+	local count = 0
+	for key, request in pairs(state.outgoing) do
+		if
+			now >= request.expires
+			or (request.questId == questId and request.status ~= "request" and request.status ~= "pending")
+		then
+			state.outgoing[key] = nil
+		else
+			count = count + 1
+			if request.questId == questId then
+				return false
+			end
+		end
+	end
+	if count >= 20 then
+		return false
+	end
+	local id = self:BuildChannelRequestId("share")
+	local request = { target = target, questId = questId, expires = now + SHARE_LIFETIME, status = "request" }
+	state.outgoing[id] = request
+	if not self:SendPartyQuestShareMessage(target, questId, id, "request") then
+		state.outgoing[id] = nil
+		if self.partyQuestCompareSession then
+			self.partyQuestCompareSession.message = "Could not send the share request. Try again."
+		end
+		self:QueuePartyQuestCompareRender()
+		return false
+	end
+	if self.partyQuestCompareSession then
+		self.partyQuestCompareSession.message = nil
+	end
+	local cooldownExpires = now + SHARE_COOLDOWN
+	state.outgoingCooldowns[target] = cooldownExpires
+	-- Only update our UI at expiry. Never retry or delay a sharing action.
+	self.API.Delay(SHARE_COOLDOWN, function()
+		if self.partyQuestShareState == state and state.outgoingCooldowns[target] == cooldownExpires then
+			state.outgoingCooldowns[target] = nil
+			self:QueuePartyQuestCompareRender()
+		end
+	end)
+	self.API.Delay(SHARE_LIFETIME, function()
+		if self.partyQuestShareState ~= state or state.outgoing[id] ~= request then
+			return
+		end
+		if request.status == "request" or request.status == "pending" then
+			request.status = "expired"
+		end
+		self:QueuePartyQuestCompareRender()
+	end)
+	self:QueuePartyQuestCompareRender()
+	return true
+end
+
+function QuestTogether:GetPartyQuestShareStatus(questId)
+	local state = self.partyQuestShareState
+	for _, request in pairs(state and state.outgoing or {}) do
+		if request.questId == questId then
+			local pending = request.status == "request" or request.status == "pending"
+			local waiting = pending and self.API.GetTime() < request.expires
+			return STATUS_TEXT[pending and not waiting and "expired" or request.status], waiting
+		end
+	end
+end
+
+function QuestTogether:HandlePartyQuestShareMessage(payload, sender, route)
+	if
+		not self.isEnabled
+		or not GROUP_ROUTES[route]
+		or not self:IsGroupedSender(sender)
+		or sender == PlayerName(self)
+		or self:IsIgnoredPlayerName(sender)
+	then
+		return false
+	end
+	if type(payload) ~= "string" or #payload > 255 then
+		return false
+	end
+	local version, requestId, target, rawId, status = payload:match("^([^,]+),([^,]+),([^,]+),([^,]+),([^,]+)$")
+	if version ~= "1" then
+		return false
+	end
+	requestId, target = self:UnescapePayload(requestId), self:NormalizeMemberName(self:UnescapePayload(target))
+	local questId = self:SafeToNumber(self:UnescapePayload(rawId))
+	if not questId or questId <= 0 or questId > 2147483647 or questId ~= math.floor(questId) then
+		return false
+	end
+	if target ~= PlayerName(self) or not questId or #requestId > 100 or not SHARE_STATUS[status] then
+		return false
+	end
+	local state, now = self:GetPartyQuestShareState(), self.API.GetTime()
+	if status ~= "request" then
+		local request = state.outgoing[requestId]
+		if
+			not request
+			or request.target ~= sender
+			or request.questId ~= questId
+			or now >= request.expires
+			or (request.status ~= "request" and request.status ~= "pending")
+		then
+			return false
+		end
+		request.status = status
+		self:QueuePartyQuestCompareRender()
+		return true
+	end
+	local key = sender .. ":" .. requestId
+	local recentCount, pendingCount = 0, 0
+	for name, expiry in pairs(state.peers) do
+		if expiry <= now then
+			state.peers[name] = nil
+		end
+	end
+	for id, expiry in pairs(state.recent) do
+		if expiry <= now then
+			state.recent[id] = nil
+		else
+			recentCount = recentCount + 1
+		end
+	end
+	for _ in pairs(state.incoming) do
+		pendingCount = pendingCount + 1
+	end
+	if state.recent[key] then
+		return false
+	end
+	-- Remember rejected requests too: replaying them must not become a later
+	-- approval. Bounds and rate limits reject new requests with a terminal reply.
+	if recentCount < 128 then
+		state.recent[key] = now + 120
+	end
+	if recentCount >= 128 or pendingCount >= 10 or (state.peers[sender] or 0) > now then
+		self:SendPartyQuestShareMessage(sender, questId, requestId, "unavailable")
+		return false
+	end
+	state.peers[sender] = now + SHARE_COOLDOWN
+	local index = self:GetQuestShareAvailability(questId)
+	if not index then
+		self:SendPartyQuestShareMessage(sender, questId, requestId, "unavailable")
+		return false
+	end
+	state.sequence = state.sequence + 1
+	local request = {
+		key = key,
+		sender = sender,
+		questId = questId,
+		requestId = requestId,
+		expires = now + SHARE_LIFETIME,
+		order = state.sequence,
+	}
+	state.incoming[key] = request
+	if self:GetOption("autoAcceptPartyShareRequests") == true then
+		-- This is a single attempt, never a delayed/retried share after restrictions.
+		if self:ConfirmPartyQuestShare(request, false, true) then
+			return true
+		end
+		if state.incoming[key] ~= request then
+			return false
+		end
+	end
+	self:SendPartyQuestShareMessage(sender, questId, requestId, "pending")
+	self.API.Delay(SHARE_LIFETIME, function()
+		if self.partyQuestShareState == state and state.incoming[key] == request then
+			self:FinishPartyQuestShare(request, "expired")
+		end
+	end)
+	self:QueuePartyQuestSharePrompt()
+	return true
+end
+
+function QuestTogether:GetNextPartyQuestShareRequest()
+	local state, nextRequest = self.partyQuestShareState, nil
+	for _, request in pairs(state and state.incoming or {}) do
+		if
+			self.API.GetTime() < request.expires
+			and self:IsGroupedSender(request.sender)
+			and (not nextRequest or request.order < nextRequest.order)
+		then
+			nextRequest = request
+		end
+	end
+	return nextRequest
+end
+
+function QuestTogether:FinishPartyQuestShare(request, status)
+	local state = self.partyQuestShareState
+	if not state or state.incoming[request.key] ~= request then
+		return false
+	end
+	state.incoming[request.key] = nil
+	self:SendPartyQuestShareMessage(request.sender, request.questId, request.requestId, status)
+	self:QueuePartyQuestSharePrompt()
+	return true
+end
+
+function QuestTogether:ConfirmPartyQuestShare(request, alwaysAllow, automatic)
+	local state = self.partyQuestShareState
+	if not request or not state or state.incoming[request.key] ~= request then
+		return false
+	end
+	if
+		not self.isEnabled
+		or self.API.GetTime() >= request.expires
+		or not self:IsGroupedSender(request.sender)
+		or self:IsIgnoredPlayerName(request.sender)
+	then
+		self:FinishPartyQuestShare(request, "expired")
+		return false
+	end
+	local index = self:GetQuestShareAvailability(request.questId)
+	if not index then
+		self:FinishPartyQuestShare(request, "unavailable")
+		return false
+	end
+	if not automatic and alwaysAllow == true then
+		self:SetOption("autoAcceptPartyShareRequests", true)
+	end
+	if self.API.PushQuestToParty(index) ~= true then
+		if not automatic then
+			self:FinishPartyQuestShare(request, "unavailable")
+		end
+		return false
+	end
+	self:FinishPartyQuestShare(request, "sent")
+	return true
+end

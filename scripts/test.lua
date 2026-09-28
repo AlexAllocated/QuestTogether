@@ -87,6 +87,14 @@ Enum = {
 }
 THREAT_TOOLTIP = "Threat"
 LinkProcessorResponse = { Handled = true }
+-- Match the pure Lua formatter in the installed Retail/Forever LinkUtil.lua.
+-- Keeping it available offline exercises real hyperlink display boundaries.
+LinkUtil = {
+	FormatLink = function(linkType, displayText, ...)
+		local link = "|H" .. table.concat({ linkType, ... }, ":")
+		return link .. (displayText and ("|h" .. displayText .. "|h") or "|h")
+	end,
+}
 local Frame = {}
 Frame.__index = Frame
 function Frame:SetScript() end
@@ -148,6 +156,8 @@ LoadAddOn = RejectEngineCall("LoadAddOn")
 UIParentLoadAddOn = RejectEngineCall("UIParentLoadAddOn")
 ShowUIPanel = RejectEngineCall("ShowUIPanel")
 QuestLogPushQuest = RejectEngineCall("QuestLogPushQuest")
+QuestMapFrame_OpenToQuestDetails = RejectEngineCall("QuestMapFrame_OpenToQuestDetails")
+OpenQuestLog = RejectEngineCall("OpenQuestLog")
 MenuUtil = { CreateContextMenu = RejectEngineCall("CreateContextMenu") }
 -- Exercise the same controller and QT-owned isolation used by the live command.
 local success, passed, failed, result = QuestTogether:RunTests(arg[2] == "reverse", false)

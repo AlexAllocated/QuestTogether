@@ -624,6 +624,7 @@ function QuestTogether:EncodeQuestCompareDonePayload(doneData)
 		self:EscapePayload(doneData.senderName or ""),
 		self:EscapePayload(doneData.classFile or ""),
 		self:EscapePayload(doneData.count or ""),
+		doneData.supportsShareRequests and "share1" or "",
 	}
 
 	return table.concat(fields, ",")
@@ -665,6 +666,7 @@ function QuestTogether:DecodeQuestCompareDonePayload(payload)
 		senderName = senderName,
 		classFile = classFile,
 		count = numericCount,
+		supportsShareRequests = fields[6] == "share1",
 	}
 end
 
@@ -1025,6 +1027,7 @@ function QuestTogether:LeaveAnnouncementChannel()
 end
 
 function QuestTogether:ResetCommsState()
+	if self.ResetPartyQuestCompare then self:ResetPartyQuestCompare() end
 	self.pendingPingRequests = {}
 	self.pendingQuestCompareRequests = {}
 	self.recentCommMessageSignatures = {}
@@ -1075,12 +1078,14 @@ end
 
 function QuestTogether:BuildChannelRequestId(prefix)
 	local requestPrefix = SafeAddonString(self, prefix or "req", "req")
+	self.channelRequestSequence = (self.channelRequestSequence or 0) + 1
 	return string.format(
-		"%s-%s-%d-%d",
+		"%s-%s-%d-%d-%d",
 		requestPrefix,
 		SafeAddonString(self, self:GetPlayerName() or "player", "player"),
 		math.floor((self.API.GetTime and self.API.GetTime() or 0) * 1000),
-		self.API.Random and self.API.Random(1000, 9999) or 1000
+		self.API.Random and self.API.Random(1000, 9999) or 1000,
+		self.channelRequestSequence
 	)
 end
 
@@ -1258,6 +1263,7 @@ function QuestTogether:SendQuestCompareDone(requestId, count, selectedRoutes)
 			senderName = self:GetPlayerFullName() or self:GetPlayerName() or "",
 			classFile = self:GetPlayerClassFile() or "",
 			count = SafeNumber(self, count) or 0,
+			supportsShareRequests = true,
 		})
 	)
 	return self:SendWireMessageToAnnouncementRoutes(
@@ -1373,16 +1379,32 @@ function QuestTogether:HandleQuestCompareRequest(requestData)
 		queue = { jobs = {}, packets = 0 }
 		self.questCompareResponseQueue = queue
 	end
-	for _, job in ipairs(queue.jobs) do
-		if job.requestId == requestData.requestId and job.requesterName == requestData.requesterName then return true end
+	-- OnCommReceived replaces payload identity with the authenticated transport
+	-- sender. A new request from that player supersedes their unfinished reply;
+	-- missing identities cannot establish ownership of another queued job.
+	local requesterName = self:NormalizeMemberName(requestData.requesterName)
+	local superseded, supersededPackets = {}, 0
+	for index, job in ipairs(queue.jobs) do
+		if job.requestId == requestData.requestId and job.requesterName == requesterName then return true end
+		if requesterName and job.requesterName == requesterName then
+			superseded[#superseded + 1] = index
+			supersededPackets = supersededPackets + job.remaining
+		end
 	end
-	if #queue.jobs >= QUEST_COMPARE_MAX_QUEUED_RESPONSES then return false end
+	if #queue.jobs - #superseded >= QUEST_COMPARE_MAX_QUEUED_RESPONSES then return false end
 	local entries, reason = self:BuildQuestCompareEntries()
 	local packetCount = entries and #entries + 1 or 1
-	if reason == "limit" or (entries and #entries > QUEST_COMPARE_MAX_ENTRIES) or queue.packets + packetCount > QUEST_COMPARE_MAX_QUEUED_PACKETS then
+	if reason == "limit" or (entries and #entries > QUEST_COMPARE_MAX_ENTRIES)
+		or queue.packets - supersededPackets + packetCount > QUEST_COMPARE_MAX_QUEUED_PACKETS then
 		self:RecordCommsDiagnostic("failedComparisons", "response queue full")
 		return false
 	end
+	-- Admit atomically, preserving unrelated callers' order and the existing
+	-- cooldown timer. Its callback drains current jobs, never a captured old job.
+	for index = #superseded, 1, -1 do
+		table.remove(queue.jobs, superseded[index])
+	end
+	queue.packets = queue.packets - supersededPackets
 	-- Reply on the route that actually delivered the request, so cross-realm
 	-- party members do not depend on a realm-local channel or duplicate traffic.
 	local distribution = requestData.replyDistribution
@@ -1391,7 +1413,7 @@ function QuestTogether:HandleQuestCompareRequest(requestData)
 	end
 	queue.jobs[#queue.jobs + 1] = {
 		requestId = requestData.requestId,
-		requesterName = requestData.requesterName,
+		requesterName = requesterName,
 		entries = entries,
 		nextEntry = 1,
 		remaining = packetCount,
@@ -1426,7 +1448,7 @@ function QuestTogether:HandleQuestCompareEntry(entryData)
 		return false
 	end
 	pending.entriesByQuestId = pending.entriesByQuestId or {}
-	if pending.entriesByQuestId[questId] then
+	if pending.entriesByQuestId[questId] or (pending.count or 0) >= QUEST_COMPARE_MAX_ENTRIES then
 		return false
 	end
 	pending.entriesByQuestId[questId] = true
@@ -1435,7 +1457,9 @@ function QuestTogether:HandleQuestCompareEntry(entryData)
 		pending.classFile = entryData.classFile
 	end
 	pending.count = (pending.count or 0) + 1
-	if self.PrintQuestCompareMessage then
+	if pending.receiver then
+		pending.receiver.onEntry(entryData)
+	elseif self.PrintQuestCompareMessage then
 		self:PrintQuestCompareMessage(senderName, entryData, pending.classFile)
 	end
 	self:TryCompleteQuestCompare(entryData.requestId)
@@ -1448,7 +1472,9 @@ function QuestTogether:TryCompleteQuestCompare(requestId)
 		return false
 	end
 	self.pendingQuestCompareRequests[requestId] = nil
-	if self.PrintQuestCompareDone then
+	if pending.receiver then
+		pending.receiver.onDone(pending.supportsShareRequests == true)
+	elseif self.PrintQuestCompareDone then
 		self:PrintQuestCompareDone(pending.targetName, pending.count or 0, pending.classFile)
 	end
 	return true
@@ -1470,7 +1496,7 @@ function QuestTogether:HandleQuestCompareDone(doneData)
 		return false
 	end
 	local expectedCount = SafeNumber(self, doneData.count)
-	if not expectedCount or expectedCount < 0 or expectedCount ~= math.floor(expectedCount) then
+	if not expectedCount or expectedCount < 0 or expectedCount > QUEST_COMPARE_MAX_ENTRIES or expectedCount ~= math.floor(expectedCount) then
 		return false
 	end
 
@@ -1480,17 +1506,18 @@ function QuestTogether:HandleQuestCompareDone(doneData)
 	-- The completion marker can arrive on one route before entries from the
 	-- other. Retain the request until the advertised unique entries arrive.
 	pending.expectedCount = expectedCount
+	pending.supportsShareRequests = doneData.supportsShareRequests == true
 	self:TryCompleteQuestCompare(doneData.requestId)
 	return true
 end
 
-function QuestTogether:RequestQuestCompare(speakerName)
+function QuestTogether:RequestQuestCompare(speakerName, receiver)
 	local targetName = self:NormalizeMemberName(speakerName) or SafeAddonString(self, speakerName or "", "")
 	if targetName == "" then
 		return false
 	end
 
-	if self.PrintQuestCompareStart then
+	if not receiver and self.PrintQuestCompareStart then
 		self:PrintQuestCompareStart(targetName, self:GetGroupedSenderClassFile(targetName))
 	end
 
@@ -1522,6 +1549,7 @@ function QuestTogether:RequestQuestCompare(speakerName)
 	local pendingRequest = {
 		targetName = targetName,
 		classFile = self:GetGroupedSenderClassFile(targetName),
+		receiver = receiver,
 		count = 0,
 		entriesByQuestId = {},
 	}
@@ -1530,7 +1558,9 @@ function QuestTogether:RequestQuestCompare(speakerName)
 		local pending = self.pendingQuestCompareRequests and self.pendingQuestCompareRequests[requestId]
 		if pending == pendingRequest then
 			self.pendingQuestCompareRequests[requestId] = nil
-			if self.isEnabled and self.PrintConsoleAnnouncement then
+			if receiver then
+				receiver.onTimeout()
+			elseif self.isEnabled and self.PrintConsoleAnnouncement then
 				self:PrintConsoleAnnouncement(
 					string.format("Quest comparison timed out (%d quests received).", pending.count or 0),
 					pending.targetName,
@@ -1552,14 +1582,15 @@ function QuestTogether:RequestQuestCompare(speakerName)
 	if
 		not self:SendWireMessageToAnnouncementRoutes(
 			wireMessage,
-			"quest compare request requestId=" .. SafeAddonString(self, requestId, "")
+			"quest compare request requestId=" .. SafeAddonString(self, requestId, ""),
+			receiver and receiver.routes
 		)
 	then
 		self.pendingQuestCompareRequests[requestId] = nil
 		return false
 	end
 
-	return true
+	return true, requestId
 end
 
 function QuestTogether:IsAnnouncementChannelEvent(channel, localID, name)
@@ -2084,6 +2115,11 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		end
 		responseData.senderName = transportSenderName
 		self:HandlePingResponse(responseData)
+		return
+	end
+
+	if command == "QSHR" and self.HandlePartyQuestShareMessage then
+		self:HandlePartyQuestShareMessage(payload, transportSenderName, channel)
 		return
 	end
 

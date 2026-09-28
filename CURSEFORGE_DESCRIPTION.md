@@ -26,7 +26,10 @@ It announces quest events, objective progress, world quest updates, and bonus ob
   - Whisper
   - Add friend
   - Ignore/unignore
-  - Compare quests
+  - Compare Party Quests
+- Compares your party's quests in one window, including ownership, completion, Share and Request Share actions. Incoming share requests ask for confirmation by default, with optional automatic approval.
+- Adds quest-name menus for Status, Share, Open in Quest Journal and Compare Party Quests.
+- Includes a draggable minimap menu and an in-game welcome and patch notes window.
 
 ## Why Use It
 
@@ -68,12 +71,17 @@ In `Options > AddOns > QuestTogether`, you can configure:
   - Party + nearby visible players
 - Nameplate quest icon style and quest health color
 - Separate emote toggles for your own and nearby players' quest completions and level-ups
+- Minimap icon visibility and automatic approval of party share requests
 
 ## Slash Commands
 
 - `/qt` or `/qt options` - Open QuestTogether options
 - `/qt enable` - Enable addon runtime behavior
 - `/qt disable` - Disable addon runtime behavior
+- `/qt compare` - Open Party Quest Compare
+- `/qt notes`, `/qt changelog`, or `/qt patchnotes` - Open the latest welcome and patch notes
+- `/qt help` - Show normal commands
+- `/qt help debug` - Show diagnostics, tests, previews and developer commands
 - `/qt debug` - Open the debug log
 - `/qt diagnostics [questID]` - Copy client, runtime, and recent-event diagnostics
 - `/qt devlogall on|off|toggle` - Toggle developer all-announcements logging
