@@ -1,6 +1,12 @@
 local QuestTogether = _G.QuestTogether
 local LibChev = QuestTogether.LibChev
 local MAX_PINS, MAX_LOCATION_ROWS, DOT_SIZE = 128, 512, 12
+local PARTNER_DOT_SIZE = 16
+
+local function PinSize(addon, name)
+	return addon:IsPlayerLookingForQuestPartners(name)
+		and PARTNER_DOT_SIZE or DOT_SIZE
+end
 
 local function Native(addon, fn, ...)
 	if addon:IsRuntimeRestricted() or not addon:CanAccessValue(fn) or type(fn) ~= "function" then
@@ -241,6 +247,7 @@ function QuestTogether:ProjectPlayerLocationPin(surface, row, geometry)
 	if not self:AreLocationPinMapLayersCompatible(row.mapID, geometry.mapID) then
 		return nil
 	end
+	local dotSize = PinSize(self, row.name)
 	local x, y
 	if surface == "map" then
 		local nx, ny = self:GetLocationPinMapPosition(row, geometry.mapID)
@@ -260,7 +267,7 @@ function QuestTogether:ProjectPlayerLocationPin(surface, row, geometry)
 		local cosine, sine = math.cos(geometry.facing), math.sin(geometry.facing)
 		local horizontal = (east * cosine + up * sine) / geometry.radius
 		local vertical = (up * cosine - east * sine) / geometry.radius
-		local margin = DOT_SIZE / math.min(geometry.width, geometry.height)
+		local margin = dotSize / math.min(geometry.width, geometry.height)
 		local limit = 1 - margin
 		if limit <= 0 then
 			return nil
@@ -278,7 +285,7 @@ function QuestTogether:ProjectPlayerLocationPin(surface, row, geometry)
 		end
 		x, y = (horizontal + 1) * geometry.width / 2, (1 - vertical) * geometry.height / 2
 	end
-	local half = DOT_SIZE / 2
+	local half = dotSize / 2
 	if x < half or y < half or x > geometry.width - half or y > geometry.height - half then
 		return nil
 	end
@@ -514,7 +521,25 @@ local function CreatePin(addon, state, surface)
 		Call(addon, texture, "AddMaskTexture", mask)
 		if layer == "ARTWORK" then
 			pin.texture = texture
+		else
+			pin.border = texture
 		end
+	end
+	-- Nested translucent circles soften outward into a halo. Reuse these owned
+	-- regions for every occupant of the pin; no animation or extra timer needed.
+	pin.glow = {}
+	for index = 1, 4 do
+		local texture = Call(addon, pin.frame, "CreateTexture", nil, "BACKGROUND")
+		Call(addon, texture, "SetPoint", "CENTER")
+		Call(addon, texture, "SetSize", PARTNER_DOT_SIZE - (index - 1) * 2, PARTNER_DOT_SIZE - (index - 1) * 2)
+		Call(addon, texture, "SetColorTexture", 1, 0.8, 0.15, 0.06 + index * 0.07)
+		Call(addon, texture, "SetBlendMode", "ADD")
+		local mask = Call(addon, pin.frame, "CreateMaskTexture")
+		Call(addon, mask, "SetAllPoints", texture)
+		Call(addon, mask, "SetTexture", "Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+		Call(addon, texture, "AddMaskTexture", mask)
+		Call(addon, texture, "Hide")
+		pin.glow[index] = texture
 	end
 	Call(addon, pin.frame, "SetScript", "OnClick", function(_, button)
 		if button ~= "LeftButton" and button ~= "RightButton" then
@@ -595,6 +620,16 @@ local function RefreshSurface(addon, state, name, rows)
 			pin.name, pin.parent, pin.mapID = row.name, geometry.parent, geometry.mapID
 			local r, g, b = Color(addon, row.classFile)
 			Call(addon, pin.texture, "SetColorTexture", r, g, b, 1)
+			local size = PinSize(addon, row.name)
+			if pin.size ~= size then
+				local looking = size == PARTNER_DOT_SIZE
+				Call(addon, pin.border, "SetColorTexture", 0, 0, 0, looking and 0 or 1)
+				for _, glow in ipairs(pin.glow) do
+					Call(addon, glow, looking and "Show" or "Hide")
+				end
+				Call(addon, pin.frame, "SetSize", size, size)
+				pin.size = size
+			end
 			Call(addon, pin.frame, "ClearAllPoints")
 			Call(addon, pin.frame, "SetPoint", "CENTER", surface.frame, "TOPLEFT", x, -y)
 			Call(addon, pin.frame, "Show")

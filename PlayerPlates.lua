@@ -167,6 +167,7 @@ function QT:HandleQuestPartnerStatusMessage(payload, sender)
 		receivedAt = now,
 		retired = retired,
 	}
+	if self.RefreshQTPlayerPartnerIndicators then self:RefreshQTPlayerPartnerIndicators() end
 	return true
 end
 
@@ -273,11 +274,13 @@ function QT:PruneQTPlayerPresence(force)
 	if changed and self.RefreshQTPlayerPlatePresence then
 		self:RefreshQTPlayerPlatePresence()
 	end
+	if self.RefreshQTPlayerPartnerIndicators then self:RefreshQTPlayerPartnerIndicators() end
 end
 
 function QT:UpdateQTPlayerPresence()
 	self:BroadcastQTPlayerPresence()
 	self:BroadcastQuestPartnerStatus()
+	self:BroadcastAddonVersion()
 	self:PruneQTPlayerPresence()
 end
 

@@ -87,6 +87,68 @@ local function SetScroll(addon, frame, value)
 	end
 end
 
+local function CreatePartnerExamples(addon, parent)
+	local gallery = New(addon, "Frame", parent)
+	Call(addon, gallery, "Hide")
+	gallery.columns = {}
+	for index = 1, 2 do
+		local column = New(addon, "Frame", gallery)
+		gallery.columns[index] = column
+		local heading = Label(addon, column, "GameFontNormalSmall")
+		Call(addon, heading, "SetPoint", "TOPLEFT")
+		Call(addon, heading, "SetPoint", "TOPRIGHT")
+		Call(addon, heading, "SetHeight", 32)
+		Call(addon, heading, "SetJustifyH", "CENTER")
+		Call(addon, heading, "SetText", index == 1 and "QT player" or "Looking for questing partners")
+		local logo = Texture(addon, column, nil, "ARTWORK", 32, 32)
+		Call(addon, logo, "SetPoint", "TOP", column, "TOP", -28, -38)
+		Call(addon, logo, "SetTexture", LOGO)
+		if index == 2 then
+			for layer = 1, 8 do
+				local angle = (layer - 1) * math.pi / 4
+				local glow = Texture(addon, column, nil, "BACKGROUND", 32, 32)
+				Call(addon, glow, "SetPoint", "CENTER", logo, "CENTER", 2 * math.cos(angle), 2 * math.sin(angle))
+				Call(addon, glow, "SetTexture", LOGO)
+				Call(addon, glow, "SetVertexColor", 1, 0.78, 0.12, 0.35)
+				Call(addon, glow, "SetBlendMode", "ADD")
+			end
+		end
+		local function Circle(size, layer, r, g, b, alpha, additive)
+			local circle = Texture(addon, column, nil, layer, size, size)
+			Call(addon, circle, "SetPoint", "TOP", column, "TOP", 28, -54 + size / 2)
+			Call(addon, circle, "SetColorTexture", r, g, b, alpha)
+			if additive then
+				Call(addon, circle, "SetBlendMode", "ADD")
+			end
+			local mask = Call(addon, column, "CreateMaskTexture")
+			Call(addon, mask, "SetAllPoints", circle)
+			Call(
+				addon,
+				mask,
+				"SetTexture",
+				"Interface\\CharacterFrame\\TempPortraitAlphaMask",
+				"CLAMPTOBLACKADDITIVE",
+				"CLAMPTOBLACKADDITIVE"
+			)
+			Call(addon, circle, "AddMaskTexture", mask)
+		end
+		if index == 1 then
+			Circle(12, "BACKGROUND", 0, 0, 0, 1)
+		else
+			for layer = 1, 4 do
+				Circle(16 - (layer - 1) * 2, "BACKGROUND", 1, 0.8, 0.15, 0.06 + layer * 0.07, true)
+			end
+		end
+		Circle(9, "ARTWORK", 0.25, 0.78, 0.92, 1)
+		for _, example in ipairs({ { -28, "Logo" }, { 28, "Map dot" } }) do
+			local caption = Label(addon, column, "GameFontHighlightSmall")
+			Call(addon, caption, "SetPoint", "TOP", column, "TOP", example[1], -80)
+			Call(addon, caption, "SetText", example[2])
+		end
+	end
+	return gallery
+end
+
 local function Create(addon, parent)
 	local frame = New(addon, "Frame", parent)
 	Call(addon, frame, "Hide")
@@ -196,6 +258,7 @@ local function Create(addon, parent)
 	frame.logo = Texture(addon, frame.content, nil, "ARTWORK", LOGO_SIZE, LOGO_SIZE)
 	Call(addon, frame.logo, "SetPoint", "TOP", frame.content, "TOP", 0, 0)
 	Call(addon, frame.logo, "SetTexture", LOGO)
+	frame.partnerExamples = CreatePartnerExamples(addon, frame.content)
 	frame.slider = New(addon, "Slider", frame)
 	Call(addon, frame.slider, "Hide")
 	Call(addon, frame.slider, "SetPoint", "TOPLEFT", frame.scroll, "TOPRIGHT", 8, 0)
@@ -283,6 +346,8 @@ local function Render(addon, notes, version, isFirstUse)
 	end
 	Add(isFirstUse and "Welcome to QuestTogether" or "What's new", "GameFontNormalLarge", 14)
 	Add(notes.welcome, "GameFontHighlight", 18)
+	Call(addon, frame.partnerExamples, "Hide")
+	local examplesShown = false
 	if addon:CanAccessTable(notes.sections) then
 		for _, section in ipairs(notes.sections) do
 			if addon:CanAccessTable(section) then
@@ -294,6 +359,19 @@ local function Render(addon, notes, version, isFirstUse)
 							Add("• " .. text, "GameFontHighlight", 9)
 						end
 					end
+				end
+				if section.illustration == "quest-partners" and not examplesShown then
+					local gallery = frame.partnerExamples
+					Call(addon, gallery, "ClearAllPoints")
+					Call(addon, gallery, "SetPoint", "TOPLEFT", 0, -offset)
+					Call(addon, gallery, "SetSize", contentWidth, 112)
+					for index, column in ipairs(gallery.columns) do
+						Call(addon, column, "ClearAllPoints")
+						Call(addon, column, "SetPoint", "TOPLEFT", (index - 1) * contentWidth / 2, 0)
+						Call(addon, column, "SetSize", contentWidth / 2, 112)
+					end
+					Call(addon, gallery, "Show")
+					offset, examplesShown = offset + 120, true
 				end
 				offset = offset + 10
 			end

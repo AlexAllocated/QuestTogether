@@ -30,11 +30,23 @@ for _, name in ipairs({
 	"Core.lua",
 	"HotPathRuntime.lua",
 	"Minimap.lua",
+	"PartyState.lua",
+	"PlayerPlates.lua",
 	"LocationPins.lua",
 }) do
 	assert(loadfile(root .. "/" .. name))("QuestTogether", namespace)
 end
 local addon = QuestTogether
+addon.isEnabled = true
+addon.API.RegionalUniqueNamesEnabled = function()
+	return client == "forever"
+end
+addon.API.GetTime = function()
+	return 100
+end
+local partnerName = addon:NormalizeMemberName(client == "forever" and "Partner Othername" or "Partner-Realm")
+local partnerStatus = { looking = false, receivedAt = 100 }
+addon.qtPlayerPresenceState = { peers = {}, questPartners = { [partnerName] = partnerStatus } }
 local restricted, rotated, ignoredRotation, facing = false, false, false, math.pi / 2
 function addon:IsRuntimeRestricted()
 	return restricted
@@ -150,6 +162,13 @@ Near(g.canvasHeight, 1000)
 local x, y = addon:ProjectPlayerLocationPin("map", { mapID = 1, x = 0.5, y = 0.6 }, g)
 Near(x, 400)
 Near(y, 300)
+-- With the native canvas offset/scale, this dot is seven pixels inside the
+-- viewport: the normal six-pixel radius fits, but the gold eight-pixel one does not.
+local edgeRow = { name = partnerName, mapID = 1, x = 0.3035, y = 0.6 }
+Near(addon:ProjectPlayerLocationPin("map", edgeRow, g), 7)
+partnerStatus.looking = true
+assert(addon:ProjectPlayerLocationPin("map", edgeRow, g) == nil, "clip the complete gold glow at the map edge")
+partnerStatus.looking = false
 local before = conversions
 addon:GetLocationPinMapPosition({ mapID = 1, x = 0.5, y = 0.5 }, 1)
 assert(conversions == before, "same map needs no world conversion")
@@ -181,6 +200,11 @@ assert(g.continent == 0, "world instance zero is valid")
 x, y = addon:ProjectPlayerLocationPin("minimap", { mapID = 1, x = 0.525, y = 0.5 }, g)
 Near(x, 150)
 Near(y, 100)
+edgeRow = { name = partnerName, mapID = 1, x = 0.5465, y = 0.5 }
+Near(addon:ProjectPlayerLocationPin("minimap", edgeRow, g), 193)
+partnerStatus.looking = true
+assert(addon:ProjectPlayerLocationPin("minimap", edgeRow, g) == nil, "clip the complete gold glow at the minimap edge")
+partnerStatus.looking = false
 rotated = true
 g = assert(addon:GetLocationPinSurface("minimap"))
 x, y = addon:ProjectPlayerLocationPin("minimap", { mapID = 1, x = 0.475, y = 0.5 }, g)
@@ -232,5 +256,5 @@ assert(inaccessibleReads == 0)
 print(
 	"location native contracts "
 		.. client
-		.. ": PASS (projection, scale, pan, cross-map, radius, rotation override, secrecy, unavailable APIs)"
+		.. ": PASS (projection, scale, pan, cross-map, LFG glow edges, radius, rotation override, secrecy, unavailable APIs)"
 )

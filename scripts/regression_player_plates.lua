@@ -122,6 +122,7 @@ local function DiscoveryMessages(addon)
 		QCDN = addon:EncodeQuestCompareDonePayload({ requestId = "discovery", senderName = "Claimed-Realm", count = 0 }),
 		QSHR = "1,discovery,Third-Realm,42,request",
 		QTPR = "1,1",
+		QTVR = "1,5.12.0",
 		QTLF = "1,100-1234,1,0",
 		LOC = "1,100-1234,1,3,12,0.4,0.6,MAGE,Mage,Human,Alliance,60,0",
 	}
@@ -273,7 +274,7 @@ end)
 QT:RegisterTest("quest partner status is opt in and independent of location and legacy presence", function()
 	local a, b = Peer("Anakin Othername"), Peer("Luke Bucket")
 	a.forever, b.forever, a.other = true, true, b
-	a.db.profile.shareLocationOnMap, a.db.profile.shareLocationOnMinimap = false, false
+	a.db.profile.sharePlayerLocation = false
 	Equal(a:GetOption("lookingForQuestPartners"), false)
 	a:UpdateQTPlayerPresence()
 	Equal(a.sent[1], "QTPR|1,1")
@@ -460,7 +461,7 @@ QT:RegisterTest(
 QT:RegisterTest("QT presence authenticates transport and survives disabled location sharing", function()
 	local a, b = Peer("Anakin Othername"), Peer("Luke Bucket")
 	a.forever, b.forever, a.other = true, true, b
-	a.db.profile.shareLocationOnMap, a.db.profile.shareLocationOnMinimap = false, false
+	a.db.profile.sharePlayerLocation = false
 	assert(a:BroadcastQTPlayerPresence())
 	Equal(a.sent[1], "QTPR|1,1")
 	assert(b:IsKnownQTPlayer(a.name))

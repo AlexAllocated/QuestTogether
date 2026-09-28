@@ -1,5 +1,15 @@
 # QuestTogether changelog
 
+## 5.13.0 — 2026-09-28
+
+- Detect newer stable addon releases from validated peer version announcements and existing ping replies. Save the highest observed update account-wide, notify once when first detected and once on each reload, and clear it after installing that release or newer. Alpha/beta builds do not prompt updates; announcements reuse the existing update loop, send only the installed version, and are limited to one every five minutes after success.
+- Highlight players looking for questing partners with larger gold-glowing map/minimap dots and a soft gold glow on their QT nameplate logo. Keep class colors and existing logo spacing, and clear highlights when partner status ends or expires.
+- Add an off-by-default “Only show players looking for questing partners” filter for both maps.
+- Consolidate map/minimap settings into “Share my location” and “Show other players,” each applying to both maps. Migrate existing profiles while preserving any prior sharing opt-out; retain older peers' per-map sharing permissions.
+- Add side-by-side regular/glowing logo and map-dot examples to What's New. Remove all temporary all-friendly-player and forced-dot previews; only recognized QT players get logos, and only active LFG players get gold glows.
+
+Validation: 746 addon tests pass in normal and reverse order on Lua 5.1/5.2, along with all six client profiles, Retail/Forever geometry checks, 60 release-tooling tests, all Lua syntax checks, generated notes and exact libchev verification. Both glow styles were approved in-game; the new patch-note examples, update reminders, two-client behavior and engine-level taint checks remain separate live-client validation.
+
 ## 5.12.0 — 2026-09-28
 
 - Move left-positioned player logos outside visible nameplate buffs, with padding for the buff artwork and scale. Restore normal spacing when buffs disappear. Refresh through guarded, coalesced aura events without reading aura contents or modifying Blizzard frames.

@@ -10,7 +10,9 @@ local function Register(name, callback)
 		for _, fixture in ipairs(fixtures) do
 			assert((fixture.invalidCalls or 0) == 0, "a swallowed error hid an unsafe release notes UI call")
 		end
-		if not ok then error(err, 0) end
+		if not ok then
+			error(err, 0)
+		end
 	end)
 end
 local function Equal(actual, expected)
@@ -118,6 +120,9 @@ local function Region(addon, parent, kind)
 		addon.regions[#addon.regions + 1] = texture
 		return texture
 	end
+	function region:CreateMaskTexture()
+		return self:CreateTexture()
+	end
 	function region:CreateFontString(_, _, font)
 		self:Check()
 		local label = Region(addon, self, "FontString")
@@ -158,6 +163,8 @@ local function Region(addon, parent, kind)
 		"SetHorizTile",
 		"SetVertTile",
 		"SetBlendMode",
+		"SetVertexColor",
+		"AddMaskTexture",
 		"SetColorTexture",
 		"SetJustifyH",
 		"SetJustifyV",
@@ -262,24 +269,21 @@ Register("release notes window sizes to content and reuses only owned frames", f
 	assert(frame.footer.text:find("/qt notes", 1, true))
 end)
 
-Register(
-	"release notes settings action keeps the welcome visible when settings cannot open",
-	function()
-		local a = Fixture()
-		assert(a:RenderReleaseNotesWindow(Notes(), "5.9.2", true))
-		local frame = a.releaseNotesWindow
-		a.settingsResult = false
-		frame.settings.scripts.OnClick({})
-		assert(frame:IsVisible())
-		a.settingsThrows = true
-		frame.settings.scripts.OnClick({})
-		assert(frame:IsVisible())
-		a.settingsThrows, a.settingsResult = false, true
-		frame.settings.scripts.OnClick({})
-		Equal(frame:IsVisible(), false)
-		Equal(a.settingsOpened, 3)
-	end
-)
+Register("release notes settings action keeps the welcome visible when settings cannot open", function()
+	local a = Fixture()
+	assert(a:RenderReleaseNotesWindow(Notes(), "5.9.2", true))
+	local frame = a.releaseNotesWindow
+	a.settingsResult = false
+	frame.settings.scripts.OnClick({})
+	assert(frame:IsVisible())
+	a.settingsThrows = true
+	frame.settings.scripts.OnClick({})
+	assert(frame:IsVisible())
+	a.settingsThrows, a.settingsResult = false, true
+	frame.settings.scripts.OnClick({})
+	Equal(frame:IsVisible(), false)
+	Equal(a.settingsOpened, 3)
+end)
 
 Register("release notes overflow scrolling clamps and resets when reopened", function()
 	local a = Fixture()
@@ -380,21 +384,18 @@ Register("release notes stale callbacks and rendering respect restrictions and q
 	Equal(#a.frames, 0)
 end)
 
-Register(
-	"release notes rejects an individually forbidden cached label without touching it",
-	function()
-		local a = Fixture()
-		assert(a:RenderReleaseNotesWindow(Notes(), "5.9.2", false))
-		local label = a.releaseNotesWindow.labels[4]
-		label.forbidden = true
-		local writes = label.writes
-		Equal(a:RenderReleaseNotesWindow(Notes(), "5.9.2", false), false)
-		Equal(label.writes, writes)
-		Equal(a.releaseNotesWindow:IsShown(), false)
-		label.forbidden = false
-		assert(a:RenderReleaseNotesWindow(Notes(), "5.9.2", false))
-	end
-)
+Register("release notes rejects an individually forbidden cached label without touching it", function()
+	local a = Fixture()
+	assert(a:RenderReleaseNotesWindow(Notes(), "5.9.2", false))
+	local label = a.releaseNotesWindow.labels[4]
+	label.forbidden = true
+	local writes = label.writes
+	Equal(a:RenderReleaseNotesWindow(Notes(), "5.9.2", false), false)
+	Equal(label.writes, writes)
+	Equal(a.releaseNotesWindow:IsShown(), false)
+	label.forbidden = false
+	assert(a:RenderReleaseNotesWindow(Notes(), "5.9.2", false))
+end)
 
 Register("release notes interrupted construction remains hidden and retries safely", function()
 	local a = Fixture()
@@ -412,16 +413,26 @@ Register("settings chat destination selection rejects restrictions without chang
 	local a = Fixture()
 	a.db = { profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile) }
 	a.opens, a.closes, a.refreshes = 0, 0, 0
-	a.API = { Delay = function() error("a blocked settings choice must not be queued") end }
+	a.API = {
+		Delay = function()
+			error("a blocked settings choice must not be queued")
+		end,
+	}
 	function a:NormalizeAnnouncementDisplayOptions() end
-	function a:GetResolvedChatLogDestination() return self.db.profile.chatLogDestination end
+	function a:GetResolvedChatLogDestination()
+		return self.db.profile.chatLogDestination
+	end
 	function a:EnsureQuestLogChatFrame()
 		self.opens = self.opens + 1
 		return {}
 	end
 	function a:ApplyMainChatFontSizeToChatFrame() end
-	function a:CloseQuestLogChatFrame() self.closes = self.closes + 1 end
-	function a:RefreshOptionsWindow() self.refreshes = self.refreshes + 1 end
+	function a:CloseQuestLogChatFrame()
+		self.closes = self.closes + 1
+	end
+	function a:RefreshOptionsWindow()
+		self.refreshes = self.refreshes + 1
+	end
 	for _, transition in ipairs({ { "main", "separate" }, { "separate", "main" } }) do
 		a.db.profile.chatLogDestination = transition[1]
 		a.blocked = true
@@ -443,4 +454,38 @@ Register("settings chat destination selection rejects restrictions without chang
 	a.blocked = true
 	assert(a:ApplyOptionsDropdownSelection("showProgressFor", "party_only"))
 	Equal(a.db.profile.showProgressFor, "party_only")
+end)
+
+Register("release notes visual examples occupy scroll space and hide when absent", function()
+	local a = Fixture()
+	local notes = Notes()
+	assert(a:RenderReleaseNotesWindow(notes, "5.13.0", false))
+	local frame = a.releaseNotesWindow
+	local initialHeight = frame.content.height
+	notes.sections[1].illustration = "quest-partners"
+	assert(a:RenderReleaseNotesWindow(notes, "5.13.0", false))
+	assert(frame.partnerExamples.shown)
+	Equal(#frame.partnerExamples.columns, 2)
+	assert(frame.content.height >= initialHeight + 120)
+	local count = #a.regions
+	assert(a:RenderReleaseNotesWindow(notes, "5.13.0", false))
+	Equal(#a.regions, count)
+	notes.sections[1].illustration = nil
+	assert(a:RenderReleaseNotesWindow(notes, "5.13.0", false))
+	assert(not frame.partnerExamples.shown)
+end)
+
+Register("release notes visual examples quarantine forbidden regions and recover", function()
+	local a = Fixture()
+	local notes = Notes()
+	notes.sections[1].illustration = "quest-partners"
+	assert(a:RenderReleaseNotesWindow(notes, "5.13.0", false))
+	local gallery = a.releaseNotesWindow.partnerExamples
+	gallery.forbidden = true
+	local writes = gallery.writes
+	Equal(a:RenderReleaseNotesWindow(notes, "5.13.0", false), false)
+	Equal(gallery.writes, writes)
+	gallery.forbidden = false
+	assert(a:RenderReleaseNotesWindow(notes, "5.13.0", false))
+	assert(gallery.shown)
 end)

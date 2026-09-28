@@ -238,7 +238,7 @@ local function WithIsolatedState(testFn)
 			"personalBubbleEditSession", "announcementChannelLocalID", "questCompareResponseQueue",
 			"partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
 			"minimapButton", "minimapTooltip", "minimapTooltipPendingHide", "minimapLauncherFrame", "minimapDragState", "minimapSuppressClick",
-			"releaseNotesWindow", "releaseNotesWakeFrame", "pendingReleaseNotes",
+			"releaseNotesWindow", "releaseNotesWakeFrame", "pendingReleaseNotes", "addonUpdateState",
 			"discordSupportWindowOwner", "qtPlayerPresenceState", "playerPlatesFrame", "qtPlayerIconStateByFrame",
 			"playerLocationState", "playerLocationUpdateFrame", "locationPinState", "playerLocationsFrame",
 			"worldQuestAreaStateByQuestID", "bonusObjectiveAreaStateByQuestID", "questSnapshotByQuestID", "questSnapshotOrder",

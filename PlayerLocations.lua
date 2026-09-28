@@ -44,8 +44,7 @@ local function NeedsWithdrawalRetry(enabled, publishedAt, now)
 end
 
 function QT:GetPlayerLocationShareMask()
-	return (self:GetOption("shareLocationOnMap") == true and 1 or 0)
-		+ (self:GetOption("shareLocationOnMinimap") == true and 2 or 0)
+	return self:GetOption("sharePlayerLocation") == true and 3 or 0
 end
 
 function QT:CanPublishPlayerLocation()
@@ -291,24 +290,26 @@ function QT:HandlePlayerLocationMessage(payload, sender)
 end
 
 function QT:GetVisiblePlayerLocations(surface)
-	local option = surface == "map" and "showLocationsOnMap" or surface == "minimap" and "showLocationsOnMinimap"
 	if
-		not option
+		(surface ~= "map" and surface ~= "minimap")
 		or not self.isEnabled
 		or self.isLoggingOut
 		or self:IsRuntimeRestricted()
-		or self:GetOption(option) ~= true
+		or self:GetOption("showPlayerLocations") ~= true
 	then
 		return {}
 	end
 	self:PrunePlayerLocations()
 	local state, result, now = rawget(self, "playerLocationState"), {}, Now(self)
+	local onlyPartners = self:GetOption("onlyShowQuestPartners") == true
 	for _, peer in pairs(state and state.peers or {}) do
 		if
 			now
 			and now >= peer.receivedAt
 			and now - peer.receivedAt < LIFETIME
+			-- Older peers can still grant permission for just one surface.
 			and ((surface == "map" and peer.mask % 2 == 1) or (surface == "minimap" and peer.mask >= 2))
+			and (not onlyPartners or self:IsPlayerLookingForQuestPartners(peer.name))
 		then
 			result[#result + 1] = peer
 		end
@@ -372,7 +373,7 @@ function QT:OnPlayerLocationOptionsChanged(key)
 	if not self.isEnabled then
 		return
 	end
-	if not key or key == "shareLocationOnMap" or key == "shareLocationOnMinimap" then
+	if not key or key == "sharePlayerLocation" then
 		self:BroadcastPlayerLocation(true)
 	end
 	self:RefreshPlayerLocationPins()

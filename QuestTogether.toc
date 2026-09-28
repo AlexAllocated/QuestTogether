@@ -32,6 +32,7 @@ TaskArea.lua
 Nameplates.lua
 PartyState.lua
 Comms.lua
+AddonUpdates.lua
 QuestCompare.lua
 QuestCompareWindow.lua
 QuestComparePreview.lua
@@ -48,8 +49,10 @@ scripts/regression_quest_state.lua
 scripts/regression_core_state.lua
 scripts/regression_nameplates.lua
 scripts/regression_friendly_nameplate_visibility.lua
+scripts/regression_lfg_nameplates.lua
 scripts/regression_nameplate_discovery.lua
 scripts/regression_comms.lua
+scripts/regression_addon_updates.lua
 scripts/regression_quest_compare.lua
 scripts/regression_minimap.lua
 scripts/regression_release_notes.lua

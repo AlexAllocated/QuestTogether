@@ -3186,12 +3186,81 @@ ResolveNameplateUnitToken = function(namePlateFrameBase, unitFrame)
 	return nil
 end
 
+function QuestTogether:SetQTPlayerIconLookingForPartners(iconFrame, looking)
+	if not CanMutateFrame(iconFrame) then
+		return false
+	end
+	looking = looking == true
+	local glow = iconFrame.qtPartnerGlow
+	if looking and self:IsWorkBlocked("nameplate_refresh") then
+		return false
+	end
+	if not glow and not looking then
+		iconFrame.qtLookingForPartners = false
+		return true
+	end
+	if not glow then
+		glow = {}
+		iconFrame.qtPartnerGlow = glow
+	end
+	-- Offset translucent copies of the transparent logo create a contour glow.
+	-- These owned background layers leave the original artwork and anchor alone.
+	if looking and not iconFrame.qtPartnerGlowReady then
+		for index = 1, 8 do
+			if not glow[index] then
+				local ok, layer = pcall(iconFrame.CreateTexture, iconFrame, nil, "BACKGROUND")
+				if not ok or not CanMutateFrame(layer) then
+					return false
+				end
+				layer:Hide()
+				glow[index] = layer
+			end
+		end
+		for _, layer in ipairs(glow) do
+			if not CanMutateFrame(layer) then
+				return false
+			end
+		end
+		for index, layer in ipairs(glow) do
+			local angle = (index - 1) * math.pi / 4
+			local x, y = 2 * math.cos(angle), 2 * math.sin(angle)
+			layer:SetTexture(self.NAMEPLATE_PLAYER_ICON_TEXTURE)
+			layer:SetTexCoord(0, 1, 0, 1)
+			layer:SetVertexColor(1, 0.78, 0.12, 0.35)
+			layer:SetBlendMode("ADD")
+			layer:ClearAllPoints()
+			layer:SetPoint("TOPLEFT", iconFrame, "TOPLEFT", x, y)
+			layer:SetPoint("BOTTOMRIGHT", iconFrame, "BOTTOMRIGHT", x, y)
+		end
+		iconFrame.qtPartnerGlowReady = true
+	end
+	for _, layer in ipairs(glow) do
+		if not CanMutateFrame(layer) then
+			return false
+		end
+	end
+	if iconFrame.qtLookingForPartners ~= looking then
+		for _, layer in ipairs(glow) do
+			if looking then
+				layer:Show()
+			else
+				layer:Hide()
+			end
+		end
+		iconFrame.qtLookingForPartners = looking
+	end
+	return true
+end
+
 function QuestTogether:SetNameplateIconKind(iconFrame, kind)
 	if not CanMutateFrame(iconFrame) then
 		return false
 	end
 	local texture = iconFrame.Icon
 	if not texture or not CanMutateFrame(texture) then
+		return false
+	end
+	if kind ~= "player" and not self:SetQTPlayerIconLookingForPartners(iconFrame, false) then
 		return false
 	end
 	if iconFrame.qtIconKind == kind then
@@ -4172,6 +4241,25 @@ function QuestTogether:RefreshQTPlayerPlatePresence()
 	end
 end
 
+function QuestTogether:RefreshQTPlayerPartnerIndicators()
+	if not self.isEnabled then
+		return false
+	end
+	local scheduled = false
+	for _, info in pairs(self.qtPlayerIconStateByFrame or {}) do
+		local looking = self:IsPlayerLookingForQuestPartners(info.name) == true
+		if
+			(info.partnerIndicatorPending == true or (info.lookingForPartners == true) ~= looking)
+			and self:IsNameplateUnitToken(info.unitToken)
+			and not self.nameplateRefreshPendingByUnitToken[info.unitToken]
+		then
+			self:ScheduleNameplateRefresh(info.unitToken)
+			scheduled = true
+		end
+	end
+	return scheduled
+end
+
 function QuestTogether:GetFriendlyPlayerNameplateVisibility()
 	local getter = self.API and self.API.GetCVar
 	if not self:CanAccessValue(getter) or type(getter) ~= "function" then
@@ -4253,8 +4341,19 @@ function QuestTogether:RefreshQTPlayerNameplate(plate, unitToken, unitFrame)
 		return false
 	end
 	icon = readyIcon
+	local lookingForPartners = self:IsPlayerLookingForQuestPartners(name) == true
 	self.qtPlayerIconStateByFrame = self.qtPlayerIconStateByFrame or setmetatable({}, { __mode = "k" })
-	self.qtPlayerIconStateByFrame[icon] = { name = name, unitToken = unitToken, guid = guid }
+	local info = { name = name, unitToken = unitToken, guid = guid, lookingForPartners = lookingForPartners }
+	if not self:SetQTPlayerIconLookingForPartners(icon, lookingForPartners) then
+		self:HideQTPlayerIcon(icon)
+		-- A quarantined child can recover while its plate stays visible. Keep
+		-- only owned identity/retry state so the normal presence prune retries
+		-- presentation; removal and disable still discard this record.
+		info.lookingForPartners, info.partnerIndicatorPending = false, true
+		self.qtPlayerIconStateByFrame[icon] = info
+		return false
+	end
+	self.qtPlayerIconStateByFrame[icon] = info
 	self:CancelNameplateVisualCleanup(icon)
 	icon:Show()
 	return true

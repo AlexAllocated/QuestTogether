@@ -360,10 +360,9 @@ QuestTogether.DEFAULTS = {
 		lookingForQuestPartners = false,
 		showMinimapButton = true,
 		minimapButtonPosition = 225,
-		shareLocationOnMap = true,
-		shareLocationOnMinimap = true,
-		showLocationsOnMap = true,
-		showLocationsOnMinimap = true,
+		sharePlayerLocation = true,
+		showPlayerLocations = true,
+		onlyShowQuestPartners = false,
 		emoteOnNearbyPlayerLevelUp = true,
 		nameplateQuestIconEnabled = true,
 		nameplatePlayerIconEnabled = true,
@@ -380,6 +379,8 @@ QuestTogether.DEFAULTS = {
 	},
 		global = {
 			releaseNotesSeenVersion = "",
+			availableAddonVersion = "",
+			addonUpdateAvailable = false,
 			questTrackers = {},
 			personalBubbleAnchors = {},
 			debugLogCategoryFilter = "ALL",
@@ -2560,6 +2561,28 @@ function QuestTogether:GetCurrentCharacterKey()
 	return playerName
 end
 
+function QuestTogether:MigratePlayerLocationOptions(profile)
+	if type(profile) ~= "table" then
+		return
+	end
+	-- Read the old settings before filling defaults. Missing settings used to
+	-- default on; every present value had to be exactly true to grant permission.
+	-- Combining sharing uses AND, while combining viewing uses OR.
+	if profile.sharePlayerLocation == nil then
+		profile.sharePlayerLocation = (profile.shareLocationOnMap == nil or profile.shareLocationOnMap == true)
+			and (profile.shareLocationOnMinimap == nil or profile.shareLocationOnMinimap == true)
+	end
+	if profile.showPlayerLocations == nil then
+		profile.showPlayerLocations = (profile.showLocationsOnMap == nil or profile.showLocationsOnMap == true)
+			or (profile.showLocationsOnMinimap == nil or profile.showLocationsOnMinimap == true)
+	end
+	if profile.onlyShowQuestPartners == nil then
+		profile.onlyShowQuestPartners = false
+	end
+	profile.shareLocationOnMap, profile.shareLocationOnMinimap = nil, nil
+	profile.showLocationsOnMap, profile.showLocationsOnMinimap = nil, nil
+end
+
 function QuestTogether:EnsureProfileStorage()
 	if not self.db then
 		return false
@@ -2571,6 +2594,11 @@ function QuestTogether:EnsureProfileStorage()
 	if type(self.db.profileKeys) ~= "table" then
 		self.db.profileKeys = {}
 	end
+	-- Inactive profiles can be selected or copied later in this session.
+	for _, profile in pairs(self.db.profiles) do
+		self:MigratePlayerLocationOptions(profile)
+	end
+	self:MigratePlayerLocationOptions(self.db.profile)
 
 	return true
 end
@@ -2610,6 +2638,7 @@ function QuestTogether:EnsureProfile(profileKey, sourceProfile)
 	if type(self.db.profiles[normalizedKey]) ~= "table" then
 		self.db.profiles[normalizedKey] = self:DeepCopy(sourceProfile or self.DEFAULTS.profile)
 	end
+	self:MigratePlayerLocationOptions(self.db.profiles[normalizedKey])
 	self:ApplyDefaults(self.db.profiles[normalizedKey], self.DEFAULTS.profile)
 	return normalizedKey, self.db.profiles[normalizedKey]
 end
@@ -2714,6 +2743,7 @@ function QuestTogether:CreateProfile(profileKey, sourceProfileKey)
 	end
 
 	self.db.profiles[normalizedKey] = self:DeepCopy(sourceProfile or self.DEFAULTS.profile)
+	self:MigratePlayerLocationOptions(self.db.profiles[normalizedKey])
 	self:ApplyDefaults(self.db.profiles[normalizedKey], self.DEFAULTS.profile)
 	return true
 end
@@ -2735,6 +2765,7 @@ function QuestTogether:CopyProfileIntoActiveProfile(sourceProfileKey)
 	end
 
 	self.db.profiles[self.activeProfileKey] = self:DeepCopy(self.db.profiles[sourceKey])
+	self:MigratePlayerLocationOptions(self.db.profiles[self.activeProfileKey])
 	self:ApplyDefaults(self.db.profiles[self.activeProfileKey], self.DEFAULTS.profile)
 	self.db.profile = self.db.profiles[self.activeProfileKey]
 	self:ApplyActiveProfileState("copy")
@@ -5105,8 +5136,11 @@ function QuestTogether:SetOption(key, value)
 	if not self.db or not self.db.profile then
 		return false
 	end
-	local isLocationOption = key == "shareLocationOnMap" or key == "shareLocationOnMinimap"
-		or key == "showLocationsOnMap" or key == "showLocationsOnMinimap"
+	if key == "shareLocationOnMap" or key == "shareLocationOnMinimap"
+		or key == "showLocationsOnMap" or key == "showLocationsOnMinimap" then
+		return false
+	end
+	local isLocationOption = key == "sharePlayerLocation" or key == "showPlayerLocations" or key == "onlyShowQuestPartners"
 	if (isLocationOption or key == "nameplatePlayerIconEnabled") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
 	if key == "showMinimapButton" and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
 		return false
@@ -5882,6 +5916,7 @@ function QuestTogether:OnLogin()
 		self:Enable()
 	end
 	if self.InitializeMinimapLauncher then self:InitializeMinimapLauncher() end
+	self:NotifyAddonUpdate()
 	self:InitializeReleaseNotes()
 end
 

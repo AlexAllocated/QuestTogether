@@ -78,14 +78,14 @@ Other QuestTogether users appear as small **class-colored dots** on the world ma
 
 Hover a dot to see the player's **name, faction, race, class, and level**, when available. Click it to open the same player menu used in QuestTogether chat logs.
 
-The **Player Locations** settings give you four independent switches:
+The **Player Locations** settings have two independent controls, each applying to both the world map and minimap:
 
-| Setting | World map | Minimap |
-| --- | --- | --- |
-| Share my location | On/off | On/off |
-| Show other players | On/off | On/off |
+- **Share my location** — let other QuestTogether users see your dot.
+- **Show other players** — display players who share their location.
 
-**All four switches start enabled.** You can share on one map, both, or neither, and control what you see independently. Both sharing switches off also removes location details from your quest announcements and ping replies.
+Both start enabled for new profiles. Turning sharing off also removes location details from your quest announcements and ping replies. Existing sharing opt-outs are preserved when upgrading.
+
+Enable **Only show players looking for questing partners** to filter both maps to LFG players. This filter starts off.
 
 On Retail, tooltips also show War Mode when available. Forever omits realm and War Mode labels. Dots remain visible across phases to help you find people to group with.
 
@@ -95,13 +95,13 @@ Locations update periodically. Brief gaps retain the last reported dot for up to
 
 ## Find a questing partner
 
-Turn on **Looking for Questing Partners** to let other QuestTogether players know you want company. Your status appears in your player-name menu and on your map-dot tooltips. Others can use the existing Whisper, Invite, or Compare Quests actions to get in touch.
+Turn on **Looking for Questing Partners** to let other QuestTogether players know you want company. Your status appears in your player-name menu and on your map-dot tooltips. A soft gold glow makes your dots stand out on both maps, and your QT nameplate logo gains a soft gold glow. Others can use the existing Whisper, Invite, or Compare Quests actions to get in touch.
 
 Toggle it in the **minimap menu**, **Settings → Miscellaneous**, or with **`/qt lfg`**. Use `/qt lfg on`, `/qt lfg off`, or `/qt lfg status` for an explicit action. The status starts off and is saved per profile. It does not enable location sharing, send automatic invitations, or post recruitment messages in public chat.
 
 Status expires when updates stop, and ignored players stay hidden. Disabling QuestTogether pauses your advertisement. Both players need a version that supports partner status.
 
-> **SCREENSHOT — Questing partners:** A player-dot tooltip showing Looking for Questing Partners, alongside the checked minimap menu shortcut.
+> **SCREENSHOT — Questing partners:** Glowing map dots and a glowing QT player logo, alongside the LFG map filter and minimap menu shortcut.
 
 ## Spot quest objectives on nameplates
 
@@ -149,10 +149,15 @@ QuestTogether can play celebration emotes when you complete quests or gain a lev
 
 There are four separate toggles under **Miscellaneous**: your quest completions, nearby players' quest completions, your level-ups, and nearby players' level-ups. Nearby reactions respect your player-scope setting. World quest and bonus-objective completions participate in quest-completion celebrations.
 
+## Know when an update is available
+
+When another player reports a newer stable QuestTogether release, you get a reminder in your chosen QuestTogether chat window. It appears once when first detected and once after each reload until you install that release or a newer one. The reminder carries across characters; alpha and beta builds do not trigger it.
+
 ## Keep familiar controls close by
 
 The draggable **QuestTogether minimap button** opens a menu with:
 
+- Looking for Questing Partners
 - Settings
 - Compare Party Quests
 - Open Quest Journal

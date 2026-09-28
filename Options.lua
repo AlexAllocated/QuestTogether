@@ -481,21 +481,21 @@ local CHECKBOX_OPTION_KEYS = {
 	"emoteOnNearbyPlayerLevelUp",
 	"autoAcceptPartyShareRequests",
 	"showMinimapButton",
-	"shareLocationOnMap",
-	"shareLocationOnMinimap",
-	"showLocationsOnMap",
-	"showLocationsOnMinimap",
+	"sharePlayerLocation",
+	"showPlayerLocations",
+	"onlyShowQuestPartners",
 }
 
-local function RefreshCheckboxOptions(controls)
+local function RefreshCheckboxOptions(controls, addon)
 	if type(controls) ~= "table" then
 		return
 	end
+	addon = addon or QuestTogether
 
 	for _, optionKey in ipairs(CHECKBOX_OPTION_KEYS) do
 		local control = controls[optionKey]
 		if control then
-			control:SetChecked(QuestTogether:GetOption(optionKey))
+			control:SetChecked(addon:GetOption(optionKey))
 		end
 	end
 end
@@ -734,7 +734,7 @@ function QuestTogether:RefreshOptionsWindow()
 end
 
 function QuestTogether:RefreshPlayerLocationsWindow()
-	if self.playerLocationsFrame then RefreshCheckboxOptions(self.playerLocationsControls) end
+	if self.playerLocationsFrame then RefreshCheckboxOptions(self.playerLocationsControls, self) end
 end
 
 function QuestTogether:RefreshHomeWindow()
@@ -1754,20 +1754,17 @@ function QuestTogether:InitializePlayerLocationsWindow(parentCategory)
 	description:SetPoint("TOPLEFT", 16, -48)
 	description:SetWidth(640)
 	description:SetJustifyH("LEFT")
-	description:SetText("Find other QuestTogether players with class-colored dots. Hover for player details, or click for the player menu. Ignored players are hidden.")
+	description:SetText("Find other QuestTogether players with class-colored dots. Gold glows mark players looking for questing partners. Hover for player details, or click for the player menu. Ignored players are hidden.")
 	self.playerLocationsControls = {}
-	for _, section in ipairs({
-		{ title = "Share my location", y = -100, keys = { "shareLocationOnMap", "shareLocationOnMinimap" },
-			tooltips = { "Let other QuestTogether players see my dot on the world map.", "Let other QuestTogether players see my dot on the minimap." } },
-		{ title = "Show other players", y = -216, keys = { "showLocationsOnMap", "showLocationsOnMinimap" },
-			tooltips = { "Show players who share their location on the world map.", "Show nearby players who share their location on the minimap." } },
+	for index, option in ipairs({
+		{ key = "sharePlayerLocation", label = "Share my location on the map and minimap",
+			tooltip = "Let other QuestTogether players see my location on both the world map and minimap." },
+		{ key = "showPlayerLocations", label = "Show other players on the map and minimap",
+			tooltip = "Show shared player locations on the world map and nearby players on the minimap." },
+		{ key = "onlyShowQuestPartners", label = "Only show players looking for questing partners",
+			tooltip = "On both maps, show only players with an active Looking for Quest Partners status. This does not change who can see your location." },
 	}) do
-		local heading = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-		heading:SetPoint("TOPLEFT", 16, section.y)
-		heading:SetText(section.title)
-		for i, key in ipairs(section.keys) do
-			self.playerLocationsControls[key] = CreateCheckbox(content, key, i == 1 and "World map" or "Minimap", section.tooltips[i], 16, section.y - 28 * i)
-		end
+		self.playerLocationsControls[option.key] = CreateCheckbox(content, option.key, option.label, option.tooltip, 16, -120 - 44 * (index - 1))
 	end
 	self.playerLocationsFrame = frame
 	frame:SetScript("OnShow", function() QuestTogether:RefreshPlayerLocationsWindow() end)

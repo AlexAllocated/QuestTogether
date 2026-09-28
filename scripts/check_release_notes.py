@@ -89,8 +89,10 @@ def parse_notes(text, label=NOTES_FILE):
     titles = set()
     for index, section in enumerate(sections, 1):
         prefix = label + ".sections[" + str(index) + "]"
-        if not isinstance(section, dict) or set(section) != {"title", "items"}:
-            raise NotesError(prefix + " must contain exactly title and items")
+        if not isinstance(section, dict) or not {"title", "items"} <= set(section) or set(section) - {"title", "items", "illustration"}:
+            raise NotesError(prefix + " must contain title and items, with an optional illustration")
+        if "illustration" in section and section["illustration"] != "quest-partners":
+            raise NotesError(prefix + ".illustration must be quest-partners")
         title = meaningful_text(section["title"], prefix + ".title", 80, single_line=True)
         if title.casefold() in titles:
             raise NotesError(prefix + ".title duplicates another section")
@@ -123,7 +125,10 @@ def render_lua(notes):
     for section in notes["sections"]:
         lines += ["\t\t{", "\t\t\ttitle = " + lua_string(section["title"]) + ",", "\t\t\titems = {"]
         lines += ["\t\t\t\t" + lua_string(item) + "," for item in section["items"]]
-        lines += ["\t\t\t},", "\t\t},"]
+        lines += ["\t\t\t},"]
+        if "illustration" in section:
+            lines += ["\t\t\tillustration = " + lua_string(section["illustration"]) + ","]
+        lines += ["\t\t},"]
     lines += ["\t},", "}", ""]
     return "\n".join(lines)
 

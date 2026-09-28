@@ -27,6 +27,15 @@ def sample_notes(version="1.2.3", item="Share eligible quests with your party.")
 
 
 class NotesTests(unittest.TestCase):
+    def test_optional_visual_example_roundtrip(self):
+        notes = sample_notes()
+        notes["sections"][0]["illustration"] = "quest-partners"
+        parsed = CHECKER.parse_notes(json.dumps(notes))
+        self.assertIn('illustration = "quest-partners"', CHECKER.render_lua(parsed))
+        notes["sections"][0]["illustration"] = "unknown"
+        with self.assertRaises(CHECKER.NotesError):
+            CHECKER.parse_notes(json.dumps(notes))
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="questtogether-notes-")
         self.addCleanup(self.temporary.cleanup)

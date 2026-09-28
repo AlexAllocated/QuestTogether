@@ -2140,10 +2140,15 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		end
 		responseData.senderName = transportSenderName
 		if self.RecordQTPlayerPresence then self:RecordQTPlayerPresence(transportSenderName, true) end
+		self:ObserveAddonVersion(responseData.addonVersion)
 		self:HandlePingResponse(responseData)
 		return
 	end
 
+	if command == "QTVR" then
+		self:HandleAddonVersionMessage(payload, transportSenderName)
+		return
+	end
 	if command == "QTLF" and self.HandleQuestPartnerStatusMessage then
 		self:HandleQuestPartnerStatusMessage(payload, transportSenderName)
 		return

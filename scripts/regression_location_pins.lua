@@ -122,6 +122,7 @@ local function Frame(addon, parent, kind)
 		"SetClipsChildren",
 		"RegisterForClicks",
 		"SetTexture",
+		"SetBlendMode",
 		"AddMaskTexture",
 		"SetFrameStrata",
 		"SetClampedToScreen",
@@ -632,6 +633,84 @@ Register("location hover refreshes explicit quest partner status without replaci
 	a.qtPlayerPresenceState.questPartners["Friend-Realm"] = nil
 	a:RefreshPlayerLocationPins()
 	Equal(a.locationPinState.tooltipLabel.text:find("Looking for Questing Partners", 1, true), nil)
+end)
+
+Register("quest partner dots gain a gold glow and return to normal on expiry or pin reuse", function()
+	local a = Fixture()
+	a.now = 100
+	a.API.GetTime = function() return a.now end
+	a.API.GetRealmName = function() return "Realm" end
+	function a:GetPlayerFullName() return "Me-Realm" end
+	a.qtPlayerPresenceState = { peers = {}, questPartners = {} }
+	for _, surface in ipairs({ "map", "minimap" }) do a.rows[surface] = { Row() } end
+	assert(a:RefreshPlayerLocationPins())
+	local frames, regions = #a.frames, #a.regions
+	a.qtPlayerPresenceState.questPartners["Friend-Realm"] = { receivedAt = 100, looking = true }
+	assert(a:RefreshPlayerLocationPins())
+	for _, surface in ipairs({ "map", "minimap" }) do
+		local pin = Pin(a, surface)
+		Equal(pin.frame.width, 16)
+		Equal(pin.border.color[4], 0)
+		local previousSize, previousAlpha = math.huge, 0
+		for _, glow in ipairs(pin.glow) do
+			assert(glow.shown)
+			assert(glow.width < previousSize and glow.color[4] > previousAlpha, "halo fades toward the outer edge")
+			assert(glow.width <= 16 and glow.color[4] < 1)
+			Equal(glow.color[1], 1)
+			previousSize, previousAlpha = glow.width, glow.color[4]
+		end
+		Near(pin.texture.color[1], 64 / 255)
+		Equal(pin.texture.width, 9)
+	end
+	a.now = 165
+	assert(a:RefreshPlayerLocationPins())
+	for _, surface in ipairs({ "map", "minimap" }) do
+		Equal(Pin(a, surface).border.width, 12)
+		Equal(Pin(a, surface).border.color[1], 0)
+		for _, glow in ipairs(Pin(a, surface).glow) do assert(not glow.shown) end
+	end
+	a.qtPlayerPresenceState.questPartners["Friend-Realm"].receivedAt = 165
+	assert(a:RefreshPlayerLocationPins())
+	for _, surface in ipairs({ "map", "minimap" }) do a.rows[surface] = { Row("Other-Realm") } end
+	assert(a:RefreshPlayerLocationPins())
+	for _, surface in ipairs({ "map", "minimap" }) do
+		Equal(Pin(a, surface).frame.width, 12)
+		Equal(Pin(a, surface).border.color[2], 0)
+		for _, glow in ipairs(Pin(a, surface).glow) do assert(not glow.shown) end
+	end
+	Equal(#a.frames, frames)
+	Equal(#a.regions, regions)
+end)
+
+Register("quest partner dot projection clips the complete larger glow on both maps", function()
+	local a = Fixture()
+	function a:IsPlayerLookingForQuestPartners() return self.looking == true end
+	local nearMapEdge, nearMiniEdge = Row(nil, 0.007, 0.5), Row(nil, 0.593, 0.5)
+	assert(a:ProjectPlayerLocationPin("map", nearMapEdge, a.geometry.map))
+	assert(a:ProjectPlayerLocationPin("minimap", nearMiniEdge, a.geometry.minimap))
+	a.looking = true
+	Equal(a:ProjectPlayerLocationPin("map", nearMapEdge, a.geometry.map), nil)
+	Equal(a:ProjectPlayerLocationPin("minimap", nearMiniEdge, a.geometry.minimap), nil)
+	assert(a:ProjectPlayerLocationPin("map", Row(), a.geometry.map))
+	assert(a:ProjectPlayerLocationPin("minimap", Row(), a.geometry.minimap))
+end)
+
+Register("quest partner glow changes respect restrictions and forbidden parents", function()
+	local a = Fixture()
+	function a:IsPlayerLookingForQuestPartners() return self.looking == true end
+	a.rows.map = { Row() }
+	assert(a:RefreshPlayerLocationPins())
+	local pin = Pin(a, "map")
+	a.looking, a.blocked = true, true
+	a:RefreshPlayerLocationPins()
+	Equal(pin.border.width, 12)
+	a.blocked, a.mapParent.forbidden = false, true
+	a:RefreshPlayerLocationPins()
+	Equal(pin.border.width, 12)
+	a.mapParent.forbidden = false
+	assert(a:RefreshPlayerLocationPins())
+	assert(pin.glow[1].shown)
+	Equal(pin.frame.width, 16)
 end)
 
 Register("location tooltip distinguishes an older last reported position from a fresh update", function()
