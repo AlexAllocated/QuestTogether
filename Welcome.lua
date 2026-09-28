@@ -1,6 +1,43 @@
 -- Welcome and release notes use account-wide version state, separate from the
 -- enabled runtime lifetime so disabled announcements do not suppress the UI.
 local Addon = _G.QuestTogether
+local DISCORD_URL = "https://discord.gg/Uxyyvhfva9"
+
+function Addon:RenderDiscordSupportLink(url)
+	local owner = rawget(self, "discordSupportWindowOwner")
+	if not owner then
+		owner = {}
+		self.discordSupportWindowOwner = owner
+	end
+	local shown = self.LibChev.OpenReportWindow(owner, url, {
+		parent = self:GetReleaseNotesUIParent(),
+		createFrame = function(...)
+			return self:CreateReleaseNotesUIFrame(...)
+		end,
+		restricted = function()
+			return self:IsRuntimeRestricted()
+		end,
+		canMutate = self.LibChev.CanMutateOwnedRegion,
+		title = "QuestTogether Discord — Feedback & Support",
+		copyLink = true,
+	})
+	if shown and not self:IsRuntimeRestricted() and self.LibChev.CanMutateOwnedRegion(owner.diagnosticsWindow) then
+		owner.diagnosticsWindow:Raise()
+	end
+	return shown
+end
+
+function Addon:OpenDiscordSupport()
+	if self:IsRuntimeRestricted() or not self:CanAccessForeignFrame(self:GetReleaseNotesUIParent(), true) then
+		return false
+	end
+	local ok, shown = pcall(self.RenderDiscordSupportLink, self, DISCORD_URL)
+	if not ok or shown ~= true then
+		self:Print("QuestTogether Discord — feedback and support tickets: " .. DISCORD_URL)
+		return false
+	end
+	return true
+end
 
 function Addon:GetReleaseNotesSeries(version)
 	local text = self:SafeTrimString(version, "")

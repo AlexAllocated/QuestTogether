@@ -36,6 +36,9 @@ QuestCompare.lua
 QuestCompareWindow.lua
 QuestComparePreview.lua
 Minimap.lua
+PlayerLocations.lua
+PlayerPlates.lua
+LocationPins.lua
 EventHandlers.lua
 Options.lua
 Diagnostics.lua
@@ -50,3 +53,7 @@ scripts/regression_quest_compare.lua
 scripts/regression_minimap.lua
 scripts/regression_release_notes.lua
 scripts/regression_release_notes_window.lua
+scripts/regression_player_locations.lua
+scripts/regression_location_pins.lua
+scripts/regression_location_ignores.lua
+scripts/regression_player_plates.lua

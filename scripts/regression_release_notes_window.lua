@@ -1,5 +1,18 @@
 -- This module runs in /qt test too: all regions and adapters are private.
 local QuestTogether = _G.QuestTogether
+local activeFixtures
+local function Register(name, callback)
+	QuestTogether:RegisterTest(name, function()
+		activeFixtures = {}
+		local ok, err = pcall(callback)
+		local fixtures = activeFixtures
+		activeFixtures = nil
+		for _, fixture in ipairs(fixtures) do
+			assert((fixture.invalidCalls or 0) == 0, "a swallowed error hid an unsafe release notes UI call")
+		end
+		if not ok then error(err, 0) end
+	end)
+end
 local function Equal(actual, expected)
 	assert(actual == expected, "expected " .. tostring(expected) .. ", got " .. tostring(actual))
 end
@@ -13,13 +26,24 @@ local function Region(addon, parent, kind)
 		return self.protected == true or (self.parent and self.parent:IsProtected()) or false
 	end
 	function region:IsShown()
+		self:CheckRead()
 		return self.shown
 	end
 	function region:IsVisible()
+		self:CheckRead()
 		return self.shown and (not self.parent or self.parent:IsVisible())
 	end
+	function region:CheckRead()
+		if self:IsForbidden() then
+			addon.invalidCalls = (addon.invalidCalls or 0) + 1
+			error("unsafe owned read")
+		end
+	end
 	function region:Check()
-		assert(not addon.blocked and not self:IsForbidden() and not self:IsProtected(), "unsafe owned mutation")
+		if addon.blocked or self:IsForbidden() or self:IsProtected() then
+			addon.invalidCalls = (addon.invalidCalls or 0) + 1
+			error("unsafe owned mutation")
+		end
 		self.writes = self.writes + 1
 	end
 	function region:Show()
@@ -43,11 +67,11 @@ local function Region(addon, parent, kind)
 		self.height = value
 	end
 	function region:GetWidth()
-		assert(not self:IsForbidden())
+		self:CheckRead()
 		return self.width
 	end
 	function region:GetHeight()
-		assert(not self:IsForbidden())
+		self:CheckRead()
 		return self.height
 	end
 	function region:SetScale(value)
@@ -71,7 +95,7 @@ local function Region(addon, parent, kind)
 		self.font = value
 	end
 	function region:GetStringHeight()
-		assert(not self:IsForbidden())
+		self:CheckRead()
 		if addon.measureUnavailable then
 			return nil
 		end
@@ -161,8 +185,10 @@ local function Fixture()
 		return self.parent
 	end
 	function addon:CreateReleaseNotesUIFrame(kind, name, parent, template)
-		assert(not name and not template, "frames must use owned scripts and texture-only art")
-		assert(not self.blocked and not parent:IsForbidden())
+		if name or template or self.blocked or parent:IsForbidden() then
+			self.invalidCalls = (self.invalidCalls or 0) + 1
+			error("unsafe frame creation")
+		end
 		local frame = Region(self, parent, kind)
 		self.frames[#self.frames + 1] = frame
 		self.regions[#self.regions + 1] = frame
@@ -178,6 +204,11 @@ local function Fixture()
 		end
 		return self.settingsResult ~= false
 	end
+	function addon:OpenDiscordSupport()
+		self.discordOpened = (self.discordOpened or 0) + 1
+		return self.discordResult ~= false
+	end
+	activeFixtures[#activeFixtures + 1] = addon
 	return addon
 end
 
@@ -195,7 +226,7 @@ local function Notes(count)
 	}
 end
 
-QuestTogether:RegisterTest("release notes window sizes to content and reuses only owned frames", function()
+Register("release notes window sizes to content and reuses only owned frames", function()
 	local a = Fixture()
 	assert(a:RenderReleaseNotesWindow(Notes(), "5.9.2", true))
 	local frame, frameCount = a.releaseNotesWindow, #a.frames
@@ -231,7 +262,7 @@ QuestTogether:RegisterTest("release notes window sizes to content and reuses onl
 	assert(frame.footer.text:find("/qt notes", 1, true))
 end)
 
-QuestTogether:RegisterTest(
+Register(
 	"release notes settings action keeps the welcome visible when settings cannot open",
 	function()
 		local a = Fixture()
@@ -250,7 +281,7 @@ QuestTogether:RegisterTest(
 	end
 )
 
-QuestTogether:RegisterTest("release notes overflow scrolling clamps and resets when reopened", function()
+Register("release notes overflow scrolling clamps and resets when reopened", function()
 	local a = Fixture()
 	a.parent.width, a.parent.height = 480, 340
 	assert(a:RenderReleaseNotesWindow(Notes(40), "5.9.2", false))
@@ -272,7 +303,23 @@ QuestTogether:RegisterTest("release notes overflow scrolling clamps and resets w
 	Equal(frame.slider.value, 0)
 end)
 
-QuestTogether:RegisterTest("release notes only confirms actual visibility and retries unavailable layout", function()
+Register("release notes Discord button opens support and dismisses only after success", function()
+	local a = Fixture()
+	assert(a:RenderReleaseNotesWindow(Notes(), "5.10.0", false))
+	local frame = a.releaseNotesWindow
+	a.discordResult = false
+	frame.discord.scripts.OnClick({})
+	assert(frame:IsVisible())
+	a.blocked = true
+	frame.discord.scripts.OnClick({})
+	Equal(a.discordOpened, 1)
+	a.blocked, a.discordResult = false, true
+	frame.discord.scripts.OnClick({})
+	Equal(a.discordOpened, 2)
+	Equal(frame:IsVisible(), false)
+end)
+
+Register("release notes only confirms actual visibility and retries unavailable layout", function()
 	local a = Fixture()
 	a.parent.shown = false
 	Equal(a:RenderReleaseNotesWindow(Notes(), "5.9.2", true), false)
@@ -296,7 +343,7 @@ QuestTogether:RegisterTest("release notes only confirms actual visibility and re
 	assert(b:RenderReleaseNotesWindow(Notes(), "5.9.2", true))
 end)
 
-QuestTogether:RegisterTest("release notes stale callbacks and rendering respect restrictions and quarantine", function()
+Register("release notes stale callbacks and rendering respect restrictions and quarantine", function()
 	for _, boundary in ipairs({ "restricted", "forbidden", "protected" }) do
 		local a = Fixture()
 		assert(a:RenderReleaseNotesWindow(Notes(40), "5.9.2", false))
@@ -333,7 +380,7 @@ QuestTogether:RegisterTest("release notes stale callbacks and rendering respect 
 	Equal(#a.frames, 0)
 end)
 
-QuestTogether:RegisterTest(
+Register(
 	"release notes rejects an individually forbidden cached label without touching it",
 	function()
 		local a = Fixture()
@@ -349,7 +396,7 @@ QuestTogether:RegisterTest(
 	end
 )
 
-QuestTogether:RegisterTest("release notes interrupted construction remains hidden and retries safely", function()
+Register("release notes interrupted construction remains hidden and retries safely", function()
 	local a = Fixture()
 	a.failTextureCreate = true
 	Equal(a:RenderReleaseNotesWindow(Notes(), "5.9.2", true), false)
@@ -359,4 +406,41 @@ QuestTogether:RegisterTest("release notes interrupted construction remains hidde
 	assert(a.releaseNotesWindow ~= partial and a.releaseNotesWindow.ready)
 	Equal(partial:IsShown(), false)
 	Equal(a.parent.writes, 0)
+end)
+
+Register("settings chat destination selection rejects restrictions without changing or replaying the choice", function()
+	local a = Fixture()
+	a.db = { profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile) }
+	a.opens, a.closes, a.refreshes = 0, 0, 0
+	a.API = { Delay = function() error("a blocked settings choice must not be queued") end }
+	function a:NormalizeAnnouncementDisplayOptions() end
+	function a:GetResolvedChatLogDestination() return self.db.profile.chatLogDestination end
+	function a:EnsureQuestLogChatFrame()
+		self.opens = self.opens + 1
+		return {}
+	end
+	function a:ApplyMainChatFontSizeToChatFrame() end
+	function a:CloseQuestLogChatFrame() self.closes = self.closes + 1 end
+	function a:RefreshOptionsWindow() self.refreshes = self.refreshes + 1 end
+	for _, transition in ipairs({ { "main", "separate" }, { "separate", "main" } }) do
+		a.db.profile.chatLogDestination = transition[1]
+		a.blocked = true
+		local opens, closes, refreshes = a.opens, a.closes, a.refreshes
+		Equal(a:ApplyOptionsDropdownSelection("chatLogDestination", transition[2]), false)
+		Equal(a.db.profile.chatLogDestination, transition[1])
+		Equal(a.opens, opens)
+		Equal(a.closes, closes)
+		Equal(a.refreshes, refreshes)
+		a.blocked = false
+		Equal(a.db.profile.chatLogDestination, transition[1], "unblocking does not replay a rejected choice")
+		assert(a:ApplyOptionsDropdownSelection("chatLogDestination", transition[2]))
+		Equal(a.db.profile.chatLogDestination, transition[2])
+		Equal(a.refreshes, refreshes + 1)
+		Equal(a.opens, opens + (transition[2] == "separate" and 1 or 0))
+		Equal(a.closes, closes + (transition[2] == "main" and 1 or 0))
+	end
+	-- Ordinary preference-only dropdown edits retain their existing behavior.
+	a.blocked = true
+	assert(a:ApplyOptionsDropdownSelection("showProgressFor", "party_only"))
+	Equal(a.db.profile.showProgressFor, "party_only")
 end)

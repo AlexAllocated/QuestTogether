@@ -245,3 +245,27 @@ QT:RegisterTest("release notes pending work cancels on logout or replacement con
 		Equal(#a.presentations, 0)
 	end
 end)
+
+QT:RegisterTest("Discord support uses the exact invite with a private copy window and guarded fallback", function()
+	local a = Fixture()
+	local urls = {}
+	function a:RenderDiscordSupportLink(url)
+		urls[#urls + 1] = url
+		if self.copyThrows then
+			error("copy window unavailable")
+		end
+		return self.copyResult ~= false
+	end
+	assert(a:OpenDiscordSupport())
+	Equal(urls[1], "https://discord.gg/Uxyyvhfva9")
+	Equal(#a.messages, 0)
+	a.blocked = true
+	Equal(a:OpenDiscordSupport(), false)
+	Equal(#urls, 1)
+	a.blocked, a.parent.forbidden = false, true
+	Equal(a:OpenDiscordSupport(), false)
+	Equal(#urls, 1)
+	a.parent.forbidden, a.copyThrows = false, true
+	Equal(a:OpenDiscordSupport(), false)
+	assert(a.messages[1]:find("https://discord.gg/Uxyyvhfva9", 1, true))
+end)

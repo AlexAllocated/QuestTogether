@@ -58,6 +58,7 @@ local function WithPlate(fn)
 	frame.healthBar, plate.UnitFrame = healthBar, frame
 	state.frame, state.plate, state.healthBar = frame, plate, healthBar
 	local icon, fill, highlight = Region(frame), Region(healthBar), Region(healthBar)
+	icon.Icon = Region(icon, true)
 	state.icon, state.fill, state.highlight = icon, fill, highlight
 	local function SortCallbacks()
 		table.sort(state.callbacks, function(a, b)
@@ -954,7 +955,84 @@ for _, provider in ipairs({ "generic structured", "hiddenLines", "questieLines" 
 				"a genuinely titleless source still carries independent objective evidence")
 		end)
 	end)
+
+	QT:RegisterTest(source .. " leading unavailable rows cannot create shared objective plate evidence", function()
+		WithSharedObjectiveSource(source, function(state, SetLines)
+			local unavailableReads = 0
+			state.inaccessibleValue = setmetatable({}, {
+				__tostring = function() unavailableReads = unavailableReads + 1; error("unavailable text formatted") end,
+			})
+			SetLines({ state.inaccessibleValue, "Defeat enemies: 0/4" })
+			QT:OnNameplateAdded("nameplate1")
+			state.drain()
+			Undecorated(state)
+			Equal(QT.nameplateQuestStateByGuid[state.guid], nil, "missing ownership must not create a positive cache")
+			SetLines({ state.inaccessibleValue, "Defeat enemies: 4/4" })
+			QT:HandleNameplateEvent("UPDATE_MOUSEOVER_UNIT")
+			state.drain()
+			Undecorated(state)
+			Equal(QT.nameplateQuestStateByGuid[state.guid], nil)
+			Equal(QT:GetNameplateStateStore().completedByNpcID[12345], nil, "partial ownership cannot prove NPC completion")
+
+			QT.partyMembers = { ["Friend-Realm"] = { displayName = "Friend" } }
+			SetLines({ state.inaccessibleValue, "Defeat enemies: 0/4", "Later Quest",
+				"Collect seals: 1/1", "Friend-Realm", "Collect seals: 0/1" })
+			QT:HandleNameplateEvent("UPDATE_MOUSEOVER_UNIT")
+			state.drain()
+			Decorated(state)
+			Equal(QT.nameplateQuestStateByGuid[state.guid], true, "a later readable owned party block may resolve")
+
+			-- Raw unit headers cannot be identified as quest titles. Preserve the
+			-- existing readable-header and true titleless provider compatibility.
+			for _, lines in ipairs({
+				{ "Defeat enemies: 0/4" },
+				{ "   ", "Defeat enemies: 0/4" },
+				{ "Ordinary Creature", "Defeat enemies: 0/4" },
+			}) do
+				SetLines(lines)
+				QT:HandleNameplateEvent("UNIT_QUEST_LOG_CHANGED", "player")
+				state.drain()
+				Decorated(state)
+			end
+			Equal(unavailableReads, 0, "unavailable text must never be inspected or formatted")
+		end)
+	end)
 end
+
+QT:RegisterTest("unavailable first structured rows retain ownership boundaries before typed objectives", function()
+	WithFallbackSources(function(state)
+		QT:GetPlayerTracker()[123] = { title = "Known Quest", objectives = { "Defeat enemies: 1/8" } }
+		QT:RebuildNameplateQuestTextCache()
+		Equal(QT.nameplateQuestTextCache["Defeat enemies"], true)
+		local unavailableReads = 0
+		state.inaccessibleValue = setmetatable({}, {
+			__index = function() unavailableReads = unavailableReads + 1; error("unavailable row indexed") end,
+			__tostring = function() unavailableReads = unavailableReads + 1; error("unavailable value formatted") end,
+		})
+		state.inaccessible = state.inaccessibleValue
+		state.combat, state.tooltipReady = true, true
+		for _, row in ipairs({
+			state.inaccessible,
+			{ type = state.inaccessibleValue, leftText = "Unowned Other Quest" },
+			{ type = "None", args = state.inaccessibleValue },
+			{ type = "None", args = { { field = "leftText", stringVal = state.inaccessibleValue } } },
+		}) do
+			state.tooltipData = { lines = { row, { type = "QuestObjective", leftText = "Defeat enemies: 0/4" } } }
+			QT:OnNameplateAdded("nameplate1")
+			state.drain()
+			Undecorated(state)
+			Equal(QT.nameplateQuestStateByGuid[state.guid], nil)
+			Equal(QT:GetNameplateStateStore().completedByNpcID[12345], nil)
+		end
+		state.tooltipData.lines[1] = { type = "UnitName", leftText = "Ordinary Creature" }
+		QT:HandleNameplateEvent("UPDATE_MOUSEOVER_UNIT")
+		state.drain()
+		Decorated(state)
+		Equal(unavailableReads, 0)
+		Equal(state.hiddenReads, 0)
+		Equal(state.questieReads, 0)
+	end)
+end)
 
 QT:RegisterTest("hidden fontstring failures and missing rows cannot establish NPC completion", function()
 	WithFallbackSources(function(state)

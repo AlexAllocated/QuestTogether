@@ -35,6 +35,12 @@ local function WithTapFixture(fn)
 		IsForbidden = function() return state.forbidden end,
 	}
 	local icon, fill, highlight = Visual(), Visual(), Visual()
+	icon.Icon = Visual()
+	function icon.Icon:SetTexture(value)
+		assert(not (state.restricted and state.protected), "protected artwork must remain deferred")
+		self.texture = value
+	end
+	function icon.Icon:SetTexCoord() end
 	state.icon, state.fill, state.highlight = icon, fill, highlight
 	state.drain = function()
 		local count = 0

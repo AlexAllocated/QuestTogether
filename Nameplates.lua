@@ -31,6 +31,7 @@ local SafeText
 
 -- Original icon used by this addon's first nameplate implementation.
 QuestTogether.NAMEPLATE_QUEST_ICON_TEXTURE = "Interface\\OPTIONSFRAME\\UI-OptionsFrame-NewFeatureIcon"
+QuestTogether.NAMEPLATE_PLAYER_ICON_TEXTURE = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon"
 QuestTogether.NAMEPLATE_QUEST_ICON_ATLAS = nil
 QuestTogether.NAMEPLATE_QUEST_ICON_TEX_COORDS = nil
 QuestTogether.NAMEPLATE_QUEST_ICON_WIDTH = 21
@@ -1808,8 +1809,13 @@ local function IsKnownTooltipQuestPlayerText(addon, text)
 	return false
 end
 
-local function AddTooltipQuestBoundary(tooltipLines)
-	if #tooltipLines > 0 and tooltipLines[#tooltipLines].type ~= "QuestBoundary" then
+local function AddTooltipQuestBoundary(tooltipLines, unavailable)
+	-- Missing leading data may own the next objective. Keep that boundary even
+	-- before any readable output, without classifying ordinary raw unit headers.
+	if
+		(#tooltipLines > 0 or unavailable)
+		and (#tooltipLines == 0 or tooltipLines[#tooltipLines].type ~= "QuestBoundary")
+	then
 		tooltipLines[#tooltipLines + 1] = { type = "QuestBoundary" }
 	end
 end
@@ -2269,12 +2275,12 @@ function QuestTogether:ExtractQuestObjectiveTooltipLinesFromTooltipData(tooltipD
 		if sanitizedLine then
 			if unavailable then
 				tooltipLines.hasIncompleteQuestData = true
-				AddTooltipQuestBoundary(tooltipLines)
+				AddTooltipQuestBoundary(tooltipLines, true)
 			end
 			tooltipLines[#tooltipLines + 1] = sanitizedLine
 		elseif not self:CanAccessTable(rawLine) or not self:CanAccessValue(rawLine.type) then
 			tooltipLines.hasIncompleteQuestData = true
-			AddTooltipQuestBoundary(tooltipLines)
+			AddTooltipQuestBoundary(tooltipLines, true)
 		elseif IsTooltipQuestTitleLineType(rawLine.type) then
 			-- Even a first unreadable title owns the following objectives. Retain
 			-- an unmatched title without copying inaccessible text, so shared
@@ -2286,12 +2292,12 @@ function QuestTogether:ExtractQuestObjectiveTooltipLinesFromTooltipData(tooltipD
 			or IsTooltipQuestPlayerLineType(rawLine.type)
 		then
 			tooltipLines.hasIncompleteQuestData = true
-			AddTooltipQuestBoundary(tooltipLines)
+			AddTooltipQuestBoundary(tooltipLines, true)
 		else
 			local primaryText, unavailable = GetTooltipQuestLinePrimaryText(rawLine, self)
 			if unavailable then
 				tooltipLines.hasIncompleteQuestData = true
-				AddTooltipQuestBoundary(tooltipLines)
+				AddTooltipQuestBoundary(tooltipLines, true)
 			elseif self:SanitizeTooltipQuestLineText(primaryText) then
 				-- Filtering a generic unknown title must not join two quest blocks.
 				AddTooltipQuestBoundary(tooltipLines)
@@ -2371,7 +2377,7 @@ function QuestTogether:GetQuestieQuestObjectiveTooltipLines(unitGuid)
 		local rawLine = tooltipData[lineIndex]
 		if not self:CanAccessValue(rawLine) or type(rawLine) ~= "string" then
 			tooltipLines.hasIncompleteQuestData = true
-			AddTooltipQuestBoundary(tooltipLines)
+			AddTooltipQuestBoundary(tooltipLines, true)
 		else
 			local normalizedText = NormalizeQuestieTooltipQuestLineText(rawLine)
 			if normalizedText then
@@ -2654,7 +2660,7 @@ function QuestTogether:ReadNameplateScanTooltipLines(scanTooltip, unitToken, uni
 			local rawText = self:GetNameplateScanTooltipLeftText(scanTooltip, lineIndex)
 			if not self:CanAccessValue(rawText) or type(rawText) ~= "string" then
 				tooltipLines.hasIncompleteQuestData = true
-				AddTooltipQuestBoundary(tooltipLines)
+				AddTooltipQuestBoundary(tooltipLines, true)
 			else
 				local leftText = SafeTrimText(rawText)
 				if leftText ~= "" then
@@ -2936,6 +2942,10 @@ function QuestTogether:ApplyResolvedQuestStateToNameplate(
 	if not self:IsNameplateUnitToken(resolvedUnitToken) then
 		resolvedUnitToken = ResolveNameplateUnitToken(namePlateFrameBase, unitFrame)
 	end
+	if self:IsNameplateUnitToken(resolvedUnitToken) and self:IsNameplateUnitPlayer(resolvedUnitToken) then
+		self:RefreshQTPlayerNameplate(namePlateFrameBase, resolvedUnitToken, unitFrame)
+		return
+	end
 	if not IsNonEmptyString(resolvedUnitGuid) and self:IsNameplateUnitToken(resolvedUnitToken) then
 		resolvedUnitGuid = self:GetNameplateTooltipScanGuid(resolvedUnitToken, unitFrame)
 	end
@@ -2948,12 +2958,21 @@ function QuestTogether:ApplyResolvedQuestStateToNameplate(
 
 	local canScheduleTintFollowUp = scheduleTintFollowUp and IsNonEmptyString(resolvedUnitGuid)
 	self:RefreshNameplateHealthTint(namePlateFrameBase, isQuestObjective, canScheduleTintFollowUp == true)
-	if canScheduleTintFollowUp and isQuestObjective and type(resolvedUnitToken) == "string" and resolvedUnitToken ~= "" then
+	if
+		canScheduleTintFollowUp
+		and isQuestObjective
+		and type(resolvedUnitToken) == "string"
+		and resolvedUnitToken ~= ""
+	then
 		self:ScheduleNameplateHealthTintRefresh(resolvedUnitToken, 0.05, true)
 	end
 
 	if shouldShow then
 		if icon then
+			if not self:SetNameplateIconKind(icon, "quest") then
+				self:HideNameplateIcon(namePlateFrameBase)
+				return
+			end
 			self:ApplyNameplateQuestIconStyle(icon, unitFrame)
 		else
 			icon = EnsureQuestIcon(unitFrame)
@@ -3121,6 +3140,36 @@ ResolveNameplateUnitToken = function(namePlateFrameBase, unitFrame)
 	return nil
 end
 
+function QuestTogether:SetNameplateIconKind(iconFrame, kind)
+	if not CanMutateFrame(iconFrame) then
+		return false
+	end
+	local texture = iconFrame.Icon
+	if not texture or not CanMutateFrame(texture) then
+		return false
+	end
+	if iconFrame.qtIconKind == kind then
+		return true
+	end
+	if kind == "player" then
+		texture:SetTexture(self.NAMEPLATE_PLAYER_ICON_TEXTURE)
+		texture:SetTexCoord(0, 1, 0, 1)
+	elseif texture.SetAtlas and self.NAMEPLATE_QUEST_ICON_ATLAS then
+		texture:SetAtlas(self.NAMEPLATE_QUEST_ICON_ATLAS, true)
+		texture:SetTexCoord(0, 1, 0, 1)
+	else
+		texture:SetTexture(self.NAMEPLATE_QUEST_ICON_TEXTURE)
+		local coords = self.NAMEPLATE_QUEST_ICON_TEX_COORDS
+		if coords then
+			texture:SetTexCoord(coords.left, coords.right, coords.top, coords.bottom)
+		else
+			texture:SetTexCoord(0, 1, 0, 1)
+		end
+	end
+	iconFrame.qtIconKind = kind
+	return true
+end
+
 function QuestTogether:ApplyNameplateQuestIconStyle(iconFrame, unitFrame)
 	if not iconFrame or not unitFrame then
 		return
@@ -3130,8 +3179,14 @@ function QuestTogether:ApplyNameplateQuestIconStyle(iconFrame, unitFrame)
 	end
 
 	local icon = iconFrame.Icon or iconFrame
+	if not CanMutateFrame(icon) then
+		return
+	end
 	local healthBarsContainer = GetAccessibleChildFrame(unitFrame, "HealthBarsContainer")
-	local style = self:GetNameplateQuestIconStyle()
+	local style = iconFrame.qtIconKind == "player" and self:GetNameplatePlayerIconStyle()
+		or self:GetNameplateQuestIconStyle()
+	local playerIcon = iconFrame.qtIconKind == "player"
+	local gap = playerIcon and 4 or 1
 	local width = self.NAMEPLATE_QUEST_ICON_WIDTH
 	local height = self.NAMEPLATE_QUEST_ICON_HEIGHT
 
@@ -3142,20 +3197,20 @@ function QuestTogether:ApplyNameplateQuestIconStyle(iconFrame, unitFrame)
 		if IsFrameForbidden(barAnchor) then
 			barAnchor = unitFrame
 		end
-		iconFrame:SetPoint("RIGHT", barAnchor, "LEFT", -1, 0)
+		iconFrame:SetPoint("RIGHT", barAnchor, "LEFT", -gap, 0)
 	elseif style == "right" then
 		local barAnchor = GetIconBarAnchor(unitFrame)
 		if IsFrameForbidden(barAnchor) then
 			barAnchor = unitFrame
 		end
-		iconFrame:SetPoint("LEFT", barAnchor, "RIGHT", 1, 0)
+		iconFrame:SetPoint("LEFT", barAnchor, "RIGHT", gap, 0)
 	elseif style == "prefix" then
 		local nameText = GetNameplateNameTextAnchor(unitFrame)
 		if nameText then
 			-- Keep the prefix icon large enough to remain legible on live nameplates.
 			width = math.max(14, math.floor(width * 0.8 + 0.5))
 			height = math.max(14, math.floor(height * 0.8 + 0.5))
-			iconFrame:SetPoint("RIGHT", nameText, "LEFT", -2, 0)
+			iconFrame:SetPoint("RIGHT", nameText, "LEFT", playerIcon and -4 or -2, 0)
 		elseif healthBarsContainer then
 			iconFrame:SetPoint("BOTTOM", healthBarsContainer, "TOP", 0, 11)
 		else
@@ -3186,7 +3241,8 @@ function QuestTogether:CreateNameplateQuestIconFrame(unitFrame)
 	return iconFrame
 end
 
-EnsureQuestIcon = function(unitFrame)
+EnsureQuestIcon = function(unitFrame, kind)
+	kind = kind or "quest"
 	if not unitFrame then
 		return nil
 	end
@@ -3196,6 +3252,9 @@ EnsureQuestIcon = function(unitFrame)
 
 	local existingIcon = QuestTogether.nameplateIconByUnitFrame[unitFrame]
 	if existingIcon then
+		if not QuestTogether:SetNameplateIconKind(existingIcon, kind) then
+			return nil
+		end
 		QuestTogether:ApplyNameplateQuestIconStyle(existingIcon, unitFrame)
 		return existingIcon
 	end
@@ -3211,21 +3270,12 @@ EnsureQuestIcon = function(unitFrame)
 	iconFrame.Icon = icon
 	QuestTogether.nameplateIconByUnitFrame[unitFrame] = iconFrame
 
-	if icon.SetAtlas and QuestTogether.NAMEPLATE_QUEST_ICON_ATLAS then
-		icon:SetAtlas(QuestTogether.NAMEPLATE_QUEST_ICON_ATLAS, true)
-		icon:SetTexCoord(0, 1, 0, 1)
-	else
-		icon:SetTexture(QuestTogether.NAMEPLATE_QUEST_ICON_TEXTURE)
-		local coords = QuestTogether.NAMEPLATE_QUEST_ICON_TEX_COORDS
-		if coords then
-			icon:SetTexCoord(coords.left, coords.right, coords.top, coords.bottom)
-		else
-			icon:SetTexCoord(0, 1, 0, 1)
-		end
+	iconFrame:Hide()
+	if not QuestTogether:SetNameplateIconKind(iconFrame, kind) then
+		return nil
 	end
 	QuestTogether:ApplyNameplateQuestIconStyle(iconFrame, unitFrame)
 
-	iconFrame:Hide()
 	return iconFrame
 end
 
@@ -3536,6 +3586,29 @@ function QuestTogether:HideAnnouncementBubble(hostFrame)
 	self:StopAndHideAnnouncementBubblePlayback(bubble)
 end
 
+function QuestTogether:ClearIgnoredAnnouncementBubbles()
+	local discarded = 0
+	for bubble, state in pairs(self.nameplateBubbleStateByFrame or {}) do
+		if state.unitToken ~= "player" and IsNonEmptyString(state.senderName)
+			and self:IsIgnoredPlayerName(state.senderName) then
+			discarded = discarded + 1
+			-- The copied sender identity is addon-owned. Never resolve the old
+			-- nameplate just to discard playback after its sender is ignored.
+			if self:StopAndHideAnnouncementBubblePlayback(bubble, "ignored") then
+				self:CancelNameplateVisualCleanup(bubble)
+			else
+				-- Stop already removed replayable data, even when the attached
+				-- visual is forbidden or restricted. Finish hiding it when safe.
+				local nameplateState = self:GetNameplateStateStore()
+				nameplateState.pendingVisualCleanupByFrame = nameplateState.pendingVisualCleanupByFrame or {}
+				nameplateState.pendingVisualCleanupByFrame[bubble] = "bubble"
+				self.pendingNameplateVisualCleanup = true
+			end
+		end
+	end
+	return discarded
+end
+
 function QuestTogether:RefreshActiveAnnouncementBubbles()
 	for unitFrame, bubble in pairs(self.nameplateBubbleByUnitFrame) do
 		local bubbleState = GetAnnouncementBubbleState(bubble)
@@ -3607,6 +3680,10 @@ end
 
 function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, text, eventType, iconAsset, iconKind, senderName)
 	local isPersonalBubble = namePlateFrameBase == self.announcementBubbleScreenHostFrame
+	local normalizedSenderName = not isPersonalBubble and self:NormalizeMemberName(senderName) or nil
+	if normalizedSenderName and self:IsIgnoredPlayerName(normalizedSenderName) then
+		return false
+	end
 	local policyUnitToken = isPersonalBubble and "player" or "nameplate"
 	if not self.isEnabled or not self:GetOption("showChatBubbles") then
 		self:Debug("show_suppressed reason=bubbles_disabled", "bubble")
@@ -3750,7 +3827,7 @@ function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, tex
 		iconKind = type(iconKind) == "string" and iconKind ~= "" and iconKind or nil,
 		unitToken = bubbleUnitToken,
 		unitGUID = bubbleUnitGUID,
-		senderName = not isPersonalBubble and self:NormalizeMemberName(senderName) or nil,
+		senderName = normalizedSenderName,
 	})
 	bubble:SetAlpha(0)
 	self:CancelNameplateVisualCleanup(bubble)
@@ -3941,6 +4018,10 @@ function QuestTogether:ScheduleNameplateHealthTintRefresh(unitToken, delaySecond
 		if liveUnitToken ~= unitToken then
 			self:ForgetResolvedNameplateQuestState(unitToken)
 		end
+		if self:IsNameplateUnitPlayer(liveUnitToken) then
+			self:RefreshQTPlayerNameplate(namePlateFrameBase, liveUnitToken, unitFrame)
+			return
+		end
 
 		local hasResolvedQuestState, isQuestObjective, unitGuid = self:TryResolveNameplateQuestObjectiveState(
 			liveUnitToken,
@@ -4015,6 +4096,91 @@ function QuestTogether:ScheduleNameplateRefresh(unitToken)
 	end)
 end
 
+function QuestTogether:HideQTPlayerIcon(icon)
+	if self.qtPlayerIconStateByFrame then
+		self.qtPlayerIconStateByFrame[icon] = nil
+	end
+	if CanMutateFrame(icon) then
+		icon:Hide()
+		self:CancelNameplateVisualCleanup(icon)
+	else
+		local state = self:GetNameplateStateStore()
+		state.pendingVisualCleanupByFrame = state.pendingVisualCleanupByFrame or {}
+		state.pendingVisualCleanupByFrame[icon] = "icon"
+		self.pendingNameplateVisualCleanup = true
+	end
+end
+
+function QuestTogether:RefreshQTPlayerPlatePresence()
+	for icon, info in pairs(self.qtPlayerIconStateByFrame or {}) do
+		if not self:IsKnownQTPlayer(info.name) then
+			self:HideQTPlayerIcon(icon)
+		end
+	end
+	if self.isEnabled and self.nameplateRegisteredEvents and self.nameplateRegisteredEvents.NAME_PLATE_UNIT_ADDED then
+		self:ScheduleNameplatePresentationRefresh("QT player presence", 0)
+	end
+end
+
+function QuestTogether:RefreshQTPlayerNameplate(plate, unitToken, unitFrame)
+	local icon = self.nameplateIconByUnitFrame[unitFrame]
+	self:ForgetResolvedNameplateQuestState(unitToken)
+	self:ClearNameplateTooltipResolveRetryCount(unitToken)
+	-- Only restore an old quest overlay; the player path never creates a tint.
+	self:RestoreNameplateHealthColor(unitFrame)
+	-- Direct plate-added and presentation calls do not pass through the work
+	-- scheduler. Apply its policy before creating or laying out a player icon;
+	-- safe stale-visual cleanup remains allowed while presentation is deferred.
+	if self:IsWorkBlocked("nameplate_refresh") then
+		if icon then
+			self:HideQTPlayerIcon(icon)
+		end
+		if self.isEnabled then
+			self:ScheduleNameplateRefresh(unitToken)
+		end
+		return false
+	end
+	local show, name, guid = false, nil, nil
+	if
+		self.isEnabled
+		and self:GetOption("nameplatePlayerIconEnabled") == true
+		and not self:IsNameplateAugmentationBlockedInCurrentContext()
+		and self:CanAccessForeignFrame(plate, true)
+		and self:CanAccessForeignFrame(unitFrame)
+		and self.API.GetCVar
+		and self.API.GetCVar("nameplateShowFriends") == "1"
+	then
+		show, name = self:IsFriendlyQTPlayerUnit(unitToken)
+		if show then
+			guid = self:GetNameplateUnitGuid(unitToken)
+			show = IsNonEmptyString(guid)
+		end
+	end
+	if not show then
+		if icon then
+			self:HideQTPlayerIcon(icon)
+		end
+		return false
+	end
+	if not CanMutateFrame(unitFrame) or (icon and not CanMutateFrame(icon)) then
+		if icon then
+			self:HideQTPlayerIcon(icon)
+		end
+		return false
+	end
+	local readyIcon = EnsureQuestIcon(unitFrame, "player")
+	if not readyIcon then
+		if icon then self:HideQTPlayerIcon(icon) end
+		return false
+	end
+	icon = readyIcon
+	self.qtPlayerIconStateByFrame = self.qtPlayerIconStateByFrame or setmetatable({}, { __mode = "k" })
+	self.qtPlayerIconStateByFrame[icon] = { name = name, unitToken = unitToken, guid = guid }
+	self:CancelNameplateVisualCleanup(icon)
+	icon:Show()
+	return true
+end
+
 function QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
 	if not self:CanAccessForeignFrame(namePlateFrameBase) then
 		return
@@ -4024,11 +4190,16 @@ function QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
 		return
 	end
 	local unitToken = ResolveNameplateUnitToken(namePlateFrameBase, unitFrame)
-	local hasResolvedQuestState, isQuestObjective, resolvedUnitGuid = self:TryResolveNameplateQuestObjectiveState(
-		unitToken,
-		unitFrame,
-		false
-	)
+	if self:IsNameplateUnitToken(unitToken) and self:IsNameplateUnitPlayer(unitToken) then
+		self:RefreshQTPlayerNameplate(namePlateFrameBase, unitToken, unitFrame)
+		return
+	end
+	local existing = self.nameplateIconByUnitFrame[unitFrame]
+	if existing and self.qtPlayerIconStateByFrame then
+		self.qtPlayerIconStateByFrame[existing] = nil
+	end
+	local hasResolvedQuestState, isQuestObjective, resolvedUnitGuid =
+		self:TryResolveNameplateQuestObjectiveState(unitToken, unitFrame, false)
 	if not hasResolvedQuestState then
 		self:ForgetResolvedNameplateQuestState(unitToken)
 		self:HideNameplateIcon(namePlateFrameBase)
@@ -4077,6 +4248,7 @@ function QuestTogether:HideNameplateIcon(namePlateFrameBase)
 end
 
 function QuestTogether:HideTapDeniedNameplateVisuals(unitToken)
+	if self:IsNameplateUnitToken(unitToken) and self:IsNameplateUnitPlayer(unitToken) then return end
 	if not self:IsNameplateUnitToken(unitToken) or not self:IsNameplateUnitTapDenied(unitToken) then
 		return
 	end
@@ -4398,14 +4570,20 @@ function QuestTogether:OnNameplateRemoved(unitToken)
 	self:ClearNameplateTooltipResolveRetryCount(unitToken)
 	self.nameplateRefreshPendingByUnitToken[unitToken] = nil
 	-- Never reuse a generation after a token is removed and assigned again.
-	self.nameplateRefreshGenerationByUnitToken[unitToken] =
-		(self.nameplateRefreshGenerationByUnitToken[unitToken] or 0) + 1
+	self.nameplateRefreshGenerationByUnitToken[unitToken] = (self.nameplateRefreshGenerationByUnitToken[unitToken] or 0)
+		+ 1
 	self.nameplateHealthTintRefreshPendingByUnitToken[unitToken] = nil
 
-	local namePlateFrameBase = self.API and self.API.GetNamePlateForUnit and self.API.GetNamePlateForUnit(unitToken) or nil
+	local namePlateFrameBase = self.API and self.API.GetNamePlateForUnit and self.API.GetNamePlateForUnit(unitToken)
+		or nil
 	if namePlateFrameBase then
 		self:HideNameplateIcon(namePlateFrameBase)
 		self:HideAnnouncementBubble(namePlateFrameBase)
+	end
+	for icon, info in pairs(self.qtPlayerIconStateByFrame or {}) do
+		if info.unitToken == unitToken then
+			self:HideQTPlayerIcon(icon)
+		end
 	end
 	-- The public lookup may already be empty by NAME_PLATE_UNIT_REMOVED.
 	-- Find playback through addon-owned state, without reading the old frame.
@@ -4465,6 +4643,11 @@ function QuestTogether:HandleNameplateEvent(eventName, ...)
 		end
 	elseif eventName == "PLAYER_TARGET_CHANGED" then
 		self:RefreshNameplateForUnitAlias("target")
+	elseif eventName == "UNIT_NAME_UPDATE" then
+		local unitToken = ...
+		if self:IsNameplateUnitToken(unitToken) then
+			self:ScheduleNameplateRefresh(unitToken)
+		end
 	elseif eventName == "UPDATE_MOUSEOVER_UNIT" then
 		self:RefreshNameplateForUnitAlias("mouseover")
 	elseif eventName == "PLAYER_ENTERING_WORLD" then
@@ -4574,6 +4757,7 @@ function QuestTogether:EnableNameplateAugmentation()
 	RegisterNameplateEvent(self, "UNIT_HEALTH")
 	RegisterNameplateEvent(self, "UNIT_MAXHEALTH")
 	RegisterNameplateEvent(self, "UNIT_CONNECTION")
+	RegisterNameplateEvent(self, "UNIT_NAME_UPDATE")
 	RegisterNameplateEvent(self, "UNIT_THREAT_LIST_UPDATE")
 	RegisterNameplateEvent(self, "UNIT_THREAT_SITUATION_UPDATE")
 	RegisterNameplateEvent(self, "UNIT_FACTION")
@@ -4637,6 +4821,7 @@ end
 function QuestTogether:DisableNameplateAugmentation()
 	self:SetRuntimeFlag("nameplateQuestTextCacheSuppressed", false)
 	self.pendingNameplateVisualCleanup = not self:HideAllNameplateVisuals()
+	self.qtPlayerIconStateByFrame = nil
 	if self.pendingNameplateVisualCleanup then
 		self:Debug("visual_cleanup deferred until restrictions end", "nameplate")
 	end

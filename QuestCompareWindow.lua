@@ -196,7 +196,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 		row.cells = {}
 		row.action = Button(self, row, QUEST_WIDTH, -2, ACTION_WIDTH - 12, "", function()
 			local data = row.data
-			if not data then
+			if not data or row.session ~= self.partyQuestCompareSession then
 				return
 			end
 			if data.action == "share" then
@@ -264,6 +264,10 @@ function QuestTogether:RenderPartyQuestCompare()
 		return
 	end
 	local rows = self:BuildPartyQuestDiffRows()
+	-- The isolated debug preview supplies its own title and has no mode.
+	if session.mode then
+		frame.title:SetText(session.mode == "target" and "Compare Quests" or "Party Quest Compare")
+	end
 	local width = QUEST_WIDTH + #session.members * MEMBER_WIDTH + ACTION_WIDTH
 	local actionX = width - ACTION_WIDTH
 	frame.rendering = true
@@ -313,6 +317,7 @@ function QuestTogether:RenderPartyQuestCompare()
 	for i, row in ipairs(frame.rows) do
 		local data = rows[session.offset + i]
 		row.data = data
+		row.session = session
 		if not data then
 			row:Hide()
 		else
@@ -368,16 +373,25 @@ function QuestTogether:RenderPartyQuestCompare()
 	end
 	frame.summary:SetText(
 		string.format(
-			"%d quests shown · %d/%d snapshots received · Refresh to update party quests",
+			"%d quests shown · %d/%d snapshots received · Refresh to update quests",
 			#rows,
 			ready,
 			#session.members
 		)
 	)
 	local message = session.message
-	if not message and #rows == 0 then
+	if
+		not message
+		and session.mode
+		and session.byName[session.playerName].state == "loading"
+		and self:IsMapTooltipSensitiveStateActive()
+	then
+		message = "Close the world map to finish loading quests."
+	elseif not message and session.mode == "target" and not self:IsGroupedSender(session.targetName) then
+		message = "Join a party together to share quests. The selected player needs QuestTogether to respond."
+	elseif not message and #rows == 0 then
 		message = self:GetOption("compareHideOtherQuests") == true
-				and "No quests to display. Uncheck ‘Hide quests I don't have’ to include party members' quests."
+				and "No quests to display. Uncheck ‘Hide quests I don't have’ to include other players' quests."
 			or "No quests to display."
 	elseif not message and #session.members == 1 then
 		message = "Join a party to compare quests. Party members need QuestTogether to respond."

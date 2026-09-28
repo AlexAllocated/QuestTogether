@@ -1027,6 +1027,8 @@ function QuestTogether:LeaveAnnouncementChannel()
 end
 
 function QuestTogether:ResetCommsState()
+	self.qtPlayerPresenceState = nil
+	if self.ResetPlayerLocations then self:ResetPlayerLocations() end
 	if self.ResetPartyQuestCompare then self:ResetPartyQuestCompare() end
 	self.pendingPingRequests = {}
 	self.pendingQuestCompareRequests = {}
@@ -1056,7 +1058,8 @@ function QuestTogether:GetPlayerPingMetadata()
 		raceName = self.API.UnitRace("player")
 	end
 	local level = self.API.UnitLevel and self.API.UnitLevel("player") or ""
-	local locationInfo = self.GetPlayerAnnouncementLocationInfo and self:GetPlayerAnnouncementLocationInfo() or {}
+	local locationInfo = (not self.CanPublishPlayerLocation or self:CanPublishPlayerLocation())
+		and self.GetPlayerAnnouncementLocationInfo and self:GetPlayerAnnouncementLocationInfo() or {}
 	local numericCoordX = locationInfo and self.SafeToNumber and self:SafeToNumber(locationInfo.coordX) or nil
 	local numericCoordY = locationInfo and self.SafeToNumber and self:SafeToNumber(locationInfo.coordY) or nil
 
@@ -1105,7 +1108,8 @@ function QuestTogether:BuildLocalAnnouncementEvent(eventType, text, questId, ext
 		iconAsset = sanitizedExtraData.iconAsset
 		iconKind = sanitizedExtraData.iconKind or iconKind
 	end
-	local locationInfo = self.GetPlayerAnnouncementLocationInfo and self:GetPlayerAnnouncementLocationInfo() or nil
+	local locationInfo = (not self.CanPublishPlayerLocation or self:CanPublishPlayerLocation())
+		and self.GetPlayerAnnouncementLocationInfo and self:GetPlayerAnnouncementLocationInfo() or nil
 	local numericCoordX = locationInfo and self.SafeToNumber and self:SafeToNumber(locationInfo.coordX) or nil
 	local numericCoordY = locationInfo and self.SafeToNumber and self:SafeToNumber(locationInfo.coordY) or nil
 	if sanitizedText == "" then
@@ -1283,7 +1287,9 @@ function QuestTogether:DrainQuestCompareResponses()
 	local attemptedSend = false
 	local nextDelay = QUEST_COMPARE_SEND_INTERVAL_SECONDS
 	local distribution = job.routes[1].distribution
-	if GROUP_ANNOUNCEMENT_DISTRIBUTIONS[distribution] and job.requesterName and not self:IsGroupedSender(job.requesterName) then
+	if job.requesterName and self:IsIgnoredPlayerName(job.requesterName) then
+		finished = true
+	elseif GROUP_ANNOUNCEMENT_DISTRIBUTIONS[distribution] and job.requesterName and not self:IsGroupedSender(job.requesterName) then
 		-- A delayed reply belongs to the requesting group member. Do not send it
 		-- into a replacement group after that player leaves.
 		finished = true
@@ -1368,6 +1374,7 @@ function QuestTogether:HandleQuestCompareRequest(requestData)
 	end
 
 	local targetName = self:NormalizeMemberName(requestData.targetName) or requestData.targetName
+	if self:IsIgnoredPlayerName(requestData.requesterName) then return false end
 	local playerName = self:GetPlayerFullName() or self:GetPlayerName() or ""
 	local normalizedPlayerName = self:NormalizeMemberName(playerName) or playerName
 	if targetName ~= normalizedPlayerName then
@@ -1713,6 +1720,9 @@ function QuestTogether:SendAnnouncementWireEvent(eventData)
 	if not eventData then
 		return false
 	end
+	if self.CanPublishPlayerLocation and not self:CanPublishPlayerLocation() then
+		eventData.coordX, eventData.coordY, eventData.mapID, eventData.zoneName = "", "", nil, ""
+	end
 
 	local payload = self:EncodeAnnouncementPayload(eventData)
 	-- Metadata itself can exhaust the packet. Do not report a successful send
@@ -1867,6 +1877,7 @@ function QuestTogether:SendBubbleAnnouncementTest(text, senderName)
 end
 
 function QuestTogether:ShouldShowAnnouncementsForRemoteSender(senderName, hasNearbyNameplate)
+	if self:IsIgnoredPlayerName(senderName) then return false end
 	local isGrouped = self:IsGroupedSender(senderName)
 	local scope = self:GetOption("showProgressFor")
 
@@ -1904,6 +1915,7 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
 	end
 
 	local senderName = self:NormalizeMemberName(eventData.senderName) or eventData.senderName
+	if not isLocal and self:IsIgnoredPlayerName(senderName) then return false end
 	local classFile = eventData.classFile
 	local isGrouped = false
 	if (not classFile or classFile == "") and not isLocal then
@@ -2091,6 +2103,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		-- CHAT_MSG_ADDON supplies the authoritative sender. Never let a payload
 		-- choose which visible player's nameplate receives the announcement.
 		eventData.senderName = transportSenderName
+		if self.RecordQTPlayerPresence then self:RecordQTPlayerPresence(transportSenderName, true) end
 
 		self:HandleAnnouncementEvent(eventData, false)
 		return
@@ -2114,12 +2127,21 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 			return
 		end
 		responseData.senderName = transportSenderName
+		if self.RecordQTPlayerPresence then self:RecordQTPlayerPresence(transportSenderName, true) end
 		self:HandlePingResponse(responseData)
 		return
 	end
 
 	if command == "QSHR" and self.HandlePartyQuestShareMessage then
 		self:HandlePartyQuestShareMessage(payload, transportSenderName, channel)
+		return
+	end
+ if command == "QTPR" and self.HandleQTPlayerPresenceMessage then
+  self:HandleQTPlayerPresenceMessage(payload, transportSenderName)
+  return
+ end
+	if command == "LOC" and self.HandlePlayerLocationMessage then
+		self:HandlePlayerLocationMessage(payload, transportSenderName)
 		return
 	end
 

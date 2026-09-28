@@ -359,8 +359,14 @@ QuestTogether.DEFAULTS = {
 		autoAcceptPartyShareRequests = false,
 		showMinimapButton = true,
 		minimapButtonPosition = 225,
+		shareLocationOnMap = true,
+		shareLocationOnMinimap = true,
+		showLocationsOnMap = true,
+		showLocationsOnMinimap = true,
 		emoteOnNearbyPlayerLevelUp = true,
 		nameplateQuestIconEnabled = true,
+		nameplatePlayerIconEnabled = true,
+		nameplatePlayerIconStyle = "left",
 		nameplateQuestIconStyle = "left",
 		nameplateQuestHealthColorEnabled = true,
 		nameplateQuestHealthColor = {
@@ -519,6 +525,11 @@ function QuestTogether:GetNameplateQuestIconStyle()
 		return configured
 	end
 	return self.DEFAULTS.profile.nameplateQuestIconStyle
+end
+
+function QuestTogether:GetNameplatePlayerIconStyle()
+	local configured = self:GetOption("nameplatePlayerIconStyle")
+	return self:IsNameplateQuestIconStyle(configured) and configured or self.DEFAULTS.profile.nameplatePlayerIconStyle
 end
 
 function QuestTogether:GetShowProgressForLabel(value)
@@ -698,6 +709,7 @@ QuestTogether.runtimeEvents = {
 	"SUPER_TRACKING_CHANGED",
 	"GROUP_JOINED",
 	"GROUP_ROSTER_UPDATE",
+	"IGNORELIST_UPDATE",
 }
 
 --[[
@@ -896,7 +908,7 @@ QuestTogether.API = QuestTogether.API or {
 	end,
 		UnitExists = function(unitToken)
 			local ok, exists = pcall(UnitExists, unitToken)
-			return ok and exists and true or false
+			return ok and CanAccessForeignValue(exists) and exists == true
 		end,
 		UnitIsUnit = function(leftUnitToken, rightUnitToken)
 			if type(UnitIsUnit) ~= "function" then
@@ -1011,9 +1023,19 @@ QuestTogether.API = QuestTogether.API or {
 			end
 			return false
 		end,
+  UnitIsFriend = function(left, right)
+	if type(UnitIsFriend) ~= "function" then
+		return nil
+	end
+	local ok, friendly = pcall(UnitIsFriend, left, right)
+	if ok and CanAccessForeignValue(friendly) and type(friendly) == "boolean" then
+		return friendly
+	end
+	return nil
+  end,
 		UnitIsPlayer = function(unitToken)
 			local ok, result = pcall(UnitIsPlayer, unitToken)
-			return ok and result and true or false
+			return ok and CanAccessForeignValue(result) and result == true
 		end,
 		GetQuestLogIndexForQuestID = function(questID)
 			if InCombatLockdown and InCombatLockdown() then
@@ -1923,15 +1945,22 @@ QuestTogether.API = QuestTogether.API or {
 			return nil
 		end,
 		SendTell = function(name, chatFrame)
+			-- Menus can be anchored to map dots or UIParent. Only a readable
+			-- chat frame with an edit box is a native preferred chat destination;
+			-- nil lets Blizzard choose its active/default window.
+			local editBox = QuestTogether:GetAccessibleFrameMember(chatFrame, "editBox")
+			if not QuestTogether:CanAccessForeignFrame(editBox) then
+				chatFrame = nil
+			end
 			if ChatFrameUtil and ChatFrameUtil.SendTell then
 				local ok, result = pcall(ChatFrameUtil.SendTell, name, chatFrame)
-				return ok and result or nil
+				return ok and QuestTogether:CanAccessValue(result) and result ~= false
 			end
 			if type(ChatFrame_SendTell) == "function" then
 				local ok, result = pcall(ChatFrame_SendTell, name, chatFrame)
-				return ok and result or nil
+				return ok and QuestTogether:CanAccessValue(result) and result ~= false
 			end
-			return nil
+			return false
 		end,
 		AddFriend = function(name)
 			if C_FriendList and C_FriendList.AddFriend then
@@ -2031,15 +2060,12 @@ QuestTogether.API = QuestTogether.API or {
 		GetMapInfo = function(mapID)
 			if C_Map and C_Map.GetMapInfo then
 				local ok, mapInfo = pcall(C_Map.GetMapInfo, mapID)
-				if not ok or type(mapInfo) ~= "table" then
-					return nil
-				end
-				if QuestTogether and QuestTogether.IsSecretValue and QuestTogether:IsSecretValue(mapInfo) then
+				if not ok or not CanAccessForeignTable(mapInfo) then
 					return nil
 				end
 
 				local sanitizedInfo = {}
-				local numericMapID = QuestTogether and QuestTogether.SafeToNumber and QuestTogether:SafeToNumber(mapInfo.mapID)
+				local numericMapID = CanAccessForeignValue(mapInfo.mapID) and QuestTogether and QuestTogether.SafeToNumber and QuestTogether:SafeToNumber(mapInfo.mapID)
 					or nil
 				if not numericMapID then
 					numericMapID = QuestTogether and QuestTogether.SafeToNumber and QuestTogether:SafeToNumber(mapID) or nil
@@ -2049,7 +2075,7 @@ QuestTogether.API = QuestTogether.API or {
 				end
 
 				local mapName = mapInfo.name
-				if not (QuestTogether and QuestTogether.IsSecretValue and QuestTogether:IsSecretValue(mapName)) then
+				if CanAccessForeignValue(mapName) then
 					if type(mapName) == "string" and mapName ~= "" then
 						sanitizedInfo.name = mapName
 					end
@@ -2062,20 +2088,26 @@ QuestTogether.API = QuestTogether.API or {
 		GetPlayerMapPosition = function(mapID, unitToken)
 			if C_Map and C_Map.GetPlayerMapPosition then
 				local ok, mapPosition = pcall(C_Map.GetPlayerMapPosition, mapID, unitToken)
-				if not ok or not mapPosition then
+				if not ok or not CanAccessForeignValue(mapPosition) then
 					return nil
 				end
-				if QuestTogether and QuestTogether.IsSecretValue and QuestTogether:IsSecretValue(mapPosition) then
+				local positionType = type(mapPosition)
+				if (positionType ~= "table" and positionType ~= "userdata")
+					or (positionType == "table" and not CanAccessForeignTable(mapPosition)) then
 					return nil
 				end
 
 				local rawX = mapPosition.x
 				local rawY = mapPosition.y
-				if (rawX == nil or rawY == nil) and mapPosition.GetXY then
-					local okXY, xValue, yValue = pcall(mapPosition.GetXY, mapPosition)
-					if okXY then
-						rawX = rawX or xValue
-						rawY = rawY or yValue
+				if not CanAccessForeignValue(rawX) or not CanAccessForeignValue(rawY) then return nil end
+				if rawX == nil or rawY == nil then
+					local getXY = mapPosition.GetXY
+					if CanAccessForeignValue(getXY) and type(getXY) == "function" then
+						local okXY, xValue, yValue = pcall(getXY, mapPosition)
+						if okXY and CanAccessForeignValue(xValue) and CanAccessForeignValue(yValue) then
+							rawX = rawX or xValue
+							rawY = rawY or yValue
+						end
 					end
 				end
 
@@ -2603,6 +2635,7 @@ function QuestTogether:ApplyActiveProfileState(changeReason)
 		self:RefreshPersonalBubbleEditModeDialog()
 	end
 	if self.RefreshMinimapButton then self:RefreshMinimapButton() end
+	if self.OnPlayerLocationOptionsChanged then self:OnPlayerLocationOptionsChanged() end
 	if self.RefreshOptionsWindow then
 		self:RefreshOptionsWindow()
 	end
@@ -4426,7 +4459,7 @@ function QuestTogether:ShowChatLogSpeakerMenu(ownerFrame, speakerName)
 end
 
 function QuestTogether:IsIgnoredPlayerName(playerName)
-	local fullName = tostring(playerName or "")
+	local fullName = self:SafeTrimString(playerName, "")
 	if fullName == "" or not self.API or not self.API.IsOnIgnoredList then
 		return false
 	end
@@ -4464,8 +4497,7 @@ function QuestTogether:WhisperChatLogSpeaker(speakerName, ownerFrame)
 		return false
 	end
 
-	self.API.SendTell(fullName, ownerFrame)
-	return true
+	return self.API.SendTell(fullName, ownerFrame) == true
 end
 
 function QuestTogether:AddFriendFromChatLogSpeaker(speakerName)
@@ -4485,16 +4517,17 @@ function QuestTogether:ToggleIgnoreChatLogSpeaker(speakerName)
 	end
 
 	self.API.AddOrDelIgnore(fullName)
+	if self.IGNORELIST_UPDATE then self:IGNORELIST_UPDATE() end
 	return true
 end
 
 function QuestTogether:CompareQuestsWithChatLogSpeaker(speakerName)
 	local fullName = self:NormalizeMemberName(speakerName) or tostring(speakerName or "")
-	if fullName == "" or not self.OpenPartyQuestCompare then
+	if fullName == "" or not self.OpenPlayerQuestCompare then
 		return false
 	end
 
-	return self:OpenPartyQuestCompare(fullName)
+	return self:OpenPlayerQuestCompare(fullName)
 end
 
 function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, speakerName)
@@ -4528,7 +4561,7 @@ function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, s
 		rootDescription:CreateButton(isIgnored and "Unignore" or "Ignore", function()
 			self:ToggleIgnoreChatLogSpeaker(fullName)
 		end)
-		rootDescription:CreateButton("Compare Party Quests", function()
+		rootDescription:CreateButton("Compare Quests", function()
 			self:CompareQuestsWithChatLogSpeaker(fullName)
 		end)
 	end
@@ -4975,7 +5008,10 @@ function QuestTogether:GetNormalizedQuestObjectiveInfo(questId, objectiveIndex, 
 end
 
 function QuestTogether:NormalizeNameplateOptions()
-	local profile = self.db.profile
+ local profile = self.db.profile
+ if not self:IsNameplateQuestIconStyle(profile.nameplatePlayerIconStyle) then
+  profile.nameplatePlayerIconStyle = self.DEFAULTS.profile.nameplatePlayerIconStyle
+ end
 	if not self:IsNameplateQuestIconStyle(profile.nameplateQuestIconStyle) then
 		profile.nameplateQuestIconStyle = self.DEFAULTS.profile.nameplateQuestIconStyle
 	end
@@ -5024,6 +5060,9 @@ function QuestTogether:SetOption(key, value)
 	if not self.db or not self.db.profile then
 		return false
 	end
+	local isLocationOption = key == "shareLocationOnMap" or key == "shareLocationOnMinimap"
+		or key == "showLocationsOnMap" or key == "showLocationsOnMinimap"
+	if (isLocationOption or key == "nameplatePlayerIconEnabled") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
 	if key == "showMinimapButton" and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
 		return false
 	end
@@ -5065,15 +5104,16 @@ function QuestTogether:SetOption(key, value)
 			return false
 		end
 	end
-	if key == "nameplateQuestIconStyle" and not self:IsNameplateQuestIconStyle(value) then
+	if (key == "nameplateQuestIconStyle" or key == "nameplatePlayerIconStyle") and not self:IsNameplateQuestIconStyle(value) then
 		self:Debugf("options", "Rejected option change key=%s invalid icon style=%s", tostring(key), tostring(value))
 		return false
 	end
 	self.db.profile[key] = value
+	if isLocationOption and self.OnPlayerLocationOptionsChanged then self:OnPlayerLocationOptionsChanged(key) end
 	if (key == "showMinimapButton" or key == "minimapButtonPosition") and self.RefreshMinimapButton then
 		self:RefreshMinimapButton()
 	end
-	if key == "nameplateQuestIconStyle" then
+	if key == "nameplateQuestIconStyle" or key == "nameplatePlayerIconStyle" then
 		self:NormalizeNameplateOptions()
 	end
 	if
@@ -5115,6 +5155,8 @@ function QuestTogether:SetOption(key, value)
 	end
 	if
 		key == "nameplateQuestIconEnabled"
+		or key == "nameplatePlayerIconEnabled"
+		or key == "nameplatePlayerIconStyle"
 		or key == "nameplateQuestIconStyle"
 		or key == "nameplateQuestHealthColorEnabled"
 		or key == "nameplateQuestHealthColor"
@@ -5302,6 +5344,7 @@ function QuestTogether:Enable()
 			self:ScanQuestLog()
 		end
 	end)
+	if self.InitializePlayerLocations then self:InitializePlayerLocations() end
 
 	return true
 end
@@ -5312,6 +5355,8 @@ function QuestTogether:Disable()
 	if not self.isEnabled then
 		return true
 	end
+	if self.BroadcastQTPlayerPresence then self:BroadcastQTPlayerPresence(true) end
+	if self.BroadcastPlayerLocation then self:BroadcastPlayerLocation(true, true) end
 
 	self:UnregisterRuntimeEvents()
 	self.isEnabled = false
@@ -5822,6 +5867,8 @@ function QuestTogether:PLAYER_ENTERING_WORLD()
 end
 
 function QuestTogether:PLAYER_LEAVING_WORLD()
+	if self.BroadcastQTPlayerPresence then self:BroadcastQTPlayerPresence(true) end
+	if self.BroadcastPlayerLocation then self:BroadcastPlayerLocation(true, true) end
 	self.isLoggingOut = true
 end
 

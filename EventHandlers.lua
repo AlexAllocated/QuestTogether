@@ -803,3 +803,11 @@ end
 function QuestTogether:GROUP_ROSTER_UPDATE()
 	self:HandleGroupRosterChanged("GROUP_ROSTER_UPDATE")
 end
+
+function QuestTogether:IGNORELIST_UPDATE()
+	if self.PruneQTPlayerPresence then self:PruneQTPlayerPresence(true) end
+	if self.ClearIgnoredAnnouncementBubbles then self:ClearIgnoredAnnouncementBubbles() end
+	if self.PrunePlayerLocations then self:PrunePlayerLocations(true) end
+	if self.RefreshPlayerLocationPins then self:RefreshPlayerLocationPins() end
+	if self.CancelIgnoredPlayerQuestCompare then self:CancelIgnoredPlayerQuestCompare() end
+end

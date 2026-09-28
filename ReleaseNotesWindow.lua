@@ -165,8 +165,28 @@ local function Create(addon, parent)
 			Call(addon, frame, "Hide")
 		end
 	end)
+	frame.discord = New(addon, "Button", frame)
+	Call(addon, frame.discord, "SetSize", 210, 24)
+	Call(addon, frame.discord, "SetPoint", "BOTTOMLEFT", 22, 17)
+	for _, art in ipairs({
+		{ "SetNormalTexture", "DialogButtonNormalTexture" },
+		{ "SetPushedTexture", "DialogButtonPushedTexture" },
+		{ "SetHighlightTexture", "DialogButtonHighlightTexture" },
+	}) do
+		local texture = Texture(addon, frame.discord, art[2], "ARTWORK")
+		Call(addon, texture, "SetAllPoints")
+		Call(addon, frame.discord, art[1], texture)
+	end
+	local discordLabel = Label(addon, frame.discord, "GameFontNormalSmall")
+	Call(addon, discordLabel, "SetPoint", "CENTER")
+	Call(addon, discordLabel, "SetText", "Discord — Feedback & Support")
+	Script(addon, frame, frame.discord, "OnClick", function()
+		if addon:OpenDiscordSupport() then
+			Call(addon, frame, "Hide")
+		end
+	end)
 	frame.footer = Label(addon, frame, "GameFontHighlightSmall")
-	Call(addon, frame.footer, "SetPoint", "BOTTOMLEFT", 22, 22)
+	Call(addon, frame.footer, "SetPoint", "BOTTOMLEFT", 22, 52)
 	Call(addon, frame.footer, "SetText", "Read this again: /qt notes")
 	frame.scroll = New(addon, "ScrollFrame", frame)
 	Call(addon, frame.scroll, "SetPoint", "TOPLEFT", 22, -45)
@@ -237,7 +257,7 @@ local function Render(addon, notes, version, isFirstUse)
 	Call(addon, frame, "SetScale", scale)
 	Call(addon, frame.title, "SetWidth", width - 70)
 	Call(addon, frame.title, "SetText", "QuestTogether " .. addon:SafeTrimString(version, ""))
-	Call(addon, frame.footer, "SetWidth", width - 156)
+	Call(addon, frame.footer, "SetWidth", width - 44)
 	local function Add(text, font, gap)
 		text = addon:SafeTrimString(text, "")
 		if text == "" then
@@ -283,8 +303,8 @@ local function Render(addon, notes, version, isFirstUse)
 		Call(addon, frame.labels[index], "Hide")
 	end
 	local contentHeight = math.max(1, offset)
-	local height = math.min(maximumHeight, math.max(260, contentHeight + 105))
-	local viewportHeight = height - 105
+	local height = math.min(maximumHeight, math.max(260, contentHeight + 129))
+	local viewportHeight = height - 129
 	Call(addon, frame, "SetSize", width, height)
 	Call(addon, frame.scroll, "SetSize", contentWidth, viewportHeight)
 	Call(addon, frame.content, "SetSize", contentWidth, math.max(contentHeight, viewportHeight))

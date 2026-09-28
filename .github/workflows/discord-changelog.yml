@@ -1,0 +1,50 @@
+name: Discord Changelog
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published release tag to preview or retry
+        required: true
+        type: string
+      dry_run:
+        description: Preview canonical notes without posting
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+
+# Serialize retries of one release without dropping a different pending release.
+concurrency:
+  group: discord-changelog-${{ github.repository }}-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Checkout the exact release tag and its history
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ github.event.release.tag_name || inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test posting contracts offline
+        run: python3 scripts/test_discord_changelog.py
+      - name: Validate canonical notes and preview messages
+        run: python3 scripts/discord_changelog.py --dry-run --tag "$RELEASE_TAG"
+      - name: Post missing release parts with the Bumblebee bot
+        if: github.event_name == 'release' || inputs.dry_run == false
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANGELOG_CHANNEL_ID: ${{ vars.DISCORD_CHANGELOG_CHANNEL_ID }}
+        run: python3 scripts/discord_changelog.py --post --tag "$RELEASE_TAG" --wait-seconds 300

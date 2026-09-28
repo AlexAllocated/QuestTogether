@@ -1,5 +1,27 @@
 # QuestTogether changelog
 
+## 5.11.0 — 2026-09-27
+
+- Generate release notes once during release preparation and reuse the same welcome and bullet points in the addon and Discord. Add a preparation workflow that opens a notes review PR, and publish changelog embeds as the Bumblebee bot to QuestTogether's Discord only after a published release has its download and passing checks. Retried announcements skip already posted parts.
+- Preserve unavailable leading tooltip boundaries so another quest's matching objective text cannot create a false quest plate or positive GUID cache. Keep readable unit-header and titleless tooltip compatibility.
+- Clear QT player logos when a departure arrives after presence expiry but before pruning, with existing guarded cleanup for inaccessible frames. Show the owner of an outstanding share request after switching comparison targets instead of leaving an enabled action that silently does nothing.
+- Retry map and minimap permission withdrawals independently after partial route failures. Gate chat-destination changes from Settings during restrictions, and check native map-return accessibility before inspecting fields.
+- Make forbidden-access regression fixtures record attempts outside caught errors; repair the stale-token-cache fixture to exercise the active cache.
+
+- Add scroll-logo icons beside friendly QuestTogether player nameplates. Player Plates settings have an independent enabled toggle and Left (default), Right, Top and Prefix positions, with a matching preview. Give the logo a four-pixel gap beside bars or name text; leave quest-icon spacing unchanged. Player icons never tint health bars and honor native friendly-nameplate visibility, ignore state and the existing open-world restriction policy.
+- Announce lightweight player presence independently of location sharing. Expire inactive peers, clear departed/ignored players, and reuse the existing addon-owned icon pool and deferred cleanup. Recover delayed player names and queued health updates without entering quest detection.
+- Add class-colored player dots to the world map and minimap. Hover for name, faction, race, class and level; click for the QT player menu. Four independent sharing/viewing switches live under Player Locations and all start enabled.
+- Send bounded, versioned location updates using authenticated transport identity. Expire old locations, honor each sender's display choices, withdraw unavailable locations, and omit announcement/ping coordinates when both sharing switches are off. Use addon-owned map overlays and tooltips with guarded native geometry and deferred cleanup.
+- Change the player menu's Compare Quests action to compare only you and the selected player, including nonparty peers on the QT channel. Keep whole-party comparisons in the minimap and quest-name menus. Native sharing and share requests remain party-only.
+- Explicitly suppress ignored players' new logs, bubbles and dots. Ignore changes clear existing bubbles and locations and cancel pending comparison/share work.
+- Add Discord — Feedback & Support buttons to the welcome window and main Settings page, opening a copyable permanent invite. Close the welcome window after the link window opens successfully.
+- Apply the shared nameplate work policy to direct player-logo refreshes. Defer map and noncombat restrictions, cancel removed-token work, and preserve unprotected open-world combat presentation.
+- Fix Whisper from map/minimap dots in instant-messenger chat mode by validating the native chat destination; report failed native calls accurately.
+- Retry location withdrawals every five seconds while the last published point can remain visible, covering partial-route failure without retrying beyond its expiry. Correct failed-send test delivery and isolate each simulated receiver's duplicate cache.
+- Make forbidden-frame regression probes record attempted reads outside caught-error boundaries. Offline mutation checks now reject removed access guards.
+
+Validation: 664 addon tests pass in normal and reverse order on Lua 5.1 and 5.2. All six API profiles, Retail/Forever geometry probes, release-tooling tests, Lua syntax, generated notes, exact libchev verification and diff checks pass. The five additional review findings and the obsolete cache fixture are repaired; native map-return and Settings guards are hardened. Unsafe map and welcome-label mutations now fail their regression tests. Real note generation, Discord bot/channel permissions and published ZIP note matching were checked without posting an announcement. Native rendering, map/minimap alignment, player-logo placement, two-client delivery and engine-level taint behavior still require checks in Retail and Forever.
+
 ## 5.10.0 — 2026-09-27
 
 - Replace the chat welcome with an addon-owned welcome and patch notes window, with the scroll logo above the welcome heading. Show it once on first use and on major/minor upgrades, across characters and profiles; patch upgrades stay quiet. Reopen it with `/qt notes`, `/qt changelog`, `/qt patchnotes`, Patch Notes in the minimap menu, or the main Settings screen.

@@ -45,6 +45,52 @@ function QuestTogether:CancelPartyQuestCompare()
 	end
 end
 
+function QuestTogether:CancelIgnoredPlayerQuestCompare()
+	local state = self.partyQuestShareState
+	local removedIncoming = false
+	for key, request in pairs(state and state.incoming or {}) do
+		if self:IsIgnoredPlayerName(request.sender) then
+			state.incoming[key] = nil
+			removedIncoming = true
+		end
+	end
+	for key, request in pairs(state and state.outgoing or {}) do
+		if self:IsIgnoredPlayerName(request.target) then
+			state.outgoing[key] = nil
+		end
+	end
+	local prompt = self.partyQuestSharePrompt
+	if prompt and prompt.request and self:IsIgnoredPlayerName(prompt.request.sender) then
+		-- This is an addon-owned, unprotected frame. Remove the old sender's
+		-- prompt immediately; displaying another prompt still uses deferred work.
+		prompt.request = nil
+		prompt:Hide()
+	end
+	if removedIncoming then
+		self:QueuePartyQuestSharePrompt()
+	end
+	local session = self.partyQuestCompareSession
+	if not session then
+		return
+	end
+	if session.mode == "target" and self:IsIgnoredPlayerName(session.targetName) then
+		self:CancelPartyQuestCompare()
+		if self.partyQuestCompareWindow then
+			self.partyQuestCompareWindow:Hide()
+		end
+		return
+	end
+	for _, member in ipairs(session.members) do
+		if not member.isLocal and self:IsIgnoredPlayerName(member.name) then
+			if member.requestId and self.pendingQuestCompareRequests then
+				self.pendingQuestCompareRequests[member.requestId] = nil
+			end
+			member.entries, member.state, member.supportsShareRequests = {}, "unavailable", nil
+		end
+	end
+	self:QueuePartyQuestCompareRender()
+end
+
 function QuestTogether:ResetPartyQuestCompare()
 	self:ClosePartyQuestComparePreview()
 	self:CancelPartyQuestCompare()
@@ -66,16 +112,56 @@ function QuestTogether:OpenPartyQuestCompare(preferredName)
 		self:Print("Quest comparison is unavailable while restricted. Try again when restrictions end.")
 		return false
 	end
-	self:RefreshPartyRoster()
 	if not self:CreatePartyQuestCompareWindow() then
 		return false
 	end
-	self:RefreshPartyQuestCompare(preferredName)
+	-- Opening the party view explicitly leaves a previous two-player session.
+	self:CancelPartyQuestCompare()
+	self:RefreshPartyRoster()
+	if not self:RefreshPartyQuestCompare(preferredName) then
+		return false
+	end
 	self.partyQuestCompareWindow:Show()
 	return true
 end
 
-function QuestTogether:RefreshPartyQuestCompare(preferredName)
+function QuestTogether:OpenPlayerQuestCompare(name)
+	if not self.isEnabled then
+		self:Print("Enable QuestTogether to compare quests.")
+		return false
+	end
+	if self:IsWorkBlocked("foreign_frame_mutation") then
+		self:Print("Quest comparison is unavailable while restricted. Try again when restrictions end.")
+		return false
+	end
+	if not self:CanAccessValue(name) or type(name) ~= "string" then
+		return false
+	end
+	local targetName = self:NormalizeMemberName(self:SafeTrimString(name, ""))
+	if not targetName or targetName == "" or targetName == PlayerName(self) or self:IsIgnoredPlayerName(targetName) then
+		return false
+	end
+	if not self:CreatePartyQuestCompareWindow() then
+		return false
+	end
+	self:CancelPartyQuestCompare()
+	self:RefreshPartyRoster()
+	if not self:RefreshPartyQuestCompare(nil, targetName) then
+		return false
+	end
+	self.partyQuestCompareWindow:Show()
+	return true
+end
+
+function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName)
+	local previous = self.partyQuestCompareSession
+	if not targetName and previous and previous.mode == "target" then
+		targetName = previous.targetName
+	end
+	if targetName and self:IsIgnoredPlayerName(targetName) then
+		self:CancelIgnoredPlayerQuestCompare()
+		return false
+	end
 	self:CancelPartyQuestCompare()
 	if not self.isEnabled then
 		return false
@@ -84,15 +170,26 @@ function QuestTogether:RefreshPartyQuestCompare(preferredName)
 	if not ownName then
 		return false
 	end
-	local session = { playerName = ownName, members = {}, byName = {}, offset = 0 }
+	local session = {
+		playerName = ownName,
+		members = {},
+		byName = {},
+		offset = 0,
+		mode = targetName and "target" or "party",
+		targetName = targetName,
+	}
 	self.partyQuestCompareSession = session
 	local names = { ownName }
-	if preferredName ~= ownName and self.partyMembers[preferredName] then
+	if targetName then
+		names[#names + 1] = targetName
+	elseif preferredName ~= ownName and self.partyMembers[preferredName] then
 		names[#names + 1] = preferredName
 	end
-	for _, name in ipairs(self.partyMemberOrder or {}) do
-		if name ~= ownName and name ~= preferredName then
-			names[#names + 1] = name
+	if not targetName then
+		for _, name in ipairs(self.partyMemberOrder or {}) do
+			if name ~= ownName and name ~= preferredName then
+				names[#names + 1] = name
+			end
 		end
 	end
 	for _, name in ipairs(names) do
@@ -105,12 +202,23 @@ function QuestTogether:RefreshPartyQuestCompare(preferredName)
 	for _, member in ipairs(session.members) do
 		if not member.isLocal then
 			local function Current()
-				return self.isEnabled and self.partyQuestCompareSession == session and self:IsGroupedSender(member.name)
+				return self.isEnabled
+					and self.partyQuestCompareSession == session
+					and not self:IsIgnoredPlayerName(member.name)
+					and (session.mode == "target" or self:IsGroupedSender(member.name))
 			end
 			local sent, requestId
-			if route then
+			local routes
+			if self:IsGroupedSender(member.name) then
+				routes = route and { { distribution = route } } or nil
+			elseif session.mode == "target" then
+				-- Nonparty peers listen on the existing QT channel. A whisper is
+				-- not a supported receive route, and unrelated groups must not receive this request.
+				routes = { { distribution = "CHANNEL", requiresChannelJoin = true } }
+			end
+			if routes and not self:IsIgnoredPlayerName(member.name) then
 				sent, requestId = self:RequestQuestCompare(member.name, {
-					routes = { { distribution = route } },
+					routes = routes,
 					onEntry = function(entry)
 						if not Current() then
 							return
@@ -196,6 +304,8 @@ function QuestTogether:BuildPartyQuestDiffRows()
 		return {}
 	end
 	local own = session.byName[session.playerName]
+	local targetCanShare = session.mode ~= "target"
+		or (self:IsGroupedSender(session.targetName) and not self:IsIgnoredPlayerName(session.targetName))
 	local union, rows = {}, {}
 	for _, member in ipairs(session.members) do
 		if member.isLocal or self:GetOption("compareHideOtherQuests") ~= true then
@@ -231,6 +341,9 @@ function QuestTogether:BuildPartyQuestDiffRows()
 				end
 			end
 		end
+		if not targetCanShare and (row.action or row.hint) then
+			row.action, row.owner, row.hint = nil, nil, "Join a party together to share quests."
+		end
 		rows[#rows + 1] = row
 	end
 	table.sort(rows, function(a, b)
@@ -246,9 +359,18 @@ function QuestTogether:BuildPartyQuestDiffRows()
 end
 
 function QuestTogether:SharePartyDiffQuest(questId)
+	local session = self.partyQuestCompareSession
+	if
+		session
+		and session.mode == "target"
+		and (not self:IsGroupedSender(session.targetName) or self:IsIgnoredPlayerName(session.targetName))
+	then
+		session.message = "Join a party together to share quests."
+		self:QueuePartyQuestCompareRender()
+		return false
+	end
 	local index, reason = self:GetQuestShareAvailability(questId)
 	local ok = index and self.API.PushQuestToParty(index) == true
-	local session = self.partyQuestCompareSession
 	if session then
 		session.message = ok and "Share attempted. WoW checks each player's eligibility."
 			or reason
@@ -274,7 +396,7 @@ end
 
 function QuestTogether:SendPartyQuestShareMessage(target, questId, requestId, status)
 	local route = self:GetGroupAnnouncementDistribution()
-	if not route or not self:IsGroupedSender(target) then
+	if not route or not self:IsGroupedSender(target) or self:IsIgnoredPlayerName(target) then
 		return false
 	end
 	local fields = { "1", requestId, target, tostring(questId), status }
@@ -295,7 +417,12 @@ function QuestTogether:GetPartyQuestShareRequestCooldown(target)
 end
 
 function QuestTogether:RequestPartyQuestShare(questId, target)
-	if not self.isEnabled or not self:IsGroupedSender(target) or self:IsWorkBlocked("quest_share") then
+	if
+		not self.isEnabled
+		or not self:IsGroupedSender(target)
+		or self:IsIgnoredPlayerName(target)
+		or self:IsWorkBlocked("quest_share")
+	then
 		return false
 	end
 	if self:GetPartyQuestShareRequestCooldown(target) > 0 then
@@ -327,6 +454,9 @@ function QuestTogether:RequestPartyQuestShare(questId, target)
 		else
 			count = count + 1
 			if request.questId == questId then
+				-- The selected player may have changed since the request began.
+				-- Refresh the same waiting state that disables the row action.
+				self:QueuePartyQuestCompareRender()
 				return false
 			end
 		end
@@ -372,11 +502,23 @@ end
 
 function QuestTogether:GetPartyQuestShareStatus(questId)
 	local state = self.partyQuestShareState
+	local session = self.partyQuestCompareSession
 	for _, request in pairs(state and state.outgoing or {}) do
 		if request.questId == questId then
 			local pending = request.status == "request" or request.status == "pending"
 			local waiting = pending and self.API.GetTime() < request.expires
-			return STATUS_TEXT[pending and not waiting and "expired" or request.status], waiting
+			if waiting and session and session.mode == "target" and request.target ~= session.targetName then
+				-- A pending request blocks this quest for every target. Keep that
+				-- owner visible without attributing their later result to this player.
+				return "Waiting for " .. request.target, true
+			end
+			if
+				not session
+				or session.mode ~= "target"
+				or (request.target == session.targetName and self:IsGroupedSender(session.targetName))
+			then
+				return STATUS_TEXT[pending and not waiting and "expired" or request.status], waiting
+			end
 		end
 	end
 end
@@ -492,6 +634,7 @@ function QuestTogether:GetNextPartyQuestShareRequest()
 		if
 			self.API.GetTime() < request.expires
 			and self:IsGroupedSender(request.sender)
+			and not self:IsIgnoredPlayerName(request.sender)
 			and (not nextRequest or request.order < nextRequest.order)
 		then
 			nextRequest = request

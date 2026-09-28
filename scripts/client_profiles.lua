@@ -4,8 +4,12 @@ return function(client)
 	assert(profiles[client], "unknown client profile")
 	local classic = client ~= "retail" and client ~= "forever"
 	local selected, pushable, secret = 7, true, {}
+	local inaccessibleReads = 0
 	local inaccessible = setmetatable({}, {
-		__index = function() error("inaccessible fixture must not be indexed") end,
+		__index = function()
+			inaccessibleReads = inaccessibleReads + 1
+			error("inaccessible fixture must not be indexed")
+		end,
 		__tostring = function() error("inaccessible fixture must not be formatted") end,
 	})
 	local objective = { text = "Wolves slain: 2/5", type = "monster", finished = false, numFulfilled = 2, numRequired = 5 }
@@ -39,6 +43,122 @@ return function(client)
 		return objective.text, objective.type, objective.finished, objective.numFulfilled
 	end or nil
 	return function(addon)
+		-- Foreign native map returns are checked before any field access. This
+		-- standalone fixture never replaces C_Map inside a live client.
+		do
+			local originalMap = C_Map
+			local result
+			C_Map = { GetMapInfo = function() return result end, GetPlayerMapPosition = function() return result end }
+			local before = inaccessibleReads
+			for _, unavailable in ipairs({ secret, inaccessible, false, "bad return", 42 }) do
+				result = unavailable
+				assert(addon.API.GetMapInfo(84) == nil)
+				assert(addon.API.GetPlayerMapPosition(84, "player") == nil)
+			end
+			assert(inaccessibleReads == before, "pcall must not hide inaccessible native map reads")
+			result = { mapID = 84, name = "Stormwind" }
+			local info = addon.API.GetMapInfo(84)
+			assert(info ~= result and info.mapID == 84 and info.name == "Stormwind")
+			result = { mapID = secret, name = inaccessible }
+			info = addon.API.GetMapInfo(84)
+			assert(info.mapID == 84 and info.name == nil)
+			for _, position in ipairs({ { x = 0, y = 1 }, { GetXY = function() return 0, 1 end } }) do
+				result = position
+				local copy = addon.API.GetPlayerMapPosition(84, "player")
+				assert(copy ~= position and copy.x == 0 and copy.y == 1)
+			end
+			for _, position in ipairs({ { x = secret, y = 0 }, { x = 0, y = inaccessible },
+				{ GetXY = secret }, { GetXY = function() return inaccessible, 0 end } }) do
+				result = position
+				assert(addon.API.GetPlayerMapPosition(84, "player") == nil)
+			end
+			assert(inaccessibleReads == before)
+			C_Map = originalMap
+		end
+		-- Native chat-frame contracts remain offline. Retail/Forever's IM-mode
+		-- ChooseBoxForSend uses a visible preferred frame's editBox directly.
+		do
+			local originalUtil, originalLegacy = ChatFrameUtil, ChatFrame_SendTell
+			local style, parsed, calls, lastPreferred = "im", 0, 0, nil
+			local editBox = { ParseText = function() parsed = parsed + 1 end }
+			local chat = { editBox = editBox, IsShown = function() return true end }
+			local pin = { IsShown = function() return true end }
+			local function SendTell(name, preferred)
+				calls, lastPreferred = calls + 1, preferred
+				assert(name == "Friend-Realm")
+				local box
+				if style == "classic" then box = editBox
+				elseif preferred and preferred:IsShown() then box = preferred.editBox
+				else box = editBox end
+				box:ParseText(0)
+			end
+			local forbiddenReads = 0
+			local forbidden = setmetatable({ IsForbidden = function() return true end }, {
+				__index = function()
+					forbiddenReads = forbiddenReads + 1
+					error("forbidden chat owner read")
+				end,
+			})
+			for _, legacy in ipairs({ false, true }) do
+				ChatFrameUtil = not legacy and { SendTell = SendTell } or nil
+				ChatFrame_SendTell = legacy and SendTell or nil
+				for _, chatStyle in ipairs({ "im", "classic" }) do
+					style = chatStyle
+					assert(addon.API.SendTell("Friend-Realm", chat) == true)
+					assert(lastPreferred == chat, "a real chat owner should retain its destination")
+					for _, owner in ipairs({ pin, forbidden, { editBox = forbidden }, secret, inaccessible }) do
+						local before = parsed
+						assert(addon.API.SendTell("Friend-Realm", owner) == true)
+						assert(lastPreferred == nil and parsed == before + 1)
+					end
+					local callback
+					addon:PopulateChatLogSpeakerMenu({
+						CreateTitle = function() end,
+						CreateButton = function(_, title, run) if title == "Whisper" then callback = run end end,
+					}, pin, "Friend-Realm")
+					local before = parsed
+					assert(callback)
+					callback()
+					assert(lastPreferred == nil and parsed == before + 1, "dot menu must open a whisper")
+				end
+			end
+			assert(forbiddenReads == 0, "pcall must not hide forbidden owner reads")
+			assert(parsed == calls)
+			for _, legacy in ipairs({ false, true }) do
+				local function Failure() error("native whisper failed") end
+				ChatFrameUtil = not legacy and { SendTell = Failure } or nil
+				ChatFrame_SendTell = legacy and Failure or nil
+				assert(addon:WhisperChatLogSpeaker("Friend-Realm", pin) == false)
+				for _, result in ipairs({ false, secret, inaccessible }) do
+					local function Unavailable() return result end
+					ChatFrameUtil = not legacy and { SendTell = Unavailable } or nil
+					ChatFrame_SendTell = legacy and Unavailable or nil
+					assert(addon:WhisperChatLogSpeaker("Friend-Realm", pin) == false)
+				end
+			end
+			ChatFrameUtil, ChatFrame_SendTell = nil, nil
+			assert(addon:WhisperChatLogSpeaker("Friend-Realm", pin) == false)
+			ChatFrameUtil, ChatFrame_SendTell = originalUtil, originalLegacy
+		end
+		-- Identity flags must be readable booleans before plate code branches.
+		do
+			local oldExists, oldPlayer, oldFriend = UnitExists, UnitIsPlayer, UnitIsFriend
+			for _, value in ipairs({ true, false, secret, inaccessible, "true", 1 }) do
+				UnitExists = function() return value end
+				UnitIsPlayer = function() return value end
+				UnitIsFriend = function() return value end
+				assert(addon.API.UnitExists("nameplate1") == (value == true))
+				assert(addon.API.UnitIsPlayer("nameplate1") == (value == true))
+				local result = addon.API.UnitIsFriend("player", "nameplate1")
+				if type(value) == "boolean" then assert(result == value)
+				else assert(result == nil) end
+			end
+			UnitIsFriend = function() error("unavailable unit") end
+			assert(addon.API.UnitIsFriend("player", "nameplate1") == nil)
+			UnitIsFriend = nil
+			assert(addon.API.UnitIsFriend("player", "nameplate1") == nil)
+			UnitExists, UnitIsPlayer, UnitIsFriend = oldExists, oldPlayer, oldFriend
+		end
 		-- Native sharing/menu contracts stay offline: these are fake globals in
 		-- this process, never monkeypatches in /qt test.
 		do
@@ -507,9 +627,14 @@ return function(client)
 		assert(addon.API.IsWorldMapVisible() == true)
 		WorldMapFrame.IsShown = function() return false end
 		assert(addon.API.IsWorldMapVisible() == false)
-		WorldMapFrame.IsForbidden = function() return true end
-		WorldMapFrame.IsShown = function() error("forbidden map must not be read") end
-		assert(addon.API.IsWorldMapVisible() == true)
+			WorldMapFrame.IsForbidden = function() return true end
+			local forbiddenVisibilityReads = 0
+			WorldMapFrame.IsShown = function()
+				forbiddenVisibilityReads = forbiddenVisibilityReads + 1
+				error("forbidden map must not be read")
+			end
+			assert(addon.API.IsWorldMapVisible() == true)
+			assert(forbiddenVisibilityReads == 0, "pcall must not hide forbidden map reads")
 		WorldMapFrame = inaccessible
 		assert(addon.API.IsWorldMapVisible() == true)
 		WorldMapFrame = { IsShown = function() return secret end }

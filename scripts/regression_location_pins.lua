@@ -1,0 +1,507 @@
+-- Private frames and adapters only: safe in the live /qt test command.
+local QuestTogether = _G.QuestTogether
+local activeFixtures
+local function Register(name, callback)
+	QuestTogether:RegisterTest(name, function()
+		activeFixtures = {}
+		local ok, err = pcall(callback)
+		local fixtures = activeFixtures
+		activeFixtures = nil
+		for _, fixture in ipairs(fixtures) do
+			assert((fixture.invalidCalls or 0) == 0, "a swallowed error hid an unsafe location UI call")
+		end
+		if not ok then
+			error(err, 0)
+		end
+	end)
+end
+local function Equal(a, b)
+	assert(a == b, "expected " .. tostring(b) .. ", got " .. tostring(a))
+end
+local function Near(a, b)
+	assert(type(a) == "number" and math.abs(a - b) < 0.00001)
+end
+
+local function Frame(addon, parent, kind)
+	local frame = { parent = parent, kind = kind, shown = true, points = {}, scripts = {}, writes = 0, hides = 0 }
+	function frame:IsForbidden()
+		return self.forbidden == true or (self.parent and self.parent:IsForbidden()) or false
+	end
+	function frame:IsProtected()
+		return self.protected == true or (self.parent and self.parent:IsProtected()) or false
+	end
+	function frame:IsShown()
+		self:CheckRead()
+		return self.shown
+	end
+	function frame:CheckRead()
+		if self:IsForbidden() then
+			addon.invalidCalls = (addon.invalidCalls or 0) + 1
+			error("unsafe owned read")
+		end
+	end
+	function frame:Check(hide)
+		if self:IsForbidden() or self:IsProtected() or (not hide and addon.blocked) then
+			addon.invalidCalls = (addon.invalidCalls or 0) + 1
+			error("unsafe owned mutation")
+		end
+		self.writes = self.writes + 1
+	end
+	function frame:Hide()
+		self:Check(true)
+		self.shown = false
+		self.hides = self.hides + 1
+	end
+	function frame:Show()
+		self:Check()
+		self.shown = true
+	end
+	function frame:SetParent(parent)
+		self:Check()
+		self.parent = parent
+	end
+	function frame:SetAllPoints(parent)
+		self:Check()
+		self.allPoints = parent or self.parent
+	end
+	function frame:ClearAllPoints()
+		self:Check()
+		self.points = {}
+	end
+	function frame:SetPoint(...)
+		self:Check()
+		self.points[#self.points + 1] = { ... }
+	end
+	function frame:SetSize(width, height)
+		self:Check()
+		self.width, self.height = width, height
+	end
+	function frame:SetWidth(width)
+		self:Check()
+		self.width = width
+	end
+	function frame:SetFrameLevel(level)
+		self:Check()
+		self.level = level
+	end
+	function frame:GetFrameLevel()
+		self:CheckRead()
+		return self.level or 1
+	end
+	function frame:SetScript(event, callback)
+		-- The unparented wake frame may install/remove cleanup during combat.
+		self:Check(self.parent == nil)
+		self.scripts[event] = callback
+	end
+	function frame:CreateTexture()
+		self:Check()
+		local region = Frame(addon, self, "Texture")
+		addon.regions[#addon.regions + 1] = region
+		return region
+	end
+	function frame:CreateMaskTexture()
+		return self:CreateTexture()
+	end
+	function frame:CreateFontString()
+		return self:CreateTexture()
+	end
+	function frame:SetText(value)
+		self:Check()
+		self.text = value
+	end
+	function frame:GetStringHeight()
+		self:CheckRead()
+		return 96
+	end
+	function frame:SetColorTexture(r, g, b, a)
+		self:Check()
+		self.color = { r, g, b, a }
+	end
+	for _, method in ipairs({
+		"EnableMouse",
+		"SetClipsChildren",
+		"RegisterForClicks",
+		"SetTexture",
+		"AddMaskTexture",
+		"SetFrameStrata",
+		"SetClampedToScreen",
+		"SetJustifyH",
+		"SetWordWrap",
+	}) do
+		frame[method] = function(self)
+			self:Check()
+		end
+	end
+	return frame
+end
+
+local function Row(name, x, y, mapID)
+	return {
+		name = name or "Friend-Realm",
+		mapID = mapID or 1,
+		x = x or 0.5,
+		y = y or 0.5,
+		classFile = "MAGE",
+		className = "Mage",
+		faction = "Alliance",
+		race = "Human",
+		level = 60,
+		warMode = false,
+	}
+end
+
+local function Fixture()
+	local a = setmetatable(
+		{ isEnabled = true, frames = {}, regions = {}, menus = {}, rows = {}, reads = {} },
+		{ __index = QuestTogether }
+	)
+	a.mapParent, a.miniParent, a.tooltipParent = Frame(a), Frame(a), Frame(a)
+	a.geometry = {
+		map = {
+			parent = a.mapParent,
+			mapID = 1,
+			width = 1000,
+			height = 600,
+			canvasLeft = 0,
+			canvasTop = 0,
+			canvasWidth = 1000,
+			canvasHeight = 600,
+		},
+		minimap = {
+			parent = a.miniParent,
+			mapID = 1,
+			width = 200,
+			height = 200,
+			radius = 100,
+			continent = 0,
+			north = 500,
+			west = 500,
+			facing = 0,
+			shape = "ROUND",
+		},
+	}
+	function a:IsRuntimeRestricted()
+		return self.blocked == true
+	end
+	function a:GetLocationPinSurface(surface)
+		self.geometryReads = (self.geometryReads or 0) + 1
+		self.lastGeometrySurface = surface
+		local g = self.geometry[surface]
+		if self.blocked or not g or not self:CanAccessForeignFrame(g.parent, true) then
+			return nil
+		end
+		return g
+	end
+	function a:AreLocationPinMapLayersCompatible(source, target)
+		return source == target or not self.floorMismatch
+	end
+	function a:GetLocationPinWorldPosition(mapID, x, y)
+		if self.worldUnavailable then
+			return nil
+		end
+		return mapID == 3 and 1 or 0, 1000 - y * 1000, 1000 - x * 1000
+	end
+	function a:GetLocationPinMapPosition(row, target)
+		if row.mapID == target then
+			return row.x, row.y
+		end
+		if self.crossMapAvailable and row.mapID == 2 and target == 1 then
+			return row.x / 2, row.y / 2
+		end
+	end
+	function a:GetVisiblePlayerLocations(surface)
+		self.reads[surface] = (self.reads[surface] or 0) + 1
+		return self.rows[surface] or {}
+	end
+	function a:GetLocationPinTooltipParent()
+		return self.tooltipParent
+	end
+	function a:CreateLocationPinFrame(kind, name, parent, template)
+		assert(not name and not template, "location UI must not use named/shared templates")
+		if self.blocked then
+			self.invalidCalls = (self.invalidCalls or 0) + 1
+			error("restricted frame creation")
+		end
+		local frame = Frame(self, parent, kind)
+		self.frames[#self.frames + 1] = frame
+		self.regions[#self.regions + 1] = frame
+		return frame
+	end
+	function a:IsIgnoredPlayerName(name)
+		return name == self.ignored
+	end
+	function a:GetClassColorCode(class)
+		return class == "MAGE" and "|cff40c7eb" or "|cffffffff"
+	end
+	function a:ShowChatLogSpeakerMenu(frame, name)
+		self.menus[#self.menus + 1] = { owner = frame, name = name }
+		return true
+	end
+	activeFixtures[#activeFixtures + 1] = a
+	return a
+end
+
+local function Pin(a, surface, index)
+	return a.locationPinState.surfaces[surface].pins[index or 1]
+end
+
+Register("location map projection follows zoom pan and clips the full dot", function()
+	local a = Fixture()
+	local g = a.geometry.map
+	local x, y = a:ProjectPlayerLocationPin("map", Row(nil, 0.25, 0.5), g)
+	Near(x, 250)
+	Near(y, 300)
+	g.canvasLeft, g.canvasTop, g.canvasWidth, g.canvasHeight = -500, -300, 2000, 1200
+	x, y = a:ProjectPlayerLocationPin("map", Row(nil, 0.5, 0.5), g)
+	Near(x, 500)
+	Near(y, 300)
+	Equal(a:ProjectPlayerLocationPin("map", Row(nil, 0.1, 0.5), g), nil)
+	Equal(a:ProjectPlayerLocationPin("map", Row(nil, 0.251, 0.5), g), nil)
+	Equal(a:ProjectPlayerLocationPin("map", Row(nil, 0.5, 1.2), g), nil)
+	Equal(a:ProjectPlayerLocationPin("map", Row(nil, 0.5, 0.5, 2), g), nil)
+	a.crossMapAvailable = true
+	x, y = a:ProjectPlayerLocationPin("map", Row(nil, 0.8, 0.8, 2), g)
+	Near(x, 300)
+	Near(y, 180)
+	a.floorMismatch = true
+	Equal(a:ProjectPlayerLocationPin("map", Row(nil, 0.8, 0.8, 2), g), nil)
+end)
+
+Register("location minimap cardinal directions rotation radius and masks are exact", function()
+	local a = Fixture()
+	local g = a.geometry.minimap
+	local x, y = a:ProjectPlayerLocationPin("minimap", Row(nil, 0.55, 0.5), g)
+	Near(x, 150)
+	Near(y, 100)
+	x, y = a:ProjectPlayerLocationPin("minimap", Row(nil, 0.5, 0.45), g)
+	Near(x, 100)
+	Near(y, 50)
+	g.facing = math.pi / 2
+	x, y = a:ProjectPlayerLocationPin("minimap", Row(nil, 0.45, 0.5), g)
+	Near(x, 100)
+	Near(y, 50)
+	g.facing, g.radius = 0, 200
+	x, y = a:ProjectPlayerLocationPin("minimap", Row(nil, 0.55, 0.5), g)
+	Near(x, 125)
+	Near(y, 100)
+	g.radius = 100
+	Equal(a:ProjectPlayerLocationPin("minimap", Row(nil, 0.59, 0.59), g), nil)
+	g.shape = "SQUARE"
+	x, y = a:ProjectPlayerLocationPin("minimap", Row(nil, 0.59, 0.59), g)
+	Near(x, 190)
+	Near(y, 190)
+	Equal(a:ProjectPlayerLocationPin("minimap", Row(nil, 0.596, 0.5), g), nil)
+	Equal(a:ProjectPlayerLocationPin("minimap", Row(nil, 0.5, 0.5, 3), g), nil)
+	g.shape = "UNKNOWN"
+	Equal(a:ProjectPlayerLocationPin("minimap", Row(), g), nil)
+	Equal(a:ProjectPlayerLocationPin("minimap", Row(nil, math.huge, 0.5), g), nil)
+end)
+
+Register("location dots reuse a bounded pool and copy no state to native parents", function()
+	local a = Fixture()
+	for _, surface in ipairs({ "map", "minimap" }) do
+		a.rows[surface] = {}
+		for index = 1, 200 do
+			a.rows[surface][index] = Row("Peer" .. index .. "-Realm")
+		end
+	end
+	assert(a:RefreshPlayerLocationPins())
+	Equal(#a.locationPinState.surfaces.map.pins, 128)
+	Equal(#a.locationPinState.surfaces.minimap.pins, 128)
+	Equal(a.mapParent.writes + a.miniParent.writes, 0)
+	Equal(next(a.mapParent.scripts), nil)
+	local frames = #a.frames
+	assert(a:RefreshPlayerLocationPins())
+	Equal(#a.frames, frames)
+	a.rows.map, a.rows.minimap = { Row("Replacement-Realm") }, {}
+	assert(a:RefreshPlayerLocationPins())
+	Equal(Pin(a, "map").name, "Replacement-Realm")
+	Equal(Pin(a, "map", 2).name, nil)
+	Equal(Pin(a, "map", 2).frame.shown, false)
+	Equal(a.locationPinState.surfaces.minimap.frame.shown, false)
+	Equal(#a.frames, frames)
+	local color = Pin(a, "map").texture.color
+	Near(color[1], 64 / 255)
+	Near(color[2], 199 / 255)
+	Near(color[3], 235 / 255)
+	a.rows.map[1].classFile = nil
+	a:RefreshPlayerLocationPins()
+	Equal(Pin(a, "map").texture.color[1], 1)
+end)
+
+Register("location tooltip and clicks revalidate live permissions identity and map", function()
+	local a = Fixture()
+	a.rows.map = { Row() }
+	a:RefreshPlayerLocationPins()
+	local pin = Pin(a, "map")
+	pin.frame.scripts.OnEnter({})
+	local state = a.locationPinState
+	assert(state.tooltip.shown)
+	for _, text in ipairs({
+		"Friend-Realm",
+		"Faction: Alliance",
+		"Race: Human",
+		"Class: Mage",
+		"Level: 60",
+		"War Mode: Off",
+	}) do
+		assert(state.tooltipLabel.text:find(text, 1, true))
+	end
+	pin.frame.scripts.OnClick({}, "RightButton")
+	Equal(a.menus[1].name, "Friend-Realm")
+	Equal(a.menus[1].owner, pin.frame)
+	Equal(state.tooltip.shown, false)
+	a.ignored = "Friend-Realm"
+	pin.frame.scripts.OnEnter({})
+	pin.frame.scripts.OnClick({}, "LeftButton")
+	Equal(#a.menus, 1)
+	Equal(state.tooltip.shown, false)
+	a.ignored, a.rows.map = nil, { Row("Different-Realm") }
+	pin.frame.scripts.OnClick({}, "LeftButton")
+	Equal(#a.menus, 1)
+	a:RefreshPlayerLocationPins()
+	pin.frame.scripts.OnClick({}, "LeftButton")
+	Equal(a.menus[2].name, "Different-Realm")
+	a.geometry.map.mapID = 2
+	pin.frame.scripts.OnClick({}, "LeftButton")
+	Equal(#a.menus, 2)
+	a.geometry.map.mapID, a.rows.map = 1, {}
+	pin.frame.scripts.OnClick({}, "LeftButton")
+	Equal(#a.menus, 2)
+	a:RefreshPlayerLocationPins()
+	Equal(pin.name, nil)
+	Equal(state.surfaces.map.frame.shown, false)
+end)
+
+Register("location empty surfaces skip UI allocation and all native geometry reads", function()
+	local a = Fixture()
+	Equal(a:RefreshPlayerLocationPins(), false)
+	Equal(rawget(a, "locationPinState"), nil)
+	Equal(#a.frames, 0)
+	Equal(a.geometryReads, nil)
+	a.rows.map = { Row() }
+	assert(a:RefreshPlayerLocationPins())
+	Equal(a.geometryReads, 1)
+	Equal(a.lastGeometrySurface, "map")
+	a.rows.map = {}
+	Equal(a:RefreshPlayerLocationPins(), false)
+	Equal(a.geometryReads, 1)
+	Equal(a.locationPinState.surfaces.map.frame.shown, false)
+end)
+
+Register("location empty optional metadata uses class token and explicit unknown labels", function()
+	local a = Fixture()
+	local row = Row()
+	row.className, row.race, row.faction, row.level = "", "", "", nil
+	a.rows.map = { row }
+	assert(a:RefreshPlayerLocationPins())
+	Pin(a, "map").frame.scripts.OnEnter({})
+	local text = a.locationPinState.tooltipLabel.text
+	for _, expected in ipairs({ "Class: MAGE", "Race: Unknown", "Faction: Unknown", "Level: Unknown" }) do
+		assert(text:find(expected, 1, true))
+	end
+end)
+
+Register("location unavailable geometry clears old surface dots and hover", function()
+	local a = Fixture()
+	a.rows.map, a.rows.minimap = { Row() }, { Row() }
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnEnter({})
+	a.geometry.map = nil
+	assert(a:RefreshPlayerLocationPins())
+	Equal(a.locationPinState.surfaces.map.frame.shown, false)
+	Equal(Pin(a, "map").name, nil)
+	Equal(a.locationPinState.tooltip.shown, false)
+	a.worldUnavailable = true
+	Equal(a:RefreshPlayerLocationPins(), false)
+	Equal(a.locationPinState.surfaces.minimap.frame.shown, false)
+	Equal(Pin(a, "minimap").name, nil)
+end)
+
+Register("location restrictions hide safe owned overlays without layout or menu activity", function()
+	local a = Fixture()
+	a.rows.map = { Row() }
+	a:RefreshPlayerLocationPins()
+	local pin, state = Pin(a, "map"), a.locationPinState
+	pin.frame.scripts.OnEnter({})
+	a.blocked = true
+	Equal(a:RefreshPlayerLocationPins(), false)
+	Equal(state.surfaces.map.frame.shown, false)
+	Equal(state.tooltip.shown, false)
+	pin.frame.scripts.OnEnter({})
+	pin.frame.scripts.OnClick({}, "LeftButton")
+	Equal(#a.menus, 0)
+	Equal(a.mapParent.writes, 0)
+	a.blocked = false
+	assert(a:RefreshPlayerLocationPins())
+end)
+
+Register("location forbidden cleanup survives disable and cannot hide a reused active overlay", function()
+	for _, boundary in ipairs({ "forbidden", "protected" }) do
+		local a = Fixture()
+		a.rows.map = { Row() }
+		a:RefreshPlayerLocationPins()
+		local state, surface = a.locationPinState, a.locationPinState.surfaces.map
+		local writes = surface.frame.writes
+		a.mapParent[boundary], a.isEnabled = true, false
+		a:HidePlayerLocationPins()
+		Equal(surface.frame.writes, writes)
+		Equal(Pin(a, "map").name, nil)
+		assert(state.pending[surface.frame] and state.wake.scripts.OnUpdate)
+		state.wake.scripts.OnUpdate({}, 0.5)
+		Equal(surface.frame.writes, writes)
+		a.mapParent[boundary] = false
+		state.wake.scripts.OnUpdate({}, 0.5)
+		Equal(surface.frame.shown, false)
+		Equal(next(state.pending), nil)
+		Equal(state.wake.scripts.OnUpdate, nil)
+		a.isEnabled = true
+		assert(a:RefreshPlayerLocationPins())
+		a.mapParent[boundary] = true
+		a:HidePlayerLocationPins()
+		local staleWake = state.wake.scripts.OnUpdate
+		a.mapParent[boundary] = false
+		assert(a:RefreshPlayerLocationPins())
+		staleWake({}, 0.5)
+		assert(surface.frame.shown)
+		Equal(state.pending[surface.frame], nil)
+	end
+end)
+
+Register("location overlay reparents only after its quarantined prior parent recovers", function()
+	local a = Fixture()
+	a.rows.map = { Row() }
+	a:RefreshPlayerLocationPins()
+	local state, oldParent = a.locationPinState, a.mapParent
+	local oldFrame, count = state.surfaces.map.frame, #a.frames
+	oldParent.forbidden = true
+	a.geometry.map.parent = Frame(a)
+	Equal(a:RefreshPlayerLocationPins(), false)
+	Equal(oldFrame.parent, oldParent)
+	Equal(#a.frames, count)
+	oldParent.forbidden = false
+	assert(a:RefreshPlayerLocationPins())
+	Equal(state.surfaces.map.frame, oldFrame)
+	Equal(oldFrame.parent, a.geometry.map.parent)
+	Equal(#a.frames, count)
+	Equal(a.geometry.map.parent.writes, 0)
+end)
+
+Register("location hidden expired or ignored peer never keeps a stale tooltip", function()
+	local a = Fixture()
+	a.rows.map = { Row() }
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnEnter({})
+	local state = a.locationPinState
+	state.tooltip.forbidden = true
+	local writes = state.tooltip.writes
+	a.rows.map = {}
+	a:RefreshPlayerLocationPins()
+	Equal(state.tooltip.writes, writes)
+	Equal(state.hovered, nil)
+	assert(state.pending[state.tooltip])
+	state.tooltip.forbidden = false
+	state.wake.scripts.OnUpdate({}, 0.5)
+	Equal(state.tooltip.shown, false)
+	Equal(next(state.pending), nil)
+end)

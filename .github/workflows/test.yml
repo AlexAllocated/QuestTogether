@@ -24,11 +24,17 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y lua${{ matrix.lua }}
       - run: python3 scripts/check_release_notes.py --check --release-history
       - run: python3 scripts/test_release_notes.py
+      - run: python3 scripts/test_generate_release_notes.py
+      - run: python3 scripts/test_discord_changelog.py
       - run: lua${{ matrix.lua }} scripts/test.lua
       - run: lua${{ matrix.lua }} scripts/test.lua . reverse
       - run: |
           for client in retail forever era tbc mists titan; do
             lua${{ matrix.lua }} scripts/test.lua . normal "$client"
+          done
+      - run: |
+          for client in retail forever; do
+            lua${{ matrix.lua }} scripts/location_client_profiles.lua . "$client"
           done
       - run: python3 ../library/scripts/vendor.py . --check
       - run: |

@@ -363,6 +363,15 @@ local function CreateScrollablePanelContent(parent, minimumHeight)
 	return scrollFrame, content
 end
 
+function QuestTogether:ApplyOptionsDropdownSelection(optionKey, value)
+	-- This choice opens/closes native chat windows. A stale Settings dropdown
+	-- must recheck restrictions just like the minimap and chat context menus.
+	if optionKey == "chatLogDestination" and self:IsRuntimeRestricted() then return false end
+	if not self:SetOption(optionKey, value) then return false end
+	self:RefreshOptionsWindow()
+	return true
+end
+
 local function CreateOptionDropdown(parent, titleText, tooltipText, x, y, width, values, getLabel, optionKey, currentValueGetter)
 	return CreateDropdown(
 		parent,
@@ -376,9 +385,9 @@ local function CreateOptionDropdown(parent, titleText, tooltipText, x, y, width,
 					local info = UIDropDownMenu_CreateInfo()
 					info.text = getLabel(value)
 					info.func = function()
-						QuestTogether:SetOption(optionKey, value)
-						QuestTogether:RefreshOptionsWindow()
-						CloseDropDownMenus()
+						if QuestTogether:ApplyOptionsDropdownSelection(optionKey, value) then
+							CloseDropDownMenus()
+						end
 				end
 				info.checked = currentValueGetter() == value
 				UIDropDownMenu_AddButton(info, level)
@@ -425,11 +434,11 @@ local function CreateChatLogDestinationDropdown(parent, x, y)
 	)
 end
 
-local function CreateNameplateIconStyleDropdown(parent, x, y)
+local function CreateNameplateIconStyleDropdown(parent, x, y, playerPlates)
 	return CreateOptionDropdown(
 		parent,
-		"Quest Icon Style",
-		"Choose where to place the quest icon on the nameplate.",
+		playerPlates and "Player Icon Style" or "Quest Icon Style",
+		"Choose where to place the icon on the nameplate.",
 		x,
 		y,
 		140,
@@ -437,9 +446,10 @@ local function CreateNameplateIconStyleDropdown(parent, x, y)
 		function(styleKey)
 			return QuestTogether:GetNameplateQuestIconStyleLabel(styleKey)
 		end,
-		"nameplateQuestIconStyle",
+		playerPlates and "nameplatePlayerIconStyle" or "nameplateQuestIconStyle",
 		function()
-			return QuestTogether:GetNameplateQuestIconStyle()
+			return playerPlates and QuestTogether:GetNameplatePlayerIconStyle()
+				or QuestTogether:GetNameplateQuestIconStyle()
 		end
 	)
 end
@@ -463,6 +473,7 @@ local CHECKBOX_OPTION_KEYS = {
 	"showChatLogs",
 	"mirrorChatLogsToMainChat",
 	"nameplateQuestIconEnabled",
+	"nameplatePlayerIconEnabled",
 	"nameplateQuestHealthColorEnabled",
 	"emoteOnQuestCompletion",
 	"emoteOnNearbyPlayerQuestCompletion",
@@ -470,6 +481,10 @@ local CHECKBOX_OPTION_KEYS = {
 	"emoteOnNearbyPlayerLevelUp",
 	"autoAcceptPartyShareRequests",
 	"showMinimapButton",
+	"shareLocationOnMap",
+	"shareLocationOnMinimap",
+	"showLocationsOnMap",
+	"showLocationsOnMinimap",
 }
 
 local function RefreshCheckboxOptions(controls)
@@ -532,8 +547,10 @@ local function RefreshQuestPlatesPreview(controls)
 		or nameplateStyle == NAMEPLATE_STYLE_HEALTH_FOCUS
 	local nameInsideHealthBar = nameplateStyle == NAMEPLATE_STYLE_MODERN or nameplateStyle == NAMEPLATE_STYLE_BLOCK
 	local barWidth = math.max(120, math.floor((230 * horizontalScale * QUEST_PLATE_PREVIEW_BAR_VISUAL_SCALE) + 0.5))
-	local barHeight =
-		math.max(8, math.floor(((largeHealthBar and 20 or 10) * verticalScale * QUEST_PLATE_PREVIEW_BAR_VISUAL_SCALE) + 0.5))
+	local barHeight = math.max(
+		8,
+		math.floor(((largeHealthBar and 20 or 10) * verticalScale * QUEST_PLATE_PREVIEW_BAR_VISUAL_SCALE) + 0.5)
+	)
 	local nameFontSize = math.max(10, math.floor((12 * verticalScale) + 0.5))
 
 	local healthContainer = previewUnitFrame.HealthBarsContainer
@@ -578,7 +595,11 @@ local function RefreshQuestPlatesPreview(controls)
 			nameLabel:SetPoint("TOP", previewUnitFrame, "TOP", 0, 0)
 		end
 		if nameplateStyle == NAMEPLATE_STYLE_LEGACY and nameLabel.SetTextColor then
-			nameLabel:SetTextColor(1, 0, 0, 1)
+			if controls.playerPlates then
+				nameLabel:SetTextColor(0.22, 0.80, 0.22, 1)
+			else
+				nameLabel:SetTextColor(1, 0, 0, 1)
+			end
 		elseif nameLabel.SetTextColor then
 			nameLabel:SetTextColor(1, 1, 1, 1)
 		end
@@ -603,9 +624,10 @@ local function RefreshQuestPlatesPreview(controls)
 		AnchorPreviewFillTexture(tintHighlight, healthBar)
 	end
 
-	local tintEnabled = QuestTogether:GetOption("nameplateQuestHealthColorEnabled") == true
+	local tintEnabled = not controls.playerPlates
+		and QuestTogether:GetOption("nameplateQuestHealthColorEnabled") == true
 	local enemyBarColor = { r = 0.82, g = 0.14, b = 0.14 }
-	local previewBarColor = enemyBarColor
+	local previewBarColor = controls.playerPlates and { r = 0.22, g = 0.80, b = 0.22 } or enemyBarColor
 	if tintEnabled then
 		previewBarColor = GetColorOption("nameplateQuestHealthColor", QuestTogether.NAMEPLATE_QUEST_HEALTH_COLOR)
 	end
@@ -674,9 +696,15 @@ local function RefreshQuestPlatesPreview(controls)
 		controls.previewIconOwner = previewUnitFrame
 	end
 
-	local showIcon = QuestTogether:GetOption("nameplateQuestIconEnabled") == true
+	local showIcon = QuestTogether:GetOption(
+		controls.playerPlates and "nameplatePlayerIconEnabled" or "nameplateQuestIconEnabled"
+	) == true
 	if showIcon then
-		ApplyAnnouncementGroupIcon(previewIcon, "nameplatePreview")
+		if controls.playerPlates then
+			QuestTogether:SetNameplateIconKind(previewIconFrame, "player")
+		else
+			ApplyAnnouncementGroupIcon(previewIcon, "nameplatePreview")
+		end
 		if QuestTogether.ApplyNameplateQuestIconStyle then
 			QuestTogether:ApplyNameplateQuestIconStyle(previewIconFrame, previewUnitFrame)
 		else
@@ -689,7 +717,9 @@ local function RefreshQuestPlatesPreview(controls)
 	end
 
 	if IsFrameMutable(previewFrame) and previewFrame.Preview then
-		previewFrame.Preview:SetText("Previewing - Quest Mob")
+		previewFrame.Preview:SetText(
+			controls.playerPlates and "Previewing - QuestTogether Player" or "Previewing - Quest Mob"
+		)
 	end
 end
 
@@ -698,7 +728,13 @@ function QuestTogether:RefreshOptionsWindow()
 	self:RefreshAnnouncementsWindow()
 	self:RefreshWhereToAnnounceWindow()
 	self:RefreshQuestPlatesWindow()
+	self:RefreshQuestPlatesWindow(true)
 	self:RefreshMiscWindow()
+	self:RefreshPlayerLocationsWindow()
+end
+
+function QuestTogether:RefreshPlayerLocationsWindow()
+	if self.playerLocationsFrame then RefreshCheckboxOptions(self.playerLocationsControls) end
 end
 
 function QuestTogether:RefreshHomeWindow()
@@ -795,22 +831,25 @@ function QuestTogether:RefreshWhereToAnnounceWindow()
 	end
 end
 
-function QuestTogether:RefreshQuestPlatesWindow()
-	if not self.questPlatesFrame then
+function QuestTogether:RefreshQuestPlatesWindow(playerPlates)
+	if not self[playerPlates and "playerPlatesFrame" or "questPlatesFrame"] then
 		return
 	end
 
-	local controls = self.questPlateControls
+	local controls = self[playerPlates and "playerPlateControls" or "questPlateControls"]
 	RefreshCheckboxOptions(controls)
 
 	if controls.nameplateQuestIconStyleDropdown then
 		RefreshDropdownControl(
 			controls.nameplateQuestIconStyleDropdown,
-			self:GetNameplateQuestIconStyleLabel(self:GetNameplateQuestIconStyle())
+			self:GetNameplateQuestIconStyleLabel(
+				playerPlates and self:GetNameplatePlayerIconStyle() or self:GetNameplateQuestIconStyle()
+			)
 		)
 	end
 
 	if not controls.nameplateQuestHealthColor then
+		RefreshQuestPlatesPreview(controls)
 		return
 	end
 	local color = GetColorOption("nameplateQuestHealthColor", self.NAMEPLATE_QUEST_HEALTH_COLOR)
@@ -1351,82 +1390,93 @@ function QuestTogether:InitializeWhereToAnnounceWindow(parentCategory)
 	self:RefreshWhereToAnnounceWindow()
 end
 
-function QuestTogether:InitializeQuestPlatesWindow(parentCategory)
-	if self.questPlatesFrame then
+function QuestTogether:InitializeQuestPlatesWindow(parentCategory, playerPlates)
+	local frameKey = playerPlates and "playerPlatesFrame" or "questPlatesFrame"
+	local controlsKey = playerPlates and "playerPlateControls" or "questPlateControls"
+	local enabledKey = playerPlates and "nameplatePlayerIconEnabled" or "nameplateQuestIconEnabled"
+	if self[frameKey] then
 		return
 	end
 
-	local frame = CreateFrame("Frame", "QuestTogetherQuestPlatesPanel")
-	frame.name = "Quest Plates"
+	local frame =
+		CreateFrame("Frame", playerPlates and "QuestTogetherPlayerPlatesPanel" or "QuestTogetherQuestPlatesPanel")
+	frame.name = playerPlates and "Player Plates" or "Quest Plates"
 	frame.parent = "QuestTogether"
 
 	local _, content = CreateScrollablePanelContent(frame, 560)
 
 	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -16)
-	title:SetText("Quest Plates")
+	title:SetText(frame.name)
 
 	local description = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
 	description:SetWidth(640)
 	description:SetJustifyH("LEFT")
-	description:SetText("Customize quest objective visuals on Blizzard nameplates.")
+	description:SetText(
+		playerPlates
+				and "Identify friendly QuestTogether players with the scroll logo. Enable friendly nameplates in WoW to see them. Ignored players are hidden; location sharing is not required."
+			or "Customize quest objective visuals on Blizzard nameplates."
+	)
 
 	local nameplateQuestIconEnabled = CreateCheckbox(
 		content,
-		"nameplateQuestIconEnabled",
-		"Quest Objective Icon",
-		"Show a quest icon on default Blizzard nameplates when a unit is a quest objective.",
+		enabledKey,
+		playerPlates and "QuestTogether Player Icon" or "Quest Objective Icon",
+		playerPlates and "Show the QuestTogether logo beside friendly players who are using QuestTogether."
+			or "Show a quest icon on default Blizzard nameplates when a unit is a quest objective.",
 		16,
 		-82
 	)
-	local nameplateQuestIconStyleDropdown = CreateNameplateIconStyleDropdown(content, 36, -108)
-	local nameplateQuestHealthColorEnabled = CreateCheckbox(
-		content,
-		"nameplateQuestHealthColorEnabled",
-		"Quest Objective Health Color",
-		"Tint quest-objective nameplate health bars with your selected quest color.",
-		16,
-		-150
-	)
-	local nameplateQuestHealthColor = CreateColorSwatch(
-		content,
-		"nameplateQuestHealthColor",
-		"Quest Health Color",
-		"Choose the color used to tint quest-objective nameplate health bars.",
-		QuestTogether.NAMEPLATE_QUEST_HEALTH_COLOR,
-		36,
-		-177
-	)
-	local resetNameplateQuestHealthColor = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
-	resetNameplateQuestHealthColor:SetSize(70, 20)
-	resetNameplateQuestHealthColor:SetPoint("LEFT", nameplateQuestHealthColor, "RIGHT", 140, 0)
-	resetNameplateQuestHealthColor:SetText("Reset")
-	resetNameplateQuestHealthColor:SetScript("OnClick", function()
-		local defaults = QuestTogether.DEFAULTS.profile.nameplateQuestHealthColor
-			or QuestTogether.NAMEPLATE_QUEST_HEALTH_COLOR
-		QuestTogether:SetOption("nameplateQuestHealthColor", {
-			r = defaults.r,
-			g = defaults.g,
-			b = defaults.b,
-		})
-		QuestTogether:RefreshOptionsWindow()
-	end)
-
+	local nameplateQuestIconStyleDropdown = CreateNameplateIconStyleDropdown(content, 36, -108, playerPlates)
+	local nameplateQuestHealthColorEnabled, nameplateQuestHealthColor, resetNameplateQuestHealthColor
+	if not playerPlates then
+		nameplateQuestHealthColorEnabled = CreateCheckbox(
+			content,
+			"nameplateQuestHealthColorEnabled",
+			"Quest Objective Health Color",
+			"Tint quest-objective nameplate health bars with your selected quest color.",
+			16,
+			-150
+		)
+		nameplateQuestHealthColor = CreateColorSwatch(
+			content,
+			"nameplateQuestHealthColor",
+			"Quest Health Color",
+			"Choose the color used to tint quest-objective nameplate health bars.",
+			QuestTogether.NAMEPLATE_QUEST_HEALTH_COLOR,
+			36,
+			-177
+		)
+		resetNameplateQuestHealthColor = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+		resetNameplateQuestHealthColor:SetSize(70, 20)
+		resetNameplateQuestHealthColor:SetPoint("LEFT", nameplateQuestHealthColor, "RIGHT", 140, 0)
+		resetNameplateQuestHealthColor:SetText("Reset")
+		resetNameplateQuestHealthColor:SetScript("OnClick", function()
+			local defaults = QuestTogether.DEFAULTS.profile.nameplateQuestHealthColor
+				or QuestTogether.NAMEPLATE_QUEST_HEALTH_COLOR
+			QuestTogether:SetOption("nameplateQuestHealthColor", {
+				r = defaults.r,
+				g = defaults.g,
+				b = defaults.b,
+			})
+			QuestTogether:RefreshOptionsWindow()
+		end)
+	end
 	local previewHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	previewHeader:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -238)
+	previewHeader:SetPoint("TOPLEFT", content, "TOPLEFT", 16, playerPlates and -164 or -238)
 	previewHeader:SetText("Preview")
 
 	local previewHint = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	previewHint:SetPoint("TOPLEFT", previewHeader, "BOTTOMLEFT", 0, -4)
 	previewHint:SetWidth(640)
 	previewHint:SetJustifyH("LEFT")
-	previewHint:SetText("This isolated preview uses your current nameplate style CVars and quest visual settings.")
+	previewHint:SetText("Preview your icon with the current WoW nameplate style.")
 
 	-- Use an isolated local frame instead of Blizzard's script nameplate preview template.
 	-- This avoids registering a real preview nameplate/unit token and reduces taint risk.
 	local previewFrame = CreateFrame("Frame", nil, content)
-	previewFrame:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -280)
+	previewFrame:SetPoint("TOPLEFT", content, "TOPLEFT", 16, playerPlates and -206 or -280)
 	previewFrame:SetSize(620, QUEST_PLATE_PREVIEW_FRAME_HEIGHT)
 
 	local previewBackground = previewFrame:CreateTexture(nil, "BACKGROUND")
@@ -1435,7 +1485,7 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory)
 
 	local previewCaption = previewFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	previewCaption:SetPoint("TOPLEFT", previewFrame, "TOPLEFT", 16, -14)
-	previewCaption:SetText("Previewing - Quest Mob")
+	previewCaption:SetText(playerPlates and "Previewing - QuestTogether Player" or "Previewing - Quest Mob")
 	previewFrame.Preview = previewCaption
 
 	local fallbackUnitFrame = CreateFrame("Frame", nil, previewFrame)
@@ -1488,7 +1538,10 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory)
 	if not fallbackTintOverlay then
 		fallbackTintOverlay = fallbackHealthBar:CreateTexture(nil, "ARTWORK", nil, 1)
 		if fallbackTintOverlay.SetAtlas then
-			fallbackTintOverlay:SetAtlas(QuestTogether.NAMEPLATE_HEALTH_FILL_ATLAS or "UI-HUD-CoolDownManager-Bar", true)
+			fallbackTintOverlay:SetAtlas(
+				QuestTogether.NAMEPLATE_HEALTH_FILL_ATLAS or "UI-HUD-CoolDownManager-Bar",
+				true
+			)
 		else
 			fallbackTintOverlay:SetTexture("Interface\\Buttons\\WHITE8X8")
 		end
@@ -1535,7 +1588,7 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory)
 	fallbackName:SetPoint("LEFT", fallbackHealthBarsContainer, "LEFT", 6, 0)
 	fallbackName:SetJustifyH("LEFT")
 	fallbackName:SetWidth(160)
-	fallbackName:SetText(GetRandomQuestPlatePreviewName())
+	fallbackName:SetText(playerPlates and "QuestTogether Player" or GetRandomQuestPlatePreviewName())
 	fallbackUnitFrame.name = fallbackName
 
 	local fallbackHealthValue = fallbackTextOverlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -1544,8 +1597,9 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory)
 	fallbackHealthValue:SetJustifyH("RIGHT")
 	fallbackUnitFrame.questPreviewHealthText = fallbackHealthValue
 
-	self.questPlateControls = {
-		nameplateQuestIconEnabled = nameplateQuestIconEnabled,
+	self[controlsKey] = {
+		playerPlates = playerPlates == true,
+		[enabledKey] = nameplateQuestIconEnabled,
 		nameplateQuestIconStyleDropdown = nameplateQuestIconStyleDropdown,
 		nameplateQuestHealthColorEnabled = nameplateQuestHealthColorEnabled,
 		nameplateQuestHealthColor = nameplateQuestHealthColor,
@@ -1555,18 +1609,21 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory)
 		previewNameLabel = fallbackName,
 		previewUnitFrame = fallbackUnitFrame,
 	}
-	self.questPlatesFrame = frame
+	self[frameKey] = frame
 
 	frame:SetScript("OnShow", function()
-		local controls = QuestTogether.questPlateControls
+		local controls = QuestTogether[controlsKey]
 		if controls and controls.previewNameLabel then
-			controls.previewNameLabel:SetText(GetRandomQuestPlatePreviewName())
+			controls.previewNameLabel:SetText(
+				playerPlates and "QuestTogether Player" or GetRandomQuestPlatePreviewName()
+			)
 		end
-		QuestTogether:RefreshQuestPlatesWindow()
+		QuestTogether:RefreshQuestPlatesWindow(playerPlates)
 	end)
 
-	self.questPlatesCategory = RegisterSubcategory(parentCategory, frame, frame.name)
-	self:RefreshQuestPlatesWindow()
+	self[playerPlates and "playerPlatesCategory" or "questPlatesCategory"] =
+		RegisterSubcategory(parentCategory, frame, frame.name)
+	self:RefreshQuestPlatesWindow(playerPlates)
 end
 
 function QuestTogether:InitializeMiscWindow(parentCategory)
@@ -1680,6 +1737,39 @@ function QuestTogether:OpenOptionsWindow()
 	return true
 end
 
+function QuestTogether:InitializePlayerLocationsWindow(parentCategory)
+	if self.playerLocationsFrame then return end
+	local frame = CreateFrame("Frame", "QuestTogetherPlayerLocationsPanel")
+	frame.name, frame.parent = "Player Locations", "QuestTogether"
+	local _, content = CreateScrollablePanelContent(frame, 370)
+	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	title:SetPoint("TOPLEFT", 16, -16)
+	title:SetText("Player Locations")
+	local description = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	description:SetPoint("TOPLEFT", 16, -48)
+	description:SetWidth(640)
+	description:SetJustifyH("LEFT")
+	description:SetText("Find other QuestTogether players with class-colored dots. Hover for player details, or click for the player menu. Ignored players are hidden.")
+	self.playerLocationsControls = {}
+	for _, section in ipairs({
+		{ title = "Share my location", y = -100, keys = { "shareLocationOnMap", "shareLocationOnMinimap" },
+			tooltips = { "Let other QuestTogether players see my dot on the world map.", "Let other QuestTogether players see my dot on the minimap." } },
+		{ title = "Show other players", y = -216, keys = { "showLocationsOnMap", "showLocationsOnMinimap" },
+			tooltips = { "Show players who share their location on the world map.", "Show nearby players who share their location on the minimap." } },
+	}) do
+		local heading = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+		heading:SetPoint("TOPLEFT", 16, section.y)
+		heading:SetText(section.title)
+		for i, key in ipairs(section.keys) do
+			self.playerLocationsControls[key] = CreateCheckbox(content, key, i == 1 and "World map" or "Minimap", section.tooltips[i], 16, section.y - 28 * i)
+		end
+	end
+	self.playerLocationsFrame = frame
+	frame:SetScript("OnShow", function() QuestTogether:RefreshPlayerLocationsWindow() end)
+	self.playerLocationsCategory = RegisterSubcategory(parentCategory, frame, frame.name)
+	self:RefreshPlayerLocationsWindow()
+end
+
 function QuestTogether:InitializeOptionsWindow()
 	if self.optionsFrame then
 		return
@@ -1687,7 +1777,7 @@ function QuestTogether:InitializeOptionsWindow()
 	local frame = CreateFrame("Frame", "QuestTogetherHomePanel")
 	frame.name = "QuestTogether"
 
-	local _, content = CreateScrollablePanelContent(frame, 450)
+	local _, content = CreateScrollablePanelContent(frame, 480)
 
 	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -16)
@@ -1703,7 +1793,7 @@ function QuestTogether:InitializeOptionsWindow()
 
 	local statusPanel = CreateFrame("Frame", nil, content)
 	statusPanel:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -18)
-	statusPanel:SetSize(360, 246)
+	statusPanel:SetSize(360, 272)
 
 	local statusPanelBackground = statusPanel:CreateTexture(nil, "BACKGROUND")
 	statusPanelBackground:SetAllPoints()
@@ -1728,7 +1818,7 @@ function QuestTogether:InitializeOptionsWindow()
 
 	local actionsPanel = CreateFrame("Frame", nil, content)
 	actionsPanel:SetPoint("TOPLEFT", statusPanel, "TOPRIGHT", 16, 0)
-	actionsPanel:SetSize(260, 246)
+	actionsPanel:SetSize(260, 272)
 
 	local actionsPanelBackground = actionsPanel:CreateTexture(nil, "BACKGROUND")
 	actionsPanelBackground:SetAllPoints()
@@ -1777,6 +1867,9 @@ function QuestTogether:InitializeOptionsWindow()
 	local patchNotes = CreateHomeActionButton(actionsPanel, "Patch Notes", 12, -216, function()
 		QuestTogether:OpenReleaseNotes()
 	end)
+	local discord = CreateHomeActionButton(actionsPanel, "Discord — Feedback & Support", 12, -242, function()
+		QuestTogether:OpenDiscordSupport()
+	end)
 
 	local tipsHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	tipsHeader:SetPoint("TOPLEFT", statusPanel, "BOTTOMLEFT", 0, -18)
@@ -1805,6 +1898,7 @@ function QuestTogether:InitializeOptionsWindow()
 		rescanQuestLog = rescanQuestLog,
 		printHelp = printHelp,
 		patchNotes = patchNotes,
+		discord = discord,
 	}
 
 	frame:SetScript("OnShow", function()
@@ -1827,6 +1921,8 @@ function QuestTogether:InitializeOptionsWindow()
 	self:InitializeAnnouncementsWindow(category)
 	self:InitializeWhereToAnnounceWindow(category)
 	self:InitializeQuestPlatesWindow(category)
+	self:InitializeQuestPlatesWindow(category, true)
+	self:InitializePlayerLocationsWindow(category)
 	self:InitializeMiscWindow(category)
 	self:InitializeProfilesWindow(category)
 

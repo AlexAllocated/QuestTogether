@@ -239,6 +239,8 @@ local function WithIsolatedState(testFn)
 			"partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
 			"minimapButton", "minimapTooltip", "minimapLauncherFrame", "minimapDragState", "minimapSuppressClick",
 			"releaseNotesWindow", "releaseNotesWakeFrame", "pendingReleaseNotes",
+			"discordSupportWindowOwner", "qtPlayerPresenceState", "playerPlatesFrame", "qtPlayerIconStateByFrame",
+			"playerLocationState", "playerLocationUpdateFrame", "locationPinState", "playerLocationsFrame",
 			"worldQuestAreaStateByQuestID", "bonusObjectiveAreaStateByQuestID", "questSnapshotByQuestID", "questSnapshotOrder",
 			"nameplateQuestTextCache", "nameplateQuestStateByGuid", "nameplateQuestStateByUnitToken", "nameplateQuestGuidByUnitToken",
 			"nameplateIconByUnitFrame", "nameplateHealthOverlayByUnitFrame", "nameplateBubbleByUnitFrame", "nameplateBubbleStateByFrame",
@@ -271,6 +273,7 @@ local function WithIsolatedState(testFn)
 		QuestTogether.eventFrame = CreateTestEventFrame()
 		QuestTogether.nameplateEventFrame = CreateTestEventFrame()
 		QuestTogether.CreateMapWorkWakeFrame = CreateTestEventFrame
+		QuestTogether.CreatePlayerLocationUpdateFrame = CreateTestEventFrame
 		QuestTogether.IsRuntimeRestrictionTypeActive = function() return false end
 		QuestTogether.IsNameplateUnitTapDenied = function() return false end
 		QuestTogether.GetQuestieQuestObjectiveTooltipLines = function() return nil end
@@ -4011,9 +4014,7 @@ QuestTogether:RegisterTest("tooltip objective evaluation stops when tooltip line
 end)
 
 QuestTogether:RegisterTest("tooltip quest scan guid does not fall back to stale token cache state", function()
-	QuestTogether.nameplateTooltipGuidByUnitToken = {
-		nameplate1 = "Creature-0-0-0-0-11111-0000000000",
-	}
+	QuestTogether.nameplateQuestGuidByUnitToken.nameplate1 = "Creature-0-0-0-0-11111-0000000000"
 
 	WithPatchedMethod(QuestTogether, "GetNameplateUnitGuid", function()
 		return nil
@@ -5064,14 +5065,14 @@ QuestTogether:RegisterTest("chat log speaker menu includes player actions", func
 	AssertEquals(buttons[2].text, "Whisper")
 	AssertEquals(buttons[3].text, "Add Friend")
 	AssertEquals(buttons[4].text, "Ignore")
-	AssertEquals(buttons[5].text, "Compare Party Quests")
+	AssertEquals(buttons[5].text, "Compare Quests")
 	AssertEquals(buttons[6].text, "Move QuestTogether Logs to Separate Window")
 	AssertEquals(dividers, 1)
 end)
 
 QuestTogether:RegisterTest("chat log speaker menu compare quests action uses full speaker name", function()
 	local comparedName = nil
-	WithPatchedMethod(QuestTogether, "OpenPartyQuestCompare", function(_, speakerName)
+	WithPatchedMethod(QuestTogether, "OpenPlayerQuestCompare", function(_, speakerName)
 		comparedName = speakerName
 		return true
 	end, function()
@@ -5093,14 +5094,22 @@ end)
 QuestTogether:RegisterTest("chat log speaker menu whisper action uses owner frame", function()
 	local whisperedName = nil
 	local whisperedFrame = nil
+	local chatFrame = { editBox = {}, IsShown = function() return true end }
 	WithPatchedMethod(QuestTogether.API, "SendTell", function(name, chatFrame)
 		whisperedName = name
 		whisperedFrame = chatFrame
+		return true
 	end, function()
-		AssertTrue(QuestTogether:WhisperChatLogSpeaker("MyPlayer-Realm", "ChatFrame9"))
+		AssertTrue(QuestTogether:WhisperChatLogSpeaker("MyPlayer-Realm", chatFrame))
 	end)
 	AssertEquals(whisperedName, "MyPlayer-Realm")
-	AssertEquals(whisperedFrame, "ChatFrame9")
+	AssertEquals(whisperedFrame, chatFrame)
+end)
+
+QuestTogether:RegisterTest("chat log speaker whisper reports native failure", function()
+	WithPatchedMethod(QuestTogether.API, "SendTell", function() return false end, function()
+		AssertEquals(QuestTogether:WhisperChatLogSpeaker("MyPlayer-Realm", {}), false)
+	end)
 end)
 
 QuestTogether:RegisterTest("chat log speaker menu add friend action uses full speaker name", function()

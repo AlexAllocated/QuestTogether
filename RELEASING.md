@@ -1,7 +1,8 @@
 # Releasing QuestTogether
 
-`release_notes.json` is the canonical source for the in-game welcome and latest
-patch notes. `ReleaseNotes.lua` is generated data; do not edit it by hand. Keep
+`release_notes.json` is the canonical source for the in-game welcome, latest
+patch notes, and Discord release announcements. `ReleaseNotes.lua` is generated
+data; do not edit it by hand. Keep
 notes concise and useful to players. Every release, including patch and
 prerelease versions, needs updated content even when it does not open the notes
 window automatically. Automatic opening is a runtime policy for major/minor
@@ -9,15 +10,46 @@ upgrades, not an exemption from writing patch notes.
 
 ## Prepare the notes
 
-1. Update `CHANGELOG.md` and the welcome/sections in `release_notes.json` for the
-   changes being released. Keep its version equal to `QuestTogether.toc` while
-   developing; the release script updates both versions together.
+Use **Actions → Prepare Release Notes → Run workflow** on `main`. It compares
+the current code with the published tag matching the TOC version, generates
+player-facing notes with the same OpenAI workflow used by Bumblebee, and opens
+a review PR containing `release_notes.json` and the matching `ReleaseNotes.lua`.
+It also uploads both files and Markdown notes as an artifact. Review and merge
+that PR before the version bump. It does not tag, release, or announce anything.
+If repository policy blocks Actions from opening PRs, the generated artifact
+remains available; use its files through the normal review process.
+
+For local preparation, with `OPENAI_API_KEY` already in the environment:
+
+```sh
+python3 scripts/generate_release_notes.py --write
+```
+
+The default requires committed changes and a clean working tree. To deliberately
+include local addon edits, use `--include-working-tree`. Omit `--write` to preview
+generated notes without changing the addon. `--markdown-out <path>` writes the
+same text for a GitHub release body. Generation uses `gpt-5.5` by default, matching
+Bumblebee; `CHANGELOG_OPENAI_MODEL` or `--model` overrides it. Only release
+evidence from approved addon/documentation paths is sent; credentials are never
+written into generated content or the addon. An API failure, refusal, invalid
+content or repeated previous notes fails instead of replacing files with a
+placeholder. This uses the documented [Responses structured-output format](https://developers.openai.com/api/docs/guides/structured-outputs).
+
+Authored notes remain supported:
+
+1. Update `CHANGELOG.md` and review or edit the welcome/sections in
+   `release_notes.json` for the changes being released. Keep its version equal to
+   `QuestTogether.toc` while developing; the release script updates both versions
+   together. AI generation drafts the prose; reviewing its accuracy is still
+   part of releasing.
 2. Generate and check the Lua data:
 
    ```sh
    python3 scripts/check_release_notes.py --write
    python3 scripts/check_release_notes.py --check --release-history
    python3 scripts/test_release_notes.py
+   python3 scripts/test_generate_release_notes.py
+   python3 scripts/test_discord_changelog.py
    ```
 
 3. Review the generated content and complete the usual Lua, client-profile,
@@ -84,3 +116,51 @@ baseline history fails instead of silently skipping the comparison.
 The first release with in-game notes is 5.10.0, using the legacy 5.9.2 release
 as its adoption baseline. Subsequent releases must change the authored content
 as well as the version.
+
+## Discord announcements
+
+**Discord Changelog** runs when a GitHub release is published. It checks out the
+exact tag and uses that tag's canonical notes, verifies the generated Lua and
+release history, and waits for the versioned release ZIP and successful Tests
+workflow for the same commit. It checks the ZIP's embedded notes before posting
+them to QuestTogether's `#changelog` as the existing **Bumblebee** bot. It does
+not regenerate or summarize notes at announcement time. The welcome window and
+Discord therefore share the same welcome and bullet points, including patch and
+prerelease notes; automatic window opening still follows the major/minor policy.
+
+The bot must belong to the QuestTogether server and have View Channels, Send
+Messages, Embed Links and Read Message History in `#changelog`. The script
+verifies its identity, guild, channel and effective permissions before posting.
+GitHub Actions configuration:
+
+- `DISCORD_BOT_TOKEN` secret: the existing Bumblebee bot credential.
+- `OPENAI_API_KEY` secret: used only by release-note preparation, not posting.
+- `DISCORD_CHANGELOG_CHANNEL_ID` variable: `1553981217039187978`.
+
+Expected guild is `1553951084941156502`; expected bot is `890285739940671548`.
+Secrets are stored in GitHub Actions, not in the addon or workflow YAML. These
+were provisioned from Bumblebee's existing configuration; rotating that shared
+bot credential also requires updating QuestTogether's Actions secret.
+
+Preview the current notes locally without network access:
+
+```sh
+python3 scripts/discord_changelog.py --dry-run
+```
+
+For a read-only connection check with the bot token and channel variable in the
+environment, run `python3 scripts/discord_changelog.py --check-access`. To retry
+an actual published announcement, manually run **Discord Changelog**, select its
+tag, and disable the default dry-run option. Long notes are split at bullet
+boundaries without dropping text. Bot-authored part markers skip already posted
+parts, including after a partial failure, and a stable nonce protects short
+transport retries. Mentions are disabled. Conflicting notes, a wrong destination,
+missing permissions or an exhausted history scan fail instead of blindly posting.
+The implementation follows [Discord's message limits and nonce contract](https://docs.discord.com/developers/resources/message).
+
+Publishing a release with a workflow's default `GITHUB_TOKEN` does not trigger
+another release-event workflow ([GitHub's event rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)). If packaging is later moved into Actions, invoke
+the changelog workflow explicitly from that pipeline or use the normal authorized
+release publisher. The current maintainer-driven release publication emits the
+release event. Do not send announcements for uncommitted work or a tag whose
+download/validation is not ready.
