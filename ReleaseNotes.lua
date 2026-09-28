@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "5.10.0",
+	version = "5.11.0",
 	welcome = "QuestTogether now adds player locations, player plate logos, focused quest comparisons, and easier Discord feedback and support. Settings let you choose what you share and what you see while quest progress stays coordinated with other QuestTogether users.",
 	sections = {
 		{
