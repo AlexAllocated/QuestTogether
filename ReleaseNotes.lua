@@ -4,38 +4,44 @@ local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
 	version = "5.11.0",
-	welcome = "QuestTogether now adds player locations, player plate logos, focused quest comparisons, and easier Discord feedback and support. Settings let you choose what you share and what you see while quest progress stays coordinated with other QuestTogether users.",
+	welcome = "Find people to quest with using the new Looking for Questing Partners status. This update also improves minimap tooltip visibility and separates Retail War Mode and realm behavior from Forever.",
 	sections = {
 		{
-			title = "Find QuestTogether players nearby",
+			title = "Looking for Questing Partners",
 			items = {
-				"Show the scroll logo beside friendly QuestTogether players when WoW's friendly nameplates are on. Player Plates are enabled by default, with a padded Left position; choose Left, Right, Top, or Prefix without changing health-bar colors.",
-				"Class-colored player dots can appear on the world map and minimap for players sharing their location. Hover a dot for name, faction, race, class, and level; click it for the QuestTogether player menu.",
-				"Player Locations has separate sharing and viewing switches for the world map and minimap, and all four start enabled. Presence for player plate logos can continue even when both location sharing switches are off.",
-				"Locations refresh periodically and disappear when they expire. Both players need the updated addon; a dot does not guarantee that you share the same phase or layer.",
+				"Let other QuestTogether users know you want company. Your status appears in your player menu and on map-dot tooltips; it does not enable location sharing or send invitations.",
+				"Toggle the status from the minimap menu, Settings > Miscellaneous, or /qt lfg. Use /qt lfg on, off, or status to set or check it. It starts off and is saved per profile.",
+				"Partner status expires when updates stop. Ignored players are excluded, and disabling QuestTogether pauses your advertisement.",
 			},
 		},
 		{
-			title = "Compare one player or the whole party",
+			title = "Retail and Forever",
 			items = {
-				"The player menu Compare Quests action now compares only you and the selected player, including reachable nonparty QuestTogether peers. Whole-party comparison stays available from the minimap menu, quest-name menus, and /qt compare.",
-				"Quest sharing and share requests remain party-only. Targeted comparisons explain when a party is needed for sharing and when the selected player needs QuestTogether to respond.",
-				"If a share request is already waiting on another player, the comparison now shows who it is waiting for after you switch targets.",
+				"Forever no longer shows War Mode in player-dot tooltips, quest location details, or ping output. Forever pings also omit realm labels while preserving complete player names.",
+				"Nearby quest updates on Forever no longer require Retail War Mode information. Map dots remain visible across phases so you can find people to group with.",
+				"Retail uses the active War Mode state when available. Unknown or unsupported War Mode is no longer reported as Off.",
 			},
 		},
 		{
-			title = "Feedback and support",
+			title = "More stable player dots",
 			items = {
-				"The welcome window and main settings page now include Discord — Feedback & Support. It opens a copyable invite when available, or prints the invite in chat if the link window cannot open.",
+				"Briefly missing coordinates no longer remove your dot immediately. Last reported positions remain for up to two minutes, and older reports show their age in the tooltip. Sharing opt-outs still withdraw immediately when communication is available.",
+				"Movement broadcasts are limited to once every ten seconds, reducing location traffic. Stationary heartbeats remain every twenty seconds so older clients stay compatible.",
+				"The location cache now retains up to 512 players. Each map still draws at most 128 visible dots, and players outside the displayed map no longer use up that drawing limit.",
 			},
 		},
 		{
-			title = "Fixes and polish",
+			title = "Reliable player logos",
 			items = {
-				"Ignored players are now filtered more completely. New logs, bubbles, dots, comparisons, and share work are suppressed, while existing bubbles and locations are cleared when the ignore list changes.",
-				"Fixed false quest plates caused by unavailable tooltip boundaries matching another quest's objective text.",
-				"Turning off map or minimap sharing now retries the update after temporary communication failures. Turning off both sharing options also removes location details from other addon updates.",
-				"Player logos clear correctly when a player's presence expires just before they leave. Whisper from map dots opens your chat window, and changing the log destination from Settings is unavailable during restrictions.",
+				"Fix missing logos on friendly player nameplates in current Forever and Retail clients by reading the current friendly-player visibility setting.",
+				"Left-positioned logos move outward to make room for visible buffs, then return to their usual position when the buffs disappear.",
+				"All supported QuestTogether messages now identify their sender. A bounded cache remembers players for the current UI session, so missed heartbeats no longer remove their logos. Explicit departures and ignored players are still cleared; no extra messages are sent.",
+			},
+		},
+		{
+			title = "Minimap polish",
+			items = {
+				"The QuestTogether minimap tooltip now uses an independent tooltip layer so it can appear over action bar UI. It hides when the button becomes unavailable or restrictions begin.",
 			},
 		},
 	},

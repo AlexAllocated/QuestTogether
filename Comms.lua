@@ -1040,14 +1040,15 @@ end
 
 function QuestTogether:GetPlayerPingMetadata()
 	local fullName = self:GetPlayerFullName() or self:GetPlayerName() or "Unknown"
-	local unitRealm
-	if self.API.UnitFullName and not self:UsesRegionalPlayerNames() then
-		local _
-		_, unitRealm = self.API.UnitFullName("player")
-	end
-	local realmName = SafeTrimAddonString(self, unitRealm, "")
-	if realmName == "" then
-		realmName = self.API.GetRealmName and self.API.GetRealmName() or ""
+	local realmName = ""
+	if not self:UsesRegionalPlayerNames() then
+		local unitRealm
+		if self.API.UnitFullName then
+			local _
+			_, unitRealm = self.API.UnitFullName("player")
+		end
+		realmName = SafeTrimAddonString(self, unitRealm, "")
+		if realmName == "" and self.API.GetRealmName then realmName = self.API.GetRealmName() end
 	end
 	local className, classFile
 	if self.API.UnitClass then
@@ -1062,6 +1063,10 @@ function QuestTogether:GetPlayerPingMetadata()
 		and self.GetPlayerAnnouncementLocationInfo and self:GetPlayerAnnouncementLocationInfo() or {}
 	local numericCoordX = locationInfo and self.SafeToNumber and self:SafeToNumber(locationInfo.coordX) or nil
 	local numericCoordY = locationInfo and self.SafeToNumber and self:SafeToNumber(locationInfo.coordY) or nil
+	local warMode
+	if locationInfo and self:SupportsWarMode() == true then
+		warMode = self:NormalizeAnnouncementWarModeValue(locationInfo.warMode)
+	end
 
 	return {
 		senderName = SafeAddonString(self, fullName or "", ""),
@@ -1074,7 +1079,7 @@ function QuestTogether:GetPlayerPingMetadata()
 		zoneName = locationInfo and SafeAddonString(self, locationInfo.zoneName or "", "") or "",
 		coordX = numericCoordX and string.format("%.1f", numericCoordX) or "",
 		coordY = numericCoordY and string.format("%.1f", numericCoordY) or "",
-		warMode = locationInfo and SafeAddonString(self, locationInfo.warMode and "1" or "0", "") or "",
+		warMode = warMode == nil and "" or (warMode and "1" or "0"),
 		mapID = locationInfo and SafeAddonString(self, locationInfo.mapID or "", "") or "",
 	}
 end
@@ -1112,6 +1117,10 @@ function QuestTogether:BuildLocalAnnouncementEvent(eventType, text, questId, ext
 		and self.GetPlayerAnnouncementLocationInfo and self:GetPlayerAnnouncementLocationInfo() or nil
 	local numericCoordX = locationInfo and self.SafeToNumber and self:SafeToNumber(locationInfo.coordX) or nil
 	local numericCoordY = locationInfo and self.SafeToNumber and self:SafeToNumber(locationInfo.coordY) or nil
+	local warMode
+	if locationInfo and self:SupportsWarMode() == true then
+		warMode = self:NormalizeAnnouncementWarModeValue(locationInfo.warMode)
+	end
 	if sanitizedText == "" then
 		return nil
 	end
@@ -1129,7 +1138,7 @@ function QuestTogether:BuildLocalAnnouncementEvent(eventType, text, questId, ext
 		zoneName = locationInfo and SafeAddonString(self, locationInfo.zoneName or "", "") or "",
 		coordX = numericCoordX and string.format("%.1f", numericCoordX) or "",
 		coordY = numericCoordY and string.format("%.1f", numericCoordY) or "",
-		warMode = locationInfo and SafeAddonString(self, locationInfo.warMode and "1" or "0", "") or "",
+		warMode = warMode == nil and "" or (warMode and "1" or "0"),
 		emoteToken = sanitizedExtraData.emoteToken or "",
 		mapID = locationInfo and locationInfo.mapID or nil,
 	})
@@ -2088,7 +2097,9 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 	local duplicateWindow = (command == PING_REQUEST_COMMAND or command == QUEST_COMPARE_REQUEST_COMMAND)
 			and COMM_REQUEST_DUPLICATE_WINDOW_SECONDS
 		or COMM_DUPLICATE_WINDOW_SECONDS
-	if self:ShouldSuppressDuplicateCommMessage(safeTransportSender, safeMessage, duplicateWindow) then
+	-- Legacy presence packets have no sequence. Every transition must apply,
+	-- including rapid departures/rejoins with otherwise identical content.
+	if command ~= "QTPR" and self:ShouldSuppressDuplicateCommMessage(safeTransportSender, safeMessage, duplicateWindow) then
 		self:RecordCommsDiagnostic("duplicateMessages", "sender=" .. transportSenderName .. " command=" .. command)
 		return
 	end
@@ -2116,6 +2127,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 			return
 		end
 		requestData.requesterName = transportSenderName or requestData.requesterName
+		self:RecordQTPlayerPresence(transportSenderName, true)
 		self:HandlePingRequest(requestData)
 		return
 	end
@@ -2132,6 +2144,10 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		return
 	end
 
+	if command == "QTLF" and self.HandleQuestPartnerStatusMessage then
+		self:HandleQuestPartnerStatusMessage(payload, transportSenderName)
+		return
+	end
 	if command == "QSHR" and self.HandlePartyQuestShareMessage then
 		self:HandlePartyQuestShareMessage(payload, transportSenderName, channel)
 		return
@@ -2153,6 +2169,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		end
 		requestData.requesterName = transportSenderName or requestData.requesterName
 		requestData.replyDistribution = SafePrimitiveString(self, channel, "")
+		self:RecordQTPlayerPresence(transportSenderName, true)
 		self:HandleQuestCompareRequest(requestData)
 		return
 	end
@@ -2164,6 +2181,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 			return
 		end
 		entryData.senderName = transportSenderName
+		self:RecordQTPlayerPresence(transportSenderName, true)
 		self:HandleQuestCompareEntry(entryData)
 		return
 	end
@@ -2175,6 +2193,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 			return
 		end
 		doneData.senderName = transportSenderName
+		self:RecordQTPlayerPresence(transportSenderName, true)
 		self:HandleQuestCompareDone(doneData)
 		return
 	end

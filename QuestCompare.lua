@@ -527,7 +527,6 @@ function QuestTogether:HandlePartyQuestShareMessage(payload, sender, route)
 	if
 		not self.isEnabled
 		or not GROUP_ROUTES[route]
-		or not self:IsGroupedSender(sender)
 		or sender == PlayerName(self)
 		or self:IsIgnoredPlayerName(sender)
 	then
@@ -545,7 +544,13 @@ function QuestTogether:HandlePartyQuestShareMessage(payload, sender, route)
 	if not questId or questId <= 0 or questId > 2147483647 or questId ~= math.floor(questId) then
 		return false
 	end
-	if target ~= PlayerName(self) or not questId or #requestId > 100 or not SHARE_STATUS[status] then
+	if not target or requestId == "" or #requestId > 100 or not SHARE_STATUS[status] then
+		return false
+	end
+	-- Group messages addressed to somebody else still identify their actual
+	-- sender as a QT user. Recognition grants no share or response authority.
+	self:RecordQTPlayerPresence(sender, true)
+	if target ~= PlayerName(self) or not self:IsGroupedSender(sender) then
 		return false
 	end
 	local state, now = self:GetPartyQuestShareState(), self.API.GetTime()

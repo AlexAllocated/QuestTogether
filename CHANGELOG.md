@@ -1,5 +1,21 @@
 # QuestTogether changelog
 
+## 5.12.0 — 2026-09-28
+
+- Move left-positioned player logos outside visible nameplate buffs, with padding for the buff artwork and scale. Restore normal spacing when buffs disappear. Refresh through guarded, coalesced aura events without reading aura contents or modifying Blizzard frames.
+- Fix friendly player logos checking an obsolete nameplate setting on current Forever and Retail. Prefer the current friendly-player setting, with guarded fallback for older clients.
+- Recognize QT users from every supported validated addon message, including map updates, comparison traffic and share requests/replies. Remember up to 512 players for the current UI session so missed heartbeats do not hide their logos; still clear explicit departures, ignored players and comms resets. Recognition adds no traffic and does not extend map or partner-status freshness.
+
+- Add an opt-in Looking for Questing Partners status, saved per profile. Toggle it through `/qt lfg [on|off|toggle|status]`, the minimap menu, or Miscellaneous settings. Show current status on player menus and map-dot tooltips without enabling location sharing or sending invites.
+- Send a separate bounded partner-status heartbeat while retaining legacy player presence. Expire stale status independently, clear departures/ignored players, and repeat withdrawals after missed messages.
+- Reduce dot flicker by retaining last reported positions through temporary read/restriction gaps and expiring them after 120 seconds. Keep stationary heartbeats at 20 seconds for compatibility; reduce moving broadcasts from every 5 seconds to every 10. Sharing opt-outs still withdraw immediately and retry until prior points expire.
+- Increase the bounded location cache from 128 to 512 players and count the renderer's 128-dot limit after projection, so off-map players cannot starve visible dots. Keep later dots interactive and show the age of reports at least 30 seconds old.
+- Order partner-status packets by session and sequence so delayed channel copies cannot revive a withdrawn status. Keep default-Off users quiet, bound withdrawal retries, and process rapid departure/rejoin transitions.
+- Keep the minimap tooltip on an independent addon-owned tooltip layer, with guarded visibility and quarantine recovery.
+- Separate Forever identity and location behavior from Retail War Mode: omit realm/War Mode labels, preserve full regional names, and remove the War Mode requirement for nearby Forever announcements. Preserve map dots across phases. Retail reports actual active War Mode and keeps unknown information distinct from Off.
+
+Validation: 711 addon tests pass in normal and reverse order on Lua 5.1 and 5.2, along with all six API profiles, Retail/Forever geometry probes, 59 release-tooling tests, all 45 Lua syntax checks, generated notes and exact libchev verification. The user confirmed player-logo rendering and final buff spacing in Forever; the temporary all-friendly-player override is removed. Broader two-client behavior and engine-level taint validation remain separate live-client checks.
+
 ## 5.11.0 — 2026-09-27
 
 - Generate release notes once during release preparation and reuse the same welcome and bullet points in the addon and Discord. Add a preparation workflow that opens a notes review PR, and publish changelog embeds as the Bumblebee bot to QuestTogether's Discord only after a published release has its download and passing checks. Retried announcements skip already posted parts.

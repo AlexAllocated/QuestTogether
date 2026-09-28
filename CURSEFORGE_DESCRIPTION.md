@@ -87,9 +87,21 @@ The **Player Locations** settings give you four independent switches:
 
 **All four switches start enabled.** You can share on one map, both, or neither, and control what you see independently. Both sharing switches off also removes location details from your quest announcements and ping replies.
 
-Locations update periodically, and stale reports expire. Both players need a version that supports location sharing. A dot represents a recently reported location; it does not guarantee that the player is in your phase or layer.
+On Retail, tooltips also show War Mode when available. Forever omits realm and War Mode labels. Dots remain visible across phases to help you find people to group with.
+
+Locations update periodically. Brief gaps retain the last reported dot for up to two minutes; older reports show their age in the tooltip. Turning location sharing off removes the dot when the withdrawal arrives, with expiry as a fallback. Both players need a version that supports location sharing. A dot represents a recently reported location; it does not guarantee that the player is in your phase or layer.
 
 > **SCREENSHOT 06 — Players on the map:** World-map and minimap views with several class-colored dots. Hover one dot to show the player-details tooltip.
+
+## Find a questing partner
+
+Turn on **Looking for Questing Partners** to let other QuestTogether players know you want company. Your status appears in your player-name menu and on your map-dot tooltips. Others can use the existing Whisper, Invite, or Compare Quests actions to get in touch.
+
+Toggle it in the **minimap menu**, **Settings → Miscellaneous**, or with **`/qt lfg`**. Use `/qt lfg on`, `/qt lfg off`, or `/qt lfg status` for an explicit action. The status starts off and is saved per profile. It does not enable location sharing, send automatic invitations, or post recruitment messages in public chat.
+
+Status expires when updates stop, and ignored players stay hidden. Disabling QuestTogether pauses your advertisement. Both players need a version that supports partner status.
+
+> **SCREENSHOT — Questing partners:** A player-dot tooltip showing Looking for Questing Partners, alongside the checked minimap menu shortcut.
 
 ## Spot quest objectives on nameplates
 
@@ -107,7 +119,7 @@ The settings preview shows your choices using the current WoW nameplate style. D
 
 Enable friendly nameplates in WoW, then choose **Left**, **Right**, **Top**, or **Prefix** placement in QuestTogether's Player Plates settings. Player icons start enabled with Left placement, include a gap between the logo and the bar or name text, and have their own preview and visibility toggle.
 
-Player icons leave health-bar colors alone. Identification works even when location sharing is off; inactive and ignored players are hidden.
+Player icons leave health-bar colors alone. Identification works from any supported QuestTogether message, even when location sharing is off. Recognized players remain known for the current UI session in a bounded cache; missed heartbeats do not remove their icons. Explicit departures and ignored players are cleared.
 
 Quest and player decorations follow the addon's open-world nameplate policy. Instances, unavailable nameplates, and game restrictions can limit their display.
 
@@ -190,6 +202,7 @@ The addon bundles its required library, so no separate library download is neede
 | --- | --- |
 | `/qt` or `/qt options` | Open settings |
 | `/qt compare` | Open Party Quest Compare |
+| `/qt lfg [on|off|toggle|status]` | Set or check Looking for Questing Partners; no argument toggles |
 | `/qt notes`, `/qt changelog`, or `/qt patchnotes` | Open welcome and latest patch notes |
 | `/qt enable` / `/qt disable` | Enable or disable addon runtime behavior |
 | `/qt scan` | Rescan your quest log |

@@ -29,6 +29,9 @@ local function NewCommsFixture()
 		Random = function()
 			return 1234
 		end,
+		IsWarModeFeatureEnabled = function()
+			return true
+		end,
 		GetRealmName = function()
 			return "Realm"
 		end,
@@ -203,12 +206,24 @@ QuestTogether:RegisterTest("Forever roster unit announcements and ping metadata 
 	Equal(addon.partyMembers["Anakin Othername"].displayName, "Anakin Othername")
 	Equal(addon:IsGroupedSender("Anakin-Othername"), true)
 	Equal(addon:BuildAnnouncementEventForUnit("party1", "QUEST_PROGRESS", "progress").senderName, "Anakin Othername")
-	Equal(addon:GetPlayerPingMetadata().realmName, "Realm")
+	Equal(addon:GetPlayerPingMetadata().realmName, "")
 	Equal(addon:GetPlayerPingMetadata().senderName, "Anakin Ofthesea")
 	addon.API.UnitFullName = function()
 		return "Anakin Ofthesea", nil
 	end
 	Equal(addon:GetPlayerFullName(), "Anakin Ofthesea")
+end)
+
+QuestTogether:RegisterTest("Forever unavailable surname profile fallback never invents a realm", function()
+	local addon = NewRegionalNameFixture()
+	addon.API.UnitFullName = function() return nil, nil end
+	addon.GetPlayerFullName = function() return nil end
+	addon.API.GetRealmName = function() error("regional profile fallback must not read a realm") end
+	Equal(addon:GetCurrentCharacterKey(), "Anakin")
+	Equal(addon:GetPersonalBubbleAnchorKey(), "Anakin")
+	addon.API.UnitFullName = function() return "Anakin", "Ofthesea" end
+	Equal(addon:GetCurrentCharacterKey(), "Anakin-Ofthesea")
+	Equal(addon:GetPersonalBubbleAnchorKey(), "Anakin-Ofthesea")
 end)
 
 QuestTogether:RegisterTest("Forever hidden surnames never become social interaction targets", function()
@@ -226,6 +241,129 @@ QuestTogether:RegisterTest("Forever hidden surnames never become social interact
 	end
 	addon:InviteChatLogSpeaker("Anakin Ofthesea")
 	Equal(queried[2], "Anakin Ofthesea")
+end)
+
+local function UseNativeLocationModel(addon)
+	addon.GetPlayerAnnouncementLocationInfo = QuestTogether.GetPlayerAnnouncementLocationInfo
+	addon.CanPublishPlayerLocation = function() return true end
+	addon.API.GetBestMapForUnit = function() return 37 end
+	addon.API.GetMapInfo = function() return { mapID = 37, name = "Elwynn Forest" } end
+	addon.API.GetPlayerMapPosition = function() return { x = 0.5, y = 0.5 } end
+end
+
+QuestTogether:RegisterTest("Forever metadata never reads or displays realms and War Mode", function()
+	local addon = NewRegionalNameFixture()
+	UseNativeLocationModel(addon)
+	addon.API.GetRealmName = function() error("Forever has no realm identity") end
+	addon.API.IsWarModeFeatureEnabled = function() error("regional clients have no War Mode") end
+	addon.API.IsWarModeActive = function() error("unsupported mode must not be polled") end
+	Equal(addon:SupportsWarMode(), false)
+	local location = addon:GetPlayerAnnouncementLocationInfo()
+	Equal(location.warMode, nil)
+	Equal(location.mapID, 37)
+	local metadata = addon:GetPlayerPingMetadata()
+	Equal(metadata.realmName, "")
+	Equal(metadata.warMode, "")
+	Equal(metadata.senderName, "Anakin Ofthesea")
+	metadata.requestId = "regional-ping"
+	local decoded = addon:DecodePingResponsePayload(addon:EncodePingResponsePayload(metadata))
+	Equal(decoded.realmName, "")
+	Equal(decoded.warMode, "")
+	Equal(decoded.senderName, metadata.senderName)
+	local event = addon:BuildLocalAnnouncementEvent("QUEST_PROGRESS", "Wolves: 1/8", 123)
+	Equal(event.warMode, "")
+	Equal(addon:DecodeAnnouncementPayload(addon:EncodeAnnouncementPayload(event)).warMode, "")
+	-- Older clients still send a dummy realm and WM Off; ignore these labels
+	-- without discarding their real name, map or coordinates.
+	decoded.realmName, decoded.warMode = "LegacyRealm", "0"
+	local message = addon:BuildPingResponseMessage(decoded)
+	assert(not message:find("LegacyRealm", 1, true))
+	assert(not message:find("WM Off", 1, true))
+	assert(message:find("Elwynn Forest", 1, true))
+	assert(not addon:BuildAnnouncementLocationSuffix(decoded):find("WM Off", 1, true))
+end)
+
+QuestTogether:RegisterTest("announcement metadata preserves unknown War Mode instead of inventing Off", function()
+	for _, capability in ipairs({ "enabled", "disabled", "unreadable", "missing" }) do
+		for _, state in ipairs({ "on", "off", "unknown" }) do
+			local addon = NewCommsFixture()
+			UseNativeLocationModel(addon)
+			local polls = 0
+			addon.API.IsWarModeFeatureEnabled = function()
+				if capability == "enabled" then return true end
+				if capability == "disabled" then return false end
+				return nil
+			end
+			if capability == "missing" then addon.API.IsWarModeFeatureEnabled = nil end
+			addon.API.IsWarModeActive = function()
+				polls = polls + 1
+				if state == "on" then return true end
+				if state == "off" then return false end
+			end
+			local expected = ""
+			if capability == "enabled" and state ~= "unknown" then expected = state == "on" and "1" or "0" end
+			local metadata = addon:GetPlayerPingMetadata()
+			Equal(metadata.warMode, expected)
+			Equal(addon:BuildLocalAnnouncementEvent("QUEST_PROGRESS", "Wolves: 1/8", 123).warMode, expected)
+			Equal(polls, capability == "enabled" and 2 or 0)
+			local suffix = addon:BuildAnnouncementLocationSuffix(metadata)
+			Equal(suffix:find("WM ", 1, true) ~= nil, expected ~= "")
+		end
+	end
+end)
+
+QuestTogether:RegisterTest("unavailable War Mode capability cannot certify nearby announcement state", function()
+	local addon = NewCommsFixture()
+	UseNativeLocationModel(addon)
+	local remote = { mapID = 37, zoneName = "Elwynn Forest", coordX = 50, coordY = 50, warMode = "0" }
+	local inaccessible = setmetatable({}, { __tostring = function() error("inaccessible mode formatted") end })
+	function addon:CanAccessValue(value) return value ~= inaccessible end
+	addon.API.IsWarModeActive = function() return false end
+	addon.API.IsWarModeFeatureEnabled = function() return inaccessible end
+	Equal(addon:SupportsWarMode(), nil)
+	Equal(addon:NormalizeAnnouncementWarModeValue(inaccessible), nil)
+	Equal(addon:IsAnnouncementSenderNearbyByLocation(remote), false)
+	addon.API.IsWarModeFeatureEnabled = function() error("capability unavailable") end
+	Equal(addon:SupportsWarMode(), nil)
+	Equal(addon:IsAnnouncementSenderNearbyByLocation(remote), false)
+	addon.API.IsWarModeFeatureEnabled = function() return false end
+	Equal(addon:IsAnnouncementSenderNearbyByLocation(remote), true)
+	addon.API.IsWarModeFeatureEnabled = function() return true end
+	Equal(addon:IsAnnouncementSenderNearbyByLocation(remote), true)
+	remote.warMode = "1"
+	Equal(addon:IsAnnouncementSenderNearbyByLocation(remote), false)
+end)
+
+QuestTogether:RegisterTest("Forever nearby announcements use map distance without Retail War Mode", function()
+	local sender, receiver = NewRegionalNameFixture(), NewRegionalNameFixture()
+	UseNativeLocationModel(sender)
+	UseNativeLocationModel(receiver)
+	receiver.API.UnitFullName = function() return "Anakin", "Othername" end
+	receiver.IsAnnouncementSenderNearbyByLocation = QuestTogether.IsAnnouncementSenderNearbyByLocation
+	receiver.ShouldShowAnnouncementsForRemoteSender = QuestTogether.ShouldShowAnnouncementsForRemoteSender
+	receiver.GetOption = function(_, key)
+		if key == "showProgressFor" then return "party_nearby" end
+		return key == "showChatLogs"
+	end
+	local event = sender:BuildLocalAnnouncementEvent("QUEST_PROGRESS", "Wolves: 1/8", 123)
+	for _, legacyMode in ipairs({ "", "0", "1" }) do
+		event.warMode = legacyMode
+		assert(sender:SendAnnouncementWireEvent(event))
+		receiver:OnCommReceived(receiver.commPrefix, sender.wire[#sender.wire][2], "CHANNEL", "Anakin Ofthesea", 7,
+			receiver.announcementChannelName)
+		receiver.now = receiver.now + 1
+	end
+	Equal(#receiver.printed, 3)
+	event.mapID = "999"
+	assert(sender:SendAnnouncementWireEvent(event))
+	receiver:OnCommReceived(receiver.commPrefix, sender.wire[#sender.wire][2], "CHANNEL", "Anakin Ofthesea", 7,
+		receiver.announcementChannelName)
+	Equal(#receiver.printed, 3)
+	event.mapID, event.coordX, event.coordY = "37", "90", "90"
+	assert(sender:SendAnnouncementWireEvent(event))
+	receiver:OnCommReceived(receiver.commPrefix, sender.wire[#sender.wire][2], "CHANNEL", "Anakin Ofthesea", 7,
+		receiver.announcementChannelName)
+	Equal(#receiver.printed, 3)
 end)
 
 QuestTogether:RegisterTest("Forever nameplate matching preserves surnames and rejects conflicting GUIDs", function()

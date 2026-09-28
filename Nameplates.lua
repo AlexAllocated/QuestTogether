@@ -3086,6 +3086,52 @@ local function GetIconBarAnchor(unitFrame)
 		or unitFrame
 end
 
+local function GetPlayerBuffIconAnchor(unitFrame)
+	-- Current Retail/Forever buffs grow left from the classification marker.
+	-- Empty lists stay shown with a nonzero width, so check visible children,
+	-- never aura contents, frame pools, or Blizzard's layout helpers.
+	local auras = GetAccessibleChildFrame(unitFrame, "AurasFrame")
+	if CallAccessibleFrameMethod(auras, "IsShown") ~= true then
+		return nil
+	end
+	local buffs = GetAccessibleChildFrame(auras, "BuffListFrame")
+	if CallAccessibleFrameMethod(buffs, "IsShown") ~= true then
+		return nil
+	end
+	local count = SafeUiNumber(CallAccessibleFrameMethod(buffs, "GetNumChildren"))
+	local getChildren = select(1, QuestTogether:GetAccessibleFrameMember(buffs, "GetChildren"))
+	-- Blizzard currently displays at most two. Bound work if another layout
+	-- changes this container; older/unknown layouts keep the normal bar anchor.
+	if not count or count < 1 or count > 8 or count % 1 ~= 0 or type(getChildren) ~= "function" then
+		return nil
+	end
+	local ok, children = pcall(function()
+		return { getChildren(buffs) }
+	end)
+	if not ok then
+		return nil
+	end
+	local occupied, border = false, 2
+	local unitScale = SafeUiNumber(CallAccessibleFrameMethod(unitFrame, "GetEffectiveScale"), 0)
+	for index = 1, count do
+		local child = children[index]
+		if QuestTogether:CanAccessValue(child) and CallAccessibleFrameMethod(child, "IsShown") == true then
+			occupied = true
+			-- Keep a compact gap around the buff artwork, scaled to the logo
+			-- parent without reading aura data.
+			local childScale = SafeUiNumber(CallAccessibleFrameMethod(child, "GetEffectiveScale"), 0)
+			if unitScale > 0 and childScale > 0 then
+				border = math.max(border, SafeUiNumber(2 * childScale / unitScale, 2))
+			end
+		end
+	end
+	if occupied then
+		-- Anchor to the stable list, not a pooled aura child that can be reused.
+		return buffs, border + 2
+	end
+	return nil
+end
+
 local function GetNameplateNameTextAnchor(unitFrame)
 	local healthBar = GetAccessibleChildFrame(unitFrame, "healthBar")
 	return GetAccessibleChildFrame(unitFrame, "unitName")
@@ -3189,15 +3235,19 @@ function QuestTogether:ApplyNameplateQuestIconStyle(iconFrame, unitFrame)
 	local gap = playerIcon and 4 or 1
 	local width = self.NAMEPLATE_QUEST_ICON_WIDTH
 	local height = self.NAMEPLATE_QUEST_ICON_HEIGHT
+	local buffAnchor, buffGap
+	if playerIcon and style == "left" then
+		buffAnchor, buffGap = GetPlayerBuffIconAnchor(unitFrame)
+	end
 
 	iconFrame:ClearAllPoints()
 
 	if style == "left" then
-		local barAnchor = GetIconBarAnchor(unitFrame)
+		local barAnchor = buffAnchor or GetIconBarAnchor(unitFrame)
 		if IsFrameForbidden(barAnchor) then
 			barAnchor = unitFrame
 		end
-		iconFrame:SetPoint("RIGHT", barAnchor, "LEFT", -gap, 0)
+		iconFrame:SetPoint("RIGHT", barAnchor, "LEFT", -(buffGap or gap), 0)
 	elseif style == "right" then
 		local barAnchor = GetIconBarAnchor(unitFrame)
 		if IsFrameForbidden(barAnchor) then
@@ -4113,13 +4163,43 @@ end
 
 function QuestTogether:RefreshQTPlayerPlatePresence()
 	for icon, info in pairs(self.qtPlayerIconStateByFrame or {}) do
-		if not self:IsKnownQTPlayer(info.name) then
+		if not self:ShouldShowQTPlayerLogoForName(info.name) then
 			self:HideQTPlayerIcon(icon)
 		end
 	end
 	if self.isEnabled and self.nameplateRegisteredEvents and self.nameplateRegisteredEvents.NAME_PLATE_UNIT_ADDED then
 		self:ScheduleNameplatePresentationRefresh("QT player presence", 0)
 	end
+end
+
+function QuestTogether:GetFriendlyPlayerNameplateVisibility()
+	local getter = self.API and self.API.GetCVar
+	if not self:CanAccessValue(getter) or type(getter) ~= "function" then
+		return nil
+	end
+	-- Retail/Forever use the player-specific CVar. An explicit modern value
+	-- takes precedence; only an absent key permits the older client fallback.
+	for _, key in ipairs({ "nameplateShowFriendlyPlayers", "nameplateShowFriends" }) do
+		local ok, value, readable = pcall(getter, key)
+		if
+			not ok
+			or not self:CanAccessValue(value)
+			or not self:CanAccessValue(readable)
+			or (readable ~= nil and readable ~= true)
+		then
+			return nil, key
+		end
+		if value ~= nil then
+			if value == "1" then
+				return true, key
+			end
+			if value == "0" then
+				return false, key
+			end
+			return nil, key
+		end
+	end
+	return nil
 end
 
 function QuestTogether:RefreshQTPlayerNameplate(plate, unitToken, unitFrame)
@@ -4147,8 +4227,7 @@ function QuestTogether:RefreshQTPlayerNameplate(plate, unitToken, unitFrame)
 		and not self:IsNameplateAugmentationBlockedInCurrentContext()
 		and self:CanAccessForeignFrame(plate, true)
 		and self:CanAccessForeignFrame(unitFrame)
-		and self.API.GetCVar
-		and self.API.GetCVar("nameplateShowFriends") == "1"
+		and self:GetFriendlyPlayerNameplateVisibility() == true
 	then
 		show, name = self:IsFriendlyQTPlayerUnit(unitToken)
 		if show then
@@ -4648,6 +4727,21 @@ function QuestTogether:HandleNameplateEvent(eventName, ...)
 		if self:IsNameplateUnitToken(unitToken) then
 			self:ScheduleNameplateRefresh(unitToken)
 		end
+	elseif eventName == "UNIT_AURA" then
+		local unitToken = ...
+		if self:IsNameplateUnitToken(unitToken) and self:GetNameplatePlayerIconStyle() == "left" then
+			-- Only existing player logos need this layout update. Do not turn
+			-- every NPC aura tick into quest detection/tooltip work. Defer until
+			-- Blizzard has laid out the buffs, and coalesce same-frame events.
+			for _, info in pairs(self.qtPlayerIconStateByFrame or {}) do
+				if info.unitToken == unitToken then
+					if not self.nameplateRefreshPendingByUnitToken[unitToken] and self:IsNameplateUnitPlayer(unitToken) then
+						self:ScheduleNameplateRefresh(unitToken)
+					end
+					break
+				end
+			end
+		end
 	elseif eventName == "UPDATE_MOUSEOVER_UNIT" then
 		self:RefreshNameplateForUnitAlias("mouseover")
 	elseif eventName == "PLAYER_ENTERING_WORLD" then
@@ -4758,6 +4852,7 @@ function QuestTogether:EnableNameplateAugmentation()
 	RegisterNameplateEvent(self, "UNIT_MAXHEALTH")
 	RegisterNameplateEvent(self, "UNIT_CONNECTION")
 	RegisterNameplateEvent(self, "UNIT_NAME_UPDATE")
+	RegisterNameplateEvent(self, "UNIT_AURA")
 	RegisterNameplateEvent(self, "UNIT_THREAT_LIST_UPDATE")
 	RegisterNameplateEvent(self, "UNIT_THREAT_SITUATION_UPDATE")
 	RegisterNameplateEvent(self, "UNIT_FACTION")

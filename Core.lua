@@ -357,6 +357,7 @@ QuestTogether.DEFAULTS = {
 		emoteOnLevelUp = true,
 		compareHideOtherQuests = false,
 		autoAcceptPartyShareRequests = false,
+		lookingForQuestPartners = false,
 		showMinimapButton = true,
 		minimapButtonPosition = 225,
 		shareLocationOnMap = true,
@@ -765,19 +766,27 @@ QuestTogether.API = QuestTogether.API or {
 		end
 		return chatFrame
 	end,
-		GetCVar = function(cvarName)
-			if not (C_CVar and C_CVar.GetCVar and type(cvarName) == "string" and cvarName ~= "") then
-				return nil
-			end
-		local ok, value = pcall(C_CVar.GetCVar, cvarName)
-		if not ok then
-			return nil
+	GetCVar = function(cvarName)
+		if
+			not CanAccessForeignValue(cvarName)
+			or type(cvarName) ~= "string"
+			or cvarName == ""
+			or not CanAccessForeignTable(C_CVar)
+		then
+			return nil, false
 		end
-		if QuestTogether and QuestTogether.IsSecretValue and QuestTogether:IsSecretValue(value) then
-			return nil
-			end
-			return value
-		end,
+		local getter = C_CVar.GetCVar
+		if not CanAccessForeignValue(getter) or type(getter) ~= "function" then
+			return nil, false
+		end
+		local ok, value = pcall(getter, cvarName)
+		if not ok or not CanAccessForeignValue(value) then
+			return nil, false
+		end
+		-- A missing CVar returns nil successfully. Keep it distinguishable from
+		-- a failed or inaccessible read when callers select a legacy fallback.
+		return value, true
+	end,
 		GetInstanceInfo = function()
 			if type(GetInstanceInfo) ~= "function" then
 				return nil
@@ -2155,14 +2164,22 @@ QuestTogether.API = QuestTogether.API or {
 			-- understands nested args; leave foreign data untouched.
 			return CanAccessForeignTable(tooltipData) and tooltipData or nil
 		end,
-		IsWarModeActive = function()
-			if C_PvP and C_PvP.IsWarModeDesired then
-				return C_PvP.IsWarModeDesired()
-			end
-		if C_PvP and C_PvP.IsWarModeActive then
-			return C_PvP.IsWarModeActive()
-		end
-		return false
+	IsWarModeFeatureEnabled = function()
+		if not CanAccessForeignTable(C_PvP) then return nil end
+		local getter = C_PvP.IsWarModeFeatureEnabled
+		if not CanAccessForeignValue(getter) or type(getter) ~= "function" then return nil end
+		local ok, enabled = pcall(getter)
+		if ok and CanAccessForeignValue(enabled) and type(enabled) == "boolean" then return enabled end
+		return nil
+	end,
+	IsWarModeActive = function()
+		if not CanAccessForeignTable(C_PvP) then return nil end
+		local getter = C_PvP.IsWarModeActive
+		if not CanAccessForeignValue(getter) or type(getter) ~= "function" then return nil end
+		-- Desired is a preference and can differ from the player's current mode.
+		local ok, active = pcall(getter)
+		if ok and CanAccessForeignValue(active) and type(active) == "boolean" then return active end
+		return nil
 	end,
 	CreateUiMapPoint = function(mapID, x, y)
 		if UiMapPoint and UiMapPoint.CreateFromCoordinates then
@@ -2514,7 +2531,8 @@ function QuestTogether:GetCurrentCharacterKey()
 	-- Keep existing Forever profile assignments: earlier versions interpreted
 	-- UnitFullName's second return as a realm and stored First-Surname keys.
 	-- This legacy storage key must not become a display or transport identity.
-	if self:UsesRegionalPlayerNames() then
+	local regionalNames = self:UsesRegionalPlayerNames()
+	if regionalNames then
 		local first, last = self.API.UnitFullName("player")
 		first = self:SafeTrimString(first, "")
 		last = self:SafeStripWhitespace(last, "")
@@ -2532,9 +2550,11 @@ function QuestTogether:GetCurrentCharacterKey()
 		return playerName
 	end
 
-	local realmName = self:SafeStripWhitespace(self.API.GetRealmName and self.API.GetRealmName() or "", "")
-	if realmName ~= "" then
-		return playerName .. "-" .. realmName
+	if not regionalNames then
+		local realmName = self:SafeStripWhitespace(self.API.GetRealmName and self.API.GetRealmName() or "", "")
+		if realmName ~= "" then
+			return playerName .. "-" .. realmName
+		end
 	end
 
 	return playerName
@@ -2636,6 +2656,7 @@ function QuestTogether:ApplyActiveProfileState(changeReason)
 	end
 	if self.RefreshMinimapButton then self:RefreshMinimapButton() end
 	if self.OnPlayerLocationOptionsChanged then self:OnPlayerLocationOptionsChanged() end
+	if self.BroadcastQuestPartnerStatus then self:BroadcastQuestPartnerStatus(true) end
 	if self.RefreshOptionsWindow then
 		self:RefreshOptionsWindow()
 	end
@@ -3353,6 +3374,7 @@ function QuestTogether:GetShortDisplayName(name)
 end
 
 function QuestTogether:NormalizeAnnouncementWarModeValue(warMode)
+	if not self:CanAccessValue(warMode) then return nil end
 	if type(warMode) == "boolean" then
 		return warMode
 	end
@@ -3365,6 +3387,17 @@ function QuestTogether:NormalizeAnnouncementWarModeValue(warMode)
 			return false
 		end
 	end
+	return nil
+end
+
+function QuestTogether:SupportsWarMode()
+	-- Forever uses regional full names and character roles, not Retail's War
+	-- Mode. Shared Mainline exports alone do not establish feature support.
+	if self:UsesRegionalPlayerNames() then return false end
+	local getter = self.API and self.API.IsWarModeFeatureEnabled
+	if type(getter) ~= "function" then return nil end
+	local ok, enabled = pcall(getter)
+	if ok and self:CanAccessValue(enabled) and type(enabled) == "boolean" then return enabled end
 	return nil
 end
 
@@ -3797,7 +3830,10 @@ function QuestTogether:GetPlayerAnnouncementLocationInfo()
 		end
 	end
 
-	local warModeActive = self.API.IsWarModeActive and self.API.IsWarModeActive() and true or false
+	local warModeActive
+	if self:SupportsWarMode() == true and self.API.IsWarModeActive then
+		warModeActive = self:NormalizeAnnouncementWarModeValue(self.API.IsWarModeActive())
+	end
 	return {
 		mapID = mapID,
 		zoneName = zoneName or "",
@@ -3839,10 +3875,16 @@ function QuestTogether:IsAnnouncementSenderNearbyByLocation(locationInfo)
 		end
 	end
 
-	local localWarMode = self:NormalizeAnnouncementWarModeValue(localInfo.warMode)
-	local remoteWarMode = self:NormalizeAnnouncementWarModeValue(locationInfo.warMode)
-	if localWarMode == nil or remoteWarMode == nil or localWarMode ~= remoteWarMode then
+	local supportsWarMode = self:SupportsWarMode()
+	if supportsWarMode == nil then
+		-- Unknown capability must not establish shared Retail surroundings.
 		return false
+	elseif supportsWarMode then
+		local localWarMode = self:NormalizeAnnouncementWarModeValue(localInfo.warMode)
+		local remoteWarMode = self:NormalizeAnnouncementWarModeValue(locationInfo.warMode)
+		if localWarMode == nil or remoteWarMode == nil or localWarMode ~= remoteWarMode then
+			return false
+		end
 	end
 
 	local localCoordX = self:SafeToNumber(localInfo.coordX)
@@ -3877,7 +3919,7 @@ function QuestTogether:BuildAnnouncementLocationSuffix(locationInfo)
 	end
 
 	local warMode = self:NormalizeAnnouncementWarModeValue(locationInfo.warMode)
-	if warMode ~= nil then
+	if self:SupportsWarMode() == true and warMode ~= nil then
 		parts[#parts + 1] = warMode and "WM On" or "WM Off"
 	end
 
@@ -4258,7 +4300,7 @@ function QuestTogether:BuildPingResponseMessage(pongData)
 
 	local parts = {}
 	parts[#parts + 1] = coloredName
-	if realmName ~= "" then
+	if not self:UsesRegionalPlayerNames() and realmName ~= "" then
 		parts[#parts + 1] = "(" .. realmName .. ")"
 	end
 	if level then
@@ -4286,7 +4328,7 @@ function QuestTogether:BuildPingResponseMessage(pongData)
 		locationBits[#locationBits + 1] = self:BuildPingCoordinateLabel(pongData.mapID, coordX, coordY)
 	end
 	local warMode = self:NormalizeAnnouncementWarModeValue(pongData.warMode)
-	if warMode ~= nil then
+	if self:SupportsWarMode() == true and warMode ~= nil then
 		locationBits[#locationBits + 1] = warMode and "WM On" or "WM Off"
 	end
 	if #locationBits > 0 then
@@ -4547,6 +4589,9 @@ function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, s
 	end
 
 	rootDescription:CreateTitle(shortName ~= "" and shortName or "QuestTogether")
+	if self:IsPlayerLookingForQuestPartners(fullName) then
+		rootDescription:CreateTitle("Looking for Questing Partners")
+	end
 
 	if fullName ~= "" then
 		rootDescription:CreateButton("Invite", function()
@@ -5066,6 +5111,9 @@ function QuestTogether:SetOption(key, value)
 	if key == "showMinimapButton" and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
 		return false
 	end
+	if key == "lookingForQuestPartners" and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
+		return false
+	end
 	if key == "minimapButtonPosition" then
 		value = self:SafeToNumber(value)
 		if not value then return false end
@@ -5109,6 +5157,7 @@ function QuestTogether:SetOption(key, value)
 		return false
 	end
 	self.db.profile[key] = value
+	if key == "lookingForQuestPartners" and self.BroadcastQuestPartnerStatus then self:BroadcastQuestPartnerStatus(true) end
 	if isLocationOption and self.OnPlayerLocationOptionsChanged then self:OnPlayerLocationOptionsChanged(key) end
 	if (key == "showMinimapButton" or key == "minimapButtonPosition") and self.RefreshMinimapButton then
 		self:RefreshMinimapButton()
@@ -5459,6 +5508,7 @@ function QuestTogether:PrintHelp()
 	self:Print("/qt set <option> <value> - Set a boolean option (e.g. emoteOnQuestCompletion off)")
 	self:Print("/qt get <option> - Read an option value")
 	self:Print("/qt compare - Open Party Quest Compare")
+	self:Print("/qt lfg [on|off|toggle|status] - Set or check Looking for Questing Partners (no argument toggles)")
 	self:Print("/qt notes | changelog | patchnotes - Open the latest welcome and patch notes")
 	self:Print("/qt scan - Rescan your quest log now")
 	self:Print("/qt help debug - Show debugging and developer commands")
@@ -5496,6 +5546,9 @@ function QuestTogether:HandleSlashCommand(input)
 	end
 	if command == "notes" or command == "changelog" or command == "patchnotes" then
 		return self:OpenReleaseNotes()
+	end
+	if command == "lfg" then
+		return self:HandleQuestPartnerCommand(rest)
 	end
 
 	-- Help is presentation only; do not delegate topics to executable debug commands.

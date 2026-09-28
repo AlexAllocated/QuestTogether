@@ -1,6 +1,6 @@
 local QuestTogether = _G.QuestTogether
 local LibChev = QuestTogether.LibChev
-local MAX_PINS, DOT_SIZE = 128, 12
+local MAX_PINS, MAX_LOCATION_ROWS, DOT_SIZE = 128, 512, 12
 
 local function Native(addon, fn, ...)
 	if addon:IsRuntimeRestricted() or not addon:CanAccessValue(fn) or type(fn) ~= "function" then
@@ -394,7 +394,7 @@ local function FreshRow(addon, pin)
 		return nil
 	end
 	local rows = addon:GetVisiblePlayerLocations(pin.surface)
-	for index = 1, math.min(MAX_PINS, #rows) do
+	for index = 1, math.min(MAX_LOCATION_ROWS, #rows) do
 		local row = rows[index]
 		if
 			row.name == pin.name
@@ -460,8 +460,16 @@ local function Tooltip(addon, state, pin, row)
 		.. Text(addon, row.className, Text(addon, row.classFile))
 		.. "\nLevel: "
 		.. (Number(addon, row.level) and tostring(row.level) or "Unknown")
-	if type(row.warMode) == "boolean" then
+	if addon:SupportsWarMode() == true and type(row.warMode) == "boolean" then
 		text = text .. "\nWar Mode: " .. (row.warMode and "On" or "Off")
+	end
+	if addon:IsPlayerLookingForQuestPartners(row.name) then
+		text = text .. "\n|cff40ff40Looking for Questing Partners|r"
+	end
+	local now = addon.API and addon.API.GetTime and Number(addon, addon.API.GetTime())
+	local receivedAt = Number(addon, row.receivedAt)
+	if now and receivedAt and now >= receivedAt + 30 then
+		text = text .. "\nLast update: " .. math.floor(now - receivedAt) .. " seconds ago"
 	end
 	Call(addon, state.tooltipLabel, "SetText", text)
 	local height = Positive(addon, Call(addon, state.tooltipLabel, "GetStringHeight"))
@@ -566,7 +574,12 @@ local function RefreshSurface(addon, state, name, rows)
 	end
 	Call(addon, surface.frame, "SetFrameLevel", parentLevel + 50)
 	local count = 0
-	for index = 1, math.min(MAX_PINS, #rows) do
+	-- Off-map peers do not consume the visible pin budget. Bound projection
+	-- work separately to the model's maximum number of candidate rows.
+	for index = 1, math.min(MAX_LOCATION_ROWS, #rows) do
+		if count >= MAX_PINS then
+			break
+		end
 		local row = rows[index]
 		local x, y = addon:ProjectPlayerLocationPin(name, row, geometry)
 		if x and y and type(row.name) == "string" and row.name ~= "" then

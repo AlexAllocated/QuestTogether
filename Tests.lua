@@ -237,7 +237,7 @@ local function WithIsolatedState(testFn)
 			"optionsFrame", "whereToAnnounceFrame", "questPlatesFrame", "miscFrame", "announcementsFrame", "profilesFrame",
 			"personalBubbleEditSession", "announcementChannelLocalID", "questCompareResponseQueue",
 			"partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
-			"minimapButton", "minimapTooltip", "minimapLauncherFrame", "minimapDragState", "minimapSuppressClick",
+			"minimapButton", "minimapTooltip", "minimapTooltipPendingHide", "minimapLauncherFrame", "minimapDragState", "minimapSuppressClick",
 			"releaseNotesWindow", "releaseNotesWakeFrame", "pendingReleaseNotes",
 			"discordSupportWindowOwner", "qtPlayerPresenceState", "playerPlatesFrame", "qtPlayerIconStateByFrame",
 			"playerLocationState", "playerLocationUpdateFrame", "locationPinState", "playerLocationsFrame",
@@ -5604,6 +5604,7 @@ end)
 
 QuestTogether:RegisterTest("local announcement event includes location metadata", function()
 	QuestTogether.API = CreateApiWithOverrides({
+		IsWarModeFeatureEnabled = function() return true end,
 		UnitGUID = function()
 			return "Player-1-ABC"
 		end,

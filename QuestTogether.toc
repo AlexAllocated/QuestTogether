@@ -47,6 +47,7 @@ scripts/regression_runtime.lua
 scripts/regression_quest_state.lua
 scripts/regression_core_state.lua
 scripts/regression_nameplates.lua
+scripts/regression_friendly_nameplate_visibility.lua
 scripts/regression_nameplate_discovery.lua
 scripts/regression_comms.lua
 scripts/regression_quest_compare.lua

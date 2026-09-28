@@ -12,18 +12,35 @@ local function Frame(parent)
 	function frame:IsForbidden()
 		return self.forbidden == true or (self.parent and self.parent:IsForbidden()) or false
 	end
+	function frame:IsProtected()
+		return self.protected == true or (self.parent and self.parent:IsProtected()) or false
+	end
+	function frame:CheckAccess(mutate)
+		if self:IsForbidden() or (mutate and self:IsProtected()) then
+			self.unsafeCalls = (self.unsafeCalls or 0) + 1
+			error("unsafe minimap fixture access")
+		end
+		if mutate then
+			self.mutations = (self.mutations or 0) + 1
+		end
+	end
 	function frame:IsShown()
+		self:CheckAccess()
 		return self.shown
 	end
+	function frame:IsVisible()
+		self:CheckAccess()
+		return self.shown and (not self.parent or self.parent:IsVisible())
+	end
 	function frame:SetScript(name, callback)
-		assert(not self:IsForbidden())
+		self:CheckAccess(true)
 		self.scripts[name] = callback
 	end
 	function frame:RegisterEvent(name)
 		self.events[name] = true
 	end
 	function frame:Show()
-		assert(not self:IsForbidden())
+		self:CheckAccess(true)
 		local changed = not self.shown
 		self.shown = true
 		if changed and self.scripts.OnShow then
@@ -31,7 +48,7 @@ local function Frame(parent)
 		end
 	end
 	function frame:Hide()
-		assert(not self:IsForbidden())
+		self:CheckAccess(true)
 		local changed = self.shown
 		self.shown = false
 		if changed and self.scripts.OnHide then
@@ -39,6 +56,7 @@ local function Frame(parent)
 		end
 	end
 	function frame:SetSize(width, height)
+		self:CheckAccess(true)
 		self.width, self.height = width, height
 	end
 	function frame:GetWidth()
@@ -58,18 +76,20 @@ local function Frame(parent)
 		return self.scale
 	end
 	function frame:SetPoint(...)
-		assert(not self:IsForbidden())
+		self:CheckAccess(true)
 		self.layouts = self.layouts + 1
 		self.points[#self.points + 1] = { ... }
 	end
 	function frame:ClearAllPoints()
-		assert(not self:IsForbidden())
+		self:CheckAccess(true)
 		self.points = {}
 	end
 	function frame:SetFrameStrata(value)
+		self:CheckAccess(true)
 		self.strata = value
 	end
 	function frame:SetFrameLevel(value)
+		self:CheckAccess(true)
 		self.level = value
 	end
 	function frame:RegisterForClicks(...)
@@ -82,18 +102,22 @@ local function Frame(parent)
 		self.highlight = value
 	end
 	function frame:SetClampedToScreen(value)
+		self:CheckAccess(true)
 		self.clamped = value
 	end
 	function frame:SetBackdrop(value)
+		self:CheckAccess(true)
 		self.backdrop = value
 	end
 	function frame:SetBackdropColor(...)
+		self:CheckAccess(true)
 		self.color = { ... }
 	end
 	function frame:SetTexture(value)
 		self.texture = value
 	end
 	function frame:SetText(value)
+		self:CheckAccess(true)
 		self.text = value
 	end
 	function frame:CreateTexture()
@@ -102,6 +126,7 @@ local function Frame(parent)
 		return texture
 	end
 	function frame:CreateFontString()
+		self:CheckAccess(true)
 		return Frame(self)
 	end
 	return frame
@@ -115,6 +140,11 @@ local function Menu()
 			self.enabled = value
 		end
 		self.entries[#self.entries + 1] = entry
+		return entry
+	end
+	function menu:CreateCheckbox(label, isSelected, callback)
+		local entry = self:CreateButton(label, callback)
+		entry.isSelected = isSelected
 		return entry
 	end
 	function menu:CreateDivider()
@@ -138,6 +168,10 @@ local function Fixture()
 	local anchor = Frame()
 	anchor.width, anchor.height, anchor.cx, anchor.cy, anchor.scale = 140, 140, 100, 200, 2
 	addon.anchor, addon.cursorX, addon.cursorY = anchor, 200, 556
+	addon.tooltipParent = Frame()
+	function addon:GetMinimapTooltipParent()
+		return self.tooltipParent
+	end
 	addon.API = {
 		GetMinimapAnchor = function()
 			return addon.anchor
@@ -221,15 +255,17 @@ QuestTogether:RegisterTest(
 		end
 		Equal(#a.menus, 2)
 		local entries = a.menus[1].entries
-		Equal(#entries, 7)
+		Equal(#entries, 8)
 		Equal(entries[1].label, "Settings")
 		Equal(entries[2].label, "Compare Party Quests")
 		Equal(entries[3].label, "Open Quest Journal")
 		Equal(entries[4].label, "Patch Notes")
-		assert(entries[5].divider)
-		Equal(entries[6].label, "Move QuestTogether Logs to Separate Window")
-		Equal(entries[7].label, "Hide Minimap Icon")
-		for _, index in ipairs({ 1, 2, 3, 4, 6 }) do
+		Equal(entries[5].label, "Looking for Questing Partners")
+		Equal(entries[5].isSelected(), false)
+		assert(entries[6].divider)
+		Equal(entries[7].label, "Move QuestTogether Logs to Separate Window")
+		Equal(entries[8].label, "Hide Minimap Icon")
+		for _, index in ipairs({ 1, 2, 3, 4, 7 }) do
 			entries[index].callback()
 		end
 		Equal(a.settings, 1)
@@ -240,8 +276,8 @@ QuestTogether:RegisterTest(
 		assert(a.separateOpened)
 		local menu = Menu()
 		a:PopulateMinimapMenu(menu)
-		Equal(menu.entries[6].label, "Move QuestTogether Logs to Main Window")
-		menu.entries[6].callback()
+		Equal(menu.entries[7].label, "Move QuestTogether Logs to Main Window")
+		menu.entries[7].callback()
 		Equal(a:GetOption("chatLogDestination"), "main")
 		Equal(a.separateOpened, false)
 	end
@@ -256,9 +292,9 @@ QuestTogether:RegisterTest("minimap stale menu actions recheck restrictions and 
 	for index = 1, 4 do
 		menu.entries[index].callback()
 	end
-	menu.entries[6].callback()
-	local messages = #a.messages
 	menu.entries[7].callback()
+	local messages = #a.messages
+	menu.entries[8].callback()
 	Equal(#a.messages, messages)
 	Equal(a:GetOption("showMinimapButton"), true)
 	assert(a.minimapButton.shown)
@@ -290,6 +326,31 @@ QuestTogether:RegisterTest("minimap stale menu actions recheck restrictions and 
 	Equal(a.journals, 2)
 end)
 
+QuestTogether:RegisterTest("minimap partner shortcut toggles the current saved value and rechecks restrictions", function()
+	local a = Fixture()
+	a:InitializeMinimapLauncher()
+	a:ShowMinimapMenu(a.minimapButton)
+	local entry = a.menus[1].entries[5]
+	Equal(entry.isSelected(), false)
+	entry.callback()
+	Equal(a:GetOption("lookingForQuestPartners"), true)
+	Equal(entry.isSelected(), true)
+	assert(a.messages[1]:find("On", 1, true))
+	-- Reusing a menu must toggle the current setting, not its opening value.
+	a:SetOption("lookingForQuestPartners", false)
+	entry.callback()
+	Equal(a:GetOption("lookingForQuestPartners"), true)
+	a.blocked = true
+	entry.callback()
+	Equal(a:GetOption("lookingForQuestPartners"), true)
+	Equal(#a.messages, 2)
+	a.blocked, a.isEnabled = false, false
+	entry.callback()
+	Equal(a:GetOption("lookingForQuestPartners"), false)
+	entry.callback()
+	assert(a.messages[#a.messages]:find("paused", 1, true))
+end)
+
 QuestTogether:RegisterTest(
 	"minimap hide shortcut saves visibility and explains how to restore it in settings",
 	function()
@@ -301,7 +362,7 @@ QuestTogether:RegisterTest(
 		a:InitializeMinimapLauncher()
 		a:ShowMinimapMenu(a.minimapButton)
 		a:ShowMinimapTooltip(a.minimapButton)
-		a.menus[1].entries[7].callback()
+		a.menus[1].entries[8].callback()
 		Equal(a:GetOption("showMinimapButton"), false)
 		Equal(a.minimapButton.shown, false)
 		Equal(a.minimapTooltip.shown, false)
@@ -317,7 +378,7 @@ QuestTogether:RegisterTest(
 		function a:SetOption()
 			return false
 		end
-		a.menus[1].entries[7].callback()
+		a.menus[1].entries[8].callback()
 		Equal(#a.messages, 1)
 		Equal(refreshed, 1)
 	end
@@ -487,7 +548,7 @@ QuestTogether:RegisterTest("minimap tooltip is addon owned reused and hidden for
 	local button = a.minimapButton
 	button.scripts.OnEnter()
 	local tooltip = a.minimapTooltip
-	assert(tooltip.shown and tooltip.parent == button)
+	assert(tooltip.shown and tooltip.parent == a.tooltipParent)
 	button.scripts.OnLeave()
 	Equal(tooltip.shown, false)
 	button.scripts.OnEnter()
@@ -557,4 +618,95 @@ QuestTogether:RegisterTest("minimap drag release rechecks restrictions before th
 	a:StopMinimapButtonDrag(false)
 	Equal(a:GetOption("minimapButtonPosition"), 225)
 	Equal(rawget(a, "minimapDragState"), nil)
+end)
+
+QuestTogether:RegisterTest(
+	"minimap tooltip uses independent tooltip draw order instead of the minimap hierarchy",
+	function()
+		local a = Fixture()
+		a:InitializeMinimapLauncher()
+		local button = a.minimapButton
+		button.scripts.OnEnter()
+		local tooltip = a.minimapTooltip
+		Equal(tooltip.parent, a.tooltipParent)
+		Equal(tooltip.strata, "TOOLTIP")
+		Equal(tooltip.level, 100)
+		Equal(tooltip.points[1][2], button)
+		Equal(a.anchor.mutations, nil)
+		Equal(a.tooltipParent.mutations, nil)
+		button:Hide()
+		Equal(tooltip.shown, false)
+		Equal(tooltip.scripts.OnUpdate, nil)
+		button.scripts.OnEnter()
+		Equal(tooltip.shown, false)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"independent minimap tooltip hides when its anchor or runtime becomes unavailable",
+	function()
+		for _, boundary in ipairs({ "hidden", "forbidden", "unreadable", "restricted", "option" }) do
+			local a = Fixture()
+			a:InitializeMinimapLauncher()
+			a.minimapButton.scripts.OnEnter()
+			local tooltip = a.minimapTooltip
+			if boundary == "hidden" then
+				a.anchor.shown = false
+			elseif boundary == "forbidden" then
+				a.anchor.forbidden = true
+			elseif boundary == "unreadable" then
+				a.unreadable = {}
+				a.minimapButton.IsVisible = function()
+					return a.unreadable
+				end
+			elseif boundary == "restricted" then
+				a.blocked = true
+			else
+				a.db.profile.showMinimapButton = false
+			end
+			-- The tooltip no longer inherits visibility or quarantine from the anchor.
+			tooltip.scripts.OnUpdate(tooltip, 0.2)
+			Equal(tooltip.shown, false)
+			Equal(tooltip.scripts.OnUpdate, nil)
+			Equal(a.anchor.unsafeCalls, nil)
+			Equal(a.minimapButton.unsafeCalls, nil)
+			Equal(tooltip.unsafeCalls, nil)
+		end
+	end
+)
+
+QuestTogether:RegisterTest("minimap tooltip checks its independent parent and quarantined owned frame", function()
+	local a = Fixture()
+	a:InitializeMinimapLauncher()
+	a.tooltipParent.forbidden = true
+	a.minimapButton.scripts.OnEnter()
+	Equal(rawget(a, "minimapTooltip"), nil)
+	Equal(#a.frames, 2)
+	Equal(a.tooltipParent.unsafeCalls, nil)
+	a.tooltipParent.forbidden = false
+	a.tooltipParent.shown = false
+	a.minimapButton.scripts.OnEnter()
+	Equal(rawget(a, "minimapTooltip"), nil)
+	Equal(#a.frames, 2)
+	a.tooltipParent.shown = true
+	a.minimapButton.scripts.OnEnter()
+	local tooltip = a.minimapTooltip
+	for _, boundary in ipairs({ "forbidden", "protected" }) do
+		tooltip[boundary] = true
+		local mutations = tooltip.mutations
+		a:HideMinimapTooltip()
+		a:ShowMinimapTooltip(a.minimapButton)
+		Equal(tooltip.mutations, mutations)
+		Equal(tooltip.unsafeCalls, nil)
+		tooltip[boundary] = false
+		-- A hide requested during quarantine must finish after access returns,
+		-- even while the launcher remains hovered and otherwise eligible.
+		tooltip.scripts.OnUpdate(tooltip, 0.2)
+		Equal(tooltip.shown, false)
+		Equal(tooltip.scripts.OnUpdate, nil)
+		Equal(rawget(a, "minimapTooltipPendingHide"), nil)
+		a.minimapButton.scripts.OnEnter()
+		assert(tooltip.shown)
+		Equal(#a.frames, 3)
+	end
 end)

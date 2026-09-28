@@ -1,7 +1,8 @@
 local QT = _G.QuestTogether
 
-local UPDATE_INTERVAL, MOVING_INTERVAL, HEARTBEAT_INTERVAL, LIFETIME = 0.2, 5, 20, 45
-local MAX_PEERS = 128
+local UPDATE_INTERVAL, SAMPLE_INTERVAL, MOVING_INTERVAL = 0.2, 5, 10
+local HEARTBEAT_INTERVAL, WITHDRAWAL_INTERVAL, LIFETIME = 20, 5, 120
+local MAX_PEERS = 512
 local CLASSES = {
 	WARRIOR = true,
 	PALADIN = true,
@@ -82,7 +83,10 @@ function QT:ReadLocalPlayerLocation()
 	if not factionOK or not self:CanAccessValue(faction) then
 		faction = nil
 	end
-	local warMode = self.API.IsWarModeActive and self.API.IsWarModeActive()
+	local warMode
+	if self:SupportsWarMode() == true and self.API.IsWarModeActive then
+		warMode = self.API.IsWarModeActive()
+	end
 	if not self:CanAccessValue(warMode) or type(warMode) ~= "boolean" then
 		warMode = nil
 	end
@@ -172,22 +176,26 @@ function QT:BroadcastPlayerLocation(force, withdraw)
 	if not now then
 		return false
 	end
-	if not force and state.lastSampleAt and now - state.lastSampleAt < MOVING_INTERVAL then
+	if not force and state.lastSampleAt and now - state.lastSampleAt < SAMPLE_INTERVAL then
 		return false
 	end
 	state.lastSampleAt = now
 	local mask = withdraw and 0 or self:GetPlayerLocationShareMask()
-	-- Restrictions and missing position revoke the old point, never resend it.
-	local location = mask ~= 0 and self:ReadLocalPlayerLocation() or nil
-	if not location then
-		mask = 0
-	end
 	-- One route can accept a permission change while another rejects it. Retry
 	-- each revoked surface until its last published point expires. Publications
 	-- on a retained surface must not prolong another surface's revocation window.
 	local mapEnabled, minimapEnabled = mask % 2 == 1, mask >= 2
 	local withdrawing = NeedsWithdrawalRetry(mapEnabled, state.lastMapLocationSentAt, now)
 		or NeedsWithdrawalRetry(minimapEnabled, state.lastMinimapLocationSentAt, now)
+	local location = mask ~= 0 and self:ReadLocalPlayerLocation() or nil
+	if mask ~= 0 and not location then
+		-- A transient read outage is not a privacy change. Do not renew stale
+		-- coordinates or withdraw an otherwise permitted last-reported point.
+		if not withdrawing then return false end
+		-- A partial opt-out still needs immediate withdrawal when no fresh
+		-- position can be published for the remaining permitted surface.
+		mask, mapEnabled, minimapEnabled = 0, false, false
+	end
 	if mask == 0 and not force and not withdrawing then
 		return false
 	end
@@ -198,7 +206,7 @@ function QT:BroadcastPlayerLocation(force, withdraw)
 	local fingerprint = mask == 0 and "0"
 		or self:EncodePlayerLocationPayload({ session = "0-0", sequence = 1 }, mask, location)
 	local changed = fingerprint ~= state.lastFingerprint
-	local interval = (changed or withdrawing) and MOVING_INTERVAL or HEARTBEAT_INTERVAL
+	local interval = withdrawing and WITHDRAWAL_INTERVAL or (changed and MOVING_INTERVAL or HEARTBEAT_INTERVAL)
 	local due = not state.lastSentAt or now - state.lastSentAt >= interval
 	if not force and not due then
 		return false
@@ -276,6 +284,9 @@ function QT:HandlePlayerLocationMessage(payload, sender)
 	end
 	data.name, data.receivedAt, data.retired = name, now, retired
 	state.peers[name] = data
+	-- An accepted update, including a location-sharing opt-out, identifies a QT
+	-- sender. Replayed/obsolete positions must not undo an explicit departure.
+	self:RecordQTPlayerPresence(name, true)
 	return true
 end
 

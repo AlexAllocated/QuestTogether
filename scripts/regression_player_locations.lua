@@ -60,8 +60,13 @@ local function Fixture(name)
 		return 60
 	end
 	a.API.IsWarModeActive = function()
+		a.warModeReads = (a.warModeReads or 0) + 1
 		return false
 	end
+	a.API.IsWarModeFeatureEnabled = function()
+		return a.warModeFeature
+	end
+	a.warModeFeature = true
 	a.API.IsOnIgnoredList = function(target)
 		return a.ignored[target] == true
 	end
@@ -145,6 +150,38 @@ QT:RegisterTest("locations default to sharing and viewing both surfaces and pres
 	Equal(#b:GetVisiblePlayerLocations("minimap"), 1)
 end)
 
+QT:RegisterTest("locations omit unsupported War Mode without dropping cross-phase positions", function()
+	for _, capability in ipairs({ "regional", "disabled", "unknown", "enabled" }) do
+		local regional = capability == "regional"
+		local a = Fixture(regional and "Torres Sky" or "Me-Realm")
+		local b = Fixture(regional and "Mira Dawn" or "Friend-Realm")
+		a.other = b
+		a.forever, b.forever = regional, regional
+		if capability == "disabled" then
+			a.warModeFeature = false
+		elseif capability == "unknown" then
+			a.warModeFeature = nil
+		end
+		-- The receiving player can have a different mode. This metadata does
+		-- not authorize filtering either map surface's shared positions.
+		b.API.IsWarModeActive = function() return true end
+		assert(a:BroadcastPlayerLocation())
+		Equal(a.warModeReads or 0, capability == "enabled" and 1 or 0)
+		for _, surface in ipairs({ "map", "minimap" }) do
+			local peers = b:GetVisiblePlayerLocations(surface)
+			Equal(#peers, 1)
+			Equal(peers[1].x, 0.4)
+			Equal(peers[1].y, 0.6)
+			if capability == "enabled" then
+				Equal(peers[1].warMode, false)
+			else
+				Equal(peers[1].warMode, nil)
+			end
+			if capability == "regional" then Equal(peers[1].name, "Torres Sky") end
+		end
+	end
+end)
+
 QT:RegisterTest(
 	"locations independently honor sender and viewer options and withdraw previously visible positions",
 	function()
@@ -193,10 +230,10 @@ QT:RegisterTest("location sends pace position reads movement heartbeat and faile
 	end
 	a.now = 130
 	assert(a:BroadcastPlayerLocation())
-	a.sendFails, a.position.x, a.now = true, 0.42, 135
+	a.sendFails, a.position.x, a.now = true, 0.42, 140
 	assert(not a:BroadcastPlayerLocation())
 	Equal(#a.sent, 4)
-	a.now = 136
+	a.now = 141
 	assert(not a:BroadcastPlayerLocation())
 	Equal(#a.sent, 4)
 end)
@@ -206,9 +243,20 @@ QT:RegisterTest("failed location sends never deliver a point to the receiver", f
 	a.other, a.sendFails = b, true
 	Equal(a:BroadcastPlayerLocation(), false)
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
-	a.now, b.now, a.sendFails = 105, 105, false
+	a.now, b.now, a.sendFails = 110, 110, false
 	assert(a:BroadcastPlayerLocation())
 	Equal(#b:GetVisiblePlayerLocations("map"), 1)
+end)
+
+QT:RegisterTest("location movement samples at five seconds but sends no faster than ten", function()
+	local a = Fixture()
+	assert(a:BroadcastPlayerLocation())
+	for now = 105, 160, 5 do
+		a.now, a.position.x = now, (now - 100) / 100
+		Equal(a:BroadcastPlayerLocation(), now % 10 == 0)
+	end
+	Equal(a.reads, 13)
+	Equal(#a.sent, 7, "moving traffic must be at most one position per ten seconds")
 end)
 
 QT:RegisterTest("location opt-out retries partial and total withdrawal failures after route recovery", function()
@@ -246,13 +294,13 @@ QT:RegisterTest("location withdrawal retries stop at old-position expiry even wh
 		a.db.profile.shareLocationOnMap, a.db.profile.shareLocationOnMinimap = false, false
 		a.sendFails = failed
 		a:BroadcastPlayerLocation(true)
-		for now = 105, 140, 5 do
+		for now = 105, 215, 5 do
 			a.now, b.now = now, now
 			a:BroadcastPlayerLocation()
 		end
-		Equal(#a.sent, 10) -- one point, one opt-out, eight bounded retries
+		Equal(#a.sent, 25) -- one point, one opt-out, twenty-three bounded retries
 		local attempts = #a.sent
-		for now = 145, 200, 5 do
+		for now = 220, 275, 5 do
 			a.now, b.now = now, now
 			Equal(a:BroadcastPlayerLocation(), false)
 		end
@@ -265,7 +313,7 @@ QT:RegisterTest("location withdrawal retries stop at old-position expiry even wh
 		Equal(b:GetVisiblePlayerLocations("map")[1].x, 0.7)
 		a.db.profile.shareLocationOnMap = false
 		assert(a:BroadcastPlayerLocation(true))
-		a.now = 205
+		a.now = 280
 		assert(a:BroadcastPlayerLocation())
 		Equal(#b:GetVisiblePlayerLocations("map"), 0)
 	end
@@ -304,7 +352,7 @@ QT:RegisterTest("location permission retry expiry belongs to each surface and re
 	a.other = b
 	assert(a:BroadcastPlayerLocation())
 	assert(a:SetOption("shareLocationOnMinimap", false))
-	for now = 105, 140, 5 do
+	for now = 105, 215, 5 do
 		a.now, b.now = now, now
 		assert(a:BroadcastPlayerLocation())
 		Equal(#b:GetVisiblePlayerLocations("map"), 1)
@@ -312,56 +360,147 @@ QT:RegisterTest("location permission retry expiry belongs to each surface and re
 	end
 	-- Updating the retained map surface must not extend the minimap revocation.
 	local attempts = #a.sent
-	for now = 145, 155, 5 do
+	for now = 220, 230, 5 do
 		a.now, b.now = now, now
 		Equal(a:BroadcastPlayerLocation(), false)
 	end
 	Equal(#a.sent, attempts)
-	a.now, b.now = 160, 160
+	a.now, b.now = 235, 235
 	assert(a:BroadcastPlayerLocation(), "the remaining surface resumes its ordinary heartbeat")
 	assert(a:SetOption("shareLocationOnMap", false))
 	local reads = a.reads
-	for now = 165, 200, 5 do
+	for now = 240, 350, 5 do
 		a.now, b.now = now, now
 		assert(a:BroadcastPlayerLocation(), "the newly revoked map has its own expiry")
 	end
 	Equal(a.reads, reads)
-	a.now = 205
+	a.now = 355
 	Equal(a:BroadcastPlayerLocation(), false)
-	a.now, b.now, a.position.x = 210, 210, 0.7
+	a.now, b.now, a.position.x = 360, 360, 0.7
 	assert(a:SetOption("shareLocationOnMinimap", true))
 	Equal(b:GetVisiblePlayerLocations("minimap")[1].x, 0.7)
 	assert(a:SetOption("shareLocationOnMinimap", false))
-	a.now = 215
+	a.now = 365
 	assert(a:BroadcastPlayerLocation(), "fresh sharing starts a new bounded revocation lifetime")
 	a:ResetPlayerLocations()
-	a.now = 220
+	a.now = 370
 	Equal(a:BroadcastPlayerLocation(), false, "reset must not retain old publication history")
 end)
 
 QT:RegisterTest(
-	"location restrictions and unreadable positions revoke old points without native position reads",
+	"location restrictions and unreadable positions retain the last point without renewing it",
 	function()
 		local a, b = Fixture(), Fixture("Friend-Realm")
 		a.other = b
 		assert(a:BroadcastPlayerLocation())
 		local reads = a.reads
-		a.restricted, a.now = true, 105
-		assert(a:BroadcastPlayerLocation())
+		a.restricted, a.now, b.now = true, 105, 105
+		Equal(a:BroadcastPlayerLocation(), false)
 		Equal(a.reads, reads)
-		Equal(#b:GetVisiblePlayerLocations("map"), 0)
-		a.restricted, a.now = false, 110
-		assert(a:BroadcastPlayerLocation())
 		Equal(#b:GetVisiblePlayerLocations("map"), 1)
-		a.position, a.now = { x = math.huge, y = 0 }, 115
-		assert(a:BroadcastPlayerLocation())
-		Equal(#b:GetVisiblePlayerLocations("map"), 0)
+		a.restricted, a.position, a.now, b.now = false, { x = math.huge, y = 0 }, 110, 110
+		Equal(a:BroadcastPlayerLocation(), false)
+		Equal(b:GetVisiblePlayerLocations("map")[1].receivedAt, 100)
+		Equal(#a.sent, 1, "unreadable data must not send a withdrawal or a cached location")
 		a.position = { x = 0, y = 0 }
-		a.now = 120
+		a.now, b.now = 120, 120
 		assert(a:BroadcastPlayerLocation())
 		Equal(b:GetVisiblePlayerLocations("map")[1].x, 0)
+		Equal(b:GetVisiblePlayerLocations("map")[1].receivedAt, 120)
+		a.position = nil
+		for now = 125, 235, 5 do
+			a.now, b.now = now, now
+			Equal(a:BroadcastPlayerLocation(), false)
+			Equal(#b:GetVisiblePlayerLocations("map"), 1)
+		end
+		Equal(#a.sent, 2)
+		b.now = 240
+		Equal(#b:GetVisiblePlayerLocations("map"), 0)
 	end
 )
+
+QT:RegisterTest("location runtime ticks tolerate lost heartbeats and publish only fresh recovery data", function()
+	local a, b = Fixture(), Fixture("Friend-Realm")
+	a.other = b
+	-- Presence has its own protocol tests; these owned runtime callbacks
+	-- exercise location sampling, real transport, pruning and recovery.
+	function a:UpdateQTPlayerPresence() end
+	function b:UpdateQTPlayerPresence() end
+	b.db.profile.shareLocationOnMap, b.db.profile.shareLocationOnMinimap = false, false
+	assert(a:InitializePlayerLocations())
+	assert(b:InitializePlayerLocations())
+	local function Tick(now)
+		a.now, b.now = now, now
+		a.playerLocationUpdateFrame.scripts.OnUpdate(a.playerLocationUpdateFrame, 0.2)
+		b.playerLocationUpdateFrame.scripts.OnUpdate(b.playerLocationUpdateFrame, 0.2)
+	end
+	Tick(100)
+	a.sendFails = true
+	for now = 105, 175, 5 do
+		Tick(now)
+		Equal(#b:GetVisiblePlayerLocations("map"), 1)
+		Equal(b:GetVisiblePlayerLocations("map")[1].receivedAt, 100)
+	end
+	Equal(#a.sent, 4, "stationary traffic stays at one attempt per twenty seconds")
+	a.sendFails, a.position = false, { x = 0.7, y = 0.8 }
+	Tick(180)
+	Equal(b:GetVisiblePlayerLocations("map")[1].x, 0.7)
+	Equal(b:GetVisiblePlayerLocations("map")[1].receivedAt, 180)
+	a.restricted = true
+	local reads, sends = a.reads, #a.sent
+	for now = 185, 295, 5 do
+		Tick(now)
+		Equal(#b:GetVisiblePlayerLocations("map"), 1)
+	end
+	Equal(a.reads, reads)
+	Equal(#a.sent, sends)
+	Tick(300)
+	Equal(#b:GetVisiblePlayerLocations("map"), 0)
+end)
+
+QT:RegisterTest("location privacy changes withdraw immediately while fresh position is unavailable", function()
+	for _, key in ipairs({ "shareLocationOnMap", "shareLocationOnMinimap", "both", "disable" }) do
+		local a, b = Fixture(), Fixture("Friend-Realm")
+		a.other = b
+		assert(a:BroadcastPlayerLocation())
+		a.restricted, a.now, b.now = true, 101, 101
+		if key == "disable" then
+			assert(a:BroadcastPlayerLocation(true, true))
+		elseif key == "both" then
+			a.db.profile.shareLocationOnMap, a.db.profile.shareLocationOnMinimap = false, false
+			assert(a:BroadcastPlayerLocation(true))
+		else
+			assert(a:SetOption(key, false))
+		end
+		Equal(#b:GetVisiblePlayerLocations("map"), 0)
+		Equal(#b:GetVisiblePlayerLocations("minimap"), 0)
+		assert(a.sent[#a.sent].message:match(",0$"))
+		Equal(a.reads, 1)
+	end
+end)
+
+QT:RegisterTest("location partial privacy withdrawal retries failed routes during a position outage", function()
+	local a, party, channel = Fixture(), Fixture("Party-Realm"), Fixture("Channel-Realm")
+	a.inParty, a.peersByRoute = true, { PARTY = party, CHANNEL = channel }
+	assert(a:BroadcastPlayerLocation())
+	a.restricted, a.now, a.failedRoutes = true, 101, { PARTY = true }
+	assert(a:SetOption("shareLocationOnMap", false))
+	Equal(#party:GetVisiblePlayerLocations("map"), 1)
+	Equal(#channel:GetVisiblePlayerLocations("map"), 0)
+	local attempts = #a.sent
+	a.now, a.failedRoutes = 105, nil
+	Equal(a:BroadcastPlayerLocation(), false)
+	Equal(#a.sent, attempts)
+	a.now = 106
+	assert(a:BroadcastPlayerLocation())
+	Equal(#party:GetVisiblePlayerLocations("map"), 0)
+	Equal(#party:GetVisiblePlayerLocations("minimap"), 0)
+	Equal(a.reads, 1)
+	a.restricted, a.now, a.position = false, 120, { x = 0.7, y = 0.8 }
+	assert(a:BroadcastPlayerLocation())
+	Equal(#party:GetVisiblePlayerLocations("map"), 0)
+	Equal(party:GetVisiblePlayerLocations("minimap")[1].x, 0.7)
+end)
 
 QT:RegisterTest("location ordering session replacement and expiry prevent stale or revoked dots returning", function()
 	local a, b = Fixture(), Fixture("Friend-Realm")
@@ -381,7 +520,9 @@ QT:RegisterTest("location ordering session replacement and expiry prevent stale 
 	b.now = 103
 	b:OnCommReceived(a.commPrefix, a.sent[2].message, "CHANNEL", a.name, 7, "QuestTogether")
 	Equal(#b:GetVisiblePlayerLocations("map"), 1)
-	b.now = 147
+	b.now = 221
+	Equal(#b:GetVisiblePlayerLocations("map"), 1)
+	b.now = 222
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 end)
 
@@ -418,11 +559,28 @@ QT:RegisterTest("location records and malformed wire input are bounded", functio
 	}) do
 		Equal(a:DecodePlayerLocationPayload(payload), nil)
 	end
-	for i = 1, 140 do
+	for i = 1, 540 do
 		a.now = 100 + i / 100
 		assert(a:HandlePlayerLocationMessage(valid, "Peer" .. i .. "-Realm"))
 	end
-	Equal(#a:GetVisiblePlayerLocations("map"), 128)
+	Equal(#a:GetVisiblePlayerLocations("map"), 512)
+end)
+
+QT:RegisterTest("location channel retains fresh positions from two hundred fifty active peers", function()
+	local a = Fixture()
+	local payload = "LOC|1,100-1234,1,3,12,0.4,0.6,MAGE,Mage,Human,Alliance,60,0"
+	for i = 1, 250 do
+		a.now = 100 + i / 100
+		a:OnCommReceived(a.commPrefix, payload, "CHANNEL", "Peer" .. i .. "-Realm", 7, "QuestTogether")
+	end
+	Equal(#a:GetVisiblePlayerLocations("map"), 250)
+	assert(a.playerLocationState.peers["Peer1-Realm"], "healthy first peers must survive an active shared channel")
+	for i = 1, 250 do
+		a.now = 120 + i / 100
+		a:OnCommReceived(a.commPrefix, payload:gsub(",1,3,", ",2,3,"), "CHANNEL", "Peer" .. i .. "-Realm", 7, "QuestTogether")
+	end
+	Equal(#a:GetVisiblePlayerLocations("minimap"), 250)
+	Equal(a.playerLocationState.peers["Peer1-Realm"].sequence, 2)
 end)
 
 QT:RegisterTest("location runtime replacement cancels old update callbacks and clears owned pins", function()
@@ -432,6 +590,8 @@ QT:RegisterTest("location runtime replacement cancels old update callbacks and c
 	local callback = frame.scripts.OnUpdate
 	callback(frame, 0.2)
 	Equal(#a.sent, 2)
+	Equal(a.sent[1].message, "QTPR|1,1")
+	assert(a.sent[2].message:find("LOC|", 1, true) == 1)
 	a:ResetPlayerLocations()
 	Equal(rawget(a, "playerLocationState"), nil)
 	Equal(frame.scripts.OnUpdate, nil)

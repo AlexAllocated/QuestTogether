@@ -122,6 +122,11 @@ function QuestTogether:PopulateMinimapMenu(rootDescription)
 			self:OpenReleaseNotes()
 		end
 	end)
+	rootDescription:CreateCheckbox("Looking for Questing Partners", function()
+		return self:GetOption("lookingForQuestPartners") == true
+	end, function()
+		if not self:IsRuntimeRestricted() then self:HandleQuestPartnerCommand("toggle") end
+	end)
 	self:PopulateChatLogDestinationMenu(rootDescription)
 	rootDescription:CreateButton("Hide Minimap Icon", function()
 		if self:IsRuntimeRestricted() then
@@ -148,24 +153,59 @@ function QuestTogether:ShowMinimapMenu(button)
 	end) == true
 end
 
+function QuestTogether:GetMinimapTooltipParent()
+	return UIParent
+end
+
+local function IsTooltipAnchorVisible(addon, frame)
+	local isVisible = addon:GetAccessibleFrameMember(frame, "IsVisible")
+	if type(isVisible) ~= "function" then
+		return false
+	end
+	local ok, visible = pcall(isVisible, frame)
+	return ok and addon:CanAccessValue(visible) and visible == true
+end
+
+local function CanShowMinimapTooltip(addon, button)
+	return not addon:IsRuntimeRestricted()
+		and not rawget(addon, "minimapDragState")
+		and addon:GetOption("showMinimapButton") ~= false
+		and IsTooltipAnchorVisible(addon, button)
+end
+
 function QuestTogether:HideMinimapTooltip()
 	local tooltip = rawget(self, "minimapTooltip")
-	if self:CanAccessForeignFrame(tooltip) then
+	self.minimapTooltipPendingHide = tooltip and true or nil
+	if self.LibChev.CanMutateOwnedRegion(tooltip) then
+		tooltip:SetScript("OnUpdate", nil)
 		tooltip:Hide()
+		self.minimapTooltipPendingHide = nil
 	end
 end
 
 function QuestTogether:ShowMinimapTooltip(button)
-	if self:IsRuntimeRestricted() or rawget(self, "minimapDragState") or not self:CanAccessForeignFrame(button) then
+	if not CanShowMinimapTooltip(self, button) then
+		self:HideMinimapTooltip()
 		return
 	end
 	local tooltip = rawget(self, "minimapTooltip")
-	if tooltip and not self:CanAccessForeignFrame(tooltip) then
+	if tooltip and not self.LibChev.CanMutateOwnedRegion(tooltip) then
 		return
 	end
 	if not tooltip then
-		tooltip = self:CreateMinimapUIFrame("Frame", nil, button, "BackdropTemplate")
+		local parent = self:GetMinimapTooltipParent()
+		if not IsTooltipAnchorVisible(self, parent) then
+			return
+		end
+		-- Keep the tooltip outside the minimap's render hierarchy. The button is
+		-- only an anchor, so minimap layers cannot place it behind other UI.
+		tooltip = self:CreateMinimapUIFrame("Frame", nil, parent, "BackdropTemplate")
+		if not self.LibChev.CanMutateOwnedRegion(tooltip) then
+			return
+		end
+		tooltip:Hide()
 		tooltip:SetFrameStrata("TOOLTIP")
+		tooltip:SetFrameLevel(100)
 		tooltip:SetClampedToScreen(true)
 		tooltip:SetSize(220, 64)
 		tooltip:SetBackdrop({
@@ -174,7 +214,6 @@ function QuestTogether:ShowMinimapTooltip(button)
 			edgeSize = 12,
 		})
 		tooltip:SetBackdropColor(0.04, 0.05, 0.07, 0.95)
-		tooltip:SetPoint("TOPRIGHT", button, "BOTTOMLEFT", 0, -4)
 		local title = tooltip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 		title:SetPoint("TOPLEFT", 10, -10)
 		title:SetText("QuestTogether")
@@ -183,6 +222,22 @@ function QuestTogether:ShowMinimapTooltip(button)
 		hint:SetText("Left or right click for menu\nDrag to move")
 		self.minimapTooltip = tooltip
 	end
+	tooltip:ClearAllPoints()
+	tooltip:SetPoint("TOPRIGHT", button, "BOTTOMLEFT", 0, -4)
+	-- An independent parent no longer hides this frame when the minimap hides
+	-- or becomes quarantined. Check that boundary only while the tooltip is up.
+	local elapsedSinceCheck = 0
+	tooltip:SetScript("OnUpdate", function(_, elapsed)
+		elapsedSinceCheck = elapsedSinceCheck + elapsed
+		if elapsedSinceCheck < 0.1 then
+			return
+		end
+		elapsedSinceCheck = 0
+		if rawget(self, "minimapTooltipPendingHide") or not CanShowMinimapTooltip(self, button) then
+			self:HideMinimapTooltip()
+		end
+	end)
+	self.minimapTooltipPendingHide = nil
 	tooltip:Show()
 end
 

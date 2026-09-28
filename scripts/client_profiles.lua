@@ -29,20 +29,135 @@ return function(client)
 	GetQuestLogSelection = function() return selected end
 	GetQuestLogPushable = function() return pushable end
 	SelectQuestLogEntry = function() error("addon must not move selected quest") end
-	GetNumQuestLeaderBoards = function(index) assert(index == 7); return 1 end
+	GetNumQuestLeaderBoards = function(index) assert(index == 7)
+return 1 end
 	C_QuestLog = {
-		GetQuestObjectives = function(id) assert(id == 12345); return { objective } end,
+		GetQuestObjectives = function(id) assert(id == 12345)
+return { objective } end,
 		GetInfo = not classic and Info or nil,
-		GetLogIndexForQuestID = not classic and function(id) assert(id == 12345); return 7 end or nil,
+		GetLogIndexForQuestID = not classic and function(id) assert(id == 12345)
+return 7 end or nil,
 		SetSelectedQuest = function() error("addon must not move selected quest") end,
 		GetNumQuestLogEntries = not classic and function() return 7 end or nil,
-		IsPushableQuest = not classic and function(id) assert(id == 12345); return pushable end or nil,
+		IsPushableQuest = not classic and function(id) assert(id == 12345)
+return pushable end or nil,
 	}
 	GetQuestObjectiveInfo = not classic and function(id, index)
 		assert(id == 12345 and index == 1)
 		return objective.text, objective.type, objective.finished, objective.numFulfilled
 	end or nil
 	return function(addon)
+		-- Shared Mainline exports do not imply that Forever has War Mode.
+		-- Keep native API probes in this offline process, not the live test suite.
+		do
+			local originalPvP, originalRegional = C_PvP, RegionalUniqueNamesEnabled
+			local active, enabled, capabilityCalls, desiredCalls = false, not classic, 0, 0
+			RegionalUniqueNamesEnabled = function() return client == "forever" end
+			C_PvP = {
+				IsWarModeFeatureEnabled = function() capabilityCalls = capabilityCalls + 1
+return enabled end,
+				IsWarModeActive = function() return active end,
+				IsWarModeDesired = function() desiredCalls = desiredCalls + 1
+return not active end,
+			}
+			assert(addon:SupportsWarMode() == (client == "retail"))
+			assert(capabilityCalls == (client == "forever" and 0 or 1))
+			for _, value in ipairs({ true, false, secret, inaccessible, "true", 1 }) do
+				active, enabled = value, value
+				local expected
+				if type(value) == "boolean" then expected = value end
+				assert(addon.API.IsWarModeFeatureEnabled() == expected)
+				assert(addon.API.IsWarModeActive() == expected)
+			end
+			active, enabled = nil, nil
+			assert(addon.API.IsWarModeFeatureEnabled() == nil)
+			assert(addon.API.IsWarModeActive() == nil)
+			C_PvP.IsWarModeActive = nil
+			assert(addon.API.IsWarModeActive() == nil)
+			assert(desiredCalls == 0, "actual mode must not be replaced with the desired preference")
+			C_PvP.IsWarModeActive = function() error("unavailable active mode") end
+			C_PvP.IsWarModeFeatureEnabled = function() error("unavailable feature") end
+			assert(addon.API.IsWarModeActive() == nil)
+			assert(addon.API.IsWarModeFeatureEnabled() == nil)
+			local before = inaccessibleReads
+			for _, unavailable in ipairs({ secret, inaccessible }) do
+				C_PvP = unavailable
+				assert(addon.API.IsWarModeActive() == nil)
+				assert(addon.API.IsWarModeFeatureEnabled() == nil)
+			end
+			assert(inaccessibleReads == before, "inaccessible C_PvP tables must not be indexed")
+			C_PvP = nil
+			assert(addon.API.IsWarModeActive() == nil)
+			assert(addon.API.IsWarModeFeatureEnabled() == nil)
+			C_PvP, RegionalUniqueNamesEnabled = originalPvP, originalRegional
+		end
+		-- A successful missing modern CVar permits the legacy alias; an unreadable
+		-- native boundary must fail closed instead of enabling friendly overlays.
+		do
+			local originalCVar = C_CVar
+			local modern, legacy = "nameplateShowFriendlyPlayers", "nameplateShowFriends"
+			local values, calls, failure = {}, {}, nil
+			C_CVar = {
+				GetCVar = function(key)
+					calls[#calls + 1] = key
+					if key == failure then
+						error("CVar unavailable")
+					end
+					return values[key]
+				end,
+			}
+			local value, readable = addon.API.GetCVar(modern)
+			assert(value == nil and readable == true, "an absent CVar is a successful read")
+			for _, case in ipairs({
+				{ modern = "1", legacy = "0", expected = true, reads = 1 },
+				{ modern = "0", legacy = "1", expected = false, reads = 1 },
+				{ legacy = "1", expected = true, reads = 2 },
+				{ legacy = "0", expected = false, reads = 2 },
+				{ reads = 2 },
+			}) do
+				values, calls = { [modern] = case.modern, [legacy] = case.legacy }, {}
+				assert(addon:GetFriendlyPlayerNameplateVisibility() == case.expected)
+				assert(#calls == case.reads and calls[1] == modern)
+				if case.reads == 2 then
+					assert(calls[2] == legacy)
+				end
+			end
+			for _, unavailable in ipairs({ secret, inaccessible, "", "invalid", 1, true }) do
+				values, calls = { [modern] = unavailable, [legacy] = "1" }, {}
+				assert(addon:GetFriendlyPlayerNameplateVisibility() == nil)
+				assert(#calls == 1, "invalid modern data must not enable legacy fallback")
+				if unavailable == secret or unavailable == inaccessible then
+					value, readable = addon.API.GetCVar(modern)
+					assert(value == nil and readable == false)
+				end
+			end
+			for _, key in ipairs({ modern, legacy }) do
+				values, calls, failure = { [legacy] = "1" }, {}, key
+				assert(addon:GetFriendlyPlayerNameplateVisibility() == nil)
+				assert(#calls == (key == modern and 1 or 2))
+				value, readable = addon.API.GetCVar(key)
+				assert(value == nil and readable == false)
+			end
+			failure = nil
+			local before = inaccessibleReads
+			for _, unavailable in ipairs({ secret, inaccessible, false }) do
+				C_CVar = unavailable
+				value, readable = addon.API.GetCVar(modern)
+				assert(value == nil and readable == false)
+				assert(addon:GetFriendlyPlayerNameplateVisibility() == nil)
+				C_CVar = { GetCVar = unavailable }
+				value, readable = addon.API.GetCVar(modern)
+				assert(value == nil and readable == false)
+			end
+			C_CVar = nil
+			value, readable = addon.API.GetCVar(modern)
+			assert(value == nil and readable == false)
+			C_CVar = {}
+			value, readable = addon.API.GetCVar(modern)
+			assert(value == nil and readable == false)
+			assert(inaccessibleReads == before, "inaccessible CVar namespace must not be read")
+			C_CVar = originalCVar
+		end
 		-- Foreign native map returns are checked before any field access. This
 		-- standalone fixture never replaces C_Map inside a live client.
 		do
@@ -176,8 +291,10 @@ return function(client)
 				assert(addon.API.GetQuestLogIndexForSharing(12345) == nil)
 				assert(addon.API.PushQuestToParty(7) == false, "legacy sharing must not change selection")
 			else
-				C_QuestLog.GetLogIndexForQuestID = function(id) assert(id == 12345); return rawIndex end
-				C_QuestLog.GetInfo = function(index) assert(index == rawIndex); return rawRow end
+				C_QuestLog.GetLogIndexForQuestID = function(id) assert(id == 12345)
+return rawIndex end
+				C_QuestLog.GetInfo = function(index) assert(index == rawIndex)
+return rawRow end
 				assert(addon.API.GetQuestLogIndexForSharing("12345") == 7)
 				assert(addon.API.PushQuestToParty(7) == true, "no native return still means the call was attempted")
 				rawIndex = 9

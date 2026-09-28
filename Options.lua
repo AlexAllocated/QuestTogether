@@ -1691,7 +1691,7 @@ function QuestTogether:InitializeMiscWindow(parentCategory)
 	)
 	local debugButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
 	debugButton:SetSize(180, 24)
-	debugButton:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -270)
+	debugButton:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -302)
 	debugButton:SetText("Open Debug Window")
 	debugButton:SetScript("OnClick", function()
 		QuestTogether:ShowDebugWindow()
@@ -1706,6 +1706,11 @@ function QuestTogether:InitializeMiscWindow(parentCategory)
 	end)
 
 	self.miscControls = {
+		lookingForQuestPartners = CreateCheckbox(
+			content, "lookingForQuestPartners", "Looking for Questing Partners",
+			"Tell other QuestTogether players you want company. Shown on your player menu and map-dot tooltips; does not share your location. Saved per profile. You can also toggle with /qt lfg.",
+			16, -266
+		),
 		showMinimapButton = showMinimapButton,
 		autoAcceptPartyShareRequests = autoAcceptPartyShareRequests,
 		emoteOnQuestCompletion = emoteOnQuestCompletion,

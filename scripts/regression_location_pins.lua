@@ -156,6 +156,11 @@ local function Fixture()
 		{ __index = QuestTogether }
 	)
 	a.mapParent, a.miniParent, a.tooltipParent = Frame(a), Frame(a), Frame(a)
+	a.API = {
+		RegionalUniqueNamesEnabled = function() return a.forever == true end,
+		IsWarModeFeatureEnabled = function() return a.warModeFeature end,
+	}
+	a.warModeFeature = true
 	a.geometry = {
 		map = {
 			parent = a.mapParent,
@@ -329,6 +334,70 @@ Register("location dots reuse a bounded pool and copy no state to native parents
 	Equal(Pin(a, "map").texture.color[1], 1)
 end)
 
+Register("location renderer finds visible players after off-map candidates and preserves interaction", function()
+	for _, surface in ipairs({ "map", "minimap" }) do
+		local a = Fixture()
+		a.rows[surface] = {}
+		for index = 1, 128 do
+			a.rows[surface][index] = Row(string.format("A%03d-Realm", index), 0.5, 0.5, 3)
+		end
+		a.rows[surface][129] = Row("ZVisible-Realm")
+		assert(a:RefreshPlayerLocationPins())
+		local pin = Pin(a, surface)
+		Equal(#a.locationPinState.surfaces[surface].pins, 1)
+		Equal(pin.name, "ZVisible-Realm")
+		assert(pin.frame.shown)
+		pin.frame.scripts.OnEnter({})
+		assert(a.locationPinState.tooltip.shown)
+		assert(a.locationPinState.tooltipLabel.text:find("ZVisible-Realm", 1, true))
+		pin.frame.scripts.OnClick({}, "RightButton")
+		Equal(#a.menus, 1)
+		Equal(a.menus[1].name, "ZVisible-Realm")
+	end
+end)
+
+Register("location renderer bounds candidates independently from its visible pin pool", function()
+	for _, surface in ipairs({ "map", "minimap" }) do
+		local a = Fixture()
+		local projections = 0
+		function a:ProjectPlayerLocationPin(...)
+			projections = projections + 1
+			return QuestTogether.ProjectPlayerLocationPin(self, ...)
+		end
+		a.rows[surface] = {}
+		for index = 1, 328 do
+			a.rows[surface][index] = Row(string.format("Peer%03d-Realm", index), 0.5, 0.5, index <= 128 and 3 or 1)
+		end
+		assert(a:RefreshPlayerLocationPins())
+		Equal(projections, 256)
+		Equal(#a.locationPinState.surfaces[surface].pins, 128)
+		Equal(Pin(a, surface, 128).name, "Peer256-Realm")
+		local frames = #a.frames
+		projections = 0
+		assert(a:RefreshPlayerLocationPins())
+		Equal(projections, 256)
+		Equal(#a.frames, frames)
+
+		-- Oversized input cannot extend native projection work beyond the model
+		-- contract. A visible peer at the last supported index still renders.
+		for index = 1, 513 do
+			a.rows[surface][index] = Row(string.format("Peer%03d-Realm", index), 0.5, 0.5, index == 513 and 1 or 3)
+		end
+		projections = 0
+		Equal(a:RefreshPlayerLocationPins(), false)
+		Equal(projections, 512)
+		Equal(a.locationPinState.surfaces[surface].frame.shown, false)
+		a.rows[surface][512] = Row("Peer512-Realm")
+		projections = 0
+		assert(a:RefreshPlayerLocationPins())
+		Equal(projections, 512)
+		Equal(Pin(a, surface).name, "Peer512-Realm")
+		Equal(Pin(a, surface, 2).frame.shown, false)
+		Equal(#a.locationPinState.surfaces[surface].pins, 128)
+		Equal(#a.frames, frames)
+	end
+end)
+
 Register("location tooltip and clicks revalidate live permissions identity and map", function()
 	local a = Fixture()
 	a.rows.map = { Row() }
@@ -371,6 +440,36 @@ Register("location tooltip and clicks revalidate live permissions identity and m
 	a:RefreshPlayerLocationPins()
 	Equal(pin.name, nil)
 	Equal(state.surfaces.map.frame.shown, false)
+end)
+
+Register("location tooltips hide unsupported War Mode and preserve every surface dot", function()
+	for _, capability in ipairs({ "regional", "disabled", "unknown", "enabled" }) do
+		local a = Fixture()
+		a.forever = capability == "regional"
+		local name = a.forever and "Torres Sky" or "Friend-Realm"
+		if capability == "disabled" then
+			a.warModeFeature = false
+		elseif capability == "unknown" then
+			a.warModeFeature = nil
+		end
+		for _, surface in ipairs({ "map", "minimap" }) do
+			a.rows[surface] = { Row(name) }
+			-- Older senders can still attach a War Mode field on Forever.
+			a.rows[surface][1].warMode = true
+		end
+		assert(a:RefreshPlayerLocationPins())
+		for _, surface in ipairs({ "map", "minimap" }) do
+			local pin = Pin(a, surface)
+			Equal(pin.name, name)
+			assert(pin.frame.shown)
+			pin.frame.scripts.OnEnter({})
+			local state = a.locationPinState
+			assert(state.tooltip.shown)
+			assert(state.tooltipLabel.text:find(name, 1, true))
+			Equal(state.tooltipLabel.text:find("War Mode: On", 1, true) ~= nil, capability == "enabled")
+			pin.frame.scripts.OnLeave({})
+		end
+	end
 end)
 
 Register("location empty surfaces skip UI allocation and all native geometry reads", function()
@@ -504,4 +603,53 @@ Register("location hidden expired or ignored peer never keeps a stale tooltip", 
 	state.wake.scripts.OnUpdate({}, 0.5)
 	Equal(state.tooltip.shown, false)
 	Equal(next(state.pending), nil)
+end)
+
+Register("location hover refreshes explicit quest partner status without replacing the pin", function()
+	local a = Fixture()
+	a.now = 100
+	a.API = {
+		GetTime = function() return a.now end,
+		GetRealmName = function() return "Realm" end,
+		RegionalUniqueNamesEnabled = function() return false end,
+	}
+	function a:GetPlayerFullName() return "Me-Realm" end
+	a.qtPlayerPresenceState = { peers = { ["Friend-Realm"] = 100 }, questPartners = { ["Friend-Realm"] = { receivedAt = 100, looking = true } } }
+	a.rows.map = { Row() }
+	a:RefreshPlayerLocationPins()
+	local pin = Pin(a, "map")
+	pin.frame.scripts.OnEnter({})
+	assert(a.locationPinState.tooltipLabel.text:find("Looking for Questing Partners", 1, true))
+	a.now = 165
+	a.qtPlayerPresenceState.peers["Friend-Realm"] = 165 -- Ordinary presence cannot renew the status.
+	a:RefreshPlayerLocationPins()
+	Equal(Pin(a, "map"), pin)
+	assert(a.locationPinState.tooltip.shown)
+	Equal(a.locationPinState.tooltipLabel.text:find("Looking for Questing Partners", 1, true), nil)
+	a.qtPlayerPresenceState.questPartners["Friend-Realm"] = { receivedAt = 165, looking = true }
+	a:RefreshPlayerLocationPins()
+	assert(a.locationPinState.tooltipLabel.text:find("Looking for Questing Partners", 1, true))
+	a.qtPlayerPresenceState.questPartners["Friend-Realm"] = nil
+	a:RefreshPlayerLocationPins()
+	Equal(a.locationPinState.tooltipLabel.text:find("Looking for Questing Partners", 1, true), nil)
+end)
+
+Register("location tooltip distinguishes an older last reported position from a fresh update", function()
+	local a = Fixture()
+	a.now = 500
+	a.API.GetTime = function() return a.now end
+	a.rows.map = { Row() }
+	a.rows.map[1].receivedAt = 450
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnEnter({})
+	assert(a.locationPinState.tooltipLabel.text:find("Last update: 50 seconds ago", 1, true))
+	a.now = 505
+	a:RefreshPlayerLocationPins()
+	assert(a.locationPinState.tooltipLabel.text:find("Last update: 55 seconds ago", 1, true))
+	a.rows.map[1].receivedAt = 505
+	a:RefreshPlayerLocationPins()
+	Equal(a.locationPinState.tooltipLabel.text:find("Last update:", 1, true), nil)
+	a.rows.map[1].receivedAt = nil
+	a:RefreshPlayerLocationPins()
+	Equal(a.locationPinState.tooltipLabel.text:find("Last update:", 1, true), nil)
 end)
