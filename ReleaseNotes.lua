@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "5.11.0",
+	version = "5.12.0",
 	welcome = "Find people to quest with using the new Looking for Questing Partners status. This update also improves minimap tooltip visibility and separates Retail War Mode and realm behavior from Forever.",
 	sections = {
 		{
