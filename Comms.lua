@@ -1028,6 +1028,7 @@ function QuestTogether:LeaveAnnouncementChannel()
 end
 
 function QuestTogether:ResetCommsState()
+	if self.ResetPartyJoin then self:ResetPartyJoin() end
 	self.qtPlayerPresenceState = nil
 	if self.ResetPlayerLocations then self:ResetPlayerLocations() end
 	if self.ResetPartyQuestCompare then self:ResetPartyQuestCompare() end
@@ -2191,6 +2192,14 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		return
 	end
 
+	if command == "QJST" and self.HandlePartyJoinMetadata then
+		self:HandlePartyJoinMetadata(payload, transportSenderName)
+		return
+	end
+	if command == "QJON" and self.HandlePartyJoinMessage then
+		self:HandlePartyJoinMessage(payload, transportSenderName)
+		return
+	end
 	if command == "QTVR" then
 		self:HandleAddonVersionMessage(payload, transportSenderName)
 		return

@@ -4,12 +4,20 @@ local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
 	version = "5.14.1",
-	welcome = "Party announcements now show the full QuestTogether name.",
+	welcome = "Ask to join a questing party directly from a QuestTogether player menu.",
 	sections = {
 		{
-			title = "Party chat",
+			title = "Join a questing party",
 			items = {
-				"Expanded the party-chat announcement prefix from [QT] to [QuestTogether], making it easier for other players to find the addon.",
+				"Grouped QT players now show Request to Join instead of Invite when recent party information is available. Both players need this update; the requester must be solo.",
+				"The recipient can send a normal WoW invitation or decline. They must have invitation permission and room in an ordinary party. You still accept the normal invitation to join.",
+			},
+		},
+		{
+			title = "Optional automatic invitations",
+			items = {
+				"Two new options automatically approve requests from character friends, or from other players while you are Looking for Questing Partners. Both start off and appear in the prompt and Miscellaneous settings. Battle.net account friends are not included.",
+				"Requests expire and respect ignores, party changes, and game restrictions. QT never leaves your current group or accepts invitations for you.",
 			},
 		},
 	},

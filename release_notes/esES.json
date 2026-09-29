@@ -1,13 +1,21 @@
 {
-  "source_sha256": "bcc9b4b484e55a81fe95ba608d94da83dc7861d4c655b9e88669b5f1977a44d0",
+  "source_sha256": "fbb33faa3c45389f9d2651737f8ee54ea157851574f3d306acf806daeb6810d6",
   "notes": {
     "version": "5.14.1",
-    "welcome": "Los anuncios de grupo ahora muestran el nombre completo de QuestTogether.",
+    "welcome": "Solicita unirte a un grupo de misiones directamente desde el menú de un jugador de QuestTogether.",
     "sections": [
       {
-        "title": "Chat de grupo",
+        "title": "Únete a un grupo de misiones",
         "items": [
-          "El prefijo de los anuncios en el chat de grupo cambia de [QT] a [QuestTogether] para que otros jugadores puedan encontrar el addon más fácilmente."
+          "Los jugadores de QT que están en grupo ahora muestran Solicitar unirse en lugar de Invitar cuando hay información reciente del grupo. Ambos jugadores necesitan esta actualización; quien envía la solicitud debe estar solo.",
+          "El destinatario puede enviar una invitación normal de WoW o rechazar la solicitud. Debe tener permiso para invitar y espacio en un grupo normal. Para unirte, sigues aceptando la invitación habitual."
+        ]
+      },
+      {
+        "title": "Invitaciones automáticas opcionales",
+        "items": [
+          "Dos nuevas opciones aprueban automáticamente las solicitudes de amigos de tu personaje, o de otros jugadores mientras buscas compañeros de misiones. Ambas están desactivadas por defecto y aparecen en la solicitud y en los ajustes Varios. No incluyen a los amigos de cuenta de Battle.net.",
+          "Las solicitudes caducan y respetan la lista de ignorados, los cambios de grupo y las restricciones del juego. QT nunca abandona tu grupo actual ni acepta invitaciones por ti."
         ]
       }
     ]

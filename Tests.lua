@@ -236,7 +236,7 @@ local function WithIsolatedState(testFn)
 			"announcementBubbleScreenHostFrame", "personalBubbleEditModeDialog", "mapWorkWakeFrame", "mapWorkWakeState",
 			"optionsFrame", "whereToAnnounceFrame", "questPlatesFrame", "miscFrame", "announcementsFrame", "profilesFrame",
 			"personalBubbleEditSession", "announcementChannelLocalID", "questCompareResponseQueue",
-			"partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
+			"partyJoinState", "partyJoinPrompt", "partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
 			"minimapButton", "minimapTooltip", "minimapTooltipPendingHide", "minimapLauncherFrame", "minimapDragState", "minimapSuppressClick",
 			"releaseNotesWindow", "releaseNotesWakeFrame", "pendingReleaseNotes", "addonUpdateState",
 			"discordSupportWindowOwner", "qtPlayerPresenceState", "playerPlatesFrame", "qtPlayerIconStateByFrame",
@@ -5079,6 +5079,7 @@ QuestTogether:RegisterTest("chat log speaker menu invite action uses full speake
 	local invitedName = nil
 	WithPatchedMethod(QuestTogether.API, "InviteUnit", function(name)
 		invitedName = name
+		return true
 	end, function()
 		AssertTrue(QuestTogether:InviteChatLogSpeaker("MyPlayer-Realm"))
 	end)

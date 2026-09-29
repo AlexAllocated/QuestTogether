@@ -1,5 +1,11 @@
 # QuestTogether changelog
 
+## 5.15.0 — 2026-09-29
+
+- Add Request to Join to QT player menus when fresh metadata identifies a grouped player. Solo and older peers retain Invite. Requests ask the recipient to send a normal WoW invitation; they never leave a group or automatically accept an invite.
+- Add off-by-default automatic approval for character friends and for other requesters while Looking for Questing Partners is on. Both controls appear in the consent prompt and Miscellaneous settings, with all five translations.
+- Recheck invite permissions, party membership, room, ignores and restrictions at approval. Expire requests, bound queues and replay history, reserve outstanding invitation slots, and fall back to manual consent after a failed automatic call. Limit unchanged party metadata to one update per minute, with transition and failure pacing.
+
 ## 5.14.1 — 2026-09-29
 
 - Expand the party-chat prefix to [QuestTogether] so other players can identify the addon. Preserve the message byte limit and UTF-8 boundaries with the longer prefix.

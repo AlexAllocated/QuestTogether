@@ -52,6 +52,7 @@ function QT:RecordQTPlayerPresence(name, active)
 		state.peers[name] = now
 	else
 		state.peers[name] = nil
+		if self.ForgetPartyJoinPeer then self:ForgetPartyJoinPeer(name) end
 	end
 	-- Recognition lasts for this UI session, independently of short-lived map
 	-- positions and partner status. Departures and evictions still clear logos.
@@ -281,6 +282,7 @@ function QT:PruneQTPlayerPresence(force)
 end
 
 function QT:UpdateQTPlayerPresence()
+	if self.UpdatePartyJoin then self:UpdatePartyJoin() end
 	self:BroadcastQTPlayerPresence()
 	self:BroadcastQuestPartnerStatus()
 	self:BroadcastAddonVersion()

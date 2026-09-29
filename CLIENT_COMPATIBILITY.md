@@ -163,3 +163,44 @@ locale tests render comparison and release-note controls and exercise status/sha
 logic in every language using private frames. Offline success does not establish
 native font coverage, label wrapping or live-client rendering. Check those in each
 client locale before declaring layout validation complete.
+
+
+## Party join requests (5.15.0)
+
+The native boundary uses `C_PartyInfo.CanInvite`, `GetNumGroupMembers`, and
+`C_PartyInfo.InviteUnit`, with guarded primitive copies and no writes to Blizzard
+frames, shared popup tables, or secure delegates. Group/raid/instance state must
+be readable; invitations are limited to ordinary parties with room and permission.
+Missing APIs fail closed. `InviteUnit` has no success return: a nonthrowing call
+means attempted, not delivered or accepted. QT does not call `ConfirmInviteUnit`,
+`RequestInviteFromUnit`, group-leave APIs, or automatically accept invitations.
+Source: [generated PartyInfo API documentation](https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_APIDocumentationGenerated/PartyInfoDocumentation.lua).
+Automatic calls are attempted once only when opted in and unrestricted; a failed
+invocation falls back to a manual prompt. This does not prove native delivery or
+hardware-click behavior on any specific live Retail/Forever build.
+
+Friends means the character friends list, queried through
+`C_FriendList.GetFriendInfo`, with exact normalized identity comparison. It is
+not faction friendliness, first-name matching, a sender claim, or Battle.net
+account friendship. Forever full regional names remain intact. A missing or
+unreadable friend lookup requires manual consent.
+Source: [generated FriendList API documentation](https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_APIDocumentationGenerated/FriendListDocumentation.lua).
+
+`QJST` version 1 advertises an ephemeral session/sequence, grouped state and
+invite availability on the existing authenticated announcement routes. Unchanged
+metadata sends once per 60 seconds; changes and failures are paced at 5 seconds.
+A 125-second expiry and 512-peer cap apply. It carries no position or friend list,
+and preserves legacy presence packets. Unknown native state is not advertised.
+`QJON` version 1 carries request ID, target and status; the transport sender is
+always authoritative. Only matching outgoing sender/ID/target replies are accepted.
+Requests expire after 60 seconds, at most one outgoing request waits, incoming
+traffic is capped at 10 requests per minute, each sender has a 15-second cooldown,
+and replay history is bounded to 128 entries retained for 120 seconds. Outstanding
+invites reserve available slots for 60 seconds or until that player joins.
+
+Changing the host roster invalidates old consent. Ignores, peer departures,
+disable/reset and expiration clear pending state. Restricted incoming requests
+are never parked for automatic execution later. Tests use private peers/frames;
+native mocks are confined to the offline client profiles. Live rendering, actual
+invitation delivery/acceptance, cross-faction eligibility, automatic invocation
+and blocked-action/taint behavior still require in-game validation on both clients.

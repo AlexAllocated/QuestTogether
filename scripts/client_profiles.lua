@@ -47,6 +47,50 @@ return pushable end or nil,
 		return objective.text, objective.type, objective.finished, objective.numFulfilled
 	end or nil
 	return function(addon)
+		-- Native party contracts are simulated offline only. Nil InviteUnit return
+		-- means invocation, not confirmed delivery; inaccessible data fails closed.
+		do
+			local oldCategory = LE_PARTY_CATEGORY_INSTANCE
+			LE_PARTY_CATEGORY_INSTANCE = 2
+			local oldParty, oldFriends = C_PartyInfo, C_FriendList
+			local oldGroup, oldRaid, oldCount = IsInGroup, IsInRaid, GetNumGroupMembers
+			local oldRestricted = addon.IsRuntimeRestricted
+			local blocked, grouped, raid, instance, count, permitted = false, true, false, false, 2, true
+			local calls, invited, friendInfo, result = 0, nil, nil, nil
+			addon.IsRuntimeRestricted = function() return blocked end
+			IsInGroup = function(category) if category == LE_PARTY_CATEGORY_INSTANCE then return instance end; return grouped end
+			IsInRaid = function() return raid end
+			GetNumGroupMembers = function() return count end
+			C_PartyInfo = {
+				CanInvite = function() return permitted end,
+				InviteUnit = function(name) calls, invited = calls + 1, name; return result end,
+			}
+			C_FriendList = { GetFriendInfo = function() return friendInfo end }
+			local g, allowed = addon.API.GetPartyJoinInfo()
+			assert(g == true and allowed == true)
+			count = 5; g, allowed = addon.API.GetPartyJoinInfo(); assert(allowed == false)
+			count, raid = 2, true; g, allowed = addon.API.GetPartyJoinInfo(); assert(allowed == false)
+			raid, instance = false, true; g, allowed = addon.API.GetPartyJoinInfo(); assert(allowed == false)
+			instance, permitted = false, secret; g, allowed = addon.API.GetPartyJoinInfo(); assert(allowed == false)
+			count = secret; assert(addon.API.GetPartyJoinInfo() == nil)
+			assert(addon.API.InviteUnit("Friend-Realm") == true and calls == 1 and invited == "Friend-Realm")
+			blocked = true; assert(addon.API.InviteUnit("Friend-Realm") == false and calls == 1); blocked = false
+			for _, value in ipairs({ false, secret, inaccessible }) do result = value; assert(addon.API.InviteUnit("Friend-Realm") == false) end
+			friendInfo = { name = "Friend-Realm" }; assert(addon.API.IsPartyJoinFriend("Friend-Realm") == true)
+			friendInfo = { name = "Friend-OtherRealm" }; assert(addon.API.IsPartyJoinFriend("Friend-Realm") == false)
+			local before = inaccessibleReads
+			for _, value in ipairs({ secret, inaccessible }) do
+				friendInfo = value; assert(addon.API.IsPartyJoinFriend("Friend-Realm") == false)
+				friendInfo = { name = value }; assert(addon.API.IsPartyJoinFriend("Friend-Realm") == false)
+				C_PartyInfo, C_FriendList = value, value
+				assert(addon.API.InviteUnit("Friend-Realm") == false and addon.API.IsPartyJoinFriend("Friend-Realm") == false)
+			end
+			assert(inaccessibleReads == before)
+			C_PartyInfo, C_FriendList = oldParty, oldFriends
+			IsInGroup, IsInRaid, GetNumGroupMembers = oldGroup, oldRaid, oldCount
+			addon.IsRuntimeRestricted = oldRestricted
+			LE_PARTY_CATEGORY_INSTANCE = oldCategory
+		end
 		local originalChat, originalLegacyChat = C_ChatInfo, SendChatMessage
 		local calls = {}
 		local function send(text, channel) calls[#calls + 1] = {text, channel} end

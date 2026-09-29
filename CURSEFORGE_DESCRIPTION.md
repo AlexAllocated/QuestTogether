@@ -103,6 +103,20 @@ Status expires when updates stop, and ignored players stay hidden. Disabling Que
 
 > **SCREENSHOT — Questing partners:** Glowing map dots and a glowing QT player logo, alongside the LFG map filter and minimap menu shortcut.
 
+## Ask to join a questing party
+
+When a QT player's recent metadata says they are already grouped, their player
+menu offers **Request to Join** instead of Invite. The recipient sees who is
+asking and chooses **Send Invitation** or **Decline**. They must be able to invite
+and have room in an ordinary party. The requester still accepts WoW's normal
+invitation. QT never leaves your current group for you.
+
+The prompt and **Miscellaneous** settings offer two independent, initially-off
+preferences: automatically invite friends who request to join, and automatically
+invite others while Looking for Questing Partners is on. Friends means your
+character friends list. Requests expire and are rate-limited; ignored players
+cannot request entry. Both players need a version supporting join requests.
+
 ## Spot quest objectives on nameplates
 
 **Quest Plates** adds an optional quest icon to relevant Blizzard nameplates and an optional health-bar tint for quest objectives.

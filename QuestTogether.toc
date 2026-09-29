@@ -44,6 +44,7 @@ Comms.lua
 AddonUpdates.lua
 QuestCompare.lua
 QuestCompareWindow.lua
+PartyJoin.lua
 QuestComparePreview.lua
 Minimap.lua
 PlayerLocations.lua
@@ -71,3 +72,4 @@ scripts/regression_location_pins.lua
 scripts/regression_location_ignores.lua
 scripts/regression_player_plates.lua
 scripts/regression_localization.lua
+scripts/regression_party_join.lua

@@ -179,6 +179,11 @@
       "Sammy Bear",
       "Wifebeast"
     ],
+    "PartyJoin.lua": [
+      "party join",
+      "party join prompt",
+      "party metadata"
+    ],
     "PlayerLocations.lua": [
       "Alliance",
       "Frame",

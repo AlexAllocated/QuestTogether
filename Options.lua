@@ -486,6 +486,8 @@ local CHECKBOX_OPTION_KEYS = {
 	"emoteOnLevelUp",
 	"emoteOnNearbyPlayerLevelUp",
 	"autoAcceptPartyShareRequests",
+	"autoInviteFriends",
+	"autoInviteWhileLFG",
 	"lookingForQuestPartners",
 	"showMinimapButton",
 	"sharePlayerLocation",
@@ -1652,7 +1654,7 @@ function QuestTogether:InitializeMiscWindow(parentCategory)
 	frame.name = L("Miscellaneous")
 	frame.parent = "QuestTogether"
 
-	local _, content = CreateScrollablePanelContent(frame, 350)
+	local _, content = CreateScrollablePanelContent(frame, 460)
 
 	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -16)
@@ -1708,7 +1710,7 @@ function QuestTogether:InitializeMiscWindow(parentCategory)
 	)
 	local debugButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
 	debugButton:SetSize(180, 24)
-	debugButton:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -302)
+	debugButton:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -398)
 	debugButton:SetText(L("Open Debug Window"))
 	debugButton:SetScript("OnClick", function()
 		QuestTogether:ShowDebugWindow()
@@ -1727,6 +1729,16 @@ function QuestTogether:InitializeMiscWindow(parentCategory)
 			content, "lookingForQuestPartners", L("Looking for Questing Partners"),
 			L("Tell other QuestTogether players you want company. Shown on your player menu and map-dot tooltips; does not share your location. Saved per profile. You can also toggle with /qt lfg."),
 			16, -266
+		),
+		autoInviteFriends = CreateCheckbox(
+			content, "autoInviteFriends", L("Automatically invite friends who request to join"),
+			L("Approve join requests from your character friends list. Otherwise, ask first. Does not accept invitations or leave your current party."),
+			16, -302
+		),
+		autoInviteWhileLFG = CreateCheckbox(
+			content, "autoInviteWhileLFG", L("Automatically invite others while looking for partners"),
+			L("Approve join requests while Looking for Questing Partners is on. You must have permission and room to invite."),
+			16, -350
 		),
 		showMinimapButton = showMinimapButton,
 		autoAcceptPartyShareRequests = autoAcceptPartyShareRequests,

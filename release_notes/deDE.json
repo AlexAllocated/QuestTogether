@@ -1,13 +1,21 @@
 {
-  "source_sha256": "bcc9b4b484e55a81fe95ba608d94da83dc7861d4c655b9e88669b5f1977a44d0",
+  "source_sha256": "fbb33faa3c45389f9d2651737f8ee54ea157851574f3d306acf806daeb6810d6",
   "notes": {
     "version": "5.14.1",
-    "welcome": "Gruppenankündigungen zeigen jetzt den vollständigen Namen QuestTogether.",
+    "welcome": "Frage direkt über das Spielermenü von QuestTogether an, ob du einer Questgruppe beitreten kannst.",
     "sections": [
       {
-        "title": "Gruppenchat",
+        "title": "Einer Questgruppe beitreten",
         "items": [
-          "Das Präfix für Ankündigungen im Gruppenchat wurde von [QT] zu [QuestTogether] erweitert, damit andere Spieler das Addon leichter finden."
+          "Bei QT-Spielern in einer Gruppe erscheint jetzt Beitritt anfragen statt Einladen, wenn aktuelle Gruppeninformationen vorliegen. Beide Spieler benötigen dieses Update; der Anfragende darf keiner Gruppe angehören.",
+          "Der Empfänger kann eine normale WoW-Einladung senden oder ablehnen. Er muss einladen dürfen und Platz in einer normalen Gruppe haben. Zum Beitritt nimmst du weiterhin die normale Einladung an."
+        ]
+      },
+      {
+        "title": "Optionale automatische Einladungen",
+        "items": [
+          "Zwei neue Optionen genehmigen Anfragen von Freunden deines Charakters automatisch oder von anderen Spielern, während du nach Questpartnern suchst. Beide sind anfangs aus und stehen im Dialog sowie unter Verschiedenes. Battle.net-Accountfreunde sind nicht eingeschlossen.",
+          "Anfragen laufen ab und berücksichtigen ignorierte Spieler, Gruppenänderungen und Spieleinschränkungen. QT verlässt niemals deine aktuelle Gruppe und nimmt keine Einladungen für dich an."
         ]
       }
     ]

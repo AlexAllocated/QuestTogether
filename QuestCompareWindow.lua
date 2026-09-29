@@ -473,3 +473,50 @@ function QuestTogether:RenderPartyQuestSharePrompt()
 	end
 	frame:Show()
 end
+
+function QuestTogether:CreatePartyJoinPrompt()
+	local parent = self:GetPartyQuestUIParent()
+	if not self:CanAccessForeignFrame(parent) then return nil end
+	local frame = Window(self, 580, 280, L("QuestTogether · Join request"))
+	frame:SetFrameStrata("FULLSCREEN_DIALOG")
+	frame:SetScale(math.min(1, parent:GetWidth() * 0.94 / 580, parent:GetHeight() * 0.94 / 280))
+	frame.message = Label(frame, 20, -48, 540, "")
+	frame.message:SetHeight(65)
+	local function Preference(y, text)
+		local check = self:CreatePartyQuestUIFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
+		check:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, y)
+		check:SetSize(26, 26)
+		local label = Label(check, 30, -4, 510, text)
+		label:SetHeight(40)
+		return check
+	end
+	frame.friends = Preference(-120, L("Automatically invite friends who request to join"))
+	frame.lfg = Preference(-168, L("Automatically invite others while looking for partners"))
+	frame.invite = Button(self, frame, 190, -238, 180, L("Send Invitation"), function()
+		self:ConfirmPartyJoin(frame.request, frame.friends:GetChecked() == true, frame.lfg:GetChecked() == true, false)
+	end)
+	frame.decline = Button(self, frame, 380, -238, 180, L("Decline"), function()
+		self:FinishPartyJoin(frame.request, "declined")
+	end)
+	self.partyJoinPrompt = frame
+	return frame
+end
+
+function QuestTogether:RenderPartyJoinPrompt()
+	if self:IsWorkBlocked("foreign_frame_mutation") then return end
+	local request = self.isEnabled and self:GetNextPartyJoinRequest() or nil
+	local frame = rawget(self, "partyJoinPrompt")
+	if not request then
+		if frame then frame.request = nil; frame:Hide() end
+		return
+	end
+	frame = frame or self:CreatePartyJoinPrompt()
+	if not frame then return end
+	if frame.request ~= request then
+		frame.request = request
+		frame.friends:SetChecked(self:GetOption("autoInviteFriends") == true)
+		frame.lfg:SetChecked(self:GetOption("autoInviteWhileLFG") == true)
+		frame.message:SetText(request.sender .. L(" would like to join your party.\nSend an invitation?"))
+	end
+	frame:Show()
+end

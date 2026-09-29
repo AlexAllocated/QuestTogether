@@ -361,6 +361,8 @@ QuestTogether.DEFAULTS = {
 		emoteOnLevelUp = true,
 		compareHideOtherQuests = false,
 		autoAcceptPartyShareRequests = false,
+		autoInviteFriends = false,
+		autoInviteWhileLFG = false,
 		lookingForQuestPartners = false,
 		showMinimapButton = true,
 		minimapButtonPosition = 225,
@@ -1957,12 +1959,46 @@ QuestTogether.API = QuestTogether.API or {
 			end
 			return progressValue
 		end,
-		InviteUnit = function(name)
-			if C_PartyInfo and C_PartyInfo.InviteUnit then
-				local ok, result = pcall(C_PartyInfo.InviteUnit, name)
-				return ok and result or nil
+		GetPartyJoinInfo = function()
+			-- Flat copied primitives only. Unknown native state is not solo.
+			local function Read(fn, ...)
+				if not CanAccessForeignValue(fn) or type(fn) ~= "function" then return nil end
+				local ok, value = pcall(fn, ...)
+				if ok and CanAccessForeignValue(value) then return value end
 			end
-			return nil
+			local grouped, raid = Read(IsInGroup), Read(IsInRaid)
+			local instance = Read(IsInGroup, LE_PARTY_CATEGORY_INSTANCE)
+			local count = Read(GetNumGroupMembers)
+			if type(grouped) ~= "boolean" or type(raid) ~= "boolean" or type(instance) ~= "boolean"
+				or type(count) ~= "number" or count ~= count or count < 0 or count > 40 then return nil end
+			local canInvite = false
+			if CanAccessForeignTable(C_PartyInfo) then
+				canInvite = Read(C_PartyInfo.CanInvite) == true
+			end
+			return grouped, canInvite and not raid and not instance and count < 5, count
+		end,
+		IsPartyJoinFriend = function(name)
+			-- Exact normalized character identity; never use display-name shortening
+			-- or sender-provided friendship. This is the character friends list.
+			if not CanAccessForeignValue(name) or type(name) ~= "string" then return false end
+			if not CanAccessForeignTable(C_FriendList) then return false end
+			local query = C_FriendList.GetFriendInfo
+			if not CanAccessForeignValue(query) or type(query) ~= "function" then return false end
+			local ok, info = pcall(query, name)
+			if not ok or not CanAccessForeignTable(info) then return false end
+			local friendName = info.name
+			if not CanAccessForeignValue(friendName) or type(friendName) ~= "string" then return false end
+			return QuestTogether:NormalizeMemberName(friendName) == QuestTogether:NormalizeMemberName(name)
+		end,
+		InviteUnit = function(name)
+			if QuestTogether:IsRuntimeRestricted() or not CanAccessForeignValue(name)
+				or type(name) ~= "string" or name == "" then return false end
+			if not CanAccessForeignTable(C_PartyInfo) then return false end
+			local invite = C_PartyInfo.InviteUnit
+			if not CanAccessForeignValue(invite) or type(invite) ~= "function" then return false end
+			local ok, result = pcall(invite, name)
+			-- The native API has no success return. This means attempted, not joined.
+			return ok and CanAccessForeignValue(result) and result ~= false
 		end,
 		SendTell = function(name, chatFrame)
 			-- Menus can be anchored to map dots or UIParent. Only a readable
@@ -4570,8 +4606,8 @@ function QuestTogether:InviteChatLogSpeaker(speakerName)
 		return false
 	end
 
-	self.API.InviteUnit(fullName)
-	return true
+	local ok, sent = pcall(self.API.InviteUnit, fullName)
+	return ok and sent == true
 end
 
 function QuestTogether:WhisperChatLogSpeaker(speakerName, ownerFrame)
@@ -4635,8 +4671,13 @@ function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, s
 	end
 
 	if fullName ~= "" then
-		rootDescription:CreateButton(L("Invite"), function()
-			self:InviteChatLogSpeaker(fullName)
+		local requestJoin = self.ShouldRequestPartyJoin and self:ShouldRequestPartyJoin(fullName)
+		rootDescription:CreateButton(requestJoin and L("Request to Join") or L("Invite"), function()
+			if requestJoin then
+				self:RequestPartyJoin(fullName)
+			else
+				self:InviteChatLogSpeaker(fullName)
+			end
 		end)
 		rootDescription:CreateButton(L("Whisper"), function()
 			self:WhisperChatLogSpeaker(fullName, ownerFrame)

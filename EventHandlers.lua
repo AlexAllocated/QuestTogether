@@ -806,6 +806,7 @@ function QuestTogether:GROUP_ROSTER_UPDATE()
 end
 
 function QuestTogether:IGNORELIST_UPDATE()
+	if self.PrunePartyJoin then self:PrunePartyJoin() end
 	if self.PruneQTPlayerPresence then self:PruneQTPlayerPresence(true) end
 	if self.ClearIgnoredAnnouncementBubbles then self:ClearIgnoredAnnouncementBubbles() end
 	if self.PrunePlayerLocations then self:PrunePlayerLocations(true) end

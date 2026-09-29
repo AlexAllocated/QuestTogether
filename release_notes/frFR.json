@@ -1,13 +1,21 @@
 {
-  "source_sha256": "bcc9b4b484e55a81fe95ba608d94da83dc7861d4c655b9e88669b5f1977a44d0",
+  "source_sha256": "fbb33faa3c45389f9d2651737f8ee54ea157851574f3d306acf806daeb6810d6",
   "notes": {
     "version": "5.14.1",
-    "welcome": "Les annonces de groupe affichent désormais le nom complet de QuestTogether.",
+    "welcome": "Demandez à rejoindre un groupe de quête directement depuis le menu d’un joueur QuestTogether.",
     "sections": [
       {
-        "title": "Canal de groupe",
+        "title": "Rejoindre un groupe de quête",
         "items": [
-          "Le préfixe des annonces dans le canal de groupe passe de [QT] à [QuestTogether] pour permettre aux autres joueurs de trouver plus facilement l’addon."
+          "Les joueurs QT déjà en groupe affichent désormais Demander à rejoindre au lieu d’Inviter lorsque des informations récentes sont disponibles. Les deux joueurs doivent disposer de cette mise à jour ; le demandeur doit être seul.",
+          "Le destinataire peut envoyer une invitation WoW normale ou refuser. Il doit avoir le droit d’inviter et une place dans un groupe normal. Vous devez toujours accepter l’invitation normale pour rejoindre."
+        ]
+      },
+      {
+        "title": "Invitations automatiques facultatives",
+        "items": [
+          "Deux nouvelles options approuvent automatiquement les demandes des amis de votre personnage, ou des autres joueurs pendant votre recherche de partenaires de quête. Désactivées par défaut, elles figurent dans la fenêtre de demande et les paramètres Divers. Les amis de compte Battle.net ne sont pas inclus.",
+          "Les demandes expirent et respectent les joueurs ignorés, les changements de groupe et les restrictions du jeu. QT ne quitte jamais votre groupe actuel et n’accepte pas d’invitations à votre place."
         ]
       }
     ]

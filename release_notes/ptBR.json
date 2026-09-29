@@ -1,13 +1,21 @@
 {
-  "source_sha256": "bcc9b4b484e55a81fe95ba608d94da83dc7861d4c655b9e88669b5f1977a44d0",
+  "source_sha256": "fbb33faa3c45389f9d2651737f8ee54ea157851574f3d306acf806daeb6810d6",
   "notes": {
     "version": "5.14.1",
-    "welcome": "Os anúncios de grupo agora mostram o nome completo do QuestTogether.",
+    "welcome": "Peça para entrar em um grupo de missões diretamente pelo menu de um jogador do QuestTogether.",
     "sections": [
       {
-        "title": "Bate-papo do grupo",
+        "title": "Entre em um grupo de missões",
         "items": [
-          "O prefixo dos anúncios no bate-papo do grupo mudou de [QT] para [QuestTogether], facilitando que outros jogadores encontrem o addon."
+          "Jogadores do QT que já estão em grupo agora mostram Pedir para entrar em vez de Convidar quando há informações recentes do grupo. Ambos precisam desta atualização; quem envia o pedido deve estar sem grupo.",
+          "O destinatário pode enviar um convite normal do WoW ou recusar. Ele precisa ter permissão para convidar e espaço em um grupo normal. Você ainda aceita o convite normal para entrar."
+        ]
+      },
+      {
+        "title": "Convites automáticos opcionais",
+        "items": [
+          "Duas novas opções aprovam automaticamente pedidos de amigos do seu personagem ou de outros jogadores enquanto você procura parceiros de missão. Ambas vêm desativadas e aparecem no pedido e nas configurações Diversos. Amigos de conta Battle.net não estão incluídos.",
+          "Os pedidos expiram e respeitam a lista de ignorados, mudanças no grupo e restrições do jogo. O QT nunca sai do seu grupo atual nem aceita convites por você."
         ]
       }
     ]
