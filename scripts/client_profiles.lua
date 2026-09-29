@@ -47,6 +47,22 @@ return pushable end or nil,
 		return objective.text, objective.type, objective.finished, objective.numFulfilled
 	end or nil
 	return function(addon)
+		local originalChat, originalLegacyChat = C_ChatInfo, SendChatMessage
+		local calls = {}
+		local function send(text, channel) calls[#calls + 1] = {text, channel} end
+		C_ChatInfo = { SendChatMessage = send }
+		SendChatMessage = function() error("modern API should win") end
+		assert(addon.API.SendPartyChatMessage("hello", "PARTY"))
+		assert(calls[1][1] == "hello" and calls[1][2] == "PARTY")
+		assert(not addon.API.SendPartyChatMessage("hello", "RAID") and #calls == 1)
+		C_ChatInfo, SendChatMessage = {}, send
+		assert(addon.API.SendPartyChatMessage("hello", "INSTANCE_CHAT"))
+		assert(calls[2][2] == "INSTANCE_CHAT")
+		SendChatMessage = function() error("blocked") end
+		assert(not addon.API.SendPartyChatMessage("hello", "PARTY"))
+		SendChatMessage = nil
+		assert(not addon.API.SendPartyChatMessage("hello", "PARTY"))
+		C_ChatInfo, SendChatMessage = originalChat, originalLegacyChat
 		-- Shared Mainline exports do not imply that Forever has War Mode.
 		-- Keep native API probes in this offline process, not the live test suite.
 		do

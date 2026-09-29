@@ -1,8 +1,10 @@
 # Releasing QuestTogether
 
 `release_notes.json` is the canonical source for the in-game welcome, latest
-patch notes, and Discord release announcements. `ReleaseNotes.lua` is generated
-data; do not edit it by hand. Keep
+patch notes, and Discord release announcements. German (`deDE`), French (`frFR`),
+Spanish (`esES`), Brazilian Portuguese (`ptBR`), and Russian (`ruRU`) translations
+live in `release_notes/<locale>.json`. `ReleaseNotes.lua` and
+`LocalizedReleaseNotes.lua` are generated data; do not edit them by hand. Keep
 notes concise and useful to players. Every release, including patch and
 prerelease versions, needs updated content even when it does not open the notes
 window automatically. Automatic opening is a runtime policy for major/minor
@@ -13,9 +15,10 @@ upgrades, not an exemption from writing patch notes.
 Use **Actions → Prepare Release Notes → Run workflow** on `main`. It compares
 the current code with the published tag matching the TOC version, generates
 player-facing notes with the same OpenAI workflow used by Bumblebee, and opens
-a review PR containing `release_notes.json` and the matching `ReleaseNotes.lua`.
-It also uploads both files and Markdown notes as an artifact. Review and merge
-that PR before the version bump. It does not tag, release, or announce anything.
+a review PR containing the English notes, all five translations, and both generated
+Lua files. It also uploads those files and English Markdown notes as an artifact.
+Review and merge that PR before the version bump. It does not tag, release, or
+announce anything.
 If repository policy blocks Actions from opening PRs, the generated artifact
 remains available; use its files through the normal review process.
 
@@ -23,6 +26,8 @@ For local preparation, with `OPENAI_API_KEY` already in the environment:
 
 ```sh
 python3 scripts/generate_release_notes.py --write
+python3 scripts/translate_locales.py --notes --write
+python3 scripts/check_release_notes.py --check
 ```
 
 The default requires committed changes and a clean working tree. To deliberately
@@ -36,17 +41,23 @@ content or repeated previous notes fails instead of replacing files with a
 placeholder. This uses the documented [Responses structured-output format](https://developers.openai.com/api/docs/guides/structured-outputs).
 Generating notes from local edits does not include those edits in a release:
 commit the implementation changes before running the release script.
+English generation deliberately leaves existing translations untouched. Translate
+again after the final English edit, then review every language before releasing.
+The preparation workflow performs these steps in order and refuses to push its
+branch if any translation or generated file fails validation. An English draft
+artifact may still be available after a translation failure; it is not release-ready.
 
 Authored notes remain supported:
 
 1. Update `CHANGELOG.md` and review or edit the welcome/sections in
    `release_notes.json` for the changes being released. Keep its version equal to
-   `QuestTogether.toc` while developing; the release script updates both versions
+   `QuestTogether.toc` while developing; the release script updates all versions
    together. AI generation drafts the prose; reviewing its accuracy is still
    part of releasing.
-2. Generate and check the Lua data:
+2. Translate the final English notes, then generate and check the Lua data:
 
    ```sh
+   python3 scripts/translate_locales.py --notes --write
    python3 scripts/check_release_notes.py --write
    python3 scripts/check_release_notes.py --check --release-history
    python3 scripts/test_release_notes.py
@@ -65,6 +76,19 @@ validation. The generator emits only a literal Lua table with escaped primitive
 strings. It does not execute JSON contents.
 The checker also requires the TOC to load `ReleaseNotes.lua` exactly once after
 `Core.lua`, so generated notes cannot silently be omitted from the addon.
+When the TOC enables `LocalizedReleaseNotes.lua`, it must load exactly once after
+the English notes, and **all five translations are mandatory for every release**.
+Each translated JSON contains exactly `source_sha256` and `notes`. Its `notes`
+has the same schema and version as the English source, with the same number of
+sections and items and matching optional illustrations. The source digest is
+SHA-256 over UTF-8 English JSON without `version`, serialized with sorted keys,
+unescaped Unicode, and separators `(',', ':')`. Any English content change makes
+old translations stale. Missing/stale translations, mismatched structure, or stale
+generated localized Lua block release preparation. Version-only bumps preserve
+the reviewed translations and their digest without contacting the translation API.
+Structural validation cannot establish translation quality; human review is still
+required. UI catalog validation is a separate `python3 scripts/localization.py`
+check and does not replace patch-note translation validation.
 
 ## Check and release
 
@@ -79,8 +103,12 @@ changes outside this explicit allowlist:
 - `QuestTogether.toc`
 - `release_notes.json`
 - `ReleaseNotes.lua`
+- `LocalizedReleaseNotes.lua`
+- `release_notes/deDE.json`, `release_notes/frFR.json`, `release_notes/esES.json`,
+  `release_notes/ptBR.json`, and `release_notes/ruRU.json`
 
-These three files may contain reviewed release preparation edits, staged or
+The localized files are allowed only when the TOC enables localized notes.
+These files may contain reviewed release preparation edits, staged or
 unstaged; the release commit includes their current contents. Keep the TOC and
 notes at the current published version until the script bumps them together.
 Ignored local files are not release inputs. Rejection happens before remote
@@ -108,8 +136,8 @@ bash scripts/bump_version.sh minor
 ```
 
 The release path repeats the same checks **before** remote access or mutation,
-checks for an existing remote tag, updates the TOC and JSON version, regenerates
-and rechecks `ReleaseNotes.lua`, then commits all three release files and pushes
+checks for an existing remote tag, updates the TOC and every notes version,
+regenerates and rechecks both Lua files, then commits the release files and pushes
 the commit and annotated tag. The script performs publication; do not run it
 merely to generate notes or preview a version. Existing alpha/beta sequencing
 continues to use stable version tags as its base.

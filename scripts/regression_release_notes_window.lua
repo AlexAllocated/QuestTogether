@@ -489,3 +489,17 @@ Register("release notes visual examples quarantine forbidden regions and recover
 	assert(a:RenderReleaseNotesWindow(notes, "5.13.0", false))
 	assert(gallery.shown)
 end)
+
+Register("release notes render translated content with owned controls in every locale", function()
+	local previous = QuestTogether.localizationTestLocale
+	for _, locale in ipairs({ "deDE", "frFR", "esES", "ptBR", "ruRU" }) do
+		QuestTogether.localizationTestLocale = locale
+		local a = Fixture()
+		local notes = QuestTogether.releaseNotesByLocale[locale]
+		assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
+		Equal(a.releaseNotesWindow.labels[1].text, QuestTogether.TranslateForLocale("What's new", locale))
+		Equal(a.releaseNotesWindow.labels[2].text, notes.welcome)
+		Equal(a.releaseNotesWindow.footer.text, QuestTogether.TranslateForLocale("Read this again: /qt notes", locale))
+	end
+	QuestTogether.localizationTestLocale = previous
+end)

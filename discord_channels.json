@@ -1,0 +1,30 @@
+{
+  "guild_id": "1553951084941156502",
+  "bot_id": "890285739940671548",
+  "channels": {
+    "enUS": {
+      "id": "1553981217039187978",
+      "name": "changelog"
+    },
+    "deDE": {
+      "id": "1554361257547665420",
+      "name": "änderungsprotokoll"
+    },
+    "frFR": {
+      "id": "1554361263952371762",
+      "name": "journal-des-modifications"
+    },
+    "esES": {
+      "id": "1554361271044939807",
+      "name": "registro-de-cambios"
+    },
+    "ptBR": {
+      "id": "1554361276531089488",
+      "name": "registro-de-alterações"
+    },
+    "ruRU": {
+      "id": "1554361279219499019",
+      "name": "журнал-изменений"
+    }
+  }
+}

@@ -117,6 +117,7 @@ local clientChecks = arg[3] and assert(loadfile(addonRoot .. "/scripts/client_pr
 local namespace = {}
 -- Load the exact live manifest. Missing/omitted test modules must not be hidden
 -- by a second, independently maintained offline file list.
+GetLocale = function() return os.getenv("QT_TEST_LOCALE") or "enUS" end
 for line in io.lines(addonRoot .. "/QuestTogether.toc") do
 	local file = line:match("^%s*(.-)%s*$")
 	if file ~= "" and not file:match("^#") then
@@ -143,6 +144,9 @@ local function RejectEngineCall(name)
 		error("test crossed engine boundary: " .. name)
 	end
 end
+SendChatMessage = RejectEngineCall("SendChatMessage")
+C_ChatInfo = C_ChatInfo or {}
+C_ChatInfo.SendChatMessage = RejectEngineCall("C_ChatInfo.SendChatMessage")
 CreateFrame = RejectEngineCall("CreateFrame")
 hooksecurefunc = RejectEngineCall("hooksecurefunc")
 C_Timer.After = RejectEngineCall("C_Timer.After")

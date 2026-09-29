@@ -1,0 +1,24 @@
+{
+  "source_sha256": "5dcf5bd74d4817eec8e07bb86dbfa6736cbda8c213e252a67460260fb3c145cf",
+  "notes": {
+    "version": "5.13.1",
+    "welcome": "O QuestTogether agora fala mais cinco idiomas e ajuda você a manter informados os integrantes do grupo que não usam QT.",
+    "sections": [
+      {
+        "title": "Jogue no seu idioma",
+        "items": [
+          "A interface agora está disponível em alemão, francês, espanhol, português do Brasil e russo. O QuestTogether acompanha o idioma do jogo e usa o inglês quando necessário.",
+          "Configurações, menus, dicas, comparações de missões e notas de atualização estão traduzidos. Os nomes de missões e textos de progresso recebidos de outros jogadores permanecem no idioma original.",
+          "Encontre os anúncios de atualização traduzidos nos cinco canais de registro de alterações por idioma do nosso Discord."
+        ]
+      },
+      {
+        "title": "Mantenha todo o grupo informado",
+        "items": [
+          "Uma nova opção de canais de anúncios envia seus anúncios de eventos habilitados para o bate-papo do grupo quando algum integrante ainda não foi reconhecido como usuário do QT. Ela vem ativada e pode ser desativada nas configurações.",
+          "Também funciona em grupos de instância formados automaticamente. Não se aplica ao jogo solo nem a raides, e os anúncios de outros jogadores nunca são retransmitidos."
+        ]
+      }
+    ]
+  }
+}

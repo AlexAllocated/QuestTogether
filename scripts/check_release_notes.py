@@ -15,7 +15,9 @@ VERSION = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-(alp
 VERSION_MENTION = re.compile(r"(?<![\w.])v?[0-9]+\.[0-9]+\.[0-9]+(?:-(?:alpha|beta)\.[0-9]+)?(?!\w|\.[0-9])", re.IGNORECASE)
 NOTES_FILE = "release_notes.json"
 LUA_FILE = "ReleaseNotes.lua"
+LOCALIZED_LUA_FILE = "LocalizedReleaseNotes.lua"
 TOC_FILE = "QuestTogether.toc"
+sys.dont_write_bytecode = True
 
 
 class NotesError(ValueError):
@@ -45,6 +47,10 @@ def check_manifest(text):
         raise NotesError("QuestTogether.toc must load Core.lua and ReleaseNotes.lua exactly once")
     if entries.index(LUA_FILE) < entries.index("Core.lua"):
         raise NotesError("QuestTogether.toc must load ReleaseNotes.lua after Core.lua")
+    if LOCALIZED_LUA_FILE in entries:
+        if entries.count(LOCALIZED_LUA_FILE) != 1 or entries.index(LOCALIZED_LUA_FILE) < entries.index(LUA_FILE):
+            raise NotesError("QuestTogether.toc must load LocalizedReleaseNotes.lua exactly once after ReleaseNotes.lua")
+    return LOCALIZED_LUA_FILE in entries
 
 
 def unique_object(pairs):
@@ -216,7 +222,7 @@ def main(argv=None):
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--check", action="store_true", help="validate exact generated output (default)")
-    mode.add_argument("--write", action="store_true", help="regenerate ReleaseNotes.lua")
+    mode.add_argument("--write", action="store_true", help="regenerate English and enabled localized release-note data")
     parser.add_argument("--set-version", help="with --write, update canonical version after the TOC bump")
     baseline = parser.add_mutually_exclusive_group()
     baseline.add_argument("--baseline-ref", help="require content changes from this explicit Git release baseline")
@@ -227,28 +233,40 @@ def main(argv=None):
             raise NotesError("--set-version requires --write")
         root = args.root.resolve()
         notes = parse_notes((root / NOTES_FILE).read_text(encoding="utf-8"))
+        previous_version = notes["version"]
         if args.set_version:
             version_key(args.set_version)
             notes["version"] = args.set_version
         manifest = (root / TOC_FILE).read_text(encoding="utf-8")
         version = toc_version(manifest)
-        check_manifest(manifest)
+        localized = check_manifest(manifest)
         if notes["version"] != version:
             raise NotesError("release_notes.json version " + notes["version"] + " does not match TOC version " + version)
         reference = previous_release(root, version) if args.release_history else args.baseline_ref
         baseline_result = check_baseline(root, notes, reference) if reference else None
-        generated = render_lua(notes)
+        outputs = {root / LUA_FILE: render_lua(notes)}
+        if localized:
+            # Validate all translations before changing any version or generated
+            # file. Version-only bumps reuse reviewed text without an API call.
+            from localization import release_note_outputs
+            localized_outputs = release_note_outputs(
+                root, notes, previous_version=previous_version if args.set_version else None)
+            outputs.update(localized_outputs)
+        if args.set_version:
+            outputs[root / NOTES_FILE] = json.dumps(notes, ensure_ascii=False, indent=2) + "\n"
         if args.write:
-            if args.set_version:
-                atomic_write(root / NOTES_FILE, json.dumps(notes, ensure_ascii=False, indent=2) + "\n")
-            atomic_write(root / LUA_FILE, generated)
-        elif not (root / LUA_FILE).is_file() or (root / LUA_FILE).read_bytes() != generated.encode("utf-8"):
-            raise NotesError("ReleaseNotes.lua is missing or stale; run python3 scripts/check_release_notes.py --write")
+            for path, generated in outputs.items():
+                atomic_write(path, generated)
+        else:
+            for path, generated in outputs.items():
+                if not path.is_file() or path.read_bytes() != generated.encode("utf-8"):
+                    raise NotesError(str(path.relative_to(root)) +
+                                     " is missing or stale; run python3 scripts/check_release_notes.py --write")
         print("Release notes " + version + (" generated." if args.write else " verified."))
         if baseline_result:
             print(baseline_result)
         return 0
-    except (OSError, UnicodeError, NotesError) as error:
+    except (OSError, UnicodeError, ValueError, ImportError) as error:
         print("Release notes error: " + str(error), file=sys.stderr)
         return 1
 

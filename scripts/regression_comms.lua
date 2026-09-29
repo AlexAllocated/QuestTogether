@@ -1995,3 +1995,89 @@ QuestTogether:RegisterTest("restricted comparison refreshes replace pending snap
 	Equal(addon.questCompareResponseQueue, nil)
 	Equal(#addon.wire, 2)
 end)
+
+local function PartyChatFixture()
+	local addon = NewCommsFixture()
+	addon.suppressLocalAnnouncementDisplayDuringTests = false
+	addon.qtPlayerPresenceState = { peers = {} }
+	function addon:IsRuntimeRestrictionTypeActive() return self.chatRestricted == true end
+	addon.chatMessages, addon.members = {}, { party1 = "Friend-Realm" }
+	addon.partyOption, addon.eventOption = true, true
+	function addon:GetOption(key)
+		if key == "announceToNonQTParty" then return self.partyOption end
+		if key == "announceProgress" then return self.eventOption end
+		return false
+	end
+	function addon:GetUnitFullName(unit) return self.members[unit] end
+	addon.API.UnitExists = function(unit) return addon.members[unit] ~= nil end
+	addon.API.IsInParty = function() return true end
+	addon.API.SendPartyChatMessage = function(text, route)
+		addon.chatMessages[#addon.chatMessages + 1] = { text, route }
+		return true
+	end
+	return addon
+end
+
+QuestTogether:RegisterTest("party announcements require a currently unidentified party member", function()
+	local a = PartyChatFixture()
+	local event = { eventType = "QUEST_PROGRESS", text = "Wolves: 2/8" }
+	Equal(QuestTogether.DEFAULTS.profile.announceToNonQTParty, true)
+	Equal(a:AnnounceToNonQTParty(event), true)
+	Equal(a.chatMessages[1][1], "[QT] Wolves: 2/8")
+	Equal(a.chatMessages[1][2], "PARTY")
+	a:RecordQTPlayerPresence("Friend-Realm", true)
+	Equal(a:AnnounceToNonQTParty(event), false)
+	a.members.party2 = "Other-Realm"
+	Equal(a:AnnounceToNonQTParty(event), true)
+	a.members.party2 = nil
+	Equal(a:AnnounceToNonQTParty(event), false)
+	Equal(#a.chatMessages, 2)
+end)
+
+QuestTogether:RegisterTest("party announcements honor options group routes and unreadable identities", function()
+	local event = { eventType = "QUEST_PROGRESS", text = "Progress" }
+	for _, scenario in ipairs({ "off", "eventOff", "disabled", "restricted", "solo", "raid", "unknownRaid", "unknownMember", "unknownName", "tests" }) do
+		local a = PartyChatFixture()
+		if scenario == "off" then a.partyOption = false
+		elseif scenario == "eventOff" then a.eventOption = false
+		elseif scenario == "disabled" then a.isEnabled = false
+		elseif scenario == "restricted" then a.chatRestricted = true
+		elseif scenario == "solo" then a.API.IsInParty = function() return false end
+		elseif scenario == "raid" then a.API.IsInRaid = function() return true end
+		elseif scenario == "unknownRaid" then a.API.IsInRaid = function() error("unavailable") end
+		elseif scenario == "unknownMember" then a.API.UnitExists = function() return nil end
+		elseif scenario == "unknownName" then a.GetUnitFullName = function() return nil end
+		else a.suppressLocalAnnouncementDisplayDuringTests = true end
+		Equal(a:AnnounceToNonQTParty(event), false)
+		Equal(#a.chatMessages, 0)
+	end
+	local a = PartyChatFixture()
+	a.API.IsInInstanceGroup = function() return true end
+	Equal(a:AnnounceToNonQTParty(event), true)
+	Equal(a.chatMessages[1][2], "INSTANCE_CHAT")
+end)
+
+QuestTogether:RegisterTest("party announcements contain bounded plain text and do not retry failures", function()
+	local a = PartyChatFixture()
+	Equal(a:AnnounceToNonQTParty({ eventType = "QUEST_PROGRESS", text = "|cffffffff|Hquest:1|h[Quest]|h|r\nDone |Ticon:16|t" }), true)
+	Equal(a.chatMessages[1][1], "[QT] [Quest] Done")
+	Equal(a:AnnounceToNonQTParty({ eventType = "QUEST_PROGRESS", text = string.rep("é", 150) }), true)
+	assert(#a.chatMessages[2][1] <= 255)
+	Equal(#a.chatMessages[2][1] % 2, 1)
+	local attempts = 0
+	a.API.SendPartyChatMessage = function() attempts = attempts + 1; error("blocked") end
+	Equal(a:AnnounceToNonQTParty({ eventType = "QUEST_PROGRESS", text = "Progress" }), false)
+	Equal(attempts, 1)
+	Equal(#a.delayed, 0)
+end)
+
+QuestTogether:RegisterTest("local publication sends one party announcement independent of addon transport", function()
+	local a = PartyChatFixture()
+	function a:BuildLocalAnnouncementEvent(eventType, text) return { eventType = eventType, text = text } end
+	function a:SendAnnouncementEvent() return false end
+	function a:HandleAnnouncementEvent() end
+	Equal(a:PublishAnnouncementEvent("QUEST_PROGRESS", "Progress"), true)
+	Equal(#a.chatMessages, 1)
+	-- Incoming events use HandleAnnouncementEvent, never the local publisher.
+	Equal(a:AnnounceToNonQTParty({ eventType = "PLAYER_LEVEL_UP", text = "Level 10" }), true)
+end)

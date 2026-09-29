@@ -1,3 +1,4 @@
+local L = _G.QuestTogether.Translate
 -- Peer-reported release discovery. Saved state is account-wide; notification
 -- suppression and broadcast pacing last only for this UI session.
 local QT = _G.QuestTogether
@@ -89,11 +90,11 @@ function QT:NotifyAddonUpdate()
 	end
 	state.noticeShown = true
 	self:Print(
-		"A newer QuestTogether version is available: "
+		L("A newer QuestTogether version is available: ")
 			.. version
-			.. " (installed: "
+			.. L(" (installed: ")
 			.. self:GetAddonVersion()
-			.. "). Please update with your addon manager."
+			.. L("). Please update with your addon manager.")
 	)
 	return true
 end

@@ -1,3 +1,4 @@
+local L = _G.QuestTogether.Translate
 local QuestTogether = _G.QuestTogether
 
 -- A small group questing around the same coastal town. These are fictional
@@ -86,7 +87,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 			render(self)
 			self.partyQuestCompareWindow.summary:SetText(
 				string.format(
-					"DEBUG PREVIEW · %d mock players · %d quests shown · Actions are simulated · Refresh resets mock data",
+					L("DEBUG PREVIEW · %d mock players · %d quests shown · Actions are simulated · Refresh resets mock data"),
 					#self.partyQuestCompareSession.members,
 					#self:BuildPartyQuestDiffRows()
 				)
@@ -112,7 +113,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		for _, row in ipairs(self:BuildPartyQuestDiffRows()) do
 			if row.questId == id and row.action == action and (action ~= "request" or row.owner == target) then
 				self.statuses[id] = action == "share" and "Share attempted" or "Awaiting confirmation"
-				session.message = "Preview only: " .. self.statuses[id] .. ". No quest or message was sent."
+				session.message = L("Preview only: ") .. L(self.statuses[id]) .. L(". No quest or message was sent.")
 				self:QueuePartyQuestCompareRender()
 				return true
 			end
@@ -130,7 +131,7 @@ end
 
 function QuestTogether:OpenPartyQuestComparePreview()
 	if self:IsWorkBlocked("foreign_frame_mutation") then
-		self:Print("Quest comparison preview is unavailable while restricted. Try again when restrictions end.")
+		self:Print(L("Quest comparison preview is unavailable while restricted. Try again when restrictions end."))
 		return false
 	end
 	local preview = rawget(self, "partyQuestComparePreview")
@@ -142,7 +143,7 @@ function QuestTogether:OpenPartyQuestComparePreview()
 	if not frame then
 		return false
 	end
-	frame.title:SetText("Party Quest Compare — Debug Preview")
+	frame.title:SetText(L("Party Quest Compare — Debug Preview"))
 	preview:RefreshPartyQuestCompare()
 	frame:Show()
 	return true

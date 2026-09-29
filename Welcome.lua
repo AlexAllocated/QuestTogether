@@ -1,3 +1,4 @@
+local L = _G.QuestTogether.Translate
 -- Welcome and release notes use account-wide version state, separate from the
 -- enabled runtime lifetime so disabled announcements do not suppress the UI.
 local Addon = _G.QuestTogether
@@ -18,8 +19,9 @@ function Addon:RenderDiscordSupportLink(url)
 			return self:IsRuntimeRestricted()
 		end,
 		canMutate = self.LibChev.CanMutateOwnedRegion,
-		title = "QuestTogether Discord — Feedback & Support",
+		title = L("QuestTogether Discord — Feedback & Support"),
 		copyLink = true,
+		translate = self.Translate,
 	})
 	if shown and not self:IsRuntimeRestricted() and self.LibChev.CanMutateOwnedRegion(owner.diagnosticsWindow) then
 		owner.diagnosticsWindow:Raise()
@@ -33,7 +35,7 @@ function Addon:OpenDiscordSupport()
 	end
 	local ok, shown = pcall(self.RenderDiscordSupportLink, self, DISCORD_URL)
 	if not ok or shown ~= true then
-		self:Print("QuestTogether Discord — feedback and support tickets: " .. DISCORD_URL)
+		self:Print(L("QuestTogether Discord — feedback and support tickets: ") .. DISCORD_URL)
 		return false
 	end
 	return true
@@ -67,6 +69,8 @@ end
 function Addon:GetCurrentReleaseNotes()
 	local version = self:GetAddonVersion()
 	local notes = rawget(self, "releaseNotes")
+	local translated = self.releaseNotesByLocale and self.releaseNotesByLocale[self.localizationTestLocale or self.locale]
+	if translated and notes and translated.version == notes.version then notes = translated end
 	if
 		not self:GetReleaseNotesSeries(version)
 		or type(notes) ~= "table"
@@ -107,7 +111,7 @@ function Addon:OpenReleaseNotes(automatic)
 	local notes, version = self:GetCurrentReleaseNotes()
 	if not notes or not self:CanPresentReleaseNotes() then
 		if not automatic then
-			self:Print("Patch notes are unavailable right now. Try again when UI restrictions end.")
+			self:Print(L("Patch notes are unavailable right now. Try again when UI restrictions end."))
 		end
 		return false
 	end
@@ -118,7 +122,7 @@ function Addon:OpenReleaseNotes(automatic)
 	local ok, shown = pcall(self.RenderReleaseNotesWindow, self, notes, version, seenMajor == nil)
 	if not ok or shown ~= true then
 		if not automatic then
-			self:Print("Unable to open patch notes right now.")
+			self:Print(L("Unable to open patch notes right now."))
 		end
 		return false
 	end

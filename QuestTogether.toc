@@ -9,6 +9,12 @@
 ## IconTexture: Interface\GossipFrame\AvailableQuestIcon
 ## Version: 5.13.1
 ## Notes: Quest progress chat bubbles and logs for party and nearby players.
+## Notes-deDE: Chatblasen und Protokolle zum Questfortschritt für Gruppenmitglieder und Spieler in der Nähe.
+## Notes-frFR: Bulles de discussion et journaux de progression des quêtes pour le groupe et les joueurs à proximité.
+## Notes-esES: Bocadillos de chat y registros del progreso de misiones para el grupo y jugadores cercanos.
+## Notes-ptBR: Bolhas de bate-papo e registros de progresso de missões para o grupo e jogadores próximos.
+## Notes-ruRU: Облачка чата и журналы прогресса заданий для группы и игроков поблизости.
+## Notes-esMX: Bocadillos de chat y registros del progreso de misiones para el grupo y jugadores cercanos.
 ## SavedVariables: QuestTogetherDB
 ## Author: Chev
 ## RequiredDeps:
@@ -21,8 +27,11 @@ Libs/libchev/Debug.lua
 Libs/libchev/DebugWindow.lua
 Libs/libchev/ReportWindow.lua
 Libs/libchev/SelfTests.lua
+Localization.lua
+Locales.lua
 Core.lua
 ReleaseNotes.lua
+LocalizedReleaseNotes.lua
 Welcome.lua
 ReleaseNotesWindow.lua
 Debug.lua
@@ -61,3 +70,4 @@ scripts/regression_player_locations.lua
 scripts/regression_location_pins.lua
 scripts/regression_location_ignores.lua
 scripts/regression_player_plates.lua
+scripts/regression_localization.lua

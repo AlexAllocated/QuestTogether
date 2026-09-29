@@ -2,10 +2,12 @@
 """Offline release-note contracts; all Git changes stay in temporary repositories."""
 
 import copy
+import hashlib
 import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -19,6 +21,7 @@ SPEC = importlib.util.spec_from_file_location("release_notes_checker", SCRIPTS /
 CHECKER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CHECKER)
 REAL_GIT = shutil.which("git")
+LOCALES = ("deDE", "frFR", "esES", "ptBR", "ruRU")
 
 
 def sample_notes(version="1.2.3", item="Share eligible quests with your party."):
@@ -79,7 +82,47 @@ class NotesTests(unittest.TestCase):
             (self.root / "ReleaseNotes.lua").write_text(CHECKER.render_lua(notes), encoding="utf-8")
 
     def set_toc_version(self, version):
-        (self.root / "QuestTogether.toc").write_text("## Version: " + version + "\nCore.lua\nReleaseNotes.lua\n", encoding="utf-8")
+        path = self.root / "QuestTogether.toc"
+        path.write_text(re.sub(r"^## Version:.*$", "## Version: " + version,
+                               path.read_text(encoding="utf-8"), flags=re.MULTILINE), encoding="utf-8")
+
+    def write_translations(self, notes):
+        # Independent canonical digest implementation: content, not version,
+        # identifies the English source that all five translations must follow.
+        source = {key: value for key, value in notes.items() if key != "version"}
+        digest = hashlib.sha256(json.dumps(source, sort_keys=True, ensure_ascii=False,
+                                           separators=(",", ":")).encode("utf-8")).hexdigest()
+        (self.root / "release_notes").mkdir(exist_ok=True)
+        for locale in LOCALES:
+            translated = copy.deepcopy(notes)
+            translated["welcome"] = {"deDE": "Willkommen bei QuestTogether.", "frFR": "Bienvenue dans QuestTogether.",
+                                     "esES": "Bienvenido a QuestTogether.", "ptBR": "Boas-vindas ao QuestTogether.",
+                                     "ruRU": "Добро пожаловать в QuestTogether."}[locale]
+            # Private fixtures preserve every section/item while keeping strings
+            # distinct from the source; language quality is a human review gate.
+            for section in translated["sections"]:
+                section["title"] = locale + ": " + section["title"]
+                section["items"] = [locale + ": " + item for item in section["items"]]
+            wrapper = {"source_sha256": digest, "notes": translated}
+            (self.root / "release_notes" / (locale + ".json")).write_text(
+                json.dumps(wrapper, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    def enable_localized_notes(self, notes=None):
+        shutil.copyfile(SCRIPTS / "localization.py", self.root / "scripts/localization.py")
+        with (self.root / "QuestTogether.toc").open("a", encoding="utf-8") as handle:
+            handle.write("LocalizedReleaseNotes.lua\n")
+        notes = notes or sample_notes()
+        self.write_notes(notes)
+        self.write_translations(notes)
+        self.check("--write")
+        self.check("--check")
+        self.git("add", ".")
+        self.git("commit", "-qm", "Enable localized release notes")
+
+    def release_note_bytes(self):
+        names = ["QuestTogether.toc", "release_notes.json", "ReleaseNotes.lua", "LocalizedReleaseNotes.lua"]
+        names += ["release_notes/" + locale + ".json" for locale in LOCALES]
+        return {name: (self.root / name).read_bytes() if (self.root / name).exists() else None for name in names}
 
     def check(self, *arguments, success=True):
         result = self.run_process([sys.executable, str(self.root / "scripts/check_release_notes.py"), *arguments])
@@ -117,15 +160,14 @@ class NotesTests(unittest.TestCase):
         return env, log
 
     def assert_bump_guard(self, arguments, success, contains):
-        paths = ("QuestTogether.toc", "release_notes.json", "ReleaseNotes.lua")
-        before = {name: (self.root / name).read_bytes() if (self.root / name).exists() else None for name in paths}
+        before = self.release_note_bytes()
         head, tags = self.git("rev-parse", "HEAD"), self.git("tag", "--list")
         env, log = self.guarded_git_env()
         result = self.run_process(["bash", "scripts/bump_version.sh", *arguments], env=env)
         self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
         self.assertIn(contains, result.stdout + result.stderr)
         self.assertFalse(log.exists(), "bump preflight attempted a mutation or remote access")
-        self.assertEqual(before, {name: (self.root / name).read_bytes() if (self.root / name).exists() else None for name in paths})
+        self.assertEqual(before, self.release_note_bytes())
         self.assertEqual(self.git("rev-parse", "HEAD"), head)
         self.assertEqual(self.git("tag", "--list"), tags)
 
@@ -174,8 +216,158 @@ class NotesTests(unittest.TestCase):
             with self.subTest(entries=entries):
                 (self.root / "QuestTogether.toc").write_text("## Version: 1.2.3\n" + entries, encoding="utf-8")
                 self.assertIn("must load", self.check(success=False))
-        self.set_toc_version("1.2.3")
+        (self.root / "QuestTogether.toc").write_text("## Version: 1.2.3\nCore.lua\nReleaseNotes.lua\n", encoding="utf-8")
         self.check()
+
+    def test_localized_manifest_must_load_once_after_english_notes(self):
+        for entries in ("Core.lua\nLocalizedReleaseNotes.lua\nReleaseNotes.lua\n",
+                        "Core.lua\nReleaseNotes.lua\nLocalizedReleaseNotes.lua\nLocalizedReleaseNotes.lua\n"):
+            with self.subTest(entries=entries):
+                (self.root / "QuestTogether.toc").write_text("## Version: 1.2.3\n" + entries, encoding="utf-8")
+                self.assertIn("LocalizedReleaseNotes.lua exactly once after", self.check(success=False))
+
+    def test_localized_notes_require_all_five_sources_and_exact_generated_lua(self):
+        self.enable_localized_notes()
+        for locale in LOCALES:
+            with self.subTest(locale=locale):
+                path = self.root / "release_notes" / (locale + ".json")
+                saved = path.read_bytes()
+                path.unlink()
+                self.assertIn(locale, self.check(success=False))
+                path.write_bytes(saved)
+        path = self.root / "LocalizedReleaseNotes.lua"
+        path.write_text(path.read_text() + "-- accidental edit\n", encoding="utf-8")
+        self.assertIn("LocalizedReleaseNotes.lua is missing or stale", self.check(success=False))
+        self.check("--write")
+        self.check("--check")
+        generated = path.read_bytes()
+        self.check("--write")
+        self.assertEqual(path.read_bytes(), generated)
+        path.unlink()
+        self.assertIn("LocalizedReleaseNotes.lua is missing or stale", self.check(success=False))
+
+    def test_localized_notes_reject_stale_source_version_shape_and_illustrations_before_writes(self):
+        notes = sample_notes()
+        notes["sections"][0]["illustration"] = "quest-partners"
+        self.enable_localized_notes(notes)
+        path = self.root / "release_notes/frFR.json"
+        original = path.read_bytes()
+        mutations = [
+            lambda data: data.update(source_sha256="0" * 64),
+            lambda data: data["notes"].update(version="1.2.2"),
+            lambda data: data["notes"]["sections"].append({"title": "Extra section", "items": ["Extra item."]}),
+            lambda data: data["notes"]["sections"][0]["items"].append("Extra translated item."),
+            lambda data: data["notes"]["sections"][0].pop("illustration"),
+            lambda data: data.update(unexpected=True),
+            lambda data: data["notes"].update(welcome="TODO"),
+        ]
+        for mutate in mutations:
+            with self.subTest(mutation=mutate):
+                data = json.loads(original)
+                mutate(data)
+                path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+                before = self.release_note_bytes()
+                self.check("--write", success=False)
+                self.assertEqual(self.release_note_bytes(), before, "validation must precede every output write")
+        path.write_bytes(original)
+        # The digest must track even a small English edit, independently of
+        # version and otherwise unchanged translated item counts.
+        notes["welcome"] += " Updated welcome."
+        self.write_notes(notes)
+        before = self.release_note_bytes()
+        self.check("--write", success=False)
+        self.assertEqual(self.release_note_bytes(), before)
+
+    def test_localized_version_sync_preserves_digest_text_and_updates_every_output(self):
+        self.enable_localized_notes()
+        old = {locale: json.loads((self.root / "release_notes" / (locale + ".json")).read_text()) for locale in LOCALES}
+        self.set_toc_version("1.3.0-beta.1")
+        self.check("--write", "--set-version", "1.3.0-beta.1")
+        self.check("--check")
+        for locale in LOCALES:
+            current = json.loads((self.root / "release_notes" / (locale + ".json")).read_text())
+            expected = copy.deepcopy(old[locale])
+            expected["notes"]["version"] = "1.3.0-beta.1"
+            self.assertEqual(current, expected)
+        self.assertEqual(json.loads((self.root / "release_notes.json").read_text())["version"], "1.3.0-beta.1")
+        script = 'local namespace = {}\nassert(loadfile("LocalizedReleaseNotes.lua"))("QuestTogether", namespace)\n'
+        for locale in LOCALES:
+            script += ('assert(namespace.releaseNotesByLocale.' + locale + '.version == "1.3.0-beta.1")\n')
+            script += ('assert(namespace.releaseNotesByLocale.' + locale + '.welcome == ' +
+                       CHECKER.lua_string(old[locale]["notes"]["welcome"]) + ')\n')
+        for interpreter in sorted({path for name in ("lua5.1", "lua5.2", "lua") if (path := shutil.which(name))}):
+            result = subprocess.run([interpreter, "-"], input=script, text=True, encoding="utf-8",
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env, cwd=self.root)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_malformed_translation_wrappers_fail_cleanly_before_any_writes(self):
+        self.enable_localized_notes()
+        path = self.root / "release_notes/ptBR.json"
+        original = path.read_bytes()
+        cases = ["null", "true", "[{}]", "not-json", '{"source_sha256":"x","source_sha256":"y","notes":{}}']
+        for value in cases:
+            with self.subTest(value=value):
+                path.write_text(value, encoding="utf-8")
+                before = self.release_note_bytes()
+                result = self.check("--write", success=False)
+                self.assertIn("Release notes error:", result)
+                self.assertNotIn("Traceback", result)
+                self.assertEqual(self.release_note_bytes(), before)
+        path.write_bytes(original)
+
+    def test_localized_version_sync_fails_before_overwriting_any_notes_when_a_translation_is_stale(self):
+        self.enable_localized_notes()
+        path = self.root / "release_notes/ruRU.json"
+        stale = json.loads(path.read_text())
+        stale["notes"]["version"] = "1.0.0"
+        path.write_text(json.dumps(stale), encoding="utf-8")
+        self.set_toc_version("1.2.4")
+        before = self.release_note_bytes()
+        self.check("--write", "--set-version", "1.2.4", success=False)
+        self.assertEqual(self.release_note_bytes(), before)
+
+    def test_localized_bump_preflight_rejects_stale_or_missing_translation_without_side_effects(self):
+        self.enable_localized_notes()
+        notes = sample_notes(item="Improved party sharing and nearby player discovery.")
+        self.write_notes(notes)
+        self.assert_bump_guard(["patch", "--check"], success=False, contains="stale")
+        self.write_translations(notes)
+        self.check("--write")
+        self.assert_bump_guard(["patch", "--check"], success=True, contains="New version: 1.2.4")
+        (self.root / "release_notes/esES.json").unlink()
+        self.assert_bump_guard(["patch"], success=False, contains="esES")
+
+    def test_full_localized_release_publishes_all_five_versions_without_an_api_key(self):
+        self.enable_localized_notes()
+        remote, branch = self.local_release_remote("localized publication")
+        notes = sample_notes(item="Find other questing players and share eligible quests.")
+        self.write_notes(notes)
+        self.write_translations(notes)
+        self.check("--write")
+        self.git("add", "release_notes/deDE.json", "release_notes.json")
+        env = {key: value for key, value in self.env.items() if key != "OPENAI_API_KEY"}
+        result = self.run_process(["bash", "scripts/bump_version.sh", "patch"], env=env)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        head = self.git("rev-parse", "HEAD")
+        self.assertEqual(self.git("rev-parse", "refs/heads/" + branch, root=remote), head)
+        self.assertEqual(self.git("rev-parse", "v1.2.4^{commit}", root=remote), head)
+        expected = {"QuestTogether.toc", "release_notes.json", "ReleaseNotes.lua", "LocalizedReleaseNotes.lua"}
+        expected.update("release_notes/" + locale + ".json" for locale in LOCALES)
+        self.assertEqual(set(self.git("diff", "--name-only", "HEAD^", "HEAD").splitlines()), expected)
+        for locale in LOCALES:
+            published = json.loads(self.git("show", "v1.2.4:release_notes/" + locale + ".json", root=remote))
+            self.assertEqual(published["notes"]["version"], "1.2.4")
+        self.check("--check", "--release-history")
+        self.assertEqual(self.git("status", "--porcelain"), "")
+
+    def test_localized_release_allowlist_rejects_unreviewed_extra_locale(self):
+        self.enable_localized_notes()
+        notes = sample_notes(item="A reviewed release with updated party features.")
+        self.write_notes(notes)
+        self.write_translations(notes)
+        self.check("--write")
+        (self.root / "release_notes/koKR.json").write_text("{}", encoding="utf-8")
+        self.assert_bump_guard(["patch", "--check"], success=False, contains="non-release changes")
 
     def test_generator_escapes_utf8_and_code_as_literal_data(self):
         interpreters = sorted({path for name in ("lua5.1", "lua5.2", "lua") if (path := shutil.which(name))})

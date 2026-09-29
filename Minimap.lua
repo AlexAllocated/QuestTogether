@@ -1,3 +1,4 @@
+local L = _G.QuestTogether.Translate
 local QuestTogether = _G.QuestTogether
 local ICON = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon"
 local DEFAULT_ANGLE = 225
@@ -86,7 +87,7 @@ end
 
 function QuestTogether:OpenQuestJournalFromMinimap()
 	if self:IsRuntimeRestricted() then
-		self:Print("Opening the quest journal is unavailable while restricted.")
+		self:Print(L("Opening the quest journal is unavailable while restricted."))
 		return false
 	end
 	if
@@ -95,47 +96,47 @@ function QuestTogether:OpenQuestJournalFromMinimap()
 		or not self.API.OpenQuestJournalWindow
 		or self.API.OpenQuestJournalWindow() ~= true
 	then
-		self:Print("Unable to open your quest journal on this client.")
+		self:Print(L("Unable to open your quest journal on this client."))
 		return false
 	end
 	return true
 end
 
 function QuestTogether:PopulateMinimapMenu(rootDescription)
-	rootDescription:CreateButton("Settings", function()
+	rootDescription:CreateButton(L("Settings"), function()
 		if not self:IsRuntimeRestricted() then
 			self:OpenOptionsWindow()
 		end
 	end)
-	local compare = rootDescription:CreateButton("Compare Party Quests", function()
+	local compare = rootDescription:CreateButton(L("Compare Party Quests"), function()
 		if self.isEnabled and not self:IsRuntimeRestricted() then
 			self:OpenPartyQuestCompare()
 		end
 	end)
 	compare:SetEnabled(self.isEnabled == true)
-	local journal = rootDescription:CreateButton("Open Quest Journal", function()
+	local journal = rootDescription:CreateButton(L("Open Quest Journal"), function()
 		self:OpenQuestJournalFromMinimap()
 	end)
 	journal:SetEnabled(self.API.CanOpenQuestJournalWindow and self.API.CanOpenQuestJournalWindow() == true or false)
-	rootDescription:CreateButton("Patch Notes", function()
+	rootDescription:CreateButton(L("Patch Notes"), function()
 		if not self:IsRuntimeRestricted() then
 			self:OpenReleaseNotes()
 		end
 	end)
-	rootDescription:CreateCheckbox("Looking for Questing Partners", function()
+	rootDescription:CreateCheckbox(L("Looking for Questing Partners"), function()
 		return self:GetOption("lookingForQuestPartners") == true
 	end, function()
 		if not self:IsRuntimeRestricted() then self:HandleQuestPartnerCommand("toggle") end
 	end)
 	self:PopulateChatLogDestinationMenu(rootDescription)
-	rootDescription:CreateButton("Hide Minimap Icon", function()
+	rootDescription:CreateButton(L("Hide Minimap Icon"), function()
 		if self:IsRuntimeRestricted() then
 			return
 		end
 		if self:SetOption("showMinimapButton", false) then
 			self:RefreshOptionsWindow()
 			self:Print(
-				"Minimap icon hidden. Re-enable it in Settings > Miscellaneous > Show minimap icon (/qt options)."
+				L("Minimap icon hidden. Re-enable it in Settings > Miscellaneous > Show minimap icon (/qt options).")
 			)
 		end
 	end)
@@ -219,7 +220,7 @@ function QuestTogether:ShowMinimapTooltip(button)
 		title:SetText("QuestTogether")
 		local hint = tooltip:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 		hint:SetPoint("TOPLEFT", 10, -28)
-		hint:SetText("Left or right click for menu\nDrag to move")
+		hint:SetText(L("Left or right click for menu\nDrag to move"))
 		self.minimapTooltip = tooltip
 	end
 	tooltip:ClearAllPoints()

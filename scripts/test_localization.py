@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+import tempfile,unittest,json
+from pathlib import Path
+import sys
+sys.dont_write_bytecode = True
+import localization as L
+from translate_locales import translate
+class LocalizationTests(unittest.TestCase):
+    def test_format_and_boundary_contracts(self):
+        for target in ['Anzahl %s', ' Anzahl %d', 'Anzahl %d ', 'Anzahl']:
+            with self.assertRaises(ValueError):L.validate_translation('Count %d',target)
+        L.validate_translation('Count %d','Anzahl %d')
+        with self.assertRaises(ValueError):L.validate_translation('Value %s','Wert %z %s')
+        with self.assertRaises(ValueError):L.validate_translation('/qt options opens settings','/qt einstellungen öffnet Optionen')
+        with self.assertRaises(ValueError):L.validate_translation('/qt options opens settings','Einstellungen öffnen')
+    def test_duplicate_keys_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            p=Path(directory)/'duplicate.json';p.write_text('{"a":"b","a":"c"}')
+            with self.assertRaises(ValueError):L.read(p)
+    def test_catalog_complete_and_generated_exact(self):
+        root=Path(__file__).resolve().parents[1]
+        self.assertGreater(L.check(root),300)
+    def test_notes_digest_ignores_version_but_not_words(self):
+        self.assertEqual(L.digest({'version':'1','welcome':'Hello'}),L.digest({'version':'2','welcome':'Hello'}))
+        self.assertNotEqual(L.digest({'version':'1','welcome':'Hello'}),L.digest({'version':'1','welcome':'Goodbye'}))
+    def test_notes_generation_preserves_structure_and_is_incremental(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);notes={'version':'1.0.0','welcome':'Welcome','sections':[{'title':'New','items':['First','Second'],'illustration':'quest-partners'}]}
+            (root/'release_notes.json').write_text(json.dumps(notes));calls=[]
+            def request(strings,locale,key,model):calls.append(strings);return ['Trad '+s for s in strings]
+            self.assertTrue(translate(root,'frFR',True,request=request))
+            result=L.read(root/'release_notes/frFR.json');self.assertEqual(result['source_sha256'],L.digest(notes))
+            self.assertEqual(result['notes']['sections'][0]['illustration'],'quest-partners')
+            self.assertFalse(translate(root,'frFR',True,request=request));self.assertEqual(len(calls),1)
+if __name__=='__main__':unittest.main()

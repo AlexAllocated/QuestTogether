@@ -1,27 +1,20 @@
 {
   "version": "5.13.1",
-  "welcome": "This maintenance update improves quest-plate recovery, clears stale bubbles and player logos, and keeps settings and the debug window behaving consistently.",
+  "welcome": "QuestTogether now speaks five more languages and helps you keep party members without QT informed.",
   "sections": [
     {
-      "title": "Quest plates and player indicators",
+      "title": "Play in your language",
       "items": [
-        "Quest icons and health tints recover correctly after restricted views close. Delayed quest scans retain their settling time, and temporarily missing tooltip data keeps its retry budget.",
-        "Announcement bubbles are cleaned up when a player plate disappears or is reused during combat. Protected or forbidden frames wait for safe cleanup.",
-        "Map locations and player presence recover after disabling QuestTogether, changing zones, and enabling it again. Departed players no longer regain a QT logo from late location or partner-status withdrawals."
+        "The interface is now available in German, French, Spanish, Brazilian Portuguese, and Russian. QuestTogether follows your game language, with English as the fallback.",
+        "Settings, menus, tooltips, quest comparisons, and patch notes are translated. Quest names and progress text received from other players stay in their original language.",
+        "Find translated release announcements in the five language-specific changelog channels on our Discord."
       ]
     },
     {
-      "title": "Settings and window fixes",
+      "title": "Keep your whole party informed",
       "items": [
-        "The Looking for Questing Partners checkbox stays synchronized when status changes through commands, menus, or profile settings.",
-        "The debug window safely finishes interrupted drag and resize gestures when restrictions lift, even after it has been hidden."
-      ]
-    },
-    {
-      "title": "Reliability improvements",
-      "items": [
-        "Strengthened tests detect forbidden frame access even when an error is caught internally.",
-        "Release checks now refuse to publish while implementation changes remain uncommitted, helping ensure fixes actually reach the download."
+        "A new Where to Announce option sends your enabled event announcements to party chat when someone in your party has not been recognized as a QT user. It starts enabled and can be turned off in settings.",
+        "This also works in matched instance parties. Solo play and raids are excluded, and other players’ announcements are never relayed."
       ]
     }
   ]

@@ -1,3 +1,4 @@
+local L = _G.QuestTogether.Translate
 --[[
 QuestTogether Nameplate Augmentation
 
@@ -442,12 +443,12 @@ local function EnsurePersonalBubbleAnchorSelection(hostFrame)
 	if selection.SetSystem then
 		selection:SetSystem({
 			GetSystemName = function()
-				return "QuestTogether Bubble"
+				return L("QuestTogether Bubble")
 			end,
 		})
 	elseif selection.SetGetLabelTextFunction then
 		selection:SetGetLabelTextFunction(function()
-			return "QuestTogether Bubble"
+			return L("QuestTogether Bubble")
 		end)
 	end
 	if selection.Label then
@@ -717,7 +718,7 @@ local function EnsurePersonalBubbleEditModeDialog()
 
 	local title = dialog:CreateFontString(nil, "ARTWORK", "GameFontHighlightLarge")
 	title:SetPoint("TOP", dialog, "TOP", 0, -15)
-	title:SetText("QuestTogether Bubble")
+	title:SetText(L("QuestTogether Bubble"))
 	dialog.Title = title
 
 	local closeButton = CreateFrame("Button", nil, dialog, "UIPanelCloseButton")
@@ -753,7 +754,7 @@ local function EnsurePersonalBubbleEditModeDialog()
 	local revertButton = CreateFrame("Button", nil, dialog, "EditModeSystemSettingsDialogButtonTemplate")
 	revertButton:SetSize(160, 28)
 	revertButton:SetPoint("BOTTOMLEFT", dialog, "BOTTOMLEFT", 24, 18)
-	revertButton:SetText("Revert Changes")
+	revertButton:SetText(L("Revert Changes"))
 	revertButton:SetScript("OnClick", function()
 		QuestTogether:RevertPersonalBubbleEditSession()
 	end)
@@ -762,7 +763,7 @@ local function EnsurePersonalBubbleEditModeDialog()
 	local resetButton = CreateFrame("Button", nil, dialog, "EditModeSystemSettingsDialogButtonTemplate")
 	resetButton:SetSize(160, 28)
 	resetButton:SetPoint("BOTTOMRIGHT", dialog, "BOTTOMRIGHT", -24, 18)
-	resetButton:SetText("Reset To Default")
+	resetButton:SetText(L("Reset To Default"))
 	resetButton:SetScript("OnClick", function()
 		QuestTogether:ResetPersonalBubbleEditSessionToDefaults()
 	end)
@@ -838,7 +839,7 @@ local function GetAnnouncementBubbleScreenHostFrame()
 	label:SetJustifyH("LEFT")
 	label:SetJustifyV("MIDDLE")
 	label:SetTextColor(1, 0.82, 0, 1)
-	label:SetText("QuestTogether Bubble")
+	label:SetText(L("QuestTogether Bubble"))
 	label:Hide()
 	hostFrame.EditLabel = label
 
@@ -956,9 +957,9 @@ function QuestTogether:RefreshPersonalBubbleEditModeDialog()
 	local function FormatDurationLabel(value)
 		local normalized = self:NormalizeChatBubbleDurationValue(value) or self.DEFAULTS.profile.chatBubbleDuration
 		if math.abs(normalized - math.floor(normalized)) < 0.001 then
-			return string.format("%d sec", normalized)
+			return string.format(L("%d sec"), normalized)
 		end
-		return string.format("%.1f sec", normalized)
+		return string.format(L("%.1f sec"), normalized)
 	end
 
 	ConfigureEditModeSlider(dialog.SizeSlider, {
@@ -973,7 +974,7 @@ function QuestTogether:RefreshPersonalBubbleEditModeDialog()
 			stepSize = self.CHAT_BUBBLE_SIZE_STEP,
 		},
 		currentValue = self:NormalizeChatBubbleSizeValue(self:GetOption("chatBubbleSize")) or self.DEFAULTS.profile.chatBubbleSize,
-		settingName = "Font Size",
+		settingName = L("Font Size"),
 	}, function(value)
 		if self:SetOption("chatBubbleSize", value) and not self.personalBubbleEditSessionRestoring then
 			UpdatePersonalBubbleEditSessionDirtyState()
@@ -992,7 +993,7 @@ function QuestTogether:RefreshPersonalBubbleEditModeDialog()
 		},
 		currentValue = self:NormalizeChatBubbleDurationValue(self:GetOption("chatBubbleDuration"))
 			or self.DEFAULTS.profile.chatBubbleDuration,
-		settingName = "Display Duration",
+		settingName = L("Display Duration"),
 	}, function(value)
 		if self:SetOption("chatBubbleDuration", value) and not self.personalBubbleEditSessionRestoring then
 			UpdatePersonalBubbleEditSessionDirtyState()
@@ -1064,7 +1065,7 @@ function QuestTogether:RefreshPersonalBubbleAnchorVisualState()
 		local fontPath, fontFlags = GetPersonalBubbleAnchorFontDefinition()
 		hostFrame.EditLabel:SetFont(fontPath, visualConfig.fontSize, fontFlags)
 		hostFrame.EditLabel:SetWidth(0)
-		hostFrame.EditLabel:SetText("QuestTogether Bubble")
+		hostFrame.EditLabel:SetText(L("QuestTogether Bubble"))
 
 		local labelWidth = hostFrame.EditLabel.GetUnboundedStringWidth and hostFrame.EditLabel:GetUnboundedStringWidth() or 0
 		labelWidth = SafeUiNumber(labelWidth, 0)
@@ -1331,7 +1332,7 @@ function QuestTogether:GetNameplateCapabilityNoticeReport()
 
 	if wantsQuestPlates then
 		local isAvailable = not questPlatesBlocked
-		local renderedLine, plainLine = BuildCapabilityStatusLine("Quest Plates", isAvailable)
+		local renderedLine, plainLine = BuildCapabilityStatusLine(L("Quest Plates"), isAvailable)
 		if not isAvailable then
 			hasLimitedFunctionality = true
 		end
@@ -1341,7 +1342,7 @@ function QuestTogether:GetNameplateCapabilityNoticeReport()
 
 	if wantsPersonalBubble then
 		local isAvailable = not personalBubbleBlocked
-		local renderedLine, plainLine = BuildCapabilityStatusLine("Personal Announcement Bubbles", isAvailable)
+		local renderedLine, plainLine = BuildCapabilityStatusLine(L("Personal Announcement Bubbles"), isAvailable)
 		if not isAvailable then
 			hasLimitedFunctionality = true
 		end
@@ -1351,7 +1352,7 @@ function QuestTogether:GetNameplateCapabilityNoticeReport()
 
 	if wantsNearbyPlayerBubbles then
 		local isAvailable = not nearbyPlayerBubblesBlocked
-		local renderedLine, plainLine = BuildCapabilityStatusLine("Nearby-Player Announcement Bubbles", isAvailable)
+		local renderedLine, plainLine = BuildCapabilityStatusLine(L("Nearby-Player Announcement Bubbles"), isAvailable)
 		if not isAvailable then
 			hasLimitedFunctionality = true
 		end
@@ -1367,8 +1368,8 @@ function QuestTogether:GetNameplateCapabilityNoticeReport()
 
 	local mode = hasLimitedFunctionality and "limited" or "full"
 	local header = hasLimitedFunctionality
-		and "QuestTogether detects limited functionality in the current instance."
-		or "Full QuestTogether functionality is available again."
+		and L("QuestTogether detects limited functionality in the current instance.")
+		or L("Full QuestTogether functionality is available again.")
 	local capabilityKey = header .. "\n" .. table.concat(keyParts, "\n")
 	return {
 		mode = mode,
@@ -3816,16 +3817,16 @@ function QuestTogether:TryShowAnnouncementBubbleOnUnitNameplate(unitToken, text,
 	if hostFrame then
 		if not self:ShowAnnouncementBubbleOnNameplate(hostFrame, text, eventType, iconAsset, iconKind) then
 			self:Debugf("bubble", "Failed to show bubble on host for unit=%s", SafeText(unitToken, ""))
-			return false, "Unable to show a bubble on that nameplate."
+			return false, L("Unable to show a bubble on that nameplate.")
 		end
 		local unitName = self:GetUnitFullName(unitToken)
 		return true, unitName or unitToken
 	end
 
 	if unitToken ~= "player" then
-		return false, "No visible nameplate found for that unit."
+		return false, L("No visible nameplate found for that unit.")
 	end
-	return false, "Your personal bubble anchor is unavailable."
+	return false, L("Your personal bubble anchor is unavailable.")
 end
 
 function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, text, eventType, iconAsset, iconKind, senderName)
@@ -3995,15 +3996,15 @@ end
 
 function QuestTogether:ShowAnnouncementBubbleOnUnitNameplate(unitToken, text, eventType, iconAsset, iconKind)
 	if type(unitToken) ~= "string" or unitToken == "" then
-		return false, "No unit token was provided."
+		return false, L("No unit token was provided.")
 	end
 	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(unitToken) then
-		return false, "Announcement bubbles are unavailable in the current context."
+		return false, L("Announcement bubbles are unavailable in the current context.")
 	end
 
 	if not C_NamePlate or not C_NamePlate.GetNamePlateForUnit then
 		if unitToken ~= "player" then
-			return false, "Nameplates are unavailable."
+			return false, L("Nameplates are unavailable.")
 		end
 	end
 
@@ -4012,7 +4013,7 @@ end
 
 function QuestTogether:ShowAnnouncementBubbleOnRandomVisiblePlayer(text)
 	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext("nameplate") then
-		return false, "Announcement bubbles are unavailable in the current context."
+		return false, L("Announcement bubbles are unavailable in the current context.")
 	end
 
 	local candidateNameplates = {}
@@ -4038,19 +4039,19 @@ function QuestTogether:ShowAnnouncementBubbleOnRandomVisiblePlayer(text)
 	end)
 
 	if #candidateNameplates == 0 then
-		return false, "No visible player nameplates found."
+		return false, L("No visible player nameplates found.")
 	end
 
 	local randomIndex = self.API.Random(1, #candidateNameplates)
 	local namePlateFrameBase = candidateNameplates[randomIndex]
 	if not self:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, text) then
-		return false, "Unable to show a bubble on the selected nameplate."
+		return false, L("Unable to show a bubble on the selected nameplate.")
 	end
 
 	local unitFrame = select(1, self:GetAccessibleFrameMember(namePlateFrameBase, "UnitFrame"))
 	local unitToken = unitFrame and ResolveNameplateUnitToken(namePlateFrameBase, unitFrame) or nil
 	local unitName = unitToken and self:GetUnitFullName(unitToken) or nil
-	return true, unitName or "Unknown"
+	return true, unitName or L("Unknown")
 end
 
 function QuestTogether:ApplyQuestTintToNameplate(unitFrame)

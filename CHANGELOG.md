@@ -1,5 +1,12 @@
 # QuestTogether changelog
 
+## 5.14.0 — 2026-09-28
+
+- Add German, French, Spanish (both client locales), Brazilian Portuguese, and Russian interface translations with English fallback. Translate locally generated labels while preserving incoming player text.
+- Translate in-game patch notes from the same reviewed sources used by the five localized Discord changelog channels. Block stale or incomplete translations at release time; preserve canonical quest states, commands, and communication identifiers.
+
+- Add an enabled-by-default Where to Announce option to post your enabled event announcements in party chat when at least one current party member has not been recognized as a QT user. Use instance-party chat for matched parties; skip raids and solo play. Received events are never relayed, and chat-restricted messages are not queued for later.
+
 ## 5.13.1 — 2026-09-28
 
 - Preserve negative quest-tooltip retry budgets during restricted option refreshes, so quest icons and tint recover when the map or other restriction closes.

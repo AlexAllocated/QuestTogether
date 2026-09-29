@@ -1,3 +1,4 @@
+local L = _G.QuestTogether.Translate
 --[[
 QuestTogether Announcement Communication Layer
 
@@ -1542,7 +1543,7 @@ function QuestTogether:RequestQuestCompare(speakerName, receiver)
 	if targetName == normalizedPlayerName then
 		local localEntries = self:BuildQuestCompareEntries()
 		if not localEntries then
-			self:PrintConsoleAnnouncement("Quest comparison unavailable while the quest log is updating.", targetName)
+			self:PrintConsoleAnnouncement(L("Quest comparison unavailable while the quest log is updating."), targetName)
 			return false
 		end
 		for _, entryData in ipairs(localEntries) do
@@ -1578,7 +1579,7 @@ function QuestTogether:RequestQuestCompare(speakerName, receiver)
 				receiver.onTimeout()
 			elseif self.isEnabled and self.PrintConsoleAnnouncement then
 				self:PrintConsoleAnnouncement(
-					string.format("Quest comparison timed out (%d quests received).", pending.count or 0),
+					string.format(L("Quest comparison timed out (%d quests received)."), pending.count or 0),
 					pending.targetName,
 					pending.classFile,
 					"QUEST_PROGRESS"
@@ -1753,7 +1754,7 @@ end
 
 function QuestTogether:SendPingRequest()
 	if not self.isEnabled then
-		return false, "QuestTogether is disabled."
+		return false, L("QuestTogether is disabled.")
 	end
 
 	local requestId = self:BuildChannelRequestId("ping")
@@ -1779,7 +1780,7 @@ function QuestTogether:SendPingRequest()
 		)
 	then
 		self.pendingPingRequests[requestId] = nil
-		return false, "Unable to send ping request over any QuestTogether comm route."
+		return false, L("Unable to send ping request over any QuestTogether comm route.")
 	end
 
 	local localResponse = self:BuildPingResponse(requestId)
@@ -1842,44 +1843,44 @@ end
 
 function QuestTogether:SendBubbleAnnouncementTest(text, senderName)
 	if not self.isEnabled then
-		return false, "QuestTogether is disabled."
+		return false, L("QuestTogether is disabled.")
 	end
 
 	local eventData = nil
 	if self.API.UnitExists and self.API.UnitExists("target") then
 		if not self.API.UnitIsPlayer or not self.API.UnitIsPlayer("target") then
-			return false, "Your target must be a player."
+			return false, L("Your target must be a player.")
 		end
 
 		eventData = self:BuildAnnouncementEventForUnit("target", "QUEST_PROGRESS", text)
 		if not eventData then
-			return false, "Unable to build a test announcement from your target."
+			return false, L("Unable to build a test announcement from your target.")
 		end
 	else
 		local trimmedSenderName = SafeTrimAddonString(self, senderName or "", "")
 		if trimmedSenderName == "" then
-			return false, "Target a nearby player or provide a visible player name."
+			return false, L("Target a nearby player or provide a visible player name.")
 		end
 		if not self.FindVisiblePlayerNameplateForSender then
-			return false, "Visible player lookup is unavailable."
+			return false, L("Visible player lookup is unavailable.")
 		end
 
 		local nameplate = self:FindVisiblePlayerNameplateForSender("", trimmedSenderName)
 		local unitToken = nameplate and nameplate.GetUnit and nameplate:GetUnit() or nil
 		if not unitToken or unitToken == "" then
-			return false, "No visible nearby player matched that name."
+			return false, L("No visible nearby player matched that name.")
 		end
 
 		eventData = self:BuildAnnouncementEventForUnit(unitToken, "QUEST_PROGRESS", text)
 		if not eventData then
-			return false, "Unable to build a test announcement for that player."
+			return false, L("Unable to build a test announcement for that player.")
 		end
 	end
 
 	-- This is a local preview of the selected player. A network packet claiming
 	-- that identity cannot pass the receiver's authoritative transport check.
 	if not self:HandleAnnouncementEvent(eventData, false) then
-		return false, "The local preview was suppressed by your announcement settings."
+		return false, L("The local preview was suppressed by your announcement settings.")
 	end
 
 	return true, eventData.senderName
@@ -2032,6 +2033,49 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
 	return true
 end
 
+-- Only local publication reaches this path; received announcements are never
+-- relayed. Use current unit identities rather than a potentially stale roster.
+function QuestTogether:AnnounceToNonQTParty(eventData)
+	if not self.isEnabled or not self:GetOption("announceToNonQTParty")
+		or self.suppressLocalAnnouncementDisplayDuringTests
+		or not self:ShouldDisplayAnnouncementType(eventData.eventType) then return false end
+	if self:IsRuntimeRestrictionTypeActive("chat") then return false end
+	local api = self.API or {}
+	if type(api.SendPartyChatMessage) ~= "function" then return false end
+	local function ReadBoolean(query, ...)
+		if type(query) ~= "function" then return nil end
+		local ok, value = pcall(query, ...)
+		if ok and self:CanAccessValue(value) and type(value) == "boolean" then return value end
+	end
+	if ReadBoolean(api.IsInRaid) ~= false then return false end
+	local instance = ReadBoolean(api.IsInInstanceGroup)
+	if instance == nil then return false end
+	if not instance and ReadBoolean(api.IsInParty) ~= true then return false end
+	local missingQT = false
+	for index = 1, 4 do
+		local unit = "party" .. index
+		local exists = ReadBoolean(api.UnitExists, unit)
+		if exists == nil then return false end
+		if exists then
+			local ok, name = pcall(self.GetUnitFullName, self, unit)
+			if not ok or not self:CanAccessValue(name) or type(name) ~= "string" or name == "" then
+				return false
+			end
+			if not self:IsKnownQTPlayer(name) then missingQT = true end
+		end
+	end
+	if not missingQT then return false end
+	-- Plain text only: custom QT links/textures are not usable by non-QT clients.
+	local text = SafeTrimAddonString(self, eventData.text, "")
+	text = text:gsub("|H.-|h(.-)|h", "%1"):gsub("|[TA].-|[ta]", "")
+	text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|", "")
+	text = text:gsub("[%c]", " ")
+	text = self:SafeTrimString(text, "")
+	if text == "" then return false end
+	local ok, sent = pcall(api.SendPartyChatMessage, "[QT] " .. TruncateUtf8(text, 250), instance and "INSTANCE_CHAT" or "PARTY")
+	return ok and sent == true
+end
+
 function QuestTogether:PublishAnnouncementEvent(eventType, text, questId, extraData)
 	if self.API.UnitIsDeadOrGhost and self.API.UnitIsDeadOrGhost("player") then
 		return false
@@ -2048,6 +2092,7 @@ function QuestTogether:PublishAnnouncementEvent(eventType, text, questId, extraD
 	end
 
 	self:SendAnnouncementEvent(eventType, text, questId, extraData)
+	self:AnnounceToNonQTParty(eventData)
 	if self.suppressLocalAnnouncementDisplayDuringTests then
 		return true
 	end

@@ -1,3 +1,4 @@
+local L = _G.QuestTogether.Translate
 --[[
 QuestTogether Event Handlers
 
@@ -280,7 +281,7 @@ function QuestTogether:PLAYER_LEVEL_UP(_, newLevel)
 
 	local emoteToken = self:PickRandomCompletionEmote()
 	-- Publish even when our own emotes are disabled; receivers choose whether to react.
-	self:PublishAnnouncementEvent("PLAYER_LEVEL_UP", "Level " .. tostring(level), nil, { emoteToken = emoteToken })
+	self:PublishAnnouncementEvent("PLAYER_LEVEL_UP", L("Level ") .. tostring(level), nil, { emoteToken = emoteToken })
 	self:PlayLocalCelebrationEmote(emoteToken, "emoteOnLevelUp")
 	return true
 end
@@ -296,21 +297,21 @@ function QuestTogether:HandleQuestCompleted(questTitle, questId, extraData, capt
 	if taskType == "world" then
 		self:PublishAnnouncementEvent(
 			"WORLD_QUEST_COMPLETED",
-			"World Quest Completed: " .. SafeText(questTitle, "Unknown"),
+			L("World Quest Completed: ") .. SafeText(questTitle, L("Unknown")),
 			questId,
 			announcementExtraData
 		)
 	elseif taskType == "bonus" then
 		self:PublishAnnouncementEvent(
 			"BONUS_OBJECTIVE_COMPLETED",
-			"Bonus Objective Completed: " .. SafeText(questTitle, "Unknown"),
+			L("Bonus Objective Completed: ") .. SafeText(questTitle, L("Unknown")),
 			questId,
 			announcementExtraData
 		)
 	else
 		self:PublishAnnouncementEvent(
 			"QUEST_COMPLETED",
-			"Quest Completed: " .. SafeText(questTitle, "Unknown"),
+			L("Quest Completed: ") .. SafeText(questTitle, L("Unknown")),
 			questId,
 			announcementExtraData
 		)
@@ -320,7 +321,7 @@ function QuestTogether:HandleQuestCompleted(questTitle, questId, extraData, capt
 end
 
 function QuestTogether:HandleQuestRemoved(questTitle)
-	self:PublishAnnouncementEvent("QUEST_REMOVED", "Quest Removed: " .. SafeText(questTitle, "Unknown"))
+	self:PublishAnnouncementEvent("QUEST_REMOVED", L("Quest Removed: ") .. SafeText(questTitle, L("Unknown")))
 end
 
 function QuestTogether:ShouldPublishObjectiveProgress(currentValue)
@@ -364,7 +365,7 @@ function QuestTogether:BuildTrackedQuestRemovalData(questId)
 	end
 	return {
 		questId = questId,
-		title = questTitle or ("Quest " .. SafeText(questId, "?")),
+		title = questTitle or (L("Quest ") .. SafeText(questId, "?")),
 		taskAnnouncementType = self:GetTaskAnnouncementType(questId),
 		iconAsset = iconAsset,
 		iconKind = iconKind,
@@ -447,7 +448,7 @@ function QuestTogether:ResolvePendingQuestRemoval(questId)
 
 	local completionData = self.questsCompleted[questId]
 	local completed = completionData ~= nil
-	local questTitle = removalData.title or (completionData and completionData.title) or ("Quest " .. SafeText(questId, "?"))
+	local questTitle = removalData.title or (completionData and completionData.title) or (L("Quest ") .. SafeText(questId, "?"))
 	local iconAsset = (completionData and completionData.iconAsset) or removalData.iconAsset
 	local iconKind = (completionData and completionData.iconKind) or removalData.iconKind
 
@@ -461,7 +462,7 @@ function QuestTogether:ResolvePendingQuestRemoval(questId)
 			iconKind = iconKind,
 		}, completionData.taskAnnouncementType or "quest")
 	elseif not removalData.taskAnnouncementType then
-		self:PublishAnnouncementEvent("QUEST_REMOVED", "Quest Removed: " .. SafeText(questTitle, "Unknown"), questId)
+		self:PublishAnnouncementEvent("QUEST_REMOVED", L("Quest Removed: ") .. SafeText(questTitle, L("Unknown")), questId)
 	end
 
 	self:ClearTrackedQuestState(questId)
@@ -593,7 +594,7 @@ function QuestTogether:QUEST_ACCEPTED(_, questIndexOrId, classicQuestId)
 		if not taskAnnouncementType then
 			self:PublishAnnouncementEvent(
 				"QUEST_ACCEPTED",
-				"Quest Accepted: " .. SafeText(questInfo.title, "Unknown"),
+				L("Quest Accepted: ") .. SafeText(questInfo.title, L("Unknown")),
 				normalizedQuestId
 			)
 		end
@@ -747,7 +748,7 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 							local questTitle = questData.title or self:GetQuestTitle(questId)
 							self:PublishAnnouncementEvent(
 								"QUEST_READY_TO_TURN_IN",
-								"Ready to Turn In: " .. SafeText(questTitle, "Unknown"),
+								L("Ready to Turn In: ") .. SafeText(questTitle, L("Unknown")),
 								questId
 							)
 						end

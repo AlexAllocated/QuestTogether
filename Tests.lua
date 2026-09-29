@@ -216,7 +216,7 @@ local function WithIsolatedState(testFn)
 	local original = {}
 	for key, value in pairs(QuestTogether) do original[key] = value end
 	local sharedTables = {
-		LibChev = true, tests = true, DEFAULTS = true, API = true, releaseNotes = true,
+		LibChev = true, tests = true, DEFAULTS = true, API = true, releaseNotes = true, localizations = true, releaseNotesByLocale = true,
 		nameplateQuestIconStyleLabels = true, nameplateQuestIconStyleOrder = true,
 		showProgressForLabels = true, showProgressForOrder = true,
 		chatLogDestinationLabels = true, chatLogDestinationOrder = true,
@@ -259,6 +259,7 @@ local function WithIsolatedState(testFn)
 		QuestTogether.activeProfileKey = "MyPlayer-Realm"
 		QuestTogether.db.profile.enabled = false
 		QuestTogether.isEnabled = false
+		QuestTogether.localizationTestLocale = "enUS"
 		QuestTogether.isInitialized = true
 		QuestTogether.isLoggingOut = false
 		QuestTogether.pendingNameplateVisualCleanup = false

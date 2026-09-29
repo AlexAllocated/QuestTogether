@@ -1,3 +1,4 @@
+local L = _G.QuestTogether.Translate
 local QuestTogether = _G.QuestTogether
 
 local SHARE_LIFETIME = 60
@@ -105,11 +106,11 @@ end
 
 function QuestTogether:OpenPartyQuestCompare(preferredName)
 	if not self.isEnabled then
-		self:Print("Enable QuestTogether to compare party quests.")
+		self:Print(L("Enable QuestTogether to compare party quests."))
 		return false
 	end
 	if self:IsWorkBlocked("foreign_frame_mutation") then
-		self:Print("Quest comparison is unavailable while restricted. Try again when restrictions end.")
+		self:Print(L("Quest comparison is unavailable while restricted. Try again when restrictions end."))
 		return false
 	end
 	if not self:CreatePartyQuestCompareWindow() then
@@ -127,11 +128,11 @@ end
 
 function QuestTogether:OpenPlayerQuestCompare(name)
 	if not self.isEnabled then
-		self:Print("Enable QuestTogether to compare quests.")
+		self:Print(L("Enable QuestTogether to compare quests."))
 		return false
 	end
 	if self:IsWorkBlocked("foreign_frame_mutation") then
-		self:Print("Quest comparison is unavailable while restricted. Try again when restrictions end.")
+		self:Print(L("Quest comparison is unavailable while restricted. Try again when restrictions end."))
 		return false
 	end
 	if not self:CanAccessValue(name) or type(name) ~= "string" then
@@ -333,7 +334,7 @@ function QuestTogether:BuildPartyQuestDiffRows()
 		elseif own.state == "ready" then
 			for _, member in ipairs(session.members) do
 				if member.state == "ready" and member.entries[id] and member.entries[id].isPushable == true then
-					row.hint = "Owner needs an update"
+					row.hint = L("Owner needs an update")
 					if member.supportsShareRequests then
 						row.action, row.owner, row.hint = "request", member.name, nil
 						break
@@ -342,7 +343,7 @@ function QuestTogether:BuildPartyQuestDiffRows()
 			end
 		end
 		if not targetCanShare and (row.action or row.hint) then
-			row.action, row.owner, row.hint = nil, nil, "Join a party together to share quests."
+			row.action, row.owner, row.hint = nil, nil, L("Join a party together to share quests.")
 		end
 		rows[#rows + 1] = row
 	end
@@ -365,16 +366,16 @@ function QuestTogether:SharePartyDiffQuest(questId)
 		and session.mode == "target"
 		and (not self:IsGroupedSender(session.targetName) or self:IsIgnoredPlayerName(session.targetName))
 	then
-		session.message = "Join a party together to share quests."
+		session.message = L("Join a party together to share quests.")
 		self:QueuePartyQuestCompareRender()
 		return false
 	end
 	local index, reason = self:GetQuestShareAvailability(questId)
 	local ok = index and self.API.PushQuestToParty(index) == true
 	if session then
-		session.message = ok and "Share attempted. WoW checks each player's eligibility."
+		session.message = ok and L("Share attempted. WoW checks each player's eligibility.")
 			or reason
-			or "Unable to share that quest."
+			or L("Unable to share that quest.")
 	end
 	self:QueuePartyQuestCompareRender()
 	return ok == true
@@ -427,7 +428,7 @@ function QuestTogether:RequestPartyQuestShare(questId, target)
 	end
 	if self:GetPartyQuestShareRequestCooldown(target) > 0 then
 		if self.partyQuestCompareSession then
-			self.partyQuestCompareSession.message = "Please wait before requesting another quest from this player."
+			self.partyQuestCompareSession.message = L("Please wait before requesting another quest from this player.")
 		end
 		self:QueuePartyQuestCompareRender()
 		return false
@@ -470,7 +471,7 @@ function QuestTogether:RequestPartyQuestShare(questId, target)
 	if not self:SendPartyQuestShareMessage(target, questId, id, "request") then
 		state.outgoing[id] = nil
 		if self.partyQuestCompareSession then
-			self.partyQuestCompareSession.message = "Could not send the share request. Try again."
+			self.partyQuestCompareSession.message = L("Could not send the share request. Try again.")
 		end
 		self:QueuePartyQuestCompareRender()
 		return false
@@ -510,14 +511,14 @@ function QuestTogether:GetPartyQuestShareStatus(questId)
 			if waiting and session and session.mode == "target" and request.target ~= session.targetName then
 				-- A pending request blocks this quest for every target. Keep that
 				-- owner visible without attributing their later result to this player.
-				return "Waiting for " .. request.target, true
+				return L("Waiting for ") .. request.target, true
 			end
 			if
 				not session
 				or session.mode ~= "target"
 				or (request.target == session.targetName and self:IsGroupedSender(session.targetName))
 			then
-				return STATUS_TEXT[pending and not waiting and "expired" or request.status], waiting
+				return L(STATUS_TEXT[pending and not waiting and "expired" or request.status]), waiting
 			end
 		end
 	end

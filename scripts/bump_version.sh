@@ -51,6 +51,12 @@ fi
 # local work before validation, network access, or writes, so a successful tag
 # cannot silently omit the implementation described by its authored notes.
 release_files=("$toc_file" release_notes.json ReleaseNotes.lua)
+if grep -Eq '^[[:space:]]*LocalizedReleaseNotes\.lua[[:space:]]*$' "$toc_file"; then
+	release_files+=(LocalizedReleaseNotes.lua)
+	for notes_locale in deDE frFR esES ptBR ruRU; do
+		release_files+=("release_notes/${notes_locale}.json")
+	done
+fi
 python3 - "${release_files[@]}" <<'PY'
 import os
 import subprocess
@@ -71,7 +77,7 @@ if unexpected:
     print("Error: non-release changes must be committed before releasing:", file=sys.stderr)
     for path in sorted(unexpected):
         print("  " + repr(os.fsdecode(path)), file=sys.stderr)
-    print("Only QuestTogether.toc, release_notes.json, and ReleaseNotes.lua may have local changes.", file=sys.stderr)
+    print("Only the TOC and declared English/localized release-note files may have local changes.", file=sys.stderr)
     sys.exit(1)
 PY
 
@@ -201,7 +207,7 @@ mv "$tmp_file" "$toc_file"
 python3 scripts/check_release_notes.py --write --set-version "$new_version" --baseline-ref "$notes_baseline_ref"
 python3 scripts/check_release_notes.py --check --baseline-ref "$notes_baseline_ref"
 
-echo "Committing ${toc_file}, release_notes.json, and ReleaseNotes.lua..."
+echo "Committing release files: ${release_files[*]}..."
 git add -- "${release_files[@]}"
 if git diff --cached --quiet -- "$toc_file"; then
 	echo "Error: ${toc_file} did not change; nothing to commit."
@@ -223,4 +229,4 @@ echo "Done."
 echo "Committed: ${release_commit}"
 echo "Commit pushed: origin/${current_branch}"
 echo "Tag pushed: ${new_tag}"
-echo "Updated files: ${toc_file}, release_notes.json, ReleaseNotes.lua"
+echo "Updated files: ${release_files[*]}"

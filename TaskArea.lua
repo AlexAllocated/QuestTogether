@@ -1,3 +1,4 @@
+local L = _G.QuestTogether.Translate
 --[[
 QuestTogether Task Area Subsystem
 
@@ -363,16 +364,16 @@ function QuestTogether:RefreshTaskAreaState(taskType, shouldAnnounce)
 		world = {
 			enterEvent = "WORLD_QUEST_ENTERED",
 			leftEvent = "WORLD_QUEST_LEFT",
-			enterPrefix = "World Quest Entered: ",
-			leftPrefix = "Left World Quest: ",
-			debugLabel = "World quest",
+			enterPrefix = L("World Quest Entered: "),
+			leftPrefix = L("Left World Quest: "),
+			debugLabel = L("World quest"),
 		},
 		bonus = {
 			enterEvent = "BONUS_OBJECTIVE_ENTERED",
 			leftEvent = "BONUS_OBJECTIVE_LEFT",
-			enterPrefix = "Bonus Objective Entered: ",
-			leftPrefix = "Left Bonus Objective: ",
-			debugLabel = "Bonus objective",
+			enterPrefix = L("Bonus Objective Entered: "),
+			leftPrefix = L("Left Bonus Objective: "),
+			debugLabel = L("Bonus objective"),
 		},
 	}
 

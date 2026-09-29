@@ -1,1 +1,5 @@
 .local/
+
+# Python release tooling caches
+__pycache__/
+*.py[cod]

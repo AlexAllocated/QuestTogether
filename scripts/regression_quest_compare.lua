@@ -1733,3 +1733,25 @@ QuestTogether:RegisterTest(
 		Equal(prompt.request.sender, "Third-Realm")
 	end
 )
+
+QuestTogether:RegisterTest("party compare renders every locale while canonical actions still share", function()
+	local previous = QuestTogether.localizationTestLocale
+	for _, locale in ipairs({ "deDE", "frFR", "esES", "ptBR", "ruRU" }) do
+		QuestTogether.localizationTestLocale = locale
+		local a = Fixture(nil, { Quest(1, "Untranslated quest title", true) })
+		function a:GetPartyQuestUIParent() return Frame() end
+		function a:CanAccessForeignFrame() return true end
+		function a:CreatePartyQuestUIFrame() return Frame() end
+		a:OpenPartyQuestCompare()
+		Reply(a, "Friend-Realm", {}, true, true)
+		a:RenderPartyQuestCompare()
+		local frame = a.partyQuestCompareWindow
+		Equal(frame.title.text, QuestTogether.TranslateForLocale("Party Quest Compare", locale))
+		Equal(frame.filter.children[1].text, QuestTogether.TranslateForLocale("Hide quests I don't have", locale))
+		Equal(frame.rows[1].title.text, "Untranslated quest title")
+		Equal(frame.rows[1].action.text, QuestTogether.TranslateForLocale("Share", locale))
+		frame.rows[1].action.scripts.OnClick(frame.rows[1].action)
+		Equal(a.pushes, 1)
+	end
+	QuestTogether.localizationTestLocale = previous
+end)

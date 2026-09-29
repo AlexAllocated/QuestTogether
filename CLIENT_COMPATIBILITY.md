@@ -143,3 +143,23 @@ interrupted gesture cancellation without bypassing its consumer policy, using
 an independent owned wake frame so hidden windows can recover. Offline tests
 exercise real addon policy/event paths and persistent attempted-access counters;
 these remain separate from native taint and live rendering validation.
+
+Party-chat fallback uses C_ChatInfo.SendChatMessage when available, with the
+legacy SendChatMessage adapter for older clients. Only current non-raid party
+units are checked; unreadable membership/identity fails closed. QT recognition
+uses existing session discovery, so newly joined QT users can briefly count as
+unrecognized. Messages go to the entire party, including QT users. Chat-specific
+restrictions suppress public messages without queuing or affecting addon transport.
+Offline adapter checks cover both API paths; actual party/instance-party delivery
+and client chat restrictions still require live validation. Native send usage:
+https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_ChatFrameBase/Shared/SlashCommands.lua
+
+Localization uses addon-owned dictionaries and immutable command/protocol identifiers.
+The first five non-English languages are deDE, frFR, esES (also esMX), ptBR and ruRU.
+Client locale is read once; unknown locales fall back to English. Incoming quest
+and progress text is not translated. The test harness temporarily uses English for
+legacy exact-string assertions and restores the original addon state; dedicated
+locale tests render comparison and release-note controls and exercise status/share
+logic in every language using private frames. Offline success does not establish
+native font coverage, label wrapping or live-client rendering. Check those in each
+client locale before declaring layout validation complete.

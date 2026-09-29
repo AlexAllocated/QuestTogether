@@ -40,11 +40,11 @@ jobs:
       - name: Test posting contracts offline
         run: python3 scripts/test_discord_changelog.py
       - name: Validate canonical notes and preview messages
-        run: python3 scripts/discord_changelog.py --dry-run --tag "$RELEASE_TAG"
+        run: python3 scripts/discord_changelog.py --dry-run --tag "$RELEASE_TAG" --all-locales
       - name: Post missing release parts with the Bumblebee bot
         if: github.event_name == 'release' || inputs.dry_run == false
         env:
           GH_TOKEN: ${{ github.token }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_CHANGELOG_CHANNEL_ID: ${{ vars.DISCORD_CHANGELOG_CHANNEL_ID }}
-        run: python3 scripts/discord_changelog.py --post --tag "$RELEASE_TAG" --wait-seconds 300
+        run: python3 scripts/discord_changelog.py --post --tag "$RELEASE_TAG" --wait-seconds 300 --all-locales

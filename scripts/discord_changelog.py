@@ -26,7 +26,7 @@ sys.dont_write_bytecode = True
 
 from check_release_notes import (
     LUA_FILE, NOTES_FILE, TOC_FILE, NotesError, check_baseline, check_manifest,
-    git, parse_notes, previous_release, render_lua, toc_version, version_key,
+    git, parse_notes, previous_release, render_lua, toc_version, unique_object, version_key,
 )
 
 
@@ -34,6 +34,16 @@ from check_release_notes import (
 EXPECTED_BOT_ID = "890285739940671548"
 EXPECTED_GUILD_ID = "1553951084941156502"
 EXPECTED_CHANNEL_NAME = "changelog"
+CHANNEL_CONFIG = "discord_channels.json"
+LOCALIZED_LUA = "LocalizedReleaseNotes.lua"
+LOCALE_CHANNEL_NAMES = {
+    "enUS": "changelog",
+    "deDE": "änderungsprotokoll",
+    "frFR": "journal-des-modifications",
+    "esES": "registro-de-cambios",
+    "ptBR": "registro-de-alterações",
+    "ruRU": "журнал-изменений",
+}
 DEFAULT_REPOSITORY = "AlexAllocated/QuestTogether"
 TEST_WORKFLOW = "test.yml"
 DISCORD_API = "https://discord.com/api/v10"
@@ -121,6 +131,8 @@ class API:
             if status != 429 and not 500 <= status < 600:
                 # Do not echo response bodies or request headers containing secrets.
                 raise ChangelogError("API " + method + " failed with HTTP " + str(status))
+            if status >= 500 and method != "GET" and not (payload and payload.get("enforce_nonce") and payload.get("nonce")):
+                raise ChangelogError("ambiguous API write failed; refusing an unsafe retry")
             if attempt == MAX_ATTEMPTS - 1:
                 raise ChangelogError("API retry limit reached (HTTP " + str(status) + ")")
             delay = 2 ** attempt
@@ -167,6 +179,74 @@ def load_notes(root, tag=None, *, exact=False):
     return notes, sha
 
 
+def canonical_locale(locale):
+    locale = "esES" if locale == "esMX" else locale
+    if locale not in LOCALE_CHANNEL_NAMES:
+        raise ChangelogError("unsupported changelog locale")
+    return locale
+
+
+def load_channel_config(root, *, allow_unconfigured=False):
+    config = json.loads((root / CHANNEL_CONFIG).read_text(encoding="utf-8"), object_pairs_hook=unique_object)
+    if (not isinstance(config, dict) or set(config) != {"guild_id", "bot_id", "channels"}
+            or config["guild_id"] != EXPECTED_GUILD_ID or config["bot_id"] != EXPECTED_BOT_ID
+            or not isinstance(config["channels"], dict) or set(config["channels"]) != set(LOCALE_CHANNEL_NAMES)):
+        raise ChangelogError("invalid localized Discord guild/bot/channel configuration")
+    ids = set()
+    for locale, name in LOCALE_CHANNEL_NAMES.items():
+        entry = config["channels"][locale]
+        if not isinstance(entry, dict) or set(entry) != {"id", "name"} or entry["name"] != name:
+            raise ChangelogError("channel name does not match the locale allowlist")
+        identifier = entry["id"]
+        if identifier is None and allow_unconfigured and locale != "enUS":
+            continue
+        snowflake(identifier)
+        if identifier in ids:
+            raise ChangelogError("localized Discord channels must have distinct IDs")
+        ids.add(identifier)
+    return config
+
+
+def channel_targets(root, locales):
+    config = load_channel_config(root) if (root / CHANNEL_CONFIG).exists() else None
+    targets = {}
+    for locale in locales:
+        locale = canonical_locale(locale)
+        if locale == "enUS" and os.environ.get("DISCORD_CHANGELOG_CHANNEL_ID"):
+            identifier = snowflake(os.environ["DISCORD_CHANGELOG_CHANNEL_ID"])
+            if config and config["channels"][locale]["id"] != identifier:
+                raise ChangelogError("English channel environment override differs from the reviewed configuration")
+        elif config:
+            identifier = config["channels"][locale]["id"]
+        else:
+            raise ChangelogError("Discord destination is not configured for " + locale)
+        targets[locale] = identifier
+    if len(set(targets.values())) != len(targets):
+        raise ChangelogError("localized Discord channels must have distinct IDs")
+    return targets
+
+
+def load_localized_notes(root, source, *, check_generated=True):
+    # Shared validator rejects stale source digests, mismatched versions and
+    # dropped/added sections or items. Never translate or summarize while posting.
+    from localization import release_note_outputs
+    outputs = release_note_outputs(root, source)
+    expected = outputs[root / LOCALIZED_LUA].encode("utf-8")
+    if check_generated and (root / LOCALIZED_LUA).read_bytes() != expected:
+        raise ChangelogError(LOCALIZED_LUA + " is stale; regenerate it before releasing")
+    translated = {}
+    for locale in LOCALE_CHANNEL_NAMES:
+        if locale == "enUS":
+            continue
+        path = root / "release_notes" / (locale + ".json")
+        raw = outputs.get(path)
+        wrapper = json.loads(raw if raw is not None else path.read_text(encoding="utf-8"))
+        translated[locale] = parse_notes(json.dumps(wrapper["notes"], ensure_ascii=False))
+        if translated[locale]["version"] != source["version"]:
+            raise ChangelogError("localized release-note version differs from English")
+    return translated, expected
+
+
 def text_length(value):
     # Conservative UTF-16 accounting also keeps astral Unicode within limits.
     return len(value.encode("utf-16-le")) // 2
@@ -177,11 +257,13 @@ def embed_length(embed):
         embed.get("footer", {}).get("text", ""))
 
 
-def release_key(repository, tag):
-    return "QuestTogether release " + repository + "@" + tag
+def release_key(repository, tag, locale="enUS"):
+    locale = canonical_locale(locale)
+    key = "QuestTogether release " + repository + "@" + tag
+    return key if locale == "enUS" else key + " [" + locale + "]"
 
 
-def build_messages(notes, repository, tag):
+def build_messages(notes, repository, tag, locale="enUS"):
     repository_name(repository)
     if tag != "v" + notes["version"]:
         raise ChangelogError("tag and notes version differ")
@@ -201,7 +283,7 @@ def build_messages(notes, repository, tag):
     # Reserve the longest possible footer before packing. No item is truncated
     # or split, and no release URL occurs twice within the same message.
     digest = hashlib.sha256(json.dumps(notes, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()[:16]
-    key = release_key(repository, tag)
+    key = release_key(repository, tag, locale)
     reserve = text_length(key + " | part 100/100 | " + digest)
     groups, current = [], []
     for embed in embeds:
@@ -258,7 +340,8 @@ def permissions(guild, member, channel):
     return value
 
 
-def verify_access(api, channel_id):
+def verify_access(api, channel_id, locale="enUS"):
+    locale = canonical_locale(locale)
     snowflake(channel_id)
     user = api.request("/users/@me")
     if user.get("id") != EXPECTED_BOT_ID or user.get("bot") is not True:
@@ -266,8 +349,8 @@ def verify_access(api, channel_id):
     channel = api.request("/channels/" + channel_id)
     if channel.get("id") != channel_id or channel.get("guild_id") != EXPECTED_GUILD_ID:
         raise ChangelogError("changelog channel belongs to the wrong guild")
-    if channel.get("name") != EXPECTED_CHANNEL_NAME or channel.get("type") not in (0, 5):
-        raise ChangelogError("destination must be the guild text/announcement channel named changelog")
+    if channel.get("name") != LOCALE_CHANNEL_NAMES[locale] or channel.get("type") not in (0, 5):
+        raise ChangelogError("destination must be the allowlisted guild text/announcement channel for " + locale)
     guild = api.request("/guilds/" + EXPECTED_GUILD_ID)
     member = api.request("/guilds/" + EXPECTED_GUILD_ID + "/members/" + EXPECTED_BOT_ID)
     if guild.get("id") != EXPECTED_GUILD_ID or member.get("user", {}).get("id") != EXPECTED_BOT_ID:
@@ -304,10 +387,10 @@ def read_history(api, channel_id, max_pages=MAX_HISTORY_PAGES):
     raise ChangelogError("Discord history scan limit reached; refusing to risk duplicate posts")
 
 
-def posted_markers(history, planned, repository, tag):
+def posted_markers(history, planned, repository, tag, locale="enUS"):
     expected = {message["embeds"][-1]["footer"]["text"] for message in planned}
     found = set()
-    prefix = release_key(repository, tag) + " | "
+    prefix = release_key(repository, tag, locale) + " | "
     for message in history:
         author = message.get("author", {})
         if author.get("id") != EXPECTED_BOT_ID or author.get("bot") is not True or message.get("webhook_id"):
@@ -321,15 +404,15 @@ def posted_markers(history, planned, repository, tag):
     return found
 
 
-def post_missing(api, channel_id, planned, history, repository, tag):
-    found = posted_markers(history, planned, repository, tag)
+def post_missing(api, channel_id, planned, history, repository, tag, locale="enUS"):
+    found = posted_markers(history, planned, repository, tag, locale)
     count = 0
     for payload in planned:
         marker = payload["embeds"][-1]["footer"]["text"]
         if marker in found:
             continue
         result = api.request("/channels/" + channel_id + "/messages", "POST", payload)
-        if result.get("channel_id") != channel_id or marker not in posted_markers([result], planned, repository, tag):
+        if result.get("channel_id") != channel_id or marker not in posted_markers([result], planned, repository, tag, locale):
             raise ChangelogError("Discord did not confirm the expected bot-authored release part")
         found.add(marker)
         count += 1
@@ -396,7 +479,7 @@ def download_archive(url, size):
     return data
 
 
-def verify_archive(release, repository, tag, notes, *, download=download_archive):
+def verify_archive(release, repository, tag, notes, *, download=download_archive, localized_lua=None):
     asset = release_archive(release, repository, tag)
     data = download(asset["browser_download_url"], asset["size"])
     if len(data) != asset["size"] or len(data) > MAX_ARCHIVE_BYTES:
@@ -407,7 +490,7 @@ def verify_archive(release, repository, tag, notes, *, download=download_archive
             if len(entries) > 1000:
                 raise ChangelogError("release ZIP has too many entries")
             # No extraction: reject duplicate/ambiguous paths before reading only
-            # these two bounded files, including Windows case/backslash aliases.
+            # these bounded files, including Windows case/backslash aliases.
             seen = set()
             for entry in entries:
                 name = entry.filename.replace("\\", "/").rstrip("/")
@@ -416,7 +499,7 @@ def verify_archive(release, repository, tag, notes, *, download=download_archive
                     raise ChangelogError("release ZIP contains duplicate or ambiguous paths")
                 seen.add(name.casefold())
             contents = {}
-            for name in (TOC_FILE, LUA_FILE):
+            for name in (TOC_FILE, LUA_FILE) + ((LOCALIZED_LUA,) if localized_lua is not None else ()):
                 info = archive.getinfo("QuestTogether/" + name)
                 if info.file_size > MAX_ARCHIVE_ENTRY_BYTES or info.flag_bits & 1:
                     raise ChangelogError("release ZIP note files are too large or encrypted")
@@ -427,6 +510,12 @@ def verify_archive(release, repository, tag, notes, *, download=download_archive
     check_manifest(manifest)
     if toc_version(manifest) != notes["version"] or contents[LUA_FILE] != render_lua(notes).encode("utf-8"):
         raise ChangelogError("published ZIP notes/version differ from the canonical release notes")
+    if localized_lua is not None:
+        entries = [line.strip().replace("\\", "/") for line in manifest.splitlines()
+                   if line.strip() and not line.lstrip().startswith("#")]
+        if (entries.count(LOCALIZED_LUA) != 1 or entries.index(LOCALIZED_LUA) < entries.index(LUA_FILE)
+                or contents[LOCALIZED_LUA] != localized_lua):
+            raise ChangelogError("published ZIP localized notes differ or are not loaded after English notes")
 
 
 def verify_release(api, repository, tag, sha):
@@ -479,37 +568,55 @@ def main(argv=None):
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--tag", help="exact release tag; required for --post")
     parser.add_argument("--repository", default=DEFAULT_REPOSITORY)
+    locales = parser.add_mutually_exclusive_group()
+    locales.add_argument("--locale", default="enUS", choices=[*LOCALE_CHANNEL_NAMES, "esMX"])
+    locales.add_argument("--all-locales", action="store_true", help="validate and post English plus all five translations")
     parser.add_argument("--wait-seconds", type=int, default=0, help="wait up to 600 seconds for the release ZIP/tests")
     args = parser.parse_args(argv)
     try:
         if not 0 <= args.wait_seconds <= 600:
             raise ChangelogError("--wait-seconds must be between 0 and 600")
         repository = repository_name(args.repository)
+        root = args.root.resolve()
+        locales = list(LOCALE_CHANNEL_NAMES) if args.all_locales else [canonical_locale(args.locale)]
         if args.check_access:
             api = API(DISCORD_API, os.environ.get("DISCORD_BOT_TOKEN"))
-            channel_id = snowflake(os.environ.get("DISCORD_CHANGELOG_CHANNEL_ID"))
-            verify_access(api, channel_id)
-            history = read_history(api, channel_id)
-            print("Verified Bumblebee bot in guild " + EXPECTED_GUILD_ID + " / #changelog (" + channel_id
-                  + "); read " + str(len(history)) + " messages. No messages sent.")
+            for locale, channel_id in channel_targets(root, locales).items():
+                verify_access(api, channel_id, locale)
+                history = read_history(api, channel_id)
+                print("Verified Bumblebee bot in guild " + EXPECTED_GUILD_ID + " / #" + LOCALE_CHANNEL_NAMES[locale]
+                      + " (" + channel_id + "); read " + str(len(history)) + " messages. No messages sent.")
             return 0
-        notes, sha = load_notes(args.root.resolve(), args.tag, exact=args.post or args.tag is not None)
+        notes, sha = load_notes(root, args.tag, exact=args.post or args.tag is not None)
         tag = args.tag or "v" + notes["version"]
-        planned = build_messages(notes, repository, tag)
+        localized_lua = None
+        all_notes = {"enUS": notes}
+        manifest_entries = {line.strip().replace("\\", "/") for line in (root / TOC_FILE).read_text(encoding="utf-8").splitlines()}
+        if locales != ["enUS"] or (root / LOCALIZED_LUA).exists() or LOCALIZED_LUA in manifest_entries:
+            translated, localized_lua = load_localized_notes(root, notes)
+            all_notes.update(translated)
+        planned = {locale: build_messages(all_notes[locale], repository, tag, locale) for locale in locales}
         if not args.post:
-            print(json.dumps(planned, ensure_ascii=False, indent=2))
+            print(json.dumps(planned if args.all_locales else planned[locales[0]], ensure_ascii=False, indent=2))
             return 0
         github = API(GITHUB_API, os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN"))
         release = wait_for_release(github, repository, tag, sha, args.wait_seconds)
-        verify_archive(release, repository, tag, notes)
+        verify_archive(release, repository, tag, notes, localized_lua=localized_lua)
         discord = API(DISCORD_API, os.environ.get("DISCORD_BOT_TOKEN"))
-        channel_id = snowflake(os.environ.get("DISCORD_CHANGELOG_CHANNEL_ID"))
-        verify_access(discord, channel_id)
-        history = read_history(discord, channel_id)
-        posted = post_missing(discord, channel_id, planned, history, repository, tag)
-        print("Release " + tag + ": posted " + str(posted) + " missing parts; " + str(len(planned) - posted) + " already present.")
+        targets = channel_targets(root, locales)
+        histories = {}
+        # Validate every target and history before the first externally visible
+        # write. A later transport failure can safely resume only missing parts.
+        for locale, channel_id in targets.items():
+            verify_access(discord, channel_id, locale)
+            histories[locale] = read_history(discord, channel_id)
+            posted_markers(histories[locale], planned[locale], repository, tag, locale)
+        for locale, channel_id in targets.items():
+            posted = post_missing(discord, channel_id, planned[locale], histories[locale], repository, tag, locale)
+            print("Release " + tag + " " + locale + ": posted " + str(posted) + " missing parts; "
+                  + str(len(planned[locale]) - posted) + " already present.")
         return 0
-    except (ChangelogError, NotesError, OSError, UnicodeError, KeyError, TypeError, AttributeError, ValueError) as error:
+    except (ChangelogError, NotesError, OSError, UnicodeError, KeyError, TypeError, AttributeError, ValueError, ImportError) as error:
         # API errors deliberately omit response bodies and headers. No token is logged.
         print("Discord changelog error: " + str(error), file=sys.stderr)
         return 1

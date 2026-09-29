@@ -17,6 +17,8 @@ import zipfile
 sys.dont_write_bytecode = True
 
 import discord_changelog as changelog
+import setup_localized_discord as setup
+import localization
 
 
 CHANNEL = "1553981217039187978"
@@ -110,7 +112,73 @@ class GitHub:
         raise AssertionError(path)
 
 
+def locale_config(*, configured=True):
+    return {"guild_id": changelog.EXPECTED_GUILD_ID, "bot_id": changelog.EXPECTED_BOT_ID,
+            "channels": {locale: {"id": CHANNEL if locale == "enUS" else
+                                   (str(1555000000000000000 + index) if configured else None), "name": name}
+                         for index, (locale, name) in enumerate(changelog.LOCALE_CHANNEL_NAMES.items())}}
+
+
+class LocalizedDiscord(Discord):
+    def __init__(self, *, existing=True):
+        super().__init__()
+        self.guild["roles"][0]["permissions"] = str(changelog.REQUIRED_PERMISSIONS | (1 << 4))
+        self.config = locale_config()
+        self.channels = {entry["id"]: dict(copy.deepcopy(self.channel), id=entry["id"], name=entry["name"])
+                         for locale, entry in self.config["channels"].items() if existing or locale == "enUS"}
+        self.histories = {identifier: [] for identifier in self.channels}
+
+    def request(self, path, method="GET", payload=None):
+        if path == "/guilds/" + changelog.EXPECTED_GUILD_ID + "/channels":
+            self.calls.append((path, method, copy.deepcopy(payload)))
+            if method == "GET":
+                return list(copy.deepcopy(self.channels).values())
+            self.posts.append(copy.deepcopy(payload))
+            identifier = next(entry["id"] for entry in self.config["channels"].values() if entry["name"] == payload["name"])
+            channel = dict(copy.deepcopy(payload), id=identifier, guild_id=changelog.EXPECTED_GUILD_ID)
+            self.channels[identifier] = channel
+            self.histories[identifier] = []
+            return channel
+        if path.startswith("/channels/"):
+            identifier = path.split("/")[2]
+            self.calls.append((path, method, copy.deepcopy(payload)))
+            if method == "POST":
+                if self.fail_part == len(self.posts) + 1:
+                    raise changelog.ChangelogError("injected partial locale failure")
+                self.posts.append(copy.deepcopy(payload))
+                result = response(payload, identifier=str(1556000000000000000 + len(self.posts)))
+                result["channel_id"] = identifier
+                self.histories[identifier].insert(0, result)
+                return result
+            if "/messages?" in path:
+                return copy.deepcopy(self.histories[identifier])
+            return copy.deepcopy(self.channels[identifier])
+        return super().request(path, method, payload)
+
+
+def write_translations(root, source):
+    (root / "release_notes").mkdir(exist_ok=True)
+    for locale in localization.LOCALES:
+        translated = copy.deepcopy(source)
+        translated["welcome"] = locale + ": " + translated["welcome"]
+        wrapper = {"source_sha256": localization.digest(source), "notes": translated}
+        (root / "release_notes" / (locale + ".json")).write_text(json.dumps(wrapper), encoding="utf-8")
+    for path, value in localization.release_note_outputs(root, source).items():
+        path.write_text(value, encoding="utf-8")
+    (root / changelog.CHANNEL_CONFIG).write_text(json.dumps(locale_config()), encoding="utf-8")
+
+
 class FormattingTests(unittest.TestCase):
+    def test_locales_have_distinct_markers_and_nonces_with_spanish_alias(self):
+        english = changelog.build_messages(notes(), REPO, TAG)
+        self.assertEqual(changelog.release_key(REPO, TAG), "QuestTogether release " + REPO + "@" + TAG)
+        planned = {locale: changelog.build_messages(notes(), REPO, TAG, locale)
+                   for locale in changelog.LOCALE_CHANNEL_NAMES}
+        self.assertEqual(planned["enUS"], english)
+        self.assertEqual(changelog.build_messages(notes(), REPO, TAG, "esMX"), planned["esES"])
+        self.assertEqual(len({messages[0]["nonce"] for messages in planned.values()}), 6)
+        self.assertEqual(changelog.posted_markers([response(english[0])], planned["frFR"], REPO, TAG, "frFR"), set())
+
     def test_canonical_content_and_mentions_preserved_without_pinging(self):
         data = notes()
         planned = changelog.build_messages(data, REPO, TAG)
@@ -249,6 +317,16 @@ class PostingTests(unittest.TestCase):
 
 
 class TransportTests(unittest.TestCase):
+    def test_channel_creation_never_blindly_retries_ambiguous_server_failure(self):
+        calls = []
+        def fail(*args):
+            calls.append(args)
+            return 503, {}, b"ambiguous"
+        api = changelog.API(changelog.DISCORD_API, "offline", transport=fail, sleep=lambda _: None)
+        with self.assertRaisesRegex(changelog.ChangelogError, "unsafe retry"):
+            api.request("/guilds/" + changelog.EXPECTED_GUILD_ID + "/channels", "POST", {"name": "test"})
+        self.assertEqual(len(calls), 1)
+
     def test_429_and_5xx_use_bounded_retries(self):
         calls, delays = [], []
         replies = [(429, {}, b'{"retry_after":0.5}'), (502, {}, b"bad gateway"), (200, {}, b'{"ok":true}')]
@@ -312,12 +390,14 @@ class TransportTests(unittest.TestCase):
 
 
 class ArchiveTests(unittest.TestCase):
-    def archive(self, *, lua=None, toc=None, duplicate=False, extra=None):
+    def archive(self, *, lua=None, toc=None, duplicate=False, extra=None, localized=None):
         output = io.BytesIO()
         with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             archive.writestr("QuestTogether/", b"")
             archive.writestr("QuestTogether/QuestTogether.toc", toc or "## Version: 1.2.4\nCore.lua\nReleaseNotes.lua\n")
             archive.writestr("QuestTogether/ReleaseNotes.lua", lua if lua is not None else changelog.render_lua(notes()))
+            if localized is not None:
+                archive.writestr("QuestTogether/LocalizedReleaseNotes.lua", localized)
             if duplicate:
                 # A case/backslash alias is ambiguous for WoW's Windows clients.
                 archive.writestr("questtogether\\releasenotes.lua", "other notes")
@@ -337,6 +417,25 @@ class ArchiveTests(unittest.TestCase):
                      self.archive(toc="## Version: 1.2.4\nCore.lua\n")):
             with self.assertRaises((changelog.ChangelogError, changelog.NotesError)):
                 self.verify(data)
+
+    def test_localized_archive_requires_exact_data_and_native_load_order(self):
+        expected = b"-- exact generated localized notes"
+        toc = "## Version: 1.2.4\nCore.lua\nReleaseNotes.lua\nLocalizedReleaseNotes.lua\n"
+        for candidate, valid in ((self.archive(toc=toc, localized=expected), True),
+                                 (self.archive(toc=toc, localized=b"stale"), False),
+                                 (self.archive(toc=toc), False),
+                                 (self.archive(localized=expected), False),
+                                 (self.archive(toc="## Version: 1.2.4\nCore.lua\nLocalizedReleaseNotes.lua\nReleaseNotes.lua\n", localized=expected), False)):
+            release = GitHub().release
+            release["assets"][0]["size"] = len(candidate)
+            def verify():
+                changelog.verify_archive(release, REPO, TAG, notes(), localized_lua=expected,
+                                         download=lambda *args: candidate)
+            if valid:
+                verify()
+            else:
+                with self.assertRaises((changelog.ChangelogError, changelog.NotesError)):
+                    verify()
 
     def test_archive_paths_contents_and_uncompressed_sizes_are_bounded(self):
         for data in (b"not a zip", self.archive(duplicate=True), self.archive(extra="QuestTogether/../other.lua"),
@@ -383,6 +482,138 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("persist-credentials: false", workflow)
         self.assertIn("fetch-depth: 0", workflow)
         self.assertIn('scripts/discord_changelog.py --post --tag "$RELEASE_TAG"', workflow)
+        self.assertEqual(workflow.count("--all-locales"), 2)
+
+
+class LocalizationTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="qt-localized-discord-")
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        write_translations(self.root, notes())
+
+    def test_shared_validator_rejects_stale_source_structure_version_and_generated_lua(self):
+        translated, expected = changelog.load_localized_notes(self.root, notes())
+        self.assertEqual(set(translated), set(localization.LOCALES))
+        self.assertEqual(expected, (self.root / changelog.LOCALIZED_LUA).read_bytes())
+        path = self.root / "release_notes/frFR.json"
+        original = json.loads(path.read_text())
+        for mutate in (lambda w: w.update(source_sha256="a" * 64),
+                       lambda w: w["notes"].update(version="1.2.3"),
+                       lambda w: w["notes"]["sections"][0]["items"].append("Unexpected extra bullet.")):
+            wrapper = copy.deepcopy(original)
+            mutate(wrapper)
+            path.write_text(json.dumps(wrapper))
+            with self.assertRaises(ValueError):
+                changelog.load_localized_notes(self.root, notes())
+        path.write_text(json.dumps(original))
+        (self.root / changelog.LOCALIZED_LUA).write_text("stale")
+        with self.assertRaisesRegex(changelog.ChangelogError, "stale"):
+            changelog.load_localized_notes(self.root, notes())
+
+    def test_config_and_access_validate_each_locale_guild_bot_name_and_unique_id(self):
+        config = locale_config()
+        for mutate in (lambda c: c.update(guild_id="1554000000000000008"),
+                       lambda c: c.update(bot_id="1554000000000000008"),
+                       lambda c: c["channels"]["deDE"].update(name="general"),
+                       lambda c: c["channels"]["deDE"].update(id=CHANNEL),
+                       lambda c: c["channels"].update(esMX=c["channels"]["esES"])):
+            candidate = copy.deepcopy(config)
+            mutate(candidate)
+            (self.root / changelog.CHANNEL_CONFIG).write_text(json.dumps(candidate))
+            with self.assertRaises(changelog.ChangelogError):
+                changelog.load_channel_config(self.root)
+        api = LocalizedDiscord()
+        for locale, entry in config["channels"].items():
+            changelog.verify_access(api, entry["id"], locale)
+            if locale != "enUS":
+                with self.assertRaises(changelog.ChangelogError):
+                    changelog.verify_access(api, entry["id"])
+
+    def test_provision_reuses_names_copies_category_permissions_and_is_idempotent(self):
+        config = locale_config(configured=False)
+        (self.root / changelog.CHANNEL_CONFIG).write_text(json.dumps(config))
+        api = LocalizedDiscord(existing=False)
+        api.channels[CHANNEL]["permission_overwrites"] = [
+            {"id": changelog.EXPECTED_GUILD_ID, "type": 0, "allow": "0", "deny": str(1 << 5)}]
+        with contextlib.redirect_stdout(io.StringIO()):
+            selected = setup.provision(api, self.root)
+            self.assertEqual(selected, {"enUS": CHANNEL})
+            self.assertEqual(api.posts, [])
+            selected = setup.provision(api, self.root, create=True)
+            self.assertEqual(len(selected), 6)
+            self.assertEqual(len(api.posts), 5)
+            for payload in api.posts:
+                self.assertEqual(payload["parent_id"], None)
+                self.assertEqual(payload["permission_overwrites"], setup.overwrites(api.channels[CHANNEL]))
+            self.assertEqual(setup.provision(api, self.root, create=True), selected)
+            self.assertEqual(len(api.posts), 5)
+        self.assertEqual(changelog.load_channel_config(self.root), locale_config())
+
+    def test_provision_fails_closed_for_missing_configured_or_conflicting_channels(self):
+        api = LocalizedDiscord()
+        identifier = api.config["channels"]["ruRU"]["id"]
+        for mutation in (lambda: api.channels[identifier].update(name="renamed"),
+                         lambda: api.channels[identifier].update(guild_id="1554000000000000008"),
+                         lambda: api.channels[identifier].update(parent_id="1554000000000000008")):
+            saved = copy.deepcopy(api.channels[identifier])
+            mutation()
+            with self.assertRaises(changelog.ChangelogError):
+                setup.provision(api, self.root, create=True)
+            self.assertEqual(api.posts, [])
+            api.channels[identifier] = saved
+
+    def test_provision_requires_manage_channels_and_never_changes_existing_permissions(self):
+        (self.root / changelog.CHANNEL_CONFIG).write_text(json.dumps(locale_config(configured=False)))
+        api = LocalizedDiscord(existing=False)
+        api.guild["roles"][0]["permissions"] = str(changelog.REQUIRED_PERMISSIONS)
+        before = (self.root / changelog.CHANNEL_CONFIG).read_bytes()
+        with self.assertRaisesRegex(changelog.ChangelogError, "Manage Channels"):
+            setup.provision(api, self.root, create=True)
+        self.assertFalse(api.posts)
+        self.assertEqual((self.root / changelog.CHANNEL_CONFIG).read_bytes(), before)
+        self.assertTrue(all(method == "GET" for _, method, _ in api.calls))
+
+    def test_partial_channel_creation_is_rediscovered_without_duplicate_creation(self):
+        config = locale_config(configured=False)
+        path = self.root / changelog.CHANNEL_CONFIG
+        path.write_text(json.dumps(config))
+        before = path.read_bytes()
+        api = LocalizedDiscord(existing=False)
+        original = api.request
+        def ambiguous(path, method="GET", payload=None):
+            result = original(path, method, payload)
+            if method == "POST":
+                raise changelog.ChangelogError("ambiguous response after channel was created")
+            return result
+        with patch.object(api, "request", side_effect=ambiguous), contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(changelog.ChangelogError):
+                setup.provision(api, self.root, create=True)
+        self.assertEqual(len(api.posts), 1)
+        self.assertEqual(path.read_bytes(), before)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(len(setup.provision(api, self.root, create=True)), 6)
+        self.assertEqual(len(api.posts), 5)
+        self.assertEqual(len({payload["name"] for payload in api.posts}), 5)
+
+    def test_duplicate_existing_locale_names_are_rejected_before_creation(self):
+        api = LocalizedDiscord()
+        identifier = api.config["channels"]["deDE"]["id"]
+        api.channels["1557000000000000000"] = dict(api.channels[identifier], id="1557000000000000000")
+        with self.assertRaisesRegex(changelog.ChangelogError, "ambiguous"):
+            setup.provision(api, self.root, create=True)
+        self.assertFalse(api.posts)
+
+    def test_optional_token_file_reads_only_named_entry_without_evaluation(self):
+        path = self.root / "private.env"
+        path.write_text('UNRELATED_SECRET=do-not-use\nDISCORD_BOT_TOKEN="offline.token-value"\n')
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(setup.bot_token(path), "offline.token-value")
+            path.write_text('DISCORD_BOT_TOKEN=$(touch sentinel)\n')
+            with self.assertRaises(changelog.ChangelogError) as error:
+                setup.bot_token(path)
+            self.assertNotIn("touch", str(error.exception))
+            self.assertFalse((self.root / "sentinel").exists())
 
 
 class ReleaseTests(unittest.TestCase):
@@ -457,6 +688,91 @@ class LocalNotesTests(unittest.TestCase):
         self.git("add", ".")
         self.git("commit", "-qm", "Fixture notes " + data["version"])
         self.git("tag", "-a", "v" + data["version"], "-m", "Fixture release")
+
+    def prepare_localized_release(self):
+        write_translations(self.root, notes())
+        with (self.root / "QuestTogether.toc").open("a") as handle:
+            handle.write("LocalizedReleaseNotes.lua\n")
+        self.git("add", ".")
+        self.git("commit", "-qm", "Fixture localized release")
+        self.git("tag", "-fa", TAG, "-m", "Fixture localized release")
+        self.sha = self.git("rev-parse", "HEAD")
+
+    def test_all_locales_preflight_every_target_before_posting_and_retries_missing_channels(self):
+        self.prepare_localized_release()
+        github, discord = GitHub(self.sha), LocalizedDiscord()
+        def api(base, token):
+            return github if base == changelog.GITHUB_API else discord
+        last = locale_config()["channels"]["ruRU"]["id"]
+        discord.channels[last]["name"] = "wrong-destination"
+        args = ["--post", "--all-locales", "--tag", TAG, "--root", str(self.root)]
+        with patch.object(changelog, "API", side_effect=api), patch.object(changelog, "verify_archive") as archive, \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(changelog.main(args), 1)
+            self.assertFalse(discord.posts)
+            discord.channels[last]["name"] = changelog.LOCALE_CHANNEL_NAMES["ruRU"]
+            discord.fail_part = 3
+            self.assertEqual(changelog.main(args), 1)
+            self.assertEqual(len(discord.posts), 2)
+            discord.fail_part = None
+            self.assertEqual(changelog.main(args), 0)
+            self.assertEqual(len(discord.posts), 6)
+            self.assertEqual(changelog.main(args), 0)
+            self.assertEqual(len(discord.posts), 6)
+            self.assertEqual(archive.call_args.kwargs["localized_lua"],
+                             (self.root / changelog.LOCALIZED_LUA).read_bytes())
+        self.assertEqual(len({payload["nonce"] for payload in discord.posts}), 6)
+        for locale, entry in locale_config()["channels"].items():
+            message = discord.histories[entry["id"]][0]
+            self.assertIn(changelog.release_key(REPO, TAG, locale), message["embeds"][-1]["footer"]["text"])
+
+    def test_stale_localized_zip_and_late_conflicting_history_prevent_all_posts(self):
+        self.prepare_localized_release()
+        github, discord = GitHub(self.sha), LocalizedDiscord()
+        def api(base, token):
+            return github if base == changelog.GITHUB_API else discord
+        args = ["--post", "--all-locales", "--tag", TAG, "--root", str(self.root)]
+        with patch.object(changelog, "API", side_effect=api), patch.object(changelog, "verify_archive", \
+                side_effect=changelog.ChangelogError("stale localized archive")), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(changelog.main(args), 1)
+        self.assertFalse(discord.calls)
+        translated, _ = changelog.load_localized_notes(self.root, notes())
+        message = response(changelog.build_messages(translated["ruRU"], REPO, TAG, "ruRU")[0])
+        last = locale_config()["channels"]["ruRU"]["id"]
+        message["channel_id"] = last
+        message["embeds"][-1]["footer"]["text"] += " conflict"
+        discord.histories[last].append(message)
+        with patch.object(changelog, "API", side_effect=api), patch.object(changelog, "verify_archive"), \
+                contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(changelog.main(args), 1)
+        self.assertFalse(discord.posts)
+
+    def test_current_backfill_requires_exact_published_source_and_checks_all_destinations(self):
+        source = notes("5.13.1")
+        self.write_notes(source)
+        write_translations(self.root, source)
+        discord = LocalizedDiscord()
+        translated, _ = changelog.load_localized_notes(self.root, source)
+        last = locale_config()["channels"]["ruRU"]["id"]
+        discord.channels[last]["name"] = "wrong-destination"
+        with patch.object(changelog, "load_notes", return_value=(source, SHA)) as load, \
+                patch.object(changelog, "verify_release", return_value={}) as release, \
+                patch.object(changelog, "verify_archive") as archive, contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(changelog.ChangelogError):
+                setup.post_current(self.root, self.root, discord, object())
+            self.assertFalse(discord.posts)
+            discord.channels[last]["name"] = changelog.LOCALE_CHANNEL_NAMES["ruRU"]
+            setup.post_current(self.root, self.root, discord, object())
+            setup.post_current(self.root, self.root, discord, object())
+            self.assertEqual(len(discord.posts), 5)
+            self.assertEqual(load.call_args.args[1], "v5.13.1")
+            self.assertEqual(load.call_args.kwargs, {"exact": True})
+            self.assertEqual(release.call_args.args[2:], ("v5.13.1", SHA))
+            self.assertNotIn("localized_lua", archive.call_args.kwargs)
+            self.write_notes(notes("5.13.2", "Unpublished future feature."))
+            with self.assertRaisesRegex(changelog.ChangelogError, "published 5.13.1"):
+                setup.post_current(self.root, self.root, discord, object())
+            self.assertEqual(len(discord.posts), 5)
 
     def test_exact_tag_generation_and_history_validation(self):
         data, sha = changelog.load_notes(self.root, TAG, exact=True)

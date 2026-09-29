@@ -19,6 +19,9 @@ local LibChev = assert(addonTable and addonTable.LibChev, "libchev must load bef
 local QuestTogether = _G.QuestTogether or addonTable or {}
 _G.QuestTogether = QuestTogether
 QuestTogether.LibChev = LibChev
+QuestTogether.Translate = addonTable.Translate
+QuestTogether.TranslateForLocale = addonTable.TranslateForLocale
+local L = QuestTogether.Translate
 
 local raw_tostring = tostring
 local raw_string_match = string.match
@@ -345,6 +348,7 @@ QuestTogether.DEFAULTS = {
 		announceBonusObjectiveCompleted = true,
 			showChatBubbles = true,
 			hideMyOwnChatBubbles = false,
+			announceToNonQTParty = true,
 			showChatLogs = true,
 			chatLogDestination = "main",
 			mirrorChatLogsToMainChat = false,
@@ -464,7 +468,7 @@ function QuestTogether:IsChatLogDestination(value)
 end
 
 function QuestTogether:GetChatLogDestinationLabel(value)
-	return self.chatLogDestinationLabels[value] or tostring(value)
+	return L(self.chatLogDestinationLabels[value]) or tostring(value)
 end
 
 function QuestTogether:NormalizeChatBubbleSizeValue(value)
@@ -518,7 +522,7 @@ function QuestTogether:IsNameplateQuestIconStyle(styleKey)
 end
 
 function QuestTogether:GetNameplateQuestIconStyleLabel(styleKey)
-	return self.nameplateQuestIconStyleLabels[styleKey] or tostring(styleKey)
+	return L(self.nameplateQuestIconStyleLabels[styleKey]) or tostring(styleKey)
 end
 
 function QuestTogether:GetNameplateQuestIconStyle()
@@ -535,7 +539,7 @@ function QuestTogether:GetNameplatePlayerIconStyle()
 end
 
 function QuestTogether:GetShowProgressForLabel(value)
-	return self.showProgressForLabels[value] or tostring(value)
+	return L(self.showProgressForLabels[value]) or tostring(value)
 end
 
 function QuestTogether:GetChatBubbleSizeLabel(sizeKey)
@@ -554,10 +558,10 @@ function QuestTogether:GetChatBubbleDurationLabel(durationValue)
 	end
 
 	if math.abs(numericValue - math.floor(numericValue)) < 0.001 then
-		return string.format("%d sec", numericValue)
+		return string.format(L("%d sec"), numericValue)
 	end
 
-	return string.format("%.1f sec", numericValue)
+	return string.format(L("%.1f sec"), numericValue)
 end
 
 function QuestTogether:GetPersonalBubbleAnchorKey()
@@ -853,6 +857,13 @@ QuestTogether.API = QuestTogether.API or {
 			local ok, result = pcall(C_ChatInfo.SendAddonMessage, prefix, message, channel, target)
 			return ok and result or nil
 		end,
+	SendPartyChatMessage = function(message, distribution)
+		if distribution ~= "PARTY" and distribution ~= "INSTANCE_CHAT" then return false end
+		local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
+		if type(send) ~= "function" then return false end
+		local ok = pcall(send, message, distribution)
+		return ok
+	end,
 	IsInInstanceGroup = function()
 		return IsInGroup(LE_PARTY_CATEGORY_INSTANCE)
 	end,
@@ -2704,12 +2715,12 @@ end
 
 function QuestTogether:SetActiveProfile(profileKey)
 	if not self.db or not self:EnsureProfileStorage() then
-		return false, "Profile database is unavailable."
+		return false, L("Profile database is unavailable.")
 	end
 
 	local normalizedKey, profileData = self:EnsureProfile(profileKey)
 	if not normalizedKey or not profileData then
-		return false, "Profile name cannot be empty."
+		return false, L("Profile name cannot be empty.")
 	end
 
 	local characterKey = self.activeCharacterKey or self:GetCurrentCharacterKey()
@@ -2724,15 +2735,15 @@ end
 
 function QuestTogether:CreateProfile(profileKey, sourceProfileKey)
 	if not self.db or not self:EnsureProfileStorage() then
-		return false, "Profile database is unavailable."
+		return false, L("Profile database is unavailable.")
 	end
 
 	local normalizedKey = NormalizeProfileKey(profileKey)
 	if not normalizedKey then
-		return false, "Profile name cannot be empty."
+		return false, L("Profile name cannot be empty.")
 	end
 	if type(self.db.profiles[normalizedKey]) == "table" then
-		return false, "A profile with that name already exists."
+		return false, L("A profile with that name already exists.")
 	end
 
 	local sourceProfile = self.db.profile
@@ -2749,18 +2760,18 @@ end
 
 function QuestTogether:CopyProfileIntoActiveProfile(sourceProfileKey)
 	if not self.db or not self:EnsureProfileStorage() then
-		return false, "Profile database is unavailable."
+		return false, L("Profile database is unavailable.")
 	end
 
 	local sourceKey = NormalizeProfileKey(sourceProfileKey)
 	if not sourceKey then
-		return false, "Profile name cannot be empty."
+		return false, L("Profile name cannot be empty.")
 	end
 	if type(self.db.profiles[sourceKey]) ~= "table" then
-		return false, "Profile not found: " .. tostring(sourceKey)
+		return false, L("Profile not found: ") .. tostring(sourceKey)
 	end
 	if not self.activeProfileKey then
-		return false, "No active profile is set."
+		return false, L("No active profile is set.")
 	end
 
 	self.db.profiles[self.activeProfileKey] = self:DeepCopy(self.db.profiles[sourceKey])
@@ -2773,10 +2784,10 @@ end
 
 function QuestTogether:ResetActiveProfile()
 	if not self.db or not self:EnsureProfileStorage() then
-		return false, "Profile database is unavailable."
+		return false, L("Profile database is unavailable.")
 	end
 	if not self.activeProfileKey then
-		return false, "No active profile is set."
+		return false, L("No active profile is set.")
 	end
 
 	self.db.profiles[self.activeProfileKey] = self:DeepCopy(self.DEFAULTS.profile)
@@ -2787,18 +2798,18 @@ end
 
 function QuestTogether:DeleteProfile(profileKey)
 	if not self.db or not self:EnsureProfileStorage() then
-		return false, "Profile database is unavailable."
+		return false, L("Profile database is unavailable.")
 	end
 
 	local normalizedKey = NormalizeProfileKey(profileKey)
 	if not normalizedKey then
-		return false, "Profile name cannot be empty."
+		return false, L("Profile name cannot be empty.")
 	end
 	if normalizedKey == self.activeProfileKey then
-		return false, "You cannot delete the active profile."
+		return false, L("You cannot delete the active profile.")
 	end
 	if type(self.db.profiles[normalizedKey]) ~= "table" then
-		return false, "Profile not found: " .. tostring(normalizedKey)
+		return false, L("Profile not found: ") .. tostring(normalizedKey)
 	end
 
 	self.db.profiles[normalizedKey] = nil
@@ -3376,7 +3387,7 @@ end
 function QuestTogether:GetShortDisplayName(name)
 	name = self:SafeTrimString(name, "")
 	if name == "" then
-		return "Unknown"
+		return L("Unknown")
 	end
 	if self:UsesRegionalPlayerNames() then
 		local fullName = self:NormalizeMemberName(name) or name
@@ -3950,7 +3961,7 @@ function QuestTogether:BuildAnnouncementLocationSuffix(locationInfo)
 
 	local warMode = self:NormalizeAnnouncementWarModeValue(locationInfo.warMode)
 	if self:SupportsWarMode() == true and warMode ~= nil then
-		parts[#parts + 1] = warMode and "WM On" or "WM Off"
+		parts[#parts + 1] = warMode and L("WM On") or L("WM Off")
 	end
 
 	if #parts == 0 then
@@ -4149,21 +4160,21 @@ end
 function QuestTogether:BuildQuestStatusMessage(questId, fallbackTitle)
 	local numericQuestId = self:SafeToNumber(questId)
 	if not numericQuestId then
-		return "Quest status unavailable."
+		return L("Quest status unavailable.")
 	end
 
 	local questTitle = self:GetQuestTitle(numericQuestId)
 	local normalizedFallbackTitle = self:NormalizeQuestLinkTitleText(fallbackTitle, numericQuestId)
 	if
 		normalizedFallbackTitle ~= ""
-		and (questTitle == nil or questTitle == "" or questTitle == ("Quest " .. tostring(numericQuestId)))
+		and (questTitle == nil or questTitle == "" or questTitle == (L("Quest ") .. tostring(numericQuestId)))
 	then
 		questTitle = normalizedFallbackTitle
 	end
 	local statusLabel = self:GetQuestStatusLabel(numericQuestId)
 	local shareableLabel = self:GetQuestShareableStatusLabel(numericQuestId)
 	local questLabel = self:BuildChatLogQuestLabel(numericQuestId, questTitle)
-	return "Quest Status: " .. questLabel .. " - " .. tostring(statusLabel) .. " | Shareable: " .. tostring(shareableLabel)
+	return L("Quest Status: ") .. questLabel .. " - " .. tostring(L(statusLabel)) .. L(" | Shareable: ") .. tostring(L(shareableLabel))
 end
 
 function QuestTogether:GetQuestStatusAnnouncementEventType(questId)
@@ -4249,7 +4260,7 @@ end
 
 function QuestTogether:BuildQuestCompareMessage(_remoteName, compareEntry)
 	if type(compareEntry) ~= "table" then
-		return "Quest comparison unavailable."
+		return L("Quest comparison unavailable.")
 	end
 
 	local questId = self:SafeToNumber(compareEntry.questId)
@@ -4263,12 +4274,12 @@ function QuestTogether:BuildQuestCompareMessage(_remoteName, compareEntry)
 	local decoratedQuestTitle = self:BuildChatLogQuestLabel(questId, questTitle)
 
 	return tostring(decoratedQuestTitle)
-		.. " | Them: "
-		.. tostring(remoteStatus)
-		.. " | You: "
-		.. tostring(localStatus)
-		.. " | Shareable to You: "
-		.. tostring(shareableLabel)
+		.. L(" | Them: ")
+		.. tostring(L(remoteStatus))
+		.. L(" | You: ")
+		.. tostring(L(localStatus))
+		.. L(" | Shareable to You: ")
+		.. tostring(L(shareableLabel))
 end
 
 function QuestTogether:PrintQuestCompareMessage(remoteName, compareEntry, classFile)
@@ -4288,16 +4299,16 @@ function QuestTogether:PrintQuestCompareMessage(remoteName, compareEntry, classF
 end
 
 function QuestTogether:PrintQuestCompareStart(remoteName, classFile)
-	self:PrintConsoleAnnouncement("Comparing quests...", remoteName, classFile, "QUEST_PROGRESS")
+	self:PrintConsoleAnnouncement(L("Comparing quests..."), remoteName, classFile, "QUEST_PROGRESS")
 end
 
 function QuestTogether:PrintQuestCompareDone(remoteName, count, classFile)
 	local suffix = ""
 	local numericCount = self:SafeToNumber(count)
 	if numericCount then
-		suffix = string.format(" (%d quests)", numericCount)
+		suffix = string.format(L(" (%d quests)"), numericCount)
 	end
-	self:PrintConsoleAnnouncement("Finished comparing quests" .. suffix .. ".", remoteName, classFile, "QUEST_COMPLETED")
+	self:PrintConsoleAnnouncement(L("Finished comparing quests") .. suffix .. ".", remoteName, classFile, "QUEST_COMPLETED")
 end
 
 function QuestTogether:BuildConsoleAnnouncementMessage(targetName, message, classFile, eventType, iconAsset, iconKind, locationInfo)
@@ -4316,13 +4327,13 @@ end
 
 function QuestTogether:BuildPingResponseMessage(pongData)
 	if type(pongData) ~= "table" then
-		return "|cff33ff99QuestTogether|r: Pong: <invalid payload>"
+		return L("|cff33ff99QuestTogether|r: Pong: <invalid payload>")
 	end
 
-	local senderName = pongData.senderName or "Unknown"
+	local senderName = pongData.senderName or L("Unknown")
 	local speakerLabel = self:GetShortDisplayName(senderName)
 	local speakerColor = self:GetClassColorCode(pongData.classFile)
-	local coloredName = speakerColor .. tostring(speakerLabel or "Unknown") .. "|r"
+	local coloredName = speakerColor .. tostring(speakerLabel or L("Unknown")) .. "|r"
 	local realmName = tostring(pongData.realmName or "")
 	local raceName = tostring(pongData.raceName or "")
 	local className = tostring(pongData.className or pongData.classFile or "")
@@ -4334,7 +4345,7 @@ function QuestTogether:BuildPingResponseMessage(pongData)
 		parts[#parts + 1] = "(" .. realmName .. ")"
 	end
 	if level then
-		parts[#parts + 1] = "Lvl " .. tostring(math.floor(level))
+		parts[#parts + 1] = L("Lvl ") .. tostring(math.floor(level))
 	end
 	if raceName ~= "" then
 		parts[#parts + 1] = raceName
@@ -4344,7 +4355,7 @@ function QuestTogether:BuildPingResponseMessage(pongData)
 	end
 	local addonVersion = tostring(pongData.addonVersion or "")
 	if addonVersion ~= "" then
-		parts[#parts + 1] = "QT v" .. addonVersion
+		parts[#parts + 1] = L("QT v") .. addonVersion
 	end
 
 	local locationBits = {}
@@ -4359,13 +4370,13 @@ function QuestTogether:BuildPingResponseMessage(pongData)
 	end
 	local warMode = self:NormalizeAnnouncementWarModeValue(pongData.warMode)
 	if self:SupportsWarMode() == true and warMode ~= nil then
-		locationBits[#locationBits + 1] = warMode and "WM On" or "WM Off"
+		locationBits[#locationBits + 1] = warMode and L("WM On") or L("WM Off")
 	end
 	if #locationBits > 0 then
 		parts[#parts + 1] = "- " .. table.concat(locationBits, " | ")
 	end
 
-	return "|cff33ff99QuestTogether|r: Pong: " .. table.concat(parts, " ")
+	return L("|cff33ff99QuestTogether|r: Pong: ") .. table.concat(parts, " ")
 end
 
 function QuestTogether:BuildPingCoordinateLabel(mapID, coordX, coordY)
@@ -4620,23 +4631,23 @@ function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, s
 
 	rootDescription:CreateTitle(shortName ~= "" and shortName or "QuestTogether")
 	if self:IsPlayerLookingForQuestPartners(fullName) then
-		rootDescription:CreateTitle("Looking for Questing Partners")
+		rootDescription:CreateTitle(L("Looking for Questing Partners"))
 	end
 
 	if fullName ~= "" then
-		rootDescription:CreateButton("Invite", function()
+		rootDescription:CreateButton(L("Invite"), function()
 			self:InviteChatLogSpeaker(fullName)
 		end)
-		rootDescription:CreateButton("Whisper", function()
+		rootDescription:CreateButton(L("Whisper"), function()
 			self:WhisperChatLogSpeaker(fullName, ownerFrame)
 		end)
-		rootDescription:CreateButton("Add Friend", function()
+		rootDescription:CreateButton(L("Add Friend"), function()
 			self:AddFriendFromChatLogSpeaker(fullName)
 		end)
-		rootDescription:CreateButton(isIgnored and "Unignore" or "Ignore", function()
+		rootDescription:CreateButton(isIgnored and L("Unignore") or L("Ignore"), function()
 			self:ToggleIgnoreChatLogSpeaker(fullName)
 		end)
-		rootDescription:CreateButton("Compare Quests", function()
+		rootDescription:CreateButton(L("Compare Quests"), function()
 			self:CompareQuestsWithChatLogSpeaker(fullName)
 		end)
 	end
@@ -4651,7 +4662,7 @@ function QuestTogether:PopulateChatLogDestinationMenu(rootDescription)
 	end
 
 	local isSeparate = self:GetOption("chatLogDestination") == "separate"
-	local buttonText = isSeparate and "Move QuestTogether Logs to Main Window" or "Move QuestTogether Logs to Separate Window"
+	local buttonText = isSeparate and L("Move QuestTogether Logs to Main Window") or L("Move QuestTogether Logs to Separate Window")
 	rootDescription:CreateButton(buttonText, function()
 		if self:IsRuntimeRestricted() then return end
 		self:SetOption("chatLogDestination", isSeparate and "main" or "separate")
@@ -4686,31 +4697,31 @@ function QuestTogether:HandleChatLogQuestLink(_link, text, linkData, contextData
 	if not self:CanAccessValue(contextData) then return LinkProcessorResponse.Handled end
 	if contextData ~= nil and not self:CanAccessTable(contextData) then return LinkProcessorResponse.Handled end
 	if not self:ShowChatLogQuestMenu(contextData and contextData.frame, questId, self:SafeTrimString(text, "")) then
-		self:Print("Quest menu is unavailable.")
+		self:Print(L("Quest menu is unavailable."))
 	end
 	return LinkProcessorResponse.Handled
 end
 
 function QuestTogether:GetQuestShareAvailability(questId)
 	local id = self:SafeToNumber(questId)
-	if not id or id <= 0 or id ~= math.floor(id) then return nil, "Invalid quest." end
-	if not self.isEnabled then return nil, "Enable QuestTogether to share quests." end
-	if self:IsWorkBlocked("quest_share") then return nil, "Quest sharing is unavailable while restricted." end
+	if not id or id <= 0 or id ~= math.floor(id) then return nil, L("Invalid quest.") end
+	if not self.isEnabled then return nil, L("Enable QuestTogether to share quests.") end
+	if self:IsWorkBlocked("quest_share") then return nil, L("Quest sharing is unavailable while restricted.") end
 	if not self.API.CanShareQuests or self.API.CanShareQuests() ~= true then
-		return nil, "Quest sharing is unavailable on this client."
+		return nil, L("Quest sharing is unavailable on this client.")
 	end
 	if not self.API.IsInGroup or self.API.IsInGroup() ~= true then
-		return nil, "Join a party to share quests."
+		return nil, L("Join a party to share quests.")
 	end
 	local index = self:SafeToNumber(self.API.GetQuestLogIndexForSharing(id))
 	if not index or index <= 0 or index ~= math.floor(index) then
-		return nil, "This quest is not available in your quest log."
+		return nil, L("This quest is not available in your quest log.")
 	end
 	local pushable = self.API.IsPushableQuest(id)
 	if not self:CanAccessValue(pushable) or type(pushable) ~= "boolean" then
-		return nil, "Quest shareability is unavailable."
+		return nil, L("Quest shareability is unavailable.")
 	end
-	if not pushable then return nil, "This quest cannot be shared." end
+	if not pushable then return nil, L("This quest cannot be shared.") end
 	return index
 end
 
@@ -4723,7 +4734,7 @@ function QuestTogether:ShareQuestFromChatLog(questId)
 		return false
 	end
 	if not self.API.PushQuestToParty(index) then
-		self:Print("Unable to share that quest.")
+		self:Print(L("Unable to share that quest."))
 		return false
 	end
 	return true
@@ -4731,16 +4742,16 @@ end
 
 function QuestTogether:GetQuestJournalAvailability(questId)
 	local id = self:SafeToNumber(questId)
-	if not id or id <= 0 or id ~= math.floor(id) then return nil, "Invalid quest." end
+	if not id or id <= 0 or id ~= math.floor(id) then return nil, L("Invalid quest.") end
 	if self:IsWorkBlocked("foreign_frame_mutation") then
-		return nil, "Opening the quest journal is unavailable while restricted."
+		return nil, L("Opening the quest journal is unavailable while restricted.")
 	end
 	if not self.API.CanOpenQuestJournal or self.API.CanOpenQuestJournal() ~= true then
-		return nil, "Opening the quest journal is unavailable on this client."
+		return nil, L("Opening the quest journal is unavailable on this client.")
 	end
 	local index = self:SafeToNumber(self.API.GetQuestLogIndexForQuestID(id))
 	if not index or index <= 0 or index ~= math.floor(index) then
-		return nil, "This quest is not in your quest journal."
+		return nil, L("This quest is not in your quest journal.")
 	end
 	return id
 end
@@ -4754,37 +4765,37 @@ function QuestTogether:OpenQuestJournalFromChatLog(questId)
 		return false
 	end
 	if self.API.OpenQuestJournal(id) ~= true then
-		self:Print("Unable to open that quest in your quest journal.")
+		self:Print(L("Unable to open that quest in your quest journal."))
 		return false
 	end
 	return true
 end
 
 function QuestTogether:PopulateChatLogQuestMenu(rootDescription, questId, fallbackTitle)
-	rootDescription:CreateButton("Status", function()
+	rootDescription:CreateButton(L("Status"), function()
 		self:PrintQuestStatus(questId, fallbackTitle)
 	end)
-	local share = rootDescription:CreateButton("Share", function()
+	local share = rootDescription:CreateButton(L("Share"), function()
 		self:ShareQuestFromChatLog(questId)
 	end)
 	local index, reason = self:GetQuestShareAvailability(questId)
 	share:SetEnabled(index ~= nil)
 	share:SetTooltip(function(tooltip)
 		if self:CanAccessForeignFrame(tooltip) then
-			tooltip:SetText(reason or "Share this quest with your party.")
+			tooltip:SetText(reason or L("Share this quest with your party."))
 		end
 	end)
-	local journal = rootDescription:CreateButton("Open in Quest Journal", function()
+	local journal = rootDescription:CreateButton(L("Open in Quest Journal"), function()
 		self:OpenQuestJournalFromChatLog(questId)
 	end)
 	local journalID, journalReason = self:GetQuestJournalAvailability(questId)
 	journal:SetEnabled(journalID ~= nil)
 	journal:SetTooltip(function(tooltip)
 		if self:CanAccessForeignFrame(tooltip) then
-			tooltip:SetText(journalReason or "Open this quest in your quest journal.")
+			tooltip:SetText(journalReason or L("Open this quest in your quest journal."))
 		end
 	end)
-	local compare = rootDescription:CreateButton("Compare Party Quests", function()
+	local compare = rootDescription:CreateButton(L("Compare Party Quests"), function()
 		if self.isEnabled and not self:IsRuntimeRestricted() then self:OpenPartyQuestCompare() end
 	end)
 	compare:SetEnabled(self.isEnabled == true)
@@ -4808,7 +4819,7 @@ function QuestTogether:HandleChatLogCoordLink(_link, _text, linkData, _contextDa
 	end
 
 	if not self:OpenPingWaypoint(mapID, coordX, coordY) then
-		self:Print("Unable to set that waypoint.")
+		self:Print(L("Unable to set that waypoint."))
 	end
 	return LinkProcessorResponse.Handled
 end
@@ -4844,12 +4855,12 @@ function QuestTogether:TryInstallChatLogLinkHandler()
 end
 
 function QuestTogether:PrintChatLogDestinationMessage()
-	self:PrintConsoleAnnouncement("You will now see QuestTogether logs here.")
+	self:PrintConsoleAnnouncement(L("You will now see QuestTogether logs here."))
 end
 
 function QuestTogether:GetPlayerName()
 	local playerName = self.API and self.API.UnitName and self.API.UnitName("player") or nil
-	return playerName or "Unknown"
+	return playerName or L("Unknown")
 end
 
 function QuestTogether:IsSelfSender(sender)
@@ -4957,7 +4968,7 @@ end
 function QuestTogether:GetQuestTitle(questId, questInfo)
 	local numericQuestId = self:NormalizeQuestID(questId)
 	if not numericQuestId then
-		return "Quest " .. tostring(questId)
+		return L("Quest ") .. tostring(questId)
 	end
 
 	if questInfo and type(questInfo.title) == "string" and questInfo.title ~= "" then
@@ -4972,7 +4983,7 @@ function QuestTogether:GetQuestTitle(questId, questInfo)
 		return snapshot.title
 	end
 
-	return "Quest " .. tostring(numericQuestId)
+	return L("Quest ") .. tostring(numericQuestId)
 end
 
 function QuestTogether:IsPlaceholderQuestTitle(questId, title)
@@ -4981,7 +4992,7 @@ function QuestTogether:IsPlaceholderQuestTitle(questId, title)
 		return false
 	end
 
-	return type(title) == "string" and title == ("Quest " .. tostring(numericQuestId))
+	return type(title) == "string" and title == (L("Quest ") .. tostring(numericQuestId))
 end
 
 function QuestTogether:NormalizeQuestProgressPercent(progressValue)
@@ -5413,7 +5424,7 @@ function QuestTogether:Enable()
 		self:RefreshPersonalBubbleAnchorVisualState()
 	end
 
-	self:Debug("Addon enabled.", "core")
+	self:Debug(L("Addon enabled."), "core")
 
 	if self.RefreshPartyRoster then
 		self:RefreshPartyRoster()
@@ -5460,7 +5471,7 @@ function QuestTogether:Disable()
 		self:RefreshPersonalBubbleAnchorVisualState()
 	end
 
-	self:Debug("Addon disabled.", "core")
+	self:Debug(L("Addon disabled."), "core")
 	return true
 end
 
@@ -5535,31 +5546,31 @@ function QuestTogether:ParseBoolean(text)
 end
 
 function QuestTogether:PrintHelp()
-	self:Print("Commands:")
-	self:Print("/qt options - Open the QuestTogether options window")
-	self:Print("/qt enable | disable - Enable or disable runtime behavior")
-	self:Print("/qt set <option> <value> - Set a boolean option (e.g. emoteOnQuestCompletion off)")
-	self:Print("/qt get <option> - Read an option value")
-	self:Print("/qt compare - Open Party Quest Compare")
-	self:Print("/qt lfg [on|off|toggle|status] - Set or check Looking for Questing Partners (no argument toggles)")
-	self:Print("/qt notes | changelog | patchnotes - Open the latest welcome and patch notes")
-	self:Print("/qt scan - Rescan your quest log now")
-	self:Print("/qt help debug - Show debugging and developer commands")
+	self:Print(L("Commands:"))
+	self:Print(L("/qt options - Open the QuestTogether options window"))
+	self:Print(L("/qt enable | disable - Enable or disable runtime behavior"))
+	self:Print(L("/qt set <option> <value> - Set a boolean option (e.g. emoteOnQuestCompletion off)"))
+	self:Print(L("/qt get <option> - Read an option value"))
+	self:Print(L("/qt compare - Open Party Quest Compare"))
+	self:Print(L("/qt lfg [on|off|toggle|status] - Set or check Looking for Questing Partners (no argument toggles)"))
+	self:Print(L("/qt notes | changelog | patchnotes - Open the latest welcome and patch notes"))
+	self:Print(L("/qt scan - Rescan your quest log now"))
+	self:Print(L("/qt help debug - Show debugging and developer commands"))
 end
 
 function QuestTogether:PrintDebugHelp()
-	self:Print("Debugging and developer commands:")
-	self:Print("/qt debug - Open the shared QuestTogether debug window")
-	self:Print("/qt devlogall [on|off|toggle] - Show or control dev all-announcements logging")
-	self:Print("/qt compare debug - Preview Party Quest Compare with mock data (no sharing)")
-	self:Print("/qt ping - Request pong metadata from all QuestTogether clients in the shared channel")
-	self:Print("/qt bubbletest <text> - Run a local bubble preview for your current target")
-	self:Print('/qt bubbletest "<player>" <text> - Run a local bubble preview for a nearby visible player (no target)')
-	self:Print("Player names can be unquoted: Name-Realm, or First Surname on Forever.")
-	self:Print("/qt test - Run in-game unit tests, then open /qt dump filtered to TEST")
-	self:Print("/qt dump [clear|CATEGORY] - Open the shared QuestTogether debug window")
-	self:Print("/qt diagnostics [questID] - Copy client, runtime, and recent event diagnostics")
-	self:Print("/qtd - Shortcut for /qt dump")
+	self:Print(L("Debugging and developer commands:"))
+	self:Print(L("/qt debug - Open the shared QuestTogether debug window"))
+	self:Print(L("/qt devlogall [on|off|toggle] - Show or control dev all-announcements logging"))
+	self:Print(L("/qt compare debug - Preview Party Quest Compare with mock data (no sharing)"))
+	self:Print(L("/qt ping - Request pong metadata from all QuestTogether clients in the shared channel"))
+	self:Print(L("/qt bubbletest <text> - Run a local bubble preview for your current target"))
+	self:Print(L('/qt bubbletest "<player>" <text> - Run a local bubble preview for a nearby visible player (no target)'))
+	self:Print(L("Player names can be unquoted: Name-Realm, or First Surname on Forever."))
+	self:Print(L("/qt test - Run in-game unit tests, then open /qt dump filtered to TEST"))
+	self:Print(L("/qt dump [clear|CATEGORY] - Open the shared QuestTogether debug window"))
+	self:Print(L("/qt diagnostics [questID] - Copy client, runtime, and recent event diagnostics"))
+	self:Print(L("/qtd - Shortcut for /qt dump"))
 end
 
 function QuestTogether:HandleSlashCommand(input)
@@ -5606,13 +5617,13 @@ function QuestTogether:HandleSlashCommand(input)
 
 	if command == "enable" then
 		self:Enable()
-		self:Print("QuestTogether enabled.")
+		self:Print(L("QuestTogether enabled."))
 		return
 	end
 
 	if command == "disable" then
 		self:Disable()
-		self:Print("QuestTogether disabled.")
+		self:Print(L("QuestTogether disabled."))
 		return
 	end
 
@@ -5627,7 +5638,7 @@ function QuestTogether:HandleSlashCommand(input)
 		else
 			local boolValue = self:ParseBoolean(flag)
 			if boolValue == nil then
-				self:Print("Usage: /qt devlogall on|off|toggle")
+				self:Print(L("Usage: /qt devlogall on|off|toggle"))
 				return
 			end
 			self:SetOption("devLogAllAnnouncements", boolValue)
@@ -5640,16 +5651,16 @@ function QuestTogether:HandleSlashCommand(input)
 	if command == "set" then
 		local optionKey, optionValueText = SafeMatch(rest, "^(%S+)%s+(.+)$")
 		if not optionKey or not optionValueText then
-			self:Print("Usage: /qt set <option> <value>")
+			self:Print(L("Usage: /qt set <option> <value>"))
 			return
 		end
 		local boolValue = self:ParseBoolean(optionValueText)
 		if boolValue == nil then
-			self:Print("Only boolean values are supported here: true/false, on/off, 1/0")
+			self:Print(L("Only boolean values are supported here: true/false, on/off, 1/0"))
 			return
 		end
 		if self:GetOption(optionKey) == nil then
-			self:Print("Unknown option key: " .. tostring(optionKey))
+			self:Print(L("Unknown option key: ") .. tostring(optionKey))
 			return
 		end
 		self:SetOption(optionKey, boolValue)
@@ -5663,7 +5674,7 @@ function QuestTogether:HandleSlashCommand(input)
 	if command == "get" then
 		local optionKey = SafeMatch(rest, "^(%S+)$")
 		if not optionKey then
-			self:Print("Usage: /qt get <option>")
+			self:Print(L("Usage: /qt get <option>"))
 			return
 		end
 		self:Print(optionKey .. " = " .. tostring(self:GetOption(optionKey)))
@@ -5677,7 +5688,7 @@ function QuestTogether:HandleSlashCommand(input)
 
 	if command == "ping" then
 		if not self.SendPingRequest then
-			self:Print("Ping is unavailable.")
+			self:Print(L("Ping is unavailable."))
 			return
 		end
 
@@ -5687,18 +5698,18 @@ function QuestTogether:HandleSlashCommand(input)
 			return
 		end
 
-		self:PrintChatLogSystemMessage("Ping sent.")
+		self:PrintChatLogSystemMessage(L("Ping sent."))
 		return
 	end
 
 	if command == "bubbletest" then
 		if rest == nil or rest == "" then
-			self:Print("Usage: /qt bubbletest <text>")
-			self:Print('   or: /qt bubbletest "<player>" <text> (without a target)')
+			self:Print(L("Usage: /qt bubbletest <text>"))
+			self:Print(L('   or: /qt bubbletest "<player>" <text> (without a target)'))
 			return
 		end
 		if not self.SendBubbleAnnouncementTest then
-			self:Print("Bubble test is unavailable.")
+			self:Print(L("Bubble test is unavailable."))
 			return
 		end
 
@@ -5722,7 +5733,7 @@ function QuestTogether:HandleSlashCommand(input)
 			senderName = self:SafeTrimString(explicitSenderName, "")
 			testText = self:SafeTrimString(explicitText, "")
 			if senderName == "" or testText == "" then
-				self:Print('Usage without a target: /qt bubbletest "<player>" <text>')
+				self:Print(L('Usage without a target: /qt bubbletest "<player>" <text>'))
 				return
 			end
 		end
@@ -5732,12 +5743,12 @@ function QuestTogether:HandleSlashCommand(input)
 			self:Print(senderNameOrError)
 			return
 		end
-		self:Print("Ran local bubble preview for " .. tostring(self:GetShortDisplayName(senderNameOrError)))
+		self:Print(L("Ran local bubble preview for ") .. tostring(self:GetShortDisplayName(senderNameOrError)))
 		return
 	end
 
 
-	self:Print("Unknown command: " .. tostring(command))
+	self:Print(L("Unknown command: ") .. tostring(command))
 	self:PrintHelp()
 end
 
@@ -5817,7 +5828,7 @@ function QuestTogether:ScanQuestLog(shouldAnnounceTaskAreas)
 			tracker[questID] = nil
 		end
 	end
-	local scanMessage = questsTracked .. " quests are being monitored by QuestTogether."
+	local scanMessage = questsTracked .. L(" quests are being monitored by QuestTogether.")
 	self:PrintConsoleAnnouncement(scanMessage)
 	if self.BuildLocalAnnouncementEvent and self.SendAnnouncementWireEvent then
 		local eventData = self:BuildLocalAnnouncementEvent("SCAN_STATUS", scanMessage)

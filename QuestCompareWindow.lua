@@ -1,6 +1,7 @@
+local L = _G.QuestTogether.Translate
 local QuestTogether = _G.QuestTogether
 local VISIBLE_ROWS, ROW_HEIGHT = 13, 28
-local QUEST_WIDTH, MEMBER_WIDTH, ACTION_WIDTH = 300, 108, 172
+local QUEST_WIDTH, MEMBER_WIDTH, ACTION_WIDTH = 300, 108, 228
 local COLORS = {
 	Have = { 0.75, 0.85, 1 },
 	Ready = { 0.35, 1, 0.55 },
@@ -132,18 +133,18 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 		return nil
 	end
 	local width = math.min(1180, parent:GetWidth() * 0.94)
-	local frame = Window(self, width, 590, "Party Quest Compare")
+	local frame = Window(self, width, 590, L("Party Quest Compare"))
 	frame:SetScale(math.min(1, parent:GetHeight() * 0.94 / 590))
 	self.partyQuestCompareWindow = frame
 	frame.summary = Label(frame, 20, -47, width - 40, "")
-	frame.filter = Checkbox(self, frame, 16, -69, "Hide quests I don't have", function(check)
+	frame.filter = Checkbox(self, frame, 16, -69, L("Hide quests I don't have"), function(check)
 		self:SetOption("compareHideOtherQuests", check:GetChecked() == true)
 		if self.partyQuestCompareSession then
 			self.partyQuestCompareSession.offset = 0
 		end
 		self:QueuePartyQuestCompareRender()
 	end)
-	frame.refresh = Button(self, frame, width - 140, -72, 112, "Refresh", function()
+	frame.refresh = Button(self, frame, width - 140, -72, 112, L("Refresh"), function()
 		self:RefreshPartyRoster()
 		self:RefreshPartyQuestCompare()
 	end)
@@ -189,7 +190,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 						.. " (#"
 						.. row.data.questId
 						.. ")"
-						.. (row.data.owner and (" — Request from " .. row.data.owner) or "")
+						.. (row.data.owner and (L(" — Request from ") .. row.data.owner) or "")
 				)
 			end
 		end)
@@ -243,7 +244,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 		20,
 		-543,
 		width - 40,
-		"Ready = ready to turn in. Unknown = no complete snapshot; use Refresh to retry."
+		L("Ready = ready to turn in. Unknown = no complete snapshot; use Refresh to retry.")
 	)
 	frame.footer = Label(frame, 20, -566, width - 40, "")
 	return frame
@@ -266,7 +267,7 @@ function QuestTogether:RenderPartyQuestCompare()
 	local rows = self:BuildPartyQuestDiffRows()
 	-- The isolated debug preview supplies its own title and has no mode.
 	if session.mode then
-		frame.title:SetText(session.mode == "target" and "Compare Quests" or "Party Quest Compare")
+		frame.title:SetText(session.mode == "target" and L("Compare Quests") or L("Party Quest Compare"))
 	end
 	local width = QUEST_WIDTH + #session.members * MEMBER_WIDTH + ACTION_WIDTH
 	local actionX = width - ACTION_WIDTH
@@ -286,9 +287,9 @@ function QuestTogether:RenderPartyQuestCompare()
 		header:SetPoint("TOPLEFT", QUEST_WIDTH + (i - 1) * MEMBER_WIDTH, 0)
 		header:SetHeight(32)
 		header:SetText(
-			(member.isLocal and "You" or member.name)
+			(member.isLocal and L("You") or member.name)
 				.. "\n"
-				.. (member.state == "ready" and "Synced" or member.state == "loading" and "Loading…" or "No snapshot")
+				.. (member.state == "ready" and L("Synced") or member.state == "loading" and (L("Loading") .. "…") or L("No snapshot"))
 		)
 		header:Show()
 	end
@@ -328,7 +329,7 @@ function QuestTogether:RenderPartyQuestCompare()
 				if not row.cells[j] then
 					row.cells[j] = Label(row, QUEST_WIDTH + (j - 1) * MEMBER_WIDTH, -6, MEMBER_WIDTH - 6, "")
 				end
-				row.cells[j]:SetText(status)
+				row.cells[j]:SetText(L(status))
 				row.cells[j]:SetTextColor(unpack(COLORS[status]))
 				row.cells[j]:Show()
 			end
@@ -346,17 +347,17 @@ function QuestTogether:RenderPartyQuestCompare()
 					or 0
 				local coolingDown = cooldown > 0
 				row.action:SetText(
-					coolingDown and "Please wait" or (data.action == "share" and "Share" or "Request Share")
+					coolingDown and L("Please wait") or (data.action == "share" and L("Share") or L("Request Share"))
 				)
 				row.action:SetEnabled(not coolingDown and not self:IsWorkBlocked("quest_share"))
 				row.action:Show()
 				if status and status ~= "" then
 					-- Keep terminal feedback visible beside a retry action, without
 					-- increasing row height or changing the scroll pool's geometry.
-					row.action:SetWidth(96)
-					row.hint:SetPoint("TOPLEFT", actionX + 100, -1)
-					row.hint:SetWidth(ACTION_WIDTH - 104)
-					row.hint:SetText(status)
+					row.action:SetWidth(140)
+					row.hint:SetPoint("TOPLEFT", actionX + 144, -1)
+					row.hint:SetWidth(ACTION_WIDTH - 148)
+					row.hint:SetText(L(status))
 					row.hint:Show()
 				else
 					row.action:SetWidth(ACTION_WIDTH - 12)
@@ -366,14 +367,14 @@ function QuestTogether:RenderPartyQuestCompare()
 				row.action:Hide()
 				row.hint:SetPoint("TOPLEFT", actionX, -1)
 				row.hint:SetWidth(ACTION_WIDTH - 8)
-				row.hint:SetText(status or data.hint or "")
+				row.hint:SetText(L(status or data.hint or ""))
 				row.hint:Show()
 			end
 		end
 	end
 	frame.summary:SetText(
 		string.format(
-			"%d quests shown · %d/%d snapshots received · Refresh to update quests",
+			L("%d quests shown · %d/%d snapshots received · Refresh to update quests"),
 			#rows,
 			ready,
 			#session.members
@@ -386,20 +387,20 @@ function QuestTogether:RenderPartyQuestCompare()
 		and session.byName[session.playerName].state == "loading"
 		and self:IsMapTooltipSensitiveStateActive()
 	then
-		message = "Close the world map to finish loading quests."
+		message = L("Close the world map to finish loading quests.")
 	elseif not message and session.mode == "target" and not self:IsGroupedSender(session.targetName) then
-		message = "Join a party together to share quests. The selected player needs QuestTogether to respond."
+		message = L("Join a party together to share quests. The selected player needs QuestTogether to respond.")
 	elseif not message and #rows == 0 then
 		message = self:GetOption("compareHideOtherQuests") == true
-				and "No quests to display. Uncheck ‘Hide quests I don't have’ to include other players' quests."
-			or "No quests to display."
+				and L("No quests to display. Uncheck ‘Hide quests I don't have’ to include other players' quests.")
+			or L("No quests to display.")
 	elseif not message and #session.members == 1 then
-		message = "Join a party to compare quests. Party members need QuestTogether to respond."
+		message = L("Join a party to compare quests. Party members need QuestTogether to respond.")
 	end
 	frame.footer:SetText(
 		message
 			or string.format(
-				"Showing %d–%d of %d · Shareability does not guarantee another player's eligibility.",
+				L("Showing %d–%d of %d · Shareability does not guarantee another player's eligibility."),
 				math.min(#rows, session.offset + 1),
 				math.min(#rows, session.offset + VISIBLE_ROWS),
 				#rows
@@ -416,16 +417,16 @@ function QuestTogether:CreatePartyQuestSharePrompt()
 	if not self:CanAccessForeignFrame(parent) then
 		return nil
 	end
-	local frame = Window(self, 460, 224, "QuestTogether · Share request")
+	local frame = Window(self, 460, 224, L("QuestTogether · Share request"))
 	frame:SetFrameStrata("FULLSCREEN_DIALOG")
 	frame:SetScale(math.min(1, parent:GetWidth() * 0.94 / 460, parent:GetHeight() * 0.94 / 224))
 	frame.message = Label(frame, 20, -56, 420, "")
 	frame.message:SetHeight(64)
-	frame.always = Checkbox(self, frame, 16, -130, "Always allow party share requests")
-	Button(self, frame, 210, -182, 105, "Share", function()
+	frame.always = Checkbox(self, frame, 16, -130, L("Always allow party share requests"))
+	Button(self, frame, 210, -182, 105, L("Share"), function()
 		self:ConfirmPartyQuestShare(frame.request, frame.always:GetChecked() == true, false)
 	end)
-	Button(self, frame, 325, -182, 105, "Decline", function()
+	Button(self, frame, 325, -182, 105, L("Decline"), function()
 		if frame.request then
 			self:FinishPartyQuestShare(frame.request, "declined")
 		end
@@ -465,9 +466,9 @@ function QuestTogether:RenderPartyQuestSharePrompt()
 		frame.always:SetChecked(false)
 		frame.message:SetText(
 			request.sender
-				.. " would like you to share\n["
+				.. L(" would like you to share\n[")
 				.. self:GetQuestTitle(request.questId)
-				.. "]\nwith the party."
+				.. L("]\nwith the party.")
 		)
 	end
 	frame:Show()

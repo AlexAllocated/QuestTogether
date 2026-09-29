@@ -1,3 +1,4 @@
+local L = _G.QuestTogether.Translate
 -- QT supplies private stores, SavedVariables migration, and domain policies.
 -- libchev owns the console, filters, commands, and test-result presentation.
 local QuestTogether = _G.QuestTogether
@@ -42,6 +43,7 @@ function QuestTogether:GetDebugController()
 	local owner = self
 	local controller = LibChev.NewDebugController({
 		addonName = "QuestTogether",
+		translate = owner.Translate,
 		failureDetails = true,
 		getLog = function()
 			return {

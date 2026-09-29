@@ -1,3 +1,4 @@
+local L = _G.QuestTogether.Translate
 local QT = _G.QuestTogether
 local HEARTBEAT, LIFETIME, MAX_PEERS = 20, 65, 256
 local MAX_KNOWN_PLAYERS = 512
@@ -229,7 +230,7 @@ function QT:HandleQuestPartnerCommand(input)
 	elseif action == "off" then
 		looking = false
 	elseif action ~= "status" then
-		self:Print("Usage: /qt lfg [on|off|toggle|status]")
+		self:Print(L("Usage: /qt lfg [on|off|toggle|status]"))
 		return false
 	end
 	if action ~= "status" then
@@ -241,9 +242,9 @@ function QT:HandleQuestPartnerCommand(input)
 		end
 	end
 	self:Print(
-		"Looking for questing partners: "
-			.. (looking and "On" or "Off")
-			.. (looking and not self.isEnabled and " (paused while QuestTogether is disabled)." or ".")
+		L("Looking for questing partners: ")
+			.. (looking and L("On") or L("Off"))
+			.. (looking and not self.isEnabled and L(" (paused while QuestTogether is disabled).") or ".")
 	)
 	return true
 end

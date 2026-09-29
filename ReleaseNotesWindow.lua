@@ -1,3 +1,4 @@
+local L = _G.QuestTogether.Translate
 local QuestTogether = _G.QuestTogether
 local LibChev = QuestTogether.LibChev
 local LOGO = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon"
@@ -99,7 +100,7 @@ local function CreatePartnerExamples(addon, parent)
 		Call(addon, heading, "SetPoint", "TOPRIGHT")
 		Call(addon, heading, "SetHeight", 32)
 		Call(addon, heading, "SetJustifyH", "CENTER")
-		Call(addon, heading, "SetText", index == 1 and "QT player" or "Looking for questing partners")
+		Call(addon, heading, "SetText", index == 1 and L("QT player") or L("Looking for questing partners"))
 		local logo = Texture(addon, column, nil, "ARTWORK", 32, 32)
 		Call(addon, logo, "SetPoint", "TOP", column, "TOP", -28, -38)
 		Call(addon, logo, "SetTexture", LOGO)
@@ -140,7 +141,7 @@ local function CreatePartnerExamples(addon, parent)
 			end
 		end
 		Circle(9, "ARTWORK", 0.25, 0.78, 0.92, 1)
-		for _, example in ipairs({ { -28, "Logo" }, { 28, "Map dot" } }) do
+		for _, example in ipairs({ { -28, L("Logo") }, { 28, L("Map dot") } }) do
 			local caption = Label(addon, column, "GameFontHighlightSmall")
 			Call(addon, caption, "SetPoint", "TOP", column, "TOP", example[1], -80)
 			Call(addon, caption, "SetText", example[2])
@@ -208,7 +209,7 @@ local function Create(addon, parent)
 		Call(addon, frame, "Hide")
 	end)
 	frame.settings = New(addon, "Button", frame)
-	Call(addon, frame.settings, "SetSize", 100, 24)
+	Call(addon, frame.settings, "SetSize", 135, 24)
 	Call(addon, frame.settings, "SetPoint", "BOTTOMRIGHT", -20, 17)
 	for _, art in ipairs({
 		{ "SetNormalTexture", "DialogButtonNormalTexture" },
@@ -221,14 +222,14 @@ local function Create(addon, parent)
 	end
 	local settingsLabel = Label(addon, frame.settings, "GameFontNormalSmall")
 	Call(addon, settingsLabel, "SetPoint", "CENTER")
-	Call(addon, settingsLabel, "SetText", "Settings")
+	Call(addon, settingsLabel, "SetText", L("Settings"))
 	Script(addon, frame, frame.settings, "OnClick", function()
 		if addon:OpenOptionsWindow() == true then
 			Call(addon, frame, "Hide")
 		end
 	end)
 	frame.discord = New(addon, "Button", frame)
-	Call(addon, frame.discord, "SetSize", 210, 24)
+	Call(addon, frame.discord, "SetSize", 320, 24)
 	Call(addon, frame.discord, "SetPoint", "BOTTOMLEFT", 22, 17)
 	for _, art in ipairs({
 		{ "SetNormalTexture", "DialogButtonNormalTexture" },
@@ -241,7 +242,7 @@ local function Create(addon, parent)
 	end
 	local discordLabel = Label(addon, frame.discord, "GameFontNormalSmall")
 	Call(addon, discordLabel, "SetPoint", "CENTER")
-	Call(addon, discordLabel, "SetText", "Discord — Feedback & Support")
+	Call(addon, discordLabel, "SetText", L("Discord — Feedback & Support"))
 	Script(addon, frame, frame.discord, "OnClick", function()
 		if addon:OpenDiscordSupport() then
 			Call(addon, frame, "Hide")
@@ -249,7 +250,7 @@ local function Create(addon, parent)
 	end)
 	frame.footer = Label(addon, frame, "GameFontHighlightSmall")
 	Call(addon, frame.footer, "SetPoint", "BOTTOMLEFT", 22, 52)
-	Call(addon, frame.footer, "SetText", "Read this again: /qt notes")
+	Call(addon, frame.footer, "SetText", L("Read this again: /qt notes"))
 	frame.scroll = New(addon, "ScrollFrame", frame)
 	Call(addon, frame.scroll, "SetPoint", "TOPLEFT", 22, -45)
 	Call(addon, frame.scroll, "EnableMouseWheel", true)
@@ -344,7 +345,7 @@ local function Render(addon, notes, version, isFirstUse)
 		end
 		offset = offset + height + gap
 	end
-	Add(isFirstUse and "Welcome to QuestTogether" or "What's new", "GameFontNormalLarge", 14)
+	Add(isFirstUse and L("Welcome to QuestTogether") or L("What's new"), "GameFontNormalLarge", 14)
 	Add(notes.welcome, "GameFontHighlight", 18)
 	Call(addon, frame.partnerExamples, "Hide")
 	local examplesShown = false

@@ -17,7 +17,7 @@ import urllib.request
 
 sys.dont_write_bytecode = True
 from check_release_notes import (
-    LUA_FILE, NOTES_FILE, TOC_FILE, NotesError, atomic_write, check_manifest,
+    LUA_FILE, LOCALIZED_LUA_FILE, NOTES_FILE, TOC_FILE, NotesError, atomic_write, check_manifest,
     content_key, git, parse_notes, render_lua, require_full_history, toc_version, unique_object,
 )
 
@@ -68,7 +68,7 @@ def evidence_path(path):
         return False
     if path in {"QuestTogether.toc", "CHANGELOG.md", "CURSEFORGE_DESCRIPTION.md", "CLIENT_COMPATIBILITY.md"}:
         return True
-    return bool(re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*\.lua", path)) and path != LUA_FILE and not re.search(
+    return bool(re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*\.lua", path)) and path not in {LUA_FILE, LOCALIZED_LUA_FILE, "Locales.lua"} and not re.search(
         r"secret|credential|private|token|api.?key|config|environment|^env(?:[._-]|$)", path, re.IGNORECASE)
 
 
@@ -215,6 +215,9 @@ def main(argv=None):
         print(markdown(notes), end="")
         if args.write:
             print("\nUpdated release_notes.json and ReleaseNotes.lua. Review the content before releasing.")
+            if check_manifest((args.root / TOC_FILE).read_text(encoding="utf-8")):
+                print("Refresh all five translations with python3 scripts/translate_locales.py --notes --write, "
+                      "then run python3 scripts/check_release_notes.py --check.")
         return 0
     except (OSError, UnicodeError, ValueError, subprocess.SubprocessError) as error:
         print("Release-note generation error: " + str(error), file=sys.stderr)

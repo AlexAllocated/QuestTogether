@@ -1,3 +1,4 @@
+local L = _G.QuestTogether.Translate
 local QuestTogether = _G.QuestTogether
 local LibChev = QuestTogether.LibChev
 local MAX_PINS, MAX_LOCATION_ROWS, DOT_SIZE = 128, 512, 12
@@ -432,7 +433,7 @@ end
 local function Text(addon, value, fallback)
 	local text = addon:SafeTrimString(value, "")
 	if text == "" then
-		text = fallback or "Unknown"
+		text = fallback or L("Unknown")
 	end
 	return text:gsub("|", "||")
 end
@@ -459,24 +460,24 @@ local function Tooltip(addon, state, pin, row)
 		Call(addon, state.tooltipLabel, "SetWordWrap", true)
 	end
 	local text = Text(addon, row.name)
-		.. "\nFaction: "
-		.. Text(addon, row.faction)
-		.. "\nRace: "
+		.. L("\nFaction: ")
+		.. L(Text(addon, row.faction))
+		.. L("\nRace: ")
 		.. Text(addon, row.race)
-		.. "\nClass: "
+		.. L("\nClass: ")
 		.. Text(addon, row.className, Text(addon, row.classFile))
-		.. "\nLevel: "
-		.. (Number(addon, row.level) and tostring(row.level) or "Unknown")
+		.. L("\nLevel: ")
+		.. (Number(addon, row.level) and tostring(row.level) or L("Unknown"))
 	if addon:SupportsWarMode() == true and type(row.warMode) == "boolean" then
-		text = text .. "\nWar Mode: " .. (row.warMode and "On" or "Off")
+		text = text .. L("\nWar Mode: ") .. (row.warMode and L("On") or L("Off"))
 	end
 	if addon:IsPlayerLookingForQuestPartners(row.name) then
-		text = text .. "\n|cff40ff40Looking for Questing Partners|r"
+		text = text .. L("\n|cff40ff40Looking for Questing Partners|r")
 	end
 	local now = addon.API and addon.API.GetTime and Number(addon, addon.API.GetTime())
 	local receivedAt = Number(addon, row.receivedAt)
 	if now and receivedAt and now >= receivedAt + 30 then
-		text = text .. "\nLast update: " .. math.floor(now - receivedAt) .. " seconds ago"
+		text = text .. L("\nLast update: ") .. math.floor(now - receivedAt) .. L(" seconds ago")
 	end
 	Call(addon, state.tooltipLabel, "SetText", text)
 	local height = Positive(addon, Call(addon, state.tooltipLabel, "GetStringHeight"))
