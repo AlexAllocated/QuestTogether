@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "5.14.0",
+	version = "5.14.1",
 	welcome = "Party announcements now show the full QuestTogether name.",
 	sections = {
 		{

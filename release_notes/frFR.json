@@ -1,7 +1,7 @@
 {
   "source_sha256": "bcc9b4b484e55a81fe95ba608d94da83dc7861d4c655b9e88669b5f1977a44d0",
   "notes": {
-    "version": "5.14.0",
+    "version": "5.14.1",
     "welcome": "Les annonces de groupe affichent désormais le nom complet de QuestTogether.",
     "sections": [
       {
