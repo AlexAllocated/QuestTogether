@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "5.13.1",
+	version = "5.14.0",
 	welcome = "QuestTogether now speaks five more languages and helps you keep party members without QT informed.",
 	sections = {
 		{

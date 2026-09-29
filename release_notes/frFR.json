@@ -1,7 +1,7 @@
 {
   "source_sha256": "5dcf5bd74d4817eec8e07bb86dbfa6736cbda8c213e252a67460260fb3c145cf",
   "notes": {
-    "version": "5.13.1",
+    "version": "5.14.0",
     "welcome": "QuestTogether parle désormais cinq langues supplémentaires et vous aide à tenir informés les membres du groupe qui n’utilisent pas QT.",
     "sections": [
       {
