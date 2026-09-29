@@ -143,7 +143,14 @@ QT:RegisterTest("regional ignore suppression preserves full surname identity", f
 end)
 
 local function WithBubbles(run)
-	local state = { restricted = false, ignored = {}, hosts = {}, guids = {}, nextUnit = 0 }
+	local state = { restricted = false, ignored = {}, hosts = {}, guids = {}, nextUnit = 0, invalidMutations = 0 }
+	local function CheckMutation(frame)
+		if frame:IsForbidden() or state.restricted then
+			-- Count before throwing: production pcall must not hide an unsafe attempt.
+			state.invalidMutations = state.invalidMutations + 1
+			error("blocked bubble fixture mutation")
+		end
+	end
 	local function Region(parent)
 		local frame = { parent = parent, shown = true, writes = 0 }
 		function frame:IsForbidden()
@@ -165,8 +172,7 @@ local function WithBubbles(run)
 			return 1
 		end
 		local function Mutate(self)
-			assert(not self.forbidden, "forbidden visual mutated")
-			assert(not state.restricted, "remote visual mutated during restrictions")
+			CheckMutation(self)
 			self.writes = self.writes + 1
 		end
 		function frame:Show()
@@ -215,11 +221,11 @@ local function WithBubbles(run)
 			return self.playing
 		end
 		function bubble.animationGroup:Play()
-			assert(not state.restricted and not bubble.forbidden, "blocked animation played")
+			CheckMutation(bubble)
 			self.playing, self.plays = true, self.plays + 1
 		end
 		function bubble.animationGroup:Stop()
-			assert(not state.restricted and not bubble.forbidden, "blocked animation stopped")
+			CheckMutation(bubble)
 			self.playing, self.stops = false, self.stops + 1
 			QT:CompleteAnnouncementBubblePlayback(bubble)
 		end
@@ -253,6 +259,7 @@ local function WithBubbles(run)
 		end,
 	}, function()
 		run(state)
+		Equal(state.invalidMutations, 0, "no forbidden or restricted mutation attempts")
 	end)
 end
 
@@ -363,7 +370,9 @@ QT:RegisterTest("new allowed playback cancels deferred ignore cleanup on the reu
 	WithBubbles(function(state)
 		local bubble, host = state:Add("Ignored-Realm")
 		state.ignored["Ignored-Realm"], state.restricted = true, true
+		bubble.protected = true
 		Equal(QT:ClearIgnoredAnnouncementBubbles(), 1)
+		Equal(QT:GetNameplateStateStore().pendingVisualCleanupByFrame[bubble], "bubble")
 		state.restricted = false
 		state.guids[host.UnitFrame.unit] = "Player-fixture-recycled"
 		Equal(

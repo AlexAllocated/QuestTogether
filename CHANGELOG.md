@@ -1,5 +1,23 @@
 # QuestTogether changelog
 
+## 5.13.1 — 2026-09-28
+
+- Preserve negative quest-tooltip retry budgets during restricted option refreshes, so quest icons and tint recover when the map or other restriction closes.
+
+- Apply the shared restriction policy to cached NPC quest-plate presentation, preserving safe deferred recovery and ordinary open-world combat behavior.
+- Preserve delayed quest-tooltip refreshes when combat or other restrictions end, so stale completion data cannot consume the later corrective scan. Vendor libchev 1.2.2.
+- Keep world-entry lifecycle handling active while QuestTogether is disabled, restoring map locations and presence correctly after disabling, zoning, and re-enabling.
+- Prevent location and partner-status withdrawals from restoring a departed player's QT logo, while retaining recognition for active players who turn location sharing or partner status off.
+- Keep the Miscellaneous Looking for Questing Partners checkbox synchronized with saved settings and changes from other controls.
+- Strengthen regression fixtures to detect forbidden access even when production catches the error; cover actual bootstrap events, departure message order, cached restriction paths, and early timer flushing.
+
+- Clean up accessible announcement bubbles during combat plate removal/recycling; retain guarded deferred cleanup for protected and forbidden frames.
+- Recover interrupted debug-window drag and resize gestures after restrictions lift, including hidden windows.
+- Reject releases with staged, unstaged, or untracked implementation changes before contacting the remote or changing files.
+- Strengthen minimap geometry and nameplate overlay fixtures with persistent forbidden-access counters.
+
+Validation: 763 addon tests pass in both orders on Lua 5.1/5.2; all six client profiles, Retail/Forever geometry, 62 release-tooling tests, Lua syntax, generated notes, and exact private-library checks pass. Libchev has 102 passing checks in both orders on both interpreters and 24 passing vendor tests. New failure reproductions cover combat plate reuse, blocked gesture cancellation, forbidden-access attempts, and actual release publication to temporary local remotes. Native rendering and taint behavior remain live-client checks.
+
 ## 5.13.0 — 2026-09-28
 
 - Detect newer stable addon releases from validated peer version announcements and existing ping replies. Save the highest observed update account-wide, notify once when first detected and once on each reload, and clear it after installing that release or newer. Alpha/beta builds do not prompt updates; announcements reuse the existing update loop, send only the installed version, and are limited to one every five minutes after success.

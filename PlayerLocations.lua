@@ -283,9 +283,9 @@ function QT:HandlePlayerLocationMessage(payload, sender)
 	end
 	data.name, data.receivedAt, data.retired = name, now, retired
 	state.peers[name] = data
-	-- An accepted update, including a location-sharing opt-out, identifies a QT
-	-- sender. Replayed/obsolete positions must not undo an explicit departure.
-	self:RecordQTPlayerPresence(name, true)
+	-- Withdrawals can arrive after QTPR departure on another route. Preserve any
+	-- existing identity for privacy opt-outs, but only a position establishes it.
+	if data.mask ~= 0 then self:RecordQTPlayerPresence(name, true) end
 	return true
 end
 

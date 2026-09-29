@@ -62,6 +62,7 @@ class NotesTests(unittest.TestCase):
         for filename in ("check_release_notes.py", "bump_version.sh"):
             shutil.copyfile(SCRIPTS / filename, root / "scripts" / filename)
         (root / "QuestTogether.toc").write_text("## Version: 1.2.3\nCore.lua\nReleaseNotes.lua\n", encoding="utf-8")
+        (root / "Core.lua").write_text("-- Published implementation\n", encoding="utf-8")
         if not legacy:
             notes = sample_notes()
             (root / "release_notes.json").write_text(json.dumps(notes), encoding="utf-8")
@@ -104,7 +105,7 @@ class NotesTests(unittest.TestCase):
                            "args = sys.argv[1:]\n" +
                            "pos = 2 if args[:1] == ['-C'] else 0\n" +
                            "cmd = args[pos] if len(args) > pos else ''\n" +
-                           "allowed = cmd in {'rev-parse','show','cat-file','log','merge-base','diff','status'}\n" +
+                           "allowed = cmd in {'rev-parse','show','cat-file','log','merge-base','diff','status','ls-files'}\n" +
                            "allowed = allowed or (cmd == 'tag' and any(x in args[pos+1:] for x in ['--list','--merged']))\n" +
                            "if not allowed:\n" +
                            "    with open(" + repr(str(log)) + ", 'a') as f: f.write(repr(args)+'\\n')\n" +
@@ -298,6 +299,97 @@ class NotesTests(unittest.TestCase):
         self.write_notes(sample_notes(item="Current patch notes include journal fixes."))
         self.git("tag", "-d", "v1.2.3")
         self.assert_bump_guard(["patch", "--check"], success=False, contains="baseline v1.2.3 is missing")
+
+    def local_release_remote(self, name):
+        remote = self.directory / (name + " remote.git")
+        self.git("init", "--bare", "-q", str(remote))
+        self.git("remote", "add", "origin", str(remote))
+        branch = self.git("symbolic-ref", "--short", "HEAD")
+        self.git("push", "-q", "origin", branch, "--tags")
+        return remote, branch
+
+    def release_state(self, remote):
+        # Compare the real index and all worktree bytes, not only the three
+        # release files: rejection must preserve unrelated staging and edits.
+        return {
+            "files": {str(path.relative_to(self.root)): path.read_bytes()
+                      for path in self.root.rglob("*")
+                      if path.is_file() and ".git" not in path.relative_to(self.root).parts},
+            "index": (self.root / ".git/index").read_bytes(),
+            "head": self.git("rev-parse", "HEAD"),
+            "refs": self.git("show-ref"),
+            "remote_refs": self.git("show-ref", root=remote),
+        }
+
+    def test_full_release_publishes_committed_code_and_only_allowed_authored_files(self):
+        for notes_committed in (False, True):
+            with self.subTest(notes_committed=notes_committed):
+                self.root = self.new_repo("publication " + str(notes_committed))
+                remote, branch = self.local_release_remote("publication " + str(notes_committed))
+                implementation = "-- Fixed implementation included in the release\n"
+                (self.root / "Core.lua").write_text(implementation, encoding="utf-8")
+                self.git("add", "Core.lua")
+                self.git("commit", "-qm", "Fix implementation before release")
+                self.write_notes(sample_notes(item="The committed implementation includes the quest fix."))
+                # An intended TOC edit and a mix of staged/unstaged notes are
+                # supported; the release must commit their current contents.
+                with (self.root / "QuestTogether.toc").open("a") as handle:
+                    handle.write("## Notes: Reviewed release metadata\n")
+                self.git("add", "release_notes.json")
+                if notes_committed:
+                    self.git("add", "QuestTogether.toc", "ReleaseNotes.lua")
+                    self.git("commit", "-qm", "Review release files before bump")
+                before_head = self.git("rev-parse", "HEAD")
+                result = self.run_process(["bash", "scripts/bump_version.sh", "patch"])
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                head = self.git("rev-parse", "HEAD")
+                self.assertNotEqual(head, before_head)
+                self.assertEqual(self.git("rev-parse", "HEAD^"), before_head)
+                self.assertEqual(self.git("rev-parse", "refs/heads/" + branch, root=remote), head)
+                self.assertEqual(self.git("rev-parse", "v1.2.4^{commit}", root=remote), head)
+                self.assertEqual(self.git("cat-file", "-t", "v1.2.4", root=remote), "tag")
+                self.assertEqual(self.git("show", "v1.2.4:Core.lua", root=remote), implementation.strip())
+                published_notes = CHECKER.parse_notes(self.git("show", "v1.2.4:release_notes.json", root=remote))
+                self.assertEqual(published_notes["version"], "1.2.4")
+                self.assertEqual(self.git("show", "v1.2.4:ReleaseNotes.lua", root=remote),
+                                 CHECKER.render_lua(published_notes).strip())
+                published_toc = self.git("show", "v1.2.4:QuestTogether.toc", root=remote)
+                self.assertEqual(CHECKER.toc_version(published_toc), "1.2.4")
+                self.assertIn("## Notes: Reviewed release metadata", published_toc)
+                changed = set(self.git("diff", "--name-only", "HEAD^", "HEAD").splitlines())
+                self.assertEqual(changed, {"QuestTogether.toc", "release_notes.json", "ReleaseNotes.lua"})
+                self.assertEqual(self.git("status", "--porcelain"), "")
+
+    def test_dirty_source_release_fails_before_network_or_mutation_and_preserves_staging(self):
+        for mode in ("staged", "unstaged", "staged_and_unstaged", "untracked", "renamed_to_release_file"):
+            with self.subTest(mode=mode):
+                self.root = self.new_repo("dirty " + mode)
+                remote, _ = self.local_release_remote("dirty " + mode)
+                if mode == "renamed_to_release_file":
+                    # A rename into an allowed filename still removes a source
+                    # file. The old path must not disappear from validation.
+                    self.git("rm", "ReleaseNotes.lua")
+                    self.git("mv", "Core.lua", "ReleaseNotes.lua")
+                self.write_notes(sample_notes(item="The next release includes the quest fix."))
+                self.git("add", "release_notes.json")
+                if mode == "untracked":
+                    # NUL-separated inspection must handle spaces/newlines.
+                    (self.root / "new quest\nmodule.lua").write_text("-- Uncommitted new module\n", encoding="utf-8")
+                elif mode != "renamed_to_release_file":
+                    (self.root / "Core.lua").write_text("-- Uncommitted quest fix\n", encoding="utf-8")
+                    if mode in ("staged", "staged_and_unstaged"):
+                        self.git("add", "Core.lua")
+                    if mode == "staged_and_unstaged":
+                        with (self.root / "Core.lua").open("a") as handle:
+                            handle.write("-- Additional unstaged edit must also survive\n")
+                before = self.release_state(remote)
+                env, forbidden = self.guarded_git_env()
+                for arguments in (["patch", "--check"], ["patch"]):
+                    result = self.run_process(["bash", "scripts/bump_version.sh", *arguments], env=env)
+                    self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.assertIn("non-release changes", result.stdout + result.stderr)
+                    self.assertFalse(forbidden.exists(), "dirty release attempted remote access or Git mutation")
+                    self.assertEqual(self.release_state(remote), before)
 
 
 if __name__ == "__main__":

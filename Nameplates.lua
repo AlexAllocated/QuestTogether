@@ -294,6 +294,16 @@ local function ClearAnnouncementBubbleState(bubble)
 	QuestTogether.nameplateBubbleStateByFrame[bubble] = nil
 end
 
+local function DeferAnnouncementBubbleCleanup(addon, bubble)
+	if bubble then
+		local state = addon:GetNameplateStateStore()
+		state.pendingVisualCleanupByFrame = state.pendingVisualCleanupByFrame or {}
+		state.pendingVisualCleanupByFrame[bubble] = "bubble"
+		addon.pendingNameplateVisualCleanup = true
+	end
+	return false
+end
+
 function QuestTogether:CompleteAnnouncementBubblePlayback(bubble)
 	local bubbleState = GetAnnouncementBubbleState(bubble)
 	local unitToken = bubbleState and bubbleState.unitToken or nil
@@ -320,13 +330,12 @@ function QuestTogether:StopAndHideAnnouncementBubblePlayback(bubble, reason)
 		self:Debugf("bubble", "playback_stop unit=%s event=%s reason=%s", SafeText(unitToken, ""),
 			SafeText(bubbleState.eventType, ""), SafeText(reason, "hide"))
 	end
-	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(unitToken) then
-		ClearAnnouncementBubbleState(bubble)
-		return false
-	end
+	-- Teardown only touches this addon-owned bubble and its animation. Unlike
+	-- starting/reparenting playback, hiding an accessible unprotected region is
+	-- safe during combat. Do not leave old playback attached to a reused base.
 	if not CanMutateFrame(bubble) then
 		ClearAnnouncementBubbleState(bubble)
-		return false
+		return DeferAnnouncementBubbleCleanup(self, bubble)
 	end
 	if
 		bubble.animationGroup
@@ -335,12 +344,15 @@ function QuestTogether:StopAndHideAnnouncementBubblePlayback(bubble, reason)
 	then
 		bubble.animationGroup:Stop()
 	end
-	-- Stop can invoke OnStop synchronously and clear the state. Use the policy
-	-- decision above, so a personal bubble does not become a foreign one when
-	-- its owner token disappears during that callback.
+	-- Stop invokes OnStop synchronously. It can clear playback state; recheck
+	-- the handle before further writes without relying on the retired token.
 	ClearAnnouncementBubbleState(bubble)
+	if not CanMutateFrame(bubble) then
+		return DeferAnnouncementBubbleCleanup(self, bubble)
+	end
 	bubble:SetAlpha(0)
 	bubble:Hide()
+	self:CancelNameplateVisualCleanup(bubble)
 	return true
 end
 
@@ -2926,6 +2938,18 @@ function QuestTogether:ShouldShowQuestNameplateIconForResolvedState(unitToken, u
 	return self:ShouldApplyResolvedQuestVisualState(unitToken, unitFrame, isQuestObjective)
 end
 
+local function DeferBlockedQuestPlatePresentation(addon, plate, unitToken)
+	if not addon:IsWorkBlocked("nameplate_refresh") then
+		return false
+	end
+	addon:HideNameplateIcon(plate)
+	if addon.isEnabled and addon:IsNameplateUnitToken(unitToken)
+		and not addon.nameplateRefreshPendingByUnitToken[unitToken] then
+		addon:ScheduleNameplateRefresh(unitToken)
+	end
+	return true
+end
+
 function QuestTogether:ApplyResolvedQuestStateToNameplate(
 	namePlateFrameBase,
 	unitToken,
@@ -2944,6 +2968,13 @@ function QuestTogether:ApplyResolvedQuestStateToNameplate(
 	end
 	if self:IsNameplateUnitToken(resolvedUnitToken) and self:IsNameplateUnitPlayer(resolvedUnitToken) then
 		self:RefreshQTPlayerNameplate(namePlateFrameBase, resolvedUnitToken, unitFrame)
+		return
+	end
+	-- Cached NPC relevance can reach this presenter directly from a plate-added
+	-- event, without passing through the deferred-work policy. Cleanup is safe
+	-- when its owned regions are mutable; layout/show must wait for the same
+	-- policy as scheduled presentation, including map and encounter restrictions.
+	if DeferBlockedQuestPlatePresentation(self, namePlateFrameBase, resolvedUnitToken) then
 		return
 	end
 	if not IsNonEmptyString(resolvedUnitGuid) and self:IsNameplateUnitToken(resolvedUnitToken) then
@@ -4372,6 +4403,12 @@ function QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
 		self:RefreshQTPlayerNameplate(namePlateFrameBase, unitToken, unitFrame)
 		return
 	end
+	-- Defer before resolving negative caches or spending a tooltip retry. A
+	-- presentation refresh advances the token generation and would invalidate
+	-- a retry queued immediately before it. Resume discovery after restrictions.
+	if DeferBlockedQuestPlatePresentation(self, namePlateFrameBase, unitToken) then
+		return
+	end
 	local existing = self.nameplateIconByUnitFrame[unitFrame]
 	if existing and self.qtPlayerIconStateByFrame then
 		self.qtPlayerIconStateByFrame[existing] = nil
@@ -4962,6 +4999,7 @@ function QuestTogether:EnableNameplateAugmentation()
 	RegisterNameplateEvent(self, "ZONE_CHANGED")
 	RegisterNameplateEvent(self, "PLAYER_REGEN_DISABLED")
 	RegisterNameplateEvent(self, "PLAYER_REGEN_ENABLED")
+	RegisterNameplateEvent(self, "ADDON_RESTRICTION_STATE_CHANGED")
 	RegisterNameplateEvent(self, "DISPLAY_SIZE_CHANGED")
 	RegisterNameplateEvent(self, "CVAR_UPDATE")
 	self:ScheduleDeferredNameplateQuestStateRefresh(

@@ -156,7 +156,9 @@ function QT:HandleQuestPartnerStatusMessage(payload, sender)
 			state.questPartners[oldest] = nil
 		end
 	end
-	if not self:RecordQTPlayerPresence(name, true) then
+	-- Off can be a delayed departure withdrawal. It clears partner status while
+	-- preserving an existing identity, but must not restore a departed logo.
+	if looking == "1" and not self:RecordQTPlayerPresence(name, true) then
 		return false
 	end
 	-- Keep Off records until expiry too: a delayed copy of On must not revive it.

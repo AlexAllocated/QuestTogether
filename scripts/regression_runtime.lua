@@ -275,6 +275,10 @@ QT:RegisterTest("shared runtime permits explicit waypoint clicks while disabled 
 	Equal(waypointCalls, 1)
 	Equal(backgroundCalls, 0)
 	Equal(addon:FlushDeferredWork(), false)
+	-- Disabled work becomes due only when its original timer fires; enable
+	-- then releases that parked entry without skipping its settling delay.
+	addon.delayed[1]()
+	Equal(backgroundCalls, 0)
 	addon.isEnabled = true
 	addon:FlushDeferredWork()
 	Equal(backgroundCalls, 1)
@@ -352,8 +356,9 @@ end)
 
 QT:RegisterTest("audit flush honors restrictions separately for each work class", function()
 	local addon, calls = NewRuntime(), 0
+	local plateBlocked = true
 	function addon:IsWorkBlocked(work)
-		return work == "quest_log_drain"
+		return work == "quest_log_drain" or plateBlocked
 	end
 	addon:ScheduleDeferredWork("quest_log_drain", "scan", function()
 		error("must stay parked")
@@ -361,6 +366,11 @@ QT:RegisterTest("audit flush honors restrictions separately for each work class"
 	addon:ScheduleDeferredWork("nameplate_refresh", "plate", function()
 		calls = calls + 1
 	end, 1)
+	addon:FlushDeferredWork()
+	Equal(calls, 0)
+	addon.delayed[1]() -- The deadline elapses while presentation is still blocked.
+	Equal(calls, 0)
+	plateBlocked = false
 	addon:FlushDeferredWork()
 	Equal(calls, 1)
 	assert(addon.state.entries[QT.LibChev.WorkKey("quest_log_drain", "scan")] ~= nil)

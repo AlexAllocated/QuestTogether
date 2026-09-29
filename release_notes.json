@@ -1,30 +1,27 @@
 {
   "version": "5.13.0",
-  "welcome": "Find questing partners at a glance with highlighted map dots and player logos, simpler location settings, and reminders when another player has a newer stable QuestTogether release.",
+  "welcome": "This maintenance update improves quest-plate recovery, clears stale bubbles and player logos, and keeps settings and the debug window behaving consistently.",
   "sections": [
     {
-      "title": "Spot questing partners",
+      "title": "Quest plates and player indicators",
       "items": [
-        "Players looking for questing partners have a soft gold glow around their class-colored map and minimap dots.",
-        "Their QuestTogether nameplate logo gets a soft gold glow. Highlights disappear when the status is turned off or expires.",
-        "Player Locations settings includes Only show players looking for questing partners. It starts off and filters both maps when enabled.",
-        "The in-game What's New window shows regular and glowing logos and map dots side by side. Gold glow means looking for questing partners."
-      ],
-      "illustration": "quest-partners"
-    },
-    {
-      "title": "Simpler location settings",
-      "items": [
-        "Share my location and Show other players each apply to both the world map and minimap.",
-        "Both options start enabled for new profiles. Existing location-sharing opt-outs are preserved when upgrading."
+        "Quest icons and health tints recover correctly after restricted views close. Delayed quest scans retain their settling time, and temporarily missing tooltip data keeps its retry budget.",
+        "Announcement bubbles are cleaned up when a player plate disappears or is reused during combat. Protected or forbidden frames wait for safe cleanup.",
+        "Map locations and player presence recover after disabling QuestTogether, changing zones, and enabling it again. Departed players no longer regain a QT logo from late location or partner-status withdrawals."
       ]
     },
     {
-      "title": "New-version reminders",
+      "title": "Settings and window fixes",
       "items": [
-        "QuestTogether notices when another player reports a newer stable addon version and prints an update reminder in your chosen QuestTogether chat window.",
-        "The reminder is saved across characters and appears once each reload until you install the detected release or a newer one. Alpha and beta versions do not trigger reminders.",
-        "Version announcements are small and infrequent. QuestTogether also recognizes version information in existing ping replies."
+        "The Looking for Questing Partners checkbox stays synchronized when status changes through commands, menus, or profile settings.",
+        "The debug window safely finishes interrupted drag and resize gestures when restrictions lift, even after it has been hidden."
+      ]
+    },
+    {
+      "title": "Reliability improvements",
+      "items": [
+        "Strengthened tests detect forbidden frame access even when an error is caught internally.",
+        "Release checks now refuse to publish while implementation changes remain uncommitted, helping ensure fixes actually reach the download."
       ]
     }
   ]

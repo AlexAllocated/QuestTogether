@@ -37,6 +37,7 @@ local function Frame(parent)
 		self.scripts[name] = callback
 	end
 	function frame:RegisterEvent(name)
+		self:CheckAccess(true)
 		self.events[name] = true
 	end
 	function frame:Show()
@@ -60,19 +61,19 @@ local function Frame(parent)
 		self.width, self.height = width, height
 	end
 	function frame:GetWidth()
-		assert(not self.forbidden)
+		self:CheckAccess()
 		return self.width
 	end
 	function frame:GetHeight()
-		assert(not self.forbidden)
+		self:CheckAccess()
 		return self.height
 	end
 	function frame:GetCenter()
-		assert(not self.forbidden)
+		self:CheckAccess()
 		return self.cx, self.cy
 	end
 	function frame:GetEffectiveScale()
-		assert(not self.forbidden)
+		self:CheckAccess()
 		return self.scale
 	end
 	function frame:SetPoint(...)
@@ -93,12 +94,15 @@ local function Frame(parent)
 		self.level = value
 	end
 	function frame:RegisterForClicks(...)
+		self:CheckAccess(true)
 		self.clicks = { ... }
 	end
 	function frame:RegisterForDrag(...)
+		self:CheckAccess(true)
 		self.drags = { ... }
 	end
 	function frame:SetHighlightTexture(value)
+		self:CheckAccess(true)
 		self.highlight = value
 	end
 	function frame:SetClampedToScreen(value)
@@ -114,6 +118,7 @@ local function Frame(parent)
 		self.color = { ... }
 	end
 	function frame:SetTexture(value)
+		self:CheckAccess(true)
 		self.texture = value
 	end
 	function frame:SetText(value)
@@ -121,6 +126,7 @@ local function Frame(parent)
 		self.text = value
 	end
 	function frame:CreateTexture()
+		self:CheckAccess(true)
 		local texture = Frame(self)
 		self.textures[#self.textures + 1] = texture
 		return texture
@@ -427,6 +433,9 @@ QuestTogether:RegisterTest("minimap invalid anchor geometry stays hidden and rec
 	a.anchor.forbidden = true
 	Equal(a:PositionMinimapButton(0), false)
 	Equal(button.layouts, layouts)
+	-- A caught getter error must still fail this test after production returns.
+	Equal(a.anchor.unsafeCalls, nil)
+	Equal(button.unsafeCalls, nil)
 	a.anchor.forbidden, a.anchor.height = false, "unavailable"
 	Equal(a:RefreshMinimapButton(), false)
 	Equal(button.shown, false)
@@ -515,6 +524,8 @@ QuestTogether:RegisterTest("minimap interrupted drags cannot save a stale angle 
 			a:RefreshMinimapButton()
 		end
 		Equal(button.scripts.OnUpdate, nil)
+		Equal(a.anchor.unsafeCalls, nil)
+		Equal(button.unsafeCalls, nil)
 	end
 end)
 
@@ -606,6 +617,9 @@ QuestTogether:RegisterTest("minimap forbidden parents recover through the indepe
 	Equal(a.minimapButton.shown, false)
 	Equal(a.minimapButton.scripts.OnUpdate, nil)
 	Equal(a:GetOption("minimapButtonPosition"), 225)
+	Equal(a.anchor.unsafeCalls, nil)
+	Equal(a.minimapButton.unsafeCalls, nil)
+	Equal(tooltip.unsafeCalls, nil)
 end)
 
 QuestTogether:RegisterTest("minimap drag release rechecks restrictions before the next animation tick", function()

@@ -194,6 +194,7 @@ QT:RegisterTest("nameplate augmentation subscribes to tap ownership changes", fu
 		Equal(registered.NAME_PLATE_UNIT_BEHIND_CAMERA_CHANGED, true)
 		Equal(registered.PLAYER_TARGET_CHANGED, true)
 		Equal(registered.UPDATE_MOUSEOVER_UNIT, true)
+		Equal(registered.ADDON_RESTRICTION_STATE_CHANGED, true)
 	end)
 end)
 
@@ -465,11 +466,13 @@ QT:RegisterTest("audit protected icon is not shown or restyled while restricted"
 end)
 
 QT:RegisterTest("audit protected health overlay does not mutate during restrictions", function()
+	local creationAttempts, hideAttempts = 0, 0
 	local texture = {
 		IsProtected = function()
 			return true
 		end,
 		Hide = function()
+			hideAttempts = hideAttempts + 1
 			error("protected texture hidden")
 		end,
 	}
@@ -478,6 +481,7 @@ QT:RegisterTest("audit protected health overlay does not mutate during restricti
 			return true
 		end,
 		CreateTexture = function()
+			creationAttempts = creationAttempts + 1
 			error("protected texture created")
 		end,
 	}
@@ -492,6 +496,8 @@ QT:RegisterTest("audit protected health overlay does not mutate during restricti
 		Equal(QT:CreateNameplateHealthOverlayTexture(healthBar), nil)
 		QT:RestoreNameplateHealthColor(unit)
 	end)
+	Equal(creationAttempts, 0, "protected creation attempts must survive a caught error")
+	Equal(hideAttempts, 0, "protected hide attempts must survive a caught error")
 end)
 
 QT:RegisterTest("audit disabled cleanup hides cached offscreen visuals after restrictions end", function()
@@ -555,7 +561,10 @@ QT:RegisterTest("audit startup timers from a previous enable do not refresh curr
 end)
 
 local function WithRecycledBubble(fn)
-	local state = { restricted = false, mutations = 0, reparents = 0 }
+	local state = {
+		restricted = false, mutationAttempts = 0, reparentAttempts = 0,
+		playing = false, animationAttempts = 0, starts = 0, stops = 0,
+	}
 	local function Region(parent)
 		local region = { parent = parent, shown = true }
 		function region:IsForbidden() return self.forbidden == true end
@@ -568,13 +577,14 @@ local function WithRecycledBubble(fn)
 		end
 		function region:GetParent() return self.parent end
 		local function Mutate(self)
+			-- Count attempts before throwing: production may catch rejected operations.
+			state.mutationAttempts = state.mutationAttempts + 1
 			assert(not self:IsForbidden(), "forbidden bubble mutated")
 			assert(not (self:IsProtected() and state.restricted), "protected bubble mutated during restrictions")
-			state.mutations = state.mutations + 1
 		end
 		function region:SetParent(newParent)
+			state.reparentAttempts = state.reparentAttempts + 1
 			Mutate(self)
-			state.reparents = state.reparents + 1
 			if state.rejectParent then error("client rejected reparent") end
 			self.parent = newParent
 		end
@@ -597,14 +607,32 @@ local function WithRecycledBubble(fn)
 	function bubble.String:GetFont() return "font", 14, "" end
 	function bubble.String:GetUnboundedStringWidth() return 100 end
 	function bubble.String:GetStringHeight() return 14 end
-	bubble.animationGroup = { IsPlaying = function() return false end, Play = function() end }
+	local function CheckAnimationAccess()
+		state.animationAttempts = state.animationAttempts + 1
+		assert(not bubble:IsForbidden(), "forbidden bubble animation accessed")
+		assert(not (bubble:IsProtected() and state.restricted), "protected bubble animation accessed during combat")
+	end
+	bubble.animationGroup = {
+		IsPlaying = function() CheckAnimationAccess(); return state.playing end,
+		Play = function() CheckAnimationAccess(); state.starts = state.starts + 1; state.playing = true end,
+		Stop = function()
+			CheckAnimationAccess()
+			state.stops, state.playing = state.stops + 1, false
+			QT:CompleteAnnouncementBubblePlayback(bubble)
+		end,
+	}
 	state.oldBase, state.newBase, state.unitFrame, state.bubble = oldBase, newBase, unitFrame, bubble
+	state.Region = Region
+	state.clock = QT:CreateTestClock(0)
 	QT.nameplateBubbleByUnitFrame[unitFrame] = bubble
 	QT.isEnabled = true
 	QT.db.profile.showChatBubbles = true
 	Patch({
-		API = { UnitGUID = function() return "Player-1-NEW" end },
-		IsRuntimeRestricted = function() return state.restricted end,
+		API = {
+			UnitGUID = function() return "Player-1-NEW" end,
+			InCombatLockdown = function() return state.restricted end,
+			Delay = function(seconds, callback) state.clock:After(seconds, callback) end,
+		},
 	}, function() fn(state) end)
 end
 
@@ -615,9 +643,9 @@ QT:RegisterTest("recycled unit frame reparents its cached bubble to the current 
 		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "New sender quest progress"), true)
 		Equal(state.bubble:GetParent(), state.newBase)
 		Equal(state.bubble:IsVisible(), true)
-		Equal(state.reparents, 1)
+		Equal(state.reparentAttempts, 1)
 		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Another update"), true)
-		Equal(state.reparents, 1, "unchanged bubble hosts should not be reparented")
+		Equal(state.reparentAttempts, 1, "unchanged bubble hosts should not be reparented")
 	end)
 end)
 
@@ -625,11 +653,11 @@ QT:RegisterTest("bubble reuse never reparents forbidden bubbles or during restri
 	WithRecycledBubble(function(state)
 		state.bubble.forbidden = true
 		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Forbidden"), false)
-		Equal(state.mutations, 0)
+		Equal(state.mutationAttempts, 0)
 		state.bubble.forbidden, state.restricted, state.oldBase.protected = false, true, true
 		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Restricted"), false)
-		Equal(state.mutations, 0)
-		Equal(state.reparents, 0)
+		Equal(state.mutationAttempts, 0)
+		Equal(state.reparentAttempts, 0)
 	end)
 end)
 
@@ -648,7 +676,7 @@ QT:RegisterTest("new bubble playback supersedes protected cleanup from the disab
 		state.restricted, state.oldBase.protected = true, true
 		QT.isEnabled = false
 		Equal(QT:HideAllNameplateVisuals(), false)
-		Equal(state.mutations, 0, "restricted old playback must remain untouched")
+		Equal(state.mutationAttempts, 0, "restricted old playback must remain untouched")
 		QT:ResetNameplateStateStore()
 		Equal(QT:GetNameplateStateStore().pendingVisualCleanupByFrame[state.bubble], "bubble")
 		state.restricted, state.oldBase.protected, QT.isEnabled = false, false, true
@@ -657,5 +685,104 @@ QT:RegisterTest("new bubble playback supersedes protected cleanup from the disab
 		Equal(QT:RetryPendingNameplateVisualCleanup(), true)
 		Equal(state.bubble:IsVisible(), true)
 		Equal(QT.nameplateBubbleStateByFrame[state.bubble].text, "New lifetime announcement")
+	end)
+end)
+
+QT:RegisterTest("combat removal stops mutable nearby playback before its base plate is reused", function()
+	for _, lookupAvailable in ipairs({ false, true }) do
+		WithRecycledBubble(function(state)
+			Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Old player progress"), true)
+			Equal(state.playing, true)
+			state.restricted = true
+			Equal(QT:IsRuntimeRestricted(), true)
+			Equal(QT:IsWorkBlocked("foreign_frame_mutation"), true)
+			Equal(QT:IsProtectedFrame(state.bubble), false)
+			QT.API.GetNamePlateForUnit = function(token)
+				return lookupAvailable and token == "nameplate2" and state.newBase or nil
+			end
+			QT:HandleNameplateEvent("PLAYER_REGEN_DISABLED")
+			QT:HandleNameplateEvent("NAME_PLATE_UNIT_REMOVED", "nameplate2")
+			Equal(state.playing, false)
+			Equal(state.bubble:IsShown(), false)
+			Equal(state.stops, 1)
+			Equal(QT.nameplateBubbleStateByFrame[state.bubble], nil)
+			Equal(QT.pendingNameplateVisualCleanup, false)
+
+			-- Blizzard recycles base plates independently of their former UnitFrames.
+			state.unitFrame.parent = state.oldBase
+			local replacement = state.Region(state.newBase)
+			replacement.unit, replacement.healthBar = "nameplate3", state.Region()
+			state.newBase.UnitFrame = replacement
+			QT.API.GetNamePlateForUnit = function(token) return token == "nameplate3" and state.newBase or nil end
+			QT.API.UnitGUID = function() return "Creature-0-0-0-0-99999-0000000001" end
+			QT.API.UnitIsPlayer = function() return false end
+			QT.API.UnitExists = function() return true end
+			QT:HandleNameplateEvent("NAME_PLATE_UNIT_ADDED", "nameplate3")
+			Equal(state.bubble:IsVisible(), false, "the old player's bubble must not follow the reused base")
+			Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Blocked new playback"), false)
+			Equal(state.starts, 1, "safe cleanup must not relax new-playback restrictions")
+		end)
+	end
+end)
+
+QT:RegisterTest("removed bubble cleanup waits for protected and forbidden handles then resumes through events", function()
+	for _, kind in ipairs({ "protected", "forbidden" }) do
+		WithRecycledBubble(function(state)
+			Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Old player progress"), true)
+			state.restricted, state.bubble[kind] = true, true
+			QT.API.GetNamePlateForUnit = function() return nil end
+			local mutations, animationCalls = state.mutationAttempts, state.animationAttempts
+			QT:HandleNameplateEvent("NAME_PLATE_UNIT_REMOVED", "nameplate2")
+			Equal(QT.nameplateBubbleStateByFrame[state.bubble], nil)
+			Equal(QT:GetNameplateStateStore().pendingVisualCleanupByFrame[state.bubble], "bubble")
+			Equal(QT.pendingNameplateVisualCleanup, true)
+			QT:HandleNameplateEvent("ADDON_RESTRICTION_STATE_CHANGED")
+			Equal(state.mutationAttempts, mutations, "quarantine must precede all visual attempts")
+			Equal(state.animationAttempts, animationCalls, "quarantine must precede all animation reads")
+			Equal(state.stops, 0)
+			if kind == "protected" then
+				state.restricted = false
+				QT:HandleNameplateEvent("PLAYER_REGEN_ENABLED")
+			else
+				state.bubble.forbidden = false
+				QT:HandleNameplateEvent("ADDON_RESTRICTION_STATE_CHANGED")
+			end
+			Equal(state.playing, false)
+			Equal(state.bubble:IsShown(), false)
+			Equal(state.stops, 1)
+			Equal(QT.pendingNameplateVisualCleanup, false)
+			Equal(QT:GetNameplateStateStore().pendingVisualCleanupByFrame[state.bubble], nil)
+		end)
+	end
+end)
+
+QT:RegisterTest("new playback supersedes a removed bubble's pending quarantine cleanup", function()
+	WithRecycledBubble(function(state)
+		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Old progress"), true)
+		state.restricted, state.bubble.protected = true, true
+		QT.API.GetNamePlateForUnit = function() return nil end
+		QT:HandleNameplateEvent("NAME_PLATE_UNIT_REMOVED", "nameplate2")
+		Equal(QT.pendingNameplateVisualCleanup, true)
+		state.restricted = false
+		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Current progress"), true)
+		Equal(QT.pendingNameplateVisualCleanup, false)
+		QT:HandleNameplateEvent("ADDON_RESTRICTION_STATE_CHANGED")
+		Equal(state.playing, true)
+		Equal(state.bubble:IsVisible(), true)
+		Equal(state.starts, 2)
+		Equal(state.stops, 1)
+		Equal(QT.nameplateBubbleStateByFrame[state.bubble].text, "Current progress")
+	end)
+end)
+
+QT:RegisterTest("disable stops mutable nearby playback during combat without pending cleanup", function()
+	WithRecycledBubble(function(state)
+		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Old player progress"), true)
+		state.restricted, QT.isEnabled = true, false
+		QT:DisableNameplateAugmentation()
+		Equal(state.stops, 1)
+		Equal(state.playing, false)
+		Equal(state.bubble:IsShown(), false)
+		Equal(QT.pendingNameplateVisualCleanup, false)
 	end)
 end)

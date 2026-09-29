@@ -123,7 +123,7 @@ local function DiscoveryMessages(addon)
 		QSHR = "1,discovery,Third-Realm,42,request",
 		QTPR = "1,1",
 		QTVR = "1,5.12.0",
-		QTLF = "1,100-1234,1,0",
+		QTLF = "1,100-1234,1,1",
 		LOC = "1,100-1234,1,3,12,0.4,0.6,MAGE,Mage,Human,Alliance,60,0",
 	}
 end
@@ -170,7 +170,7 @@ QT:RegisterTest("every supported communication discovers only its authenticated 
 			Equal(a:IsKnownQTPlayer(a.name), false)
 			Equal(a.refreshes, 1)
 			Equal(#a.sent, 0, "recognition must not add traffic")
-			Equal(a:IsPlayerLookingForQuestPartners(sender), false)
+			Equal(a:IsPlayerLookingForQuestPartners(sender), command == "QTLF")
 		end
 	end
 end)
@@ -582,6 +582,8 @@ local function WithPlate(run)
 			"SetFrameStrata",
 			"SetFrameLevel",
 			"SetTexCoord",
+			"SetBlendMode",
+			"SetVertexColor",
 		}) do
 			r[method] = Mutate
 		end
@@ -758,6 +760,121 @@ QT:RegisterTest("only fresh authenticated location messages renew QT player iden
 	a.isEnabled, a.now = false, 190
 	a:OnCommReceived(a.commPrefix, "LOC|1,100-1234,4,0", "PARTY", "Friend-Realm")
 	Equal(a.qtPlayerPresenceState.peers["Friend-Realm"], nil)
+end)
+
+local function LocationSender(name)
+	local sender = Peer(name)
+	sender.API.GetBestMapForUnit = function() return 12 end
+	sender.API.GetPlayerMapPosition = function() return { x = 0.4, y = 0.6 } end
+	sender.API.UnitClass = function() return "Mage", "MAGE" end
+	sender.API.UnitRace = function() return "Human" end
+	sender.API.GetFaction = function() return "Alliance" end
+	sender.API.UnitLevel = function() return 60 end
+	sender.API.IsWarModeFeatureEnabled = function() return false end
+	sender.API.IsInParty = function() return true end
+	sender.API.SendAddonMessage = function(prefix, wire, route)
+		local packet = { prefix = prefix, wire = wire, route = route }
+		if sender.queue then
+			sender.queue[#sender.queue + 1] = packet
+		else
+			sender:Deliver(packet)
+		end
+		return 0
+	end
+	function sender:Deliver(packet)
+		self.other:OnCommReceived(packet.prefix, packet.wire, packet.route, self.name, 7, "QuestTogether")
+	end
+	return sender
+end
+
+QT:RegisterTest("actual departure withdrawals never restore logos in either channel delivery order", function()
+	for _, lifecycle in ipairs({ "Disable", "PLAYER_LEAVING_WORLD" }) do
+		for _, order in ipairs({ "native", "reverse", "presence-first" }) do
+			WithPlate(function(s)
+				QT.recentCommMessageSignatures = {}
+				QT.playerLocationState = nil
+				QT.API.GetChannelName = function() return 7 end
+				local sender = LocationSender(s.name)
+				sender.other = QT
+				assert(sender:BroadcastQTPlayerPresence())
+				assert(sender:BroadcastPlayerLocation())
+				assert(sender:SetOption("lookingForQuestPartners", true))
+				QT:RefreshNameplateIcon(s.plate)
+				local icon = QT.nameplateIconByUnitFrame[s.frame]
+				assert(icon.shown and QT:IsPlayerLookingForQuestPartners(s.name))
+				sender.queue = {}
+				-- Run the real lifecycle and all three real withdrawal senders. Only
+				-- unrelated sender-side UI/runtime teardown uses private no-op seams.
+				for _, method in ipairs({
+					"UnregisterRuntimeEvents", "ResetQuestEventState", "ResetTaskAreaStateStore",
+					"ResetRuntimeWorkStateStore", "LeaveAnnouncementChannel", "DisableNameplateAugmentation",
+					"RefreshPersonalBubbleAnchorVisualState",
+				}) do sender[method] = function() end end
+				sender[lifecycle](sender)
+				Equal(#sender.queue, 6) -- QTLF Off, QTPR departure, LOC withdrawal on both routes.
+				local delivered = {}
+				local function Deliver(index)
+					s.now = s.now + 1 -- Exercise sequence checks after content deduplication expires.
+					sender:Deliver(sender.queue[index])
+					delivered[index] = true
+				end
+				if order == "reverse" then
+					for index = #sender.queue, 1, -1 do Deliver(index) end
+				else
+					if order == "presence-first" then
+						for index, packet in ipairs(sender.queue) do
+							if packet.wire == "QTPR|1,0" then Deliver(index) end
+						end
+					end
+					for index in ipairs(sender.queue) do if not delivered[index] then Deliver(index) end end
+				end
+				QT:RefreshNameplateIcon(s.plate)
+				Equal(QT:IsKnownQTPlayer(s.name), false)
+				Equal(QT:IsPlayerLookingForQuestPartners(s.name), false)
+				Equal(icon.shown, false)
+				Equal(QT.playerLocationState.peers[s.name].mask, 0)
+				-- Replays remain harmless even after location/status ordering records expire.
+				s.now = 10000
+				QT:PruneQTPlayerPresence(true)
+				QT:PrunePlayerLocations(true)
+				for _, packet in ipairs(sender.queue) do sender:Deliver(packet) end
+				QT:RefreshNameplateIcon(s.plate)
+				Equal(QT:IsKnownQTPlayer(s.name), false)
+				Equal(icon.shown, false)
+				-- An actual new positive publication can identify a returning sender.
+				sender.isEnabled, sender.isLoggingOut, sender.queue, sender.now = true, false, nil, s.now
+				assert(sender:BroadcastPlayerLocation(true))
+				QT:RefreshNameplateIcon(s.plate)
+				assert(QT:IsKnownQTPlayer(s.name) and icon.shown)
+			end)
+		end
+	end
+end)
+
+QT:RegisterTest("location and partner opt outs preserve known identity without discovering unknown senders", function()
+	for _, known in ipairs({ false, true }) do
+		for _, command in ipairs({ "LOC", "QTLF" }) do
+			local a = Peer()
+			local sender = "Friend-Realm"
+			if known then assert(a:RecordQTPlayerPresence(sender, true)) end
+			a.now = 101
+			local wire = command .. "|1,100-1234,1,0"
+			a:OnCommReceived(a.commPrefix, wire, "PARTY", sender)
+			Equal(a:IsKnownQTPlayer(sender), known)
+			if known then Equal(a.qtPlayerPresenceState.peers[sender], 100) end
+			-- Withdrawal ordering is retained even when it supplied no identity.
+			local state = command == "LOC" and a.playerLocationState.peers[sender]
+				or a.qtPlayerPresenceState.questPartners[sender]
+			Equal(state.sequence, 1)
+			Equal(a:IsPlayerLookingForQuestPartners(sender), false)
+			a:OnCommReceived(a.commPrefix, "QTPR|1,1", "PARTY", sender)
+			assert(a:IsKnownQTPlayer(sender))
+			a.now = 102
+			a:OnCommReceived(a.commPrefix, command .. "|1,100-1234,2,0", "CHANNEL", sender, 7, "QuestTogether")
+			assert(a:IsKnownQTPlayer(sender))
+			Equal(a.qtPlayerPresenceState.peers[sender], 101)
+		end
+	end
 end)
 
 QT:RegisterTest("QT player plate defaults and all four positions are independent of quest icons", function()

@@ -374,12 +374,15 @@ QT:RegisterTest("task classification resets with the runtime and fresh acceptanc
 	end
 end)
 
-local function NewEnabledOptionFixture()
+local function NewEnabledOptionFixture(enabled)
 	local addon = NewFixture()
-	addon.db.profile.enabled = true
+	addon.isEnabled = enabled ~= false
+	addon.db.profile.enabled = addon.isEnabled
 	addon.events, addon.messages = {}, {}
 	addon.registeredRuntimeEvents = {}
 	addon.eventFrame = {
+		scripts = {},
+		SetScript = function(frame, event, callback) frame.scripts[event] = callback end,
 		RegisterEvent = function(_, event) addon.events[event] = true end,
 		UnregisterEvent = function(_, event) addon.events[event] = nil end,
 	}
@@ -392,9 +395,23 @@ local function NewEnabledOptionFixture()
 	addon.RefreshOptionsWindow = Noop
 	addon.ReconcileQuestLogChatDestination = Noop
 	addon.InitializeReleaseNotes = Noop
-	addon.visualsEnabled = true
-	addon:RegisterRuntimeEvents()
+	addon.visualsEnabled = addon.isEnabled
+	addon:RegisterBootstrapEvents()
+	if addon.isEnabled then addon:RegisterRuntimeEvents() end
+	function addon:DeliverRegisteredEvent(event, ...)
+		if not self.events[event] then return false end
+		self.eventFrame.scripts.OnEvent(self.eventFrame, event, ...)
+		return true
+	end
 	return addon
+end
+
+local function AssertRuntimeEventsUnregistered(addon)
+	for _, event in ipairs(addon.runtimeEvents) do
+		Equal(addon.events[event], nil, "disabled runtime event " .. event)
+	end
+	Equal(addon.events.PLAYER_ENTERING_WORLD, true)
+	Equal(addon.events.PLAYER_LEAVING_WORLD, true)
 end
 
 QT:RegisterTest("generic enabled option applies the actual disable and enable lifecycles", function()
@@ -405,7 +422,7 @@ QT:RegisterTest("generic enabled option applies the actual disable and enable li
 	addon:HandleSlashCommand("set enabled off")
 	Equal(addon.db.profile.enabled, false)
 	Equal(addon.isEnabled, false)
-	Equal(next(addon.events), nil)
+	AssertRuntimeEventsUnregistered(addon)
 	Equal(next(addon.registeredRuntimeEvents), nil)
 	Equal(next(addon.pendingQuestAcceptances), nil)
 	Equal(addon.questCompareResponseQueue, nil)
@@ -431,7 +448,7 @@ QT:RegisterTest("enabled option preserves pre-login deferral and rejects nonbool
 	Equal(addon:SetOption("enabled", true), true)
 	Equal(addon.db.profile.enabled, true)
 	Equal(addon.isEnabled, false)
-	Equal(next(addon.events), nil)
+	AssertRuntimeEventsUnregistered(addon)
 	Equal(#addon.delayed, 0)
 	for _, value in ipairs({ "false", 0, {} }) do
 		Equal(addon:SetOption("enabled", value), false)
@@ -441,6 +458,69 @@ QT:RegisterTest("enabled option preserves pre-login deferral and rejects nonbool
 	addon:OnLogin()
 	Equal(addon.isEnabled, true)
 	Equal(addon.events.QUEST_LOG_UPDATE, true)
+end)
+
+local function ObserveWorldLifecycleWork(addon)
+	local calls = { refresh = 0, join = 0, presence = 0, location = 0 }
+	addon.RefreshTaskAreaStates = function() calls.refresh = calls.refresh + 1 end
+	addon.EnsureAnnouncementChannelJoined = function() calls.join = calls.join + 1 end
+	addon.BroadcastQTPlayerPresence = function() calls.presence = calls.presence + 1 end
+	addon.BroadcastPlayerLocation = function() calls.location = calls.location + 1 end
+	addon.InitializeMinimapLauncher, addon.NotifyAddonUpdate = Noop, Noop
+	addon.InitializePlayerLocations = Noop
+	return calls
+end
+
+QT:RegisterTest("bootstrap world events survive disable and re-enable without disabled runtime work", function()
+	local addon = NewEnabledOptionFixture()
+	local calls = ObserveWorldLifecycleWork(addon)
+	Equal(addon:DeliverRegisteredEvent("PLAYER_LEAVING_WORLD"), true)
+	Equal(addon.isLoggingOut, true)
+	Equal(calls.presence, 1)
+	Equal(calls.location, 1)
+	Equal(addon:DeliverRegisteredEvent("PLAYER_ENTERING_WORLD"), true)
+	Equal(addon.isLoggingOut, false)
+	Equal(calls.refresh, 1)
+	Equal(calls.join, 1)
+	addon:Disable()
+	calls = ObserveWorldLifecycleWork(addon)
+	Equal(addon:DeliverRegisteredEvent("PLAYER_LEAVING_WORLD"), true)
+	Equal(addon.isLoggingOut, true)
+	Equal(addon:DeliverRegisteredEvent("PLAYER_ENTERING_WORLD"), true)
+	Equal(addon.isLoggingOut, false, "disabled zoning must clear the leaving-world flag")
+	Equal(addon:DeliverRegisteredEvent("QUEST_LOG_UPDATE"), false)
+	for name, count in pairs(calls) do Equal(count, 0, "disabled " .. name) end
+	addon:Enable()
+	Equal(addon.isEnabled, true)
+	Equal(addon.isLoggingOut, false, "re-enable must not inherit a completed loading screen")
+	Equal(addon.events.QUEST_LOG_UPDATE, true)
+	Equal(addon.registeredRuntimeEvents.PLAYER_ENTERING_WORLD, nil, "bootstrap event must have one lifecycle owner")
+	Equal(calls.refresh, 1)
+	Equal(calls.join, 1)
+end)
+
+QT:RegisterTest("initially disabled login and zoning retain bootstrap state without runtime work", function()
+	local addon = NewEnabledOptionFixture(false)
+	local calls = ObserveWorldLifecycleWork(addon)
+	Equal(addon:DeliverRegisteredEvent("PLAYER_LOGIN"), true)
+	Equal(addon.isEnabled, false)
+	for _ = 1, 2 do
+		Equal(addon:DeliverRegisteredEvent("PLAYER_LEAVING_WORLD"), true)
+		Equal(addon.isLoggingOut, true)
+		Equal(addon:DeliverRegisteredEvent("PLAYER_ENTERING_WORLD"), true)
+		Equal(addon.isLoggingOut, false)
+	end
+	for name, count in pairs(calls) do Equal(count, 0, "initially disabled " .. name) end
+	Equal(next(addon.registeredRuntimeEvents), nil)
+	Equal(addon.events.QUEST_LOG_UPDATE, nil)
+	addon:Enable()
+	Equal(addon.isEnabled, true)
+	Equal(addon.isLoggingOut, false)
+	Equal(calls.refresh, 1)
+	Equal(calls.join, 1)
+	Equal(addon:DeliverRegisteredEvent("PLAYER_ENTERING_WORLD"), true)
+	Equal(calls.refresh, 2, "enabled world entry must retain the runtime refresh")
+	Equal(calls.join, 2)
 end)
 
 local function NewProfileDeletionFixture()
@@ -690,9 +770,6 @@ local function NewWaypointLifecycleFixture(restriction)
 	addon.RefreshNameplatesForQuestStateChange = Noop
 	addon.OnNameplatePlayerRegenEnabled = Noop
 	addon.FlushPendingAnnouncementIntents = Noop
-	function addon:DeliverRegisteredEvent(event)
-		if self.events[event] then self[event](self) end
-	end
 	return addon, clock
 end
 
@@ -714,7 +791,7 @@ QT:RegisterTest("disabled restricted waypoint clicks are rejected across real di
 		-- A new unrestricted click works without enabling background runtime.
 		Equal(addon:CreateBlizzardWaypoint(85, 30, 40), true)
 		Equal(addon.isEnabled, false)
-		Equal(next(addon.events), nil)
+		AssertRuntimeEventsUnregistered(addon)
 		Equal(#addon.waypointWrites, 1)
 		Equal(addon.waypointWrites[1].mapID, 85)
 		addon:Enable()

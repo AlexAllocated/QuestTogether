@@ -706,7 +706,6 @@ QuestTogether.runtimeEvents = {
 	"ZONE_CHANGED_INDOORS",
 	"ZONE_CHANGED_NEW_AREA",
 	"PLAYER_REGEN_ENABLED",
-	"PLAYER_ENTERING_WORLD",
 	"ADDON_RESTRICTION_STATE_CHANGED",
 	"SUPER_TRACKING_CHANGED",
 	"GROUP_JOINED",
@@ -5946,6 +5945,7 @@ end
 
 function QuestTogether:PLAYER_ENTERING_WORLD()
 	self.isLoggingOut = false
+	if not self.isEnabled then return end
 	-- Refresh after loading screens without synthetic enter/leave announcements.
 	self:SetRuntimeFlag("pendingScheduledTaskAreaRefreshShouldAnnounce", false)
 	self:RefreshTaskAreaStates(false)
@@ -5955,8 +5955,10 @@ function QuestTogether:PLAYER_ENTERING_WORLD()
 end
 
 function QuestTogether:PLAYER_LEAVING_WORLD()
-	if self.BroadcastQTPlayerPresence then self:BroadcastQTPlayerPresence(true) end
-	if self.BroadcastPlayerLocation then self:BroadcastPlayerLocation(true, true) end
+	if self.isEnabled then
+		if self.BroadcastQTPlayerPresence then self:BroadcastQTPlayerPresence(true) end
+		if self.BroadcastPlayerLocation then self:BroadcastPlayerLocation(true, true) end
+	end
 	self.isLoggingOut = true
 end
 
@@ -5965,30 +5967,36 @@ function QuestTogether:PLAYER_LOGOUT()
 end
 
 -- Shared event dispatcher for all WoW events this addon listens for.
-local function DispatchEvent(_, eventName, ...)
-	local handler = QuestTogether[eventName]
+local function DispatchEvent(addon, eventName, ...)
+	local handler = addon[eventName]
 	if type(handler) ~= "function" then
 		return
 	end
 
 	local ok, err
-	if QuestTogether.RunGuardedCallback then
-		ok, err = QuestTogether:RunGuardedCallback(eventName, handler, QuestTogether, eventName, ...)
+	if addon.RunGuardedCallback then
+		ok, err = addon:RunGuardedCallback(eventName, handler, addon, eventName, ...)
 	else
-		ok, err = pcall(handler, QuestTogether, eventName, ...)
+		ok, err = pcall(handler, addon, eventName, ...)
 	end
 	if not ok then
 		if type(geterrorhandler) == "function" then geterrorhandler()(err) end
 	end
 end
 
-QuestTogether.eventFrame = QuestTogether.eventFrame or CreateFrame("Frame")
-QuestTogether.eventFrame:SetScript("OnEvent", DispatchEvent)
-QuestTogether.eventFrame:RegisterEvent("ADDON_LOADED")
-QuestTogether.eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-QuestTogether.eventFrame:RegisterEvent("PLAYER_LEAVING_WORLD")
-QuestTogether.eventFrame:RegisterEvent("PLAYER_LOGIN")
-QuestTogether.eventFrame:RegisterEvent("PLAYER_LOGOUT")
+-- Bootstrap lifecycle and diagnostic events outlive the enabled runtime. Keep
+-- registration on the addon-owned frame so private tests use this exact path.
+function QuestTogether:RegisterBootstrapEvents()
+	self.eventFrame:SetScript("OnEvent", function(_, eventName, ...)
+		DispatchEvent(self, eventName, ...)
+	end)
+	for _, eventName in ipairs({
+		"ADDON_LOADED", "PLAYER_ENTERING_WORLD", "PLAYER_LEAVING_WORLD",
+		"PLAYER_LOGIN", "PLAYER_LOGOUT", "ADDON_ACTION_BLOCKED", "ADDON_ACTION_FORBIDDEN",
+	}) do
+		self.eventFrame:RegisterEvent(eventName)
+	end
+end
 
-QuestTogether.eventFrame:RegisterEvent("ADDON_ACTION_BLOCKED")
-QuestTogether.eventFrame:RegisterEvent("ADDON_ACTION_FORBIDDEN")
+QuestTogether.eventFrame = QuestTogether.eventFrame or CreateFrame("Frame")
+QuestTogether:RegisterBootstrapEvents()

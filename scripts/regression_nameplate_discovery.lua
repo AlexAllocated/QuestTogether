@@ -8,7 +8,7 @@ local function WithPlate(fn)
 	local state = {
 		guid = "Creature-0-0-0-0-12345-0000000000", combat = true,
 		present = true, shown = true, fillReady = true, tooltipReady = true,
-		reads = 0, callbacks = {}, now = 0, sequence = 0, creations = 0,
+		reads = 0, callbacks = {}, now = 0, sequence = 0, creations = 0, presentationMutations = 0, unsafeMutationAttempts = 0,
 	}
 	local function Region(parent, shown)
 		local region = { parent = parent, shown = shown == true }
@@ -24,19 +24,29 @@ local function WithPlate(fn)
 		end
 		function region:GetParent() return self.parent end
 		local function CheckMutation(self)
-			assert(not self:IsForbidden(), "forbidden visual mutated")
-			assert(not (self:IsProtected() and (state.combat or state.restriction)), "protected visual mutated while restricted")
+			local forbidden = self:IsForbidden()
+			local restricted = self:IsProtected() and (state.combat or state.restriction)
+			-- Preserve evidence even when a production error boundary catches the assertion.
+			if forbidden or restricted then
+				state.unsafeMutationAttempts = state.unsafeMutationAttempts + 1
+			end
+			assert(not forbidden, "forbidden visual mutated")
+			assert(not restricted, "protected visual mutated while restricted")
 		end
-		function region:Show() CheckMutation(self); self.shown = true end
+		function region:Show() CheckMutation(self); state.presentationMutations = state.presentationMutations + 1; self.shown = true end
 		function region:Hide() CheckMutation(self); self.shown = false end
 		function region:SetParent(newParent) CheckMutation(self); self.parent = newParent end
 		function region:GetFrameStrata() return "LOW" end
 		function region:GetFrameLevel() return 1 end
 		for _, method in ipairs({ "ClearAllPoints", "SetPoint", "SetSize", "SetAllPoints", "SetVertexColor", "SetColorTexture", "SetAlpha", "SetFrameStrata", "SetFrameLevel", "SetTexture", "SetTexCoord", "SetAtlas", "SetBlendMode" }) do
-			region[method] = CheckMutation
+			region[method] = function(self)
+				CheckMutation(self)
+				state.presentationMutations = state.presentationMutations + 1
+			end
 		end
 		function region:CreateTexture(_, _, _, subLevel)
 			CheckMutation(self)
+			state.presentationMutations = state.presentationMutations + 1
 			local texture = Region(self, true)
 			if self == state.healthBar then
 				if subLevel == 1 then state.highlight = texture else state.fill = texture end
@@ -106,6 +116,7 @@ local function WithPlate(fn)
 			return state.icon
 		end,
 		API = {
+			GetTime = function() return state.now end,
 			GetNamePlateForUnit = function(token)
 				Equal(token, "nameplate1")
 				return state.present and plate or nil
@@ -154,6 +165,7 @@ local function WithPlate(fn)
 	local ok, err = pcall(fn, state)
 	for key in pairs(replacements) do QT[key] = originals[key] end
 	assert(ok, err)
+	Equal(state.unsafeMutationAttempts, 0, "unsafe visual mutation attempted")
 end
 local function Decorated(state)
 	Equal(state.icon:IsVisible(), true, "quest icon missing or under a hidden parent")
@@ -492,6 +504,119 @@ QT:RegisterTest("nameplate discovery still defers map and encounter work", funct
 	end)
 end)
 
+QT:RegisterTest("cached NPC direct adds defer existing and new visuals until every presentation restriction clears", function()
+	for _, restriction in ipairs({ "map_visible", "encounter", "challenge", "pvp", "map" }) do
+		for _, createVisuals in ipairs({ false, true }) do
+			WithPlate(function(state)
+				QT:StoreResolvedNameplateQuestState("nameplate1", state.guid, true)
+				if createVisuals then
+					QT.nameplateIconByUnitFrame[state.frame] = nil
+					QT.nameplateHealthOverlayByUnitFrame[state.frame] = nil
+				else
+					-- Existing mutable visuals may still be visible when a restriction starts.
+					state.icon.shown, state.fill.shown, state.highlight.shown = true, true, true
+				end
+				if restriction == "map_visible" then state.map = true else state.restriction = restriction end
+				Equal(QT:IsWorkBlocked("nameplate_refresh"), true)
+				QT:HandleNameplateEvent("NAME_PLATE_UNIT_ADDED", "nameplate1")
+				-- A second same-frame presentation request shares the pending token.
+				QT:RefreshNameplateIcon(state.plate)
+				Equal(#state.callbacks, 1)
+				Equal(state.presentationMutations, 0, restriction .. " must prevent direct cached layout/show")
+				Equal(state.creations, 0)
+				state.drain()
+				Equal(state.presentationMutations, 0)
+				Undecorated(state)
+				Equal(state.reads, 0, "cached presentation must not need a tooltip read")
+				if restriction == "map_visible" then
+					state.map = false
+					assert(state.onMapUpdate, "map closure must have a real owned wakeup")
+					state.onMapUpdate(nil, 0.2)
+				else
+					state.restriction = nil
+					QT:ADDON_RESTRICTION_STATE_CHANGED()
+				end
+				state.drain()
+				Decorated(state)
+				Equal(state.creations, createVisuals and 1 or 0)
+				Equal(state.reads, 0)
+				Equal(state.combat, true, "ordinary combat must remain eligible after other restrictions clear")
+			end)
+		end
+	end
+end)
+
+for _, restriction in ipairs({ "map_visible", "encounter", "challenge", "pvp", "map" }) do
+	QT:RegisterTest("restricted option refreshes preserve negative tooltip recovery: " .. restriction, function()
+		WithPlate(function(state)
+			state.combat = false
+			-- Quest titles can arrive before their objective rows on a new plate.
+			state.tooltipData = { lines = { { type = "QuestTitle", leftText = "Wolf Hunt" } } }
+			QT:HandleNameplateEvent("NAME_PLATE_UNIT_ADDED", "nameplate1")
+			Equal(QT.nameplateQuestStateByGuid[state.guid], false)
+			local reads = state.reads
+			Equal(reads > 0, true)
+			local retries = QT:GetNameplateTooltipResolveRetryCount("nameplate1")
+			if restriction == "map_visible" then state.map = true else state.restriction = restriction end
+			state.tooltipData = nil -- The objective becomes readable while work is blocked.
+			for index = 1, 8 do
+				QT:SetOption("nameplateQuestIconEnabled", index % 2 == 0)
+				state.drain()
+			end
+			Equal(state.reads, reads, "restricted refresh must not read a tooltip")
+			Equal(QT:GetNameplateTooltipResolveRetryCount("nameplate1"), retries,
+				"blocked refreshes must not spend tooltip attempts")
+			Undecorated(state)
+			if restriction == "map_visible" then
+				state.map = false
+				assert(state.onMapUpdate)
+				state.onMapUpdate(nil, 0.2)
+			else
+				state.restriction = nil
+				QT:ADDON_RESTRICTION_STATE_CHANGED()
+			end
+			state.drain()
+			Equal(state.reads > reads, true, "restriction release must recheck the objective")
+			Decorated(state)
+			Equal(QT:GetNameplateTooltipResolveRetryCount("nameplate1"), 0)
+		end)
+	end)
+end
+
+QT:RegisterTest("restricted cached NPC presentation cannot revive removed recycled or disabled plates", function()
+	for _, boundary in ipairs({ "removed", "recycled", "disabled" }) do
+		WithPlate(function(state)
+			local oldGuid = state.guid
+			QT:StoreResolvedNameplateQuestState("nameplate1", oldGuid, true)
+			state.restriction = "encounter"
+			QT:HandleNameplateEvent("NAME_PLATE_UNIT_ADDED", "nameplate1")
+			state.drain() -- Park the existing token generation before its lifetime ends.
+			Equal(state.presentationMutations, 0)
+			if boundary == "disabled" then
+				QT:Disable()
+			else
+				QT:HandleNameplateEvent("NAME_PLATE_UNIT_REMOVED", "nameplate1")
+				state.present = false
+				if boundary == "recycled" then
+					state.guid, state.complete, state.present = "Creature-0-0-0-0-54321-0000000002", true, true
+					QT:HandleNameplateEvent("NAME_PLATE_UNIT_ADDED", "nameplate1")
+				end
+			end
+			state.restriction = nil
+			QT:ADDON_RESTRICTION_STATE_CHANGED()
+			state.drain()
+			Undecorated(state)
+			Equal(state.presentationMutations, 0, "stale pending presentation must never decorate")
+			if boundary == "recycled" then
+				Equal(QT.nameplateQuestStateByGuid[state.guid], false)
+				Equal(QT.nameplateQuestStateByGuid[oldGuid], true)
+			else
+				Equal(state.reads, 0)
+			end
+		end)
+	end
+end)
+
 QT:RegisterTest("quest discovery does not decorate instance mobs or denied taps", function()
 	WithPlate(function(state)
 		state.instance = true
@@ -600,9 +725,10 @@ end)
 
 QT:RegisterTest("combat quest discovery never traverses inaccessible tooltip containers", function()
 	WithPlate(function(state)
+		local invalidReads, errorsBefore = 0, QT.diagnosticErrorCount or 0
 		state.inaccessible = setmetatable({}, {
-			__index = function() error("inaccessible tooltip traversed") end,
-			__tostring = function() error("inaccessible tooltip formatted") end,
+			__index = function() invalidReads = invalidReads + 1; error("inaccessible tooltip traversed") end,
+			__tostring = function() invalidReads = invalidReads + 1; error("inaccessible tooltip formatted") end,
 		})
 		state.tooltipData = state.inaccessible
 		QT:OnNameplateAdded("nameplate1")
@@ -614,7 +740,38 @@ QT:RegisterTest("combat quest discovery never traverses inaccessible tooltip con
 		state.drain()
 		Equal(state.icon.shown, false)
 		Equal(state.fill.shown, false)
+		Equal(invalidReads, 0, "guarded callback errors must not conceal forbidden access attempts")
+		Equal(QT.diagnosticErrorCount or 0, errorsBefore, "discovery must not swallow unexpected errors")
 	end)
+end)
+
+QT:RegisterTest("combat release preserves the pending quest tooltip refresh deadline", function()
+	for _, earlyRelease in ipairs({ false, true }) do
+		WithInstanceQuestCache(function(state)
+			state.instance = false
+			QT:HandleNameplateEvent("ZONE_CHANGED_NEW_AREA")
+			state.drain()
+			state.combat = true
+			QT:OnNameplateAdded("nameplate1")
+			state.drain()
+			Decorated(state)
+			QT:HandleNameplateEvent("UNIT_QUEST_LOG_CHANGED", "player")
+			state.advance(0.1)
+			local reads = state.reads
+			if earlyRelease then
+				state.combat = false
+				QT:PLAYER_REGEN_ENABLED()
+				Equal(state.reads, reads, "restriction flush must not consume a future tooltip refresh")
+			end
+			-- The tooltip catches up after combat release, before the original deadline.
+			state.complete = true
+			state.advance(0.8)
+			Equal(state.reads, reads, "the one-second quest-data delay must still apply")
+			state.advance(0.11)
+			Undecorated(state)
+			Equal(QT.nameplateQuestStateByGuid[state.guid], false)
+		end)
+	end
 end)
 
 QT:RegisterTest("completed objective updates an existing positive plate through combat quest events", function()

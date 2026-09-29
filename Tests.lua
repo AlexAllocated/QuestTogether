@@ -305,32 +305,46 @@ function QuestTogether:RunTests(reverse, present)
 	return self:GetDebugController():RunTests(reverse, present)
 end
 
-QuestTogether:RegisterTest("misc options refresh saved automatic sharing and later profile changes", function()
+QuestTogether:RegisterTest("misc options refresh saved sharing and partner status through profiles resets and slash changes", function()
+	local optionKeys = { "autoAcceptPartyShareRequests", "lookingForQuestPartners" }
 	local profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
-	profile.autoAcceptPartyShareRequests = true
+	for _, key in ipairs(optionKeys) do profile[key] = true end
+	profile.enabled = false
+	QuestTogether.hasLoggedIn = false
 	QuestTogether:InitializeDatabase({
 		global = {},
 		profiles = { ["MyPlayer-Realm"] = profile },
 		profileKeys = { ["MyPlayer-Realm"] = "MyPlayer-Realm" },
 	})
-	local checkbox = { checked = false, writes = 0 }
-	function checkbox:SetChecked(value)
-		self.checked, self.writes = value, self.writes + 1
+	QuestTogether.miscFrame, QuestTogether.miscControls = {}, {}
+	for _, key in ipairs(optionKeys) do
+		local checkbox = { checked = false, writes = 0 }
+		function checkbox:SetChecked(value)
+			self.checked, self.writes = value, self.writes + 1
+		end
+		QuestTogether.miscControls[key] = checkbox
 	end
-	QuestTogether.miscFrame = {}
-	QuestTogether.miscControls = { autoAcceptPartyShareRequests = checkbox }
+	local function AssertChecks(expected, reason)
+		for _, key in ipairs(optionKeys) do
+			AssertEquals(QuestTogether.miscControls[key].checked, expected, key .. ": " .. reason)
+		end
+	end
 	QuestTogether:RefreshOptionsWindow()
-	AssertTrue(checkbox.checked, "saved automatic sharing must appear checked when settings open")
-	AssertEquals(checkbox.writes, 1)
+	AssertChecks(true, "saved values must be checked when settings open")
+	for _, key in ipairs(optionKeys) do AssertEquals(QuestTogether.miscControls[key].writes, 1) end
 
-	-- Profile switches and resets replace the active profile before refreshing.
-	QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
-	QuestTogether:RefreshOptionsWindow()
-	AssertFalse(checkbox.checked, "a profile without automatic sharing must clear the old check")
-	AssertEquals(checkbox.writes, 2)
-	AssertTrue(QuestTogether:SetOption("autoAcceptPartyShareRequests", true))
+	AssertTrue(QuestTogether:SetActiveProfile("Other"))
+	AssertChecks(false, "default profile must clear old checks")
+	AssertTrue(QuestTogether:SetActiveProfile("MyPlayer-Realm"))
+	AssertChecks(true, "switching back must restore saved checks")
+	AssertTrue(QuestTogether:ResetActiveProfile())
+	AssertChecks(false, "reset must show current defaults")
+	for _, key in ipairs(optionKeys) do AssertTrue(QuestTogether:SetOption(key, true)) end
 	QuestTogether:RefreshMiscWindow()
-	AssertTrue(checkbox.checked, "consent changes must be reflected when the panel reopens")
+	AssertChecks(true, "model changes must appear when the panel reopens")
+	for _, key in ipairs(optionKeys) do QuestTogether:HandleSlashCommand("set " .. key .. " off") end
+	AssertChecks(false, "real slash commands must refresh an already open panel")
+	for _, key in ipairs(optionKeys) do AssertFalse(QuestTogether:GetOption(key)) end
 end)
 
 local function NewHelpFixture()
@@ -1034,6 +1048,16 @@ QuestTogether:RegisterTest("task area refresh defers during combat and resumes o
 			})
 
 			QuestTogether:PLAYER_REGEN_ENABLED()
+			AssertEquals(#refreshCalls, 0, "combat release must preserve the pending refresh deadline")
+			AssertFalse(deferredEntry.delayElapsed)
+			AssertEquals(QuestTogether:GetDeferredWorkStateStore().entries[LibChev.WorkKey(
+				"task_area_refresh", "task_area_refresh"
+			)], deferredEntry)
+			local delay = QuestTogether.runtimeWorkDelayByClass.task_area_refresh
+			AssertTrue(type(delay) == "number" and delay > 0)
+			QuestTogether.testClock:Advance(delay / 2)
+			AssertEquals(#refreshCalls, 0, "refresh must remain parked before its timer")
+			QuestTogether.testClock:Advance(delay)
 			AssertEquals(refreshCalls[1], "world:true")
 			AssertEquals(refreshCalls[2], "bonus:true")
 			AssertEquals(
@@ -2688,54 +2712,30 @@ QuestTogether:RegisterTest("tooltip quest detection recognizes fallback-style pr
 	end)
 end)
 
-QuestTogether:RegisterTest("tooltip quest detection does not iterate tooltip arg payloads", function()
+QuestTogether:RegisterTest("structured tooltip sanitizer and evaluator prefer readable line text without reading args", function()
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
 	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
-	local poisonedArgs = setmetatable({}, {
-		__index = function()
-			error("tooltip arg payload should not be indexed")
-		end,
-		__pairs = function()
-			error("tooltip arg payload should not be iterated")
-		end,
-	})
+	local argsReads = 0
+	-- Observe the args field itself: Lua 5.1 does not honor an empty table's
+	-- __pairs trap. A counter also detects reads swallowed by protected calls.
+	local objectiveLine = setmetatable({
+		type = objectiveLineType,
+		leftText = "1/8 Digested Object",
+	}, { __index = function(_, key)
+		if key == "args" then
+			argsReads = argsReads + 1
+			return { { stringVal = "8/8 Conflicting Metadata" } }
+		end
+	end })
 	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
-
-	WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
-		return true
-	end, function()
-		WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
-			return false
-		end, function()
-			WithPatchedMethod(QuestTogether, "GetNameplateTooltipScanGuid", function()
-				return "Creature-0-0-0-0-12345-0000000000"
-			end, function()
-				WithPatchedMethod(QuestTogether, "GetQuestieQuestObjectiveTooltipLines", function()
-					return nil
-				end, function()
-					WithPatchedMethod(QuestTogether, "GetStructuredQuestObjectiveTooltipLines", function()
-						return {
-							{
-								type = titleLineType,
-								leftText = "Tracking the Trail",
-							},
-							{
-								type = objectiveLineType,
-								leftText = "1/8 Digested Object",
-								args = poisonedArgs,
-							},
-						}
-					end, function()
-						WithPatchedMethod(QuestTogether, "GetHiddenQuestObjectiveTooltipLines", function()
-							error("hidden tooltip fallback should not run when structured data succeeds")
-						end, function()
-							AssertTrue(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
-						end)
-					end)
-				end)
-			end)
-		end)
-	end)
+	local tooltipLines = QuestTogether:ExtractQuestObjectiveTooltipLinesFromTooltipData({ lines = {
+		{ type = titleLineType, leftText = "Tracking the Trail" },
+		objectiveLine,
+	} })
+	AssertEquals(#tooltipLines, 2)
+	AssertEquals(tooltipLines[2].leftText, "1/8 Digested Object")
+	AssertTrue(QuestTogether:EvaluateTooltipQuestObjectiveLines(tooltipLines))
+	AssertEquals(argsReads, 0, "readable primary text must not inspect structured args")
 end)
 
 QuestTogether:RegisterTest("tooltip quest detection blocks live scans while map-sensitive runtime gate is active", function()
@@ -3297,53 +3297,46 @@ QuestTogether:RegisterTest("hidden tooltip quest scan uses addon-owned helpers",
 	end)
 end)
 
-QuestTogether:RegisterTest("structured-tooltip clients suppress Blizzard tooltip quest scans for map safety", function()
+QuestTogether:RegisterTest("structured tooltip map gate prevents native provider calls and resumes after closing", function()
 	local unitGuid = "Creature-0-0-0-0-12345-0000000000"
+	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
 	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
-	local poisonedArgs = setmetatable({}, {
-		__index = function()
-			error("tooltip args should not be indexed")
-		end,
-		__pairs = function()
-			error("tooltip args should not be iterated")
-		end,
-	})
-
+	local mapVisible, hyperlinkCalls, unitCalls, surfaceCalls = true, 0, 0, 0
+	local tooltipData = { lines = {
+		{ type = titleLineType, leftText = "Gnarlidin Trophies" },
+		{ type = objectiveLineType, leftText = "0/35 Gnarlidin Trophies" },
+	} }
+	QuestTogether.nameplateQuestTextCache["Gnarlidin Trophies"] = true
 	QuestTogether.API = CreateApiWithOverrides({
-		IsWorldMapVisible = function()
-			return true
-		end,
+		IsWorldMapVisible = function() return mapVisible end,
 		GetTooltipDataForHyperlink = function(hyperlink)
+			hyperlinkCalls = hyperlinkCalls + 1
 			AssertEquals(hyperlink, "unit:" .. unitGuid)
-			return {
-				lines = {
-					{
-						type = "UnitName",
-						leftText = "Should Be Ignored",
-					},
-					{
-						type = objectiveLineType,
-						leftText = "0/35 Gnarlidin Trophies",
-						args = poisonedArgs,
-					},
-				},
-			}
+			return tooltipData
 		end,
-		GetTooltipDataForUnit = function()
-			error("unit tooltip fallback should not run when hyperlink tooltip data is available")
+		GetTooltipDataForUnit = function(unitToken)
+			unitCalls = unitCalls + 1
+			AssertEquals(unitToken, "nameplate1")
+			return tooltipData
+		end,
+		SurfaceTooltipDataArgs = function(data)
+			surfaceCalls = surfaceCalls + 1
+			return data
 		end,
 	})
+	AssertEquals(QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid), nil)
+	AssertEquals(QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid, "hyperlink"), nil)
+	AssertEquals(QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid, "unit"), nil)
+	AssertEquals(hyperlinkCalls, 0, "map gate must run before the native hyperlink source")
+	AssertEquals(unitCalls, 0, "map gate must run before the native unit source")
+	AssertEquals(surfaceCalls, 0, "map gate must run before surfacing native data")
 
-	WithPatchedMethod(QuestTogether, "GetQuestieQuestObjectiveTooltipLines", function()
-		return nil
-	end, function()
-		WithPatchedMethod(QuestTogether, "GetOrCreateNameplateScanTooltip", function()
-			error("hidden tooltip fallback should not run when structured tooltip data is available")
-		end, function()
-			local tooltipLines = QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid)
-			AssertEquals(tooltipLines, nil)
-		end)
-	end)
+	mapVisible = false
+	AssertEquals(#QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid), 2)
+	AssertEquals(#QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid, "unit"), 2)
+	AssertEquals(hyperlinkCalls, 1)
+	AssertEquals(unitCalls, 1)
+	AssertEquals(surfaceCalls, 2)
 end)
 
 QuestTogether:RegisterTest("structured tooltip suppression still falls back to hidden tooltip when both structured sources fail", function()

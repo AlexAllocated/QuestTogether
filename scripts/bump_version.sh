@@ -47,6 +47,34 @@ if [[ ! -f "$toc_file" ]]; then
 	exit 1
 fi
 
+# These are the only paths included in the release commit below. Reject other
+# local work before validation, network access, or writes, so a successful tag
+# cannot silently omit the implementation described by its authored notes.
+release_files=("$toc_file" release_notes.json ReleaseNotes.lua)
+python3 - "${release_files[@]}" <<'PY'
+import os
+import subprocess
+import sys
+
+allowed = {os.fsencode(path) for path in sys.argv[1:]}
+changed = set()
+for arguments in (
+    ["diff", "--name-only", "--no-renames", "--no-ext-diff", "--ignore-submodules=none", "-z"],
+    ["diff", "--cached", "--name-only", "--no-renames", "--no-ext-diff", "--ignore-submodules=none", "-z"],
+    ["ls-files", "--others", "--exclude-standard", "-z"],
+):
+    result = subprocess.run(["git", *arguments], stdout=subprocess.PIPE, check=True,
+                            env={**os.environ, "GIT_OPTIONAL_LOCKS": "0"})
+    changed.update(path for path in result.stdout.split(b"\0") if path)
+unexpected = changed - allowed
+if unexpected:
+    print("Error: non-release changes must be committed before releasing:", file=sys.stderr)
+    for path in sorted(unexpected):
+        print("  " + repr(os.fsdecode(path)), file=sys.stderr)
+    print("Only QuestTogether.toc, release_notes.json, and ReleaseNotes.lua may have local changes.", file=sys.stderr)
+    sys.exit(1)
+PY
+
 # Validate the authored files before any repository mutation or remote access.
 python3 scripts/check_release_notes.py --check
 toc_version="$(sed -n 's/^## Version:[[:space:]]*//p' "$toc_file" | head -n 1)"
@@ -174,12 +202,12 @@ python3 scripts/check_release_notes.py --write --set-version "$new_version" --ba
 python3 scripts/check_release_notes.py --check --baseline-ref "$notes_baseline_ref"
 
 echo "Committing ${toc_file}, release_notes.json, and ReleaseNotes.lua..."
-git add "$toc_file" release_notes.json ReleaseNotes.lua
+git add -- "${release_files[@]}"
 if git diff --cached --quiet -- "$toc_file"; then
 	echo "Error: ${toc_file} did not change; nothing to commit."
 	exit 1
 fi
-git commit -m "Bump version to ${new_version}" -- "$toc_file" release_notes.json ReleaseNotes.lua
+git commit -m "Bump version to ${new_version}" -- "${release_files[@]}"
 
 release_commit="$(git rev-parse --short HEAD)"
 echo "Pushing commit ${release_commit} to origin/${current_branch}..."

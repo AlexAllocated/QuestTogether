@@ -34,6 +34,8 @@ evidence from approved addon/documentation paths is sent; credentials are never
 written into generated content or the addon. An API failure, refusal, invalid
 content or repeated previous notes fails instead of replacing files with a
 placeholder. This uses the documented [Responses structured-output format](https://developers.openai.com/api/docs/guides/structured-outputs).
+Generating notes from local edits does not include those edits in a release:
+commit the implementation changes before running the release script.
 
 Authored notes remain supported:
 
@@ -69,6 +71,21 @@ The checker also requires the TOC to load `ReleaseNotes.lua` exactly once after
 Use a full Git checkout with the published tags available. A shallow checkout
 is rejected for release-history checks; fetch the missing history and tags
 instead of disabling validation. CI uses `fetch-depth: 0`.
+
+Commit all implementation, test, documentation and workflow changes first.
+Both preflight and publication reject staged, unstaged or unignored untracked
+changes outside this explicit allowlist:
+
+- `QuestTogether.toc`
+- `release_notes.json`
+- `ReleaseNotes.lua`
+
+These three files may contain reviewed release preparation edits, staged or
+unstaged; the release commit includes their current contents. Keep the TOC and
+notes at the current published version until the script bumps them together.
+Ignored local files are not release inputs. Rejection happens before remote
+access or writes and preserves the worktree, index, commits and tags; the script
+does not automatically stage or commit unrelated work.
 
 First run a local preflight, for example:
 

@@ -480,6 +480,7 @@ local CHECKBOX_OPTION_KEYS = {
 	"emoteOnLevelUp",
 	"emoteOnNearbyPlayerLevelUp",
 	"autoAcceptPartyShareRequests",
+	"lookingForQuestPartners",
 	"showMinimapButton",
 	"sharePlayerLocation",
 	"showPlayerLocations",

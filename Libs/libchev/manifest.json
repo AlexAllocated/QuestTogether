@@ -1,14 +1,14 @@
 {
   "schema": 1,
   "repository": "https://github.com/AlexAllocated/libchev",
-  "revision": "bd83b65fcbd21d108d8f6c02677acddb30541c6a",
-  "version": "1.2.0",
+  "revision": "1a1c90ca157c233cdcea019cfb0bce87952ae037",
+  "version": "1.2.2",
   "files": {
-    "libchev.lua": "78e01683da6d82a6a8c3c783f3b804c5e4e384485f0c0520d7b0b5f5852a1f87",
+    "libchev.lua": "3a99842eea799707d8420bca7c47094df802786c08cfc76837d35a100917af40",
     "Debug.lua": "1a9b8354d9b9b4e38e8fff3bb97ba2a9916200bf03ad1fb494a071c22091e8b6",
-    "DebugWindow.lua": "b0777bf7f0cb25a0629c82ed09f50b330f7598aca53b9e862954acbb1cf59ac4",
+    "DebugWindow.lua": "7dba30232649db10c2edaff7ed09c35c4f23807d0d14c30c2fd5b016a9a62170",
     "ReportWindow.lua": "3ea726f617979f7c69d9b521fa736f53e929358b61c40879252a012e1081095e",
-    "SelfTests.lua": "0ba6b144616dd8264ce9417b05d3efbf73166fae876a730421f7de9112daaef0",
+    "SelfTests.lua": "c8ae60a12c0431b10526a56c47c00e99d4923b24cedf3634dbbf2a09d1136632",
     "LICENSE": "d1bc39a4c90fbac0fc97b6a98786200011eab7ff77a29c2274603ae4e12fe03b"
   }
 }
