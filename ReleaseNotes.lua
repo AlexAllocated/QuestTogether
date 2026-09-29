@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "5.13.0",
+	version = "5.13.1",
 	welcome = "This maintenance update improves quest-plate recovery, clears stale bubbles and player logos, and keeps settings and the debug window behaving consistently.",
 	sections = {
 		{
