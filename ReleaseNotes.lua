@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "5.14.1",
+	version = "5.15.0",
 	welcome = "Ask to join a questing party directly from a QuestTogether player menu.",
 	sections = {
 		{

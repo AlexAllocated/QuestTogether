@@ -1,7 +1,7 @@
 {
   "source_sha256": "fbb33faa3c45389f9d2651737f8ee54ea157851574f3d306acf806daeb6810d6",
   "notes": {
-    "version": "5.14.1",
+    "version": "5.15.0",
     "welcome": "Solicita unirte a un grupo de misiones directamente desde el menú de un jugador de QuestTogether.",
     "sections": [
       {
