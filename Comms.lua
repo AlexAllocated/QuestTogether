@@ -2072,7 +2072,8 @@ function QuestTogether:AnnounceToNonQTParty(eventData)
 	text = text:gsub("[%c]", " ")
 	text = self:SafeTrimString(text, "")
 	if text == "" then return false end
-	local ok, sent = pcall(api.SendPartyChatMessage, "[QT] " .. TruncateUtf8(text, 250), instance and "INSTANCE_CHAT" or "PARTY")
+	local prefix = "[QuestTogether] "
+	local ok, sent = pcall(api.SendPartyChatMessage, prefix .. TruncateUtf8(text, 255 - #prefix), instance and "INSTANCE_CHAT" or "PARTY")
 	return ok and sent == true
 end
 

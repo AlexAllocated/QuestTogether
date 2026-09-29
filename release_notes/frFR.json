@@ -1,22 +1,13 @@
 {
-  "source_sha256": "5dcf5bd74d4817eec8e07bb86dbfa6736cbda8c213e252a67460260fb3c145cf",
+  "source_sha256": "bcc9b4b484e55a81fe95ba608d94da83dc7861d4c655b9e88669b5f1977a44d0",
   "notes": {
     "version": "5.14.0",
-    "welcome": "QuestTogether parle désormais cinq langues supplémentaires et vous aide à tenir informés les membres du groupe qui n’utilisent pas QT.",
+    "welcome": "Les annonces de groupe affichent désormais le nom complet de QuestTogether.",
     "sections": [
       {
-        "title": "Jouez dans votre langue",
+        "title": "Canal de groupe",
         "items": [
-          "L’interface est désormais disponible en allemand, français, espagnol, portugais brésilien et russe. QuestTogether utilise la langue du jeu, avec l’anglais comme langue de secours.",
-          "Les paramètres, menus, infobulles, comparaisons de quêtes et notes de mise à jour sont traduits. Les noms de quêtes et les textes de progression reçus des autres joueurs restent dans leur langue d’origine.",
-          "Retrouvez les annonces de mise à jour traduites dans les cinq salons dédiés aux différentes langues sur notre Discord."
-        ]
-      },
-      {
-        "title": "Informez tout votre groupe",
-        "items": [
-          "Une nouvelle option dans les canaux d’annonce envoie vos annonces d’événements activées dans le canal de groupe lorsqu’un membre n’a pas été reconnu comme utilisateur de QT. Elle est activée par défaut et peut être désactivée dans les paramètres.",
-          "Cela fonctionne aussi dans les groupes d’instance constitués automatiquement. Le jeu en solo et les raids sont exclus, et les annonces des autres joueurs ne sont jamais retransmises."
+          "Le préfixe des annonces dans le canal de groupe passe de [QT] à [QuestTogether] pour permettre aux autres joueurs de trouver plus facilement l’addon."
         ]
       }
     ]

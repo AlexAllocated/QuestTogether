@@ -2023,7 +2023,7 @@ QuestTogether:RegisterTest("party announcements require a currently unidentified
 	local event = { eventType = "QUEST_PROGRESS", text = "Wolves: 2/8" }
 	Equal(QuestTogether.DEFAULTS.profile.announceToNonQTParty, true)
 	Equal(a:AnnounceToNonQTParty(event), true)
-	Equal(a.chatMessages[1][1], "[QT] Wolves: 2/8")
+	Equal(a.chatMessages[1][1], "[QuestTogether] Wolves: 2/8")
 	Equal(a.chatMessages[1][2], "PARTY")
 	a:RecordQTPlayerPresence("Friend-Realm", true)
 	Equal(a:AnnounceToNonQTParty(event), false)
@@ -2060,10 +2060,10 @@ end)
 QuestTogether:RegisterTest("party announcements contain bounded plain text and do not retry failures", function()
 	local a = PartyChatFixture()
 	Equal(a:AnnounceToNonQTParty({ eventType = "QUEST_PROGRESS", text = "|cffffffff|Hquest:1|h[Quest]|h|r\nDone |Ticon:16|t" }), true)
-	Equal(a.chatMessages[1][1], "[QT] [Quest] Done")
+	Equal(a.chatMessages[1][1], "[QuestTogether] [Quest] Done")
 	Equal(a:AnnounceToNonQTParty({ eventType = "QUEST_PROGRESS", text = string.rep("é", 150) }), true)
 	assert(#a.chatMessages[2][1] <= 255)
-	Equal(#a.chatMessages[2][1] % 2, 1)
+	Equal(a.chatMessages[2][1], "[QuestTogether] " .. string.rep("é", 119))
 	local attempts = 0
 	a.API.SendPartyChatMessage = function() attempts = attempts + 1; error("blocked") end
 	Equal(a:AnnounceToNonQTParty({ eventType = "QUEST_PROGRESS", text = "Progress" }), false)

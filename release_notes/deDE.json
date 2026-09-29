@@ -1,22 +1,13 @@
 {
-  "source_sha256": "5dcf5bd74d4817eec8e07bb86dbfa6736cbda8c213e252a67460260fb3c145cf",
+  "source_sha256": "bcc9b4b484e55a81fe95ba608d94da83dc7861d4c655b9e88669b5f1977a44d0",
   "notes": {
     "version": "5.14.0",
-    "welcome": "QuestTogether spricht jetzt fünf weitere Sprachen und hilft dir, Gruppenmitglieder ohne QT auf dem Laufenden zu halten.",
+    "welcome": "Gruppenankündigungen zeigen jetzt den vollständigen Namen QuestTogether.",
     "sections": [
       {
-        "title": "Spiele in deiner Sprache",
+        "title": "Gruppenchat",
         "items": [
-          "Die Benutzeroberfläche ist jetzt auf Deutsch, Französisch, Spanisch, brasilianischem Portugiesisch und Russisch verfügbar. QuestTogether verwendet deine Spielsprache und greift bei Bedarf auf Englisch zurück.",
-          "Einstellungen, Menüs, Tooltips, Questvergleiche und Patchnotes sind übersetzt. Questnamen und Fortschrittstexte anderer Spieler bleiben in ihrer ursprünglichen Sprache.",
-          "Übersetzte Versionshinweise findest du in den fünf sprachspezifischen Änderungsprotokoll-Kanälen auf unserem Discord."
-        ]
-      },
-      {
-        "title": "Halte deine ganze Gruppe auf dem Laufenden",
-        "items": [
-          "Eine neue Option unter „Ankündigungskanäle“ sendet deine aktivierten Ereignismeldungen in den Gruppenchat, wenn mindestens ein Gruppenmitglied noch nicht als QT-Nutzer erkannt wurde. Sie ist standardmäßig aktiviert und lässt sich in den Einstellungen ausschalten.",
-          "Das funktioniert auch in automatisch zusammengestellten Instanzgruppen. Alleinspiel und Schlachtzüge sind ausgeschlossen; Meldungen anderer Spieler werden niemals weitergeleitet."
+          "Das Präfix für Ankündigungen im Gruppenchat wurde von [QT] zu [QuestTogether] erweitert, damit andere Spieler das Addon leichter finden."
         ]
       }
     ]

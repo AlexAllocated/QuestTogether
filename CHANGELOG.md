@@ -1,5 +1,9 @@
 # QuestTogether changelog
 
+## 5.14.1 — 2026-09-29
+
+- Expand the party-chat prefix to [QuestTogether] so other players can identify the addon. Preserve the message byte limit and UTF-8 boundaries with the longer prefix.
+
 ## 5.14.0 — 2026-09-28
 
 - Add German, French, Spanish (both client locales), Brazilian Portuguese, and Russian interface translations with English fallback. Translate locally generated labels while preserving incoming player text.
