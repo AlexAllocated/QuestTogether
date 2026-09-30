@@ -1,7 +1,7 @@
 {
   "source_sha256": "41bf50baa423ddb1d745e32e9d347963b082cbca1b577f41c3ebda3c976036c1",
   "notes": {
-    "version": "5.16.0",
+    "version": "5.16.1",
     "welcome": "퀘스트 파트너를 더 쉽게 찾고, 그들이 어떤 퀘스트에 집중하고 있는지 확인하세요.",
     "sections": [
       {
