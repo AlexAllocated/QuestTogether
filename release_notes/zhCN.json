@@ -1,7 +1,7 @@
 {
   "source_sha256": "4604d6779705fba7b506a6cd81a956bcff03cc0fde1445471545377064be6f44",
   "notes": {
-    "version": "5.15.0",
+    "version": "5.16.0",
     "welcome": "QuestTogether 现在支持所有 WoW 语言，并且可以用你客户端的语言显示其他玩家的任务更新。",
     "sections": [
       {

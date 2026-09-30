@@ -1,7 +1,7 @@
 {
   "source_sha256": "4604d6779705fba7b506a6cd81a956bcff03cc0fde1445471545377064be6f44",
   "notes": {
-    "version": "5.15.0",
+    "version": "5.16.0",
     "welcome": "QuestTogether prend désormais en charge toutes les langues de WoW et peut afficher les mises à jour de quête des autres joueurs dans la langue de votre client.",
     "sections": [
       {

@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "5.15.0",
+	version = "5.16.0",
 	welcome = "QuestTogether now supports every WoW language and can display other players’ quest updates in your client’s language.",
 	sections = {
 		{

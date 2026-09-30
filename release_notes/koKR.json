@@ -1,7 +1,7 @@
 {
   "source_sha256": "4604d6779705fba7b506a6cd81a956bcff03cc0fde1445471545377064be6f44",
   "notes": {
-    "version": "5.15.0",
+    "version": "5.16.0",
     "welcome": "QuestTogether는 이제 모든 WoW 언어를 지원하며, 다른 플레이어의 퀘스트 업데이트를 클라이언트 언어로 표시할 수 있습니다.",
     "sections": [
       {

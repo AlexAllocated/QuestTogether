@@ -1,7 +1,7 @@
 {
   "source_sha256": "4604d6779705fba7b506a6cd81a956bcff03cc0fde1445471545377064be6f44",
   "notes": {
-    "version": "5.15.0",
+    "version": "5.16.0",
     "welcome": "QuestTogether ahora es compatible con todos los idiomas de WoW y puede mostrar las actualizaciones de misiones de otros jugadores en el idioma de tu cliente.",
     "sections": [
       {
