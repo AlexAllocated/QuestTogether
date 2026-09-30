@@ -66,7 +66,7 @@ The comparison window puts sharing actions beside the quests that need them:
 
 Incoming requests **ask for confirmation by default**. The owner sees who is asking and which quest they want, then chooses **Share** or **Decline**.
 
-For regular questing partners, check **Always allow party share requests** before confirming. You can change that preference at any time under **Miscellaneous** in settings. This automatically approves eligible requests from any current party member; the recipient still handles WoW's normal quest-acceptance prompt.
+For regular questing partners, check **Always allow party share requests** before confirming. You can change that preference at any time under **Groups & Sharing** in settings. This automatically approves eligible requests from any current party member; the recipient still handles WoW's normal quest-acceptance prompt.
 
 Sharing is per quest and requires a party together. WoW's normal shareability and recipient eligibility rules still apply. A share attempt does not guarantee that another player can receive or accept the quest, and unavailable actions explain why they cannot be used.
 
@@ -97,7 +97,7 @@ Locations update periodically. Brief gaps retain the last reported dot for up to
 
 Turn on **Looking for Questing Partners** to let other QuestTogether players know you want company. Your status appears in your player-name menu and on your map-dot tooltips. A soft gold glow makes your dots stand out on both maps, and your QT nameplate logo gains a soft gold glow. Others can use the existing Whisper, Invite, or Compare Quests actions to get in touch.
 
-Toggle it in the **minimap menu**, **Settings → Miscellaneous**, or with **`/qt lfg`**. Use `/qt lfg on`, `/qt lfg off`, or `/qt lfg status` for an explicit action. The status starts off and is saved per profile. It does not enable location sharing, send automatic invitations, or post recruitment messages in public chat.
+Toggle it in the **minimap menu**, **Settings → Groups & Sharing**, or with **`/qt lfg`**. Use `/qt lfg on`, `/qt lfg off`, or `/qt lfg status` for an explicit action. The status starts off and is saved per profile. It does not enable location sharing, send automatic invitations, or post recruitment messages in public chat.
 
 Status expires when updates stop, and ignored players stay hidden. Disabling QuestTogether pauses your advertisement. Both players need a version that supports partner status.
 
@@ -111,7 +111,7 @@ asking and chooses **Send Invitation** or **Decline**. They must be able to invi
 and have room in an ordinary party. The requester still accepts WoW's normal
 invitation. QT never leaves your current group for you.
 
-The prompt and **Miscellaneous** settings offer two independent, initially-off
+The prompt and **Groups & Sharing** settings offer two independent, initially-off
 preferences: automatically invite friends who request to join, and automatically
 invite others while Looking for Questing Partners is on. Friends means your
 character friends list. Requests expire and are rate-limited; ignored players
@@ -161,7 +161,7 @@ Coordinate links, when included in an update or ping reply, can create a **TomTo
 
 QuestTogether can play celebration emotes when you complete quests or gain a level, and respond to nearby QuestTogether players' celebrations.
 
-There are four separate toggles under **Miscellaneous**: your quest completions, nearby players' quest completions, your level-ups, and nearby players' level-ups. Nearby reactions respect your player-scope setting. World quest and bonus-objective completions participate in quest-completion celebrations.
+There are four separate toggles under **Where to Announce → Celebration Emotes**: your quest completions, nearby players' quest completions, your level-ups, and nearby players' level-ups. Nearby reactions respect your player-scope setting. World quest and bonus-objective completions participate in quest-completion celebrations.
 
 ## Know when an update is available
 
@@ -179,13 +179,13 @@ The draggable **QuestTogether minimap button** opens a menu with:
 - Move QuestTogether Logs to Separate Window, or back to Main Window
 - Hide Minimap Icon
 
-You can drag the button around the minimap or hide it. Hiding it prints a reminder that it can be restored through **Miscellaneous → Show minimap icon** in `/qt options`.
+You can drag the button around the minimap or hide it. Hiding it prints a reminder that it can be restored through **General → Show minimap icon** in `/qt options`.
 
 > **SCREENSHOT 10 — Minimap menu:** The scroll-logo minimap button with its context menu open.
 
 ## Make each character feel right
 
-QuestTogether's settings are organized into **What To Announce**, **Where To Announce**, **Quest Plates**, **Player Plates**, **Player Locations**, **Miscellaneous**, and **Profiles**.
+QuestTogether's settings are organized into **What To Announce**, **Where To Announce**, **Quest Plates**, **Player Plates**, **Player Locations**, **Groups & Sharing**, and **Profiles**.
 
 Each character starts with its own profile assignment. Switch profiles, create a new one, copy settings from another profile, reset the active profile, or delete a profile that is not active. Use different setups for different characters, or assign a shared profile where you want the same preferences.
 

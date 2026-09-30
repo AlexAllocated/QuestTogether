@@ -1,22 +1,23 @@
 {
-  "source_sha256": "7f31cfe5754d55a0455527b39e48ce7a659a24451aedb365afba8b4f44abe369",
+  "source_sha256": "f358e159ed5d3f046ed6d0becae3257e7fbce6f2f044e8c9692b5d4052ed1e62",
   "notes": {
     "version": "5.16.2",
-    "welcome": "Riconosci i giocatori di QuestTogether dai loro tooltip e individua più facilmente compagni per le missioni.",
+    "welcome": "Trova più facilmente le impostazioni di cui hai bisogno e visualizza a colpo d'occhio le tue preferenze di QuestTogether.",
     "sections": [
       {
-        "title": "Tooltip dei giocatori di QuestTogether",
+        "title": "Impostazioni organizzate in base a come giochi",
         "items": [
-          "Passa il cursore sul personaggio, sulla barra del nome o sul riquadro unità di un giocatore QT per vedere “Questo giocatore usa QuestTogether.” I giocatori in cerca di compagni per le missioni mostrano anche quello stato e un logo QT luminoso.",
-          "La sezione QT si adatta alla larghezza e alla scala del tooltip, resta separata dalla sua barra della salute e si sposta sopra il tooltip quando lo spazio sotto è limitato."
+          "Gruppi e condivisione sostituisce Varie, riunendo disponibilità dei compagni, richieste di ingresso e approvazioni per la condivisione delle missioni.",
+          "Le emote di celebrazione ora si trovano sotto Dove annunciare. La visibilità della minimappa è sotto Generale nella pagina principale, con gli strumenti di debug e la nuova scansione del registro missioni insieme sotto Risoluzione dei problemi.",
+          "Confronta le missioni del gruppo e Trova compagni per le missioni ora sono le prime Azioni rapide. Le tue preferenze esistenti vengono mantenute."
         ]
       },
       {
-        "title": "Un bagliore dei compagni più visibile",
-        "illustration": "quest-partners",
+        "title": "Uno stato rapido più utile",
         "items": [
-          "Il bagliore dorato della barra del nome ora si estende il doppio intorno al logo, mantenendo il logo stesso della stessa dimensione.",
-          "Le icone e i bagliori rispecchiano i veri utenti QT e il loro attuale stato di ricerca compagni."
+          "Visualizza lo stato dei tuoi compagni, le preferenze di condivisione della posizione e di visualizzazione, le approvazioni delle richieste, l'output degli annunci e le impostazioni di missioni e targhette dei nomi dei personaggi in sezioni collegate.",
+          "Controlla il tuo profilo attivo, la versione installata e qualsiasi versione più recente rilevata. Quando QT è disattivato, il riepilogo identifica chiaramente le impostazioni come preferenze salvate.",
+          "Fai clic sull'intestazione di una sezione per aprirne le impostazioni. Il riepilogo si espande per adattarsi al testo e rimane aggiornato mentre la pagina è aperta."
         ]
       }
     ]

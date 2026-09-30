@@ -1,22 +1,23 @@
 {
-  "source_sha256": "7f31cfe5754d55a0455527b39e48ce7a659a24451aedb365afba8b4f44abe369",
+  "source_sha256": "f358e159ed5d3f046ed6d0becae3257e7fbce6f2f044e8c9692b5d4052ed1e62",
   "notes": {
     "version": "5.16.2",
-    "welcome": "Reconheça jogadores do QuestTogether pelos tooltips deles e encontre parceiros de missões com mais facilidade.",
+    "welcome": "Encontre as configurações de que você precisa com mais facilidade e veja suas preferências do QuestTogether de relance.",
     "sections": [
       {
-        "title": "Tooltips de jogadores do QuestTogether",
+        "title": "Configurações organizadas em torno de como você joga",
         "items": [
-          "Passe o mouse sobre o personagem, a barra de nome ou o quadro de unidade de um jogador QT para ver “Este jogador está usando QuestTogether.” Jogadores procurando parceiros para fazer missões também mostram esse status e um logotipo QT brilhante.",
-          "A seção QT acompanha a largura e a escala do tooltip, fica afastada da barra de vida e se move para cima do tooltip quando o espaço abaixo é limitado."
+          "Grupos e Compartilhamento substitui Diversos, reunindo disponibilidade de parceiros, solicitações de entrada e aprovações de compartilhamento de missões.",
+          "Emotes de comemoração agora ficam em Onde Anunciar. A visibilidade no minimapa fica em Geral na página principal, com ferramentas de depuração e nova varredura do registro de missões juntas em Solução de Problemas.",
+          "Comparar Missões do Grupo e Encontrar Parceiros de Missões agora são as primeiras Ações Rápidas. Suas preferências existentes são preservadas."
         ]
       },
       {
-        "title": "Um brilho de parceiro mais visível",
-        "illustration": "quest-partners",
+        "title": "Um Status Rápido mais útil",
         "items": [
-          "O brilho dourado da barra de nome agora se estende duas vezes mais ao redor do logotipo, mantendo o logotipo em si do mesmo tamanho.",
-          "Ícones e brilhos refletem usuários reais do QT e o status atual deles de procura por parceiros."
+          "Veja seu status de parceiro, compartilhamento de localização e preferências de exibição, aprovações de solicitações, saída de anúncios e configurações de placas de identificação de missões e jogadores nas seções vinculadas.",
+          "Verifique seu perfil ativo, a versão instalada e qualquer versão mais recente detectada. Quando o QT estiver desativado, o resumo identifica claramente as configurações como preferências salvas.",
+          "Clique no cabeçalho de uma seção para abrir suas configurações. O resumo se expande para caber no texto e permanece atualizado enquanto a página estiver aberta."
         ]
       }
     ]

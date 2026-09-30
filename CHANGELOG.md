@@ -1,5 +1,12 @@
 # QuestTogether changelog
 
+## 5.16.3 — 2026-09-30
+
+- Expand Quick Status with linked sections for partner availability, location sharing, request approvals, announcements, and nameplates. Show addon state, installed version, and detected updates, with layout that grows to fit translations.
+
+- Replace Miscellaneous with Groups & Sharing for finding partners, join requests, and quest-sharing approval. Move celebration emotes to Where to Announce and minimap visibility to General on the main settings page.
+- Prioritize Compare Party Quests and Find Questing Partners on the home page, and group Debug Window and Rescan Quest Log under Troubleshooting. Preserve existing profile preferences.
+
 ## 5.16.2 — 2026-09-30
 
 - Add a QT logo and questing-partner status beside built-in player tooltips, with the same animated LFG glow as nameplates. Match tooltip width and scale, and keep clear of the health bar.

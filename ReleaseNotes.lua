@@ -4,22 +4,23 @@ local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
 	version = "5.16.2",
-	welcome = "Recognize QuestTogether players from their tooltips and spot questing partners more easily.",
+	welcome = "Find the settings you need more easily and see your QuestTogether preferences at a glance.",
 	sections = {
 		{
-			title = "QuestTogether player tooltips",
+			title = "Settings organized around how you play",
 			items = {
-				"Hover a QT player’s character, nameplate, or unit frame to see “This player is using QuestTogether.” Players looking for questing partners also show that status and a glowing QT logo.",
-				"The QT section matches the tooltip’s width and scale, sits clear of its health bar, and moves above the tooltip when space below is limited.",
+				"Groups & Sharing replaces Miscellaneous, bringing partner availability, join requests, and quest-sharing approvals together.",
+				"Celebration emotes now live under Where to Announce. Minimap visibility is under General on the main page, with debug tools and quest-log rescanning together under Troubleshooting.",
+				"Compare Party Quests and Find Questing Partners are now the first Quick Actions. Your existing preferences are preserved.",
 			},
 		},
 		{
-			title = "A more visible partner glow",
+			title = "A more useful Quick Status",
 			items = {
-				"The gold nameplate glow now reaches twice as far around the logo while keeping the logo itself the same size.",
-				"Icons and glows reflect real QT users and their current partner-seeking status.",
+				"See your partner status, location sharing and display preferences, request approvals, announcement output, and quest and player nameplate settings in linked sections.",
+				"Check your active profile, installed version, and any detected newer version. When QT is disabled, the summary clearly identifies the settings as saved preferences.",
+				"Click a section heading to open its settings. The summary grows to fit its text and stays current while the page is open.",
 			},
-			illustration = "quest-partners",
 		},
 	},
 }

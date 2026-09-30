@@ -1,22 +1,23 @@
 {
-  "source_sha256": "7f31cfe5754d55a0455527b39e48ce7a659a24451aedb365afba8b4f44abe369",
+  "source_sha256": "f358e159ed5d3f046ed6d0becae3257e7fbce6f2f044e8c9692b5d4052ed1e62",
   "notes": {
     "version": "5.16.2",
-    "welcome": "Reconoce a los jugadores de QuestTogether por sus tooltips y encuentra compañeros de misiones más fácilmente.",
+    "welcome": "Encuentra más fácilmente la configuración que necesitas y ve tus preferencias de QuestTogether de un vistazo.",
     "sections": [
       {
-        "title": "Tooltips de jugadores de QuestTogether",
+        "title": "Configuración organizada según cómo juegas",
         "items": [
-          "Pasa el cursor sobre el personaje, la barra de nombre o el marco de unidad de un jugador de QT para ver “Este jugador está usando QuestTogether.” Los jugadores que buscan compañeros de misiones también muestran ese estado y un logo de QT brillante.",
-          "La sección de QT coincide con el ancho y la escala del tooltip, queda separada de su barra de salud y se mueve encima del tooltip cuando el espacio debajo es limitado."
+          "Grupos y uso compartido reemplaza a Misceláneo, reuniendo la disponibilidad de compañeros, las solicitudes para unirse y las aprobaciones para compartir misiones.",
+          "Los gestos de celebración ahora están en Dónde anunciar. La visibilidad del minimapa está en General, en la página principal, con las herramientas de depuración y el nuevo escaneo del registro de misiones juntos en Solución de problemas.",
+          "Comparar misiones del grupo y Buscar compañeros de misiones ahora son las primeras Acciones rápidas. Tus preferencias existentes se conservan."
         ]
       },
       {
-        "title": "Un brillo de compañero más visible",
-        "illustration": "quest-partners",
+        "title": "Un Estado rápido más útil",
         "items": [
-          "El brillo dorado de la barra de nombre ahora se extiende el doble alrededor del logo, manteniendo el logo del mismo tamaño.",
-          "Los íconos y brillos reflejan a usuarios reales de QT y su estado actual de búsqueda de compañeros."
+          "Ve el estado de tus compañeros, las preferencias de compartir ubicación y visualización, las aprobaciones de solicitudes, la salida de anuncios y la configuración de placas de nombre de misiones y jugadores en secciones vinculadas.",
+          "Consulta tu perfil activo, la versión instalada y cualquier versión más reciente detectada. Cuando QT está desactivado, el resumen identifica claramente la configuración como preferencias guardadas.",
+          "Haz clic en el encabezado de una sección para abrir su configuración. El resumen crece para ajustarse a su texto y se mantiene actualizado mientras la página está abierta."
         ]
       }
     ]

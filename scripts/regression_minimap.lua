@@ -374,7 +374,7 @@ QuestTogether:RegisterTest(
 		Equal(a.minimapTooltip.shown, false)
 		Equal(refreshed, 1)
 		Equal(#a.messages, 1)
-		assert(a.messages[1]:find("Settings > Miscellaneous > Show minimap icon", 1, true))
+		assert(a.messages[1]:find("Settings > General > Show minimap icon", 1, true))
 		assert(a.messages[1]:find("/qt options", 1, true))
 		-- Restoring through the same option used by the settings checkbox reuses the button.
 		assert(a:SetOption("showMinimapButton", true))
@@ -577,19 +577,19 @@ QuestTogether:RegisterTest("minimap tooltip is addon owned reused and hidden for
 	Equal(a:GetOption("minimapButtonPosition"), 225)
 end)
 
-QuestTogether:RegisterTest("misc settings refresh minimap visibility after profile switches", function()
+QuestTogether:RegisterTest("home settings refresh minimap visibility after profile switches", function()
 	local checkbox = {
 		SetChecked = function(self, value)
 			self.checked = value
 		end,
 	}
-	QuestTogether.miscFrame = {}
-	QuestTogether.miscControls = { showMinimapButton = checkbox }
+	QuestTogether.optionsFrame = {}
+	QuestTogether.homeControls = { showMinimapButton = checkbox }
 	QuestTogether.db.profile.showMinimapButton = true
-	QuestTogether:RefreshMiscWindow()
+	QuestTogether:RefreshHomeWindow()
 	Equal(checkbox.checked, true)
 	QuestTogether.db.profile = { showMinimapButton = false }
-	QuestTogether:RefreshMiscWindow()
+	QuestTogether:RefreshHomeWindow()
 	Equal(checkbox.checked, false)
 end)
 

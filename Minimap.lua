@@ -136,7 +136,7 @@ function QuestTogether:PopulateMinimapMenu(rootDescription)
 		if self:SetOption("showMinimapButton", false) then
 			self:RefreshOptionsWindow()
 			self:Print(
-				L("Minimap icon hidden. Re-enable it in Settings > Miscellaneous > Show minimap icon (/qt options).")
+				L("Minimap icon hidden. Re-enable it in Settings > General > Show minimap icon (/qt options).")
 			)
 		end
 	end)

@@ -931,3 +931,97 @@ QT:RegisterTest("audit bubble edit revert still applies the current profile snap
 	Equal(writes, 2)
 	Equal(addon.personalBubbleEditSession.pending, false)
 end)
+
+QT:RegisterTest("moved celebration and general controls preserve existing profile values", function()
+	local addon = QT
+	local function Checkbox()
+		return { SetChecked = function(self, value) self.checked = value end }
+	end
+	local emotes = { "emoteOnQuestCompletion", "emoteOnNearbyPlayerQuestCompletion", "emoteOnLevelUp", "emoteOnNearbyPlayerLevelUp" }
+	addon.whereToAnnounceFrame, addon.whereToAnnounceControls = {}, {}
+	addon.optionsFrame, addon.homeControls = {}, { showMinimapButton = Checkbox() }
+	for i, key in ipairs(emotes) do
+		addon.db.profile[key] = i % 2 == 1
+		addon.whereToAnnounceControls[key] = Checkbox()
+	end
+	addon.db.profile.showMinimapButton = false
+	addon:RefreshOptionsWindow()
+	for i, key in ipairs(emotes) do assert(addon.whereToAnnounceControls[key].checked == (i % 2 == 1)) end
+	assert(addon.homeControls.showMinimapButton.checked == false)
+	for i, key in ipairs(emotes) do addon.db.profile[key] = i % 2 == 0 end
+	addon.db.profile.showMinimapButton = true
+	addon:RefreshOptionsWindow()
+	for i, key in ipairs(emotes) do assert(addon.whereToAnnounceControls[key].checked == (i % 2 == 0)) end
+	assert(addon.homeControls.showMinimapButton.checked == true)
+end)
+
+QT:RegisterTest("home status distinguishes runtime state and conditional sharing preferences", function()
+	local addon = NewFixture()
+	local options = {
+		showPlayerLocations = true, onlyShowQuestPartners = true, sharePlayerLocation = false,
+		lookingForQuestPartners = false, autoInviteWhileLFG = true, autoInviteFriends = false,
+		showChatLogs = false, chatLogDestination = "separate", mirrorChatLogsToMainChat = true,
+	}
+	addon.GetOption = function(_, key) return options[key] end
+	addon.GetCurrentProfileKey = function() return "Private fixture" end
+	addon.GetAddonVersion = function() return "5.16.2" end
+	addon.GetShowProgressForLabel = function() return "Everyone" end
+	addon.GetChatLogDestinationLabel = function() return "DESTINATION_SENTINEL" end
+	addon.isEnabled = false
+	addon.db.global.availableAddonVersion = "5.16.3"
+	local L = QT.Translate
+	local groups = addon:GetHomeStatusGroups()
+	assert(groups[1].text:find(L("Disabled"), 1, true))
+	assert(groups[1].text:find(L("Saved preferences below apply when QuestTogether is enabled."), 1, true))
+	assert(groups[1].text:find("5.16.3", 1, true))
+	assert(groups[2].text:find(L("Other requests while looking for partners"), 1, true))
+	assert(groups[3].text:find(L("Questing partners only"), 1, true))
+	assert(groups[4].text == L("Ask before sharing quests"))
+	assert(not groups[5].text:find("DESTINATION_SENTINEL", 1, true))
+	for _, group in ipairs(groups) do assert(type(group.categoryKey) == "string") end
+
+	addon.isEnabled = true
+	addon.db.global.availableAddonVersion = "5.16.2"
+	options.showPlayerLocations, options.showChatLogs = false, true
+	options.autoInviteWhileLFG, options.autoAcceptPartyShareRequests = false, true
+	groups = addon:GetHomeStatusGroups()
+	assert(not groups[1].text:find(L("Newer version detected"), 1, true))
+	assert(not groups[1].text:find(L("Saved preferences below apply when QuestTogether is enabled."), 1, true))
+	assert(groups[2].text:find(L("Ask first"), 1, true))
+	assert(not groups[3].text:find(L("Questing partners only"), 1, true))
+	assert(groups[4].text == L("Automatically approve party share requests"))
+	assert(groups[5].text:find("DESTINATION_SENTINEL", 1, true))
+end)
+
+QT:RegisterTest("home status layout grows for wrapped translations and shrinks after refresh", function()
+	local addon = NewFixture()
+	addon.optionsFrame = {}
+	local textHeight = 70
+	local function Sized()
+		return { SetHeight = function(self, height) self.height = height end }
+	end
+	local rows = {}
+	for i = 1, 7 do
+		rows[i] = {
+			frame = Sized(), button = { SetText = Noop },
+			text = { SetText = Noop, GetStringHeight = function() return textHeight end },
+		}
+	end
+	local groups = {}
+	for i = 1, 7 do groups[i] = { title = "Section", text = "Wrapped text", categoryKey = "groupsCategory" } end
+	addon.GetHomeStatusGroups = function() return groups end
+	addon.homeControls = {
+		statusGroups = rows, statusPanel = Sized(), content = Sized(),
+		description = { GetStringHeight = function() return 40 end },
+		tipsText = { GetStringHeight = function() return 60 end },
+	}
+	addon:RefreshHomeWindow()
+	local expanded = addon.homeControls.statusPanel.height
+	assert(expanded >= 7 * (70 + 26 + 12))
+	assert(addon.homeControls.content.height >= expanded + 400)
+	for _, row in ipairs(rows) do assert(row.frame.height >= textHeight + 26) end
+	textHeight = 14
+	addon:RefreshHomeWindow()
+	assert(addon.homeControls.statusPanel.height < expanded)
+	assert(addon.homeControls.statusPanel.height >= 304)
+end)

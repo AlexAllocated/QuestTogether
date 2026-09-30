@@ -234,7 +234,7 @@ local function WithIsolatedState(testFn)
 		for _, key in ipairs({
 			"localizedQuestTitles", "runtimeStateStore", "debugController", "nameplateTooltipGuidByUnitToken", "nameplateScanTooltip",
 			"announcementBubbleScreenHostFrame", "personalBubbleEditModeDialog", "mapWorkWakeFrame", "mapWorkWakeState",
-			"optionsFrame", "whereToAnnounceFrame", "questPlatesFrame", "miscFrame", "announcementsFrame", "profilesFrame",
+			"optionsFrame", "whereToAnnounceFrame", "questPlatesFrame", "groupsFrame", "announcementsFrame", "profilesFrame",
 			"personalBubbleEditSession", "announcementChannelLocalID", "questCompareResponseQueue",
 			"partyJoinState", "partyJoinPrompt", "partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
 			"minimapButton", "minimapTooltip", "minimapTooltipPendingHide", "minimapLauncherFrame", "minimapDragState", "minimapSuppressClick",
@@ -307,8 +307,8 @@ function QuestTogether:RunTests(reverse, present)
 	return self:GetDebugController():RunTests(reverse, present)
 end
 
-QuestTogether:RegisterTest("misc options refresh saved sharing and partner status through profiles resets and slash changes", function()
-	local optionKeys = { "autoAcceptPartyShareRequests", "lookingForQuestPartners" }
+QuestTogether:RegisterTest("group options refresh saved sharing and partner status through profiles resets and slash changes", function()
+	local optionKeys = { "autoAcceptPartyShareRequests", "lookingForQuestPartners", "autoInviteFriends", "autoInviteWhileLFG" }
 	local profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
 	for _, key in ipairs(optionKeys) do profile[key] = true end
 	profile.enabled = false
@@ -318,22 +318,22 @@ QuestTogether:RegisterTest("misc options refresh saved sharing and partner statu
 		profiles = { ["MyPlayer-Realm"] = profile },
 		profileKeys = { ["MyPlayer-Realm"] = "MyPlayer-Realm" },
 	})
-	QuestTogether.miscFrame, QuestTogether.miscControls = {}, {}
+	QuestTogether.groupsFrame, QuestTogether.groupsControls = {}, {}
 	for _, key in ipairs(optionKeys) do
 		local checkbox = { checked = false, writes = 0 }
 		function checkbox:SetChecked(value)
 			self.checked, self.writes = value, self.writes + 1
 		end
-		QuestTogether.miscControls[key] = checkbox
+		QuestTogether.groupsControls[key] = checkbox
 	end
 	local function AssertChecks(expected, reason)
 		for _, key in ipairs(optionKeys) do
-			AssertEquals(QuestTogether.miscControls[key].checked, expected, key .. ": " .. reason)
+			AssertEquals(QuestTogether.groupsControls[key].checked, expected, key .. ": " .. reason)
 		end
 	end
 	QuestTogether:RefreshOptionsWindow()
 	AssertChecks(true, "saved values must be checked when settings open")
-	for _, key in ipairs(optionKeys) do AssertEquals(QuestTogether.miscControls[key].writes, 1) end
+	for _, key in ipairs(optionKeys) do AssertEquals(QuestTogether.groupsControls[key].writes, 1) end
 
 	AssertTrue(QuestTogether:SetActiveProfile("Other"))
 	AssertChecks(false, "default profile must clear old checks")
@@ -342,7 +342,7 @@ QuestTogether:RegisterTest("misc options refresh saved sharing and partner statu
 	AssertTrue(QuestTogether:ResetActiveProfile())
 	AssertChecks(false, "reset must show current defaults")
 	for _, key in ipairs(optionKeys) do AssertTrue(QuestTogether:SetOption(key, true)) end
-	QuestTogether:RefreshMiscWindow()
+	QuestTogether:RefreshGroupsWindow()
 	AssertChecks(true, "model changes must appear when the panel reopens")
 	for _, key in ipairs(optionKeys) do QuestTogether:HandleSlashCommand("set " .. key .. " off") end
 	AssertChecks(false, "real slash commands must refresh an already open panel")
