@@ -1,7 +1,7 @@
 {
   "source_sha256": "f358e159ed5d3f046ed6d0becae3257e7fbce6f2f044e8c9692b5d4052ed1e62",
   "notes": {
-    "version": "5.16.2",
+    "version": "5.16.3",
     "welcome": "필요한 설정을 더 쉽게 찾고 QuestTogether 환경설정을 한눈에 확인하세요.",
     "sections": [
       {

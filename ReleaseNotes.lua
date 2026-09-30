@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "5.16.2",
+	version = "5.16.3",
 	welcome = "Find the settings you need more easily and see your QuestTogether preferences at a glance.",
 	sections = {
 		{
