@@ -2,7 +2,8 @@
 
 `release_notes.json` is the canonical source for the in-game welcome, latest
 patch notes, and Discord release announcements. German (`deDE`), French (`frFR`),
-Spanish (`esES`), Brazilian Portuguese (`ptBR`), and Russian (`ruRU`) translations
+European Spanish (`esES`), Latin American Spanish (`esMX`), Brazilian Portuguese (`ptBR`), Russian (`ruRU`), Italian (`itIT`),
+Korean (`koKR`), Simplified Chinese (`zhCN`), and Traditional Chinese (`zhTW`) translations
 live in `release_notes/<locale>.json`. `ReleaseNotes.lua` and
 `LocalizedReleaseNotes.lua` are generated data; do not edit them by hand. Keep
 notes concise and useful to players. Every release, including patch and
@@ -15,7 +16,7 @@ upgrades, not an exemption from writing patch notes.
 Use **Actions → Prepare Release Notes → Run workflow** on `main`. It compares
 the current code with the published tag matching the TOC version, generates
 player-facing notes with the same OpenAI workflow used by Bumblebee, and opens
-a review PR containing the English notes, all five translations, and both generated
+a review PR containing the English notes, all ten translations, and both generated
 Lua files. It also uploads those files and English Markdown notes as an artifact.
 Review and merge that PR before the version bump. It does not tag, release, or
 announce anything.
@@ -77,7 +78,7 @@ strings. It does not execute JSON contents.
 The checker also requires the TOC to load `ReleaseNotes.lua` exactly once after
 `Core.lua`, so generated notes cannot silently be omitted from the addon.
 When the TOC enables `LocalizedReleaseNotes.lua`, it must load exactly once after
-the English notes, and **all five translations are mandatory for every release**.
+the English notes, and **all ten translations are mandatory for every release**.
 Each translated JSON contains exactly `source_sha256` and `notes`. Its `notes`
 has the same schema and version as the English source, with the same number of
 sections and items and matching optional illustrations. The source digest is
@@ -104,8 +105,9 @@ changes outside this explicit allowlist:
 - `release_notes.json`
 - `ReleaseNotes.lua`
 - `LocalizedReleaseNotes.lua`
-- `release_notes/deDE.json`, `release_notes/frFR.json`, `release_notes/esES.json`,
-  `release_notes/ptBR.json`, and `release_notes/ruRU.json`
+- `release_notes/deDE.json`, `release_notes/frFR.json`, `release_notes/esES.json`, `release_notes/esMX.json`,
+  `release_notes/ptBR.json`, `release_notes/ruRU.json`, `release_notes/itIT.json`,
+  `release_notes/koKR.json`, `release_notes/zhCN.json`, and `release_notes/zhTW.json`
 
 The localized files are allowed only when the TOC enables localized notes.
 These files may contain reviewed release preparation edits, staged or

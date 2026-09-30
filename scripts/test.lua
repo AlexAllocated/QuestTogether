@@ -131,6 +131,9 @@ end
 QuestTogether:InitializeDatabase()
 QuestTogether:EnsureRuntimeStateStore()
 QuestTogether.isInitialized = true
+local selectedTestLocale = os.getenv("QT_TEST_LOCALE") or "enUS"
+local expectedTestLocale = selectedTestLocale == "enGB" and "enUS" or selectedTestLocale
+assert(QuestTogether.locale == expectedTestLocale, "client locale must survive addon initialization")
 if clientChecks then
 	clientChecks(QuestTogether)
 	os.exit(0)
@@ -159,6 +162,9 @@ C_AddOns.LoadAddOn = RejectEngineCall("C_AddOns.LoadAddOn")
 LoadAddOn = RejectEngineCall("LoadAddOn")
 UIParentLoadAddOn = RejectEngineCall("UIParentLoadAddOn")
 ShowUIPanel = RejectEngineCall("ShowUIPanel")
+C_QuestLog = C_QuestLog or {}
+C_QuestLog.GetTitleForQuestID = RejectEngineCall("C_QuestLog.GetTitleForQuestID")
+C_QuestLog.RequestLoadQuestByID = RejectEngineCall("C_QuestLog.RequestLoadQuestByID")
 QuestLogPushQuest = RejectEngineCall("QuestLogPushQuest")
 QuestMapFrame_OpenToQuestDetails = RejectEngineCall("QuestMapFrame_OpenToQuestDetails")
 OpenQuestLog = RejectEngineCall("OpenQuestLog")

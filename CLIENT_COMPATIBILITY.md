@@ -155,9 +155,18 @@ and client chat restrictions still require live validation. Native send usage:
 https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_ChatFrameBase/Shared/SlashCommands.lua
 
 Localization uses addon-owned dictionaries and immutable command/protocol identifiers.
-The first five non-English languages are deDE, frFR, esES (also esMX), ptBR and ruRU.
-Client locale is read once; unknown locales fall back to English. Incoming quest
-and progress text is not translated. The test harness temporarily uses English for
+The eleven native text locales are enUS, deDE, frFR, esES, esMX, ptBR, ruRU, itIT,
+koKR, zhCN and zhTW: nine languages with separate Spanish and Chinese variants.
+European and Latin American Spanish use independent catalogs and event locale IDs;
+enGB remains a compatibility alias for enUS. Client locale is read once; unknown locales fall back to English.
+Optional ANN facts allow receiver-local event rendering while preserving the original
+text for older peers and unsupported payloads. Native `C_QuestLog.GetTitleForQuestID`
+and `RequestLoadQuestByID` are feature-detected and restriction-gated; title loading
+is bounded. Missing APIs retain source titles or localized quest-ID labels. Progress
+uses sender counters, never the receiver's objective counters or potentially different
+quest stage. Structured `numRequired` supplements legacy objective reads only when
+text, type and any existing current count agree. Same-language text and public party
+chat retain their original wording. See `LOCALIZATION.md` for cache and fallback rules. The test harness temporarily uses English for
 legacy exact-string assertions and restores the original addon state; dedicated
 locale tests render comparison and release-note controls and exercise status/share
 logic in every language using private frames. Offline success does not establish

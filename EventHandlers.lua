@@ -281,7 +281,7 @@ function QuestTogether:PLAYER_LEVEL_UP(_, newLevel)
 
 	local emoteToken = self:PickRandomCompletionEmote()
 	-- Publish even when our own emotes are disabled; receivers choose whether to react.
-	self:PublishAnnouncementEvent("PLAYER_LEVEL_UP", L("Level ") .. tostring(level), nil, { emoteToken = emoteToken })
+	self:PublishAnnouncementEvent("PLAYER_LEVEL_UP", L("Level ") .. tostring(level), nil, { emoteToken = emoteToken, eventFacts = self:BuildAnnouncementFacts("PLAYER_LEVEL_UP", nil, nil, nil, level) })
 	self:PlayLocalCelebrationEmote(emoteToken, "emoteOnLevelUp")
 	return true
 end
@@ -703,7 +703,7 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 						or 0
 
 					for objectiveIndex = 1, numObjectives do
-						local objectiveText, _, _, currentValue =
+						local objectiveText, objectiveType, finished, currentValue, requiredValue =
 							self:GetNormalizedQuestObjectiveInfo(questId, objectiveIndex, false)
 
 						if self:UpdateTrackedObjectiveProgress(questData, objectiveIndex, objectiveText, currentValue, questId) then
@@ -714,7 +714,9 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 							elseif taskAnnouncementType == "bonus" then
 								eventType = "BONUS_OBJECTIVE_PROGRESS"
 							end
-							self:PublishAnnouncementEvent(eventType, objectiveText, questId)
+							self:PublishAnnouncementEvent(eventType, objectiveText, questId, {
+								eventFacts = self:BuildAnnouncementFacts(eventType, objectiveIndex, objectiveType, finished, currentValue, requiredValue),
+							})
 						end
 					end
 

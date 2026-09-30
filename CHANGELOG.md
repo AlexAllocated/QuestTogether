@@ -1,5 +1,12 @@
 # QuestTogether changelog
 
+## 5.16.0 — 2026-09-29
+
+- Render supported cross-language quest events in the receiver's language, with local quest titles when available and sender-owned objective counts, percentages, or completion states. Preserve original messages for older QT versions and unavailable structured data; public party chat remains in the sender's language.
+- Use localized objective numbers when a safe translated description cannot be established, avoiding incorrect quest-stage labels or the receiver's own progress. Bound native title loading and cache entries, and respect restricted states.
+- Add Italian, Korean, Simplified Chinese, and Traditional Chinese UI and patch-note translations, and give Latin American Spanish its own catalog instead of sharing European Spanish. Match WoW’s nine languages across eleven native text locales, including English. Extend release validation and Discord changelog routing to all ten non-English catalogs.
+- Keep localized quest titles clickable with non-ASCII punctuation and prefer local titles in quest comparison.
+
 ## 5.15.0 — 2026-09-29
 
 - Add Request to Join to QT player menus when fresh metadata identifies a grouped player. Solo and older peers retain Invite. Requests ask the recipient to send a normal WoW invitation; they never leave a group or automatically accept an invite.

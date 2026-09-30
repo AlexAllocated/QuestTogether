@@ -21,7 +21,7 @@ SPEC = importlib.util.spec_from_file_location("release_notes_checker", SCRIPTS /
 CHECKER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CHECKER)
 REAL_GIT = shutil.which("git")
-LOCALES = ("deDE", "frFR", "esES", "ptBR", "ruRU")
+LOCALES = ("deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW")
 
 
 def sample_notes(version="1.2.3", item="Share eligible quests with your party."):
@@ -88,7 +88,7 @@ class NotesTests(unittest.TestCase):
 
     def write_translations(self, notes):
         # Independent canonical digest implementation: content, not version,
-        # identifies the English source that all five translations must follow.
+        # identifies the English source that all ten translations must follow.
         source = {key: value for key, value in notes.items() if key != "version"}
         digest = hashlib.sha256(json.dumps(source, sort_keys=True, ensure_ascii=False,
                                            separators=(",", ":")).encode("utf-8")).hexdigest()
@@ -96,8 +96,9 @@ class NotesTests(unittest.TestCase):
         for locale in LOCALES:
             translated = copy.deepcopy(notes)
             translated["welcome"] = {"deDE": "Willkommen bei QuestTogether.", "frFR": "Bienvenue dans QuestTogether.",
-                                     "esES": "Bienvenido a QuestTogether.", "ptBR": "Boas-vindas ao QuestTogether.",
-                                     "ruRU": "Добро пожаловать в QuestTogether."}[locale]
+                                     "esES": "Bienvenido a QuestTogether.", "esMX": "Te damos la bienvenida a QuestTogether.", "ptBR": "Boas-vindas ao QuestTogether.",
+                                     "ruRU": "Добро пожаловать в QuestTogether.", "itIT": "Benvenuto in QuestTogether.",
+                                     "koKR": "QuestTogether에 오신 것을 환영합니다.", "zhCN": "欢迎使用QuestTogether。", "zhTW": "歡迎使用QuestTogether。"}[locale]
             # Private fixtures preserve every section/item while keeping strings
             # distinct from the source; language quality is a human review gate.
             for section in translated["sections"]:
@@ -226,7 +227,7 @@ class NotesTests(unittest.TestCase):
                 (self.root / "QuestTogether.toc").write_text("## Version: 1.2.3\n" + entries, encoding="utf-8")
                 self.assertIn("LocalizedReleaseNotes.lua exactly once after", self.check(success=False))
 
-    def test_localized_notes_require_all_five_sources_and_exact_generated_lua(self):
+    def test_localized_notes_require_all_ten_sources_and_exact_generated_lua(self):
         self.enable_localized_notes()
         for locale in LOCALES:
             with self.subTest(locale=locale):
@@ -337,7 +338,7 @@ class NotesTests(unittest.TestCase):
         (self.root / "release_notes/esES.json").unlink()
         self.assert_bump_guard(["patch"], success=False, contains="esES")
 
-    def test_full_localized_release_publishes_all_five_versions_without_an_api_key(self):
+    def test_full_localized_release_publishes_all_ten_versions_without_an_api_key(self):
         self.enable_localized_notes()
         remote, branch = self.local_release_remote("localized publication")
         notes = sample_notes(item="Find other questing players and share eligible quests.")
@@ -366,7 +367,7 @@ class NotesTests(unittest.TestCase):
         self.write_notes(notes)
         self.write_translations(notes)
         self.check("--write")
-        (self.root / "release_notes/koKR.json").write_text("{}", encoding="utf-8")
+        (self.root / "release_notes/xxXX.json").write_text("{}", encoding="utf-8")
         self.assert_bump_guard(["patch", "--check"], success=False, contains="non-release changes")
 
     def test_generator_escapes_utf8_and_code_as_literal_data(self):

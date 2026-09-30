@@ -16,7 +16,7 @@ def request_translation(strings,locale,key,model):
         'Translate descriptions after commands but keep runnable command syntax and placeholders <option>, <value>, <player>, <text>, [questID] unchanged. '
         'Fragments may join a name or number; preserve their boundaries and punctuation. Do not add explanations or new formatting. '
         'These strings cover addon settings, menus, chat, quest comparison, and patch notes; use concise labels suitable for buttons. '
-        'For Spanish use broadly understandable Spanish. For Portuguese use Brazilian Portuguese. Translate whole sentences faithfully without inventing claims.')
+        'For esES use World of Warcraft terminology from Spain. For esMX use World of Warcraft terminology from Latin America (Mexico), including ustedes rather than vosotros. For Portuguese use Brazilian Portuguese. Translate whole sentences faithfully without inventing claims.')
     body={'model':model,'store':False,'max_output_tokens':16000,'input':[{'role':'system','content':instructions},{'role':'user','content':json.dumps(strings,ensure_ascii=False)}],
           'text':{'format':{'type':'json_schema','name':'translations','strict':True,'schema':schema}}}
     request=urllib.request.Request('https://api.openai.com/v1/responses',data=json.dumps(body).encode(),headers={'Authorization':'Bearer '+key,'Content-Type':'application/json'},method='POST')

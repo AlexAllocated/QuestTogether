@@ -1884,6 +1884,19 @@ QuestTogether.API = QuestTogether.API or {
 			end
 			return math.floor(numericObjectiveCount + 0.5)
 		end,
+		GetLocalizedQuestTitle = function(questID)
+			if not CanAccessForeignTable(C_QuestLog) or type(C_QuestLog.GetTitleForQuestID) ~= "function" then return nil end
+			local id = QuestTogether:NormalizeQuestID(questID)
+			if not id or QuestTogether:IsWorkBlocked("quest_snapshot_refresh") then return nil end
+			local ok, title = pcall(C_QuestLog.GetTitleForQuestID, id)
+			if ok and CanAccessForeignValue(title) and type(title) == "string" and title ~= "" then return title end
+		end,
+		RequestLocalizedQuestTitle = function(questID)
+			if not CanAccessForeignTable(C_QuestLog) or type(C_QuestLog.RequestLoadQuestByID) ~= "function" then return false end
+			local id = QuestTogether:NormalizeQuestID(questID)
+			if not id or QuestTogether:IsWorkBlocked("quest_snapshot_refresh") then return false end
+			return pcall(C_QuestLog.RequestLoadQuestByID, id)
+		end,
 		GetQuestObjectiveInfo = function(questID, objectiveIndex, displayComplete)
 			if InCombatLockdown and InCombatLockdown() then
 				return nil, nil, nil, nil
@@ -1905,7 +1918,7 @@ QuestTogether.API = QuestTogether.API or {
 				return nil, nil, nil, nil
 			end
 
-			local ok, text, objectiveType, finished, currentValue
+			local ok, text, objectiveType, finished, currentValue, requiredValue
 			if type(GetQuestObjectiveInfo) == "function" then
 				ok, text, objectiveType, finished, currentValue =
 					pcall(GetQuestObjectiveInfo, numericQuestID, numericObjectiveIndex, displayComplete)
@@ -1914,7 +1927,7 @@ QuestTogether.API = QuestTogether.API or {
 				if not queryOK or not CanAccessForeignTable(objectives) then return nil, nil, nil, nil end
 				local objective = objectives[numericObjectiveIndex]
 				if not CanAccessForeignTable(objective) then return nil, nil, nil, nil end
-				ok, text, objectiveType, finished, currentValue = true, objective.text, objective.type, objective.finished, objective.numFulfilled
+				ok, text, objectiveType, finished, currentValue, requiredValue = true, objective.text, objective.type, objective.finished, objective.numFulfilled, objective.numRequired
 			elseif type(GetQuestLogLeaderBoard) == "function" then
 				local index = QuestTogether.API.GetQuestLogIndexForQuestID(numericQuestID)
 				if not index then return nil, nil, nil, nil end
@@ -1935,7 +1948,22 @@ QuestTogether.API = QuestTogether.API or {
 			if not CanAccessForeignValue(currentValue) then
 				currentValue = nil
 			end
-			return text, objectiveType, finished, currentValue
+			if not CanAccessForeignValue(requiredValue) then requiredValue = nil end
+			-- Some clients expose the legacy text API and the structured API together.
+			-- Only supplement counters when both reads describe the identical row.
+			if type(GetQuestObjectiveInfo) == "function" and requiredValue == nil and type(text) == "string"
+				and CanAccessForeignTable(C_QuestLog) and type(C_QuestLog.GetQuestObjectives) == "function" then
+				local readOK, rows = pcall(C_QuestLog.GetQuestObjectives, numericQuestID)
+				local row = readOK and CanAccessForeignTable(rows) and rows[numericObjectiveIndex] or nil
+				if CanAccessForeignTable(row) and CanAccessForeignValue(row.text) and CanAccessForeignValue(row.type)
+					and row.text == text and row.type == objectiveType
+					and CanAccessForeignValue(row.numFulfilled) and CanAccessForeignValue(row.numRequired)
+					and (currentValue == nil or row.numFulfilled == currentValue) then
+					currentValue, requiredValue = row.numFulfilled, row.numRequired
+				end
+			end
+			if not CanAccessForeignValue(requiredValue) then requiredValue = nil end
+			return text, objectiveType, finished, currentValue, requiredValue
 		end,
 		GetQuestProgressBarPercent = function(questID)
 			if InCombatLockdown and InCombatLockdown() then
@@ -4046,7 +4074,13 @@ function QuestTogether:DecorateAnnouncementMessageWithQuestLink(message, eventTy
 	if string.find(messageText, "|H" .. (self.chatLogQuestLinkType or "questtogetherquest") .. ":", 1, true) then
 		return messageText
 	end
-	local prefixText, questTitle = SafeMatch(messageText, "^(.-:%s+)(.+)$")
+	local prefixText, questTitle
+	local translatedPrefix = self.GetLocalizedEventPrefix and self:GetLocalizedEventPrefix(eventType)
+	if translatedPrefix and messageText:sub(1, #translatedPrefix) == translatedPrefix then
+		prefixText, questTitle = translatedPrefix, messageText:sub(#translatedPrefix + 1)
+	else
+		prefixText, questTitle = SafeMatch(messageText, "^(.-:%s+)(.+)$")
+	end
 	if not prefixText or not questTitle or questTitle == "" then
 		return messageText
 	end
@@ -5100,9 +5134,9 @@ function QuestTogether:GetQuestLogIndexForQuest(questId, questInfo)
 end
 
 function QuestTogether:GetNormalizedQuestObjectiveInfo(questId, objectiveIndex, displayComplete)
-	local objectiveText, objectiveType, finished, currentValue = nil, nil, nil, nil
+	local objectiveText, objectiveType, finished, currentValue, requiredValue = nil, nil, nil, nil, nil
 	if self.API and self.API.GetQuestObjectiveInfo then
-		objectiveText, objectiveType, finished, currentValue =
+		objectiveText, objectiveType, finished, currentValue, requiredValue =
 			self.API.GetQuestObjectiveInfo(questId, objectiveIndex, displayComplete)
 	end
 	if objectiveText == nil and objectiveType == nil and currentValue == nil then
@@ -5131,7 +5165,7 @@ function QuestTogether:GetNormalizedQuestObjectiveInfo(questId, objectiveIndex, 
 		end
 	end
 
-	return objectiveText, objectiveType, finished, currentValue
+	return objectiveText, objectiveType, finished, currentValue, requiredValue
 end
 
 function QuestTogether:NormalizeNameplateOptions()

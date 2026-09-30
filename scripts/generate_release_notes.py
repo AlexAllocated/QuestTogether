@@ -216,7 +216,7 @@ def main(argv=None):
         if args.write:
             print("\nUpdated release_notes.json and ReleaseNotes.lua. Review the content before releasing.")
             if check_manifest((args.root / TOC_FILE).read_text(encoding="utf-8")):
-                print("Refresh all five translations with python3 scripts/translate_locales.py --notes --write, "
+                print("Refresh all ten translations with python3 scripts/translate_locales.py --notes --write, "
                       "then run python3 scripts/check_release_notes.py --check.")
         return 0
     except (OSError, UnicodeError, ValueError, subprocess.SubprocessError) as error:

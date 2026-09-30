@@ -318,7 +318,7 @@ function QuestTogether:BuildPartyQuestDiffRows()
 		end
 	end
 	for id, entry in pairs(union) do
-		local row = { questId = id, title = entry.questTitle, cells = {}, missing = 0 }
+		local row = { questId = id, title = self:GetLocalizedQuestTitle(id) or entry.questTitle, cells = {}, missing = 0 }
 		for i, member in ipairs(session.members) do
 			local quest = member.entries[id]
 			row.cells[i] = quest and (quest.isComplete and "Ready" or "Have")

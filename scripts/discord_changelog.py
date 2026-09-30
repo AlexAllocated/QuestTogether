@@ -41,8 +41,13 @@ LOCALE_CHANNEL_NAMES = {
     "deDE": "änderungsprotokoll",
     "frFR": "journal-des-modifications",
     "esES": "registro-de-cambios",
+    "esMX": "registro-de-cambios-latam",
     "ptBR": "registro-de-alterações",
     "ruRU": "журнал-изменений",
+    "itIT": "registro-modifiche",
+    "koKR": "변경-내역",
+    "zhCN": "更新日志",
+    "zhTW": "更新日誌",
 }
 DEFAULT_REPOSITORY = "AlexAllocated/QuestTogether"
 TEST_WORKFLOW = "test.yml"
@@ -180,7 +185,6 @@ def load_notes(root, tag=None, *, exact=False):
 
 
 def canonical_locale(locale):
-    locale = "esES" if locale == "esMX" else locale
     if locale not in LOCALE_CHANNEL_NAMES:
         raise ChangelogError("unsupported changelog locale")
     return locale
@@ -569,8 +573,8 @@ def main(argv=None):
     parser.add_argument("--tag", help="exact release tag; required for --post")
     parser.add_argument("--repository", default=DEFAULT_REPOSITORY)
     locales = parser.add_mutually_exclusive_group()
-    locales.add_argument("--locale", default="enUS", choices=[*LOCALE_CHANNEL_NAMES, "esMX"])
-    locales.add_argument("--all-locales", action="store_true", help="validate and post English plus all five translations")
+    locales.add_argument("--locale", default="enUS", choices=[*LOCALE_CHANNEL_NAMES])
+    locales.add_argument("--all-locales", action="store_true", help="validate and post English plus all ten translations")
     parser.add_argument("--wait-seconds", type=int, default=0, help="wait up to 600 seconds for the release ZIP/tests")
     args = parser.parse_args(argv)
     try:

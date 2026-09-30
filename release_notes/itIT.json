@@ -1,0 +1,31 @@
+{
+  "source_sha256": "4604d6779705fba7b506a6cd81a956bcff03cc0fde1445471545377064be6f44",
+  "notes": {
+    "version": "5.15.0",
+    "welcome": "QuestTogether ora supporta tutte le lingue di WoW e può mostrare gli aggiornamenti delle missioni degli altri giocatori nella lingua del tuo client.",
+    "sections": [
+      {
+        "title": "Gioca in più lingue",
+        "items": [
+          "Menu, impostazioni e note della patch ora supportano tutte le lingue locali di WoW: inglese, tedesco, francese, spagnolo europeo, spagnolo latinoamericano, portoghese brasiliano, russo, italiano, coreano, cinese semplificato e cinese tradizionale.",
+          "Lo spagnolo latinoamericano ora ha un proprio testo invece di condividere quello dello spagnolo europeo."
+        ]
+      },
+      {
+        "title": "Progressi delle missioni localizzati",
+        "items": [
+          "Gli eventi missione supportati dai giocatori QT aggiornati possono apparire nella lingua del tuo client nei registri e nei fumetti della chat QT, usando i titoli locali delle missioni quando disponibili e i numeri di progresso effettivi del mittente.",
+          "Quando non è possibile scegliere in modo sicuro una descrizione tradotta dell'obiettivo, QT usa un numero di obiettivo localizzato con conteggi, percentuali, completamento o stato di avanzamento.",
+          "Le versioni precedenti di QT e la chat di gruppo pubblica mantengono la formulazione del mittente. Quando WoW non può fornire un titolo di missione locale, QT mantiene il titolo originale o mostra l'ID della missione. Gli eventi nella stessa lingua mantengono la loro formulazione nativa dettagliata."
+        ]
+      },
+      {
+        "title": "Rifinitura dei titoli delle missioni",
+        "items": [
+          "Il confronto delle missioni ora preferisce il titolo locale della missione quando disponibile.",
+          "I titoli localizzati delle missioni con punteggiatura non ASCII restano cliccabili in modo più affidabile."
+        ]
+      }
+    ]
+  }
+}

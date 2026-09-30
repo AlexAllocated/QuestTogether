@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 sys.dont_write_bytecode = True
 
-LOCALES = {'deDE':'German', 'frFR':'French', 'esES':'Spanish', 'ptBR':'Brazilian Portuguese', 'ruRU':'Russian'}
+LOCALES = {'deDE':'German', 'frFR':'French', 'esES':'European Spanish', 'esMX':'Latin American Spanish', 'ptBR':'Brazilian Portuguese', 'ruRU':'Russian', 'itIT':'Italian', 'koKR':'Korean', 'zhCN':'Simplified Chinese', 'zhTW':'Traditional Chinese'}
 LITERAL = r'''"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*' '''.strip()
 LOOKUP = re.compile(r'\bL\(\s*('+LITERAL+r')\s*\)')
 FORMAT = re.compile(r'%(?:[-+ #0]*\d*(?:\.\d+)?[cdiouxXeEfgGqs%])')
@@ -90,9 +90,8 @@ def check(root,write=False):
     toc=root/'QuestTogether.toc'
     metadata=toc.read_text()
     description='Quest progress chat bubbles and logs for party and nearby players.'
-    metadata=re.sub(r'^## Notes-(?:deDE|frFR|esES|esMX|ptBR|ruRU):.*\n','',metadata,flags=re.M)
+    metadata=re.sub(r'^## Notes-(?:deDE|frFR|esES|esMX|ptBR|ruRU|itIT|koKR|zhCN|zhTW):.*\n','',metadata,flags=re.M)
     additions=''.join('## Notes-'+locale+': '+tables[locale][description]+'\n' for locale in LOCALES)
-    additions+='## Notes-esMX: '+tables['esES'][description]+'\n'
     metadata=re.sub(r'(^## Notes:.*\n)',lambda m:m[0]+additions,metadata,count=1,flags=re.M)
     outputs[toc]=metadata
     for path,text in outputs.items():
@@ -116,4 +115,4 @@ def release_note_outputs(root,notes,previous_version=None):
     return outputs
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[1]);p.add_argument('--write',action='store_true');a=p.parse_args()
-    print(str(check(a.root,a.write))+' source strings verified in all five locales')
+    print(str(check(a.root,a.write))+' source strings verified in all '+str(len(LOCALES))+' translated locales')

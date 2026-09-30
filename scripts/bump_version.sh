@@ -53,7 +53,7 @@ fi
 release_files=("$toc_file" release_notes.json ReleaseNotes.lua)
 if grep -Eq '^[[:space:]]*LocalizedReleaseNotes\.lua[[:space:]]*$' "$toc_file"; then
 	release_files+=(LocalizedReleaseNotes.lua)
-	for notes_locale in deDE frFR esES ptBR ruRU; do
+	for notes_locale in deDE frFR esES esMX ptBR ruRU itIT koKR zhCN zhTW; do
 		release_files+=("release_notes/${notes_locale}.json")
 	done
 fi

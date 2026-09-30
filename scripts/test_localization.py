@@ -6,6 +6,14 @@ sys.dont_write_bytecode = True
 import localization as L
 from translate_locales import translate
 class LocalizationTests(unittest.TestCase):
+    def test_catalogs_match_native_wow_text_locales(self):
+        # WoW has separate esES/esMX and zhCN/zhTW text locales. English is source.
+        self.assertEqual(set(L.LOCALES), {'deDE','frFR','esES','esMX','ptBR','ruRU','itIT','koKR','zhCN','zhTW'})
+        root=Path(__file__).resolve().parents[1]
+        self.assertNotEqual(L.read(root/'locales/esMX.json'),L.read(root/'locales/esES.json'))
+        toc=(root/'QuestTogether.toc').read_text()
+        for locale in L.LOCALES:
+            self.assertEqual(toc.count('## Notes-'+locale+':'),1)
     def test_format_and_boundary_contracts(self):
         for target in ['Anzahl %s', ' Anzahl %d', 'Anzahl %d ', 'Anzahl']:
             with self.assertRaises(ValueError):L.validate_translation('Count %d',target)

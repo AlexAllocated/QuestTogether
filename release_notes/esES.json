@@ -1,21 +1,29 @@
 {
-  "source_sha256": "fbb33faa3c45389f9d2651737f8ee54ea157851574f3d306acf806daeb6810d6",
+  "source_sha256": "4604d6779705fba7b506a6cd81a956bcff03cc0fde1445471545377064be6f44",
   "notes": {
     "version": "5.15.0",
-    "welcome": "Solicita unirte a un grupo de misiones directamente desde el menú de un jugador de QuestTogether.",
+    "welcome": "QuestTogether ahora es compatible con todos los idiomas de WoW y puede mostrar las actualizaciones de misiones de otros jugadores en el idioma de tu cliente.",
     "sections": [
       {
-        "title": "Únete a un grupo de misiones",
+        "title": "Jugar en más idiomas",
         "items": [
-          "Los jugadores de QT que están en grupo ahora muestran Solicitar unirse en lugar de Invitar cuando hay información reciente del grupo. Ambos jugadores necesitan esta actualización; quien envía la solicitud debe estar solo.",
-          "El destinatario puede enviar una invitación normal de WoW o rechazar la solicitud. Debe tener permiso para invitar y espacio en un grupo normal. Para unirte, sigues aceptando la invitación habitual."
+          "Los menús, ajustes y notas de parche ahora son compatibles con todos los idiomas locales de WoW: inglés, alemán, francés, español europeo, español latinoamericano, portugués de Brasil, ruso, italiano, coreano, chino simplificado y chino tradicional.",
+          "El español latinoamericano ahora tiene su propio texto en lugar de compartir el español europeo."
         ]
       },
       {
-        "title": "Invitaciones automáticas opcionales",
+        "title": "Progreso de misión localizado",
         "items": [
-          "Dos nuevas opciones aprueban automáticamente las solicitudes de amigos de tu personaje, o de otros jugadores mientras buscas compañeros de misiones. Ambas están desactivadas por defecto y aparecen en la solicitud y en los ajustes Varios. No incluyen a los amigos de cuenta de Battle.net.",
-          "Las solicitudes caducan y respetan la lista de ignorados, los cambios de grupo y las restricciones del juego. QT nunca abandona tu grupo actual ni acepta invitaciones por ti."
+          "Los eventos de misión compatibles de jugadores con QT actualizado pueden aparecer en el idioma de tu cliente en los registros de chat y bocadillos de QT, usando títulos de misión locales cuando estén disponibles y las cifras de progreso reales del remitente.",
+          "Cuando no se pueda elegir con seguridad una descripción de objetivo traducida, QT usará un número de objetivo localizado con contadores, porcentajes, estado de completado o estado de progreso en su lugar.",
+          "Las versiones antiguas de QT y el chat de grupo público conservan la redacción del remitente. Cuando WoW no pueda proporcionar un título de misión local, QT mantendrá el título de origen o mostrará el ID de misión. Los eventos en el mismo idioma conservan su redacción nativa detallada."
+        ]
+      },
+      {
+        "title": "Pulido de títulos de misión",
+        "items": [
+          "La comparación de misiones ahora prefiere el título de misión local cuando esté disponible.",
+          "Los títulos de misión localizados con puntuación no ASCII siguen siendo clicables de forma más fiable."
         ]
       }
     ]

@@ -1736,7 +1736,7 @@ QuestTogether:RegisterTest(
 
 QuestTogether:RegisterTest("party compare renders every locale while canonical actions still share", function()
 	local previous = QuestTogether.localizationTestLocale
-	for _, locale in ipairs({ "deDE", "frFR", "esES", "ptBR", "ruRU" }) do
+	for _, locale in ipairs({ "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW" }) do
 		QuestTogether.localizationTestLocale = locale
 		local a = Fixture(nil, { Quest(1, "Untranslated quest title", true) })
 		function a:GetPartyQuestUIParent() return Frame() end

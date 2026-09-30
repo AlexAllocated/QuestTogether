@@ -47,6 +47,36 @@ return pushable end or nil,
 		return objective.text, objective.type, objective.finished, objective.numFulfilled
 	end or nil
 	return function(addon)
+		-- Quest-title lookups never select quests and copy only public strings.
+		do
+			local oldLog, oldBlocked = C_QuestLog, addon.IsWorkBlocked
+			local blocked, calls, loads, title = false, 0, 0, "Localized title"
+			addon.IsWorkBlocked = function(_, kind) assert(kind == "quest_snapshot_refresh"); return blocked end
+			C_QuestLog = {
+				GetTitleForQuestID = function(id) assert(id == 12345); calls = calls + 1; return title end,
+				RequestLoadQuestByID = function(id) assert(id == 12345); loads = loads + 1 end,
+			}
+			assert(addon.API.GetLocalizedQuestTitle(12345) == title and calls == 1)
+			assert(addon.API.RequestLocalizedQuestTitle(12345) == true and loads == 1)
+			blocked = true
+			assert(addon.API.GetLocalizedQuestTitle(12345) == nil and calls == 1)
+			assert(addon.API.RequestLocalizedQuestTitle(12345) == false and loads == 1)
+			blocked = false
+			local before = inaccessibleReads
+			for _, value in ipairs({ secret, inaccessible, {}, 123 }) do
+				title = value; assert(addon.API.GetLocalizedQuestTitle(12345) == nil)
+			end
+			for _, value in ipairs({ secret, inaccessible }) do
+				C_QuestLog = value
+				assert(addon.API.GetLocalizedQuestTitle(12345) == nil)
+				assert(addon.API.RequestLocalizedQuestTitle(12345) == false)
+			end
+			assert(inaccessibleReads == before, "inaccessible title API must not be inspected")
+			C_QuestLog = nil
+			assert(addon.API.GetLocalizedQuestTitle(12345) == nil)
+			assert(addon.API.RequestLocalizedQuestTitle(12345) == false)
+			C_QuestLog, addon.IsWorkBlocked = oldLog, oldBlocked
+		end
 		-- Native party contracts are simulated offline only. Nil InviteUnit return
 		-- means invocation, not confirmed delivery; inaccessible data fails closed.
 		do
@@ -636,8 +666,19 @@ return rawRow end
 				"legacy location availability: " .. shape)
 		end
 		GetQuestLogTitle, C_QuestLog.GetInfo = originalTitleGetter, originalInfoGetter
-		local text, kind, done, count = addon.API.GetQuestObjectiveInfo(12345, 1, false)
-		assert(text == "Wolves slain: 2/5" and kind == "monster" and done == false and count == 2)
+		local text, kind, done, count, required = addon.API.GetQuestObjectiveInfo(12345, 1, false)
+		assert(text == "Wolves slain: 2/5" and kind == "monster" and done == false and count == 2 and required == 5)
+		objective.numRequired = secret
+		local _, _, _, _, hiddenRequired = addon.API.GetQuestObjectiveInfo(12345, 1, false)
+		assert(hiddenRequired == nil, "secret required count must be dropped")
+		objective.numRequired = 5
+		if not classic then
+			local originalObjectives = C_QuestLog.GetQuestObjectives
+			C_QuestLog.GetQuestObjectives = function() return {{ text = "Another stage: 2/8", type = "monster", numFulfilled = 2, numRequired = 8 }} end
+			local _, _, _, ownCount, wrongRequired = addon.API.GetQuestObjectiveInfo(12345, 1, false)
+			assert(ownCount == 2 and wrongRequired == nil, "mismatched rows cannot supplement counters")
+			C_QuestLog.GetQuestObjectives = originalObjectives
+		end
 		assert(addon.API.IsPushableQuest(12345) == true)
 		pushable = false
 		assert(addon.API.IsPushableQuest(12345) == false)

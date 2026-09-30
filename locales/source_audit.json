@@ -128,6 +128,18 @@
       "quest_lifecycle questId=%s transition=turned_in pendingRemoval=%s",
       "unknown error"
     ],
+    "EventLocalization.lua": [
+      "Bonus Objective Completed: ",
+      "Bonus Objective Entered: ",
+      "Left Bonus Objective: ",
+      "Left World Quest: ",
+      "Quest Accepted: ",
+      "Quest Completed: ",
+      "Quest Removed: ",
+      "Ready to Turn In: ",
+      "World Quest Completed: ",
+      "World Quest Entered: "
+    ],
     "HotPathRuntime.lua": [
       "Frame",
       "work_failed class=%s key=%s reason=%s error=%s"

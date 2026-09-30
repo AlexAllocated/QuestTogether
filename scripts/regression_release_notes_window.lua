@@ -492,7 +492,7 @@ end)
 
 Register("release notes render translated content with owned controls in every locale", function()
 	local previous = QuestTogether.localizationTestLocale
-	for _, locale in ipairs({ "deDE", "frFR", "esES", "ptBR", "ruRU" }) do
+	for _, locale in ipairs({ "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW" }) do
 		QuestTogether.localizationTestLocale = locale
 		local a = Fixture()
 		local notes = QuestTogether.releaseNotesByLocale[locale]

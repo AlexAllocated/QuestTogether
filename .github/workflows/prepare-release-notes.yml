@@ -56,8 +56,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git add -- release_notes.json ReleaseNotes.lua LocalizedReleaseNotes.lua \
-            release_notes/deDE.json release_notes/frFR.json release_notes/esES.json \
-            release_notes/ptBR.json release_notes/ruRU.json
+            release_notes/deDE.json release_notes/frFR.json release_notes/esES.json release_notes/esMX.json \
+            release_notes/ptBR.json release_notes/ruRU.json \
+            release_notes/itIT.json release_notes/koKR.json release_notes/zhCN.json release_notes/zhTW.json
           if git diff --cached --quiet; then
             printf 'changed=false\n' >> "$GITHUB_OUTPUT"
             printf 'The generated notes already match the current files.\n'
@@ -78,9 +79,9 @@ jobs:
           NOTES_VERSION: ${{ steps.notes.outputs.version }}
         run: |
           cat > .local/release-notes-pr-body.md <<'BODY'
-          This generated draft updates the shared in-game and Discord release notes from changes since the current release tag, plus German, French, Spanish, Brazilian Portuguese, and Russian in-game translations. Human review is required before merging or publishing.
+          This generated draft updates the shared in-game and Discord release notes from changes since the current release tag, plus German, French, European Spanish, Latin American Spanish, Brazilian Portuguese, Russian, Italian, Korean, Simplified Chinese, and Traditional Chinese in-game translations. Human review is required before merging or publishing.
 
-          Verify that the notes describe only new player-facing changes, use accurate defaults and limits, and match the intended release. Review translation quality as well as the English draft. All five translations were checked against the English source digest, version, section/item structure, and illustrations; generated JSON/Lua consistency and the release baseline were checked before this branch was pushed. This preparation does not bump the version or publish a release.
+          Verify that the notes describe only new player-facing changes, use accurate defaults and limits, and match the intended release. Review translation quality as well as the English draft. All ten translations were checked against the English source digest, version, section/item structure, and illustrations; generated JSON/Lua consistency and the release baseline were checked before this branch was pushed. This preparation does not bump the version or publish a release.
 
           BODY
           cat .local/generated-release-notes.md >> .local/release-notes-pr-body.md
@@ -99,7 +100,12 @@ jobs:
             release_notes/deDE.json
             release_notes/frFR.json
             release_notes/esES.json
+            release_notes/esMX.json
             release_notes/ptBR.json
             release_notes/ruRU.json
+            release_notes/itIT.json
+            release_notes/koKR.json
+            release_notes/zhCN.json
+            release_notes/zhTW.json
             LocalizedReleaseNotes.lua
             .local/generated-release-notes.md

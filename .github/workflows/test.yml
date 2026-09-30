@@ -31,7 +31,7 @@ jobs:
       - run: lua${{ matrix.lua }} scripts/test.lua
       - run: lua${{ matrix.lua }} scripts/test.lua . reverse
       - run: |
-          for locale in deDE frFR esES esMX ptBR ruRU; do
+          for locale in enGB deDE frFR esES esMX ptBR ruRU itIT koKR zhCN zhTW; do
             QT_TEST_LOCALE="$locale" lua${{ matrix.lua }} scripts/test.lua
           done
       - run: |

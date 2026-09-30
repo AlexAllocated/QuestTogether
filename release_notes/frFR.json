@@ -1,21 +1,29 @@
 {
-  "source_sha256": "fbb33faa3c45389f9d2651737f8ee54ea157851574f3d306acf806daeb6810d6",
+  "source_sha256": "4604d6779705fba7b506a6cd81a956bcff03cc0fde1445471545377064be6f44",
   "notes": {
     "version": "5.15.0",
-    "welcome": "Demandez à rejoindre un groupe de quête directement depuis le menu d’un joueur QuestTogether.",
+    "welcome": "QuestTogether prend désormais en charge toutes les langues de WoW et peut afficher les mises à jour de quête des autres joueurs dans la langue de votre client.",
     "sections": [
       {
-        "title": "Rejoindre un groupe de quête",
+        "title": "Jouez dans plus de langues",
         "items": [
-          "Les joueurs QT déjà en groupe affichent désormais Demander à rejoindre au lieu d’Inviter lorsque des informations récentes sont disponibles. Les deux joueurs doivent disposer de cette mise à jour ; le demandeur doit être seul.",
-          "Le destinataire peut envoyer une invitation WoW normale ou refuser. Il doit avoir le droit d’inviter et une place dans un groupe normal. Vous devez toujours accepter l’invitation normale pour rejoindre."
+          "Les menus, paramètres et notes de mise à jour prennent désormais en charge toutes les langues locales de WoW : anglais, allemand, français, espagnol européen, espagnol latino-américain, portugais brésilien, russe, italien, coréen, chinois simplifié et chinois traditionnel.",
+          "L’espagnol latino-américain dispose désormais de ses propres textes au lieu de partager ceux de l’espagnol européen."
         ]
       },
       {
-        "title": "Invitations automatiques facultatives",
+        "title": "Progression de quête localisée",
         "items": [
-          "Deux nouvelles options approuvent automatiquement les demandes des amis de votre personnage, ou des autres joueurs pendant votre recherche de partenaires de quête. Désactivées par défaut, elles figurent dans la fenêtre de demande et les paramètres Divers. Les amis de compte Battle.net ne sont pas inclus.",
-          "Les demandes expirent et respectent les joueurs ignorés, les changements de groupe et les restrictions du jeu. QT ne quitte jamais votre groupe actuel et n’accepte pas d’invitations à votre place."
+          "Les événements de quête pris en charge provenant de joueurs QT à jour peuvent apparaître dans la langue de votre client dans les journaux de discussion et bulles QT, en utilisant les titres de quête locaux lorsqu’ils sont disponibles et les nombres de progression réels de l’expéditeur.",
+          "Lorsqu’une description d’objectif traduite ne peut pas être choisie de manière fiable, QT utilise à la place un numéro d’objectif localisé avec le nombre, le pourcentage, l’état d’achèvement ou l’état de progression.",
+          "Les anciennes versions de QT et la discussion de groupe publique conservent la formulation de l’expéditeur. Lorsque WoW ne peut pas fournir de titre de quête local, QT conserve le titre source ou affiche l’ID de quête. Les événements dans la même langue conservent leur formulation native détaillée."
+        ]
+      },
+      {
+        "title": "Amélioration des titres de quête",
+        "items": [
+          "La comparaison de quêtes privilégie désormais votre titre de quête local lorsqu’il est disponible.",
+          "Les titres de quête localisés contenant une ponctuation non ASCII restent cliquables de manière plus fiable."
         ]
       }
     ]

@@ -12,9 +12,13 @@
 ## Notes-deDE: Chatblasen und Protokolle zum Questfortschritt für Gruppenmitglieder und Spieler in der Nähe.
 ## Notes-frFR: Bulles de discussion et journaux de progression des quêtes pour le groupe et les joueurs à proximité.
 ## Notes-esES: Bocadillos de chat y registros del progreso de misiones para el grupo y jugadores cercanos.
+## Notes-esMX: Burbujas de chat y registros de progreso de misiones para el grupo y jugadores cercanos.
 ## Notes-ptBR: Bolhas de bate-papo e registros de progresso de missões para o grupo e jogadores próximos.
 ## Notes-ruRU: Облачка чата и журналы прогресса заданий для группы и игроков поблизости.
-## Notes-esMX: Bocadillos de chat y registros del progreso de misiones para el grupo y jugadores cercanos.
+## Notes-itIT: Bolle di chat e registri dei progressi missione per il gruppo e i giocatori vicini.
+## Notes-koKR: 파티 및 주변 플레이어의 퀘스트 진행 대화 말풍선과 기록입니다.
+## Notes-zhCN: 队伍和附近玩家的任务进度聊天气泡和记录。
+## Notes-zhTW: 隊伍與附近玩家的任務進度對話泡泡與記錄。
 ## SavedVariables: QuestTogetherDB
 ## Author: Chev
 ## RequiredDeps:
@@ -41,6 +45,7 @@ TaskArea.lua
 Nameplates.lua
 PartyState.lua
 Comms.lua
+EventLocalization.lua
 AddonUpdates.lua
 QuestCompare.lua
 QuestCompareWindow.lua
@@ -72,4 +77,5 @@ scripts/regression_location_pins.lua
 scripts/regression_location_ignores.lua
 scripts/regression_player_plates.lua
 scripts/regression_localization.lua
+scripts/regression_event_localization.lua
 scripts/regression_party_join.lua

@@ -78,6 +78,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	function preview:SetOption(key, value)
 		self.options[key] = value
 	end
+	function preview:GetLocalizedQuestTitle() return nil end
 	function preview:RefreshPartyRoster() end
 	function preview:CancelPartyQuestCompare()
 		self.partyQuestCompareSession = nil

@@ -169,14 +169,15 @@ def write_translations(root, source):
 
 
 class FormattingTests(unittest.TestCase):
-    def test_locales_have_distinct_markers_and_nonces_with_spanish_alias(self):
+    def test_locales_have_distinct_markers_and_nonces_with_distinct_spanish_locales(self):
         english = changelog.build_messages(notes(), REPO, TAG)
         self.assertEqual(changelog.release_key(REPO, TAG), "QuestTogether release " + REPO + "@" + TAG)
         planned = {locale: changelog.build_messages(notes(), REPO, TAG, locale)
                    for locale in changelog.LOCALE_CHANNEL_NAMES}
         self.assertEqual(planned["enUS"], english)
-        self.assertEqual(changelog.build_messages(notes(), REPO, TAG, "esMX"), planned["esES"])
-        self.assertEqual(len({messages[0]["nonce"] for messages in planned.values()}), 6)
+        self.assertNotEqual(planned["esMX"], planned["esES"])
+        self.assertEqual(changelog.canonical_locale("esMX"), "esMX")
+        self.assertEqual(len({messages[0]["nonce"] for messages in planned.values()}),len(changelog.LOCALE_CHANNEL_NAMES))
         self.assertEqual(changelog.posted_markers([response(english[0])], planned["frFR"], REPO, TAG, "frFR"), set())
 
     def test_canonical_content_and_mentions_preserved_without_pinging(self):
@@ -517,7 +518,7 @@ class LocalizationTests(unittest.TestCase):
                        lambda c: c.update(bot_id="1554000000000000008"),
                        lambda c: c["channels"]["deDE"].update(name="general"),
                        lambda c: c["channels"]["deDE"].update(id=CHANNEL),
-                       lambda c: c["channels"].update(esMX=c["channels"]["esES"])):
+                       lambda c: c["channels"].update(xxXX=c["channels"]["esES"])):
             candidate = copy.deepcopy(config)
             mutate(candidate)
             (self.root / changelog.CHANNEL_CONFIG).write_text(json.dumps(candidate))
@@ -541,13 +542,13 @@ class LocalizationTests(unittest.TestCase):
             self.assertEqual(selected, {"enUS": CHANNEL})
             self.assertEqual(api.posts, [])
             selected = setup.provision(api, self.root, create=True)
-            self.assertEqual(len(selected), 6)
-            self.assertEqual(len(api.posts), 5)
+            self.assertEqual(len(selected),len(changelog.LOCALE_CHANNEL_NAMES))
+            self.assertEqual(len(api.posts),len(changelog.LOCALE_CHANNEL_NAMES) - 1)
             for payload in api.posts:
                 self.assertEqual(payload["parent_id"], None)
                 self.assertEqual(payload["permission_overwrites"], setup.overwrites(api.channels[CHANNEL]))
             self.assertEqual(setup.provision(api, self.root, create=True), selected)
-            self.assertEqual(len(api.posts), 5)
+            self.assertEqual(len(api.posts),len(changelog.LOCALE_CHANNEL_NAMES) - 1)
         self.assertEqual(changelog.load_channel_config(self.root), locale_config())
 
     def test_provision_fails_closed_for_missing_configured_or_conflicting_channels(self):
@@ -592,9 +593,9 @@ class LocalizationTests(unittest.TestCase):
         self.assertEqual(len(api.posts), 1)
         self.assertEqual(path.read_bytes(), before)
         with contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(len(setup.provision(api, self.root, create=True)), 6)
-        self.assertEqual(len(api.posts), 5)
-        self.assertEqual(len({payload["name"] for payload in api.posts}), 5)
+            self.assertEqual(len(setup.provision(api, self.root, create=True)),len(changelog.LOCALE_CHANNEL_NAMES))
+        self.assertEqual(len(api.posts),len(changelog.LOCALE_CHANNEL_NAMES) - 1)
+        self.assertEqual(len({payload["name"] for payload in api.posts}),len(changelog.LOCALE_CHANNEL_NAMES) - 1)
 
     def test_duplicate_existing_locale_names_are_rejected_before_creation(self):
         api = LocalizedDiscord()
@@ -716,12 +717,12 @@ class LocalNotesTests(unittest.TestCase):
             self.assertEqual(len(discord.posts), 2)
             discord.fail_part = None
             self.assertEqual(changelog.main(args), 0)
-            self.assertEqual(len(discord.posts), 6)
+            self.assertEqual(len(discord.posts),len(changelog.LOCALE_CHANNEL_NAMES))
             self.assertEqual(changelog.main(args), 0)
-            self.assertEqual(len(discord.posts), 6)
+            self.assertEqual(len(discord.posts),len(changelog.LOCALE_CHANNEL_NAMES))
             self.assertEqual(archive.call_args.kwargs["localized_lua"],
                              (self.root / changelog.LOCALIZED_LUA).read_bytes())
-        self.assertEqual(len({payload["nonce"] for payload in discord.posts}), 6)
+        self.assertEqual(len({payload["nonce"] for payload in discord.posts}),len(changelog.LOCALE_CHANNEL_NAMES))
         for locale, entry in locale_config()["channels"].items():
             message = discord.histories[entry["id"]][0]
             self.assertIn(changelog.release_key(REPO, TAG, locale), message["embeds"][-1]["footer"]["text"])
@@ -764,7 +765,7 @@ class LocalNotesTests(unittest.TestCase):
             discord.channels[last]["name"] = changelog.LOCALE_CHANNEL_NAMES["ruRU"]
             setup.post_current(self.root, self.root, discord, object())
             setup.post_current(self.root, self.root, discord, object())
-            self.assertEqual(len(discord.posts), 5)
+            self.assertEqual(len(discord.posts),len(changelog.LOCALE_CHANNEL_NAMES) - 1)
             self.assertEqual(load.call_args.args[1], "v5.13.1")
             self.assertEqual(load.call_args.kwargs, {"exact": True})
             self.assertEqual(release.call_args.args[2:], ("v5.13.1", SHA))
@@ -772,7 +773,7 @@ class LocalNotesTests(unittest.TestCase):
             self.write_notes(notes("5.13.2", "Unpublished future feature."))
             with self.assertRaisesRegex(changelog.ChangelogError, "published 5.13.1"):
                 setup.post_current(self.root, self.root, discord, object())
-            self.assertEqual(len(discord.posts), 5)
+            self.assertEqual(len(discord.posts),len(changelog.LOCALE_CHANNEL_NAMES) - 1)
 
     def test_exact_tag_generation_and_history_validation(self):
         data, sha = changelog.load_notes(self.root, TAG, exact=True)

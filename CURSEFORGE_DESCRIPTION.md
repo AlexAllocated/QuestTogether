@@ -237,3 +237,15 @@ For troubleshooting, QuestTogether includes a searchable, filterable debug windo
 **[Join the QuestTogether Discord](https://discord.gg/Uxyyvhfva9)** to suggest features, share feedback, or open a support ticket. You can also find a copyable invite through **Discord — Feedback & Support** in the welcome window and main settings page.
 
 When reporting a problem, include your game client, QuestTogether version, what happened, and how to reproduce it. Screenshots and copied diagnostics are helpful. To copy debug output, open `/qt debug`, choose **Select All**, and press **Ctrl+C**.
+
+## Play in your language
+
+QuestTogether supports all nine WoW languages across eleven in-game text locales:
+English, German, French, European and Latin American Spanish, Brazilian Portuguese,
+Russian, Italian, Korean, and Simplified and Traditional Chinese. Menus,
+settings, and patch notes follow your WoW client language. Events from updated QT
+players can be displayed in your language too, using local quest titles when WoW
+has them and the other player's actual progress. Some objectives use a translated
+objective number instead of their original description. Older addon versions and
+unavailable quest data retain safe fallbacks; public party chat uses the sender's
+language. Discord has a separate changelog channel for each supported language.

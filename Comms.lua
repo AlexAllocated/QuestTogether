@@ -339,6 +339,8 @@ function QuestTogether:SanitizeAnnouncementExtraData(extraData)
 	local iconAsset = SafePrimitiveString(self, extraData.iconAsset, "")
 	local iconKind = SafePrimitiveString(self, extraData.iconKind, "")
 	local emoteToken = SafePrimitiveString(self, extraData.emoteToken, "")
+	local facts = SafePrimitiveString(self, extraData.eventFacts, "")
+	if self.DecodeAnnouncementFacts and self:DecodeAnnouncementFacts(facts) then sanitized.eventFacts = facts end
 	if iconAsset ~= "" then
 		sanitized.iconAsset = iconAsset
 	end
@@ -392,6 +394,7 @@ function QuestTogether:SanitizeAnnouncementEventData(eventData)
 		coordY = numericCoordY and string.format("%.1f", numericCoordY) or "",
 		warMode = normalizedWarMode == nil and "" or (normalizedWarMode and "1" or "0"),
 		emoteToken = sanitizedExtraData.emoteToken or "",
+		eventFacts = sanitizedExtraData.eventFacts or "",
 		mapID = numericMapID and SafePrimitiveString(self, numericMapID, "") or "",
 	}
 end
@@ -690,11 +693,12 @@ function QuestTogether:EncodeAnnouncementPayload(eventData)
 		-- Append optional fields: v1-v3 receivers continue reading their original
 		-- slots, and new receivers can still use zone labels from older packets.
 		self:EscapePayload(eventData.mapID or ""),
+		self:EscapePayload(eventData.eventFacts or ""),
 	}
 
 	-- Numeric location is useful even when a long localized display label cannot
 	-- fit. Keep the coordinate system, coordinates and war mode together.
-	return FitPayloadText(self, fields, 6, ANNOUNCEMENT_COMMAND, { { 8, 9 }, { 10 }, { 3 }, { 4 }, { 11, 12, 13, 15 } })
+	return FitPayloadText(self, fields, 6, ANNOUNCEMENT_COMMAND, { { 8, 9 }, { 10 }, { 3 }, { 4 }, { 16 }, { 11, 12, 13, 15 } })
 end
 
 function QuestTogether:DecodeAnnouncementPayload(payload)
@@ -723,6 +727,7 @@ function QuestTogether:DecodeAnnouncementPayload(payload)
 	local warMode = self:UnescapePayload(fields[13] or "")
 	local emoteToken = self:UnescapePayload(fields[14] or "")
 	local mapID = self:UnescapePayload(fields[15] or "")
+	local eventFacts = self:UnescapePayload(fields[16] or "")
 
 	if eventType == "" or senderName == "" or text == "" then
 		return nil
@@ -744,6 +749,7 @@ function QuestTogether:DecodeAnnouncementPayload(payload)
 		warMode = warMode,
 		emoteToken = emoteToken,
 		mapID = mapID,
+		eventFacts = eventFacts,
 	})
 end
 
@@ -1028,6 +1034,7 @@ function QuestTogether:LeaveAnnouncementChannel()
 end
 
 function QuestTogether:ResetCommsState()
+	self.localizedQuestTitles = nil
 	if self.ResetPartyJoin then self:ResetPartyJoin() end
 	self.qtPlayerPresenceState = nil
 	if self.ResetPlayerLocations then self:ResetPlayerLocations() end
@@ -1142,6 +1149,7 @@ function QuestTogether:BuildLocalAnnouncementEvent(eventType, text, questId, ext
 		coordY = numericCoordY and string.format("%.1f", numericCoordY) or "",
 		warMode = warMode == nil and "" or (warMode and "1" or "0"),
 		emoteToken = sanitizedExtraData.emoteToken or "",
+		eventFacts = sanitizedExtraData.eventFacts or (self.BuildAnnouncementFacts and self:BuildAnnouncementFacts(eventType)) or "",
 		mapID = locationInfo and locationInfo.mapID or nil,
 	})
 end
@@ -1966,6 +1974,12 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
 		return false
 	end
 
+	-- This is an addon-owned sanitized copy. Keep the wire/party-chat text intact.
+	local originalText = eventData.text
+	if not isLocal and (self:GetOption("showChatLogs") or self:GetOption("showChatBubbles"))
+		and self.LocalizeAnnouncementEvent then
+		eventData.text = self:LocalizeAnnouncementEvent(eventData)
+	end
 	local isLevelUp = eventData.eventType == "PLAYER_LEVEL_UP"
 	if not isLevelUp and self:GetOption("showChatLogs") then
 		local shouldPrint = isLocal or isGrouped or hasNearbySignal or forceAllChatLogs
@@ -2027,7 +2041,7 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
 			eventData.questId,
 			tostring(self:GetOption("showChatBubbles")),
 			tostring(self:GetOption("hideMyOwnChatBubbles")),
-			string.sub(eventData.text, 1, 220)
+			string.sub(originalText, 1, 220)
 		)
 	)
 
