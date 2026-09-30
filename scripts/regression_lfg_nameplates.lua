@@ -55,6 +55,26 @@ local function Fixture()
 			texture.layer = layer
 			return texture
 		end
+		function r:CreateAnimationGroup()
+			if s.animationUnsupported then error("animation unavailable") end
+			Write(self)
+			local group = { animations = {}, plays = 0, stops = 0 }
+			function group:SetLooping(value) self.looping = value end
+			function group:CreateAnimation(kind)
+				Equal(kind, "Alpha")
+				local animation = {}
+				for _, field in ipairs({ "Order", "FromAlpha", "ToAlpha", "Duration", "Smoothing" }) do
+					local key = field
+					animation["Set" .. key] = function(_, value) animation[key] = value end
+				end
+				self.animations[#self.animations + 1] = animation
+				return animation
+			end
+			function group:IsPlaying() Read(r); return self.playing == true end
+			function group:Play() Write(r); self.playing = true; self.plays = self.plays + 1 end
+			function group:Stop() Write(r, true); self.playing = false; self.stops = self.stops + 1 end
+			return group
+		end
 		function r:SetTexture(value)
 			Write(self)
 			self.texture = value
@@ -179,7 +199,14 @@ end
 
 local function Glow(icon, shown)
 	assert(icon.qtPartnerGlow and #icon.qtPartnerGlow == 8, "eight reusable contour-glow regions expected")
-	for _, edge in ipairs(icon.qtPartnerGlow) do
+	for index, edge in ipairs(icon.qtPartnerGlow) do
+		local pulse = icon.qtPartnerGlowPulses[index]
+		assert(pulse and pulse.playing == shown)
+		Equal(pulse.looping, "REPEAT")
+		Equal(#pulse.animations, 2)
+		assert(pulse.animations[1].FromAlpha > 0, "pulse must not blink off")
+		Equal(pulse.animations[1].ToAlpha, pulse.animations[2].FromAlpha)
+		Equal(pulse.animations[2].ToAlpha, pulse.animations[1].FromAlpha)
 		Equal(edge.parent, icon)
 		Equal(edge.shown, shown)
 		Equal(edge.layer, "BACKGROUND")
@@ -418,5 +445,41 @@ QT:RegisterTest("partner indicator refresh accepts empty stores and old records 
 	s:Status(true)
 	s.clock:Advance(0)
 	Glow(icon, true)
+	Equal(s.invalid, 0)
+end)
+
+QT:RegisterTest("partner logo pulses stop on hide and restart without allocating new glow layers", function()
+	local s = Fixture()
+	s:Status(true)
+	s.clock:Advance(0)
+	local icon = s:Show()
+	Glow(icon, true)
+	local pulse, textures = icon.qtPartnerGlowPulses[1], s.textures
+	local plays = pulse.plays
+	s:Show()
+	Equal(pulse.plays, plays)
+	QT:HideQTPlayerIcon(icon)
+	Glow(icon, false)
+	s:Show()
+	Glow(icon, true)
+	Equal(pulse.plays, plays + 1)
+	Equal(s.textures, textures)
+	Equal(s.invalid, 0)
+end)
+
+QT:RegisterTest("unsupported native animation keeps the partner logo bright and static", function()
+	local s = Fixture()
+	s.animationUnsupported = true
+	s:Status(true)
+	s.clock:Advance(0)
+	local icon = s:Show()
+	assert(icon.shown and icon.qtLookingForPartners)
+	Equal(next(icon.qtPartnerGlowPulses), nil)
+	for _, layer in ipairs(icon.qtPartnerGlow) do
+		assert(layer.shown and layer.color[4] >= 0.8)
+	end
+	s:Status(false)
+	s.clock:Advance(0)
+	for _, layer in ipairs(icon.qtPartnerGlow) do assert(not layer.shown) end
 	Equal(s.invalid, 0)
 end)

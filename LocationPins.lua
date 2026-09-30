@@ -473,6 +473,10 @@ local function Tooltip(addon, state, pin, row)
 	end
 	if addon:IsPlayerLookingForQuestPartners(row.name) then
 		text = text .. L("\n|cff40ff40Looking for Questing Partners|r")
+		local questID, sourceTitle = addon:GetPlayerPartnerQuestID(row.name)
+		if questID then
+			text = text .. L("\nTracked quest: ") .. Text(addon, addon:GetLocalizedQuestTitle(questID) or sourceTitle or addon:GetQuestTitle(questID))
+		end
 	end
 	local now = addon.API and addon.API.GetTime and Number(addon, addon.API.GetTime())
 	local receivedAt = Number(addon, row.receivedAt)

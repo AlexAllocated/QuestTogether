@@ -1,29 +1,22 @@
 {
-  "source_sha256": "4604d6779705fba7b506a6cd81a956bcff03cc0fde1445471545377064be6f44",
+  "source_sha256": "41bf50baa423ddb1d745e32e9d347963b082cbca1b577f41c3ebda3c976036c1",
   "notes": {
     "version": "5.16.0",
-    "welcome": "QuestTogether unterstützt jetzt alle WoW-Sprachen und kann Questupdates anderer Spieler in der Sprache deines Clients anzeigen.",
+    "welcome": "Finde leichter Questpartner und sieh, auf welche Quest sie sich konzentrieren.",
     "sections": [
       {
-        "title": "In mehr Sprachen spielen",
+        "title": "Helleres Leuchten für Partner",
+        "illustration": "quest-partners",
         "items": [
-          "Menüs, Einstellungen und Patchnotes unterstützen jetzt alle WoW-Sprachversionen: Englisch, Deutsch, Französisch, europäisches Spanisch, lateinamerikanisches Spanisch, brasilianisches Portugiesisch, Russisch, Italienisch, Koreanisch, vereinfachtes Chinesisch und traditionelles Chinesisch.",
-          "Lateinamerikanisches Spanisch hat jetzt eigene Texte, statt europäisches Spanisch mitzubenutzen."
+          "Spieler, die nach Questpartnern suchen, haben nun ein helleres goldenes Leuchten um ihr QT-Namensplakettenlogo, mit einem sanften pulsierenden Effekt. Das Logo selbst bleibt ruhig."
         ]
       },
       {
-        "title": "Lokalisierter Questfortschritt",
+        "title": "Ihre aktuelle Quest sehen",
         "items": [
-          "Unterstützte Questereignisse von aktualisierten QT-Spielern können in QT-Chatprotokollen und -Sprechblasen in deiner Clientsprache erscheinen, mit lokalen Questtiteln, sofern verfügbar, und den tatsächlichen Fortschrittszahlen des Absenders.",
-          "Wenn eine übersetzte Zielbeschreibung nicht sicher ausgewählt werden kann, verwendet QT stattdessen eine lokalisierte Zielnummer mit Zählwerten, Prozentangaben, Abschluss- oder Fortschrittsstatus.",
-          "Ältere QT-Versionen und der öffentliche Gruppenchat behalten die Formulierung des Absenders bei. Wenn WoW keinen lokalen Questtitel liefern kann, behält QT den Quelltitel bei oder zeigt die Quest-ID an. Ereignisse in derselben Sprache behalten ihre detaillierte Originalformulierung."
-        ]
-      },
-      {
-        "title": "Feinschliff für Questtitel",
-        "items": [
-          "Der Questvergleich bevorzugt jetzt deinen lokalen Questtitel, sofern verfügbar.",
-          "Lokalisierte Questtitel mit Nicht-ASCII-Satzzeichen bleiben zuverlässiger anklickbar."
+          "Fahre mit der Maus über den Karten- oder Minikartenpunkt eines Spielers, der nach Questpartnern sucht, um seine superverfolgte Quest zu sehen – die einzelne Quest, die für die Navigation ausgewählt ist. Beide Spieler benötigen dieses Update.",
+          "Questinformationen werden etwa alle 20 Sekunden aktualisiert. Sie werden nur geteilt, wenn „Nach Questpartnern suchen“ und die Standortfreigabe aktiviert sind.",
+          "Questnamen verwenden deine Client-Sprache, wenn verfügbar, andernfalls den Titel oder die Quest-ID des Absenders als Fallback. Ältere QT-Versionen behalten ihre bestehenden Punkte und Partneranzeigen."
         ]
       }
     ]

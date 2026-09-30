@@ -47,6 +47,38 @@ return pushable end or nil,
 		return objective.text, objective.type, objective.finished, objective.numFulfilled
 	end or nil
 	return function(addon)
+		-- Native tracking is read-only: a waypoint is not a quest, even if a
+		-- previously tracked quest ID remains cached by the engine.
+		do
+			local oldTrack, oldBlocked, oldSensitive = C_SuperTrack, addon.IsRuntimeRestricted, addon.IsMapTooltipSensitiveStateActive
+			local blocked, active, id, reads = false, true, 12345, 0
+			addon.IsRuntimeRestricted = function() return blocked end
+			C_SuperTrack = {
+				IsSuperTrackingQuest = function() return active end,
+				GetSuperTrackedQuestID = function() reads = reads + 1; return id end,
+			}
+			addon.IsMapTooltipSensitiveStateActive = function() return true end
+			assert(addon.API.GetActiveTrackedQuestID() == 12345 and reads == 1)
+			for _, value in ipairs({ false, secret, inaccessible }) do
+				active = value; assert(addon.API.GetActiveTrackedQuestID() == nil and reads == 1)
+			end
+			active, blocked = true, true
+			assert(addon.API.GetActiveTrackedQuestID() == nil and reads == 1)
+			blocked = false
+			for _, value in ipairs({ 0, -1, 1.5, 1000000001, secret, inaccessible }) do
+				id = value; assert(addon.API.GetActiveTrackedQuestID() == nil)
+			end
+			C_SuperTrack.GetSuperTrackedQuestID = function() error("unavailable") end
+			assert(addon.API.GetActiveTrackedQuestID() == nil)
+			C_SuperTrack.IsSuperTrackingQuest = function() error("unavailable") end
+			assert(addon.API.GetActiveTrackedQuestID() == nil)
+			for _, value in ipairs({ {}, secret, inaccessible }) do
+				C_SuperTrack = value; assert(addon.API.GetActiveTrackedQuestID() == nil)
+			end
+			C_SuperTrack = nil; assert(addon.API.GetActiveTrackedQuestID() == nil)
+			C_SuperTrack, addon.IsRuntimeRestricted, addon.IsMapTooltipSensitiveStateActive = oldTrack, oldBlocked, oldSensitive
+			assert(inaccessibleReads == 0)
+		end
 		-- Quest-title lookups never select quests and copy only public strings.
 		do
 			local oldLog, oldBlocked = C_QuestLog, addon.IsWorkBlocked

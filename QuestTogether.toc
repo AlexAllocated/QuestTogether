@@ -54,6 +54,7 @@ QuestComparePreview.lua
 Minimap.lua
 PlayerLocations.lua
 PlayerPlates.lua
+QuestPartnerQuest.lua
 LocationPins.lua
 EventHandlers.lua
 Options.lua

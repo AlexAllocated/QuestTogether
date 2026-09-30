@@ -1,29 +1,22 @@
 {
-  "source_sha256": "4604d6779705fba7b506a6cd81a956bcff03cc0fde1445471545377064be6f44",
+  "source_sha256": "41bf50baa423ddb1d745e32e9d347963b082cbca1b577f41c3ebda3c976036c1",
   "notes": {
     "version": "5.16.0",
-    "welcome": "QuestTogether ahora es compatible con todos los idiomas de WoW y puede mostrar las actualizaciones de misiones de otros jugadores en el idioma de tu cliente.",
+    "welcome": "Encuentra compañeros de misiones más fácilmente y consulta en qué misión se están centrando.",
     "sections": [
       {
-        "title": "Jugar en más idiomas",
+        "title": "Un brillo de compañero más intenso",
+        "illustration": "quest-partners",
         "items": [
-          "Los menús, ajustes y notas de parche ahora son compatibles con todos los idiomas locales de WoW: inglés, alemán, francés, español europeo, español latinoamericano, portugués de Brasil, ruso, italiano, coreano, chino simplificado y chino tradicional.",
-          "El español latinoamericano ahora tiene su propio texto en lugar de compartir el español europeo."
+          "Los jugadores que buscan compañeros de misiones ahora tienen un brillo dorado más intenso alrededor del logotipo de QT en su placa de nombre, con una suave pulsación. El logotipo permanece fijo."
         ]
       },
       {
-        "title": "Progreso de misión localizado",
+        "title": "Consulta su misión actual",
         "items": [
-          "Los eventos de misión compatibles de jugadores con QT actualizado pueden aparecer en el idioma de tu cliente en los registros de chat y bocadillos de QT, usando títulos de misión locales cuando estén disponibles y las cifras de progreso reales del remitente.",
-          "Cuando no se pueda elegir con seguridad una descripción de objetivo traducida, QT usará un número de objetivo localizado con contadores, porcentajes, estado de completado o estado de progreso en su lugar.",
-          "Las versiones antiguas de QT y el chat de grupo público conservan la redacción del remitente. Cuando WoW no pueda proporcionar un título de misión local, QT mantendrá el título de origen o mostrará el ID de misión. Los eventos en el mismo idioma conservan su redacción nativa detallada."
-        ]
-      },
-      {
-        "title": "Pulido de títulos de misión",
-        "items": [
-          "La comparación de misiones ahora prefiere el título de misión local cuando esté disponible.",
-          "Los títulos de misión localizados con puntuación no ASCII siguen siendo clicables de forma más fiable."
+          "Pasa el cursor sobre el punto del mapa o minimapa de un jugador que busca compañeros de misiones para ver su misión con seguimiento destacado: la única misión seleccionada para la navegación. Ambos jugadores necesitan esta actualización.",
+          "La información de la misión se actualiza aproximadamente cada 20 segundos. Solo se comparte mientras Buscar compañeros de misiones y compartir ubicación están activados.",
+          "Los nombres de las misiones usan el idioma de tu cliente cuando está disponible, con el título del remitente o el ID de misión como alternativa. Las versiones anteriores de QT mantienen sus puntos e indicadores de compañeros existentes."
         ]
       }
     ]

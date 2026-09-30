@@ -732,3 +732,41 @@ Register("location tooltip distinguishes an older last reported position from a 
 	a:RefreshPlayerLocationPins()
 	Equal(a.locationPinState.tooltipLabel.text:find("Last update:", 1, true), nil)
 end)
+
+Register("partner dot tooltips show localized super-tracking and clear it on newer status or expiry", function()
+	for _, surface in ipairs({ "map", "minimap" }) do
+		local a = Fixture()
+		a.now = 100
+		a.API.GetTime = function() return a.now end
+		a.API.GetRealmName = function() return "Realm" end
+		function a:GetPlayerFullName() return "Me-Realm" end
+		function a:GetLocalizedQuestTitle(id)
+			Equal(id, 42)
+			return self.title
+		end
+		a.title = "Une quête |cffff0000test"
+		a.qtPlayerPresenceState = {
+			peers = {},
+			questPartners = { ["Friend-Realm"] = { session = "10-1234", sequence = 1, receivedAt = 100, looking = true } },
+			partnerQuests = { ["Friend-Realm"] = { session = "10-1234", sequence = 1, receivedAt = 100, questID = 42 } },
+		}
+		a.rows[surface] = { Row() }
+		a:RefreshPlayerLocationPins()
+		Pin(a, surface).frame.scripts.OnEnter({})
+		assert(a.locationPinState.tooltipLabel.text:find("Tracked quest: Une quête ||cffff0000test", 1, true))
+		a.title = nil
+		a.qtPlayerPresenceState.partnerQuests["Friend-Realm"].title = "Sender |Hquest:42|hname|h"
+		a:RefreshPlayerLocationPins()
+		assert(a.locationPinState.tooltipLabel.text:find("Tracked quest: Sender ||Hquest:42||hname||h", 1, true))
+		a.qtPlayerPresenceState.partnerQuests["Friend-Realm"].title = nil
+		a:RefreshPlayerLocationPins()
+		assert(a.locationPinState.tooltipLabel.text:find("Tracked quest: Quest 42", 1, true))
+		a.qtPlayerPresenceState.questPartners["Friend-Realm"].sequence = 2
+		a:RefreshPlayerLocationPins()
+		Equal(a.locationPinState.tooltipLabel.text:find("Tracked quest:", 1, true), nil)
+		a.qtPlayerPresenceState.questPartners["Friend-Realm"].sequence = 1
+		a.now = 165
+		a:RefreshPlayerLocationPins()
+		Equal(a.locationPinState.tooltipLabel.text:find("Tracked quest:", 1, true), nil)
+	end
+end)

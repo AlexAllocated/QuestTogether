@@ -375,6 +375,7 @@ function QT:OnPlayerLocationOptionsChanged(key)
 	end
 	if not key or key == "sharePlayerLocation" then
 		self:BroadcastPlayerLocation(true)
+		self:BroadcastQuestPartnerStatus(true)
 	end
 	self:RefreshPlayerLocationPins()
 end

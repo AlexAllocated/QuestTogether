@@ -1,5 +1,11 @@
 # QuestTogether changelog
 
+## 5.16.1 — 2026-09-29
+
+- Make LFG nameplate logos easier to spot with a brighter gold contour glow that gently pulses.
+
+- Show a questing partner’s super-tracked quest in map and minimap dot tooltips, using the viewer’s localized quest title when available. Share only while looking for questing partners and location sharing are enabled; preserve compatibility with older QT versions.
+
 ## 5.16.0 — 2026-09-29
 
 - Render supported cross-language quest events in the receiver's language, with local quest titles when available and sender-owned objective counts, percentages, or completion states. Preserve original messages for older QT versions and unavailable structured data; public party chat remains in the sender's language.

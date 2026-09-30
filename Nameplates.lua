@@ -3218,6 +3218,30 @@ ResolveNameplateUnitToken = function(namePlateFrameBase, unitFrame)
 	return nil
 end
 
+-- The texture and its animations belong exclusively to QT. A native animation
+-- group keeps the pulse off our Lua update loop and preserves the logo contour.
+function QuestTogether:CreateQTPlayerGlowPulse(layer)
+	if not CanMutateFrame(layer) then return nil end
+	local create = self:GetAccessibleFrameMember(layer, "CreateAnimationGroup")
+	if type(create) ~= "function" then return nil end
+	local ok, group = pcall(create, layer)
+	if not ok or not self:CanAccessTable(group) then return nil end
+	local ready = pcall(function()
+		group:SetLooping("REPEAT")
+		for order = 1, 2 do
+			local alpha = group:CreateAnimation("Alpha")
+			alpha:SetOrder(order)
+			alpha:SetFromAlpha(order == 1 and 0.55 or 1)
+			alpha:SetToAlpha(order == 1 and 1 or 0.55)
+			alpha:SetDuration(1.2)
+			alpha:SetSmoothing("IN_OUT")
+		end
+	end)
+	if ready then return group end
+	-- Unsupported animation APIs retain a bright static glow.
+	return nil
+end
+
 function QuestTogether:SetQTPlayerIconLookingForPartners(iconFrame, looking)
 	if not CanMutateFrame(iconFrame) then
 		return false
@@ -3258,17 +3282,32 @@ function QuestTogether:SetQTPlayerIconLookingForPartners(iconFrame, looking)
 			local x, y = 2 * math.cos(angle), 2 * math.sin(angle)
 			layer:SetTexture(self.NAMEPLATE_PLAYER_ICON_TEXTURE)
 			layer:SetTexCoord(0, 1, 0, 1)
-			layer:SetVertexColor(1, 0.78, 0.12, 0.35)
+			layer:SetVertexColor(1, 0.78, 0.12, 0.9)
 			layer:SetBlendMode("ADD")
 			layer:ClearAllPoints()
 			layer:SetPoint("TOPLEFT", iconFrame, "TOPLEFT", x, y)
 			layer:SetPoint("BOTTOMRIGHT", iconFrame, "BOTTOMRIGHT", x, y)
+		end
+		iconFrame.qtPartnerGlowPulses = iconFrame.qtPartnerGlowPulses or {}
+		for index, layer in ipairs(glow) do
+			iconFrame.qtPartnerGlowPulses[index] = self:CreateQTPlayerGlowPulse(layer)
 		end
 		iconFrame.qtPartnerGlowReady = true
 	end
 	for _, layer in ipairs(glow) do
 		if not CanMutateFrame(layer) then
 			return false
+		end
+	end
+	-- Resume after an engine-driven hide without restarting an active pulse.
+	for index in ipairs(glow) do
+		local pulse = iconFrame.qtPartnerGlowPulses and iconFrame.qtPartnerGlowPulses[index]
+		if pulse then
+			if looking then
+				if not pulse:IsPlaying() then pulse:Play() end
+			else
+				pulse:Stop()
+			end
 		end
 	end
 	if iconFrame.qtLookingForPartners ~= looking then
@@ -4252,6 +4291,7 @@ function QuestTogether:HideQTPlayerIcon(icon)
 		self.qtPlayerIconStateByFrame[icon] = nil
 	end
 	if CanMutateFrame(icon) then
+		self:SetQTPlayerIconLookingForPartners(icon, false)
 		icon:Hide()
 		self:CancelNameplateVisualCleanup(icon)
 	else

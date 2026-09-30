@@ -215,6 +215,7 @@ function QT:BroadcastQuestPartnerStatus(force, inactive)
 	state.lastPartnerSentAt = now -- Pace failed sends too.
 	local sent =
 		self:SendWireMessageToAnnouncementRoutes(self:SerializeWireMessage("QTLF", payload), "quest partner status")
+	self:BroadcastQuestPartnerQuest(state, looking)
 	if sent and looking then
 		state.lastPartnerOnAt = now
 	end
@@ -259,6 +260,7 @@ function QT:PruneQTPlayerPresence(force)
 		return
 	end
 	state.lastPruneAt = now
+	self:PruneQuestPartnerQuests(now)
 	local changed = false
 	for name, seen in pairs(state.peers) do
 		if not now or now < seen or self:IsIgnoredPlayerName(name) then

@@ -2218,6 +2218,10 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		self:HandleAddonVersionMessage(payload, transportSenderName)
 		return
 	end
+	if command == "QTLQ" then
+		self:HandleQuestPartnerQuestMessage(payload, transportSenderName)
+		return
+	end
 	if command == "QTLF" and self.HandleQuestPartnerStatusMessage then
 		self:HandleQuestPartnerStatusMessage(payload, transportSenderName)
 		return

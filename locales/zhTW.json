@@ -4,6 +4,7 @@
   "\nLast update: ": "\n上次更新： ",
   "\nLevel: ": "\n等級： ",
   "\nRace: ": "\n種族： ",
+  "\nTracked quest: ": "\n追蹤任務： ",
   "\nWar Mode: ": "\n戰爭模式： ",
   "\n|cff40ff40Looking for Questing Partners|r": "\n|cff40ff40尋找解任務夥伴|r",
   "   or: /qt bubbletest \"<player>\" <text> (without a target)": "   或：/qt bubbletest \"<player>\" <text>（無目標時）",

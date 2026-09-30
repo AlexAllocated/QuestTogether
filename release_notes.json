@@ -1,27 +1,20 @@
 {
   "version": "5.16.0",
-  "welcome": "QuestTogether now supports every WoW language and can display other players’ quest updates in your client’s language.",
+  "welcome": "Find questing partners more easily and see which quest they are focusing on.",
   "sections": [
     {
-      "title": "Play in more languages",
+      "title": "A brighter partner glow",
+      "illustration": "quest-partners",
       "items": [
-        "Menus, settings, and patch notes now support all WoW language locales: English, German, French, European Spanish, Latin American Spanish, Brazilian Portuguese, Russian, Italian, Korean, Simplified Chinese, and Traditional Chinese.",
-        "Latin American Spanish now has its own text instead of sharing European Spanish."
+        "Players looking for questing partners now have a brighter gold glow around their QT nameplate logo, with a gentle breathing pulse. The logo itself stays steady."
       ]
     },
     {
-      "title": "Localized quest progress",
+      "title": "See their current quest",
       "items": [
-        "Supported quest events from updated QT players can appear in your client language in QT chat logs and bubbles, using local quest titles when available and the sender’s actual progress numbers.",
-        "When a translated objective description cannot be chosen safely, QT uses a localized objective number with counts, percentages, completion, or progress status instead.",
-        "Older QT versions and public party chat retain the sender’s wording. When WoW cannot supply a local quest title, QT keeps the source title or shows the quest ID. Same-language events keep their detailed native wording."
-      ]
-    },
-    {
-      "title": "Quest title polish",
-      "items": [
-        "Quest comparison now prefers your local quest title when available.",
-        "Localized quest titles with non-ASCII punctuation stay clickable more reliably."
+        "Hover the map or minimap dot of a player looking for questing partners to see their super-tracked quest—the single quest selected for navigation. Both players need this update.",
+        "Quest information refreshes about every 20 seconds. It is shared only while Looking for Questing Partners and location sharing are enabled.",
+        "Quest names use your client language when available, with the sender’s title or quest ID as a fallback. Older QT versions keep their existing dots and partner indicators."
       ]
     }
   ]

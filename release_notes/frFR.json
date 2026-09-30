@@ -1,29 +1,22 @@
 {
-  "source_sha256": "4604d6779705fba7b506a6cd81a956bcff03cc0fde1445471545377064be6f44",
+  "source_sha256": "41bf50baa423ddb1d745e32e9d347963b082cbca1b577f41c3ebda3c976036c1",
   "notes": {
     "version": "5.16.0",
-    "welcome": "QuestTogether prend désormais en charge toutes les langues de WoW et peut afficher les mises à jour de quête des autres joueurs dans la langue de votre client.",
+    "welcome": "Trouvez plus facilement des partenaires de quête et voyez sur quelle quête ils se concentrent.",
     "sections": [
       {
-        "title": "Jouez dans plus de langues",
+        "title": "Une lueur de partenaire plus lumineuse",
+        "illustration": "quest-partners",
         "items": [
-          "Les menus, paramètres et notes de mise à jour prennent désormais en charge toutes les langues locales de WoW : anglais, allemand, français, espagnol européen, espagnol latino-américain, portugais brésilien, russe, italien, coréen, chinois simplifié et chinois traditionnel.",
-          "L’espagnol latino-américain dispose désormais de ses propres textes au lieu de partager ceux de l’espagnol européen."
+          "Les joueurs qui cherchent des partenaires de quête ont désormais une lueur dorée plus lumineuse autour du logo QT sur leur barre d’info, avec une légère pulsation. Le logo lui-même reste stable."
         ]
       },
       {
-        "title": "Progression de quête localisée",
+        "title": "Voir leur quête actuelle",
         "items": [
-          "Les événements de quête pris en charge provenant de joueurs QT à jour peuvent apparaître dans la langue de votre client dans les journaux de discussion et bulles QT, en utilisant les titres de quête locaux lorsqu’ils sont disponibles et les nombres de progression réels de l’expéditeur.",
-          "Lorsqu’une description d’objectif traduite ne peut pas être choisie de manière fiable, QT utilise à la place un numéro d’objectif localisé avec le nombre, le pourcentage, l’état d’achèvement ou l’état de progression.",
-          "Les anciennes versions de QT et la discussion de groupe publique conservent la formulation de l’expéditeur. Lorsque WoW ne peut pas fournir de titre de quête local, QT conserve le titre source ou affiche l’ID de quête. Les événements dans la même langue conservent leur formulation native détaillée."
-        ]
-      },
-      {
-        "title": "Amélioration des titres de quête",
-        "items": [
-          "La comparaison de quêtes privilégie désormais votre titre de quête local lorsqu’il est disponible.",
-          "Les titres de quête localisés contenant une ponctuation non ASCII restent cliquables de manière plus fiable."
+          "Survolez le point sur la carte ou la minicarte d’un joueur qui cherche des partenaires de quête pour voir sa quête super-suivie — la quête unique sélectionnée pour la navigation. Les deux joueurs doivent disposer de cette mise à jour.",
+          "Les informations de quête s’actualisent environ toutes les 20 secondes. Elles ne sont partagées que lorsque la recherche de partenaires de quête et le partage de position sont activés.",
+          "Les noms des quêtes utilisent la langue de votre client lorsqu’elle est disponible, avec le titre ou l’ID de quête de l’expéditeur comme solution de repli. Les anciennes versions de QT conservent leurs points et indicateurs de partenaire existants."
         ]
       }
     ]

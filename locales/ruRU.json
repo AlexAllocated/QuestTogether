@@ -4,6 +4,7 @@
   "\nLast update: ": "\nПоследнее обновление: ",
   "\nLevel: ": "\nУровень: ",
   "\nRace: ": "\nРаса: ",
+  "\nTracked quest: ": "\nОтслеживаемое задание: ",
   "\nWar Mode: ": "\nРежим войны: ",
   "\n|cff40ff40Looking for Questing Partners|r": "\n|cff40ff40Ищу напарников для заданий|r",
   "   or: /qt bubbletest \"<player>\" <text> (without a target)": "   или: /qt bubbletest \"<player>\" <text> (без цели)",

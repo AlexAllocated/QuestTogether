@@ -4,6 +4,7 @@
   "\nLast update: ": "\nLast update: ",
   "\nLevel: ": "\nLevel: ",
   "\nRace: ": "\nRace: ",
+  "\nTracked quest: ": "\nTracked quest: ",
   "\nWar Mode: ": "\nWar Mode: ",
   "\n|cff40ff40Looking for Questing Partners|r": "\n|cff40ff40Looking for Questing Partners|r",
   "   or: /qt bubbletest \"<player>\" <text> (without a target)": "   or: /qt bubbletest \"<player>\" <text> (without a target)",

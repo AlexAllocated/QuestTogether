@@ -4,6 +4,7 @@
   "\nLast update: ": "\nLetzte Aktualisierung: ",
   "\nLevel: ": "\nStufe: ",
   "\nRace: ": "\nVolk: ",
+  "\nTracked quest: ": "\nVerfolgte Quest: ",
   "\nWar Mode: ": "\nKriegsmodus: ",
   "\n|cff40ff40Looking for Questing Partners|r": "\n|cff40ff40Suche Questpartner|r",
   "   or: /qt bubbletest \"<player>\" <text> (without a target)": "   oder: /qt bubbletest \"<player>\" <text> (ohne Ziel)",

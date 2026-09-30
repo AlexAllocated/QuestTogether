@@ -1290,3 +1290,145 @@ QT:RegisterTest("QT player plates do not read forbidden hosts or mutate foreign 
 		Equal(s.plate.writes, 0)
 	end)
 end)
+
+QT:RegisterTest("super-tracked partner quests use bounded heartbeat packets and honor both sharing controls", function()
+	local a, b = Peer("Alice-Realm"), Peer("Bob-Realm")
+	a.other = b
+	local reads, id = 0, 42
+	a.API.GetActiveTrackedQuestID = function() reads = reads + 1; return id end
+	a:BroadcastQuestPartnerStatus()
+	Equal(reads, 0)
+	a.db.profile.lookingForQuestPartners = true
+	a:BroadcastQuestPartnerStatus(true)
+	Equal(b:GetPlayerPartnerQuestID(a.name), 42)
+	assert(a.sent[#a.sent]:match("^QTLQ|1,%d+%-%d+,%d+,42,$"))
+	local count = #a.sent
+	a:BroadcastQuestPartnerStatus()
+	Equal(#a.sent, count)
+	Equal(reads, 1)
+	id, a.now = 43, 120
+	a:BroadcastQuestPartnerStatus()
+	Equal(b:GetPlayerPartnerQuestID(a.name), 43)
+	a.db.profile.sharePlayerLocation = false
+	a:BroadcastQuestPartnerStatus(true)
+	Equal(reads, 2)
+	Equal(b:GetPlayerPartnerQuestID(a.name), nil)
+	a.db.profile.sharePlayerLocation = true
+	a.restricted = true
+	a:BroadcastQuestPartnerStatus(true)
+	Equal(reads, 2)
+	Equal(b:GetPlayerPartnerQuestID(a.name), nil)
+	a.restricted = false
+	a:BroadcastQuestPartnerStatus(true)
+	Equal(b:GetPlayerPartnerQuestID(a.name), 43)
+	a.db.profile.lookingForQuestPartners = false
+	a:BroadcastQuestPartnerStatus(true)
+	Equal(b:GetPlayerPartnerQuestID(a.name), nil)
+end)
+
+QT:RegisterTest("partner quest metadata tolerates reordering without resurrecting stale quests or partner status", function()
+	local a, name = Peer(), "Alice-Realm"
+	assert(a:HandleQuestPartnerQuestMessage("1,10-1234,1,42", name))
+	Equal(a:GetPlayerPartnerQuestID(name), nil)
+	assert(not a:IsKnownQTPlayer(name))
+	assert(a:HandleQuestPartnerStatusMessage("1,10-1234,1,1", name))
+	Equal(a:GetPlayerPartnerQuestID(name), 42)
+	assert(a:HandleQuestPartnerQuestMessage("1,10-1234,2,43", name))
+	Equal(a:GetPlayerPartnerQuestID(name), nil)
+	assert(a:HandleQuestPartnerStatusMessage("1,10-1234,2,1", name))
+	Equal(a:GetPlayerPartnerQuestID(name), 43)
+	assert(not a:HandleQuestPartnerQuestMessage("1,10-1234,1,42", name))
+	assert(a:HandleQuestPartnerStatusMessage("1,10-1234,3,0", name))
+	assert(a:HandleQuestPartnerQuestMessage("1,10-1234,3,43", name))
+	Equal(a:GetPlayerPartnerQuestID(name), nil)
+	assert(a:HandleQuestPartnerStatusMessage("1,20-1234,1,1", name))
+	Equal(a:GetPlayerPartnerQuestID(name), nil)
+	assert(a:HandleQuestPartnerQuestMessage("1,20-1234,1,44", name))
+	Equal(a:GetPlayerPartnerQuestID(name), 44)
+	assert(not a:HandleQuestPartnerQuestMessage("1,10-1234,99,42", name))
+	a.ignored = name
+	Equal(a:GetPlayerPartnerQuestID(name), nil)
+	assert(not a:HandleQuestPartnerQuestMessage("1,20-1234,2,45", name))
+	a.ignored = nil
+	a.now = 165
+	Equal(a:GetPlayerPartnerQuestID(name), nil)
+	a:PruneQTPlayerPresence(true)
+	Equal(next(a.qtPlayerPresenceState.partnerQuests), nil)
+end)
+
+QT:RegisterTest("partner quest metadata rejects invalid IDs and bounds independent peer storage", function()
+	local a = Peer()
+	for _, payload in ipairs({ "", "2,10-1234,1,42", "1,10-1234,0,42", "1,10-1234,2147483648,42", "1,10-1234,1,-1", "1,10-1234,1,1.5", "1,10-1234,1,1000000001", "1,10-1234,1,42,extra,field" }) do
+		assert(not a:HandleQuestPartnerQuestMessage(payload, "Alice-Realm"), payload)
+	end
+	assert(not a:HandleQuestPartnerQuestMessage("1,10-1234,1,42", a.name))
+	for i = 1, 270 do
+		assert(a:HandleQuestPartnerQuestMessage("1,10-1234,1,42", "Peer" .. i .. "-Realm"))
+	end
+	local count = 0
+	for _ in pairs(a.qtPlayerPresenceState.partnerQuests) do count = count + 1 end
+	Equal(count, 256)
+	a.isEnabled = false
+	assert(not a:HandleQuestPartnerQuestMessage("1,10-1234,1,42", "Alice-Realm"))
+end)
+
+QT:RegisterTest("missing or cleared super-tracking never substitutes a watched quest and failures remain paced", function()
+	local a, b = Peer("Alice-Realm"), Peer("Bob-Realm")
+	a.other = b
+	a.db.profile.lookingForQuestPartners = true
+	a:BroadcastQuestPartnerStatus(true)
+	Equal(#a.sent, 1) -- Legacy packet only when no API/active quest exists.
+	a.API.GetActiveTrackedQuestID = function() return 42 end
+	a:BroadcastQuestPartnerStatus(true)
+	Equal(b:GetPlayerPartnerQuestID(a.name), 42)
+	a.API.GetActiveTrackedQuestID = function() return nil end
+	a:BroadcastQuestPartnerStatus(true)
+	Equal(b:GetPlayerPartnerQuestID(a.name), nil)
+	a.API.GetActiveTrackedQuestID = function() error("restricted") end
+	a:BroadcastQuestPartnerStatus(true)
+	Equal(b:GetPlayerPartnerQuestID(a.name), nil)
+	a.sendFails = true
+	a:BroadcastQuestPartnerStatus(true)
+	local count = #a.sent
+	a:BroadcastQuestPartnerStatus()
+	Equal(#a.sent, count)
+end)
+
+QT:RegisterTest("Forever full-name partner quests withdraw on location opt-out and clear retries expire", function()
+	local a, b = Peer("Alice Adventure"), Peer("Bob Brave")
+	a.forever, b.forever, a.other = true, true, b
+	a.db.profile.lookingForQuestPartners = true
+	a.API.GetActiveTrackedQuestID = function() return 42 end
+	function a:BroadcastPlayerLocation() end
+	function a:RefreshPlayerLocationPins() end
+	a:BroadcastQuestPartnerStatus(true)
+	Equal(b:GetPlayerPartnerQuestID(a.name), 42)
+	a.db.profile.sharePlayerLocation = false
+	a:OnPlayerLocationOptionsChanged("sharePlayerLocation")
+	Equal(b:GetPlayerPartnerQuestID(a.name), nil)
+	local count = #a.sent
+	a.now = 166
+	a:BroadcastQuestPartnerStatus()
+	Equal(#a.sent, count + 1) -- Only QTLF, no indefinite quest-clear traffic.
+	PartnerWire(a.sent[#a.sent], true)
+end)
+
+QT:RegisterTest("partner quest titles preserve UTF-8 and framing within the addon message budget", function()
+	local a, b = Peer("Alice-Realm"), Peer("Bob-Realm")
+	a.other = b
+	a.db.profile.lookingForQuestPartners = true
+	a.API.GetActiveTrackedQuestID = function() return 42 end
+	local title = "龍, quête | 100%\nnext"
+	function a:GetLocalizedQuestTitle() return title end
+	a:BroadcastQuestPartnerStatus(true)
+	local id, received = b:GetPlayerPartnerQuestID(a.name)
+	Equal(id, 42)
+	Equal(received, "龍, quête | 100% next")
+	assert(#a.sent[#a.sent] <= 255)
+	title = string.rep("龍,%|", 150)
+	a:BroadcastQuestPartnerStatus(true)
+	id, received = b:GetPlayerPartnerQuestID(a.name)
+	Equal(id, 42)
+	Equal(received, nil)
+	assert(#a.sent[#a.sent] <= 255)
+end)

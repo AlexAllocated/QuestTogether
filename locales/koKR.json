@@ -4,6 +4,7 @@
   "\nLast update: ": "\n마지막 업데이트: ",
   "\nLevel: ": "\n레벨: ",
   "\nRace: ": "\n종족: ",
+  "\nTracked quest: ": "\n추적 중인 퀘스트: ",
   "\nWar Mode: ": "\n전쟁 모드: ",
   "\n|cff40ff40Looking for Questing Partners|r": "\n|cff40ff40퀘스트 동료 찾는 중|r",
   "   or: /qt bubbletest \"<player>\" <text> (without a target)": "   또는: /qt bubbletest \"<player>\" <text> (대상 없이)",

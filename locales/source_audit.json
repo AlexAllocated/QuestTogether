@@ -251,6 +251,9 @@
       "party compare render",
       "party share prompt"
     ],
+    "QuestPartnerQuest.lua": [
+      "quest partner tracked quest"
+    ],
     "ReleaseNotesWindow.lua": [
       "Button",
       "Down",

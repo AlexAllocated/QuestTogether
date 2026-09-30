@@ -1884,6 +1884,20 @@ QuestTogether.API = QuestTogether.API or {
 			end
 			return math.floor(numericObjectiveCount + 0.5)
 		end,
+		GetActiveTrackedQuestID = function()
+			-- Scalar navigation state does not query quest tooltips or mutate the map.
+			if QuestTogether:IsRuntimeRestricted() or not CanAccessForeignTable(C_SuperTrack) then return nil end
+			local isQuest, getQuest = C_SuperTrack.IsSuperTrackingQuest, C_SuperTrack.GetSuperTrackedQuestID
+			if not CanAccessForeignValue(isQuest) or type(isQuest) ~= "function"
+				or not CanAccessForeignValue(getQuest) or type(getQuest) ~= "function" then return nil end
+			local ok, active = pcall(isQuest)
+			if not ok or not CanAccessForeignValue(active) or active ~= true then return nil end
+			local got, id = pcall(getQuest)
+			if got then
+				id = QuestTogether:SafeToNumber(id)
+				if id and id >= 1 and id <= 1000000000 and id == math.floor(id) then return id end
+			end
+		end,
 		GetLocalizedQuestTitle = function(questID)
 			if not CanAccessForeignTable(C_QuestLog) or type(C_QuestLog.GetTitleForQuestID) ~= "function" then return nil end
 			local id = QuestTogether:NormalizeQuestID(questID)
