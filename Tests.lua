@@ -239,7 +239,7 @@ local function WithIsolatedState(testFn)
 			"partyJoinState", "partyJoinPrompt", "partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
 			"minimapButton", "minimapTooltip", "minimapTooltipPendingHide", "minimapLauncherFrame", "minimapDragState", "minimapSuppressClick",
 			"releaseNotesWindow", "releaseNotesWakeFrame", "pendingReleaseNotes", "addonUpdateState",
-			"discordSupportWindowOwner", "qtPlayerPresenceState", "playerPlatesFrame", "qtPlayerIconStateByFrame",
+			"playerTooltipBadge", "discordSupportWindowOwner", "qtPlayerPresenceState", "playerPlatesFrame", "qtPlayerIconStateByFrame",
 			"playerLocationState", "playerLocationUpdateFrame", "locationPinState", "playerLocationsFrame",
 			"worldQuestAreaStateByQuestID", "bonusObjectiveAreaStateByQuestID", "questSnapshotByQuestID", "questSnapshotOrder",
 			"nameplateQuestTextCache", "nameplateQuestStateByGuid", "nameplateQuestStateByUnitToken", "nameplateQuestGuidByUnitToken",
@@ -275,6 +275,7 @@ local function WithIsolatedState(testFn)
 		QuestTogether.nameplateEventFrame = CreateTestEventFrame()
 		QuestTogether.CreateMapWorkWakeFrame = CreateTestEventFrame
 		QuestTogether.CreatePlayerLocationUpdateFrame = CreateTestEventFrame
+		QuestTogether.GetPlayerTooltipHost = function() return nil end
 		QuestTogether.IsRuntimeRestrictionTypeActive = function() return false end
 		QuestTogether.IsNameplateUnitTapDenied = function() return false end
 		QuestTogether.GetQuestieQuestObjectiveTooltipLines = function() return nil end

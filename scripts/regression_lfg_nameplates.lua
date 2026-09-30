@@ -217,7 +217,7 @@ local function Glow(icon, shown)
 		assert(#edge.points == 2, "glow follows the logo size")
 		for _, point in ipairs(edge.points) do
 			Equal(point[2], icon)
-			assert(math.abs(point[4]) <= 2 and math.abs(point[5]) <= 2, "halo stays within the existing logo padding")
+			assert(math.abs(point[4]) <= 4 and math.abs(point[5]) <= 4, "halo stays within its four-pixel reach")
 		end
 	end
 end

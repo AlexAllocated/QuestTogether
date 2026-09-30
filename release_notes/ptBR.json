@@ -1,22 +1,22 @@
 {
-  "source_sha256": "41bf50baa423ddb1d745e32e9d347963b082cbca1b577f41c3ebda3c976036c1",
+  "source_sha256": "7f31cfe5754d55a0455527b39e48ce7a659a24451aedb365afba8b4f44abe369",
   "notes": {
     "version": "5.16.1",
-    "welcome": "Encontre parceiros de missões com mais facilidade e veja em qual missão eles estão focando.",
+    "welcome": "Reconheça jogadores do QuestTogether pelos tooltips deles e encontre parceiros de missões com mais facilidade.",
     "sections": [
       {
-        "title": "Um brilho de parceiro mais forte",
-        "illustration": "quest-partners",
+        "title": "Tooltips de jogadores do QuestTogether",
         "items": [
-          "Jogadores procurando parceiros para fazer missões agora têm um brilho dourado mais forte ao redor do logotipo do QT na placa de identificação, com uma pulsação suave. O logotipo em si permanece estável."
+          "Passe o mouse sobre o personagem, a barra de nome ou o quadro de unidade de um jogador QT para ver “Este jogador está usando QuestTogether.” Jogadores procurando parceiros para fazer missões também mostram esse status e um logotipo QT brilhante.",
+          "A seção QT acompanha a largura e a escala do tooltip, fica afastada da barra de vida e se move para cima do tooltip quando o espaço abaixo é limitado."
         ]
       },
       {
-        "title": "Veja a missão atual deles",
+        "title": "Um brilho de parceiro mais visível",
+        "illustration": "quest-partners",
         "items": [
-          "Passe o mouse sobre o ponto no mapa ou minimapa de um jogador procurando parceiros para fazer missões para ver a missão super-rastreada dele — a única missão selecionada para navegação. Ambos os jogadores precisam desta atualização.",
-          "As informações da missão são atualizadas a cada cerca de 20 segundos. Elas só são compartilhadas enquanto Procurando Parceiros para Missões e o compartilhamento de localização estiverem ativados.",
-          "Os nomes das missões usam o idioma do seu cliente quando disponível, com o título ou ID da missão do remetente como alternativa. Versões mais antigas do QT mantêm seus pontos e indicadores de parceiros existentes."
+          "O brilho dourado da barra de nome agora se estende duas vezes mais ao redor do logotipo, mantendo o logotipo em si do mesmo tamanho.",
+          "Ícones e brilhos refletem usuários reais do QT e o status atual deles de procura por parceiros."
         ]
       }
     ]

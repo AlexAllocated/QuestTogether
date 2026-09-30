@@ -353,12 +353,14 @@ function QT:InitializePlayerLocations()
 		self:BroadcastPlayerLocation()
 		self:PrunePlayerLocations()
 		self:RefreshPlayerLocationPins()
+		self:UpdatePlayerTooltipBadge()
 	end)
 	-- First update uses the same paced path as recovery and movement.
 	return true
 end
 
 function QT:ResetPlayerLocations()
+	self:HidePlayerTooltipBadge()
 	self.playerLocationState = nil
 	local frame = rawget(self, "playerLocationUpdateFrame")
 	if frame and self.LibChev.CanMutateOwnedRegion(frame) then

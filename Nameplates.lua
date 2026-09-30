@@ -3279,7 +3279,7 @@ function QuestTogether:SetQTPlayerIconLookingForPartners(iconFrame, looking)
 		end
 		for index, layer in ipairs(glow) do
 			local angle = (index - 1) * math.pi / 4
-			local x, y = 2 * math.cos(angle), 2 * math.sin(angle)
+			local x, y = 4 * math.cos(angle), 4 * math.sin(angle)
 			layer:SetTexture(self.NAMEPLATE_PLAYER_ICON_TEXTURE)
 			layer:SetTexCoord(0, 1, 0, 1)
 			layer:SetVertexColor(1, 0.78, 0.12, 0.9)

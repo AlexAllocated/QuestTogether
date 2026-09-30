@@ -421,5 +421,6 @@
   "unknown": "desconocido",
   "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.": "¡v%s cargada! Ahora es compatible con %s. Escribe %s para la configuración. Si encuentras algún problema, deja tus comentarios en %s o %s.",
   "|cff33ff99QuestTogether|r: Pong: ": "|cff33ff99QuestTogether|r: Pong: ",
-  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Pong: <invalid payload>"
+  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Pong: <invalid payload>",
+  "This player is using QuestTogether": "Este jugador usa QuestTogether"
 }

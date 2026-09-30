@@ -55,6 +55,7 @@ Minimap.lua
 PlayerLocations.lua
 PlayerPlates.lua
 QuestPartnerQuest.lua
+PlayerTooltips.lua
 LocationPins.lua
 EventHandlers.lua
 Options.lua
@@ -80,3 +81,4 @@ scripts/regression_player_plates.lua
 scripts/regression_localization.lua
 scripts/regression_event_localization.lua
 scripts/regression_party_join.lua
+scripts/regression_player_tooltips.lua

@@ -1,22 +1,22 @@
 {
-  "source_sha256": "41bf50baa423ddb1d745e32e9d347963b082cbca1b577f41c3ebda3c976036c1",
+  "source_sha256": "7f31cfe5754d55a0455527b39e48ce7a659a24451aedb365afba8b4f44abe369",
   "notes": {
     "version": "5.16.1",
-    "welcome": "Encuentra compañeros de misiones más fácilmente y ve en qué misión se están enfocando.",
+    "welcome": "Reconoce a los jugadores de QuestTogether por sus tooltips y encuentra compañeros de misiones más fácilmente.",
     "sections": [
       {
-        "title": "Un brillo de compañero más intenso",
-        "illustration": "quest-partners",
+        "title": "Tooltips de jugadores de QuestTogether",
         "items": [
-          "Los jugadores que buscan compañeros de misiones ahora tienen un brillo dorado más intenso alrededor del logo de QT en su placa de nombre, con un suave pulso de respiración. El logo permanece estable."
+          "Pasa el cursor sobre el personaje, la barra de nombre o el marco de unidad de un jugador de QT para ver “Este jugador está usando QuestTogether.” Los jugadores que buscan compañeros de misiones también muestran ese estado y un logo de QT brillante.",
+          "La sección de QT coincide con el ancho y la escala del tooltip, queda separada de su barra de salud y se mueve encima del tooltip cuando el espacio debajo es limitado."
         ]
       },
       {
-        "title": "Ve su misión actual",
+        "title": "Un brillo de compañero más visible",
+        "illustration": "quest-partners",
         "items": [
-          "Pasa el cursor sobre el punto del mapa o minimapa de un jugador que busca compañeros de misiones para ver su misión superrastreada: la única misión seleccionada para la navegación. Ambos jugadores necesitan esta actualización.",
-          "La información de la misión se actualiza aproximadamente cada 20 segundos. Solo se comparte mientras Buscar compañeros de misiones y compartir ubicación están activados.",
-          "Los nombres de las misiones usan el idioma de tu cliente cuando está disponible, con el título o ID de misión del remitente como alternativa. Las versiones anteriores de QT conservan sus puntos e indicadores de compañero existentes."
+          "El brillo dorado de la barra de nombre ahora se extiende el doble alrededor del logo, manteniendo el logo del mismo tamaño.",
+          "Los íconos y brillos reflejan a usuarios reales de QT y su estado actual de búsqueda de compañeros."
         ]
       }
     ]

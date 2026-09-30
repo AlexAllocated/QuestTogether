@@ -1,5 +1,10 @@
 # QuestTogether changelog
 
+## 5.16.2 — 2026-09-30
+
+- Add a QT logo and questing-partner status beside built-in player tooltips, with the same animated LFG glow as nameplates. Match tooltip width and scale, and keep clear of the health bar.
+- Increase the nameplate glow's reach from two to four pixels.
+
 ## 5.16.1 — 2026-09-29
 
 - Make LFG nameplate logos easier to spot with a brighter gold contour glow that gently pulses.

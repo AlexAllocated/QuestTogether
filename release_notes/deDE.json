@@ -1,22 +1,22 @@
 {
-  "source_sha256": "41bf50baa423ddb1d745e32e9d347963b082cbca1b577f41c3ebda3c976036c1",
+  "source_sha256": "7f31cfe5754d55a0455527b39e48ce7a659a24451aedb365afba8b4f44abe369",
   "notes": {
     "version": "5.16.1",
-    "welcome": "Finde leichter Questpartner und sieh, auf welche Quest sie sich konzentrieren.",
+    "welcome": "Erkenne QuestTogether-Spieler anhand ihrer Tooltips und finde Quest-Partner leichter.",
     "sections": [
       {
-        "title": "Helleres Leuchten für Partner",
-        "illustration": "quest-partners",
+        "title": "QuestTogether-Spielertooltips",
         "items": [
-          "Spieler, die nach Questpartnern suchen, haben nun ein helleres goldenes Leuchten um ihr QT-Namensplakettenlogo, mit einem sanften pulsierenden Effekt. Das Logo selbst bleibt ruhig."
+          "Fahre mit der Maus über den Charakter, die Namensplakette oder den Einheitenrahmen eines QT-Spielers, um „Dieser Spieler verwendet QuestTogether.“ zu sehen. Spieler, die nach Quest-Partnern suchen, zeigen ebenfalls diesen Status und ein leuchtendes QT-Logo an.",
+          "Der QT-Abschnitt passt sich Breite und Skalierung des Tooltips an, hält Abstand zu seiner Gesundheitsleiste und wird über den Tooltip verschoben, wenn darunter wenig Platz ist."
         ]
       },
       {
-        "title": "Ihre aktuelle Quest sehen",
+        "title": "Ein auffälligeres Partnerleuchten",
+        "illustration": "quest-partners",
         "items": [
-          "Fahre mit der Maus über den Karten- oder Minikartenpunkt eines Spielers, der nach Questpartnern sucht, um seine superverfolgte Quest zu sehen – die einzelne Quest, die für die Navigation ausgewählt ist. Beide Spieler benötigen dieses Update.",
-          "Questinformationen werden etwa alle 20 Sekunden aktualisiert. Sie werden nur geteilt, wenn „Nach Questpartnern suchen“ und die Standortfreigabe aktiviert sind.",
-          "Questnamen verwenden deine Client-Sprache, wenn verfügbar, andernfalls den Titel oder die Quest-ID des Absenders als Fallback. Ältere QT-Versionen behalten ihre bestehenden Punkte und Partneranzeigen."
+          "Das goldene Namensplaketten-Leuchten reicht jetzt doppelt so weit um das Logo, während das Logo selbst gleich groß bleibt.",
+          "Symbole und Leuchteffekte zeigen echte QT-Nutzer und ihren aktuellen Status bei der Partnersuche an."
         ]
       }
     ]

@@ -207,6 +207,11 @@
       "player presence",
       "quest partner status"
     ],
+    "PlayerTooltips.lua": [
+      "Frame",
+      "Hide",
+      "Show"
+    ],
     "QuestCompare.lua": [
       "Awaiting confirmation",
       "Have",

@@ -421,5 +421,6 @@
   "Objective %d: %d%%": "目标 %d：%d%%",
   "Objective %d: %d/%d": "目标 %d：%d/%d",
   "Objective %d: Complete": "目标 %d：完成",
-  "Objective %d: Progress updated": "目标 %d：进度已更新"
+  "Objective %d: Progress updated": "目标 %d：进度已更新",
+  "This player is using QuestTogether": "该玩家正在使用 QuestTogether"
 }

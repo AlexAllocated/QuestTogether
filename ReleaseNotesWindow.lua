@@ -108,7 +108,7 @@ local function CreatePartnerExamples(addon, parent)
 			for layer = 1, 8 do
 				local angle = (layer - 1) * math.pi / 4
 				local glow = Texture(addon, column, nil, "BACKGROUND", 32, 32)
-				Call(addon, glow, "SetPoint", "CENTER", logo, "CENTER", 2 * math.cos(angle), 2 * math.sin(angle))
+				Call(addon, glow, "SetPoint", "CENTER", logo, "CENTER", 4 * math.cos(angle), 4 * math.sin(angle))
 				Call(addon, glow, "SetTexture", LOGO)
 				Call(addon, glow, "SetVertexColor", 1, 0.78, 0.12, 0.9)
 				Call(addon, glow, "SetBlendMode", "ADD")

@@ -1,22 +1,22 @@
 {
-  "source_sha256": "41bf50baa423ddb1d745e32e9d347963b082cbca1b577f41c3ebda3c976036c1",
+  "source_sha256": "7f31cfe5754d55a0455527b39e48ce7a659a24451aedb365afba8b4f44abe369",
   "notes": {
     "version": "5.16.1",
-    "welcome": "Trouvez plus facilement des partenaires de quête et voyez sur quelle quête ils se concentrent.",
+    "welcome": "Reconnaissez les joueurs de QuestTogether grâce à leurs infobulles et repérez plus facilement des partenaires de quête.",
     "sections": [
       {
-        "title": "Une lueur de partenaire plus lumineuse",
-        "illustration": "quest-partners",
+        "title": "Infobulles des joueurs QuestTogether",
         "items": [
-          "Les joueurs qui cherchent des partenaires de quête ont désormais une lueur dorée plus lumineuse autour du logo QT sur leur barre d’info, avec une légère pulsation. Le logo lui-même reste stable."
+          "Survolez le personnage, la barre d’identification ou le cadre d’unité d’un joueur QT pour voir « Ce joueur utilise QuestTogether. » Les joueurs qui cherchent des partenaires de quête affichent également ce statut et un logo QT lumineux.",
+          "La section QT correspond à la largeur et à l’échelle de l’infobulle, reste à l’écart de sa barre de vie et se déplace au-dessus de l’infobulle quand l’espace en dessous est limité."
         ]
       },
       {
-        "title": "Voir leur quête actuelle",
+        "title": "Une lueur de partenaire plus visible",
+        "illustration": "quest-partners",
         "items": [
-          "Survolez le point sur la carte ou la minicarte d’un joueur qui cherche des partenaires de quête pour voir sa quête super-suivie — la quête unique sélectionnée pour la navigation. Les deux joueurs doivent disposer de cette mise à jour.",
-          "Les informations de quête s’actualisent environ toutes les 20 secondes. Elles ne sont partagées que lorsque la recherche de partenaires de quête et le partage de position sont activés.",
-          "Les noms des quêtes utilisent la langue de votre client lorsqu’elle est disponible, avec le titre ou l’ID de quête de l’expéditeur comme solution de repli. Les anciennes versions de QT conservent leurs points et indicateurs de partenaire existants."
+          "La lueur dorée de la barre d’identification s’étend désormais deux fois plus loin autour du logo, tout en conservant la même taille pour le logo lui-même.",
+          "Les icônes et les lueurs reflètent les vrais utilisateurs de QT et leur statut actuel de recherche de partenaire."
         ]
       }
     ]

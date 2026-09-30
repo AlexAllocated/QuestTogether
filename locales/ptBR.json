@@ -421,5 +421,6 @@
   "Objective %d: %d%%": "Objetivo %d: %d%%",
   "Objective %d: %d/%d": "Objetivo %d: %d/%d",
   "Objective %d: Complete": "Objetivo %d: Concluído",
-  "Objective %d: Progress updated": "Objetivo %d: Progresso atualizado"
+  "Objective %d: Progress updated": "Objetivo %d: Progresso atualizado",
+  "This player is using QuestTogether": "Este jogador usa QuestTogether"
 }

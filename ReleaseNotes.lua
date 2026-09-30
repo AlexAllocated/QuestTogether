@@ -4,22 +4,22 @@ local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
 	version = "5.16.1",
-	welcome = "Find questing partners more easily and see which quest they are focusing on.",
+	welcome = "Recognize QuestTogether players from their tooltips and spot questing partners more easily.",
 	sections = {
 		{
-			title = "A brighter partner glow",
+			title = "QuestTogether player tooltips",
 			items = {
-				"Players looking for questing partners now have a brighter gold glow around their QT nameplate logo, with a gentle breathing pulse. The logo itself stays steady.",
+				"Hover a QT player’s character, nameplate, or unit frame to see “This player is using QuestTogether.” Players looking for questing partners also show that status and a glowing QT logo.",
+				"The QT section matches the tooltip’s width and scale, sits clear of its health bar, and moves above the tooltip when space below is limited.",
 			},
-			illustration = "quest-partners",
 		},
 		{
-			title = "See their current quest",
+			title = "A more visible partner glow",
 			items = {
-				"Hover the map or minimap dot of a player looking for questing partners to see their super-tracked quest—the single quest selected for navigation. Both players need this update.",
-				"Quest information refreshes about every 20 seconds. It is shared only while Looking for Questing Partners and location sharing are enabled.",
-				"Quest names use your client language when available, with the sender’s title or quest ID as a fallback. Older QT versions keep their existing dots and partner indicators.",
+				"The gold nameplate glow now reaches twice as far around the logo while keeping the logo itself the same size.",
+				"Icons and glows reflect real QT users and their current partner-seeking status.",
 			},
+			illustration = "quest-partners",
 		},
 	},
 }
