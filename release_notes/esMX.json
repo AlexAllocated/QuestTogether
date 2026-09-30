@@ -1,7 +1,7 @@
 {
   "source_sha256": "7f31cfe5754d55a0455527b39e48ce7a659a24451aedb365afba8b4f44abe369",
   "notes": {
-    "version": "5.16.1",
+    "version": "5.16.2",
     "welcome": "Reconoce a los jugadores de QuestTogether por sus tooltips y encuentra compañeros de misiones más fácilmente.",
     "sections": [
       {
