@@ -1,14 +1,15 @@
 {
-  "source_sha256": "efe777113f3cbed0e34df70a0e5e6174cad2064734f0dade100f729be3b7a122",
+  "source_sha256": "830e7d04582e4c330706dcd4a4beaa5adaf4bc94d2fc3ef413e80a9228407ba6",
   "notes": {
     "version": "5.16.5",
-    "welcome": "較短的前綴可讓隊伍公告更精簡。",
+    "welcome": "一眼就能看出你正在尋找任務夥伴。",
     "sections": [
       {
-        "title": "精簡隊伍公告",
+        "title": "發光的小地圖提醒",
+        "illustration": "quest-partners",
         "items": [
-          "發送給沒有 QuestTogether 的隊伍成員的任務進度，現在會以 [QT] 開頭，而不是 [QuestTogether]。",
-          "公告仍會遵守聊天訊息長度限制，並在所有語言中保留完整字元。"
+          "當「尋找任務夥伴」開啟時，你的 QuestTogether 小地圖按鈕現在會和玩家名條一樣，以金色標誌光芒閃動。",
+          "光芒會跟隨你的夥伴狀態，並在 QT 停用或小地圖按鈕隱藏時停止。你的按鈕和標誌會維持現有大小。"
         ]
       }
     ]

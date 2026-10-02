@@ -1,14 +1,15 @@
 {
-  "source_sha256": "efe777113f3cbed0e34df70a0e5e6174cad2064734f0dade100f729be3b7a122",
+  "source_sha256": "830e7d04582e4c330706dcd4a4beaa5adaf4bc94d2fc3ef413e80a9228407ba6",
   "notes": {
     "version": "5.16.5",
-    "welcome": "짧은 접두사는 파티 알림을 간결하게 유지합니다.",
+    "welcome": "퀘스트를 함께할 파트너를 찾는 중인지 한눈에 확인하세요.",
     "sections": [
       {
-        "title": "간결한 파티 알림",
+        "title": "반짝이는 미니맵 알림",
+        "illustration": "quest-partners",
         "items": [
-          "이제 QuestTogether가 없는 파티원에게 게시되는 퀘스트 진행 상황은 [QuestTogether] 대신 [QT]로 시작합니다.",
-          "알림은 여전히 대화 메시지 제한을 준수하며 모든 언어에서 문자가 온전하게 유지됩니다."
+          "퀘스트 파트너 찾기가 켜져 있는 동안, QuestTogether 미니맵 버튼이 플레이어 이름표와 같은 금색 로고 빛으로 깜박입니다.",
+          "이 빛은 파트너 상태를 따라가며, QT가 비활성화되거나 미니맵 버튼이 숨겨지면 멈춥니다. 버튼과 로고는 기존 크기를 유지합니다."
         ]
       }
     ]

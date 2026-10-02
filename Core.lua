@@ -5291,6 +5291,7 @@ function QuestTogether:SetOption(key, value)
 	end
 	self.db.profile[key] = value
 	if key == "lookingForQuestPartners" and self.BroadcastQuestPartnerStatus then self:BroadcastQuestPartnerStatus(true) end
+	if key == "lookingForQuestPartners" and self.RefreshMinimapPartnerGlow then self:RefreshMinimapPartnerGlow() end
 	if isLocationOption and self.OnPlayerLocationOptionsChanged then self:OnPlayerLocationOptionsChanged(key) end
 	if (key == "showMinimapButton" or key == "minimapButtonPosition") and self.RefreshMinimapButton then
 		self:RefreshMinimapButton()
@@ -5486,6 +5487,7 @@ function QuestTogether:Enable()
 	self:RegisterRuntimeEvents()
 	self.API.RegisterAddonPrefix(self.commPrefix)
 	self.isEnabled = true
+	if self.RefreshMinimapPartnerGlow then self:RefreshMinimapPartnerGlow() end
 	self:ResetQuestEventState()
 	-- Events may have been missed while disabled/offline, including a repeatable
 	-- quest being accepted again. Start a fresh observation lifetime on enable.
@@ -5542,6 +5544,7 @@ function QuestTogether:Disable()
 
 	self:UnregisterRuntimeEvents()
 	self.isEnabled = false
+	if self.RefreshMinimapPartnerGlow then self:RefreshMinimapPartnerGlow() end
 	self:ResetQuestEventState()
 	if self.ResetTaskAreaStateStore then
 		self:ResetTaskAreaStateStore()

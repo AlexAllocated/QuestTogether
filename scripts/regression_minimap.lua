@@ -121,6 +121,26 @@ local function Frame(parent)
 		self:CheckAccess(true)
 		self.texture = value
 	end
+	function frame:SetTexCoord(...) self:CheckAccess(true); self.texCoord = { ... } end
+	function frame:SetVertexColor(...) self:CheckAccess(true); self.vertexColor = { ... } end
+	function frame:SetBlendMode(value) self:CheckAccess(true); self.blend = value end
+	function frame:CreateAnimationGroup()
+		self:CheckAccess(true)
+		local group = { animations = {}, plays = 0, stops = 0 }
+		function group:SetLooping(value) self.looping = value end
+		function group:CreateAnimation(kind)
+			local animation = { kind = kind }
+			for _, field in ipairs({ "Order", "FromAlpha", "ToAlpha", "Duration", "Smoothing" }) do
+				animation["Set" .. field] = function(self, value) self[field] = value end
+			end
+			self.animations[#self.animations + 1] = animation
+			return animation
+		end
+		function group:IsPlaying() return self.playing == true end
+		function group:Play() self.playing = true; self.plays = self.plays + 1 end
+		function group:Stop() self.playing = false; self.stops = self.stops + 1 end
+		return group
+	end
 	function frame:SetText(value)
 		self:CheckAccess(true)
 		self.text = value
@@ -208,6 +228,9 @@ local function Fixture()
 	end
 	function addon:GetMinimapShapeName()
 		return self.shape or "ROUND"
+	end
+	function addon:IsWorkBlocked(workClass)
+		return self.blocked == true or (self.mapOpen and workClass == "nameplate_refresh")
 	end
 	function addon:IsRuntimeRestricted()
 		return self.blocked == true
@@ -723,4 +746,50 @@ QuestTogether:RegisterTest("minimap tooltip checks its independent parent and qu
 		assert(tooltip.shown)
 		Equal(#a.frames, 3)
 	end
+end)
+
+QuestTogether:RegisterTest("minimap partner glow follows status visibility and restrictions with a reused pulse", function()
+	local a = Fixture()
+	a:InitializeMinimapLauncher()
+	local button = a.minimapButton
+	a.mapOpen = true -- launcher glow does not inspect map/nameplate data
+	Equal(button.qtPartnerGlow, nil)
+	a:SetOption("lookingForQuestPartners", true)
+	Equal(#button.qtPartnerGlow, 8)
+	local pulse = button.qtPartnerGlowPulses[1]
+	assert(pulse:IsPlaying())
+	Equal(pulse.looping, "REPEAT")
+	Equal(pulse.animations[1].Duration, 1.2)
+	Equal(button.qtPartnerGlow[1].points[1][2], button.qtLogoTexture)
+	Equal(button.qtLogoTexture.width, 24)
+	local textures, plays = #button.textures, pulse.plays
+	a:RefreshMinimapButton()
+	Equal(#button.textures, textures)
+	Equal(pulse.plays, plays)
+	a:SetOption("lookingForQuestPartners", false)
+	assert(not pulse:IsPlaying() and not button.qtPartnerGlow[1].shown)
+	a.blocked = true
+	a:SetOption("lookingForQuestPartners", true)
+	assert(not pulse:IsPlaying())
+	a.blocked = false
+	a.minimapLauncherFrame.scripts.OnEvent(nil, "PLAYER_REGEN_ENABLED")
+	assert(pulse:IsPlaying())
+	a:SetOption("showMinimapButton", false)
+	assert(not pulse:IsPlaying())
+	a:SetOption("showMinimapButton", true)
+	assert(pulse:IsPlaying())
+	a.isEnabled = false
+	a:RefreshMinimapPartnerGlow()
+	assert(not pulse:IsPlaying())
+	a.isEnabled = true
+	a:RefreshMinimapPartnerGlow()
+	assert(pulse:IsPlaying())
+	a.anchor.forbidden = true
+	Equal(a:RefreshMinimapPartnerGlow(), false)
+	Equal(button.unsafeCalls, nil)
+	a.anchor.forbidden = false
+	a.blocked = true
+	a:SetOption("lookingForQuestPartners", false)
+	assert(not pulse:IsPlaying())
+	Equal(#button.textures, textures)
 end)

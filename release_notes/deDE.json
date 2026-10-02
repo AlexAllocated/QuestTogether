@@ -1,14 +1,15 @@
 {
-  "source_sha256": "efe777113f3cbed0e34df70a0e5e6174cad2064734f0dade100f729be3b7a122",
+  "source_sha256": "830e7d04582e4c330706dcd4a4beaa5adaf4bc94d2fc3ef413e80a9228407ba6",
   "notes": {
     "version": "5.16.5",
-    "welcome": "Ein kürzeres Präfix hält Gruppenankündigungen kompakt.",
+    "welcome": "Sieh auf einen Blick, wann du nach Questpartnern suchst.",
     "sections": [
       {
-        "title": "Kompakte Gruppenankündigungen",
+        "title": "Eine leuchtende Minikarten-Erinnerung",
+        "illustration": "quest-partners",
         "items": [
-          "Questfortschritt, der an Gruppenmitglieder ohne QuestTogether gesendet wird, beginnt jetzt mit [QT] statt mit [QuestTogether].",
-          "Ankündigungen beachten weiterhin das Limit für Chatnachrichten und erhalten vollständige Zeichen in jeder Sprache."
+          "Dein QuestTogether-Minimap-Button pulsiert jetzt mit demselben goldenen Logo-Leuchten wie Spielernamensplaketten, während „Suche nach Questpartnern“ aktiviert ist.",
+          "Das Leuchten folgt deinem Partnerstatus und endet, wenn QT deaktiviert ist oder der Minimap-Button ausgeblendet wird. Dein Button und dein Logo behalten ihre bestehende Größe."
         ]
       }
     ]

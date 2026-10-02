@@ -1,14 +1,15 @@
 {
-  "source_sha256": "efe777113f3cbed0e34df70a0e5e6174cad2064734f0dade100f729be3b7a122",
+  "source_sha256": "830e7d04582e4c330706dcd4a4beaa5adaf4bc94d2fc3ef413e80a9228407ba6",
   "notes": {
     "version": "5.16.5",
-    "welcome": "较短的前缀可让小队通告更简洁。",
+    "welcome": "一目了然地查看你何时正在寻找任务伙伴。",
     "sections": [
       {
-        "title": "简洁小队通告",
+        "title": "发光的小地图提醒",
+        "illustration": "quest-partners",
         "items": [
-          "发送给未安装 QuestTogether 的小队成员的任务进度现在以 [QT] 开头，而不是 [QuestTogether]。",
-          "通告仍会遵守聊天消息长度限制，并在各种语言中保留完整字符。"
+          "当“寻找任务伙伴”开启时，你的 QuestTogether 小地图按钮现在会像玩家姓名板一样带有金色标志光晕并脉动。",
+          "该光晕会跟随你的伙伴状态，并在 QT 被禁用或小地图按钮隐藏时停止。你的按钮和标志会保持现有大小。"
         ]
       }
     ]

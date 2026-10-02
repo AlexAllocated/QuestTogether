@@ -329,6 +329,18 @@ function QuestTogether:StartMinimapButtonDrag(button)
 	self:UpdateMinimapButtonDrag()
 end
 
+function QuestTogether:RefreshMinimapPartnerGlow(hidden)
+	local button = rawget(self, "minimapButton")
+	if not button or not self.LibChev.CanMutateOwnedRegion(button) then return false end
+	local looking = not hidden and self.isEnabled and not self.isLoggingOut
+		and self:GetOption("showMinimapButton") ~= false
+		and self:GetOption("lookingForQuestPartners") == true
+	-- Turning the glow off is safe on our owned regions even during restrictions.
+	-- Creation/layout waits for the launcher's existing recovery events.
+	if looking and self:IsRuntimeRestricted() then return false end
+	return self:SetQTPlayerIconLookingForPartners(button, looking == true, button.qtLogoTexture, "foreign_frame_mutation")
+end
+
 function QuestTogether:CreateMinimapButton(anchor)
 	local button = self:CreateMinimapUIFrame("Button", "QuestTogetherMinimapButton", anchor)
 	self.minimapButton = button
@@ -343,6 +355,7 @@ function QuestTogether:CreateMinimapButton(anchor)
 	icon:SetSize(24, 24)
 	icon:SetPoint("CENTER", 0, 0)
 	icon:SetTexture(ICON)
+	button.qtLogoTexture = icon
 	local border = button:CreateTexture(nil, "OVERLAY")
 	border:SetSize(54, 54)
 	border:SetPoint("TOPLEFT", 0, 0)
@@ -373,11 +386,13 @@ function QuestTogether:CreateMinimapButton(anchor)
 		self:StopMinimapButtonDrag(false)
 	end)
 	button:SetScript("OnHide", function()
+		self:RefreshMinimapPartnerGlow(true)
 		self:StopMinimapButtonDrag(true)
 		self:HideMinimapTooltip()
 	end)
 	button:SetScript("OnShow", function()
 		self:PositionMinimapButton()
+		self:RefreshMinimapPartnerGlow()
 	end)
 	return button
 end
@@ -408,6 +423,7 @@ function QuestTogether:RefreshMinimapButton()
 		return false
 	end
 	button:Show()
+	self:RefreshMinimapPartnerGlow()
 	return true
 end
 

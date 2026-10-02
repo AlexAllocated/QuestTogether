@@ -1,5 +1,9 @@
 # QuestTogether changelog
 
+## 5.16.6 — 2026-10-02
+
+- Give the minimap button the same pulsing gold logo glow as player nameplates while Looking for Questing Partners is enabled. The glow follows status and visibility changes without changing the button or logo size.
+
 ## 5.16.5 — 2026-10-02
 
 - Shorten announcements for party members without the addon to the [QT] prefix, preserving message limits and UTF-8 boundaries.

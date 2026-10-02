@@ -1,14 +1,15 @@
 {
-  "source_sha256": "efe777113f3cbed0e34df70a0e5e6174cad2064734f0dade100f729be3b7a122",
+  "source_sha256": "830e7d04582e4c330706dcd4a4beaa5adaf4bc94d2fc3ef413e80a9228407ba6",
   "notes": {
     "version": "5.16.5",
-    "welcome": "Un préfixe plus court rend les annonces de groupe plus compactes.",
+    "welcome": "Voyez d’un coup d’œil quand vous cherchez des partenaires de quête.",
     "sections": [
       {
-        "title": "Annonces de groupe compactes",
+        "title": "Un rappel lumineux sur la minicarte",
+        "illustration": "quest-partners",
         "items": [
-          "La progression des quêtes publiée aux membres du groupe sans QuestTogether commence désormais par [QT] au lieu de [QuestTogether].",
-          "Les annonces respectent toujours la limite des messages de discussion et préservent les caractères complets dans toutes les langues."
+          "Le bouton QuestTogether de votre minicarte clignote désormais avec la même lueur dorée du logo que les barres d’info des personnages-joueurs tant que Recherche de partenaires de quête est activée.",
+          "La lueur suit votre statut de partenaire et s’arrête quand QT est désactivé ou quand le bouton de la minicarte est masqué. Votre bouton et le logo conservent leur taille actuelle."
         ]
       }
     ]

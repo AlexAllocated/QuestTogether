@@ -1,12 +1,13 @@
 {
   "version": "5.16.5",
-  "welcome": "A shorter prefix keeps party announcements compact.",
+  "welcome": "See at a glance when you are looking for questing partners.",
   "sections": [
     {
-      "title": "Compact party announcements",
+      "title": "A glowing minimap reminder",
+      "illustration": "quest-partners",
       "items": [
-        "Quest progress posted to party members without QuestTogether now starts with [QT] instead of [QuestTogether].",
-        "Announcements still respect the chat message limit and preserve complete characters in every language."
+        "Your QuestTogether minimap button now pulses with the same gold logo glow as player nameplates while Looking for Questing Partners is on.",
+        "The glow follows your partner status and stops when QT is disabled or the minimap button is hidden. Your button and logo keep their existing size."
       ]
     }
   ]

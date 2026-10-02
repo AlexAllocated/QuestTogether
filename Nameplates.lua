@@ -3282,13 +3282,15 @@ function QuestTogether:CreateQTPlayerGlowPulse(layer)
 	return nil
 end
 
-function QuestTogether:SetQTPlayerIconLookingForPartners(iconFrame, looking)
+function QuestTogether:SetQTPlayerIconLookingForPartners(iconFrame, looking, glowAnchor, workClass)
 	if not CanMutateFrame(iconFrame) then
 		return false
 	end
+	glowAnchor = glowAnchor or iconFrame
+	if not CanMutateFrame(glowAnchor) then return false end
 	looking = looking == true
 	local glow = iconFrame.qtPartnerGlow
-	if looking and self:IsWorkBlocked("nameplate_refresh") then
+	if looking and self:IsWorkBlocked(workClass or "nameplate_refresh") then
 		return false
 	end
 	if not glow and not looking then
@@ -3325,8 +3327,8 @@ function QuestTogether:SetQTPlayerIconLookingForPartners(iconFrame, looking)
 			layer:SetVertexColor(1, 0.78, 0.12, 0.9)
 			layer:SetBlendMode("ADD")
 			layer:ClearAllPoints()
-			layer:SetPoint("TOPLEFT", iconFrame, "TOPLEFT", x, y)
-			layer:SetPoint("BOTTOMRIGHT", iconFrame, "BOTTOMRIGHT", x, y)
+			layer:SetPoint("TOPLEFT", glowAnchor, "TOPLEFT", x, y)
+			layer:SetPoint("BOTTOMRIGHT", glowAnchor, "BOTTOMRIGHT", x, y)
 		end
 		iconFrame.qtPartnerGlowPulses = iconFrame.qtPartnerGlowPulses or {}
 		for index, layer in ipairs(glow) do

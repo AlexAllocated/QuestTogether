@@ -1,14 +1,15 @@
 {
-  "source_sha256": "efe777113f3cbed0e34df70a0e5e6174cad2064734f0dade100f729be3b7a122",
+  "source_sha256": "830e7d04582e4c330706dcd4a4beaa5adaf4bc94d2fc3ef413e80a9228407ba6",
   "notes": {
     "version": "5.16.5",
-    "welcome": "Um prefixo mais curto mantém os anúncios do grupo compactos.",
+    "welcome": "Veja rapidamente quando você está procurando parceiros para fazer missões.",
     "sections": [
       {
-        "title": "Anúncios compactos para o grupo",
+        "title": "Um lembrete brilhante no minimapa",
+        "illustration": "quest-partners",
         "items": [
-          "O progresso da missão enviado aos membros do grupo sem QuestTogether agora começa com [QT] em vez de [QuestTogether].",
-          "Os anúncios ainda respeitam o limite de mensagens do chat e preservam caracteres completos em todos os idiomas."
+          "Seu botão do QuestTogether no minimapa agora pulsa com o mesmo brilho dourado do logotipo das placas de nome dos jogadores enquanto Procurando Parceiros para Missões está ativado.",
+          "O brilho acompanha seu status de parceiro e para quando o QT é desativado ou quando o botão do minimapa está oculto. Seu botão e logotipo mantêm o tamanho atual."
         ]
       }
     ]
