@@ -126,6 +126,7 @@ local function Fixture(name)
 			end,
 		}
 	end
+	a.GetPlayerLocationPriorityOrigin = function() return nil end
 	return a
 end
 
@@ -885,3 +886,25 @@ QT:RegisterTest(
 		Equal(data.warMode, nil)
 	end
 )
+
+QT:RegisterTest("full location cache retains nearby peers over fresh distant arrivals", function()
+	local a = Fixture()
+	a.GetPlayerLocationPriorityOrigin = function() return {} end
+	a.GetPlayerLocationPriorityDistance = function(_, row) return row.mask == 0 and math.huge or row.x end
+	local function Payload(x, sequence)
+		return "1,100-1234," .. (sequence or 1) .. ",3,12," .. x .. ",0.6,MAGE,Mage,Human,Alliance,60,0"
+	end
+	for i = 1, 512 do assert(a:HandlePlayerLocationMessage(Payload("0.1"), "Near" .. i .. "-Realm")) end
+	a.now = 101
+	assert(a:HandlePlayerLocationMessage(Payload("0.9"), "Far-Realm"))
+	assert(not a.playerLocationState.peers["Far-Realm"])
+	Equal(#a:GetVisiblePlayerLocations("map"), 512)
+	assert(a:HandlePlayerLocationMessage(Payload("0.01"), "Closest-Realm"))
+	assert(a.playerLocationState.peers["Closest-Realm"])
+	Equal(#a:GetVisiblePlayerLocations("map"), 512)
+	-- Existing peers still accept a move, then become eligible for eviction.
+	assert(a:HandlePlayerLocationMessage(Payload("0.95", 2), "Closest-Realm"))
+	assert(a:HandlePlayerLocationMessage(Payload("0.02"), "NewNear-Realm"))
+	assert(not a.playerLocationState.peers["Closest-Realm"])
+	assert(a.playerLocationState.peers["NewNear-Realm"])
+end)

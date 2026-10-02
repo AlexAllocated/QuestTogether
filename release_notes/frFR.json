@@ -1,23 +1,23 @@
 {
-  "source_sha256": "f358e159ed5d3f046ed6d0becae3257e7fbce6f2f044e8c9692b5d4052ed1e62",
+  "source_sha256": "2889c91fd432c5d72e120bf242b2312be58fb31a307b2607b032d921713bfd05",
   "notes": {
     "version": "5.16.3",
-    "welcome": "Trouvez plus facilement les paramètres dont vous avez besoin et consultez vos préférences QuestTogether d’un coup d’œil.",
+    "welcome": "Conservez vos réglages de bulle en quittant le mode Édition et trouvez des compagnons de quête à proximité sur les cartes bondées.",
     "sections": [
       {
-        "title": "Paramètres organisés autour de votre façon de jouer",
+        "title": "Les réglages de bulle restent enregistrés",
         "items": [
-          "Groupes et partage remplace Divers, en regroupant la disponibilité des partenaires, les demandes de participation et les approbations de partage de quêtes.",
-          "Les emotes de célébration se trouvent désormais dans Où annoncer. La visibilité de la minicarte se trouve dans Général sur la page principale, avec les outils de débogage et la nouvelle analyse du journal des quêtes dans Dépannage.",
-          "Comparer les quêtes du groupe et Trouver des partenaires de quête sont désormais les premières actions rapides. Vos préférences existantes sont conservées."
+          "La fermeture du mode Édition de l’ATH conserve désormais la taille de police, la durée d’affichage et la position de votre bulle QT au lieu de les réinitialiser.",
+          "Le panneau de bulle QT dispose désormais de son propre bouton Enregistrer les modifications et d’un message d’état enregistré. Les réglages s’appliquent automatiquement ; Enregistrer les modifications définit le point auquel Rétablir les modifications revient.",
+          "Après avoir enregistré puis effectué d’autres ajustements, Rétablir les modifications restaure vos derniers réglages QT enregistrés."
         ]
       },
       {
-        "title": "Un état rapide plus utile",
+        "title": "Les joueurs à proximité sont prioritaires",
         "items": [
-          "Consultez l’état de vos partenaires, le partage de position et les préférences d’affichage, les approbations de demandes, la sortie des annonces, ainsi que les paramètres des barres d’info des quêtes et des joueurs dans les sections liées.",
-          "Vérifiez votre profil actif, la version installée et toute version plus récente détectée. Lorsque QT est désactivé, le résumé indique clairement que les paramètres sont des préférences enregistrées.",
-          "Cliquez sur l’en-tête d’une section pour ouvrir ses paramètres. Le résumé s’agrandit pour s’adapter à son texte et reste à jour tant que la page est ouverte."
+          "Lorsque plus de 128 points éligibles se disputent l’espace sur la carte ou la minicarte, les joueurs les plus proches sont prioritaires en fonction de leur distance par rapport à votre personnage.",
+          "Lorsque le cache de 512 emplacements se remplit, les joueurs les plus proches sont conservés avant les arrivants plus éloignés. Le déplacement et le zoom de la carte ne modifient pas la priorité de proximité.",
+          "Ces changements conservent les limites existantes de points et de cache sans envoyer de messages de communication supplémentaires."
         ]
       }
     ]

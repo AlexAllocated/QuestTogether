@@ -1,23 +1,23 @@
 {
-  "source_sha256": "f358e159ed5d3f046ed6d0becae3257e7fbce6f2f044e8c9692b5d4052ed1e62",
+  "source_sha256": "2889c91fd432c5d72e120bf242b2312be58fb31a307b2607b032d921713bfd05",
   "notes": {
     "version": "5.16.3",
-    "welcome": "Finde die benötigten Einstellungen leichter und sieh deine QuestTogether-Einstellungen auf einen Blick.",
+    "welcome": "Behalte deine Sprechblasen-Einstellungen beim Verlassen des Bearbeitungsmodus und finde Questbegleiter in der Nähe auf überfüllten Karten.",
     "sections": [
       {
-        "title": "Einstellungen danach organisiert, wie du spielst",
+        "title": "Sprechblasen-Einstellungen bleiben gespeichert",
         "items": [
-          "Gruppen & Teilen ersetzt Verschiedenes und führt Partnerverfügbarkeit, Beitrittsanfragen und Genehmigungen zum Teilen von Quests zusammen.",
-          "Feier-Emotes befinden sich jetzt unter „Wo ankündigen“. Die Sichtbarkeit der Minikarte ist unter „Allgemein“ auf der Hauptseite zu finden, Debug-Werkzeuge und das erneute Einlesen des Questlogs zusammen unter „Fehlerbehebung“.",
-          "Quests der Gruppe vergleichen und Questpartner finden sind jetzt die ersten Schnellaktionen. Deine bestehenden Einstellungen bleiben erhalten."
+          "Beim Schließen des HUD-Bearbeitungsmodus bleiben jetzt Schriftgröße, Anzeigedauer und Position deiner QT-Sprechblase erhalten, statt zurückgesetzt zu werden.",
+          "Das QT-Sprechblasenfenster hat jetzt eine eigene Schaltfläche Änderungen speichern und eine Meldung zum gespeicherten Zustand. Einstellungen werden automatisch übernommen; Änderungen speichern legt den Punkt fest, zu dem Änderungen zurücksetzen zurückkehrt.",
+          "Nach dem Speichern und weiteren Anpassungen stellt Änderungen zurücksetzen deine zuletzt gespeicherten QT-Einstellungen wieder her."
         ]
       },
       {
-        "title": "Ein nützlicherer Schnellstatus",
+        "title": "Spieler in der Nähe haben Vorrang",
         "items": [
-          "Sieh deinen Partnerstatus, die Standortfreigabe und Anzeigeeinstellungen, Anfragegenehmigungen, Ankündigungsausgabe sowie Quest- und Spieler-Namensplaketten-Einstellungen in verknüpften Abschnitten.",
-          "Prüfe dein aktives Profil, die installierte Version und jede erkannte neuere Version. Wenn QT deaktiviert ist, kennzeichnet die Zusammenfassung die Einstellungen klar als gespeicherte Präferenzen.",
-          "Klicke auf eine Abschnittsüberschrift, um die zugehörigen Einstellungen zu öffnen. Die Zusammenfassung passt sich an ihren Text an und bleibt aktuell, solange die Seite geöffnet ist."
+          "Wenn mehr als 128 geeignete Punkte auf der Karte oder Minikarte um Platz konkurrieren, haben die nächsten Spieler basierend auf der Entfernung zu deinem Charakter Vorrang.",
+          "Wenn der Cache mit 512 Positionen voll ist, werden nähere Spieler vor weiter entfernten neu ankommenden Spielern behalten. Verschieben und Zoomen der Karte ändern die Nähe-Priorität nicht.",
+          "Diese Änderungen behalten die bestehenden Punkt- und Cache-Begrenzungen bei, ohne zusätzliche Kommunikationsnachrichten zu senden."
         ]
       }
     ]

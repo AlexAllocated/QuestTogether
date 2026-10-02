@@ -94,6 +94,42 @@ function QuestTogether:GetLocationPinWorldPosition(mapID, x, y)
 	end
 end
 
+-- Distance ranking uses world coordinates, not map pixels or the viewed map
+-- center. Read-only adapters also work when location sharing is turned off.
+function QuestTogether:GetPlayerLocationPriorityOrigin()
+	if self:IsRuntimeRestricted() then return nil end
+	local mapID = ID(self, Native(self, self.API.GetBestMapForUnit, "player"))
+	if not mapID then return nil end
+	local position = Native(self, self.API.GetPlayerMapPosition, mapID, "player")
+	if not self:CanAccessTable(position) then return nil end
+	local x, y = Normalized(self, position.x), Normalized(self, position.y)
+	if not x or not y then return nil end
+	local continent, north, west = self:GetLocationPinWorldPosition(mapID, x, y)
+	if continent and north and west then return { continent = continent, north = north, west = west } end
+end
+
+function QuestTogether:GetPlayerLocationPriorityDistance(row, origin)
+	if not origin or row.mask == 0 then return math.huge end
+	local continent, north, west = self:GetLocationPinWorldPosition(row.mapID, row.x, row.y)
+	if continent ~= origin.continent or not north or not west then return math.huge end
+	return (north - origin.north)^2 + (west - origin.west)^2
+end
+
+function QuestTogether:PrioritizePlayerLocationRows(rows, origin)
+	local ranked = {}
+	for i = 1, math.min(MAX_LOCATION_ROWS, #rows) do
+		local row = rows[i]
+		ranked[i] = { row = row, distance = self:GetPlayerLocationPriorityDistance(row, origin) }
+	end
+	table.sort(ranked, function(a, b)
+		if a.distance ~= b.distance then return a.distance < b.distance end
+		return a.row.name < b.row.name
+	end)
+	local result = {}
+	for i, entry in ipairs(ranked) do result[i] = entry.row end
+	return result
+end
+
 function QuestTogether:GetLocationPinMapPosition(row, targetMapID)
 	if row.mapID == targetMapID then
 		return Normalized(self, row.x), Normalized(self, row.y)
@@ -603,6 +639,10 @@ local function RefreshSurface(addon, state, name, rows)
 		return false
 	end
 	Call(addon, surface.frame, "SetFrameLevel", parentLevel + 50)
+	if #rows > MAX_PINS then
+		local origin = name == "minimap" and geometry or addon:GetPlayerLocationPriorityOrigin()
+		rows = addon:PrioritizePlayerLocationRows(rows, origin)
+	end
 	local count = 0
 	-- Off-map peers do not consume the visible pin budget. Bound projection
 	-- work separately to the model's maximum number of candidate rows.

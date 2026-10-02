@@ -1,5 +1,12 @@
 # QuestTogether changelog
 
+## 5.16.4 — 2026-10-01
+
+- Keep QT bubble size, duration, and position when closing HUD Edit Mode; native exit cleanup no longer acts as a request to undo QT settings.
+- Prioritize the closest players at the 128-dot display limit and retain closer players when the 512-location cache fills, without increasing communication traffic.
+
+- Give the QT bubble Edit Mode panel its own Save Changes button and saved-state explanation. Preserve immediate saving, and make Revert restore the last explicitly saved font size, duration, and position after further edits.
+
 ## 5.16.3 — 2026-09-30
 
 - Expand Quick Status with linked sections for partner availability, location sharing, request approvals, announcements, and nameplates. Show addon state, installed version, and detected updates, with layout that grows to fit translations.

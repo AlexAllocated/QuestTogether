@@ -1,23 +1,23 @@
 {
-  "source_sha256": "f358e159ed5d3f046ed6d0becae3257e7fbce6f2f044e8c9692b5d4052ed1e62",
+  "source_sha256": "2889c91fd432c5d72e120bf242b2312be58fb31a307b2607b032d921713bfd05",
   "notes": {
     "version": "5.16.3",
-    "welcome": "Trova più facilmente le impostazioni di cui hai bisogno e visualizza a colpo d'occhio le tue preferenze di QuestTogether.",
+    "welcome": "Mantieni le impostazioni dei fumetti quando esci dalla modalità Modifica e trova compagni di missione nelle vicinanze sulle mappe affollate.",
     "sections": [
       {
-        "title": "Impostazioni organizzate in base a come giochi",
+        "title": "Le impostazioni dei fumetti restano salvate",
         "items": [
-          "Gruppi e condivisione sostituisce Varie, riunendo disponibilità dei compagni, richieste di ingresso e approvazioni per la condivisione delle missioni.",
-          "Le emote di celebrazione ora si trovano sotto Dove annunciare. La visibilità della minimappa è sotto Generale nella pagina principale, con gli strumenti di debug e la nuova scansione del registro missioni insieme sotto Risoluzione dei problemi.",
-          "Confronta le missioni del gruppo e Trova compagni per le missioni ora sono le prime Azioni rapide. Le tue preferenze esistenti vengono mantenute."
+          "Chiudendo la modalità Modifica dell'HUD ora vengono preservate le dimensioni del carattere, la durata di visualizzazione e la posizione del fumetto QT invece di ripristinarle.",
+          "Il pannello dei fumetti QT ora ha un proprio pulsante Salva modifiche e un messaggio di stato salvato. Le impostazioni si applicano automaticamente; Salva modifiche imposta il punto a cui torna Annulla modifiche.",
+          "Dopo aver salvato e apportato ulteriori modifiche, Annulla modifiche ripristina le ultime impostazioni QT salvate."
         ]
       },
       {
-        "title": "Uno stato rapido più utile",
+        "title": "Priorità ai giocatori vicini",
         "items": [
-          "Visualizza lo stato dei tuoi compagni, le preferenze di condivisione della posizione e di visualizzazione, le approvazioni delle richieste, l'output degli annunci e le impostazioni di missioni e targhette dei nomi dei personaggi in sezioni collegate.",
-          "Controlla il tuo profilo attivo, la versione installata e qualsiasi versione più recente rilevata. Quando QT è disattivato, il riepilogo identifica chiaramente le impostazioni come preferenze salvate.",
-          "Fai clic sull'intestazione di una sezione per aprirne le impostazioni. Il riepilogo si espande per adattarsi al testo e rimane aggiornato mentre la pagina è aperta."
+          "Quando più di 128 punti idonei competono per lo spazio sulla mappa o sulla minimappa, i giocatori più vicini hanno la priorità in base alla distanza dal tuo personaggio.",
+          "Quando la cache da 512 posizioni si riempie, i giocatori più vicini vengono mantenuti prima degli arrivi più lontani. Spostare e ingrandire/ridurre la mappa non cambia la priorità di prossimità.",
+          "Queste modifiche mantengono i limiti esistenti dei punti e della cache senza inviare messaggi di comunicazione aggiuntivi."
         ]
       }
     ]

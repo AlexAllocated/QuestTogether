@@ -23,7 +23,7 @@ local ANNOUNCEMENT_BUBBLE_Y_OFFSET = 22
 local ANNOUNCEMENT_BUBBLE_FADE_IN_SECONDS = 0.2
 local ANNOUNCEMENT_BUBBLE_FADE_OUT_SECONDS = 0.4
 local PERSONAL_BUBBLE_SETTINGS_DIALOG_WIDTH = 380
-local PERSONAL_BUBBLE_SETTINGS_DIALOG_HEIGHT = 220
+local PERSONAL_BUBBLE_SETTINGS_DIALOG_HEIGHT = 300
 local ApplyQuestIconVisual
 local EnsureQuestIcon
 local ResolveNameplateUnitToken
@@ -509,40 +509,44 @@ local function GetPersonalBubbleEditSession()
 	return QuestTogether:GetPersonalBubbleEditSession()
 end
 
-local function EnsurePersonalBubbleEditSession()
-	local currentSession = GetPersonalBubbleEditSession()
+function QuestTogether:EnsurePersonalBubbleEditSession()
+	local currentSession = self:GetPersonalBubbleEditSession()
 	if currentSession then
 		return currentSession
 	end
 
 	local session = {
-		profile = QuestTogether.db and QuestTogether.db.profile,
+		profile = self.db and self.db.profile,
 		saved = {
-			chatBubbleSize = QuestTogether:NormalizeChatBubbleSizeValue(QuestTogether:GetOption("chatBubbleSize"))
-				or QuestTogether.DEFAULTS.profile.chatBubbleSize,
-			chatBubbleDuration = QuestTogether:NormalizeChatBubbleDurationValue(QuestTogether:GetOption("chatBubbleDuration"))
-				or QuestTogether.DEFAULTS.profile.chatBubbleDuration,
-			anchor = QuestTogether:DeepCopy(QuestTogether:GetPersonalBubbleAnchor()),
+			chatBubbleSize = self:NormalizeChatBubbleSizeValue(self:GetOption("chatBubbleSize"))
+				or self.DEFAULTS.profile.chatBubbleSize,
+			chatBubbleDuration = self:NormalizeChatBubbleDurationValue(self:GetOption("chatBubbleDuration"))
+				or self.DEFAULTS.profile.chatBubbleDuration,
+			anchor = self:DeepCopy(self:GetPersonalBubbleAnchor()),
 		},
 		pending = false,
 	}
 
-	QuestTogether.personalBubbleEditSession = session
+	self.personalBubbleEditSession = session
 	return session
 end
 
 
-local function IsPersonalBubbleEditSnapshotEqual(snapshot)
+local function EnsurePersonalBubbleEditSession()
+	return QuestTogether:EnsurePersonalBubbleEditSession()
+end
+
+local function IsPersonalBubbleEditSnapshotEqual(addon, snapshot)
 	if type(snapshot) ~= "table" then
 		return true
 	end
 
-	local currentSize = QuestTogether:NormalizeChatBubbleSizeValue(QuestTogether:GetOption("chatBubbleSize"))
-		or QuestTogether.DEFAULTS.profile.chatBubbleSize
-	local currentDuration = QuestTogether:NormalizeChatBubbleDurationValue(QuestTogether:GetOption("chatBubbleDuration"))
-		or QuestTogether.DEFAULTS.profile.chatBubbleDuration
-	local currentAnchor = QuestTogether:GetPersonalBubbleAnchor()
-	local savedAnchor = snapshot.anchor or QuestTogether.DEFAULT_PERSONAL_BUBBLE_ANCHOR
+	local currentSize = addon:NormalizeChatBubbleSizeValue(addon:GetOption("chatBubbleSize"))
+		or addon.DEFAULTS.profile.chatBubbleSize
+	local currentDuration = addon:NormalizeChatBubbleDurationValue(addon:GetOption("chatBubbleDuration"))
+		or addon.DEFAULTS.profile.chatBubbleDuration
+	local currentAnchor = addon:GetPersonalBubbleAnchor()
+	local savedAnchor = snapshot.anchor or addon.DEFAULT_PERSONAL_BUBBLE_ANCHOR
 
 	return currentSize == snapshot.chatBubbleSize
 		and currentDuration == snapshot.chatBubbleDuration
@@ -569,15 +573,27 @@ local function IsPersonalBubbleAtDefaultState()
 		and currentAnchor.y == anchorDefaults.y
 end
 
+function QuestTogether:RefreshPersonalBubbleEditSaveState()
+	local session = self:GetPersonalBubbleEditSession()
+	local pending = session and not IsPersonalBubbleEditSnapshotEqual(self, session.saved) or false
+	if session then session.pending = pending end
+	local dialog = self.personalBubbleEditModeDialog
+	if not dialog then return end
+	if dialog.SaveButton then dialog.SaveButton:SetEnabled(pending) end
+	if dialog.RevertButton then dialog.RevertButton:SetEnabled(pending) end
+	if dialog.SaveStatus then
+		dialog.SaveStatus:SetText(pending
+			and L("Changes applied automatically. Save Changes sets the point Revert returns to.")
+			or L("QuestTogether settings saved. Blizzard's Save button is not needed."))
+	end
+end
+
 local function UpdatePersonalBubbleEditSessionDirtyState()
-	local session = EnsurePersonalBubbleEditSession()
-	session.pending = not IsPersonalBubbleEditSnapshotEqual(session.saved)
-	if
-		QuestTogether.personalBubbleEditModeDialog
-		and QuestTogether.personalBubbleEditModeDialog.RevertButton
-	then
-		QuestTogether.personalBubbleEditModeDialog.RevertButton:SetEnabled(session.pending)
-		QuestTogether.personalBubbleEditModeDialog.ResetButton:SetEnabled(not IsPersonalBubbleAtDefaultState())
+	EnsurePersonalBubbleEditSession()
+	QuestTogether:RefreshPersonalBubbleEditSaveState()
+	local dialog = QuestTogether.personalBubbleEditModeDialog
+	if dialog and dialog.ResetButton then
+		dialog.ResetButton:SetEnabled(not IsPersonalBubbleAtDefaultState())
 	end
 end
 
@@ -600,7 +616,7 @@ local function ConfigureEditModeSlider(settingFrame, settingData, onValueChanged
 		settingFrame.Slider,
 		MinimalSliderWithSteppersMixin.Event.OnValueChanged,
 		function(_, value)
-			if type(onValueChanged) == "function" then
+			if not settingFrame.initInProgress and type(onValueChanged) == "function" then
 				onValueChanged(value)
 			end
 		end,
@@ -662,9 +678,9 @@ end
 function QuestTogether:CommitPersonalBubbleEditSession()
 	self.personalBubbleEditSession = nil
 	self.personalBubbleEditSessionRestoring = false
-	if self.personalBubbleEditModeDialog and self.personalBubbleEditModeDialog.RevertButton then
-		self.personalBubbleEditModeDialog.RevertButton:SetEnabled(false)
-	end
+	-- Capture the new baseline before the next slider/anchor edit, not after it.
+	self:EnsurePersonalBubbleEditSession()
+	self:RefreshPersonalBubbleEditSaveState()
 end
 
 function QuestTogether:RevertPersonalBubbleEditSession()
@@ -675,12 +691,14 @@ function QuestTogether:RevertPersonalBubbleEditSession()
 
 	self:ApplyPersonalBubbleEditSnapshot(session.saved)
 	session.pending = false
+	self:RefreshPersonalBubbleEditSaveState()
 	if self.personalBubbleEditModeDialog and self.personalBubbleEditModeDialog.RevertButton then
 		self.personalBubbleEditModeDialog.RevertButton:SetEnabled(false)
 	end
 end
 
 function QuestTogether:ResetPersonalBubbleEditSessionToDefaults()
+	self:EnsurePersonalBubbleEditSession()
 	self.personalBubbleEditSessionRestoring = true
 	self:SetOption("chatBubbleSize", self.DEFAULTS.profile.chatBubbleSize)
 	self:SetOption("chatBubbleDuration", self.DEFAULTS.profile.chatBubbleDuration)
@@ -750,6 +768,21 @@ local function EnsurePersonalBubbleEditModeDialog()
 	local durationSlider = CreateFrame("Frame", nil, dialog, "EditModeSettingSliderTemplate")
 	durationSlider:SetPoint("TOPLEFT", sizeSlider, "BOTTOMLEFT", 0, -18)
 	dialog.DurationSlider = durationSlider
+
+	local saveStatus = dialog:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+	saveStatus:SetPoint("TOPLEFT", durationSlider, "BOTTOMLEFT", 0, -12)
+	saveStatus:SetWidth(PERSONAL_BUBBLE_SETTINGS_DIALOG_WIDTH - 48)
+	saveStatus:SetJustifyH("LEFT")
+	dialog.SaveStatus = saveStatus
+
+	local saveButton = CreateFrame("Button", nil, dialog, "EditModeSystemSettingsDialogButtonTemplate")
+	saveButton:SetSize(PERSONAL_BUBBLE_SETTINGS_DIALOG_WIDTH - 48, 28)
+	saveButton:SetPoint("BOTTOMLEFT", dialog, "BOTTOMLEFT", 24, 54)
+	saveButton:SetText(L("Save Changes"))
+	saveButton:SetScript("OnClick", function()
+		QuestTogether:CommitPersonalBubbleEditSession()
+	end)
+	dialog.SaveButton = saveButton
 
 	local revertButton = CreateFrame("Button", nil, dialog, "EditModeSystemSettingsDialogButtonTemplate")
 	revertButton:SetSize(160, 28)
@@ -914,6 +947,7 @@ function QuestTogether:SavePersonalBubbleAnchorFromFrame(hostFrame)
 		return false
 	end
 
+	if self:IsPersonalBubbleAnchorInEditMode() then self:EnsurePersonalBubbleEditSession() end
 	local changed = self:SetPersonalBubbleAnchor(point, relativePoint, RoundOffset(offsetX), RoundOffset(offsetY))
 	if changed and self:IsPersonalBubbleAnchorInEditMode() and not self.personalBubbleEditSessionRestoring then
 		UpdatePersonalBubbleEditSessionDirtyState()
@@ -952,8 +986,6 @@ function QuestTogether:RefreshPersonalBubbleEditModeDialog()
 		return
 	end
 
-	local session = GetPersonalBubbleEditSession()
-
 	local function FormatDurationLabel(value)
 		local normalized = self:NormalizeChatBubbleDurationValue(value) or self.DEFAULTS.profile.chatBubbleDuration
 		if math.abs(normalized - math.floor(normalized)) < 0.001 then
@@ -976,6 +1008,7 @@ function QuestTogether:RefreshPersonalBubbleEditModeDialog()
 		currentValue = self:NormalizeChatBubbleSizeValue(self:GetOption("chatBubbleSize")) or self.DEFAULTS.profile.chatBubbleSize,
 		settingName = L("Font Size"),
 	}, function(value)
+		self:EnsurePersonalBubbleEditSession()
 		if self:SetOption("chatBubbleSize", value) and not self.personalBubbleEditSessionRestoring then
 			UpdatePersonalBubbleEditSessionDirtyState()
 			self:RefreshPersonalBubbleAnchorVisualState()
@@ -995,6 +1028,7 @@ function QuestTogether:RefreshPersonalBubbleEditModeDialog()
 			or self.DEFAULTS.profile.chatBubbleDuration,
 		settingName = L("Display Duration"),
 	}, function(value)
+		self:EnsurePersonalBubbleEditSession()
 		if self:SetOption("chatBubbleDuration", value) and not self.personalBubbleEditSessionRestoring then
 			UpdatePersonalBubbleEditSessionDirtyState()
 			self:RefreshPersonalBubbleAnchorVisualState()
@@ -1002,9 +1036,7 @@ function QuestTogether:RefreshPersonalBubbleEditModeDialog()
 		end
 	end)
 
-	if dialog.RevertButton then
-		dialog.RevertButton:SetEnabled(session and session.pending or false)
-	end
+	self:RefreshPersonalBubbleEditSaveState()
 	if dialog.ResetButton then
 		dialog.ResetButton:SetEnabled(not IsPersonalBubbleAtDefaultState())
 	end
@@ -1135,6 +1167,42 @@ function QuestTogether:RefreshPersonalBubbleAnchorVisualState()
 	hostFrame:Show()
 end
 
+-- Production supplies access-checked frames; private tests supply owned fixtures.
+function QuestTogether:BindPersonalBubbleEditModeCallbacks(manager, revertButton, hookMethod)
+	manager:HookScript("OnShow", function()
+		self:EnsurePersonalBubbleEditSession()
+		self:RefreshPersonalBubbleAnchorVisualState()
+		self:RefreshPersonalBubbleEditModeDialog()
+	end)
+	manager:HookScript("OnHide", function()
+		self:DeselectPersonalBubbleAnchor()
+		-- Addon settings persist immediately. Keep dirty/revert state entirely
+		-- addon-owned instead of writing Blizzard's shared layout manager.
+		self:CommitPersonalBubbleEditSession()
+		self.personalBubbleEditSession = nil
+	end)
+
+	hookMethod(manager, "SelectSystem", function(_, systemFrame)
+		local hostFrame = self.announcementBubbleScreenHostFrame
+		if hostFrame and systemFrame ~= hostFrame then
+			self:DeselectPersonalBubbleAnchor()
+		end
+	end)
+	hookMethod(manager, "ClearSelectedSystem", function()
+		self:DeselectPersonalBubbleAnchor()
+	end)
+	hookMethod(manager, "SaveLayouts", function()
+		self:CommitPersonalBubbleEditSession()
+	end)
+	-- Native ExitEditMode calls RevertAllChanges even on ordinary close.
+	-- Only the explicit Revert button may roll back QT's immediately saved data.
+	if revertButton then
+		revertButton:HookScript("OnClick", function()
+			self:RevertPersonalBubbleEditSession()
+		end)
+	end
+end
+
 function QuestTogether:TryInstallPersonalBubbleEditModeHooks()
 	if self.personalBubbleEditModeHooksInstalled then
 		return
@@ -1151,39 +1219,11 @@ function QuestTogether:TryInstallPersonalBubbleEditModeHooks()
 	GetAnnouncementBubbleScreenHostFrame()
 	EnsurePersonalBubbleEditModeDialog()
 
-	EditModeManagerFrame:HookScript("OnShow", function()
-		EnsurePersonalBubbleEditSession()
-		QuestTogether:RefreshPersonalBubbleAnchorVisualState()
-		QuestTogether:RefreshPersonalBubbleEditModeDialog()
-	end)
-	EditModeManagerFrame:HookScript("OnHide", function()
-		QuestTogether:DeselectPersonalBubbleAnchor()
-		-- Addon settings persist immediately. Keep dirty/revert state entirely
-		-- addon-owned instead of writing Blizzard's shared layout manager.
-		QuestTogether:CommitPersonalBubbleEditSession()
-	end)
-
-	hooksecurefunc(EditModeManagerFrame, "SelectSystem", function(_, systemFrame)
-		local hostFrame = QuestTogether.announcementBubbleScreenHostFrame
-		if hostFrame and systemFrame ~= hostFrame then
-			QuestTogether:DeselectPersonalBubbleAnchor()
-		end
-	end)
-	hooksecurefunc(EditModeManagerFrame, "ClearSelectedSystem", function()
-		QuestTogether:DeselectPersonalBubbleAnchor()
-	end)
-	hooksecurefunc(EditModeManagerFrame, "SaveLayouts", function()
-		QuestTogether:CommitPersonalBubbleEditSession()
-	end)
-	hooksecurefunc(EditModeManagerFrame, "RevertAllChanges", function()
-		QuestTogether:RevertPersonalBubbleEditSession()
-	end)
 	local revertButton = GetAccessibleChildFrame(EditModeManagerFrame, "RevertAllChangesButton")
-	if CanMutateFrame(revertButton) and type(select(1, self:GetAccessibleFrameMember(revertButton, "HookScript"))) == "function" then
-		revertButton:HookScript("OnClick", function()
-			QuestTogether:RevertPersonalBubbleEditSession()
-		end)
+	if not CanMutateFrame(revertButton) or type(select(1, self:GetAccessibleFrameMember(revertButton, "HookScript"))) ~= "function" then
+		revertButton = nil
 	end
+	self:BindPersonalBubbleEditModeCallbacks(EditModeManagerFrame, revertButton, hooksecurefunc)
 
 	self.personalBubbleEditModeHooksInstalled = true
 end

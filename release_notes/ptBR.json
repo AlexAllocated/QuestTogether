@@ -1,23 +1,23 @@
 {
-  "source_sha256": "f358e159ed5d3f046ed6d0becae3257e7fbce6f2f044e8c9692b5d4052ed1e62",
+  "source_sha256": "2889c91fd432c5d72e120bf242b2312be58fb31a307b2607b032d921713bfd05",
   "notes": {
     "version": "5.16.3",
-    "welcome": "Encontre as configurações de que você precisa com mais facilidade e veja suas preferências do QuestTogether de relance.",
+    "welcome": "Mantenha suas configurações de bolha ao sair do Modo de Edição e encontre companheiros de missão próximos em mapas lotados.",
     "sections": [
       {
-        "title": "Configurações organizadas em torno de como você joga",
+        "title": "Configurações de bolha continuam salvas",
         "items": [
-          "Grupos e Compartilhamento substitui Diversos, reunindo disponibilidade de parceiros, solicitações de entrada e aprovações de compartilhamento de missões.",
-          "Emotes de comemoração agora ficam em Onde Anunciar. A visibilidade no minimapa fica em Geral na página principal, com ferramentas de depuração e nova varredura do registro de missões juntas em Solução de Problemas.",
-          "Comparar Missões do Grupo e Encontrar Parceiros de Missões agora são as primeiras Ações Rápidas. Suas preferências existentes são preservadas."
+          "Fechar o Modo de Edição do HUD agora preserva o tamanho da fonte, a duração de exibição e a posição da sua bolha do QT em vez de revertê-los.",
+          "O painel de bolha do QT agora tem seu próprio botão Salvar Alterações e mensagem de estado salvo. As configurações se aplicam automaticamente; Salvar Alterações define o ponto ao qual Reverter Alterações retorna.",
+          "Depois de salvar e fazer mais ajustes, Reverter Alterações restaura suas últimas configurações salvas do QT."
         ]
       },
       {
-        "title": "Um Status Rápido mais útil",
+        "title": "Jogadores próximos têm prioridade",
         "items": [
-          "Veja seu status de parceiro, compartilhamento de localização e preferências de exibição, aprovações de solicitações, saída de anúncios e configurações de placas de identificação de missões e jogadores nas seções vinculadas.",
-          "Verifique seu perfil ativo, a versão instalada e qualquer versão mais recente detectada. Quando o QT estiver desativado, o resumo identifica claramente as configurações como preferências salvas.",
-          "Clique no cabeçalho de uma seção para abrir suas configurações. O resumo se expande para caber no texto e permanece atualizado enquanto a página estiver aberta."
+          "Quando mais de 128 pontos elegíveis disputam espaço no mapa ou minimapa, os jogadores mais próximos têm prioridade com base na distância do seu personagem.",
+          "Quando o cache de 512 localizações fica cheio, jogadores mais próximos são mantidos antes de chegadas mais distantes. Mover e aplicar zoom no mapa não alteram a prioridade de proximidade.",
+          "Essas mudanças mantêm os limites existentes de pontos e de cache sem enviar mensagens de comunicação adicionais."
         ]
       }
     ]

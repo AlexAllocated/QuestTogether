@@ -1025,3 +1025,91 @@ QT:RegisterTest("home status layout grows for wrapped translations and shrinks a
 	assert(addon.homeControls.statusPanel.height < expanded)
 	assert(addon.homeControls.statusPanel.height >= 304)
 end)
+
+QT:RegisterTest("bubble save enables for edits and reverts to the last explicit save", function()
+	local addon = NewFixture()
+	addon.db.profile.chatBubbleSize = 100
+	addon.db.profile.chatBubbleDuration = 4
+	local anchor = { point = "CENTER", relativePoint = "CENTER", x = 0, y = 0 }
+	addon.GetPersonalBubbleAnchor = function() return anchor end
+	addon.SetPersonalBubbleAnchor = function(_, point, relativePoint, x, y)
+		anchor = { point = point, relativePoint = relativePoint, x = x, y = y }
+	end
+	addon.SetOption = function(self, key, value) self.db.profile[key] = value; return true end
+	addon.RefreshPersonalBubbleAnchorVisualState = Noop
+	addon.AttachPersonalBubbleEditModeDialog = Noop
+	addon.RefreshPersonalBubbleEditModeDialog = Noop
+	local function Button() return { SetEnabled = function(self, enabled) self.enabled = enabled end } end
+	addon.personalBubbleEditModeDialog = {
+		SaveButton = Button(), RevertButton = Button(),
+		SaveStatus = { SetText = function(self, text) self.text = text end },
+	}
+	local dialog = addon.personalBubbleEditModeDialog
+	addon:EnsurePersonalBubbleEditSession()
+	addon:RefreshPersonalBubbleEditSaveState()
+	assert(not dialog.SaveButton.enabled and not dialog.RevertButton.enabled)
+	addon.db.profile.chatBubbleSize = 140
+	addon:RefreshPersonalBubbleEditSaveState()
+	assert(dialog.SaveButton.enabled and dialog.RevertButton.enabled)
+	addon:CommitPersonalBubbleEditSession()
+	assert(not dialog.SaveButton.enabled and not dialog.RevertButton.enabled)
+	Equal(addon.personalBubbleEditSession.saved.chatBubbleSize, 140)
+	addon.db.profile.chatBubbleDuration = 7
+	anchor.x = 120
+	addon:RefreshPersonalBubbleEditSaveState()
+	assert(dialog.SaveButton.enabled)
+	addon:RevertPersonalBubbleEditSession()
+	Equal(addon.db.profile.chatBubbleSize, 140)
+	Equal(addon.db.profile.chatBubbleDuration, 4)
+	Equal(anchor.x, 0)
+	assert(not dialog.SaveButton.enabled and not dialog.RevertButton.enabled)
+	-- Returning a slider to its saved value clears dirty state without Save.
+	addon.db.profile.chatBubbleSize = 160
+	addon:RefreshPersonalBubbleEditSaveState()
+	assert(dialog.SaveButton.enabled)
+	addon.db.profile.chatBubbleSize = 140
+	addon:RefreshPersonalBubbleEditSaveState()
+	assert(not dialog.SaveButton.enabled)
+	-- A profile switch cannot leave the old profile's Save/Revert active.
+	addon.db.profile = { chatBubbleSize = 80, chatBubbleDuration = 2 }
+	addon:RefreshPersonalBubbleEditSaveState()
+	assert(not dialog.SaveButton.enabled and not dialog.RevertButton.enabled)
+	Equal(rawget(addon, "personalBubbleEditSession"), nil)
+end)
+
+QT:RegisterTest("closing native edit mode preserves bubble edits while explicit revert restores them", function()
+	local addon = NewFixture()
+	addon.db.profile.chatBubbleSize, addon.db.profile.chatBubbleDuration = 100, 3
+	addon.personalBubbleEditModeDialog = false
+	addon.GetPersonalBubbleAnchor = function() return { point = "CENTER", relativePoint = "CENTER", x = 0, y = 0 } end
+	addon.RefreshPersonalBubbleAnchorVisualState = Noop
+	addon.RefreshPersonalBubbleEditModeDialog = Noop
+	addon.DeselectPersonalBubbleAnchor = Noop
+	addon.ApplyPersonalBubbleEditSnapshot = function(self, snapshot)
+		self.db.profile.chatBubbleSize = snapshot.chatBubbleSize
+		self.db.profile.chatBubbleDuration = snapshot.chatBubbleDuration
+	end
+	local function Frame()
+		return { scripts = {}, HookScript = function(self, name, callback) self.scripts[name] = callback end }
+	end
+	local manager, button, hooks = Frame(), Frame(), {}
+	addon:BindPersonalBubbleEditModeCallbacks(manager, button, function(_, method, callback) hooks[method] = callback end)
+	manager.scripts.OnShow()
+	addon.db.profile.chatBubbleSize = 140
+	addon.db.profile.chatBubbleDuration = 6
+	-- Native ExitEditMode calls RevertAllChanges before addon OnHide hooks.
+	if hooks.RevertAllChanges then hooks.RevertAllChanges() end
+	manager.scripts.OnHide()
+	Equal(addon.db.profile.chatBubbleSize, 140)
+	Equal(addon.db.profile.chatBubbleDuration, 6)
+	manager.scripts.OnShow()
+	Equal(addon.personalBubbleEditSession.saved.chatBubbleSize, 140)
+	addon.db.profile.chatBubbleSize = 160
+	button.scripts.OnClick()
+	Equal(addon.db.profile.chatBubbleSize, 140)
+	addon.db.profile.chatBubbleDuration = 8
+	hooks.SaveLayouts()
+	addon.db.profile.chatBubbleDuration = 10
+	button.scripts.OnClick()
+	Equal(addon.db.profile.chatBubbleDuration, 8)
+end)

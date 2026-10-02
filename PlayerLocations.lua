@@ -269,20 +269,26 @@ function QT:HandlePlayerLocationMessage(payload, sender)
 			table.remove(retired, 1)
 		end
 	end
-	if not previous then
-		local count, oldestName, oldestTime = 0, nil, math.huge
-		for peerName, peer in pairs(state.peers) do
-			count = count + 1
-			if peer.receivedAt < oldestTime then
-				oldestName, oldestTime = peerName, peer.receivedAt
-			end
-		end
-		if count >= MAX_PEERS then
-			state.peers[oldestName] = nil
-		end
-	end
 	data.name, data.receivedAt, data.retired = name, now, retired
 	state.peers[name] = data
+	if not previous then
+		local count = 0
+		for _ in pairs(state.peers) do count = count + 1 end
+		if count > MAX_PEERS then
+			local origin = self:GetPlayerLocationPriorityOrigin()
+			local worstName, worstDistance, oldestTime
+			for peerName, peer in pairs(state.peers) do
+				local distance = self:GetPlayerLocationPriorityDistance(peer, origin)
+				if not worstName or distance > worstDistance
+					or (distance == worstDistance and (peer.receivedAt < oldestTime
+						or (peer.receivedAt == oldestTime and peerName > worstName))) then
+					worstName, worstDistance, oldestTime = peerName, distance, peer.receivedAt
+				end
+			end
+			state.peers[worstName] = nil
+		end
+	end
+
 	-- Withdrawals can arrive after QTPR departure on another route. Preserve any
 	-- existing identity for privacy opt-outs, but only a position establishes it.
 	if data.mask ~= 0 then self:RecordQTPlayerPresence(name, true) end

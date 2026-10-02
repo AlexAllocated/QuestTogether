@@ -201,6 +201,10 @@ local function Fixture()
 	function a:AreLocationPinMapLayersCompatible(source, target)
 		return source == target or not self.floorMismatch
 	end
+	function a:GetPlayerLocationPriorityOrigin()
+		if self.worldUnavailable then return nil end
+		return { continent = 0, north = 500, west = self.playerWest or 500 }
+	end
 	function a:GetLocationPinWorldPosition(mapID, x, y)
 		if self.worldUnavailable then
 			return nil
@@ -370,13 +374,13 @@ Register("location renderer bounds candidates independently from its visible pin
 			a.rows[surface][index] = Row(string.format("Peer%03d-Realm", index), 0.5, 0.5, index <= 128 and 3 or 1)
 		end
 		assert(a:RefreshPlayerLocationPins())
-		Equal(projections, 256)
+		Equal(projections, 128)
 		Equal(#a.locationPinState.surfaces[surface].pins, 128)
 		Equal(Pin(a, surface, 128).name, "Peer256-Realm")
 		local frames = #a.frames
 		projections = 0
 		assert(a:RefreshPlayerLocationPins())
-		Equal(projections, 256)
+		Equal(projections, 128)
 		Equal(#a.frames, frames)
 
 		-- Oversized input cannot extend native projection work beyond the model
@@ -769,4 +773,36 @@ Register("partner dot tooltips show localized super-tracking and clear it on new
 		a:RefreshPlayerLocationPins()
 		Equal(a.locationPinState.tooltipLabel.text:find("Tracked quest:", 1, true), nil)
 	end
+end)
+
+Register("crowded maps prioritize closest players independently of names and map pan", function()
+	for _, surface in ipairs({ "map", "minimap" }) do
+		local a = Fixture()
+		local rows = {}
+		for i = 1, 128 do rows[i] = Row(string.format("A%03d-Realm", i), 0.55, 0.5) end
+		rows[129] = Row("ZClosest-Realm", 0.501, 0.5)
+		a.rows[surface] = rows
+		assert(a:RefreshPlayerLocationPins())
+		Equal(Pin(a, surface).name, "ZClosest-Realm")
+		Equal(#a.locationPinState.surfaces[surface].pins, 128)
+		Equal(Pin(a, surface, 128).name, "A127-Realm")
+		-- Moving the player, without new peer messages, changes priority.
+		a.playerWest = 450
+		a.geometry.minimap.west = 450
+		assert(a:RefreshPlayerLocationPins())
+		Equal(Pin(a, surface).name, "A001-Realm")
+		Equal(Pin(a, surface, 128).name, "A128-Realm")
+		Equal(rows[129].name, "ZClosest-Realm", "source ordering must not be mutated")
+	end
+end)
+
+Register("location distance ranks shared world coordinates and uses stable unknown fallback", function()
+	local a = Fixture()
+	local rows = { Row("ZNear", 0.501, 0.5, 2), Row("AFar", 0.55, 0.5), Row("OtherWorld", 0.5, 0.5, 3) }
+	local ranked = a:PrioritizePlayerLocationRows(rows, a:GetPlayerLocationPriorityOrigin())
+	Equal(ranked[1].name, "ZNear")
+	Equal(ranked[3].name, "OtherWorld")
+	ranked = a:PrioritizePlayerLocationRows(rows, nil)
+	Equal(ranked[1].name, "AFar")
+	Equal(ranked[3].name, "ZNear")
 end)

@@ -133,6 +133,7 @@ C_Minimap = {
 }
 local wrongMap, worldUnavailable, badWorld, conversions, sameFloorGroup = false, false, nil, 0, false
 C_Map = {
+	GetBestMapForUnit = function(unit) assert(unit == "player"); return 1 end,
 	GetMapGroupID = function()
 		return sameFloorGroup and 7 or nil
 	end,
@@ -246,9 +247,17 @@ local getter = C_Minimap.GetViewRadius
 C_Minimap.GetViewRadius = nil
 assert(addon:GetLocationPinSurface("minimap") == nil, "missing modern geometry omits marker")
 C_Minimap.GetViewRadius = getter
+local origin = assert(addon:GetPlayerLocationPriorityOrigin())
+assert(origin.continent == 0 and origin.north == 500 and origin.west == 1000)
+Near(addon:GetPlayerLocationPriorityDistance({ mapID = 1, x = 0.51, y = 0.5, mask = 3 }, origin), 400)
+assert(addon:GetPlayerLocationPriorityDistance({ mapID = 3, x = 0.5, y = 0.5, mask = 3 }, origin) == math.huge)
+badWorld = Vector(secret, 500)
+assert(addon:GetPlayerLocationPriorityOrigin() == nil)
+badWorld = nil
 restricted = true
 local reads, nativeFrameReads = conversions, frameReads
 assert(addon:GetLocationPinSurface("minimap") == nil and addon:GetLocationPinSurface("map") == nil)
+assert(addon:GetPlayerLocationPriorityOrigin() == nil)
 assert(conversions == reads)
 assert(frameReads == nativeFrameReads, "restricted geometry must not read native frames")
 assert(forbiddenReads == 0)
