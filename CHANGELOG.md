@@ -1,5 +1,9 @@
 # QuestTogether changelog
 
+## 5.16.5 — 2026-10-02
+
+- Shorten announcements for party members without the addon to the [QT] prefix, preserving message limits and UTF-8 boundaries.
+
 ## 5.16.4 — 2026-10-01
 
 - Keep QT bubble size, duration, and position when closing HUD Edit Mode; native exit cleanup no longer acts as a request to undo QT settings.

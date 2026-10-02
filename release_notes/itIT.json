@@ -1,23 +1,14 @@
 {
-  "source_sha256": "2889c91fd432c5d72e120bf242b2312be58fb31a307b2607b032d921713bfd05",
+  "source_sha256": "efe777113f3cbed0e34df70a0e5e6174cad2064734f0dade100f729be3b7a122",
   "notes": {
     "version": "5.16.4",
-    "welcome": "Mantieni le impostazioni dei fumetti quando esci dalla modalità Modifica e trova compagni di missione nelle vicinanze sulle mappe affollate.",
+    "welcome": "Un prefisso più breve mantiene compatti gli annunci del gruppo.",
     "sections": [
       {
-        "title": "Le impostazioni dei fumetti restano salvate",
+        "title": "Annunci di gruppo compatti",
         "items": [
-          "Chiudendo la modalità Modifica dell'HUD ora vengono preservate le dimensioni del carattere, la durata di visualizzazione e la posizione del fumetto QT invece di ripristinarle.",
-          "Il pannello dei fumetti QT ora ha un proprio pulsante Salva modifiche e un messaggio di stato salvato. Le impostazioni si applicano automaticamente; Salva modifiche imposta il punto a cui torna Annulla modifiche.",
-          "Dopo aver salvato e apportato ulteriori modifiche, Annulla modifiche ripristina le ultime impostazioni QT salvate."
-        ]
-      },
-      {
-        "title": "Priorità ai giocatori vicini",
-        "items": [
-          "Quando più di 128 punti idonei competono per lo spazio sulla mappa o sulla minimappa, i giocatori più vicini hanno la priorità in base alla distanza dal tuo personaggio.",
-          "Quando la cache da 512 posizioni si riempie, i giocatori più vicini vengono mantenuti prima degli arrivi più lontani. Spostare e ingrandire/ridurre la mappa non cambia la priorità di prossimità.",
-          "Queste modifiche mantengono i limiti esistenti dei punti e della cache senza inviare messaggi di comunicazione aggiuntivi."
+          "I progressi delle missioni inviati ai membri del gruppo senza QuestTogether ora iniziano con [QT] invece di [QuestTogether].",
+          "Gli annunci continuano a rispettare il limite dei messaggi della chat e preservano caratteri completi in ogni lingua."
         ]
       }
     ]
