@@ -7,7 +7,7 @@
 ## Interface-Titan: 38001, 38002
 ## Title: QuestTogether
 ## IconTexture: Interface\GossipFrame\AvailableQuestIcon
-## Version: 5.16.3
+## Version: 5.16.4
 ## Notes: Quest progress chat bubbles and logs for party and nearby players.
 ## Notes-deDE: Chatblasen und Protokolle zum Questfortschritt für Gruppenmitglieder und Spieler in der Nähe.
 ## Notes-frFR: Bulles de discussion et journaux de progression des quêtes pour le groupe et les joueurs à proximité.
