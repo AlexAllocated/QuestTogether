@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "5.16.4",
+	version = "5.16.5",
 	welcome = "A shorter prefix keeps party announcements compact.",
 	sections = {
 		{

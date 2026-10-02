@@ -1,7 +1,7 @@
 {
   "source_sha256": "efe777113f3cbed0e34df70a0e5e6174cad2064734f0dade100f729be3b7a122",
   "notes": {
-    "version": "5.16.4",
+    "version": "5.16.5",
     "welcome": "Более короткий префикс делает объявления группе компактнее.",
     "sections": [
       {
