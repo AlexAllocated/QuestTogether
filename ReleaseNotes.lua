@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "5.16.5",
+	version = "5.16.6",
 	welcome = "See at a glance when you are looking for questing partners.",
 	sections = {
 		{
