@@ -164,6 +164,9 @@ def repository_name(value):
 
 
 def load_notes(root, tag=None, *, exact=False):
+    if (root / "scripts/changelogs.py").is_file():
+        from changelogs import check as check_changelogs
+        check_changelogs(root)
     notes = parse_notes((root / NOTES_FILE).read_text(encoding="utf-8"))
     manifest = (root / TOC_FILE).read_text(encoding="utf-8")
     check_manifest(manifest)

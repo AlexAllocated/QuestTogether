@@ -1,15 +1,15 @@
 {
-  "source_sha256": "830e7d04582e4c330706dcd4a4beaa5adaf4bc94d2fc3ef413e80a9228407ba6",
+  "source_sha256": "6ecd7531cd9f26e2437ca2654dc34e4d45903b83bb75a926f425c3dcaa588bf5",
   "notes": {
     "version": "5.16.6",
-    "welcome": "Vedi a colpo d'occhio quando stai cercando compagni per le missioni.",
+    "welcome": "Leggi le stesse note di rilascio di QuestTogether in gioco, su Discord e nella tua lingua preferita nei file del changelog.",
     "sections": [
       {
-        "title": "Un promemoria luminoso sulla minimappa",
-        "illustration": "quest-partners",
+        "title": "Changelog coerenti e multilingue",
         "items": [
-          "Il tuo pulsante di QuestTogether sulla minimappa ora pulsa con lo stesso bagliore dorato del logo delle targhette dei nomi dei personaggi mentre Cerchi compagni per le missioni è attivo.",
-          "Il bagliore segue il tuo stato di compagno e si interrompe quando QT è disabilitato o il pulsante della minimappa è nascosto. Il tuo pulsante e il logo mantengono le dimensioni esistenti."
+          "Il changelog inglese ora condivide gli stessi riepiloghi di rilascio e gli stessi punti elenco della finestra di benvenuto e degli annunci su Discord.",
+          "I file del changelog sono disponibili per tutte le lingue supportate, con la cronologia delle versioni tradotta esistente e una copia conservata delle vecchie note in inglese scritte a mano.",
+          "I controlli di rilascio mantengono i file del changelog sincronizzati con le note canoniche e le traduzioni."
         ]
       }
     ]

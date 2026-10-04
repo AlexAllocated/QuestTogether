@@ -1,0 +1,2076 @@
+{
+  "schema": 1,
+  "releases": [
+    {
+      "enUS": {
+        "version": "5.16.6",
+        "welcome": "See at a glance when you are looking for questing partners.",
+        "sections": [
+          {
+            "title": "A glowing minimap reminder",
+            "illustration": "quest-partners",
+            "items": [
+              "Your QuestTogether minimap button now pulses with the same gold logo glow as player nameplates while Looking for Questing Partners is on.",
+              "The glow follows your partner status and stops when QT is disabled or the minimap button is hidden. Your button and logo keep their existing size."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.16.6",
+        "welcome": "Sieh auf einen Blick, wann du nach Questpartnern suchst.",
+        "sections": [
+          {
+            "title": "Eine leuchtende Minikarten-Erinnerung",
+            "illustration": "quest-partners",
+            "items": [
+              "Dein QuestTogether-Minimap-Button pulsiert jetzt mit demselben goldenen Logo-Leuchten wie Spielernamensplaketten, während „Suche nach Questpartnern“ aktiviert ist.",
+              "Das Leuchten folgt deinem Partnerstatus und endet, wenn QT deaktiviert ist oder der Minimap-Button ausgeblendet wird. Dein Button und dein Logo behalten ihre bestehende Größe."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "5.16.6",
+        "welcome": "Voyez d’un coup d’œil quand vous cherchez des partenaires de quête.",
+        "sections": [
+          {
+            "title": "Un rappel lumineux sur la minicarte",
+            "illustration": "quest-partners",
+            "items": [
+              "Le bouton QuestTogether de votre minicarte clignote désormais avec la même lueur dorée du logo que les barres d’info des personnages-joueurs tant que Recherche de partenaires de quête est activée.",
+              "La lueur suit votre statut de partenaire et s’arrête quand QT est désactivé ou quand le bouton de la minicarte est masqué. Votre bouton et le logo conservent leur taille actuelle."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.16.6",
+        "welcome": "Consulta de un vistazo cuándo estás buscando compañeros para hacer misiones.",
+        "sections": [
+          {
+            "title": "Un recordatorio luminoso en el minimapa",
+            "illustration": "quest-partners",
+            "items": [
+              "El botón de QuestTogether del minimapa ahora palpita con el mismo brillo dorado del logotipo que las placas de nombre de los jugadores mientras Buscar compañeros para hacer misiones está activado.",
+              "El brillo sigue tu estado de compañero y se detiene cuando QT está desactivado o el botón del minimapa está oculto. Tu botón y el logotipo mantienen su tamaño actual."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "5.16.6",
+        "welcome": "Ve de un vistazo cuando estés buscando compañeros para misiones.",
+        "sections": [
+          {
+            "title": "Un recordatorio brillante en el minimapa",
+            "illustration": "quest-partners",
+            "items": [
+              "Tu botón de QuestTogether en el minimapa ahora pulsa con el mismo brillo dorado del logo que las placas de nombre de los jugadores mientras Buscar compañeros para misiones está activado.",
+              "El brillo sigue tu estado de compañero y se detiene cuando QT está desactivado o el botón del minimapa está oculto. Tu botón y el logo mantienen su tamaño actual."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.16.6",
+        "welcome": "Veja rapidamente quando você está procurando parceiros para fazer missões.",
+        "sections": [
+          {
+            "title": "Um lembrete brilhante no minimapa",
+            "illustration": "quest-partners",
+            "items": [
+              "Seu botão do QuestTogether no minimapa agora pulsa com o mesmo brilho dourado do logotipo das placas de nome dos jogadores enquanto Procurando Parceiros para Missões está ativado.",
+              "O brilho acompanha seu status de parceiro e para quando o QT é desativado ou quando o botão do minimapa está oculto. Seu botão e logotipo mantêm o tamanho atual."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.16.6",
+        "welcome": "Сразу видно, что вы ищете напарников для выполнения заданий.",
+        "sections": [
+          {
+            "title": "Светящееся напоминание у мини-карты",
+            "illustration": "quest-partners",
+            "items": [
+              "Кнопка QuestTogether у мини-карты теперь пульсирует тем же золотым свечением логотипа, что и индикаторы игроков, пока включен поиск напарников для заданий.",
+              "Свечение зависит от вашего статуса напарника и прекращается, когда QT отключен или кнопка у мини-карты скрыта. Ваша кнопка и логотип сохраняют текущий размер."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.16.6",
+        "welcome": "Vedi a colpo d'occhio quando stai cercando compagni per le missioni.",
+        "sections": [
+          {
+            "title": "Un promemoria luminoso sulla minimappa",
+            "illustration": "quest-partners",
+            "items": [
+              "Il tuo pulsante di QuestTogether sulla minimappa ora pulsa con lo stesso bagliore dorato del logo delle targhette dei nomi dei personaggi mentre Cerchi compagni per le missioni è attivo.",
+              "Il bagliore segue il tuo stato di compagno e si interrompe quando QT è disabilitato o il pulsante della minimappa è nascosto. Il tuo pulsante e il logo mantengono le dimensioni esistenti."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.16.6",
+        "welcome": "퀘스트를 함께할 파트너를 찾는 중인지 한눈에 확인하세요.",
+        "sections": [
+          {
+            "title": "반짝이는 미니맵 알림",
+            "illustration": "quest-partners",
+            "items": [
+              "퀘스트 파트너 찾기가 켜져 있는 동안, QuestTogether 미니맵 버튼이 플레이어 이름표와 같은 금색 로고 빛으로 깜박입니다.",
+              "이 빛은 파트너 상태를 따라가며, QT가 비활성화되거나 미니맵 버튼이 숨겨지면 멈춥니다. 버튼과 로고는 기존 크기를 유지합니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.16.6",
+        "welcome": "一目了然地查看你何时正在寻找任务伙伴。",
+        "sections": [
+          {
+            "title": "发光的小地图提醒",
+            "illustration": "quest-partners",
+            "items": [
+              "当“寻找任务伙伴”开启时，你的 QuestTogether 小地图按钮现在会像玩家姓名板一样带有金色标志光晕并脉动。",
+              "该光晕会跟随你的伙伴状态，并在 QT 被禁用或小地图按钮隐藏时停止。你的按钮和标志会保持现有大小。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.16.6",
+        "welcome": "一眼就能看出你正在尋找任務夥伴。",
+        "sections": [
+          {
+            "title": "發光的小地圖提醒",
+            "illustration": "quest-partners",
+            "items": [
+              "當「尋找任務夥伴」開啟時，你的 QuestTogether 小地圖按鈕現在會和玩家名條一樣，以金色標誌光芒閃動。",
+              "光芒會跟隨你的夥伴狀態，並在 QT 停用或小地圖按鈕隱藏時停止。你的按鈕和標誌會維持現有大小。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
+        "version": "5.16.5",
+        "welcome": "A shorter prefix keeps party announcements compact.",
+        "sections": [
+          {
+            "title": "Compact party announcements",
+            "items": [
+              "Quest progress posted to party members without QuestTogether now starts with [QT] instead of [QuestTogether].",
+              "Announcements still respect the chat message limit and preserve complete characters in every language."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.16.5",
+        "welcome": "Ein kürzeres Präfix hält Gruppenankündigungen kompakt.",
+        "sections": [
+          {
+            "title": "Kompakte Gruppenankündigungen",
+            "items": [
+              "Questfortschritt, der an Gruppenmitglieder ohne QuestTogether gesendet wird, beginnt jetzt mit [QT] statt mit [QuestTogether].",
+              "Ankündigungen beachten weiterhin das Limit für Chatnachrichten und erhalten vollständige Zeichen in jeder Sprache."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "5.16.5",
+        "welcome": "Un préfixe plus court rend les annonces de groupe plus compactes.",
+        "sections": [
+          {
+            "title": "Annonces de groupe compactes",
+            "items": [
+              "La progression des quêtes publiée aux membres du groupe sans QuestTogether commence désormais par [QT] au lieu de [QuestTogether].",
+              "Les annonces respectent toujours la limite des messages de discussion et préservent les caractères complets dans toutes les langues."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.16.5",
+        "welcome": "Un prefijo más corto mantiene compactos los anuncios de grupo.",
+        "sections": [
+          {
+            "title": "Anuncios de grupo compactos",
+            "items": [
+              "El progreso de las misiones publicado a los miembros del grupo sin QuestTogether ahora empieza con [QT] en lugar de [QuestTogether].",
+              "Los anuncios siguen respetando el límite de mensajes del chat y conservan caracteres completos en todos los idiomas."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "5.16.5",
+        "welcome": "Un prefijo más corto mantiene compactos los anuncios del grupo.",
+        "sections": [
+          {
+            "title": "Anuncios de grupo compactos",
+            "items": [
+              "El progreso de misión publicado para miembros del grupo sin QuestTogether ahora empieza con [QT] en lugar de [QuestTogether].",
+              "Los anuncios siguen respetando el límite de mensajes del chat y conservan caracteres completos en todos los idiomas."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.16.5",
+        "welcome": "Um prefixo mais curto mantém os anúncios do grupo compactos.",
+        "sections": [
+          {
+            "title": "Anúncios compactos para o grupo",
+            "items": [
+              "O progresso da missão enviado aos membros do grupo sem QuestTogether agora começa com [QT] em vez de [QuestTogether].",
+              "Os anúncios ainda respeitam o limite de mensagens do chat e preservam caracteres completos em todos os idiomas."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.16.5",
+        "welcome": "Более короткий префикс делает объявления группе компактнее.",
+        "sections": [
+          {
+            "title": "Компактные объявления группе",
+            "items": [
+              "Прогресс задания, отправляемый членам группы без QuestTogether, теперь начинается с [QT] вместо [QuestTogether].",
+              "Объявления по-прежнему учитывают ограничение длины сообщения в чате и сохраняют целые символы на любом языке."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.16.5",
+        "welcome": "Un prefisso più breve mantiene compatti gli annunci del gruppo.",
+        "sections": [
+          {
+            "title": "Annunci di gruppo compatti",
+            "items": [
+              "I progressi delle missioni inviati ai membri del gruppo senza QuestTogether ora iniziano con [QT] invece di [QuestTogether].",
+              "Gli annunci continuano a rispettare il limite dei messaggi della chat e preservano caratteri completi in ogni lingua."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.16.5",
+        "welcome": "짧은 접두사는 파티 알림을 간결하게 유지합니다.",
+        "sections": [
+          {
+            "title": "간결한 파티 알림",
+            "items": [
+              "이제 QuestTogether가 없는 파티원에게 게시되는 퀘스트 진행 상황은 [QuestTogether] 대신 [QT]로 시작합니다.",
+              "알림은 여전히 대화 메시지 제한을 준수하며 모든 언어에서 문자가 온전하게 유지됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.16.5",
+        "welcome": "较短的前缀可让小队通告更简洁。",
+        "sections": [
+          {
+            "title": "简洁小队通告",
+            "items": [
+              "发送给未安装 QuestTogether 的小队成员的任务进度现在以 [QT] 开头，而不是 [QuestTogether]。",
+              "通告仍会遵守聊天消息长度限制，并在各种语言中保留完整字符。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.16.5",
+        "welcome": "較短的前綴可讓隊伍公告更精簡。",
+        "sections": [
+          {
+            "title": "精簡隊伍公告",
+            "items": [
+              "發送給沒有 QuestTogether 的隊伍成員的任務進度，現在會以 [QT] 開頭，而不是 [QuestTogether]。",
+              "公告仍會遵守聊天訊息長度限制，並在所有語言中保留完整字元。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
+        "version": "5.16.4",
+        "welcome": "Keep your bubble settings when leaving Edit Mode and find nearby questing companions on crowded maps.",
+        "sections": [
+          {
+            "title": "Bubble settings stay saved",
+            "items": [
+              "Closing HUD Edit Mode now preserves your QT bubble font size, display duration, and position instead of reverting them.",
+              "The QT bubble panel now has its own Save Changes button and saved-state message. Settings apply automatically; Save Changes sets the point that Revert Changes returns to.",
+              "After saving and making further adjustments, Revert Changes restores your last saved QT settings."
+            ]
+          },
+          {
+            "title": "Nearby players get priority",
+            "items": [
+              "When more than 128 eligible dots compete for space on the map or minimap, the closest players get priority based on distance from your character.",
+              "When the 512-location cache fills, closer players are retained ahead of more distant arrivals. Map panning and zooming do not change proximity priority.",
+              "These changes keep the existing dot and cache limits without sending additional communication messages."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.16.4",
+        "welcome": "Behalte deine Sprechblasen-Einstellungen beim Verlassen des Bearbeitungsmodus und finde Questbegleiter in der Nähe auf überfüllten Karten.",
+        "sections": [
+          {
+            "title": "Sprechblasen-Einstellungen bleiben gespeichert",
+            "items": [
+              "Beim Schließen des HUD-Bearbeitungsmodus bleiben jetzt Schriftgröße, Anzeigedauer und Position deiner QT-Sprechblase erhalten, statt zurückgesetzt zu werden.",
+              "Das QT-Sprechblasenfenster hat jetzt eine eigene Schaltfläche Änderungen speichern und eine Meldung zum gespeicherten Zustand. Einstellungen werden automatisch übernommen; Änderungen speichern legt den Punkt fest, zu dem Änderungen zurücksetzen zurückkehrt.",
+              "Nach dem Speichern und weiteren Anpassungen stellt Änderungen zurücksetzen deine zuletzt gespeicherten QT-Einstellungen wieder her."
+            ]
+          },
+          {
+            "title": "Spieler in der Nähe haben Vorrang",
+            "items": [
+              "Wenn mehr als 128 geeignete Punkte auf der Karte oder Minikarte um Platz konkurrieren, haben die nächsten Spieler basierend auf der Entfernung zu deinem Charakter Vorrang.",
+              "Wenn der Cache mit 512 Positionen voll ist, werden nähere Spieler vor weiter entfernten neu ankommenden Spielern behalten. Verschieben und Zoomen der Karte ändern die Nähe-Priorität nicht.",
+              "Diese Änderungen behalten die bestehenden Punkt- und Cache-Begrenzungen bei, ohne zusätzliche Kommunikationsnachrichten zu senden."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "5.16.4",
+        "welcome": "Conservez vos réglages de bulle en quittant le mode Édition et trouvez des compagnons de quête à proximité sur les cartes bondées.",
+        "sections": [
+          {
+            "title": "Les réglages de bulle restent enregistrés",
+            "items": [
+              "La fermeture du mode Édition de l’ATH conserve désormais la taille de police, la durée d’affichage et la position de votre bulle QT au lieu de les réinitialiser.",
+              "Le panneau de bulle QT dispose désormais de son propre bouton Enregistrer les modifications et d’un message d’état enregistré. Les réglages s’appliquent automatiquement ; Enregistrer les modifications définit le point auquel Rétablir les modifications revient.",
+              "Après avoir enregistré puis effectué d’autres ajustements, Rétablir les modifications restaure vos derniers réglages QT enregistrés."
+            ]
+          },
+          {
+            "title": "Les joueurs à proximité sont prioritaires",
+            "items": [
+              "Lorsque plus de 128 points éligibles se disputent l’espace sur la carte ou la minicarte, les joueurs les plus proches sont prioritaires en fonction de leur distance par rapport à votre personnage.",
+              "Lorsque le cache de 512 emplacements se remplit, les joueurs les plus proches sont conservés avant les arrivants plus éloignés. Le déplacement et le zoom de la carte ne modifient pas la priorité de proximité.",
+              "Ces changements conservent les limites existantes de points et de cache sans envoyer de messages de communication supplémentaires."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.16.4",
+        "welcome": "Conserva tus ajustes de bocadillos al salir del modo de edición y encuentra compañeros de misión cercanos en mapas concurridos.",
+        "sections": [
+          {
+            "title": "Los ajustes de bocadillos permanecen guardados",
+            "items": [
+              "Al cerrar el modo de edición del HUD, ahora se conserva el tamaño de fuente, la duración de visualización y la posición de tus bocadillos de QT en lugar de revertirlos.",
+              "El panel de bocadillos de QT ahora tiene su propio botón Guardar cambios y un mensaje de estado guardado. Los ajustes se aplican automáticamente; Guardar cambios establece el punto al que vuelve Revertir cambios.",
+              "Tras guardar y realizar más ajustes, Revertir cambios restaura tus últimos ajustes de QT guardados."
+            ]
+          },
+          {
+            "title": "Los jugadores cercanos tienen prioridad",
+            "items": [
+              "Cuando más de 128 puntos válidos compiten por espacio en el mapa o minimapa, los jugadores más cercanos tienen prioridad según la distancia a tu personaje.",
+              "Cuando la caché de 512 ubicaciones se llena, se conservan los jugadores más cercanos antes que los que llegan desde más lejos. Desplazar y ampliar el mapa no cambia la prioridad por proximidad.",
+              "Estos cambios mantienen los límites existentes de puntos y caché sin enviar mensajes de comunicación adicionales."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "5.16.4",
+        "welcome": "Conserva la configuración de tus burbujas al salir del modo Edición y encuentra compañeros cercanos para hacer misiones en mapas concurridos.",
+        "sections": [
+          {
+            "title": "La configuración de las burbujas permanece guardada",
+            "items": [
+              "Al cerrar el modo Edición del HUD, ahora se conservan el tamaño de fuente, la duración de visualización y la posición de tus burbujas de QT en lugar de revertirlos.",
+              "El panel de burbujas de QT ahora tiene su propio botón Guardar cambios y un mensaje de estado guardado. La configuración se aplica automáticamente; Guardar cambios establece el punto al que vuelve Revertir cambios.",
+              "Después de guardar y hacer más ajustes, Revertir cambios restaura la última configuración guardada de QT."
+            ]
+          },
+          {
+            "title": "Los jugadores cercanos tienen prioridad",
+            "items": [
+              "Cuando más de 128 puntos elegibles compiten por espacio en el mapa o minimapa, los jugadores más cercanos tienen prioridad según la distancia desde tu personaje.",
+              "Cuando se llena la caché de 512 ubicaciones, se conservan los jugadores más cercanos antes que las llegadas más lejanas. Desplazar y hacer zoom en el mapa no cambia la prioridad por cercanía.",
+              "Estos cambios mantienen los límites existentes de puntos y caché sin enviar mensajes de comunicación adicionales."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.16.4",
+        "welcome": "Mantenha suas configurações de bolha ao sair do Modo de Edição e encontre companheiros de missão próximos em mapas lotados.",
+        "sections": [
+          {
+            "title": "Configurações de bolha continuam salvas",
+            "items": [
+              "Fechar o Modo de Edição do HUD agora preserva o tamanho da fonte, a duração de exibição e a posição da sua bolha do QT em vez de revertê-los.",
+              "O painel de bolha do QT agora tem seu próprio botão Salvar Alterações e mensagem de estado salvo. As configurações se aplicam automaticamente; Salvar Alterações define o ponto ao qual Reverter Alterações retorna.",
+              "Depois de salvar e fazer mais ajustes, Reverter Alterações restaura suas últimas configurações salvas do QT."
+            ]
+          },
+          {
+            "title": "Jogadores próximos têm prioridade",
+            "items": [
+              "Quando mais de 128 pontos elegíveis disputam espaço no mapa ou minimapa, os jogadores mais próximos têm prioridade com base na distância do seu personagem.",
+              "Quando o cache de 512 localizações fica cheio, jogadores mais próximos são mantidos antes de chegadas mais distantes. Mover e aplicar zoom no mapa não alteram a prioridade de proximidade.",
+              "Essas mudanças mantêm os limites existentes de pontos e de cache sem enviar mensagens de comunicação adicionais."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.16.4",
+        "welcome": "Сохраняйте настройки облачка при выходе из режима редактирования и находите ближайших спутников для заданий на заполненных картах.",
+        "sections": [
+          {
+            "title": "Настройки облачка сохраняются",
+            "items": [
+              "При закрытии режима редактирования интерфейса теперь сохраняются размер шрифта, длительность отображения и положение облачка QT, а не сбрасываются.",
+              "У панели облачка QT теперь есть собственная кнопка «Сохранить изменения» и сообщение о сохранённом состоянии. Настройки применяются автоматически; «Сохранить изменения» задаёт точку, к которой возвращает «Отменить изменения».",
+              "После сохранения и дальнейших правок «Отменить изменения» восстанавливает последние сохранённые настройки QT."
+            ]
+          },
+          {
+            "title": "Ближайшие игроки получают приоритет",
+            "items": [
+              "Когда за место на карте или мини-карте борются более 128 подходящих точек, ближайшие игроки получают приоритет с учётом расстояния от вашего персонажа.",
+              "Когда кэш на 512 местоположений заполняется, ближайшие игроки сохраняются раньше, чем более дальние новые записи. Перемещение и масштабирование карты не меняют приоритет по близости.",
+              "Эти изменения сохраняют текущие ограничения точек и кэша без отправки дополнительных сообщений."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.16.4",
+        "welcome": "Mantieni le impostazioni dei fumetti quando esci dalla modalità Modifica e trova compagni di missione nelle vicinanze sulle mappe affollate.",
+        "sections": [
+          {
+            "title": "Le impostazioni dei fumetti restano salvate",
+            "items": [
+              "Chiudendo la modalità Modifica dell'HUD ora vengono preservate le dimensioni del carattere, la durata di visualizzazione e la posizione del fumetto QT invece di ripristinarle.",
+              "Il pannello dei fumetti QT ora ha un proprio pulsante Salva modifiche e un messaggio di stato salvato. Le impostazioni si applicano automaticamente; Salva modifiche imposta il punto a cui torna Annulla modifiche.",
+              "Dopo aver salvato e apportato ulteriori modifiche, Annulla modifiche ripristina le ultime impostazioni QT salvate."
+            ]
+          },
+          {
+            "title": "Priorità ai giocatori vicini",
+            "items": [
+              "Quando più di 128 punti idonei competono per lo spazio sulla mappa o sulla minimappa, i giocatori più vicini hanno la priorità in base alla distanza dal tuo personaggio.",
+              "Quando la cache da 512 posizioni si riempie, i giocatori più vicini vengono mantenuti prima degli arrivi più lontani. Spostare e ingrandire/ridurre la mappa non cambia la priorità di prossimità.",
+              "Queste modifiche mantengono i limiti esistenti dei punti e della cache senza inviare messaggi di comunicazione aggiuntivi."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.16.4",
+        "welcome": "편집 모드를 종료할 때 말풍선 설정을 유지하고, 붐비는 지도에서 주변의 퀘스트 동료를 찾아보세요.",
+        "sections": [
+          {
+            "title": "말풍선 설정이 저장된 상태로 유지됩니다",
+            "items": [
+              "HUD 편집 모드를 닫아도 QT 말풍선의 글꼴 크기, 표시 시간, 위치가 되돌아가지 않고 보존됩니다.",
+              "QT 말풍선 패널에 이제 자체 변경 사항 저장 버튼과 저장 상태 메시지가 있습니다. 설정은 자동으로 적용되며, 변경 사항 저장은 변경 사항 되돌리기가 돌아갈 지점을 설정합니다.",
+              "저장한 뒤 추가로 조정한 후에는, 변경 사항 되돌리기를 사용하면 마지막으로 저장한 QT 설정으로 복원됩니다."
+            ]
+          },
+          {
+            "title": "주변 플레이어 우선",
+            "items": [
+              "지도나 미니맵에서 공간을 차지하려고 경쟁하는 표시 가능한 점이 128개를 초과하면, 캐릭터와의 거리를 기준으로 가장 가까운 플레이어가 우선 표시됩니다.",
+              "512개 위치 캐시가 가득 차면, 더 먼 거리에서 새로 들어오는 플레이어보다 가까운 플레이어가 우선 유지됩니다. 지도를 이동하거나 확대/축소해도 근접 우선순위는 변경되지 않습니다.",
+              "이 변경 사항은 추가 통신 메시지를 보내지 않으면서 기존 점 및 캐시 제한을 유지합니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.16.4",
+        "welcome": "在离开编辑模式时保留你的气泡设置，并在拥挤的地图上寻找附近的任务伙伴。",
+        "sections": [
+          {
+            "title": "气泡设置保持保存",
+            "items": [
+              "关闭 HUD 编辑模式现在会保留你的 QT 气泡字体大小、显示持续时间和位置，而不是将其还原。",
+              "QT 气泡面板现在有自己的“保存更改”按钮和已保存状态消息。设置会自动应用；“保存更改”会设置“还原更改”返回到的点。",
+              "保存后再进行进一步调整时，“还原更改”会恢复你上次保存的 QT 设置。"
+            ]
+          },
+          {
+            "title": "附近玩家优先",
+            "items": [
+              "当超过 128 个符合条件的点在地图或小地图上争夺空间时，离你角色最近的玩家会根据距离获得优先权。",
+              "当 512 个位置缓存已满时，会优先保留较近的玩家，而不是更远的新加入者。平移和缩放地图不会改变距离优先级。",
+              "这些更改会保持现有的点和缓存限制，且不会发送额外的通信消息。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.16.4",
+        "welcome": "離開編輯模式時保留你的泡泡設定，並在擁擠的地圖上尋找附近一起解任務的夥伴。",
+        "sections": [
+          {
+            "title": "泡泡設定會保持儲存",
+            "items": [
+              "關閉 HUD 編輯模式現在會保留你的 QT 泡泡字型大小、顯示持續時間和位置，而不是將其還原。",
+              "QT 泡泡面板現在有自己的「儲存變更」按鈕和已儲存狀態訊息。設定會自動套用；「儲存變更」會設定「還原變更」返回的基準點。",
+              "儲存後再進一步調整時，「還原變更」會恢復你上次儲存的 QT 設定。"
+            ]
+          },
+          {
+            "title": "附近玩家優先",
+            "items": [
+              "當超過 128 個符合條件的點在地圖或小地圖上爭奪空間時，會依據與你角色的距離，優先顯示最近的玩家。",
+              "當 512 個位置快取填滿時，會優先保留較近的玩家，而不是較遠的新進玩家。平移和縮放地圖不會改變距離優先順序。",
+              "這些變更會保留現有的點和快取限制，不會傳送額外的通訊訊息。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
+        "version": "5.16.3",
+        "welcome": "Find the settings you need more easily and see your QuestTogether preferences at a glance.",
+        "sections": [
+          {
+            "title": "Settings organized around how you play",
+            "items": [
+              "Groups & Sharing replaces Miscellaneous, bringing partner availability, join requests, and quest-sharing approvals together.",
+              "Celebration emotes now live under Where to Announce. Minimap visibility is under General on the main page, with debug tools and quest-log rescanning together under Troubleshooting.",
+              "Compare Party Quests and Find Questing Partners are now the first Quick Actions. Your existing preferences are preserved."
+            ]
+          },
+          {
+            "title": "A more useful Quick Status",
+            "items": [
+              "See your partner status, location sharing and display preferences, request approvals, announcement output, and quest and player nameplate settings in linked sections.",
+              "Check your active profile, installed version, and any detected newer version. When QT is disabled, the summary clearly identifies the settings as saved preferences.",
+              "Click a section heading to open its settings. The summary grows to fit its text and stays current while the page is open."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.16.3",
+        "welcome": "Finde die benötigten Einstellungen leichter und sieh deine QuestTogether-Einstellungen auf einen Blick.",
+        "sections": [
+          {
+            "title": "Einstellungen danach organisiert, wie du spielst",
+            "items": [
+              "Gruppen & Teilen ersetzt Verschiedenes und führt Partnerverfügbarkeit, Beitrittsanfragen und Genehmigungen zum Teilen von Quests zusammen.",
+              "Feier-Emotes befinden sich jetzt unter „Wo ankündigen“. Die Sichtbarkeit der Minikarte ist unter „Allgemein“ auf der Hauptseite zu finden, Debug-Werkzeuge und das erneute Einlesen des Questlogs zusammen unter „Fehlerbehebung“.",
+              "Quests der Gruppe vergleichen und Questpartner finden sind jetzt die ersten Schnellaktionen. Deine bestehenden Einstellungen bleiben erhalten."
+            ]
+          },
+          {
+            "title": "Ein nützlicherer Schnellstatus",
+            "items": [
+              "Sieh deinen Partnerstatus, die Standortfreigabe und Anzeigeeinstellungen, Anfragegenehmigungen, Ankündigungsausgabe sowie Quest- und Spieler-Namensplaketten-Einstellungen in verknüpften Abschnitten.",
+              "Prüfe dein aktives Profil, die installierte Version und jede erkannte neuere Version. Wenn QT deaktiviert ist, kennzeichnet die Zusammenfassung die Einstellungen klar als gespeicherte Präferenzen.",
+              "Klicke auf eine Abschnittsüberschrift, um die zugehörigen Einstellungen zu öffnen. Die Zusammenfassung passt sich an ihren Text an und bleibt aktuell, solange die Seite geöffnet ist."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "5.16.3",
+        "welcome": "Trouvez plus facilement les paramètres dont vous avez besoin et consultez vos préférences QuestTogether d’un coup d’œil.",
+        "sections": [
+          {
+            "title": "Paramètres organisés autour de votre façon de jouer",
+            "items": [
+              "Groupes et partage remplace Divers, en regroupant la disponibilité des partenaires, les demandes de participation et les approbations de partage de quêtes.",
+              "Les emotes de célébration se trouvent désormais dans Où annoncer. La visibilité de la minicarte se trouve dans Général sur la page principale, avec les outils de débogage et la nouvelle analyse du journal des quêtes dans Dépannage.",
+              "Comparer les quêtes du groupe et Trouver des partenaires de quête sont désormais les premières actions rapides. Vos préférences existantes sont conservées."
+            ]
+          },
+          {
+            "title": "Un état rapide plus utile",
+            "items": [
+              "Consultez l’état de vos partenaires, le partage de position et les préférences d’affichage, les approbations de demandes, la sortie des annonces, ainsi que les paramètres des barres d’info des quêtes et des joueurs dans les sections liées.",
+              "Vérifiez votre profil actif, la version installée et toute version plus récente détectée. Lorsque QT est désactivé, le résumé indique clairement que les paramètres sont des préférences enregistrées.",
+              "Cliquez sur l’en-tête d’une section pour ouvrir ses paramètres. Le résumé s’agrandit pour s’adapter à son texte et reste à jour tant que la page est ouverte."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.16.3",
+        "welcome": "Encuentra los ajustes que necesitas más fácilmente y consulta de un vistazo tus preferencias de QuestTogether.",
+        "sections": [
+          {
+            "title": "Ajustes organizados en torno a tu forma de jugar",
+            "items": [
+              "Grupos y compartir reemplaza a Varios, reuniendo la disponibilidad de compañeros, las solicitudes para unirse y las aprobaciones para compartir misiones.",
+              "Los gestos de celebración ahora están en Dónde anunciar. La visibilidad del minimapa está en General, en la página principal, con las herramientas de depuración y el reescaneo del registro de misiones juntos en Solución de problemas.",
+              "Comparar misiones de grupo y Buscar compañeros de misión ahora son las primeras acciones rápidas. Tus preferencias existentes se conservan."
+            ]
+          },
+          {
+            "title": "Un estado rápido más útil",
+            "items": [
+              "Consulta en secciones enlazadas tu estado de compañero, tus preferencias de compartir ubicación y visualización, las aprobaciones de solicitudes, la salida de anuncios y los ajustes de misiones y nombres de jugadores.",
+              "Comprueba tu perfil activo, la versión instalada y cualquier versión más reciente detectada. Cuando QT está desactivado, el resumen identifica claramente los ajustes como preferencias guardadas.",
+              "Haz clic en el encabezado de una sección para abrir sus ajustes. El resumen crece para ajustarse a su texto y se mantiene actualizado mientras la página está abierta."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "5.16.3",
+        "welcome": "Encuentra más fácilmente la configuración que necesitas y ve tus preferencias de QuestTogether de un vistazo.",
+        "sections": [
+          {
+            "title": "Configuración organizada según cómo juegas",
+            "items": [
+              "Grupos y uso compartido reemplaza a Misceláneo, reuniendo la disponibilidad de compañeros, las solicitudes para unirse y las aprobaciones para compartir misiones.",
+              "Los gestos de celebración ahora están en Dónde anunciar. La visibilidad del minimapa está en General, en la página principal, con las herramientas de depuración y el nuevo escaneo del registro de misiones juntos en Solución de problemas.",
+              "Comparar misiones del grupo y Buscar compañeros de misiones ahora son las primeras Acciones rápidas. Tus preferencias existentes se conservan."
+            ]
+          },
+          {
+            "title": "Un Estado rápido más útil",
+            "items": [
+              "Ve el estado de tus compañeros, las preferencias de compartir ubicación y visualización, las aprobaciones de solicitudes, la salida de anuncios y la configuración de placas de nombre de misiones y jugadores en secciones vinculadas.",
+              "Consulta tu perfil activo, la versión instalada y cualquier versión más reciente detectada. Cuando QT está desactivado, el resumen identifica claramente la configuración como preferencias guardadas.",
+              "Haz clic en el encabezado de una sección para abrir su configuración. El resumen crece para ajustarse a su texto y se mantiene actualizado mientras la página está abierta."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.16.3",
+        "welcome": "Encontre as configurações de que você precisa com mais facilidade e veja suas preferências do QuestTogether de relance.",
+        "sections": [
+          {
+            "title": "Configurações organizadas em torno de como você joga",
+            "items": [
+              "Grupos e Compartilhamento substitui Diversos, reunindo disponibilidade de parceiros, solicitações de entrada e aprovações de compartilhamento de missões.",
+              "Emotes de comemoração agora ficam em Onde Anunciar. A visibilidade no minimapa fica em Geral na página principal, com ferramentas de depuração e nova varredura do registro de missões juntas em Solução de Problemas.",
+              "Comparar Missões do Grupo e Encontrar Parceiros de Missões agora são as primeiras Ações Rápidas. Suas preferências existentes são preservadas."
+            ]
+          },
+          {
+            "title": "Um Status Rápido mais útil",
+            "items": [
+              "Veja seu status de parceiro, compartilhamento de localização e preferências de exibição, aprovações de solicitações, saída de anúncios e configurações de placas de identificação de missões e jogadores nas seções vinculadas.",
+              "Verifique seu perfil ativo, a versão instalada e qualquer versão mais recente detectada. Quando o QT estiver desativado, o resumo identifica claramente as configurações como preferências salvas.",
+              "Clique no cabeçalho de uma seção para abrir suas configurações. O resumo se expande para caber no texto e permanece atualizado enquanto a página estiver aberta."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.16.3",
+        "welcome": "Находите нужные настройки проще и сразу видьте свои предпочтения QuestTogether.",
+        "sections": [
+          {
+            "title": "Настройки организованы вокруг того, как вы играете",
+            "items": [
+              "«Группы и общий доступ» заменяет «Разное», объединяя доступность напарников, запросы на присоединение и подтверждения отправки заданий.",
+              "Эмоции празднования теперь находятся в разделе «Где объявлять». Видимость у мини-карты — в разделе «Общие» на главной странице, а инструменты отладки и повторное сканирование журнала заданий — вместе в разделе «Устранение неполадок».",
+              "«Сравнить задания группы» и «Найти напарников для заданий» теперь первые в списке быстрых действий. Ваши текущие настройки сохранены."
+            ]
+          },
+          {
+            "title": "Более полезное краткое состояние",
+            "items": [
+              "Просматривайте состояние напарника, настройки передачи местоположения и отображения, подтверждения запросов, вывод объявлений, а также настройки индикаторов заданий и имен игроков в связанных разделах.",
+              "Проверьте активный профиль, установленную версию и любую обнаруженную более новую версию. Когда QT отключен, сводка ясно указывает, что это сохраненные настройки.",
+              "Нажмите заголовок раздела, чтобы открыть его настройки. Сводка увеличивается под размер текста и остается актуальной, пока страница открыта."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.16.3",
+        "welcome": "Trova più facilmente le impostazioni di cui hai bisogno e visualizza a colpo d'occhio le tue preferenze di QuestTogether.",
+        "sections": [
+          {
+            "title": "Impostazioni organizzate in base a come giochi",
+            "items": [
+              "Gruppi e condivisione sostituisce Varie, riunendo disponibilità dei compagni, richieste di ingresso e approvazioni per la condivisione delle missioni.",
+              "Le emote di celebrazione ora si trovano sotto Dove annunciare. La visibilità della minimappa è sotto Generale nella pagina principale, con gli strumenti di debug e la nuova scansione del registro missioni insieme sotto Risoluzione dei problemi.",
+              "Confronta le missioni del gruppo e Trova compagni per le missioni ora sono le prime Azioni rapide. Le tue preferenze esistenti vengono mantenute."
+            ]
+          },
+          {
+            "title": "Uno stato rapido più utile",
+            "items": [
+              "Visualizza lo stato dei tuoi compagni, le preferenze di condivisione della posizione e di visualizzazione, le approvazioni delle richieste, l'output degli annunci e le impostazioni di missioni e targhette dei nomi dei personaggi in sezioni collegate.",
+              "Controlla il tuo profilo attivo, la versione installata e qualsiasi versione più recente rilevata. Quando QT è disattivato, il riepilogo identifica chiaramente le impostazioni come preferenze salvate.",
+              "Fai clic sull'intestazione di una sezione per aprirne le impostazioni. Il riepilogo si espande per adattarsi al testo e rimane aggiornato mentre la pagina è aperta."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.16.3",
+        "welcome": "필요한 설정을 더 쉽게 찾고 QuestTogether 환경설정을 한눈에 확인하세요.",
+        "sections": [
+          {
+            "title": "플레이 방식에 맞게 정리된 설정",
+            "items": [
+              "그룹 및 공유가 기타를 대체하여, 파트너 가능 여부, 참여 요청, 퀘스트 공유 승인을 한곳에 모았습니다.",
+              "축하 감정표현은 이제 알림 위치 아래에 있습니다. 미니맵 표시 여부는 메인 페이지의 일반 아래에 있으며, 디버그 도구와 퀘스트 기록 재검색은 문제 해결 아래에 함께 있습니다.",
+              "파티 퀘스트 비교와 퀘스트 파트너 찾기가 이제 첫 번째 빠른 동작입니다. 기존 환경설정은 유지됩니다."
+            ]
+          },
+          {
+            "title": "더 유용한 빠른 상태",
+            "items": [
+              "연결된 섹션에서 파트너 상태, 위치 공유 및 표시 환경설정, 요청 승인, 알림 출력, 퀘스트 및 플레이어 이름표 설정을 확인하세요.",
+              "활성 프로필, 설치된 버전, 감지된 최신 버전을 확인하세요. QT가 비활성화된 경우, 요약은 해당 설정이 저장된 환경설정임을 명확히 표시합니다.",
+              "섹션 제목을 클릭하여 해당 설정을 여세요. 요약은 텍스트에 맞게 늘어나며 페이지가 열려 있는 동안 최신 상태로 유지됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.16.3",
+        "welcome": "更轻松地找到你需要的设置，并一目了然地查看你的 QuestTogether 偏好。",
+        "sections": [
+          {
+            "title": "围绕你的玩法整理的设置",
+            "items": [
+              "“队伍与共享”取代了“杂项”，将伙伴可用性、加入请求和任务共享批准集中在一起。",
+              "庆祝表情现在位于“发布位置”下。小地图可见性位于主页的“通用”下，调试工具和任务日志重新扫描则一起位于“故障排除”下。",
+              "“比较队伍任务”和“寻找任务伙伴”现在是最前面的快速操作。你现有的偏好会保留。"
+            ]
+          },
+          {
+            "title": "更实用的快速状态",
+            "items": [
+              "在关联的部分中查看你的伙伴状态、位置共享和显示偏好、请求批准、公告输出，以及任务和玩家姓名板设置。",
+              "查看你的当前配置文件、已安装版本，以及任何检测到的更新版本。当 QT 被禁用时，摘要会明确标识这些设置为已保存的偏好。",
+              "点击某个部分标题即可打开其设置。摘要会根据文本自动扩展，并在页面打开期间保持最新。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.16.3",
+        "welcome": "更輕鬆找到你需要的設定，並一目了然查看你的 QuestTogether 偏好設定。",
+        "sections": [
+          {
+            "title": "依照你的遊玩方式整理設定",
+            "items": [
+              "「隊伍與分享」取代了「雜項」，將夥伴可用狀態、加入請求與任務分享核准集中在一起。",
+              "慶祝表情現在位於「公告位置」下。小地圖顯示位於主頁面的「一般」下，除錯工具與任務記錄重新掃描則一併歸在「疑難排解」下。",
+              "「比較隊伍任務」與「尋找任務夥伴」現在是最前面的快速動作。你現有的偏好設定會保留。"
+            ]
+          },
+          {
+            "title": "更實用的快速狀態",
+            "items": [
+              "在連結的區段中查看你的夥伴狀態、位置分享與顯示偏好、請求核准、公告輸出，以及任務與玩家名條設定。",
+              "查看你的啟用中設定檔、已安裝版本，以及偵測到的任何較新版本。當 QT 停用時，摘要會清楚標示這些設定為已儲存的偏好設定。",
+              "點擊區段標題以開啟其設定。摘要會依文字內容自動延展，並在頁面開啟時保持最新。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
+        "version": "5.16.2",
+        "welcome": "Recognize QuestTogether players from their tooltips and spot questing partners more easily.",
+        "sections": [
+          {
+            "title": "QuestTogether player tooltips",
+            "items": [
+              "Hover a QT player’s character, nameplate, or unit frame to see “This player is using QuestTogether.” Players looking for questing partners also show that status and a glowing QT logo.",
+              "The QT section matches the tooltip’s width and scale, sits clear of its health bar, and moves above the tooltip when space below is limited."
+            ]
+          },
+          {
+            "title": "A more visible partner glow",
+            "illustration": "quest-partners",
+            "items": [
+              "The gold nameplate glow now reaches twice as far around the logo while keeping the logo itself the same size.",
+              "Icons and glows reflect real QT users and their current partner-seeking status."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.16.2",
+        "welcome": "Erkenne QuestTogether-Spieler anhand ihrer Tooltips und finde Quest-Partner leichter.",
+        "sections": [
+          {
+            "title": "QuestTogether-Spielertooltips",
+            "items": [
+              "Fahre mit der Maus über den Charakter, die Namensplakette oder den Einheitenrahmen eines QT-Spielers, um „Dieser Spieler verwendet QuestTogether.“ zu sehen. Spieler, die nach Quest-Partnern suchen, zeigen ebenfalls diesen Status und ein leuchtendes QT-Logo an.",
+              "Der QT-Abschnitt passt sich Breite und Skalierung des Tooltips an, hält Abstand zu seiner Gesundheitsleiste und wird über den Tooltip verschoben, wenn darunter wenig Platz ist."
+            ]
+          },
+          {
+            "title": "Ein auffälligeres Partnerleuchten",
+            "illustration": "quest-partners",
+            "items": [
+              "Das goldene Namensplaketten-Leuchten reicht jetzt doppelt so weit um das Logo, während das Logo selbst gleich groß bleibt.",
+              "Symbole und Leuchteffekte zeigen echte QT-Nutzer und ihren aktuellen Status bei der Partnersuche an."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "5.16.2",
+        "welcome": "Reconnaissez les joueurs de QuestTogether grâce à leurs infobulles et repérez plus facilement des partenaires de quête.",
+        "sections": [
+          {
+            "title": "Infobulles des joueurs QuestTogether",
+            "items": [
+              "Survolez le personnage, la barre d’identification ou le cadre d’unité d’un joueur QT pour voir « Ce joueur utilise QuestTogether. » Les joueurs qui cherchent des partenaires de quête affichent également ce statut et un logo QT lumineux.",
+              "La section QT correspond à la largeur et à l’échelle de l’infobulle, reste à l’écart de sa barre de vie et se déplace au-dessus de l’infobulle quand l’espace en dessous est limité."
+            ]
+          },
+          {
+            "title": "Une lueur de partenaire plus visible",
+            "illustration": "quest-partners",
+            "items": [
+              "La lueur dorée de la barre d’identification s’étend désormais deux fois plus loin autour du logo, tout en conservant la même taille pour le logo lui-même.",
+              "Les icônes et les lueurs reflètent les vrais utilisateurs de QT et leur statut actuel de recherche de partenaire."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.16.2",
+        "welcome": "Reconoce a los jugadores de QuestTogether por sus descripciones emergentes y encuentra compañeros de misiones más fácilmente.",
+        "sections": [
+          {
+            "title": "Descripciones emergentes de jugadores de QuestTogether",
+            "items": [
+              "Pasa el cursor sobre el personaje, la placa de nombre o el marco de unidad de un jugador de QT para ver «Este jugador usa QuestTogether». Los jugadores que buscan compañeros para hacer misiones también muestran ese estado y un logotipo de QT brillante.",
+              "La sección de QT se ajusta al ancho y la escala de la descripción emergente, se mantiene separada de su barra de salud y se desplaza encima de la descripción emergente cuando el espacio inferior es limitado."
+            ]
+          },
+          {
+            "title": "Un brillo de compañero más visible",
+            "illustration": "quest-partners",
+            "items": [
+              "El brillo dorado de la placa de nombre ahora llega el doble de lejos alrededor del logotipo, manteniendo el logotipo del mismo tamaño.",
+              "Los iconos y brillos reflejan usuarios reales de QT y su estado actual de búsqueda de compañeros."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "5.16.2",
+        "welcome": "Reconoce a los jugadores de QuestTogether por sus tooltips y encuentra compañeros de misiones más fácilmente.",
+        "sections": [
+          {
+            "title": "Tooltips de jugadores de QuestTogether",
+            "items": [
+              "Pasa el cursor sobre el personaje, la barra de nombre o el marco de unidad de un jugador de QT para ver “Este jugador está usando QuestTogether.” Los jugadores que buscan compañeros de misiones también muestran ese estado y un logo de QT brillante.",
+              "La sección de QT coincide con el ancho y la escala del tooltip, queda separada de su barra de salud y se mueve encima del tooltip cuando el espacio debajo es limitado."
+            ]
+          },
+          {
+            "title": "Un brillo de compañero más visible",
+            "illustration": "quest-partners",
+            "items": [
+              "El brillo dorado de la barra de nombre ahora se extiende el doble alrededor del logo, manteniendo el logo del mismo tamaño.",
+              "Los íconos y brillos reflejan a usuarios reales de QT y su estado actual de búsqueda de compañeros."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.16.2",
+        "welcome": "Reconheça jogadores do QuestTogether pelos tooltips deles e encontre parceiros de missões com mais facilidade.",
+        "sections": [
+          {
+            "title": "Tooltips de jogadores do QuestTogether",
+            "items": [
+              "Passe o mouse sobre o personagem, a barra de nome ou o quadro de unidade de um jogador QT para ver “Este jogador está usando QuestTogether.” Jogadores procurando parceiros para fazer missões também mostram esse status e um logotipo QT brilhante.",
+              "A seção QT acompanha a largura e a escala do tooltip, fica afastada da barra de vida e se move para cima do tooltip quando o espaço abaixo é limitado."
+            ]
+          },
+          {
+            "title": "Um brilho de parceiro mais visível",
+            "illustration": "quest-partners",
+            "items": [
+              "O brilho dourado da barra de nome agora se estende duas vezes mais ao redor do logotipo, mantendo o logotipo em si do mesmo tamanho.",
+              "Ícones e brilhos refletem usuários reais do QT e o status atual deles de procura por parceiros."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.16.2",
+        "welcome": "Распознавайте игроков QuestTogether по их подсказкам и легче находите напарников для заданий.",
+        "sections": [
+          {
+            "title": "Подсказки игроков QuestTogether",
+            "items": [
+              "Наведите курсор на персонажа, индикатор имени или рамку юнита игрока QT, чтобы увидеть «Этот игрок использует QuestTogether». У игроков, ищущих напарников для заданий, также отображается этот статус и светящийся логотип QT.",
+              "Раздел QT соответствует ширине и масштабу подсказки, не перекрывает ее полосу здоровья и перемещается над подсказкой, когда снизу мало места."
+            ]
+          },
+          {
+            "title": "Более заметное свечение напарника",
+            "illustration": "quest-partners",
+            "items": [
+              "Золотое свечение индикатора имени теперь распространяется вокруг логотипа вдвое дальше, при этом сам логотип остается того же размера.",
+              "Значки и свечение отражают реальных пользователей QT и их текущий статус поиска напарников."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.16.2",
+        "welcome": "Riconosci i giocatori di QuestTogether dai loro tooltip e individua più facilmente compagni per le missioni.",
+        "sections": [
+          {
+            "title": "Tooltip dei giocatori di QuestTogether",
+            "items": [
+              "Passa il cursore sul personaggio, sulla barra del nome o sul riquadro unità di un giocatore QT per vedere “Questo giocatore usa QuestTogether.” I giocatori in cerca di compagni per le missioni mostrano anche quello stato e un logo QT luminoso.",
+              "La sezione QT si adatta alla larghezza e alla scala del tooltip, resta separata dalla sua barra della salute e si sposta sopra il tooltip quando lo spazio sotto è limitato."
+            ]
+          },
+          {
+            "title": "Un bagliore dei compagni più visibile",
+            "illustration": "quest-partners",
+            "items": [
+              "Il bagliore dorato della barra del nome ora si estende il doppio intorno al logo, mantenendo il logo stesso della stessa dimensione.",
+              "Le icone e i bagliori rispecchiano i veri utenti QT e il loro attuale stato di ricerca compagni."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.16.2",
+        "welcome": "툴팁으로 QuestTogether 플레이어를 알아보고 퀘스트 동료를 더 쉽게 찾으세요.",
+        "sections": [
+          {
+            "title": "QuestTogether 플레이어 툴팁",
+            "items": [
+              "QT 플레이어의 캐릭터, 이름표 또는 유닛 프레임에 마우스를 올리면 “이 플레이어는 QuestTogether를 사용 중입니다.”가 표시됩니다. 퀘스트 동료를 찾는 플레이어는 해당 상태와 빛나는 QT 로고도 표시됩니다.",
+              "QT 섹션은 툴팁의 너비와 크기에 맞춰지고, 생명력 바와 겹치지 않게 배치되며, 아래 공간이 부족하면 툴팁 위로 이동합니다."
+            ]
+          },
+          {
+            "title": "더 잘 보이는 동료 발광 효과",
+            "illustration": "quest-partners",
+            "items": [
+              "금색 이름표 발광 효과가 이제 로고 자체 크기는 그대로 유지하면서 로고 주위로 두 배 더 멀리 퍼집니다.",
+              "아이콘과 발광 효과는 실제 QT 사용자와 현재 동료 찾기 상태를 반영합니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.16.2",
+        "welcome": "通过鼠标提示识别 QuestTogether 玩家，并更轻松地发现任务伙伴。",
+        "sections": [
+          {
+            "title": "QuestTogether 玩家鼠标提示",
+            "items": [
+              "将鼠标悬停在 QT 玩家的角色、姓名板或单位框体上，可看到“该玩家正在使用 QuestTogether。”正在寻找任务伙伴的玩家也会显示该状态和发光的 QT 标志。",
+              "QT 部分会匹配鼠标提示的宽度和缩放，避开其生命条，并在下方空间有限时移动到鼠标提示上方。"
+            ]
+          },
+          {
+            "title": "更醒目的伙伴发光效果",
+            "illustration": "quest-partners",
+            "items": [
+              "金色姓名板发光效果现在会在标志周围延伸两倍远，同时保持标志本身大小不变。",
+              "图标和发光效果会反映真实的 QT 用户及其当前寻找伙伴的状态。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.16.2",
+        "welcome": "透過提示資訊辨識 QuestTogether 玩家，並更容易找到任務夥伴。",
+        "sections": [
+          {
+            "title": "QuestTogether 玩家提示資訊",
+            "items": [
+              "將滑鼠移到 QT 玩家的角色、名條或單位框架上，即可看到「此玩家正在使用 QuestTogether。」正在尋找任務夥伴的玩家也會顯示該狀態與發光的 QT 標誌。",
+              "QT 區塊會符合提示資訊的寬度與縮放比例，避開其生命條，並在下方空間不足時移到提示資訊上方。"
+            ]
+          },
+          {
+            "title": "更顯眼的夥伴發光效果",
+            "illustration": "quest-partners",
+            "items": [
+              "金色名條發光效果現在會在標誌周圍延伸兩倍遠，同時保持標誌本身大小不變。",
+              "圖示與發光效果會反映真正的 QT 使用者及其目前尋找夥伴的狀態。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
+        "version": "5.16.1",
+        "welcome": "Find questing partners more easily and see which quest they are focusing on.",
+        "sections": [
+          {
+            "title": "A brighter partner glow",
+            "illustration": "quest-partners",
+            "items": [
+              "Players looking for questing partners now have a brighter gold glow around their QT nameplate logo, with a gentle breathing pulse. The logo itself stays steady."
+            ]
+          },
+          {
+            "title": "See their current quest",
+            "items": [
+              "Hover the map or minimap dot of a player looking for questing partners to see their super-tracked quest—the single quest selected for navigation. Both players need this update.",
+              "Quest information refreshes about every 20 seconds. It is shared only while Looking for Questing Partners and location sharing are enabled.",
+              "Quest names use your client language when available, with the sender’s title or quest ID as a fallback. Older QT versions keep their existing dots and partner indicators."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.16.1",
+        "welcome": "Finde leichter Questpartner und sieh, auf welche Quest sie sich konzentrieren.",
+        "sections": [
+          {
+            "title": "Helleres Leuchten für Partner",
+            "illustration": "quest-partners",
+            "items": [
+              "Spieler, die nach Questpartnern suchen, haben nun ein helleres goldenes Leuchten um ihr QT-Namensplakettenlogo, mit einem sanften pulsierenden Effekt. Das Logo selbst bleibt ruhig."
+            ]
+          },
+          {
+            "title": "Ihre aktuelle Quest sehen",
+            "items": [
+              "Fahre mit der Maus über den Karten- oder Minikartenpunkt eines Spielers, der nach Questpartnern sucht, um seine superverfolgte Quest zu sehen – die einzelne Quest, die für die Navigation ausgewählt ist. Beide Spieler benötigen dieses Update.",
+              "Questinformationen werden etwa alle 20 Sekunden aktualisiert. Sie werden nur geteilt, wenn „Nach Questpartnern suchen“ und die Standortfreigabe aktiviert sind.",
+              "Questnamen verwenden deine Client-Sprache, wenn verfügbar, andernfalls den Titel oder die Quest-ID des Absenders als Fallback. Ältere QT-Versionen behalten ihre bestehenden Punkte und Partneranzeigen."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "5.16.1",
+        "welcome": "Trouvez plus facilement des partenaires de quête et voyez sur quelle quête ils se concentrent.",
+        "sections": [
+          {
+            "title": "Une lueur de partenaire plus lumineuse",
+            "illustration": "quest-partners",
+            "items": [
+              "Les joueurs qui cherchent des partenaires de quête ont désormais une lueur dorée plus lumineuse autour du logo QT sur leur barre d’info, avec une légère pulsation. Le logo lui-même reste stable."
+            ]
+          },
+          {
+            "title": "Voir leur quête actuelle",
+            "items": [
+              "Survolez le point sur la carte ou la minicarte d’un joueur qui cherche des partenaires de quête pour voir sa quête super-suivie — la quête unique sélectionnée pour la navigation. Les deux joueurs doivent disposer de cette mise à jour.",
+              "Les informations de quête s’actualisent environ toutes les 20 secondes. Elles ne sont partagées que lorsque la recherche de partenaires de quête et le partage de position sont activés.",
+              "Les noms des quêtes utilisent la langue de votre client lorsqu’elle est disponible, avec le titre ou l’ID de quête de l’expéditeur comme solution de repli. Les anciennes versions de QT conservent leurs points et indicateurs de partenaire existants."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.16.1",
+        "welcome": "Encuentra compañeros de misiones más fácilmente y consulta en qué misión se están centrando.",
+        "sections": [
+          {
+            "title": "Un brillo de compañero más intenso",
+            "illustration": "quest-partners",
+            "items": [
+              "Los jugadores que buscan compañeros de misiones ahora tienen un brillo dorado más intenso alrededor del logotipo de QT en su placa de nombre, con una suave pulsación. El logotipo permanece fijo."
+            ]
+          },
+          {
+            "title": "Consulta su misión actual",
+            "items": [
+              "Pasa el cursor sobre el punto del mapa o minimapa de un jugador que busca compañeros de misiones para ver su misión con seguimiento destacado: la única misión seleccionada para la navegación. Ambos jugadores necesitan esta actualización.",
+              "La información de la misión se actualiza aproximadamente cada 20 segundos. Solo se comparte mientras Buscar compañeros de misiones y compartir ubicación están activados.",
+              "Los nombres de las misiones usan el idioma de tu cliente cuando está disponible, con el título del remitente o el ID de misión como alternativa. Las versiones anteriores de QT mantienen sus puntos e indicadores de compañeros existentes."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "5.16.1",
+        "welcome": "Encuentra compañeros de misiones más fácilmente y ve en qué misión se están enfocando.",
+        "sections": [
+          {
+            "title": "Un brillo de compañero más intenso",
+            "illustration": "quest-partners",
+            "items": [
+              "Los jugadores que buscan compañeros de misiones ahora tienen un brillo dorado más intenso alrededor del logo de QT en su placa de nombre, con un suave pulso de respiración. El logo permanece estable."
+            ]
+          },
+          {
+            "title": "Ve su misión actual",
+            "items": [
+              "Pasa el cursor sobre el punto del mapa o minimapa de un jugador que busca compañeros de misiones para ver su misión superrastreada: la única misión seleccionada para la navegación. Ambos jugadores necesitan esta actualización.",
+              "La información de la misión se actualiza aproximadamente cada 20 segundos. Solo se comparte mientras Buscar compañeros de misiones y compartir ubicación están activados.",
+              "Los nombres de las misiones usan el idioma de tu cliente cuando está disponible, con el título o ID de misión del remitente como alternativa. Las versiones anteriores de QT conservan sus puntos e indicadores de compañero existentes."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.16.1",
+        "welcome": "Encontre parceiros de missões com mais facilidade e veja em qual missão eles estão focando.",
+        "sections": [
+          {
+            "title": "Um brilho de parceiro mais forte",
+            "illustration": "quest-partners",
+            "items": [
+              "Jogadores procurando parceiros para fazer missões agora têm um brilho dourado mais forte ao redor do logotipo do QT na placa de identificação, com uma pulsação suave. O logotipo em si permanece estável."
+            ]
+          },
+          {
+            "title": "Veja a missão atual deles",
+            "items": [
+              "Passe o mouse sobre o ponto no mapa ou minimapa de um jogador procurando parceiros para fazer missões para ver a missão super-rastreada dele — a única missão selecionada para navegação. Ambos os jogadores precisam desta atualização.",
+              "As informações da missão são atualizadas a cada cerca de 20 segundos. Elas só são compartilhadas enquanto Procurando Parceiros para Missões e o compartilhamento de localização estiverem ativados.",
+              "Os nomes das missões usam o idioma do seu cliente quando disponível, com o título ou ID da missão do remetente como alternativa. Versões mais antigas do QT mantêm seus pontos e indicadores de parceiros existentes."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.16.1",
+        "welcome": "Легче находите напарников для заданий и смотрите, на каком задании они сосредоточены.",
+        "sections": [
+          {
+            "title": "Более яркое свечение напарника",
+            "illustration": "quest-partners",
+            "items": [
+              "У игроков, ищущих напарников для заданий, теперь вокруг логотипа QT на индикаторе имени яркое золотое свечение с мягкой пульсацией. Сам логотип остаётся неподвижным."
+            ]
+          },
+          {
+            "title": "Смотрите их текущее задание",
+            "items": [
+              "Наведите курсор на точку игрока на карте или мини-карте, если он ищет напарников для заданий, чтобы увидеть его приоритетно отслеживаемое задание — единственное задание, выбранное для навигации. Это обновление должно быть установлено у обоих игроков.",
+              "Информация о заданиях обновляется примерно каждые 20 секунд. Она передаётся только когда включены поиск напарников для заданий и передача местоположения.",
+              "Названия заданий используют язык вашего клиента, когда это возможно; в качестве запасного варианта используются название или ID задания от отправителя. В старых версиях QT сохраняются прежние точки и индикаторы напарников."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.16.1",
+        "welcome": "Trova più facilmente compagni per le missioni e vedi su quale missione si stanno concentrando.",
+        "sections": [
+          {
+            "title": "Un bagliore più luminoso per i compagni",
+            "illustration": "quest-partners",
+            "items": [
+              "I giocatori in cerca di compagni per le missioni ora hanno un bagliore dorato più luminoso attorno al logo QT della loro targhetta, con una leggera pulsazione. Il logo stesso rimane stabile."
+            ]
+          },
+          {
+            "title": "Vedi la loro missione attuale",
+            "items": [
+              "Passa il mouse sul punto nella mappa o nella minimappa di un giocatore in cerca di compagni per le missioni per vedere la sua missione super-tracciata, cioè la singola missione selezionata per la navigazione. Entrambi i giocatori devono avere questo aggiornamento.",
+              "Le informazioni sulla missione si aggiornano circa ogni 20 secondi. Vengono condivise solo mentre la ricerca di compagni per le missioni e la condivisione della posizione sono abilitate.",
+              "I nomi delle missioni usano la lingua del tuo client quando disponibile, con il titolo inviato dal mittente o l'ID missione come ripiego. Le versioni precedenti di QT mantengono i loro punti e indicatori di compagno esistenti."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.16.1",
+        "welcome": "퀘스트 파트너를 더 쉽게 찾고, 그들이 어떤 퀘스트에 집중하고 있는지 확인하세요.",
+        "sections": [
+          {
+            "title": "더 밝아진 파트너 빛 효과",
+            "illustration": "quest-partners",
+            "items": [
+              "퀘스트 파트너를 찾는 플레이어는 이제 QT 이름표 로고 주변에 더 밝은 금색 빛 효과와 부드러운 숨쉬기 펄스 효과가 표시됩니다. 로고 자체는 그대로 유지됩니다."
+            ]
+          },
+          {
+            "title": "현재 진행 중인 퀘스트 보기",
+            "items": [
+              "퀘스트 파트너를 찾는 플레이어의 지도 또는 미니맵 점에 마우스를 올리면, 그 플레이어가 추적 중인 퀘스트(내비게이션용으로 선택한 단일 퀘스트)를 볼 수 있습니다. 두 플레이어 모두 이 업데이트가 필요합니다.",
+              "퀘스트 정보는 약 20초마다 새로고침됩니다. 퀘스트 파트너 찾기와 위치 공유가 활성화되어 있을 때만 공유됩니다.",
+              "퀘스트 이름은 가능한 경우 사용자의 클라이언트 언어를 사용하며, 없을 경우 보낸 사람의 제목 또는 퀘스트 ID를 대체로 사용합니다. 이전 QT 버전은 기존의 점과 파트너 표시기를 유지합니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.16.1",
+        "welcome": "更轻松地寻找任务伙伴，并查看他们当前专注的任务。",
+        "sections": [
+          {
+            "title": "更明亮的伙伴光晕",
+            "illustration": "quest-partners",
+            "items": [
+              "正在寻找任务伙伴的玩家现在会在其 QT 姓名板标志周围显示更明亮的金色光晕，并带有柔和的呼吸脉冲效果。标志本身保持稳定。"
+            ]
+          },
+          {
+            "title": "查看他们当前的任务",
+            "items": [
+              "将鼠标悬停在正在寻找任务伙伴的玩家的地图或小地图圆点上，即可查看他们的超级追踪任务——也就是选中用于导航的单个任务。双方玩家都需要此更新。",
+              "任务信息大约每 20 秒刷新一次。仅在启用寻找任务伙伴和位置共享时才会共享。",
+              "任务名称会尽可能使用你的客户端语言；若不可用，则回退为发送者的标题或任务 ID。旧版 QT 会保留其现有的圆点和伙伴指示器。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.16.1",
+        "welcome": "更輕鬆地尋找任務夥伴，並查看他們正在專注進行哪個任務。",
+        "sections": [
+          {
+            "title": "更明亮的夥伴光暈",
+            "illustration": "quest-partners",
+            "items": [
+              "正在尋找任務夥伴的玩家，現在其 QT 名條標誌周圍會有更明亮的金色光暈，並帶有柔和的呼吸脈動效果。標誌本身會保持穩定。"
+            ]
+          },
+          {
+            "title": "查看他們目前的任務",
+            "items": [
+              "將滑鼠停在正在尋找任務夥伴的玩家的地圖或小地圖圓點上，即可查看他們超級追蹤的任務——也就是選取用於導航的單一任務。雙方玩家都需要此更新。",
+              "任務資訊約每 20 秒重新整理一次。只有在啟用尋找任務夥伴與位置分享時才會分享。",
+              "可用時，任務名稱會使用你的用戶端語言；若不可用，則以傳送者的標題或任務 ID 作為備用。較舊的 QT 版本會保留其現有的圓點與夥伴指示器。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
+        "version": "5.16.0",
+        "welcome": "QuestTogether now supports every WoW language and can display other players’ quest updates in your client’s language.",
+        "sections": [
+          {
+            "title": "Play in more languages",
+            "items": [
+              "Menus, settings, and patch notes now support all WoW language locales: English, German, French, European Spanish, Latin American Spanish, Brazilian Portuguese, Russian, Italian, Korean, Simplified Chinese, and Traditional Chinese.",
+              "Latin American Spanish now has its own text instead of sharing European Spanish."
+            ]
+          },
+          {
+            "title": "Localized quest progress",
+            "items": [
+              "Supported quest events from updated QT players can appear in your client language in QT chat logs and bubbles, using local quest titles when available and the sender’s actual progress numbers.",
+              "When a translated objective description cannot be chosen safely, QT uses a localized objective number with counts, percentages, completion, or progress status instead.",
+              "Older QT versions and public party chat retain the sender’s wording. When WoW cannot supply a local quest title, QT keeps the source title or shows the quest ID. Same-language events keep their detailed native wording."
+            ]
+          },
+          {
+            "title": "Quest title polish",
+            "items": [
+              "Quest comparison now prefers your local quest title when available.",
+              "Localized quest titles with non-ASCII punctuation stay clickable more reliably."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.16.0",
+        "welcome": "QuestTogether unterstützt jetzt alle WoW-Sprachen und kann Questupdates anderer Spieler in der Sprache deines Clients anzeigen.",
+        "sections": [
+          {
+            "title": "In mehr Sprachen spielen",
+            "items": [
+              "Menüs, Einstellungen und Patchnotes unterstützen jetzt alle WoW-Sprachversionen: Englisch, Deutsch, Französisch, europäisches Spanisch, lateinamerikanisches Spanisch, brasilianisches Portugiesisch, Russisch, Italienisch, Koreanisch, vereinfachtes Chinesisch und traditionelles Chinesisch.",
+              "Lateinamerikanisches Spanisch hat jetzt eigene Texte, statt europäisches Spanisch mitzubenutzen."
+            ]
+          },
+          {
+            "title": "Lokalisierter Questfortschritt",
+            "items": [
+              "Unterstützte Questereignisse von aktualisierten QT-Spielern können in QT-Chatprotokollen und -Sprechblasen in deiner Clientsprache erscheinen, mit lokalen Questtiteln, sofern verfügbar, und den tatsächlichen Fortschrittszahlen des Absenders.",
+              "Wenn eine übersetzte Zielbeschreibung nicht sicher ausgewählt werden kann, verwendet QT stattdessen eine lokalisierte Zielnummer mit Zählwerten, Prozentangaben, Abschluss- oder Fortschrittsstatus.",
+              "Ältere QT-Versionen und der öffentliche Gruppenchat behalten die Formulierung des Absenders bei. Wenn WoW keinen lokalen Questtitel liefern kann, behält QT den Quelltitel bei oder zeigt die Quest-ID an. Ereignisse in derselben Sprache behalten ihre detaillierte Originalformulierung."
+            ]
+          },
+          {
+            "title": "Feinschliff für Questtitel",
+            "items": [
+              "Der Questvergleich bevorzugt jetzt deinen lokalen Questtitel, sofern verfügbar.",
+              "Lokalisierte Questtitel mit Nicht-ASCII-Satzzeichen bleiben zuverlässiger anklickbar."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "5.16.0",
+        "welcome": "QuestTogether prend désormais en charge toutes les langues de WoW et peut afficher les mises à jour de quête des autres joueurs dans la langue de votre client.",
+        "sections": [
+          {
+            "title": "Jouez dans plus de langues",
+            "items": [
+              "Les menus, paramètres et notes de mise à jour prennent désormais en charge toutes les langues locales de WoW : anglais, allemand, français, espagnol européen, espagnol latino-américain, portugais brésilien, russe, italien, coréen, chinois simplifié et chinois traditionnel.",
+              "L’espagnol latino-américain dispose désormais de ses propres textes au lieu de partager ceux de l’espagnol européen."
+            ]
+          },
+          {
+            "title": "Progression de quête localisée",
+            "items": [
+              "Les événements de quête pris en charge provenant de joueurs QT à jour peuvent apparaître dans la langue de votre client dans les journaux de discussion et bulles QT, en utilisant les titres de quête locaux lorsqu’ils sont disponibles et les nombres de progression réels de l’expéditeur.",
+              "Lorsqu’une description d’objectif traduite ne peut pas être choisie de manière fiable, QT utilise à la place un numéro d’objectif localisé avec le nombre, le pourcentage, l’état d’achèvement ou l’état de progression.",
+              "Les anciennes versions de QT et la discussion de groupe publique conservent la formulation de l’expéditeur. Lorsque WoW ne peut pas fournir de titre de quête local, QT conserve le titre source ou affiche l’ID de quête. Les événements dans la même langue conservent leur formulation native détaillée."
+            ]
+          },
+          {
+            "title": "Amélioration des titres de quête",
+            "items": [
+              "La comparaison de quêtes privilégie désormais votre titre de quête local lorsqu’il est disponible.",
+              "Les titres de quête localisés contenant une ponctuation non ASCII restent cliquables de manière plus fiable."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.16.0",
+        "welcome": "QuestTogether ahora es compatible con todos los idiomas de WoW y puede mostrar las actualizaciones de misiones de otros jugadores en el idioma de tu cliente.",
+        "sections": [
+          {
+            "title": "Jugar en más idiomas",
+            "items": [
+              "Los menús, ajustes y notas de parche ahora son compatibles con todos los idiomas locales de WoW: inglés, alemán, francés, español europeo, español latinoamericano, portugués de Brasil, ruso, italiano, coreano, chino simplificado y chino tradicional.",
+              "El español latinoamericano ahora tiene su propio texto en lugar de compartir el español europeo."
+            ]
+          },
+          {
+            "title": "Progreso de misión localizado",
+            "items": [
+              "Los eventos de misión compatibles de jugadores con QT actualizado pueden aparecer en el idioma de tu cliente en los registros de chat y bocadillos de QT, usando títulos de misión locales cuando estén disponibles y las cifras de progreso reales del remitente.",
+              "Cuando no se pueda elegir con seguridad una descripción de objetivo traducida, QT usará un número de objetivo localizado con contadores, porcentajes, estado de completado o estado de progreso en su lugar.",
+              "Las versiones antiguas de QT y el chat de grupo público conservan la redacción del remitente. Cuando WoW no pueda proporcionar un título de misión local, QT mantendrá el título de origen o mostrará el ID de misión. Los eventos en el mismo idioma conservan su redacción nativa detallada."
+            ]
+          },
+          {
+            "title": "Pulido de títulos de misión",
+            "items": [
+              "La comparación de misiones ahora prefiere el título de misión local cuando esté disponible.",
+              "Los títulos de misión localizados con puntuación no ASCII siguen siendo clicables de forma más fiable."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "5.16.0",
+        "welcome": "QuestTogether ahora es compatible con todos los idiomas de WoW y puede mostrar las actualizaciones de misiones de otros jugadores en el idioma de tu cliente.",
+        "sections": [
+          {
+            "title": "Juega en más idiomas",
+            "items": [
+              "Los menús, ajustes y notas del parche ahora son compatibles con todas las configuraciones regionales de idioma de WoW: inglés, alemán, francés, español europeo, español latinoamericano, portugués brasileño, ruso, italiano, coreano, chino simplificado y chino tradicional.",
+              "El español latinoamericano ahora tiene su propio texto en lugar de compartir el español europeo."
+            ]
+          },
+          {
+            "title": "Progreso de misión localizado",
+            "items": [
+              "Los eventos de misión compatibles de jugadores de QT actualizados pueden aparecer en el idioma de tu cliente en los registros de chat y burbujas de QT, usando títulos de misión locales cuando estén disponibles y los números de progreso reales del remitente.",
+              "Cuando no se puede elegir de forma segura una descripción traducida de un objetivo, QT usa un número de objetivo localizado con conteos, porcentajes, finalización o estado de progreso en su lugar.",
+              "Las versiones anteriores de QT y el chat público de grupo conservan la redacción del remitente. Cuando WoW no puede proporcionar un título de misión local, QT conserva el título de origen o muestra el ID de la misión. Los eventos en el mismo idioma conservan su redacción nativa detallada."
+            ]
+          },
+          {
+            "title": "Mejoras en títulos de misión",
+            "items": [
+              "La comparación de misiones ahora prefiere tu título de misión local cuando esté disponible.",
+              "Los títulos de misión localizados con puntuación no ASCII se mantienen clicables con mayor fiabilidad."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.16.0",
+        "welcome": "O QuestTogether agora oferece suporte a todos os idiomas do WoW e pode exibir as atualizações de missões de outros jogadores no idioma do seu cliente.",
+        "sections": [
+          {
+            "title": "Jogue em mais idiomas",
+            "items": [
+              "Menus, configurações e notas de atualização agora oferecem suporte a todas as localidades de idioma do WoW: inglês, alemão, francês, espanhol europeu, espanhol latino-americano, português do Brasil, russo, italiano, coreano, chinês simplificado e chinês tradicional.",
+              "O espanhol latino-americano agora tem seu próprio texto em vez de compartilhar o espanhol europeu."
+            ]
+          },
+          {
+            "title": "Progresso de missão localizado",
+            "items": [
+              "Eventos de missão compatíveis de jogadores QT atualizados podem aparecer no idioma do seu cliente nos registros e balões de bate-papo do QT, usando títulos de missões locais quando disponíveis e os números reais de progresso do remetente.",
+              "Quando uma descrição traduzida do objetivo não puder ser escolhida com segurança, o QT usa um número de objetivo localizado com contagens, porcentagens, conclusão ou status de progresso.",
+              "Versões antigas do QT e o bate-papo público do grupo mantêm o texto do remetente. Quando o WoW não puder fornecer um título de missão local, o QT mantém o título de origem ou mostra o ID da missão. Eventos no mesmo idioma mantêm o texto nativo detalhado."
+            ]
+          },
+          {
+            "title": "Ajustes nos títulos de missões",
+            "items": [
+              "A comparação de missões agora dá preferência ao título local da missão quando disponível.",
+              "Títulos de missões localizados com pontuação não ASCII permanecem clicáveis com mais confiabilidade."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.16.0",
+        "welcome": "QuestTogether теперь поддерживает все языки WoW и может показывать обновления заданий других игроков на языке вашего клиента.",
+        "sections": [
+          {
+            "title": "Играйте на большем числе языков",
+            "items": [
+              "Меню, настройки и примечания к обновлению теперь поддерживают все языковые локали WoW: английский, немецкий, французский, европейский испанский, латиноамериканский испанский, бразильский португальский, русский, итальянский, корейский, упрощенный китайский и традиционный китайский.",
+              "Для латиноамериканского испанского теперь используется собственный текст вместо общего с европейским испанским."
+            ]
+          },
+          {
+            "title": "Локализованный прогресс заданий",
+            "items": [
+              "Поддерживаемые события заданий от игроков с обновленной версией QT могут отображаться на языке вашего клиента в журналах чата и облачках QT, используя локальные названия заданий, когда они доступны, и фактические числа прогресса отправителя.",
+              "Если переведенное описание цели нельзя выбрать надежно, QT вместо этого использует локализованный номер цели со счетчиками, процентами, отметкой выполнения или статусом прогресса.",
+              "Более старые версии QT и публичный чат группы сохраняют формулировки отправителя. Если WoW не может предоставить локальное название задания, QT сохраняет исходное название или показывает ID задания. События на том же языке сохраняют свои подробные исходные формулировки."
+            ]
+          },
+          {
+            "title": "Улучшение названий заданий",
+            "items": [
+              "Сравнение заданий теперь предпочитает ваше локальное название задания, когда оно доступно.",
+              "Локализованные названия заданий с пунктуацией не из ASCII надежнее остаются кликабельными."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.16.0",
+        "welcome": "QuestTogether ora supporta tutte le lingue di WoW e può mostrare gli aggiornamenti delle missioni degli altri giocatori nella lingua del tuo client.",
+        "sections": [
+          {
+            "title": "Gioca in più lingue",
+            "items": [
+              "Menu, impostazioni e note della patch ora supportano tutte le lingue locali di WoW: inglese, tedesco, francese, spagnolo europeo, spagnolo latinoamericano, portoghese brasiliano, russo, italiano, coreano, cinese semplificato e cinese tradizionale.",
+              "Lo spagnolo latinoamericano ora ha un proprio testo invece di condividere quello dello spagnolo europeo."
+            ]
+          },
+          {
+            "title": "Progressi delle missioni localizzati",
+            "items": [
+              "Gli eventi missione supportati dai giocatori QT aggiornati possono apparire nella lingua del tuo client nei registri e nei fumetti della chat QT, usando i titoli locali delle missioni quando disponibili e i numeri di progresso effettivi del mittente.",
+              "Quando non è possibile scegliere in modo sicuro una descrizione tradotta dell'obiettivo, QT usa un numero di obiettivo localizzato con conteggi, percentuali, completamento o stato di avanzamento.",
+              "Le versioni precedenti di QT e la chat di gruppo pubblica mantengono la formulazione del mittente. Quando WoW non può fornire un titolo di missione locale, QT mantiene il titolo originale o mostra l'ID della missione. Gli eventi nella stessa lingua mantengono la loro formulazione nativa dettagliata."
+            ]
+          },
+          {
+            "title": "Rifinitura dei titoli delle missioni",
+            "items": [
+              "Il confronto delle missioni ora preferisce il titolo locale della missione quando disponibile.",
+              "I titoli localizzati delle missioni con punteggiatura non ASCII restano cliccabili in modo più affidabile."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.16.0",
+        "welcome": "QuestTogether는 이제 모든 WoW 언어를 지원하며, 다른 플레이어의 퀘스트 업데이트를 클라이언트 언어로 표시할 수 있습니다.",
+        "sections": [
+          {
+            "title": "더 많은 언어로 플레이",
+            "items": [
+              "메뉴, 설정 및 패치 노트가 이제 모든 WoW 언어 로케일을 지원합니다: 영어, 독일어, 프랑스어, 유럽 스페인어, 라틴 아메리카 스페인어, 브라질 포르투갈어, 러시아어, 이탈리아어, 한국어, 중국어 간체, 중국어 번체.",
+              "라틴 아메리카 스페인어는 이제 유럽 스페인어를 공유하지 않고 자체 텍스트를 사용합니다."
+            ]
+          },
+          {
+            "title": "현지화된 퀘스트 진행 상황",
+            "items": [
+              "업데이트된 QT 플레이어의 지원되는 퀘스트 이벤트가 사용 가능한 경우 현지 퀘스트 제목과 보낸 사람의 실제 진행 수치를 사용하여 QT 대화 기록과 말풍선에 클라이언트 언어로 표시될 수 있습니다.",
+              "번역된 목표 설명을 안전하게 선택할 수 없는 경우, QT는 횟수, 백분율, 완료 또는 진행 상태가 포함된 현지화된 목표 번호를 대신 사용합니다.",
+              "이전 QT 버전과 공개 파티 대화는 보낸 사람의 표현을 유지합니다. WoW가 현지 퀘스트 제목을 제공할 수 없는 경우, QT는 원문 제목을 유지하거나 퀘스트 ID를 표시합니다. 같은 언어 이벤트는 자세한 원어 표현을 유지합니다."
+            ]
+          },
+          {
+            "title": "퀘스트 제목 개선",
+            "items": [
+              "퀘스트 비교는 이제 사용 가능한 경우 현지 퀘스트 제목을 우선 사용합니다.",
+              "ASCII가 아닌 문장 부호가 포함된 현지화된 퀘스트 제목도 더 안정적으로 클릭할 수 있습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.16.0",
+        "welcome": "QuestTogether 现在支持所有 WoW 语言，并且可以用你客户端的语言显示其他玩家的任务更新。",
+        "sections": [
+          {
+            "title": "支持更多语言游玩",
+            "items": [
+              "菜单、设置和补丁说明现在支持所有 WoW 语言区域：英语、德语、法语、欧洲西班牙语、拉丁美洲西班牙语、巴西葡萄牙语、俄语、意大利语、韩语、简体中文和繁体中文。",
+              "拉丁美洲西班牙语现在拥有自己的文本，不再与欧洲西班牙语共用。"
+            ]
+          },
+          {
+            "title": "本地化任务进度",
+            "items": [
+              "来自已更新 QT 玩家的受支持任务事件，可以使用本地任务标题（可用时）和发送者的实际进度数字，以你的客户端语言显示在 QT 聊天记录和气泡中。",
+              "当无法安全选择已翻译的目标描述时，QT 会改用本地化目标编号，并附带计数、百分比、完成或进度状态。",
+              "较旧的 QT 版本和公共小队聊天会保留发送者的措辞。当 WoW 无法提供本地任务标题时，QT 会保留来源标题或显示任务 ID。相同语言的事件会保留其详细的原语言措辞。"
+            ]
+          },
+          {
+            "title": "任务标题优化",
+            "items": [
+              "任务比较现在会优先使用你的本地任务标题（可用时）。",
+              "带有非 ASCII 标点的本地化任务标题现在更可靠地保持可点击。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.16.0",
+        "welcome": "QuestTogether 現在支援所有 WoW 語言，並能以你的客戶端語言顯示其他玩家的任務更新。",
+        "sections": [
+          {
+            "title": "以更多語言遊玩",
+            "items": [
+              "選單、設定與更新說明現在支援所有 WoW 語言地區：英文、德文、法文、歐洲西班牙文、拉丁美洲西班牙文、巴西葡萄牙文、俄文、義大利文、韓文、簡體中文與繁體中文。",
+              "拉丁美洲西班牙文現在有自己的文字，不再與歐洲西班牙文共用。"
+            ]
+          },
+          {
+            "title": "本地化任務進度",
+            "items": [
+              "來自已更新 QT 玩家且受支援的任務事件，可以在 QT 聊天記錄與聊天泡泡中以你的客戶端語言顯示，並在可用時使用本地任務標題與傳送者的實際進度數字。",
+              "當無法安全選擇翻譯後的目標描述時，QT 會改用本地化的目標編號，並搭配計數、百分比、完成或進度狀態。",
+              "較舊的 QT 版本與公開隊伍聊天會保留傳送者的用語。當 WoW 無法提供本地任務標題時，QT 會保留來源標題或顯示任務 ID。相同語言的事件會保留其詳細的原生用語。"
+            ]
+          },
+          {
+            "title": "任務標題潤飾",
+            "items": [
+              "任務比較現在會優先使用你的本地任務標題（若可用）。",
+              "含有非 ASCII 標點的本地化任務標題，將更可靠地保持可點擊。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
+        "version": "5.15.0",
+        "welcome": "Ask to join a questing party directly from a QuestTogether player menu.",
+        "sections": [
+          {
+            "title": "Join a questing party",
+            "items": [
+              "Grouped QT players now show Request to Join instead of Invite when recent party information is available. Both players need this update; the requester must be solo.",
+              "The recipient can send a normal WoW invitation or decline. They must have invitation permission and room in an ordinary party. You still accept the normal invitation to join."
+            ]
+          },
+          {
+            "title": "Optional automatic invitations",
+            "items": [
+              "Two new options automatically approve requests from character friends, or from other players while you are Looking for Questing Partners. Both start off and appear in the prompt and Miscellaneous settings. Battle.net account friends are not included.",
+              "Requests expire and respect ignores, party changes, and game restrictions. QT never leaves your current group or accepts invitations for you."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.15.0",
+        "welcome": "Frage direkt über das Spielermenü von QuestTogether an, ob du einer Questgruppe beitreten kannst.",
+        "sections": [
+          {
+            "title": "Einer Questgruppe beitreten",
+            "items": [
+              "Bei QT-Spielern in einer Gruppe erscheint jetzt Beitritt anfragen statt Einladen, wenn aktuelle Gruppeninformationen vorliegen. Beide Spieler benötigen dieses Update; der Anfragende darf keiner Gruppe angehören.",
+              "Der Empfänger kann eine normale WoW-Einladung senden oder ablehnen. Er muss einladen dürfen und Platz in einer normalen Gruppe haben. Zum Beitritt nimmst du weiterhin die normale Einladung an."
+            ]
+          },
+          {
+            "title": "Optionale automatische Einladungen",
+            "items": [
+              "Zwei neue Optionen genehmigen Anfragen von Freunden deines Charakters automatisch oder von anderen Spielern, während du nach Questpartnern suchst. Beide sind anfangs aus und stehen im Dialog sowie unter Verschiedenes. Battle.net-Accountfreunde sind nicht eingeschlossen.",
+              "Anfragen laufen ab und berücksichtigen ignorierte Spieler, Gruppenänderungen und Spieleinschränkungen. QT verlässt niemals deine aktuelle Gruppe und nimmt keine Einladungen für dich an."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "5.15.0",
+        "welcome": "Demandez à rejoindre un groupe de quête directement depuis le menu d’un joueur QuestTogether.",
+        "sections": [
+          {
+            "title": "Rejoindre un groupe de quête",
+            "items": [
+              "Les joueurs QT déjà en groupe affichent désormais Demander à rejoindre au lieu d’Inviter lorsque des informations récentes sont disponibles. Les deux joueurs doivent disposer de cette mise à jour ; le demandeur doit être seul.",
+              "Le destinataire peut envoyer une invitation WoW normale ou refuser. Il doit avoir le droit d’inviter et une place dans un groupe normal. Vous devez toujours accepter l’invitation normale pour rejoindre."
+            ]
+          },
+          {
+            "title": "Invitations automatiques facultatives",
+            "items": [
+              "Deux nouvelles options approuvent automatiquement les demandes des amis de votre personnage, ou des autres joueurs pendant votre recherche de partenaires de quête. Désactivées par défaut, elles figurent dans la fenêtre de demande et les paramètres Divers. Les amis de compte Battle.net ne sont pas inclus.",
+              "Les demandes expirent et respectent les joueurs ignorés, les changements de groupe et les restrictions du jeu. QT ne quitte jamais votre groupe actuel et n’accepte pas d’invitations à votre place."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.15.0",
+        "welcome": "Solicita unirte a un grupo de misiones directamente desde el menú de un jugador de QuestTogether.",
+        "sections": [
+          {
+            "title": "Únete a un grupo de misiones",
+            "items": [
+              "Los jugadores de QT que están en grupo ahora muestran Solicitar unirse en lugar de Invitar cuando hay información reciente del grupo. Ambos jugadores necesitan esta actualización; quien envía la solicitud debe estar solo.",
+              "El destinatario puede enviar una invitación normal de WoW o rechazar la solicitud. Debe tener permiso para invitar y espacio en un grupo normal. Para unirte, sigues aceptando la invitación habitual."
+            ]
+          },
+          {
+            "title": "Invitaciones automáticas opcionales",
+            "items": [
+              "Dos nuevas opciones aprueban automáticamente las solicitudes de amigos de tu personaje, o de otros jugadores mientras buscas compañeros de misiones. Ambas están desactivadas por defecto y aparecen en la solicitud y en los ajustes Varios. No incluyen a los amigos de cuenta de Battle.net.",
+              "Las solicitudes caducan y respetan la lista de ignorados, los cambios de grupo y las restricciones del juego. QT nunca abandona tu grupo actual ni acepta invitaciones por ti."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.15.0",
+        "welcome": "Peça para entrar em um grupo de missões diretamente pelo menu de um jogador do QuestTogether.",
+        "sections": [
+          {
+            "title": "Entre em um grupo de missões",
+            "items": [
+              "Jogadores do QT que já estão em grupo agora mostram Pedir para entrar em vez de Convidar quando há informações recentes do grupo. Ambos precisam desta atualização; quem envia o pedido deve estar sem grupo.",
+              "O destinatário pode enviar um convite normal do WoW ou recusar. Ele precisa ter permissão para convidar e espaço em um grupo normal. Você ainda aceita o convite normal para entrar."
+            ]
+          },
+          {
+            "title": "Convites automáticos opcionais",
+            "items": [
+              "Duas novas opções aprovam automaticamente pedidos de amigos do seu personagem ou de outros jogadores enquanto você procura parceiros de missão. Ambas vêm desativadas e aparecem no pedido e nas configurações Diversos. Amigos de conta Battle.net não estão incluídos.",
+              "Os pedidos expiram e respeitam a lista de ignorados, mudanças no grupo e restrições do jogo. O QT nunca sai do seu grupo atual nem aceita convites por você."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.15.0",
+        "welcome": "Попроситесь в группу для выполнения заданий прямо из меню игрока QuestTogether.",
+        "sections": [
+          {
+            "title": "Присоединяйтесь к группе",
+            "items": [
+              "У игроков QT, состоящих в группе, теперь появляется пункт Попроситься в группу вместо Пригласить, если доступны свежие сведения о группе. Обоим игрокам нужно это обновление; отправитель запроса не должен состоять в группе.",
+              "Получатель может отправить обычное приглашение WoW или отклонить запрос. У него должны быть право приглашать и свободное место в обычной группе. Для вступления вы по-прежнему принимаете стандартное приглашение."
+            ]
+          },
+          {
+            "title": "Необязательные автоматические приглашения",
+            "items": [
+              "Две новые настройки автоматически одобряют запросы от друзей вашего персонажа или от других игроков, пока вы ищете напарников для заданий. Обе изначально выключены и доступны в окне запроса и разделе Разное. Друзья учётной записи Battle.net не учитываются.",
+              "Запросы имеют срок действия и учитывают игнорирование, изменения группы и ограничения игры. QT никогда не покидает вашу текущую группу и не принимает приглашения за вас."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
+        "version": "5.14.1",
+        "welcome": "Party announcements now show the full QuestTogether name.",
+        "sections": [
+          {
+            "title": "Party chat",
+            "items": [
+              "Expanded the party-chat announcement prefix from [QT] to [QuestTogether], making it easier for other players to find the addon."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.14.1",
+        "welcome": "Gruppenankündigungen zeigen jetzt den vollständigen Namen QuestTogether.",
+        "sections": [
+          {
+            "title": "Gruppenchat",
+            "items": [
+              "Das Präfix für Ankündigungen im Gruppenchat wurde von [QT] zu [QuestTogether] erweitert, damit andere Spieler das Addon leichter finden."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "5.14.1",
+        "welcome": "Les annonces de groupe affichent désormais le nom complet de QuestTogether.",
+        "sections": [
+          {
+            "title": "Canal de groupe",
+            "items": [
+              "Le préfixe des annonces dans le canal de groupe passe de [QT] à [QuestTogether] pour permettre aux autres joueurs de trouver plus facilement l’addon."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.14.1",
+        "welcome": "Los anuncios de grupo ahora muestran el nombre completo de QuestTogether.",
+        "sections": [
+          {
+            "title": "Chat de grupo",
+            "items": [
+              "El prefijo de los anuncios en el chat de grupo cambia de [QT] a [QuestTogether] para que otros jugadores puedan encontrar el addon más fácilmente."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.14.1",
+        "welcome": "Os anúncios de grupo agora mostram o nome completo do QuestTogether.",
+        "sections": [
+          {
+            "title": "Bate-papo do grupo",
+            "items": [
+              "O prefixo dos anúncios no bate-papo do grupo mudou de [QT] para [QuestTogether], facilitando que outros jogadores encontrem o addon."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.14.1",
+        "welcome": "Объявления в группе теперь показывают полное название QuestTogether.",
+        "sections": [
+          {
+            "title": "Чат группы",
+            "items": [
+              "Префикс объявлений в чате группы изменён с [QT] на [QuestTogether], чтобы другим игрокам было проще найти аддон."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
+        "version": "5.14.0",
+        "welcome": "QuestTogether now speaks five more languages and helps you keep party members without QT informed.",
+        "sections": [
+          {
+            "title": "Play in your language",
+            "items": [
+              "The interface is now available in German, French, Spanish, Brazilian Portuguese, and Russian. QuestTogether follows your game language, with English as the fallback.",
+              "Settings, menus, tooltips, quest comparisons, and patch notes are translated. Quest names and progress text received from other players stay in their original language.",
+              "Find translated release announcements in the five language-specific changelog channels on our Discord."
+            ]
+          },
+          {
+            "title": "Keep your whole party informed",
+            "items": [
+              "A new Where to Announce option sends your enabled event announcements to party chat when someone in your party has not been recognized as a QT user. It starts enabled and can be turned off in settings.",
+              "This also works in matched instance parties. Solo play and raids are excluded, and other players’ announcements are never relayed."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.14.0",
+        "welcome": "QuestTogether spricht jetzt fünf weitere Sprachen und hilft dir, Gruppenmitglieder ohne QT auf dem Laufenden zu halten.",
+        "sections": [
+          {
+            "title": "Spiele in deiner Sprache",
+            "items": [
+              "Die Benutzeroberfläche ist jetzt auf Deutsch, Französisch, Spanisch, brasilianischem Portugiesisch und Russisch verfügbar. QuestTogether verwendet deine Spielsprache und greift bei Bedarf auf Englisch zurück.",
+              "Einstellungen, Menüs, Tooltips, Questvergleiche und Patchnotes sind übersetzt. Questnamen und Fortschrittstexte anderer Spieler bleiben in ihrer ursprünglichen Sprache.",
+              "Übersetzte Versionshinweise findest du in den fünf sprachspezifischen Änderungsprotokoll-Kanälen auf unserem Discord."
+            ]
+          },
+          {
+            "title": "Halte deine ganze Gruppe auf dem Laufenden",
+            "items": [
+              "Eine neue Option unter „Ankündigungskanäle“ sendet deine aktivierten Ereignismeldungen in den Gruppenchat, wenn mindestens ein Gruppenmitglied noch nicht als QT-Nutzer erkannt wurde. Sie ist standardmäßig aktiviert und lässt sich in den Einstellungen ausschalten.",
+              "Das funktioniert auch in automatisch zusammengestellten Instanzgruppen. Alleinspiel und Schlachtzüge sind ausgeschlossen; Meldungen anderer Spieler werden niemals weitergeleitet."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "5.14.0",
+        "welcome": "QuestTogether parle désormais cinq langues supplémentaires et vous aide à tenir informés les membres du groupe qui n’utilisent pas QT.",
+        "sections": [
+          {
+            "title": "Jouez dans votre langue",
+            "items": [
+              "L’interface est désormais disponible en allemand, français, espagnol, portugais brésilien et russe. QuestTogether utilise la langue du jeu, avec l’anglais comme langue de secours.",
+              "Les paramètres, menus, infobulles, comparaisons de quêtes et notes de mise à jour sont traduits. Les noms de quêtes et les textes de progression reçus des autres joueurs restent dans leur langue d’origine.",
+              "Retrouvez les annonces de mise à jour traduites dans les cinq salons dédiés aux différentes langues sur notre Discord."
+            ]
+          },
+          {
+            "title": "Informez tout votre groupe",
+            "items": [
+              "Une nouvelle option dans les canaux d’annonce envoie vos annonces d’événements activées dans le canal de groupe lorsqu’un membre n’a pas été reconnu comme utilisateur de QT. Elle est activée par défaut et peut être désactivée dans les paramètres.",
+              "Cela fonctionne aussi dans les groupes d’instance constitués automatiquement. Le jeu en solo et les raids sont exclus, et les annonces des autres joueurs ne sont jamais retransmises."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.14.0",
+        "welcome": "QuestTogether ahora habla cinco idiomas más y te ayuda a mantener informados a los miembros del grupo que no usan QT.",
+        "sections": [
+          {
+            "title": "Juega en tu idioma",
+            "items": [
+              "La interfaz ya está disponible en alemán, francés, español, portugués de Brasil y ruso. QuestTogether usa el idioma del juego y recurre al inglés cuando es necesario.",
+              "Los ajustes, menús, descripciones emergentes, comparaciones de misiones y notas de actualización están traducidos. Los nombres de misiones y los textos de progreso recibidos de otros jugadores conservan su idioma original.",
+              "Encontrarás los anuncios de actualización traducidos en los cinco canales de registro de cambios por idioma de nuestro Discord."
+            ]
+          },
+          {
+            "title": "Mantén informado a todo tu grupo",
+            "items": [
+              "Una nueva opción de canales de anuncios envía tus anuncios de eventos habilitados al chat de grupo cuando algún miembro no ha sido reconocido como usuario de QT. Está activada por defecto y se puede desactivar en los ajustes.",
+              "También funciona en grupos de estancia formados automáticamente. No se aplica al juego en solitario ni a las bandas, y nunca reenvía anuncios de otros jugadores."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.14.0",
+        "welcome": "O QuestTogether agora fala mais cinco idiomas e ajuda você a manter informados os integrantes do grupo que não usam QT.",
+        "sections": [
+          {
+            "title": "Jogue no seu idioma",
+            "items": [
+              "A interface agora está disponível em alemão, francês, espanhol, português do Brasil e russo. O QuestTogether acompanha o idioma do jogo e usa o inglês quando necessário.",
+              "Configurações, menus, dicas, comparações de missões e notas de atualização estão traduzidos. Os nomes de missões e textos de progresso recebidos de outros jogadores permanecem no idioma original.",
+              "Encontre os anúncios de atualização traduzidos nos cinco canais de registro de alterações por idioma do nosso Discord."
+            ]
+          },
+          {
+            "title": "Mantenha todo o grupo informado",
+            "items": [
+              "Uma nova opção de canais de anúncios envia seus anúncios de eventos habilitados para o bate-papo do grupo quando algum integrante ainda não foi reconhecido como usuário do QT. Ela vem ativada e pode ser desativada nas configurações.",
+              "Também funciona em grupos de instância formados automaticamente. Não se aplica ao jogo solo nem a raides, e os anúncios de outros jogadores nunca são retransmitidos."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.14.0",
+        "welcome": "QuestTogether теперь поддерживает ещё пять языков и помогает держать в курсе участников группы, у которых нет QT.",
+        "sections": [
+          {
+            "title": "Играйте на своём языке",
+            "items": [
+              "Интерфейс теперь доступен на немецком, французском, испанском, бразильском португальском и русском языках. QuestTogether использует язык игры, а при отсутствии перевода — английский.",
+              "Переведены настройки, меню, подсказки, сравнение заданий и заметки об обновлениях. Названия заданий и сообщения о прогрессе, полученные от других игроков, сохраняют исходный язык.",
+              "Переведённые объявления об обновлениях доступны в пяти отдельных языковых каналах журнала изменений на нашем Discord."
+            ]
+          },
+          {
+            "title": "Держите всю группу в курсе",
+            "items": [
+              "Новая настройка каналов объявлений отправляет ваши включённые уведомления о событиях в чат группы, если хотя бы один участник ещё не распознан как пользователь QT. Она включена по умолчанию; её можно отключить в настройках.",
+              "Это работает и в автоматически подобранных группах для прохождения подземелий. В одиночной игре и рейдах объявления не отправляются, а сообщения других игроков никогда не пересылаются."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
+        "version": "5.13.1",
+        "welcome": "This maintenance update improves quest-plate recovery, clears stale bubbles and player logos, and keeps settings and the debug window behaving consistently.",
+        "sections": [
+          {
+            "title": "Quest plates and player indicators",
+            "items": [
+              "Quest icons and health tints recover correctly after restricted views close. Delayed quest scans retain their settling time, and temporarily missing tooltip data keeps its retry budget.",
+              "Announcement bubbles are cleaned up when a player plate disappears or is reused during combat. Protected or forbidden frames wait for safe cleanup.",
+              "Map locations and player presence recover after disabling QuestTogether, changing zones, and enabling it again. Departed players no longer regain a QT logo from late location or partner-status withdrawals."
+            ]
+          },
+          {
+            "title": "Settings and window fixes",
+            "items": [
+              "The Looking for Questing Partners checkbox stays synchronized when status changes through commands, menus, or profile settings.",
+              "The debug window safely finishes interrupted drag and resize gestures when restrictions lift, even after it has been hidden."
+            ]
+          },
+          {
+            "title": "Reliability improvements",
+            "items": [
+              "Strengthened tests detect forbidden frame access even when an error is caught internally.",
+              "Release checks now refuse to publish while implementation changes remain uncommitted, helping ensure fixes actually reach the download."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
+        "version": "5.13.0",
+        "welcome": "Find questing partners at a glance with highlighted map dots and player logos, simpler location settings, and reminders when another player has a newer stable QuestTogether release.",
+        "sections": [
+          {
+            "title": "Spot questing partners",
+            "items": [
+              "Players looking for questing partners have a soft gold glow around their class-colored map and minimap dots.",
+              "Their QuestTogether nameplate logo gets a soft gold glow. Highlights disappear when the status is turned off or expires.",
+              "Player Locations settings includes Only show players looking for questing partners. It starts off and filters both maps when enabled.",
+              "The in-game What's New window shows regular and glowing logos and map dots side by side. Gold glow means looking for questing partners."
+            ],
+            "illustration": "quest-partners"
+          },
+          {
+            "title": "Simpler location settings",
+            "items": [
+              "Share my location and Show other players each apply to both the world map and minimap.",
+              "Both options start enabled for new profiles. Existing location-sharing opt-outs are preserved when upgrading."
+            ]
+          },
+          {
+            "title": "New-version reminders",
+            "items": [
+              "QuestTogether notices when another player reports a newer stable addon version and prints an update reminder in your chosen QuestTogether chat window.",
+              "The reminder is saved across characters and appears once each reload until you install the detected release or a newer one. Alpha and beta versions do not trigger reminders.",
+              "Version announcements are small and infrequent. QuestTogether also recognizes version information in existing ping replies."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
+        "version": "5.12.0",
+        "welcome": "Find people to quest with using the new Looking for Questing Partners status. This update also improves minimap tooltip visibility and separates Retail War Mode and realm behavior from Forever.",
+        "sections": [
+          {
+            "title": "Looking for Questing Partners",
+            "items": [
+              "Let other QuestTogether users know you want company. Your status appears in your player menu and on map-dot tooltips; it does not enable location sharing or send invitations.",
+              "Toggle the status from the minimap menu, Settings > Miscellaneous, or /qt lfg. Use /qt lfg on, off, or status to set or check it. It starts off and is saved per profile.",
+              "Partner status expires when updates stop. Ignored players are excluded, and disabling QuestTogether pauses your advertisement."
+            ]
+          },
+          {
+            "title": "Retail and Forever",
+            "items": [
+              "Forever no longer shows War Mode in player-dot tooltips, quest location details, or ping output. Forever pings also omit realm labels while preserving complete player names.",
+              "Nearby quest updates on Forever no longer require Retail War Mode information. Map dots remain visible across phases so you can find people to group with.",
+              "Retail uses the active War Mode state when available. Unknown or unsupported War Mode is no longer reported as Off."
+            ]
+          },
+          {
+            "title": "More stable player dots",
+            "items": [
+              "Briefly missing coordinates no longer remove your dot immediately. Last reported positions remain for up to two minutes, and older reports show their age in the tooltip. Sharing opt-outs still withdraw immediately when communication is available.",
+              "Movement broadcasts are limited to once every ten seconds, reducing location traffic. Stationary heartbeats remain every twenty seconds so older clients stay compatible.",
+              "The location cache now retains up to 512 players. Each map still draws at most 128 visible dots, and players outside the displayed map no longer use up that drawing limit."
+            ]
+          },
+          {
+            "title": "Reliable player logos",
+            "items": [
+              "Fix missing logos on friendly player nameplates in current Forever and Retail clients by reading the current friendly-player visibility setting.",
+              "Left-positioned logos move outward to make room for visible buffs, then return to their usual position when the buffs disappear.",
+              "All supported QuestTogether messages now identify their sender. A bounded cache remembers players for the current UI session, so missed heartbeats no longer remove their logos. Explicit departures and ignored players are still cleared; no extra messages are sent."
+            ]
+          },
+          {
+            "title": "Minimap polish",
+            "items": [
+              "The QuestTogether minimap tooltip now uses an independent tooltip layer so it can appear over action bar UI. It hides when the button becomes unavailable or restrictions begin."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
+        "version": "5.11.0",
+        "welcome": "QuestTogether now adds player locations, player plate logos, focused quest comparisons, and easier Discord feedback and support. Settings let you choose what you share and what you see while quest progress stays coordinated with other QuestTogether users.",
+        "sections": [
+          {
+            "title": "Find QuestTogether players nearby",
+            "items": [
+              "Show the scroll logo beside friendly QuestTogether players when WoW's friendly nameplates are on. Player Plates are enabled by default, with a padded Left position; choose Left, Right, Top, or Prefix without changing health-bar colors.",
+              "Class-colored player dots can appear on the world map and minimap for players sharing their location. Hover a dot for name, faction, race, class, and level; click it for the QuestTogether player menu.",
+              "Player Locations has separate sharing and viewing switches for the world map and minimap, and all four start enabled. Presence for player plate logos can continue even when both location sharing switches are off.",
+              "Locations refresh periodically and disappear when they expire. Both players need the updated addon; a dot does not guarantee that you share the same phase or layer."
+            ]
+          },
+          {
+            "title": "Compare one player or the whole party",
+            "items": [
+              "The player menu Compare Quests action now compares only you and the selected player, including reachable nonparty QuestTogether peers. Whole-party comparison stays available from the minimap menu, quest-name menus, and /qt compare.",
+              "Quest sharing and share requests remain party-only. Targeted comparisons explain when a party is needed for sharing and when the selected player needs QuestTogether to respond.",
+              "If a share request is already waiting on another player, the comparison now shows who it is waiting for after you switch targets."
+            ]
+          },
+          {
+            "title": "Feedback and support",
+            "items": [
+              "The welcome window and main settings page now include Discord — Feedback & Support. It opens a copyable invite when available, or prints the invite in chat if the link window cannot open."
+            ]
+          },
+          {
+            "title": "Fixes and polish",
+            "items": [
+              "Ignored players are now filtered more completely. New logs, bubbles, dots, comparisons, and share work are suppressed, while existing bubbles and locations are cleared when the ignore list changes.",
+              "Fixed false quest plates caused by unavailable tooltip boundaries matching another quest's objective text.",
+              "Turning off map or minimap sharing now retries the update after temporary communication failures. Turning off both sharing options also removes location details from other addon updates.",
+              "Player logos clear correctly when a player's presence expires just before they leave. Whisper from map dots opens your chat window, and changing the log destination from Settings is unavailable during restrictions."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
+        "version": "5.10.0",
+        "welcome": "QuestTogether shares quest progress with your party and nearby players. Use the minimap button for settings, party quest comparisons, your quest journal, and these latest notes.",
+        "sections": [
+          {
+            "title": "Compare and share party quests",
+            "items": [
+              "Open Compare Party Quests from the minimap or quest and player menus, or type /qt compare. See who has each quest and how far everyone has progressed.",
+              "All party quests appear by default. Check Hide quests I don't have to focus on quests in your own journal.",
+              "Request shareable quests from party members using the updated addon. Requests ask permission by default; automatic sharing is an optional setting.",
+              "Comparisons recover after map or combat restrictions. Refreshes replace older replies, and request cooldowns and failures explain when you can try again."
+            ]
+          },
+          {
+            "title": "Shortcuts and quest menus",
+            "items": [
+              "Drag the scroll-shaped minimap button to reposition it. Its menu opens settings, comparisons, the quest journal, patch notes, and the log-window destination control. Hide it from the menu and restore it in Miscellaneous settings.",
+              "Quest-name menus offer Status, Share, Open in Quest Journal, and Compare Party Quests. Sharing and journal actions recheck the current quest and restrictions when clicked.",
+              "Quest status links keep their titles intact after a quest leaves your log. The automatic-sharing checkbox now follows saved settings and profile changes."
+            ]
+          },
+          {
+            "title": "Help and latest notes",
+            "items": [
+              "Read the welcome and latest patch notes in their own window instead of repeated chat messages. Choose Patch Notes from the minimap menu or main Settings page, or use /qt notes, /qt changelog, or /qt patchnotes.",
+              "The notes window opens automatically for major and minor upgrades. Patch updates still include fresh notes without opening the window automatically.",
+              "Use /qt help for normal commands and /qt help debug for previews, diagnostics, and developer commands."
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

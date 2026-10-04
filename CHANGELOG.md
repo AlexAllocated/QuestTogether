@@ -1,270 +1,268 @@
-# QuestTogether changelog
+# QuestTogether — Changelog
 
-## 5.16.6 — 2026-10-02
+<!-- Generated from canonical release notes; do not edit by hand. -->
 
-- Give the minimap button the same pulsing gold logo glow as player nameplates while Looking for Questing Partners is enabled. The glow follows status and visibility changes without changing the button or logo size.
+[Other languages](changelogs/README.md)
 
-## 5.16.5 — 2026-10-02
+## 5.16.6
 
-- Shorten announcements for party members without the addon to the [QT] prefix, preserving message limits and UTF-8 boundaries.
+Read the same QuestTogether release notes in-game, on Discord, and in your preferred language in the changelog files.
 
-## 5.16.4 — 2026-10-01
+### Consistent, multilingual changelogs
 
-- Keep QT bubble size, duration, and position when closing HUD Edit Mode; native exit cleanup no longer acts as a request to undo QT settings.
-- Prioritize the closest players at the 128-dot display limit and retain closer players when the 512-location cache fills, without increasing communication traffic.
+- The English changelog now shares the same release summaries and bullet points as the welcome window and Discord announcements.
+- Changelog files are available for all supported locales, with existing translated release history and a preserved copy of the older handwritten English notes.
+- Release checks keep the changelog files synchronized with the canonical notes and translations.
 
-- Give the QT bubble Edit Mode panel its own Save Changes button and saved-state explanation. Preserve immediate saving, and make Revert restore the last explicitly saved font size, duration, and position after further edits.
+## 5.16.5
 
-## 5.16.3 — 2026-09-30
+A shorter prefix keeps party announcements compact.
 
-- Expand Quick Status with linked sections for partner availability, location sharing, request approvals, announcements, and nameplates. Show addon state, installed version, and detected updates, with layout that grows to fit translations.
+### Compact party announcements
 
-- Replace Miscellaneous with Groups & Sharing for finding partners, join requests, and quest-sharing approval. Move celebration emotes to Where to Announce and minimap visibility to General on the main settings page.
-- Prioritize Compare Party Quests and Find Questing Partners on the home page, and group Debug Window and Rescan Quest Log under Troubleshooting. Preserve existing profile preferences.
+- Quest progress posted to party members without QuestTogether now starts with [QT] instead of [QuestTogether].
+- Announcements still respect the chat message limit and preserve complete characters in every language.
 
-## 5.16.2 — 2026-09-30
+## 5.16.4
 
-- Add a QT logo and questing-partner status beside built-in player tooltips, with the same animated LFG glow as nameplates. Match tooltip width and scale, and keep clear of the health bar.
-- Increase the nameplate glow's reach from two to four pixels.
+Keep your bubble settings when leaving Edit Mode and find nearby questing companions on crowded maps.
 
-## 5.16.1 — 2026-09-29
+### Bubble settings stay saved
 
-- Make LFG nameplate logos easier to spot with a brighter gold contour glow that gently pulses.
+- Closing HUD Edit Mode now preserves your QT bubble font size, display duration, and position instead of reverting them.
+- The QT bubble panel now has its own Save Changes button and saved-state message. Settings apply automatically; Save Changes sets the point that Revert Changes returns to.
+- After saving and making further adjustments, Revert Changes restores your last saved QT settings.
 
-- Show a questing partner’s super-tracked quest in map and minimap dot tooltips, using the viewer’s localized quest title when available. Share only while looking for questing partners and location sharing are enabled; preserve compatibility with older QT versions.
+### Nearby players get priority
 
-## 5.16.0 — 2026-09-29
+- When more than 128 eligible dots compete for space on the map or minimap, the closest players get priority based on distance from your character.
+- When the 512-location cache fills, closer players are retained ahead of more distant arrivals. Map panning and zooming do not change proximity priority.
+- These changes keep the existing dot and cache limits without sending additional communication messages.
 
-- Render supported cross-language quest events in the receiver's language, with local quest titles when available and sender-owned objective counts, percentages, or completion states. Preserve original messages for older QT versions and unavailable structured data; public party chat remains in the sender's language.
-- Use localized objective numbers when a safe translated description cannot be established, avoiding incorrect quest-stage labels or the receiver's own progress. Bound native title loading and cache entries, and respect restricted states.
-- Add Italian, Korean, Simplified Chinese, and Traditional Chinese UI and patch-note translations, and give Latin American Spanish its own catalog instead of sharing European Spanish. Match WoW’s nine languages across eleven native text locales, including English. Extend release validation and Discord changelog routing to all ten non-English catalogs.
-- Keep localized quest titles clickable with non-ASCII punctuation and prefer local titles in quest comparison.
+## 5.16.3
 
-## 5.15.0 — 2026-09-29
+Find the settings you need more easily and see your QuestTogether preferences at a glance.
 
-- Add Request to Join to QT player menus when fresh metadata identifies a grouped player. Solo and older peers retain Invite. Requests ask the recipient to send a normal WoW invitation; they never leave a group or automatically accept an invite.
-- Add off-by-default automatic approval for character friends and for other requesters while Looking for Questing Partners is on. Both controls appear in the consent prompt and Miscellaneous settings, with all five translations.
-- Recheck invite permissions, party membership, room, ignores and restrictions at approval. Expire requests, bound queues and replay history, reserve outstanding invitation slots, and fall back to manual consent after a failed automatic call. Limit unchanged party metadata to one update per minute, with transition and failure pacing.
+### Settings organized around how you play
 
-## 5.14.1 — 2026-09-29
+- Groups & Sharing replaces Miscellaneous, bringing partner availability, join requests, and quest-sharing approvals together.
+- Celebration emotes now live under Where to Announce. Minimap visibility is under General on the main page, with debug tools and quest-log rescanning together under Troubleshooting.
+- Compare Party Quests and Find Questing Partners are now the first Quick Actions. Your existing preferences are preserved.
 
-- Expand the party-chat prefix to [QuestTogether] so other players can identify the addon. Preserve the message byte limit and UTF-8 boundaries with the longer prefix.
+### A more useful Quick Status
 
-## 5.14.0 — 2026-09-28
+- See your partner status, location sharing and display preferences, request approvals, announcement output, and quest and player nameplate settings in linked sections.
+- Check your active profile, installed version, and any detected newer version. When QT is disabled, the summary clearly identifies the settings as saved preferences.
+- Click a section heading to open its settings. The summary grows to fit its text and stays current while the page is open.
 
-- Add German, French, Spanish (both client locales), Brazilian Portuguese, and Russian interface translations with English fallback. Translate locally generated labels while preserving incoming player text.
-- Translate in-game patch notes from the same reviewed sources used by the five localized Discord changelog channels. Block stale or incomplete translations at release time; preserve canonical quest states, commands, and communication identifiers.
+## 5.16.2
 
-- Add an enabled-by-default Where to Announce option to post your enabled event announcements in party chat when at least one current party member has not been recognized as a QT user. Use instance-party chat for matched parties; skip raids and solo play. Received events are never relayed, and chat-restricted messages are not queued for later.
+Recognize QuestTogether players from their tooltips and spot questing partners more easily.
 
-## 5.13.1 — 2026-09-28
+### QuestTogether player tooltips
 
-- Preserve negative quest-tooltip retry budgets during restricted option refreshes, so quest icons and tint recover when the map or other restriction closes.
+- Hover a QT player’s character, nameplate, or unit frame to see “This player is using QuestTogether.” Players looking for questing partners also show that status and a glowing QT logo.
+- The QT section matches the tooltip’s width and scale, sits clear of its health bar, and moves above the tooltip when space below is limited.
 
-- Apply the shared restriction policy to cached NPC quest-plate presentation, preserving safe deferred recovery and ordinary open-world combat behavior.
-- Preserve delayed quest-tooltip refreshes when combat or other restrictions end, so stale completion data cannot consume the later corrective scan. Vendor libchev 1.2.2.
-- Keep world-entry lifecycle handling active while QuestTogether is disabled, restoring map locations and presence correctly after disabling, zoning, and re-enabling.
-- Prevent location and partner-status withdrawals from restoring a departed player's QT logo, while retaining recognition for active players who turn location sharing or partner status off.
-- Keep the Miscellaneous Looking for Questing Partners checkbox synchronized with saved settings and changes from other controls.
-- Strengthen regression fixtures to detect forbidden access even when production catches the error; cover actual bootstrap events, departure message order, cached restriction paths, and early timer flushing.
+### A more visible partner glow
 
-- Clean up accessible announcement bubbles during combat plate removal/recycling; retain guarded deferred cleanup for protected and forbidden frames.
-- Recover interrupted debug-window drag and resize gestures after restrictions lift, including hidden windows.
-- Reject releases with staged, unstaged, or untracked implementation changes before contacting the remote or changing files.
-- Strengthen minimap geometry and nameplate overlay fixtures with persistent forbidden-access counters.
+- The gold nameplate glow now reaches twice as far around the logo while keeping the logo itself the same size.
+- Icons and glows reflect real QT users and their current partner-seeking status.
 
-Validation: 763 addon tests pass in both orders on Lua 5.1/5.2; all six client profiles, Retail/Forever geometry, 62 release-tooling tests, Lua syntax, generated notes, and exact private-library checks pass. Libchev has 102 passing checks in both orders on both interpreters and 24 passing vendor tests. New failure reproductions cover combat plate reuse, blocked gesture cancellation, forbidden-access attempts, and actual release publication to temporary local remotes. Native rendering and taint behavior remain live-client checks.
+## 5.16.1
 
-## 5.13.0 — 2026-09-28
+Find questing partners more easily and see which quest they are focusing on.
 
-- Detect newer stable addon releases from validated peer version announcements and existing ping replies. Save the highest observed update account-wide, notify once when first detected and once on each reload, and clear it after installing that release or newer. Alpha/beta builds do not prompt updates; announcements reuse the existing update loop, send only the installed version, and are limited to one every five minutes after success.
-- Highlight players looking for questing partners with larger gold-glowing map/minimap dots and a soft gold glow on their QT nameplate logo. Keep class colors and existing logo spacing, and clear highlights when partner status ends or expires.
-- Add an off-by-default “Only show players looking for questing partners” filter for both maps.
-- Consolidate map/minimap settings into “Share my location” and “Show other players,” each applying to both maps. Migrate existing profiles while preserving any prior sharing opt-out; retain older peers' per-map sharing permissions.
-- Add side-by-side regular/glowing logo and map-dot examples to What's New. Remove all temporary all-friendly-player and forced-dot previews; only recognized QT players get logos, and only active LFG players get gold glows.
+### A brighter partner glow
 
-Validation: 746 addon tests pass in normal and reverse order on Lua 5.1/5.2, along with all six client profiles, Retail/Forever geometry checks, 60 release-tooling tests, all Lua syntax checks, generated notes and exact libchev verification. Both glow styles were approved in-game; the new patch-note examples, update reminders, two-client behavior and engine-level taint checks remain separate live-client validation.
+- Players looking for questing partners now have a brighter gold glow around their QT nameplate logo, with a gentle breathing pulse. The logo itself stays steady.
 
-## 5.12.0 — 2026-09-28
+### See their current quest
 
-- Move left-positioned player logos outside visible nameplate buffs, with padding for the buff artwork and scale. Restore normal spacing when buffs disappear. Refresh through guarded, coalesced aura events without reading aura contents or modifying Blizzard frames.
-- Fix friendly player logos checking an obsolete nameplate setting on current Forever and Retail. Prefer the current friendly-player setting, with guarded fallback for older clients.
-- Recognize QT users from every supported validated addon message, including map updates, comparison traffic and share requests/replies. Remember up to 512 players for the current UI session so missed heartbeats do not hide their logos; still clear explicit departures, ignored players and comms resets. Recognition adds no traffic and does not extend map or partner-status freshness.
+- Hover the map or minimap dot of a player looking for questing partners to see their super-tracked quest—the single quest selected for navigation. Both players need this update.
+- Quest information refreshes about every 20 seconds. It is shared only while Looking for Questing Partners and location sharing are enabled.
+- Quest names use your client language when available, with the sender’s title or quest ID as a fallback. Older QT versions keep their existing dots and partner indicators.
 
-- Add an opt-in Looking for Questing Partners status, saved per profile. Toggle it through `/qt lfg [on|off|toggle|status]`, the minimap menu, or Miscellaneous settings. Show current status on player menus and map-dot tooltips without enabling location sharing or sending invites.
-- Send a separate bounded partner-status heartbeat while retaining legacy player presence. Expire stale status independently, clear departures/ignored players, and repeat withdrawals after missed messages.
-- Reduce dot flicker by retaining last reported positions through temporary read/restriction gaps and expiring them after 120 seconds. Keep stationary heartbeats at 20 seconds for compatibility; reduce moving broadcasts from every 5 seconds to every 10. Sharing opt-outs still withdraw immediately and retry until prior points expire.
-- Increase the bounded location cache from 128 to 512 players and count the renderer's 128-dot limit after projection, so off-map players cannot starve visible dots. Keep later dots interactive and show the age of reports at least 30 seconds old.
-- Order partner-status packets by session and sequence so delayed channel copies cannot revive a withdrawn status. Keep default-Off users quiet, bound withdrawal retries, and process rapid departure/rejoin transitions.
-- Keep the minimap tooltip on an independent addon-owned tooltip layer, with guarded visibility and quarantine recovery.
-- Separate Forever identity and location behavior from Retail War Mode: omit realm/War Mode labels, preserve full regional names, and remove the War Mode requirement for nearby Forever announcements. Preserve map dots across phases. Retail reports actual active War Mode and keeps unknown information distinct from Off.
+## 5.16.0
 
-Validation: 711 addon tests pass in normal and reverse order on Lua 5.1 and 5.2, along with all six API profiles, Retail/Forever geometry probes, 59 release-tooling tests, all 45 Lua syntax checks, generated notes and exact libchev verification. The user confirmed player-logo rendering and final buff spacing in Forever; the temporary all-friendly-player override is removed. Broader two-client behavior and engine-level taint validation remain separate live-client checks.
+QuestTogether now supports every WoW language and can display other players’ quest updates in your client’s language.
 
-## 5.11.0 — 2026-09-27
+### Play in more languages
 
-- Generate release notes once during release preparation and reuse the same welcome and bullet points in the addon and Discord. Add a preparation workflow that opens a notes review PR, and publish changelog embeds as the Bumblebee bot to QuestTogether's Discord only after a published release has its download and passing checks. Retried announcements skip already posted parts.
-- Preserve unavailable leading tooltip boundaries so another quest's matching objective text cannot create a false quest plate or positive GUID cache. Keep readable unit-header and titleless tooltip compatibility.
-- Clear QT player logos when a departure arrives after presence expiry but before pruning, with existing guarded cleanup for inaccessible frames. Show the owner of an outstanding share request after switching comparison targets instead of leaving an enabled action that silently does nothing.
-- Retry map and minimap permission withdrawals independently after partial route failures. Gate chat-destination changes from Settings during restrictions, and check native map-return accessibility before inspecting fields.
-- Make forbidden-access regression fixtures record attempts outside caught errors; repair the stale-token-cache fixture to exercise the active cache.
+- Menus, settings, and patch notes now support all WoW language locales: English, German, French, European Spanish, Latin American Spanish, Brazilian Portuguese, Russian, Italian, Korean, Simplified Chinese, and Traditional Chinese.
+- Latin American Spanish now has its own text instead of sharing European Spanish.
 
-- Add scroll-logo icons beside friendly QuestTogether player nameplates. Player Plates settings have an independent enabled toggle and Left (default), Right, Top and Prefix positions, with a matching preview. Give the logo a four-pixel gap beside bars or name text; leave quest-icon spacing unchanged. Player icons never tint health bars and honor native friendly-nameplate visibility, ignore state and the existing open-world restriction policy.
-- Announce lightweight player presence independently of location sharing. Expire inactive peers, clear departed/ignored players, and reuse the existing addon-owned icon pool and deferred cleanup. Recover delayed player names and queued health updates without entering quest detection.
-- Add class-colored player dots to the world map and minimap. Hover for name, faction, race, class and level; click for the QT player menu. Four independent sharing/viewing switches live under Player Locations and all start enabled.
-- Send bounded, versioned location updates using authenticated transport identity. Expire old locations, honor each sender's display choices, withdraw unavailable locations, and omit announcement/ping coordinates when both sharing switches are off. Use addon-owned map overlays and tooltips with guarded native geometry and deferred cleanup.
-- Change the player menu's Compare Quests action to compare only you and the selected player, including nonparty peers on the QT channel. Keep whole-party comparisons in the minimap and quest-name menus. Native sharing and share requests remain party-only.
-- Explicitly suppress ignored players' new logs, bubbles and dots. Ignore changes clear existing bubbles and locations and cancel pending comparison/share work.
-- Add Discord — Feedback & Support buttons to the welcome window and main Settings page, opening a copyable permanent invite. Close the welcome window after the link window opens successfully.
-- Apply the shared nameplate work policy to direct player-logo refreshes. Defer map and noncombat restrictions, cancel removed-token work, and preserve unprotected open-world combat presentation.
-- Fix Whisper from map/minimap dots in instant-messenger chat mode by validating the native chat destination; report failed native calls accurately.
-- Retry location withdrawals every five seconds while the last published point can remain visible, covering partial-route failure without retrying beyond its expiry. Correct failed-send test delivery and isolate each simulated receiver's duplicate cache.
-- Make forbidden-frame regression probes record attempted reads outside caught-error boundaries. Offline mutation checks now reject removed access guards.
+### Localized quest progress
 
-Validation: 664 addon tests pass in normal and reverse order on Lua 5.1 and 5.2. All six API profiles, Retail/Forever geometry probes, release-tooling tests, Lua syntax, generated notes, exact libchev verification and diff checks pass. The five additional review findings and the obsolete cache fixture are repaired; native map-return and Settings guards are hardened. Unsafe map and welcome-label mutations now fail their regression tests. Real note generation, Discord bot/channel permissions and published ZIP note matching were checked without posting an announcement. Native rendering, map/minimap alignment, player-logo placement, two-client delivery and engine-level taint behavior still require checks in Retail and Forever.
+- Supported quest events from updated QT players can appear in your client language in QT chat logs and bubbles, using local quest titles when available and the sender’s actual progress numbers.
+- When a translated objective description cannot be chosen safely, QT uses a localized objective number with counts, percentages, completion, or progress status instead.
+- Older QT versions and public party chat retain the sender’s wording. When WoW cannot supply a local quest title, QT keeps the source title or shows the quest ID. Same-language events keep their detailed native wording.
 
-## 5.10.0 — 2026-09-27
+### Quest title polish
 
-- Replace the chat welcome with an addon-owned welcome and patch notes window, with the scroll logo above the welcome heading. Show it once on first use and on major/minor upgrades, across characters and profiles; patch upgrades stay quiet. Reopen it with `/qt notes`, `/qt changelog`, `/qt patchnotes`, Patch Notes in the minimap menu, or the main Settings screen.
-- Require current, regenerated in-game notes for every release. CI and the release script validate the version, generated data and changed content against the previous release; document the workflow in `RELEASING.md`.
-- Fix quest Status links taking the full chat line as a fallback title, which duplicated closing brackets and announcement text after a quest was removed. Match the clicked quest link and recover titles from older malformed status lines.
+- Quest comparison now prefers your local quest title when available.
+- Localized quest titles with non-ASCII punctuation stay clickable more reliably.
 
-- Add a draggable minimap button using the SVG scroll emblem. Left- or right-click for Settings, Compare Party Quests, Open Quest Journal, Patch Notes and the shared log-window destination action. Position and visibility are saved per profile. Use Hide Minimap Icon in its menu or Show minimap icon in Miscellaneous settings; the shortcut prints instructions for restoring it.
-- Keep `/qt help` focused on normal commands; show debugging and developer commands with `/qt help debug`.
-- Recover compare snapshots after map/combat restrictions, preserve sessions when the game UI hides, and replace obsolete peer replies during rapid refreshes. Synchronize the automatic-sharing setting, explain request cooldowns/rejections, and keep terminal feedback visible beside retry actions.
+## 5.15.0
 
-- `/qt compare debug` opens the full compare window with a realistic three-player party, 16 quests, overlapping progress and simulated actions. Filters and Refresh work without sending messages, sharing real quests or changing saved settings.
-- Compare Party Quests in the minimap, player-name and quest-name menus opens Party Quest Compare, styled to match the WoW artwork in the debug window, with ownership and completion columns and Share buttons. All party quests appear by default; checking “Hide quests I don't have” limits the list to your quests. Also available with `/qt compare`.
-- Request shareable quests from party members using the updated addon. Incoming requests ask by default, with an “Always allow party share requests” checkbox and a matching Miscellaneous setting. Requests expire and eligibility is checked again before sharing.
+Ask to join a questing party directly from a QuestTogether player menu.
 
-Add Open in Quest Journal to the quest-name menu after Share. It opens the selected quest's journal details, remains available while solo, and explains when a quest is not in your journal. Recheck the quest and restrictions on click without queueing delayed journal actions.
+### Join a questing party
 
-Validation: 595 addon tests pass in normal and reverse order on Lua 5.1 and 5.2, along with all six client API profiles and 20 release-tooling tests. Generated notes, Lua and shell syntax, exact libchev verification, and diff checks pass. Native sharing, recipient eligibility, final window rendering, and engine-level taint behavior require separate live-client validation.
+- Grouped QT players now show Request to Join instead of Invite when recent party information is available. Both players need this update; the requester must be solo.
+- The recipient can send a normal WoW invitation or decline. They must have invitation permission and room in an ordinary party. You still accept the normal invitation to join.
 
-## 5.9.2 — 2026-09-27
+### Optional automatic invitations
 
-Left- or right-click a quest name in the QuestTogether log to open its menu, with Status first and Share second. Share uses the current quest-log entry without changing Blizzard's selected quest, and is unavailable when solo, restricted, or the quest cannot be shared. After a separator, the final option moves QuestTogether logs between the main and separate windows, matching QT's player-name menu.
+- Two new options automatically approve requests from character friends, or from other players while you are Looking for Questing Partners. Both start off and appear in the prompt and Miscellaneous settings. Battle.net account friends are not included.
+- Requests expire and respect ignores, party changes, and game restrictions. QT never leaves your current group or accepts invitations for you.
 
-Make quest names in status messages clickable, including fallback titles from other players' logs. Preserve existing quest links when formatting completed quest comparisons so status details do not become part of a second, broken link.
+## 5.14.1
 
-Validation: 521 tests pass in normal and reverse order on Lua 5.1 and 5.2. All six client API profiles, Lua and shell syntax checks, exact libchev verification, and diff checks pass. Live-client menu behavior, quest-share delivery, and engine-level taint validation remain separate.
+Party announcements now show the full QuestTogether name.
 
-## 5.9.1 — 2026-09-27
+### Party chat
 
-Keep shared objective wording from reopening an unrelated raw tooltip quest block. Later owned quest titles, party progress and genuinely titleless sources still work.
+- Expanded the party-chat announcement prefix from [QT] to [QuestTogether], making it easier for other players to find the addon.
 
-Preserve unknown task location flags without announcing false exits or re-entries. Explicit false and real quest removal remain authoritative; fresh acceptance resets retained observations, while duplicate acceptance preserves the current task lifetime.
+## 5.14.0
 
-Honor native waypoint rejection before tracking a pin. Disabled, restricted clicks are declined rather than queued without a wakeup; unrestricted clicks still work while disabled. Coordinate links report immediate failures.
+QuestTogether now speaks five more languages and helps you keep party members without QT informed.
 
-Accept full Forever player names and quoted names in local bubble previews. Correct preview/debug instructions, native API test return values, forbidden-read assertions and restriction/deferral test timing. Make the CI syntax step propagate compiler failures.
+### Play in your language
 
-Keep newly accepted quests pending until a real quest-log update supplies the matching row. Retry unreadable data without losing the acceptance, and cancel pending work when a quest is removed. Treat Classic's failed completion value (`-1`) as incomplete and preserve an explicit modern incomplete result.
+- The interface is now available in German, French, Spanish, Brazilian Portuguese, and Russian. QuestTogether follows your game language, with English as the fallback.
+- Settings, menus, tooltips, quest comparisons, and patch notes are translated. Quest names and progress text received from other players stay in their original language.
+- Find translated release announcements in the five language-specific changelog channels on our Discord.
 
-Retain the last usable objective observation across missing rows and quest-log rescans so the next new milestone still announces. Preserve stage-change and replay suppression, and start fresh history when a quest is accepted again.
+### Keep your whole party informed
 
-Invalidate cached nameplate relevance when quest state changes, including during combat. Stop tooltip objective matching at every new quest-title block, and reparent reused announcement bubbles to their current nameplate. Resume map-blocked work when the map closes while preserving combat, encounter and other restrictions.
+- A new Where to Announce option sends your enabled event announcements to party chat when someone in your party has not been recognized as a QT user. It starts enabled and can be turned off in settings.
+- This also works in matched instance parties. Solo play and raids are excluded, and other players’ announcements are never relayed.
 
-Keep untyped tooltip quest blocks separate while retaining recognized party progress. Preserve incomplete-data signals from hidden tooltips and Questie so unreadable objectives cannot mark an entire mob type completed.
+## 5.13.1
 
-Retry disabled nameplate cleanup only for the handles that could not be hidden; new icon, tint and bubble presentations cancel their previous cleanup. Invalidate party-dependent quest relevance on actual roster changes, require a readable live GUID for cached relevance, and prevent explicit unrelated quest titles from borrowing another quest's objective text.
+This maintenance update improves quest-plate recovery, clears stale bubbles and player logos, and keeps settings and the debug window behaving consistently.
 
-Treat a missing progress-bar percentage as unknown even when its separate objective counter remains readable. Complete authoritative turn-ins that arrive before initial quest tracking becomes readable. Share the latest confirmed bonus-objective classification between snapshot and area readers, preserving unknown reads without overriding an explicit false or carrying classification into a new quest lifetime.
+### Quest plates and player indicators
 
-Resolve newly accepted tasks from current metadata before discarding hidden rows or announcing ordinary acceptance. Preserve confirmed world-quest classification through temporarily unavailable reads, and carry captured world, bonus or ordinary quest types into late completion announcements.
+- Quest icons and health tints recover correctly after restricted views close. Delayed quest scans retain their settling time, and temporarily missing tooltip data keeps its retry budget.
+- Announcement bubbles are cleaned up when a player plate disappears or is reused during combat. Protected or forbidden frames wait for safe cleanup.
+- Map locations and player presence recover after disabling QuestTogether, changing zones, and enabling it again. Departed players no longer regain a QT logo from late location or partner-status withdrawals.
 
-Rebuild quest text cleared inside instances when returning outdoors, using the existing restricted-work scheduler. Coalesce exit events and cancel obsolete recovery work when disabled.
+### Settings and window fixes
 
-Keep localized announcement and presence metadata within the wire limit without losing sender identity. Pace quest comparison responses, retry transport failures, and stop canceled or expired replies without reporting incomplete data as a finished comparison. Wait through known restrictions without consuming failed-read retries. Preserve Yes, No and Unknown shareability through comparison messages.
+- The Looking for Questing Partners checkbox stays synchronized when status changes through commands, menus, or profile settings.
+- The debug window safely finishes interrupted drag and resize gestures when restrictions lift, even after it has been hidden.
 
-Include an optional map ID in announcements so nearby detection compares the same coordinate system across locales, retaining the zone-label fallback for older peers. Keep numeric location when a long zone label cannot fit. Make `/qt bubbletest` a local preview of the selected visible player, with no network impersonation or transport dependency.
+### Reliability improvements
 
-Accept only approved celebration emotes from nearby players, with guarded mounted and faction-specific handling. Open HUD Edit Mode through Blizzard's eligible panel-opening path and report success only when its manager is visible.
+- Strengthened tests detect forbidden frame access even when an error is caught internally.
+- Release checks now refuse to publish while implementation changes remain uncommitted, helping ensure fixes actually reach the download.
 
-Apply `/qt set enabled on|off` through the normal enable/disable lifecycle. Deleting another character's assigned profile now clears its assignment without immediately recreating the deleted profile; the character's default is resolved on its next login.
+## 5.13.0
 
-Correct the test harness to preserve live addon state and use private frame, API and timer fixtures. Load the same regression modules offline and in-game, including nameplate discovery tests. Add regressions for real quest-log event sequencing, inherited bubble visibility, first-time combat discovery, map recovery, legacy completion and localized or interrupted communications.
+Find questing partners at a glance with highlighted map dots and player logos, simpler location settings, and reminders when another player has a newer stable QuestTogether release.
 
-Avoid division by zero in the live invalid-level test, which Forever rejects before the addon handler runs. Keep NaN rejection coverage in the offline client contracts.
+### Spot questing partners
 
-Preserve typed quest-title boundaries when the title text is unreadable, so a following objective cannot borrow an unrelated tracked quest's title. Keep independently readable positive evidence and prevent incomplete tooltip data from establishing completion.
+- Players looking for questing partners have a soft gold glow around their class-colored map and minimap dots.
+- Their QuestTogether nameplate logo gets a soft gold glow. Highlights disappear when the status is turned off or expires.
+- Player Locations settings includes Only show players looking for questing partners. It starts off and filters both maps when enabled.
+- The in-game What's New window shows regular and glowing logos and map dots side by side. Gold glow means looking for questing partners.
 
-Retry an unreadable initial quest scan on a later quest-log event through the existing restricted-work scheduler. Keep pending acceptances in control of their own tracking, preserve area-entry announcements as task metadata recovers, and cancel obsolete recovery work on disable.
+### Simpler location settings
 
-Read the Chat restriction enum in diagnostics without adding it to general quest or UI restriction gates. Exercise the actual reader and report against supported, unavailable and inaccessible API results in offline client contracts.
+- Share my location and Show other players each apply to both the world map and minimap.
+- Both options start enabled for new profiles. Existing location-sharing opt-outs are preserved when upgrading.
 
-Validation: 516 tests pass in normal and reverse order on Lua 5.1 and 5.2. All six client API profiles, Lua and shell syntax, exact library verification and diff checks pass. Repaired tests reject deliberately inserted forbidden reads and restriction bypasses. Offline tripwires detect accidental engine frame, timer, hook, restriction, tap, Questie, addon loader or native panel calls from live-test fixtures. Live-client rendering, two-client delivery and engine-level taint validation remain separate from these checks.
+### New-version reminders
 
-## 5.9.0 — 2026-09-26
+- QuestTogether notices when another player reports a newer stable addon version and prints an update reminder in your chosen QuestTogether chat window.
+- The reminder is saved across characters and appears once each reload until you install the detected release or a newer one. Alpha and beta versions do not trigger reminders.
+- Version announcements are small and infrequent. QuestTogether also recognizes version information in existing ping replies.
 
-Celebrate your own and nearby QuestTogether players' level-ups with synchronized emotes. Add separate, enabled-by-default level-up emote toggles beside the quest completion emote settings in Miscellaneous. Nearby reactions respect the existing player scope and proximity rules.
+## 5.12.0
 
-Remember confirmed quest-objective completion by creature type as well as individual spawn. Mobs that appear during combat stay unmarked when tooltip data is unavailable, even if an older spawn was cached as needed. Fresh unfinished objectives can restore highlighting; quest-state changes clear completion memory. Partial or inaccessible tooltip data is never treated as proof that everyone is done.
+Find people to quest with using the new Looking for Questing Partners status. This update also improves minimap tooltip visibility and separates Retail War Mode and realm behavior from Forever.
 
-Clear quest nameplate icons and health tint immediately when a mob's tap is denied, including during combat. Listen for ownership changes and recheck taps on health and threat updates.
+### Looking for Questing Partners
 
-Detect newly encountered quest mobs during ordinary open-world combat using readable unit tooltip data. Refresh plates when they return from behind the camera, become your target, or are moused over. Retry delayed frames, GUIDs and tooltip quest lines with a bounded per-unit budget, cancel stale work when units are removed, and restore tint and icon together. Preserve map, instance, inaccessible-data and protected-frame guards; combat discovery does not invoke Questie or hidden tooltip UI.
+- Let other QuestTogether users know you want company. Your status appears in your player menu and on map-dot tooltips; it does not enable location sharing or send invitations.
+- Toggle the status from the minimap menu, Settings > Miscellaneous, or /qt lfg. Use /qt lfg on, off, or status to set or check it. It starts off and is saved per profile.
+- Partner status expires when updates stop. Ignored players are excluded, and disabling QuestTogether pauses your advertisement.
 
-Validation: 374 offline tests pass in normal and reverse order on Lua 5.1 and 5.2. Six client API profiles, Lua syntax checks, exact library verification and diff checks pass. Completion-cache regressions reproduced the bug before the fix. Live gameplay and engine-level taint validation remain separate.
+### Retail and Forever
 
-## 5.8.6 — 2026-09-25
+- Forever no longer shows War Mode in player-dot tooltips, quest location details, or ping output. Forever pings also omit realm labels while preserving complete player names.
+- Nearby quest updates on Forever no longer require Retail War Mode information. Map dots remain visible across phases so you can find people to group with.
+- Retail uses the active War Mode state when available. Unknown or unsupported War Mode is no longer reported as Off.
 
-Harden character names, class names, quest titles and custom class colors against inaccessible or malformed API values. Validate optional TomTom and Questie integration data before using it, and stop reading Questie tooltip lines at inaccessible data. Normalize bubble visibility and edit-mode state to booleans before passing them to UI controls.
+### More stable player dots
 
-Consolidate the loading-screen event handler, remove unused private arguments and an unused restriction-enum branch, and clarify callback and return-value handling. Keep modern/legacy client fallbacks and the exact private library revision intact.
+- Briefly missing coordinates no longer remove your dot immediately. Last reported positions remain for up to two minutes, and older reports show their age in the tooltip. Sharing opt-outs still withdraw immediately when communication is available.
+- Movement broadcasts are limited to once every ten seconds, reducing location traffic. Stationary heartbeats remain every twenty seconds so older clients stay compatible.
+- The location cache now retains up to 512 players. Each map still draws at most 128 visible dots, and players outside the displayed map no longer use up that drawing limit.
 
-Validation: 336 tests pass in normal and reverse order on Lua 5.1 and 5.2, with expanded adapter checks across six client profiles. New regressions fail against the previous implementation. Lua parsing, exact library verification and diff checks pass. Reviewed the remaining Ketho WoW API/LuaLS diagnostics, including a separate pass without offline client mocks; retained findings have specific compatibility, guard, callback, library or fixture reasons. Live Retail and Forever gameplay validation remains separate.
+### Reliable player logos
 
-## 5.8.5 — 2026-09-25
+- Fix missing logos on friendly player nameplates in current Forever and Retail clients by reading the current friendly-player visibility setting.
+- Left-positioned logos move outward to make room for visible buffs, then return to their usual position when the buffs disappear.
+- All supported QuestTogether messages now identify their sender. A bounded cache remembers players for the current UI session, so missed heartbeats no longer remove their logos. Explicit departures and ignored players are still cleared; no extra messages are sent.
 
-Fix task/world-quest map discovery on modern clients by reading `questID` from `C_TaskQuest.GetQuestsOnMap`, while retaining the legacy API and `questId` field for older clients. Prefer `C_ChatInfo.PerformEmote` so completion emotes work when deprecated globals are disabled; safely handle missing or failing emote APIs.
+### Minimap polish
 
-Remove an unused party-roster fingerprint calculation and unused local variables. Extend offline client checks to cover modern and legacy task/emote APIs, API precedence, inaccessible quest data, and missing/failing APIs. Validation: 334 tests pass in normal and reverse order on Lua 5.1 and 5.2, plus the expanded API checks on six client profiles, Lua parsing and exact library verification. Gameplay validation in Retail and Forever remains separate from offline checks.
+- The QuestTogether minimap tooltip now uses an independent tooltip layer so it can appear over action bar UI. It hides when the button becomes unavailable or restrictions begin.
 
-## 5.8.4 — 2026-09-25
+## 5.11.0
 
-Repository housekeeping: keep local development notes outside the tracked source and release packages. Gameplay behavior is unchanged.
+QuestTogether now adds player locations, player plate logos, focused quest comparisons, and easier Discord feedback and support. Settings let you choose what you share and what you see while quest progress stays coordinated with other QuestTogether users.
 
-## 5.8.3 — 2026-09-24
+### Find QuestTogether players nearby
 
-Announce the installed version, supported clients and settings command once per login or UI reload. Include addon-specific CurseForge and GitHub feedback links; clicking a link opens a native-style copy window. Share message behavior and safe copy UI through private libchev 1.2.0. If link registration or the copy window is unavailable, show the full URL in chat. An unavailable welcome helper cannot interrupt normal addon startup.
+- Show the scroll logo beside friendly QuestTogether players when WoW's friendly nameplates are on. Player Plates are enabled by default, with a padded Left position; choose Left, Right, Top, or Prefix without changing health-bar colors.
+- Class-colored player dots can appear on the world map and minimap for players sharing their location. Hover a dot for name, faction, race, class, and level; click it for the QuestTogether player menu.
+- Player Locations has separate sharing and viewing switches for the world map and minimap, and all four start enabled. Presence for player plate logos can continue even when both location sharing switches are off.
+- Locations refresh periodically and disappear when they expire. Both players need the updated addon; a dot does not guarantee that you share the same phase or layer.
 
-Validation: 334 tests pass in both orders on Lua 5.1 and 5.2, with client API checks, Lua parsing and exact library vendor verification. NoPoizen smoke simulations exercise both feedback links on all seven client/ruleset profiles. Live rendering remains a separate check.
+### Compare one player or the whole party
 
-## 5.8.2 — 2026-09-24
+- The player menu Compare Quests action now compares only you and the selected player, including reachable nonparty QuestTogether peers. Whole-party comparison stays available from the minimap menu, quest-name menus, and /qt compare.
+- Quest sharing and share requests remain party-only. Targeted comparisons explain when a party is needed for sharing and when the selected player needs QuestTogether to respond.
+- If a share request is already waiting on another player, the comparison now shows who it is waiting for after you switch targets.
 
-Isolate test fixture GUID lookups from nearby players. Fix two false failures in `/qt test` when a real unit occupies the nameplate token used by the tooltip and cached-icon checks. Gameplay nameplate behavior is unchanged.
+### Feedback and support
 
-The offline environment now includes that token collision and reproduces both failures without the fixture fix. All 333 tests pass in both orders on Lua 5.1 and 5.2 after the fix; six client API profiles also pass. In-game confirmation remains separate.
+- The welcome window and main settings page now include Discord — Feedback & Support. It opens a copyable invite when available, or prints the invite in chat if the link window cannot open.
 
-## 5.8.1 — 2026-09-24
+### Fixes and polish
 
-Show Blizzard's quest marker beside QuestTogether in the AddOns list instead of the default question mark.
+- Ignored players are now filtered more completely. New logs, bubbles, dots, comparisons, and share work are suppressed, while existing bubbles and locations are cleared when the ignore list changes.
+- Fixed false quest plates caused by unavailable tooltip boundaries matching another quest's objective text.
+- Turning off map or minimap sharing now retries the update after temporary communication failures. Turning off both sharing options also removes location details from other addon updates.
+- Player logos clear correctly when a player's presence expires just before they leave. Whisper from map dots opens your chat window, and changing the log destination from Settings is unavailable during restrictions.
 
-## 5.8.0 — 2026-09-24
+## 5.10.0
 
-Support current Classic clients with correct quest-acceptance payloads, guarded objective API fallbacks, honest unknown shareability, flavor metadata and six-client API regression checks. Preserve Retail/Forever behavior and shared debug utilities.
+QuestTogether shares quest progress with your party and nearby players. Use the minimap button for settings, party quest comparisons, your quest journal, and these latest notes.
 
-Validation: 333 tests pass in both orders on Lua 5.1 and 5.2, with six client profiles, Lua parsing and exact private-library vendor checks. NoPoizen client smoke checks and package verification also pass. Live validation of the new adapters remains pending.
+### Compare and share party quests
 
-See [CLIENT_COMPATIBILITY.md](CLIENT_COMPATIBILITY.md) for source evidence, scope and validation limits.
+- Open Compare Party Quests from the minimap or quest and player menus, or type /qt compare. See who has each quest and how far everyone has progressed.
+- All party quests appear by default. Check Hide quests I don't have to focus on quests in your own journal.
+- Request shareable quests from party members using the updated addon. Requests ask permission by default; automatic sharing is an optional setting.
+- Comparisons recover after map or combat restrictions. Refreshes replace older replies, and request cooldowns and failures explain when you can try again.
 
-## 5.7.7 — 2026-09-24
+### Shortcuts and quest menus
 
-Keep overlapping debug consoles and their controls in one native stacking group through private libchev 1.1.3. Category menus stay with their owning console.
+- Drag the scroll-shaped minimap button to reposition it. Its menu opens settings, comparisons, the quest journal, patch notes, and the log-window destination control. Hide it from the menu and restore it in Miscellaneous settings.
+- Quest-name menus offer Status, Share, Open in Quest Journal, and Compare Party Quests. Sharing and journal actions recheck the current quest and restrictions when clicked.
+- Quest status links keep their titles intact after a quest leaves your log. The automatic-sharing checkbox now follows saved settings and profile changes.
 
-Default quest objective icons to the left of the nameplate. Existing saved icon positions remain unchanged.
+### Help and latest notes
 
-Respect Forever's “My Last Name” setting when displaying your character's name. Keep other players' surnames visible, matching the native setting's scope. Use full names consistently for communications, group membership, nameplate matching, and social actions while preserving existing profile and personal bubble position keys.
+- Read the welcome and latest patch notes in their own window instead of repeated chat messages. Choose Patch Notes from the minimap menu or main Settings page, or use /qt notes, /qt changelog, or /qt patchnotes.
+- The notes window opens automatically for major and minor upgrades. Patch updates still include fresh notes without opening the window automatically.
+- Use /qt help for normal commands and /qt help debug for previews, diagnostics, and developer commands.
 
-Fix duplicate local quest announcements caused by receiving your own channel message under a different full-name format. Regression coverage exercises the local announcement followed by its channel and party echoes, including another character with the same first name.
-
-Validation: 331 tests pass in both orders under Lua 5.1/5.2. Live confirmation of the new icon default and multi-window interaction remains separate.
-
-## 5.7.6 — 2026-09-24
-
-Use the same private libchev 1.1.2 debug console across all three addons, including category/search filters, copy controls, test results, diagnostic reports, timestamps when available, and a single final test summary. Fix stretched native frame artwork with explicit texture bounds.
-
-QuestTogether supplies its own quest diagnostics and isolated tests while the shared library owns the console and generic debug behavior. Run `/qt test`, `/qt debug`, or `/qt diagnostics`.
-
-Validation: 324 tests pass in both orders on Lua 5.1/5.2. The user confirmed the corrected frame appearance in-game. Other live restriction and gameplay validation remains separate.
+[Earlier handwritten changelog](changelogs/legacy-enUS.md)

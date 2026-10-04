@@ -1,7 +1,7 @@
 # Releasing QuestTogether
 
 `release_notes.json` is the canonical source for the in-game welcome, latest
-patch notes, and Discord release announcements. German (`deDE`), French (`frFR`),
+patch notes, Discord release announcements, and repository changelogs. German (`deDE`), French (`frFR`),
 European Spanish (`esES`), Latin American Spanish (`esMX`), Brazilian Portuguese (`ptBR`), Russian (`ruRU`), Italian (`itIT`),
 Korean (`koKR`), Simplified Chinese (`zhCN`), and Traditional Chinese (`zhTW`) translations
 live in `release_notes/<locale>.json`. `ReleaseNotes.lua` and
@@ -28,6 +28,7 @@ For local preparation, with `OPENAI_API_KEY` already in the environment:
 ```sh
 python3 scripts/generate_release_notes.py --write
 python3 scripts/translate_locales.py --notes --write
+python3 scripts/check_release_notes.py --write
 python3 scripts/check_release_notes.py --check
 ```
 
@@ -50,7 +51,7 @@ artifact may still be available after a translation failure; it is not release-r
 
 Authored notes remain supported:
 
-1. Update `CHANGELOG.md` and review or edit the welcome/sections in
+1. Review or edit the welcome/sections in
    `release_notes.json` for the changes being released. Keep its version equal to
    `QuestTogether.toc` while developing; the release script updates all versions
    together. AI generation drafts the prose; reviewing its accuracy is still
@@ -102,6 +103,7 @@ Both preflight and publication reject staged, unstaged or unignored untracked
 changes outside this explicit allowlist:
 
 - `QuestTogether.toc`
+- `CHANGELOG.md`, `changelogs/history.json`, and `changelogs/<locale>.md` for the ten supported non-English locales
 - `release_notes.json`
 - `ReleaseNotes.lua`
 - `LocalizedReleaseNotes.lua`
@@ -211,3 +213,25 @@ the changelog workflow explicitly from that pipeline or use the normal authorize
 release publisher. The current maintainer-driven release publication emits the
 release event. Do not send announcements for uncommitted work or a tag whose
 download/validation is not ready.
+
+## Synchronized repository changelogs
+
+Do not hand-edit `CHANGELOG.md` or `changelogs/<locale>.md`. They are generated
+by `python3 scripts/check_release_notes.py --write` from the exact welcome,
+section titles, and items used by Discord. Update the canonical JSON and all
+translations first. The check mode, release preflight, CI, and Discord posting
+reject missing or stale Markdown. The release-note preparation workflow stages
+and uploads all generated changelogs with its notes.
+
+`changelogs/history.json` preserves the canonical notes from published tags.
+The version-bump step archives the previous version from its reachable Git tag,
+never from the edited draft, and then generates the new entry plus history.
+Version bumps commit the archive and all eleven Markdown files together.
+The original handwritten changelog is retained in `changelogs/legacy-enUS.md`.
+Localized history begins at each locale's first available tagged translation;
+we do not invent historical translations or repost older Discord announcements.
+No network or translation API is needed to regenerate existing changelogs.
+
+Include `CHANGELOG.md` and `changelogs/*.md` in release downloads when packaging
+documentation. The JSON archive is release tooling data, not an addon runtime
+file. Existing published ZIPs and Discord messages remain unchanged.

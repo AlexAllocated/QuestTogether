@@ -1,15 +1,15 @@
 {
-  "source_sha256": "830e7d04582e4c330706dcd4a4beaa5adaf4bc94d2fc3ef413e80a9228407ba6",
+  "source_sha256": "6ecd7531cd9f26e2437ca2654dc34e4d45903b83bb75a926f425c3dcaa588bf5",
   "notes": {
     "version": "5.16.6",
-    "welcome": "Sieh auf einen Blick, wann du nach Questpartnern suchst.",
+    "welcome": "Lies dieselben QuestTogether-Versionshinweise im Spiel, auf Discord und in deiner bevorzugten Sprache in den Changelog-Dateien.",
     "sections": [
       {
-        "title": "Eine leuchtende Minikarten-Erinnerung",
-        "illustration": "quest-partners",
+        "title": "Einheitliche, mehrsprachige Changelogs",
         "items": [
-          "Dein QuestTogether-Minimap-Button pulsiert jetzt mit demselben goldenen Logo-Leuchten wie Spielernamensplaketten, während „Suche nach Questpartnern“ aktiviert ist.",
-          "Das Leuchten folgt deinem Partnerstatus und endet, wenn QT deaktiviert ist oder der Minimap-Button ausgeblendet wird. Dein Button und dein Logo behalten ihre bestehende Größe."
+          "Der englische Changelog enthält jetzt dieselben Zusammenfassungen und Stichpunkte zu Veröffentlichungen wie das Willkommensfenster und die Discord-Ankündigungen.",
+          "Changelog-Dateien sind für alle unterstützten Gebietsschemata verfügbar, mit bereits übersetztem Versionsverlauf und einer erhaltenen Kopie der älteren handgeschriebenen englischen Notizen.",
+          "Release-Prüfungen halten die Changelog-Dateien mit den kanonischen Hinweisen und Übersetzungen synchron."
         ]
       }
     ]

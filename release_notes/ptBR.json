@@ -1,15 +1,15 @@
 {
-  "source_sha256": "830e7d04582e4c330706dcd4a4beaa5adaf4bc94d2fc3ef413e80a9228407ba6",
+  "source_sha256": "6ecd7531cd9f26e2437ca2654dc34e4d45903b83bb75a926f425c3dcaa588bf5",
   "notes": {
     "version": "5.16.6",
-    "welcome": "Veja rapidamente quando você está procurando parceiros para fazer missões.",
+    "welcome": "Leia as mesmas notas de lançamento do QuestTogether dentro do jogo, no Discord e no seu idioma preferido nos arquivos de changelog.",
     "sections": [
       {
-        "title": "Um lembrete brilhante no minimapa",
-        "illustration": "quest-partners",
+        "title": "Changelogs consistentes e multilíngues",
         "items": [
-          "Seu botão do QuestTogether no minimapa agora pulsa com o mesmo brilho dourado do logotipo das placas de nome dos jogadores enquanto Procurando Parceiros para Missões está ativado.",
-          "O brilho acompanha seu status de parceiro e para quando o QT é desativado ou quando o botão do minimapa está oculto. Seu botão e logotipo mantêm o tamanho atual."
+          "O changelog em inglês agora compartilha os mesmos resumos de lançamento e tópicos da janela de boas-vindas e dos anúncios no Discord.",
+          "Os arquivos de changelog estão disponíveis para todos os idiomas compatíveis, com o histórico de lançamentos traduzido existente e uma cópia preservada das notas antigas em inglês escritas manualmente.",
+          "As verificações de lançamento mantêm os arquivos de changelog sincronizados com as notas e traduções canônicas."
         ]
       }
     ]

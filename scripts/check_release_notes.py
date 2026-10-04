@@ -252,6 +252,10 @@ def main(argv=None):
             localized_outputs = release_note_outputs(
                 root, notes, previous_version=previous_version if args.set_version else None)
             outputs.update(localized_outputs)
+        if (root / "scripts/changelogs.py").is_file():
+            from changelogs import outputs as changelog_outputs
+            outputs.update(changelog_outputs(root, notes, outputs,
+                           previous_version=previous_version if args.set_version else None))
         if args.set_version:
             outputs[root / NOTES_FILE] = json.dumps(notes, ensure_ascii=False, indent=2) + "\n"
         if args.write:

@@ -1,15 +1,15 @@
 {
-  "source_sha256": "830e7d04582e4c330706dcd4a4beaa5adaf4bc94d2fc3ef413e80a9228407ba6",
+  "source_sha256": "6ecd7531cd9f26e2437ca2654dc34e4d45903b83bb75a926f425c3dcaa588bf5",
   "notes": {
     "version": "5.16.6",
-    "welcome": "Ve de un vistazo cuando estés buscando compañeros para misiones.",
+    "welcome": "Lee las mismas notas de lanzamiento de QuestTogether dentro del juego, en Discord y en tu idioma preferido en los archivos de registro de cambios.",
     "sections": [
       {
-        "title": "Un recordatorio brillante en el minimapa",
-        "illustration": "quest-partners",
+        "title": "Registros de cambios multilingües y coherentes",
         "items": [
-          "Tu botón de QuestTogether en el minimapa ahora pulsa con el mismo brillo dorado del logo que las placas de nombre de los jugadores mientras Buscar compañeros para misiones está activado.",
-          "El brillo sigue tu estado de compañero y se detiene cuando QT está desactivado o el botón del minimapa está oculto. Tu botón y el logo mantienen su tamaño actual."
+          "El registro de cambios en inglés ahora comparte los mismos resúmenes de lanzamiento y puntos clave que la ventana de bienvenida y los anuncios de Discord.",
+          "Los archivos de registro de cambios están disponibles para todos los idiomas compatibles, con el historial de lanzamientos traducido existente y una copia preservada de las notas antiguas en inglés escritas manualmente.",
+          "Las comprobaciones de lanzamiento mantienen los archivos de registro de cambios sincronizados con las notas canónicas y las traducciones."
         ]
       }
     ]

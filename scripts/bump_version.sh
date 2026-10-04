@@ -57,6 +57,12 @@ if grep -Eq '^[[:space:]]*LocalizedReleaseNotes\.lua[[:space:]]*$' "$toc_file"; 
 		release_files+=("release_notes/${notes_locale}.json")
 	done
 fi
+if [[ -f scripts/changelogs.py ]]; then
+	release_files+=(CHANGELOG.md changelogs/history.json)
+	for notes_locale in deDE frFR esES esMX ptBR ruRU itIT koKR zhCN zhTW; do
+		release_files+=("changelogs/${notes_locale}.md")
+	done
+fi
 python3 - "${release_files[@]}" <<'PY'
 import os
 import subprocess
@@ -77,7 +83,7 @@ if unexpected:
     print("Error: non-release changes must be committed before releasing:", file=sys.stderr)
     for path in sorted(unexpected):
         print("  " + repr(os.fsdecode(path)), file=sys.stderr)
-    print("Only the TOC and declared English/localized release-note files may have local changes.", file=sys.stderr)
+    print("Only declared release-note and generated changelog files may have local changes.", file=sys.stderr)
     sys.exit(1)
 PY
 
