@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 5.17.1
+## 5.17.2
 
 O chat do QT fica mais fácil de distinguir dos anúncios de missões.
 
@@ -10,6 +10,22 @@ O chat do QT fica mais fácil de distinguir dos anúncios de missões.
 
 - Mensagens de jogadores no chat do QT agora usam texto branco no registro de bate-papo e nos balões sobre a cabeça.
 - Os nomes dos jogadores mantêm as cores de suas classes, e os anúncios de missões mantêm o texto amarelo.
+
+## 5.17.1
+
+Veja mais sobre seus companheiros de missões e confira o status da missão diretamente nas dicas de chat.
+
+### Dicas de jogadores mais úteis
+
+- As dicas de nome do jogador e de pontos no mapa agora mostram quantas missões o QuestTogether está monitorando, além de Solo ou Grupo de N. Sua própria dica usa seu estado local atual.
+- A dica do minimapa agora conta as missões monitoradas pelo QuestTogether, correspondendo ao anúncio de inicialização em vez de contar apenas as missões acompanhadas no rastreador do WoW.
+- Contagens de missões remotas e tamanhos de grupo exigem um par atualizado. Elas são atualizadas aproximadamente a cada 80 segundos por meio das mensagens de pulsação existentes, sem mensagens extras; relatórios ausentes ou desatualizados aparecem como desconhecidos. Versões mais antigas continuam recebendo anúncios de versão compatíveis.
+
+### Status da missão ao passar o mouse
+
+- Passe o mouse sobre o nome de uma missão nos registros do QT para ver seu status da missão, se ela pode ser compartilhada, o ID da missão e o progresso dos objetivos rastreados localmente em uma dica ao lado do cursor.
+- O item de menu Status foi removido. Clicar no nome de uma missão ainda abre Compartilhar, Abrir no Diário de Missões, Comparar Missões do Grupo e a ação de destino da janela de registro.
+- Os novos rótulos das dicas estão traduzidos para todos os idiomas compatíveis. Os detalhes da missão refletem seu próprio progresso, não a etapa da missão do remetente.
 
 ## 5.17.0
 

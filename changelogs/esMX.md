@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 5.17.1
+## 5.17.2
 
 El chat de QT es más fácil de distinguir de los anuncios de misiones.
 
@@ -10,6 +10,22 @@ El chat de QT es más fácil de distinguir de los anuncios de misiones.
 
 - Los mensajes de los jugadores en el chat de QT ahora usan texto blanco en el registro de chat y en los globos sobre la cabeza.
 - Los nombres de los jugadores conservan los colores de su clase, y los anuncios de misiones conservan su texto amarillo.
+
+## 5.17.1
+
+Consulta más información sobre tus compañeros de misión y revisa el estado de la misión directamente desde las descripciones emergentes del chat.
+
+### Descripciones emergentes de jugador más útiles
+
+- Las descripciones emergentes del nombre del jugador y de los puntos del mapa ahora muestran cuántas misiones está monitoreando QuestTogether, además de Solo o Grupo de N. Tu propia descripción emergente usa tu estado local actual.
+- La descripción emergente del minimapa ahora cuenta las misiones monitoreadas por QuestTogether, coincidiendo con el anuncio de inicio en lugar de contar solo las misiones vigiladas en el seguimiento de WoW.
+- Los conteos de misiones remotas y tamaños de grupo requieren un par actualizado. Se actualizan aproximadamente cada 80 segundos mediante los mensajes de latido existentes, sin mensajes adicionales; los informes faltantes o antiguos se muestran como desconocidos. Las versiones anteriores siguen recibiendo anuncios de versión compatibles.
+
+### Estado de misión al pasar el cursor
+
+- Pasa el cursor sobre el nombre de una misión en los registros de QT para ver el estado de tu misión, si se puede compartir, el ID de misión y el progreso de los objetivos seguidos localmente en una descripción emergente junto al cursor.
+- Se eliminó el elemento Estado del menú. Al hacer clic en el nombre de una misión, aún se abren Compartir, Abrir en el Diario de misiones, Comparar misiones del grupo y la acción de destino de la ventana de registro.
+- Las nuevas etiquetas de las descripciones emergentes están traducidas a todos los idiomas admitidos. Los detalles de la misión reflejan tu propio progreso, no la etapa de misión del remitente.
 
 ## 5.17.0
 

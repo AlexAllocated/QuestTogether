@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "5.17.1",
+	version = "5.17.2",
 	welcome = "QT chat is easier to distinguish from quest announcements.",
 	sections = {
 		{

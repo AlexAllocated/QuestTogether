@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 5.17.1
+## 5.17.2
 
 El chat de QT es más fácil de distinguir de los anuncios de misiones.
 
@@ -10,6 +10,22 @@ El chat de QT es más fácil de distinguir de los anuncios de misiones.
 
 - Los mensajes de los jugadores en el chat de QT ahora usan texto blanco en el registro de chat y en los bocadillos sobre la cabeza.
 - Los nombres de los jugadores conservan los colores de su clase, y los anuncios de misiones conservan su texto amarillo.
+
+## 5.17.1
+
+Consulta más información sobre tus compañeros de misiones y comprueba el estado de las misiones directamente desde los tooltips del chat.
+
+### Tooltips de jugador más útiles
+
+- Los tooltips de nombres de jugador y puntos del mapa ahora muestran cuántas misiones está monitorizando QuestTogether, además de Solo o Grupo de N. Tu propio tooltip usa tu estado local actual.
+- El tooltip del minimapa ahora cuenta las misiones monitorizadas por QuestTogether, coincidiendo con el anuncio de inicio en lugar de contar solo las misiones seguidas en el seguimiento de WoW.
+- Los recuentos de misiones remotas y los tamaños de grupo requieren un par actualizado. Se actualizan aproximadamente cada 80 segundos mediante los mensajes de latido existentes, sin mensajes adicionales; los informes ausentes o desactualizados se muestran como desconocidos. Las versiones anteriores siguen recibiendo anuncios de versión compatibles.
+
+### Estado de la misión al pasar el cursor
+
+- Pasa el cursor sobre el nombre de una misión en los registros de QT para ver el estado de tu misión, si se puede compartir, el ID de misión y el progreso de objetivos seguidos localmente en un tooltip junto al cursor.
+- Se ha eliminado el elemento de menú Estado. Al hacer clic en el nombre de una misión, se siguen abriendo Compartir, Abrir en el registro de misiones, Comparar misiones de grupo y la acción de destino de la ventana de registro.
+- Las nuevas etiquetas de tooltip están traducidas a todos los idiomas compatibles. Los detalles de misión reflejan tu propio progreso, no la fase de misión del remitente.
 
 ## 5.17.0
 

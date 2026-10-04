@@ -1,7 +1,7 @@
 {
   "source_sha256": "66c143ee6a0a79c7bde32f98ed5dd9aa8e4991ccdf7b0c793bfb8ff793b17d2c",
   "notes": {
-    "version": "5.17.1",
+    "version": "5.17.2",
     "welcome": "QT 대화를 퀘스트 알림과 더 쉽게 구분할 수 있습니다.",
     "sections": [
       {
