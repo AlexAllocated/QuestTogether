@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 5.16.6
+## 5.16.7
 
 Leia as mesmas notas de lançamento do QuestTogether dentro do jogo, no Discord e no seu idioma preferido nos arquivos de changelog.
 
@@ -11,6 +11,15 @@ Leia as mesmas notas de lançamento do QuestTogether dentro do jogo, no Discord 
 - O changelog em inglês agora compartilha os mesmos resumos de lançamento e tópicos da janela de boas-vindas e dos anúncios no Discord.
 - Os arquivos de changelog estão disponíveis para todos os idiomas compatíveis, com o histórico de lançamentos traduzido existente e uma cópia preservada das notas antigas em inglês escritas manualmente.
 - As verificações de lançamento mantêm os arquivos de changelog sincronizados com as notas e traduções canônicas.
+
+## 5.16.6
+
+Veja rapidamente quando você está procurando parceiros para fazer missões.
+
+### Um lembrete brilhante no minimapa
+
+- Seu botão do QuestTogether no minimapa agora pulsa com o mesmo brilho dourado do logotipo das placas de nome dos jogadores enquanto Procurando Parceiros para Missões está ativado.
+- O brilho acompanha seu status de parceiro e para quando o QT é desativado ou quando o botão do minimapa está oculto. Seu botão e logotipo mantêm o tamanho atual.
 
 ## 5.16.5
 

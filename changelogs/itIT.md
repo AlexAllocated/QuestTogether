@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 5.16.6
+## 5.16.7
 
 Leggi le stesse note di rilascio di QuestTogether in gioco, su Discord e nella tua lingua preferita nei file del changelog.
 
@@ -11,6 +11,15 @@ Leggi le stesse note di rilascio di QuestTogether in gioco, su Discord e nella t
 - Il changelog inglese ora condivide gli stessi riepiloghi di rilascio e gli stessi punti elenco della finestra di benvenuto e degli annunci su Discord.
 - I file del changelog sono disponibili per tutte le lingue supportate, con la cronologia delle versioni tradotta esistente e una copia conservata delle vecchie note in inglese scritte a mano.
 - I controlli di rilascio mantengono i file del changelog sincronizzati con le note canoniche e le traduzioni.
+
+## 5.16.6
+
+Vedi a colpo d'occhio quando stai cercando compagni per le missioni.
+
+### Un promemoria luminoso sulla minimappa
+
+- Il tuo pulsante di QuestTogether sulla minimappa ora pulsa con lo stesso bagliore dorato del logo delle targhette dei nomi dei personaggi mentre Cerchi compagni per le missioni è attivo.
+- Il bagliore segue il tuo stato di compagno e si interrompe quando QT è disabilitato o il pulsante della minimappa è nascosto. Il tuo pulsante e il logo mantengono le dimensioni esistenti.
 
 ## 5.16.5
 

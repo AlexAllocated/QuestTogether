@@ -1,7 +1,7 @@
 {
   "source_sha256": "6ecd7531cd9f26e2437ca2654dc34e4d45903b83bb75a926f425c3dcaa588bf5",
   "notes": {
-    "version": "5.16.6",
+    "version": "5.16.7",
     "welcome": "게임 내, Discord, 변경 내역 파일에서 선호하는 언어로 동일한 QuestTogether 출시 노트를 읽을 수 있습니다.",
     "sections": [
       {

@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 5.16.6
+## 5.16.7
 
 Read the same QuestTogether release notes in-game, on Discord, and in your preferred language in the changelog files.
 
@@ -13,6 +13,15 @@ Read the same QuestTogether release notes in-game, on Discord, and in your prefe
 - The English changelog now shares the same release summaries and bullet points as the welcome window and Discord announcements.
 - Changelog files are available for all supported locales, with existing translated release history and a preserved copy of the older handwritten English notes.
 - Release checks keep the changelog files synchronized with the canonical notes and translations.
+
+## 5.16.6
+
+See at a glance when you are looking for questing partners.
+
+### A glowing minimap reminder
+
+- Your QuestTogether minimap button now pulses with the same gold logo glow as player nameplates while Looking for Questing Partners is on.
+- The glow follows your partner status and stops when QT is disabled or the minimap button is hidden. Your button and logo keep their existing size.
 
 ## 5.16.5
 

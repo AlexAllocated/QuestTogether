@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "5.16.6",
+	version = "5.16.7",
 	welcome = "Read the same QuestTogether release notes in-game, on Discord, and in your preferred language in the changelog files.",
 	sections = {
 		{

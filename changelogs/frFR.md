@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 5.16.6
+## 5.16.7
 
 Lisez les mêmes notes de version de QuestTogether en jeu, sur Discord et dans votre langue préférée dans les fichiers du journal des modifications.
 
@@ -11,6 +11,15 @@ Lisez les mêmes notes de version de QuestTogether en jeu, sur Discord et dans v
 - Le journal des modifications anglais reprend désormais les mêmes résumés de version et listes à puces que la fenêtre d’accueil et les annonces Discord.
 - Des fichiers de journal des modifications sont disponibles pour toutes les langues prises en charge, avec l’historique des versions traduit existant et une copie conservée des anciennes notes anglaises rédigées à la main.
 - Les vérifications de version maintiennent les fichiers du journal des modifications synchronisés avec les notes et traductions de référence.
+
+## 5.16.6
+
+Voyez d’un coup d’œil quand vous cherchez des partenaires de quête.
+
+### Un rappel lumineux sur la minicarte
+
+- Le bouton QuestTogether de votre minicarte clignote désormais avec la même lueur dorée du logo que les barres d’info des personnages-joueurs tant que Recherche de partenaires de quête est activée.
+- La lueur suit votre statut de partenaire et s’arrête quand QT est désactivé ou quand le bouton de la minicarte est masqué. Votre bouton et le logo conservent leur taille actuelle.
 
 ## 5.16.5
 

@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 5.16.6
+## 5.16.7
 
 Lee las mismas notas de la versión de QuestTogether en el juego, en Discord y en tu idioma preferido en los archivos de registro de cambios.
 
@@ -11,6 +11,15 @@ Lee las mismas notas de la versión de QuestTogether en el juego, en Discord y e
 - El registro de cambios en inglés ahora comparte los mismos resúmenes de versión y puntos de la lista que la ventana de bienvenida y los anuncios de Discord.
 - Los archivos de registro de cambios están disponibles para todos los idiomas compatibles, con el historial de versiones traducido existente y una copia conservada de las antiguas notas en inglés escritas a mano.
 - Las comprobaciones de versión mantienen los archivos de registro de cambios sincronizados con las notas canónicas y las traducciones.
+
+## 5.16.6
+
+Consulta de un vistazo cuándo estás buscando compañeros para hacer misiones.
+
+### Un recordatorio luminoso en el minimapa
+
+- El botón de QuestTogether del minimapa ahora palpita con el mismo brillo dorado del logotipo que las placas de nombre de los jugadores mientras Buscar compañeros para hacer misiones está activado.
+- El brillo sigue tu estado de compañero y se detiene cuando QT está desactivado o el botón del minimapa está oculto. Tu botón y el logotipo mantienen su tamaño actual.
 
 ## 5.16.5
 
