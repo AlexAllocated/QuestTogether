@@ -38,7 +38,9 @@ Switch the log destination from settings or directly from QuestTogether's player
 
 **QuestTogether chat:** Type `/qt <message>` to talk to other players receiving the QuestTogether channel. Recognized commands still run normally. Conversations use the same chat log and nearby-player bubbles, with a speech-bubble icon. The minimap menu’s **Send QT chat message** opens a draft for you. Disable **Show QuestTogether Chat** in **Where to Announce** to hide conversations without changing quest announcements. Hover player names in the log for the same player details shown on map dots.
 
-During the channel-name transition, QT joins both **QuestTogether** and the older **QuestTogetherAnnounce1** channel. Where the client supports channel reordering, both go after your other channels, with QuestTogether first. Addon updates travel through both for compatibility; typed chat is sent only to QuestTogether.
+Version 6.0 uses **QuestTogether** for global chat and occasional worldwide player updates. Frequent updates and quest announcements use a channel for your current zone; viewing another zone on the world map temporarily subscribes to its updates too. Party announcements still cross zone boundaries. Where supported, QT keeps its channels after your other chat channels, with QuestTogether first. The old **QuestTogetherAnnounce1** channel is retired.
+
+Map dots remain available worldwide, but distant locations update less often; hover a dot to see the age of older information. Manual `/qt ping` requests remain global for discovering other QT users, with replies collected for up to five minutes. Replies are best effort, so this is not an exact online-player count.
 
 > **SCREENSHOT 02 — Chat your way:** QuestTogether updates in a dedicated chat window, showing player names, clickable quest names, objective progress, and completion messages.
 

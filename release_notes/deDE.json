@@ -1,14 +1,39 @@
 {
-  "source_sha256": "66c143ee6a0a79c7bde32f98ed5dd9aa8e4991ccdf7b0c793bfb8ff793b17d2c",
+  "source_sha256": "d838fac1b9d7202837436fa7d9628ec207d661e4be781d6b16d263800854230c",
   "notes": {
-    "version": "5.17.2",
-    "welcome": "QT-Chat lässt sich leichter von Questankündigungen unterscheiden.",
+    "version": "6.0.0",
+    "welcome": "QuestTogether 6.0 bereitet sich mit einem Kommunikationssystem auf den Forever-Launch vor, das den Hintergrunddatenverkehr reduzieren soll, während die Community wächst.",
     "sections": [
       {
-        "title": "Weißer QT-Chattext",
+        "title": "Lokale Aktivität, weltweite Entdeckung",
         "items": [
-          "Nachrichten von Spielern im QT-Chat verwenden jetzt weißen Text im Chatfenster und in Sprechblasen über dem Kopf.",
-          "Spielernamen behalten ihre Klassenfarben, und Questankündigungen behalten ihren gelben Text."
+          "Questankündigungen und häufige Spieleraktualisierungen verwenden jetzt Zonenkanäle. Gruppenankündigungen erreichen eure Gruppe weiterhin über Zonengrenzen hinweg.",
+          "Spielerpunkte bleiben weltweit verfügbar, mit langsameren Hintergrundaktualisierungen. Wenn du eine andere Zone auf der Weltkarte öffnest, abonnierst du vorübergehend ihre Aktualisierungen.",
+          "Der QT-Textchat bleibt im globalen QuestTogether-Kanal. Deine Chateinstellung Global oder Nur Zone steuert weiterhin, welche Nachrichten du siehst."
+        ]
+      },
+      {
+        "title": "Weniger Hintergrunddatenverkehr",
+        "items": [
+          "Präsenz, Version, Questanzahl, Partnerstatus und Standort werden in kompakten Aktualisierungen gebündelt. Überfüllte Zonen werden seltener aktualisiert, um den Datenverkehr zu reduzieren.",
+          "Ankündigungen werden zeitlich gestaffelt und haben Vorrang vor Hintergrundaktualisierungen. Ping-Antworten werden verteilt, um einen Antwortschwall zu vermeiden. WoW kann die Kanalauslieferung weiterhin verzögern; dieses Update garantiert keine sofortigen Nachrichten.",
+          "Spieler-Tooltips zeigen das Alter älterer Standorte an. Die Diagnose meldet jetzt Nachrichtenanzahlen, Drosselung und vom Absender gemeldete Ankündigungsverzögerungen."
+        ]
+      },
+      {
+        "title": "Ein großes Update während der Beta",
+        "items": [
+          "Wir nehmen diese größere Kommunikationsänderung jetzt in Erwartung des Forever-Launches vor. Die Beta ist der beste Zeitpunkt, um diese grundlegenden Entscheidungen zu treffen, bevor mehr Spieler vom alten Verhalten abhängig sind.",
+          "Version 6.0 verlässt QuestTogetherAnnounce1 und sendet oder empfängt nicht mehr auf diesem Legacy-Kanal. Sie verwendet QuestTogether für globalen Chat und Entdeckung sowie Zonenkanäle für lokale Aktivität.",
+          "QuestTogether behält seine Kanäle nach deinen anderen Chatkanälen bei, wobei der Hauptchatkanal vor seinen Zonenkanälen steht. Deine Einstellungen für Standortfreigabe, Ignorierliste und Ankündigungen bleiben erhalten."
+        ]
+      },
+      {
+        "title": "Kompatibilität mit älteren Versionen",
+        "items": [
+          "Bitte aktualisiert gemeinsam. Ältere Versionen können die neuen gebündelten Spieleraktualisierungen nicht lesen und nicht auf die neuen Zonenkanäle hören, sodass Spielern mit gemischten Versionen Kartenpunkte, Partnerstatus und Questankündigungen in der Nähe entgehen können.",
+          "Spieler, die nur den Legacy-Kanal verwenden, sind in 6.0 über diesen Kanal nicht mehr auffindbar. Einige Austausche mit neueren 5.x-Versionen können weiterhin über den gemeinsamen globalen Kanal oder eine Gruppe funktionieren, aber das ist nur teilweise Kompatibilität, nicht das volle Erlebnis.",
+          "Manuelles /qt ping verwendet weiterhin den globalen Kanal. Es kann dort kompatible ältere Clients hören, ist aber ein Entdeckungswerkzeug nach bestem Bemühen und keine vollständige Zählung aller, die QuestTogether verwenden."
         ]
       }
     ]

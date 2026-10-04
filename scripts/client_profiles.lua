@@ -48,6 +48,18 @@ return pushable end or nil,
 	end or nil
 	return function(addon)
 		do
+			local original = GetServerTime
+			GetServerTime = function() return 1791086400 end
+			assert(addon.API.GetServerTime() == 1791086400)
+			GetServerTime = function() return secret end
+			assert(addon.API.GetServerTime() == nil)
+			GetServerTime = function() error("unavailable") end
+			assert(addon.API.GetServerTime() == nil)
+			GetServerTime = nil
+			assert(addon.API.GetServerTime() == nil)
+			GetServerTime = original
+		end
+		do
 			local oldUtil, oldLegacy, oldRestricted = ChatFrameUtil, ChatFrame_OpenChat, addon.IsRuntimeRestricted
 			local calls, restricted = 0, false
 			addon.IsRuntimeRestricted = function() return restricted end
@@ -377,12 +389,12 @@ return not active end,
 				assert(addon.API.GetPlayerMapPosition(84, "player") == nil)
 			end
 			assert(inaccessibleReads == before, "pcall must not hide inaccessible native map reads")
-			result = { mapID = 84, name = "Stormwind" }
+			result = { mapID = 84, name = "Stormwind", mapType = 3, parentMapID = 13 }
 			local info = addon.API.GetMapInfo(84)
-			assert(info ~= result and info.mapID == 84 and info.name == "Stormwind")
-			result = { mapID = secret, name = inaccessible }
+			assert(info ~= result and info.mapID == 84 and info.name == "Stormwind" and info.mapType == 3 and info.parentMapID == 13)
+			result = { mapID = secret, name = inaccessible, mapType = secret, parentMapID = inaccessible }
 			info = addon.API.GetMapInfo(84)
-			assert(info.mapID == 84 and info.name == nil)
+			assert(info.mapID == 84 and info.name == nil and info.mapType == nil and info.parentMapID == nil)
 			for _, position in ipairs({ { x = 0, y = 1 }, { GetXY = function() return 0, 1 end } }) do
 				result = position
 				local copy = addon.API.GetPlayerMapPosition(84, "player")

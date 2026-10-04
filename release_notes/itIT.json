@@ -1,14 +1,39 @@
 {
-  "source_sha256": "66c143ee6a0a79c7bde32f98ed5dd9aa8e4991ccdf7b0c793bfb8ff793b17d2c",
+  "source_sha256": "d838fac1b9d7202837436fa7d9628ec207d661e4be781d6b16d263800854230c",
   "notes": {
-    "version": "5.17.2",
-    "welcome": "La chat QT è più facile da distinguere dagli annunci delle missioni.",
+    "version": "6.0.0",
+    "welcome": "QuestTogether 6.0 si prepara al lancio di Forever con un sistema di comunicazione progettato per ridurre il traffico in background man mano che la community cresce.",
     "sections": [
       {
-        "title": "Testo bianco per la chat QT",
+        "title": "Attività locale, scoperta mondiale",
         "items": [
-          "I messaggi dei giocatori nella chat QT ora usano testo bianco nel registro chat e nei fumetti sopra la testa.",
-          "I nomi dei giocatori mantengono i colori della loro classe, e gli annunci delle missioni mantengono il testo giallo."
+          "Gli annunci delle missioni e gli aggiornamenti frequenti dei giocatori ora usano i canali di zona. Gli annunci del gruppo raggiungono comunque il tuo gruppo oltre i confini di zona.",
+          "I puntini dei giocatori restano disponibili in tutto il mondo, con aggiornamenti in background più lenti. Aprire un'altra zona sulla mappa del mondo ti iscrive temporaneamente ai suoi aggiornamenti.",
+          "La chat testuale di QT resta sul canale globale QuestTogether. La tua impostazione chat Globale o Solo zona continua a controllare quali messaggi vedi."
+        ]
+      },
+      {
+        "title": "Meno traffico in background",
+        "items": [
+          "Presenza, versione, conteggi delle missioni, stato del compagno e posizione sono raggruppati in aggiornamenti compatti. Le zone affollate si aggiornano meno spesso per ridurre il traffico.",
+          "Gli annunci sono regolati e hanno priorità sugli aggiornamenti in background. Le risposte ai ping vengono distribuite per evitare un picco di risposte. WoW può comunque ritardare la consegna dei canali; questo aggiornamento non garantisce messaggi istantanei.",
+          "I tooltip dei giocatori mostrano l'età delle posizioni meno recenti. La diagnostica ora riporta conteggi dei messaggi, limitazioni e ritardi degli annunci segnalati dal mittente."
+        ]
+      },
+      {
+        "title": "Un aggiornamento importante durante la beta",
+        "items": [
+          "Stiamo apportando ora questa modifica più ampia alla comunicazione in previsione del lancio di Forever. La beta è il momento migliore per prendere queste decisioni fondamentali, prima che più giocatori dipendano dal vecchio comportamento.",
+          "La versione 6.0 abbandona QuestTogetherAnnounce1 e non invia né riceve più su quel canale legacy. Usa QuestTogether per chat globale e scoperta, più canali di zona per l'attività locale.",
+          "QuestTogether mantiene i propri canali dopo gli altri tuoi canali di chat, con il canale chat principale prima dei suoi canali di zona. Le tue preferenze di condivisione della posizione, lista ignorati e annunci vengono conservate."
+        ]
+      },
+      {
+        "title": "Compatibilità con le versioni precedenti",
+        "items": [
+          "Aggiornate insieme. Le versioni precedenti non possono leggere i nuovi aggiornamenti raggruppati dei giocatori né ascoltare i nuovi canali di zona, quindi i giocatori con versioni diverse potrebbero non vedere puntini sulla mappa, stato del compagno e annunci delle missioni vicine.",
+          "I giocatori che usano solo il canale legacy non sono più rilevabili tramite quel canale nella 6.0. Alcuni scambi con le versioni 5.x più recenti possono ancora funzionare tramite il canale globale condiviso o un gruppo, ma si tratta di compatibilità parziale, non dell'esperienza completa.",
+          "Il comando manuale /qt ping usa ancora il canale globale. Può rilevare lì i client precedenti compatibili, ma è uno strumento di scoperta best-effort, non un conteggio completo di tutti quelli che usano QuestTogether."
         ]
       }
     ]

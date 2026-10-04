@@ -3,6 +3,151 @@
   "releases": [
     {
       "enUS": {
+        "version": "5.17.2",
+        "welcome": "QT chat is easier to distinguish from quest announcements.",
+        "sections": [
+          {
+            "title": "White QT chat text",
+            "items": [
+              "Messages from players in QT chat now use white text in the chat log and overhead bubbles.",
+              "Player names keep their class colors, and quest announcements keep their yellow text."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.17.2",
+        "welcome": "QT-Chat lässt sich leichter von Questankündigungen unterscheiden.",
+        "sections": [
+          {
+            "title": "Weißer QT-Chattext",
+            "items": [
+              "Nachrichten von Spielern im QT-Chat verwenden jetzt weißen Text im Chatfenster und in Sprechblasen über dem Kopf.",
+              "Spielernamen behalten ihre Klassenfarben, und Questankündigungen behalten ihren gelben Text."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "5.17.2",
+        "welcome": "Le chat QT est plus facile à distinguer des annonces de quêtes.",
+        "sections": [
+          {
+            "title": "Texte blanc pour le chat QT",
+            "items": [
+              "Les messages des joueurs dans le chat QT utilisent désormais du texte blanc dans la fenêtre de discussion et les bulles au-dessus des personnages.",
+              "Les noms des joueurs conservent la couleur de leur classe, et les annonces de quêtes conservent leur texte jaune."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.17.2",
+        "welcome": "El chat de QT es más fácil de distinguir de los anuncios de misiones.",
+        "sections": [
+          {
+            "title": "Texto blanco en el chat de QT",
+            "items": [
+              "Los mensajes de los jugadores en el chat de QT ahora usan texto blanco en el registro de chat y en los bocadillos sobre la cabeza.",
+              "Los nombres de los jugadores conservan los colores de su clase, y los anuncios de misiones conservan su texto amarillo."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "5.17.2",
+        "welcome": "El chat de QT es más fácil de distinguir de los anuncios de misiones.",
+        "sections": [
+          {
+            "title": "Texto blanco del chat de QT",
+            "items": [
+              "Los mensajes de los jugadores en el chat de QT ahora usan texto blanco en el registro de chat y en los globos sobre la cabeza.",
+              "Los nombres de los jugadores conservan los colores de su clase, y los anuncios de misiones conservan su texto amarillo."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.17.2",
+        "welcome": "O chat do QT fica mais fácil de distinguir dos anúncios de missões.",
+        "sections": [
+          {
+            "title": "Texto branco no chat do QT",
+            "items": [
+              "Mensagens de jogadores no chat do QT agora usam texto branco no registro de bate-papo e nos balões sobre a cabeça.",
+              "Os nomes dos jogadores mantêm as cores de suas classes, e os anúncios de missões mantêm o texto amarelo."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.17.2",
+        "welcome": "Чат QT легче отличить от объявлений о заданиях.",
+        "sections": [
+          {
+            "title": "Белый текст чата QT",
+            "items": [
+              "Сообщения от игроков в чате QT теперь отображаются белым текстом в журнале чата и облачках над головой.",
+              "Имена игроков сохраняют цвета классов, а объявления о заданиях — жёлтый текст."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.17.2",
+        "welcome": "La chat QT è più facile da distinguere dagli annunci delle missioni.",
+        "sections": [
+          {
+            "title": "Testo bianco per la chat QT",
+            "items": [
+              "I messaggi dei giocatori nella chat QT ora usano testo bianco nel registro chat e nei fumetti sopra la testa.",
+              "I nomi dei giocatori mantengono i colori della loro classe, e gli annunci delle missioni mantengono il testo giallo."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.17.2",
+        "welcome": "QT 대화를 퀘스트 알림과 더 쉽게 구분할 수 있습니다.",
+        "sections": [
+          {
+            "title": "흰색 QT 대화 텍스트",
+            "items": [
+              "QT 대화에서 플레이어가 보낸 메시지는 이제 대화창과 머리 위 말풍선에 흰색 텍스트로 표시됩니다.",
+              "플레이어 이름은 직업 색상을 유지하며, 퀘스트 알림은 노란색 텍스트를 유지합니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.17.2",
+        "welcome": "QT 聊天更容易与任务通告区分开来。",
+        "sections": [
+          {
+            "title": "白色 QT 聊天文字",
+            "items": [
+              "来自玩家的 QT 聊天消息现在会在聊天记录和头顶气泡中使用白色文字。",
+              "玩家姓名保留其职业颜色，任务通告保留其黄色文字。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.17.2",
+        "welcome": "QT 聊天更容易與任務公告區分。",
+        "sections": [
+          {
+            "title": "白色 QT 聊天文字",
+            "items": [
+              "QT 聊天中的玩家訊息現在會在聊天記錄和頭頂對話泡泡中使用白色文字。",
+              "玩家名稱會保留其職業顏色，而任務公告會保留其黃色文字。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "5.17.1",
         "welcome": "See more about your questing companions and check quest status directly from chat tooltips.",
         "sections": [

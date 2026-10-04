@@ -126,7 +126,7 @@ function QT:IsPlayerLookingForQuestPartners(name)
 		and record.looking == true
 		and now ~= nil
 		and now >= record.receivedAt
-		and now - record.receivedAt < LIFETIME
+		and now - record.receivedAt < (record.lifetime or LIFETIME)
 end
 
 function QT:HandleQuestPartnerStatusMessage(payload, sender)
@@ -316,7 +316,7 @@ function QT:PruneQTPlayerPresence(force)
 		if
 			not now
 			or now < record.receivedAt
-			or now - record.receivedAt >= LIFETIME
+			or now - record.receivedAt >= (record.lifetime or LIFETIME)
 			or self:IsIgnoredPlayerName(name)
 		then
 			state.questPartners[name] = nil

@@ -108,6 +108,59 @@ local function Event(text)
 	}
 end
 
+QuestTogether:RegisterTest("announcement timestamps measure delayed delivery and leave old peers unknown", function()
+	local sender, receiver = NewCommsFixture(), NewCommsFixture()
+	local epoch = 1791086400
+	sender.API.GetServerTime = function() return epoch end
+	receiver.API.GetServerTime = function() return epoch + 210 end
+	function receiver:HandleAnnouncementEvent(event) self.lastEvent = event end
+	function receiver:RefreshQTPlayerPlatePresence() end
+	local event = sender:BuildLocalAnnouncementEvent("QUEST_PROGRESS", "Wolves: 2/5", 123)
+	Equal(event.occurredAt, epoch)
+	local wire = "ANN|" .. sender:EncodeAnnouncementPayload(event)
+	Equal(#wire <= 255, true)
+	receiver:OnCommReceived(receiver.commPrefix, wire, "CHANNEL", "Friend-Realm", 7, receiver.announcementChannelName)
+	Equal(receiver.lastEvent.occurredAt, epoch)
+	local diagnostics = receiver:GetCommsDiagnostics()
+	Equal(diagnostics.announcementAgeLast, 210)
+	Equal(diagnostics.announcementAgeSamples, 1)
+	receiver:OnCommReceived(receiver.commPrefix, wire, "CHANNEL", "Friend-Realm", 7, receiver.announcementChannelName)
+	Equal(diagnostics.announcementAgeSamples, 1) -- duplicate delivery isn't another age sample
+	Equal(diagnostics.traffic.ANN.received, 2)
+	Equal(diagnostics.traffic.ANN.duplicate, 1)
+	Equal(diagnostics.traffic.ANN.receivedBytes, #wire * 2)
+	local legacy = wire:gsub(",%d+$", "")
+	receiver.now = receiver.now + 1
+	receiver:OnCommReceived(receiver.commPrefix, legacy, "CHANNEL", "Friend-Realm", 7, receiver.announcementChannelName)
+	Equal(receiver.lastEvent.occurredAt, nil)
+	Equal(diagnostics.announcementAgeUnknown, 1)
+	event.occurredAt = epoch + 999
+	receiver:RecordAnnouncementLatency(sender:DecodeAnnouncementPayload(sender:EncodeAnnouncementPayload(event)))
+	Equal(diagnostics.announcementAgeUnknown, 2)
+	event.occurredAt = "invalid"
+	Equal(sender:DecodeAnnouncementPayload(sender:EncodeAnnouncementPayload(event)).occurredAt, nil)
+	sender.API.GetServerTime = function() error("clock unavailable") end
+	Equal(sender:GetAnnouncementServerTime(), nil)
+end)
+
+QuestTogether:RegisterTest("transport counters count each route attempt and bound unknown command buckets", function()
+	local addon = NewCommsFixture()
+	addon.API.GetChannelName = function(name) return name == addon.announcementChannelName and 6 or 7 end
+	addon.API.SendAddonMessage = function(_, _, route) return route == "CHANNEL" and 0 or 3 end
+	addon.API.IsInParty = function() return true end
+	Equal(addon:SendWireMessageToAnnouncementRoutes("LOC|sample"), true)
+	local diagnostics = addon:GetCommsDiagnostics()
+	Equal(diagnostics.traffic.LOC.sent, 1)
+	Equal(diagnostics.traffic.LOC.failed, 1)
+	Equal(diagnostics.traffic.LOC.throttled, 1)
+	Equal(diagnostics.traffic.LOC.sentBytes, 10)
+	for i = 1, 100 do addon:RecordCommsTraffic("received", "UNKNOWN" .. i .. "|sample") end
+	local count = 0
+	for _ in pairs(diagnostics.traffic) do count = count + 1 end
+	Equal(count, 2)
+	Equal(diagnostics.traffic.OTHER.received, 100)
+end)
+
 QuestTogether:RegisterTest("unknown addon packets do not fall through into human channel chat", function()
 	local addon = NewCommsFixture()
 	function addon:CHAT_MSG_CHANNEL() error("addon traffic cannot become human chat") end
@@ -706,6 +759,109 @@ QuestTogether:RegisterTest("ping responses deduplicate each sender for entire re
 	Equal(addon:HandlePingResponse(response), false)
 	Equal(addon:HandlePingResponse({ requestId = "test", senderName = "Friend-OtherRealm" }), true)
 	Equal(#addon.printed, 2)
+end)
+
+QuestTogether:RegisterTest("ping round trip reaches current-channel peers with distinct channel IDs and Forever names", function()
+	for _, regional in ipairs({ false, true }) do
+		local function Peer(first, surname, currentID, legacyID)
+			local addon = NewCommsFixture()
+			addon.channelRequestSequence = 0
+			addon.logs = {}
+			addon.API.RegionalUniqueNamesEnabled = function() return regional end
+			addon.API.UnitFullName = function() return first, surname end
+			addon.API.UnitName = function() return first end
+			addon.API.GetChannelName = function(name)
+				return name == addon.announcementChannelName and currentID or legacyID
+			end
+			function addon:Debugf(_, format, ...) self.logs[#self.logs + 1] = string.format(format, ...) end
+			function addon:RefreshQTPlayerPlatePresence() end
+			function addon:HideAnnouncementChannelFromChatWindows() end
+			return addon
+		end
+		local localPeer = Peer("Barbara", "Myers", 8, 9)
+		local remote = Peer("Seras", "Aran", 3, 4)
+		local ok, id = localPeer:SendPingRequest()
+		Equal(ok, true)
+		Equal(#localPeer.printed, 1) -- local pong alone proves no delivery
+		Equal(#localPeer.wire, 1)
+		Equal(localPeer.wire[1][4], 8)
+		-- Deliver actual packets with recipient-local channel IDs.
+		remote:OnCommReceived(remote.commPrefix, localPeer.wire[1][2], "CHANNEL", localPeer:GetPlayerFullName(), 3, remote.announcementChannelName)
+		Equal(#remote.wire, 1)
+		Equal(remote.wire[1][4], 3)
+		for _, packet in ipairs(remote.wire) do
+			local current = packet[4] == 3
+			localPeer:OnCommReceived(localPeer.commPrefix, packet[2], "CHANNEL", remote:GetPlayerFullName(), current and 8 or 9,
+				current and localPeer.announcementChannelName or localPeer.announcementChannelName)
+		end
+		Equal(#localPeer.printed, 2)
+		Equal(localPeer.printed[2], remote:GetPlayerFullName())
+		Equal(localPeer.pendingPingRequests[id].remoteReplies, 1)
+		localPeer.delayed[1]()
+		Equal(localPeer.pendingPingRequests[id], nil)
+		assert(table.concat(localPeer.logs, "\n"):find("remoteReplies=1", 1, true))
+		-- Late responses remain identifiable in diagnostics after the timeout.
+		localPeer.now = localPeer.now + 11
+		localPeer:OnCommReceived(localPeer.commPrefix, remote.wire[1][2], "CHANNEL", remote:GetPlayerFullName(), 9, localPeer.announcementChannelName)
+		Equal(#localPeer.printed, 2)
+		assert(table.concat(localPeer.logs, "\n"):find("ping reply unmatched", 1, true))
+	end
+end)
+
+QuestTogether:RegisterTest("ping accepts a delayed three minute reply once and expires after five minutes", function()
+	local addon = NewCommsFixture()
+	local clock = addon:CreateTestClock(3745.484)
+	addon.API.GetTime = function() return clock:GetTime() end
+	addon.API.Delay = function(seconds, callback) clock:After(seconds, callback) end
+	local ok, id = addon:SendPingRequest()
+	Equal(ok, true)
+	clock:Advance(209.956) -- observed live channel delay
+	local response = { requestId = id, senderName = "Friend-Realm" }
+	Equal(addon:HandlePingResponse(response), true)
+	clock:Advance(1)
+	Equal(addon:HandlePingResponse(response), false)
+	Equal(#addon.printed, 2)
+	Equal(#addon.wire, 1) -- no retries or extra messages while waiting
+	clock:Advance(90)
+	Equal(addon.pendingPingRequests[id], nil)
+	Equal(addon:HandlePingResponse({ requestId = id, senderName = "Other-Realm" }), false)
+end)
+
+QuestTogether:RegisterTest("ping retention stays bounded and rejects expired or reset requests", function()
+	local addon = NewCommsFixture()
+	local ids = {}
+	for i = 1, 9 do
+		addon.now = addon.now + 1
+		local ok, id = addon:SendPingRequest()
+		Equal(ok, true)
+		ids[i] = id
+	end
+	Equal(addon.pendingPingRequests[ids[1]], nil)
+	local count = 0
+	for _ in pairs(addon.pendingPingRequests) do count = count + 1 end
+	Equal(count, 8)
+	addon.delayed[1]() -- evicted request's callback cannot remove newer work
+	Equal(addon.pendingPingRequests[ids[9]] ~= nil, true)
+	addon.now = addon.now + 301 -- expiry also enforced before delayed timer execution
+	Equal(addon:HandlePingResponse({ requestId = ids[9], senderName = "Friend-Realm" }), false)
+	local ok, id = addon:SendPingRequest()
+	Equal(ok, true)
+	addon.pendingPingRequests = {} -- reset/reload never trusts an old request ID
+	Equal(addon:HandlePingResponse({ requestId = id, senderName = "Friend-Realm" }), false)
+end)
+
+QuestTogether:RegisterTest("ping replies use only the requesting group or named channel", function()
+	local addon = NewCommsFixture()
+	local request = { requestId = "route-test", requesterName = "Friend-Realm" }
+	Equal(addon:HandlePingRequest(request, "PARTY"), true)
+	Equal(#addon.wire, 1)
+	Equal(addon.wire[1][3], "PARTY")
+	Equal(addon:HandlePingRequest(request, "CHANNEL", 7, "7. QuestTogether"), true)
+	Equal(#addon.wire, 2)
+	Equal(addon.wire[2][3], "CHANNEL")
+	Equal(addon:HandlePingRequest(request, "CHANNEL", 7, "OtherChannel"), false)
+	Equal(addon:HandlePingRequest(request, "WHISPER"), false)
+	Equal(#addon.wire, 2)
 end)
 
 QuestTogether:RegisterTest("stale quest compare timeout cannot clear a replacement request", function()
@@ -2178,68 +2334,47 @@ QuestTogether:RegisterTest("local publication sends one party announcement indep
 	Equal(a:AnnounceToNonQTParty({ eventType = "PLAYER_LEVEL_UP", text = "Level 10" }), true)
 end)
 
-QuestTogether:RegisterTest("channel migration publishes to both named channels and deduplicates received addon events", function()
+QuestTogether:RegisterTest("major channel transition sends only current and rejects retired channel traffic", function()
 	local addon = NewCommsFixture()
-	addon.API.GetChannelName = function(name)
-		return name == addon.announcementChannelName and 7 or 9
-	end
-	function addon:HideAnnouncementChannelFromChatWindows() end
-	local event = Event()
-	local wire = addon:SerializeWireMessage("ANN", addon:EncodeAnnouncementPayload(event))
+	local wire = addon:SerializeWireMessage("ANN", addon:EncodeAnnouncementPayload(Event()))
 	Equal(addon:SendWireMessageToAnnouncementRoutes(wire), true)
-	Equal(#addon.wire, 2)
-	Equal(addon.wire[1][4], 7)
-	Equal(addon.wire[2][4], 9)
-	Equal(addon.wire[1][2], addon.wire[2][2])
-	local received, discovered = 0, 0
+	Equal(#addon.wire, 1)
+	local received = 0
 	function addon:HandleAnnouncementEvent() received = received + 1 end
-	function addon:RecordQTPlayerPresence() discovered = discovered + 1 end
-	addon:OnCommReceived(addon.commPrefix, wire, "CHANNEL", "Friend-Realm", 9, addon.legacyAnnouncementChannelName)
+	function addon:RecordQTPlayerPresence() end
+	addon:OnCommReceived(addon.commPrefix, wire, "CHANNEL", "Friend-Realm", 7, "QuestTogetherAnnounce1")
+	Equal(received, 0)
 	addon:OnCommReceived(addon.commPrefix, wire, "CHANNEL", "Friend-Realm", 7, addon.announcementChannelName)
 	Equal(received, 1)
-	Equal(discovered, 1)
-	Equal(addon:IsAnnouncementChannelEvent("CHANNEL", 9, ""), true)
 	Equal(addon:IsAnnouncementChannelEvent("CHANNEL", 7, "General"), false)
-	Equal(addon:AnnouncementChannelChatFilter(nil, nil, "hi", "Friend", "", "2. " .. addon.legacyAnnouncementChannelName), true)
-	local left = {}
-	addon.API.LeaveChannelByName = function(name) left[#left + 1] = name end
-	function addon:ResetCommsState() end
-	function addon:UnregisterAnnouncementChannelChatFilters() end
-	addon:LeaveAnnouncementChannel()
-	Equal(left[1], addon.announcementChannelName)
-	Equal(left[2], addon.legacyAnnouncementChannelName)
-	Equal(addon.legacyAnnouncementChannelLocalID, nil)
+	Equal(addon:AnnouncementChannelChatFilter(nil, nil, "hi", "Friend", "", "2. QuestTogetherAnnounce1"), false)
 end)
 
-QuestTogether:RegisterTest("channel migration tolerates either unavailable route and resolves IDs after joins", function()
+QuestTogether:RegisterTest("current channel resolves fresh IDs after joins and fails without a route", function()
 	local addon = NewCommsFixture()
 	local available, joined = {}, {}
 	addon.API.GetChannelName = function(name) return available[name] end
 	addon.API.JoinPermanentChannel = function(name)
 		joined[#joined + 1] = name
-		if name ~= addon.failedChannel then available[name] = name == addon.announcementChannelName and 11 or 13 end
+		if not addon.fail then available[name] = 11 end
 	end
 	function addon:RegisterAnnouncementChannelChatFilters() end
 	function addon:HideAnnouncementChannelFromChatWindows() end
-	for _, failed in ipairs({ addon.announcementChannelName, addon.legacyAnnouncementChannelName }) do
-		available, joined, addon.wire = {}, {}, {}
-		addon.failedChannel = failed
-		Equal(addon:SendWireMessageToAnnouncementRoutes("PING|test"), true)
-		Equal(#joined, 2)
-		Equal(#addon.wire, 1)
-		Equal(addon.wire[1][4], failed == addon.announcementChannelName and 13 or 11)
-	end
-	-- Selected CHANNEL routes (including comparison replies) also reach old peers.
-	available, addon.wire, addon.failedChannel = {}, {}, nil
+	addon.fail = true
+	Equal(addon:SendWireMessageToAnnouncementRoutes("PING|test"), false)
+	Equal(#joined, 1)
+	Equal(#addon.wire, 0)
+	addon.fail = false
 	Equal(addon:SendWireMessageToAnnouncementRoutes("QCDN|test", nil, { { distribution = "CHANNEL", requiresChannelJoin = true } }), true)
-	Equal(#addon.wire, 2)
+	Equal(#addon.wire, 1)
 	Equal(addon.wire[1][4], 11)
-	Equal(addon.wire[2][4], 13)
 end)
 
-QuestTogether:RegisterTest("QT channels sort last in current legacy order without disturbing other channel order", function()
+QuestTogether:RegisterTest("QT channels sort last in human chat then regional order without disturbing other channel order", function()
 	local addon = NewCommsFixture()
-	local names = { addon.legacyAnnouncementChannelName, "General", addon.announcementChannelName, "Trade", "MyFriends" }
+	addon:InitializeGeographicComms()
+	addon.geographicCommsState.subscriptions.QuestTogetherZ12 = true
+	local names = { "QuestTogetherZ12", "General", addon.announcementChannelName, "Trade", "MyFriends" }
 	local swaps = 0
 	function addon:IsRuntimeRestricted() return self.blocked == true end
 	function addon:IsRuntimeRestrictionTypeActive() return false end
@@ -2263,14 +2398,13 @@ QuestTogether:RegisterTest("QT channels sort last in current legacy order withou
 	addon:CHANNEL_UI_UPDATE()
 	Equal(#addon.delayed, 1)
 	addon.delayed[1]()
-	Equal(table.concat(names, ","), "General,Trade,MyFriends,QuestTogether,QuestTogetherAnnounce1")
+	Equal(table.concat(names, ","), "General,Trade,MyFriends,QuestTogether,QuestTogetherZ12")
 	Equal(addon.announcementChannelLocalID, 4)
-	Equal(addon.legacyAnnouncementChannelLocalID, 5)
 	Equal(#addon.delayed, 1) -- swap events do not create a feedback timer loop
 	local prior = swaps
 	Equal(addon:MoveAnnouncementChannelsToEnd(), true)
 	Equal(swaps, prior)
-	names = { addon.legacyAnnouncementChannelName, addon.announcementChannelName }
+	names = { "QuestTogetherZ12", addon.announcementChannelName }
 	Equal(addon:MoveAnnouncementChannelsToEnd(), true)
 	Equal(names[1], addon.announcementChannelName)
 	-- Channels joining later go ahead of both QT channels.
@@ -2282,7 +2416,7 @@ QuestTogether:RegisterTest("QT channels sort last in current legacy order withou
 	Equal(addon:MoveAnnouncementChannelsToEnd(), true)
 	Equal(names[1], "General")
 	Equal(names[2], addon.announcementChannelName)
-	Equal(names[3], addon.legacyAnnouncementChannelName)
+	Equal(names[3], "QuestTogetherZ12")
 	addon:ScheduleAnnouncementChannelOrder()
 	addon.channelOrderWork = nil -- reset/disable invalidates queued work
 	prior = swaps

@@ -157,7 +157,7 @@ function QT:GetPlayerTooltipStats(sender)
 	local state = rawget(self, "qtPlayerPresenceState")
 	local record = state and state.peerTooltipStats and state.peerTooltipStats[name]
 	local now = self.API.GetTime and self:SafeToNumber(self.API.GetTime())
-	if record and now and now >= record.at and now - record.at < 180 then return record end
+	if record and now and now >= record.at and now - record.at < (record.lifetime or 180) then return record end
 end
 
 function QT:GetPlayerMonitoredQuestCount(sender)

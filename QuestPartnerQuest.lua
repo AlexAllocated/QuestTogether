@@ -63,7 +63,7 @@ function QT:PruneQuestPartnerQuests(now)
 		if
 			not now
 			or now < record.receivedAt
-			or now - record.receivedAt >= LIFETIME
+			or now - record.receivedAt >= (record.lifetime or LIFETIME)
 			or self:IsIgnoredPlayerName(name)
 		then
 			state.partnerQuests[name] = nil
@@ -159,7 +159,7 @@ function QT:GetPlayerPartnerQuestID(name)
 		and status
 		and now
 		and now >= record.receivedAt
-		and now - record.receivedAt < LIFETIME
+		and now - record.receivedAt < (record.lifetime or LIFETIME)
 		and record.session == status.session
 		and record.sequence == status.sequence
 	then

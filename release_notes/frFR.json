@@ -1,14 +1,39 @@
 {
-  "source_sha256": "66c143ee6a0a79c7bde32f98ed5dd9aa8e4991ccdf7b0c793bfb8ff793b17d2c",
+  "source_sha256": "d838fac1b9d7202837436fa7d9628ec207d661e4be781d6b16d263800854230c",
   "notes": {
-    "version": "5.17.2",
-    "welcome": "Le chat QT est plus facile à distinguer des annonces de quêtes.",
+    "version": "6.0.0",
+    "welcome": "QuestTogether 6.0 prépare le lancement de Forever avec un système de communication conçu pour réduire le trafic en arrière-plan à mesure que la communauté grandit.",
     "sections": [
       {
-        "title": "Texte blanc pour le chat QT",
+        "title": "Activité locale, découverte mondiale",
         "items": [
-          "Les messages des joueurs dans le chat QT utilisent désormais du texte blanc dans la fenêtre de discussion et les bulles au-dessus des personnages.",
-          "Les noms des joueurs conservent la couleur de leur classe, et les annonces de quêtes conservent leur texte jaune."
+          "Les annonces de quêtes et les mises à jour fréquentes des joueurs utilisent désormais les canaux de zone. Les annonces de groupe atteignent toujours votre groupe au-delà des limites de zone.",
+          "Les points des joueurs restent disponibles dans le monde entier, avec des mises à jour en arrière-plan plus lentes. Ouvrir une autre zone sur la carte du monde vous abonne temporairement à ses mises à jour.",
+          "La discussion texte de QT reste sur le canal global QuestTogether. Votre réglage de discussion Globale ou Zone uniquement contrôle toujours les messages que vous voyez."
+        ]
+      },
+      {
+        "title": "Moins de trafic en arrière-plan",
+        "items": [
+          "La présence, la version, le nombre de quêtes, le statut de partenaire et la position sont regroupés dans des mises à jour compactes. Les zones très fréquentées sont mises à jour moins souvent afin de réduire le trafic.",
+          "Les annonces sont régulées et prioritaires par rapport aux mises à jour en arrière-plan. Les réponses aux pings sont réparties afin d’éviter une rafale de réponses. WoW peut toujours retarder la distribution des messages de canal ; cette mise à jour ne garantit pas des messages instantanés.",
+          "Les infobulles des joueurs indiquent l’âge des positions plus anciennes. Les diagnostics signalent désormais le nombre de messages, la limitation et les délais d’annonce indiqués par l’expéditeur."
+        ]
+      },
+      {
+        "title": "Une mise à jour majeure pendant la bêta",
+        "items": [
+          "Nous effectuons maintenant ce changement de communication plus important en prévision du lancement de Forever. La bêta est le meilleur moment pour prendre ces décisions fondamentales, avant que davantage de joueurs ne dépendent de l’ancien comportement.",
+          "La version 6.0 quitte QuestTogetherAnnounce1 et n’envoie ni ne reçoit plus sur cet ancien canal. Elle utilise QuestTogether pour la discussion et la découverte globales, ainsi que des canaux de zone pour l’activité locale.",
+          "QuestTogether conserve ses canaux après vos autres canaux de discussion, avec le canal de discussion principal avant ses canaux de zone. Vos préférences de partage de position, de liste d’ignorés et d’annonces sont conservées."
+        ]
+      },
+      {
+        "title": "Compatibilité avec les anciennes versions",
+        "items": [
+          "Veuillez mettre à jour ensemble. Les anciennes versions ne peuvent pas lire les nouvelles mises à jour groupées des joueurs ni écouter les nouveaux canaux de zone ; les joueurs utilisant des versions différentes peuvent donc manquer des points sur la carte, le statut de partenaire et les annonces de quêtes à proximité.",
+          "Les joueurs utilisant uniquement l’ancien canal ne sont plus détectables via ce canal en 6.0. Certains échanges avec les versions 5.x plus récentes peuvent encore fonctionner via le canal global partagé ou un groupe, mais il s’agit d’une compatibilité partielle, pas de l’expérience complète.",
+          "La commande manuelle /qt ping utilise toujours le canal global. Elle peut y entendre les anciens clients compatibles, mais c’est un outil de découverte au mieux, pas un décompte complet de toutes les personnes utilisant QuestTogether."
         ]
       }
     ]

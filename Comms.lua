@@ -26,7 +26,10 @@ local QUEST_COMPARE_DONE_VERSION = 1
 local QUEST_COMPARE_DONE_COMMAND = "QCDN"
 local ANNOUNCEMENT_MAX_TEXT_LENGTH = 220
 local ADDON_MESSAGE_MAX_BYTES = 255
-local PING_REQUEST_TIMEOUT_SECONDS = 10
+-- Live Forever channel replies can arrive several minutes after the request.
+local PING_REQUEST_TIMEOUT_SECONDS = 300
+local PING_MAX_PENDING_REQUESTS = 8
+local PING_MAX_RESPONDERS = 4096
 local QUEST_COMPARE_TIMEOUT_SECONDS = 180
 local QUEST_COMPARE_SEND_INTERVAL_SECONDS = 0.1
 local QUEST_COMPARE_RETRY_INTERVAL_SECONDS = 1
@@ -47,7 +50,6 @@ local GROUP_ANNOUNCEMENT_DISTRIBUTIONS = {
 }
 local COMM_DUPLICATE_WINDOW_SECONDS = 0.75
 local COMM_REQUEST_DUPLICATE_WINDOW_SECONDS = 10
-local COMM_DUPLICATE_PRUNE_THRESHOLD = 200
 -- Receiving an addon message grants no authority to choose an arbitrary local
 -- emote. Keep the approved celebration set private, independent of the mutable
 -- local selection list; special celebrations are checked against local state.
@@ -163,7 +165,6 @@ local function MatchesAnnouncementChannelName(addon, value)
 	local base = string.match(value, "^%d+%.%s+(.+)$") or value
 	base = string.lower(base)
 	return base == string.lower(channelName)
-		or base == string.lower(SafeAddonString(addon, addon.legacyAnnouncementChannelName, ""))
 end
 
 local function SplitByDelimiter(text, delimiter)
@@ -333,6 +334,14 @@ function QuestTogether:SanitizeAnnouncementText(text)
 	return TruncateUtf8(sanitized, ANNOUNCEMENT_MAX_TEXT_LENGTH)
 end
 
+function QuestTogether:GetAnnouncementServerTime()
+	local getter = self.API and self.API.GetServerTime
+	if type(getter) ~= "function" then return nil end
+	local ok, value = pcall(getter)
+	local now = ok and SafeNumber(self, value) or nil
+	return now and now >= 1000000000 and now < 100000000000 and now == math.floor(now) and now or nil
+end
+
 function QuestTogether:SanitizeAnnouncementExtraData(extraData)
 	local sanitized = {}
 	if type(extraData) ~= "table" or not self:CanAccessTable(extraData) then
@@ -377,13 +386,19 @@ function QuestTogether:SanitizeAnnouncementEventData(eventData)
 	if numericMapID and (numericMapID <= 0 or numericMapID ~= math.floor(numericMapID)) then
 		numericMapID = nil
 	end
+	local eventId = SafePrimitiveString(self, eventData.eventId, "")
+	if #eventId > 64 or not eventId:match("^%d+%-%d+%-%d+$") then eventId = "" end
 	local normalizedWarMode = nil
+	local occurredAt = SafeNumber(self, eventData.occurredAt)
+	if occurredAt and (occurredAt < 1000000000 or occurredAt >= 100000000000 or occurredAt ~= math.floor(occurredAt)) then occurredAt = nil end
 	if self.NormalizeAnnouncementWarModeValue then
 		normalizedWarMode = self:NormalizeAnnouncementWarModeValue(eventData.warMode)
 	end
 
 	return {
 		version = SafeNumber(self, eventData.version) or ANNOUNCEMENT_WIRE_VERSION,
+		occurredAt = occurredAt,
+		eventId = eventId,
 		eventType = SafePrimitiveString(self, eventType, ""),
 		senderGUID = SafePrimitiveString(self, eventData.senderGUID, ""),
 		classFile = SafePrimitiveString(self, eventData.classFile, ""),
@@ -697,11 +712,14 @@ function QuestTogether:EncodeAnnouncementPayload(eventData)
 		-- slots, and new receivers can still use zone labels from older packets.
 		self:EscapePayload(eventData.mapID or ""),
 		self:EscapePayload(eventData.eventFacts or ""),
+		self:EscapePayload(eventData.occurredAt or ""),
 	}
+
+	if eventData.eventId and eventData.eventId ~= "" then fields[18] = self:EscapePayload(eventData.eventId) end
 
 	-- Numeric location is useful even when a long localized display label cannot
 	-- fit. Keep the coordinate system, coordinates and war mode together.
-	return FitPayloadText(self, fields, 6, ANNOUNCEMENT_COMMAND, { { 8, 9 }, { 10 }, { 3 }, { 4 }, { 16 }, { 11, 12, 13, 15 } })
+	return FitPayloadText(self, fields, 6, ANNOUNCEMENT_COMMAND, { { 8, 9 }, { 10 }, { 3 }, { 4 }, { 17 }, { 16 }, { 11, 12, 13, 15 } })
 end
 
 function QuestTogether:DecodeAnnouncementPayload(payload)
@@ -731,6 +749,8 @@ function QuestTogether:DecodeAnnouncementPayload(payload)
 	local emoteToken = self:UnescapePayload(fields[14] or "")
 	local mapID = self:UnescapePayload(fields[15] or "")
 	local eventFacts = self:UnescapePayload(fields[16] or "")
+	local occurredAt = self:UnescapePayload(fields[17] or "")
+	local eventId = self:UnescapePayload(fields[18] or "")
 
 	if eventType == "" or senderName == "" or text == "" then
 		return nil
@@ -739,6 +759,8 @@ function QuestTogether:DecodeAnnouncementPayload(payload)
 	return self:SanitizeAnnouncementEventData({
 		version = version,
 		eventType = eventType,
+		occurredAt = occurredAt,
+		eventId = eventId,
 		senderGUID = senderGUID,
 		classFile = classFile,
 		senderName = senderName,
@@ -817,6 +839,44 @@ function QuestTogether:GetCommsDiagnostics()
 	return runtime.commsDiagnostics
 end
 
+-- Fixed command buckets keep unknown traffic from growing diagnostic state.
+local TRAFFIC_COMMANDS = { ANN = true, LVL = true, LOC = true, QTPR = true, QTVR = true,
+	QTLF = true, QTLQ = true, QJST = true, QJON = true, QCMP = true, QCQE = true,
+	QCDN = true, QTB1 = true, QSHR = true, PING = true, PONG = true }
+function QuestTogether:RecordCommsTraffic(kind, message, result)
+	local diagnostics = self:GetCommsDiagnostics()
+	local now = SafeNumber(self, self.API.GetTime and self.API.GetTime())
+	diagnostics.trafficStartedAt = diagnostics.trafficStartedAt or now
+	diagnostics.trafficObservedAt = now
+	diagnostics.traffic = diagnostics.traffic or {}
+	local command = message:match("^([^|]+)|")
+	command = TRAFFIC_COMMANDS[command] and command or "OTHER"
+	local bucket = diagnostics.traffic[command] or {}
+	diagnostics.traffic[command] = bucket
+	bucket[kind] = (bucket[kind] or 0) + 1
+	bucket[kind .. "Bytes"] = (bucket[kind .. "Bytes"] or 0) + #message
+	if result == 3 or result == 8 then bucket.throttled = (bucket.throttled or 0) + 1 end
+end
+
+function QuestTogether:RecordAnnouncementLatency(eventData)
+	local now = self:GetAnnouncementServerTime()
+	local age = now and eventData.occurredAt and now - eventData.occurredAt or nil
+	local diagnostics = self:GetCommsDiagnostics()
+	-- These are sender-reported, second-resolution timestamps, not trusted
+	-- network telemetry. Future or implausibly old values remain unknown.
+	if age and age >= 0 and age <= 86400 then
+		diagnostics.announcementAgeSamples = (diagnostics.announcementAgeSamples or 0) + 1
+		diagnostics.announcementAgeTotal = (diagnostics.announcementAgeTotal or 0) + age
+		diagnostics.announcementAgeMax = math.max(diagnostics.announcementAgeMax or 0, age)
+		diagnostics.announcementAgeLast = age
+	else
+		age = nil
+		diagnostics.announcementAgeUnknown = (diagnostics.announcementAgeUnknown or 0) + 1
+	end
+	self:Debugf("comms", "announcement age sender=%s event=%s reportedAgeSeconds=%s",
+		eventData.senderName, eventData.eventType, age and tostring(age) or "unknown")
+end
+
 function QuestTogether:RecordCommsDiagnostic(kind, detail)
 	local diagnostics = self:GetCommsDiagnostics()
 	diagnostics[kind] = (diagnostics[kind] or 0) + 1
@@ -831,7 +891,7 @@ function QuestTogether:RecordCommsDiagnostic(kind, detail)
 	end
 end
 
-function QuestTogether:SendWireMessageToAnnouncementRoutes(wireMessage, debugContext, selectedRoutes)
+function QuestTogether:SendWireMessageToAnnouncementRoutes(wireMessage, debugContext, selectedRoutes, direct)
 	wireMessage = SafePrimitiveString(self, wireMessage, "")
 	if wireMessage == "" or not self.isEnabled then
 		return false
@@ -848,10 +908,19 @@ function QuestTogether:SendWireMessageToAnnouncementRoutes(wireMessage, debugCon
 		)
 		return false
 	end
+	local command = wireMessage:match("^([^|]+)|")
+	local geographic = rawget(self, "geographicCommsState")
+	if geographic and not direct and not selectedRoutes then
+		local staged = self:StageGeographicState(wireMessage)
+		if staged ~= nil then return staged end
+		if command == "ANN" or command == "LVL" then
+			selectedRoutes = self:GetGeographicAnnouncementRoutes()
+		end
+	end
 	local routes = {}
 	for _, route in ipairs(selectedRoutes or self:GetAnnouncementWireRoutes()) do
 		if route.requiresChannelJoin and not route.channelName then
-			for _, name in ipairs({ self.announcementChannelName, self.legacyAnnouncementChannelName }) do
+			for _, name in ipairs({ self.announcementChannelName }) do
 				routes[#routes + 1] = { distribution = "CHANNEL", requiresChannelJoin = true, channelName = name }
 			end
 		else
@@ -859,10 +928,16 @@ function QuestTogether:SendWireMessageToAnnouncementRoutes(wireMessage, debugCon
 		end
 	end
 	local sentCount, sentTargets = 0, {}
+	local isPing = wireMessage:sub(1, 5) == "PING|" or wireMessage:sub(1, 5) == "PONG|"
 
 	for _, route in ipairs(routes) do
-		if route.requiresChannelJoin and not self:EnsureAnnouncementChannelJoined(route.channelName) then
+		if geographic and not direct and (command == "ANN" or command == "LVL" or command == "PONG") then
+			if self:QueueGeographicWire(wireMessage, contextLabel, route, false) then sentCount = sentCount + 1 end
+		elseif geographic and not direct and not self:TakeCommsSendToken(false) then
+			self:RecordCommsDiagnostic("pacedRoutes", contextLabel)
+		elseif route.requiresChannelJoin and not self:EnsureAnnouncementChannelJoined(route.channelName) then
 			self:RecordCommsDiagnostic("failedRoutes", "channel join failed " .. contextLabel)
+			if isPing then self:Debugf("comms", "ping route join failed channel=%s %s", route.channelName or "", contextLabel) end
 		else
 			-- Joining can replace a channel ID. Resolve its target after the join,
 			-- never from the cached route assembled before it.
@@ -873,13 +948,21 @@ function QuestTogether:SendWireMessageToAnnouncementRoutes(wireMessage, debugCon
 				sentTargets[targetKey] = true
 				local ok, result =
 					pcall(self.API.SendAddonMessage, self.commPrefix, wireMessage, route.distribution, target)
+				if isPing then
+					self:Debugf("comms", "ping route=%s channel=%s target=%s callOK=%s result=%s %s",
+						route.distribution, route.channelName or "", tostring(target or ""), tostring(ok), SafeDebugString(result), contextLabel)
+				end
 				if ok and self:CanAccessValue(result) and (result == 0 or result == true) then
+					self:RecordCommsTraffic("sent", wireMessage)
 					sentCount = sentCount + 1
 					self:RecordCommsDiagnostic(
 						"sentRoutes",
 						string.format("route=%s bytes=%d %s", route.distribution, #wireMessage, contextLabel)
 					)
 				else
+					local code = SafeNumber(self, result)
+					if geographic and (code == 3 or code == 8) then geographic.blockedUntil = self.API.GetTime() + 2 end
+					self:RecordCommsTraffic("failed", wireMessage, code)
 					self:RecordCommsDiagnostic(
 						"failedRoutes",
 						string.format(
@@ -903,24 +986,20 @@ function QuestTogether:ShouldSuppressDuplicateCommMessage(sender, message, dupli
 	self.recentCommMessageSignatures = self.recentCommMessageSignatures or {}
 
 	local signatures = self.recentCommMessageSignatures
-	local signatureCount = 0
-	for _ in pairs(signatures) do
-		signatureCount = signatureCount + 1
-	end
-	if signatureCount > COMM_DUPLICATE_PRUNE_THRESHOLD then
-		for signature, seenAt in pairs(signatures) do
-			if (nowSeconds - (seenAt or 0)) > COMM_REQUEST_DUPLICATE_WINDOW_SECONDS then
-				signatures[signature] = nil
-			end
-		end
-	end
-
 	local signature = (self:NormalizeMemberName(sender) or "") .. "|" .. SafeAddonString(self, message or "", "")
 	local seenAt = signatures[signature]
-	if seenAt and nowSeconds >= seenAt and (nowSeconds - seenAt) <= duplicateWindow then
-		return true
+	if seenAt and nowSeconds >= seenAt and nowSeconds - seenAt <= duplicateWindow then return true end
+	-- A fixed ring bounds both storage and per-message work during busy-zone
+	-- bursts. Replacing the signature table (reset/tests) resets the ring too.
+	local index = rawget(self, "recentCommSignatureIndex")
+	if not index or index.signatures ~= signatures then
+		index = { signatures = signatures, ring = {}, cursor = 0 }
+		self.recentCommSignatureIndex = index
 	end
-
+	index.cursor = index.cursor % 4096 + 1
+	local old = index.ring[index.cursor]
+	if old and signatures[old.key] == old.at then signatures[old.key] = nil end
+	index.ring[index.cursor] = { key = signature, at = nowSeconds }
 	signatures[signature] = nowSeconds
 	return false
 end
@@ -929,6 +1008,7 @@ function QuestTogether:AnnouncementChannelChatFilter(_, _, ...)
 	-- Only channel metadata identifies this channel. Scanning message text and
 	-- player names both hides unrelated conversations and touches secret data.
 	return MatchesAnnouncementChannelName(self, select(4, ...)) or MatchesAnnouncementChannelName(self, select(9, ...))
+		or self:IsGeographicChannelName(select(4, ...)) or self:IsGeographicChannelName(select(9, ...))
 end
 
 function QuestTogether:RegisterAnnouncementChannelChatFilters()
@@ -980,7 +1060,7 @@ function QuestTogether:HideAnnouncementChannelFromChatWindows(channelName)
 		local chatFrame = self.API.GetChatFrameByID(chatFrameID)
 		if chatFrame then
 			-- Some chat frames reject channel removal in edge states; keep cleanup best-effort.
-			for _, name in ipairs(channelName and { channelName } or { self.announcementChannelName, self.legacyAnnouncementChannelName }) do
+			for _, name in ipairs(channelName and { channelName } or { self.announcementChannelName }) do
 				pcall(self.API.RemoveChatWindowChannel, chatFrame, name)
 			end
 		end
@@ -989,11 +1069,10 @@ end
 
 function QuestTogether:EnsureAnnouncementChannelJoined(channelName)
 	if not channelName then
-		local current = self:EnsureAnnouncementChannelJoined(self.announcementChannelName)
-		local legacy = self:EnsureAnnouncementChannelJoined(self.legacyAnnouncementChannelName)
-		return current or legacy
+		return self:EnsureAnnouncementChannelJoined(self.announcementChannelName)
 	end
-	local cacheKey = channelName == self.announcementChannelName and "announcementChannelLocalID" or "legacyAnnouncementChannelLocalID"
+	local cacheKey = channelName == self.announcementChannelName and "announcementChannelLocalID" or nil
+	if not cacheKey and not self:IsGeographicChannelName(channelName) then return false end
 	if not self.isEnabled then
 		self:Debug("Skipping channel join because addon is disabled", "comms")
 		return false
@@ -1001,13 +1080,13 @@ function QuestTogether:EnsureAnnouncementChannelJoined(channelName)
 
 	local currentLocalID = self:GetAnnouncementChannelLocalID(channelName)
 	if currentLocalID then
-		self[cacheKey] = currentLocalID
+		if cacheKey then self[cacheKey] = currentLocalID end
 		if self.HideAnnouncementChannelFromChatWindows then
 			self:HideAnnouncementChannelFromChatWindows(channelName)
 		end
 		return true
 	end
-	self[cacheKey] = nil
+	if cacheKey then self[cacheKey] = nil end
 
 	if not self.API or not self.API.JoinPermanentChannel then
 		self:Debug("JoinPermanentChannel API unavailable", "comms")
@@ -1029,7 +1108,7 @@ function QuestTogether:EnsureAnnouncementChannelJoined(channelName)
 
 	currentLocalID = self:GetAnnouncementChannelLocalID(channelName)
 	if currentLocalID then
-		self[cacheKey] = currentLocalID
+		if cacheKey then self[cacheKey] = currentLocalID end
 		if self.HideAnnouncementChannelFromChatWindows then
 			self:HideAnnouncementChannelFromChatWindows(channelName)
 		end
@@ -1054,7 +1133,7 @@ function QuestTogether:MoveAnnouncementChannelsToEnd()
 		local id, name = SafeChannelNumber(self, list[i]), SafeTrimAddonString(self, list[i + 1], "")
 		if not id or id < 1 or id > 30 or id ~= math.floor(id) or name == "" or seen[id] then return false end
 		seen[id] = true
-		channels[#channels + 1] = { id = id, name = name, qt = MatchesAnnouncementChannelName(self, name) }
+		channels[#channels + 1] = { id = id, name = name, qt = MatchesAnnouncementChannelName(self, name) or self:IsGeographicChannelName(name) }
 	end
 	table.sort(channels, function(a, b) return a.id < b.id end)
 	for i = 2, #channels do
@@ -1063,26 +1142,25 @@ function QuestTogether:MoveAnnouncementChannelsToEnd()
 			if self:IsRuntimeRestricted() then return false end
 			local swapped, result = pcall(api.SwapChatChannelIndices, channels[j - 1].id, channels[j].id)
 			-- Native channel indices can change; never retain a stale receive fallback.
-			self.announcementChannelLocalID, self.legacyAnnouncementChannelLocalID = nil, nil
+			self.announcementChannelLocalID = nil
 			if not swapped or result ~= true then return false end
 			channels[j - 1].qt, channels[j].qt = channels[j].qt, channels[j - 1].qt
 			channels[j - 1].name, channels[j].name = channels[j].name, channels[j - 1].name
 			j = j - 1
 		end
 	end
-	local current, legacy
+	-- Keep the human chat channel before the machine-only zone subscriptions.
+	local firstQT, current
 	for _, channel in ipairs(channels) do
+		if channel.qt and not firstQT then firstQT = channel.id end
 		if channel.name == self.announcementChannelName then current = channel.id end
-		if channel.name == self.legacyAnnouncementChannelName then legacy = channel.id end
 	end
-	if current and legacy and current > legacy then
-		if self:IsRuntimeRestricted() then return false end
-		local swapped, result = pcall(api.SwapChatChannelIndices, current, legacy)
-		self.announcementChannelLocalID, self.legacyAnnouncementChannelLocalID = nil, nil
+	if firstQT and current and current ~= firstQT then
+		local swapped, result = pcall(api.SwapChatChannelIndices, current, firstQT)
+		self.announcementChannelLocalID = nil
 		if not swapped or result ~= true then return false end
 	end
 	self.announcementChannelLocalID = self:GetAnnouncementChannelLocalID()
-	self.legacyAnnouncementChannelLocalID = self:GetAnnouncementChannelLocalID(self.legacyAnnouncementChannelName)
 	return true
 end
 
@@ -1110,10 +1188,8 @@ function QuestTogether:LeaveAnnouncementChannel()
 		)
 		-- Channel leave can fail if Blizzard already removed it; no need to hard fail disable.
 		pcall(self.API.LeaveChannelByName, self.announcementChannelName)
-		pcall(self.API.LeaveChannelByName, self.legacyAnnouncementChannelName)
 	end
 	self.announcementChannelLocalID = nil
-	self.legacyAnnouncementChannelLocalID = nil
 	self:ResetCommsState()
 	if self.UnregisterAnnouncementChannelChatFilters then
 		self:UnregisterAnnouncementChannelChatFilters()
@@ -1121,6 +1197,7 @@ function QuestTogether:LeaveAnnouncementChannel()
 end
 
 function QuestTogether:ResetCommsState()
+	if self.ResetGeographicComms then self:ResetGeographicComms() end
 	self.channelOrderWork = nil
 	self.localizedQuestTitles = nil
 	if self.ResetPartyJoin then self:ResetPartyJoin() end
@@ -1130,6 +1207,7 @@ function QuestTogether:ResetCommsState()
 	self.pendingPingRequests = {}
 	self.pendingQuestCompareRequests = {}
 	self.recentCommMessageSignatures = {}
+	self.recentCommSignatureIndex = nil
 	-- Pending timer closures retain the old state only; they cannot send after
 	-- disable/re-enable or remove work from a replacement queue.
 	self.questCompareResponseQueue = nil
@@ -1224,6 +1302,7 @@ function QuestTogether:BuildLocalAnnouncementEvent(eventType, text, questId, ext
 
 	return self:SanitizeAnnouncementEventData({
 		version = ANNOUNCEMENT_WIRE_VERSION,
+		occurredAt = self:GetAnnouncementServerTime(),
 		eventType = SafeAddonString(self, eventType or "", ""),
 		senderGUID = SafeAddonString(self, senderGUID or "", ""),
 		classFile = SafeAddonString(self, self:GetPlayerClassFile() or "", ""),
@@ -1719,14 +1798,13 @@ function QuestTogether:IsAnnouncementChannelEvent(channel, localID, name)
 	end
 
 	if name ~= "" then
-		return MatchesAnnouncementChannelName(self, name)
+		return MatchesAnnouncementChannelName(self, name) or self:IsGeographicChannelName(name)
 	end
 
 	local expectedLocalID = SafeChannelNumber(self, self.announcementChannelLocalID)
 	local incomingLocalID = SafeChannelNumber(self, localID)
-	local legacyLocalID = SafeChannelNumber(self, self.legacyAnnouncementChannelLocalID)
 	return incomingLocalID ~= nil and incomingLocalID > 0
-		and (expectedLocalID == incomingLocalID or legacyLocalID == incomingLocalID)
+		and (expectedLocalID == incomingLocalID or self:IsGeographicChannelEvent(channel, incomingLocalID))
 end
 
 function QuestTogether:SendAnnouncementEvent(eventType, text, questId, extraData)
@@ -1833,6 +1911,11 @@ function QuestTogether:SendAnnouncementWireEvent(eventData)
 		eventData.coordX, eventData.coordY, eventData.mapID, eventData.zoneName = "", "", nil, ""
 	end
 
+	local geographic = rawget(self, "geographicCommsState")
+	if geographic and eventData.eventId == "" then
+		geographic.eventSequence = (geographic.eventSequence or 0) + 1
+		eventData.eventId = geographic.session .. "-" .. geographic.eventSequence
+	end
 	local payload = self:EncodeAnnouncementPayload(eventData)
 	-- Metadata itself can exhaust the packet. Do not report a successful send
 	-- for an announcement that the receiver must reject for having no text.
@@ -1859,10 +1942,12 @@ function QuestTogether:SendPingRequest()
 	local requestId = self:BuildChannelRequestId("ping")
 	local requesterName = self:GetPlayerFullName() or self:GetPlayerName() or ""
 	self.pendingPingRequests = self.pendingPingRequests or {}
-	local pendingRequest = { responders = {} }
+	local now = SafeNumber(self, self.API.GetTime and self.API.GetTime()) or 0
+	local pendingRequest = { responders = {}, remoteReplies = 0, responderCount = 0, startedAt = now, expiresAt = now + PING_REQUEST_TIMEOUT_SECONDS }
 	self.pendingPingRequests[requestId] = pendingRequest
 	self.API.Delay(PING_REQUEST_TIMEOUT_SECONDS, function()
 		if self.pendingPingRequests and self.pendingPingRequests[requestId] == pendingRequest then
+			self:Debugf("comms", "ping complete id=%s remoteReplies=%d", requestId, pendingRequest.remoteReplies)
 			self.pendingPingRequests[requestId] = nil
 		end
 	end)
@@ -1881,6 +1966,19 @@ function QuestTogether:SendPingRequest()
 		self.pendingPingRequests[requestId] = nil
 		return false, L("Unable to send ping request over any QuestTogether comm route.")
 	end
+	local retained = {}
+	for id, request in pairs(self.pendingPingRequests) do
+		if id ~= requestId then
+			retained[#retained + 1] = { id = id, startedAt = type(request) == "table" and request.startedAt or 0 }
+		end
+	end
+	table.sort(retained, function(a, b)
+		if a.startedAt == b.startedAt then return a.id < b.id end
+		return a.startedAt < b.startedAt
+	end)
+	for index = 1, #retained - PING_MAX_PENDING_REQUESTS + 1 do
+		self.pendingPingRequests[retained[index].id] = nil
+	end
 
 	local localResponse = self:BuildPingResponse(requestId)
 	if localResponse and self.HandlePingResponse then
@@ -1890,7 +1988,7 @@ function QuestTogether:SendPingRequest()
 	return true, requestId
 end
 
-function QuestTogether:SendPingResponse(requestId)
+function QuestTogether:SendPingResponse(requestId, selectedRoutes)
 	local responseData = self:BuildPingResponse(requestId)
 	if not responseData then
 		return false
@@ -1899,15 +1997,41 @@ function QuestTogether:SendPingResponse(requestId)
 	local wireMessage = self:SerializeWireMessage(PING_RESPONSE_COMMAND, self:EncodePingResponsePayload(responseData))
 	return self:SendWireMessageToAnnouncementRoutes(
 		wireMessage,
-		"ping response id=" .. SafeAddonString(self, requestId, "")
+		"ping response id=" .. SafeAddonString(self, requestId, ""),
+		selectedRoutes
 	)
 end
 
-function QuestTogether:HandlePingRequest(requestData)
+function QuestTogether:HandlePingRequest(requestData, channel, localID, channelName)
 	if type(requestData) ~= "table" or type(requestData.requestId) ~= "string" or requestData.requestId == "" then
 		return false
 	end
-	return self:SendPingResponse(requestData.requestId)
+	self:Debugf("comms", "ping request received id=%s sender=%s", requestData.requestId, requestData.requesterName or "")
+	local routes
+	if GROUP_ANNOUNCEMENT_DISTRIBUTIONS[channel] then
+		routes = { { distribution = channel } }
+	elseif channel == "CHANNEL" then
+		local incomingName = SafeTrimAddonString(self, channelName, "")
+		incomingName = string.lower(string.match(incomingName, "^%d+%.%s+(.+)$") or incomingName)
+		local incomingID = SafeChannelNumber(self, localID)
+		local names = { self.announcementChannelName }
+		local geographic = rawget(self, "geographicCommsState")
+		for name in pairs(geographic and geographic.subscriptions or {}) do names[#names + 1] = name end
+		for _, name in ipairs(names) do
+			if incomingName == string.lower(name)
+				or (incomingName == "" and incomingID and incomingID == self:GetAnnouncementChannelLocalID(name)) then
+				routes = { { distribution = "CHANNEL", channelName = name, requiresChannelJoin = true } }
+				break
+			end
+		end
+		if not routes then return false end
+	elseif channel ~= nil then
+		return false
+	end
+	-- Reply on the proven incoming route, not both public channels plus a group
+	-- unrelated to the requester. Old peers understand the unchanged PONG wire.
+	if rawget(self, "geographicCommsState") then return self:ScheduleGeographicPingReply(requestData.requestId, routes) end
+	return self:SendPingResponse(requestData.requestId, routes)
 end
 
 function QuestTogether:HandlePingResponse(responseData)
@@ -1918,6 +2042,14 @@ function QuestTogether:HandlePingResponse(responseData)
 	self.pendingPingRequests = self.pendingPingRequests or {}
 	local pending = self.pendingPingRequests[responseData.requestId]
 	if not pending then
+		self:Debugf("comms", "ping reply unmatched id=%s sender=%s", responseData.requestId, responseData.senderName or "")
+		return false
+	end
+	local now = SafeNumber(self, self.API.GetTime and self.API.GetTime())
+	if type(pending) == "table" and pending.expiresAt
+		and (not now or now < pending.startedAt or now >= pending.expiresAt) then
+		self.pendingPingRequests[responseData.requestId] = nil
+		self:Debugf("comms", "ping reply expired id=%s sender=%s", responseData.requestId, responseData.senderName or "")
 		return false
 	end
 	local senderName = self:NormalizeMemberName(responseData.senderName)
@@ -1930,9 +2062,15 @@ function QuestTogether:HandlePingResponse(responseData)
 	end
 	pending.responders = pending.responders or {}
 	if pending.responders[senderName] then
+		self:Debugf("comms", "ping reply duplicate id=%s sender=%s", responseData.requestId, senderName)
 		return false
 	end
+	if (pending.responderCount or 0) >= PING_MAX_RESPONDERS then return false end
 	pending.responders[senderName] = true
+	pending.responderCount = (pending.responderCount or 0) + 1
+	if not self:IsSelfSender(senderName) then pending.remoteReplies = (pending.remoteReplies or 0) + 1 end
+	self:Debugf("comms", "ping reply accepted id=%s sender=%s elapsed=%.3f", responseData.requestId, senderName,
+		now and pending.startedAt and now - pending.startedAt or 0)
 
 	if self.PrintPingResponse then
 		self:PrintPingResponse(responseData)
@@ -2280,6 +2418,12 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		self:Debug("Rejected comm payload without an accessible transport sender", "comms")
 		return
 	end
+	if safeMessage:sub(1, 5) == "PING|" or safeMessage:sub(1, 5) == "PONG|" then
+		self:Debugf("comms", "ping packet command=%s sender=%s route=%s localID=%s channel=%s self=%s allowedRoute=%s",
+			safeMessage:sub(1, 4), transportSenderName, SafePrimitiveString(self, channel, ""), SafeDebugString(localID),
+			SafePrimitiveString(self, name, ""), tostring(self:IsSelfSender(safeTransportSender)),
+			tostring(self:IsAnnouncementChannelEvent(channel, localID, name)))
+	end
 	if self:IsSelfSender(safeTransportSender) then
 		return
 	end
@@ -2298,6 +2442,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 			#safeMessage
 		)
 	)
+	self:RecordCommsTraffic("received", safeMessage)
 
 	local command, payload = self:DeserializeWireMessage(safeMessage)
 	if not command then
@@ -2307,15 +2452,31 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 	local duplicateWindow = (command == PING_REQUEST_COMMAND or command == QUEST_COMPARE_REQUEST_COMMAND)
 			and COMM_REQUEST_DUPLICATE_WINDOW_SECONDS
 		or COMM_DUPLICATE_WINDOW_SECONDS
+	local decodedAnnouncement
+	local signatureMessage = safeMessage
+	if command == ANNOUNCEMENT_COMMAND or command == LEVEL_UP_COMMAND then
+		decodedAnnouncement = self:DecodeAnnouncementPayload(payload)
+		if decodedAnnouncement and decodedAnnouncement.eventId ~= "" then
+			signatureMessage = command .. "|" .. decodedAnnouncement.eventId
+			duplicateWindow = 300
+		end
+	end
 	-- Legacy presence packets have no sequence. Every transition must apply,
 	-- including rapid departures/rejoins with otherwise identical content.
-	if command ~= "QTPR" and self:ShouldSuppressDuplicateCommMessage(safeTransportSender, safeMessage, duplicateWindow) then
+	if command ~= "QTPR" and self:ShouldSuppressDuplicateCommMessage(safeTransportSender, signatureMessage, duplicateWindow) then
+		self:RecordCommsTraffic("duplicate", safeMessage)
 		self:RecordCommsDiagnostic("duplicateMessages", "sender=" .. transportSenderName .. " command=" .. command)
 		return
 	end
 
+	if command == "QTB1" then
+		self:HandleGeographicSnapshot(payload, transportSenderName)
+		return
+	end
+	if self:IsGeographicChannelEvent(channel, localID, name)
+		and command ~= "ANN" and command ~= "LVL" and command ~= "PING" and command ~= "PONG" then return end
 	if command == ANNOUNCEMENT_COMMAND or command == LEVEL_UP_COMMAND then
-		local eventData = self:DecodeAnnouncementPayload(payload)
+		local eventData = decodedAnnouncement
 		if not eventData or (command == LEVEL_UP_COMMAND and eventData.eventType ~= "PLAYER_LEVEL_UP") then
 			self:Debug("Failed to decode announcement payload", "comms")
 			return
@@ -2324,6 +2485,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		-- CHAT_MSG_ADDON supplies the authoritative sender. Never let a payload
 		-- choose which visible player's nameplate receives the announcement.
 		eventData.senderName = transportSenderName
+		self:RecordAnnouncementLatency(eventData)
 		if self.RecordQTPlayerPresence then self:RecordQTPlayerPresence(transportSenderName, true) end
 
 		self:HandleAnnouncementEvent(eventData, false)
@@ -2338,7 +2500,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		end
 		requestData.requesterName = transportSenderName or requestData.requesterName
 		self:RecordQTPlayerPresence(transportSenderName, true)
-		self:HandlePingRequest(requestData)
+		self:HandlePingRequest(requestData, channel, localID, name)
 		return
 	end
 

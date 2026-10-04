@@ -203,6 +203,12 @@ local function Rect(addon, frame)
 	end
 end
 
+function QuestTogether:GetViewedQuestTogetherMapID()
+	if self:IsRuntimeRestricted() or not self:CanAccessForeignFrame(WorldMapFrame, true) then return nil end
+	if Method(self, WorldMapFrame, "IsShown") ~= true then return nil end
+	return ID(self, Method(self, WorldMapFrame, "GetMapID"))
+end
+
 function QuestTogether:GetLocationPinSurface(surface)
 	if self:IsRuntimeRestricted() then
 		return nil
@@ -583,7 +589,7 @@ local function Tooltip(addon, state, pin, row)
 			end
 		end
 		local now = addon.API and addon.API.GetTime and Number(addon, addon.API.GetTime())
-		local receivedAt = Number(addon, row.receivedAt)
+		local receivedAt = Number(addon, row.sampledAt or row.receivedAt)
 		if now and receivedAt and now >= receivedAt + 30 then
 			text = text .. "\n|cff909090" .. L("\nLast update: ") .. math.floor(now - receivedAt) .. L(" seconds ago") .. "|r"
 		end

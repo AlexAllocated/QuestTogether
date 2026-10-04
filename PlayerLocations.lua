@@ -39,8 +39,8 @@ local function Now(addon)
 	return type(getter) == "function" and addon:SafeToNumber(getter()) or nil
 end
 
-local function NeedsWithdrawalRetry(enabled, publishedAt, now)
-	return not enabled and publishedAt and now >= publishedAt and now < publishedAt + LIFETIME
+local function NeedsWithdrawalRetry(enabled, publishedAt, now, lifetime)
+	return not enabled and publishedAt and now >= publishedAt and now < publishedAt + lifetime
 end
 
 function QT:GetPlayerLocationShareMask()
@@ -184,8 +184,8 @@ function QT:BroadcastPlayerLocation(force, withdraw)
 	-- each revoked surface until its last published point expires. Publications
 	-- on a retained surface must not prolong another surface's revocation window.
 	local mapEnabled, minimapEnabled = mask % 2 == 1, mask >= 2
-	local withdrawing = NeedsWithdrawalRetry(mapEnabled, state.lastMapLocationSentAt, now)
-		or NeedsWithdrawalRetry(minimapEnabled, state.lastMinimapLocationSentAt, now)
+	local withdrawing = NeedsWithdrawalRetry(mapEnabled, state.lastMapLocationSentAt, now, rawget(self, "geographicCommsState") and 600 or LIFETIME)
+		or NeedsWithdrawalRetry(minimapEnabled, state.lastMinimapLocationSentAt, now, rawget(self, "geographicCommsState") and 600 or LIFETIME)
 	local location = mask ~= 0 and self:ReadLocalPlayerLocation() or nil
 	if mask ~= 0 and not location then
 		-- A transient read outage is not a privacy change. Do not renew stale
@@ -233,7 +233,7 @@ function QT:PrunePlayerLocations(force)
 	end
 	state.lastPruneAt = now
 	for name, peer in pairs(state.peers) do
-		if not now or now < peer.receivedAt or now - peer.receivedAt >= LIFETIME or self:IsIgnoredPlayerName(name) then
+		if not now or now < peer.receivedAt or now - peer.receivedAt >= (peer.lifetime or LIFETIME) or self:IsIgnoredPlayerName(name) then
 			state.peers[name] = nil
 		end
 	end
@@ -299,7 +299,7 @@ function QT:GetRecentPlayerLocationMapID(name)
 	local state = rawget(self, "playerLocationState")
 	local peer = state and state.peers and state.peers[name]
 	local now = Now(self)
-	if not peer or not now or peer.mask == 0 or now < peer.receivedAt or now - peer.receivedAt >= LIFETIME then return nil end
+	if not peer or not now or peer.mask == 0 or now < peer.receivedAt or now - peer.receivedAt >= (peer.lifetime or LIFETIME) then return nil end
 	return peer.mapID
 end
 
@@ -320,7 +320,7 @@ function QT:GetVisiblePlayerLocations(surface)
 		if
 			now
 			and now >= peer.receivedAt
-			and now - peer.receivedAt < LIFETIME
+			and now - peer.receivedAt < (peer.lifetime or LIFETIME)
 			-- Older peers can still grant permission for just one surface.
 			and ((surface == "map" and peer.mask % 2 == 1) or (surface == "minimap" and peer.mask >= 2))
 			and (not onlyPartners or self:IsPlayerLookingForQuestPartners(peer.name))
@@ -365,6 +365,7 @@ function QT:InitializePlayerLocations()
 			self:UpdateQTPlayerPresence()
 		end
 		self:BroadcastPlayerLocation()
+		if self.UpdateGeographicComms then self:UpdateGeographicComms() end
 		self:PrunePlayerLocations()
 		self:RefreshPlayerLocationPins()
 		self:UpdatePlayerTooltipBadge()

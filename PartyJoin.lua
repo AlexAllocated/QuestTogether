@@ -111,7 +111,7 @@ function QT:PrunePartyJoin()
 		end
 	end
 	for name, peer in pairs(state.peers) do
-		if now < peer.at or now - peer.at >= PEER_LIFETIME or self:IsIgnoredPlayerName(name) then
+		if now < peer.at or now - peer.at >= (peer.lifetime or PEER_LIFETIME) or self:IsIgnoredPlayerName(name) then
 			state.peers[name] = nil
 		end
 	end
@@ -247,7 +247,7 @@ function QT:ShouldRequestPartyJoin(name)
 		and peer ~= nil
 		and peer.grouped == "1"
 		and now >= peer.at
-		and now - peer.at < PEER_LIFETIME
+		and now - peer.at < (peer.lifetime or PEER_LIFETIME)
 		and not self:IsIgnoredPlayerName(name)
 end
 

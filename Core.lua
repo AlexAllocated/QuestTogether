@@ -296,7 +296,7 @@ local tostring = SafeText
 QuestTogether.addonName = addonName or "QuestTogether"
 QuestTogether.commPrefix = "QuestTogether"
 QuestTogether.announcementChannelName = "QuestTogether"
-QuestTogether.legacyAnnouncementChannelName = "QuestTogetherAnnounce1"
+QuestTogether.retiredAnnouncementChannelName = "QuestTogetherAnnounce1"
 QuestTogether.questLogWindowName = "QuestTogether"
 QuestTogether.CHAT_BUBBLE_SIZE_MIN = 80
 QuestTogether.CHAT_BUBBLE_SIZE_MAX = 160
@@ -939,6 +939,11 @@ QuestTogether.API = QuestTogether.API or {
 	end,
 		GetTime = function()
 			return GetTime()
+		end,
+		GetServerTime = function()
+			if type(GetServerTime) ~= "function" then return nil end
+			local ok, value = pcall(GetServerTime)
+			return ok and QuestTogether:SafeToNumber(value) or nil
 		end,
 		ReloadUI = function()
 			if type(ReloadUI) ~= "function" then
@@ -2203,6 +2208,10 @@ QuestTogether.API = QuestTogether.API or {
 				end
 
 				local sanitizedInfo = {}
+				for _, key in ipairs({ "mapType", "parentMapID" }) do
+					local value = CanAccessForeignValue(mapInfo[key]) and QuestTogether:SafeToNumber(mapInfo[key])
+					if value and value >= 0 and value <= 1000000 and value == math.floor(value) then sanitizedInfo[key] = value end
+				end
 				local numericMapID = CanAccessForeignValue(mapInfo.mapID) and QuestTogether and QuestTogether.SafeToNumber and QuestTogether:SafeToNumber(mapInfo.mapID)
 					or nil
 				if not numericMapID then
@@ -5595,6 +5604,8 @@ function QuestTogether:Enable()
 	if self.ResetRuntimeWorkStateStore then
 		self:ResetRuntimeWorkStateStore()
 	end
+	if self.InitializeGeographicComms then self:InitializeGeographicComms() end
+	if self.API.LeaveChannelByName then pcall(self.API.LeaveChannelByName, self.retiredAnnouncementChannelName) end
 	if self.EnsureAnnouncementChannelJoined then
 		self:EnsureAnnouncementChannelJoined()
 		self:ScheduleAnnouncementChannelOrder()
@@ -5639,6 +5650,7 @@ function QuestTogether:Disable()
 	end
 	if self.BroadcastQTPlayerPresence then self:BroadcastQTPlayerPresence(true) end
 	if self.BroadcastPlayerLocation then self:BroadcastPlayerLocation(true, true) end
+	if self.FlushGeographicDeparture then self:FlushGeographicDeparture() end
 
 	self:UnregisterRuntimeEvents()
 	self.isEnabled = false
@@ -6155,6 +6167,7 @@ function QuestTogether:PLAYER_LEAVING_WORLD()
 	if self.isEnabled then
 		if self.BroadcastQTPlayerPresence then self:BroadcastQTPlayerPresence(true) end
 		if self.BroadcastPlayerLocation then self:BroadcastPlayerLocation(true, true) end
+		if self.FlushGeographicDeparture then self:FlushGeographicDeparture() end
 	end
 	self.isLoggingOut = true
 end

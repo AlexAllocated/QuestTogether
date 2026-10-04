@@ -84,6 +84,22 @@ function QuestTogether:BuildDiagnosticReport(questId)
 	}) do
 		Add("comms." .. key, comms[key] or 0)
 	end
+	Add("comms.trafficSeconds", math.max(0, (comms.trafficObservedAt or 0) - (comms.trafficStartedAt or 0)))
+	local trafficCommands = {}
+	for command in pairs(comms.traffic or {}) do trafficCommands[#trafficCommands + 1] = command end
+	table.sort(trafficCommands)
+	for _, command in ipairs(trafficCommands) do
+		local bucket = comms.traffic[command]
+		for _, key in ipairs({ "queued", "queuedBytes", "sent", "sentBytes", "failed", "failedBytes", "throttled", "received", "receivedBytes", "duplicate", "duplicateBytes" }) do
+			Add("comms.traffic." .. command .. "." .. key, bucket[key] or 0)
+		end
+	end
+	for _, key in ipairs({ "announcementAgeSamples", "announcementAgeUnknown" }) do
+		Add("comms." .. key, comms[key] or 0)
+	end
+	for _, key in ipairs({ "announcementAgeLast", "announcementAgeMax" }) do Add("comms." .. key, comms[key] or "unknown") end
+	Add("comms.announcementAgeMean", (comms.announcementAgeSamples or 0) > 0
+		and comms.announcementAgeTotal / comms.announcementAgeSamples or "unknown")
 	Add("log.lines", #self:GetDebugLogStore())
 	Add("log.limit", self.DEBUG_LOG_MAX_LINES)
 	Add("log.dropped", self.diagnosticDroppedLogLines or 0)

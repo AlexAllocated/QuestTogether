@@ -7,7 +7,7 @@
 ## Interface-Titan: 38001, 38002
 ## Title: QuestTogether
 ## IconTexture: Interface\GossipFrame\AvailableQuestIcon
-## Version: 5.17.2
+## Version: 6.0.0
 ## Notes: Quest progress chat bubbles and logs for party and nearby players.
 ## Notes-deDE: Chatblasen und Protokolle zum Questfortschritt für Gruppenmitglieder und Spieler in der Nähe.
 ## Notes-frFR: Bulles de discussion et journaux de progression des quêtes pour le groupe et les joueurs à proximité.
@@ -45,6 +45,7 @@ TaskArea.lua
 Nameplates.lua
 PartyState.lua
 Comms.lua
+GeographicComms.lua
 EventLocalization.lua
 AddonUpdates.lua
 QuestCompare.lua
@@ -82,3 +83,5 @@ scripts/regression_localization.lua
 scripts/regression_event_localization.lua
 scripts/regression_party_join.lua
 scripts/regression_player_tooltips.lua
+
+scripts/regression_geographic_comms.lua

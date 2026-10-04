@@ -228,17 +228,17 @@ Location rendering retains the 128-pin cap per surface and the 512-peer model bo
 
 ## QT chat and channel-name transition
 
-The canonical channel is `QuestTogether`; `QuestTogetherAnnounce1` remains joined for older addons. Broadcast addon routes and explicitly selected CHANNEL comparison routes send the same wire packet to both. Existing sender/payload deduplication suppresses duplicate event delivery; sequence-aware state protocols keep their existing handling. No received message is relayed. The transition temporarily uses two channel slots and increases channel-route traffic; remove the legacy route only in a later planned compatibility release.
+Version 6.0 ends the two-channel migration: `QuestTogetherAnnounce1` is left on enable and is neither joined, sent to, nor accepted as an incoming route. `QuestTogether` remains the global human chat and discovery channel; zone subscriptions are described below. Older clients may understand individual packets on shared routes but are no longer a full compatibility target. No received message is relayed.
 
 Plain `CHAT_MSG_CHANNEL` messages are accepted only by exact channel metadata on either QT channel, respect ignore/disabled/chat restriction and output settings, and never establish QT presence. Display strips user-supplied UI markup. `/qt <message>` sends otherwise-unrecognized text once to the freshly resolved canonical channel ID, without local echo or deferred retries. Native channel delivery and moderation rules still apply; older QT clients do not display this new chat feature.
 
-Channel reordering uses `GetChannelList` and the public `C_ChatInfo.SwapChatChannelsByChannelIndex` used in Blizzard's ChatConfig UI. It preserves non-QT relative order, then places the canonical and legacy channels last in that order. Coalesced channel events and restriction recovery trigger bounded passes. No ChatTypeInfo or native frame fields are changed. Missing reorder APIs leave the original order intact. Chat-name hover uses the public `ChatFrame.OnHyperlinkEnter/Leave` events and the same addon-owned tooltip renderer as dots, anchored beside the cursor at UIParent scale. Native GameTooltip and chat-frame scripts remain untouched.
+Channel reordering uses `GetChannelList` and the public `C_ChatInfo.SwapChatChannelsByChannelIndex` used in Blizzard's ChatConfig UI. It preserves non-QT relative order, then places QT channels last, with the canonical human chat channel before regional subscriptions. Coalesced channel events and restriction recovery trigger bounded passes. No ChatTypeInfo or native frame fields are changed. Missing reorder APIs leave the original order intact. Chat-name hover uses the public `ChatFrame.OnHyperlinkEnter/Leave` events and the same addon-owned tooltip renderer as dots, anchored beside the cursor at UIParent scale. Native GameTooltip and chat-frame scripts remain untouched.
 
 Offline coverage includes distinct channel IDs, partial join failures, duplicate delivery, channel reordering/recovery, current-ID slash sends, shared tooltip content/cleanup, and initialized-live-addon fixture isolation. Live Retail/Forever checks still need channel order across login/zone changes, real mixed-version delivery, tooltip positioning at UI scales, circular launcher glow, and blocked-action/taint behavior.
 
 The nearby announcement range is persisted per profile as a 5–100 percentage, default 25. At 5 it exactly preserves the previous 5-coordinate-point radius. Higher settings convert x/y deltas using physical map width/height in yards, with the radius set to the selected percentage of the map diagonal; 100 includes all valid points on the same map. This measures a radius, not percentage of zone area. Map/legacy-label identity and Retail War Mode checks remain in place. `GetMapWorldSize` is read behind the existing restricted/access-guarded map adapters; clients lacking it derive dimensions from 0/0 and 0.5/0.5 world positions, following HereBeDragons’ Classic fallback. Missing geometry retains only the old nearby range. No packet or heartbeat changes are needed.
 
-QT chat scope is independently persisted as Global (default) or Zone Only. Global never queries location data. Zone Only checks the local best map against an existing shared peer location younger than the location model’s 120-second lifetime, with withdrawals and unknown locations excluded. It is a receive-side filter for both logs and bubbles, rather than a separate channel or a sender delivery boundary. Sender self-echo remains allowed. UI tooltips explain the need for recent shared locations.
+QT chat scope is independently persisted as Global (default) or Zone Only. Global never queries location data. Zone Only checks the local best map against an existing shared peer location within the location model’s lifetime (120 seconds for unwrapped old LOC packets, at most 600 seconds from sampling for new snapshots), with withdrawals and unknown locations excluded. It is a receive-side filter for both logs and bubbles, rather than a separate channel or a sender delivery boundary. Sender self-echo remains allowed. UI tooltips explain the need for recent shared locations.
 
 The shared map-dot/chat-speaker tooltip now uses a wrapping class-colored title, larger body text, faction accents, a divider, padded sections, gold partner/quest highlights, and muted location age. All regions and styling remain QT-owned; refreshing between partner/non-partner and hover sources reuses the same regions.
 
@@ -256,4 +256,52 @@ The LFQP announcement cooldown is 30 seconds and paces failed attempts too, with
 
 Quest-name hover now uses the QT-owned cursor tooltip, with your local quest status, shareability, quest ID, and available local objective text. It replaces the Status menu action; quest sharing, journal, compare, and log destination actions retain their click-time guards. Player and quest hovers share the owned rendering/lifecycle path, hide on leave, restriction, disable, and hidden chat frames, and escape foreign display markup. No native tooltip lines or chat scripts are replaced.
 
-Player-name/map-dot tooltips and the minimap count use QT's monitored tracker, matching the full-scan announcement rather than WoW's watched quest count. Counts stay unknown until the first readable QT scan. Player tooltips also show Solo or Party of N, using guarded native group metadata for self. Version heartbeats alternate legacy QTVR v1 with QTVR v2 carrying installed version, monitored count, and group size (empty fields mean unknown). Existing presence pacing is unchanged: extended stats normally arrive every 80 seconds, while older receivers retain readable legacy version advertisements. Remote stats expire after 180 seconds and are removed with ignored/departed/evicted identities; missing reports never imply zero quests or Solo. Peer stats do not control sharing or invite authorization.
+Player-name/map-dot tooltips and the minimap count use QT's monitored tracker, matching the full-scan announcement rather than WoW's watched quest count. Counts stay unknown until the first readable QT scan. Player tooltips also show Solo or Party of N, using guarded native group metadata for self. Version heartbeats alternate legacy QTVR v1 with QTVR v2 carrying installed version, monitored count, and group size (empty fields mean unknown). In 6.0 these individual metadata updates are captured into compact regional/global snapshots; the newest extended stats are preserved when an internal producer emits a short version-only form. Unwrapped old stats expire after 180 seconds, and snapshot stats after at most 600 seconds from sampling and are removed with ignored/departed/evicted identities; missing reports never imply zero quests or Solo. Peer stats do not control sharing or invite authorization.
+
+## Transport latency and capacity diagnostics
+
+The Forever trace from October 4, 2026 contains replies to a ping generated at
+3745.484 arriving at 3955.440: about 210 seconds round trip. That is not a
+measurement of one-way quest-announcement latency or proof of channel overload.
+Requests now remain eligible for five minutes (eight retained requests, up to
+4096 distinct responders each). Reset/reload discards them. Replies use only the
+validated incoming group/channel route. Manual `/qt ping` requests remain global, plus the group route when grouped; replies are jittered over 1–20 seconds and queued with bounded lifetime. No automatic ping request retries were added.
+
+Announcement wire v3 has an optional seventeenth field containing the sender's
+server epoch time when QT creates the event. Existing v1-v3 decoders ignore this
+extra field. The 255-byte budget is unchanged; timing may be omitted if space is
+needed. Incoming messages without a valid timestamp have unknown age, not zero.
+`/qt dump comms` logs `reportedAgeSeconds`; `/qt diag` includes sample count,
+mean/max age, and local per-command transport counters. Ages are second-resolution,
+sender-reported estimates, affected by clock differences; they do not control
+display, emotes, identity, or permissions. Future timestamps and ages over one day
+are treated as unknown. Existing installations must update to send timestamps.
+
+Traffic counters count every attempted successful/failed API send route, received
+packet and duplicate, including payload bytes and throttle results. Successful
+sends mean API acceptance, not verified delivery; byte counts exclude transport
+overhead. Counters reset with the addon runtime and use fixed command buckets.
+These measurements do not send additional packets.
+
+Pre-6.0 capacity baseline: with both migration channels, a solo stationary client normally
+broadcasts about 14 background channel packets per minute (location, alternating
+presence/version, and party metadata). Moving with LFQP and a tracked quest is
+about 32/minute, before quest events, comparisons, requests, startup bursts or
+failures. At 1000 clients this is roughly 233-533 broadcast packets/second, each
+potentially delivered to every listener. These are source-derived estimates,
+not a measured server limit. The former independent send timers shared one native
+prefix budget without a common scheduler; the observed startup trace contains
+native throttle failures. A longer ping window does not solve that scaling risk.
+The 6.0 implementation below replaces those independent publications.
+
+## Geographic transport in 6.0
+
+- **Global:** `QuestTogether` retains plain text QT chat, low-volume targeted comparison/join transactions, and `QTB1` presence snapshots every 150–210 seconds. Worldwide dots remain available within the existing bounded cache (512 locations, 128 drawn pins). Their last-update age uses sample time, including estimated transit delay, rather than disguising delayed coordinates as newly sampled.
+- **Regional:** `QuestTogetherZ<zoneMapID>` carries announcements and snapshots. Subscribe to the current zone plus, after four seconds of stable map selection, one viewed zone. Leaving/closing the view releases the old subscription; never more than two zone subscriptions. Zone/floor ancestors use copied `C_Map.GetMapInfo` fields, with cycle/depth bounds; continents/world maps never create subscriptions. No role, realm suffix, War Mode or phase identifier partitions these channels. Existing Retail display filtering still applies.
+- **Cadence:** current-zone and group snapshots normally run every 20–25 seconds, backing off to at most 90–95 seconds as same-zone peers accumulate. Global snapshots continue independently. A newly viewed zone receives the next scheduled publication; opening a map never solicits a broadcast response storm. Failed joins fall back to global announcement delivery, without claiming zone subscription success.
+- **Snapshots:** state producers stage only their newest LOC/QTPR/QTVR/QTLF/QTLQ/QJST data. Each length-prefixed packet stays within 255 bytes; long optional labels/titles are omitted. A bounded parser allows only those six commands and rejects truncated framing, nesting and implausible time fields. Snapshot sessions and per-command sequences tolerate fragment/route reordering and reject retired sessions. Data expires at most 600 seconds after sampling; unreadable locations are omitted after 35 seconds rather than renewed indefinitely. The server timestamp is an estimate; when unavailable, transit age is unknown and receiver time is used.
+- **Scheduler:** one two-packet/second token budget with a four-packet burst, one token reserved for immediate transactions. Up to 96 queued packets; announcements/PONGs expire after 30 seconds, snapshots after 15. Events precede snapshots, snapshots coalesce per route/part, and native throttle results pause all attempts for two seconds. Transaction calls retain actual-send return semantics; state staging and event queue acceptance acknowledge only local storage. No invite, quest-sharing or other protected action is deferred by this scheduler.
+- **Lifecycle/privacy:** location withdrawal cancels packed snapshots and queued announcements, replaces the stored position with a clear, and schedules global/local publication. Status changes accelerate publication with a ten-second global floor. Normal disable/world departure attempts a compact clear immediately and discards pending publications. Reset invalidates ping callbacks and leaves owned regional channels. Group roster changes and regional departures discard queued work for the old audience. Ignore checks apply before snapshot decoding/display. Clears are best effort; lost clears expire naturally, and are never proof of remote removal.
+- **Deduplication:** party/zone/global overlap still produces duplicate delivery without the legacy channel. A 4096-entry ring gives bounded storage and constant-time replacement; new announcements carry a bounded event ID in optional field 18 and deduplicate for five minutes (subject to ring capacity), so separately generated identical actions remain distinct. Snapshot sequencing additionally rejects obsolete state after the short payload duplicate window. Capability/order records are bounded to 2048 peers. Existing model cache bounds remain in place.
+
+The packet-rate savings depend on snapshot size, player activity and adoption. This is an audience and traffic reduction, not proof of a native server capacity limit. Local simulations cover subscriptions, two-peer transport, throttling, queue expiry, ordering, consent changes and dense-zone backoff. Live Retail/Forever validation is still required for channel joining/order, real latency, two-client delivery, and taint/blocked-action behavior. Owner `devlogall` can only show received events; regional subscriptions no longer provide a worldwide firehose of quest activity.
