@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 5.16.7
+## 5.17.0
 
 Dites bonjour dans la discussion QT, trouvez des partenaires de quête dans toute votre zone et découvrez des informations et paramètres de joueur plus clairs.
 
@@ -29,6 +29,16 @@ Dites bonjour dans la discussion QT, trouvez des partenaires de quête dans tout
 - L’infobulle de la minicarte affiche désormais votre version de QT, votre statut de partenaire, la portée de la discussion, le nombre de quêtes surveillées, la portée de proximité et l’état du partage de position.
 - Les contrôles des paramètres disposent désormais d’explications traduites au survol, y compris pour les menus déroulants, les curseurs, les actions de profil et les contrôles de couleur.
 - Lorsque votre client ne parvient pas à résoudre un titre de quête localisé, les annonces conservent le texte d’origine de l’expéditeur dans les journaux comme dans les bulles au lieu d’afficher un numéro de quête générique. L’affichage localisé reprend pour les annonces suivantes une fois le titre disponible.
+
+## 5.16.7
+
+Lisez les mêmes notes de version de QuestTogether en jeu, sur Discord et dans votre langue préférée dans les fichiers du journal des modifications.
+
+### Journaux des modifications cohérents et multilingues
+
+- Le journal des modifications anglais reprend désormais les mêmes résumés de version et listes à puces que la fenêtre d’accueil et les annonces Discord.
+- Des fichiers de journal des modifications sont disponibles pour toutes les langues prises en charge, avec l’historique des versions traduit existant et une copie conservée des anciennes notes anglaises rédigées à la main.
+- Les vérifications de version maintiennent les fichiers du journal des modifications synchronisés avec les notes et traductions de référence.
 
 ## 5.16.6
 

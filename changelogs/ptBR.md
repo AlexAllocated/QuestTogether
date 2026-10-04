@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 5.16.7
+## 5.17.0
 
 Diga olá no bate-papo do QT, encontre parceiros de missões pela sua zona e descubra detalhes de jogadores e configurações mais claros.
 
@@ -29,6 +29,16 @@ Diga olá no bate-papo do QT, encontre parceiros de missões pela sua zona e des
 - A dica do minimapa agora mostra sua versão do QT, status de parceiro, escopo do bate-papo, contagem de missões observadas, alcance próximo e status de compartilhamento de localização.
 - Os controles das configurações agora têm explicações traduzidas ao passar o mouse, incluindo menus suspensos, controles deslizantes, ações de perfil e controles de cor.
 - Quando seu cliente não consegue resolver um título de missão localizado, os anúncios preservam o texto original do remetente tanto nos registros quanto nos balões, em vez de mostrar um número genérico de missão. A renderização localizada é retomada em anúncios posteriores assim que o título estiver disponível.
+
+## 5.16.7
+
+Leia as mesmas notas de lançamento do QuestTogether dentro do jogo, no Discord e no seu idioma preferido nos arquivos de changelog.
+
+### Changelogs consistentes e multilíngues
+
+- O changelog em inglês agora compartilha os mesmos resumos de lançamento e tópicos da janela de boas-vindas e dos anúncios no Discord.
+- Os arquivos de changelog estão disponíveis para todos os idiomas compatíveis, com o histórico de lançamentos traduzido existente e uma cópia preservada das notas antigas em inglês escritas manualmente.
+- As verificações de lançamento mantêm os arquivos de changelog sincronizados com as notas e traduções canônicas.
 
 ## 5.16.6
 

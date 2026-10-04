@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 5.16.7
+## 5.17.0
 
 Sag im QT-Chat Hallo, finde Questpartner in deiner ganzen Zone und entdecke übersichtlichere Spielerdetails und Einstellungen.
 
@@ -29,6 +29,16 @@ Sag im QT-Chat Hallo, finde Questpartner in deiner ganzen Zone und entdecke übe
 - Der Minikarten-Tooltip zeigt jetzt deine QT-Version, den Partnerstatus, Chatbereich, die Anzahl beobachteter Quests, die Reichweite für Spieler in der Nähe und den Status der Standortfreigabe an.
 - Einstellungselemente haben jetzt übersetzte Erklärungen beim Darüberfahren, einschließlich Dropdowns, Schiebereglern, Profilaktionen und Farbauswahl.
 - Wenn dein Client einen lokalisierten Questtitel nicht auflösen kann, behalten Ankündigungen den ursprünglichen Text des Absenders sowohl in Logs als auch in Sprechblasen bei, statt eine generische Questnummer anzuzeigen. Die lokalisierte Darstellung wird bei späteren Ankündigungen fortgesetzt, sobald der Titel verfügbar ist.
+
+## 5.16.7
+
+Lies dieselben QuestTogether-Versionshinweise im Spiel, auf Discord und in deiner bevorzugten Sprache in den Changelog-Dateien.
+
+### Einheitliche, mehrsprachige Changelogs
+
+- Der englische Changelog enthält jetzt dieselben Zusammenfassungen und Stichpunkte zu Veröffentlichungen wie das Willkommensfenster und die Discord-Ankündigungen.
+- Changelog-Dateien sind für alle unterstützten Gebietsschemata verfügbar, mit bereits übersetztem Versionsverlauf und einer erhaltenen Kopie der älteren handgeschriebenen englischen Notizen.
+- Release-Prüfungen halten die Changelog-Dateien mit den kanonischen Hinweisen und Übersetzungen synchron.
 
 ## 5.16.6
 

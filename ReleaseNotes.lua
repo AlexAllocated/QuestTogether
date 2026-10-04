@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "5.16.7",
+	version = "5.17.0",
 	welcome = "Say hello in QT chat, find questing partners across your zone, and discover clearer player details and settings.",
 	sections = {
 		{

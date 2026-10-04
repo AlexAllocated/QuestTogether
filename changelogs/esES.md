@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 5.16.7
+## 5.17.0
 
 Saluda en el chat de QT, encuentra compañeros de misiones por tu zona y descubre detalles de jugadores y ajustes más claros.
 
@@ -29,6 +29,16 @@ Saluda en el chat de QT, encuentra compañeros de misiones por tu zona y descubr
 - La descripción del minimapa ahora muestra tu versión de QT, estado de compañero, ámbito del chat, número de misiones vigiladas, alcance cercano y estado de compartir ubicación.
 - Los controles de ajustes ahora tienen explicaciones traducidas al pasar el cursor, incluidos menús desplegables, deslizadores, acciones de perfil y controles de color.
 - Cuando tu cliente no pueda resolver el título localizado de una misión, los anuncios conservarán el texto original del remitente tanto en los registros como en los bocadillos en lugar de mostrar un número de misión genérico. La visualización localizada se reanudará en anuncios posteriores cuando el título esté disponible.
+
+## 5.16.7
+
+Lee las mismas notas de la versión de QuestTogether en el juego, en Discord y en tu idioma preferido en los archivos de registro de cambios.
+
+### Registros de cambios coherentes y multilingües
+
+- El registro de cambios en inglés ahora comparte los mismos resúmenes de versión y puntos de la lista que la ventana de bienvenida y los anuncios de Discord.
+- Los archivos de registro de cambios están disponibles para todos los idiomas compatibles, con el historial de versiones traducido existente y una copia conservada de las antiguas notas en inglés escritas a mano.
+- Las comprobaciones de versión mantienen los archivos de registro de cambios sincronizados con las notas canónicas y las traducciones.
 
 ## 5.16.6
 

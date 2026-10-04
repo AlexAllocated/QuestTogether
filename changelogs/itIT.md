@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 5.16.7
+## 5.17.0
 
 Saluta nella chat QT, trova compagni per le missioni nella tua zona e scopri dettagli dei giocatori e impostazioni più chiari.
 
@@ -29,6 +29,16 @@ Saluta nella chat QT, trova compagni per le missioni nella tua zona e scopri det
 - Il suggerimento della minimappa ora mostra la tua versione QT, lo stato compagno, l'ambito della chat, il numero di missioni osservate, il raggio di vicinanza e lo stato della condivisione della posizione.
 - I controlli delle impostazioni ora hanno spiegazioni tradotte al passaggio del mouse, inclusi menu a discesa, cursori, azioni profilo e controlli colore.
 - Quando il tuo client non riesce a risolvere un titolo di missione localizzato, gli annunci conservano il testo originale del mittente sia nei registri sia nei fumetti invece di mostrare un numero di missione generico. La resa localizzata riprende per gli annunci successivi una volta che il titolo è disponibile.
+
+## 5.16.7
+
+Leggi le stesse note di rilascio di QuestTogether in gioco, su Discord e nella tua lingua preferita nei file del changelog.
+
+### Changelog coerenti e multilingue
+
+- Il changelog inglese ora condivide gli stessi riepiloghi di rilascio e gli stessi punti elenco della finestra di benvenuto e degli annunci su Discord.
+- I file del changelog sono disponibili per tutte le lingue supportate, con la cronologia delle versioni tradotta esistente e una copia conservata delle vecchie note in inglese scritte a mano.
+- I controlli di rilascio mantengono i file del changelog sincronizzati con le note canoniche e le traduzioni.
 
 ## 5.16.6
 

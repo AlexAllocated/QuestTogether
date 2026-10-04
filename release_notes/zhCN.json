@@ -1,7 +1,7 @@
 {
   "source_sha256": "36263f8974cc7cb85f9869c7b1e2c86b7ab7f9336949b2ffc0573cb5520c13ca",
   "notes": {
-    "version": "5.16.7",
+    "version": "5.17.0",
     "welcome": "在 QT 聊天中打个招呼，在你所在区域寻找任务伙伴，并查看更清晰的玩家详情和设置。",
     "sections": [
       {

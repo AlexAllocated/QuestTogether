@@ -1,7 +1,7 @@
 {
   "source_sha256": "36263f8974cc7cb85f9869c7b1e2c86b7ab7f9336949b2ffc0573cb5520c13ca",
   "notes": {
-    "version": "5.16.7",
+    "version": "5.17.0",
     "welcome": "QT 채팅에서 인사하고, 같은 지역에서 퀘스트 파트너를 찾고, 더 명확한 플레이어 정보와 설정을 확인하세요.",
     "sections": [
       {

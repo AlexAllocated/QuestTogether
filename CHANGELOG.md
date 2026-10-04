@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 5.16.7
+## 5.17.0
 
 Say hello in QT chat, find questing partners across your zone, and discover clearer player details and settings.
 
@@ -31,6 +31,16 @@ Say hello in QT chat, find questing partners across your zone, and discover clea
 - The minimap tooltip now shows your QT version, partner status, chat scope, watched quest count, nearby range, and location-sharing status.
 - Settings controls now have translated explanations on hover, including dropdowns, sliders, profile actions, and color controls.
 - When your client cannot resolve a localized quest title, announcements preserve the sender’s original text in both logs and bubbles instead of showing a generic quest number. Localized rendering resumes for later announcements once the title is available.
+
+## 5.16.7
+
+Read the same QuestTogether release notes in-game, on Discord, and in your preferred language in the changelog files.
+
+### Consistent, multilingual changelogs
+
+- The English changelog now shares the same release summaries and bullet points as the welcome window and Discord announcements.
+- Changelog files are available for all supported locales, with existing translated release history and a preserved copy of the older handwritten English notes.
+- Release checks keep the changelog files synchronized with the canonical notes and translations.
 
 ## 5.16.6
 
