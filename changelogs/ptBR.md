@@ -4,31 +4,19 @@
 
 ## 5.17.0
 
-Diga olá no bate-papo do QT, encontre parceiros de missões pela sua zona e descubra detalhes de jogadores e configurações mais claros.
+Veja mais sobre seus companheiros de missões e confira o status da missão diretamente nas dicas de chat.
 
-### Converse com outros jogadores do QuestTogether
+### Dicas de jogadores mais úteis
 
-- Digite /qt <text>, ou escolha Enviar mensagem de bate-papo do QT no menu do minimapa. As conversas aparecem nos registros do QT e em balões acima de jogadores próximos com um ícone de balão de fala; os comandos de barra existentes continuam funcionando.
-- Escolha bate-papo Global (o padrão), Somente Zona, ou oculte totalmente o bate-papo do QT. Somente Zona exige uma localização compartilhada recente do remetente; Global não.
-- O novo canal QuestTogether funciona junto com QuestTogetherAnnounce1 durante a transição. O QT coloca ambos depois dos seus outros canais quando compatível, com QuestTogether primeiro; o bate-papo digitado usa apenas o novo canal.
+- As dicas de nome do jogador e de pontos no mapa agora mostram quantas missões o QuestTogether está monitorando, além de Solo ou Grupo de N. Sua própria dica usa seu estado local atual.
+- A dica do minimapa agora conta as missões monitoradas pelo QuestTogether, correspondendo ao anúncio de inicialização em vez de contar apenas as missões acompanhadas no rastreador do WoW.
+- Contagens de missões remotas e tamanhos de grupo exigem um par atualizado. Elas são atualizadas aproximadamente a cada 80 segundos por meio das mensagens de pulsação existentes, sem mensagens extras; relatórios ausentes ou desatualizados aparecem como desconhecidos. Versões mais antigas continuam recebendo anúncios de versão compatíveis.
 
-### Encontre parceiros de missões
+### Status da missão ao passar o mouse
 
-- Ativar Procurando parceiros de missões anuncia sua busca por toda a sua zona com um ícone QT com brilho dourado e um sorriso. A entrega por toda a zona exige compartilhamento de localização e respeita as preferências de anúncio; desativar permanece silencioso.
-- Controle essas mensagens em O que anunciar. Uma recarga de 30 segundos limita anúncios repetidos, enquanto seu status e brilho ainda são atualizados imediatamente. Você também pode escolher parar de procurar automaticamente ao entrar em um grupo; isso começa desativado.
-- Shift-clique no botão do minimapa para alternar sua busca por parceiros. Um anel dourado mais brilhante e pulsante destaca sua busca ativa sem cortar o logotipo.
-
-### Escolha seu alcance e veja mais detalhes dos jogadores
-
-- O Alcance Próximo agora vai de 5% até Zona Inteira, com padrão de 25%. Ele dimensiona a distância pela sua zona atual; membros do grupo e jogadores diretamente visíveis mantêm o comportamento existente.
-- Passe o mouse sobre nomes nos registros do QT para ver a mesma dica aprimorada dos pontos no mapa: nome colorido pela classe, nível, raça, classe, emblema da facção, status de parceiro, missão rastreada quando disponível e versão do QT. As dicas de nome agora aparecem ao lado do cursor.
-- A dica do seu próprio nome agora mostra sua missão super-rastreada atual enquanto procura parceiros. Clientes atualizados anunciam versões aproximadamente a cada 40 segundos usando as mensagens de pulsação existentes; clientes mais antigos mantêm a programação anterior.
-
-### Controles e anúncios mais claros
-
-- A dica do minimapa agora mostra sua versão do QT, status de parceiro, escopo do bate-papo, contagem de missões observadas, alcance próximo e status de compartilhamento de localização.
-- Os controles das configurações agora têm explicações traduzidas ao passar o mouse, incluindo menus suspensos, controles deslizantes, ações de perfil e controles de cor.
-- Quando seu cliente não consegue resolver um título de missão localizado, os anúncios preservam o texto original do remetente tanto nos registros quanto nos balões, em vez de mostrar um número genérico de missão. A renderização localizada é retomada em anúncios posteriores assim que o título estiver disponível.
+- Passe o mouse sobre o nome de uma missão nos registros do QT para ver seu status da missão, se ela pode ser compartilhada, o ID da missão e o progresso dos objetivos rastreados localmente em uma dica ao lado do cursor.
+- O item de menu Status foi removido. Clicar no nome de uma missão ainda abre Compartilhar, Abrir no Diário de Missões, Comparar Missões do Grupo e a ação de destino da janela de registro.
+- Os novos rótulos das dicas estão traduzidos para todos os idiomas compatíveis. Os detalhes da missão refletem seu próprio progresso, não a etapa da missão do remetente.
 
 ## 5.16.7
 

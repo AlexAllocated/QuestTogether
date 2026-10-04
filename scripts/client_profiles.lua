@@ -75,30 +75,6 @@ return pushable end or nil,
 			assert(addon.API.OpenQTChatComposer() == false)
 			ChatFrameUtil, ChatFrame_OpenChat, addon.IsRuntimeRestricted = oldUtil, oldLegacy, oldRestricted
 		end
-		do
-			local oldLog, oldWatches, oldBlocked = C_QuestLog, GetNumQuestWatches, addon.IsRuntimeRestricted
-			local reads, restricted, regular, world = 0, false, 4, 2
-			addon.IsRuntimeRestricted = function() return restricted end
-			C_QuestLog = {
-				GetNumQuestWatches = function() reads = reads + 1; return regular end,
-				GetNumWorldQuestWatches = function() reads = reads + 1; return world end,
-			}
-			assert(addon.API.GetTrackedQuestCount() == 6)
-			regular, world = 0, 0
-			assert(addon.API.GetTrackedQuestCount() == 0)
-			restricted = true
-			assert(addon.API.GetTrackedQuestCount() == nil and reads == 4)
-			restricted, regular = false, secret
-			assert(addon.API.GetTrackedQuestCount() == nil)
-			regular, world = 1, inaccessible
-			assert(addon.API.GetTrackedQuestCount() == nil)
-			C_QuestLog = {}
-			GetNumQuestWatches = function() return 3 end
-			assert(addon.API.GetTrackedQuestCount() == 3)
-			GetNumQuestWatches = function() error("unavailable") end
-			assert(addon.API.GetTrackedQuestCount() == nil)
-			C_QuestLog, GetNumQuestWatches, addon.IsRuntimeRestricted = oldLog, oldWatches, oldBlocked
-		end
 		-- Native tracking is read-only: a waypoint is not a quest, even if a
 		-- previously tracked quest ID remains cached by the engine.
 		do

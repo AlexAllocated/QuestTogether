@@ -20,12 +20,7 @@ function QuestTogether:BuildMinimapTooltipStatus()
 	local function OnOff(key)
 		return self:GetOption(key) and "|cff66dd88" .. L("On") .. "|r" or "|cffaaaaaa" .. L("Off") .. "|r"
 	end
-	local count
-	if not self:IsRuntimeRestricted() and self.API.GetTrackedQuestCount then
-		local ok, value = pcall(self.API.GetTrackedQuestCount)
-		count = ok and self:SafeToNumber(value) or nil
-		if count and (count < 0 or count > 20000 or count ~= math.floor(count)) then count = nil end
-	end
+	local count = self:GetMonitoredQuestCount()
 	local scope = self:GetOption("showQTChat") == false and L("Off")
 		or self:GetOption("qtChatScope") == "zone_only" and L("Zone Only") or L("Global")
 	local lines = {

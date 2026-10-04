@@ -49,12 +49,14 @@ function QT:RecordQTPlayerPresence(name, active)
 			if count >= MAX_KNOWN_PLAYERS then
 				state.peers[oldest] = nil
 				if state.peerVersions then state.peerVersions[oldest] = nil end
+				if state.peerTooltipStats then state.peerTooltipStats[oldest] = nil end
 			end
 		end
 		state.peers[name] = now
 	else
 		state.peers[name] = nil
 		if state.peerVersions then state.peerVersions[name] = nil end
+		if state.peerTooltipStats then state.peerTooltipStats[name] = nil end
 		if self.ForgetPartyJoinPeer then self:ForgetPartyJoinPeer(name) end
 	end
 	-- Recognition lasts for this UI session, independently of short-lived map
@@ -307,6 +309,7 @@ function QT:PruneQTPlayerPresence(force)
 		if not now or now < seen or self:IsIgnoredPlayerName(name) then
 			state.peers[name], changed = nil, true
 			if state.peerVersions then state.peerVersions[name] = nil end
+			if state.peerTooltipStats then state.peerTooltipStats[name] = nil end
 		end
 	end
 	for name, record in pairs(state.questPartners or {}) do

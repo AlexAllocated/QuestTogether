@@ -324,6 +324,7 @@ function QuestTogether:ResetRuntimeWorkStateStore()
 	local runtimeState = self:GetRuntimeWorkStateStore()
 	runtimeState.pendingWaypointIntent = nil
 	runtimeState.pendingQuestLogScan = false
+	runtimeState.questTrackerReady = false
 	runtimeState.pendingScheduledTaskAreaRefreshShouldAnnounce = false
 	runtimeState.pendingDeferredNameplateQuestStateRefresh = false
 	runtimeState.deferredNameplateQuestStateRefreshGeneration = 0

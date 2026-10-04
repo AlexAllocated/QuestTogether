@@ -135,15 +135,71 @@ function QT:GetPlayerAddonVersion(sender)
 	return state and state.peerVersions and state.peerVersions[name] or nil
 end
 
+function QT:GetLocalPartySize()
+	if self:IsRuntimeRestricted() then return nil end
+	local getter = self.API and self.API.GetPartyJoinInfo
+	if type(getter) ~= "function" then return nil end
+	local ok, grouped, _, size = pcall(getter)
+	if not ok or not self:CanAccessValue(grouped) or type(grouped) ~= "boolean" then return nil end
+	size = self:SafeToNumber(size)
+	if not size or size < 0 or size > 40 or size ~= math.floor(size) then return nil end
+	if not grouped then return size == 0 and 0 or nil end
+	return size > 0 and size or nil
+end
+
+function QT:GetPlayerTooltipStats(sender)
+	local name = self:NormalizeMemberName(sender)
+	if not name then return nil end
+	if self:IsSelfSender(name) then
+		return { count = self:GetMonitoredQuestCount(), partySize = self:GetLocalPartySize() }
+	end
+	if not self:IsKnownQTPlayer(name) then return nil end
+	local state = rawget(self, "qtPlayerPresenceState")
+	local record = state and state.peerTooltipStats and state.peerTooltipStats[name]
+	local now = self.API.GetTime and self:SafeToNumber(self.API.GetTime())
+	if record and now and now >= record.at and now - record.at < 180 then return record end
+end
+
+function QT:GetPlayerMonitoredQuestCount(sender)
+	local stats = self:GetPlayerTooltipStats(sender)
+	return stats and stats.count
+end
+
+function QT:GetPlayerPartySize(sender)
+	local stats = self:GetPlayerTooltipStats(sender)
+	return stats and stats.partySize
+end
+
 function QT:HandleAddonVersionMessage(payload, sender)
-	if not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 50 then
+	if not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 64 then
 		return false
 	end
 	local version = payload:match("^1,(.+)$")
-	if not self:ParseAddonVersion(version) or not self:RecordQTPlayerPresence(sender, true) then
+	local extended, count, partySize
+	if not version then
+		local rawCount, rawSize
+		version, rawCount, rawSize = payload:match("^2,([^,]+),(%d*),(%d*)$")
+		if not version then return false end
+		extended = true
+		if rawCount ~= "" then
+			count = self:SafeToNumber(rawCount)
+			if not count or count < 0 or count > 20000 or count ~= math.floor(count) then return false end
+		end
+		if rawSize ~= "" then
+			partySize = self:SafeToNumber(rawSize)
+			if not partySize or partySize > 40 or partySize < 0 or partySize ~= math.floor(partySize) then return false end
+		end
+	end
+	local now = self.API.GetTime and self:SafeToNumber(self.API.GetTime())
+	if not now or not self:ParseAddonVersion(version) or not self:RecordQTPlayerPresence(sender, true) then
 		return false
 	end
 	self:RememberPlayerAddonVersion(sender, version)
+	if extended then
+		local state = self:GetQTPlayerPresenceState()
+		state.peerTooltipStats = state.peerTooltipStats or {}
+		state.peerTooltipStats[self:NormalizeMemberName(sender)] = { count = count, partySize = partySize, at = now }
+	end
 	self:ObserveAddonVersion(version)
 	return true
 end
@@ -168,8 +224,18 @@ function QT:BroadcastAddonVersion(forPresenceHeartbeat)
 	end
 	-- Advertise only our installed version, never relay another peer's claim.
 	-- Keep legacy presence unchanged and reuse the existing paced update frame.
-	local sent =
-		self:SendWireMessageToAnnouncementRoutes(self:SerializeWireMessage("QTVR", "1," .. version), "addon version")
+	local payload = "1," .. version
+	-- Alternate extended and legacy version heartbeats. Old clients require an
+	-- exact version string; they must continue receiving readable advertisements.
+	if forPresenceHeartbeat and not state.lastVersionIncludedStats then
+		local count = self:GetMonitoredQuestCount()
+		local partySize = self:GetLocalPartySize()
+		payload = "2," .. version .. "," .. (count and tostring(count) or "") .. "," .. (partySize and tostring(partySize) or "")
+		state.lastVersionIncludedStats = true
+	else
+		state.lastVersionIncludedStats = false
+	end
+	local sent = self:SendWireMessageToAnnouncementRoutes(self:SerializeWireMessage("QTVR", payload), "addon version")
 	if sent then
 		state.interval = BROADCAST_INTERVAL
 	end

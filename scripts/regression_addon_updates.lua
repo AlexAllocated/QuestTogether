@@ -101,6 +101,72 @@ local function Receive(a, version, sender, route)
 	a:OnCommReceived(a.commPrefix, "QTVR|1," .. version, route or "PARTY", sender or "Friend-Realm")
 end
 
+QT:RegisterTest("monitored quest and party counts share version heartbeats and expire without extra traffic", function()
+	local a, b = Peer("5.17.0", nil, "Alice-Realm"), Peer("5.17.0", nil, "Bob-Realm")
+	a.other = b
+	local tracker = { [1] = {}, [2] = {}, [3] = {} }
+	function a:GetPlayerTracker() return tracker end
+	function a:IsRuntimeRestricted() return self.blocked == true end
+	local grouped, size = true, 3
+	a.API.GetPartyJoinInfo = function() return grouped, false, size end
+	function a:UpdatePartyJoin() end -- Only the discovery heartbeat is under test.
+	a.API.GetTrackedQuestCount = function() error("must not count WoW quest watches") end
+	Equal(a:GetMonitoredQuestCount(), nil)
+	a:SetRuntimeFlag("questTrackerReady", true)
+	Equal(a:GetMonitoredQuestCount(), 3)
+	a:UpdateQTPlayerPresence()
+	Equal(b:GetPlayerMonitoredQuestCount(a.name), nil)
+	a.now, b.now = 120, 120
+	a:UpdateQTPlayerPresence()
+	Equal(a.sent[3], "QTVR|2,5.17.0,3,3")
+	Equal(b:GetPlayerMonitoredQuestCount(a.name), 3)
+	Equal(b:GetPlayerPartySize(a.name), 3)
+	Equal(a:GetPlayerPartySize(a.name), 3)
+	Equal(#a.sent, 3)
+	Equal(#b.sent, 0)
+	tracker[1], tracker[2], tracker[3] = nil, nil, nil
+	grouped, size = false, 0
+	Equal(a:GetPlayerPartySize(a.name), 0)
+	for _, now in ipairs({ 140, 160, 180, 200 }) do
+		a.now, b.now = now, now
+		a:UpdateQTPlayerPresence()
+	end
+	Equal(a.sent[5], "QTVR|1,5.17.0") -- Old readers still receive exact legacy versions.
+	Equal(a.sent[7], "QTVR|2,5.17.0,0,0")
+	Equal(b:GetPlayerMonitoredQuestCount(a.name), 0)
+	Equal(b:GetPlayerPartySize(a.name), 0)
+	b.now = 380
+	Equal(b:GetPlayerMonitoredQuestCount(a.name), nil)
+	Equal(b:GetPlayerPartySize(a.name), nil)
+	assert(b:IsKnownQTPlayer(a.name))
+	b.now = 100 -- A backwards clock cannot revive a cached count.
+	Equal(b:GetPlayerMonitoredQuestCount(a.name), nil)
+	a.blocked = true
+	Equal(a:GetLocalPartySize(), nil)
+end)
+
+QT:RegisterTest("peer tooltip stats validate payloads and clear with unknown reports departures and ignores", function()
+	local a = Peer()
+	assert(a:HandleAddonVersionMessage("2,5.12.0,0,0", "Friend-Realm"))
+	Equal(a:GetPlayerMonitoredQuestCount("Friend-Realm"), 0)
+	Equal(a:GetPlayerPartySize("Friend-Realm"), 0)
+	for _, payload in ipairs({ "2,5.12.0,-1,2", "2,5.12.0,1.5,2", "2,5.12.0,20001,2", "2,5.12.0,2,41", "2,5.12.0,2,-1", "2,5.12.0,2,2,spoof", "2,5.12.0,2", "2,bad,2,2" }) do
+		Equal(a:HandleAddonVersionMessage(payload, "Stranger-Realm"), false)
+		Equal(a:IsKnownQTPlayer("Stranger-Realm"), false)
+	end
+	assert(a:HandleAddonVersionMessage("2,5.12.0,,", "Friend-Realm"))
+	Equal(a:GetPlayerMonitoredQuestCount("Friend-Realm"), nil)
+	Equal(a:GetPlayerPartySize("Friend-Realm"), nil)
+	assert(a:HandleAddonVersionMessage("2,5.12.0,8,4", "Friend-Realm"))
+	a:RecordQTPlayerPresence("Friend-Realm", false)
+	Equal(a.qtPlayerPresenceState.peerTooltipStats["Friend-Realm"], nil)
+	assert(a:HandleAddonVersionMessage("2,5.12.0,8,4", "Friend-Realm"))
+	a.ignored = "Friend-Realm"
+	a:PruneQTPlayerPresence(true)
+	Equal(a:GetPlayerPartySize("Friend-Realm"), nil)
+	Equal(a.qtPlayerPresenceState.peerTooltipStats["Friend-Realm"], nil)
+end)
+
 QT:RegisterTest("addon versions compare numeric components and supported prereleases in release order", function()
 	for _, case in ipairs({
 		{ "5.10.0", "5.9.99", 1 },
@@ -364,7 +430,7 @@ QT:RegisterTest("presence alternates compatible version packets without adding h
 	Equal(#a.sent, 2)
 	a.now = 120
 	a:UpdateQTPlayerPresence()
-	Equal(a.sent[3], "QTVR|1,5.12.0")
+	Equal(a.sent[3], "QTVR|2,5.12.0,,")
 	Equal(#a.sent, 3)
 	a.now = 140
 	a:UpdateQTPlayerPresence()

@@ -1,40 +1,23 @@
 {
-  "source_sha256": "36263f8974cc7cb85f9869c7b1e2c86b7ab7f9336949b2ffc0573cb5520c13ca",
+  "source_sha256": "5fa1bdbaefff1112886109fe246fef7a7501962849cc4921b0a3f35dbf45c00b",
   "notes": {
     "version": "5.17.0",
-    "welcome": "Sag im QT-Chat Hallo, finde Questpartner in deiner ganzen Zone und entdecke übersichtlichere Spielerdetails und Einstellungen.",
+    "welcome": "Erfahre mehr über deine Questgefährten und prüfe den Queststatus direkt über Chat-Tooltips.",
     "sections": [
       {
-        "title": "Mit anderen QuestTogether-Spielern chatten",
+        "title": "Nützlichere Spieler-Tooltips",
         "items": [
-          "Gib /qt <text> ein oder wähle im Minikartenmenü „QT-Chatnachricht senden“. Unterhaltungen erscheinen in den QT-Logs und in Sprechblasen über Spielern in der Nähe mit einem Sprechblasen-Symbol; bestehende Chatbefehle funktionieren weiterhin.",
-          "Wähle Globaler Chat (Standard), Nur Zone oder blende den QT-Chat vollständig aus. Nur Zone erfordert einen kürzlich geteilten Standort des Absenders; Global nicht.",
-          "Der neue QuestTogether-Kanal funktioniert während der Übergangsphase parallel zu QuestTogetherAnnounce1. QT platziert beide nach deinen anderen Kanälen, wenn unterstützt, mit QuestTogether zuerst; eingegebener Chat verwendet nur den neuen Kanal."
+          "Tooltips für Spielernamen und Kartenpunkte zeigen jetzt an, wie viele Quests QuestTogether überwacht, plus Solo oder Gruppe mit N. Dein eigener Tooltip verwendet deinen aktuellen lokalen Status.",
+          "Der Minikarten-Tooltip zählt jetzt die von QuestTogether überwachten Quests und entspricht damit der Startankündigung, statt nur die Quests zu zählen, die im WoW-Tracker verfolgt werden.",
+          "Entfernte Questzahlen und Gruppengrößen erfordern einen aktualisierten Peer. Sie werden etwa alle 80 Sekunden über bestehende Heartbeat-Nachrichten aktualisiert, ohne zusätzliche Nachrichten; fehlende oder veraltete Meldungen werden als unbekannt angezeigt. Ältere Versionen erhalten weiterhin kompatible Versionsankündigungen."
         ]
       },
       {
-        "title": "Questpartner finden",
-        "illustration": "quest-partners",
+        "title": "Queststatus beim Darüberfahren",
         "items": [
-          "Wenn du „Suche nach Questpartnern“ aktivierst, wird deine Suche in deiner ganzen Zone mit einem goldglänzenden QT-Symbol und einem Smiley angekündigt. Zonenweite Zustellung erfordert Standortfreigabe und berücksichtigt Ankündigungseinstellungen; beim Deaktivieren bleibt es still.",
-          "Steuere diese Nachrichten unter „Was angekündigt werden soll“. Eine Abklingzeit von 30 Sekunden begrenzt wiederholte Ankündigungen, während dein Status und Leuchten weiterhin sofort aktualisiert werden. Du kannst außerdem festlegen, dass die Suche beim Beitritt zu einer Gruppe automatisch beendet wird; dies ist zunächst deaktiviert.",
-          "Umschalt-Klick auf die Minikartenschaltfläche, um deine Partnersuche ein- oder auszuschalten. Ein hellerer, pulsierender Goldring hebt deine aktive Suche hervor, ohne das Logo abzuschneiden."
-        ]
-      },
-      {
-        "title": "Wähle deine Reichweite und sieh mehr Spielerdetails",
-        "items": [
-          "Die Reichweite für Spieler in der Nähe reicht jetzt von 5 % bis Ganze Zone, mit 25 % als Standard. Sie skaliert die Entfernung über deine aktuelle Zone; Gruppenmitglieder und direkt sichtbare Spieler behalten ihr bestehendes Verhalten.",
-          "Fahre in den QT-Logs mit der Maus über Namen, um denselben verbesserten Tooltip wie bei Kartenpunkten zu sehen: einen klassenfarbenen Namen, Stufe, Volk, Klasse, Fraktionsemblem, Partnerstatus, verfolgte Quest, wenn verfügbar, und QT-Version. Namenstooltips erscheinen jetzt neben deinem Cursor.",
-          "Dein eigener Namenstooltip zeigt jetzt deine aktuell hervorgehobene Quest an, während du nach Partnern suchst. Aktualisierte Clients melden ihre Versionen etwa alle 40 Sekunden über bestehende Heartbeat-Nachrichten; ältere Clients behalten ihren bisherigen Zeitplan bei."
-        ]
-      },
-      {
-        "title": "Übersichtlichere Steuerung und Ankündigungen",
-        "items": [
-          "Der Minikarten-Tooltip zeigt jetzt deine QT-Version, den Partnerstatus, Chatbereich, die Anzahl beobachteter Quests, die Reichweite für Spieler in der Nähe und den Status der Standortfreigabe an.",
-          "Einstellungselemente haben jetzt übersetzte Erklärungen beim Darüberfahren, einschließlich Dropdowns, Schiebereglern, Profilaktionen und Farbauswahl.",
-          "Wenn dein Client einen lokalisierten Questtitel nicht auflösen kann, behalten Ankündigungen den ursprünglichen Text des Absenders sowohl in Logs als auch in Sprechblasen bei, statt eine generische Questnummer anzuzeigen. Die lokalisierte Darstellung wird bei späteren Ankündigungen fortgesetzt, sobald der Titel verfügbar ist."
+          "Fahre in QT-Protokollen mit der Maus über einen Questnamen, um deinen Queststatus, die Teilbarkeit, die Quest-ID und den lokal verfolgten Zielfortschritt in einem Tooltip neben dem Mauszeiger zu sehen.",
+          "Der Menüpunkt Status wurde entfernt. Ein Klick auf einen Questnamen öffnet weiterhin Teilen, Im Questlog öffnen, Gruppenquests vergleichen und die Zielaktion des Protokollfensters.",
+          "Die neuen Tooltip-Beschriftungen sind in alle unterstützten Sprachen übersetzt. Questdetails spiegeln deinen eigenen Fortschritt wider, nicht den Questfortschritt des Absenders."
         ]
       }
     ]

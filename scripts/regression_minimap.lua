@@ -436,11 +436,11 @@ QuestTogether:RegisterTest("minimap shift clicks toggle partners while normal an
 	Equal(#a.menus, 2)
 end)
 
-QuestTogether:RegisterTest("minimap tooltip refreshes status and watched count while hovered without recreating frames", function()
+QuestTogether:RegisterTest("minimap tooltip refreshes status and QT monitored count while hovered without recreating frames", function()
 	local a = Fixture()
 	function a:GetAddonVersion() return "5.16.7" end
 	local reads, count = 0, 6
-	a.API.GetTrackedQuestCount = function() reads = reads + 1; return count end
+	a.GetMonitoredQuestCount = function() reads = reads + 1; return count end
 	a:InitializeMinimapLauncher()
 	a:ShowMinimapTooltip(a.minimapButton)
 	local tooltip = a.minimapTooltip

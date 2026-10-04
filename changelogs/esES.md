@@ -4,31 +4,19 @@
 
 ## 5.17.0
 
-Saluda en el chat de QT, encuentra compañeros de misiones por tu zona y descubre detalles de jugadores y ajustes más claros.
+Consulta más información sobre tus compañeros de misiones y comprueba el estado de las misiones directamente desde los tooltips del chat.
 
-### Chatea con otros jugadores de QuestTogether
+### Tooltips de jugador más útiles
 
-- Escribe /qt <text>, o elige Enviar mensaje de chat de QT en el menú del minimapa. Las conversaciones aparecen en los registros de QT y en bocadillos sobre jugadores cercanos con un icono de bocadillo; los comandos de barra existentes siguen funcionando.
-- Elige chat global (el predeterminado), Solo zona u oculta el chat de QT por completo. Solo zona requiere una ubicación compartida reciente del remitente; Global no.
-- El nuevo canal de QuestTogether funciona junto a QuestTogetherAnnounce1 durante la transición. QT coloca ambos después de tus otros canales cuando es compatible, con QuestTogether primero; el chat escrito solo usa el canal nuevo.
+- Los tooltips de nombres de jugador y puntos del mapa ahora muestran cuántas misiones está monitorizando QuestTogether, además de Solo o Grupo de N. Tu propio tooltip usa tu estado local actual.
+- El tooltip del minimapa ahora cuenta las misiones monitorizadas por QuestTogether, coincidiendo con el anuncio de inicio en lugar de contar solo las misiones seguidas en el seguimiento de WoW.
+- Los recuentos de misiones remotas y los tamaños de grupo requieren un par actualizado. Se actualizan aproximadamente cada 80 segundos mediante los mensajes de latido existentes, sin mensajes adicionales; los informes ausentes o desactualizados se muestran como desconocidos. Las versiones anteriores siguen recibiendo anuncios de versión compatibles.
 
-### Encuentra compañeros de misiones
+### Estado de la misión al pasar el cursor
 
-- Activar Buscando compañeros de misiones anuncia tu búsqueda por toda tu zona con un icono de QT con brillo dorado y una carita sonriente. La entrega a toda la zona requiere compartir ubicación y respeta las preferencias de anuncios; al desactivarla, no se anuncia nada.
-- Controla estos mensajes en Qué anunciar. Un tiempo de reutilización de 30 segundos limita los anuncios repetidos mientras tu estado y el brillo se actualizan igualmente al instante. También puedes elegir dejar de buscar automáticamente al unirte a un grupo; esto empieza desactivado.
-- Mayús-clic en el botón del minimapa para activar o desactivar tu búsqueda de compañeros. Un anillo dorado más brillante y pulsante resalta tu búsqueda activa sin recortar el logotipo.
-
-### Elige tu alcance y consulta más detalles de jugadores
-
-- Alcance cercano ahora va del 5% a Toda la zona, con un valor predeterminado del 25%. Escala la distancia en tu zona actual; los miembros del grupo y los jugadores visibles directamente conservan su comportamiento actual.
-- Pasa el cursor sobre los nombres en los registros de QT para ver la misma descripción mejorada que en los puntos del mapa: nombre con el color de la clase, nivel, raza, clase, emblema de facción, estado de compañero, misión seguida cuando esté disponible y versión de QT. Las descripciones de nombres ahora aparecen junto al cursor.
-- La descripción de tu propio nombre ahora muestra tu misión con seguimiento destacado actual mientras buscas compañeros. Los clientes actualizados anuncian versiones aproximadamente cada 40 segundos usando los mensajes de latido existentes; los clientes antiguos mantienen su programación anterior.
-
-### Controles y anuncios más claros
-
-- La descripción del minimapa ahora muestra tu versión de QT, estado de compañero, ámbito del chat, número de misiones vigiladas, alcance cercano y estado de compartir ubicación.
-- Los controles de ajustes ahora tienen explicaciones traducidas al pasar el cursor, incluidos menús desplegables, deslizadores, acciones de perfil y controles de color.
-- Cuando tu cliente no pueda resolver el título localizado de una misión, los anuncios conservarán el texto original del remitente tanto en los registros como en los bocadillos en lugar de mostrar un número de misión genérico. La visualización localizada se reanudará en anuncios posteriores cuando el título esté disponible.
+- Pasa el cursor sobre el nombre de una misión en los registros de QT para ver el estado de tu misión, si se puede compartir, el ID de misión y el progreso de objetivos seguidos localmente en un tooltip junto al cursor.
+- Se ha eliminado el elemento de menú Estado. Al hacer clic en el nombre de una misión, se siguen abriendo Compartir, Abrir en el registro de misiones, Comparar misiones de grupo y la acción de destino de la ventana de registro.
+- Las nuevas etiquetas de tooltip están traducidas a todos los idiomas compatibles. Los detalles de misión reflejan tu propio progreso, no la fase de misión del remitente.
 
 ## 5.16.7
 

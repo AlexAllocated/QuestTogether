@@ -1924,29 +1924,6 @@ QuestTogether.API = QuestTogether.API or {
 				if id and id >= 1 and id <= 1000000000 and id == math.floor(id) then return id end
 			end
 		end,
-		GetTrackedQuestCount = function()
-			if QuestTogether:IsRuntimeRestricted() then return nil end
-			local questGetter, worldGetter
-			if CanAccessForeignTable(C_QuestLog) then
-				questGetter, worldGetter = C_QuestLog.GetNumQuestWatches, C_QuestLog.GetNumWorldQuestWatches
-			end
-			if not CanAccessForeignValue(questGetter) or not CanAccessForeignValue(worldGetter) then return nil end
-			if questGetter == nil then questGetter = GetNumQuestWatches end
-			local function Count(getter)
-				if not CanAccessForeignValue(getter) or type(getter) ~= "function" then return nil end
-				local ok, value = pcall(getter)
-				value = ok and QuestTogether:SafeToNumber(value) or nil
-				if value and value >= 0 and value <= 10000 and value == math.floor(value) then return value end
-			end
-			local count = Count(questGetter)
-			if count == nil then return nil end
-			if worldGetter ~= nil then
-				local worldCount = Count(worldGetter)
-				if worldCount == nil then return nil end
-				count = count + worldCount
-			end
-			return count
-		end,
 		GetLocalizedQuestTitle = function(questID)
 			if not CanAccessForeignTable(C_QuestLog) or type(C_QuestLog.GetTitleForQuestID) ~= "function" then return nil end
 			local id = QuestTogether:NormalizeQuestID(questID)
@@ -4959,9 +4936,6 @@ function QuestTogether:OpenQuestJournalFromChatLog(questId)
 end
 
 function QuestTogether:PopulateChatLogQuestMenu(rootDescription, questId, fallbackTitle)
-	rootDescription:CreateButton(L("Status"), function()
-		self:PrintQuestStatus(questId, fallbackTitle)
-	end)
 	local share = rootDescription:CreateButton(L("Share"), function()
 		self:ShareQuestFromChatLog(questId)
 	end)
@@ -5488,6 +5462,16 @@ function QuestTogether:GetPlayerTracker()
 	return self.db.global.questTrackers[characterKey]
 end
 
+function QuestTogether:GetMonitoredQuestCount()
+	if not self:GetRuntimeFlag("questTrackerReady", false)
+		or not self.db or not self.db.global then return nil end
+	local count = 0
+	for id, quest in pairs(self:GetPlayerTracker()) do
+		if self:NormalizeQuestID(id) and type(quest) == "table" then count = count + 1 end
+	end
+	return count
+end
+
 function QuestTogether:QueueQuestLogTask(taskFn)
 	if type(taskFn) == "function" then
 		table.insert(self.onQuestLogUpdate, taskFn)
@@ -5983,7 +5967,6 @@ function QuestTogether:ScanQuestLog(shouldAnnounceTaskAreas)
 	local tracker = self:GetPlayerTracker()
 	local pendingAcceptances = self.pendingQuestAcceptances or {}
 	local seenQuestIDs = {}
-	local questsTracked = 0
 
 	local snapshotByQuestID = self.GetQuestSnapshotByQuestID and self:GetQuestSnapshotByQuestID() or nil
 	local snapshotOrder = self.GetQuestSnapshotOrder and self:GetQuestSnapshotOrder() or {}
@@ -5996,7 +5979,6 @@ function QuestTogether:ScanQuestLog(shouldAnnounceTaskAreas)
 			-- snapshot ID alone must not consume its still-unreadable title/type.
 			if not pendingAcceptances[questID] then
 				self:WatchQuest(questID, questInfo)
-				questsTracked = questsTracked + 1
 			end
 		end
 	end
@@ -6012,9 +5994,6 @@ function QuestTogether:ScanQuestLog(shouldAnnounceTaskAreas)
 			seenQuestIDs[questId] = true
 			if not tracker[questId] and not pendingAcceptances[questId] then
 				self:WatchQuest(questId, { title = questTitle })
-				if tracker[questId] then
-					questsTracked = questsTracked + 1
-				end
 			end
 		end
 	end
@@ -6023,9 +6002,6 @@ function QuestTogether:ScanQuestLog(shouldAnnounceTaskAreas)
 			seenQuestIDs[questId] = true
 			if not tracker[questId] and not pendingAcceptances[questId] then
 				self:WatchQuest(questId, { title = questTitle })
-				if tracker[questId] then
-					questsTracked = questsTracked + 1
-				end
 			end
 		end
 	end
@@ -6035,7 +6011,8 @@ function QuestTogether:ScanQuestLog(shouldAnnounceTaskAreas)
 			tracker[questID] = nil
 		end
 	end
-	local scanMessage = questsTracked .. L(" quests are being monitored by QuestTogether.")
+	self:SetRuntimeFlag("questTrackerReady", true)
+	local scanMessage = self:GetMonitoredQuestCount() .. L(" quests are being monitored by QuestTogether.")
 	self:PrintConsoleAnnouncement(scanMessage)
 	if self.BuildLocalAnnouncementEvent and self.SendAnnouncementWireEvent then
 		local eventData = self:BuildLocalAnnouncementEvent("SCAN_STATUS", scanMessage)

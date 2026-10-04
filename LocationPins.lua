@@ -490,6 +490,31 @@ local function Text(addon, value, fallback)
 	return text:gsub("|", "||")
 end
 
+function QuestTogether:GetChatLogQuestTooltipRow(questID, fallbackTitle)
+	local title = self:GetQuestTitle(questID)
+	if not title or title == "" or self:IsPlaceholderQuestTitle(questID, title) then
+		local fallback = self:NormalizeQuestLinkTitleText(fallbackTitle, questID)
+		if fallback ~= "" then title = fallback end
+	end
+	local lines = {
+		L("Your quest status") .. ": " .. L(self:GetQuestStatusLabel(questID)),
+		L("Shareable") .. ": " .. L(self:GetQuestShareableStatusLabel(questID)),
+		"|cff909090" .. L("Quest ID") .. ": " .. tostring(questID) .. "|r",
+	}
+	-- Read only QT's own current objective text, never infer the sender's
+	-- progress from our quest stage. A missing local quest has no objectives.
+	local tracker = self.db and self.db.global and self:GetPlayerTracker()
+	local quest = tracker and tracker[questID]
+	local objectives = quest and quest.objectives
+	if type(objectives) == "table" then
+		for index = 1, 100 do
+			local objective = self:SafeTrimString(objectives[index], "")
+			if objective ~= "" then lines[#lines + 1] = Text(self, objective) end
+		end
+	end
+	return { questID = questID, name = title, questText = table.concat(lines, "\n") }
+end
+
 local function Tooltip(addon, state, pin, row)
 	local parent = addon:GetLocationPinTooltipParent()
 	if not addon:CanAccessForeignFrame(parent, true) or not Guard(addon, pin.frame) then
@@ -527,6 +552,7 @@ local function Tooltip(addon, state, pin, row)
 	end
 	local classColor = addon:GetClassColorCode(row.classFile)
 	local r, g, b = Color(addon, row.classFile)
+	if row.questID then classColor, r, g, b = "|cffffd200", 1, 0.82, 0 end
 	Call(addon, state.tooltipDivider, "SetColorTexture", r, g, b, 0.6)
 	local factionTexture = row.faction == "Alliance" and "Interface\\TargetingFrame\\UI-PVP-Alliance"
 		or row.faction == "Horde" and "Interface\\TargetingFrame\\UI-PVP-Horde"
@@ -538,26 +564,37 @@ local function Tooltip(addon, state, pin, row)
 	end
 	Call(addon, state.tooltipTitle, "SetWidth", factionTexture and 246 or 272)
 	Call(addon, state.tooltipTitle, "SetText", classColor .. Text(addon, row.name) .. "|r")
-	local text = string.format(L("Level %s %s %s"),
-		Number(addon, row.level) and tostring(row.level) or L("Unknown"),
-		Text(addon, row.race),
-		classColor .. Text(addon, row.className, Text(addon, row.classFile)) .. "|r")
-	if addon:SupportsWarMode() == true and type(row.warMode) == "boolean" then
-		text = text .. L("\nWar Mode: ") .. (row.warMode and L("On") or L("Off"))
-	end
-	if addon:IsPlayerLookingForQuestPartners(row.name) then
-		text = text .. "\n" .. L("\n|cff40ff40Looking for Questing Partners|r"):gsub("|cff40ff40", "|cffffd200")
-		local questID, sourceTitle = addon:GetPlayerPartnerQuestID(row.name)
-		if questID then
-			text = text .. "|cffffd200" .. L("\nTracked quest: ") .. Text(addon, addon:GetLocalizedQuestTitle(questID) or sourceTitle or addon:GetQuestTitle(questID)) .. "|r"
+	local text
+	if row.questID then
+		text = row.questText
+	else
+		text = string.format(L("Level %s %s %s"),
+			Number(addon, row.level) and tostring(row.level) or L("Unknown"),
+			Text(addon, row.race),
+			classColor .. Text(addon, row.className, Text(addon, row.classFile)) .. "|r")
+		if addon:SupportsWarMode() == true and type(row.warMode) == "boolean" then
+			text = text .. L("\nWar Mode: ") .. (row.warMode and L("On") or L("Off"))
 		end
+		if addon:IsPlayerLookingForQuestPartners(row.name) then
+			text = text .. "\n" .. L("\n|cff40ff40Looking for Questing Partners|r"):gsub("|cff40ff40", "|cffffd200")
+			local questID, sourceTitle = addon:GetPlayerPartnerQuestID(row.name)
+			if questID then
+				text = text .. "|cffffd200" .. L("\nTracked quest: ") .. Text(addon, addon:GetLocalizedQuestTitle(questID) or sourceTitle or addon:GetQuestTitle(questID)) .. "|r"
+			end
+		end
+		local now = addon.API and addon.API.GetTime and Number(addon, addon.API.GetTime())
+		local receivedAt = Number(addon, row.receivedAt)
+		if now and receivedAt and now >= receivedAt + 30 then
+			text = text .. "\n|cff909090" .. L("\nLast update: ") .. math.floor(now - receivedAt) .. L(" seconds ago") .. "|r"
+		end
+		local stats = addon:GetPlayerTooltipStats(row.name)
+		local partySize = stats and stats.partySize
+		local partyText = partySize == 0 and L("Solo") or partySize and string.format(L("Party of %d"), partySize) or L("Party status unknown")
+		text = text .. "\n" .. partyText
+		local questCount = stats and stats.count
+		text = text .. "\n\n" .. L("Tracked quests") .. ": " .. (questCount and tostring(questCount) or L("Unknown"))
+		text = text .. "\n|cff909090" .. L("QT Version") .. ": " .. Text(addon, addon:GetPlayerAddonVersion(row.name)) .. "|r"
 	end
-	local now = addon.API and addon.API.GetTime and Number(addon, addon.API.GetTime())
-	local receivedAt = Number(addon, row.receivedAt)
-	if now and receivedAt and now >= receivedAt + 30 then
-		text = text .. "\n|cff909090" .. L("\nLast update: ") .. math.floor(now - receivedAt) .. L(" seconds ago") .. "|r"
-	end
-	text = text .. "\n\n|cff909090" .. L("QT Version") .. ": " .. Text(addon, addon:GetPlayerAddonVersion(row.name)) .. "|r"
 	Call(addon, state.tooltipLabel, "SetText", text)
 	local height = Positive(addon, Call(addon, state.tooltipLabel, "GetStringHeight"))
 	local titleHeight = Positive(addon, Call(addon, state.tooltipTitle, "GetStringHeight"))
@@ -613,26 +650,38 @@ function QuestTogether:UpdateChatLogPlayerTooltip()
 	RetryCleanup(self, state)
 	local pin = state.hovered
 	if not pin then return end
-	if not self.isEnabled or self:IsRuntimeRestricted() or self:IsIgnoredPlayerName(pin.name)
+	if not self.isEnabled or self:IsRuntimeRestricted() or (not pin.questID and self:IsIgnoredPlayerName(pin.name))
 		or Method(self, pin.frame, "IsShown") ~= true then
 		self:HideChatLogPlayerTooltip()
 		return
 	end
-	local row = self:GetChatLogPlayerTooltipRow(pin.name)
-	if not pcall(Tooltip, self, state, pin, row) then self:HideChatLogPlayerTooltip() end
+	local ok, row
+	if pin.questID then
+		ok, row = pcall(self.GetChatLogQuestTooltipRow, self, pin.questID, pin.title)
+	else
+		ok, row = pcall(self.GetChatLogPlayerTooltipRow, self, pin.name)
+	end
+	if not ok or type(row) ~= "table" or not pcall(Tooltip, self, state, pin, row) then self:HideChatLogPlayerTooltip() end
 end
 
-function QuestTogether:ShowChatLogPlayerTooltip(frame, link)
+function QuestTogether:ShowChatLogPlayerTooltip(frame, link, text)
 	self:HideChatLogPlayerTooltip()
 	if not self.isEnabled or self:IsRuntimeRestricted() or not self:CanAccessForeignFrame(frame, true) then return false end
 	link = self:SafeTrimString(link, "")
 	local kind, name = link:match("^([^:]+):(.+)$")
-	if kind ~= self.chatLogLinkType then return false end
-	name = self:NormalizeMemberName(name)
-	if not name or self:IsIgnoredPlayerName(name) then return false end
+	local questID
+	if kind == self.chatLogQuestLinkType then
+		questID = self:SafeToNumber(name)
+		if not questID or questID < 1 or questID > 1000000000 or questID ~= math.floor(questID) then return false end
+	elseif kind == self.chatLogLinkType then
+		name = self:NormalizeMemberName(name)
+		if not name or self:IsIgnoredPlayerName(name) then return false end
+	else
+		return false
+	end
 	local state = rawget(self, "chatLogPlayerTooltipState") or { pending = {} }
 	self.chatLogPlayerTooltipState = state
-	state.hovered = { frame = frame, name = name, chatLink = true }
+	state.hovered = { frame = frame, name = name, questID = questID, title = self:SafeTrimString(text, ""), chatLink = true }
 	self:UpdateChatLogPlayerTooltip()
 	return state.hovered ~= nil
 end
@@ -647,8 +696,8 @@ end
 
 function QuestTogether:InitializeChatLogPlayerTooltips()
 	if rawget(self, "chatLogHoverCallbacksInstalled") then return end
-	self.chatLogHoverCallbacksInstalled = self:RegisterChatLogHoverCallbacks(function(_, frame, link)
-		self:ShowChatLogPlayerTooltip(frame, link)
+	self.chatLogHoverCallbacksInstalled = self:RegisterChatLogHoverCallbacks(function(_, frame, link, text)
+		self:ShowChatLogPlayerTooltip(frame, link, text)
 	end, function()
 		self:HideChatLogPlayerTooltip()
 	end)

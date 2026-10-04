@@ -512,6 +512,34 @@ Register("location empty optional metadata uses class token and unknown characte
 	Equal(a.locationPinState.tooltipFaction.shown, false)
 end)
 
+Register("remote dot and chat tooltips show monitored counts and party size without inventing stale data", function()
+	local a = Fixture()
+	local now = 100
+	a.API.GetTime = function() return now end
+	a.API.GetRealmName = function() return "Realm" end
+	function a:GetPlayerFullName() return "Me-Realm" end
+	function a:GetChatLogTooltipCursorPosition() return 100, 200 end
+	local row = Row("Friend-Realm")
+	a.qtPlayerPresenceState = {
+		peers = { [row.name] = now },
+		peerTooltipStats = { [row.name] = { count = 12, partySize = 4, at = now } },
+	}
+	a.rows.map, a.playerLocationState = { row }, { peers = { [row.name] = row } }
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnEnter()
+	local text = a.locationPinState.tooltipLabel.text
+	assert(text:find("Tracked quests: 12", 1, true))
+	assert(text:find("Party of 4", 1, true))
+	local chat = Frame(a, a.tooltipParent)
+	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Friend-Realm"))
+	Equal(a.chatLogPlayerTooltipState.tooltipLabel.text, text)
+	now = 280
+	a:UpdateChatLogPlayerTooltip()
+	text = a.chatLogPlayerTooltipState.tooltipLabel.text
+	assert(text:find("Tracked quests: Unknown", 1, true))
+	assert(text:find("Party status unknown", 1, true))
+end)
+
 Register("player tooltip reuses faction and class styling without leaking the previous player", function()
 	local a = Fixture()
 	local row = Row()
@@ -541,6 +569,9 @@ Register("own chat tooltip reads live super tracking without a received peer rec
 	a.API.GetActiveTrackedQuestID = function() return id end
 	function a:GetPlayerFullName() return "Me-Realm" end
 	function a:GetAddonVersion() return "5.16.7" end
+	local count, size = 8, 0
+	function a:GetMonitoredQuestCount() return count end
+	a.API.GetPartyJoinInfo = function() return size > 0, false, size end
 	function a:GetOption(key) return key == "lookingForQuestPartners" end
 	function a:ReadLocalPlayerLocation() return Row("Me-Realm") end
 	function a:CanPublishPlayerLocation() error("self tooltip must not depend on sharing") end
@@ -552,15 +583,66 @@ Register("own chat tooltip reads live super tracking without a received peer rec
 	assert(state.tooltipLabel.text:find("Tracked quest: Local quest 42", 1, true))
 	assert(state.tooltipLabel.text:find("Level 60 Human", 1, true))
 	assert(state.tooltipLabel.text:find("QT Version: 5.16.7", 1, true))
+	assert(state.tooltipLabel.text:find("Tracked quests: 8", 1, true))
+	assert(state.tooltipLabel.text:find("Solo", 1, true))
+	count, size = 7, 3
 	id = 43
 	a:UpdateChatLogPlayerTooltip()
 	assert(state.tooltipLabel.text:find("Tracked quest: Local quest 43", 1, true))
+	assert(state.tooltipLabel.text:find("Tracked quests: 7", 1, true))
+	assert(state.tooltipLabel.text:find("Party of 3", 1, true))
 	id = nil
 	a:UpdateChatLogPlayerTooltip()
 	Equal(state.tooltipLabel.text:find("Tracked quest:", 1, true), nil)
 	id = 43
 	a.blocked = true
 	a:UpdateChatLogPlayerTooltip()
+	Equal(state.tooltip.shown, false)
+end)
+
+Register("quest hover shows local status and objectives at the cursor and clears between link kinds", function()
+	local a = Fixture()
+	a.db = { global = {} }
+	local tracker = { [42] = { objectives = { "Wolves slain: 3/8", "|Hbad|hText|h" } } }
+	function a:GetPlayerTracker() return tracker end
+	function a:GetQuestTitle(id) return "Quest " .. id end
+	local status, shareable = "In Progress", "Yes"
+	function a:GetQuestStatusLabel() return status end
+	function a:GetQuestShareableStatusLabel() return shareable end
+	function a:GetChatLogTooltipCursorPosition() return 100, 200 end
+	function a:PrintQuestStatus() error("hover must not print") end
+	function a:RegisterChatLogHoverCallbacks(enter, leave) self.enter, self.leave = enter, leave; return true end
+	a:InitializeChatLogPlayerTooltips()
+	local chat = Frame(a, a.tooltipParent)
+	a.enter(nil, chat, "questtogetherquest:42", "|Hquesttogetherquest:42|h[Wolf Hunt]|h")
+	local state = a.chatLogPlayerTooltipState
+	assert(state.tooltip.shown)
+	assert(state.tooltipTitle.text:find("Wolf Hunt", 1, true))
+	for _, text in ipairs({ "Your quest status: In Progress", "Shareable: Yes", "Quest ID: 42", "Wolves slain: 3/8", "||Hbad||hText||h" }) do
+		assert(state.tooltipLabel.text:find(text, 1, true), text)
+	end
+	Equal(state.tooltipFaction.shown, false)
+	Equal(state.tooltipLabel.text:find("QT Version", 1, true), nil)
+	Equal(state.tooltip.points[1][4], 112)
+	Equal(state.tooltip.points[1][5], 212)
+	tracker[42], status, shareable = nil, "Not Started", "Unknown"
+	a:UpdateChatLogPlayerTooltip()
+	assert(state.tooltipLabel.text:find("Your quest status: Not Started", 1, true))
+	Equal(state.tooltipLabel.text:find("Wolves", 1, true), nil)
+	a.enter(nil, chat, "questtogetherlog:Friend-Realm")
+	Equal(state.tooltipLabel.text:find("Your quest status", 1, true), nil)
+	assert(state.tooltipLabel.text:find("Tracked quests: Unknown", 1, true))
+	assert(state.tooltipLabel.text:find("Party status unknown", 1, true))
+	a.enter(nil, chat, "questtogetherquest:42", "[Wolf Hunt]")
+	a.blocked = true
+	a:UpdateChatLogPlayerTooltip()
+	Equal(state.tooltip.shown, false)
+	a.blocked = false
+	for _, link in ipairs({ "item:42", "questtogetherquest:0", "questtogetherquest:-1", "questtogetherquest:abc", "questtogetherquest:1.5", "questtogetherquest:1e999" }) do
+		Equal(a:ShowChatLogPlayerTooltip(chat, link), false)
+	end
+	a.enter(nil, chat, "questtogetherquest:42", "[Wolf Hunt]")
+	a.leave()
 	Equal(state.tooltip.shown, false)
 end)
 

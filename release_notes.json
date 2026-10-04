@@ -1,38 +1,21 @@
 {
   "version": "5.17.0",
-  "welcome": "Say hello in QT chat, find questing partners across your zone, and discover clearer player details and settings.",
+  "welcome": "See more about your questing companions and check quest status directly from chat tooltips.",
   "sections": [
     {
-      "title": "Chat with other QuestTogether players",
+      "title": "More useful player tooltips",
       "items": [
-        "Type /qt <text>, or choose Send QT chat message from the minimap menu. Conversations appear in QT logs and nearby overhead bubbles with a speech-bubble icon; existing slash commands still work.",
-        "Choose Global chat (the default), Zone Only, or hide QT chat entirely. Zone Only requires a recent shared location from the sender; Global does not.",
-        "The new QuestTogether channel works alongside QuestTogetherAnnounce1 during the transition. QT places both after your other channels when supported, with QuestTogether first; typed chat uses only the new channel."
+        "Player-name and map-dot tooltips now show how many quests QuestTogether is monitoring, plus Solo or Party of N. Your own tooltip uses your current local state.",
+        "The minimap tooltip now counts quests monitored by QuestTogether, matching the startup announcement instead of counting only quests watched in WoW’s tracker.",
+        "Remote quest counts and party sizes require an updated peer. They refresh about every 80 seconds through existing heartbeat messages, with no extra messages; missing or stale reports show as unknown. Older versions continue receiving compatible version announcements."
       ]
     },
     {
-      "title": "Find questing partners",
-      "illustration": "quest-partners",
+      "title": "Quest status on hover",
       "items": [
-        "Turning on Looking for Questing Partners announces your search throughout your zone with a gold-glow QT icon and a smiley. Zone-wide delivery requires location sharing and respects announcement preferences; turning it off stays silent.",
-        "Control these messages in What to Announce. A 30-second cooldown limits repeated announcements while your status and glow still update immediately. You can also choose to stop looking automatically when joining a group; this starts off.",
-        "Shift-click the minimap button to toggle your partner search. A brighter, pulsing gold ring highlights your active search without clipping the logo."
-      ]
-    },
-    {
-      "title": "Choose your range and see more player details",
-      "items": [
-        "Nearby Range now runs from 5% to Entire Zone, with a default of 25%. It scales distance across your current zone; party members and directly visible players retain their existing behavior.",
-        "Hover names in QT logs for the same improved tooltip as map dots: a class-colored name, level, race, class, faction emblem, partner status, tracked quest when available, and QT version. Name tooltips now appear beside your cursor.",
-        "Your own name tooltip now shows your current super-tracked quest while looking for partners. Updated clients advertise versions about every 40 seconds using existing heartbeat messages; older clients keep their previous schedule."
-      ]
-    },
-    {
-      "title": "Clearer controls and announcements",
-      "items": [
-        "The minimap tooltip now shows your QT version, partner status, chat scope, watched quest count, nearby range, and location-sharing status.",
-        "Settings controls now have translated explanations on hover, including dropdowns, sliders, profile actions, and color controls.",
-        "When your client cannot resolve a localized quest title, announcements preserve the sender’s original text in both logs and bubbles instead of showing a generic quest number. Localized rendering resumes for later announcements once the title is available."
+        "Hover a quest name in QT logs to see your quest status, shareability, quest ID, and locally tracked objective progress in a tooltip beside the cursor.",
+        "The Status menu item has been removed. Clicking a quest name still opens Share, Open in Quest Journal, Compare Party Quests, and the log-window destination action.",
+        "The new tooltip labels are translated into every supported locale. Quest details reflect your own progress, not the sender’s quest stage."
       ]
     }
   ]

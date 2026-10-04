@@ -658,10 +658,26 @@ QT:RegisterTest("audit full scans preserve already-observed objective milestones
 	local history = addon.tracker[12345].objectiveProgressHighWater
 	addon.liveValue = 0
 	addon:ScanQuestLog()
+	Equal(addon:GetMonitoredQuestCount(), 1)
 	Equal(addon.tracker[12345].objectiveProgressHighWater, history)
 	Equal(addon.tracker[12345].objectiveValues[1], 0)
 	Equal(addon:UpdateTrackedObjectiveProgress(addon.tracker[12345], 1, "80% Locations Photographed", 80), false)
 	Equal(addon:UpdateTrackedObjectiveProgress(addon.tracker[12345], 1, "100% Locations Photographed", 100), true)
+end)
+
+QT:RegisterTest("monitored counts reflect the live QT tracker and remain unknown before its initial scan", function()
+	local a = NewFixture()
+	Equal(a:GetMonitoredQuestCount(), nil)
+	a:ScanQuestLog()
+	Equal(a:GetMonitoredQuestCount(), 1)
+	a.tracker[67890] = { title = "Area task", objectives = {} }
+	Equal(a:GetMonitoredQuestCount(), 2)
+	a.tracker[12345] = nil
+	Equal(a:GetMonitoredQuestCount(), 1)
+	a.tracker[67890] = nil
+	Equal(a:GetMonitoredQuestCount(), 0)
+	a:ResetRuntimeWorkStateStore()
+	Equal(a:GetMonitoredQuestCount(), nil)
 end)
 
 QT:RegisterTest("audit enabling starts fresh objective history after missed acceptance events", function()

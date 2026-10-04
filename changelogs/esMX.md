@@ -4,31 +4,19 @@
 
 ## 5.17.0
 
-Saluda en el chat de QT, encuentra compañeros para hacer misiones por tu zona y descubre detalles y ajustes de jugador más claros.
+Consulta más información sobre tus compañeros de misión y revisa el estado de la misión directamente desde las descripciones emergentes del chat.
 
-### Chatea con otros jugadores de QuestTogether
+### Descripciones emergentes de jugador más útiles
 
-- Escribe /qt <text>, o elige Enviar mensaje de chat de QT en el menú del minimapa. Las conversaciones aparecen en los registros de QT y en globos cercanos sobre la cabeza con un ícono de globo de diálogo; los comandos con barra existentes siguen funcionando.
-- Elige chat global (el predeterminado), Solo zona, u oculta el chat de QT por completo. Solo zona requiere una ubicación compartida reciente del remitente; Global no.
-- El nuevo canal QuestTogether funciona junto con QuestTogetherAnnounce1 durante la transición. QT coloca ambos después de tus otros canales cuando es compatible, con QuestTogether primero; el chat escrito usa solo el canal nuevo.
+- Las descripciones emergentes del nombre del jugador y de los puntos del mapa ahora muestran cuántas misiones está monitoreando QuestTogether, además de Solo o Grupo de N. Tu propia descripción emergente usa tu estado local actual.
+- La descripción emergente del minimapa ahora cuenta las misiones monitoreadas por QuestTogether, coincidiendo con el anuncio de inicio en lugar de contar solo las misiones vigiladas en el seguimiento de WoW.
+- Los conteos de misiones remotas y tamaños de grupo requieren un par actualizado. Se actualizan aproximadamente cada 80 segundos mediante los mensajes de latido existentes, sin mensajes adicionales; los informes faltantes o antiguos se muestran como desconocidos. Las versiones anteriores siguen recibiendo anuncios de versión compatibles.
 
-### Encuentra compañeros para hacer misiones
+### Estado de misión al pasar el cursor
 
-- Activar Buscando compañeros para hacer misiones anuncia tu búsqueda por toda tu zona con un ícono de QT con brillo dorado y una carita sonriente. La entrega en toda la zona requiere compartir ubicación y respeta las preferencias de anuncios; desactivarlo no envía nada.
-- Controla estos mensajes en Qué anunciar. Un tiempo de reutilización de 30 segundos limita los anuncios repetidos mientras tu estado y brillo se actualizan de inmediato. También puedes elegir dejar de buscar automáticamente al unirte a un grupo; esta opción empieza desactivada.
-- Mayús-clic en el botón del minimapa para activar o desactivar tu búsqueda de compañeros. Un anillo dorado más brillante y palpitante resalta tu búsqueda activa sin recortar el logo.
-
-### Elige tu alcance y ve más detalles de jugadores
-
-- El alcance cercano ahora va de 5% a Toda la zona, con un valor predeterminado de 25%. Ajusta la distancia en toda tu zona actual; los miembros del grupo y los jugadores directamente visibles conservan su comportamiento existente.
-- Pasa el cursor sobre los nombres en los registros de QT para ver la misma descripción emergente mejorada que en los puntos del mapa: nombre con color de clase, nivel, raza, clase, emblema de facción, estado de compañero, misión seguida cuando esté disponible y versión de QT. Las descripciones emergentes de nombres ahora aparecen junto al cursor.
-- La descripción emergente de tu propio nombre ahora muestra tu misión actual con seguimiento destacado mientras buscas compañeros. Los clientes actualizados anuncian versiones aproximadamente cada 40 segundos usando los mensajes de latido existentes; los clientes antiguos mantienen su intervalo anterior.
-
-### Controles y anuncios más claros
-
-- La descripción emergente del minimapa ahora muestra tu versión de QT, estado de compañero, alcance del chat, cantidad de misiones vigiladas, alcance cercano y estado de compartir ubicación.
-- Los controles de ajustes ahora tienen explicaciones traducidas al pasar el cursor, incluidos menús desplegables, controles deslizantes, acciones de perfil y controles de color.
-- Cuando tu cliente no puede resolver el título localizado de una misión, los anuncios conservan el texto original del remitente tanto en los registros como en los globos, en lugar de mostrar un número de misión genérico. La visualización localizada se reanuda para anuncios posteriores cuando el título esté disponible.
+- Pasa el cursor sobre el nombre de una misión en los registros de QT para ver el estado de tu misión, si se puede compartir, el ID de misión y el progreso de los objetivos seguidos localmente en una descripción emergente junto al cursor.
+- Se eliminó el elemento Estado del menú. Al hacer clic en el nombre de una misión, aún se abren Compartir, Abrir en el Diario de misiones, Comparar misiones del grupo y la acción de destino de la ventana de registro.
+- Las nuevas etiquetas de las descripciones emergentes están traducidas a todos los idiomas admitidos. Los detalles de la misión reflejan tu propio progreso, no la etapa de misión del remitente.
 
 ## 5.16.7
 
