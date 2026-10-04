@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.0.1
+## 6.0.2
 
 Durchsuche frühere Updates von QuestTogether in deiner Sprache, mit besserer Wiederherstellung von Questnamen für Abschlussmeldungen.
 
@@ -16,6 +16,16 @@ Durchsuche frühere Updates von QuestTogether in deiner Sprache, mit besserer Wi
 
 - Wenn eine Quest aus deinem Questlog verschwindet, bevor QuestTogether einen verwendbaren Titel hat, versuchen Abschlussmeldungen jetzt zuerst die verfügbare Questtitel-Abfrage des Spiels, bevor auf eine Quest-ID zurückgegriffen wird. Ein wiederhergestellter Titel bleibt unabhängig von der Reihenfolge der Abgabe- und Entfernungsereignisse erhalten.
 - Ankündigungen verwenden weiterhin den Text des Absenders, wenn dein Client keinen lokalen Titel auflösen kann. Wenn keiner der beiden Clients einen Namen verfügbar hat, bleibt die Quest-ID die Ausweichlösung. Die verbesserte Wiederherstellung auf Absenderseite greift, wenn der Absender aktualisiert.
+
+## 6.0.1
+
+Feiern bleiben jetzt bei Spielern, die du in der Nähe tatsächlich sehen kannst.
+
+### Korrekturen für Feiern in der Nähe
+
+- Reaktionen darauf, dass ein anderer Spieler eine Quest abschließt oder eine Stufe aufsteigt, erfordern jetzt eine passende, sichtbare Spielereinheit. Kartenkoordinaten oder ein Name allein lösen kein Emote mehr aus, auch nicht, wenn devlogall aktiviert ist.
+- Eingehende Emotes müssen mit QuestTogethers eigener Feierliste übereinstimmen. Nicht aufgeführte Emotes, einschließlich mountspecial und Fraktionsjubel, werden ignoriert, ohne einen Ersatz auszuwählen.
+- Deine eigenen Feiern für Questabschluss und Stufenaufstieg behalten ihr bestehendes Verhalten und ihre Einstellungen bei.
 
 ## 6.0.0
 

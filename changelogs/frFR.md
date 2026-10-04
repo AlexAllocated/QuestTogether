@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.0.1
+## 6.0.2
 
 Parcourez les anciennes mises à jour de QuestTogether dans votre langue, avec une meilleure récupération des noms de quêtes pour les annonces d’achèvement.
 
@@ -16,6 +16,16 @@ Parcourez les anciennes mises à jour de QuestTogether dans votre langue, avec u
 
 - Lorsqu’une quête quitte votre journal avant que QuestTogether ne dispose d’un titre utilisable, les annonces d’achèvement essaient désormais la recherche de titre de quête disponible en jeu avant de se rabattre sur un ID de quête. Un titre récupéré est conservé quel que soit l’ordre des événements de rendu et de suppression.
 - Les annonces utilisent toujours le texte de l’expéditeur lorsque votre client ne peut pas résoudre un titre local. Si aucun des deux clients n’a de nom disponible, l’ID de quête reste la solution de repli. La récupération améliorée côté expéditeur s’applique lorsque l’expéditeur effectue la mise à jour.
+
+## 6.0.1
+
+Les célébrations restent désormais associées aux joueurs que vous pouvez réellement voir à proximité.
+
+### Correctifs des célébrations à proximité
+
+- Les réactions à un autre joueur qui termine une quête ou gagne un niveau nécessitent désormais une unité de joueur correspondante et visible. Les coordonnées de la carte ou un nom seul ne déclenchent plus d’emote, y compris lorsque devlogall est activé.
+- Les emotes entrantes doivent correspondre à la propre liste de célébrations de QuestTogether. Les emotes non répertoriées, y compris mountspecial et les acclamations de faction, sont ignorées sans choisir de substitut.
+- Vos propres célébrations de fin de quête et de gain de niveau conservent leur comportement et leurs paramètres existants.
 
 ## 6.0.0
 

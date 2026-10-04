@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 6.0.1
+## 6.0.2
 
 Browse QuestTogether’s past updates in your language, with better quest-name recovery for completion announcements.
 
@@ -18,6 +18,16 @@ Browse QuestTogether’s past updates in your language, with better quest-name r
 
 - When a quest leaves your log before QuestTogether has a usable title, completion announcements now try the game’s available quest-title lookup before falling back to a quest ID. A recovered title is preserved regardless of turn-in and removal event order.
 - Announcements still use the sender’s text when your client cannot resolve a local title. If neither client has a name available, the quest ID remains the fallback. The improved sender-side recovery applies when the sender updates.
+
+## 6.0.1
+
+Celebrations now stay with players you can actually see nearby.
+
+### Nearby celebration fixes
+
+- Reactions to another player finishing a quest or leveling up now require a matching, visible player unit. Map coordinates or a name alone no longer trigger an emote, including when devlogall is enabled.
+- Incoming emotes must match QuestTogether's own celebration list. Unlisted emotes, including mountspecial and faction cheers, are ignored without choosing a substitute.
+- Your own quest-completion and level-up celebrations keep their existing behavior and settings.
 
 ## 6.0.0
 

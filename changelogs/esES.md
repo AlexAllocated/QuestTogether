@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.0.1
+## 6.0.2
 
 Explora las actualizaciones anteriores de QuestTogether en tu idioma, con mejor recuperación de nombres de misiones para los anuncios de finalización.
 
@@ -16,6 +16,16 @@ Explora las actualizaciones anteriores de QuestTogether en tu idioma, con mejor 
 
 - Cuando una misión desaparece de tu registro antes de que QuestTogether tenga un título utilizable, los anuncios de finalización ahora intentan usar la búsqueda de títulos de misión disponible en el juego antes de recurrir a un ID de misión. El título recuperado se conserva independientemente del orden de los eventos de entrega y eliminación.
 - Los anuncios siguen usando el texto del remitente cuando tu cliente no puede resolver un título local. Si ningún cliente tiene un nombre disponible, el ID de misión sigue siendo la alternativa. La recuperación mejorada en el lado del remitente se aplica cuando el remitente actualiza.
+
+## 6.0.1
+
+Las celebraciones ahora permanecen con los jugadores que realmente puedes ver cerca.
+
+### Correcciones de celebraciones cercanas
+
+- Las reacciones a que otro jugador complete una misión o suba de nivel ahora requieren una unidad de jugador coincidente y visible. Las coordenadas del mapa o solo un nombre ya no activan un gesto, incluso cuando devlogall está activado.
+- Los gestos entrantes deben coincidir con la propia lista de celebraciones de QuestTogether. Los gestos no incluidos en la lista, incluidos mountspecial y los vítores de facción, se ignoran sin elegir un sustituto.
+- Tus propias celebraciones por completar misiones y subir de nivel mantienen su comportamiento y ajustes actuales.
 
 ## 6.0.0
 

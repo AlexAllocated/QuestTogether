@@ -1,7 +1,7 @@
 {
   "source_sha256": "26737a87275ce322b877d18ff68dec08b1484759c62e9ac81a665e7240552c4d",
   "notes": {
-    "version": "6.0.1",
+    "version": "6.0.2",
     "welcome": "Parcourez les anciennes mises à jour de QuestTogether dans votre langue, avec une meilleure récupération des noms de quêtes pour les annonces d’achèvement.",
     "sections": [
       {

@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.0.1
+## 6.0.2
 
 Sfoglia gli aggiornamenti passati di QuestTogether nella tua lingua, con un recupero migliore dei nomi delle missioni per gli annunci di completamento.
 
@@ -16,6 +16,16 @@ Sfoglia gli aggiornamenti passati di QuestTogether nella tua lingua, con un recu
 
 - Quando una missione lascia il tuo registro prima che QuestTogether abbia un titolo utilizzabile, gli annunci di completamento ora provano a usare la ricerca dei titoli missione disponibile del gioco prima di ripiegare su un ID missione. Un titolo recuperato viene preservato indipendentemente dall'ordine degli eventi di consegna e rimozione.
 - Gli annunci usano comunque il testo del mittente quando il tuo client non riesce a risolvere un titolo locale. Se nessuno dei due client ha un nome disponibile, l'ID missione resta l'alternativa. Il recupero migliorato lato mittente si applica quando il mittente si aggiorna.
+
+## 6.0.1
+
+Le celebrazioni ora restano con i giocatori che puoi effettivamente vedere nelle vicinanze.
+
+### Correzioni alle celebrazioni nelle vicinanze
+
+- Le reazioni al completamento di una missione o all'aumento di livello di un altro giocatore ora richiedono un'unità giocatore corrispondente e visibile. Le coordinate della mappa o il solo nome non attivano più un'emote, anche quando devlogall è abilitato.
+- Le emote in arrivo devono corrispondere alla lista di celebrazioni di QuestTogether. Le emote non presenti nella lista, incluse mountspecial e le acclamazioni di fazione, vengono ignorate senza scegliere un sostituto.
+- Le tue celebrazioni per il completamento delle missioni e per l'aumento di livello mantengono il comportamento e le impostazioni esistenti.
 
 ## 6.0.0
 

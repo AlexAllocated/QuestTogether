@@ -1,7 +1,7 @@
 {
   "source_sha256": "26737a87275ce322b877d18ff68dec08b1484759c62e9ac81a665e7240552c4d",
   "notes": {
-    "version": "6.0.1",
+    "version": "6.0.2",
     "welcome": "以你的语言浏览 QuestTogether 过往更新，并改进了完成通告中的任务名称恢复。",
     "sections": [
       {

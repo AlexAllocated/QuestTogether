@@ -1,7 +1,7 @@
 {
   "source_sha256": "26737a87275ce322b877d18ff68dec08b1484759c62e9ac81a665e7240552c4d",
   "notes": {
-    "version": "6.0.1",
+    "version": "6.0.2",
     "welcome": "내 언어로 QuestTogether의 지난 업데이트를 살펴보고, 완료 알림의 퀘스트 이름 복구 기능이 개선되었습니다.",
     "sections": [
       {
