@@ -8136,9 +8136,15 @@ end)
 
 QuestTogether:RegisterTest("remote nearby completion plays synced emote", function()
 	local emoteCalls = {}
+	QuestTogether.isEnabled = true
 	QuestTogether.db.profile.emoteOnNearbyPlayerQuestCompletion = true
 
 	QuestTogether.API = CreateApiWithOverrides({
+		CanTargetUnitForEmote = function(unit) return unit == "target" end,
+		UnitExists = function(unit) return unit == "target" end,
+		UnitIsPlayer = function() return true end,
+		UnitGUID = function() return "Player-4-JKL" end,
+		UnitFullName = function() return "Nearby", "Realm" end,
 		DoEmote = function(token, target)
 			emoteCalls[#emoteCalls + 1] = token .. ":" .. tostring(target)
 		end,
@@ -8171,6 +8177,7 @@ end)
 
 QuestTogether:RegisterTest("remote far completion does not play synced emote", function()
 	local emoteCalls = 0
+	QuestTogether.isEnabled = true
 	QuestTogether.db.profile.emoteOnNearbyPlayerQuestCompletion = true
 
 	QuestTogether.API = CreateApiWithOverrides({
@@ -8209,9 +8216,15 @@ end)
 
 QuestTogether:RegisterTest("remote nearby completion emote obeys nearby-player emote option", function()
 	local emoteCalls = 0
+	QuestTogether.isEnabled = true
 	QuestTogether.db.profile.emoteOnNearbyPlayerQuestCompletion = false
 
 	QuestTogether.API = CreateApiWithOverrides({
+		CanTargetUnitForEmote = function(unit) return unit == "target" end,
+		UnitExists = function(unit) return unit == "target" end,
+		UnitIsPlayer = function() return true end,
+		UnitGUID = function() return "Player-4-JKL" end,
+		UnitFullName = function() return "Nearby", "Realm" end,
 		DoEmote = function()
 			emoteCalls = emoteCalls + 1
 		end,

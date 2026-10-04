@@ -1090,6 +1090,26 @@ QuestTogether.API = QuestTogether.API or {
 			local ok, result = pcall(UnitIsPlayer, unitToken)
 			return ok and CanAccessForeignValue(result) and result == true
 		end,
+		CanTargetUnitForEmote = function(unitToken)
+			if not CanAccessForeignValue(unitToken) or type(unitToken) ~= "string" then return false end
+			-- A name or a map dot is not evidence that the unit is in this layer.
+			if unitToken ~= "target" and unitToken ~= "mouseover" and unitToken ~= "focus"
+				and not unitToken:match("^nameplate%d+$") then return false end
+			for _, query in ipairs({ "UnitExists", "UnitIsPlayer", "UnitIsVisible" }) do
+				local fn = _G[query]
+				if type(fn) ~= "function" then return false end
+				local ok, value = pcall(fn, unitToken)
+				if not ok or not CanAccessForeignValue(value) or value ~= true then return false end
+			end
+			if type(UnitPhaseReason) == "function" then
+				local ok, reason = pcall(UnitPhaseReason, unitToken)
+				if not ok or not CanAccessForeignValue(reason) or reason ~= nil then return false end
+			elseif type(UnitInPhase) == "function" then
+				local ok, inPhase = pcall(UnitInPhase, unitToken)
+				if not ok or not CanAccessForeignValue(inPhase) or inPhase ~= true then return false end
+			end
+			return true
+		end,
 		GetQuestLogIndexForQuestID = function(questID)
 			if InCombatLockdown and InCombatLockdown() then
 				return nil

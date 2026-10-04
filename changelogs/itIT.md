@@ -4,31 +4,13 @@
 
 ## 6.0.0
 
-QuestTogether 6.0 si prepara al lancio di Forever con un sistema di comunicazione progettato per ridurre il traffico in background man mano che la community cresce.
+Le celebrazioni ora restano con i giocatori che puoi effettivamente vedere nelle vicinanze.
 
-### Attività locale, scoperta mondiale
+### Correzioni alle celebrazioni nelle vicinanze
 
-- Gli annunci delle missioni e gli aggiornamenti frequenti dei giocatori ora usano i canali di zona. Gli annunci del gruppo raggiungono comunque il tuo gruppo oltre i confini di zona.
-- I puntini dei giocatori restano disponibili in tutto il mondo, con aggiornamenti in background più lenti. Aprire un'altra zona sulla mappa del mondo ti iscrive temporaneamente ai suoi aggiornamenti.
-- La chat testuale di QT resta sul canale globale QuestTogether. La tua impostazione chat Globale o Solo zona continua a controllare quali messaggi vedi.
-
-### Meno traffico in background
-
-- Presenza, versione, conteggi delle missioni, stato del compagno e posizione sono raggruppati in aggiornamenti compatti. Le zone affollate si aggiornano meno spesso per ridurre il traffico.
-- Gli annunci sono regolati e hanno priorità sugli aggiornamenti in background. Le risposte ai ping vengono distribuite per evitare un picco di risposte. WoW può comunque ritardare la consegna dei canali; questo aggiornamento non garantisce messaggi istantanei.
-- I tooltip dei giocatori mostrano l'età delle posizioni meno recenti. La diagnostica ora riporta conteggi dei messaggi, limitazioni e ritardi degli annunci segnalati dal mittente.
-
-### Un aggiornamento importante durante la beta
-
-- Stiamo apportando ora questa modifica più ampia alla comunicazione in previsione del lancio di Forever. La beta è il momento migliore per prendere queste decisioni fondamentali, prima che più giocatori dipendano dal vecchio comportamento.
-- La versione 6.0 abbandona QuestTogetherAnnounce1 e non invia né riceve più su quel canale legacy. Usa QuestTogether per chat globale e scoperta, più canali di zona per l'attività locale.
-- QuestTogether mantiene i propri canali dopo gli altri tuoi canali di chat, con il canale chat principale prima dei suoi canali di zona. Le tue preferenze di condivisione della posizione, lista ignorati e annunci vengono conservate.
-
-### Compatibilità con le versioni precedenti
-
-- Aggiornate insieme. Le versioni precedenti non possono leggere i nuovi aggiornamenti raggruppati dei giocatori né ascoltare i nuovi canali di zona, quindi i giocatori con versioni diverse potrebbero non vedere puntini sulla mappa, stato del compagno e annunci delle missioni vicine.
-- I giocatori che usano solo il canale legacy non sono più rilevabili tramite quel canale nella 6.0. Alcuni scambi con le versioni 5.x più recenti possono ancora funzionare tramite il canale globale condiviso o un gruppo, ma si tratta di compatibilità parziale, non dell'esperienza completa.
-- Il comando manuale /qt ping usa ancora il canale globale. Può rilevare lì i client precedenti compatibili, ma è uno strumento di scoperta best-effort, non un conteggio completo di tutti quelli che usano QuestTogether.
+- Le reazioni al completamento di una missione o all'aumento di livello di un altro giocatore ora richiedono un'unità giocatore corrispondente e visibile. Le coordinate della mappa o il solo nome non attivano più un'emote, anche quando devlogall è abilitato.
+- Le emote in arrivo devono corrispondere alla lista di celebrazioni di QuestTogether. Le emote non presenti nella lista, incluse mountspecial e le acclamazioni di fazione, vengono ignorate senza scegliere un sostituto.
+- Le tue celebrazioni per il completamento delle missioni e per l'aumento di livello mantengono il comportamento e le impostazioni esistenti.
 
 ## 5.17.2
 

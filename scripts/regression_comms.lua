@@ -936,6 +936,14 @@ local function NewLevelUpFixture()
 	addon.API.DoEmote = function(token, target)
 		addon.emotes[#addon.emotes + 1] = { token = token, target = target }
 	end
+	addon.API.CanTargetUnitForEmote = function(unit) return unit == "target" or unit == "nameplate1" end
+	addon.API.UnitExists = function(unit) return unit == "player" or unit == "target" or unit == "nameplate1" end
+	addon.API.UnitIsPlayer = function() return true end
+	addon.API.UnitGUID = function(unit) return unit == "player" and "Player-self" or "Player-1-ABC" end
+	addon.API.UnitFullName = function(unit) return unit == "player" and "MyPlayer" or "Friend", "Realm" end
+	addon.API.UnitName = function(unit) return unit == "player" and "MyPlayer" or "Friend" end
+	function addon:IsRuntimeRestricted() return false end
+	function addon:IsRuntimeRestrictionTypeActive() return false end
 	function addon:FindVisiblePlayerNameplateForSender() return nil end
 	function addon:FindNearbyPlayerUnitTokenForSender() return "target" end
 	function addon:IsAnnouncementSenderNearbyByLocation() return false end
@@ -1004,23 +1012,17 @@ QuestTogether:RegisterTest("received celebrations canonicalize every approved lo
 	end
 end)
 
-QuestTogether:RegisterTest("received special celebrations retain mounted and faction handling", function()
-	local cases = {
-		{ token = " MOUNTSPECIAL ", mounted = true, expected = "mountspecial" },
-		{ token = "mountspecial", expected = "applaud" },
-		{ token = " FORTHEHORDE ", faction = "Alliance", expected = "forthealliance" },
-		{ token = " FORTHEALLIANCE ", faction = "Horde", expected = "forthehorde" },
-		{ token = "forthealliance", expected = "applaud" },
-	}
-	for _, eventType in ipairs({ "QUEST_COMPLETED", "PLAYER_LEVEL_UP" }) do
-		for _, case in ipairs(cases) do
-			local addon = NewRemoteCelebrationFixture()
-			addon.API.IsMounted = function() return case.mounted == true end
-			addon.API.GetFaction = function() return case.faction or "Neutral" end
-			ReceiveCelebration(addon, eventType, case.token)
-			Equal(#addon.emotes, 1)
-			Equal(addon.emotes[1].token, case.expected)
-			Equal(addon.emotes[1].target, "target")
+QuestTogether:RegisterTest("received out-of-list special celebrations are rejected regardless of mount or faction", function()
+	for _, eventType in ipairs({ "QUEST_COMPLETED", "WORLD_QUEST_COMPLETED", "BONUS_OBJECTIVE_COMPLETED", "PLAYER_LEVEL_UP" }) do
+		for _, token in ipairs({ " MOUNTSPECIAL ", " FORTHEHORDE ", " FORTHEALLIANCE " }) do
+			for _, faction in ipairs({ "Alliance", "Horde", "Neutral" }) do
+				local addon = NewRemoteCelebrationFixture()
+				addon.API.IsMounted = function() return true end
+				addon.API.GetFaction = function() return faction end
+				ReceiveCelebration(addon, eventType, token)
+				Equal(addon:GetCommsDiagnostics().acceptedAnnouncements, 1)
+				Equal(#addon.emotes, 0)
+			end
 		end
 	end
 end)
@@ -1055,24 +1057,24 @@ QuestTogether:RegisterTest("remote celebration validation never stringifies inac
 	Equal(addon:GetSafeRemoteCompletionEmote(nil), nil)
 end)
 
-QuestTogether:RegisterTest("remote celebration fallback cannot expand its approved token set", function()
+QuestTogether:RegisterTest("remote celebrations cannot expand their shipped list through runtime mutation", function()
 	local addon = NewRemoteCelebrationFixture()
-	addon.completionEmotes = { "rude" }
-	local attempts = 0
-	addon.API.Random = function() attempts = attempts + 1; return 1 end
-	ReceiveCelebration(addon, "QUEST_COMPLETED", "mountspecial")
+	addon.completionEmotes = { "rude", "mountspecial", "forthealliance", "forthehorde" }
+	addon.API.Random = function() error("unsupported incoming emotes must not pick a substitute") end
+	for _, token in ipairs(addon.completionEmotes) do
+		ReceiveCelebration(addon, "QUEST_COMPLETED", token)
+	end
 	Equal(#addon.emotes, 0)
-	Equal(attempts > 0 and attempts <= 20, true)
+	Equal(addon:GetSafeRemoteCompletionEmote("cheer"), "cheer")
 end)
 
-QuestTogether:RegisterTest("remote special celebrations use approved fallback when local state is inaccessible", function()
+QuestTogether:RegisterTest("remote rejected celebrations never query mount or faction or choose a fallback", function()
 	local addon = NewRemoteCelebrationFixture()
-	local inaccessible = {}
-	addon.CanAccessValue = function(_, value) return value ~= inaccessible end
-	addon.API.IsMounted = function() return inaccessible end
-	addon.API.GetFaction = function() return inaccessible end
-	for _, token in ipairs({ "mountspecial", "forthealliance", "forthehorde" }) do
-		Equal(addon:GetSafeRemoteCompletionEmote(token), "applaud")
+	addon.API.IsMounted = function() error("mount state is irrelevant") end
+	addon.API.GetFaction = function() error("faction is irrelevant") end
+	addon.API.Random = function() error("no replacement emote") end
+	for _, token in ipairs({ "mountspecial", "forthealliance", "forthehorde", "rude" }) do
+		Equal(addon:GetSafeRemoteCompletionEmote(token), nil)
 	end
 end)
 
@@ -1160,14 +1162,13 @@ QuestTogether:RegisterTest("level-up reactions require proximity and obey party-
 	Equal(#addon.emotes, 1)
 	addon.IsAnnouncementSenderNearbyByLocation = function() return true end
 	addon:HandleAnnouncementEvent(LevelUpEvent(), false)
-	Equal(#addon.emotes, 2)
-	Equal(addon.emotes[2].target, "Friend-Realm")
+	Equal(#addon.emotes, 1) -- Coordinates cannot establish visibility in this layer.
 	addon.FindVisiblePlayerNameplateForSender = function()
 		return { GetUnit = function() return "nameplate1" end }
 	end
 	addon:HandleAnnouncementEvent(LevelUpEvent(), false)
-	Equal(#addon.emotes, 3)
-	Equal(addon.emotes[3].target, "nameplate1")
+	Equal(#addon.emotes, 2)
+	Equal(addon.emotes[2].target, "nameplate1")
 	Equal(#addon.printed, 0)
 end)
 
@@ -1188,6 +1189,79 @@ QuestTogether:RegisterTest("level-up wire uses transport identity and suppresses
 	addon.IsIgnoredPlayerName = function() return true end
 	addon:OnCommReceived(addon.commPrefix, wire, "PARTY", "Ignored-Realm")
 	Equal(#addon.emotes, 1)
+end)
+
+QuestTogether:RegisterTest("remote celebrations require a current visible matching unit even with dev logging", function()
+	for _, eventType in ipairs({ "QUEST_COMPLETED", "WORLD_QUEST_COMPLETED", "BONUS_OBJECTIVE_COMPLETED", "PLAYER_LEVEL_UP" }) do
+		for _, failure in ipairs({ "coordinates", "other layer", "gone", "recycled GUID", "wrong name", "not player", "restricted", "chat restricted", "unknown", "error" }) do
+			local addon = NewRemoteCelebrationFixture()
+			addon.db.profile.showChatLogs = true
+			addon.db.profile.devLogAllAnnouncements = true
+			addon.IsAnnouncementSenderNearbyByLocation = function() return true end
+			if failure == "coordinates" then
+				addon.FindNearbyPlayerUnitTokenForSender = function() return nil end
+			elseif failure == "other layer" then
+				addon.API.CanTargetUnitForEmote = function() return false end
+			elseif failure == "gone" then
+				addon.FindNearbyPlayerUnitTokenForSender = function() return "target" end
+				addon.API.UnitExists = function() return false end
+			elseif failure == "recycled GUID" then
+				addon.FindNearbyPlayerUnitTokenForSender = function() return "target" end
+				addon.API.UnitGUID = function() return "Player-other" end
+			elseif failure == "wrong name" then
+				addon.FindNearbyPlayerUnitTokenForSender = function() return "target" end
+				addon.API.UnitFullName = function() return "SomeoneElse", "Realm" end
+			elseif failure == "not player" then
+				addon.FindNearbyPlayerUnitTokenForSender = function() return "target" end
+				addon.API.UnitIsPlayer = function() return false end
+			elseif failure == "restricted" then
+				addon.IsRuntimeRestricted = function() return true end
+			elseif failure == "chat restricted" then
+				addon.IsRuntimeRestrictionTypeActive = function(_, kind) return kind == "chat" end
+			elseif failure == "unknown" then
+				local inaccessible = {}
+				addon.CanAccessValue = function(_, value) return value ~= inaccessible end
+				addon.API.CanTargetUnitForEmote = function() return inaccessible end
+			elseif failure == "error" then
+				addon.API.CanTargetUnitForEmote = function() error("unit unavailable") end
+			end
+			ReceiveCelebration(addon, eventType, "cheer")
+			Equal(#addon.emotes, 0)
+			if eventType ~= "PLAYER_LEVEL_UP" then Equal(#addon.printed, 1) end
+			Equal(#addon.delayed, 0) -- Never defer a reaction until someone becomes visible.
+		end
+	end
+end)
+
+QuestTogether:RegisterTest("remote plate celebrations handle recycled forbidden and unreadable plate units", function()
+	for _, failure in ipairs({ "valid", "recycled", "forbidden", "getter error", "unreadable" }) do
+		local addon = NewRemoteCelebrationFixture()
+		local inaccessible = {}
+		addon.CanAccessValue = function(_, value) return value ~= inaccessible end
+		addon.API.UnitExists = function(unit) return unit == "nameplate1" end
+		addon.API.UnitGUID = function() return failure == "recycled" and "Player-other" or "Player-friend" end
+		local plate = {
+			IsForbidden = function() return failure == "forbidden" end,
+			GetUnit = function()
+				if failure == "forbidden" or failure == "getter error" then error("do not read plate") end
+				return failure == "unreadable" and inaccessible or "nameplate1"
+			end,
+		}
+		addon.FindVisiblePlayerNameplateForSender = function() return plate end
+		ReceiveCelebration(addon, "QUEST_COMPLETED", "cheer")
+		Equal(#addon.emotes, failure == "valid" and 1 or 0)
+	end
+end)
+
+QuestTogether:RegisterTest("self celebrations do not require remote target visibility", function()
+	local addon = NewLevelUpFixture()
+	addon.API.CanTargetUnitForEmote = function() error("self emotes must not use remote targeting") end
+	addon.API.UnitExists = function() return false end
+	Equal(addon:PlayLocalCompletionEmote("cheer"), true)
+	Equal(addon:PlayLocalCelebrationEmote("applaud", "emoteOnLevelUp"), true)
+	Equal(#addon.emotes, 2)
+	Equal(addon.emotes[1].target, "MyPlayer")
+	Equal(addon.emotes[2].target, "MyPlayer")
 end)
 
 QuestTogether:RegisterTest("level-up wire rejects other event types", function()

@@ -51,14 +51,12 @@ local GROUP_ANNOUNCEMENT_DISTRIBUTIONS = {
 local COMM_DUPLICATE_WINDOW_SECONDS = 0.75
 local COMM_REQUEST_DUPLICATE_WINDOW_SECONDS = 10
 -- Receiving an addon message grants no authority to choose an arbitrary local
--- emote. Keep the approved celebration set private, independent of the mutable
--- local selection list; special celebrations are checked against local state.
-local REMOTE_CELEBRATION_EMOTES = {
-	applaud = true, bow = true, cheer = true, clap = true, commend = true,
-	congratulate = true, curtsey = true, dance = true, golfclap = true, happy = true,
-	highfive = true, huzzah = true, impressed = true, praise = true, proud = true,
-	roar = true, sexy = true, smirk = true, strut = true, victory = true,
-}
+-- emote. Snapshot our shipped selection list so local and remote celebrations
+-- share one source without allowing later table mutations to expand acceptance.
+local REMOTE_CELEBRATION_EMOTES = {}
+for _, token in ipairs(QuestTogether.completionEmotes) do
+	REMOTE_CELEBRATION_EMOTES[token] = true
+end
 local raw_issecretvalue = type(issecretvalue) == "function" and issecretvalue or nil
 
 local function IsSecretValue(value)
@@ -1825,10 +1823,6 @@ function QuestTogether:SendAnnouncementEvent(eventType, text, questId, extraData
 	return self:SendAnnouncementWireEvent(eventData)
 end
 
-function QuestTogether:IsSpecialCompletionEmote(emoteToken)
-	return emoteToken == "mountspecial" or emoteToken == "forthealliance" or emoteToken == "forthehorde"
-end
-
 function QuestTogether:GetSafeRemoteCompletionEmote(emoteToken)
 	if not self:CanAccessValue(emoteToken) or type(emoteToken) ~= "string" then
 		return nil
@@ -1837,46 +1831,12 @@ function QuestTogether:GetSafeRemoteCompletionEmote(emoteToken)
 	if REMOTE_CELEBRATION_EMOTES[token] then
 		return token
 	end
-	if not self:IsSpecialCompletionEmote(token) then
-		return nil
-	end
-
-	if token == "mountspecial" and self.API and self.API.IsMounted then
-		local mounted = self.API.IsMounted()
-		if self:CanAccessValue(mounted) and mounted == true then
-			return token
-		end
-	end
-
-	if token == "forthealliance" or token == "forthehorde" then
-		local faction
-		if self.API and self.API.GetFaction then
-			faction = self.API.GetFaction()
-		end
-		if self:CanAccessValue(faction) then
-			if faction == "Alliance" then
-				return "forthealliance"
-			end
-			if faction == "Horde" then
-				return "forthehorde"
-			end
-		end
-	end
-
-	for _ = 1, 20 do
-		token = self:PickRandomCompletionEmote()
-		if self:CanAccessValue(token) and type(token) == "string" then
-			token = string.lower(self:SafeTrimString(token, ""))
-			if REMOTE_CELEBRATION_EMOTES[token] then
-				return token
-			end
-		end
-	end
 	return nil
 end
 
 function QuestTogether:PlayRemoteCelebrationEmote(eventData, nearbyUnitToken, senderName)
-	if type(eventData) ~= "table" then
+	if type(eventData) ~= "table" or not self.isEnabled or self:IsRuntimeRestricted()
+		or self:IsRuntimeRestrictionTypeActive("chat") then
 		return false
 	end
 	local optionKey = eventData.eventType == "PLAYER_LEVEL_UP" and "emoteOnNearbyPlayerLevelUp"
@@ -1885,17 +1845,22 @@ function QuestTogether:PlayRemoteCelebrationEmote(eventData, nearbyUnitToken, se
 		return false
 	end
 
+	-- Revalidate immediately before the action: aliases and plates can be
+	-- recycled, and coordinate proximity says nothing about another layer.
+	local api = self.API or {}
+	if not self:CanAccessValue(nearbyUnitToken) or type(nearbyUnitToken) ~= "string"
+		or not api.CanTargetUnitForEmote or not api.DoEmote then return false end
+	local ok, targetable = pcall(api.CanTargetUnitForEmote, nearbyUnitToken)
+	if not ok or not self:CanAccessValue(targetable) or targetable ~= true then return false end
+	local matched, matches = pcall(self.DoesUnitTokenMatchSender, self, nearbyUnitToken, eventData.senderGUID, senderName)
+	if not matched or not self:CanAccessValue(matches) or matches ~= true then return false end
+
 	local token = self:GetSafeRemoteCompletionEmote(eventData.emoteToken)
 	if not token then
 		return false
 	end
 
-	local emoteTarget = nearbyUnitToken or senderName
-	if not emoteTarget or emoteTarget == "" or not (self.API and self.API.DoEmote) then
-		return false
-	end
-
-	self.API.DoEmote(token, emoteTarget)
+	self.API.DoEmote(token, nearbyUnitToken)
 	return true
 end
 
@@ -2233,8 +2198,12 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
 		and self:ShouldPlayRemoteEmoteForAnnouncement(eventData)
 	then
 		local emoteTarget = nearbyUnitToken
-		if not emoteTarget and hasNearbyNameplate and nearbyNameplate and nearbyNameplate.GetUnit then
-			emoteTarget = nearbyNameplate:GetUnit()
+		if not emoteTarget and hasNearbyNameplate and nearbyNameplate then
+			local getUnit = self:GetAccessibleFrameMember(nearbyNameplate, "GetUnit")
+			if type(getUnit) == "function" then
+				local ok, unit = pcall(getUnit, nearbyNameplate)
+				if ok and self:CanAccessValue(unit) and type(unit) == "string" then emoteTarget = unit end
+			end
 		end
 		self:PlayRemoteCelebrationEmote(eventData, emoteTarget, senderName)
 	end

@@ -48,6 +48,54 @@ return pushable end or nil,
 	end or nil
 	return function(addon)
 		do
+			-- Offline only: exercise native visibility/phase access failures without
+			-- replacing any globals during the live /qt test suite.
+			local keys = { "UnitExists", "UnitIsPlayer", "UnitIsVisible", "UnitPhaseReason", "UnitInPhase" }
+			local saved = {}
+			for _, key in ipairs(keys) do saved[key] = _G[key] end
+			local function Visible()
+				UnitExists = function() return true end
+				UnitIsPlayer = function() return true end
+				UnitIsVisible = function() return true end
+				UnitPhaseReason = function() return nil end
+				UnitInPhase = nil
+			end
+			Visible()
+			for _, unit in ipairs({ "target", "focus", "mouseover", "nameplate1" }) do
+				assert(addon.API.CanTargetUnitForEmote(unit))
+			end
+			for _, unit in ipairs({ "Friend-Realm", "player", "", secret, inaccessible }) do
+				assert(not addon.API.CanTargetUnitForEmote(unit))
+			end
+			for _, key in ipairs({ "UnitExists", "UnitIsPlayer", "UnitIsVisible" }) do
+				for _, result in ipairs({ false, 1, secret, inaccessible }) do
+					Visible(); _G[key] = function() return result end
+					assert(not addon.API.CanTargetUnitForEmote("target"))
+				end
+				Visible(); _G[key] = nil
+				assert(not addon.API.CanTargetUnitForEmote("target"))
+				Visible(); _G[key] = function() error("restricted unit query") end
+				assert(not addon.API.CanTargetUnitForEmote("target"))
+			end
+			for _, reason in ipairs({ 0, 1, secret, inaccessible }) do
+				Visible(); UnitPhaseReason = function() return reason end
+				assert(not addon.API.CanTargetUnitForEmote("target"))
+			end
+			Visible(); UnitPhaseReason = function() error("restricted phase query") end
+			assert(not addon.API.CanTargetUnitForEmote("target"))
+			Visible(); UnitPhaseReason = nil
+			assert(addon.API.CanTargetUnitForEmote("target"))
+			UnitInPhase = function() return true end
+			assert(addon.API.CanTargetUnitForEmote("target"))
+			for _, result in ipairs({ false, secret, inaccessible }) do
+				UnitInPhase = function() return result end
+				assert(not addon.API.CanTargetUnitForEmote("target"))
+			end
+			UnitInPhase = function() error("restricted legacy phase query") end
+			assert(not addon.API.CanTargetUnitForEmote("target"))
+			for _, key in ipairs(keys) do _G[key] = saved[key] end
+		end
+		do
 			local original = GetServerTime
 			GetServerTime = function() return 1791086400 end
 			assert(addon.API.GetServerTime() == 1791086400)

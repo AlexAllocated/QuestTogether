@@ -4,31 +4,13 @@
 
 ## 6.0.0
 
-QuestTogether 6.0 bereitet sich mit einem Kommunikationssystem auf den Forever-Launch vor, das den Hintergrunddatenverkehr reduzieren soll, während die Community wächst.
+Feiern bleiben jetzt bei Spielern, die du in der Nähe tatsächlich sehen kannst.
 
-### Lokale Aktivität, weltweite Entdeckung
+### Korrekturen für Feiern in der Nähe
 
-- Questankündigungen und häufige Spieleraktualisierungen verwenden jetzt Zonenkanäle. Gruppenankündigungen erreichen eure Gruppe weiterhin über Zonengrenzen hinweg.
-- Spielerpunkte bleiben weltweit verfügbar, mit langsameren Hintergrundaktualisierungen. Wenn du eine andere Zone auf der Weltkarte öffnest, abonnierst du vorübergehend ihre Aktualisierungen.
-- Der QT-Textchat bleibt im globalen QuestTogether-Kanal. Deine Chateinstellung Global oder Nur Zone steuert weiterhin, welche Nachrichten du siehst.
-
-### Weniger Hintergrunddatenverkehr
-
-- Präsenz, Version, Questanzahl, Partnerstatus und Standort werden in kompakten Aktualisierungen gebündelt. Überfüllte Zonen werden seltener aktualisiert, um den Datenverkehr zu reduzieren.
-- Ankündigungen werden zeitlich gestaffelt und haben Vorrang vor Hintergrundaktualisierungen. Ping-Antworten werden verteilt, um einen Antwortschwall zu vermeiden. WoW kann die Kanalauslieferung weiterhin verzögern; dieses Update garantiert keine sofortigen Nachrichten.
-- Spieler-Tooltips zeigen das Alter älterer Standorte an. Die Diagnose meldet jetzt Nachrichtenanzahlen, Drosselung und vom Absender gemeldete Ankündigungsverzögerungen.
-
-### Ein großes Update während der Beta
-
-- Wir nehmen diese größere Kommunikationsänderung jetzt in Erwartung des Forever-Launches vor. Die Beta ist der beste Zeitpunkt, um diese grundlegenden Entscheidungen zu treffen, bevor mehr Spieler vom alten Verhalten abhängig sind.
-- Version 6.0 verlässt QuestTogetherAnnounce1 und sendet oder empfängt nicht mehr auf diesem Legacy-Kanal. Sie verwendet QuestTogether für globalen Chat und Entdeckung sowie Zonenkanäle für lokale Aktivität.
-- QuestTogether behält seine Kanäle nach deinen anderen Chatkanälen bei, wobei der Hauptchatkanal vor seinen Zonenkanälen steht. Deine Einstellungen für Standortfreigabe, Ignorierliste und Ankündigungen bleiben erhalten.
-
-### Kompatibilität mit älteren Versionen
-
-- Bitte aktualisiert gemeinsam. Ältere Versionen können die neuen gebündelten Spieleraktualisierungen nicht lesen und nicht auf die neuen Zonenkanäle hören, sodass Spielern mit gemischten Versionen Kartenpunkte, Partnerstatus und Questankündigungen in der Nähe entgehen können.
-- Spieler, die nur den Legacy-Kanal verwenden, sind in 6.0 über diesen Kanal nicht mehr auffindbar. Einige Austausche mit neueren 5.x-Versionen können weiterhin über den gemeinsamen globalen Kanal oder eine Gruppe funktionieren, aber das ist nur teilweise Kompatibilität, nicht das volle Erlebnis.
-- Manuelles /qt ping verwendet weiterhin den globalen Kanal. Es kann dort kompatible ältere Clients hören, ist aber ein Entdeckungswerkzeug nach bestem Bemühen und keine vollständige Zählung aller, die QuestTogether verwenden.
+- Reaktionen darauf, dass ein anderer Spieler eine Quest abschließt oder eine Stufe aufsteigt, erfordern jetzt eine passende, sichtbare Spielereinheit. Kartenkoordinaten oder ein Name allein lösen kein Emote mehr aus, auch nicht, wenn devlogall aktiviert ist.
+- Eingehende Emotes müssen mit QuestTogethers eigener Feierliste übereinstimmen. Nicht aufgeführte Emotes, einschließlich mountspecial und Fraktionsjubel, werden ignoriert, ohne einen Ersatz auszuwählen.
+- Deine eigenen Feiern für Questabschluss und Stufenaufstieg behalten ihr bestehendes Verhalten und ihre Einstellungen bei.
 
 ## 5.17.2
 
