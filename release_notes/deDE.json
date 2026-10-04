@@ -1,15 +1,22 @@
 {
-  "source_sha256": "0ef0fe7d6149d3f742c933253c6c49a08614227ed2a01abcb063ae7bef34be27",
+  "source_sha256": "26737a87275ce322b877d18ff68dec08b1484759c62e9ac81a665e7240552c4d",
   "notes": {
     "version": "6.0.1",
-    "welcome": "Feiern bleiben jetzt bei Spielern, die du in der Nähe tatsächlich sehen kannst.",
+    "welcome": "Durchsuche frühere Updates von QuestTogether in deiner Sprache, mit besserer Wiederherstellung von Questnamen für Abschlussmeldungen.",
     "sections": [
       {
-        "title": "Korrekturen für Feiern in der Nähe",
+        "title": "Frühere Patchnotes anzeigen",
         "items": [
-          "Reaktionen darauf, dass ein anderer Spieler eine Quest abschließt oder eine Stufe aufsteigt, erfordern jetzt eine passende, sichtbare Spielereinheit. Kartenkoordinaten oder ein Name allein lösen kein Emote mehr aus, auch nicht, wenn devlogall aktiviert ist.",
-          "Eingehende Emotes müssen mit QuestTogethers eigener Feierliste übereinstimmen. Nicht aufgeführte Emotes, einschließlich mountspecial und Fraktionsjubel, werden ignoriert, ohne einen Ersatz auszuwählen.",
-          "Deine eigenen Feiern für Questabschluss und Stufenaufstieg behalten ihr bestehendes Verhalten und ihre Einstellungen bei."
+          "Das Willkommensfenster hat jetzt Schaltflächen für Älter und Neuer, eine Verknüpfung zu Neueste sowie eine Verlaufsauswahl, die Release-Versionen und Daten anzeigt. Beim Öffnen der Patchnotes wird mit dem neuesten Release begonnen.",
+          "Der Verlauf enthält jedes zuvor veröffentlichte Release, einschließlich der frühen Betas. Alle historischen Hinweise sind in jede unterstützte WoW-Sprachversion übersetzt und in den entsprechenden Repository-Changelogs enthalten.",
+          "Navigationsschaltflächen werden deaktiviert, wenn es nirgendwohin weitergeht. Das Durchsuchen älterer Hinweise ändert nicht, welches Upgrade du bestätigt hast; automatische Popups erscheinen weiterhin nur bei größeren und kleineren Upgrades. Öffne das Fenster jederzeit mit /qt notes."
+        ]
+      },
+      {
+        "title": "Questabschluss-Titel",
+        "items": [
+          "Wenn eine Quest aus deinem Questlog verschwindet, bevor QuestTogether einen verwendbaren Titel hat, versuchen Abschlussmeldungen jetzt zuerst die verfügbare Questtitel-Abfrage des Spiels, bevor auf eine Quest-ID zurückgegriffen wird. Ein wiederhergestellter Titel bleibt unabhängig von der Reihenfolge der Abgabe- und Entfernungsereignisse erhalten.",
+          "Ankündigungen verwenden weiterhin den Text des Absenders, wenn dein Client keinen lokalen Titel auflösen kann. Wenn keiner der beiden Clients einen Namen verfügbar hat, bleibt die Quest-ID die Ausweichlösung. Die verbesserte Wiederherstellung auf Absenderseite greift, wenn der Absender aktualisiert."
         ]
       }
     ]

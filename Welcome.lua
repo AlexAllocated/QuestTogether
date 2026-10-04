@@ -92,6 +92,43 @@ function Addon:CanPresentReleaseNotes()
 		and self:CanAccessForeignFrame(self:GetReleaseNotesUIParent(), true)
 end
 
+function Addon:GetReleaseNotesCatalog(notes, version)
+	local dates = rawget(self, "releaseNotesDates") or {}
+	local entries = { { notes = notes, version = version, date = dates[version] } }
+	local locale = self.localizationTestLocale or self.locale or "enUS"
+	if locale == "enGB" then locale = "enUS" end
+	local seen = { [version] = true }
+	for _, entry in ipairs(rawget(self, "releaseNotesHistory") or {}) do
+		local archived = type(entry.locales) == "table" and (entry.locales[locale] or entry.locales.enUS)
+		if type(archived) == "table" and self:GetReleaseNotesSeries(entry.version)
+			and not seen[entry.version] and archived.version == entry.version then
+			entries[#entries + 1] = {
+				notes = archived, version = entry.version, date = entry.date,
+				englishOnly = locale ~= "enUS" and not entry.locales[locale],
+			}
+			seen[entry.version] = true
+		end
+	end
+	return entries
+end
+
+function Addon:ShowReleaseNotesPage(index, history)
+	local browser = rawget(self, "releaseNotesBrowser")
+	index = self:SafeToNumber(index)
+	if not browser or not index or index ~= math.floor(index) or not browser.entries[index]
+		or not self:CanPresentReleaseNotes() then return false end
+	local oldIndex, oldHistory = browser.index, browser.history
+	browser.index, browser.history = index, history == true
+	local entry = browser.entries[index]
+	local ok, shown = pcall(self.RenderReleaseNotesWindow, self, entry.notes, entry.version, false)
+	if not ok or shown ~= true then
+		browser.index, browser.history = oldIndex, oldHistory
+		return false
+	end
+	-- Browsing history never acknowledges an upgrade or changes startup state.
+	return true
+end
+
 function Addon:CreateReleaseNotesWakeFrame()
 	-- No foreign parent or hooks. The short-lived listener also works while
 	-- runtime announcements are disabled or UIParent is temporarily hidden.
@@ -117,10 +154,13 @@ function Addon:OpenReleaseNotes(automatic)
 	end
 	local global = self.db and self.db.global
 	local seenMajor, seenMinor = self:GetReleaseNotesSeries(global and global.releaseNotesSeenVersion)
+	local previousBrowser = rawget(self, "releaseNotesBrowser")
+	self.releaseNotesBrowser = { entries = self:GetReleaseNotesCatalog(notes, version), index = 1, history = false }
 	-- Contain a partial installation or a failed UI build without breaking login.
 	-- The renderer guards native access itself; pcall is not a taint barrier.
 	local ok, shown = pcall(self.RenderReleaseNotesWindow, self, notes, version, seenMajor == nil)
 	if not ok or shown ~= true then
+		self.releaseNotesBrowser = previousBrowser
 		if not automatic then
 			self:Print(L("Unable to open patch notes right now."))
 		end

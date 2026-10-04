@@ -1,15 +1,22 @@
 {
-  "source_sha256": "0ef0fe7d6149d3f742c933253c6c49a08614227ed2a01abcb063ae7bef34be27",
+  "source_sha256": "26737a87275ce322b877d18ff68dec08b1484759c62e9ac81a665e7240552c4d",
   "notes": {
     "version": "6.0.1",
-    "welcome": "Les célébrations restent désormais associées aux joueurs que vous pouvez réellement voir à proximité.",
+    "welcome": "Parcourez les anciennes mises à jour de QuestTogether dans votre langue, avec une meilleure récupération des noms de quêtes pour les annonces d’achèvement.",
     "sections": [
       {
-        "title": "Correctifs des célébrations à proximité",
+        "title": "Parcourir les anciennes notes de mise à jour",
         "items": [
-          "Les réactions à un autre joueur qui termine une quête ou gagne un niveau nécessitent désormais une unité de joueur correspondante et visible. Les coordonnées de la carte ou un nom seul ne déclenchent plus d’emote, y compris lorsque devlogall est activé.",
-          "Les emotes entrantes doivent correspondre à la propre liste de célébrations de QuestTogether. Les emotes non répertoriées, y compris mountspecial et les acclamations de faction, sont ignorées sans choisir de substitut.",
-          "Vos propres célébrations de fin de quête et de gain de niveau conservent leur comportement et leurs paramètres existants."
+          "La fenêtre d’accueil comporte maintenant des boutons Anciennes et Récentes, un raccourci Dernière et un sélecteur d’historique affichant les versions et dates de publication. L’ouverture des notes de mise à jour commence à la dernière version.",
+          "L’historique comprend toutes les versions publiées précédemment, y compris les premières bêtas. Toutes les notes historiques sont traduites dans chaque langue de WoW prise en charge et incluses dans les journaux des modifications des dépôts correspondants.",
+          "Les boutons de navigation se désactivent lorsqu’il n’y a nulle part où aller. Parcourir d’anciennes notes ne change pas la mise à niveau que vous avez confirmée ; les fenêtres automatiques n’apparaissent toujours que pour les mises à niveau majeures et mineures. Ouvrez la fenêtre à tout moment avec /qt notes."
+        ]
+      },
+      {
+        "title": "Titres des quêtes terminées",
+        "items": [
+          "Lorsqu’une quête quitte votre journal avant que QuestTogether ne dispose d’un titre utilisable, les annonces d’achèvement essaient désormais la recherche de titre de quête disponible en jeu avant de se rabattre sur un ID de quête. Un titre récupéré est conservé quel que soit l’ordre des événements de rendu et de suppression.",
+          "Les annonces utilisent toujours le texte de l’expéditeur lorsque votre client ne peut pas résoudre un titre local. Si aucun des deux clients n’a de nom disponible, l’ID de quête reste la solution de repli. La récupération améliorée côté expéditeur s’applique lorsque l’expéditeur effectue la mise à jour."
         ]
       }
     ]

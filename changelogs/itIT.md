@@ -4,13 +4,18 @@
 
 ## 6.0.1
 
-Le celebrazioni ora restano con i giocatori che puoi effettivamente vedere nelle vicinanze.
+Sfoglia gli aggiornamenti passati di QuestTogether nella tua lingua, con un recupero migliore dei nomi delle missioni per gli annunci di completamento.
 
-### Correzioni alle celebrazioni nelle vicinanze
+### Sfoglia le note delle patch precedenti
 
-- Le reazioni al completamento di una missione o all'aumento di livello di un altro giocatore ora richiedono un'unità giocatore corrispondente e visibile. Le coordinate della mappa o il solo nome non attivano più un'emote, anche quando devlogall è abilitato.
-- Le emote in arrivo devono corrispondere alla lista di celebrazioni di QuestTogether. Le emote non presenti nella lista, incluse mountspecial e le acclamazioni di fazione, vengono ignorate senza scegliere un sostituto.
-- Le tue celebrazioni per il completamento delle missioni e per l'aumento di livello mantengono il comportamento e le impostazioni esistenti.
+- La finestra di benvenuto ora ha i pulsanti Meno recenti e Più recenti, una scorciatoia Ultima e un selettore Cronologia che mostra versioni e date di rilascio. All'apertura, le note della patch partono dall'ultima versione.
+- La cronologia include ogni versione pubblicata in precedenza, incluse le prime beta. Tutte le note storiche sono tradotte in ogni localizzazione di WoW supportata e incluse nei changelog dei repository corrispondenti.
+- I pulsanti di navigazione si disattivano quando non c'è nessun'altra nota da vedere. Consultare note più vecchie non cambia quale aggiornamento hai confermato; i popup automatici continuano a comparire solo per aggiornamenti maggiori e minori. Apri la finestra in qualsiasi momento con /qt notes.
+
+### Titoli di completamento delle missioni
+
+- Quando una missione lascia il tuo registro prima che QuestTogether abbia un titolo utilizzabile, gli annunci di completamento ora provano a usare la ricerca dei titoli missione disponibile del gioco prima di ripiegare su un ID missione. Un titolo recuperato viene preservato indipendentemente dall'ordine degli eventi di consegna e rimozione.
+- Gli annunci usano comunque il testo del mittente quando il tuo client non riesce a risolvere un titolo locale. Se nessuno dei due client ha un nome disponibile, l'ID missione resta l'alternativa. Il recupero migliorato lato mittente si applica quando il mittente si aggiorna.
 
 ## 6.0.0
 
@@ -200,3 +205,318 @@ QuestTogether ora supporta tutte le lingue di WoW e può mostrare gli aggiorname
 
 - Il confronto delle missioni ora preferisce il titolo locale della missione quando disponibile.
 - I titoli localizzati delle missioni con punteggiatura non ASCII restano cliccabili in modo più affidabile.
+
+## 5.15.0
+
+Chiedi di unirti a un gruppo per missioni direttamente dal menu giocatore di QuestTogether.
+
+### Unisciti a un gruppo per missioni
+
+- I giocatori QT già in gruppo ora mostrano Richiedi di unirti invece di Invita quando sono disponibili informazioni recenti sul gruppo. Entrambi i giocatori devono avere questo aggiornamento; chi fa la richiesta deve essere da solo.
+- Il destinatario può inviare un normale invito di WoW o rifiutare. Deve avere il permesso di invitare e spazio in un gruppo normale. Dovrai comunque accettare il normale invito per unirti.
+
+### Inviti automatici opzionali
+
+- Due nuove opzioni approvano automaticamente le richieste dagli amici del personaggio, oppure da altri giocatori mentre sei In cerca di compagni per le missioni. Entrambe iniziano disattivate e compaiono nella richiesta e nelle impostazioni Varie. Gli amici dell'account Battle.net non sono inclusi.
+- Le richieste scadono e rispettano ignore, cambi di gruppo e restrizioni di gioco. QT non abbandona mai il tuo gruppo attuale né accetta inviti per te.
+
+## 5.14.1
+
+Gli annunci di gruppo ora mostrano il nome QuestTogether completo.
+
+### Chat di gruppo
+
+- Il prefisso degli annunci nella chat di gruppo è stato esteso da [QT] a [QuestTogether], così gli altri giocatori possono trovare più facilmente l'addon.
+
+## 5.14.0
+
+QuestTogether ora parla cinque lingue in più e ti aiuta a tenere informati i membri del gruppo senza QT.
+
+### Gioca nella tua lingua
+
+- L'interfaccia è ora disponibile in tedesco, francese, spagnolo, portoghese brasiliano e russo. QuestTogether segue la lingua del gioco, con l'inglese come ripiego.
+- Impostazioni, menu, tooltip, confronti delle missioni e note di aggiornamento sono tradotti. I nomi delle missioni e il testo dei progressi ricevuti da altri giocatori restano nella loro lingua originale.
+- Trova gli annunci di rilascio tradotti nei cinque canali changelog specifici per lingua sul nostro Discord.
+
+### Tieni informato tutto il tuo gruppo
+
+- Una nuova opzione Dove annunciare invia gli annunci evento abilitati alla chat di gruppo quando qualcuno nel tuo gruppo non è stato riconosciuto come utente QT. Inizia abilitata e può essere disattivata nelle impostazioni.
+- Funziona anche nei gruppi di istanza abbinati. Il gioco in solitaria e le incursioni sono esclusi, e gli annunci degli altri giocatori non vengono mai inoltrati.
+
+## 5.13.1
+
+Questo aggiornamento di manutenzione migliora il ripristino degli indicatori delle missioni, rimuove fumetti e loghi giocatore obsoleti e mantiene coerenti le impostazioni e la finestra di debug.
+
+### Indicatori missione e giocatori
+
+- Le icone delle missioni e le tinte della salute si ripristinano correttamente dopo la chiusura delle visualizzazioni limitate. Le scansioni missioni ritardate mantengono il loro tempo di assestamento, e i dati tooltip temporaneamente mancanti conservano il loro limite di tentativi.
+- I fumetti degli annunci vengono ripuliti quando la barra di un giocatore scompare o viene riutilizzata durante il combattimento. I riquadri protetti o vietati attendono una pulizia sicura.
+- Le posizioni sulla mappa e la presenza dei giocatori si ripristinano dopo aver disattivato QuestTogether, cambiato zona e riattivato l'addon. I giocatori andati via non riottengono più un logo QT da ritiri tardivi della posizione o dello stato di partner.
+
+### Correzioni a impostazioni e finestre
+
+- La casella In cerca di compagni per le missioni resta sincronizzata quando lo stato cambia tramite comandi, menu o impostazioni del profilo.
+- La finestra di debug conclude in sicurezza i gesti di trascinamento e ridimensionamento interrotti quando le restrizioni vengono rimosse, anche dopo essere stata nascosta.
+
+### Miglioramenti dell'affidabilità
+
+- Test rafforzati rilevano l'accesso a riquadri vietati anche quando un errore viene intercettato internamente.
+- I controlli di rilascio ora rifiutano la pubblicazione finché restano modifiche dell'implementazione non registrate, aiutando a garantire che le correzioni arrivino davvero al download.
+
+## 5.13.0
+
+Trova a colpo d'occhio compagni per le missioni con punti sulla mappa e loghi giocatore evidenziati, impostazioni posizione più semplici e promemoria quando un altro giocatore ha una versione stabile di QuestTogether più recente.
+
+### Trova compagni per le missioni
+
+- I giocatori in cerca di compagni per le missioni hanno un leggero bagliore dorato attorno ai punti sulla mappa e sulla minimappa colorati in base alla classe.
+- Il loro logo QuestTogether sulla barra del nome ottiene un leggero bagliore dorato. Le evidenziazioni scompaiono quando lo stato viene disattivato o scade.
+- Le impostazioni Posizioni dei giocatori includono Mostra solo giocatori in cerca di compagni per le missioni. Inizia disattivata e filtra entrambe le mappe quando abilitata.
+- La finestra Novità in gioco mostra fianco a fianco loghi e punti sulla mappa normali e luminosi. Il bagliore dorato significa in cerca di compagni per le missioni.
+
+### Impostazioni posizione più semplici
+
+- Condividi la mia posizione e Mostra altri giocatori si applicano ciascuna sia alla mappa del mondo sia alla minimappa.
+- Entrambe le opzioni iniziano abilitate per i nuovi profili. Le disattivazioni esistenti della condivisione posizione vengono mantenute durante l'aggiornamento.
+
+### Promemoria nuova versione
+
+- QuestTogether nota quando un altro giocatore segnala una versione stabile più recente dell'addon e stampa un promemoria di aggiornamento nella finestra chat di QuestTogether scelta.
+- Il promemoria viene salvato tra i personaggi e compare una volta a ogni ricaricamento finché non installi la versione rilevata o una più recente. Le versioni alpha e beta non attivano promemoria.
+- Gli annunci di versione sono piccoli e poco frequenti. QuestTogether riconosce anche le informazioni di versione nelle risposte ping esistenti.
+
+## 5.12.0
+
+Trova persone con cui fare missioni usando il nuovo stato In cerca di compagni per le missioni. Questo aggiornamento migliora anche la visibilità dei tooltip della minimappa e separa il comportamento della Modalità Guerra e del reame di Retail da Forever.
+
+### In cerca di compagni per le missioni
+
+- Fai sapere agli altri utenti QuestTogether che vuoi compagnia. Il tuo stato compare nel menu del tuo giocatore e nei tooltip dei punti sulla mappa; non abilita la condivisione della posizione né invia inviti.
+- Attiva o disattiva lo stato dal menu della minimappa, da Impostazioni > Varie o con /qt lfg. Usa /qt lfg on, off o status per impostarlo o controllarlo. Inizia disattivato e viene salvato per profilo.
+- Lo stato di partner scade quando gli aggiornamenti si interrompono. I giocatori ignorati sono esclusi, e disattivare QuestTogether mette in pausa il tuo annuncio.
+
+### Retail e Forever
+
+- Forever non mostra più la Modalità Guerra nei tooltip dei punti giocatore, nei dettagli della posizione delle missioni o nell'output del ping. I ping di Forever omettono anche le etichette del reame pur conservando i nomi completi dei giocatori.
+- Gli aggiornamenti delle missioni vicine su Forever non richiedono più informazioni della Modalità Guerra di Retail. I punti sulla mappa restano visibili attraverso le fasi, così puoi trovare persone con cui formare un gruppo.
+- Retail usa lo stato attivo della Modalità Guerra quando disponibile. Una Modalità Guerra sconosciuta o non supportata non viene più segnalata come Disattivata.
+
+### Punti giocatore più stabili
+
+- Coordinate mancanti per poco tempo non rimuovono più subito il tuo punto. Le ultime posizioni segnalate restano fino a due minuti, e i report più vecchi mostrano la loro età nel tooltip. Le rinunce alla condivisione si ritirano comunque subito quando la comunicazione è disponibile.
+- Le trasmissioni di movimento sono limitate a una volta ogni dieci secondi, riducendo il traffico delle posizioni. I segnali di presenza da fermi restano ogni venti secondi, così i client più vecchi restano compatibili.
+- La cache delle posizioni ora conserva fino a 512 giocatori. Ogni mappa disegna comunque al massimo 128 punti visibili, e i giocatori fuori dalla mappa visualizzata non consumano più quel limite di disegno.
+
+### Loghi giocatore affidabili
+
+- Corregge i loghi mancanti sulle barre dei nomi dei giocatori amichevoli nei client Forever e Retail attuali leggendo l'impostazione corrente di visibilità dei giocatori amichevoli.
+- I loghi posizionati a sinistra si spostano verso l'esterno per fare spazio ai benefici visibili, poi tornano alla posizione abituale quando i benefici scompaiono.
+- Tutti i messaggi QuestTogether supportati ora identificano il mittente. Una cache limitata ricorda i giocatori per la sessione UI corrente, così i segnali di presenza mancati non rimuovono più i loro loghi. Le uscite esplicite e i giocatori ignorati vengono comunque eliminati; non vengono inviati messaggi extra.
+
+### Rifiniture della minimappa
+
+- Il tooltip della minimappa di QuestTogether ora usa un livello tooltip indipendente, così può apparire sopra l'UI della barra delle azioni. Si nasconde quando il pulsante diventa non disponibile o iniziano le restrizioni.
+
+## 5.11.0
+
+QuestTogether ora aggiunge posizioni dei giocatori, loghi sulle barre dei giocatori, confronti mirati delle missioni e feedback e supporto Discord più semplici. Le impostazioni ti permettono di scegliere cosa condividere e cosa vedere mentre i progressi delle missioni restano coordinati con altri utenti QuestTogether.
+
+### Trova giocatori QuestTogether nelle vicinanze
+
+- Mostra il logo della pergamena accanto ai giocatori amichevoli di QuestTogether quando le barre dei nomi amichevoli di WoW sono attive. Le Targhette giocatore sono abilitate per impostazione predefinita, con una posizione a Sinistra distanziata; scegli Sinistra, Destra, Alto o Prefisso senza cambiare i colori della barra della salute.
+- I punti giocatore colorati in base alla classe possono comparire sulla mappa del mondo e sulla minimappa per i giocatori che condividono la loro posizione. Passa il mouse su un punto per nome, fazione, razza, classe e livello; cliccalo per il menu giocatore di QuestTogether.
+- Posizioni dei giocatori ha interruttori separati per condividere e visualizzare sulla mappa del mondo e sulla minimappa, e tutti e quattro iniziano abilitati. La presenza per i loghi sulle barre dei giocatori può continuare anche quando entrambi gli interruttori di condivisione posizione sono disattivati.
+- Le posizioni si aggiornano periodicamente e scompaiono quando scadono. Entrambi i giocatori devono avere l'addon aggiornato; un punto non garantisce che condividiate la stessa fase o layer.
+
+### Confronta un giocatore o tutto il gruppo
+
+- L'azione Confronta missioni del menu giocatore ora confronta solo te e il giocatore selezionato, inclusi i pari QuestTogether raggiungibili fuori dal gruppo. Il confronto dell'intero gruppo resta disponibile dal menu della minimappa, dai menu dei nomi missione e da /qt compare.
+- La condivisione delle missioni e le richieste di condivisione restano solo per il gruppo. I confronti mirati spiegano quando serve un gruppo per condividere e quando il giocatore selezionato ha bisogno di QuestTogether per rispondere.
+- Se una richiesta di condivisione è già in attesa su un altro giocatore, il confronto ora mostra chi sta aspettando dopo che cambi bersaglio.
+
+### Feedback e supporto
+
+- La finestra di benvenuto e la pagina principale delle impostazioni ora includono Discord — Feedback e supporto. Apre un invito copiabile quando disponibile, oppure stampa l'invito in chat se la finestra del link non può aprirsi.
+
+### Correzioni e rifiniture
+
+- I giocatori ignorati ora vengono filtrati in modo più completo. Nuovi registri, fumetti, punti, confronti e lavori di condivisione vengono soppressi, mentre fumetti e posizioni esistenti vengono eliminati quando cambia la lista ignore.
+- Corrette false targhette missione causate da limiti tooltip non disponibili che corrispondevano al testo obiettivo di un'altra missione.
+- Disattivare la condivisione della mappa o della minimappa ora ritenta l'aggiornamento dopo errori temporanei di comunicazione. Disattivare entrambe le opzioni di condivisione rimuove anche i dettagli della posizione dagli altri aggiornamenti dell'addon.
+- I loghi giocatore si eliminano correttamente quando la presenza di un giocatore scade appena prima che se ne vada. Sussurra dai punti sulla mappa apre la finestra chat, e cambiare la destinazione del registro dalle Impostazioni non è disponibile durante le restrizioni.
+
+## 5.10.0
+
+QuestTogether condivide i progressi delle missioni con il tuo gruppo e i giocatori vicini. Usa il pulsante sulla minimappa per le impostazioni, i confronti delle missioni del gruppo, il tuo registro missioni e queste ultime note.
+
+### Confronta e condividi le missioni del gruppo
+
+- Apri Confronta missioni del gruppo dalla minimappa o dai menu delle missioni e dei giocatori, oppure digita /qt compare. Scopri chi ha ogni missione e quanto è progredito ciascuno.
+- Tutte le missioni del gruppo compaiono per impostazione predefinita. Seleziona Nascondi missioni che non ho per concentrarti sulle missioni nel tuo registro.
+- Richiedi le missioni condivisibili ai membri del gruppo che usano l'addon aggiornato. Le richieste chiedono il permesso per impostazione predefinita; la condivisione automatica è un'impostazione opzionale.
+- I confronti vengono recuperati dopo restrizioni di mappa o combattimento. Gli aggiornamenti sostituiscono le risposte precedenti, e i tempi di recupero e gli errori delle richieste spiegano quando puoi riprovare.
+
+### Scorciatoie e menu delle missioni
+
+- Trascina il pulsante a forma di pergamena sulla minimappa per riposizionarlo. Il suo menu apre impostazioni, confronti, il registro missioni, note della patch e il controllo di destinazione della finestra del registro. Nascondilo dal menu e ripristinalo nelle impostazioni Varie.
+- I menu dei nomi delle missioni offrono Stato, Condividi, Apri nel registro missioni e Confronta missioni del gruppo. Le azioni di condivisione e registro ricontrollano la missione attuale e le restrizioni quando vengono cliccate.
+- I link allo stato delle missioni mantengono intatti i titoli dopo che una missione lascia il tuo registro. La casella della condivisione automatica ora segue le impostazioni salvate e le modifiche del profilo.
+
+### Aiuto e ultime note
+
+- Leggi il messaggio di benvenuto e le ultime note della patch nella loro finestra invece che in messaggi di chat ripetuti. Scegli Note della patch dal menu della minimappa o dalla pagina principale delle Impostazioni, oppure usa /qt notes, /qt changelog o /qt patchnotes.
+- La finestra delle note si apre automaticamente per gli aggiornamenti principali e secondari. Gli aggiornamenti delle patch includono comunque note nuove senza aprire automaticamente la finestra.
+- Usa /qt help per i comandi normali e /qt help debug per anteprime, diagnostica e comandi per sviluppatori.
+
+## 5.9.2
+
+Fai clic sinistro o destro sul nome di una missione nel registro di QuestTogether per aprirne il menu, con Stato per primo e Condividi per secondo. Condividi usa la voce corrente del registro missioni senza cambiare la missione selezionata da Blizzard, e non è disponibile quando sei da solo, ci sono restrizioni o la missione non può essere condivisa. Dopo un separatore, l'opzione finale sposta i registri di QuestTogether tra la finestra principale e quella separata, in accordo con il menu dei nomi dei giocatori di QT.
+
+### Modifiche in questa versione
+
+- Rendi cliccabili i nomi delle missioni nei messaggi di stato, inclusi i titoli di riserva dai registri di altri giocatori. Mantieni i link delle missioni esistenti durante la formattazione dei confronti delle missioni completate, così i dettagli di stato non diventano parte di un secondo link non funzionante.
+- Validazione: 521 test superati in ordine normale e inverso su Lua 5.1 e 5.2. Tutti e sei i profili API del client, i controlli di sintassi Lua e shell, la verifica esatta di libchev e i controlli diff sono superati. Il comportamento dei menu del client live, la consegna delle condivisioni di missione e la validazione del taint a livello di motore restano separati.
+
+## 5.9.1
+
+Corregge il tracciamento delle missioni, la visibilità delle barre del nome delle missioni, gli annunci delle aree obiettivo, l'affidabilità della comunicazione e le azioni utente identificate nell'audit completo.
+
+### Modifiche in questa versione
+
+- Impedisci a blocchi di missione non correlati nei tooltip di prendere in prestito il testo degli obiettivi condivisi. Mantieni i progressi validi del gruppo e recupera le barre del nome dopo cambi di mappa, istanza, elenco del gruppo e missione.
+- Mantieni in sospeso le missioni appena accettate e le scansioni iniziali finché non arrivano dati leggibili. Conserva le tappe degli obiettivi, la classificazione degli incarichi e lo stato di posizione sconosciuta senza uscite false o voci duplicate.
+- Migliora annunci localizzati e confronti delle missioni, inclusi limiti del payload, ritmo, tentativi, annullamento e segnalazione della condivisibilità.
+- Rispetta gli errori nativi dei waypoint senza tracciare un vecchio segnaposto. Rifiuta i clic soggetti a restrizioni mentre è disabilitato invece di perdere il lavoro in coda.
+- Rendi i test delle bolle anteprime locali e accetta nomi Forever completi o nomi tra virgolette, preservando l'identità esatta del giocatore.
+- Correggi gestione di abilitazione/disabilitazione e profili, apertura della Modalità modifica dell'HUD, emote di celebrazione approvate e diagnostica.
+- Rafforza l'isolamento dei test sicuro per il client live e la copertura delle regressioni, correggi presupposti errati dei test e fai propagare a CI gli errori di sintassi Lua.
+- Validazione: 516 test superati in ordine normale e inverso su Lua 5.1 e 5.2. Tutti e sei i profili API del client, i controlli di sintassi, la verifica esatta di libchev e i controlli diff sono superati. Rendering del client live, consegna tra due client e validazione del taint a livello di motore restano separati.
+
+## 5.9.0
+
+Festeggia gli aumenti di livello tuoi e dei giocatori QuestTogether vicini con emote sincronizzate. Aggiungi interruttori separati per le emote di aumento di livello, abilitati per impostazione predefinita, accanto alle impostazioni delle emote di completamento missione in Varie. Le reazioni vicine rispettano l'ambito giocatori e le regole di prossimità esistenti.
+
+### Modifiche in questa versione
+
+- Ricorda il completamento confermato degli obiettivi missione per tipo di creatura oltre che per singolo spawn. I mob che compaiono durante il combattimento restano non contrassegnati quando i dati del tooltip non sono disponibili, anche se uno spawn precedente era stato memorizzato come necessario. Obiettivi recenti non completati possono ripristinare l'evidenziazione; i cambi di stato della missione azzerano la memoria di completamento. Dati del tooltip parziali o inaccessibili non vengono mai trattati come prova che tutti abbiano finito.
+- Rimuovi immediatamente le icone delle missioni sulle barre del nome e la tinta della salute quando il tag di un mob viene negato, anche durante il combattimento. Ascolta i cambi di proprietà e ricontrolla i tag sugli aggiornamenti di salute e minaccia.
+- Rileva i nuovi mob di missione incontrati durante il normale combattimento nel mondo aperto usando dati leggibili del tooltip dell'unità. Aggiorna le barre del nome quando tornano da dietro la telecamera, diventano il tuo bersaglio o vengono sorvolate col mouse. Riprova frame ritardati, GUID e righe di missione del tooltip con un budget limitato per unità, annulla il lavoro obsoleto quando le unità vengono rimosse e ripristina insieme tinta e icona. Mantieni le protezioni per mappa, istanza, dati inaccessibili e frame protetti; la scoperta in combattimento non invoca Questie né UI dei tooltip nascoste.
+- Validazione: 374 test offline superati in ordine normale e inverso su Lua 5.1 e 5.2. Sei profili API del client, controlli di sintassi Lua, verifica esatta delle librerie e controlli diff sono superati. Le regressioni della cache di completamento hanno riprodotto il bug prima della correzione. Gameplay live e validazione del taint a livello di motore restano separati.
+
+## 5.8.6
+
+Rendi più robusti nomi dei personaggi, nomi delle classi, titoli delle missioni e colori personalizzati delle classi contro valori API inaccessibili o malformati. Valida i dati di integrazione opzionale di TomTom e Questie prima di usarli, e smetti di leggere le righe del tooltip di Questie quando i dati sono inaccessibili. Normalizza visibilità delle bolle e stato della modalità modifica in booleani prima di passarli ai controlli UI.
+
+### Modifiche in questa versione
+
+- Consolida il gestore degli eventi della schermata di caricamento, rimuovi argomenti privati inutilizzati e un ramo inutilizzato dell'enum delle restrizioni, e chiarisci la gestione di callback e valori di ritorno. Mantieni intatti i fallback dei client moderni/legacy e la revisione esatta della libreria privata.
+- Validazione: 336 test superati in ordine normale e inverso su Lua 5.1 e 5.2, con controlli dell'adapter ampliati su sei profili client. Le nuove regressioni falliscono contro l'implementazione precedente. Parsing Lua, verifica esatta delle librerie e controlli diff sono superati. Rivisti i restanti diagnostici Ketho WoW API/LuaLS, incluso un passaggio separato senza mock offline del client; i risultati mantenuti hanno motivi specifici di compatibilità, protezione, callback, libreria o fixture. La validazione del gameplay live Retail e Forever resta separata.
+
+## 5.8.5
+
+Correggi la scoperta di incarichi/missioni mondiali sulla mappa nei client moderni leggendo questID da C_TaskQuest.GetQuestsOnMap, mantenendo al tempo stesso l'API legacy e il campo questId per i client più vecchi. Preferisci C_ChatInfo.PerformEmote così le emote di completamento funzionano quando le globali deprecate sono disabilitate; gestisci in sicurezza API delle emote mancanti o non funzionanti.
+
+### Modifiche in questa versione
+
+- Rimuovi un calcolo inutilizzato dell'impronta dell'elenco del gruppo e variabili locali inutilizzate. Estendi i controlli offline del client per coprire API moderne e legacy di incarichi/emote, precedenza API, dati missione inaccessibili e API mancanti/non funzionanti. Validazione: 334 test superati in ordine normale e inverso su Lua 5.1 e 5.2, più i controlli API ampliati su sei profili client, parsing Lua e verifica esatta delle librerie. La validazione del gameplay in Retail e Forever resta separata dai controlli offline.
+
+## 5.8.4
+
+Manutenzione del repository: tieni le note di sviluppo locali fuori dal sorgente tracciato e dai pacchetti di rilascio. Il comportamento di gioco è invariato.
+
+### Modifiche in questa versione
+
+- Manutenzione del repository: tieni le note di sviluppo locali fuori dal sorgente tracciato e dai pacchetti di rilascio. Il comportamento di gioco è invariato.
+
+## 5.8.3
+
+Annuncia la versione installata, i client supportati e il comando delle impostazioni una volta per accesso o ricaricamento dell'UI. Includi link di feedback specifici dell'addon per CurseForge e GitHub; cliccando un link si apre una finestra di copia in stile nativo. Condividi il comportamento dei messaggi e l'UI di copia sicura tramite libchev 1.2.0 privata. Se la registrazione del link o la finestra di copia non è disponibile, mostra l'URL completo in chat. Un helper di benvenuto non disponibile non può interrompere il normale avvio dell'addon.
+
+### Modifiche in questa versione
+
+- Validazione: 334 test superati in entrambi gli ordini su Lua 5.1 e 5.2, con controlli API del client, parsing Lua e verifica esatta del vendor della libreria. Le simulazioni smoke NoPoizen esercitano entrambi i link di feedback su tutti e sette i profili client/ruleset. Il rendering live resta un controllo separato.
+
+## 5.8.2
+
+Isola le ricerche GUID delle fixture di test dai giocatori vicini. Correggi due falsi errori in /qt test quando una vera unità occupa il token della barra del nome usato dai controlli del tooltip e dell'icona in cache. Il comportamento delle barre del nome in gioco è invariato.
+
+### Modifiche in questa versione
+
+- L'ambiente offline ora include quella collisione di token e riproduce entrambi gli errori senza la correzione della fixture. Tutti i 333 test passano in entrambi gli ordini su Lua 5.1 e 5.2 dopo la correzione; anche sei profili API del client passano. La conferma in gioco resta separata.
+
+## 5.8.1
+
+Mostra l'indicatore di missione di Blizzard accanto a QuestTogether nell'elenco AddOns invece del punto interrogativo predefinito.
+
+### Modifiche in questa versione
+
+- Mostra l'indicatore di missione di Blizzard accanto a QuestTogether nell'elenco AddOns invece del punto interrogativo predefinito.
+
+## 5.8.0
+
+Supporta gli attuali client Classic con payload corretti per l'accettazione delle missioni, fallback protetti per l'API degli obiettivi, condivisibilità sconosciuta dichiarata onestamente, metadati di flavor e controlli di regressione API su sei client. Mantiene il comportamento Retail/Forever e le utilità di debug condivise.
+
+### Modifiche in questa versione
+
+- Validazione: 333 test superati in entrambi gli ordini su Lua 5.1 e 5.2, con sei profili client, parsing Lua e controlli esatti del vendor della libreria privata. Superati anche gli smoke check del client NoPoizen e la verifica del pacchetto. La validazione live dei nuovi adattatori resta in sospeso.
+- Consulta CLIENT_COMPATIBILITY.md per le prove delle fonti, l'ambito e i limiti di validazione.
+
+## 5.7.7
+
+Mantiene le console di debug sovrapposte e i relativi controlli in un unico gruppo di impilamento nativo tramite libchev privata 1.1.3. I menu categoria restano con la console a cui appartengono.
+
+### Modifiche in questa versione
+
+- Imposta per impostazione predefinita le icone degli obiettivi missione a sinistra della targhetta del nome. Le posizioni delle icone salvate esistenti restano invariate.
+- Rispetta l'impostazione “My Last Name” di Forever quando mostra il nome del tuo personaggio. Mantiene visibili i cognomi degli altri giocatori, in linea con l'ambito dell'impostazione nativa. Usa coerentemente i nomi completi per comunicazioni, appartenenza al gruppo, corrispondenza delle targhette dei nomi e azioni social, preservando le chiavi esistenti di profilo e posizione della bolla personale.
+- Corregge gli annunci locali duplicati delle missioni causati dalla ricezione del proprio messaggio di canale con un formato diverso del nome completo. La copertura di regressione verifica l'annuncio locale seguito dai suoi echi di canale e gruppo, incluso un altro personaggio con lo stesso nome.
+- Validazione: 331 test superati in entrambi gli ordini con Lua 5.1/5.2. La conferma live della nuova impostazione predefinita delle icone e dell'interazione a più finestre resta separata.
+
+## 5.7.6
+
+Usa la stessa console di debug privata libchev 1.1.2 in tutti e tre gli addon, inclusi filtri categoria/ricerca, controlli di copia, risultati dei test, rapporti diagnostici, timestamp quando disponibili e un unico riepilogo finale dei test. Corregge gli elementi grafici nativi del riquadro stirati con limiti espliciti delle texture.
+
+### Modifiche in questa versione
+
+- QuestTogether fornisce la propria diagnostica delle missioni e test isolati, mentre la libreria condivisa gestisce la console e il comportamento di debug generico. Esegui /qt test, /qt debug, o /qt diagnostics.
+- Validazione: 324 test superati in entrambi gli ordini su Lua 5.1/5.2. L'utente ha confermato in gioco l'aspetto corretto del riquadro. Altre validazioni live di restrizioni e gameplay restano separate.
+
+## 5.7.6-beta.3
+
+QuestTogether 5.7.6-beta.3 aggiorna la console di debug condivisa incorporata a libchev 1.1.1.
+
+### Modifiche in questa versione
+
+- Ripristina l'aspetto nativo delle finestre in stile WoW nella console condivisa degli addon.
+- Rimuove la riga duplicata del riepilogo dei test mantenendo il riepilogo finale nella cronologia limitata.
+- Mantiene il comportamento comune di ricerca, categoria, copia, scorrimento, test e diagnostica e le protezioni esistenti contro le restrizioni.
+- L'utente ha segnalato che tutti i 324 test QT sono stati superati in Forever 1.60.1 build 70009 su beta.2. I sette file di test caricati live di QT sono stati anche verificati per aritmetica non valida; non sono stati trovati casi di test con generazione di NaN o divisione per zero. Quel precedente risultato di test live non valida questa nuova modifica dell'aspetto.
+- Dopo /reload, apri /qtd, esegui /qt test, e controlla l'aspetto della finestra e il riepilogo singolo. Il rendering live e il comportamento di restrizioni/taint per questa revisione necessitano ancora di verifica sul client.
+- Validazione: tutti i 324 casi superati in ordine normale/inverso su Lua 5.1.5 e 5.2.4 reali, ogni esecuzione CLI emette un solo riepilogo e lo ZIP installabile estratto con 26 file passa su entrambe le versioni. Tutti i 23 file Lua vengono analizzati correttamente; tutte le 22 voci TOC e il manifest del vendor sono verificati. I controlli di formattazione e diff sono superati. Pin libreria: 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. Non è configurata alcuna CI GitHub per QT; la CI della libreria upstream è passata.
+
+## 5.7.6-beta.2
+
+QuestTogether 5.7.6-beta.2 sostituisce la sua finestra di debug separata con la console condivisa libchev v1.1 usata in tutti gli addon. La libreria incorporata è inclusa; non è richiesta alcuna installazione separata.
+
+### Modifiche in questa versione
+
+- Filtri categoria condivisi, ricerca approssimata/con virgolette, copia/selezione, cancellazione, ricarica, test, diagnostica e comportamento di seguito dello scorrimento.
+- /qt test apre i risultati correnti; le esecuzioni ripetute sostituiscono la vecchia cronologia TEST e cancellano i filtri di ricerca obsoleti.
+- /qt diagnostics [questID] e /qt diag [questID] ricostruiscono il report nella cache corrente nella stessa console, mantenendo gli eventi recenti entro il budget di esportazione condiviso.
+- Le protezioni condivise per restrizioni e frame posseduti sostituiscono i vecchi callback della console e l'implementazione del menu a discesa di QT.
+- Stato delle missioni, annunci, targhette dei nomi, comunicazioni e isolamento dei test specifici di QT restano gestiti da QuestTogether.
+- Questa è una versione beta. Il rendering live Retail/Forever e il comportamento del taint richiedono ancora verifica. Dopo /reload, esegui /qt test e /qt diagnostics, poi prova categoria/ricerca, copia, cancellazione, ridimensionamento, scorrimento, esecuzioni ripetute dei test e passaggio tra report e registri. Includi transizioni di combattimento/restrizione e il tuo set abituale di addon.
+- Validazione: 324/324 test superati in entrambi gli ordini con Lua 5.1.5 e 5.2.4. Tutti i 23 file Lua vengono analizzati correttamente, tutte le 22 voci TOC sono valide e il manifest della libreria fissata è verificato. Lo ZIP installabile è stato estratto e ha superato tutti i 324 casi usando l'harness offline separato. Pin libreria: 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6.
+
+## 5.7.6-beta.1
+
+QuestTogether 5.7.6-beta.1 incorpora libchev v1.0.0 per condividere registrazione, diagnostica, protezioni dei callback, meccaniche di lavoro differito ed esecuzione dei test con gli altri addon Together. La libreria è inclusa; non è necessaria alcuna installazione separata di addon.
+
+### Modifiche in questa versione
+
+- I rapporti diagnostici includono informazioni comuni su client/addon/libreria e mantengono gli eventi più recenti quando la finestra di copia si riempie.
+- Il comportamento di missioni, gruppo, targhette dei nomi e restrizioni resta gestito da QuestTogether, con archivi di runtime isolati per ogni addon.
+- I link alle coordinate restano utilizzabili mentre QT è disabilitato quando le restrizioni lo consentono; il lavoro in background in coda resta in pausa e i timer obsoleti vengono scartati.
+- /qt test ora include 315 casi: i 300 esistenti, dieci controlli della libreria condivisa e cinque regressioni di integrazione.
+- Validazione: tutti i 315 test superati in entrambi gli ordini con Lua 5.1.5 e 5.2.4; sintassi Lua, ordine di caricamento TOC e manifest di revisione/hash incorporato superati. Sorgente libchev incorporata: 09ac76eb6fe8e9589b809188652950c3cd9e444c.
+- Questa è una versione beta. Il rendering UI live Retail/Forever e il comportamento del taint dopo questa estrazione richiedono ancora verifica. Dopo il ricaricamento, esegui /qt test e /qt diagnostics, poi prova missioni, bolle di progresso, targhette dei nomi e link alle coordinate durante combattimento, cambio di zona, disattivazione/riattivazione e ricaricamento con i tuoi addon abituali. La precedente conferma dei 300 test Retail si applicava a v5.7.5.

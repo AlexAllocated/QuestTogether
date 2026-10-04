@@ -1,0 +1,2375 @@
+[
+  {
+    "enUS": {
+      "version": "5.9.2",
+      "welcome": "Left- or right-click a quest name in the QuestTogether log to open its menu, with Status first and Share second. Share uses the current quest-log entry without changing Blizzard's selected quest, and is unavailable when solo, restricted, or the quest cannot be shared. After a separator, the final option moves QuestTogether logs between the main and separate windows, matching QT's player-name menu.",
+      "sections": [
+        {
+          "title": "Changes in this release",
+          "items": [
+            "Make quest names in status messages clickable, including fallback titles from other players' logs. Preserve existing quest links when formatting completed quest comparisons so status details do not become part of a second, broken link.",
+            "Validation: 521 tests pass in normal and reverse order on Lua 5.1 and 5.2. All six client API profiles, Lua and shell syntax checks, exact libchev verification, and diff checks pass. Live-client menu behavior, quest-share delivery, and engine-level taint validation remain separate."
+          ]
+        }
+      ]
+    },
+    "frFR": {
+      "version": "5.9.2",
+      "welcome": "Faites un clic gauche ou droit sur le nom d’une quête dans le journal QuestTogether pour ouvrir son menu, avec État en premier et Partager en second. Partager utilise l’entrée actuelle du journal des quêtes sans modifier la quête sélectionnée par Blizzard, et n’est pas disponible si vous êtes en solo, si elle est restreinte ou si la quête ne peut pas être partagée. Après un séparateur, la dernière option déplace les journaux QuestTogether entre la fenêtre principale et la fenêtre séparée, comme le menu des noms de joueurs de QT.",
+      "sections": [
+        {
+          "title": "Changements de cette version",
+          "items": [
+            "Rendre les noms de quêtes cliquables dans les messages d’état, y compris les titres de secours issus des journaux d’autres joueurs. Préserver les liens de quête existants lors de la mise en forme des comparaisons de quêtes terminées afin que les détails d’état ne fassent pas partie d’un second lien cassé.",
+            "Validation : 521 tests réussissent dans l’ordre normal et inverse sous Lua 5.1 et 5.2. Les six profils d’API client, les vérifications de syntaxe Lua et shell, la vérification exacte de libchev et les contrôles de diff réussissent. Le comportement des menus sur client réel, la distribution du partage de quêtes et la validation du taint au niveau du moteur restent séparés."
+          ]
+        }
+      ]
+    },
+    "deDE": {
+      "version": "5.9.2",
+      "welcome": "Klicke mit der linken oder rechten Maustaste auf einen Questnamen im QuestTogether-Log, um sein Menü zu öffnen, mit Status an erster und Teilen an zweiter Stelle. Teilen verwendet den aktuellen Questlog-Eintrag, ohne Blizzards ausgewählte Quest zu ändern, und ist nicht verfügbar, wenn du solo bist, eingeschränkt bist oder die Quest nicht geteilt werden kann. Nach einem Trennstrich verschiebt die letzte Option QuestTogether-Logs zwischen dem Hauptfenster und separaten Fenstern, passend zum Spielernamen-Menü von QT.",
+      "sections": [
+        {
+          "title": "Änderungen in dieser Version",
+          "items": [
+            "Questnamen in Statusmeldungen anklickbar machen, einschließlich Ersatztiteln aus den Logs anderer Spieler. Bestehende Questlinks beim Formatieren abgeschlossener Questvergleiche beibehalten, damit Statusdetails nicht Teil eines zweiten, defekten Links werden.",
+            "Validierung: 521 Tests bestehen in normaler und umgekehrter Reihenfolge unter Lua 5.1 und 5.2. Alle sechs Client-API-Profile, Lua- und Shell-Syntaxprüfungen, exakte libchev-Verifizierung und Diff-Prüfungen bestehen. Menüverhalten im Live-Client, Questteilen-Zustellung und Taint-Validierung auf Engine-Ebene bleiben separat."
+          ]
+        }
+      ]
+    },
+    "esES": {
+      "version": "5.9.2",
+      "welcome": "Haz clic izquierdo o derecho en el nombre de una misión en el registro de QuestTogether para abrir su menú, con Estado primero y Compartir segundo. Compartir usa la entrada actual del registro de misiones sin cambiar la misión seleccionada por Blizzard, y no está disponible cuando juegas en solitario, está restringida o la misión no se puede compartir. Tras un separador, la opción final mueve los registros de QuestTogether entre la ventana principal y la separada, coincidiendo con el menú de nombre de jugador de QT.",
+      "sections": [
+        {
+          "title": "Cambios de esta versión",
+          "items": [
+            "Haz que los nombres de misión en los mensajes de estado sean clicables, incluidos los títulos de respaldo de los registros de otros jugadores. Conserva los enlaces de misión existentes al formatear comparaciones de misiones completadas para que los detalles de estado no pasen a formar parte de un segundo enlace roto.",
+            "Validación: 521 pruebas superadas en orden normal e inverso en Lua 5.1 y 5.2. Los seis perfiles de API de cliente, las comprobaciones de sintaxis de Lua y shell, la verificación exacta de libchev y las comprobaciones de diff pasan. El comportamiento de menús en el cliente en vivo, la entrega de compartir misión y la validación de taint a nivel de motor siguen siendo independientes."
+          ]
+        }
+      ]
+    },
+    "esMX": {
+      "version": "5.9.2",
+      "welcome": "Haz clic izquierdo o derecho en el nombre de una misión en el registro de QuestTogether para abrir su menú, con Estado primero y Compartir segundo. Compartir usa la entrada actual del registro de misiones sin cambiar la misión seleccionada de Blizzard, y no está disponible cuando estás solo, restringido o la misión no se puede compartir. Después de un separador, la opción final mueve los registros de QuestTogether entre la ventana principal y una separada, coincidiendo con el menú de nombre de jugador de QT.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Hace que los nombres de misiones en los mensajes de estado sean clicables, incluidos títulos alternativos de los registros de otros jugadores. Conserva los enlaces de misión existentes al dar formato a comparaciones de misiones completadas para que los detalles de estado no se conviertan en parte de un segundo enlace roto.",
+            "Validación: 521 pruebas pasan en orden normal e inverso en Lua 5.1 y 5.2. Pasan los seis perfiles de API de cliente, las comprobaciones de sintaxis de Lua y shell, la verificación exacta de libchev y las comprobaciones de diferencias. El comportamiento de menús del cliente en vivo, la entrega de misiones compartidas y la validación de contaminación a nivel de motor permanecen por separado."
+          ]
+        }
+      ]
+    },
+    "ptBR": {
+      "version": "5.9.2",
+      "welcome": "Clique com o botão esquerdo ou direito no nome de uma missão no registro do QuestTogether para abrir seu menu, com Status primeiro e Compartilhar em segundo. Compartilhar usa a entrada atual do registro de missões sem alterar a missão selecionada pela Blizzard, e fica indisponível quando você está solo, quando há restrição ou quando a missão não pode ser compartilhada. Após um separador, a opção final move os registros do QuestTogether entre a janela principal e janelas separadas, correspondendo ao menu de nome do jogador do QT.",
+      "sections": [
+        {
+          "title": "Alterações nesta versão",
+          "items": [
+            "Torna os nomes de missões em mensagens de status clicáveis, incluindo títulos de fallback dos registros de outros jogadores. Preserva links de missões existentes ao formatar comparações de missões concluídas, para que os detalhes de status não se tornem parte de um segundo link quebrado.",
+            "Validação: 521 testes passam em ordem normal e reversa no Lua 5.1 e 5.2. Todos os seis perfis de API de cliente, verificações de sintaxe Lua e shell, verificação exata da libchev e verificações de diff passam. O comportamento de menus no cliente ao vivo, a entrega de compartilhamento de missões e a validação de taint no nível do motor permanecem separados."
+          ]
+        }
+      ]
+    },
+    "ruRU": {
+      "version": "5.9.2",
+      "welcome": "Щелкните левой или правой кнопкой мыши по названию задания в журнале QuestTogether, чтобы открыть его меню: первым будет «Статус», вторым — «Поделиться». «Поделиться» использует текущую запись журнала заданий, не меняя выбранное Blizzard задание, и недоступно вне группы, при ограничениях или если заданием нельзя поделиться. После разделителя последний пункт перемещает журналы QuestTogether между основным и отдельным окнами, как в меню имени игрока QT.",
+      "sections": [
+        {
+          "title": "Изменения в этом выпуске",
+          "items": [
+            "Сделать названия заданий в сообщениях о статусе кликабельными, включая запасные названия из журналов других игроков. Сохранять существующие ссылки на задания при форматировании сравнения выполненных заданий, чтобы детали статуса не становились частью второй, сломанной ссылки.",
+            "Проверка: 521 тест проходит в обычном и обратном порядке на Lua 5.1 и 5.2. Все шесть профилей клиентского API, проверки синтаксиса Lua и shell, точная проверка libchev и проверки diff проходят. Поведение меню в живом клиенте, доставка отправки заданий и проверка taint на уровне движка остаются отдельными."
+          ]
+        }
+      ]
+    },
+    "itIT": {
+      "version": "5.9.2",
+      "welcome": "Fai clic sinistro o destro sul nome di una missione nel registro di QuestTogether per aprirne il menu, con Stato per primo e Condividi per secondo. Condividi usa la voce corrente del registro missioni senza cambiare la missione selezionata da Blizzard, e non è disponibile quando sei da solo, ci sono restrizioni o la missione non può essere condivisa. Dopo un separatore, l'opzione finale sposta i registri di QuestTogether tra la finestra principale e quella separata, in accordo con il menu dei nomi dei giocatori di QT.",
+      "sections": [
+        {
+          "title": "Modifiche in questa versione",
+          "items": [
+            "Rendi cliccabili i nomi delle missioni nei messaggi di stato, inclusi i titoli di riserva dai registri di altri giocatori. Mantieni i link delle missioni esistenti durante la formattazione dei confronti delle missioni completate, così i dettagli di stato non diventano parte di un secondo link non funzionante.",
+            "Validazione: 521 test superati in ordine normale e inverso su Lua 5.1 e 5.2. Tutti e sei i profili API del client, i controlli di sintassi Lua e shell, la verifica esatta di libchev e i controlli diff sono superati. Il comportamento dei menu del client live, la consegna delle condivisioni di missione e la validazione del taint a livello di motore restano separati."
+          ]
+        }
+      ]
+    },
+    "zhCN": {
+      "version": "5.9.2",
+      "welcome": "在 QuestTogether 日志中左键或右键点击任务名称可打开其菜单，其中“状态”在第一项，“共享”在第二项。共享会使用当前任务日志条目，而不会更改 Blizzard 选中的任务；单人、受限制或任务无法共享时不可用。分隔线之后，最后一个选项会在主窗口和单独窗口之间移动 QuestTogether 日志，与 QT 的玩家名称菜单一致。",
+      "sections": [
+        {
+          "title": "此版本的更改",
+          "items": [
+            "使状态消息中的任务名称可点击，包括来自其他玩家日志的备用标题。格式化已完成任务比较时保留现有任务链接，避免状态详情变成第二个损坏链接的一部分。",
+            "验证：521 项测试在 Lua 5.1 和 5.2 上按正常与反向顺序通过。全部六个客户端 API 配置、Lua 和 shell 语法检查、精确 libchev 验证以及差异检查均通过。实时客户端菜单行为、任务共享传递和引擎级污染验证仍单独进行。"
+          ]
+        }
+      ]
+    },
+    "koKR": {
+      "version": "5.9.2",
+      "welcome": "QuestTogether 로그에서 퀘스트 이름을 좌클릭 또는 우클릭하여 메뉴를 여세요. 상태가 첫 번째, 공유가 두 번째로 표시됩니다. 공유는 Blizzard가 선택한 퀘스트를 변경하지 않고 현재 퀘스트 목록 항목을 사용하며, 혼자이거나 제한 중이거나 퀘스트를 공유할 수 없을 때는 사용할 수 없습니다. 구분선 뒤의 마지막 옵션은 QuestTogether 로그를 기본 창과 별도 창 사이에서 이동하며, QT의 플레이어 이름 메뉴와 일치합니다.",
+      "sections": [
+        {
+          "title": "이번 릴리스의 변경 사항",
+          "items": [
+            "다른 플레이어의 목록에서 가져온 대체 제목을 포함하여 상태 메시지의 퀘스트 이름을 클릭할 수 있게 했습니다. 완료된 퀘스트 비교 형식 지정 시 기존 퀘스트 링크를 보존하여 상태 세부 정보가 두 번째 깨진 링크의 일부가 되지 않게 했습니다.",
+            "검증: Lua 5.1 및 5.2에서 정순 및 역순으로 521개 테스트가 통과했습니다. 6개 클라이언트 API 프로필, Lua 및 셸 구문 검사, 정확한 libchev 검증, diff 검사가 모두 통과했습니다. 라이브 클라이언트 메뉴 동작, 퀘스트 공유 전달, 엔진 수준 오염 검증은 별도로 유지됩니다."
+          ]
+        }
+      ]
+    },
+    "zhTW": {
+      "version": "5.9.2",
+      "welcome": "在 QuestTogether 記錄中左鍵或右鍵點擊任務名稱可開啟其選單，狀態列在第一項、分享列在第二項。分享會使用目前的任務日誌項目，不會變更 Blizzard 選取的任務；當單人、受限制或任務無法分享時不可使用。分隔線之後的最後一個選項，會在主視窗與獨立視窗之間移動 QuestTogether 記錄，與 QT 的玩家名稱選單一致。",
+      "sections": [
+        {
+          "title": "本版變更",
+          "items": [
+            "讓狀態訊息中的任務名稱可點擊，包括來自其他玩家日誌的備用標題。格式化已完成任務比較時保留現有任務連結，讓狀態詳細資訊不會變成第二個損壞連結的一部分。",
+            "驗證：521 項測試在 Lua 5.1 與 5.2 上以正常與反向順序通過。全部六個用戶端 API 設定檔、Lua 與 shell 語法檢查、精確 libchev 驗證，以及差異檢查皆通過。即時用戶端選單行為、任務分享傳遞，以及引擎層級污染驗證仍為獨立項目。"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "enUS": {
+      "version": "5.9.1",
+      "welcome": "Fixes quest tracking, quest plate visibility, task-area announcements, communication reliability, and user actions identified in the comprehensive audit.",
+      "sections": [
+        {
+          "title": "Changes in this release",
+          "items": [
+            "Prevent unrelated tooltip quest blocks from borrowing shared objective text. Preserve valid party progress and recover plates after map, instance, roster, and quest changes.",
+            "Keep newly accepted quests and initial scans pending until readable data arrives. Preserve objective milestones, task classification, and unknown location state without false exits or duplicate entries.",
+            "Improve localized announcements and quest comparisons, including payload limits, pacing, retries, cancellation, and shareability reporting.",
+            "Honor native waypoint failures without tracking an old pin. Decline restricted clicks while disabled instead of losing queued work.",
+            "Make bubble tests local previews and accept full Forever names or quoted names, while preserving exact player identity.",
+            "Correct enable/disable and profile handling, HUD Edit Mode opening, approved celebration emotes, and diagnostics.",
+            "Strengthen live-safe test isolation and regression coverage, correct faulty test assumptions, and make CI propagate Lua syntax failures.",
+            "Validation: 516 tests pass in normal and reverse order on Lua 5.1 and 5.2. All six client API profiles, syntax checks, exact libchev verification, and diff checks pass. Live-client rendering, two-client delivery, and engine-level taint validation remain separate."
+          ]
+        }
+      ]
+    },
+    "frFR": {
+      "version": "5.9.1",
+      "welcome": "Corrige le suivi des quêtes, la visibilité des barres d’info de quêtes, les annonces de zones d’objectifs, la fiabilité de la communication et les actions utilisateur identifiées lors de l’audit complet.",
+      "sections": [
+        {
+          "title": "Changements de cette version",
+          "items": [
+            "Empêcher les blocs de quêtes d’infobulles sans rapport d’emprunter le texte d’objectif partagé. Préserver la progression de groupe valide et récupérer les barres d’info après les changements de carte, d’instance, de composition de groupe et de quêtes.",
+            "Garder les quêtes nouvellement acceptées et les analyses initiales en attente jusqu’à l’arrivée de données lisibles. Préserver les jalons d’objectifs, la classification des tâches et l’état d’emplacement inconnu sans sorties erronées ni entrées en double.",
+            "Améliorer les annonces localisées et les comparaisons de quêtes, notamment les limites de charge utile, le rythme, les nouvelles tentatives, l’annulation et le signalement de la possibilité de partage.",
+            "Respecter les échecs de points de passage natifs sans suivre un ancien repère. Refuser les clics restreints pendant la désactivation au lieu de perdre le travail en file d’attente.",
+            "Faire des tests de bulles des aperçus locaux et accepter les noms Forever complets ou les noms entre guillemets, tout en préservant l’identité exacte du joueur.",
+            "Corriger l’activation/désactivation et la gestion des profils, l’ouverture du mode Édition de l’ATH, les emotes de célébration approuvées et les diagnostics.",
+            "Renforcer l’isolation des tests sûrs pour le client réel et la couverture de régression, corriger les hypothèses de test erronées et faire propager les échecs de syntaxe Lua par la CI.",
+            "Validation : 516 tests réussissent dans l’ordre normal et inverse sous Lua 5.1 et 5.2. Les six profils d’API client, les vérifications de syntaxe, la vérification exacte de libchev et les contrôles de diff réussissent. Le rendu sur client réel, la distribution entre deux clients et la validation du taint au niveau du moteur restent séparés."
+          ]
+        }
+      ]
+    },
+    "deDE": {
+      "version": "5.9.1",
+      "welcome": "Behebt Questverfolgung, Sichtbarkeit von Quest-Namensplaketten, Ankündigungen in Aufgabenbereichen, Kommunikationszuverlässigkeit und Benutzeraktionen, die im umfassenden Audit identifiziert wurden.",
+      "sections": [
+        {
+          "title": "Änderungen in dieser Version",
+          "items": [
+            "Verhindern, dass nicht zugehörige Tooltip-Questblöcke gemeinsamen Zieltext übernehmen. Gültigen Gruppenfortschritt beibehalten und Namensplaketten nach Karten-, Instanz-, Gruppen- und Queständerungen wiederherstellen.",
+            "Neu angenommene Quests und erste Scans ausstehend halten, bis lesbare Daten eintreffen. Zielmeilensteine, Aufgabenklassifizierung und unbekannten Ortsstatus ohne falsche Ausstiege oder doppelte Einträge beibehalten.",
+            "Lokalisierte Ankündigungen und Questvergleiche verbessern, einschließlich Nutzdatenlimits, Taktung, Wiederholungen, Abbruch und Meldung der Teilbarkeit.",
+            "Native Wegpunktfehler respektieren, ohne einen alten Pin weiterzuverfolgen. Eingeschränkte Klicks bei deaktiviertem Zustand ablehnen, statt eingereihte Arbeit zu verlieren.",
+            "Sprechblasentests zu lokalen Vorschauen machen und vollständige Forever-Namen oder Namen in Anführungszeichen akzeptieren, während die exakte Spieleridentität erhalten bleibt.",
+            "Aktivieren/Deaktivieren und Profilbehandlung, Öffnen des HUD-Bearbeitungsmodus, genehmigte Feier-Emotes und Diagnosen korrigieren.",
+            "Live-sichere Testisolation und Regressionsabdeckung stärken, fehlerhafte Testannahmen korrigieren und CI Lua-Syntaxfehler weitergeben lassen.",
+            "Validierung: 516 Tests bestehen in normaler und umgekehrter Reihenfolge unter Lua 5.1 und 5.2. Alle sechs Client-API-Profile, Syntaxprüfungen, exakte libchev-Verifizierung und Diff-Prüfungen bestehen. Live-Client-Rendering, Zwei-Client-Zustellung und Taint-Validierung auf Engine-Ebene bleiben separat."
+          ]
+        }
+      ]
+    },
+    "esES": {
+      "version": "5.9.1",
+      "welcome": "Corrige el seguimiento de misiones, la visibilidad de placas de misión, los anuncios de áreas de tarea, la fiabilidad de la comunicación y las acciones de usuario identificadas en la auditoría exhaustiva.",
+      "sections": [
+        {
+          "title": "Cambios de esta versión",
+          "items": [
+            "Evita que bloques de misión de tooltip no relacionados tomen prestado texto de objetivo compartido. Conserva el progreso válido del grupo y recupera placas tras cambios de mapa, estancia, lista de miembros y misiones.",
+            "Mantén las misiones recién aceptadas y los escaneos iniciales pendientes hasta que lleguen datos legibles. Conserva los hitos de objetivos, la clasificación de tareas y el estado de ubicación desconocida sin salidas falsas ni entradas duplicadas.",
+            "Mejora los anuncios localizados y las comparaciones de misiones, incluidos los límites de carga útil, el ritmo, los reintentos, la cancelación y el informe de si se puede compartir.",
+            "Respeta los fallos nativos de puntos de ruta sin seguir un marcador antiguo. Rechaza los clics restringidos mientras esté desactivado en lugar de perder trabajo en cola.",
+            "Convierte las pruebas de burbujas en vistas previas locales y acepta nombres completos de Forever o nombres entrecomillados, conservando la identidad exacta del jugador.",
+            "Corrige el manejo de activar/desactivar y perfiles, la apertura del Modo edición del HUD, los gestos de celebración aprobados y los diagnósticos.",
+            "Refuerza el aislamiento de pruebas seguro para cliente en vivo y la cobertura de regresiones, corrige suposiciones de prueba erróneas y hace que CI propague los fallos de sintaxis de Lua.",
+            "Validación: 516 pruebas superadas en orden normal e inverso en Lua 5.1 y 5.2. Los seis perfiles de API de cliente, las comprobaciones de sintaxis, la verificación exacta de libchev y las comprobaciones de diff pasan. El renderizado en cliente en vivo, la entrega entre dos clientes y la validación de taint a nivel de motor siguen siendo independientes."
+          ]
+        }
+      ]
+    },
+    "esMX": {
+      "version": "5.9.1",
+      "welcome": "Corrige el seguimiento de misiones, la visibilidad de placas de misión, los anuncios de áreas de tarea, la fiabilidad de la comunicación y las acciones de usuario identificadas en la auditoría integral.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Evita que bloques de misiones de descripciones emergentes no relacionadas tomen prestado texto de objetivos compartidos. Conserva el progreso válido del grupo y recupera las placas después de cambios de mapa, instancia, lista de miembros y misiones.",
+            "Mantiene las misiones recién aceptadas y los escaneos iniciales pendientes hasta que lleguen datos legibles. Conserva hitos de objetivos, clasificación de tareas y estado de ubicación desconocida sin salidas falsas ni entradas duplicadas.",
+            "Mejora los anuncios localizados y las comparaciones de misiones, incluidos límites de carga útil, ritmo, reintentos, cancelación e informes de posibilidad de compartir.",
+            "Respeta los fallos nativos de puntos de ruta sin rastrear un marcador antiguo. Rechaza clics restringidos mientras está desactivado en lugar de perder trabajo en cola.",
+            "Convierte las pruebas de burbujas en vistas previas locales y acepta nombres Forever completos o nombres entre comillas, mientras conserva la identidad exacta del jugador.",
+            "Corrige el manejo de activar/desactivar y perfiles, la apertura del Modo de edición del HUD, emotes de celebración aprobados y diagnósticos.",
+            "Refuerza el aislamiento de pruebas seguras en vivo y la cobertura de regresiones, corrige suposiciones de prueba defectuosas y hace que CI propague fallos de sintaxis de Lua.",
+            "Validación: 516 pruebas pasan en orden normal e inverso en Lua 5.1 y 5.2. Pasan los seis perfiles de API de cliente, comprobaciones de sintaxis, verificación exacta de libchev y comprobaciones de diferencias. El renderizado del cliente en vivo, la entrega entre dos clientes y la validación de contaminación a nivel de motor permanecen por separado."
+          ]
+        }
+      ]
+    },
+    "ptBR": {
+      "version": "5.9.1",
+      "welcome": "Corrige o rastreamento de missões, a visibilidade de placas de missões, anúncios de áreas de tarefa, confiabilidade da comunicação e ações do usuário identificadas na auditoria abrangente.",
+      "sections": [
+        {
+          "title": "Alterações nesta versão",
+          "items": [
+            "Impede que blocos de missões de dicas não relacionadas tomem emprestado texto de objetivo compartilhado. Preserva progresso válido do grupo e recupera placas após alterações de mapa, instância, lista do grupo e missões.",
+            "Mantém missões recém-aceitas e varreduras iniciais pendentes até que dados legíveis cheguem. Preserva marcos de objetivos, classificação de tarefas e estado de localização desconhecida sem saídas falsas ou entradas duplicadas.",
+            "Melhora anúncios localizados e comparações de missões, incluindo limites de payload, ritmo, novas tentativas, cancelamento e relatório de possibilidade de compartilhamento.",
+            "Respeita falhas nativas de ponto de referência sem rastrear um marcador antigo. Recusa cliques restritos enquanto desativado, em vez de perder trabalho enfileirado.",
+            "Faz com que testes de balão sejam pré-visualizações locais e aceita nomes completos do Forever ou nomes entre aspas, preservando a identidade exata do jogador.",
+            "Corrige ativação/desativação e tratamento de perfis, abertura do Modo de Edição do HUD, emotes de comemoração aprovados e diagnósticos.",
+            "Fortalece o isolamento de testes seguro para cliente ao vivo e a cobertura de regressão, corrige suposições de teste incorretas e faz o CI propagar falhas de sintaxe Lua.",
+            "Validação: 516 testes passam em ordem normal e reversa no Lua 5.1 e 5.2. Todos os seis perfis de API de cliente, verificações de sintaxe, verificação exata da libchev e verificações de diff passam. A renderização no cliente ao vivo, a entrega entre dois clientes e a validação de taint no nível do motor permanecem separadas."
+          ]
+        }
+      ]
+    },
+    "ruRU": {
+      "version": "5.9.1",
+      "welcome": "Исправляет отслеживание заданий, видимость индикаторов заданий, объявления в областях задач, надежность связи и действия пользователя, выявленные комплексным аудитом.",
+      "sections": [
+        {
+          "title": "Изменения в этом выпуске",
+          "items": [
+            "Не позволять посторонним блокам заданий в подсказках заимствовать общий текст целей. Сохранять корректный прогресс группы и восстанавливать индикаторы после изменений карты, подземелья, состава группы и заданий.",
+            "Держать недавно принятые задания и начальные сканирования в ожидании, пока не появятся читаемые данные. Сохранять этапы целей, классификацию задач и неизвестное состояние местоположения без ложных выходов или дублирующихся записей.",
+            "Улучшить локализованные объявления и сравнение заданий, включая ограничения размера данных, темп, повторы, отмену и отчет о возможности поделиться.",
+            "Учитывать собственные ошибки путевых точек, не отслеживая старую метку. Отклонять ограниченные щелчки, пока отключено, вместо потери поставленной в очередь работы.",
+            "Сделать тесты пузырей локальным предпросмотром и принимать полные имена Forever или имена в кавычках, сохраняя точную личность игрока.",
+            "Исправить обработку включения/отключения и профилей, открытие режима редактирования HUD, одобренные эмоции празднования и диагностику.",
+            "Усилить безопасную для живого клиента изоляцию тестов и покрытие регрессий, исправить неверные предположения тестов и заставить CI передавать ошибки синтаксиса Lua.",
+            "Проверка: 516 тестов проходят в обычном и обратном порядке на Lua 5.1 и 5.2. Все шесть профилей клиентского API, проверки синтаксиса, точная проверка libchev и проверки diff проходят. Отрисовка в живом клиенте, доставка между двумя клиентами и проверка taint на уровне движка остаются отдельными."
+          ]
+        }
+      ]
+    },
+    "itIT": {
+      "version": "5.9.1",
+      "welcome": "Corregge il tracciamento delle missioni, la visibilità delle barre del nome delle missioni, gli annunci delle aree obiettivo, l'affidabilità della comunicazione e le azioni utente identificate nell'audit completo.",
+      "sections": [
+        {
+          "title": "Modifiche in questa versione",
+          "items": [
+            "Impedisci a blocchi di missione non correlati nei tooltip di prendere in prestito il testo degli obiettivi condivisi. Mantieni i progressi validi del gruppo e recupera le barre del nome dopo cambi di mappa, istanza, elenco del gruppo e missione.",
+            "Mantieni in sospeso le missioni appena accettate e le scansioni iniziali finché non arrivano dati leggibili. Conserva le tappe degli obiettivi, la classificazione degli incarichi e lo stato di posizione sconosciuta senza uscite false o voci duplicate.",
+            "Migliora annunci localizzati e confronti delle missioni, inclusi limiti del payload, ritmo, tentativi, annullamento e segnalazione della condivisibilità.",
+            "Rispetta gli errori nativi dei waypoint senza tracciare un vecchio segnaposto. Rifiuta i clic soggetti a restrizioni mentre è disabilitato invece di perdere il lavoro in coda.",
+            "Rendi i test delle bolle anteprime locali e accetta nomi Forever completi o nomi tra virgolette, preservando l'identità esatta del giocatore.",
+            "Correggi gestione di abilitazione/disabilitazione e profili, apertura della Modalità modifica dell'HUD, emote di celebrazione approvate e diagnostica.",
+            "Rafforza l'isolamento dei test sicuro per il client live e la copertura delle regressioni, correggi presupposti errati dei test e fai propagare a CI gli errori di sintassi Lua.",
+            "Validazione: 516 test superati in ordine normale e inverso su Lua 5.1 e 5.2. Tutti e sei i profili API del client, i controlli di sintassi, la verifica esatta di libchev e i controlli diff sono superati. Rendering del client live, consegna tra due client e validazione del taint a livello di motore restano separati."
+          ]
+        }
+      ]
+    },
+    "zhCN": {
+      "version": "5.9.1",
+      "welcome": "修复全面审计中发现的任务追踪、任务姓名板可见性、任务区域通告、通信可靠性和用户操作问题。",
+      "sections": [
+        {
+          "title": "此版本的更改",
+          "items": [
+            "防止无关的鼠标提示任务块借用共享目标文本。保留有效的队伍进度，并在地图、副本、成员名单和任务变化后恢复姓名板。",
+            "将新接取的任务和初始扫描保持为待处理，直到可读数据到达。保留目标里程碑、任务分类和未知位置状态，避免错误退出或重复条目。",
+            "改进本地化通告和任务比较，包括载荷限制、节奏、重试、取消和可共享性报告。",
+            "尊重原生路径点失败，不再追踪旧标记。禁用时拒绝受限制的点击，而不是丢失已排队的工作。",
+            "将气泡测试改为本地预览，并接受完整 Forever 名称或带引号的名称，同时保留精确的玩家身份。",
+            "修正启用/禁用和配置文件处理、HUD 编辑模式打开、已批准的庆祝表情以及诊断。",
+            "加强对实时环境安全的测试隔离和回归覆盖，修正错误的测试假设，并让 CI 传播 Lua 语法失败。",
+            "验证：516 项测试在 Lua 5.1 和 5.2 上按正常与反向顺序通过。全部六个客户端 API 配置、语法检查、精确 libchev 验证以及差异检查均通过。实时客户端渲染、双客户端传递和引擎级污染验证仍单独进行。"
+          ]
+        }
+      ]
+    },
+    "koKR": {
+      "version": "5.9.1",
+      "welcome": "종합 감사에서 확인된 퀘스트 추적, 퀘스트 이름표 표시, 과제 지역 알림, 통신 안정성, 사용자 동작 문제를 수정했습니다.",
+      "sections": [
+        {
+          "title": "이번 릴리스의 변경 사항",
+          "items": [
+            "관련 없는 툴팁 퀘스트 블록이 공유된 목표 텍스트를 빌려 쓰지 못하게 했습니다. 유효한 파티 진행 상황을 보존하고 지도, 인스턴스, 파티 구성, 퀘스트 변경 후 이름표를 복구합니다.",
+            "새로 수락한 퀘스트와 초기 스캔은 읽을 수 있는 데이터가 도착할 때까지 대기 상태로 유지합니다. 잘못된 종료나 중복 항목 없이 목표 단계, 과제 분류, 알 수 없는 위치 상태를 보존합니다.",
+            "페이로드 제한, 속도 조절, 재시도, 취소, 공유 가능 여부 보고를 포함하여 현지화된 알림과 퀘스트 비교를 개선했습니다.",
+            "이전 핀을 추적하지 않고 기본 경유지 실패를 존중합니다. 비활성화 중 제한된 클릭은 대기 중인 작업을 잃지 않고 거부합니다.",
+            "말풍선 테스트를 로컬 미리보기로 만들고, 정확한 플레이어 신원을 보존하면서 전체 Forever 이름 또는 따옴표로 묶은 이름을 허용합니다.",
+            "활성화/비활성화 및 프로필 처리, HUD 편집 모드 열기, 승인된 축하 감정표현, 진단을 수정했습니다.",
+            "라이브 환경에 안전한 테스트 격리와 회귀 범위를 강화하고, 잘못된 테스트 가정을 수정하며, CI가 Lua 구문 실패를 전파하도록 했습니다.",
+            "검증: Lua 5.1 및 5.2에서 정순 및 역순으로 516개 테스트가 통과했습니다. 6개 클라이언트 API 프로필, 구문 검사, 정확한 libchev 검증, diff 검사가 모두 통과했습니다. 라이브 클라이언트 렌더링, 두 클라이언트 간 전달, 엔진 수준 오염 검증은 별도로 유지됩니다."
+          ]
+        }
+      ]
+    },
+    "zhTW": {
+      "version": "5.9.1",
+      "welcome": "修正全面稽核中發現的任務追蹤、任務名條可見性、任務區域公告、通訊可靠性與使用者操作。",
+      "sections": [
+        {
+          "title": "本版變更",
+          "items": [
+            "防止不相關的浮動提示任務區塊借用共享目標文字。保留有效的隊伍進度，並在地圖、副本、名單與任務變更後恢復名條。",
+            "在可讀取資料抵達前，保持新接取任務與初始掃描為待處理。保留目標里程碑、任務分類與未知位置狀態，不會誤判離開或產生重複項目。",
+            "改善本地化公告與任務比較，包括承載限制、節奏、重試、取消與可分享性回報。",
+            "遵循原生路徑點失敗，不追蹤舊釘點。停用時拒絕受限制的點擊，而不是遺失已排程的工作。",
+            "將泡泡測試做成本機預覽，並接受完整的 Forever 名稱或引號名稱，同時保留精確的玩家身分。",
+            "修正啟用/停用與設定檔處理、HUD 編輯模式開啟、已核准的慶祝表情，以及診斷。",
+            "強化即時安全測試隔離與回歸覆蓋率，修正錯誤的測試假設，並讓 CI 傳遞 Lua 語法失敗。",
+            "驗證：516 項測試在 Lua 5.1 與 5.2 上以正常與反向順序通過。全部六個用戶端 API 設定檔、語法檢查、精確 libchev 驗證，以及差異檢查皆通過。即時用戶端渲染、雙用戶端傳遞，以及引擎層級污染驗證仍為獨立項目。"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "enUS": {
+      "version": "5.9.0",
+      "welcome": "Celebrate your own and nearby QuestTogether players' level-ups with synchronized emotes. Add separate, enabled-by-default level-up emote toggles beside the quest completion emote settings in Miscellaneous. Nearby reactions respect the existing player scope and proximity rules.",
+      "sections": [
+        {
+          "title": "Changes in this release",
+          "items": [
+            "Remember confirmed quest-objective completion by creature type as well as individual spawn. Mobs that appear during combat stay unmarked when tooltip data is unavailable, even if an older spawn was cached as needed. Fresh unfinished objectives can restore highlighting; quest-state changes clear completion memory. Partial or inaccessible tooltip data is never treated as proof that everyone is done.",
+            "Clear quest nameplate icons and health tint immediately when a mob's tap is denied, including during combat. Listen for ownership changes and recheck taps on health and threat updates.",
+            "Detect newly encountered quest mobs during ordinary open-world combat using readable unit tooltip data. Refresh plates when they return from behind the camera, become your target, or are moused over. Retry delayed frames, GUIDs and tooltip quest lines with a bounded per-unit budget, cancel stale work when units are removed, and restore tint and icon together. Preserve map, instance, inaccessible-data and protected-frame guards; combat discovery does not invoke Questie or hidden tooltip UI.",
+            "Validation: 374 offline tests pass in normal and reverse order on Lua 5.1 and 5.2. Six client API profiles, Lua syntax checks, exact library verification and diff checks pass. Completion-cache regressions reproduced the bug before the fix. Live gameplay and engine-level taint validation remain separate."
+          ]
+        }
+      ]
+    },
+    "frFR": {
+      "version": "5.9.0",
+      "welcome": "Célébrez vos propres montées de niveau et celles des joueurs QuestTogether proches avec des emotes synchronisées. Ajoutez des options d’emotes de montée de niveau séparées, activées par défaut, à côté des réglages d’emote de fin de quête dans Divers. Les réactions à proximité respectent les règles existantes de portée des joueurs et de proximité.",
+      "sections": [
+        {
+          "title": "Changements de cette version",
+          "items": [
+            "Mémoriser la fin confirmée des objectifs de quête par type de créature ainsi que par apparition individuelle. Les monstres qui apparaissent pendant le combat restent non marqués lorsque les données d’infobulle sont indisponibles, même si une ancienne apparition avait été mise en cache comme nécessaire. Les nouveaux objectifs inachevés peuvent rétablir la mise en évidence ; les changements d’état de quête effacent la mémoire d’achèvement. Les données d’infobulle partielles ou inaccessibles ne sont jamais considérées comme la preuve que tout le monde a terminé.",
+            "Effacer immédiatement les icônes de quête et la teinte de santé des barres d’info lorsque le tag d’un monstre est refusé, y compris en combat. Écouter les changements de propriétaire et revérifier les tags lors des mises à jour de santé et de menace.",
+            "Détecter les nouveaux monstres de quête rencontrés pendant le combat ordinaire en extérieur à l’aide de données lisibles de l’infobulle d’unité. Actualiser les barres d’info lorsqu’elles reviennent de derrière la caméra, deviennent votre cible ou sont survolées par la souris. Réessayer les cadres, GUID et lignes de quête d’infobulle retardés avec un budget borné par unité, annuler le travail obsolète lorsque les unités sont supprimées, et restaurer la teinte et l’icône ensemble. Préserver les protections de carte, d’instance, de données inaccessibles et de cadres protégés ; la découverte en combat n’invoque pas Questie ni l’interface d’infobulle cachée.",
+            "Validation : 374 tests hors ligne réussissent dans l’ordre normal et inverse sous Lua 5.1 et 5.2. Les six profils d’API client, les vérifications de syntaxe Lua, la vérification exacte de la bibliothèque et les contrôles de diff réussissent. Les régressions du cache d’achèvement ont reproduit le bug avant la correction. Le jeu en direct et la validation du taint au niveau du moteur restent séparés."
+          ]
+        }
+      ]
+    },
+    "deDE": {
+      "version": "5.9.0",
+      "welcome": "Feiere deine eigenen Stufenaufstiege und die von QuestTogether-Spielern in der Nähe mit synchronisierten Emotes. Separate, standardmäßig aktivierte Stufenaufstieg-Emote-Schalter neben den Questabschluss-Emote-Einstellungen unter Sonstiges hinzufügen. Reaktionen in der Nähe berücksichtigen den bestehenden Spielerbereich und die Näherungsregeln.",
+      "sections": [
+        {
+          "title": "Änderungen in dieser Version",
+          "items": [
+            "Bestätigte Questziel-Abschlüsse nach Kreaturentyp sowie nach einzelnem Spawn merken. Mobs, die während des Kampfs erscheinen, bleiben unmarkiert, wenn Tooltip-Daten nicht verfügbar sind, selbst wenn ein älterer Spawn als benötigt zwischengespeichert wurde. Neue, nicht abgeschlossene Ziele können die Hervorhebung wiederherstellen; Queststatusänderungen löschen den Abschlussspeicher. Unvollständige oder unzugängliche Tooltip-Daten werden nie als Beweis behandelt, dass alle fertig sind.",
+            "Quest-Namensplaketten-Symbole und Lebensbalkenfärbung sofort löschen, wenn das Anrecht auf einen Mob verweigert wird, auch während des Kampfs. Auf Besitzwechsel achten und Anrechte bei Lebens- und Bedrohungsaktualisierungen erneut prüfen.",
+            "Neu entdeckte Questmobs während gewöhnlicher Open-World-Kämpfe anhand lesbarer Einheiten-Tooltip-Daten erkennen. Namensplaketten aktualisieren, wenn sie hinter der Kamera hervorkommen, zu deinem Ziel werden oder Mouseover erhalten. Verzögerte Frames, GUIDs und Tooltip-Questzeilen mit einem begrenzten Budget pro Einheit erneut versuchen, veraltete Arbeit abbrechen, wenn Einheiten entfernt werden, und Färbung und Symbol gemeinsam wiederherstellen. Schutzprüfungen für Karte, Instanz, unzugängliche Daten und geschützte Frames beibehalten; Kampferkennung ruft weder Questie noch versteckte Tooltip-UI auf.",
+            "Validierung: 374 Offline-Tests bestehen in normaler und umgekehrter Reihenfolge unter Lua 5.1 und 5.2. Sechs Client-API-Profile, Lua-Syntaxprüfungen, exakte Bibliotheksverifizierung und Diff-Prüfungen bestehen. Abschluss-Cache-Regressionen haben den Fehler vor der Behebung reproduziert. Live-Gameplay und Taint-Validierung auf Engine-Ebene bleiben separat."
+          ]
+        }
+      ]
+    },
+    "esES": {
+      "version": "5.9.0",
+      "welcome": "Celebra tus subidas de nivel y las de jugadores de QuestTogether cercanos con gestos sincronizados. Añade opciones independientes de gesto de subida de nivel, activadas por defecto, junto a los ajustes de gesto de completar misión en Miscelánea. Las reacciones cercanas respetan las reglas existentes de alcance de jugadores y proximidad.",
+      "sections": [
+        {
+          "title": "Cambios de esta versión",
+          "items": [
+            "Recuerda la finalización confirmada de objetivos de misión por tipo de criatura además de por aparición individual. Los enemigos que aparecen durante el combate permanecen sin marcar cuando los datos del tooltip no están disponibles, aunque una aparición anterior estuviera en caché como necesaria. Los objetivos recientes sin terminar pueden restaurar el resaltado; los cambios de estado de la misión borran la memoria de finalización. Los datos parciales o inaccesibles del tooltip nunca se tratan como prueba de que todos hayan terminado.",
+            "Borra los iconos de misión de las placas de nombre y el tinte de salud de inmediato cuando se deniegue el derecho sobre un enemigo, incluso durante el combate. Escucha cambios de propiedad y vuelve a comprobar los derechos en actualizaciones de salud y amenaza.",
+            "Detecta enemigos de misión recién encontrados durante el combate normal en mundo abierto usando datos legibles del tooltip de unidad. Actualiza las placas cuando vuelven de detrás de la cámara, pasan a ser tu objetivo o se pasa el ratón por encima. Reintenta fotogramas retrasados, GUID y líneas de misión del tooltip con un presupuesto acotado por unidad, cancela el trabajo obsoleto cuando se eliminan unidades y restaura el tinte y el icono juntos. Conserva las protecciones de mapa, estancia, datos inaccesibles y marcos protegidos; el descubrimiento en combate no invoca Questie ni la IU de tooltip oculta.",
+            "Validación: 374 pruebas sin conexión superadas en orden normal e inverso en Lua 5.1 y 5.2. Seis perfiles de API de cliente, comprobaciones de sintaxis de Lua, verificación exacta de bibliotecas y comprobaciones de diff pasan. Las regresiones de la caché de finalización reprodujeron el error antes de la corrección. El juego en vivo y la validación de taint a nivel de motor siguen siendo independientes."
+          ]
+        }
+      ]
+    },
+    "esMX": {
+      "version": "5.9.0",
+      "welcome": "Celebra las subidas de nivel tuyas y de jugadores cercanos de QuestTogether con emotes sincronizados. Agrega interruptores separados para emotes de subida de nivel, activados de forma predeterminada, junto a la configuración de emotes de completar misión en Miscelánea. Las reacciones cercanas respetan las reglas existentes de alcance de jugador y proximidad.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Recuerda la confirmación de completar objetivos de misión por tipo de criatura además de apariciones individuales. Los enemigos que aparecen durante el combate permanecen sin marcar cuando no hay datos de descripción emergente disponibles, incluso si una aparición anterior estaba en caché como necesaria. Los objetivos nuevos sin terminar pueden restaurar el resaltado; los cambios de estado de misión borran la memoria de completado. Los datos parciales o inaccesibles de descripción emergente nunca se tratan como prueba de que todos terminaron.",
+            "Borra los íconos de placas de misión y el tinte de salud inmediatamente cuando se deniega el etiquetado de un enemigo, incluso durante el combate. Escucha cambios de propiedad y vuelve a comprobar el etiquetado en actualizaciones de salud y amenaza.",
+            "Detecta enemigos de misión recién encontrados durante combates normales en el mundo abierto usando datos legibles de descripción emergente de unidad. Actualiza las placas cuando vuelven de detrás de la cámara, se convierten en tu objetivo o pasas el mouse por encima. Reintenta fotogramas retrasados, GUID y líneas de misión de descripción emergente con un presupuesto acotado por unidad, cancela trabajo obsoleto cuando se eliminan unidades y restaura el tinte y el ícono juntos. Conserva las protecciones de mapa, instancia, datos inaccesibles y fotogramas protegidos; el descubrimiento en combate no invoca Questie ni IU oculta de descripciones emergentes.",
+            "Validación: 374 pruebas sin conexión pasan en orden normal e inverso en Lua 5.1 y 5.2. Pasan seis perfiles de API de cliente, comprobaciones de sintaxis de Lua, verificación exacta de bibliotecas y comprobaciones de diferencias. Las regresiones de caché de completado reprodujeron el error antes de la corrección. La jugabilidad en vivo y la validación de contaminación a nivel de motor permanecen por separado."
+          ]
+        }
+      ]
+    },
+    "ptBR": {
+      "version": "5.9.0",
+      "welcome": "Comemora seus aumentos de nível e os de jogadores do QuestTogether próximos com emotes sincronizados. Adiciona alternâncias separadas de emote de aumento de nível, ativadas por padrão, ao lado das configurações de emote de conclusão de missão em Diversos. Reações próximas respeitam o escopo de jogadores e as regras de proximidade existentes.",
+      "sections": [
+        {
+          "title": "Alterações nesta versão",
+          "items": [
+            "Lembra a conclusão confirmada de objetivos de missão por tipo de criatura, bem como por aparecimento individual. Mobs que aparecem durante o combate permanecem sem marcação quando os dados de dica estão indisponíveis, mesmo que um aparecimento anterior tenha sido armazenado em cache como necessário. Objetivos novos e inacabados podem restaurar o destaque; alterações no estado da missão limpam a memória de conclusão. Dados de dica parciais ou inacessíveis nunca são tratados como prova de que todos terminaram.",
+            "Limpa ícones de missão das placas de identificação e a coloração da vida imediatamente quando o tag de um mob é negado, inclusive durante o combate. Escuta alterações de posse e verifica novamente os tags em atualizações de vida e ameaça.",
+            "Detecta mobs de missão encontrados recentemente durante combate comum em mundo aberto usando dados legíveis da dica da unidade. Atualiza placas quando elas retornam de trás da câmera, tornam-se seu alvo ou recebem o cursor do mouse. Tenta novamente quadros atrasados, GUIDs e linhas de missão em dicas com um orçamento limitado por unidade, cancela trabalho obsoleto quando unidades são removidas e restaura coloração e ícone juntos. Preserva proteções de mapa, instância, dados inacessíveis e quadros protegidos; a descoberta em combate não invoca o Questie nem a interface oculta de dicas.",
+            "Validação: 374 testes offline passam em ordem normal e reversa no Lua 5.1 e 5.2. Seis perfis de API de cliente, verificações de sintaxe Lua, verificação exata de biblioteca e verificações de diff passam. Regressões do cache de conclusão reproduziram o bug antes da correção. A jogabilidade ao vivo e a validação de taint no nível do motor permanecem separadas."
+          ]
+        }
+      ]
+    },
+    "ruRU": {
+      "version": "5.9.0",
+      "welcome": "Празднуйте повышение уровня свое и находящихся рядом игроков QuestTogether синхронизированными эмоциями. Добавлены отдельные, включенные по умолчанию переключатели эмоций повышения уровня рядом с настройками эмоции завершения задания в разделе «Разное». Реакции рядом учитывают существующие правила охвата игроков и близости.",
+      "sections": [
+        {
+          "title": "Изменения в этом выпуске",
+          "items": [
+            "Запоминать подтвержденное завершение целей задания как по типу существа, так и по отдельной точке появления. Мобы, появившиеся в бою, остаются без отметки, когда данные подсказки недоступны, даже если более старая точка появления была кэширована как нужная. Новые незавершенные цели могут восстановить подсветку; изменения состояния задания очищают память о завершении. Частичные или недоступные данные подсказки никогда не считаются доказательством того, что все закончили.",
+            "Сразу убирать значки заданий на индикаторах и оттенок здоровья, когда у моба отказано в зачете, в том числе во время боя. Отслеживать изменения владельца и повторно проверять зачёт при обновлениях здоровья и угрозы.",
+            "Обнаруживать новых встреченных квестовых мобов во время обычного боя в открытом мире по читаемым данным подсказки юнита. Обновлять индикаторы, когда они возвращаются из-за камеры, становятся вашей целью или на них наводят мышь. Повторять отложенные кадры, GUID и строки заданий в подсказках с ограниченным бюджетом на юнита, отменять устаревшую работу при удалении юнитов и восстанавливать оттенок и значок вместе. Сохранять защиты карты, подземелья, недоступных данных и защищенных фреймов; обнаружение в бою не вызывает Questie или скрытый интерфейс подсказок.",
+            "Проверка: 374 офлайн-теста проходят в обычном и обратном порядке на Lua 5.1 и 5.2. Шесть профилей клиентского API, проверки синтаксиса Lua, точная проверка библиотек и проверки diff проходят. Регрессии кэша завершения воспроизвели ошибку до исправления. Живая игра и проверка taint на уровне движка остаются отдельными."
+          ]
+        }
+      ]
+    },
+    "itIT": {
+      "version": "5.9.0",
+      "welcome": "Festeggia gli aumenti di livello tuoi e dei giocatori QuestTogether vicini con emote sincronizzate. Aggiungi interruttori separati per le emote di aumento di livello, abilitati per impostazione predefinita, accanto alle impostazioni delle emote di completamento missione in Varie. Le reazioni vicine rispettano l'ambito giocatori e le regole di prossimità esistenti.",
+      "sections": [
+        {
+          "title": "Modifiche in questa versione",
+          "items": [
+            "Ricorda il completamento confermato degli obiettivi missione per tipo di creatura oltre che per singolo spawn. I mob che compaiono durante il combattimento restano non contrassegnati quando i dati del tooltip non sono disponibili, anche se uno spawn precedente era stato memorizzato come necessario. Obiettivi recenti non completati possono ripristinare l'evidenziazione; i cambi di stato della missione azzerano la memoria di completamento. Dati del tooltip parziali o inaccessibili non vengono mai trattati come prova che tutti abbiano finito.",
+            "Rimuovi immediatamente le icone delle missioni sulle barre del nome e la tinta della salute quando il tag di un mob viene negato, anche durante il combattimento. Ascolta i cambi di proprietà e ricontrolla i tag sugli aggiornamenti di salute e minaccia.",
+            "Rileva i nuovi mob di missione incontrati durante il normale combattimento nel mondo aperto usando dati leggibili del tooltip dell'unità. Aggiorna le barre del nome quando tornano da dietro la telecamera, diventano il tuo bersaglio o vengono sorvolate col mouse. Riprova frame ritardati, GUID e righe di missione del tooltip con un budget limitato per unità, annulla il lavoro obsoleto quando le unità vengono rimosse e ripristina insieme tinta e icona. Mantieni le protezioni per mappa, istanza, dati inaccessibili e frame protetti; la scoperta in combattimento non invoca Questie né UI dei tooltip nascoste.",
+            "Validazione: 374 test offline superati in ordine normale e inverso su Lua 5.1 e 5.2. Sei profili API del client, controlli di sintassi Lua, verifica esatta delle librerie e controlli diff sono superati. Le regressioni della cache di completamento hanno riprodotto il bug prima della correzione. Gameplay live e validazione del taint a livello di motore restano separati."
+          ]
+        }
+      ]
+    },
+    "zhCN": {
+      "version": "5.9.0",
+      "welcome": "用同步表情庆祝你自己和附近 QuestTogether 玩家升级。在“杂项”中的任务完成表情设置旁添加单独且默认启用的升级表情开关。附近反应遵循现有玩家范围和距离规则。",
+      "sections": [
+        {
+          "title": "此版本的更改",
+          "items": [
+            "按生物类型以及单个刷新点记住已确认的任务目标完成状态。战斗中出现的怪物在鼠标提示数据不可用时会保持未标记，即使较早的刷新点曾被缓存为需要。新的未完成目标可恢复高亮；任务状态变化会清除完成记忆。部分或不可访问的鼠标提示数据绝不会被当作所有人都已完成的证明。",
+            "当怪物的归属被拒绝时，立即清除任务姓名板图标和生命值着色，包括战斗中。监听所有权变化，并在生命值和威胁更新时重新检查归属。",
+            "使用可读的单位鼠标提示数据，在普通野外战斗中检测新遇到的任务怪物。当它们从镜头后返回、成为你的目标或被鼠标悬停时刷新姓名板。以有界的单单位预算重试延迟帧、GUID 和鼠标提示任务行，在单位被移除时取消过期工作，并同时恢复着色和图标。保留地图、副本、不可访问数据和受保护框体保护；战斗发现不会调用 Questie 或隐藏的鼠标提示 UI。",
+            "验证：374 项离线测试在 Lua 5.1 和 5.2 上按正常与反向顺序通过。六个客户端 API 配置、Lua 语法检查、精确库验证和差异检查均通过。完成缓存回归测试在修复前复现了该错误。实时游戏和引擎级污染验证仍单独进行。"
+          ]
+        }
+      ]
+    },
+    "koKR": {
+      "version": "5.9.0",
+      "welcome": "동기화된 감정표현으로 자신과 주변 QuestTogether 플레이어의 레벨 상승을 축하하세요. 기타 설정의 퀘스트 완료 감정표현 설정 옆에 기본적으로 활성화된 별도의 레벨 상승 감정표현 토글을 추가했습니다. 주변 반응은 기존 플레이어 범위와 근접 규칙을 따릅니다.",
+      "sections": [
+        {
+          "title": "이번 릴리스의 변경 사항",
+          "items": [
+            "개별 생성 지점뿐 아니라 생물 유형별로 확인된 퀘스트 목표 완료를 기억합니다. 전투 중 나타난 몹은 이전 생성 지점이 필요 대상으로 캐시되어 있더라도 툴팁 데이터를 사용할 수 없으면 표시되지 않습니다. 새로 미완료된 목표는 강조 표시를 복원할 수 있으며, 퀘스트 상태 변경은 완료 기억을 지웁니다. 부분적이거나 접근할 수 없는 툴팁 데이터는 모두가 완료했다는 증거로 취급되지 않습니다.",
+            "전투 중에도 몹의 선점이 거부되면 퀘스트 이름표 아이콘과 생명력 색조를 즉시 지웁니다. 소유권 변경을 감지하고 생명력 및 위협 수준 업데이트 시 선점을 다시 확인합니다.",
+            "읽을 수 있는 유닛 툴팁 데이터를 사용하여 일반 야외 전투 중 새로 만난 퀘스트 몹을 감지합니다. 이름표가 카메라 뒤에서 돌아오거나, 대상이 되거나, 마우스를 올리면 새로 고칩니다. 지연된 프레임, GUID, 툴팁 퀘스트 줄을 유닛별 제한된 예산으로 재시도하고, 유닛이 제거되면 오래된 작업을 취소하며, 색조와 아이콘을 함께 복원합니다. 지도, 인스턴스, 접근할 수 없는 데이터, 보호된 프레임 가드를 보존하며, 전투 중 발견은 Questie나 숨겨진 툴팁 UI를 호출하지 않습니다.",
+            "검증: Lua 5.1 및 5.2에서 정순 및 역순으로 374개 오프라인 테스트가 통과했습니다. 6개 클라이언트 API 프로필, Lua 구문 검사, 정확한 라이브러리 검증, diff 검사가 통과했습니다. 완료 캐시 회귀는 수정 전 버그를 재현했습니다. 라이브 게임플레이와 엔진 수준 오염 검증은 별도로 유지됩니다."
+          ]
+        }
+      ]
+    },
+    "zhTW": {
+      "version": "5.9.0",
+      "welcome": "以同步表情慶祝你自己以及附近 QuestTogether 玩家升級。在其他設定中，於任務完成表情設定旁新增獨立且預設啟用的升級表情切換。附近反應會遵循現有的玩家範圍與距離規則。",
+      "sections": [
+        {
+          "title": "本版變更",
+          "items": [
+            "依生物類型以及個別生成點記住已確認完成的任務目標。戰鬥中出現的怪物在無法取得浮動提示資料時會保持未標記，即使較舊的生成點已快取為需要。新的未完成目標可以恢復高亮；任務狀態變更會清除完成記憶。部分或無法存取的浮動提示資料絕不會被視為所有人都完成的證明。",
+            "當怪物歸屬被拒絕時，立即清除任務名條圖示與生命值染色，包括戰鬥中。監聽所有權變更，並在生命值與威脅值更新時重新檢查歸屬。",
+            "使用可讀取的單位浮動提示資料，在一般開放世界戰鬥中偵測新遇到的任務怪物。當名條從鏡頭後方返回、成為你的目標或滑鼠指向時重新整理。以有界限的每單位預算重試延遲的框架、GUID 與浮動提示任務行，單位移除時取消過期工作，並一起還原染色與圖示。保留地圖、副本、無法存取資料與受保護框架的防護；戰鬥探索不會呼叫 Questie 或隱藏的浮動提示 UI。",
+            "驗證：374 項離線測試在 Lua 5.1 與 5.2 上以正常與反向順序通過。六個用戶端 API 設定檔、Lua 語法檢查、精確函式庫驗證與差異檢查皆通過。完成快取回歸在修正前重現了此錯誤。即時遊戲與引擎層級污染驗證仍為獨立項目。"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "enUS": {
+      "version": "5.8.6",
+      "welcome": "Harden character names, class names, quest titles and custom class colors against inaccessible or malformed API values. Validate optional TomTom and Questie integration data before using it, and stop reading Questie tooltip lines at inaccessible data. Normalize bubble visibility and edit-mode state to booleans before passing them to UI controls.",
+      "sections": [
+        {
+          "title": "Changes in this release",
+          "items": [
+            "Consolidate the loading-screen event handler, remove unused private arguments and an unused restriction-enum branch, and clarify callback and return-value handling. Keep modern/legacy client fallbacks and the exact private library revision intact.",
+            "Validation: 336 tests pass in normal and reverse order on Lua 5.1 and 5.2, with expanded adapter checks across six client profiles. New regressions fail against the previous implementation. Lua parsing, exact library verification and diff checks pass. Reviewed the remaining Ketho WoW API/LuaLS diagnostics, including a separate pass without offline client mocks; retained findings have specific compatibility, guard, callback, library or fixture reasons. Live Retail and Forever gameplay validation remains separate."
+          ]
+        }
+      ]
+    },
+    "frFR": {
+      "version": "5.8.6",
+      "welcome": "Renforcer les noms de personnages, noms de classes, titres de quêtes et couleurs de classe personnalisées contre les valeurs d’API inaccessibles ou mal formées. Valider les données d’intégration optionnelles de TomTom et Questie avant de les utiliser, et arrêter de lire les lignes d’infobulle Questie aux données inaccessibles. Normaliser la visibilité des bulles et l’état du mode édition en booléens avant de les transmettre aux contrôles d’interface.",
+      "sections": [
+        {
+          "title": "Changements de cette version",
+          "items": [
+            "Consolider le gestionnaire d’événements de l’écran de chargement, supprimer les arguments privés inutilisés et une branche d’énumération de restriction inutilisée, et clarifier la gestion des callbacks et des valeurs de retour. Conserver les solutions de repli des clients modernes/anciens et la révision exacte de la bibliothèque privée intacte.",
+            "Validation : 336 tests réussissent dans l’ordre normal et inverse sous Lua 5.1 et 5.2, avec des vérifications d’adaptateurs étendues sur six profils client. Les nouvelles régressions échouent avec l’implémentation précédente. L’analyse Lua, la vérification exacte de la bibliothèque et les contrôles de diff réussissent. Les diagnostics restants de l’API WoW Ketho/LuaLS ont été examinés, y compris une passe séparée sans mocks de client hors ligne ; les constats conservés ont des raisons spécifiques de compatibilité, de garde, de callback, de bibliothèque ou de fixture. La validation du gameplay Retail et Forever en direct reste séparée."
+          ]
+        }
+      ]
+    },
+    "deDE": {
+      "version": "5.8.6",
+      "welcome": "Charakternamen, Klassennamen, Questtitel und benutzerdefinierte Klassenfarben gegen unzugängliche oder fehlerhafte API-Werte absichern. Optionale TomTom- und Questie-Integrationsdaten vor der Verwendung validieren und das Lesen von Questie-Tooltip-Zeilen bei unzugänglichen Daten stoppen. Sprechblasen-Sichtbarkeit und Bearbeitungsmodus-Status zu booleschen Werten normalisieren, bevor sie an UI-Steuerelemente übergeben werden.",
+      "sections": [
+        {
+          "title": "Änderungen in dieser Version",
+          "items": [
+            "Den Ereignishandler für Ladebildschirme konsolidieren, ungenutzte private Argumente und einen ungenutzten Einschränkungs-Enum-Zweig entfernen und Callback- sowie Rückgabewertbehandlung klarstellen. Moderne/Legacy-Client-Fallbacks und die exakte private Bibliotheksrevision unverändert lassen.",
+            "Validierung: 336 Tests bestehen in normaler und umgekehrter Reihenfolge unter Lua 5.1 und 5.2, mit erweiterten Adapterprüfungen über sechs Client-Profile. Neue Regressionen schlagen gegen die vorherige Implementierung fehl. Lua-Parsing, exakte Bibliotheksverifizierung und Diff-Prüfungen bestehen. Die verbleibenden Ketho WoW API/LuaLS-Diagnosen wurden überprüft, einschließlich eines separaten Durchlaufs ohne Offline-Client-Mocks; beibehaltene Befunde haben spezifische Gründe bei Kompatibilität, Schutzprüfung, Callback, Bibliothek oder Fixture. Live-Validierung in Retail und Forever bleibt separat."
+          ]
+        }
+      ]
+    },
+    "esES": {
+      "version": "5.8.6",
+      "welcome": "Protege nombres de personaje, nombres de clase, títulos de misión y colores de clase personalizados frente a valores de API inaccesibles o mal formados. Valida los datos opcionales de integración con TomTom y Questie antes de usarlos, y deja de leer las líneas de tooltip de Questie ante datos inaccesibles. Normaliza la visibilidad de burbujas y el estado del modo edición a booleanos antes de pasarlos a controles de IU.",
+      "sections": [
+        {
+          "title": "Cambios de esta versión",
+          "items": [
+            "Consolida el manejador de evento de pantalla de carga, elimina argumentos privados sin usar y una rama de enumeración de restricción sin usar, y aclara el manejo de callbacks y valores de retorno. Mantén intactas las alternativas para clientes modernos/antiguos y la revisión exacta de la biblioteca privada.",
+            "Validación: 336 pruebas superadas en orden normal e inverso en Lua 5.1 y 5.2, con comprobaciones ampliadas de adaptadores en seis perfiles de cliente. Las nuevas regresiones fallan frente a la implementación anterior. El análisis de Lua, la verificación exacta de bibliotecas y las comprobaciones de diff pasan. Revisados los diagnósticos restantes de Ketho WoW API/LuaLS, incluida una pasada separada sin mocks de cliente sin conexión; los hallazgos conservados tienen motivos específicos de compatibilidad, protección, callback, biblioteca o fixture. La validación de juego en vivo en Retail y Forever sigue siendo independiente."
+          ]
+        }
+      ]
+    },
+    "esMX": {
+      "version": "5.8.6",
+      "welcome": "Refuerza nombres de personajes, nombres de clases, títulos de misiones y colores de clase personalizados contra valores de API inaccesibles o mal formados. Valida los datos opcionales de integración con TomTom y Questie antes de usarlos, y deja de leer líneas de descripciones emergentes de Questie al encontrar datos inaccesibles. Normaliza la visibilidad de burbujas y el estado del modo de edición a valores booleanos antes de pasarlos a controles de IU.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Consolida el manejador de eventos de la pantalla de carga, elimina argumentos privados sin usar y una rama de enumeración de restricciones sin usar, y aclara el manejo de callbacks y valores de retorno. Mantiene intactas las alternativas para clientes modernos/antiguos y la revisión exacta de la biblioteca privada.",
+            "Validación: 336 pruebas pasan en orden normal e inverso en Lua 5.1 y 5.2, con comprobaciones ampliadas de adaptadores en seis perfiles de cliente. Las nuevas regresiones fallan contra la implementación anterior. Pasan el análisis de Lua, la verificación exacta de bibliotecas y las comprobaciones de diferencias. Se revisaron los diagnósticos restantes de Ketho WoW API/LuaLS, incluida una pasada separada sin mocks de cliente sin conexión; los hallazgos conservados tienen motivos específicos de compatibilidad, protección, callback, biblioteca o fixture. La validación de jugabilidad en vivo de Retail y Forever permanece por separado."
+          ]
+        }
+      ]
+    },
+    "ptBR": {
+      "version": "5.8.6",
+      "welcome": "Protege nomes de personagens, nomes de classes, títulos de missões e cores de classe personalizadas contra valores de API inacessíveis ou malformados. Valida dados opcionais de integração com TomTom e Questie antes de usá-los e para de ler linhas de dicas do Questie ao encontrar dados inacessíveis. Normaliza a visibilidade de balões e o estado do modo de edição para booleanos antes de passá-los aos controles da interface.",
+      "sections": [
+        {
+          "title": "Alterações nesta versão",
+          "items": [
+            "Consolida o manipulador de evento de tela de carregamento, remove argumentos privados não usados e um ramo não usado de enumeração de restrição, e esclarece o tratamento de callbacks e valores retornados. Mantém intactos os fallbacks de clientes modernos/legados e a revisão exata da biblioteca privada.",
+            "Validação: 336 testes passam em ordem normal e reversa no Lua 5.1 e 5.2, com verificações de adaptadores expandidas em seis perfis de cliente. Novas regressões falham contra a implementação anterior. Análise Lua, verificação exata de biblioteca e verificações de diff passam. Revisados os diagnósticos restantes de Ketho WoW API/LuaLS, incluindo uma passagem separada sem mocks de cliente offline; achados retidos têm motivos específicos de compatibilidade, proteção, callback, biblioteca ou fixture. A validação de jogabilidade ao vivo no Retail e no Forever permanece separada."
+          ]
+        }
+      ]
+    },
+    "ruRU": {
+      "version": "5.8.6",
+      "welcome": "Защитить имена персонажей, названия классов, названия заданий и пользовательские цвета классов от недоступных или некорректных значений API. Проверять необязательные интеграционные данные TomTom и Questie перед использованием и прекращать чтение строк подсказок Questie на недоступных данных. Нормализовать видимость пузырей и состояние режима редактирования до логических значений перед передачей элементам интерфейса.",
+      "sections": [
+        {
+          "title": "Изменения в этом выпуске",
+          "items": [
+            "Объединить обработчик события экрана загрузки, удалить неиспользуемые приватные аргументы и неиспользуемую ветку перечисления ограничений, а также прояснить обработку обратных вызовов и возвращаемых значений. Сохранить современные/устаревшие запасные варианты клиента и точную ревизию приватной библиотеки без изменений.",
+            "Проверка: 336 тестов проходят в обычном и обратном порядке на Lua 5.1 и 5.2, с расширенными проверками адаптера по шести профилям клиента. Новые регрессии не проходят на предыдущей реализации. Разбор Lua, точная проверка библиотек и проверки diff проходят. Просмотрены оставшиеся диагностики Ketho WoW API/LuaLS, включая отдельный проход без офлайн-моков клиента; сохраненные замечания имеют конкретные причины, связанные с совместимостью, защитами, обратными вызовами, библиотеками или фикстурами. Проверка живой игры Retail и Forever остается отдельной."
+          ]
+        }
+      ]
+    },
+    "itIT": {
+      "version": "5.8.6",
+      "welcome": "Rendi più robusti nomi dei personaggi, nomi delle classi, titoli delle missioni e colori personalizzati delle classi contro valori API inaccessibili o malformati. Valida i dati di integrazione opzionale di TomTom e Questie prima di usarli, e smetti di leggere le righe del tooltip di Questie quando i dati sono inaccessibili. Normalizza visibilità delle bolle e stato della modalità modifica in booleani prima di passarli ai controlli UI.",
+      "sections": [
+        {
+          "title": "Modifiche in questa versione",
+          "items": [
+            "Consolida il gestore degli eventi della schermata di caricamento, rimuovi argomenti privati inutilizzati e un ramo inutilizzato dell'enum delle restrizioni, e chiarisci la gestione di callback e valori di ritorno. Mantieni intatti i fallback dei client moderni/legacy e la revisione esatta della libreria privata.",
+            "Validazione: 336 test superati in ordine normale e inverso su Lua 5.1 e 5.2, con controlli dell'adapter ampliati su sei profili client. Le nuove regressioni falliscono contro l'implementazione precedente. Parsing Lua, verifica esatta delle librerie e controlli diff sono superati. Rivisti i restanti diagnostici Ketho WoW API/LuaLS, incluso un passaggio separato senza mock offline del client; i risultati mantenuti hanno motivi specifici di compatibilità, protezione, callback, libreria o fixture. La validazione del gameplay live Retail e Forever resta separata."
+          ]
+        }
+      ]
+    },
+    "zhCN": {
+      "version": "5.8.6",
+      "welcome": "加强角色名称、职业名称、任务标题和自定义职业颜色对不可访问或格式异常 API 值的防护。使用前验证可选的 TomTom 和 Questie 集成数据，并在遇到不可访问数据时停止读取 Questie 鼠标提示行。将气泡可见性和编辑模式状态规范化为布尔值后再传递给 UI 控件。",
+      "sections": [
+        {
+          "title": "此版本的更改",
+          "items": [
+            "整合加载界面事件处理器，移除未使用的私有参数和未使用的限制枚举分支，并明确回调和返回值处理。保持现代/旧版客户端回退以及精确私有库修订不变。",
+            "验证：336 项测试在 Lua 5.1 和 5.2 上按正常与反向顺序通过，并在六个客户端配置中扩展了适配器检查。新的回归测试会在先前实现上失败。Lua 解析、精确库验证和差异检查均通过。已审查剩余的 Ketho WoW API/LuaLS 诊断，包括一次不使用离线客户端模拟的单独检查；保留的问题均有特定的兼容性、保护、回调、库或夹具原因。实时 Retail 和 Forever 游戏验证仍单独进行。"
+          ]
+        }
+      ]
+    },
+    "koKR": {
+      "version": "5.8.6",
+      "welcome": "접근할 수 없거나 잘못된 API 값으로부터 캐릭터 이름, 직업 이름, 퀘스트 제목, 사용자 지정 직업 색상을 강화했습니다. 선택적 TomTom 및 Questie 통합 데이터를 사용하기 전에 검증하고, 접근할 수 없는 데이터에서 Questie 툴팁 줄 읽기를 중단합니다. UI 컨트롤에 전달하기 전에 말풍선 표시 여부와 편집 모드 상태를 불리언으로 정규화합니다.",
+      "sections": [
+        {
+          "title": "이번 릴리스의 변경 사항",
+          "items": [
+            "로딩 화면 이벤트 처리기를 통합하고, 사용되지 않는 비공개 인수와 사용되지 않는 제한 열거형 분기를 제거하며, 콜백 및 반환값 처리를 명확히 했습니다. 현대/레거시 클라이언트 대체 처리와 정확한 비공개 라이브러리 리비전은 그대로 유지합니다.",
+            "검증: Lua 5.1 및 5.2에서 정순 및 역순으로 336개 테스트가 통과했으며, 6개 클라이언트 프로필 전반의 어댑터 검사를 확장했습니다. 새 회귀 테스트는 이전 구현에서 실패합니다. Lua 파싱, 정확한 라이브러리 검증, diff 검사가 통과했습니다. 오프라인 클라이언트 목 없이 별도 통과를 포함하여 남은 Ketho WoW API/LuaLS 진단을 검토했습니다. 유지된 발견 사항에는 구체적인 호환성, 가드, 콜백, 라이브러리 또는 픽스처 이유가 있습니다. 라이브 Retail 및 Forever 게임플레이 검증은 별도로 유지됩니다."
+          ]
+        }
+      ]
+    },
+    "zhTW": {
+      "version": "5.8.6",
+      "welcome": "強化角色名稱、職業名稱、任務標題與自訂職業顏色，以防無法存取或格式錯誤的 API 值。使用前先驗證選用的 TomTom 與 Questie 整合資料，並在遇到無法存取的資料時停止讀取 Questie 浮動提示行。將泡泡可見性與編輯模式狀態正規化為布林值，再傳遞給 UI 控制項。",
+      "sections": [
+        {
+          "title": "本版變更",
+          "items": [
+            "整合載入畫面事件處理器，移除未使用的私有引數與未使用的限制列舉分支，並釐清回呼與回傳值處理。保留現代/舊版用戶端備援與精確的私有函式庫修訂版。",
+            "驗證：336 項測試在 Lua 5.1 與 5.2 上以正常與反向順序通過，並在六個用戶端設定檔中擴充配接器檢查。新的回歸測試會在先前實作上失敗。Lua 解析、精確函式庫驗證與差異檢查皆通過。已檢閱其餘 Ketho WoW API/LuaLS 診斷，包括一次不使用離線用戶端模擬的獨立檢查；保留的發現都有特定相容性、防護、回呼、函式庫或夾具原因。即時 Retail 與 Forever 遊戲驗證仍為獨立項目。"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "enUS": {
+      "version": "5.8.5",
+      "welcome": "Fix task/world-quest map discovery on modern clients by reading questID from C_TaskQuest.GetQuestsOnMap, while retaining the legacy API and questId field for older clients. Prefer C_ChatInfo.PerformEmote so completion emotes work when deprecated globals are disabled; safely handle missing or failing emote APIs.",
+      "sections": [
+        {
+          "title": "Changes in this release",
+          "items": [
+            "Remove an unused party-roster fingerprint calculation and unused local variables. Extend offline client checks to cover modern and legacy task/emote APIs, API precedence, inaccessible quest data, and missing/failing APIs. Validation: 334 tests pass in normal and reverse order on Lua 5.1 and 5.2, plus the expanded API checks on six client profiles, Lua parsing and exact library verification. Gameplay validation in Retail and Forever remains separate from offline checks."
+          ]
+        }
+      ]
+    },
+    "frFR": {
+      "version": "5.8.5",
+      "welcome": "Corriger la découverte des tâches/expéditions sur la carte des clients modernes en lisant questID depuis C_TaskQuest.GetQuestsOnMap, tout en conservant l’ancienne API et le champ questId pour les clients plus anciens. Privilégier C_ChatInfo.PerformEmote afin que les emotes de fin fonctionnent lorsque les variables globales obsolètes sont désactivées ; gérer en toute sécurité les API d’emote manquantes ou défaillantes.",
+      "sections": [
+        {
+          "title": "Changements de cette version",
+          "items": [
+            "Supprimer un calcul d’empreinte de composition de groupe inutilisé et des variables locales inutilisées. Étendre les vérifications hors ligne des clients pour couvrir les API modernes et anciennes de tâches/emotes, la priorité des API, les données de quêtes inaccessibles et les API manquantes/défaillantes. Validation : 334 tests réussissent dans l’ordre normal et inverse sous Lua 5.1 et 5.2, plus les vérifications d’API étendues sur six profils client, l’analyse Lua et la vérification exacte de la bibliothèque. La validation du gameplay dans Retail et Forever reste séparée des vérifications hors ligne."
+          ]
+        }
+      ]
+    },
+    "deDE": {
+      "version": "5.8.5",
+      "welcome": "Kartenentdeckung für Aufgaben/Weltquests auf modernen Clients beheben, indem questID aus C_TaskQuest.GetQuestsOnMap gelesen wird, während die Legacy-API und das Feld questId für ältere Clients beibehalten werden. C_ChatInfo.PerformEmote bevorzugen, damit Abschluss-Emotes funktionieren, wenn veraltete Globals deaktiviert sind; fehlende oder fehlschlagende Emote-APIs sicher behandeln.",
+      "sections": [
+        {
+          "title": "Änderungen in dieser Version",
+          "items": [
+            "Eine ungenutzte Gruppenlisten-Fingerabdruckberechnung und ungenutzte lokale Variablen entfernen. Offline-Client-Prüfungen erweitern, um moderne und Legacy-Aufgaben-/Emote-APIs, API-Priorität, unzugängliche Questdaten und fehlende/fehlschlagende APIs abzudecken. Validierung: 334 Tests bestehen in normaler und umgekehrter Reihenfolge unter Lua 5.1 und 5.2, dazu die erweiterten API-Prüfungen auf sechs Client-Profilen, Lua-Parsing und exakte Bibliotheksverifizierung. Gameplay-Validierung in Retail und Forever bleibt von Offline-Prüfungen getrennt."
+          ]
+        }
+      ]
+    },
+    "esES": {
+      "version": "5.8.5",
+      "welcome": "Corrige el descubrimiento de tareas/misiones del mundo en el mapa en clientes modernos leyendo questID de C_TaskQuest.GetQuestsOnMap, mientras conserva la API antigua y el campo questId para clientes antiguos. Prefiere C_ChatInfo.PerformEmote para que los gestos de finalización funcionen cuando los globales obsoletos están desactivados; maneja de forma segura API de gestos ausentes o fallidas.",
+      "sections": [
+        {
+          "title": "Cambios de esta versión",
+          "items": [
+            "Elimina un cálculo de huella de lista de grupo sin usar y variables locales sin usar. Amplía las comprobaciones de cliente sin conexión para cubrir API modernas y antiguas de tareas/gestos, precedencia de API, datos de misión inaccesibles y API ausentes/fallidas. Validación: 334 pruebas superadas en orden normal e inverso en Lua 5.1 y 5.2, además de las comprobaciones de API ampliadas en seis perfiles de cliente, análisis de Lua y verificación exacta de bibliotecas. La validación de juego en Retail y Forever sigue siendo independiente de las comprobaciones sin conexión."
+          ]
+        }
+      ]
+    },
+    "esMX": {
+      "version": "5.8.5",
+      "welcome": "Corrige el descubrimiento de misiones de tarea/mundo en el mapa en clientes modernos leyendo questID desde C_TaskQuest.GetQuestsOnMap, mientras conserva la API antigua y el campo questId para clientes anteriores. Prefiere C_ChatInfo.PerformEmote para que los emotes de completado funcionen cuando los globales obsoletos están desactivados; maneja de forma segura APIs de emotes faltantes o con fallos.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Elimina un cálculo de huella digital de la lista de miembros del grupo sin usar y variables locales sin usar. Extiende las comprobaciones de cliente sin conexión para cubrir APIs modernas y antiguas de tareas/emotes, precedencia de API, datos de misión inaccesibles y APIs faltantes/con fallos. Validación: 334 pruebas pasan en orden normal e inverso en Lua 5.1 y 5.2, además de las comprobaciones de API ampliadas en seis perfiles de cliente, análisis de Lua y verificación exacta de bibliotecas. La validación de jugabilidad en Retail y Forever permanece separada de las comprobaciones sin conexión."
+          ]
+        }
+      ]
+    },
+    "ptBR": {
+      "version": "5.8.5",
+      "welcome": "Corrige a descoberta de tarefas/missões mundiais no mapa em clientes modernos lendo questID de C_TaskQuest.GetQuestsOnMap, mantendo a API legada e o campo questId para clientes mais antigos. Prefere C_ChatInfo.PerformEmote para que emotes de conclusão funcionem quando globais obsoletos estiverem desativados; lida com segurança com APIs de emote ausentes ou com falha.",
+      "sections": [
+        {
+          "title": "Alterações nesta versão",
+          "items": [
+            "Remove um cálculo não usado de assinatura da lista do grupo e variáveis locais não usadas. Estende verificações offline de cliente para cobrir APIs modernas e legadas de tarefas/emotes, precedência de API, dados de missão inacessíveis e APIs ausentes/com falha. Validação: 334 testes passam em ordem normal e reversa no Lua 5.1 e 5.2, além das verificações de API expandidas em seis perfis de cliente, análise Lua e verificação exata de biblioteca. A validação de jogabilidade no Retail e no Forever permanece separada das verificações offline."
+          ]
+        }
+      ]
+    },
+    "ruRU": {
+      "version": "5.8.5",
+      "welcome": "Исправить обнаружение задач/локальных заданий на карте в современных клиентах, читая questID из C_TaskQuest.GetQuestsOnMap, при этом сохранив устаревший API и поле questId для старых клиентов. Предпочитать C_ChatInfo.PerformEmote, чтобы эмоции завершения работали при отключенных устаревших глобальных функциях; безопасно обрабатывать отсутствующие или дающие сбой API эмоций.",
+      "sections": [
+        {
+          "title": "Изменения в этом выпуске",
+          "items": [
+            "Удалить неиспользуемый расчет отпечатка состава группы и неиспользуемые локальные переменные. Расширить офлайн-проверки клиента, чтобы охватить современные и устаревшие API задач/эмоций, приоритет API, недоступные данные заданий и отсутствующие/дающие сбой API. Проверка: 334 теста проходят в обычном и обратном порядке на Lua 5.1 и 5.2, плюс расширенные проверки API на шести профилях клиента, разбор Lua и точная проверка библиотек. Проверка игрового процесса в Retail и Forever остается отдельной от офлайн-проверок."
+          ]
+        }
+      ]
+    },
+    "itIT": {
+      "version": "5.8.5",
+      "welcome": "Correggi la scoperta di incarichi/missioni mondiali sulla mappa nei client moderni leggendo questID da C_TaskQuest.GetQuestsOnMap, mantenendo al tempo stesso l'API legacy e il campo questId per i client più vecchi. Preferisci C_ChatInfo.PerformEmote così le emote di completamento funzionano quando le globali deprecate sono disabilitate; gestisci in sicurezza API delle emote mancanti o non funzionanti.",
+      "sections": [
+        {
+          "title": "Modifiche in questa versione",
+          "items": [
+            "Rimuovi un calcolo inutilizzato dell'impronta dell'elenco del gruppo e variabili locali inutilizzate. Estendi i controlli offline del client per coprire API moderne e legacy di incarichi/emote, precedenza API, dati missione inaccessibili e API mancanti/non funzionanti. Validazione: 334 test superati in ordine normale e inverso su Lua 5.1 e 5.2, più i controlli API ampliati su sei profili client, parsing Lua e verifica esatta delle librerie. La validazione del gameplay in Retail e Forever resta separata dai controlli offline."
+          ]
+        }
+      ]
+    },
+    "zhCN": {
+      "version": "5.8.5",
+      "welcome": "通过从 C_TaskQuest.GetQuestsOnMap 读取 questID，修复现代客户端上的任务/世界任务地图发现，同时为旧版客户端保留旧版 API 和 questId 字段。优先使用 C_ChatInfo.PerformEmote，以便在弃用的全局函数被禁用时完成表情仍可工作；安全处理缺失或失败的表情 API。",
+      "sections": [
+        {
+          "title": "此版本的更改",
+          "items": [
+            "移除未使用的队伍名单指纹计算和未使用的局部变量。扩展离线客户端检查，以覆盖现代和旧版任务/表情 API、API 优先级、不可访问任务数据以及缺失/失败的 API。验证：334 项测试在 Lua 5.1 和 5.2 上按正常与反向顺序通过，另有六个客户端配置上的扩展 API 检查、Lua 解析和精确库验证也通过。Retail 和 Forever 中的游戏验证仍与离线检查分开进行。"
+          ]
+        }
+      ]
+    },
+    "koKR": {
+      "version": "5.8.5",
+      "welcome": "현대 클라이언트에서 C_TaskQuest.GetQuestsOnMap의 questID를 읽어 과제/전역 퀘스트 지도 발견을 수정하면서, 이전 클라이언트를 위한 레거시 API와 questId 필드는 유지합니다. 더 이상 사용되지 않는 전역이 비활성화된 경우에도 완료 감정표현이 작동하도록 C_ChatInfo.PerformEmote를 우선 사용하며, 누락되었거나 실패하는 감정표현 API를 안전하게 처리합니다.",
+      "sections": [
+        {
+          "title": "이번 릴리스의 변경 사항",
+          "items": [
+            "사용되지 않는 파티 구성 지문 계산과 사용되지 않는 로컬 변수를 제거했습니다. 오프라인 클라이언트 검사를 확장하여 현대 및 레거시 과제/감정표현 API, API 우선순위, 접근할 수 없는 퀘스트 데이터, 누락/실패하는 API를 포함했습니다. 검증: Lua 5.1 및 5.2에서 정순 및 역순으로 334개 테스트가 통과했으며, 6개 클라이언트 프로필의 확장 API 검사, Lua 파싱, 정확한 라이브러리 검증도 통과했습니다. Retail 및 Forever의 게임플레이 검증은 오프라인 검사와 별도로 유지됩니다."
+          ]
+        }
+      ]
+    },
+    "zhTW": {
+      "version": "5.8.5",
+      "welcome": "在現代用戶端上透過從 C_TaskQuest.GetQuestsOnMap 讀取 questID，修正任務/世界任務地圖探索，同時保留舊版 API 與較舊用戶端的 questId 欄位。優先使用 C_ChatInfo.PerformEmote，讓停用已棄用全域函式時仍可使用完成表情；安全處理缺少或失敗的表情 API。",
+      "sections": [
+        {
+          "title": "本版變更",
+          "items": [
+            "移除未使用的隊伍名單指紋計算與未使用的區域變數。擴充離線用戶端檢查，以涵蓋現代與舊版任務/表情 API、API 優先順序、無法存取的任務資料，以及缺少/失敗的 API。驗證：334 項測試在 Lua 5.1 與 5.2 上以正常與反向順序通過，另有六個用戶端設定檔上的擴充 API 檢查、Lua 解析與精確函式庫驗證。Retail 與 Forever 中的遊戲驗證仍與離線檢查分開。"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "enUS": {
+      "version": "5.8.4",
+      "welcome": "Repository housekeeping: keep local development notes outside the tracked source and release packages. Gameplay behavior is unchanged.",
+      "sections": [
+        {
+          "title": "Changes in this release",
+          "items": [
+            "Repository housekeeping: keep local development notes outside the tracked source and release packages. Gameplay behavior is unchanged."
+          ]
+        }
+      ]
+    },
+    "frFR": {
+      "version": "5.8.4",
+      "welcome": "Entretien du dépôt : garder les notes de développement locales hors du code source suivi et des paquets de version. Le comportement en jeu est inchangé.",
+      "sections": [
+        {
+          "title": "Changements de cette version",
+          "items": [
+            "Entretien du dépôt : garder les notes de développement locales hors du code source suivi et des paquets de version. Le comportement en jeu est inchangé."
+          ]
+        }
+      ]
+    },
+    "deDE": {
+      "version": "5.8.4",
+      "welcome": "Repository-Aufräumen: lokale Entwicklungsnotizen außerhalb der nachverfolgten Quellen und Release-Pakete halten. Das Gameplay-Verhalten ist unverändert.",
+      "sections": [
+        {
+          "title": "Änderungen in dieser Version",
+          "items": [
+            "Repository-Aufräumen: lokale Entwicklungsnotizen außerhalb der nachverfolgten Quellen und Release-Pakete halten. Das Gameplay-Verhalten ist unverändert."
+          ]
+        }
+      ]
+    },
+    "esES": {
+      "version": "5.8.4",
+      "welcome": "Mantenimiento del repositorio: mantén las notas de desarrollo locales fuera del código fuente con seguimiento y de los paquetes de lanzamiento. El comportamiento de juego no cambia.",
+      "sections": [
+        {
+          "title": "Cambios de esta versión",
+          "items": [
+            "Mantenimiento del repositorio: mantén las notas de desarrollo locales fuera del código fuente con seguimiento y de los paquetes de lanzamiento. El comportamiento de juego no cambia."
+          ]
+        }
+      ]
+    },
+    "esMX": {
+      "version": "5.8.4",
+      "welcome": "Mantenimiento del repositorio: mantiene las notas de desarrollo locales fuera del código fuente rastreado y de los paquetes de lanzamiento. El comportamiento de jugabilidad no cambia.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Mantenimiento del repositorio: mantiene las notas de desarrollo locales fuera del código fuente rastreado y de los paquetes de lanzamiento. El comportamiento de jugabilidad no cambia."
+          ]
+        }
+      ]
+    },
+    "ptBR": {
+      "version": "5.8.4",
+      "welcome": "Manutenção do repositório: mantém notas de desenvolvimento local fora do código-fonte rastreado e dos pacotes de lançamento. O comportamento de jogabilidade não mudou.",
+      "sections": [
+        {
+          "title": "Alterações nesta versão",
+          "items": [
+            "Manutenção do repositório: mantém notas de desenvolvimento local fora do código-fonte rastreado e dos pacotes de lançamento. O comportamento de jogabilidade não mudou."
+          ]
+        }
+      ]
+    },
+    "ruRU": {
+      "version": "5.8.4",
+      "welcome": "Обслуживание репозитория: хранить локальные заметки разработки вне отслеживаемого исходного кода и пакетов выпуска. Игровое поведение не изменилось.",
+      "sections": [
+        {
+          "title": "Изменения в этом выпуске",
+          "items": [
+            "Обслуживание репозитория: хранить локальные заметки разработки вне отслеживаемого исходного кода и пакетов выпуска. Игровое поведение не изменилось."
+          ]
+        }
+      ]
+    },
+    "itIT": {
+      "version": "5.8.4",
+      "welcome": "Manutenzione del repository: tieni le note di sviluppo locali fuori dal sorgente tracciato e dai pacchetti di rilascio. Il comportamento di gioco è invariato.",
+      "sections": [
+        {
+          "title": "Modifiche in questa versione",
+          "items": [
+            "Manutenzione del repository: tieni le note di sviluppo locali fuori dal sorgente tracciato e dai pacchetti di rilascio. Il comportamento di gioco è invariato."
+          ]
+        }
+      ]
+    },
+    "zhCN": {
+      "version": "5.8.4",
+      "welcome": "仓库整理：将本地开发说明保留在受跟踪源代码和发布包之外。游戏行为未更改。",
+      "sections": [
+        {
+          "title": "此版本的更改",
+          "items": [
+            "仓库整理：将本地开发说明保留在受跟踪源代码和发布包之外。游戏行为未更改。"
+          ]
+        }
+      ]
+    },
+    "koKR": {
+      "version": "5.8.4",
+      "welcome": "저장소 정리: 로컬 개발 노트는 추적되는 소스와 릴리스 패키지 밖에 보관합니다. 게임플레이 동작은 변경되지 않았습니다.",
+      "sections": [
+        {
+          "title": "이번 릴리스의 변경 사항",
+          "items": [
+            "저장소 정리: 로컬 개발 노트는 추적되는 소스와 릴리스 패키지 밖에 보관합니다. 게임플레이 동작은 변경되지 않았습니다."
+          ]
+        }
+      ]
+    },
+    "zhTW": {
+      "version": "5.8.4",
+      "welcome": "儲存庫整理：將本機開發筆記保留在追蹤的原始碼與發行套件之外。遊戲行為不變。",
+      "sections": [
+        {
+          "title": "本版變更",
+          "items": [
+            "儲存庫整理：將本機開發筆記保留在追蹤的原始碼與發行套件之外。遊戲行為不變。"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "enUS": {
+      "version": "5.8.3",
+      "welcome": "Announce the installed version, supported clients and settings command once per login or UI reload. Include addon-specific CurseForge and GitHub feedback links; clicking a link opens a native-style copy window. Share message behavior and safe copy UI through private libchev 1.2.0. If link registration or the copy window is unavailable, show the full URL in chat. An unavailable welcome helper cannot interrupt normal addon startup.",
+      "sections": [
+        {
+          "title": "Changes in this release",
+          "items": [
+            "Validation: 334 tests pass in both orders on Lua 5.1 and 5.2, with client API checks, Lua parsing and exact library vendor verification. NoPoizen smoke simulations exercise both feedback links on all seven client/ruleset profiles. Live rendering remains a separate check."
+          ]
+        }
+      ]
+    },
+    "frFR": {
+      "version": "5.8.3",
+      "welcome": "Annoncer la version installée, les clients pris en charge et la commande des réglages une fois par connexion ou rechargement de l’interface. Inclure des liens de retour CurseForge et GitHub propres à l’addon ; cliquer sur un lien ouvre une fenêtre de copie de style natif. Partager le comportement des messages et l’interface de copie sûre via libchev 1.2.0 privée. Si l’enregistrement des liens ou la fenêtre de copie est indisponible, afficher l’URL complète dans la discussion. Un assistant de bienvenue indisponible ne peut pas interrompre le démarrage normal de l’addon.",
+      "sections": [
+        {
+          "title": "Changements de cette version",
+          "items": [
+            "Validation : 334 tests réussissent dans les deux ordres sous Lua 5.1 et 5.2, avec les vérifications d’API client, l’analyse Lua et la vérification exacte du fournisseur de bibliothèque. Les simulations rapides NoPoizen exercent les deux liens de retour sur les sept profils client/règles. Le rendu en direct reste une vérification séparée."
+          ]
+        }
+      ]
+    },
+    "deDE": {
+      "version": "5.8.3",
+      "welcome": "Die installierte Version, unterstützte Clients und den Einstellungsbefehl einmal pro Login oder UI-Neuladen ankündigen. Addon-spezifische CurseForge- und GitHub-Feedbacklinks einschließen; ein Klick auf einen Link öffnet ein Kopierfenster im nativen Stil. Nachrichtenverhalten beim Teilen und sichere Kopier-UI über private libchev 1.2.0 gemeinsam nutzen. Wenn Linkregistrierung oder Kopierfenster nicht verfügbar sind, die vollständige URL im Chat anzeigen. Ein nicht verfügbarer Willkommenshelfer kann den normalen Addon-Start nicht unterbrechen.",
+      "sections": [
+        {
+          "title": "Änderungen in dieser Version",
+          "items": [
+            "Validierung: 334 Tests bestehen in beiden Reihenfolgen unter Lua 5.1 und 5.2, mit Client-API-Prüfungen, Lua-Parsing und exakter Bibliotheksanbieter-Verifizierung. NoPoizen-Smoke-Simulationen üben beide Feedbacklinks auf allen sieben Client-/Regelwerk-Profilen aus. Live-Rendering bleibt eine separate Prüfung."
+          ]
+        }
+      ]
+    },
+    "esES": {
+      "version": "5.8.3",
+      "welcome": "Anuncia la versión instalada, los clientes compatibles y el comando de ajustes una vez por inicio de sesión o recarga de IU. Incluye enlaces de comentarios específicos del addon para CurseForge y GitHub; al hacer clic en un enlace se abre una ventana de copia de estilo nativo. Comparte el comportamiento de mensajes y la IU de copia segura mediante libchev 1.2.0 privada. Si el registro de enlaces o la ventana de copia no están disponibles, muestra la URL completa en el chat. Un asistente de bienvenida no disponible no puede interrumpir el inicio normal del addon.",
+      "sections": [
+        {
+          "title": "Cambios de esta versión",
+          "items": [
+            "Validación: 334 pruebas superadas en ambos órdenes en Lua 5.1 y 5.2, con comprobaciones de API de cliente, análisis de Lua y verificación exacta del proveedor de bibliotecas. Las simulaciones de humo de NoPoizen ejercitan ambos enlaces de comentarios en los siete perfiles de cliente/conjunto de reglas. El renderizado en vivo sigue siendo una comprobación independiente."
+          ]
+        }
+      ]
+    },
+    "esMX": {
+      "version": "5.8.3",
+      "welcome": "Anuncia la versión instalada, los clientes compatibles y el comando de configuración una vez por inicio de sesión o recarga de IU. Incluye enlaces de comentarios específicos del addon en CurseForge y GitHub; al hacer clic en un enlace se abre una ventana de copia de estilo nativo. Comparte el comportamiento de mensajes y la IU de copia segura mediante libchev privada 1.2.0. Si el registro de enlaces o la ventana de copia no están disponibles, muestra la URL completa en el chat. Un asistente de bienvenida no disponible no puede interrumpir el inicio normal del addon.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Validación: 334 pruebas pasan en ambos órdenes en Lua 5.1 y 5.2, con comprobaciones de API de cliente, análisis de Lua y verificación exacta del proveedor de bibliotecas. Las simulaciones rápidas de NoPoizen ejercitan ambos enlaces de comentarios en los siete perfiles de cliente/conjunto de reglas. El renderizado en vivo permanece como una comprobación separada."
+          ]
+        }
+      ]
+    },
+    "ptBR": {
+      "version": "5.8.3",
+      "welcome": "Anuncia a versão instalada, clientes compatíveis e comando de configurações uma vez por login ou recarregamento da interface. Inclui links de feedback específicos do addon no CurseForge e GitHub; clicar em um link abre uma janela de cópia em estilo nativo. O comportamento de mensagens e a IU de cópia segura são compartilhados por meio da libchev privada 1.2.0. Se o registro de links ou a janela de cópia estiver indisponível, mostra a URL completa no chat. Um ajudante de boas-vindas indisponível não pode interromper a inicialização normal do addon.",
+      "sections": [
+        {
+          "title": "Alterações nesta versão",
+          "items": [
+            "Validação: 334 testes passam nas duas ordens no Lua 5.1 e 5.2, com verificações de API de cliente, análise Lua e verificação exata do fornecedor da biblioteca. Simulações de fumaça do NoPoizen exercitam ambos os links de feedback em todos os sete perfis de cliente/conjunto de regras. A renderização ao vivo permanece uma verificação separada."
+          ]
+        }
+      ]
+    },
+    "ruRU": {
+      "version": "5.8.3",
+      "welcome": "Сообщать установленную версию, поддерживаемые клиенты и команду настроек один раз при входе или перезагрузке интерфейса. Включить ссылки обратной связи CurseForge и GitHub для аддона; щелчок по ссылке открывает окно копирования в стиле стандартного интерфейса. Поведение сообщений общего доступа и безопасный интерфейс копирования используют приватную libchev 1.2.0. Если регистрация ссылки или окно копирования недоступны, показывать полный URL в чате. Недоступный помощник приветствия не может прервать обычный запуск аддона.",
+      "sections": [
+        {
+          "title": "Изменения в этом выпуске",
+          "items": [
+            "Проверка: 334 теста проходят в обоих порядках на Lua 5.1 и 5.2, с проверками клиентского API, разбором Lua и точной проверкой поставщика библиотеки. Дымовые симуляции NoPoizen проверяют обе ссылки обратной связи на всех семи профилях клиентов/наборов правил. Живая отрисовка остается отдельной проверкой."
+          ]
+        }
+      ]
+    },
+    "itIT": {
+      "version": "5.8.3",
+      "welcome": "Annuncia la versione installata, i client supportati e il comando delle impostazioni una volta per accesso o ricaricamento dell'UI. Includi link di feedback specifici dell'addon per CurseForge e GitHub; cliccando un link si apre una finestra di copia in stile nativo. Condividi il comportamento dei messaggi e l'UI di copia sicura tramite libchev 1.2.0 privata. Se la registrazione del link o la finestra di copia non è disponibile, mostra l'URL completo in chat. Un helper di benvenuto non disponibile non può interrompere il normale avvio dell'addon.",
+      "sections": [
+        {
+          "title": "Modifiche in questa versione",
+          "items": [
+            "Validazione: 334 test superati in entrambi gli ordini su Lua 5.1 e 5.2, con controlli API del client, parsing Lua e verifica esatta del vendor della libreria. Le simulazioni smoke NoPoizen esercitano entrambi i link di feedback su tutti e sette i profili client/ruleset. Il rendering live resta un controllo separato."
+          ]
+        }
+      ]
+    },
+    "zhCN": {
+      "version": "5.8.3",
+      "welcome": "每次登录或重载 UI 时通告一次已安装版本、支持的客户端和设置命令。包含插件专用的 CurseForge 和 GitHub 反馈链接；点击链接会打开原生风格的复制窗口。通过私有 libchev 1.2.0 共享消息行为和安全复制 UI。如果链接注册或复制窗口不可用，则在聊天中显示完整 URL。不可用的欢迎辅助功能不会中断插件正常启动。",
+      "sections": [
+        {
+          "title": "此版本的更改",
+          "items": [
+            "验证：334 项测试在 Lua 5.1 和 5.2 上按两种顺序均通过，并包含客户端 API 检查、Lua 解析和精确库供应商验证。NoPoizen 冒烟模拟在全部七个客户端/规则集配置上测试两个反馈链接。实时渲染仍作为单独检查。"
+          ]
+        }
+      ]
+    },
+    "koKR": {
+      "version": "5.8.3",
+      "welcome": "로그인 또는 UI 재시작마다 한 번씩 설치된 버전, 지원 클라이언트, 설정 명령어를 알립니다. 애드온 전용 CurseForge 및 GitHub 피드백 링크를 포함하며, 링크를 클릭하면 기본 스타일의 복사 창이 열립니다. 메시지 동작과 안전한 복사 UI는 비공개 libchev 1.2.0을 통해 공유합니다. 링크 등록 또는 복사 창을 사용할 수 없으면 전체 URL을 대화창에 표시합니다. 사용할 수 없는 환영 도우미는 정상적인 애드온 시작을 방해할 수 없습니다.",
+      "sections": [
+        {
+          "title": "이번 릴리스의 변경 사항",
+          "items": [
+            "검증: Lua 5.1 및 5.2에서 양방향 순서로 334개 테스트가 통과했으며, 클라이언트 API 검사, Lua 파싱, 정확한 라이브러리 벤더 검증도 통과했습니다. NoPoizen 스모크 시뮬레이션은 7개 클라이언트/규칙 세트 프로필 모두에서 두 피드백 링크를 모두 실행합니다. 라이브 렌더링은 별도 검사로 유지됩니다."
+          ]
+        }
+      ]
+    },
+    "zhTW": {
+      "version": "5.8.3",
+      "welcome": "每次登入或重新載入 UI 時，公告已安裝版本、支援的用戶端與設定指令一次。包含插件專用的 CurseForge 與 GitHub 回饋連結；點擊連結會開啟原生風格的複製視窗。透過私有 libchev 1.2.0 分享訊息行為與安全複製 UI。若連結註冊或複製視窗無法使用，則在聊天中顯示完整 URL。無法使用的歡迎輔助程式不會中斷正常的插件啟動。",
+      "sections": [
+        {
+          "title": "本版變更",
+          "items": [
+            "驗證：334 項測試在 Lua 5.1 與 5.2 上以兩種順序皆通過，並包含用戶端 API 檢查、Lua 解析與精確函式庫供應商驗證。NoPoizen 冒煙模擬會在全部七個用戶端/規則集設定檔上測試兩個回饋連結。即時渲染仍為獨立檢查。"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "enUS": {
+      "version": "5.8.2",
+      "welcome": "Isolate test fixture GUID lookups from nearby players. Fix two false failures in /qt test when a real unit occupies the nameplate token used by the tooltip and cached-icon checks. Gameplay nameplate behavior is unchanged.",
+      "sections": [
+        {
+          "title": "Changes in this release",
+          "items": [
+            "The offline environment now includes that token collision and reproduces both failures without the fixture fix. All 333 tests pass in both orders on Lua 5.1 and 5.2 after the fix; six client API profiles also pass. In-game confirmation remains separate."
+          ]
+        }
+      ]
+    },
+    "frFR": {
+      "version": "5.8.2",
+      "welcome": "Isoler les recherches de GUID des fixtures de test des joueurs à proximité. Corriger deux faux échecs dans /qt test lorsqu’une unité réelle occupe le jeton de barre d’info utilisé par les vérifications d’infobulle et d’icône en cache. Le comportement des barres d’info en jeu est inchangé.",
+      "sections": [
+        {
+          "title": "Changements de cette version",
+          "items": [
+            "L’environnement hors ligne inclut désormais cette collision de jeton et reproduit les deux échecs sans la correction de fixture. Les 333 tests réussissent dans les deux ordres sous Lua 5.1 et 5.2 après la correction ; six profils d’API client réussissent également. La confirmation en jeu reste séparée."
+          ]
+        }
+      ]
+    },
+    "deDE": {
+      "version": "5.8.2",
+      "welcome": "GUID-Abfragen der Test-Fixture von Spielern in der Nähe isolieren. Zwei falsche Fehler in /qt test beheben, wenn eine echte Einheit das Namensplaketten-Token belegt, das von den Tooltip- und Zwischensymbol-Prüfungen verwendet wird. Das Gameplay-Verhalten von Namensplaketten ist unverändert.",
+      "sections": [
+        {
+          "title": "Änderungen in dieser Version",
+          "items": [
+            "Die Offline-Umgebung enthält nun diese Token-Kollision und reproduziert beide Fehler ohne die Fixture-Behebung. Alle 333 Tests bestehen nach der Behebung in beiden Reihenfolgen unter Lua 5.1 und 5.2; sechs Client-API-Profile bestehen ebenfalls. Bestätigung im Spiel bleibt separat."
+          ]
+        }
+      ]
+    },
+    "esES": {
+      "version": "5.8.2",
+      "welcome": "Aísla las búsquedas de GUID de fixtures de prueba de los jugadores cercanos. Corrige dos fallos falsos en /qt test cuando una unidad real ocupa el token de placa de nombre usado por las comprobaciones de tooltip e icono en caché. El comportamiento de placas de nombre en el juego no cambia.",
+      "sections": [
+        {
+          "title": "Cambios de esta versión",
+          "items": [
+            "El entorno sin conexión ahora incluye esa colisión de token y reproduce ambos fallos sin la corrección del fixture. Las 333 pruebas pasan en ambos órdenes en Lua 5.1 y 5.2 tras la corrección; seis perfiles de API de cliente también pasan. La confirmación dentro del juego sigue siendo independiente."
+          ]
+        }
+      ]
+    },
+    "esMX": {
+      "version": "5.8.2",
+      "welcome": "Aísla las búsquedas de GUID de fixtures de prueba de los jugadores cercanos. Corrige dos fallos falsos en /qt test cuando una unidad real ocupa el token de placa usado por las comprobaciones de descripción emergente e ícono en caché. El comportamiento de placas en el juego no cambia.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "El entorno sin conexión ahora incluye esa colisión de tokens y reproduce ambos fallos sin la corrección del fixture. Las 333 pruebas pasan en ambos órdenes en Lua 5.1 y 5.2 después de la corrección; también pasan seis perfiles de API de cliente. La confirmación en el juego permanece por separado."
+          ]
+        }
+      ]
+    },
+    "ptBR": {
+      "version": "5.8.2",
+      "welcome": "Isola buscas de GUID da fixture de teste de jogadores próximos. Corrige duas falhas falsas em /qt test quando uma unidade real ocupa o token de placa de identificação usado pelas verificações de dica e ícone em cache. O comportamento das placas de identificação em jogo não mudou.",
+      "sections": [
+        {
+          "title": "Alterações nesta versão",
+          "items": [
+            "O ambiente offline agora inclui essa colisão de token e reproduz ambas as falhas sem a correção da fixture. Todos os 333 testes passam nas duas ordens no Lua 5.1 e 5.2 após a correção; seis perfis de API de cliente também passam. A confirmação em jogo permanece separada."
+          ]
+        }
+      ]
+    },
+    "ruRU": {
+      "version": "5.8.2",
+      "welcome": "Изолировать поиски GUID в тестовой фикстуре от находящихся рядом игроков. Исправить два ложных сбоя в /qt test, когда реальный юнит занимает токен индикатора, используемый проверками подсказки и кэшированного значка. Игровое поведение индикаторов не изменилось.",
+      "sections": [
+        {
+          "title": "Изменения в этом выпуске",
+          "items": [
+            "Офлайн-среда теперь включает это столкновение токенов и воспроизводит оба сбоя без исправления фикстуры. Все 333 теста проходят в обоих порядках на Lua 5.1 и 5.2 после исправления; шесть профилей клиентского API также проходят. Подтверждение в игре остается отдельным."
+          ]
+        }
+      ]
+    },
+    "itIT": {
+      "version": "5.8.2",
+      "welcome": "Isola le ricerche GUID delle fixture di test dai giocatori vicini. Correggi due falsi errori in /qt test quando una vera unità occupa il token della barra del nome usato dai controlli del tooltip e dell'icona in cache. Il comportamento delle barre del nome in gioco è invariato.",
+      "sections": [
+        {
+          "title": "Modifiche in questa versione",
+          "items": [
+            "L'ambiente offline ora include quella collisione di token e riproduce entrambi gli errori senza la correzione della fixture. Tutti i 333 test passano in entrambi gli ordini su Lua 5.1 e 5.2 dopo la correzione; anche sei profili API del client passano. La conferma in gioco resta separata."
+          ]
+        }
+      ]
+    },
+    "zhCN": {
+      "version": "5.8.2",
+      "welcome": "将测试夹具 GUID 查找与附近玩家隔离。修复 /qt test 中两个误报失败：当真实单位占用鼠标提示和缓存图标检查所用的姓名板标记时。游戏内姓名板行为未更改。",
+      "sections": [
+        {
+          "title": "此版本的更改",
+          "items": [
+            "离线环境现在包含该标记冲突，并能在未修复夹具时复现两个失败。修复后，全部 333 项测试在 Lua 5.1 和 5.2 上按两种顺序均通过；六个客户端 API 配置也通过。游戏内确认仍单独进行。"
+          ]
+        }
+      ]
+    },
+    "koKR": {
+      "version": "5.8.2",
+      "welcome": "테스트 픽스처 GUID 조회를 주변 플레이어와 격리했습니다. 실제 유닛이 툴팁 및 캐시된 아이콘 검사에 사용되는 이름표 토큰을 차지할 때 /qt test에서 발생하던 두 가지 거짓 실패를 수정했습니다. 게임플레이 이름표 동작은 변경되지 않았습니다.",
+      "sections": [
+        {
+          "title": "이번 릴리스의 변경 사항",
+          "items": [
+            "오프라인 환경에는 이제 해당 토큰 충돌이 포함되며, 픽스처 수정 없이 두 실패를 모두 재현합니다. 수정 후 Lua 5.1 및 5.2에서 양방향 순서로 333개 테스트가 모두 통과했으며, 6개 클라이언트 API 프로필도 통과했습니다. 게임 내 확인은 별도로 유지됩니다."
+          ]
+        }
+      ]
+    },
+    "zhTW": {
+      "version": "5.8.2",
+      "welcome": "將測試夾具 GUID 查詢與附近玩家隔離。修正 /qt test 中兩個誤報失敗，這些失敗會在真實單位佔用浮動提示與快取圖示檢查所使用的名條權杖時發生。遊戲中的名條行為不變。",
+      "sections": [
+        {
+          "title": "本版變更",
+          "items": [
+            "離線環境現在包含該權杖衝突，並能在沒有夾具修正時重現兩個失敗。修正後，全部 333 項測試在 Lua 5.1 與 5.2 上以兩種順序皆通過；六個用戶端 API 設定檔也通過。遊戲內確認仍為獨立項目。"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "enUS": {
+      "version": "5.8.1",
+      "welcome": "Show Blizzard's quest marker beside QuestTogether in the AddOns list instead of the default question mark.",
+      "sections": [
+        {
+          "title": "Changes in this release",
+          "items": [
+            "Show Blizzard's quest marker beside QuestTogether in the AddOns list instead of the default question mark."
+          ]
+        }
+      ]
+    },
+    "frFR": {
+      "version": "5.8.1",
+      "welcome": "Afficher le marqueur de quête de Blizzard à côté de QuestTogether dans la liste des AddOns au lieu du point d’interrogation par défaut.",
+      "sections": [
+        {
+          "title": "Changements de cette version",
+          "items": [
+            "Afficher le marqueur de quête de Blizzard à côté de QuestTogether dans la liste des AddOns au lieu du point d’interrogation par défaut."
+          ]
+        }
+      ]
+    },
+    "deDE": {
+      "version": "5.8.1",
+      "welcome": "Blizzards Questmarkierung neben QuestTogether in der AddOns-Liste statt des standardmäßigen Fragezeichens anzeigen.",
+      "sections": [
+        {
+          "title": "Änderungen in dieser Version",
+          "items": [
+            "Blizzards Questmarkierung neben QuestTogether in der AddOns-Liste statt des standardmäßigen Fragezeichens anzeigen."
+          ]
+        }
+      ]
+    },
+    "esES": {
+      "version": "5.8.1",
+      "welcome": "Muestra el marcador de misión de Blizzard junto a QuestTogether en la lista de AddOns en lugar del signo de interrogación predeterminado.",
+      "sections": [
+        {
+          "title": "Cambios de esta versión",
+          "items": [
+            "Muestra el marcador de misión de Blizzard junto a QuestTogether en la lista de AddOns en lugar del signo de interrogación predeterminado."
+          ]
+        }
+      ]
+    },
+    "esMX": {
+      "version": "5.8.1",
+      "welcome": "Muestra el marcador de misión de Blizzard junto a QuestTogether en la lista de AddOns en lugar del signo de interrogación predeterminado.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Muestra el marcador de misión de Blizzard junto a QuestTogether en la lista de AddOns en lugar del signo de interrogación predeterminado."
+          ]
+        }
+      ]
+    },
+    "ptBR": {
+      "version": "5.8.1",
+      "welcome": "Mostra o marcador de missão da Blizzard ao lado de QuestTogether na lista de AddOns em vez do ponto de interrogação padrão.",
+      "sections": [
+        {
+          "title": "Alterações nesta versão",
+          "items": [
+            "Mostra o marcador de missão da Blizzard ao lado de QuestTogether na lista de AddOns em vez do ponto de interrogação padrão."
+          ]
+        }
+      ]
+    },
+    "ruRU": {
+      "version": "5.8.1",
+      "welcome": "Показывать маркер задания Blizzard рядом с QuestTogether в списке AddOns вместо стандартного вопросительного знака.",
+      "sections": [
+        {
+          "title": "Изменения в этом выпуске",
+          "items": [
+            "Показывать маркер задания Blizzard рядом с QuestTogether в списке AddOns вместо стандартного вопросительного знака."
+          ]
+        }
+      ]
+    },
+    "itIT": {
+      "version": "5.8.1",
+      "welcome": "Mostra l'indicatore di missione di Blizzard accanto a QuestTogether nell'elenco AddOns invece del punto interrogativo predefinito.",
+      "sections": [
+        {
+          "title": "Modifiche in questa versione",
+          "items": [
+            "Mostra l'indicatore di missione di Blizzard accanto a QuestTogether nell'elenco AddOns invece del punto interrogativo predefinito."
+          ]
+        }
+      ]
+    },
+    "zhCN": {
+      "version": "5.8.1",
+      "welcome": "在 AddOns 列表中，在 QuestTogether 旁显示 Blizzard 的任务标记，而不是默认问号。",
+      "sections": [
+        {
+          "title": "此版本的更改",
+          "items": [
+            "在 AddOns 列表中，在 QuestTogether 旁显示 Blizzard 的任务标记，而不是默认问号。"
+          ]
+        }
+      ]
+    },
+    "koKR": {
+      "version": "5.8.1",
+      "welcome": "AddOns 목록에서 기본 물음표 대신 QuestTogether 옆에 Blizzard의 퀘스트 표시를 표시합니다.",
+      "sections": [
+        {
+          "title": "이번 릴리스의 변경 사항",
+          "items": [
+            "AddOns 목록에서 기본 물음표 대신 QuestTogether 옆에 Blizzard의 퀘스트 표시를 표시합니다."
+          ]
+        }
+      ]
+    },
+    "zhTW": {
+      "version": "5.8.1",
+      "welcome": "在 AddOns 列表中，於 QuestTogether 旁顯示 Blizzard 的任務標記，而不是預設問號。",
+      "sections": [
+        {
+          "title": "本版變更",
+          "items": [
+            "在 AddOns 列表中，於 QuestTogether 旁顯示 Blizzard 的任務標記，而不是預設問號。"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "enUS": {
+      "version": "5.8.0",
+      "welcome": "Support current Classic clients with correct quest-acceptance payloads, guarded objective API fallbacks, honest unknown shareability, flavor metadata and six-client API regression checks. Preserve Retail/Forever behavior and shared debug utilities.",
+      "sections": [
+        {
+          "title": "Changes in this release",
+          "items": [
+            "Validation: 333 tests pass in both orders on Lua 5.1 and 5.2, with six client profiles, Lua parsing and exact private-library vendor checks. NoPoizen client smoke checks and package verification also pass. Live validation of the new adapters remains pending.",
+            "See CLIENT_COMPATIBILITY.md for source evidence, scope and validation limits."
+          ]
+        }
+      ]
+    },
+    "frFR": {
+      "version": "5.8.0",
+      "welcome": "Prendre en charge les clients Classic actuels avec des charges utiles d’acceptation de quête correctes, des solutions de repli d’API d’objectifs protégées, une possibilité de partage inconnue signalée honnêtement, des métadonnées d’ambiance et des vérifications de régression d’API sur six clients. Préserver le comportement Retail/Forever et les utilitaires de débogage partagés.",
+      "sections": [
+        {
+          "title": "Changements de cette version",
+          "items": [
+            "Validation : 333 tests réussissent dans les deux ordres sous Lua 5.1 et 5.2, avec six profils client, l’analyse Lua et les vérifications exactes du fournisseur de bibliothèque privée. Les vérifications rapides de client NoPoizen et la vérification des paquets réussissent également. La validation en direct des nouveaux adaptateurs reste en attente.",
+            "Consultez CLIENT_COMPATIBILITY.md pour les preuves sources, la portée et les limites de validation."
+          ]
+        }
+      ]
+    },
+    "deDE": {
+      "version": "5.8.0",
+      "welcome": "Aktuelle Classic-Clients mit korrekten Nutzdaten zur Questannahme, abgesicherten Ziel-API-Fallbacks, ehrlicher Meldung unbekannter Teilbarkeit, Flavor-Metadaten und API-Regressionsprüfungen für sechs Clients unterstützen. Retail-/Forever-Verhalten und gemeinsame Debug-Hilfsfunktionen beibehalten.",
+      "sections": [
+        {
+          "title": "Änderungen in dieser Version",
+          "items": [
+            "Validierung: 333 Tests bestehen in beiden Reihenfolgen unter Lua 5.1 und 5.2, mit sechs Client-Profilen, Lua-Parsing und exakten Vendor-Prüfungen privater Bibliotheken. NoPoizen-Client-Smoke-Prüfungen und Paketverifizierung bestehen ebenfalls. Live-Validierung der neuen Adapter steht noch aus.",
+            "Siehe CLIENT_COMPATIBILITY.md für Quellennachweise, Umfang und Validierungsgrenzen."
+          ]
+        }
+      ]
+    },
+    "esES": {
+      "version": "5.8.0",
+      "welcome": "Admite los clientes actuales de Classic con cargas útiles correctas de aceptación de misiones, alternativas protegidas de API de objetivos, indicación honesta de compartibilidad desconocida, metadatos de estilo y comprobaciones de regresión de API de seis clientes. Conserva el comportamiento de Retail/Forever y las utilidades de depuración compartidas.",
+      "sections": [
+        {
+          "title": "Cambios de esta versión",
+          "items": [
+            "Validación: 333 pruebas superadas en ambos órdenes en Lua 5.1 y 5.2, con seis perfiles de cliente, análisis de Lua y comprobaciones exactas de proveedor de bibliotecas privadas. Las comprobaciones de humo del cliente NoPoizen y la verificación de paquetes también pasan. La validación en vivo de los nuevos adaptadores sigue pendiente.",
+            "Consulta CLIENT_COMPATIBILITY.md para ver las pruebas de origen, el alcance y los límites de validación."
+          ]
+        }
+      ]
+    },
+    "esMX": {
+      "version": "5.8.0",
+      "welcome": "Compatibilidad con los clientes Classic actuales mediante cargas correctas de aceptación de misiones, resguardos para API de objetivos, capacidad de compartir desconocida mostrada de forma honesta, metadatos de variante y comprobaciones de regresión de API para seis clientes. Se conserva el comportamiento de Retail/Forever y las utilidades de depuración compartidas.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Validación: 333 pruebas pasan en ambos órdenes en Lua 5.1 y 5.2, con seis perfiles de cliente, análisis de Lua y comprobaciones exactas de proveedor de biblioteca privada. También pasan las pruebas rápidas del cliente NoPoizen y la verificación de paquetes. La validación en vivo de los nuevos adaptadores sigue pendiente.",
+            "Consulta CLIENT_COMPATIBILITY.md para ver la evidencia de origen, el alcance y los límites de validación."
+          ]
+        }
+      ]
+    },
+    "ptBR": {
+      "version": "5.8.0",
+      "welcome": "Compatibiliza clientes Classic atuais com payloads corretos de aceitação de missão, fallbacks protegidos de API de objetivos, possibilidade de compartilhamento desconhecida informada com honestidade, metadados de variante e verificações de regressão de API em seis clientes. Preserva o comportamento do Retail/Forever e utilitários de depuração compartilhados.",
+      "sections": [
+        {
+          "title": "Alterações nesta versão",
+          "items": [
+            "Validação: 333 testes passam nas duas ordens no Lua 5.1 e 5.2, com seis perfis de cliente, análise Lua e verificações exatas de fornecedor de biblioteca privada. Verificações de fumaça de cliente NoPoizen e verificação de pacote também passam. A validação ao vivo dos novos adaptadores continua pendente.",
+            "Veja CLIENT_COMPATIBILITY.md para evidências de origem, escopo e limites de validação."
+          ]
+        }
+      ]
+    },
+    "ruRU": {
+      "version": "5.8.0",
+      "welcome": "Поддержать текущие клиенты Classic с корректными данными принятия задания, защищенными запасными вариантами API целей, честным неизвестным статусом возможности поделиться, метаданными варианта клиента и проверками регрессий API для шести клиентов. Сохранить поведение Retail/Forever и общие утилиты отладки.",
+      "sections": [
+        {
+          "title": "Изменения в этом выпуске",
+          "items": [
+            "Проверка: 333 теста проходят в обоих порядках на Lua 5.1 и 5.2, с шестью профилями клиентов, разбором Lua и точными проверками поставщика приватной библиотеки. Дымовые проверки клиента NoPoizen и проверка пакета также проходят. Живая проверка новых адаптеров пока ожидается.",
+            "См. CLIENT_COMPATIBILITY.md для исходных подтверждений, области действия и ограничений проверки."
+          ]
+        }
+      ]
+    },
+    "itIT": {
+      "version": "5.8.0",
+      "welcome": "Supporta gli attuali client Classic con payload corretti per l'accettazione delle missioni, fallback protetti per l'API degli obiettivi, condivisibilità sconosciuta dichiarata onestamente, metadati di flavor e controlli di regressione API su sei client. Mantiene il comportamento Retail/Forever e le utilità di debug condivise.",
+      "sections": [
+        {
+          "title": "Modifiche in questa versione",
+          "items": [
+            "Validazione: 333 test superati in entrambi gli ordini su Lua 5.1 e 5.2, con sei profili client, parsing Lua e controlli esatti del vendor della libreria privata. Superati anche gli smoke check del client NoPoizen e la verifica del pacchetto. La validazione live dei nuovi adattatori resta in sospeso.",
+            "Consulta CLIENT_COMPATIBILITY.md per le prove delle fonti, l'ambito e i limiti di validazione."
+          ]
+        }
+      ]
+    },
+    "zhCN": {
+      "version": "5.8.0",
+      "welcome": "支持当前怀旧服客户端，使用正确的任务接受载荷、受保护的目标 API 回退、如实标记未知的可共享性、客户端类型元数据，以及六客户端 API 回归检查。保留正式服/Forever 行为和共享调试工具。",
+      "sections": [
+        {
+          "title": "此版本中的更改",
+          "items": [
+            "验证：333 项测试在 Lua 5.1 和 5.2 上以两种顺序均通过，覆盖六个客户端配置、Lua 解析以及精确的私有库供应商检查。NoPoizen 客户端冒烟检查和包验证也已通过。新适配器的实时验证仍待完成。",
+            "有关来源证据、范围和验证限制，请参阅 CLIENT_COMPATIBILITY.md。"
+          ]
+        }
+      ]
+    },
+    "zhTW": {
+      "version": "5.8.0",
+      "welcome": "支援目前的經典版客戶端，提供正確的任務接受承載、受防護的目標 API 後援、如實顯示未知的可分享性、客戶端類型中繼資料，以及六種客戶端 API 回歸檢查。保留 Retail/Forever 行為與共用除錯工具。",
+      "sections": [
+        {
+          "title": "此版本的變更",
+          "items": [
+            "驗證：333 項測試在 Lua 5.1 與 5.2 上以兩種順序皆通過，涵蓋六種客戶端設定檔、Lua 剖析，以及精確的私有函式庫供應商檢查。NoPoizen 客戶端煙霧測試與套件驗證也通過。新轉接器的實機驗證仍待完成。",
+            "請參閱 CLIENT_COMPATIBILITY.md 以取得來源證據、範圍與驗證限制。"
+          ]
+        }
+      ]
+    },
+    "koKR": {
+      "version": "5.8.0",
+      "welcome": "현재 Classic 클라이언트를 지원하도록 올바른 퀘스트 수락 페이로드, 보호된 목표 API 폴백, 알 수 없는 공유 가능 여부의 정직한 표시, 플레이버 메타데이터, 6개 클라이언트 API 회귀 검사를 추가합니다. Retail/Forever 동작과 공유 디버그 유틸리티는 유지합니다.",
+      "sections": [
+        {
+          "title": "이번 릴리스의 변경 사항",
+          "items": [
+            "검증: Lua 5.1 및 5.2에서 양쪽 순서 모두 333개 테스트가 통과했으며, 6개 클라이언트 프로필, Lua 파싱, 정확한 비공개 라이브러리 벤더 검사도 포함됩니다. NoPoizen 클라이언트 스모크 검사와 패키지 검증도 통과했습니다. 새 어댑터의 라이브 검증은 아직 보류 중입니다.",
+            "출처 근거, 범위, 검증 한계는 CLIENT_COMPATIBILITY.md를 참조하세요."
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "enUS": {
+      "version": "5.7.7",
+      "welcome": "Keep overlapping debug consoles and their controls in one native stacking group through private libchev 1.1.3. Category menus stay with their owning console.",
+      "sections": [
+        {
+          "title": "Changes in this release",
+          "items": [
+            "Default quest objective icons to the left of the nameplate. Existing saved icon positions remain unchanged.",
+            "Respect Forever's “My Last Name” setting when displaying your character's name. Keep other players' surnames visible, matching the native setting's scope. Use full names consistently for communications, group membership, nameplate matching, and social actions while preserving existing profile and personal bubble position keys.",
+            "Fix duplicate local quest announcements caused by receiving your own channel message under a different full-name format. Regression coverage exercises the local announcement followed by its channel and party echoes, including another character with the same first name.",
+            "Validation: 331 tests pass in both orders under Lua 5.1/5.2. Live confirmation of the new icon default and multi-window interaction remains separate."
+          ]
+        }
+      ]
+    },
+    "frFR": {
+      "version": "5.7.7",
+      "welcome": "Garder les consoles de débogage superposées et leurs contrôles dans un seul groupe d’empilement natif grâce à libchev 1.1.3 privée. Les menus de catégories restent avec leur console propriétaire.",
+      "sections": [
+        {
+          "title": "Changements de cette version",
+          "items": [
+            "Placer par défaut les icônes d’objectifs de quête à gauche de la barre d’info. Les positions d’icônes enregistrées existantes restent inchangées.",
+            "Respecter le réglage “My Last Name” de Forever lors de l’affichage du nom de votre personnage. Garder les noms de famille des autres joueurs visibles, conformément à la portée du réglage natif. Utiliser systématiquement les noms complets pour les communications, l’appartenance au groupe, la correspondance des barres d’info et les actions sociales, tout en préservant les clés existantes de profil et de position de bulle personnelle.",
+            "Corriger les annonces de quêtes locales en double causées par la réception de votre propre message de canal sous un format de nom complet différent. La couverture de régression teste l’annonce locale suivie de ses échos de canal et de groupe, y compris un autre personnage ayant le même prénom.",
+            "Validation : 331 tests réussissent dans les deux ordres sous Lua 5.1/5.2. La confirmation en direct du nouveau réglage par défaut des icônes et de l’interaction entre plusieurs fenêtres reste séparée."
+          ]
+        }
+      ]
+    },
+    "deDE": {
+      "version": "5.7.7",
+      "welcome": "Überlappende Debug-Konsolen und ihre Steuerelemente über private libchev 1.1.3 in einer nativen Stapelgruppe halten. Kategoriemenüs bleiben bei ihrer zugehörigen Konsole.",
+      "sections": [
+        {
+          "title": "Änderungen in dieser Version",
+          "items": [
+            "Questziel-Symbole standardmäßig links von der Namensplakette platzieren. Bestehende gespeicherte Symbolpositionen bleiben unverändert.",
+            "Forevers Einstellung „My Last Name“ beim Anzeigen des Namens deines Charakters berücksichtigen. Die Nachnamen anderer Spieler sichtbar lassen, passend zum Geltungsbereich der nativen Einstellung. Vollständige Namen konsequent für Kommunikation, Gruppenmitgliedschaft, Namensplaketten-Abgleich und soziale Aktionen verwenden, während bestehende Profil- und persönliche Sprechblasenpositions-Schlüssel erhalten bleiben.",
+            "Doppelte lokale Questankündigungen beheben, die entstehen, wenn deine eigene Kanalnachricht unter einem anderen Vollnamenformat empfangen wird. Die Regressionsabdeckung prüft die lokale Ankündigung gefolgt von ihren Kanal- und Gruppenechos, einschließlich eines anderen Charakters mit demselben Vornamen.",
+            "Validierung: 331 Tests bestehen in beiden Reihenfolgen unter Lua 5.1/5.2. Live-Bestätigung des neuen Symbolstandards und der Mehrfenster-Interaktion bleibt separat."
+          ]
+        }
+      ]
+    },
+    "esES": {
+      "version": "5.7.7",
+      "welcome": "Mantén las consolas de depuración solapadas y sus controles en un único grupo de apilamiento nativo mediante libchev 1.1.3 privada. Los menús de categoría permanecen con su consola propietaria.",
+      "sections": [
+        {
+          "title": "Cambios de esta versión",
+          "items": [
+            "Coloca por defecto los iconos de objetivo de misión a la izquierda de la placa de nombre. Las posiciones de icono guardadas existentes no cambian.",
+            "Respeta el ajuste “My Last Name” de Forever al mostrar el nombre de tu personaje. Mantén visibles los apellidos de otros jugadores, coincidiendo con el alcance del ajuste nativo. Usa nombres completos de forma coherente para comunicaciones, pertenencia a grupo, coincidencia de placas de nombre y acciones sociales, conservando las claves existentes de perfil y de posición de burbuja personal.",
+            "Corrige anuncios locales de misión duplicados causados por recibir tu propio mensaje de canal con un formato de nombre completo diferente. La cobertura de regresión ejercita el anuncio local seguido de sus ecos de canal y grupo, incluido otro personaje con el mismo nombre de pila.",
+            "Validación: 331 pruebas superadas en ambos órdenes bajo Lua 5.1/5.2. La confirmación en vivo del nuevo valor predeterminado de iconos y la interacción multiventana sigue siendo independiente."
+          ]
+        }
+      ]
+    },
+    "esMX": {
+      "version": "5.7.7",
+      "welcome": "Mantiene las consolas de depuración superpuestas y sus controles en un solo grupo de apilamiento nativo mediante la biblioteca privada libchev 1.1.3. Los menús de categorías permanecen con su consola propietaria.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Los íconos de objetivos de misión predeterminados se colocan a la izquierda de la placa de nombre. Las posiciones de íconos guardadas existentes no cambian.",
+            "Respeta la configuración “Mi apellido” de Forever al mostrar el nombre de tu personaje. Mantiene visibles los apellidos de otros jugadores, coincidiendo con el alcance de la configuración nativa. Usa nombres completos de forma coherente para comunicaciones, pertenencia al grupo, coincidencia de placas de nombre y acciones sociales, conservando las claves existentes de perfil y de posición de burbuja personal.",
+            "Corrige los anuncios locales de misión duplicados causados por recibir tu propio mensaje de canal con un formato de nombre completo distinto. La cobertura de regresión prueba el anuncio local seguido de sus ecos de canal y grupo, incluido otro personaje con el mismo nombre.",
+            "Validación: 331 pruebas pasan en ambos órdenes con Lua 5.1/5.2. La confirmación en vivo del nuevo valor predeterminado de ícono y la interacción entre varias ventanas se mantiene aparte."
+          ]
+        }
+      ]
+    },
+    "ptBR": {
+      "version": "5.7.7",
+      "welcome": "Mantém consoles de depuração sobrepostos e seus controles em um único grupo nativo de empilhamento por meio da libchev privada 1.1.3. Menus de categoria permanecem com seu console proprietário.",
+      "sections": [
+        {
+          "title": "Alterações nesta versão",
+          "items": [
+            "Por padrão, coloca ícones de objetivo de missão à esquerda da placa de identificação. Posições de ícones já salvas permanecem inalteradas.",
+            "Respeita a configuração “My Last Name” do Forever ao exibir o nome do seu personagem. Mantém visíveis os sobrenomes de outros jogadores, correspondendo ao escopo da configuração nativa. Usa nomes completos de forma consistente para comunicações, membros do grupo, correspondência de placas de identificação e ações sociais, preservando as chaves existentes de perfil e de posição de balões pessoais.",
+            "Corrige anúncios duplicados de missões locais causados por receber sua própria mensagem de canal em um formato diferente de nome completo. A cobertura de regressão exercita o anúncio local seguido por seus ecos de canal e grupo, incluindo outro personagem com o mesmo primeiro nome.",
+            "Validação: 331 testes passam nas duas ordens no Lua 5.1/5.2. A confirmação ao vivo do novo padrão de ícone e da interação entre múltiplas janelas permanece separada."
+          ]
+        }
+      ]
+    },
+    "ruRU": {
+      "version": "5.7.7",
+      "welcome": "Держать перекрывающиеся консоли отладки и их элементы управления в одной стандартной группе наложения через приватную libchev 1.1.3. Меню категорий остаются со своей консолью-владельцем.",
+      "sections": [
+        {
+          "title": "Изменения в этом выпуске",
+          "items": [
+            "По умолчанию размещать значки целей задания слева от индикатора. Существующие сохраненные позиции значков остаются без изменений.",
+            "Учитывать настройку Forever «My Last Name» при отображении имени вашего персонажа. Сохранять видимость фамилий других игроков в соответствии с областью действия стандартной настройки. Последовательно использовать полные имена для связи, членства в группе, сопоставления индикаторов и социальных действий, сохраняя существующие ключи профиля и позиции личного пузыря.",
+            "Исправить дублирование локальных объявлений о заданиях, вызванное получением вашего собственного сообщения канала в другом формате полного имени. Покрытие регрессий проверяет локальное объявление, за которым следуют его эхо из канала и группы, включая другого персонажа с тем же именем.",
+            "Проверка: 331 тест проходит в обоих порядках под Lua 5.1/5.2. Живое подтверждение нового значения значков по умолчанию и взаимодействия нескольких окон остается отдельным."
+          ]
+        }
+      ]
+    },
+    "itIT": {
+      "version": "5.7.7",
+      "welcome": "Mantiene le console di debug sovrapposte e i relativi controlli in un unico gruppo di impilamento nativo tramite libchev privata 1.1.3. I menu categoria restano con la console a cui appartengono.",
+      "sections": [
+        {
+          "title": "Modifiche in questa versione",
+          "items": [
+            "Imposta per impostazione predefinita le icone degli obiettivi missione a sinistra della targhetta del nome. Le posizioni delle icone salvate esistenti restano invariate.",
+            "Rispetta l'impostazione “My Last Name” di Forever quando mostra il nome del tuo personaggio. Mantiene visibili i cognomi degli altri giocatori, in linea con l'ambito dell'impostazione nativa. Usa coerentemente i nomi completi per comunicazioni, appartenenza al gruppo, corrispondenza delle targhette dei nomi e azioni social, preservando le chiavi esistenti di profilo e posizione della bolla personale.",
+            "Corregge gli annunci locali duplicati delle missioni causati dalla ricezione del proprio messaggio di canale con un formato diverso del nome completo. La copertura di regressione verifica l'annuncio locale seguito dai suoi echi di canale e gruppo, incluso un altro personaggio con lo stesso nome.",
+            "Validazione: 331 test superati in entrambi gli ordini con Lua 5.1/5.2. La conferma live della nuova impostazione predefinita delle icone e dell'interazione a più finestre resta separata."
+          ]
+        }
+      ]
+    },
+    "zhCN": {
+      "version": "5.7.7",
+      "welcome": "通过私有 libchev 1.1.3，将重叠的调试控制台及其控件保持在同一个原生堆叠组中。分类菜单仍随其所属控制台显示。",
+      "sections": [
+        {
+          "title": "此版本中的更改",
+          "items": [
+            "默认将任务目标图标显示在姓名板左侧。现有已保存的图标位置保持不变。",
+            "显示你的角色姓名时遵循 Forever 的“My Last Name”设置。保持其他玩家的姓氏可见，与原生设置的作用范围一致。通信、队伍成员、姓名板匹配和社交操作始终使用全名，同时保留现有配置文件和个人气泡位置键。",
+            "修复因收到以不同全名格式发送的自己频道消息而导致的本地任务通告重复。回归覆盖本地通告及其随后的频道和队伍回显，包括另一名同名角色。",
+            "验证：331 项测试在 Lua 5.1/5.2 下以两种顺序均通过。新的图标默认值和多窗口交互的实时确认仍需单独进行。"
+          ]
+        }
+      ]
+    },
+    "zhTW": {
+      "version": "5.7.7",
+      "welcome": "透過私有 libchev 1.1.3，將重疊的除錯主控台及其控制項維持在同一個原生堆疊群組中。分類選單會保留在其所屬的主控台。",
+      "sections": [
+        {
+          "title": "此版本的變更",
+          "items": [
+            "將任務目標圖示的預設位置設在姓名板左側。既有已儲存的圖示位置不會變更。",
+            "顯示你角色的姓名時，遵循 Forever 的「我的姓氏」設定。其他玩家的姓氏仍會顯示，與原生設定的作用範圍一致。通訊、隊伍成員、姓名板比對與社交動作都一致使用全名，同時保留既有的設定檔與個人泡泡位置鍵。",
+            "修正因以不同全名格式收到自己的頻道訊息而造成的本機任務公告重複。回歸涵蓋本機公告後接其頻道與隊伍回音，包括另一個同名的角色。",
+            "驗證：331 項測試在 Lua 5.1/5.2 下以兩種順序皆通過。新圖示預設值與多視窗互動的實機確認仍需另行進行。"
+          ]
+        }
+      ]
+    },
+    "koKR": {
+      "version": "5.7.7",
+      "welcome": "겹치는 디버그 콘솔과 해당 컨트롤을 비공개 libchev 1.1.3을 통해 하나의 네이티브 중첩 그룹에 유지합니다. 분류 메뉴는 소유 콘솔에 계속 속합니다.",
+      "sections": [
+        {
+          "title": "이번 릴리스의 변경 사항",
+          "items": [
+            "퀘스트 목표 아이콘의 기본 위치를 이름표 왼쪽으로 설정합니다. 기존에 저장된 아이콘 위치는 변경되지 않습니다.",
+            "캐릭터 이름을 표시할 때 Forever의 “My Last Name” 설정을 따릅니다. 네이티브 설정 범위와 맞게 다른 플레이어의 성은 계속 표시합니다. 기존 프로필과 개인 말풍선 위치 키를 유지하면서 통신, 그룹 구성원, 이름표 일치, 소셜 동작에는 전체 이름을 일관되게 사용합니다.",
+            "다른 전체 이름 형식으로 된 자신의 채널 메시지를 받아 발생하던 중복 로컬 퀘스트 알림을 수정합니다. 회귀 범위는 로컬 알림 뒤에 이어지는 채널 및 파티 재수신을 검사하며, 같은 이름(성 제외)을 가진 다른 캐릭터도 포함합니다.",
+            "검증: Lua 5.1/5.2에서 양쪽 순서 모두 331개 테스트가 통과했습니다. 새 아이콘 기본값과 다중 창 상호작용의 라이브 확인은 별도로 진행됩니다."
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "enUS": {
+      "version": "5.7.6",
+      "welcome": "Use the same private libchev 1.1.2 debug console across all three addons, including category/search filters, copy controls, test results, diagnostic reports, timestamps when available, and a single final test summary. Fix stretched native frame artwork with explicit texture bounds.",
+      "sections": [
+        {
+          "title": "Changes in this release",
+          "items": [
+            "QuestTogether supplies its own quest diagnostics and isolated tests while the shared library owns the console and generic debug behavior. Run /qt test, /qt debug, or /qt diagnostics.",
+            "Validation: 324 tests pass in both orders on Lua 5.1/5.2. The user confirmed the corrected frame appearance in-game. Other live restriction and gameplay validation remains separate."
+          ]
+        }
+      ]
+    },
+    "deDE": {
+      "version": "5.7.6",
+      "welcome": "Verwendet dieselbe private Debug-Konsole libchev 1.1.2 über alle drei Addons hinweg, einschließlich Kategorie-/Suchfiltern, Kopiersteuerungen, Testergebnissen, Diagnoseberichten, Zeitstempeln, sofern verfügbar, und einer einzigen abschließenden Testzusammenfassung. Behebt gestreckte native Frame-Grafiken mit expliziten Texturgrenzen.",
+      "sections": [
+        {
+          "title": "Änderungen in dieser Version",
+          "items": [
+            "QuestTogether stellt eigene Questdiagnosen und isolierte Tests bereit, während die gemeinsame Bibliothek die Konsole und das allgemeine Debug-Verhalten verwaltet. Führe /qt test, /qt debug oder /qt diagnostics aus.",
+            "Validierung: 324 Tests bestehen in beiden Reihenfolgen unter Lua 5.1/5.2. Der Benutzer hat das korrigierte Frame-Aussehen im Spiel bestätigt. Weitere Validierung von Live-Einschränkungen und Gameplay bleibt separat."
+          ]
+        }
+      ]
+    },
+    "frFR": {
+      "version": "5.7.6",
+      "welcome": "Utilise la même console de débogage privée libchev 1.1.2 pour les trois addons, avec filtres de catégorie/recherche, contrôles de copie, résultats de tests, rapports de diagnostic, horodatages lorsqu’ils sont disponibles, et un seul résumé final des tests. Corrige les éléments graphiques de cadre natifs étirés avec des limites de texture explicites.",
+      "sections": [
+        {
+          "title": "Changements de cette version",
+          "items": [
+            "QuestTogether fournit ses propres diagnostics de quêtes et tests isolés, tandis que la bibliothèque partagée gère la console et le comportement de débogage générique. Exécutez /qt test, /qt debug ou /qt diagnostics.",
+            "Validation : 324 tests réussissent dans les deux ordres sous Lua 5.1/5.2. L’utilisateur a confirmé en jeu l’apparence corrigée des cadres. La validation des autres restrictions en conditions réelles et du gameplay reste distincte."
+          ]
+        }
+      ]
+    },
+    "esES": {
+      "version": "5.7.6",
+      "welcome": "Usa la misma consola de depuración privada de libchev 1.1.2 en los tres addons, incluidos filtros de categoría/búsqueda, controles de copia, resultados de pruebas, informes de diagnóstico, marcas de tiempo cuando estén disponibles y un único resumen final de pruebas. Corrige los gráficos estirados del marco nativo con límites de textura explícitos.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "QuestTogether proporciona sus propios diagnósticos de misiones y pruebas aisladas, mientras que la biblioteca compartida se encarga de la consola y del comportamiento genérico de depuración. Ejecuta /qt test, /qt debug o /qt diagnostics.",
+            "Validación: 324 pruebas superadas en ambos órdenes en Lua 5.1/5.2. El usuario confirmó en el juego el aspecto corregido del marco. La validación de otras restricciones en vivo y de jugabilidad sigue siendo independiente."
+          ]
+        }
+      ]
+    },
+    "esMX": {
+      "version": "5.7.6",
+      "welcome": "Usa la misma consola de depuración privada libchev 1.1.2 en los tres addons, incluidos filtros de categoría/búsqueda, controles de copia, resultados de pruebas, informes de diagnóstico, marcas de tiempo cuando estén disponibles y un único resumen final de pruebas. Corrige el arte estirado del marco nativo con límites de textura explícitos.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "QuestTogether proporciona sus propios diagnósticos de misiones y pruebas aisladas, mientras que la biblioteca compartida se encarga de la consola y del comportamiento genérico de depuración. Ejecuta /qt test, /qt debug o /qt diagnostics.",
+            "Validación: 324 pruebas pasan en ambos órdenes en Lua 5.1/5.2. El usuario confirmó en el juego la apariencia corregida del marco. La validación en vivo de otras restricciones y del gameplay se mantiene aparte."
+          ]
+        }
+      ]
+    },
+    "ptBR": {
+      "version": "5.7.6",
+      "welcome": "Usa o mesmo console de depuração privado libchev 1.1.2 nos três addons, incluindo filtros de categoria/busca, controles de cópia, resultados de teste, relatórios de diagnóstico, registros de data/hora quando disponíveis e um único resumo final de teste. Corrige a arte esticada dos quadros nativos com limites de textura explícitos.",
+      "sections": [
+        {
+          "title": "Alterações nesta versão",
+          "items": [
+            "QuestTogether fornece seus próprios diagnósticos de missões e testes isolados, enquanto a biblioteca compartilhada controla o console e o comportamento genérico de depuração. Execute /qt test, /qt debug ou /qt diagnostics.",
+            "Validação: 324 testes passam nas duas ordens no Lua 5.1/5.2. O usuário confirmou a aparência corrigida do quadro dentro do jogo. Outras validações de restrições ao vivo e de jogabilidade permanecem separadas."
+          ]
+        }
+      ]
+    },
+    "ruRU": {
+      "version": "5.7.6",
+      "welcome": "Использует одну и ту же приватную отладочную консоль libchev 1.1.2 во всех трёх аддонах, включая фильтры категорий/поиска, элементы копирования, результаты тестов, диагностические отчёты, временные метки при наличии и единую итоговую сводку тестов. Исправляет растянутое оформление стандартного фрейма явными границами текстур.",
+      "sections": [
+        {
+          "title": "Изменения в этом выпуске",
+          "items": [
+            "QuestTogether предоставляет собственную диагностику заданий и изолированные тесты, а общая библиотека отвечает за консоль и общее отладочное поведение. Запустите /qt test, /qt debug или /qt diagnostics.",
+            "Проверка: 324 теста проходят в обоих порядках на Lua 5.1/5.2. Пользователь подтвердил исправленный внешний вид фрейма в игре. Остальная проверка live-ограничений и игрового процесса выполняется отдельно."
+          ]
+        }
+      ]
+    },
+    "itIT": {
+      "version": "5.7.6",
+      "welcome": "Usa la stessa console di debug privata libchev 1.1.2 in tutti e tre gli addon, inclusi filtri categoria/ricerca, controlli di copia, risultati dei test, rapporti diagnostici, timestamp quando disponibili e un unico riepilogo finale dei test. Corregge gli elementi grafici nativi del riquadro stirati con limiti espliciti delle texture.",
+      "sections": [
+        {
+          "title": "Modifiche in questa versione",
+          "items": [
+            "QuestTogether fornisce la propria diagnostica delle missioni e test isolati, mentre la libreria condivisa gestisce la console e il comportamento di debug generico. Esegui /qt test, /qt debug, o /qt diagnostics.",
+            "Validazione: 324 test superati in entrambi gli ordini su Lua 5.1/5.2. L'utente ha confermato in gioco l'aspetto corretto del riquadro. Altre validazioni live di restrizioni e gameplay restano separate."
+          ]
+        }
+      ]
+    },
+    "zhCN": {
+      "version": "5.7.6",
+      "welcome": "在全部三个插件中使用相同的私有 libchev 1.1.2 调试控制台，包括分类/搜索过滤器、复制控件、测试结果、诊断报告、可用时的时间戳，以及单一最终测试摘要。通过显式纹理边界修复被拉伸的原生框体美术。",
+      "sections": [
+        {
+          "title": "此版本中的更改",
+          "items": [
+            "QuestTogether 提供自己的任务诊断和隔离测试，而共享库负责控制台和通用调试行为。运行 /qt test、/qt debug 或 /qt diagnostics。",
+            "验证：324 项测试在 Lua 5.1/5.2 上以两种顺序均通过。用户已确认游戏内框体外观已修正。其他实时限制和玩法验证仍需单独进行。"
+          ]
+        }
+      ]
+    },
+    "zhTW": {
+      "version": "5.7.6",
+      "welcome": "三個插件皆使用相同的私有 libchev 1.1.2 除錯主控台，包含分類/搜尋篩選、複製控制、測試結果、診斷報告、可用時的時間戳，以及單一最終測試摘要。以明確的材質邊界修正被拉伸的原生框架美術圖。",
+      "sections": [
+        {
+          "title": "此版本的變更",
+          "items": [
+            "QuestTogether 提供自己的任務診斷與隔離測試，而共用函式庫負責主控台與通用除錯行為。執行 /qt test、/qt debug 或 /qt diagnostics。",
+            "驗證：324 項測試在 Lua 5.1/5.2 上以兩種順序皆通過。使用者已確認遊戲內框架外觀已修正。其他實機限制與遊戲玩法驗證仍需另行進行。"
+          ]
+        }
+      ]
+    },
+    "koKR": {
+      "version": "5.7.6",
+      "welcome": "세 애드온 모두에서 동일한 비공개 libchev 1.1.2 디버그 콘솔을 사용합니다. 여기에는 분류/검색 필터, 복사 컨트롤, 테스트 결과, 진단 보고서, 사용 가능한 경우 타임스탬프, 단일 최종 테스트 요약이 포함됩니다. 명시적 텍스처 경계로 늘어난 네이티브 프레임 아트워크를 수정합니다.",
+      "sections": [
+        {
+          "title": "이번 릴리스의 변경 사항",
+          "items": [
+            "QuestTogether는 자체 퀘스트 진단과 격리된 테스트를 제공하고, 공유 라이브러리는 콘솔과 일반 디버그 동작을 담당합니다. /qt test, /qt debug 또는 /qt diagnostics를 실행하세요.",
+            "검증: Lua 5.1/5.2에서 양쪽 순서 모두 324개 테스트가 통과했습니다. 사용자가 게임 내에서 수정된 프레임 외형을 확인했습니다. 기타 라이브 제한 및 게임플레이 검증은 별도로 진행됩니다."
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "enUS": {
+      "version": "5.7.6-beta.3",
+      "welcome": "QuestTogether 5.7.6-beta.3 updates the embedded shared debug console to libchev 1.1.1.",
+      "sections": [
+        {
+          "title": "Changes in this release",
+          "items": [
+            "Restores the native WoW-style window appearance across the addons' shared console.",
+            "Removes the duplicate test-summary line while retaining the final summary in bounded history.",
+            "Keeps the common search, category, copy, scrolling, test, and diagnostic behavior and existing restriction guards.",
+            "The user reported all 324 QT tests passing in Forever 1.60.1 build 70009 on beta.2. QT's seven live-loaded test files were also audited for invalid arithmetic; no NaN-generation or division-by-zero fixtures were found. That earlier live test result does not validate this new appearance change.",
+            "After /reload, open /qtd, run /qt test, and check the window appearance and single summary. Live rendering and restriction/taint behavior for this revision still need client verification.",
+            "Validation: all 324 cases pass forward/reverse on actual Lua 5.1.5 and 5.2.4, each CLI run emits one summary, and the extracted 26-file installable ZIP passes on both versions. All 23 Lua files parse; all 22 TOC entries and the vendor manifest verify. Formatting and diff checks pass. Library pin: 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. No QT GitHub CI is configured; upstream library CI passed."
+          ]
+        }
+      ]
+    },
+    "deDE": {
+      "version": "5.7.6-beta.3",
+      "welcome": "QuestTogether 5.7.6-beta.3 aktualisiert die eingebettete gemeinsame Debug-Konsole auf libchev 1.1.1.",
+      "sections": [
+        {
+          "title": "Änderungen in dieser Version",
+          "items": [
+            "Stellt das native WoW-ähnliche Fensterdesign in der gemeinsamen Konsole der Addons wieder her.",
+            "Entfernt die doppelte Testzusammenfassungszeile, während die abschließende Zusammenfassung im begrenzten Verlauf erhalten bleibt.",
+            "Behält die gemeinsamen Such-, Kategorie-, Kopier-, Scroll-, Test- und Diagnosefunktionen sowie die bestehenden Einschränkungsprüfungen bei.",
+            "Der Benutzer hat gemeldet, dass alle 324 QT-Tests in Forever 1.60.1 Build 70009 auf beta.2 bestanden wurden. Die sieben live geladenen Testdateien von QT wurden außerdem auf ungültige Arithmetik geprüft; es wurden keine Fixtures zur NaN-Erzeugung oder Division durch null gefunden. Dieses frühere Live-Testergebnis validiert diese neue Änderung am Aussehen nicht.",
+            "Öffne nach /reload /qtd, führe /qt test aus und prüfe das Fensteraussehen sowie die einzelne Zusammenfassung. Live-Rendering und Einschränkungs-/Taint-Verhalten für diese Revision müssen noch im Client verifiziert werden.",
+            "Validierung: Alle 324 Fälle bestehen vorwärts/rückwärts unter echtem Lua 5.1.5 und 5.2.4, jeder CLI-Lauf gibt eine Zusammenfassung aus, und die extrahierte installierbare ZIP mit 26 Dateien besteht auf beiden Versionen. Alle 23 Lua-Dateien werden geparst; alle 22 TOC-Einträge und das Vendor-Manifest werden verifiziert. Formatierungs- und Diff-Prüfungen bestehen. Bibliotheks-Pin: 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. Es ist keine QT-GitHub-CI konfiguriert; die CI der Upstream-Bibliothek wurde bestanden."
+          ]
+        }
+      ]
+    },
+    "frFR": {
+      "version": "5.7.6-beta.3",
+      "welcome": "QuestTogether 5.7.6-beta.3 met à jour la console de débogage partagée intégrée vers libchev 1.1.1.",
+      "sections": [
+        {
+          "title": "Changements de cette version",
+          "items": [
+            "Restaure l’apparence de fenêtre native de style WoW dans la console partagée des addons.",
+            "Supprime la ligne de résumé de tests en double tout en conservant le résumé final dans l’historique limité.",
+            "Conserve la recherche, les catégories, la copie, le défilement, les tests, les diagnostics et les protections contre les restrictions déjà en place.",
+            "L’utilisateur a signalé que les 324 tests de QT réussissaient dans Forever 1.60.1 build 70009 sur beta.2. Les sept fichiers de test de QT chargés en jeu ont aussi été audités pour détecter toute arithmétique invalide ; aucun cas générant NaN ni division par zéro n’a été trouvé. Ce résultat de test en conditions réelles antérieur ne valide pas ce nouveau changement d’apparence.",
+            "Après /reload, ouvrez /qtd, exécutez /qt test, puis vérifiez l’apparence de la fenêtre et le résumé unique. Le rendu en conditions réelles et le comportement des restrictions/taint de cette révision doivent encore être vérifiés côté client.",
+            "Validation : les 324 cas réussissent en ordre normal/inverse sur de vrais Lua 5.1.5 et 5.2.4, chaque exécution CLI émet un seul résumé, et le ZIP installable extrait de 26 fichiers réussit sur les deux versions. Les 23 fichiers Lua s’analysent correctement ; les 22 entrées TOC et le manifeste vendeur sont vérifiés. Les vérifications de formatage et de diff réussissent. Version épinglée de la bibliothèque : 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. Aucune CI GitHub de QT n’est configurée ; la CI de la bibliothèque amont a réussi."
+          ]
+        }
+      ]
+    },
+    "esES": {
+      "version": "5.7.6-beta.3",
+      "welcome": "QuestTogether 5.7.6-beta.3 actualiza la consola de depuración compartida integrada a libchev 1.1.1.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Restaura el aspecto de ventana nativo de estilo WoW en la consola compartida de los addons.",
+            "Elimina la línea duplicada del resumen de pruebas mientras conserva el resumen final en el historial acotado.",
+            "Mantiene la búsqueda común, categoría, copia, desplazamiento, pruebas, diagnóstico y comportamiento existentes de guardas de restricción.",
+            "El usuario informó de que las 324 pruebas de QT se superaban en Forever 1.60.1 build 70009 en beta.2. Los siete archivos de prueba cargados en vivo de QT también fueron auditados en busca de aritmética no válida; no se encontraron casos de generación de NaN ni de división por cero. Ese resultado anterior de prueba en vivo no valida este nuevo cambio de apariencia.",
+            "Tras /reload, abre /qtd, ejecuta /qt test y comprueba el aspecto de la ventana y el resumen único. El renderizado en vivo y el comportamiento de restricción/contaminación de esta revisión aún necesitan verificación en el cliente.",
+            "Validación: los 324 casos se superan en orden directo/inverso en Lua 5.1.5 y 5.2.4 reales, cada ejecución de CLI emite un resumen, y el ZIP instalable extraído de 26 archivos pasa en ambas versiones. Los 23 archivos Lua se analizan correctamente; se verifican las 22 entradas TOC y el manifiesto de proveedores. Las comprobaciones de formato y diferencias pasan. Pin de biblioteca: 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. No hay CI de GitHub configurado para QT; el CI de la biblioteca de origen pasó."
+          ]
+        }
+      ]
+    },
+    "esMX": {
+      "version": "5.7.6-beta.3",
+      "welcome": "QuestTogether 5.7.6-beta.3 actualiza la consola de depuración compartida integrada a libchev 1.1.1.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Restaura la apariencia de ventana nativa estilo WoW en la consola compartida de los addons.",
+            "Elimina la línea duplicada de resumen de pruebas mientras conserva el resumen final en el historial limitado.",
+            "Mantiene el comportamiento común de búsqueda, categoría, copia, desplazamiento, pruebas y diagnósticos, así como los resguardos de restricción existentes.",
+            "El usuario informó que las 324 pruebas de QT pasaron en Forever 1.60.1 build 70009 en beta.2. También se auditaron los siete archivos de prueba cargados en vivo de QT en busca de aritmética inválida; no se encontraron fixtures que generen NaN ni divisiones entre cero. Ese resultado anterior de prueba en vivo no valida este nuevo cambio de apariencia.",
+            "Después de /reload, abre /qtd, ejecuta /qt test y revisa la apariencia de la ventana y el resumen único. El renderizado en vivo y el comportamiento de restricción/taint de esta revisión aún necesitan verificación en el cliente.",
+            "Validación: los 324 casos pasan hacia adelante y en reversa en Lua 5.1.5 y 5.2.4 reales; cada ejecución de CLI emite un resumen, y el ZIP instalable extraído de 26 archivos pasa en ambas versiones. Los 23 archivos Lua se analizan correctamente; las 22 entradas TOC y el manifiesto del proveedor se verifican. Pasan las comprobaciones de formato y diferencias. Biblioteca fijada: 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. No hay CI de GitHub configurado para QT; la CI de la biblioteca upstream pasó."
+          ]
+        }
+      ]
+    },
+    "ptBR": {
+      "version": "5.7.6-beta.3",
+      "welcome": "QuestTogether 5.7.6-beta.3 atualiza o console de depuração compartilhado incorporado para libchev 1.1.1.",
+      "sections": [
+        {
+          "title": "Alterações nesta versão",
+          "items": [
+            "Restaura a aparência de janela nativa no estilo do WoW no console compartilhado dos addons.",
+            "Remove a linha duplicada de resumo de teste, mantendo o resumo final no histórico limitado.",
+            "Mantém o comportamento comum de busca, categoria, cópia, rolagem, teste e diagnóstico, além das proteções de restrição existentes.",
+            "O usuário relatou que todos os 324 testes do QT passaram no Forever 1.60.1 build 70009 na beta.2. Os sete arquivos de teste carregados ao vivo do QT também foram auditados quanto a aritmética inválida; nenhum fixture de geração de NaN ou divisão por zero foi encontrado. Esse resultado anterior de teste ao vivo não valida esta nova alteração de aparência.",
+            "Depois de /reload, abra /qtd, execute /qt test e verifique a aparência da janela e o resumo único. A renderização ao vivo e o comportamento de restrição/taint desta revisão ainda precisam de verificação no cliente.",
+            "Validação: todos os 324 casos passam em ordem normal/inversa no Lua 5.1.5 e 5.2.4 reais, cada execução CLI emite um resumo, e o ZIP instalável extraído com 26 arquivos passa nas duas versões. Todos os 23 arquivos Lua são analisados; todas as 22 entradas TOC e o manifesto do fornecedor são verificados. As verificações de formatação e diff passam. Pin da biblioteca: 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. Nenhum CI do GitHub do QT está configurado; o CI da biblioteca upstream passou."
+          ]
+        }
+      ]
+    },
+    "ruRU": {
+      "version": "5.7.6-beta.3",
+      "welcome": "QuestTogether 5.7.6-beta.3 обновляет встроенную общую отладочную консоль до libchev 1.1.1.",
+      "sections": [
+        {
+          "title": "Изменения в этом выпуске",
+          "items": [
+            "Восстанавливает стандартный внешний вид окна в стиле WoW для общей консоли аддонов.",
+            "Удаляет дублирующую строку сводки тестов, сохраняя итоговую сводку в ограниченной истории.",
+            "Сохраняет общие поиск, категории, копирование, прокрутку, тесты, диагностику, а также существующие защитные проверки ограничений.",
+            "Пользователь сообщил, что все 324 теста QT прошли в Forever 1.60.1 build 70009 на beta.2. Семь загружаемых live-файлов тестов QT также были проверены на некорректную арифметику; фикстур, создающих NaN или деление на ноль, не найдено. Этот более ранний результат live-тестов не проверяет новое изменение внешнего вида.",
+            "После /reload откройте /qtd, запустите /qt test и проверьте внешний вид окна и единственную сводку. Live-отрисовка и поведение ограничений/taint для этой ревизии всё ещё требуют проверки в клиенте.",
+            "Проверка: все 324 случая проходят в прямом и обратном порядке на настоящих Lua 5.1.5 и 5.2.4, каждый запуск CLI выводит одну сводку, а извлечённый устанавливаемый ZIP из 26 файлов проходит на обеих версиях. Все 23 файла Lua проходят синтаксический разбор; все 22 записи TOC и манифест поставщика проверены. Проверки форматирования и diff проходят. Закрепление библиотеки: 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. Для QT GitHub CI не настроен; CI исходной библиотеки прошёл."
+          ]
+        }
+      ]
+    },
+    "itIT": {
+      "version": "5.7.6-beta.3",
+      "welcome": "QuestTogether 5.7.6-beta.3 aggiorna la console di debug condivisa incorporata a libchev 1.1.1.",
+      "sections": [
+        {
+          "title": "Modifiche in questa versione",
+          "items": [
+            "Ripristina l'aspetto nativo delle finestre in stile WoW nella console condivisa degli addon.",
+            "Rimuove la riga duplicata del riepilogo dei test mantenendo il riepilogo finale nella cronologia limitata.",
+            "Mantiene il comportamento comune di ricerca, categoria, copia, scorrimento, test e diagnostica e le protezioni esistenti contro le restrizioni.",
+            "L'utente ha segnalato che tutti i 324 test QT sono stati superati in Forever 1.60.1 build 70009 su beta.2. I sette file di test caricati live di QT sono stati anche verificati per aritmetica non valida; non sono stati trovati casi di test con generazione di NaN o divisione per zero. Quel precedente risultato di test live non valida questa nuova modifica dell'aspetto.",
+            "Dopo /reload, apri /qtd, esegui /qt test, e controlla l'aspetto della finestra e il riepilogo singolo. Il rendering live e il comportamento di restrizioni/taint per questa revisione necessitano ancora di verifica sul client.",
+            "Validazione: tutti i 324 casi superati in ordine normale/inverso su Lua 5.1.5 e 5.2.4 reali, ogni esecuzione CLI emette un solo riepilogo e lo ZIP installabile estratto con 26 file passa su entrambe le versioni. Tutti i 23 file Lua vengono analizzati correttamente; tutte le 22 voci TOC e il manifest del vendor sono verificati. I controlli di formattazione e diff sono superati. Pin libreria: 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. Non è configurata alcuna CI GitHub per QT; la CI della libreria upstream è passata."
+          ]
+        }
+      ]
+    },
+    "zhCN": {
+      "version": "5.7.6-beta.3",
+      "welcome": "QuestTogether 5.7.6-beta.3 将内嵌共享调试控制台更新到 libchev 1.1.1。",
+      "sections": [
+        {
+          "title": "此版本中的更改",
+          "items": [
+            "恢复各插件共享控制台的原生 WoW 风格窗口外观。",
+            "移除重复的测试摘要行，同时在有界历史中保留最终摘要。",
+            "保留通用搜索、分类、复制、滚动、测试和诊断行为，以及现有限制保护。",
+            "用户报告在 beta.2 上，所有 324 项 QT 测试均已在 Forever 1.60.1 build 70009 中通过。还审查了 QT 的七个实时加载测试文件是否存在无效算术；未发现会生成 NaN 或除以零的测试夹具。该较早的实时测试结果并不验证此次新的外观更改。",
+            "/reload 后，打开 /qtd，运行 /qt test，并检查窗口外观和单一摘要。此修订的实时渲染和限制/污染行为仍需客户端验证。",
+            "验证：全部 324 个用例在实际 Lua 5.1.5 和 5.2.4 上正向/反向均通过，每次 CLI 运行只输出一个摘要，提取出的 26 文件可安装 ZIP 在两个版本上均通过。全部 23 个 Lua 文件可解析；全部 22 个 TOC 条目和供应商清单均通过验证。格式和差异检查通过。库固定版本：2feea04bab60ba1c1b91bd01ab8a58ce02e091a9。未配置 QT GitHub CI；上游库 CI 已通过。"
+          ]
+        }
+      ]
+    },
+    "zhTW": {
+      "version": "5.7.6-beta.3",
+      "welcome": "QuestTogether 5.7.6-beta.3 將內嵌共用除錯主控台更新為 libchev 1.1.1。",
+      "sections": [
+        {
+          "title": "此版本的變更",
+          "items": [
+            "還原各插件共用主控台的原生 WoW 風格視窗外觀。",
+            "移除重複的測試摘要列，同時在有界限的歷史記錄中保留最終摘要。",
+            "保留通用搜尋、分類、複製、捲動、測試與診斷行為，以及既有限制防護。",
+            "使用者回報在 beta.2 的 Forever 1.60.1 build 70009 中，全部 324 項 QT 測試皆通過。也已稽核 QT 的七個實機載入測試檔是否有無效運算；未發現產生 NaN 或除以零的測試用例。先前的實機測試結果不驗證此新外觀變更。",
+            "在 /reload 後，開啟 /qtd、執行 /qt test，並檢查視窗外觀與單一摘要。此修訂的實機渲染與限制/污染行為仍需客戶端驗證。",
+            "驗證：全部 324 個案例在實際 Lua 5.1.5 與 5.2.4 上正向/反向皆通過，每次 CLI 執行都輸出一份摘要，且解出的 26 個檔案安裝版 ZIP 在兩個版本上皆通過。全部 23 個 Lua 檔案皆可剖析；全部 22 個 TOC 項目與供應商資訊清單皆驗證通過。格式化與差異檢查通過。函式庫釘選：2feea04bab60ba1c1b91bd01ab8a58ce02e091a9。未設定 QT GitHub CI；上游函式庫 CI 已通過。"
+          ]
+        }
+      ]
+    },
+    "koKR": {
+      "version": "5.7.6-beta.3",
+      "welcome": "QuestTogether 5.7.6-beta.3은 내장 공유 디버그 콘솔을 libchev 1.1.1로 업데이트합니다.",
+      "sections": [
+        {
+          "title": "이번 릴리스의 변경 사항",
+          "items": [
+            "애드온들의 공유 콘솔 전반에 네이티브 WoW 스타일 창 외형을 복원합니다.",
+            "최종 요약은 제한된 기록에 유지하면서 중복 테스트 요약 줄을 제거합니다.",
+            "공통 검색, 분류, 복사, 스크롤, 테스트, 진단 동작과 기존 제한 보호를 유지합니다.",
+            "사용자는 beta.2의 Forever 1.60.1 빌드 70009에서 QT 테스트 324개가 모두 통과했다고 보고했습니다. QT의 라이브 로드 테스트 파일 7개도 잘못된 산술 연산 여부를 감사했으며, NaN 생성 또는 0으로 나누기 픽스처는 발견되지 않았습니다. 해당 이전 라이브 테스트 결과는 이 새 외형 변경을 검증하지 않습니다.",
+            "/reload 후 /qtd를 열고 /qt test를 실행한 다음 창 외형과 단일 요약을 확인하세요. 이 리비전의 라이브 렌더링 및 제한/오염 동작은 아직 클라이언트 검증이 필요합니다.",
+            "검증: 실제 Lua 5.1.5 및 5.2.4에서 모든 324개 사례가 정방향/역방향으로 통과했고, 각 CLI 실행은 요약을 하나만 출력하며, 추출한 설치 가능 ZIP(26개 파일)이 두 버전 모두에서 통과했습니다. Lua 파일 23개가 모두 파싱되며, TOC 항목 22개와 벤더 매니페스트가 모두 검증되었습니다. 서식 및 diff 검사가 통과했습니다. 라이브러리 핀: 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. QT GitHub CI는 구성되어 있지 않으며, 업스트림 라이브러리 CI는 통과했습니다."
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "enUS": {
+      "version": "5.7.6-beta.2",
+      "welcome": "QuestTogether 5.7.6-beta.2 replaces its separate debug window with the shared libchev v1.1 console used across the addons. The embedded library is included; no separate installation is required.",
+      "sections": [
+        {
+          "title": "Changes in this release",
+          "items": [
+            "Shared category filtering, fuzzy/quoted search, copy/select, clear, reload, tests, diagnostics, and scroll-following behavior.",
+            "/qt test opens the current results; repeated runs replace old TEST history and clear stale search filters.",
+            "/qt diagnostics [questID] and /qt diag [questID] rebuild the current cached report in the same console, retaining recent events within the shared export budget.",
+            "Shared restriction and owned-frame guards replace QT's old console callbacks and dropdown implementation.",
+            "Quest state, announcements, nameplates, comms, and QT-specific test isolation remain owned by QuestTogether.",
+            "This is a beta release. Live Retail/Forever rendering and taint behavior still need verification. After /reload, run /qt test and /qt diagnostics, then exercise category/search, copy, clear, resize, scrolling, repeated test runs, and switching between reports and logs. Include combat/restriction transitions and your usual addon set.",
+            "Validation: 324/324 tests pass in both orders under Lua 5.1.5 and 5.2.4. All 23 Lua files parse, all 22 TOC entries validate, and the pinned library manifest verifies. The installable ZIP was extracted and passed all 324 cases using the separate offline harness. Library pin: 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6."
+          ]
+        }
+      ]
+    },
+    "deDE": {
+      "version": "5.7.6-beta.2",
+      "welcome": "QuestTogether 5.7.6-beta.2 ersetzt sein separates Debug-Fenster durch die gemeinsame libchev v1.1-Konsole, die über die Addons hinweg verwendet wird. Die eingebettete Bibliothek ist enthalten; keine separate Installation ist erforderlich.",
+      "sections": [
+        {
+          "title": "Änderungen in dieser Version",
+          "items": [
+            "Gemeinsame Kategoriefilterung, unscharfe/angeführte Suche, Kopieren/Auswählen, Löschen, Neuladen, Tests, Diagnosen und Scroll-Follow-Verhalten.",
+            "/qt test öffnet die aktuellen Ergebnisse; wiederholte Läufe ersetzen den alten TEST-Verlauf und löschen veraltete Suchfilter.",
+            "/qt diagnostics [questID] und /qt diag [questID] erstellen den aktuellen zwischengespeicherten Bericht in derselben Konsole neu und behalten aktuelle Ereignisse innerhalb des gemeinsamen Exportbudgets bei.",
+            "Gemeinsame Einschränkungs- und Own-Frame-Schutzmechanismen ersetzen die alten Konsolen-Callbacks und die Dropdown-Implementierung von QT.",
+            "Queststatus, Ankündigungen, Namensplaketten, Kommunikation und QT-spezifische Testisolation bleiben im Besitz von QuestTogether.",
+            "Dies ist eine Betaversion. Live-Rendering und Taint-Verhalten in Retail/Forever müssen noch verifiziert werden. Führe nach /reload /qt test und /qt diagnostics aus und teste anschließend Kategorie/Suche, Kopieren, Löschen, Größenänderung, Scrollen, wiederholte Testläufe sowie das Wechseln zwischen Berichten und Logs. Schließe Kampf-/Einschränkungsübergänge und dein übliches Addon-Set ein.",
+            "Validierung: 324/324 Tests bestehen in beiden Reihenfolgen unter Lua 5.1.5 und 5.2.4. Alle 23 Lua-Dateien werden geparst, alle 22 TOC-Einträge validiert, und das angepinnte Bibliotheksmanifest wird verifiziert. Die installierbare ZIP wurde extrahiert und bestand alle 324 Fälle mit dem separaten Offline-Harness. Bibliotheks-Pin: 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6."
+          ]
+        }
+      ]
+    },
+    "frFR": {
+      "version": "5.7.6-beta.2",
+      "welcome": "QuestTogether 5.7.6-beta.2 remplace sa fenêtre de débogage séparée par la console partagée libchev v1.1 utilisée par les addons. La bibliothèque intégrée est incluse ; aucune installation séparée n’est requise.",
+      "sections": [
+        {
+          "title": "Changements de cette version",
+          "items": [
+            "Filtrage partagé par catégorie, recherche approximative/entre guillemets, copie/sélection, effacement, rechargement, tests, diagnostics et comportement de suivi du défilement.",
+            "/qt test ouvre les résultats actuels ; les exécutions répétées remplacent l’ancien historique TEST et effacent les filtres de recherche obsolètes.",
+            "/qt diagnostics [questID] et /qt diag [questID] régénèrent le rapport actuel en cache dans la même console, en conservant les événements récents dans la limite du budget d’export partagé.",
+            "Les protections partagées de restriction et de cadres possédés remplacent les anciens rappels de console et l’implémentation de menu déroulant de QT.",
+            "L’état des quêtes, les annonces, les barres de nom, les communications et l’isolation des tests propre à QT restent gérés par QuestTogether.",
+            "Il s’agit d’une version bêta. Le rendu en conditions réelles Retail/Forever et le comportement de taint doivent encore être vérifiés. Après /reload, exécutez /qt test et /qt diagnostics, puis testez les catégories/recherche, la copie, l’effacement, le redimensionnement, le défilement, les exécutions répétées de tests et le passage entre rapports et journaux. Incluez les transitions de combat/restrictions et votre ensemble habituel d’addons.",
+            "Validation : 324/324 tests réussissent dans les deux ordres sous Lua 5.1.5 et 5.2.4. Les 23 fichiers Lua s’analysent correctement, les 22 entrées TOC sont validées et le manifeste de la bibliothèque épinglée est vérifié. Le ZIP installable a été extrait et a réussi les 324 cas avec le banc de test hors ligne séparé. Version épinglée de la bibliothèque : 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6."
+          ]
+        }
+      ]
+    },
+    "esES": {
+      "version": "5.7.6-beta.2",
+      "welcome": "QuestTogether 5.7.6-beta.2 reemplaza su ventana de depuración separada por la consola compartida libchev v1.1 usada en todos los addons. La biblioteca integrada está incluida; no hace falta instalación separada.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Filtrado compartido por categorías, búsqueda difusa/entrecomillada, copiar/seleccionar, borrar, recargar, pruebas, diagnósticos y comportamiento de seguimiento del desplazamiento.",
+            "/qt test abre los resultados actuales; las ejecuciones repetidas reemplazan el historial TEST antiguo y borran filtros de búsqueda obsoletos.",
+            "/qt diagnostics [questID] y /qt diag [questID] reconstruyen el informe actual en caché en la misma consola, conservando eventos recientes dentro del límite compartido de exportación.",
+            "Las guardas compartidas de restricción y de marcos propios reemplazan las antiguas retrollamadas de la consola de QT y la implementación del menú desplegable.",
+            "El estado de misiones, anuncios, placas de nombre, comunicaciones y aislamiento de pruebas específico de QT siguen perteneciendo a QuestTogether.",
+            "Esta es una versión beta. El renderizado y el comportamiento de contaminación en vivo de Retail/Forever aún necesitan verificación. Tras /reload, ejecuta /qt test y /qt diagnostics; luego prueba categoría/búsqueda, copiar, borrar, redimensionar, desplazamiento, ejecuciones repetidas de pruebas y cambios entre informes y registros. Incluye transiciones de combate/restricción y tu conjunto habitual de addons.",
+            "Validación: 324/324 pruebas superadas en ambos órdenes con Lua 5.1.5 y 5.2.4. Los 23 archivos Lua se analizan correctamente, las 22 entradas TOC se validan y el manifiesto de la biblioteca fijada se verifica. El ZIP instalable fue extraído y superó los 324 casos usando el arnés sin conexión separado. Pin de biblioteca: 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6."
+          ]
+        }
+      ]
+    },
+    "esMX": {
+      "version": "5.7.6-beta.2",
+      "welcome": "QuestTogether 5.7.6-beta.2 reemplaza su ventana de depuración separada por la consola compartida libchev v1.1 usada en todos los addons. La biblioteca integrada está incluida; no se requiere instalación por separado.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Filtrado de categorías compartido, búsqueda difusa/entre comillas, copiar/seleccionar, borrar, recargar, pruebas, diagnósticos y comportamiento de seguimiento del desplazamiento.",
+            "/qt test abre los resultados actuales; las ejecuciones repetidas reemplazan el historial TEST anterior y borran filtros de búsqueda obsoletos.",
+            "/qt diagnostics [questID] y /qt diag [questID] reconstruyen el informe actual en caché en la misma consola, conservando los eventos recientes dentro del presupuesto de exportación compartido.",
+            "Los resguardos compartidos de restricción y de marcos propios reemplazan las antiguas callbacks de consola y la implementación de menú desplegable de QT.",
+            "El estado de misiones, los anuncios, las placas de nombre, las comunicaciones y el aislamiento de pruebas específico de QT siguen siendo propiedad de QuestTogether.",
+            "Esta es una versión beta. El renderizado en vivo en Retail/Forever y el comportamiento de taint aún necesitan verificación. Después de /reload, ejecuta /qt test y /qt diagnostics; luego prueba categoría/búsqueda, copiar, borrar, redimensionar, desplazamiento, ejecuciones repetidas de pruebas y el cambio entre informes y registros. Incluye transiciones de combate/restricción y tu conjunto habitual de addons.",
+            "Validación: 324/324 pruebas pasan en ambos órdenes con Lua 5.1.5 y 5.2.4. Los 23 archivos Lua se analizan correctamente, las 22 entradas TOC se validan y el manifiesto de la biblioteca fijada se verifica. El ZIP instalable se extrajo y pasó los 324 casos usando el arnés sin conexión separado. Biblioteca fijada: 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6."
+          ]
+        }
+      ]
+    },
+    "ptBR": {
+      "version": "5.7.6-beta.2",
+      "welcome": "QuestTogether 5.7.6-beta.2 substitui sua janela de depuração separada pelo console compartilhado libchev v1.1 usado entre os addons. A biblioteca incorporada está incluída; nenhuma instalação separada é necessária.",
+      "sections": [
+        {
+          "title": "Alterações nesta versão",
+          "items": [
+            "Filtragem compartilhada por categoria, busca aproximada/com aspas, copiar/selecionar, limpar, recarregar, testes, diagnósticos e comportamento de acompanhar a rolagem.",
+            "/qt test abre os resultados atuais; execuções repetidas substituem o histórico TEST antigo e limpam filtros de busca obsoletos.",
+            "/qt diagnostics [questID] e /qt diag [questID] recriam o relatório atual em cache no mesmo console, mantendo eventos recentes dentro do orçamento de exportação compartilhado.",
+            "Proteções compartilhadas de restrição e de quadro proprietário substituem os callbacks antigos do console do QT e a implementação de menu suspenso.",
+            "Estado de missões, anúncios, placas de identificação, comunicações e isolamento de testes específicos do QT continuam sob responsabilidade do QuestTogether.",
+            "Esta é uma versão beta. A renderização ao vivo no Retail/Forever e o comportamento de taint ainda precisam de verificação. Depois de /reload, execute /qt test e /qt diagnostics, então teste categoria/busca, copiar, limpar, redimensionar, rolagem, execuções repetidas de teste e alternância entre relatórios e logs. Inclua transições de combate/restrição e seu conjunto usual de addons.",
+            "Validação: 324/324 testes passam nas duas ordens no Lua 5.1.5 e 5.2.4. Todos os 23 arquivos Lua são analisados, todas as 22 entradas TOC são validadas e o manifesto da biblioteca fixada é verificado. O ZIP instalável foi extraído e passou em todos os 324 casos usando o harness offline separado. Pin da biblioteca: 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6."
+          ]
+        }
+      ]
+    },
+    "ruRU": {
+      "version": "5.7.6-beta.2",
+      "welcome": "QuestTogether 5.7.6-beta.2 заменяет отдельное окно отладки общей консолью libchev v1.1, используемой во всех аддонах. Встроенная библиотека включена; отдельная установка не требуется.",
+      "sections": [
+        {
+          "title": "Изменения в этом выпуске",
+          "items": [
+            "Общие фильтрация по категориям, нечёткий/цитируемый поиск, копирование/выделение, очистка, перезагрузка, тесты, диагностика и поведение следования прокрутки.",
+            "/qt test открывает текущие результаты; повторные запуски заменяют старую историю TEST и очищают устаревшие фильтры поиска.",
+            "/qt diagnostics [questID] и /qt diag [questID] заново строят текущий кэшированный отчёт в той же консоли, сохраняя недавние события в пределах общего лимита экспорта.",
+            "Общие защитные проверки ограничений и собственных фреймов заменяют старые callback-и консоли QT и реализацию выпадающего меню.",
+            "Состояние заданий, объявления, индикаторы имен, связь и изоляция тестов, специфичная для QT, остаются под управлением QuestTogether.",
+            "Это бета-версия. Отрисовка и taint-поведение в живых Retail/Forever всё ещё требуют проверки. После /reload запустите /qt test и /qt diagnostics, затем проверьте категории/поиск, копирование, очистку, изменение размера, прокрутку, повторные запуски тестов и переключение между отчётами и журналами. Включите переходы боя/ограничений и ваш обычный набор аддонов.",
+            "Проверка: 324/324 теста проходят в обоих порядках под Lua 5.1.5 и 5.2.4. Все 23 файла Lua проходят синтаксический разбор, все 22 записи TOC проверяются, и закреплённый манифест библиотеки проходит проверку. Устанавливаемый ZIP был извлечён и прошёл все 324 случая с помощью отдельного офлайн-стенда. Закрепление библиотеки: 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6."
+          ]
+        }
+      ]
+    },
+    "itIT": {
+      "version": "5.7.6-beta.2",
+      "welcome": "QuestTogether 5.7.6-beta.2 sostituisce la sua finestra di debug separata con la console condivisa libchev v1.1 usata in tutti gli addon. La libreria incorporata è inclusa; non è richiesta alcuna installazione separata.",
+      "sections": [
+        {
+          "title": "Modifiche in questa versione",
+          "items": [
+            "Filtri categoria condivisi, ricerca approssimata/con virgolette, copia/selezione, cancellazione, ricarica, test, diagnostica e comportamento di seguito dello scorrimento.",
+            "/qt test apre i risultati correnti; le esecuzioni ripetute sostituiscono la vecchia cronologia TEST e cancellano i filtri di ricerca obsoleti.",
+            "/qt diagnostics [questID] e /qt diag [questID] ricostruiscono il report nella cache corrente nella stessa console, mantenendo gli eventi recenti entro il budget di esportazione condiviso.",
+            "Le protezioni condivise per restrizioni e frame posseduti sostituiscono i vecchi callback della console e l'implementazione del menu a discesa di QT.",
+            "Stato delle missioni, annunci, targhette dei nomi, comunicazioni e isolamento dei test specifici di QT restano gestiti da QuestTogether.",
+            "Questa è una versione beta. Il rendering live Retail/Forever e il comportamento del taint richiedono ancora verifica. Dopo /reload, esegui /qt test e /qt diagnostics, poi prova categoria/ricerca, copia, cancellazione, ridimensionamento, scorrimento, esecuzioni ripetute dei test e passaggio tra report e registri. Includi transizioni di combattimento/restrizione e il tuo set abituale di addon.",
+            "Validazione: 324/324 test superati in entrambi gli ordini con Lua 5.1.5 e 5.2.4. Tutti i 23 file Lua vengono analizzati correttamente, tutte le 22 voci TOC sono valide e il manifest della libreria fissata è verificato. Lo ZIP installabile è stato estratto e ha superato tutti i 324 casi usando l'harness offline separato. Pin libreria: 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6."
+          ]
+        }
+      ]
+    },
+    "zhCN": {
+      "version": "5.7.6-beta.2",
+      "welcome": "QuestTogether 5.7.6-beta.2 将其独立调试窗口替换为各插件通用的共享 libchev v1.1 控制台。已包含内嵌库；无需单独安装。",
+      "sections": [
+        {
+          "title": "此版本中的更改",
+          "items": [
+            "共享分类过滤、模糊/引号搜索、复制/选择、清除、重载、测试、诊断和跟随滚动行为。",
+            "/qt test 会打开当前结果；重复运行会替换旧的 TEST 历史并清除过期搜索过滤器。",
+            "/qt diagnostics [questID] 和 /qt diag [questID] 会在同一控制台中重建当前缓存报告，并在共享导出预算内保留最近事件。",
+            "共享的限制和自有框体保护会替代 QT 旧的控制台回调和下拉菜单实现。",
+            "任务状态、通告、姓名板、通信和 QT 专用测试隔离仍由 QuestTogether 负责。",
+            "这是一个 beta 版本。正式服/Forever 的实时渲染和污染行为仍需验证。/reload 后，运行 /qt test 和 /qt diagnostics，然后测试分类/搜索、复制、清除、调整大小、滚动、重复测试运行，以及在报告和日志之间切换。请包括战斗/限制状态切换和你常用的插件组合。",
+            "验证：324/324 项测试在 Lua 5.1.5 和 5.2.4 下以两种顺序均通过。全部 23 个 Lua 文件可解析，全部 22 个 TOC 条目验证通过，固定库清单验证通过。可安装 ZIP 已提取，并使用独立离线测试框架通过全部 324 个用例。库固定版本：1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6。"
+          ]
+        }
+      ]
+    },
+    "zhTW": {
+      "version": "5.7.6-beta.2",
+      "welcome": "QuestTogether 5.7.6-beta.2 以各插件共用的 libchev v1.1 主控台取代獨立除錯視窗。已包含內嵌函式庫；不需要另行安裝。",
+      "sections": [
+        {
+          "title": "此版本的變更",
+          "items": [
+            "共用分類篩選、模糊/引號搜尋、複製/選取、清除、重新載入、測試、診斷與跟隨捲動行為。",
+            "/qt test 會開啟目前結果；重複執行會取代舊的 TEST 歷史記錄並清除過期的搜尋篩選。",
+            "/qt diagnostics [questID] 與 /qt diag [questID] 會在同一個主控台中重建目前快取的報告，並在共用匯出容量上限內保留最近事件。",
+            "共用限制與所屬框架防護取代 QT 舊的主控台回呼與下拉選單實作。",
+            "任務狀態、公告、姓名板、通訊與 QT 專屬測試隔離仍由 QuestTogether 負責。",
+            "這是 beta 版本。Retail/Forever 的實機渲染與污染行為仍需驗證。/reload 後，執行 /qt test 與 /qt diagnostics，然後測試分類/搜尋、複製、清除、調整大小、捲動、重複測試執行，以及在報告與記錄之間切換。請包含戰鬥/限制狀態轉換與你平常使用的插件組合。",
+            "驗證：324/324 項測試在 Lua 5.1.5 與 5.2.4 下以兩種順序皆通過。全部 23 個 Lua 檔案皆可剖析、全部 22 個 TOC 項目皆驗證通過，且釘選的函式庫資訊清單驗證通過。安裝版 ZIP 已解壓，並使用獨立離線測試工具通過全部 324 個案例。函式庫釘選：1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6。"
+          ]
+        }
+      ]
+    },
+    "koKR": {
+      "version": "5.7.6-beta.2",
+      "welcome": "QuestTogether 5.7.6-beta.2는 별도의 디버그 창을 애드온들 전반에서 사용하는 공유 libchev v1.1 콘솔로 교체합니다. 내장 라이브러리가 포함되어 있으며, 별도 설치는 필요하지 않습니다.",
+      "sections": [
+        {
+          "title": "이번 릴리스의 변경 사항",
+          "items": [
+            "공유 분류 필터링, 퍼지/따옴표 검색, 복사/선택, 지우기, 다시 불러오기, 테스트, 진단, 스크롤 따라가기 동작.",
+            "/qt test는 현재 결과를 엽니다. 반복 실행하면 이전 TEST 기록을 교체하고 오래된 검색 필터를 지웁니다.",
+            "/qt diagnostics [questID] 및 /qt diag [questID]는 현재 캐시된 보고서를 같은 콘솔에 다시 작성하며, 공유 내보내기 한도 내에서 최근 이벤트를 유지합니다.",
+            "공유 제한 및 소유 프레임 보호 로직이 QT의 기존 콘솔 콜백과 드롭다운 구현을 대체합니다.",
+            "퀘스트 상태, 알림, 이름표, 통신, QT 전용 테스트 격리는 계속 QuestTogether가 담당합니다.",
+            "베타 릴리스입니다. 라이브 Retail/Forever 렌더링과 오염 동작은 아직 검증이 필요합니다. /reload 후 /qt test와 /qt diagnostics를 실행한 다음 분류/검색, 복사, 지우기, 크기 조절, 스크롤, 반복 테스트 실행, 보고서와 로그 간 전환을 확인하세요. 전투/제한 전환과 평소 사용하는 애드온 구성도 포함하세요.",
+            "검증: Lua 5.1.5 및 5.2.4에서 양쪽 순서 모두 324/324개 테스트가 통과했습니다. Lua 파일 23개가 모두 파싱되고, TOC 항목 22개가 모두 검증되며, 고정된 라이브러리 매니페스트가 확인되었습니다. 설치 가능 ZIP을 추출해 별도 오프라인 하네스에서 324개 사례를 모두 통과했습니다. 라이브러리 핀: 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6."
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "enUS": {
+      "version": "5.7.6-beta.1",
+      "welcome": "QuestTogether 5.7.6-beta.1 embeds libchev v1.0.0 to share logging, diagnostics, callback guards, deferred-work mechanics, and test execution with the other Together addons. The library is included; no separate addon installation is needed.",
+      "sections": [
+        {
+          "title": "Changes in this release",
+          "items": [
+            "Diagnostic reports include common client/addon/library information and retain the newest events when the copy window fills.",
+            "Quest, party, nameplate, and restriction behavior remains owned by QuestTogether, with isolated per-addon runtime stores.",
+            "Coordinate links remain usable while QT is disabled when restrictions allow them; queued background work stays paused and stale timers are discarded.",
+            "/qt test now includes 315 cases: the existing 300, ten shared library checks, and five integration regressions.",
+            "Validation: all 315 tests pass in both orders under Lua 5.1.5 and 5.2.4; Lua syntax, TOC load order, and the embedded revision/hash manifest pass. Embedded libchev source: 09ac76eb6fe8e9589b809188652950c3cd9e444c.",
+            "This is a beta release. Live Retail/Forever UI rendering and taint behavior after this extraction still need verification. After reloading, run /qt test and /qt diagnostics, then exercise quests, progress bubbles, nameplates, and coordinate links across combat, zoning, disable/re-enable, and reload with your usual addons. The earlier Retail 300-test confirmation applied to v5.7.5."
+          ]
+        }
+      ]
+    },
+    "deDE": {
+      "version": "5.7.6-beta.1",
+      "welcome": "QuestTogether 5.7.6-beta.1 bettet libchev v1.0.0 ein, um Logging, Diagnosen, Callback-Schutzmechanismen, Mechaniken für aufgeschobene Arbeit und Testausführung mit den anderen Together-Addons zu teilen. Die Bibliothek ist enthalten; keine separate Addon-Installation ist nötig.",
+      "sections": [
+        {
+          "title": "Änderungen in dieser Version",
+          "items": [
+            "Diagnoseberichte enthalten gemeinsame Client-/Addon-/Bibliotheksinformationen und behalten die neuesten Ereignisse bei, wenn das Kopierfenster voll wird.",
+            "Quest-, Gruppen-, Namensplaketten- und Einschränkungsverhalten bleibt im Besitz von QuestTogether, mit isolierten Laufzeitspeichern pro Addon.",
+            "Koordinatenlinks bleiben nutzbar, während QT deaktiviert ist, sofern Einschränkungen sie erlauben; eingereihte Hintergrundarbeit bleibt pausiert, und veraltete Timer werden verworfen.",
+            "/qt test enthält jetzt 315 Fälle: die bestehenden 300, zehn Prüfungen der gemeinsamen Bibliothek und fünf Integrationsregressionen.",
+            "Validierung: Alle 315 Tests bestehen in beiden Reihenfolgen unter Lua 5.1.5 und 5.2.4; Lua-Syntax, TOC-Ladereihenfolge und das eingebettete Revisions-/Hash-Manifest bestehen. Eingebettete libchev-Quelle: 09ac76eb6fe8e9589b809188652950c3cd9e444c.",
+            "Dies ist eine Betaversion. Live-Rendering der Benutzeroberfläche und Taint-Verhalten in Retail/Forever nach dieser Auslagerung müssen noch verifiziert werden. Führe nach dem Neuladen /qt test und /qt diagnostics aus und teste anschließend Quests, Fortschrittsblasen, Namensplaketten und Koordinatenlinks über Kampf, Gebietswechsel, Deaktivieren/Reaktivieren und Neuladen hinweg mit deinen üblichen Addons. Die frühere Retail-Bestätigung mit 300 Tests galt für v5.7.5."
+          ]
+        }
+      ]
+    },
+    "frFR": {
+      "version": "5.7.6-beta.1",
+      "welcome": "QuestTogether 5.7.6-beta.1 intègre libchev v1.0.0 pour partager la journalisation, les diagnostics, les protections de rappels, les mécanismes de tâches différées et l’exécution des tests avec les autres addons Together. La bibliothèque est incluse ; aucune installation d’addon séparée n’est nécessaire.",
+      "sections": [
+        {
+          "title": "Changements de cette version",
+          "items": [
+            "Les rapports de diagnostic incluent des informations communes sur le client, l’addon et la bibliothèque, et conservent les événements les plus récents lorsque la fenêtre de copie se remplit.",
+            "Le comportement des quêtes, du groupe, des barres de nom et des restrictions reste géré par QuestTogether, avec des espaces de stockage d’exécution isolés par addon.",
+            "Les liens de coordonnées restent utilisables lorsque QT est désactivé si les restrictions les autorisent ; les tâches d’arrière-plan en file d’attente restent en pause et les minuteries obsolètes sont supprimées.",
+            "/qt test inclut désormais 315 cas : les 300 existants, dix vérifications de bibliothèque partagée et cinq régressions d’intégration.",
+            "Validation : les 315 tests réussissent dans les deux ordres sous Lua 5.1.5 et 5.2.4 ; la syntaxe Lua, l’ordre de chargement TOC et le manifeste de révision/hash intégré réussissent. Source libchev intégrée : 09ac76eb6fe8e9589b809188652950c3cd9e444c.",
+            "Il s’agit d’une version bêta. Le rendu de l’interface Retail/Forever en conditions réelles et le comportement de taint après cette extraction doivent encore être vérifiés. Après rechargement, exécutez /qt test et /qt diagnostics, puis testez les quêtes, les bulles de progression, les barres de nom et les liens de coordonnées pendant le combat, les changements de zone, la désactivation/réactivation et le rechargement, avec vos addons habituels. La confirmation antérieure des 300 tests sur Retail s’appliquait à v5.7.5."
+          ]
+        }
+      ]
+    },
+    "esES": {
+      "version": "5.7.6-beta.1",
+      "welcome": "QuestTogether 5.7.6-beta.1 integra libchev v1.0.0 para compartir registro, diagnósticos, guardas de retrollamada, mecánicas de trabajo diferido y ejecución de pruebas con los otros addons Together. La biblioteca está incluida; no hace falta instalar un addon separado.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Los informes de diagnóstico incluyen información común de cliente/addon/biblioteca y conservan los eventos más recientes cuando se llena la ventana de copia.",
+            "El comportamiento de misiones, grupo, placas de nombre y restricciones sigue perteneciendo a QuestTogether, con almacenes de ejecución aislados por addon.",
+            "Los enlaces de coordenadas siguen siendo utilizables mientras QT está desactivado cuando las restricciones lo permiten; el trabajo en segundo plano en cola permanece pausado y los temporizadores obsoletos se descartan.",
+            "/qt test ahora incluye 315 casos: los 300 existentes, diez comprobaciones de la biblioteca compartida y cinco regresiones de integración.",
+            "Validación: las 315 pruebas se superan en ambos órdenes con Lua 5.1.5 y 5.2.4; pasan la sintaxis Lua, el orden de carga TOC y el manifiesto integrado de revisión/hash. Fuente de libchev integrada: 09ac76eb6fe8e9589b809188652950c3cd9e444c.",
+            "Esta es una versión beta. El renderizado de IU y el comportamiento de contaminación en vivo en Retail/Forever tras esta extracción aún necesitan verificación. Tras recargar, ejecuta /qt test y /qt diagnostics; luego prueba misiones, burbujas de progreso, placas de nombre y enlaces de coordenadas en combate, cambios de zona, desactivación/reactivación y recarga con tus addons habituales. La confirmación anterior de 300 pruebas en Retail se aplicaba a v5.7.5."
+          ]
+        }
+      ]
+    },
+    "esMX": {
+      "version": "5.7.6-beta.1",
+      "welcome": "QuestTogether 5.7.6-beta.1 integra libchev v1.0.0 para compartir registro, diagnósticos, resguardos de callbacks, mecánicas de trabajo diferido y ejecución de pruebas con los otros addons Together. La biblioteca está incluida; no se necesita instalar un addon por separado.",
+      "sections": [
+        {
+          "title": "Cambios en esta versión",
+          "items": [
+            "Los informes de diagnóstico incluyen información común de cliente/addon/biblioteca y conservan los eventos más recientes cuando la ventana de copia se llena.",
+            "El comportamiento de misiones, grupo, placas de nombre y restricciones sigue siendo propiedad de QuestTogether, con almacenes de ejecución aislados por addon.",
+            "Los enlaces de coordenadas siguen siendo utilizables mientras QT está desactivado cuando las restricciones lo permiten; el trabajo en segundo plano en cola permanece pausado y los temporizadores obsoletos se descartan.",
+            "/qt test ahora incluye 315 casos: los 300 existentes, diez comprobaciones de biblioteca compartida y cinco regresiones de integración.",
+            "Validación: las 315 pruebas pasan en ambos órdenes con Lua 5.1.5 y 5.2.4; pasan la sintaxis de Lua, el orden de carga TOC y el manifiesto de revisión/hash integrado. Fuente de libchev integrada: 09ac76eb6fe8e9589b809188652950c3cd9e444c.",
+            "Esta es una versión beta. El renderizado de IU en vivo en Retail/Forever y el comportamiento de taint después de esta extracción aún necesitan verificación. Después de recargar, ejecuta /qt test y /qt diagnostics; luego prueba misiones, burbujas de progreso, placas de nombre y enlaces de coordenadas durante combate, cambio de zona, desactivar/reactivar y recargar con tus addons habituales. La confirmación anterior de 300 pruebas en Retail se aplicaba a v5.7.5."
+          ]
+        }
+      ]
+    },
+    "ptBR": {
+      "version": "5.7.6-beta.1",
+      "welcome": "QuestTogether 5.7.6-beta.1 incorpora libchev v1.0.0 para compartilhar logs, diagnósticos, proteções de callback, mecânicas de trabalho adiado e execução de testes com os outros addons Together. A biblioteca está incluída; nenhuma instalação separada de addon é necessária.",
+      "sections": [
+        {
+          "title": "Alterações nesta versão",
+          "items": [
+            "Relatórios de diagnóstico incluem informações comuns de cliente/addon/biblioteca e mantêm os eventos mais recentes quando a janela de cópia fica cheia.",
+            "O comportamento de missões, grupo, placas de identificação e restrições continua sob responsabilidade do QuestTogether, com armazenamentos de execução isolados por addon.",
+            "Links de coordenadas permanecem utilizáveis enquanto o QT está desativado quando as restrições permitem; trabalhos em segundo plano na fila permanecem pausados e temporizadores obsoletos são descartados.",
+            "/qt test agora inclui 315 casos: os 300 existentes, dez verificações da biblioteca compartilhada e cinco regressões de integração.",
+            "Validação: todos os 315 testes passam nas duas ordens no Lua 5.1.5 e 5.2.4; a sintaxe Lua, a ordem de carregamento do TOC e o manifesto de revisão/hash incorporado passam. Fonte libchev incorporada: 09ac76eb6fe8e9589b809188652950c3cd9e444c.",
+            "Esta é uma versão beta. A renderização da UI ao vivo no Retail/Forever e o comportamento de taint após esta extração ainda precisam de verificação. Depois de recarregar, execute /qt test e /qt diagnostics, então teste missões, bolhas de progresso, placas de identificação e links de coordenadas em combate, mudança de zona, desativação/reativação e recarregamento com seus addons usuais. A confirmação anterior de 300 testes no Retail se aplicava à v5.7.5."
+          ]
+        }
+      ]
+    },
+    "ruRU": {
+      "version": "5.7.6-beta.1",
+      "welcome": "QuestTogether 5.7.6-beta.1 встраивает libchev v1.0.0 для общего использования журналирования, диагностики, защитных проверок callback-ов, механизмов отложенной работы и выполнения тестов с другими аддонами Together. Библиотека включена; отдельная установка аддона не требуется.",
+      "sections": [
+        {
+          "title": "Изменения в этом выпуске",
+          "items": [
+            "Диагностические отчёты включают общие сведения о клиенте/аддоне/библиотеке и сохраняют новейшие события, когда окно копирования заполняется.",
+            "Поведение заданий, группы, индикаторов имен и ограничений остаётся под управлением QuestTogether, с изолированными хранилищами времени выполнения для каждого аддона.",
+            "Ссылки на координаты остаются доступными, пока QT отключён, если ограничения это позволяют; фоновая работа в очереди остаётся приостановленной, а устаревшие таймеры отбрасываются.",
+            "/qt test теперь включает 315 случаев: существующие 300, десять проверок общей библиотеки и пять интеграционных регрессий.",
+            "Проверка: все 315 тестов проходят в обоих порядках под Lua 5.1.5 и 5.2.4; синтаксис Lua, порядок загрузки TOC и встроенный манифест ревизии/хэша проходят проверку. Встроенный исходный код libchev: 09ac76eb6fe8e9589b809188652950c3cd9e444c.",
+            "Это бета-версия. Отрисовка интерфейса и taint-поведение в живых Retail/Forever после этого извлечения всё ещё требуют проверки. После перезагрузки запустите /qt test и /qt diagnostics, затем проверьте задания, пузырьки прогресса, индикаторы имен и ссылки на координаты в бою, при смене зоны, отключении/повторном включении и перезагрузке с вашими обычными аддонами. Более раннее подтверждение 300 тестов на Retail относилось к v5.7.5."
+          ]
+        }
+      ]
+    },
+    "itIT": {
+      "version": "5.7.6-beta.1",
+      "welcome": "QuestTogether 5.7.6-beta.1 incorpora libchev v1.0.0 per condividere registrazione, diagnostica, protezioni dei callback, meccaniche di lavoro differito ed esecuzione dei test con gli altri addon Together. La libreria è inclusa; non è necessaria alcuna installazione separata di addon.",
+      "sections": [
+        {
+          "title": "Modifiche in questa versione",
+          "items": [
+            "I rapporti diagnostici includono informazioni comuni su client/addon/libreria e mantengono gli eventi più recenti quando la finestra di copia si riempie.",
+            "Il comportamento di missioni, gruppo, targhette dei nomi e restrizioni resta gestito da QuestTogether, con archivi di runtime isolati per ogni addon.",
+            "I link alle coordinate restano utilizzabili mentre QT è disabilitato quando le restrizioni lo consentono; il lavoro in background in coda resta in pausa e i timer obsoleti vengono scartati.",
+            "/qt test ora include 315 casi: i 300 esistenti, dieci controlli della libreria condivisa e cinque regressioni di integrazione.",
+            "Validazione: tutti i 315 test superati in entrambi gli ordini con Lua 5.1.5 e 5.2.4; sintassi Lua, ordine di caricamento TOC e manifest di revisione/hash incorporato superati. Sorgente libchev incorporata: 09ac76eb6fe8e9589b809188652950c3cd9e444c.",
+            "Questa è una versione beta. Il rendering UI live Retail/Forever e il comportamento del taint dopo questa estrazione richiedono ancora verifica. Dopo il ricaricamento, esegui /qt test e /qt diagnostics, poi prova missioni, bolle di progresso, targhette dei nomi e link alle coordinate durante combattimento, cambio di zona, disattivazione/riattivazione e ricaricamento con i tuoi addon abituali. La precedente conferma dei 300 test Retail si applicava a v5.7.5."
+          ]
+        }
+      ]
+    },
+    "zhCN": {
+      "version": "5.7.6-beta.1",
+      "welcome": "QuestTogether 5.7.6-beta.1 内嵌 libchev v1.0.0，用于与其他 Together 插件共享日志、诊断、回调保护、延迟工作机制和测试执行。已包含该库；无需单独安装插件。",
+      "sections": [
+        {
+          "title": "此版本中的更改",
+          "items": [
+            "诊断报告包含通用客户端/插件/库信息，并在复制窗口填满时保留最新事件。",
+            "任务、队伍、姓名板和限制行为仍由 QuestTogether 负责，并使用按插件隔离的运行时存储。",
+            "当限制允许时，QT 禁用期间坐标链接仍可使用；排队的后台工作保持暂停，过期计时器会被丢弃。",
+            "/qt test 现在包含 315 个用例：现有 300 个、10 个共享库检查，以及 5 个集成回归。",
+            "验证：全部 315 项测试在 Lua 5.1.5 和 5.2.4 下以两种顺序均通过；Lua 语法、TOC 加载顺序和内嵌修订/哈希清单均通过。内嵌 libchev 来源：09ac76eb6fe8e9589b809188652950c3cd9e444c。",
+            "这是一个 beta 版本。此次提取后的正式服/Forever UI 实时渲染和污染行为仍需验证。重新加载后，运行 /qt test 和 /qt diagnostics，然后在战斗、切换区域、禁用/重新启用和重载过程中，配合你常用的插件测试任务、进度气泡、姓名板和坐标链接。较早的正式服 300 项测试确认适用于 v5.7.5。"
+          ]
+        }
+      ]
+    },
+    "zhTW": {
+      "version": "5.7.6-beta.1",
+      "welcome": "QuestTogether 5.7.6-beta.1 內嵌 libchev v1.0.0，用來與其他 Together 插件共用記錄、診斷、回呼防護、延後工作機制與測試執行。已包含此函式庫；不需要另行安裝插件。",
+      "sections": [
+        {
+          "title": "此版本的變更",
+          "items": [
+            "診斷報告包含通用的客戶端/插件/函式庫資訊，並在複製視窗填滿時保留最新事件。",
+            "任務、隊伍、姓名板與限制行為仍由 QuestTogether 負責，並具備每個插件獨立的執行階段儲存。",
+            "當限制允許時，即使 QT 已停用，座標連結仍可使用；已佇列的背景工作會保持暫停，過期的計時器會被捨棄。",
+            "/qt test 現在包含 315 個案例：既有的 300 個、十項共用函式庫檢查，以及五項整合回歸。",
+            "驗證：全部 315 項測試在 Lua 5.1.5 與 5.2.4 下以兩種順序皆通過；Lua 語法、TOC 載入順序，以及內嵌修訂/雜湊資訊清單皆通過。內嵌 libchev 來源：09ac76eb6fe8e9589b809188652950c3cd9e444c。",
+            "這是 beta 版本。此次抽離後的 Retail/Forever UI 實機渲染與污染行為仍需驗證。重新載入後，執行 /qt test 與 /qt diagnostics，然後在戰鬥、換區、停用/重新啟用與重新載入期間，搭配你平常使用的插件測試任務、進度泡泡、姓名板與座標連結。先前的 Retail 300 項測試確認適用於 v5.7.5。"
+          ]
+        }
+      ]
+    },
+    "koKR": {
+      "version": "5.7.6-beta.1",
+      "welcome": "QuestTogether 5.7.6-beta.1은 libchev v1.0.0을 내장하여 다른 Together 애드온과 로깅, 진단, 콜백 보호, 지연 작업 메커니즘, 테스트 실행을 공유합니다. 라이브러리가 포함되어 있으며, 별도 애드온 설치는 필요하지 않습니다.",
+      "sections": [
+        {
+          "title": "이번 릴리스의 변경 사항",
+          "items": [
+            "진단 보고서에는 공통 클라이언트/애드온/라이브러리 정보가 포함되며, 복사 창이 가득 차면 최신 이벤트를 유지합니다.",
+            "퀘스트, 파티, 이름표, 제한 동작은 애드온별 격리된 런타임 저장소와 함께 계속 QuestTogether가 담당합니다.",
+            "제한이 허용하는 경우 QT가 비활성화되어도 좌표 링크를 계속 사용할 수 있습니다. 대기 중인 백그라운드 작업은 일시 중지된 상태를 유지하고 오래된 타이머는 폐기됩니다.",
+            "/qt test에는 이제 기존 300개, 공유 라이브러리 검사 10개, 통합 회귀 5개를 합쳐 315개 사례가 포함됩니다.",
+            "검증: Lua 5.1.5 및 5.2.4에서 모든 315개 테스트가 양쪽 순서 모두 통과했습니다. Lua 구문, TOC 로드 순서, 내장 리비전/해시 매니페스트가 통과했습니다. 내장 libchev 출처: 09ac76eb6fe8e9589b809188652950c3cd9e444c.",
+            "베타 릴리스입니다. 이 추출 이후의 라이브 Retail/Forever UI 렌더링과 오염 동작은 아직 검증이 필요합니다. 다시 불러온 뒤 /qt test와 /qt diagnostics를 실행한 다음, 평소 사용하는 애드온과 함께 전투, 지역 전환, 비활성화/재활성화, reload 전반에서 퀘스트, 진행도 말풍선, 이름표, 좌표 링크를 확인하세요. 이전 Retail 300개 테스트 확인은 v5.7.5에 적용된 것입니다."
+          ]
+        }
+      ]
+    }
+  }
+]

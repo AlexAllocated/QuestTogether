@@ -51,6 +51,9 @@ fi
 # local work before validation, network access, or writes, so a successful tag
 # cannot silently omit the implementation described by its authored notes.
 release_files=("$toc_file" release_notes.json ReleaseNotes.lua)
+if grep -Eq '^[[:space:]]*ReleaseNotesHistory\.lua[[:space:]]*$' "$toc_file"; then
+	release_files+=(ReleaseNotesHistory.lua changelogs/release_dates.json)
+fi
 if grep -Eq '^[[:space:]]*LocalizedReleaseNotes\.lua[[:space:]]*$' "$toc_file"; then
 	release_files+=(LocalizedReleaseNotes.lua)
 	for notes_locale in deDE frFR esES esMX ptBR ruRU itIT koKR zhCN zhTW; do

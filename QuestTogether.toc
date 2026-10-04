@@ -36,6 +36,7 @@ Locales.lua
 Core.lua
 ReleaseNotes.lua
 LocalizedReleaseNotes.lua
+ReleaseNotesHistory.lua
 Welcome.lua
 ReleaseNotesWindow.lua
 Debug.lua

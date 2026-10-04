@@ -68,7 +68,7 @@ def evidence_path(path):
         return False
     if path in {"QuestTogether.toc", "CHANGELOG.md", "CURSEFORGE_DESCRIPTION.md", "CLIENT_COMPATIBILITY.md"}:
         return True
-    return bool(re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*\.lua", path)) and path not in {LUA_FILE, LOCALIZED_LUA_FILE, "Locales.lua"} and not re.search(
+    return bool(re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*\.lua", path)) and path not in {LUA_FILE, LOCALIZED_LUA_FILE, "ReleaseNotesHistory.lua", "Locales.lua"} and not re.search(
         r"secret|credential|private|token|api.?key|config|environment|^env(?:[._-]|$)", path, re.IGNORECASE)
 
 

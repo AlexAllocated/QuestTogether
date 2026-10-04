@@ -503,5 +503,15 @@
   "unknown": "unbekannt",
   "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.": "v%s geladen! Unterstützt jetzt %s. Gib %s für die Einstellungen ein. Wenn Probleme auftreten, hinterlasse bitte Feedback auf %s oder %s.",
   "|cff33ff99QuestTogether|r: Pong: ": "|cff33ff99QuestTogether|r: Pong: ",
-  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Pong: <invalid payload>"
+  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Pong: <invalid payload>",
+  "Back": "Zurück",
+  "Choose a version to read its patch notes. Dates are in UTC.": "Wähle eine Version aus, um ihre Patchnotes zu lesen. Datumsangaben sind in UTC.",
+  "Date unavailable": "Datum nicht verfügbar",
+  "History": "Verlauf",
+  "Latest": "Neueste",
+  "Newer": "Neuer",
+  "Older": "Älter",
+  "Release date (UTC): %s": "Veröffentlichungsdatum (UTC): %s",
+  "Release history": "Versionsverlauf",
+  "These notes are available in English only.": "Diese Hinweise sind nur auf Englisch verfügbar."
 }

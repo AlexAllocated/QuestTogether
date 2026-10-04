@@ -1,15 +1,22 @@
 {
-  "source_sha256": "0ef0fe7d6149d3f742c933253c6c49a08614227ed2a01abcb063ae7bef34be27",
+  "source_sha256": "26737a87275ce322b877d18ff68dec08b1484759c62e9ac81a665e7240552c4d",
   "notes": {
     "version": "6.0.1",
-    "welcome": "As celebrações agora permanecem com jogadores que você realmente consegue ver por perto.",
+    "welcome": "Navegue pelas atualizações anteriores do QuestTogether no seu idioma, com melhor recuperação de nomes de missões para anúncios de conclusão.",
     "sections": [
       {
-        "title": "Correções de celebrações próximas",
+        "title": "Ver notas de atualização anteriores",
         "items": [
-          "Reações a outro jogador concluindo uma missão ou subindo de nível agora exigem uma unidade de jogador correspondente e visível. Coordenadas do mapa ou apenas um nome não acionam mais um emote, inclusive quando devlogall está ativado.",
-          "Emotes recebidos devem corresponder à própria lista de celebrações do QuestTogether. Emotes não listados, incluindo mountspecial e gritos de facção, são ignorados sem escolher um substituto.",
-          "Suas próprias celebrações de conclusão de missão e de subida de nível mantêm o comportamento e as configurações existentes."
+          "A janela de boas-vindas agora tem botões Mais antigas e Mais recentes, um atalho para a Mais recente e um seletor de Histórico mostrando versões e datas de lançamento. Ao abrir as notas de atualização, elas começam na versão mais recente.",
+          "O histórico inclui todas as versões publicadas anteriormente, incluindo os primeiros betas. Todas as notas históricas são traduzidas para todos os idiomas de WoW compatíveis e incluídas nos changelogs correspondentes do repositório.",
+          "Os botões de navegação ficam desativados quando não há para onde ir. Navegar por notas mais antigas não altera qual atualização você reconheceu; pop-ups automáticos ainda aparecem apenas para atualizações principais e secundárias. Abra a janela a qualquer momento com /qt notes."
+        ]
+      },
+      {
+        "title": "Títulos de conclusão de missões",
+        "items": [
+          "Quando uma missão sai do seu registro antes que o QuestTogether tenha um título utilizável, os anúncios de conclusão agora tentam consultar o título da missão disponível no jogo antes de recorrer a um ID de missão. Um título recuperado é preservado independentemente da ordem dos eventos de entrega e remoção.",
+          "Os anúncios ainda usam o texto do remetente quando o seu cliente não consegue resolver um título local. Se nenhum dos clientes tiver um nome disponível, o ID da missão continua sendo a alternativa. A recuperação aprimorada do lado do remetente se aplica quando o remetente atualiza."
         ]
       }
     ]

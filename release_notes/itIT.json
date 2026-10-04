@@ -1,15 +1,22 @@
 {
-  "source_sha256": "0ef0fe7d6149d3f742c933253c6c49a08614227ed2a01abcb063ae7bef34be27",
+  "source_sha256": "26737a87275ce322b877d18ff68dec08b1484759c62e9ac81a665e7240552c4d",
   "notes": {
     "version": "6.0.1",
-    "welcome": "Le celebrazioni ora restano con i giocatori che puoi effettivamente vedere nelle vicinanze.",
+    "welcome": "Sfoglia gli aggiornamenti passati di QuestTogether nella tua lingua, con un recupero migliore dei nomi delle missioni per gli annunci di completamento.",
     "sections": [
       {
-        "title": "Correzioni alle celebrazioni nelle vicinanze",
+        "title": "Sfoglia le note delle patch precedenti",
         "items": [
-          "Le reazioni al completamento di una missione o all'aumento di livello di un altro giocatore ora richiedono un'unità giocatore corrispondente e visibile. Le coordinate della mappa o il solo nome non attivano più un'emote, anche quando devlogall è abilitato.",
-          "Le emote in arrivo devono corrispondere alla lista di celebrazioni di QuestTogether. Le emote non presenti nella lista, incluse mountspecial e le acclamazioni di fazione, vengono ignorate senza scegliere un sostituto.",
-          "Le tue celebrazioni per il completamento delle missioni e per l'aumento di livello mantengono il comportamento e le impostazioni esistenti."
+          "La finestra di benvenuto ora ha i pulsanti Meno recenti e Più recenti, una scorciatoia Ultima e un selettore Cronologia che mostra versioni e date di rilascio. All'apertura, le note della patch partono dall'ultima versione.",
+          "La cronologia include ogni versione pubblicata in precedenza, incluse le prime beta. Tutte le note storiche sono tradotte in ogni localizzazione di WoW supportata e incluse nei changelog dei repository corrispondenti.",
+          "I pulsanti di navigazione si disattivano quando non c'è nessun'altra nota da vedere. Consultare note più vecchie non cambia quale aggiornamento hai confermato; i popup automatici continuano a comparire solo per aggiornamenti maggiori e minori. Apri la finestra in qualsiasi momento con /qt notes."
+        ]
+      },
+      {
+        "title": "Titoli di completamento delle missioni",
+        "items": [
+          "Quando una missione lascia il tuo registro prima che QuestTogether abbia un titolo utilizzabile, gli annunci di completamento ora provano a usare la ricerca dei titoli missione disponibile del gioco prima di ripiegare su un ID missione. Un titolo recuperato viene preservato indipendentemente dall'ordine degli eventi di consegna e rimozione.",
+          "Gli annunci usano comunque il testo del mittente quando il tuo client non riesce a risolvere un titolo locale. Se nessuno dei due client ha un nome disponibile, l'ID missione resta l'alternativa. Il recupero migliorato lato mittente si applica quando il mittente si aggiorna."
         ]
       }
     ]

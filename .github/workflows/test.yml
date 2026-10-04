@@ -27,6 +27,7 @@ jobs:
       - run: python3 scripts/test_localization.py
       - run: python3 scripts/changelogs.py
       - run: python3 scripts/test_changelogs.py
+      - run: python3 scripts/test_release_history.py
       - run: python3 scripts/test_release_notes.py
       - run: python3 scripts/test_generate_release_notes.py
       - run: python3 scripts/test_discord_changelog.py

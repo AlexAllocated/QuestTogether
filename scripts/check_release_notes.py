@@ -50,6 +50,11 @@ def check_manifest(text):
     if LOCALIZED_LUA_FILE in entries:
         if entries.count(LOCALIZED_LUA_FILE) != 1 or entries.index(LOCALIZED_LUA_FILE) < entries.index(LUA_FILE):
             raise NotesError("QuestTogether.toc must load LocalizedReleaseNotes.lua exactly once after ReleaseNotes.lua")
+    if "ReleaseNotesHistory.lua" in entries:
+        if (entries.count("ReleaseNotesHistory.lua") != 1 or LOCALIZED_LUA_FILE not in entries
+                or entries.index("ReleaseNotesHistory.lua") < entries.index(LOCALIZED_LUA_FILE)
+                or ("Welcome.lua" in entries and entries.index("ReleaseNotesHistory.lua") > entries.index("Welcome.lua"))):
+            raise NotesError("QuestTogether.toc must load ReleaseNotesHistory.lua once after localized notes and before Welcome.lua")
     return LOCALIZED_LUA_FILE in entries
 
 
@@ -255,6 +260,10 @@ def main(argv=None):
         if (root / "scripts/changelogs.py").is_file():
             from changelogs import outputs as changelog_outputs
             outputs.update(changelog_outputs(root, notes, outputs,
+                           previous_version=previous_version if args.set_version else None))
+        if any(line.strip() == "ReleaseNotesHistory.lua" for line in manifest.splitlines()):
+            from release_history import outputs as history_outputs
+            outputs.update(history_outputs(root, notes, outputs,
                            previous_version=previous_version if args.set_version else None))
         if args.set_version:
             outputs[root / NOTES_FILE] = json.dumps(notes, ensure_ascii=False, indent=2) + "\n"

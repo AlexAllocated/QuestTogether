@@ -217,6 +217,7 @@ local function WithIsolatedState(testFn)
 	for key, value in pairs(QuestTogether) do original[key] = value end
 	local sharedTables = {
 		LibChev = true, tests = true, DEFAULTS = true, API = true, releaseNotes = true, localizations = true, releaseNotesByLocale = true,
+		releaseNotesHistory = true, releaseNotesDates = true,
 		nameplateQuestIconStyleLabels = true, nameplateQuestIconStyleOrder = true,
 		showProgressForLabels = true, showProgressForOrder = true,
 		chatLogDestinationLabels = true, chatLogDestinationOrder = true,
@@ -239,7 +240,7 @@ local function WithIsolatedState(testFn)
 			"partyJoinState", "partyJoinPrompt", "partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
 			"minimapButton", "minimapTooltip", "minimapTooltipPendingHide", "minimapLauncherFrame", "minimapDragState", "minimapSuppressClick",
 			"settingsTooltip", "settingsTooltipOwner", "settingsTooltipPendingHide",
-			"releaseNotesWindow", "releaseNotesWakeFrame", "pendingReleaseNotes", "addonUpdateState",
+			"releaseNotesWindow", "releaseNotesWakeFrame", "pendingReleaseNotes", "releaseNotesBrowser", "addonUpdateState",
 			"playerTooltipBadge", "discordSupportWindowOwner", "qtPlayerPresenceState", "playerPlatesFrame", "qtPlayerIconStateByFrame",
 			"playerLocationState", "playerLocationUpdateFrame", "locationPinState", "chatLogPlayerTooltipState", "playerLocationsFrame",
 			"worldQuestAreaStateByQuestID", "bonusObjectiveAreaStateByQuestID", "questSnapshotByQuestID", "questSnapshotOrder",

@@ -225,6 +225,33 @@ QT:RegisterTest("release notes manual downgrade viewing never lowers the remembe
 	Equal(#a.presentations, 1)
 end)
 
+QT:RegisterTest("release history selects archived locale and browsing never changes upgrade acknowledgement", function()
+	local a = Fixture("6.0.1", { releaseNotesSeenVersion = "7.0.0" })
+	a.hasLoggedIn, a.localizationTestLocale = true, "deDE"
+	local english, german = Notes("6.0.0"), Notes("6.0.0")
+	german.welcome = "Archivierte Änderungen."
+	a.releaseNotesHistory = {
+		{ version = "6.0.0", date = "2026-10-04", locales = { enUS = english, deDE = german } },
+		{ version = "5.9.2", date = "2026-09-27", locales = { enUS = Notes("5.9.2") } },
+	}
+	assert(a:OpenReleaseNotes())
+	assert(a:ShowReleaseNotesPage(2))
+	Equal(a.presentations[#a.presentations].notes, german)
+	Equal(a.db.global.releaseNotesSeenVersion, "7.0.0")
+	assert(a:ShowReleaseNotesPage(3))
+	Equal(a.releaseNotesBrowser.entries[3].englishOnly, true)
+	Equal(a.db.global.releaseNotesSeenVersion, "7.0.0")
+	a.renderResult = false
+	Equal(a:ShowReleaseNotesPage(1), false)
+	Equal(a.releaseNotesBrowser.index, 3)
+	a.renderResult = true
+	assert(a:OpenReleaseNotes())
+	Equal(a.releaseNotesBrowser.index, 1)
+	a.localizationTestLocale = "enGB"
+	assert(a:OpenReleaseNotes())
+	Equal(a.releaseNotesBrowser.entries[2].notes, english)
+end)
+
 QT:RegisterTest("release notes pending work cancels on logout or replacement content", function()
 	for _, reason in ipairs({ "logout", "version", "seen" }) do
 		local a = Fixture()

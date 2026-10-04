@@ -107,6 +107,7 @@ changes outside this explicit allowlist:
 - `release_notes.json`
 - `ReleaseNotes.lua`
 - `LocalizedReleaseNotes.lua`
+- `ReleaseNotesHistory.lua` and `changelogs/release_dates.json` when the TOC enables history
 - `release_notes/deDE.json`, `release_notes/frFR.json`, `release_notes/esES.json`, `release_notes/esMX.json`,
   `release_notes/ptBR.json`, `release_notes/ruRU.json`, `release_notes/itIT.json`,
   `release_notes/koKR.json`, `release_notes/zhCN.json`, and `release_notes/zhTW.json`
@@ -235,3 +236,24 @@ No network or translation API is needed to regenerate existing changelogs.
 Include `CHANGELOG.md` and `changelogs/*.md` in release downloads when packaging
 documentation. The JSON archive is release tooling data, not an addon runtime
 file. Existing published ZIPs and Discord messages remain unchanged.
+
+## Browsable release history
+
+The welcome window opens at the latest release. Older/Newer buttons page through
+notes; History lists all bundled releases with publication dates in UTC. Browsing
+history never changes upgrade acknowledgement or the major/minor popup policy.
+
+`ReleaseNotesHistory.lua` is generated from `changelogs/history.json` and
+`changelogs/legacy_notes.json`. The latter preserves releases predating structured
+notes, including the 5.7.6 betas. All historical entries require every supported
+locale. These same entries generate the English and localized Markdown changelogs.
+Do not edit generated Lua or Markdown directly. Existing Discord posts are not
+reposted when historical translations are backfilled.
+
+`changelogs/release_dates.json` records dates from published GitHub releases. A
+version bump records the new version's UTC date once and archives the published
+previous notes. If publication moves to another day, update that date before
+publishing and regenerate with `python3 scripts/check_release_notes.py --write`.
+CI rejects missing dates, incomplete historical translations, duplicate versions,
+and stale generated history. Include `ReleaseNotesHistory.lua` and the dates file
+in release commits alongside the existing notes and changelogs.

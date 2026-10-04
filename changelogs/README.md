@@ -25,3 +25,5 @@ history. Earlier handwritten English entries remain available in the
 For maintainers: edit `release_notes.json` and its translations, then run
 `python3 scripts/check_release_notes.py --write`. Do not hand-edit generated
 Markdown or the published-note archive. See [the release workflow](../RELEASING.md).
+
+All published releases, including the original betas, are available in every supported locale and in the in-game patch-note history. Older notes preserve the behavior described at the time of that release.

@@ -84,7 +84,7 @@ class GeneratorTests(unittest.TestCase):
         self.commit_feature()
         (self.root / ".gitignore").write_text("Ignored.lua\n.local/\n", encoding="utf-8")
         for name in (".env", ".env.lua", "Secrets.lua", "Credentials.lua", "PrivateKey.lua",
-                     "Config.lua", "Ignored.lua", "release_notes.json", "LocalizedReleaseNotes.lua", "Locales.lua"):
+                     "Config.lua", "Ignored.lua", "release_notes.json", "LocalizedReleaseNotes.lua", "ReleaseNotesHistory.lua", "Locales.lua"):
             (self.root / name).write_text("excluded-content-" + name, encoding="utf-8")
         (self.root / ".local").mkdir()
         (self.root / ".local/Debug.lua").write_text("excluded-local-content", encoding="utf-8")

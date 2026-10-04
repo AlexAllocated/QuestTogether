@@ -3082,6 +3082,106 @@
             ]
           }
         ]
+      },
+      "esMX": {
+        "version": "5.15.0",
+        "welcome": "Pide unirte a un grupo de misiones directamente desde el menú de jugador de QuestTogether.",
+        "sections": [
+          {
+            "title": "Unirse a un grupo de misiones",
+            "items": [
+              "Los jugadores de QT agrupados ahora muestran Solicitar unirse en lugar de Invitar cuando hay información reciente de grupo disponible. Ambos jugadores necesitan esta actualización; quien solicita debe estar sin grupo.",
+              "El destinatario puede enviar una invitación normal de WoW o rechazarla. Debe tener permiso para invitar y espacio en un grupo normal. Aun así debes aceptar la invitación normal para unirte."
+            ]
+          },
+          {
+            "title": "Invitaciones automáticas opcionales",
+            "items": [
+              "Dos opciones nuevas aprueban automáticamente las solicitudes de amigos de personaje o de otros jugadores mientras estás Buscando compañeros para misiones. Ambas empiezan desactivadas y aparecen en el aviso y en la configuración de Varios. Los amigos de cuenta de Battle.net no están incluidos.",
+              "Las solicitudes caducan y respetan los ignorados, los cambios de grupo y las restricciones del juego. QT nunca abandona tu grupo actual ni acepta invitaciones por ti."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.15.0",
+        "welcome": "Chiedi di unirti a un gruppo per missioni direttamente dal menu giocatore di QuestTogether.",
+        "sections": [
+          {
+            "title": "Unisciti a un gruppo per missioni",
+            "items": [
+              "I giocatori QT già in gruppo ora mostrano Richiedi di unirti invece di Invita quando sono disponibili informazioni recenti sul gruppo. Entrambi i giocatori devono avere questo aggiornamento; chi fa la richiesta deve essere da solo.",
+              "Il destinatario può inviare un normale invito di WoW o rifiutare. Deve avere il permesso di invitare e spazio in un gruppo normale. Dovrai comunque accettare il normale invito per unirti."
+            ]
+          },
+          {
+            "title": "Inviti automatici opzionali",
+            "items": [
+              "Due nuove opzioni approvano automaticamente le richieste dagli amici del personaggio, oppure da altri giocatori mentre sei In cerca di compagni per le missioni. Entrambe iniziano disattivate e compaiono nella richiesta e nelle impostazioni Varie. Gli amici dell'account Battle.net non sono inclusi.",
+              "Le richieste scadono e rispettano ignore, cambi di gruppo e restrizioni di gioco. QT non abbandona mai il tuo gruppo attuale né accetta inviti per te."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.15.0",
+        "welcome": "QuestTogether 플레이어 메뉴에서 바로 퀘스트 파티 참여를 요청합니다.",
+        "sections": [
+          {
+            "title": "퀘스트 파티 참여",
+            "items": [
+              "최근 파티 정보를 사용할 수 있을 때, 파티 중인 QT 플레이어에게 이제 초대 대신 참여 요청이 표시됩니다. 두 플레이어 모두 이 업데이트가 필요하며, 요청자는 혼자 있어야 합니다.",
+              "수신자는 일반 WoW 초대를 보내거나 거절할 수 있습니다. 일반 파티에 초대할 권한과 빈자리가 있어야 합니다. 참여하려면 여전히 일반 초대를 수락해야 합니다."
+            ]
+          },
+          {
+            "title": "선택적 자동 초대",
+            "items": [
+              "캐릭터 친구의 요청을 자동으로 승인하거나, 퀘스트 파트너 찾는 중일 때 다른 플레이어의 요청을 자동으로 승인하는 새 옵션 2개가 추가되었습니다. 둘 다 처음에는 꺼져 있으며, 확인창과 기타 설정에 표시됩니다. Battle.net 계정 친구는 포함되지 않습니다.",
+              "요청은 만료되며 차단, 파티 변경, 게임 제한을 따릅니다. QT는 현재 그룹에서 나가거나 초대를 대신 수락하지 않습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.15.0",
+        "welcome": "可直接从 QuestTogether 玩家菜单请求加入做任务小队。",
+        "sections": [
+          {
+            "title": "加入做任务小队",
+            "items": [
+              "有近期小队信息时，已组队的 QT 玩家现在会显示“请求加入”而不是“邀请”。双方玩家都需要此更新；请求者必须处于单人状态。",
+              "接收者可以发送普通 WoW 邀请或拒绝。他们必须拥有邀请权限，且普通小队中有空位。你仍需接受普通邀请才能加入。"
+            ]
+          },
+          {
+            "title": "可选自动邀请",
+            "items": [
+              "两个新选项可自动批准来自角色好友的请求，或在你正在寻找任务伙伴时自动批准其他玩家的请求。两者默认关闭，并显示在提示和杂项设置中。不包括 Battle.net 账号好友。",
+              "请求会过期，并会遵循忽略列表、小队变化和游戏限制。QT 永远不会让你离开当前队伍，也不会替你接受邀请。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.15.0",
+        "welcome": "可直接從 QuestTogether 玩家選單請求加入任務隊伍。",
+        "sections": [
+          {
+            "title": "加入任務隊伍",
+            "items": [
+              "當最近的隊伍資訊可用時，已組隊的 QT 玩家現在會顯示「請求加入」而不是「邀請」。雙方玩家都需要此更新；請求者必須是單人狀態。",
+              "接收者可以傳送一般 WoW 邀請或拒絕。他們必須擁有邀請權限，且一般隊伍中仍有空位。你仍需接受一般邀請才能加入。"
+            ]
+          },
+          {
+            "title": "選用的自動邀請",
+            "items": [
+              "兩個新選項可自動核准來自角色好友的請求，或在你正在尋找任務夥伴時核准來自其他玩家的請求。兩者預設關閉，並會顯示在提示與雜項設定中。不包含 Battle.net 帳號好友。",
+              "請求會過期，並會遵守忽略、隊伍變更和遊戲限制。QT 絕不會讓你離開目前隊伍，也不會替你接受邀請。"
+            ]
+          }
+        ]
       }
     },
     {
@@ -3153,6 +3253,66 @@
             "title": "Чат группы",
             "items": [
               "Префикс объявлений в чате группы изменён с [QT] на [QuestTogether], чтобы другим игрокам было проще найти аддон."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "5.14.1",
+        "welcome": "Los anuncios de grupo ahora muestran el nombre completo de QuestTogether.",
+        "sections": [
+          {
+            "title": "Chat de grupo",
+            "items": [
+              "Se amplió el prefijo de anuncio en chat de grupo de [QT] a [QuestTogether], para que a otros jugadores les sea más fácil encontrar el addon."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.14.1",
+        "welcome": "Gli annunci di gruppo ora mostrano il nome QuestTogether completo.",
+        "sections": [
+          {
+            "title": "Chat di gruppo",
+            "items": [
+              "Il prefisso degli annunci nella chat di gruppo è stato esteso da [QT] a [QuestTogether], così gli altri giocatori possono trovare più facilmente l'addon."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.14.1",
+        "welcome": "파티 알림에 이제 전체 QuestTogether 이름이 표시됩니다.",
+        "sections": [
+          {
+            "title": "파티 대화",
+            "items": [
+              "파티 대화 알림 접두어를 [QT]에서 [QuestTogether]로 확장하여 다른 플레이어가 애드온을 더 쉽게 찾을 수 있게 했습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.14.1",
+        "welcome": "小队公告现在会显示完整的 QuestTogether 名称。",
+        "sections": [
+          {
+            "title": "小队聊天",
+            "items": [
+              "将小队聊天公告前缀从 [QT] 扩展为 [QuestTogether]，方便其他玩家找到该插件。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.14.1",
+        "welcome": "隊伍公告現在會顯示完整的 QuestTogether 名稱。",
+        "sections": [
+          {
+            "title": "隊伍聊天",
+            "items": [
+              "將隊伍聊天公告前綴從 [QT] 擴展為 [QuestTogether]，讓其他玩家更容易找到此插件。"
             ]
           }
         ]
@@ -3284,6 +3444,111 @@
             ]
           }
         ]
+      },
+      "esMX": {
+        "version": "5.14.0",
+        "welcome": "QuestTogether ahora habla cinco idiomas más y te ayuda a mantener informados a los miembros del grupo que no tienen QT.",
+        "sections": [
+          {
+            "title": "Juega en tu idioma",
+            "items": [
+              "La interfaz ahora está disponible en alemán, francés, español, portugués brasileño y ruso. QuestTogether sigue el idioma de tu juego, con inglés como alternativa.",
+              "La configuración, los menús, las descripciones emergentes, las comparaciones de misiones y las notas del parche están traducidos. Los nombres de misiones y el texto de progreso recibidos de otros jugadores permanecen en su idioma original.",
+              "Encuentra anuncios de lanzamiento traducidos en los cinco canales de registro de cambios específicos por idioma en nuestro Discord."
+            ]
+          },
+          {
+            "title": "Mantén informado a todo tu grupo",
+            "items": [
+              "Una nueva opción Dónde anunciar envía tus anuncios de eventos activados al chat de grupo cuando alguien de tu grupo no ha sido reconocido como usuario de QT. Empieza activada y se puede desactivar en la configuración.",
+              "Esto también funciona en grupos de instancia emparejados. Se excluyen el juego en solitario y las bandas, y nunca se retransmiten los anuncios de otros jugadores."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.14.0",
+        "welcome": "QuestTogether ora parla cinque lingue in più e ti aiuta a tenere informati i membri del gruppo senza QT.",
+        "sections": [
+          {
+            "title": "Gioca nella tua lingua",
+            "items": [
+              "L'interfaccia è ora disponibile in tedesco, francese, spagnolo, portoghese brasiliano e russo. QuestTogether segue la lingua del gioco, con l'inglese come ripiego.",
+              "Impostazioni, menu, tooltip, confronti delle missioni e note di aggiornamento sono tradotti. I nomi delle missioni e il testo dei progressi ricevuti da altri giocatori restano nella loro lingua originale.",
+              "Trova gli annunci di rilascio tradotti nei cinque canali changelog specifici per lingua sul nostro Discord."
+            ]
+          },
+          {
+            "title": "Tieni informato tutto il tuo gruppo",
+            "items": [
+              "Una nuova opzione Dove annunciare invia gli annunci evento abilitati alla chat di gruppo quando qualcuno nel tuo gruppo non è stato riconosciuto come utente QT. Inizia abilitata e può essere disattivata nelle impostazioni.",
+              "Funziona anche nei gruppi di istanza abbinati. Il gioco in solitaria e le incursioni sono esclusi, e gli annunci degli altri giocatori non vengono mai inoltrati."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.14.0",
+        "welcome": "QuestTogether가 이제 5개 언어를 추가로 지원하며, QT가 없는 파티원에게도 정보를 전달할 수 있게 도와줍니다.",
+        "sections": [
+          {
+            "title": "내 언어로 플레이",
+            "items": [
+              "이제 인터페이스를 독일어, 프랑스어, 스페인어, 브라질 포르투갈어, 러시아어로 사용할 수 있습니다. QuestTogether는 게임 언어를 따르며, 기본값은 영어입니다.",
+              "설정, 메뉴, 툴팁, 퀘스트 비교, 패치 노트가 번역되었습니다. 다른 플레이어에게서 받은 퀘스트 이름과 진행 상황 텍스트는 원래 언어로 유지됩니다.",
+              "Discord의 5개 언어별 변경 기록 채널에서 번역된 출시 공지를 확인하세요."
+            ]
+          },
+          {
+            "title": "파티 전체에 정보 전달",
+            "items": [
+              "새 공지 위치 옵션은 파티 내에 QT 사용자로 인식되지 않은 사람이 있을 때 활성화된 이벤트 알림을 파티 대화로 보냅니다. 처음에는 켜져 있으며 설정에서 끌 수 있습니다.",
+              "자동 매칭 인스턴스 파티에서도 작동합니다. 혼자 플레이와 공격대는 제외되며, 다른 플레이어의 알림은 절대 중계되지 않습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.14.0",
+        "welcome": "QuestTogether 现在支持另外五种语言，并帮助你让未安装 QT 的小队成员保持知情。",
+        "sections": [
+          {
+            "title": "使用你的语言游玩",
+            "items": [
+              "界面现已支持德语、法语、西班牙语、巴西葡萄牙语和俄语。QuestTogether 会跟随你的游戏语言，英语作为备用语言。",
+              "设置、菜单、鼠标提示、任务比较和补丁说明均已翻译。从其他玩家处收到的任务名称和进度文本会保持原始语言。",
+              "可在我们 Discord 上五个特定语言的更新日志频道中查看翻译后的发布公告。"
+            ]
+          },
+          {
+            "title": "让整个小队保持知情",
+            "items": [
+              "新的“公告位置”选项会在你的小队中有人未被识别为 QT 用户时，将你启用的事件公告发送到小队聊天。该选项默认启用，可在设置中关闭。",
+              "这也适用于匹配副本队伍。单人游玩和团队除外，且绝不会转发其他玩家的公告。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.14.0",
+        "welcome": "QuestTogether 現在支援另外五種語言，並協助你讓沒有 QT 的隊伍成員也能掌握資訊。",
+        "sections": [
+          {
+            "title": "使用你的語言遊玩",
+            "items": [
+              "介面現在提供德文、法文、西班牙文、巴西葡萄牙文和俄文。QuestTogether 會跟隨你的遊戲語言，並以英文作為備用語言。",
+              "設定、選單、提示、任務比較和更新說明都已翻譯。從其他玩家收到的任務名稱與進度文字會保留其原始語言。",
+              "可在我們 Discord 上五個特定語言的更新紀錄頻道中找到翻譯後的版本公告。"
+            ]
+          },
+          {
+            "title": "讓整個隊伍掌握資訊",
+            "items": [
+              "新的發佈位置選項會在你的隊伍中有人未被辨識為 QT 使用者時，將你已啟用的事件公告傳送到隊伍聊天。此選項預設啟用，可在設定中關閉。",
+              "這也適用於配對的副本隊伍。單人遊玩和團隊會排除在外，且絕不會轉發其他玩家的公告。"
+            ]
+          }
+        ]
       }
     },
     {
@@ -3311,6 +3576,286 @@
             "items": [
               "Strengthened tests detect forbidden frame access even when an error is caught internally.",
               "Release checks now refuse to publish while implementation changes remain uncommitted, helping ensure fixes actually reach the download."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "5.13.1",
+        "welcome": "Cette mise à jour de maintenance améliore la récupération des plaques de quête, supprime les bulles et logos de joueurs obsolètes, et garantit un comportement cohérent des paramètres et de la fenêtre de débogage.",
+        "sections": [
+          {
+            "title": "Plaques de quête et indicateurs de joueurs",
+            "items": [
+              "Les icônes de quête et les teintes des barres de vie se rétablissent correctement après la fermeture des vues restreintes. Les analyses de quêtes différées conservent leur temps de stabilisation, et les données d’infobulle temporairement manquantes gardent leur nombre de nouvelles tentatives.",
+              "Les bulles d’annonce sont nettoyées quand la plaque d’un joueur disparaît ou est réutilisée pendant le combat. Les cadres protégés ou interdits attendent un nettoyage sûr.",
+              "Les positions sur la carte et la présence des joueurs se rétablissent après avoir désactivé QuestTogether, changé de zone, puis l’avoir réactivé. Les joueurs partis ne récupèrent plus un logo QT à cause de retraits tardifs de position ou de statut de partenaire."
+            ]
+          },
+          {
+            "title": "Correctifs des paramètres et des fenêtres",
+            "items": [
+              "La case Recherche de partenaires de quête reste synchronisée quand le statut change via les commandes, les menus ou les paramètres de profil.",
+              "La fenêtre de débogage termine en toute sécurité les déplacements et redimensionnements interrompus quand les restrictions sont levées, même après avoir été masquée."
+            ]
+          },
+          {
+            "title": "Améliorations de fiabilité",
+            "items": [
+              "Des tests renforcés détectent l’accès aux cadres interdits même lorsqu’une erreur est interceptée en interne.",
+              "Les contrôles de publication refusent désormais de publier tant que des changements d’implémentation ne sont pas validés, afin de garantir que les correctifs atteignent bien le téléchargement."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.13.1",
+        "welcome": "Dieses Wartungsupdate verbessert die Wiederherstellung von Quest-Plaketten, entfernt veraltete Sprechblasen und Spielerlogos und sorgt dafür, dass Einstellungen und das Debug-Fenster konsistent funktionieren.",
+        "sections": [
+          {
+            "title": "Quest-Plaketten und Spieleranzeigen",
+            "items": [
+              "Questsymbole und Lebensleisten-Einfärbungen werden korrekt wiederhergestellt, nachdem eingeschränkte Ansichten geschlossen wurden. Verzögerte Questscans behalten ihre Einschwingzeit bei, und vorübergehend fehlende Tooltip-Daten behalten ihr Wiederholungsbudget.",
+              "Ankündigungsblasen werden bereinigt, wenn eine Spielerplakette verschwindet oder im Kampf wiederverwendet wird. Geschützte oder verbotene Frames warten auf eine sichere Bereinigung.",
+              "Kartenpositionen und Spielerpräsenz werden wiederhergestellt, nachdem QuestTogether deaktiviert, die Zone gewechselt und es wieder aktiviert wurde. Fortgegangene Spieler erhalten kein QT-Logo mehr durch verspätete Zurückziehungen von Standort- oder Partnerstatusdaten."
+            ]
+          },
+          {
+            "title": "Korrekturen an Einstellungen und Fenstern",
+            "items": [
+              "Das Kontrollkästchen Suche nach Questpartnern bleibt synchronisiert, wenn sich der Status über Befehle, Menüs oder Profileinstellungen ändert.",
+              "Das Debug-Fenster beendet unterbrochene Zieh- und Größenänderungsvorgänge sicher, wenn Einschränkungen aufgehoben werden, selbst nachdem es ausgeblendet wurde."
+            ]
+          },
+          {
+            "title": "Verbesserungen der Zuverlässigkeit",
+            "items": [
+              "Verstärkte Tests erkennen den Zugriff auf verbotene Frames auch dann, wenn ein Fehler intern abgefangen wird.",
+              "Veröffentlichungsprüfungen verweigern nun die Veröffentlichung, solange Implementierungsänderungen nicht committet sind, damit Korrekturen tatsächlich im Download ankommen."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.13.1",
+        "welcome": "Esta actualización de mantenimiento mejora la recuperación de las placas de misión, elimina burbujas y logotipos de jugadores obsoletos, y mantiene los ajustes y la ventana de depuración funcionando de forma coherente.",
+        "sections": [
+          {
+            "title": "Placas de misión e indicadores de jugadores",
+            "items": [
+              "Los iconos de misión y los tintes de salud se recuperan correctamente al cerrarse las vistas restringidas. Los escaneos de misiones retrasados conservan su tiempo de asentamiento, y los datos de descripción emergente que falten temporalmente mantienen su margen de reintentos.",
+              "Las burbujas de anuncio se limpian cuando la placa de un jugador desaparece o se reutiliza durante el combate. Los marcos protegidos o prohibidos esperan a una limpieza segura.",
+              "Las ubicaciones del mapa y la presencia de jugadores se recuperan tras desactivar QuestTogether, cambiar de zona y volver a activarlo. Los jugadores que se han marchado ya no vuelven a recibir un logotipo de QT por retiradas tardías de ubicación o estado de compañero."
+            ]
+          },
+          {
+            "title": "Correcciones de ajustes y ventanas",
+            "items": [
+              "La casilla Buscando compañeros para misiones permanece sincronizada cuando el estado cambia mediante comandos, menús o ajustes de perfil.",
+              "La ventana de depuración finaliza de forma segura los gestos de arrastrar y redimensionar interrumpidos cuando se levantan las restricciones, incluso después de haberse ocultado."
+            ]
+          },
+          {
+            "title": "Mejoras de fiabilidad",
+            "items": [
+              "Las pruebas reforzadas detectan accesos a marcos prohibidos incluso cuando un error se captura internamente.",
+              "Las comprobaciones de lanzamiento ahora se niegan a publicar mientras queden cambios de implementación sin confirmar, lo que ayuda a garantizar que las correcciones lleguen realmente a la descarga."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "5.13.1",
+        "welcome": "Esta actualización de mantenimiento mejora la recuperación de placas de misión, borra globos y logos de jugador obsoletos, y mantiene el comportamiento consistente de la configuración y la ventana de depuración.",
+        "sections": [
+          {
+            "title": "Placas de misión e indicadores de jugador",
+            "items": [
+              "Los íconos de misión y los tintes de salud se recuperan correctamente después de que se cierran las vistas restringidas. Los escaneos de misiones retrasados conservan su tiempo de estabilización, y los datos de descripción emergente que faltan temporalmente mantienen su margen de reintentos.",
+              "Los globos de anuncio se limpian cuando una placa de jugador desaparece o se reutiliza durante el combate. Los marcos protegidos o prohibidos esperan a una limpieza segura.",
+              "Las ubicaciones en el mapa y la presencia de jugadores se recuperan después de desactivar QuestTogether, cambiar de zona y volver a activarlo. Los jugadores que se fueron ya no recuperan un logo de QT por retiradas tardías de ubicación o estado de compañero."
+            ]
+          },
+          {
+            "title": "Correcciones de configuración y ventanas",
+            "items": [
+              "La casilla Buscando compañeros para misiones se mantiene sincronizada cuando el estado cambia mediante comandos, menús o configuración de perfil.",
+              "La ventana de depuración finaliza de forma segura los gestos de arrastre y cambio de tamaño interrumpidos cuando se levantan las restricciones, incluso después de haber estado oculta."
+            ]
+          },
+          {
+            "title": "Mejoras de fiabilidad",
+            "items": [
+              "Las pruebas reforzadas detectan el acceso a marcos prohibidos incluso cuando un error se captura internamente.",
+              "Las comprobaciones de lanzamiento ahora se niegan a publicar mientras queden cambios de implementación sin confirmar, lo que ayuda a asegurar que las correcciones realmente lleguen a la descarga."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.13.1",
+        "welcome": "Esta atualização de manutenção melhora a recuperação das placas de missões, limpa balões e logotipos de jogadores obsoletos e mantém as configurações e a janela de depuração se comportando de forma consistente.",
+        "sections": [
+          {
+            "title": "Placas de missões e indicadores de jogadores",
+            "items": [
+              "Ícones de missões e tons de vida se recuperam corretamente depois que visualizações restritas são fechadas. Varreduras de missões adiadas mantêm seu tempo de estabilização, e dados de tooltip temporariamente ausentes mantêm seu limite de novas tentativas.",
+              "Balões de anúncio são limpos quando a placa de um jogador desaparece ou é reutilizada durante o combate. Quadros protegidos ou proibidos aguardam uma limpeza segura.",
+              "Localizações no mapa e presença de jogadores se recuperam após desativar o QuestTogether, mudar de zona e ativá-lo novamente. Jogadores que saíram não recuperam mais um logotipo QT por causa de retiradas tardias de localização ou status de parceiro."
+            ]
+          },
+          {
+            "title": "Correções de configurações e janela",
+            "items": [
+              "A caixa Procurando parceiros para fazer missões permanece sincronizada quando o status muda por comandos, menus ou configurações de perfil.",
+              "A janela de depuração termina com segurança gestos de arrastar e redimensionar interrompidos quando as restrições são suspensas, mesmo depois de ter sido ocultada."
+            ]
+          },
+          {
+            "title": "Melhorias de confiabilidade",
+            "items": [
+              "Testes reforçados detectam acesso a quadros proibidos mesmo quando um erro é capturado internamente.",
+              "As verificações de lançamento agora recusam publicar enquanto mudanças de implementação permanecem sem commit, ajudando a garantir que as correções realmente cheguem ao download."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.13.1",
+        "welcome": "Это техническое обновление улучшает восстановление индикаторов заданий, очищает устаревшие пузырьки и логотипы игроков, а также поддерживает единообразную работу настроек и окна отладки.",
+        "sections": [
+          {
+            "title": "Индикаторы заданий и игроков",
+            "items": [
+              "Значки заданий и оттенки здоровья корректно восстанавливаются после закрытия ограниченных видов. Отложенные проверки заданий сохраняют время ожидания стабилизации, а временно отсутствующие данные подсказок сохраняют свой лимит повторов.",
+              "Пузырьки объявлений очищаются, когда индикатор игрока исчезает или повторно используется в бою. Защищенные или запрещенные фреймы ждут безопасной очистки.",
+              "Местоположения на карте и присутствие игроков восстанавливаются после отключения QuestTogether, смены зоны и повторного включения. Ушедшие игроки больше не получают логотип QT из запоздалых отзывов местоположения или статуса партнера."
+            ]
+          },
+          {
+            "title": "Исправления настроек и окон",
+            "items": [
+              "Флажок поиска напарников для заданий остается синхронизированным при изменении статуса через команды, меню или настройки профиля.",
+              "Окно отладки безопасно завершает прерванные перетаскивания и изменения размера после снятия ограничений, даже если оно было скрыто."
+            ]
+          },
+          {
+            "title": "Улучшения надежности",
+            "items": [
+              "Усиленные тесты обнаруживают доступ к запрещенным фреймам, даже если ошибка перехвачена внутри.",
+              "Проверки выпуска теперь не позволяют публиковать версию, пока изменения реализации не зафиксированы, помогая убедиться, что исправления действительно попадут в загрузку."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.13.1",
+        "welcome": "Questo aggiornamento di manutenzione migliora il ripristino degli indicatori delle missioni, rimuove fumetti e loghi giocatore obsoleti e mantiene coerenti le impostazioni e la finestra di debug.",
+        "sections": [
+          {
+            "title": "Indicatori missione e giocatori",
+            "items": [
+              "Le icone delle missioni e le tinte della salute si ripristinano correttamente dopo la chiusura delle visualizzazioni limitate. Le scansioni missioni ritardate mantengono il loro tempo di assestamento, e i dati tooltip temporaneamente mancanti conservano il loro limite di tentativi.",
+              "I fumetti degli annunci vengono ripuliti quando la barra di un giocatore scompare o viene riutilizzata durante il combattimento. I riquadri protetti o vietati attendono una pulizia sicura.",
+              "Le posizioni sulla mappa e la presenza dei giocatori si ripristinano dopo aver disattivato QuestTogether, cambiato zona e riattivato l'addon. I giocatori andati via non riottengono più un logo QT da ritiri tardivi della posizione o dello stato di partner."
+            ]
+          },
+          {
+            "title": "Correzioni a impostazioni e finestre",
+            "items": [
+              "La casella In cerca di compagni per le missioni resta sincronizzata quando lo stato cambia tramite comandi, menu o impostazioni del profilo.",
+              "La finestra di debug conclude in sicurezza i gesti di trascinamento e ridimensionamento interrotti quando le restrizioni vengono rimosse, anche dopo essere stata nascosta."
+            ]
+          },
+          {
+            "title": "Miglioramenti dell'affidabilità",
+            "items": [
+              "Test rafforzati rilevano l'accesso a riquadri vietati anche quando un errore viene intercettato internamente.",
+              "I controlli di rilascio ora rifiutano la pubblicazione finché restano modifiche dell'implementazione non registrate, aiutando a garantire che le correzioni arrivino davvero al download."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.13.1",
+        "welcome": "이번 유지보수 업데이트는 퀘스트 이름표 복구를 개선하고, 오래된 말풍선과 플레이어 로고를 정리하며, 설정과 디버그 창이 일관되게 동작하도록 합니다.",
+        "sections": [
+          {
+            "title": "퀘스트 이름표 및 플레이어 표시",
+            "items": [
+              "제한된 표시가 닫힌 뒤 퀘스트 아이콘과 생명력 색조가 올바르게 복구됩니다. 지연된 퀘스트 스캔은 안정화 시간을 유지하며, 일시적으로 누락된 툴팁 데이터는 재시도 횟수를 유지합니다.",
+              "전투 중 플레이어 이름표가 사라지거나 재사용될 때 알림 말풍선이 정리됩니다. 보호되었거나 금지된 프레임은 안전하게 정리할 수 있을 때까지 대기합니다.",
+              "QuestTogether를 비활성화하고 지역을 변경한 뒤 다시 활성화해도 지도 위치와 플레이어 존재 정보가 복구됩니다. 떠난 플레이어는 늦게 도착한 위치 또는 파트너 상태 철회로 QT 로고를 다시 얻지 않습니다."
+            ]
+          },
+          {
+            "title": "설정 및 창 수정",
+            "items": [
+              "명령어, 메뉴, 프로필 설정을 통해 상태가 변경되어도 퀘스트 파트너 찾는 중 체크박스가 동기화된 상태를 유지합니다.",
+              "디버그 창이 숨겨진 뒤에도 제한이 풀리면 중단된 끌기 및 크기 조절 동작을 안전하게 마무리합니다."
+            ]
+          },
+          {
+            "title": "안정성 개선",
+            "items": [
+              "오류가 내부에서 잡히더라도 강화된 테스트가 금지된 프레임 접근을 감지합니다.",
+              "이제 출시 검사는 구현 변경 사항이 커밋되지 않은 상태에서는 게시를 거부하여, 수정 사항이 실제로 다운로드에 포함되도록 도와줍니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.13.1",
+        "welcome": "本维护更新改进了任务姓名板恢复，清理过期的气泡和玩家标志，并保持设置和调试窗口的行为一致。",
+        "sections": [
+          {
+            "title": "任务姓名板和玩家指示器",
+            "items": [
+              "受限视图关闭后，任务图标和生命值着色会正确恢复。延迟任务扫描会保留其稳定等待时间，临时缺失的鼠标提示数据也会保留重试次数。",
+              "当玩家姓名板消失或在战斗中被复用时，公告气泡会被清理。受保护或被禁止的框架会等待安全时机再清理。",
+              "禁用 QuestTogether、更换区域并再次启用后，地图位置和玩家存在状态会恢复。已离开的玩家不再会因迟到的位置或伙伴状态撤回而重新获得 QT 标志。"
+            ]
+          },
+          {
+            "title": "设置和窗口修复",
+            "items": [
+              "当状态通过命令、菜单或配置文件设置更改时，“寻找任务伙伴”复选框会保持同步。",
+              "限制解除后，调试窗口会安全完成被中断的拖动和调整大小操作，即使它此前已被隐藏。"
+            ]
+          },
+          {
+            "title": "可靠性改进",
+            "items": [
+              "强化后的测试即使在错误被内部捕获时，也能检测到被禁止的框架访问。",
+              "发布检查现在会在实现更改尚未提交时拒绝发布，帮助确保修复确实进入下载版本。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.13.1",
+        "welcome": "此維護更新改善任務名條復原、清除過期的泡泡與玩家標誌，並讓設定與除錯視窗的行為保持一致。",
+        "sections": [
+          {
+            "title": "任務名條與玩家指示器",
+            "items": [
+              "受限制的檢視關閉後，任務圖示和生命值色調會正確復原。延遲任務掃描會保留其穩定時間，暫時缺少的提示資料也會保留其重試次數。",
+              "當玩家名條消失或在戰鬥中被重用時，公告泡泡會被清理。受保護或禁止的框架會等待安全時機再清理。",
+              "停用 QuestTogether、變更區域並再次啟用後，地圖位置與玩家存在狀態會復原。已離開的玩家不會再因延遲的位置或夥伴狀態撤回而重新取得 QT 標誌。"
+            ]
+          },
+          {
+            "title": "設定與視窗修正",
+            "items": [
+              "當狀態透過指令、選單或設定檔設定變更時，尋找任務夥伴核取方塊會保持同步。",
+              "限制解除後，即使除錯視窗已被隱藏，也會安全完成被中斷的拖曳與調整大小手勢。"
+            ]
+          },
+          {
+            "title": "可靠性改善",
+            "items": [
+              "強化測試可偵測禁止的框架存取，即使錯誤已在內部被攔截也一樣。",
+              "發佈檢查現在會在實作變更尚未提交時拒絕發布，協助確保修正確實到達下載版本。"
             ]
           }
         ]
@@ -3344,6 +3889,316 @@
               "QuestTogether notices when another player reports a newer stable addon version and prints an update reminder in your chosen QuestTogether chat window.",
               "The reminder is saved across characters and appears once each reload until you install the detected release or a newer one. Alpha and beta versions do not trigger reminders.",
               "Version announcements are small and infrequent. QuestTogether also recognizes version information in existing ping replies."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "5.13.0",
+        "welcome": "Trouvez des partenaires de quête d’un coup d’œil grâce aux points de carte et logos de joueurs mis en évidence, à des paramètres de position simplifiés et à des rappels quand un autre joueur possède une version stable plus récente de QuestTogether.",
+        "sections": [
+          {
+            "title": "Repérer les partenaires de quête",
+            "items": [
+              "Les joueurs recherchant des partenaires de quête ont une douce lueur dorée autour de leurs points de carte et de minicarte aux couleurs de leur classe.",
+              "Leur logo QuestTogether sur la barre d’info reçoit une douce lueur dorée. Les surbrillances disparaissent quand le statut est désactivé ou expire.",
+              "Les paramètres Positions des joueurs incluent Afficher uniquement les joueurs recherchant des partenaires de quête. Cette option commence désactivée et filtre les deux cartes lorsqu’elle est activée.",
+              "La fenêtre Nouveautés en jeu affiche côte à côte les logos et points de carte normaux et lumineux. La lueur dorée signifie rechercher des partenaires de quête."
+            ],
+            "illustration": "quest-partners"
+          },
+          {
+            "title": "Paramètres de position simplifiés",
+            "items": [
+              "Partager ma position et Afficher les autres joueurs s’appliquent chacun à la carte du monde et à la minicarte.",
+              "Les deux options sont activées par défaut pour les nouveaux profils. Les désactivations existantes du partage de position sont conservées lors de la mise à niveau."
+            ]
+          },
+          {
+            "title": "Rappels de nouvelle version",
+            "items": [
+              "QuestTogether détecte quand un autre joueur signale une version stable plus récente de l’addon et affiche un rappel de mise à jour dans la fenêtre de discussion QuestTogether de votre choix.",
+              "Le rappel est conservé entre les personnages et apparaît une fois à chaque rechargement jusqu’à ce que vous installiez la version détectée ou une version plus récente. Les versions alpha et bêta ne déclenchent pas de rappels.",
+              "Les annonces de version sont légères et peu fréquentes. QuestTogether reconnaît aussi les informations de version dans les réponses de ping existantes."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.13.0",
+        "welcome": "Finde Questpartner auf einen Blick mit hervorgehobenen Kartenpunkten und Spielerlogos, einfacheren Standorteinstellungen und Erinnerungen, wenn ein anderer Spieler eine neuere stabile QuestTogether-Version hat.",
+        "sections": [
+          {
+            "title": "Questpartner erkennen",
+            "items": [
+              "Spieler, die Questpartner suchen, haben einen sanften goldenen Schein um ihre klassenfarbenen Punkte auf Karte und Minikarte.",
+              "Ihr QuestTogether-Logo an der Namensplakette erhält einen sanften goldenen Schein. Hervorhebungen verschwinden, wenn der Status ausgeschaltet wird oder abläuft.",
+              "Die Einstellungen für Spielerstandorte enthalten Nur Spieler anzeigen, die Questpartner suchen. Die Option ist anfangs ausgeschaltet und filtert bei Aktivierung beide Karten.",
+              "Das Was ist neu-Fenster im Spiel zeigt normale und leuchtende Logos und Kartenpunkte nebeneinander. Goldener Schein bedeutet, dass Questpartner gesucht werden."
+            ],
+            "illustration": "quest-partners"
+          },
+          {
+            "title": "Einfachere Standorteinstellungen",
+            "items": [
+              "Meinen Standort teilen und Andere Spieler anzeigen gelten jeweils sowohl für die Weltkarte als auch für die Minikarte.",
+              "Beide Optionen sind bei neuen Profilen anfangs aktiviert. Vorhandene Ablehnungen der Standortfreigabe bleiben beim Upgrade erhalten."
+            ]
+          },
+          {
+            "title": "Erinnerungen an neue Versionen",
+            "items": [
+              "QuestTogether erkennt, wenn ein anderer Spieler eine neuere stabile Addon-Version meldet, und gibt eine Update-Erinnerung in deinem gewählten QuestTogether-Chatfenster aus.",
+              "Die Erinnerung wird charakterübergreifend gespeichert und erscheint nach jedem Neuladen einmal, bis du die erkannte Version oder eine neuere installierst. Alpha- und Betaversionen lösen keine Erinnerungen aus.",
+              "Versionsankündigungen sind klein und selten. QuestTogether erkennt Versionsinformationen auch in vorhandenen Ping-Antworten."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.13.0",
+        "welcome": "Encuentra compañeros para misiones de un vistazo con puntos del mapa y logotipos de jugadores resaltados, ajustes de ubicación más sencillos y recordatorios cuando otro jugador tenga una versión estable más reciente de QuestTogether.",
+        "sections": [
+          {
+            "title": "Encuentra compañeros para misiones",
+            "items": [
+              "Los jugadores que buscan compañeros para misiones tienen un suave resplandor dorado alrededor de sus puntos del mapa y el minimapa, coloreados por clase.",
+              "Su logotipo de QuestTogether en la placa de nombre recibe un suave resplandor dorado. Los resaltados desaparecen cuando el estado se desactiva o caduca.",
+              "Los ajustes de Ubicaciones de jugadores incluyen Mostrar solo jugadores que buscan compañeros para misiones. Empieza desactivado y, al activarlo, filtra ambos mapas.",
+              "La ventana Novedades del juego muestra logotipos y puntos de mapa normales y con resplandor uno junto a otro. El resplandor dorado significa que se buscan compañeros para misiones."
+            ],
+            "illustration": "quest-partners"
+          },
+          {
+            "title": "Ajustes de ubicación más sencillos",
+            "items": [
+              "Compartir mi ubicación y Mostrar otros jugadores se aplican tanto al mapa del mundo como al minimapa.",
+              "Ambas opciones empiezan activadas en los perfiles nuevos. Las exclusiones existentes de compartir ubicación se conservan al actualizar."
+            ]
+          },
+          {
+            "title": "Recordatorios de nueva versión",
+            "items": [
+              "QuestTogether detecta cuando otro jugador informa de una versión estable más reciente del addon y muestra un recordatorio de actualización en la ventana de chat de QuestTogether que hayas elegido.",
+              "El recordatorio se guarda entre personajes y aparece una vez en cada recarga hasta que instales la versión detectada o una más reciente. Las versiones alfa y beta no activan recordatorios.",
+              "Los anuncios de versión son pequeños y poco frecuentes. QuestTogether también reconoce información de versión en respuestas de ping existentes."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "5.13.0",
+        "welcome": "Encuentra compañeros para misiones de un vistazo con puntos de mapa y logos de jugador resaltados, configuración de ubicación más sencilla y recordatorios cuando otro jugador tiene una versión estable más nueva de QuestTogether.",
+        "sections": [
+          {
+            "title": "Detecta compañeros para misiones",
+            "items": [
+              "Los jugadores que buscan compañeros para misiones tienen un suave brillo dorado alrededor de sus puntos del mapa y minimapa con color de clase.",
+              "Su logo de QuestTogether en la placa de nombre obtiene un suave brillo dorado. Los resaltados desaparecen cuando el estado se desactiva o caduca.",
+              "La configuración de Ubicaciones de jugadores incluye Mostrar solo jugadores que buscan compañeros para misiones. Empieza desactivada y filtra ambos mapas al activarse.",
+              "La ventana de Novedades dentro del juego muestra logos y puntos de mapa normales y brillantes lado a lado. El brillo dorado significa que buscan compañeros para misiones."
+            ],
+            "illustration": "quest-partners"
+          },
+          {
+            "title": "Configuración de ubicación más sencilla",
+            "items": [
+              "Compartir mi ubicación y Mostrar otros jugadores se aplican al mapa del mundo y al minimapa.",
+              "Ambas opciones empiezan activadas para los perfiles nuevos. Las exclusiones existentes de compartir ubicación se conservan al actualizar."
+            ]
+          },
+          {
+            "title": "Recordatorios de versión nueva",
+            "items": [
+              "QuestTogether detecta cuando otro jugador informa una versión estable más nueva del addon e imprime un recordatorio de actualización en la ventana de chat de QuestTogether que elegiste.",
+              "El recordatorio se guarda entre personajes y aparece una vez en cada recarga hasta que instales la versión detectada o una más nueva. Las versiones alfa y beta no activan recordatorios.",
+              "Los anuncios de versión son pequeños y poco frecuentes. QuestTogether también reconoce información de versión en las respuestas de ping existentes."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.13.0",
+        "welcome": "Encontre parceiros para fazer missões de relance com pontos no mapa e logotipos de jogadores destacados, configurações de localização mais simples e lembretes quando outro jogador tiver uma versão estável mais recente do QuestTogether.",
+        "sections": [
+          {
+            "title": "Encontre parceiros para fazer missões",
+            "items": [
+              "Jogadores procurando parceiros para fazer missões têm um brilho dourado suave ao redor dos pontos do mapa e do minimapa coloridos pela classe.",
+              "O logotipo do QuestTogether na placa de identificação deles recebe um brilho dourado suave. Os destaques desaparecem quando o status é desativado ou expira.",
+              "As configurações de Localizações de Jogadores incluem Mostrar apenas jogadores procurando parceiros para fazer missões. Ela começa desativada e filtra ambos os mapas quando ativada.",
+              "A janela Novidades do jogo mostra logotipos e pontos de mapa normais e brilhantes lado a lado. Brilho dourado significa procurando parceiros para fazer missões."
+            ],
+            "illustration": "quest-partners"
+          },
+          {
+            "title": "Configurações de localização mais simples",
+            "items": [
+              "Compartilhar minha localização e Mostrar outros jogadores se aplicam ao mapa-múndi e ao minimapa.",
+              "Ambas as opções começam ativadas para novos perfis. Opções de não compartilhar localização existentes são preservadas ao atualizar."
+            ]
+          },
+          {
+            "title": "Lembretes de nova versão",
+            "items": [
+              "O QuestTogether percebe quando outro jogador informa uma versão estável mais recente do addon e imprime um lembrete de atualização na janela de chat do QuestTogether escolhida por você.",
+              "O lembrete é salvo entre personagens e aparece uma vez a cada recarregamento até você instalar a versão detectada ou uma mais recente. Versões alfa e beta não acionam lembretes.",
+              "Anúncios de versão são pequenos e pouco frequentes. O QuestTogether também reconhece informações de versão em respostas de ping existentes."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.13.0",
+        "welcome": "Находите напарников для заданий с первого взгляда благодаря подсвеченным точкам на карте и логотипам игроков, более простым настройкам местоположения и напоминаниям, когда у другого игрока есть более новый стабильный выпуск QuestTogether.",
+        "sections": [
+          {
+            "title": "Замечайте напарников для заданий",
+            "items": [
+              "У игроков, которые ищут напарников для заданий, вокруг окрашенных по классу точек на карте и мини-карте появляется мягкое золотое свечение.",
+              "Их логотип QuestTogether на индикаторе получает мягкое золотое свечение. Подсветка исчезает, когда статус отключается или истекает.",
+              "Настройки местоположений игроков включают «Показывать только игроков, ищущих напарников для заданий». Изначально параметр выключен и при включении фильтрует обе карты.",
+              "Внутриигровое окно «Что нового» показывает обычные и светящиеся логотипы и точки на карте рядом друг с другом. Золотое свечение означает поиск напарников для заданий."
+            ],
+            "illustration": "quest-partners"
+          },
+          {
+            "title": "Более простые настройки местоположения",
+            "items": [
+              "«Делиться моим местоположением» и «Показывать других игроков» теперь применяются и к карте мира, и к мини-карте.",
+              "Оба параметра изначально включены для новых профилей. Существующие отказы от передачи местоположения сохраняются при обновлении."
+            ]
+          },
+          {
+            "title": "Напоминания о новой версии",
+            "items": [
+              "QuestTogether замечает, когда другой игрок сообщает о более новой стабильной версии аддона, и выводит напоминание об обновлении в выбранное вами окно чата QuestTogether.",
+              "Напоминание сохраняется между персонажами и появляется один раз после каждой перезагрузки интерфейса, пока вы не установите обнаруженный выпуск или более новый. Альфа- и бета-версии не вызывают напоминаний.",
+              "Объявления о версиях небольшие и редкие. QuestTogether также распознает информацию о версии в существующих ответах на пинги."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.13.0",
+        "welcome": "Trova a colpo d'occhio compagni per le missioni con punti sulla mappa e loghi giocatore evidenziati, impostazioni posizione più semplici e promemoria quando un altro giocatore ha una versione stabile di QuestTogether più recente.",
+        "sections": [
+          {
+            "title": "Trova compagni per le missioni",
+            "items": [
+              "I giocatori in cerca di compagni per le missioni hanno un leggero bagliore dorato attorno ai punti sulla mappa e sulla minimappa colorati in base alla classe.",
+              "Il loro logo QuestTogether sulla barra del nome ottiene un leggero bagliore dorato. Le evidenziazioni scompaiono quando lo stato viene disattivato o scade.",
+              "Le impostazioni Posizioni dei giocatori includono Mostra solo giocatori in cerca di compagni per le missioni. Inizia disattivata e filtra entrambe le mappe quando abilitata.",
+              "La finestra Novità in gioco mostra fianco a fianco loghi e punti sulla mappa normali e luminosi. Il bagliore dorato significa in cerca di compagni per le missioni."
+            ],
+            "illustration": "quest-partners"
+          },
+          {
+            "title": "Impostazioni posizione più semplici",
+            "items": [
+              "Condividi la mia posizione e Mostra altri giocatori si applicano ciascuna sia alla mappa del mondo sia alla minimappa.",
+              "Entrambe le opzioni iniziano abilitate per i nuovi profili. Le disattivazioni esistenti della condivisione posizione vengono mantenute durante l'aggiornamento."
+            ]
+          },
+          {
+            "title": "Promemoria nuova versione",
+            "items": [
+              "QuestTogether nota quando un altro giocatore segnala una versione stabile più recente dell'addon e stampa un promemoria di aggiornamento nella finestra chat di QuestTogether scelta.",
+              "Il promemoria viene salvato tra i personaggi e compare una volta a ogni ricaricamento finché non installi la versione rilevata o una più recente. Le versioni alpha e beta non attivano promemoria.",
+              "Gli annunci di versione sono piccoli e poco frequenti. QuestTogether riconosce anche le informazioni di versione nelle risposte ping esistenti."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.13.0",
+        "welcome": "강조된 지도 점과 플레이어 로고로 퀘스트 파트너를 한눈에 찾고, 더 간단한 위치 설정과 다른 플레이어에게 더 최신 안정 QuestTogether 릴리스가 있을 때 알림을 제공합니다.",
+        "sections": [
+          {
+            "title": "퀘스트 파트너 찾기",
+            "items": [
+              "퀘스트 파트너를 찾는 플레이어는 직업 색상의 지도 및 미니맵 점 주변에 부드러운 금색 빛이 표시됩니다.",
+              "해당 플레이어의 QuestTogether 이름표 로고에도 부드러운 금색 빛이 표시됩니다. 상태가 꺼지거나 만료되면 강조 표시가 사라집니다.",
+              "플레이어 위치 설정에 퀘스트 파트너를 찾는 플레이어만 표시가 포함되었습니다. 처음에는 꺼져 있으며, 활성화하면 두 지도 모두에 필터가 적용됩니다.",
+              "게임 내 새 소식 창은 일반 로고와 빛나는 로고, 지도 점을 나란히 보여줍니다. 금색 빛은 퀘스트 파트너를 찾는 중임을 의미합니다."
+            ],
+            "illustration": "quest-partners"
+          },
+          {
+            "title": "더 간단한 위치 설정",
+            "items": [
+              "내 위치 공유와 다른 플레이어 표시가 각각 세계 지도와 미니맵 모두에 적용됩니다.",
+              "새 프로필에서는 두 옵션이 모두 켜진 상태로 시작합니다. 업그레이드 시 기존 위치 공유 거부 설정은 유지됩니다."
+            ]
+          },
+          {
+            "title": "새 버전 알림",
+            "items": [
+              "QuestTogether는 다른 플레이어가 더 최신 안정 애드온 버전을 보고하면 이를 감지하고, 선택한 QuestTogether 대화 창에 업데이트 알림을 출력합니다.",
+              "알림은 캐릭터 간에 저장되며, 감지된 릴리스 또는 더 최신 릴리스를 설치할 때까지 매번 다시 불러올 때 한 번씩 표시됩니다. 알파와 베타 버전은 알림을 유발하지 않습니다.",
+              "버전 알림은 작고 드물게 표시됩니다. QuestTogether는 기존 ping 응답에 포함된 버전 정보도 인식합니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.13.0",
+        "welcome": "通过高亮地图点和玩家标志一眼找到任务伙伴，位置设置更简单，并在其他玩家拥有更新的稳定版 QuestTogether 时提醒你。",
+        "sections": [
+          {
+            "title": "发现任务伙伴",
+            "items": [
+              "正在寻找任务伙伴的玩家，其按职业着色的地图和小地图圆点周围会有柔和的金色光晕。",
+              "他们的 QuestTogether 姓名板标志会带有柔和的金色光晕。当状态关闭或过期时，高亮会消失。",
+              "玩家位置设置包含“仅显示正在寻找任务伙伴的玩家”。该选项默认关闭，启用后会筛选两张地图。",
+              "游戏内“新内容”窗口会并排显示普通和发光的标志及地图点。金色光晕表示正在寻找任务伙伴。"
+            ],
+            "illustration": "quest-partners"
+          },
+          {
+            "title": "更简单的位置设置",
+            "items": [
+              "“分享我的位置”和“显示其他玩家”分别同时适用于世界地图和小地图。",
+              "新配置文件中这两个选项默认启用。升级时会保留现有的位置共享退出选择。"
+            ]
+          },
+          {
+            "title": "新版本提醒",
+            "items": [
+              "当其他玩家报告更新的稳定版插件版本时，QuestTogether 会注意到，并在你选择的 QuestTogether 聊天窗口中打印更新提醒。",
+              "提醒会跨角色保存，并在每次重载后显示一次，直到你安装检测到的版本或更新版本。Alpha 和 beta 版本不会触发提醒。",
+              "版本公告很小且不频繁。QuestTogether 也会识别现有 ping 回复中的版本信息。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.13.0",
+        "welcome": "透過醒目的地圖點與玩家標誌、更簡單的位置設定，以及在其他玩家有較新的穩定版 QuestTogether 時提醒你，讓你一眼就能找到任務夥伴。",
+        "sections": [
+          {
+            "title": "發現任務夥伴",
+            "items": [
+              "正在尋找任務夥伴的玩家，其職業色彩的地圖與小地圖點周圍會有柔和的金色光暈。",
+              "他們的 QuestTogether 名條標誌會有柔和的金色光暈。當狀態關閉或過期時，醒目提示會消失。",
+              "玩家位置設定包含「只顯示正在尋找任務夥伴的玩家」。此選項預設關閉，啟用後會同時篩選兩張地圖。",
+              "遊戲內的最新消息視窗會並排顯示一般與發光的標誌和地圖點。金色光暈代表正在尋找任務夥伴。"
+            ],
+            "illustration": "quest-partners"
+          },
+          {
+            "title": "更簡單的位置設定",
+            "items": [
+              "分享我的位置與顯示其他玩家各自同時套用於世界地圖和小地圖。",
+              "這兩個選項對新設定檔預設啟用。升級時會保留既有的位置分享退出選擇。"
+            ]
+          },
+          {
+            "title": "新版本提醒",
+            "items": [
+              "當其他玩家回報較新的穩定版插件版本時，QuestTogether 會注意到並在你選擇的 QuestTogether 聊天視窗中列印更新提醒。",
+              "提醒會跨角色保存，並在每次重新載入後出現一次，直到你安裝偵測到的版本或更新版本為止。Alpha 和 beta 版本不會觸發提醒。",
+              "版本公告很小且不頻繁。QuestTogether 也會辨識既有 ping 回覆中的版本資訊。"
             ]
           }
         ]
@@ -3393,6 +4248,446 @@
             ]
           }
         ]
+      },
+      "frFR": {
+        "version": "5.12.0",
+        "welcome": "Trouvez des personnes avec qui faire des quêtes grâce au nouveau statut Recherche de partenaires de quête. Cette mise à jour améliore aussi la visibilité des infobulles de la minicarte et sépare le comportement du Mode Guerre et des royaumes de Retail de celui de Forever.",
+        "sections": [
+          {
+            "title": "Recherche de partenaires de quête",
+            "items": [
+              "Faites savoir aux autres utilisateurs de QuestTogether que vous voulez de la compagnie. Votre statut apparaît dans votre menu de joueur et dans les infobulles des points de carte ; il n’active pas le partage de position et n’envoie pas d’invitations.",
+              "Activez ou désactivez le statut depuis le menu de la minicarte, Paramètres > Divers, ou /qt lfg. Utilisez /qt lfg on, off ou status pour le définir ou le vérifier. Il commence désactivé et est enregistré par profil.",
+              "Le statut de partenaire expire lorsque les mises à jour s’arrêtent. Les joueurs ignorés sont exclus, et désactiver QuestTogether met votre annonce en pause."
+            ]
+          },
+          {
+            "title": "Retail et Forever",
+            "items": [
+              "Forever n’affiche plus le Mode Guerre dans les infobulles des points de joueurs, les détails de position de quête ou la sortie de ping. Les pings de Forever omettent aussi les libellés de royaume tout en conservant les noms complets des joueurs.",
+              "Les mises à jour de quêtes à proximité sur Forever ne nécessitent plus les informations de Mode Guerre de Retail. Les points de carte restent visibles entre les phases afin que vous puissiez trouver des personnes avec qui grouper.",
+              "Retail utilise l’état actif du Mode Guerre lorsqu’il est disponible. Un Mode Guerre inconnu ou non pris en charge n’est plus indiqué comme Désactivé."
+            ]
+          },
+          {
+            "title": "Points de joueurs plus stables",
+            "items": [
+              "Des coordonnées brièvement manquantes ne retirent plus immédiatement votre point. Les dernières positions signalées restent jusqu’à deux minutes, et les signalements plus anciens affichent leur âge dans l’infobulle. Les désactivations du partage se retirent toujours immédiatement lorsque la communication est disponible.",
+              "Les diffusions de déplacement sont limitées à une fois toutes les dix secondes, ce qui réduit le trafic de position. Les signaux de présence immobiles restent envoyés toutes les vingt secondes pour maintenir la compatibilité avec les anciens clients.",
+              "Le cache de position conserve désormais jusqu’à 512 joueurs. Chaque carte affiche toujours au maximum 128 points visibles, et les joueurs hors de la carte affichée ne consomment plus cette limite d’affichage."
+            ]
+          },
+          {
+            "title": "Logos de joueurs fiables",
+            "items": [
+              "Corrige les logos manquants sur les barres d’info des joueurs amicaux dans les clients Forever et Retail actuels en lisant le paramètre actuel de visibilité des joueurs amicaux.",
+              "Les logos placés à gauche se déplacent vers l’extérieur pour laisser de la place aux améliorations visibles, puis reviennent à leur position habituelle lorsque celles-ci disparaissent.",
+              "Tous les messages QuestTogether pris en charge identifient désormais leur expéditeur. Un cache limité mémorise les joueurs pour la session d’interface actuelle, afin que les signaux de présence manqués ne retirent plus leurs logos. Les départs explicites et les joueurs ignorés sont toujours effacés ; aucun message supplémentaire n’est envoyé."
+            ]
+          },
+          {
+            "title": "Finitions de la minicarte",
+            "items": [
+              "L’infobulle de la minicarte QuestTogether utilise désormais une couche d’infobulle indépendante afin de pouvoir apparaître au-dessus de l’interface des barres d’actions. Elle se masque lorsque le bouton devient indisponible ou que les restrictions commencent."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.12.0",
+        "welcome": "Finde Leute zum Questen mit dem neuen Status Suche nach Questpartnern. Dieses Update verbessert außerdem die Sichtbarkeit von Minikarten-Tooltips und trennt das Verhalten von Kriegsmodus und Realm in Retail von Forever.",
+        "sections": [
+          {
+            "title": "Suche nach Questpartnern",
+            "items": [
+              "Lass andere QuestTogether-Benutzer wissen, dass du Gesellschaft möchtest. Dein Status erscheint in deinem Spielermenü und in Tooltips von Kartenpunkten; er aktiviert weder die Standortfreigabe noch sendet er Einladungen.",
+              "Schalte den Status über das Minikartenmenü, Einstellungen > Verschiedenes oder /qt lfg um. Verwende /qt lfg on, off oder status, um ihn festzulegen oder zu prüfen. Er ist anfangs ausgeschaltet und wird pro Profil gespeichert.",
+              "Der Partnerstatus läuft ab, wenn keine Updates mehr kommen. Ignorierte Spieler werden ausgeschlossen, und das Deaktivieren von QuestTogether pausiert deine Anzeige."
+            ]
+          },
+          {
+            "title": "Retail und Forever",
+            "items": [
+              "Forever zeigt den Kriegsmodus nicht mehr in Tooltips von Spielerpunkten, Quest-Standortdetails oder Ping-Ausgaben an. Forever-Pings lassen außerdem Realm-Bezeichnungen aus, während vollständige Spielernamen erhalten bleiben.",
+              "Quest-Updates in der Nähe benötigen auf Forever keine Kriegsmodus-Informationen aus Retail mehr. Kartenpunkte bleiben phasenübergreifend sichtbar, damit du Leute zum Gruppieren findest.",
+              "Retail verwendet den aktiven Kriegsmodus-Status, wenn verfügbar. Unbekannter oder nicht unterstützter Kriegsmodus wird nicht mehr als Aus gemeldet."
+            ]
+          },
+          {
+            "title": "Stabilere Spielerpunkte",
+            "items": [
+              "Kurzzeitig fehlende Koordinaten entfernen deinen Punkt nicht mehr sofort. Zuletzt gemeldete Positionen bleiben bis zu zwei Minuten erhalten, und ältere Meldungen zeigen ihr Alter im Tooltip an. Opt-outs für die Freigabe ziehen den Standort weiterhin sofort zurück, wenn Kommunikation verfügbar ist.",
+              "Bewegungsübertragungen sind auf einmal alle zehn Sekunden begrenzt, wodurch der Standortdatenverkehr reduziert wird. Herzschläge im Stand bleiben alle zwanzig Sekunden, damit ältere Clients kompatibel bleiben.",
+              "Der Standortcache behält nun bis zu 512 Spieler. Jede Karte zeichnet weiterhin höchstens 128 sichtbare Punkte, und Spieler außerhalb der angezeigten Karte verbrauchen dieses Zeichenlimit nicht mehr."
+            ]
+          },
+          {
+            "title": "Zuverlässige Spielerlogos",
+            "items": [
+              "Fehlende Logos auf Namensplaketten befreundeter Spieler in aktuellen Forever- und Retail-Clients werden behoben, indem die aktuelle Sichtbarkeitseinstellung für befreundete Spieler ausgelesen wird.",
+              "Links positionierte Logos rücken nach außen, um Platz für sichtbare Stärkungszauber zu schaffen, und kehren dann an ihre übliche Position zurück, wenn die Stärkungszauber verschwinden.",
+              "Alle unterstützten QuestTogether-Nachrichten identifizieren nun ihren Absender. Ein begrenzter Cache merkt sich Spieler für die aktuelle UI-Sitzung, sodass verpasste Herzschläge ihre Logos nicht mehr entfernen. Ausdrückliche Abmeldungen und ignorierte Spieler werden weiterhin entfernt; es werden keine zusätzlichen Nachrichten gesendet."
+            ]
+          },
+          {
+            "title": "Feinschliff an der Minikarte",
+            "items": [
+              "Der QuestTogether-Minikarten-Tooltip verwendet nun eine unabhängige Tooltip-Ebene, damit er über der Aktionsleisten-UI erscheinen kann. Er wird ausgeblendet, wenn die Schaltfläche nicht verfügbar ist oder Einschränkungen beginnen."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.12.0",
+        "welcome": "Encuentra gente con la que hacer misiones usando el nuevo estado Buscando compañeros para misiones. Esta actualización también mejora la visibilidad de las descripciones emergentes del minimapa y separa el comportamiento del Modo de guerra y el reino de Retail del de Forever.",
+        "sections": [
+          {
+            "title": "Buscando compañeros para misiones",
+            "items": [
+              "Haz saber a otros usuarios de QuestTogether que quieres compañía. Tu estado aparece en tu menú de jugador y en las descripciones emergentes de los puntos del mapa; no activa el uso compartido de ubicación ni envía invitaciones.",
+              "Activa o desactiva el estado desde el menú del minimapa, Ajustes > Varios o /qt lfg. Usa /qt lfg on, off o status para configurarlo o consultarlo. Empieza desactivado y se guarda por perfil.",
+              "El estado de compañero caduca cuando dejan de recibirse actualizaciones. Los jugadores ignorados quedan excluidos, y desactivar QuestTogether pausa tu anuncio."
+            ]
+          },
+          {
+            "title": "Retail y Forever",
+            "items": [
+              "Forever ya no muestra el Modo de guerra en las descripciones emergentes de los puntos de jugadores, en los detalles de ubicación de misiones ni en la salida de ping. Los pings de Forever también omiten las etiquetas de reino, conservando los nombres completos de los jugadores.",
+              "Las actualizaciones de misiones cercanas en Forever ya no requieren información del Modo de guerra de Retail. Los puntos del mapa siguen visibles entre fases para que puedas encontrar gente con la que formar grupo.",
+              "Retail usa el estado activo del Modo de guerra cuando está disponible. El Modo de guerra desconocido o no admitido ya no se informa como Desactivado."
+            ]
+          },
+          {
+            "title": "Puntos de jugadores más estables",
+            "items": [
+              "La falta breve de coordenadas ya no elimina tu punto de inmediato. Las últimas posiciones comunicadas se mantienen hasta dos minutos, y los informes más antiguos muestran su antigüedad en la descripción emergente. Las exclusiones de compartir ubicación siguen retirándose de inmediato cuando hay comunicación disponible.",
+              "Las emisiones de movimiento están limitadas a una vez cada diez segundos, lo que reduce el tráfico de ubicación. Los latidos estacionarios permanecen cada veinte segundos para que los clientes antiguos sigan siendo compatibles.",
+              "La caché de ubicaciones ahora conserva hasta 512 jugadores. Cada mapa sigue dibujando como máximo 128 puntos visibles, y los jugadores fuera del mapa mostrado ya no consumen ese límite de dibujo."
+            ]
+          },
+          {
+            "title": "Logotipos de jugadores fiables",
+            "items": [
+              "Corrige logotipos ausentes en las placas de nombre de jugadores amistosos en los clientes actuales de Forever y Retail leyendo el ajuste actual de visibilidad de jugadores amistosos.",
+              "Los logotipos colocados a la izquierda se desplazan hacia fuera para dejar sitio a beneficios visibles, y vuelven a su posición habitual cuando los beneficios desaparecen.",
+              "Todos los mensajes admitidos de QuestTogether ahora identifican a su remitente. Una caché limitada recuerda a los jugadores durante la sesión actual de la IU, de modo que los latidos perdidos ya no eliminan sus logotipos. Las salidas explícitas y los jugadores ignorados se siguen borrando; no se envían mensajes adicionales."
+            ]
+          },
+          {
+            "title": "Pulido del minimapa",
+            "items": [
+              "La descripción emergente del minimapa de QuestTogether ahora usa una capa de descripción emergente independiente para que pueda aparecer sobre la IU de la barra de acción. Se oculta cuando el botón deja de estar disponible o comienzan las restricciones."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "5.12.0",
+        "welcome": "Encuentra personas con quienes hacer misiones usando el nuevo estado Buscando compañeros para misiones. Esta actualización también mejora la visibilidad de las descripciones emergentes del minimapa y separa el comportamiento del Modo de guerra y los reinos de Retail respecto a Forever.",
+        "sections": [
+          {
+            "title": "Buscando compañeros para misiones",
+            "items": [
+              "Haz saber a otros usuarios de QuestTogether que quieres compañía. Tu estado aparece en tu menú de jugador y en las descripciones emergentes de puntos del mapa; no activa compartir ubicación ni envía invitaciones.",
+              "Cambia el estado desde el menú del minimapa, Configuración > Varios o /qt lfg. Usa /qt lfg on, off o status para establecerlo o consultarlo. Empieza desactivado y se guarda por perfil.",
+              "El estado de compañero caduca cuando las actualizaciones se detienen. Los jugadores ignorados se excluyen, y desactivar QuestTogether pausa tu anuncio."
+            ]
+          },
+          {
+            "title": "Retail y Forever",
+            "items": [
+              "Forever ya no muestra el Modo de guerra en las descripciones emergentes de puntos de jugador, detalles de ubicación de misión ni salida de ping. Los pings de Forever también omiten las etiquetas de reino mientras conservan los nombres completos de los jugadores.",
+              "Las actualizaciones de misiones cercanas en Forever ya no requieren información del Modo de guerra de Retail. Los puntos del mapa permanecen visibles entre fases para que puedas encontrar personas con quienes formar grupo.",
+              "Retail usa el estado activo del Modo de guerra cuando está disponible. El Modo de guerra desconocido o no compatible ya no se informa como Desactivado."
+            ]
+          },
+          {
+            "title": "Puntos de jugador más estables",
+            "items": [
+              "La falta breve de coordenadas ya no elimina tu punto de inmediato. Las últimas posiciones informadas permanecen hasta dos minutos, y los informes más antiguos muestran su antigüedad en la descripción emergente. Las exclusiones de compartir aún se retiran de inmediato cuando la comunicación está disponible.",
+              "Las transmisiones de movimiento están limitadas a una vez cada diez segundos, lo que reduce el tráfico de ubicación. Los latidos estacionarios permanecen cada veinte segundos para que los clientes antiguos sigan siendo compatibles.",
+              "La caché de ubicación ahora conserva hasta 512 jugadores. Cada mapa aún dibuja como máximo 128 puntos visibles, y los jugadores fuera del mapa mostrado ya no consumen ese límite de dibujo."
+            ]
+          },
+          {
+            "title": "Logos de jugador fiables",
+            "items": [
+              "Se corrigen los logos que faltaban en las placas de nombre de jugadores amistosos en los clientes actuales de Forever y Retail al leer la configuración actual de visibilidad de jugadores amistosos.",
+              "Los logos ubicados a la izquierda se mueven hacia afuera para dejar espacio a los beneficios visibles, y luego vuelven a su posición habitual cuando los beneficios desaparecen.",
+              "Todos los mensajes compatibles de QuestTogether ahora identifican a su remitente. Una caché limitada recuerda a los jugadores durante la sesión actual de la IU, de modo que los latidos perdidos ya no eliminan sus logos. Las salidas explícitas y los jugadores ignorados aún se borran; no se envían mensajes adicionales."
+            ]
+          },
+          {
+            "title": "Mejoras del minimapa",
+            "items": [
+              "La descripción emergente del minimapa de QuestTogether ahora usa una capa de descripción emergente independiente para poder aparecer sobre la IU de la barra de acción. Se oculta cuando el botón deja de estar disponible o comienzan las restricciones."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.12.0",
+        "welcome": "Encontre pessoas para fazer missões usando o novo status Procurando parceiros para fazer missões. Esta atualização também melhora a visibilidade dos tooltips do minimapa e separa o comportamento do Modo de Guerra e dos reinos do Retail do Forever.",
+        "sections": [
+          {
+            "title": "Procurando parceiros para fazer missões",
+            "items": [
+              "Informe a outros usuários do QuestTogether que você quer companhia. Seu status aparece no menu do seu jogador e nos tooltips dos pontos do mapa; ele não ativa compartilhamento de localização nem envia convites.",
+              "Alterne o status pelo menu do minimapa, Configurações > Diversos ou /qt lfg. Use /qt lfg on, off ou status para definir ou verificar. Ele começa desativado e é salvo por perfil.",
+              "O status de parceiro expira quando as atualizações param. Jogadores ignorados são excluídos, e desativar o QuestTogether pausa seu anúncio."
+            ]
+          },
+          {
+            "title": "Retail e Forever",
+            "items": [
+              "O Forever não mostra mais o Modo de Guerra nos tooltips dos pontos de jogadores, nos detalhes de localização de missões nem na saída de ping. Pings do Forever também omitem rótulos de reino, preservando os nomes completos dos jogadores.",
+              "Atualizações de missões próximas no Forever não exigem mais informações de Modo de Guerra do Retail. Os pontos no mapa permanecem visíveis entre fases para que você encontre pessoas com quem formar grupo.",
+              "O Retail usa o estado ativo do Modo de Guerra quando disponível. Modo de Guerra desconhecido ou incompatível não é mais informado como Desativado."
+            ]
+          },
+          {
+            "title": "Pontos de jogadores mais estáveis",
+            "items": [
+              "Coordenadas brevemente ausentes não removem mais seu ponto imediatamente. As últimas posições informadas permanecem por até dois minutos, e informes mais antigos mostram a idade no tooltip. Opções de não compartilhar ainda são retiradas imediatamente quando a comunicação está disponível.",
+              "Transmissões de movimento são limitadas a uma vez a cada dez segundos, reduzindo o tráfego de localização. Batimentos estacionários continuam a cada vinte segundos para manter clientes mais antigos compatíveis.",
+              "O cache de localização agora mantém até 512 jogadores. Cada mapa ainda desenha no máximo 128 pontos visíveis, e jogadores fora do mapa exibido não consomem mais esse limite de desenho."
+            ]
+          },
+          {
+            "title": "Logotipos de jogadores confiáveis",
+            "items": [
+              "Corrige logotipos ausentes nas placas de identificação de jogadores aliados nos clientes Forever e Retail atuais lendo a configuração atual de visibilidade de jogadores aliados.",
+              "Logotipos posicionados à esquerda se movem para fora para abrir espaço para bônus visíveis e depois retornam à posição normal quando os bônus desaparecem.",
+              "Todas as mensagens compatíveis do QuestTogether agora identificam seu remetente. Um cache limitado lembra jogadores durante a sessão atual da IU, então batimentos perdidos não removem mais seus logotipos. Saídas explícitas e jogadores ignorados ainda são removidos; nenhuma mensagem extra é enviada."
+            ]
+          },
+          {
+            "title": "Polimento do minimapa",
+            "items": [
+              "O tooltip do minimapa do QuestTogether agora usa uma camada de tooltip independente para poder aparecer sobre a IU da barra de ações. Ele se oculta quando o botão fica indisponível ou as restrições começam."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.12.0",
+        "welcome": "Ищите людей для совместного выполнения заданий с новым статусом поиска напарников. Это обновление также улучшает видимость подсказок мини-карты и отделяет поведение режима войны и игровых миров Retail от Forever.",
+        "sections": [
+          {
+            "title": "Поиск напарников для заданий",
+            "items": [
+              "Сообщите другим пользователям QuestTogether, что вам нужна компания. Ваш статус отображается в меню игрока и в подсказках точек на карте; он не включает передачу местоположения и не отправляет приглашения.",
+              "Переключайте статус через меню мини-карты, Настройки > Разное или /qt lfg. Используйте /qt lfg on, off или status, чтобы задать или проверить его. Изначально он выключен и сохраняется для каждого профиля.",
+              "Статус напарника истекает, когда обновления прекращаются. Игнорируемые игроки исключаются, а отключение QuestTogether приостанавливает ваше объявление."
+            ]
+          },
+          {
+            "title": "Retail и Forever",
+            "items": [
+              "Forever больше не показывает режим войны в подсказках точек игроков, сведениях о местоположении задания или выводе пинга. Пинги Forever также не указывают игровые миры, сохраняя полные имена игроков.",
+              "Обновления заданий поблизости в Forever больше не требуют информации о режиме войны Retail. Точки на карте остаются видимыми между фазами, чтобы вы могли находить людей для группы.",
+              "Retail использует активное состояние режима войны, когда оно доступно. Неизвестный или неподдерживаемый режим войны больше не отображается как выключенный."
+            ]
+          },
+          {
+            "title": "Более стабильные точки игроков",
+            "items": [
+              "Кратковременное отсутствие координат больше не удаляет вашу точку сразу. Последние сообщенные позиции сохраняются до двух минут, а для более старых сообщений в подсказке показывается их возраст. Отказы от передачи местоположения по-прежнему отзываются сразу, когда связь доступна.",
+              "Передачи о перемещении ограничены одним разом в десять секунд, что снижает трафик местоположения. Периодические сигналы без движения остаются каждые двадцать секунд, чтобы сохранялась совместимость со старыми клиентами.",
+              "Кэш местоположений теперь хранит до 512 игроков. Каждая карта по-прежнему отображает не более 128 видимых точек, а игроки вне отображаемой карты больше не расходуют этот лимит отрисовки."
+            ]
+          },
+          {
+            "title": "Надежные логотипы игроков",
+            "items": [
+              "Исправлены отсутствующие логотипы на индикаторах дружественных игроков в текущих клиентах Forever и Retail за счет чтения текущей настройки видимости дружественных игроков.",
+              "Логотипы слева смещаются наружу, чтобы освободить место для видимых положительных эффектов, а затем возвращаются на обычное место, когда эффекты исчезают.",
+              "Все поддерживаемые сообщения QuestTogether теперь указывают отправителя. Ограниченный кэш запоминает игроков на текущую сессию интерфейса, поэтому пропущенные периодические сигналы больше не удаляют их логотипы. Явные уходы и игнорируемые игроки по-прежнему очищаются; дополнительные сообщения не отправляются."
+            ]
+          },
+          {
+            "title": "Полировка мини-карты",
+            "items": [
+              "Подсказка QuestTogether на мини-карте теперь использует независимый слой подсказок, поэтому может отображаться поверх интерфейса панелей команд. Она скрывается, когда кнопка становится недоступной или начинаются ограничения."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.12.0",
+        "welcome": "Trova persone con cui fare missioni usando il nuovo stato In cerca di compagni per le missioni. Questo aggiornamento migliora anche la visibilità dei tooltip della minimappa e separa il comportamento della Modalità Guerra e del reame di Retail da Forever.",
+        "sections": [
+          {
+            "title": "In cerca di compagni per le missioni",
+            "items": [
+              "Fai sapere agli altri utenti QuestTogether che vuoi compagnia. Il tuo stato compare nel menu del tuo giocatore e nei tooltip dei punti sulla mappa; non abilita la condivisione della posizione né invia inviti.",
+              "Attiva o disattiva lo stato dal menu della minimappa, da Impostazioni > Varie o con /qt lfg. Usa /qt lfg on, off o status per impostarlo o controllarlo. Inizia disattivato e viene salvato per profilo.",
+              "Lo stato di partner scade quando gli aggiornamenti si interrompono. I giocatori ignorati sono esclusi, e disattivare QuestTogether mette in pausa il tuo annuncio."
+            ]
+          },
+          {
+            "title": "Retail e Forever",
+            "items": [
+              "Forever non mostra più la Modalità Guerra nei tooltip dei punti giocatore, nei dettagli della posizione delle missioni o nell'output del ping. I ping di Forever omettono anche le etichette del reame pur conservando i nomi completi dei giocatori.",
+              "Gli aggiornamenti delle missioni vicine su Forever non richiedono più informazioni della Modalità Guerra di Retail. I punti sulla mappa restano visibili attraverso le fasi, così puoi trovare persone con cui formare un gruppo.",
+              "Retail usa lo stato attivo della Modalità Guerra quando disponibile. Una Modalità Guerra sconosciuta o non supportata non viene più segnalata come Disattivata."
+            ]
+          },
+          {
+            "title": "Punti giocatore più stabili",
+            "items": [
+              "Coordinate mancanti per poco tempo non rimuovono più subito il tuo punto. Le ultime posizioni segnalate restano fino a due minuti, e i report più vecchi mostrano la loro età nel tooltip. Le rinunce alla condivisione si ritirano comunque subito quando la comunicazione è disponibile.",
+              "Le trasmissioni di movimento sono limitate a una volta ogni dieci secondi, riducendo il traffico delle posizioni. I segnali di presenza da fermi restano ogni venti secondi, così i client più vecchi restano compatibili.",
+              "La cache delle posizioni ora conserva fino a 512 giocatori. Ogni mappa disegna comunque al massimo 128 punti visibili, e i giocatori fuori dalla mappa visualizzata non consumano più quel limite di disegno."
+            ]
+          },
+          {
+            "title": "Loghi giocatore affidabili",
+            "items": [
+              "Corregge i loghi mancanti sulle barre dei nomi dei giocatori amichevoli nei client Forever e Retail attuali leggendo l'impostazione corrente di visibilità dei giocatori amichevoli.",
+              "I loghi posizionati a sinistra si spostano verso l'esterno per fare spazio ai benefici visibili, poi tornano alla posizione abituale quando i benefici scompaiono.",
+              "Tutti i messaggi QuestTogether supportati ora identificano il mittente. Una cache limitata ricorda i giocatori per la sessione UI corrente, così i segnali di presenza mancati non rimuovono più i loro loghi. Le uscite esplicite e i giocatori ignorati vengono comunque eliminati; non vengono inviati messaggi extra."
+            ]
+          },
+          {
+            "title": "Rifiniture della minimappa",
+            "items": [
+              "Il tooltip della minimappa di QuestTogether ora usa un livello tooltip indipendente, così può apparire sopra l'UI della barra delle azioni. Si nasconde quando il pulsante diventa non disponibile o iniziano le restrizioni."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.12.0",
+        "welcome": "새 퀘스트 파트너 찾는 중 상태를 사용해 함께 퀘스트할 사람을 찾으세요. 이 업데이트는 미니맵 툴팁 가시성도 개선하고, 본 서버 전쟁 모드 및 서버 동작을 Forever와 분리합니다.",
+        "sections": [
+          {
+            "title": "퀘스트 파트너 찾는 중",
+            "items": [
+              "다른 QuestTogether 사용자에게 함께하고 싶다는 것을 알립니다. 내 상태는 플레이어 메뉴와 지도 점 툴팁에 표시되며, 위치 공유를 활성화하거나 초대를 보내지는 않습니다.",
+              "미니맵 메뉴, 설정 > 기타, 또는 /qt lfg에서 상태를 전환하세요. /qt lfg on, off, 또는 status를 사용해 설정하거나 확인할 수 있습니다. 처음에는 꺼져 있으며 프로필별로 저장됩니다.",
+              "업데이트가 중단되면 파트너 상태가 만료됩니다. 차단한 플레이어는 제외되며, QuestTogether를 비활성화하면 내 광고가 일시 중지됩니다."
+            ]
+          },
+          {
+            "title": "본 서버 및 Forever",
+            "items": [
+              "Forever는 더 이상 플레이어 점 툴팁, 퀘스트 위치 세부 정보, ping 출력에 전쟁 모드를 표시하지 않습니다. Forever ping은 전체 플레이어 이름을 유지하면서 서버 표시도 생략합니다.",
+              "Forever의 근처 퀘스트 업데이트는 더 이상 본 서버 전쟁 모드 정보를 요구하지 않습니다. 여러 위상에서도 지도 점이 계속 표시되어 함께 파티할 사람을 찾을 수 있습니다.",
+              "본 서버는 사용 가능한 경우 활성 전쟁 모드 상태를 사용합니다. 알 수 없거나 지원되지 않는 전쟁 모드는 더 이상 꺼짐으로 보고되지 않습니다."
+            ]
+          },
+          {
+            "title": "더 안정적인 플레이어 점",
+            "items": [
+              "좌표가 잠시 누락되어도 내 점이 즉시 제거되지 않습니다. 마지막으로 보고된 위치는 최대 2분 동안 유지되며, 오래된 보고는 툴팁에 경과 시간이 표시됩니다. 공유 거부는 통신이 가능할 때 여전히 즉시 철회됩니다.",
+              "이동 브로드캐스트는 10초에 한 번으로 제한되어 위치 트래픽이 줄어듭니다. 정지 상태 하트비트는 이전 클라이언트와의 호환성을 위해 계속 20초마다 유지됩니다.",
+              "위치 캐시는 이제 최대 512명의 플레이어를 유지합니다. 각 지도는 여전히 최대 128개의 보이는 점만 그리며, 표시된 지도 밖의 플레이어는 더 이상 그리기 제한을 차지하지 않습니다."
+            ]
+          },
+          {
+            "title": "신뢰할 수 있는 플레이어 로고",
+            "items": [
+              "현재 Forever 및 본 서버 클라이언트에서 현재 우호적 플레이어 표시 설정을 읽어 우호적 플레이어 이름표의 누락된 로고를 수정합니다.",
+              "왼쪽에 배치된 로고는 표시된 강화 효과를 위한 공간을 만들기 위해 바깥쪽으로 이동한 뒤, 강화 효과가 사라지면 원래 위치로 돌아옵니다.",
+              "지원되는 모든 QuestTogether 메시지는 이제 보낸 사람을 식별합니다. 제한된 캐시가 현재 UI 세션 동안 플레이어를 기억하므로, 하트비트를 놓쳐도 로고가 제거되지 않습니다. 명시적 이탈과 차단한 플레이어는 계속 정리되며, 추가 메시지는 전송되지 않습니다."
+            ]
+          },
+          {
+            "title": "미니맵 다듬기",
+            "items": [
+              "QuestTogether 미니맵 툴팁은 이제 독립적인 툴팁 레이어를 사용하므로 행동 단축바 UI 위에 나타날 수 있습니다. 버튼을 사용할 수 없게 되거나 제한이 시작되면 숨겨집니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.12.0",
+        "welcome": "使用新的“寻找任务伙伴”状态来寻找一起做任务的人。本更新还改进了小地图鼠标提示的可见性，并将正式服战争模式和服务器行为与 Forever 分离。",
+        "sections": [
+          {
+            "title": "寻找任务伙伴",
+            "items": [
+              "让其他 QuestTogether 用户知道你想找人作伴。你的状态会显示在玩家菜单和地图点鼠标提示中；它不会启用位置共享，也不会发送邀请。",
+              "可从小地图菜单、设置 > 杂项，或 /qt lfg 切换该状态。使用 /qt lfg on、off 或 status 来设置或检查状态。它默认关闭，并按配置文件保存。",
+              "当更新停止时，伙伴状态会过期。已忽略的玩家会被排除，禁用 QuestTogether 会暂停你的广告。"
+            ]
+          },
+          {
+            "title": "正式服和 Forever",
+            "items": [
+              "Forever 不再在玩家点鼠标提示、任务位置详情或 ping 输出中显示战争模式。Forever 的 ping 也会省略服务器标签，同时保留完整的玩家名称。",
+              "Forever 上的附近任务更新不再需要正式服战争模式信息。地图点会在不同相位间保持可见，方便你找到可组队的人。",
+              "正式服会在可用时使用当前的战争模式状态。未知或不受支持的战争模式不再报告为关闭。"
+            ]
+          },
+          {
+            "title": "更稳定的玩家点",
+            "items": [
+              "坐标短暂缺失不再会立即移除你的点。最后报告的位置最多会保留两分钟，较旧的报告会在鼠标提示中显示其时间。通信可用时，共享退出仍会立即撤回。",
+              "移动广播限制为每十秒一次，以减少位置流量。静止心跳仍为每二十秒一次，以保持与旧版客户端兼容。",
+              "位置缓存现在最多保留 512 名玩家。每张地图仍最多绘制 128 个可见点，显示地图之外的玩家不再占用该绘制上限。"
+            ]
+          },
+          {
+            "title": "可靠的玩家标志",
+            "items": [
+              "通过读取当前友方玩家可见性设置，修复当前 Forever 和正式服客户端中友方玩家姓名板上缺失标志的问题。",
+              "位于左侧的标志会向外移动，为可见增益留出空间，然后在增益消失时回到通常位置。",
+              "所有受支持的 QuestTogether 消息现在都会标识其发送者。有界缓存会记住当前 UI 会话中的玩家，因此错过心跳不再会移除他们的标志。明确离开和已忽略的玩家仍会被清除；不会发送额外消息。"
+            ]
+          },
+          {
+            "title": "小地图优化",
+            "items": [
+              "QuestTogether 小地图鼠标提示现在使用独立的鼠标提示层，因此可显示在动作条 UI 之上。当按钮不可用或限制开始时，它会隐藏。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.12.0",
+        "welcome": "使用新的尋找任務夥伴狀態來尋找一起解任務的人。此更新也改善小地圖提示的可見度，並將正式服戰爭模式和伺服器行為與 Forever 分離。",
+        "sections": [
+          {
+            "title": "尋找任務夥伴",
+            "items": [
+              "讓其他 QuestTogether 使用者知道你想找人作伴。你的狀態會顯示在玩家選單與地圖點提示上；它不會啟用位置分享或傳送邀請。",
+              "可從小地圖選單、設定 > 雜項，或 /qt lfg 切換狀態。使用 /qt lfg on、off 或 status 來設定或查看狀態。此狀態預設關閉，並依設定檔保存。",
+              "當更新停止時，夥伴狀態會過期。已忽略的玩家會被排除，停用 QuestTogether 會暫停你的公告。"
+            ]
+          },
+          {
+            "title": "正式服與 Forever",
+            "items": [
+              "Forever 不再於玩家點提示、任務位置詳細資訊或 ping 輸出中顯示戰爭模式。Forever ping 也會省略伺服器標籤，同時保留完整玩家名稱。",
+              "Forever 上的附近任務更新不再需要正式服戰爭模式資訊。地圖點會在不同階段間保持可見，讓你能找到可組隊的人。",
+              "正式服會在可用時使用目前的戰爭模式狀態。未知或不支援的戰爭模式不再回報為關閉。"
+            ]
+          },
+          {
+            "title": "更穩定的玩家點",
+            "items": [
+              "短暫缺少座標不再會立即移除你的點。最後回報的位置最多會保留兩分鐘，較舊的回報會在提示中顯示其時間。當通訊可用時，退出分享仍會立即撤回。",
+              "移動廣播限制為每十秒一次，以減少位置流量。靜止心跳仍維持每二十秒一次，讓較舊的客戶端保持相容。",
+              "位置快取現在最多保留 512 名玩家。每張地圖仍最多繪製 128 個可見點，而顯示地圖外的玩家不再佔用該繪製限制。"
+            ]
+          },
+          {
+            "title": "可靠的玩家標誌",
+            "items": [
+              "透過讀取目前的友方玩家可見度設定，修正目前 Forever 和正式服客戶端中友方玩家名條缺少標誌的問題。",
+              "位於左側的標誌會向外移動以騰出可見增益的空間，並在增益消失後返回通常位置。",
+              "所有支援的 QuestTogether 訊息現在都會識別其傳送者。有界限的快取會記住目前 UI 工作階段中的玩家，因此錯過心跳不再會移除其標誌。明確離開與已忽略的玩家仍會被清除；不會傳送額外訊息。"
+            ]
+          },
+          {
+            "title": "小地圖潤飾",
+            "items": [
+              "QuestTogether 小地圖提示現在使用獨立的提示圖層，因此可顯示在快捷列 UI 上方。當按鈕無法使用或限制開始時，它會隱藏。"
+            ]
+          }
+        ]
       }
     },
     {
@@ -3433,6 +4728,386 @@
             ]
           }
         ]
+      },
+      "frFR": {
+        "version": "5.11.0",
+        "welcome": "QuestTogether ajoute désormais les positions des joueurs, les logos sur les barres des joueurs, les comparaisons de quêtes ciblées et un accès plus simple aux retours et à l’assistance via Discord. Les paramètres vous permettent de choisir ce que vous partagez et ce que vous voyez pendant que la progression des quêtes reste coordonnée avec les autres utilisateurs de QuestTogether.",
+        "sections": [
+          {
+            "title": "Trouver des joueurs QuestTogether à proximité",
+            "items": [
+              "Affiche le logo de parchemin à côté des joueurs QuestTogether amicaux lorsque les barres d’info amicales de WoW sont activées. Les barres des joueurs sont activées par défaut, avec une position Gauche avec marge ; choisissez Gauche, Droite, Haut ou Préfixe sans modifier les couleurs des barres de vie.",
+              "Des points de joueurs aux couleurs de classe peuvent apparaître sur la carte du monde et la minicarte pour les joueurs qui partagent leur position. Survolez un point pour voir le nom, la faction, la race, la classe et le niveau ; cliquez dessus pour ouvrir le menu de joueur QuestTogether.",
+              "Positions des joueurs possède des interrupteurs distincts pour le partage et l’affichage sur la carte du monde et la minicarte, et les quatre sont activés par défaut. La présence des logos sur les barres des joueurs peut continuer même lorsque les deux interrupteurs de partage de position sont désactivés.",
+              "Les positions se rafraîchissent périodiquement et disparaissent lorsqu’elles expirent. Les deux joueurs doivent utiliser l’addon mis à jour ; un point ne garantit pas que vous partagez la même phase ou couche."
+            ]
+          },
+          {
+            "title": "Comparer un joueur ou tout le groupe",
+            "items": [
+              "L’action Comparer les quêtes du menu de joueur compare désormais seulement vous et le joueur sélectionné, y compris les pairs QuestTogether joignables qui ne sont pas dans le groupe. La comparaison de tout le groupe reste disponible depuis le menu de la minicarte, les menus de noms de quête et /qt compare.",
+              "Le partage de quêtes et les demandes de partage restent réservés au groupe. Les comparaisons ciblées indiquent quand un groupe est nécessaire pour le partage et quand le joueur sélectionné doit utiliser QuestTogether pour répondre.",
+              "Si une demande de partage est déjà en attente auprès d’un autre joueur, la comparaison indique désormais de qui elle attend une réponse après votre changement de cible."
+            ]
+          },
+          {
+            "title": "Retours et assistance",
+            "items": [
+              "La fenêtre d’accueil et la page principale des paramètres incluent désormais Discord — Retours et assistance. Cela ouvre une invitation copiable lorsqu’elle est disponible, ou affiche l’invitation dans la discussion si la fenêtre de lien ne peut pas s’ouvrir."
+            ]
+          },
+          {
+            "title": "Correctifs et finitions",
+            "items": [
+              "Les joueurs ignorés sont désormais filtrés plus complètement. Les nouveaux journaux, bulles, points, comparaisons et opérations de partage sont bloqués, tandis que les bulles et positions existantes sont effacées lorsque la liste des ignorés change.",
+              "Correction de fausses plaques de quête causées par des limites d’infobulle indisponibles correspondant au texte d’objectif d’une autre quête.",
+              "Désactiver le partage sur la carte ou la minicarte relance désormais la mise à jour après des échecs temporaires de communication. Désactiver les deux options de partage retire aussi les détails de position des autres mises à jour de l’addon.",
+              "Les logos de joueurs s’effacent correctement lorsque la présence d’un joueur expire juste avant son départ. Chuchoter depuis les points de carte ouvre votre fenêtre de discussion, et changer la destination du journal depuis les Paramètres est indisponible pendant les restrictions."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.11.0",
+        "welcome": "QuestTogether fügt nun Spielerstandorte, Spielerplaketten-Logos, fokussierte Questvergleiche sowie einfacheres Discord-Feedback und Unterstützung hinzu. Über die Einstellungen wählst du, was du teilst und was du siehst, während der Questfortschritt mit anderen QuestTogether-Benutzern koordiniert bleibt.",
+        "sections": [
+          {
+            "title": "QuestTogether-Spieler in der Nähe finden",
+            "items": [
+              "Zeige das Schriftrollenlogo neben befreundeten QuestTogether-Spielern, wenn WoWs Namensplaketten für befreundete Spieler aktiviert sind. Spielerplaketten sind standardmäßig aktiviert, mit einer gepolsterten Position Links; wähle Links, Rechts, Oben oder Präfix, ohne die Farben der Lebensleisten zu ändern.",
+              "Klassenfarbene Spielerpunkte können auf Weltkarte und Minikarte für Spieler erscheinen, die ihren Standort teilen. Fahre mit der Maus über einen Punkt, um Name, Fraktion, Volk, Klasse und Stufe zu sehen; klicke darauf, um das QuestTogether-Spielermenü zu öffnen.",
+              "Spielerstandorte hat separate Schalter zum Teilen und Anzeigen für Weltkarte und Minikarte, und alle vier sind anfangs aktiviert. Die Präsenz für Spielerplaketten-Logos kann weiterlaufen, selbst wenn beide Schalter zum Teilen des Standorts ausgeschaltet sind.",
+              "Standorte werden regelmäßig aktualisiert und verschwinden, wenn sie ablaufen. Beide Spieler benötigen das aktualisierte Addon; ein Punkt garantiert nicht, dass ihr euch in derselben Phase oder demselben Layer befindet."
+            ]
+          },
+          {
+            "title": "Einen Spieler oder die ganze Gruppe vergleichen",
+            "items": [
+              "Die Aktion Quests vergleichen im Spielermenü vergleicht nun nur dich und den ausgewählten Spieler, einschließlich erreichbarer QuestTogether-Kontakte außerhalb der Gruppe. Der Vergleich der ganzen Gruppe bleibt über das Minikartenmenü, Questnamen-Menüs und /qt compare verfügbar.",
+              "Questteilen und Teilen-Anfragen bleiben auf die Gruppe beschränkt. Gezielte Vergleiche erklären, wann eine Gruppe zum Teilen benötigt wird und wann der ausgewählte Spieler QuestTogether benötigt, um zu antworten.",
+              "Wenn eine Anfrage zum Teilen bereits auf einen anderen Spieler wartet, zeigt der Vergleich nun an, auf wen gewartet wird, nachdem du das Ziel gewechselt hast."
+            ]
+          },
+          {
+            "title": "Feedback und Unterstützung",
+            "items": [
+              "Das Willkommensfenster und die Haupteinstellungsseite enthalten nun Discord — Feedback & Support. Es öffnet eine kopierbare Einladung, wenn verfügbar, oder gibt die Einladung im Chat aus, falls das Linkfenster nicht geöffnet werden kann."
+            ]
+          },
+          {
+            "title": "Korrekturen und Feinschliff",
+            "items": [
+              "Ignorierte Spieler werden nun vollständiger gefiltert. Neue Logs, Sprechblasen, Punkte, Vergleiche und Teilen-Vorgänge werden unterdrückt, während vorhandene Sprechblasen und Standorte gelöscht werden, wenn sich die Ignorierliste ändert.",
+              "Falsche Quest-Plaketten wurden behoben, die dadurch entstanden, dass nicht verfügbare Tooltip-Grenzen mit dem Zieltext einer anderen Quest übereinstimmten.",
+              "Beim Ausschalten der Karten- oder Minikartenfreigabe wird das Update nach vorübergehenden Kommunikationsfehlern nun erneut versucht. Das Ausschalten beider Freigabeoptionen entfernt außerdem Standortdetails aus anderen Addon-Updates.",
+              "Spielerlogos werden korrekt entfernt, wenn die Präsenz eines Spielers kurz vor seinem Verlassen abläuft. Flüstern von Kartenpunkten öffnet dein Chatfenster, und das Ändern des Log-Ziels über die Einstellungen ist während Einschränkungen nicht verfügbar."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.11.0",
+        "welcome": "QuestTogether ahora añade ubicaciones de jugadores, logotipos en placas de jugadores, comparaciones de misiones centradas y formas más sencillas de enviar comentarios y recibir asistencia en Discord. Los ajustes te permiten elegir qué compartes y qué ves mientras el progreso de las misiones se mantiene coordinado con otros usuarios de QuestTogether.",
+        "sections": [
+          {
+            "title": "Encuentra jugadores de QuestTogether cerca",
+            "items": [
+              "Muestra el logotipo del pergamino junto a jugadores amistosos de QuestTogether cuando las placas de nombre amistosas de WoW están activadas. Las placas de jugadores están activadas por defecto, con una posición izquierda con margen; elige Izquierda, Derecha, Arriba o Prefijo sin cambiar los colores de la barra de salud.",
+              "Pueden aparecer puntos de jugadores coloreados por clase en el mapa del mundo y el minimapa para los jugadores que comparten su ubicación. Pasa el cursor sobre un punto para ver nombre, facción, raza, clase y nivel; haz clic en él para abrir el menú de jugador de QuestTogether.",
+              "Ubicaciones de jugadores tiene interruptores separados para compartir y ver en el mapa del mundo y el minimapa, y los cuatro empiezan activados. La presencia para los logotipos de placas de jugadores puede continuar aunque ambos interruptores de compartir ubicación estén desactivados.",
+              "Las ubicaciones se actualizan periódicamente y desaparecen cuando caducan. Ambos jugadores necesitan el addon actualizado; un punto no garantiza que compartáis la misma fase o capa."
+            ]
+          },
+          {
+            "title": "Compara un jugador o todo el grupo",
+            "items": [
+              "La acción Comparar misiones del menú de jugador ahora compara solo a ti y al jugador seleccionado, incluidos compañeros de QuestTogether alcanzables que no estén en el grupo. La comparación de todo el grupo sigue disponible desde el menú del minimapa, los menús de nombres de misión y /qt compare.",
+              "Compartir misiones y las solicitudes para compartir siguen siendo solo para el grupo. Las comparaciones dirigidas explican cuándo se necesita un grupo para compartir y cuándo el jugador seleccionado necesita QuestTogether para responder.",
+              "Si una solicitud para compartir ya está esperando a otro jugador, la comparación ahora muestra a quién está esperando después de que cambies de objetivo."
+            ]
+          },
+          {
+            "title": "Comentarios y asistencia",
+            "items": [
+              "La ventana de bienvenida y la página principal de ajustes ahora incluyen Discord — comentarios y asistencia. Abre una invitación copiable cuando está disponible, o imprime la invitación en el chat si no se puede abrir la ventana del enlace."
+            ]
+          },
+          {
+            "title": "Correcciones y pulido",
+            "items": [
+              "Los jugadores ignorados ahora se filtran de forma más completa. Se suprimen nuevos registros, burbujas, puntos, comparaciones y acciones de compartir, mientras que las burbujas y ubicaciones existentes se eliminan cuando cambia la lista de ignorados.",
+              "Se han corregido falsas placas de misión causadas por límites de descripción emergente no disponibles que coincidían con el texto de objetivo de otra misión.",
+              "Desactivar compartir en el mapa o minimapa ahora reintenta la actualización tras fallos temporales de comunicación. Desactivar ambas opciones de compartir también elimina los detalles de ubicación de otras actualizaciones del addon.",
+              "Los logotipos de jugadores se eliminan correctamente cuando la presencia de un jugador caduca justo antes de que se vaya. Susurrar desde los puntos del mapa abre tu ventana de chat, y cambiar el destino del registro desde Ajustes no está disponible durante las restricciones."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "5.11.0",
+        "welcome": "QuestTogether ahora agrega ubicaciones de jugadores, logos en placas de jugador, comparaciones de misiones específicas y comentarios y soporte de Discord más fáciles. La configuración te permite elegir qué compartes y qué ves mientras el progreso de misiones se mantiene coordinado con otros usuarios de QuestTogether.",
+        "sections": [
+          {
+            "title": "Encuentra jugadores de QuestTogether cercanos",
+            "items": [
+              "Muestra el logo de pergamino junto a jugadores amistosos de QuestTogether cuando las placas de nombre amistosas de WoW están activadas. Placas de jugador está activado de forma predeterminada, con una posición Izquierda con espacio adicional; elige Izquierda, Derecha, Arriba o Prefijo sin cambiar los colores de la barra de salud.",
+              "Pueden aparecer puntos de jugador con color de clase en el mapa del mundo y el minimapa para los jugadores que comparten su ubicación. Pasa el cursor sobre un punto para ver nombre, facción, raza, clase y nivel; haz clic en él para abrir el menú de jugador de QuestTogether.",
+              "Ubicaciones de jugadores tiene interruptores separados para compartir y ver en el mapa del mundo y el minimapa, y los cuatro empiezan activados. La presencia para los logos en placas de jugador puede continuar incluso cuando ambos interruptores de compartir ubicación están desactivados.",
+              "Las ubicaciones se actualizan periódicamente y desaparecen cuando caducan. Ambos jugadores necesitan el addon actualizado; un punto no garantiza que compartan la misma fase o capa."
+            ]
+          },
+          {
+            "title": "Compara un jugador o todo el grupo",
+            "items": [
+              "La acción Comparar misiones del menú de jugador ahora compara solo a ti y al jugador seleccionado, incluidos compañeros de QuestTogether accesibles que no están en tu grupo. La comparación de todo el grupo sigue disponible desde el menú del minimapa, los menús de nombres de misión y /qt compare.",
+              "Compartir misiones y las solicitudes para compartir siguen siendo solo para el grupo. Las comparaciones dirigidas explican cuándo se necesita un grupo para compartir y cuándo el jugador seleccionado necesita QuestTogether para responder.",
+              "Si una solicitud para compartir ya está esperando a otro jugador, la comparación ahora muestra a quién está esperando después de que cambias de objetivo."
+            ]
+          },
+          {
+            "title": "Comentarios y soporte",
+            "items": [
+              "La ventana de bienvenida y la página principal de configuración ahora incluyen Discord — Comentarios y soporte. Abre una invitación copiable cuando está disponible, o imprime la invitación en el chat si la ventana de enlace no puede abrirse."
+            ]
+          },
+          {
+            "title": "Correcciones y mejoras",
+            "items": [
+              "Los jugadores ignorados ahora se filtran de forma más completa. Se suprimen nuevos registros, globos, puntos, comparaciones y acciones de compartir, mientras que los globos y ubicaciones existentes se borran cuando cambia la lista de ignorados.",
+              "Se corrigieron placas de misión falsas causadas por límites de descripción emergente no disponibles que coincidían con el texto de objetivo de otra misión.",
+              "Desactivar compartir en el mapa o minimapa ahora reintenta la actualización después de fallas temporales de comunicación. Desactivar ambas opciones de compartir también elimina los detalles de ubicación de otras actualizaciones del addon.",
+              "Los logos de jugador se borran correctamente cuando la presencia de un jugador caduca justo antes de que se vaya. Susurrar desde los puntos del mapa abre tu ventana de chat, y cambiar el destino del registro desde Configuración no está disponible durante restricciones."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.11.0",
+        "welcome": "O QuestTogether agora adiciona localizações de jogadores, logotipos nas placas de jogadores, comparações de missões direcionadas e feedback e suporte mais fáceis pelo Discord. As configurações permitem escolher o que você compartilha e o que vê enquanto o progresso de missões permanece coordenado com outros usuários do QuestTogether.",
+        "sections": [
+          {
+            "title": "Encontre jogadores do QuestTogether por perto",
+            "items": [
+              "Mostre o logotipo de pergaminho ao lado de jogadores aliados do QuestTogether quando as placas de identificação aliadas do WoW estiverem ativadas. Placas de Jogadores ficam ativadas por padrão, com a posição Esquerda espaçada; escolha Esquerda, Direita, Acima ou Prefixo sem mudar as cores da barra de vida.",
+              "Pontos de jogadores coloridos pela classe podem aparecer no mapa-múndi e no minimapa para jogadores que compartilham sua localização. Passe o mouse sobre um ponto para ver nome, facção, raça, classe e nível; clique nele para abrir o menu de jogador do QuestTogether.",
+              "Localizações de Jogadores tem controles separados de compartilhamento e visualização para o mapa-múndi e o minimapa, e todos os quatro começam ativados. A presença dos logotipos nas placas de jogadores pode continuar mesmo quando ambos os controles de compartilhamento de localização estão desativados.",
+              "As localizações são atualizadas periodicamente e desaparecem quando expiram. Ambos os jogadores precisam do addon atualizado; um ponto não garante que vocês compartilhem a mesma fase ou camada."
+            ]
+          },
+          {
+            "title": "Compare um jogador ou o grupo inteiro",
+            "items": [
+              "A ação Comparar Missões do menu de jogador agora compara apenas você e o jogador selecionado, incluindo pares do QuestTogether alcançáveis fora do grupo. A comparação do grupo inteiro continua disponível pelo menu do minimapa, menus de nomes de missões e /qt compare.",
+              "Compartilhamento de missões e pedidos de compartilhamento continuam sendo apenas para o grupo. Comparações direcionadas explicam quando um grupo é necessário para compartilhar e quando o jogador selecionado precisa do QuestTogether para responder.",
+              "Se um pedido de compartilhamento já estiver aguardando outro jogador, a comparação agora mostra por quem está esperando depois que você troca de alvo."
+            ]
+          },
+          {
+            "title": "Feedback e suporte",
+            "items": [
+              "A janela de boas-vindas e a página principal de configurações agora incluem Discord — Feedback e Suporte. Ela abre um convite copiável quando disponível, ou imprime o convite no chat se a janela de link não puder abrir."
+            ]
+          },
+          {
+            "title": "Correções e polimento",
+            "items": [
+              "Jogadores ignorados agora são filtrados de forma mais completa. Novos registros, balões, pontos, comparações e trabalhos de compartilhamento são suprimidos, enquanto balões e localizações existentes são limpos quando a lista de ignorados muda.",
+              "Corrigidas placas de missões falsas causadas por limites de tooltip indisponíveis que correspondiam ao texto de objetivo de outra missão.",
+              "Desativar o compartilhamento do mapa ou minimapa agora tenta novamente a atualização após falhas temporárias de comunicação. Desativar ambas as opções de compartilhamento também remove detalhes de localização de outras atualizações do addon.",
+              "Logotipos de jogadores são limpos corretamente quando a presença de um jogador expira pouco antes de ele sair. Sussurrar a partir de pontos do mapa abre sua janela de chat, e mudar o destino do registro em Configurações fica indisponível durante restrições."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.11.0",
+        "welcome": "QuestTogether теперь добавляет местоположения игроков, логотипы на индикаторах игроков, сравнения выбранных заданий и более простую обратную связь и поддержку через Discord. Настройки позволяют выбрать, чем делиться и что видеть, пока прогресс заданий остается скоординированным с другими пользователями QuestTogether.",
+        "sections": [
+          {
+            "title": "Находите игроков QuestTogether поблизости",
+            "items": [
+              "Показывайте логотип-свиток рядом с дружественными игроками QuestTogether, когда в WoW включены индикаторы дружественных игроков. Индикаторы игроков включены по умолчанию, с позицией слева и отступом; выберите слева, справа, сверху или префикс без изменения цветов полос здоровья.",
+              "Окрашенные по классу точки игроков могут отображаться на карте мира и мини-карте для игроков, которые делятся своим местоположением. Наведите на точку, чтобы увидеть имя, фракцию, расу, класс и уровень; нажмите на нее, чтобы открыть меню игрока QuestTogether.",
+              "В местоположениях игроков есть отдельные переключатели передачи и отображения для карты мира и мини-карты, и все четыре изначально включены. Присутствие для логотипов на индикаторах игроков может продолжаться, даже когда оба переключателя передачи местоположения выключены.",
+              "Местоположения периодически обновляются и исчезают, когда истекает срок их действия. Обоим игрокам нужен обновленный аддон; точка не гарантирует, что вы находитесь в той же фазе или слое."
+            ]
+          },
+          {
+            "title": "Сравнивайте одного игрока или всю группу",
+            "items": [
+              "Действие «Сравнить задания» в меню игрока теперь сравнивает только вас и выбранного игрока, включая доступных негрупповых участников QuestTogether. Сравнение всей группы остается доступным из меню мини-карты, меню названий заданий и /qt compare.",
+              "Передача заданий и запросы передачи по-прежнему доступны только в группе. Целевые сравнения объясняют, когда для передачи нужна группа и когда выбранному игроку нужен QuestTogether для ответа.",
+              "Если запрос передачи уже ожидает другого игрока, сравнение теперь показывает, кого оно ожидает, после смены цели."
+            ]
+          },
+          {
+            "title": "Обратная связь и поддержка",
+            "items": [
+              "Окно приветствия и главная страница настроек теперь включают Discord — обратная связь и поддержка. Оно открывает приглашение для копирования, когда оно доступно, или выводит приглашение в чат, если окно ссылки открыть нельзя."
+            ]
+          },
+          {
+            "title": "Исправления и полировка",
+            "items": [
+              "Игнорируемые игроки теперь фильтруются полнее. Новые журналы, пузырьки, точки, сравнения и передача подавляются, а существующие пузырьки и местоположения очищаются при изменении списка игнорирования.",
+              "Исправлены ложные индикаторы заданий, вызванные тем, что недоступные границы подсказки совпадали с текстом цели другого задания.",
+              "Отключение передачи на карте или мини-карте теперь повторяет обновление после временных сбоев связи. Отключение обоих параметров передачи также удаляет сведения о местоположении из других обновлений аддона.",
+              "Логотипы игроков корректно очищаются, когда присутствие игрока истекает прямо перед его уходом. Шепот из точек на карте открывает ваше окно чата, а изменение места вывода журнала в настройках недоступно во время ограничений."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.11.0",
+        "welcome": "QuestTogether ora aggiunge posizioni dei giocatori, loghi sulle barre dei giocatori, confronti mirati delle missioni e feedback e supporto Discord più semplici. Le impostazioni ti permettono di scegliere cosa condividere e cosa vedere mentre i progressi delle missioni restano coordinati con altri utenti QuestTogether.",
+        "sections": [
+          {
+            "title": "Trova giocatori QuestTogether nelle vicinanze",
+            "items": [
+              "Mostra il logo della pergamena accanto ai giocatori amichevoli di QuestTogether quando le barre dei nomi amichevoli di WoW sono attive. Le Targhette giocatore sono abilitate per impostazione predefinita, con una posizione a Sinistra distanziata; scegli Sinistra, Destra, Alto o Prefisso senza cambiare i colori della barra della salute.",
+              "I punti giocatore colorati in base alla classe possono comparire sulla mappa del mondo e sulla minimappa per i giocatori che condividono la loro posizione. Passa il mouse su un punto per nome, fazione, razza, classe e livello; cliccalo per il menu giocatore di QuestTogether.",
+              "Posizioni dei giocatori ha interruttori separati per condividere e visualizzare sulla mappa del mondo e sulla minimappa, e tutti e quattro iniziano abilitati. La presenza per i loghi sulle barre dei giocatori può continuare anche quando entrambi gli interruttori di condivisione posizione sono disattivati.",
+              "Le posizioni si aggiornano periodicamente e scompaiono quando scadono. Entrambi i giocatori devono avere l'addon aggiornato; un punto non garantisce che condividiate la stessa fase o layer."
+            ]
+          },
+          {
+            "title": "Confronta un giocatore o tutto il gruppo",
+            "items": [
+              "L'azione Confronta missioni del menu giocatore ora confronta solo te e il giocatore selezionato, inclusi i pari QuestTogether raggiungibili fuori dal gruppo. Il confronto dell'intero gruppo resta disponibile dal menu della minimappa, dai menu dei nomi missione e da /qt compare.",
+              "La condivisione delle missioni e le richieste di condivisione restano solo per il gruppo. I confronti mirati spiegano quando serve un gruppo per condividere e quando il giocatore selezionato ha bisogno di QuestTogether per rispondere.",
+              "Se una richiesta di condivisione è già in attesa su un altro giocatore, il confronto ora mostra chi sta aspettando dopo che cambi bersaglio."
+            ]
+          },
+          {
+            "title": "Feedback e supporto",
+            "items": [
+              "La finestra di benvenuto e la pagina principale delle impostazioni ora includono Discord — Feedback e supporto. Apre un invito copiabile quando disponibile, oppure stampa l'invito in chat se la finestra del link non può aprirsi."
+            ]
+          },
+          {
+            "title": "Correzioni e rifiniture",
+            "items": [
+              "I giocatori ignorati ora vengono filtrati in modo più completo. Nuovi registri, fumetti, punti, confronti e lavori di condivisione vengono soppressi, mentre fumetti e posizioni esistenti vengono eliminati quando cambia la lista ignore.",
+              "Corrette false targhette missione causate da limiti tooltip non disponibili che corrispondevano al testo obiettivo di un'altra missione.",
+              "Disattivare la condivisione della mappa o della minimappa ora ritenta l'aggiornamento dopo errori temporanei di comunicazione. Disattivare entrambe le opzioni di condivisione rimuove anche i dettagli della posizione dagli altri aggiornamenti dell'addon.",
+              "I loghi giocatore si eliminano correttamente quando la presenza di un giocatore scade appena prima che se ne vada. Sussurra dai punti sulla mappa apre la finestra chat, e cambiare la destinazione del registro dalle Impostazioni non è disponibile durante le restrizioni."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.11.0",
+        "welcome": "QuestTogether에 이제 플레이어 위치, 플레이어 이름표 로고, 집중 퀘스트 비교, 더 쉬운 Discord 피드백 및 지원이 추가되었습니다. 설정에서 공유할 내용과 볼 내용을 선택할 수 있으며, 퀘스트 진행 상황은 다른 QuestTogether 사용자와 계속 조율됩니다.",
+        "sections": [
+          {
+            "title": "근처 QuestTogether 플레이어 찾기",
+            "items": [
+              "WoW의 우호적 이름표가 켜져 있을 때 우호적 QuestTogether 플레이어 옆에 두루마리 로고를 표시합니다. 플레이어 이름표는 기본적으로 활성화되어 있으며 여백 있는 왼쪽 위치를 사용합니다. 생명력 바 색상을 바꾸지 않고 왼쪽, 오른쪽, 위, 접두어 중에서 선택하세요.",
+              "위치를 공유하는 플레이어는 직업 색상의 플레이어 점이 세계 지도와 미니맵에 나타날 수 있습니다. 점에 마우스를 올리면 이름, 진영, 종족, 직업, 레벨을 볼 수 있으며, 클릭하면 QuestTogether 플레이어 메뉴가 열립니다.",
+              "플레이어 위치에는 세계 지도와 미니맵에 대한 별도의 공유 및 보기 스위치가 있으며, 네 가지 모두 처음에는 켜져 있습니다. 두 위치 공유 스위치가 모두 꺼져 있어도 플레이어 이름표 로고의 존재 정보는 계속 유지될 수 있습니다.",
+              "위치는 주기적으로 갱신되며 만료되면 사라집니다. 두 플레이어 모두 업데이트된 애드온이 필요합니다. 점이 표시된다고 해서 같은 위상이나 레이어를 공유한다는 보장은 없습니다."
+            ]
+          },
+          {
+            "title": "한 플레이어 또는 파티 전체 비교",
+            "items": [
+              "플레이어 메뉴의 퀘스트 비교 동작은 이제 자신과 선택한 플레이어만 비교하며, 도달 가능한 비파티 QuestTogether 동료도 포함합니다. 전체 파티 비교는 미니맵 메뉴, 퀘스트 이름 메뉴, /qt compare에서 계속 사용할 수 있습니다.",
+              "퀘스트 공유와 공유 요청은 파티 전용으로 유지됩니다. 대상 지정 비교는 공유에 파티가 필요할 때와 선택한 플레이어가 응답하려면 QuestTogether가 필요할 때를 설명합니다.",
+              "공유 요청이 이미 다른 플레이어에게 대기 중인 경우, 대상을 전환한 뒤 비교에 누구를 기다리는 중인지 표시됩니다."
+            ]
+          },
+          {
+            "title": "피드백 및 지원",
+            "items": [
+              "환영 창과 기본 설정 페이지에 이제 Discord — 피드백 및 지원이 포함됩니다. 사용할 수 있으면 복사 가능한 초대를 열고, 링크 창을 열 수 없으면 대화창에 초대를 출력합니다."
+            ]
+          },
+          {
+            "title": "수정 및 다듬기",
+            "items": [
+              "차단한 플레이어가 이제 더 완전하게 필터링됩니다. 새 기록, 말풍선, 점, 비교, 공유 작업이 억제되며, 차단 목록이 변경되면 기존 말풍선과 위치가 정리됩니다.",
+              "사용할 수 없는 툴팁 경계가 다른 퀘스트의 목표 텍스트와 일치하여 발생하던 잘못된 퀘스트 이름표를 수정했습니다.",
+              "지도 또는 미니맵 공유를 끄면 일시적인 통신 실패 후 업데이트를 다시 시도합니다. 두 공유 옵션을 모두 끄면 다른 애드온 업데이트에서도 위치 세부 정보가 제거됩니다.",
+              "플레이어의 존재 정보가 떠나기 직전에 만료되어도 플레이어 로고가 올바르게 정리됩니다. 지도 점에서 귓속말을 선택하면 대화 창이 열리며, 제한 중에는 설정에서 기록 대상 변경을 사용할 수 없습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.11.0",
+        "welcome": "QuestTogether 现在添加了玩家位置、玩家姓名板标志、聚焦任务比较，以及更便捷的 Discord 反馈和支持。设置让你选择分享什么、查看什么，同时任务进度会与其他 QuestTogether 用户保持协调。",
+        "sections": [
+          {
+            "title": "查找附近的 QuestTogether 玩家",
+            "items": [
+              "当 WoW 的友方姓名板开启时，在友方 QuestTogether 玩家旁显示卷轴标志。玩家姓名板默认启用，位置为带边距的左侧；可选择左侧、右侧、顶部或前缀，而不会改变生命条颜色。",
+              "正在分享位置的玩家可在世界地图和小地图上显示按职业着色的玩家点。悬停圆点可查看姓名、阵营、种族、职业和等级；点击可打开 QuestTogether 玩家菜单。",
+              "玩家位置为世界地图和小地图分别提供共享与查看开关，四个开关均默认启用。即使两个位置共享开关都关闭，玩家姓名板标志的存在状态仍可继续。",
+              "位置会定期刷新，并在过期时消失。双方玩家都需要更新后的插件；一个圆点并不保证你们处于相同相位或层。"
+            ]
+          },
+          {
+            "title": "比较单个玩家或整个小队",
+            "items": [
+              "玩家菜单中的“比较任务”操作现在只比较你和所选玩家，包括可联系的非小队 QuestTogether 同伴。全队比较仍可从小地图菜单、任务名称菜单和 /qt compare 使用。",
+              "任务分享和分享请求仍仅限小队。定向比较会说明何时需要小队才能分享，以及何时需要所选玩家使用 QuestTogether 才能响应。",
+              "如果已有分享请求正在等待另一名玩家，切换目标后，比较现在会显示正在等待谁。"
+            ]
+          },
+          {
+            "title": "反馈与支持",
+            "items": [
+              "欢迎窗口和主设置页面现在包含 Discord — 反馈与支持。可用时会打开可复制的邀请；如果链接窗口无法打开，则会在聊天中打印邀请。"
+            ]
+          },
+          {
+            "title": "修复与优化",
+            "items": [
+              "现在会更彻底地过滤已忽略的玩家。新的日志、气泡、圆点、比较和分享操作会被抑制，而当忽略列表变化时，现有气泡和位置会被清除。",
+              "修复了因不可用的鼠标提示边界匹配到另一任务的目标文本而导致的错误任务姓名板。",
+              "关闭地图或小地图共享后，现在会在临时通信失败后重试更新。关闭两个共享选项也会从其他插件更新中移除位置详情。",
+              "当玩家存在状态刚好在离开前过期时，玩家标志会正确清除。从地图点发起密语会打开你的聊天窗口，在限制期间无法从设置更改日志目标。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.11.0",
+        "welcome": "QuestTogether 現在新增玩家位置、玩家名條標誌、聚焦的任務比較，以及更容易的 Discord 意見回饋與支援。設定可讓你選擇要分享與查看的內容，同時任務進度會與其他 QuestTogether 使用者保持協調。",
+        "sections": [
+          {
+            "title": "尋找附近的 QuestTogether 玩家",
+            "items": [
+              "當 WoW 的友方名條開啟時，在友方 QuestTogether 玩家旁顯示卷軸標誌。玩家名條預設啟用，位置為帶間距的左側；可選擇左側、右側、頂部或前綴，而不變更生命條顏色。",
+              "分享位置的玩家可在世界地圖與小地圖上顯示職業色彩的玩家點。將游標移到點上可查看名稱、陣營、種族、職業與等級；點擊它可開啟 QuestTogether 玩家選單。",
+              "玩家位置對世界地圖和小地圖各有獨立的分享與檢視開關，四個選項預設皆啟用。即使兩個位置分享開關都關閉，玩家名條標誌的存在狀態仍可繼續。",
+              "位置會定期重新整理並在過期時消失。雙方玩家都需要更新後的插件；出現點並不保證你們位於相同階段或分層。"
+            ]
+          },
+          {
+            "title": "比較一名玩家或整個隊伍",
+            "items": [
+              "玩家選單中的比較任務動作現在只會比較你與所選玩家，包括可連線的非隊伍 QuestTogether 同伴。整個隊伍比較仍可從小地圖選單、任務名稱選單和 /qt compare 使用。",
+              "任務分享與分享請求仍僅限隊伍。目標比較會說明何時需要隊伍才能分享，以及所選玩家何時需要 QuestTogether 才能回應。",
+              "如果已有分享請求正在等待另一名玩家，切換目標後，比較現在會顯示正在等待的對象。"
+            ]
+          },
+          {
+            "title": "意見回饋與支援",
+            "items": [
+              "歡迎視窗與主要設定頁面現在包含 Discord — 意見回饋與支援。可用時會開啟可複製的邀請；若連結視窗無法開啟，則會在聊天中列印邀請。"
+            ]
+          },
+          {
+            "title": "修正與潤飾",
+            "items": [
+              "已忽略的玩家現在會被更完整地過濾。新的記錄、泡泡、點、比較與分享作業會被抑制，而當忽略清單變更時，既有泡泡與位置會被清除。",
+              "修正因不可用的提示邊界符合另一個任務的目標文字而造成的錯誤任務名條。",
+              "關閉地圖或小地圖分享現在會在暫時通訊失敗後重試更新。關閉兩個分享選項也會從其他插件更新中移除位置詳細資訊。",
+              "當玩家的存在狀態在離開前剛好過期時，玩家標誌會正確清除。從地圖點密語會開啟你的聊天視窗，而在限制期間無法從設定變更記錄目的地。"
+            ]
+          }
+        ]
       }
     },
     {
@@ -3463,6 +5138,316 @@
               "Read the welcome and latest patch notes in their own window instead of repeated chat messages. Choose Patch Notes from the minimap menu or main Settings page, or use /qt notes, /qt changelog, or /qt patchnotes.",
               "The notes window opens automatically for major and minor upgrades. Patch updates still include fresh notes without opening the window automatically.",
               "Use /qt help for normal commands and /qt help debug for previews, diagnostics, and developer commands."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "5.10.0",
+        "welcome": "QuestTogether partage la progression des quêtes avec votre groupe et les joueurs à proximité. Utilisez le bouton de la minicarte pour les paramètres, les comparaisons de quêtes de groupe, votre journal des quêtes et ces dernières notes.",
+        "sections": [
+          {
+            "title": "Comparer et partager les quêtes du groupe",
+            "items": [
+              "Ouvrez Comparer les quêtes du groupe depuis la minicarte ou les menus de quêtes et de joueurs, ou tapez /qt compare. Voyez qui possède chaque quête et la progression de chacun.",
+              "Toutes les quêtes du groupe apparaissent par défaut. Cochez Masquer les quêtes que je n’ai pas pour vous concentrer sur les quêtes de votre propre journal.",
+              "Demandez les quêtes partageables aux membres du groupe qui utilisent l’addon mis à jour. Les demandes sollicitent l’autorisation par défaut ; le partage automatique est un paramètre optionnel.",
+              "Les comparaisons se rétablissent après les restrictions de carte ou de combat. Les actualisations remplacent les anciennes réponses, et les temps de recharge et échecs des demandes indiquent quand vous pouvez réessayer."
+            ]
+          },
+          {
+            "title": "Raccourcis et menus de quête",
+            "items": [
+              "Faites glisser le bouton de minicarte en forme de parchemin pour le repositionner. Son menu ouvre les paramètres, les comparaisons, le journal des quêtes, les notes de mise à jour et le contrôle de destination de la fenêtre du journal. Masquez-le depuis le menu et restaurez-le dans les paramètres Divers.",
+              "Les menus de noms de quête proposent Statut, Partager, Ouvrir dans le journal des quêtes et Comparer les quêtes du groupe. Les actions de partage et de journal revérifient la quête actuelle et les restrictions au moment du clic.",
+              "Les liens de statut de quête conservent leurs titres intacts après qu’une quête quitte votre journal. La case de partage automatique suit désormais les paramètres enregistrés et les changements de profil."
+            ]
+          },
+          {
+            "title": "Aide et dernières notes",
+            "items": [
+              "Lisez l’accueil et les dernières notes de mise à jour dans leur propre fenêtre au lieu de messages de discussion répétés. Choisissez Notes de mise à jour depuis le menu de la minicarte ou la page principale des Paramètres, ou utilisez /qt notes, /qt changelog ou /qt patchnotes.",
+              "La fenêtre des notes s’ouvre automatiquement pour les mises à niveau majeures et mineures. Les mises à jour de correctif incluent toujours de nouvelles notes sans ouvrir automatiquement la fenêtre.",
+              "Utilisez /qt help pour les commandes normales et /qt help debug pour les aperçus, diagnostics et commandes développeur."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "5.10.0",
+        "welcome": "QuestTogether teilt Questfortschritt mit deiner Gruppe und Spielern in der Nähe. Verwende die Minikarten-Schaltfläche für Einstellungen, Gruppenquestvergleiche, dein Questlog und diese neuesten Hinweise.",
+        "sections": [
+          {
+            "title": "Gruppenquests vergleichen und teilen",
+            "items": [
+              "Öffne Gruppenquests vergleichen über die Minikarte oder Quest- und Spielermenüs, oder gib /qt compare ein. Sieh, wer welche Quest hat und wie weit alle fortgeschritten sind.",
+              "Standardmäßig erscheinen alle Gruppenquests. Aktiviere Quests ausblenden, die ich nicht habe, um dich auf Quests in deinem eigenen Questlog zu konzentrieren.",
+              "Fordere teilbare Quests von Gruppenmitgliedern an, die das aktualisierte Addon verwenden. Anfragen bitten standardmäßig um Erlaubnis; automatisches Teilen ist eine optionale Einstellung.",
+              "Vergleiche werden nach Karten- oder Kampfeinschränkungen wiederhergestellt. Aktualisierungen ersetzen ältere Antworten, und Abklingzeiten und Fehlschläge von Anfragen erklären, wann du es erneut versuchen kannst."
+            ]
+          },
+          {
+            "title": "Tastenkürzel und Questmenüs",
+            "items": [
+              "Ziehe die schriftrollenförmige Minikarten-Schaltfläche, um sie neu zu positionieren. Ihr Menü öffnet Einstellungen, Vergleiche, das Questlog, Patchnotes und die Steuerung für das Ziel des Logfensters. Blende sie über das Menü aus und stelle sie in den Einstellungen unter Verschiedenes wieder her.",
+              "Questnamen-Menüs bieten Status, Teilen, Im Questlog öffnen und Gruppenquests vergleichen. Teilen- und Questlog-Aktionen prüfen die aktuelle Quest und Einschränkungen erneut, wenn sie angeklickt werden.",
+              "Queststatus-Links behalten ihre Titel, nachdem eine Quest dein Questlog verlassen hat. Das Kontrollkästchen für automatisches Teilen folgt nun gespeicherten Einstellungen und Profiländerungen."
+            ]
+          },
+          {
+            "title": "Hilfe und neueste Hinweise",
+            "items": [
+              "Lies die Willkommens- und neuesten Patchnotes in einem eigenen Fenster statt in wiederholten Chatnachrichten. Wähle Patchnotes im Minikartenmenü oder auf der Haupteinstellungsseite, oder verwende /qt notes, /qt changelog oder /qt patchnotes.",
+              "Das Hinweise-Fenster öffnet sich automatisch bei Haupt- und Nebenversions-Upgrades. Patch-Updates enthalten weiterhin neue Hinweise, ohne das Fenster automatisch zu öffnen.",
+              "Verwende /qt help für normale Befehle und /qt help debug für Vorschauen, Diagnosen und Entwicklerbefehle."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "5.10.0",
+        "welcome": "QuestTogether comparte el progreso de las misiones con tu grupo y con jugadores cercanos. Usa el botón del minimapa para ver ajustes, comparaciones de misiones de grupo, tu registro de misiones y estas últimas notas.",
+        "sections": [
+          {
+            "title": "Compara y comparte misiones de grupo",
+            "items": [
+              "Abre Comparar misiones de grupo desde el minimapa o los menús de misiones y jugadores, o escribe /qt compare. Mira quién tiene cada misión y cuánto ha progresado cada uno.",
+              "Todas las misiones de grupo aparecen por defecto. Marca Ocultar misiones que no tengo para centrarte en las misiones de tu propio registro.",
+              "Solicita misiones compartibles a miembros del grupo que usen el addon actualizado. Las solicitudes piden permiso por defecto; compartir automáticamente es un ajuste opcional.",
+              "Las comparaciones se recuperan tras restricciones de mapa o combate. Las actualizaciones sustituyen a respuestas anteriores, y los tiempos de reutilización y fallos de solicitudes explican cuándo puedes volver a intentarlo."
+            ]
+          },
+          {
+            "title": "Atajos y menús de misiones",
+            "items": [
+              "Arrastra el botón del minimapa con forma de pergamino para recolocarlo. Su menú abre ajustes, comparaciones, el registro de misiones, notas de parche y el control de destino de la ventana de registro. Ocúltalo desde el menú y restáuralo en los ajustes de Varios.",
+              "Los menús de nombres de misión ofrecen Estado, Compartir, Abrir en el registro de misiones y Comparar misiones de grupo. Las acciones de compartir y de registro vuelven a comprobar la misión actual y las restricciones al hacer clic.",
+              "Los enlaces de estado de misión mantienen sus títulos intactos después de que una misión salga de tu registro. La casilla de compartir automáticamente ahora sigue los ajustes guardados y los cambios de perfil."
+            ]
+          },
+          {
+            "title": "Ayuda y últimas notas",
+            "items": [
+              "Lee la bienvenida y las últimas notas de parche en su propia ventana en lugar de mensajes de chat repetidos. Elige Notas de parche en el menú del minimapa o en la página principal de Ajustes, o usa /qt notes, /qt changelog o /qt patchnotes.",
+              "La ventana de notas se abre automáticamente para actualizaciones mayores y menores. Las actualizaciones de parche siguen incluyendo notas nuevas sin abrir la ventana automáticamente.",
+              "Usa /qt help para comandos normales y /qt help debug para vistas previas, diagnósticos y comandos de desarrollador."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "5.10.0",
+        "welcome": "QuestTogether comparte el progreso de misiones con tu grupo y jugadores cercanos. Usa el botón del minimapa para la configuración, comparaciones de misiones del grupo, tu registro de misiones y estas notas más recientes.",
+        "sections": [
+          {
+            "title": "Comparar y compartir misiones del grupo",
+            "items": [
+              "Abre Comparar misiones del grupo desde el minimapa o los menús de misiones y jugadores, o escribe /qt compare. Ve quién tiene cada misión y cuánto ha progresado cada uno.",
+              "Todas las misiones del grupo aparecen de forma predeterminada. Marca Ocultar misiones que no tengo para concentrarte en las misiones de tu propio registro.",
+              "Solicita misiones compartibles a los miembros del grupo que usen el addon actualizado. Las solicitudes piden permiso de forma predeterminada; compartir automáticamente es una configuración opcional.",
+              "Las comparaciones se recuperan después de restricciones de mapa o combate. Las actualizaciones reemplazan las respuestas anteriores, y los tiempos de reutilización y fallos de las solicitudes explican cuándo puedes volver a intentarlo."
+            ]
+          },
+          {
+            "title": "Atajos y menús de misiones",
+            "items": [
+              "Arrastra el botón con forma de pergamino del minimapa para reposicionarlo. Su menú abre la configuración, comparaciones, el registro de misiones, notas de parche y el control de destino de la ventana de registro. Ocúltalo desde el menú y restáuralo en la configuración de Miscelánea.",
+              "Los menús de nombre de misión ofrecen Estado, Compartir, Abrir en el registro de misiones y Comparar misiones del grupo. Al hacer clic, las acciones de compartir y del registro vuelven a comprobar la misión actual y las restricciones.",
+              "Los enlaces de estado de misión conservan sus títulos intactos después de que una misión sale de tu registro. La casilla de compartir automáticamente ahora sigue la configuración guardada y los cambios de perfil."
+            ]
+          },
+          {
+            "title": "Ayuda y notas más recientes",
+            "items": [
+              "Lee la bienvenida y las notas de parche más recientes en su propia ventana en lugar de mensajes de chat repetidos. Elige Notas de parche en el menú del minimapa o en la página principal de Configuración, o usa /qt notes, /qt changelog o /qt patchnotes.",
+              "La ventana de notas se abre automáticamente para actualizaciones mayores y menores. Las actualizaciones de parche aún incluyen notas nuevas sin abrir la ventana automáticamente.",
+              "Usa /qt help para comandos normales y /qt help debug para vistas previas, diagnósticos y comandos de desarrollador."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "5.10.0",
+        "welcome": "O QuestTogether compartilha o progresso de missões com seu grupo e jogadores próximos. Use o botão do minimapa para configurações, comparações de missões do grupo, seu diário de missões e estas notas mais recentes.",
+        "sections": [
+          {
+            "title": "Compare e compartilhe missões do grupo",
+            "items": [
+              "Abra Comparar Missões do Grupo pelo minimapa ou pelos menus de missões e jogadores, ou digite /qt compare. Veja quem tem cada missão e até onde todos progrediram.",
+              "Todas as missões do grupo aparecem por padrão. Marque Ocultar missões que eu não tenho para focar nas missões do seu próprio diário.",
+              "Peça missões compartilháveis aos membros do grupo usando o addon atualizado. Pedidos solicitam permissão por padrão; compartilhamento automático é uma configuração opcional.",
+              "Comparações se recuperam após restrições de mapa ou combate. Atualizações substituem respostas mais antigas, e recargas e falhas de pedidos explicam quando você pode tentar novamente."
+            ]
+          },
+          {
+            "title": "Atalhos e menus de missões",
+            "items": [
+              "Arraste o botão em forma de pergaminho do minimapa para reposicioná-lo. O menu dele abre configurações, comparações, o diário de missões, notas de atualização e o controle de destino da janela de registro. Oculte-o pelo menu e restaure-o nas configurações de Diversos.",
+              "Menus de nomes de missões oferecem Status, Compartilhar, Abrir no Diário de Missões e Comparar Missões do Grupo. Ações de compartilhamento e diário verificam novamente a missão atual e as restrições ao serem clicadas.",
+              "Links de status de missões mantêm seus títulos intactos depois que uma missão sai do seu registro. A caixa de compartilhamento automático agora segue configurações salvas e mudanças de perfil."
+            ]
+          },
+          {
+            "title": "Ajuda e notas mais recentes",
+            "items": [
+              "Leia as boas-vindas e as notas de atualização mais recentes em uma janela própria em vez de mensagens repetidas no chat. Escolha Notas de Atualização no menu do minimapa ou na página principal de Configurações, ou use /qt notes, /qt changelog ou /qt patchnotes.",
+              "A janela de notas abre automaticamente para atualizações maiores e menores. Atualizações de correção ainda incluem notas novas sem abrir a janela automaticamente.",
+              "Use /qt help para comandos normais e /qt help debug para prévias, diagnósticos e comandos de desenvolvedor."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "5.10.0",
+        "welcome": "QuestTogether делится прогрессом заданий с вашей группой и игроками поблизости. Используйте кнопку на мини-карте для настроек, сравнений заданий группы, журнала заданий и этих последних заметок.",
+        "sections": [
+          {
+            "title": "Сравнивайте и передавайте задания группы",
+            "items": [
+              "Откройте «Сравнить задания группы» из меню мини-карты, меню задания или игрока либо введите /qt compare. Узнайте, у кого есть каждое задание и насколько далеко все продвинулись.",
+              "По умолчанию отображаются все задания группы. Отметьте «Скрыть задания, которых у меня нет», чтобы сосредоточиться на заданиях в вашем журнале.",
+              "Запрашивайте доступные для передачи задания у участников группы с обновленным аддоном. По умолчанию запросы спрашивают разрешение; автоматическая передача — необязательная настройка.",
+              "Сравнения восстанавливаются после ограничений карты или боя. Обновления заменяют более старые ответы, а восстановления запросов и сбои объясняют, когда можно попробовать снова."
+            ]
+          },
+          {
+            "title": "Ярлыки и меню заданий",
+            "items": [
+              "Перетаскивайте кнопку мини-карты в виде свитка, чтобы изменить ее положение. Ее меню открывает настройки, сравнения, журнал заданий, заметки к обновлению и управление местом вывода окна журнала. Скройте ее из меню и восстановите в настройках «Разное».",
+              "Меню названия задания предлагают «Статус», «Передать», «Открыть в журнале заданий» и «Сравнить задания группы». Действия передачи и журнала повторно проверяют текущее задание и ограничения при нажатии.",
+              "Ссылки статуса задания сохраняют свои названия после того, как задание покинет ваш журнал. Флажок автоматической передачи теперь следует сохраненным настройкам и изменениям профиля."
+            ]
+          },
+          {
+            "title": "Справка и последние заметки",
+            "items": [
+              "Читайте приветствие и последние заметки к обновлению в отдельном окне вместо повторяющихся сообщений в чате. Выберите «Заметки к обновлению» в меню мини-карты или на главной странице настроек либо используйте /qt notes, /qt changelog или /qt patchnotes.",
+              "Окно заметок автоматически открывается при крупных и малых обновлениях. Патч-обновления по-прежнему включают свежие заметки, но не открывают окно автоматически.",
+              "Используйте /qt help для обычных команд и /qt help debug для предпросмотров, диагностики и команд разработчика."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "5.10.0",
+        "welcome": "QuestTogether condivide i progressi delle missioni con il tuo gruppo e i giocatori vicini. Usa il pulsante sulla minimappa per le impostazioni, i confronti delle missioni del gruppo, il tuo registro missioni e queste ultime note.",
+        "sections": [
+          {
+            "title": "Confronta e condividi le missioni del gruppo",
+            "items": [
+              "Apri Confronta missioni del gruppo dalla minimappa o dai menu delle missioni e dei giocatori, oppure digita /qt compare. Scopri chi ha ogni missione e quanto è progredito ciascuno.",
+              "Tutte le missioni del gruppo compaiono per impostazione predefinita. Seleziona Nascondi missioni che non ho per concentrarti sulle missioni nel tuo registro.",
+              "Richiedi le missioni condivisibili ai membri del gruppo che usano l'addon aggiornato. Le richieste chiedono il permesso per impostazione predefinita; la condivisione automatica è un'impostazione opzionale.",
+              "I confronti vengono recuperati dopo restrizioni di mappa o combattimento. Gli aggiornamenti sostituiscono le risposte precedenti, e i tempi di recupero e gli errori delle richieste spiegano quando puoi riprovare."
+            ]
+          },
+          {
+            "title": "Scorciatoie e menu delle missioni",
+            "items": [
+              "Trascina il pulsante a forma di pergamena sulla minimappa per riposizionarlo. Il suo menu apre impostazioni, confronti, il registro missioni, note della patch e il controllo di destinazione della finestra del registro. Nascondilo dal menu e ripristinalo nelle impostazioni Varie.",
+              "I menu dei nomi delle missioni offrono Stato, Condividi, Apri nel registro missioni e Confronta missioni del gruppo. Le azioni di condivisione e registro ricontrollano la missione attuale e le restrizioni quando vengono cliccate.",
+              "I link allo stato delle missioni mantengono intatti i titoli dopo che una missione lascia il tuo registro. La casella della condivisione automatica ora segue le impostazioni salvate e le modifiche del profilo."
+            ]
+          },
+          {
+            "title": "Aiuto e ultime note",
+            "items": [
+              "Leggi il messaggio di benvenuto e le ultime note della patch nella loro finestra invece che in messaggi di chat ripetuti. Scegli Note della patch dal menu della minimappa o dalla pagina principale delle Impostazioni, oppure usa /qt notes, /qt changelog o /qt patchnotes.",
+              "La finestra delle note si apre automaticamente per gli aggiornamenti principali e secondari. Gli aggiornamenti delle patch includono comunque note nuove senza aprire automaticamente la finestra.",
+              "Usa /qt help per i comandi normali e /qt help debug per anteprime, diagnostica e comandi per sviluppatori."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "5.10.0",
+        "welcome": "QuestTogether 会与队伍和附近玩家共享任务进度。使用小地图按钮打开设置、队伍任务比较、你的任务日志以及这些最新说明。",
+        "sections": [
+          {
+            "title": "比较并共享队伍任务",
+            "items": [
+              "从小地图、任务和玩家菜单打开“比较队伍任务”，或输入 /qt compare。查看谁拥有每个任务以及每个人的进度。",
+              "默认显示所有队伍任务。勾选“隐藏我没有的任务”，专注于你自己日志中的任务。",
+              "使用已更新插件的队伍成员可请求共享任务。默认情况下，请求会询问许可；自动共享是一个可选设置。",
+              "比较会在地图或战斗限制解除后恢复。刷新会替换较早的回复，请求冷却和失败提示会说明何时可以重试。"
+            ]
+          },
+          {
+            "title": "快捷方式和任务菜单",
+            "items": [
+              "拖动卷轴形小地图按钮可重新定位。其菜单可打开设置、比较、任务日志、补丁说明以及日志窗口目标控制。可从菜单隐藏它，并在“杂项”设置中恢复。",
+              "任务名称菜单提供状态、共享、在任务日志中打开和比较队伍任务。点击时，共享和日志操作会重新检查当前任务和限制。",
+              "任务状态链接会在任务离开你的日志后保持标题不变。自动共享复选框现在会跟随已保存设置和配置文件更改。"
+            ]
+          },
+          {
+            "title": "帮助和最新说明",
+            "items": [
+              "在单独窗口中阅读欢迎和最新补丁说明，而不是重复的聊天消息。从小地图菜单或主设置页面选择“补丁说明”，或使用 /qt notes、/qt changelog 或 /qt patchnotes。",
+              "说明窗口会在重大和小版本升级时自动打开。补丁更新仍会包含新说明，但不会自动打开窗口。",
+              "使用 /qt help 查看普通命令，使用 /qt help debug 查看预览、诊断和开发者命令。"
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "5.10.0",
+        "welcome": "QuestTogether는 파티원 및 주변 플레이어와 퀘스트 진행 상황을 공유합니다. 미니맵 버튼으로 설정, 파티 퀘스트 비교, 퀘스트 일지, 최신 내용을 확인하세요.",
+        "sections": [
+          {
+            "title": "파티 퀘스트 비교 및 공유",
+            "items": [
+              "미니맵 또는 퀘스트와 플레이어 메뉴에서 파티 퀘스트 비교를 열거나 /qt compare를 입력하세요. 각 퀘스트를 누가 보유 중인지, 모두가 얼마나 진행했는지 확인할 수 있습니다.",
+              "기본적으로 모든 파티 퀘스트가 표시됩니다. 내 퀘스트 일지의 퀘스트에 집중하려면 내가 없는 퀘스트 숨기기를 선택하세요.",
+              "업데이트된 애드온을 사용하는 파티원에게 공유 가능한 퀘스트를 요청하세요. 요청은 기본적으로 허가를 묻고, 자동 공유는 선택 설정입니다.",
+              "비교는 지도 또는 전투 제한 후 복구됩니다. 새로 고침은 이전 응답을 대체하며, 요청 재사용 대기시간과 실패는 언제 다시 시도할 수 있는지 설명합니다."
+            ]
+          },
+          {
+            "title": "단축키 및 퀘스트 메뉴",
+            "items": [
+              "두루마리 모양 미니맵 버튼을 드래그하여 위치를 바꾸세요. 해당 메뉴에서 설정, 비교, 퀘스트 일지, 패치 노트, 로그 창 표시 위치 설정을 열 수 있습니다. 메뉴에서 숨긴 뒤 기타 설정에서 복원할 수 있습니다.",
+              "퀘스트 이름 메뉴에는 상태, 공유, 퀘스트 일지에서 열기, 파티 퀘스트 비교가 제공됩니다. 공유 및 일지 동작은 클릭 시 현재 퀘스트와 제한 사항을 다시 확인합니다.",
+              "퀘스트 상태 링크는 퀘스트가 목록에서 사라진 뒤에도 제목을 그대로 유지합니다. 자동 공유 체크박스는 이제 저장된 설정과 프로필 변경을 따릅니다."
+            ]
+          },
+          {
+            "title": "도움말 및 최신 내용",
+            "items": [
+              "환영 메시지와 최신 패치 노트를 반복되는 대화 메시지 대신 별도 창에서 읽으세요. 미니맵 메뉴 또는 기본 설정 페이지에서 패치 노트를 선택하거나 /qt notes, /qt changelog, /qt patchnotes를 사용하세요.",
+              "노트 창은 대규모 및 소규모 업그레이드 시 자동으로 열립니다. 패치 업데이트에는 여전히 새 노트가 포함되지만 창은 자동으로 열리지 않습니다.",
+              "일반 명령어는 /qt help를, 미리보기, 진단, 개발자 명령어는 /qt help debug를 사용하세요."
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "5.10.0",
+        "welcome": "QuestTogether 會與你的隊伍和附近玩家分享任務進度。使用小地圖按鈕可開啟設定、隊伍任務比較、你的任務日誌，以及這些最新說明。",
+        "sections": [
+          {
+            "title": "比較並分享隊伍任務",
+            "items": [
+              "從小地圖或任務與玩家選單開啟比較隊伍任務，或輸入 /qt compare。查看誰擁有每個任務，以及每個人的進度。",
+              "預設會顯示所有隊伍任務。勾選隱藏我沒有的任務，以專注於你自己日誌中的任務。",
+              "向使用新版插件的隊伍成員請求可分享的任務。請求預設會先詢問許可；自動分享是可選設定。",
+              "比較會在地圖或戰鬥限制解除後恢復。重新整理會取代較舊的回覆，請求冷卻與失敗會說明你何時可以再試。"
+            ]
+          },
+          {
+            "title": "快捷方式與任務選單",
+            "items": [
+              "拖曳卷軸形狀的小地圖按鈕可重新定位。它的選單可開啟設定、比較、任務日誌、更新說明，以及記錄視窗目的地控制。可從選單隱藏它，並在其他設定中還原。",
+              "任務名稱選單提供狀態、分享、在任務日誌中開啟，以及比較隊伍任務。點擊時，分享與日誌動作會重新檢查目前任務與限制。",
+              "任務狀態連結會在任務離開你的日誌後保留其標題。自動分享核取方塊現在會跟隨已儲存的設定與設定檔變更。"
+            ]
+          },
+          {
+            "title": "說明與最新說明",
+            "items": [
+              "在專屬視窗中閱讀歡迎訊息與最新更新說明，而不是重複的聊天訊息。從小地圖選單或主設定頁面選擇更新說明，或使用 /qt notes、/qt changelog 或 /qt patchnotes。",
+              "說明視窗會在主要與次要升級後自動開啟。修補更新仍會包含新的說明，但不會自動開啟視窗。",
+              "使用 /qt help 查看一般指令，使用 /qt help debug 查看預覽、診斷與開發者指令。"
             ]
           }
         ]

@@ -1,13 +1,20 @@
 {
   "version": "6.0.1",
-  "welcome": "Celebrations now stay with players you can actually see nearby.",
+  "welcome": "Browse QuestTogether’s past updates in your language, with better quest-name recovery for completion announcements.",
   "sections": [
     {
-      "title": "Nearby celebration fixes",
+      "title": "Browse past patch notes",
       "items": [
-        "Reactions to another player finishing a quest or leveling up now require a matching, visible player unit. Map coordinates or a name alone no longer trigger an emote, including when devlogall is enabled.",
-        "Incoming emotes must match QuestTogether's own celebration list. Unlisted emotes, including mountspecial and faction cheers, are ignored without choosing a substitute.",
-        "Your own quest-completion and level-up celebrations keep their existing behavior and settings."
+        "The welcome window now has Older and Newer buttons, a Latest shortcut, and a History picker showing release versions and dates. Opening patch notes starts at the latest release.",
+        "The history includes every previous published release, including the early betas. All historical notes are translated into every supported WoW locale and included in the matching repository changelogs.",
+        "Navigation buttons disable when there is nowhere to go. Browsing older notes does not change which upgrade you have acknowledged; automatic popups still appear only for major and minor upgrades. Open the window anytime with /qt notes."
+      ]
+    },
+    {
+      "title": "Quest completion titles",
+      "items": [
+        "When a quest leaves your log before QuestTogether has a usable title, completion announcements now try the game’s available quest-title lookup before falling back to a quest ID. A recovered title is preserved regardless of turn-in and removal event order.",
+        "Announcements still use the sender’s text when your client cannot resolve a local title. If neither client has a name available, the quest ID remains the fallback. The improved sender-side recovery applies when the sender updates."
       ]
     }
   ]

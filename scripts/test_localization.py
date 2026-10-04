@@ -21,6 +21,11 @@ class LocalizationTests(unittest.TestCase):
         with self.assertRaises(ValueError):L.validate_translation('Value %s','Wert %z %s')
         with self.assertRaises(ValueError):L.validate_translation('/qt options opens settings','/qt einstellungen öffnet Optionen')
         with self.assertRaises(ValueError):L.validate_translation('/qt options opens settings','Einstellungen öffnen')
+    def test_command_names_allow_korean_particles_but_reject_renames(self):
+        L.validate_translation('Open /qtd, then run /qt test.', '/qtd를 열고 /qt test를 실행하세요.')
+        for target in ['/qtdx를 열고 /qt test를 실행하세요.', '/qtd를 열고 /qt 검사 실행하세요.']:
+            with self.assertRaises(ValueError):
+                L.validate_translation('Open /qtd, then run /qt test.', target)
     def test_duplicate_keys_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             p=Path(directory)/'duplicate.json';p.write_text('{"a":"b","a":"c"}')

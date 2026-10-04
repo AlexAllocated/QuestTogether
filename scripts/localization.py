@@ -31,7 +31,7 @@ def read(path):
 def source_strings(root):
     keys=set()
     for p in root.glob('*.lua'):
-        if p.name in ('Tests.lua','Locales.lua','LocalizedReleaseNotes.lua','ReleaseNotes.lua'): continue
+        if p.name in ('Tests.lua','Locales.lua','LocalizedReleaseNotes.lua','ReleaseNotes.lua','ReleaseNotesHistory.lua'): continue
         for m in LOOKUP.finditer(p.read_text()): keys.add(ast.literal_eval(m[1]))
     # Dynamic, canonical status identifiers are translated only at presentation.
     keys.update(read(root/'locales/dynamic.json'))
@@ -46,7 +46,8 @@ def validate_translation(source,target):
             match=FORMAT.match(target,position)
             if not match:raise ValueError('invalid format token: '+source)
             position=match.end()
-    commands = r'/qtd?\b(?: [a-z]+)?'
+    # Korean particles can directly follow a command without changing its ASCII name.
+    commands = r'/qtd?(?![A-Za-z0-9_])(?: [a-z]+)?'
     if re.findall(commands,source)!=re.findall(commands,target):raise ValueError('command changed: '+source)
     for argument in re.findall(r'<[^>]+>|\[(?:on|questID)[^\]]*\]|emoteOnQuestCompletion|on\|off\|toggle|true/false, on/off, 1/0',source):
         if '/qt' in source and argument not in target:raise ValueError('command argument changed: '+source)
@@ -62,7 +63,7 @@ TOKENS = re.compile(r'--\[(=*)\[.*?\]\1\]|--[^\n]*|\[(=*)\[.*?\]\2\]|"(?:\\.|[^"
 def untranslated_literals(root):
     result={}
     for p in root.glob('*.lua'):
-        if p.name in ('Tests.lua','Localization.lua','Locales.lua','LocalizedReleaseNotes.lua','ReleaseNotes.lua','Diagnostics.lua'):continue
+        if p.name in ('Tests.lua','Localization.lua','Locales.lua','LocalizedReleaseNotes.lua','ReleaseNotes.lua','ReleaseNotesHistory.lua','Diagnostics.lua'):continue
         text=p.read_text()
         for m in TOKENS.finditer(text):
             raw=m[0]

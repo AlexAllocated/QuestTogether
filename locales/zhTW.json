@@ -503,5 +503,15 @@
   "unknown": "未知",
   "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.": "v%s 已載入！現在支援 %s。輸入 %s 開啟設定。如果遇到任何問題，請在 %s 或 %s 留下回饋。",
   "|cff33ff99QuestTogether|r: Pong: ": "|cff33ff99QuestTogether|r：Pong： ",
-  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r：Pong：<invalid payload>"
+  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r：Pong：<invalid payload>",
+  "Back": "返回",
+  "Choose a version to read its patch notes. Dates are in UTC.": "選擇一個版本以閱讀其更新說明。日期為 UTC。",
+  "Date unavailable": "日期無法使用",
+  "History": "歷史紀錄",
+  "Latest": "最新",
+  "Newer": "較新",
+  "Older": "較舊",
+  "Release date (UTC): %s": "發布日期（UTC）：%s",
+  "Release history": "發布歷史",
+  "These notes are available in English only.": "這些說明僅提供英文版。"
 }

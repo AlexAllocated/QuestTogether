@@ -1226,3 +1226,44 @@ QuestTogether:RegisterTest("duplicate acceptance preserves watched task area obs
 		AssertEqual(addon:CountAreaAnnouncements("ENTERED"), 0, "recovery must not replay entry after duplicate acceptance")
 	end
 end)
+
+QuestTogether:RegisterTest("completion recovers native titles after log retirement and preserves captured titles", function()
+	for _, mode in ipairs({ "untracked", "retired", "captured", "restricted", "unavailable" }) do
+		local addon = NewQuestFixture()
+		addon.GetQuestTitle = function() return "Quest 78146" end
+		addon.GetQuestSnapshot = function() return nil end
+		addon.IsWorkBlocked = function() return mode == "restricted" end
+		local reads = 0
+		addon.API.GetLocalizedQuestTitle = function(id)
+			AssertEqual(id, 78146)
+			reads = reads + 1
+			if mode ~= "unavailable" then return "A native quest title" end
+		end
+		if mode == "retired" or mode == "captured" then
+			local data = { questId = 78146, title = mode == "captured" and "Captured title" or "Quest 78146" }
+			addon.retiredQuestIds[78146] = { removalData = data }
+			addon.pendingQuestRemovals[78146] = data
+		end
+		addon:QUEST_TURNED_IN(nil, 78146)
+		addon:QUEST_TURNED_IN(nil, 78146)
+		AssertEqual(#addon.announcements, 1)
+		local expected = mode == "captured" and "Captured title"
+			or ((mode == "restricted" or mode == "unavailable") and "Quest 78146" or "A native quest title")
+		AssertEqual(addon.announcements[1][2], expected)
+		AssertEqual(reads, (mode == "captured" or mode == "restricted") and 0 or 1)
+	end
+end)
+
+QuestTogether:RegisterTest("later removal title is not replaced by an earlier completion placeholder", function()
+	local addon = NewQuestFixture()
+	addon.GetQuestTitle = function() return "Quest 78146" end
+	addon.GetQuestSnapshot = function() return nil end
+	addon.tracker[78146] = { title = "Quest 78146" }
+	addon:QUEST_TURNED_IN(nil, 78146)
+	AssertEqual(#addon.announcements, 0)
+	addon.tracker[78146].title = "Title received before removal"
+	addon:QUEST_REMOVED(nil, 78146)
+	addon.delayed[1]()
+	AssertEqual(#addon.announcements, 1)
+	AssertEqual(addon.announcements[1][2], "Title received before removal")
+end)

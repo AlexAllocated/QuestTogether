@@ -503,5 +503,15 @@
   "unknown": "неизвестно",
   "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.": "v%s загружена! Теперь поддерживает %s. Введите %s для настроек. Если у вас возникнут проблемы, оставьте отзыв на %s или %s.",
   "|cff33ff99QuestTogether|r: Pong: ": "|cff33ff99QuestTogether|r: Понг: ",
-  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Понг: <недопустимые данные>"
+  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Понг: <недопустимые данные>",
+  "Back": "Назад",
+  "Choose a version to read its patch notes. Dates are in UTC.": "Выберите версию, чтобы прочитать примечания к обновлению. Даты указаны в UTC.",
+  "Date unavailable": "Дата недоступна",
+  "History": "История",
+  "Latest": "Последняя",
+  "Newer": "Новее",
+  "Older": "Старее",
+  "Release date (UTC): %s": "Дата выпуска (UTC): %s",
+  "Release history": "История выпусков",
+  "These notes are available in English only.": "Эти примечания доступны только на английском."
 }

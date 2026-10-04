@@ -149,12 +149,17 @@ local function Region(addon, parent, kind)
 			self.scripts.OnValueChanged(self, value)
 		end
 	end
+	function region:SetEnabled(enabled)
+		self:Check()
+		self.enabled = enabled
+	end
 	function region:SetTexture(value)
 		self:Check()
 		self.texture = value
 	end
 	for _, method in ipairs({
 		"SetFrameStrata",
+		"SetAlpha",
 		"SetToplevel",
 		"SetFlattensRenderLayers",
 		"SetClampedToScreen",
@@ -267,6 +272,74 @@ Register("release notes window sizes to content and reuses only owned frames", f
 	frame.close.scripts.OnClick({})
 	Equal(frame:IsVisible(), false)
 	assert(frame.footer.text:find("/qt notes", 1, true))
+end)
+
+Register("release notes browse history by page or dated picker and reopen at latest", function()
+	local a = Fixture()
+	a.hasLoggedIn, a.db = true, { global = {} }
+	a.GetAddonVersion = function() return "5.9.2" end
+	a.releaseNotes = Notes(2)
+	a.releaseNotesDates = { ["5.9.2"] = "2026-09-27" }
+	local older, oldest = Notes(40), Notes(1)
+	older.version, oldest.version = "5.9.1", "5.9.0"
+	older.sections[1].illustration = "quest-partners"
+	a.releaseNotesHistory = {
+		{ version = older.version, date = "2026-09-27", locales = { enUS = older } },
+		{ version = oldest.version, date = "2026-09-26", locales = { enUS = oldest } },
+	}
+	assert(a:OpenReleaseNotes())
+	local frame = a.releaseNotesWindow
+	Equal(a.releaseNotesBrowser.index, 1)
+	Equal(frame.navigation[2].enabled, false)
+	Equal(frame.navigation[4].enabled, false)
+	frame.navigation[1].scripts.OnClick({})
+	Equal(frame.title.text, "QuestTogether 5.9.1")
+	Equal(frame.navigation[4].enabled, true)
+	assert(frame.maximumScroll > 0 and frame.partnerExamples.shown)
+	frame.scroll.scripts.OnMouseWheel({}, -10)
+	assert(frame.scrollOffset > 0)
+	frame.navigation[1].scripts.OnClick({})
+	Equal(a.releaseNotesBrowser.index, 3)
+	Equal(frame.navigation[1].enabled, false)
+	Equal(frame.scrollOffset, 0)
+	Equal(frame.partnerExamples.shown, false)
+	Equal(a:ShowReleaseNotesPage(4), false)
+	Equal(a:ShowReleaseNotesPage(0), false)
+	Equal(a:ShowReleaseNotesPage(1.5), false)
+	frame.navigation[3].scripts.OnClick({})
+	assert(a.releaseNotesBrowser.history)
+	Equal(frame.logo.shown, false)
+	assert(frame.historyRows[3].label.text:find("2026-09-26", 1, true))
+	frame.historyRows[2].scripts.OnClick({})
+	Equal(a.releaseNotesBrowser.index, 2)
+	Equal(a.releaseNotesBrowser.history, false)
+	Equal(frame.logo.shown, true)
+	Equal(frame.historyRows[2].shown, false)
+	Equal(a.db.global.releaseNotesSeenVersion, "5.9.2")
+	local frames = #a.frames
+	frame.navigation[3].scripts.OnClick({})
+	frame.navigation[3].scripts.OnClick({})
+	Equal(#a.frames, frames)
+	frame.navigation[4].scripts.OnClick({})
+	Equal(a.releaseNotesBrowser.index, 1)
+	Equal(frame.navigation[4].enabled, false)
+	frame.navigation[3].scripts.OnClick({})
+	Equal(frame.navigation[4].enabled, true)
+	frame.navigation[4].scripts.OnClick({})
+	Equal(a.releaseNotesBrowser.history, false)
+	Equal(frame.navigation[4].enabled, false)
+	frame.navigation[1].scripts.OnClick({})
+	frame.close.scripts.OnClick({})
+	assert(a:OpenReleaseNotes())
+	Equal(a.releaseNotesBrowser.index, 1)
+	Equal(a.releaseNotesBrowser.history, false)
+	-- Retained UI callbacks must respect restrictions and never acknowledge history.
+	a.blocked = true
+	frame.navigation[1].scripts.OnClick({})
+	frame.historyRows[3].scripts.OnClick({})
+	Equal(a.releaseNotesBrowser.index, 1)
+	Equal(a:ShowReleaseNotesPage(2), false)
+	a.blocked = false
 end)
 
 Register("release notes settings action keeps the welcome visible when settings cannot open", function()

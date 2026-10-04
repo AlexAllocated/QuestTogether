@@ -374,3 +374,21 @@ QT:RegisterTest("quest title request pacing survives eviction and cached titles 
 	assert(a:GetLocalizedQuestTitle(400) == "Cached title")
 	assert(a:GetLocalizedQuestTitle(999) == nil and a.reads == reads and a.loads == 11)
 end)
+
+QT:RegisterTest("wire completion titles survive unavailable receiver data and clickable chat formatting", function()
+	local a = Fixture()
+	function a:BuildChatLogQuestLabel(id, title)
+		assert(id == 78146)
+		return "[" .. title .. "]"
+	end
+	for _, locale in ipairs({ "enUS", "deDE" }) do
+		a.localizationTestLocale = locale
+		local event = Event("QUEST_COMPLETED", "1:enUS:q:::", "Quest Completed: Sender's quest name")
+		event.questId = "78146"
+		local decoded = assert(a:DecodeAnnouncementPayload(a:EncodeAnnouncementPayload(event)))
+		local text = a:LocalizeAnnouncementEvent(decoded)
+		assert(text == event.text)
+		assert(a:DecorateAnnouncementMessageWithQuestLink(text, decoded.eventType, decoded.questId)
+			== "Quest Completed: [Sender's quest name]")
+	end
+end)

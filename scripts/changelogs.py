@@ -99,6 +99,16 @@ def outputs(root, notes, localized_outputs=None, previous_version=None):
             current[locale] = json.loads(localized_outputs[path])['notes']
     validate_entry(current)
     entries = dict(archived)
+    legacy_path = root / 'changelogs/legacy_notes.json'
+    if legacy_path.exists():
+        legacy = read(legacy_path)
+        if not isinstance(legacy, list):
+            raise NotesError('legacy notes must be a list')
+        for entry in legacy:
+            version = validate_entry(entry)
+            if version in entries or version_key(version) >= version_key(notes['version']):
+                raise NotesError('duplicate or newer legacy release: ' + version)
+            entries[version] = entry
     entries[notes['version']] = current
     ordered = [entries[v] for v in sorted(entries, key=version_key, reverse=True)]
     result = {root / ('CHANGELOG.md' if locale == 'enUS' else 'changelogs/' + locale + '.md'): render(locale, ordered)

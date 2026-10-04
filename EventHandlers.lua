@@ -343,6 +343,15 @@ function QuestTogether:GetTaskAnnouncementType(questId)
 	return nil
 end
 
+local function ResolveCapturedQuestTitle(addon, questId, title)
+	title = addon:SafeTrimString(title, "")
+	if title ~= "" and not addon:IsPlaceholderQuestTitle(questId, title) then return title end
+	-- A turn-in may outlive its quest-log snapshot. The existing guarded,
+	-- bounded title reader can still resolve the ID without selecting a quest.
+	local resolved = addon.GetLocalizedQuestTitle and addon:GetLocalizedQuestTitle(questId)
+	return resolved or (title ~= "" and title or nil)
+end
+
 function QuestTogether:BuildTrackedQuestRemovalData(questId)
 	questId = NormalizeQuestId(self, questId)
 	if not questId then
@@ -363,6 +372,7 @@ function QuestTogether:BuildTrackedQuestRemovalData(questId)
 			questTitle = resolvedTitle
 		end
 	end
+	questTitle = ResolveCapturedQuestTitle(self, questId, questTitle)
 	return {
 		questId = questId,
 		title = questTitle or (L("Quest ") .. SafeText(questId, "?")),
@@ -399,6 +409,8 @@ function QuestTogether:BuildTrackedQuestCompletionData(questId)
 		title = self:GetQuestTitle(questId),
 		taskAnnouncementType = self:GetTaskAnnouncementType(questId),
 	}
+
+	completionData.title = ResolveCapturedQuestTitle(self, questId, completionData.title)
 
 	local completionEventType = "QUEST_READY_TO_TURN_IN"
 	if completionData.taskAnnouncementType == "world" then
@@ -448,7 +460,11 @@ function QuestTogether:ResolvePendingQuestRemoval(questId)
 
 	local completionData = self.questsCompleted[questId]
 	local completed = completionData ~= nil
-	local questTitle = removalData.title or (completionData and completionData.title) or (L("Quest ") .. SafeText(questId, "?"))
+	local questTitle = removalData.title
+	if completionData and (not questTitle or questTitle == "" or self:IsPlaceholderQuestTitle(questId, questTitle)) then
+		questTitle = completionData.title or questTitle
+	end
+	questTitle = questTitle or (L("Quest ") .. SafeText(questId, "?"))
 	local iconAsset = (completionData and completionData.iconAsset) or removalData.iconAsset
 	local iconKind = (completionData and completionData.iconKind) or removalData.iconKind
 

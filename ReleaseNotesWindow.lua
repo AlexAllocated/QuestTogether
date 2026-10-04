@@ -72,6 +72,25 @@ local function Script(addon, frame, region, event, callback)
 	end)
 end
 
+local function Button(addon, frame, parent, text, callback)
+	local button = New(addon, "Button", parent)
+	for _, art in ipairs({
+		{ "SetNormalTexture", "DialogButtonNormalTexture" },
+		{ "SetPushedTexture", "DialogButtonPushedTexture" },
+		{ "SetHighlightTexture", "DialogButtonHighlightTexture" },
+	}) do
+		local texture = Texture(addon, button, art[2], "ARTWORK")
+		Call(addon, texture, "SetAllPoints")
+		Call(addon, button, art[1], texture)
+	end
+	button.label = Label(addon, button, "GameFontNormalSmall")
+	Call(addon, button.label, "SetPoint", "CENTER")
+	Call(addon, button.label, "SetJustifyH", "CENTER")
+	Call(addon, button.label, "SetText", text)
+	Script(addon, frame, button, "OnClick", callback)
+	return button
+end
+
 local function SetScroll(addon, frame, value)
 	value = addon:SafeToNumber(value)
 	if not value then
@@ -251,8 +270,21 @@ local function Create(addon, parent)
 	frame.footer = Label(addon, frame, "GameFontHighlightSmall")
 	Call(addon, frame.footer, "SetPoint", "BOTTOMLEFT", 22, 52)
 	Call(addon, frame.footer, "SetText", L("Read this again: /qt notes"))
+	frame.navigation = {}
+	for index, text in ipairs({ L("Older"), L("Newer"), L("History"), L("Latest") }) do
+		local action = index
+		frame.navigation[index] = Button(addon, frame, frame, text, function()
+			local browser = rawget(addon, "releaseNotesBrowser")
+			if not browser then return end
+			if action == 1 then addon:ShowReleaseNotesPage(browser.index + 1)
+			elseif action == 2 then addon:ShowReleaseNotesPage(browser.index - 1)
+			elseif action == 3 then addon:ShowReleaseNotesPage(browser.index, not browser.history)
+			else addon:ShowReleaseNotesPage(1) end
+		end)
+	end
+	frame.historyRows = {}
 	frame.scroll = New(addon, "ScrollFrame", frame)
-	Call(addon, frame.scroll, "SetPoint", "TOPLEFT", 22, -45)
+	Call(addon, frame.scroll, "SetPoint", "TOPLEFT", 22, -84)
 	Call(addon, frame.scroll, "EnableMouseWheel", true)
 	frame.content = New(addon, "Frame", frame.scroll)
 	Call(addon, frame.scroll, "SetScrollChild", frame.content)
@@ -318,6 +350,23 @@ local function Render(addon, notes, version, isFirstUse)
 	local scale = math.min(1, parentWidth * 0.92 / width, parentHeight * 0.92 / 260)
 	local maximumHeight = math.max(260, math.min(650, parentHeight * 0.88 / scale))
 	local contentWidth, offset, count = width - 68, LOGO_SIZE + LOGO_GAP, 0
+	local browser = rawget(addon, "releaseNotesBrowser")
+	local history = browser and browser.history
+	local entry = browser and browser.entries[browser.index]
+	for index, button in ipairs(frame.navigation) do
+		local buttonWidth = (contentWidth - 18) / 4
+		Call(addon, button, "ClearAllPoints")
+		Call(addon, button, "SetPoint", "TOPLEFT", 22 + (index - 1) * (buttonWidth + 6), -36)
+		Call(addon, button, "SetSize", buttonWidth, 32)
+		Call(addon, button.label, "SetWidth", buttonWidth - 8)
+		local enabled = browser ~= nil and (index == 3
+			or (index == 4 and (history or browser.index > 1))
+			or (not history and (index == 1 and browser.index < #browser.entries or index == 2 and browser.index > 1)))
+		Call(addon, button, "SetEnabled", enabled)
+		Call(addon, button.label, "SetAlpha", enabled and 1 or 0.4)
+	end
+	Call(addon, frame.navigation[3].label, "SetText", history and L("Back") or L("History"))
+	for _, row in ipairs(frame.historyRows) do Call(addon, row, "Hide") end
 	Call(addon, frame, "SetScale", scale)
 	Call(addon, frame.title, "SetWidth", width - 70)
 	Call(addon, frame.title, "SetText", "QuestTogether " .. addon:SafeTrimString(version, ""))
@@ -345,36 +394,63 @@ local function Render(addon, notes, version, isFirstUse)
 		end
 		offset = offset + height + gap
 	end
-	Add(isFirstUse and L("Welcome to QuestTogether") or L("What's new"), "GameFontNormalLarge", 14)
-	Add(notes.welcome, "GameFontHighlight", 18)
 	Call(addon, frame.partnerExamples, "Hide")
-	local examplesShown = false
-	if addon:CanAccessTable(notes.sections) then
-		for _, section in ipairs(notes.sections) do
-			if addon:CanAccessTable(section) then
-				Add(section.title, "GameFontNormal", 8)
-				if addon:CanAccessTable(section.items) then
-					for _, item in ipairs(section.items) do
-						local text = addon:SafeTrimString(item, "")
-						if text ~= "" then
-							Add("• " .. text, "GameFontHighlight", 9)
+	Call(addon, frame.logo, history and "Hide" or "Show")
+	if history then
+		offset = 0
+		Call(addon, frame.title, "SetText", "QuestTogether — " .. L("Release history"))
+		Add(L("Release history"), "GameFontNormalLarge", 12)
+		Add(L("Choose a version to read its patch notes. Dates are in UTC."), "GameFontHighlight", 16)
+		for index, item in ipairs(browser.entries) do
+			local row = frame.historyRows[index]
+			if not row then
+				local selected = index
+				row = Button(addon, frame, frame.content, "", function() addon:ShowReleaseNotesPage(selected) end)
+				frame.historyRows[index] = row
+			end
+			Call(addon, row.label, "SetWidth", contentWidth - 24)
+			Call(addon, row.label, "SetText", item.version .. " · " .. (item.date or L("Date unavailable"))
+				.. "\n" .. addon:SafeTrimString(item.notes.sections[1].title, ""))
+			local rowHeight = math.max(48, (addon:SafeToNumber(Call(addon, row.label, "GetStringHeight")) or 32) + 16)
+			Call(addon, row, "ClearAllPoints")
+			Call(addon, row, "SetPoint", "TOPLEFT", 0, -offset)
+			Call(addon, row, "SetSize", contentWidth, rowHeight)
+			Call(addon, row, "Show")
+			offset = offset + rowHeight + 6
+		end
+	else
+		Add(isFirstUse and L("Welcome to QuestTogether") or L("What's new"), "GameFontNormalLarge", 14)
+		if entry and entry.date then Add(string.format(L("Release date (UTC): %s"), entry.date), "GameFontHighlightSmall", 12) end
+		if entry and entry.englishOnly then Add(L("These notes are available in English only."), "GameFontHighlightSmall", 12) end
+		Add(notes.welcome, "GameFontHighlight", 18)
+		local examplesShown = false
+		if addon:CanAccessTable(notes.sections) then
+			for _, section in ipairs(notes.sections) do
+				if addon:CanAccessTable(section) then
+					Add(section.title, "GameFontNormal", 8)
+					if addon:CanAccessTable(section.items) then
+						for _, item in ipairs(section.items) do
+							local text = addon:SafeTrimString(item, "")
+							if text ~= "" then
+								Add("• " .. text, "GameFontHighlight", 9)
+							end
 						end
 					end
-				end
-				if section.illustration == "quest-partners" and not examplesShown then
-					local gallery = frame.partnerExamples
-					Call(addon, gallery, "ClearAllPoints")
-					Call(addon, gallery, "SetPoint", "TOPLEFT", 0, -offset)
-					Call(addon, gallery, "SetSize", contentWidth, 112)
-					for index, column in ipairs(gallery.columns) do
-						Call(addon, column, "ClearAllPoints")
-						Call(addon, column, "SetPoint", "TOPLEFT", (index - 1) * contentWidth / 2, 0)
-						Call(addon, column, "SetSize", contentWidth / 2, 112)
+					if section.illustration == "quest-partners" and not examplesShown then
+						local gallery = frame.partnerExamples
+						Call(addon, gallery, "ClearAllPoints")
+						Call(addon, gallery, "SetPoint", "TOPLEFT", 0, -offset)
+						Call(addon, gallery, "SetSize", contentWidth, 112)
+						for index, column in ipairs(gallery.columns) do
+							Call(addon, column, "ClearAllPoints")
+							Call(addon, column, "SetPoint", "TOPLEFT", (index - 1) * contentWidth / 2, 0)
+							Call(addon, column, "SetSize", contentWidth / 2, 112)
+						end
+						Call(addon, gallery, "Show")
+						offset, examplesShown = offset + 120, true
 					end
-					Call(addon, gallery, "Show")
-					offset, examplesShown = offset + 120, true
+					offset = offset + 10
 				end
-				offset = offset + 10
 			end
 		end
 	end
@@ -382,8 +458,8 @@ local function Render(addon, notes, version, isFirstUse)
 		Call(addon, frame.labels[index], "Hide")
 	end
 	local contentHeight = math.max(1, offset)
-	local height = math.min(maximumHeight, math.max(260, contentHeight + 129))
-	local viewportHeight = height - 129
+	local height = math.min(maximumHeight, math.max(260, contentHeight + 168))
+	local viewportHeight = height - 168
 	Call(addon, frame, "SetSize", width, height)
 	Call(addon, frame.scroll, "SetSize", contentWidth, viewportHeight)
 	Call(addon, frame.content, "SetSize", contentWidth, math.max(contentHeight, viewportHeight))

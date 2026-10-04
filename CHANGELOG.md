@@ -6,13 +6,18 @@
 
 ## 6.0.1
 
-Celebrations now stay with players you can actually see nearby.
+Browse QuestTogether’s past updates in your language, with better quest-name recovery for completion announcements.
 
-### Nearby celebration fixes
+### Browse past patch notes
 
-- Reactions to another player finishing a quest or leveling up now require a matching, visible player unit. Map coordinates or a name alone no longer trigger an emote, including when devlogall is enabled.
-- Incoming emotes must match QuestTogether's own celebration list. Unlisted emotes, including mountspecial and faction cheers, are ignored without choosing a substitute.
-- Your own quest-completion and level-up celebrations keep their existing behavior and settings.
+- The welcome window now has Older and Newer buttons, a Latest shortcut, and a History picker showing release versions and dates. Opening patch notes starts at the latest release.
+- The history includes every previous published release, including the early betas. All historical notes are translated into every supported WoW locale and included in the matching repository changelogs.
+- Navigation buttons disable when there is nowhere to go. Browsing older notes does not change which upgrade you have acknowledged; automatic popups still appear only for major and minor upgrades. Open the window anytime with /qt notes.
+
+### Quest completion titles
+
+- When a quest leaves your log before QuestTogether has a usable title, completion announcements now try the game’s available quest-title lookup before falling back to a quest ID. A recovered title is preserved regardless of turn-in and removal event order.
+- Announcements still use the sender’s text when your client cannot resolve a local title. If neither client has a name available, the quest ID remains the fallback. The improved sender-side recovery applies when the sender updates.
 
 ## 6.0.0
 
@@ -364,5 +369,158 @@ QuestTogether shares quest progress with your party and nearby players. Use the 
 - Read the welcome and latest patch notes in their own window instead of repeated chat messages. Choose Patch Notes from the minimap menu or main Settings page, or use /qt notes, /qt changelog, or /qt patchnotes.
 - The notes window opens automatically for major and minor upgrades. Patch updates still include fresh notes without opening the window automatically.
 - Use /qt help for normal commands and /qt help debug for previews, diagnostics, and developer commands.
+
+## 5.9.2
+
+Left- or right-click a quest name in the QuestTogether log to open its menu, with Status first and Share second. Share uses the current quest-log entry without changing Blizzard's selected quest, and is unavailable when solo, restricted, or the quest cannot be shared. After a separator, the final option moves QuestTogether logs between the main and separate windows, matching QT's player-name menu.
+
+### Changes in this release
+
+- Make quest names in status messages clickable, including fallback titles from other players' logs. Preserve existing quest links when formatting completed quest comparisons so status details do not become part of a second, broken link.
+- Validation: 521 tests pass in normal and reverse order on Lua 5.1 and 5.2. All six client API profiles, Lua and shell syntax checks, exact libchev verification, and diff checks pass. Live-client menu behavior, quest-share delivery, and engine-level taint validation remain separate.
+
+## 5.9.1
+
+Fixes quest tracking, quest plate visibility, task-area announcements, communication reliability, and user actions identified in the comprehensive audit.
+
+### Changes in this release
+
+- Prevent unrelated tooltip quest blocks from borrowing shared objective text. Preserve valid party progress and recover plates after map, instance, roster, and quest changes.
+- Keep newly accepted quests and initial scans pending until readable data arrives. Preserve objective milestones, task classification, and unknown location state without false exits or duplicate entries.
+- Improve localized announcements and quest comparisons, including payload limits, pacing, retries, cancellation, and shareability reporting.
+- Honor native waypoint failures without tracking an old pin. Decline restricted clicks while disabled instead of losing queued work.
+- Make bubble tests local previews and accept full Forever names or quoted names, while preserving exact player identity.
+- Correct enable/disable and profile handling, HUD Edit Mode opening, approved celebration emotes, and diagnostics.
+- Strengthen live-safe test isolation and regression coverage, correct faulty test assumptions, and make CI propagate Lua syntax failures.
+- Validation: 516 tests pass in normal and reverse order on Lua 5.1 and 5.2. All six client API profiles, syntax checks, exact libchev verification, and diff checks pass. Live-client rendering, two-client delivery, and engine-level taint validation remain separate.
+
+## 5.9.0
+
+Celebrate your own and nearby QuestTogether players' level-ups with synchronized emotes. Add separate, enabled-by-default level-up emote toggles beside the quest completion emote settings in Miscellaneous. Nearby reactions respect the existing player scope and proximity rules.
+
+### Changes in this release
+
+- Remember confirmed quest-objective completion by creature type as well as individual spawn. Mobs that appear during combat stay unmarked when tooltip data is unavailable, even if an older spawn was cached as needed. Fresh unfinished objectives can restore highlighting; quest-state changes clear completion memory. Partial or inaccessible tooltip data is never treated as proof that everyone is done.
+- Clear quest nameplate icons and health tint immediately when a mob's tap is denied, including during combat. Listen for ownership changes and recheck taps on health and threat updates.
+- Detect newly encountered quest mobs during ordinary open-world combat using readable unit tooltip data. Refresh plates when they return from behind the camera, become your target, or are moused over. Retry delayed frames, GUIDs and tooltip quest lines with a bounded per-unit budget, cancel stale work when units are removed, and restore tint and icon together. Preserve map, instance, inaccessible-data and protected-frame guards; combat discovery does not invoke Questie or hidden tooltip UI.
+- Validation: 374 offline tests pass in normal and reverse order on Lua 5.1 and 5.2. Six client API profiles, Lua syntax checks, exact library verification and diff checks pass. Completion-cache regressions reproduced the bug before the fix. Live gameplay and engine-level taint validation remain separate.
+
+## 5.8.6
+
+Harden character names, class names, quest titles and custom class colors against inaccessible or malformed API values. Validate optional TomTom and Questie integration data before using it, and stop reading Questie tooltip lines at inaccessible data. Normalize bubble visibility and edit-mode state to booleans before passing them to UI controls.
+
+### Changes in this release
+
+- Consolidate the loading-screen event handler, remove unused private arguments and an unused restriction-enum branch, and clarify callback and return-value handling. Keep modern/legacy client fallbacks and the exact private library revision intact.
+- Validation: 336 tests pass in normal and reverse order on Lua 5.1 and 5.2, with expanded adapter checks across six client profiles. New regressions fail against the previous implementation. Lua parsing, exact library verification and diff checks pass. Reviewed the remaining Ketho WoW API/LuaLS diagnostics, including a separate pass without offline client mocks; retained findings have specific compatibility, guard, callback, library or fixture reasons. Live Retail and Forever gameplay validation remains separate.
+
+## 5.8.5
+
+Fix task/world-quest map discovery on modern clients by reading questID from C_TaskQuest.GetQuestsOnMap, while retaining the legacy API and questId field for older clients. Prefer C_ChatInfo.PerformEmote so completion emotes work when deprecated globals are disabled; safely handle missing or failing emote APIs.
+
+### Changes in this release
+
+- Remove an unused party-roster fingerprint calculation and unused local variables. Extend offline client checks to cover modern and legacy task/emote APIs, API precedence, inaccessible quest data, and missing/failing APIs. Validation: 334 tests pass in normal and reverse order on Lua 5.1 and 5.2, plus the expanded API checks on six client profiles, Lua parsing and exact library verification. Gameplay validation in Retail and Forever remains separate from offline checks.
+
+## 5.8.4
+
+Repository housekeeping: keep local development notes outside the tracked source and release packages. Gameplay behavior is unchanged.
+
+### Changes in this release
+
+- Repository housekeeping: keep local development notes outside the tracked source and release packages. Gameplay behavior is unchanged.
+
+## 5.8.3
+
+Announce the installed version, supported clients and settings command once per login or UI reload. Include addon-specific CurseForge and GitHub feedback links; clicking a link opens a native-style copy window. Share message behavior and safe copy UI through private libchev 1.2.0. If link registration or the copy window is unavailable, show the full URL in chat. An unavailable welcome helper cannot interrupt normal addon startup.
+
+### Changes in this release
+
+- Validation: 334 tests pass in both orders on Lua 5.1 and 5.2, with client API checks, Lua parsing and exact library vendor verification. NoPoizen smoke simulations exercise both feedback links on all seven client/ruleset profiles. Live rendering remains a separate check.
+
+## 5.8.2
+
+Isolate test fixture GUID lookups from nearby players. Fix two false failures in /qt test when a real unit occupies the nameplate token used by the tooltip and cached-icon checks. Gameplay nameplate behavior is unchanged.
+
+### Changes in this release
+
+- The offline environment now includes that token collision and reproduces both failures without the fixture fix. All 333 tests pass in both orders on Lua 5.1 and 5.2 after the fix; six client API profiles also pass. In-game confirmation remains separate.
+
+## 5.8.1
+
+Show Blizzard's quest marker beside QuestTogether in the AddOns list instead of the default question mark.
+
+### Changes in this release
+
+- Show Blizzard's quest marker beside QuestTogether in the AddOns list instead of the default question mark.
+
+## 5.8.0
+
+Support current Classic clients with correct quest-acceptance payloads, guarded objective API fallbacks, honest unknown shareability, flavor metadata and six-client API regression checks. Preserve Retail/Forever behavior and shared debug utilities.
+
+### Changes in this release
+
+- Validation: 333 tests pass in both orders on Lua 5.1 and 5.2, with six client profiles, Lua parsing and exact private-library vendor checks. NoPoizen client smoke checks and package verification also pass. Live validation of the new adapters remains pending.
+- See CLIENT_COMPATIBILITY.md for source evidence, scope and validation limits.
+
+## 5.7.7
+
+Keep overlapping debug consoles and their controls in one native stacking group through private libchev 1.1.3. Category menus stay with their owning console.
+
+### Changes in this release
+
+- Default quest objective icons to the left of the nameplate. Existing saved icon positions remain unchanged.
+- Respect Forever's “My Last Name” setting when displaying your character's name. Keep other players' surnames visible, matching the native setting's scope. Use full names consistently for communications, group membership, nameplate matching, and social actions while preserving existing profile and personal bubble position keys.
+- Fix duplicate local quest announcements caused by receiving your own channel message under a different full-name format. Regression coverage exercises the local announcement followed by its channel and party echoes, including another character with the same first name.
+- Validation: 331 tests pass in both orders under Lua 5.1/5.2. Live confirmation of the new icon default and multi-window interaction remains separate.
+
+## 5.7.6
+
+Use the same private libchev 1.1.2 debug console across all three addons, including category/search filters, copy controls, test results, diagnostic reports, timestamps when available, and a single final test summary. Fix stretched native frame artwork with explicit texture bounds.
+
+### Changes in this release
+
+- QuestTogether supplies its own quest diagnostics and isolated tests while the shared library owns the console and generic debug behavior. Run /qt test, /qt debug, or /qt diagnostics.
+- Validation: 324 tests pass in both orders on Lua 5.1/5.2. The user confirmed the corrected frame appearance in-game. Other live restriction and gameplay validation remains separate.
+
+## 5.7.6-beta.3
+
+QuestTogether 5.7.6-beta.3 updates the embedded shared debug console to libchev 1.1.1.
+
+### Changes in this release
+
+- Restores the native WoW-style window appearance across the addons' shared console.
+- Removes the duplicate test-summary line while retaining the final summary in bounded history.
+- Keeps the common search, category, copy, scrolling, test, and diagnostic behavior and existing restriction guards.
+- The user reported all 324 QT tests passing in Forever 1.60.1 build 70009 on beta.2. QT's seven live-loaded test files were also audited for invalid arithmetic; no NaN-generation or division-by-zero fixtures were found. That earlier live test result does not validate this new appearance change.
+- After /reload, open /qtd, run /qt test, and check the window appearance and single summary. Live rendering and restriction/taint behavior for this revision still need client verification.
+- Validation: all 324 cases pass forward/reverse on actual Lua 5.1.5 and 5.2.4, each CLI run emits one summary, and the extracted 26-file installable ZIP passes on both versions. All 23 Lua files parse; all 22 TOC entries and the vendor manifest verify. Formatting and diff checks pass. Library pin: 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. No QT GitHub CI is configured; upstream library CI passed.
+
+## 5.7.6-beta.2
+
+QuestTogether 5.7.6-beta.2 replaces its separate debug window with the shared libchev v1.1 console used across the addons. The embedded library is included; no separate installation is required.
+
+### Changes in this release
+
+- Shared category filtering, fuzzy/quoted search, copy/select, clear, reload, tests, diagnostics, and scroll-following behavior.
+- /qt test opens the current results; repeated runs replace old TEST history and clear stale search filters.
+- /qt diagnostics [questID] and /qt diag [questID] rebuild the current cached report in the same console, retaining recent events within the shared export budget.
+- Shared restriction and owned-frame guards replace QT's old console callbacks and dropdown implementation.
+- Quest state, announcements, nameplates, comms, and QT-specific test isolation remain owned by QuestTogether.
+- This is a beta release. Live Retail/Forever rendering and taint behavior still need verification. After /reload, run /qt test and /qt diagnostics, then exercise category/search, copy, clear, resize, scrolling, repeated test runs, and switching between reports and logs. Include combat/restriction transitions and your usual addon set.
+- Validation: 324/324 tests pass in both orders under Lua 5.1.5 and 5.2.4. All 23 Lua files parse, all 22 TOC entries validate, and the pinned library manifest verifies. The installable ZIP was extracted and passed all 324 cases using the separate offline harness. Library pin: 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6.
+
+## 5.7.6-beta.1
+
+QuestTogether 5.7.6-beta.1 embeds libchev v1.0.0 to share logging, diagnostics, callback guards, deferred-work mechanics, and test execution with the other Together addons. The library is included; no separate addon installation is needed.
+
+### Changes in this release
+
+- Diagnostic reports include common client/addon/library information and retain the newest events when the copy window fills.
+- Quest, party, nameplate, and restriction behavior remains owned by QuestTogether, with isolated per-addon runtime stores.
+- Coordinate links remain usable while QT is disabled when restrictions allow them; queued background work stays paused and stale timers are discarded.
+- /qt test now includes 315 cases: the existing 300, ten shared library checks, and five integration regressions.
+- Validation: all 315 tests pass in both orders under Lua 5.1.5 and 5.2.4; Lua syntax, TOC load order, and the embedded revision/hash manifest pass. Embedded libchev source: 09ac76eb6fe8e9589b809188652950c3cd9e444c.
+- This is a beta release. Live Retail/Forever UI rendering and taint behavior after this extraction still need verification. After reloading, run /qt test and /qt diagnostics, then exercise quests, progress bubbles, nameplates, and coordinate links across combat, zoning, disable/re-enable, and reload with your usual addons. The earlier Retail 300-test confirmation applied to v5.7.5.
 
 [Earlier handwritten changelog](changelogs/legacy-enUS.md)
