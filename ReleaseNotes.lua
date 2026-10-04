@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "5.17.0",
+	version = "5.17.1",
 	welcome = "See more about your questing companions and check quest status directly from chat tooltips.",
 	sections = {
 		{

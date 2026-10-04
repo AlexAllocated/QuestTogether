@@ -1,7 +1,7 @@
 {
   "source_sha256": "5fa1bdbaefff1112886109fe246fef7a7501962849cc4921b0a3f35dbf45c00b",
   "notes": {
-    "version": "5.17.0",
+    "version": "5.17.1",
     "welcome": "Consulta más información sobre tus compañeros de misiones y comprueba el estado de las misiones directamente desde los tooltips del chat.",
     "sections": [
       {

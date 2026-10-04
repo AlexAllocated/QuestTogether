@@ -1,7 +1,7 @@
 {
   "source_sha256": "5fa1bdbaefff1112886109fe246fef7a7501962849cc4921b0a3f35dbf45c00b",
   "notes": {
-    "version": "5.17.0",
+    "version": "5.17.1",
     "welcome": "從聊天提示資訊直接查看更多關於你的任務夥伴的資訊並查看任務狀態。",
     "sections": [
       {
