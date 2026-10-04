@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.0.0
+## 6.0.1
 
 Les célébrations restent désormais associées aux joueurs que vous pouvez réellement voir à proximité.
 
@@ -11,6 +11,34 @@ Les célébrations restent désormais associées aux joueurs que vous pouvez ré
 - Les réactions à un autre joueur qui termine une quête ou gagne un niveau nécessitent désormais une unité de joueur correspondante et visible. Les coordonnées de la carte ou un nom seul ne déclenchent plus d’emote, y compris lorsque devlogall est activé.
 - Les emotes entrantes doivent correspondre à la propre liste de célébrations de QuestTogether. Les emotes non répertoriées, y compris mountspecial et les acclamations de faction, sont ignorées sans choisir de substitut.
 - Vos propres célébrations de fin de quête et de gain de niveau conservent leur comportement et leurs paramètres existants.
+
+## 6.0.0
+
+QuestTogether 6.0 prépare le lancement de Forever avec un système de communication conçu pour réduire le trafic en arrière-plan à mesure que la communauté grandit.
+
+### Activité locale, découverte mondiale
+
+- Les annonces de quêtes et les mises à jour fréquentes des joueurs utilisent désormais les canaux de zone. Les annonces de groupe atteignent toujours votre groupe au-delà des limites de zone.
+- Les points des joueurs restent disponibles dans le monde entier, avec des mises à jour en arrière-plan plus lentes. Ouvrir une autre zone sur la carte du monde vous abonne temporairement à ses mises à jour.
+- La discussion texte de QT reste sur le canal global QuestTogether. Votre réglage de discussion Globale ou Zone uniquement contrôle toujours les messages que vous voyez.
+
+### Moins de trafic en arrière-plan
+
+- La présence, la version, le nombre de quêtes, le statut de partenaire et la position sont regroupés dans des mises à jour compactes. Les zones très fréquentées sont mises à jour moins souvent afin de réduire le trafic.
+- Les annonces sont régulées et prioritaires par rapport aux mises à jour en arrière-plan. Les réponses aux pings sont réparties afin d’éviter une rafale de réponses. WoW peut toujours retarder la distribution des messages de canal ; cette mise à jour ne garantit pas des messages instantanés.
+- Les infobulles des joueurs indiquent l’âge des positions plus anciennes. Les diagnostics signalent désormais le nombre de messages, la limitation et les délais d’annonce indiqués par l’expéditeur.
+
+### Une mise à jour majeure pendant la bêta
+
+- Nous effectuons maintenant ce changement de communication plus important en prévision du lancement de Forever. La bêta est le meilleur moment pour prendre ces décisions fondamentales, avant que davantage de joueurs ne dépendent de l’ancien comportement.
+- La version 6.0 quitte QuestTogetherAnnounce1 et n’envoie ni ne reçoit plus sur cet ancien canal. Elle utilise QuestTogether pour la discussion et la découverte globales, ainsi que des canaux de zone pour l’activité locale.
+- QuestTogether conserve ses canaux après vos autres canaux de discussion, avec le canal de discussion principal avant ses canaux de zone. Vos préférences de partage de position, de liste d’ignorés et d’annonces sont conservées.
+
+### Compatibilité avec les anciennes versions
+
+- Veuillez mettre à jour ensemble. Les anciennes versions ne peuvent pas lire les nouvelles mises à jour groupées des joueurs ni écouter les nouveaux canaux de zone ; les joueurs utilisant des versions différentes peuvent donc manquer des points sur la carte, le statut de partenaire et les annonces de quêtes à proximité.
+- Les joueurs utilisant uniquement l’ancien canal ne sont plus détectables via ce canal en 6.0. Certains échanges avec les versions 5.x plus récentes peuvent encore fonctionner via le canal global partagé ou un groupe, mais il s’agit d’une compatibilité partielle, pas de l’expérience complète.
+- La commande manuelle /qt ping utilise toujours le canal global. Elle peut y entendre les anciens clients compatibles, mais c’est un outil de découverte au mieux, pas un décompte complet de toutes les personnes utilisant QuestTogether.
 
 ## 5.17.2
 

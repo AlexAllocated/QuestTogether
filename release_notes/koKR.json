@@ -1,7 +1,7 @@
 {
   "source_sha256": "0ef0fe7d6149d3f742c933253c6c49a08614227ed2a01abcb063ae7bef34be27",
   "notes": {
-    "version": "6.0.0",
+    "version": "6.0.1",
     "welcome": "이제 축하 동작은 근처에서 실제로 볼 수 있는 플레이어에게만 유지됩니다.",
     "sections": [
       {

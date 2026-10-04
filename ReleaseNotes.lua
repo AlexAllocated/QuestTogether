@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "6.0.0",
+	version = "6.0.1",
 	welcome = "Celebrations now stay with players you can actually see nearby.",
 	sections = {
 		{
