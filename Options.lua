@@ -185,6 +185,88 @@ local function CreateAnnouncementGroupHeader(parent, text, iconType, x, y, width
 	return label
 end
 
+function QuestTogether:GetSettingsTooltipParent()
+	return UIParent
+end
+
+function QuestTogether:CreateSettingsTooltipFrame(parent)
+	return CreateFrame("Frame", nil, parent, "BackdropTemplate")
+end
+
+function QuestTogether:HideSettingsTooltip(owner)
+	if owner and rawget(self, "settingsTooltipOwner") ~= owner then return end
+	self.settingsTooltipPendingHide = true
+	local tooltip = rawget(self, "settingsTooltip")
+	if self.LibChev.CanMutateOwnedRegion(tooltip) then
+		tooltip:Hide()
+		tooltip:SetScript("OnUpdate", nil)
+		self.settingsTooltipOwner, self.settingsTooltipPendingHide = nil, nil
+	end
+end
+
+function QuestTogether:ShowSettingsTooltip(owner, title, text)
+	if self:IsRuntimeRestricted() or not self.LibChev.CanMutateOwnedRegion(owner) or not owner:IsVisible() then
+		self:HideSettingsTooltip()
+		return false
+	end
+	local tooltip = rawget(self, "settingsTooltip")
+	if not tooltip then
+		local parent = self:GetSettingsTooltipParent()
+		if not self:CanAccessForeignFrame(parent) then return false end
+		tooltip = self:CreateSettingsTooltipFrame(parent)
+		if not self.LibChev.CanMutateOwnedRegion(tooltip) then return false end
+		self.settingsTooltip = tooltip
+		tooltip:Hide()
+		tooltip:SetFrameStrata("TOOLTIP")
+		tooltip:SetFrameLevel(100)
+		tooltip:SetClampedToScreen(true)
+		tooltip:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 12 })
+		tooltip:SetBackdropColor(0.04, 0.05, 0.07, 0.97)
+		tooltip.title = tooltip:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+		tooltip.title:SetPoint("TOPLEFT", 12, -12)
+		tooltip.title:SetWidth(296)
+		tooltip.title:SetJustifyH("LEFT")
+		tooltip.title:SetWordWrap(true)
+		tooltip.text = tooltip:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		tooltip.text:SetPoint("TOPLEFT", tooltip.title, "BOTTOMLEFT", 0, -8)
+		tooltip.text:SetWidth(296)
+		tooltip.text:SetJustifyH("LEFT")
+		tooltip.text:SetWordWrap(true)
+	end
+	if not self.LibChev.CanMutateOwnedRegion(tooltip)
+		or not self.LibChev.CanMutateOwnedRegion(tooltip.title)
+		or not self.LibChev.CanMutateOwnedRegion(tooltip.text) then return false end
+	tooltip.title:SetText(title)
+	tooltip.text:SetText(text)
+	tooltip:SetSize(320, tooltip.title:GetStringHeight() + tooltip.text:GetStringHeight() + 32)
+	tooltip:ClearAllPoints()
+	tooltip:SetPoint("TOPLEFT", owner, "TOPRIGHT", 8, 0)
+	self.settingsTooltipOwner, self.settingsTooltipPendingHide = owner, nil
+	local elapsedSinceCheck = 0
+	tooltip:SetScript("OnUpdate", function(_, elapsed)
+		elapsedSinceCheck = elapsedSinceCheck + elapsed
+		if elapsedSinceCheck < 0.1 then return end
+		elapsedSinceCheck = 0
+		local current = rawget(self, "settingsTooltipOwner")
+		if self.settingsTooltipPendingHide or self:IsRuntimeRestricted()
+			or not self.LibChev.CanMutateOwnedRegion(current) or not current:IsVisible() then
+			self:HideSettingsTooltip()
+		end
+	end)
+	tooltip:Show()
+	return true
+end
+
+-- Only attach to controls created by this addon. No shared GameTooltip state.
+function QuestTogether:AttachSettingsTooltip(control, title, text)
+	assert(type(text) == "string" and text ~= "", "settings controls require explanatory tooltip text")
+	control:EnableMouse(true)
+	if control.SetMotionScriptsWhileDisabled then control:SetMotionScriptsWhileDisabled(true) end
+	control:HookScript("OnEnter", function() self:ShowSettingsTooltip(control, title, text) end)
+	control:HookScript("OnLeave", function() self:HideSettingsTooltip(control) end)
+	control:HookScript("OnHide", function() self:HideSettingsTooltip(control) end)
+end
+
 local function CreateCheckbox(parent, optionKey, labelText, tooltipText, x, y)
 	local checkbox = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
 	checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
@@ -198,9 +280,8 @@ local function CreateCheckbox(parent, optionKey, labelText, tooltipText, x, y)
 	label:SetText(labelText)
 	checkbox.Label = label
 
-	if tooltipText and tooltipText ~= "" then
-		checkbox.tooltipText = tooltipText
-	end
+	checkbox:SetHitRectInsets(0, -(math.max(360, 600 - x) + 6), 0, 0)
+	QuestTogether:AttachSettingsTooltip(checkbox, labelText, tooltipText)
 
 	checkbox:SetScript("OnClick", function(self)
 		QuestTogether:SetOption(optionKey, self:GetChecked() == true)
@@ -286,9 +367,8 @@ local function CreateColorSwatch(parent, optionKey, labelText, tooltipText, fall
 	label:SetPoint("LEFT", swatchButton, "RIGHT", 8, 0)
 	label:SetText(labelText)
 
-	if tooltipText and tooltipText ~= "" then
-		swatchButton.tooltipText = tooltipText
-	end
+	swatchButton:SetHitRectInsets(0, -120, 0, 0)
+	QuestTogether:AttachSettingsTooltip(swatchButton, labelText, tooltipText)
 
 	swatchButton:SetScript("OnClick", function()
 		if not (ColorPickerFrame and ColorPickerFrame.SetupColorPickerAndShow) then
@@ -344,9 +424,8 @@ local function CreateDropdown(parent, titleText, tooltipText, x, y, width, initi
 	dropdown.initializeMenu = initializeMenu
 	dropdown.title = title
 
-	if tooltipText and tooltipText ~= "" then
-		dropdown.tooltipText = tooltipText
-	end
+	QuestTogether:AttachSettingsTooltip(dropdown, titleText, tooltipText)
+	if dropdown.Button then QuestTogether:AttachSettingsTooltip(dropdown.Button, titleText, tooltipText) end
 
 	UIDropDownMenu_SetWidth(dropdown, width or 180)
 	UIDropDownMenu_Initialize(dropdown, initializeMenu)
@@ -405,7 +484,7 @@ local function CreateShowProgressForDropdown(parent, x, y)
 	return CreateOptionDropdown(
 		parent,
 		L("Show Announcements For"),
-		L("Choose whether to display grouped players only, or grouped plus nearby players with visible nameplates."),
+		L("Party Only shows announcements from your group. Party and Nearby also includes players within your Nearby Range or visible nearby. Looking-for-partners announcements reach the whole zone."),
 		x,
 		y,
 		200,
@@ -418,6 +497,14 @@ local function CreateShowProgressForDropdown(parent, x, y)
 			return QuestTogether:GetOption("showProgressFor")
 		end
 	)
+end
+
+local function CreateQTChatScopeDropdown(parent, x, y)
+	return CreateOptionDropdown(parent, L("QT Chat Scope"),
+		L("Global shows all received QT chat. Zone Only shows players whose recent shared location is in your zone; unknown or stale locations are hidden."),
+		x, y, 200, { "zone_only", "global" },
+		function(value) return value == "zone_only" and L("Zone Only") or L("Global") end,
+		"qtChatScope", function() return QuestTogether:GetOption("qtChatScope") end)
 end
 
 local function CreateChatLogDestinationDropdown(parent, x, y)
@@ -460,6 +547,8 @@ local function CreateNameplateIconStyleDropdown(parent, x, y, playerPlates)
 end
 
 local CHECKBOX_OPTION_KEYS = {
+	"announceQuestPartners",
+	"stopLookingForPartnersOnJoin",
 	"announceAccepted",
 	"announceCompleted",
 	"announceReadyToTurnIn",
@@ -476,6 +565,7 @@ local CHECKBOX_OPTION_KEYS = {
 	"showChatBubbles",
 	"hideMyOwnChatBubbles",
 	"showChatLogs",
+	"showQTChat",
 	"announceToNonQTParty",
 	"mirrorChatLogsToMainChat",
 	"nameplateQuestIconEnabled",
@@ -843,6 +933,9 @@ function QuestTogether:RefreshWhereToAnnounceWindow()
 		)
 	end
 
+	if controls.qtChatScopeDropdown then
+		RefreshDropdownControl(controls.qtChatScopeDropdown, self:GetOption("qtChatScope") == "zone_only" and L("Zone Only") or L("Global"))
+	end
 	local showBubbleControls = self:GetOption("showChatBubbles") and true or false
 	if controls.hideMyOwnChatBubbles then
 		controls.hideMyOwnChatBubbles:SetShown(showBubbleControls)
@@ -920,12 +1013,71 @@ function QuestTogether:RefreshGroupsWindow()
 	RefreshCheckboxOptions(self.groupsControls)
 end
 
+-- This callback seam configures only QT-owned controls; live tests pass private
+-- slider/label fixtures and never patch native slider mixins or globals.
+function QuestTogether:ConfigureNearbyRangeSlider(slider, label)
+	local addon = self
+	-- Keep the instance in the closure; private fixtures must not consult QT's profile.
+	slider.RefreshNearbyRange = function(control)
+		control.qtRefreshing = true
+		local value = addon:GetNearbyAnnouncementRange()
+		control:SetValue(value)
+		control.qtRefreshing = nil
+		label:SetText(string.format(L("Nearby Range: %d%% of zone"), value))
+	end
+	slider:SetScript("OnValueChanged", function(control, value)
+		if control.qtRefreshing then return end
+		value = addon:NormalizeNearbyAnnouncementRange(value)
+		if value and addon:SetOption("nearbyAnnouncementRange", value) then
+			label:SetText(string.format(L("Nearby Range: %d%% of zone"), value))
+		end
+	end)
+	slider:RefreshNearbyRange()
+end
+
+local function CreateNearbyRangeSlider(parent, x, y)
+	local slider = CreateFrame("Slider", nil, parent)
+	slider:SetSize(360, 18)
+	slider:SetPoint("TOPLEFT", x, y)
+	slider:SetOrientation("HORIZONTAL")
+	slider:SetMinMaxValues(QuestTogether.NEARBY_RANGE_MIN, QuestTogether.NEARBY_RANGE_MAX)
+	slider:SetValueStep(1)
+	if slider.SetObeyStepOnDrag then slider:SetObeyStepOnDrag(true) end
+	local track = slider:CreateTexture(nil, "BACKGROUND")
+	track:SetColorTexture(0.12, 0.12, 0.12, 1)
+	track:SetPoint("LEFT")
+	track:SetPoint("RIGHT")
+	track:SetHeight(6)
+	local thumb = slider:CreateTexture(nil, "ARTWORK")
+	thumb:SetTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+	thumb:SetSize(32, 32)
+	slider:SetThumbTexture(thumb)
+	local label = slider:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	label:SetPoint("BOTTOMLEFT", slider, "TOPLEFT", 0, 6)
+	local minimum = slider:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	minimum:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -6)
+	minimum:SetText(L("Nearby"))
+	local maximum = slider:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	maximum:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", 0, -6)
+	maximum:SetText(L("Entire Zone"))
+	local hint = slider:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	hint:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -28)
+	hint:SetWidth(590)
+	hint:SetJustifyH("LEFT")
+	hint:SetText(L("Choose how far away to show quest updates within your current zone. The maximum includes the entire zone. Group members and visible nameplates are always included."))
+	QuestTogether:ConfigureNearbyRangeSlider(slider, label)
+	QuestTogether:AttachSettingsTooltip(slider, L("Nearby"),
+		L("Choose how far away to show quest updates within your current zone. The maximum includes the entire zone. Group members and visible nameplates are always included."))
+	return slider
+end
+
 function QuestTogether:RefreshAnnouncementsWindow()
 	if not self.announcementsFrame then
 		return
 	end
 
 	RefreshCheckboxOptions(self.announcementControls)
+	if self.announcementControls.nearbyRangeSlider then self.announcementControls.nearbyRangeSlider:RefreshNearbyRange() end
 
 	if self.announcementControls.showProgressForDropdown then
 		RefreshDropdownControl(
@@ -1090,7 +1242,7 @@ function QuestTogether:InitializeProfilesWindow(parentCategory)
 	local copyFromDropdown = CreateDropdown(
 		content,
 		L("Copy Into Current Profile"),
-		L("Pick another profile, then click Copy."),
+		L("Copy all settings from the selected profile into your current profile, replacing its settings."),
 		16,
 		-160,
 		240,
@@ -1118,6 +1270,7 @@ function QuestTogether:InitializeProfilesWindow(parentCategory)
 		copyButton:SetPoint("TOPLEFT", content, "TOPLEFT", 280, -185)
 	end
 	copyButton:SetText(L("Copy"))
+	self:AttachSettingsTooltip(copyButton, L("Copy"), L("Copy all settings from the selected profile into your current profile, replacing its settings."))
 	copyButton:SetScript("OnClick", function()
 		local sourceProfileKey = QuestTogether.profileUIState.copyFromProfileKey
 		local ok, err = QuestTogether:CopyProfileIntoActiveProfile(sourceProfileKey)
@@ -1143,6 +1296,8 @@ function QuestTogether:InitializeProfilesWindow(parentCategory)
 	createProfileButton:SetSize(90, 22)
 	createProfileButton:SetPoint("TOPLEFT", content, "TOPLEFT", 280, -266)
 	createProfileButton:SetText(L("Create"))
+	self:AttachSettingsTooltip(createProfileEdit, L("Create And Switch To New Profile"), L("Enter a name to create a copy of your current settings and switch to the new profile."))
+	self:AttachSettingsTooltip(createProfileButton, L("Create"), L("Enter a name to create a copy of your current settings and switch to the new profile."))
 
 	local function CreateAndActivateProfile()
 		local requestedProfileName = createProfileEdit:GetText() or ""
@@ -1173,6 +1328,7 @@ function QuestTogether:InitializeProfilesWindow(parentCategory)
 	resetButton:SetSize(180, 22)
 	resetButton:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -314)
 	resetButton:SetText(L("Reset Active Profile"))
+	self:AttachSettingsTooltip(resetButton, L("Reset Active Profile"), L("Restore all settings in the current profile to their defaults."))
 	resetButton:SetScript("OnClick", function()
 		local ok, err = QuestTogether:ResetActiveProfile()
 		if not ok then
@@ -1186,7 +1342,7 @@ function QuestTogether:InitializeProfilesWindow(parentCategory)
 	local deleteProfileDropdown = CreateDropdown(
 		content,
 		L("Delete Profile"),
-		L("Pick another profile, then click Delete."),
+		L("Choose another profile to delete. You cannot delete the active profile."),
 		16,
 		-370,
 		240,
@@ -1214,6 +1370,7 @@ function QuestTogether:InitializeProfilesWindow(parentCategory)
 		deleteButton:SetPoint("TOPLEFT", content, "TOPLEFT", 280, -395)
 	end
 	deleteButton:SetText(L("Delete"))
+	self:AttachSettingsTooltip(deleteButton, L("Delete"), L("Delete the selected profile and its saved settings. You cannot delete the active profile."))
 	deleteButton:SetScript("OnClick", function()
 		local deleteProfileKey = QuestTogether.profileUIState.deleteProfileKey
 		local ok, err = QuestTogether:DeleteProfile(deleteProfileKey)
@@ -1268,7 +1425,7 @@ function QuestTogether:InitializeAnnouncementsWindow(parentCategory)
 	frame.name = L("What to Announce")
 	frame.parent = "QuestTogether"
 
-	local _, content = CreateScrollablePanelContent(frame, 720)
+	local _, content = CreateScrollablePanelContent(frame, 900)
 
 	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -16)
@@ -1278,38 +1435,44 @@ function QuestTogether:InitializeAnnouncementsWindow(parentCategory)
 	description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
 	description:SetWidth(640)
 	description:SetJustifyH("LEFT")
-	description:SetText(L("Choose exactly which quest-related events QuestTogether should broadcast to others."))
+	description:SetText(L("Choose which event announcements you see. These choices also control announcements sent to party chat."))
 
 	CreateAnnouncementGroupHeader(content, L("Announcement Scope"), "quest", 16, -82, 620)
 	local showProgressForDropdown = CreateShowProgressForDropdown(content, 32, -112)
+	local nearbyRangeSlider = CreateNearbyRangeSlider(content, 32, -184)
 
-	CreateAnnouncementGroupHeader(content, L("Quests"), "quest", 16, -170, 620)
-	local announceAccepted = CreateCheckbox(content, "announceAccepted", L("Announce Quest Acceptance"), "", 32, -200)
-	local announceCompleted = CreateCheckbox(content, "announceCompleted", L("Announce Quest Completion"), "", 32, -228)
-	local announceReadyToTurnIn = CreateCheckbox(content, "announceReadyToTurnIn", L("Announce Ready To Turn In"), "", 32, -256)
-	local announceRemoved = CreateCheckbox(content, "announceRemoved", L("Announce Quest Removal"), "", 32, -284)
-	local announceProgress = CreateCheckbox(content, "announceProgress", L("Announce Quest Progress"), "", 32, -312)
+	CreateAnnouncementGroupHeader(content, L("Quests"), "quest", 16, -290, 620)
+	local announceAccepted = CreateCheckbox(content, "announceAccepted", L("Announce Quest Acceptance"), L("Show an announcement when a player accepts a quest."), 32, -320)
+	local announceCompleted = CreateCheckbox(content, "announceCompleted", L("Announce Quest Completion"), L("Show an announcement when a player turns in a completed quest."), 32, -348)
+	local announceReadyToTurnIn = CreateCheckbox(content, "announceReadyToTurnIn", L("Announce Ready To Turn In"), L("Show an announcement when all quest objectives are done and the quest is ready to turn in."), 32, -376)
+	local announceRemoved = CreateCheckbox(content, "announceRemoved", L("Announce Quest Removal"), L("Show an announcement when a player abandons or removes a quest."), 32, -404)
+	local announceProgress = CreateCheckbox(content, "announceProgress", L("Announce Quest Progress"), L("Show updates as players make progress on quest objectives, such as collecting items or defeating enemies."), 32, -432)
 
-	CreateAnnouncementGroupHeader(content, L("World Quests"), "world", 16, -358, 620)
+	CreateAnnouncementGroupHeader(content, L("World Quests"), "world", 16, -478, 620)
 	local announceWorldQuestAreaEnter =
-		CreateCheckbox(content, "announceWorldQuestAreaEnter", L("Announce Area Enter"), "", 32, -388)
+		CreateCheckbox(content, "announceWorldQuestAreaEnter", L("Announce Area Enter"), L("Show an announcement when a player enters a world quest area."), 32, -508)
 	local announceWorldQuestAreaLeave =
-		CreateCheckbox(content, "announceWorldQuestAreaLeave", L("Announce Area Leave"), "", 32, -416)
-	local announceWorldQuestProgress = CreateCheckbox(content, "announceWorldQuestProgress", L("Announce Progress"), "", 32, -444)
+		CreateCheckbox(content, "announceWorldQuestAreaLeave", L("Announce Area Leave"), L("Show an announcement when a player leaves a world quest area."), 32, -536)
+	local announceWorldQuestProgress = CreateCheckbox(content, "announceWorldQuestProgress", L("Announce Progress"), L("Show progress updates for world quest objectives."), 32, -564)
 	local announceWorldQuestCompleted =
-		CreateCheckbox(content, "announceWorldQuestCompleted", L("Announce Completion"), "", 32, -472)
+		CreateCheckbox(content, "announceWorldQuestCompleted", L("Announce Completion"), L("Show an announcement when a player finishes a world quest."), 32, -592)
 
-	CreateAnnouncementGroupHeader(content, L("Bonus Objectives"), "bonus", 16, -518, 620)
+	CreateAnnouncementGroupHeader(content, L("Bonus Objectives"), "bonus", 16, -638, 620)
 	local announceBonusObjectiveAreaEnter =
-		CreateCheckbox(content, "announceBonusObjectiveAreaEnter", L("Announce Area Enter"), "", 32, -548)
+		CreateCheckbox(content, "announceBonusObjectiveAreaEnter", L("Announce Area Enter"), L("Show an announcement when a player enters a bonus objective area."), 32, -668)
 	local announceBonusObjectiveAreaLeave =
-		CreateCheckbox(content, "announceBonusObjectiveAreaLeave", L("Announce Area Leave"), "", 32, -576)
+		CreateCheckbox(content, "announceBonusObjectiveAreaLeave", L("Announce Area Leave"), L("Show an announcement when a player leaves a bonus objective area."), 32, -696)
 	local announceBonusObjectiveProgress =
-		CreateCheckbox(content, "announceBonusObjectiveProgress", L("Announce Progress"), "", 32, -604)
+		CreateCheckbox(content, "announceBonusObjectiveProgress", L("Announce Progress"), L("Show progress updates for bonus objectives."), 32, -724)
 	local announceBonusObjectiveCompleted =
-		CreateCheckbox(content, "announceBonusObjectiveCompleted", L("Announce Completion"), "", 32, -632)
+		CreateCheckbox(content, "announceBonusObjectiveCompleted", L("Announce Completion"), L("Show an announcement when a player finishes a bonus objective."), 32, -752)
+	CreateAnnouncementGroupHeader(content, L("Finding Partners"), "quest", 16, -798, 620)
+	local announceQuestPartners = CreateCheckbox(content, "announceQuestPartners", L("Announce Looking for Questing Partners"),
+		L("Send and show announcements when players start looking for questing partners. Their status and glowing icons remain visible when this is off."), 32, -828)
 
 	self.announcementControls = {
+		announceQuestPartners = announceQuestPartners,
+		nearbyRangeSlider = nearbyRangeSlider,
 		showProgressForDropdown = showProgressForDropdown,
 		announceAccepted = announceAccepted,
 		announceCompleted = announceCompleted,
@@ -1344,7 +1507,7 @@ function QuestTogether:InitializeWhereToAnnounceWindow(parentCategory)
 	frame.name = L("Where to Announce")
 	frame.parent = "QuestTogether"
 
-	local _, content = CreateScrollablePanelContent(frame, 650)
+	local _, content = CreateScrollablePanelContent(frame, 775)
 
 	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -16)
@@ -1387,8 +1550,14 @@ function QuestTogether:InitializeWhereToAnnounceWindow(parentCategory)
 		-238
 	)
 
+	local showQTChat = CreateCheckbox(content, "showQTChat", L("Show QuestTogether Chat"),
+		L("Show conversations from the QuestTogether channel in enabled chat logs and bubbles. Quest announcements are unaffected."),
+		16, -278)
+
+	local qtChatScopeDropdown = CreateQTChatScopeDropdown(content, 36, -318)
+
 	local bubbleHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	bubbleHeader:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -274)
+	bubbleHeader:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -382)
 	bubbleHeader:SetText(L("Chat Bubbles"))
 
 	local showChatBubbles = CreateCheckbox(
@@ -1397,7 +1566,7 @@ function QuestTogether:InitializeWhereToAnnounceWindow(parentCategory)
 		L("Show Chat Bubbles"),
 		L("Display QuestTogether bubbles over nearby players and on your personal bubble anchor."),
 		16,
-		-298
+		-406
 	)
 	local hideMyOwnChatBubbles = CreateCheckbox(
 		content,
@@ -1405,13 +1574,14 @@ function QuestTogether:InitializeWhereToAnnounceWindow(parentCategory)
 		L("Hide My Own Chat Bubbles"),
 		L("If enabled, your client still sends local progress to others but does not show your own QuestTogether bubbles."),
 		36,
-		-326
+		-434
 	)
 
 	local openHudEditMode = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
 	openHudEditMode:SetSize(180, 24)
-	openHudEditMode:SetPoint("TOPLEFT", content, "TOPLEFT", 36, -358)
+	openHudEditMode:SetPoint("TOPLEFT", content, "TOPLEFT", 36, -466)
 	openHudEditMode:SetText(L("Open HUD Edit Mode"))
+	self:AttachSettingsTooltip(openHudEditMode, L("Open HUD Edit Mode"), L("Use HUD Edit Mode to move your personal bubble and adjust its size and duration from the QuestTogether Bubble settings panel."))
 	openHudEditMode:SetScript("OnClick", function()
 		if not QuestTogether:OpenHudEditMode() then
 			QuestTogether:Print(L("HUD Edit Mode is unavailable right now."))
@@ -1419,7 +1589,7 @@ function QuestTogether:InitializeWhereToAnnounceWindow(parentCategory)
 	end)
 
 	local personalBubbleEditHint = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	personalBubbleEditHint:SetPoint("TOPLEFT", content, "TOPLEFT", 36, -390)
+	personalBubbleEditHint:SetPoint("TOPLEFT", content, "TOPLEFT", 36, -498)
 	personalBubbleEditHint:SetJustifyH("LEFT")
 	personalBubbleEditHint:SetWidth(560)
 	personalBubbleEditHint:SetText(
@@ -1427,7 +1597,7 @@ function QuestTogether:InitializeWhereToAnnounceWindow(parentCategory)
 	)
 
 	local celebrations = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	celebrations:SetPoint("TOPLEFT", 16, -458)
+	celebrations:SetPoint("TOPLEFT", 16, -566)
 	celebrations:SetText(L("Celebration Emotes"))
 	local emoteOnQuestCompletion = CreateCheckbox(
 		content,
@@ -1435,7 +1605,7 @@ function QuestTogether:InitializeWhereToAnnounceWindow(parentCategory)
 		L("Emote On Quest Completion"),
 		L("If disabled, this character never performs local quest completion emotes."),
 		16,
-		-488
+		-596
 	)
 	local emoteOnNearbyPlayerQuestCompletion = CreateCheckbox(
 		content,
@@ -1443,7 +1613,7 @@ function QuestTogether:InitializeWhereToAnnounceWindow(parentCategory)
 		L("Emote On Nearby Player Quest Completion"),
 		L("If disabled, this character will not mirror nearby players' quest completion emotes."),
 		16,
-		-520
+		-628
 	)
 	local emoteOnLevelUp = CreateCheckbox(
 		content,
@@ -1451,7 +1621,7 @@ function QuestTogether:InitializeWhereToAnnounceWindow(parentCategory)
 		L("Emote On Level Up"),
 		L("Perform a celebration emote when this character levels up."),
 		16,
-		-552
+		-660
 	)
 	local emoteOnNearbyPlayerLevelUp = CreateCheckbox(
 		content,
@@ -1459,9 +1629,11 @@ function QuestTogether:InitializeWhereToAnnounceWindow(parentCategory)
 		L("Emote On Nearby Player Level Up"),
 		L("Mirror nearby QuestTogether players' level-up emotes, respecting your player scope setting."),
 		16,
-		-584
+		-692
 	)
 	self.whereToAnnounceControls = {
+		showQTChat = showQTChat,
+		qtChatScopeDropdown = qtChatScopeDropdown,
 		emoteOnQuestCompletion = emoteOnQuestCompletion,
 		emoteOnNearbyPlayerQuestCompletion = emoteOnNearbyPlayerQuestCompletion,
 		emoteOnLevelUp = emoteOnLevelUp,
@@ -1547,6 +1719,7 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory, playerPlates)
 		resetNameplateQuestHealthColor:SetSize(70, 20)
 		resetNameplateQuestHealthColor:SetPoint("LEFT", nameplateQuestHealthColor, "RIGHT", 140, 0)
 		resetNameplateQuestHealthColor:SetText(L("Reset"))
+		self:AttachSettingsTooltip(resetNameplateQuestHealthColor, L("Reset"), L("Restore the default quest health-bar color."))
 		resetNameplateQuestHealthColor:SetScript("OnClick", function()
 			local defaults = QuestTogether.DEFAULTS.profile.nameplateQuestHealthColor
 				or QuestTogether.NAMEPLATE_QUEST_HEALTH_COLOR
@@ -1725,7 +1898,7 @@ function QuestTogether:InitializeGroupsWindow(parentCategory)
 	if self.groupsFrame then return end
 	local frame = CreateFrame("Frame", "QuestTogetherGroupsPanel")
 	frame.name, frame.parent = L("Groups & Sharing"), "QuestTogether"
-	local _, content = CreateScrollablePanelContent(frame, 450)
+	local _, content = CreateScrollablePanelContent(frame, 500)
 	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", 16, -16)
 	title:SetText(L("Groups & Sharing"))
@@ -1740,17 +1913,19 @@ function QuestTogether:InitializeGroupsWindow(parentCategory)
 		label:SetText(text)
 	end
 	Header(L("Finding Partners"), -90)
-	Header(L("Join Requests"), -226)
-	Header(L("Quest Sharing"), -326)
+	Header(L("Join Requests"), -272)
+	Header(L("Quest Sharing"), -372)
 	self.groupsControls = {
 		lookingForQuestPartners = CreateCheckbox(content, "lookingForQuestPartners", L("Looking for Questing Partners"),
-			L("Tell other QuestTogether players you want company. Shown on your player menu and map-dot tooltips; does not share your location. Saved per profile. You can also toggle with /qt lfg."), 16, -118),
+			L("Show that you're looking for questing partners. Turning this on announces your search throughout your zone when location sharing is enabled. Saved per profile; toggle with /qt lfg."), 16, -118),
 		autoInviteWhileLFG = CreateCheckbox(content, "autoInviteWhileLFG", L("Automatically invite others while looking for partners"),
 			L("Approve join requests while Looking for Questing Partners is on. You must have permission and room to invite."), 36, -164),
+		stopLookingForPartnersOnJoin = CreateCheckbox(content, "stopLookingForPartnersOnJoin", L("Stop looking for partners when joining a group"),
+			L("Turn off Looking for Questing Partners when you join or form a party or raid. You can turn it back on to recruit more players."), 36, -210),
 		autoInviteFriends = CreateCheckbox(content, "autoInviteFriends", L("Automatically invite friends who request to join"),
-			L("Approve join requests from your character friends list. Otherwise, ask first. Does not accept invitations or leave your current party."), 16, -254),
+			L("Approve join requests from your character friends list. Otherwise, ask first. Does not accept invitations or leave your current party."), 16, -300),
 		autoAcceptPartyShareRequests = CreateCheckbox(content, "autoAcceptPartyShareRequests", L("Always allow party share requests"),
-			L("Automatically share eligible quests when a party member requests them. Otherwise, ask first."), 16, -354),
+			L("Automatically share eligible quests when a party member requests them. Otherwise, ask first."), 16, -400),
 	}
 	self.groupsFrame = frame
 	frame:SetScript("OnShow", function() QuestTogether:RefreshGroupsWindow() end)
@@ -1852,6 +2027,7 @@ function QuestTogether:InitializeOptionsWindow()
 		row.button:SetNormalFontObject("GameFontNormal")
 		row.button:SetHighlightFontObject("GameFontHighlight")
 		row.button:SetText(group.title .. " >")
+		self:AttachSettingsTooltip(row.button, group.title, L("Open the settings for this section."))
 		row.button:GetFontString():SetJustifyH("LEFT")
 		row.categoryKey = group.categoryKey
 		row.button:SetScript("OnClick", function()
@@ -1882,11 +2058,26 @@ function QuestTogether:InitializeOptionsWindow()
 	actionsHeader:SetPoint("TOPLEFT", actionsPanel, "TOPLEFT", 12, -10)
 	actionsHeader:SetText(L("Quick Actions"))
 
+	local actionHelp = {
+		[L("Compare Party Quests")] = L("Compare your party's quests and share quests that other members are missing."),
+		[L("Find Questing Partners")] = L("Open options for finding partners, joining groups, and sharing quests."),
+		[L("Open What to Announce")] = L("Choose which quest events and partner searches to announce and display."),
+		[L("Open Where to Announce")] = L("Choose chat output, bubbles, and celebration emotes."),
+		[L("Open Quest Plates")] = L("Customize quest objective visuals on Blizzard nameplates."),
+		[L("Open Profiles")] = L("Switch, copy, create, reset, or delete saved settings profiles."),
+		[L("Open HUD Edit Mode")] = L("Use HUD Edit Mode to move your personal bubble and adjust its size and duration from the QuestTogether Bubble settings panel."),
+		[L("Print /qt Help")] = L("Print the available QuestTogether commands in your chat log."),
+		[L("Patch Notes")] = L("Read the latest QuestTogether changes and new features."),
+		[L("Discord — Feedback & Support")] = L("Open the Discord invite link to share feedback or ask for help."),
+		[L("Open Debug Window")] = L("Open diagnostic logs and tests to help troubleshoot addon problems."),
+		[L("Rescan Quest Log")] = L("Refresh QuestTogether's quest information from your current quest log."),
+	}
 	local function CreateHomeActionButton(parent, text, x, y, onClick)
 		local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
 		button:SetSize(232, 22)
 		button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
 		button:SetText(text)
+		QuestTogether:AttachSettingsTooltip(button, text, actionHelp[text])
 		button:SetScript("OnClick", onClick)
 		return button
 	end

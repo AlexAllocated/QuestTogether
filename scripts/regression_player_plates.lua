@@ -26,6 +26,7 @@ local function Peer(name)
 		qtPlayerIconStateByFrame = {},
 		recentCommMessageSignatures = {},
 	}, { __index = QT })
+	function a:AnnounceQuestPartnerSearch() end
 	a.db = { profile = QT:DeepCopy(QT.DEFAULTS.profile) }
 	a.API = {
 		GetTime = function()
@@ -86,6 +87,37 @@ local function PartnerPayload(addon, looking, session, sequence)
 	addon.partnerTestSequence = (addon.partnerTestSequence or 0) + 1
 	return string.format("1,%s,%d,%d", session or "10-1234", sequence or addon.partnerTestSequence, looking and 1 or 0)
 end
+
+QT:RegisterTest("joining a group optionally clears partner status without announcements or roster churn", function()
+	local a = Peer()
+	local changes = 0
+	function a:HandleGroupRosterChanged() changes = changes + 1 end
+	Equal(a:GetOption("stopLookingForPartnersOnJoin"), false)
+	a:SetOption("lookingForQuestPartners", true)
+	a:GROUP_JOINED()
+	Equal(a:GetOption("lookingForQuestPartners"), true)
+	Equal(a:SetOption("stopLookingForPartnersOnJoin", "true"), false)
+	Equal(a:SetOption("stopLookingForPartnersOnJoin", true), true)
+	function a:AnnounceQuestPartnerSearch() error("turning LFQP off must be silent") end
+	a:GROUP_JOINED()
+	Equal(a:GetOption("lookingForQuestPartners"), false)
+	assert(a.sent[#a.sent]:match("^QTLF|.+,0$"), "joining must withdraw advertised partner status")
+	local sent = #a.sent
+	a:GROUP_JOINED()
+	Equal(#a.sent, sent)
+	-- A player can resume recruiting in their group without roster updates
+	-- immediately undoing that choice.
+	a.db.profile.lookingForQuestPartners = true
+	a:GROUP_ROSTER_UPDATE()
+	Equal(a:GetOption("lookingForQuestPartners"), true)
+	a.isEnabled = false
+	a:GROUP_JOINED()
+	Equal(a:GetOption("lookingForQuestPartners"), true)
+	a.isEnabled, a.isLoggingOut = true, true
+	a:GROUP_JOINED()
+	Equal(a:GetOption("lookingForQuestPartners"), true)
+	Equal(changes, 6)
+end)
 local function PartnerWire(message, looking)
 	assert(message:match("^QTLF|1,%d+%-%d+,%d+," .. (looking and "1" or "0") .. "$"), message)
 end

@@ -21,6 +21,7 @@ local function Fixture(name)
 		announcementChannelName = "QuestTogether",
 		announcementChannelLocalID = 7,
 	}, { __index = QT })
+	function a:AnnounceQuestPartnerSearch() end
 	a.db = { profile = QT:DeepCopy(QT.DEFAULTS.profile) }
 	a.API = {}
 	for key, value in pairs(QT.API) do

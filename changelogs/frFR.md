@@ -4,13 +4,31 @@
 
 ## 5.16.7
 
-Lisez les mêmes notes de version de QuestTogether en jeu, sur Discord et dans votre langue préférée dans les fichiers du journal des modifications.
+Dites bonjour dans la discussion QT, trouvez des partenaires de quête dans toute votre zone et découvrez des informations et paramètres de joueur plus clairs.
 
-### Journaux des modifications cohérents et multilingues
+### Discutez avec d’autres joueurs de QuestTogether
 
-- Le journal des modifications anglais reprend désormais les mêmes résumés de version et listes à puces que la fenêtre d’accueil et les annonces Discord.
-- Des fichiers de journal des modifications sont disponibles pour toutes les langues prises en charge, avec l’historique des versions traduit existant et une copie conservée des anciennes notes anglaises rédigées à la main.
-- Les vérifications de version maintiennent les fichiers du journal des modifications synchronisés avec les notes et traductions de référence.
+- Tapez /qt <text>, ou choisissez Envoyer un message de discussion QT dans le menu de la minicarte. Les conversations apparaissent dans les journaux QT et dans les bulles au-dessus des joueurs à proximité avec une icône de bulle de dialogue ; les commandes obliques existantes fonctionnent toujours.
+- Choisissez la discussion globale (par défaut), Zone uniquement, ou masquez entièrement la discussion QT. Zone uniquement nécessite une position partagée récente de l’expéditeur ; la discussion globale n’en a pas besoin.
+- Le nouveau canal QuestTogether fonctionne en parallèle de QuestTogetherAnnounce1 pendant la transition. QT place les deux après vos autres canaux lorsque c’est pris en charge, avec QuestTogether en premier ; la discussion saisie utilise uniquement le nouveau canal.
+
+### Trouvez des partenaires de quête
+
+- Activer Recherche de partenaires de quête annonce votre recherche dans toute votre zone avec une icône QT dorée lumineuse et un smiley. La diffusion à l’échelle de la zone nécessite le partage de position et respecte les préférences d’annonce ; la désactiver reste silencieux.
+- Contrôlez ces messages dans Quoi annoncer. Un temps de recharge de 30 secondes limite les annonces répétées tandis que votre statut et la lueur se mettent quand même à jour immédiatement. Vous pouvez aussi choisir d’arrêter automatiquement la recherche en rejoignant un groupe ; cette option est désactivée au départ.
+- Maj-clic sur le bouton de la minicarte pour activer ou désactiver votre recherche de partenaires. Un anneau doré plus vif et pulsant met en évidence votre recherche active sans rogner le logo.
+
+### Choisissez votre portée et voyez plus d’informations sur les joueurs
+
+- La portée de proximité va désormais de 5 % à Toute la zone, avec une valeur par défaut de 25 %. Elle ajuste la distance sur l’ensemble de votre zone actuelle ; les membres du groupe et les joueurs directement visibles conservent leur comportement existant.
+- Survolez les noms dans les journaux QT pour afficher la même infobulle améliorée que sur les points de la carte : nom coloré selon la classe, niveau, race, classe, emblème de faction, statut de partenaire, quête suivie si disponible et version de QT. Les infobulles de nom apparaissent désormais à côté de votre curseur.
+- L’infobulle de votre propre nom affiche désormais votre quête suivie prioritairement actuelle lorsque vous recherchez des partenaires. Les clients mis à jour annoncent leurs versions environ toutes les 40 secondes via les messages de battement existants ; les anciens clients conservent leur fréquence précédente.
+
+### Contrôles et annonces plus clairs
+
+- L’infobulle de la minicarte affiche désormais votre version de QT, votre statut de partenaire, la portée de la discussion, le nombre de quêtes surveillées, la portée de proximité et l’état du partage de position.
+- Les contrôles des paramètres disposent désormais d’explications traduites au survol, y compris pour les menus déroulants, les curseurs, les actions de profil et les contrôles de couleur.
+- Lorsque votre client ne parvient pas à résoudre un titre de quête localisé, les annonces conservent le texte d’origine de l’expéditeur dans les journaux comme dans les bulles au lieu d’afficher un numéro de quête générique. L’affichage localisé reprend pour les annonces suivantes une fois le titre disponible.
 
 ## 5.16.6
 

@@ -144,6 +144,13 @@ function QT:GetPlayerPartnerQuestID(name)
 	if not name or not self:IsPlayerLookingForQuestPartners(name) then
 		return nil
 	end
+	if self:IsSelfSender(name) then
+		if self:IsRuntimeRestricted() then return nil end
+		local getter = self.API.GetActiveTrackedQuestID
+		if not self:CanAccessValue(getter) or type(getter) ~= "function" then return nil end
+		local ok, value = pcall(getter)
+		return ok and QuestID(self, value) or nil
+	end
 	local state, now = rawget(self, "qtPlayerPresenceState"), Now(self)
 	local record = state and state.partnerQuests and state.partnerQuests[name]
 	local status = state and state.questPartners and state.questPartners[name]

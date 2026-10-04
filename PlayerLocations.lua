@@ -295,6 +295,14 @@ function QT:HandlePlayerLocationMessage(payload, sender)
 	return true
 end
 
+function QT:GetRecentPlayerLocationMapID(name)
+	local state = rawget(self, "playerLocationState")
+	local peer = state and state.peers and state.peers[name]
+	local now = Now(self)
+	if not peer or not now or peer.mask == 0 or now < peer.receivedAt or now - peer.receivedAt >= LIFETIME then return nil end
+	return peer.mapID
+end
+
 function QT:GetVisiblePlayerLocations(surface)
 	if
 		(surface ~= "map" and surface ~= "minimap")
@@ -360,12 +368,14 @@ function QT:InitializePlayerLocations()
 		self:PrunePlayerLocations()
 		self:RefreshPlayerLocationPins()
 		self:UpdatePlayerTooltipBadge()
+		self:UpdateChatLogPlayerTooltip()
 	end)
 	-- First update uses the same paced path as recovery and movement.
 	return true
 end
 
 function QT:ResetPlayerLocations()
+	self:HideChatLogPlayerTooltip()
 	self:HidePlayerTooltipBadge()
 	self.playerLocationState = nil
 	local frame = rawget(self, "playerLocationUpdateFrame")

@@ -36,6 +36,15 @@ local function Frame(parent)
 		self:CheckAccess(true)
 		self.scripts[name] = callback
 	end
+	function frame:EnableMouse() self:CheckAccess(true) end
+	function frame:HookScript(name, callback)
+		self:CheckAccess(true)
+		local old = self.scripts[name]
+		self.scripts[name] = function(...)
+			if old then old(...) end
+			callback(...)
+		end
+	end
 	function frame:RegisterEvent(name)
 		self:CheckAccess(true)
 		self.events[name] = true
@@ -59,6 +68,15 @@ local function Frame(parent)
 	function frame:SetSize(width, height)
 		self:CheckAccess(true)
 		self.width, self.height = width, height
+	end
+	function frame:SetWidth(width) self:CheckAccess(true); self.width = width end
+	function frame:SetJustifyH() self:CheckAccess(true) end
+	function frame:SetWordWrap() self:CheckAccess(true) end
+	function frame:SetSpacing() self:CheckAccess(true) end
+	function frame:GetStringHeight()
+		self:CheckAccess()
+		local _, lines = (self.text or ""):gsub("\n", "")
+		return (lines + 1) * 14
 	end
 	function frame:GetWidth()
 		self:CheckAccess()
@@ -191,6 +209,8 @@ local function Fixture()
 		compares = 0,
 		journals = 0,
 	}, { __index = QuestTogether })
+	function addon:AnnounceQuestPartnerSearch() end
+	function addon:IsMinimapShiftKeyDown() return self.shift == true end
 	local anchor = Frame()
 	anchor.width, anchor.height, anchor.cx, anchor.cy, anchor.scale = 140, 140, 100, 200, 2
 	addon.anchor, addon.cursorX, addon.cursorY = anchor, 200, 556
@@ -199,6 +219,10 @@ local function Fixture()
 		return self.tooltipParent
 	end
 	addon.API = {
+		OpenQTChatComposer = function()
+			addon.chatDrafts = (addon.chatDrafts or 0) + 1
+			return true
+		end,
 		GetMinimapAnchor = function()
 			return addon.anchor
 		end,
@@ -284,29 +308,31 @@ QuestTogether:RegisterTest(
 		end
 		Equal(#a.menus, 2)
 		local entries = a.menus[1].entries
-		Equal(#entries, 8)
+		Equal(#entries, 9)
 		Equal(entries[1].label, "Settings")
 		Equal(entries[2].label, "Compare Party Quests")
 		Equal(entries[3].label, "Open Quest Journal")
 		Equal(entries[4].label, "Patch Notes")
 		Equal(entries[5].label, "Looking for Questing Partners")
 		Equal(entries[5].isSelected(), false)
-		assert(entries[6].divider)
-		Equal(entries[7].label, "Move QuestTogether Logs to Separate Window")
-		Equal(entries[8].label, "Hide Minimap Icon")
-		for _, index in ipairs({ 1, 2, 3, 4, 7 }) do
+		Equal(entries[6].label, "Send QT chat message")
+		assert(entries[7].divider)
+		Equal(entries[8].label, "Move QuestTogether Logs to Separate Window")
+		Equal(entries[9].label, "Hide Minimap Icon")
+		for _, index in ipairs({ 1, 2, 3, 4, 6, 8 }) do
 			entries[index].callback()
 		end
 		Equal(a.settings, 1)
 		Equal(a.compares, 1)
 		Equal(a.journals, 1)
 		Equal(a.notes, 1)
+		Equal(a.chatDrafts, 1)
 		Equal(a:GetOption("chatLogDestination"), "separate")
 		assert(a.separateOpened)
 		local menu = Menu()
 		a:PopulateMinimapMenu(menu)
-		Equal(menu.entries[7].label, "Move QuestTogether Logs to Main Window")
-		menu.entries[7].callback()
+		Equal(menu.entries[8].label, "Move QuestTogether Logs to Main Window")
+		menu.entries[8].callback()
 		Equal(a:GetOption("chatLogDestination"), "main")
 		Equal(a.separateOpened, false)
 	end
@@ -321,9 +347,11 @@ QuestTogether:RegisterTest("minimap stale menu actions recheck restrictions and 
 	for index = 1, 4 do
 		menu.entries[index].callback()
 	end
-	menu.entries[7].callback()
-	local messages = #a.messages
+	menu.entries[6].callback()
+	Equal(a.chatDrafts, nil)
 	menu.entries[8].callback()
+	local messages = #a.messages
+	menu.entries[9].callback()
 	Equal(#a.messages, messages)
 	Equal(a:GetOption("showMinimapButton"), true)
 	assert(a.minimapButton.shown)
@@ -336,9 +364,12 @@ QuestTogether:RegisterTest("minimap stale menu actions recheck restrictions and 
 	a.blocked, a.isEnabled = false, false
 	menu.entries[2].callback()
 	Equal(a.compares, 0)
+	menu.entries[6].callback()
+	Equal(a.chatDrafts, nil)
 	local disabled = Menu()
 	a:PopulateMinimapMenu(disabled)
 	Equal(disabled.entries[2].enabled, false)
+	Equal(disabled.entries[6].enabled, false)
 	assert(disabled.entries[1].enabled and disabled.entries[3].enabled)
 	disabled.entries[1].callback()
 	disabled.entries[3].callback()
@@ -380,6 +411,101 @@ QuestTogether:RegisterTest("minimap partner shortcut toggles the current saved v
 	assert(a.messages[#a.messages]:find("paused", 1, true))
 end)
 
+QuestTogether:RegisterTest("minimap shift clicks toggle partners while normal and dragged clicks keep their behavior", function()
+	local a = Fixture()
+	a:InitializeMinimapLauncher()
+	local click = a.minimapButton.scripts.OnClick
+	click(nil, "LeftButton")
+	click(nil, "RightButton")
+	Equal(#a.menus, 2)
+	a.shift = true
+	click(nil, "LeftButton")
+	Equal(a:GetOption("lookingForQuestPartners"), true)
+	click(nil, "RightButton")
+	Equal(a:GetOption("lookingForQuestPartners"), false)
+	Equal(#a.menus, 2)
+	a.minimapSuppressClick = true
+	click(nil, "LeftButton")
+	Equal(a:GetOption("lookingForQuestPartners"), false)
+	a.blocked = true
+	click(nil, "LeftButton")
+	Equal(a:GetOption("lookingForQuestPartners"), false)
+	a.blocked, a.anchor.forbidden = false, true
+	click(nil, "LeftButton")
+	Equal(a:GetOption("lookingForQuestPartners"), false)
+	Equal(#a.menus, 2)
+end)
+
+QuestTogether:RegisterTest("minimap tooltip refreshes status and watched count while hovered without recreating frames", function()
+	local a = Fixture()
+	function a:GetAddonVersion() return "5.16.7" end
+	local reads, count = 0, 6
+	a.API.GetTrackedQuestCount = function() reads = reads + 1; return count end
+	a:InitializeMinimapLauncher()
+	a:ShowMinimapTooltip(a.minimapButton)
+	local tooltip = a.minimapTooltip
+	local frames = #a.frames
+	local text = tooltip.qtStatus.text
+	for _, part in ipairs({ "QT Version: 5.16.7", "Tracked quests: 6", "QT Chat Scope: Global", "Nearby Range: 25%", "Shift-click", "Share my location", "Looking for Questing Partners" }) do
+		assert(text:find(part, 1, true), part)
+	end
+	a.db.profile.qtChatScope = "zone_only"
+	a.db.profile.lookingForQuestPartners = true
+	count = 0
+	tooltip.scripts.OnUpdate(nil, 1)
+	assert(tooltip.qtStatus.text:find("Tracked quests: 0", 1, true))
+	assert(tooltip.qtStatus.text:find("QT Chat Scope: Zone Only", 1, true))
+	assert(tooltip.qtStatus.text:find("Looking for Questing Partners: |cff66dd88On", 1, true))
+	a.db.profile.showQTChat = false
+	a.isEnabled, count = false, nil
+	tooltip.scripts.OnUpdate(nil, 1)
+	assert(tooltip.qtStatus.text:find("QT Chat Scope: Off", 1, true))
+	assert(tooltip.qtStatus.text:find("QuestTogether disabled.", 1, true))
+	assert(tooltip.qtStatus.text:find("Tracked quests: Unknown", 1, true))
+	Equal(#a.frames, frames)
+	Equal(reads, 3)
+	a.blocked = true
+	tooltip.scripts.OnUpdate(nil, 1)
+	Equal(reads, 3)
+	Equal(tooltip.shown, false)
+end)
+
+QuestTogether:RegisterTest("settings help preserves control hooks reuses one tooltip and hides on close or restriction", function()
+	local a = Fixture()
+	function a:GetSettingsTooltipParent() return self.tooltipParent end
+	function a:CreateSettingsTooltipFrame(parent) return self:CreateMinimapUIFrame("Frame", nil, parent) end
+	local owner, other = Frame(a.tooltipParent), Frame(a.tooltipParent)
+	local entered = 0
+	owner:SetScript("OnEnter", function() entered = entered + 1 end)
+	a:AttachSettingsTooltip(owner, "Setting", "Plain language help")
+	a:AttachSettingsTooltip(other, "Other setting", "Other help")
+	owner.scripts.OnEnter()
+	local tooltip = a.settingsTooltip
+	Equal(entered, 1)
+	Equal(tooltip.text.text, "Plain language help")
+	Equal(tooltip.strata, "TOOLTIP")
+	Equal(tooltip.parent, a.tooltipParent)
+	Equal(tooltip.shown, true)
+	other.scripts.OnEnter()
+	owner.scripts.OnLeave() -- A delayed leave must not hide the next control's help.
+	Equal(tooltip.text.text, "Other help")
+	Equal(tooltip.shown, true)
+	other:Hide()
+	Equal(tooltip.shown, false)
+	owner.scripts.OnEnter()
+	a.blocked = true
+	tooltip.scripts.OnUpdate(nil, 0.1)
+	Equal(tooltip.shown, false)
+	owner.scripts.OnEnter()
+	Equal(tooltip.shown, false)
+	a.blocked = false
+	owner.forbidden = true
+	owner.scripts.OnEnter()
+	Equal(tooltip.shown, false)
+	Equal(owner.unsafeCalls, nil)
+	Equal(#a.frames, 1)
+end)
+
 QuestTogether:RegisterTest(
 	"minimap hide shortcut saves visibility and explains how to restore it in settings",
 	function()
@@ -391,7 +517,7 @@ QuestTogether:RegisterTest(
 		a:InitializeMinimapLauncher()
 		a:ShowMinimapMenu(a.minimapButton)
 		a:ShowMinimapTooltip(a.minimapButton)
-		a.menus[1].entries[8].callback()
+		a.menus[1].entries[9].callback()
 		Equal(a:GetOption("showMinimapButton"), false)
 		Equal(a.minimapButton.shown, false)
 		Equal(a.minimapTooltip.shown, false)
@@ -407,7 +533,7 @@ QuestTogether:RegisterTest(
 		function a:SetOption()
 			return false
 		end
-		a.menus[1].entries[8].callback()
+		a.menus[1].entries[9].callback()
 		Equal(#a.messages, 1)
 		Equal(refreshed, 1)
 	end
@@ -753,21 +879,25 @@ QuestTogether:RegisterTest("minimap partner glow follows status visibility and r
 	a:InitializeMinimapLauncher()
 	local button = a.minimapButton
 	a.mapOpen = true -- launcher glow does not inspect map/nameplate data
-	Equal(button.qtPartnerGlow, nil)
+	Equal(button.qtRingGlow, nil)
 	a:SetOption("lookingForQuestPartners", true)
-	Equal(#button.qtPartnerGlow, 8)
-	local pulse = button.qtPartnerGlowPulses[1]
+	Equal(button.qtRingGlow ~= nil, true)
+	local pulse = button.qtRingPulse
 	assert(pulse:IsPlaying())
 	Equal(pulse.looping, "REPEAT")
-	Equal(pulse.animations[1].Duration, 1.2)
-	Equal(button.qtPartnerGlow[1].points[1][2], button.qtLogoTexture)
+	Equal(pulse.animations[1].Duration, 0.7)
+	Equal(pulse.animations[1].FromAlpha, 0.3)
+	Equal(pulse.animations[1].ToAlpha, 1)
+	Equal(pulse.animations[2].FromAlpha, 1)
+	Equal(pulse.animations[2].ToAlpha, 0.3)
+	Equal(button.qtRingGlow.points[1][2], button)
 	Equal(button.qtLogoTexture.width, 24)
 	local textures, plays = #button.textures, pulse.plays
 	a:RefreshMinimapButton()
 	Equal(#button.textures, textures)
 	Equal(pulse.plays, plays)
 	a:SetOption("lookingForQuestPartners", false)
-	assert(not pulse:IsPlaying() and not button.qtPartnerGlow[1].shown)
+	assert(not pulse:IsPlaying() and not button.qtRingGlow.shown)
 	a.blocked = true
 	a:SetOption("lookingForQuestPartners", true)
 	assert(not pulse:IsPlaying())

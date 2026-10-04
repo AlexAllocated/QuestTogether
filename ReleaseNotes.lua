@@ -4,14 +4,39 @@ local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
 	version = "5.16.7",
-	welcome = "Read the same QuestTogether release notes in-game, on Discord, and in your preferred language in the changelog files.",
+	welcome = "Say hello in QT chat, find questing partners across your zone, and discover clearer player details and settings.",
 	sections = {
 		{
-			title = "Consistent, multilingual changelogs",
+			title = "Chat with other QuestTogether players",
 			items = {
-				"The English changelog now shares the same release summaries and bullet points as the welcome window and Discord announcements.",
-				"Changelog files are available for all supported locales, with existing translated release history and a preserved copy of the older handwritten English notes.",
-				"Release checks keep the changelog files synchronized with the canonical notes and translations.",
+				"Type /qt <text>, or choose Send QT chat message from the minimap menu. Conversations appear in QT logs and nearby overhead bubbles with a speech-bubble icon; existing slash commands still work.",
+				"Choose Global chat (the default), Zone Only, or hide QT chat entirely. Zone Only requires a recent shared location from the sender; Global does not.",
+				"The new QuestTogether channel works alongside QuestTogetherAnnounce1 during the transition. QT places both after your other channels when supported, with QuestTogether first; typed chat uses only the new channel.",
+			},
+		},
+		{
+			title = "Find questing partners",
+			items = {
+				"Turning on Looking for Questing Partners announces your search throughout your zone with a gold-glow QT icon and a smiley. Zone-wide delivery requires location sharing and respects announcement preferences; turning it off stays silent.",
+				"Control these messages in What to Announce. A 30-second cooldown limits repeated announcements while your status and glow still update immediately. You can also choose to stop looking automatically when joining a group; this starts off.",
+				"Shift-click the minimap button to toggle your partner search. A brighter, pulsing gold ring highlights your active search without clipping the logo.",
+			},
+			illustration = "quest-partners",
+		},
+		{
+			title = "Choose your range and see more player details",
+			items = {
+				"Nearby Range now runs from 5% to Entire Zone, with a default of 25%. It scales distance across your current zone; party members and directly visible players retain their existing behavior.",
+				"Hover names in QT logs for the same improved tooltip as map dots: a class-colored name, level, race, class, faction emblem, partner status, tracked quest when available, and QT version. Name tooltips now appear beside your cursor.",
+				"Your own name tooltip now shows your current super-tracked quest while looking for partners. Updated clients advertise versions about every 40 seconds using existing heartbeat messages; older clients keep their previous schedule.",
+			},
+		},
+		{
+			title = "Clearer controls and announcements",
+			items = {
+				"The minimap tooltip now shows your QT version, partner status, chat scope, watched quest count, nearby range, and location-sharing status.",
+				"Settings controls now have translated explanations on hover, including dropdowns, sliders, profile actions, and color controls.",
+				"When your client cannot resolve a localized quest title, announcements preserve the sender’s original text in both logs and bubbles instead of showing a generic quest number. Localized rendering resumes for later announcements once the title is available.",
 			},
 		},
 	},

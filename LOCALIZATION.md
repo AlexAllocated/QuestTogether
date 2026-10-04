@@ -40,8 +40,9 @@ or omitted to fit the 255-byte wire limit. No per-language packets are broadcast
 
 For different-language senders, `EventLocalization.lua` renders supported event labels
 locally and resolves quest titles through addon snapshots or guarded native quest-data
-APIs. If a title is unavailable, title events preserve the sender's title; progress
-uses a localized quest-ID label. Successful native lookups are cached for five minutes,
+APIs. If a title is unavailable, all quest events preserve the complete sender text
+already carried in the packet, including progress, rather than generating a quest-ID
+label or partially translating the message. Successful native lookups are cached for five minutes,
 misses for five seconds, with 256 entries and at most ten native data-load requests
 per 30 seconds. Each missing quest is requested at most once per 30 seconds. Loaded
 results are used on subsequent presentation; old chat lines are not reprinted.

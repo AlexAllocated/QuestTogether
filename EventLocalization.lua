@@ -154,7 +154,7 @@ function QT:GetLocalizedQuestTitle(questID)
 	end
 	local ok, rawTitle = pcall(api.GetLocalizedQuestTitle, id)
 	title = ok and self:SafeTrimString(rawTitle, "") or ""
-	if #title > 512 then
+	if #title > 512 or self:IsPlaceholderQuestTitle(id, title) then
 		title = ""
 	end
 	if not entry then
@@ -187,6 +187,9 @@ function QT:GetLocalizedQuestTitle(questID)
 end
 
 function QT:LocalizeAnnouncementEvent(event)
+	if event.eventType == "LOOKING_FOR_QUEST_PARTNERS" then
+		return L("Looking for questing partners") .. " :)"
+	end
 	local facts = self:DecodeAnnouncementFacts(event.eventFacts)
 	if not facts or facts.locale == self:GetEventLocale() then
 		return event.text
@@ -206,19 +209,15 @@ function QT:LocalizeAnnouncementEvent(event)
 		return event.text
 	end
 	local title = self:GetLocalizedQuestTitle(id)
+	-- ANN already carries the sender's readable text. If local quest data is
+	-- unavailable, preserve that complete message instead of inventing an ID
+	-- label or mixing a translated prefix with an untranslated title.
+	if not title then
+		return event.text
+	end
 	if prefix then
-		-- If the local client has no quest data, retain the sender's title while
-		-- still translating the event wording. Never interpret arbitrary prose.
-		if not title then
-			local sourcePrefix = self.TranslateForLocale(prefix, facts.locale)
-			if event.text:sub(1, #sourcePrefix) == sourcePrefix then
-				title = event.text:sub(#sourcePrefix + 1)
-			end
-		end
-		title = title and title ~= "" and title or (L("Quest ") .. tostring(id))
 		return self.TranslateForLocale(prefix, self:GetEventLocale()) .. title
 	end
-	title = title or (L("Quest ") .. tostring(id))
 	-- Objective indexes are not stable identities across stages. Do not borrow
 	-- another player's objective text or counters, or replace numbers in prose.
 	local progress

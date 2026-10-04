@@ -251,6 +251,7 @@ function QuestTogether:FlushDeferredWork(reason)
 end
 
 function QuestTogether:ADDON_RESTRICTION_STATE_CHANGED()
+	self:ScheduleAnnouncementChannelOrder()
 	self:FlushDeferredWork("ADDON_RESTRICTION_STATE_CHANGED")
 end
 

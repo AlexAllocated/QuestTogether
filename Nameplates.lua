@@ -3260,8 +3260,10 @@ end
 
 -- The texture and its animations belong exclusively to QT. A native animation
 -- group keeps the pulse off our Lua update loop and preserves the logo contour.
-function QuestTogether:CreateQTPlayerGlowPulse(layer)
+function QuestTogether:CreateQTPlayerGlowPulse(layer, minimumAlpha, duration)
 	if not CanMutateFrame(layer) then return nil end
+	minimumAlpha = minimumAlpha or 0.55
+	duration = duration or 1.2
 	local create = self:GetAccessibleFrameMember(layer, "CreateAnimationGroup")
 	if type(create) ~= "function" then return nil end
 	local ok, group = pcall(create, layer)
@@ -3271,9 +3273,9 @@ function QuestTogether:CreateQTPlayerGlowPulse(layer)
 		for order = 1, 2 do
 			local alpha = group:CreateAnimation("Alpha")
 			alpha:SetOrder(order)
-			alpha:SetFromAlpha(order == 1 and 0.55 or 1)
-			alpha:SetToAlpha(order == 1 and 1 or 0.55)
-			alpha:SetDuration(1.2)
+			alpha:SetFromAlpha(order == 1 and minimumAlpha or 1)
+			alpha:SetToAlpha(order == 1 and 1 or minimumAlpha)
+			alpha:SetDuration(duration)
 			alpha:SetSmoothing("IN_OUT")
 		end
 	end)
@@ -3601,6 +3603,9 @@ end
 local function ApplyAnnouncementIconVisual(texture, eventType, iconAsset, iconKind)
 	if not texture then
 		return
+	end
+	if eventType == "LOOKING_FOR_QUEST_PARTNERS" then
+		iconAsset, iconKind = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon", "texture"
 	end
 
 	if type(iconAsset) == "string" and iconAsset ~= "" then

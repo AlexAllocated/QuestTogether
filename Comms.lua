@@ -160,7 +160,10 @@ local function MatchesAnnouncementChannelName(addon, value)
 		return true
 	end
 
-	return string.match(value, "^%d+%.%s+(.+)$") == channelName
+	local base = string.match(value, "^%d+%.%s+(.+)$") or value
+	base = string.lower(base)
+	return base == string.lower(channelName)
+		or base == string.lower(SafeAddonString(addon, addon.legacyAnnouncementChannelName, ""))
 end
 
 local function SplitByDelimiter(text, delimiter)
@@ -753,12 +756,12 @@ function QuestTogether:DecodeAnnouncementPayload(payload)
 	})
 end
 
-function QuestTogether:GetAnnouncementChannelLocalID()
+function QuestTogether:GetAnnouncementChannelLocalID(channelName)
 	if not self.API or not self.API.GetChannelName then
 		return nil
 	end
 
-	local localID = self.API.GetChannelName(self.announcementChannelName)
+	local localID = self.API.GetChannelName(channelName or self.announcementChannelName)
 	local numericLocalID = SafeChannelNumber(self, localID)
 	if numericLocalID and numericLocalID > 0 then
 		return numericLocalID
@@ -767,13 +770,14 @@ function QuestTogether:GetAnnouncementChannelLocalID()
 	return nil
 end
 
-function QuestTogether:GetAnnouncementChannelTarget()
-	local localID = self:GetAnnouncementChannelLocalID() or self.announcementChannelLocalID
+function QuestTogether:GetAnnouncementChannelTarget(channelName)
+	channelName = channelName or self.announcementChannelName
+	local localID = self:GetAnnouncementChannelLocalID(channelName)
 	if type(localID) == "number" and localID > 0 then
 		return localID
 	end
 
-	return self.announcementChannelName
+	return channelName
 end
 
 function QuestTogether:GetGroupAnnouncementDistribution()
@@ -844,39 +848,52 @@ function QuestTogether:SendWireMessageToAnnouncementRoutes(wireMessage, debugCon
 		)
 		return false
 	end
-	local routes = selectedRoutes or self:GetAnnouncementWireRoutes()
-	local sentCount = 0
+	local routes = {}
+	for _, route in ipairs(selectedRoutes or self:GetAnnouncementWireRoutes()) do
+		if route.requiresChannelJoin and not route.channelName then
+			for _, name in ipairs({ self.announcementChannelName, self.legacyAnnouncementChannelName }) do
+				routes[#routes + 1] = { distribution = "CHANNEL", requiresChannelJoin = true, channelName = name }
+			end
+		else
+			routes[#routes + 1] = route
+		end
+	end
+	local sentCount, sentTargets = 0, {}
 
 	for _, route in ipairs(routes) do
-		if route.requiresChannelJoin and not self:EnsureAnnouncementChannelJoined() then
+		if route.requiresChannelJoin and not self:EnsureAnnouncementChannelJoined(route.channelName) then
 			self:RecordCommsDiagnostic("failedRoutes", "channel join failed " .. contextLabel)
 		else
 			-- Joining can replace a channel ID. Resolve its target after the join,
 			-- never from the cached route assembled before it.
-			local target = route.requiresChannelJoin and self:GetAnnouncementChannelTarget() or route.target
-			local ok, result =
-				pcall(self.API.SendAddonMessage, self.commPrefix, wireMessage, route.distribution, target)
-			if ok and self:CanAccessValue(result) and (result == 0 or result == true) then
-				sentCount = sentCount + 1
-				self:RecordCommsDiagnostic(
-					"sentRoutes",
-					string.format("route=%s bytes=%d %s", route.distribution, #wireMessage, contextLabel)
-				)
-			else
-				self:RecordCommsDiagnostic(
-					"failedRoutes",
-					string.format(
-						"route=%s bytes=%d result=%s %s",
-						route.distribution,
-						#wireMessage,
-						SafeDebugString(result),
-						contextLabel
+			local target = route.requiresChannelJoin and self:GetAnnouncementChannelTarget(route.channelName)
+				or route.target
+			local targetKey = route.distribution .. ":" .. tostring(target or "")
+			if not sentTargets[targetKey] then
+				sentTargets[targetKey] = true
+				local ok, result =
+					pcall(self.API.SendAddonMessage, self.commPrefix, wireMessage, route.distribution, target)
+				if ok and self:CanAccessValue(result) and (result == 0 or result == true) then
+					sentCount = sentCount + 1
+					self:RecordCommsDiagnostic(
+						"sentRoutes",
+						string.format("route=%s bytes=%d %s", route.distribution, #wireMessage, contextLabel)
 					)
-				)
+				else
+					self:RecordCommsDiagnostic(
+						"failedRoutes",
+						string.format(
+							"route=%s bytes=%d result=%s %s",
+							route.distribution,
+							#wireMessage,
+							SafeDebugString(result),
+							contextLabel
+						)
+					)
+				end
 			end
 		end
 	end
-
 	return sentCount > 0
 end
 
@@ -948,7 +965,7 @@ function QuestTogether:UnregisterAnnouncementChannelChatFilters()
 	self.announcementChannelChatFiltersRegistered = nil
 end
 
-function QuestTogether:HideAnnouncementChannelFromChatWindows()
+function QuestTogether:HideAnnouncementChannelFromChatWindows(channelName)
 	if
 		not self.API
 		or not self.API.GetNumChatWindows
@@ -963,26 +980,34 @@ function QuestTogether:HideAnnouncementChannelFromChatWindows()
 		local chatFrame = self.API.GetChatFrameByID(chatFrameID)
 		if chatFrame then
 			-- Some chat frames reject channel removal in edge states; keep cleanup best-effort.
-			pcall(self.API.RemoveChatWindowChannel, chatFrame, self.announcementChannelName)
+			for _, name in ipairs(channelName and { channelName } or { self.announcementChannelName, self.legacyAnnouncementChannelName }) do
+				pcall(self.API.RemoveChatWindowChannel, chatFrame, name)
+			end
 		end
 	end
 end
 
-function QuestTogether:EnsureAnnouncementChannelJoined()
+function QuestTogether:EnsureAnnouncementChannelJoined(channelName)
+	if not channelName then
+		local current = self:EnsureAnnouncementChannelJoined(self.announcementChannelName)
+		local legacy = self:EnsureAnnouncementChannelJoined(self.legacyAnnouncementChannelName)
+		return current or legacy
+	end
+	local cacheKey = channelName == self.announcementChannelName and "announcementChannelLocalID" or "legacyAnnouncementChannelLocalID"
 	if not self.isEnabled then
 		self:Debug("Skipping channel join because addon is disabled", "comms")
 		return false
 	end
 
-	local currentLocalID = self:GetAnnouncementChannelLocalID()
+	local currentLocalID = self:GetAnnouncementChannelLocalID(channelName)
 	if currentLocalID then
-		self.announcementChannelLocalID = currentLocalID
+		self[cacheKey] = currentLocalID
 		if self.HideAnnouncementChannelFromChatWindows then
-			self:HideAnnouncementChannelFromChatWindows()
+			self:HideAnnouncementChannelFromChatWindows(channelName)
 		end
 		return true
 	end
-	self.announcementChannelLocalID = nil
+	self[cacheKey] = nil
 
 	if not self.API or not self.API.JoinPermanentChannel then
 		self:Debug("JoinPermanentChannel API unavailable", "comms")
@@ -997,24 +1022,84 @@ function QuestTogether:EnsureAnnouncementChannelJoined()
 	self:Debugf(
 		"comms",
 		"Joining announcement channel name=%s chatFrameId=%s",
-		SafeAddonString(self, self.announcementChannelName),
+		SafeAddonString(self, channelName),
 		SafeAddonString(self, chatFrameId)
 	)
-	self.API.JoinPermanentChannel(self.announcementChannelName, nil, chatFrameId, 1)
+	self.API.JoinPermanentChannel(channelName, nil, chatFrameId, 1)
 
-	currentLocalID = self:GetAnnouncementChannelLocalID()
+	currentLocalID = self:GetAnnouncementChannelLocalID(channelName)
 	if currentLocalID then
-		self.announcementChannelLocalID = currentLocalID
+		self[cacheKey] = currentLocalID
 		if self.HideAnnouncementChannelFromChatWindows then
-			self:HideAnnouncementChannelFromChatWindows()
+			self:HideAnnouncementChannelFromChatWindows(channelName)
 		end
 		self:Debugf("comms", "Joined announcement channel localID=%s", SafeAddonString(self, currentLocalID))
 		return true
 	end
 
-	self:Debug("Unable to join announcement channel " .. SafeAddonString(self, self.announcementChannelName), "comms")
+	self:Debug("Unable to join announcement channel " .. SafeAddonString(self, channelName), "comms")
 	return false
 end
+
+-- Stable partition using the public channel-order API, never ChatTypeInfo or
+-- Blizzard frame fields. Non-QT channels retain their relative ordering.
+function QuestTogether:MoveAnnouncementChannelsToEnd()
+	if not self.isEnabled or self:IsRuntimeRestricted() or self:IsRuntimeRestrictionTypeActive("chat") then return false end
+	local api = self.API or {}
+	if not api.GetChatChannelList or not api.SwapChatChannelIndices then return false end
+	local ok, list = pcall(api.GetChatChannelList)
+	if not ok or not self:CanAccessTable(list) or #list > 90 or #list % 3 ~= 0 then return false end
+	local channels, seen = {}, {}
+	for i = 1, #list, 3 do
+		local id, name = SafeChannelNumber(self, list[i]), SafeTrimAddonString(self, list[i + 1], "")
+		if not id or id < 1 or id > 30 or id ~= math.floor(id) or name == "" or seen[id] then return false end
+		seen[id] = true
+		channels[#channels + 1] = { id = id, name = name, qt = MatchesAnnouncementChannelName(self, name) }
+	end
+	table.sort(channels, function(a, b) return a.id < b.id end)
+	for i = 2, #channels do
+		local j = i
+		while j > 1 and not channels[j].qt and channels[j - 1].qt do
+			if self:IsRuntimeRestricted() then return false end
+			local swapped, result = pcall(api.SwapChatChannelIndices, channels[j - 1].id, channels[j].id)
+			-- Native channel indices can change; never retain a stale receive fallback.
+			self.announcementChannelLocalID, self.legacyAnnouncementChannelLocalID = nil, nil
+			if not swapped or result ~= true then return false end
+			channels[j - 1].qt, channels[j].qt = channels[j].qt, channels[j - 1].qt
+			channels[j - 1].name, channels[j].name = channels[j].name, channels[j - 1].name
+			j = j - 1
+		end
+	end
+	local current, legacy
+	for _, channel in ipairs(channels) do
+		if channel.name == self.announcementChannelName then current = channel.id end
+		if channel.name == self.legacyAnnouncementChannelName then legacy = channel.id end
+	end
+	if current and legacy and current > legacy then
+		if self:IsRuntimeRestricted() then return false end
+		local swapped, result = pcall(api.SwapChatChannelIndices, current, legacy)
+		self.announcementChannelLocalID, self.legacyAnnouncementChannelLocalID = nil, nil
+		if not swapped or result ~= true then return false end
+	end
+	self.announcementChannelLocalID = self:GetAnnouncementChannelLocalID()
+	self.legacyAnnouncementChannelLocalID = self:GetAnnouncementChannelLocalID(self.legacyAnnouncementChannelName)
+	return true
+end
+
+function QuestTogether:ScheduleAnnouncementChannelOrder()
+	if not self.isEnabled or not self.API.GetChatChannelList or not self.API.SwapChatChannelIndices
+		or not self.API.Delay or rawget(self, "channelOrderWork") then return end
+	local work = {}
+	self.channelOrderWork = work
+	self.API.Delay(0.2, function()
+		if rawget(self, "channelOrderWork") ~= work then return end
+		self:MoveAnnouncementChannelsToEnd()
+		self.channelOrderWork = nil
+	end)
+end
+
+function QuestTogether:CHANNEL_COUNT_UPDATE() self:ScheduleAnnouncementChannelOrder() end
+function QuestTogether:CHANNEL_UI_UPDATE() self:ScheduleAnnouncementChannelOrder() end
 
 function QuestTogether:LeaveAnnouncementChannel()
 	if self.API and self.API.LeaveChannelByName then
@@ -1025,8 +1110,10 @@ function QuestTogether:LeaveAnnouncementChannel()
 		)
 		-- Channel leave can fail if Blizzard already removed it; no need to hard fail disable.
 		pcall(self.API.LeaveChannelByName, self.announcementChannelName)
+		pcall(self.API.LeaveChannelByName, self.legacyAnnouncementChannelName)
 	end
 	self.announcementChannelLocalID = nil
+	self.legacyAnnouncementChannelLocalID = nil
 	self:ResetCommsState()
 	if self.UnregisterAnnouncementChannelChatFilters then
 		self:UnregisterAnnouncementChannelChatFilters()
@@ -1034,6 +1121,7 @@ function QuestTogether:LeaveAnnouncementChannel()
 end
 
 function QuestTogether:ResetCommsState()
+	self.channelOrderWork = nil
 	self.localizedQuestTitles = nil
 	if self.ResetPartyJoin then self:ResetPartyJoin() end
 	self.qtPlayerPresenceState = nil
@@ -1631,12 +1719,14 @@ function QuestTogether:IsAnnouncementChannelEvent(channel, localID, name)
 	end
 
 	if name ~= "" then
-		return name == self.announcementChannelName
+		return MatchesAnnouncementChannelName(self, name)
 	end
 
 	local expectedLocalID = SafeChannelNumber(self, self.announcementChannelLocalID)
 	local incomingLocalID = SafeChannelNumber(self, localID)
-	return expectedLocalID ~= nil and incomingLocalID ~= nil and expectedLocalID == incomingLocalID
+	local legacyLocalID = SafeChannelNumber(self, self.legacyAnnouncementChannelLocalID)
+	return incomingLocalID ~= nil and incomingLocalID > 0
+		and (expectedLocalID == incomingLocalID or legacyLocalID == incomingLocalID)
 end
 
 function QuestTogether:SendAnnouncementEvent(eventType, text, questId, extraData)
@@ -1959,7 +2049,9 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
 		and nearbyUnitToken == nil
 		and self.IsAnnouncementSenderNearbyByLocation
 	then
-		nearbyByLocation = self:IsAnnouncementSenderNearbyByLocation(eventData)
+		nearbyByLocation = self:IsAnnouncementSenderNearbyByLocation(
+			eventData, eventData.eventType == "LOOKING_FOR_QUEST_PARTNERS"
+		)
 	end
 	hasNearbySignal = hasNearbyNameplate or nearbyUnitToken ~= nil or nearbyByLocation
 	isGrouped = self:IsGroupedSender(senderName)
@@ -2116,6 +2208,63 @@ function QuestTogether:PublishAnnouncementEvent(eventType, text, questId, extraD
 	return true
 end
 
+function QuestTogether:SendQTChannelChat(message)
+	if not self.isEnabled or self:IsRuntimeRestrictionTypeActive("chat") then return false end
+	message = SafeTrimAddonString(self, message, "")
+	message = TruncateUtf8(message:gsub("[%c]", " "), 255)
+	if message == "" or not self.API.SendChannelChatMessage then return false end
+	if not self:EnsureAnnouncementChannelJoined(self.announcementChannelName) then return false end
+	local id = self:GetAnnouncementChannelLocalID()
+	if not id then return false end
+	local ok, sent = pcall(self.API.SendChannelChatMessage, message, id)
+	return ok and sent == true
+end
+
+function QuestTogether:ShouldShowQTChannelChatFromSender(name)
+	if self:GetOption("qtChatScope") ~= "zone_only" or self:IsSelfSender(name) then return true end
+	if self:IsRuntimeRestricted() then return false end
+	local api = self.API or {}
+	if not api.GetBestMapForUnit then return false end
+	local ok, localMapID = pcall(api.GetBestMapForUnit, "player")
+	localMapID = ok and self:SafeToNumber(localMapID) or nil
+	local remoteMapID = self:GetRecentPlayerLocationMapID(name)
+	return localMapID ~= nil and remoteMapID ~= nil and localMapID == remoteMapID
+end
+
+-- Handle once per event, never from the per-chat-frame suppression filter.
+-- Human channel chat is not addon protocol traffic or evidence of QT presence.
+function QuestTogether:CHAT_MSG_CHANNEL(_, message, sender, _, channelName, _, _, _, _, channelBaseName, _, _, senderGUID)
+	if not self.isEnabled or self:GetOption("showQTChat") == false
+		or self:IsRuntimeRestrictionTypeActive("chat") then return false end
+	if not MatchesAnnouncementChannelName(self, channelBaseName)
+		and not MatchesAnnouncementChannelName(self, channelName) then return false end
+	local name = SafeTrimAddonString(self, sender, "")
+	if name == "" then return false end
+	name = self:NormalizeMemberName(name)
+	if not name or self:IsIgnoredPlayerName(name) or not self:ShouldShowQTChannelChatFromSender(name) then return false end
+	local text = SafePrimitiveString(self, message, "")
+	-- Preserve link labels as plain text, without accepting user-supplied UI markup.
+	text = text:gsub("|H.-|h(.-)|h", "%1"):gsub("|[TA].-|[ta]", "")
+	text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|", "")
+	text = TruncateUtf8(self:SafeTrimString(text:gsub("[%c]", " "), ""), 255)
+	if text == "" then return false end
+	local icon = "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon"
+	if self:GetOption("showChatLogs") then
+		self:PrintConsoleAnnouncement(text, name, nil, nil, icon, "texture")
+	end
+	if self:GetOption("showChatBubbles") then
+		if self:IsSelfSender(name) then
+			if not self:GetOption("hideMyOwnChatBubbles") then
+				self:ShowAnnouncementBubbleOnUnitNameplate("player", text, nil, icon, "texture")
+			end
+		else
+			local plate = self:FindVisiblePlayerNameplateForSender(SafePrimitiveString(self, senderGUID, ""), name)
+			if plate then self:ShowAnnouncementBubbleOnNameplate(plate, text, nil, icon, "texture", name) end
+		end
+	end
+	return true
+end
+
 function QuestTogether:CHAT_MSG_ADDON(_, prefix, message, channel, sender, _, _, localID, name)
 	self:OnCommReceived(prefix, message, channel, sender, localID, name)
 end
@@ -2202,6 +2351,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		responseData.senderName = transportSenderName
 		if self.RecordQTPlayerPresence then self:RecordQTPlayerPresence(transportSenderName, true) end
 		self:ObserveAddonVersion(responseData.addonVersion)
+		self:RememberPlayerAddonVersion(transportSenderName, responseData.addonVersion)
 		self:HandlePingResponse(responseData)
 		return
 	end

@@ -4,13 +4,31 @@
 
 ## 5.16.7
 
-Lies dieselben QuestTogether-Versionshinweise im Spiel, auf Discord und in deiner bevorzugten Sprache in den Changelog-Dateien.
+Sag im QT-Chat Hallo, finde Questpartner in deiner ganzen Zone und entdecke übersichtlichere Spielerdetails und Einstellungen.
 
-### Einheitliche, mehrsprachige Changelogs
+### Mit anderen QuestTogether-Spielern chatten
 
-- Der englische Changelog enthält jetzt dieselben Zusammenfassungen und Stichpunkte zu Veröffentlichungen wie das Willkommensfenster und die Discord-Ankündigungen.
-- Changelog-Dateien sind für alle unterstützten Gebietsschemata verfügbar, mit bereits übersetztem Versionsverlauf und einer erhaltenen Kopie der älteren handgeschriebenen englischen Notizen.
-- Release-Prüfungen halten die Changelog-Dateien mit den kanonischen Hinweisen und Übersetzungen synchron.
+- Gib /qt <text> ein oder wähle im Minikartenmenü „QT-Chatnachricht senden“. Unterhaltungen erscheinen in den QT-Logs und in Sprechblasen über Spielern in der Nähe mit einem Sprechblasen-Symbol; bestehende Chatbefehle funktionieren weiterhin.
+- Wähle Globaler Chat (Standard), Nur Zone oder blende den QT-Chat vollständig aus. Nur Zone erfordert einen kürzlich geteilten Standort des Absenders; Global nicht.
+- Der neue QuestTogether-Kanal funktioniert während der Übergangsphase parallel zu QuestTogetherAnnounce1. QT platziert beide nach deinen anderen Kanälen, wenn unterstützt, mit QuestTogether zuerst; eingegebener Chat verwendet nur den neuen Kanal.
+
+### Questpartner finden
+
+- Wenn du „Suche nach Questpartnern“ aktivierst, wird deine Suche in deiner ganzen Zone mit einem goldglänzenden QT-Symbol und einem Smiley angekündigt. Zonenweite Zustellung erfordert Standortfreigabe und berücksichtigt Ankündigungseinstellungen; beim Deaktivieren bleibt es still.
+- Steuere diese Nachrichten unter „Was angekündigt werden soll“. Eine Abklingzeit von 30 Sekunden begrenzt wiederholte Ankündigungen, während dein Status und Leuchten weiterhin sofort aktualisiert werden. Du kannst außerdem festlegen, dass die Suche beim Beitritt zu einer Gruppe automatisch beendet wird; dies ist zunächst deaktiviert.
+- Umschalt-Klick auf die Minikartenschaltfläche, um deine Partnersuche ein- oder auszuschalten. Ein hellerer, pulsierender Goldring hebt deine aktive Suche hervor, ohne das Logo abzuschneiden.
+
+### Wähle deine Reichweite und sieh mehr Spielerdetails
+
+- Die Reichweite für Spieler in der Nähe reicht jetzt von 5 % bis Ganze Zone, mit 25 % als Standard. Sie skaliert die Entfernung über deine aktuelle Zone; Gruppenmitglieder und direkt sichtbare Spieler behalten ihr bestehendes Verhalten.
+- Fahre in den QT-Logs mit der Maus über Namen, um denselben verbesserten Tooltip wie bei Kartenpunkten zu sehen: einen klassenfarbenen Namen, Stufe, Volk, Klasse, Fraktionsemblem, Partnerstatus, verfolgte Quest, wenn verfügbar, und QT-Version. Namenstooltips erscheinen jetzt neben deinem Cursor.
+- Dein eigener Namenstooltip zeigt jetzt deine aktuell hervorgehobene Quest an, während du nach Partnern suchst. Aktualisierte Clients melden ihre Versionen etwa alle 40 Sekunden über bestehende Heartbeat-Nachrichten; ältere Clients behalten ihren bisherigen Zeitplan bei.
+
+### Übersichtlichere Steuerung und Ankündigungen
+
+- Der Minikarten-Tooltip zeigt jetzt deine QT-Version, den Partnerstatus, Chatbereich, die Anzahl beobachteter Quests, die Reichweite für Spieler in der Nähe und den Status der Standortfreigabe an.
+- Einstellungselemente haben jetzt übersetzte Erklärungen beim Darüberfahren, einschließlich Dropdowns, Schiebereglern, Profilaktionen und Farbauswahl.
+- Wenn dein Client einen lokalisierten Questtitel nicht auflösen kann, behalten Ankündigungen den ursprünglichen Text des Absenders sowohl in Logs als auch in Sprechblasen bei, statt eine generische Questnummer anzuzeigen. Die lokalisierte Darstellung wird bei späteren Ankündigungen fortgesetzt, sobald der Titel verfügbar ist.
 
 ## 5.16.6
 

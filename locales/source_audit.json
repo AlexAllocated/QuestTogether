@@ -144,9 +144,11 @@
       "work_failed class=%s key=%s reason=%s error=%s"
     ],
     "LocationPins.lua": [
+      "Alliance",
       "Button",
       "Frame",
       "Hide",
+      "Horde",
       "Show",
       "location pin frame unavailable",
       "location pin parent unavailable",
@@ -188,7 +190,9 @@
       "Piper Hippo",
       "Rue Angel",
       "Sammy Bear",
-      "Wifebeast"
+      "Slider",
+      "Wifebeast",
+      "settings controls require explanatory tooltip text"
     ],
     "PartyJoin.lua": [
       "party join",

@@ -108,6 +108,95 @@ local function Event(text)
 	}
 end
 
+QuestTogether:RegisterTest("unknown addon packets do not fall through into human channel chat", function()
+	local addon = NewCommsFixture()
+	function addon:CHAT_MSG_CHANNEL() error("addon traffic cannot become human chat") end
+	function addon:RecordQTPlayerPresence() error("unknown commands cannot identify peers") end
+	addon:OnCommReceived(addon.commPrefix, "FUTURE|Quest 844 — Objective 1: 5/7", "CHANNEL", "Friend-Realm", 7, addon.announcementChannelName)
+	Equal(#addon.printed, 0)
+	Equal(#addon.wire, 0)
+end)
+
+QuestTogether:RegisterTest("plain QT channel chat displays once without relaying or discovering peers", function()
+	local addon = NewCommsFixture()
+	local options = { showChatLogs = true, showChatBubbles = true }
+	local bubbles, plate = {}, {}
+	function addon:GetOption(key) return options[key] end
+	function addon:PrintConsoleAnnouncement(text, _, _, _, icon, kind)
+		Equal(icon, "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon")
+		Equal(kind, "texture")
+		self.printed[#self.printed + 1] = text
+	end
+	function addon:IsRuntimeRestrictionTypeActive() return self.restricted == true end
+	function addon:IsSelfSender(name) return name == "MyPlayer-Realm" end
+	function addon:FindVisiblePlayerNameplateForSender(guid, name)
+		Equal(guid, "Player-1-ABC")
+		Equal(name, "Friend-Realm")
+		return self.visible and plate or nil
+	end
+	function addon:ShowAnnouncementBubbleOnNameplate(frame, text, _, icon, kind, name)
+		Equal(icon, "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon")
+		Equal(kind, "texture")
+		Equal(frame, plate)
+		Equal(name, "Friend-Realm")
+		bubbles[#bubbles + 1] = text
+	end
+	function addon:ShowAnnouncementBubbleOnUnitNameplate(unit, text, _, icon, kind)
+		Equal(unit, "player")
+		Equal(icon, "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon")
+		Equal(kind, "texture")
+		bubbles[#bubbles + 1] = text
+	end
+	function addon:RecordQTPlayerPresence() error("plain chat cannot establish addon presence") end
+	local function Receive(text, sender, channel, base)
+		return addon:CHAT_MSG_CHANNEL("CHAT_MSG_CHANNEL", text, sender or "Friend-Realm", "",
+			channel or "7. " .. addon.announcementChannelName, nil, nil, nil, 7,
+			base, nil, 1, "Player-1-ABC")
+	end
+	-- Remote chat reaches the log even without proximity or group membership.
+	Equal(Receive("Hello!"), true)
+	Equal(#addon.printed, 1)
+	Equal(#bubbles, 0)
+	addon.visible = true
+	Equal(Receive("|cffffffffHi|r |Hitem:123|h[item]|h |Tbad:99|t\nthere"), true)
+	Equal(addon.printed[2], "Hi [item]  there")
+	Equal(bubbles[1], addon.printed[2])
+	Equal(Receive("hello", "MyPlayer-Realm"), true)
+	Equal(#bubbles, 2)
+	options.hideMyOwnChatBubbles = true
+	Receive("hello", "MyPlayer-Realm")
+	Equal(#bubbles, 2)
+	options.showChatLogs, options.showChatBubbles = false, false
+	Receive("hidden")
+	Equal(#addon.printed, 4)
+	Equal(#bubbles, 2)
+	Equal(#addon.wire, 0)
+	Equal(#addon.delayed, 0)
+	options.showQTChat = false
+	Equal(Receive("muted"), false)
+	options.showQTChat = true
+	Equal(Receive("wrong", nil, "General"), false)
+	Equal(Receive("wrong", nil, addon.announcementChannelName .. "Other"), false)
+	Equal(Receive("base metadata", nil, "", addon.announcementChannelName), true)
+	Equal(Receive(" "), false)
+	Equal(Receive("hello", ""), false)
+	local inaccessible = setmetatable({}, { __tostring = function() error("inaccessible chat read") end })
+	function addon:CanAccessValue(value) return value ~= inaccessible end
+	Equal(Receive(inaccessible), false)
+	Equal(Receive("hello", inaccessible), false)
+	Equal(Receive("hello", nil, inaccessible, inaccessible), false)
+	options.showChatLogs = true
+	Receive(string.rep("é", 130))
+	Equal(#addon.printed[#addon.printed], 254)
+	addon.restricted = true
+	Equal(Receive("restricted"), false)
+	addon.restricted = false
+	function addon:IsIgnoredPlayerName() return true end
+	Equal(Receive("ignored"), false)
+	addon.isEnabled = false
+	Equal(Receive("disabled"), false)
+end)
+
 local function NewRegionalNameFixture()
 	local addon = NewCommsFixture()
 	addon.showSurname = false
@@ -244,6 +333,8 @@ QuestTogether:RegisterTest("Forever hidden surnames never become social interact
 end)
 
 local function UseNativeLocationModel(addon)
+	function addon:IsRuntimeRestricted() return false end
+	function addon:GetLocationPinMapWorldSize() return 4000, 2000 end
 	addon.GetPlayerAnnouncementLocationInfo = QuestTogether.GetPlayerAnnouncementLocationInfo
 	addon.CanPublishPlayerLocation = function() return true end
 	addon.API.GetBestMapForUnit = function() return 37 end
@@ -1596,6 +1687,8 @@ local function NewLocationReceiver()
 	addon.db.profile.showChatBubbles = false
 	addon.FindVisiblePlayerNameplateForSender = function() return nil end
 	addon.FindNearbyPlayerUnitTokenForSender = function() return nil end
+	function addon:IsRuntimeRestricted() return false end
+	function addon:GetLocationPinMapWorldSize() return 4000, 2000 end
 	return addon
 end
 
@@ -2080,4 +2173,411 @@ QuestTogether:RegisterTest("local publication sends one party announcement indep
 	Equal(#a.chatMessages, 1)
 	-- Incoming events use HandleAnnouncementEvent, never the local publisher.
 	Equal(a:AnnounceToNonQTParty({ eventType = "PLAYER_LEVEL_UP", text = "Level 10" }), true)
+end)
+
+QuestTogether:RegisterTest("channel migration publishes to both named channels and deduplicates received addon events", function()
+	local addon = NewCommsFixture()
+	addon.API.GetChannelName = function(name)
+		return name == addon.announcementChannelName and 7 or 9
+	end
+	function addon:HideAnnouncementChannelFromChatWindows() end
+	local event = Event()
+	local wire = addon:SerializeWireMessage("ANN", addon:EncodeAnnouncementPayload(event))
+	Equal(addon:SendWireMessageToAnnouncementRoutes(wire), true)
+	Equal(#addon.wire, 2)
+	Equal(addon.wire[1][4], 7)
+	Equal(addon.wire[2][4], 9)
+	Equal(addon.wire[1][2], addon.wire[2][2])
+	local received, discovered = 0, 0
+	function addon:HandleAnnouncementEvent() received = received + 1 end
+	function addon:RecordQTPlayerPresence() discovered = discovered + 1 end
+	addon:OnCommReceived(addon.commPrefix, wire, "CHANNEL", "Friend-Realm", 9, addon.legacyAnnouncementChannelName)
+	addon:OnCommReceived(addon.commPrefix, wire, "CHANNEL", "Friend-Realm", 7, addon.announcementChannelName)
+	Equal(received, 1)
+	Equal(discovered, 1)
+	Equal(addon:IsAnnouncementChannelEvent("CHANNEL", 9, ""), true)
+	Equal(addon:IsAnnouncementChannelEvent("CHANNEL", 7, "General"), false)
+	Equal(addon:AnnouncementChannelChatFilter(nil, nil, "hi", "Friend", "", "2. " .. addon.legacyAnnouncementChannelName), true)
+	local left = {}
+	addon.API.LeaveChannelByName = function(name) left[#left + 1] = name end
+	function addon:ResetCommsState() end
+	function addon:UnregisterAnnouncementChannelChatFilters() end
+	addon:LeaveAnnouncementChannel()
+	Equal(left[1], addon.announcementChannelName)
+	Equal(left[2], addon.legacyAnnouncementChannelName)
+	Equal(addon.legacyAnnouncementChannelLocalID, nil)
+end)
+
+QuestTogether:RegisterTest("channel migration tolerates either unavailable route and resolves IDs after joins", function()
+	local addon = NewCommsFixture()
+	local available, joined = {}, {}
+	addon.API.GetChannelName = function(name) return available[name] end
+	addon.API.JoinPermanentChannel = function(name)
+		joined[#joined + 1] = name
+		if name ~= addon.failedChannel then available[name] = name == addon.announcementChannelName and 11 or 13 end
+	end
+	function addon:RegisterAnnouncementChannelChatFilters() end
+	function addon:HideAnnouncementChannelFromChatWindows() end
+	for _, failed in ipairs({ addon.announcementChannelName, addon.legacyAnnouncementChannelName }) do
+		available, joined, addon.wire = {}, {}, {}
+		addon.failedChannel = failed
+		Equal(addon:SendWireMessageToAnnouncementRoutes("PING|test"), true)
+		Equal(#joined, 2)
+		Equal(#addon.wire, 1)
+		Equal(addon.wire[1][4], failed == addon.announcementChannelName and 13 or 11)
+	end
+	-- Selected CHANNEL routes (including comparison replies) also reach old peers.
+	available, addon.wire, addon.failedChannel = {}, {}, nil
+	Equal(addon:SendWireMessageToAnnouncementRoutes("QCDN|test", nil, { { distribution = "CHANNEL", requiresChannelJoin = true } }), true)
+	Equal(#addon.wire, 2)
+	Equal(addon.wire[1][4], 11)
+	Equal(addon.wire[2][4], 13)
+end)
+
+QuestTogether:RegisterTest("QT channels sort last in current legacy order without disturbing other channel order", function()
+	local addon = NewCommsFixture()
+	local names = { addon.legacyAnnouncementChannelName, "General", addon.announcementChannelName, "Trade", "MyFriends" }
+	local swaps = 0
+	function addon:IsRuntimeRestricted() return self.blocked == true end
+	function addon:IsRuntimeRestrictionTypeActive() return false end
+	addon.API.GetChatChannelList = function()
+		local list = {}
+		for i, name in ipairs(names) do
+			list[#list + 1], list[#list + 2], list[#list + 3] = i, name, false
+		end
+		return list
+	end
+	addon.API.GetChannelName = function(name)
+		for i, value in ipairs(names) do if name == value then return i end end
+	end
+	addon.API.SwapChatChannelIndices = function(a, b)
+		names[a], names[b] = names[b], names[a]
+		swaps = swaps + 1
+		addon:CHANNEL_UI_UPDATE()
+		return true
+	end
+	addon:CHANNEL_COUNT_UPDATE()
+	addon:CHANNEL_UI_UPDATE()
+	Equal(#addon.delayed, 1)
+	addon.delayed[1]()
+	Equal(table.concat(names, ","), "General,Trade,MyFriends,QuestTogether,QuestTogetherAnnounce1")
+	Equal(addon.announcementChannelLocalID, 4)
+	Equal(addon.legacyAnnouncementChannelLocalID, 5)
+	Equal(#addon.delayed, 1) -- swap events do not create a feedback timer loop
+	local prior = swaps
+	Equal(addon:MoveAnnouncementChannelsToEnd(), true)
+	Equal(swaps, prior)
+	names = { addon.legacyAnnouncementChannelName, addon.announcementChannelName }
+	Equal(addon:MoveAnnouncementChannelsToEnd(), true)
+	Equal(names[1], addon.announcementChannelName)
+	-- Channels joining later go ahead of both QT channels.
+	names[3] = "General"
+	addon.blocked = true
+	Equal(addon:MoveAnnouncementChannelsToEnd(), false)
+	Equal(names[1], addon.announcementChannelName)
+	addon.blocked = false
+	Equal(addon:MoveAnnouncementChannelsToEnd(), true)
+	Equal(names[1], "General")
+	Equal(names[2], addon.announcementChannelName)
+	Equal(names[3], addon.legacyAnnouncementChannelName)
+	addon:ScheduleAnnouncementChannelOrder()
+	addon.channelOrderWork = nil -- reset/disable invalidates queued work
+	prior = swaps
+	addon.delayed[#addon.delayed]()
+	Equal(swaps, prior)
+end)
+
+QuestTogether:RegisterTest("QT slash chat sends once to fresh primary channel ID without local echo or retry", function()
+	local addon = NewCommsFixture()
+	function addon:IsRuntimeRestrictionTypeActive() return self.blocked == true end
+	function addon:HideAnnouncementChannelFromChatWindows() end
+	local sends = {}
+	addon.API.SendChannelChatMessage = function(message, id)
+		sends[#sends + 1] = { message, id }
+		return not addon.failed
+	end
+	Equal(addon:SendQTChannelChat("Hi everyone!"), true)
+	Equal(#sends, 1)
+	Equal(sends[1][1], "Hi everyone!")
+	Equal(sends[1][2], 7)
+	addon.channelID = 12
+	Equal(addon:SendQTChannelChat("Hello again"), true)
+	Equal(sends[2][2], 12)
+	addon.failed = true
+	Equal(addon:SendQTChannelChat("attempt"), false)
+	Equal(#addon.delayed, 0)
+	Equal(#addon.printed, 0)
+	Equal(#addon.wire, 0)
+	addon.blocked = true
+	Equal(addon:SendQTChannelChat("restricted"), false)
+	addon.blocked = false
+	addon.isEnabled = false
+	Equal(addon:SendQTChannelChat("disabled"), false)
+	Equal(#sends, 3)
+end)
+
+QuestTogether:RegisterTest("channel ordering rejects inaccessible metadata and stops on failed swaps", function()
+	local addon = NewCommsFixture()
+	function addon:IsRuntimeRestricted() return false end
+	function addon:IsRuntimeRestrictionTypeActive() return false end
+	local secret = setmetatable({}, { __tostring = function() error("unreadable channel name") end })
+	function addon:CanAccessValue(value) return value ~= secret end
+	local swaps = 0
+	addon.API.GetChatChannelList = function() return { 1, secret, false, 2, "General", false } end
+	addon.API.SwapChatChannelIndices = function() swaps = swaps + 1; return false end
+	Equal(addon:MoveAnnouncementChannelsToEnd(), false)
+	Equal(swaps, 0)
+	addon.API.GetChatChannelList = function() return { 1, addon.announcementChannelName, false, 2, "General", false } end
+	Equal(addon:MoveAnnouncementChannelsToEnd(), false)
+	Equal(swaps, 1)
+	Equal(addon.announcementChannelLocalID, nil)
+	addon.API.SwapChatChannelIndices = nil
+	Equal(addon:MoveAnnouncementChannelsToEnd(), false)
+	Equal(swaps, 1)
+	Equal(addon:AnnouncementChannelChatFilter(nil, nil, "hi", "Friend", "", "4. questtogether"), true)
+end)
+
+QuestTogether:RegisterTest("nearby range uses physical map proportions keeps minimum and covers entire zone", function()
+	local addon = NewCommsFixture()
+	UseNativeLocationModel(addon)
+	addon.db = { profile = addon:DeepCopy(addon.DEFAULTS.profile) }
+	addon.API.IsWarModeFeatureEnabled = function() return false end
+	local remote = { mapID = 37, coordX = 60, coordY = 50 }
+	Equal(addon:GetNearbyAnnouncementRange(), 25)
+	Equal(addon:IsAnnouncementSenderNearbyByLocation(remote), true)
+	addon.db.profile.nearbyAnnouncementRange = 5
+	Equal(addon:IsAnnouncementSenderNearbyByLocation(remote), false)
+	remote.coordX, remote.coordY = 53, 54
+	Equal(addon:IsAnnouncementSenderNearbyByLocation(remote), true)
+	remote.coordY = 54.01
+	Equal(addon:IsAnnouncementSenderNearbyByLocation(remote), false)
+	addon.db.profile.nearbyAnnouncementRange = 25
+	remote.coordX, remote.coordY = 80, 50 -- 1200 yards on a 4000x2000 map
+	Equal(addon:IsAnnouncementSenderNearbyByLocation(remote), false)
+	remote.coordX, remote.coordY = 50, 80 -- 600 yards along the shorter axis
+	Equal(addon:IsAnnouncementSenderNearbyByLocation(remote), true)
+	addon.GetPlayerAnnouncementLocationInfo = function() return { mapID = 37, coordX = 0, coordY = 0 } end
+	remote.coordX, remote.coordY = 100, 100
+	addon.db.profile.nearbyAnnouncementRange = 100
+	Equal(addon:IsAnnouncementSenderNearbyByLocation(remote), true)
+	remote.mapID = 38 -- Keep the requested zone-boundary rule even at Entire Zone.
+	Equal(addon:IsAnnouncementSenderNearbyByLocation(remote), false)
+	remote.mapID, remote.coordX = 37, 101
+	Equal(addon:IsAnnouncementSenderNearbyByLocation(remote), false)
+	addon.GetLocationPinMapWorldSize = function() return nil end
+	remote.coordX, remote.coordY = 50, 50
+	Equal(addon:IsAnnouncementSenderNearbyByLocation(remote), false)
+end)
+
+QuestTogether:RegisterTest("nearby percentage slider validates and refreshes profiles without writing on initialization", function()
+	local addon = NewCommsFixture()
+	addon.db = { profile = addon:DeepCopy(addon.DEFAULTS.profile) }
+	local writes = 0
+	function addon:SetOption(key, value)
+		Equal(key, "nearbyAnnouncementRange")
+		self.db.profile[key] = value
+		writes = writes + 1
+		return true
+	end
+	local label = { SetText = function(self, text) self.text = text end }
+	local slider = { scripts = {} }
+	function slider:SetScript(key, callback) self.scripts[key] = callback end
+	function slider:SetValue(value)
+		self.value = value
+		if self.scripts.OnValueChanged then self.scripts.OnValueChanged(self, value) end
+	end
+	addon:ConfigureNearbyRangeSlider(slider, label)
+	Equal(writes, 0)
+	Equal(slider.value, 25)
+	Equal(label.text:find("25%", 1, true) ~= nil, true)
+	slider:SetValue(60)
+	Equal(writes, 1)
+	Equal(addon.db.profile.nearbyAnnouncementRange, 60)
+	addon.db.profile = { nearbyAnnouncementRange = 10 }
+	slider:RefreshNearbyRange()
+	Equal(slider.value, 10)
+	Equal(writes, 1)
+	for _, invalid in ipairs({ 4, 101, -1, math.huge, "invalid", false }) do
+		Equal(addon:NormalizeNearbyAnnouncementRange(invalid), nil)
+	end
+end)
+
+QuestTogether:RegisterTest("Global QT chat does not need locations while Zone Only requires fresh matching zones", function()
+	local addon = NewCommsFixture()
+	addon.db = { profile = addon:DeepCopy(addon.DEFAULTS.profile) }
+	function addon:IsRuntimeRestricted() return false end
+	function addon:IsRuntimeRestrictionTypeActive() return false end
+	function addon:FindVisiblePlayerNameplateForSender() return nil end
+	addon.API.GetBestMapForUnit = function() return 37 end
+	addon.db.profile.showChatBubbles = false
+	local function Receive()
+		return addon:CHAT_MSG_CHANNEL("CHAT_MSG_CHANNEL", "hello", "Friend-Realm", "", addon.announcementChannelName)
+	end
+	Equal(Receive(), true) -- Global, no known player or location
+	addon.db.profile.qtChatScope = "zone_only"
+	Equal(Receive(), false)
+	addon.playerLocationState = { peers = { ["Friend-Realm"] = { mapID = 37, receivedAt = addon.now, mask = 3 } } }
+	Equal(Receive(), true)
+	local peer = addon.playerLocationState.peers["Friend-Realm"]
+	peer.mapID = 38
+	Equal(Receive(), false)
+	peer.mapID, peer.receivedAt = 37, addon.now - 120
+	Equal(Receive(), false)
+	peer.receivedAt, peer.mask = addon.now, 0
+	Equal(Receive(), false)
+	addon.db.profile.qtChatScope = "global"
+	addon.playerLocationState = nil
+	addon.API.GetBestMapForUnit = function() error("Global must not read location") end
+	Equal(Receive(), true)
+end)
+
+QuestTogether:RegisterTest("nearby range and QT chat scope persist valid profile options and reject invalid choices", function()
+	local addon = NewCommsFixture()
+	addon.db = { profile = addon:DeepCopy(addon.DEFAULTS.profile) }
+	Equal(addon:SetOption("nearbyAnnouncementRange", 60), true)
+	Equal(addon:GetNearbyAnnouncementRange(), 60)
+	Equal(addon:SetOption("nearbyAnnouncementRange", 101), false)
+	Equal(addon:GetNearbyAnnouncementRange(), 60)
+	Equal(addon:SetOption("qtChatScope", "zone_only"), true)
+	Equal(addon:GetOption("qtChatScope"), "zone_only")
+	Equal(addon:SetOption("qtChatScope", "invalid"), false)
+	Equal(addon:GetOption("qtChatScope"), "zone_only")
+	addon.db.profile.nearbyAnnouncementRange = "invalid"
+	addon:NormalizeAnnouncementDisplayOptions()
+	Equal(addon:GetNearbyAnnouncementRange(), 25)
+end)
+
+QuestTogether:RegisterTest("partner search announces only explicit off to on transitions", function()
+	local addon = NewLocationReceiver()
+	local announcements, broadcasts = 0, 0
+	function addon:AnnounceQuestPartnerSearch() announcements = announcements + 1 end
+	function addon:BroadcastQuestPartnerStatus() broadcasts = broadcasts + 1 end
+	function addon:RefreshMinimapPartnerGlow() end
+	function addon:RefreshOptionsWindow() end
+	Equal(addon:SetOption("lookingForQuestPartners", false), true)
+	Equal(announcements, 0)
+	Equal(addon:SetOption("lookingForQuestPartners", true), true)
+	Equal(announcements, 1)
+	Equal(addon:SetOption("lookingForQuestPartners", true), true)
+	Equal(announcements, 1)
+	Equal(addon:SetOption("lookingForQuestPartners", false), true)
+	Equal(announcements, 1)
+	Equal(addon:SetOption("lookingForQuestPartners", "true"), false)
+	Equal(announcements, 1)
+	Equal(addon:SetOption("lookingForQuestPartners", true), true)
+	Equal(announcements, 2)
+	Equal(broadcasts, 5)
+end)
+
+QuestTogether:RegisterTest("partner announcement cooldown leaves status changes immediate and never queues retries", function()
+	local addon = NewLocationReceiver()
+	local announcements, statuses, glows = 0, 0, 0
+	function addon:SendAnnouncementWireEvent()
+		announcements = announcements + 1
+		return not self.failSend
+	end
+	function addon:BroadcastQuestPartnerStatus() statuses = statuses + 1 end
+	function addon:RefreshMinimapPartnerGlow() glows = glows + 1 end
+	function addon:RefreshOptionsWindow() end
+	local function ToggleOn()
+		assert(addon:SetOption("lookingForQuestPartners", false))
+		assert(addon:SetOption("lookingForQuestPartners", true))
+		Equal(addon:GetOption("lookingForQuestPartners"), true)
+	end
+	ToggleOn()
+	Equal(announcements, 1)
+	addon.now = 129.9
+	ToggleOn()
+	Equal(announcements, 1)
+	Equal(statuses, 4)
+	Equal(glows, 4)
+	addon.qtPlayerPresenceState = nil -- Metadata lifecycle must not reset the cooldown.
+	ToggleOn()
+	Equal(announcements, 1)
+	addon.now = 130
+	ToggleOn()
+	Equal(announcements, 2)
+	addon.now, addon.failSend = 160, true
+	ToggleOn()
+	ToggleOn()
+	Equal(announcements, 3)
+	Equal(#addon.delayed, 0)
+	-- A clock reset starts a fresh interval instead of suppressing indefinitely.
+	addon.now = 1
+	ToggleOn()
+	Equal(announcements, 4)
+end)
+
+QuestTogether:RegisterTest("partner search crosses the zone once through normal transport without changing quest range", function()
+	local sender, receiver = NewLocationReceiver(), NewLocationReceiver()
+	sender.suppressLocalAnnouncementDisplayDuringTests = false
+	sender.API.UnitFullName = function() return "Friend", "Realm" end
+	sender.API.UnitName = function() return "Friend" end
+	sender.db.profile.lookingForQuestPartners = true
+	local localMapID, remoteMapID, localWarMode = 37, 37, false
+	function sender:GetPlayerAnnouncementLocationInfo()
+		return { mapID = remoteMapID, zoneName = "Elwynn", coordX = 99, coordY = 99, warMode = false }
+	end
+	function receiver:GetPlayerAnnouncementLocationInfo()
+		return { mapID = localMapID, zoneName = "Elwynn", coordX = 1, coordY = 1, warMode = localWarMode }
+	end
+	receiver.db.profile.nearbyAnnouncementRange = 5
+	function receiver:GetLocationPinMapWorldSize() error("LFQP must not need map dimensions") end
+	function sender:AnnounceToNonQTParty() error("partner search is a QT announcement") end
+	function receiver:RecordQTPlayerPresence() end
+	sender.db.profile.announceQuestPartners = false
+	Equal(sender:AnnounceQuestPartnerSearch(), false)
+	Equal(#sender.wire, 0)
+	sender.db.profile.announceQuestPartners = true
+	Equal(sender:AnnounceQuestPartnerSearch(), true)
+	assert(#sender.printed == 1, "local partner search should print once")
+	local wire = sender.wire[1][2]
+	local command, payload = sender:DeserializeWireMessage(wire)
+	Equal(command, "ANN")
+	local event = sender:DecodeAnnouncementPayload(payload)
+	Equal(event.eventType, "LOOKING_FOR_QUEST_PARTNERS")
+	Equal(event.text, QuestTogether.Translate("Looking for questing partners") .. " :)")
+	Equal(event.iconAsset, "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon")
+	local iconTag = receiver:GetAnnouncementIconChatTag(event.eventType, 14, event.iconAsset, event.iconKind)
+	assert(iconTag:find("QuestTogetherPartnerIcon", 1, true), "LFQP uses local glow artwork with a legacy-safe wire icon")
+	receiver:OnCommReceived(sender.commPrefix, wire, "CHANNEL", "Friend-Realm", 7, "QuestTogether")
+	receiver:OnCommReceived(sender.commPrefix, wire, "PARTY", "Friend-Realm")
+	assert(#receiver.printed == 1, "remote partner search should print once across routes")
+	Equal(receiver.printed[1], QuestTogether.Translate("Looking for questing partners") .. " :)")
+	event.eventType = "QUEST_PROGRESS"
+	Equal(receiver:HandleAnnouncementEvent(event, false), false)
+	event.eventType = "LOOKING_FOR_QUEST_PARTNERS"
+	localMapID = 38
+	Equal(receiver:HandleAnnouncementEvent(event, false), false)
+	localMapID, localWarMode = 37, true
+	Equal(receiver:HandleAnnouncementEvent(event, false), false)
+	localWarMode = false
+	receiver.db.profile.showProgressFor = "party_only"
+	Equal(receiver:HandleAnnouncementEvent(event, false), false)
+	receiver.db.profile.showProgressFor = "party_nearby"
+	receiver.db.profile.announceQuestPartners = false
+	Equal(receiver:HandleAnnouncementEvent(event, false), false)
+	receiver.db.profile.announceQuestPartners = true
+	function receiver:IsIgnoredPlayerName() return true end
+	Equal(receiver:HandleAnnouncementEvent(event, false), false)
+	Equal(#receiver.printed, 1)
+	local count = #sender.wire
+	sender.isEnabled = false
+	Equal(sender:AnnounceQuestPartnerSearch(), false)
+	sender.isEnabled = true
+	function sender:IsRuntimeRestricted() return true end
+	Equal(sender:AnnounceQuestPartnerSearch(), false)
+	function sender:IsRuntimeRestricted() return false end
+	sender.db.profile.lookingForQuestPartners = false
+	Equal(sender:AnnounceQuestPartnerSearch(), false)
+	Equal(#sender.wire, count)
+	-- Sharing disabled still redacts location; the new event cannot bypass it.
+	sender.now = sender.now + 30
+	sender.db.profile.lookingForQuestPartners = true
+	sender.db.profile.sharePlayerLocation = false
+	Equal(sender:AnnounceQuestPartnerSearch(), true)
+	local _, privatePayload = sender:DeserializeWireMessage(sender.wire[#sender.wire][2])
+	local privateEvent = sender:DecodeAnnouncementPayload(privatePayload)
+	Equal(privateEvent.mapID, "")
+	Equal(privateEvent.coordX, "")
 end)

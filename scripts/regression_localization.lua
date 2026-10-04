@@ -68,5 +68,9 @@ QT:RegisterTest("Latin American Spanish keeps its native locale in events and pa
 	function a:GetLocalizedQuestTitle()
 		return nil
 	end
-	assert(a:LocalizeAnnouncementEvent(received) == "Quest Accepted: Una misión")
+	assert(a:LocalizeAnnouncementEvent(received) == received.text)
+	function a:GetLocalizedQuestTitle()
+		return "A quest"
+	end
+	assert(a:LocalizeAnnouncementEvent(received) == "Quest Accepted: A quest")
 end)

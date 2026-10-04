@@ -486,6 +486,7 @@ function QuestTogether:HandleGroupRosterChanged(reason)
 end
 
 function QuestTogether:PLAYER_REGEN_ENABLED()
+	self:ScheduleAnnouncementChannelOrder()
 	if self.FlushDeferredWork then
 		self:FlushDeferredWork("PLAYER_REGEN_ENABLED")
 	end
@@ -800,6 +801,7 @@ function QuestTogether:ZONE_CHANGED_NEW_AREA()
 end
 
 function QuestTogether:GROUP_JOINED()
+	self:StopLookingForPartnersOnGroupJoin()
 	self:HandleGroupRosterChanged("GROUP_JOINED")
 end
 

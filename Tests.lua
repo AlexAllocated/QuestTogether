@@ -235,12 +235,13 @@ local function WithIsolatedState(testFn)
 			"localizedQuestTitles", "runtimeStateStore", "debugController", "nameplateTooltipGuidByUnitToken", "nameplateScanTooltip",
 			"announcementBubbleScreenHostFrame", "personalBubbleEditModeDialog", "mapWorkWakeFrame", "mapWorkWakeState",
 			"optionsFrame", "whereToAnnounceFrame", "questPlatesFrame", "groupsFrame", "announcementsFrame", "profilesFrame",
-			"personalBubbleEditSession", "announcementChannelLocalID", "questCompareResponseQueue",
+			"personalBubbleEditSession", "announcementChannelLocalID", "legacyAnnouncementChannelLocalID", "channelOrderWork", "questCompareResponseQueue",
 			"partyJoinState", "partyJoinPrompt", "partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
 			"minimapButton", "minimapTooltip", "minimapTooltipPendingHide", "minimapLauncherFrame", "minimapDragState", "minimapSuppressClick",
+			"settingsTooltip", "settingsTooltipOwner", "settingsTooltipPendingHide",
 			"releaseNotesWindow", "releaseNotesWakeFrame", "pendingReleaseNotes", "addonUpdateState",
 			"playerTooltipBadge", "discordSupportWindowOwner", "qtPlayerPresenceState", "playerPlatesFrame", "qtPlayerIconStateByFrame",
-			"playerLocationState", "playerLocationUpdateFrame", "locationPinState", "playerLocationsFrame",
+			"playerLocationState", "playerLocationUpdateFrame", "locationPinState", "chatLogPlayerTooltipState", "playerLocationsFrame",
 			"worldQuestAreaStateByQuestID", "bonusObjectiveAreaStateByQuestID", "questSnapshotByQuestID", "questSnapshotOrder",
 			"nameplateQuestTextCache", "nameplateQuestStateByGuid", "nameplateQuestStateByUnitToken", "nameplateQuestGuidByUnitToken",
 			"nameplateIconByUnitFrame", "nameplateHealthOverlayByUnitFrame", "nameplateBubbleByUnitFrame", "nameplateBubbleStateByFrame",
@@ -308,7 +309,7 @@ function QuestTogether:RunTests(reverse, present)
 end
 
 QuestTogether:RegisterTest("group options refresh saved sharing and partner status through profiles resets and slash changes", function()
-	local optionKeys = { "autoAcceptPartyShareRequests", "lookingForQuestPartners", "autoInviteFriends", "autoInviteWhileLFG" }
+	local optionKeys = { "autoAcceptPartyShareRequests", "lookingForQuestPartners", "autoInviteFriends", "autoInviteWhileLFG", "stopLookingForPartnersOnJoin" }
 	local profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
 	for _, key in ipairs(optionKeys) do profile[key] = true end
 	profile.enabled = false
@@ -395,15 +396,16 @@ QuestTogether:RegisterTest("help slash dispatch requires the explicit debug topi
 	AssertEquals(#addon.debugCommands, 0, "displaying debug help must not execute debug commands")
 end)
 
-QuestTogether:RegisterTest("unknown slash commands fall back to normal help", function()
+QuestTogether:RegisterTest("unknown slash commands send their original text while help remains a command", function()
 	local addon = NewHelpFixture()
-	addon:HandleSlashCommand("unknown-command")
-	local text = table.concat(addon.messages, "\n")
-	AssertTrue(text:find("Unknown command: unknown-command", 1, true))
-	AssertTrue(text:find("/qt options", 1, true))
-	AssertFalse(text:find("/qt devlogall", 1, true))
-	AssertEquals(#addon.debugCommands, 1)
-	AssertEquals(addon.debugCommands[1], "unknown-command")
+	local sent = {}
+	function addon:SendQTChannelChat(message) sent[#sent + 1] = message; return true end
+	addon:HandleSlashCommand("Anyone in Westfall?")
+	AssertEquals(sent[1], "Anyone in Westfall?")
+	AssertEquals(#addon.messages, 0)
+	addon:HandleSlashCommand("help")
+	AssertEquals(#sent, 1)
+	AssertTrue(#addon.messages > 0)
 end)
 
 local function NewHudEditModeFixture()
@@ -5171,7 +5173,7 @@ QuestTogether:RegisterTest("request quest compare sends compare request for remo
 			return false
 		end,
 		GetChannelName = function(channelName)
-			AssertEquals(channelName, QuestTogether.announcementChannelName)
+			AssertTrue(channelName == QuestTogether.announcementChannelName or channelName == QuestTogether.legacyAnnouncementChannelName)
 			return 9
 		end,
 		SendAddonMessage = function(prefix, message, channel, target)
@@ -7078,7 +7080,7 @@ QuestTogether:RegisterTest("local progress announcement publishes player identit
 				return false
 			end,
 			GetChannelName = function(channelName)
-				AssertEquals(channelName, QuestTogether.announcementChannelName)
+				AssertTrue(channelName == QuestTogether.announcementChannelName or channelName == QuestTogether.legacyAnnouncementChannelName)
 				return 7
 		end,
 		SendAddonMessage = function(prefix, message, channel, target)
@@ -7127,7 +7129,7 @@ QuestTogether:RegisterTest("announcement wire uses both party and channel routes
 			return true
 		end,
 		GetChannelName = function(channelName)
-			AssertEquals(channelName, QuestTogether.announcementChannelName)
+			AssertTrue(channelName == QuestTogether.announcementChannelName or channelName == QuestTogether.legacyAnnouncementChannelName)
 			return 8
 		end,
 		SendAddonMessage = function(prefix, message, channel, target)
@@ -7180,7 +7182,7 @@ QuestTogether:RegisterTest("ping request uses both party and channel routes when
 			return true
 		end,
 		GetChannelName = function(channelName)
-			AssertEquals(channelName, QuestTogether.announcementChannelName)
+			AssertTrue(channelName == QuestTogether.announcementChannelName or channelName == QuestTogether.legacyAnnouncementChannelName)
 			return 12
 		end,
 		SendAddonMessage = function(prefix, message, channel, target)
@@ -7328,7 +7330,7 @@ QuestTogether:RegisterTest("ping response uses both party and channel routes whe
 			return true
 		end,
 		GetChannelName = function(channelName)
-			AssertEquals(channelName, QuestTogether.announcementChannelName)
+			AssertTrue(channelName == QuestTogether.announcementChannelName or channelName == QuestTogether.legacyAnnouncementChannelName)
 			return 14
 		end,
 		SendAddonMessage = function(prefix, message, channel, target)
@@ -7393,7 +7395,7 @@ QuestTogether:RegisterTest("quest compare request uses both party and channel ro
 			return true
 		end,
 		GetChannelName = function(channelName)
-			AssertEquals(channelName, QuestTogether.announcementChannelName)
+			AssertTrue(channelName == QuestTogether.announcementChannelName or channelName == QuestTogether.legacyAnnouncementChannelName)
 			return 13
 		end,
 		SendAddonMessage = function(prefix, message, channel, target)
@@ -7491,7 +7493,7 @@ QuestTogether:RegisterTest("quest compare entry and done use both party and chan
 			return true
 		end,
 		GetChannelName = function(channelName)
-			AssertEquals(channelName, QuestTogether.announcementChannelName)
+			AssertTrue(channelName == QuestTogether.announcementChannelName or channelName == QuestTogether.legacyAnnouncementChannelName)
 			return 15
 		end,
 		SendAddonMessage = function(prefix, message, channel, target)
@@ -7865,7 +7867,7 @@ QuestTogether:RegisterTest("joining announcement channel removes it from chat wi
 	QuestTogether.isEnabled = true
 	QuestTogether.API = CreateApiWithOverrides({
 		GetChannelName = function(name)
-			AssertEquals(name, QuestTogether.announcementChannelName)
+			AssertTrue(name == QuestTogether.announcementChannelName or name == QuestTogether.legacyAnnouncementChannelName)
 			return 7
 		end,
 		JoinPermanentChannel = function() end,
@@ -7889,9 +7891,11 @@ QuestTogether:RegisterTest("joining announcement channel removes it from chat wi
 	})
 
 	AssertTrue(QuestTogether:EnsureAnnouncementChannelJoined())
-	AssertEquals(#removed, 2)
+	AssertEquals(#removed, 4)
 	AssertEquals(removed[1], "1:" .. QuestTogether.announcementChannelName)
 	AssertEquals(removed[2], "2:" .. QuestTogether.announcementChannelName)
+	AssertEquals(removed[3], "1:" .. QuestTogether.legacyAnnouncementChannelName)
+	AssertEquals(removed[4], "2:" .. QuestTogether.legacyAnnouncementChannelName)
 end)
 
 QuestTogether:RegisterTest("target bubble preview handles locally as remote without sending target payload", function()

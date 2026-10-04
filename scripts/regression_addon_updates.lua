@@ -76,6 +76,27 @@ local function Peer(version, global, name)
 	return a
 end
 
+QT:RegisterTest("player tooltip versions come from identified peers and clear with recognition", function()
+	local a = Peer()
+	Equal(a:GetPlayerAddonVersion(a.name), a.version)
+	Equal(a:GetPlayerAddonVersion("Friend-Realm"), nil)
+	assert(a:HandleAddonVersionMessage("1,5.11.0", "Friend-Realm"))
+	Equal(a:GetPlayerAddonVersion("Friend-Realm"), "5.11.0")
+	assert(a:HandleAddonVersionMessage("1,5.17.0-beta.1", "Friend-Realm"))
+	Equal(a:GetPlayerAddonVersion("Friend-Realm"), "5.17.0-beta.1")
+	Equal(a:GetAvailableAddonUpdate(), nil) -- Display beta versions without promoting beta update notices.
+	Equal(a:RememberPlayerAddonVersion("Friend-Realm", "|Hbad|h"), false)
+	Equal(a:GetPlayerAddonVersion("Friend-Realm"), "5.17.0-beta.1")
+	a:RecordQTPlayerPresence("Friend-Realm", false)
+	Equal(a:GetPlayerAddonVersion("Friend-Realm"), nil)
+	Equal(a.qtPlayerPresenceState.peerVersions["Friend-Realm"], nil)
+	assert(a:HandleAddonVersionMessage("1,5.11.1", "Friend-Realm"))
+	a.ignored = "Friend-Realm"
+	Equal(a:GetPlayerAddonVersion("Friend-Realm"), nil)
+	a:PruneQTPlayerPresence(true)
+	Equal(a.qtPlayerPresenceState.peerVersions["Friend-Realm"], nil)
+end)
+
 local function Receive(a, version, sender, route)
 	a:OnCommReceived(a.commPrefix, "QTVR|1," .. version, route or "PARTY", sender or "Friend-Realm")
 end
@@ -335,7 +356,7 @@ QT:RegisterTest("validated legacy ping responses discover versions without requi
 	Equal(#old.messages, 0)
 end)
 
-QT:RegisterTest("the existing presence update drives version discovery without replacing legacy packets", function()
+QT:RegisterTest("presence alternates compatible version packets without adding heartbeat messages", function()
 	local a = Peer()
 	a:UpdateQTPlayerPresence()
 	Equal(a.sent[1], "QTPR|1,1")
@@ -343,9 +364,65 @@ QT:RegisterTest("the existing presence update drives version discovery without r
 	Equal(#a.sent, 2)
 	a.now = 120
 	a:UpdateQTPlayerPresence()
-	Equal(a.sent[3], "QTPR|1,1")
+	Equal(a.sent[3], "QTVR|1,5.12.0")
 	Equal(#a.sent, 3)
-	a:BroadcastQTPlayerPresence(true)
-	Equal(a.sent[4], "QTPR|1,0")
+	a.now = 140
+	a:UpdateQTPlayerPresence()
+	Equal(a.sent[4], "QTPR|1,1")
 	Equal(#a.sent, 4)
+	a.now = 160
+	a:UpdateQTPlayerPresence()
+	Equal(a.sent[5], "QTVR|1,5.12.0")
+	Equal(#a.sent, 5)
+	a:BroadcastQTPlayerPresence(true)
+	Equal(a.sent[6], "QTPR|1,0")
+	Equal(#a.sent, 6)
+end)
+
+QT:RegisterTest("a reloaded observer learns versions from heartbeats without ping or location sharing", function()
+	for _, regional in ipairs({ false, true }) do
+		local sender = Peer("5.13.0", nil, regional and "Torres Sky" or "Torres-Realm")
+		local receiver = Peer("5.13.0", nil, regional and "Mira Dawn" or "Mira-Realm")
+		sender.regional, receiver.regional, sender.other = regional, regional, receiver
+		sender.db.profile.sharePlayerLocation = false
+		sender:UpdateQTPlayerPresence()
+		Equal(receiver:GetPlayerAddonVersion(sender.name), "5.13.0")
+		-- Reload after the last version packet, then see a legacy heartbeat
+		-- before the next version slot. Neither observer sends any requests.
+		sender.now = 120
+		sender:UpdateQTPlayerPresence()
+		receiver.qtPlayerPresenceState = nil
+		receiver.recentCommMessageSignatures = {}
+		Equal(receiver:GetPlayerAddonVersion(sender.name), nil)
+		sender.now, receiver.now = 140, 140
+		sender:UpdateQTPlayerPresence()
+		assert(receiver:IsKnownQTPlayer(sender.name))
+		Equal(receiver:GetPlayerAddonVersion(sender.name), nil)
+		sender.now, receiver.now = 160, 160
+		sender:UpdateQTPlayerPresence()
+		Equal(receiver:GetPlayerAddonVersion(sender.name), "5.13.0")
+		Equal(#sender.sent, 5)
+		Equal(#receiver.sent, 0)
+		Equal(#receiver.messages, 0)
+		sender:BroadcastQTPlayerPresence(true)
+		Equal(receiver:GetPlayerAddonVersion(sender.name), nil)
+	end
+end)
+
+QT:RegisterTest("version heartbeat failures remain paced and invalid versions retain legacy discovery", function()
+	local a = Peer()
+	a:UpdateQTPlayerPresence()
+	a.now, a.sendFails = 120, true
+	a:UpdateQTPlayerPresence()
+	Equal(#a.sent, 3)
+	a.now = 121
+	a:UpdateQTPlayerPresence()
+	Equal(#a.sent, 3)
+	a.now, a.sendFails = 140, false
+	a:UpdateQTPlayerPresence()
+	Equal(#a.sent, 5) -- Legacy heartbeat plus the due failed-version retry.
+	a.version, a.now = "unknown", 160
+	a:UpdateQTPlayerPresence()
+	Equal(a.sent[6], "QTPR|1,1")
+	Equal(#a.sent, 6)
 end)

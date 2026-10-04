@@ -36,6 +36,10 @@ You can hide your own bubbles while continuing to send your progress to other pl
 
 Switch the log destination from settings or directly from QuestTogether's player, quest, and minimap menus.
 
+**QuestTogether chat:** Type `/qt <message>` to talk to other players receiving the QuestTogether channel. Recognized commands still run normally. Conversations use the same chat log and nearby-player bubbles, with a speech-bubble icon. The minimap menu’s **Send QT chat message** opens a draft for you. Disable **Show QuestTogether Chat** in **Where to Announce** to hide conversations without changing quest announcements. Hover player names in the log for the same player details shown on map dots.
+
+During the channel-name transition, QT joins both **QuestTogether** and the older **QuestTogetherAnnounce1** channel. Where the client supports channel reordering, both go after your other channels, with QuestTogether first. Addon updates travel through both for compatibility; typed chat is sent only to QuestTogether.
+
 > **SCREENSHOT 02 — Chat your way:** QuestTogether updates in a dedicated chat window, showing player names, clickable quest names, objective progress, and completion messages.
 
 > **SCREENSHOT 03 — Personal bubble customization:** HUD Edit Mode with the QuestTogether Bubble anchor selected and its size/duration controls visible.
@@ -249,3 +253,13 @@ has them and the other player's actual progress. Some objectives use a translate
 objective number instead of their original description. Older addon versions and
 unavailable quest data retain safe fallbacks; public party chat uses the sender's
 language. Discord has a separate changelog channel for each supported language.
+
+**Nearby Range:** Settings → What to Announce has a percentage slider from the former nearby range to Entire Zone, defaulting to **25% of zone**. The percentage scales a physical radius against the current map’s corner-to-corner distance; it is not a percentage of map area. Group members and direct visible-player signals retain their existing behavior. The coordinate fallback still requires matching map identities (or matching legacy zone labels).
+
+**QT Chat Scope:** Settings → Where to Announce offers **Global** (default) or **Zone Only**. Global shows all received QT channel conversations. Zone Only requires a recent shared location in your current zone; unknown, stale, or withdrawn locations are hidden. This applies to QT conversations, independently of the quest announcement range.
+
+Turning on **Looking for questing partners** also announces your search to QT players throughout your zone, regardless of their Nearby Range setting. Zone-wide visibility requires location sharing and follows the receiver's announcement preferences. Turning the status off stays silent.
+
+**What to Announce → Announce Looking for Questing Partners** controls LFQP announcements, independently of status and glowing icons. Under **Groups & Sharing**, optionally enable **Stop looking for partners when joining a group** to clear LFQP when you join or form a party or raid; this starts off.
+
+**Minimap shortcuts and tooltips:** Shift-click the minimap button to toggle your search for questing partners. Its tooltip shows your QT version, partner status, chat scope, watched quest count, nearby range, and location-sharing status. Player-name and map-dot tooltips show class-colored details and the player’s reported QT version. Settings controls include translated explanations on hover.

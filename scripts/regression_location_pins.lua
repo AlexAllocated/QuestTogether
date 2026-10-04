@@ -102,8 +102,10 @@ local function Frame(addon, parent, kind)
 	function frame:CreateMaskTexture()
 		return self:CreateTexture()
 	end
-	function frame:CreateFontString()
-		return self:CreateTexture()
+	function frame:CreateFontString(_, _, font)
+		local region = self:CreateTexture()
+		region.font = font
+		return region
 	end
 	function frame:SetText(value)
 		self:Check()
@@ -117,17 +119,19 @@ local function Frame(addon, parent, kind)
 		self:Check()
 		self.color = { r, g, b, a }
 	end
+	function frame:SetTexture(value) self:Check(); self.texture = value end
+	function frame:SetAlpha(value) self:Check(); self.alpha = value end
 	for _, method in ipairs({
 		"EnableMouse",
 		"SetClipsChildren",
 		"RegisterForClicks",
-		"SetTexture",
 		"SetBlendMode",
 		"AddMaskTexture",
 		"SetFrameStrata",
 		"SetClampedToScreen",
 		"SetJustifyH",
 		"SetWordWrap",
+		"SetSpacing",
 	}) do
 		frame[method] = function(self)
 			self:Check()
@@ -354,7 +358,7 @@ Register("location renderer finds visible players after off-map candidates and p
 		assert(pin.frame.shown)
 		pin.frame.scripts.OnEnter({})
 		assert(a.locationPinState.tooltip.shown)
-		assert(a.locationPinState.tooltipLabel.text:find("ZVisible-Realm", 1, true))
+		assert(a.locationPinState.tooltipTitle.text:find("ZVisible-Realm", 1, true))
 		pin.frame.scripts.OnClick({}, "RightButton")
 		Equal(#a.menus, 1)
 		Equal(a.menus[1].name, "ZVisible-Realm")
@@ -411,16 +415,17 @@ Register("location tooltip and clicks revalidate live permissions identity and m
 	pin.frame.scripts.OnEnter({})
 	local state = a.locationPinState
 	assert(state.tooltip.shown)
+	assert(state.tooltipTitle.text:find("Friend-Realm", 1, true))
 	for _, text in ipairs({
-		"Friend-Realm",
-		"Faction: Alliance",
-		"Race: Human",
-		"Class: Mage",
-		"Level: 60",
+		"Level 60 Human ",
+		"Mage|r",
 		"War Mode: Off",
 	}) do
 		assert(state.tooltipLabel.text:find(text, 1, true))
 	end
+	Equal(state.tooltipFaction.texture, "Interface\\TargetingFrame\\UI-PVP-Alliance")
+	assert(state.tooltipFaction.shown)
+	assert(not state.tooltipLabel.text:find("Class:", 1, true))
 	pin.frame.scripts.OnClick({}, "RightButton")
 	Equal(a.menus[1].name, "Friend-Realm")
 	Equal(a.menus[1].owner, pin.frame)
@@ -470,7 +475,7 @@ Register("location tooltips hide unsupported War Mode and preserve every surface
 			pin.frame.scripts.OnEnter({})
 			local state = a.locationPinState
 			assert(state.tooltip.shown)
-			assert(state.tooltipLabel.text:find(name, 1, true))
+			assert(state.tooltipTitle.text:find(name, 1, true))
 			Equal(state.tooltipLabel.text:find("War Mode: On", 1, true) ~= nil, capability == "enabled")
 			pin.frame.scripts.OnLeave({})
 		end
@@ -493,7 +498,7 @@ Register("location empty surfaces skip UI allocation and all native geometry rea
 	Equal(a.locationPinState.surfaces.map.frame.shown, false)
 end)
 
-Register("location empty optional metadata uses class token and explicit unknown labels", function()
+Register("location empty optional metadata uses class token and unknown character details", function()
 	local a = Fixture()
 	local row = Row()
 	row.className, row.race, row.faction, row.level = "", "", "", nil
@@ -501,9 +506,62 @@ Register("location empty optional metadata uses class token and explicit unknown
 	assert(a:RefreshPlayerLocationPins())
 	Pin(a, "map").frame.scripts.OnEnter({})
 	local text = a.locationPinState.tooltipLabel.text
-	for _, expected in ipairs({ "Class: MAGE", "Race: Unknown", "Faction: Unknown", "Level: Unknown" }) do
+	for _, expected in ipairs({ "MAGE|r", "Level Unknown Unknown " }) do
 		assert(text:find(expected, 1, true))
 	end
+	Equal(a.locationPinState.tooltipFaction.shown, false)
+end)
+
+Register("player tooltip reuses faction and class styling without leaking the previous player", function()
+	local a = Fixture()
+	local row = Row()
+	a.rows.map = { row }
+	a:RefreshPlayerLocationPins()
+	local pin = Pin(a, "map")
+	pin.frame.scripts.OnEnter({})
+	local state = a.locationPinState
+	local regions = #a.regions
+	row.faction, row.race, row.className, row.classFile, row.level = "Horde", "Troll", "Warlock", "WARLOCK", 13
+	pin.frame.scripts.OnEnter({})
+	Equal(#a.regions, regions)
+	Equal(state.tooltipFaction.texture, "Interface\\TargetingFrame\\UI-PVP-Horde")
+	assert(state.tooltipFaction.shown)
+	assert(state.tooltipLabel.text:find("Level 13 Troll ", 1, true))
+	assert(state.tooltipLabel.text:find(a:GetClassColorCode("WARLOCK") .. "Warlock|r", 1, true))
+	row.faction = "Unknown"
+	pin.frame.scripts.OnEnter({})
+	Equal(state.tooltipFaction.shown, false)
+	Equal(state.tooltipTitle.width, 272)
+end)
+
+Register("own chat tooltip reads live super tracking without a received peer record or sharing consent", function()
+	local a = Fixture()
+	local id = 42
+	a.API.GetRealmName = function() return "Realm" end
+	a.API.GetActiveTrackedQuestID = function() return id end
+	function a:GetPlayerFullName() return "Me-Realm" end
+	function a:GetAddonVersion() return "5.16.7" end
+	function a:GetOption(key) return key == "lookingForQuestPartners" end
+	function a:ReadLocalPlayerLocation() return Row("Me-Realm") end
+	function a:CanPublishPlayerLocation() error("self tooltip must not depend on sharing") end
+	function a:GetLocalizedQuestTitle(questID) return "Local quest " .. questID end
+	function a:GetChatLogTooltipCursorPosition() return 100, 100 end
+	local chat = Frame(a, a.tooltipParent)
+	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Me-Realm"))
+	local state = a.chatLogPlayerTooltipState
+	assert(state.tooltipLabel.text:find("Tracked quest: Local quest 42", 1, true))
+	assert(state.tooltipLabel.text:find("Level 60 Human", 1, true))
+	assert(state.tooltipLabel.text:find("QT Version: 5.16.7", 1, true))
+	id = 43
+	a:UpdateChatLogPlayerTooltip()
+	assert(state.tooltipLabel.text:find("Tracked quest: Local quest 43", 1, true))
+	id = nil
+	a:UpdateChatLogPlayerTooltip()
+	Equal(state.tooltipLabel.text:find("Tracked quest:", 1, true), nil)
+	id = 43
+	a.blocked = true
+	a:UpdateChatLogPlayerTooltip()
+	Equal(state.tooltip.shown, false)
 end)
 
 Register("location unavailable geometry clears old surface dots and hover", function()
@@ -805,4 +863,64 @@ Register("location distance ranks shared world coordinates and uses stable unkno
 	ranked = a:PrioritizePlayerLocationRows(rows, nil)
 	Equal(ranked[1].name, "AFar")
 	Equal(ranked[3].name, "ZNear")
+end)
+
+Register("chat speaker hover reuses dot tooltip content and cleans up independent hover state", function()
+	local a = Fixture()
+	local row = Row("Friend-Realm", 0.5, 0.5)
+	local chat = Frame(a)
+	function a:GetChatLogTooltipCursorPosition() return 200, 100 end
+	a.playerLocationState = { peers = { [row.name] = row } }
+	a.rows.map = { row }
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnEnter()
+	local expected = a.locationPinState.tooltipLabel.text
+	-- Reproduce a live client whose real addon has already installed callbacks.
+	-- Private fixture initialization must not inherit that instance's state.
+	setmetatable(a, { __index = function(_, key)
+		if key == "chatLogHoverCallbacksInstalled" then return true end
+		return QuestTogether[key]
+	end })
+	local registrations, enter, leave = 0
+	function a:RegisterChatLogHoverCallbacks(onEnter, onLeave)
+		registrations = registrations + 1
+		enter, leave = onEnter, onLeave
+		return true
+	end
+	a:InitializeChatLogPlayerTooltips()
+	a:InitializeChatLogPlayerTooltips()
+	Equal(registrations, 1)
+	enter(nil, chat, "questtogetherlog:Friend-Realm")
+	local state = a.chatLogPlayerTooltipState
+	Equal(state.tooltipLabel.text, expected)
+	Equal(state.tooltipTitle.font, "GameFontNormalLarge")
+	Equal(state.tooltipLabel.font, "GameFontHighlight")
+	Equal(state.tooltip.width, 300)
+	assert(state.tooltipTitle.text:find("|cff40c7eb", 1, true))
+	Equal(state.tooltip.points[1][2], a.tooltipParent)
+	Equal(state.tooltip.points[1][4], 212)
+	Equal(state.tooltip.points[1][5], 112)
+	assert(state.tooltip.shown)
+	a:HidePlayerLocationPins()
+	assert(state.tooltip.shown)
+	leave()
+	assert(not state.tooltip.shown)
+	Equal(a:ShowChatLogPlayerTooltip(chat, "item:123"), false)
+	Equal(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Friend-Realm"), true)
+	a.ignored = row.name
+	a:UpdateChatLogPlayerTooltip()
+	assert(not state.tooltip.shown)
+	a.ignored = nil
+	a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Friend-Realm")
+	a.blocked = true
+	a:UpdateChatLogPlayerTooltip()
+	assert(not state.tooltip.shown)
+	a.blocked = false
+	a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Friend-Realm")
+	chat:Hide()
+	a:UpdateChatLogPlayerTooltip()
+	assert(not state.tooltip.shown)
+	chat:Show()
+	a.isEnabled = false
+	Equal(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Friend-Realm"), false)
 end)

@@ -9,6 +9,46 @@ function QuestTogether:GetMinimapAnchor()
 	return self.API.GetMinimapAnchor and self.API.GetMinimapAnchor() or nil
 end
 
+function QuestTogether:IsMinimapShiftKeyDown()
+	if self:IsRuntimeRestricted() or not self:CanAccessValue(IsShiftKeyDown)
+		or type(IsShiftKeyDown) ~= "function" then return false end
+	local ok, down = pcall(IsShiftKeyDown)
+	return ok and self:CanAccessValue(down) and down == true
+end
+
+function QuestTogether:BuildMinimapTooltipStatus()
+	local function OnOff(key)
+		return self:GetOption(key) and "|cff66dd88" .. L("On") .. "|r" or "|cffaaaaaa" .. L("Off") .. "|r"
+	end
+	local count
+	if not self:IsRuntimeRestricted() and self.API.GetTrackedQuestCount then
+		local ok, value = pcall(self.API.GetTrackedQuestCount)
+		count = ok and self:SafeToNumber(value) or nil
+		if count and (count < 0 or count > 20000 or count ~= math.floor(count)) then count = nil end
+	end
+	local scope = self:GetOption("showQTChat") == false and L("Off")
+		or self:GetOption("qtChatScope") == "zone_only" and L("Zone Only") or L("Global")
+	local lines = {
+		L("QT Version") .. ": " .. self:SafeTrimString(self:GetAddonVersion(), L("Unknown")):gsub("|", "||"),
+		L("Looking for Questing Partners") .. ": " .. OnOff("lookingForQuestPartners"),
+		L("QT Chat Scope") .. ": " .. scope,
+		L("Tracked quests") .. ": " .. (count and tostring(count) or L("Unknown")),
+		string.format(L("Nearby Range: %d%% of zone"), self:GetNearbyAnnouncementRange()),
+		L("Share my location") .. ": " .. OnOff("sharePlayerLocation"),
+	}
+	if not self.isEnabled then table.insert(lines, 1, "|cffffaa66" .. L("QuestTogether disabled.") .. "|r") end
+	return table.concat(lines, "\n") .. "\n\n|cffaaaaaa" .. L("Left or right click for menu\nShift-click to toggle looking for partners\nDrag to move") .. "|r"
+end
+
+function QuestTogether:RefreshMinimapTooltipStatus()
+	local tooltip = rawget(self, "minimapTooltip")
+	if self:IsRuntimeRestricted() or not self.LibChev.CanMutateOwnedRegion(tooltip)
+		or not self.LibChev.CanMutateOwnedRegion(tooltip.qtStatus) then return end
+	tooltip.qtStatus:SetText(self:BuildMinimapTooltipStatus())
+	local height = self:SafeToNumber(tooltip.qtStatus:GetStringHeight())
+	if height and height > 0 then tooltip:SetSize(310, height + 42) end
+end
+
 function QuestTogether:CreateMinimapUIFrame(...)
 	return CreateFrame(...)
 end
@@ -128,6 +168,12 @@ function QuestTogether:PopulateMinimapMenu(rootDescription)
 	end, function()
 		if not self:IsRuntimeRestricted() then self:HandleQuestPartnerCommand("toggle") end
 	end)
+	local chat = rootDescription:CreateButton(L("Send QT chat message"), function()
+		if self.isEnabled and not self:IsRuntimeRestricted() and self.API.OpenQTChatComposer then
+			self.API.OpenQTChatComposer()
+		end
+	end)
+	chat:SetEnabled(self.isEnabled == true and type(self.API.OpenQTChatComposer) == "function")
 	self:PopulateChatLogDestinationMenu(rootDescription)
 	rootDescription:CreateButton(L("Hide Minimap Icon"), function()
 		if self:IsRuntimeRestricted() then
@@ -208,7 +254,7 @@ function QuestTogether:ShowMinimapTooltip(button)
 		tooltip:SetFrameStrata("TOOLTIP")
 		tooltip:SetFrameLevel(100)
 		tooltip:SetClampedToScreen(true)
-		tooltip:SetSize(220, 64)
+		tooltip:SetSize(310, 200)
 		tooltip:SetBackdrop({
 			bgFile = "Interface\\Buttons\\WHITE8X8",
 			edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -219,23 +265,33 @@ function QuestTogether:ShowMinimapTooltip(button)
 		title:SetPoint("TOPLEFT", 10, -10)
 		title:SetText("QuestTogether")
 		local hint = tooltip:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		tooltip.qtStatus = hint
 		hint:SetPoint("TOPLEFT", 10, -28)
-		hint:SetText(L("Left or right click for menu\nDrag to move"))
+		hint:SetWidth(290)
+		hint:SetJustifyH("LEFT")
+		hint:SetWordWrap(true)
+		hint:SetSpacing(3)
 		self.minimapTooltip = tooltip
 	end
+	self:RefreshMinimapTooltipStatus()
 	tooltip:ClearAllPoints()
 	tooltip:SetPoint("TOPRIGHT", button, "BOTTOMLEFT", 0, -4)
 	-- An independent parent no longer hides this frame when the minimap hides
 	-- or becomes quarantined. Check that boundary only while the tooltip is up.
 	local elapsedSinceCheck = 0
+	local elapsedSinceStatus = 0
 	tooltip:SetScript("OnUpdate", function(_, elapsed)
 		elapsedSinceCheck = elapsedSinceCheck + elapsed
+		elapsedSinceStatus = elapsedSinceStatus + elapsed
 		if elapsedSinceCheck < 0.1 then
 			return
 		end
 		elapsedSinceCheck = 0
 		if rawget(self, "minimapTooltipPendingHide") or not CanShowMinimapTooltip(self, button) then
 			self:HideMinimapTooltip()
+		elseif elapsedSinceStatus >= 1 then
+			elapsedSinceStatus = 0
+			self:RefreshMinimapTooltipStatus()
 		end
 	end)
 	self.minimapTooltipPendingHide = nil
@@ -338,7 +394,27 @@ function QuestTogether:RefreshMinimapPartnerGlow(hidden)
 	-- Turning the glow off is safe on our owned regions even during restrictions.
 	-- Creation/layout waits for the launcher's existing recovery events.
 	if looking and self:IsRuntimeRestricted() then return false end
-	return self:SetQTPlayerIconLookingForPartners(button, looking == true, button.qtLogoTexture, "foreign_frame_mutation")
+	local glow = button.qtRingGlow
+	if not glow and not looking then return true end
+	if not glow then
+		glow = button:CreateTexture(nil, "OVERLAY", nil, 1)
+		button.qtRingGlow = glow
+		glow:SetTexture("Interface\\AddOns\\QuestTogether\\Media\\MinimapPartnerRing")
+		glow:SetSize(44, 44)
+		glow:SetPoint("CENTER", button, "CENTER", 0, 0)
+		glow:SetBlendMode("ADD")
+		button.qtRingPulse = self:CreateQTPlayerGlowPulse(glow, 0.3, 0.7)
+	end
+	if not self.LibChev.CanMutateOwnedRegion(glow) then return false end
+	local pulse = button.qtRingPulse
+	if looking then
+		glow:Show()
+		if pulse and not pulse:IsPlaying() then pulse:Play() end
+	else
+		if pulse then pulse:Stop() end
+		glow:Hide()
+	end
+	return true
 end
 
 function QuestTogether:CreateMinimapButton(anchor)
@@ -357,6 +433,7 @@ function QuestTogether:CreateMinimapButton(anchor)
 	icon:SetTexture(ICON)
 	button.qtLogoTexture = icon
 	local border = button:CreateTexture(nil, "OVERLAY")
+	button.qtBorderTexture = border
 	border:SetSize(54, 54)
 	border:SetPoint("TOPLEFT", 0, 0)
 	border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
@@ -370,7 +447,12 @@ function QuestTogether:CreateMinimapButton(anchor)
 		end
 		if mouseButton == "LeftButton" or mouseButton == "RightButton" then
 			self:HideMinimapTooltip()
-			self:ShowMinimapMenu(button)
+			if self:IsRuntimeRestricted() or not self:CanAccessForeignFrame(button) then return end
+			if self:IsMinimapShiftKeyDown() then
+				self:HandleQuestPartnerCommand("toggle")
+			else
+				self:ShowMinimapMenu(button)
+			end
 		end
 	end)
 	button:SetScript("OnEnter", function()

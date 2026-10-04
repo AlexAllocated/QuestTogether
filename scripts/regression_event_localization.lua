@@ -126,17 +126,52 @@ QT:RegisterTest("all translated locales render event labels titles and progress"
 	QT.localizationTestLocale = previous
 end)
 
-QT:RegisterTest("missing native quest data keeps source title but translates the event label", function()
+QT:RegisterTest("missing native quest data preserves complete source text until a local title loads", function()
 	local a = Fixture()
 	local original = QT.TranslateForLocale("Quest Completed: ", "deDE") .. "Eine Quest"
-	assert(
-		a:LocalizeAnnouncementEvent(Event("QUEST_COMPLETED", "1:deDE:q:::", original)) == "Quest Completed: Eine Quest"
-	)
-	assert(a:LocalizeAnnouncementEvent(Event()) == "Quest 12345 — Objective 2: 3/8")
+	assert(a:LocalizeAnnouncementEvent(Event("QUEST_COMPLETED", "1:deDE:q:::", original)) == original)
+	assert(a:LocalizeAnnouncementEvent(Event()) == "Wolves slain: 3/8")
 	assert(a.reads == 1 and a.loads == 1)
 	a.titles[12345] = "Local quest"
 	a.now = a.now + 5
 	assert(a:LocalizeAnnouncementEvent(Event()) == "Local quest — Objective 2: 3/8")
+end)
+
+QT:RegisterTest("unavailable quest titles preserve wire text across quest event kinds and restricted reads", function()
+	for _, condition in ipairs({ "missing", "blocked", "failed", "placeholder" }) do
+		local a = Fixture()
+		a.blocked = condition == "blocked"
+		if condition == "failed" then
+			a.API.GetLocalizedQuestTitle = function()
+				error("quest data unavailable")
+			end
+		elseif condition == "placeholder" then
+			a.titles[12345] = "Quest 12345"
+		end
+		for _, kind in ipairs({
+			"QUEST_ACCEPTED",
+			"QUEST_COMPLETED",
+			"QUEST_READY_TO_TURN_IN",
+			"QUEST_REMOVED",
+			"WORLD_QUEST_ENTERED",
+			"WORLD_QUEST_LEFT",
+			"WORLD_QUEST_COMPLETED",
+			"BONUS_OBJECTIVE_ENTERED",
+			"BONUS_OBJECTIVE_LEFT",
+			"BONUS_OBJECTIVE_COMPLETED",
+			"QUEST_PROGRESS",
+			"WORLD_QUEST_PROGRESS",
+			"BONUS_OBJECTIVE_PROGRESS",
+		}) do
+			local facts = kind:match("PROGRESS$") and "1:deDE:c:1:5:7" or "1:deDE:q:::"
+			local event = Event(kind, facts, "Wölfe besiegt: 5/7, 50%")
+			local decoded = assert(a:DecodeAnnouncementPayload(a:EncodeAnnouncementPayload(event)))
+			assert(a:LocalizeAnnouncementEvent(decoded) == event.text, kind .. " must preserve source text")
+		end
+		if a.blocked then
+			assert(a.reads == 0 and a.loads == 0)
+		end
+	end
 end)
 
 QT:RegisterTest("localized quest lookup is bounded cached restriction guarded and resettable", function()
@@ -236,6 +271,11 @@ QT:RegisterTest("remote chat and bubbles share localized presentation without mu
 	assert(a:HandleAnnouncementEvent(event, false))
 	assert(a.chat == "Local title — Objective 2: 3/8" and a.bubble == a.chat)
 	assert(event.text == "Wolves slain: 3/8")
+	-- The same receive path must retain the sender's text in both surfaces
+	-- when this client's quest data cannot supply a localized title.
+	a.snapshots[12345] = nil
+	assert(a:HandleAnnouncementEvent(event, false))
+	assert(a.chat == event.text and a.bubble == event.text)
 	a.chat, a.bubble = nil, nil
 	function a:IsIgnoredPlayerName()
 		return true

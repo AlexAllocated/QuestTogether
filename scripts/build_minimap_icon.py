@@ -8,6 +8,7 @@ The original logo.svg and logo.png are never modified.
 
 from pathlib import Path
 import copy
+import argparse
 import struct
 import subprocess
 import tempfile
@@ -21,6 +22,10 @@ SIZE = 128
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--glow", action="store_true", help="Render the LFQP announcement variant")
+    args = parser.parse_args()
+    output = ROOT / "Media" / "QuestTogetherPartnerIcon.tga" if args.glow else OUTPUT
     source = ET.parse(ROOT / "logo.svg")
     scrolls = source.find(f".//{{{SVG_NS}}}g[@id='quest-scrolls']")
     if scrolls is None:
@@ -31,10 +36,29 @@ def main():
     icon = ET.Element(f"{{{SVG_NS}}}svg", {
         "width": str(SIZE),
         "height": str(SIZE),
-        "viewBox": "365 253 560 560",
+        "viewBox": "315 203 660 660" if args.glow else "365 253 560 560",
     })
-    icon.append(copy.deepcopy(scrolls))
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    emblem = copy.deepcopy(scrolls)
+    if args.glow:
+        # Bake the gold contour into a static texture: inline chat textures
+        # cannot own animation groups. Keep the original vector paths intact.
+        defs = ET.SubElement(icon, f"{{{SVG_NS}}}defs")
+        glow = ET.SubElement(defs, f"{{{SVG_NS}}}filter", {
+            "id": "partner-glow", "x": "-30%", "y": "-30%", "width": "160%", "height": "160%",
+            "color-interpolation-filters": "sRGB",
+        })
+        ET.SubElement(glow, f"{{{SVG_NS}}}feMorphology", {
+            "in": "SourceAlpha", "operator": "dilate", "radius": "12", "result": "outline",
+        })
+        ET.SubElement(glow, f"{{{SVG_NS}}}feGaussianBlur", {"in": "outline", "stdDeviation": "24", "result": "halo"})
+        ET.SubElement(glow, f"{{{SVG_NS}}}feFlood", {"flood-color": "#FFD447", "result": "gold"})
+        ET.SubElement(glow, f"{{{SVG_NS}}}feComposite", {"in": "gold", "in2": "halo", "operator": "in", "result": "gold-halo"})
+        merge = ET.SubElement(glow, f"{{{SVG_NS}}}feMerge")
+        ET.SubElement(merge, f"{{{SVG_NS}}}feMergeNode", {"in": "gold-halo"})
+        ET.SubElement(merge, f"{{{SVG_NS}}}feMergeNode", {"in": "SourceGraphic"})
+        emblem.set("filter", "url(#partner-glow)")
+    icon.append(emblem)
+    output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="questtogether-icon-") as temp:
         svg = Path(temp) / "icon.svg"
         png = Path(temp) / "icon.png"
@@ -57,8 +81,8 @@ def main():
             or (descriptor & 15) != 8
         ):
             raise SystemExit("Expected an uncompressed 128x128 32-bit TGA with 8-bit alpha")
-        OUTPUT.write_bytes(data)
-    print(f"Wrote {OUTPUT.relative_to(ROOT)} ({SIZE}x{SIZE}, 32-bit RGBA)")
+        output.write_bytes(data)
+    print(f"Wrote {output.relative_to(ROOT)} ({SIZE}x{SIZE}, 32-bit RGBA)")
 
 
 if __name__ == "__main__":

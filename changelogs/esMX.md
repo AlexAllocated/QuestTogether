@@ -4,13 +4,31 @@
 
 ## 5.16.7
 
-Lee las mismas notas de lanzamiento de QuestTogether dentro del juego, en Discord y en tu idioma preferido en los archivos de registro de cambios.
+Saluda en el chat de QT, encuentra compañeros para hacer misiones por tu zona y descubre detalles y ajustes de jugador más claros.
 
-### Registros de cambios multilingües y coherentes
+### Chatea con otros jugadores de QuestTogether
 
-- El registro de cambios en inglés ahora comparte los mismos resúmenes de lanzamiento y puntos clave que la ventana de bienvenida y los anuncios de Discord.
-- Los archivos de registro de cambios están disponibles para todos los idiomas compatibles, con el historial de lanzamientos traducido existente y una copia preservada de las notas antiguas en inglés escritas manualmente.
-- Las comprobaciones de lanzamiento mantienen los archivos de registro de cambios sincronizados con las notas canónicas y las traducciones.
+- Escribe /qt <text>, o elige Enviar mensaje de chat de QT en el menú del minimapa. Las conversaciones aparecen en los registros de QT y en globos cercanos sobre la cabeza con un ícono de globo de diálogo; los comandos con barra existentes siguen funcionando.
+- Elige chat global (el predeterminado), Solo zona, u oculta el chat de QT por completo. Solo zona requiere una ubicación compartida reciente del remitente; Global no.
+- El nuevo canal QuestTogether funciona junto con QuestTogetherAnnounce1 durante la transición. QT coloca ambos después de tus otros canales cuando es compatible, con QuestTogether primero; el chat escrito usa solo el canal nuevo.
+
+### Encuentra compañeros para hacer misiones
+
+- Activar Buscando compañeros para hacer misiones anuncia tu búsqueda por toda tu zona con un ícono de QT con brillo dorado y una carita sonriente. La entrega en toda la zona requiere compartir ubicación y respeta las preferencias de anuncios; desactivarlo no envía nada.
+- Controla estos mensajes en Qué anunciar. Un tiempo de reutilización de 30 segundos limita los anuncios repetidos mientras tu estado y brillo se actualizan de inmediato. También puedes elegir dejar de buscar automáticamente al unirte a un grupo; esta opción empieza desactivada.
+- Mayús-clic en el botón del minimapa para activar o desactivar tu búsqueda de compañeros. Un anillo dorado más brillante y palpitante resalta tu búsqueda activa sin recortar el logo.
+
+### Elige tu alcance y ve más detalles de jugadores
+
+- El alcance cercano ahora va de 5% a Toda la zona, con un valor predeterminado de 25%. Ajusta la distancia en toda tu zona actual; los miembros del grupo y los jugadores directamente visibles conservan su comportamiento existente.
+- Pasa el cursor sobre los nombres en los registros de QT para ver la misma descripción emergente mejorada que en los puntos del mapa: nombre con color de clase, nivel, raza, clase, emblema de facción, estado de compañero, misión seguida cuando esté disponible y versión de QT. Las descripciones emergentes de nombres ahora aparecen junto al cursor.
+- La descripción emergente de tu propio nombre ahora muestra tu misión actual con seguimiento destacado mientras buscas compañeros. Los clientes actualizados anuncian versiones aproximadamente cada 40 segundos usando los mensajes de latido existentes; los clientes antiguos mantienen su intervalo anterior.
+
+### Controles y anuncios más claros
+
+- La descripción emergente del minimapa ahora muestra tu versión de QT, estado de compañero, alcance del chat, cantidad de misiones vigiladas, alcance cercano y estado de compartir ubicación.
+- Los controles de ajustes ahora tienen explicaciones traducidas al pasar el cursor, incluidos menús desplegables, controles deslizantes, acciones de perfil y controles de color.
+- Cuando tu cliente no puede resolver el título localizado de una misión, los anuncios conservan el texto original del remitente tanto en los registros como en los globos, en lugar de mostrar un número de misión genérico. La visualización localizada se reanuda para anuncios posteriores cuando el título esté disponible.
 
 ## 5.16.6
 

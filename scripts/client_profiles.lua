@@ -47,6 +47,58 @@ return pushable end or nil,
 		return objective.text, objective.type, objective.finished, objective.numFulfilled
 	end or nil
 	return function(addon)
+		do
+			local oldUtil, oldLegacy, oldRestricted = ChatFrameUtil, ChatFrame_OpenChat, addon.IsRuntimeRestricted
+			local calls, restricted = 0, false
+			addon.IsRuntimeRestricted = function() return restricted end
+			local function OpenChat(text, preferred)
+				assert(text == "/qt " and preferred == nil)
+				calls = calls + 1
+			end
+			for _, legacy in ipairs({ false, true }) do
+				ChatFrameUtil = not legacy and { OpenChat = OpenChat } or nil
+				ChatFrame_OpenChat = legacy and OpenChat or nil
+				assert(addon.API.OpenQTChatComposer() == true)
+				local before = calls
+				restricted = true
+				assert(addon.API.OpenQTChatComposer() == false and calls == before)
+				restricted = false
+			end
+			for _, value in ipairs({ secret, inaccessible, function() error("unavailable") end, function() return false end }) do
+				ChatFrameUtil, ChatFrame_OpenChat = { OpenChat = value }, nil
+				assert(addon.API.OpenQTChatComposer() == false)
+			end
+			ChatFrameUtil, ChatFrame_OpenChat = inaccessible, nil
+			local before = inaccessibleReads
+			assert(addon.API.OpenQTChatComposer() == false and inaccessibleReads == before)
+			ChatFrameUtil, ChatFrame_OpenChat = nil, nil
+			assert(addon.API.OpenQTChatComposer() == false)
+			ChatFrameUtil, ChatFrame_OpenChat, addon.IsRuntimeRestricted = oldUtil, oldLegacy, oldRestricted
+		end
+		do
+			local oldLog, oldWatches, oldBlocked = C_QuestLog, GetNumQuestWatches, addon.IsRuntimeRestricted
+			local reads, restricted, regular, world = 0, false, 4, 2
+			addon.IsRuntimeRestricted = function() return restricted end
+			C_QuestLog = {
+				GetNumQuestWatches = function() reads = reads + 1; return regular end,
+				GetNumWorldQuestWatches = function() reads = reads + 1; return world end,
+			}
+			assert(addon.API.GetTrackedQuestCount() == 6)
+			regular, world = 0, 0
+			assert(addon.API.GetTrackedQuestCount() == 0)
+			restricted = true
+			assert(addon.API.GetTrackedQuestCount() == nil and reads == 4)
+			restricted, regular = false, secret
+			assert(addon.API.GetTrackedQuestCount() == nil)
+			regular, world = 1, inaccessible
+			assert(addon.API.GetTrackedQuestCount() == nil)
+			C_QuestLog = {}
+			GetNumQuestWatches = function() return 3 end
+			assert(addon.API.GetTrackedQuestCount() == 3)
+			GetNumQuestWatches = function() error("unavailable") end
+			assert(addon.API.GetTrackedQuestCount() == nil)
+			C_QuestLog, GetNumQuestWatches, addon.IsRuntimeRestricted = oldLog, oldWatches, oldBlocked
+		end
 		-- Native tracking is read-only: a waypoint is not a quest, even if a
 		-- previously tracked quest ID remains cached by the engine.
 		do
@@ -79,6 +131,34 @@ return pushable end or nil,
 			C_SuperTrack, addon.IsRuntimeRestricted, addon.IsMapTooltipSensitiveStateActive = oldTrack, oldBlocked, oldSensitive
 			assert(inaccessibleReads == 0)
 		end
+		do
+			local oldMap, oldVector, oldBlocked = C_Map, CreateVector2D, addon.IsRuntimeRestricted
+			local blocked, width, height = false, 4000, 2000
+			addon.IsRuntimeRestricted = function() return blocked end
+			CreateVector2D = function(x, y) return { x = x, y = y } end
+			C_Map = {
+				GetMapWorldSize = function(id) assert(id == 37); return width, height end,
+				GetWorldPosFromMapPos = function(id, pos)
+					assert(id == 37)
+					return 0, { GetXY = function() return 1000 - pos.y * 2000, 2000 - pos.x * 4000 end }
+				end,
+			}
+			local w, h = addon:GetLocationPinMapWorldSize(37)
+			assert(w == 4000 and h == 2000)
+			C_Map.GetMapWorldSize = nil -- Classic capability fallback
+			w, h = addon:GetLocationPinMapWorldSize(37)
+			assert(w == 4000 and h == 2000)
+			blocked = true
+			assert(addon:GetLocationPinMapWorldSize(37) == nil)
+			blocked = false
+			for _, value in ipairs({ secret, inaccessible, 0, -1, 1.5 }) do
+				assert(addon:GetLocationPinMapWorldSize(value) == nil)
+			end
+			C_Map.GetWorldPosFromMapPos = function() return secret, inaccessible end
+			assert(addon:GetLocationPinMapWorldSize(37) == nil)
+			C_Map, CreateVector2D, addon.IsRuntimeRestricted = oldMap, oldVector, oldBlocked
+		end
+
 		-- Quest-title lookups never select quests and copy only public strings.
 		do
 			local oldLog, oldBlocked = C_QuestLog, addon.IsWorkBlocked
@@ -169,6 +249,34 @@ return pushable end or nil,
 		SendChatMessage = nil
 		assert(not addon.API.SendPartyChatMessage("hello", "PARTY"))
 		C_ChatInfo, SendChatMessage = originalChat, originalLegacyChat
+		-- Native contracts stay offline; the live suite uses private adapters.
+		do
+			local oldChat, oldSend, oldList = C_ChatInfo, SendChatMessage, GetChannelList
+			local channelCalls = {}
+			local function sendChannel(text, route, language, target)
+				channelCalls[#channelCalls + 1] = { text, route, language, target }
+			end
+			C_ChatInfo = { SendChatMessage = sendChannel, SwapChatChannelsByChannelIndex = function(a, b)
+				assert(a == 2 and b == 4)
+			end }
+			assert(addon.API.SendChannelChatMessage("hello", 7))
+			assert(channelCalls[1][2] == "CHANNEL" and channelCalls[1][3] == nil and channelCalls[1][4] == 7)
+			assert(addon.API.SwapChatChannelIndices(2, 4))
+			GetChannelList = function() return 1, "General", false, 2, "QuestTogether", false end
+			local channels = addon.API.GetChatChannelList()
+			assert(#channels == 6 and channels[2] == "General" and channels[5] == "QuestTogether")
+			C_ChatInfo, SendChatMessage = {}, sendChannel
+			assert(addon.API.SendChannelChatMessage("legacy", 9))
+			assert(channelCalls[2][4] == 9)
+			assert(not addon.API.SwapChatChannelIndices(2, 4))
+			SendChatMessage = function() error("blocked") end
+			assert(not addon.API.SendChannelChatMessage("blocked", 9))
+			SendChatMessage, GetChannelList = nil, nil
+			assert(not addon.API.SendChannelChatMessage("missing", 9))
+			assert(addon.API.GetChatChannelList() == nil)
+			C_ChatInfo, SendChatMessage, GetChannelList = oldChat, oldSend, oldList
+		end
+
 		-- Shared Mainline exports do not imply that Forever has War Mode.
 		-- Keep native API probes in this offline process, not the live test suite.
 		do

@@ -117,6 +117,24 @@ function QT:ObserveAddonVersion(version)
 	return true
 end
 
+function QT:RememberPlayerAddonVersion(sender, version)
+	local name = self:NormalizeMemberName(sender)
+	if not name or not self:ParseAddonVersion(version) or not self:IsKnownQTPlayer(name) then return false end
+	local state = self:GetQTPlayerPresenceState()
+	state.peerVersions = state.peerVersions or {}
+	state.peerVersions[name] = version
+	return true
+end
+
+function QT:GetPlayerAddonVersion(sender)
+	local name = self:NormalizeMemberName(sender)
+	if not name then return nil end
+	if self:IsSelfSender(name) then return self:GetAddonVersion() end
+	if not self:IsKnownQTPlayer(name) then return nil end
+	local state = rawget(self, "qtPlayerPresenceState")
+	return state and state.peerVersions and state.peerVersions[name] or nil
+end
+
 function QT:HandleAddonVersionMessage(payload, sender)
 	if not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 50 then
 		return false
@@ -125,11 +143,12 @@ function QT:HandleAddonVersionMessage(payload, sender)
 	if not self:ParseAddonVersion(version) or not self:RecordQTPlayerPresence(sender, true) then
 		return false
 	end
+	self:RememberPlayerAddonVersion(sender, version)
 	self:ObserveAddonVersion(version)
 	return true
 end
 
-function QT:BroadcastAddonVersion()
+function QT:BroadcastAddonVersion(forPresenceHeartbeat)
 	if not self.isEnabled or self.isLoggingOut then
 		return false
 	end
@@ -138,7 +157,8 @@ function QT:BroadcastAddonVersion()
 		return false
 	end
 	local state = self:GetAddonUpdateState()
-	if state.lastAttempt and now >= state.lastAttempt and now - state.lastAttempt < state.interval then
+	local interval = forPresenceHeartbeat and math.min(state.interval or RETRY_INTERVAL, RETRY_INTERVAL) or state.interval
+	if state.lastAttempt and now >= state.lastAttempt and now - state.lastAttempt < interval then
 		return false
 	end
 	state.lastAttempt, state.interval = now, RETRY_INTERVAL

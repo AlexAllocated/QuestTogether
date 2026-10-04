@@ -295,7 +295,8 @@ local tostring = SafeText
 
 QuestTogether.addonName = addonName or "QuestTogether"
 QuestTogether.commPrefix = "QuestTogether"
-QuestTogether.announcementChannelName = "QuestTogetherAnnounce1"
+QuestTogether.announcementChannelName = "QuestTogether"
+QuestTogether.legacyAnnouncementChannelName = "QuestTogetherAnnounce1"
 QuestTogether.questLogWindowName = "QuestTogether"
 QuestTogether.CHAT_BUBBLE_SIZE_MIN = 80
 QuestTogether.CHAT_BUBBLE_SIZE_MAX = 160
@@ -304,6 +305,8 @@ QuestTogether.CHAT_BUBBLE_DURATION_MIN = 1
 QuestTogether.CHAT_BUBBLE_DURATION_MAX = 8
 QuestTogether.CHAT_BUBBLE_DURATION_STEP = 0.5
 QuestTogether.ANNOUNCEMENT_NEARBY_RADIUS = 5
+QuestTogether.NEARBY_RANGE_MIN = 5
+QuestTogether.NEARBY_RANGE_MAX = 100
 
 -- Runtime state flags.
 QuestTogether.isInitialized = QuestTogether.isInitialized or false
@@ -338,6 +341,7 @@ QuestTogether.DEFAULTS = {
 		announceReadyToTurnIn = true,
 		announceRemoved = true,
 		announceProgress = true,
+		announceQuestPartners = true,
 		announceWorldQuestAreaEnter = true,
 		announceWorldQuestAreaLeave = true,
 		announceWorldQuestProgress = true,
@@ -350,9 +354,12 @@ QuestTogether.DEFAULTS = {
 			hideMyOwnChatBubbles = false,
 			announceToNonQTParty = true,
 			showChatLogs = true,
+			showQTChat = true,
+			qtChatScope = "global",
 			chatLogDestination = "main",
 			mirrorChatLogsToMainChat = false,
 			showProgressFor = "party_nearby",
+			nearbyAnnouncementRange = 25,
 			devLogAllAnnouncements = false,
 		chatBubbleSize = 100,
 		chatBubbleDuration = 3,
@@ -364,6 +371,7 @@ QuestTogether.DEFAULTS = {
 		autoInviteFriends = false,
 		autoInviteWhileLFG = false,
 		lookingForQuestPartners = false,
+		stopLookingForPartnersOnJoin = false,
 		showMinimapButton = true,
 		minimapButtonPosition = 225,
 		sharePlayerLocation = true,
@@ -699,6 +707,9 @@ QuestTogether.completionEmotes = {
 -- The runtime event list that should only be registered while the addon is enabled.
 QuestTogether.runtimeEvents = {
 	"CHAT_MSG_ADDON",
+	"CHAT_MSG_CHANNEL",
+	"CHANNEL_COUNT_UPDATE",
+	"CHANNEL_UI_UPDATE",
 	"PLAYER_LEVEL_UP",
 	"QUEST_ACCEPTED",
 	"QUEST_TURNED_IN",
@@ -758,6 +769,15 @@ QuestTogether.API = QuestTogether.API or {
 	end,
 	GetChannelName = function(name)
 		return GetChannelName(name)
+	end,
+	GetChatChannelList = function()
+		if type(GetChannelList) ~= "function" then return nil end
+		return { GetChannelList() }
+	end,
+	SwapChatChannelIndices = function(first, second)
+		if not C_ChatInfo or type(C_ChatInfo.SwapChatChannelsByChannelIndex) ~= "function" then return false end
+		C_ChatInfo.SwapChatChannelsByChannelIndex(first, second)
+		return true
 	end,
 	GetNumChatWindows = function()
 		return NUM_CHAT_WINDOWS or 0
@@ -859,6 +879,12 @@ QuestTogether.API = QuestTogether.API or {
 			local ok, result = pcall(C_ChatInfo.SendAddonMessage, prefix, message, channel, target)
 			return ok and result or nil
 		end,
+	SendChannelChatMessage = function(message, channelID)
+		local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
+		if type(send) ~= "function" then return false end
+		local ok, result = pcall(send, message, "CHANNEL", nil, channelID)
+		return ok and result ~= false
+	end,
 	SendPartyChatMessage = function(message, distribution)
 		if distribution ~= "PARTY" and distribution ~= "INSTANCE_CHAT" then return false end
 		local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
@@ -1898,6 +1924,29 @@ QuestTogether.API = QuestTogether.API or {
 				if id and id >= 1 and id <= 1000000000 and id == math.floor(id) then return id end
 			end
 		end,
+		GetTrackedQuestCount = function()
+			if QuestTogether:IsRuntimeRestricted() then return nil end
+			local questGetter, worldGetter
+			if CanAccessForeignTable(C_QuestLog) then
+				questGetter, worldGetter = C_QuestLog.GetNumQuestWatches, C_QuestLog.GetNumWorldQuestWatches
+			end
+			if not CanAccessForeignValue(questGetter) or not CanAccessForeignValue(worldGetter) then return nil end
+			if questGetter == nil then questGetter = GetNumQuestWatches end
+			local function Count(getter)
+				if not CanAccessForeignValue(getter) or type(getter) ~= "function" then return nil end
+				local ok, value = pcall(getter)
+				value = ok and QuestTogether:SafeToNumber(value) or nil
+				if value and value >= 0 and value <= 10000 and value == math.floor(value) then return value end
+			end
+			local count = Count(questGetter)
+			if count == nil then return nil end
+			if worldGetter ~= nil then
+				local worldCount = Count(worldGetter)
+				if worldCount == nil then return nil end
+				count = count + worldCount
+			end
+			return count
+		end,
 		GetLocalizedQuestTitle = function(questID)
 			if not CanAccessForeignTable(C_QuestLog) or type(C_QuestLog.GetTitleForQuestID) ~= "function" then return nil end
 			local id = QuestTogether:NormalizeQuestID(questID)
@@ -2040,6 +2089,20 @@ QuestTogether.API = QuestTogether.API or {
 			if not CanAccessForeignValue(invite) or type(invite) ~= "function" then return false end
 			local ok, result = pcall(invite, name)
 			-- The native API has no success return. This means attempted, not joined.
+			return ok and CanAccessForeignValue(result) and result ~= false
+		end,
+		OpenQTChatComposer = function()
+			if QuestTogether:IsRuntimeRestricted() then return false end
+			local openChat
+			if CanAccessForeignTable(ChatFrameUtil) then
+				openChat = ChatFrameUtil.OpenChat
+			end
+			if not CanAccessForeignValue(openChat) then return false end
+			if type(openChat) ~= "function" then openChat = ChatFrame_OpenChat end
+			if not CanAccessForeignValue(openChat) or type(openChat) ~= "function" then return false end
+			-- Let Blizzard choose its edit box; pass only text, never the minimap
+			-- button as a chat frame. Opening a draft does not send a message.
+			local ok, result = pcall(openChat, "/qt ")
 			return ok and CanAccessForeignValue(result) and result ~= false
 		end,
 		SendTell = function(name, chatFrame)
@@ -3900,6 +3963,9 @@ function QuestTogether:GetBonusObjectiveAnnouncementIconInfo(eventType, questId)
 end
 
 function QuestTogether:GetAnnouncementIconInfo(eventType, questId)
+	if eventType == "LOOKING_FOR_QUEST_PARTNERS" then
+		return "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon", "texture"
+	end
 	if self:IsWorldQuestAnnouncementType(eventType) then
 		return self:GetWorldQuestAnnouncementIconInfo(questId)
 	end
@@ -3913,6 +3979,9 @@ end
 function QuestTogether:GetAnnouncementIconChatTag(eventType, size, iconAsset, iconKind)
 	local asset = iconAsset
 	local kind = iconKind
+	if eventType == "LOOKING_FOR_QUEST_PARTNERS" then
+		asset, kind = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon", "texture"
+	end
 	if type(asset) ~= "string" or asset == "" then
 		asset, kind = self:GetAnnouncementIconInfo(eventType, nil)
 	end
@@ -3962,7 +4031,18 @@ function QuestTogether:GetPlayerAnnouncementLocationInfo()
 	}
 end
 
-function QuestTogether:IsAnnouncementSenderNearbyByLocation(locationInfo)
+
+function QuestTogether:NormalizeNearbyAnnouncementRange(value)
+	local number = self:SafeToNumber(value)
+	if not number or number < self.NEARBY_RANGE_MIN or number > self.NEARBY_RANGE_MAX then return nil end
+	return math.floor(number + 0.5)
+end
+
+function QuestTogether:GetNearbyAnnouncementRange()
+	return self:NormalizeNearbyAnnouncementRange(self:GetOption("nearbyAnnouncementRange")) or self.DEFAULTS.profile.nearbyAnnouncementRange
+end
+
+function QuestTogether:IsAnnouncementSenderNearbyByLocation(locationInfo, entireZone)
 	if type(locationInfo) ~= "table" then
 		return false
 	end
@@ -4006,6 +4086,9 @@ function QuestTogether:IsAnnouncementSenderNearbyByLocation(locationInfo)
 		end
 	end
 
+	-- Partner searches need only a matching zone; ordinary updates retain the
+	-- configured radius and coordinate validation below.
+	if entireZone then return true end
 	local localCoordX = self:SafeToNumber(localInfo.coordX)
 	local localCoordY = self:SafeToNumber(localInfo.coordY)
 	local remoteCoordX = self:SafeToNumber(locationInfo.coordX)
@@ -4014,10 +4097,25 @@ function QuestTogether:IsAnnouncementSenderNearbyByLocation(locationInfo)
 		return false
 	end
 
-	local deltaX = localCoordX - remoteCoordX
-	local deltaY = localCoordY - remoteCoordY
-	local radius = self.ANNOUNCEMENT_NEARBY_RADIUS or 5
-	return (deltaX * deltaX + deltaY * deltaY) <= (radius * radius)
+	for _, value in ipairs({ localCoordX, localCoordY, remoteCoordX, remoteCoordY }) do
+		if value < 0 or value > 100 then return false end
+	end
+	local deltaX, deltaY = localCoordX - remoteCoordX, localCoordY - remoteCoordY
+	local oldRange = self.ANNOUNCEMENT_NEARBY_RADIUS
+	local inOldRange = deltaX * deltaX + deltaY * deltaY <= oldRange * oldRange
+	local range = self:GetNearbyAnnouncementRange()
+	-- The slider's minimum exactly preserves the former coordinate check.
+	if range == self.NEARBY_RANGE_MIN then return inOldRange end
+	-- Convert both axes to yards so rectangular maps use a circular physical
+	-- radius. Percentages describe distance across the full map diagonal, not area.
+	local ok, width, height = pcall(self.GetLocationPinMapWorldSize, self, localMapID or remoteMapID)
+	width, height = self:SafeToNumber(width), self:SafeToNumber(height)
+	if not ok or not width or not height or width <= 0 or height <= 0 then return inOldRange end
+	if width > 1000000 or height > 1000000 then return inOldRange end
+	local radiusSquared = (width * width + height * height) * (range / 100)^2
+	deltaX, deltaY = deltaX * width / 100, deltaY * height / 100
+	return deltaX * deltaX + deltaY * deltaY <= radiusSquared
+
 end
 
 function QuestTogether:BuildAnnouncementLocationSuffix(locationInfo)
@@ -4914,6 +5012,7 @@ function QuestTogether:HandleChatLogCoordLink(_link, _text, linkData, _contextDa
 end
 
 function QuestTogether:TryInstallChatLogLinkHandler()
+	self:InitializeChatLogPlayerTooltips()
 	if self.chatLogLinkHandlerInstalled then
 		return
 	end
@@ -4963,6 +5062,7 @@ end
 function QuestTogether:GetAnnouncementOptionKey(eventType)
 	local keysByType = {
 		QUEST_ACCEPTED = "announceAccepted",
+		LOOKING_FOR_QUEST_PARTNERS = "announceQuestPartners",
 		QUEST_COMPLETED = "announceCompleted",
 		QUEST_READY_TO_TURN_IN = "announceReadyToTurnIn",
 		QUEST_REMOVED = "announceRemoved",
@@ -5215,6 +5315,8 @@ function QuestTogether:NormalizeAnnouncementDisplayOptions()
 	if not self:IsShowProgressFor(profile.showProgressFor) then
 		profile.showProgressFor = self.DEFAULTS.profile.showProgressFor
 	end
+	if profile.qtChatScope ~= "global" and profile.qtChatScope ~= "zone_only" then profile.qtChatScope = "global" end
+	profile.nearbyAnnouncementRange = self:NormalizeNearbyAnnouncementRange(profile.nearbyAnnouncementRange) or self.DEFAULTS.profile.nearbyAnnouncementRange
 	profile.chatBubbleSize = self:NormalizeChatBubbleSizeValue(profile.chatBubbleSize)
 		or self.DEFAULTS.profile.chatBubbleSize
 	profile.chatBubbleDuration = self:NormalizeChatBubbleDurationValue(profile.chatBubbleDuration)
@@ -5244,7 +5346,8 @@ function QuestTogether:SetOption(key, value)
 	if key == "showMinimapButton" and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
 		return false
 	end
-	if key == "lookingForQuestPartners" and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
+	if (key == "lookingForQuestPartners" or key == "announceQuestPartners" or key == "stopLookingForPartnersOnJoin")
+		and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
 		return false
 	end
 	if key == "minimapButtonPosition" then
@@ -5271,6 +5374,11 @@ function QuestTogether:SetOption(key, value)
 		self:Debugf("options", "Rejected option change key=%s invalid chat destination=%s", tostring(key), tostring(value))
 		return false
 	end
+	if key == "qtChatScope" and (not self:CanAccessValue(value) or (value ~= "global" and value ~= "zone_only")) then return false end
+	if key == "nearbyAnnouncementRange" then
+		value = self:NormalizeNearbyAnnouncementRange(value)
+		if value == nil then return false end
+	end
 	if key == "chatBubbleSize" then
 		value = self:NormalizeChatBubbleSizeValue(value)
 		if not value then
@@ -5289,8 +5397,11 @@ function QuestTogether:SetOption(key, value)
 		self:Debugf("options", "Rejected option change key=%s invalid icon style=%s", tostring(key), tostring(value))
 		return false
 	end
+	local startedLooking = key == "lookingForQuestPartners" and value == true
+		and self.db.profile[key] ~= true
 	self.db.profile[key] = value
 	if key == "lookingForQuestPartners" and self.BroadcastQuestPartnerStatus then self:BroadcastQuestPartnerStatus(true) end
+	if startedLooking then self:AnnounceQuestPartnerSearch() end
 	if key == "lookingForQuestPartners" and self.RefreshMinimapPartnerGlow then self:RefreshMinimapPartnerGlow() end
 	if isLocationOption and self.OnPlayerLocationOptionsChanged then self:OnPlayerLocationOptionsChanged(key) end
 	if (key == "showMinimapButton" or key == "minimapButtonPosition") and self.RefreshMinimapButton then
@@ -5303,6 +5414,7 @@ function QuestTogether:SetOption(key, value)
 		key == "chatLogDestination"
 		or key == "mirrorChatLogsToMainChat"
 		or key == "showProgressFor"
+		or key == "nearbyAnnouncementRange"
 		or key == "chatBubbleSize"
 		or key == "chatBubbleDuration"
 	then
@@ -5500,6 +5612,7 @@ function QuestTogether:Enable()
 	end
 	if self.EnsureAnnouncementChannelJoined then
 		self:EnsureAnnouncementChannelJoined()
+		self:ScheduleAnnouncementChannelOrder()
 	end
 	if self.RefreshTaskAreaStates then
 		self:RefreshTaskAreaStates(false)
@@ -5639,6 +5752,7 @@ end
 
 function QuestTogether:PrintHelp()
 	self:Print(L("Commands:"))
+	self:Print(L("/qt <message> - Chat with QuestTogether players (recognized commands still run)"))
 	self:Print(L("/qt options - Open the QuestTogether options window"))
 	self:Print(L("/qt enable | disable - Enable or disable runtime behavior"))
 	self:Print(L("/qt set <option> <value> - Set a boolean option (e.g. emoteOnQuestCompletion off)"))
@@ -5840,8 +5954,9 @@ function QuestTogether:HandleSlashCommand(input)
 	end
 
 
-	self:Print(L("Unknown command: ") .. tostring(command))
-	self:PrintHelp()
+	if not self:SendQTChannelChat(input) then
+		self:Print(L("Unable to send QuestTogether chat. The addon must be enabled and its chat channel available."))
+	end
 end
 
 -- Full quest log scan to build local objective snapshots.
@@ -6054,6 +6169,7 @@ function QuestTogether:PLAYER_ENTERING_WORLD()
 	self:RefreshTaskAreaStates(false)
 	if self.EnsureAnnouncementChannelJoined and self.isEnabled then
 		self:EnsureAnnouncementChannelJoined()
+		self:ScheduleAnnouncementChannelOrder()
 	end
 end
 

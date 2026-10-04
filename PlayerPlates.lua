@@ -2,6 +2,7 @@ local L = _G.QuestTogether.Translate
 local QT = _G.QuestTogether
 local HEARTBEAT, LIFETIME, MAX_PEERS = 20, 65, 256
 local MAX_KNOWN_PLAYERS = 512
+local PARTNER_ANNOUNCEMENT_COOLDOWN = 30
 
 local function Now(addon)
 	local getTime = addon.API and addon.API.GetTime
@@ -47,11 +48,13 @@ function QT:RecordQTPlayerPresence(name, active)
 			end
 			if count >= MAX_KNOWN_PLAYERS then
 				state.peers[oldest] = nil
+				if state.peerVersions then state.peerVersions[oldest] = nil end
 			end
 		end
 		state.peers[name] = now
 	else
 		state.peers[name] = nil
+		if state.peerVersions then state.peerVersions[name] = nil end
 		if self.ForgetPartyJoinPeer then self:ForgetPartyJoinPeer(name) end
 	end
 	-- Recognition lasts for this UI session, independently of short-lived map
@@ -84,6 +87,16 @@ function QT:BroadcastQTPlayerPresence(inactive)
 	state.lastSentAt = now
 	if inactive and (state.lastPartnerOnAt or self:GetOption("lookingForQuestPartners") == true) then
 		self:BroadcastQuestPartnerStatus(true, true)
+	end
+	if not inactive then
+		local includeVersion = state.nextPresenceIncludesVersion
+		state.nextPresenceIncludesVersion = not includeVersion
+		-- Legacy QTPR receivers require an exact payload. Alternate with QTVR,
+		-- which also establishes presence, instead of extending that payload or
+		-- adding traffic. Invalid local version metadata still permits discovery.
+		if includeVersion and self:ParseAddonVersion(self:GetAddonVersion()) then
+			return self:BroadcastAddonVersion(true)
+		end
 	end
 	-- This presence packet contains no position and is independent of map consent.
 	return self:SendWireMessageToAnnouncementRoutes(
@@ -173,6 +186,34 @@ function QT:HandleQuestPartnerStatusMessage(payload, sender)
 	}
 	if self.RefreshQTPlayerPartnerIndicators then self:RefreshQTPlayerPartnerIndicators() end
 	return true
+end
+
+-- Only an explicit off-to-on setting change announces a search. Heartbeats,
+-- login, profile loading, and withdrawals remain metadata-only updates.
+function QT:AnnounceQuestPartnerSearch()
+	if not self.isEnabled or self.isLoggingOut or self:IsRuntimeRestricted()
+		or self:GetOption("lookingForQuestPartners") ~= true
+		or not self:ShouldDisplayAnnouncementType("LOOKING_FOR_QUEST_PARTNERS") then return false end
+	local now = Now(self)
+	if not now then return false end
+	local last = rawget(self, "lastQuestPartnerAnnouncementAt")
+	if last and now >= last and now - last < PARTNER_ANNOUNCEMENT_COOLDOWN then return false end
+	local event = self:BuildLocalAnnouncementEvent("LOOKING_FOR_QUEST_PARTNERS", L("Looking for questing partners") .. " :)")
+	if not event then return false end
+	-- Pace attempts too; failed routes must not let rapid toggles flood comms.
+	-- Keep this separate from presence state so disabling/re-enabling the addon
+	-- or changing profiles does not reset the session cooldown.
+	self.lastQuestPartnerAnnouncementAt = now
+	local sent = self:SendAnnouncementWireEvent(event)
+	if not self.suppressLocalAnnouncementDisplayDuringTests then self:HandleAnnouncementEvent(event, true) end
+	return sent
+end
+
+function QT:StopLookingForPartnersOnGroupJoin()
+	if not self.isEnabled or self.isLoggingOut
+		or self:GetOption("stopLookingForPartnersOnJoin") ~= true
+		or self:GetOption("lookingForQuestPartners") ~= true then return false end
+	return self:SetOption("lookingForQuestPartners", false)
 end
 
 function QT:BroadcastQuestPartnerStatus(force, inactive)
@@ -265,6 +306,7 @@ function QT:PruneQTPlayerPresence(force)
 	for name, seen in pairs(state.peers) do
 		if not now or now < seen or self:IsIgnoredPlayerName(name) then
 			state.peers[name], changed = nil, true
+			if state.peerVersions then state.peerVersions[name] = nil end
 		end
 	end
 	for name, record in pairs(state.questPartners or {}) do

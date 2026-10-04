@@ -94,6 +94,22 @@ function QuestTogether:GetLocationPinWorldPosition(mapID, x, y)
 	end
 end
 
+function QuestTogether:GetLocationPinMapWorldSize(mapID)
+	mapID = ID(self, mapID)
+	if not mapID then return nil end
+	local width, height = API(self, C_Map, "GetMapWorldSize", mapID)
+	width, height = Positive(self, width), Positive(self, height)
+	if width and height then return width, height end
+	-- Some Classic clients omit the size API. Use half-map points rather than
+	-- the 1/1 corner, which is inaccurate on some maps (HereBeDragons precedent).
+	local instance, north, west = self:GetLocationPinWorldPosition(mapID, 0, 0)
+	local centerInstance, centerNorth, centerWest = self:GetLocationPinWorldPosition(mapID, 0.5, 0.5)
+	if instance and instance == centerInstance and north and west and centerNorth and centerWest then
+		width, height = math.abs(west - centerWest) * 2, math.abs(north - centerNorth) * 2
+		if width > 0 and height > 0 then return width, height end
+	end
+end
+
 -- Distance ranking uses world coordinates, not map pixels or the viewed map
 -- center. Read-only adapters also work when location sharing is turned off.
 function QuestTogether:GetPlayerLocationPriorityOrigin()
@@ -489,48 +505,153 @@ local function Tooltip(addon, state, pin, row)
 		local background = Call(addon, tooltip, "CreateTexture", nil, "BACKGROUND")
 		Call(addon, background, "SetAllPoints")
 		Call(addon, background, "SetColorTexture", 0.03, 0.03, 0.04, 0.97)
-		state.tooltipLabel = Call(addon, tooltip, "CreateFontString", nil, "OVERLAY", "GameFontHighlightSmall")
-		Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", 10, -10)
-		Call(addon, state.tooltipLabel, "SetWidth", 240)
+		state.tooltipTitle = Call(addon, tooltip, "CreateFontString", nil, "OVERLAY", "GameFontNormalLarge")
+		Call(addon, state.tooltipTitle, "SetPoint", "TOPLEFT", 14, -12)
+		Call(addon, state.tooltipTitle, "SetWidth", 272)
+		Call(addon, state.tooltipTitle, "SetJustifyH", "LEFT")
+		Call(addon, state.tooltipTitle, "SetWordWrap", true)
+		local divider = Call(addon, tooltip, "CreateTexture", nil, "BORDER")
+		state.tooltipDivider = divider
+		Call(addon, divider, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -8)
+		Call(addon, divider, "SetSize", 272, 1)
+		state.tooltipFaction = Call(addon, tooltip, "CreateTexture", nil, "ARTWORK")
+		Call(addon, state.tooltipFaction, "SetPoint", "TOPRIGHT", -14, -12)
+		Call(addon, state.tooltipFaction, "SetSize", 18, 18)
+		Call(addon, state.tooltipFaction, "SetAlpha", 0.65)
+		state.tooltipLabel = Call(addon, tooltip, "CreateFontString", nil, "OVERLAY", "GameFontHighlight")
+		Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -18)
+		Call(addon, state.tooltipLabel, "SetWidth", 272)
 		Call(addon, state.tooltipLabel, "SetJustifyH", "LEFT")
 		Call(addon, state.tooltipLabel, "SetWordWrap", true)
+		Call(addon, state.tooltipLabel, "SetSpacing", 3)
 	end
-	local text = Text(addon, row.name)
-		.. L("\nFaction: ")
-		.. L(Text(addon, row.faction))
-		.. L("\nRace: ")
-		.. Text(addon, row.race)
-		.. L("\nClass: ")
-		.. Text(addon, row.className, Text(addon, row.classFile))
-		.. L("\nLevel: ")
-		.. (Number(addon, row.level) and tostring(row.level) or L("Unknown"))
+	local classColor = addon:GetClassColorCode(row.classFile)
+	local r, g, b = Color(addon, row.classFile)
+	Call(addon, state.tooltipDivider, "SetColorTexture", r, g, b, 0.6)
+	local factionTexture = row.faction == "Alliance" and "Interface\\TargetingFrame\\UI-PVP-Alliance"
+		or row.faction == "Horde" and "Interface\\TargetingFrame\\UI-PVP-Horde"
+	if factionTexture then
+		Call(addon, state.tooltipFaction, "SetTexture", factionTexture)
+		Call(addon, state.tooltipFaction, "Show")
+	else
+		Call(addon, state.tooltipFaction, "Hide")
+	end
+	Call(addon, state.tooltipTitle, "SetWidth", factionTexture and 246 or 272)
+	Call(addon, state.tooltipTitle, "SetText", classColor .. Text(addon, row.name) .. "|r")
+	local text = string.format(L("Level %s %s %s"),
+		Number(addon, row.level) and tostring(row.level) or L("Unknown"),
+		Text(addon, row.race),
+		classColor .. Text(addon, row.className, Text(addon, row.classFile)) .. "|r")
 	if addon:SupportsWarMode() == true and type(row.warMode) == "boolean" then
 		text = text .. L("\nWar Mode: ") .. (row.warMode and L("On") or L("Off"))
 	end
 	if addon:IsPlayerLookingForQuestPartners(row.name) then
-		text = text .. L("\n|cff40ff40Looking for Questing Partners|r")
+		text = text .. "\n" .. L("\n|cff40ff40Looking for Questing Partners|r"):gsub("|cff40ff40", "|cffffd200")
 		local questID, sourceTitle = addon:GetPlayerPartnerQuestID(row.name)
 		if questID then
-			text = text .. L("\nTracked quest: ") .. Text(addon, addon:GetLocalizedQuestTitle(questID) or sourceTitle or addon:GetQuestTitle(questID))
+			text = text .. "|cffffd200" .. L("\nTracked quest: ") .. Text(addon, addon:GetLocalizedQuestTitle(questID) or sourceTitle or addon:GetQuestTitle(questID)) .. "|r"
 		end
 	end
 	local now = addon.API and addon.API.GetTime and Number(addon, addon.API.GetTime())
 	local receivedAt = Number(addon, row.receivedAt)
 	if now and receivedAt and now >= receivedAt + 30 then
-		text = text .. L("\nLast update: ") .. math.floor(now - receivedAt) .. L(" seconds ago")
+		text = text .. "\n|cff909090" .. L("\nLast update: ") .. math.floor(now - receivedAt) .. L(" seconds ago") .. "|r"
 	end
+	text = text .. "\n\n|cff909090" .. L("QT Version") .. ": " .. Text(addon, addon:GetPlayerAddonVersion(row.name)) .. "|r"
 	Call(addon, state.tooltipLabel, "SetText", text)
 	local height = Positive(addon, Call(addon, state.tooltipLabel, "GetStringHeight"))
-	if not height then
+	local titleHeight = Positive(addon, Call(addon, state.tooltipTitle, "GetStringHeight"))
+	if not height or not titleHeight then
 		HideTooltip(addon, state)
 		return
 	end
-	Call(addon, tooltip, "SetSize", 260, height + 20)
+	Call(addon, tooltip, "SetSize", 300, titleHeight + height + 46)
 	Call(addon, tooltip, "ClearAllPoints")
-	Call(addon, tooltip, "SetPoint", "BOTTOMLEFT", pin.frame, "TOPRIGHT", 6, 6)
+	if pin.chatLink then
+		local x, y = addon:GetChatLogTooltipCursorPosition(parent)
+		if not x or not y then HideTooltip(addon, state); return end
+		Call(addon, tooltip, "SetPoint", "BOTTOMLEFT", parent, "BOTTOMLEFT", x + 12, y + 12)
+	else
+		Call(addon, tooltip, "SetPoint", "BOTTOMLEFT", pin.frame, "TOPRIGHT", 6, 6)
+	end
 	Call(addon, tooltip, "Show")
 	state.pending[tooltip] = nil
 	state.hovered = pin
+end
+
+-- The same owned tooltip renderer serves dots and QT speaker links. Keep their
+-- hover state separate so refreshing map pins cannot dismiss a chat tooltip.
+function QuestTogether:GetChatLogTooltipCursorPosition(parent)
+	local x, y = Native(self, GetCursorPosition)
+	x, y = Number(self, x), Number(self, y)
+	local scale = Positive(self, Method(self, parent, "GetEffectiveScale"))
+	if x and y and scale then return x / scale, y / scale end
+end
+
+function QuestTogether:GetChatLogPlayerTooltipRow(name)
+	if self:IsSelfSender(name) and not self:IsRuntimeRestricted() then
+		local ok, row = pcall(self.ReadLocalPlayerLocation, self)
+		if ok and type(row) == "table" then
+			row.name = name
+			return row
+		end
+		return { name = name }
+	end
+	local state = rawget(self, "playerLocationState")
+	local row = state and state.peers and state.peers[name]
+	return row or { name = name }
+end
+
+function QuestTogether:HideChatLogPlayerTooltip()
+	local state = rawget(self, "chatLogPlayerTooltipState")
+	if state then HideTooltip(self, state) end
+end
+
+function QuestTogether:UpdateChatLogPlayerTooltip()
+	local state = rawget(self, "chatLogPlayerTooltipState")
+	if not state then return end
+	RetryCleanup(self, state)
+	local pin = state.hovered
+	if not pin then return end
+	if not self.isEnabled or self:IsRuntimeRestricted() or self:IsIgnoredPlayerName(pin.name)
+		or Method(self, pin.frame, "IsShown") ~= true then
+		self:HideChatLogPlayerTooltip()
+		return
+	end
+	local row = self:GetChatLogPlayerTooltipRow(pin.name)
+	if not pcall(Tooltip, self, state, pin, row) then self:HideChatLogPlayerTooltip() end
+end
+
+function QuestTogether:ShowChatLogPlayerTooltip(frame, link)
+	self:HideChatLogPlayerTooltip()
+	if not self.isEnabled or self:IsRuntimeRestricted() or not self:CanAccessForeignFrame(frame, true) then return false end
+	link = self:SafeTrimString(link, "")
+	local kind, name = link:match("^([^:]+):(.+)$")
+	if kind ~= self.chatLogLinkType then return false end
+	name = self:NormalizeMemberName(name)
+	if not name or self:IsIgnoredPlayerName(name) then return false end
+	local state = rawget(self, "chatLogPlayerTooltipState") or { pending = {} }
+	self.chatLogPlayerTooltipState = state
+	state.hovered = { frame = frame, name = name, chatLink = true }
+	self:UpdateChatLogPlayerTooltip()
+	return state.hovered ~= nil
+end
+
+-- Public event callbacks avoid replacing chat scripts or writing onto chat frames.
+function QuestTogether:RegisterChatLogHoverCallbacks(enter, leave)
+	if not EventRegistry or type(EventRegistry.RegisterCallback) ~= "function" then return false end
+	EventRegistry:RegisterCallback("ChatFrame.OnHyperlinkEnter", enter, self)
+	EventRegistry:RegisterCallback("ChatFrame.OnHyperlinkLeave", leave, self)
+	return true
+end
+
+function QuestTogether:InitializeChatLogPlayerTooltips()
+	if rawget(self, "chatLogHoverCallbacksInstalled") then return end
+	self.chatLogHoverCallbacksInstalled = self:RegisterChatLogHoverCallbacks(function(_, frame, link)
+		self:ShowChatLogPlayerTooltip(frame, link)
+	end, function()
+		self:HideChatLogPlayerTooltip()
+	end)
 end
 
 local function CreatePin(addon, state, surface)
