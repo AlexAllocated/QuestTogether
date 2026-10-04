@@ -4,19 +4,12 @@
 
 ## 5.17.1
 
-Scopri di più sui tuoi compagni d'avventura e controlla lo stato delle missioni direttamente dai tooltip della chat.
+La chat QT è più facile da distinguere dagli annunci delle missioni.
 
-### Tooltip dei personaggi più utili
+### Testo bianco per la chat QT
 
-- I tooltip del nome del personaggio e dei punti sulla mappa ora mostrano quante missioni QuestTogether sta monitorando, più Solo o Gruppo di N. Il tuo tooltip usa il tuo stato locale attuale.
-- Il tooltip della minimappa ora conta le missioni monitorate da QuestTogether, corrispondendo all'annuncio all'avvio invece di contare solo le missioni osservate nel tracker di WoW.
-- I conteggi delle missioni remote e le dimensioni dei gruppi richiedono un peer aggiornato. Si aggiornano circa ogni 80 secondi tramite i messaggi heartbeat esistenti, senza messaggi aggiuntivi; i rapporti mancanti o obsoleti vengono mostrati come sconosciuti. Le versioni precedenti continuano a ricevere annunci di versione compatibili.
-
-### Stato missione al passaggio del mouse
-
-- Passa il mouse sul nome di una missione nei registri QT per vedere lo stato della missione, la condivisibilità, l'ID missione e l'avanzamento degli obiettivi tracciati localmente in un tooltip accanto al cursore.
-- La voce di menu Stato è stata rimossa. Fare clic sul nome di una missione apre ancora Condividi, Apri nel Registro missioni, Confronta missioni del gruppo e l'azione di destinazione della finestra di registro.
-- Le nuove etichette dei tooltip sono tradotte in tutte le lingue supportate. I dettagli della missione riflettono il tuo avanzamento, non la fase della missione del mittente.
+- I messaggi dei giocatori nella chat QT ora usano testo bianco nel registro chat e nei fumetti sopra la testa.
+- I nomi dei giocatori mantengono i colori della loro classe, e gli annunci delle missioni mantengono il testo giallo.
 
 ## 5.17.0
 

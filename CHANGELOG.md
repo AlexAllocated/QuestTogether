@@ -6,19 +6,12 @@
 
 ## 5.17.1
 
-See more about your questing companions and check quest status directly from chat tooltips.
+QT chat is easier to distinguish from quest announcements.
 
-### More useful player tooltips
+### White QT chat text
 
-- Player-name and map-dot tooltips now show how many quests QuestTogether is monitoring, plus Solo or Party of N. Your own tooltip uses your current local state.
-- The minimap tooltip now counts quests monitored by QuestTogether, matching the startup announcement instead of counting only quests watched in WoW’s tracker.
-- Remote quest counts and party sizes require an updated peer. They refresh about every 80 seconds through existing heartbeat messages, with no extra messages; missing or stale reports show as unknown. Older versions continue receiving compatible version announcements.
-
-### Quest status on hover
-
-- Hover a quest name in QT logs to see your quest status, shareability, quest ID, and locally tracked objective progress in a tooltip beside the cursor.
-- The Status menu item has been removed. Clicking a quest name still opens Share, Open in Quest Journal, Compare Party Quests, and the log-window destination action.
-- The new tooltip labels are translated into every supported locale. Quest details reflect your own progress, not the sender’s quest stage.
+- Messages from players in QT chat now use white text in the chat log and overhead bubbles.
+- Player names keep their class colors, and quest announcements keep their yellow text.
 
 ## 5.17.0
 

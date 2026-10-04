@@ -4,19 +4,12 @@
 
 ## 5.17.1
 
-Erfahre mehr über deine Questgefährten und prüfe den Queststatus direkt über Chat-Tooltips.
+QT-Chat lässt sich leichter von Questankündigungen unterscheiden.
 
-### Nützlichere Spieler-Tooltips
+### Weißer QT-Chattext
 
-- Tooltips für Spielernamen und Kartenpunkte zeigen jetzt an, wie viele Quests QuestTogether überwacht, plus Solo oder Gruppe mit N. Dein eigener Tooltip verwendet deinen aktuellen lokalen Status.
-- Der Minikarten-Tooltip zählt jetzt die von QuestTogether überwachten Quests und entspricht damit der Startankündigung, statt nur die Quests zu zählen, die im WoW-Tracker verfolgt werden.
-- Entfernte Questzahlen und Gruppengrößen erfordern einen aktualisierten Peer. Sie werden etwa alle 80 Sekunden über bestehende Heartbeat-Nachrichten aktualisiert, ohne zusätzliche Nachrichten; fehlende oder veraltete Meldungen werden als unbekannt angezeigt. Ältere Versionen erhalten weiterhin kompatible Versionsankündigungen.
-
-### Queststatus beim Darüberfahren
-
-- Fahre in QT-Protokollen mit der Maus über einen Questnamen, um deinen Queststatus, die Teilbarkeit, die Quest-ID und den lokal verfolgten Zielfortschritt in einem Tooltip neben dem Mauszeiger zu sehen.
-- Der Menüpunkt Status wurde entfernt. Ein Klick auf einen Questnamen öffnet weiterhin Teilen, Im Questlog öffnen, Gruppenquests vergleichen und die Zielaktion des Protokollfensters.
-- Die neuen Tooltip-Beschriftungen sind in alle unterstützten Sprachen übersetzt. Questdetails spiegeln deinen eigenen Fortschritt wider, nicht den Questfortschritt des Absenders.
+- Nachrichten von Spielern im QT-Chat verwenden jetzt weißen Text im Chatfenster und in Sprechblasen über dem Kopf.
+- Spielernamen behalten ihre Klassenfarben, und Questankündigungen behalten ihren gelben Text.
 
 ## 5.17.0
 

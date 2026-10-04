@@ -4007,6 +4007,12 @@ function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, tex
 	end
 
 	bubble.String:SetWidth(maxTextWidth)
+	-- Bubbles are reused between human chat and quest announcements.
+	if eventType == "QT_CHAT" then
+		bubble.String:SetTextColor(1, 1, 1, 1)
+	else
+		bubble.String:SetTextColor(1, 0.82, 0, 1)
+	end
 	bubble.String:SetText(message)
 
 	local measuredUnboundedWidth = nil

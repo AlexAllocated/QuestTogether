@@ -592,6 +592,10 @@ local function WithRecycledBubble(fn)
 		function region:Hide() Mutate(self); self.shown = false end
 		function region:GetFrameStrata() return "LOW" end
 		function region:GetFrameLevel() return 1 end
+		function region:SetTextColor(r, g, b, a)
+			Mutate(self)
+			self.textColor = { r, g, b, a }
+		end
 		for _, name in ipairs({ "SetFrameStrata", "SetFrameLevel", "SetAlpha", "ClearAllPoints", "SetPoint", "SetSize", "SetClampRectInsets", "SetWidth", "SetText", "SetFont", "SetAtlas", "SetTexCoord" }) do
 			region[name] = Mutate
 		end
@@ -644,7 +648,10 @@ QT:RegisterTest("recycled unit frame reparents its cached bubble to the current 
 		Equal(state.bubble:GetParent(), state.newBase)
 		Equal(state.bubble:IsVisible(), true)
 		Equal(state.reparentAttempts, 1)
+		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Hello!", "QT_CHAT"), true)
+		Equal(table.concat(state.bubble.String.textColor, ","), "1,1,1,1")
 		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Another update"), true)
+		Equal(table.concat(state.bubble.String.textColor, ","), "1,0.82,0,1")
 		Equal(state.reparentAttempts, 1, "unchanged bubble hosts should not be reparented")
 	end)
 end)

@@ -4412,6 +4412,8 @@ QuestTogether:RegisterTest("console announcement message includes icon and playe
 	AssertTrue(string.find(message, "|T" .. QuestTogether.NAMEPLATE_QUEST_ICON_TEXTURE, 1, true) ~= nil)
 	AssertTrue(string.find(message, "MyPlayer", 1, true) ~= nil)
 	AssertTrue(string.find(message, "|cffffd200: hello there|r", 1, true) ~= nil)
+	local chat = QuestTogether:BuildConsoleAnnouncementMessage("MyPlayer-Realm", "hello there", "MAGE", "QT_CHAT")
+	AssertTrue(string.find(chat, "|cffffffff: hello there|r", 1, true) ~= nil)
 end)
 
 QuestTogether:RegisterTest("chat log speaker link handler opens QuestTogether menu", function()

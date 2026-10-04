@@ -193,6 +193,7 @@ local function WithBubbles(run)
 			"SetClampRectInsets",
 			"SetWidth",
 			"SetText",
+			"SetTextColor",
 			"SetFont",
 		}) do
 			frame[method] = Mutate

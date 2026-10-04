@@ -110,8 +110,7 @@
       "snapshot_deferred unreadable_row=%d rows=%d generation=%d",
       "|cff33ff99 - |r",
       "|cff33ff99QuestTogether|r: ",
-      "|cffff8800 - |r",
-      "|cffffd200: "
+      "|cffff8800 - |r"
     ],
     "Debug.lua": [
       "Clear",

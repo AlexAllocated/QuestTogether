@@ -4,19 +4,12 @@
 
 ## 5.17.1
 
-Découvrez-en plus sur vos compagnons de quête et consultez l’état des quêtes directement depuis les infobulles de discussion.
+Le chat QT est plus facile à distinguer des annonces de quêtes.
 
-### Infobulles de joueur plus utiles
+### Texte blanc pour le chat QT
 
-- Les infobulles des noms de joueur et des points sur la carte indiquent désormais combien de quêtes QuestTogether surveille, ainsi que Solo ou Groupe de N. Votre propre infobulle utilise votre état local actuel.
-- L’infobulle de la minicarte compte désormais les quêtes surveillées par QuestTogether, comme l’annonce au démarrage, au lieu de ne compter que les quêtes suivies dans le suivi de WoW.
-- Le nombre de quêtes distantes et la taille des groupes nécessitent un pair mis à jour. Ils sont actualisés environ toutes les 80 secondes via les messages de pulsation existants, sans messages supplémentaires ; les rapports manquants ou obsolètes s’affichent comme inconnus. Les anciennes versions continuent de recevoir les annonces de version compatibles.
-
-### État de la quête au survol
-
-- Survolez un nom de quête dans les journaux QT pour voir votre état de quête, si elle peut être partagée, l’ID de quête et la progression des objectifs suivis localement dans une infobulle à côté du curseur.
-- L’élément de menu État a été supprimé. Cliquer sur un nom de quête ouvre toujours Partager, Ouvrir dans le journal des quêtes, Comparer les quêtes du groupe et l’action de destination de la fenêtre de journal.
-- Les nouveaux libellés d’infobulle sont traduits dans toutes les langues prises en charge. Les détails de quête reflètent votre propre progression, pas l’étape de quête de l’expéditeur.
+- Les messages des joueurs dans le chat QT utilisent désormais du texte blanc dans la fenêtre de discussion et les bulles au-dessus des personnages.
+- Les noms des joueurs conservent la couleur de leur classe, et les annonces de quêtes conservent leur texte jaune.
 
 ## 5.17.0
 

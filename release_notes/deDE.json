@@ -1,23 +1,14 @@
 {
-  "source_sha256": "5fa1bdbaefff1112886109fe246fef7a7501962849cc4921b0a3f35dbf45c00b",
+  "source_sha256": "66c143ee6a0a79c7bde32f98ed5dd9aa8e4991ccdf7b0c793bfb8ff793b17d2c",
   "notes": {
     "version": "5.17.1",
-    "welcome": "Erfahre mehr über deine Questgefährten und prüfe den Queststatus direkt über Chat-Tooltips.",
+    "welcome": "QT-Chat lässt sich leichter von Questankündigungen unterscheiden.",
     "sections": [
       {
-        "title": "Nützlichere Spieler-Tooltips",
+        "title": "Weißer QT-Chattext",
         "items": [
-          "Tooltips für Spielernamen und Kartenpunkte zeigen jetzt an, wie viele Quests QuestTogether überwacht, plus Solo oder Gruppe mit N. Dein eigener Tooltip verwendet deinen aktuellen lokalen Status.",
-          "Der Minikarten-Tooltip zählt jetzt die von QuestTogether überwachten Quests und entspricht damit der Startankündigung, statt nur die Quests zu zählen, die im WoW-Tracker verfolgt werden.",
-          "Entfernte Questzahlen und Gruppengrößen erfordern einen aktualisierten Peer. Sie werden etwa alle 80 Sekunden über bestehende Heartbeat-Nachrichten aktualisiert, ohne zusätzliche Nachrichten; fehlende oder veraltete Meldungen werden als unbekannt angezeigt. Ältere Versionen erhalten weiterhin kompatible Versionsankündigungen."
-        ]
-      },
-      {
-        "title": "Queststatus beim Darüberfahren",
-        "items": [
-          "Fahre in QT-Protokollen mit der Maus über einen Questnamen, um deinen Queststatus, die Teilbarkeit, die Quest-ID und den lokal verfolgten Zielfortschritt in einem Tooltip neben dem Mauszeiger zu sehen.",
-          "Der Menüpunkt Status wurde entfernt. Ein Klick auf einen Questnamen öffnet weiterhin Teilen, Im Questlog öffnen, Gruppenquests vergleichen und die Zielaktion des Protokollfensters.",
-          "Die neuen Tooltip-Beschriftungen sind in alle unterstützten Sprachen übersetzt. Questdetails spiegeln deinen eigenen Fortschritt wider, nicht den Questfortschritt des Absenders."
+          "Nachrichten von Spielern im QT-Chat verwenden jetzt weißen Text im Chatfenster und in Sprechblasen über dem Kopf.",
+          "Spielernamen behalten ihre Klassenfarben, und Questankündigungen behalten ihren gelben Text."
         ]
       }
     ]

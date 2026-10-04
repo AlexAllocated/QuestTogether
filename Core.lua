@@ -4476,12 +4476,13 @@ function QuestTogether:BuildConsoleAnnouncementMessage(targetName, message, clas
 	local trimmedMessage = self:DecorateAnnouncementMessageWithQuestLink(tostring(message or ""), eventType, questId)
 	local body = trimmedMessage
 	local speakerText = self:BuildChatLogSpeakerLabel(targetName, classFile)
+	local textColor = eventType == "QT_CHAT" and "|cffffffff" or "|cffffd200"
 
 	if iconTag ~= "" then
-		return iconTag .. speakerText .. "|cffffd200: " .. body .. "|r"
+		return iconTag .. speakerText .. textColor .. ": " .. body .. "|r"
 	end
 
-	return speakerText .. "|cffffd200: " .. body .. "|r"
+	return speakerText .. textColor .. ": " .. body .. "|r"
 end
 
 function QuestTogether:BuildPingResponseMessage(pongData)

@@ -2250,16 +2250,16 @@ function QuestTogether:CHAT_MSG_CHANNEL(_, message, sender, _, channelName, _, _
 	if text == "" then return false end
 	local icon = "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon"
 	if self:GetOption("showChatLogs") then
-		self:PrintConsoleAnnouncement(text, name, nil, nil, icon, "texture")
+		self:PrintConsoleAnnouncement(text, name, nil, "QT_CHAT", icon, "texture")
 	end
 	if self:GetOption("showChatBubbles") then
 		if self:IsSelfSender(name) then
 			if not self:GetOption("hideMyOwnChatBubbles") then
-				self:ShowAnnouncementBubbleOnUnitNameplate("player", text, nil, icon, "texture")
+				self:ShowAnnouncementBubbleOnUnitNameplate("player", text, "QT_CHAT", icon, "texture")
 			end
 		else
 			local plate = self:FindVisiblePlayerNameplateForSender(SafePrimitiveString(self, senderGUID, ""), name)
-			if plate then self:ShowAnnouncementBubbleOnNameplate(plate, text, nil, icon, "texture", name) end
+			if plate then self:ShowAnnouncementBubbleOnNameplate(plate, text, "QT_CHAT", icon, "texture", name) end
 		end
 	end
 	return true

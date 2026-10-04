@@ -122,7 +122,8 @@ QuestTogether:RegisterTest("plain QT channel chat displays once without relaying
 	local options = { showChatLogs = true, showChatBubbles = true }
 	local bubbles, plate = {}, {}
 	function addon:GetOption(key) return options[key] end
-	function addon:PrintConsoleAnnouncement(text, _, _, _, icon, kind)
+	function addon:PrintConsoleAnnouncement(text, _, _, eventType, icon, kind)
+		Equal(eventType, "QT_CHAT")
 		Equal(icon, "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon")
 		Equal(kind, "texture")
 		self.printed[#self.printed + 1] = text
@@ -134,14 +135,16 @@ QuestTogether:RegisterTest("plain QT channel chat displays once without relaying
 		Equal(name, "Friend-Realm")
 		return self.visible and plate or nil
 	end
-	function addon:ShowAnnouncementBubbleOnNameplate(frame, text, _, icon, kind, name)
+	function addon:ShowAnnouncementBubbleOnNameplate(frame, text, eventType, icon, kind, name)
+		Equal(eventType, "QT_CHAT")
 		Equal(icon, "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon")
 		Equal(kind, "texture")
 		Equal(frame, plate)
 		Equal(name, "Friend-Realm")
 		bubbles[#bubbles + 1] = text
 	end
-	function addon:ShowAnnouncementBubbleOnUnitNameplate(unit, text, _, icon, kind)
+	function addon:ShowAnnouncementBubbleOnUnitNameplate(unit, text, eventType, icon, kind)
+		Equal(eventType, "QT_CHAT")
 		Equal(unit, "player")
 		Equal(icon, "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon")
 		Equal(kind, "texture")
