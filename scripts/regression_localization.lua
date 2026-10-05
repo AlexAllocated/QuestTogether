@@ -124,7 +124,7 @@ QT:RegisterTest("client locale renders event classes and locally resolved quest 
 	end
 	for _, kind in ipairs({ "QUEST_PROGRESS", "WORLD_QUEST_PROGRESS", "BONUS_OBJECTIVE_PROGRESS" }) do
 		local event = { eventType = kind, questId = 12345, text = "Source progress", eventFacts = "1:" .. sourceLocale .. ":c:2:3:8" }
-		assert(QT:LocalizeAnnouncementEvent(event) == "Native title " .. locale .. " — " .. string.format(T("Objective %d: %d/%d"), 2, 3, 8))
+		assert(QT:LocalizeAnnouncementEvent(event) == event.text)
 	end
 	assert(QT:LocalizeAnnouncementEvent({ eventType = "SCAN_STATUS", text = "Source count", eventFacts = "1:" .. sourceLocale .. ":s::17:" }) == string.format(T("Quests monitored by QuestTogether: %d"), 17))
 	assert(QT:LocalizeAnnouncementEvent({ eventType = "PLAYER_LEVEL_UP", text = "Source level", eventFacts = "1:" .. sourceLocale .. ":l::13:" }) == T("Level ") .. "13")

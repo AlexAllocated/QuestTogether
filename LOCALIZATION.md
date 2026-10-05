@@ -44,20 +44,20 @@ For different-language senders, `EventLocalization.lua` renders supported event 
 locally and resolves quest titles through addon snapshots or guarded native quest-data
 APIs. If a title is unavailable, quest lifecycle events translate the label while
 retaining the sender's readable title, extracted only from an exact known prefix.
-Unsupported/custom text and progress without a local title retain the complete source
+Unsupported/custom text and all objective progress retain the complete source
 message; the receiver never invents quest-ID labels or objective identities. Successful
 native lookups are cached for five minutes,
 misses for five seconds, with 256 entries and at most ten native data-load requests
 per 30 seconds. Each missing quest is requested at most once per 30 seconds. Loaded
 results are used on subsequent presentation; old chat lines are not reprinted.
 
-Progress uses transmitted objective index, count/total, percentage, or completion
-state. WoW's objective rows do not provide a cross-stage stable target identity, so
-translated progress says, for example, “Objective 2: 3/8” instead of borrowing the
-receiver's current objective description or counters. Legacy text-only APIs can send
-completion state; without trustworthy structured facts the original text is retained.
-Same-language progress retains its detailed native objective wording; lifecycle
-titles still prefer available local data, including repairs of sent Quest-ID
+Progress preserves the sender's original objective wording and counts in every locale,
+including when a local quest title is available. WoW's objective rows do not provide
+a cross-stage stable target identity, so the receiver cannot safely translate an
+objective description using its own quest log. Readable foreign-language text is
+preferred over generic numbered objectives. Progress presentation performs no local
+quest-data lookups; optional objective facts remain on the wire for compatibility.
+Lifecycle titles still prefer available local data, including repairs of sent Quest-ID
 placeholders. Monitored-quest scan announcements carry a bounded count fact;
 older receivers retain the original readable text. Comparison
 rows prefer the receiver's local quest title when available. Player names are unchanged.

@@ -242,11 +242,14 @@ function QT:LocalizeAnnouncementEvent(event)
 	if event.eventType == "LOOKING_FOR_QUEST_PARTNERS" then
 		return L("Looking for questing partners") .. " :)"
 	end
-	local facts = self:DecodeAnnouncementFacts(event.eventFacts)
-	local prefix = prefixes[event.eventType]
-	if facts and facts.locale == self:GetEventLocale() and progressEvents[event.eventType] then
+	-- Objective indexes are not stable across quest stages. Preserve the sender's
+	-- readable objective and counts instead of inventing a generic translation
+	-- or borrowing the receiver's potentially unrelated objective description.
+	if progressEvents[event.eventType] then
 		return event.text
 	end
+	local facts = self:DecodeAnnouncementFacts(event.eventFacts)
+	local prefix = prefixes[event.eventType]
 	if event.eventType == "SCAN_STATUS" and facts and facts.kind == "s" then
 		return self:GetMonitoredQuestCountText(facts.current)
 	end
@@ -254,7 +257,7 @@ function QT:LocalizeAnnouncementEvent(event)
 		return L("Level ") .. tostring(facts.current)
 	end
 	local id = Integer(self, event.questId, 1, 1000000000)
-	if not id or (not prefix and not progressEvents[event.eventType]) then
+	if not id or not prefix then
 		return event.text
 	end
 	if prefix and facts and facts.kind ~= "q" then
@@ -279,28 +282,4 @@ function QT:LocalizeAnnouncementEvent(event)
 		local title = self:GetLocalizedQuestTitle(id) or sourceTitle
 		return title and (self.TranslateForLocale(prefix, self:GetEventLocale()) .. title) or event.text
 	end
-	if not facts or (facts.kind ~= "c" and facts.kind ~= "p" and facts.kind ~= "o") then
-		return event.text
-	end
-	local title = self:GetLocalizedQuestTitle(id)
-	-- Progress prose cannot safely be split into a quest title and objective.
-	-- Preserve readable source text when local data cannot supply the title.
-	if not title then
-		return event.text
-	end
-	-- Objective indexes are not stable identities across stages. Do not borrow
-	-- another player's objective text or counters, or replace numbers in prose.
-	local progress
-	if facts.kind == "p" then
-		progress = string.format(L("Objective %d: %d%%"), facts.index, facts.current)
-	elseif facts.kind == "c" and facts.required then
-		progress = string.format(L("Objective %d: %d/%d"), facts.index, facts.current, facts.required)
-	elseif facts.kind == "c" then
-		progress = string.format(L("Objective %d: %d"), facts.index, facts.current)
-	elseif facts.current == 1 then
-		progress = string.format(L("Objective %d: Complete"), facts.index)
-	else
-		progress = string.format(L("Objective %d: Progress updated"), facts.index)
-	end
-	return title .. " — " .. progress
 end
