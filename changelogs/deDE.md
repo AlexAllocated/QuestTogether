@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.1.2
+## 6.2.0
 
 Flüssigere Punkte in der Nähe, schnellere Spielerdetails und zuverlässigere Kommunikation.
 
@@ -26,6 +26,24 @@ Flüssigere Punkte in der Nähe, schnellere Spielerdetails und zuverlässigere K
 
 - Vergleiche, Gruppenlisten, Beitritts- und Teilanfragen sowie Ping-Antworten bevorzugen direkte Flüsternachrichten mit kompatiblen Spielern. Zusammengefasste Statusmeldungen und weniger unveränderte Positionsupdates reduzieren unnötigen öffentlichen Datenverkehr.
 - Wiederholte Questprüfungen, übermäßige Namensplakettenprüfungen, während Einschränkungen nicht schließbare Fenster und nicht umschaltbare Einstellungen bei /qt set wurden korrigiert. Das Abschalten der Positionsfreigabe verwirft keine anderen wartenden Anfragen mehr.
+
+## 6.1.2
+
+Reaktionsschnellere Punkte für Spieler in der Nähe und klarere übersetzte Meldungen.
+
+### Minikarten-Spielerpunkte
+
+- Fehlende QT-Spielerpunkte behoben, wenn die Minikarte keine Karten-ID bereitstellt. QT verwendet bei Bedarf jetzt deine aktuelle Karte.
+
+### Schnellere lokale Standortaktualisierungen
+
+- Standortaktualisierungen erfolgen jetzt etwa einmal pro Sekunde bei weniger als 10 bekannten QT-Nutzern in deiner Zone, alle 5–10 Sekunden bei 10–19 und alle 15–20 Sekunden bei 100. Die Intervalle werden zwischen diesen Stufen schrittweise länger; Timings bei 500 oder mehr bleiben unverändert.
+- Schnelle Aktualisierungen senden kompakte, frisch erfasste Standorte, während andere Spielerdetails ihren langsameren Heartbeat beibehalten. Bestehende Traffic-Limits gelten weiterhin, daher kann Überlastung die Zustellung verzögern. Andere Spieler benötigen dieses Update, um schnellere Positionen zu senden.
+
+### Klarere übersetzte Meldungen
+
+- Questsereignis-Bezeichnungen wie Quest angenommen verwenden jetzt deine Sprache, selbst wenn ein lokaler Questtitel oder optionale Übersetzungsmetadaten nicht verfügbar sind.
+- Wenn WoW keinen lokalen Questtitel bereitstellen kann, behält QT den lesbaren Titel des Absenders bei. Fortschrittsmeldungen behalten weiterhin ihren ursprünglichen Text bei, wenn sie nicht sicher rekonstruiert werden können.
 
 ## 6.1.1
 

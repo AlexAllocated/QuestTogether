@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 6.1.2
+## 6.2.0
 
 Smoother nearby dots, faster player details, and more reliable communication.
 
@@ -28,6 +28,24 @@ Smoother nearby dots, faster player details, and more reliable communication.
 
 - Comparisons, party rosters, join and share requests, and ping replies prefer direct whispers with compatible peers. Consolidated heartbeats and fewer unchanged location updates reduce redundant public traffic.
 - Fixed repeated quest scans, excessive nameplate retries, dialogs that could not close during restrictions, and /qt set accepting non-toggle settings. Disabling location sharing no longer drops unrelated queued requests.
+
+## 6.1.2
+
+More responsive nearby player dots and clearer translated announcements.
+
+### Minimap player dots
+
+- Fixed missing QT player dots when the minimap does not provide a map ID. QT now uses your current map when needed.
+
+### Faster local location updates
+
+- Location updates now target once per second with fewer than 10 known QT users in your zone, 5–10 seconds with 10–19, and 15–20 seconds at 100. Intervals lengthen gradually between these levels; timings at 500 or more are unchanged.
+- Fast updates send compact, freshly sampled locations while other player details keep their slower heartbeat. Existing traffic limits still apply, so congestion may delay delivery. Other players need this update to send faster positions.
+
+### Clearer translated announcements
+
+- Quest event labels such as Quest Accepted now use your language even when a local quest title or optional translation metadata is unavailable.
+- When WoW cannot provide a local quest title, QT keeps the sender’s readable title. Progress messages still retain their original text when they cannot be safely reconstructed.
 
 ## 6.1.1
 

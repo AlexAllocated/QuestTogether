@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.1.2
+## 6.2.0
 
 Des points proches plus fluides, des détails de joueur plus rapides et une communication plus fiable.
 
@@ -26,6 +26,24 @@ Des points proches plus fluides, des détails de joueur plus rapides et une comm
 
 - Les comparaisons, listes de groupe, demandes pour rejoindre ou partager et réponses au ping privilégient les chuchotements directs avec les joueurs compatibles. Le regroupement des messages périodiques et la réduction des mises à jour de positions inchangées allègent le trafic public.
 - Correction des analyses de quêtes répétées, des vérifications excessives des barres de nom, des fenêtres impossibles à fermer pendant les restrictions et de /qt set acceptant des réglages autres que marche/arrêt. Désactiver le partage de position ne supprime plus les autres demandes en attente.
+
+## 6.1.2
+
+Points des joueurs à proximité plus réactifs et annonces traduites plus claires.
+
+### Points des joueurs sur la minicarte
+
+- Correction des points de joueurs QT manquants lorsque la minicarte ne fournit pas d’ID de carte. QT utilise désormais votre carte actuelle si nécessaire.
+
+### Mises à jour de position locales plus rapides
+
+- Les mises à jour de position ciblent désormais une fois par seconde avec moins de 10 utilisateurs QT connus dans votre zone, 5 à 10 secondes avec 10 à 19, et 15 à 20 secondes à 100. Les intervalles s’allongent progressivement entre ces paliers ; les timings à 500 ou plus restent inchangés.
+- Les mises à jour rapides envoient des positions compactes et fraîchement échantillonnées, tandis que les autres détails des joueurs conservent leur battement plus lent. Les limites de trafic existantes s’appliquent toujours, la congestion peut donc retarder la livraison. Les autres joueurs doivent disposer de cette mise à jour pour envoyer des positions plus rapides.
+
+### Annonces traduites plus claires
+
+- Les libellés d’événements de quête, comme Quête acceptée, utilisent désormais votre langue même lorsqu’un titre de quête local ou des métadonnées de traduction facultatives sont indisponibles.
+- Lorsque WoW ne peut pas fournir de titre de quête local, QT conserve le titre lisible de l’expéditeur. Les messages de progression conservent toujours leur texte d’origine lorsqu’ils ne peuvent pas être reconstruits en toute sécurité.
 
 ## 6.1.1
 

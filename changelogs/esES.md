@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.1.2
+## 6.2.0
 
 Puntos cercanos más fluidos, información de jugadores más rápida y comunicación más fiable.
 
@@ -26,6 +26,24 @@ Puntos cercanos más fluidos, información de jugadores más rápida y comunicac
 
 - Las comparaciones, listas de grupo, solicitudes para unirse o compartir y respuestas de ping prefieren susurros directos con jugadores compatibles. Los mensajes periódicos consolidados y menos actualizaciones de posiciones sin cambios reducen el tráfico público redundante.
 - Corregidos los análisis de misiones repetidos, los reintentos excesivos de placas de nombre, los diálogos que no se podían cerrar durante restricciones y /qt set aceptando ajustes que no son interruptores. Desactivar compartir ubicación ya no descarta otras solicitudes en cola.
+
+## 6.1.2
+
+Puntos de jugadores cercanos con mejor respuesta y anuncios traducidos más claros.
+
+### Puntos de jugadores en el minimapa
+
+- Se han corregido los puntos de jugadores de QT que faltaban cuando el minimapa no proporciona un ID de mapa. QT ahora usa tu mapa actual cuando sea necesario.
+
+### Actualizaciones de ubicación local más rápidas
+
+- Las actualizaciones de ubicación ahora se realizan una vez por segundo con menos de 10 usuarios de QT conocidos en tu zona, cada 5–10 segundos con 10–19, y cada 15–20 segundos con 100. Los intervalos aumentan gradualmente entre estos niveles; los tiempos con 500 o más no cambian.
+- Las actualizaciones rápidas envían ubicaciones compactas y recién muestreadas, mientras que el resto de detalles de los jugadores mantienen su latido más lento. Los límites de tráfico existentes siguen aplicándose, así que la congestión puede retrasar la entrega. Los demás jugadores necesitan esta actualización para enviar posiciones más rápidas.
+
+### Anuncios traducidos más claros
+
+- Las etiquetas de eventos de misión, como Misión aceptada, ahora usan tu idioma incluso cuando no haya disponible un título de misión local o metadatos de traducción opcionales.
+- Cuando WoW no puede proporcionar un título de misión local, QT conserva el título legible del remitente. Los mensajes de progreso siguen conservando su texto original cuando no se pueden reconstruir de forma segura.
 
 ## 6.1.1
 

@@ -1,7 +1,7 @@
 {
   "source_sha256": "34b9c5bf348f0048984fcf94d05f0bcb73922a207a887aa1e8b3621e8acf1193",
   "notes": {
-    "version": "6.1.2",
+    "version": "6.2.0",
     "welcome": "주변 플레이어 점의 움직임이 부드러워지고, 플레이어 정보를 더 빠르게 확인하며, 통신 안정성이 향상됩니다.",
     "sections": [
       {

@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "6.1.2",
+	version = "6.2.0",
 	welcome = "Smoother nearby dots, faster player details, and more reliable communication.",
 	sections = {
 		{
