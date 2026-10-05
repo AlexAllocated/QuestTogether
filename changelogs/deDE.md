@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.1.1
+## 6.1.2
 
 Reaktionsschnellere Punkte für Spieler in der Nähe und klarere übersetzte Meldungen.
 
@@ -19,6 +19,14 @@ Reaktionsschnellere Punkte für Spieler in der Nähe und klarere übersetzte Mel
 
 - Questsereignis-Bezeichnungen wie Quest angenommen verwenden jetzt deine Sprache, selbst wenn ein lokaler Questtitel oder optionale Übersetzungsmetadaten nicht verfügbar sind.
 - Wenn WoW keinen lokalen Questtitel bereitstellen kann, behält QT den lesbaren Titel des Absenders bei. Fortschrittsmeldungen behalten weiterhin ihren ursprünglichen Text bei, wenn sie nicht sicher rekonstruiert werden können.
+
+## 6.1.1
+
+Übersichtlichere Kontextmenüs für Spieler und Quests.
+
+### Bereinigung der Kontextmenüs
+
+- Menüs für Spielernamen und Questnamen enthalten nicht mehr die Verknüpfung zum Logfenster. Verschiebe QuestTogether-Logs über das Minikartenmenü oder die Einstellungen zwischen dem Haupt-Chatfenster und einem separaten Fenster.
 
 ## 6.1.0
 

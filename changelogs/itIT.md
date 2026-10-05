@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.1.1
+## 6.1.2
 
 Punti dei giocatori vicini più reattivi e annunci tradotti più chiari.
 
@@ -19,6 +19,14 @@ Punti dei giocatori vicini più reattivi e annunci tradotti più chiari.
 
 - Le etichette degli eventi delle missioni, come Missione accettata, ora usano la tua lingua anche quando non è disponibile un titolo locale della missione o metadati di traduzione opzionali.
 - Quando WoW non può fornire un titolo locale della missione, QT conserva il titolo leggibile del mittente. I messaggi di progresso mantengono comunque il loro testo originale quando non possono essere ricostruiti in modo sicuro.
+
+## 6.1.1
+
+Menu contestuali più puliti per giocatori e missioni.
+
+### Pulizia del menu contestuale
+
+- I menu dei nomi dei giocatori e delle missioni non includono più la scorciatoia per la finestra del registro. Sposta i registri di QuestTogether tra la finestra principale della chat e una finestra separata usando il menu della minimappa o le impostazioni.
 
 ## 6.1.0
 

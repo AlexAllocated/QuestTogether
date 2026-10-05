@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.1.1
+## 6.1.2
 
 Points des joueurs à proximité plus réactifs et annonces traduites plus claires.
 
@@ -19,6 +19,14 @@ Points des joueurs à proximité plus réactifs et annonces traduites plus clair
 
 - Les libellés d’événements de quête, comme Quête acceptée, utilisent désormais votre langue même lorsqu’un titre de quête local ou des métadonnées de traduction facultatives sont indisponibles.
 - Lorsque WoW ne peut pas fournir de titre de quête local, QT conserve le titre lisible de l’expéditeur. Les messages de progression conservent toujours leur texte d’origine lorsqu’ils ne peuvent pas être reconstruits en toute sécurité.
+
+## 6.1.1
+
+Menus contextuels plus clairs pour les joueurs et les quêtes.
+
+### Nettoyage des menus contextuels
+
+- Les menus de noms de joueurs et de quêtes n’incluent plus le raccourci vers la fenêtre de journal. Déplacez les journaux de QuestTogether entre la fenêtre de discussion principale et une fenêtre séparée via le menu de la minicarte ou les paramètres.
 
 ## 6.1.0
 

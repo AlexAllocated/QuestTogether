@@ -3,6 +3,140 @@
   "releases": [
     {
       "enUS": {
+        "version": "6.1.1",
+        "welcome": "Cleaner context menus for players and quests.",
+        "sections": [
+          {
+            "title": "Context menu cleanup",
+            "items": [
+              "Player-name and quest-name menus no longer include the log-window shortcut. Move QuestTogether logs between the main chat window and a separate window using the minimap menu or settings."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "6.1.1",
+        "welcome": "Übersichtlichere Kontextmenüs für Spieler und Quests.",
+        "sections": [
+          {
+            "title": "Bereinigung der Kontextmenüs",
+            "items": [
+              "Menüs für Spielernamen und Questnamen enthalten nicht mehr die Verknüpfung zum Logfenster. Verschiebe QuestTogether-Logs über das Minikartenmenü oder die Einstellungen zwischen dem Haupt-Chatfenster und einem separaten Fenster."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "6.1.1",
+        "welcome": "Menus contextuels plus clairs pour les joueurs et les quêtes.",
+        "sections": [
+          {
+            "title": "Nettoyage des menus contextuels",
+            "items": [
+              "Les menus de noms de joueurs et de quêtes n’incluent plus le raccourci vers la fenêtre de journal. Déplacez les journaux de QuestTogether entre la fenêtre de discussion principale et une fenêtre séparée via le menu de la minicarte ou les paramètres."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "6.1.1",
+        "welcome": "Menús contextuales más claros para jugadores y misiones.",
+        "sections": [
+          {
+            "title": "Limpieza de menús contextuales",
+            "items": [
+              "Los menús de nombre de jugador y nombre de misión ya no incluyen el atajo de la ventana de registro. Mueve los registros de QuestTogether entre la ventana principal del chat y una ventana independiente usando el menú del minimapa o los ajustes."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "6.1.1",
+        "welcome": "Menús contextuales más limpios para jugadores y misiones.",
+        "sections": [
+          {
+            "title": "Limpieza del menú contextual",
+            "items": [
+              "Los menús de nombres de jugador y nombres de misiones ya no incluyen el acceso directo a la ventana del registro. Mueve los registros de QuestTogether entre la ventana principal de chat y una ventana separada usando el menú del minimapa o la configuración."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "6.1.1",
+        "welcome": "Menus de contexto mais limpos para jogadores e missões.",
+        "sections": [
+          {
+            "title": "Limpeza do menu de contexto",
+            "items": [
+              "Os menus de nome de jogador e de nome de missão não incluem mais o atalho da janela de registros. Mova os registros do QuestTogether entre a janela principal de bate-papo e uma janela separada usando o menu do minimapa ou as configurações."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "6.1.1",
+        "welcome": "Более чистые контекстные меню для игроков и заданий.",
+        "sections": [
+          {
+            "title": "Очистка контекстного меню",
+            "items": [
+              "Меню имен игроков и названий заданий больше не содержат ярлык окна журнала. Перемещайте журналы QuestTogether между основным окном чата и отдельным окном через меню у мини-карты или настройки."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "6.1.1",
+        "welcome": "Menu contestuali più puliti per giocatori e missioni.",
+        "sections": [
+          {
+            "title": "Pulizia del menu contestuale",
+            "items": [
+              "I menu dei nomi dei giocatori e delle missioni non includono più la scorciatoia per la finestra del registro. Sposta i registri di QuestTogether tra la finestra principale della chat e una finestra separata usando il menu della minimappa o le impostazioni."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "6.1.1",
+        "welcome": "플레이어와 퀘스트의 상황별 메뉴를 더 깔끔하게 정리했습니다.",
+        "sections": [
+          {
+            "title": "상황별 메뉴 정리",
+            "items": [
+              "플레이어 이름 및 퀘스트 이름 메뉴에 더 이상 로그 창 바로가기가 포함되지 않습니다. 미니맵 메뉴나 설정을 사용해 QuestTogether 로그를 기본 대화창과 별도 창 사이에서 이동할 수 있습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "6.1.1",
+        "welcome": "更清爽的玩家和任务右键菜单。",
+        "sections": [
+          {
+            "title": "右键菜单清理",
+            "items": [
+              "玩家姓名和任务名称菜单不再包含日志窗口快捷项。可使用小地图菜单或设置，在主聊天窗口和单独窗口之间移动 QuestTogether 日志。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "6.1.1",
+        "welcome": "玩家與任務的右鍵選單更簡潔。",
+        "sections": [
+          {
+            "title": "右鍵選單清理",
+            "items": [
+              "玩家名稱與任務名稱選單不再包含記錄視窗捷徑。可使用小地圖選單或設定，在主聊天視窗與獨立視窗之間移動 QuestTogether 記錄。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "6.1.0",
         "welcome": "Find parties on the map, see who is questing together, and request to join through any party member. Player tooltips now put party details front and center.",
         "sections": [

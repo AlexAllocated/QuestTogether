@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 6.1.1
+## 6.1.2
 
 More responsive nearby player dots and clearer translated announcements.
 
@@ -21,6 +21,14 @@ More responsive nearby player dots and clearer translated announcements.
 
 - Quest event labels such as Quest Accepted now use your language even when a local quest title or optional translation metadata is unavailable.
 - When WoW cannot provide a local quest title, QT keeps the sender’s readable title. Progress messages still retain their original text when they cannot be safely reconstructed.
+
+## 6.1.1
+
+Cleaner context menus for players and quests.
+
+### Context menu cleanup
+
+- Player-name and quest-name menus no longer include the log-window shortcut. Move QuestTogether logs between the main chat window and a separate window using the minimap menu or settings.
 
 ## 6.1.0
 

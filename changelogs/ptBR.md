@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.1.1
+## 6.1.2
 
 Pontos de jogadores próximos mais responsivos e anúncios traduzidos mais claros.
 
@@ -19,6 +19,14 @@ Pontos de jogadores próximos mais responsivos e anúncios traduzidos mais claro
 
 - Rótulos de eventos de missão, como Missão aceita, agora usam seu idioma mesmo quando um título de missão local ou metadados de tradução opcionais não estão disponíveis.
 - Quando o WoW não consegue fornecer um título de missão local, o QT mantém o título legível do remetente. Mensagens de progresso ainda mantêm o texto original quando não podem ser reconstruídas com segurança.
+
+## 6.1.1
+
+Menus de contexto mais limpos para jogadores e missões.
+
+### Limpeza do menu de contexto
+
+- Os menus de nome de jogador e de nome de missão não incluem mais o atalho da janela de registros. Mova os registros do QuestTogether entre a janela principal de bate-papo e uma janela separada usando o menu do minimapa ou as configurações.
 
 ## 6.1.0
 
