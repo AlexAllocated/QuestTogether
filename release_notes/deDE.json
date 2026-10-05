@@ -1,15 +1,14 @@
 {
-  "source_sha256": "6a9ff0456094fb043598686bdc252e62399a52f7bf57ca62527240e316b7af93",
+  "source_sha256": "37465ae72361af0fcca163e8cbda71dc4196240537d25a2bcc4bc067c737fc92",
   "notes": {
-    "version": "6.2.1",
-    "welcome": "Mehr Klarheit bei Ankündigungen im Gruppenchat.",
+    "version": "6.2.2",
+    "welcome": "Lesbarer Questfortschritt in jeder Sprache.",
     "sections": [
       {
-        "title": "Wissen, wann QT im Gruppenchat schreibt",
+        "title": "Details zu den Zielen beibehalten",
         "items": [
-          "Die Einstellung unter Wo ankündigen erklärt jetzt deutlich, dass QT auch im Gruppenchat schreibt, wenn ein Mitglied nicht als QT-Nutzer erkannt wird. Sie bleibt standardmäßig aktiviert.",
-          "Nach einer kurzen Erkennungsphase erscheint ein neuer Dialog mit dem QT-Logo. Wähle Aktiviert lassen oder Ankündigungen ausschalten, bevor die Weiterleitung beginnt. Nicht erneut erinnern speichert deine Bestätigung für das aktuelle Profil.",
-          "Die übersetzte Erinnerung nennt die betroffenen Mitglieder und kann erneut erscheinen, wenn neue, noch nicht erkannte Mitglieder beitreten. Werden sie als QT-Nutzer erkannt, verschwindet sie. Während der Wartezeit zurückgehaltene Ereignisse werden nicht nachträglich gesendet."
+          "Fortschrittsmeldungen für Quests, Weltquests und Bonusziele behalten im Chat und in Sprechblasen jetzt den ursprünglichen Text und die Zähler des Absenders bei, statt sie durch allgemeine Angaben wie „Ziel 1: 5/5“ zu ersetzen.",
+          "Meldungen über angenommene und abgeschlossene Quests verwenden weiterhin übersetzte Bezeichnungen und lokal verfügbare Questtitel."
         ]
       }
     ]

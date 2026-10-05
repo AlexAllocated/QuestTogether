@@ -1,15 +1,14 @@
 {
-  "source_sha256": "6a9ff0456094fb043598686bdc252e62399a52f7bf57ca62527240e316b7af93",
+  "source_sha256": "37465ae72361af0fcca163e8cbda71dc4196240537d25a2bcc4bc067c737fc92",
   "notes": {
-    "version": "6.2.1",
-    "welcome": "Un contrôle plus clair des annonces dans le canal de groupe.",
+    "version": "6.2.2",
+    "welcome": "Une progression de quête lisible dans toutes les langues.",
     "sections": [
       {
-        "title": "Savoir quand QT écrit dans le canal de groupe",
+        "title": "Conserver les détails des objectifs",
         "items": [
-          "Le réglage sous Où annoncer indique désormais clairement que QT écrit aussi dans le canal de groupe si un membre n’est pas reconnu comme utilisateur de QT. Il reste activé par défaut.",
-          "Une nouvelle fenêtre avec le logo QT apparaît après un court délai de détection. Choisissez Laisser activé ou Désactiver les annonces avant le début de la transmission. Ne plus me le rappeler enregistre votre confirmation pour le profil actuel.",
-          "Le rappel traduit nomme les membres concernés et peut revenir lorsque de nouveaux membres non identifiés rejoignent le groupe. Il disparaît s’ils sont reconnus comme utilisateurs de QT. Les événements retenus pendant l’attente ne sont pas renvoyés."
+          "La progression des quêtes, expéditions et objectifs bonus conserve désormais le texte et les compteurs d’origine de l’expéditeur dans le chat et les bulles, au lieu de les remplacer par un texte générique comme « Objectif 1 : 5/5 ».",
+          "Les annonces de quêtes acceptées et terminées utilisent toujours des libellés traduits et les titres de quête disponibles localement."
         ]
       }
     ]

@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.2.2
+
+Lesbarer Questfortschritt in jeder Sprache.
+
+### Details zu den Zielen beibehalten
+
+- Fortschrittsmeldungen für Quests, Weltquests und Bonusziele behalten im Chat und in Sprechblasen jetzt den ursprünglichen Text und die Zähler des Absenders bei, statt sie durch allgemeine Angaben wie „Ziel 1: 5/5“ zu ersetzen.
+- Meldungen über angenommene und abgeschlossene Quests verwenden weiterhin übersetzte Bezeichnungen und lokal verfügbare Questtitel.
+
 ## 6.2.1
 
 Mehr Klarheit bei Ankündigungen im Gruppenchat.

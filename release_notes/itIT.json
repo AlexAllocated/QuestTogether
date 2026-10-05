@@ -1,15 +1,14 @@
 {
-  "source_sha256": "6a9ff0456094fb043598686bdc252e62399a52f7bf57ca62527240e316b7af93",
+  "source_sha256": "37465ae72361af0fcca163e8cbda71dc4196240537d25a2bcc4bc067c737fc92",
   "notes": {
-    "version": "6.2.1",
-    "welcome": "Più chiarezza e controllo sugli annunci nella chat di gruppo.",
+    "version": "6.2.2",
+    "welcome": "Progressi delle missioni leggibili in ogni lingua.",
     "sections": [
       {
-        "title": "Scopri quando QT scrive nella chat di gruppo",
+        "title": "Mantieni i dettagli degli obiettivi",
         "items": [
-          "L’opzione in Dove annunciare ora spiega chiaramente che QT scrive anche nella chat di gruppo quando un membro non viene riconosciuto come utente QT. Rimane attiva per impostazione predefinita.",
-          "Una nuova finestra con il logo QT appare dopo una breve attesa per il rilevamento. Scegli Lascia attivo o Disattiva annunci prima che inizi l’invio. Non ricordarmelo più salva la conferma per il profilo attuale.",
-          "Il promemoria tradotto elenca i membri interessati e può riapparire quando si uniscono nuovi membri non identificati. Scompare se vengono riconosciuti come utenti QT. Gli eventi trattenuti durante l’attesa non vengono inviati in seguito."
+          "I progressi di missioni, missioni mondiali e obiettivi bonus ora mantengono il testo e i contatori originali del mittente nella chat e nei fumetti, invece di sostituirli con testo generico come \"Obiettivo 1: 5/5\".",
+          "Gli annunci delle missioni accettate e completate continuano a usare etichette tradotte e i titoli delle missioni disponibili localmente."
         ]
       }
     ]

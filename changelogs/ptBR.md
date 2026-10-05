@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.2.2
+
+Progresso de missões legível em todos os idiomas.
+
+### Manter os detalhes dos objetivos
+
+- O progresso de missões, missões mundiais e objetivos bônus agora mantém o texto e os contadores originais do remetente no bate-papo e nos balões, em vez de substituí-los por texto genérico como “Objetivo 1: 5/5”.
+- Os anúncios de missões aceitas e concluídas continuam usando rótulos traduzidos e os títulos de missão disponíveis localmente.
+
 ## 6.2.1
 
 Mais clareza e controle sobre os anúncios no bate-papo do grupo.

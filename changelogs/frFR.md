@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.2.2
+
+Une progression de quête lisible dans toutes les langues.
+
+### Conserver les détails des objectifs
+
+- La progression des quêtes, expéditions et objectifs bonus conserve désormais le texte et les compteurs d’origine de l’expéditeur dans le chat et les bulles, au lieu de les remplacer par un texte générique comme « Objectif 1 : 5/5 ».
+- Les annonces de quêtes acceptées et terminées utilisent toujours des libellés traduits et les titres de quête disponibles localement.
+
 ## 6.2.1
 
 Un contrôle plus clair des annonces dans le canal de groupe.

@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.2.2
+
+Progreso de misiones legible en todos los idiomas.
+
+### Conservar los detalles del objetivo
+
+- El progreso de misiones, misiones del mundo y objetivos de bonificación conserva ahora el texto y los contadores originales del remitente en el chat y las burbujas, en lugar de sustituirlos por texto genérico como «Objetivo 1: 5/5».
+- Los anuncios de misiones aceptadas y completadas siguen usando etiquetas traducidas y los títulos de misión disponibles localmente.
+
 ## 6.2.1
 
 Más claridad y control sobre los anuncios del chat de grupo.

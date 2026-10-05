@@ -4,6 +4,15 @@
 
 [Other languages](changelogs/README.md)
 
+## 6.2.2
+
+Readable quest progress in every language.
+
+### Keep the objective details
+
+- Quest, world quest, and bonus objective progress now keeps the sender's original wording and counts in chat and bubbles instead of replacing them with generic text such as "Objective 1: 5/5".
+- Quest accepted and completed announcements still use translated labels and locally available quest titles.
+
 ## 6.2.1
 
 Clearer control over party-chat announcements.

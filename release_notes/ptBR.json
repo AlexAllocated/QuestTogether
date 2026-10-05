@@ -1,15 +1,14 @@
 {
-  "source_sha256": "6a9ff0456094fb043598686bdc252e62399a52f7bf57ca62527240e316b7af93",
+  "source_sha256": "37465ae72361af0fcca163e8cbda71dc4196240537d25a2bcc4bc067c737fc92",
   "notes": {
-    "version": "6.2.1",
-    "welcome": "Mais clareza e controle sobre os anúncios no bate-papo do grupo.",
+    "version": "6.2.2",
+    "welcome": "Progresso de missões legível em todos os idiomas.",
     "sections": [
       {
-        "title": "Saiba quando o QT publica no bate-papo do grupo",
+        "title": "Manter os detalhes dos objetivos",
         "items": [
-          "A opção em Onde Anunciar agora explica claramente que o QT também publica no bate-papo do grupo quando um membro não é reconhecido como usuário do QT. Ela continua ativada por padrão.",
-          "Uma nova janela com o logotipo do QT aparece após uma breve espera para detecção. Escolha Manter ativado ou Desativar anúncios antes dos envios começarem. Não me lembrar novamente salva sua confirmação para o perfil atual.",
-          "O lembrete traduzido mostra os membros afetados e pode reaparecer quando novos membros não identificados entrarem. Ele desaparece se forem reconhecidos como usuários do QT. Os eventos retidos durante a espera não são reenviados."
+          "O progresso de missões, missões mundiais e objetivos bônus agora mantém o texto e os contadores originais do remetente no bate-papo e nos balões, em vez de substituí-los por texto genérico como “Objetivo 1: 5/5”.",
+          "Os anúncios de missões aceitas e concluídas continuam usando rótulos traduzidos e os títulos de missão disponíveis localmente."
         ]
       }
     ]

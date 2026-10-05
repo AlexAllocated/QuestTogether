@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.2.2
+
+Progressi delle missioni leggibili in ogni lingua.
+
+### Mantieni i dettagli degli obiettivi
+
+- I progressi di missioni, missioni mondiali e obiettivi bonus ora mantengono il testo e i contatori originali del mittente nella chat e nei fumetti, invece di sostituirli con testo generico come "Obiettivo 1: 5/5".
+- Gli annunci delle missioni accettate e completate continuano a usare etichette tradotte e i titoli delle missioni disponibili localmente.
+
 ## 6.2.1
 
 Più chiarezza e controllo sugli annunci nella chat di gruppo.

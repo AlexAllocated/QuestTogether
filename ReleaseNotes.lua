@@ -3,15 +3,14 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "6.2.1",
-	welcome = "Clearer control over party-chat announcements.",
+	version = "6.2.2",
+	welcome = "Readable quest progress in every language.",
 	sections = {
 		{
-			title = "Know when QT posts to party chat",
+			title = "Keep the objective details",
 			items = {
-				"The setting under Where to Announce now clearly says that QT also posts to party chat when a member is not recognized as a QT user. It remains on by default.",
-				"A new dialog with the QT logo appears after a short discovery delay. Choose Keep enabled or Turn off announcements before forwarding starts. Don't remind me again saves your acknowledgement for the current profile.",
-				"The localized reminder names the affected members and can return when new unidentified members join. It disappears if they are recognized as QT users. Events held back while waiting are not replayed.",
+				"Quest, world quest, and bonus objective progress now keeps the sender's original wording and counts in chat and bubbles instead of replacing them with generic text such as \"Objective 1: 5/5\".",
+				"Quest accepted and completed announcements still use translated labels and locally available quest titles.",
 			},
 		},
 	},

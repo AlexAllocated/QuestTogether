@@ -1,15 +1,14 @@
 {
-  "source_sha256": "6a9ff0456094fb043598686bdc252e62399a52f7bf57ca62527240e316b7af93",
+  "source_sha256": "37465ae72361af0fcca163e8cbda71dc4196240537d25a2bcc4bc067c737fc92",
   "notes": {
-    "version": "6.2.1",
-    "welcome": "Más claridad y control sobre los anuncios del chat de grupo.",
+    "version": "6.2.2",
+    "welcome": "Progreso de misiones legible en todos los idiomas.",
     "sections": [
       {
-        "title": "Saber cuándo QT publica en el chat de grupo",
+        "title": "Conservar los detalles del objetivo",
         "items": [
-          "El ajuste en Dónde anunciar ahora indica claramente que QT también publica en el chat de grupo cuando un miembro no se reconoce como usuario de QT. Sigue activado por defecto.",
-          "Tras una breve espera para detectar usuarios, aparece un nuevo diálogo con el logotipo de QT. Elige Mantener activado o Desactivar anuncios antes de que empiecen los envíos. No volver a recordármelo guarda tu confirmación para el perfil actual.",
-          "El recordatorio traducido muestra los miembros afectados y puede volver cuando se unan nuevos miembros sin identificar. Desaparece si se reconocen como usuarios de QT. Los eventos retenidos durante la espera no se vuelven a enviar."
+          "El progreso de misiones, misiones del mundo y objetivos de bonificación conserva ahora el texto y los contadores originales del remitente en el chat y las burbujas, en lugar de sustituirlos por texto genérico como «Objetivo 1: 5/5».",
+          "Los anuncios de misiones aceptadas y completadas siguen usando etiquetas traducidas y los títulos de misión disponibles localmente."
         ]
       }
     ]
