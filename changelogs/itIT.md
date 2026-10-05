@@ -2,13 +2,35 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.1.0
+## 6.1.1
 
 Menu contestuali più puliti per giocatori e missioni.
 
 ### Pulizia del menu contestuale
 
 - I menu dei nomi dei giocatori e delle missioni non includono più la scorciatoia per la finestra del registro. Sposta i registri di QuestTogether tra la finestra principale della chat e una finestra separata usando il menu della minimappa o le impostazioni.
+
+## 6.1.0
+
+Trova gruppi sulla mappa, vedi chi sta svolgendo missioni insieme e richiedi di unirti tramite qualsiasi membro del gruppo. I tooltip dei giocatori ora mettono i dettagli del gruppo in primo piano.
+
+### Vedi chi sta svolgendo missioni insieme
+
+- I giocatori in gruppo ora hanno un piccolo distintivo con due persone sui loro punti di mappa e minimappa. Passa il mouse su un membro del gruppo per evidenziare i suoi compagni con un contorno bianco, attenuare i punti non correlati e mostrare una corona sul capogruppo. I bagliori dorati per la ricerca di compagni per le missioni restano visibili.
+- I tooltip dei giocatori elencano i membri del gruppo con punti e nomi colorati in base alla classe, con il capogruppo incoronato per primo. I gruppi fino a cinque membri li elencano tutti; i gruppi più grandi mostrano solo il capogruppo. Questi dettagli appaiono anche passando il mouse sui nomi dei giocatori nel registro di QuestTogether.
+- Il tuo gruppo usa l'elenco del gioco. I dettagli dei gruppi remoti vengono caricati dai peer QuestTogether aggiornati quando necessario, con risultati in cache e richieste scaglionate per mantenere basso il traffico del canale. I client più vecchi mantengono i loro normali punti e le informazioni di base sulla dimensione del gruppo; i dettagli completi dei gruppi remoti richiedono un peer aggiornato.
+
+### Le richieste di invito possono raggiungere il capogruppo
+
+- Puoi richiedere di unirti tramite un membro del gruppo che non può invitarti. Se il suo capogruppo usa QuestTogether ed è disponibile a invitare, la richiesta viene reindirizzata al capogruppo usando le solite impostazioni di conferma e approvazione automatica.
+- Se non è noto che il capogruppo usi QuestTogether, il membro può annunciare “[QT] PlayerName richiede di unirsi al gruppo.” nella chat di gruppo quando gli annunci in chat di gruppo sono abilitati. Qualcuno con il permesso di invitare dovrà poi invitarti manualmente.
+- Chi richiede e il membro che inoltra hanno bisogno di questo aggiornamento per le richieste reindirizzate. I controlli esistenti per gruppo pieno, restrizioni, ignorati, scadenza e frequenza delle richieste continuano ad applicarsi.
+
+### Tooltip dei giocatori più chiari
+
+- Le informazioni del gruppo ora si trovano subito sotto la riga con livello, razza e classe, con righe compatte per i membri e spazio tra le sezioni. Gli stemmi di Alleanza e Orda sono grandi il doppio.
+- La versione dell'addon appare per ultima nel formato più breve vX.Y.Z. Quando viene mostrata l'età di una posizione, Ultimo aggiornamento si trova direttamente sopra la versione.
+- I conteggi delle missioni tracciate sono stati rimossi dai tooltip dei giocatori e del pulsante sulla minimappa. Il titolo della missione attiva per i giocatori che cercano compagni per le missioni viene ancora mostrato.
 
 ## 6.0.2
 

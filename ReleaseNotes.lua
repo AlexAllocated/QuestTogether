@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "6.1.0",
+	version = "6.1.1",
 	welcome = "Cleaner context menus for players and quests.",
 	sections = {
 		{

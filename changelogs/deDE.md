@@ -2,13 +2,35 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.1.0
+## 6.1.1
 
 Übersichtlichere Kontextmenüs für Spieler und Quests.
 
 ### Bereinigung der Kontextmenüs
 
 - Menüs für Spielernamen und Questnamen enthalten nicht mehr die Verknüpfung zum Logfenster. Verschiebe QuestTogether-Logs über das Minikartenmenü oder die Einstellungen zwischen dem Haupt-Chatfenster und einem separaten Fenster.
+
+## 6.1.0
+
+Findet Gruppen auf der Karte, seht, wer gemeinsam questet, und bittet über ein beliebiges Gruppenmitglied um Beitritt. Spieler-Tooltips stellen Gruppendetails jetzt in den Mittelpunkt.
+
+### Seht, wer gemeinsam questet
+
+- Gruppierte Spieler haben jetzt ein kleines Abzeichen mit zwei Personen auf ihren Karten- und Minikartenpunkten. Fahrt mit der Maus über ein Gruppenmitglied, um seine Begleiter weiß zu umranden, nicht zugehörige Punkte abzudunkeln und auf dem Anführer eine Krone anzuzeigen. Goldene Leuchteffekte für „Suche nach Questpartnern“ bleiben sichtbar.
+- Spieler-Tooltips listen Gruppenmitglieder mit klassenfarbenen Punkten und Namen auf, wobei der gekrönte Anführer zuerst angezeigt wird. Bei Gruppen mit bis zu fünf Spielern werden alle Mitglieder aufgelistet; größere Gruppen zeigen nur den Anführer. Diese Details erscheinen auch, wenn ihr im QuestTogether-Protokoll mit der Maus über Spielernamen fahrt.
+- Eure eigene Gruppe nutzt die Gruppenübersicht des Spiels. Details zu entfernten Gruppen werden bei Bedarf von aktualisierten QuestTogether-Peers geladen, mit zwischengespeicherten Ergebnissen und dosierten Anfragen, um den Kanalverkehr gering zu halten. Ältere Clients behalten ihre normalen Punkte und grundlegenden Informationen zur Gruppengröße; vollständige Details zu entfernten Gruppen erfordern einen aktualisierten Peer.
+
+### Beitrittsanfragen können den Gruppenanführer erreichen
+
+- Ihr könnt über ein Gruppenmitglied um Beitritt bitten, das euch nicht einladen kann. Wenn dessen Anführer QuestTogether nutzt und zum Einladen verfügbar ist, wird die Anfrage mit den üblichen Bestätigungs- und Auto-Annahme-Einstellungen an den Anführer weitergeleitet.
+- Wenn nicht bekannt ist, dass der Anführer QuestTogether nutzt, kann das Mitglied „[QT] PlayerName möchte der Gruppe beitreten.“ im Gruppenchat ankündigen, wenn Gruppenchat-Ankündigungen aktiviert sind. Jemand mit Einladungsberechtigung muss euch dann manuell einladen.
+- Der Anfragende und das weiterleitende Mitglied benötigen dieses Update für weitergeleitete Anfragen. Bestehende Prüfungen auf volle Gruppe, Einschränkungen, Ignorieren, Ablauf und Anfragenrate gelten weiterhin.
+
+### Übersichtlichere Spieler-Tooltips
+
+- Gruppeninformationen stehen jetzt direkt unter der Zeile mit Stufe, Volk und Klasse, mit kompakten Mitgliederzeilen und Abstand zwischen den Abschnitten. Allianz- und Horde-Abzeichen sind doppelt so groß.
+- Die Addon-Version erscheint zuletzt im kürzeren Format vX.Y.Z. Wenn das Alter eines Standorts angezeigt wird, steht „Letzte Aktualisierung“ direkt über der Version.
+- Anzahlen verfolgter Quests wurden aus Spieler- und Minikartenbutton-Tooltips entfernt. Der aktive Questtitel für Spieler, die nach Questpartnern suchen, wird weiterhin angezeigt.
 
 ## 6.0.2
 

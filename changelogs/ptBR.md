@@ -2,13 +2,35 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.1.0
+## 6.1.1
 
 Menus de contexto mais limpos para jogadores e missões.
 
 ### Limpeza do menu de contexto
 
 - Os menus de nome de jogador e de nome de missão não incluem mais o atalho da janela de registros. Mova os registros do QuestTogether entre a janela principal de bate-papo e uma janela separada usando o menu do minimapa ou as configurações.
+
+## 6.1.0
+
+Encontre grupos no mapa, veja quem está fazendo missões junto e peça para entrar por meio de qualquer membro do grupo. As dicas de jogadores agora colocam os detalhes do grupo em destaque.
+
+### Veja quem está fazendo missões junto
+
+- Jogadores agrupados agora têm um pequeno emblema de duas pessoas nos pontos do mapa e do minimapa. Passe o mouse sobre um membro do grupo para dar aos companheiros dele um contorno branco, escurecer pontos não relacionados e mostrar uma coroa no líder. Os brilhos dourados de Procurando Parceiros para Missões continuam visíveis.
+- As dicas de jogadores listam os membros do grupo com pontos e nomes nas cores das classes, com o líder coroado primeiro. Grupos de até cinco listam todos os membros; grupos maiores mostram apenas o líder. Esses detalhes também aparecem ao passar o mouse sobre nomes de jogadores no registro do QuestTogether.
+- Seu próprio grupo usa a lista do jogo. Detalhes de grupos remotos são carregados de pares atualizados do QuestTogether quando necessário, com resultados em cache e solicitações dosadas para manter o tráfego do canal baixo. Clientes mais antigos mantêm seus pontos normais e informações básicas de tamanho do grupo; os detalhes completos de grupos remotos exigem um par atualizado.
+
+### Solicitações para entrar podem chegar ao líder do grupo
+
+- Você pode pedir para entrar por meio de um membro do grupo que não pode convidar você. Se o líder dele estiver usando o QuestTogether e puder convidar, a solicitação será redirecionada ao líder usando as configurações normais de confirmação e aprovação automática.
+- Se não houver confirmação de que o líder usa o QuestTogether, o membro poderá anunciar “[QT] PlayerName está pedindo para entrar no grupo.” no bate-papo do grupo quando os anúncios no bate-papo do grupo estiverem ativados. Alguém com permissão para convidar terá que convidar você manualmente.
+- O solicitante e o membro que encaminha precisam desta atualização para solicitações redirecionadas. As verificações existentes de grupo cheio, restrições, ignorados, expiração e frequência de solicitações ainda se aplicam.
+
+### Dicas de jogadores mais limpas
+
+- As informações do grupo agora ficam logo abaixo da linha de nível, raça e classe, com linhas de membros compactas e espaço entre as seções. Os emblemas da Aliança e da Horda têm o dobro do tamanho.
+- A versão do addon aparece por último no formato mais curto vX.Y.Z. Quando a idade de uma localização é mostrada, Última atualização fica diretamente acima da versão.
+- As contagens de missões rastreadas foram removidas das dicas de jogadores e do botão do minimapa. O título da missão ativa para jogadores procurando parceiros para missões ainda é mostrado.
 
 ## 6.0.2
 
