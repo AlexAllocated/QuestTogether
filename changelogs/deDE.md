@@ -4,11 +4,21 @@
 
 ## 6.1.1
 
-Übersichtlichere Kontextmenüs für Spieler und Quests.
+Reaktionsschnellere Punkte für Spieler in der Nähe und klarere übersetzte Meldungen.
 
-### Bereinigung der Kontextmenüs
+### Minikarten-Spielerpunkte
 
-- Menüs für Spielernamen und Questnamen enthalten nicht mehr die Verknüpfung zum Logfenster. Verschiebe QuestTogether-Logs über das Minikartenmenü oder die Einstellungen zwischen dem Haupt-Chatfenster und einem separaten Fenster.
+- Fehlende QT-Spielerpunkte behoben, wenn die Minikarte keine Karten-ID bereitstellt. QT verwendet bei Bedarf jetzt deine aktuelle Karte.
+
+### Schnellere lokale Standortaktualisierungen
+
+- Standortaktualisierungen erfolgen jetzt etwa einmal pro Sekunde bei weniger als 10 bekannten QT-Nutzern in deiner Zone, alle 5–10 Sekunden bei 10–19 und alle 15–20 Sekunden bei 100. Die Intervalle werden zwischen diesen Stufen schrittweise länger; Timings bei 500 oder mehr bleiben unverändert.
+- Schnelle Aktualisierungen senden kompakte, frisch erfasste Standorte, während andere Spielerdetails ihren langsameren Heartbeat beibehalten. Bestehende Traffic-Limits gelten weiterhin, daher kann Überlastung die Zustellung verzögern. Andere Spieler benötigen dieses Update, um schnellere Positionen zu senden.
+
+### Klarere übersetzte Meldungen
+
+- Questsereignis-Bezeichnungen wie Quest angenommen verwenden jetzt deine Sprache, selbst wenn ein lokaler Questtitel oder optionale Übersetzungsmetadaten nicht verfügbar sind.
+- Wenn WoW keinen lokalen Questtitel bereitstellen kann, behält QT den lesbaren Titel des Absenders bei. Fortschrittsmeldungen behalten weiterhin ihren ursprünglichen Text bei, wenn sie nicht sicher rekonstruiert werden können.
 
 ## 6.1.0
 

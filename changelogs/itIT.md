@@ -4,11 +4,21 @@
 
 ## 6.1.1
 
-Menu contestuali più puliti per giocatori e missioni.
+Punti dei giocatori vicini più reattivi e annunci tradotti più chiari.
 
-### Pulizia del menu contestuale
+### Punti dei giocatori sulla minimappa
 
-- I menu dei nomi dei giocatori e delle missioni non includono più la scorciatoia per la finestra del registro. Sposta i registri di QuestTogether tra la finestra principale della chat e una finestra separata usando il menu della minimappa o le impostazioni.
+- Risolto il problema dei punti dei giocatori QT mancanti quando la minimappa non fornisce un ID mappa. QT ora usa la tua mappa attuale quando necessario.
+
+### Aggiornamenti più rapidi della posizione locale
+
+- Gli aggiornamenti della posizione ora vengono inviati circa una volta al secondo con meno di 10 utenti QT noti nella tua zona, ogni 5–10 secondi con 10–19 e ogni 15–20 secondi a 100. Gli intervalli si allungano gradualmente tra questi livelli; le tempistiche a 500 o più restano invariate.
+- Gli aggiornamenti rapidi inviano posizioni compatte e appena rilevate, mentre gli altri dettagli dei giocatori mantengono il loro heartbeat più lento. I limiti di traffico esistenti sono ancora validi, quindi la congestione può ritardare la consegna. Gli altri giocatori devono avere questo aggiornamento per inviare posizioni più rapide.
+
+### Annunci tradotti più chiari
+
+- Le etichette degli eventi delle missioni, come Missione accettata, ora usano la tua lingua anche quando non è disponibile un titolo locale della missione o metadati di traduzione opzionali.
+- Quando WoW non può fornire un titolo locale della missione, QT conserva il titolo leggibile del mittente. I messaggi di progresso mantengono comunque il loro testo originale quando non possono essere ricostruiti in modo sicuro.
 
 ## 6.1.0
 

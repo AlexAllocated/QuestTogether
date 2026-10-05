@@ -113,7 +113,10 @@ end
 GetPlayerFacing = function()
 	return facing
 end
-local radius, minimapMap = 100, 1
+-- The native minimap map ID is nullable (ordinary terrain need not use a
+-- HybridMinimap UI map). Do not assume it always equals the player's map.
+local radius, minimapMap = 100, nil
+local playerMap, playerMapReads = 1, 0
 C_CVar = {
 	GetCVarBool = function(key)
 		assert(key == "rotateMinimap")
@@ -133,12 +136,16 @@ C_Minimap = {
 }
 local wrongMap, worldUnavailable, badWorld, conversions, sameFloorGroup = false, false, nil, 0, false
 C_Map = {
-	GetBestMapForUnit = function(unit) assert(unit == "player"); return 1 end,
+	GetBestMapForUnit = function(unit)
+		assert(unit == "player")
+		playerMapReads = playerMapReads + 1
+		return playerMap
+	end,
 	GetMapGroupID = function()
 		return sameFloorGroup and 7 or nil
 	end,
 	GetPlayerMapPosition = function(mapID, unit)
-		assert(mapID == 1 and unit == "player")
+		assert((mapID == 1 or mapID == 2) and unit == "player")
 		return Vector(0.5, 0.5)
 	end,
 	GetWorldPosFromMapPos = function(mapID, position)
@@ -197,10 +204,35 @@ assert(addon:GetLocationPinSurface("map") == nil)
 viewport.hidden = false
 
 g = assert(addon:GetLocationPinSurface("minimap"))
+assert(g.mapID == 1 and playerMapReads > 0, "ordinary minimap uses the player's current map when no UI map exists")
 assert(g.continent == 0, "world instance zero is valid")
 x, y = addon:ProjectPlayerLocationPin("minimap", { mapID = 1, x = 0.525, y = 0.5 }, g)
 Near(x, 150)
 Near(y, 100)
+-- A hybrid minimap's explicit map/floor remains authoritative. Unreadable or
+-- invalid IDs must fail closed rather than falling back to another floor.
+before = playerMapReads
+minimapMap = 2
+g = assert(addon:GetLocationPinSurface("minimap"))
+assert(g.mapID == 2 and playerMapReads == before)
+for _, invalid in ipairs({ secret, inaccessible, 0, -1, "invalid" }) do
+	minimapMap = invalid
+	assert(addon:GetLocationPinSurface("minimap") == nil)
+	assert(playerMapReads == before, "invalid explicit minimap map must not trigger a fallback")
+end
+minimapMap = nil
+for _, invalid in ipairs({ secret, inaccessible, 0, -1, "invalid" }) do
+	playerMap = invalid
+	assert(addon:GetLocationPinSurface("minimap") == nil)
+end
+playerMap = nil
+assert(addon:GetLocationPinSurface("minimap") == nil, "no dots when neither map ID is available")
+playerMap = 1
+local minimapMapGetter = C_Minimap.GetUiMapID
+C_Minimap.GetUiMapID = nil
+assert(addon:GetLocationPinSurface("minimap").mapID == 1, "clients without a hybrid map getter use the player's map")
+C_Minimap.GetUiMapID = minimapMapGetter
+g = assert(addon:GetLocationPinSurface("minimap"))
 edgeRow = { name = partnerName, mapID = 1, x = 0.5465, y = 0.5 }
 Near(addon:ProjectPlayerLocationPin("minimap", edgeRow, g), 193)
 partnerStatus.looking = true
@@ -256,14 +288,16 @@ assert(addon:GetPlayerLocationPriorityOrigin() == nil)
 badWorld = nil
 restricted = true
 local reads, nativeFrameReads = conversions, frameReads
+before = playerMapReads
 assert(addon:GetLocationPinSurface("minimap") == nil and addon:GetLocationPinSurface("map") == nil)
 assert(addon:GetPlayerLocationPriorityOrigin() == nil)
 assert(conversions == reads)
 assert(frameReads == nativeFrameReads, "restricted geometry must not read native frames")
+assert(playerMapReads == before, "restricted geometry must not query a fallback map")
 assert(forbiddenReads == 0)
 assert(inaccessibleReads == 0)
 print(
 	"location native contracts "
 		.. client
-		.. ": PASS (projection, scale, pan, cross-map, LFG glow edges, radius, rotation override, secrecy, unavailable APIs)"
+		.. ": PASS (projection, scale, pan, cross-map, nullable minimap map, LFG glow edges, radius, rotation override, secrecy, unavailable APIs)"
 )

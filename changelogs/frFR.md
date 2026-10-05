@@ -4,11 +4,21 @@
 
 ## 6.1.1
 
-Menus contextuels plus clairs pour les joueurs et les quêtes.
+Points des joueurs à proximité plus réactifs et annonces traduites plus claires.
 
-### Nettoyage des menus contextuels
+### Points des joueurs sur la minicarte
 
-- Les menus de noms de joueurs et de quêtes n’incluent plus le raccourci vers la fenêtre de journal. Déplacez les journaux de QuestTogether entre la fenêtre de discussion principale et une fenêtre séparée via le menu de la minicarte ou les paramètres.
+- Correction des points de joueurs QT manquants lorsque la minicarte ne fournit pas d’ID de carte. QT utilise désormais votre carte actuelle si nécessaire.
+
+### Mises à jour de position locales plus rapides
+
+- Les mises à jour de position ciblent désormais une fois par seconde avec moins de 10 utilisateurs QT connus dans votre zone, 5 à 10 secondes avec 10 à 19, et 15 à 20 secondes à 100. Les intervalles s’allongent progressivement entre ces paliers ; les timings à 500 ou plus restent inchangés.
+- Les mises à jour rapides envoient des positions compactes et fraîchement échantillonnées, tandis que les autres détails des joueurs conservent leur battement plus lent. Les limites de trafic existantes s’appliquent toujours, la congestion peut donc retarder la livraison. Les autres joueurs doivent disposer de cette mise à jour pour envoyer des positions plus rapides.
+
+### Annonces traduites plus claires
+
+- Les libellés d’événements de quête, comme Quête acceptée, utilisent désormais votre langue même lorsqu’un titre de quête local ou des métadonnées de traduction facultatives sont indisponibles.
+- Lorsque WoW ne peut pas fournir de titre de quête local, QT conserve le titre lisible de l’expéditeur. Les messages de progression conservent toujours leur texte d’origine lorsqu’ils ne peuvent pas être reconstruits en toute sécurité.
 
 ## 6.1.0
 

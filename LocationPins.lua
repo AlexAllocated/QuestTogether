@@ -242,7 +242,17 @@ function QuestTogether:GetLocationPinSurface(surface)
 	end
 	local parent = self:GetMinimapAnchor()
 	local bounds = Rect(self, parent)
-	local mapID = ID(self, API(self, C_Minimap, "GetUiMapID"))
+	local minimapMap = API(self, C_Minimap, "GetUiMapID")
+	if not self:CanAccessValue(minimapMap) then
+		return nil
+	end
+	-- GetUiMapID is nullable: the terrain minimap need not have a HybridMinimap
+	-- UI map. Use the player's current map in that case, but never substitute
+	-- for an explicitly supplied invalid or restricted map ID.
+	if minimapMap == nil then
+		minimapMap = Native(self, self.API.GetBestMapForUnit, "player")
+	end
+	local mapID = ID(self, minimapMap)
 	local radius = Positive(self, API(self, C_Minimap, "GetViewRadius"))
 	if not bounds or not mapID or not radius then
 		return nil

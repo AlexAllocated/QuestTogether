@@ -273,7 +273,7 @@ QT:RegisterTest("compact snapshots preserve worldwide dots partner status versio
 	b.now = 300
 	Equal(#b:GetVisiblePlayerLocations("map"), 1)
 	Equal(b:IsPlayerLookingForQuestPartners("Alice-Realm"), true)
-	b.now = 701
+	b.now = b.playerLocationState.peers[a.name].sampledAt + 600
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 	Equal(b:IsPlayerLookingForQuestPartners("Alice-Realm"), false)
 	for _, packet in ipairs(a.sent) do
@@ -497,13 +497,101 @@ QT:RegisterTest("crowded zones back off without unrelated worldwide peers slowin
 	end
 	a.geographicCommsState.nextLocal = a.now
 	a:UpdateGeographicComms()
-	assert(a.geographicCommsState.nextLocal - a.now <= 25)
+	Equal(a.geographicCommsState.nextLocal - a.now, 1)
 	for _, peer in pairs(a.geographicCommsState.peers) do
 		peer.zone = 12
 	end
 	a.geographicCommsState.nextLocal = a.now
 	a:UpdateGeographicComms()
 	assert(a.geographicCommsState.nextLocal - a.now >= 90)
+end)
+
+QT:RegisterTest("regional location cadence matches sparse and crowded population anchors", function()
+	for _, edge in ipairs({ 0, 5 }) do
+		for _, row in ipairs({ {0,1}, {9,1}, {10,5}, {19,5}, {20,5}, {99,14}, {100,15},
+			{499,44}, {500,45}, {1000,70}, {1400,90}, {2000,90} }) do
+			local a = Fixture()
+			a.API.Random = function(low, high) return edge == 0 and low or high end
+			a:UpdateGeographicSubscriptions()
+			local state = a.geographicCommsState
+			for i = 1, row[1] do state.peers[tostring(i)] = { zone = 12, at = a.now } end
+			state.peers.stale = { zone = 12, at = a.now - 600 }
+			state.peers.future = { zone = 12, at = a.now + 1 }
+			state.peers.remote = { zone = 45, at = a.now }
+			state.nextLocal, state.nextGlobal = a.now, a.now + 1000
+			a:UpdateGeographicComms()
+			Equal(state.nextLocal - a.now, row[2] + (row[1] < 10 and 0 or edge))
+		end
+	end
+end)
+
+QT:RegisterTest("one-second zone updates resample movement without repeating full metadata or growing queues", function()
+	local a, b = Fixture("Alice-Realm"), Fixture("Bob-Realm")
+	a.other = b
+	b:UpdateGeographicSubscriptions()
+	a:UpdateGeographicSubscriptions()
+	Stage(a, true)
+	local s = a.geographicCommsState
+	s.nextLocal, s.nextGlobal = a.now, a.now + 1000
+	s.nextLocalMetadata = a.now
+	a:UpdateGeographicComms()
+	Tick(a, 4)
+	assert(b.playerLocationState.peers[a.name])
+	local before = #a.sent
+	for step = 1, 10 do
+		a.position.x = 0.4 + step * 0.001
+		Tick(a, 1.2)
+		assert(#s.queue <= 2, "fast updates coalesce rather than accumulating")
+	end
+	assert(math.abs(b.playerLocationState.peers[a.name].x - a.position.x) < 0.00001, "receiver must get newly sampled coordinates")
+	assert(#a.sent > before + 5, "low-density updates must actually leave the queue")
+	for i = before + 1, #a.sent do
+		local packet = a.sent[i]
+		Equal(packet.target, a.joined.QuestTogetherZ12)
+		assert(packet.wire:find("LOC|", 1, true))
+		assert(not packet.wire:find("QTVR|", 1, true) and not packet.wire:find("QTLF|", 1, true))
+		assert(#packet.wire <= 255)
+	end
+	-- Turning off sharing replaces queued coordinates with a withdrawal, even
+	-- while the server is throttling sends. It must not restore a preview/sample.
+	a.sendFails = true
+	a.db.profile.sharePlayerLocation = false
+	a:BroadcastPlayerLocation(true)
+	for _, pending in ipairs(s.queue) do assert(not pending.publishesLocation) end
+	Equal(#a:BuildGeographicSnapshots(true), 0, "privacy withdrawals use full snapshots, not a perpetual one-second broadcast")
+	a.sendFails = false
+	Tick(a, 4)
+	Equal(#b:GetVisiblePlayerLocations("minimap"), 0)
+end)
+
+QT:RegisterTest("metadata heartbeat is independent of movement jitter and survives one-second party traffic", function()
+	local a, b = Fixture("Alice-Realm"), Fixture("Bob-Realm")
+	a.other, a.inParty, b.inParty = b, true, true
+	a:UpdateGeographicSubscriptions()
+	b:UpdateGeographicSubscriptions()
+	Stage(a, true)
+	local s = a.geographicCommsState
+	s.nextGlobal, s.nextLocal, s.nextLocalMetadata = a.now + 1000, a.now, a.now
+	for step = 1, 40 do
+		a.position.x = 0.4 + step * 0.001
+		if step % 10 == 0 then Stage(a, true) end
+		Tick(a, 1.2)
+		assert(#s.queue <= 12, "party copies and metadata cannot create an unbounded movement backlog")
+	end
+	local peer = assert(b.playerLocationState.peers[a.name])
+	assert(math.abs(peer.x - a.position.x) < 0.004, "party traffic cannot starve fresh movement")
+	Equal(b:GetPlayerAddonVersion(a.name), "6.0.0")
+	Equal(b:IsPlayerLookingForQuestPartners(a.name), true)
+	-- Full state is due even when a separately jittered location timer is later.
+	s.queue, s.nextLocal, s.nextLocalMetadata = {}, a.now + 40, a.now
+	a:UpdateGeographicComms()
+	Equal(s.nextLocal, a.now + 40)
+	assert(s.nextLocalMetadata > a.now)
+	local foundMetadata = false
+	for _, pending in ipairs(s.queue) do
+		if pending.wire:find("QTVR|", 1, true) then foundMetadata = true end
+	end
+	assert(foundMetadata, "metadata must not wait for the next position timer")
 end)
 
 QT:RegisterTest("manual developer ping stays global and does not change background zone routing", function()

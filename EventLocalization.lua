@@ -191,32 +191,47 @@ function QT:LocalizeAnnouncementEvent(event)
 		return L("Looking for questing partners") .. " :)"
 	end
 	local facts = self:DecodeAnnouncementFacts(event.eventFacts)
-	if not facts or facts.locale == self:GetEventLocale() then
+	local prefix = prefixes[event.eventType]
+	if facts and facts.locale == self:GetEventLocale() then
 		return event.text
 	end
-	local prefix = prefixes[event.eventType]
-	if event.eventType == "PLAYER_LEVEL_UP" and facts.kind == "l" then
+	if event.eventType == "PLAYER_LEVEL_UP" and facts and facts.kind == "l" then
 		return L("Level ") .. tostring(facts.current)
 	end
 	local id = Integer(self, event.questId, 1, 1000000000)
 	if not id or (not prefix and not progressEvents[event.eventType]) then
 		return event.text
 	end
-	if prefix and facts.kind ~= "q" then
-		return event.text
-	end
-	if not prefix and facts.kind ~= "c" and facts.kind ~= "p" and facts.kind ~= "o" then
-		return event.text
-	end
-	local title = self:GetLocalizedQuestTitle(id)
-	-- ANN already carries the sender's readable text. If local quest data is
-	-- unavailable, preserve that complete message instead of inventing an ID
-	-- label or mixing a translated prefix with an untranslated title.
-	if not title then
+	if prefix and facts and facts.kind ~= "q" then
 		return event.text
 	end
 	if prefix then
-		return self.TranslateForLocale(prefix, self:GetEventLocale()) .. title
+		-- Event type already identifies these labels. Optional facts can be
+		-- omitted by older senders or packet fitting; recognize only exact known
+		-- prefixes, never guess a title by splitting arbitrary translated prose.
+		local sourceTitle
+		local text = self:SafeTrimString(event.text, "")
+		for locale in pairs(locales) do
+			if not facts or facts.locale == locale then
+				local sourcePrefix = self.TranslateForLocale(prefix, locale)
+				if text:sub(1, #sourcePrefix) == sourcePrefix and #text > #sourcePrefix then
+					sourceTitle = text:sub(#sourcePrefix + 1)
+					break
+				end
+			end
+		end
+		if not facts and not sourceTitle then return event.text end
+		local title = self:GetLocalizedQuestTitle(id) or sourceTitle
+		return title and (self.TranslateForLocale(prefix, self:GetEventLocale()) .. title) or event.text
+	end
+	if not facts or (facts.kind ~= "c" and facts.kind ~= "p" and facts.kind ~= "o") then
+		return event.text
+	end
+	local title = self:GetLocalizedQuestTitle(id)
+	-- Progress prose cannot safely be split into a quest title and objective.
+	-- Preserve readable source text when local data cannot supply the title.
+	if not title then
+		return event.text
 	end
 	-- Objective indexes are not stable identities across stages. Do not borrow
 	-- another player's objective text or counters, or replace numbers in prose.

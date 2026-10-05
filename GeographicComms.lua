@@ -41,6 +41,7 @@ function QT:InitializeGeographicComms()
 		nextGlobal = Now(self) + Random(self, 2, 12),
 		nextLocal = Now(self) + Random(self, 1, 10),
 	}
+	self.geographicCommsState.nextLocalMetadata = self.geographicCommsState.nextLocal
 end
 
 function QT:GetGeographicZoneID(mapID)
@@ -154,6 +155,7 @@ function QT:UpdateGeographicSubscriptions()
 	local channel = current and ("QuestTogetherZ" .. current) or nil
 	if channel ~= s.currentChannel then
 		s.currentChannel, s.nextLocal = channel, now + Random(self, 1, 10)
+		s.nextLocalMetadata = s.nextLocal
 	end
 end
 
@@ -197,6 +199,7 @@ function QT:StageGeographicState(wire)
 	if withdrawal or changedStatus or changedParty or (command == "QTPR" and payload == "1,0") then
 		s.nextGlobal = math.min(s.nextGlobal, math.max(now + 1, (s.lastGlobal or 0) + 10))
 		s.nextLocal = math.min(s.nextLocal, now + 1)
+		s.nextLocalMetadata = math.min(s.nextLocalMetadata or 0, now + 1)
 		-- Discard already packed positions/status; never let them follow a clear.
 		for i = #s.queue, 1, -1 do
 			if s.queue[i].snapshot or (withdrawal and s.queue[i].publishesLocation) then
@@ -209,7 +212,7 @@ end
 
 -- Length-prefixed inner messages retain the existing strict decoders. The
 -- envelope permits only presence data, never recursively nested/control messages.
-function QT:BuildGeographicSnapshots()
+function QT:BuildGeographicSnapshots(locationOnly)
 	local s, now = rawget(self, "geographicCommsState"), Now(self)
 	if not s then
 		return {}
@@ -221,7 +224,8 @@ function QT:BuildGeographicSnapshots()
 	for _, command in ipairs(ORDER) do
 		local entry = s.latest[command]
 		local maxAge = command == "LOC" and 35 or (command == "QTVR" and 180 or 90)
-		if entry and now >= entry.at and now - entry.at <= maxAge then
+		local isLocationUpdate = command == "LOC" and entry and not entry.wire:match("^LOC|1,[^,]+,%d+,0$")
+		if entry and (not locationOnly or isLocationUpdate) and now >= entry.at and now - entry.at <= maxAge then
 			local wire = entry.wire
 			-- Optional localized labels never displace position/status. Receivers
 			-- resolve quest titles locally when the title cannot fit the envelope.
@@ -486,9 +490,15 @@ function QT:UpdateGeographicComms()
 		return
 	end
 	self:UpdateGeographicSubscriptions()
-	local global, regional = now >= s.nextGlobal, now >= s.nextLocal
+	local global, locationDue = now >= s.nextGlobal, now >= s.nextLocal
+	local fullLocal = now >= (s.nextLocalMetadata or s.nextLocal)
+	local regional = locationDue or fullLocal
 	if global or regional then
-		local packets = self:BuildGeographicSnapshots()
+		-- Sample now instead of republishing the producer's older 10/20-second
+		-- location. Staging is local; the same bounded queue owns actual sends.
+		self:BroadcastPlayerLocation(self:CanPublishPlayerLocation())
+		local fullPackets = (global or fullLocal) and self:BuildGeographicSnapshots() or nil
+		local localPackets = regional and (fullLocal and fullPackets or self:BuildGeographicSnapshots(true)) or nil
 		local routes = {}
 		if global then
 			routes[#routes + 1] = Channel(self.announcementChannelName)
@@ -503,13 +513,24 @@ function QT:UpdateGeographicComms()
 			end
 		end
 		for _, route in ipairs(routes) do
+			local isGlobal = route.channelName == self.announcementChannelName
+			local packets = isGlobal and fullPackets or localPackets
+			local locationOnly = not isGlobal and not fullLocal
+			local routeKey = route.channelName or route.distribution
+			-- Full metadata must not be displaced by the next one-second location
+			-- sample. A full snapshot supersedes any older queued location-only one.
+			if not locationOnly then
+				for i = #s.queue, 1, -1 do
+					if s.queue[i].key == routeKey .. ":location:1" then table.remove(s.queue, i) end
+				end
+			end
 			for i, packet in ipairs(packets) do
 				self:QueueGeographicWire(
 					packet,
 					"presence snapshot",
 					route,
 					true,
-					(route.channelName or route.distribution) .. ":" .. i
+					routeKey .. (locationOnly and ":location:" or ":state:") .. i
 				)
 			end
 		end
@@ -523,8 +544,22 @@ function QT:UpdateGeographicComms()
 					count = count + 1
 				end
 			end
-			-- Bounded density backoff: a crowded launch zone updates less often.
-			s.nextLocal = now + math.min(90, 20 + math.floor(count / 20)) + Random(self, 0, 5)
+			-- Sparse zones get smooth positions; retain the previous density
+			-- backoff at 500+ known peers. Interpolate between the smaller anchors.
+			local interval
+			if count < 10 then interval = 1
+			elseif count < 20 then interval = 5
+			elseif count < 100 then interval = 5 + math.floor((count - 20) / 8)
+			elseif count < 500 then interval = 15 + math.floor((count - 100) * 30 / 400)
+			else interval = math.min(90, 20 + math.floor(count / 20)) end
+			if locationDue then
+				s.nextLocal = now + interval + (count < 10 and 0 or Random(self, 0, 5))
+			end
+			-- Compact LOC-only envelopes carry fast movement updates. Version,
+			-- party and partner metadata retain their existing heartbeat cadence.
+			if fullLocal then
+				s.nextLocalMetadata = now + math.min(90, 20 + math.floor(count / 20)) + Random(self, 0, 5)
+			end
 		end
 	end
 	self:DrainGeographicQueue()

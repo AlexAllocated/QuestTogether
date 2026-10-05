@@ -4,12 +4,26 @@ local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
 	version = "6.1.1",
-	welcome = "Cleaner context menus for players and quests.",
+	welcome = "More responsive nearby player dots and clearer translated announcements.",
 	sections = {
 		{
-			title = "Context menu cleanup",
+			title = "Minimap player dots",
 			items = {
-				"Player-name and quest-name menus no longer include the log-window shortcut. Move QuestTogether logs between the main chat window and a separate window using the minimap menu or settings.",
+				"Fixed missing QT player dots when the minimap does not provide a map ID. QT now uses your current map when needed.",
+			},
+		},
+		{
+			title = "Faster local location updates",
+			items = {
+				"Location updates now target once per second with fewer than 10 known QT users in your zone, 5–10 seconds with 10–19, and 15–20 seconds at 100. Intervals lengthen gradually between these levels; timings at 500 or more are unchanged.",
+				"Fast updates send compact, freshly sampled locations while other player details keep their slower heartbeat. Existing traffic limits still apply, so congestion may delay delivery. Other players need this update to send faster positions.",
+			},
+		},
+		{
+			title = "Clearer translated announcements",
+			items = {
+				"Quest event labels such as Quest Accepted now use your language even when a local quest title or optional translation metadata is unavailable.",
+				"When WoW cannot provide a local quest title, QT keeps the sender’s readable title. Progress messages still retain their original text when they cannot be safely reconstructed.",
 			},
 		},
 	},
