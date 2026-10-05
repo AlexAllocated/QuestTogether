@@ -4870,7 +4870,6 @@ function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, s
 		end)
 	end
 
-	self:PopulateChatLogDestinationMenu(rootDescription)
 	return true
 end
 
@@ -5014,7 +5013,6 @@ function QuestTogether:PopulateChatLogQuestMenu(rootDescription, questId, fallba
 		if self.isEnabled and not self:IsRuntimeRestricted() then self:OpenPartyQuestCompare() end
 	end)
 	compare:SetEnabled(self.isEnabled == true)
-	self:PopulateChatLogDestinationMenu(rootDescription)
 end
 
 function QuestTogether:ShowChatLogQuestMenu(ownerFrame, questId, fallbackTitle)

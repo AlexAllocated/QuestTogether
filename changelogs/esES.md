@@ -4,25 +4,11 @@
 
 ## 6.1.0
 
-Encuentra grupos en el mapa, consulta quién está haciendo misiones en grupo y solicita unirte a través de cualquier miembro del grupo. Las descripciones emergentes de los jugadores ahora muestran los detalles del grupo en primer plano.
+Menús contextuales más claros para jugadores y misiones.
 
-### Consulta quién está haciendo misiones en grupo
+### Limpieza de menús contextuales
 
-- Los jugadores agrupados ahora tienen una pequeña insignia de dos personas en sus puntos del mapa y el minimapa. Pasa el cursor sobre un miembro del grupo para resaltar a sus compañeros con un contorno blanco, atenuar los puntos no relacionados y mostrar una corona sobre el líder. Los resplandores dorados de «Buscando compañeros para misiones» siguen siendo visibles.
-- Las descripciones emergentes de los jugadores muestran los miembros del grupo con puntos y nombres del color de su clase, con el líder coronado en primer lugar. Los grupos de hasta cinco muestran todos sus miembros; los grupos más grandes solo muestran al líder. Estos detalles también aparecen al pasar el cursor sobre nombres de jugadores en el registro de QuestTogether.
-- Tu propio grupo usa la lista del juego. Los detalles de grupos remotos se cargan desde otros usuarios de QuestTogether actualizados cuando hace falta, con resultados en caché y solicitudes espaciadas para mantener bajo el tráfico del canal. Los clientes antiguos conservan sus puntos normales y la información básica del tamaño del grupo; los detalles completos de grupos remotos requieren que el otro usuario esté actualizado.
-
-### Las solicitudes para unirse pueden llegar al líder del grupo
-
-- Puedes solicitar unirte a través de un miembro del grupo que no pueda invitarte. Si su líder usa QuestTogether y está disponible para invitar, la solicitud se redirige al líder usando los ajustes habituales de confirmación y aprobación automática.
-- Si no se sabe si el líder usa QuestTogether, el miembro puede anunciar “[QT] PlayerName solicita unirse al grupo.” en el chat de grupo cuando los anuncios en el chat de grupo estén activados. Entonces alguien con permiso para invitar deberá invitarte manualmente.
-- El solicitante y el miembro que reenvía la solicitud necesitan esta actualización para las solicitudes redirigidas. Se siguen aplicando las comprobaciones existentes de grupo completo, restricciones, ignorados, caducidad y frecuencia de solicitudes.
-
-### Descripciones emergentes de jugadores más claras
-
-- La información del grupo ahora aparece justo debajo de la línea de nivel, raza y clase, con filas de miembros compactas y espacio entre secciones. Las insignias de la Alianza y la Horda son el doble de grandes.
-- La versión del addon aparece al final con el formato más corto vX.Y.Z. Cuando se muestra la antigüedad de una ubicación, Última actualización aparece justo encima de la versión.
-- Se han eliminado los recuentos de misiones seguidas de las descripciones emergentes de jugadores y del botón del minimapa. Se sigue mostrando el título de la misión activa de los jugadores que buscan compañeros para misiones.
+- Los menús de nombre de jugador y nombre de misión ya no incluyen el atajo de la ventana de registro. Mueve los registros de QuestTogether entre la ventana principal del chat y una ventana independiente usando el menú del minimapa o los ajustes.
 
 ## 6.0.2
 

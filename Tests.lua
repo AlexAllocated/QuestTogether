@@ -4558,7 +4558,7 @@ local function NewQuestShareMenuFixture()
 	return addon, state, root
 end
 
-QuestTogether:RegisterTest("quest clicks open Status Share journal party compare and a separated log destination action", function()
+QuestTogether:RegisterTest("quest clicks open Share journal and party compare without log destination actions", function()
 	local addon, state, root = NewQuestShareMenuFixture()
 	local owner = {}
 	for _, button in ipairs({ "LeftButton", "RightButton" }) do
@@ -4567,7 +4567,7 @@ QuestTogether:RegisterTest("quest clicks open Status Share journal party compare
 		AssertEquals(response, LinkProcessorResponse.Handled)
 		AssertEquals(state.owner, owner)
 		AssertEquals(#state.statuses, 0, "opening a menu must not print status")
-		AssertEquals(#root.buttons, 4)
+		AssertEquals(#root.buttons, 3)
 		AssertEquals(root.buttons[1].label, "Share")
 		AssertEquals(root.buttons[2].label, "Open in Quest Journal")
 		AssertTrue(root.buttons[2].enabled)
@@ -4575,8 +4575,7 @@ QuestTogether:RegisterTest("quest clicks open Status Share journal party compare
 		AssertEquals(root.buttons[3].label, "Compare Party Quests")
 		AssertTrue(root.buttons[3].enabled)
 		AssertEquals(state.compares, nil, "opening a menu must not open party compare")
-		AssertEquals(root.dividers[1], 3)
-		AssertEquals(root.buttons[4].label, "Move QuestTogether Logs to Separate Window")
+		AssertEquals(#root.dividers, 0)
 		AssertEquals(state.destination, "main", "opening a menu must not move logs")
 		AssertTrue(root.buttons[1].enabled)
 		AssertEquals(#state.sends, 0, "opening a menu must not share")
@@ -4593,15 +4592,12 @@ QuestTogether:RegisterTest("quest clicks open Status Share journal party compare
 	AssertEquals(state.opened[1], 12345, "journal uses quest ID, not its changed log index")
 	root.buttons[3].callback()
 	AssertEquals(state.compares, 1)
-	root.buttons[4].callback()
-	AssertEquals(state.destination, "separate")
-	AssertTrue(state.optionsRefreshed)
+	state.destination = "separate"
 	root.buttons, root.dividers = {}, {}
 	addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
-	AssertEquals(root.dividers[1], 3)
-	AssertEquals(root.buttons[4].label, "Move QuestTogether Logs to Main Window")
-	root.buttons[4].callback()
-	AssertEquals(state.destination, "main")
+	AssertEquals(#root.buttons, 3)
+	AssertEquals(#root.dividers, 0)
+	AssertEquals(state.destination, "separate")
 end)
 
 QuestTogether:RegisterTest("quest menu preserves modified clicks and rejects malformed links", function()
@@ -5064,8 +5060,8 @@ QuestTogether:RegisterTest("chat log speaker menu includes player actions", func
 	AssertEquals(buttons[3].text, "Add Friend")
 	AssertEquals(buttons[4].text, "Ignore")
 	AssertEquals(buttons[5].text, "Compare Quests")
-	AssertEquals(buttons[6].text, "Move QuestTogether Logs to Separate Window")
-	AssertEquals(dividers, 1)
+	AssertEquals(#buttons, 5)
+	AssertEquals(dividers, 0)
 end)
 
 QuestTogether:RegisterTest("chat log speaker menu compare quests action uses full speaker name", function()

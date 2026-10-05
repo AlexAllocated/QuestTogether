@@ -34,7 +34,7 @@ You can hide your own bubbles while continuing to send your progress to other pl
 
 **Chat logs** can go to the main chat window or a separate QuestTogether window. Keep that window docked as a tab or float it beside your other UI. If it is docked, an optional setting also prints updates to main chat; floating windows keep their output separate.
 
-Switch the log destination from settings or directly from QuestTogether's player, quest, and minimap menus.
+Switch the log destination from settings or QuestTogether's minimap menu.
 
 **QuestTogether chat:** Type `/qt <message>` to talk to other players receiving the QuestTogether channel. Recognized commands still run normally. Conversations use the same chat log and nearby-player bubbles, with a speech-bubble icon. The minimap menu’s **Send QT chat message** opens a draft for you. Disable **Show QuestTogether Chat** in **Where to Announce** to hide conversations without changing quest announcements. Hover player names in the log for the same player details shown on map dots.
 
@@ -163,15 +163,13 @@ Quest and player decorations follow the addon's open-world nameplate policy. Ins
 
 Left- or right-click linked names in QuestTogether's log to open their menus.
 
-**Player-name menus** provide Invite, Whisper, Add Friend, Ignore/Unignore, and Compare Quests, plus the shortcut to move QuestTogether logs between main and separate chat windows.
+**Player-name menus** provide Invite, Whisper, Add Friend, Ignore/Unignore, and Compare Quests.
 
-**Quest-name menus** provide:
+Hover a quest name to see its status, shareability, and available objectives. **Quest-name menus** provide:
 
-- **Status** — print the quest's local status and shareability when available.
 - **Share** — share an eligible quest you currently own with your party.
 - **Open in Quest Journal** — open that quest's journal entry when it is in your log.
 - **Compare Party Quests** — open the whole-party comparison.
-- The same shortcut to move QuestTogether's logs.
 
 Coordinate links, when included in an update or ping reply, can create a **TomTom waypoint** if TomTom is installed, with a **Blizzard waypoint** fallback where supported.
 

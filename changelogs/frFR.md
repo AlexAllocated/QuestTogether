@@ -4,25 +4,11 @@
 
 ## 6.1.0
 
-Trouvez des groupes sur la carte, voyez qui fait des quêtes ensemble et demandez à rejoindre le groupe via n’importe quel membre. Les infobulles des personnages-joueurs mettent désormais les détails du groupe en évidence.
+Menus contextuels plus clairs pour les joueurs et les quêtes.
 
-### Voir qui fait des quêtes ensemble
+### Nettoyage des menus contextuels
 
-- Les joueurs groupés ont désormais un petit badge à deux personnes sur leurs points de carte et de minicarte. Survolez un membre du groupe pour afficher un contour blanc autour de ses compagnons, estomper les points sans rapport et afficher une couronne sur le chef. Les lueurs dorées de Recherche de partenaires de quête restent visibles.
-- Les infobulles des personnages-joueurs listent les membres du groupe avec des points et des noms aux couleurs de classe, le chef couronné en premier. Les groupes jusqu’à cinq membres les affichent tous ; les groupes plus grands n’affichent que le chef. Ces détails apparaissent aussi quand vous survolez les noms de joueurs dans le journal QuestTogether.
-- Votre propre groupe utilise la liste de membres du jeu. Les détails des groupes distants sont chargés depuis les pairs QuestTogether mis à jour lorsque nécessaire, avec des résultats en cache et des requêtes espacées pour limiter le trafic du canal. Les anciens clients conservent leurs points normaux et les informations de base sur la taille du groupe ; les détails complets des groupes distants nécessitent un pair à jour.
-
-### Les demandes pour rejoindre peuvent parvenir au chef de groupe
-
-- Vous pouvez demander à rejoindre via un membre du groupe qui ne peut pas vous inviter. Si son chef utilise QuestTogether et peut inviter, la demande est redirigée vers le chef avec les réglages habituels de confirmation et d’approbation automatique.
-- Si le chef n’est pas connu comme utilisateur de QuestTogether, le membre peut annoncer « [QT] PlayerName demande à rejoindre le groupe. » dans la discussion de groupe lorsque les annonces en discussion de groupe sont activées. Quelqu’un ayant la permission d’inviter doit alors vous inviter manuellement.
-- Le demandeur et le membre qui transfère la demande doivent disposer de cette mise à jour pour les demandes redirigées. Les vérifications existantes de groupe complet, de restriction, d’ignore, d’expiration et de fréquence des demandes s’appliquent toujours.
-
-### Infobulles de joueurs plus claires
-
-- Les informations de groupe se trouvent désormais juste sous la ligne de niveau, de race et de classe, avec des lignes de membres compactes et de l’espace entre les sections. Les insignes de l’Alliance et de la Horde sont deux fois plus grands.
-- La version de l’addon apparaît en dernier au format abrégé vX.Y.Z. Quand l’ancienneté d’un emplacement est affichée, Dernière mise à jour se trouve directement au-dessus de la version.
-- Les nombres de quêtes suivies ont été retirés des infobulles des joueurs et du bouton de la minicarte. Le titre de la quête active des joueurs qui recherchent des partenaires de quête est toujours affiché.
+- Les menus de noms de joueurs et de quêtes n’incluent plus le raccourci vers la fenêtre de journal. Déplacez les journaux de QuestTogether entre la fenêtre de discussion principale et une fenêtre séparée via le menu de la minicarte ou les paramètres.
 
 ## 6.0.2
 
