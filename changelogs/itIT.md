@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.2.0
+## 6.2.1
 
 Più chiarezza e controllo sugli annunci nella chat di gruppo.
 
@@ -11,6 +11,31 @@ Più chiarezza e controllo sugli annunci nella chat di gruppo.
 - L’opzione in Dove annunciare ora spiega chiaramente che QT scrive anche nella chat di gruppo quando un membro non viene riconosciuto come utente QT. Rimane attiva per impostazione predefinita.
 - Una nuova finestra con il logo QT appare dopo una breve attesa per il rilevamento. Scegli Lascia attivo o Disattiva annunci prima che inizi l’invio. Non ricordarmelo più salva la conferma per il profilo attuale.
 - Il promemoria tradotto elenca i membri interessati e può riapparire quando si uniscono nuovi membri non identificati. Scompare se vengono riconosciuti come utenti QT. Gli eventi trattenuti durante l’attesa non vengono inviati in seguito.
+
+## 6.2.0
+
+Punti vicini più fluidi, dettagli dei giocatori più rapidi e comunicazioni più affidabili.
+
+### Movimento più fluido sulla minimappa
+
+- I giocatori vicini possono scambiarsi le posizioni tramite sussurri dell’addon a frequenza limitata. Il movimento fluido privilegia fino a quattro dei giocatori idonei più vicini e rispetta condivisione, filtri, giocatori ignorati e limiti di traffico.
+- Entrambi i giocatori devono installare questo aggiornamento per i flussi di posizione e le risposte dirette al passaggio del puntatore. Le versioni precedenti mantengono le normali trasmissioni; ritardi e restrizioni del server possono ancora influire sulla consegna.
+
+### Rilevamento e dettagli del gruppo più rapidi
+
+- Passare il puntatore su un nome o un punto può richiedere direttamente dettagli aggiornati. Le richieste hanno una frequenza limitata e gli elenchi dei membri invariati non scadono più dopo due minuti.
+- Posizioni recenti, stato di ricerca di compagni e dettagli noti del gruppo sopravvivono a /reload per un massimo di tre minuti dal rilevamento originale. Entrare in una zona richiede anche un aggiornamento scaglionato del rilevamento.
+- I tooltip usano lo stato noto di giocatore solo o in gruppo mentre attendono la dimensione esatta del gruppo. Un piccolo logo identifica gli utenti QT nell’elenco dei membri, mantenendo i nomi allineati.
+
+### Traduzioni e presentazione più chiare
+
+- Nomi delle razze, dettagli del ping, dati delle missioni e altri testi dell’interfaccia usano le traduzioni locali disponibili. Se manca una traduzione della missione, resta il testo leggibile del mittente; i progressi non usano descrizioni di obiettivi locali non pertinenti.
+- Gli annunci generici ora usano il logo QT. La ricerca di compagni di missioni è la prima opzione nel menu della minimappa.
+
+### Comunicazione e affidabilità
+
+- Confronti, elenchi del gruppo, richieste di ingresso e condivisione e risposte ping preferiscono sussurri diretti con giocatori compatibili. Messaggi periodici consolidati e meno aggiornamenti di posizioni invariate riducono il traffico pubblico ridondante.
+- Corretti controlli ripetuti delle missioni, tentativi eccessivi sulle barre dei nomi, finestre impossibili da chiudere durante le restrizioni e /qt set che accettava impostazioni diverse da attiva/disattiva. Disattivare la condivisione della posizione non elimina più altre richieste in coda.
 
 ## 6.1.2
 

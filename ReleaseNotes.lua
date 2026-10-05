@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "6.2.0",
+	version = "6.2.1",
 	welcome = "Clearer control over party-chat announcements.",
 	sections = {
 		{

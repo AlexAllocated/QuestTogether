@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.2.0
+## 6.2.1
 
 Mehr Klarheit bei Ankündigungen im Gruppenchat.
 
@@ -11,6 +11,31 @@ Mehr Klarheit bei Ankündigungen im Gruppenchat.
 - Die Einstellung unter Wo ankündigen erklärt jetzt deutlich, dass QT auch im Gruppenchat schreibt, wenn ein Mitglied nicht als QT-Nutzer erkannt wird. Sie bleibt standardmäßig aktiviert.
 - Nach einer kurzen Erkennungsphase erscheint ein neuer Dialog mit dem QT-Logo. Wähle Aktiviert lassen oder Ankündigungen ausschalten, bevor die Weiterleitung beginnt. Nicht erneut erinnern speichert deine Bestätigung für das aktuelle Profil.
 - Die übersetzte Erinnerung nennt die betroffenen Mitglieder und kann erneut erscheinen, wenn neue, noch nicht erkannte Mitglieder beitreten. Werden sie als QT-Nutzer erkannt, verschwindet sie. Während der Wartezeit zurückgehaltene Ereignisse werden nicht nachträglich gesendet.
+
+## 6.2.0
+
+Flüssigere Punkte in der Nähe, schnellere Spielerdetails und zuverlässigere Kommunikation.
+
+### Flüssigere Bewegung auf der Minikarte
+
+- Spieler in der Nähe können Positionen über begrenzte Addon-Flüsternachrichten austauschen. Flüssige Bewegungen bevorzugen bis zu vier der nächsten geeigneten Spieler und beachten Freigaben, Filter, ignorierte Spieler und Übertragungslimits.
+- Beide Spieler benötigen dieses Update für Positionsstreams und direkte Antworten beim Darüberfahren. Ältere Versionen senden weiterhin reguläre Meldungen; Serververzögerungen und Einschränkungen können die Zustellung weiterhin beeinflussen.
+
+### Schnellere Erkennung und Gruppendetails
+
+- Beim Darüberfahren über einen Spielernamen oder Punkt können aktuelle Details direkt angefordert werden. Anfragen sind begrenzt, und unveränderte Gruppenlisten laufen nicht mehr nach zwei Minuten ab.
+- Aktuelle Positionen, Partnersuchstatus und bekannte Gruppendetails bleiben nach /reload bis zu drei Minuten ab ihrer ursprünglichen Erfassung erhalten. Beim Betreten eines Gebiets wird außerdem eine zeitlich verteilte Erkennungsaktualisierung angefordert.
+- Tooltips zeigen einen bekannten Solo- oder Gruppenstatus an, während die genaue Gruppengröße noch fehlt. Ein kleines Logo kennzeichnet QT-Nutzer in der Mitgliederliste; die Namen bleiben bündig.
+
+### Klarere Übersetzungen und Darstellung
+
+- Volksnamen, Ping-Details, Questdaten und weitere Oberflächentexte nutzen verfügbare lokale Übersetzungen. Fehlt eine Questübersetzung, bleibt der lesbare Text des Absenders erhalten; Fortschrittstexte übernehmen keine unpassenden lokalen Zielbeschreibungen.
+- Allgemeine Ankündigungen verwenden jetzt das QT-Logo. Die Suche nach Questpartnern steht im Minikartenmenü an erster Stelle.
+
+### Kommunikation und Zuverlässigkeit
+
+- Vergleiche, Gruppenlisten, Beitritts- und Teilanfragen sowie Ping-Antworten bevorzugen direkte Flüsternachrichten mit kompatiblen Spielern. Zusammengefasste Statusmeldungen und weniger unveränderte Positionsupdates reduzieren unnötigen öffentlichen Datenverkehr.
+- Wiederholte Questprüfungen, übermäßige Namensplakettenprüfungen, während Einschränkungen nicht schließbare Fenster und nicht umschaltbare Einstellungen bei /qt set wurden korrigiert. Das Abschalten der Positionsfreigabe verwirft keine anderen wartenden Anfragen mehr.
 
 ## 6.1.2
 

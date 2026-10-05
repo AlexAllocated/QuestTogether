@@ -1,7 +1,7 @@
 {
   "source_sha256": "6a9ff0456094fb043598686bdc252e62399a52f7bf57ca62527240e316b7af93",
   "notes": {
-    "version": "6.2.0",
+    "version": "6.2.1",
     "welcome": "Un contrôle plus clair des annonces dans le canal de groupe.",
     "sections": [
       {
