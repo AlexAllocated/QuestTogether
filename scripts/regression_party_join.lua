@@ -10,7 +10,8 @@ local function Peer(name)
 		grouped = true,
 		count = 2,
 		isEnabled = true,
-		options = {},
+		options = { hidePartyChatReminder = true }, -- Existing fallback tests start with the notice acknowledged.
+		db = { profile = {} },
 		messages = {},
 		wire = {},
 		invites = {},

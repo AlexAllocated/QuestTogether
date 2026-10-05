@@ -51,6 +51,7 @@ EventLocalization.lua
 AddonUpdates.lua
 QuestCompare.lua
 QuestCompareWindow.lua
+PartyChatReminder.lua
 PartyJoin.lua
 PartyVisuals.lua
 QuestComparePreview.lua

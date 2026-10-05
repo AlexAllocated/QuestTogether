@@ -4,28 +4,13 @@
 
 ## 6.2.0
 
-Puntos cercanos más fluidos, información de jugadores más rápida y comunicación más fiable.
+Más claridad y control sobre los anuncios del chat de grupo.
 
-### Movimiento más fluido en el minimapa
+### Saber cuándo QT publica en el chat de grupo
 
-- Los jugadores cercanos pueden intercambiar posiciones mediante susurros del addon con frecuencia limitada. El movimiento fluido prioriza hasta cuatro de los jugadores válidos más cercanos y respeta las preferencias de compartir, filtros, ignorados y límites de tráfico.
-- Ambos jugadores necesitan esta actualización para los flujos de posición y las respuestas directas al pasar el cursor. Las versiones anteriores mantienen sus mensajes habituales; los retrasos y restricciones del servidor pueden seguir afectando a la entrega.
-
-### Detección e información de grupo más rápidas
-
-- Pasar el cursor sobre un nombre o punto puede solicitar información reciente directamente. Las solicitudes tienen una frecuencia limitada y las listas de miembros sin cambios ya no caducan a los dos minutos.
-- Las posiciones recientes, el estado de búsqueda de compañeros y los datos de grupo conocidos se conservan tras /reload hasta tres minutos desde su captura original. Entrar en una zona también solicita una actualización escalonada de la detección.
-- Las descripciones usan el estado conocido de solitario o agrupado mientras esperan el tamaño exacto del grupo. Un pequeño logotipo identifica a los usuarios de QT en la lista de miembros, manteniendo los nombres alineados.
-
-### Localización y presentación más claras
-
-- Los nombres de raza, los detalles de ping, los datos de misión y más textos de la interfaz usan traducciones locales cuando están disponibles. Si falta una traducción de misión, se conserva el texto legible del remitente; el progreso no toma descripciones de objetivos locales que no correspondan.
-- Los anuncios genéricos usan ahora el logotipo de QT. Buscar compañeros de misiones es la primera opción del menú del minimapa.
-
-### Comunicación y fiabilidad
-
-- Las comparaciones, listas de grupo, solicitudes para unirse o compartir y respuestas de ping prefieren susurros directos con jugadores compatibles. Los mensajes periódicos consolidados y menos actualizaciones de posiciones sin cambios reducen el tráfico público redundante.
-- Corregidos los análisis de misiones repetidos, los reintentos excesivos de placas de nombre, los diálogos que no se podían cerrar durante restricciones y /qt set aceptando ajustes que no son interruptores. Desactivar compartir ubicación ya no descarta otras solicitudes en cola.
+- El ajuste en Dónde anunciar ahora indica claramente que QT también publica en el chat de grupo cuando un miembro no se reconoce como usuario de QT. Sigue activado por defecto.
+- Tras una breve espera para detectar usuarios, aparece un nuevo diálogo con el logotipo de QT. Elige Mantener activado o Desactivar anuncios antes de que empiecen los envíos. No volver a recordármelo guarda tu confirmación para el perfil actual.
+- El recordatorio traducido muestra los miembros afectados y puede volver cuando se unan nuevos miembros sin identificar. Desaparece si se reconocen como usuarios de QT. Los eventos retenidos durante la espera no se vuelven a enviar.
 
 ## 6.1.2
 

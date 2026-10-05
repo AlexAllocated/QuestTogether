@@ -543,3 +543,105 @@ function QuestTogether:RenderPartyJoinPrompt()
 	end
 	frame:Show()
 end
+
+function QuestTogether:RenderPartyChatReminder(request)
+	local frameKey = request and request.preview and "partyChatReminderPreviewFrame" or "partyChatReminderFrame"
+	local frame = rawget(self, frameKey)
+	self:HideRetiredPartyRequestPrompt(frame, request)
+	if not request or self:IsWorkBlocked("foreign_frame_mutation") then return end
+	local parent = self:GetPartyQuestUIParent()
+	if not self:CanAccessForeignFrame(parent) then return end
+	local function Dimension(method)
+		local getter = self:GetAccessibleFrameMember(parent, method)
+		if type(getter) ~= "function" then return nil end
+		local ok, value = pcall(getter, parent)
+		value = ok and self:SafeToNumber(value) or nil
+		return value and value > 0 and value or nil
+	end
+	local width, parentHeight = Dimension("GetWidth"), Dimension("GetHeight")
+	if not width or not parentHeight then return end
+	if not frame then
+		frame = Window(self, 520, 300, L("QuestTogether · Party chat announcements"))
+		self[frameKey] = frame
+		frame:SetFrameStrata("FULLSCREEN_DIALOG")
+		frame:SetFrameLevel(200)
+		frame.logo = NativeTexture(frame, nil, "ARTWORK", 52, 52)
+		frame.logo:SetPoint("TOPLEFT", 26, -43)
+		frame.logo:SetTexture(self.NAMEPLATE_PLAYER_ICON_TEXTURE)
+		frame.heading = Label(frame, 94, -47, 398, L("Share updates with your party?"), "GameFontNormalLarge")
+		frame.heading:SetWordWrap(true)
+		frame.preview = Label(frame, 94, -76, 398, "", "GameFontHighlightSmall")
+		frame.preview:SetTextColor(0.65, 0.65, 0.65)
+		frame.message = Label(frame, 24, -116, 472, L("Your quest updates can also appear in party chat, so party members without QuestTogether can follow along."), "GameFontHighlight")
+		frame.message:SetWordWrap(true)
+		frame.memberPanel = NativeTexture(frame, nil, "BACKGROUND")
+		frame.memberPanel:SetColorTexture(0, 0, 0, 0.3)
+		frame.memberLabel = Label(frame, 36, 0, 448, L("QT hasn't been detected for:"), "GameFontNormalSmall")
+		frame.members = Label(frame, 36, 0, 448, "", "GameFontHighlight")
+		frame.members:SetWordWrap(true)
+		frame.hint = Label(frame, 24, 0, 472, L('Change this anytime in Settings under "Where to Announce".'), "GameFontHighlightSmall")
+		frame.hint:SetTextColor(0.7, 0.7, 0.7)
+		frame.hint:SetWordWrap(true)
+		frame.remember = Checkbox(self, frame, 16, -210, L("Don't remind me again"))
+		frame.keep = Button(self, frame, 24, -260, 230, L("Keep enabled"), function()
+			if self.LibChev.CanMutateOwnedRegion(frame.remember) then
+				self:AcknowledgePartyChatReminder(frame.request, frame.remember:GetChecked() == true, false)
+			end
+		end)
+		frame.disable = Button(self, frame, 266, -260, 230, L("Turn off announcements"), function()
+			if self.LibChev.CanMutateOwnedRegion(frame.remember) then
+				self:AcknowledgePartyChatReminder(frame.request, frame.remember:GetChecked() == true, true)
+			end
+		end)
+		frame.close = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelCloseButton")
+		frame.close:SetPoint("TOPRIGHT", 0, 0)
+		frame.close:SetScript("OnClick", function()
+			-- Safe dismissal remains available during combat. A restricted close
+			-- does not acknowledge or save preferences; the reminder resumes later.
+			if self.LibChev.CanMutateOwnedRegion(frame) then frame:Hide() end
+			if self.LibChev.CanMutateOwnedRegion(frame.remember) then
+				self:AcknowledgePartyChatReminder(frame.request, frame.remember:GetChecked() == true, false)
+			end
+		end)
+		frame:SetScript("OnDragStart", function()
+			if not self:IsWorkBlocked("foreign_frame_mutation") and self.LibChev.CanMutateOwnedRegion(frame) then frame:StartMoving() end
+		end)
+		frame:SetScript("OnDragStop", function()
+			if self.LibChev.CanMutateOwnedRegion(frame) then frame:StopMovingOrSizing() end
+		end)
+	end
+	if not self.LibChev.CanMutateOwnedRegion(frame) then return end
+	if frame.request ~= request then
+		frame.request = request
+		frame.remember:SetChecked(false)
+		frame.preview:SetText(request.preview and L("Preview - no settings will change.") or "")
+		frame.members:SetText(table.concat(request.names, "\n"):gsub("|", "||"))
+		-- Lay out each wrapped section from its actual height. No fixed blank
+		-- message area, and long translations/member names grow the dialog.
+		local function Place(region, x, y)
+			region:ClearAllPoints()
+			region:SetPoint("TOPLEFT", frame, "TOPLEFT", x, -y)
+		end
+		local headingHeight = frame.heading:GetStringHeight()
+		Place(frame.preview, 94, 47 + headingHeight + 6)
+		local headerBottom = math.max(95, 47 + headingHeight + (request.preview and frame.preview:GetStringHeight() + 6 or 0))
+		local y = headerBottom + 18
+		Place(frame.message, 24, y)
+		y = y + frame.message:GetStringHeight() + 16
+		Place(frame.memberPanel, 24, y)
+		Place(frame.memberLabel, 36, y + 10)
+		Place(frame.members, 36, y + 10 + frame.memberLabel:GetStringHeight() + 6)
+		local panelHeight = 20 + frame.memberLabel:GetStringHeight() + 6 + frame.members:GetStringHeight()
+		frame.memberPanel:SetSize(472, panelHeight)
+		y = y + panelHeight + 14
+		Place(frame.hint, 24, y)
+		y = y + frame.hint:GetStringHeight() + 14
+		Place(frame.remember, 20, y)
+		y = y + 38
+		Place(frame.keep, 24, y)
+		Place(frame.disable, 266, y)
+		frame:SetHeight(y + 46)
+		frame:SetScale(math.min(1, width * 0.94 / 520, parentHeight * 0.94 / (y + 46)))
+	end
+	frame:Show()
+end

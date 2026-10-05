@@ -1265,6 +1265,8 @@ function QuestTogether:LeaveAnnouncementChannel()
 end
 
 function QuestTogether:ResetCommsState()
+	self:ClosePartyChatReminderPreview()
+	self:ResetPartyChatReminder()
 	if self.ResetGeographicComms then self:ResetGeographicComms() end
 	self.channelOrderWork = nil
 	self.announcementChannelBindings = nil
@@ -2329,8 +2331,44 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
 	return true
 end
 
--- Only local publication reaches this path; received announcements are never
--- relayed. Use current unit identities rather than a potentially stale roster.
+-- Shared by forwarding and its reminder; unreadable group data is not proof
+-- of a non-QT member. Always read current native identities.
+function QuestTogether:GetNonQTPartyMembers()
+	local api = self.API or {}
+	local function ReadBoolean(query, ...)
+		if type(query) ~= "function" then return nil end
+		local ok, value = pcall(query, ...)
+		if ok and self:CanAccessValue(value) and type(value) == "boolean" then return value end
+	end
+	local raid = ReadBoolean(api.IsInRaid)
+	if raid == nil then return nil end
+	if raid then return {} end
+	local instance = ReadBoolean(api.IsInInstanceGroup)
+	if instance == nil then return nil end
+	if not instance then
+		local party = ReadBoolean(api.IsInParty)
+		if party == nil then return nil end
+		if not party then return {} end
+	end
+	local missingQT = {}
+	for index = 1, 4 do
+		local unit = "party" .. index
+		local exists = ReadBoolean(api.UnitExists, unit)
+		if exists == nil then return nil end
+		if exists then
+			local ok, name = pcall(self.GetUnitFullName, self, unit)
+			if not ok or not self:CanAccessValue(name) or type(name) ~= "string" or name == ""
+				or #name > 120 or name:find("[%c|]") then
+				return nil
+			end
+			if not self:IsKnownQTPlayer(name) then missingQT[#missingQT + 1] = name end
+		end
+	end
+	table.sort(missingQT)
+	return missingQT, instance and "INSTANCE_CHAT" or "PARTY"
+end
+
+-- Only local publication reaches this path; received events are never relayed.
 function QuestTogether:AnnounceToNonQTParty(eventData)
 	if not self.isEnabled or not self:GetOption("announceToNonQTParty")
 		or self.suppressLocalAnnouncementDisplayDuringTests
@@ -2338,29 +2376,8 @@ function QuestTogether:AnnounceToNonQTParty(eventData)
 	if self:IsRuntimeRestrictionTypeActive("chat") then return false end
 	local api = self.API or {}
 	if type(api.SendPartyChatMessage) ~= "function" then return false end
-	local function ReadBoolean(query, ...)
-		if type(query) ~= "function" then return nil end
-		local ok, value = pcall(query, ...)
-		if ok and self:CanAccessValue(value) and type(value) == "boolean" then return value end
-	end
-	if ReadBoolean(api.IsInRaid) ~= false then return false end
-	local instance = ReadBoolean(api.IsInInstanceGroup)
-	if instance == nil then return false end
-	if not instance and ReadBoolean(api.IsInParty) ~= true then return false end
-	local missingQT = false
-	for index = 1, 4 do
-		local unit = "party" .. index
-		local exists = ReadBoolean(api.UnitExists, unit)
-		if exists == nil then return false end
-		if exists then
-			local ok, name = pcall(self.GetUnitFullName, self, unit)
-			if not ok or not self:CanAccessValue(name) or type(name) ~= "string" or name == "" then
-				return false
-			end
-			if not self:IsKnownQTPlayer(name) then missingQT = true end
-		end
-	end
-	if not missingQT then return false end
+	local members, distribution = self:GetNonQTPartyMembers()
+	if not members or #members == 0 or not self:UpdatePartyChatReminder(members) then return false end
 	-- Plain text only: custom QT links/textures are not usable by non-QT clients.
 	local text = SafeTrimAddonString(self, eventData.text, "")
 	text = text:gsub("|H.-|h(.-)|h", "%1"):gsub("|[TA].-|[ta]", "")
@@ -2369,7 +2386,7 @@ function QuestTogether:AnnounceToNonQTParty(eventData)
 	text = self:SafeTrimString(text, "")
 	if text == "" then return false end
 	local prefix = "[QT] "
-	local ok, sent = pcall(api.SendPartyChatMessage, prefix .. TruncateUtf8(text, 255 - #prefix), instance and "INSTANCE_CHAT" or "PARTY")
+	local ok, sent = pcall(api.SendPartyChatMessage, prefix .. TruncateUtf8(text, 255 - #prefix), distribution)
 	return ok and sent == true
 end
 

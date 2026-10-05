@@ -2387,7 +2387,9 @@ local function PartyChatFixture()
 	function addon:IsRuntimeRestrictionTypeActive() return self.chatRestricted == true end
 	addon.chatMessages, addon.members = {}, { party1 = "Friend-Realm" }
 	addon.partyOption, addon.eventOption = true, true
+	addon.db = { profile = { hidePartyChatReminder = true } }
 	function addon:GetOption(key)
+		if key == "hidePartyChatReminder" then return self.db.profile.hidePartyChatReminder end
 		if key == "announceToNonQTParty" then return self.partyOption end
 		if key == "announceProgress" then return self.eventOption end
 		return false
@@ -2416,6 +2418,99 @@ QuestTogether:RegisterTest("party announcements require a currently unidentified
 	a.members.party2 = nil
 	Equal(a:AnnounceToNonQTParty(event), false)
 	Equal(#a.chatMessages, 2)
+end)
+
+local function ReminderFixture()
+	local a = PartyChatFixture()
+	a.db.profile.hidePartyChatReminder = false
+	function a:IsRuntimeRestricted() return self.blocked == true end
+	function a:RenderPartyChatReminder(request) self.rendered = request end
+	function a:RefreshOptionsWindow() end
+	function a:SetOption(key, value)
+		if key == "announceToNonQTParty" then self.partyOption = value
+		else self.db.profile[key] = value end
+		return true
+	end
+	return a
+end
+
+QuestTogether:RegisterTest("party reminder gates forwarding until acknowledged and rearms for new members", function()
+	local a, event = ReminderFixture(), { eventType = "QUEST_PROGRESS", text = "Progress" }
+	Equal(QuestTogether.DEFAULTS.profile.hidePartyChatReminder, false)
+	Equal(a:AnnounceToNonQTParty(event), false)
+	Equal(a.rendered, nil)
+	a.now = 109
+	Equal(a:UpdatePartyChatReminder(), false)
+	Equal(a.rendered, nil)
+	a.now = 110
+	Equal(a:UpdatePartyChatReminder(), false)
+	local request = a.rendered
+	Equal(request.names[1], "Friend-Realm")
+	Equal(a:AcknowledgePartyChatReminder(request, false, false), true)
+	Equal(a:AnnounceToNonQTParty(event), true)
+	Equal(#a.chatMessages, 1) -- Nothing queued or replayed from before acknowledgement.
+	a.blocked = true
+	Equal(a:AnnounceToNonQTParty(event), true) -- UI restrictions do not revoke acknowledgement.
+	a.blocked = false
+	Equal(a:UpdatePartyChatReminder(), true)
+	a.members.party2 = "New-Realm"
+	Equal(a:AnnounceToNonQTParty(event), false)
+	a.now = 120
+	a:UpdatePartyChatReminder()
+	Equal(a.rendered.names[1], "New-Realm")
+	a:RecordQTPlayerPresence("New-Realm", true)
+	Equal(a:UpdatePartyChatReminder(), true)
+	Equal(a.rendered, nil)
+	a.members = {}
+	a:UpdatePartyChatReminder()
+	a.members.party1 = "Friend-Realm"
+	Equal(a:UpdatePartyChatReminder(), false)
+end)
+
+QuestTogether:RegisterTest("party reminder choices persist only on valid acknowledgement", function()
+	for _, off in ipairs({ false, true }) do
+		local a = ReminderFixture()
+		a:UpdatePartyChatReminder(); a.now = 110; a:UpdatePartyChatReminder()
+		Equal(a:AcknowledgePartyChatReminder(a.rendered, true, off), true)
+		Equal(a.db.profile.hidePartyChatReminder, true)
+		Equal(a.partyOption, not off)
+		a:ResetPartyChatReminder()
+		Equal(a:UpdatePartyChatReminder(), not off)
+	end
+	for _, stale in ipairs({ "profile", "leave", "known", "off", "disabled", "restricted", "unreadable" }) do
+		local a = ReminderFixture()
+		a:UpdatePartyChatReminder(); a.now = 110; a:UpdatePartyChatReminder()
+		local old = a.rendered
+		if stale == "profile" then a.db.profile = { hidePartyChatReminder = false }
+		elseif stale == "leave" then a.members = {}
+		elseif stale == "known" then a:RecordQTPlayerPresence("Friend-Realm", true)
+		elseif stale == "off" then a.partyOption = false
+		elseif stale == "disabled" then a.isEnabled = false
+		elseif stale == "restricted" then a.blocked = true
+		else a.API.UnitExists = function() return nil end end
+		Equal(a:AcknowledgePartyChatReminder(old, true, false), false)
+		Equal(a.db.profile.hidePartyChatReminder, false)
+	end
+end)
+
+QuestTogether:RegisterTest("party reminder cancels discovery candidates and handles clock resets", function()
+	local a = ReminderFixture()
+	a:UpdatePartyChatReminder()
+	a.now = 105
+	a:RecordQTPlayerPresence("Friend-Realm", true)
+	Equal(a:UpdatePartyChatReminder(), true)
+	Equal(a.rendered, nil)
+	a:RecordQTPlayerPresence("Friend-Realm", false)
+	a:UpdatePartyChatReminder(); a.now = 115; a:UpdatePartyChatReminder()
+	local old = a.rendered
+	a.now = 10
+	Equal(a:AcknowledgePartyChatReminder(old, true, false), false)
+	Equal(a.rendered, nil)
+	a.now = 20
+	a:UpdatePartyChatReminder()
+	assert(a.rendered ~= old)
+	a:ResetCommsState()
+	Equal(a.partyChatReminderState, nil)
 end)
 
 QuestTogether:RegisterTest("party announcements honor options group routes and unreadable identities", function()

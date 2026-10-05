@@ -494,3 +494,11 @@ The location reload cache also retains solo/group size, known leader/class/revis
 The minimap menu now starts with the Looking for Questing Partners checkbox. Its selection/callback still reads the current saved setting and rechecks restrictions; Settings and the other actions follow it.
 
 Party tooltip summaries also use fresh existing QJST solo/grouped metadata when an exact size is unavailable. A newer contradictory summary hides the older count and roster; delayed older summaries cannot replace newer sampled party identity. Grouped-only reports show no invented count or members. These fallbacks work with published peers that do not support hover requests.
+
+### Party-chat acknowledgement (6.2.1)
+
+The default-on party-chat option now explains that enabled announcements are also sent when a party member is not recognized as a QT user. A ten-second discovery grace period precedes an addon-owned reminder naming those members. Keep enabled (or the close button) acknowledges the current unidentified members; Turn off announcements disables the setting. The optional Don't remind me again checkbox is saved per profile only by a valid acknowledgement. New unidentified members can trigger another reminder; members who leave or become recognized are removed. No extra presence probes are sent.
+
+Event forwarding and non-QT-leader join-request chat wait for acknowledgement, unless that profile has already suppressed reminders. Waiting events are not queued or replayed. The reminder shares the forwarding path's current native party checks, excludes raids, defers discovery/presentation under restrictions, and rechecks membership/profile at click time. An existing acknowledgement still permits otherwise-allowed announcements during combat. Safe close hides the owned window during restrictions without saving an acknowledgement; it resumes afterward. Disable/reset clears transient state.
+
+`/qt partychatpreview` shows the same dialog with localized sample names and is listed only in `/qt help debug`. Its separate preview frame and request cannot alter real acknowledgement, settings, membership, or outgoing chat. Preview closes on addon reset. Both live-safe state regressions and private-frame callback tests cover it; actual client layout still needs visual validation.

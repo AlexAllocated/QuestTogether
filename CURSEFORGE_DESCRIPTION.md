@@ -134,8 +134,12 @@ The leader decides whether to invite you, using their own confirmation and
 auto-invite settings.
 
 If the leader is not known to use QT, the contacted player can announce your
-request in party chat instead, using the existing **Announce In Party Chat When
-Someone Doesn't Have QT** setting. The leader can then invite you manually.
+request in party chat instead, using **Also send announcements to party chat if
+any party members are not running QuestTogether** in **Where to Announce**.
+Party-chat forwarding is enabled by default. A dismissible reminder explains
+the behavior and lets you keep it enabled or turn it off before forwarding starts.
+Choose **Don't remind me again** to remember your acknowledgement for that profile.
+The leader can then invite you manually.
 
 ## Spot quest objectives on nameplates
 

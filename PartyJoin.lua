@@ -287,6 +287,7 @@ function QT:AnnouncePartyJoinRequest(sender)
 	if not leader or self:IsKnownQTPlayer(leader) then return false end
 	local send = self.API and self.API.SendPartyChatMessage
 	if type(send) ~= "function" then return false end
+	if not self:UpdatePartyChatReminder() then return false end
 	-- Authenticated player identity and localized prose only, never requester text.
 	local text = "[QT] " .. self:SanitizeAnnouncementText(string.format(
 		L("%s is requesting to join the party."), sender))

@@ -4,28 +4,13 @@
 
 ## 6.2.0
 
-Des points proches plus fluides, des détails de joueur plus rapides et une communication plus fiable.
+Un contrôle plus clair des annonces dans le canal de groupe.
 
-### Des déplacements plus fluides sur la minicarte
+### Savoir quand QT écrit dans le canal de groupe
 
-- Les joueurs proches peuvent échanger leurs positions par des chuchotements d’addon cadencés. Les déplacements fluides privilégient jusqu’à quatre joueurs admissibles parmi les plus proches et respectent le partage, les filtres, les joueurs ignorés et les limites de trafic.
-- Les deux joueurs doivent installer cette mise à jour pour les flux de position et les réponses directes au survol. Les anciennes versions conservent leurs diffusions habituelles ; les délais et restrictions du serveur peuvent toujours affecter la réception.
-
-### Découverte et détails de groupe plus rapides
-
-- Survoler un nom ou un point peut demander directement des détails récents. La fréquence des demandes est limitée et les listes de membres inchangées n’expirent plus après deux minutes.
-- Les positions récentes, le statut de recherche de partenaires et les détails de groupe connus survivent à /reload pendant trois minutes au maximum depuis leur relevé initial. Entrer dans une zone demande aussi une actualisation de découverte échelonnée.
-- Les infobulles utilisent le statut solo ou en groupe connu en attendant la taille exacte du groupe. Un petit logo identifie désormais les utilisateurs de QT dans la liste des membres, tout en gardant les noms alignés.
-
-### Traduction et présentation améliorées
-
-- Les noms de race, détails de ping, données de quête et davantage de textes d’interface utilisent les traductions locales disponibles. Sinon, le texte lisible de l’expéditeur est conservé ; la progression n’emprunte pas de descriptions d’objectifs locaux sans rapport.
-- Les annonces génériques utilisent désormais le logo QT. La recherche de partenaires de quête est la première option du menu de la minicarte.
-
-### Communication et fiabilité
-
-- Les comparaisons, listes de groupe, demandes pour rejoindre ou partager et réponses au ping privilégient les chuchotements directs avec les joueurs compatibles. Le regroupement des messages périodiques et la réduction des mises à jour de positions inchangées allègent le trafic public.
-- Correction des analyses de quêtes répétées, des vérifications excessives des barres de nom, des fenêtres impossibles à fermer pendant les restrictions et de /qt set acceptant des réglages autres que marche/arrêt. Désactiver le partage de position ne supprime plus les autres demandes en attente.
+- Le réglage sous Où annoncer indique désormais clairement que QT écrit aussi dans le canal de groupe si un membre n’est pas reconnu comme utilisateur de QT. Il reste activé par défaut.
+- Une nouvelle fenêtre avec le logo QT apparaît après un court délai de détection. Choisissez Laisser activé ou Désactiver les annonces avant le début de la transmission. Ne plus me le rappeler enregistre votre confirmation pour le profil actuel.
+- Le rappel traduit nomme les membres concernés et peut revenir lorsque de nouveaux membres non identifiés rejoignent le groupe. Il disparaît s’ils sont reconnus comme utilisateurs de QT. Les événements retenus pendant l’attente ne sont pas renvoyés.
 
 ## 6.1.2
 

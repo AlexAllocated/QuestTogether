@@ -591,6 +591,7 @@ local function Frame(parent)
 	function methods:GetHeight()
 		return self.height
 	end
+	function methods:GetStringHeight() return 180 end
 	function methods:SetChecked(value)
 		self.checked = value
 	end
@@ -664,6 +665,8 @@ local function Frame(parent)
 		"SetMaxLines",
 		"SetTextColor",
 		"SetFrameStrata",
+		"SetFrameLevel",
+		"SetWordWrap",
 		"SetToplevel",
 		"SetFlattensRenderLayers",
 		"SetClampedToScreen",
@@ -706,6 +709,74 @@ local function AttachUI(addon)
 	end
 	return parent
 end
+
+QuestTogether:RegisterTest("party chat reminder renders choices resets checkbox and safely dismisses during restrictions", function()
+	local a = Fixture()
+	AttachUI(a)
+	a.db = { profile = {} }
+	a.options.announceToNonQTParty = true
+	a.suppressLocalAnnouncementDisplayDuringTests = false
+	function a:GetNonQTPartyMembers() return { "Friend-Realm" } end
+	function a:IsRuntimeRestrictionTypeActive() return false end
+	function a:RefreshOptionsWindow() end
+	a:UpdatePartyChatReminder(); a.now = a.now + 10; a:UpdatePartyChatReminder()
+	local frame = a.partyChatReminderFrame
+	assert(frame:IsShown())
+	Equal(frame.remember:GetChecked(), false)
+	assert(frame.members.text:find("Friend-Realm", 1, true))
+	frame.remember:SetChecked(true)
+	a.blocked = true
+	frame.close.scripts.OnClick()
+	Equal(frame:IsShown(), false)
+	Equal(a.options.hidePartyChatReminder, nil)
+	a.blocked = false
+	a:UpdatePartyChatReminder()
+	Equal(frame:IsShown(), true)
+	frame.keep.scripts.OnClick()
+	Equal(frame:IsShown(), false)
+	Equal(a.options.hidePartyChatReminder, true)
+	Equal(a.options.announceToNonQTParty, true)
+	a.options.hidePartyChatReminder = false
+	a:ResetPartyChatReminder()
+	a:UpdatePartyChatReminder(); a.now = a.now + 10; a:UpdatePartyChatReminder()
+	Equal(frame.remember:GetChecked(), false)
+	frame.disable.scripts.OnClick()
+	Equal(a.options.announceToNonQTParty, false)
+	Equal(frame:IsShown(), false)
+	a:RenderPartyChatReminder(nil)
+end)
+
+QuestTogether:RegisterTest("party chat preview command is isolated from real acknowledgements settings and normal help", function()
+	local a = Fixture()
+	AttachUI(a)
+	a.db = { profile = {} }
+	a.printed = {}
+	function a:Print(text) self.printed[#self.printed + 1] = text end
+	function a:GetNonQTPartyMembers() error("preview must not inspect party") end
+	local real = { request = {} }
+	a.partyChatReminderState = real
+	assert(a:HandleSlashCommand("partychatpreview"))
+	local frame = a.partyChatReminderPreviewFrame
+	assert(frame:IsShown())
+	frame.remember:SetChecked(true)
+	frame.disable.scripts.OnClick()
+	Equal(frame:IsShown(), false)
+	Equal(a.options.announceToNonQTParty, nil)
+	Equal(a.options.hidePartyChatReminder, nil)
+	Equal(a.partyChatReminderState, real)
+	Equal(#a.wire, 0)
+	assert(a:ShowPartyChatReminderPreview())
+	Equal(frame.remember:GetChecked(), false)
+	frame.keep.scripts.OnClick()
+	Equal(a.partyChatReminderState, real)
+	a:PrintHelp()
+	assert(not table.concat(a.printed, "\n"):find("partychatpreview", 1, true))
+	a:PrintDebugHelp()
+	assert(table.concat(a.printed, "\n"):find("/qt partychatpreview", 1, true))
+	a.blocked = true
+	Equal(a:ShowPartyChatReminderPreview(), false)
+	Equal(frame:IsShown(), false)
+end)
 
 QuestTogether:RegisterTest("comparison titles refresh on load results and drain a bounded load queue", function()
 	local a = Fixture()

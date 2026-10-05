@@ -355,6 +355,7 @@ function QT:PruneQTPlayerPresence(force)
 end
 
 function QT:UpdateQTPlayerPresence()
+	self:UpdatePartyChatReminder()
 	if self.UpdatePartyJoin then self:UpdatePartyJoin() end
 	self:BroadcastQTPlayerPresence()
 	self:BroadcastQuestPartnerStatus()

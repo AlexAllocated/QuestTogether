@@ -353,6 +353,7 @@ QuestTogether.DEFAULTS = {
 			showChatBubbles = true,
 			hideMyOwnChatBubbles = false,
 			announceToNonQTParty = true,
+			hidePartyChatReminder = false,
 			showChatLogs = true,
 			showQTChat = true,
 			qtChatScope = "global",
@@ -5386,6 +5387,8 @@ function QuestTogether:SetOption(key, value)
 	if not self.db or not self.db.profile then
 		return false
 	end
+	if (key == "announceToNonQTParty" or key == "hidePartyChatReminder")
+		and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
 	if key == "shareLocationOnMap" or key == "shareLocationOnMinimap"
 		or key == "showLocationsOnMap" or key == "showLocationsOnMinimap" then
 		return false
@@ -5449,6 +5452,7 @@ function QuestTogether:SetOption(key, value)
 	local startedLooking = key == "lookingForQuestPartners" and value == true
 		and self.db.profile[key] ~= true
 	self.db.profile[key] = value
+	if key == "announceToNonQTParty" or key == "hidePartyChatReminder" then self:UpdatePartyChatReminder() end
 	if key == "lookingForQuestPartners" and self.BroadcastQuestPartnerStatus then self:BroadcastQuestPartnerStatus(true) end
 	if startedLooking then self:AnnounceQuestPartnerSearch() end
 	if key == "lookingForQuestPartners" and self.RefreshMinimapPartnerGlow then self:RefreshMinimapPartnerGlow() end
@@ -5828,6 +5832,7 @@ end
 
 function QuestTogether:PrintDebugHelp()
 	self:Print(L("Debugging and developer commands:"))
+	self:Print(L("/qt partychatpreview - Preview the party chat reminder without changing settings"))
 	self:Print(L("/qt debug - Open the shared QuestTogether debug window"))
 	self:Print(L("/qt devlogall [on|off|toggle] - Show or control dev all-announcements logging"))
 	self:Print(L("/qt compare debug - Preview Party Quest Compare with mock data (no sharing)"))
@@ -5843,7 +5848,9 @@ end
 
 function QuestTogether:HandleSlashCommand(input)
 	local compareCommand = string.lower(self:SafeTrimString(input, ""))
-	if compareCommand == "compare" then
+	if compareCommand == "partychatpreview" then
+		return self:ShowPartyChatReminderPreview()
+	elseif compareCommand == "compare" then
 		self:ClosePartyQuestComparePreview()
 		return self:OpenPartyQuestCompare()
 	elseif compareCommand:match("^compare%s+debug$") then
