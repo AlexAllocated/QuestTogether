@@ -387,7 +387,6 @@
   "Send Invitation": "Envoyer une invitation",
   "Send QT chat message": "Envoyer un message dans le chat QT",
   "Send and show announcements when players start looking for questing partners. Their status and glowing icons remain visible when this is off.": "Envoyer et afficher les annonces lorsque des joueurs commencent à chercher des partenaires de quête. Leur statut et leurs icônes lumineuses restent visibles si cette option est désactivée.",
-  "Send your enabled event announcements to party chat when a member has not been recognized as a QuestTogether user. Everyone in the party sees these messages. Does not post to raids.": "Envoyez vos annonces d’événements activées dans le canal de groupe lorsqu’un membre n’a pas été reconnu comme utilisateur de QuestTogether. Tous les membres du groupe voient ces messages. Ne publie pas en raid.",
   "Separate Chat Window": "Fenêtre de discussion séparée",
   "Settings": "Paramètres",
   "Settings API is unavailable; addon options could not be registered.": "L’API des paramètres est indisponible ; les options de l’addon n’ont pas pu être enregistrées.",
@@ -445,7 +444,6 @@
   "Tint quest-objective nameplate health bars with your selected quest color.": "Teinter les barres de vie des barres d’info des objectifs de quête avec la couleur de quête sélectionnée.",
   "Tips": "Astuces",
   "Top": "Haut",
-  "Tracked quests": "Quêtes suivies",
   "Troubleshooting": "Dépannage",
   "Turn off Looking for Questing Partners when you join or form a party or raid. You can turn it back on to recruit more players.": "Désactiver la recherche de partenaires de quête lorsque vous rejoignez ou formez un groupe ou un raid. Vous pouvez la réactiver pour recruter davantage de joueurs.",
   "Unable to build a test announcement for that player.": "Impossible de créer une annonce de test pour ce joueur.",
@@ -513,5 +511,11 @@
   "Older": "Plus ancien",
   "Release date (UTC): %s": "Date de sortie (UTC) : %s",
   "Release history": "Historique des versions",
-  "These notes are available in English only.": "Ces notes sont disponibles en anglais uniquement."
+  "These notes are available in English only.": "Ces notes sont disponibles en anglais uniquement.",
+  "%s is requesting to join the party.": "%s demande à rejoindre le groupe.",
+  "Join request forwarded to party leader: ": "Demande d’invitation transmise au chef de groupe : ",
+  "Join request sent to party chat. The leader must invite you manually.": "Demande pour rejoindre envoyée dans la discussion de groupe. Le chef de groupe doit vous inviter manuellement.",
+  "Send your enabled event announcements to party chat when a member has not been recognized as a QuestTogether user. Also announce requests to join when you cannot invite and the party leader is not known to use QT. Everyone in the party sees these messages. Does not post to raids.": "Envoyer vos annonces d’événements activées dans la discussion de groupe lorsqu’un membre n’a pas été reconnu comme utilisateur de QuestTogether. Annoncer également les demandes pour rejoindre lorsque vous ne pouvez pas inviter et que le chef de groupe n’est pas connu comme utilisateur de QT. Tous les membres du groupe voient ces messages. Ne publie rien dans les raids.",
+  "Leader": "Chef",
+  "Loading party members…": "Chargement des membres du groupe…"
 }

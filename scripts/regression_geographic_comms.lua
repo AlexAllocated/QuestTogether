@@ -555,3 +555,45 @@ QT:RegisterTest("delayed group and zone event copies deduplicate without merging
 	assert(#payload + 4 <= 255)
 	Equal(a:DecodeAnnouncementPayload(payload).eventId, event.eventId)
 end)
+
+QT:RegisterTest("party metadata is isolated from older snapshot commands and keeps geographic freshness", function()
+	local a,b=Fixture("Alice-Realm"),Fixture("Bob-Realm")
+	Stage(a, false)
+	assert(a:StageGeographicState("QTPG|1,3,Alice-Realm,MAGE,123"))
+	local packets=a:BuildGeographicSnapshots(); local partyPackets=0
+	for _,wire in ipairs(packets) do
+		if wire:find("QTPG|",1,true) then
+			partyPackets=partyPackets+1
+			for _,command in ipairs({"LOC|","QTVR|","QJST|","QTLF|","QTPR|"}) do assert(not wire:find(command,1,true)) end
+		end
+		assert(b:HandleGeographicSnapshot(wire:sub(6),a.name))
+	end
+	Equal(partyPackets,1); Equal(b:GetPlayerPartyVisualInfo(a.name).leader,a.name)
+	b.now=400; assert(b:GetPlayerPartyVisualInfo(a.name))
+	b.now=701; Equal(b:GetPlayerPartyVisualInfo(a.name),nil)
+	-- A current withdrawal cannot be undone by an older split packet.
+	b.now,a.now=110,110; a:StageGeographicState("QTPG|1,0,,,")
+	for _,wire in ipairs(a:BuildGeographicSnapshots()) do b:HandleGeographicSnapshot(wire:sub(6),a.name) end
+	for _,wire in ipairs(packets) do b:HandleGeographicSnapshot(wire:sub(6),a.name) end
+	Equal(b:GetPlayerPartyVisualInfo(a.name).size,0)
+end)
+QT:RegisterTest("five member hover responses drain through shared pacing rather than dropping the fifth member", function()
+	local a,b=Fixture("Viewer-Realm"),Fixture("Leader-Realm")
+	a.other,b.other=b,a
+	b.API.GetPartyJoinInfo=function() return true,false,5 end
+	b.API.GetPartyVisualLeaderUnit=function() return "player" end
+	function b:GetUnitFullName() return self.name end
+	b.partyMembers={[b.name]={classFile="MAGE"}}
+	for i=2,5 do b.partyMembers["Member"..i.."-Realm"]={classFile="WARRIOR"} end
+	assert(b:BroadcastPartyVisualMetadata())
+	for _,wire in ipairs(b:BuildGeographicSnapshots()) do a:OnCommReceived(a.commPrefix,wire,"CHANNEL",b.name,6,"QuestTogether") end
+	assert(a:RequestPartyVisualRoster(b.name))
+	Equal(#a.sent,0)
+	for i=1,30 do
+		a.now,b.now=100+i/2,100+i/2
+		a:DrainGeographicQueue(); b:DrainGeographicQueue()
+	end
+	Equal(#a:GetPlayerPartyVisualInfo(b.name).members,5)
+	Equal(#a.sent,1); Equal(#b.sent,5)
+	for _,packet in ipairs(b.sent) do Equal(packet.route,"CHANNEL"); assert(#packet.wire<=255) end
+end)

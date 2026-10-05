@@ -82,6 +82,11 @@ Sharing is per quest and requires a party together. WoW's normal shareability an
 
 Other QuestTogether users appear as small **class-colored dots** on the world map and minimap when location sharing and viewing are enabled.
 
+Grouped players have a small **party badge**. Hover a member to outline their party's visible dots in white, dim unrelated dots, and show a crown on the leader. The tooltip lists up to five party members with class-colored dots and names, with the crowned leader first; larger groups show only the leader. These details also appear when hovering names in QT chat. Remote party details require an updated peer and may take a moment to load.
+
+> **SCREENSHOT — Party map highlighting:** Hover a grouped player's dot, showing the party badge, highlighted companions, leader crown, and class-colored roster in the tooltip.
+
+
 Hover a dot to see the player's **name, faction, race, class, and level**, when available. Click it to open the same player menu used in QuestTogether chat logs.
 
 The **Player Locations** settings have two independent controls, each applying to both the world map and minimap:
@@ -122,6 +127,15 @@ preferences: automatically invite friends who request to join, and automatically
 invite others while Looking for Questing Partners is on. Friends means your
 character friends list. Requests expire and are rate-limited; ignored players
 cannot request entry. Both players need a version supporting join requests.
+
+If the player cannot invite, an updated QuestTogether client can forward your
+request to their party leader when the leader also supports QT join requests.
+The leader decides whether to invite you, using their own confirmation and
+auto-invite settings.
+
+If the leader is not known to use QT, the contacted player can announce your
+request in party chat instead, using the existing **Announce In Party Chat When
+Someone Doesn't Have QT** setting. The leader can then invite you manually.
 
 ## Spot quest objectives on nameplates
 
@@ -264,6 +278,6 @@ Turning on **Looking for questing partners** also announces your search to QT pl
 
 **What to Announce → Announce Looking for Questing Partners** controls LFQP announcements, independently of status and glowing icons. Under **Groups & Sharing**, optionally enable **Stop looking for partners when joining a group** to clear LFQP when you join or form a party or raid; this starts off.
 
-**Minimap shortcuts and tooltips:** Shift-click the minimap button to toggle your search for questing partners. Its tooltip shows your QT version, partner status, chat scope, QT-monitored quest count, nearby range, and location-sharing status. Player-name and map-dot tooltips show class-colored details, QT-monitored quest counts, Solo or Party of N, and the player’s reported QT version. Remote counts require an updated peer and a recent report. Settings controls include translated explanations on hover.
+**Minimap shortcuts and tooltips:** Shift-click the minimap button to toggle your search for questing partners. Its tooltip shows your QT version, partner status, chat scope, nearby range, and location-sharing status. Player-name and map-dot tooltips show class-colored details, Solo or Party of N, and the player’s reported QT version. Settings controls include translated explanations on hover.
 
 Hover quest names in QT logs to see your quest status, shareability, quest ID, and locally tracked objectives. Clicking opens the action menu for sharing, the quest journal, party comparison, and moving the log window.

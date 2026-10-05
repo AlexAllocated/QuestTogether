@@ -20,14 +20,12 @@ function QuestTogether:BuildMinimapTooltipStatus()
 	local function OnOff(key)
 		return self:GetOption(key) and "|cff66dd88" .. L("On") .. "|r" or "|cffaaaaaa" .. L("Off") .. "|r"
 	end
-	local count = self:GetMonitoredQuestCount()
 	local scope = self:GetOption("showQTChat") == false and L("Off")
 		or self:GetOption("qtChatScope") == "zone_only" and L("Zone Only") or L("Global")
 	local lines = {
 		L("QT Version") .. ": " .. self:SafeTrimString(self:GetAddonVersion(), L("Unknown")):gsub("|", "||"),
 		L("Looking for Questing Partners") .. ": " .. OnOff("lookingForQuestPartners"),
 		L("QT Chat Scope") .. ": " .. scope,
-		L("Tracked quests") .. ": " .. (count and tostring(count) or L("Unknown")),
 		string.format(L("Nearby Range: %d%% of zone"), self:GetNearbyAnnouncementRange()),
 		L("Share my location") .. ": " .. OnOff("sharePlayerLocation"),
 	}

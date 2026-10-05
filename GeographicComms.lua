@@ -1,8 +1,8 @@
 -- Addon-owned subscriptions, bounded outbound scheduling, and compact presence.
 -- No server phase identifiers: regional names depend only on the zone map ID.
 local QT = _G.QuestTogether
-local STATE_COMMANDS = { LOC = true, QTPR = true, QTVR = true, QTLF = true, QTLQ = true, QJST = true }
-local ORDER = { "QTPR", "QTVR", "QJST", "QTLF", "QTLQ", "LOC" }
+local STATE_COMMANDS = { LOC = true, QTPR = true, QTVR = true, QTLF = true, QTLQ = true, QJST = true, QTPG = true }
+local ORDER = { "QTPR", "QTVR", "QJST", "QTLF", "QTLQ", "LOC", "QTPG" }
 local HANDLERS = {
 	LOC = "HandlePlayerLocationMessage",
 	QTPR = "HandleQTPlayerPresenceMessage",
@@ -10,6 +10,7 @@ local HANDLERS = {
 	QTLF = "HandleQuestPartnerStatusMessage",
 	QTLQ = "HandleQuestPartnerQuestMessage",
 	QJST = "HandlePartyJoinMetadata",
+	QTPG = "HandlePartyVisualMetadata",
 }
 local SNAPSHOT_LIFETIME = 600
 local function Now(a)
@@ -191,8 +192,9 @@ function QT:StageGeographicState(wire)
 	local changedStatus = (old ~= nil or now - s.startedAt > 12)
 		and command == "QTLF"
 		and (not old or old.wire:match(",([01])$") ~= wire:match(",([01])$"))
+	local changedParty = command == "QTPG" and (not old or old.wire ~= wire)
 	local withdrawal = command == "LOC" and payload:match("^1,[^,]+,%d+,0$")
-	if withdrawal or changedStatus or (command == "QTPR" and payload == "1,0") then
+	if withdrawal or changedStatus or changedParty or (command == "QTPR" and payload == "1,0") then
 		s.nextGlobal = math.min(s.nextGlobal, math.max(now + 1, (s.lastGlobal or 0) + 10))
 		s.nextLocal = math.min(s.nextLocal, now + 1)
 		-- Discard already packed positions/status; never let them follow a clear.
@@ -236,7 +238,9 @@ function QT:BuildGeographicSnapshots()
 			end
 			local part = math.floor(now - entry.at) .. "," .. #wire .. ":" .. wire
 			if #header + #part <= 255 then
-				if #packet + #part > 255 then
+				-- Older receivers reject unknown inner commands. Isolate new metadata
+				-- so their established location/presence packets remain readable.
+				if #packet + #part > 255 or (command == "QTPG" and packet ~= header) then
 					packets[#packets + 1], packet = packet, header
 				end
 				packet = packet .. part
@@ -332,6 +336,7 @@ function QT:HandleGeographicSnapshot(payload, sender)
 				QTLQ = presence and presence.partnerQuests,
 				QTVR = presence and presence.peerTooltipStats,
 				QJST = joins and joins.peers,
+				QTPG = rawget(self, "partyVisualState") and self.partyVisualState.peers,
 			}
 			local record = records[entry.command] and records[entry.command][name]
 			if entry.command == "LOC" then
@@ -448,7 +453,7 @@ function QT:DrainGeographicQueue()
 		then
 			staleRoute = true
 		end
-		if now >= row.expires or now < row.expires - 30 or staleRoute then
+		if now >= row.expires or now < row.expires - 30 or staleRoute or not self:IsPartyVisualQueuedWireCurrent(row.wire) then
 			table.remove(s.queue, i)
 			self:RecordCommsDiagnostic("queueDropped", "expired or departed route")
 		end

@@ -436,37 +436,36 @@ QuestTogether:RegisterTest("minimap shift clicks toggle partners while normal an
 	Equal(#a.menus, 2)
 end)
 
-QuestTogether:RegisterTest("minimap tooltip refreshes status and QT monitored count while hovered without recreating frames", function()
+QuestTogether:RegisterTest("minimap tooltip refreshes status without reading quest counts or recreating frames", function()
 	local a = Fixture()
 	function a:GetAddonVersion() return "5.16.7" end
-	local reads, count = 0, 6
-	a.GetMonitoredQuestCount = function() reads = reads + 1; return count end
+	local reads = 0
+	a.GetMonitoredQuestCount = function() reads = reads + 1; return 6 end
 	a:InitializeMinimapLauncher()
 	a:ShowMinimapTooltip(a.minimapButton)
 	local tooltip = a.minimapTooltip
 	local frames = #a.frames
 	local text = tooltip.qtStatus.text
-	for _, part in ipairs({ "QT Version: 5.16.7", "Tracked quests: 6", "QT Chat Scope: Global", "Nearby Range: 25%", "Shift-click", "Share my location", "Looking for Questing Partners" }) do
+	for _, part in ipairs({ "QT Version: 5.16.7", "QT Chat Scope: Global", "Nearby Range: 25%", "Shift-click", "Share my location", "Looking for Questing Partners" }) do
 		assert(text:find(part, 1, true), part)
 	end
 	a.db.profile.qtChatScope = "zone_only"
 	a.db.profile.lookingForQuestPartners = true
-	count = 0
 	tooltip.scripts.OnUpdate(nil, 1)
-	assert(tooltip.qtStatus.text:find("Tracked quests: 0", 1, true))
+	Equal(tooltip.qtStatus.text:find("Tracked quests:", 1, true), nil)
 	assert(tooltip.qtStatus.text:find("QT Chat Scope: Zone Only", 1, true))
 	assert(tooltip.qtStatus.text:find("Looking for Questing Partners: |cff66dd88On", 1, true))
 	a.db.profile.showQTChat = false
-	a.isEnabled, count = false, nil
+	a.isEnabled = false
 	tooltip.scripts.OnUpdate(nil, 1)
 	assert(tooltip.qtStatus.text:find("QT Chat Scope: Off", 1, true))
 	assert(tooltip.qtStatus.text:find("QuestTogether disabled.", 1, true))
-	assert(tooltip.qtStatus.text:find("Tracked quests: Unknown", 1, true))
+	Equal(tooltip.qtStatus.text:find("Tracked quests:", 1, true), nil)
 	Equal(#a.frames, frames)
-	Equal(reads, 3)
+	Equal(reads, 0)
 	a.blocked = true
 	tooltip.scripts.OnUpdate(nil, 1)
-	Equal(reads, 3)
+	Equal(reads, 0)
 	Equal(tooltip.shown, false)
 end)
 

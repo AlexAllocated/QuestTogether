@@ -37,6 +37,7 @@ function QT:RecordQTPlayerPresence(name, active)
 	local state = self:GetQTPlayerPresenceState()
 	local wasKnown = self:IsKnownQTPlayer(name)
 	local hadRecord = state.peers[name] ~= nil
+	if not active then self:ForgetPartyVisualPeer(name) end
 	if active then
 		if not state.peers[name] then
 			local count, oldest, oldestAt = 0, nil, math.huge
@@ -48,6 +49,7 @@ function QT:RecordQTPlayerPresence(name, active)
 			end
 			if count >= MAX_KNOWN_PLAYERS then
 				state.peers[oldest] = nil
+				self:ForgetPartyVisualPeer(oldest)
 				if state.peerVersions then state.peerVersions[oldest] = nil end
 				if state.peerTooltipStats then state.peerTooltipStats[oldest] = nil end
 			end
@@ -308,6 +310,7 @@ function QT:PruneQTPlayerPresence(force)
 	for name, seen in pairs(state.peers) do
 		if not now or now < seen or self:IsIgnoredPlayerName(name) then
 			state.peers[name], changed = nil, true
+			self:ForgetPartyVisualPeer(name)
 			if state.peerVersions then state.peerVersions[name] = nil end
 			if state.peerTooltipStats then state.peerTooltipStats[name] = nil end
 		end

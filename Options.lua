@@ -1545,7 +1545,7 @@ function QuestTogether:InitializeWhereToAnnounceWindow(parentCategory)
 		content,
 		"announceToNonQTParty",
 		L("Announce In Party Chat When Someone Doesn't Have QT"),
-		L("Send your enabled event announcements to party chat when a member has not been recognized as a QuestTogether user. Everyone in the party sees these messages. Does not post to raids."),
+		L("Send your enabled event announcements to party chat when a member has not been recognized as a QuestTogether user. Also announce requests to join when you cannot invite and the party leader is not known to use QT. Everyone in the party sees these messages. Does not post to raids."),
 		16,
 		-238
 	)

@@ -839,7 +839,7 @@ end
 
 -- Fixed command buckets keep unknown traffic from growing diagnostic state.
 local TRAFFIC_COMMANDS = { ANN = true, LVL = true, LOC = true, QTPR = true, QTVR = true,
-	QTLF = true, QTLQ = true, QJST = true, QJON = true, QCMP = true, QCQE = true,
+	QTLF = true, QTLQ = true, QJST = true, QJON = true, QTPG = true, QPGR = true, QPGM = true, QCMP = true, QCQE = true,
 	QCDN = true, QTB1 = true, QSHR = true, PING = true, PONG = true }
 function QuestTogether:RecordCommsTraffic(kind, message, result)
 	local diagnostics = self:GetCommsDiagnostics()
@@ -929,7 +929,7 @@ function QuestTogether:SendWireMessageToAnnouncementRoutes(wireMessage, debugCon
 	local isPing = wireMessage:sub(1, 5) == "PING|" or wireMessage:sub(1, 5) == "PONG|"
 
 	for _, route in ipairs(routes) do
-		if geographic and not direct and (command == "ANN" or command == "LVL" or command == "PONG") then
+		if geographic and not direct and (command == "ANN" or command == "LVL" or command == "PONG" or command == "QPGR" or command == "QPGM") then
 			if self:QueueGeographicWire(wireMessage, contextLabel, route, false) then sentCount = sentCount + 1 end
 		elseif geographic and not direct and not self:TakeCommsSendToken(false) then
 			self:RecordCommsDiagnostic("pacedRoutes", contextLabel)
@@ -1198,7 +1198,8 @@ function QuestTogether:ResetCommsState()
 	if self.ResetGeographicComms then self:ResetGeographicComms() end
 	self.channelOrderWork = nil
 	self.localizedQuestTitles = nil
-	if self.ResetPartyJoin then self:ResetPartyJoin() end
+	if self.ResetPartyJoin then self:ResetPartyJoin()
+	self.partyVisualState = nil end
 	self.qtPlayerPresenceState = nil
 	if self.ResetPlayerLocations then self:ResetPlayerLocations() end
 	if self.ResetPartyQuestCompare then self:ResetPartyQuestCompare() end
@@ -2487,6 +2488,9 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		return
 	end
 
+	if command == "QTPG" then self:HandlePartyVisualMetadata(payload, transportSenderName); return end
+	if command == "QPGR" then self:HandlePartyVisualRosterRequest(payload, transportSenderName); return end
+	if command == "QPGM" then self:HandlePartyVisualRosterMember(payload, transportSenderName); return end
 	if command == "QJST" and self.HandlePartyJoinMetadata then
 		self:HandlePartyJoinMetadata(payload, transportSenderName)
 		return

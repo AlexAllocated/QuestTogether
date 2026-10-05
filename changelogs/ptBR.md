@@ -4,18 +4,25 @@
 
 ## 6.0.2
 
-Navegue pelas atualizações anteriores do QuestTogether no seu idioma, com melhor recuperação de nomes de missões para anúncios de conclusão.
+Encontre grupos no mapa, veja quem está fazendo missões junto e peça para entrar por meio de qualquer membro do grupo. As dicas de jogadores agora colocam os detalhes do grupo em destaque.
 
-### Ver notas de atualização anteriores
+### Veja quem está fazendo missões junto
 
-- A janela de boas-vindas agora tem botões Mais antigas e Mais recentes, um atalho para a Mais recente e um seletor de Histórico mostrando versões e datas de lançamento. Ao abrir as notas de atualização, elas começam na versão mais recente.
-- O histórico inclui todas as versões publicadas anteriormente, incluindo os primeiros betas. Todas as notas históricas são traduzidas para todos os idiomas de WoW compatíveis e incluídas nos changelogs correspondentes do repositório.
-- Os botões de navegação ficam desativados quando não há para onde ir. Navegar por notas mais antigas não altera qual atualização você reconheceu; pop-ups automáticos ainda aparecem apenas para atualizações principais e secundárias. Abra a janela a qualquer momento com /qt notes.
+- Jogadores agrupados agora têm um pequeno emblema de duas pessoas nos pontos do mapa e do minimapa. Passe o mouse sobre um membro do grupo para dar aos companheiros dele um contorno branco, escurecer pontos não relacionados e mostrar uma coroa no líder. Os brilhos dourados de Procurando Parceiros para Missões continuam visíveis.
+- As dicas de jogadores listam os membros do grupo com pontos e nomes nas cores das classes, com o líder coroado primeiro. Grupos de até cinco listam todos os membros; grupos maiores mostram apenas o líder. Esses detalhes também aparecem ao passar o mouse sobre nomes de jogadores no registro do QuestTogether.
+- Seu próprio grupo usa a lista do jogo. Detalhes de grupos remotos são carregados de pares atualizados do QuestTogether quando necessário, com resultados em cache e solicitações dosadas para manter o tráfego do canal baixo. Clientes mais antigos mantêm seus pontos normais e informações básicas de tamanho do grupo; os detalhes completos de grupos remotos exigem um par atualizado.
 
-### Títulos de conclusão de missões
+### Solicitações para entrar podem chegar ao líder do grupo
 
-- Quando uma missão sai do seu registro antes que o QuestTogether tenha um título utilizável, os anúncios de conclusão agora tentam consultar o título da missão disponível no jogo antes de recorrer a um ID de missão. Um título recuperado é preservado independentemente da ordem dos eventos de entrega e remoção.
-- Os anúncios ainda usam o texto do remetente quando o seu cliente não consegue resolver um título local. Se nenhum dos clientes tiver um nome disponível, o ID da missão continua sendo a alternativa. A recuperação aprimorada do lado do remetente se aplica quando o remetente atualiza.
+- Você pode pedir para entrar por meio de um membro do grupo que não pode convidar você. Se o líder dele estiver usando o QuestTogether e puder convidar, a solicitação será redirecionada ao líder usando as configurações normais de confirmação e aprovação automática.
+- Se não houver confirmação de que o líder usa o QuestTogether, o membro poderá anunciar “[QT] PlayerName está pedindo para entrar no grupo.” no bate-papo do grupo quando os anúncios no bate-papo do grupo estiverem ativados. Alguém com permissão para convidar terá que convidar você manualmente.
+- O solicitante e o membro que encaminha precisam desta atualização para solicitações redirecionadas. As verificações existentes de grupo cheio, restrições, ignorados, expiração e frequência de solicitações ainda se aplicam.
+
+### Dicas de jogadores mais limpas
+
+- As informações do grupo agora ficam logo abaixo da linha de nível, raça e classe, com linhas de membros compactas e espaço entre as seções. Os emblemas da Aliança e da Horda têm o dobro do tamanho.
+- A versão do addon aparece por último no formato mais curto vX.Y.Z. Quando a idade de uma localização é mostrada, Última atualização fica diretamente acima da versão.
+- As contagens de missões rastreadas foram removidas das dicas de jogadores e do botão do minimapa. O título da missão ativa para jogadores procurando parceiros para missões ainda é mostrado.
 
 ## 6.0.1
 

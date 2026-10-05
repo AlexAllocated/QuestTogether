@@ -218,6 +218,7 @@ function QT:BroadcastAddonVersion(forPresenceHeartbeat)
 		return false
 	end
 	state.lastAttempt, state.interval = now, RETRY_INTERVAL
+	if forPresenceHeartbeat then self:BroadcastPartyVisualMetadata() end
 	local version = self:GetAddonVersion()
 	if not self:ParseAddonVersion(version) then
 		return false

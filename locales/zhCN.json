@@ -387,7 +387,6 @@
   "Send Invitation": "发送邀请",
   "Send QT chat message": "发送 QT 聊天消息",
   "Send and show announcements when players start looking for questing partners. Their status and glowing icons remain visible when this is off.": "当玩家开始寻找任务伙伴时发送和显示通知。关闭此选项后，仍会显示他们的状态和发光图标。",
-  "Send your enabled event announcements to party chat when a member has not been recognized as a QuestTogether user. Everyone in the party sees these messages. Does not post to raids.": "当某个成员未被识别为 QuestTogether 用户时，将你已启用的事件通告发送到小队聊天。小队中的所有人都能看到这些消息。不会发送到团队。",
   "Separate Chat Window": "独立聊天窗口",
   "Settings": "设置",
   "Settings API is unavailable; addon options could not be registered.": "设置 API 不可用；无法注册插件选项。",
@@ -445,7 +444,6 @@
   "Tint quest-objective nameplate health bars with your selected quest color.": "用你选择的任务颜色为任务目标姓名板生命条着色。",
   "Tips": "提示",
   "Top": "顶部",
-  "Tracked quests": "追踪的任务",
   "Troubleshooting": "故障排除",
   "Turn off Looking for Questing Partners when you join or form a party or raid. You can turn it back on to recruit more players.": "加入或组建小队或团队时关闭寻找任务伙伴。你可以重新开启以招募更多玩家。",
   "Unable to build a test announcement for that player.": "无法为该玩家生成测试通告。",
@@ -513,5 +511,11 @@
   "Older": "较旧",
   "Release date (UTC): %s": "发布日期（UTC）：%s",
   "Release history": "发布历史",
-  "These notes are available in English only.": "这些说明仅提供英文版本。"
+  "These notes are available in English only.": "这些说明仅提供英文版本。",
+  "%s is requesting to join the party.": "%s 正在请求加入小队。",
+  "Join request forwarded to party leader: ": "加入请求已转发给队长： ",
+  "Join request sent to party chat. The leader must invite you manually.": "已向小队聊天发送加入请求。队长必须手动邀请你。",
+  "Send your enabled event announcements to party chat when a member has not been recognized as a QuestTogether user. Also announce requests to join when you cannot invite and the party leader is not known to use QT. Everyone in the party sees these messages. Does not post to raids.": "当某个成员未被识别为 QuestTogether 用户时，将你已启用的事件通告发送到小队聊天。当你无法邀请且不知道小队队长是否使用 QT 时，也会通告加入请求。小队中的所有人都能看到这些消息。不会发送到团队。",
+  "Leader": "队长",
+  "Loading party members…": "正在加载队伍成员…"
 }

@@ -305,3 +305,79 @@ The 6.0 implementation below replaces those independent publications.
 - **Deduplication:** party/zone/global overlap still produces duplicate delivery without the legacy channel. A 4096-entry ring gives bounded storage and constant-time replacement; new announcements carry a bounded event ID in optional field 18 and deduplicate for five minutes (subject to ring capacity), so separately generated identical actions remain distinct. Snapshot sequencing additionally rejects obsolete state after the short payload duplicate window. Capability/order records are bounded to 2048 peers. Existing model cache bounds remain in place.
 
 The packet-rate savings depend on snapshot size, player activity and adoption. This is an audience and traffic reduction, not proof of a native server capacity limit. Local simulations cover subscriptions, two-peer transport, throttling, queue expiry, ordering, consent changes and dense-zone backoff. Live Retail/Forever validation is still required for channel joining/order, real latency, two-client delivery, and taint/blocked-action behavior. Owner `devlogall` can only show received events; regional subscriptions no longer provide a worldwide firehose of quest activity.
+
+### Join requests through a party member
+
+A fresh grouped `QJST` record permits a manual join request even when the member
+cannot invite. If that member is in a normal party with room, QT resolves the
+current `party1`–`party4` leader through an access-checked native wrapper and
+requires fresh, invite-capable QT join metadata for that roster member. Raid,
+instance-group, full, unknown, ignored, and restricted states cannot relay.
+
+The member replies with `QJON|1,<id>,<requester>,redirect,<leader>`; names are
+escaped exactly as in ordinary requests. Only the contacted member can redirect
+an active outgoing request with its exact ID, once and before any pending
+confirmation. The requester sends an ordinary authenticated request to the
+leader itself. No payload can impersonate the original requester. The original
+outgoing expiry is retained, and responses from the original member no longer
+complete the redirected request. Normal replay, cooldown, queue and invite-slot
+bounds still apply; there is no new heartbeat or automatic retry loop.
+
+The leader applies its own friendship/LFQP consent preferences and rechecks
+invite permissions, party capacity, roster, profile, expiry, and ignores at
+confirmation. The requester and contacted member need this forwarding support;
+the leader only needs the existing join-request protocol. Older members return
+the existing unavailable response. Direct invites and requests remain unchanged.
+A rare older requester using stale invite-capable metadata cannot interpret a
+redirect and will expire normally. Live three-client Retail/Forever delivery and
+native invitation behavior still require client validation.
+
+When the current leader is not known to use QT, `announceToNonQTParty` also
+allows the contacted member to send a single plain `[QT] <requester> is requesting
+to join the party.` message to PARTY chat. This uses the same request replay, per-sender
+cooldown and ten-per-minute global budget. No announcement goes to raids,
+instance groups, full/unknown parties, ignored players, or restricted chat, and
+no delayed retry is queued. A known QT leader with stale join metadata is not
+treated as a non-QT leader. The requester receives `announced` feedback only
+after the party-chat adapter reports a successful invocation; the leader must
+invite manually. Native invocation is not proof of server delivery.
+
+
+## Party map visuals (6.1)
+
+- Grouped map/minimap dots show a two-person badge. Hovering a party member gives
+  matching visible dots a white outline, dims unrelated dots, and crowns that
+  party's leader. The gold LFQP glow remains independent. Leaving, closing the
+  surface, recycling a pin, disabling QT, or entering restrictions clears the
+  hover state without mutating protected UI.
+- Both map-dot and chat-name tooltips put the crowned leader first, with class-colored
+  dots and full names. Groups of two through five list all members (including
+  non-QT members); larger groups show only the leader. Ignored names are omitted.
+  Native roster data is authoritative for the viewer's own group.
+- `QTPG` advertises size, leader name/class and a deterministic roster revision in
+  the existing paced presence snapshots. It is isolated in its own QTB1 packet:
+  older 6.x parsers reject unknown inner commands, so combining it with LOC would
+  prevent those clients from reading locations. Initially solo clients need no
+  extra packet; QTVR already carries solo status. Group changes stage a fresh
+  revision/withdrawal, with the existing global ten-second burst floor.
+- Hovering a remote small party requests its roster with targeted global `QPGR`;
+  `QPGM` replies carry one member each, at most five. They use the existing bounded
+  send queue and token budget, not immediate five-packet bursts. No periodic full
+  roster broadcast or query storm is added. Requests are correlated with the exact
+  sender, request ID and revision; only a complete, unique, hash-matching roster
+  containing its sender and leader is displayed. Partial/stale results stay unknown.
+- Header records follow snapshot sampling/expiry (up to 600 seconds); complete
+  roster caches last 120 seconds. Request attempts are limited to once per party
+  per 60 seconds, with at most 16 outstanding; responders allow one request per
+  sender per 20 seconds and one total response per five seconds. Peer, roster,
+  retry and responder caches are bounded. Native group changes, ignore/departure,
+  disable/reset and metadata replacement invalidate dependent state.
+- Older clients can still supply the basic grouped badge through their existing
+  party-size metadata. Remote identity, crowns, highlights and complete member
+  lists require a peer with the new party metadata; no group identity is guessed
+  from equal party sizes. Only visible shared QT dots are highlighted; the feature
+  does not invent locations for non-QT or non-sharing members.
+- Native leader detection copies a unit token behind restriction/secret guards
+  and supports solo leader, party and raid token layouts. All rendering uses
+  addon-owned regions. Offline adapter, transport and private-frame tests do not
+  establish live rendering, server delivery or taint safety on Retail/Forever.

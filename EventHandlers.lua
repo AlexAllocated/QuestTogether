@@ -490,6 +490,7 @@ function QuestTogether:HandleGroupRosterChanged(reason)
 	if self.RefreshPartyRoster then
 		self:RefreshPartyRoster()
 	end
+	if self.isEnabled and rawget(self, "geographicCommsState") then self:BroadcastPartyVisualMetadata() end
 	if self.isEnabled and self.partyRosterFingerprint ~= previousFingerprint and self.OnPartyQuestRosterChanged then
 		self:OnPartyQuestRosterChanged()
 	end

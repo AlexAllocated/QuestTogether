@@ -4,18 +4,25 @@
 
 ## 6.0.2
 
-Durchsuche frühere Updates von QuestTogether in deiner Sprache, mit besserer Wiederherstellung von Questnamen für Abschlussmeldungen.
+Findet Gruppen auf der Karte, seht, wer gemeinsam questet, und bittet über ein beliebiges Gruppenmitglied um Beitritt. Spieler-Tooltips stellen Gruppendetails jetzt in den Mittelpunkt.
 
-### Frühere Patchnotes anzeigen
+### Seht, wer gemeinsam questet
 
-- Das Willkommensfenster hat jetzt Schaltflächen für Älter und Neuer, eine Verknüpfung zu Neueste sowie eine Verlaufsauswahl, die Release-Versionen und Daten anzeigt. Beim Öffnen der Patchnotes wird mit dem neuesten Release begonnen.
-- Der Verlauf enthält jedes zuvor veröffentlichte Release, einschließlich der frühen Betas. Alle historischen Hinweise sind in jede unterstützte WoW-Sprachversion übersetzt und in den entsprechenden Repository-Changelogs enthalten.
-- Navigationsschaltflächen werden deaktiviert, wenn es nirgendwohin weitergeht. Das Durchsuchen älterer Hinweise ändert nicht, welches Upgrade du bestätigt hast; automatische Popups erscheinen weiterhin nur bei größeren und kleineren Upgrades. Öffne das Fenster jederzeit mit /qt notes.
+- Gruppierte Spieler haben jetzt ein kleines Abzeichen mit zwei Personen auf ihren Karten- und Minikartenpunkten. Fahrt mit der Maus über ein Gruppenmitglied, um seine Begleiter weiß zu umranden, nicht zugehörige Punkte abzudunkeln und auf dem Anführer eine Krone anzuzeigen. Goldene Leuchteffekte für „Suche nach Questpartnern“ bleiben sichtbar.
+- Spieler-Tooltips listen Gruppenmitglieder mit klassenfarbenen Punkten und Namen auf, wobei der gekrönte Anführer zuerst angezeigt wird. Bei Gruppen mit bis zu fünf Spielern werden alle Mitglieder aufgelistet; größere Gruppen zeigen nur den Anführer. Diese Details erscheinen auch, wenn ihr im QuestTogether-Protokoll mit der Maus über Spielernamen fahrt.
+- Eure eigene Gruppe nutzt die Gruppenübersicht des Spiels. Details zu entfernten Gruppen werden bei Bedarf von aktualisierten QuestTogether-Peers geladen, mit zwischengespeicherten Ergebnissen und dosierten Anfragen, um den Kanalverkehr gering zu halten. Ältere Clients behalten ihre normalen Punkte und grundlegenden Informationen zur Gruppengröße; vollständige Details zu entfernten Gruppen erfordern einen aktualisierten Peer.
 
-### Questabschluss-Titel
+### Beitrittsanfragen können den Gruppenanführer erreichen
 
-- Wenn eine Quest aus deinem Questlog verschwindet, bevor QuestTogether einen verwendbaren Titel hat, versuchen Abschlussmeldungen jetzt zuerst die verfügbare Questtitel-Abfrage des Spiels, bevor auf eine Quest-ID zurückgegriffen wird. Ein wiederhergestellter Titel bleibt unabhängig von der Reihenfolge der Abgabe- und Entfernungsereignisse erhalten.
-- Ankündigungen verwenden weiterhin den Text des Absenders, wenn dein Client keinen lokalen Titel auflösen kann. Wenn keiner der beiden Clients einen Namen verfügbar hat, bleibt die Quest-ID die Ausweichlösung. Die verbesserte Wiederherstellung auf Absenderseite greift, wenn der Absender aktualisiert.
+- Ihr könnt über ein Gruppenmitglied um Beitritt bitten, das euch nicht einladen kann. Wenn dessen Anführer QuestTogether nutzt und zum Einladen verfügbar ist, wird die Anfrage mit den üblichen Bestätigungs- und Auto-Annahme-Einstellungen an den Anführer weitergeleitet.
+- Wenn nicht bekannt ist, dass der Anführer QuestTogether nutzt, kann das Mitglied „[QT] PlayerName möchte der Gruppe beitreten.“ im Gruppenchat ankündigen, wenn Gruppenchat-Ankündigungen aktiviert sind. Jemand mit Einladungsberechtigung muss euch dann manuell einladen.
+- Der Anfragende und das weiterleitende Mitglied benötigen dieses Update für weitergeleitete Anfragen. Bestehende Prüfungen auf volle Gruppe, Einschränkungen, Ignorieren, Ablauf und Anfragenrate gelten weiterhin.
+
+### Übersichtlichere Spieler-Tooltips
+
+- Gruppeninformationen stehen jetzt direkt unter der Zeile mit Stufe, Volk und Klasse, mit kompakten Mitgliederzeilen und Abstand zwischen den Abschnitten. Allianz- und Horde-Abzeichen sind doppelt so groß.
+- Die Addon-Version erscheint zuletzt im kürzeren Format vX.Y.Z. Wenn das Alter eines Standorts angezeigt wird, steht „Letzte Aktualisierung“ direkt über der Version.
+- Anzahlen verfolgter Quests wurden aus Spieler- und Minikartenbutton-Tooltips entfernt. Der aktive Questtitel für Spieler, die nach Questpartnern suchen, wird weiterhin angezeigt.
 
 ## 6.0.1
 

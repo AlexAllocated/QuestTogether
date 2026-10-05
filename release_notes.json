@@ -1,20 +1,29 @@
 {
   "version": "6.0.2",
-  "welcome": "Browse QuestTogether’s past updates in your language, with better quest-name recovery for completion announcements.",
+  "welcome": "Find parties on the map, see who is questing together, and request to join through any party member. Player tooltips now put party details front and center.",
   "sections": [
     {
-      "title": "Browse past patch notes",
+      "title": "See who is questing together",
       "items": [
-        "The welcome window now has Older and Newer buttons, a Latest shortcut, and a History picker showing release versions and dates. Opening patch notes starts at the latest release.",
-        "The history includes every previous published release, including the early betas. All historical notes are translated into every supported WoW locale and included in the matching repository changelogs.",
-        "Navigation buttons disable when there is nowhere to go. Browsing older notes does not change which upgrade you have acknowledged; automatic popups still appear only for major and minor upgrades. Open the window anytime with /qt notes."
+        "Grouped players now have a small two-person badge on their map and minimap dots. Hover a party member to give their companions a white outline, dim unrelated dots, and show a crown on the leader. Gold Looking for Questing Partners glows remain visible.",
+        "Player tooltips list party members with class-colored dots and names, with the crowned leader first. Parties of up to five list all members; larger groups show only the leader. These details also appear when hovering player names in the QuestTogether log.",
+        "Your own party uses the game’s roster. Remote party details load from updated QuestTogether peers when needed, with cached results and paced requests to keep channel traffic small. Older clients retain their normal dots and basic party-size information; full remote party details require an updated peer."
       ]
     },
     {
-      "title": "Quest completion titles",
+      "title": "Join requests can reach the party leader",
       "items": [
-        "When a quest leaves your log before QuestTogether has a usable title, completion announcements now try the game’s available quest-title lookup before falling back to a quest ID. A recovered title is preserved regardless of turn-in and removal event order.",
-        "Announcements still use the sender’s text when your client cannot resolve a local title. If neither client has a name available, the quest ID remains the fallback. The improved sender-side recovery applies when the sender updates."
+        "You can request to join through a party member who cannot invite you. If their leader is running QuestTogether and available to invite, the request is redirected to the leader using the usual confirmation and automatic-approval settings.",
+        "If the leader is not known to be using QuestTogether, the member can announce “[QT] PlayerName is requesting to join the party.” in party chat when party-chat announcements are enabled. Someone with invite permission must then invite you manually.",
+        "The requester and forwarding member need this update for redirected requests. Existing full-party, restriction, ignore, expiry, and request-rate checks still apply."
+      ]
+    },
+    {
+      "title": "Cleaner player tooltips",
+      "items": [
+        "Party information now sits immediately below the level, race, and class line, with compact member rows and space between sections. Alliance and Horde badges are twice as large.",
+        "The addon version appears last in the shorter vX.Y.Z format. When a location’s age is shown, Last update sits directly above the version.",
+        "Tracked quest counts have been removed from player and minimap-button tooltips. The active quest title for players looking for questing partners is still shown."
       ]
     }
   ]

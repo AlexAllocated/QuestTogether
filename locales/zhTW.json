@@ -387,7 +387,6 @@
   "Send Invitation": "發送邀請",
   "Send QT chat message": "傳送 QT 聊天訊息",
   "Send and show announcements when players start looking for questing partners. Their status and glowing icons remain visible when this is off.": "當玩家開始尋找任務夥伴時傳送和顯示通知。關閉此選項後，仍會顯示他們的狀態與發光圖示。",
-  "Send your enabled event announcements to party chat when a member has not been recognized as a QuestTogether user. Everyone in the party sees these messages. Does not post to raids.": "當成員未被辨識為 QuestTogether 使用者時，將你已啟用的事件公告發送到隊伍聊天。隊伍中的所有人都會看到這些訊息。不會發佈到團隊。",
   "Separate Chat Window": "獨立聊天視窗",
   "Settings": "設定",
   "Settings API is unavailable; addon options could not be registered.": "設定 API 無法使用；無法註冊插件選項。",
@@ -445,7 +444,6 @@
   "Tint quest-objective nameplate health bars with your selected quest color.": "使用你選取的任務顏色為任務目標的名條生命條著色。",
   "Tips": "提示",
   "Top": "頂端",
-  "Tracked quests": "追蹤的任務",
   "Troubleshooting": "疑難排解",
   "Turn off Looking for Questing Partners when you join or form a party or raid. You can turn it back on to recruit more players.": "加入或建立小隊或團隊時關閉尋找任務夥伴。你可以重新開啟以招募更多玩家。",
   "Unable to build a test announcement for that player.": "無法為該玩家建立測試公告。",
@@ -513,5 +511,11 @@
   "Older": "較舊",
   "Release date (UTC): %s": "發布日期（UTC）：%s",
   "Release history": "發布歷史",
-  "These notes are available in English only.": "這些說明僅提供英文版。"
+  "These notes are available in English only.": "這些說明僅提供英文版。",
+  "%s is requesting to join the party.": "%s 正在請求加入隊伍。",
+  "Join request forwarded to party leader: ": "加入請求已轉交給隊伍隊長： ",
+  "Join request sent to party chat. The leader must invite you manually.": "加入請求已傳送到隊伍聊天。隊長必須手動邀請你。",
+  "Send your enabled event announcements to party chat when a member has not been recognized as a QuestTogether user. Also announce requests to join when you cannot invite and the party leader is not known to use QT. Everyone in the party sees these messages. Does not post to raids.": "當某成員未被辨識為 QuestTogether 使用者時，將你已啟用的事件通知傳送到隊伍聊天。當你無法邀請且隊長不確定是否使用 QT 時，也會公布加入請求。隊伍中的所有人都會看到這些訊息。不會發布到團隊。",
+  "Leader": "隊長",
+  "Loading party members…": "正在載入隊伍成員…"
 }

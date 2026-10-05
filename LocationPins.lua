@@ -421,9 +421,45 @@ local function State(addon)
 	return state
 end
 
+local PARTY_MEDIA = "Interface\\AddOns\\QuestTogether\\Media\\"
+local function PartyTexture(addon, frame, name, width, height, point, relative, relativePoint, x, y)
+	local texture = Call(addon, frame, "CreateTexture", nil, "OVERLAY")
+	Call(addon, texture, "SetTexture", PARTY_MEDIA .. name)
+	Call(addon, texture, "SetSize", width, height)
+	Call(addon, texture, "SetPoint", point, relative, relativePoint, x, y)
+	Call(addon, texture, "Hide")
+	return texture
+end
+
+local function PartyHighlights(addon, state)
+	if not state.surfaces or addon:IsRuntimeRestricted() then return end
+	local hovered = state.hovered and addon:GetPlayerPartyVisualInfo(state.hovered.name)
+	local key = hovered and hovered.key
+	for _, surface in pairs(state.surfaces) do
+		for _, pin in ipairs(surface.pins) do
+			if pin.name and Guard(addon, pin.frame) then
+				local info = addon:GetPlayerPartyVisualInfo(pin.name)
+				local same = key and info and info.key == key
+				-- Older peers can also be identified by a fetched current roster,
+				-- but never override a conflicting explicit party advertisement.
+				if key and (not info or not info.key) and hovered.members then
+					for _, member in ipairs(hovered.members) do
+						if member.name == pin.name and (not info or info.size ~= 0) then same = true end
+					end
+				end
+				Call(addon, pin.frame, "SetAlpha", key and not same and 0.45 or 1)
+				Call(addon, pin.partyBadge, info and info.size and info.size > 1 and "Show" or "Hide")
+				Call(addon, pin.partyOutline, same and "Show" or "Hide")
+				Call(addon, pin.partyCrown, same and pin.name == hovered.leader and "Show" or "Hide")
+			end
+		end
+	end
+end
+
 local function HideTooltip(addon, state)
 	state.hovered = nil
 	Hide(addon, state, state.tooltip)
+	PartyHighlights(addon, state)
 end
 
 local function HideSurface(addon, state, surface)
@@ -521,6 +557,56 @@ function QuestTogether:GetChatLogQuestTooltipRow(questID, fallbackTitle)
 	return { questID = questID, name = title, questText = table.concat(lines, "\n") }
 end
 
+local function PartyTooltipRows(addon, state, info)
+	state.partyRows = state.partyRows or {}
+	local members = {}
+	if info and info.leader then
+		if not addon:IsIgnoredPlayerName(info.leader) then
+			members[1] = { name = info.leader, classFile = info.leaderClass }
+		end
+		if info.size <= 5 and info.members then
+			for _, member in ipairs(info.members) do
+				if member.name ~= info.leader and not addon:IsIgnoredPlayerName(member.name) then members[#members + 1] = member end
+			end
+		end
+	end
+	local height = 0
+	for index, member in ipairs(members) do
+		local item = state.partyRows[index]
+		if not item then
+			item = { frame = New(addon, "Frame", state.tooltip) }
+			state.partyRows[index] = item
+			Call(addon, item.frame, "SetSize", 272, 14)
+			item.dot = Call(addon, item.frame, "CreateTexture", nil, "ARTWORK")
+			Call(addon, item.dot, "SetSize", 10, 10)
+			Call(addon, item.dot, "SetPoint", "LEFT", 2, 0)
+			local mask = Call(addon, item.frame, "CreateMaskTexture")
+			Call(addon, mask, "SetAllPoints", item.dot)
+			Call(addon, mask, "SetTexture", "Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+			Call(addon, item.dot, "AddMaskTexture", mask)
+			item.crown = PartyTexture(addon, item.frame, "PartyLeader", 12, 9, "BOTTOM", item.dot, "TOP", 0, -2)
+			item.label = Call(addon, item.frame, "CreateFontString", nil, "OVERLAY", "GameFontHighlightSmall")
+			Call(addon, item.label, "SetPoint", "TOPLEFT", 20, -1)
+			Call(addon, item.label, "SetWidth", 252)
+			Call(addon, item.label, "SetJustifyH", "LEFT")
+			Call(addon, item.label, "SetWordWrap", true)
+		end
+		local r, g, b = Color(addon, member.classFile)
+		Call(addon, item.dot, "SetColorTexture", r, g, b, 1)
+		local leader = member.name == info.leader
+		Call(addon, item.label, "SetText", addon:GetClassColorCode(member.classFile) .. member.name .. "|r" .. (leader and (" — " .. L("Leader")) or ""))
+		local lineHeight = math.max(14, (Positive(addon, Call(addon, item.label, "GetStringHeight")) or 12) + 2)
+		Call(addon, item.frame, "SetSize", 272, lineHeight)
+		Call(addon, item.frame, "ClearAllPoints")
+		Call(addon, item.frame, "SetPoint", "TOPLEFT", state.tooltipIntro, "BOTTOMLEFT", 0, -8 - height)
+		Call(addon, item.crown, leader and "Show" or "Hide")
+		Call(addon, item.frame, "Show")
+		height = height + lineHeight
+	end
+	for i = #members + 1, #state.partyRows do Call(addon, state.partyRows[i].frame, "Hide") end
+	return height > 0 and height + 8 or 0
+end
+
 local function Tooltip(addon, state, pin, row)
 	local parent = addon:GetLocationPinTooltipParent()
 	if not addon:CanAccessForeignFrame(parent, true) or not Guard(addon, pin.frame) then
@@ -547,8 +633,14 @@ local function Tooltip(addon, state, pin, row)
 		Call(addon, divider, "SetSize", 272, 1)
 		state.tooltipFaction = Call(addon, tooltip, "CreateTexture", nil, "ARTWORK")
 		Call(addon, state.tooltipFaction, "SetPoint", "TOPRIGHT", -14, -12)
-		Call(addon, state.tooltipFaction, "SetSize", 18, 18)
+		Call(addon, state.tooltipFaction, "SetSize", 36, 36)
 		Call(addon, state.tooltipFaction, "SetAlpha", 0.65)
+		state.tooltipIntro = Call(addon, tooltip, "CreateFontString", nil, "OVERLAY", "GameFontHighlight")
+		Call(addon, state.tooltipIntro, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -18)
+		Call(addon, state.tooltipIntro, "SetWidth", 272)
+		Call(addon, state.tooltipIntro, "SetJustifyH", "LEFT")
+		Call(addon, state.tooltipIntro, "SetWordWrap", true)
+		Call(addon, state.tooltipIntro, "SetSpacing", 3)
 		state.tooltipLabel = Call(addon, tooltip, "CreateFontString", nil, "OVERLAY", "GameFontHighlight")
 		Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -18)
 		Call(addon, state.tooltipLabel, "SetWidth", 272)
@@ -568,16 +660,26 @@ local function Tooltip(addon, state, pin, row)
 	else
 		Call(addon, state.tooltipFaction, "Hide")
 	end
-	Call(addon, state.tooltipTitle, "SetWidth", factionTexture and 246 or 272)
+	Call(addon, state.tooltipTitle, "SetWidth", factionTexture and 228 or 272)
 	Call(addon, state.tooltipTitle, "SetText", classColor .. Text(addon, row.name) .. "|r")
-	local text
+	local titleHeight = Positive(addon, Call(addon, state.tooltipTitle, "GetStringHeight"))
+	if not titleHeight then HideTooltip(addon, state); return end
+	local headerExtra = factionTexture and math.max(0, 36 - titleHeight) or 0
+	Call(addon, state.tooltipDivider, "ClearAllPoints")
+	Call(addon, state.tooltipDivider, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -8 - headerExtra)
+	Call(addon, state.tooltipIntro, "ClearAllPoints")
+	Call(addon, state.tooltipIntro, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -18 - headerExtra)
+	local text, introText, lastUpdate
+	local party = not row.questID and addon:GetPlayerPartyVisualInfo(row.name) or nil
+	if party and party.key and party.size <= 5 and not party.members then addon:RequestPartyVisualRoster(row.name) end
 	if row.questID then
 		text = row.questText
 	else
-		text = string.format(L("Level %s %s %s"),
+		introText = string.format(L("Level %s %s %s"),
 			Number(addon, row.level) and tostring(row.level) or L("Unknown"),
 			Text(addon, row.race),
 			classColor .. Text(addon, row.className, Text(addon, row.classFile)) .. "|r")
+		text = ""
 		if addon:SupportsWarMode() == true and type(row.warMode) == "boolean" then
 			text = text .. L("\nWar Mode: ") .. (row.warMode and L("On") or L("Off"))
 		end
@@ -591,24 +693,42 @@ local function Tooltip(addon, state, pin, row)
 		local now = addon.API and addon.API.GetTime and Number(addon, addon.API.GetTime())
 		local receivedAt = Number(addon, row.sampledAt or row.receivedAt)
 		if now and receivedAt and now >= receivedAt + 30 then
-			text = text .. "\n|cff909090" .. L("\nLast update: ") .. math.floor(now - receivedAt) .. L(" seconds ago") .. "|r"
+			lastUpdate = L("\nLast update: "):gsub("^\n+", "") .. math.floor(now - receivedAt) .. L(" seconds ago")
 		end
 		local stats = addon:GetPlayerTooltipStats(row.name)
-		local partySize = stats and stats.partySize
+		local partySize = party and party.size or stats and stats.partySize
 		local partyText = partySize == 0 and L("Solo") or partySize and string.format(L("Party of %d"), partySize) or L("Party status unknown")
-		text = text .. "\n" .. partyText
-		local questCount = stats and stats.count
-		text = text .. "\n\n" .. L("Tracked quests") .. ": " .. (questCount and tostring(questCount) or L("Unknown"))
-		text = text .. "\n|cff909090" .. L("QT Version") .. ": " .. Text(addon, addon:GetPlayerAddonVersion(row.name)) .. "|r"
+		local version = addon:GetPlayerAddonVersion(row.name)
+		text = text:gsub("^\n+", "")
+		text = text .. (text ~= "" and "\n\n" or "") .. "|cff909090" .. (lastUpdate and (lastUpdate .. "\n") or "") .. (version and ("v" .. Text(addon, version)) or L("Unknown")) .. "|r"
+		introText = introText .. "\n\n" .. partyText
+		if party and party.key and party.size <= 5 and not party.members then
+			introText = introText .. "\n|cff909090" .. L("Loading party members…") .. "|r"
+		end
+	end
+	local introHeight = 0
+	if introText then
+		Call(addon, state.tooltipIntro, "SetText", introText)
+		introHeight = Positive(addon, Call(addon, state.tooltipIntro, "GetStringHeight"))
+		if not introHeight then HideTooltip(addon, state); return end
+		Call(addon, state.tooltipIntro, "Show")
+	else
+		Call(addon, state.tooltipIntro, "Hide")
+	end
+	local partyHeight = PartyTooltipRows(addon, state, party)
+	Call(addon, state.tooltipLabel, "ClearAllPoints")
+	if introText then
+		Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", state.tooltipIntro, "BOTTOMLEFT", 0, -partyHeight - 14)
+	else
+		Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -18)
 	end
 	Call(addon, state.tooltipLabel, "SetText", text)
 	local height = Positive(addon, Call(addon, state.tooltipLabel, "GetStringHeight"))
-	local titleHeight = Positive(addon, Call(addon, state.tooltipTitle, "GetStringHeight"))
-	if not height or not titleHeight then
+	if not height then
 		HideTooltip(addon, state)
 		return
 	end
-	Call(addon, tooltip, "SetSize", 300, titleHeight + height + 46)
+	Call(addon, tooltip, "SetSize", 300, titleHeight + headerExtra + height + 46 + introHeight + partyHeight + (introText and 14 or 0))
 	Call(addon, tooltip, "ClearAllPoints")
 	if pin.chatLink then
 		local x, y = addon:GetChatLogTooltipCursorPosition(parent)
@@ -620,6 +740,7 @@ local function Tooltip(addon, state, pin, row)
 	Call(addon, tooltip, "Show")
 	state.pending[tooltip] = nil
 	state.hovered = pin
+	PartyHighlights(addon, state)
 end
 
 -- The same owned tooltip renderer serves dots and QT speaker links. Keep their
@@ -758,6 +879,9 @@ local function CreatePin(addon, state, surface)
 		Call(addon, texture, "Hide")
 		pin.glow[index] = texture
 	end
+	pin.partyOutline = PartyTexture(addon, pin.frame, "PartyHighlight", 16, 16, "CENTER", pin.texture, "CENTER", 0, 0)
+	pin.partyBadge = PartyTexture(addon, pin.frame, "PartyBadge", 10, 10, "CENTER", pin.texture, "BOTTOMRIGHT", 0, 0)
+	pin.partyCrown = PartyTexture(addon, pin.frame, "PartyLeader", 12, 9, "BOTTOM", pin.texture, "TOP", 0, -1)
 	Call(addon, pin.frame, "SetScript", "OnClick", function(_, button)
 		if button ~= "LeftButton" and button ~= "RightButton" then
 			return
@@ -909,5 +1033,6 @@ function QuestTogether:RefreshPlayerLocationPins()
 			HideTooltip(self, state)
 		end
 	end
+	PartyHighlights(self, state)
 	return visible
 end

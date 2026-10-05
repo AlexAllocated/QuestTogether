@@ -2068,7 +2068,31 @@ QuestTogether.API = QuestTogether.API or {
 			if CanAccessForeignTable(C_PartyInfo) then
 				canInvite = Read(C_PartyInfo.CanInvite) == true
 			end
-			return grouped, canInvite and not raid and not instance and count < 5, count
+			return grouped, canInvite and not raid and not instance and count < 5, count,
+				grouped and not raid and not instance and count >= 2 and count < 5
+		end,
+		GetPartyVisualLeaderUnit = function()
+			if QuestTogether:IsRuntimeRestricted() or not CanAccessForeignValue(UnitIsGroupLeader)
+				or type(UnitIsGroupLeader) ~= "function" or not CanAccessForeignValue(IsInRaid)
+				or type(IsInRaid) ~= "function" then return nil end
+			local ok, raid = pcall(IsInRaid)
+			if not ok or not CanAccessForeignValue(raid) or type(raid) ~= "boolean" then return nil end
+			for index = 0, raid and 40 or 4 do
+				local unit = index == 0 and "player" or (raid and "raid" or "party") .. index
+				local valid, leader = pcall(UnitIsGroupLeader, unit)
+				if not valid or not CanAccessForeignValue(leader) or type(leader) ~= "boolean" then return nil end
+				if leader then return unit end
+			end
+		end,
+		GetPartyJoinLeaderUnit = function()
+			if QuestTogether:IsRuntimeRestricted() or not CanAccessForeignValue(UnitIsGroupLeader)
+				or type(UnitIsGroupLeader) ~= "function" then return nil end
+			for index = 1, 4 do
+				local unit = "party" .. index
+				local ok, leader = pcall(UnitIsGroupLeader, unit)
+				if not ok or not CanAccessForeignValue(leader) or type(leader) ~= "boolean" then return nil end
+				if leader then return unit end
+			end
 		end,
 		IsPartyJoinFriend = function(name)
 			-- Exact normalized character identity; never use display-name shortening

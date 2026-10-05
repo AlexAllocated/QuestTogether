@@ -232,6 +232,7 @@ return pushable end or nil,
 			LE_PARTY_CATEGORY_INSTANCE = 2
 			local oldParty, oldFriends = C_PartyInfo, C_FriendList
 			local oldGroup, oldRaid, oldCount = IsInGroup, IsInRaid, GetNumGroupMembers
+			local oldLeader = UnitIsGroupLeader
 			local oldRestricted = addon.IsRuntimeRestricted
 			local blocked, grouped, raid, instance, count, permitted = false, true, false, false, 2, true
 			local calls, invited, friendInfo, result = 0, nil, nil, nil
@@ -244,8 +245,39 @@ return pushable end or nil,
 				InviteUnit = function(name) calls, invited = calls + 1, name; return result end,
 			}
 			C_FriendList = { GetFriendInfo = function() return friendInfo end }
-			local g, allowed = addon.API.GetPartyJoinInfo()
-			assert(g == true and allowed == true)
+			local g, allowed, _, relay = addon.API.GetPartyJoinInfo()
+			assert(g == true and allowed == true and relay == true)
+			UnitIsGroupLeader = function(unit) return unit == "player" end
+			assert(addon.API.GetPartyVisualLeaderUnit() == "player")
+			UnitIsGroupLeader = function(unit) return unit == "party3" end
+			assert(addon.API.GetPartyVisualLeaderUnit() == "party3")
+			raid = true; UnitIsGroupLeader = function(unit) return unit == "raid40" end
+			assert(addon.API.GetPartyVisualLeaderUnit() == "raid40")
+			blocked = true; assert(addon.API.GetPartyVisualLeaderUnit() == nil); blocked = false
+			for _, value in ipairs({ secret, inaccessible }) do
+				UnitIsGroupLeader = value; assert(addon.API.GetPartyVisualLeaderUnit() == nil)
+				UnitIsGroupLeader = function() return value end; assert(addon.API.GetPartyVisualLeaderUnit() == nil)
+				IsInRaid = function() return value end; assert(addon.API.GetPartyVisualLeaderUnit() == nil)
+			end
+			IsInRaid = function() return raid end
+			UnitIsGroupLeader = function() error("unavailable") end; assert(addon.API.GetPartyVisualLeaderUnit() == nil)
+			raid = false
+			local leaderCalls = 0
+			UnitIsGroupLeader = function(unit) leaderCalls = leaderCalls + 1; return unit == "party2" end
+			assert(addon.API.GetPartyJoinLeaderUnit() == "party2" and leaderCalls == 2)
+			blocked = true; assert(addon.API.GetPartyJoinLeaderUnit() == nil and leaderCalls == 2); blocked = false
+			for _, value in ipairs({ secret, inaccessible }) do
+				UnitIsGroupLeader = value; assert(addon.API.GetPartyJoinLeaderUnit() == nil)
+				UnitIsGroupLeader = function() return value end; assert(addon.API.GetPartyJoinLeaderUnit() == nil)
+			end
+			UnitIsGroupLeader = function() error("unavailable") end; assert(addon.API.GetPartyJoinLeaderUnit() == nil)
+			UnitIsGroupLeader = function() return false end; assert(addon.API.GetPartyJoinLeaderUnit() == nil)
+			for _, case in ipairs({ "full", "raid", "instance", "solo" }) do
+				count = case == "full" and 5 or 2
+				raid, instance, grouped = case == "raid", case == "instance", case ~= "solo"
+				local _, _, _, mayRelay = addon.API.GetPartyJoinInfo(); assert(mayRelay == false)
+			end
+			count, raid, instance, grouped = 2, false, false, true
 			count = 5; g, allowed = addon.API.GetPartyJoinInfo(); assert(allowed == false)
 			count, raid = 2, true; g, allowed = addon.API.GetPartyJoinInfo(); assert(allowed == false)
 			raid, instance = false, true; g, allowed = addon.API.GetPartyJoinInfo(); assert(allowed == false)
@@ -266,6 +298,7 @@ return pushable end or nil,
 			assert(inaccessibleReads == before)
 			C_PartyInfo, C_FriendList = oldParty, oldFriends
 			IsInGroup, IsInRaid, GetNumGroupMembers = oldGroup, oldRaid, oldCount
+			UnitIsGroupLeader = oldLeader
 			addon.IsRuntimeRestricted = oldRestricted
 			LE_PARTY_CATEGORY_INSTANCE = oldCategory
 		end

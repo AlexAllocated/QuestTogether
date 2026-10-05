@@ -176,6 +176,8 @@ function QuestTogether:RefreshPartyRoster()
 	self.partyMembers = membersByName
 	self.partyMemberOrder = orderedNames
 	self.partyRosterFingerprint = table.concat(orderedNames, "|")
+	local visuals = rawget(self, "partyVisualState")
+	if visuals then visuals.localAt, visuals.localInfo = nil, nil end
 end
 
 function QuestTogether:GetPartyRosterFingerprint()

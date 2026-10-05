@@ -421,7 +421,7 @@ Register("location tooltip and clicks revalidate live permissions identity and m
 		"Mage|r",
 		"War Mode: Off",
 	}) do
-		assert(state.tooltipLabel.text:find(text, 1, true))
+		assert((state.tooltipIntro.text .. "\n" .. state.tooltipLabel.text):find(text, 1, true))
 	end
 	Equal(state.tooltipFaction.texture, "Interface\\TargetingFrame\\UI-PVP-Alliance")
 	assert(state.tooltipFaction.shown)
@@ -505,14 +505,14 @@ Register("location empty optional metadata uses class token and unknown characte
 	a.rows.map = { row }
 	assert(a:RefreshPlayerLocationPins())
 	Pin(a, "map").frame.scripts.OnEnter({})
-	local text = a.locationPinState.tooltipLabel.text
+	local text = a.locationPinState.tooltipIntro.text
 	for _, expected in ipairs({ "MAGE|r", "Level Unknown Unknown " }) do
 		assert(text:find(expected, 1, true))
 	end
 	Equal(a.locationPinState.tooltipFaction.shown, false)
 end)
 
-Register("remote dot and chat tooltips show monitored counts and party size without inventing stale data", function()
+Register("remote dot and chat tooltips show fresh party size without tracked quest counts", function()
 	local a = Fixture()
 	local now = 100
 	a.API.GetTime = function() return now end
@@ -528,16 +528,16 @@ Register("remote dot and chat tooltips show monitored counts and party size with
 	a:RefreshPlayerLocationPins()
 	Pin(a, "map").frame.scripts.OnEnter()
 	local text = a.locationPinState.tooltipLabel.text
-	assert(text:find("Tracked quests: 12", 1, true))
-	assert(text:find("Party of 4", 1, true))
+	Equal(text:find("Tracked quests:", 1, true), nil)
+	assert(a.locationPinState.tooltipIntro.text:find("Party of 4", 1, true))
 	local chat = Frame(a, a.tooltipParent)
 	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Friend-Realm"))
 	Equal(a.chatLogPlayerTooltipState.tooltipLabel.text, text)
 	now = 280
 	a:UpdateChatLogPlayerTooltip()
 	text = a.chatLogPlayerTooltipState.tooltipLabel.text
-	assert(text:find("Tracked quests: Unknown", 1, true))
-	assert(text:find("Party status unknown", 1, true))
+	Equal(text:find("Tracked quests:", 1, true), nil)
+	assert(a.chatLogPlayerTooltipState.tooltipIntro.text:find("Party status unknown", 1, true))
 end)
 
 Register("player tooltip reuses faction and class styling without leaking the previous player", function()
@@ -553,9 +553,11 @@ Register("player tooltip reuses faction and class styling without leaking the pr
 	pin.frame.scripts.OnEnter({})
 	Equal(#a.regions, regions)
 	Equal(state.tooltipFaction.texture, "Interface\\TargetingFrame\\UI-PVP-Horde")
+	Equal(state.tooltipFaction.width,36); Equal(state.tooltipFaction.height,36)
+	Equal(state.tooltipTitle.width,228)
 	assert(state.tooltipFaction.shown)
-	assert(state.tooltipLabel.text:find("Level 13 Troll ", 1, true))
-	assert(state.tooltipLabel.text:find(a:GetClassColorCode("WARLOCK") .. "Warlock|r", 1, true))
+	assert(state.tooltipIntro.text:find("Level 13 Troll ", 1, true))
+	assert(state.tooltipIntro.text:find(a:GetClassColorCode("WARLOCK") .. "Warlock|r", 1, true))
 	row.faction = "Unknown"
 	pin.frame.scripts.OnEnter({})
 	Equal(state.tooltipFaction.shown, false)
@@ -581,16 +583,16 @@ Register("own chat tooltip reads live super tracking without a received peer rec
 	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Me-Realm"))
 	local state = a.chatLogPlayerTooltipState
 	assert(state.tooltipLabel.text:find("Tracked quest: Local quest 42", 1, true))
-	assert(state.tooltipLabel.text:find("Level 60 Human", 1, true))
-	assert(state.tooltipLabel.text:find("QT Version: 5.16.7", 1, true))
-	assert(state.tooltipLabel.text:find("Tracked quests: 8", 1, true))
-	assert(state.tooltipLabel.text:find("Solo", 1, true))
+	assert(state.tooltipIntro.text:find("Level 60 Human", 1, true))
+	assert(state.tooltipLabel.text:match("\n\n|cff909090v5%.16%.7|r$"))
+	Equal(state.tooltipLabel.text:find("Tracked quests:", 1, true), nil)
+	assert(state.tooltipIntro.text:find("Solo", 1, true))
 	count, size = 7, 3
 	id = 43
 	a:UpdateChatLogPlayerTooltip()
 	assert(state.tooltipLabel.text:find("Tracked quest: Local quest 43", 1, true))
-	assert(state.tooltipLabel.text:find("Tracked quests: 7", 1, true))
-	assert(state.tooltipLabel.text:find("Party of 3", 1, true))
+	Equal(state.tooltipLabel.text:find("Tracked quests:", 1, true), nil)
+	assert(state.tooltipIntro.text:find("Party of 3", 1, true))
 	id = nil
 	a:UpdateChatLogPlayerTooltip()
 	Equal(state.tooltipLabel.text:find("Tracked quest:", 1, true), nil)
@@ -631,8 +633,8 @@ Register("quest hover shows local status and objectives at the cursor and clears
 	Equal(state.tooltipLabel.text:find("Wolves", 1, true), nil)
 	a.enter(nil, chat, "questtogetherlog:Friend-Realm")
 	Equal(state.tooltipLabel.text:find("Your quest status", 1, true), nil)
-	assert(state.tooltipLabel.text:find("Tracked quests: Unknown", 1, true))
-	assert(state.tooltipLabel.text:find("Party status unknown", 1, true))
+	Equal(state.tooltipLabel.text:find("Tracked quests:", 1, true), nil)
+	assert(state.tooltipIntro.text:find("Party status unknown", 1, true))
 	a.enter(nil, chat, "questtogetherquest:42", "[Wolf Hunt]")
 	a.blocked = true
 	a:UpdateChatLogPlayerTooltip()
@@ -859,13 +861,14 @@ end)
 
 Register("location tooltip distinguishes an older last reported position from a fresh update", function()
 	local a = Fixture()
+	function a:GetPlayerAddonVersion() return "6.0.3" end
 	a.now = 500
 	a.API.GetTime = function() return a.now end
 	a.rows.map = { Row() }
 	a.rows.map[1].receivedAt = 450
 	a:RefreshPlayerLocationPins()
 	Pin(a, "map").frame.scripts.OnEnter({})
-	assert(a.locationPinState.tooltipLabel.text:find("Last update: 50 seconds ago", 1, true))
+	assert(a.locationPinState.tooltipLabel.text:match("\n\n|cff909090Last update: 50 seconds ago\nv6%.0%.3|r$"))
 	a.now = 505
 	a:RefreshPlayerLocationPins()
 	assert(a.locationPinState.tooltipLabel.text:find("Last update: 55 seconds ago", 1, true))
@@ -1005,4 +1008,67 @@ Register("chat speaker hover reuses dot tooltip content and cleans up independen
 	chat:Show()
 	a.isEnabled = false
 	Equal(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Friend-Realm"), false)
+end)
+
+local function VisualParty(a)
+	local info = { key = "Leader:123", size = 3, leader = "Leader-Realm", leaderClass = "MAGE", members = {
+		{ name = "Leader-Realm", classFile = "MAGE" }, { name = "Friend-Realm", classFile = "WARRIOR" },
+		{ name = "Third-Realm", classFile = "MAGE" },
+	} }
+	a.visualMembers = { ["Leader-Realm"] = info, ["Friend-Realm"] = info, ["Third-Realm"] = info }
+	function a:GetPlayerPartyVisualInfo(name) return self.visualMembers[name] end
+	function a:RequestPartyVisualRoster() self.rosterRequests = (self.rosterRequests or 0) + 1 end
+	return info
+end
+Register("party map badges hover outline leader crown and dimming span both surfaces and clear on leave", function()
+	local a = Fixture(); VisualParty(a)
+	a.rows.map = { Row("Friend-Realm"), Row("Leader-Realm",0.6,0.5), Row("Unrelated-Realm",0.7,0.5) }
+	a.rows.minimap = { Row("Third-Realm") }
+	function a:IsPlayerLookingForQuestPartners(name) return name == "Leader-Realm" end
+	assert(a:RefreshPlayerLocationPins())
+	local member,leader,other,mini=Pin(a,"map",1),Pin(a,"map",2),Pin(a,"map",3),Pin(a,"minimap")
+	assert(member.partyBadge.shown and leader.partyBadge.shown and not other.partyBadge.shown)
+	assert(not leader.partyCrown.shown and not member.partyOutline.shown)
+	member.frame.scripts.OnEnter()
+	assert(member.partyOutline.shown and leader.partyOutline.shown and mini.partyOutline.shown)
+	assert(leader.partyCrown.shown and not member.partyCrown.shown and not other.partyCrown.shown)
+	Near(other.frame.alpha,0.45); Near(leader.frame.alpha,1)
+	assert(leader.glow[1].shown) -- gold LFQP identity survives the independent white ring
+	member.frame.scripts.OnLeave()
+	assert(not leader.partyCrown.shown and not mini.partyOutline.shown)
+	Near(other.frame.alpha,1); assert(leader.glow[1].shown)
+end)
+Register("party tooltip lists class colored members crowned leader first and only the leader above five", function()
+	local a=Fixture(); local info=VisualParty(a)
+	a.rows.map={Row("Friend-Realm")}; a:RefreshPlayerLocationPins(); Pin(a,"map").frame.scripts.OnEnter()
+	local s=a.locationPinState
+	assert(s.tooltipIntro.text:find("\n\nParty of 3",1,true))
+	Equal(s.partyRows[1].frame.points[1][2],s.tooltipIntro)
+	Equal(s.tooltipLabel.points[1][2],s.tooltipIntro)
+	local rosterHeight=8
+	for _,item in ipairs(s.partyRows) do rosterHeight=rosterHeight+item.frame.height end
+	Equal(s.tooltipLabel.points[1][5],-rosterHeight-14)
+	Equal(#s.partyRows,3); assert(s.partyRows[1].label.text:find("|cff40c7ebLeader-Realm|r",1,true))
+	assert(s.partyRows[1].crown.shown and not s.partyRows[2].crown.shown)
+	Near(s.partyRows[1].dot.color[2],0.78039215686275)
+	Equal(s.partyRows[1].crown.texture,Pin(a,"map").partyCrown.texture)
+	local allocated=#a.regions
+	info.size=6; a:RefreshPlayerLocationPins()
+	assert(s.partyRows[1].frame.shown and not s.partyRows[2].frame.shown and not s.partyRows[3].frame.shown)
+	Equal(#a.regions,allocated)
+	info.size=3; info.members=nil; a:RefreshPlayerLocationPins()
+	assert(s.tooltipIntro.text:find("Loading party members",1,true)); assert(s.partyRows[1].frame.shown)
+	a.visualMembers={}; a:RefreshPlayerLocationPins()
+	assert(not s.partyRows[1].frame.shown)
+end)
+Register("party highlights reset for recycled pins and restriction cleanup never mutates protected regions", function()
+	local a=Fixture(); VisualParty(a)
+	a.rows.map={Row("Friend-Realm"),Row("Leader-Realm",0.6,0.5)}; a:RefreshPlayerLocationPins()
+	local pin=Pin(a,"map"); pin.frame.scripts.OnEnter()
+	a.rows.map[1]=Row("Unrelated-Realm"); a:RefreshPlayerLocationPins()
+	Equal(a.locationPinState.hovered,nil); assert(not pin.partyOutline.shown); Near(pin.frame.alpha,1)
+	Pin(a,"map",2).frame.scripts.OnEnter(); a.blocked=true; a:RefreshPlayerLocationPins()
+	assert(not a.locationPinState.tooltip.shown)
+	a.blocked=false; a:RefreshPlayerLocationPins()
+	assert(not Pin(a,"map",2).partyCrown.shown); Near(pin.frame.alpha,1)
 end)

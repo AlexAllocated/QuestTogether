@@ -1,7 +1,7 @@
 local L = _G.QuestTogether.Translate
 local QT = _G.QuestTogether
 local LIFETIME, PEER_LIFETIME = 60, 125
-local STATUS = { request = true, pending = true, sent = true, declined = true, unavailable = true, expired = true }
+local STATUS = { request = true, pending = true, sent = true, declined = true, unavailable = true, expired = true, redirect = true, announced = true }
 
 local function Now(a)
 	return a.API and a.API.GetTime and a:SafeToNumber(a.API.GetTime()) or 0
@@ -17,7 +17,7 @@ local function ReadInfo(a)
 	if type(fn) ~= "function" then
 		return nil
 	end
-	local ok, grouped, invite, count = pcall(fn)
+	local ok, grouped, invite, count, relay = pcall(fn)
 	if
 		not ok
 		or not a:CanAccessValue(grouped)
@@ -32,7 +32,7 @@ local function ReadInfo(a)
 	if not count or count < 0 or count > 40 or count ~= math.floor(count) then
 		return nil
 	end
-	return grouped, invite, count
+	return grouped, invite, count, a:CanAccessValue(relay) and relay == true
 end
 local function Profile(a)
 	local db = rawget(a, "db")
@@ -93,7 +93,7 @@ function QT:ForgetPartyJoinPeer(name)
 	end
 	RetirePeerSession(state, name, state.peers[name], Now(self))
 	state.peers[name], state.incoming[name], state.reservations[name] = nil, nil, nil
-	if state.outgoing and state.outgoing.target == name then
+	if state.outgoing and (state.outgoing.target == name or state.outgoing.origin == name) then
 		state.outgoing = nil
 	end
 	self:QueuePartyJoinPrompt()
@@ -145,6 +145,7 @@ function QT:PrunePartyJoin()
 			now >= outgoing.expires
 			or now < outgoing.created
 			or self:IsIgnoredPlayerName(outgoing.target)
+			or (outgoing.origin and self:IsIgnoredPlayerName(outgoing.origin))
 			or ReadInfo(self) ~= false
 		)
 	then
@@ -251,14 +252,61 @@ function QT:ShouldRequestPartyJoin(name)
 		and not self:IsIgnoredPlayerName(name)
 end
 
-function QT:SendPartyJoinMessage(target, id, status)
+function QT:GetPartyJoinLeaderName()
+	if not Allowed(self) then return nil end
+	local grouped, invite, _, relay = ReadInfo(self)
+	if grouped ~= true or invite ~= false or not relay then return nil end
+	local fn = self.API and self.API.GetPartyJoinLeaderUnit
+	if type(fn) ~= "function" then return nil end
+	local ok, unit = pcall(fn)
+	if not ok or not self:CanAccessValue(unit) or type(unit) ~= "string"
+		or not unit:match("^party[1-4]$") then return nil end
+	local named, leader = pcall(self.GetUnitFullName, self, unit)
+	leader = named and Name(self, leader) or nil
+	if not leader or self:IsSelfSender(leader) or self:IsIgnoredPlayerName(leader)
+		or not self:IsGroupedSender(leader) then return nil end
+	return leader
+end
+
+function QT:GetPartyJoinRelayTarget()
+	local leader = self:GetPartyJoinLeaderName()
+	if not leader or not self:ShouldRequestPartyJoin(leader) then return nil end
+	local peer = self:GetPartyJoinState().peers[leader]
+	return peer and peer.invite and leader or nil
+end
+
+function QT:AnnouncePartyJoinRequest(sender)
+	if not Allowed(self) or self:GetOption("announceToNonQTParty") ~= true
+		or self.suppressLocalAnnouncementDisplayDuringTests
+		or self:IsRuntimeRestrictionTypeActive("chat") then return false end
+	sender = Name(self, sender)
+	if not sender or self:IsSelfSender(sender) or self:IsIgnoredPlayerName(sender)
+		or self:IsGroupedSender(sender) then return false end
+	local leader = self:GetPartyJoinLeaderName()
+	if not leader or self:IsKnownQTPlayer(leader) then return false end
+	local send = self.API and self.API.SendPartyChatMessage
+	if type(send) ~= "function" then return false end
+	-- Authenticated player identity and localized prose only, never requester text.
+	local text = "[QT] " .. self:SanitizeAnnouncementText(string.format(
+		L("%s is requesting to join the party."), sender))
+	local ok, sent = pcall(send, text, "PARTY")
+	return ok and self:CanAccessValue(sent) and sent == true
+end
+
+function QT:SendPartyJoinMessage(target, id, status, leader)
 	if not Allowed(self) then
 		return false
+	end
+	local suffix = ""
+	if status == "redirect" then
+		leader = Name(self, leader)
+		if not leader then return false end
+		suffix = "," .. self:EscapePayload(leader)
 	end
 	return self:SendWireMessageToAnnouncementRoutes(
 		self:SerializeWireMessage(
 			"QJON",
-			"1," .. self:EscapePayload(id) .. "," .. self:EscapePayload(target) .. "," .. status
+			"1," .. self:EscapePayload(id) .. "," .. self:EscapePayload(target) .. "," .. status .. suffix
 		),
 		"party join"
 	)
@@ -275,8 +323,7 @@ function QT:RequestPartyJoin(target)
 	end
 	self:PrunePartyJoin()
 	local state, now = self:GetPartyJoinState(), Now(self)
-	local peer = state.peers[target]
-	if not self:ShouldRequestPartyJoin(target) or not peer.invite then
+	if not self:ShouldRequestPartyJoin(target) then
 		self:Print(L("This player cannot currently accept join requests. Try whispering them."))
 		return false
 	end
@@ -382,6 +429,13 @@ function QT:HandlePartyJoinMessage(payload, sender)
 	end
 	sender = Name(self, sender)
 	local id, target, status = payload:match("^1,([^,]+),([^,]+),([a-z]+)$")
+	local leader
+	if not id then
+		id, target, leader = payload:match("^1,([^,]+),([^,]+),redirect,([^,]+)$")
+		status = "redirect"
+		leader = leader and Name(self, self:UnescapePayload(leader))
+	end
+	if status == "redirect" and not leader then return false end
 	if not sender or not id or not STATUS[status] or self:IsSelfSender(sender) or self:IsIgnoredPlayerName(sender) then
 		return false
 	end
@@ -400,7 +454,20 @@ function QT:HandlePartyJoinMessage(payload, sender)
 		if not request or request.target ~= sender or request.id ~= id then
 			return false
 		end
-		if status == "pending" then
+		if status == "redirect" then
+			-- Only the member we contacted can redirect this live request, once.
+			-- Send as ourselves: the leader never trusts a relayed requester name.
+			if not Allowed(self) or request.redirected or request.pending or leader == sender
+				or self:IsSelfSender(leader) or self:IsIgnoredPlayerName(leader) then return false end
+			request.redirected, request.origin, request.target = true, sender, leader
+			self:Print(L("Join request forwarded to party leader: ") .. leader .. ".")
+			if not self:SendPartyJoinMessage(leader, id, "request") then
+				if state.outgoing == request then state.outgoing = nil end
+				self:Print(L("Unable to send join request."))
+				return false
+			end
+			return true
+		elseif status == "pending" then
 			if request.pending then
 				return false
 			end
@@ -408,7 +475,9 @@ function QT:HandlePartyJoinMessage(payload, sender)
 			self:Print(L("Join request: awaiting confirmation."))
 		else
 			state.outgoing = nil
-			if status == "sent" then
+			if status == "announced" then
+				self:Print(L("Join request sent to party chat. The leader must invite you manually."))
+			elseif status == "sent" then
 				self:Print(L("Invitation attempted. Accept WoW's party invitation to join."))
 			elseif status == "declined" then
 				self:Print(L("Join request declined."))
@@ -438,6 +507,12 @@ function QT:HandlePartyJoinMessage(payload, sender)
 	end
 	state.seen[key], state.windowCount = now, state.windowCount + 1
 	if not self:CanAcceptPartyJoin(sender) or Count(state.incoming) >= 10 then
+		local leader = not self:IsGroupedSender(sender) and self:GetPartyJoinRelayTarget()
+		if leader and self:SendPartyJoinMessage(sender, id, "redirect", leader) then return true end
+		if self:AnnouncePartyJoinRequest(sender) then
+			self:SendPartyJoinMessage(sender, id, "announced")
+			return true
+		end
 		self:SendPartyJoinMessage(sender, id, "unavailable")
 		return false
 	end

@@ -38,8 +38,10 @@ local function Peer(name)
 			if a.unknown then
 				return nil
 			end
-			return a.grouped == true, a.canInvite ~= false, a.count or 0
+			return a.grouped == true, a.canInvite ~= false, a.count or 0,
+				a.grouped == true and (a.count or 0) >= 2 and (a.count or 0) < 5 and not a.unsupported
 		end,
+		GetPartyJoinLeaderUnit = function() return a.leaderUnit end,
 		IsPartyJoinFriend = function(n)
 			return a.friend == n
 		end,
@@ -321,7 +323,7 @@ QT:RegisterTest("join queues replay caches reservations and outgoing attempts ar
 end)
 
 QT:RegisterTest("join requests never leave existing groups and recheck stale menu metadata", function()
-	for _, scenario in ipairs({ "grouped", "unknown", "stale", "full", "failed" }) do
+	for _, scenario in ipairs({ "grouped", "unknown", "stale", "failed" }) do
 		local a, b = Pair()
 		if scenario == "grouped" then
 			a.grouped = true
@@ -329,8 +331,6 @@ QT:RegisterTest("join requests never leave existing groups and recheck stale men
 			a.unknown = true
 		elseif scenario == "stale" then
 			a.now = 230
-		elseif scenario == "full" then
-			a.partyJoinState.peers[b.name].invite = false
 		else
 			a.sendFails = true
 		end
@@ -528,4 +528,224 @@ QT:RegisterTest("delayed party metadata cannot revive a departed or replaced pee
 	Equal(a:ShouldRequestPartyJoin("Friend-Realm"), true)
 	a:HandlePartyJoinMetadata("1,newest,1,0,1", "Friend-Realm")
 	Equal(a:HandlePartyJoinMetadata("1,new,2,1,1", "Friend-Realm"), false)
+end)
+
+local function RelayParty(regional)
+	local requester = Peer(regional and "Anna Wildflower" or "Requestor-Realm")
+	local member = Peer(regional and "Joe Bucket" or "Member-Realm")
+	local leader = Peer(regional and "Jane Meadow" or "Leader-Realm")
+	local peers, queue = { requester, member, leader }, {}
+	requester.grouped, requester.count = false, 0
+	member.canInvite, member.leaderUnit = false, "party2"
+	member.partyMembers[leader.name], leader.partyMembers[member.name] = {}, {}
+	function member:GetUnitFullName(unit) return unit == self.leaderUnit and leader.name or nil end
+	for _, peer in ipairs(peers) do
+		peer.regional = regional == true
+		function peer:SendWireMessageToAnnouncementRoutes(wire)
+			self.wire[#self.wire + 1] = wire
+			if self.sendFails then return false end
+			queue[#queue + 1] = { sender = self.name, wire = wire }
+			return true
+		end
+	end
+	local function Flush()
+		local sent = 0
+		while #queue > 0 do
+			sent = sent + 1
+			assert(sent < 40, "join relay must not form a forwarding loop")
+			local message = table.remove(queue, 1)
+			for _, peer in ipairs(peers) do
+				peer:OnCommReceived(peer.commPrefix, message.wire, "CHANNEL", message.sender, 7, "QuestTogether")
+			end
+		end
+	end
+	leader:BroadcastPartyJoinMetadata()
+	member:BroadcastPartyJoinMetadata()
+	Flush()
+	return requester, member, leader, Flush, queue
+end
+
+QT:RegisterTest("party member redirects a real requester to its QT leader with leader-owned consent", function()
+	for _, regional in ipairs({ false, true }) do
+		local a, member, leader, flush = RelayParty(regional)
+		member.options.autoInviteFriends, member.friend = true, a.name
+		Equal(a.partyJoinState.peers[member.name].invite, false)
+		Equal(a:RequestPartyJoin(member.name), true)
+		flush()
+		Equal(#member.invites, 0)
+		Equal(member:GetNextPartyJoinRequest(), nil)
+		Equal(a.partyJoinState.outgoing.target, leader.name)
+		Equal(a.partyJoinState.outgoing.origin, member.name)
+		Equal(a.partyJoinState.outgoing.pending, true)
+		local request = leader:GetNextPartyJoinRequest()
+		Equal(request.sender, a.name)
+		Equal(#leader.invites, 0)
+		Equal(leader:ConfirmPartyJoin(request, false, false, false), true)
+		flush()
+		Equal(#leader.invites, 1)
+		Equal(leader.invites[1], a.name)
+		Equal(a.partyJoinState.outgoing, nil)
+	end
+end)
+
+QT:RegisterTest("join relay uses leader auto-approval and handles declines and failed invites", function()
+	for _, mode in ipairs({ "friend", "lfg", "decline", "failed", "full" }) do
+		local a, member, leader, flush = RelayParty()
+		if mode == "friend" then leader.options.autoInviteFriends, leader.friend = true, a.name end
+		if mode == "lfg" then leader.options.autoInviteWhileLFG, leader.options.lookingForQuestPartners = true, true end
+		if mode == "failed" then leader.options.autoInviteWhileLFG, leader.options.lookingForQuestPartners, leader.inviteFails = true, true, true end
+		if mode == "full" then leader.count = 5 end
+		assert(a:RequestPartyJoin(member.name)); flush()
+		if mode == "decline" then leader:FinishPartyJoin(leader:GetNextPartyJoinRequest(), "declined"); flush() end
+		if mode == "failed" then
+			Equal(#leader.invites, 1)
+			assert(leader:GetNextPartyJoinRequest())
+			leader:UpdatePartyJoin(); flush()
+			Equal(#leader.invites, 1)
+		else
+			Equal(a.partyJoinState.outgoing, nil)
+			Equal(#leader.invites, (mode == "friend" or mode == "lfg") and 1 or 0)
+		end
+	end
+end)
+
+QT:RegisterTest("join relay requires a current supported party and fresh invite-capable QT leader", function()
+	for _, mode in ipairs({ "unknown", "stale", "notQT", "nonmember", "ignored", "unavailable", "full", "unsupported", "blocked", "solo", "invalidUnit" }) do
+		local a, member, leader, flush = RelayParty()
+		if mode == "unknown" then member.unknown = true
+		elseif mode == "stale" then member.partyJoinState.peers[leader.name].at = -1000
+		elseif mode == "notQT" then member.partyJoinState.peers[leader.name] = nil
+		elseif mode == "nonmember" then member.partyMembers[leader.name] = nil
+		elseif mode == "ignored" then member.ignored = leader.name
+		elseif mode == "unavailable" then member.partyJoinState.peers[leader.name].invite = false
+		elseif mode == "full" then member.count = 5
+		elseif mode == "unsupported" then member.unsupported = true
+		elseif mode == "blocked" then member.blocked = true
+		elseif mode == "solo" then member.grouped = false
+		else member.leaderUnit = "target" end
+		assert(a:RequestPartyJoin(member.name)); flush()
+		Equal(leader:GetNextPartyJoinRequest(), nil)
+		Equal(#leader.invites, 0)
+		Equal(member:GetPartyJoinRelayTarget(), nil)
+	end
+end)
+
+QT:RegisterTest("join redirects reject spoofing replay chains stale requests and ignored destinations", function()
+	for _, mode in ipairs({ "spoof", "id", "ignored", "self", "expired", "joined", "blocked", "reset", "pending", "loop", "sendFailure" }) do
+		local a, member, leader, flush = RelayParty()
+		assert(a:RequestPartyJoin(member.name))
+		local request = a.partyJoinState.outgoing
+		local id, sender, target = request.id, member.name, leader.name
+		if mode == "spoof" then sender = "Fake-Realm"
+		elseif mode == "id" then id = "wrong"
+		elseif mode == "ignored" then a.ignored = leader.name
+		elseif mode == "self" then target = a.name
+		elseif mode == "expired" then a.now = request.expires
+		elseif mode == "joined" then a.grouped = true
+		elseif mode == "blocked" then a.blocked = true
+		elseif mode == "reset" then a:ResetPartyJoin()
+		elseif mode == "pending" then request.pending = true
+		elseif mode == "loop" then request.redirected = true
+		else a.sendFails = true end
+		Equal(a:HandlePartyJoinMessage("1," .. id .. "," .. a.name .. ",redirect," .. target, sender), false)
+		Equal(#a.wire, mode == "sendFailure" and 2 or 1)
+		Equal(#leader.invites, 0)
+	end
+	local a, member, leader, flush = RelayParty()
+	assert(a:RequestPartyJoin(member.name)); flush()
+	local request = a.partyJoinState.outgoing
+	local before = #a.wire
+	Equal(a:HandlePartyJoinMessage("1," .. request.id .. "," .. a.name .. ",redirect," .. member.name, leader.name), false)
+	Equal(a:HandlePartyJoinMessage("1," .. request.id .. "," .. a.name .. ",sent", member.name), false)
+	Equal(#a.wire, before)
+	a.ignored = member.name; a:PrunePartyJoin(); Equal(a.partyJoinState.outgoing, nil)
+end)
+
+QT:RegisterTest("join requests to full parties still return unavailable after a bounded attempt", function()
+	local a, b = Pair()
+	b.count, b.canInvite = 5, false
+	a.partyJoinState.peers[b.name].invite = false
+	Equal(a:RequestPartyJoin(b.name), true)
+	Equal(a.partyJoinState.outgoing, nil)
+	Equal(#b.invites, 0)
+end)
+
+QT:RegisterTest("non-QT leaders receive one enabled party chat request with manual-invite feedback", function()
+	for _, regional in ipairs({ false, true }) do
+		local a, member, leader, flush = RelayParty(regional)
+		member:RecordQTPlayerPresence(leader.name, false)
+		member:ForgetPartyJoinPeer(leader.name)
+		member.options.announceToNonQTParty = true
+		member.suppressLocalAnnouncementDisplayDuringTests = false
+		function member:IsRuntimeRestrictionTypeActive() return false end
+		local chats = {}
+		member.API.SendPartyChatMessage = function(text, route)
+			chats[#chats + 1] = { text, route }; return true
+		end
+		assert(a:RequestPartyJoin(member.name))
+		local id = a.partyJoinState.outgoing.id
+		flush()
+		Equal(#chats, 1)
+		Equal(chats[1][1], "[QT] " .. a.name .. " is requesting to join the party.")
+		Equal(chats[1][2], "PARTY")
+		Equal(a.partyJoinState.outgoing, nil)
+		Equal(a.messages[#a.messages], "Join request sent to party chat. The leader must invite you manually.")
+		Equal(#leader.invites, 0)
+		Equal(leader:GetNextPartyJoinRequest(), nil)
+		Equal(Request(member, a.name, id), false)
+		Equal(Request(member, a.name, "another"), false)
+		Equal(#chats, 1)
+	end
+end)
+
+QT:RegisterTest("party join chat fallback respects settings membership QT discovery restrictions and failures", function()
+	for _, mode in ipairs({ "off", "known", "staleQT", "leaderIgnored", "senderIgnored", "alreadyJoined", "full", "unsupported", "solo", "unknown", "blocked", "chatBlocked", "failed", "throws", "missingAPI" }) do
+		local a, member, leader, flush = RelayParty()
+		member.options.announceToNonQTParty = true
+		member.suppressLocalAnnouncementDisplayDuringTests = false
+		member:RecordQTPlayerPresence(leader.name, false)
+		member:ForgetPartyJoinPeer(leader.name)
+		local chats = 0
+		function member:IsRuntimeRestrictionTypeActive() return mode == "chatBlocked" end
+		member.API.SendPartyChatMessage = function()
+			chats = chats + 1
+			if mode == "throws" then error("unavailable") end
+			return mode ~= "failed"
+		end
+		if mode == "off" then member.options.announceToNonQTParty = false
+		elseif mode == "known" or mode == "staleQT" then
+			member:RecordQTPlayerPresence(leader.name, true)
+			if mode == "staleQT" then member:HandlePartyJoinMetadata("1,older,1,1,1", leader.name); member.partyJoinState.peers[leader.name].at = -1000 end
+		elseif mode == "leaderIgnored" then member.ignored = leader.name
+		elseif mode == "senderIgnored" then member.ignored = a.name
+		elseif mode == "alreadyJoined" then member.partyMembers[a.name] = {}
+		elseif mode == "full" then member.count = 5
+		elseif mode == "unsupported" then member.unsupported = true
+		elseif mode == "solo" then member.grouped = false
+		elseif mode == "unknown" then member.unknown = true
+		elseif mode == "blocked" then member.blocked = true
+		elseif mode == "missingAPI" then member.API.SendPartyChatMessage = nil end
+		assert(a:RequestPartyJoin(member.name)); flush()
+		Equal(chats, (mode == "failed" or mode == "throws") and 1 or 0)
+		Equal(#leader.invites, 0)
+		for _, text in ipairs(a.messages) do assert(not text:find("sent to party chat", 1, true)) end
+	end
+end)
+
+QT:RegisterTest("party chat join fallbacks share the bounded request budget and never retry", function()
+	local a, member, leader = RelayParty()
+	member:RecordQTPlayerPresence(leader.name, false)
+	member.options.announceToNonQTParty = true
+	member.suppressLocalAnnouncementDisplayDuringTests = false
+	function member:IsRuntimeRestrictionTypeActive() return false end
+	local sent = 0
+	member.API.SendPartyChatMessage = function(text, route)
+		assert(#text <= 255 and route == "PARTY")
+		sent = sent + 1; return true
+	end
+	for i = 1, 20 do Request(member, "Visitor" .. i .. "-Realm", "request-" .. i) end
+	Equal(sent, 10)
+	Equal(next(member.partyJoinState.incoming), nil)
+	member:UpdatePartyJoin()
+	Equal(sent, 10)
 end)

@@ -213,6 +213,11 @@
       "party join prompt",
       "party metadata"
     ],
+    "PartyVisuals.lua": [
+      "party roster member",
+      "party roster request",
+      "party visual metadata"
+    ],
     "PlayerLocations.lua": [
       "Alliance",
       "Frame",

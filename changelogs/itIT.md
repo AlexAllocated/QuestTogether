@@ -4,18 +4,25 @@
 
 ## 6.0.2
 
-Sfoglia gli aggiornamenti passati di QuestTogether nella tua lingua, con un recupero migliore dei nomi delle missioni per gli annunci di completamento.
+Trova gruppi sulla mappa, vedi chi sta svolgendo missioni insieme e richiedi di unirti tramite qualsiasi membro del gruppo. I tooltip dei giocatori ora mettono i dettagli del gruppo in primo piano.
 
-### Sfoglia le note delle patch precedenti
+### Vedi chi sta svolgendo missioni insieme
 
-- La finestra di benvenuto ora ha i pulsanti Meno recenti e Più recenti, una scorciatoia Ultima e un selettore Cronologia che mostra versioni e date di rilascio. All'apertura, le note della patch partono dall'ultima versione.
-- La cronologia include ogni versione pubblicata in precedenza, incluse le prime beta. Tutte le note storiche sono tradotte in ogni localizzazione di WoW supportata e incluse nei changelog dei repository corrispondenti.
-- I pulsanti di navigazione si disattivano quando non c'è nessun'altra nota da vedere. Consultare note più vecchie non cambia quale aggiornamento hai confermato; i popup automatici continuano a comparire solo per aggiornamenti maggiori e minori. Apri la finestra in qualsiasi momento con /qt notes.
+- I giocatori in gruppo ora hanno un piccolo distintivo con due persone sui loro punti di mappa e minimappa. Passa il mouse su un membro del gruppo per evidenziare i suoi compagni con un contorno bianco, attenuare i punti non correlati e mostrare una corona sul capogruppo. I bagliori dorati per la ricerca di compagni per le missioni restano visibili.
+- I tooltip dei giocatori elencano i membri del gruppo con punti e nomi colorati in base alla classe, con il capogruppo incoronato per primo. I gruppi fino a cinque membri li elencano tutti; i gruppi più grandi mostrano solo il capogruppo. Questi dettagli appaiono anche passando il mouse sui nomi dei giocatori nel registro di QuestTogether.
+- Il tuo gruppo usa l'elenco del gioco. I dettagli dei gruppi remoti vengono caricati dai peer QuestTogether aggiornati quando necessario, con risultati in cache e richieste scaglionate per mantenere basso il traffico del canale. I client più vecchi mantengono i loro normali punti e le informazioni di base sulla dimensione del gruppo; i dettagli completi dei gruppi remoti richiedono un peer aggiornato.
 
-### Titoli di completamento delle missioni
+### Le richieste di invito possono raggiungere il capogruppo
 
-- Quando una missione lascia il tuo registro prima che QuestTogether abbia un titolo utilizzabile, gli annunci di completamento ora provano a usare la ricerca dei titoli missione disponibile del gioco prima di ripiegare su un ID missione. Un titolo recuperato viene preservato indipendentemente dall'ordine degli eventi di consegna e rimozione.
-- Gli annunci usano comunque il testo del mittente quando il tuo client non riesce a risolvere un titolo locale. Se nessuno dei due client ha un nome disponibile, l'ID missione resta l'alternativa. Il recupero migliorato lato mittente si applica quando il mittente si aggiorna.
+- Puoi richiedere di unirti tramite un membro del gruppo che non può invitarti. Se il suo capogruppo usa QuestTogether ed è disponibile a invitare, la richiesta viene reindirizzata al capogruppo usando le solite impostazioni di conferma e approvazione automatica.
+- Se non è noto che il capogruppo usi QuestTogether, il membro può annunciare “[QT] PlayerName richiede di unirsi al gruppo.” nella chat di gruppo quando gli annunci in chat di gruppo sono abilitati. Qualcuno con il permesso di invitare dovrà poi invitarti manualmente.
+- Chi richiede e il membro che inoltra hanno bisogno di questo aggiornamento per le richieste reindirizzate. I controlli esistenti per gruppo pieno, restrizioni, ignorati, scadenza e frequenza delle richieste continuano ad applicarsi.
+
+### Tooltip dei giocatori più chiari
+
+- Le informazioni del gruppo ora si trovano subito sotto la riga con livello, razza e classe, con righe compatte per i membri e spazio tra le sezioni. Gli stemmi di Alleanza e Orda sono grandi il doppio.
+- La versione dell'addon appare per ultima nel formato più breve vX.Y.Z. Quando viene mostrata l'età di una posizione, Ultimo aggiornamento si trova direttamente sopra la versione.
+- I conteggi delle missioni tracciate sono stati rimossi dai tooltip dei giocatori e del pulsante sulla minimappa. Il titolo della missione attiva per i giocatori che cercano compagni per le missioni viene ancora mostrato.
 
 ## 6.0.1
 
