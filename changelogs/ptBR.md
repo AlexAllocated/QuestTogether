@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.0.2
+## 6.1.0
 
 Encontre grupos no mapa, veja quem está fazendo missões junto e peça para entrar por meio de qualquer membro do grupo. As dicas de jogadores agora colocam os detalhes do grupo em destaque.
 
@@ -23,6 +23,21 @@ Encontre grupos no mapa, veja quem está fazendo missões junto e peça para ent
 - As informações do grupo agora ficam logo abaixo da linha de nível, raça e classe, com linhas de membros compactas e espaço entre as seções. Os emblemas da Aliança e da Horda têm o dobro do tamanho.
 - A versão do addon aparece por último no formato mais curto vX.Y.Z. Quando a idade de uma localização é mostrada, Última atualização fica diretamente acima da versão.
 - As contagens de missões rastreadas foram removidas das dicas de jogadores e do botão do minimapa. O título da missão ativa para jogadores procurando parceiros para missões ainda é mostrado.
+
+## 6.0.2
+
+Navegue pelas atualizações anteriores do QuestTogether no seu idioma, com melhor recuperação de nomes de missões para anúncios de conclusão.
+
+### Ver notas de atualização anteriores
+
+- A janela de boas-vindas agora tem botões Mais antigas e Mais recentes, um atalho para a Mais recente e um seletor de Histórico mostrando versões e datas de lançamento. Ao abrir as notas de atualização, elas começam na versão mais recente.
+- O histórico inclui todas as versões publicadas anteriormente, incluindo os primeiros betas. Todas as notas históricas são traduzidas para todos os idiomas de WoW compatíveis e incluídas nos changelogs correspondentes do repositório.
+- Os botões de navegação ficam desativados quando não há para onde ir. Navegar por notas mais antigas não altera qual atualização você reconheceu; pop-ups automáticos ainda aparecem apenas para atualizações principais e secundárias. Abra a janela a qualquer momento com /qt notes.
+
+### Títulos de conclusão de missões
+
+- Quando uma missão sai do seu registro antes que o QuestTogether tenha um título utilizável, os anúncios de conclusão agora tentam consultar o título da missão disponível no jogo antes de recorrer a um ID de missão. Um título recuperado é preservado independentemente da ordem dos eventos de entrega e remoção.
+- Os anúncios ainda usam o texto do remetente quando o seu cliente não consegue resolver um título local. Se nenhum dos clientes tiver um nome disponível, o ID da missão continua sendo a alternativa. A recuperação aprimorada do lado do remetente se aplica quando o remetente atualiza.
 
 ## 6.0.1
 

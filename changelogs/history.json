@@ -3,6 +3,239 @@
   "releases": [
     {
       "enUS": {
+        "version": "6.0.2",
+        "welcome": "Browse QuestTogether’s past updates in your language, with better quest-name recovery for completion announcements.",
+        "sections": [
+          {
+            "title": "Browse past patch notes",
+            "items": [
+              "The welcome window now has Older and Newer buttons, a Latest shortcut, and a History picker showing release versions and dates. Opening patch notes starts at the latest release.",
+              "The history includes every previous published release, including the early betas. All historical notes are translated into every supported WoW locale and included in the matching repository changelogs.",
+              "Navigation buttons disable when there is nowhere to go. Browsing older notes does not change which upgrade you have acknowledged; automatic popups still appear only for major and minor upgrades. Open the window anytime with /qt notes."
+            ]
+          },
+          {
+            "title": "Quest completion titles",
+            "items": [
+              "When a quest leaves your log before QuestTogether has a usable title, completion announcements now try the game’s available quest-title lookup before falling back to a quest ID. A recovered title is preserved regardless of turn-in and removal event order.",
+              "Announcements still use the sender’s text when your client cannot resolve a local title. If neither client has a name available, the quest ID remains the fallback. The improved sender-side recovery applies when the sender updates."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "6.0.2",
+        "welcome": "Durchsuche frühere Updates von QuestTogether in deiner Sprache, mit besserer Wiederherstellung von Questnamen für Abschlussmeldungen.",
+        "sections": [
+          {
+            "title": "Frühere Patchnotes anzeigen",
+            "items": [
+              "Das Willkommensfenster hat jetzt Schaltflächen für Älter und Neuer, eine Verknüpfung zu Neueste sowie eine Verlaufsauswahl, die Release-Versionen und Daten anzeigt. Beim Öffnen der Patchnotes wird mit dem neuesten Release begonnen.",
+              "Der Verlauf enthält jedes zuvor veröffentlichte Release, einschließlich der frühen Betas. Alle historischen Hinweise sind in jede unterstützte WoW-Sprachversion übersetzt und in den entsprechenden Repository-Changelogs enthalten.",
+              "Navigationsschaltflächen werden deaktiviert, wenn es nirgendwohin weitergeht. Das Durchsuchen älterer Hinweise ändert nicht, welches Upgrade du bestätigt hast; automatische Popups erscheinen weiterhin nur bei größeren und kleineren Upgrades. Öffne das Fenster jederzeit mit /qt notes."
+            ]
+          },
+          {
+            "title": "Questabschluss-Titel",
+            "items": [
+              "Wenn eine Quest aus deinem Questlog verschwindet, bevor QuestTogether einen verwendbaren Titel hat, versuchen Abschlussmeldungen jetzt zuerst die verfügbare Questtitel-Abfrage des Spiels, bevor auf eine Quest-ID zurückgegriffen wird. Ein wiederhergestellter Titel bleibt unabhängig von der Reihenfolge der Abgabe- und Entfernungsereignisse erhalten.",
+              "Ankündigungen verwenden weiterhin den Text des Absenders, wenn dein Client keinen lokalen Titel auflösen kann. Wenn keiner der beiden Clients einen Namen verfügbar hat, bleibt die Quest-ID die Ausweichlösung. Die verbesserte Wiederherstellung auf Absenderseite greift, wenn der Absender aktualisiert."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "6.0.2",
+        "welcome": "Parcourez les anciennes mises à jour de QuestTogether dans votre langue, avec une meilleure récupération des noms de quêtes pour les annonces d’achèvement.",
+        "sections": [
+          {
+            "title": "Parcourir les anciennes notes de mise à jour",
+            "items": [
+              "La fenêtre d’accueil comporte maintenant des boutons Anciennes et Récentes, un raccourci Dernière et un sélecteur d’historique affichant les versions et dates de publication. L’ouverture des notes de mise à jour commence à la dernière version.",
+              "L’historique comprend toutes les versions publiées précédemment, y compris les premières bêtas. Toutes les notes historiques sont traduites dans chaque langue de WoW prise en charge et incluses dans les journaux des modifications des dépôts correspondants.",
+              "Les boutons de navigation se désactivent lorsqu’il n’y a nulle part où aller. Parcourir d’anciennes notes ne change pas la mise à niveau que vous avez confirmée ; les fenêtres automatiques n’apparaissent toujours que pour les mises à niveau majeures et mineures. Ouvrez la fenêtre à tout moment avec /qt notes."
+            ]
+          },
+          {
+            "title": "Titres des quêtes terminées",
+            "items": [
+              "Lorsqu’une quête quitte votre journal avant que QuestTogether ne dispose d’un titre utilisable, les annonces d’achèvement essaient désormais la recherche de titre de quête disponible en jeu avant de se rabattre sur un ID de quête. Un titre récupéré est conservé quel que soit l’ordre des événements de rendu et de suppression.",
+              "Les annonces utilisent toujours le texte de l’expéditeur lorsque votre client ne peut pas résoudre un titre local. Si aucun des deux clients n’a de nom disponible, l’ID de quête reste la solution de repli. La récupération améliorée côté expéditeur s’applique lorsque l’expéditeur effectue la mise à jour."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "6.0.2",
+        "welcome": "Explora las actualizaciones anteriores de QuestTogether en tu idioma, con mejor recuperación de nombres de misiones para los anuncios de finalización.",
+        "sections": [
+          {
+            "title": "Ver notas del parche anteriores",
+            "items": [
+              "La ventana de bienvenida ahora tiene botones Anteriores y Siguientes, un acceso directo a la última versión y un selector de historial que muestra las versiones y fechas de lanzamiento. Al abrir las notas del parche, se empieza en la versión más reciente.",
+              "El historial incluye todas las versiones publicadas anteriormente, incluidas las primeras betas. Todas las notas históricas están traducidas a todos los idiomas de WoW compatibles y se incluyen en los registros de cambios correspondientes del repositorio.",
+              "Los botones de navegación se desactivan cuando no hay adónde ir. Ver notas más antiguas no cambia qué actualización has reconocido; las ventanas emergentes automáticas siguen apareciendo solo para actualizaciones mayores y menores. Abre la ventana en cualquier momento con /qt notes."
+            ]
+          },
+          {
+            "title": "Títulos al completar misiones",
+            "items": [
+              "Cuando una misión desaparece de tu registro antes de que QuestTogether tenga un título utilizable, los anuncios de finalización ahora intentan usar la búsqueda de títulos de misión disponible en el juego antes de recurrir a un ID de misión. El título recuperado se conserva independientemente del orden de los eventos de entrega y eliminación.",
+              "Los anuncios siguen usando el texto del remitente cuando tu cliente no puede resolver un título local. Si ningún cliente tiene un nombre disponible, el ID de misión sigue siendo la alternativa. La recuperación mejorada en el lado del remitente se aplica cuando el remitente actualiza."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "6.0.2",
+        "welcome": "Explora las actualizaciones anteriores de QuestTogether en tu idioma, con una mejor recuperación de nombres de misiones para los anuncios de completado.",
+        "sections": [
+          {
+            "title": "Explorar notas de parche anteriores",
+            "items": [
+              "La ventana de bienvenida ahora tiene botones de Más antiguas y Más recientes, un acceso directo a La más reciente y un selector de Historial que muestra las versiones y fechas de lanzamiento. Al abrir las notas de parche, se empieza en la versión más reciente.",
+              "El historial incluye todas las versiones publicadas anteriormente, incluidas las primeras betas. Todas las notas históricas están traducidas a todos los idiomas de WoW compatibles e incluidas en los registros de cambios del repositorio correspondiente.",
+              "Los botones de navegación se desactivan cuando no hay a dónde ir. Explorar notas anteriores no cambia qué actualización has confirmado; las ventanas emergentes automáticas siguen apareciendo solo para actualizaciones mayores y menores. Abre la ventana en cualquier momento con /qt notes."
+            ]
+          },
+          {
+            "title": "Títulos de completado de misiones",
+            "items": [
+              "Cuando una misión sale de tu registro antes de que QuestTogether tenga un título utilizable, los anuncios de completado ahora intentan usar la búsqueda de títulos de misión disponible del juego antes de recurrir a un ID de misión. Un título recuperado se conserva sin importar el orden de los eventos de entrega y eliminación.",
+              "Los anuncios siguen usando el texto del remitente cuando tu cliente no puede resolver un título local. Si ninguno de los clientes tiene un nombre disponible, el ID de misión sigue siendo la alternativa. La recuperación mejorada del lado del remitente se aplica cuando el remitente se actualiza."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "6.0.2",
+        "welcome": "Navegue pelas atualizações anteriores do QuestTogether no seu idioma, com melhor recuperação de nomes de missões para anúncios de conclusão.",
+        "sections": [
+          {
+            "title": "Ver notas de atualização anteriores",
+            "items": [
+              "A janela de boas-vindas agora tem botões Mais antigas e Mais recentes, um atalho para a Mais recente e um seletor de Histórico mostrando versões e datas de lançamento. Ao abrir as notas de atualização, elas começam na versão mais recente.",
+              "O histórico inclui todas as versões publicadas anteriormente, incluindo os primeiros betas. Todas as notas históricas são traduzidas para todos os idiomas de WoW compatíveis e incluídas nos changelogs correspondentes do repositório.",
+              "Os botões de navegação ficam desativados quando não há para onde ir. Navegar por notas mais antigas não altera qual atualização você reconheceu; pop-ups automáticos ainda aparecem apenas para atualizações principais e secundárias. Abra a janela a qualquer momento com /qt notes."
+            ]
+          },
+          {
+            "title": "Títulos de conclusão de missões",
+            "items": [
+              "Quando uma missão sai do seu registro antes que o QuestTogether tenha um título utilizável, os anúncios de conclusão agora tentam consultar o título da missão disponível no jogo antes de recorrer a um ID de missão. Um título recuperado é preservado independentemente da ordem dos eventos de entrega e remoção.",
+              "Os anúncios ainda usam o texto do remetente quando o seu cliente não consegue resolver um título local. Se nenhum dos clientes tiver um nome disponível, o ID da missão continua sendo a alternativa. A recuperação aprimorada do lado do remetente se aplica quando o remetente atualiza."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "6.0.2",
+        "welcome": "Просматривайте прошлые обновления QuestTogether на своём языке, с улучшенным восстановлением названий заданий для объявлений о выполнении.",
+        "sections": [
+          {
+            "title": "Просмотреть прошлые заметки к обновлениям",
+            "items": [
+              "В окне приветствия теперь есть кнопки «Старее» и «Новее», быстрый переход к последней версии и список истории с версиями выпусков и датами. При открытии заметок к обновлениям показывается последний выпуск.",
+              "История включает все ранее опубликованные выпуски, включая ранние бета-версии. Все исторические заметки переведены на все поддерживаемые локали WoW и включены в соответствующие журналы изменений репозитория.",
+              "Кнопки навигации отключаются, когда переходить некуда. Просмотр более старых заметок не меняет, какое обновление вы уже подтвердили; автоматические всплывающие окна по-прежнему появляются только для крупных и малых обновлений. Открыть окно в любое время можно командой /qt notes."
+            ]
+          },
+          {
+            "title": "Названия выполненных заданий",
+            "items": [
+              "Когда задание исчезает из вашего журнала до того, как у QuestTogether появляется пригодное название, объявления о выполнении теперь пытаются использовать доступный в игре поиск названия задания, прежде чем возвращаться к ID задания. Восстановленное название сохраняется независимо от порядка событий сдачи и удаления.",
+              "Объявления по-прежнему используют текст отправителя, если ваш клиент не может определить локальное название. Если название недоступно ни у одного клиента, запасным вариантом остаётся ID задания. Улучшенное восстановление на стороне отправителя применяется, когда отправитель обновляется."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "6.0.2",
+        "welcome": "Sfoglia gli aggiornamenti passati di QuestTogether nella tua lingua, con un recupero migliore dei nomi delle missioni per gli annunci di completamento.",
+        "sections": [
+          {
+            "title": "Sfoglia le note delle patch precedenti",
+            "items": [
+              "La finestra di benvenuto ora ha i pulsanti Meno recenti e Più recenti, una scorciatoia Ultima e un selettore Cronologia che mostra versioni e date di rilascio. All'apertura, le note della patch partono dall'ultima versione.",
+              "La cronologia include ogni versione pubblicata in precedenza, incluse le prime beta. Tutte le note storiche sono tradotte in ogni localizzazione di WoW supportata e incluse nei changelog dei repository corrispondenti.",
+              "I pulsanti di navigazione si disattivano quando non c'è nessun'altra nota da vedere. Consultare note più vecchie non cambia quale aggiornamento hai confermato; i popup automatici continuano a comparire solo per aggiornamenti maggiori e minori. Apri la finestra in qualsiasi momento con /qt notes."
+            ]
+          },
+          {
+            "title": "Titoli di completamento delle missioni",
+            "items": [
+              "Quando una missione lascia il tuo registro prima che QuestTogether abbia un titolo utilizzabile, gli annunci di completamento ora provano a usare la ricerca dei titoli missione disponibile del gioco prima di ripiegare su un ID missione. Un titolo recuperato viene preservato indipendentemente dall'ordine degli eventi di consegna e rimozione.",
+              "Gli annunci usano comunque il testo del mittente quando il tuo client non riesce a risolvere un titolo locale. Se nessuno dei due client ha un nome disponibile, l'ID missione resta l'alternativa. Il recupero migliorato lato mittente si applica quando il mittente si aggiorna."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "6.0.2",
+        "welcome": "내 언어로 QuestTogether의 지난 업데이트를 살펴보고, 완료 알림의 퀘스트 이름 복구 기능이 개선되었습니다.",
+        "sections": [
+          {
+            "title": "지난 패치 노트 보기",
+            "items": [
+              "환영 창에 이제 이전 및 다음 버튼, 최신 바로가기, 출시 버전과 날짜를 보여주는 기록 선택기가 추가되었습니다. 패치 노트를 열면 최신 출시 버전부터 표시됩니다.",
+              "기록에는 초기 베타를 포함하여 이전에 공개된 모든 출시 버전이 포함됩니다. 모든 이전 노트는 지원되는 모든 WoW 로케일로 번역되어 해당 저장소 변경 기록에 포함됩니다.",
+              "이동할 곳이 없으면 탐색 버튼이 비활성화됩니다. 이전 노트를 둘러봐도 확인한 업그레이드 항목은 변경되지 않습니다. 자동 팝업은 계속 주요 및 보조 업그레이드에만 표시됩니다. 언제든지 /qt notes로 창을 열 수 있습니다."
+            ]
+          },
+          {
+            "title": "퀘스트 완료 제목",
+            "items": [
+              "퀘스트가 QuestTogether에서 사용할 수 있는 제목을 확보하기 전에 퀘스트 목록에서 사라지면, 이제 완료 알림은 퀘스트 ID로 대체하기 전에 게임에서 제공하는 퀘스트 제목 조회를 시도합니다. 복구된 제목은 완료 보고 및 제거 이벤트 순서와 관계없이 보존됩니다.",
+              "내 클라이언트에서 현지화된 제목을 확인할 수 없으면 알림은 여전히 보낸 사람의 텍스트를 사용합니다. 양쪽 클라이언트 모두에서 이름을 사용할 수 없으면 퀘스트 ID가 대체값으로 유지됩니다. 개선된 발신자 측 복구는 보낸 사람이 업데이트했을 때 적용됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "6.0.2",
+        "welcome": "以你的语言浏览 QuestTogether 过往更新，并改进了完成通告中的任务名称恢复。",
+        "sections": [
+          {
+            "title": "浏览过往补丁说明",
+            "items": [
+              "欢迎窗口现在有“较旧”和“较新”按钮、“最新”快捷按钮，以及显示发布版本和日期的历史记录选择器。打开补丁说明时会从最新版本开始。",
+              "历史记录包含以往发布的每个版本，包括早期测试版。所有历史说明均已翻译为每种受支持的 WoW 语言，并包含在对应仓库的更新日志中。",
+              "导航按钮会在无处可去时禁用。浏览较旧说明不会改变你已确认的升级版本；自动弹窗仍只会在重大和次要升级时出现。可随时使用 /qt notes 打开窗口。"
+            ]
+          },
+          {
+            "title": "任务完成标题",
+            "items": [
+              "当任务在 QuestTogether 获得可用标题前离开你的任务日志时，完成通告现在会先尝试使用游戏可用的任务标题查找，再回退到任务 ID。无论交任务和移除事件的顺序如何，恢复到的标题都会被保留。",
+              "当你的客户端无法解析本地标题时，通告仍会使用发送者的文本。如果双方客户端都没有可用名称，则仍以任务 ID 作为回退。改进后的发送端恢复会在发送者更新后生效。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "6.0.2",
+        "welcome": "以你的語言瀏覽 QuestTogether 過去的更新，並改善完成公告中的任務名稱復原。",
+        "sections": [
+          {
+            "title": "瀏覽過去的更新說明",
+            "items": [
+              "歡迎視窗現在有「較舊」與「較新」按鈕、「最新」捷徑，以及顯示發行版本與日期的「歷史」選單。開啟更新說明時會從最新版本開始。",
+              "歷史記錄包含每個過去已發布的版本，包括早期測試版。所有歷史說明都已翻譯成每個支援的 WoW 語系，並包含在對應的儲存庫更新日誌中。",
+              "導覽按鈕會在無處可前往時停用。瀏覽較舊的說明不會變更你已確認的升級；自動彈出視窗仍只會在主要與次要升級時出現。可隨時使用 /qt notes 開啟視窗。"
+            ]
+          },
+          {
+            "title": "任務完成標題",
+            "items": [
+              "當任務在 QuestTogether 取得可用標題前就離開你的任務紀錄時，完成公告現在會先嘗試使用遊戲可用的任務標題查詢，再退回使用任務 ID。無論回報與移除事件的順序如何，復原的標題都會保留。",
+              "當你的客戶端無法解析本地標題時，公告仍會使用發送者的文字。如果兩邊客戶端都沒有可用名稱，任務 ID 仍會作為後備。改進後的發送者端復原會在發送者更新後套用。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "6.0.1",
         "welcome": "Celebrations now stay with players you can actually see nearby.",
         "sections": [

@@ -1,7 +1,7 @@
 {
   "source_sha256": "ce352378cc1aad5f9616f7d69ad48a4bb6e1b06f1b678ffc1183035c1429cfe7",
   "notes": {
-    "version": "6.0.2",
+    "version": "6.1.0",
     "welcome": "Encuentra grupos en el mapa, consulta quién está haciendo misiones en grupo y solicita unirte a través de cualquier miembro del grupo. Las descripciones emergentes de los jugadores ahora muestran los detalles del grupo en primer plano.",
     "sections": [
       {

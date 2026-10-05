@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.0.2
+## 6.1.0
 
 Trouvez des groupes sur la carte, voyez qui fait des quêtes ensemble et demandez à rejoindre le groupe via n’importe quel membre. Les infobulles des personnages-joueurs mettent désormais les détails du groupe en évidence.
 
@@ -23,6 +23,21 @@ Trouvez des groupes sur la carte, voyez qui fait des quêtes ensemble et demande
 - Les informations de groupe se trouvent désormais juste sous la ligne de niveau, de race et de classe, avec des lignes de membres compactes et de l’espace entre les sections. Les insignes de l’Alliance et de la Horde sont deux fois plus grands.
 - La version de l’addon apparaît en dernier au format abrégé vX.Y.Z. Quand l’ancienneté d’un emplacement est affichée, Dernière mise à jour se trouve directement au-dessus de la version.
 - Les nombres de quêtes suivies ont été retirés des infobulles des joueurs et du bouton de la minicarte. Le titre de la quête active des joueurs qui recherchent des partenaires de quête est toujours affiché.
+
+## 6.0.2
+
+Parcourez les anciennes mises à jour de QuestTogether dans votre langue, avec une meilleure récupération des noms de quêtes pour les annonces d’achèvement.
+
+### Parcourir les anciennes notes de mise à jour
+
+- La fenêtre d’accueil comporte maintenant des boutons Anciennes et Récentes, un raccourci Dernière et un sélecteur d’historique affichant les versions et dates de publication. L’ouverture des notes de mise à jour commence à la dernière version.
+- L’historique comprend toutes les versions publiées précédemment, y compris les premières bêtas. Toutes les notes historiques sont traduites dans chaque langue de WoW prise en charge et incluses dans les journaux des modifications des dépôts correspondants.
+- Les boutons de navigation se désactivent lorsqu’il n’y a nulle part où aller. Parcourir d’anciennes notes ne change pas la mise à niveau que vous avez confirmée ; les fenêtres automatiques n’apparaissent toujours que pour les mises à niveau majeures et mineures. Ouvrez la fenêtre à tout moment avec /qt notes.
+
+### Titres des quêtes terminées
+
+- Lorsqu’une quête quitte votre journal avant que QuestTogether ne dispose d’un titre utilisable, les annonces d’achèvement essaient désormais la recherche de titre de quête disponible en jeu avant de se rabattre sur un ID de quête. Un titre récupéré est conservé quel que soit l’ordre des événements de rendu et de suppression.
+- Les annonces utilisent toujours le texte de l’expéditeur lorsque votre client ne peut pas résoudre un titre local. Si aucun des deux clients n’a de nom disponible, l’ID de quête reste la solution de repli. La récupération améliorée côté expéditeur s’applique lorsque l’expéditeur effectue la mise à jour.
 
 ## 6.0.1
 

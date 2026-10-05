@@ -1,7 +1,7 @@
 {
   "source_sha256": "ce352378cc1aad5f9616f7d69ad48a4bb6e1b06f1b678ffc1183035c1429cfe7",
   "notes": {
-    "version": "6.0.2",
+    "version": "6.1.0",
     "welcome": "在地圖上尋找隊伍，查看誰正在一起解任務，並透過任何隊伍成員請求加入。玩家滑鼠提示現在會把隊伍詳細資訊放在最醒目的位置。",
     "sections": [
       {

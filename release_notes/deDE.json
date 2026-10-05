@@ -1,7 +1,7 @@
 {
   "source_sha256": "ce352378cc1aad5f9616f7d69ad48a4bb6e1b06f1b678ffc1183035c1429cfe7",
   "notes": {
-    "version": "6.0.2",
+    "version": "6.1.0",
     "welcome": "Findet Gruppen auf der Karte, seht, wer gemeinsam questet, und bittet über ein beliebiges Gruppenmitglied um Beitritt. Spieler-Tooltips stellen Gruppendetails jetzt in den Mittelpunkt.",
     "sections": [
       {

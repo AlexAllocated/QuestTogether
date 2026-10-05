@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 6.0.2
+## 6.1.0
 
 Find parties on the map, see who is questing together, and request to join through any party member. Player tooltips now put party details front and center.
 
@@ -25,6 +25,21 @@ Find parties on the map, see who is questing together, and request to join throu
 - Party information now sits immediately below the level, race, and class line, with compact member rows and space between sections. Alliance and Horde badges are twice as large.
 - The addon version appears last in the shorter vX.Y.Z format. When a location’s age is shown, Last update sits directly above the version.
 - Tracked quest counts have been removed from player and minimap-button tooltips. The active quest title for players looking for questing partners is still shown.
+
+## 6.0.2
+
+Browse QuestTogether’s past updates in your language, with better quest-name recovery for completion announcements.
+
+### Browse past patch notes
+
+- The welcome window now has Older and Newer buttons, a Latest shortcut, and a History picker showing release versions and dates. Opening patch notes starts at the latest release.
+- The history includes every previous published release, including the early betas. All historical notes are translated into every supported WoW locale and included in the matching repository changelogs.
+- Navigation buttons disable when there is nowhere to go. Browsing older notes does not change which upgrade you have acknowledged; automatic popups still appear only for major and minor upgrades. Open the window anytime with /qt notes.
+
+### Quest completion titles
+
+- When a quest leaves your log before QuestTogether has a usable title, completion announcements now try the game’s available quest-title lookup before falling back to a quest ID. A recovered title is preserved regardless of turn-in and removal event order.
+- Announcements still use the sender’s text when your client cannot resolve a local title. If neither client has a name available, the quest ID remains the fallback. The improved sender-side recovery applies when the sender updates.
 
 ## 6.0.1
 

@@ -1,7 +1,7 @@
 {
   "source_sha256": "ce352378cc1aad5f9616f7d69ad48a4bb6e1b06f1b678ffc1183035c1429cfe7",
   "notes": {
-    "version": "6.0.2",
+    "version": "6.1.0",
     "welcome": "在地图上寻找小队，查看哪些玩家正在一起做任务，并通过任意小队成员申请加入。玩家鼠标提示现在会将小队详情置于醒目位置。",
     "sections": [
       {

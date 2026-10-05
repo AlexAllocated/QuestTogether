@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.0.2
+## 6.1.0
 
 Findet Gruppen auf der Karte, seht, wer gemeinsam questet, und bittet über ein beliebiges Gruppenmitglied um Beitritt. Spieler-Tooltips stellen Gruppendetails jetzt in den Mittelpunkt.
 
@@ -23,6 +23,21 @@ Findet Gruppen auf der Karte, seht, wer gemeinsam questet, und bittet über ein 
 - Gruppeninformationen stehen jetzt direkt unter der Zeile mit Stufe, Volk und Klasse, mit kompakten Mitgliederzeilen und Abstand zwischen den Abschnitten. Allianz- und Horde-Abzeichen sind doppelt so groß.
 - Die Addon-Version erscheint zuletzt im kürzeren Format vX.Y.Z. Wenn das Alter eines Standorts angezeigt wird, steht „Letzte Aktualisierung“ direkt über der Version.
 - Anzahlen verfolgter Quests wurden aus Spieler- und Minikartenbutton-Tooltips entfernt. Der aktive Questtitel für Spieler, die nach Questpartnern suchen, wird weiterhin angezeigt.
+
+## 6.0.2
+
+Durchsuche frühere Updates von QuestTogether in deiner Sprache, mit besserer Wiederherstellung von Questnamen für Abschlussmeldungen.
+
+### Frühere Patchnotes anzeigen
+
+- Das Willkommensfenster hat jetzt Schaltflächen für Älter und Neuer, eine Verknüpfung zu Neueste sowie eine Verlaufsauswahl, die Release-Versionen und Daten anzeigt. Beim Öffnen der Patchnotes wird mit dem neuesten Release begonnen.
+- Der Verlauf enthält jedes zuvor veröffentlichte Release, einschließlich der frühen Betas. Alle historischen Hinweise sind in jede unterstützte WoW-Sprachversion übersetzt und in den entsprechenden Repository-Changelogs enthalten.
+- Navigationsschaltflächen werden deaktiviert, wenn es nirgendwohin weitergeht. Das Durchsuchen älterer Hinweise ändert nicht, welches Upgrade du bestätigt hast; automatische Popups erscheinen weiterhin nur bei größeren und kleineren Upgrades. Öffne das Fenster jederzeit mit /qt notes.
+
+### Questabschluss-Titel
+
+- Wenn eine Quest aus deinem Questlog verschwindet, bevor QuestTogether einen verwendbaren Titel hat, versuchen Abschlussmeldungen jetzt zuerst die verfügbare Questtitel-Abfrage des Spiels, bevor auf eine Quest-ID zurückgegriffen wird. Ein wiederhergestellter Titel bleibt unabhängig von der Reihenfolge der Abgabe- und Entfernungsereignisse erhalten.
+- Ankündigungen verwenden weiterhin den Text des Absenders, wenn dein Client keinen lokalen Titel auflösen kann. Wenn keiner der beiden Clients einen Namen verfügbar hat, bleibt die Quest-ID die Ausweichlösung. Die verbesserte Wiederherstellung auf Absenderseite greift, wenn der Absender aktualisiert.
 
 ## 6.0.1
 

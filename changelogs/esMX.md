@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.0.2
+## 6.1.0
 
 Encuentra grupos en el mapa, ve quiénes están haciendo misiones juntos y solicita unirte a través de cualquier miembro del grupo. Las descripciones emergentes de jugadores ahora muestran los detalles del grupo al frente y al centro.
 
@@ -23,6 +23,21 @@ Encuentra grupos en el mapa, ve quiénes están haciendo misiones juntos y solic
 - La información de grupo ahora aparece justo debajo de la línea de nivel, raza y clase, con filas compactas de miembros y espacio entre secciones. Las insignias de la Alianza y la Horda son el doble de grandes.
 - La versión del addon aparece al final en el formato más corto vX.Y.Z. Cuando se muestra la antigüedad de una ubicación, Última actualización aparece directamente encima de la versión.
 - Se eliminaron los recuentos de misiones con seguimiento de las descripciones emergentes de jugadores y del botón del minimapa. Se sigue mostrando el título de la misión activa para los jugadores que buscan compañeros para misiones.
+
+## 6.0.2
+
+Explora las actualizaciones anteriores de QuestTogether en tu idioma, con una mejor recuperación de nombres de misiones para los anuncios de completado.
+
+### Explorar notas de parche anteriores
+
+- La ventana de bienvenida ahora tiene botones de Más antiguas y Más recientes, un acceso directo a La más reciente y un selector de Historial que muestra las versiones y fechas de lanzamiento. Al abrir las notas de parche, se empieza en la versión más reciente.
+- El historial incluye todas las versiones publicadas anteriormente, incluidas las primeras betas. Todas las notas históricas están traducidas a todos los idiomas de WoW compatibles e incluidas en los registros de cambios del repositorio correspondiente.
+- Los botones de navegación se desactivan cuando no hay a dónde ir. Explorar notas anteriores no cambia qué actualización has confirmado; las ventanas emergentes automáticas siguen apareciendo solo para actualizaciones mayores y menores. Abre la ventana en cualquier momento con /qt notes.
+
+### Títulos de completado de misiones
+
+- Cuando una misión sale de tu registro antes de que QuestTogether tenga un título utilizable, los anuncios de completado ahora intentan usar la búsqueda de títulos de misión disponible del juego antes de recurrir a un ID de misión. Un título recuperado se conserva sin importar el orden de los eventos de entrega y eliminación.
+- Los anuncios siguen usando el texto del remitente cuando tu cliente no puede resolver un título local. Si ninguno de los clientes tiene un nombre disponible, el ID de misión sigue siendo la alternativa. La recuperación mejorada del lado del remitente se aplica cuando el remitente se actualiza.
 
 ## 6.0.1
 

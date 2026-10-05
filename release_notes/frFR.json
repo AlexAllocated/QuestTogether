@@ -1,7 +1,7 @@
 {
   "source_sha256": "ce352378cc1aad5f9616f7d69ad48a4bb6e1b06f1b678ffc1183035c1429cfe7",
   "notes": {
-    "version": "6.0.2",
+    "version": "6.1.0",
     "welcome": "Trouvez des groupes sur la carte, voyez qui fait des quêtes ensemble et demandez à rejoindre le groupe via n’importe quel membre. Les infobulles des personnages-joueurs mettent désormais les détails du groupe en évidence.",
     "sections": [
       {
