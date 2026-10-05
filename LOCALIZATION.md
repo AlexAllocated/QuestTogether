@@ -56,7 +56,10 @@ state. WoW's objective rows do not provide a cross-stage stable target identity,
 translated progress says, for example, “Objective 2: 3/8” instead of borrowing the
 receiver's current objective description or counters. Legacy text-only APIs can send
 completion state; without trustworthy structured facts the original text is retained.
-Same-language announcements retain their detailed native objective wording. Comparison
+Same-language progress retains its detailed native objective wording; lifecycle
+titles still prefer available local data, including repairs of sent Quest-ID
+placeholders. Monitored-quest scan announcements carry a bounded count fact;
+older receivers retain the original readable text. Comparison
 rows prefer the receiver's local quest title when available. Player names are unchanged.
 Public party chat stays in the sender's language because everyone receives one string.
 
@@ -82,8 +85,29 @@ remain useful across locales; shared debug window controls and headings are tran
 Formatting placeholders and command syntax must survive translation. The validator
 checks source-key completeness, placeholder order, boundary whitespace, and generated
 file consistency. A reviewed source audit catches new prose that lacks a lookup.
+The source audit examines visible text inside WoW color/hyperlink markup while
+excluding texture and atlas payloads. Add tests for newly encountered markup.
+
+Behavioral fixtures use an explicit English registration policy by default. For
+presentation coverage, register with `RegisterTest(name, callback, { locale =
+"client" })`; isolation preserves the client locale for these cases. The CI locale
+matrix runs actual tooltip, notice, menu, settings-status, comparison/consent and
+notes renderers under each selected locale and prints the presentation-case count.
+New presentation paths need a client-locale case, not just English assertions.
+
 These checks do not establish translation quality or native UI fit; inspect settings,
 comparison, sharing requests, map tooltips and notes in the relevant live client.
+
+Use complete format strings for sentences so translations can place names and titles
+naturally. Monitored counts use a label followed by the number, avoiding a plural
+suffix that fails for singular counts or languages with several plural forms.
+
+Quest title resolution includes current-session, matching-locale task trackers once
+the initial scan completes. Saved tracker titles from another locale are not local
+translations. Open comparisons invalidate cached misses on quest-data load results
+and retry queued title loads under the existing ten-per-30-second limit, at most
+twice per quest per comparison. Closing or replacing the comparison invalidates its
+callbacks; these refreshes never request new remote snapshots or replay chat.
 
 ## Patch notes and Discord
 

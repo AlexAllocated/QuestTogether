@@ -704,7 +704,14 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 		return
 	end
 
+	-- Every callback reads the current log, not the event-time state. Retain
+	-- one progress scan while restrictions defer it, alongside independently
+	-- queued acceptance lifetimes. Replacing the queue also resets this marker.
+	local queue = self.onQuestLogUpdate
+	if queue.progressScanQueued then return end
+	queue.progressScanQueued = true
 	self:QueueQuestLogTask(function()
+		queue.progressScanQueued = nil
 		local tracker = self:GetPlayerTracker()
 
 		for questId, questData in pairs(tracker) do
@@ -765,7 +772,7 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 					if readyForTurnInChanged then
 						questData.isReadyForTurnIn = currentReadyForTurnIn
 						if currentReadyForTurnIn and not self:GetTaskAnnouncementType(questId) then
-							local questTitle = questData.title or self:GetQuestTitle(questId)
+							local questTitle = self:GetQuestDisplayTitle(questId, questData.title)
 							self:PublishAnnouncementEvent(
 								"QUEST_READY_TO_TURN_IN",
 								L("Ready to Turn In: ") .. SafeText(questTitle, L("Unknown")),

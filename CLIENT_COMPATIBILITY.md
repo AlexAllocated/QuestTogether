@@ -299,13 +299,13 @@ The 6.0 implementation below replaces those independent publications.
 
 ## Geographic transport in 6.0
 
-- **Global:** `QuestTogether` retains plain text QT chat, low-volume targeted comparison/join transactions, and `QTB1` presence snapshots every 150–210 seconds. Worldwide dots remain available within the existing bounded cache (512 locations, 128 drawn pins). Their last-update age uses sample time, including estimated transit delay, rather than disguising delayed coordinates as newly sampled.
+- **Global:** `QuestTogether` retains plain text QT chat, legacy comparison/join transactions for older peers, and `QTB1` presence snapshots every 150–210 seconds. Worldwide dots remain available within the existing bounded cache (512 locations, 128 drawn pins). Their last-update age uses sample time, including estimated transit delay, rather than disguising delayed coordinates as newly sampled.
 - **Regional:** `QuestTogetherZ<zoneMapID>` carries announcements and snapshots. Subscribe to the current zone plus, after four seconds of stable map selection, one viewed zone. Leaving/closing the view releases the old subscription; never more than two zone subscriptions. Zone/floor ancestors use copied `C_Map.GetMapInfo` fields, with cycle/depth bounds; continents/world maps never create subscriptions. No role, realm suffix, War Mode or phase identifier partitions these channels. Existing Retail display filtering still applies.
-- **Cadence:** current-zone and group locations update every 1 second below 10 known same-zone peers, 5–10 seconds at 10–19 peers, and 15–20 seconds at 100 peers. Intermediate populations interpolate to the existing 45–50 seconds at 500 peers, 70–75 at 1,000, and 90–95 at 1,400+. The fastest interval has no jitter. Each scheduled publication samples fresh coordinates; fast updates use compact location-only envelopes while full metadata retains the previous 20–95-second density-based heartbeat. Status changes still expedite a full snapshot. Queue pacing can add delivery delay, and duplicate pending location updates coalesce rather than accumulating. Global snapshots continue independently. A newly viewed zone receives the next scheduled publication; opening a map never solicits a broadcast response storm. Failed joins fall back to global announcement delivery, without claiming zone subscription success.
-- **Snapshots:** state producers stage only their newest LOC/QTPR/QTVR/QTLF/QTLQ/QJST data. Each length-prefixed packet stays within 255 bytes; long optional labels/titles are omitted. A bounded parser allows only those six commands and rejects truncated framing, nesting and implausible time fields. Snapshot sessions and per-command sequences tolerate fragment/route reordering and reject retired sessions. Data expires at most 600 seconds after sampling; unreadable locations are omitted after 35 seconds rather than renewed indefinitely. The server timestamp is an estimate; when unavailable, transit age is unknown and receiver time is used.
-- **Scheduler:** one two-packet/second token budget with a four-packet burst, one token reserved for immediate transactions. Up to 96 queued packets; announcements/PONGs expire after 30 seconds, snapshots after 15. Events precede snapshots, snapshots coalesce per route/part, and native throttle results pause all attempts for two seconds. Transaction calls retain actual-send return semantics; state staging and event queue acceptance acknowledge only local storage. No invite, quest-sharing or other protected action is deferred by this scheduler.
-- **Lifecycle/privacy:** location withdrawal cancels packed snapshots and queued announcements, replaces the stored position with a clear, and schedules global/local publication. Status changes accelerate publication with a ten-second global floor. Normal disable/world departure attempts a compact clear immediately and discards pending publications. Reset invalidates ping callbacks and leaves owned regional channels. Group roster changes and regional departures discard queued work for the old audience. Ignore checks apply before snapshot decoding/display. Clears are best effort; lost clears expire naturally, and are never proof of remote removal.
-- **Deduplication:** party/zone/global overlap still produces duplicate delivery without the legacy channel. A 4096-entry ring gives bounded storage and constant-time replacement; new announcements carry a bounded event ID in optional field 18 and deduplicate for five minutes (subject to ring capacity), so separately generated identical actions remain distinct. Snapshot sequencing additionally rejects obsolete state after the short payload duplicate window. Capability/order records are bounded to 2048 peers. Existing model cache bounds remain in place.
+- **Cadence:** current-zone and group locations update every 1 second below 10 known same-zone peers, 5–10 seconds at 10–19 peers, and 15–20 seconds at 100 peers. Intermediate populations interpolate to the existing 45–50 seconds at 500 peers, 70–75 at 1,000, and 90–95 at 1,400+. The fastest interval has no jitter. Each scheduled publication samples fresh coordinates; unchanged positions skip fast per-route publications while full metadata still renews discovery and freshness. Fast updates use compact location-only envelopes while full metadata retains the previous 20–95-second density-based heartbeat. Status changes still expedite a full snapshot. Queue pacing can add delivery delay, and duplicate pending location updates coalesce rather than accumulating. Global snapshots continue independently. A newly viewed zone receives the next scheduled publication; opening a map never solicits a broadcast response storm. Failed joins fall back to global announcement delivery, without claiming zone subscription success.
+- **Snapshots:** state producers stage only their newest LOC/QTPR/QTVR/QTLF/QTLQ/QJST data. Each length-prefixed packet stays within 255 bytes; long optional labels/titles are omitted. QTPG party visuals and QTCI capabilities travel in isolated fragments for older decoders. A bounded parser allows only recognized state commands and rejects truncated framing, nesting and implausible time fields. Snapshot sessions and per-command sequences tolerate fragment/route reordering and reject retired sessions. Data expires at most 600 seconds after sampling; unreadable locations are omitted after 35 seconds rather than renewed indefinitely. The server timestamp is an estimate; when unavailable, transit age is unknown and receiver time is used.
+- **Scheduler:** one two-packet/second token budget with a four-packet burst, one token reserved for immediate transactions. Up to 96 queued packets; announcements/PONGs expire after 30 seconds, snapshots after 15. Events precede snapshots, snapshots coalesce per route/part, and native throttle results pause all attempts for two seconds. Comparison requests also queue, validate that their request is still pending before sending, and acknowledge queue acceptance. Other transaction calls retain actual-send return semantics; state staging and event queue acceptance acknowledge only local storage. Local token pacing does not spend comparison-response failure retries. A failed route backs off independently; native throttle results still pause all routes. Complete replacement snapshots remove obsolete trailing fragments. No invite, quest-sharing or other protected action is deferred by this scheduler.
+- **Lifecycle/privacy:** the transition to location withdrawal cancels packed snapshots and queued announcements, replaces the stored position with a clear, and schedules global/local publication. Repeated location clears use the normal global cadence. LFQP and tracked-quest withdrawals repeat throughout the 600-second snapshot lifetime. Status changes accelerate publication with a ten-second global floor. Normal disable/world departure attempts a compact clear immediately and discards pending publications. Reset invalidates ping callbacks and leaves owned regional channels. Reload reconciliation removes orphaned numeric QT zone subscriptions; already-joined channels still receive filters, and chat-window cleanup runs when channel bindings change rather than on every send. Group roster changes and regional departures discard queued work for the old audience. Ignore checks apply before snapshot decoding/display. Clears are best effort; lost clears expire naturally, and are never proof of remote removal.
+- **Deduplication:** party/zone/global overlap still produces duplicate delivery without the legacy channel. A 4096-entry ring gives bounded storage and constant-time replacement; new announcements carry a bounded event ID in optional field 18 and deduplicate for five minutes (subject to ring capacity), so separately generated identical actions remain distinct. Snapshot sequencing additionally rejects obsolete state after the short payload duplicate window. Capability/order records are bounded to 2048 peers; expiry maintenance runs at most once per second, with immediate admission-cap enforcement. Existing model cache bounds remain in place.
 
 The packet-rate savings depend on snapshot size, player activity and adoption. This is an audience and traffic reduction, not proof of a native server capacity limit. Local simulations cover subscriptions, two-peer transport, throttling, queue expiry, ordering, consent changes and dense-zone backoff. Live Retail/Forever validation is still required for channel joining/order, real latency, two-client delivery, and taint/blocked-action behavior. Owner `devlogall` can only show received events; regional subscriptions no longer provide a worldwide firehose of quest activity.
 
@@ -363,7 +363,7 @@ invite manually. Native invocation is not proof of server delivery.
   prevent those clients from reading locations. Initially solo clients need no
   extra packet; QTVR already carries solo status. Group changes stage a fresh
   revision/withdrawal, with the existing global ten-second burst floor.
-- Hovering a remote small party requests its roster with targeted global `QPGR`;
+- Hovering a remote small party requests its roster with targeted `QPGR` whispers when supported (global channel for older peers);
   `QPGM` replies carry one member each, at most five. They use the existing bounded
   send queue and token budget, not immediate five-packet bursts. No periodic full
   roster broadcast or query storm is added. Requests are correlated with the exact
@@ -384,3 +384,113 @@ invite manually. Native invocation is not proof of server delivery.
   and supports solo leader, party and raid token layouts. All rendering uses
   addon-owned regions. Offline adapter, transport and private-frame tests do not
   establish live rendering, server delivery or taint safety on Retail/Forever.
+
+## Nearby whisper positions and tooltip identity (6.2.0)
+
+- Updated peers advertise `QTCI|1,streamSupport,raceID,directSupport` in the existing paced
+  metadata snapshots. This small optional packet is isolated from established
+  presence, LOC and party packets, so older receivers can keep reading those.
+  There are no speculative whisper probes to older clients. A missing native
+  race ID is encoded as zero; native race/class labels fall back to sender text.
+- A peer must already have a fresh, consented location inside the current
+  minimap projection, advertise stream support, and be among the four closest
+  eligible peers. Both sharing and viewing must be enabled. The existing LFQP
+  filter, ignore list, map-floor compatibility, hidden minimap and runtime
+  restrictions apply. Server phase is deliberately not inferred from coordinates.
+- `QTSR` requests/renews a 12-second lease; `QTSP` carries its receiver-issued
+  token, sequence, timestamp, map ID and normalized position; `QTSX` cancels it.
+  Only WHISPER accepts these commands. Sender identity comes from the transport,
+  and requests cannot name a different reply recipient. Other commands remain
+  rejected on WHISPER, while the separate targeted-control allowlist below is accepted. Position packets cannot refresh a public LOC record or
+  revive its sharing consent. Stale requests, mismatched tokens, reordered samples,
+  withdrawals and disabled/departed peers lose their streams.
+- Each client sends at most five nearby whisper packets per second TOTAL,
+  including lease controls, across at most four nearest subscribers. Fair
+  scheduling shares this budget; a lone moving peer usually receives roughly
+  four to five samples per second, while crowded situations get fewer. Stationary
+  positions use a two-second heartbeat. No movement backlog accumulates.
+  Pending announcement/response traffic takes priority, native throttle pauses
+  are shared, and failed whispers back off before another attempt. These limits
+  are additional to the existing two-packet/second geographic send budget;
+  WHISPER is not assumed to bypass native/server throttling.
+- Only existing QT-owned minimap pins animate (up to 30 frames per second),
+  interpolating received samples over 0.2–1 seconds without extrapolation.
+  Map changes and large jumps snap. After three seconds without fresh position
+  data, the normal zone/global location remains the fallback. This animation
+  does not rebuild world-map UI or tooltip content on every animation frame.
+- Tooltip race names resolve through `C_CreatureInfo.GetRaceInfo(raceID)` and
+  classes through the local class-name table. Custom/unavailable races and
+  peers without a race ID retain their readable original names. No machine
+  translation, extra per-tooltip query, or additional identity heartbeat is used.
+- Private two-client transports, bounded-rate/lifecycle tests, private frame
+  animation tests and offline native adapter profiles validate the model only.
+  Real WHISPER delivery, movement quality, server throttling and taint still need
+  testing with two updated clients in both Retail and Forever.
+
+## Generic announcement decoration (6.2.0)
+
+- Generic announcements, info/warning headers and bubble fallbacks use the QT
+  logo. The old generic exclamation-mark texture received from older peers is
+  recognized at display time and replaced too. Quest-specific textures/atlases,
+  the chat-bubble icon and LFQP's glowing logo keep their existing meanings;
+  the quest-mob nameplate icon is unchanged.
+
+### Communication audit (2026-10-05, 6.2.0)
+
+Targeted party-join controls use one route: a supported whisper, otherwise the current group when the target is in it, or the global QT channel. Announcement publication constructs one event for local display, native party chat and wire encoding. Receive dispatch rejects oversized and NUL-containing wire packets before parsing. Nearby position streams yield to ready comparison-response jobs as well as queued announcements, but continue while a comparison is waiting for an unavailable local quest snapshot.
+
+In an isolated ten-minute workload with unchanged positions and fewer than ten peers, solo traffic fell from 638 packets to 68, and grouped traffic from 1,201 to 192. Moving workloads retained identical packet counts and payload bytes; higher-density idle savings vary with heartbeat cadence. These measurements exclude optional nearby whisper traffic and native/server latency. The local audit manifest, pre-change source copies, workload script and measurements are under `.local/audits/comms-2026-10-05/`.
+
+### Targeted control transport (architecture audit, 6.2.0)
+
+One-recipient traffic uses addon `WHISPER` when the target advertises direct-control support. A single route-selection helper covers quest comparisons (`QCMP`, `QCQE`, `QCDN`), party-roster lookups (`QPGR`, `QPGM`), join controls (`QJON`), party share controls (`QSHR`), and ping replies (`PONG`). Old or unknown peers retain their established group/global route; comparison requests no longer broadcast to both an unrelated channel and the target's group.
+
+Direct support adds one flag to the existing isolated QTCI presence fragment, without an extra heartbeat. Its bounded 512-peer cache expires from the snapshot's sample time and is reset with comms. Stream/location preferences do not disable direct controls. Old three-field QTCI metadata remains readable. A valid incoming direct request establishes its reply path without requiring reciprocal discovery first.
+
+Manual PING remains global plus group. Its optional trailing `direct1` flag lets updated receivers whisper their replies immediately after the requester's reload. Released parsers ignore the extra field and continue their original replies. PONG still requires an outstanding request and authoritative sender identity; an unrelated client does not receive whispered reports.
+
+The whisper control allowlist does not admit ANN, LVL, plain QT chat, presence snapshots, or public LOC messages. Existing sender/target/request correlation, ignore handling, bounded queues, timeouts, share consent and current-group membership checks remain enforced. Group-dependent queued direct requests and comparison responses stop on departure. Nearby streams retain their own strict three-command lease protocol. Both paths still honor native throttling; whispers do not imply unlimited bandwidth or delivery acknowledgement. Failed sends remain failed and expire/retry under their existing bounded policy rather than blindly duplicating an accepted whisper onto a broadcast channel.
+
+Offline three-client tests exercise Retail cross-realm name strings and Forever full names, zero bystander delivery of comparisons/rosters, immediate post-reload private ping replies, old-peer broadcast compatibility, capability expiry, throttling, cancellation, ignored peers, departed groups, and manual share/invite consent. Live addon whisper delivery must still be checked on both clients, including cross-realm/instance and faction restrictions where applicable.
+
+### Heartbeat ownership and consolidation (6.2.0)
+
+In geographic mode, the twenty-second presence producer refreshes extended QTVR version/tooltip metadata and party visuals together. It no longer alternates bare presence, basic version, and extended version stages or runs a separate version heartbeat. The old alternating behavior is retained only for the non-geographic path. Party-visual refresh does not depend on version parsing succeeding. Actual transmission remains owned by the density-paced local/group and slower global snapshot scheduler; a producer call is not an extra network message.
+
+A fresh valid version record already identifies the sender as a QT user, so full snapshots omit a redundant positive QTPR record when that record is included. Explicit departures are retained, and bare presence remains available when version data is absent, invalid or stale. Party-visual solo withdrawals stop after the last grouped publication's possible lifetime (600 seconds for snapshots, 180 for the legacy path); the staged clear then ages out normally. LFQP and location withdrawals retain their existing independent consent/freshness rules.
+
+The update loop has one public-position publisher in geographic mode. It avoids the separate five-second sample before geographic publication, and shares a fresh same-tick addon-owned sample with nearby position streams when both need it. The sample is never cached across ticks, and stream consent/restriction gates still run before use. Without a due geographic publication, a stream samples its own fresh position. Legacy location publication remains supported.
+
+Nearby lease renewals and stationary stream keepalives remain separate from public presence: they authorize short-lived peer streams and prevent smooth-position samples from expiring. Public heartbeat consolidation must not extend those leases or keep stale movement alive. QTLF and its optional tracked-quest QTLQ also remain paired because receiver sequencing requires them to match.
+
+The repeatable ten-minute public-traffic workload under `.local/audits/heartbeat-2026-10-05/` shows 68→68 packets and 8,602→8,161 payload bytes for idle sparse-zone solo presence; at 1,000 observed peers, public position reads drop from 129→13. These measurements exclude active nearby whispers and native/server latency. Publication cadence, geographic/group audiences and explicit privacy withdrawals remain intact.
+
+### Reload location cache and zone discovery (6.2.0)
+
+On logout/reload, QT saves at most 512 validated public locations in an addon-owned SavedVariables cache scoped to the current character. A saved point expires three minutes after its original sample, or sooner if its original live lifetime ends. Restoration translates wall-clock ages back to the current session clock; repeated reloads never renew the timestamp. Old, malformed, future-dated, wrong-character, ignored, and withdrawn positions are discarded. The cache is consumed once on initialization, respects the existing location display/filter options, and does not restore streaming leases or pretend that cached metadata is a new live message. Fresh LFQP status is also retained with its own original expiry, capped at three minutes from its sample. Party status and known small-party rosters retain the original party-revision confirmation expiry as described below. Other metadata continues to refresh through presence traffic or a requested hover reply.
+
+The one-time `QTDQ|1,<zone>` query is queued 2–5 seconds after discovering the current zone, once its channel is joined. It uses only that regional channel, never the global channel, group channel, whispers, or a zone merely viewed on the map. Zone changes can query again, with a 60-second per-client request floor. A request from another newcomer coalesces any pending local query. Receivers advance their existing regional metadata snapshot by a random 2–20 seconds, without postponing an already-due snapshot or advancing global publication. Each client considers at most one request per minute; with more than 32 known same-zone peers it responds with probability 32 / peer count. This limits expected acceleration in known crowded zones, not a hard server-wide count: population estimates and simultaneous cold starts can differ. Normal heartbeats continue filling in all remaining peers.
+
+Queries use the existing bounded queue, token budget, expiry and restriction checks. Queries queued for a departed current zone are discarded even if that channel remains subscribed for the world map. Older QT versions ignore the new query and still supply their regular snapshots. Offline checks cover two-peer dispatch, throttling-compatible queue ownership, routing, coalescing, dense-zone sampling, cache expiry/clock reset, live replacement, ignore/consent handling and capacity. Actual SavedVariables persistence and accelerated discovery still require live reload and two-updated-client checks.
+
+
+### Hover details and review repairs (6.2.0)
+
+Entering a QT player-name or map/minimap-dot tooltip can request fresh details through addon whispers. This is an entry action, not another periodic heartbeat: repainting an open tooltip does not send more requests. A known QT identity or a still-valid restored position is sufficient to query; no prior party leader or revision is required. Requests never use a public channel fallback. Older versions ignore these optional commands and continue their existing presence broadcasts.
+
+`QTHQ` requests correlate to `QTHD` responses by transport sender and a session-specific request ID. One client can attempt a request every two seconds, with at most eight outstanding requests and a 15-second response lifetime. Complete recent metadata or a successful reply is reused for 30 seconds; unanswered/unsupported peers have a 120-second retry floor. Responders allow one reply per sender per 30 seconds and one reply total every five seconds. Both directions use the existing bounded geographic send queue and token budget; they do not get a separate high-frequency channel or bypass congestion backoff.
+
+Replies contain freshly read party identity, version, join availability, LFQP status, tracked quest where sharing permits, and non-location character identity. Existing `QTB1` per-command sequence ordering prevents older public snapshots from replacing newer requested details. `QTHI` supplies class, level, faction and optional source-language race/class labels without publishing coordinates. The receiver uses local class/race lookups where available. A response is bounded to eight 175-byte fragments, validates its metadata-only command allowlist after complete assembly, and tolerates fragments arriving out of order. No partial reply is displayed. After current small-party identity arrives, the existing correlated roster exchange can fetch member names directly. All messages remain within the native 255-byte payload limit.
+
+Ignore, disable, restrictions, expiry, changed response rosters and withdrawn location consent invalidate queued hover work where relevant. Tracked quest details follow the same sharing consent as normal presence; basic character and party identity do not depend on publishing a location. Neither a restored point nor a request attempt establishes fresh live presence. Responses update owned data; normal tooltip repaint refreshes only the tooltip currently being hovered and never reopens a dismissed one.
+
+The review repairs also separate safe owned window dismissal from protected actions/layout, coalesce blocked objective rescans, respect exhausted nonquest tooltip scan retries, classify queued location-bearing packets by content, preserve nonboolean options when `/qt set` is misused, translate the compare column heading, and resolve available local class/race/zone labels in ping output. Shared window dismissal is supplied by private libchev 1.2.4 through the normal immutable vendor workflow.
+
+Offline validation covers complete two-peer dispatch, Forever names, lost/reordered/duplicate/expired/mismatched replies, privacy and ignore changes, long UTF-8 payloads, original snapshot ordering, queue budgets, and tooltip entry/repaint/leave behavior. Actual delivery timing, SavedVariables persistence, rendering and taint behavior still require live-client checks.
+
+
+The location reload cache also retains solo/group size, known leader/class/revision and a validated roster for parties of up to five. Party metadata expires at its original deadline and no later than three minutes after its sample. A validated member list remains reusable while fresh party metadata confirms its exact revision; it no longer expires independently after two minutes. Saved rosters use the matching revision confirmation's original sample and expiry, including transit age, with the same three-minute reload cap. QTVR-only size information is retained when a full party identity was unavailable. Restored party information is explicitly marked cached and requires a still-valid cached position until live presence arrives. Cached status never establishes live QT membership, starts roster traffic, or authorizes invites/shares. Fresh live information replaces it. Larger groups retain the known leader only. Repeated reloads, malformed revisions/rosters, expiry, ignores and explicit departures are regression-tested.
+
+The minimap menu now starts with the Looking for Questing Partners checkbox. Its selection/callback still reads the current saved setting and rechecks restrictions; Settings and the other actions follow it.
+
+Party tooltip summaries also use fresh existing QJST solo/grouped metadata when an exact size is unavailable. A newer contradictory summary hides the older count and roster; delayed older summaries cannot replace newer sampled party identity. Grouped-only reports show no invented count or members. These fallbacks work with published peers that do not support hover requests.

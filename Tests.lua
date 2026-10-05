@@ -7,10 +7,18 @@ local LibChev = QuestTogether.LibChev
 
 QuestTogether.tests = QuestTogether.tests or {}
 
-function QuestTogether:RegisterTest(name, fn)
+function QuestTogether:RegisterTest(name, fn, options)
+	-- Existing behavioral fixtures assert English wording. Presentation cases
+	-- explicitly retain the selected client locale, including the CI matrix.
+	local locale = options and options.locale or "enUS"
+	assert(locale == "enUS" or locale == "client", "invalid test locale policy")
 	self.tests[#self.tests + 1] = {
 		name = name,
-		fn = fn,
+		locale = locale,
+		fn = function()
+			QuestTogether.localizationTestLocale = locale == "enUS" and "enUS" or nil
+			fn()
+		end,
 	}
 end
 
@@ -233,7 +241,7 @@ local function WithIsolatedState(testFn)
 	end
 	local ok, err = pcall(function()
 		for _, key in ipairs({
-			"geographicCommsState", "recentCommSignatureIndex", "localizedQuestTitles", "runtimeStateStore", "debugController", "nameplateTooltipGuidByUnitToken", "nameplateScanTooltip",
+			"nearbyStreamState", "playerDetailsState", "directCommPeers", "geographicCommsState", "announcementChannelBindings", "recentCommSignatureIndex", "localizedQuestTitles", "runtimeStateStore", "debugController", "nameplateTooltipGuidByUnitToken", "nameplateScanTooltip",
 			"announcementBubbleScreenHostFrame", "personalBubbleEditModeDialog", "mapWorkWakeFrame", "mapWorkWakeState",
 			"optionsFrame", "whereToAnnounceFrame", "questPlatesFrame", "groupsFrame", "announcementsFrame", "profilesFrame",
 			"personalBubbleEditSession", "announcementChannelLocalID", "legacyAnnouncementChannelLocalID", "channelOrderWork", "questCompareResponseQueue",
@@ -261,7 +269,7 @@ local function WithIsolatedState(testFn)
 		QuestTogether.activeProfileKey = "MyPlayer-Realm"
 		QuestTogether.db.profile.enabled = false
 		QuestTogether.isEnabled = false
-		QuestTogether.localizationTestLocale = "enUS"
+		QuestTogether.localizationTestLocale = nil
 		QuestTogether.isInitialized = true
 		QuestTogether.isLoggingOut = false
 		QuestTogether.pendingNameplateVisualCleanup = false
@@ -4344,7 +4352,7 @@ end)
 
 QuestTogether:RegisterTest("chat log warning message uses warning styling", function()
 	local printed = {}
-	local expectedIcon = QuestTogether:GetQuestIconChatTag(14)
+	local expectedIcon = QuestTogether:GetDefaultAnnouncementIconChatTag(14)
 
 	QuestTogether.PrintChatLogRaw = function(_, message)
 		printed[#printed + 1] = message
@@ -4377,7 +4385,7 @@ end)
 
 QuestTogether:RegisterTest("chat log info message uses info styling", function()
 	local printed = {}
-	local expectedIcon = QuestTogether:GetQuestIconChatTag(14)
+	local expectedIcon = QuestTogether:GetDefaultAnnouncementIconChatTag(14)
 
 	QuestTogether.PrintChatLogRaw = function(_, message)
 		printed[#printed + 1] = message
@@ -4410,7 +4418,7 @@ end)
 
 QuestTogether:RegisterTest("console announcement message includes icon and player name", function()
 	local message = QuestTogether:BuildConsoleAnnouncementMessage("MyPlayer-Realm", "hello there", "MAGE")
-	AssertTrue(string.find(message, "|T" .. QuestTogether.NAMEPLATE_QUEST_ICON_TEXTURE, 1, true) ~= nil)
+	AssertTrue(string.find(message, "|T" .. QuestTogether.NAMEPLATE_PLAYER_ICON_TEXTURE, 1, true) ~= nil)
 	AssertTrue(string.find(message, "MyPlayer", 1, true) ~= nil)
 	AssertTrue(string.find(message, "|cffffd200: hello there|r", 1, true) ~= nil)
 	local chat = QuestTogether:BuildConsoleAnnouncementMessage("MyPlayer-Realm", "hello there", "MAGE", "QT_CHAT")
@@ -4855,7 +4863,7 @@ QuestTogether:RegisterTest("quest link title fallback preserves punctuation and 
 	}) do
 		AssertEquals(addon:NormalizeQuestLinkTitleText(text, 12345), "")
 	end
-	function addon:GetQuestTitle(id) return self.knownTitle or "Quest " .. tostring(id) end
+	function addon:GetQuestSnapshot() return self.knownTitle and { title = self.knownTitle } or nil end
 	function addon:GetQuestStatusLabel() return "Not Started" end
 	function addon:GetQuestShareableStatusLabel() return "Unknown" end
 	local unrelated = "|Hquesttogetherquest:99|h[Other quest]|h"
@@ -7372,7 +7380,7 @@ QuestTogether:RegisterTest("ping response uses both party and channel routes whe
 	AssertTrue(string.find(sent[2].message, "^PONG|", 1) ~= nil)
 end)
 
-QuestTogether:RegisterTest("quest compare request uses both party and channel routes when grouped", function()
+QuestTogether:RegisterTest("quest compare request uses only the recipient group route for an older peer", function()
 	local sent = {}
 	QuestTogether.isEnabled = true
 	QuestTogether.partyMembers = {
@@ -7415,15 +7423,11 @@ QuestTogether:RegisterTest("quest compare request uses both party and channel ro
 		AssertTrue(QuestTogether:RequestQuestCompare("Remote-Realm"))
 	end)
 
-	AssertEquals(#sent, 2)
+	AssertEquals(#sent, 1)
 	AssertEquals(sent[1].prefix, QuestTogether.commPrefix)
 	AssertEquals(sent[1].channel, "PARTY")
 	AssertEquals(sent[1].target, nil)
 	AssertTrue(string.find(sent[1].message, "^QCMP|", 1) ~= nil)
-	AssertEquals(sent[2].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[2].channel, "CHANNEL")
-	AssertEquals(sent[2].target, 13)
-	AssertTrue(string.find(sent[2].message, "^QCMP|", 1) ~= nil)
 end)
 
 QuestTogether:RegisterTest("quest compare request still sends to group when channel join is unavailable", function()
@@ -8635,4 +8639,24 @@ QuestTogether:RegisterTest("completed protected bubble playback avoids visual mu
 	end)
 
 	AssertEquals(QuestTogether.nameplateBubbleStateByFrame[bubble], nil)
+end)
+
+QuestTogether:RegisterTest("generic announcement icons use QT logo while specific icons retain their meaning", function()
+	local logo = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon"
+	local asset, kind = QuestTogether:GetAnnouncementIconInfo("SCAN_STATUS")
+	AssertEquals(asset, logo)
+	AssertEquals(kind, "texture")
+	for _, old in ipairs({ QuestTogether.NAMEPLATE_QUEST_ICON_TEXTURE, "Interface/OPTIONSFRAME/UI-OptionsFrame-NewFeatureIcon" }) do
+		asset, kind = QuestTogether:ResolveAnnouncementDisplayIcon("SCAN_STATUS", old, "texture")
+		AssertEquals(asset, logo)
+	end
+	asset, kind = QuestTogether:ResolveAnnouncementDisplayIcon("QUEST_ACCEPTED", "Interface/GossipFrame/AvailableQuestIcon", "texture")
+	AssertEquals(asset, "Interface/GossipFrame/AvailableQuestIcon")
+	asset, kind = QuestTogether:ResolveAnnouncementDisplayIcon("WORLD_QUEST_PROGRESS")
+	AssertEquals(asset, "worldquest-icon")
+	AssertEquals(kind, "atlas")
+	asset = QuestTogether:ResolveAnnouncementDisplayIcon("QT_CHAT")
+	AssertEquals(asset, "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon")
+	asset = QuestTogether:ResolveAnnouncementDisplayIcon("LOOKING_FOR_QUEST_PARTNERS")
+	AssertEquals(asset, "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon")
 end)

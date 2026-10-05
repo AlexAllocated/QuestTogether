@@ -1267,3 +1267,33 @@ QuestTogether:RegisterTest("later removal title is not replaced by an earlier co
 	AssertEqual(#addon.announcements, 1)
 	AssertEqual(addon.announcements[1][2], "Title received before removal")
 end)
+
+QuestTogether:RegisterTest("restricted progress bursts coalesce without losing acceptance lifetimes or latest values", function()
+	local a = NewQuestFixture()
+	local reads = 0
+	a.API.GetNumQuestLeaderBoards = function() reads = reads + 1; return 1 end
+	for id = 1, 30 do a:WatchQuest(id, { title = "Photo Quest" }) end
+	a.combat = true
+	for i = 1, 100 do
+		a:UNIT_QUEST_LOG_CHANGED(nil, "player")
+		a:QUEST_LOG_UPDATE()
+	end
+	AssertEqual(reads, 0)
+	AssertEqual(#a.onQuestLogUpdate, 1, "keep only one current-state scan while blocked")
+	local acceptanceRan = false
+	a:QueueQuestLogTask(function() acceptanceRan = true end)
+	a.liveValue, a.liveText = 81, "81% Locations Photographed"
+	a.combat = false
+	a:DrainQueuedQuestLogTasks()
+	AssertEqual(reads, 30)
+	assert(acceptanceRan, "other lifecycle work must remain in order")
+	AssertEqual(a.tracker[1].objectiveValues[1], 81)
+	AssertEqual(#a.announcements, 30)
+	a:UNIT_QUEST_LOG_CHANGED(nil, "player")
+	a:DrainQueuedQuestLogTasks()
+	AssertEqual(reads, 60, "a later update must still scan")
+	a:UNIT_QUEST_LOG_CHANGED(nil, "player")
+	a:ResetQuestEventState()
+	a:UNIT_QUEST_LOG_CHANGED(nil, "player")
+	AssertEqual(#a.onQuestLogUpdate, 1, "reset cannot retain a marker from the old queue")
+end)

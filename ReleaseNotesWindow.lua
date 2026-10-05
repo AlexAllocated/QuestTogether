@@ -224,8 +224,12 @@ local function Create(addon, parent)
 		end
 		Call(addon, frame.close, art[1], texture)
 	end
-	Script(addon, frame, frame.close, "OnClick", function()
-		Call(addon, frame, "Hide")
+	-- Dismissal is safe on accessible, unprotected owned regions even when
+	-- combat starts after presentation. Keep layout/native actions restricted.
+	Call(addon, frame.close, "SetScript", "OnClick", function()
+		if LibChev.CanMutateOwnedRegion(frame) and LibChev.CanMutateOwnedRegion(frame.close) then
+			frame:Hide()
+		end
 	end)
 	frame.settings = New(addon, "Button", frame)
 	Call(addon, frame.settings, "SetSize", 135, 24)

@@ -74,6 +74,38 @@ local function Group(a, count)
 		s.localAt = nil
 	end
 end
+QT:RegisterTest("party summary uses current join metadata without inventing counts or reviving stale rosters", function()
+	local a, name = Peer(), "Friend-Realm"
+	a.known[name] = true
+	a.partyJoinState = { peers = { [name] = { grouped = "0", at = 100 } } }
+	Eq(a:GetPlayerPartyVisualInfo(name).size, 0)
+	a.partyJoinState.peers[name].grouped = "1"
+	Eq(a:GetPlayerPartyVisualInfo(name).grouped, true)
+	Eq(a:GetPlayerPartyVisualInfo(name).size, nil)
+	Eq(a:RequestPartyVisualRoster(name), false)
+	Eq(a:HandlePartyVisualMetadata("1,3,Friend-Realm,MAGE,123", name), true)
+	Eq(a:GetPlayerPartyVisualInfo(name).size, 3)
+	a.now = 101
+	a.partyJoinState.peers[name] = { grouped = "0", at = 101 }
+	Eq(a:GetPlayerPartyVisualInfo(name).size, 0)
+	Eq(a:GetPlayerPartyVisualInfo(name).leader, nil)
+	-- Delivery order is not sample order: an older solo snapshot cannot win.
+	a.partyJoinState.peers[name].sampledAt = 99
+	Eq(a:GetPlayerPartyVisualInfo(name).size, 3)
+	a:GetPartyVisualState().peers[name] = nil
+	a.partyJoinState.peers[name] = { grouped = "1", at = 100 }
+	a.now = 225
+	Eq(a:GetPlayerPartyVisualInfo(name), nil)
+	a.partyJoinState.peers[name].lifetime = 600
+	Eq(a:GetPlayerPartyVisualInfo(name).grouped, true)
+	a.partyJoinState.peers[name].grouped = "2"
+	Eq(a:GetPlayerPartyVisualInfo(name), nil)
+	a.partyJoinState.peers[name].grouped = "0"
+	a.ignored = name
+	Eq(a:GetPlayerPartyVisualInfo(name), nil)
+	a.ignored, a.known[name] = nil, nil
+	Eq(a:GetPlayerPartyVisualInfo(name), nil)
+end)
 local function Deliver(a, wire, sender)
 	local command, payload = wire:match("^([^|]+)|(.*)$")
 	local handlers = {
@@ -260,4 +292,57 @@ QT:RegisterTest("party roster chunks fit long multilingual full names without tr
 		assert(Deliver(a, b.wire[i], b.name))
 	end
 	Eq(#a:GetPlayerPartyVisualInfo(b.name).members, 5)
+end)
+
+QT:RegisterTest("solo party visual withdrawals stop after the last grouped publication can expire", function()
+	for _, geographic in ipairs({false,true}) do
+		local a = Peer()
+		if geographic then a.geographicCommsState = {} end
+		Group(a, 3)
+		assert(a:BroadcastPartyVisualMetadata())
+		local deadline = a.now + (geographic and 600 or 180)
+		a.now = a.now + 1; Group(a, 0)
+		assert(a:BroadcastPartyVisualMetadata())
+		a.now = deadline - 1
+		assert(a:BroadcastPartyVisualMetadata())
+		local count = #a.wire
+		a.now = deadline
+		Eq(a:BroadcastPartyVisualMetadata(), false)
+		Eq(#a.wire, count)
+		a.now = a.now + 1; Group(a, 3)
+		assert(a:BroadcastPartyVisualMetadata())
+		a.now = a.now + 1; Group(a, 0)
+		assert(a:BroadcastPartyVisualMetadata())
+	end
+end)
+
+QT:RegisterTest("matching fresh party revisions reuse rosters beyond the old two minute fetch expiry", function()
+	local a,b=Peer(),Peer("Leader-Realm")
+	Start(a,b,3)
+	for i=2,#b.wire do assert(Deliver(a,b.wire[i],b.name)) end
+	local key=a:GetPlayerPartyVisualInfo(b.name).key
+	local roster=a:GetPartyVisualState().rosters[key]
+	Eq(roster.at,100)
+	a.now=250
+	Eq(#a:GetPlayerPartyVisualInfo(b.name).members,3)
+	Eq(a:RequestPartyVisualRoster(b.name),false)
+	Eq(#a.wire,1)
+	-- A later heartbeat confirms the same hash; no re-download is needed even
+	-- though the first roster fetch is now five minutes old.
+	a.now,b.now=400,400
+	assert(b:BroadcastPartyVisualMetadata())
+	assert(Deliver(a,b.wire[#b.wire],b.name))
+	Eq(#a:GetPlayerPartyVisualInfo(b.name).members,3)
+	Eq(a:RequestPartyVisualRoster(b.name),false)
+	Eq(roster.at,100,"hover must not manufacture a fresh fetch timestamp")
+	-- A same-size membership/class change still invalidates the list via hash.
+	b.partyMembers["Member2-Realm"].classFile="MAGE"
+	b:GetPartyVisualState().localAt=nil
+	a.now,b.now=410,410
+	assert(b:BroadcastPartyVisualMetadata())
+	assert(Deliver(a,b.wire[#b.wire],b.name))
+	Eq(a:GetPlayerPartyVisualInfo(b.name).members,nil)
+	Eq(a:RequestPartyVisualRoster(b.name),true)
+	a.now=590
+	Eq(a:GetPlayerPartyVisualInfo(b.name),nil,"an old list cannot keep expired party metadata alive")
 end)

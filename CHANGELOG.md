@@ -6,21 +6,28 @@
 
 ## 6.1.2
 
-More responsive nearby player dots and clearer translated announcements.
+Smoother nearby dots, faster player details, and more reliable communication.
 
-### Minimap player dots
+### Smoother minimap movement
 
-- Fixed missing QT player dots when the minimap does not provide a map ID. QT now uses your current map when needed.
+- Nearby players can exchange positions through paced addon whispers. Smooth movement favors up to four closest eligible peers and respects sharing preferences, filters, ignores, and traffic limits.
+- Both players need this update for nearby streams and direct hover replies. Older versions keep normal broadcasts; server delays and restrictions can still affect delivery.
 
-### Faster local location updates
+### Faster discovery and party details
 
-- Location updates now target once per second with fewer than 10 known QT users in your zone, 5–10 seconds with 10–19, and 15–20 seconds at 100. Intervals lengthen gradually between these levels; timings at 500 or more are unchanged.
-- Fast updates send compact, freshly sampled locations while other player details keep their slower heartbeat. Existing traffic limits still apply, so congestion may delay delivery. Other players need this update to send faster positions.
+- Hovering a player name or dot can request fresh details directly. Requests are rate-limited, and unchanged party member lists no longer expire after two minutes.
+- Recent locations, partner status, and known party details survive /reload for up to three minutes from their original samples. Entering a zone also requests a paced discovery refresh.
+- Tooltips use known solo or grouped status while waiting for an exact party size. Party member rows now identify QT users with a small logo, keeping names aligned.
 
-### Clearer translated announcements
+### Clearer localization and presentation
 
-- Quest event labels such as Quest Accepted now use your language even when a local quest title or optional translation metadata is unavailable.
-- When WoW cannot provide a local quest title, QT keeps the sender’s readable title. Progress messages still retain their original text when they cannot be safely reconstructed.
+- Race names, ping details, quest data, and more interface text use local translations when available. Unavailable quest translations retain readable sender text; progress avoids borrowing unrelated local objective descriptions.
+- Generic announcements now use the QT logo. Looking for Questing Partners is the first option in the minimap menu.
+
+### Communication and reliability
+
+- Comparisons, party rosters, join and share requests, and ping replies prefer direct whispers with compatible peers. Consolidated heartbeats and fewer unchanged location updates reduce redundant public traffic.
+- Fixed repeated quest scans, excessive nameplate retries, dialogs that could not close during restrictions, and /qt set accepting non-toggle settings. Disabling location sharing no longer drops unrelated queued requests.
 
 ## 6.1.1
 

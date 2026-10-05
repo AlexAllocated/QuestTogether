@@ -213,8 +213,8 @@ function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName)
 			if self:IsGroupedSender(member.name) then
 				routes = route and { { distribution = route } } or nil
 			elseif session.mode == "target" then
-				-- Nonparty peers listen on the existing QT channel. A whisper is
-				-- not a supported receive route, and unrelated groups must not receive this request.
+				-- The request helper upgrades this legacy route to a whisper when
+				-- the peer advertises direct controls. Unrelated groups never receive it.
 				routes = { { distribution = "CHANNEL", requiresChannelJoin = true } }
 			end
 			if routes and not self:IsIgnoredPlayerName(member.name) then
@@ -318,7 +318,8 @@ function QuestTogether:BuildPartyQuestDiffRows()
 		end
 	end
 	for id, entry in pairs(union) do
-		local row = { questId = id, title = self:GetLocalizedQuestTitle(id) or entry.questTitle, cells = {}, missing = 0 }
+		local localTitle = self:GetLocalizedQuestTitle(id)
+		local row = { questId = id, title = localTitle or entry.questTitle, needsLocalTitle = not localTitle, cells = {}, missing = 0 }
 		for i, member in ipairs(session.members) do
 			local quest = member.entries[id]
 			row.cells[i] = quest and (quest.isComplete and "Ready" or "Have")
@@ -407,7 +408,7 @@ function QuestTogether:SendPartyQuestShareMessage(target, questId, requestId, st
 	return self:SendWireMessageToAnnouncementRoutes(
 		self:SerializeWireMessage("QSHR", table.concat(fields, ",")),
 		"party quest share",
-		{ { distribution = route } }
+		self:GetTargetedCommRoutes(target, { { distribution = route } })
 	)
 end
 
@@ -527,7 +528,8 @@ end
 function QuestTogether:HandlePartyQuestShareMessage(payload, sender, route)
 	if
 		not self.isEnabled
-		or not GROUP_ROUTES[route]
+		or (not GROUP_ROUTES[route] and route ~= "WHISPER")
+		or (route == "WHISPER" and not self:IsGroupedSender(sender))
 		or sender == PlayerName(self)
 		or self:IsIgnoredPlayerName(sender)
 	then
@@ -554,6 +556,7 @@ function QuestTogether:HandlePartyQuestShareMessage(payload, sender, route)
 	if target ~= PlayerName(self) or not self:IsGroupedSender(sender) then
 		return false
 	end
+	if route == "WHISPER" then self:RememberDirectCommPeer(sender, true) end
 	local state, now = self:GetPartyQuestShareState(), self.API.GetTime()
 	if status ~= "request" then
 		local request = state.outgoing[requestId]

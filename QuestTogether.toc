@@ -60,6 +60,8 @@ PlayerPlates.lua
 QuestPartnerQuest.lua
 PlayerTooltips.lua
 LocationPins.lua
+NearbyStreams.lua
+PlayerDetails.lua
 EventHandlers.lua
 Options.lua
 Diagnostics.lua
@@ -88,3 +90,5 @@ scripts/regression_party_visuals.lua
 scripts/regression_player_tooltips.lua
 
 scripts/regression_geographic_comms.lua
+scripts/regression_nearby_streams.lua
+scripts/regression_player_details.lua

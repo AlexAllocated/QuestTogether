@@ -112,6 +112,20 @@ local function Request(a, sender, id)
 		sender or "Friend-Realm"
 	)
 end
+
+QT:RegisterTest("join control messages use only the route that can reach their recipient", function()
+	local a = Peer()
+	function a:GetGroupAnnouncementDistribution() return "PARTY" end
+	function a:SendWireMessageToAnnouncementRoutes(_, _, routes) self.routes = routes; return true end
+	assert(a:SendPartyJoinMessage("Outside-Realm", "req-1", "pending"))
+	Equal(#a.routes, 1)
+	Equal(a.routes[1].distribution, "CHANNEL")
+	Equal(a.routes[1].channelName, "QuestTogether")
+	a.partyMembers["Member-Realm"] = {}
+	assert(a:SendPartyJoinMessage("Member-Realm", "req-2", "unavailable"))
+	Equal(#a.routes, 1)
+	Equal(a.routes[1].distribution, "PARTY")
+end)
 local function Pair()
 	local a, b = Peer("Requestor-Realm"), Peer("Host-Realm")
 	a.other, b.other, a.grouped, a.count = b, a, false, 0
@@ -284,7 +298,7 @@ QT:RegisterTest("join transport rejects wrong destinations senders routes and un
 	Equal(a:HandlePartyJoinMessage("1," .. pending.id .. ",Other-Realm,sent", b.name), false)
 	Equal(a.partyJoinState.outgoing, pending)
 	local c = Peer()
-	for _, route in ipairs({ "WHISPER", "GUILD", "SAY" }) do
+	for _, route in ipairs({ "RAID_WARNING", "GUILD", "SAY" }) do
 		c:OnCommReceived(c.commPrefix, "QJON|1,x," .. c.name .. ",request", route, "Friend-Realm")
 	end
 	Equal(c.partyJoinState, nil)
@@ -748,4 +762,22 @@ QT:RegisterTest("party chat join fallbacks share the bounded request budget and 
 	Equal(next(member.partyJoinState.incoming), nil)
 	member:UpdatePartyJoin()
 	Equal(sent, 10)
+end)
+
+QT:RegisterTest("direct join requests acknowledge by whisper and still require invite consent", function()
+	local a = Peer("Host-Realm")
+	function a:SendWireMessageToAnnouncementRoutes(wire, _, routes)
+		self.wire[#self.wire + 1] = wire
+		self.lastRoutes = routes
+		return true
+	end
+	a:OnCommReceived(a.commPrefix, "QJON|1,direct-join," .. a.name .. ",request", "WHISPER", "Friend-Realm")
+	local request = a:GetNextPartyJoinRequest()
+	assert(request)
+	Equal(#a.invites, 0)
+	Equal(a.lastRoutes[1].distribution, "WHISPER")
+	Equal(a.lastRoutes[1].target, "Friend-Realm")
+	a:FinishPartyJoin(request, "declined")
+	Equal(#a.invites, 0)
+	Equal(a.lastRoutes[1].distribution, "WHISPER")
 end)

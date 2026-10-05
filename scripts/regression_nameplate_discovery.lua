@@ -1542,3 +1542,22 @@ QT:RegisterTest("reused icons and tints leave old cleanup while quarantined hand
 		Decorated(state)
 	end)
 end)
+
+QT:RegisterTest("ordinary health and threat events respect exhausted tooltip discovery retries", function()
+	WithPlate(function(state)
+		state.tooltipData = { lines = { { type = "None", leftText = "Ordinary Wolf" } } }
+		QT:OnNameplateAdded("nameplate1")
+		state.drain()
+		local initial = state.reads
+		assert(initial > 1 and initial <= 5)
+		for i = 1, 100 do
+			QT:HandleNameplateEvent(i % 2 == 0 and "UNIT_HEALTH" or "UNIT_THREAT_LIST_UPDATE", "nameplate1")
+			state.advance(0.1)
+		end
+		Equal(state.reads, initial, "presentation ticks must not restart exhausted discovery")
+		state.tooltipData = nil
+		QT:HandleNameplateEvent("UPDATE_MOUSEOVER_UNIT")
+		state.drain()
+		Decorated(state)
+	end)
+end)

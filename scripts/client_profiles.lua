@@ -960,6 +960,38 @@ return rawRow end
 		DoEmote = nil
 		assert(addon.API.DoEmote("CHEER", "MyPlayer") == false)
 
+		do
+			local oldRace, oldInfo, oldClasses = UnitRace, C_CreatureInfo, LOCALIZED_CLASS_NAMES_MALE
+			UnitRace = function() return "Zwerg", "Dwarf", 3 end
+			assert(addon.API.GetPlayerRaceID() == 3)
+			C_CreatureInfo = { GetRaceInfo = function(id) assert(id == 3) return { raceName = "Dwarf" } end }
+			LOCALIZED_CLASS_NAMES_MALE = { MAGE = "Mage" }
+			assert(addon.API.GetLocalizedRaceName(3) == "Dwarf")
+			assert(addon.API.GetLocalizedClassName("MAGE") == "Mage")
+			for _, value in ipairs({ secret, inaccessible, false, 0, -1, 1.5, 100001 }) do
+				UnitRace = function() return "Zwerg", "Dwarf", value end
+				assert(addon.API.GetPlayerRaceID() == nil)
+				assert(addon.API.GetLocalizedRaceName(value) == nil)
+			end
+			for _, value in ipairs({ secret, inaccessible, false, 42 }) do
+				C_CreatureInfo = { GetRaceInfo = function() return value end }
+				assert(addon.API.GetLocalizedRaceName(3) == nil)
+				C_CreatureInfo = { GetRaceInfo = function() return { raceName = value } end }
+				LOCALIZED_CLASS_NAMES_MALE = { MAGE = value }
+				assert(addon.API.GetLocalizedRaceName(3) == nil)
+				assert(addon.API.GetLocalizedClassName("MAGE") == nil)
+			end
+			C_CreatureInfo, LOCALIZED_CLASS_NAMES_MALE = inaccessible, inaccessible
+			assert(addon.API.GetLocalizedRaceName(3) == nil)
+			assert(addon.API.GetLocalizedClassName("MAGE") == nil)
+			C_CreatureInfo, LOCALIZED_CLASS_NAMES_MALE = nil, nil
+			assert(addon.API.GetLocalizedRaceName(3) == nil)
+			assert(addon.API.GetLocalizedClassName("MAGE") == nil)
+			UnitRace = function() error("unavailable") end
+			assert(addon.API.GetPlayerRaceID() == nil)
+			assert(inaccessibleReads == 0)
+			UnitRace, C_CreatureInfo, LOCALIZED_CLASS_NAMES_MALE = oldRace, oldInfo, oldClasses
+		end
 		local className, classFile = "Priest", "PRIEST"
 		UnitClass = function() return className, classFile end
 		local safeName, safeFile = addon.API.UnitClass("player")

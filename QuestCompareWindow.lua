@@ -171,7 +171,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	frame.content = self:CreatePartyQuestUIFrame("Frame", nil, frame.viewport)
 	frame.content:SetSize(QUEST_WIDTH + ACTION_WIDTH, VISIBLE_ROWS * ROW_HEIGHT + 40)
 	frame.viewport:SetScrollChild(frame.content)
-	frame.questHeader = Label(frame.content, 4, 0, QUEST_WIDTH - 8, "QUEST", "GameFontNormalSmall")
+	frame.questHeader = Label(frame.content, 4, 0, QUEST_WIDTH - 8, L("QUEST"), "GameFontNormalSmall")
 	frame.headers, frame.rows = {}, {}
 	for i = 1, VISIBLE_ROWS do
 		local row = self:CreatePartyQuestUIFrame("Frame", nil, frame.content)
@@ -251,12 +251,33 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 end
 
 function QuestTogether:QueuePartyQuestCompareRender()
-	if not self.partyQuestCompareSession then
+	local session = self.partyQuestCompareSession
+	if not session then
 		return
 	end
 	self:ScheduleDeferredWork("foreign_frame_mutation", "party_compare_render", function()
-		self:RenderPartyQuestCompare()
+		if self.partyQuestCompareSession == session then self:RenderPartyQuestCompare() end
 	end, 0.05, "party compare render")
+end
+
+function QuestTogether:QueuePartyQuestTitleRefresh(rows)
+	local session, api = self.partyQuestCompareSession, self.API or {}
+	if not session or session.titleRefreshPending or type(api.RequestLocalizedQuestTitle) ~= "function"
+		or type(api.GetLocalizedQuestTitle) ~= "function" then return end
+	local now = self:SafeToNumber(api.GetTime and api.GetTime()) or 0
+	for _, row in ipairs(rows) do
+		local attempt = session.titleRequests and session.titleRequests[row.questId]
+		-- Work through titles beyond the ten-per-30-second load budget. Give each
+		-- title two attempts and one final cache read; failed IDs cannot poll forever.
+		if row.needsLocalTitle and (not attempt or attempt.count < 2 or now < attempt.time + 5) then
+			session.titleRefreshPending = true
+			self:ScheduleDeferredWork("quest_snapshot_refresh", "party_compare_titles", function()
+				session.titleRefreshPending = nil
+				if self.partyQuestCompareSession == session then self:RenderPartyQuestCompare() end
+			end, 30, "party compare titles")
+			return
+		end
+	end
 end
 
 function QuestTogether:RenderPartyQuestCompare()
@@ -407,6 +428,7 @@ function QuestTogether:RenderPartyQuestCompare()
 			)
 	)
 	frame.rendering = false
+	self:QueuePartyQuestTitleRefresh(rows)
 end
 
 function QuestTogether:CreatePartyQuestSharePrompt()
@@ -435,41 +457,44 @@ function QuestTogether:CreatePartyQuestSharePrompt()
 	return frame
 end
 
+-- Clearing a retired prompt is owned teardown, not permission to show the
+-- next request or invoke a native share/invite while restricted.
+function QuestTogether:HideRetiredPartyRequestPrompt(frame, request)
+	if frame and (not request or frame.request ~= request) then
+		frame.request = nil
+		if self.LibChev.CanMutateOwnedRegion(frame) then frame:Hide() end
+	end
+end
+
 function QuestTogether:QueuePartyQuestSharePrompt()
 	if not self.partyQuestShareState then
 		return
 	end
+	self:HideRetiredPartyRequestPrompt(self.partyQuestSharePrompt, self.isEnabled and self:GetNextPartyQuestShareRequest() or nil)
 	self:ScheduleDeferredWork("foreign_frame_mutation", "party_share_prompt", function()
 		self:RenderPartyQuestSharePrompt()
 	end, 0, "party share prompt")
 end
 
 function QuestTogether:RenderPartyQuestSharePrompt()
+	local request = self.isEnabled and self:GetNextPartyQuestShareRequest() or nil
+	local frame = self.partyQuestSharePrompt
+	self:HideRetiredPartyRequestPrompt(frame, request)
 	if self:IsWorkBlocked("foreign_frame_mutation") then
 		return
 	end
-	local request = self:GetNextPartyQuestShareRequest()
-	local frame = self.partyQuestSharePrompt
-	if not request then
-		if frame then
-			frame.request = nil
-			frame:Hide()
-		end
-		return
-	end
+	if not request then return end
 	frame = frame or self:CreatePartyQuestSharePrompt()
-	if not frame then
+	if not self.LibChev.CanMutateOwnedRegion(frame) then
 		return
 	end
 	if frame.request ~= request then
 		frame.request = request
 		frame.always:SetChecked(false)
-		frame.message:SetText(
-			request.sender
-				.. L(" would like you to share\n[")
-				.. self:GetQuestTitle(request.questId)
-				.. L("]\nwith the party.")
-		)
+		frame.message:SetText(string.format(
+			L("%s would like you to share\n[%s]\nwith the party."),
+			request.sender, self:GetQuestTitle(request.questId)
+		))
 	end
 	frame:Show()
 end
@@ -503,15 +528,13 @@ function QuestTogether:CreatePartyJoinPrompt()
 end
 
 function QuestTogether:RenderPartyJoinPrompt()
-	if self:IsWorkBlocked("foreign_frame_mutation") then return end
 	local request = self.isEnabled and self:GetNextPartyJoinRequest() or nil
 	local frame = rawget(self, "partyJoinPrompt")
-	if not request then
-		if frame then frame.request = nil; frame:Hide() end
-		return
-	end
+	self:HideRetiredPartyRequestPrompt(frame, request)
+	if self:IsWorkBlocked("foreign_frame_mutation") then return end
+	if not request then return end
 	frame = frame or self:CreatePartyJoinPrompt()
-	if not frame then return end
+	if not self.LibChev.CanMutateOwnedRegion(frame) then return end
 	if frame.request ~= request then
 		frame.request = request
 		frame.friends:SetChecked(self:GetOption("autoInviteFriends") == true)

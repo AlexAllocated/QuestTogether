@@ -309,17 +309,17 @@ QuestTogether:RegisterTest(
 		Equal(#a.menus, 2)
 		local entries = a.menus[1].entries
 		Equal(#entries, 9)
-		Equal(entries[1].label, "Settings")
-		Equal(entries[2].label, "Compare Party Quests")
-		Equal(entries[3].label, "Open Quest Journal")
-		Equal(entries[4].label, "Patch Notes")
-		Equal(entries[5].label, "Looking for Questing Partners")
-		Equal(entries[5].isSelected(), false)
+		Equal(entries[1].label, "Looking for Questing Partners")
+		Equal(entries[1].isSelected(), false)
+		Equal(entries[2].label, "Settings")
+		Equal(entries[3].label, "Compare Party Quests")
+		Equal(entries[4].label, "Open Quest Journal")
+		Equal(entries[5].label, "Patch Notes")
 		Equal(entries[6].label, "Send QT chat message")
 		assert(entries[7].divider)
 		Equal(entries[8].label, "Move QuestTogether Logs to Separate Window")
 		Equal(entries[9].label, "Hide Minimap Icon")
-		for _, index in ipairs({ 1, 2, 3, 4, 6, 8 }) do
+		for _, index in ipairs({ 2, 3, 4, 5, 6, 8 }) do
 			entries[index].callback()
 		end
 		Equal(a.settings, 1)
@@ -344,7 +344,7 @@ QuestTogether:RegisterTest("minimap stale menu actions recheck restrictions and 
 	a:ShowMinimapMenu(a.minimapButton)
 	local menu = a.menus[1]
 	a.blocked = true
-	for index = 1, 4 do
+	for index = 1, 5 do
 		menu.entries[index].callback()
 	end
 	menu.entries[6].callback()
@@ -362,25 +362,25 @@ QuestTogether:RegisterTest("minimap stale menu actions recheck restrictions and 
 	Equal(a:ShowMinimapMenu(a.minimapButton), false)
 	Equal(#a.menus, 1)
 	a.blocked, a.isEnabled = false, false
-	menu.entries[2].callback()
+	menu.entries[3].callback()
 	Equal(a.compares, 0)
 	menu.entries[6].callback()
 	Equal(a.chatDrafts, nil)
 	local disabled = Menu()
 	a:PopulateMinimapMenu(disabled)
-	Equal(disabled.entries[2].enabled, false)
+	Equal(disabled.entries[3].enabled, false)
 	Equal(disabled.entries[6].enabled, false)
-	assert(disabled.entries[1].enabled and disabled.entries[3].enabled)
-	disabled.entries[1].callback()
-	disabled.entries[3].callback()
+	assert(disabled.entries[2].enabled and disabled.entries[4].enabled)
+	disabled.entries[2].callback()
+	disabled.entries[4].callback()
 	Equal(a.settings, 1)
 	Equal(a.journals, 1)
 	a.journalAvailable = false
-	menu.entries[3].callback()
+	menu.entries[4].callback()
 	Equal(a.journals, 1)
 	local unavailable = Menu()
 	a:PopulateMinimapMenu(unavailable)
-	Equal(unavailable.entries[3].enabled, false)
+	Equal(unavailable.entries[4].enabled, false)
 	a.journalAvailable, a.journalSucceeds = true, false
 	Equal(a:OpenQuestJournalFromMinimap(), false)
 	Equal(a.journals, 2)
@@ -390,7 +390,7 @@ QuestTogether:RegisterTest("minimap partner shortcut toggles the current saved v
 	local a = Fixture()
 	a:InitializeMinimapLauncher()
 	a:ShowMinimapMenu(a.minimapButton)
-	local entry = a.menus[1].entries[5]
+	local entry = a.menus[1].entries[1]
 	Equal(entry.isSelected(), false)
 	entry.callback()
 	Equal(a:GetOption("lookingForQuestPartners"), true)

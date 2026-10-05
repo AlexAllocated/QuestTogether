@@ -1,7 +1,7 @@
 -- This module runs in /qt test too: all regions and adapters are private.
 local QuestTogether = _G.QuestTogether
 local activeFixtures
-local function Register(name, callback)
+local function Register(name, callback, options)
 	QuestTogether:RegisterTest(name, function()
 		activeFixtures = {}
 		local ok, err = pcall(callback)
@@ -13,7 +13,7 @@ local function Register(name, callback)
 		if not ok then
 			error(err, 0)
 		end
-	end)
+	end, options)
 end
 local function Equal(actual, expected)
 	assert(actual == expected, "expected " .. tostring(expected) .. ", got " .. tostring(actual))
@@ -41,8 +41,8 @@ local function Region(addon, parent, kind)
 			error("unsafe owned read")
 		end
 	end
-	function region:Check()
-		if addon.blocked or self:IsForbidden() or self:IsProtected() then
+	function region:Check(teardown)
+		if (addon.blocked and not teardown) or self:IsForbidden() or self:IsProtected() then
 			addon.invalidCalls = (addon.invalidCalls or 0) + 1
 			error("unsafe owned mutation")
 		end
@@ -53,7 +53,7 @@ local function Region(addon, parent, kind)
 		self.shown = true
 	end
 	function region:Hide()
-		self:Check()
+		self:Check(true)
 		self.shown = false
 	end
 	function region:SetSize(width, height)
@@ -444,7 +444,8 @@ Register("release notes stale callbacks and rendering respect restrictions and q
 		for _, region in ipairs(a.regions) do
 			after = after + region.writes
 		end
-		Equal(after, writes)
+		Equal(after, writes + (boundary == "restricted" and 1 or 0))
+		Equal(frame.shown, boundary ~= "restricted")
 		a.blocked, a.parent.forbidden, a.parent.protected = false, false, false
 		assert(a:RenderReleaseNotesWindow(Notes(), "5.9.2", false))
 	end
@@ -576,3 +577,14 @@ Register("release notes render translated content with owned controls in every l
 	end
 	QuestTogether.localizationTestLocale = previous
 end)
+
+Register("client locale renders current notes and window navigation", function()
+	assert(QuestTogether.localizationTestLocale == nil)
+	local locale = QuestTogether:GetEventLocale()
+	local a = Fixture()
+	local notes = locale == "enUS" and QuestTogether.releaseNotes or QuestTogether.releaseNotesByLocale[locale]
+	assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
+	Equal(a.releaseNotesWindow.labels[1].text, QuestTogether.TranslateForLocale("What's new", locale))
+	Equal(a.releaseNotesWindow.labels[2].text, notes.welcome)
+	Equal(a.releaseNotesWindow.footer.text, QuestTogether.TranslateForLocale("Read this again: /qt notes", locale))
+end, { locale = "client" })

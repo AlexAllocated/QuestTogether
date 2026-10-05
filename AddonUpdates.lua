@@ -218,7 +218,8 @@ function QT:BroadcastAddonVersion(forPresenceHeartbeat)
 		return false
 	end
 	state.lastAttempt, state.interval = now, RETRY_INTERVAL
-	if forPresenceHeartbeat then self:BroadcastPartyVisualMetadata() end
+	local geographic = rawget(self, "geographicCommsState")
+	if forPresenceHeartbeat and not geographic then self:BroadcastPartyVisualMetadata() end
 	local version = self:GetAddonVersion()
 	if not self:ParseAddonVersion(version) then
 		return false
@@ -228,7 +229,7 @@ function QT:BroadcastAddonVersion(forPresenceHeartbeat)
 	local payload = "1," .. version
 	-- Alternate extended and legacy version heartbeats. Old clients require an
 	-- exact version string; they must continue receiving readable advertisements.
-	if forPresenceHeartbeat and not state.lastVersionIncludedStats then
+	if forPresenceHeartbeat and (geographic or not state.lastVersionIncludedStats) then
 		local count = self:GetMonitoredQuestCount()
 		local partySize = self:GetLocalPartySize()
 		payload = "2," .. version .. "," .. (count and tostring(count) or "") .. "," .. (partySize and tostring(partySize) or "")

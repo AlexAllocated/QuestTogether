@@ -180,4 +180,10 @@ assert(#engineBoundaryCalls == 0, "live-test isolation failure: " .. table.conca
 -- The shared headless runner already prints failures and the summary through
 -- QT's console adapter; avoid duplicating its presentation here.
 print("registered=" .. tostring(result.total))
+local presentationCases = 0
+for _, case in ipairs(QuestTogether.tests) do
+	if case.locale == "client" then presentationCases = presentationCases + 1 end
+end
+assert(presentationCases >= 6, "client-locale presentation coverage must be registered")
+print("presentationLocale=" .. QuestTogether.locale .. " cases=" .. presentationCases)
 os.exit(success and 0 or 1)

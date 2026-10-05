@@ -1,27 +1,36 @@
 {
-  "source_sha256": "99619c9517c94840c105fc6e0884f5b07adf833cd8b6bc0a4a29cb625d1a2a06",
+  "source_sha256": "34b9c5bf348f0048984fcf94d05f0bcb73922a207a887aa1e8b3621e8acf1193",
   "notes": {
     "version": "6.1.2",
-    "welcome": "Punti dei giocatori vicini più reattivi e annunci tradotti più chiari.",
+    "welcome": "Punti vicini più fluidi, dettagli dei giocatori più rapidi e comunicazioni più affidabili.",
     "sections": [
       {
-        "title": "Punti dei giocatori sulla minimappa",
+        "title": "Movimento più fluido sulla minimappa",
         "items": [
-          "Risolto il problema dei punti dei giocatori QT mancanti quando la minimappa non fornisce un ID mappa. QT ora usa la tua mappa attuale quando necessario."
+          "I giocatori vicini possono scambiarsi le posizioni tramite sussurri dell’addon a frequenza limitata. Il movimento fluido privilegia fino a quattro dei giocatori idonei più vicini e rispetta condivisione, filtri, giocatori ignorati e limiti di traffico.",
+          "Entrambi i giocatori devono installare questo aggiornamento per i flussi di posizione e le risposte dirette al passaggio del puntatore. Le versioni precedenti mantengono le normali trasmissioni; ritardi e restrizioni del server possono ancora influire sulla consegna."
         ]
       },
       {
-        "title": "Aggiornamenti più rapidi della posizione locale",
+        "title": "Rilevamento e dettagli del gruppo più rapidi",
         "items": [
-          "Gli aggiornamenti della posizione ora vengono inviati circa una volta al secondo con meno di 10 utenti QT noti nella tua zona, ogni 5–10 secondi con 10–19 e ogni 15–20 secondi a 100. Gli intervalli si allungano gradualmente tra questi livelli; le tempistiche a 500 o più restano invariate.",
-          "Gli aggiornamenti rapidi inviano posizioni compatte e appena rilevate, mentre gli altri dettagli dei giocatori mantengono il loro heartbeat più lento. I limiti di traffico esistenti sono ancora validi, quindi la congestione può ritardare la consegna. Gli altri giocatori devono avere questo aggiornamento per inviare posizioni più rapide."
+          "Passare il puntatore su un nome o un punto può richiedere direttamente dettagli aggiornati. Le richieste hanno una frequenza limitata e gli elenchi dei membri invariati non scadono più dopo due minuti.",
+          "Posizioni recenti, stato di ricerca di compagni e dettagli noti del gruppo sopravvivono a /reload per un massimo di tre minuti dal rilevamento originale. Entrare in una zona richiede anche un aggiornamento scaglionato del rilevamento.",
+          "I tooltip usano lo stato noto di giocatore solo o in gruppo mentre attendono la dimensione esatta del gruppo. Un piccolo logo identifica gli utenti QT nell’elenco dei membri, mantenendo i nomi allineati."
         ]
       },
       {
-        "title": "Annunci tradotti più chiari",
+        "title": "Traduzioni e presentazione più chiare",
         "items": [
-          "Le etichette degli eventi delle missioni, come Missione accettata, ora usano la tua lingua anche quando non è disponibile un titolo locale della missione o metadati di traduzione opzionali.",
-          "Quando WoW non può fornire un titolo locale della missione, QT conserva il titolo leggibile del mittente. I messaggi di progresso mantengono comunque il loro testo originale quando non possono essere ricostruiti in modo sicuro."
+          "Nomi delle razze, dettagli del ping, dati delle missioni e altri testi dell’interfaccia usano le traduzioni locali disponibili. Se manca una traduzione della missione, resta il testo leggibile del mittente; i progressi non usano descrizioni di obiettivi locali non pertinenti.",
+          "Gli annunci generici ora usano il logo QT. La ricerca di compagni di missioni è la prima opzione nel menu della minimappa."
+        ]
+      },
+      {
+        "title": "Comunicazione e affidabilità",
+        "items": [
+          "Confronti, elenchi del gruppo, richieste di ingresso e condivisione e risposte ping preferiscono sussurri diretti con giocatori compatibili. Messaggi periodici consolidati e meno aggiornamenti di posizioni invariate riducono il traffico pubblico ridondante.",
+          "Corretti controlli ripetuti delle missioni, tentativi eccessivi sulle barre dei nomi, finestre impossibili da chiudere durante le restrizioni e /qt set che accettava impostazioni diverse da attiva/disattiva. Disattivare la condivisione della posizione non elimina più altre richieste in coda."
         ]
       }
     ]

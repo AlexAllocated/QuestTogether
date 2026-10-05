@@ -1,27 +1,36 @@
 {
-  "source_sha256": "99619c9517c94840c105fc6e0884f5b07adf833cd8b6bc0a4a29cb625d1a2a06",
+  "source_sha256": "34b9c5bf348f0048984fcf94d05f0bcb73922a207a887aa1e8b3621e8acf1193",
   "notes": {
     "version": "6.1.2",
-    "welcome": "Reaktionsschnellere Punkte für Spieler in der Nähe und klarere übersetzte Meldungen.",
+    "welcome": "Flüssigere Punkte in der Nähe, schnellere Spielerdetails und zuverlässigere Kommunikation.",
     "sections": [
       {
-        "title": "Minikarten-Spielerpunkte",
+        "title": "Flüssigere Bewegung auf der Minikarte",
         "items": [
-          "Fehlende QT-Spielerpunkte behoben, wenn die Minikarte keine Karten-ID bereitstellt. QT verwendet bei Bedarf jetzt deine aktuelle Karte."
+          "Spieler in der Nähe können Positionen über begrenzte Addon-Flüsternachrichten austauschen. Flüssige Bewegungen bevorzugen bis zu vier der nächsten geeigneten Spieler und beachten Freigaben, Filter, ignorierte Spieler und Übertragungslimits.",
+          "Beide Spieler benötigen dieses Update für Positionsstreams und direkte Antworten beim Darüberfahren. Ältere Versionen senden weiterhin reguläre Meldungen; Serververzögerungen und Einschränkungen können die Zustellung weiterhin beeinflussen."
         ]
       },
       {
-        "title": "Schnellere lokale Standortaktualisierungen",
+        "title": "Schnellere Erkennung und Gruppendetails",
         "items": [
-          "Standortaktualisierungen erfolgen jetzt etwa einmal pro Sekunde bei weniger als 10 bekannten QT-Nutzern in deiner Zone, alle 5–10 Sekunden bei 10–19 und alle 15–20 Sekunden bei 100. Die Intervalle werden zwischen diesen Stufen schrittweise länger; Timings bei 500 oder mehr bleiben unverändert.",
-          "Schnelle Aktualisierungen senden kompakte, frisch erfasste Standorte, während andere Spielerdetails ihren langsameren Heartbeat beibehalten. Bestehende Traffic-Limits gelten weiterhin, daher kann Überlastung die Zustellung verzögern. Andere Spieler benötigen dieses Update, um schnellere Positionen zu senden."
+          "Beim Darüberfahren über einen Spielernamen oder Punkt können aktuelle Details direkt angefordert werden. Anfragen sind begrenzt, und unveränderte Gruppenlisten laufen nicht mehr nach zwei Minuten ab.",
+          "Aktuelle Positionen, Partnersuchstatus und bekannte Gruppendetails bleiben nach /reload bis zu drei Minuten ab ihrer ursprünglichen Erfassung erhalten. Beim Betreten eines Gebiets wird außerdem eine zeitlich verteilte Erkennungsaktualisierung angefordert.",
+          "Tooltips zeigen einen bekannten Solo- oder Gruppenstatus an, während die genaue Gruppengröße noch fehlt. Ein kleines Logo kennzeichnet QT-Nutzer in der Mitgliederliste; die Namen bleiben bündig."
         ]
       },
       {
-        "title": "Klarere übersetzte Meldungen",
+        "title": "Klarere Übersetzungen und Darstellung",
         "items": [
-          "Questsereignis-Bezeichnungen wie Quest angenommen verwenden jetzt deine Sprache, selbst wenn ein lokaler Questtitel oder optionale Übersetzungsmetadaten nicht verfügbar sind.",
-          "Wenn WoW keinen lokalen Questtitel bereitstellen kann, behält QT den lesbaren Titel des Absenders bei. Fortschrittsmeldungen behalten weiterhin ihren ursprünglichen Text bei, wenn sie nicht sicher rekonstruiert werden können."
+          "Volksnamen, Ping-Details, Questdaten und weitere Oberflächentexte nutzen verfügbare lokale Übersetzungen. Fehlt eine Questübersetzung, bleibt der lesbare Text des Absenders erhalten; Fortschrittstexte übernehmen keine unpassenden lokalen Zielbeschreibungen.",
+          "Allgemeine Ankündigungen verwenden jetzt das QT-Logo. Die Suche nach Questpartnern steht im Minikartenmenü an erster Stelle."
+        ]
+      },
+      {
+        "title": "Kommunikation und Zuverlässigkeit",
+        "items": [
+          "Vergleiche, Gruppenlisten, Beitritts- und Teilanfragen sowie Ping-Antworten bevorzugen direkte Flüsternachrichten mit kompatiblen Spielern. Zusammengefasste Statusmeldungen und weniger unveränderte Positionsupdates reduzieren unnötigen öffentlichen Datenverkehr.",
+          "Wiederholte Questprüfungen, übermäßige Namensplakettenprüfungen, während Einschränkungen nicht schließbare Fenster und nicht umschaltbare Einstellungen bei /qt set wurden korrigiert. Das Abschalten der Positionsfreigabe verwirft keine anderen wartenden Anfragen mehr."
         ]
       }
     ]

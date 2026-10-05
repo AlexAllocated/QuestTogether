@@ -13,7 +13,7 @@ end
 -- QTLF and LOC have strict legacy decoders. A separate, small optional packet
 -- keeps older peers' partner status and map dots working unchanged. Its sequence
 -- must match QTLF before we display it, including when transport reorders them.
-function QT:BroadcastQuestPartnerQuest(state, looking)
+function QT:BuildQuestPartnerQuestPayload(state, looking)
 	local questID
 	if looking and self:CanPublishPlayerLocation() and not self:IsRuntimeRestricted() then
 		local getter = self.API.GetActiveTrackedQuestID
@@ -23,12 +23,6 @@ function QT:BroadcastQuestPartnerQuest(state, looking)
 				questID = QuestID(self, value)
 			end
 		end
-	end
-	-- Stay silent for clients without a tracked quest unless withdrawing one.
-	local now = Now(self)
-	local last = state.lastPartnerQuestOnAt
-	if not questID and (not now or not last or now < last or now - last >= LIFETIME) then
-		return false
 	end
 	local payload = string.format("1,%s,%d,%d", state.partnerSession, state.partnerSequence, questID or 0)
 	local title = ""
@@ -45,8 +39,20 @@ function QT:BroadcastQuestPartnerQuest(state, looking)
 			title = ""
 		end
 	end
+	return payload .. "," .. title, questID
+end
+
+function QT:BroadcastQuestPartnerQuest(state, looking)
+	local payload, questID = self:BuildQuestPartnerQuestPayload(state, looking)
+	-- Stay silent for clients without a tracked quest unless withdrawing one.
+	local now = Now(self)
+	local last = state.lastPartnerQuestOnAt
+	local withdrawalLifetime = rawget(self, "geographicCommsState") and 600 or LIFETIME
+	if not questID and (not now or not last or now < last or now - last >= withdrawalLifetime) then
+		return false
+	end
 	local sent = self:SendWireMessageToAnnouncementRoutes(
-		self:SerializeWireMessage("QTLQ", payload .. "," .. title),
+		self:SerializeWireMessage("QTLQ", payload),
 		"quest partner tracked quest"
 	)
 	-- A partially successful route can still publish data. Keep sending clears on

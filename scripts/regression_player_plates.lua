@@ -183,7 +183,7 @@ QT:RegisterTest("every supported communication discovers only its authenticated 
 			local sender = regional and "Anakin Othername" or "Friend-Realm"
 			local message = command .. "|" .. payload
 			a:OnCommReceived("UnrelatedPrefix", message, "PARTY", sender)
-			a:OnCommReceived(a.commPrefix, message, "WHISPER", sender)
+			a:OnCommReceived(a.commPrefix, message, "GUILD", sender)
 			a:OnCommReceived(a.commPrefix, message, "CHANNEL", sender, 8, "OtherChannel")
 			a:OnCommReceived(a.commPrefix, message, "PARTY", a.name)
 			a:OnCommReceived(a.commPrefix, command .. "|malformed", "PARTY", sender)

@@ -716,6 +716,7 @@ QuestTogether.runtimeEvents = {
 	"QUEST_REMOVED",
 	"UNIT_QUEST_LOG_CHANGED",
 	"QUEST_LOG_UPDATE",
+	"QUEST_DATA_LOAD_RESULT",
 	"QUEST_POI_UPDATE",
 	"AREA_POIS_UPDATED",
 	"PLAYER_INSIDE_QUEST_BLOB_STATE_CHANGED",
@@ -1027,6 +1028,25 @@ QuestTogether.API = QuestTogether.API or {
 			return nil
 		end
 		return raceName
+	end,
+	GetPlayerRaceID = function()
+		local ok, _, _, raceID = pcall(UnitRace, "player")
+		local id = ok and QuestTogether:SafeToNumber(raceID) or nil
+		return id and id >= 1 and id <= 100000 and id == math.floor(id) and id or nil
+	end,
+	GetLocalizedRaceName = function(raceID)
+		local id = QuestTogether:SafeToNumber(raceID)
+		if not id or id < 1 or id > 100000 or id ~= math.floor(id) or not CanAccessForeignTable(C_CreatureInfo) then return nil end
+		local getter = C_CreatureInfo.GetRaceInfo
+		if not CanAccessForeignValue(getter) or type(getter) ~= "function" then return nil end
+		local ok, info = pcall(getter, id)
+		if not ok or not CanAccessForeignTable(info) then return nil end
+		return ReadOptionalString(info.raceName)
+	end,
+	GetLocalizedClassName = function(classFile)
+		local token = ReadOptionalString(classFile)
+		if not token or not CanAccessForeignTable(LOCALIZED_CLASS_NAMES_MALE) then return nil end
+		return ReadOptionalString(LOCALIZED_CLASS_NAMES_MALE[token])
 	end,
 	UnitLevel = function(unitToken)
 		local ok, levelValue = pcall(UnitLevel, unitToken)
@@ -3017,8 +3037,8 @@ function QuestTogether:PrintChatLogSystemMessage(message)
 end
 
 function QuestTogether:PrintChatLogWarningMessage(message)
-	local warningPrefix = "|cffff8800Warning:|r"
-	local iconTag = self.GetQuestIconChatTag and self:GetQuestIconChatTag(14) or ""
+	local warningPrefix = "|cffff8800" .. L("Warning:") .. "|r"
+	local iconTag = self.GetDefaultAnnouncementIconChatTag and self:GetDefaultAnnouncementIconChatTag(14) or ""
 	if iconTag ~= "" then
 		warningPrefix = iconTag .. warningPrefix
 	end
@@ -3029,8 +3049,8 @@ function QuestTogether:PrintChatLogWarningMessage(message)
 end
 
 function QuestTogether:PrintChatLogInfoMessage(message)
-	local infoPrefix = "|cff33ff99Info:|r"
-	local iconTag = self.GetQuestIconChatTag and self:GetQuestIconChatTag(14) or ""
+	local infoPrefix = "|cff33ff99" .. L("Info:") .. "|r"
+	local iconTag = self.GetDefaultAnnouncementIconChatTag and self:GetDefaultAnnouncementIconChatTag(14) or ""
 	if iconTag ~= "" then
 		infoPrefix = iconTag .. infoPrefix
 	end
@@ -3482,14 +3502,8 @@ function QuestTogether:PrintChatLogRaw(message)
 	end
 end
 
-function QuestTogether:GetQuestIconChatTag(size)
-	local texturePath = self.NAMEPLATE_QUEST_ICON_TEXTURE
-	if type(texturePath) ~= "string" or texturePath == "" then
-		return ""
-	end
-
-	local iconSize = math.max(1, math.floor((self:SafeToNumber(size) or 14)))
-	return string.format("|T%s:%d:%d:0:0|t", texturePath, iconSize, iconSize)
+function QuestTogether:GetDefaultAnnouncementIconChatTag(size)
+	return self:GetIconChatTagFromAsset(self.NAMEPLATE_PLAYER_ICON_TEXTURE, "texture", size)
 end
 
 function QuestTogether:GetIconChatTagFromAsset(iconAsset, iconKind, size)
@@ -3944,7 +3958,7 @@ function QuestTogether:GetQuestStateAnnouncementIconInfo(eventType, questId)
 		end
 	end
 
-	local texturePath = self.NAMEPLATE_QUEST_ICON_TEXTURE
+	local texturePath = self.NAMEPLATE_PLAYER_ICON_TEXTURE
 	if type(texturePath) ~= "string" or texturePath == "" then
 		return nil, nil
 	end
@@ -3993,6 +4007,7 @@ function QuestTogether:GetBonusObjectiveAnnouncementIconInfo(eventType, questId)
 end
 
 function QuestTogether:GetAnnouncementIconInfo(eventType, questId)
+	if eventType == "QT_CHAT" then return "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon", "texture" end
 	if eventType == "LOOKING_FOR_QUEST_PARTNERS" then
 		return "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon", "texture"
 	end
@@ -4006,20 +4021,27 @@ function QuestTogether:GetAnnouncementIconInfo(eventType, questId)
 	return self:GetQuestStateAnnouncementIconInfo(eventType, questId)
 end
 
-function QuestTogether:GetAnnouncementIconChatTag(eventType, size, iconAsset, iconKind)
-	local asset = iconAsset
-	local kind = iconKind
+function QuestTogether:ResolveAnnouncementDisplayIcon(eventType, iconAsset, iconKind)
 	if eventType == "LOOKING_FOR_QUEST_PARTNERS" then
-		asset, kind = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon", "texture"
+		return "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon", "texture"
 	end
-	if type(asset) ~= "string" or asset == "" then
-		asset, kind = self:GetAnnouncementIconInfo(eventType, nil)
+	if type(iconAsset) == "string" and iconAsset ~= "" then
+		-- Earlier clients explicitly sent the generic exclamation mark. Treat
+		-- that decoration as a fallback too; retain actual quest-specific icons.
+		if iconKind ~= "atlas" and iconAsset:lower():gsub("/", "\\") == self.NAMEPLATE_QUEST_ICON_TEXTURE:lower() then
+			return self.NAMEPLATE_PLAYER_ICON_TEXTURE, "texture"
+		end
+		return iconAsset, iconKind
 	end
+	return self:GetAnnouncementIconInfo(eventType, nil)
+end
+
+function QuestTogether:GetAnnouncementIconChatTag(eventType, size, iconAsset, iconKind)
+	local asset, kind = self:ResolveAnnouncementDisplayIcon(eventType, iconAsset, iconKind)
 	if type(asset) == "string" and asset ~= "" then
 		return self:GetIconChatTagFromAsset(asset, kind, size)
 	end
-
-	return self:GetQuestIconChatTag(size)
+	return self:GetDefaultAnnouncementIconChatTag(size)
 end
 
 function QuestTogether:GetPlayerAnnouncementLocationInfo()
@@ -4375,14 +4397,7 @@ function QuestTogether:BuildQuestStatusMessage(questId, fallbackTitle)
 		return L("Quest status unavailable.")
 	end
 
-	local questTitle = self:GetQuestTitle(numericQuestId)
-	local normalizedFallbackTitle = self:NormalizeQuestLinkTitleText(fallbackTitle, numericQuestId)
-	if
-		normalizedFallbackTitle ~= ""
-		and (questTitle == nil or questTitle == "" or questTitle == (L("Quest ") .. tostring(numericQuestId)))
-	then
-		questTitle = normalizedFallbackTitle
-	end
+	local questTitle = self:GetQuestDisplayTitle(numericQuestId, fallbackTitle)
 	local statusLabel = self:GetQuestStatusLabel(numericQuestId)
 	local shareableLabel = self:GetQuestShareableStatusLabel(numericQuestId)
 	local questLabel = self:BuildChatLogQuestLabel(numericQuestId, questTitle)
@@ -4476,10 +4491,7 @@ function QuestTogether:BuildQuestCompareMessage(_remoteName, compareEntry)
 	end
 
 	local questId = self:SafeToNumber(compareEntry.questId)
-	local questTitle = tostring(compareEntry.questTitle or "")
-	if questTitle == "" then
-		questTitle = self:GetQuestTitle(questId)
-	end
+	local questTitle = self:GetQuestDisplayTitle(questId, compareEntry.questTitle)
 	local localStatus = self:GetQuestStatusLabel(questId)
 	local shareableLabel = self:GetQuestCompareShareableToYouLabel(compareEntry.isPushable)
 	local remoteStatus = self:GetQuestCompareRemoteStatusLabel(compareEntry.isComplete)
@@ -4548,8 +4560,10 @@ function QuestTogether:BuildPingResponseMessage(pongData)
 	local speakerColor = self:GetClassColorCode(pongData.classFile)
 	local coloredName = speakerColor .. tostring(speakerLabel or L("Unknown")) .. "|r"
 	local realmName = tostring(pongData.realmName or "")
-	local raceName = tostring(pongData.raceName or "")
-	local className = tostring(pongData.className or pongData.classFile or "")
+	local identityOK, raceName, className = pcall(self.GetPlayerTooltipIdentity, self, { name = senderName, race = pongData.raceName,
+		className = pongData.className, classFile = pongData.classFile })
+	if not identityOK then raceName, className = pongData.raceName, pongData.className end
+	raceName, className = tostring(raceName or ""), tostring(className or pongData.classFile or "")
 	local level = self:SafeToNumber(pongData.level)
 
 	local parts = {}
@@ -4573,6 +4587,15 @@ function QuestTogether:BuildPingResponseMessage(pongData)
 
 	local locationBits = {}
 	local zoneName = tostring(pongData.zoneName or "")
+	local mapID = self:SafeToNumber(pongData.mapID)
+	if not self:IsRuntimeRestricted() and mapID and mapID > 0 and mapID == math.floor(mapID)
+		and self.API.GetMapInfo then
+		local ok, info = pcall(self.API.GetMapInfo, mapID)
+		if ok and self:CanAccessTable(info) then
+			local localized = self:SafeTrimString(info.name, "")
+			if localized ~= "" then zoneName = localized end
+		end
+	end
 	if zoneName ~= "" then
 		locationBits[#locationBits + 1] = zoneName
 	end
@@ -5908,6 +5931,10 @@ function QuestTogether:HandleSlashCommand(input)
 			self:Print(L("Unknown option key: ") .. tostring(optionKey))
 			return
 		end
+		if type(self.DEFAULTS.profile[optionKey]) ~= "boolean" then
+			self:Print(L("This command only changes on/off settings."))
+			return
+		end
 		self:SetOption(optionKey, boolValue)
 		self:Print(optionKey .. " = " .. tostring(self:GetOption(optionKey)))
 		if self.RefreshOptionsWindow then
@@ -6067,10 +6094,13 @@ function QuestTogether:ScanQuestLog(shouldAnnounceTaskAreas)
 		end
 	end
 	self:SetRuntimeFlag("questTrackerReady", true)
-	local scanMessage = self:GetMonitoredQuestCount() .. L(" quests are being monitored by QuestTogether.")
+	local monitoredCount = self:GetMonitoredQuestCount()
+	local scanMessage = self:GetMonitoredQuestCountText(monitoredCount)
 	self:PrintConsoleAnnouncement(scanMessage)
 	if self.BuildLocalAnnouncementEvent and self.SendAnnouncementWireEvent then
-		local eventData = self:BuildLocalAnnouncementEvent("SCAN_STATUS", scanMessage)
+		local eventData = self:BuildLocalAnnouncementEvent("SCAN_STATUS", scanMessage, nil, {
+			eventFacts = self:BuildAnnouncementFacts("SCAN_STATUS", nil, nil, nil, monitoredCount),
+		})
 		if eventData then
 			self:SendAnnouncementWireEvent(eventData)
 		end
@@ -6099,13 +6129,14 @@ function QuestTogether:WatchQuest(questId, questInfo)
 	if self:IsPlaceholderQuestTitle(numericQuestId, questTitle) then
 		local existingTitle = existingTrackedQuest and existingTrackedQuest.title or nil
 		if type(existingTitle) == "string" and existingTitle ~= "" and not self:IsPlaceholderQuestTitle(numericQuestId, existingTitle) then
-			questTitle = existingTitle
+			if existingTrackedQuest.titleLocale == self:GetEventLocale() then questTitle = existingTitle end
 		end
 	end
 	local initialStatusState = self.GetTrackedQuestStatusState and self:GetTrackedQuestStatusState(numericQuestId, true) or nil
 
 	tracker[numericQuestId] = {
 		title = questTitle,
+		titleLocale = self:GetEventLocale(),
 		taskAnnouncementType = self:GetTaskAnnouncementType(numericQuestId),
 		objectives = {},
 		-- Cached numeric objective values used to gate progress announcements.
@@ -6215,6 +6246,7 @@ function QuestTogether:PLAYER_LEAVING_WORLD()
 end
 
 function QuestTogether:PLAYER_LOGOUT()
+	if self.SavePlayerLocationCache then self:SavePlayerLocationCache() end
 	self.isLoggingOut = true
 end
 

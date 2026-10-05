@@ -136,6 +136,11 @@ function QuestTogether:OpenQuestJournalFromMinimap()
 end
 
 function QuestTogether:PopulateMinimapMenu(rootDescription)
+	rootDescription:CreateCheckbox(L("Looking for Questing Partners"), function()
+		return self:GetOption("lookingForQuestPartners") == true
+	end, function()
+		if not self:IsRuntimeRestricted() then self:HandleQuestPartnerCommand("toggle") end
+	end)
 	rootDescription:CreateButton(L("Settings"), function()
 		if not self:IsRuntimeRestricted() then
 			self:OpenOptionsWindow()
@@ -155,11 +160,6 @@ function QuestTogether:PopulateMinimapMenu(rootDescription)
 		if not self:IsRuntimeRestricted() then
 			self:OpenReleaseNotes()
 		end
-	end)
-	rootDescription:CreateCheckbox(L("Looking for Questing Partners"), function()
-		return self:GetOption("lookingForQuestPartners") == true
-	end, function()
-		if not self:IsRuntimeRestricted() then self:HandleQuestPartnerCommand("toggle") end
 	end)
 	local chat = rootDescription:CreateButton(L("Send QT chat message"), function()
 		if self.isEnabled and not self:IsRuntimeRestricted() and self.API.OpenQTChatComposer then

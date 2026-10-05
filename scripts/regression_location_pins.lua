@@ -1,7 +1,7 @@
 -- Private frames and adapters only: safe in the live /qt test command.
 local QuestTogether = _G.QuestTogether
 local activeFixtures
-local function Register(name, callback)
+local function Register(name, callback, options)
 	QuestTogether:RegisterTest(name, function()
 		activeFixtures = {}
 		local ok, err = pcall(callback)
@@ -13,7 +13,7 @@ local function Register(name, callback)
 		if not ok then
 			error(err, 0)
 		end
-	end)
+	end, options)
 end
 local function Equal(a, b)
 	assert(a == b, "expected " .. tostring(b) .. ", got " .. tostring(a))
@@ -538,6 +538,13 @@ Register("remote dot and chat tooltips show fresh party size without tracked que
 	text = a.chatLogPlayerTooltipState.tooltipLabel.text
 	Equal(text:find("Tracked quests:", 1, true), nil)
 	assert(a.chatLogPlayerTooltipState.tooltipIntro.text:find("Party status unknown", 1, true))
+	a.partyJoinState = { peers = { [row.name] = { grouped = "0", at = now } } }
+	a:UpdateChatLogPlayerTooltip()
+	assert(a.chatLogPlayerTooltipState.tooltipIntro.text:find("Solo", 1, true))
+	a.partyJoinState.peers[row.name].grouped = "1"
+	a:UpdateChatLogPlayerTooltip()
+	assert(a.chatLogPlayerTooltipState.tooltipIntro.text:find("In a party", 1, true))
+	Equal(a.chatLogPlayerTooltipState.tooltipIntro.text:find("Party of 4", 1, true), nil)
 end)
 
 Register("player tooltip reuses faction and class styling without leaking the previous player", function()
@@ -1071,4 +1078,138 @@ Register("party highlights reset for recycled pins and restriction cleanup never
 	assert(not a.locationPinState.tooltip.shown)
 	a.blocked=false; a:RefreshPlayerLocationPins()
 	assert(not Pin(a,"map",2).partyCrown.shown); Near(pin.frame.alpha,1)
+end)
+
+Register("party tooltip reserves aligned QT icon slots and updates recognition on reused rows", function()
+	local a = Fixture()
+	local info = VisualParty(a)
+	a.API.GetTime = function() return 100 end
+	function a:GetPlayerFullName() return "Third-Realm" end
+	function a:NormalizeMemberName(name) return name end
+	a.qtPlayerPresenceState = { peers = { ["Leader-Realm"] = 90 } }
+	a.rows.map = { Row("Friend-Realm") }
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnEnter()
+	local rows = a.locationPinState.partyRows
+	assert(rows[1].qtIcon.shown and not rows[2].qtIcon.shown and rows[3].qtIcon.shown)
+	Equal(rows[1].qtIcon.texture, a.NAMEPLATE_PLAYER_ICON_TEXTURE)
+	for _, row in ipairs(rows) do
+		Equal(row.dot.points[1][2], rows[1].dot.points[1][2])
+		Equal(row.label.points[1][2], rows[1].label.points[1][2])
+	end
+	local allocated = #a.regions
+	a.qtPlayerPresenceState.peers["Leader-Realm"] = nil
+	a.qtPlayerPresenceState.peers["Friend-Realm"] = 100
+	info.members[3] = { name = "Other-Realm", classFile = "MAGE" }
+	a:RefreshPlayerLocationPins()
+	assert(not rows[1].qtIcon.shown and rows[2].qtIcon.shown and not rows[3].qtIcon.shown)
+	assert(rows[1].crown.shown)
+	Equal(#a.regions, allocated)
+	local chat = Frame(a)
+	function a:GetChatLogTooltipCursorPosition() return 200, 100 end
+	a.playerLocationState = { peers = { ["Friend-Realm"] = a.rows.map[1] } }
+	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Friend-Realm"))
+	local chatRows = a.chatLogPlayerTooltipState.partyRows
+	assert(not chatRows[1].qtIcon.shown and chatRows[2].qtIcon.shown and not chatRows[3].qtIcon.shown)
+end)
+
+Register("nearby stream animation moves only owned minimap pins and respects foreign frame guards", function()
+	local a = Fixture()
+	a.now = 100
+	a.API.GetTime = function() return a.now end
+	a.db = { profile = { showPlayerLocations = true, sharePlayerLocation = true } }
+	local row = Row(nil, 0.5, 0.5)
+	row.receivedAt, row.mask = 100, 3
+	a.playerLocationState = { peers = { [row.name] = row } }
+	a.rows.map, a.rows.minimap = {row}, {row}
+	a.nearbyStreamState = { wanted = { [row.name] = { sample = {
+		mapID = 1, x = 0.54, y = 0.5, fromX = 0.5, fromY = 0.5, at = 100, duration = 1,
+	} } } }
+	a:RefreshPlayerLocationPins()
+	local pin, mapPin = Pin(a, "minimap"), Pin(a, "map")
+	local frames, mapWrites, miniWrites = #a.frames, mapPin.frame.writes, pin.frame.writes
+	a.now = 100.5
+	a:RefreshNearbyStreamPins()
+	Equal(#a.frames, frames)
+	Equal(mapPin.frame.writes, mapWrites)
+	assert(pin.frame.writes > miniWrites)
+	Near(pin.frame.points[#pin.frame.points][4], 120)
+	Near(pin.frame.points[#pin.frame.points][5], -100)
+	a.miniParent.forbidden = true
+	a:RefreshNearbyStreamPins()
+	Equal(a.invalidCalls or 0, 0)
+	a.miniParent.forbidden = false
+	a.blocked = true
+	a:RefreshNearbyStreamPins()
+	Equal(a.invalidCalls or 0, 0)
+	Equal(a.locationPinState.surfaces.minimap.frame.shown, false)
+end)
+
+Register("map and chat tooltip intro use native localized race and class labels", function()
+	local a = Fixture()
+	a.now = 100
+	a.API.GetTime = function() return a.now end
+	a.API.GetLocalizedRaceName = function(id) return id == 3 and "Dwarf" or nil end
+	a.API.GetLocalizedClassName = function(token) return token == "MAGE" and "Mage" or nil end
+	local row = Row()
+	row.race, row.className = "Zwerg", "Magier"
+	a.nearbyStreamState = { capabilities = { [row.name] = { receivedAt = 100, raceID = 3 } }, wanted = {} }
+	a.rows.map = { row }
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnEnter()
+	assert(a.locationPinState.tooltipIntro.text:find("Dwarf", 1, true))
+	assert(a.locationPinState.tooltipIntro.text:find("Mage", 1, true))
+	assert(not a.locationPinState.tooltipIntro.text:find("Zwerg", 1, true))
+end)
+
+Register("client locale paints quest hover labels and local native title", function()
+	assert(QuestTogether.localizationTestLocale == nil)
+	local locale = QuestTogether:GetEventLocale()
+	local function T(key) return QuestTogether.TranslateForLocale(key, locale) end
+	local a = Fixture()
+	a.db = { global = {} }
+	function a:GetPlayerTracker() return {} end
+	function a:GetQuestSnapshot() return nil end
+	function a:IsWorkBlocked() return self.blocked == true end
+	a.API.GetLocalizedQuestTitle = function() return "Local title " .. locale end
+	function a:GetQuestStatusLabel() return "Not Started" end
+	function a:GetQuestShareableStatusLabel() return "Unknown" end
+	function a:GetChatLogTooltipCursorPosition() return 100, 200 end
+	function a:RegisterChatLogHoverCallbacks(enter, leave) self.enter, self.leave = enter, leave; return true end
+	a:InitializeChatLogPlayerTooltips()
+	local chat = Frame(a, a.tooltipParent)
+	a.enter(nil, chat, "questtogetherquest:42", "|Hquesttogetherquest:42|h[Foreign title]|h")
+	local state = a.chatLogPlayerTooltipState
+	assert(state.tooltip.shown)
+	assert(state.tooltipTitle.text:find("Local title " .. locale, 1, true))
+	assert(state.tooltipLabel.text:find(T("Your quest status") .. ": " .. T("Not Started"), 1, true))
+	assert(state.tooltipLabel.text:find(T("Shareable") .. ": " .. T("Unknown"), 1, true))
+	a.leave()
+	Equal(state.tooltip.shown, false)
+end, { locale = "client" })
+
+Register("hover refresh queries only on entry and incoming details update only the current tooltip", function()
+	local a = Fixture()
+	a.requests = {}
+	function a:RequestPlayerDetails(name) self.requests[#self.requests + 1] = name end
+	function a:GetChatLogTooltipCursorPosition() return 200, 100 end
+	a.API = { GetTime = function() return 100 end }
+	local row = Row("Friend-Realm")
+	a.rows.map = { row }
+	a.playerLocationState = { peers = { [row.name] = row } }
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnEnter()
+	Equal(#a.requests, 1)
+	for _ = 1, 10 do a:RefreshPlayerLocationPins() end
+	Equal(#a.requests, 1)
+	local chat = Frame(a)
+	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Friend-Realm"))
+	Equal(#a.requests, 2)
+	a.playerDetailsState = { identities = { [row.name] = { receivedAt = 100, level = 42, classFile = "MAGE", race = "Dwarf", faction = "Alliance" } } }
+	a:UpdateChatLogPlayerTooltip()
+	assert(a.chatLogPlayerTooltipState.tooltipIntro.text:find("42", 1, true))
+	Equal(#a.requests, 2)
+	a:HideChatLogPlayerTooltip()
+	a:UpdateChatLogPlayerTooltip()
+	Equal(a.chatLogPlayerTooltipState.tooltip.shown, false)
 end)

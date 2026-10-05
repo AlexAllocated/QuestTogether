@@ -26,6 +26,19 @@ class LocalizationTests(unittest.TestCase):
         for target in ['/qtdx를 열고 /qt test를 실행하세요.', '/qtd를 열고 /qt 검사 실행하세요.']:
             with self.assertRaises(ValueError):
                 L.validate_translation('Open /qtd, then run /qt test.', target)
+    def test_source_audit_finds_visible_text_inside_wow_markup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            strings=['QUEST', 'LEVEL', '|cffff8800Warning:|r', '|cff33ff99available|r', '|cffff4444unavailable|r',
+                     '|Hquest:12345|hQuestName|h', '|TInterface\\\\Icons\\\\Logo:14|tWarning:']
+            ignored=['|TInterface\\\\Icons\\\\Logo:14|t', '|A:QuestNormal:14:14|a', '|cffffffff', '|r',
+                     'Interface\\\\Icons\\\\Logo']
+            (root/'Example.lua').write_text('\n'.join('local text = '+json.dumps(value) for value in strings+ignored)
+                + '\nlocal translated = L(\n "Settings")\n-- "Not a label"\n')
+            self.assertEqual(L.untranslated_literals(root), {'Example.lua':sorted(strings)})
+    def test_markup_scanning_preserves_escaped_pipe_literals(self):
+        self.assertEqual(L.visible_markup_text('||cffffffff'), '||cffffffff')
+        self.assertEqual(L.visible_markup_text('|Hquest:1|h|cffffffffQuest title|r|h'), 'Quest title')
     def test_duplicate_keys_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             p=Path(directory)/'duplicate.json';p.write_text('{"a":"b","a":"c"}')

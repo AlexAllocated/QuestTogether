@@ -37,7 +37,15 @@ function QT:RecordQTPlayerPresence(name, active)
 	local state = self:GetQTPlayerPresenceState()
 	local wasKnown = self:IsKnownQTPlayer(name)
 	local hadRecord = state.peers[name] ~= nil
-	if not active then self:ForgetPartyVisualPeer(name) end
+	if not active then
+		local details = rawget(self, "playerDetailsState")
+		if details then
+			details.pending[name], details.attempts[name], details.replies[name], details.identities[name] = nil, nil, nil, nil
+		end
+		self:ForgetPartyVisualPeer(name)
+		local streams = rawget(self, "nearbyStreamState")
+		if streams then streams.capabilities[name], streams.wanted[name], streams.subscribers[name] = nil, nil, nil end
+	end
 	if active then
 		if not state.peers[name] then
 			local count, oldest, oldestAt = 0, nil, math.huge
@@ -91,6 +99,14 @@ function QT:BroadcastQTPlayerPresence(inactive)
 	state.lastSentAt = now
 	if inactive and (state.lastPartnerOnAt or self:GetOption("lookingForQuestPartners") == true) then
 		self:BroadcastQuestPartnerStatus(true, true)
+	end
+	if not inactive and rawget(self, "geographicCommsState") then
+		-- One current metadata heartbeat. Party visuals must not depend on a
+		-- valid version string or the version broadcaster's legacy alternation.
+		self:BroadcastPartyVisualMetadata()
+		if self:ParseAddonVersion(self:GetAddonVersion()) then
+			return self:BroadcastAddonVersion(true)
+		end
 	end
 	if not inactive then
 		local includeVersion = state.nextPresenceIncludesVersion
@@ -220,6 +236,23 @@ function QT:StopLookingForPartnersOnGroupJoin()
 	return self:SetOption("lookingForQuestPartners", false)
 end
 
+-- Allocate ordering exactly once for either a heartbeat or a requested refresh.
+function QT:BuildQuestPartnerStatusPayload(state, looking)
+	local now = Now(self)
+	if not state.partnerSession then
+		local random = self:SafeToNumber(self.API.Random and self.API.Random(1000, 999999)) or 1000
+		state.partnerSession = string.format(
+			"%d-%d",
+			math.max(0, math.floor(now * 1000)),
+			math.max(1000, math.min(999999, math.floor(random)))
+		)
+		state.partnerSequence = 0
+	end
+	state.partnerSequence = state.partnerSequence % 2147483647 + 1
+	local payload = string.format("1,%s,%d,%d", state.partnerSession, state.partnerSequence, looking and 1 or 0)
+	return payload
+end
+
 function QT:BroadcastQuestPartnerStatus(force, inactive)
 	if not self.isEnabled or (self.isLoggingOut and not inactive) then
 		return false
@@ -234,7 +267,7 @@ function QT:BroadcastQuestPartnerStatus(force, inactive)
 	-- an earlier On can still be visible, in which case repeat its withdrawal.
 	local withdrawing = state.lastPartnerOnAt
 		and now >= state.lastPartnerOnAt
-		and now - state.lastPartnerOnAt < LIFETIME
+		and now - state.lastPartnerOnAt < (rawget(self, "geographicCommsState") and 600 or LIFETIME)
 	if not looking and not force and not withdrawing then
 		return false
 	end
@@ -246,17 +279,7 @@ function QT:BroadcastQuestPartnerStatus(force, inactive)
 	then
 		return false
 	end
-	if not state.partnerSession then
-		local random = self:SafeToNumber(self.API.Random and self.API.Random(1000, 999999)) or 1000
-		state.partnerSession = string.format(
-			"%d-%d",
-			math.max(0, math.floor(now * 1000)),
-			math.max(1000, math.min(999999, math.floor(random)))
-		)
-		state.partnerSequence = 0
-	end
-	state.partnerSequence = state.partnerSequence % 2147483647 + 1
-	local payload = string.format("1,%s,%d,%d", state.partnerSession, state.partnerSequence, looking and 1 or 0)
+	local payload = self:BuildQuestPartnerStatusPayload(state, looking)
 	state.lastPartnerSentAt = now -- Pace failed sends too.
 	local sent =
 		self:SendWireMessageToAnnouncementRoutes(self:SerializeWireMessage("QTLF", payload), "quest partner status")
@@ -335,7 +358,7 @@ function QT:UpdateQTPlayerPresence()
 	if self.UpdatePartyJoin then self:UpdatePartyJoin() end
 	self:BroadcastQTPlayerPresence()
 	self:BroadcastQuestPartnerStatus()
-	self:BroadcastAddonVersion()
+	if not rawget(self, "geographicCommsState") then self:BroadcastAddonVersion() end
 	self:PruneQTPlayerPresence()
 end
 

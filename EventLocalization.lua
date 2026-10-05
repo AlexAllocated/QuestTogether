@@ -52,7 +52,7 @@ function QT:DecodeAnnouncementFacts(value)
 	if not self:CanAccessValue(value) or type(value) ~= "string" or #value > 80 then
 		return nil
 	end
-	local locale, kind, index, current, required = value:match("^1:([a-zA-Z]+):([qcplo]):(%d*):(%d*):(%d*)$")
+	local locale, kind, index, current, required = value:match("^1:([a-zA-Z]+):([qcplos]):(%d*):(%d*):(%d*)$")
 	if not locales[locale] then
 		return nil
 	end
@@ -61,8 +61,8 @@ function QT:DecodeAnnouncementFacts(value)
 		if index ~= "" or current ~= "" or required ~= "" then
 			return nil
 		end
-	elseif kind == "l" then
-		fact.current = Integer(self, current, 1, 1000)
+	elseif kind == "l" or kind == "s" then
+		fact.current = Integer(self, current, kind == "s" and 0 or 1, kind == "s" and 10000 or 1000)
 		if index ~= "" or required ~= "" or not fact.current then
 			return nil
 		end
@@ -87,8 +87,9 @@ end
 
 function QT:BuildAnnouncementFacts(eventType, index, objectiveType, finished, current, required)
 	local kind = prefixes[eventType] and "q" or nil
-	if eventType == "PLAYER_LEVEL_UP" then
-		kind, current, index, required = "l", Integer(self, current, 1, 1000), nil, nil
+	if eventType == "PLAYER_LEVEL_UP" or eventType == "SCAN_STATUS" then
+		local scan = eventType == "SCAN_STATUS"
+		kind, current, index, required = scan and "s" or "l", Integer(self, current, scan and 0 or 1, scan and 10000 or 1000), nil, nil
 		if not current then
 			return nil
 		end
@@ -135,6 +136,15 @@ function QT:GetLocalizedQuestTitle(questID)
 	if title ~= "" and not self:IsPlaceholderQuestTitle(id, title) then
 		return title
 	end
+	-- Enable clears saved trackers; the ready flag proves this session rebuilt
+	-- them. Task quests may have no normal quest-log row or native title cache.
+	if self:GetRuntimeFlag("questTrackerReady", false) and self.db and self.db.global then
+		local tracked = self:GetPlayerTracker()[id]
+		if tracked and tracked.titleLocale == self:GetEventLocale() then
+			title = self:SafeTrimString(tracked.title, "")
+			if title ~= "" and #title <= 512 and not self:IsPlaceholderQuestTitle(id, title) then return title end
+		end
+	end
 	local api = self.API or {}
 	if type(api.GetLocalizedQuestTitle) ~= "function" then
 		return nil
@@ -167,6 +177,13 @@ function QT:GetLocalizedQuestTitle(questID)
 	end
 	entry.time, entry.title = now, title ~= "" and title or nil
 	if title == "" and type(api.RequestLocalizedQuestTitle) == "function" then
+		local session = self.partyQuestCompareSession
+		local inCompare = false
+		for _, member in ipairs(session and session.members or {}) do
+			if member.entries[id] then inCompare = true; break end
+		end
+		if not inCompare then session = nil end
+		local attempts = session and session.titleRequests and session.titleRequests[id]
 		-- A bounded rolling window prevents bursts at fixed-window boundaries
 		-- and retains per-ID throttling even if the display cache evicts an entry.
 		local requested = false
@@ -178,12 +195,47 @@ function QT:GetLocalizedQuestTitle(questID)
 				requested = true
 			end
 		end
-		if #cache.requests < 10 and not requested then
+		if #cache.requests < 10 and not requested and (not attempts or attempts.count < 2) then
 			cache.requests[#cache.requests + 1] = { id = id, time = now }
+			if session then
+				session.titleRequests = session.titleRequests or {}
+				session.titleRequests[id] = { count = (attempts and attempts.count or 0) + 1, time = now }
+			end
 			pcall(api.RequestLocalizedQuestTitle, id)
 		end
 	end
 	return entry.title
+end
+
+function QT:QUEST_DATA_LOAD_RESULT(_, questID, success)
+	local id = Integer(self, questID, 1, 1000000000)
+	local cache = rawget(self, "localizedQuestTitles")
+	if not id or not cache or not self:CanAccessValue(success) or success ~= true then return end
+	-- Ignore unrelated game loads. Retain the entry/order slot and request budget.
+	local entry = cache.entries[id]
+	if not entry or entry.title then return end
+	entry.time = -math.huge
+	local session = self.partyQuestCompareSession
+	for _, member in ipairs(session and session.members or {}) do
+		if member.entries[id] then
+			self:QueuePartyQuestCompareRender()
+			break
+		end
+	end
+end
+
+-- Presentation resolver only. Keep GetQuestTitle snapshot-only for scan/plate
+-- paths; these guarded native reads belong to explicit text presentation.
+function QT:GetQuestDisplayTitle(questID, fallbackTitle)
+	local title = self:GetLocalizedQuestTitle(questID)
+	if title then return title end
+	local fallback = self:NormalizeQuestLinkTitleText(fallbackTitle, questID)
+	if fallback ~= "" then return fallback end
+	return self:GetQuestTitle(questID)
+end
+
+function QT:GetMonitoredQuestCountText(count)
+	return string.format(L("Quests monitored by QuestTogether: %d"), count)
 end
 
 function QT:LocalizeAnnouncementEvent(event)
@@ -192,8 +244,11 @@ function QT:LocalizeAnnouncementEvent(event)
 	end
 	local facts = self:DecodeAnnouncementFacts(event.eventFacts)
 	local prefix = prefixes[event.eventType]
-	if facts and facts.locale == self:GetEventLocale() then
+	if facts and facts.locale == self:GetEventLocale() and progressEvents[event.eventType] then
 		return event.text
+	end
+	if event.eventType == "SCAN_STATUS" and facts and facts.kind == "s" then
+		return self:GetMonitoredQuestCountText(facts.current)
 	end
 	if event.eventType == "PLAYER_LEVEL_UP" and facts and facts.kind == "l" then
 		return L("Level ") .. tostring(facts.current)

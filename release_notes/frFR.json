@@ -1,27 +1,36 @@
 {
-  "source_sha256": "99619c9517c94840c105fc6e0884f5b07adf833cd8b6bc0a4a29cb625d1a2a06",
+  "source_sha256": "34b9c5bf348f0048984fcf94d05f0bcb73922a207a887aa1e8b3621e8acf1193",
   "notes": {
     "version": "6.1.2",
-    "welcome": "Points des joueurs à proximité plus réactifs et annonces traduites plus claires.",
+    "welcome": "Des points proches plus fluides, des détails de joueur plus rapides et une communication plus fiable.",
     "sections": [
       {
-        "title": "Points des joueurs sur la minicarte",
+        "title": "Des déplacements plus fluides sur la minicarte",
         "items": [
-          "Correction des points de joueurs QT manquants lorsque la minicarte ne fournit pas d’ID de carte. QT utilise désormais votre carte actuelle si nécessaire."
+          "Les joueurs proches peuvent échanger leurs positions par des chuchotements d’addon cadencés. Les déplacements fluides privilégient jusqu’à quatre joueurs admissibles parmi les plus proches et respectent le partage, les filtres, les joueurs ignorés et les limites de trafic.",
+          "Les deux joueurs doivent installer cette mise à jour pour les flux de position et les réponses directes au survol. Les anciennes versions conservent leurs diffusions habituelles ; les délais et restrictions du serveur peuvent toujours affecter la réception."
         ]
       },
       {
-        "title": "Mises à jour de position locales plus rapides",
+        "title": "Découverte et détails de groupe plus rapides",
         "items": [
-          "Les mises à jour de position ciblent désormais une fois par seconde avec moins de 10 utilisateurs QT connus dans votre zone, 5 à 10 secondes avec 10 à 19, et 15 à 20 secondes à 100. Les intervalles s’allongent progressivement entre ces paliers ; les timings à 500 ou plus restent inchangés.",
-          "Les mises à jour rapides envoient des positions compactes et fraîchement échantillonnées, tandis que les autres détails des joueurs conservent leur battement plus lent. Les limites de trafic existantes s’appliquent toujours, la congestion peut donc retarder la livraison. Les autres joueurs doivent disposer de cette mise à jour pour envoyer des positions plus rapides."
+          "Survoler un nom ou un point peut demander directement des détails récents. La fréquence des demandes est limitée et les listes de membres inchangées n’expirent plus après deux minutes.",
+          "Les positions récentes, le statut de recherche de partenaires et les détails de groupe connus survivent à /reload pendant trois minutes au maximum depuis leur relevé initial. Entrer dans une zone demande aussi une actualisation de découverte échelonnée.",
+          "Les infobulles utilisent le statut solo ou en groupe connu en attendant la taille exacte du groupe. Un petit logo identifie désormais les utilisateurs de QT dans la liste des membres, tout en gardant les noms alignés."
         ]
       },
       {
-        "title": "Annonces traduites plus claires",
+        "title": "Traduction et présentation améliorées",
         "items": [
-          "Les libellés d’événements de quête, comme Quête acceptée, utilisent désormais votre langue même lorsqu’un titre de quête local ou des métadonnées de traduction facultatives sont indisponibles.",
-          "Lorsque WoW ne peut pas fournir de titre de quête local, QT conserve le titre lisible de l’expéditeur. Les messages de progression conservent toujours leur texte d’origine lorsqu’ils ne peuvent pas être reconstruits en toute sécurité."
+          "Les noms de race, détails de ping, données de quête et davantage de textes d’interface utilisent les traductions locales disponibles. Sinon, le texte lisible de l’expéditeur est conservé ; la progression n’emprunte pas de descriptions d’objectifs locaux sans rapport.",
+          "Les annonces génériques utilisent désormais le logo QT. La recherche de partenaires de quête est la première option du menu de la minicarte."
+        ]
+      },
+      {
+        "title": "Communication et fiabilité",
+        "items": [
+          "Les comparaisons, listes de groupe, demandes pour rejoindre ou partager et réponses au ping privilégient les chuchotements directs avec les joueurs compatibles. Le regroupement des messages périodiques et la réduction des mises à jour de positions inchangées allègent le trafic public.",
+          "Correction des analyses de quêtes répétées, des vérifications excessives des barres de nom, des fenêtres impossibles à fermer pendant les restrictions et de /qt set acceptant des réglages autres que marche/arrêt. Désactiver le partage de position ne supprime plus les autres demandes en attente."
         ]
       }
     ]

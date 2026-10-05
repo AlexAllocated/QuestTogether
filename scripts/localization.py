@@ -60,18 +60,29 @@ def validate_translation(source,target):
 # Explicit source audit: anything new that looks like prose must be localized
 # or given a reviewed exemption; native identifiers and diagnostics stay stable.
 TOKENS = re.compile(r'--\[(=*)\[.*?\]\1\]|--[^\n]*|\[(=*)\[.*?\]\2\]|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'', re.S)
+def visible_markup_text(value):
+    # Audit what is displayed, not texture paths, atlas names or hyperlink data.
+    # Leave escaped pipes literal rather than interpreting them as markup.
+    text=value.replace('||', '\x00')
+    text=re.sub(r'\|H[^|]*\|h(.*?)\|h', r'\1', text, flags=re.S)
+    text=re.sub(r'\|[TA][^|]*\|[ta]', '', text)
+    text=re.sub(r'\|c[0-9a-fA-F]{8}|\|r', '', text)
+    return text.replace('\x00', '||')
+
 def untranslated_literals(root):
     result={}
     for p in root.glob('*.lua'):
         if p.name in ('Tests.lua','Localization.lua','Locales.lua','LocalizedReleaseNotes.lua','ReleaseNotes.lua','ReleaseNotesHistory.lua','Diagnostics.lua'):continue
         text=p.read_text()
+        localized={m.start(1) for m in LOOKUP.finditer(text)}
         for m in TOKENS.finditer(text):
             raw=m[0]
-            if raw[0] not in ('"', "'") or text[max(0,m.start()-2):m.start()]=='L(':continue
+            if raw[0] not in ('"', "'") or m.start() in localized:continue
             value=ast.literal_eval(raw)
-            if not re.search('[A-Za-z]{3}',value):continue
-            if not (' ' in value or re.fullmatch('[A-Z][a-z]+[!:?…]?',value)):continue
-            if re.search(r'Interface\\|Fonts\\|^https?://',value):continue
+            visible=visible_markup_text(value)
+            if not re.search('[A-Za-z]{3}',visible):continue
+            if not (visible != value or ' ' in visible or re.fullmatch('(?:[A-Z][a-z]+|[A-Z]{3,})[!:?…]?',visible)):continue
+            if re.search(r'Interface\\|Fonts\\|^https?://',visible):continue
             result.setdefault(p.name,[])
             if value not in result[p.name]:result[p.name].append(value)
     return {k:sorted(v) for k,v in sorted(result.items())}

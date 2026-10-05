@@ -543,11 +543,7 @@ local function Text(addon, value, fallback)
 end
 
 function QuestTogether:GetChatLogQuestTooltipRow(questID, fallbackTitle)
-	local title = self:GetQuestTitle(questID)
-	if not title or title == "" or self:IsPlaceholderQuestTitle(questID, title) then
-		local fallback = self:NormalizeQuestLinkTitleText(fallbackTitle, questID)
-		if fallback ~= "" then title = fallback end
-	end
+	local title = self:GetQuestDisplayTitle(questID, fallbackTitle)
 	local lines = {
 		L("Your quest status") .. ": " .. L(self:GetQuestStatusLabel(questID)),
 		L("Shareable") .. ": " .. L(self:GetQuestShareableStatusLabel(questID)),
@@ -587,21 +583,28 @@ local function PartyTooltipRows(addon, state, info)
 			item = { frame = New(addon, "Frame", state.tooltip) }
 			state.partyRows[index] = item
 			Call(addon, item.frame, "SetSize", 272, 14)
+			item.qtIcon = Call(addon, item.frame, "CreateTexture", nil, "ARTWORK")
+			Call(addon, item.qtIcon, "SetSize", 14, 14)
+			Call(addon, item.qtIcon, "SetPoint", "LEFT", 0, 0)
+			Call(addon, item.qtIcon, "SetTexture", addon.NAMEPLATE_PLAYER_ICON_TEXTURE)
 			item.dot = Call(addon, item.frame, "CreateTexture", nil, "ARTWORK")
 			Call(addon, item.dot, "SetSize", 10, 10)
-			Call(addon, item.dot, "SetPoint", "LEFT", 2, 0)
+			Call(addon, item.dot, "SetPoint", "LEFT", 20, 0)
 			local mask = Call(addon, item.frame, "CreateMaskTexture")
 			Call(addon, mask, "SetAllPoints", item.dot)
 			Call(addon, mask, "SetTexture", "Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
 			Call(addon, item.dot, "AddMaskTexture", mask)
 			item.crown = PartyTexture(addon, item.frame, "PartyLeader", 12, 9, "BOTTOM", item.dot, "TOP", 0, -2)
 			item.label = Call(addon, item.frame, "CreateFontString", nil, "OVERLAY", "GameFontHighlightSmall")
-			Call(addon, item.label, "SetPoint", "TOPLEFT", 20, -1)
-			Call(addon, item.label, "SetWidth", 252)
+			Call(addon, item.label, "SetPoint", "TOPLEFT", 38, -1)
+			Call(addon, item.label, "SetWidth", 234)
 			Call(addon, item.label, "SetJustifyH", "LEFT")
 			Call(addon, item.label, "SetWordWrap", true)
 		end
 		local r, g, b = Color(addon, member.classFile)
+		-- Reserve the same icon column for every member, including unknown peers.
+		local usesQT = addon:IsSelfSender(member.name) or addon:IsKnownQTPlayer(member.name)
+		Call(addon, item.qtIcon, usesQT and "Show" or "Hide")
 		Call(addon, item.dot, "SetColorTexture", r, g, b, 1)
 		local leader = member.name == info.leader
 		Call(addon, item.label, "SetText", addon:GetClassColorCode(member.classFile) .. member.name .. "|r" .. (leader and (" — " .. L("Leader")) or ""))
@@ -622,6 +625,7 @@ local function Tooltip(addon, state, pin, row)
 	if not addon:CanAccessForeignFrame(parent, true) or not Guard(addon, pin.frame) then
 		return
 	end
+	if not row.questID then row = addon:GetPlayerDetailsTooltipRow(row) end
 	local tooltip = state.tooltip
 	if not tooltip then
 		tooltip = New(addon, "Frame", parent)
@@ -685,10 +689,11 @@ local function Tooltip(addon, state, pin, row)
 	if row.questID then
 		text = row.questText
 	else
+		local raceName, className = addon:GetPlayerTooltipIdentity(row)
 		introText = string.format(L("Level %s %s %s"),
 			Number(addon, row.level) and tostring(row.level) or L("Unknown"),
-			Text(addon, row.race),
-			classColor .. Text(addon, row.className, Text(addon, row.classFile)) .. "|r")
+			Text(addon, raceName),
+			classColor .. Text(addon, className, Text(addon, row.classFile)) .. "|r")
 		text = ""
 		if addon:SupportsWarMode() == true and type(row.warMode) == "boolean" then
 			text = text .. L("\nWar Mode: ") .. (row.warMode and L("On") or L("Off"))
@@ -705,9 +710,9 @@ local function Tooltip(addon, state, pin, row)
 		if now and receivedAt and now >= receivedAt + 30 then
 			lastUpdate = L("\nLast update: "):gsub("^\n+", "") .. math.floor(now - receivedAt) .. L(" seconds ago")
 		end
-		local stats = addon:GetPlayerTooltipStats(row.name)
-		local partySize = party and party.size or stats and stats.partySize
-		local partyText = partySize == 0 and L("Solo") or partySize and string.format(L("Party of %d"), partySize) or L("Party status unknown")
+		local partySize = party and party.size
+		local partyText = partySize == 0 and L("Solo") or partySize and string.format(L("Party of %d"), partySize)
+			or party and party.grouped and L("In a party") or L("Party status unknown")
 		local version = addon:GetPlayerAddonVersion(row.name)
 		text = text:gsub("^\n+", "")
 		text = text .. (text ~= "" and "\n\n" or "") .. "|cff909090" .. (lastUpdate and (lastUpdate .. "\n") or "") .. (version and ("v" .. Text(addon, version)) or L("Unknown")) .. "|r"
@@ -818,6 +823,7 @@ function QuestTogether:ShowChatLogPlayerTooltip(frame, link, text)
 	end
 	local state = rawget(self, "chatLogPlayerTooltipState") or { pending = {} }
 	self.chatLogPlayerTooltipState = state
+	if not questID then self:RequestPlayerDetails(name) end
 	state.hovered = { frame = frame, name = name, questID = questID, title = self:SafeTrimString(text, ""), chatLink = true }
 	self:UpdateChatLogPlayerTooltip()
 	return state.hovered ~= nil
@@ -905,6 +911,7 @@ local function CreatePin(addon, state, surface)
 	Call(addon, pin.frame, "SetScript", "OnEnter", function()
 		local ok, row = pcall(FreshRow, addon, pin)
 		if ok and row then
+			addon:RequestPlayerDetails(row.name)
 			if not pcall(Tooltip, addon, state, pin, row) then
 				HideTooltip(addon, state)
 			end
@@ -1045,4 +1052,41 @@ function QuestTogether:RefreshPlayerLocationPins()
 	end
 	PartyHighlights(self, state)
 	return visible
+end
+
+-- Move only existing streamed minimap pins at animation cadence. No new frames,
+-- world-map rebuilds, tooltip updates, or writes to Blizzard-owned UI here.
+function QuestTogether:RefreshNearbyStreamPins()
+	local streams, state = rawget(self, "nearbyStreamState"), rawget(self, "locationPinState")
+	local surface = state and state.surfaces.minimap
+	if not streams or not next(streams.wanted) or not surface then return end
+	if not self.isEnabled or self:IsRuntimeRestricted() or self:GetOption("showPlayerLocations") ~= true then
+		HideSurface(self, state, surface)
+		return
+	end
+	local ok = pcall(function()
+		local geometry = self:GetLocationPinSurface("minimap")
+		if not geometry or geometry.parent ~= surface.parent then
+			HideSurface(self, state, surface)
+			return
+		end
+		local locations = rawget(self, "playerLocationState")
+		for _, pin in ipairs(surface.pins) do
+			if pin.name and streams.wanted[pin.name] then
+				local row = locations and locations.peers[pin.name]
+				if not row or row.mask < 2 or self:IsIgnoredPlayerName(pin.name)
+					or (self:GetOption("onlyShowQuestPartners") == true and not self:IsPlayerLookingForQuestPartners(pin.name)) then
+					Hide(self, state, pin.frame)
+				else
+					row = self:GetNearbyStreamPosition(row, true)
+					local x, y = self:ProjectPlayerLocationPin("minimap", row, geometry)
+					if x and y then
+						Call(self, pin.frame, "ClearAllPoints")
+						Call(self, pin.frame, "SetPoint", "CENTER", surface.frame, "TOPLEFT", x, -y)
+					else Hide(self, state, pin.frame) end
+				end
+			end
+		end
+	end)
+	if not ok then HideSurface(self, state, surface) end
 end

@@ -4,21 +4,28 @@
 
 ## 6.1.2
 
-Pontos de jogadores próximos mais responsivos e anúncios traduzidos mais claros.
+Pontos próximos mais suaves, detalhes de jogadores mais rápidos e comunicação mais confiável.
 
-### Pontos de jogadores no minimapa
+### Movimento mais suave no minimapa
 
-- Corrigidos pontos de jogadores do QT ausentes quando o minimapa não fornece um ID de mapa. O QT agora usa seu mapa atual quando necessário.
+- Jogadores próximos podem trocar posições por sussurros do addon com frequência limitada. O movimento suave prioriza até quatro dos jogadores elegíveis mais próximos e respeita preferências de compartilhamento, filtros, ignorados e limites de tráfego.
+- Ambos os jogadores precisam desta atualização para os fluxos de posição e respostas diretas ao passar o cursor. Versões anteriores mantêm suas transmissões normais; atrasos e restrições do servidor ainda podem afetar a entrega.
 
-### Atualizações de localização locais mais rápidas
+### Descoberta e detalhes de grupo mais rápidos
 
-- As atualizações de localização agora miram uma vez por segundo com menos de 10 usuários conhecidos do QT na sua zona, 5–10 segundos com 10–19, e 15–20 segundos com 100. Os intervalos aumentam gradualmente entre esses níveis; os tempos com 500 ou mais permanecem inalterados.
-- Atualizações rápidas enviam localizações compactas e recém-amostradas, enquanto outros detalhes dos jogadores mantêm seu pulso mais lento. Os limites de tráfego existentes ainda se aplicam, então congestionamento pode atrasar a entrega. Outros jogadores precisam desta atualização para enviar posições mais rapidamente.
+- Passar o cursor sobre um nome ou ponto pode solicitar detalhes recentes diretamente. As solicitações têm frequência limitada, e listas de membros sem alterações não expiram mais após dois minutos.
+- Posições recentes, status de busca de parceiros e detalhes conhecidos do grupo sobrevivem a /reload por até três minutos desde a coleta original. Entrar em uma zona também solicita uma atualização de descoberta escalonada.
+- As dicas usam o status conhecido de solo ou em grupo enquanto aguardam o tamanho exato do grupo. Um pequeno logotipo identifica usuários do QT na lista de membros, mantendo os nomes alinhados.
 
-### Anúncios traduzidos mais claros
+### Tradução e apresentação mais claras
 
-- Rótulos de eventos de missão, como Missão aceita, agora usam seu idioma mesmo quando um título de missão local ou metadados de tradução opcionais não estão disponíveis.
-- Quando o WoW não consegue fornecer um título de missão local, o QT mantém o título legível do remetente. Mensagens de progresso ainda mantêm o texto original quando não podem ser reconstruídas com segurança.
+- Nomes de raça, detalhes de ping, dados de missão e mais textos da interface usam traduções locais quando disponíveis. Se a tradução da missão não estiver disponível, o texto legível do remetente é mantido; o progresso não usa descrições de objetivos locais sem relação.
+- Anúncios genéricos agora usam o logotipo do QT. Buscar parceiros de missões é a primeira opção do menu do minimapa.
+
+### Comunicação e confiabilidade
+
+- Comparações, listas de grupo, pedidos para entrar ou compartilhar e respostas de ping preferem sussurros diretos com jogadores compatíveis. Mensagens periódicas consolidadas e menos atualizações de posições inalteradas reduzem o tráfego público redundante.
+- Corrigidas verificações repetidas de missões, tentativas excessivas nas placas de nome, janelas que não fechavam durante restrições e /qt set aceitando opções que não são de ativar/desativar. Desativar o compartilhamento de localização não descarta mais outras solicitações na fila.
 
 ## 6.1.1
 

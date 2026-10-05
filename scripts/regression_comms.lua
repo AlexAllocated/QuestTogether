@@ -788,10 +788,11 @@ QuestTogether:RegisterTest("ping round trip reaches current-channel peers with d
 		-- Deliver actual packets with recipient-local channel IDs.
 		remote:OnCommReceived(remote.commPrefix, localPeer.wire[1][2], "CHANNEL", localPeer:GetPlayerFullName(), 3, remote.announcementChannelName)
 		Equal(#remote.wire, 1)
-		Equal(remote.wire[1][4], 3)
+		Equal(remote.wire[1][3], "WHISPER")
+		Equal(remote.wire[1][4], localPeer:GetPlayerFullName())
 		for _, packet in ipairs(remote.wire) do
 			local current = packet[4] == 3
-			localPeer:OnCommReceived(localPeer.commPrefix, packet[2], "CHANNEL", remote:GetPlayerFullName(), current and 8 or 9,
+			localPeer:OnCommReceived(localPeer.commPrefix, packet[2], packet[3], remote:GetPlayerFullName(), current and 8 or 9,
 				current and localPeer.announcementChannelName or localPeer.announcementChannelName)
 		end
 		Equal(#localPeer.printed, 2)
@@ -1398,6 +1399,63 @@ local function SetComparisonEntries(addon, count)
 		return entries
 	end
 end
+
+QuestTogether:RegisterTest("comparison send pacing does not consume failed-native-send retries", function()
+	local a = NewCommsFixture()
+	InstallResponseClock(a)
+	SetComparisonEntries(a, 2)
+	a:InitializeGeographicComms()
+	a.geographicCommsState.blockedUntil = a.now + 10
+	assert(a:HandleQuestCompareRequest({ requestId = "paced-response", requesterName = "Peer-Realm",
+		targetName = "MyPlayer-Realm", replyDistribution = "CHANNEL" }))
+	for _ = 1, 7 do assert(RunResponseTimer(a)) end
+	Equal(#a.wire, 0)
+	Equal(#a.questCompareResponseQueue.jobs, 1)
+	Equal(a.questCompareResponseQueue.jobs[1].attempts, 0)
+	for _ = 1, 20 do if not RunResponseTimer(a) then break end end
+	Equal(#a.questCompareResponseQueue.jobs, 0)
+	Equal(#a.wire, 3)
+	assert(a.wire[3][2]:find("QCDN|", 1, true))
+end)
+
+QuestTogether:RegisterTest("existing channels install filters once and avoid per-packet chat cleanup", function()
+	local a = NewCommsFixture()
+	local filters, cleanups = 0, 0
+	a.announcementChannelChatFiltersRegistered = false
+	a.API.AddMessageEventFilter = function() filters = filters + 1 end
+	function a:HideAnnouncementChannelFromChatWindows() cleanups = cleanups + 1 end
+	function a:IsRuntimeRestricted() return false end
+	for _ = 1, 20 do assert(a:EnsureAnnouncementChannelJoined()) end
+	Equal(filters, 3)
+	Equal(cleanups, 1)
+	a.channelID = 9
+	assert(a:EnsureAnnouncementChannelJoined())
+	Equal(cleanups, 2)
+end)
+
+QuestTogether:RegisterTest("local publication samples one event for wire party chat and local presentation", function()
+	local a = NewCommsFixture()
+	local builds = 0
+	function a:BuildLocalAnnouncementEvent()
+		builds = builds + 1
+		return { eventType = "QUEST_PROGRESS", senderName = "Me-Realm", text = "sample " .. builds }
+	end
+	function a:SendAnnouncementWireEvent(event) self.sentEvent = event; return true end
+	function a:AnnounceToNonQTParty(event) self.partyEvent = event end
+	function a:HandleAnnouncementEvent(event) self.localEvent = event end
+	a.suppressLocalAnnouncementDisplayDuringTests = false
+	assert(a:PublishAnnouncementEvent("QUEST_PROGRESS", "Progress"))
+	Equal(builds, 1)
+	Equal(a.sentEvent, a.partyEvent)
+	Equal(a.sentEvent, a.localEvent)
+end)
+
+QuestTogether:RegisterTest("oversized or nul-containing inbound transport is rejected before decoding", function()
+	local a = NewCommsFixture()
+	function a:DeserializeWireMessage() error("invalid packet reached parser") end
+	a:OnCommReceived(a.commPrefix, "ANN|" .. string.rep("x", 252), "PARTY", "Peer-Realm")
+	a:OnCommReceived(a.commPrefix, "PING|1,a\0b", "PARTY", "Peer-Realm")
+end)
 
 QuestTogether:RegisterTest("quest comparison paces and retries delivery before completing the real receiver", function()
 	local sender, receiver = NewCommsFixture(), NewCommsFixture()
@@ -2400,7 +2458,7 @@ end)
 QuestTogether:RegisterTest("local publication sends one party announcement independent of addon transport", function()
 	local a = PartyChatFixture()
 	function a:BuildLocalAnnouncementEvent(eventType, text) return { eventType = eventType, text = text } end
-	function a:SendAnnouncementEvent() return false end
+	function a:SendAnnouncementWireEvent() return false end
 	function a:HandleAnnouncementEvent() end
 	Equal(a:PublishAnnouncementEvent("QUEST_PROGRESS", "Progress"), true)
 	Equal(#a.chatMessages, 1)
@@ -2791,4 +2849,24 @@ QuestTogether:RegisterTest("partner search crosses the zone once through normal 
 	local privateEvent = sender:DecodeAnnouncementPayload(privatePayload)
 	Equal(privateEvent.mapID, "")
 	Equal(privateEvent.coordX, "")
+end)
+
+QuestTogether:RegisterTest("ping localizes available identity and zone while preserving sender fallback", function()
+	local a = NewCommsFixture()
+	function a:IsRuntimeRestricted() return self.blocked == true end
+	a.API.GetLocalizedClassName = function(id) if id == "MAGE" then return "Local Mage" end end
+	a.API.GetMapInfo = function(id) if id == 37 then return { name = "Local Forest" } end end
+	a.API.GetLocalizedRaceName = function(id) if id == 3 then return "Local Dwarf" end end
+	a.nearbyStreamState = { capabilities = { ["Remote-Realm"] = { receivedAt = a.now, raceID = 3 } } }
+	local pong = { senderName = "Remote-Realm", className = "Magier", classFile = "MAGE", raceName = "Zwerg", zoneName = "Wald", mapID = 37 }
+	local text = a:BuildPingResponseMessage(pong)
+	assert(text:find("Local Mage", 1, true) and text:find("Local Forest", 1, true) and text:find("Local Dwarf", 1, true))
+	assert(not text:find("Magier", 1, true) and not text:find("Zwerg", 1, true) and not text:find("Wald", 1, true))
+	a.API.GetLocalizedClassName, a.API.GetMapInfo, a.API.GetLocalizedRaceName = function() end, function() end, function() end
+	text = a:BuildPingResponseMessage(pong)
+	assert(text:find("Magier", 1, true) and text:find("Zwerg", 1, true) and text:find("Wald", 1, true))
+	a.blocked = true
+	a.API.GetLocalizedClassName, a.API.GetMapInfo = function() error("restricted lookup") end, function() error("restricted lookup") end
+	text = a:BuildPingResponseMessage(pong)
+	assert(text:find("Magier", 1, true) and text:find("Wald", 1, true))
 end)

@@ -204,33 +204,34 @@ function QT:HandlePartyJoinMetadata(payload, sender)
 	return true
 end
 
-function QT:BroadcastPartyJoinMetadata()
-	if not Allowed(self) then
-		return false
-	end
+function QT:BuildPartyJoinMetadataPayload()
+	if not Allowed(self) then return nil end
 	local state, now = self:GetPartyJoinState(), Now(self)
 	local grouped, invite = ReadInfo(self)
-	if grouped == nil then
-		return false
-	end
-	local metadata = (grouped == nil and "2" or grouped and "1" or "0") .. "," .. (invite and "1" or "0")
-	if state.lastAttempt and now >= state.lastAttempt and now - state.lastAttempt < 5 then
-		return false
-	end
-	if state.lastSent and metadata == state.lastMetadata and now >= state.lastSent and now - state.lastSent < 60 then
-		return false
-	end
-	state.lastAttempt = now
+	if grouped == nil then return nil end
+	local metadata = (grouped and "1" or "0") .. "," .. (invite and "1" or "0")
 	if not state.session then
 		local random = self:SafeToNumber(self.API.Random and self.API.Random(1000, 999999)) or 1000
 		state.session = string.format("%d-%d", math.max(0, math.floor(now * 1000)), random)
 	end
 	state.sequence = state.sequence % 2147483647 + 1
-	local payload = "1," .. state.session .. "," .. state.sequence .. "," .. metadata
+	return "1," .. state.session .. "," .. state.sequence .. "," .. metadata, metadata
+end
+
+function QT:BroadcastPartyJoinMetadata()
+	if not Allowed(self) then return false end
+	local state, now = self:GetPartyJoinState(), Now(self)
+	local grouped, invite = ReadInfo(self)
+	if grouped == nil then return false end
+	local metadata = (grouped and "1" or "0") .. "," .. (invite and "1" or "0")
+	if state.lastAttempt and now >= state.lastAttempt and now - state.lastAttempt < 5 then return false end
+	if state.lastSent and metadata == state.lastMetadata and now >= state.lastSent and now - state.lastSent < 60 then return false end
+	state.lastAttempt = now
+	local payload
+	payload, metadata = self:BuildPartyJoinMetadataPayload()
+	if not payload then return false end
 	local sent = self:SendWireMessageToAnnouncementRoutes(self:SerializeWireMessage("QJST", payload), "party metadata")
-	if sent then
-		state.lastSent, state.lastMetadata = now, metadata
-	end
+	if sent then state.lastSent, state.lastMetadata = now, metadata end
 	return sent
 end
 
@@ -303,12 +304,13 @@ function QT:SendPartyJoinMessage(target, id, status, leader)
 		if not leader then return false end
 		suffix = "," .. self:EscapePayload(leader)
 	end
+	local routes = self:GetTargetedCommRoutes(target)
 	return self:SendWireMessageToAnnouncementRoutes(
 		self:SerializeWireMessage(
 			"QJON",
 			"1," .. self:EscapePayload(id) .. "," .. self:EscapePayload(target) .. "," .. status .. suffix
 		),
-		"party join"
+		"party join", routes
 	)
 end
 
@@ -423,7 +425,7 @@ function QT:ConfirmPartyJoin(request, friends, lfg, automatic)
 	return true
 end
 
-function QT:HandlePartyJoinMessage(payload, sender)
+function QT:HandlePartyJoinMessage(payload, sender, direct)
 	if not self.isEnabled or not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 255 then
 		return false
 	end
@@ -447,6 +449,7 @@ function QT:HandlePartyJoinMessage(payload, sender)
 	if target ~= Name(self, self:GetPlayerFullName()) then
 		return false
 	end
+	if direct then self:RememberDirectCommPeer(sender, true) end
 	self:PrunePartyJoin()
 	local state, now = self:GetPartyJoinState(), Now(self)
 	if status ~= "request" then
@@ -557,6 +560,7 @@ function QT:GetNextPartyJoinRequest()
 end
 
 function QT:QueuePartyJoinPrompt()
+	self:HideRetiredPartyRequestPrompt(rawget(self, "partyJoinPrompt"), self.isEnabled and self:GetNextPartyJoinRequest() or nil)
 	if not rawget(self, "partyJoinPrompt") and not self:GetNextPartyJoinRequest() then
 		return
 	end

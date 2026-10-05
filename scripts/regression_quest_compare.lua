@@ -359,7 +359,7 @@ end)
 
 QuestTogether:RegisterTest("party share request authenticates route sender target version and quest id", function()
 	local a = Fixture(nil, { Quest(1, nil, true) })
-	for _, route in ipairs({ "CHANNEL", "WHISPER", "GUILD" }) do
+	for _, route in ipairs({ "CHANNEL", "RAID_WARNING", "GUILD" }) do
 		Equal(a:HandlePartyQuestShareMessage(SharePacket(a), "Friend-Realm", route), false)
 	end
 	Equal(a:HandlePartyQuestShareMessage(SharePacket(a), "Stranger-Realm", "PARTY"), false)
@@ -562,6 +562,8 @@ local function Frame(parent)
 		parent.children[#parent.children + 1] = frame
 	end
 	local methods = {}
+	function methods:IsForbidden() return self.forbidden == true or (self.parent and self.parent:IsForbidden()) or false end
+	function methods:IsProtected() return self.protected == true or (self.parent and self.parent:IsProtected()) or false end
 	function methods:SetScript(event, callback)
 		self.scripts[event] = callback
 	end
@@ -704,6 +706,84 @@ local function AttachUI(addon)
 	end
 	return parent
 end
+
+QuestTogether:RegisterTest("comparison titles refresh on load results and drain a bounded load queue", function()
+	local a = Fixture()
+	AttachUI(a)
+	a.QueuePartyQuestCompareRender = QuestTogether.QueuePartyQuestCompareRender
+	local loaded, requests = {}, {}
+	function a:GetQuestSnapshot() return nil end
+	a.API.GetLocalizedQuestTitle = function(id) return loaded[id] end
+	a.API.RequestLocalizedQuestTitle = function(id) requests[#requests + 1] = id end
+	a:OpenPartyQuestCompare()
+	local remote = {}
+	for id = 1, 12 do remote[id] = Quest(id, "Foreign title " .. id) end
+	Reply(a, "Friend-Realm", remote, true, true)
+	a:Advance(0.1)
+	Equal(#requests, 10)
+	local id = requests[1]
+	loaded[id] = "Loaded local title"
+	a:QUEST_DATA_LOAD_RESULT(nil, id, true)
+	a:Advance(0.1)
+	local displayed = false
+	for _, row in ipairs(a.partyQuestCompareWindow.rows) do
+		if row.data and row.data.questId == id then
+			Equal(row.title.text, "Loaded local title")
+			displayed = true
+		end
+	end
+	assert(displayed, "native load completion must replace the displayed fallback immediately")
+	local wires = #a.wire
+	for _ = 1, 8 do a:Advance(30) end
+	local counts = {}
+	for _, questID in ipairs(requests) do counts[questID] = (counts[questID] or 0) + 1 end
+	for questID = 1, 12 do Equal(counts[questID], questID == id and 1 or 2) end
+	Equal(#a.wire, wires, "title refresh must not request new remote snapshots")
+	assert(not a.partyQuestCompareSession.titleRefreshPending)
+	local total = #requests
+	a:Advance(90)
+	Equal(#requests, total)
+end)
+
+QuestTogether:RegisterTest("quest title load events guard restrictions and cannot revive closed comparisons", function()
+	local a = Fixture()
+	AttachUI(a)
+	a.QueuePartyQuestCompareRender = QuestTogether.QueuePartyQuestCompareRender
+	local title
+	function a:GetQuestSnapshot() return nil end
+	a.API.GetLocalizedQuestTitle = function() return title end
+	a.API.RequestLocalizedQuestTitle = function() end
+	a:OpenPartyQuestCompare()
+	Reply(a, "Friend-Realm", { Quest(1, "Sent title") }, true, true)
+	a:Advance(0.1)
+	Equal(a.partyQuestCompareWindow.rows[1].title.text, "Sent title")
+	title = "Local title"
+	a:QUEST_DATA_LOAD_RESULT(nil, 1, false)
+	a:Advance(0.1)
+	Equal(a.partyQuestCompareWindow.rows[1].title.text, "Sent title")
+	a.blocked = true
+	a:QUEST_DATA_LOAD_RESULT(nil, 1, true)
+	a:Advance(0.1)
+	Equal(a.partyQuestCompareWindow.rows[1].title.text, "Sent title")
+	a.blocked = false
+	a:FlushDeferredWork("test resume")
+	Equal(a.partyQuestCompareWindow.rows[1].title.text, "Local title")
+	-- Queue another result, then close before its callback executes.
+	a.localizedQuestTitles.entries[1].title = nil
+	a:QUEST_DATA_LOAD_RESULT(nil, 1, true)
+	a:CancelPartyQuestCompare()
+	a.partyQuestCompareWindow:Hide()
+	a:Advance(60)
+	assert(not a.partyQuestCompareSession and not a.partyQuestCompareWindow:IsShown())
+	-- Replacing a session before a queued render must not render its successor.
+	a:OpenPartyQuestCompare()
+	a:Advance(0.1)
+	a:QueuePartyQuestCompareRender()
+	a:CancelPartyQuestCompare()
+	a.partyQuestCompareSession = { members = {} }
+	function a:RenderPartyQuestCompare() error("stale render reached replacement session") end
+	a:Advance(0.1)
+end)
 
 QuestTogether:RegisterTest(
 	"party compare vertical scrollbar follows filtered rows and resets a collapsed range",
@@ -1754,4 +1834,120 @@ QuestTogether:RegisterTest("party compare renders every locale while canonical a
 		Equal(a.pushes, 1)
 	end
 	QuestTogether.localizationTestLocale = previous
+end)
+
+QuestTogether:RegisterTest("client locale renders comparison and sharing consent controls", function()
+	assert(QuestTogether.localizationTestLocale == nil)
+	local locale = QuestTogether:GetEventLocale()
+	local function T(key) return QuestTogether.TranslateForLocale(key, locale) end
+	local a = Fixture(nil, { Quest(1, "Local quest", true) })
+	AttachUI(a)
+	a:OpenPartyQuestCompare()
+	Reply(a, "Friend-Realm", {}, true, true)
+	a:RenderPartyQuestCompare()
+	local frame = a.partyQuestCompareWindow
+	Equal(frame.title.text, T("Party Quest Compare"))
+	Equal(frame.filter.children[1].text, T("Hide quests I don't have"))
+	Equal(frame.rows[1].action.text, T("Share"))
+	function a:GetQuestTitle() return "Local quest" end
+	assert(a:HandlePartyQuestShareMessage(SharePacket(a), "Friend-Realm", "PARTY"))
+	a:RenderPartyQuestSharePrompt()
+	local prompt = a.partyQuestSharePrompt
+	Equal(prompt.title.text, T("QuestTogether · Share request"))
+	Equal(prompt.always.children[1].text, T("Always allow party share requests"))
+	Equal(prompt.message.text, string.format(T("%s would like you to share\n[%s]\nwith the party."), "Friend-Realm", "Local quest"))
+	Equal(a.pushes, 0)
+end, { locale = "client" })
+
+QuestTogether:RegisterTest("direct share controls retain group authorization and manual consent", function()
+	local a = Fixture(nil, { Quest(1, nil, true) })
+	function a:SendWireMessageToAnnouncementRoutes(wire, _, routes)
+		self.wire[#self.wire + 1] = wire
+		self.lastRoutes = routes
+		return true
+	end
+	Equal(a:HandlePartyQuestShareMessage(SharePacket(a), "Stranger-Realm", "WHISPER"), false)
+	Equal(a.pushes, 0)
+	Equal(a:HandlePartyQuestShareMessage(SharePacket(a), "Friend-Realm", "WHISPER"), true)
+	Equal(a.pushes, 0)
+	Equal(a.lastRoutes[1].distribution, "WHISPER")
+	Equal(a.lastRoutes[1].target, "Friend-Realm")
+	a.partyMembers = {}
+	Equal(a:SendPartyQuestShareMessage("Friend-Realm", 1, "stale", "sent"), false)
+	Equal(a.pushes, 0)
+end)
+
+QuestTogether:RegisterTest("retired share and join prompts dismiss safely during restrictions without showing their successors", function()
+	for _, kind in ipairs({ "share", "join" }) do
+		local a = Fixture(nil, { Quest(1, "Share me", true) })
+		AttachUI(a)
+		a.QueuePartyQuestSharePrompt = QuestTogether.QueuePartyQuestSharePrompt
+		function a:GetQuestTitle() return "Share me" end
+		function a:SendPartyQuestShareMessage() return true end
+		function a:SendPartyJoinMessage() return true end
+		local first = { sender = kind == "share" and "Friend-Realm" or "Visitor-Realm", key = "first", questId = 1,
+			requestId = "r1", id = "j1", order = 1, created = 100, expires = 160 }
+		local second = { sender = kind == "share" and "Friend-Realm" or "Other-Realm", key = "second", questId = 1,
+			requestId = "r2", id = "j2", order = 2, created = 101, expires = 170 }
+		local render, finish, queue, state, frameKey
+		if kind == "share" then
+			a.partyQuestShareState = { incoming = { first = first, second = second } }
+			state = a.partyQuestShareState
+			render, finish, queue = a.RenderPartyQuestSharePrompt, a.FinishPartyQuestShare, a.QueuePartyQuestSharePrompt
+			frameKey = "partyQuestSharePrompt"
+		else
+			a.partyJoinState = { incoming = { [first.sender] = first, [second.sender] = second } }
+			state = a.partyJoinState
+			render, finish, queue = a.RenderPartyJoinPrompt, a.FinishPartyJoin, a.QueuePartyJoinPrompt
+			frameKey = "partyJoinPrompt"
+		end
+		render(a)
+		local frame = a[frameKey]
+		Equal(frame.request, first)
+		Equal(frame.shown, true)
+		a.blocked = true
+		Equal(finish(a, first, "declined"), true)
+		Equal(frame.shown, false)
+		Equal(frame.request, nil)
+		a:Advance(0.1)
+		Equal(frame.shown, false)
+		assert(next(state.incoming), "the next consent request must remain pending")
+		Equal(a.pushes, 0)
+		a.blocked = false
+		a:FlushDeferredWork("test restrictions ended")
+		Equal(frame.shown, true)
+		Equal(frame.request, second)
+		-- Expiry does not require a successful layout/render callback either.
+		a.blocked = true
+		a.now = 171
+		queue(a)
+		Equal(frame.shown, false)
+		Equal(frame.request, nil)
+	end
+end)
+
+QuestTogether:RegisterTest("retired consent prompts quarantine protected and forbidden frames until safe teardown", function()
+	for _, boundary in ipairs({ "protected", "forbidden" }) do
+		local a = Fixture()
+		AttachUI(a)
+		local frame = Frame()
+		frame.request, frame[boundary] = {}, true
+		a.partyQuestSharePrompt = frame
+		a.partyQuestShareState = { incoming = {} }
+		a.blocked = true
+		local hides = 0
+		local hide = frame.Hide
+		function frame:Hide()
+			assert(not self.protected and not self.forbidden, "quarantined prompt must not mutate")
+			hides = hides + 1
+			hide(self)
+		end
+		a:RenderPartyQuestSharePrompt()
+		Equal(hides, 0)
+		Equal(frame.request, nil)
+		frame[boundary] = false
+		a:RenderPartyQuestSharePrompt()
+		Equal(hides, 1)
+		Equal(frame.shown, false)
+	end
 end)

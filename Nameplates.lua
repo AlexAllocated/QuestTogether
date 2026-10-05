@@ -1335,10 +1335,10 @@ end
 
 local function BuildCapabilityStatusLabel(isAvailable)
 	if isAvailable then
-		return "|cff33ff99available|r", "available"
+		return "|cff33ff99" .. L("available") .. "|r", "available"
 	end
 
-	return "|cffff4444unavailable|r", "unavailable"
+	return "|cffff4444" .. L("unavailable") .. "|r", "unavailable"
 end
 
 local function BuildCapabilityStatusLine(label, isAvailable)
@@ -3601,41 +3601,14 @@ ApplyQuestIconVisual = function(texture)
 end
 
 local function ApplyAnnouncementIconVisual(texture, eventType, iconAsset, iconKind)
-	if not texture then
-		return
+	if not texture then return end
+	local asset, kind = QuestTogether:ResolveAnnouncementDisplayIcon(eventType, iconAsset, iconKind)
+	if kind == "atlas" and texture.SetAtlas then
+		texture:SetAtlas(asset, true)
+	else
+		texture:SetTexture(kind ~= "atlas" and type(asset) == "string" and asset ~= "" and asset or QuestTogether.NAMEPLATE_PLAYER_ICON_TEXTURE)
 	end
-	if eventType == "LOOKING_FOR_QUEST_PARTNERS" then
-		iconAsset, iconKind = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon", "texture"
-	end
-
-	if type(iconAsset) == "string" and iconAsset ~= "" then
-		if iconKind == "atlas" and texture.SetAtlas then
-			texture:SetAtlas(iconAsset, true)
-			texture:SetTexCoord(0, 1, 0, 1)
-			return
-		end
-
-		texture:SetTexture(iconAsset)
-		texture:SetTexCoord(0, 1, 0, 1)
-		return
-	end
-
-	if QuestTogether.IsWorldQuestAnnouncementType and QuestTogether:IsWorldQuestAnnouncementType(eventType) then
-		if texture.SetAtlas then
-			texture:SetAtlas("worldquest-icon", true)
-			texture:SetTexCoord(0, 1, 0, 1)
-			return
-		end
-	end
-	if QuestTogether.IsBonusObjectiveAnnouncementType and QuestTogether:IsBonusObjectiveAnnouncementType(eventType) then
-		if texture.SetAtlas then
-			texture:SetAtlas("Bonus-Objective-Star", true)
-			texture:SetTexCoord(0, 1, 0, 1)
-			return
-		end
-	end
-
-	ApplyQuestIconVisual(texture)
+	texture:SetTexCoord(0, 1, 0, 1)
 end
 
 local function CreateAnnouncementBubbleFrame(parentFrame)
@@ -4274,7 +4247,11 @@ function QuestTogether:ScheduleNameplateHealthTintRefresh(unitToken, delaySecond
 		if not hasResolvedQuestState then
 			self:ForgetResolvedNameplateQuestState(liveUnitToken)
 			self:HideNameplateIcon(namePlateFrameBase)
-			if self.ScheduleNameplateTooltipResolution then
+			-- Health/threat ticks are presentation updates, not a new discovery
+			-- lifetime. Empty/nonquest tooltips must not bypass exhausted retries.
+			-- Quest changes, target/mouseover and plate additions reset the budget.
+			if self.ScheduleNameplateTooltipResolution
+				and self:GetNameplateTooltipResolveRetryCount(liveUnitToken) < NAMEPLATE_TOOLTIP_RETRY_MAX_ATTEMPTS then
 				self:ScheduleNameplateTooltipResolution(liveUnitToken, self:GetNameplateTooltipScanGuid(liveUnitToken, unitFrame), 0, "ScheduleNameplateHealthTintRefresh")
 			end
 			return

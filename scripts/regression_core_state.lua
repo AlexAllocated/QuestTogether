@@ -1129,3 +1129,21 @@ QT:RegisterTest("closing native edit mode preserves bubble edits while explicit 
 	button.scripts.OnClick()
 	Equal(addon.db.profile.chatBubbleDuration, 8)
 end)
+
+QT:RegisterTest("boolean slash setter preserves nonboolean options and still changes boolean defaults", function()
+	local a = NewFixture()
+	a.db.profile = a:DeepCopy(QT.DEFAULTS.profile)
+	a.Print, a.RefreshOptionsWindow, a.Debugf = Noop, Noop, Noop
+	local color = { r = 0.1, g = 0.2, b = 0.3 }
+	a.db.profile.nameplateQuestHealthColor = color
+	for _, key in ipairs({ "nameplateQuestHealthColor", "nearbyAnnouncementRange", "chatLogDestination", "nameplatePlayerIconStyle" }) do
+		local original = a.db.profile[key]
+		a:HandleSlashCommand("set " .. key .. " off")
+		Equal(a.db.profile[key], original)
+	end
+	a:HandleSlashCommand("set announceAccepted off")
+	Equal(a.db.profile.announceAccepted, false)
+	a:HandleSlashCommand("set announceAccepted on")
+	Equal(a.db.profile.announceAccepted, true)
+	Equal(color.r, 0.1)
+end)

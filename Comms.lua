@@ -422,6 +422,7 @@ function QuestTogether:EncodePingRequestPayload(requestData)
 		self:EscapePayload(requestData.requesterName or ""),
 	}
 
+	if requestData.supportsDirectComms then fields[4] = "direct1" end
 	return table.concat(fields, ",")
 end
 
@@ -447,6 +448,7 @@ function QuestTogether:DecodePingRequestPayload(payload)
 		version = version,
 		requestId = requestId,
 		requesterName = requesterName,
+		supportsDirectComms = fields[4] == "direct1",
 	}
 end
 
@@ -840,7 +842,7 @@ end
 -- Fixed command buckets keep unknown traffic from growing diagnostic state.
 local TRAFFIC_COMMANDS = { ANN = true, LVL = true, LOC = true, QTPR = true, QTVR = true,
 	QTLF = true, QTLQ = true, QJST = true, QJON = true, QTPG = true, QPGR = true, QPGM = true, QCMP = true, QCQE = true,
-	QCDN = true, QTB1 = true, QSHR = true, PING = true, PONG = true }
+	QCDN = true, QTB1 = true, QTDQ = true, QTCI = true, QTHQ = true, QTHD = true, QTSR = true, QTSP = true, QTSX = true, QSHR = true, PING = true, PONG = true }
 function QuestTogether:RecordCommsTraffic(kind, message, result)
 	local diagnostics = self:GetCommsDiagnostics()
 	local now = SafeNumber(self, self.API.GetTime and self.API.GetTime())
@@ -889,6 +891,56 @@ function QuestTogether:RecordCommsDiagnostic(kind, detail)
 	end
 end
 
+-- One-recipient controls use whispers only after capability discovery or a
+-- valid direct exchange. Older peers retain their established group/channel path.
+local DIRECT_COMMANDS = { QCMP = true, QCQE = true, QCDN = true, QJON = true,
+	QPGR = true, QPGM = true, QSHR = true, PONG = true }
+
+function QuestTogether:RememberDirectCommPeer(sender, supported, lifetime)
+	local name = self:NormalizeMemberName(sender)
+	if not name or #name > 120 or name:find("[%c|,]") or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then return end
+	local state = rawget(self, "directCommPeers")
+	if not state then state = {}; self.directCommPeers = state end
+	if not supported then state[name] = nil; return end
+	local now = self.API.GetTime()
+	local existing = state[name]
+	state[name] = { at = now, expires = now + (lifetime or 600) }
+	-- Refreshes do not grow the cache; bound/prune only on new admission.
+	if existing then return end
+	local count, oldest, at = 0
+	for key, peer in pairs(state) do
+		if now < peer.at or now >= peer.expires then state[key] = nil
+		else
+			count = count + 1
+			if not at or peer.at < at then oldest, at = key, peer.at end
+		end
+	end
+	if count > 512 then state[oldest] = nil end
+end
+
+function QuestTogether:SupportsDirectComms(sender)
+	local name = self:NormalizeMemberName(sender)
+	local state = rawget(self, "directCommPeers")
+	local peer = state and name and state[name]
+	local now = self.API.GetTime()
+	if peer and now >= peer.at and now < peer.expires and not self:IsIgnoredPlayerName(name) then return true end
+	if state and name then state[name] = nil end
+	return false
+end
+
+function QuestTogether:GetTargetedCommRoutes(target, legacyRoutes)
+	target = self:NormalizeMemberName(target)
+	if not target or self:IsSelfSender(target) or self:IsIgnoredPlayerName(target) then return {} end
+	local group = self:IsGroupedSender(target) and self:GetGroupAnnouncementDistribution()
+	local fallback = legacyRoutes or (group and { { distribution = group } })
+		or { { distribution = "CHANNEL", channelName = self.announcementChannelName, requiresChannelJoin = true } }
+	if self:SupportsDirectComms(target) then
+		local groupOnly = fallback[1] and GROUP_ANNOUNCEMENT_DISTRIBUTIONS[fallback[1].distribution] or false
+		return { { distribution = "WHISPER", target = target, requiresGroup = groupOnly } }
+	end
+	return fallback
+end
+
 function QuestTogether:SendWireMessageToAnnouncementRoutes(wireMessage, debugContext, selectedRoutes, direct)
 	wireMessage = SafePrimitiveString(self, wireMessage, "")
 	if wireMessage == "" or not self.isEnabled then
@@ -925,13 +977,14 @@ function QuestTogether:SendWireMessageToAnnouncementRoutes(wireMessage, debugCon
 			routes[#routes + 1] = route
 		end
 	end
-	local sentCount, sentTargets = 0, {}
+	local sentCount, sentTargets, paced = 0, {}, false
 	local isPing = wireMessage:sub(1, 5) == "PING|" or wireMessage:sub(1, 5) == "PONG|"
 
 	for _, route in ipairs(routes) do
-		if geographic and not direct and (command == "ANN" or command == "LVL" or command == "PONG" or command == "QPGR" or command == "QPGM") then
+		if geographic and not direct and (command == "ANN" or command == "LVL" or command == "PONG" or command == "QPGR" or command == "QPGM" or command == "QCMP") then
 			if self:QueueGeographicWire(wireMessage, contextLabel, route, false) then sentCount = sentCount + 1 end
 		elseif geographic and not direct and not self:TakeCommsSendToken(false) then
+			paced = true
 			self:RecordCommsDiagnostic("pacedRoutes", contextLabel)
 		elseif route.requiresChannelJoin and not self:EnsureAnnouncementChannelJoined(route.channelName) then
 			self:RecordCommsDiagnostic("failedRoutes", "channel join failed " .. contextLabel)
@@ -975,7 +1028,7 @@ function QuestTogether:SendWireMessageToAnnouncementRoutes(wireMessage, debugCon
 			end
 		end
 	end
-	return sentCount > 0
+	return sentCount > 0, sentCount == 0 and paced and "paced" or nil
 end
 
 function QuestTogether:ShouldSuppressDuplicateCommMessage(sender, message, duplicateWindow)
@@ -1000,6 +1053,14 @@ function QuestTogether:ShouldSuppressDuplicateCommMessage(sender, message, dupli
 	index.ring[index.cursor] = { key = signature, at = nowSeconds }
 	signatures[signature] = nowSeconds
 	return false
+end
+
+function QuestTogether:IsQueuedCommRequestCurrent(wire)
+	if wire:sub(1, 5) ~= "QCMP|" then return true end
+	local request = self:DecodeQuestCompareRequestPayload(wire:sub(6))
+	local pending = request and self.pendingQuestCompareRequests and self.pendingQuestCompareRequests[request.requestId]
+	return pending ~= nil and not self:IsIgnoredPlayerName(pending.targetName)
+		and pending.targetName == self:NormalizeMemberName(request.targetName)
 end
 
 function QuestTogether:AnnouncementChannelChatFilter(_, _, ...)
@@ -1076,23 +1137,26 @@ function QuestTogether:EnsureAnnouncementChannelJoined(channelName)
 		return false
 	end
 
+	-- Existing permanent channels survive /reload too; they need our filters
+	-- even when no JoinPermanentChannel call is necessary.
+	self:RegisterAnnouncementChannelChatFilters()
 	local currentLocalID = self:GetAnnouncementChannelLocalID(channelName)
 	if currentLocalID then
 		if cacheKey then self[cacheKey] = currentLocalID end
-		if self.HideAnnouncementChannelFromChatWindows then
+		local bindings = rawget(self, "announcementChannelBindings") or {}
+		self.announcementChannelBindings = bindings
+		if bindings[channelName] ~= currentLocalID and not self:IsRuntimeRestricted() then
 			self:HideAnnouncementChannelFromChatWindows(channelName)
+			bindings[channelName] = currentLocalID
 		end
 		return true
 	end
 	if cacheKey then self[cacheKey] = nil end
+	if self.announcementChannelBindings then self.announcementChannelBindings[channelName] = nil end
 
 	if not self.API or not self.API.JoinPermanentChannel then
 		self:Debug("JoinPermanentChannel API unavailable", "comms")
 		return false
-	end
-
-	if self.RegisterAnnouncementChannelChatFilters then
-		self:RegisterAnnouncementChannelChatFilters()
 	end
 
 	local chatFrameId = (DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.GetID and DEFAULT_CHAT_FRAME:GetID()) or 1
@@ -1109,6 +1173,8 @@ function QuestTogether:EnsureAnnouncementChannelJoined(channelName)
 		if cacheKey then self[cacheKey] = currentLocalID end
 		if self.HideAnnouncementChannelFromChatWindows then
 			self:HideAnnouncementChannelFromChatWindows(channelName)
+			self.announcementChannelBindings = self.announcementChannelBindings or {}
+			self.announcementChannelBindings[channelName] = currentLocalID
 		end
 		self:Debugf("comms", "Joined announcement channel localID=%s", SafeAddonString(self, currentLocalID))
 		return true
@@ -1174,7 +1240,11 @@ function QuestTogether:ScheduleAnnouncementChannelOrder()
 	end)
 end
 
-function QuestTogether:CHANNEL_COUNT_UPDATE() self:ScheduleAnnouncementChannelOrder() end
+function QuestTogether:CHANNEL_COUNT_UPDATE()
+	local state = rawget(self, "geographicCommsState")
+	if state then state.reconciledChannels = nil end
+	self:ScheduleAnnouncementChannelOrder()
+end
 function QuestTogether:CHANNEL_UI_UPDATE() self:ScheduleAnnouncementChannelOrder() end
 
 function QuestTogether:LeaveAnnouncementChannel()
@@ -1197,6 +1267,7 @@ end
 function QuestTogether:ResetCommsState()
 	if self.ResetGeographicComms then self:ResetGeographicComms() end
 	self.channelOrderWork = nil
+	self.announcementChannelBindings = nil
 	self.localizedQuestTitles = nil
 	if self.ResetPartyJoin then self:ResetPartyJoin()
 	self.partyVisualState = nil end
@@ -1210,6 +1281,8 @@ function QuestTogether:ResetCommsState()
 	-- Pending timer closures retain the old state only; they cannot send after
 	-- disable/re-enable or remove work from a replacement queue.
 	self.questCompareResponseQueue = nil
+	self.directCommPeers = nil
+	self.playerDetailsState = nil
 end
 
 function QuestTogether:GetPlayerPingMetadata()
@@ -1474,7 +1547,7 @@ function QuestTogether:DrainQuestCompareResponses()
 	local distribution = job.routes[1].distribution
 	if job.requesterName and self:IsIgnoredPlayerName(job.requesterName) then
 		finished = true
-	elseif GROUP_ANNOUNCEMENT_DISTRIBUTIONS[distribution] and job.requesterName and not self:IsGroupedSender(job.requesterName) then
+	elseif (GROUP_ANNOUNCEMENT_DISTRIBUTIONS[distribution] or job.routes[1].requiresGroup) and job.requesterName and not self:IsGroupedSender(job.requesterName) then
 		-- A delayed reply belongs to the requesting group member. Do not send it
 		-- into a replacement group after that player leaves.
 		finished = true
@@ -1513,13 +1586,13 @@ function QuestTogether:DrainQuestCompareResponses()
 		if job.entries and not finished then
 			attemptedSend = true
 			local entry = job.entries[job.nextEntry]
-			local sent
+			local sent, reason
 			if entry then
-				sent = self:SendQuestCompareEntry(job.requestId, entry, job.routes)
+				sent, reason = self:SendQuestCompareEntry(job.requestId, entry, job.routes)
 			else
 				-- Advertise the full count only after every entry has been accepted by
 				-- the transport on the requester's route. Never certify a partial log.
-				sent = self:SendQuestCompareDone(job.requestId, #job.entries, job.routes)
+				sent, reason = self:SendQuestCompareDone(job.requestId, #job.entries, job.routes)
 			end
 			if sent then
 				queue.packets = queue.packets - 1
@@ -1528,7 +1601,7 @@ function QuestTogether:DrainQuestCompareResponses()
 				job.nextEntry = job.nextEntry + 1
 				finished = entry == nil
 			else
-				job.attempts = job.attempts + 1
+				if reason ~= "paced" then job.attempts = job.attempts + 1 end
 				nextDelay = QUEST_COMPARE_RETRY_INTERVAL_SECONDS
 				if job.attempts >= QUEST_COMPARE_MAX_SEND_ATTEMPTS then
 					finished = true
@@ -1597,10 +1670,11 @@ function QuestTogether:HandleQuestCompareRequest(requestData)
 		table.remove(queue.jobs, superseded[index])
 	end
 	queue.packets = queue.packets - supersededPackets
-	-- Reply on the route that actually delivered the request, so cross-realm
-	-- party members do not depend on a realm-local channel or duplicate traffic.
+	-- Prefer the requester alone; older peers retain the proven incoming route.
+	-- Cross-realm party replies never depend on a realm-local channel.
 	local distribution = requestData.replyDistribution
-	if distribution ~= "CHANNEL" and not GROUP_ANNOUNCEMENT_DISTRIBUTIONS[distribution] then
+	if distribution == "WHISPER" and not requesterName then return false end
+	if distribution ~= "CHANNEL" and distribution ~= "WHISPER" and not GROUP_ANNOUNCEMENT_DISTRIBUTIONS[distribution] then
 		distribution = self:GetGroupAnnouncementDistribution() or "CHANNEL"
 	end
 	queue.jobs[#queue.jobs + 1] = {
@@ -1613,7 +1687,9 @@ function QuestTogether:HandleQuestCompareRequest(requestData)
 		snapshotAttempts = (entries or reason == "restricted") and 0 or 1,
 		snapshotRetryAt = self.API.GetTime() + QUEST_COMPARE_RETRY_INTERVAL_SECONDS,
 		expiresAt = self.API.GetTime() + QUEST_COMPARE_RESPONSE_LIFETIME_SECONDS,
-		routes = { { distribution = distribution, requiresChannelJoin = distribution == "CHANNEL" } },
+		routes = distribution == "WHISPER" and { { distribution = "WHISPER", target = requesterName, requiresGroup = self:IsGroupedSender(requesterName) } }
+			or (requesterName and self:GetTargetedCommRoutes(requesterName, { { distribution = distribution, requiresChannelJoin = distribution == "CHANNEL" } })
+			or { { distribution = distribution, requiresChannelJoin = distribution == "CHANNEL" } }),
 	}
 	queue.packets = queue.packets + packetCount
 	self:DrainQuestCompareResponses()
@@ -1775,7 +1851,7 @@ function QuestTogether:RequestQuestCompare(speakerName, receiver)
 		not self:SendWireMessageToAnnouncementRoutes(
 			wireMessage,
 			"quest compare request requestId=" .. SafeAddonString(self, requestId, ""),
-			receiver and receiver.routes
+			self:GetTargetedCommRoutes(targetName, receiver and receiver.routes)
 		)
 	then
 		self.pendingQuestCompareRequests[requestId] = nil
@@ -1921,6 +1997,7 @@ function QuestTogether:SendPingRequest()
 	local requestData = {
 		requestId = requestId,
 		requesterName = requesterName,
+		supportsDirectComms = true,
 	}
 	local wireMessage = self:SerializeWireMessage(PING_REQUEST_COMMAND, self:EncodePingRequestPayload(requestData))
 	if
@@ -1994,8 +2071,12 @@ function QuestTogether:HandlePingRequest(requestData, channel, localID, channelN
 	elseif channel ~= nil then
 		return false
 	end
-	-- Reply on the proven incoming route, not both public channels plus a group
-	-- unrelated to the requester. Old peers understand the unchanged PONG wire.
+	-- The discovery request is broadcast; its report belongs only to its requester.
+	-- Preserve the proven incoming route for older receivers.
+	if requestData.requesterName then
+		if requestData.supportsDirectComms then self:RememberDirectCommPeer(requestData.requesterName, true) end
+		routes = self:GetTargetedCommRoutes(requestData.requesterName, routes)
+	end
 	if rawget(self, "geographicCommsState") then return self:ScheduleGeographicPingReply(requestData.requestId, routes) end
 	return self:SendPingResponse(requestData.requestId, routes)
 end
@@ -2307,7 +2388,7 @@ function QuestTogether:PublishAnnouncementEvent(eventType, text, questId, extraD
 		return false
 	end
 
-	self:SendAnnouncementEvent(eventType, text, questId, extraData)
+	self:SendAnnouncementWireEvent(eventData)
 	self:AnnounceToNonQTParty(eventData)
 	if self.suppressLocalAnnouncementDisplayDuringTests then
 		return true
@@ -2382,6 +2463,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		return
 	end
 	local safeMessage = SafePrimitiveString(self, message, "")
+	if safeMessage == "" or #safeMessage > ADDON_MESSAGE_MAX_BYTES or safeMessage:find("\0", 1, true) then return end
 	local safeTransportSender = SafeTrimAddonString(self, sender, "")
 	local transportSenderName = safeTransportSender ~= "" and self:NormalizeMemberName(safeTransportSender) or nil
 	if not transportSenderName then
@@ -2400,7 +2482,25 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 	if self.IsIgnoredPlayerName and self:IsIgnoredPlayerName(transportSenderName) then
 		return
 	end
-	if not self:IsAnnouncementChannelEvent(channel, localID, name) then
+	local isWhisper = SafePrimitiveString(self, channel, "") == "WHISPER"
+	if isWhisper then
+		local command, payload = self:DeserializeWireMessage(safeMessage)
+		if command == "QTHQ" or command == "QTHD" then
+			if self:HandlePlayerDetailsMessage(command, payload, transportSenderName) then
+				self:RecordCommsTraffic("received", safeMessage)
+			end
+			return
+		end
+		if command == "QTSR" or command == "QTSP" or command == "QTSX" then
+			if self:HandleNearbyStreamMessage(command, payload, transportSenderName) then
+				self:RecordCommsTraffic("received", safeMessage)
+			end
+			return
+		end
+		-- Direct traffic is a strict control allowlist, never an alternate path
+		-- for announcements, chat, presence snapshots or location broadcasts.
+		if not DIRECT_COMMANDS[command] then return end
+	elseif not self:IsAnnouncementChannelEvent(channel, localID, name) then
 		return
 	end
 	self:RecordCommsDiagnostic(
@@ -2417,6 +2517,12 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 	local command, payload = self:DeserializeWireMessage(safeMessage)
 	if not command then
 		self:Debug("Failed to deserialize incoming comm payload", "comms")
+		return
+	end
+	-- Discovery has a shared response cooldown. Validate its narrow route before
+	-- any dedup bookkeeping so a copy on another channel cannot suppress it.
+	if command == "QTDQ" then
+		self:HandleGeographicDiscovery(payload, transportSenderName, channel, localID, name)
 		return
 	end
 	local duplicateWindow = (command == PING_REQUEST_COMMAND or command == QUEST_COMPARE_REQUEST_COMMAND)
@@ -2484,19 +2590,22 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		if self.RecordQTPlayerPresence then self:RecordQTPlayerPresence(transportSenderName, true) end
 		self:ObserveAddonVersion(responseData.addonVersion)
 		self:RememberPlayerAddonVersion(transportSenderName, responseData.addonVersion)
-		self:HandlePingResponse(responseData)
+		if self:HandlePingResponse(responseData) and isWhisper then self:RememberDirectCommPeer(transportSenderName, true) end
 		return
 	end
 
 	if command == "QTPG" then self:HandlePartyVisualMetadata(payload, transportSenderName); return end
-	if command == "QPGR" then self:HandlePartyVisualRosterRequest(payload, transportSenderName); return end
-	if command == "QPGM" then self:HandlePartyVisualRosterMember(payload, transportSenderName); return end
+	if command == "QPGR" then self:HandlePartyVisualRosterRequest(payload, transportSenderName, isWhisper); return end
+	if command == "QPGM" then
+		if self:HandlePartyVisualRosterMember(payload, transportSenderName) and isWhisper then self:RememberDirectCommPeer(transportSenderName, true) end
+		return
+	end
 	if command == "QJST" and self.HandlePartyJoinMetadata then
 		self:HandlePartyJoinMetadata(payload, transportSenderName)
 		return
 	end
 	if command == "QJON" and self.HandlePartyJoinMessage then
-		self:HandlePartyJoinMessage(payload, transportSenderName)
+		self:HandlePartyJoinMessage(payload, transportSenderName, isWhisper)
 		return
 	end
 	if command == "QTVR" then
@@ -2533,7 +2642,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		requestData.requesterName = transportSenderName or requestData.requesterName
 		requestData.replyDistribution = SafePrimitiveString(self, channel, "")
 		self:RecordQTPlayerPresence(transportSenderName, true)
-		self:HandleQuestCompareRequest(requestData)
+		if self:HandleQuestCompareRequest(requestData) and isWhisper then self:RememberDirectCommPeer(transportSenderName, true) end
 		return
 	end
 
@@ -2545,7 +2654,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		end
 		entryData.senderName = transportSenderName
 		self:RecordQTPlayerPresence(transportSenderName, true)
-		self:HandleQuestCompareEntry(entryData)
+		if self:HandleQuestCompareEntry(entryData) and isWhisper then self:RememberDirectCommPeer(transportSenderName, true) end
 		return
 	end
 
@@ -2557,7 +2666,7 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		end
 		doneData.senderName = transportSenderName
 		self:RecordQTPlayerPresence(transportSenderName, true)
-		self:HandleQuestCompareDone(doneData)
+		if self:HandleQuestCompareDone(doneData) and isWhisper then self:RememberDirectCommPeer(transportSenderName, true) end
 		return
 	end
 end
