@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "6.3.0",
+	version = "6.3.1",
 	welcome = "More comfortable spacing in the Party Quest Log.",
 	sections = {
 		{

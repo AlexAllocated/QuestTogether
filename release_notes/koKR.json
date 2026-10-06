@@ -1,7 +1,7 @@
 {
   "source_sha256": "cc2a434f085b1c811a66e90a993aadd2c083311be57fa002ea2f723c11eb3e2c",
   "notes": {
-    "version": "6.3.0",
+    "version": "6.3.1",
     "welcome": "파티 퀘스트 일지의 여백을 개선했습니다.",
     "sections": [
       {
