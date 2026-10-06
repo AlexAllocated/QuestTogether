@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.4.0
+## 6.4.1
 
 Détection expérimentale des couches pour les joueurs QT proches.
 
@@ -15,6 +15,44 @@ Détection expérimentale des couches pour les joueurs QT proches.
 ### Captures des notes de version
 
 - Les captures des notes de version sont désormais téléversées directement sur Discord pour rester visibles dans les publications du journal des modifications.
+
+## 6.4.0
+
+Des fenêtres QT plus soignées et un accès plus rapide aux quêtes du groupe.
+
+### Journal de quêtes du groupe
+
+- Découvrez le journal de quêtes du groupe introduit en 6.3 : comparez jusqu’à cinq joueurs dans des colonnes aux couleurs de classe, repérez les quêtes possédées ou manquantes et voyez quand le groupe peut les rendre. Combinez recherche et filtres de possession, progression et action. Partage et demandes de partage sont proposés lorsque cela est possible.
+- Chaque en-tête affiche la quête suivie du joueur. Cliquez sur le nom d’un coéquipier pour suivre volontairement sa quête active ; si vous ne la possédez pas, votre navigation reste inchangée. Actualiser récupère un nouvel état de la progression distante. Les captures montrent des données fictives de prévisualisation.
+- Les quêtes que vous possédez ont désormais un petit bouton en forme de livre qui ouvre leurs détails dans le journal des quêtes de Blizzard. Cliquer sur la ligne développe toujours les objectifs.
+- Une couronne indique le chef du groupe et suit les changements de chef. Votre propre colonne reste en premier.
+
+**Retail**
+
+![Journal de quêtes du groupe — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogRetail.png)
+
+**Forever**
+
+![Journal de quêtes du groupe — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
+
+### Développer les objectifs de chacun
+
+- Cliquez sur une quête pour afficher les compteurs, barres de progression et étapes terminées de chaque membre. Plusieurs quêtes peuvent rester développées. Cette version compacte ces sections et harmonise les fonds aux couleurs de classe des noms et des objectifs. Une quête typique de cinq joueurs avec deux objectifs chacun tient dans la fenêtre par défaut ; les quêtes plus longues peuvent nécessiter un défilement.
+
+**Forever**
+
+![Développer les objectifs de chacun — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+
+### Fenêtres et minicarte
+
+- Un clic gauche sur l’icône de la minicarte ouvre ou ferme le journal de quêtes du groupe ; un clic droit ouvre le menu. Les paramètres sont de retour dans le menu et l’infobulle explique les raccourcis.
+- Les rappels de discussion de groupe, demandes de partage et d’invitation, réglages des bulles et boîte de lien Discord utilisent maintenant le cadre en parchemin et les thèmes clair/sombre de QT, avec plus de marges et de place pour les valeurs des curseurs.
+- Le déplacement des fenêtres conserve le décalage du curseur, y compris dans l’aperçu du comparateur. Les menus et infobulles emploient désormais systématiquement le nom Journal des quêtes pour la fenêtre de Blizzard.
+
+### Commandes d’aperçu
+
+- /qt preview affiche la liste des aperçus de fenêtres et d’annonces. Les anciennes commandes fonctionnent toujours ; les actions simulées n’invitent aucun joueur, ne partagent aucune quête et n’envoient aucun message.
+- L’aperçu du comparateur présente maintenant un groupe complet de cinq joueurs, dont un chasseur et un voleur, avec des objectifs variés, des quêtes actives et une couronne de chef.
 
 ## 6.3.1
 

@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "6.4.0",
+	version = "6.4.1",
 	welcome = "Experimental layer detection for nearby QT players.",
 	sections = {
 		{

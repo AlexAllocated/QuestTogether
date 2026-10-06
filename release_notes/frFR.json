@@ -1,7 +1,7 @@
 {
   "source_sha256": "8e17df4b36351e476fc521ef91b98b2dd3bc8288ec39c1d9836434898c92c871",
   "notes": {
-    "version": "6.4.0",
+    "version": "6.4.1",
     "welcome": "Détection expérimentale des couches pour les joueurs QT proches.",
     "sections": [
       {

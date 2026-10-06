@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.4.0
+## 6.4.1
 
 Experimentelle Layer-Erkennung für QT-Spieler in der Nähe.
 
@@ -15,6 +15,44 @@ Experimentelle Layer-Erkennung für QT-Spieler in der Nähe.
 ### Bilder in Versionshinweisen
 
 - Bilder aus Versionshinweisen werden jetzt direkt auf Discord hochgeladen, damit sie in den Änderungsprotokollen sichtbar bleiben.
+
+## 6.4.0
+
+Überarbeitete QT-Fenster und schnellerer Zugriff auf Gruppenquests.
+
+### Gruppenquestlog
+
+- Das mit 6.3 eingeführte Gruppenquestlog im Überblick: Vergleiche bis zu fünf Spieler in klassenfarbenen Spalten und erkenne, wer welche Quest hat, wem sie fehlt und wann die Gruppe abgabebereit ist. Kombiniere Suche und Filter für Besitz, Fortschritt und Aktionen. Teilen und Teilanfragen stehen zur Verfügung, wenn unterstützt.
+- Unter jedem Spielernamen steht die aktuell fokussierte Quest. Klicke auf den Namen eines Mitspielers, um seinem Questfokus freiwillig zu folgen. Fehlt dir dessen Quest, bleibt deine Navigation unverändert. Aktualisieren lädt einen neuen Fortschrittsstand der anderen Spieler. Die Bilder zeigen fiktive Vorschaudaten.
+- Quests in deinem Questlog haben jetzt eine kleine Buchschaltfläche, die ihre Details in Blizzards Questlog öffnet. Ein Klick auf die Zeile klappt weiterhin die Ziele auf.
+- Eine Krone kennzeichnet den Gruppenanführer und wechselt bei einem Führungswechsel mit. Deine eigene Spalte bleibt an erster Stelle.
+
+**Retail**
+
+![Gruppenquestlog — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogRetail.png)
+
+**Forever**
+
+![Gruppenquestlog — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
+
+### Ziele aller Gruppenmitglieder aufklappen
+
+- Klicke auf eine Quest, um Zielzähler, Fortschrittsbalken und erledigte Schritte jedes Mitglieds anzuzeigen. Mehrere Quests können gleichzeitig geöffnet bleiben. Diese Version macht die Abschnitte kompakter und gleicht die Klassenfarben von Überschriften und Inhalt an. Eine typische Fünfergruppenquest mit je zwei Zielen passt in die Standardfenstergröße; längere Quests können weiterhin Scrollen erfordern.
+
+**Forever**
+
+![Ziele aller Gruppenmitglieder aufklappen — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+
+### Fenster und Minikarte
+
+- Ein Linksklick auf das Minikartensymbol öffnet oder schließt das Gruppenquestlog; ein Rechtsklick öffnet das Menü. Einstellungen ist wieder im Menü, und der Tooltip erklärt die Kurzbefehle.
+- Erinnerungen an Gruppenchat-Meldungen, Teil- und Beitrittsanfragen, Sprechblaseneinstellungen und der Discord-Linkdialog verwenden jetzt QTs Schriftrollenrahmen und helle/dunkle Designs, mit mehr Innenabstand und Platz für Schiebereglerwerte.
+- Beim Verschieben von Fenstern bleibt der Abstand zum Mauszeiger erhalten, auch in der Vergleichsvorschau. Menüs und Tooltips bezeichnen Blizzards Fenster jetzt durchgehend als Questlog.
+
+### Vorschaubefehle
+
+- /qt preview listet die Fenster- und Ankündigungsvorschauen auf. Die bisherigen Vorschaubefehle funktionieren weiterhin; simulierte Aktionen laden keine Spieler ein, teilen keine Quests und senden keine Nachrichten.
+- Die Vergleichsvorschau zeigt jetzt eine vollständige Fünfergruppe mit Jäger und Schurke, unterschiedlichen Zielen, aktiven Quests und einer Anführerkrone.
 
 ## 6.3.1
 

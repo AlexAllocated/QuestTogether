@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.4.0
+## 6.4.1
 
 Detecção experimental de camadas para jogadores QT próximos.
 
@@ -15,6 +15,44 @@ Detecção experimental de camadas para jogadores QT próximos.
 ### Capturas nas notas de versão
 
 - As capturas das notas de versão agora são enviadas diretamente ao Discord para permanecerem visíveis nas publicações do registro de alterações.
+
+## 6.4.0
+
+Janelas do QT mais bem-acabadas e acesso mais rápido às missões do grupo.
+
+### Registro de missões do grupo
+
+- Conheça melhor o Registro de Missões do Grupo introduzido na versão 6.3: compare até cinco jogadores em colunas com cores de classe, veja quem tem cada missão, quem precisa dela e quando o grupo pode entregá-la. Combine busca e filtros de posse, progresso e ação. Compartilhar e solicitar compartilhamento estão disponíveis quando compatíveis.
+- O cabeçalho de cada jogador mostra sua missão em foco. Clique no nome de um colega para seguir voluntariamente o foco dele; se você não tiver a missão, sua navegação permanece inalterada. Atualizar busca uma nova captura do progresso remoto. As imagens mostram dados fictícios da prévia.
+- As missões que você possui agora têm um pequeno botão de livro que abre seus detalhes no diário de missões da Blizzard. Clicar na linha continua expandindo os objetivos.
+- Uma coroa identifica o líder do grupo e acompanha as mudanças de liderança. Sua própria coluna continua sendo a primeira.
+
+**Retail**
+
+![Registro de missões do grupo — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogRetail.png)
+
+**Forever**
+
+![Registro de missões do grupo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
+
+### Expanda os objetivos de todos
+
+- Clique em uma missão para ver contadores de objetivos, barras de progresso e etapas concluídas de cada integrante. Várias missões podem permanecer expandidas. Esta versão compacta as seções e usa o mesmo fundo com cor de classe nos nomes e objetivos. Uma missão típica de cinco jogadores com dois objetivos cada cabe no tamanho padrão; missões maiores ainda podem exigir rolagem.
+
+**Forever**
+
+![Expanda os objetivos de todos — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+
+### Janelas e minimapa
+
+- Clique com o botão esquerdo no ícone do minimapa para abrir ou fechar o registro de missões do grupo; o botão direito abre o menu. Configurações voltou ao menu, e a dica explica os atalhos.
+- Os lembretes do chat de grupo, pedidos de compartilhamento e entrada, configurações dos balões e diálogo do link do Discord agora usam a moldura de pergaminho e os temas claro/escuro do QT, com mais margens e espaço para os valores dos controles deslizantes.
+- Ao arrastar janelas, a distância até o cursor é preservada, inclusive na prévia do comparador. Menus e dicas agora usam de forma consistente o nome Diário de missões para a janela da Blizzard.
+
+### Comandos de prévia
+
+- Use /qt preview para listar as prévias de janelas e anúncios. Os comandos antigos continuam funcionando; as ações simuladas não convidam jogadores, compartilham missões nem enviam mensagens.
+- A prévia do comparador agora mostra um grupo completo de cinco jogadores, incluindo um Caçador e um Ladino, com objetivos variados, missões ativas e uma coroa para o líder.
 
 ## 6.3.1
 
