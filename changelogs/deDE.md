@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.4.1
+## 6.4.2
 
 Danke, dass du QuestTogether verwendest! Dieses Update bietet mehr Kontrolle über Quest-Fortschritts-Schnappschüsse, Spielerstandort-Anzeigen und die Zugänglichkeit von Fenstern. Einstellungen lassen sich leichter anpassen, und Discord ist weiterhin der beste Ort für Feedback und Support.
 
@@ -11,7 +11,7 @@ Danke, dass du QuestTogether verwendest! Dieses Update bietet mehr Kontrolle üb
 - Spielerüberschriften zeigen jetzt an, wie aktuell jeder Quest-Schnappschuss ist. Öffne das Menü einer Spielerüberschrift, um nur diesen Spieler zu aktualisieren, ohne alle anderen zu aktualisieren.
 - Filter enthalten jetzt eine optionale Einstellung zur automatischen Aktualisierung. Wenn sie aktiviert ist, wird das Gruppen-Questlog etwa alle 30 Sekunden aktualisiert, während das eigentliche Fenster geöffnet ist.
 - Beim Aktualisieren bleiben deine Suche, aufgeklappte Quests, horizontale Position und sichtbare Questposition nach Möglichkeit erhalten, während neue Schnappschussdaten eintreffen.
-- Quest-Fokus-Beschriftungen unterscheiden jetzt zwischen wartenden, abgelaufenen, nicht unterstützten, nicht verfügbaren und nicht geteilten Zuständen, und das Menü warnt, wenn das Folgen eine Schleife erzeugen würde.
+- Die Quest-Fokus-Anzeige erklärt jetzt wartende, abgelaufene und nicht unterstützte Daten. Wenn QT die Ursache nicht unterscheiden kann, zeigt sie „Nicht geteilt oder nicht verfügbar“. Das Menü warnt außerdem vor Schleifen beim Folgen.
 
 ### Zugänglichkeit und Fensterlayout
 
@@ -30,7 +30,21 @@ Danke, dass du QuestTogether verwendest! Dieses Update bietet mehr Kontrolle üb
 
 - Die experimentelle Layer-Erkennung behält dieselben Einstellungen und dieselbe UI bei, mit flüssigerer Anfrageverarbeitung, wenn sich lokale Hinweise ändern oder nahe Kandidaten eine Abklingzeit haben.
 - QuestTogether-Dialoge behandeln Escape jetzt über ihre normalen Schließen-Aktionen, und dem Gruppen-Questlog kann im nativen Menü für Tastaturbelegungen eine Taste zugewiesen werden, wobei standardmäßig keine Taste festgelegt ist.
-- Prozentzeichen in übersetzten Versionshinweisen werden als normaler Text behandelt.
+- Bewege den Mauszeiger über Quest- und Zielzeilen, um den vollständigen Text zu lesen. Die Schieberegler für Fensterskalierung und Umkreis haben jetzt hellere Leisten mit dunklen Umrandungen für bessere Sichtbarkeit.
+
+## 6.4.1
+
+Experimentelle Layer-Erkennung für QT-Spieler in der Nähe.
+
+### Experimentelle Layer-Erkennung
+
+- Standardmäßig unter Einstellungen > QuestTogether > Experimentell aktiviert. Deaktiviere Andere Layer erkennen, um Vergleiche zu stoppen und vermutete Phasenanzeigen auszublenden.
+- In Forevers offener Welt vergleichen kompatible QT-Clients in der Nähe beobachtete NPCs und sichtbare Spieler. Ein Phasensymbol weist auf einen vermutlich anderen Layer hin. Details erscheinen beim Darüberfahren. Standortfreigabe ist erforderlich.
+- Schätzungen können falsch sein. Fehlende Spieler allein sind nicht aussagekräftig. Gegenseitige Sichtbarkeit oder ein gemeinsam sichtbarer Spieler haben Vorrang vor der NPC-Schätzung. Veraltete Hinweise werden automatisch verworfen. Ältere QT-Clients können nicht teilnehmen.
+
+### Bilder in Versionshinweisen
+
+- Bilder aus Versionshinweisen werden jetzt direkt auf Discord hochgeladen, damit sie in den Änderungsprotokollen sichtbar bleiben.
 
 ## 6.4.0
 

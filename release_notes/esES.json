@@ -1,7 +1,7 @@
 {
-  "source_sha256": "46a1063a869cefc3920ccb6cca6f104c349b33b1f128cffd2799d21a5a159d41",
+  "source_sha256": "3b293ec67fa3c85ef6184861c74e946ee08cf16dc122b6114f4908952ccca099",
   "notes": {
-    "version": "6.4.1",
+    "version": "6.4.2",
     "welcome": "¡Gracias por usar QuestTogether! Esta actualización añade más control sobre las instantáneas del progreso de las misiones, la visualización de la ubicación de los jugadores y la accesibilidad de las ventanas. Los ajustes son más fáciles de configurar, y Discord sigue siendo el mejor sitio para comentarios y asistencia.",
     "sections": [
       {
@@ -10,7 +10,7 @@
           "Los encabezados de los jugadores ahora muestran lo reciente que es cada instantánea de misión. Abre el menú del encabezado de un jugador para actualizar solo a ese jugador sin actualizar a todos.",
           "Filtros ahora incluye un ajuste opcional de actualización automática. Cuando está activado, el Registro de misiones del grupo se actualiza aproximadamente cada 30 segundos mientras la ventana real está abierta.",
           "Al actualizar se mantienen, siempre que sea posible, tu búsqueda, las misiones expandidas, la posición horizontal y la posición visible de la misión mientras llegan nuevos datos de instantánea.",
-          "Las etiquetas de enfoque de misión ahora distinguen entre estados en espera, caducado, no compatible, no disponible y no compartido, y el menú avisa cuando seguir crearía un bucle."
+          "Las etiquetas de enfoque de misión explican ahora los datos en espera, caducados o no compatibles, o indican «No compartido o no disponible» cuando QT no puede distinguir esos casos. El menú también avisa si seguir crearía un bucle."
         ]
       },
       {
@@ -35,7 +35,7 @@
         "items": [
           "La detección experimental de capas mantiene los mismos ajustes e interfaz, con una gestión de solicitudes más fluida cuando cambian las pruebas locales o los candidatos cercanos están en reutilización.",
           "Los diálogos de QuestTogether ahora gestionan Escape mediante sus acciones de cierre normales, y al Registro de misiones del grupo se le puede asignar una tecla en el menú nativo de Asignación de teclas sin ninguna tecla predeterminada establecida.",
-          "Los signos de porcentaje en las notas de la versión traducidas se tratan como texto normal."
+          "Pasa el cursor sobre las filas de misiones y objetivos para leer el texto completo. Los deslizadores de escala de ventana y alcance cercano ahora tienen pistas más claras con bordes oscuros para mejorar su visibilidad."
         ]
       }
     ]

@@ -1,7 +1,7 @@
 {
-  "source_sha256": "46a1063a869cefc3920ccb6cca6f104c349b33b1f128cffd2799d21a5a159d41",
+  "source_sha256": "3b293ec67fa3c85ef6184861c74e946ee08cf16dc122b6114f4908952ccca099",
   "notes": {
-    "version": "6.4.1",
+    "version": "6.4.2",
     "welcome": "Grazie per usare QuestTogether! Questo aggiornamento aggiunge più controllo sulle istantanee dei progressi delle missioni, sulla visualizzazione della posizione dei giocatori e sull'accessibilità delle finestre. Le impostazioni sono più facili da regolare, e Discord resta il posto migliore per feedback e supporto.",
     "sections": [
       {
@@ -10,7 +10,7 @@
           "Le intestazioni dei giocatori ora mostrano quanto è recente ogni istantanea delle missioni. Apri il menu dell'intestazione di un giocatore per aggiornare solo quel giocatore senza aggiornare tutti.",
           "I filtri ora includono un'impostazione opzionale di aggiornamento automatico. Quando è attiva, il Registro missioni del gruppo si aggiorna circa ogni 30 secondi mentre la finestra reale è aperta.",
           "L'aggiornamento mantiene, quando possibile, la ricerca, le missioni espanse, la posizione orizzontale e la posizione della missione visibile mentre arrivano i nuovi dati dell'istantanea.",
-          "Le etichette del focus missione ora distinguono tra stati in attesa, scaduti, non supportati, non disponibili e non condivisi, e il menu avvisa quando seguire creerebbe un ciclo."
+          "Le etichette del focus missione ora spiegano i dati in attesa, scaduti o non supportati, oppure indicano \"Non condiviso o non disponibile\" quando QT non può distinguere i due casi. Il menu avvisa anche se seguire creerebbe un ciclo."
         ]
       },
       {
@@ -35,7 +35,7 @@
         "items": [
           "Il rilevamento sperimentale del livello mantiene le stesse impostazioni e la stessa interfaccia, con una gestione delle richieste più fluida quando le prove locali cambiano o i candidati vicini sono in recupero.",
           "Le finestre di dialogo di QuestTogether ora gestiscono Esc tramite le normali azioni di chiusura, e al Registro missioni del gruppo può essere assegnato un tasto nel menu nativo delle Assegnazioni tasti senza alcun tasto predefinito impostato.",
-          "I segni di percentuale nelle note di rilascio tradotte vengono gestiti come testo normale."
+          "Passa il cursore sulle righe delle missioni e degli obiettivi per leggere il testo completo. I cursori della scala finestra e del raggio nelle vicinanze ora hanno barre più chiare con contorni scuri per una migliore visibilità."
         ]
       }
     ]

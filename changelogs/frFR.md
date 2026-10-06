@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.4.1
+## 6.4.2
 
 Merci d’utiliser QuestTogether ! Cette mise à jour ajoute davantage de contrôle sur les instantanés de progression des quêtes, l’affichage de la position des joueurs et l’accessibilité des fenêtres. Les paramètres sont plus faciles à ajuster, et Discord reste le meilleur endroit pour les retours et l’assistance.
 
@@ -11,7 +11,7 @@ Merci d’utiliser QuestTogether ! Cette mise à jour ajoute davantage de contr�
 - Les en-têtes des joueurs indiquent désormais la fraîcheur de chaque instantané de quête. Ouvrez le menu d’en-tête d’un joueur pour actualiser uniquement ce joueur sans actualiser tout le monde.
 - Les filtres incluent désormais un paramètre optionnel d’actualisation automatique. Lorsqu’il est activé, le journal des quêtes de groupe s’actualise environ toutes les 30 secondes tant que la vraie fenêtre est ouverte.
 - L’actualisation conserve autant que possible votre recherche, les quêtes développées, la position horizontale et la position de quête visible pendant l’arrivée des nouvelles données d’instantané.
-- Les libellés de suivi de quête distinguent désormais les états en attente, expiré, non pris en charge, indisponible et non partagé, et le menu avertit lorsqu’un suivi créerait une boucle.
+- Les libellés de suivi de quête expliquent désormais les données en attente, expirées ou non prises en charge, ou indiquent « Non partagé ou indisponible » lorsque QT ne peut pas distinguer ces cas. Le menu avertit aussi des boucles de suivi.
 
 ### Accessibilité et disposition des fenêtres
 
@@ -30,7 +30,21 @@ Merci d’utiliser QuestTogether ! Cette mise à jour ajoute davantage de contr�
 
 - La détection expérimentale de couche conserve les mêmes paramètres et la même interface, avec une gestion des requêtes plus fluide lorsque les indices locaux changent ou que les candidats proches sont en recharge.
 - Les boîtes de dialogue QuestTogether gèrent désormais Échap via leurs actions de fermeture normales, et une touche peut être assignée au journal des quêtes de groupe dans le menu natif Raccourcis clavier, sans touche définie par défaut.
-- Les signes pourcentage dans les notes de mise à jour traduites sont traités comme du texte normal.
+- Survolez les lignes de quêtes et d’objectifs pour lire leur texte complet. Les curseurs d’échelle de fenêtre et de portée à proximité ont désormais des pistes plus claires avec des contours sombres pour une meilleure visibilité.
+
+## 6.4.1
+
+Détection expérimentale des couches pour les joueurs QT proches.
+
+### Détection expérimentale des couches
+
+- Activée par défaut dans Paramètres > QuestTogether > Expérimental. Désactivez Détecter les couches différentes pour arrêter les comparaisons et masquer les indicateurs de phase estimée.
+- Dans le monde ouvert de Forever, les clients QT compatibles proches comparent les PNJ observés et les joueurs visibles. Une icône de phase indique une couche probablement différente ; survolez-la pour plus de détails. Le partage de position est requis.
+- Les estimations peuvent être erronées. L'absence de joueurs seule ne permet pas de conclure. Se voir mutuellement ou voir un joueur commun prime sur l'estimation par PNJ. Les indices périmés sont automatiquement effacés. Les anciens clients QT ne peuvent pas participer.
+
+### Captures des notes de version
+
+- Les captures des notes de version sont désormais téléversées directement sur Discord pour rester visibles dans les publications du journal des modifications.
 
 ## 6.4.0
 

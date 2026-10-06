@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.4.1
+## 6.4.2
 
 Obrigado por usar o QuestTogether! Esta atualização adiciona mais controle sobre os instantâneos de progresso de missões, a exibição da localização dos jogadores e a acessibilidade das janelas. As configurações estão mais fáceis de ajustar, e o Discord continua sendo o melhor lugar para feedback e suporte.
 
@@ -11,7 +11,7 @@ Obrigado por usar o QuestTogether! Esta atualização adiciona mais controle sob
 - Os cabeçalhos dos jogadores agora mostram o quão recente é cada instantâneo de missão. Abra o menu do cabeçalho de um jogador para atualizar apenas esse jogador sem atualizar todos.
 - Os filtros agora incluem uma configuração opcional de atualização automática. Quando ativada, o Registro de Missões do Grupo é atualizado aproximadamente a cada 30 segundos enquanto a janela real estiver aberta.
 - A atualização mantém sua busca, missões expandidas, posição horizontal e posição visível da missão quando possível enquanto novos dados de instantâneo chegam.
-- Os rótulos de foco de missão agora distinguem estados de aguardando, expirado, sem suporte, indisponível e não compartilhado, e o menu avisa quando seguir criaria um ciclo.
+- Os rótulos de foco de missão agora explicam dados aguardando, expirados ou sem suporte, ou indicam "Não compartilhado ou indisponível" quando QT não consegue distinguir esses casos. O menu também avisa se seguir criaria um ciclo.
 
 ### Acessibilidade e layout da janela
 
@@ -30,7 +30,21 @@ Obrigado por usar o QuestTogether! Esta atualização adiciona mais controle sob
 
 - A detecção experimental de camada mantém as mesmas configurações e IU, com tratamento de solicitações mais suave quando evidências locais mudam ou candidatos próximos estão em recarga.
 - As caixas de diálogo do QuestTogether agora lidam com Escape por meio de suas ações normais de fechamento, e o Registro de Missões do Grupo pode receber uma tecla no menu nativo de Teclas de Atalho sem tecla padrão definida.
-- Sinais de porcentagem nas notas de atualização traduzidas são tratados como texto normal.
+- Passe o cursor sobre as linhas de missões e objetivos para ler o texto completo. Os controles deslizantes de escala da janela e alcance próximo agora têm trilhos mais claros com contornos escuros para melhorar a visibilidade.
+
+## 6.4.1
+
+Detecção experimental de camadas para jogadores QT próximos.
+
+### Detecção experimental de camadas
+
+- Ativada por padrão em Configurações > QuestTogether > Experimental. Desative Detectar camadas diferentes para interromper as comparações e ocultar os indicadores de fase estimada.
+- No mundo aberto do Forever, clientes QT compatíveis próximos comparam PNJs observados e jogadores visíveis. Um ícone de fase indica uma camada provavelmente diferente; passe o cursor para ver detalhes. É necessário compartilhar a localização.
+- As estimativas podem estar erradas. A ausência de jogadores por si só é inconclusiva; ver um ao outro ou um jogador em comum tem prioridade sobre a estimativa por PNJs. Os dados antigos são apagados automaticamente. Clientes QT antigos não podem participar.
+
+### Capturas nas notas de versão
+
+- As capturas das notas de versão agora são enviadas diretamente ao Discord para permanecerem visíveis nas publicações do registro de alterações.
 
 ## 6.4.0
 

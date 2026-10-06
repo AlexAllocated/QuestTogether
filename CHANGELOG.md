@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 6.4.1
+## 6.4.2
 
 Thanks for using QuestTogether! This update adds more control over quest progress snapshots, player location displays, and window accessibility. Settings are easier to tune, and Discord is still the best place for feedback and support.
 
@@ -13,7 +13,7 @@ Thanks for using QuestTogether! This update adds more control over quest progres
 - Player headers now show how fresh each quest snapshot is. Open a player header menu to refresh just that player without refreshing everyone.
 - Filters now includes an optional auto-refresh setting. When enabled, the Party Quest Log refreshes about every 30 seconds while the real window is open.
 - Refreshing keeps your search, expanded quests, horizontal position, and visible quest position when possible while new snapshot data arrives.
-- Quest focus labels now distinguish waiting, expired, unsupported, unavailable, and unshared states, and the menu warns when following would create a loop.
+- Quest focus labels now explain waiting, expired and unsupported data, or say "not shared or unavailable" when QT cannot distinguish those cases. The menu also warns when following would create a loop.
 
 ### Accessibility and window layout
 
@@ -32,7 +32,21 @@ Thanks for using QuestTogether! This update adds more control over quest progres
 
 - Experimental layer detection keeps the same settings and UI, with smoother request handling when local evidence changes or nearby candidates are cooling down.
 - QuestTogether dialogs now handle Escape through their normal close actions, and the Party Quest Log can be assigned a key in the native Key Bindings menu with no default key set.
-- Percent signs in translated release notes are handled as normal text.
+- Hover quest and objective rows to read their full text. The window-scale and nearby-range sliders now have brighter tracks with dark outlines for better visibility.
+
+## 6.4.1
+
+Experimental layer detection for nearby QT players.
+
+### Experimental layer detection
+
+- Enabled by default under Settings > QuestTogether > Experimental. Turn off Detect different layers to stop comparisons and hide inferred phase indicators.
+- In Forever's open world, nearby compatible QT clients compare NPC observations and visible players. A phased icon marks a likely different layer; hover for details. Location sharing is required.
+- Estimates can be wrong. Missing players alone are inconclusive; seeing each other or a shared player overrides the NPC estimate. Stale evidence clears automatically. Older QT clients cannot participate.
+
+### Release screenshots
+
+- Screenshots in release notes now upload directly to Discord so images remain visible in changelog posts.
 
 ## 6.4.0
 

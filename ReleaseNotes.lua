@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "6.4.1",
+	version = "6.4.2",
 	welcome = "Thanks for using QuestTogether! This update adds more control over quest progress snapshots, player location displays, and window accessibility. Settings are easier to tune, and Discord is still the best place for feedback and support.",
 	sections = {
 		{
@@ -12,7 +12,7 @@ QuestTogether.releaseNotes = {
 				"Player headers now show how fresh each quest snapshot is. Open a player header menu to refresh just that player without refreshing everyone.",
 				"Filters now includes an optional auto-refresh setting. When enabled, the Party Quest Log refreshes about every 30 seconds while the real window is open.",
 				"Refreshing keeps your search, expanded quests, horizontal position, and visible quest position when possible while new snapshot data arrives.",
-				"Quest focus labels now distinguish waiting, expired, unsupported, unavailable, and unshared states, and the menu warns when following would create a loop.",
+				"Quest focus labels now explain waiting, expired and unsupported data, or say \"not shared or unavailable\" when QT cannot distinguish those cases. The menu also warns when following would create a loop.",
 			},
 		},
 		{
@@ -37,7 +37,7 @@ QuestTogether.releaseNotes = {
 			items = {
 				"Experimental layer detection keeps the same settings and UI, with smoother request handling when local evidence changes or nearby candidates are cooling down.",
 				"QuestTogether dialogs now handle Escape through their normal close actions, and the Party Quest Log can be assigned a key in the native Key Bindings menu with no default key set.",
-				"Percent signs in translated release notes are handled as normal text.",
+				"Hover quest and objective rows to read their full text. The window-scale and nearby-range sliders now have brighter tracks with dark outlines for better visibility.",
 			},
 		},
 	},

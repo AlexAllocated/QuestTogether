@@ -1,7 +1,7 @@
 {
-  "source_sha256": "46a1063a869cefc3920ccb6cca6f104c349b33b1f128cffd2799d21a5a159d41",
+  "source_sha256": "3b293ec67fa3c85ef6184861c74e946ee08cf16dc122b6114f4908952ccca099",
   "notes": {
-    "version": "6.4.1",
+    "version": "6.4.2",
     "welcome": "Merci d’utiliser QuestTogether ! Cette mise à jour ajoute davantage de contrôle sur les instantanés de progression des quêtes, l’affichage de la position des joueurs et l’accessibilité des fenêtres. Les paramètres sont plus faciles à ajuster, et Discord reste le meilleur endroit pour les retours et l’assistance.",
     "sections": [
       {
@@ -10,7 +10,7 @@
           "Les en-têtes des joueurs indiquent désormais la fraîcheur de chaque instantané de quête. Ouvrez le menu d’en-tête d’un joueur pour actualiser uniquement ce joueur sans actualiser tout le monde.",
           "Les filtres incluent désormais un paramètre optionnel d’actualisation automatique. Lorsqu’il est activé, le journal des quêtes de groupe s’actualise environ toutes les 30 secondes tant que la vraie fenêtre est ouverte.",
           "L’actualisation conserve autant que possible votre recherche, les quêtes développées, la position horizontale et la position de quête visible pendant l’arrivée des nouvelles données d’instantané.",
-          "Les libellés de suivi de quête distinguent désormais les états en attente, expiré, non pris en charge, indisponible et non partagé, et le menu avertit lorsqu’un suivi créerait une boucle."
+          "Les libellés de suivi de quête expliquent désormais les données en attente, expirées ou non prises en charge, ou indiquent « Non partagé ou indisponible » lorsque QT ne peut pas distinguer ces cas. Le menu avertit aussi des boucles de suivi."
         ]
       },
       {
@@ -35,7 +35,7 @@
         "items": [
           "La détection expérimentale de couche conserve les mêmes paramètres et la même interface, avec une gestion des requêtes plus fluide lorsque les indices locaux changent ou que les candidats proches sont en recharge.",
           "Les boîtes de dialogue QuestTogether gèrent désormais Échap via leurs actions de fermeture normales, et une touche peut être assignée au journal des quêtes de groupe dans le menu natif Raccourcis clavier, sans touche définie par défaut.",
-          "Les signes pourcentage dans les notes de mise à jour traduites sont traités comme du texte normal."
+          "Survolez les lignes de quêtes et d’objectifs pour lire leur texte complet. Les curseurs d’échelle de fenêtre et de portée à proximité ont désormais des pistes plus claires avec des contours sombres pour une meilleure visibilité."
         ]
       }
     ]

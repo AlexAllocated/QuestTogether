@@ -1,7 +1,7 @@
 {
-  "source_sha256": "46a1063a869cefc3920ccb6cca6f104c349b33b1f128cffd2799d21a5a159d41",
+  "source_sha256": "3b293ec67fa3c85ef6184861c74e946ee08cf16dc122b6114f4908952ccca099",
   "notes": {
-    "version": "6.4.1",
+    "version": "6.4.2",
     "welcome": "Danke, dass du QuestTogether verwendest! Dieses Update bietet mehr Kontrolle über Quest-Fortschritts-Schnappschüsse, Spielerstandort-Anzeigen und die Zugänglichkeit von Fenstern. Einstellungen lassen sich leichter anpassen, und Discord ist weiterhin der beste Ort für Feedback und Support.",
     "sections": [
       {
@@ -10,7 +10,7 @@
           "Spielerüberschriften zeigen jetzt an, wie aktuell jeder Quest-Schnappschuss ist. Öffne das Menü einer Spielerüberschrift, um nur diesen Spieler zu aktualisieren, ohne alle anderen zu aktualisieren.",
           "Filter enthalten jetzt eine optionale Einstellung zur automatischen Aktualisierung. Wenn sie aktiviert ist, wird das Gruppen-Questlog etwa alle 30 Sekunden aktualisiert, während das eigentliche Fenster geöffnet ist.",
           "Beim Aktualisieren bleiben deine Suche, aufgeklappte Quests, horizontale Position und sichtbare Questposition nach Möglichkeit erhalten, während neue Schnappschussdaten eintreffen.",
-          "Quest-Fokus-Beschriftungen unterscheiden jetzt zwischen wartenden, abgelaufenen, nicht unterstützten, nicht verfügbaren und nicht geteilten Zuständen, und das Menü warnt, wenn das Folgen eine Schleife erzeugen würde."
+          "Die Quest-Fokus-Anzeige erklärt jetzt wartende, abgelaufene und nicht unterstützte Daten. Wenn QT die Ursache nicht unterscheiden kann, zeigt sie „Nicht geteilt oder nicht verfügbar“. Das Menü warnt außerdem vor Schleifen beim Folgen."
         ]
       },
       {
@@ -35,7 +35,7 @@
         "items": [
           "Die experimentelle Layer-Erkennung behält dieselben Einstellungen und dieselbe UI bei, mit flüssigerer Anfrageverarbeitung, wenn sich lokale Hinweise ändern oder nahe Kandidaten eine Abklingzeit haben.",
           "QuestTogether-Dialoge behandeln Escape jetzt über ihre normalen Schließen-Aktionen, und dem Gruppen-Questlog kann im nativen Menü für Tastaturbelegungen eine Taste zugewiesen werden, wobei standardmäßig keine Taste festgelegt ist.",
-          "Prozentzeichen in übersetzten Versionshinweisen werden als normaler Text behandelt."
+          "Bewege den Mauszeiger über Quest- und Zielzeilen, um den vollständigen Text zu lesen. Die Schieberegler für Fensterskalierung und Umkreis haben jetzt hellere Leisten mit dunklen Umrandungen für bessere Sichtbarkeit."
         ]
       }
     ]

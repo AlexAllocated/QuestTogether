@@ -1,7 +1,7 @@
 {
-  "source_sha256": "46a1063a869cefc3920ccb6cca6f104c349b33b1f128cffd2799d21a5a159d41",
+  "source_sha256": "3b293ec67fa3c85ef6184861c74e946ee08cf16dc122b6114f4908952ccca099",
   "notes": {
-    "version": "6.4.1",
+    "version": "6.4.2",
     "welcome": "¡Gracias por usar QuestTogether! Esta actualización agrega más control sobre las instantáneas de progreso de misiones, las visualizaciones de ubicación de jugadores y la accesibilidad de las ventanas. Las opciones son más fáciles de ajustar, y Discord sigue siendo el mejor lugar para enviar comentarios y recibir ayuda.",
     "sections": [
       {
@@ -10,7 +10,7 @@
           "Los encabezados de jugador ahora muestran qué tan reciente es cada instantánea de misiones. Abre el menú de encabezado de un jugador para actualizar solo a ese jugador sin actualizar a todos.",
           "Los filtros ahora incluyen una opción opcional de actualización automática. Al activarla, el Registro de misiones de grupo se actualiza aproximadamente cada 30 segundos mientras la ventana real está abierta.",
           "La actualización conserva tu búsqueda, las misiones expandidas, la posición horizontal y la posición visible de la misión cuando es posible mientras llegan nuevos datos de instantáneas.",
-          "Las etiquetas de enfoque de misión ahora distinguen entre estados en espera, vencidos, no compatibles, no disponibles y no compartidos, y el menú advierte cuando seguir crearía un bucle."
+          "Las etiquetas de enfoque de misión ahora explican los datos en espera, vencidos o no compatibles, o indican «No compartido o no disponible» cuando QT no puede distinguir esos casos. El menú también avisa si seguir crearía un bucle."
         ]
       },
       {
@@ -35,7 +35,7 @@
         "items": [
           "La detección experimental de capas conserva las mismas opciones y la misma IU, con un manejo de solicitudes más fluido cuando la evidencia local cambia o los candidatos cercanos están en tiempo de reutilización.",
           "Los cuadros de diálogo de QuestTogether ahora manejan Escape mediante sus acciones normales de cierre, y el Registro de misiones de grupo puede asignarse a una tecla en el menú nativo de Atajos de teclado sin ninguna tecla predeterminada configurada.",
-          "Los signos de porcentaje en las notas de versión traducidas se manejan como texto normal."
+          "Pasa el cursor sobre las filas de misiones y objetivos para leer el texto completo. Los deslizadores de escala de ventana y alcance cercano ahora tienen pistas más claras con bordes oscuros para mejorar su visibilidad."
         ]
       }
     ]

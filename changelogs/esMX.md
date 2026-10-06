@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.4.1
+## 6.4.2
 
 ¡Gracias por usar QuestTogether! Esta actualización agrega más control sobre las instantáneas de progreso de misiones, las visualizaciones de ubicación de jugadores y la accesibilidad de las ventanas. Las opciones son más fáciles de ajustar, y Discord sigue siendo el mejor lugar para enviar comentarios y recibir ayuda.
 
@@ -11,7 +11,7 @@
 - Los encabezados de jugador ahora muestran qué tan reciente es cada instantánea de misiones. Abre el menú de encabezado de un jugador para actualizar solo a ese jugador sin actualizar a todos.
 - Los filtros ahora incluyen una opción opcional de actualización automática. Al activarla, el Registro de misiones de grupo se actualiza aproximadamente cada 30 segundos mientras la ventana real está abierta.
 - La actualización conserva tu búsqueda, las misiones expandidas, la posición horizontal y la posición visible de la misión cuando es posible mientras llegan nuevos datos de instantáneas.
-- Las etiquetas de enfoque de misión ahora distinguen entre estados en espera, vencidos, no compatibles, no disponibles y no compartidos, y el menú advierte cuando seguir crearía un bucle.
+- Las etiquetas de enfoque de misión ahora explican los datos en espera, vencidos o no compatibles, o indican «No compartido o no disponible» cuando QT no puede distinguir esos casos. El menú también avisa si seguir crearía un bucle.
 
 ### Accesibilidad y diseño de ventanas
 
@@ -30,7 +30,21 @@
 
 - La detección experimental de capas conserva las mismas opciones y la misma IU, con un manejo de solicitudes más fluido cuando la evidencia local cambia o los candidatos cercanos están en tiempo de reutilización.
 - Los cuadros de diálogo de QuestTogether ahora manejan Escape mediante sus acciones normales de cierre, y el Registro de misiones de grupo puede asignarse a una tecla en el menú nativo de Atajos de teclado sin ninguna tecla predeterminada configurada.
-- Los signos de porcentaje en las notas de versión traducidas se manejan como texto normal.
+- Pasa el cursor sobre las filas de misiones y objetivos para leer el texto completo. Los deslizadores de escala de ventana y alcance cercano ahora tienen pistas más claras con bordes oscuros para mejorar su visibilidad.
+
+## 6.4.1
+
+Detección experimental de capas para jugadores QT cercanos.
+
+### Detección experimental de capas
+
+- Activada por defecto en Configuración > QuestTogether > Experimental. Desactiva Detectar capas diferentes para detener las comparaciones y ocultar los indicadores de fase estimada.
+- En el mundo abierto de Forever, los clientes QT compatibles cercanos comparan los PNJ observados y los jugadores visibles. Un ícono de fase indica una capa probablemente diferente; pasa el cursor para ver los detalles. Es necesario compartir la ubicación.
+- Las estimaciones pueden ser incorrectas. La ausencia de jugadores por sí sola no permite concluir nada; verse mutuamente o ver a un jugador en común tiene prioridad sobre la estimación mediante PNJ. Los datos vencidos se eliminan automáticamente. Los clientes QT antiguos no pueden participar.
+
+### Capturas de las notas de versión
+
+- Las capturas de las notas de versión ahora se suben directamente a Discord para que sigan visibles en las publicaciones del registro de cambios.
 
 ## 6.4.0
 

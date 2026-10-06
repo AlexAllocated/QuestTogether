@@ -1,7 +1,7 @@
 {
-  "source_sha256": "46a1063a869cefc3920ccb6cca6f104c349b33b1f128cffd2799d21a5a159d41",
+  "source_sha256": "3b293ec67fa3c85ef6184861c74e946ee08cf16dc122b6114f4908952ccca099",
   "notes": {
-    "version": "6.4.1",
+    "version": "6.4.2",
     "welcome": "Obrigado por usar o QuestTogether! Esta atualização adiciona mais controle sobre os instantâneos de progresso de missões, a exibição da localização dos jogadores e a acessibilidade das janelas. As configurações estão mais fáceis de ajustar, e o Discord continua sendo o melhor lugar para feedback e suporte.",
     "sections": [
       {
@@ -10,7 +10,7 @@
           "Os cabeçalhos dos jogadores agora mostram o quão recente é cada instantâneo de missão. Abra o menu do cabeçalho de um jogador para atualizar apenas esse jogador sem atualizar todos.",
           "Os filtros agora incluem uma configuração opcional de atualização automática. Quando ativada, o Registro de Missões do Grupo é atualizado aproximadamente a cada 30 segundos enquanto a janela real estiver aberta.",
           "A atualização mantém sua busca, missões expandidas, posição horizontal e posição visível da missão quando possível enquanto novos dados de instantâneo chegam.",
-          "Os rótulos de foco de missão agora distinguem estados de aguardando, expirado, sem suporte, indisponível e não compartilhado, e o menu avisa quando seguir criaria um ciclo."
+          "Os rótulos de foco de missão agora explicam dados aguardando, expirados ou sem suporte, ou indicam \"Não compartilhado ou indisponível\" quando QT não consegue distinguir esses casos. O menu também avisa se seguir criaria um ciclo."
         ]
       },
       {
@@ -35,7 +35,7 @@
         "items": [
           "A detecção experimental de camada mantém as mesmas configurações e IU, com tratamento de solicitações mais suave quando evidências locais mudam ou candidatos próximos estão em recarga.",
           "As caixas de diálogo do QuestTogether agora lidam com Escape por meio de suas ações normais de fechamento, e o Registro de Missões do Grupo pode receber uma tecla no menu nativo de Teclas de Atalho sem tecla padrão definida.",
-          "Sinais de porcentagem nas notas de atualização traduzidas são tratados como texto normal."
+          "Passe o cursor sobre as linhas de missões e objetivos para ler o texto completo. Os controles deslizantes de escala da janela e alcance próximo agora têm trilhos mais claros com contornos escuros para melhorar a visibilidade."
         ]
       }
     ]

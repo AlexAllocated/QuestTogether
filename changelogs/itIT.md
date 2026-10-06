@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.4.1
+## 6.4.2
 
 Grazie per usare QuestTogether! Questo aggiornamento aggiunge più controllo sulle istantanee dei progressi delle missioni, sulla visualizzazione della posizione dei giocatori e sull'accessibilità delle finestre. Le impostazioni sono più facili da regolare, e Discord resta il posto migliore per feedback e supporto.
 
@@ -11,7 +11,7 @@ Grazie per usare QuestTogether! Questo aggiornamento aggiunge più controllo sul
 - Le intestazioni dei giocatori ora mostrano quanto è recente ogni istantanea delle missioni. Apri il menu dell'intestazione di un giocatore per aggiornare solo quel giocatore senza aggiornare tutti.
 - I filtri ora includono un'impostazione opzionale di aggiornamento automatico. Quando è attiva, il Registro missioni del gruppo si aggiorna circa ogni 30 secondi mentre la finestra reale è aperta.
 - L'aggiornamento mantiene, quando possibile, la ricerca, le missioni espanse, la posizione orizzontale e la posizione della missione visibile mentre arrivano i nuovi dati dell'istantanea.
-- Le etichette del focus missione ora distinguono tra stati in attesa, scaduti, non supportati, non disponibili e non condivisi, e il menu avvisa quando seguire creerebbe un ciclo.
+- Le etichette del focus missione ora spiegano i dati in attesa, scaduti o non supportati, oppure indicano "Non condiviso o non disponibile" quando QT non può distinguere i due casi. Il menu avvisa anche se seguire creerebbe un ciclo.
 
 ### Accessibilità e disposizione delle finestre
 
@@ -30,7 +30,21 @@ Grazie per usare QuestTogether! Questo aggiornamento aggiunge più controllo sul
 
 - Il rilevamento sperimentale del livello mantiene le stesse impostazioni e la stessa interfaccia, con una gestione delle richieste più fluida quando le prove locali cambiano o i candidati vicini sono in recupero.
 - Le finestre di dialogo di QuestTogether ora gestiscono Esc tramite le normali azioni di chiusura, e al Registro missioni del gruppo può essere assegnato un tasto nel menu nativo delle Assegnazioni tasti senza alcun tasto predefinito impostato.
-- I segni di percentuale nelle note di rilascio tradotte vengono gestiti come testo normale.
+- Passa il cursore sulle righe delle missioni e degli obiettivi per leggere il testo completo. I cursori della scala finestra e del raggio nelle vicinanze ora hanno barre più chiare con contorni scuri per una migliore visibilità.
+
+## 6.4.1
+
+Rilevamento sperimentale dei livelli di mondo dei giocatori QT vicini.
+
+### Rilevamento sperimentale dei livelli di mondo
+
+- Attivo per impostazione predefinita in Impostazioni > QuestTogether > Sperimentale. Disattiva Rileva livelli di mondo diversi per interrompere i confronti e nascondere gli indicatori di fase stimata.
+- Nel mondo aperto di Forever, i client QT compatibili vicini confrontano i PNG osservati e i giocatori visibili. Un’icona di fase indica un probabile livello di mondo diverso; passa il cursore per i dettagli. È richiesta la condivisione della posizione.
+- Le stime possono essere errate. La sola assenza di giocatori non permette conclusioni; vedersi a vicenda o vedere un giocatore in comune ha la precedenza sulla stima tramite PNG. I dati obsoleti vengono rimossi automaticamente. I vecchi client QT non possono partecipare.
+
+### Immagini nelle note di versione
+
+- Le immagini nelle note di versione vengono ora caricate direttamente su Discord per rimanere visibili nei messaggi del registro delle modifiche.
 
 ## 6.4.0
 
