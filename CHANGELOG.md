@@ -6,17 +6,33 @@
 
 ## 6.4.1
 
-Experimental layer detection for nearby QT players.
+Thanks for using QuestTogether! This update adds more control over quest progress snapshots, player location displays, and window accessibility. Settings are easier to tune, and Discord is still the best place for feedback and support.
 
-### Experimental layer detection
+### Party Quest Log updates
 
-- Enabled by default under Settings > QuestTogether > Experimental. Turn off Detect different layers to stop comparisons and hide inferred phase indicators.
-- In Forever's open world, nearby compatible QT clients compare NPC observations and visible players. A phased icon marks a likely different layer; hover for details. Location sharing is required.
-- Estimates can be wrong. Missing players alone are inconclusive; seeing each other or a shared player overrides the NPC estimate. Stale evidence clears automatically. Older QT clients cannot participate.
+- Player headers now show how fresh each quest snapshot is. Open a player header menu to refresh just that player without refreshing everyone.
+- Filters now includes an optional auto-refresh setting. When enabled, the Party Quest Log refreshes about every 30 seconds while the real window is open.
+- Refreshing keeps your search, expanded quests, horizontal position, and visible quest position when possible while new snapshot data arrives.
+- Quest focus labels now distinguish waiting, expired, unsupported, unavailable, and unshared states, and the menu warns when following would create a loop.
 
-### Release screenshots
+### Accessibility and window layout
 
-- Screenshots in release notes now upload directly to Discord so images remain visible in changelog posts.
+- Settings now includes Accessibility options for window scale from 80% to 150% and reduced motion for instant scrolling and objective expansion.
+- Window scale enlarges text and controls together, but may be capped when needed to keep the full window on screen.
+- The Party Quest Log and welcome window now save their size and screen-relative position per profile, and QuestTogether windows are refit after display size or UI scale changes.
+- Use Reset window layout in Accessibility, or /qt resetlayout, to clear saved QuestTogether window layouts and recenter them.
+
+### Player location controls
+
+- World map and minimap display can now be toggled separately from location sharing, so you can hide local pins without changing what you share.
+- The player location filter now offers all QuestTogether players, questing partners, or party only.
+- Always show my party is on by default, so party members still appear when using the questing-partner filter if their location permissions allow it.
+
+### Fixes and polish
+
+- Experimental layer detection keeps the same settings and UI, with smoother request handling when local evidence changes or nearby candidates are cooling down.
+- QuestTogether dialogs now handle Escape through their normal close actions, and the Party Quest Log can be assigned a key in the native Key Bindings menu with no default key set.
+- Percent signs in translated release notes are handled as normal text.
 
 ## 6.4.0
 

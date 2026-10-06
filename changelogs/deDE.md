@@ -4,17 +4,33 @@
 
 ## 6.4.1
 
-Experimentelle Layer-Erkennung für QT-Spieler in der Nähe.
+Danke, dass du QuestTogether verwendest! Dieses Update bietet mehr Kontrolle über Quest-Fortschritts-Schnappschüsse, Spielerstandort-Anzeigen und die Zugänglichkeit von Fenstern. Einstellungen lassen sich leichter anpassen, und Discord ist weiterhin der beste Ort für Feedback und Support.
 
-### Experimentelle Layer-Erkennung
+### Aktualisierungen am Gruppen-Questlog
 
-- Standardmäßig unter Einstellungen > QuestTogether > Experimentell aktiviert. Deaktiviere Andere Layer erkennen, um Vergleiche zu stoppen und vermutete Phasenanzeigen auszublenden.
-- In Forevers offener Welt vergleichen kompatible QT-Clients in der Nähe beobachtete NPCs und sichtbare Spieler. Ein Phasensymbol weist auf einen vermutlich anderen Layer hin. Details erscheinen beim Darüberfahren. Standortfreigabe ist erforderlich.
-- Schätzungen können falsch sein. Fehlende Spieler allein sind nicht aussagekräftig. Gegenseitige Sichtbarkeit oder ein gemeinsam sichtbarer Spieler haben Vorrang vor der NPC-Schätzung. Veraltete Hinweise werden automatisch verworfen. Ältere QT-Clients können nicht teilnehmen.
+- Spielerüberschriften zeigen jetzt an, wie aktuell jeder Quest-Schnappschuss ist. Öffne das Menü einer Spielerüberschrift, um nur diesen Spieler zu aktualisieren, ohne alle anderen zu aktualisieren.
+- Filter enthalten jetzt eine optionale Einstellung zur automatischen Aktualisierung. Wenn sie aktiviert ist, wird das Gruppen-Questlog etwa alle 30 Sekunden aktualisiert, während das eigentliche Fenster geöffnet ist.
+- Beim Aktualisieren bleiben deine Suche, aufgeklappte Quests, horizontale Position und sichtbare Questposition nach Möglichkeit erhalten, während neue Schnappschussdaten eintreffen.
+- Quest-Fokus-Beschriftungen unterscheiden jetzt zwischen wartenden, abgelaufenen, nicht unterstützten, nicht verfügbaren und nicht geteilten Zuständen, und das Menü warnt, wenn das Folgen eine Schleife erzeugen würde.
 
-### Bilder in Versionshinweisen
+### Zugänglichkeit und Fensterlayout
 
-- Bilder aus Versionshinweisen werden jetzt direkt auf Discord hochgeladen, damit sie in den Änderungsprotokollen sichtbar bleiben.
+- Einstellungen enthalten jetzt Zugänglichkeitsoptionen für eine Fensterskalierung von 80 % bis 150 % sowie reduzierte Bewegung für sofortiges Scrollen und sofortiges Aufklappen von Zielen.
+- Die Fensterskalierung vergrößert Text und Bedienelemente gemeinsam, kann aber bei Bedarf begrenzt werden, damit das gesamte Fenster auf dem Bildschirm bleibt.
+- Das Gruppen-Questlog und das Willkommensfenster speichern jetzt ihre Größe und bildschirmrelative Position pro Profil, und QuestTogether-Fenster werden nach Änderungen der Anzeigegröße oder UI-Skalierung neu angepasst.
+- Verwende Fensterlayout zurücksetzen in Zugänglichkeit oder /qt resetlayout, um gespeicherte QuestTogether-Fensterlayouts zu löschen und sie wieder zu zentrieren.
+
+### Spielerstandort-Steuerung
+
+- Die Anzeige auf Weltkarte und Minimap kann jetzt getrennt von der Standortfreigabe umgeschaltet werden, sodass du lokale Markierungen ausblenden kannst, ohne zu ändern, was du teilst.
+- Der Spielerstandortfilter bietet jetzt alle QuestTogether-Spieler, Questpartner oder nur die Gruppe an.
+- Meine Gruppe immer anzeigen ist standardmäßig aktiviert, sodass Gruppenmitglieder weiterhin angezeigt werden, wenn der Questpartner-Filter verwendet wird, sofern ihre Standortberechtigungen dies zulassen.
+
+### Korrekturen und Feinschliff
+
+- Die experimentelle Layer-Erkennung behält dieselben Einstellungen und dieselbe UI bei, mit flüssigerer Anfrageverarbeitung, wenn sich lokale Hinweise ändern oder nahe Kandidaten eine Abklingzeit haben.
+- QuestTogether-Dialoge behandeln Escape jetzt über ihre normalen Schließen-Aktionen, und dem Gruppen-Questlog kann im nativen Menü für Tastaturbelegungen eine Taste zugewiesen werden, wobei standardmäßig keine Taste festgelegt ist.
+- Prozentzeichen in übersetzten Versionshinweisen werden als normaler Text behandelt.
 
 ## 6.4.0
 

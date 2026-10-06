@@ -4,17 +4,33 @@
 
 ## 6.4.1
 
-Détection expérimentale des couches pour les joueurs QT proches.
+Merci d’utiliser QuestTogether ! Cette mise à jour ajoute davantage de contrôle sur les instantanés de progression des quêtes, l’affichage de la position des joueurs et l’accessibilité des fenêtres. Les paramètres sont plus faciles à ajuster, et Discord reste le meilleur endroit pour les retours et l’assistance.
 
-### Détection expérimentale des couches
+### Mises à jour du journal des quêtes de groupe
 
-- Activée par défaut dans Paramètres > QuestTogether > Expérimental. Désactivez Détecter les couches différentes pour arrêter les comparaisons et masquer les indicateurs de phase estimée.
-- Dans le monde ouvert de Forever, les clients QT compatibles proches comparent les PNJ observés et les joueurs visibles. Une icône de phase indique une couche probablement différente ; survolez-la pour plus de détails. Le partage de position est requis.
-- Les estimations peuvent être erronées. L'absence de joueurs seule ne permet pas de conclure. Se voir mutuellement ou voir un joueur commun prime sur l'estimation par PNJ. Les indices périmés sont automatiquement effacés. Les anciens clients QT ne peuvent pas participer.
+- Les en-têtes des joueurs indiquent désormais la fraîcheur de chaque instantané de quête. Ouvrez le menu d’en-tête d’un joueur pour actualiser uniquement ce joueur sans actualiser tout le monde.
+- Les filtres incluent désormais un paramètre optionnel d’actualisation automatique. Lorsqu’il est activé, le journal des quêtes de groupe s’actualise environ toutes les 30 secondes tant que la vraie fenêtre est ouverte.
+- L’actualisation conserve autant que possible votre recherche, les quêtes développées, la position horizontale et la position de quête visible pendant l’arrivée des nouvelles données d’instantané.
+- Les libellés de suivi de quête distinguent désormais les états en attente, expiré, non pris en charge, indisponible et non partagé, et le menu avertit lorsqu’un suivi créerait une boucle.
 
-### Captures des notes de version
+### Accessibilité et disposition des fenêtres
 
-- Les captures des notes de version sont désormais téléversées directement sur Discord pour rester visibles dans les publications du journal des modifications.
+- Les paramètres incluent désormais des options d’accessibilité pour une échelle de fenêtre de 80 % à 150 % et une réduction des mouvements pour le défilement instantané et l’ouverture instantanée des objectifs.
+- L’échelle de fenêtre agrandit le texte et les commandes ensemble, mais peut être limitée si nécessaire pour garder toute la fenêtre à l’écran.
+- Le journal des quêtes de groupe et la fenêtre de bienvenue enregistrent désormais leur taille et leur position relative à l’écran par profil, et les fenêtres QuestTogether sont réajustées après les changements de taille d’affichage ou d’échelle de l’interface.
+- Utilisez Réinitialiser la disposition des fenêtres dans Accessibilité, ou /qt resetlayout, pour effacer les dispositions de fenêtres QuestTogether enregistrées et les recentrer.
+
+### Commandes de position des joueurs
+
+- L’affichage sur la carte du monde et la minicarte peut désormais être activé ou désactivé séparément du partage de position, afin que vous puissiez masquer les repères locaux sans modifier ce que vous partagez.
+- Le filtre de position des joueurs propose désormais tous les joueurs QuestTogether, les partenaires de quête ou uniquement le groupe.
+- Toujours afficher mon groupe est activé par défaut, afin que les membres du groupe apparaissent quand même avec le filtre des partenaires de quête si leurs autorisations de position le permettent.
+
+### Corrections et finitions
+
+- La détection expérimentale de couche conserve les mêmes paramètres et la même interface, avec une gestion des requêtes plus fluide lorsque les indices locaux changent ou que les candidats proches sont en recharge.
+- Les boîtes de dialogue QuestTogether gèrent désormais Échap via leurs actions de fermeture normales, et une touche peut être assignée au journal des quêtes de groupe dans le menu natif Raccourcis clavier, sans touche définie par défaut.
+- Les signes pourcentage dans les notes de mise à jour traduites sont traités comme du texte normal.
 
 ## 6.4.0
 

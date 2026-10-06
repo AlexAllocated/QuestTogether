@@ -4,17 +4,33 @@
 
 ## 6.4.1
 
-Detecção experimental de camadas para jogadores QT próximos.
+Obrigado por usar o QuestTogether! Esta atualização adiciona mais controle sobre os instantâneos de progresso de missões, a exibição da localização dos jogadores e a acessibilidade das janelas. As configurações estão mais fáceis de ajustar, e o Discord continua sendo o melhor lugar para feedback e suporte.
 
-### Detecção experimental de camadas
+### Atualizações do Registro de Missões do Grupo
 
-- Ativada por padrão em Configurações > QuestTogether > Experimental. Desative Detectar camadas diferentes para interromper as comparações e ocultar os indicadores de fase estimada.
-- No mundo aberto do Forever, clientes QT compatíveis próximos comparam PNJs observados e jogadores visíveis. Um ícone de fase indica uma camada provavelmente diferente; passe o cursor para ver detalhes. É necessário compartilhar a localização.
-- As estimativas podem estar erradas. A ausência de jogadores por si só é inconclusiva; ver um ao outro ou um jogador em comum tem prioridade sobre a estimativa por PNJs. Os dados antigos são apagados automaticamente. Clientes QT antigos não podem participar.
+- Os cabeçalhos dos jogadores agora mostram o quão recente é cada instantâneo de missão. Abra o menu do cabeçalho de um jogador para atualizar apenas esse jogador sem atualizar todos.
+- Os filtros agora incluem uma configuração opcional de atualização automática. Quando ativada, o Registro de Missões do Grupo é atualizado aproximadamente a cada 30 segundos enquanto a janela real estiver aberta.
+- A atualização mantém sua busca, missões expandidas, posição horizontal e posição visível da missão quando possível enquanto novos dados de instantâneo chegam.
+- Os rótulos de foco de missão agora distinguem estados de aguardando, expirado, sem suporte, indisponível e não compartilhado, e o menu avisa quando seguir criaria um ciclo.
 
-### Capturas nas notas de versão
+### Acessibilidade e layout da janela
 
-- As capturas das notas de versão agora são enviadas diretamente ao Discord para permanecerem visíveis nas publicações do registro de alterações.
+- As configurações agora incluem opções de Acessibilidade para escala da janela de 80% a 150% e movimento reduzido para rolagem instantânea e expansão de objetivos.
+- A escala da janela aumenta textos e controles juntos, mas pode ser limitada quando necessário para manter a janela inteira na tela.
+- O Registro de Missões do Grupo e a janela de boas-vindas agora salvam o tamanho e a posição relativa à tela por perfil, e as janelas do QuestTogether são reajustadas após mudanças no tamanho da tela ou na escala da IU.
+- Use Redefinir layout da janela em Acessibilidade, ou /qt resetlayout, para limpar os layouts de janela salvos do QuestTogether e recentralizá-los.
+
+### Controles de localização de jogadores
+
+- A exibição no mapa-múndi e no minimapa agora pode ser alternada separadamente do compartilhamento de localização, para que você possa ocultar marcadores locais sem alterar o que compartilha.
+- O filtro de localização de jogadores agora oferece todos os jogadores do QuestTogether, parceiros de missão ou apenas o grupo.
+- Sempre mostrar meu grupo fica ativado por padrão, então os membros do grupo ainda aparecem ao usar o filtro de parceiros de missão se as permissões de localização deles permitirem.
+
+### Correções e polimento
+
+- A detecção experimental de camada mantém as mesmas configurações e IU, com tratamento de solicitações mais suave quando evidências locais mudam ou candidatos próximos estão em recarga.
+- As caixas de diálogo do QuestTogether agora lidam com Escape por meio de suas ações normais de fechamento, e o Registro de Missões do Grupo pode receber uma tecla no menu nativo de Teclas de Atalho sem tecla padrão definida.
+- Sinais de porcentagem nas notas de atualização traduzidas são tratados como texto normal.
 
 ## 6.4.0
 

@@ -4,17 +4,33 @@
 
 ## 6.4.1
 
-Detección experimental de capas para jugadores QT cercanos.
+¡Gracias por usar QuestTogether! Esta actualización añade más control sobre las instantáneas del progreso de las misiones, la visualización de la ubicación de los jugadores y la accesibilidad de las ventanas. Los ajustes son más fáciles de configurar, y Discord sigue siendo el mejor sitio para comentarios y asistencia.
 
-### Detección experimental de capas
+### Actualizaciones del Registro de misiones del grupo
 
-- Activada por defecto en Ajustes > QuestTogether > Experimental. Desactiva Detectar capas diferentes para detener las comparaciones y ocultar los indicadores de fase estimada.
-- En el mundo abierto de Forever, los clientes QT compatibles cercanos comparan los PNJ observados y los jugadores visibles. Un icono de fase indica una capa probablemente diferente; pasa el cursor para ver los detalles. Es necesario compartir la ubicación.
-- Las estimaciones pueden ser incorrectas. La ausencia de jugadores por sí sola no permite concluir nada; verse mutuamente o ver a un jugador en común tiene prioridad sobre la estimación mediante PNJ. Los datos caducados se eliminan automáticamente. Los clientes QT antiguos no pueden participar.
+- Los encabezados de los jugadores ahora muestran lo reciente que es cada instantánea de misión. Abre el menú del encabezado de un jugador para actualizar solo a ese jugador sin actualizar a todos.
+- Filtros ahora incluye un ajuste opcional de actualización automática. Cuando está activado, el Registro de misiones del grupo se actualiza aproximadamente cada 30 segundos mientras la ventana real está abierta.
+- Al actualizar se mantienen, siempre que sea posible, tu búsqueda, las misiones expandidas, la posición horizontal y la posición visible de la misión mientras llegan nuevos datos de instantánea.
+- Las etiquetas de enfoque de misión ahora distinguen entre estados en espera, caducado, no compatible, no disponible y no compartido, y el menú avisa cuando seguir crearía un bucle.
 
-### Capturas de las notas de versión
+### Accesibilidad y disposición de ventanas
 
-- Las capturas de las notas de versión ahora se suben directamente a Discord para que sigan visibles en las publicaciones del registro de cambios.
+- Ajustes ahora incluye opciones de Accesibilidad para la escala de ventana del 80% al 150% y movimiento reducido para desplazamiento y expansión de objetivos instantáneos.
+- La escala de ventana aumenta el texto y los controles a la vez, pero puede limitarse cuando sea necesario para mantener la ventana completa en pantalla.
+- El Registro de misiones del grupo y la ventana de bienvenida ahora guardan su tamaño y posición relativa a la pantalla por perfil, y las ventanas de QuestTogether se reajustan tras cambios en el tamaño de pantalla o la escala de la IU.
+- Usa Restablecer disposición de ventanas en Accesibilidad, o /qt resetlayout, para borrar las disposiciones de ventanas guardadas de QuestTogether y volver a centrarlas.
+
+### Controles de ubicación de jugadores
+
+- La visualización en el mapa del mundo y el minimapa ahora se puede activar por separado del uso compartido de ubicación, para que puedas ocultar los marcadores locales sin cambiar lo que compartes.
+- El filtro de ubicación de jugadores ahora ofrece todos los jugadores de QuestTogether, compañeros de misiones o solo el grupo.
+- Mostrar siempre mi grupo está activado de forma predeterminada, así que los miembros del grupo seguirán apareciendo al usar el filtro de compañeros de misiones si sus permisos de ubicación lo permiten.
+
+### Correcciones y mejoras
+
+- La detección experimental de capas mantiene los mismos ajustes e interfaz, con una gestión de solicitudes más fluida cuando cambian las pruebas locales o los candidatos cercanos están en reutilización.
+- Los diálogos de QuestTogether ahora gestionan Escape mediante sus acciones de cierre normales, y al Registro de misiones del grupo se le puede asignar una tecla en el menú nativo de Asignación de teclas sin ninguna tecla predeterminada establecida.
+- Los signos de porcentaje en las notas de la versión traducidas se tratan como texto normal.
 
 ## 6.4.0
 

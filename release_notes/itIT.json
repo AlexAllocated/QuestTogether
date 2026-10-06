@@ -1,21 +1,41 @@
 {
-  "source_sha256": "8e17df4b36351e476fc521ef91b98b2dd3bc8288ec39c1d9836434898c92c871",
+  "source_sha256": "46a1063a869cefc3920ccb6cca6f104c349b33b1f128cffd2799d21a5a159d41",
   "notes": {
     "version": "6.4.1",
-    "welcome": "Rilevamento sperimentale dei livelli di mondo dei giocatori QT vicini.",
+    "welcome": "Grazie per usare QuestTogether! Questo aggiornamento aggiunge più controllo sulle istantanee dei progressi delle missioni, sulla visualizzazione della posizione dei giocatori e sull'accessibilità delle finestre. Le impostazioni sono più facili da regolare, e Discord resta il posto migliore per feedback e supporto.",
     "sections": [
       {
-        "title": "Rilevamento sperimentale dei livelli di mondo",
+        "title": "Aggiornamenti del Registro missioni del gruppo",
         "items": [
-          "Attivo per impostazione predefinita in Impostazioni > QuestTogether > Sperimentale. Disattiva Rileva livelli di mondo diversi per interrompere i confronti e nascondere gli indicatori di fase stimata.",
-          "Nel mondo aperto di Forever, i client QT compatibili vicini confrontano i PNG osservati e i giocatori visibili. Un’icona di fase indica un probabile livello di mondo diverso; passa il cursore per i dettagli. È richiesta la condivisione della posizione.",
-          "Le stime possono essere errate. La sola assenza di giocatori non permette conclusioni; vedersi a vicenda o vedere un giocatore in comune ha la precedenza sulla stima tramite PNG. I dati obsoleti vengono rimossi automaticamente. I vecchi client QT non possono partecipare."
+          "Le intestazioni dei giocatori ora mostrano quanto è recente ogni istantanea delle missioni. Apri il menu dell'intestazione di un giocatore per aggiornare solo quel giocatore senza aggiornare tutti.",
+          "I filtri ora includono un'impostazione opzionale di aggiornamento automatico. Quando è attiva, il Registro missioni del gruppo si aggiorna circa ogni 30 secondi mentre la finestra reale è aperta.",
+          "L'aggiornamento mantiene, quando possibile, la ricerca, le missioni espanse, la posizione orizzontale e la posizione della missione visibile mentre arrivano i nuovi dati dell'istantanea.",
+          "Le etichette del focus missione ora distinguono tra stati in attesa, scaduti, non supportati, non disponibili e non condivisi, e il menu avvisa quando seguire creerebbe un ciclo."
         ]
       },
       {
-        "title": "Immagini nelle note di versione",
+        "title": "Accessibilità e disposizione delle finestre",
         "items": [
-          "Le immagini nelle note di versione vengono ora caricate direttamente su Discord per rimanere visibili nei messaggi del registro delle modifiche."
+          "Le impostazioni ora includono opzioni di Accessibilità per la scala della finestra dall'80% al 150% e movimento ridotto per scorrimento ed espansione degli obiettivi istantanei.",
+          "La scala della finestra ingrandisce insieme testo e controlli, ma può essere limitata quando necessario per mantenere l'intera finestra sullo schermo.",
+          "Il Registro missioni del gruppo e la finestra di benvenuto ora salvano dimensione e posizione relativa allo schermo per ogni profilo, e le finestre di QuestTogether vengono riadattate dopo modifiche alla dimensione dello schermo o alla scala dell'interfaccia.",
+          "Usa Reimposta disposizione finestre in Accessibilità, oppure /qt resetlayout, per cancellare le disposizioni salvate delle finestre di QuestTogether e ricentrarle."
+        ]
+      },
+      {
+        "title": "Controlli della posizione dei giocatori",
+        "items": [
+          "La visualizzazione su mappa del mondo e minimappa ora può essere attivata o disattivata separatamente dalla condivisione della posizione, così puoi nascondere i segnaposti locali senza cambiare ciò che condividi.",
+          "Il filtro della posizione dei giocatori ora offre tutti i giocatori di QuestTogether, compagni di missione o solo gruppo.",
+          "Mostra sempre il mio gruppo è attivo per impostazione predefinita, quindi i membri del gruppo continuano a comparire quando si usa il filtro dei compagni di missione, se i loro permessi di posizione lo consentono."
+        ]
+      },
+      {
+        "title": "Correzioni e rifiniture",
+        "items": [
+          "Il rilevamento sperimentale del livello mantiene le stesse impostazioni e la stessa interfaccia, con una gestione delle richieste più fluida quando le prove locali cambiano o i candidati vicini sono in recupero.",
+          "Le finestre di dialogo di QuestTogether ora gestiscono Esc tramite le normali azioni di chiusura, e al Registro missioni del gruppo può essere assegnato un tasto nel menu nativo delle Assegnazioni tasti senza alcun tasto predefinito impostato.",
+          "I segni di percentuale nelle note di rilascio tradotte vengono gestiti come testo normale."
         ]
       }
     ]
