@@ -2,6 +2,42 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.3
+
+Scopri il registro delle missioni del gruppo: confronta le missioni, coordina il prossimo obiettivo e segui la missione attiva di un compagno. Questa patch amplia la guida con tre immagini; il funzionamento resta invariato. Le immagini mostrano l’anteprima di Forever con compagni simulati.
+
+### Il gruppo a colpo d’occhio
+
+- Un clic sinistro sull’icona QT della minimappa apre o chiude il registro. La tua colonna resta per prima, i colori di classe distinguono i compagni e una corona indica il capogruppo. Ogni missione mostra chi la possiede, a chi manca e quanti possono consegnarla. Condividi e Richiedi condivisione appaiono quando supportati; Non condivisibile e Condivisione sconosciuta spiegano le azioni assenti. Restano validi le regole Blizzard e i requisiti del destinatario.
+
+**Forever**
+
+![Il gruppo a colpo d’occhio — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestOverviewForever.png)
+
+### Scegli una missione o segui un compagno
+
+- I piccoli pulsanti mostrano la missione attiva di ogni giocatore. Clicca nella tua colonna per cambiare la missione di navigazione Blizzard o sulla missione attiva di un compagno per seguirlo. Durante il seguito solo il suo pulsante attivo resta colorato; quelli attivi degli altri restano cliccabili per cambiare bersaglio. Il seguito applica le nuove missioni che possiedi e sopravvive ai ricaricamenti. Se la prossima missione manca, QT interrompe il seguito e propone di aprire il registro del gruppo.
+
+**Forever**
+
+![Scegli una missione o segui un compagno — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFollowingForever.png)
+
+### Conferma il cambio di obiettivo
+
+- L’indicatore del seguito identifica il compagno, con il pulsante per interrompere accanto. Scegliere una tua missione o un altro compagno richiede conferma. Anche cambiare o rimuovere la missione attiva dal tracciatore Blizzard: QT ripristina quella seguita mentre decidi. Annulla mantiene il seguito; Cambia obiettivo applica la scelta. Se il compagno rimuove il suo obiettivo, la tua missione resta invariata. Uscire dal gruppo o convertirlo in incursione interrompe il seguito.
+
+**Forever**
+
+![Conferma il cambio di obiettivo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFocusWarningForever.png)
+
+### Espandi i progressi e trova le missioni
+
+- Clicca una riga per espandere obiettivi, contatori e barre di ogni membro. Più missioni possono restare aperte. Ricerca e Filtri limitano la lista per possesso, avanzamento e azioni. Il libro apre una tua missione nel registro Blizzard. I progressi remoti sono un’istantanea: controllane l’età sotto il nome e usa Aggiorna.
+
+### Prova senza un vero gruppo
+
+- /qt preview compare combina il tuo vero registro con quattro compagni simulati e missioni aggiuntive mancanti. I pulsanti cambiano la navigazione reale; condividere resta simulato. Il menu del nome di un compagno permette di passare alla sua prossima missione per provare il seguito e le missioni mancanti. Il tracciatore Blizzard attiva anche la conferma. Chiudendo l’anteprima riprende il seguito nel gruppo reale. /qt preview unfollow mostra solo il dialogo di avvertimento.
+
 ## 6.5.2
 
 Pulsanti delle missioni più chiari, conferme durante il seguito e icone coerenti con il tracciatore Blizzard.

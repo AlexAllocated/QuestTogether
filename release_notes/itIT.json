@@ -1,31 +1,40 @@
 {
-  "source_sha256": "c97bf4f73ed99ec17b14910f6b5c9a1ff000e96a46c2ed71abeb0829fee58aa8",
+  "source_sha256": "e8706653dd30a3c128db85a486268a5bc1c57eb624168c4ceb5a736cc010d913",
   "notes": {
-    "version": "6.5.2",
-    "welcome": "Pulsanti delle missioni più chiari, conferme durante il seguito e icone coerenti con il tracciatore Blizzard.",
+    "version": "6.5.3",
+    "welcome": "Scopri il registro delle missioni del gruppo: confronta le missioni, coordina il prossimo obiettivo e segui la missione attiva di un compagno. Questa patch amplia la guida con tre immagini; il funzionamento resta invariato. Le immagini mostrano l’anteprima di Forever con compagni simulati.",
     "sections": [
       {
-        "title": "Comandi più chiari",
+        "title": "Il gruppo a colpo d’occhio",
         "items": [
-          "Quando segui un giocatore, solo il pulsante della sua missione attiva resta colorato. Senza seguito, i tuoi pulsanti e le missioni attive dei compagni restano colorati. Gli altri pulsanti sono grigi, senza trasparenza. Le missioni attive dei compagni restano cliccabili per iniziare a seguirli o cambiare giocatore."
+          "Un clic sinistro sull’icona QT della minimappa apre o chiude il registro. La tua colonna resta per prima, i colori di classe distinguono i compagni e una corona indica il capogruppo. Ogni missione mostra chi la possiede, a chi manca e quanti possono consegnarla. Condividi e Richiedi condivisione appaiono quando supportati; Non condivisibile e Condivisione sconosciuta spiegano le azioni assenti. Restano validi le regole Blizzard e i requisiti del destinatario."
+        ],
+        "illustration": "party-quest-overview"
+      },
+      {
+        "title": "Scegli una missione o segui un compagno",
+        "items": [
+          "I piccoli pulsanti mostrano la missione attiva di ogni giocatore. Clicca nella tua colonna per cambiare la missione di navigazione Blizzard o sulla missione attiva di un compagno per seguirlo. Durante il seguito solo il suo pulsante attivo resta colorato; quelli attivi degli altri restano cliccabili per cambiare bersaglio. Il seguito applica le nuove missioni che possiedi e sopravvive ai ricaricamenti. Se la prossima missione manca, QT interrompe il seguito e propone di aprire il registro del gruppo."
+        ],
+        "illustration": "party-quest-following"
+      },
+      {
+        "title": "Conferma il cambio di obiettivo",
+        "items": [
+          "L’indicatore del seguito identifica il compagno, con il pulsante per interrompere accanto. Scegliere una tua missione o un altro compagno richiede conferma. Anche cambiare o rimuovere la missione attiva dal tracciatore Blizzard: QT ripristina quella seguita mentre decidi. Annulla mantiene il seguito; Cambia obiettivo applica la scelta. Se il compagno rimuove il suo obiettivo, la tua missione resta invariata. Uscire dal gruppo o convertirlo in incursione interrompe il seguito."
+        ],
+        "illustration": "party-quest-focus-warning"
+      },
+      {
+        "title": "Espandi i progressi e trova le missioni",
+        "items": [
+          "Clicca una riga per espandere obiettivi, contatori e barre di ogni membro. Più missioni possono restare aperte. Ricerca e Filtri limitano la lista per possesso, avanzamento e azioni. Il libro apre una tua missione nel registro Blizzard. I progressi remoti sono un’istantanea: controllane l’età sotto il nome e usa Aggiorna."
         ]
       },
       {
-        "title": "Conferma prima di cambiare",
+        "title": "Prova senza un vero gruppo",
         "items": [
-          "Scegliere una propria missione o un altro compagno richiede conferma prima di interrompere il seguito. Anche cambiare o rimuovere la missione attiva dal tracciatore Blizzard richiede conferma: QT ripristina la missione seguita mentre decidi. Annulla mantiene il seguito; Cambia obiettivo applica la scelta. Anteprima: /qt preview unfollow."
-        ]
-      },
-      {
-        "title": "Icone coerenti",
-        "items": [
-          "Lo stato delle missioni usa ora la stessa verifica di completamento del tracciatore Blizzard, correggendo le missioni di consegna che mostravano un’icona di avanzamento invece di un punto interrogativo. Lo stato Pronto corretto viene incluso anche nei dati condivisi del registro del gruppo."
-        ]
-      },
-      {
-        "title": "Prova con le tue missioni",
-        "items": [
-          "L’anteprima usa il tuo vero registro con quattro compagni simulati e missioni aggiuntive mancanti. I comandi cambiano la tua navigazione Blizzard reale; la condivisione resta simulata. Usa il menu del nome di un compagno per cambiare la sua missione attiva. La colonna delle azioni mostra ora Non condivisibile o Condivisione sconosciuta, centrato, invece di rimanere vuota. Chiudendo l’anteprima riprende il seguito esistente nel gruppo reale."
+          "/qt preview compare combina il tuo vero registro con quattro compagni simulati e missioni aggiuntive mancanti. I pulsanti cambiano la navigazione reale; condividere resta simulato. Il menu del nome di un compagno permette di passare alla sua prossima missione per provare il seguito e le missioni mancanti. Il tracciatore Blizzard attiva anche la conferma. Chiudendo l’anteprima riprende il seguito nel gruppo reale. /qt preview unfollow mostra solo il dialogo di avvertimento."
         ]
       }
     ]

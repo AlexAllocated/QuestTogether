@@ -2,6 +2,42 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.3
+
+Découvrez le journal de quêtes du groupe : comparez les quêtes, préparez le prochain objectif et suivez la cible d’un coéquipier. Ce patch enrichit le guide avec trois captures, sans changer le fonctionnement du jeu. Les images montrent un aperçu Forever avec des coéquipiers simulés.
+
+### Votre groupe en un coup d’œil
+
+- Un clic gauche sur l’icône QT de la minicarte ouvre ou ferme le journal. Votre colonne reste en premier, les couleurs de classe distinguent les joueurs et une couronne indique le chef. Chaque quête affiche qui la possède, qui ne l’a pas et combien de joueurs peuvent la rendre. Partager et Demander le partage apparaissent quand ils sont disponibles ; Non partageable et Partage possible inconnu expliquent leur absence. Les règles Blizzard et les prérequis du destinataire restent applicables.
+
+**Forever**
+
+![Votre groupe en un coup d’œil — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestOverviewForever.png)
+
+### Choisissez une quête ou suivez un coéquipier
+
+- Les petits boutons indiquent la quête ciblée de chaque joueur. Cliquez dans votre colonne pour changer votre quête de navigation Blizzard, ou sur la quête active d’un coéquipier pour le suivre. Pendant le suivi, seul son bouton actif reste coloré ; les quêtes actives des autres restent cliquables pour changer de cible. Le suivi applique les nouvelles cibles si vous possédez les quêtes et persiste après rechargement. Si la prochaine quête vous manque, QT arrête le suivi et propose d’ouvrir le journal du groupe.
+
+**Forever**
+
+![Choisissez une quête ou suivez un coéquipier — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFollowingForever.png)
+
+### Changez de cible en connaissance de cause
+
+- L’indicateur de suivi nomme votre cible, avec Arrêter le suivi à côté. Choisir votre propre quête ou un autre coéquipier demande confirmation. Changer ou effacer la cible dans le suivi Blizzard aussi : QT rétablit la cible suivie pendant votre décision. Annuler conserve le suivi ; Changer de cible applique le choix. Si le joueur suivi efface sa cible, votre quête reste inchangée. Quitter le groupe ou le convertir en raid met fin au suivi.
+
+**Forever**
+
+![Changez de cible en connaissance de cause — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFocusWarningForever.png)
+
+### Déployez les objectifs et trouvez une quête
+
+- Cliquez sur une ligne pour déployer les objectifs, compteurs et barres de progression de chaque membre. Plusieurs quêtes peuvent rester ouvertes. Recherche et Filtres limitent la liste selon la possession, la progression et les actions disponibles. Le livre ouvre une quête que vous possédez dans le journal Blizzard. La progression distante est un instantané : vérifiez son âge sous le nom et utilisez Actualiser.
+
+### Testez le suivi sans vrai groupe
+
+- /qt preview compare combine votre vrai journal avec quatre coéquipiers simulés et des quêtes supplémentaires manquantes. Les boutons changent votre navigation réelle ; le partage reste simulé. Le menu du nom d’un coéquipier permet de passer à sa prochaine quête pour tester le suivi et les quêtes manquantes. Le suivi Blizzard déclenche aussi la confirmation. Fermer l’aperçu reprend le suivi existant dans votre vrai groupe. /qt preview unfollow affiche uniquement le dialogue d’avertissement.
+
 ## 6.5.2
 
 Des boutons de quête plus clairs, des changements confirmés pendant le suivi et des icônes conformes au suivi Blizzard.

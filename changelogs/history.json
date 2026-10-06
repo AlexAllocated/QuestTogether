@@ -3,6 +3,338 @@
   "releases": [
     {
       "enUS": {
+        "version": "6.5.2",
+        "welcome": "Clearer quest focus buttons, safer changes while following, and icons that match the native quest tracker.",
+        "sections": [
+          {
+            "title": "Clear focus controls",
+            "items": [
+              "While following, only the followed player’s active quest button stays colored. Without a follow, your buttons and teammates’ active quests stay colored. All other buttons are gray, with no fading. Teammates’ active quests remain clickable to start or switch following."
+            ]
+          },
+          {
+            "title": "Confirm before changing focus",
+            "items": [
+              "Choosing your own quest or switching teammates asks before ending the current follow. Changing or clearing quest focus through Blizzard’s tracker now asks too: QT restores the followed focus while you decide. Cancel keeps following; Change focus applies your choice. Preview the dialog with /qt preview unfollow."
+            ]
+          },
+          {
+            "title": "Matching quest icons",
+            "items": [
+              "Quest readiness now uses the same completion query as Blizzard’s tracker, fixing delivery quests that showed an in-progress icon instead of a question mark. The corrected Ready status is also included in shared Party Quest Log snapshots."
+            ]
+          },
+          {
+            "title": "Test with your own quests",
+            "items": [
+              "The compare preview now uses your real quest log with four simulated teammates and extra missing quests. Focus controls change your real Blizzard navigation; sharing stays simulated. Use a teammate’s name menu to advance their focused quest. Quests that cannot be shared now show a centered Not shareable or Shareability unknown label instead of a blank action column. Closing the preview resumes any existing real-party follow."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "6.5.2",
+        "welcome": "Klarere Questfokus-Schaltflächen, sichere Wechsel beim Folgen und passende Symbole zur Blizzard-Questverfolgung.",
+        "sections": [
+          {
+            "title": "Klarer Questfokus",
+            "items": [
+              "Beim Folgen bleibt nur die aktive Quest des verfolgten Spielers farbig. Ohne Folgen bleiben deine Schaltflächen und die aktiven Quests deiner Mitspieler farbig. Alle anderen sind grau, ohne Transparenz. Aktive Quests von Mitspielern bleiben anklickbar, um das Folgen zu starten oder das Ziel zu wechseln."
+            ]
+          },
+          {
+            "title": "Fokuswechsel bestätigen",
+            "items": [
+              "Die Wahl einer eigenen Quest oder eines anderen Mitspielers fragt vor dem Ende des bisherigen Folgens nach. Auch Fokuswechsel oder das Aufheben des Fokus über Blizzards Questverfolgung fragen jetzt nach: QT stellt den bisherigen Fokus während der Entscheidung wieder her. Abbrechen behält das Folgen bei; Fokus ändern übernimmt die Auswahl. Vorschau: /qt preview unfollow."
+            ]
+          },
+          {
+            "title": "Passende Questsymbole",
+            "items": [
+              "Der Queststatus nutzt jetzt dieselbe Abschlussabfrage wie Blizzards Questverfolgung. Dadurch zeigen Lieferquests ein Fragezeichen statt eines Fortschrittssymbols. Der korrigierte Bereit-Status wird auch mit dem Gruppen-Questlog geteilt."
+            ]
+          },
+          {
+            "title": "Mit eigenen Quests testen",
+            "items": [
+              "Die Vergleichsvorschau nutzt dein echtes Questlog mit vier simulierten Mitspielern und zusätzlichen fehlenden Quests. Fokuswechsel ändern deine echte Blizzard-Navigation; Teilen bleibt simuliert. Über das Namensmenü eines Mitspielers wechselst du dessen Fokus weiter. Statt einer leeren Aktionsspalte zeigen nicht teilbare Quests nun zentriert Nicht teilbar oder Teilbarkeit unbekannt. Beim Schließen der Vorschau wird ein bestehendes Folgen in der echten Gruppe fortgesetzt."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "6.5.2",
+        "welcome": "Des boutons de quête plus clairs, des changements confirmés pendant le suivi et des icônes conformes au suivi Blizzard.",
+        "sections": [
+          {
+            "title": "Des commandes plus claires",
+            "items": [
+              "Pendant le suivi, seul le bouton de la quête active du joueur suivi reste coloré. Sans suivi, vos boutons et les quêtes actives de vos coéquipiers restent colorés. Les autres boutons sont gris, sans transparence. Les quêtes actives des coéquipiers restent cliquables pour commencer le suivi ou changer de joueur."
+            ]
+          },
+          {
+            "title": "Confirmer le changement",
+            "items": [
+              "Choisir votre propre quête ou un autre coéquipier demande confirmation avant d’arrêter le suivi actuel. Changer ou effacer la cible dans le suivi Blizzard demande aussi confirmation : QT rétablit la cible suivie pendant votre décision. Annuler conserve le suivi ; Changer de cible applique votre choix. Aperçu : /qt preview unfollow."
+            ]
+          },
+          {
+            "title": "Des icônes cohérentes",
+            "items": [
+              "L’état des quêtes utilise désormais la même vérification d’achèvement que le suivi Blizzard. Les quêtes de livraison affichent ainsi un point d’interrogation au lieu d’une icône de progression. L’état Prêt corrigé est également inclus dans les données partagées du journal du groupe."
+            ]
+          },
+          {
+            "title": "Testez avec vos quêtes",
+            "items": [
+              "L’aperçu utilise votre vrai journal avec quatre coéquipiers simulés et des quêtes supplémentaires manquantes. Le ciblage change votre navigation Blizzard réelle ; le partage reste simulé. Le menu du nom d’un coéquipier permet de changer sa quête active. La colonne d’action affiche désormais Non partageable ou Partage possible inconnu, centré, au lieu de rester vide. Fermer l’aperçu reprend le suivi existant dans votre vrai groupe."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "6.5.2",
+        "welcome": "Botones de misión más claros, cambios confirmados al seguir a alguien e iconos que coinciden con el seguimiento de Blizzard.",
+        "sections": [
+          {
+            "title": "Controles más claros",
+            "items": [
+              "Mientras sigues a alguien, solo conserva su color el botón de su misión activa. Sin seguimiento, tus botones y las misiones activas de tus compañeros conservan su color. Los demás botones son grises, sin transparencia. Las misiones activas de tus compañeros siguen siendo pulsables para empezar a seguirlos o cambiar de objetivo."
+            ]
+          },
+          {
+            "title": "Confirmar los cambios",
+            "items": [
+              "Elegir tu propia misión o cambiar de compañero pide confirmación antes de terminar el seguimiento actual. Cambiar o quitar la misión activa desde el seguimiento de Blizzard también: QT restaura la misión seguida mientras decides. Cancelar mantiene el seguimiento; Cambiar misión aplica tu elección. Vista previa: /qt preview unfollow."
+            ]
+          },
+          {
+            "title": "Iconos coherentes",
+            "items": [
+              "El estado de las misiones ahora usa la misma consulta de finalización que el seguimiento de Blizzard. Así se corrigen las misiones de entrega que mostraban un icono de progreso en vez de una interrogación. El estado Listo corregido también se incluye en los datos compartidos del registro del grupo."
+            ]
+          },
+          {
+            "title": "Prueba con tus misiones",
+            "items": [
+              "La vista previa usa tu registro real con cuatro compañeros simulados y misiones adicionales que no tienes. Los controles de misión cambian tu navegación real de Blizzard; compartir sigue siendo simulado. Usa el menú del nombre de un compañero para avanzar su misión activa. La columna de acciones muestra ahora No se puede compartir o Disponibilidad de compartir desconocida, centrado, en vez de quedar vacía. Al cerrar la vista previa se reanuda el seguimiento existente del grupo real."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "6.5.2",
+        "welcome": "Botones de misión más claros, cambios confirmados al seguir a alguien e iconos que coinciden con el seguimiento de Blizzard.",
+        "sections": [
+          {
+            "title": "Controles más claros",
+            "items": [
+              "Mientras sigues a alguien, solo conserva su color el botón de su misión activa. Sin seguimiento, tus botones y las misiones activas de tus compañeros conservan su color. Los demás botones son grises, sin transparencia. Las misiones activas de tus compañeros siguen siendo pulsables para empezar a seguirlos o cambiar de objetivo."
+            ]
+          },
+          {
+            "title": "Confirmar los cambios",
+            "items": [
+              "Elegir tu propia misión o cambiar de compañero pide confirmación antes de terminar el seguimiento actual. Cambiar o quitar la misión activa desde el seguimiento de Blizzard también: QT restaura la misión seguida mientras decides. Cancelar mantiene el seguimiento; Cambiar misión aplica tu elección. Vista previa: /qt preview unfollow."
+            ]
+          },
+          {
+            "title": "Iconos coherentes",
+            "items": [
+              "El estado de las misiones ahora usa la misma consulta de finalización que el seguimiento de Blizzard. Así se corrigen las misiones de entrega que mostraban un icono de progreso en vez de una interrogación. El estado Listo corregido también se incluye en los datos compartidos del registro del grupo."
+            ]
+          },
+          {
+            "title": "Prueba con tus misiones",
+            "items": [
+              "La vista previa usa tu registro real con cuatro compañeros simulados y misiones adicionales que no tienes. Los controles de misión cambian tu navegación real de Blizzard; compartir sigue siendo simulado. Usa el menú del nombre de un compañero para avanzar su misión activa. La columna de acciones muestra ahora No se puede compartir o Disponibilidad de compartir desconocida, centrado, en vez de quedar vacía. Al cerrar la vista previa se reanuda el seguimiento existente del grupo real."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "6.5.2",
+        "welcome": "Botões de missão mais claros, confirmação ao mudar o foco seguido e ícones iguais aos do rastreador da Blizzard.",
+        "sections": [
+          {
+            "title": "Controles mais claros",
+            "items": [
+              "Ao seguir alguém, apenas o botão da missão ativa desse jogador mantém a cor. Sem seguir, seus botões e as missões ativas dos colegas mantêm a cor. Os demais ficam cinza, sem transparência. As missões ativas dos colegas continuam clicáveis para começar a segui-los ou trocar de jogador."
+            ]
+          },
+          {
+            "title": "Confirme antes de mudar",
+            "items": [
+              "Escolher sua própria missão ou outro colega pede confirmação antes de encerrar o seguimento atual. Mudar ou limpar o foco pelo rastreador da Blizzard também pede confirmação: o QT restaura o foco seguido enquanto você decide. Cancelar mantém o seguimento; Mudar foco aplica sua escolha. Prévia: /qt preview unfollow."
+            ]
+          },
+          {
+            "title": "Ícones consistentes",
+            "items": [
+              "O estado das missões agora usa a mesma consulta de conclusão do rastreador da Blizzard, corrigindo missões de entrega que exibiam um ícone de progresso em vez de uma interrogação. O estado Pronto corrigido também é incluído nos dados compartilhados do Registro de Missões do Grupo."
+            ]
+          },
+          {
+            "title": "Teste com suas missões",
+            "items": [
+              "A prévia usa seu registro real com quatro colegas simulados e missões extras que você não tem. Os controles mudam sua navegação real da Blizzard; o compartilhamento continua simulado. Use o menu do nome de um colega para avançar a missão ativa dele. A coluna de ações agora mostra Não compartilhável ou Compartilhamento desconhecido, centralizado, em vez de ficar vazia. Fechar a prévia retoma o seguimento existente no grupo real."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "6.5.2",
+        "welcome": "Более понятные кнопки заданий, подтверждение смены цели при следовании и значки, совпадающие с отслеживанием Blizzard.",
+        "sections": [
+          {
+            "title": "Понятные кнопки",
+            "items": [
+              "При следовании цветным остаётся только активное задание выбранного игрока. Без следования цветными остаются ваши кнопки и активные задания товарищей. Остальные кнопки серые, без прозрачности. На активные задания товарищей по-прежнему можно нажать, чтобы начать следование или сменить игрока."
+            ]
+          },
+          {
+            "title": "Подтверждение смены цели",
+            "items": [
+              "Выбор собственного задания или другого товарища требует подтверждения перед прекращением текущего следования. Смена или очистка цели через отслеживание Blizzard тоже: QT восстанавливает прежнюю цель, пока вы решаете. Отмена сохраняет следование, а смена цели применяет выбор. Просмотр диалога: /qt preview unfollow."
+            ]
+          },
+          {
+            "title": "Правильные значки заданий",
+            "items": [
+              "Готовность заданий теперь проверяется так же, как в отслеживании Blizzard. Это исправляет задания на доставку, для которых вместо вопросительного знака отображался значок выполнения. Исправленный статус готовности также передаётся в журнал заданий группы."
+            ]
+          },
+          {
+            "title": "Проверяйте на своих заданиях",
+            "items": [
+              "Просмотр использует ваш настоящий журнал с четырьмя условными товарищами и дополнительными отсутствующими заданиями. Выбор цели меняет настоящую навигацию Blizzard, а передача заданий остаётся имитацией. Меню имени товарища позволяет переключить его активное задание. Вместо пустой колонки действий теперь по центру отображается Нельзя поделиться или Возможность передачи неизвестна. После закрытия просмотра возобновляется прежнее следование в настоящей группе."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "6.5.2",
+        "welcome": "Pulsanti delle missioni più chiari, conferme durante il seguito e icone coerenti con il tracciatore Blizzard.",
+        "sections": [
+          {
+            "title": "Comandi più chiari",
+            "items": [
+              "Quando segui un giocatore, solo il pulsante della sua missione attiva resta colorato. Senza seguito, i tuoi pulsanti e le missioni attive dei compagni restano colorati. Gli altri pulsanti sono grigi, senza trasparenza. Le missioni attive dei compagni restano cliccabili per iniziare a seguirli o cambiare giocatore."
+            ]
+          },
+          {
+            "title": "Conferma prima di cambiare",
+            "items": [
+              "Scegliere una propria missione o un altro compagno richiede conferma prima di interrompere il seguito. Anche cambiare o rimuovere la missione attiva dal tracciatore Blizzard richiede conferma: QT ripristina la missione seguita mentre decidi. Annulla mantiene il seguito; Cambia obiettivo applica la scelta. Anteprima: /qt preview unfollow."
+            ]
+          },
+          {
+            "title": "Icone coerenti",
+            "items": [
+              "Lo stato delle missioni usa ora la stessa verifica di completamento del tracciatore Blizzard, correggendo le missioni di consegna che mostravano un’icona di avanzamento invece di un punto interrogativo. Lo stato Pronto corretto viene incluso anche nei dati condivisi del registro del gruppo."
+            ]
+          },
+          {
+            "title": "Prova con le tue missioni",
+            "items": [
+              "L’anteprima usa il tuo vero registro con quattro compagni simulati e missioni aggiuntive mancanti. I comandi cambiano la tua navigazione Blizzard reale; la condivisione resta simulata. Usa il menu del nome di un compagno per cambiare la sua missione attiva. La colonna delle azioni mostra ora Non condivisibile o Condivisione sconosciuta, centrato, invece di rimanere vuota. Chiudendo l’anteprima riprende il seguito esistente nel gruppo reale."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "6.5.2",
+        "welcome": "퀘스트 버튼이 더 명확해지고, 따라가기 중 변경을 확인하며, 기본 추적기와 같은 아이콘을 표시합니다.",
+        "sections": [
+          {
+            "title": "명확한 집중 추적 버튼",
+            "items": [
+              "따라가기 중에는 대상 플레이어의 활성 퀘스트 버튼만 색상을 유지합니다. 따라가지 않을 때는 자신의 버튼과 파티원의 활성 퀘스트가 색상을 유지합니다. 나머지는 투명도 변경 없이 회색으로 표시됩니다. 파티원의 활성 퀘스트를 클릭하면 따라가기를 시작하거나 대상을 바꿀 수 있습니다."
+            ]
+          },
+          {
+            "title": "변경 전 확인",
+            "items": [
+              "자신의 퀘스트나 다른 파티원을 선택하면 현재 따라가기를 끝내기 전에 확인합니다. 블리자드 추적기에서 퀘스트 집중 추적을 변경하거나 해제해도 확인합니다. 결정하는 동안 QT가 기존 집중 추적을 복원합니다. 취소하면 따라가기를 유지하고, 집중 추적 변경을 누르면 선택을 적용합니다. 미리 보기: /qt preview unfollow."
+            ]
+          },
+          {
+            "title": "일치하는 퀘스트 아이콘",
+            "items": [
+              "이제 블리자드 추적기와 같은 완료 확인 방식을 사용하여 배달 퀘스트에 물음표 대신 진행 중 아이콘이 표시되던 문제를 수정했습니다. 수정된 완료 준비 상태는 공유되는 파티 퀘스트 목록 정보에도 반영됩니다."
+            ]
+          },
+          {
+            "title": "내 퀘스트로 테스트",
+            "items": [
+              "비교 미리 보기는 실제 퀘스트 목록과 가상 파티원 4명, 보유하지 않은 추가 퀘스트를 사용합니다. 집중 추적 버튼은 실제 블리자드 길 안내를 변경하지만 공유는 시뮬레이션입니다. 파티원 이름 메뉴에서 해당 파티원의 다음 활성 퀘스트로 이동할 수 있습니다. 공유할 수 없는 퀘스트는 빈 작업 열 대신 공유 불가 또는 공유 가능 여부 알 수 없음을 가운데 정렬로 표시합니다. 미리 보기를 닫으면 실제 파티에서 기존에 설정한 따라가기를 재개합니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "6.5.2",
+        "welcome": "更清晰的任务按钮、跟随时的切换确认，以及与暴雪任务追踪器一致的图标。",
+        "sections": [
+          {
+            "title": "清晰的重点追踪按钮",
+            "items": [
+              "跟随时，只有被跟随玩家的当前任务按钮保持彩色。未跟随时，你的按钮和队友的当前任务保持彩色。其余按钮显示为灰色，不再降低透明度。队友的当前任务仍可点击，以开始跟随或切换跟随对象。"
+            ]
+          },
+          {
+            "title": "切换前确认",
+            "items": [
+              "选择自己的任务或切换队友时，会先确认是否结束当前跟随。通过暴雪追踪器更改或清除重点追踪任务也会提示：决定期间，QT会恢复原来跟随的任务。取消会继续跟随，更改重点追踪则应用你的选择。预览对话框：/qt preview unfollow。"
+            ]
+          },
+          {
+            "title": "一致的任务图标",
+            "items": [
+              "任务就绪状态现在使用与暴雪追踪器相同的完成查询，修复了交付任务显示进行中图标而非问号的问题。修正后的就绪状态也会包含在共享的队伍任务日志数据中。"
+            ]
+          },
+          {
+            "title": "使用自己的任务测试",
+            "items": [
+              "对比预览现在使用你的真实任务日志，搭配四名模拟队友和额外缺少的任务。重点追踪操作会更改真实的暴雪导航，分享仍为模拟。使用队友姓名菜单可切换其当前任务。无法分享的任务现在会在操作列居中显示无法分享或分享状态未知，不再留白。 关闭预览后，会恢复真实队伍中原有的跟随。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "6.5.2",
+        "welcome": "更清楚的任務按鈕、跟隨時的切換確認，以及與暴雪任務追蹤器一致的圖示。",
+        "sections": [
+          {
+            "title": "清楚的重點追蹤按鈕",
+            "items": [
+              "跟隨時，只有被跟隨玩家的目前任務按鈕保持彩色。未跟隨時，你的按鈕和隊友的目前任務保持彩色。其餘按鈕顯示為灰色，不再降低透明度。隊友的目前任務仍可點擊，以開始跟隨或切換跟隨對象。"
+            ]
+          },
+          {
+            "title": "切換前確認",
+            "items": [
+              "選擇自己的任務或切換隊友時，會先確認是否結束目前跟隨。透過暴雪追蹤器更改或清除重點追蹤任務也會提示：決定期間，QT會還原原本跟隨的任務。取消會繼續跟隨，更改重點追蹤則套用你的選擇。預覽對話框：/qt preview unfollow。"
+            ]
+          },
+          {
+            "title": "一致的任務圖示",
+            "items": [
+              "任務就緒狀態現在使用與暴雪追蹤器相同的完成查詢，修正了交付任務顯示進行中圖示而非問號的問題。修正後的就緒狀態也會包含在共享的隊伍任務日誌資料中。"
+            ]
+          },
+          {
+            "title": "使用自己的任務測試",
+            "items": [
+              "比較預覽現在使用你的真實任務日誌，搭配四名模擬隊友和額外缺少的任務。重點追蹤操作會更改真實的暴雪導航，分享仍為模擬。使用隊友姓名選單可切換其目前任務。無法分享的任務現在會在操作欄置中顯示無法分享或分享狀態未知，不再留白。 關閉預覽後，會恢復真實隊伍中原有的跟隨。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "6.5.1",
         "welcome": "Clearer quest focus buttons, safer changes while following, and icons that match the native quest tracker.",
         "sections": [

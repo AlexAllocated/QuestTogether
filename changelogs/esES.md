@@ -2,6 +2,42 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.3
+
+Conoce el registro de misiones del grupo: compara misiones, coordina el siguiente objetivo y sigue la misión activa de un compañero. Este parche amplía la guía con tres capturas; el funcionamiento no cambia. Las imágenes muestran la vista previa de Forever con compañeros simulados.
+
+### Tu grupo de un vistazo
+
+- Haz clic izquierdo en el icono QT del minimapa para abrir o cerrar el registro. Tu columna permanece primero, los colores de clase distinguen a los compañeros y una corona marca al líder. Cada misión indica quién la tiene, a quién le falta y cuántos pueden entregarla. Compartir y Solicitar compartir aparecen cuando se admiten; No se puede compartir y Disponibilidad de compartir desconocida explican su ausencia. Siguen aplicándose las reglas de Blizzard y los requisitos del destinatario.
+
+**Forever**
+
+![Tu grupo de un vistazo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestOverviewForever.png)
+
+### Elige tu misión o sigue a un compañero
+
+- Los botones pequeños muestran la misión activa de cada jugador. Pulsa uno de tu columna para cambiar tu misión de navegación de Blizzard, o la misión activa de un compañero para seguirlo. Mientras lo sigues, solo su botón activo mantiene el color; los botones activos de otros compañeros siguen siendo pulsables para cambiar de objetivo. El seguimiento actualiza las misiones que tienes y se conserva al recargar. Si te falta la siguiente, QT detiene el seguimiento y ofrece abrir el registro del grupo.
+
+**Forever**
+
+![Elige tu misión o sigue a un compañero — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFollowingForever.png)
+
+### Cambia la misión con confirmación
+
+- El indicador Siguiendo identifica al compañero, junto a Dejar de seguir. Elegir tu propia misión u otro compañero pide confirmación. Cambiar o quitar la misión activa desde el seguimiento de Blizzard también: QT restaura la misión seguida mientras decides. Cancelar mantiene el seguimiento; Cambiar misión aplica tu elección. Si el compañero elimina su selección, tu misión no cambia. Salir del grupo o convertirlo en banda termina el seguimiento.
+
+**Forever**
+
+![Cambia la misión con confirmación — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFocusWarningForever.png)
+
+### Expande el progreso y encuentra una misión
+
+- Pulsa una fila para desplegar objetivos, contadores y barras de progreso de cada miembro. Puedes mantener varias misiones expandidas. Buscar y Filtros limitan la lista por posesión, progreso y acciones. El libro abre una misión que tienes en el registro de Blizzard. El progreso remoto es una instantánea: comprueba su antigüedad bajo el nombre y usa Actualizar.
+
+### Prueba el seguimiento sin un grupo real
+
+- /qt preview compare combina tu registro real con cuatro compañeros simulados y misiones adicionales que no tienes. Los botones cambian tu navegación real; compartir sigue siendo simulado. El menú del nombre de un compañero permite avanzar su misión activa para probar el seguimiento y las misiones que faltan. El seguimiento de Blizzard también activa la confirmación. Cerrar la vista previa reanuda el seguimiento existente del grupo real. /qt preview unfollow muestra solo el diálogo de advertencia.
+
 ## 6.5.2
 
 Botones de misión más claros, cambios confirmados al seguir a alguien e iconos que coinciden con el seguimiento de Blizzard.

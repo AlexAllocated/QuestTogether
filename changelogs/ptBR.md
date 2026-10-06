@@ -2,6 +2,42 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.3
+
+Conheça o Registro de Missões do Grupo: compare missões, combine o próximo objetivo e siga o foco de um colega. Este patch amplia o guia com três capturas; o funcionamento não mudou. As imagens mostram a prévia do Forever com colegas simulados.
+
+### Seu grupo em um só lugar
+
+- Clique com o botão esquerdo no ícone QT do minimapa para abrir ou fechar o registro. Sua coluna fica primeiro, cores de classe distinguem os colegas e uma coroa marca o líder. Cada missão mostra quem a tem, para quem falta e quantos podem entregá-la. Compartilhar e Solicitar compartilhamento aparecem quando disponíveis; Não compartilhável e Compartilhamento desconhecido explicam a ausência. As regras da Blizzard e os requisitos do destinatário continuam valendo.
+
+**Forever**
+
+![Seu grupo em um só lugar — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestOverviewForever.png)
+
+### Escolha sua missão ou siga um colega
+
+- Os botões pequenos mostram o foco de cada jogador. Clique na sua coluna para mudar sua missão de navegação da Blizzard, ou na missão ativa de um colega para segui-lo. Ao seguir, apenas o botão ativo dele mantém a cor; missões ativas de outros colegas continuam clicáveis para trocar de alvo. O seguimento acompanha novas missões que você tem e permanece após recarregar. Se você não tiver a próxima missão, o QT para de seguir e oferece abrir o registro do grupo.
+
+**Forever**
+
+![Escolha sua missão ou siga um colega — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFollowingForever.png)
+
+### Confirme antes de mudar o foco
+
+- O indicador Seguindo identifica o colega, com Parar de seguir ao lado. Escolher sua missão ou outro colega pede confirmação. Mudar ou limpar o foco pelo rastreador da Blizzard também: o QT restaura o foco seguido enquanto você decide. Cancelar mantém o seguimento; Mudar foco aplica sua escolha. Se o colega limpar o foco, sua missão fica como está. Sair do grupo ou convertê-lo em raide encerra o seguimento.
+
+**Forever**
+
+![Confirme antes de mudar o foco — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFocusWarningForever.png)
+
+### Expanda o progresso e encontre missões
+
+- Clique na linha de uma missão para expandir objetivos, contadores e barras de cada membro. Várias missões podem permanecer expandidas. Busca e Filtros limitam a lista por posse, progresso e ações. O livro abre uma missão sua no Registro de Missões da Blizzard. O progresso remoto é uma captura: confira a idade abaixo do nome e use Atualizar.
+
+### Teste sem um grupo real
+
+- /qt preview compare combina seu registro real com quatro colegas simulados e missões extras ausentes. Os botões mudam sua navegação real; compartilhar continua simulado. O menu do nome de um colega permite avançar sua missão ativa para testar seguimento e missões ausentes. O rastreador da Blizzard também aciona a confirmação. Fechar a prévia retoma o seguimento existente no grupo real. /qt preview unfollow mostra apenas o aviso.
+
 ## 6.5.2
 
 Botões de missão mais claros, confirmação ao mudar o foco seguido e ícones iguais aos do rastreador da Blizzard.

@@ -2,6 +2,42 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.3
+
+Das Gruppen-Questlog im Detail: Vergleiche Quests, plane das nächste Ziel und folge dem Questfokus eines Mitspielers. Dieser Patch erweitert die Anleitung um drei Screenshots; das Spielverhalten bleibt unverändert. Die Bilder zeigen Forever-Vorschaudaten mit simulierten Mitspielern.
+
+### Deine Gruppe auf einen Blick
+
+- Ein Linksklick auf das QT-Minimap-Symbol öffnet oder schließt das Gruppen-Questlog. Deine Spalte bleibt vorn, Klassenfarben unterscheiden Mitspieler und eine Krone kennzeichnet den Anführer. Jede Quest zeigt Besitz, fehlende Teilnehmer und die Anzahl der abgabebereiten Spieler. Teilen und Teilen anfordern erscheinen, wenn unterstützt; Nicht teilbar und Teilbarkeit unbekannt erklären fehlende Aktionen. Es gelten weiterhin Blizzards Regeln und die Voraussetzungen des Empfängers.
+
+**Forever**
+
+![Deine Gruppe auf einen Blick — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestOverviewForever.png)
+
+### Eigene Quest wählen oder Mitspielern folgen
+
+- Die kleinen Questschaltflächen zeigen den Fokus jedes Spielers. Klicke in deiner Spalte, um Blizzards Navigationsquest zu wechseln, oder auf die aktive Quest eines Mitspielers, um ihm zu folgen. Beim Folgen bleibt nur dessen aktive Schaltfläche farbig; aktive Quests anderer Mitspieler bleiben zum Wechseln anklickbar. Neue Fokusdaten werden übernommen, wenn du die Quest hast; Folgen übersteht Neuladen. Fehlt dir die nächste Quest, endet das Folgen und QT bietet das Öffnen des Gruppen-Questlogs an.
+
+**Forever**
+
+![Eigene Quest wählen oder Mitspielern folgen — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFollowingForever.png)
+
+### Fokus bewusst wechseln
+
+- Die Anzeige Folgen: nennt dein Ziel, daneben steht Folgen beenden. Eine eigene Quest oder ein anderer Mitspieler erfordert eine Bestätigung. Auch das Wechseln oder Aufheben des Fokus in Blizzards Questverfolgung fragt nach: QT stellt den bisherigen Fokus während der Entscheidung wieder her. Abbrechen behält das Folgen bei; Fokus ändern übernimmt die Wahl. Hebt der verfolgte Spieler seinen Fokus auf, bleibt deine Quest erhalten. Gruppenaustritt oder Schlachtzugumwandlung beendet das Folgen.
+
+**Forever**
+
+![Fokus bewusst wechseln — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFocusWarningForever.png)
+
+### Fortschritt aufklappen und Quests finden
+
+- Klicke eine Questzeile an, um Ziele, Zähler und Fortschrittsbalken jedes Mitglieds aufzuklappen. Mehrere Quests können gleichzeitig offen bleiben. Suche und Filter grenzen nach Besitz, Fortschritt und Aktionen ein. Das Buchsymbol öffnet eine eigene Quest in Blizzards Questlog. Fremder Fortschritt ist eine Momentaufnahme: Prüfe das Alter unter dem Namen und nutze Aktualisieren.
+
+### Folgen ohne echte Gruppe testen
+
+- /qt preview compare kombiniert dein echtes Questlog mit vier simulierten Mitspielern und zusätzlichen fehlenden Quests. Die Fokusschaltflächen ändern deine echte Navigation; Teilen bleibt simuliert. Wähle im Namensmenü eines Mitspielers die nächste Vorschauquest, um Folgen und fehlende Quests zu testen. Blizzards Questverfolgung löst ebenfalls die Bestätigung aus. Beim Schließen wird ein bestehendes Folgen in der echten Gruppe fortgesetzt. /qt preview unfollow zeigt nur den Warndialog.
+
 ## 6.5.2
 
 Klarere Questfokus-Schaltflächen, sichere Wechsel beim Folgen und passende Symbole zur Blizzard-Questverfolgung.

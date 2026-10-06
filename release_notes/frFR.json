@@ -1,31 +1,40 @@
 {
-  "source_sha256": "c97bf4f73ed99ec17b14910f6b5c9a1ff000e96a46c2ed71abeb0829fee58aa8",
+  "source_sha256": "e8706653dd30a3c128db85a486268a5bc1c57eb624168c4ceb5a736cc010d913",
   "notes": {
-    "version": "6.5.2",
-    "welcome": "Des boutons de quête plus clairs, des changements confirmés pendant le suivi et des icônes conformes au suivi Blizzard.",
+    "version": "6.5.3",
+    "welcome": "Découvrez le journal de quêtes du groupe : comparez les quêtes, préparez le prochain objectif et suivez la cible d’un coéquipier. Ce patch enrichit le guide avec trois captures, sans changer le fonctionnement du jeu. Les images montrent un aperçu Forever avec des coéquipiers simulés.",
     "sections": [
       {
-        "title": "Des commandes plus claires",
+        "title": "Votre groupe en un coup d’œil",
         "items": [
-          "Pendant le suivi, seul le bouton de la quête active du joueur suivi reste coloré. Sans suivi, vos boutons et les quêtes actives de vos coéquipiers restent colorés. Les autres boutons sont gris, sans transparence. Les quêtes actives des coéquipiers restent cliquables pour commencer le suivi ou changer de joueur."
+          "Un clic gauche sur l’icône QT de la minicarte ouvre ou ferme le journal. Votre colonne reste en premier, les couleurs de classe distinguent les joueurs et une couronne indique le chef. Chaque quête affiche qui la possède, qui ne l’a pas et combien de joueurs peuvent la rendre. Partager et Demander le partage apparaissent quand ils sont disponibles ; Non partageable et Partage possible inconnu expliquent leur absence. Les règles Blizzard et les prérequis du destinataire restent applicables."
+        ],
+        "illustration": "party-quest-overview"
+      },
+      {
+        "title": "Choisissez une quête ou suivez un coéquipier",
+        "items": [
+          "Les petits boutons indiquent la quête ciblée de chaque joueur. Cliquez dans votre colonne pour changer votre quête de navigation Blizzard, ou sur la quête active d’un coéquipier pour le suivre. Pendant le suivi, seul son bouton actif reste coloré ; les quêtes actives des autres restent cliquables pour changer de cible. Le suivi applique les nouvelles cibles si vous possédez les quêtes et persiste après rechargement. Si la prochaine quête vous manque, QT arrête le suivi et propose d’ouvrir le journal du groupe."
+        ],
+        "illustration": "party-quest-following"
+      },
+      {
+        "title": "Changez de cible en connaissance de cause",
+        "items": [
+          "L’indicateur de suivi nomme votre cible, avec Arrêter le suivi à côté. Choisir votre propre quête ou un autre coéquipier demande confirmation. Changer ou effacer la cible dans le suivi Blizzard aussi : QT rétablit la cible suivie pendant votre décision. Annuler conserve le suivi ; Changer de cible applique le choix. Si le joueur suivi efface sa cible, votre quête reste inchangée. Quitter le groupe ou le convertir en raid met fin au suivi."
+        ],
+        "illustration": "party-quest-focus-warning"
+      },
+      {
+        "title": "Déployez les objectifs et trouvez une quête",
+        "items": [
+          "Cliquez sur une ligne pour déployer les objectifs, compteurs et barres de progression de chaque membre. Plusieurs quêtes peuvent rester ouvertes. Recherche et Filtres limitent la liste selon la possession, la progression et les actions disponibles. Le livre ouvre une quête que vous possédez dans le journal Blizzard. La progression distante est un instantané : vérifiez son âge sous le nom et utilisez Actualiser."
         ]
       },
       {
-        "title": "Confirmer le changement",
+        "title": "Testez le suivi sans vrai groupe",
         "items": [
-          "Choisir votre propre quête ou un autre coéquipier demande confirmation avant d’arrêter le suivi actuel. Changer ou effacer la cible dans le suivi Blizzard demande aussi confirmation : QT rétablit la cible suivie pendant votre décision. Annuler conserve le suivi ; Changer de cible applique votre choix. Aperçu : /qt preview unfollow."
-        ]
-      },
-      {
-        "title": "Des icônes cohérentes",
-        "items": [
-          "L’état des quêtes utilise désormais la même vérification d’achèvement que le suivi Blizzard. Les quêtes de livraison affichent ainsi un point d’interrogation au lieu d’une icône de progression. L’état Prêt corrigé est également inclus dans les données partagées du journal du groupe."
-        ]
-      },
-      {
-        "title": "Testez avec vos quêtes",
-        "items": [
-          "L’aperçu utilise votre vrai journal avec quatre coéquipiers simulés et des quêtes supplémentaires manquantes. Le ciblage change votre navigation Blizzard réelle ; le partage reste simulé. Le menu du nom d’un coéquipier permet de changer sa quête active. La colonne d’action affiche désormais Non partageable ou Partage possible inconnu, centré, au lieu de rester vide. Fermer l’aperçu reprend le suivi existant dans votre vrai groupe."
+          "/qt preview compare combine votre vrai journal avec quatre coéquipiers simulés et des quêtes supplémentaires manquantes. Les boutons changent votre navigation réelle ; le partage reste simulé. Le menu du nom d’un coéquipier permet de passer à sa prochaine quête pour tester le suivi et les quêtes manquantes. Le suivi Blizzard déclenche aussi la confirmation. Fermer l’aperçu reprend le suivi existant dans votre vrai groupe. /qt preview unfollow affiche uniquement le dialogue d’avertissement."
         ]
       }
     ]
