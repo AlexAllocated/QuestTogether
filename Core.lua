@@ -4289,7 +4289,8 @@ function QuestTogether:GetTrackedQuestStatusState(questId, allowLiveFallback)
 	local state = {
 		isTracked = trackedQuest ~= nil,
 		isComplete = trackedQuest and trackedQuest.isComplete == true or false,
-		isReadyForTurnIn = trackedQuest and trackedQuest.isReadyForTurnIn == true or false,
+		-- Unknown readiness must not establish an unfinished baseline.
+		isReadyForTurnIn = trackedQuest and trackedQuest.isReadyForTurnIn,
 		isFlaggedCompleted = false,
 		isOnQuest = false,
 	}
@@ -6152,7 +6153,17 @@ function QuestTogether:WatchQuest(questId, questInfo)
 		objectiveProgressHighWater = existingTrackedQuest and existingTrackedQuest.objectiveProgressHighWater or {},
 		objectiveProgressObservations = existingTrackedQuest and existingTrackedQuest.objectiveProgressObservations or {},
 		isComplete = initialStatusState and initialStatusState.isComplete == true or false,
-		isReadyForTurnIn = initialStatusState and initialStatusState.isReadyForTurnIn == true or false,
+		isReadyForTurnIn = initialStatusState and initialStatusState.isReadyForTurnIn,
+		-- Scans establish a silent baseline, including quests whose objectives
+		-- are already complete before ReadyForTurnIn has caught up. Preserve
+		-- the milestone across rescans and transient false live reads. A new
+		-- acceptance or enable lifetime starts with a fresh tracker instead.
+		readyForTurnInObserved = (existingTrackedQuest and
+			(existingTrackedQuest.readyForTurnInObserved == true or existingTrackedQuest.isReadyForTurnIn == true))
+			or (initialStatusState and initialStatusState.isReadyForTurnIn == true)
+			or (not existingTrackedQuest and
+				((initialStatusState and initialStatusState.isComplete == true) or questInfo.isComplete == true))
+			or false,
 	}
 
 	if not questLogIndex then

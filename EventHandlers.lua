@@ -767,11 +767,17 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 						questData.isComplete = currentIsComplete
 					end
 
-					local currentReadyForTurnIn = statusState and statusState.isReadyForTurnIn == true or false
-					local readyForTurnInChanged = questData.isReadyForTurnIn ~= currentReadyForTurnIn
-					if readyForTurnInChanged then
+					local currentReadyForTurnIn = statusState and statusState.isReadyForTurnIn
+					if type(currentReadyForTurnIn) == "boolean" then
+						local wasNotReady = questData.isReadyForTurnIn == false
+						local alreadyObserved = questData.readyForTurnInObserved == true
+							or questData.isReadyForTurnIn == true
 						questData.isReadyForTurnIn = currentReadyForTurnIn
-						if currentReadyForTurnIn and not self:GetTaskAnnouncementType(questId) then
+						-- Unknown -> ready initializes silently. Once observed, a
+						-- false/true API wobble must not replay this quest milestone.
+						questData.readyForTurnInObserved = alreadyObserved or currentReadyForTurnIn
+						if currentReadyForTurnIn and wasNotReady and not alreadyObserved
+							and not self:GetTaskAnnouncementType(questId) then
 							local questTitle = self:GetQuestDisplayTitle(questId, questData.title)
 							self:PublishAnnouncementEvent(
 								"QUEST_READY_TO_TURN_IN",

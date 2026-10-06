@@ -1147,3 +1147,117 @@ QT:RegisterTest("boolean slash setter preserves nonboolean options and still cha
 	Equal(a.db.profile.announceAccepted, true)
 	Equal(color.r, 0.1)
 end)
+
+-- Exercise real scans/status reads and the queued progress callback together.
+-- Only API wrappers and presentation sinks belong to this private fixture.
+local function NewReadyMilestoneFixture(count)
+	local a = NewFixture()
+	a.rows, a.readyAnnouncements = {}, {}
+	for index = 1, count or 1 do
+		a.rows[index] = { questID = 12344 + index, questLogIndex = index, title = "Existing Quest " .. index }
+	end
+	a.API.GetNumQuestLeaderBoards = function() return 0 end
+	function a:PublishAnnouncementEvent(kind, _, id)
+		if kind == "QUEST_READY_TO_TURN_IN" then
+			self.readyAnnouncements[#self.readyAnnouncements + 1] = id
+		end
+	end
+	function a:GetAnnouncementIconInfo() end
+	function a:GetTrackedQuestAnnouncementIcon() end
+	function a:HandleQuestCompleted() end
+	function a:GetQuestDisplayTitle(_, title) return title end
+	function a:ObserveReady()
+		self:UNIT_QUEST_LOG_CHANGED(nil, "player")
+		self:DrainQueuedQuestLogTasks()
+	end
+	return a
+end
+
+QT:RegisterTest("readiness without any readable baseline stays unknown including restricted reads", function()
+	local a = NewReadyMilestoneFixture()
+	a.liveReady, a.liveComplete = nil, nil
+	Equal(a:GetTrackedQuestStatusState(12345, true).isReadyForTurnIn, nil)
+	a:ScanQuestLog()
+	Equal(a.tracker[12345].isReadyForTurnIn, nil)
+	a:ObserveReady()
+	Equal(a.tracker[12345].isReadyForTurnIn, nil)
+	a.blocked = true
+	a.API.IsQuestReadyForTurnIn = function() error("must not read restricted readiness") end
+	Equal(a:GetTrackedQuestStatusState(12345, true).isReadyForTurnIn, nil)
+end)
+
+QT:RegisterTest("initial ready and late readable completed quests never announce a catch-up burst", function()
+	for _, condition in ipairs({ "ready", "unknown", "false_complete", "false_snapshot_complete", "missing_api" }) do
+		local a = NewReadyMilestoneFixture(10)
+		a.liveReady = condition == "ready"
+		a.liveComplete = condition == "false_complete" or condition == "ready"
+		if condition == "unknown" then a.liveReady, a.liveComplete = nil, nil end
+		if condition == "missing_api" then a.API.IsQuestReadyForTurnIn = nil end
+		if condition == "false_snapshot_complete" then
+			for _, row in ipairs(a.rows) do row.isComplete = true end
+		end
+		a:ScanQuestLog()
+		Equal(#a.readyAnnouncements, 0)
+		a.API.IsQuestReadyForTurnIn = function() return a.liveReady end
+		a.liveReady, a.liveComplete = true, true
+		a:ObserveReady()
+		a:ObserveReady()
+		Equal(#a.readyAnnouncements, 0, condition)
+	end
+end)
+
+QT:RegisterTest("ready notifications survive false unknown and rescan refreshes without replay", function()
+	for _, initiallyReady in ipairs({ true, false }) do
+		local a = NewReadyMilestoneFixture(10)
+		a.liveReady, a.liveComplete = initiallyReady, initiallyReady
+		a:ScanQuestLog()
+		a.liveReady, a.liveComplete = true, true
+		a:ObserveReady()
+		local expected = initiallyReady and 0 or 10
+		Equal(#a.readyAnnouncements, expected, "genuine unfinished-to-ready transitions still announce")
+		for _, condition in ipairs({ "unknown", "false", "rescan_false" }) do
+			a.liveReady, a.liveComplete = false, false
+			if condition == "unknown" then a.liveReady, a.liveComplete = nil, nil end
+			a:ObserveReady()
+			if condition == "rescan_false" then a:ScanQuestLog() end
+			a.liveReady, a.liveComplete = true, true
+			a:ObserveReady()
+			Equal(#a.readyAnnouncements, expected, condition)
+		end
+	end
+end)
+
+QT:RegisterTest("unknown readiness can establish an unfinished baseline then announce real completion", function()
+	local a = NewReadyMilestoneFixture()
+	a.liveReady, a.liveComplete = nil, nil
+	a:ScanQuestLog()
+	a.liveReady, a.liveComplete = false, false
+	a:ObserveReady()
+	a.liveReady = nil
+	a:ObserveReady()
+	Equal(a.tracker[12345].isReadyForTurnIn, false, "unknown must retain a known unfinished baseline")
+	a.liveReady, a.liveComplete = true, true
+	a:ObserveReady()
+	Equal(#a.readyAnnouncements, 1)
+end)
+
+QT:RegisterTest("ready notification history resets after turn-in or abandonment and reacceptance", function()
+	for _, turnedIn in ipairs({ true, false }) do
+		local a = NewReadyMilestoneFixture()
+		a:ScanQuestLog()
+		a.liveReady, a.liveComplete = true, true
+		a:ObserveReady()
+		Equal(#a.readyAnnouncements, 1)
+		if turnedIn then a:QUEST_TURNED_IN(nil, 12345) end
+		a:QUEST_REMOVED(nil, 12345)
+		a:ResolvePendingQuestRemoval(12345)
+		Equal(a.tracker[12345], nil)
+		a.liveReady, a.liveComplete = false, false
+		a:QUEST_ACCEPTED(nil, 12345)
+		a:DrainQueuedQuestLogTasks()
+		assert(a.tracker[12345], "new acceptance must install a fresh tracker")
+		a.liveReady, a.liveComplete = true, true
+		a:ObserveReady()
+		Equal(#a.readyAnnouncements, 2, "a new quest lifetime can announce again")
+	end
+end)

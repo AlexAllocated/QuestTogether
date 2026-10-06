@@ -56,6 +56,16 @@ Before release, use two updated clients to check map zoom/pan, minimap scale/rot
 
 Quest enumeration retains legacy `GetQuestLogTitle` and modern `C_QuestLog.GetInfo` paths. Legacy completion `1` means complete; `nil` and `-1` do not. An explicit modern `false` takes precedence, while a missing modern completion field may use legacy data. Objective reads support the legacy by-ID function, structured `C_QuestLog.GetQuestObjectives`, and the older indexed leaderboard API. Foreign tables/values are access-gated before use. Existing snapshot completion status remains available when Classic lacks Retail's named completion APIs.
 
+Ready-to-turn-in tracking preserves unknown readiness separately from a readable false.
+Initial scans silently baseline quests that are already ready or have completed objectives,
+even if the readiness API has not caught up yet. An unknown-to-ready observation is also
+silent. A confirmed unfinished-to-ready transition announces once per tracked quest
+lifetime; rescans and temporary false/unknown reads cannot replay that milestone.
+Live false still updates status displays. Removal/reacceptance and addon re-enabling
+start fresh tracker lifetimes. No polling, extra communication, or native mutations are
+added. If every available API reports an unfinished quest during loading, that cannot
+be distinguished from genuine unfinished state until more data arrives.
+
 An initial scan with an unreadable row or count remains pending until a later quest-log event supplies usable data. Recovery uses the existing scheduler and respects runtime and map restrictions; it does not poll unreadable data and is canceled on disable. Pending acceptances retain ownership of their tracking and readiness checks while recovery initializes other quests. Area-entry announcements remain eligible when task metadata becomes readable during the recovery scan, including after another acceptance has already refreshed area state.
 
 Classic `GetQuestLogPushable()` refers to the currently selected quest. QT reads it only when that selection already matches; it never changes the user's quest selection. Unavailable shareability is displayed as **Unknown**, not an incorrect **No**.
