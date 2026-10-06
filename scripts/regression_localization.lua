@@ -33,7 +33,11 @@ QT:RegisterTest("localized patch notes preserve released version and section str
 	for _, locale in ipairs({ "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW" }) do
 		local notes = QT.releaseNotesByLocale[locale]
 		assert(notes.version == QT.releaseNotes.version)
-		assert(notes.welcome ~= QT.releaseNotes.welcome)
+		if #QT.releaseNotes.sections == 0 then
+			assert(notes.welcome == "" and QT.releaseNotes.welcome == "")
+		else
+			assert(notes.welcome ~= QT.releaseNotes.welcome)
+		end
 		assert(#notes.sections == #QT.releaseNotes.sections)
 		for i, section in ipairs(notes.sections) do
 			assert(#section.items == #QT.releaseNotes.sections[i].items)
@@ -47,6 +51,7 @@ QT:RegisterTest("Latin American Spanish keeps its native locale in events and pa
 		localizationTestLocale = "esMX",
 		releaseNotes = QT.releaseNotes,
 		releaseNotesByLocale = QT.releaseNotesByLocale,
+		releaseNotesHistory = QT.releaseNotesHistory,
 		GetAddonVersion = function()
 			return QT.releaseNotes.version
 		end,
@@ -62,8 +67,9 @@ QT:RegisterTest("Latin American Spanish keeps its native locale in events and pa
 	})
 	local received = assert(a:DecodeAnnouncementPayload(packet))
 	assert(a:DecodeAnnouncementFacts(received.eventFacts).locale == "esMX")
-	assert(a:GetCurrentReleaseNotes() == QT.releaseNotesByLocale.esMX)
-	assert(a:GetCurrentReleaseNotes() ~= QT.releaseNotesByLocale.esES)
+	local expected = #QT.releaseNotes.sections == 0 and QT.releaseNotesHistory[1].locales or QT.releaseNotesByLocale
+	assert(a:GetCurrentReleaseNotes() == expected.esMX)
+	assert(a:GetCurrentReleaseNotes() ~= expected.esES)
 	a.localizationTestLocale = "enUS"
 	function a:GetLocalizedQuestTitle()
 		return nil

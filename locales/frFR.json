@@ -617,5 +617,8 @@
   "unknown": "inconnu",
   "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.": "v%s chargée ! Prend désormais en charge %s. Tapez %s pour ouvrir les paramètres. Si vous rencontrez des problèmes, veuillez laisser vos commentaires sur %s ou %s.",
   "|cff33ff99QuestTogether|r: Pong: ": "|cff33ff99QuestTogether|r : Pong : ",
-  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r : Pong : <invalid payload>"
+  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r : Pong : <invalid payload>",
+  "Usage: /qt ad <channel> (for example: /qt ad 1 or /qt ad General)": "Utilisation : /qt ad <channel> (par exemple : /qt ad 1 ou /qt ad General)",
+  "That chat channel is not joined. Use its current number or name.": "Vous n’avez pas rejoint ce canal de discussion. Utilisez son numéro actuel ou son nom.",
+  "The ad could not be sent. Try again when chat is available.": "Le message promotionnel n’a pas pu être envoyé. Réessayez lorsque le chat sera disponible."
 }

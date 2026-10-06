@@ -30,6 +30,16 @@ def sample_notes(version="1.2.3", item="Share eligible quests with your party.")
 
 
 class NotesTests(unittest.TestCase):
+    def test_explicit_silent_notes_and_baseline_validation(self):
+        notes = {"version": "1.2.3", "welcome": "", "sections": []}
+        self.assertEqual(CHECKER.parse_notes(json.dumps(notes)), notes)
+        self.write_notes(notes)
+        self.assertIn("silent release", CHECKER.check_baseline(self.root, notes, "v1.2.3"))
+        for malformed in ({**notes, "welcome": "A description."},
+                          {**notes, "sections": sample_notes()["sections"]}):
+            with self.assertRaises(CHECKER.NotesError):
+                CHECKER.parse_notes(json.dumps(malformed))
+
     def test_optional_visual_example_roundtrip(self):
         notes = sample_notes()
         notes["sections"][0]["illustration"] = "quest-partners"

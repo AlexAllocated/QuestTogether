@@ -93,6 +93,9 @@ def parse_notes(text, label=NOTES_FILE):
     if not isinstance(notes, dict) or set(notes) != {"version", "welcome", "sections"}:
         raise NotesError(label + " must contain exactly version, welcome, and sections")
     version_key(notes["version"])
+    # Explicitly empty content is a silent release, not placeholder prose.
+    if notes["welcome"] == "" and notes["sections"] == []:
+        return notes
     meaningful_text(notes["welcome"], label + ".welcome", 1200)
     sections = notes["sections"]
     if not isinstance(sections, list) or not 1 <= len(sections) <= 12:
@@ -201,6 +204,8 @@ def check_baseline(root, notes, reference):
     baseline = parse_notes(git(root, "show", commit + ":" + NOTES_FILE).stdout, reference + ":" + NOTES_FILE)
     if baseline["version"] != baseline_version:
         raise NotesError("baseline notes do not match its TOC version: " + reference)
+    if notes["welcome"] == "" and notes["sections"] == []:
+        return "silent release; no new release notes"
     if content_key(notes) == content_key(baseline):
         raise NotesError("release notes are unchanged from " + reference + "; update their content for every release")
     return "release-note content differs from " + reference

@@ -17,6 +17,11 @@ from discord_changelog import build_messages, DEFAULT_REPOSITORY, load_notes
 
 
 class ChangelogTests(unittest.TestCase):
+    def test_silent_release_has_no_markdown_heading_or_discord_payload(self):
+        notes = {'version': '1.0.1', 'welcome': '', 'sections': []}
+        self.assertNotIn('1.0.1', c.render('enUS', [{'enUS': notes}]))
+        self.assertEqual(build_messages(notes, DEFAULT_REPOSITORY, 'v1.0.1'), [])
+
     def test_client_screenshots_are_tag_pinned_on_web_and_attached_in_discord(self):
         notes = {'version': '6.4.0', 'welcome': 'Explore party quests.', 'sections': [
             {'title': 'Party Quest Log', 'items': ['Compare your party.'], 'illustration': 'party-quest-log'},

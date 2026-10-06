@@ -15,6 +15,16 @@ import test_changelogs
 
 
 class HistoryTests(test_changelogs.ChangelogTests):
+    def test_silent_archives_are_excluded_from_browsable_history(self):
+        entry = {loc: {'version': '0.9.0', 'welcome': '', 'sections': []} for loc in ['enUS', *LOCALES]}
+        self.dates['0.9.0'] = '2026-10-04'
+        self.write_dates()
+        (self.root / 'changelogs/history.json').write_text(dumps({'schema': 1, 'releases': [entry]}))
+        self.generate()
+        lua = (self.root / h.LUA_FILE).read_text().split('namespace.releaseNotesDates')[0]
+        self.assertNotIn('0.9.0', lua)
+        self.assertNotIn('## 0.9.0', (self.root / 'CHANGELOG.md').read_text())
+
     def setUp(self):
         super().setUp()
         toc = self.root / 'QuestTogether.toc'

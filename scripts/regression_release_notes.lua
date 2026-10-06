@@ -296,3 +296,26 @@ QT:RegisterTest("Discord support uses the exact invite with a private copy windo
 	Equal(a:OpenDiscordSupport(), false)
 	assert(a.messages[1]:find("https://discord.gg/Uxyyvhfva9", 1, true))
 end)
+
+QT:RegisterTest("silent patches show the previous localized guide without a new history entry", function()
+	local a = Fixture("6.5.4", { releaseNotesSeenVersion = "6.5.3" })
+	a.hasLoggedIn, a.localizationTestLocale = true, "deDE"
+	a.releaseNotes = { version = "6.5.4", welcome = "", sections = {} }
+	a.releaseNotesByLocale = { deDE = { version = "6.5.4", welcome = "", sections = {} } }
+	local previous = Notes("6.5.3")
+	previous.welcome = "Vorherige Hinweise."
+	a.releaseNotesHistory = {
+		{ version = "6.5.3", date = "2026-10-06", locales = { enUS = Notes("6.5.3"), deDE = previous } },
+		{ version = "6.5.2", date = "2026-10-06", locales = { enUS = Notes("6.5.2") } },
+	}
+	local notes, version = a:GetCurrentReleaseNotes()
+	Equal(notes, previous)
+	Equal(version, "6.5.3")
+	Equal(a:ShouldShowReleaseNotes(version), false)
+	assert(a:OpenReleaseNotes())
+	Equal(#a.releaseNotesBrowser.entries, 2)
+	Equal(a.releaseNotesBrowser.entries[1].version, "6.5.3")
+	Equal(a.db.global.releaseNotesSeenVersion, "6.5.3")
+	a.releaseNotesHistory = {}
+	Equal(a:GetCurrentReleaseNotes(), nil)
+end)

@@ -41,7 +41,7 @@ def outputs(root, current, generated, previous_version=None):
         if version not in dates:
             raise NotesError('missing release date: ' + version)
     archived = [{'version': v, 'date': dates[v], 'locales': entries[v]}
-                for v in sorted(entries, key=version_key, reverse=True)]
+                for v in sorted(entries, key=version_key, reverse=True) if entries[v]['enUS']['sections']]
     content = ('-- Generated from canonical changelog history; do not edit.\n'
                'local _, namespace = ...\n'
                'namespace.releaseNotesHistory = ' + lua(archived) + '\n'

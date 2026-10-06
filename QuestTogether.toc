@@ -34,6 +34,7 @@ Libs/libchev/SelfTests.lua
 Localization.lua
 Locales.lua
 Core.lua
+Ads.lua
 WindowTheme.lua
 WindowLayout.lua
 ReleaseNotes.lua

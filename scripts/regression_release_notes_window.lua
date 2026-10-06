@@ -680,12 +680,21 @@ Register("release notes visual examples quarantine forbidden regions and recover
 	assert(gallery.shown)
 end)
 
+local function LatestVisibleNotes(locale)
+	local notes = QuestTogether.releaseNotesByLocale[locale] or QuestTogether.releaseNotes
+	if #notes.sections == 0 then
+		local entry = QuestTogether.releaseNotesHistory[1]
+		notes = entry.locales[locale] or entry.locales.enUS
+	end
+	return notes
+end
+
 Register("release notes render translated content with owned controls in every locale", function()
 	local previous = QuestTogether.localizationTestLocale
 	for _, locale in ipairs({ "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW" }) do
 		QuestTogether.localizationTestLocale = locale
 		local a = Fixture()
-		local notes = QuestTogether.releaseNotesByLocale[locale]
+		local notes = LatestVisibleNotes(locale)
 		assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
 		Equal(a.releaseNotesWindow.labels[1].text, QuestTogether.TranslateForLocale("What's new", locale))
 		Equal(a.releaseNotesWindow.labels[2].text, notes.welcome)
@@ -698,7 +707,7 @@ Register("client locale renders current notes and window navigation", function()
 	assert(QuestTogether.localizationTestLocale == nil)
 	local locale = QuestTogether:GetEventLocale()
 	local a = Fixture()
-	local notes = locale == "enUS" and QuestTogether.releaseNotes or QuestTogether.releaseNotesByLocale[locale]
+	local notes = LatestVisibleNotes(locale)
 	assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
 	Equal(a.releaseNotesWindow.labels[1].text, QuestTogether.TranslateForLocale("What's new", locale))
 	Equal(a.releaseNotesWindow.labels[2].text, notes.welcome)

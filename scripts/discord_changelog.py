@@ -293,6 +293,8 @@ def build_messages(notes, repository, tag, locale="enUS"):
     repository_name(repository)
     if tag != "v" + notes["version"]:
         raise ChangelogError("tag and notes version differ")
+    if notes["welcome"] == "" and notes["sections"] == []:
+        return []
     url = "https://github.com/" + repository + "/releases/tag/" + tag
     embeds = [{"title": "QuestTogether " + tag, "description": notes["welcome"]}]
     for section in notes["sections"]:
@@ -682,6 +684,9 @@ def main(argv=None):
             translated, localized_lua = load_localized_notes(root, notes)
             all_notes.update(translated)
         planned = {locale: build_messages(all_notes[locale], repository, tag, locale) for locale in locales}
+        if not any(planned.values()):
+            print("Silent release " + tag + ": no release notes; no Discord messages sent.")
+            return 0
         for messages in planned.values():
             for payload in messages:
                 message_files(root, payload)

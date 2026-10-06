@@ -6053,6 +6053,7 @@ function QuestTogether:HandleSlashCommand(input)
 	if command == "preview" then return self:HandlePreviewCommand(rest) end
 	if command == "bubbletest" then return self:HandlePreviewCommand("announcement " .. (rest or "")) end
 	if command == "discord" then return self:OpenDiscordSupport() end
+	if command == "ad" then return self:HandleAdvertisementCommand(rest) end
 
 	if command == "" or command == "options" then
 		self:OpenOptionsWindow()

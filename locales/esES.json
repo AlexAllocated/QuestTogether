@@ -617,5 +617,8 @@
   "unknown": "desconocido",
   "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.": "¡v%s cargado! Ahora es compatible con %s. Escribe %s para los ajustes. Si tienes algún problema, deja tus comentarios en %s o %s.",
   "|cff33ff99QuestTogether|r: Pong: ": "|cff33ff99QuestTogether|r: Pong: ",
-  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Pong: <invalid payload>"
+  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Pong: <invalid payload>",
+  "Usage: /qt ad <channel> (for example: /qt ad 1 or /qt ad General)": "Uso: /qt ad <channel> (por ejemplo: /qt ad 1 o /qt ad General)",
+  "That chat channel is not joined. Use its current number or name.": "No te has unido a ese canal de chat. Usa su número actual o su nombre.",
+  "The ad could not be sent. Try again when chat is available.": "No se pudo enviar el anuncio. Inténtalo de nuevo cuando el chat esté disponible."
 }

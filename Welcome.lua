@@ -50,6 +50,20 @@ function Addon:GetCurrentReleaseNotes()
 	local notes = rawget(self, "releaseNotes")
 	local translated = self.releaseNotesByLocale and self.releaseNotesByLocale[self.localizationTestLocale or self.locale]
 	if translated and notes and translated.version == notes.version then notes = translated end
+	-- Silent patches keep the latest published guide available without inventing
+	-- a new history entry or relabeling older notes as the current patch.
+	if type(notes) == "table" and notes.version == version and notes.welcome == ""
+		and type(notes.sections) == "table" and #notes.sections == 0 then
+		local locale = self.localizationTestLocale or self.locale or "enUS"
+		for _, entry in ipairs(rawget(self, "releaseNotesHistory") or {}) do
+			local archived = type(entry.locales) == "table" and (entry.locales[locale] or entry.locales.enUS)
+			if type(archived) == "table" and archived.version == entry.version
+				and self:GetReleaseNotesSeries(entry.version) and type(archived.welcome) == "string"
+				and archived.welcome ~= "" and type(archived.sections) == "table" and #archived.sections > 0 then
+				return archived, entry.version
+			end
+		end
+	end
 	if
 		not self:GetReleaseNotesSeries(version)
 		or type(notes) ~= "table"

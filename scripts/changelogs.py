@@ -59,7 +59,7 @@ def render(locale, entries):
         lines += ['[Other languages](changelogs/README.md)', '']
     for entry in entries:
         notes = entry.get(locale)
-        if not notes:
+        if not notes or not notes['sections']:
             continue
         lines += ['## ' + notes['version'], '', notes['welcome'], '']
         for section in notes['sections']:

@@ -417,6 +417,117 @@ QuestTogether:RegisterTest("unknown slash commands send their original text whil
 	AssertTrue(#addon.messages > 0)
 end)
 
+local function NewAdFixture()
+	local addon = setmetatable({ messages = {}, sends = {}, lastAdvertisementIndex = false }, { __index = QuestTogether })
+	function addon:Print(message) self.messages[#self.messages + 1] = message end
+	function addon:IsRuntimeRestrictionTypeActive() return self.blocked == true end
+	function addon:SendQTChannelChat() error("Ad commands must not fall through to QT chat") end
+	function addon:GetDebugController() error("Ad commands must not reach debug dispatch") end
+	addon.API = {
+		Random = function(low, high)
+			addon.randomCalls = (addon.randomCalls or 0) + 1
+			return addon.pickLast and high or low
+		end,
+		GetChannelName = function(channel)
+			addon.resolved = channel
+			if channel == 1 or channel == "General" then return addon.channelID or 1 end
+			if channel == 2 then return 2 end
+			return 0
+		end,
+		SendChannelChatMessage = function(message, id)
+			addon.sends[#addon.sends + 1] = { message = message, id = id }
+			if addon.throw then error("fixture send failure") end
+			return not addon.fail
+		end,
+	}
+	return addon
+end
+
+QuestTogether:RegisterTest("ads send once per explicit slash invocation and resolve the current channel", function()
+	local addon = NewAdFixture()
+	AssertTrue(addon:HandleSlashCommand("  AD  1  "))
+	AssertEquals(addon.resolved, 1)
+	AssertEquals(#addon.sends, 1)
+	AssertEquals(addon.sends[1].id, 1)
+	addon.channelID = 4
+	AssertTrue(addon:HandleSlashCommand("ad General"))
+	AssertEquals(addon.resolved, "General")
+	AssertEquals(addon.sends[2].id, 4)
+	AssertFalse(addon.sends[1].message == addon.sends[2].message)
+	AssertTrue(addon:HandleSlashCommand("ad /2"))
+	AssertEquals(addon.sends[3].id, 2)
+	AssertEquals(#addon.sends, 3)
+	AssertEquals(#addon.messages, 0)
+end)
+
+QuestTogether:RegisterTest("ads exhaust a shuffled pool before refilling across channels", function()
+	for _, useHigh in ipairs({ false, true }) do
+		local addon = NewAdFixture()
+		addon.pickLast = useHigh
+		addon:PickAdvertisement()
+		local count = #addon.advertisementPool
+		AssertTrue(count > 1)
+		local previous, allMessages
+		for cycle = 1, 4 do
+			local seen = {}
+			for draw = 1, count do
+				AssertTrue(addon:HandleSlashCommand(draw % 2 == 0 and "ad 1" or "ad 2"))
+				local text = addon.sends[#addon.sends].message
+				AssertFalse(seen[text] == true, "every ad must appear once per cycle")
+				AssertFalse(text == previous, "refills must not immediately repeat the last ad")
+				AssertTrue(#text <= 255, "ads must fit without truncating the signoff")
+				AssertTrue(text:find("QuestTogether", 1, true))
+				AssertTrue(text:find("This msg is a macro, but I am not a bot. Just spreading the word :)", 1, true))
+				AssertFalse(text:find("[%c|]") ~= nil)
+				if allMessages then AssertTrue(allMessages[text] == true) end
+				seen[text], previous = true, text
+				AssertEquals(#addon.advertisementPool, count - draw)
+			end
+			allMessages = seen
+		end
+	end
+end)
+
+QuestTogether:RegisterTest("failed ad sends retain the pending draw for the next explicit invocation", function()
+	local addon = NewAdFixture()
+	AssertTrue(addon:HandleSlashCommand("ad 1"))
+	local previous = addon.lastAdvertisementIndex
+	local pending, index = addon:PickAdvertisement()
+	local remaining = #addon.advertisementPool
+	addon.fail = true
+	AssertFalse(addon:HandleSlashCommand("ad 2"))
+	AssertEquals(#addon.sends, 2)
+	AssertEquals(addon.sends[2].message, pending)
+	AssertEquals(#addon.advertisementPool, remaining)
+	AssertEquals(addon.lastAdvertisementIndex, previous)
+	addon.fail = false
+	AssertTrue(addon:HandleSlashCommand("ad 2"))
+	AssertEquals(addon.sends[3].message, pending)
+	AssertEquals(addon.lastAdvertisementIndex, index)
+	AssertEquals(#addon.advertisementPool, remaining - 1)
+end)
+
+QuestTogether:RegisterTest("invalid restricted and failed ads never retry or advance the previous selection", function()
+	for _, input in ipairs({ "", "0", "-1", "1.5", "999", "Unknown", "1 extra", "1\n2", "|Hchannel", string.rep("x", 129) }) do
+		local addon = NewAdFixture()
+		AssertFalse(addon:HandleSlashCommand("ad " .. input))
+		AssertEquals(#addon.sends, 0)
+		AssertEquals(#addon.messages, 1)
+	end
+	for _, failure in ipairs({ "blocked", "fail", "throw", "noSender", "noResolver", "badResolver" }) do
+		local addon = NewAdFixture()
+		addon.lastAdvertisementIndex = 3
+		addon[failure] = true
+		if failure == "noSender" then addon.API.SendChannelChatMessage = nil end
+		if failure == "noResolver" then addon.API.GetChannelName = nil end
+		if failure == "badResolver" then addon.API.GetChannelName = function() error("fixture lookup failure") end end
+		AssertFalse(addon:HandleSlashCommand("ad 1"))
+		AssertEquals(addon.lastAdvertisementIndex, 3)
+		AssertEquals(#addon.messages, 1)
+		AssertEquals(#addon.sends, (failure == "fail" or failure == "throw") and 1 or 0)
+	end
+end)
+
 local function NewHudEditModeFixture()
 	local state = { available = true, eligible = true, loads = 0, gets = 0, shows = 0, eligibilityChecks = 0 }
 	local manager = {

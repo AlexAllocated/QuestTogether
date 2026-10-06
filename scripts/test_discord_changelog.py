@@ -730,6 +730,14 @@ class ReleaseTests(unittest.TestCase):
 
 
 class LocalNotesTests(unittest.TestCase):
+    def test_silent_release_post_does_not_contact_github_or_discord(self):
+        self.commit_notes({'version': '1.2.5', 'welcome': '', 'sections': []})
+        output = io.StringIO()
+        with patch.object(changelog, 'API', side_effect=AssertionError('No network for silent releases')), \
+                contextlib.redirect_stdout(output):
+            self.assertEqual(changelog.main(['--post', '--tag', 'v1.2.5', '--root', str(self.root)]), 0)
+        self.assertIn('no Discord messages sent', output.getvalue())
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="questtogether-discord-")
         self.addCleanup(self.temporary.cleanup)

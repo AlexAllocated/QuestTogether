@@ -617,5 +617,8 @@
   "unknown": "未知",
   "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.": "v%s 已載入！現在支援 %s。輸入 %s 開啟設定。如果遇到任何問題，請在 %s 或 %s 留下回饋。",
   "|cff33ff99QuestTogether|r: Pong: ": "|cff33ff99QuestTogether|r：Pong： ",
-  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r：Pong：<invalid payload>"
+  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r：Pong：<invalid payload>",
+  "Usage: /qt ad <channel> (for example: /qt ad 1 or /qt ad General)": "用法：/qt ad <channel>（例如：/qt ad 1 或 /qt ad General）",
+  "That chat channel is not joined. Use its current number or name.": "你尚未加入該聊天頻道。請使用其目前編號或名稱。",
+  "The ad could not be sent. Try again when chat is available.": "無法傳送宣傳訊息。請在聊天可用時重試。"
 }
