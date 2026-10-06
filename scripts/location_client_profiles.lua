@@ -27,6 +27,8 @@ end
 local namespace = {}
 for _, name in ipairs({
 	"Libs/libchev/libchev.lua",
+	"Localization.lua",
+	"Locales.lua",
 	"Core.lua",
 	"HotPathRuntime.lua",
 	"Minimap.lua",

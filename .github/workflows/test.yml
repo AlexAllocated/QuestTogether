@@ -32,6 +32,7 @@ jobs:
       - run: python3 scripts/test_generate_release_notes.py
       - run: python3 scripts/test_discord_changelog.py
       - run: lua${{ matrix.lua }} scripts/test.lua
+      - run: lua${{ matrix.lua }} scripts/settings_smoke.lua
       - run: lua${{ matrix.lua }} scripts/test.lua . reverse
       - run: |
           for locale in enGB deDE frFR esES esMX ptBR ruRU itIT koKR zhCN zhTW; do

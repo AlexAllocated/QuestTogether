@@ -186,3 +186,22 @@ QT:RegisterTest("experimental comparison excludes stale cached positions even in
 	local candidates = a:GetPlayerPhaseCandidates()
 	Eq(#candidates, 1); Eq(candidates[1].name, "Fresh")
 end)
+
+QT:RegisterTest("phase startup evidence changes retire nonce without peer failure backoff", function()
+ local a = Peer("A", "Player-1-ABC", "1:0:100")
+ a.nearby = { { name = "B" } }
+ a:UpdatePlayerPhaseObservations()
+ local first = a.sent[1].wire
+ a.now = 101; a:UpdatePlayerPhaseObservations()
+ a.now = 102; a:UpdatePlayerPhaseObservations()
+ Eq(#a.sent, 2)
+ Eq(a:IsPlayerPhaseQueuedWireCurrent(first, "B"), false)
+ Eq(a.playerPhaseState.attempts.B.key, "1:0:100")
+end)
+QT:RegisterTest("phase probes reach compatible candidates beyond four cooling peers", function()
+ local a = Peer("A", "Player-1-ABC", nil)
+ for i = 1, 6 do a.nearby[i] = { name = "Peer" .. i } end
+ for now = 100, 110 do a.now = now; a:UpdatePlayerPhaseObservations() end
+ Eq(#a.sent, 6)
+ Eq(a.sent[6].target, "Peer6")
+end)

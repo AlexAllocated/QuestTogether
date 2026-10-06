@@ -39,13 +39,15 @@ local function DragDimension(addon, region, method)
 	return ok and addon:SafeToNumber(value) or nil
 end
 
-function QuestTogether:StopWindowDrag(frame)
+function QuestTogether:StopWindowDrag(frame, skipSave)
+	local wasDragging = frame.dragging
 	frame.windowDrag, frame.dragging = nil, nil
 	local driver = frame.windowDragDriver
 	if driver and self.LibChev.CanMutateOwnedRegion(driver) then
 		driver:SetScript("OnUpdate", nil)
 		if driver:IsShown() then driver:Hide() end
 	end
+	if wasDragging and not skipSave then self:SaveWindowLayout(frame) end
 end
 
 function QuestTogether:StartWindowDrag(frame)
@@ -205,6 +207,7 @@ function QuestTogether:CreateScrollDialog(width, height, title)
 	end)
 	self:DecorateScrollDialog(frame, title)
 	self:FitScrollDialog(frame)
+	self:RegisterManagedWindow(frame)
 	return frame
 end
 
@@ -311,6 +314,6 @@ function QuestTogether:FitScrollDialog(frame)
 		if not value or value <= 0 then return false end
 		sizes[#sizes + 1] = value
 	end
-	frame:SetScale(math.min(1, sizes[1] * 0.94 / frame:GetWidth(), sizes[2] * 0.94 / frame:GetHeight()))
+	frame:SetScale(math.min(self:GetWindowScale(), sizes[1] * 0.94 / frame:GetWidth(), sizes[2] * 0.94 / frame:GetHeight()))
 	return true
 end

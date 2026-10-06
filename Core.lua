@@ -333,6 +333,9 @@ QuestTogether.worldQuestAreaStateByQuestID = QuestTogether.worldQuestAreaStateBy
 QuestTogether.bonusObjectiveAreaStateByQuestID = QuestTogether.bonusObjectiveAreaStateByQuestID or {}
 
 -- Default settings for SavedVariables.
+BINDING_HEADER_QUESTTOGETHER = "QuestTogether"
+BINDING_NAME_QUESTTOGETHER_PARTY_LOG = L("Toggle Party Quest Log")
+
 QuestTogether.DEFAULTS = {
 	profile = {
 		enabled = true,
@@ -369,6 +372,9 @@ QuestTogether.DEFAULTS = {
 		emoteOnLevelUp = true,
 		compareHideOtherQuests = false,
 		lightMode = false,
+		windowScale = 100,
+		reduceMotion = false,
+		compareAutoRefresh = false,
 		experimentalLayerDetection = true,
 		compareQuestOwnership = "all",
 		compareQuestProgress = "all",
@@ -386,6 +392,10 @@ QuestTogether.DEFAULTS = {
 		sharePlayerLocation = true,
 		showPlayerLocations = true,
 		onlyShowQuestPartners = false,
+		mapPartyOnly = false,
+		mapAlwaysShowParty = true,
+		showWorldMapPlayers = true,
+		showMinimapPlayers = true,
 		emoteOnNearbyPlayerLevelUp = true,
 		nameplateQuestIconEnabled = true,
 		nameplatePlayerIconEnabled = true,
@@ -2850,6 +2860,8 @@ function QuestTogether:MigratePlayerLocationOptions(profile)
 		profile.showPlayerLocations = (profile.showLocationsOnMap == nil or profile.showLocationsOnMap == true)
 			or (profile.showLocationsOnMinimap == nil or profile.showLocationsOnMinimap == true)
 	end
+	if profile.showWorldMapPlayers == nil then profile.showWorldMapPlayers = profile.showPlayerLocations end
+	if profile.showMinimapPlayers == nil then profile.showMinimapPlayers = profile.showPlayerLocations end
 	if profile.onlyShowQuestPartners == nil then
 		profile.onlyShowQuestPartners = false
 	end
@@ -2958,6 +2970,7 @@ function QuestTogether:ApplyActiveProfileState(changeReason)
 		self:RefreshPersonalBubbleEditModeDialog()
 	end
 	if self.RefreshMinimapButton then self:RefreshMinimapButton() end
+	if self.RefreshManagedWindowLayouts then self:RefreshManagedWindowLayouts() end
 	if self.OnPlayerLocationOptionsChanged then self:OnPlayerLocationOptionsChanged() end
 	if self.BroadcastQuestPartnerStatus then self:BroadcastQuestPartnerStatus(true) end
 	if self.RefreshOptionsWindow then
@@ -5467,9 +5480,9 @@ function QuestTogether:SetOption(key, value)
 	end
 	local isPartyNavigationOption = key == "sharePartyFocus" or key == "sharePartyWaypoint" or key == "showPartyWaypoints"
 	if isPartyNavigationOption and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
-	local isLocationOption = key == "sharePlayerLocation" or key == "showPlayerLocations" or key == "onlyShowQuestPartners"
+	local isLocationOption = key == "sharePlayerLocation" or key == "showPlayerLocations" or key == "onlyShowQuestPartners" or key == "mapPartyOnly" or key == "mapAlwaysShowParty" or key == "showWorldMapPlayers" or key == "showMinimapPlayers"
 	if (isLocationOption or key == "nameplatePlayerIconEnabled") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
-	if (key == "showMinimapButton" or key == "lightMode" or key == "experimentalLayerDetection") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
+	if (key == "showMinimapButton" or key == "lightMode" or key == "experimentalLayerDetection" or key == "reduceMotion" or key == "compareAutoRefresh") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
 		return false
 	end
 	if (key == "lookingForQuestPartners" or key == "announceQuestPartners" or key == "stopLookingForPartnersOnJoin")
@@ -5523,15 +5536,25 @@ function QuestTogether:SetOption(key, value)
 		self:Debugf("options", "Rejected option change key=%s invalid icon style=%s", tostring(key), tostring(value))
 		return false
 	end
+	if key == "windowScale" then
+		value = self:SafeToNumber(value)
+		if not value or value < 80 or value > 150 then return false end
+	end
 	local startedLooking = key == "lookingForQuestPartners" and value == true
 		and self.db.profile[key] ~= true
 	self.db.profile[key] = value
+	if key == "showPlayerLocations" then
+		self.db.profile.showWorldMapPlayers, self.db.profile.showMinimapPlayers = value, value
+	elseif key == "showWorldMapPlayers" or key == "showMinimapPlayers" then
+		self.db.profile.showPlayerLocations = self.db.profile.showWorldMapPlayers == true or self.db.profile.showMinimapPlayers == true
+	end
 	if isPartyNavigationOption then self:QueuePartyNavigationUpdate() end
 	if key == "experimentalLayerDetection" or key == "sharePlayerLocation" then
 		self.playerPhaseState = nil
 		if self.RefreshPlayerLocationPins then self:RefreshPlayerLocationPins() end
 	end
-	if key == "lightMode" and self.RefreshWindowThemes then self:RefreshWindowThemes() end
+	if key == "lightMode" or key == "reduceMotion" then self:RefreshWindowThemes() end
+	if key == "windowScale" then self:RefreshManagedWindowLayouts() end
 	if key == "announceToNonQTParty" or key == "hidePartyChatReminder" then self:UpdatePartyChatReminder() end
 	if key == "lookingForQuestPartners" and self.BroadcastQuestPartnerStatus then self:BroadcastQuestPartnerStatus(true) end
 	if startedLooking then self:AnnounceQuestPartnerSearch() end
@@ -5905,6 +5928,7 @@ function QuestTogether:PrintHelp()
 	self:Print(L("/qt set <option> <value> - Set a boolean option (e.g. emoteOnQuestCompletion off)"))
 	self:Print(L("/qt get <option> - Read an option value"))
 	self:Print(L("/qt compare - Open Party Quest Log"))
+	self:Print("/qt resetlayout - " .. L("Reset window layout"))
 	self:Print(L("/qt lfg [on|off|toggle|status] - Set or check Looking for Questing Partners (no argument toggles)"))
 	self:Print(L("/qt notes | changelog | patchnotes - Open the latest welcome and patch notes"))
 	self:Print(L("/qt scan - Rescan your quest log now"))
@@ -6006,6 +6030,7 @@ function QuestTogether:HandleSlashCommand(input)
 	local command, rest = SafeMatch(input, "^%s*(%S*)%s*(.-)$")
 	command = string.lower(command or "")
 
+	if command == "resetlayout" then return self:ResetWindowLayouts() end
 	if command == "preview" then return self:HandlePreviewCommand(rest) end
 	if command == "bubbletest" then return self:HandlePreviewCommand("announcement " .. (rest or "")) end
 	if command == "discord" then return self:OpenDiscordSupport() end
@@ -6405,6 +6430,9 @@ function QuestTogether:RegisterBootstrapEvents()
 		"PLAYER_LOGIN", "PLAYER_LOGOUT", "ADDON_ACTION_BLOCKED", "ADDON_ACTION_FORBIDDEN",
 	}) do
 		self.eventFrame:RegisterEvent(eventName)
+	end
+	for _, eventName in ipairs({ "DISPLAY_SIZE_CHANGED", "UI_SCALE_CHANGED" }) do
+		pcall(self.eventFrame.RegisterEvent, self.eventFrame, eventName)
 	end
 end
 

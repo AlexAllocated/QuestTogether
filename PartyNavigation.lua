@@ -408,9 +408,14 @@ function QT:WithdrawPartyNavigation()
 end
 function QT:GetPartyFocusLabel(name)
 	local p = self:GetPartyNavigationPeer(name)
-	if not p or p.questID < 0 then
-		return L("Focus unavailable")
+	if not p then
+		local state = rawget(self, "partyNavigationState")
+		if state and state.seen[name] then return L("Focus data expired") end
+		local version = self:GetPlayerAddonVersion(name)
+		if version and self:CompareAddonVersions(version, "6.3.0") == -1 then return L("Quest focus unsupported") end
+		return L("Waiting for quest focus")
 	end
+	if p.questID < 0 then return L("Focus not shared or unavailable") end
 	if p.questID == 0 then
 		return L("No focused quest")
 	end
@@ -439,6 +444,9 @@ function QT:PopulatePartyFocusMenu(root, name)
 		button:SetEnabled(following or (p ~= nil and p.questID >= 0 and not self:WouldPartyQuestFollowCycle(name)))
 	end
 	root:CreateTitle(self:GetPartyFocusLabel(name))
+	if not following and p and self:WouldPartyQuestFollowCycle(name) then
+		root:CreateTitle(L("Following would create a loop"))
+	end
 	local session = self.partyQuestCompareSession
 	local member = session and session.byName[name]
 	local entry = p and member and member.entries and member.entries[p.questID]

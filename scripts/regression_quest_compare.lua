@@ -643,6 +643,9 @@ local function Frame(parent)
 	function methods:StopMovingOrSizing()
 		self.sizing = nil
 	end
+	function methods:SetScale(value) self.scale = value end
+	function methods:GetScale() return self.scale or 1 end
+
 	function methods:GetWidth()
 		return self.width
 	end
@@ -750,7 +753,6 @@ local function Frame(parent)
 		"SetBackdrop",
 		"SetBackdropColor",
 		"SetBackdropBorderColor",
-		"SetScale",
 		"SetAllPoints",
 		"SetTexture",
 		"SetHorizTile",
@@ -996,7 +998,7 @@ QuestTogether:RegisterTest(
 		Equal(frame.vertical:IsShown(), true)
 		frame.refresh.scripts.OnClick()
 		a:RenderPartyQuestCompare()
-		Equal(frame.vertical:IsShown(), false) -- Remote rows await a new snapshot.
+		Equal(frame.vertical:IsShown(), true) -- Retain old rows while fresh data is pending.
 	end
 )
 
@@ -2891,14 +2893,16 @@ QuestTogether:RegisterTest("quest log filter menu search reset and preview incom
 	menu.items[1].items[2].click()
 	assert(menu.items[1].items[2].checked())
 	Equal(frame.filter.text, "Filters (1)")
+	p.partyQuestCompareSession.restoreAnchor = { questId = 1, offset = 30 }
 	frame.search:SetText("  HERBALIST  ")
+	Equal(p.partyQuestCompareSession.restoreAnchor, nil)
 	Equal(#p:BuildPartyQuestDiffRows(), 1)
 	Equal(frame.reset.enabled, true)
 	frame.reset.scripts.OnClick()
 	Equal(frame.search:GetText(), "")
 	Equal(#p:BuildPartyQuestDiffRows(), 16)
 	Equal(frame.reset.enabled, false)
-	menu.items[5].click() -- Preview-only missing snapshot toggle.
+	menu.items[6].click() -- Preview-only missing snapshot toggle.
 	menu.items[2].items[5].click()
 	Equal(#p:BuildPartyQuestDiffRows(), 16)
 	Equal(p:GetPartyQuestCompareFilters().progress, "unknown")
@@ -3544,4 +3548,55 @@ QuestTogether:RegisterTest("preview namespace lists choices without triggering p
 	end
 	Equal(table.concat(a.opened, ","), "compare,compare,notes,notes,partychat,partychat")
 	Equal(#a.wire, 0)
+end)
+
+QuestTogether:RegisterTest("snapshot freshness per-member refresh and closed-window polling stay bounded", function()
+ local a = Fixture(nil, { Quest(1) }); AttachUI(a)
+ a:OpenPartyQuestCompare(); a:Advance(0)
+ Reply(a, "Friend-Realm", { Quest(2) }, true, true)
+ local member = a.partyQuestCompareSession.byName["Friend-Realm"]
+ Equal(a:GetPartyQuestSnapshotLabel(member), "Updated 0s ago")
+ a.now = a.now + 20
+ Equal(a:GetPartyQuestSnapshotLabel(member), "Updated 20s ago")
+ local localMember = a.partyQuestCompareSession.byName[a.name]
+ a:RefreshPartyQuestCompareMember(member.name)
+ Equal(a.partyQuestCompareSession.byName[a.name], localMember)
+ Equal(member.state, "loading")
+ Reply(a, "Friend-Realm", { Quest(3) }, true, true)
+ Equal(member.entries[2], nil); assert(member.entries[3])
+ a.options.compareAutoRefresh = true
+ a.now = a.now + 31
+ a:UpdatePartyQuestCompareFreshness()
+ local session = a.partyQuestCompareSession
+ assert(session.byName[member.name] ~= member)
+ a.partyQuestCompareWindow:Hide()
+ local sent = #a.wire
+ a.now = a.now + 120; a:UpdatePartyQuestCompareFreshness()
+ Equal(#a.wire, sent)
+end)
+QuestTogether:RegisterTest("refresh retains scroll anchor and full text is accessible on hovered rows", function()
+ local entries = {}; for id = 1, 30 do entries[id] = Quest(id, string.format("Quest %02d long complete title", id)) end
+ local a = Fixture(nil, entries); AttachUI(a)
+ function a:ShowSettingsTooltip(_, title) self.tooltipTitle = title end
+ function a:HideSettingsTooltip() self.tooltipTitle = nil end
+ a:OpenPartyQuestCompare(); a:Advance(0)
+ Reply(a, "Friend-Realm", entries, true, true); a:RenderPartyQuestCompare()
+ local frame = a.partyQuestCompareWindow
+ frame.vertical:SetValue(300)
+ local before = a.partyQuestCompareSession.scrollPixels
+ a:RefreshPartyQuestCompare(); a:Advance(0)
+ Reply(a, "Friend-Realm", entries, true, true); a:RenderPartyQuestCompare()
+ Equal(a.partyQuestCompareSession.scrollPixels, before)
+ local row = frame.rows[1]; row.scripts.OnEnter()
+ Equal(a.tooltipTitle, row.data.title)
+ row.scripts.OnLeave(); Equal(a.tooltipTitle, nil)
+end)
+QuestTogether:RegisterTest("reduced motion preview changes expansion and scrolling without animation", function()
+ local a = Fixture(); AttachUI(a); a.options.reduceMotion = true
+ a:OpenPartyQuestComparePreview()
+ local p, f = a.partyQuestComparePreview, a.partyQuestComparePreview.partyQuestCompareWindow
+ local row = f.rows[1]; row.scripts.OnMouseUp(row, "LeftButton")
+ assert(not f.expansions and not f.expansionAnimator.scripts.OnUpdate)
+ f.rowsViewport.scripts.OnMouseWheel(f.rowsViewport, -1)
+ assert(p.partyQuestCompareSession.scrollPixels > 0 and not f.scripts.OnUpdate)
 end)

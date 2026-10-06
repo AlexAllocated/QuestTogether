@@ -94,7 +94,7 @@ function QT:SetPartyQuestCompareFilter(key, value)
 			end
 		end
 	end
-	session.offset, session.scrollPixels = 0, 0
+	session.offset, session.scrollPixels, session.restoreAnchor = 0, 0, nil
 	if self.partyQuestCompareWindow then
 		local frame = self.partyQuestCompareWindow
 		frame.wheelTarget, frame.expansions, frame.animateExpansion = nil, nil, nil
@@ -154,6 +154,9 @@ function QT:ShowPartyQuestCompareFilters(owner)
 			end
 		end
 		root:CreateDivider()
+		root:CreateCheckbox(L("Auto-refresh while open"), function() return self:GetOption("compareAutoRefresh") == true end,
+			function() self:SetOption("compareAutoRefresh", not self:GetOption("compareAutoRefresh")) end)
+
 		root:CreateButton(L("Reset filters"), function()
 			if self.partyQuestCompareSession == session then
 				self:ResetPartyQuestCompareFilters()

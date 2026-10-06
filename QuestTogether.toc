@@ -35,6 +35,7 @@ Localization.lua
 Locales.lua
 Core.lua
 WindowTheme.lua
+WindowLayout.lua
 ReleaseNotes.lua
 LocalizedReleaseNotes.lua
 ReleaseNotesHistory.lua
@@ -102,3 +103,5 @@ scripts/regression_player_details.lua
 scripts/regression_player_phases.lua
 
 scripts/regression_party_navigation.lua
+
+scripts/regression_window_layout.lua

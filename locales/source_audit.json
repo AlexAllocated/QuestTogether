@@ -101,6 +101,7 @@
       " samples: ",
       "#%d title=%s header=%s questID=%s task=%s onMap=%s poi=%s",
       "...(%d more)",
+      "/qt resetlayout - ",
       "ALL",
       "Adopted existing QuestTogether chat window id=%s on login",
       "Applied active profile state reason=%s character=%s profile=%s",
@@ -271,7 +272,6 @@
       "CENTER",
       "Creature",
       "DIALOG",
-      "ESCAPE",
       "Failed to create or resolve bubble frame",
       "Failed to show bubble on host for unit=%s",
       "Frame",
@@ -604,6 +604,12 @@
     ],
     "Welcome.lua": [
       "Frame"
+    ],
+    "WindowLayout.lua": [
+      "BOTTOMLEFT",
+      "CENTER",
+      "ESCAPE",
+      "fit windows to display"
     ],
     "WindowTheme.lua": [
       "ARTWORK",

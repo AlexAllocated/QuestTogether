@@ -67,6 +67,7 @@ local function Populate(preview)
 	}
 	for _, member in ipairs(members) do
 		member.entries = {}
+		member.sampledAt = preview:GetPartyQuestCompareTime() - (member.isLocal and 0 or 30)
 		session.byName[member.name] = member
 	end
 	for id, quest in ipairs(QUESTS) do
@@ -96,6 +97,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		regionalNames = self:UsesRegionalPlayerNames(),
 		options = { compareHideOtherQuests = false },
 		GetScrollWindowTheme = self.GetScrollWindowTheme,
+		GetPartyQuestSnapshotLabel = self.GetPartyQuestSnapshotLabel,
 		BuildPartyQuestDiffRows = self.BuildPartyQuestDiffRows,
 		BuildPartyQuestCompareDisplayRows = self.BuildPartyQuestCompareDisplayRows,
 		GetPartyQuestReadiness = self.GetPartyQuestReadiness,
@@ -127,6 +129,15 @@ function QuestTogether:CreatePartyQuestComparePreview()
 				self:QueuePartyQuestCompareRender()
 			end)
 		end)
+	end
+	function preview:RegisterManagedWindow(frame, _, minWidth, minHeight) return owner:RegisterManagedWindow(frame, nil, minWidth, minHeight) end
+	function preview:SaveWindowLayout(frame) return owner:SaveWindowLayout(frame) end
+	function preview:ApplyWindowLayout(frame) return owner:ApplyWindowLayout(frame) end
+	function preview:GetPartyQuestCompareTime() return owner:GetPartyQuestCompareTime() end
+	function preview:RefreshPartyQuestCompareMember(name)
+		local member = self.partyQuestCompareSession.byName[name]
+		if member then member.state, member.sampledAt = "ready", self:GetPartyQuestCompareTime() end
+		self:QueuePartyQuestCompareRender()
 	end
 	function preview:GetPartyQuestUIParent()
 		return owner:GetPartyQuestUIParent()
@@ -161,7 +172,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		return owner:IsWorkBlocked(kind)
 	end
 	function preview:GetOption(key)
-		if key == "lightMode" then
+		if key == "lightMode" or key == "reduceMotion" or key == "windowScale" then
 			return owner:GetOption(key)
 		end
 		return self.options[key]

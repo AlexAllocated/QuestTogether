@@ -909,3 +909,31 @@ QT:RegisterTest("full location cache retains nearby peers over fresh distant arr
 	assert(not a.playerLocationState.peers["Closest-Realm"])
 	assert(a.playerLocationState.peers["NewNear-Realm"])
 end)
+
+QT:RegisterTest("map display filters keep party exception independent of sharing and surfaces", function()
+ local a = Fixture()
+ a.playerLocationState = { peers = {
+  ["Friend-Realm"] = {name="Friend-Realm",receivedAt=100,mask=3,mapID=12,x=0.4,y=0.6},
+  ["Other-Realm"] = {name="Other-Realm",receivedAt=100,mask=3,mapID=12,x=0.5,y=0.6} } }
+ function a:IsGroupedSender(name) return name == "Friend-Realm" end
+ function a:IsPlayerLookingForQuestPartners(name) return name == "Other-Realm" end
+ a.db.profile.onlyShowQuestPartners = true
+ Equal(#a:GetVisiblePlayerLocations("map"), 2)
+ a.db.profile.mapAlwaysShowParty = false
+ Equal(#a:GetVisiblePlayerLocations("map"), 1)
+ a.db.profile.mapPartyOnly, a.db.profile.onlyShowQuestPartners = true, false
+ Equal(a:GetVisiblePlayerLocations("map")[1].name, "Friend-Realm")
+ a.db.profile.showWorldMapPlayers = false
+ Equal(#a:GetVisiblePlayerLocations("map"), 0)
+ Equal(#a:GetVisiblePlayerLocations("minimap"), 1)
+ assert(a.db.profile.sharePlayerLocation)
+end)
+
+QT:RegisterTest("display preferences do not withdraw streams shared with other players", function()
+ local a = Fixture()
+ local subscribers = { ["Friend-Realm"] = { at = 100 } }
+ a.nearbyStreamState = { subscribers = subscribers, wanted = {}, nextCapability = 130 }
+ a:OnPlayerLocationOptionsChanged("showWorldMapPlayers")
+ Equal(a.nearbyStreamState.subscribers, subscribers)
+ Equal(a.nearbyStreamState.nextCapability, 130)
+end)

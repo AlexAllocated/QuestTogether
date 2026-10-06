@@ -112,14 +112,18 @@ function QT:UpdatePlayerPhaseObservations()
 	observation.at = now
 	if s.observation and s.observation.key ~= observation.key then
 		s.peers = {}
-		for _, attempt in pairs(s.attempts) do attempt.pending = false end
+		-- A local evidence change is not a failed/unsupported peer. Retire
+		-- the nonce and allow a fresh probe after the global pacing interval.
+		s.attempts = {}
 	end
 	s.observation = observation
 	s.nearby = {}
 	local candidates = self:GetPlayerPhaseCandidates()
 	for _, row in ipairs(candidates) do s.nearby[row.name] = true end
 	for _, t in ipairs({ s.peers, s.attempts, s.replies }) do Prune(t, now) end
-	for index = 1, math.min(4, #candidates) do
+	-- Walk past cooling-down/older clients. The global limiter still permits
+	-- at most one outgoing probe every two seconds.
+	for index = 1, #candidates do
 		if self:RequestPlayerPhaseComparison(candidates[index].name) then break end
 	end
 end

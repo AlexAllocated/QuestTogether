@@ -1,0 +1,3 @@
+<Bindings>
+ <Binding name="QUESTTOGETHER_PARTY_LOG" header="QUESTTOGETHER">QuestTogether:TogglePartyQuestCompare()</Binding>
+</Bindings>

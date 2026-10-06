@@ -339,6 +339,7 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 	for i, row in ipairs(frame.rows) do
 		local slot = frame.visibleRows[i]
 		local data = slot and rows[slot.index]
+		if row.data ~= data then self:HideSettingsTooltip(row) end
 		row.data = data
 		row.session = session
 		if not data then
@@ -540,6 +541,31 @@ local function CompareHeight(frame)
 	return height
 end
 
+function QuestTogether:CapturePartyQuestScrollAnchor()
+	local frame, session = rawget(self, "partyQuestCompareWindow"), rawget(self, "partyQuestCompareSession")
+	if not frame or not session or frame.displaySession ~= session then return end
+	local pixels, y, anchor = session.scrollPixels or 0, 0
+	for i, row in ipairs(frame.displayRows or {}) do
+		if not row.kind and y <= pixels then anchor = { questId = row.questId, offset = pixels - y } end
+		y = y + CompareRowHeight(frame.displayRows, i)
+	end
+	return anchor
+end
+
+local function RestoreScrollAnchor(session, rows)
+	local anchor = session.restoreAnchor
+	if not anchor then return end
+	local y = 0
+	for i, row in ipairs(rows) do
+		if not row.kind and row.questId == anchor.questId then session.scrollPixels = y + anchor.offset; break end
+		y = y + CompareRowHeight(rows, i)
+	end
+	for _, member in ipairs(session.members) do
+		if member.state == "loading" or member.objectiveRequestQuestId then return end
+	end
+	session.restoreAnchor = nil
+end
+
 local function ScrollCompare(self, frame, session, pixels, force)
 	if
 		self.partyQuestCompareSession ~= session
@@ -647,6 +673,9 @@ local function AnimateExpansions(self, frame, session)
 end
 
 local function PrepareExpansions(self, frame, session, rows)
+	if self:GetOption("reduceMotion") then
+		StopExpansion(frame); frame.displayRows = rows; return
+	end
 	local intent = frame.animateExpansion
 	frame.animateExpansion = nil
 	local transitions = frame.expansions or {}
@@ -713,9 +742,14 @@ local function WheelCompare(self, frame, delta)
 	if not session or frame.displaySession ~= session or self:IsWorkBlocked("foreign_frame_mutation") then
 		return
 	end
+	session.restoreAnchor = nil
 	local maximum = math.max(0, CompareHeight(frame) - frame.rowsViewport:GetHeight())
 	frame.wheelTarget =
 		math.max(0, math.min(maximum, (frame.wheelTarget or session.scrollPixels or 0) - delta * ROW_HEIGHT * 1.5))
+	if self:GetOption("reduceMotion") then
+		local target = frame.wheelTarget
+		StopCompareScroll(frame); ScrollCompare(self, frame, session, target); return
+	end
 	frame.wheelSession = session
 	frame:SetScript("OnUpdate", function(_, elapsed)
 		if self.partyQuestCompareSession ~= session or frame.displaySession ~= session then
@@ -906,11 +940,14 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			row:SetScript("OnEnter", function()
 				if row.data then
 					ShowPanel(row.hover, true)
+					self:ShowSettingsTooltip(row, row.data.title or "", row.data.hint or "")
 				end
 			end)
 			row:SetScript("OnLeave", function()
 				ShowPanel(row.hover, false)
+				self:HideSettingsTooltip(row)
 			end)
+			row:SetScript("OnHide", function() self:HideSettingsTooltip(row) end)
 			row.cells, row.cellShades = {}, {}
 			row.action = Button(self, row, QUEST_WIDTH, -9, ACTION_WIDTH - 12, "", function()
 				local data = row.data
@@ -941,6 +978,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	frame.vertical:SetScript("OnValueChanged", function(_, value)
 		local session = self.partyQuestCompareSession
 		if session and not frame.rendering and not frame.scrolling then
+			session.restoreAnchor = nil
 			StopCompareScroll(frame)
 			ScrollCompare(self, frame, session, value)
 		end
@@ -998,14 +1036,17 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	frame:SetResizable(true)
 	function frame:UpdateResizeBounds(memberCount)
 		local minimum = MinimumWidth(memberCount)
-		if self.minimumWidth == minimum then
+		screenWidth, screenHeight = parent:GetWidth(), parent:GetHeight()
+		local currentScale = self:GetScale()
+		if self.minimumWidth == minimum and self.boundsWidth == screenWidth and self.boundsHeight == screenHeight and self.boundsScale == currentScale then
 			return
 		end
 		self.minimumWidth = minimum
 		-- A growing party must still fit on a small display. Do not increase
 		-- the scale again on departure and unexpectedly enlarge the window.
-		scale = math.min(scale, screenWidth * 0.94 / minimum)
+		scale = math.min(self:GetScale() or scale, screenWidth * 0.94 / minimum, screenHeight * 0.94 / self:GetHeight())
 		self:SetScale(scale)
+		self.boundsWidth, self.boundsHeight, self.boundsScale = screenWidth, screenHeight, scale
 		local maxWidth = math.max(minimum, math.min(1600, screenWidth * 0.98 / scale))
 		local maxHeight = math.max(500, math.min(1100, screenHeight * 0.98 / scale))
 		if type(self.SetResizeBounds) == "function" then
@@ -1037,6 +1078,8 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 		if frame.resizing then
 			frame:StopMovingOrSizing()
 			frame.resizing = nil
+			self:SaveWindowLayout(frame)
+			self:ApplyWindowLayout(frame)
 		end
 	end)
 	frame:SetScript("OnSizeChanged", function()
@@ -1069,6 +1112,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 		ScrollCompare(self, frame, session, session.scrollPixels or 0, true)
 	end)
 	frame:Layout()
+	self:RegisterManagedWindow(frame, "partyQuestLog", frame.minimumWidth, 500)
 	return frame
 end
 
@@ -1156,6 +1200,8 @@ function QuestTogether:RenderPartyQuestCompare()
 		StopExpansion(frame)
 	end
 	frame.displaySession = session
+	if self:GetOption("reduceMotion") then StopCompareScroll(frame) end
+	RestoreScrollAnchor(session, rows)
 	PrepareExpansions(self, frame, session, rows)
 	local ready = 0
 	local leaderName = session.mode ~= "target" and self:GetPartyQuestLeaderName() or nil
@@ -1193,12 +1239,9 @@ function QuestTogether:RenderPartyQuestCompare()
 		status:ClearAllPoints()
 		status:SetPoint("TOPLEFT", ColumnLeft(i) + 8, -23)
 		status:SetHeight(14)
+		status:SetMaxLines(1)
 		status:SetTextColor(unpack(theme.muted))
-		status:SetText(
-			member.state == "ready" and L("Synced")
-				or member.state == "loading" and (L("Loading") .. "…")
-				or L("No snapshot")
-		)
+		status:SetText(self:GetPartyQuestSnapshotLabel(member))
 		status:Show()
 		local enabled = session.mode ~= "target" and self.GetPartyFocusLabel ~= nil
 		if not frame.focusHeaders[i] then
@@ -1237,7 +1280,11 @@ function QuestTogether:RenderPartyQuestCompare()
 					return
 				end
 				ShowPanel(button.hover, true)
-				self:ShowSettingsTooltip(button, button.navName, L("Click to open this player's quest focus menu."))
+				local member = button.navSession.byName[button.navName]
+				self:ShowSettingsTooltip(button, button.navName,
+					(member and self:GetPartyQuestSnapshotLabel(member) or "") .. "\n"
+					.. (button.navSession.mode ~= "target" and self:GetPartyFocusLabel(button.navName) .. "\n" or "")
+					.. L("Click for refresh and quest focus options."))
 			end)
 			button:SetScript("OnLeave", Leave)
 			button:SetScript("OnHide", function()
@@ -1255,6 +1302,9 @@ function QuestTogether:RenderPartyQuestCompare()
 				end
 				self:CreatePartyQuestFilterMenu(button, function(_, root)
 					if self.partyQuestCompareSession == button.navSession then
+						root:CreateTitle(button.navName)
+						root:CreateButton(L("Refresh this player"), function() self:RefreshPartyQuestCompareMember(button.navName) end)
+						root:CreateDivider()
 						self:PopulatePartyFocusMenu(root, button.navName)
 					end
 				end)
@@ -1270,7 +1320,7 @@ function QuestTogether:RenderPartyQuestCompare()
 		button:SetPoint("TOPLEFT", ColumnLeft(i), 0)
 		button:SetSize(COLUMN_WIDTH, 70)
 		button.navSession, button.navName = session, member.name
-		local clickable = enabled and not member.isLocal
+		local clickable = not member.isLocal
 		button.navClickable = clickable
 		button:SetEnabled(clickable)
 		header:SetWidth(COLUMN_WIDTH - (clickable and 30 or 16) - (isLeader and 20 or 0))

@@ -393,3 +393,18 @@ QT:RegisterTest("explicit coordinate navigation stops following even with TomTom
 	assert(a:OpenPingWaypoint(37, 50, 50))
 	Equal(a.partyNavigationState.following, nil)
 end)
+
+QT:RegisterTest("focus labels distinguish unsupported waiting expired and unavailable without guessing privacy", function()
+ local a = Fixture()
+ function a:GetPartyNavigationPeer() return self.peer end
+ function a:GetPlayerAddonVersion() return self.peerVersion end
+ Equal(a:GetPartyFocusLabel("Friend"), "Waiting for quest focus")
+ a.peerVersion = "6.2.3"
+ Equal(a:GetPartyFocusLabel("Friend"), "Quest focus unsupported")
+ a.partyNavigationState = { seen = { Friend = {} } }
+ Equal(a:GetPartyFocusLabel("Friend"), "Focus data expired")
+ a.peer = { questID = -1 }
+ Equal(a:GetPartyFocusLabel("Friend"), "Focus not shared or unavailable")
+ a.peer.questID = 0
+ Equal(a:GetPartyFocusLabel("Friend"), "No focused quest")
+end)

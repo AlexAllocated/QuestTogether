@@ -572,3 +572,16 @@ restrictions, or a scale change. Check repeated grabs after resizing, with a
 non-default UI scale, and with bubble settings attached to Edit Mode. Offline
 fixtures cover pickup geometry and cleanup; actual cursor tracking and visual
 spacing still need confirmation in the client.
+
+
+### Window accessibility and snapshot freshness (local changes after 6.4.1)
+
+Party Quest Log now labels remote snapshots with their age. Its player header menu can refresh one player, and Filters offers an opt-in 30-second refresh while the real window is visible. Closing it cancels requests; the preview remains isolated. Refresh keeps search, expanded quests, horizontal position, and the visible quest anchor while replacement data arrives. Hover rows for complete quest/objective text.
+
+Settings > Accessibility provides 80–150% window scaling and reduced-motion scrolling/expansion. Scaling enlarges text and controls together; fitting the full window on a small display takes priority over the requested percentage. The Party Quest Log and welcome window save size and screen-relative position per profile. Restoring, reopening, changing display size, or changing UI scale clamps/fits registered QT windows to the current screen. Reset window layout (or `/qt resetlayout`) clears saved layouts and recenters windows. No layout state is stored on Blizzard frames. `Bindings.xml` exposes Toggle Party Quest Log in native Key Bindings with no default key. QT dialogs handle Escape through their existing dismissal actions; the libchev debug window is unchanged.
+
+Player Locations separates world-map and minimap display from location sharing. Its single filter menu offers all QT players, questing partners, or party only. Always show my party defaults on and exempts party members from the questing-partner filter, subject to their existing location-sharing permissions. Local display changes do not cancel outgoing nearby streams.
+
+The experimental layer UI is unchanged. Local evidence changes retire old request nonces without imposing the unsupported-peer backoff, and outgoing candidate checks skip cooling-down peers instead of being limited to the nearest four. The global pacing limit remains in force.
+
+Private regressions exercise display changes, malformed layout data, restricted deferral, snapshot refresh lifetime, reduced motion, and filtering. Actual Retail/Forever rendering, Escape ordering against native windows, native keybindings, and the ultrawide/Moonlight display transition still require live-client verification.

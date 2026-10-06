@@ -435,6 +435,7 @@ local function Create(addon, parent)
 		if LibChev.CanMutateOwnedRegion(frame) and (frame.dragging or frame.resizing) then
 			frame:StopMovingOrSizing()
 			frame.dragging, frame.resizing = nil, nil
+			addon:SaveWindowLayout(frame)
 		end
 	end
 	Call(addon, frame.dragHandle, "SetScript", "OnDragStop", StopDrag)
@@ -450,6 +451,7 @@ local function Create(addon, parent)
 		end
 	end)
 	frame.labels, frame.ready = {}, true
+	addon:RegisterManagedWindow(frame, "releaseNotes", 520, 320)
 	return frame
 end
 
@@ -520,7 +522,7 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll)
 	frame.rendering = true
 	frame.notes, frame.version, frame.isFirstUse = notes, version, isFirstUse
 	local oldScroll = preserveScroll and frame.scrollOffset or 0
-	local scale = math.min(1, parentWidth * 0.92 / 520, parentHeight * 0.92 / 320)
+	local scale = math.min(addon:GetWindowScale(), parentWidth * 0.92 / 520, parentHeight * 0.92 / 320)
 	local maximumWidth = math.max(520, math.min(1100, parentWidth * 0.92 / scale))
 	local maximumHeight = math.max(320, math.min(1000, parentHeight * 0.92 / scale))
 	local width = math.max(520, math.min(frame.userWidth or 700, maximumWidth))
@@ -696,6 +698,7 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll)
 	SetScroll(addon, frame, oldScroll or 0)
 	ApplyTheme(addon, frame)
 	frame.rendering = nil
+	addon:ApplyWindowLayout(frame)
 	Call(addon, frame, "Show")
 	local visible = Call(addon, frame, "IsVisible")
 	return addon:CanAccessValue(visible) and visible == true

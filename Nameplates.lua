@@ -841,11 +841,9 @@ local function EnsurePersonalBubbleEditModeDialog(addon, preview)
 	dialog:SetScript("OnHide", function(frame)
 		addon:StopWindowDrag(frame)
 	end)
-	dialog:SetScript("OnKeyDown", function(_, key)
-		if key == "ESCAPE" then
-			if preview then dialog:Hide() else addon:DeselectPersonalBubbleAnchor() end
-		end
-	end)
+	dialog.escapeAction = function()
+		if preview then dialog:Hide() else addon:DeselectPersonalBubbleAnchor() end
+	end
 
 	addon[key] = dialog
 	return dialog

@@ -588,6 +588,12 @@ local CHECKBOX_OPTION_KEYS = {
 	"sharePlayerLocation",
 	"showPlayerLocations",
 	"onlyShowQuestPartners",
+	"mapPartyOnly",
+	"mapAlwaysShowParty",
+	"showWorldMapPlayers",
+	"showMinimapPlayers",
+	"reduceMotion",
+	"compareAutoRefresh",
 }
 
 local function RefreshCheckboxOptions(controls, addon)
@@ -860,7 +866,7 @@ function QuestTogether:GetHomeStatusGroups()
 	if not self.isEnabled then general = general .. "\n" .. L("Saved preferences below apply when QuestTogether is enabled.") end
 	local locations = L("Off")
 	if self:GetOption("showPlayerLocations") then
-		locations = self:GetOption("onlyShowQuestPartners") and L("Questing partners only") or L("All QuestTogether players")
+		locations = self:GetOption("mapPartyOnly") and L("Party only") or self:GetOption("onlyShowQuestPartners") and L("Questing partners only") or L("All QuestTogether players")
 	end
 	local invites = {}
 	if self:GetOption("autoInviteFriends") then invites[#invites + 1] = L("Friends who request to join") end
@@ -1050,11 +1056,16 @@ local function CreateNearbyRangeSlider(parent, x, y)
 	slider:SetMinMaxValues(QuestTogether.NEARBY_RANGE_MIN, QuestTogether.NEARBY_RANGE_MAX)
 	slider:SetValueStep(1)
 	if slider.SetObeyStepOnDrag then slider:SetObeyStepOnDrag(true) end
-	local track = slider:CreateTexture(nil, "BACKGROUND")
-	track:SetColorTexture(0.12, 0.12, 0.12, 1)
+	local trackBorder = slider:CreateTexture(nil, "BACKGROUND")
+	trackBorder:SetColorTexture(0.03, 0.03, 0.04, 1)
+	trackBorder:SetPoint("LEFT", -2, 0)
+	trackBorder:SetPoint("RIGHT", 2, 0)
+	trackBorder:SetHeight(12)
+	local track = slider:CreateTexture(nil, "BORDER")
+	track:SetColorTexture(0.50, 0.53, 0.57, 1)
 	track:SetPoint("LEFT")
 	track:SetPoint("RIGHT")
-	track:SetHeight(6)
+	track:SetHeight(8)
 	local thumb = slider:CreateTexture(nil, "ARTWORK")
 	thumb:SetTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
 	thumb:SetSize(32, 32)
@@ -1988,7 +1999,7 @@ function QuestTogether:InitializePlayerLocationsWindow(parentCategory)
 	if self.playerLocationsFrame then return end
 	local frame = CreateFrame("Frame", "QuestTogetherPlayerLocationsPanel")
 	frame.name, frame.parent = L("Player Locations"), "QuestTogether"
-	local _, content = CreateScrollablePanelContent(frame, 370)
+	local _, content = CreateScrollablePanelContent(frame, 470)
 	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", 16, -16)
 	title:SetText(L("Player Locations"))
@@ -2001,17 +2012,88 @@ function QuestTogether:InitializePlayerLocationsWindow(parentCategory)
 	for index, option in ipairs({
 		{ key = "sharePlayerLocation", label = L("Share my location on the map and minimap"),
 			tooltip = L("Let other QuestTogether players see my location on both the world map and minimap.") },
-		{ key = "showPlayerLocations", label = L("Show other players on the map and minimap"),
-			tooltip = L("Show shared player locations on the world map and nearby players on the minimap.") },
-		{ key = "onlyShowQuestPartners", label = L("Only show players looking for questing partners"),
-			tooltip = L("On both maps, show only players with an active Looking for Quest Partners status. This does not change who can see your location.") },
+		{ key = "showWorldMapPlayers", label = L("Show players on the world map"), tooltip = L("Show shared player locations on the world map.") },
+		{ key = "showMinimapPlayers", label = L("Show players on the minimap"), tooltip = L("Show nearby shared player locations on the minimap.") },
+		{ key = "mapAlwaysShowParty", label = L("Always show my party"), tooltip = L("Keep party members visible when filtering for questing partners. This does not override their location sharing settings.") },
 	}) do
 		self.playerLocationsControls[option.key] = CreateCheckbox(content, option.key, option.label, option.tooltip, 16, -120 - 44 * (index - 1))
 	end
+	local filter = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+	filter:SetPoint("TOPLEFT", 16, -310)
+	filter:SetSize(310, 28)
+	local function RefreshFilter()
+		filter:SetText(QuestTogether:GetOption("mapPartyOnly") and L("Party only")
+			or QuestTogether:GetOption("onlyShowQuestPartners") and L("Questing partners only") or L("All QuestTogether players"))
+	end
+	filter:SetScript("OnClick", function()
+		QuestTogether:CreatePartyQuestFilterMenu(filter, function(_, root)
+			for i, label in ipairs({ L("All QuestTogether players"), L("Questing partners only"), L("Party only") }) do
+				local choice = i
+				root:CreateButton(label, function()
+					QuestTogether:SetOption("mapPartyOnly", choice == 3)
+					QuestTogether:SetOption("onlyShowQuestPartners", choice == 2)
+					RefreshFilter()
+				end)
+			end
+		end)
+	end)
+	filter:SetScript("OnShow", RefreshFilter)
+	RefreshFilter()
 	self.playerLocationsFrame = frame
 	frame:SetScript("OnShow", function() QuestTogether:RefreshPlayerLocationsWindow() end)
 	self.playerLocationsCategory = RegisterSubcategory(parentCategory, frame, frame.name)
 	self:RefreshPlayerLocationsWindow()
+end
+
+function QuestTogether:InitializeAccessibilityWindow(parentCategory)
+	if self.accessibilityFrame then return end
+	local frame = CreateFrame("Frame", "QuestTogetherAccessibilityPanel")
+	frame.name, frame.parent = L("Accessibility"), "QuestTogether"
+	local _, content = CreateScrollablePanelContent(frame, 450)
+	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	title:SetPoint("TOPLEFT", 16, -16); title:SetText(L("Accessibility"))
+	local hint = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	hint:SetPoint("TOPLEFT", 16, -50); hint:SetWidth(610); hint:SetJustifyH("LEFT")
+	hint:SetText(L("Resize QT text and controls together. Windows always fit your current display. Use Escape to close a window; assign Toggle Party Quest Log in WoW Key Bindings."))
+	local slider = CreateFrame("Slider", nil, content)
+	slider:SetSize(360, 18); slider:SetPoint("TOPLEFT", 16, -150); slider:SetOrientation("HORIZONTAL")
+	if slider.SetObeyStepOnDrag then slider:SetObeyStepOnDrag(true) end
+	local trackBorder = slider:CreateTexture(nil, "BACKGROUND")
+	trackBorder:SetColorTexture(0.03, 0.03, 0.04, 1)
+	trackBorder:SetPoint("LEFT", -2, 0); trackBorder:SetPoint("RIGHT", 2, 0); trackBorder:SetHeight(12)
+	local track = slider:CreateTexture(nil, "BORDER")
+	track:SetColorTexture(0.50, 0.53, 0.57, 1); track:SetPoint("LEFT"); track:SetPoint("RIGHT"); track:SetHeight(8)
+	local thumb = slider:CreateTexture(nil, "ARTWORK")
+	thumb:SetTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal"); thumb:SetSize(32, 32); slider:SetThumbTexture(thumb)
+	local label = slider:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	label:SetPoint("BOTTOMLEFT", slider, "TOPLEFT", 0, 8)
+	slider:SetScript("OnValueChanged", nil)
+	slider:SetMinMaxValues(80, 150); slider:SetValueStep(5)
+	local updating
+	local function Refresh()
+		updating = true
+		slider:SetValue(QuestTogether:GetOption("windowScale") or 100)
+		label:SetText(string.format(L("Window scale: %d%%"), QuestTogether:GetOption("windowScale") or 100))
+		updating = nil
+	end
+	slider:SetScript("OnValueChanged", function(_, value)
+		if updating then return end
+		value = math.floor(value / 5 + 0.5) * 5
+		QuestTogether:SetOption("windowScale", value)
+		label:SetText(string.format(L("Window scale: %d%%"), value))
+	end)
+	self:AttachSettingsTooltip(slider, L("Accessibility"), L("Increase text and control size together. The scale is capped when needed to keep the entire window on screen."))
+	local motion = CreateCheckbox(content, "reduceMotion", L("Reduce motion"), L("Expand objectives and scroll immediately, without animated transitions."), 16, -215)
+	local reset = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+	reset:SetPoint("TOPLEFT", 16, -285); reset:SetSize(240, 24); reset:SetText(L("Reset window layout"))
+	reset:SetScript("OnClick", function() QuestTogether:ResetWindowLayouts() end)
+	local resetHint = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	resetHint:SetPoint("TOPLEFT", 16, -325); resetHint:SetWidth(610); resetHint:SetJustifyH("LEFT")
+	resetHint:SetText(L("Also available with /qt resetlayout. Saved windows are fitted automatically after display size or UI scale changes."))
+	frame:SetScript("OnShow", function() Refresh(); RefreshCheckboxOptions({ reduceMotion = motion }, QuestTogether) end)
+	Refresh()
+	self.accessibilityFrame = frame
+	self.accessibilityCategory = RegisterSubcategory(parentCategory, frame, frame.name)
 end
 
 function QuestTogether:InitializeOptionsWindow()
@@ -2249,6 +2331,7 @@ function QuestTogether:InitializeOptionsWindow()
 	self:InitializeQuestPlatesWindow(category, true)
 	self:InitializePlayerLocationsWindow(category)
 	self:InitializeGroupsWindow(category)
+	self:InitializeAccessibilityWindow(category)
 	self:InitializeExperimentalWindow(category)
 	self:InitializeProfilesWindow(category)
 

@@ -140,6 +140,7 @@ function QT:LoadPartyQuestObjectives(member)
 	local function Current()
 		return self.isEnabled
 			and self.partyQuestCompareSession == session
+			and session.byName[member.name] == member
 			and session.expandedQuestIds[id]
 			and member.objectiveDetails[id] == detail
 			and not self:IsIgnoredPlayerName(member.name)

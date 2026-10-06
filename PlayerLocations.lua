@@ -410,6 +410,8 @@ function QT:GetVisiblePlayerLocations(surface)
 		or self.isLoggingOut
 		or self:IsRuntimeRestricted()
 		or self:GetOption("showPlayerLocations") ~= true
+		or (surface == "map" and self:GetOption("showWorldMapPlayers") == false)
+		or (surface == "minimap" and self:GetOption("showMinimapPlayers") == false)
 	then
 		return {}
 	end
@@ -423,7 +425,9 @@ function QT:GetVisiblePlayerLocations(surface)
 			and now - peer.receivedAt < (peer.lifetime or LIFETIME)
 			-- Older peers can still grant permission for just one surface.
 			and ((surface == "map" and peer.mask % 2 == 1) or (surface == "minimap" and peer.mask >= 2))
-			and (not onlyPartners or self:IsPlayerLookingForQuestPartners(peer.name))
+			and (self:GetOption("mapPartyOnly") ~= true or self:IsGroupedSender(peer.name))
+			and (not onlyPartners or self:IsPlayerLookingForQuestPartners(peer.name)
+				or (self:GetOption("mapAlwaysShowParty") == true and self:IsGroupedSender(peer.name)))
 		then
 			result[#result + 1] = surface == "minimap" and self:GetNearbyStreamPosition(peer, true) or peer
 		end
@@ -437,6 +441,7 @@ end
 -- One owner for periodic publication. Share this tick's addon-owned location
 -- sample with nearby streams; never retain it across frames or privacy changes.
 function QT:UpdatePlayerCommunications()
+	self:UpdatePartyQuestCompareFreshness()
 	self:UpdatePlayerPhaseObservations()
 	if self.UpdateQTPlayerPresence then self:UpdateQTPlayerPresence() end
 	local sample
@@ -511,7 +516,10 @@ end
 
 function QT:OnPlayerLocationOptionsChanged(key)
 	local streams = rawget(self, "nearbyStreamState")
-	if streams then streams.wanted, streams.subscribers, streams.nextScan, streams.nextCapability = {}, {}, 0, 0 end
+	if streams then
+		streams.wanted, streams.nextScan = {}, 0
+		if not key or key == "sharePlayerLocation" then streams.subscribers, streams.nextCapability = {}, 0 end
+	end
 	if not self.isEnabled then
 		return
 	end
