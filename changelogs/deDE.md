@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.2.3
+
+Weniger wiederholte Meldungen über abgabebereite Quests.
+
+### Korrekturen bei abgabebereiten Quests
+
+- Quests, die beim Start der Verfolgung bereits abgabebereit oder abgeschlossen sind, werden still erfasst. Fehlende Bereitschaftsdaten und spätere Aktualisierungen lösen bereits erfasste Meldungen zur Abgabebereitschaft nicht erneut aus.
+- Neue Abschlüsse werden weiterhin gemeldet. Wird eine Quest erneut angenommen, wird ihr Benachrichtigungsverlauf zurückgesetzt. Der sendende Spieler benötigt dieses Update; ältere Versionen können weiterhin Meldungen in Schüben senden.
+
 ## 6.2.2
 
 Lesbarer Questfortschritt in jeder Sprache.

@@ -1,14 +1,14 @@
 {
-  "source_sha256": "37465ae72361af0fcca163e8cbda71dc4196240537d25a2bcc4bc067c737fc92",
+  "source_sha256": "066e7fe33e30231796ab283c390c2d3bb6ae6c7d327b7e1d120f3718679df600",
   "notes": {
-    "version": "6.2.2",
-    "welcome": "Une progression de quête lisible dans toutes les langues.",
+    "version": "6.2.3",
+    "welcome": "Moins d’annonces répétées de quêtes prêtes à être rendues.",
     "sections": [
       {
-        "title": "Conserver les détails des objectifs",
+        "title": "Corrections du suivi des quêtes prêtes à être rendues",
         "items": [
-          "La progression des quêtes, expéditions et objectifs bonus conserve désormais le texte et les compteurs d’origine de l’expéditeur dans le chat et les bulles, au lieu de les remplacer par un texte générique comme « Objectif 1 : 5/5 ».",
-          "Les annonces de quêtes acceptées et terminées utilisent toujours des libellés traduits et les titres de quête disponibles localement."
+          "Les quêtes déjà prêtes à être rendues ou terminées au début du suivi sont enregistrées sans annonce. Les données manquantes et les actualisations ultérieures ne répètent plus les annonces de quêtes prêtes à être rendues déjà prises en compte.",
+          "Les nouvelles quêtes terminées sont toujours annoncées, et accepter à nouveau une quête réinitialise son historique de notifications. Le joueur qui envoie les annonces doit installer cette mise à jour ; les anciennes versions peuvent encore envoyer des rafales d’annonces."
         ]
       }
     ]

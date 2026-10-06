@@ -3,6 +3,151 @@
   "releases": [
     {
       "enUS": {
+        "version": "6.2.2",
+        "welcome": "Readable quest progress in every language.",
+        "sections": [
+          {
+            "title": "Keep the objective details",
+            "items": [
+              "Quest, world quest, and bonus objective progress now keeps the sender's original wording and counts in chat and bubbles instead of replacing them with generic text such as \"Objective 1: 5/5\".",
+              "Quest accepted and completed announcements still use translated labels and locally available quest titles."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "6.2.2",
+        "welcome": "Lesbarer Questfortschritt in jeder Sprache.",
+        "sections": [
+          {
+            "title": "Details zu den Zielen beibehalten",
+            "items": [
+              "Fortschrittsmeldungen für Quests, Weltquests und Bonusziele behalten im Chat und in Sprechblasen jetzt den ursprünglichen Text und die Zähler des Absenders bei, statt sie durch allgemeine Angaben wie „Ziel 1: 5/5“ zu ersetzen.",
+              "Meldungen über angenommene und abgeschlossene Quests verwenden weiterhin übersetzte Bezeichnungen und lokal verfügbare Questtitel."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "6.2.2",
+        "welcome": "Une progression de quête lisible dans toutes les langues.",
+        "sections": [
+          {
+            "title": "Conserver les détails des objectifs",
+            "items": [
+              "La progression des quêtes, expéditions et objectifs bonus conserve désormais le texte et les compteurs d’origine de l’expéditeur dans le chat et les bulles, au lieu de les remplacer par un texte générique comme « Objectif 1 : 5/5 ».",
+              "Les annonces de quêtes acceptées et terminées utilisent toujours des libellés traduits et les titres de quête disponibles localement."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "6.2.2",
+        "welcome": "Progreso de misiones legible en todos los idiomas.",
+        "sections": [
+          {
+            "title": "Conservar los detalles del objetivo",
+            "items": [
+              "El progreso de misiones, misiones del mundo y objetivos de bonificación conserva ahora el texto y los contadores originales del remitente en el chat y las burbujas, en lugar de sustituirlos por texto genérico como «Objetivo 1: 5/5».",
+              "Los anuncios de misiones aceptadas y completadas siguen usando etiquetas traducidas y los títulos de misión disponibles localmente."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "6.2.2",
+        "welcome": "Progreso de misiones legible en todos los idiomas.",
+        "sections": [
+          {
+            "title": "Conservar los detalles del objetivo",
+            "items": [
+              "El progreso de misiones, misiones de mundo y objetivos de bonificación ahora conserva el texto y los contadores originales del remitente en el chat y las burbujas, en lugar de reemplazarlos por texto genérico como «Objetivo 1: 5/5».",
+              "Los anuncios de misiones aceptadas y completadas siguen usando etiquetas traducidas y los títulos de misión disponibles localmente."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "6.2.2",
+        "welcome": "Progresso de missões legível em todos os idiomas.",
+        "sections": [
+          {
+            "title": "Manter os detalhes dos objetivos",
+            "items": [
+              "O progresso de missões, missões mundiais e objetivos bônus agora mantém o texto e os contadores originais do remetente no bate-papo e nos balões, em vez de substituí-los por texto genérico como “Objetivo 1: 5/5”.",
+              "Os anúncios de missões aceitas e concluídas continuam usando rótulos traduzidos e os títulos de missão disponíveis localmente."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "6.2.2",
+        "welcome": "Понятный прогресс заданий на любом языке.",
+        "sections": [
+          {
+            "title": "Сохраняем подробности о целях",
+            "items": [
+              "Сообщения о прогрессе заданий, локальных заданий и дополнительных целей теперь сохраняют исходный текст и счётчики отправителя в чате и облачках, а не заменяют их общими фразами вроде «Цель 1: 5/5».",
+              "Объявления о принятых и выполненных заданиях по-прежнему используют переведённые подписи и названия заданий, доступные на вашем клиенте."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "6.2.2",
+        "welcome": "Progressi delle missioni leggibili in ogni lingua.",
+        "sections": [
+          {
+            "title": "Mantieni i dettagli degli obiettivi",
+            "items": [
+              "I progressi di missioni, missioni mondiali e obiettivi bonus ora mantengono il testo e i contatori originali del mittente nella chat e nei fumetti, invece di sostituirli con testo generico come \"Obiettivo 1: 5/5\".",
+              "Gli annunci delle missioni accettate e completate continuano a usare etichette tradotte e i titoli delle missioni disponibili localmente."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "6.2.2",
+        "welcome": "모든 언어에서 알아볼 수 있는 퀘스트 진행 상황.",
+        "sections": [
+          {
+            "title": "목표의 자세한 내용 유지",
+            "items": [
+              "이제 퀘스트, 전역 퀘스트, 추가 목표의 진행 상황은 채팅과 말풍선에서 \"목표 1: 5/5\" 같은 일반적인 문구로 대체되지 않고 보낸 플레이어의 원문과 진행 수치를 그대로 표시합니다.",
+              "퀘스트 수락 및 완료 알림은 계속해서 번역된 문구와 내 클라이언트에서 확인할 수 있는 퀘스트 제목을 사용합니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "6.2.2",
+        "welcome": "让每种语言的任务进度都清楚可读。",
+        "sections": [
+          {
+            "title": "保留任务目标详情",
+            "items": [
+              "任务、世界任务和奖励目标的进度现在会在聊天和气泡中保留发送者的原始描述及进度数值，不再将其替换为“目标1：5/5”之类的笼统文本。",
+              "接受和完成任务的通知仍会使用翻译后的提示文字，以及本地可获取的任务名称。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "6.2.2",
+        "welcome": "讓每種語言的任務進度都清楚易讀。",
+        "sections": [
+          {
+            "title": "保留任務目標詳情",
+            "items": [
+              "任務、世界任務和獎勵目標的進度現在會在聊天和對話泡泡中保留傳送者的原始描述及進度數值，不再將其替換為「目標1：5/5」之類的籠統文字。",
+              "接受和完成任務的通知仍會使用翻譯後的提示文字，以及本機可取得的任務名稱。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "6.2.1",
         "welcome": "Clearer control over party-chat announcements.",
         "sections": [

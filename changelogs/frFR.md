@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.2.3
+
+Moins d’annonces répétées de quêtes prêtes à être rendues.
+
+### Corrections du suivi des quêtes prêtes à être rendues
+
+- Les quêtes déjà prêtes à être rendues ou terminées au début du suivi sont enregistrées sans annonce. Les données manquantes et les actualisations ultérieures ne répètent plus les annonces de quêtes prêtes à être rendues déjà prises en compte.
+- Les nouvelles quêtes terminées sont toujours annoncées, et accepter à nouveau une quête réinitialise son historique de notifications. Le joueur qui envoie les annonces doit installer cette mise à jour ; les anciennes versions peuvent encore envoyer des rafales d’annonces.
+
 ## 6.2.2
 
 Une progression de quête lisible dans toutes les langues.

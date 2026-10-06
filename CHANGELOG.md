@@ -4,6 +4,15 @@
 
 [Other languages](changelogs/README.md)
 
+## 6.2.3
+
+Fewer repeated ready-to-turn-in announcements.
+
+### Quest readiness fixes
+
+- Quests already ready or complete when tracking starts are recorded quietly. Missing readiness data and later refreshes no longer replay already-observed ready-to-turn-in announcements.
+- New completions still announce, and accepting a quest again resets its notification history. The sending player needs this update; older versions can still send bursts.
+
 ## 6.2.2
 
 Readable quest progress in every language.

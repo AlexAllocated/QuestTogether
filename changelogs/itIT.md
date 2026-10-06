@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.2.3
+
+Meno annunci ripetuti di missioni pronte da consegnare.
+
+### Correzioni al rilevamento delle missioni pronte
+
+- Le missioni già pronte da consegnare o completate all’inizio del monitoraggio vengono registrate senza annunci. I dati di consegna mancanti e gli aggiornamenti successivi non ripetono più gli annunci di missioni pronte da consegnare già rilevati.
+- I nuovi completamenti vengono ancora annunciati e accettare nuovamente una missione ne azzera la cronologia delle notifiche. Il giocatore che invia gli annunci deve installare questo aggiornamento; le versioni precedenti possono ancora inviarne molti tutti insieme.
+
 ## 6.2.2
 
 Progressi delle missioni leggibili in ogni lingua.

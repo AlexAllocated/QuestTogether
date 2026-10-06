@@ -1,14 +1,14 @@
 {
-  "source_sha256": "37465ae72361af0fcca163e8cbda71dc4196240537d25a2bcc4bc067c737fc92",
+  "source_sha256": "066e7fe33e30231796ab283c390c2d3bb6ae6c7d327b7e1d120f3718679df600",
   "notes": {
-    "version": "6.2.2",
-    "welcome": "Progresso de missões legível em todos os idiomas.",
+    "version": "6.2.3",
+    "welcome": "Menos anúncios repetidos de missões prontas para entregar.",
     "sections": [
       {
-        "title": "Manter os detalhes dos objetivos",
+        "title": "Correções no estado das missões",
         "items": [
-          "O progresso de missões, missões mundiais e objetivos bônus agora mantém o texto e os contadores originais do remetente no bate-papo e nos balões, em vez de substituí-los por texto genérico como “Objetivo 1: 5/5”.",
-          "Os anúncios de missões aceitas e concluídas continuam usando rótulos traduzidos e os títulos de missão disponíveis localmente."
+          "Missões já prontas para entregar ou concluídas quando o acompanhamento começa são registradas sem anúncios. Dados de entrega ausentes e atualizações posteriores não repetem mais anúncios de missões prontas para entregar já registrados.",
+          "Novas conclusões continuam sendo anunciadas, e aceitar uma missão novamente reinicia seu histórico de notificações. O jogador que envia os anúncios precisa desta atualização; versões antigas ainda podem enviar rajadas de anúncios."
         ]
       }
     ]

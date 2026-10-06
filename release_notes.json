@@ -1,12 +1,12 @@
 {
-  "version": "6.2.2",
-  "welcome": "Readable quest progress in every language.",
+  "version": "6.2.3",
+  "welcome": "Fewer repeated ready-to-turn-in announcements.",
   "sections": [
     {
-      "title": "Keep the objective details",
+      "title": "Quest readiness fixes",
       "items": [
-        "Quest, world quest, and bonus objective progress now keeps the sender's original wording and counts in chat and bubbles instead of replacing them with generic text such as \"Objective 1: 5/5\".",
-        "Quest accepted and completed announcements still use translated labels and locally available quest titles."
+        "Quests already ready or complete when tracking starts are recorded quietly. Missing readiness data and later refreshes no longer replay already-observed ready-to-turn-in announcements.",
+        "New completions still announce, and accepting a quest again resets its notification history. The sending player needs this update; older versions can still send bursts."
       ]
     }
   ]

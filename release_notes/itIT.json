@@ -1,14 +1,14 @@
 {
-  "source_sha256": "37465ae72361af0fcca163e8cbda71dc4196240537d25a2bcc4bc067c737fc92",
+  "source_sha256": "066e7fe33e30231796ab283c390c2d3bb6ae6c7d327b7e1d120f3718679df600",
   "notes": {
-    "version": "6.2.2",
-    "welcome": "Progressi delle missioni leggibili in ogni lingua.",
+    "version": "6.2.3",
+    "welcome": "Meno annunci ripetuti di missioni pronte da consegnare.",
     "sections": [
       {
-        "title": "Mantieni i dettagli degli obiettivi",
+        "title": "Correzioni al rilevamento delle missioni pronte",
         "items": [
-          "I progressi di missioni, missioni mondiali e obiettivi bonus ora mantengono il testo e i contatori originali del mittente nella chat e nei fumetti, invece di sostituirli con testo generico come \"Obiettivo 1: 5/5\".",
-          "Gli annunci delle missioni accettate e completate continuano a usare etichette tradotte e i titoli delle missioni disponibili localmente."
+          "Le missioni già pronte da consegnare o completate all’inizio del monitoraggio vengono registrate senza annunci. I dati di consegna mancanti e gli aggiornamenti successivi non ripetono più gli annunci di missioni pronte da consegnare già rilevati.",
+          "I nuovi completamenti vengono ancora annunciati e accettare nuovamente una missione ne azzera la cronologia delle notifiche. Il giocatore che invia gli annunci deve installare questo aggiornamento; le versioni precedenti possono ancora inviarne molti tutti insieme."
         ]
       }
     ]

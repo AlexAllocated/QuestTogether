@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.2.3
+
+Menos anuncios repetidos de misiones listas para entregar.
+
+### Correcciones del estado de las misiones
+
+- Las misiones que ya están listas para entregar o completadas al comenzar el seguimiento se registran sin anuncios. La falta de datos de entrega y las actualizaciones posteriores ya no repiten anuncios de misiones listas para entregar que ya se habían registrado.
+- Las nuevas finalizaciones siguen anunciándose, y volver a aceptar una misión reinicia su historial de notificaciones. El jugador que envía los anuncios necesita esta actualización; las versiones anteriores todavía pueden enviar ráfagas de anuncios.
+
 ## 6.2.2
 
 Progreso de misiones legible en todos los idiomas.

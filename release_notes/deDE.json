@@ -1,14 +1,14 @@
 {
-  "source_sha256": "37465ae72361af0fcca163e8cbda71dc4196240537d25a2bcc4bc067c737fc92",
+  "source_sha256": "066e7fe33e30231796ab283c390c2d3bb6ae6c7d327b7e1d120f3718679df600",
   "notes": {
-    "version": "6.2.2",
-    "welcome": "Lesbarer Questfortschritt in jeder Sprache.",
+    "version": "6.2.3",
+    "welcome": "Weniger wiederholte Meldungen über abgabebereite Quests.",
     "sections": [
       {
-        "title": "Details zu den Zielen beibehalten",
+        "title": "Korrekturen bei abgabebereiten Quests",
         "items": [
-          "Fortschrittsmeldungen für Quests, Weltquests und Bonusziele behalten im Chat und in Sprechblasen jetzt den ursprünglichen Text und die Zähler des Absenders bei, statt sie durch allgemeine Angaben wie „Ziel 1: 5/5“ zu ersetzen.",
-          "Meldungen über angenommene und abgeschlossene Quests verwenden weiterhin übersetzte Bezeichnungen und lokal verfügbare Questtitel."
+          "Quests, die beim Start der Verfolgung bereits abgabebereit oder abgeschlossen sind, werden still erfasst. Fehlende Bereitschaftsdaten und spätere Aktualisierungen lösen bereits erfasste Meldungen zur Abgabebereitschaft nicht erneut aus.",
+          "Neue Abschlüsse werden weiterhin gemeldet. Wird eine Quest erneut angenommen, wird ihr Benachrichtigungsverlauf zurückgesetzt. Der sendende Spieler benötigt dieses Update; ältere Versionen können weiterhin Meldungen in Schüben senden."
         ]
       }
     ]

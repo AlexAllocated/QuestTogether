@@ -1,14 +1,14 @@
 {
-  "source_sha256": "37465ae72361af0fcca163e8cbda71dc4196240537d25a2bcc4bc067c737fc92",
+  "source_sha256": "066e7fe33e30231796ab283c390c2d3bb6ae6c7d327b7e1d120f3718679df600",
   "notes": {
-    "version": "6.2.2",
-    "welcome": "Progreso de misiones legible en todos los idiomas.",
+    "version": "6.2.3",
+    "welcome": "Menos anuncios repetidos de misiones listas para entregar.",
     "sections": [
       {
-        "title": "Conservar los detalles del objetivo",
+        "title": "Correcciones del estado de las misiones",
         "items": [
-          "El progreso de misiones, misiones de mundo y objetivos de bonificación ahora conserva el texto y los contadores originales del remitente en el chat y las burbujas, en lugar de reemplazarlos por texto genérico como «Objetivo 1: 5/5».",
-          "Los anuncios de misiones aceptadas y completadas siguen usando etiquetas traducidas y los títulos de misión disponibles localmente."
+          "Las misiones que ya están listas para entregar o completadas al comenzar el seguimiento se registran sin anuncios. La falta de datos de entrega y las actualizaciones posteriores ya no repiten anuncios de misiones listas para entregar que ya se habían registrado.",
+          "Las nuevas finalizaciones siguen anunciándose, y volver a aceptar una misión reinicia su historial de notificaciones. El jugador que envía los anuncios necesita esta actualización; las versiones anteriores todavía pueden enviar ráfagas de anuncios."
         ]
       }
     ]
