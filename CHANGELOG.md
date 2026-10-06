@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 6.3.1
+## 6.4.0
 
 Refined QT windows and quicker access to party quests.
 
@@ -17,11 +17,11 @@ Refined QT windows and quicker access to party quests.
 
 **Retail**
 
-![Party Quest Log — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogRetail.png)
+![Party Quest Log — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogRetail.png)
 
 **Forever**
 
-![Party Quest Log — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogForever.png)
+![Party Quest Log — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
 
 ### Expand everyone’s objectives
 
@@ -29,7 +29,7 @@ Refined QT windows and quicker access to party quests.
 
 **Forever**
 
-![Expand everyone’s objectives — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+![Expand everyone’s objectives — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
 
 ### Windows and minimap
 
@@ -41,6 +41,15 @@ Refined QT windows and quicker access to party quests.
 
 - Use /qt preview to list the window and announcement previews. The older preview commands still work; mock actions do not invite players, share quests, or send messages.
 - The compare preview now shows a full five-player party, including a Hunter and Rogue, with varied objectives, focused quests, and a leader crown.
+
+## 6.3.1
+
+More comfortable spacing in the Party Quest Log.
+
+### Objective panel spacing
+
+- Expanded objective panels now have extra bottom padding so progress bars do not touch the border. Scrolling and expansion animations include the added space.
+- Messages such as “No objective details available” are vertically centered beside the player’s name instead of crowding the top border.
 
 ## 6.3.0
 

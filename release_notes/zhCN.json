@@ -1,7 +1,7 @@
 {
   "source_sha256": "c4f12f562adb50ce47bc257457a5a99c4b04c7b07e5fb89d1d022afef6e85f15",
   "notes": {
-    "version": "6.3.1",
+    "version": "6.4.0",
     "welcome": "优化 QT 窗口，更快捷地查看队伍任务。",
     "sections": [
       {

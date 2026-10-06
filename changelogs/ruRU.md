@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.3.1
+## 6.4.0
 
 Обновлённые окна QT и более быстрый доступ к заданиям группы.
 
@@ -15,11 +15,11 @@
 
 **Retail**
 
-![Журнал заданий группы — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogRetail.png)
+![Журнал заданий группы — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogRetail.png)
 
 **Forever**
 
-![Журнал заданий группы — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogForever.png)
+![Журнал заданий группы — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
 
 ### Разверните цели всех участников
 
@@ -27,7 +27,7 @@
 
 **Forever**
 
-![Разверните цели всех участников — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+![Разверните цели всех участников — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
 
 ### Окна и мини-карта
 
@@ -39,6 +39,15 @@
 
 - /qt preview выводит список предпросмотров окон и объявлений. Старые команды по-прежнему работают; имитация действий не приглашает игроков, не передаёт задания и не отправляет сообщения.
 - Предпросмотр сравнения теперь показывает полную группу из пяти игроков, включая охотника и разбойника, с разными целями, активными заданиями и короной лидера.
+
+## 6.3.1
+
+Более удобные отступы в журнале заданий группы.
+
+### Отступы в панелях целей
+
+- В раскрытых панелях целей увеличен нижний внутренний отступ, чтобы полосы прогресса не касались рамки. Прокрутка и анимации раскрытия учитывают дополнительное пространство.
+- Сообщения вроде «Нет сведений о целях» теперь выровнены по вертикальному центру рядом с именем игрока, а не прижаты к верхней рамке.
 
 ## 6.3.0
 

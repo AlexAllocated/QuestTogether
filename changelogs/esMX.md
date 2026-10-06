@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.3.1
+## 6.4.0
 
 Ventanas de QT más cuidadas y acceso más rápido a las misiones del grupo.
 
@@ -15,11 +15,11 @@ Ventanas de QT más cuidadas y acceso más rápido a las misiones del grupo.
 
 **Retail**
 
-![Registro de misiones del grupo — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogRetail.png)
+![Registro de misiones del grupo — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogRetail.png)
 
 **Forever**
 
-![Registro de misiones del grupo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogForever.png)
+![Registro de misiones del grupo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
 
 ### Expande los objetivos de todos
 
@@ -27,7 +27,7 @@ Ventanas de QT más cuidadas y acceso más rápido a las misiones del grupo.
 
 **Forever**
 
-![Expande los objetivos de todos — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+![Expande los objetivos de todos — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
 
 ### Ventanas y minimapa
 
@@ -39,6 +39,15 @@ Ventanas de QT más cuidadas y acceso más rápido a las misiones del grupo.
 
 - Usa /qt preview para ver las vistas previas de ventanas y anuncios. Los comandos anteriores siguen funcionando; las acciones simuladas no invitan a jugadores, comparten misiones ni envían mensajes.
 - La vista previa del comparador ahora muestra un grupo completo de cinco jugadores, incluidos un cazador y un pícaro, con objetivos variados, misiones activas y una corona para el líder.
+
+## 6.3.1
+
+Mejor espaciado en el registro de misiones del grupo.
+
+### Espaciado de los paneles de objetivos
+
+- Los paneles de objetivos expandidos tienen más espacio interior inferior para que las barras de progreso no toquen el borde. El desplazamiento y las animaciones de expansión tienen en cuenta este espacio.
+- Los mensajes como «No hay detalles de objetivos disponibles» se centran verticalmente junto al nombre del jugador en lugar de quedar pegados al borde superior.
 
 ## 6.3.0
 

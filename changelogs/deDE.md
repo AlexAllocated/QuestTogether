@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.3.1
+## 6.4.0
 
 Überarbeitete QT-Fenster und schnellerer Zugriff auf Gruppenquests.
 
@@ -15,11 +15,11 @@
 
 **Retail**
 
-![Gruppenquestlog — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogRetail.png)
+![Gruppenquestlog — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogRetail.png)
 
 **Forever**
 
-![Gruppenquestlog — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogForever.png)
+![Gruppenquestlog — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
 
 ### Ziele aller Gruppenmitglieder aufklappen
 
@@ -27,7 +27,7 @@
 
 **Forever**
 
-![Ziele aller Gruppenmitglieder aufklappen — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+![Ziele aller Gruppenmitglieder aufklappen — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
 
 ### Fenster und Minikarte
 
@@ -39,6 +39,15 @@
 
 - /qt preview listet die Fenster- und Ankündigungsvorschauen auf. Die bisherigen Vorschaubefehle funktionieren weiterhin; simulierte Aktionen laden keine Spieler ein, teilen keine Quests und senden keine Nachrichten.
 - Die Vergleichsvorschau zeigt jetzt eine vollständige Fünfergruppe mit Jäger und Schurke, unterschiedlichen Zielen, aktiven Quests und einer Anführerkrone.
+
+## 6.3.1
+
+Angenehmere Abstände im Gruppenquestlog.
+
+### Abstände in den Zielfeldern
+
+- Ausgeklappte Zielfelder haben jetzt unten mehr Innenabstand, damit Fortschrittsbalken den Rand nicht berühren. Scrollen und Ausklappanimationen berücksichtigen den zusätzlichen Platz.
+- Meldungen wie „Keine Zieldetails verfügbar“ werden neben dem Spielernamen vertikal zentriert, statt zu dicht am oberen Rand zu stehen.
 
 ## 6.3.0
 

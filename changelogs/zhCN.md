@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.3.1
+## 6.4.0
 
 优化 QT 窗口，更快捷地查看队伍任务。
 
@@ -15,11 +15,11 @@
 
 **Retail**
 
-![队伍任务日志 — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogRetail.png)
+![队伍任务日志 — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogRetail.png)
 
 **Forever**
 
-![队伍任务日志 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogForever.png)
+![队伍任务日志 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
 
 ### 展开所有队员的任务目标
 
@@ -27,7 +27,7 @@
 
 **Forever**
 
-![展开所有队员的任务目标 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+![展开所有队员的任务目标 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
 
 ### 窗口与小地图
 
@@ -39,6 +39,15 @@
 
 - 使用 /qt preview 查看窗口和公告的预览列表。旧的预览命令仍然有效；模拟操作不会邀请玩家、分享任务或发送消息。
 - 比较预览现在展示完整的五人队伍，包括猎人和潜行者，以及不同的目标进度、当前关注的任务和队长王冠。
+
+## 6.3.1
+
+优化了队伍任务日志的间距。
+
+### 目标面板间距
+
+- 展开的目标面板现在有更多底部内边距，避免进度条紧贴边框。滚动和展开动画也会计入新增的空间。
+- “没有可用的目标详情”等提示现在会在玩家姓名旁垂直居中显示，不再紧贴顶部边框。
 
 ## 6.3.0
 

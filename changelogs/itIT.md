@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.3.1
+## 6.4.0
 
 Finestre QT più curate e accesso più rapido alle missioni del gruppo.
 
@@ -15,11 +15,11 @@ Finestre QT più curate e accesso più rapido alle missioni del gruppo.
 
 **Retail**
 
-![Registro missioni del gruppo — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogRetail.png)
+![Registro missioni del gruppo — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogRetail.png)
 
 **Forever**
 
-![Registro missioni del gruppo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogForever.png)
+![Registro missioni del gruppo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
 
 ### Espandi gli obiettivi di tutti
 
@@ -27,7 +27,7 @@ Finestre QT più curate e accesso più rapido alle missioni del gruppo.
 
 **Forever**
 
-![Espandi gli obiettivi di tutti — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+![Espandi gli obiettivi di tutti — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
 
 ### Finestre e minimappa
 
@@ -39,6 +39,15 @@ Finestre QT più curate e accesso più rapido alle missioni del gruppo.
 
 - Usa /qt preview per elencare le anteprime di finestre e annunci. I vecchi comandi funzionano ancora; le azioni simulate non invitano giocatori, condividono missioni o inviano messaggi.
 - L’anteprima del confronto ora mostra un gruppo completo di cinque giocatori, tra cui un Cacciatore e un Ladro, con obiettivi diversi, missioni attive e una corona per il capogruppo.
+
+## 6.3.1
+
+Spaziatura più confortevole nel registro missioni del gruppo.
+
+### Spaziatura dei pannelli degli obiettivi
+
+- I pannelli degli obiettivi espansi hanno ora più spazio interno in basso, così le barre di avanzamento non toccano il bordo. Lo scorrimento e le animazioni di espansione tengono conto dello spazio aggiunto.
+- I messaggi come «Nessun dettaglio sugli obiettivi disponibile» sono centrati verticalmente accanto al nome del giocatore anziché essere troppo vicini al bordo superiore.
 
 ## 6.3.0
 

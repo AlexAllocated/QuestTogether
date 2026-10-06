@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "6.3.1",
+	version = "6.4.0",
 	welcome = "Refined QT windows and quicker access to party quests.",
 	sections = {
 		{

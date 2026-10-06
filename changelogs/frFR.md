@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.3.1
+## 6.4.0
 
 Des fenêtres QT plus soignées et un accès plus rapide aux quêtes du groupe.
 
@@ -15,11 +15,11 @@ Des fenêtres QT plus soignées et un accès plus rapide aux quêtes du groupe.
 
 **Retail**
 
-![Journal de quêtes du groupe — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogRetail.png)
+![Journal de quêtes du groupe — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogRetail.png)
 
 **Forever**
 
-![Journal de quêtes du groupe — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogForever.png)
+![Journal de quêtes du groupe — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
 
 ### Développer les objectifs de chacun
 
@@ -27,7 +27,7 @@ Des fenêtres QT plus soignées et un accès plus rapide aux quêtes du groupe.
 
 **Forever**
 
-![Développer les objectifs de chacun — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+![Développer les objectifs de chacun — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
 
 ### Fenêtres et minicarte
 
@@ -39,6 +39,15 @@ Des fenêtres QT plus soignées et un accès plus rapide aux quêtes du groupe.
 
 - /qt preview affiche la liste des aperçus de fenêtres et d’annonces. Les anciennes commandes fonctionnent toujours ; les actions simulées n’invitent aucun joueur, ne partagent aucune quête et n’envoient aucun message.
 - L’aperçu du comparateur présente maintenant un groupe complet de cinq joueurs, dont un chasseur et un voleur, avec des objectifs variés, des quêtes actives et une couronne de chef.
+
+## 6.3.1
+
+Un espacement plus agréable dans le journal de quêtes du groupe.
+
+### Espacement des panneaux d’objectifs
+
+- Les panneaux d’objectifs développés ont désormais plus d’espace en bas pour éviter que les barres de progression touchent la bordure. Le défilement et les animations tiennent compte de cet espace.
+- Les messages tels que « Aucun détail d’objectif disponible » sont centrés verticalement à côté du nom du joueur au lieu d’être collés à la bordure supérieure.
 
 ## 6.3.0
 

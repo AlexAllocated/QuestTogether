@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.3.1
+## 6.4.0
 
 優化 QT 視窗，更快速地查看隊伍任務。
 
@@ -15,11 +15,11 @@
 
 **Retail**
 
-![隊伍任務日誌 — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogRetail.png)
+![隊伍任務日誌 — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogRetail.png)
 
 **Forever**
 
-![隊伍任務日誌 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogForever.png)
+![隊伍任務日誌 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
 
 ### 展開所有隊員的任務目標
 
@@ -27,7 +27,7 @@
 
 **Forever**
 
-![展開所有隊員的任務目標 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+![展開所有隊員的任務目標 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
 
 ### 視窗與小地圖
 
@@ -39,6 +39,15 @@
 
 - 使用 /qt preview 查看視窗與公告的預覽清單。舊的預覽指令仍然有效；模擬操作不會邀請玩家、分享任務或傳送訊息。
 - 比較預覽現在展示完整的五人隊伍，包括獵人和盜賊，以及不同的目標進度、目前關注的任務和隊長皇冠。
+
+## 6.3.1
+
+改善了隊伍任務日誌的間距。
+
+### 目標面板間距
+
+- 展開的目標面板現在有更多底部內邊距，避免進度條緊貼邊框。捲動和展開動畫也會計入新增的空間。
+- 「沒有可用的目標詳細資訊」等提示現在會在玩家姓名旁垂直置中顯示，不再緊貼頂部邊框。
 
 ## 6.3.0
 

@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.3.1
+## 6.4.0
 
 Janelas do QT mais bem-acabadas e acesso mais rápido às missões do grupo.
 
@@ -15,11 +15,11 @@ Janelas do QT mais bem-acabadas e acesso mais rápido às missões do grupo.
 
 **Retail**
 
-![Registro de missões do grupo — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogRetail.png)
+![Registro de missões do grupo — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogRetail.png)
 
 **Forever**
 
-![Registro de missões do grupo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogForever.png)
+![Registro de missões do grupo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
 
 ### Expanda os objetivos de todos
 
@@ -27,7 +27,7 @@ Janelas do QT mais bem-acabadas e acesso mais rápido às missões do grupo.
 
 **Forever**
 
-![Expanda os objetivos de todos — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+![Expanda os objetivos de todos — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
 
 ### Janelas e minimapa
 
@@ -39,6 +39,15 @@ Janelas do QT mais bem-acabadas e acesso mais rápido às missões do grupo.
 
 - Use /qt preview para listar as prévias de janelas e anúncios. Os comandos antigos continuam funcionando; as ações simuladas não convidam jogadores, compartilham missões nem enviam mensagens.
 - A prévia do comparador agora mostra um grupo completo de cinco jogadores, incluindo um Caçador e um Ladino, com objetivos variados, missões ativas e uma coroa para o líder.
+
+## 6.3.1
+
+Espaçamento mais confortável no registro de missões do grupo.
+
+### Espaçamento dos painéis de objetivos
+
+- Os painéis de objetivos expandidos agora têm mais espaço interno na parte inferior para que as barras de progresso não encostem na borda. A rolagem e as animações de expansão consideram esse espaço adicional.
+- Mensagens como “Nenhum detalhe de objetivo disponível” ficam centralizadas verticalmente ao lado do nome do jogador, em vez de muito próximas da borda superior.
 
 ## 6.3.0
 

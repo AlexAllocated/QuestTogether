@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.3.1
+## 6.4.0
 
 QT 창을 다듬고 파티 퀘스트에 더 빠르게 접근할 수 있도록 개선했습니다.
 
@@ -15,11 +15,11 @@ QT 창을 다듬고 파티 퀘스트에 더 빠르게 접근할 수 있도록 �
 
 **Retail**
 
-![파티 퀘스트 일지 — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogRetail.png)
+![파티 퀘스트 일지 — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogRetail.png)
 
 **Forever**
 
-![파티 퀘스트 일지 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogForever.png)
+![파티 퀘스트 일지 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
 
 ### 모든 파티원의 목표 펼치기
 
@@ -27,7 +27,7 @@ QT 창을 다듬고 파티 퀘스트에 더 빠르게 접근할 수 있도록 �
 
 **Forever**
 
-![모든 파티원의 목표 펼치기 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+![모든 파티원의 목표 펼치기 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
 
 ### 창과 미니맵
 
@@ -39,6 +39,15 @@ QT 창을 다듬고 파티 퀘스트에 더 빠르게 접근할 수 있도록 �
 
 - /qt preview로 창과 알림의 미리보기 목록을 확인할 수 있습니다. 기존 미리보기 명령어도 계속 작동합니다. 모의 동작은 플레이어를 초대하거나 퀘스트를 공유하거나 메시지를 보내지 않습니다.
 - 비교 미리보기에 사냥꾼과 도적을 포함한 5인 파티 전체가 표시됩니다. 다양한 목표 진행도, 활성 퀘스트, 파티장 왕관도 확인할 수 있습니다.
+
+## 6.3.1
+
+파티 퀘스트 일지의 여백을 개선했습니다.
+
+### 목표 패널 여백
+
+- 펼친 목표 패널의 아래쪽 내부 여백을 늘려 진행 막대가 테두리에 닿지 않도록 했습니다. 스크롤과 펼치기 애니메이션에도 추가된 공간이 반영됩니다.
+- “목표 세부 정보 없음” 같은 메시지를 위쪽 테두리 가까이 표시하는 대신 플레이어 이름 옆에 세로 중앙 정렬합니다.
 
 ## 6.3.0
 

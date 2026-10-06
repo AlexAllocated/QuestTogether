@@ -3,6 +3,151 @@
   "releases": [
     {
       "enUS": {
+        "version": "6.3.1",
+        "welcome": "More comfortable spacing in the Party Quest Log.",
+        "sections": [
+          {
+            "title": "Objective panel spacing",
+            "items": [
+              "Expanded objective panels now have extra bottom padding so progress bars do not touch the border. Scrolling and expansion animations include the added space.",
+              "Messages such as “No objective details available” are vertically centered beside the player’s name instead of crowding the top border."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "6.3.1",
+        "welcome": "Angenehmere Abstände im Gruppenquestlog.",
+        "sections": [
+          {
+            "title": "Abstände in den Zielfeldern",
+            "items": [
+              "Ausgeklappte Zielfelder haben jetzt unten mehr Innenabstand, damit Fortschrittsbalken den Rand nicht berühren. Scrollen und Ausklappanimationen berücksichtigen den zusätzlichen Platz.",
+              "Meldungen wie „Keine Zieldetails verfügbar“ werden neben dem Spielernamen vertikal zentriert, statt zu dicht am oberen Rand zu stehen."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "6.3.1",
+        "welcome": "Un espacement plus agréable dans le journal de quêtes du groupe.",
+        "sections": [
+          {
+            "title": "Espacement des panneaux d’objectifs",
+            "items": [
+              "Les panneaux d’objectifs développés ont désormais plus d’espace en bas pour éviter que les barres de progression touchent la bordure. Le défilement et les animations tiennent compte de cet espace.",
+              "Les messages tels que « Aucun détail d’objectif disponible » sont centrés verticalement à côté du nom du joueur au lieu d’être collés à la bordure supérieure."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "6.3.1",
+        "welcome": "Mejor espaciado en el registro de misiones del grupo.",
+        "sections": [
+          {
+            "title": "Espaciado de los paneles de objetivos",
+            "items": [
+              "Los paneles de objetivos desplegados tienen más espacio interior inferior para que las barras de progreso no toquen el borde. El desplazamiento y las animaciones de expansión tienen en cuenta este espacio.",
+              "Los mensajes como «No hay detalles de objetivos disponibles» se centran verticalmente junto al nombre del jugador en lugar de quedar pegados al borde superior."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "6.3.1",
+        "welcome": "Mejor espaciado en el registro de misiones del grupo.",
+        "sections": [
+          {
+            "title": "Espaciado de los paneles de objetivos",
+            "items": [
+              "Los paneles de objetivos expandidos tienen más espacio interior inferior para que las barras de progreso no toquen el borde. El desplazamiento y las animaciones de expansión tienen en cuenta este espacio.",
+              "Los mensajes como «No hay detalles de objetivos disponibles» se centran verticalmente junto al nombre del jugador en lugar de quedar pegados al borde superior."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "6.3.1",
+        "welcome": "Espaçamento mais confortável no registro de missões do grupo.",
+        "sections": [
+          {
+            "title": "Espaçamento dos painéis de objetivos",
+            "items": [
+              "Os painéis de objetivos expandidos agora têm mais espaço interno na parte inferior para que as barras de progresso não encostem na borda. A rolagem e as animações de expansão consideram esse espaço adicional.",
+              "Mensagens como “Nenhum detalhe de objetivo disponível” ficam centralizadas verticalmente ao lado do nome do jogador, em vez de muito próximas da borda superior."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "6.3.1",
+        "welcome": "Более удобные отступы в журнале заданий группы.",
+        "sections": [
+          {
+            "title": "Отступы в панелях целей",
+            "items": [
+              "В раскрытых панелях целей увеличен нижний внутренний отступ, чтобы полосы прогресса не касались рамки. Прокрутка и анимации раскрытия учитывают дополнительное пространство.",
+              "Сообщения вроде «Нет сведений о целях» теперь выровнены по вертикальному центру рядом с именем игрока, а не прижаты к верхней рамке."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "6.3.1",
+        "welcome": "Spaziatura più confortevole nel registro missioni del gruppo.",
+        "sections": [
+          {
+            "title": "Spaziatura dei pannelli degli obiettivi",
+            "items": [
+              "I pannelli degli obiettivi espansi hanno ora più spazio interno in basso, così le barre di avanzamento non toccano il bordo. Lo scorrimento e le animazioni di espansione tengono conto dello spazio aggiunto.",
+              "I messaggi come «Nessun dettaglio sugli obiettivi disponibile» sono centrati verticalmente accanto al nome del giocatore anziché essere troppo vicini al bordo superiore."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "6.3.1",
+        "welcome": "파티 퀘스트 일지의 여백을 개선했습니다.",
+        "sections": [
+          {
+            "title": "목표 패널 여백",
+            "items": [
+              "펼친 목표 패널의 아래쪽 내부 여백을 늘려 진행 막대가 테두리에 닿지 않도록 했습니다. 스크롤과 펼치기 애니메이션에도 추가된 공간이 반영됩니다.",
+              "“목표 세부 정보 없음” 같은 메시지를 위쪽 테두리 가까이 표시하는 대신 플레이어 이름 옆에 세로 중앙 정렬합니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "6.3.1",
+        "welcome": "优化了队伍任务日志的间距。",
+        "sections": [
+          {
+            "title": "目标面板间距",
+            "items": [
+              "展开的目标面板现在有更多底部内边距，避免进度条紧贴边框。滚动和展开动画也会计入新增的空间。",
+              "“没有可用的目标详情”等提示现在会在玩家姓名旁垂直居中显示，不再紧贴顶部边框。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "6.3.1",
+        "welcome": "改善了隊伍任務日誌的間距。",
+        "sections": [
+          {
+            "title": "目標面板間距",
+            "items": [
+              "展開的目標面板現在有更多底部內邊距，避免進度條緊貼邊框。捲動和展開動畫也會計入新增的空間。",
+              "「沒有可用的目標詳細資訊」等提示現在會在玩家姓名旁垂直置中顯示，不再緊貼頂部邊框。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "6.3.0",
         "welcome": "A new Party Quest Log, shared destinations, and optional quest following make it easier to quest together.",
         "sections": [
