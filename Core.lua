@@ -5950,7 +5950,7 @@ function QuestTogether:PrintDebugHelp()
 end
 
 function QuestTogether:PrintPreviewHelp()
-	self:Print(L("/qt preview share|join|partychat|bubble|discord - Preview a QT dialog without changing settings"))
+	self:Print(L("/qt preview share|join|partychat|bubble|discord|focus - Preview a QT dialog without changing settings"))
 	self:Print(L("/qt preview compare - Preview Party Quest Log with mock data (no sharing)"))
 	self:Print(L("/qt preview notes - Preview the welcome and patch-notes window"))
 	self:Print(L("/qt preview announcement <text> - Run a local bubble preview for your current target"))
@@ -5966,7 +5966,7 @@ function QuestTogether:HandlePreviewCommand(input)
 	if arguments and arguments ~= "" then self:PrintPreviewHelp(); return false end
 	if kind == "compare" then return self:OpenPartyQuestComparePreview() end
 	if kind == "notes" or kind == "welcome" then return self:OpenReleaseNotes() end
-	if kind == "share" or kind == "join" or kind == "partychat" or kind == "bubble" or kind == "discord" then
+	if kind == "share" or kind == "join" or kind == "partychat" or kind == "bubble" or kind == "discord" or kind == "focus" then
 		return self:ShowDialogPreview(kind)
 	end
 	-- Empty/unknown preview commands are help, never outgoing QT chat.

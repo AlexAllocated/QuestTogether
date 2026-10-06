@@ -333,9 +333,66 @@ function QuestTogether:GetPartyQuestUIParent()
 	return UIParent
 end
 
+-- QT owns these buttons and textures; use Blizzard's ordinary mini quest POI
+-- artwork without registering remote quests with Blizzard's POI button mixins.
+local function FocusAtlas(texture, atlas, fallback)
+	if not texture.SetAtlas or not pcall(texture.SetAtlas, texture, atlas) then
+		texture:SetTexture(fallback)
+	end
+end
+local function CreateFocusButton(addon, row, column)
+	local button = addon:CreatePartyQuestUIFrame("Button", nil, row)
+	button:SetSize(26, 26)
+	button:SetPoint("TOPLEFT", ColumnLeft(column) + COLUMN_WIDTH - 31, -8)
+	button.normal = button:CreateTexture(nil, "BACKGROUND")
+	button.pushed = button:CreateTexture(nil, "BACKGROUND")
+	button.icon = button:CreateTexture(nil, "ARTWORK")
+	button.highlight = button:CreateTexture(nil, "HIGHLIGHT")
+	for _, texture in ipairs({ button.normal, button.pushed, button.highlight }) do texture:SetAllPoints() end
+	button.icon:SetSize(16, 16)
+	button.icon:SetPoint("CENTER")
+	button:SetNormalTexture(button.normal)
+	button:SetPushedTexture(button.pushed)
+	button:SetHighlightTexture(button.highlight)
+	FocusAtlas(button.highlight, "UI-QuestPoi-InnerGlow", "Interface\\Buttons\\UI-Common-MouseHilight")
+	local function Current()
+		return row.data and not row.data.kind and row.session == addon.partyQuestCompareSession
+	end
+	local function Leave() addon:HideSettingsTooltip(button) end
+	button:SetScript("OnLeave", Leave)
+	button:SetScript("OnHide", Leave)
+	button:SetScript("OnEnter", function()
+		if not Current() then return end
+		local hint = button.localPlayer and L("Click to focus this quest.")
+			or (button.selected and L("Click to follow this player's quest focus.") or L("This player is not focusing this quest."))
+		if not button.localPlayer and not button.knownFocus then hint = addon:GetPartyFocusLabel(button.memberName) end
+		addon:ShowSettingsTooltip(button, button.memberName, hint)
+	end)
+	button:SetScript("OnClick", function()
+		Leave()
+		if Current() and button.clickable and not addon:IsWorkBlocked("foreign_frame_mutation") then
+			addon:SelectPartyQuestFocus(button.memberName, row.data.questId)
+		end
+	end)
+	return button
+end
+local function PaintFocusButton(button, selected, complete)
+	button.selected = selected
+	local suffix = selected and "-SuperTracked" or ""
+	FocusAtlas(button.normal, "UI-QuestPoi-QuestNumber" .. suffix, "Interface\\Buttons\\UI-Quickslot2")
+	FocusAtlas(button.pushed, "UI-QuestPoi-QuestNumber-Pressed" .. suffix, "Interface\\Buttons\\UI-Quickslot-Depress")
+	FocusAtlas(button.icon, complete and "UI-QuestIcon-TurnIn-Normal"
+		or (selected and "Quest-In-Progress-Icon-Brown" or "Quest-In-Progress-Icon-yellow"),
+		"Interface\\GossipFrame\\ActiveQuestIcon")
+end
+
 local function DrawCompareRows(self, frame, session, rows, width, actionX)
 	local dark = self:GetOption("lightMode") ~= true
 	local colors = dark and DARK_COLORS or COLORS
+	local focusIDs = {}
+	for i, member in ipairs(session.members) do
+		focusIDs[i] = self.GetPartyQuestFocusID and self:GetPartyQuestFocusID(member.name)
+	end
 	for i, row in ipairs(frame.rows) do
 		local slot = frame.visibleRows[i]
 		local data = slot and rows[slot.index]
@@ -446,7 +503,7 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 			for j, status in ipairs(data.cells) do
 				if not row.cells[j] then
 					row.cells[j] =
-						Label(row, QUEST_WIDTH + (j - 1) * MEMBER_WIDTH, -12, MEMBER_WIDTH - 6, "", "GameFontHighlight")
+						Label(row, QUEST_WIDTH + (j - 1) * MEMBER_WIDTH, -12, MEMBER_WIDTH - 40, "", "GameFontHighlight")
 					row.cellShades[j] = row:CreateTexture(nil, "BORDER")
 					row.cellShades[j]:SetPoint("TOPLEFT", ColumnLeft(j), 0)
 					row.cellShades[j]:SetSize(COLUMN_WIDTH, ROW_HEIGHT - 1)
@@ -457,10 +514,19 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 				row.cells[j]:SetText(L(status))
 				row.cells[j]:SetTextColor(unpack(colors[status]))
 				row.cells[j]:Show()
+				if not row.focusCells[j] then row.focusCells[j] = CreateFocusButton(self, row, j) end
+				local button, member = row.focusCells[j], session.members[j]
+				button.memberName, button.localPlayer = member.name, member.isLocal
+				button.knownFocus = focusIDs[j] ~= nil and focusIDs[j] >= 0
+				local selected = focusIDs[j] == data.questId
+				button.clickable = member.isLocal or (selected and session.mode ~= "target")
+				PaintFocusButton(button, selected, status == "Ready")
+				if status == "Have" or status == "Ready" then button:Show() else button:Hide() end
 			end
 			for j = #data.cells + 1, #row.cells do
 				row.cells[j]:Hide()
 				row.cellShades[j]:Hide()
+				if row.focusCells[j] then row.focusCells[j]:Hide() end
 			end
 			row.action:ClearAllPoints()
 			row.action:SetPoint("TOPLEFT", actionX, -9)
@@ -846,23 +912,23 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 
 	frame.viewport = self:CreatePartyQuestUIFrame("ScrollFrame", nil, frame)
 	frame.viewport:SetPoint("TOPLEFT", 20, -140)
-	frame.viewport:SetSize(width - 62, VISIBLE_ROWS * ROW_HEIGHT + 78)
+	frame.viewport:SetSize(width - 62, VISIBLE_ROWS * ROW_HEIGHT + 54)
 	frame.content = self:CreatePartyQuestUIFrame("Frame", nil, frame.viewport)
-	frame.content:SetSize(QUEST_WIDTH + ACTION_WIDTH, VISIBLE_ROWS * ROW_HEIGHT + 78)
+	frame.content:SetSize(QUEST_WIDTH + ACTION_WIDTH, VISIBLE_ROWS * ROW_HEIGHT + 54)
 	frame.viewport:SetScrollChild(frame.content)
 	frame.questHeader = Label(frame.content, 4, 0, QUEST_WIDTH - 8, L("QUEST"), "GameFontNormal")
 	frame.rowsViewport = self:CreatePartyQuestUIFrame("ScrollFrame", nil, frame.content)
-	frame.rowsViewport:SetPoint("TOPLEFT", 0, -78)
+	frame.rowsViewport:SetPoint("TOPLEFT", 0, -54)
 	frame.rowsViewport:SetSize(QUEST_WIDTH + ACTION_WIDTH, VISIBLE_ROWS * ROW_HEIGHT)
 	frame.rowsContent = self:CreatePartyQuestUIFrame("Frame", nil, frame.rowsViewport)
 	frame.rowsContent:SetSize(QUEST_WIDTH + ACTION_WIDTH, (VISIBLE_ROWS * 2 + 2) * ROW_HEIGHT)
 	frame.rowsViewport:SetScrollChild(frame.rowsContent)
 	frame.headers, frame.headerAccents, frame.rows = {}, {}, {}
 	frame.headerCrowns = {}
-	frame.focusHeaders, frame.focusButtons, frame.headerStatuses = {}, {}, {}
-	frame.followStatus = Label(frame.content, 4, -26, QUEST_WIDTH - 130, "", "GameFontHighlightSmall")
-	frame.followStatus:SetHeight(44)
-	frame.stopFollowing = Button(self, frame.content, QUEST_WIDTH - 124, -32, 116, L("Stop following"), function()
+	frame.focusButtons, frame.headerStatuses = {}, {}
+	frame.followStatus = Label(frame.content, 4, -18, QUEST_WIDTH - 130, "", "GameFontHighlightSmall")
+	frame.followStatus:SetHeight(34)
+	frame.stopFollowing = Button(self, frame.content, QUEST_WIDTH - 124, -22, 116, L("Stop following"), function()
 		self:StopPartyQuestFollow()
 	end)
 	frame.stopFollowing:Hide()
@@ -948,7 +1014,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 				self:HideSettingsTooltip(row)
 			end)
 			row:SetScript("OnHide", function() self:HideSettingsTooltip(row) end)
-			row.cells, row.cellShades = {}, {}
+			row.cells, row.cellShades, row.focusCells = {}, {}, {}
 			row.action = Button(self, row, QUEST_WIDTH, -9, ACTION_WIDTH - 12, "", function()
 				local data = row.data
 				if not data or row.session ~= self.partyQuestCompareSession then
@@ -969,7 +1035,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	end
 	EnsureRows(VISIBLE_ROWS * 2 + 2)
 	frame.vertical = Slider(self, frame, true)
-	frame.vertical:SetPoint("TOPRIGHT", -18, -188)
+	frame.vertical:SetPoint("TOPRIGHT", -18, -194)
 	frame.vertical:SetSize(16, VISIBLE_ROWS * ROW_HEIGHT)
 	frame.vertical:SetMinMaxValues(0, 0)
 	frame.vertical:SetValueStep(1)
@@ -1012,7 +1078,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	-- quest reads or starts communication. Grow the reusable row pool only as needed.
 	function frame:Layout()
 		local w, h = self:GetWidth(), self:GetHeight()
-		local rowsHeight = math.max(42, h - 258)
+		local rowsHeight = math.max(42, h - 234)
 		self.title:SetWidth(w - 100)
 		self.summary:SetWidth(w - 40)
 		self.search:SetWidth(math.max(100, math.min(300, w - 500)))
@@ -1021,8 +1087,8 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			control[1]:SetPoint("TOPLEFT", w - control[2], -74)
 		end
 		self.activeFilters:SetWidth(w - 62)
-		self.viewport:SetSize(w - 62, rowsHeight + 78)
-		self.content:SetHeight(rowsHeight + 78)
+		self.viewport:SetSize(w - 62, rowsHeight + 54)
+		self.content:SetHeight(rowsHeight + 54)
 		self.rowsViewport:SetHeight(rowsHeight)
 		local capacity = 2 * math.ceil(rowsHeight / ROW_HEIGHT) + 2
 		EnsureRows(capacity)
@@ -1213,7 +1279,7 @@ function QuestTogether:RenderPartyQuestCompare()
 			frame.headers[i] = Label(frame.content, 0, 0, MEMBER_WIDTH - 6, "", "GameFontNormal")
 			frame.headerAccents[i] = frame.content:CreateTexture(nil, "ARTWORK")
 			frame.headerAccents[i]:SetSize(COLUMN_WIDTH, 3)
-			frame.headerAccents[i]:SetPoint("TOPLEFT", ColumnLeft(i), -72)
+			frame.headerAccents[i]:SetPoint("TOPLEFT", ColumnLeft(i), -48)
 			frame.headerCrowns[i] = frame.content:CreateTexture(nil, "OVERLAY")
 			frame.headerCrowns[i]:SetTexture("Interface\\AddOns\\QuestTogether\\Media\\PartyLeader")
 			frame.headerCrowns[i]:SetSize(16, 12)
@@ -1243,12 +1309,7 @@ function QuestTogether:RenderPartyQuestCompare()
 		status:SetTextColor(unpack(theme.muted))
 		status:SetText(self:GetPartyQuestSnapshotLabel(member))
 		status:Show()
-		local enabled = session.mode ~= "target" and self.GetPartyFocusLabel ~= nil
-		if not frame.focusHeaders[i] then
-			frame.focusHeaders[i] = Label(frame.content, 0, 0, MEMBER_WIDTH - 8, "", "GameFontHighlightSmall")
-			frame.focusHeaders[i]:SetHeight(24)
-			frame.focusHeaders[i]:SetJustifyV("TOP")
-			frame.focusHeaders[i]:SetMaxLines(2)
+		if not frame.focusButtons[i] then
 			local button = self:CreatePartyQuestUIFrame("Button", nil, frame.content)
 			frame.focusButtons[i] = button
 			-- Decoration stays beneath the existing header text. The transparent
@@ -1310,22 +1371,17 @@ function QuestTogether:RenderPartyQuestCompare()
 				end)
 			end)
 		end
-		local focus, button = frame.focusHeaders[i], frame.focusButtons[i]
-		focus:ClearAllPoints()
-		focus:SetPoint("TOPLEFT", ColumnLeft(i) + 8, -42)
-		focus:SetWidth(COLUMN_WIDTH - 16)
-		focus:SetTextColor(unpack(theme.body))
-		focus:SetText(enabled and self:GetPartyFocusLabel(member.name) or "")
+		local button = frame.focusButtons[i]
 		button:ClearAllPoints()
 		button:SetPoint("TOPLEFT", ColumnLeft(i), 0)
-		button:SetSize(COLUMN_WIDTH, 70)
+		button:SetSize(COLUMN_WIDTH, 46)
 		button.navSession, button.navName = session, member.name
 		local clickable = not member.isLocal
 		button.navClickable = clickable
 		button:SetEnabled(clickable)
 		header:SetWidth(COLUMN_WIDTH - (clickable and 30 or 16) - (isLeader and 20 or 0))
-		LayoutPanel(button.paper, frame.content, "BACKGROUND", 0, ColumnLeft(i), 0, COLUMN_WIDTH, 70, true, false)
-		LayoutPanel(button.hover, frame.content, "BORDER", 0, ColumnLeft(i), 0, COLUMN_WIDTH, 70, true, false)
+		LayoutPanel(button.paper, frame.content, "BACKGROUND", 0, ColumnLeft(i), 0, COLUMN_WIDTH, 46, true, false)
+		LayoutPanel(button.hover, frame.content, "BORDER", 0, ColumnLeft(i), 0, COLUMN_WIDTH, 46, true, false)
 		ColorPanel(button.paper, r, g, b, dark and 0.14 or 0.10)
 		ColorPanel(button.hover, r, g, b, dark and 0.22 or 0.16)
 		for _, strip in ipairs(button.arrow) do
@@ -1338,7 +1394,6 @@ function QuestTogether:RenderPartyQuestCompare()
 			button:Hide()
 			ShowPanel(button.paper, false)
 		end
-		focus:Show()
 		header:Show()
 	end
 	for i = #session.members + 1, #frame.headers do
@@ -1346,7 +1401,6 @@ function QuestTogether:RenderPartyQuestCompare()
 		frame.headerStatuses[i]:Hide()
 		frame.headerAccents[i]:Hide()
 		frame.headerCrowns[i]:Hide()
-		frame.focusHeaders[i]:Hide()
 		frame.focusButtons[i]:Hide()
 	end
 

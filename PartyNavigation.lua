@@ -1,5 +1,5 @@
 -- One small-party snapshot owns focus, native waypoint and follow intent.
--- No public-channel traffic, per-feature timers, or persistent follow state.
+-- No public-channel traffic or per-feature timers. Only follow intent persists.
 local QT = _G.QuestTogether
 local L = QT.Translate
 local TTL = 90
@@ -35,6 +35,19 @@ function QT:GetPartyNavigationRoute()
 	end
 	return count >= 2 and count <= 5 and route or nil
 end
+-- Saved per character, not per options profile. Never persist a peer snapshot:
+-- a restored follow waits for current, validated group navigation data.
+local function FollowStore(a)
+	local db = rawget(a, "db")
+	local owner = rawget(a, "activeCharacterKey")
+	if type(db) ~= "table" or type(db.global) ~= "table" or type(owner) ~= "string" then return nil end
+	if type(db.global.partyQuestFollowByCharacter) ~= "table" then db.global.partyQuestFollowByCharacter = {} end
+	return db.global.partyQuestFollowByCharacter, owner
+end
+function QT:SavePartyQuestFollow(name)
+	local store, owner = FollowStore(self)
+	if store then store[owner] = name and Name(self, name) or nil end
+end
 function QT:GetPartyNavigationState()
 	local s = rawget(self, "partyNavigationState")
 	if not s then
@@ -51,6 +64,11 @@ function QT:GetPartyNavigationState()
 			),
 			nextSend = Now(self) + 0.25,
 		}
+		local store, owner = FollowStore(self)
+		local target = store and Name(self, store[owner])
+		if target and not self:IsSelfSender(target) then
+			s.following, s.resuming, s.followStatus = target, true, L("Waiting for quest focus")
+		elseif store then store[owner] = nil end
 		self.partyNavigationState = s
 	end
 	return s
@@ -63,11 +81,12 @@ function QT:QueuePartyNavigationUpdate()
 	s.dirtyAt = s.dirtyAt or (Now(self) + 0.25)
 end
 function QT:StopPartyQuestFollow()
+	self:SavePartyQuestFollow(nil)
 	local s = rawget(self, "partyNavigationState")
 	if not s or not s.following then
 		return false
 	end
-	s.following, s.expectedQuest, s.attempt, s.followStatus, s.checkExternal = nil, nil, nil, nil, nil
+	s.following, s.expectedQuest, s.attempt, s.followStatus, s.checkExternal, s.resuming = nil, nil, nil, nil, nil, nil
 	self:QueuePartyNavigationUpdate()
 	Changed(self)
 	return true
@@ -122,7 +141,9 @@ function QT:FollowPartyQuestFocus(name)
 	end
 	local s = self:GetPartyNavigationState()
 	s.following, s.attempt, s.expectedQuest = name, nil, self.API.GetActiveTrackedQuestID() or 0
-	s.checkExternal = nil
+	s.checkExternal, s.resuming = nil, nil
+	self:SavePartyQuestFollow(name)
+	self:ClearPartyFocusMissingNotice()
 	self:QueuePartyNavigationUpdate()
 	self:ApplyPartyQuestFocus()
 	Changed(self)
@@ -133,13 +154,23 @@ function QT:ApplyPartyQuestFocus()
 	if not s or not s.following then
 		return
 	end
-	local p = self:GetPartyNavigationPeer(s.following)
-	if not p or p.questID < 0 or self:WouldPartyQuestFollowCycle(s.following) then
+	if not self:IsGroupedSender(s.following) or self:IsIgnoredPlayerName(s.following)
+		or (self.API.IsInRaid and self.API.IsInRaid()) or self:WouldPartyQuestFollowCycle(s.following) then
 		self:StopPartyQuestFollow()
+		return
+	end
+	local p = self:GetPartyNavigationPeer(s.following)
+	if not p or p.questID < 0 then
+		local status = p and L("Focus not shared or unavailable") or L("Waiting for quest focus")
+		if s.followStatus ~= status then s.followStatus = status; Changed(self) end
 		return
 	end
 	if self:IsRuntimeRestricted() then
 		return
+	end
+	if s.resuming then
+		self:SamplePartyNavigation()
+		if s.resuming then return end
 	end
 	-- Manual navigation wins even if a peer packet arrives before the next tick.
 	if s.checkExternal then
@@ -154,8 +185,13 @@ function QT:ApplyPartyQuestFocus()
 		status, s.attempt = L("No focused quest"), nil
 	else
 		local owned = self.API.IsOnQuest(p.questID)
-		if owned ~= true then
-			status, s.attempt = L("You don't have this quest"), nil
+		if owned == false then
+			local name = s.following
+			self:StopPartyQuestFollow()
+			self:QueuePartyFocusMissingNotice(name, p.questID, p.title)
+			return
+		elseif owned ~= true then
+			return
 		elseif self.API.GetActiveTrackedQuestID() == p.questID then
 			s.attempt, s.expectedQuest = p.questID, p.questID
 		else
@@ -182,13 +218,13 @@ function QT:ApplyPartyQuestFocus()
 end
 function QT:OnPartyNavigationTrackingChanged()
 	local s = rawget(self, "partyNavigationState")
-	if s and s.following and not s.applying then
+	if s and s.following and not s.applying and not s.resuming then
 		-- Defer unreadable observations, never treat an inaccessible quest as a
 		-- deliberate clear. The update loop revisits it after restrictions end.
 		s.checkExternal = true
 	end
 	self:QueuePartyNavigationUpdate()
-	-- The local PQL header must update even without a party transport route.
+	-- Local PQL focus buttons update even without a party transport route.
 	Changed(self)
 end
 function QT:SamplePartyNavigation()
@@ -200,6 +236,11 @@ function QT:SamplePartyNavigation()
 		return nil
 	end
 	local s = self:GetPartyNavigationState()
+	-- Establish a local baseline during reload, independently of peer arrival.
+	-- Later manual changes still win while waiting for fresh remote state.
+	if s.resuming and native.questID >= 0 then
+		s.expectedQuest, s.resuming = native.questID, nil
+	end
 	if s.checkExternal and native.questID >= 0 then
 		s.checkExternal = nil
 		if s.following and native.questID >= 0 then
@@ -324,6 +365,14 @@ function QT:HandlePartyNavigationMessage(payload, sender, route)
 	Changed(self)
 	return true
 end
+function QT:ReconcilePartyQuestFollow()
+	local s = rawget(self, "partyNavigationState")
+	if not s or not s.following or self.isLoggingOut then return end
+	if (self.API.IsInRaid and self.API.IsInRaid()) or (self.API.IsInParty and not self.API.IsInParty())
+		or not self:IsGroupedSender(s.following) or self:IsIgnoredPlayerName(s.following) then
+		self:StopPartyQuestFollow()
+	end
+end
 function QT:UpdatePartyNavigation()
 	local s = self:GetPartyNavigationState()
 	local route, now = self:GetPartyNavigationRoute(), Now(self)
@@ -343,11 +392,8 @@ function QT:UpdatePartyNavigation()
 			Changed(self)
 		end
 	end
-	if s.following and not self:GetPartyNavigationPeer(s.following) then
-		self:StopPartyQuestFollow()
-	end
+	self:ReconcilePartyQuestFollow()
 	if not route then
-		self:StopPartyQuestFollow()
 		return
 	end
 	if self:IsRuntimeRestricted() then
@@ -387,6 +433,8 @@ function QT:UpdatePartyNavigation()
 	end
 end
 function QT:ResetPartyNavigation()
+	self:StopPartyQuestFollow()
+	self:ClearPartyFocusMissingNotice()
 	self.partyNavigationState = nil
 	if self.HidePartyWaypointPins then
 		self:HidePartyWaypointPins()
@@ -408,6 +456,28 @@ function QT:WithdrawPartyNavigation()
 		)
 	end
 end
+function QT:GetPartyQuestFocusID(name)
+	if self:IsSelfSender(name) then
+		if self:IsRuntimeRestricted() then return nil end
+		local ok, native = pcall(self.API.GetPartyNavigationNativeState)
+		return ok and self:CanAccessTable(native) and Number(self, native.questID, -1, 1000000000) or nil
+	end
+	local peer = self:GetPartyNavigationPeer(name)
+	return peer and peer.questID or nil
+end
+function QT:SelectPartyQuestFocus(name, questID)
+	if self:IsRuntimeRestricted() then return false end
+	if self:IsSelfSender(name) then
+		if self.API.IsOnQuest(questID) ~= true then return false end
+		self:StopPartyQuestFollow()
+		local ok, applied = pcall(self.API.SetPartyNavigationQuest, questID)
+		if ok and applied == true then self:OnPartyNavigationTrackingChanged(); return true end
+		return false
+	end
+	if self:GetPartyQuestFocusID(name) ~= questID then return false end
+	return self:FollowPartyQuestFocus(name)
+end
+
 function QT:GetPartyFocusLabel(name)
 	local p
 	if self:IsSelfSender(name) then

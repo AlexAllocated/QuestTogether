@@ -117,6 +117,11 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		local session = self.partyQuestCompareSession
 		return owner:CreatePartyQuestFilterMenu(frame, function(menuOwner, root)
 			generator(menuOwner, root)
+			if frame.navName then
+				root:CreateButton(L("Preview next focused quest"), function()
+					if self.partyQuestCompareSession == session then self:AdvancePartyQuestFocus(frame.navName) end
+				end)
+			end
 			root:CreateDivider()
 			root:CreateCheckbox(L("Preview incomplete data"), function()
 				return self.incompleteData
@@ -272,15 +277,46 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		self:QueuePartyQuestCompareRender()
 		return true
 	end
+	function preview:GetPartyQuestFocusID(name)
+		local member = self.partyQuestCompareSession and self.partyQuestCompareSession.byName[name]
+		return member and (member.isLocal and (self.previewFocus or member.focusQuestId) or member.focusQuestId)
+	end
 	function preview:GetPartyFocusLabel(name)
+		local id = self:GetPartyQuestFocusID(name)
+		return QUESTS[id] and QUESTS[id].title or L("No focused quest")
+	end
+	function preview:SelectPartyQuestFocus(name, id)
 		local session = self.partyQuestCompareSession
 		local member = session and session.byName[name]
-		if not member then
-			return L("Focus unavailable")
-		end
-		local id = member.isLocal and (self.previewFocus or member.focusQuestId) or member.focusQuestId
-		return QUESTS[id].title
+		if not member or not member.entries[id] then return false end
+		if member.isLocal then
+			self.previewFollowing, self.previewFocus = nil, id
+		elseif member.focusQuestId == id then
+			if session.byName[session.playerName].entries[id] then
+				self.previewFollowing, self.previewFocus = name, id
+			else
+				self.previewFollowing = nil
+				owner:ShowPartyFocusMissingDialog({ name = name, questID = id, title = QUESTS[id].title }, true)
+			end
+		else return false end
+		self:QueuePartyQuestCompareRender()
+		return true
 	end
+	function preview:AdvancePartyQuestFocus(name)
+		local session = self.partyQuestCompareSession
+		local member = session and session.byName[name]
+		if not member or member.isLocal then return end
+		for offset = 1, #QUESTS do
+			local id = (member.focusQuestId + offset - 1) % #QUESTS + 1
+			if member.entries[id] then
+				member.focusQuestId = id
+				if self.previewFollowing == name then self:SelectPartyQuestFocus(name, id) end
+				break
+			end
+		end
+		self:QueuePartyQuestCompareRender()
+	end
+
 	function preview:GetPartyFollowingText()
 		return self.previewFollowing
 				and (string.format(L("Following: %s"), self.previewFollowing) .. (self.previewFollowStatus and ("\n" .. self.previewFollowStatus) or ""))
@@ -301,14 +337,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 			if self.previewFollowing == name then
 				self:StopPartyQuestFollow()
 			else
-				self.previewFollowing = name
-				local id = member.focusQuestId
-				if session.byName[session.playerName].entries[id] then
-					self.previewFocus, self.previewFollowStatus = id, nil
-				else
-					self.previewFollowStatus = L("You don't have this quest")
-				end
-				self:QueuePartyQuestCompareRender()
+				self:SelectPartyQuestFocus(name, member.focusQuestId)
 			end
 		end)
 	end

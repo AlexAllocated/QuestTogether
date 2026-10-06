@@ -65,6 +65,11 @@ local function Fixture(name)
 			return a.sendResult or 0
 		end,
 	}
+	function a:QueuePartyFocusMissingNotice(name, id, title)
+		self.notice = { name = name, questID = id, title = title }
+		self.noticeCount = (self.noticeCount or 0) + 1
+	end
+	function a:ClearPartyFocusMissingNotice() self.notice = nil end
 	function a:GetOption(key)
 		return self.options[key]
 	end
@@ -203,7 +208,7 @@ QT:RegisterTest("party quest following applies once and stops for external navig
 	Equal(a.partyNavigationState.following, nil)
 	Equal(a.native.questID, 1)
 end)
-QT:RegisterTest("party focus pauses for missing quests restrictions and rejected native changes", function()
+QT:RegisterTest("party focus stops for missing quests and defers restricted native changes", function()
 	local a, b = Pair()
 	b.native.questID = 2
 	b:QueuePartyNavigationUpdate()
@@ -212,8 +217,15 @@ QT:RegisterTest("party focus pauses for missing quests restrictions and rejected
 	a.owned[2] = nil
 	assert(a:FollowPartyQuestFocus(b.name))
 	Equal(#a.writes, 0)
-	Equal(a.partyNavigationState.followStatus, "You don't have this quest")
-	a.owned[2], a.blocked = 2, true
+	Equal(a.partyNavigationState.following, nil)
+	Equal(a.notice.questID, 2)
+	a:Tick()
+	Equal(a.noticeCount, 1)
+	a, b = Pair()
+	assert(a:FollowPartyQuestFocus(b.name))
+	a.blocked = true
+	b.native.questID = 2
+	b:QueuePartyNavigationUpdate(); b:Tick(); b:Deliver(a)
 	a:Tick()
 	Equal(#a.writes, 0)
 	a.blocked, a.reject = false, true
@@ -235,7 +247,7 @@ QT:RegisterTest("party focus pauses for missing quests restrictions and rejected
 	Equal(a.native.questID, 2)
 	Equal(a.partyNavigationState.followStatus, "No focused quest")
 end)
-QT:RegisterTest("party follow cycles departures expiry and disabling clear owned state", function()
+QT:RegisterTest("party follow cycles and departures stop while expired snapshots wait", function()
 	local a, b = Pair()
 	assert(a:FollowPartyQuestFocus(b.name))
 	a:Tick()
@@ -244,7 +256,8 @@ QT:RegisterTest("party follow cycles departures expiry and disabling clear owned
 	a:Tick(91)
 	b:Deliver(a, 1)
 	Equal(a:GetPartyNavigationPeer(b.name), nil)
-	Equal(a.partyNavigationState.following, nil)
+	Equal(a.partyNavigationState.following, b.name)
+	Equal(a.partyNavigationState.followStatus, "Waiting for quest focus")
 	Equal(#a:GetPartyWaypointRows(), 0)
 	b:Tick(1)
 	b:Tick(30)
@@ -369,16 +382,16 @@ QT:RegisterTest("party focus native failures refresh UI once without retrying", 
 	function a:QueuePartyQuestCompareRender()
 		self.renders = self.renders + 1
 	end
-	a.owned[2] = nil
+	a.reject = true
 	b.native.questID = 2
 	b:QueuePartyNavigationUpdate()
 	b:Tick()
 	b:Deliver(a)
 	a:Tick()
 	local renders = a.renders
-	a.owned[2], a.reject = 2, true
+	a.reject = true
 	a:Tick()
-	assert(a.renders > renders)
+	Equal(a.renders, renders)
 	Equal(a.partyNavigationState.followStatus, "Unable to track this quest")
 	Equal(#a.writes, 1)
 	a:Tick()
@@ -459,4 +472,94 @@ QT:RegisterTest("tracking changes refresh open local PQL without sending party m
 	a.native.questID = 0
 	a:OnPartyNavigationTrackingChanged()
 	Equal(a.renderedFocus, "No focused quest")
+end)
+
+QT:RegisterTest("party follow restores per character only after fresh validated data and survives silence", function()
+	local a, b = Pair()
+	a.db, a.activeCharacterKey = { global = {} }, "Me"
+	assert(a:FollowPartyQuestFocus(b.name))
+	Equal(a.db.global.partyQuestFollowByCharacter.Me, b.name)
+	local restored = Fixture()
+	restored.db, restored.activeCharacterKey = a.db, "Me"
+	restored:Tick(0)
+	Equal(restored.partyNavigationState.following, b.name)
+	Equal(#restored.writes, 0)
+	-- Native startup events must not cancel restoration before the first snapshot.
+	restored:OnPartyNavigationTrackingChanged()
+	restored:Tick()
+	b.native.questID = 2
+	b:QueuePartyNavigationUpdate(); b:Tick(); b:Deliver(restored)
+	Equal(restored.native.questID, 2)
+	Equal(#restored.writes, 1)
+	restored:Tick(91)
+	Equal(restored.partyNavigationState.following, b.name)
+	Equal(restored.db.global.partyQuestFollowByCharacter.Me, b.name)
+	b:Tick(95); b:Deliver(restored)
+	Equal(#restored.writes, 1)
+	local other = Fixture()
+	other.db, other.activeCharacterKey = a.db, "Other"
+	Equal(other:GetPartyNavigationState().following, nil)
+	restored:Roster(restored.name)
+	restored:ReconcilePartyQuestFollow()
+	Equal(restored.partyNavigationState.following, nil)
+	Equal(restored.db.global.partyQuestFollowByCharacter.Me, nil)
+end)
+QT:RegisterTest("missing focus stops persisted following once without changing navigation", function()
+	local a, b = Pair()
+	a.db, a.activeCharacterKey = { global = {} }, "Me"
+	assert(a:FollowPartyQuestFocus(b.name))
+	a.owned[2] = nil
+	b.native.questID = 2
+	b:QueuePartyNavigationUpdate(); b:Tick(); b:Deliver(a)
+	Equal(a.native.questID, 1)
+	Equal(a.partyNavigationState.following, nil)
+	Equal(a.db.global.partyQuestFollowByCharacter.Me, nil)
+	Equal(a.notice.name, b.name)
+	Equal(a.notice.questID, 2)
+	b:Tick(35); b:Deliver(a); a:Tick()
+	Equal(a.noticeCount, 1)
+end)
+QT:RegisterTest("own PQL focus selection stops following and validates ownership and restrictions", function()
+	local a, b = Pair()
+	assert(a:FollowPartyQuestFocus(b.name))
+	assert(a:SelectPartyQuestFocus(a.name, 2))
+	Equal(a.native.questID, 2)
+	Equal(a.partyNavigationState.following, nil)
+	Equal(a:GetPartyQuestFocusID(a.name), 2)
+	Equal(a:SelectPartyQuestFocus(a.name, 99), false)
+	Equal(a:SelectPartyQuestFocus(b.name, 2), false)
+	a.blocked = true
+	Equal(a:SelectPartyQuestFocus(a.name, 1), false)
+	Equal(a.native.questID, 2)
+end)
+QT:RegisterTest("unavailable focus preserves intent but ignore raid and disable clear saved follows", function()
+	for _, reason in ipairs({ "ignore", "raid", "disable", "manual" }) do
+		local a, b = Pair()
+		a.db, a.activeCharacterKey = { global = {} }, "Me"
+		assert(a:FollowPartyQuestFocus(b.name))
+		b.options.sharePartyFocus = false
+		b:QueuePartyNavigationUpdate(); b:Tick(); b:Deliver(a)
+		Equal(a.partyNavigationState.following, b.name)
+		if reason == "ignore" then a.ignored[b.name] = true; a:Tick()
+		elseif reason == "raid" then a.raid = true; a:Tick()
+		elseif reason == "disable" then a:ResetPartyNavigation()
+		else a.native.questID = 2; a:OnPartyNavigationTrackingChanged(); a:Tick() end
+		Equal(a.db.global.partyQuestFollowByCharacter.Me, nil)
+	end
+end)
+
+QT:RegisterTest("manual navigation during reload recovery cancels follow before peer arrives", function()
+	local a, b = Pair()
+	a.db, a.activeCharacterKey = { global = {} }, "Me"
+	assert(a:FollowPartyQuestFocus(b.name))
+	local restored = Fixture()
+	restored.db, restored.activeCharacterKey = a.db, "Me"
+	restored:Tick()
+	restored.native.questID = 2
+	restored:OnPartyNavigationTrackingChanged()
+	b:Tick(30); b:Deliver(restored)
+	Equal(restored.native.questID, 2)
+	Equal(restored.partyNavigationState.following, nil)
+	Equal(restored.db.global.partyQuestFollowByCharacter.Me, nil)
+	Equal(#restored.writes, 0)
 end)

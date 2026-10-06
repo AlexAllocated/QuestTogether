@@ -276,6 +276,7 @@ function QuestTogether:ShowDialogPreview(kind)
 		self:Print(L("Dialog previews are unavailable while UI restrictions are active."))
 		return false
 	end
+	if kind == "focus" then return self:ShowPartyFocusMissingDialog({ name = L("Example Player"), questID = 1, title = L("Example Quest") }, true) end
 	if kind == "partychat" then return self:ShowPartyChatReminderPreview() end
 	if kind == "discord" then return self:OpenDiscordSupport() end
 	if kind == "bubble" then return self:ShowPersonalBubbleSettingsPreview() end
@@ -315,5 +316,67 @@ function QuestTogether:FitScrollDialog(frame)
 		sizes[#sizes + 1] = value
 	end
 	frame:SetScale(math.min(self:GetWindowScale(), sizes[1] * 0.94 / frame:GetWidth(), sizes[2] * 0.94 / frame:GetHeight()))
+	return true
+end
+
+function QuestTogether:ClearPartyFocusMissingNotice()
+	self.partyFocusMissingNotice = nil
+	local frame = rawget(self, "partyFocusMissingDialog")
+	if frame and self.LibChev.CanMutateOwnedRegion(frame) then frame:Hide() end
+end
+
+function QuestTogether:QueuePartyFocusMissingNotice(name, questID, title)
+	local notice = { name = name, questID = questID, title = title }
+	self.partyFocusMissingNotice = notice
+	self:ScheduleDeferredWork("foreign_frame_mutation", "party_focus_missing", function()
+		if self.isEnabled and rawget(self, "partyFocusMissingNotice") == notice then
+			self:ShowPartyFocusMissingDialog(notice)
+		end
+	end, 0, "party focus missing quest")
+end
+
+function QuestTogether:ShowPartyFocusMissingDialog(notice, preview)
+	if self:IsWorkBlocked("foreign_frame_mutation") then return false end
+	local key = preview and "partyFocusMissingPreview" or "partyFocusMissingDialog"
+	local frame = rawget(self, key)
+	if not frame then
+		frame = self:CreateScrollDialog(650, 310, L("Quest following stopped"))
+		if not frame then return false end
+		self[key] = frame
+		frame.message = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+		frame.message:SetPoint("TOPLEFT", frame.contentInset, -frame.contentTop)
+		frame.message:SetWidth(frame.contentWidth)
+		frame.message:SetJustifyH("LEFT")
+		frame.message:SetWordWrap(true)
+		self:AddScrollDialogLabel(frame, frame.message)
+		local function Close()
+			if not preview then self.partyFocusMissingNotice = nil end
+			if self.LibChev.CanMutateOwnedRegion(frame) then frame:Hide() end
+		end
+		frame.escapeAction = Close
+		frame.close = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelCloseButton")
+		frame.close:SetPoint("TOPRIGHT", -12, -8)
+		frame.close:SetScript("OnClick", Close)
+		frame.open = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelButtonTemplate")
+		frame.open:SetSize(240, 26)
+		frame.open:SetPoint("BOTTOMRIGHT", -frame.contentInset, frame.contentBottom)
+		frame.open:SetText(L("Open Party Quest Log"))
+		frame.open:SetScript("OnClick", function()
+			if self:IsWorkBlocked("foreign_frame_mutation") then return end
+			if preview then self:OpenPartyQuestComparePreview()
+			else self:OpenPartyQuestCompare() end
+			Close()
+		end)
+	end
+	if not self.LibChev.CanMutateOwnedRegion(frame) or not self.LibChev.CanMutateOwnedRegion(frame.message) then return false end
+	local title = preview and notice.title or self:GetLocalizedQuestTitle(notice.questID)
+		or (notice.title and notice.title ~= "" and notice.title) or self:GetQuestTitle(notice.questID)
+	frame.message:SetText(string.format(L("%s is tracking %s, which you don't have. Following has stopped. Your current navigation is unchanged.\n\nOpen Party Quest Log to request the quest, then follow this player again."), notice.name, title)
+		.. (preview and ("\n\n" .. L("Preview - no settings will change.")) or ""))
+	frame.message:SetHeight(frame.message:GetStringHeight())
+	frame:SetHeight(math.max(280, frame.contentTop + frame.message:GetStringHeight() + frame.contentBottom + 54))
+	self:ApplyScrollDialogTheme(frame)
+	self:FitScrollDialog(frame)
+	frame:Show(); frame:Raise()
 	return true
 end

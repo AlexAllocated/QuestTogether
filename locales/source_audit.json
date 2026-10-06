@@ -530,13 +530,16 @@
       "CENTER",
       "DIALOG",
       "Frame",
+      "HIGHLIGHT",
       "HORIZONTAL",
+      "Have",
       "Hide",
       "LEFT",
       "MEDIUM",
       "MIDDLE",
       "OVERLAY",
       "RIGHT",
+      "Ready",
       "Show",
       "Slider",
       "TOP",
@@ -627,7 +630,9 @@
       "RIGHT",
       "TOP",
       "TOPLEFT",
+      "TOPRIGHT",
       "party compare preview theme",
+      "party focus missing quest",
       "scroll dialog themes"
     ]
   }

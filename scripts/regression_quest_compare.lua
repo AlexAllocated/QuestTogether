@@ -721,6 +721,7 @@ local function Frame(parent)
 	function methods:Hide()
 		SetShown(self, false)
 	end
+	function methods:SetAtlas(atlas) self.atlas = atlas end
 	-- These presentation-only methods are intentionally stubbed; behavioral
 	-- methods above are implemented and all other method names are rejected.
 	for _, name in ipairs({
@@ -982,7 +983,7 @@ QuestTogether:RegisterTest(
 		Equal(frame.horizontal:IsShown(), false)
 		a:RenderPartyQuestCompare()
 		Equal(frame.vertical:IsShown(), false) -- Exactly one full page fits.
-		Reply(a, "Friend-Realm", { Quest(14) }, true, true)
+		Reply(a, "Friend-Realm", { Quest(14), Quest(15) }, true, true)
 		a:RenderPartyQuestCompare()
 		Equal(frame.vertical:IsShown(), true)
 		Equal(frame.horizontal:IsShown(), false)
@@ -1065,7 +1066,7 @@ QuestTogether:RegisterTest("party diff UI renders a bounded row pool and filter 
 	Reply(a, "Friend-Realm", { Quest(2, "Request me", true) }, true, true)
 	a:RenderPartyQuestCompare()
 	local frame = a.partyQuestCompareWindow
-	Equal(#frame.rows, 24)
+	Equal(#frame.rows, 26)
 	Equal(frame.title.text, "Party Quest Log")
 	Equal(frame.filter.text, "Filters")
 	Equal(frame.filter.text, "Filters")
@@ -1187,7 +1188,7 @@ QuestTogether:RegisterTest("compare debug command renders the full mock UI witho
 	local frame = preview.partyQuestCompareWindow
 	Equal(frame.shown, true)
 	Equal(frame.title.text, "Party Quest Log — Debug Preview")
-	Equal(#frame.rows, 24)
+	Equal(#frame.rows, 26)
 	Equal(#preview.partyQuestCompareSession.members, 5)
 	Equal(preview.partyQuestCompareSession.members[4].classFile, "HUNTER")
 	Equal(preview.partyQuestCompareSession.members[5].classFile, "ROGUE")
@@ -2495,13 +2496,13 @@ QuestTogether:RegisterTest(
 		Equal(p.partyQuestCompareSession.expandedQuestIds[id], true)
 		Equal(#p:BuildPartyQuestDiffRows(), count)
 		assert(#p:BuildPartyQuestCompareDisplayRows(p:BuildPartyQuestDiffRows()) > count)
-		Equal(#frame.rows, 24)
+		Equal(#frame.rows, 26)
 		Equal(frame.rows[2].data.kind, "member")
 		Equal(frame.rows[3].data.kind, "objective")
 		Equal(frame.rows[3].action:IsShown(), false)
 		Equal(frame.rows[3].hint.text, "2/8")
 		frame.vertical:SetValue(5 * 42)
-		Equal(#frame.rows, 24)
+		Equal(#frame.rows, 26)
 		Equal(#a.wire, 0)
 		frame.vertical:SetValue(0)
 		frame.rows[1].scripts.OnMouseUp(frame.rows[1], "LeftButton")
@@ -2718,7 +2719,7 @@ QuestTogether:RegisterTest(
 		Equal(p.partyQuestCompareSession.scrollPixels, target)
 		Equal(frame.scripts.OnUpdate, nil)
 		Equal(frame.headers[1].text, header)
-		Equal(#frame.rows, 24)
+		Equal(#frame.rows, 26)
 		p.BuildPartyQuestDiffRows = build
 		frame.viewport.scripts.OnMouseWheel(frame.viewport, -1)
 		p:SetPartyQuestCompareFilter("search", "Herbalist")
@@ -3047,7 +3048,7 @@ QuestTogether:RegisterTest(
 		Equal(frame:GetWidth(), originalWidth)
 		Equal(frame:GetHeight(), originalHeight)
 		frame:SetSize(1600, 1100)
-		Equal(frame.rowsViewport:GetHeight(), 842)
+		Equal(frame.rowsViewport:GetHeight(), 866)
 		Equal(frame.viewport:GetWidth(), 1538)
 		Equal(#frame.rows, 44)
 		Equal(frame.horizontal:IsShown(), false)
@@ -3056,7 +3057,7 @@ QuestTogether:RegisterTest(
 		frame:SetSize(100, 100) -- Native resize bounds, modeled by the private fixture.
 		Equal(frame:GetWidth(), 1222)
 		Equal(frame:GetHeight(), 500)
-		Equal(frame.rowsViewport:GetHeight(), 242)
+		Equal(frame.rowsViewport:GetHeight(), 266)
 		Equal(frame.footer, nil)
 		Equal(frame.detail, nil)
 		Equal(frame.horizontal:IsShown(), false)
@@ -3292,7 +3293,8 @@ QuestTogether:RegisterTest("quest log focus preview follows stops and preserves 
 	p:PopulatePartyFocusMenu(menu, "Borin-AeriePeak")
 	menu.click()
 	Equal(p.previewFocus, 2)
-	assert(frame.followStatus.text:find("You don't have this quest", 1, true))
+	Equal(p.previewFollowing, nil)
+	assert(a.partyFocusMissingPreview:IsShown())
 	p:PopulatePartyFocusMenu(menu, "Celia-AeriePeak")
 	menu.click()
 	Equal(p.previewFocus, 5)
@@ -3300,7 +3302,8 @@ QuestTogether:RegisterTest("quest log focus preview follows stops and preserves 
 	p:PopulatePartyFocusMenu(menu, "Dara-AeriePeak")
 	menu.click()
 	Equal(p.previewFocus, 5)
-	assert(frame.followStatus.text:find("You don't have this quest", 1, true))
+	Equal(p.previewFollowing, nil)
+	assert(a.partyFocusMissingPreview:IsShown())
 	p:StopPartyQuestFollow()
 	Equal(p:GetPartyFollowingText(), "")
 	p:RefreshPartyQuestCompare()
@@ -3599,4 +3602,82 @@ QuestTogether:RegisterTest("reduced motion preview changes expansion and scrolli
  assert(not f.expansions and not f.expansionAnimator.scripts.OnUpdate)
  f.rowsViewport.scripts.OnMouseWheel(f.rowsViewport, -1)
  assert(p.partyQuestCompareSession.scrollPixels > 0 and not f.scripts.OnUpdate)
+end)
+
+QuestTogether:RegisterTest("PQL cell buttons select local focus and follow only current selected remote focus", function()
+	local a = PreviewFixture()
+	a:OpenPartyQuestComparePreview()
+	local p = a.partyQuestComparePreview
+	local frame = p.partyQuestCompareWindow
+	local function Find(id)
+		for _, row in ipairs(frame.rows) do if row.data and not row.data.kind and row.data.questId == id then return row end end
+		error("quest not visible")
+	end
+	local row = Find(2)
+	local own, remote = row.focusCells[1], row.focusCells[2]
+	assert(not own.selected and remote.selected)
+	Equal(remote.normal.atlas, "UI-QuestPoi-QuestNumber-SuperTracked")
+	own.scripts.OnClick()
+	Equal(p.previewFocus, 2)
+	assert(own.selected)
+	remote.scripts.OnClick()
+	Equal(p.previewFollowing, p.partyQuestCompareSession.members[2].name)
+	local unchanged = Find(13).focusCells[2]
+	assert(not unchanged.selected)
+	unchanged.scripts.OnClick()
+	Equal(p.previewFocus, 2)
+	p:AdvancePartyQuestFocus(p.previewFollowing)
+	Equal(p.previewFocus, 3)
+	Find(13).focusCells[1].scripts.OnClick()
+	Equal(p.previewFocus, 13)
+	Equal(p.previewFollowing, nil)
+	Equal(#a.wire, 0)
+	local stale = row.focusCells[1]
+	p:CancelPartyQuestCompare()
+	stale.scripts.OnClick()
+	Equal(p.previewFocus, 13)
+end)
+QuestTogether:RegisterTest("missing focus dialog preview is isolated and opens only mock PQL", function()
+	local a = PreviewFixture()
+	local live = { name = "Live", questID = 999 }
+	a.partyFocusMissingNotice = live
+	assert(a:HandleSlashCommand("preview focus"))
+	local frame = a.partyFocusMissingPreview
+	assert(frame:IsShown())
+	assert(frame.message.text:find("Following has stopped", 1, true))
+	assert(frame.message.points[1][2] >= 40)
+	a.blocked = true
+	frame.open.scripts.OnClick()
+	assert(not a.partyQuestComparePreview)
+	a.blocked = false
+	frame.open.scripts.OnClick()
+	assert(a.partyQuestComparePreview.partyQuestCompareWindow:IsShown())
+	assert(not frame:IsShown())
+	Equal(a.partyFocusMissingNotice, live)
+	Equal(#a.wire, 0)
+end)
+
+QuestTogether:RegisterTest("missing focus notices defer during restrictions and discard superseded callbacks", function()
+	local a = Fixture()
+	AttachUI(a)
+	function a:GetLocalizedQuestTitle() return "Local quest title" end
+	function a:OpenPartyQuestCompare() self.openedForMissing = true; return true end
+	a.blocked = true
+	a:QueuePartyFocusMissingNotice("Friend-Realm", 1, "Remote title")
+	a:Advance(0.1)
+	assert(not rawget(a, "partyFocusMissingDialog"))
+	a:ClearPartyFocusMissingNotice()
+	a.blocked = false
+	a:FlushDeferredWork("test resume")
+	assert(not rawget(a, "partyFocusMissingDialog"))
+	a:QueuePartyFocusMissingNotice("Friend-Realm", 2, "Remote title")
+	a:Advance(0.1)
+	local frame = a.partyFocusMissingDialog
+	assert(frame:IsShown())
+	assert(frame.message.text:find("Local quest title", 1, true))
+	frame.open.scripts.OnClick()
+	assert(a.openedForMissing)
+	Equal(a.partyFocusMissingNotice, nil)
+	assert(not frame:IsShown())
+	Equal(#a.wire, 0)
 end)
