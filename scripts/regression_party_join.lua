@@ -395,6 +395,12 @@ local function Frame()
 		"EnableMouse",
 		"RegisterForDrag",
 		"SetTexture",
+		"SetTexCoord",
+		"SetVertexColor",
+		"SetTextColor",
+		"SetJustifyV",
+		"SetMaxLines",
+		"SetWordWrap",
 		"SetHorizTile",
 		"SetVertTile",
 		"SetJustifyH",
@@ -428,6 +434,7 @@ local function Frame()
 	function f:GetWidth()
 		return self.width
 	end
+	function f:GetStringHeight() return 28 end
 	function f:GetHeight()
 		return self.height
 	end

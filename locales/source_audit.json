@@ -150,6 +150,7 @@
       "Wrapperactivequesticon",
       "Wrapperavailablequesticon",
       "Yes",
+      "announcement ",
       "devLogAllAnnouncements = ",
       "dump ",
       "empty quest snapshot. totalEntries=",
@@ -456,9 +457,12 @@
       "A Long Way from Home",
       "A Shipment Gone Missing",
       "An Old Family Heirloom",
+      "Aria Frostwind",
       "Awaiting confirmation",
       "Bandits on the Coast Road",
       "Beneath the Breakwater",
+      "Borin Ironvale",
+      "Celia Wildwood",
       "Check the damaged fence",
       "Coastal bandits defeated",
       "Collect courier satchels",
@@ -466,6 +470,7 @@
       "Collect overdue payments",
       "Collect scattered ledger pages",
       "Collect smuggler markings",
+      "Dara Nightfall",
       "Defeat creatures beneath the breakwater",
       "Deliver supplies to the watch",
       "Find the bandit camp",
@@ -474,6 +479,7 @@
       "Gather coastal herbs",
       "Gather lengths of twine",
       "Gather watch supplies",
+      "HUNTER",
       "Have",
       "Inspect the abandoned tools",
       "Inspect the flooded tunnel",
@@ -485,6 +491,7 @@
       "Orchard wolves defeated",
       "PALADIN",
       "Quarry prowlers defeated",
+      "ROGUE",
       "Ready",
       "Recover heirloom fragments",
       "Recover lost belongings",
@@ -493,6 +500,7 @@
       "Return to the herbalist",
       "Return to the innkeeper",
       "Return to the miller",
+      "Rowan Lightward",
       "Search the wrecked wagon",
       "Share attempted",
       "Signs of the Smugglers",
@@ -507,6 +515,7 @@
       "Wolves at the Orchard"
     ],
     "QuestCompareWindow.lua": [
+      "ADD",
       "ARTWORK",
       "BACKGROUND",
       "BORDER",
@@ -522,7 +531,6 @@
       "MEDIUM",
       "MIDDLE",
       "OVERLAY",
-      "REPEAT",
       "RIGHT",
       "Show",
       "Slider",
@@ -593,7 +601,23 @@
       "Frame"
     ],
     "WindowTheme.lua": [
-      "party compare preview theme"
+      "ARTWORK",
+      "BACKGROUND",
+      "BOTTOM",
+      "BOTTOMLEFT",
+      "BOTTOMRIGHT",
+      "Button",
+      "CENTER",
+      "DIALOG",
+      "Frame",
+      "LEFT",
+      "MIDDLE",
+      "OVERLAY",
+      "RIGHT",
+      "TOP",
+      "TOPLEFT",
+      "party compare preview theme",
+      "scroll dialog themes"
     ]
   }
 }

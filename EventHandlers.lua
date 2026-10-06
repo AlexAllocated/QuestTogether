@@ -494,6 +494,10 @@ function QuestTogether:HandleGroupRosterChanged(reason)
 	if self.isEnabled and rawget(self, "geographicCommsState") then self:BroadcastPartyVisualMetadata() end
 	if self.isEnabled and self.partyRosterFingerprint ~= previousFingerprint and self.OnPartyQuestRosterChanged then
 		self:OnPartyQuestRosterChanged()
+	elseif self.isEnabled and self.partyQuestCompareSession then
+		-- Leadership can change without changing membership. Refresh the crown
+		-- from native group state without requesting new quest snapshots.
+		self:QueuePartyQuestCompareRender()
 	end
 	if self.isEnabled and self.partyRosterFingerprint ~= previousFingerprint and self.InvalidateNameplateQuestState then
 		-- Tooltip quest evidence includes unfinished objectives owned by grouped

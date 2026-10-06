@@ -306,23 +306,25 @@ QuestTogether:RegisterTest(
 		for _, click in ipairs({ "LeftButton", "RightButton" }) do
 			button.scripts.OnClick(button, click)
 		end
-		Equal(#a.menus, 2)
+		Equal(#a.menus, 1)
+		Equal(a.compares, 1)
 		local entries = a.menus[1].entries
-		Equal(#entries, 8)
+		Equal(#entries, 9)
 		Equal(entries[1].label, "Looking for Questing Partners")
 		Equal(entries[1].isSelected(), false)
 		assert(entries[2].divider)
 		Equal(entries[3].label, "Party Quest Log")
-		Equal(entries[4].label, "Open Quest Journal")
+		Equal(entries[4].label, "Open Quest Log")
 		assert(entries[5].divider)
-		Equal(entries[6].label, "Patch Notes")
-		Equal(entries[7].label, "Move QuestTogether Logs to Separate Window")
-		Equal(entries[8].label, "Hide Minimap Icon")
-		for _, index in ipairs({ 3, 4, 6, 7 }) do
+		Equal(entries[6].label, "Settings")
+		Equal(entries[7].label, "Patch Notes")
+		Equal(entries[8].label, "Move QuestTogether Logs to Separate Window")
+		Equal(entries[9].label, "Hide Minimap Icon")
+		for _, index in ipairs({ 3, 4, 6, 7, 8 }) do
 			entries[index].callback()
 		end
-		Equal(a.settings, 0)
-		Equal(a.compares, 1)
+		Equal(a.settings, 1)
+		Equal(a.compares, 2)
 		Equal(a.journals, 1)
 		Equal(a.notes, 1)
 		Equal(a.chatDrafts, nil)
@@ -330,8 +332,8 @@ QuestTogether:RegisterTest(
 		assert(a.separateOpened)
 		local menu = Menu()
 		a:PopulateMinimapMenu(menu)
-		Equal(menu.entries[7].label, "Move QuestTogether Logs to Main Window")
-		menu.entries[7].callback()
+		Equal(menu.entries[8].label, "Move QuestTogether Logs to Main Window")
+		menu.entries[8].callback()
 		Equal(a:GetOption("chatLogDestination"), "main")
 		Equal(a.separateOpened, false)
 	end
@@ -343,13 +345,13 @@ QuestTogether:RegisterTest("minimap stale menu actions recheck restrictions and 
 	a:ShowMinimapMenu(a.minimapButton)
 	local menu = a.menus[1]
 	a.blocked = true
-	for _, index in ipairs({ 1, 3, 4, 6 }) do
+	for _, index in ipairs({ 1, 3, 4, 6, 7 }) do
 		menu.entries[index].callback()
 	end
 	Equal(a.chatDrafts, nil)
-	menu.entries[7].callback()
-	local messages = #a.messages
 	menu.entries[8].callback()
+	local messages = #a.messages
+	menu.entries[9].callback()
 	Equal(#a.messages, messages)
 	Equal(a:GetOption("showMinimapButton"), true)
 	assert(a.minimapButton.shown)
@@ -365,11 +367,12 @@ QuestTogether:RegisterTest("minimap stale menu actions recheck restrictions and 
 	local disabled = Menu()
 	a:PopulateMinimapMenu(disabled)
 	Equal(disabled.entries[3].enabled, false)
-	assert(disabled.entries[6].enabled and disabled.entries[4].enabled)
+	assert(disabled.entries[7].enabled and disabled.entries[4].enabled)
 	disabled.entries[6].callback()
+	disabled.entries[7].callback()
 	Equal(a.notes, 1)
 	disabled.entries[4].callback()
-	Equal(a.settings, 0)
+	Equal(a.settings, 1)
 	Equal(a.journals, 1)
 	a.journalAvailable = false
 	menu.entries[4].callback()
@@ -413,23 +416,74 @@ QuestTogether:RegisterTest("minimap shift clicks toggle partners while normal an
 	local click = a.minimapButton.scripts.OnClick
 	click(nil, "LeftButton")
 	click(nil, "RightButton")
-	Equal(#a.menus, 2)
+	Equal(#a.menus, 1)
+	Equal(a.compares, 1)
 	a.shift = true
 	click(nil, "LeftButton")
 	Equal(a:GetOption("lookingForQuestPartners"), true)
 	click(nil, "RightButton")
 	Equal(a:GetOption("lookingForQuestPartners"), false)
-	Equal(#a.menus, 2)
+	Equal(#a.menus, 1)
+	Equal(a.compares, 1)
 	a.minimapSuppressClick = true
 	click(nil, "LeftButton")
 	Equal(a:GetOption("lookingForQuestPartners"), false)
+	a.shift = false
+	a.minimapSuppressClick = true
+	click(nil, "LeftButton")
+	Equal(a.compares, 1)
 	a.blocked = true
 	click(nil, "LeftButton")
 	Equal(a:GetOption("lookingForQuestPartners"), false)
 	a.blocked, a.anchor.forbidden = false, true
 	click(nil, "LeftButton")
 	Equal(a:GetOption("lookingForQuestPartners"), false)
-	Equal(#a.menus, 2)
+	Equal(#a.menus, 1)
+	Equal(a.compares, 1)
+end)
+
+QuestTogether:RegisterTest("minimap left click closes an open quest log or preview before reopening", function()
+	local a = Fixture()
+	a:InitializeMinimapLauncher()
+	local window = Frame()
+	window:Hide()
+	a.partyQuestCompareWindow = window
+	function a:OpenPartyQuestCompare()
+		self.compares = self.compares + 1
+		self.partyQuestCompareSession = {}
+		window:Show()
+	end
+	function a:CancelPartyQuestCompare()
+		self.partyQuestCompareSession = nil
+	end
+	local click = a.minimapButton.scripts.OnClick
+	click(nil, "LeftButton")
+	assert(window:IsShown() and a.partyQuestCompareSession)
+	click(nil, "RightButton")
+	Equal(#a.menus, 1)
+	assert(window:IsShown())
+	click(nil, "LeftButton")
+	assert(not window:IsShown())
+	Equal(a.partyQuestCompareSession, nil)
+	Equal(a.compares, 1)
+	click(nil, "LeftButton")
+	Equal(a.compares, 2)
+	assert(window:IsShown())
+	a.blocked = true
+	click(nil, "LeftButton")
+	assert(window:IsShown())
+	a.blocked = false
+	click(nil, "LeftButton")
+	local preview = { partyQuestCompareWindow = Frame(), partyQuestCompareSession = {} }
+	function preview:CancelPartyQuestCompare() self.partyQuestCompareSession = nil end
+	a.partyQuestComparePreview = preview
+	click(nil, "LeftButton")
+	assert(not preview.partyQuestCompareWindow:IsShown())
+	Equal(preview.partyQuestCompareSession, nil)
+	Equal(a.compares, 2)
+	click(nil, "LeftButton")
+	Equal(a.compares, 3)
+	assert(window:IsShown())
 end)
 
 QuestTogether:RegisterTest("minimap tooltip refreshes status without reading quest counts or recreating frames", function()
@@ -442,7 +496,7 @@ QuestTogether:RegisterTest("minimap tooltip refreshes status without reading que
 	local tooltip = a.minimapTooltip
 	local frames = #a.frames
 	local text = tooltip.qtStatus.text
-	for _, part in ipairs({ "QT Version: 5.16.7", "QT Chat Scope: Global", "Nearby Range: 25%", "Shift-click", "Share my location", "Looking for Questing Partners" }) do
+	for _, part in ipairs({ "QT Version: 5.16.7", "QT Chat Scope: Global", "Nearby Range: 25%", "Left-click to toggle Party Quest Log", "Right-click for menu", "Shift-click", "Share my location", "Looking for Questing Partners" }) do
 		assert(text:find(part, 1, true), part)
 	end
 	a.db.profile.qtChatScope = "zone_only"
@@ -512,7 +566,7 @@ QuestTogether:RegisterTest(
 		a:InitializeMinimapLauncher()
 		a:ShowMinimapMenu(a.minimapButton)
 		a:ShowMinimapTooltip(a.minimapButton)
-		a.menus[1].entries[8].callback()
+		a.menus[1].entries[9].callback()
 		Equal(a:GetOption("showMinimapButton"), false)
 		Equal(a.minimapButton.shown, false)
 		Equal(a.minimapTooltip.shown, false)
@@ -528,7 +582,7 @@ QuestTogether:RegisterTest(
 		function a:SetOption()
 			return false
 		end
-		a.menus[1].entries[8].callback()
+		a.menus[1].entries[9].callback()
 		Equal(#a.messages, 1)
 		Equal(refreshed, 1)
 	end
@@ -625,6 +679,7 @@ QuestTogether:RegisterTest(
 			Equal(button.scripts.OnUpdate, nil)
 			button.scripts.OnClick(button, "LeftButton")
 			Equal(#a.menus, 0)
+			Equal(a.compares, 0)
 		end
 		button.scripts.OnMouseDown()
 		button.scripts.OnClick(button, "RightButton")

@@ -2157,8 +2157,10 @@ end
 QuestTogether:RegisterTest("bubbletest slash accepts full regional quoted and legacy identities", function()
 	for _, command in ipairs({
 		"bubbletest Anakin Othername hello there",
+		"preview announcement Anakin Othername hello there",
 		"bubbletest Anakin   Othername hello there",
 		'bubbletest "Anakin Othername" hello there',
+		'preview announcement "Anakin Othername" hello there',
 		"bubbletest Anakin-Othername hello there",
 	}) do
 		local addon = NewBubbleSlashFixture(true, false)
@@ -2178,7 +2180,9 @@ QuestTogether:RegisterTest("bubbletest slash retains retail single-token and quo
 	for _, command in ipairs({
 		"bubbletest Target hello there",
 		"bubbletest Target-Realm hello there",
+		"preview announcement Target-Realm hello there",
 		'bubbletest "Target-Realm" hello there',
+		'preview announcement "Target-Realm" hello there',
 	}) do
 		local addon = NewBubbleSlashFixture(false, false)
 		addon:HandleSlashCommand(command)
@@ -2191,8 +2195,8 @@ end)
 QuestTogether:RegisterTest("bubbletest slash keeps complete target text including quotes and player-like words", function()
 	for _, regional in ipairs({ false, true }) do
 		local addon = NewBubbleSlashFixture(regional, true)
-		local text = '"Anakin Othername" hello there'
-		addon:HandleSlashCommand("bubbletest " .. text)
+		local text = '"Anakin Othername" Hello THERE'
+		addon:HandleSlashCommand("preview ANNOUNCEMENT " .. text)
 		Equal(#addon.bubbles, 1)
 		Equal(addon.bubbles[1], text)
 		Equal(#addon.wire, 0)
@@ -2206,7 +2210,7 @@ QuestTogether:RegisterTest("bubbletest slash rejects malformed names empty text 
 			addon:HandleSlashCommand("bubbletest " .. arguments)
 			Equal(#addon.bubbles, 0)
 			Equal(#addon.wire, 0)
-			Equal(addon.messages[#addon.messages], 'Usage without a target: /qt bubbletest "<player>" <text>')
+			Equal(addon.messages[#addon.messages], 'Usage without a target: /qt preview announcement "<player>" <text>')
 		end
 	end
 	for _, arguments in ipairs({ '"Anakin" hello there', "Anakin hello there" }) do

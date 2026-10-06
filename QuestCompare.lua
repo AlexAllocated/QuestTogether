@@ -109,6 +109,22 @@ function QuestTogether:ResetPartyQuestCompare()
 	end
 end
 
+function QuestTogether:TogglePartyQuestCompare()
+	if self:IsWorkBlocked("foreign_frame_mutation") then return false end
+	local closed = false
+	for _, controller in ipairs({ self, rawget(self, "partyQuestComparePreview") }) do
+		local frame = rawget(controller, "partyQuestCompareWindow")
+		if frame and not self.LibChev.CanMutateOwnedRegion(frame) then return false end
+		if frame and frame:IsShown() then
+			controller:CancelPartyQuestCompare()
+			frame:Hide()
+			closed = true
+		end
+	end
+	if closed then return true end
+	return self:OpenPartyQuestCompare()
+end
+
 function QuestTogether:OpenPartyQuestCompare(preferredName)
 	if not self.isEnabled then
 		self:Print(L("Enable QuestTogether to compare party quests."))
@@ -296,6 +312,18 @@ function QuestTogether:OnPartyQuestLogChanged()
 	self:RefreshLocalPartyQuestCompare(0.2)
 end
 
+function QuestTogether:GetPartyQuestLeaderName()
+	if self:IsWorkBlocked("foreign_frame_mutation") then return nil end
+	local getter = self.API and self.API.GetPartyVisualLeaderUnit
+	if type(getter) ~= "function" then return nil end
+	local ok, unit = pcall(getter)
+	if not ok or not self:CanAccessValue(unit) or type(unit) ~= "string"
+		or not (unit == "player" or unit:match("^party[1-4]$") or unit:match("^raid%d+$")) then return nil end
+	local named, name = pcall(self.GetUnitFullName, self, unit)
+	if not named or not self:CanAccessValue(name) or type(name) ~= "string" then return nil end
+	return self:NormalizeMemberName(name)
+end
+
 function QuestTogether:OnPartyQuestRosterChanged()
 	if self.partyQuestCompareSession then
 		self:RefreshPartyQuestCompare()
@@ -373,6 +401,14 @@ function QuestTogether:BuildPartyQuestDiffRows()
 		return a.questId < b.questId
 	end)
 	return self:FilterPartyQuestCompareRows(rows)
+end
+
+function QuestTogether:OpenPartyQuestJournal(questId)
+	local session = self.partyQuestCompareSession
+	local own = session and session.byName[session.playerName]
+	if self:IsWorkBlocked("foreign_frame_mutation") or not own or not own.entries[questId] then return false end
+	-- The shared journal adapter rechecks native ownership before opening.
+	return self:OpenQuestJournalFromChatLog(questId)
 end
 
 function QuestTogether:SharePartyDiffQuest(questId)

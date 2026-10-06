@@ -5035,14 +5035,14 @@ function QuestTogether:GetQuestJournalAvailability(questId)
 	local id = self:SafeToNumber(questId)
 	if not id or id <= 0 or id ~= math.floor(id) then return nil, L("Invalid quest.") end
 	if self:IsWorkBlocked("foreign_frame_mutation") then
-		return nil, L("Opening the quest journal is unavailable while restricted.")
+		return nil, L("Opening the quest log is unavailable while restricted.")
 	end
 	if not self.API.CanOpenQuestJournal or self.API.CanOpenQuestJournal() ~= true then
-		return nil, L("Opening the quest journal is unavailable on this client.")
+		return nil, L("Opening the quest log is unavailable on this client.")
 	end
 	local index = self:SafeToNumber(self.API.GetQuestLogIndexForQuestID(id))
 	if not index or index <= 0 or index ~= math.floor(index) then
-		return nil, L("This quest is not in your quest journal.")
+		return nil, L("This quest is not in your quest log.")
 	end
 	return id
 end
@@ -5056,7 +5056,7 @@ function QuestTogether:OpenQuestJournalFromChatLog(questId)
 		return false
 	end
 	if self.API.OpenQuestJournal(id) ~= true then
-		self:Print(L("Unable to open that quest in your quest journal."))
+		self:Print(L("Unable to open that quest in your quest log."))
 		return false
 	end
 	return true
@@ -5073,14 +5073,14 @@ function QuestTogether:PopulateChatLogQuestMenu(rootDescription, questId, fallba
 			tooltip:SetText(reason or L("Share this quest with your party."))
 		end
 	end)
-	local journal = rootDescription:CreateButton(L("Open in Quest Journal"), function()
+	local journal = rootDescription:CreateButton(L("Open in Quest Log"), function()
 		self:OpenQuestJournalFromChatLog(questId)
 	end)
 	local journalID, journalReason = self:GetQuestJournalAvailability(questId)
 	journal:SetEnabled(journalID ~= nil)
 	journal:SetTooltip(function(tooltip)
 		if self:CanAccessForeignFrame(tooltip) then
-			tooltip:SetText(journalReason or L("Open this quest in your quest journal."))
+			tooltip:SetText(journalReason or L("Open this quest in your quest log."))
 		end
 	end)
 	local compare = rootDescription:CreateButton(L("Party Quest Log"), function()
@@ -5887,32 +5887,102 @@ end
 
 function QuestTogether:PrintDebugHelp()
 	self:Print(L("Debugging and developer commands:"))
-	self:Print(L("/qt partychatpreview - Preview the party chat reminder without changing settings"))
+	self:PrintPreviewHelp()
 	self:Print(L("/qt debug - Open the shared QuestTogether debug window"))
 	self:Print(L("/qt devlogall [on|off|toggle] - Show or control dev all-announcements logging"))
-	self:Print(L("/qt compare debug - Preview Party Quest Log with mock data (no sharing)"))
 	self:Print(L("/qt ping - Request pong metadata from all QuestTogether clients in the shared channel"))
-	self:Print(L("/qt bubbletest <text> - Run a local bubble preview for your current target"))
-	self:Print(L('/qt bubbletest "<player>" <text> - Run a local bubble preview for a nearby visible player (no target)'))
-	self:Print(L("Player names can be unquoted: Name-Realm, or First Surname on Forever."))
 	self:Print(L("/qt test - Run in-game unit tests, then open /qt dump filtered to TEST"))
 	self:Print(L("/qt dump [clear|CATEGORY] - Open the shared QuestTogether debug window"))
 	self:Print(L("/qt diagnostics [questID] - Copy client, runtime, and recent event diagnostics"))
 	self:Print(L("/qtd - Shortcut for /qt dump"))
 end
 
+function QuestTogether:PrintPreviewHelp()
+	self:Print(L("/qt preview share|join|partychat|bubble|discord - Preview a QT dialog without changing settings"))
+	self:Print(L("/qt preview compare - Preview Party Quest Log with mock data (no sharing)"))
+	self:Print(L("/qt preview notes - Preview the welcome and patch-notes window"))
+	self:Print(L("/qt preview announcement <text> - Run a local bubble preview for your current target"))
+	self:Print(L('/qt preview announcement "<player>" <text> - Run a local bubble preview for a nearby visible player (no target)'))
+	self:Print(L("Player names can be unquoted: Name-Realm, or First Surname on Forever."))
+end
+
+function QuestTogether:HandlePreviewCommand(input)
+	local kind, arguments = SafeMatch(input, "^%s*(%S*)%s*(.-)$")
+	kind = string.lower(kind or "")
+	-- Only normalize the selector. Names, quotes and message text retain case.
+	if kind == "announcement" then return self:PreviewBubbleAnnouncement(arguments or "") end
+	if arguments and arguments ~= "" then self:PrintPreviewHelp(); return false end
+	if kind == "compare" then return self:OpenPartyQuestComparePreview() end
+	if kind == "notes" or kind == "welcome" then return self:OpenReleaseNotes() end
+	if kind == "share" or kind == "join" or kind == "partychat" or kind == "bubble" or kind == "discord" then
+		return self:ShowDialogPreview(kind)
+	end
+	-- Empty/unknown preview commands are help, never outgoing QT chat.
+	self:PrintPreviewHelp()
+	return kind == "" or kind == "help"
+end
+
+function QuestTogether:PreviewBubbleAnnouncement(rest)
+	if rest == nil or rest == "" then
+		self:Print(L("Usage: /qt preview announcement <text>"))
+		self:Print(L('   or: /qt preview announcement "<player>" <text> (without a target)'))
+		return
+	end
+	if not self.SendBubbleAnnouncementTest then
+		self:Print(L("Bubble test is unavailable."))
+		return
+	end
+
+	local senderName = nil
+	local testText = rest
+	if not (self.API.UnitExists and self.API.UnitExists("target")) then
+		local explicitSenderName, explicitText
+		if string.sub(rest, 1, 1) == '"' then
+			-- Quotes delimit a complete identity without consuming preview text.
+			explicitSenderName, explicitText = SafeMatch(rest, '^"([^"]+)"%s+(.+)$')
+		else
+			explicitSenderName, explicitText = SafeMatch(rest, "^(%S+)%s+(.+)$")
+			if explicitSenderName and self:UsesRegionalPlayerNames() and not string.find(explicitSenderName, "-", 1, true) then
+				-- Native regional names have a first name and surname. Preserve
+				-- legacy First-Surname inputs as a single identity token.
+				local surname
+				surname, explicitText = SafeMatch(explicitText, "^(%S+)%s+(.+)$")
+				explicitSenderName = surname and (explicitSenderName .. " " .. surname) or nil
+			end
+		end
+		senderName = self:SafeTrimString(explicitSenderName, "")
+		testText = self:SafeTrimString(explicitText, "")
+		if senderName == "" or testText == "" then
+			self:Print(L('Usage without a target: /qt preview announcement "<player>" <text>'))
+			return
+		end
+	end
+
+	local ok, senderNameOrError = self:SendBubbleAnnouncementTest(testText, senderName)
+	if not ok then
+		self:Print(senderNameOrError)
+		return
+	end
+	self:Print(L("Ran local bubble preview for ") .. tostring(self:GetShortDisplayName(senderNameOrError)))
+	return
+end
+
 function QuestTogether:HandleSlashCommand(input)
 	local compareCommand = string.lower(self:SafeTrimString(input, ""))
 	if compareCommand == "partychatpreview" then
-		return self:ShowPartyChatReminderPreview()
+		return self:HandlePreviewCommand("partychat")
 	elseif compareCommand == "compare" then
 		self:ClosePartyQuestComparePreview()
 		return self:OpenPartyQuestCompare()
 	elseif compareCommand:match("^compare%s+debug$") then
-		return self:OpenPartyQuestComparePreview()
+		return self:HandlePreviewCommand("compare")
 	end
 	local command, rest = SafeMatch(input, "^%s*(%S*)%s*(.-)$")
 	command = string.lower(command or "")
+
+	if command == "preview" then return self:HandlePreviewCommand(rest) end
+	if command == "bubbletest" then return self:HandlePreviewCommand("announcement " .. (rest or "")) end
+	if command == "discord" then return self:OpenDiscordSupport() end
 
 	if command == "" or command == "options" then
 		self:OpenOptionsWindow()
@@ -6036,50 +6106,6 @@ function QuestTogether:HandleSlashCommand(input)
 		return
 	end
 
-	if command == "bubbletest" then
-		if rest == nil or rest == "" then
-			self:Print(L("Usage: /qt bubbletest <text>"))
-			self:Print(L('   or: /qt bubbletest "<player>" <text> (without a target)'))
-			return
-		end
-		if not self.SendBubbleAnnouncementTest then
-			self:Print(L("Bubble test is unavailable."))
-			return
-		end
-
-		local senderName = nil
-		local testText = rest
-		if not (self.API.UnitExists and self.API.UnitExists("target")) then
-			local explicitSenderName, explicitText
-			if string.sub(rest, 1, 1) == '"' then
-				-- Quotes delimit a complete identity without consuming preview text.
-				explicitSenderName, explicitText = SafeMatch(rest, '^"([^"]+)"%s+(.+)$')
-			else
-				explicitSenderName, explicitText = SafeMatch(rest, "^(%S+)%s+(.+)$")
-				if explicitSenderName and self:UsesRegionalPlayerNames() and not string.find(explicitSenderName, "-", 1, true) then
-					-- Native regional names have a first name and surname. Preserve
-					-- legacy First-Surname inputs as a single identity token.
-					local surname
-					surname, explicitText = SafeMatch(explicitText, "^(%S+)%s+(.+)$")
-					explicitSenderName = surname and (explicitSenderName .. " " .. surname) or nil
-				end
-			end
-			senderName = self:SafeTrimString(explicitSenderName, "")
-			testText = self:SafeTrimString(explicitText, "")
-			if senderName == "" or testText == "" then
-				self:Print(L('Usage without a target: /qt bubbletest "<player>" <text>'))
-				return
-			end
-		end
-
-		local ok, senderNameOrError = self:SendBubbleAnnouncementTest(testText, senderName)
-		if not ok then
-			self:Print(senderNameOrError)
-			return
-		end
-		self:Print(L("Ran local bubble preview for ") .. tostring(self:GetShortDisplayName(senderNameOrError)))
-		return
-	end
 
 
 	if not self:SendQTChannelChat(input) then

@@ -5,23 +5,26 @@ local QuestTogether = _G.QuestTogether
 -- quests; ownership and progress are explicit so the sample feels like a real
 -- shared quest log rather than a catalogue of UI error states.
 local QUESTS = {
-	{ title = "A Shipment Gone Missing", shareable = true, progress = { "Have", "Have", false } },
-	{ title = "Bandits on the Coast Road", shareable = true, progress = { "Have", "Have", "Have" } },
-	{ title = "Supplies for the Watch", shareable = true, progress = { "Ready", "Ready", "Ready" } },
-	{ title = "The Miller's Lost Ledger", shareable = true, progress = { "Have", "Ready", "Have" } },
-	{ title = "Trouble at the Old Quarry", shareable = true, progress = { "Have", "Have", "Have" } },
-	{ title = "A Letter for the Harbormaster", shareable = false, progress = { "Ready", "Ready", "Ready" } },
-	{ title = "Wolves at the Orchard", shareable = true, progress = { "Have", "Have", "Have" } },
-	{ title = "The Lighthouse Keeper", shareable = true, progress = { "Ready", "Have", "Have" } },
-	{ title = "A Debt to the Innkeeper", shareable = false, progress = { "Have", "Have", "Have" } },
-	{ title = "Mending the Fishermen's Nets", shareable = true, progress = { "Have", "Ready", "Have" } },
-	{ title = "A Long Way from Home", shareable = true, progress = { "Have", "Have", "Have" } },
-	{ title = "Signs of the Smugglers", shareable = true, progress = { "Have", "Have", "Have" } },
-	{ title = "A Favor for the Herbalist", shareable = true, progress = { "Have", false, "Have" } },
-	{ title = "The Missing Courier", shareable = true, progress = { false, "Have", "Have" } },
-	{ title = "Beneath the Breakwater", shareable = true, progress = { false, false, "Have" } },
-	{ title = "An Old Family Heirloom", shareable = false, progress = { "Have", false, false } },
+	{ title = "A Shipment Gone Missing", shareable = true, progress = { "Have", "Have", false, "Have", "Ready" } },
+	{ title = "Bandits on the Coast Road", shareable = true, progress = { "Have", "Have", "Have", "Have", "Have" } },
+	{ title = "Supplies for the Watch", shareable = true, progress = { "Ready", "Ready", "Ready", "Ready", "Ready" } },
+	{ title = "The Miller's Lost Ledger", shareable = true, progress = { "Have", "Ready", "Have", "Have", "Ready" } },
+	{ title = "Trouble at the Old Quarry", shareable = true, progress = { "Have", "Have", "Have", "Ready", "Have" } },
+	{ title = "A Letter for the Harbormaster", shareable = false, progress = { "Ready", "Ready", "Ready", "Ready", "Ready" } },
+	{ title = "Wolves at the Orchard", shareable = true, progress = { "Have", "Have", "Have", "Have", "Have" } },
+	{ title = "The Lighthouse Keeper", shareable = true, progress = { "Ready", "Have", "Have", "Have", "Have" } },
+	{ title = "A Debt to the Innkeeper", shareable = false, progress = { "Have", "Have", "Have", "Have", "Have" } },
+	{ title = "Mending the Fishermen's Nets", shareable = true, progress = { "Have", "Ready", "Have", "Ready", "Have" } },
+	{ title = "A Long Way from Home", shareable = true, progress = { "Have", "Have", "Have", "Have", "Have" } },
+	{ title = "Signs of the Smugglers", shareable = true, progress = { "Have", "Have", "Have", "Have", "Have" } },
+	{ title = "A Favor for the Herbalist", shareable = true, progress = { "Have", false, "Have", "Have", false } },
+	{ title = "The Missing Courier", shareable = true, progress = { false, "Have", "Have", false, "Have" } },
+	{ title = "Beneath the Breakwater", shareable = true, progress = { false, false, "Have", "Have", false } },
+	{ title = "An Old Family Heirloom", shareable = false, progress = { "Have", false, false, false, "Have" } },
 }
+
+local OBJECTIVE_COUNTS = { 2, 4, 6, 1, 5 }
+local REGIONAL_NAMES = { "Rowan Lightward", "Aria Frostwind", "Borin Ironvale", "Celia Wildwood", "Dara Nightfall" }
 
 local OBJECTIVES = {
 	{ "Recover shipment crates", "Search the wrecked wagon" },
@@ -44,10 +47,17 @@ local OBJECTIVES = {
 
 local function Populate(preview)
 	local members = {
-		{ name = "Rowan-AeriePeak", state = "ready", isLocal = true, classFile = "PALADIN" },
-		{ name = "Aria-AeriePeak", state = "ready", supportsShareRequests = true, classFile = "MAGE" },
-		{ name = "Borin-AeriePeak", state = "ready", supportsShareRequests = true, classFile = "WARRIOR" },
+		{ name = "Rowan-AeriePeak", state = "ready", isLocal = true, classFile = "PALADIN", focusQuestId = 1 },
+		{ name = "Aria-AeriePeak", state = "ready", supportsShareRequests = true, classFile = "MAGE", focusQuestId = 2 },
+		{ name = "Borin-AeriePeak", state = "ready", supportsShareRequests = true, classFile = "WARRIOR", focusQuestId = 15 },
+		{ name = "Celia-AeriePeak", state = "ready", supportsShareRequests = true, classFile = "HUNTER", focusQuestId = 5 },
+		{ name = "Dara-AeriePeak", state = "ready", supportsShareRequests = true, classFile = "ROGUE", focusQuestId = 14 },
 	}
+	if preview.regionalNames then
+		for i, member in ipairs(members) do
+			member.name = REGIONAL_NAMES[i]
+		end
+	end
 	local session = {
 		playerName = members[1].name,
 		members = members,
@@ -83,6 +93,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	-- Deliberately no inheritance from the live addon: only the model and view
 	-- methods below are shared. This controller has no API or comms adapters.
 	local preview = {
+		regionalNames = self:UsesRegionalPlayerNames(),
 		options = { compareHideOtherQuests = false },
 		GetScrollWindowTheme = self.GetScrollWindowTheme,
 		BuildPartyQuestDiffRows = self.BuildPartyQuestDiffRows,
@@ -120,11 +131,22 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	function preview:GetPartyQuestUIParent()
 		return owner:GetPartyQuestUIParent()
 	end
+	function preview:GetPartyQuestLeaderName()
+		return self.partyQuestCompareSession and self.partyQuestCompareSession.playerName
+	end
 	function preview:GetClassColorCode(classFile)
 		return owner:GetClassColorCode(classFile)
 	end
 	function preview:CreatePartyQuestUIFrame(...)
 		return owner:CreatePartyQuestUIFrame(...)
+	end
+	-- Delegate only window movement; the isolated controller still has no
+	-- live quest state or communications adapters.
+	function preview:StartWindowDrag(frame)
+		return owner:StartWindowDrag(frame)
+	end
+	function preview:StopWindowDrag(frame)
+		return owner:StopWindowDrag(frame)
 	end
 	function preview:ShowSettingsTooltip(...)
 		return owner:ShowSettingsTooltip(...)
@@ -171,7 +193,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 					{
 						text = OBJECTIVES[id][1],
 						kind = "item",
-						current = complete and 8 or (i * 2),
+						current = complete and 8 or OBJECTIVE_COUNTS[i],
 						required = 8,
 						finished = complete,
 					},
@@ -231,13 +253,21 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	function preview:RequestPartyQuestShare(id, target)
 		return Simulate(self, id, "request", target)
 	end
+	function preview:OpenPartyQuestJournal(id)
+		local session = self.partyQuestCompareSession
+		local quest = session and session.byName[session.playerName].entries[id]
+		if not quest or self:IsWorkBlocked("foreign_frame_mutation") then return false end
+		session.message = L("Preview only: ") .. L("Open in Quest Log") .. ": " .. quest.questTitle
+		self:QueuePartyQuestCompareRender()
+		return true
+	end
 	function preview:GetPartyFocusLabel(name)
 		local session = self.partyQuestCompareSession
 		local member = session and session.byName[name]
 		if not member then
 			return L("Focus unavailable")
 		end
-		local id = member.isLocal and (self.previewFocus or 1) or (member.name == "Aria-AeriePeak" and 2 or 15)
+		local id = member.isLocal and (self.previewFocus or member.focusQuestId) or member.focusQuestId
 		return QUESTS[id].title
 	end
 	function preview:GetPartyFollowingText()
@@ -261,7 +291,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 				self:StopPartyQuestFollow()
 			else
 				self.previewFollowing = name
-				local id = name == "Aria-AeriePeak" and 2 or 15
+				local id = member.focusQuestId
 				if session.byName[session.playerName].entries[id] then
 					self.previewFocus, self.previewFollowStatus = id, nil
 				else

@@ -151,7 +151,7 @@ QT:RegisterTest("client locale renders minimap menus tooltip and settings status
 	root.CreateCheckbox = root.CreateButton
 	function root:CreateDivider() end
 	QT:PopulateMinimapMenu(root)
-	for i, key in ipairs({ "Looking for Questing Partners", "Party Quest Log", "Open Quest Journal", "Patch Notes", "Move QuestTogether Logs to Separate Window", "Hide Minimap Icon" }) do
+	for i, key in ipairs({ "Looking for Questing Partners", "Party Quest Log", "Open Quest Log", "Settings", "Patch Notes", "Move QuestTogether Logs to Separate Window", "Hide Minimap Icon" }) do
 		assert(root.labels[i] == T(key), key)
 	end
 	local tooltip = QT:BuildMinimapTooltipStatus()

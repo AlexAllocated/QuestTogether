@@ -408,8 +408,7 @@ local function Create(addon, parent)
 	Call(addon, frame.dragHandle, "EnableMouse", true)
 	Call(addon, frame.dragHandle, "RegisterForDrag", "LeftButton")
 	Script(addon, frame, frame.dragHandle, "OnDragStart", function()
-		Call(addon, frame, "StartMoving")
-		frame.dragging = true
+		addon:StartWindowDrag(frame)
 	end)
 	frame.resizeGrip = New(addon, "Button", frame)
 	Call(addon, frame.resizeGrip, "SetSize", 24, 24)
@@ -432,6 +431,7 @@ local function Create(addon, parent)
 	end)
 	-- Stopping an owned drag remains safe if restrictions start mid-gesture.
 	local function StopDrag()
+		addon:StopWindowDrag(frame)
 		if LibChev.CanMutateOwnedRegion(frame) and (frame.dragging or frame.resizing) then
 			frame:StopMovingOrSizing()
 			frame.dragging, frame.resizing = nil, nil
@@ -587,6 +587,9 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll)
 		offset = offset + height + gap
 	end
 	Call(addon, frame.partnerExamples, "Hide")
+	for _, screenshot in pairs(frame.releaseScreenshots or {}) do
+		Call(addon, screenshot, "Hide")
+	end
 	if history then
 		offset = 0
 		Call(addon, frame.title, "SetText", "QuestTogether — " .. L("Release history"))
@@ -620,6 +623,7 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll)
 		end
 		Add(notes.welcome, "GameFontHighlight", 18)
 		local examplesShown = false
+		local regional = addon:UsesRegionalPlayerNames()
 		if addon:CanAccessTable(notes.sections) then
 			for _, section in ipairs(notes.sections) do
 				if addon:CanAccessTable(section) then
@@ -644,6 +648,29 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll)
 						end
 						Call(addon, gallery, "Show")
 						offset, examplesShown = offset + 120, true
+					end
+					local asset, imageWidth, imageHeight
+					if section.illustration == "party-quest-log" then
+						asset = regional and "PartyQuestLogForever" or "PartyQuestLogRetail"
+						imageWidth, imageHeight = regional and 1560 or 1564, regional and 899 or 898
+					elseif section.illustration == "party-quest-objectives" and regional then
+						asset, imageWidth, imageHeight = "PartyQuestObjectivesForever", 1564, 893
+					end
+					if asset then
+						frame.releaseScreenshots = frame.releaseScreenshots or {}
+						local screenshot = frame.releaseScreenshots[asset]
+						if not screenshot then
+							screenshot = Call(addon, frame.content, "CreateTexture", nil, "ARTWORK")
+							frame.releaseScreenshots[asset] = screenshot
+							Call(addon, screenshot, "SetTexture", "Interface\\AddOns\\QuestTogether\\Media\\ReleaseNotes\\" .. asset)
+							Call(addon, screenshot, "SetTexCoord", 0, imageWidth / 2048, 0, imageHeight / 1024)
+						end
+						local imageDisplayHeight = contentWidth * imageHeight / imageWidth
+						Call(addon, screenshot, "ClearAllPoints")
+						Call(addon, screenshot, "SetPoint", "TOPLEFT", 0, -offset)
+						Call(addon, screenshot, "SetSize", contentWidth, imageDisplayHeight)
+						Call(addon, screenshot, "Show")
+						offset = offset + imageDisplayHeight + 12
 					end
 					offset = offset + 10
 				end

@@ -271,6 +271,8 @@ def release_key(repository, tag, locale="enUS"):
 
 
 def build_messages(notes, repository, tag, locale="enUS"):
+    from changelogs import illustration_images
+
     repository_name(repository)
     if tag != "v" + notes["version"]:
         raise ChangelogError("tag and notes version differ")
@@ -287,6 +289,10 @@ def build_messages(notes, repository, tag, locale="enUS"):
             else:
                 description = combined
         embeds.append({"title": section["title"], "description": description})
+        for client, asset in illustration_images(section.get("illustration")):
+            embeds.append({"title": section["title"], "description": client,
+                           "image": {"url": "https://raw.githubusercontent.com/" + repository + "/" + tag
+                                     + "/Media/ReleaseNotes/" + asset + ".png"}})
     # Reserve the longest possible footer before packing. No item is truncated
     # or split, and no release URL occurs twice within the same message.
     digest = hashlib.sha256(json.dumps(notes, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()[:16]

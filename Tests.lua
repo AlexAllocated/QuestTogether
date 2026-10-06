@@ -377,7 +377,7 @@ QuestTogether:RegisterTest("normal help lists user commands without developer co
 	for _, command in ipairs({ "options", "enable | disable", "compare -", "notes | changelog | patchnotes", "set", "get", "scan", "help debug" }) do
 		AssertTrue(text:find("/qt " .. command, 1, true), "normal help must include " .. command)
 	end
-	for _, command in ipairs({ "debug", "devlogall", "compare debug", "ping", "bubbletest", "test", "dump", "diagnostics" }) do
+	for _, command in ipairs({ "debug", "devlogall", "preview compare", "ping", "preview announcement", "test", "dump", "diagnostics" }) do
 		AssertFalse(text:find("/qt " .. command, 1, true), "normal help must omit " .. command)
 	end
 	AssertFalse(text:find("/qtd", 1, true))
@@ -397,7 +397,7 @@ QuestTogether:RegisterTest("help slash dispatch requires the explicit debug topi
 	addon.messages = {}
 	addon:HandleSlashCommand("  HeLp   DeBuG  ")
 	local text = table.concat(addon.messages, "\n")
-	for _, command in ipairs({ "debug", "devlogall", "compare debug", "ping", "bubbletest", "test", "dump", "diagnostics" }) do
+	for _, command in ipairs({ "debug", "devlogall", "preview compare", "ping", "preview announcement", "test", "dump", "diagnostics" }) do
 		AssertTrue(text:find("/qt " .. command, 1, true), "debug help must include " .. command)
 	end
 	AssertTrue(text:find("/qtd", 1, true))
@@ -4577,7 +4577,7 @@ QuestTogether:RegisterTest("quest clicks open Share journal and party compare wi
 		AssertEquals(#state.statuses, 0, "opening a menu must not print status")
 		AssertEquals(#root.buttons, 3)
 		AssertEquals(root.buttons[1].label, "Share")
-		AssertEquals(root.buttons[2].label, "Open in Quest Journal")
+		AssertEquals(root.buttons[2].label, "Open in Quest Log")
 		AssertTrue(root.buttons[2].enabled)
 		AssertEquals(#state.opened, 0, "opening a menu must not open the journal")
 		AssertEquals(root.buttons[3].label, "Party Quest Log")
@@ -4682,7 +4682,7 @@ QuestTogether:RegisterTest("quest menu party compare rechecks disabled and restr
 	AssertEquals(state.compares, 1)
 end)
 
-QuestTogether:RegisterTest("quest journal rechecks stale entries and reports unavailable or failed opens", function()
+QuestTogether:RegisterTest("quest log rechecks stale entries and reports unavailable or failed opens", function()
 	for _, change in ipairs({
 		function(s) s.index = nil end,
 		function(s) s.index = 0 end,
@@ -4704,14 +4704,14 @@ QuestTogether:RegisterTest("quest journal rechecks stale entries and reports una
 	local addon, state = NewQuestShareMenuFixture()
 	state.journalFails = true
 	AssertFalse(addon:OpenQuestJournalFromChatLog(12345))
-	AssertEquals(state.messages[1], "Unable to open that quest in your quest journal.")
+	AssertEquals(state.messages[1], "Unable to open that quest in your quest log.")
 	for _, id in ipairs({ 0, -1, 1.5, math.huge, "invalid", false }) do
 		AssertEquals(addon:GetQuestJournalAvailability(id), nil)
 	end
 	AssertEquals(#state.opened, 1)
 end)
 
-QuestTogether:RegisterTest("quest journal works solo and with an open map but never queues restricted clicks", function()
+QuestTogether:RegisterTest("quest log works solo and with an open map but never queues restricted clicks", function()
 	local addon, state, root = NewQuestShareMenuFixture()
 	addon.isEnabled = false
 	state.grouped, state.pushable, state.mapVisible = false, false, true

@@ -76,6 +76,12 @@ The JSON must contain `version`, a `welcome` string, and nonempty `sections` of
 versions, a version different from the TOC, and stale/missing generated Lua fail
 validation. The generator emits only a literal Lua table with escaped primitive
 strings. It does not execute JSON contents.
+Sections may include `illustration`: `quest-partners`, `party-quest-log`, or
+`party-quest-objectives`. Party Quest Log screenshots are checked-in assets:
+web changelogs and Discord label the Retail/Forever captures and link to the
+release tag, while the in-game viewer selects the client's overview. The
+expanded-objective capture is Forever-only in-game. Include the matching
+`Media/ReleaseNotes/*.tga` files in the ZIP; see `Media/README.md` for conversion.
 The checker also requires the TOC to load `ReleaseNotes.lua` exactly once after
 `Core.lua`, so generated notes cannot silently be omitted from the addon.
 When the TOC enables `LocalizedReleaseNotes.lua`, it must load exactly once after

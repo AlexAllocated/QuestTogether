@@ -82,6 +82,10 @@ local function Region(addon, parent, kind)
 		self:CheckRead()
 		return self.height
 	end
+	function region:GetEffectiveScale() self:CheckRead(); return self.scale or 1 end
+	function region:GetLeft() self:CheckRead(); return self.parent and 200 or 0 end
+	function region:GetTop() self:CheckRead(); return 800 end
+	function region:GetBottom() self:CheckRead(); return 0 end
 	function region:SetScale(value)
 		self:Check()
 		self.scale = value
@@ -128,7 +132,7 @@ local function Region(addon, parent, kind)
 		return math.max(1, math.ceil(#(self.text or "") / columns)) * size
 	end
 	function region:SetScript(event, callback)
-		self:Check()
+		self:Check(callback == nil)
 		self.scripts[event] = callback
 	end
 	function region:CreateTexture(_, _, template)
@@ -262,6 +266,9 @@ local function Fixture()
 		self.regions[#self.regions + 1] = frame
 		return frame
 	end
+	addon.GetPartyQuestUIParent = addon.GetReleaseNotesUIParent
+	addon.CreatePartyQuestUIFrame = addon.CreateReleaseNotesUIFrame
+	function addon:GetWindowDragCursor() return 600, 500 end
 	function addon:IsRuntimeRestricted()
 		return self.blocked == true
 	end
@@ -628,6 +635,36 @@ Register("release notes visual examples occupy scroll space and hide when absent
 	assert(not frame.partnerExamples.shown)
 end)
 
+Register("release notes screenshots match client names resize reuse and hide on other pages", function()
+	for _, regional in ipairs({ false, true }) do
+		local a = Fixture()
+		function a:UsesRegionalPlayerNames() return regional end
+		local notes = Notes()
+		notes.sections[1].illustration = "party-quest-log"
+		notes.sections[2] = { title = "Objectives", items = { "Expand progress." }, illustration = "party-quest-objectives" }
+		assert(a:RenderReleaseNotesWindow(notes, "6.4.0", false))
+		local frame = a.releaseNotesWindow
+		local asset = regional and "PartyQuestLogForever" or "PartyQuestLogRetail"
+		local screenshot = frame.releaseScreenshots[asset]
+		assert(screenshot and screenshot.shown)
+		assert(screenshot.texture:find(asset, 1, true))
+		local expectedRatio = regional and 899 / 1560 or 898 / 1564
+		assert(math.abs(screenshot.height / screenshot.width - expectedRatio) < 0.0001)
+		Equal(frame.releaseScreenshots.PartyQuestObjectivesForever ~= nil, regional)
+		local count = #a.regions
+		frame.userWidth = 900
+		assert(a:RenderReleaseNotesWindow(notes, "6.4.0", false))
+		Equal(#a.regions, count)
+		assert(math.abs(screenshot.height / screenshot.width - expectedRatio) < 0.0001)
+		assert(a:RenderReleaseNotesWindow(Notes(), "6.3.1", false))
+		for _, image in pairs(frame.releaseScreenshots) do assert(not image.shown) end
+		screenshot.forbidden = true
+		local writes = screenshot.writes
+		Equal(a:RenderReleaseNotesWindow(notes, "6.4.0", false), false)
+		Equal(screenshot.writes, writes)
+	end
+end)
+
 Register("release notes visual examples quarantine forbidden regions and recover", function()
 	local a = Fixture()
 	local notes = Notes()
@@ -739,9 +776,10 @@ Register("release notes resizing preserves pages and scroll while fixed rolls co
 	f.scroll.scripts.OnMouseWheel({}, -4)
 	local offset, count = f.scrollOffset, #a.regions
 	f.dragHandle.scripts.OnDragStart({})
-	assert(f.moving)
+	assert(f.dragging)
 	f.dragHandle.scripts.OnDragStop({})
-	Equal(f.moving, false)
+	Equal(f.dragging, nil)
+	count = #a.regions -- the drag driver is allocated once on first pickup
 	local originalWidth, originalHeight = f.width, f.height
 	f.resizeGrip.scripts.OnMouseDown({}, "LeftButton")
 	assert(f.sizing)

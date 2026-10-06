@@ -30,7 +30,7 @@ function QuestTogether:BuildMinimapTooltipStatus()
 		L("Share my location") .. ": " .. OnOff("sharePlayerLocation"),
 	}
 	if not self.isEnabled then table.insert(lines, 1, "|cffffaa66" .. L("QuestTogether disabled.") .. "|r") end
-	return table.concat(lines, "\n") .. "\n\n|cffaaaaaa" .. L("Left or right click for menu\nShift-click to toggle looking for partners\nDrag to move") .. "|r"
+	return table.concat(lines, "\n") .. "\n\n|cffaaaaaa" .. L("Left-click to toggle Party Quest Log\nRight-click for menu\nShift-click to toggle looking for partners\nDrag to move") .. "|r"
 end
 
 function QuestTogether:RefreshMinimapTooltipStatus()
@@ -120,7 +120,7 @@ end
 
 function QuestTogether:OpenQuestJournalFromMinimap()
 	if self:IsRuntimeRestricted() then
-		self:Print(L("Opening the quest journal is unavailable while restricted."))
+		self:Print(L("Opening the quest log is unavailable while restricted."))
 		return false
 	end
 	if
@@ -129,7 +129,7 @@ function QuestTogether:OpenQuestJournalFromMinimap()
 		or not self.API.OpenQuestJournalWindow
 		or self.API.OpenQuestJournalWindow() ~= true
 	then
-		self:Print(L("Unable to open your quest journal on this client."))
+		self:Print(L("Unable to open your quest log on this client."))
 		return false
 	end
 	return true
@@ -148,11 +148,16 @@ function QuestTogether:PopulateMinimapMenu(rootDescription)
 		end
 	end)
 	compare:SetEnabled(self.isEnabled == true)
-	local journal = rootDescription:CreateButton(L("Open Quest Journal"), function()
+	local journal = rootDescription:CreateButton(L("Open Quest Log"), function()
 		self:OpenQuestJournalFromMinimap()
 	end)
 	journal:SetEnabled(self.API.CanOpenQuestJournalWindow and self.API.CanOpenQuestJournalWindow() == true or false)
 	rootDescription:CreateDivider()
+	rootDescription:CreateButton(L("Settings"), function()
+		if not self:IsRuntimeRestricted() then
+			self:OpenOptionsWindow()
+		end
+	end)
 	rootDescription:CreateButton(L("Patch Notes"), function()
 		if not self:IsRuntimeRestricted() then
 			self:OpenReleaseNotes()
@@ -434,6 +439,8 @@ function QuestTogether:CreateMinimapButton(anchor)
 			if self:IsRuntimeRestricted() or not self:CanAccessForeignFrame(button) then return end
 			if self:IsMinimapShiftKeyDown() then
 				self:HandleQuestPartnerCommand("toggle")
+			elseif mouseButton == "LeftButton" then
+				self:TogglePartyQuestCompare()
 			else
 				self:ShowMinimapMenu(button)
 			end

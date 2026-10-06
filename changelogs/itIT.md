@@ -4,12 +4,41 @@
 
 ## 6.3.1
 
-Spaziatura più confortevole nel registro missioni del gruppo.
+Finestre QT più curate e accesso più rapido alle missioni del gruppo.
 
-### Spaziatura dei pannelli degli obiettivi
+### Registro missioni del gruppo
 
-- I pannelli degli obiettivi espansi hanno ora più spazio interno in basso, così le barre di avanzamento non toccano il bordo. Lo scorrimento e le animazioni di espansione tengono conto dello spazio aggiunto.
-- I messaggi come «Nessun dettaglio sugli obiettivi disponibile» sono centrati verticalmente accanto al nome del giocatore anziché essere troppo vicini al bordo superiore.
+- Scopri il Registro missioni del gruppo introdotto nella versione 6.3: confronta fino a cinque giocatori in colonne con i colori delle classi, verifica chi possiede ogni missione, a chi manca e quando il gruppo è pronto a consegnarla. Combina ricerca e filtri per possesso, avanzamento e azione. Condivisione e richieste di condivisione sono disponibili quando supportate.
+- L’intestazione di ogni giocatore mostra la sua missione attiva. Clicca sul nome di un compagno per seguirne volontariamente la missione; se non la possiedi, la tua navigazione resta invariata. Aggiorna recupera una nuova istantanea dei progressi remoti. Le immagini mostrano dati fittizi dell’anteprima.
+- Le missioni che possiedi hanno ora un piccolo pulsante con un libro che apre i dettagli nel Registro missioni di Blizzard. Un clic sulla riga continua a espandere gli obiettivi.
+- Una corona identifica il capogruppo e si aggiorna quando cambia il comando. La tua colonna rimane sempre la prima.
+
+**Retail**
+
+![Registro missioni del gruppo — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogRetail.png)
+
+**Forever**
+
+![Registro missioni del gruppo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestLogForever.png)
+
+### Espandi gli obiettivi di tutti
+
+- Clicca su una missione per vedere contatori, barre di avanzamento e passaggi completati di ciascun membro. Puoi lasciare aperte più missioni. Questa versione rende le sezioni più compatte e uniforma lo sfondo con i colori di classe di nomi e obiettivi. Una missione tipica per cinque giocatori con due obiettivi ciascuno entra nella finestra predefinita; quelle più lunghe possono richiedere lo scorrimento.
+
+**Forever**
+
+![Espandi gli obiettivi di tutti — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.3.1/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+
+### Finestre e minimappa
+
+- Il clic sinistro sull’icona della minimappa apre o chiude il Registro missioni del gruppo; il clic destro apre il menu. Le impostazioni sono tornate nel menu e il tooltip spiega le scorciatoie.
+- I promemoria della chat di gruppo, le richieste di condivisione e di ingresso, le impostazioni dei fumetti e la finestra del collegamento Discord usano ora la cornice a pergamena e i temi chiaro/scuro di QT, con più margini e spazio per i valori dei cursori.
+- Trascinando le finestre si mantiene la distanza dal puntatore, anche nell’anteprima del confronto. Menu e tooltip ora chiamano sempre Registro missioni la finestra di Blizzard.
+
+### Comandi di anteprima
+
+- Usa /qt preview per elencare le anteprime di finestre e annunci. I vecchi comandi funzionano ancora; le azioni simulate non invitano giocatori, condividono missioni o inviano messaggi.
+- L’anteprima del confronto ora mostra un gruppo completo di cinque giocatori, tra cui un Cacciatore e un Ladro, con obiettivi diversi, missioni attive e una corona per il capogruppo.
 
 ## 6.3.0
 

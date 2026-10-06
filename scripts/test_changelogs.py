@@ -17,6 +17,20 @@ from discord_changelog import build_messages, DEFAULT_REPOSITORY, load_notes
 
 
 class ChangelogTests(unittest.TestCase):
+    def test_client_screenshots_are_tag_pinned_in_web_notes_and_discord(self):
+        notes = {'version': '6.4.0', 'welcome': 'Explore party quests.', 'sections': [
+            {'title': 'Party Quest Log', 'items': ['Compare your party.'], 'illustration': 'party-quest-log'},
+            {'title': 'Objectives', 'items': ['Expand progress.'], 'illustration': 'party-quest-objectives'}]}
+        markdown = c.render('enUS', [{'enUS': notes}])
+        messages = build_messages(notes, DEFAULT_REPOSITORY, 'v6.4.0')
+        images = [embed['image']['url'] for message in messages for embed in message['embeds'] if 'image' in embed]
+        self.assertEqual(len(images), 3)
+        for asset, url in zip(('PartyQuestLogRetail', 'PartyQuestLogForever', 'PartyQuestObjectivesForever'), images):
+            self.assertTrue(url.endswith('/v6.4.0/Media/ReleaseNotes/' + asset + '.png'))
+            self.assertIn(url, markdown)
+        self.assertIn('**Retail**', markdown)
+        self.assertIn('**Forever**', markdown)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

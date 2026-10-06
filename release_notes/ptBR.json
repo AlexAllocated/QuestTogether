@@ -1,14 +1,39 @@
 {
-  "source_sha256": "cc2a434f085b1c811a66e90a993aadd2c083311be57fa002ea2f723c11eb3e2c",
+  "source_sha256": "c4f12f562adb50ce47bc257457a5a99c4b04c7b07e5fb89d1d022afef6e85f15",
   "notes": {
     "version": "6.3.1",
-    "welcome": "Espaçamento mais confortável no registro de missões do grupo.",
+    "welcome": "Janelas do QT mais bem-acabadas e acesso mais rápido às missões do grupo.",
     "sections": [
       {
-        "title": "Espaçamento dos painéis de objetivos",
+        "title": "Registro de missões do grupo",
         "items": [
-          "Os painéis de objetivos expandidos agora têm mais espaço interno na parte inferior para que as barras de progresso não encostem na borda. A rolagem e as animações de expansão consideram esse espaço adicional.",
-          "Mensagens como “Nenhum detalhe de objetivo disponível” ficam centralizadas verticalmente ao lado do nome do jogador, em vez de muito próximas da borda superior."
+          "Conheça melhor o Registro de Missões do Grupo introduzido na versão 6.3: compare até cinco jogadores em colunas com cores de classe, veja quem tem cada missão, quem precisa dela e quando o grupo pode entregá-la. Combine busca e filtros de posse, progresso e ação. Compartilhar e solicitar compartilhamento estão disponíveis quando compatíveis.",
+          "O cabeçalho de cada jogador mostra sua missão em foco. Clique no nome de um colega para seguir voluntariamente o foco dele; se você não tiver a missão, sua navegação permanece inalterada. Atualizar busca uma nova captura do progresso remoto. As imagens mostram dados fictícios da prévia.",
+          "As missões que você possui agora têm um pequeno botão de livro que abre seus detalhes no diário de missões da Blizzard. Clicar na linha continua expandindo os objetivos.",
+          "Uma coroa identifica o líder do grupo e acompanha as mudanças de liderança. Sua própria coluna continua sendo a primeira."
+        ],
+        "illustration": "party-quest-log"
+      },
+      {
+        "title": "Expanda os objetivos de todos",
+        "items": [
+          "Clique em uma missão para ver contadores de objetivos, barras de progresso e etapas concluídas de cada integrante. Várias missões podem permanecer expandidas. Esta versão compacta as seções e usa o mesmo fundo com cor de classe nos nomes e objetivos. Uma missão típica de cinco jogadores com dois objetivos cada cabe no tamanho padrão; missões maiores ainda podem exigir rolagem."
+        ],
+        "illustration": "party-quest-objectives"
+      },
+      {
+        "title": "Janelas e minimapa",
+        "items": [
+          "Clique com o botão esquerdo no ícone do minimapa para abrir ou fechar o registro de missões do grupo; o botão direito abre o menu. Configurações voltou ao menu, e a dica explica os atalhos.",
+          "Os lembretes do chat de grupo, pedidos de compartilhamento e entrada, configurações dos balões e diálogo do link do Discord agora usam a moldura de pergaminho e os temas claro/escuro do QT, com mais margens e espaço para os valores dos controles deslizantes.",
+          "Ao arrastar janelas, a distância até o cursor é preservada, inclusive na prévia do comparador. Menus e dicas agora usam de forma consistente o nome Diário de missões para a janela da Blizzard."
+        ]
+      },
+      {
+        "title": "Comandos de prévia",
+        "items": [
+          "Use /qt preview para listar as prévias de janelas e anúncios. Os comandos antigos continuam funcionando; as ações simuladas não convidam jogadores, compartilham missões nem enviam mensagens.",
+          "A prévia do comparador agora mostra um grupo completo de cinco jogadores, incluindo um Caçador e um Ladino, com objetivos variados, missões ativas e uma coroa para o líder."
         ]
       }
     ]

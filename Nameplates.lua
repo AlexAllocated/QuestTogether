@@ -22,7 +22,7 @@ local NAMEPLATE_SCAN_TOOLTIP_NAME = "QuestTogetherNameplateScanTooltip"
 local ANNOUNCEMENT_BUBBLE_Y_OFFSET = 22
 local ANNOUNCEMENT_BUBBLE_FADE_IN_SECONDS = 0.2
 local ANNOUNCEMENT_BUBBLE_FADE_OUT_SECONDS = 0.4
-local PERSONAL_BUBBLE_SETTINGS_DIALOG_WIDTH = 380
+local PERSONAL_BUBBLE_SETTINGS_DIALOG_WIDTH = 500
 local PERSONAL_BUBBLE_SETTINGS_DIALOG_HEIGHT = 300
 local ApplyQuestIconVisual
 local EnsureQuestIcon
@@ -647,6 +647,40 @@ local function ConfigureEditModeSlider(settingFrame, settingData, onValueChanged
 	settingFrame:Show()
 end
 
+-- Addon-owned seam: native slider wiring stays out of live test fixtures.
+function QuestTogether:ConfigurePersonalBubbleDialogSlider(frame, data, callback)
+	ConfigureEditModeSlider(frame, data, callback)
+end
+
+function QuestTogether:LayoutPersonalBubbleDialog(dialog)
+	-- SetupSetting restores Blizzard's fixed track width on every refresh.
+	-- Reserve a value column inside our content bounds after that setup runs.
+	for _, setting in ipairs({ dialog.SizeSlider, dialog.DurationSlider }) do
+		setting:SetWidth(dialog.contentWidth)
+		local label, slider = setting.Label, setting.Slider
+		if label and slider and slider.RightText then
+			label:ClearAllPoints()
+			label:SetPoint("LEFT", setting, "LEFT", 0, 0)
+			label:SetWidth(120)
+			label:SetWordWrap(true)
+			local height = math.max(32, label:GetStringHeight())
+			label:SetHeight(height)
+			setting:SetHeight(height)
+			slider:ClearAllPoints()
+			slider:SetPoint("LEFT", label, "RIGHT", 16, 0)
+			slider:SetWidth(dialog.contentWidth - 120 - 16 - 12 - 64)
+			slider.RightText:ClearAllPoints()
+			slider.RightText:SetPoint("RIGHT", setting, "RIGHT", 0, 0)
+			slider.RightText:SetWidth(64)
+			slider.RightText:SetJustifyH("RIGHT")
+		end
+	end
+	dialog:SetHeight(dialog.contentTop + dialog.SizeSlider:GetHeight() + 24
+		+ dialog.DurationSlider:GetHeight() + 20 + dialog.SaveStatus:GetStringHeight()
+		+ 24 + 68 + dialog.contentBottom)
+	self:FitScrollDialog(dialog)
+end
+
 function QuestTogether:ApplyPersonalBubbleEditSnapshot(snapshot)
 	if type(snapshot) ~= "table" then
 		return
@@ -711,114 +745,109 @@ function QuestTogether:ResetPersonalBubbleEditSessionToDefaults()
 	self:RefreshPersonalBubbleEditModeDialog()
 end
 
-local function EnsurePersonalBubbleEditModeDialog()
-	if QuestTogether.personalBubbleEditModeDialog then
-		return QuestTogether.personalBubbleEditModeDialog
+local function EnsurePersonalBubbleEditModeDialog(addon, preview)
+	local key = preview and "personalBubbleEditModePreviewDialog" or "personalBubbleEditModeDialog"
+	if rawget(addon, key) then
+		return addon[key]
 	end
-	if not EditModeManagerFrame then
+	if not preview and not EditModeManagerFrame then
 		return nil
 	end
 
-	local dialog = CreateFrame("Frame", "QuestTogetherPersonalBubbleSettingsDialog", UIParent)
-	dialog:SetSize(PERSONAL_BUBBLE_SETTINGS_DIALOG_WIDTH, PERSONAL_BUBBLE_SETTINGS_DIALOG_HEIGHT)
+	local dialog = addon:CreateScrollDialog(PERSONAL_BUBBLE_SETTINGS_DIALOG_WIDTH, PERSONAL_BUBBLE_SETTINGS_DIALOG_HEIGHT + 44, L("QuestTogether Bubble"))
+	if not dialog then return nil end
 	dialog:SetFrameStrata("DIALOG")
 	dialog:SetFrameLevel(250)
 	dialog:SetClampedToScreen(true)
 	dialog:SetMovable(true)
 	dialog:EnableMouse(true)
 	dialog:RegisterForDrag("LeftButton")
-	dialog:EnableKeyboard(true)
+	dialog:EnableKeyboard(not preview)
 	dialog:Hide()
 
-	local border = CreateFrame("Frame", nil, dialog, "DialogBorderTranslucentTemplate")
-	border:SetAllPoints()
-	dialog.Border = border
+	dialog.Title = dialog.title
 
-	local title = dialog:CreateFontString(nil, "ARTWORK", "GameFontHighlightLarge")
-	title:SetPoint("TOP", dialog, "TOP", 0, -15)
-	title:SetText(L("QuestTogether Bubble"))
-	dialog.Title = title
-
-	local closeButton = CreateFrame("Button", nil, dialog, "UIPanelCloseButton")
-	closeButton:SetPoint("TOPRIGHT", dialog, "TOPRIGHT")
+	local closeButton = addon:CreatePartyQuestUIFrame("Button", nil, dialog, "UIPanelCloseButton")
+	closeButton:SetPoint("TOPRIGHT", dialog, "TOPRIGHT", -10, -8)
 	closeButton:SetScript("OnClick", function()
-		QuestTogether:DeselectPersonalBubbleAnchor()
+		if preview then dialog:Hide() else addon:DeselectPersonalBubbleAnchor() end
 	end)
 	dialog.CloseButton = closeButton
 
-	local dragHandle = CreateFrame("Frame", nil, dialog)
+	local dragHandle = addon:CreatePartyQuestUIFrame("Frame", nil, dialog)
 	dragHandle:SetPoint("TOPLEFT", dialog, "TOPLEFT", 8, -8)
 	dragHandle:SetPoint("TOPRIGHT", closeButton, "TOPLEFT", -4, -8)
 	dragHandle:SetHeight(28)
 	dragHandle:EnableMouse(true)
 	dragHandle:RegisterForDrag("LeftButton")
 	dragHandle:SetScript("OnDragStart", function()
-		dialog:StartMoving()
+		if not addon:IsWorkBlocked("foreign_frame_mutation") then addon:StartWindowDrag(dialog) end
 	end)
 	dragHandle:SetScript("OnDragStop", function()
-		dialog:StopMovingOrSizing()
-		SavePersonalBubbleDialogPosition(dialog)
+		addon:StopWindowDrag(dialog)
+		if not preview then SavePersonalBubbleDialogPosition(dialog) end
 	end)
 	dialog.DragHandle = dragHandle
 
-	local sizeSlider = CreateFrame("Frame", nil, dialog, "EditModeSettingSliderTemplate")
-	sizeSlider:SetPoint("TOPLEFT", dialog, "TOPLEFT", 24, -48)
+	local sizeSlider = addon:CreatePartyQuestUIFrame("Frame", nil, dialog, "EditModeSettingSliderTemplate")
+	sizeSlider:SetPoint("TOPLEFT", dialog, "TOPLEFT", dialog.contentInset, -dialog.contentTop)
 	dialog.SizeSlider = sizeSlider
 
-	local durationSlider = CreateFrame("Frame", nil, dialog, "EditModeSettingSliderTemplate")
-	durationSlider:SetPoint("TOPLEFT", sizeSlider, "BOTTOMLEFT", 0, -18)
+	local durationSlider = addon:CreatePartyQuestUIFrame("Frame", nil, dialog, "EditModeSettingSliderTemplate")
+	durationSlider:SetPoint("TOPLEFT", sizeSlider, "BOTTOMLEFT", 0, -24)
 	dialog.DurationSlider = durationSlider
 
 	local saveStatus = dialog:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-	saveStatus:SetPoint("TOPLEFT", durationSlider, "BOTTOMLEFT", 0, -12)
-	saveStatus:SetWidth(PERSONAL_BUBBLE_SETTINGS_DIALOG_WIDTH - 48)
+	saveStatus:SetPoint("TOPLEFT", durationSlider, "BOTTOMLEFT", 0, -20)
+	saveStatus:SetWidth(dialog.contentWidth)
 	saveStatus:SetJustifyH("LEFT")
 	dialog.SaveStatus = saveStatus
+	addon:AddScrollDialogLabel(dialog, saveStatus, "muted")
 
-	local saveButton = CreateFrame("Button", nil, dialog, "EditModeSystemSettingsDialogButtonTemplate")
-	saveButton:SetSize(PERSONAL_BUBBLE_SETTINGS_DIALOG_WIDTH - 48, 28)
-	saveButton:SetPoint("BOTTOMLEFT", dialog, "BOTTOMLEFT", 24, 54)
+	local saveButton = addon:CreatePartyQuestUIFrame("Button", nil, dialog, "UIPanelButtonTemplate")
+	saveButton:SetSize(dialog.contentWidth, 28)
+	saveButton:SetPoint("BOTTOMLEFT", dialog, "BOTTOMLEFT", dialog.contentInset, dialog.contentBottom + 40)
 	saveButton:SetText(L("Save Changes"))
 	saveButton:SetScript("OnClick", function()
-		QuestTogether:CommitPersonalBubbleEditSession()
+		if not preview then addon:CommitPersonalBubbleEditSession() end
 	end)
 	dialog.SaveButton = saveButton
 
-	local revertButton = CreateFrame("Button", nil, dialog, "EditModeSystemSettingsDialogButtonTemplate")
-	revertButton:SetSize(160, 28)
-	revertButton:SetPoint("BOTTOMLEFT", dialog, "BOTTOMLEFT", 24, 18)
+	local revertButton = addon:CreatePartyQuestUIFrame("Button", nil, dialog, "UIPanelButtonTemplate")
+	revertButton:SetSize((dialog.contentWidth - 12) / 2, 28)
+	revertButton:SetPoint("BOTTOMLEFT", dialog, "BOTTOMLEFT", dialog.contentInset, dialog.contentBottom)
 	revertButton:SetText(L("Revert Changes"))
 	revertButton:SetScript("OnClick", function()
-		QuestTogether:RevertPersonalBubbleEditSession()
+		if not preview then addon:RevertPersonalBubbleEditSession() end
 	end)
 	dialog.RevertButton = revertButton
 
-	local resetButton = CreateFrame("Button", nil, dialog, "EditModeSystemSettingsDialogButtonTemplate")
-	resetButton:SetSize(160, 28)
-	resetButton:SetPoint("BOTTOMRIGHT", dialog, "BOTTOMRIGHT", -24, 18)
+	local resetButton = addon:CreatePartyQuestUIFrame("Button", nil, dialog, "UIPanelButtonTemplate")
+	resetButton:SetSize((dialog.contentWidth - 12) / 2, 28)
+	resetButton:SetPoint("BOTTOMRIGHT", dialog, "BOTTOMRIGHT", -dialog.contentInset, dialog.contentBottom)
 	resetButton:SetText(L("Reset To Default"))
 	resetButton:SetScript("OnClick", function()
-		QuestTogether:ResetPersonalBubbleEditSessionToDefaults()
+		if not preview then addon:ResetPersonalBubbleEditSessionToDefaults() end
 	end)
 	dialog.ResetButton = resetButton
 
 	dialog:SetScript("OnDragStart", function(frame)
-		frame:StartMoving()
+		if not addon:IsWorkBlocked("foreign_frame_mutation") then addon:StartWindowDrag(frame) end
 	end)
 	dialog:SetScript("OnDragStop", function(frame)
-		frame:StopMovingOrSizing()
-		SavePersonalBubbleDialogPosition(frame)
+		addon:StopWindowDrag(frame)
+		if not preview then SavePersonalBubbleDialogPosition(frame) end
 	end)
 	dialog:SetScript("OnHide", function(frame)
-		frame:StopMovingOrSizing()
+		addon:StopWindowDrag(frame)
 	end)
 	dialog:SetScript("OnKeyDown", function(_, key)
 		if key == "ESCAPE" then
-			QuestTogether:DeselectPersonalBubbleAnchor()
+			if preview then dialog:Hide() else addon:DeselectPersonalBubbleAnchor() end
 		end
 	end)
 
-	QuestTogether.personalBubbleEditModeDialog = dialog
+	addon[key] = dialog
 	return dialog
 end
 
@@ -980,8 +1009,9 @@ function QuestTogether:AttachPersonalBubbleEditModeDialog()
 	dialog:SetPoint(point, relativeTo, relativePoint, offsetX, offsetY)
 end
 
-function QuestTogether:RefreshPersonalBubbleEditModeDialog()
-	local dialog = EnsurePersonalBubbleEditModeDialog()
+function QuestTogether:RefreshPersonalBubbleEditModeDialog(preview)
+	if self:IsWorkBlocked("foreign_frame_mutation") then return end
+	local dialog = EnsurePersonalBubbleEditModeDialog(self, preview)
 	if not dialog then
 		return
 	end
@@ -994,7 +1024,7 @@ function QuestTogether:RefreshPersonalBubbleEditModeDialog()
 		return string.format(L("%.1f sec"), normalized)
 	end
 
-	ConfigureEditModeSlider(dialog.SizeSlider, {
+	self:ConfigurePersonalBubbleDialogSlider(dialog.SizeSlider, {
 		displayInfo = {
 			setting = "chatBubbleSize",
 			formatter = function(value)
@@ -1008,6 +1038,7 @@ function QuestTogether:RefreshPersonalBubbleEditModeDialog()
 		currentValue = self:NormalizeChatBubbleSizeValue(self:GetOption("chatBubbleSize")) or self.DEFAULTS.profile.chatBubbleSize,
 		settingName = L("Font Size"),
 	}, function(value)
+		if preview then return end
 		self:EnsurePersonalBubbleEditSession()
 		if self:SetOption("chatBubbleSize", value) and not self.personalBubbleEditSessionRestoring then
 			UpdatePersonalBubbleEditSessionDirtyState()
@@ -1016,7 +1047,7 @@ function QuestTogether:RefreshPersonalBubbleEditModeDialog()
 		end
 	end)
 
-	ConfigureEditModeSlider(dialog.DurationSlider, {
+	self:ConfigurePersonalBubbleDialogSlider(dialog.DurationSlider, {
 		displayInfo = {
 			setting = "chatBubbleDuration",
 			formatter = FormatDurationLabel,
@@ -1028,6 +1059,7 @@ function QuestTogether:RefreshPersonalBubbleEditModeDialog()
 			or self.DEFAULTS.profile.chatBubbleDuration,
 		settingName = L("Display Duration"),
 	}, function(value)
+		if preview then return end
 		self:EnsurePersonalBubbleEditSession()
 		if self:SetOption("chatBubbleDuration", value) and not self.personalBubbleEditSessionRestoring then
 			UpdatePersonalBubbleEditSessionDirtyState()
@@ -1036,10 +1068,47 @@ function QuestTogether:RefreshPersonalBubbleEditModeDialog()
 		end
 	end)
 
-	self:RefreshPersonalBubbleEditSaveState()
-	if dialog.ResetButton then
+	if preview then
+		dialog.SaveStatus:SetText(L("Preview - no settings will change."))
+		dialog.SaveButton:SetEnabled(false)
+		dialog.RevertButton:SetEnabled(false)
+		dialog.ResetButton:SetEnabled(false)
+	else
+		self:RefreshPersonalBubbleEditSaveState()
+	end
+	self:LayoutPersonalBubbleDialog(dialog)
+	-- These labels are children of addon-owned slider templates.
+	for _, slider in ipairs({ dialog.SizeSlider, dialog.DurationSlider }) do
+		if slider.Label and not slider.qtThemeRegistered then
+			self:AddScrollDialogLabel(dialog, slider.Label)
+			if slider.Slider then
+				for _, name in ipairs({ "LeftText", "RightText", "TopText", "MinText", "MaxText" }) do
+					local label = slider.Slider[name]
+					if label then self:AddScrollDialogLabel(dialog, label) end
+				end
+			end
+			slider.qtThemeRegistered = true
+		end
+	end
+	self:ApplyScrollDialogTheme(dialog)
+	if not preview and dialog.ResetButton then
 		dialog.ResetButton:SetEnabled(not IsPersonalBubbleAtDefaultState())
 	end
+end
+
+function QuestTogether:ShowPersonalBubbleSettingsPreview()
+	if self:IsWorkBlocked("foreign_frame_mutation") then return false end
+	local ok = pcall(self.RefreshPersonalBubbleEditModeDialog, self, true)
+	local dialog = rawget(self, "personalBubbleEditModePreviewDialog")
+	if not ok or not dialog or not self.LibChev.CanMutateOwnedRegion(dialog) then
+		if dialog and self.LibChev.CanMutateOwnedRegion(dialog) then dialog:Hide() end
+		self:Print(L("Bubble settings preview is unavailable on this client."))
+		return false
+	end
+	dialog:ClearAllPoints()
+	dialog:SetPoint("CENTER")
+	dialog:Show()
+	return true
 end
 
 function QuestTogether:SelectPersonalBubbleAnchor()
@@ -1063,7 +1132,7 @@ function QuestTogether:SelectPersonalBubbleAnchor()
 	self:AttachPersonalBubbleEditModeDialog()
 	self:RefreshPersonalBubbleEditModeDialog()
 
-	local dialog = EnsurePersonalBubbleEditModeDialog()
+	local dialog = EnsurePersonalBubbleEditModeDialog(self)
 	if dialog then
 		dialog:Show()
 	end
@@ -1217,7 +1286,7 @@ function QuestTogether:TryInstallPersonalBubbleEditModeHooks()
 	end
 
 	GetAnnouncementBubbleScreenHostFrame()
-	EnsurePersonalBubbleEditModeDialog()
+	EnsurePersonalBubbleEditModeDialog(self)
 
 	local revertButton = GetAccessibleChildFrame(EditModeManagerFrame, "RevertAllChangesButton")
 	if not CanMutateFrame(revertButton) or type(select(1, self:GetAccessibleFrameMember(revertButton, "HookScript"))) ~= "function" then

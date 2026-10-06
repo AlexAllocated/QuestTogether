@@ -16,3 +16,21 @@ them with `python3 scripts/build_minimap_icon.py`,
 `python3 scripts/build_minimap_ring.py`, respectively. The SVG sources and build
 scripts are development assets; screenshot files in this directory are not
 runtime textures.
+
+## Release-note screenshots
+
+`ReleaseNotes/*.png` are unedited, user-supplied Party Quest Log preview screenshots.
+Retail and Forever overview images retain their client-specific player names;
+the expanded-objective image was captured in Forever. Web release notes label
+these separately, and in-game notes select the overview using QT's regional-name
+adapter. The objective screenshot is shown in-game only on Forever.
+
+The matching uncompressed RGB TGA files preserve the original pixels at the
+upper left of a 2048×1024 canvas. ReleaseNotesWindow crops the unused canvas with
+texture coordinates and scales proportionally. To regenerate an asset:
+
+```sh
+magick Media/ReleaseNotes/PartyQuestLogRetail.png -background black -gravity northwest -extent 2048x1024 -alpha off -compress none Media/ReleaseNotes/PartyQuestLogRetail.tga
+```
+
+Ship all three TGA files with the addon; the PNG originals support web notes.

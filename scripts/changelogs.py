@@ -66,9 +66,20 @@ def render(locale, entries):
             lines += ['### ' + section['title'], '']
             lines += ['- ' + item for item in section['items']]
             lines += ['']
+            for client, asset in illustration_images(section.get('illustration')):
+                url = 'https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v' + notes['version'] + '/Media/ReleaseNotes/' + asset + '.png'
+                lines += ['**' + client + '**', '', '![' + section['title'] + ' — ' + client + '](' + url + ')', '']
     if locale == 'enUS':
         lines += ['[Earlier handwritten changelog](changelogs/legacy-enUS.md)', '']
     return '\n'.join(lines)
+
+
+def illustration_images(illustration):
+    if illustration == 'party-quest-log':
+        return [('Retail', 'PartyQuestLogRetail'), ('Forever', 'PartyQuestLogForever')]
+    if illustration == 'party-quest-objectives':
+        return [('Forever', 'PartyQuestObjectivesForever')]
+    return []
 
 
 def outputs(root, notes, localized_outputs=None, previous_version=None):

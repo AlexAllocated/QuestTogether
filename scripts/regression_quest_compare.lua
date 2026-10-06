@@ -722,6 +722,12 @@ local function Frame(parent)
 	-- methods above are implemented and all other method names are rejected.
 	for _, name in ipairs({
 		"SetAutoFocus",
+		"EnableKeyboard",
+		"SetFontObject",
+		"SetTextInsets",
+		"HighlightText",
+		"SetFocus",
+		"Raise",
 		"SetMaxLetters",
 		"ClearFocus",
 		"SetJustifyH",
@@ -854,7 +860,7 @@ QuestTogether:RegisterTest(
 		a:PrintHelp()
 		assert(not table.concat(a.printed, "\n"):find("partychatpreview", 1, true))
 		a:PrintDebugHelp()
-		assert(table.concat(a.printed, "\n"):find("/qt partychatpreview", 1, true))
+		assert(table.concat(a.printed, "\n"):find("/qt preview share|join|partychat", 1, true))
 		a.blocked = true
 		Equal(a:ShowPartyChatReminderPreview(), false)
 		Equal(frame:IsShown(), false)
@@ -1174,13 +1180,17 @@ QuestTogether:RegisterTest("compare debug command renders the full mock UI witho
 	local liveShares = { outgoing = { untouched = true } }
 	a.partyQuestCompareSession, a.partyQuestShareState = liveSession, liveShares
 	a.pendingQuestCompareRequests.keep = { marker = "pending" }
-	assert(a:HandleSlashCommand("  compare   DEBUG  "))
+	assert(a:HandleSlashCommand("  preview   COMPARE  "))
 	local preview, livePending = a.partyQuestComparePreview, a.pendingQuestCompareRequests.keep
 	local frame = preview.partyQuestCompareWindow
 	Equal(frame.shown, true)
 	Equal(frame.title.text, "Party Quest Log — Debug Preview")
 	Equal(#frame.rows, 24)
-	Equal(#preview.partyQuestCompareSession.members, 3)
+	Equal(#preview.partyQuestCompareSession.members, 5)
+	Equal(preview.partyQuestCompareSession.members[4].classFile, "HUNTER")
+	Equal(preview.partyQuestCompareSession.members[5].classFile, "ROGUE")
+	assert(frame.headerCrowns[1]:IsShown())
+	for i = 2, 5 do assert(not frame.headerCrowns[i]:IsShown()) end
 	Equal(#preview:BuildPartyQuestDiffRows(), 16)
 	Equal(frame.filter.text, "Filters")
 	Equal(a.options.compareHideOtherQuests, true)
@@ -1215,6 +1225,37 @@ QuestTogether:RegisterTest("compare debug command renders the full mock UI witho
 	Equal(#a.wire, 0)
 	Equal(a.pushes, 0)
 	Equal(#a.delayed, 0)
+end)
+
+QuestTogether:RegisterTest("compare preview uses client appropriate names for headers leader and following", function()
+	for _, regional in ipairs({ false, true }) do
+		local a = PreviewFixture()
+		a.API.RegionalUniqueNamesEnabled = function() return regional end
+		assert(a:OpenPartyQuestComparePreview())
+		local p = a.partyQuestComparePreview
+		local expected = regional
+			and { "Rowan Lightward", "Aria Frostwind", "Borin Ironvale", "Celia Wildwood", "Dara Nightfall" }
+			or { "Rowan-AeriePeak", "Aria-AeriePeak", "Borin-AeriePeak", "Celia-AeriePeak", "Dara-AeriePeak" }
+		for i, name in ipairs(expected) do
+			Equal(p.partyQuestCompareSession.members[i].name, name)
+			Equal(p.partyQuestCompareSession.byName[name], p.partyQuestCompareSession.members[i])
+		end
+		Equal(p:GetPartyQuestLeaderName(), expected[1])
+		assert(p.partyQuestCompareWindow.headerCrowns[1]:IsShown())
+		local menu = {}
+		function menu:CreateTitle() end
+		function menu:CreateButton(_, click) self.click = click end
+		p:PopulatePartyFocusMenu(menu, expected[2])
+		menu.click()
+		Equal(p.previewFollowing, expected[2])
+		Equal(p.previewFocus, 2)
+		assert(p:GetPartyFollowingText():find(expected[2], 1, true))
+		p:RefreshPartyQuestCompare()
+		Equal(p.partyQuestCompareSession.members[2].name, expected[2])
+		Equal(p:GetPartyQuestLeaderName(), expected[1])
+		Equal(#a.wire, 0)
+		Equal(a.pushes, 0)
+	end
 end)
 
 QuestTogether:RegisterTest("compare preview actions simulate feedback and Refresh and filter stay private", function()
@@ -2465,7 +2506,7 @@ QuestTogether:RegisterTest(
 		FinishExpansion(frame)
 		Equal(p.partyQuestCompareSession.expandedQuestIds[id], nil)
 		Equal(frame.rows[2].data.kind, nil)
-		Equal(frame.rows[2].title.width, 314)
+		Equal(frame.rows[2].title.width, 284) -- Owned quests reserve space for the quest-log button.
 	end
 )
 
@@ -2527,6 +2568,37 @@ QuestTogether:RegisterTest(
 		Equal(all[1].objectiveCount, nil)
 	end
 )
+
+QuestTogether:RegisterTest("compact objectives fit all five members with two objectives inside the default viewport", function()
+	for _, lightMode in ipairs({ false, true }) do
+		local a = PreviewFixture()
+		a.options.lightMode = lightMode
+		a:OpenPartyQuestComparePreview()
+		local p = a.partyQuestComparePreview
+		local frame = p.partyQuestCompareWindow
+		p:SetPartyQuestCompareFilter("search", "Supplies for the Watch")
+		p:TogglePartyQuestObjectives(3)
+		local members, objectives, height = 0, 0, 0
+		for _, row in ipairs(frame.rows) do
+			if row.data then
+				height = height + row:GetHeight()
+				if row.data.kind == "member" then members = members + 1 end
+				if row.data.kind == "objective" then
+					objectives = objectives + 1
+					if row.progressTrack:IsShown() then
+						local barBottom = -row.progressTrack.points[1][3] + row.progressTrack:GetHeight()
+						assert(barBottom < row:GetHeight(), "progress bars retain bottom padding")
+					end
+				end
+			end
+		end
+		Equal(members, 5)
+		Equal(objectives, 10)
+		assert(height <= frame.rowsViewport:GetHeight(), "the complete five-player section fits without scrolling")
+		assert(not frame.vertical:IsShown())
+		Equal(#a.wire, 0)
+	end
+end)
 
 QuestTogether:RegisterTest("party readiness counts missing and unknown members without inferring completion", function()
 	local a = ObjectiveFixture()
@@ -2978,7 +3050,7 @@ QuestTogether:RegisterTest(
 		assert(session.expandedQuestIds[expanded])
 		frame.vertical:SetValue(99999)
 		frame:SetSize(100, 100) -- Native resize bounds, modeled by the private fixture.
-		Equal(frame:GetWidth(), 962)
+		Equal(frame:GetWidth(), 1222)
 		Equal(frame:GetHeight(), 500)
 		Equal(frame.rowsViewport:GetHeight(), 242)
 		Equal(frame.footer, nil)
@@ -3018,7 +3090,7 @@ QuestTogether:RegisterTest(
 		assert(frame.parchment.vertexColor[1] < 0.2)
 		assert(frame.rows[1].title.textColor[1] > lightInk)
 		assert(frame.headers[1].textColor[1] > lightHeader)
-		assert(frame.rows[2].background.textureColor[4] < frame.rows[3].background.textureColor[4])
+		Equal(frame.rows[2].background.textureColor[4], frame.rows[3].background.textureColor[4])
 		assert(not frame.rows[2].accent:IsShown() and frame.rows[2].panelEdges[1]:IsShown())
 		assert(p.partyQuestCompareSession.expandedQuestIds[id])
 		a.options.lightMode = true
@@ -3027,7 +3099,7 @@ QuestTogether:RegisterTest(
 		Equal(frame.parchment.vertexColor[1], 1)
 		Equal(frame.rows[1].title.textColor[1], lightInk)
 		Equal(frame.headers[1].textColor[1], lightHeader)
-		assert(frame.rows[2].background.textureColor[4] > frame.rows[3].background.textureColor[4])
+		Equal(frame.rows[2].background.textureColor[4], frame.rows[3].background.textureColor[4])
 		Equal(#a.wire, 0)
 	end
 )
@@ -3099,6 +3171,108 @@ QuestTogether:RegisterTest(
 	end
 )
 
+QuestTogether:RegisterTest("quest log leader crown updates without requesting new snapshots", function()
+	local a = Fixture(nil, { Quest(1, "Local quest", true) })
+	AttachUI(a)
+	a.leaderUnit = "player"
+	a.API.GetPartyVisualLeaderUnit = function() return a.leaderUnit end
+	function a:GetUnitFullName(unit)
+		return unit == "player" and self.name or "Friend-Realm"
+	end
+	function a:QueuePartyNavigationUpdate() end
+	a:OpenPartyQuestCompare()
+	a:Advance(0)
+	a:RenderPartyQuestCompare()
+	local frame, session = a.partyQuestCompareWindow, a.partyQuestCompareSession
+	assert(frame.headerCrowns[1]:IsShown())
+	assert(not frame.headerCrowns[2]:IsShown())
+	local sent, renders = #a.wire, a.renders
+	a.leaderUnit = "party1"
+	a:HandleGroupRosterChanged("GROUP_ROSTER_UPDATE")
+	Equal(a.partyQuestCompareSession, session)
+	Equal(a.renders, renders + 1)
+	Equal(#a.wire, sent)
+	a:RenderPartyQuestCompare()
+	assert(not frame.headerCrowns[1]:IsShown())
+	assert(frame.headerCrowns[2]:IsShown())
+	-- Unavailable/invalid native data clears the crown instead of retaining it.
+	a.leaderUnit = "target"
+	a:RenderPartyQuestCompare()
+	assert(not frame.headerCrowns[1]:IsShown() and not frame.headerCrowns[2]:IsShown())
+	a.leaderUnit = "player"
+	a.blocked = true
+	Equal(a:GetPartyQuestLeaderName(), nil)
+	a.blocked = false
+	session.mode = "target"
+	a:RenderPartyQuestCompare()
+	assert(not frame.headerCrowns[1]:IsShown() and not frame.headerCrowns[2]:IsShown())
+	session.mode = "party"
+	a.leaderUnit = "party1"
+	a:RenderPartyQuestCompare()
+	assert(frame.headerCrowns[2]:IsShown())
+	table.remove(session.members, 2)
+	a:RenderPartyQuestCompare()
+	assert(not frame.headerCrowns[2]:IsShown())
+end)
+
+QuestTogether:RegisterTest("quest log journal buttons open only owned current quests and leave expansion alone", function()
+	local a = ObjectiveFixture()
+	AttachUI(a)
+	a.openedQuests = {}
+	a.API.CanOpenQuestJournal = function() return true end
+	a.API.OpenQuestJournal = function(id) a.openedQuests[#a.openedQuests + 1] = id; return true end
+	function a:Print(text) self.lastMessage = text end
+	a:OpenPartyQuestCompare()
+	a:Advance(0)
+	Reply(a, "Friend-Realm", { Quest(3, "Remote quest", true) }, true, true)
+	a:RenderPartyQuestCompare()
+	local frame, ownRow, missingRow = a.partyQuestCompareWindow
+	for _, row in ipairs(frame.rows) do
+		if row.data and row.data.questId == 1 then ownRow = row end
+		if row.data and row.data.questId == 3 then missingRow = row end
+	end
+	assert(ownRow.journal:IsShown())
+	assert(not missingRow.journal:IsShown())
+	assert(ownRow.title:GetWidth() < missingRow.title:GetWidth())
+	ownRow.journal.scripts.OnClick()
+	Equal(a.openedQuests[1], 1)
+	assert(not a.partyQuestCompareSession.expandedQuestIds[1])
+	missingRow.journal.scripts.OnClick()
+	Equal(#a.openedQuests, 1)
+	a.blocked = true
+	ownRow.journal.scripts.OnClick()
+	Equal(#a.openedQuests, 1)
+	a.blocked = false
+	-- Native ownership can disappear before the visible snapshot refreshes.
+	a.entries = {}
+	ownRow.journal.scripts.OnClick()
+	Equal(#a.openedQuests, 1)
+	Equal(a.lastMessage, "This quest is not in your quest log.")
+	a.partyQuestCompareSession = nil
+	ownRow.journal.scripts.OnClick()
+	Equal(#a.openedQuests, 1)
+end)
+
+QuestTogether:RegisterTest("quest log preview journal buttons simulate opening and clear on pooled detail rows", function()
+	local a = PreviewFixture()
+	function a:OpenQuestJournalFromChatLog() error("preview opened a native quest") end
+	a:OpenPartyQuestComparePreview()
+	local preview, frame = a.partyQuestComparePreview, a.partyQuestComparePreview.partyQuestCompareWindow
+	local row
+	for _, candidate in ipairs(frame.rows) do
+		if candidate.data and candidate.journal:IsShown() then row = candidate; break end
+	end
+	assert(row)
+	row.journal.scripts.OnClick()
+	assert(frame.summary.text:find("Preview only: Open in Quest Log", 1, true))
+	preview:TogglePartyQuestObjectives(row.data.questId)
+	for _, candidate in ipairs(frame.rows) do
+		if candidate.data and candidate.data.kind then assert(not candidate.journal:IsShown()) end
+	end
+	Equal(#a.wire, 0)
+	Equal(a.pushes, 0)
+end)
+
 QuestTogether:RegisterTest("quest log focus preview follows stops and preserves selection for missing quests", function()
 	local a = ObjectiveFixture()
 	AttachUI(a)
@@ -3115,10 +3289,259 @@ QuestTogether:RegisterTest("quest log focus preview follows stops and preserves 
 	menu.click()
 	Equal(p.previewFocus, 2)
 	assert(frame.followStatus.text:find("You don't have this quest", 1, true))
+	p:PopulatePartyFocusMenu(menu, "Celia-AeriePeak")
+	menu.click()
+	Equal(p.previewFocus, 5)
+	Equal(p.previewFollowStatus, nil)
+	p:PopulatePartyFocusMenu(menu, "Dara-AeriePeak")
+	menu.click()
+	Equal(p.previewFocus, 5)
+	assert(frame.followStatus.text:find("You don't have this quest", 1, true))
 	p:StopPartyQuestFollow()
 	Equal(p:GetPartyFollowingText(), "")
 	p:RefreshPartyQuestCompare()
 	Equal(p.previewFocus, nil)
 	Equal(p.previewFollowing, nil)
+	Equal(#a.wire, 0)
+end)
+
+QuestTogether:RegisterTest("themed request previews cannot consume live requests or change preferences", function()
+	local a = Fixture()
+	AttachUI(a)
+	function a:Print(text) self.previewWarning = text end
+	local liveShare, liveJoin = {}, {}
+	a.partyQuestSharePrompt, a.partyJoinPrompt = liveShare, liveJoin
+	function a:ConfirmPartyQuestShare() error("preview shared a real quest") end
+	function a:ConfirmPartyJoin() error("preview invited a real player") end
+	function a:FinishPartyQuestShare() error("preview consumed a real share") end
+	function a:FinishPartyJoin() error("preview consumed a real join") end
+	assert(a:HandleSlashCommand("preview share"))
+	local share = a.partyQuestSharePreviewPrompt
+	Equal(#share.scrollPieces, 9)
+	assert(share.previewNote and share:IsShown())
+	share.always:SetChecked(true)
+	share.share.scripts.OnClick()
+	assert(not share:IsShown())
+	assert(a:HandleSlashCommand("preview join"))
+	local join = a.partyJoinPreviewPrompt
+	join.friends:SetChecked(true)
+	join.lfg:SetChecked(true)
+	join.invite.scripts.OnClick()
+	assert(not join:IsShown())
+	Equal(a.partyQuestSharePrompt, liveShare)
+	Equal(a.partyJoinPrompt, liveJoin)
+	Equal(a.options.autoInviteFriends, nil)
+	Equal(a.options.autoInviteWhileLFG, nil)
+	Equal(#a.wire, 0)
+	assert(a:ShowDialogPreview("share"))
+	Equal(share.always:GetChecked(), false)
+	share.close.scripts.OnClick()
+	assert(not share:IsShown())
+	a.blocked = true
+	Equal(a:ShowDialogPreview("join"), false)
+	assert(a.previewWarning:find("unavailable", 1, true))
+	assert(not join:IsShown())
+end)
+
+QuestTogether:RegisterTest("scroll dialog themes refresh existing controls without resetting consent", function()
+	local a = Fixture()
+	AttachUI(a)
+	assert(a:ShowDialogPreview("join"))
+	local frame = a.partyJoinPreviewPrompt
+	frame.friends:SetChecked(true)
+	assert(frame.scrollPieces[1].vertexColor[1] < 0.2)
+	a.options.lightMode = true
+	a:QueueScrollDialogThemeRefresh()
+	a:Advance(0)
+	Equal(frame.scrollPieces[1].vertexColor[1], 1)
+	assert(frame.message.textColor[1] < 0.3)
+	assert(frame.friends:GetChecked())
+	a.blocked = true
+	a.options.lightMode = false
+	Equal(a:ApplyScrollDialogTheme(frame), false)
+	Equal(frame.scrollPieces[1].vertexColor[1], 1)
+	a.blocked = false
+	assert(a:ApplyScrollDialogTheme(frame))
+	assert(frame.message.textColor[1] > 0.9)
+	frame.forbidden = true
+	Equal(a:ApplyScrollDialogTheme(frame), false)
+end)
+
+QuestTogether:RegisterTest("bubble dialog preview uses private controls without touching live edit state", function()
+	local a = Fixture()
+	AttachUI(a)
+	local liveDialog, liveSession = {}, {}
+	a.personalBubbleEditModeDialog, a.personalBubbleEditSession = liveDialog, liveSession
+	function a:ConfigurePersonalBubbleDialogSlider(frame, data, callback)
+		frame.settingData, frame.change = data, callback
+		frame.Label = frame.Label or Frame(frame)
+		frame.Slider = frame.Slider or Frame(frame)
+		frame.Slider.RightText = frame.Slider.RightText or Frame(frame.Slider)
+		function frame.Label:GetStringHeight() return 32 end
+	end
+	function a:SetOption() error("preview changed a saved option") end
+	function a:DeselectPersonalBubbleAnchor() error("preview deselected the live bubble") end
+	assert(a:HandleSlashCommand("preview bubble"))
+	local frame = a.personalBubbleEditModePreviewDialog
+	assert(frame:IsShown())
+	Equal(#frame.scrollPieces, 9)
+	Equal(frame.SizeSlider:GetWidth(), frame.contentWidth)
+	local slider = frame.SizeSlider.Slider
+	Equal(slider:GetWidth() + 120 + 16 + 12 + slider.RightText:GetWidth(), frame.contentWidth)
+	Equal(slider.RightText.points[1][1], "RIGHT")
+	Equal(slider.RightText.points[1][2], frame.SizeSlider)
+	frame.SizeSlider.change(160)
+	frame.DurationSlider.change(8)
+	frame.SaveButton.scripts.OnClick()
+	frame.RevertButton.scripts.OnClick()
+	frame.ResetButton.scripts.OnClick()
+	Equal(a.personalBubbleEditModeDialog, liveDialog)
+	Equal(a.personalBubbleEditSession, liveSession)
+	assert(not frame.SaveButton.enabled)
+	frame.CloseButton.scripts.OnClick()
+	assert(not frame:IsShown())
+	Equal(#a.wire, 0)
+end)
+
+QuestTogether:RegisterTest("window dragging preserves pickup position and scaled cursor offset", function()
+	local a = Fixture()
+	local root = AttachUI(a)
+	function root:GetEffectiveScale() return 0.8 end
+	function root:GetLeft() return 10 end
+	function root:GetBottom() return 20 end
+	a.cursorX, a.cursorY = 600, 500
+	function a:GetWindowDragCursor() return self.cursorX, self.cursorY end
+	local frame = a:CreateScrollDialog(500, 400, "Drag fixture")
+	frame:Show()
+	frame.effectiveScale = 0.6
+	function frame:GetEffectiveScale() return self.effectiveScale end
+	function frame:GetLeft() return 200 end
+	function frame:GetTop() return 700 end
+	local initialPoint = frame.points[1]
+	frame.scripts.OnDragStart(frame)
+	assert(frame.dragging)
+	Equal(frame.points[1], initialPoint)
+	local driver = frame.windowDragDriver
+	driver.scripts.OnUpdate()
+	Equal(frame.points[1], initialPoint)
+	a.cursorX, a.cursorY = 660, 470
+	driver.scripts.OnUpdate()
+	local point = frame.points[1]
+	Equal(point[1], "TOPLEFT")
+	Equal(point[2], root)
+	assert(math.abs(point[4] * 0.6 + 10 * 0.8 - (200 * 0.6 + 60)) < 0.001)
+	assert(math.abs(point[5] * 0.6 + 20 * 0.8 - (700 * 0.6 - 30)) < 0.001)
+	-- Returning to the exact pickup position must also update the anchor.
+	a.cursorX, a.cursorY = 600, 500
+	driver.scripts.OnUpdate()
+	assert(math.abs(frame.points[1][4] * 0.6 + 8 - 120) < 0.001)
+	frame.scripts.OnDragStop(frame)
+	Equal(frame.dragging, nil)
+	Equal(driver.scripts.OnUpdate, nil)
+	assert(not driver:IsShown())
+	-- Repeated pickup after a scale/reanchor still starts without changing points.
+	frame.effectiveScale = 1
+	initialPoint = frame.points[1]
+	assert(a:StartWindowDrag(frame))
+	Equal(frame.windowDragDriver, driver)
+	Equal(frame.points[1], initialPoint)
+	a.blocked = true
+	driver.scripts.OnUpdate()
+	Equal(frame.dragging, nil)
+	Equal(a:StartWindowDrag(frame), false)
+	a.blocked = false
+	assert(a:StartWindowDrag(frame))
+	frame:Hide()
+	Equal(frame.dragging, nil)
+	Equal(driver.scripts.OnUpdate, nil)
+	frame:Show()
+	assert(a:StartWindowDrag(frame))
+	frame.effectiveScale = 0.5
+	driver.scripts.OnUpdate()
+	Equal(frame.dragging, nil)
+end)
+
+QuestTogether:RegisterTest("isolated compare preview delegates drag callbacks without live session changes", function()
+	local a = Fixture()
+	local root = AttachUI(a)
+	function root:GetEffectiveScale() return 1 end
+	function root:GetLeft() return 0 end
+	function root:GetBottom() return 0 end
+	a.cursorX, a.cursorY = 600, 500
+	function a:GetWindowDragCursor() return self.cursorX, self.cursorY end
+	local liveSession = {}
+	a.partyQuestCompareSession = liveSession
+	assert(a:OpenPartyQuestComparePreview())
+	local preview = a.partyQuestComparePreview
+	local frame = preview.partyQuestCompareWindow
+	function frame:GetEffectiveScale() return 0.8 end
+	function frame:GetLeft() return 200 end
+	function frame:GetTop() return 700 end
+	-- Releasing without a successful pickup must be harmless too.
+	frame.scripts.OnDragStop(frame)
+	frame.scripts.OnDragStart(frame)
+	assert(frame.dragging)
+	a.cursorX, a.cursorY = 640, 480
+	frame.windowDragDriver.scripts.OnUpdate()
+	Equal(frame.points[1][4], 250)
+	Equal(frame.points[1][5], 675)
+	frame.scripts.OnDragStop(frame)
+	Equal(frame.dragging, nil)
+	Equal(frame.windowDragDriver.scripts.OnUpdate, nil)
+	frame.scripts.OnDragStart(frame)
+	frame:Hide()
+	Equal(frame.dragging, nil)
+	Equal(a.partyQuestCompareSession, liveSession)
+	Equal(preview.API, nil)
+	Equal(#a.wire, 0)
+	Equal(a.pushes, 0)
+end)
+
+QuestTogether:RegisterTest("Discord link dialog uses QT themes and supports safe dismissal", function()
+	local a = Fixture()
+	AttachUI(a)
+	assert(a:HandleSlashCommand("preview discord"))
+	local frame = a.discordLinkDialog
+	assert(frame:IsShown())
+	Equal(#frame.scrollPieces, 9)
+	assert(frame.box.text:find("https://discord.gg/", 1, true))
+	local original = frame.box.text
+	frame.box.text = "changed"
+	frame.box.scripts.OnTextChanged(frame.box, true)
+	Equal(frame.box.text, original)
+	a.options.lightMode = true
+	a:QueueScrollDialogThemeRefresh()
+	a:Advance(0)
+	Equal(frame.scrollPieces[1].vertexColor[1], 1)
+	assert(frame.box.textColor[1] < 0.3)
+	a.blocked = true
+	frame.box.scripts.OnEscapePressed()
+	assert(not frame:IsShown())
+	Equal(a:ShowDiscordLinkDialog(original), false)
+	Equal(#a.wire, 0)
+end)
+
+
+QuestTogether:RegisterTest("preview namespace lists choices without triggering previews or sending chat", function()
+	local a = Fixture()
+	a.printed, a.opened = {}, {}
+	function a:Print(text) self.printed[#self.printed + 1] = text end
+	function a:SendQTChannelChat() error("preview input must not become chat") end
+	function a:GetDebugController() error("preview help must not execute diagnostics") end
+	function a:OpenPartyQuestComparePreview() self.opened[#self.opened + 1] = "compare"; return true end
+	function a:OpenReleaseNotes() self.opened[#self.opened + 1] = "notes"; return true end
+	function a:ShowDialogPreview(kind) self.opened[#self.opened + 1] = kind; return true end
+	for _, command in ipairs({ "preview", "preview help", "preview typo", "preview join extra" }) do
+		a:HandleSlashCommand(command)
+	end
+	Equal(#a.opened, 0)
+	local help = table.concat(a.printed, "\n")
+	assert(help:find("/qt preview compare", 1, true))
+	assert(help:find("/qt preview announcement", 1, true))
+	assert(not help:find("/qt bubbletest", 1, true))
+	for _, command in ipairs({ "preview compare", "compare debug", "preview notes", "preview welcome", "preview partychat", "partychatpreview" }) do
+		assert(a:HandleSlashCommand(command))
+	end
+	Equal(table.concat(a.opened, ","), "compare,compare,notes,notes,partychat,partychat")
 	Equal(#a.wire, 0)
 end)

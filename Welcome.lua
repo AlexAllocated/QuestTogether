@@ -5,28 +5,7 @@ local Addon = _G.QuestTogether
 local DISCORD_URL = "https://discord.gg/Uxyyvhfva9"
 
 function Addon:RenderDiscordSupportLink(url)
-	local owner = rawget(self, "discordSupportWindowOwner")
-	if not owner then
-		owner = {}
-		self.discordSupportWindowOwner = owner
-	end
-	local shown = self.LibChev.OpenReportWindow(owner, url, {
-		parent = self:GetReleaseNotesUIParent(),
-		createFrame = function(...)
-			return self:CreateReleaseNotesUIFrame(...)
-		end,
-		restricted = function()
-			return self:IsRuntimeRestricted()
-		end,
-		canMutate = self.LibChev.CanMutateOwnedRegion,
-		title = L("QuestTogether Discord — Feedback & Support"),
-		copyLink = true,
-		translate = self.Translate,
-	})
-	if shown and not self:IsRuntimeRestricted() and self.LibChev.CanMutateOwnedRegion(owner.diagnosticsWindow) then
-		owner.diagnosticsWindow:Raise()
-	end
-	return shown
+	return self:ShowDiscordLinkDialog(url)
 end
 
 function Addon:OpenDiscordSupport()

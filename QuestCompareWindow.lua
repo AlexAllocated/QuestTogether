@@ -1,11 +1,15 @@
 local L = _G.QuestTogether.Translate
 local QuestTogether = _G.QuestTogether
 local VISIBLE_ROWS, ROW_HEIGHT = 11, 42
+local MEMBER_ROW_HEIGHT, OBJECTIVE_ROW_HEIGHT = 24, 26
 local DETAIL_BOTTOM_PADDING = 10
 local function CompareRowHeight(rows, index)
-	local row, following = rows[index], rows[index + 1]
+	local row, previous, following = rows[index], rows[index - 1], rows[index + 1]
+	local firstDetail = row.kind and (not previous or not previous.kind or previous.questId ~= row.questId)
 	local lastDetail = row.kind and (not following or not following.kind or following.questId ~= row.questId)
-	return ROW_HEIGHT + (lastDetail and DETAIL_BOTTOM_PADDING or 0)
+	local height = row.kind == "member" and (row.hint and row.hint ~= "" and 34 or MEMBER_ROW_HEIGHT)
+		or row.kind == "objective" and OBJECTIVE_ROW_HEIGHT or ROW_HEIGHT
+	return height + (firstDetail and 6 or 0) + (lastDetail and DETAIL_BOTTOM_PADDING or 0)
 end
 local QUEST_WIDTH, MEMBER_WIDTH, ACTION_WIDTH = 350, 130, 160
 local COLUMN_WIDTH = MEMBER_WIDTH - 4
@@ -245,15 +249,8 @@ local function NativeTexture(parent, template, layer, width, height)
 	return texture
 end
 
-local function TiledBackground(parent, file)
-	local texture = NativeTexture(parent, nil, "BACKGROUND")
-	texture:SetAllPoints()
-	texture:SetTexture(file, "REPEAT", "REPEAT")
-	texture:SetHorizTile(true)
-	texture:SetVertTile(true)
-end
-
 local function Window(addon, width, height, title, parchment)
+	if not parchment then return addon:CreateScrollDialog(width, height, title) end
 	local frame = addon:CreatePartyQuestUIFrame("Frame", nil, addon:GetPartyQuestUIParent())
 	frame:Hide()
 	frame:SetSize(width, height)
@@ -269,60 +266,15 @@ local function Window(addon, width, height, title, parchment)
 		if addon:IsWorkBlocked("foreign_frame_mutation") then
 			return
 		end
-		self:StartMoving()
+		addon:StartWindowDrag(self)
 	end)
 	frame:SetScript("OnDragStop", function(self)
-		self:StopMovingOrSizing()
+		addon:StopWindowDrag(self)
 	end)
-	if parchment then
-		frame.parchment = NativeTexture(frame, nil, "BACKGROUND")
-		frame.parchment:SetPoint("TOPLEFT", -16, 12)
-		frame.parchment:SetPoint("BOTTOMRIGHT", 16, -12)
-		frame.parchment:SetTexture(addon:GetScrollWindowTheme().texture)
-	else
-		TiledBackground(frame, "Interface\\FrameGeneral\\UI-Background-Marble")
-		local topLeft = NativeTexture(frame, "UI-Frame-TopLeftCorner", "OVERLAY", 33, 33)
-		topLeft:SetPoint("TOPLEFT", -6, 1)
-		local topRight = NativeTexture(frame, "UI-Frame-TopCornerRight", "OVERLAY", 33, 33)
-		topRight:SetPoint("TOPRIGHT", 0, 1)
-		local bottomLeft = NativeTexture(frame, "UI-Frame-BotCornerLeft", "BORDER", 14, 14)
-		bottomLeft:SetPoint("BOTTOMLEFT", -6, -5)
-		local bottomRight = NativeTexture(frame, "UI-Frame-BotCornerRight", "BORDER", 11, 11)
-		bottomRight:SetPoint("BOTTOMRIGHT", 0, -5)
-		for _, edge in ipairs({
-			{ "_UI-Frame-TitleTile", "TOPLEFT", topLeft, "TOPRIGHT", "TOPRIGHT", topRight, "TOPLEFT", 256, 28 },
-			{
-				"_UI-Frame-Bot",
-				"BOTTOMLEFT",
-				bottomLeft,
-				"BOTTOMRIGHT",
-				"BOTTOMRIGHT",
-				bottomRight,
-				"BOTTOMLEFT",
-				256,
-				9,
-			},
-			{ "!UI-Frame-LeftTile", "TOPLEFT", topLeft, "BOTTOMLEFT", "BOTTOMLEFT", bottomLeft, "TOPLEFT", 16, 256 },
-			{
-				"!UI-Frame-RightTile",
-				"TOPRIGHT",
-				topRight,
-				"BOTTOMRIGHT",
-				"BOTTOMRIGHT",
-				bottomRight,
-				"TOPRIGHT",
-				10,
-				256,
-			},
-		}) do
-			local texture = NativeTexture(frame, edge[1], "BORDER", edge[8], edge[9])
-			texture:SetPoint(edge[2], edge[3], edge[4])
-			texture:SetPoint(edge[5], edge[6], edge[7])
-		end
-		local titleBackground = NativeTexture(frame, "_UI-Frame-TitleTileBg", "BACKGROUND", 256, 18)
-		titleBackground:SetPoint("TOPLEFT", 2, -1)
-		titleBackground:SetPoint("TOPRIGHT", -25, -1)
-	end
+	frame.parchment = NativeTexture(frame, nil, "BACKGROUND")
+	frame.parchment:SetPoint("TOPLEFT", -16, 12)
+	frame.parchment:SetPoint("BOTTOMRIGHT", 16, -12)
+	frame.parchment:SetTexture(addon:GetScrollWindowTheme().texture)
 	frame.title = Label(
 		frame,
 		parchment and 50 or 16,
@@ -351,7 +303,8 @@ local function Checkbox(addon, parent, x, y, text, callback)
 	local check = addon:CreatePartyQuestUIFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
 	check:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
 	check:SetSize(26, 26)
-	Label(check, 30, -7, 340, text)
+	check.label = Label(check, 30, -7, (parent.contentWidth or (parent:GetWidth() - 48)) - 26, text)
+	if parent.themeLabels then addon:AddScrollDialogLabel(parent, check.label) end
 	check:SetScript("OnClick", callback)
 	return check
 end
@@ -408,14 +361,24 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 			ColorPanel(row.hover, dark and 1 or 0.35, dark and 1 or 0.24, dark and 1 or 0.10, 0.08)
 			row.title:ClearAllPoints()
 			local indent = data.kind == "objective" and 64 or data.kind == "member" and 48 or 28
-			row.title:SetPoint("TOPLEFT", indent, (data.kind == "member" and -12 or -5) - top)
-			row.title:SetWidth(data.kind and (actionX - indent - 16) or (QUEST_WIDTH - 36))
+			local own = session.byName[session.playerName]
+			local journalVisible = not data.kind and own and own.entries[data.questId] ~= nil
+			local titleTop = data.kind == "member" and (data.hint and data.hint ~= "" and 9 or 4)
+				or data.kind == "objective" and 3 or 5
+			row.title:SetPoint("TOPLEFT", indent, -titleTop - top)
+			row.title:SetWidth(data.kind and (actionX - indent - 16) or (QUEST_WIDTH - (journalVisible and 66 or 36)))
+			if journalVisible then
+				row.journal:SetEnabled(not self:IsWorkBlocked("foreign_frame_mutation"))
+				row.journal:Show()
+			else
+				row.journal:Hide()
+			end
 			row.partySummary:SetText(data.partySummary or "")
 			row.partySummary:SetTextColor(unpack(colors[data.partySummaryState or "Unknown"]))
 			if data.kind then
 				row.accent:Hide()
 				local r, g, b = MemberColor(self, data.classFile)
-				ColorPanel(row.background, r, g, b, data.kind == "member" and (dark and 0.12 or 0.34) or 0.20)
+				ColorPanel(row.background, r, g, b, 0.20)
 			else
 				if expanded then
 					row.accent:SetColorTexture(0.46, 0.30, 0.08, 1)
@@ -434,9 +397,9 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 			if data.fraction then
 				local barWidth = actionX - 80
 				row.progressTrack:ClearAllPoints()
-				row.progressTrack:SetPoint("TOPLEFT", 64, -32)
+				row.progressTrack:SetPoint("TOPLEFT", 64, -22 - top)
 				row.progressFill:ClearAllPoints()
-				row.progressFill:SetPoint("TOPLEFT", 64, -32)
+				row.progressFill:SetPoint("TOPLEFT", 64, -22 - top)
 				row.progressTrack:SetWidth(barWidth)
 				row.progressTrack:SetColorTexture(
 					dark and 0.75 or 0.3,
@@ -503,7 +466,7 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 			row.action:SetHeight(24)
 			row.hint:SetMaxLines(2)
 			row.hint:ClearAllPoints()
-			row.hint:SetHeight(data.kind and (ROW_HEIGHT - top - bottom - 4) or (ROW_HEIGHT - 8))
+			row.hint:SetHeight(data.kind and (row:GetHeight() - top - bottom - 4) or (ROW_HEIGHT - 8))
 			local status, waiting = self:GetPartyQuestShareStatus(data.questId)
 			if data.kind then
 				status, waiting = nil, false
@@ -861,6 +824,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	frame.rowsContent:SetSize(QUEST_WIDTH + ACTION_WIDTH, (VISIBLE_ROWS * 2 + 2) * ROW_HEIGHT)
 	frame.rowsViewport:SetScrollChild(frame.rowsContent)
 	frame.headers, frame.headerAccents, frame.rows = {}, {}, {}
+	frame.headerCrowns = {}
 	frame.focusHeaders, frame.focusButtons, frame.headerStatuses = {}, {}, {}
 	frame.followStatus = Label(frame.content, 4, -26, QUEST_WIDTH - 130, "", "GameFontHighlightSmall")
 	frame.followStatus:SetHeight(44)
@@ -916,6 +880,28 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 				end
 			end)
 			row.title:SetMaxLines(1)
+			row.journal = self:CreatePartyQuestUIFrame("Button", nil, row)
+			row.journal:SetSize(22, 22)
+			row.journal:SetPoint("TOPLEFT", QUEST_WIDTH - 32, -4)
+			row.journal:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+			local journalIcon = row.journal:CreateTexture(nil, "ARTWORK")
+			journalIcon:SetTexture("Interface\\Icons\\INV_Misc_Book_09")
+			journalIcon:SetSize(18, 18)
+			journalIcon:SetPoint("CENTER")
+			row.journal:SetScript("OnEnter", function()
+				if row.data and not row.data.kind and row.session == self.partyQuestCompareSession then
+					self:ShowSettingsTooltip(row.journal, L("Open in Quest Log"), row.data.title)
+				end
+			end)
+			local function HideJournalTooltip() self:HideSettingsTooltip(row.journal) end
+			row.journal:SetScript("OnLeave", HideJournalTooltip)
+			row.journal:SetScript("OnHide", HideJournalTooltip)
+			row.journal:SetScript("OnClick", function()
+				HideJournalTooltip()
+				if row.data and not row.data.kind and row.session == self.partyQuestCompareSession then
+					self:OpenPartyQuestJournal(row.data.questId)
+				end
+			end)
 			row:EnableMouse(true)
 			row:SetScript("OnEnter", function()
 				if row.data then
@@ -1172,6 +1158,7 @@ function QuestTogether:RenderPartyQuestCompare()
 	frame.displaySession = session
 	PrepareExpansions(self, frame, session, rows)
 	local ready = 0
+	local leaderName = session.mode ~= "target" and self:GetPartyQuestLeaderName() or nil
 	for i, member in ipairs(session.members) do
 		if member.state == "ready" then
 			ready = ready + 1
@@ -1181,14 +1168,20 @@ function QuestTogether:RenderPartyQuestCompare()
 			frame.headerAccents[i] = frame.content:CreateTexture(nil, "ARTWORK")
 			frame.headerAccents[i]:SetSize(COLUMN_WIDTH, 3)
 			frame.headerAccents[i]:SetPoint("TOPLEFT", ColumnLeft(i), -72)
+			frame.headerCrowns[i] = frame.content:CreateTexture(nil, "OVERLAY")
+			frame.headerCrowns[i]:SetTexture("Interface\\AddOns\\QuestTogether\\Media\\PartyLeader")
+			frame.headerCrowns[i]:SetSize(16, 12)
+			frame.headerCrowns[i]:SetPoint("TOPLEFT", ColumnLeft(i) + 8, -7)
 		end
 		local header = frame.headers[i]
+		local isLeader = member.name == leaderName
+		if isLeader then frame.headerCrowns[i]:Show() else frame.headerCrowns[i]:Hide() end
 		local r, g, b = MemberColor(self, member.classFile)
 		header:SetTextColor(r, g, b)
 		frame.headerAccents[i]:SetColorTexture(r, g, b, 1)
 		frame.headerAccents[i]:Show()
 		header:ClearAllPoints()
-		header:SetPoint("TOPLEFT", ColumnLeft(i) + 8, -6)
+		header:SetPoint("TOPLEFT", ColumnLeft(i) + (isLeader and 28 or 8), -6)
 		header:SetHeight(16)
 		header:SetMaxLines(1)
 		header:SetJustifyV("TOP")
@@ -1280,7 +1273,7 @@ function QuestTogether:RenderPartyQuestCompare()
 		local clickable = enabled and not member.isLocal
 		button.navClickable = clickable
 		button:SetEnabled(clickable)
-		header:SetWidth(COLUMN_WIDTH - (clickable and 30 or 16))
+		header:SetWidth(COLUMN_WIDTH - (clickable and 30 or 16) - (isLeader and 20 or 0))
 		LayoutPanel(button.paper, frame.content, "BACKGROUND", 0, ColumnLeft(i), 0, COLUMN_WIDTH, 70, true, false)
 		LayoutPanel(button.hover, frame.content, "BORDER", 0, ColumnLeft(i), 0, COLUMN_WIDTH, 70, true, false)
 		ColorPanel(button.paper, r, g, b, dark and 0.14 or 0.10)
@@ -1302,6 +1295,7 @@ function QuestTogether:RenderPartyQuestCompare()
 		frame.headers[i]:Hide()
 		frame.headerStatuses[i]:Hide()
 		frame.headerAccents[i]:Hide()
+		frame.headerCrowns[i]:Hide()
 		frame.focusHeaders[i]:Hide()
 		frame.focusButtons[i]:Hide()
 	end
@@ -1361,29 +1355,80 @@ function QuestTogether:RenderPartyQuestCompare()
 	self:QueuePartyQuestTitleRefresh(session.unfilteredQuests or quests)
 end
 
-function QuestTogether:CreatePartyQuestSharePrompt()
-	if self.partyQuestSharePrompt then
-		return self.partyQuestSharePrompt
+local function LayoutRequestPrompt(addon, frame)
+	frame.message:SetHeight(frame.message:GetStringHeight())
+	local y = frame.contentTop + frame.message:GetStringHeight() + 24
+	if frame.preview then
+		if not frame.previewNote then
+			frame.previewNote = Label(frame, frame.contentInset, -y, frame.contentWidth, L("Preview - no settings will change."))
+			addon:AddScrollDialogLabel(frame, frame.previewNote, "muted")
+		end
+		frame.previewNote:ClearAllPoints()
+		frame.previewNote:SetPoint("TOPLEFT", frame.contentInset, -y)
+		y = y + frame.previewNote:GetStringHeight() + 14
 	end
+	for _, check in ipairs(frame.preferences) do
+		check:ClearAllPoints()
+		check:SetPoint("TOPLEFT", frame, "TOPLEFT", frame.contentInset - 4, -y)
+		check.label:SetWordWrap(true)
+		check.label:SetHeight(check.label:GetStringHeight())
+		y = y + math.max(26, check.label:GetStringHeight() + 8) + 12
+	end
+	frame:SetHeight(y + 12 + 24 + frame.contentBottom)
+	addon:FitScrollDialog(frame)
+end
+
+local function DismissPreview(addon, frame)
+	if frame.preview then
+		if addon.LibChev.CanMutateOwnedRegion(frame) then frame:Hide() end
+		return true
+	end
+	return false
+end
+
+function QuestTogether:CreatePartyQuestSharePrompt(preview)
+	local key = preview and "partyQuestSharePreviewPrompt" or "partyQuestSharePrompt"
+	if rawget(self, key) then return self[key] end
 	local parent = self:GetPartyQuestUIParent()
 	if not self:CanAccessForeignFrame(parent) then
 		return nil
 	end
-	local frame = Window(self, 460, 224, L("QuestTogether · Share request"))
+	local frame = Window(self, 520, 260, L("QuestTogether · Share request"))
+	if not frame then return nil end
+	frame.preview = preview
 	frame:SetFrameStrata("FULLSCREEN_DIALOG")
-	frame:SetScale(math.min(1, parent:GetWidth() * 0.94 / 460, parent:GetHeight() * 0.94 / 224))
-	frame.message = Label(frame, 20, -56, 420, "")
+	frame:SetScale(math.min(1, parent:GetWidth() * 0.94 / 520, parent:GetHeight() * 0.94 / 260))
+	frame.message = Label(frame, frame.contentInset, -frame.contentTop, frame.contentWidth, "", "GameFontHighlight")
+	self:AddScrollDialogLabel(frame, frame.message)
 	frame.message:SetHeight(64)
-	frame.always = Checkbox(self, frame, 16, -130, L("Always allow party share requests"))
-	Button(self, frame, 210, -182, 105, L("Share"), function()
+	frame.always = Checkbox(self, frame, frame.contentInset - 4, -152, L("Always allow party share requests"))
+	frame.preferences = { frame.always }
+	frame.share = Button(self, frame, 264, -222, 105, L("Share"), function()
+		if DismissPreview(self, frame) then return end
 		self:ConfirmPartyQuestShare(frame.request, frame.always:GetChecked() == true, false)
 	end)
-	Button(self, frame, 325, -182, 105, L("Decline"), function()
+	frame.decline = Button(self, frame, 379, -222, 105, L("Decline"), function()
+		if DismissPreview(self, frame) then return end
 		if frame.request then
 			self:FinishPartyQuestShare(frame.request, "declined")
 		end
 	end)
-	self.partyQuestSharePrompt = frame
+	frame.share:ClearAllPoints()
+	frame.share:SetPoint("BOTTOMRIGHT", -frame.contentInset - 115, frame.contentBottom)
+	frame.decline:ClearAllPoints()
+	frame.decline:SetPoint("BOTTOMRIGHT", -frame.contentInset, frame.contentBottom)
+	frame.LayoutRequest = function() LayoutRequestPrompt(self, frame) end
+	frame.close = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelCloseButton")
+	frame.close:SetPoint("TOPRIGHT", -12, -8)
+	frame.close:SetScript("OnClick", function()
+		if self.LibChev.CanMutateOwnedRegion(frame) then frame:Hide() end
+		if not frame.preview then
+			if frame.always then self:FinishPartyQuestShare(frame.request, "declined")
+			else self:FinishPartyJoin(frame.request, "declined") end
+		end
+	end)
+
+	self[key] = frame
 	return frame
 end
 
@@ -1436,36 +1481,63 @@ function QuestTogether:RenderPartyQuestSharePrompt()
 			)
 		)
 	end
+	frame:LayoutRequest()
+	self:ApplyScrollDialogTheme(frame)
 	frame:Show()
 end
 
-function QuestTogether:CreatePartyJoinPrompt()
+function QuestTogether:CreatePartyJoinPrompt(preview)
+	local key = preview and "partyJoinPreviewPrompt" or "partyJoinPrompt"
+	if rawget(self, key) then return self[key] end
 	local parent = self:GetPartyQuestUIParent()
 	if not self:CanAccessForeignFrame(parent) then
 		return nil
 	end
-	local frame = Window(self, 580, 280, L("QuestTogether · Join request"))
+	local frame = Window(self, 580, 316, L("QuestTogether · Join request"))
+	if not frame then return nil end
+	frame.preview = preview
 	frame:SetFrameStrata("FULLSCREEN_DIALOG")
-	frame:SetScale(math.min(1, parent:GetWidth() * 0.94 / 580, parent:GetHeight() * 0.94 / 280))
-	frame.message = Label(frame, 20, -48, 540, "")
+	frame:SetScale(math.min(1, parent:GetWidth() * 0.94 / 580, parent:GetHeight() * 0.94 / 316))
+	frame.message = Label(frame, frame.contentInset, -frame.contentTop, frame.contentWidth, "", "GameFontHighlight")
+	self:AddScrollDialogLabel(frame, frame.message)
 	frame.message:SetHeight(65)
 	local function Preference(y, text)
 		local check = self:CreatePartyQuestUIFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
 		check:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, y)
 		check:SetSize(26, 26)
-		local label = Label(check, 30, -4, 510, text)
+		local label = Label(check, 30, -4, frame.contentWidth - 26, text)
+		check.label = label
+		self:AddScrollDialogLabel(frame, label)
 		label:SetHeight(40)
 		return check
 	end
-	frame.friends = Preference(-120, L("Automatically invite friends who request to join"))
-	frame.lfg = Preference(-168, L("Automatically invite others while looking for partners"))
-	frame.invite = Button(self, frame, 190, -238, 180, L("Send Invitation"), function()
+	frame.friends = Preference(-140, L("Automatically invite friends who request to join"))
+	frame.lfg = Preference(-188, L("Automatically invite others while looking for partners"))
+	frame.preferences = { frame.friends, frame.lfg }
+	frame.invite = Button(self, frame, 172, -278, 180, L("Send Invitation"), function()
+		if DismissPreview(self, frame) then return end
 		self:ConfirmPartyJoin(frame.request, frame.friends:GetChecked() == true, frame.lfg:GetChecked() == true, false)
 	end)
-	frame.decline = Button(self, frame, 380, -238, 180, L("Decline"), function()
+	frame.decline = Button(self, frame, 362, -278, 180, L("Decline"), function()
+		if DismissPreview(self, frame) then return end
 		self:FinishPartyJoin(frame.request, "declined")
 	end)
-	self.partyJoinPrompt = frame
+	frame.invite:ClearAllPoints()
+	frame.invite:SetPoint("BOTTOMRIGHT", -frame.contentInset - 190, frame.contentBottom)
+	frame.decline:ClearAllPoints()
+	frame.decline:SetPoint("BOTTOMRIGHT", -frame.contentInset, frame.contentBottom)
+	frame.LayoutRequest = function() LayoutRequestPrompt(self, frame) end
+	frame.close = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelCloseButton")
+	frame.close:SetPoint("TOPRIGHT", -12, -8)
+	frame.close:SetScript("OnClick", function()
+		if self.LibChev.CanMutateOwnedRegion(frame) then frame:Hide() end
+		if not frame.preview then
+			if frame.always then self:FinishPartyQuestShare(frame.request, "declined")
+			else self:FinishPartyJoin(frame.request, "declined") end
+		end
+	end)
+
+	self[key] = frame
 	return frame
 end
 
@@ -1489,10 +1561,15 @@ function QuestTogether:RenderPartyJoinPrompt()
 		frame.lfg:SetChecked(self:GetOption("autoInviteWhileLFG") == true)
 		frame.message:SetText(request.sender .. L(" would like to join your party.\nSend an invitation?"))
 	end
+	frame:LayoutRequest()
+	self:ApplyScrollDialogTheme(frame)
 	frame:Show()
 end
 
 function QuestTogether:RenderPartyChatReminder(request)
+	local inset = self.SCROLL_DIALOG_INSET
+	local bodyWidth = 520 - inset * 2
+	local buttonWidth = (bodyWidth - 12) / 2
 	local frameKey = request and request.preview and "partyChatReminderPreviewFrame" or "partyChatReminderFrame"
 	local frame = rawget(self, frameKey)
 	self:HideRetiredPartyRequestPrompt(frame, request)
@@ -1518,21 +1595,20 @@ function QuestTogether:RenderPartyChatReminder(request)
 	end
 	if not frame then
 		frame = Window(self, 520, 300, L("QuestTogether · Party chat announcements"))
+		if not frame then return end
 		self[frameKey] = frame
 		frame:SetFrameStrata("FULLSCREEN_DIALOG")
 		frame:SetFrameLevel(200)
-		frame.logo = NativeTexture(frame, nil, "ARTWORK", 52, 52)
-		frame.logo:SetPoint("TOPLEFT", 26, -43)
-		frame.logo:SetTexture(self.NAMEPLATE_PLAYER_ICON_TEXTURE)
-		frame.heading = Label(frame, 94, -47, 398, L("Share updates with your party?"), "GameFontNormalLarge")
+
+		frame.heading = Label(frame, inset, -frame.contentTop, bodyWidth, L("Share updates with your party?"), "GameFontNormalLarge")
 		frame.heading:SetWordWrap(true)
-		frame.preview = Label(frame, 94, -76, 398, "", "GameFontHighlightSmall")
+		frame.preview = Label(frame, inset, -94, bodyWidth, "", "GameFontHighlightSmall")
 		frame.preview:SetTextColor(0.65, 0.65, 0.65)
 		frame.message = Label(
 			frame,
-			24,
+			inset,
 			-116,
-			472,
+			bodyWidth,
 			L(
 				"Your quest updates can also appear in party chat, so party members without QuestTogether can follow along."
 			),
@@ -1541,32 +1617,33 @@ function QuestTogether:RenderPartyChatReminder(request)
 		frame.message:SetWordWrap(true)
 		frame.memberPanel = NativeTexture(frame, nil, "BACKGROUND")
 		frame.memberPanel:SetColorTexture(0, 0, 0, 0.3)
-		frame.memberLabel = Label(frame, 36, 0, 448, L("QT hasn't been detected for:"), "GameFontNormalSmall")
-		frame.members = Label(frame, 36, 0, 448, "", "GameFontHighlight")
+		frame.memberLabel = Label(frame, inset + 12, 0, bodyWidth - 24, L("QT hasn't been detected for:"), "GameFontNormalSmall")
+		frame.members = Label(frame, inset + 12, 0, bodyWidth - 24, "", "GameFontHighlight")
 		frame.members:SetWordWrap(true)
 		frame.hint = Label(
 			frame,
-			24,
+			inset,
 			0,
-			472,
+			bodyWidth,
 			L('Change this anytime in Settings under "Where to Announce".'),
 			"GameFontHighlightSmall"
 		)
 		frame.hint:SetTextColor(0.7, 0.7, 0.7)
 		frame.hint:SetWordWrap(true)
-		frame.remember = Checkbox(self, frame, 16, -210, L("Don't remind me again"))
-		frame.keep = Button(self, frame, 24, -260, 230, L("Keep enabled"), function()
+		frame.remember = Checkbox(self, frame, inset - 4, -210, L("Don't remind me again"))
+		frame.remember.label:SetWidth(bodyWidth - 26)
+		frame.keep = Button(self, frame, inset, -260, buttonWidth, L("Keep enabled"), function()
 			if self.LibChev.CanMutateOwnedRegion(frame.remember) then
 				self:AcknowledgePartyChatReminder(frame.request, frame.remember:GetChecked() == true, false)
 			end
 		end)
-		frame.disable = Button(self, frame, 266, -260, 230, L("Turn off announcements"), function()
+		frame.disable = Button(self, frame, inset + buttonWidth + 12, -260, buttonWidth, L("Turn off announcements"), function()
 			if self.LibChev.CanMutateOwnedRegion(frame.remember) then
 				self:AcknowledgePartyChatReminder(frame.request, frame.remember:GetChecked() == true, true)
 			end
 		end)
 		frame.close = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelCloseButton")
-		frame.close:SetPoint("TOPRIGHT", 0, 0)
+		frame.close:SetPoint("TOPRIGHT", -12, -8)
 		frame.close:SetScript("OnClick", function()
 			-- Safe dismissal remains available during combat. A restricted close
 			-- does not acknowledge or save preferences; the reminder resumes later.
@@ -1577,14 +1654,18 @@ function QuestTogether:RenderPartyChatReminder(request)
 				self:AcknowledgePartyChatReminder(frame.request, frame.remember:GetChecked() == true, false)
 			end
 		end)
+		for _, region in ipairs({ frame.heading, frame.memberLabel }) do self:AddScrollDialogLabel(frame, region, "heading") end
+		for _, region in ipairs({ frame.preview, frame.hint }) do self:AddScrollDialogLabel(frame, region, "muted") end
+		for _, region in ipairs({ frame.message, frame.members }) do self:AddScrollDialogLabel(frame, region) end
+
 		frame:SetScript("OnDragStart", function()
 			if not self:IsWorkBlocked("foreign_frame_mutation") and self.LibChev.CanMutateOwnedRegion(frame) then
-				frame:StartMoving()
+				self:StartWindowDrag(frame)
 			end
 		end)
 		frame:SetScript("OnDragStop", function()
 			if self.LibChev.CanMutateOwnedRegion(frame) then
-				frame:StopMovingOrSizing()
+				self:StopWindowDrag(frame)
 			end
 		end)
 	end
@@ -1603,26 +1684,28 @@ function QuestTogether:RenderPartyChatReminder(request)
 			region:SetPoint("TOPLEFT", frame, "TOPLEFT", x, -y)
 		end
 		local headingHeight = frame.heading:GetStringHeight()
-		Place(frame.preview, 94, 47 + headingHeight + 6)
+		Place(frame.preview, inset, frame.contentTop + headingHeight + 8)
 		local headerBottom =
-			math.max(95, 47 + headingHeight + (request.preview and frame.preview:GetStringHeight() + 6 or 0))
+			frame.contentTop + headingHeight + (request.preview and frame.preview:GetStringHeight() + 8 or 0)
 		local y = headerBottom + 18
-		Place(frame.message, 24, y)
+		Place(frame.message, inset, y)
 		y = y + frame.message:GetStringHeight() + 16
-		Place(frame.memberPanel, 24, y)
-		Place(frame.memberLabel, 36, y + 10)
-		Place(frame.members, 36, y + 10 + frame.memberLabel:GetStringHeight() + 6)
+		Place(frame.memberPanel, inset, y)
+		Place(frame.memberLabel, inset + 12, y + 10)
+		Place(frame.members, inset + 12, y + 10 + frame.memberLabel:GetStringHeight() + 6)
 		local panelHeight = 20 + frame.memberLabel:GetStringHeight() + 6 + frame.members:GetStringHeight()
-		frame.memberPanel:SetSize(472, panelHeight)
+		frame.memberPanel:SetSize(bodyWidth, panelHeight)
 		y = y + panelHeight + 14
-		Place(frame.hint, 24, y)
+		Place(frame.hint, inset, y)
 		y = y + frame.hint:GetStringHeight() + 14
-		Place(frame.remember, 20, y)
-		y = y + 38
-		Place(frame.keep, 24, y)
-		Place(frame.disable, 266, y)
-		frame:SetHeight(y + 46)
-		frame:SetScale(math.min(1, width * 0.94 / 520, parentHeight * 0.94 / (y + 46)))
+		Place(frame.remember, inset - 4, y)
+		frame.remember.label:SetWordWrap(true)
+		frame.remember.label:SetHeight(frame.remember.label:GetStringHeight())
+		y = y + math.max(26, frame.remember.label:GetStringHeight() + 8) + 12
+		Place(frame.keep, inset, y + 24)
+		Place(frame.disable, inset + buttonWidth + 12, y + 24)
+		frame:SetHeight(y + 24 + 24 + frame.contentBottom)
+		self:FitScrollDialog(frame)
 	end
 	frame:Show()
 end
