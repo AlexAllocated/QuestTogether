@@ -49,6 +49,7 @@
       "QTLQ",
       "QTNAV",
       "QTPG",
+      "QTPH",
       "QTPR",
       "QTSP",
       "QTSR",
@@ -401,6 +402,10 @@
       "LOC",
       "Neutral",
       "player location"
+    ],
+    "PlayerPhases.lua": [
+      "WHISPER",
+      "layer comparison"
     ],
     "PlayerPlates.lua": [
       "QTLF",

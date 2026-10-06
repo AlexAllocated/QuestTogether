@@ -574,5 +574,11 @@
   "unknown": "未知",
   "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.": "v%s 已加载！现已支持 %s。输入 %s 打开设置。如果你遇到任何问题，请在 %s 或 %s 留下反馈。",
   "|cff33ff99QuestTogether|r: Pong: ": "|cff33ff99QuestTogether|r: Pong： ",
-  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Pong：<无效载荷>"
+  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Pong：<无效载荷>",
+  "Experimental": "实验性功能",
+  "Features in testing. Turn them off if they cause problems.": "正在测试的功能。如果出现问题，请将其关闭。",
+  "Detect different layers": "检测不同分层",
+  "Estimate nearby players' layers using NPCs and visible players. Requires location sharing and compatible QT clients. NPC inference is available in Forever's open world. Missing players alone never prove a different layer.": "通过NPC和可见玩家估计附近玩家所在的分层。需要开启位置共享并使用兼容的QT客户端。基于NPC的推断适用于Forever的开放世界。仅仅看不到玩家并不能证明处于不同分层。",
+  "Likely different layer (experimental)": "可能处于不同分层（实验性）",
+  "Nearby NPC observations differ. This is an estimate, not a confirmed phase.": "附近NPC的观测结果不同。这是估计结果，并非已确认的位面。"
 }

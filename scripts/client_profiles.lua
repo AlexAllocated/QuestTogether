@@ -48,6 +48,43 @@ return pushable end or nil,
 	end or nil
 	return function(addon)
 		do
+			-- Offline-only negative controls for the read-only layer adapter.
+			local saved = { UnitExists = UnitExists, UnitIsVisible = UnitIsVisible,
+				UnitPlayerControlled = UnitPlayerControlled, UnitGUID = UnitGUID, UnitPhaseReason = UnitPhaseReason }
+			local visibility, controlled, guid, reason = true, false, "Creature-0-1-0-100-123-ABC", nil
+			UnitExists = function() return true end
+			UnitIsVisible = function() return visibility end
+			UnitPlayerControlled = function() return controlled end
+			UnitGUID = function() return guid end
+			UnitPhaseReason = function() return reason end
+			assert(addon.API.GetLayerObservationUnit("target").guid == guid)
+			for _, value in ipairs({ false, secret, inaccessible }) do
+				visibility = value
+				assert(addon.API.GetLayerObservationUnit("target") == nil)
+			end
+			visibility = true
+			for _, value in ipairs({ secret, inaccessible }) do
+				controlled = value
+				assert(addon.API.GetLayerObservationUnit("target") == nil)
+			end
+			controlled = false
+			for _, value in ipairs({ secret, inaccessible, 123 }) do
+				guid = value
+				assert(addon.API.GetLayerObservationUnit("target") == nil)
+			end
+			guid = "Player-1-ABC"
+			for _, value in ipairs({ 1, secret, inaccessible }) do
+				reason = value
+				assert(addon.API.GetLayerObservationUnit("target") == nil)
+			end
+			reason = nil
+			UnitPlayerControlled = nil
+			assert(addon.API.GetLayerObservationUnit("target") == nil)
+			for _, key in ipairs({ "UnitExists", "UnitIsVisible", "UnitPlayerControlled", "UnitGUID", "UnitPhaseReason" }) do
+				_G[key] = saved[key]
+			end
+		end
+		do
 			-- Offline only: exercise native visibility/phase access failures without
 			-- replacing any globals during the live /qt test suite.
 			local keys = { "UnitExists", "UnitIsPlayer", "UnitIsVisible", "UnitPhaseReason", "UnitInPhase" }

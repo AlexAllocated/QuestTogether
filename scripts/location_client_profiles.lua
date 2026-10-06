@@ -33,6 +33,7 @@ for _, name in ipairs({
 	"PartyState.lua",
 	"PlayerPlates.lua",
 	"LocationPins.lua",
+	"PlayerPhases.lua",
 }) do
 	assert(loadfile(root .. "/" .. name))("QuestTogether", namespace)
 end

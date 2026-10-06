@@ -213,6 +213,79 @@ class FormattingTests(unittest.TestCase):
         self.assertEqual(len({message["nonce"] for message in planned}), len(planned))
 
 
+class AttachmentTests(unittest.TestCase):
+    def test_multipart_contains_exact_pngs_and_json_with_nonce_and_mentions_disabled(self):
+        from email.parser import BytesParser
+        from email.policy import default
+        data = notes()
+        data["sections"][0]["illustration"] = "party-quest-log"
+        payload = changelog.build_messages(data, REPO, TAG)[0]
+        files = [(a["filename"], b"\x89PNG\r\n\x1a\nprivate-fixture") for a in payload["attachments"]]
+        bodies = []
+        def transport(method, url, headers, body):
+            self.assertEqual(method, "POST")
+            bodies.append(body)
+            message = BytesParser(policy=default).parsebytes(
+                ("Content-Type: " + headers["Content-Type"] + "\r\nMIME-Version: 1.0\r\n\r\n").encode() + body)
+            parts = list(message.iter_parts())
+            self.assertEqual(json.loads(parts[0].get_payload(decode=True)), payload)
+            self.assertEqual([(part.get_filename(), part.get_payload(decode=True)) for part in parts[1:]], files)
+            for index, part in enumerate(parts[1:]):
+                self.assertEqual(part.get_param("name", header="Content-Disposition"), "files[" + str(index) + "]")
+            return (429, {}, b'{"retry_after":0.1}') if len(bodies) == 1 else (200, {}, b'{"id":"ok"}')
+        api = changelog.API(changelog.DISCORD_API, "fixture", transport=transport, sleep=lambda _: None)
+        api.request("/channels/" + CHANNEL + "/messages", "POST", payload, files=files)
+        self.assertEqual(bodies[0], bodies[1])
+        self.assertTrue(payload["enforce_nonce"])
+        self.assertEqual(payload["allowed_mentions"]["parse"], [])
+
+    def test_assets_are_preflighted_and_missing_uploads_are_not_success(self):
+        data = notes(); data["sections"][0]["illustration"] = "party-quest-log"
+        planned = changelog.build_messages(data, REPO, TAG)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with self.assertRaisesRegex(changelog.ChangelogError, "missing or oversized"):
+                changelog.post_missing(Discord(), CHANNEL, planned, [], REPO, TAG, root=root)
+            folder = root / "Media/ReleaseNotes"; folder.mkdir(parents=True)
+            for attachment in planned[0]["attachments"]:
+                (folder / attachment["filename"]).write_bytes(b"\x89PNG\r\n\x1a\nfixture")
+            files = changelog.message_files(root, planned[0])
+            self.assertEqual(len(files), 2)
+            result = response(planned[0])
+            with self.assertRaisesRegex(changelog.ChangelogError, "missing uploaded"):
+                changelog.verify_attachments(result, planned[0])
+            result["attachments"] = [{"filename": name, "size": len(binary),
+                                      "url": "https://cdn.discordapp.com/attachments/fixture/" + name}
+                                     for name, binary in files]
+            changelog.verify_attachments(result, planned[0])
+            # Discord returns embedded uploads through CDN image fields, with
+            # an empty top-level attachment list (observed actual API shape).
+            result["attachments"] = []
+            for embed in result["embeds"]:
+                if "image" in embed:
+                    name = embed["image"]["url"].removeprefix("attachment://")
+                    embed["image"] = {"url": "https://cdn.discordapp.com/attachments/" + CHANNEL + "/123/" + name,
+                                      "width": 1564, "height": 898}
+            changelog.verify_attachments(result, planned[0])
+            for embed in result["embeds"]:
+                if "image" in embed: embed["image"]["url"] = embed["image"]["url"].replace(CHANNEL, "another-channel")
+            with self.assertRaises(changelog.ChangelogError): changelog.verify_attachments(result, planned[0])
+            # Retries must not silently call an old image-less post complete.
+            with self.assertRaisesRegex(changelog.ChangelogError, "missing uploaded"):
+                changelog.post_missing(Discord(), CHANNEL, planned, [response(planned[0])], REPO, TAG, root=root)
+            payload = copy.deepcopy(planned[0]); payload["attachments"][0]["filename"] = "../../secret.png"
+            with self.assertRaises(changelog.ChangelogError): changelog.message_files(root, payload)
+
+    def test_missing_attach_files_permission_blocks_posting(self):
+        api = Discord()
+        api.guild["roles"][0]["permissions"] = str(changelog.REQUIRED_PERMISSIONS & ~changelog.ATTACH_FILES)
+        with self.assertRaises(changelog.ChangelogError): changelog.verify_access(api, CHANNEL)
+
+    def test_delete_204_is_success_without_json(self):
+        api = changelog.API(changelog.DISCORD_API, "fixture", transport=lambda *args: (204, {}, b""))
+        self.assertEqual(api.request("/channels/" + CHANNEL + "/messages/1554000000000000000", "DELETE"), {})
+
+
 class AccessTests(unittest.TestCase):
     def test_expected_bot_guild_name_type_and_permissions(self):
         for mutation in (lambda d: d.user.update(id="1554000000000000008"),

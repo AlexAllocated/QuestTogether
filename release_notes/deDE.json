@@ -1,39 +1,21 @@
 {
-  "source_sha256": "c4f12f562adb50ce47bc257457a5a99c4b04c7b07e5fb89d1d022afef6e85f15",
+  "source_sha256": "8e17df4b36351e476fc521ef91b98b2dd3bc8288ec39c1d9836434898c92c871",
   "notes": {
     "version": "6.4.0",
-    "welcome": "Überarbeitete QT-Fenster und schnellerer Zugriff auf Gruppenquests.",
+    "welcome": "Experimentelle Layer-Erkennung für QT-Spieler in der Nähe.",
     "sections": [
       {
-        "title": "Gruppenquestlog",
+        "title": "Experimentelle Layer-Erkennung",
         "items": [
-          "Das mit 6.3 eingeführte Gruppenquestlog im Überblick: Vergleiche bis zu fünf Spieler in klassenfarbenen Spalten und erkenne, wer welche Quest hat, wem sie fehlt und wann die Gruppe abgabebereit ist. Kombiniere Suche und Filter für Besitz, Fortschritt und Aktionen. Teilen und Teilanfragen stehen zur Verfügung, wenn unterstützt.",
-          "Unter jedem Spielernamen steht die aktuell fokussierte Quest. Klicke auf den Namen eines Mitspielers, um seinem Questfokus freiwillig zu folgen. Fehlt dir dessen Quest, bleibt deine Navigation unverändert. Aktualisieren lädt einen neuen Fortschrittsstand der anderen Spieler. Die Bilder zeigen fiktive Vorschaudaten.",
-          "Quests in deinem Questlog haben jetzt eine kleine Buchschaltfläche, die ihre Details in Blizzards Questlog öffnet. Ein Klick auf die Zeile klappt weiterhin die Ziele auf.",
-          "Eine Krone kennzeichnet den Gruppenanführer und wechselt bei einem Führungswechsel mit. Deine eigene Spalte bleibt an erster Stelle."
-        ],
-        "illustration": "party-quest-log"
-      },
-      {
-        "title": "Ziele aller Gruppenmitglieder aufklappen",
-        "items": [
-          "Klicke auf eine Quest, um Zielzähler, Fortschrittsbalken und erledigte Schritte jedes Mitglieds anzuzeigen. Mehrere Quests können gleichzeitig geöffnet bleiben. Diese Version macht die Abschnitte kompakter und gleicht die Klassenfarben von Überschriften und Inhalt an. Eine typische Fünfergruppenquest mit je zwei Zielen passt in die Standardfenstergröße; längere Quests können weiterhin Scrollen erfordern."
-        ],
-        "illustration": "party-quest-objectives"
-      },
-      {
-        "title": "Fenster und Minikarte",
-        "items": [
-          "Ein Linksklick auf das Minikartensymbol öffnet oder schließt das Gruppenquestlog; ein Rechtsklick öffnet das Menü. Einstellungen ist wieder im Menü, und der Tooltip erklärt die Kurzbefehle.",
-          "Erinnerungen an Gruppenchat-Meldungen, Teil- und Beitrittsanfragen, Sprechblaseneinstellungen und der Discord-Linkdialog verwenden jetzt QTs Schriftrollenrahmen und helle/dunkle Designs, mit mehr Innenabstand und Platz für Schiebereglerwerte.",
-          "Beim Verschieben von Fenstern bleibt der Abstand zum Mauszeiger erhalten, auch in der Vergleichsvorschau. Menüs und Tooltips bezeichnen Blizzards Fenster jetzt durchgehend als Questlog."
+          "Standardmäßig unter Einstellungen > QuestTogether > Experimentell aktiviert. Deaktiviere Andere Layer erkennen, um Vergleiche zu stoppen und vermutete Phasenanzeigen auszublenden.",
+          "In Forevers offener Welt vergleichen kompatible QT-Clients in der Nähe beobachtete NPCs und sichtbare Spieler. Ein Phasensymbol weist auf einen vermutlich anderen Layer hin. Details erscheinen beim Darüberfahren. Standortfreigabe ist erforderlich.",
+          "Schätzungen können falsch sein. Fehlende Spieler allein sind nicht aussagekräftig. Gegenseitige Sichtbarkeit oder ein gemeinsam sichtbarer Spieler haben Vorrang vor der NPC-Schätzung. Veraltete Hinweise werden automatisch verworfen. Ältere QT-Clients können nicht teilnehmen."
         ]
       },
       {
-        "title": "Vorschaubefehle",
+        "title": "Bilder in Versionshinweisen",
         "items": [
-          "/qt preview listet die Fenster- und Ankündigungsvorschauen auf. Die bisherigen Vorschaubefehle funktionieren weiterhin; simulierte Aktionen laden keine Spieler ein, teilen keine Quests und senden keine Nachrichten.",
-          "Die Vergleichsvorschau zeigt jetzt eine vollständige Fünfergruppe mit Jäger und Schurke, unterschiedlichen Zielen, aktiven Quests und einer Anführerkrone."
+          "Bilder aus Versionshinweisen werden jetzt direkt auf Discord hochgeladen, damit sie in den Änderungsprotokollen sichtbar bleiben."
         ]
       }
     ]

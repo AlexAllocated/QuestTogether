@@ -582,7 +582,8 @@ function QT:DrainGeographicQueue()
 		end
 		if now >= row.expires or now < row.expires - 30 or staleRoute or staleDiscovery
 			or not self:IsPartyVisualQueuedWireCurrent(row.wire) or not self:IsQueuedCommRequestCurrent(row.wire)
-			or not self:IsPlayerDetailsQueuedWireCurrent(row.wire, route.target) then
+			or not self:IsPlayerDetailsQueuedWireCurrent(row.wire, route.target)
+			or not self:IsPlayerPhaseQueuedWireCurrent(row.wire, route.target) then
 			table.remove(s.queue, i)
 			self:RecordCommsDiagnostic("queueDropped", "expired or departed route")
 		end

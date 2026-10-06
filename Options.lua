@@ -584,6 +584,7 @@ local CHECKBOX_OPTION_KEYS = {
 	"lookingForQuestPartners",
 	"showMinimapButton",
 	"lightMode",
+	"experimentalLayerDetection",
 	"sharePlayerLocation",
 	"showPlayerLocations",
 	"onlyShowQuestPartners",
@@ -834,6 +835,7 @@ function QuestTogether:RefreshOptionsWindow()
 	self:RefreshQuestPlatesWindow()
 	self:RefreshQuestPlatesWindow(true)
 	self:RefreshGroupsWindow()
+	RefreshCheckboxOptions(self.experimentalControls)
 	self:RefreshPlayerLocationsWindow()
 end
 
@@ -1899,6 +1901,29 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory, playerPlates)
 	self:RefreshQuestPlatesWindow(playerPlates)
 end
 
+function QuestTogether:InitializeExperimentalWindow(parentCategory)
+	if self.experimentalFrame then return end
+	local frame = CreateFrame("Frame", "QuestTogetherExperimentalPanel")
+	frame.name, frame.parent = L("Experimental"), "QuestTogether"
+	local _, content = CreateScrollablePanelContent(frame, 400)
+	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	title:SetPoint("TOPLEFT", 16, -16)
+	title:SetText(L("Experimental"))
+	local description = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	description:SetPoint("TOPLEFT", 16, -50)
+	description:SetWidth(600)
+	description:SetJustifyH("LEFT")
+	description:SetText(L("Features in testing. Turn them off if they cause problems."))
+	self.experimentalControls = {
+		experimentalLayerDetection = CreateCheckbox(content, "experimentalLayerDetection", L("Detect different layers"),
+			L("Estimate nearby players' layers using NPCs and visible players. Requires location sharing and compatible QT clients. NPC inference is available in Forever's open world. Missing players alone never prove a different layer."), 16, -110),
+	}
+	self.experimentalFrame = frame
+	frame:SetScript("OnShow", function() RefreshCheckboxOptions(QuestTogether.experimentalControls) end)
+	self.experimentalCategory = RegisterSubcategory(parentCategory, frame, frame.name)
+	RefreshCheckboxOptions(self.experimentalControls)
+end
+
 function QuestTogether:InitializeGroupsWindow(parentCategory)
 	if self.groupsFrame then return end
 	local frame = CreateFrame("Frame", "QuestTogetherGroupsPanel")
@@ -2224,6 +2249,7 @@ function QuestTogether:InitializeOptionsWindow()
 	self:InitializeQuestPlatesWindow(category, true)
 	self:InitializePlayerLocationsWindow(category)
 	self:InitializeGroupsWindow(category)
+	self:InitializeExperimentalWindow(category)
 	self:InitializeProfilesWindow(category)
 
 	self:RefreshOptionsWindow()

@@ -893,7 +893,7 @@ end
 -- Fixed command buckets keep unknown traffic from growing diagnostic state.
 local TRAFFIC_COMMANDS = { QTNAV = true, ANN = true, LVL = true, LOC = true, QTPR = true, QTVR = true,
 	QTLF = true, QTLQ = true, QJST = true, QJON = true, QTPG = true, QPGR = true, QPGM = true, QCMP = true, QCQE = true,
-	QCDN = true, QCOB = true, QTB1 = true, QTDQ = true, QTCI = true, QTHQ = true, QTHD = true, QTSR = true, QTSP = true, QTSX = true, QSHR = true, PING = true, PONG = true }
+	QCDN = true, QCOB = true, QTB1 = true, QTDQ = true, QTCI = true, QTHQ = true, QTHD = true, QTPH = true, QTSR = true, QTSP = true, QTSX = true, QSHR = true, PING = true, PONG = true }
 function QuestTogether:RecordCommsTraffic(kind, message, result)
 	local diagnostics = self:GetCommsDiagnostics()
 	local now = SafeNumber(self, self.API.GetTime and self.API.GetTime())
@@ -2575,6 +2575,12 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 	local isWhisper = SafePrimitiveString(self, channel, "") == "WHISPER"
 	if isWhisper then
 		local command, payload = self:DeserializeWireMessage(safeMessage)
+		if command == "QTPH" then
+			if self:HandlePlayerPhaseMessage(payload, transportSenderName) then
+				self:RecordCommsTraffic("received", safeMessage)
+			end
+			return
+		end
 		if command == "QTHQ" or command == "QTHD" then
 			if self:HandlePlayerDetailsMessage(command, payload, transportSenderName) then
 				self:RecordCommsTraffic("received", safeMessage)

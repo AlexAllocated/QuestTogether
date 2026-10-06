@@ -68,6 +68,7 @@ LocationPins.lua
 PartyWaypointPins.lua
 NearbyStreams.lua
 PlayerDetails.lua
+PlayerPhases.lua
 EventHandlers.lua
 Options.lua
 Diagnostics.lua
@@ -98,5 +99,6 @@ scripts/regression_player_tooltips.lua
 scripts/regression_geographic_comms.lua
 scripts/regression_nearby_streams.lua
 scripts/regression_player_details.lua
+scripts/regression_player_phases.lua
 
 scripts/regression_party_navigation.lua

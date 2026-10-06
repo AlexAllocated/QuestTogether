@@ -369,6 +369,7 @@ QuestTogether.DEFAULTS = {
 		emoteOnLevelUp = true,
 		compareHideOtherQuests = false,
 		lightMode = false,
+		experimentalLayerDetection = true,
 		compareQuestOwnership = "all",
 		compareQuestProgress = "all",
 		compareQuestAction = "all",
@@ -731,6 +732,8 @@ QuestTogether.runtimeEvents = {
 	"ZONE_CHANGED",
 	"ZONE_CHANGED_INDOORS",
 	"ZONE_CHANGED_NEW_AREA",
+	"SHARD_TRANSFER",
+	"SHARD_TRANSFER_IMMINENT",
 	"PLAYER_REGEN_ENABLED",
 	"ADDON_RESTRICTION_STATE_CHANGED",
 	"SUPER_TRACKING_CHANGED",
@@ -1118,6 +1121,25 @@ QuestTogether.API = QuestTogether.API or {
 		UnitIsPlayer = function(unitToken)
 			local ok, result = pcall(UnitIsPlayer, unitToken)
 			return ok and CanAccessForeignValue(result) and result == true
+		end,
+		GetLayerObservationUnit = function(unitToken)
+			-- All results are checked before use; observations never mutate native units.
+			for _, query in ipairs({ "UnitExists", "UnitIsVisible" }) do
+				local fn = _G[query]
+				if type(fn) ~= "function" then return nil end
+				local ok, value = pcall(fn, unitToken)
+				if not ok or not CanAccessForeignValue(value) or value ~= true then return nil end
+			end
+			if type(UnitPlayerControlled) ~= "function" then return nil end
+			local okControlled, controlled = pcall(UnitPlayerControlled, unitToken)
+			local okGUID, guid = pcall(UnitGUID, unitToken)
+			if not okControlled or not CanAccessForeignValue(controlled) or type(controlled) ~= "boolean"
+				or not okGUID or not CanAccessForeignValue(guid) or type(guid) ~= "string" then return nil end
+			if type(UnitPhaseReason) == "function" then
+				local ok, reason = pcall(UnitPhaseReason, unitToken)
+				if not ok or not CanAccessForeignValue(reason) or reason ~= nil then return nil end
+			end
+			return { guid = guid, controlled = controlled }
 		end,
 		CanTargetUnitForEmote = function(unitToken)
 			if not CanAccessForeignValue(unitToken) or type(unitToken) ~= "string" then return false end
@@ -5447,7 +5469,7 @@ function QuestTogether:SetOption(key, value)
 	if isPartyNavigationOption and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
 	local isLocationOption = key == "sharePlayerLocation" or key == "showPlayerLocations" or key == "onlyShowQuestPartners"
 	if (isLocationOption or key == "nameplatePlayerIconEnabled") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
-	if (key == "showMinimapButton" or key == "lightMode") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
+	if (key == "showMinimapButton" or key == "lightMode" or key == "experimentalLayerDetection") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
 		return false
 	end
 	if (key == "lookingForQuestPartners" or key == "announceQuestPartners" or key == "stopLookingForPartnersOnJoin")
@@ -5505,6 +5527,10 @@ function QuestTogether:SetOption(key, value)
 		and self.db.profile[key] ~= true
 	self.db.profile[key] = value
 	if isPartyNavigationOption then self:QueuePartyNavigationUpdate() end
+	if key == "experimentalLayerDetection" or key == "sharePlayerLocation" then
+		self.playerPhaseState = nil
+		if self.RefreshPlayerLocationPins then self:RefreshPlayerLocationPins() end
+	end
 	if key == "lightMode" and self.RefreshWindowThemes then self:RefreshWindowThemes() end
 	if key == "announceToNonQTParty" or key == "hidePartyChatReminder" then self:UpdatePartyChatReminder() end
 	if key == "lookingForQuestPartners" and self.BroadcastQuestPartnerStatus then self:BroadcastQuestPartnerStatus(true) end
@@ -6323,6 +6349,7 @@ function QuestTogether:PLAYER_LOGIN()
 end
 
 function QuestTogether:PLAYER_ENTERING_WORLD()
+	self.playerPhaseState = nil
 	self.isLoggingOut = false
 	if not self.isEnabled then return end
 	-- Refresh after loading screens without synthetic enter/leave announcements.
@@ -6335,6 +6362,7 @@ function QuestTogether:PLAYER_ENTERING_WORLD()
 end
 
 function QuestTogether:PLAYER_LEAVING_WORLD()
+	self.playerPhaseState = nil
 	if self.isEnabled then
 		if self.BroadcastQTPlayerPresence then self:BroadcastQTPlayerPresence(true) end
 		if self.BroadcastPlayerLocation then self:BroadcastPlayerLocation(true, true) end

@@ -1,39 +1,21 @@
 {
-  "source_sha256": "c4f12f562adb50ce47bc257457a5a99c4b04c7b07e5fb89d1d022afef6e85f15",
+  "source_sha256": "8e17df4b36351e476fc521ef91b98b2dd3bc8288ec39c1d9836434898c92c871",
   "notes": {
     "version": "6.4.0",
-    "welcome": "Finestre QT più curate e accesso più rapido alle missioni del gruppo.",
+    "welcome": "Rilevamento sperimentale dei livelli di mondo dei giocatori QT vicini.",
     "sections": [
       {
-        "title": "Registro missioni del gruppo",
+        "title": "Rilevamento sperimentale dei livelli di mondo",
         "items": [
-          "Scopri il Registro missioni del gruppo introdotto nella versione 6.3: confronta fino a cinque giocatori in colonne con i colori delle classi, verifica chi possiede ogni missione, a chi manca e quando il gruppo è pronto a consegnarla. Combina ricerca e filtri per possesso, avanzamento e azione. Condivisione e richieste di condivisione sono disponibili quando supportate.",
-          "L’intestazione di ogni giocatore mostra la sua missione attiva. Clicca sul nome di un compagno per seguirne volontariamente la missione; se non la possiedi, la tua navigazione resta invariata. Aggiorna recupera una nuova istantanea dei progressi remoti. Le immagini mostrano dati fittizi dell’anteprima.",
-          "Le missioni che possiedi hanno ora un piccolo pulsante con un libro che apre i dettagli nel Registro missioni di Blizzard. Un clic sulla riga continua a espandere gli obiettivi.",
-          "Una corona identifica il capogruppo e si aggiorna quando cambia il comando. La tua colonna rimane sempre la prima."
-        ],
-        "illustration": "party-quest-log"
-      },
-      {
-        "title": "Espandi gli obiettivi di tutti",
-        "items": [
-          "Clicca su una missione per vedere contatori, barre di avanzamento e passaggi completati di ciascun membro. Puoi lasciare aperte più missioni. Questa versione rende le sezioni più compatte e uniforma lo sfondo con i colori di classe di nomi e obiettivi. Una missione tipica per cinque giocatori con due obiettivi ciascuno entra nella finestra predefinita; quelle più lunghe possono richiedere lo scorrimento."
-        ],
-        "illustration": "party-quest-objectives"
-      },
-      {
-        "title": "Finestre e minimappa",
-        "items": [
-          "Il clic sinistro sull’icona della minimappa apre o chiude il Registro missioni del gruppo; il clic destro apre il menu. Le impostazioni sono tornate nel menu e il tooltip spiega le scorciatoie.",
-          "I promemoria della chat di gruppo, le richieste di condivisione e di ingresso, le impostazioni dei fumetti e la finestra del collegamento Discord usano ora la cornice a pergamena e i temi chiaro/scuro di QT, con più margini e spazio per i valori dei cursori.",
-          "Trascinando le finestre si mantiene la distanza dal puntatore, anche nell’anteprima del confronto. Menu e tooltip ora chiamano sempre Registro missioni la finestra di Blizzard."
+          "Attivo per impostazione predefinita in Impostazioni > QuestTogether > Sperimentale. Disattiva Rileva livelli di mondo diversi per interrompere i confronti e nascondere gli indicatori di fase stimata.",
+          "Nel mondo aperto di Forever, i client QT compatibili vicini confrontano i PNG osservati e i giocatori visibili. Un’icona di fase indica un probabile livello di mondo diverso; passa il cursore per i dettagli. È richiesta la condivisione della posizione.",
+          "Le stime possono essere errate. La sola assenza di giocatori non permette conclusioni; vedersi a vicenda o vedere un giocatore in comune ha la precedenza sulla stima tramite PNG. I dati obsoleti vengono rimossi automaticamente. I vecchi client QT non possono partecipare."
         ]
       },
       {
-        "title": "Comandi di anteprima",
+        "title": "Immagini nelle note di versione",
         "items": [
-          "Usa /qt preview per elencare le anteprime di finestre e annunci. I vecchi comandi funzionano ancora; le azioni simulate non invitano giocatori, condividono missioni o inviano messaggi.",
-          "L’anteprima del confronto ora mostra un gruppo completo di cinque giocatori, tra cui un Cacciatore e un Ladro, con obiettivi diversi, missioni attive e una corona per il capogruppo."
+          "Le immagini nelle note di versione vengono ora caricate direttamente su Discord per rimanere visibili nei messaggi del registro delle modifiche."
         ]
       }
     ]

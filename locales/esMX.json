@@ -574,5 +574,11 @@
   "unknown": "desconocido",
   "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.": "¡v%s cargada! Ahora es compatible con %s. Escribe %s para la configuración. Si encuentras algún problema, deja tus comentarios en %s o %s.",
   "|cff33ff99QuestTogether|r: Pong: ": "|cff33ff99QuestTogether|r: Pong: ",
-  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Pong: <invalid payload>"
+  "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Pong: <invalid payload>",
+  "Experimental": "Experimental",
+  "Features in testing. Turn them off if they cause problems.": "Funciones en pruebas. Desactívalas si causan problemas.",
+  "Detect different layers": "Detectar capas diferentes",
+  "Estimate nearby players' layers using NPCs and visible players. Requires location sharing and compatible QT clients. NPC inference is available in Forever's open world. Missing players alone never prove a different layer.": "Estima las capas de los jugadores cercanos mediante PNJ y jugadores visibles. Requiere compartir la ubicación y clientes QT compatibles. La estimación mediante PNJ está disponible en el mundo abierto de Forever. La ausencia de jugadores por sí sola nunca demuestra una capa diferente.",
+  "Likely different layer (experimental)": "Probablemente en otra capa (experimental)",
+  "Nearby NPC observations differ. This is an estimate, not a confirmed phase.": "Las observaciones de PNJ cercanos difieren. Es una estimación, no una fase confirmada."
 }

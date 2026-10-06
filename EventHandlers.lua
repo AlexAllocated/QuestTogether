@@ -828,15 +828,26 @@ function QuestTogether:AREA_POIS_UPDATED()
 	self:ScheduleTaskAreaRefresh(true, 0)
 end
 
+function QuestTogether:SHARD_TRANSFER()
+	self.playerPhaseState = nil
+end
+
+function QuestTogether:SHARD_TRANSFER_IMMINENT()
+	self.playerPhaseState = nil
+end
+
 function QuestTogether:ZONE_CHANGED()
+	self.playerPhaseState = nil
 	self:ScheduleTaskAreaRefresh(true, 0)
 end
 
 function QuestTogether:ZONE_CHANGED_INDOORS()
+	self.playerPhaseState = nil
 	self:ScheduleTaskAreaRefresh(true, 0)
 end
 
 function QuestTogether:ZONE_CHANGED_NEW_AREA()
+	self.playerPhaseState = nil
 	self:ScheduleTaskAreaRefresh(true, 0)
 end
 

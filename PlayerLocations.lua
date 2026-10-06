@@ -437,6 +437,7 @@ end
 -- One owner for periodic publication. Share this tick's addon-owned location
 -- sample with nearby streams; never retain it across frames or privacy changes.
 function QT:UpdatePlayerCommunications()
+	self:UpdatePlayerPhaseObservations()
 	if self.UpdateQTPlayerPresence then self:UpdateQTPlayerPresence() end
 	local sample
 	if rawget(self, "geographicCommsState") then
@@ -498,6 +499,7 @@ function QT:ResetPlayerLocations()
 	self:HidePlayerTooltipBadge()
 	self.playerLocationState = nil
 	self.nearbyStreamState = nil
+	self.playerPhaseState = nil
 	local frame = rawget(self, "playerLocationUpdateFrame")
 	if frame and self.LibChev.CanMutateOwnedRegion(frame) then
 		frame:SetScript("OnUpdate", nil)

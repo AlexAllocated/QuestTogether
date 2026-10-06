@@ -712,6 +712,9 @@ local function Tooltip(addon, state, pin, row)
 			Text(addon, raceName),
 			classColor .. Text(addon, className, Text(addon, row.classFile)) .. "|r")
 		text = ""
+		if addon:GetPlayerPhaseStatus(row.name) == "different" then
+			text = L("Likely different layer (experimental)") .. "\n" .. L("Nearby NPC observations differ. This is an estimate, not a confirmed phase.")
+		end
 		if addon:SupportsWarMode() == true and type(row.warMode) == "boolean" then
 			text = text .. L("\nWar Mode: ") .. (row.warMode and L("On") or L("Off"))
 		end
@@ -929,6 +932,12 @@ local function CreatePin(addon, state, surface)
 		Call(addon, texture, "Hide")
 		pin.glow[index] = texture
 	end
+	pin.phaseIcon = Call(addon, pin.frame, "CreateTexture", nil, "OVERLAY")
+	Call(addon, pin.phaseIcon, "SetTexture", "Interface\\TargetingFrame\\UI-PhasingIcon")
+	Call(addon, pin.phaseIcon, "SetTexCoord", 0.15625, 0.84375, 0.15625, 0.84375)
+	Call(addon, pin.phaseIcon, "SetSize", 12, 12)
+	Call(addon, pin.phaseIcon, "SetPoint", "CENTER", pin.texture, "TOPLEFT", -1, 1)
+	Call(addon, pin.phaseIcon, "Hide")
 	pin.partyOutline = PartyTexture(addon, pin.frame, "PartyHighlight", 16, 16, "CENTER", pin.texture, "CENTER", 0, 0)
 	pin.partyBadge = PartyTexture(addon, pin.frame, "PartyBadge", 10, 10, "CENTER", pin.texture, "BOTTOMRIGHT", 0, 0)
 	pin.partyCrown = PartyTexture(addon, pin.frame, "PartyLeader", 12, 9, "BOTTOM", pin.texture, "TOP", 0, -1)
@@ -946,6 +955,7 @@ local function CreatePin(addon, state, surface)
 		local ok, row = pcall(FreshRow, addon, pin)
 		if ok and row then
 			addon:RequestPlayerDetails(row.name)
+			addon:RequestPlayerPhaseComparison(row.name)
 			if not pcall(Tooltip, addon, state, pin, row) then
 				HideTooltip(addon, state)
 			end
@@ -1014,6 +1024,7 @@ local function RefreshSurface(addon, state, name, rows)
 				HideTooltip(addon, state)
 			end
 			pin.name, pin.parent, pin.mapID = row.name, geometry.parent, geometry.mapID
+			Call(addon, pin.phaseIcon, addon:GetPlayerPhaseStatus(row.name) == "different" and "Show" or "Hide")
 			local r, g, b = Color(addon, row.classFile)
 			Call(addon, pin.texture, "SetColorTexture", r, g, b, 1)
 			local size = PinSize(addon, row.name)

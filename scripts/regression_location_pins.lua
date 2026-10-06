@@ -128,6 +128,7 @@ local function Frame(addon, parent, kind)
 	end
 	function frame:SetVertexColor(...) self:Check(); self.vertexColor = { ... } end
 	function frame:SetTexture(value) self:Check(); self.texture = value end
+	function frame:SetTexCoord(...) self:Check(); self.texCoord = { ... } end
 	function frame:SetAlpha(value) self:Check(); self.alpha = value end
 	for _, method in ipairs({
 		"EnableMouse",
@@ -1327,4 +1328,19 @@ Register("party waypoint surfaces hide for restrictions unavailable geometry and
 	a.mapParent.forbidden = false; a.geometry.map = nil
 	a:RefreshPartyWaypointPins(); Equal(s.surfaces.map.frame.shown, false)
 	a:HidePartyWaypointPins(); Equal(s.surfaces.minimap.frame.shown, false)
+end)
+
+Register("experimental phase decoration clears when a pooled pin changes occupant", function()
+	local a = Fixture()
+	function a:GetPlayerPhaseStatus(name) return name == "Other-Realm" and "different" or nil end
+	a.rows.map = { Row("Other-Realm") }
+	assert(a:RefreshPlayerLocationPins())
+	local pin = Pin(a, "map")
+	Equal(pin.phaseIcon.shown, true)
+	Equal(pin.phaseIcon.texture, "Interface\\TargetingFrame\\UI-PhasingIcon")
+	Equal(pin.phaseIcon.texCoord[1], 0.15625)
+	a.rows.map = { Row("Same-Realm") }
+	assert(a:RefreshPlayerLocationPins())
+	Equal(Pin(a, "map"), pin)
+	Equal(pin.phaseIcon.shown, false)
 end)

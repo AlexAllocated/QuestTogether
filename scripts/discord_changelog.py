@@ -21,6 +21,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+import uuid
 
 sys.dont_write_bytecode = True
 
@@ -61,8 +62,8 @@ MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_ARCHIVE_BYTES = 16 * 1024 * 1024
 MAX_ARCHIVE_ENTRY_BYTES = 1024 * 1024
 PUBLIC_ASSET_HOSTS = {"github.com", "release-assets.githubusercontent.com", "objects.githubusercontent.com"}
-VIEW_CHANNEL, SEND_MESSAGES, EMBED_LINKS, READ_HISTORY = 1 << 10, 1 << 11, 1 << 14, 1 << 16
-REQUIRED_PERMISSIONS = VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | READ_HISTORY
+VIEW_CHANNEL, SEND_MESSAGES, EMBED_LINKS, ATTACH_FILES, READ_HISTORY = 1 << 10, 1 << 11, 1 << 14, 1 << 15, 1 << 16
+REQUIRED_PERMISSIONS = VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | ATTACH_FILES | READ_HISTORY
 
 
 class ChangelogError(ValueError):
@@ -100,7 +101,7 @@ class API:
             raise ChangelogError("unsupported API origin")
         self.base, self.token, self.transport, self.sleep, self.clock = base, token, transport, sleep, clock
 
-    def request(self, path, method="GET", payload=None):
+    def request(self, path, method="GET", payload=None, *, files=None):
         if not path.startswith("/") or path.startswith("//"):
             raise ChangelogError("invalid API path")
         headers = {"Authorization": ("Bot " if self.base == DISCORD_API else "Bearer ") + self.token,
@@ -111,6 +112,20 @@ class API:
         if payload is not None:
             headers["Content-Type"] = "application/json"
             body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        if files:
+            if self.base != DISCORD_API or method != "POST" or not payload:
+                raise ChangelogError("attachments require a Discord message POST")
+            boundary = "qt-" + uuid.uuid4().hex
+            parts = [b"--" + boundary.encode() + b'\r\nContent-Disposition: form-data; name="payload_json"\r\n'
+                     b'Content-Type: application/json\r\n\r\n' + body + b"\r\n"]
+            for index, (filename, data) in enumerate(files):
+                if not re.fullmatch(r"[A-Za-z0-9_-]+\.png", filename):
+                    raise ChangelogError("invalid attachment filename")
+                parts.append(("--" + boundary + '\r\nContent-Disposition: form-data; name="files[' + str(index)
+                              + ']"; filename="' + filename + '"\r\nContent-Type: image/png\r\n\r\n').encode()
+                             + data + b"\r\n")
+            body = b"".join(parts) + ("--" + boundary + "--\r\n").encode()
+            headers["Content-Type"] = "multipart/form-data; boundary=" + boundary
         deadline = self.clock() + 120
         for attempt in range(MAX_ATTEMPTS):
             if self.clock() >= deadline:
@@ -130,6 +145,8 @@ class API:
             except (ValueError, UnicodeError):
                 data = None
             if 200 <= status < 300:
+                if status == 204 and method == "DELETE":
+                    return {}
                 if data is None:
                     raise ChangelogError("API returned no readable JSON")
                 return data
@@ -291,8 +308,7 @@ def build_messages(notes, repository, tag, locale="enUS"):
         embeds.append({"title": section["title"], "description": description})
         for client, asset in illustration_images(section.get("illustration")):
             embeds.append({"title": section["title"], "description": client,
-                           "image": {"url": "https://raw.githubusercontent.com/" + repository + "/" + tag
-                                     + "/Media/ReleaseNotes/" + asset + ".png"}})
+                           "image": {"url": "attachment://" + asset + ".png"}})
     # Reserve the longest possible footer before packing. No item is truncated
     # or split, and no release URL occurs twice within the same message.
     digest = hashlib.sha256(json.dumps(notes, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()[:16]
@@ -317,9 +333,13 @@ def build_messages(notes, repository, tag, locale="enUS"):
         group[-1]["footer"] = {"text": marker}
         if sum(map(embed_length, group)) > 6000:
             raise ChangelogError("release message exceeds Discord's text budget")
-        nonce = hashlib.sha256((key + "|" + str(index)).encode("utf-8")).hexdigest()[:24]
+        filenames = list(dict.fromkeys(embed["image"]["url"].removeprefix("attachment://")
+                                       for embed in group if "image" in embed))
+        nonce = hashlib.sha256((key + "|" + str(index) + ("|attachments-v1" if filenames else "")).encode("utf-8")).hexdigest()[:24]
         messages.append({"embeds": group, "allowed_mentions": {"parse": [], "users": [], "roles": [], "replied_user": False},
                          "nonce": nonce, "enforce_nonce": True})
+        if filenames:
+            messages[-1]["attachments"] = [{"id": i, "filename": name} for i, name in enumerate(filenames)]
     return messages
 
 
@@ -376,7 +396,7 @@ def verify_access(api, channel_id, locale="enUS"):
     except (KeyError, TypeError, ValueError):
         raise ChangelogError("could not determine bot channel permissions") from None
     if effective & REQUIRED_PERMISSIONS != REQUIRED_PERMISSIONS:
-        raise ChangelogError("bot needs View Channel, Send Messages, Embed Links and Read Message History")
+        raise ChangelogError("bot needs View Channel, Send Messages, Embed Links, Attach Files and Read Message History")
     return channel
 
 
@@ -417,16 +437,69 @@ def posted_markers(history, planned, repository, tag, locale="enUS"):
     return found
 
 
-def post_missing(api, channel_id, planned, history, repository, tag, locale="enUS"):
+def message_files(root, payload):
+    """Read only the canonical, locally checked-in PNGs referenced by this part."""
+    from changelogs import illustration_images
+    allowed = {asset + ".png" for name in ("party-quest-log", "party-quest-objectives")
+               for _, asset in illustration_images(name)}
+    files = []
+    for index, attachment in enumerate(payload.get("attachments", [])):
+        name = attachment.get("filename")
+        if name not in allowed or attachment.get("id") != index:
+            raise ChangelogError("unknown release illustration attachment")
+        path = root / "Media/ReleaseNotes" / name
+        if path.is_symlink() or not path.is_file() or not 0 < path.stat().st_size <= 8 * 1024 * 1024:
+            raise ChangelogError("missing or oversized release illustration: " + name)
+        data = path.read_bytes()
+        if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+            raise ChangelogError("release illustration is not a PNG: " + name)
+        files.append((name, data))
+    if len(files) > 10 or sum(len(data) for _, data in files) > 24 * 1024 * 1024:
+        raise ChangelogError("release illustrations exceed message upload limits")
+    return files
+
+
+def verify_attachments(message, payload):
+    expected = {a["filename"] for a in payload.get("attachments", [])}
+    actual = {a.get("filename") for a in message.get("attachments", [])
+              if a.get("size", 0) > 0 and a.get("url", "").startswith("https://cdn.discordapp.com/")}
+    # Discord omits files used by embeds from message.attachments. Their image
+    # URL is rewritten from attachment:// to this message channel's CDN path.
+    channel = message.get("channel_id", "")
+    for embed in message.get("embeds", []):
+        image = embed.get("image", {})
+        url = urllib.parse.urlsplit(image.get("url", ""))
+        if (url.scheme == "https" and url.hostname == "cdn.discordapp.com"
+                and url.path.startswith("/attachments/" + channel + "/")
+                and image.get("width", 0) > 0 and image.get("height", 0) > 0):
+            actual.add(urllib.parse.unquote(url.path.rsplit("/", 1)[-1]))
+    if not expected <= actual:
+        raise ChangelogError("release post is missing uploaded screenshots; inspect before retrying")
+
+
+def post_missing(api, channel_id, planned, history, repository, tag, locale="enUS", *, root=None):
     found = posted_markers(history, planned, repository, tag, locale)
+    uploads = {}
+    for payload in planned:
+        marker = payload["embeds"][-1]["footer"]["text"]
+        if payload.get("attachments") and root is None:
+            raise ChangelogError("release root required for screenshot uploads")
+        uploads[marker] = message_files(root, payload) if payload.get("attachments") else []
+        if marker in found:
+            for message in history:
+                if marker in posted_markers([message], planned, repository, tag, locale):
+                    verify_attachments(message, payload)
     count = 0
     for payload in planned:
         marker = payload["embeds"][-1]["footer"]["text"]
         if marker in found:
             continue
-        result = api.request("/channels/" + channel_id + "/messages", "POST", payload)
+        files = uploads[marker]
+        result = api.request("/channels/" + channel_id + "/messages", "POST", payload,
+                             **({"files": files} if files else {}))
         if result.get("channel_id") != channel_id or marker not in posted_markers([result], planned, repository, tag, locale):
             raise ChangelogError("Discord did not confirm the expected bot-authored release part")
+        verify_attachments(result, payload)
         found.add(marker)
         count += 1
     return count
@@ -609,6 +682,9 @@ def main(argv=None):
             translated, localized_lua = load_localized_notes(root, notes)
             all_notes.update(translated)
         planned = {locale: build_messages(all_notes[locale], repository, tag, locale) for locale in locales}
+        for messages in planned.values():
+            for payload in messages:
+                message_files(root, payload)
         if not args.post:
             print(json.dumps(planned if args.all_locales else planned[locales[0]], ensure_ascii=False, indent=2))
             return 0
@@ -625,7 +701,7 @@ def main(argv=None):
             histories[locale] = read_history(discord, channel_id)
             posted_markers(histories[locale], planned[locale], repository, tag, locale)
         for locale, channel_id in targets.items():
-            posted = post_missing(discord, channel_id, planned[locale], histories[locale], repository, tag, locale)
+            posted = post_missing(discord, channel_id, planned[locale], histories[locale], repository, tag, locale, root=root)
             print("Release " + tag + " " + locale + ": posted " + str(posted) + " missing parts; "
                   + str(len(planned[locale]) - posted) + " already present.")
         return 0
