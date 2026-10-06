@@ -36,7 +36,7 @@ You can hide your own bubbles while continuing to send your progress to other pl
 
 Switch the log destination from settings or QuestTogether's minimap menu.
 
-**QuestTogether chat:** Type `/qt <message>` to talk to other players receiving the QuestTogether channel. Recognized commands still run normally. Conversations use the same chat log and nearby-player bubbles, with a speech-bubble icon. The minimap menu’s **Send QT chat message** opens a draft for you. Disable **Show QuestTogether Chat** in **Where to Announce** to hide conversations without changing quest announcements. Hover player names in the log for the same player details shown on map dots.
+**QuestTogether chat:** Type `/qt <message>` to talk to other players receiving the QuestTogether channel. Recognized commands still run normally. Conversations use the same chat log and nearby-player bubbles, with a speech-bubble icon. Disable **Show QuestTogether Chat** in **Where to Announce** to hide conversations without changing quest announcements. Hover player names in the log for the same player details shown on map dots.
 
 Version 6.0 uses **QuestTogether** for global chat and occasional worldwide player updates. Frequent updates and quest announcements use a channel for your current zone; viewing another zone on the world map temporarily subscribes to its updates too. Party announcements still cross zone boundaries. Where supported, QT keeps its channels after your other chat channels, with QuestTogether first. The old **QuestTogetherAnnounce1** channel is retired.
 
@@ -48,19 +48,32 @@ Map dots remain available worldwide, but distant locations update less often; ho
 
 ## Compare your party's quests
 
-Open **Party Quest Compare** with `/qt compare`, or choose **Compare Party Quests** from the minimap or quest-name menu.
+Open **Party Quest Log** with `/qt compare`, or choose **Party Quest Log** from the minimap or quest-name menu.
 
-The movable comparison window uses familiar WoW styling, with each quest on one row and each group member in a column. Text and color show whether a player has the quest, is ready to turn it in, or is missing it. **Loading** and **Unknown** distinguish an unanswered request from a confirmed missing quest.
+The movable, resizable window uses a parchment scroll frame, with each quest on one row and each group member in a column. Text and color show whether a player has the quest, is ready to turn it in, or is missing it. **Loading** and **Unknown** distinguish an unanswered request from a confirmed missing quest.
 
 - See the combined quest lists by default, including quests you do not have.
-- Check **Hide quests I don't have** to focus on your own quests. The choice is saved in your profile.
+- Search by quest name or ID, including received names in another language.
+- Combine ownership, party progress, and available-action filters. Choices are saved in your profile; **Reset** clears the filters and search.
+- Class-colored columns distinguish players, and each quest summarizes who is ready, missing the quest, or still unknown.
 - Use **Refresh** to request updated quest lists from other players. Your own list updates as your quest log changes.
-- Scroll through longer quest lists and across wider groups; scrollbars appear only when needed.
-- Hover quest rows for the full title, quest ID, and the selected owner for a share request when applicable.
+- Drag the bottom-right corner to resize the window. Scroll through longer quest lists and across wider groups; scrollbars appear only when needed.
+- Dark parchment with light text is the default. Enable **Light mode** on the main QuestTogether settings page for the lighter parchment style.
+- Click a quest row to expand each player's objectives, counts, and completion state. Keep several quests expanded at once; click a quest again to collapse only its details. Remote objective details are requested privately when you expand a quest and remain a snapshot until Refresh (or reopening the details). Your own details follow local quest-log updates. Older clients still compare quest lists but need an update to provide objective details.
 
 You can also compare with one person. Choose **Compare Quests** from a player's name or map-dot menu to open a comparison between just you and that player. This includes reachable QuestTogether users outside your party, making it easier to decide whether you should quest together.
 
-> **SCREENSHOT 04 — Party Quest Compare:** A realistic three-player comparison with Have, Ready, and Missing states, plus Share and Request Share buttons. Leave “Hide quests I don't have” unchecked.
+> **SCREENSHOT 04 — Party Quest Log:** A realistic three-player comparison with Have, Ready, and Missing states, plus Share and Request Share buttons. Show the search field, filter menu, class-colored headings, and expanded objectives.
+
+## Follow a party quest and share destinations
+
+In parties of up to five, including dungeon groups, QuestTogether shares each member's active quest and normal Blizzard map waypoint. Under **Groups & Sharing**, **Share my focused quest**, **Share my waypoint**, and **Show party waypoints** all start enabled and can be changed independently of public location sharing.
+
+See active quests beneath the player headings in Party Quest Log. Choose **Follow quest focus** from a member's menu to follow their quest selection when you own the quest. If you do not, your current navigation stays in place. **Stop following**, selecting a different quest, or navigating to a waypoint ends following. Following never starts automatically and does not survive a reload.
+
+Other members' waypoints appear as class-colored pins on the world map and, when nearby, the minimap. Hover to see the owner, zone, and coordinates; overlapping pins list all owners. Choose **Navigate here** to use TomTom or the native waypoint navigation. Receiving a pin never redirects you. Pins disappear when cleared or when their owner leaves the party, and they do not indicate whether someone shares your phase. These features require updated QuestTogether clients.
+
+> **SCREENSHOT — Party navigation:** Party Quest Log with a focused quest and Following indicator, alongside two class-colored shared waypoint pins and their tooltip.
 
 ## Share quests with fewer steps
 
@@ -173,7 +186,7 @@ Hover a quest name to see its status, shareability, and available objectives. **
 
 - **Share** — share an eligible quest you currently own with your party.
 - **Open in Quest Journal** — open that quest's journal entry when it is in your log.
-- **Compare Party Quests** — open the whole-party comparison.
+- **Party Quest Log** — open the whole-party comparison.
 
 Coordinate links, when included in an update or ping reply, can create a **TomTom waypoint** if TomTom is installed, with a **Blizzard waypoint** fallback where supported.
 
@@ -194,8 +207,7 @@ When another player reports a newer stable QuestTogether release, you get a remi
 The draggable **QuestTogether minimap button** opens a menu with:
 
 - Looking for Questing Partners
-- Settings
-- Compare Party Quests
+- Party Quest Log
 - Open Quest Journal
 - Patch Notes
 - Move QuestTogether Logs to Separate Window, or back to Main Window
@@ -242,7 +254,7 @@ The addon bundles its required library, so no separate library download is neede
 | Command | Action |
 | --- | --- |
 | `/qt` or `/qt options` | Open settings |
-| `/qt compare` | Open Party Quest Compare |
+| `/qt compare` | Open Party Quest Log |
 | `/qt lfg [on|off|toggle|status]` | Set or check Looking for Questing Partners; no argument toggles |
 | `/qt notes`, `/qt changelog`, or `/qt patchnotes` | Open welcome and latest patch notes |
 | `/qt enable` / `/qt disable` | Enable or disable addon runtime behavior |

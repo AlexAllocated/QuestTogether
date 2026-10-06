@@ -38,6 +38,7 @@ end
 
 function QuestTogether:CancelPartyQuestCompare()
 	local session = self.partyQuestCompareSession
+	self:CancelPartyQuestObjectiveRequests(session)
 	self.partyQuestCompareSession = nil
 	for _, member in ipairs(session and session.members or {}) do
 		if member.requestId and self.pendingQuestCompareRequests then
@@ -86,6 +87,10 @@ function QuestTogether:CancelIgnoredPlayerQuestCompare()
 			if member.requestId and self.pendingQuestCompareRequests then
 				self.pendingQuestCompareRequests[member.requestId] = nil
 			end
+			for _, detail in pairs(member.objectiveDetails or {}) do
+				if detail.requestId then self.pendingQuestCompareRequests[detail.requestId] = nil end
+			end
+			member.objectiveDetails, member.objectiveRequestQuestId = {}, nil
 			member.entries, member.state, member.supportsShareRequests = {}, "unavailable", nil
 		end
 	end
@@ -178,6 +183,8 @@ function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName)
 		offset = 0,
 		mode = targetName and "target" or "party",
 		targetName = targetName,
+		expandedQuestIds = previous and previous.expandedQuestIds or {},
+		search = previous and previous.search or "",
 	}
 	self.partyQuestCompareSession = session
 	local names = { ownName }
@@ -195,6 +202,7 @@ function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName)
 	end
 	for _, name in ipairs(names) do
 		local member = { name = name, entries = {}, state = "loading", isLocal = name == ownName }
+		member.classFile = member.isLocal and self:GetPlayerClassFile() or self:GetGroupedSenderClassFile(name)
 		session.members[#session.members + 1] = member
 		session.byName[name] = member
 	end
@@ -225,14 +233,18 @@ function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName)
 							return
 						end
 						member.entries[self:NormalizeQuestID(entry.questId)] = entry
+						if entry.classFile and entry.classFile ~= "" then member.classFile = entry.classFile end
 						self:QueuePartyQuestCompareRender()
 					end,
-					onDone = function(supportsShareRequests)
+					onDone = function(supportsShareRequests, supportsObjectives, classFile)
 						if not Current() then
 							return
 						end
 						member.state = "ready"
 						member.supportsShareRequests = supportsShareRequests
+						member.supportsObjectives = supportsObjectives
+						if classFile and classFile ~= "" then member.classFile = classFile end
+						self:LoadPartyQuestObjectives(member)
 						self:QueuePartyQuestCompareRender()
 					end,
 					onTimeout = function()
@@ -271,6 +283,11 @@ function QuestTogether:RefreshLocalPartyQuestCompare(delaySeconds)
 		local entries = self:BuildQuestCompareEntries()
 		member.entries = EntryMap(self, entries)
 		member.state = entries and "ready" or "unavailable"
+		member.objectiveDetails = {}
+		for id in pairs(session.expandedQuestIds or {}) do
+			member.objectiveDetails[id] = { questId = id, state = "ready",
+				objectives = member.entries[id] and self:ReadQuestCompareObjectives(id) or nil }
+		end
 		self:QueuePartyQuestCompareRender()
 	end, delaySeconds or 0, "party compare local snapshot")
 end
@@ -309,11 +326,9 @@ function QuestTogether:BuildPartyQuestDiffRows()
 		or (self:IsGroupedSender(session.targetName) and not self:IsIgnoredPlayerName(session.targetName))
 	local union, rows = {}, {}
 	for _, member in ipairs(session.members) do
-		if member.isLocal or self:GetOption("compareHideOtherQuests") ~= true then
-			for id, entry in pairs(member.entries) do
-				if not union[id] or member.isLocal then
-					union[id] = entry
-				end
+		for id, entry in pairs(member.entries) do
+			if not union[id] or member.isLocal then
+				union[id] = entry
 			end
 		end
 	end
@@ -357,7 +372,7 @@ function QuestTogether:BuildPartyQuestDiffRows()
 		end
 		return a.questId < b.questId
 	end)
-	return rows
+	return self:FilterPartyQuestCompareRows(rows)
 end
 
 function QuestTogether:SharePartyDiffQuest(questId)

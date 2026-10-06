@@ -4,12 +4,24 @@
 
 ## 6.2.3
 
-Meno annunci ripetuti di missioni pronte da consegnare.
+Un nuovo Registro missioni del gruppo, destinazioni condivise e il seguito facoltativo delle missioni rendono più facile giocare insieme.
 
-### Correzioni al rilevamento delle missioni pronte
+### Registro missioni del gruppo
 
-- Le missioni già pronte da consegnare o completate all’inizio del monitoraggio vengono registrate senza annunci. I dati di consegna mancanti e gli aggiornamenti successivi non ripetono più gli annunci di missioni pronte da consegnare già rilevati.
-- I nuovi completamenti vengono ancora annunciati e accettare nuovamente una missione ne azzera la cronologia delle notifiche. Il giocatore che invia gli annunci deve installare questo aggiornamento; le versioni precedenti possono ancora inviarne molti tutti insieme.
+- Il confronto diventa Registro missioni del gruppo. Espandi più missioni contemporaneamente per vedere obiettivi e progressi di ogni membro, con un riepilogo delle missioni pronte per la consegna.
+- Cerca missioni e combina filtri di possesso, progresso e condivisione. Aggiorna richiede nuovi dati agli altri giocatori; i client meno recenti confrontano ancora gli elenchi, ma non forniscono dettagli sugli obiettivi.
+- Ridimensiona la finestra di pergamena e scorri in modo fluido. Colonne nei colori delle classi, intestazioni cliccabili con spaziatura interna e pannelli degli obiettivi arrotondati migliorano la leggibilità.
+
+### Missione attiva e punti di passaggio condivisi
+
+- La missione attiva compare sotto il nome di ogni membro. Scegli di seguirla dall'intestazione o dal menu QT per attivare missioni che possiedi. Una missione assente o deselezionata lascia invariata la navigazione; navigare manualmente, lasciare il gruppo o ricaricare l'interfaccia interrompe il seguito.
+- I punti di passaggio Blizzard degli altri membri appaiono nei colori delle classi sulla mappa del mondo e, se vicini, sulla minimappa. I segnalini sovrapposti elencano tutti i proprietari; Naviga qui usa TomTom o la navigazione nativa. Ricevere un punto non cambia la destinazione e non implica una fase condivisa.
+- Condividi la mia missione attiva, Condividi il mio punto di passaggio e Mostra i punti del gruppo sono attivi per impostazione predefinita in Gruppi e condivisione, indipendentemente dalla posizione pubblica e dalla ricerca di compagni. Seguire richiede una scelta esplicita. Servono compagni aggiornati in gruppi fino a cinque, spedizioni comprese; le incursioni sono escluse.
+
+### Finestre e menu
+
+- Anche le note di aggiornamento usano la pergamena scura, con modalità chiara facoltativa. Sposta o ridimensiona la finestra, sfoglia una cronologia più ordinata e usa le frecce per cambiare versione o saltare alle estremità. Discord e Impostazioni sono nel piè di pagina.
+- I suggerimenti dei giocatori si adattano meglio al contenuto. Il menu della minimappa separa gli strumenti delle missioni da note, posizione del registro e visibilità dell'icona. Impostazioni e Invia messaggio nella chat QT sono rimossi da questo menu; le impostazioni restano disponibili con /qt options.
 
 ## 6.2.2
 

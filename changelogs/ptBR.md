@@ -4,12 +4,24 @@
 
 ## 6.2.3
 
-Menos anúncios repetidos de missões prontas para entregar.
+Um novo Registro de Missões do Grupo, destinos compartilhados e acompanhamento opcional de missões facilitam jogar juntos.
 
-### Correções no estado das missões
+### Registro de Missões do Grupo
 
-- Missões já prontas para entregar ou concluídas quando o acompanhamento começa são registradas sem anúncios. Dados de entrega ausentes e atualizações posteriores não repetem mais anúncios de missões prontas para entregar já registrados.
-- Novas conclusões continuam sendo anunciadas, e aceitar uma missão novamente reinicia seu histórico de notificações. O jogador que envia os anúncios precisa desta atualização; versões antigas ainda podem enviar rajadas de anúncios.
+- O comparador agora se chama Registro de Missões do Grupo. Expanda várias missões de uma vez para ver os objetivos e o progresso de cada integrante, com um resumo das missões prontas para entrega.
+- Busque missões e combine filtros de posse, progresso e compartilhamento. Atualizar renova os dados dos outros jogadores; clientes antigos ainda comparam listas, mas não fornecem detalhes dos objetivos.
+- Redimensione a janela de pergaminho e role suavemente. Colunas nas cores das classes, cabeçalhos de jogador clicáveis com espaçamento interno e painéis de objetivos arredondados melhoram a leitura.
+
+### Missão ativa e pontos de rota compartilhados
+
+- A missão ativa aparece abaixo do nome de cada integrante. Escolha acompanhar a missão pelo cabeçalho ou menu QT para ativar missões que você possui. Missões ausentes ou desmarcadas preservam sua navegação; navegar manualmente, sair do grupo ou recarregar a interface encerra o acompanhamento.
+- Pontos de rota da Blizzard dos outros integrantes aparecem nas cores das classes no mapa-múndi e, quando próximos, no minimapa. Marcadores sobrepostos mostram todos os donos; Navegar até aqui usa TomTom ou a navegação nativa. Receber um ponto nunca muda seu destino nem garante estar na mesma fase.
+- Compartilhar minha missão ativa, Compartilhar meu ponto de rota e Mostrar pontos do grupo vêm ativados em Grupos e Compartilhamento, independentemente da localização pública e da busca de parceiros. Acompanhar exige uma escolha explícita. Esses recursos requerem colegas atualizados em grupos de até cinco, incluindo masmorras, mas não raides.
+
+### Janelas e menus
+
+- As notas de atualização também usam pergaminho escuro, com modo claro opcional. Mova ou redimensione a janela, navegue por um histórico mais limpo e use as setas para trocar de versão ou ir às extremidades. Discord e Configurações ficam no rodapé.
+- As dicas dos jogadores se ajustam melhor ao conteúdo. O menu do minimapa separa as ferramentas de missões das notas, da posição do registro e da visibilidade do ícone. Configurações e Enviar mensagem no chat QT foram removidos desse menu; as configurações continuam disponíveis em /qt options.
 
 ## 6.2.2
 

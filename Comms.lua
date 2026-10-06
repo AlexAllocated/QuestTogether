@@ -533,6 +533,7 @@ function QuestTogether:EncodeQuestCompareRequestPayload(requestData)
 		self:EscapePayload(requestData.requesterName or ""),
 		self:EscapePayload(requestData.targetName or ""),
 	}
+	if requestData.objectiveQuestId then fields[5] = tostring(requestData.objectiveQuestId) end
 
 	return table.concat(fields, ",")
 end
@@ -552,6 +553,8 @@ function QuestTogether:DecodeQuestCompareRequestPayload(payload)
 	local requestId = self:UnescapePayload(fields[2] or "")
 	local requesterName = self:UnescapePayload(fields[3] or "")
 	local targetName = self:UnescapePayload(fields[4] or "")
+	local objectiveQuestId = fields[5] and fields[5] ~= "" and SafeNumber(self, fields[5]) or nil
+	if fields[5] and fields[5] ~= "" and (not objectiveQuestId or objectiveQuestId < 1 or objectiveQuestId > 1000000000 or objectiveQuestId ~= math.floor(objectiveQuestId)) then return nil end
 	if requestId == "" or targetName == "" then
 		return nil
 	end
@@ -561,6 +564,7 @@ function QuestTogether:DecodeQuestCompareRequestPayload(payload)
 		requestId = requestId,
 		requesterName = requesterName,
 		targetName = targetName,
+		objectiveQuestId = objectiveQuestId,
 	}
 end
 
@@ -581,6 +585,7 @@ function QuestTogether:EncodeQuestCompareEntryPayload(entryData)
 		self:EscapePayload(entryData.isComplete and "1" or "0"),
 		pushable,
 	}
+	if entryData.objectiveCount ~= nil then fields[9] = tostring(entryData.objectiveCount) end
 
 	return FitPayloadText(self, fields, 6, QUEST_COMPARE_ENTRY_COMMAND)
 end
@@ -626,6 +631,8 @@ function QuestTogether:DecodeQuestCompareEntryPayload(payload)
 	if requestId == "" or senderName == "" or questId == "" then
 		return nil
 	end
+	local objectiveCount = fields[9] and fields[9] ~= "" and SafeNumber(self, fields[9]) or nil
+	if fields[9] and fields[9] ~= "" and (not objectiveCount or objectiveCount < 0 or objectiveCount > 20 or objectiveCount ~= math.floor(objectiveCount)) then return nil end
 
 	return {
 		version = version,
@@ -636,7 +643,49 @@ function QuestTogether:DecodeQuestCompareEntryPayload(payload)
 		questTitle = questTitle,
 		isComplete = isComplete,
 		isPushable = isPushable,
+		objectiveCount = objectiveCount,
 	}
+end
+
+-- Objective replies are scoped to a requested quest. One bounded packet per
+-- objective avoids truncating an entire list or adding unsolicited log traffic.
+function QuestTogether:EncodeQuestCompareObjectivePayload(requestId, row)
+	local fields = { "1", self:EscapePayload(requestId), tostring(row.questId), tostring(row.objectiveIndex),
+		self:EscapePayload(row.text), self:EscapePayload(row.kind), row.finished == true and "1" or row.finished == false and "0" or "",
+		row.current ~= nil and tostring(row.current) or "", row.required ~= nil and tostring(row.required) or "" }
+	return FitPayloadText(self, fields, 5, "QCOB")
+end
+
+function QuestTogether:DecodeQuestCompareObjectivePayload(payload)
+	local f = SplitByDelimiter(SafePrimitiveString(self, payload, ""), ",")
+	if #f ~= 9 or f[1] ~= "1" or f[2] == "" then return nil end
+	local id, index = SafeNumber(self, f[3]), SafeNumber(self, f[4])
+	if not id or id < 1 or id > 1000000000 or id ~= math.floor(id) or not index or index < 1 or index > 20 or index ~= math.floor(index) then return nil end
+	if f[7] ~= "" and f[7] ~= "0" and f[7] ~= "1" then return nil end
+	local current, required = SafeNumber(self, f[8]), SafeNumber(self, f[9])
+	for i = 8, 9 do
+		local n = SafeNumber(self, f[i])
+		if f[i] ~= "" and (not n or n < 0 or n > 1000000000 or n ~= math.floor(n)) then return nil end
+	end
+	local kind = self:UnescapePayload(f[6])
+	if #kind > 32 or kind:find("[^%a]") then return nil end
+	local finished
+	if f[7] ~= "" then finished = f[7] == "1" end
+	local text = self:CleanQuestCompareObjectiveText(self:UnescapePayload(f[5]))
+	if text == "" then return nil end
+	return { requestId = self:UnescapePayload(f[2]), questId = id, objectiveIndex = index,
+		text = text, kind = kind,
+		finished = finished, current = current, required = required }
+end
+
+function QuestTogether:HandleQuestCompareObjective(row, sender)
+	local pending = self.pendingQuestCompareRequests and self.pendingQuestCompareRequests[row.requestId]
+	if not pending or pending.targetName ~= self:NormalizeMemberName(sender) or pending.objectiveQuestId ~= row.questId then return false end
+	pending.objectives = pending.objectives or {}
+	if pending.objectives[row.objectiveIndex] then return false end
+	pending.objectives[row.objectiveIndex] = row
+	self:TryCompleteQuestCompare(row.requestId)
+	return true
 end
 
 function QuestTogether:EncodeQuestCompareDonePayload(doneData)
@@ -647,6 +696,7 @@ function QuestTogether:EncodeQuestCompareDonePayload(doneData)
 		self:EscapePayload(doneData.classFile or ""),
 		self:EscapePayload(doneData.count or ""),
 		doneData.supportsShareRequests and "share1" or "",
+		doneData.supportsObjectives and "obj1" or "",
 	}
 
 	return table.concat(fields, ",")
@@ -689,6 +739,7 @@ function QuestTogether:DecodeQuestCompareDonePayload(payload)
 		classFile = classFile,
 		count = numericCount,
 		supportsShareRequests = fields[6] == "share1",
+		supportsObjectives = fields[7] == "obj1",
 	}
 end
 
@@ -840,9 +891,9 @@ function QuestTogether:GetCommsDiagnostics()
 end
 
 -- Fixed command buckets keep unknown traffic from growing diagnostic state.
-local TRAFFIC_COMMANDS = { ANN = true, LVL = true, LOC = true, QTPR = true, QTVR = true,
+local TRAFFIC_COMMANDS = { QTNAV = true, ANN = true, LVL = true, LOC = true, QTPR = true, QTVR = true,
 	QTLF = true, QTLQ = true, QJST = true, QJON = true, QTPG = true, QPGR = true, QPGM = true, QCMP = true, QCQE = true,
-	QCDN = true, QTB1 = true, QTDQ = true, QTCI = true, QTHQ = true, QTHD = true, QTSR = true, QTSP = true, QTSX = true, QSHR = true, PING = true, PONG = true }
+	QCDN = true, QCOB = true, QTB1 = true, QTDQ = true, QTCI = true, QTHQ = true, QTHD = true, QTSR = true, QTSP = true, QTSX = true, QSHR = true, PING = true, PONG = true }
 function QuestTogether:RecordCommsTraffic(kind, message, result)
 	local diagnostics = self:GetCommsDiagnostics()
 	local now = SafeNumber(self, self.API.GetTime and self.API.GetTime())
@@ -893,7 +944,7 @@ end
 
 -- One-recipient controls use whispers only after capability discovery or a
 -- valid direct exchange. Older peers retain their established group/channel path.
-local DIRECT_COMMANDS = { QCMP = true, QCQE = true, QCDN = true, QJON = true,
+local DIRECT_COMMANDS = { QCMP = true, QCQE = true, QCOB = true, QCDN = true, QJON = true,
 	QPGR = true, QPGM = true, QSHR = true, PONG = true }
 
 function QuestTogether:RememberDirectCommPeer(sender, supported, lifetime)
@@ -935,7 +986,7 @@ function QuestTogether:GetTargetedCommRoutes(target, legacyRoutes)
 	local fallback = legacyRoutes or (group and { { distribution = group } })
 		or { { distribution = "CHANNEL", channelName = self.announcementChannelName, requiresChannelJoin = true } }
 	if self:SupportsDirectComms(target) then
-		local groupOnly = fallback[1] and GROUP_ANNOUNCEMENT_DISTRIBUTIONS[fallback[1].distribution] or false
+		local groupOnly = fallback[1] and (fallback[1].requiresGroup or GROUP_ANNOUNCEMENT_DISTRIBUTIONS[fallback[1].distribution]) or false
 		return { { distribution = "WHISPER", target = target, requiresGroup = groupOnly } }
 	end
 	return fallback
@@ -1495,6 +1546,10 @@ function QuestTogether:SendQuestCompareEntry(requestId, entryData, selectedRoute
 	if type(requestId) ~= "string" or requestId == "" or type(entryData) ~= "table" then
 		return false
 	end
+	if entryData.objectiveIndex then
+		return self:SendWireMessageToAnnouncementRoutes("QCOB|" .. self:EncodeQuestCompareObjectivePayload(requestId, entryData),
+			"quest compare objective", selectedRoutes)
+	end
 
 	local wireMessage = self:SerializeWireMessage(
 		QUEST_COMPARE_ENTRY_COMMAND,
@@ -1506,6 +1561,7 @@ function QuestTogether:SendQuestCompareEntry(requestId, entryData, selectedRoute
 			questTitle = entryData.questTitle or "",
 			isComplete = entryData.isComplete and true or false,
 			isPushable = entryData.isPushable,
+			objectiveCount = entryData.objectiveCount,
 		})
 	)
 	return self:SendWireMessageToAnnouncementRoutes(
@@ -1528,6 +1584,7 @@ function QuestTogether:SendQuestCompareDone(requestId, count, selectedRoutes)
 			classFile = self:GetPlayerClassFile() or "",
 			count = SafeNumber(self, count) or 0,
 			supportsShareRequests = true,
+			supportsObjectives = true,
 		})
 	)
 	return self:SendWireMessageToAnnouncementRoutes(
@@ -1566,7 +1623,7 @@ function QuestTogether:DrainQuestCompareResponses()
 		if not job.entries then
 			nextDelay = QUEST_COMPARE_RETRY_INTERVAL_SECONDS
 			if now >= job.snapshotRetryAt then
-				local entries, reason = self:BuildQuestCompareEntries()
+				local entries, reason = self:BuildQuestCompareResponseEntries(job.objectiveQuestId)
 				-- Combat/map/encounter deferrals have not attempted a quest read.
 				-- Keep the job until its deadline without spending read retries.
 				if reason ~= "restricted" then job.snapshotAttempts = job.snapshotAttempts + 1 end
@@ -1594,7 +1651,7 @@ function QuestTogether:DrainQuestCompareResponses()
 			else
 				-- Advertise the full count only after every entry has been accepted by
 				-- the transport on the requester's route. Never certify a partial log.
-				sent, reason = self:SendQuestCompareDone(job.requestId, #job.entries, job.routes)
+				sent, reason = self:SendQuestCompareDone(job.requestId, job.objectiveQuestId and (#job.entries > 0 and 1 or 0) or #job.entries, job.routes)
 			end
 			if sent then
 				queue.packets = queue.packets - 1
@@ -1659,7 +1716,7 @@ function QuestTogether:HandleQuestCompareRequest(requestData)
 		end
 	end
 	if #queue.jobs - #superseded >= QUEST_COMPARE_MAX_QUEUED_RESPONSES then return false end
-	local entries, reason = self:BuildQuestCompareEntries()
+	local entries, reason = self:BuildQuestCompareResponseEntries(requestData.objectiveQuestId)
 	local packetCount = entries and #entries + 1 or 1
 	if reason == "limit" or (entries and #entries > QUEST_COMPARE_MAX_ENTRIES)
 		or queue.packets - supersededPackets + packetCount > QUEST_COMPARE_MAX_QUEUED_PACKETS then
@@ -1682,6 +1739,7 @@ function QuestTogether:HandleQuestCompareRequest(requestData)
 	queue.jobs[#queue.jobs + 1] = {
 		requestId = requestData.requestId,
 		requesterName = requesterName,
+		objectiveQuestId = requestData.objectiveQuestId,
 		entries = entries,
 		nextEntry = 1,
 		remaining = packetCount,
@@ -1714,14 +1772,14 @@ function QuestTogether:HandleQuestCompareEntry(entryData)
 		return false
 	end
 	local questId = self:NormalizeQuestID(entryData.questId)
-	if not questId then
+	if not questId or (pending.objectiveQuestId and questId ~= pending.objectiveQuestId) then
 		return false
 	end
 	pending.entriesByQuestId = pending.entriesByQuestId or {}
 	if pending.entriesByQuestId[questId] or (pending.count or 0) >= QUEST_COMPARE_MAX_ENTRIES then
 		return false
 	end
-	pending.entriesByQuestId[questId] = true
+	pending.entriesByQuestId[questId] = entryData
 
 	if type(entryData.classFile) == "string" and entryData.classFile ~= "" then
 		pending.classFile = entryData.classFile
@@ -1741,9 +1799,21 @@ function QuestTogether:TryCompleteQuestCompare(requestId)
 	if not pending or pending.expectedCount == nil or (pending.count or 0) < pending.expectedCount then
 		return false
 	end
+	if pending.objectiveQuestId and pending.expectedCount > 0 then
+		local entry = pending.entriesByQuestId[pending.objectiveQuestId]
+		if not entry then return false end
+		if entry.objectiveCount then
+			local objectives = {}
+			for index = 1, entry.objectiveCount do
+				if not pending.objectives or not pending.objectives[index] then return false end
+				objectives[index] = pending.objectives[index]
+			end
+			entry.objectives = objectives
+		end
+	end
 	self.pendingQuestCompareRequests[requestId] = nil
 	if pending.receiver then
-		pending.receiver.onDone(pending.supportsShareRequests == true)
+		pending.receiver.onDone(pending.supportsShareRequests == true, pending.supportsObjectives == true, pending.classFile)
 	elseif self.PrintQuestCompareDone then
 		self:PrintQuestCompareDone(pending.targetName, pending.count or 0, pending.classFile)
 	end
@@ -1766,7 +1836,7 @@ function QuestTogether:HandleQuestCompareDone(doneData)
 		return false
 	end
 	local expectedCount = SafeNumber(self, doneData.count)
-	if not expectedCount or expectedCount < 0 or expectedCount > QUEST_COMPARE_MAX_ENTRIES or expectedCount ~= math.floor(expectedCount) then
+	if not expectedCount or expectedCount < 0 or expectedCount > (pending.objectiveQuestId and 1 or QUEST_COMPARE_MAX_ENTRIES) or expectedCount ~= math.floor(expectedCount) then
 		return false
 	end
 
@@ -1777,6 +1847,7 @@ function QuestTogether:HandleQuestCompareDone(doneData)
 	-- other. Retain the request until the advertised unique entries arrive.
 	pending.expectedCount = expectedCount
 	pending.supportsShareRequests = doneData.supportsShareRequests == true
+	pending.supportsObjectives = doneData.supportsObjectives == true
 	self:TryCompleteQuestCompare(doneData.requestId)
 	return true
 end
@@ -1820,6 +1891,7 @@ function QuestTogether:RequestQuestCompare(speakerName, receiver)
 		targetName = targetName,
 		classFile = self:GetGroupedSenderClassFile(targetName),
 		receiver = receiver,
+		objectiveQuestId = receiver and receiver.objectiveQuestId,
 		count = 0,
 		entriesByQuestId = {},
 	}
@@ -1847,6 +1919,7 @@ function QuestTogether:RequestQuestCompare(speakerName, receiver)
 			requestId = requestId,
 			requesterName = playerName,
 			targetName = targetName,
+			objectiveQuestId = receiver and receiver.objectiveQuestId,
 		})
 	)
 	if
@@ -2538,6 +2611,10 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 	end
 	-- Discovery has a shared response cooldown. Validate its narrow route before
 	-- any dedup bookkeeping so a copy on another channel cannot suppress it.
+	if command == "QTNAV" then
+		self:HandlePartyNavigationMessage(payload, transportSenderName, channel)
+		return
+	end
 	if command == "QTDQ" then
 		self:HandleGeographicDiscovery(payload, transportSenderName, channel, localID, name)
 		return
@@ -2672,6 +2749,12 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		entryData.senderName = transportSenderName
 		self:RecordQTPlayerPresence(transportSenderName, true)
 		if self:HandleQuestCompareEntry(entryData) and isWhisper then self:RememberDirectCommPeer(transportSenderName, true) end
+		return
+	end
+
+	if command == "QCOB" then
+		local objective = self:DecodeQuestCompareObjectivePayload(payload)
+		if objective then self:HandleQuestCompareObjective(objective, transportSenderName) end
 		return
 	end
 

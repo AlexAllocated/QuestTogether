@@ -142,6 +142,7 @@ QT:RegisterTest("client locale renders minimap menus tooltip and settings status
 	QT.GetAddonVersion = function() return "6.1.2" end
 	QT.GetAvailableAddonUpdate = function() return nil end
 	QT.db.profile.qtChatScope = "zone_only"
+	QT.db.profile.chatLogDestination = "main"
 	local root = { labels = {} }
 	function root:CreateButton(label)
 		self.labels[#self.labels + 1] = label
@@ -150,7 +151,7 @@ QT:RegisterTest("client locale renders minimap menus tooltip and settings status
 	root.CreateCheckbox = root.CreateButton
 	function root:CreateDivider() end
 	QT:PopulateMinimapMenu(root)
-	for i, key in ipairs({ "Looking for Questing Partners", "Settings", "Compare Party Quests", "Open Quest Journal", "Patch Notes", "Send QT chat message" }) do
+	for i, key in ipairs({ "Looking for Questing Partners", "Party Quest Log", "Open Quest Journal", "Patch Notes", "Move QuestTogether Logs to Separate Window", "Hide Minimap Icon" }) do
 		assert(root.labels[i] == T(key), key)
 	end
 	local tooltip = QT:BuildMinimapTooltipStatus()

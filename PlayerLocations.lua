@@ -480,6 +480,8 @@ function QT:InitializePlayerLocations()
 			return
 		end
 		elapsed = 0
+		self:UpdatePartyNavigation()
+		self:RefreshPartyWaypointPins()
 		self:UpdatePlayerCommunications()
 		self:PrunePlayerLocations()
 		self:RefreshPlayerLocationPins()
@@ -491,6 +493,7 @@ function QT:InitializePlayerLocations()
 end
 
 function QT:ResetPlayerLocations()
+	self:ResetPartyNavigation()
 	self:HideChatLogPlayerTooltip()
 	self:HidePlayerTooltipBadge()
 	self.playerLocationState = nil

@@ -368,7 +368,14 @@ QuestTogether.DEFAULTS = {
 		emoteOnNearbyPlayerQuestCompletion = true,
 		emoteOnLevelUp = true,
 		compareHideOtherQuests = false,
+		lightMode = false,
+		compareQuestOwnership = "all",
+		compareQuestProgress = "all",
+		compareQuestAction = "all",
 		autoAcceptPartyShareRequests = false,
+		sharePartyFocus = true,
+		sharePartyWaypoint = true,
+		showPartyWaypoints = true,
 		autoInviteFriends = false,
 		autoInviteWhileLFG = false,
 		lookingForQuestPartners = false,
@@ -727,6 +734,7 @@ QuestTogether.runtimeEvents = {
 	"PLAYER_REGEN_ENABLED",
 	"ADDON_RESTRICTION_STATE_CHANGED",
 	"SUPER_TRACKING_CHANGED",
+	"USER_WAYPOINT_UPDATED",
 	"GROUP_JOINED",
 	"GROUP_ROSTER_UPDATE",
 	"IGNORELIST_UPDATE",
@@ -1969,6 +1977,48 @@ QuestTogether.API = QuestTogether.API or {
 				id = QuestTogether:SafeToNumber(id)
 				if id and id >= 1 and id <= 1000000000 and id == math.floor(id) then return id end
 			end
+		end,
+		GetPartyNavigationNativeState = function()
+			if QuestTogether:IsRuntimeRestricted() then return nil end
+			local result = { questID = -1, mapID = -1, x = 0, y = 0 }
+			if CanAccessForeignTable(C_SuperTrack)
+				and CanAccessForeignValue(C_SuperTrack.IsSuperTrackingQuest) and type(C_SuperTrack.IsSuperTrackingQuest) == "function"
+				and CanAccessForeignValue(C_SuperTrack.GetSuperTrackedQuestID) and type(C_SuperTrack.GetSuperTrackedQuestID) == "function" then
+				local ok, active = pcall(C_SuperTrack.IsSuperTrackingQuest)
+				if not ok or not CanAccessForeignValue(active) or type(active) ~= "boolean" then return nil end
+				if active then
+					local id = QuestTogether.API.GetActiveTrackedQuestID()
+					if not id then return nil end
+					result.questID = id
+				else result.questID = 0 end
+			end
+			if CanAccessForeignTable(C_Map) and CanAccessForeignValue(C_Map.GetUserWaypoint) and type(C_Map.GetUserWaypoint) == "function" then
+				local ok, point = pcall(C_Map.GetUserWaypoint)
+				if not ok or not CanAccessForeignValue(point) then return nil end
+				if point == nil then result.mapID = 0
+				else
+					if not CanAccessForeignTable(point) or not CanAccessForeignTable(point.position) then return nil end
+					local map = QuestTogether:SafeToNumber(point.uiMapID)
+					local getter = point.position.GetXY
+					if not CanAccessForeignValue(getter) or type(getter) ~= "function" then return nil end
+					local got, x, y = pcall(getter, point.position)
+					x, y = QuestTogether:SafeToNumber(x), QuestTogether:SafeToNumber(y)
+					if not got or not map or map <= 0 or map > 1000000 or map ~= math.floor(map)
+						or not x or not y or x < 0 or x > 1 or y < 0 or y > 1 then return nil end
+					result.mapID, result.x, result.y = map, x, y
+				end
+			end
+			return result
+		end,
+		SetPartyNavigationQuest = function(questID)
+			if QuestTogether:IsRuntimeRestricted() or not CanAccessForeignTable(C_SuperTrack) then return false end
+			local setter = C_SuperTrack.SetSuperTrackedQuestID
+			if not CanAccessForeignValue(setter) or type(setter) ~= "function" then return false end
+			local id = QuestTogether:NormalizeQuestID(questID)
+			if not id then return false end
+			if QuestTogether.API.IsOnQuest(id) ~= true then return false end
+			local ok = pcall(setter, id)
+			return ok and QuestTogether.API.GetActiveTrackedQuestID() == id
 		end,
 		GetLocalizedQuestTitle = function(questID)
 			if not CanAccessForeignTable(C_QuestLog) or type(C_QuestLog.GetTitleForQuestID) ~= "function" then return nil end
@@ -4728,6 +4778,8 @@ function QuestTogether:CreateBlizzardWaypoint(mapID, coordX, coordY)
 end
 
 function QuestTogether:OpenPingWaypoint(mapID, coordX, coordY)
+	-- Explicit coordinate navigation also ends following when TomTom handles it.
+	self:StopPartyQuestFollow()
 	if self:CreateTomTomWaypoint(mapID, coordX, coordY) then
 		return true
 	end
@@ -4895,14 +4947,11 @@ function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, s
 		end)
 	end
 
+	self:PopulatePartyFocusMenu(rootDescription, fullName)
 	return true
 end
 
 function QuestTogether:PopulateChatLogDestinationMenu(rootDescription)
-	if rootDescription.CreateDivider then
-		rootDescription:CreateDivider()
-	end
-
 	local isSeparate = self:GetOption("chatLogDestination") == "separate"
 	local buttonText = isSeparate and L("Move QuestTogether Logs to Main Window") or L("Move QuestTogether Logs to Separate Window")
 	rootDescription:CreateButton(buttonText, function()
@@ -5034,7 +5083,7 @@ function QuestTogether:PopulateChatLogQuestMenu(rootDescription, questId, fallba
 			tooltip:SetText(journalReason or L("Open this quest in your quest journal."))
 		end
 	end)
-	local compare = rootDescription:CreateButton(L("Compare Party Quests"), function()
+	local compare = rootDescription:CreateButton(L("Party Quest Log"), function()
 		if self.isEnabled and not self:IsRuntimeRestricted() then self:OpenPartyQuestCompare() end
 	end)
 	compare:SetEnabled(self.isEnabled == true)
@@ -5394,9 +5443,11 @@ function QuestTogether:SetOption(key, value)
 		or key == "showLocationsOnMap" or key == "showLocationsOnMinimap" then
 		return false
 	end
+	local isPartyNavigationOption = key == "sharePartyFocus" or key == "sharePartyWaypoint" or key == "showPartyWaypoints"
+	if isPartyNavigationOption and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
 	local isLocationOption = key == "sharePlayerLocation" or key == "showPlayerLocations" or key == "onlyShowQuestPartners"
 	if (isLocationOption or key == "nameplatePlayerIconEnabled") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
-	if key == "showMinimapButton" and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
+	if (key == "showMinimapButton" or key == "lightMode") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
 		return false
 	end
 	if (key == "lookingForQuestPartners" or key == "announceQuestPartners" or key == "stopLookingForPartnersOnJoin")
@@ -5453,6 +5504,8 @@ function QuestTogether:SetOption(key, value)
 	local startedLooking = key == "lookingForQuestPartners" and value == true
 		and self.db.profile[key] ~= true
 	self.db.profile[key] = value
+	if isPartyNavigationOption then self:QueuePartyNavigationUpdate() end
+	if key == "lightMode" and self.RefreshWindowThemes then self:RefreshWindowThemes() end
 	if key == "announceToNonQTParty" or key == "hidePartyChatReminder" then self:UpdatePartyChatReminder() end
 	if key == "lookingForQuestPartners" and self.BroadcastQuestPartnerStatus then self:BroadcastQuestPartnerStatus(true) end
 	if startedLooking then self:AnnounceQuestPartnerSearch() end
@@ -5718,6 +5771,7 @@ function QuestTogether:Disable()
 	if not self.isEnabled then
 		return true
 	end
+	if self.WithdrawPartyNavigation then self:WithdrawPartyNavigation() end
 	if self.BroadcastQTPlayerPresence then self:BroadcastQTPlayerPresence(true) end
 	if self.BroadcastPlayerLocation then self:BroadcastPlayerLocation(true, true) end
 	if self.FlushGeographicDeparture then self:FlushGeographicDeparture() end
@@ -5824,7 +5878,7 @@ function QuestTogether:PrintHelp()
 	self:Print(L("/qt enable | disable - Enable or disable runtime behavior"))
 	self:Print(L("/qt set <option> <value> - Set a boolean option (e.g. emoteOnQuestCompletion off)"))
 	self:Print(L("/qt get <option> - Read an option value"))
-	self:Print(L("/qt compare - Open Party Quest Compare"))
+	self:Print(L("/qt compare - Open Party Quest Log"))
 	self:Print(L("/qt lfg [on|off|toggle|status] - Set or check Looking for Questing Partners (no argument toggles)"))
 	self:Print(L("/qt notes | changelog | patchnotes - Open the latest welcome and patch notes"))
 	self:Print(L("/qt scan - Rescan your quest log now"))
@@ -5836,7 +5890,7 @@ function QuestTogether:PrintDebugHelp()
 	self:Print(L("/qt partychatpreview - Preview the party chat reminder without changing settings"))
 	self:Print(L("/qt debug - Open the shared QuestTogether debug window"))
 	self:Print(L("/qt devlogall [on|off|toggle] - Show or control dev all-announcements logging"))
-	self:Print(L("/qt compare debug - Preview Party Quest Compare with mock data (no sharing)"))
+	self:Print(L("/qt compare debug - Preview Party Quest Log with mock data (no sharing)"))
 	self:Print(L("/qt ping - Request pong metadata from all QuestTogether clients in the shared channel"))
 	self:Print(L("/qt bubbletest <text> - Run a local bubble preview for your current target"))
 	self:Print(L('/qt bubbletest "<player>" <text> - Run a local bubble preview for a nearby visible player (no target)'))

@@ -141,12 +141,8 @@ function QuestTogether:PopulateMinimapMenu(rootDescription)
 	end, function()
 		if not self:IsRuntimeRestricted() then self:HandleQuestPartnerCommand("toggle") end
 	end)
-	rootDescription:CreateButton(L("Settings"), function()
-		if not self:IsRuntimeRestricted() then
-			self:OpenOptionsWindow()
-		end
-	end)
-	local compare = rootDescription:CreateButton(L("Compare Party Quests"), function()
+	rootDescription:CreateDivider()
+	local compare = rootDescription:CreateButton(L("Party Quest Log"), function()
 		if self.isEnabled and not self:IsRuntimeRestricted() then
 			self:OpenPartyQuestCompare()
 		end
@@ -156,17 +152,12 @@ function QuestTogether:PopulateMinimapMenu(rootDescription)
 		self:OpenQuestJournalFromMinimap()
 	end)
 	journal:SetEnabled(self.API.CanOpenQuestJournalWindow and self.API.CanOpenQuestJournalWindow() == true or false)
+	rootDescription:CreateDivider()
 	rootDescription:CreateButton(L("Patch Notes"), function()
 		if not self:IsRuntimeRestricted() then
 			self:OpenReleaseNotes()
 		end
 	end)
-	local chat = rootDescription:CreateButton(L("Send QT chat message"), function()
-		if self.isEnabled and not self:IsRuntimeRestricted() and self.API.OpenQTChatComposer then
-			self.API.OpenQTChatComposer()
-		end
-	end)
-	chat:SetEnabled(self.isEnabled == true and type(self.API.OpenQTChatComposer) == "function")
 	self:PopulateChatLogDestinationMenu(rootDescription)
 	rootDescription:CreateButton(L("Hide Minimap Icon"), function()
 		if self:IsRuntimeRestricted() then

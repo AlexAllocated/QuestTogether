@@ -5,6 +5,17 @@ local function Equal(actual, expected)
 		error("expected " .. tostring(expected) .. ", got " .. tostring(actual))
 	end
 end
+local function FinishExpansion(frame)
+	for _ = 1, 5 do
+		local update = frame.expansionAnimator.scripts.OnUpdate
+		if not update then
+			return
+		end
+		update(frame.expansionAnimator, 0.1)
+	end
+	error("expansion animation did not finish")
+end
+
 local function Quest(id, title, pushable, complete)
 	return { questId = id, questTitle = title or ("Quest " .. id), isPushable = pushable, isComplete = complete == true }
 end
@@ -21,6 +32,7 @@ local function Fixture(name, entries)
 		recentCommMessageSignatures = {},
 		partyQuestCompareSession = false,
 		partyQuestCompareWindow = false,
+		partyQuestComparePreview = false,
 		partyQuestSharePrompt = false,
 		partyQuestShareState = false,
 		questCompareResponseQueue = false,
@@ -562,8 +574,12 @@ local function Frame(parent)
 		parent.children[#parent.children + 1] = frame
 	end
 	local methods = {}
-	function methods:IsForbidden() return self.forbidden == true or (self.parent and self.parent:IsForbidden()) or false end
-	function methods:IsProtected() return self.protected == true or (self.parent and self.parent:IsProtected()) or false end
+	function methods:IsForbidden()
+		return self.forbidden == true or (self.parent and self.parent:IsForbidden()) or false
+	end
+	function methods:IsProtected()
+		return self.protected == true or (self.parent and self.parent:IsProtected()) or false
+	end
 	function methods:SetScript(event, callback)
 		self.scripts[event] = callback
 	end
@@ -575,6 +591,31 @@ local function Frame(parent)
 	end
 	function methods:SetText(value)
 		self.text = value
+		if self.scripts.OnTextChanged then
+			self.scripts.OnTextChanged(self)
+		end
+	end
+	function methods:SetTextColor(...)
+		self.textColor = { ... }
+	end
+	function methods:SetColorTexture(...)
+		self.textureColor = { ... }
+	end
+	function methods:SetTexCoord(...)
+		self.texCoords = { ... }
+	end
+	function methods:SetVertexColor(...)
+		self.vertexColor = { ... }
+	end
+	function methods:GetText()
+		return self.text or ""
+	end
+	function methods:SetPoint(...)
+		self.points = self.points or {}
+		self.points[#self.points + 1] = { ... }
+	end
+	function methods:ClearAllPoints()
+		self.points = {}
 	end
 	function methods:SetWidth(value)
 		self.width = value
@@ -583,7 +624,24 @@ local function Frame(parent)
 		self.height = value
 	end
 	function methods:SetSize(width, height)
+		if self.resizeBounds then
+			width = math.max(self.resizeBounds[1], math.min(self.resizeBounds[3], width))
+			height = math.max(self.resizeBounds[2], math.min(self.resizeBounds[4], height))
+		end
 		self.width, self.height = width, height
+		if self.scripts.OnSizeChanged then
+			self.scripts.OnSizeChanged(self, width, height)
+		end
+	end
+	function methods:SetResizeBounds(...)
+		self.resizeBounds = { ... }
+	end
+	function methods:StartSizing(point, fromMouse)
+		self.sizing = point
+		self.sizingFromMouse = fromMouse
+	end
+	function methods:StopMovingOrSizing()
+		self.sizing = nil
 	end
 	function methods:GetWidth()
 		return self.width
@@ -591,7 +649,9 @@ local function Frame(parent)
 	function methods:GetHeight()
 		return self.height
 	end
-	function methods:GetStringHeight() return 180 end
+	function methods:GetStringHeight()
+		return 180
+	end
 	function methods:SetChecked(value)
 		self.checked = value
 	end
@@ -619,6 +679,9 @@ local function Frame(parent)
 	end
 	function methods:GetValue()
 		return self.value
+	end
+	function methods:SetVerticalScroll(value)
+		self.verticalScroll = value
 	end
 	function methods:SetHorizontalScroll(value)
 		self.horizontalScroll = value
@@ -658,12 +721,12 @@ local function Frame(parent)
 	-- These presentation-only methods are intentionally stubbed; behavioral
 	-- methods above are implemented and all other method names are rejected.
 	for _, name in ipairs({
-		"SetPoint",
-		"ClearAllPoints",
+		"SetAutoFocus",
+		"SetMaxLetters",
+		"ClearFocus",
 		"SetJustifyH",
 		"SetJustifyV",
 		"SetMaxLines",
-		"SetTextColor",
 		"SetFrameStrata",
 		"SetFrameLevel",
 		"SetWordWrap",
@@ -674,13 +737,15 @@ local function Frame(parent)
 		"EnableMouse",
 		"RegisterForDrag",
 		"StartMoving",
-		"StopMovingOrSizing",
+		"SetResizable",
+		"SetNormalTexture",
+		"SetHighlightTexture",
+		"SetPushedTexture",
 		"SetBackdrop",
 		"SetBackdropColor",
 		"SetBackdropBorderColor",
 		"SetScale",
 		"SetAllPoints",
-		"SetColorTexture",
 		"SetTexture",
 		"SetHorizTile",
 		"SetVertTile",
@@ -710,105 +775,137 @@ local function AttachUI(addon)
 	return parent
 end
 
-QuestTogether:RegisterTest("party chat reminder renders choices resets checkbox and safely dismisses during restrictions", function()
-	local a = Fixture()
-	AttachUI(a)
-	a.db = { profile = {} }
-	a.options.announceToNonQTParty = true
-	a.suppressLocalAnnouncementDisplayDuringTests = false
-	function a:GetNonQTPartyMembers() return { "Friend-Realm" } end
-	function a:IsRuntimeRestrictionTypeActive() return false end
-	function a:RefreshOptionsWindow() end
-	a:UpdatePartyChatReminder(); a.now = a.now + 10; a:UpdatePartyChatReminder()
-	local frame = a.partyChatReminderFrame
-	assert(frame:IsShown())
-	Equal(frame.remember:GetChecked(), false)
-	assert(frame.members.text:find("Friend-Realm", 1, true))
-	frame.remember:SetChecked(true)
-	a.blocked = true
-	frame.close.scripts.OnClick()
-	Equal(frame:IsShown(), false)
-	Equal(a.options.hidePartyChatReminder, nil)
-	a.blocked = false
-	a:UpdatePartyChatReminder()
-	Equal(frame:IsShown(), true)
-	frame.keep.scripts.OnClick()
-	Equal(frame:IsShown(), false)
-	Equal(a.options.hidePartyChatReminder, true)
-	Equal(a.options.announceToNonQTParty, true)
-	a.options.hidePartyChatReminder = false
-	a:ResetPartyChatReminder()
-	a:UpdatePartyChatReminder(); a.now = a.now + 10; a:UpdatePartyChatReminder()
-	Equal(frame.remember:GetChecked(), false)
-	frame.disable.scripts.OnClick()
-	Equal(a.options.announceToNonQTParty, false)
-	Equal(frame:IsShown(), false)
-	a:RenderPartyChatReminder(nil)
-end)
+QuestTogether:RegisterTest(
+	"party chat reminder renders choices resets checkbox and safely dismisses during restrictions",
+	function()
+		local a = Fixture()
+		AttachUI(a)
+		a.db = { profile = {} }
+		a.options.announceToNonQTParty = true
+		a.suppressLocalAnnouncementDisplayDuringTests = false
+		function a:GetNonQTPartyMembers()
+			return { "Friend-Realm" }
+		end
+		function a:IsRuntimeRestrictionTypeActive()
+			return false
+		end
+		function a:RefreshOptionsWindow() end
+		a:UpdatePartyChatReminder()
+		a.now = a.now + 10
+		a:UpdatePartyChatReminder()
+		local frame = a.partyChatReminderFrame
+		assert(frame:IsShown())
+		Equal(frame.remember:GetChecked(), false)
+		assert(frame.members.text:find("Friend-Realm", 1, true))
+		frame.remember:SetChecked(true)
+		a.blocked = true
+		frame.close.scripts.OnClick()
+		Equal(frame:IsShown(), false)
+		Equal(a.options.hidePartyChatReminder, nil)
+		a.blocked = false
+		a:UpdatePartyChatReminder()
+		Equal(frame:IsShown(), true)
+		frame.keep.scripts.OnClick()
+		Equal(frame:IsShown(), false)
+		Equal(a.options.hidePartyChatReminder, true)
+		Equal(a.options.announceToNonQTParty, true)
+		a.options.hidePartyChatReminder = false
+		a:ResetPartyChatReminder()
+		a:UpdatePartyChatReminder()
+		a.now = a.now + 10
+		a:UpdatePartyChatReminder()
+		Equal(frame.remember:GetChecked(), false)
+		frame.disable.scripts.OnClick()
+		Equal(a.options.announceToNonQTParty, false)
+		Equal(frame:IsShown(), false)
+		a:RenderPartyChatReminder(nil)
+	end
+)
 
-QuestTogether:RegisterTest("party chat preview command is isolated from real acknowledgements settings and normal help", function()
-	local a = Fixture()
-	AttachUI(a)
-	a.db = { profile = {} }
-	a.printed = {}
-	function a:Print(text) self.printed[#self.printed + 1] = text end
-	function a:GetNonQTPartyMembers() error("preview must not inspect party") end
-	local real = { request = {} }
-	a.partyChatReminderState = real
-	assert(a:HandleSlashCommand("partychatpreview"))
-	local frame = a.partyChatReminderPreviewFrame
-	assert(frame:IsShown())
-	frame.remember:SetChecked(true)
-	frame.disable.scripts.OnClick()
-	Equal(frame:IsShown(), false)
-	Equal(a.options.announceToNonQTParty, nil)
-	Equal(a.options.hidePartyChatReminder, nil)
-	Equal(a.partyChatReminderState, real)
-	Equal(#a.wire, 0)
-	assert(a:ShowPartyChatReminderPreview())
-	Equal(frame.remember:GetChecked(), false)
-	frame.keep.scripts.OnClick()
-	Equal(a.partyChatReminderState, real)
-	a:PrintHelp()
-	assert(not table.concat(a.printed, "\n"):find("partychatpreview", 1, true))
-	a:PrintDebugHelp()
-	assert(table.concat(a.printed, "\n"):find("/qt partychatpreview", 1, true))
-	a.blocked = true
-	Equal(a:ShowPartyChatReminderPreview(), false)
-	Equal(frame:IsShown(), false)
-end)
+QuestTogether:RegisterTest(
+	"party chat preview command is isolated from real acknowledgements settings and normal help",
+	function()
+		local a = Fixture()
+		AttachUI(a)
+		a.db = { profile = {} }
+		a.printed = {}
+		function a:Print(text)
+			self.printed[#self.printed + 1] = text
+		end
+		function a:GetNonQTPartyMembers()
+			error("preview must not inspect party")
+		end
+		local real = { request = {} }
+		a.partyChatReminderState = real
+		assert(a:HandleSlashCommand("partychatpreview"))
+		local frame = a.partyChatReminderPreviewFrame
+		assert(frame:IsShown())
+		frame.remember:SetChecked(true)
+		frame.disable.scripts.OnClick()
+		Equal(frame:IsShown(), false)
+		Equal(a.options.announceToNonQTParty, nil)
+		Equal(a.options.hidePartyChatReminder, nil)
+		Equal(a.partyChatReminderState, real)
+		Equal(#a.wire, 0)
+		assert(a:ShowPartyChatReminderPreview())
+		Equal(frame.remember:GetChecked(), false)
+		frame.keep.scripts.OnClick()
+		Equal(a.partyChatReminderState, real)
+		a:PrintHelp()
+		assert(not table.concat(a.printed, "\n"):find("partychatpreview", 1, true))
+		a:PrintDebugHelp()
+		assert(table.concat(a.printed, "\n"):find("/qt partychatpreview", 1, true))
+		a.blocked = true
+		Equal(a:ShowPartyChatReminderPreview(), false)
+		Equal(frame:IsShown(), false)
+	end
+)
 
 QuestTogether:RegisterTest("comparison titles refresh on load results and drain a bounded load queue", function()
 	local a = Fixture()
 	AttachUI(a)
 	a.QueuePartyQuestCompareRender = QuestTogether.QueuePartyQuestCompareRender
 	local loaded, requests = {}, {}
-	function a:GetQuestSnapshot() return nil end
-	a.API.GetLocalizedQuestTitle = function(id) return loaded[id] end
-	a.API.RequestLocalizedQuestTitle = function(id) requests[#requests + 1] = id end
+	function a:GetQuestSnapshot()
+		return nil
+	end
+	a.API.GetLocalizedQuestTitle = function(id)
+		return loaded[id]
+	end
+	a.API.RequestLocalizedQuestTitle = function(id)
+		requests[#requests + 1] = id
+	end
 	a:OpenPartyQuestCompare()
 	local remote = {}
-	for id = 1, 12 do remote[id] = Quest(id, "Foreign title " .. id) end
+	for id = 1, 12 do
+		remote[id] = Quest(id, "Foreign title " .. id)
+	end
 	Reply(a, "Friend-Realm", remote, true, true)
 	a:Advance(0.1)
 	Equal(#requests, 10)
-	local id = requests[1]
-	loaded[id] = "Loaded local title"
+	local id = a.partyQuestCompareWindow.rows[1].data.questId
+	loaded[id] = "A loaded local title"
 	a:QUEST_DATA_LOAD_RESULT(nil, id, true)
 	a:Advance(0.1)
 	local displayed = false
 	for _, row in ipairs(a.partyQuestCompareWindow.rows) do
 		if row.data and row.data.questId == id then
-			Equal(row.title.text, "Loaded local title")
+			Equal(row.title.text, "A loaded local title")
 			displayed = true
 		end
 	end
 	assert(displayed, "native load completion must replace the displayed fallback immediately")
 	local wires = #a.wire
-	for _ = 1, 8 do a:Advance(30) end
+	for _ = 1, 8 do
+		a:Advance(30)
+	end
 	local counts = {}
-	for _, questID in ipairs(requests) do counts[questID] = (counts[questID] or 0) + 1 end
-	for questID = 1, 12 do Equal(counts[questID], questID == id and 1 or 2) end
+	for _, questID in ipairs(requests) do
+		counts[questID] = (counts[questID] or 0) + 1
+	end
+	for questID = 1, 12 do
+		Equal(counts[questID], questID == id and 1 or 2)
+	end
 	Equal(#a.wire, wires, "title refresh must not request new remote snapshots")
 	assert(not a.partyQuestCompareSession.titleRefreshPending)
 	local total = #requests
@@ -821,8 +918,12 @@ QuestTogether:RegisterTest("quest title load events guard restrictions and canno
 	AttachUI(a)
 	a.QueuePartyQuestCompareRender = QuestTogether.QueuePartyQuestCompareRender
 	local title
-	function a:GetQuestSnapshot() return nil end
-	a.API.GetLocalizedQuestTitle = function() return title end
+	function a:GetQuestSnapshot()
+		return nil
+	end
+	a.API.GetLocalizedQuestTitle = function()
+		return title
+	end
 	a.API.RequestLocalizedQuestTitle = function() end
 	a:OpenPartyQuestCompare()
 	Reply(a, "Friend-Realm", { Quest(1, "Sent title") }, true, true)
@@ -852,7 +953,9 @@ QuestTogether:RegisterTest("quest title load events guard restrictions and canno
 	a:QueuePartyQuestCompareRender()
 	a:CancelPartyQuestCompare()
 	a.partyQuestCompareSession = { members = {} }
-	function a:RenderPartyQuestCompare() error("stale render reached replacement session") end
+	function a:RenderPartyQuestCompare()
+		error("stale render reached replacement session")
+	end
 	a:Advance(0.1)
 end)
 
@@ -860,7 +963,7 @@ QuestTogether:RegisterTest(
 	"party compare vertical scrollbar follows filtered rows and resets a collapsed range",
 	function()
 		local entries = {}
-		for id = 1, 13 do
+		for id = 1, 11 do
 			entries[id] = Quest(id)
 		end
 		local a = Fixture(nil, entries)
@@ -875,16 +978,14 @@ QuestTogether:RegisterTest(
 		a:RenderPartyQuestCompare()
 		Equal(frame.vertical:IsShown(), true)
 		Equal(frame.horizontal:IsShown(), false)
-		frame.vertical:SetValue(1)
+		frame.vertical:SetValue(1 * 42)
 		Equal(a.partyQuestCompareSession.offset, 1)
-		frame.filter:SetChecked(true)
-		frame.filter.scripts.OnClick(frame.filter)
+		a:SetPartyQuestCompareFilter("ownership", "mine")
 		a:RenderPartyQuestCompare()
 		Equal(frame.vertical:IsShown(), false)
 		Equal(frame.vertical:GetValue(), 0)
 		Equal(a.partyQuestCompareSession.offset, 0)
-		frame.filter:SetChecked(false)
-		frame.filter.scripts.OnClick(frame.filter)
+		a:SetPartyQuestCompareFilter("ownership", "all")
 		a:RenderPartyQuestCompare()
 		Equal(frame.vertical:IsShown(), true)
 		frame.refresh.scripts.OnClick()
@@ -897,21 +998,30 @@ QuestTogether:RegisterTest(
 	"party compare horizontal scrollbar follows column overflow independently of rows",
 	function()
 		local a = Fixture(nil, { Quest(1) })
-		AttachUI(a)
+		local parent = AttachUI(a)
+		parent:SetSize(1920, 1200)
 		a:OpenPartyQuestCompare()
 		a:RenderPartyQuestCompare()
 		local frame = a.partyQuestCompareWindow
-		local originalWidth = frame.viewport:GetWidth()
-		frame.viewport:SetWidth(frame.content:GetWidth())
+		a:Roster(a.name, "Friend-Realm", "Third-Realm", "Fourth-Realm", "Fifth-Realm", "Sixth-Realm")
+		a:OnPartyQuestRosterChanged()
+		a:RenderPartyQuestCompare()
+		local originalWidth = frame:GetWidth()
+		-- Wide viewports stretch the action area; find the fixed column minimum.
+		frame:SetSize(780, frame:GetHeight())
+		a:RenderPartyQuestCompare()
+		frame:SetSize(frame.content:GetWidth() + 62, frame:GetHeight())
 		a:RenderPartyQuestCompare()
 		Equal(frame.horizontal:IsShown(), false) -- Exactly fitting columns need no bar.
-		frame.viewport:SetWidth(frame.content:GetWidth() - 1)
+		frame:SetSize(frame.content:GetWidth() + 61, frame:GetHeight())
 		a:RenderPartyQuestCompare()
 		Equal(frame.horizontal:IsShown(), true)
 		Equal(frame.vertical:IsShown(), false)
 		frame.horizontal:SetValue(1)
 		Equal(frame.viewport.horizontalScroll, 1)
-		frame.viewport:SetWidth(originalWidth)
+		frame:SetSize(originalWidth, frame:GetHeight())
+		a:Roster(a.name, "Friend-Realm")
+		a:OnPartyQuestRosterChanged()
 		a:RenderPartyQuestCompare()
 		Equal(frame.horizontal:IsShown(), false)
 		Equal(frame.horizontal:GetValue(), 0)
@@ -947,21 +1057,19 @@ QuestTogether:RegisterTest("party diff UI renders a bounded row pool and filter 
 	Reply(a, "Friend-Realm", { Quest(2, "Request me", true) }, true, true)
 	a:RenderPartyQuestCompare()
 	local frame = a.partyQuestCompareWindow
-	Equal(#frame.rows, 13)
-	Equal(frame.title.text, "Party Quest Compare")
-	Equal(frame.filter.children[1].text, "Hide quests I don't have")
-	Equal(frame.filter.checked, false)
+	Equal(#frame.rows, 24)
+	Equal(frame.title.text, "Party Quest Log")
+	Equal(frame.filter.text, "Filters")
+	Equal(frame.filter.text, "Filters")
 	Equal(#a:BuildPartyQuestDiffRows(), 2)
-	frame.filter:SetChecked(true)
-	frame.filter.scripts.OnClick(frame.filter)
+	a:SetPartyQuestCompareFilter("ownership", "mine")
 	a:RenderPartyQuestCompare()
 	Equal(a:GetOption("compareHideOtherQuests"), true)
 	Equal(#a:BuildPartyQuestDiffRows(), 1)
 	Equal(frame.rows[1].action.text, "Share")
 	frame.rows[1].action.scripts.OnClick()
 	Equal(a.pushes, 1)
-	frame.filter:SetChecked(false)
-	frame.filter.scripts.OnClick(frame.filter)
+	a:SetPartyQuestCompareFilter("ownership", "all")
 	a:RenderPartyQuestCompare()
 	Equal(frame.rows[1].action.text, "Request Share")
 	frame.rows[1].action.scripts.OnClick()
@@ -978,21 +1086,19 @@ QuestTogether:RegisterTest("party compare empty-state guidance matches the hide 
 	a:OpenPartyQuestCompare()
 	a:RenderPartyQuestCompare()
 	local frame = a.partyQuestCompareWindow
-	Equal(frame.filter.checked, false)
-	Equal(frame.footer.text, "No quests to display.")
+	Equal(frame.filter.text, "Filters")
+	Equal(frame.summary.text, "No quests to display.")
 	Reply(a, "Friend-Realm", { Quest(2, "Their quest", true) }, true, true)
 	a:RenderPartyQuestCompare()
 	Equal(#a:BuildPartyQuestDiffRows(), 1)
-	frame.filter:SetChecked(true)
-	frame.filter.scripts.OnClick(frame.filter)
+	a:SetPartyQuestCompareFilter("ownership", "mine")
 	a:RenderPartyQuestCompare()
 	Equal(#a:BuildPartyQuestDiffRows(), 0)
-	assert(frame.footer.text:find("Uncheck ‘Hide quests I don't have’", 1, true))
-	frame.filter:SetChecked(false)
-	frame.filter.scripts.OnClick(frame.filter)
+	Equal(frame.summary.text, "No quests match. Try another search or reset the filters.")
+	a:SetPartyQuestCompareFilter("ownership", "all")
 	a:RenderPartyQuestCompare()
 	Equal(#a:BuildPartyQuestDiffRows(), 1)
-	assert(not frame.footer.text:find("Uncheck", 1, true))
+	assert(not frame.summary.text:find("Uncheck", 1, true))
 end)
 
 QuestTogether:RegisterTest("party share consent UI resets checkbox between requests and hides on expiry", function()
@@ -1072,11 +1178,11 @@ QuestTogether:RegisterTest("compare debug command renders the full mock UI witho
 	local preview, livePending = a.partyQuestComparePreview, a.pendingQuestCompareRequests.keep
 	local frame = preview.partyQuestCompareWindow
 	Equal(frame.shown, true)
-	Equal(frame.title.text, "Party Quest Compare — Debug Preview")
-	Equal(#frame.rows, 13)
+	Equal(frame.title.text, "Party Quest Log — Debug Preview")
+	Equal(#frame.rows, 24)
 	Equal(#preview.partyQuestCompareSession.members, 3)
 	Equal(#preview:BuildPartyQuestDiffRows(), 16)
-	Equal(frame.filter.checked, false)
+	Equal(frame.filter.text, "Filters")
 	Equal(a.options.compareHideOtherQuests, true)
 	local statuses, actions = {}, {}
 	for _, row in ipairs(preview:BuildPartyQuestDiffRows()) do
@@ -1100,7 +1206,7 @@ QuestTogether:RegisterTest("compare debug command renders the full mock UI witho
 	end
 	assert(shared > #preview:BuildPartyQuestDiffRows() / 2, "most quests should overlap")
 	assert(frame.content.width <= frame.viewport.width, "a typical party should fit without horizontal scrolling")
-	frame.vertical:SetValue(3)
+	frame.vertical:SetValue(3 * 42)
 	Equal(preview.partyQuestCompareSession.offset, 3)
 	assert(frame.summary.text:find("DEBUG PREVIEW", 1, true))
 	Equal(a.partyQuestCompareSession, liveSession)
@@ -1117,10 +1223,10 @@ QuestTogether:RegisterTest("compare preview actions simulate feedback and Refres
 	local preview, share, request = a.partyQuestComparePreview
 	local frame = preview.partyQuestCompareWindow
 	for _, row in ipairs(frame.rows) do
-		if row.data.action == "share" and not share then
+		if row.data and row.data.action == "share" and not share then
 			share = row
 		end
-		if row.data.action == "request" and not request then
+		if row.data and row.data.action == "request" and not request then
 			request = row
 		end
 	end
@@ -1130,9 +1236,8 @@ QuestTogether:RegisterTest("compare preview actions simulate feedback and Refres
 	Equal(share.hint.text, "Share attempted")
 	request.action.scripts.OnClick()
 	Equal(request.hint.text, "Awaiting confirmation")
-	assert(frame.footer.text:find("Preview only", 1, true))
-	frame.filter:SetChecked(true)
-	frame.filter.scripts.OnClick(frame.filter)
+	assert(frame.summary.text:find("Preview only", 1, true))
+	preview:SetPartyQuestCompareFilter("ownership", "mine")
 	for _, row in ipairs(preview:BuildPartyQuestDiffRows()) do
 		assert(
 			preview.partyQuestCompareSession.byName[preview.partyQuestCompareSession.playerName].entries[row.questId]
@@ -1144,7 +1249,7 @@ QuestTogether:RegisterTest("compare preview actions simulate feedback and Refres
 	Equal(preview.statuses[requestedID], nil)
 	Equal(preview.partyQuestCompareSession.offset, 0)
 	Equal(frame.horizontal.value, 0)
-	Equal(frame.filter.checked, true)
+	Equal(frame.filter.text, "Filters (1)")
 	Equal(#a.wire, 0)
 	Equal(a.pushes, 0)
 end)
@@ -1195,7 +1300,7 @@ QuestTogether:RegisterTest("compare preview refuses restricted creation without 
 	end
 	Equal(a:OpenPartyQuestComparePreview(), false)
 	assert(printed:find("restricted", 1, true))
-	Equal(rawget(a, "partyQuestComparePreview"), nil)
+	Equal(rawget(a, "partyQuestComparePreview"), false)
 	Equal(a.createdFrames, 0)
 	Equal(#a.wire, 0)
 	Equal(#a.delayed, 0)
@@ -1498,7 +1603,7 @@ QuestTogether:RegisterTest(
 		Equal(#a.packets, 1)
 		a:RenderPartyQuestCompare()
 		Equal(a.partyQuestCompareWindow.title.text, "Compare Quests")
-		assert(string.find(a.partyQuestCompareWindow.footer.text, "Join a party together", 1, true))
+		assert(string.find(a.partyQuestCompareWindow.summary.text, "Join a party together", 1, true))
 		Equal(a.partyQuestCompareWindow.rows[1].action.shown, false)
 	end
 )
@@ -1538,7 +1643,7 @@ QuestTogether:RegisterTest(
 		Equal(a.partyQuestCompareSession.mode, "party")
 		Equal(#a.partyQuestCompareSession.members, 3)
 		a:RenderPartyQuestCompare()
-		Equal(a.partyQuestCompareWindow.title.text, "Party Quest Compare")
+		Equal(a.partyQuestCompareWindow.title.text, "Party Quest Log")
 	end
 )
 
@@ -1766,10 +1871,10 @@ QuestTogether:RegisterTest(
 			Equal(session.byName[a.name].state, "loading")
 			if restriction == "map" then
 				a:RenderPartyQuestCompare()
-				Equal(a.partyQuestCompareWindow.footer.text, "Close the world map to finish loading quests.")
+				Equal(a.partyQuestCompareWindow.summary.text, "Close the world map to finish loading quests.")
 				session.message = "Existing feedback"
 				a:RenderPartyQuestCompare()
-				Equal(a.partyQuestCompareWindow.footer.text, "Existing feedback")
+				Equal(a.partyQuestCompareWindow.summary.text, "Existing feedback")
 				session.message = nil
 			end
 			a.blocked, a.mapVisible = false, false
@@ -1780,7 +1885,7 @@ QuestTogether:RegisterTest(
 			Equal(session.targetName, "Nearby-Realm")
 			Equal(#session.members, 2)
 			Equal(a.partyQuestCompareWindow.title.text, "Compare Quests")
-			assert(a.partyQuestCompareWindow.footer.text ~= "Close the world map to finish loading quests.")
+			assert(a.partyQuestCompareWindow.summary.text ~= "Close the world map to finish loading quests.")
 			Equal(a.pushes, 0)
 		end
 	end
@@ -1890,15 +1995,21 @@ QuestTogether:RegisterTest("party compare renders every locale while canonical a
 	for _, locale in ipairs({ "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW" }) do
 		QuestTogether.localizationTestLocale = locale
 		local a = Fixture(nil, { Quest(1, "Untranslated quest title", true) })
-		function a:GetPartyQuestUIParent() return Frame() end
-		function a:CanAccessForeignFrame() return true end
-		function a:CreatePartyQuestUIFrame() return Frame() end
+		function a:GetPartyQuestUIParent()
+			return Frame()
+		end
+		function a:CanAccessForeignFrame()
+			return true
+		end
+		function a:CreatePartyQuestUIFrame()
+			return Frame()
+		end
 		a:OpenPartyQuestCompare()
 		Reply(a, "Friend-Realm", {}, true, true)
 		a:RenderPartyQuestCompare()
 		local frame = a.partyQuestCompareWindow
-		Equal(frame.title.text, QuestTogether.TranslateForLocale("Party Quest Compare", locale))
-		Equal(frame.filter.children[1].text, QuestTogether.TranslateForLocale("Hide quests I don't have", locale))
+		Equal(frame.title.text, QuestTogether.TranslateForLocale("Party Quest Log", locale))
+		Equal(frame.filter.text, QuestTogether.TranslateForLocale("Filters", locale))
 		Equal(frame.rows[1].title.text, "Untranslated quest title")
 		Equal(frame.rows[1].action.text, QuestTogether.TranslateForLocale("Share", locale))
 		frame.rows[1].action.scripts.OnClick(frame.rows[1].action)
@@ -1910,23 +2021,30 @@ end)
 QuestTogether:RegisterTest("client locale renders comparison and sharing consent controls", function()
 	assert(QuestTogether.localizationTestLocale == nil)
 	local locale = QuestTogether:GetEventLocale()
-	local function T(key) return QuestTogether.TranslateForLocale(key, locale) end
+	local function T(key)
+		return QuestTogether.TranslateForLocale(key, locale)
+	end
 	local a = Fixture(nil, { Quest(1, "Local quest", true) })
 	AttachUI(a)
 	a:OpenPartyQuestCompare()
 	Reply(a, "Friend-Realm", {}, true, true)
 	a:RenderPartyQuestCompare()
 	local frame = a.partyQuestCompareWindow
-	Equal(frame.title.text, T("Party Quest Compare"))
-	Equal(frame.filter.children[1].text, T("Hide quests I don't have"))
+	Equal(frame.title.text, T("Party Quest Log"))
+	Equal(frame.filter.text, T("Filters"))
 	Equal(frame.rows[1].action.text, T("Share"))
-	function a:GetQuestTitle() return "Local quest" end
+	function a:GetQuestTitle()
+		return "Local quest"
+	end
 	assert(a:HandlePartyQuestShareMessage(SharePacket(a), "Friend-Realm", "PARTY"))
 	a:RenderPartyQuestSharePrompt()
 	local prompt = a.partyQuestSharePrompt
 	Equal(prompt.title.text, T("QuestTogether · Share request"))
 	Equal(prompt.always.children[1].text, T("Always allow party share requests"))
-	Equal(prompt.message.text, string.format(T("%s would like you to share\n[%s]\nwith the party."), "Friend-Realm", "Local quest"))
+	Equal(
+		prompt.message.text,
+		string.format(T("%s would like you to share\n[%s]\nwith the party."), "Friend-Realm", "Local quest")
+	)
 	Equal(a.pushes, 0)
 end, { locale = "client" })
 
@@ -1948,77 +2066,1059 @@ QuestTogether:RegisterTest("direct share controls retain group authorization and
 	Equal(a.pushes, 0)
 end)
 
-QuestTogether:RegisterTest("retired share and join prompts dismiss safely during restrictions without showing their successors", function()
-	for _, kind in ipairs({ "share", "join" }) do
-		local a = Fixture(nil, { Quest(1, "Share me", true) })
-		AttachUI(a)
-		a.QueuePartyQuestSharePrompt = QuestTogether.QueuePartyQuestSharePrompt
-		function a:GetQuestTitle() return "Share me" end
-		function a:SendPartyQuestShareMessage() return true end
-		function a:SendPartyJoinMessage() return true end
-		local first = { sender = kind == "share" and "Friend-Realm" or "Visitor-Realm", key = "first", questId = 1,
-			requestId = "r1", id = "j1", order = 1, created = 100, expires = 160 }
-		local second = { sender = kind == "share" and "Friend-Realm" or "Other-Realm", key = "second", questId = 1,
-			requestId = "r2", id = "j2", order = 2, created = 101, expires = 170 }
-		local render, finish, queue, state, frameKey
-		if kind == "share" then
-			a.partyQuestShareState = { incoming = { first = first, second = second } }
-			state = a.partyQuestShareState
-			render, finish, queue = a.RenderPartyQuestSharePrompt, a.FinishPartyQuestShare, a.QueuePartyQuestSharePrompt
-			frameKey = "partyQuestSharePrompt"
-		else
-			a.partyJoinState = { incoming = { [first.sender] = first, [second.sender] = second } }
-			state = a.partyJoinState
-			render, finish, queue = a.RenderPartyJoinPrompt, a.FinishPartyJoin, a.QueuePartyJoinPrompt
-			frameKey = "partyJoinPrompt"
+QuestTogether:RegisterTest(
+	"retired share and join prompts dismiss safely during restrictions without showing their successors",
+	function()
+		for _, kind in ipairs({ "share", "join" }) do
+			local a = Fixture(nil, { Quest(1, "Share me", true) })
+			AttachUI(a)
+			a.QueuePartyQuestSharePrompt = QuestTogether.QueuePartyQuestSharePrompt
+			function a:GetQuestTitle()
+				return "Share me"
+			end
+			function a:SendPartyQuestShareMessage()
+				return true
+			end
+			function a:SendPartyJoinMessage()
+				return true
+			end
+			local first = {
+				sender = kind == "share" and "Friend-Realm" or "Visitor-Realm",
+				key = "first",
+				questId = 1,
+				requestId = "r1",
+				id = "j1",
+				order = 1,
+				created = 100,
+				expires = 160,
+			}
+			local second = {
+				sender = kind == "share" and "Friend-Realm" or "Other-Realm",
+				key = "second",
+				questId = 1,
+				requestId = "r2",
+				id = "j2",
+				order = 2,
+				created = 101,
+				expires = 170,
+			}
+			local render, finish, queue, state, frameKey
+			if kind == "share" then
+				a.partyQuestShareState = { incoming = { first = first, second = second } }
+				state = a.partyQuestShareState
+				render, finish, queue =
+					a.RenderPartyQuestSharePrompt, a.FinishPartyQuestShare, a.QueuePartyQuestSharePrompt
+				frameKey = "partyQuestSharePrompt"
+			else
+				a.partyJoinState = { incoming = { [first.sender] = first, [second.sender] = second } }
+				state = a.partyJoinState
+				render, finish, queue = a.RenderPartyJoinPrompt, a.FinishPartyJoin, a.QueuePartyJoinPrompt
+				frameKey = "partyJoinPrompt"
+			end
+			render(a)
+			local frame = a[frameKey]
+			Equal(frame.request, first)
+			Equal(frame.shown, true)
+			a.blocked = true
+			Equal(finish(a, first, "declined"), true)
+			Equal(frame.shown, false)
+			Equal(frame.request, nil)
+			a:Advance(0.1)
+			Equal(frame.shown, false)
+			assert(next(state.incoming), "the next consent request must remain pending")
+			Equal(a.pushes, 0)
+			a.blocked = false
+			a:FlushDeferredWork("test restrictions ended")
+			Equal(frame.shown, true)
+			Equal(frame.request, second)
+			-- Expiry does not require a successful layout/render callback either.
+			a.blocked = true
+			a.now = 171
+			queue(a)
+			Equal(frame.shown, false)
+			Equal(frame.request, nil)
 		end
-		render(a)
-		local frame = a[frameKey]
-		Equal(frame.request, first)
-		Equal(frame.shown, true)
-		a.blocked = true
-		Equal(finish(a, first, "declined"), true)
-		Equal(frame.shown, false)
-		Equal(frame.request, nil)
-		a:Advance(0.1)
-		Equal(frame.shown, false)
-		assert(next(state.incoming), "the next consent request must remain pending")
-		Equal(a.pushes, 0)
-		a.blocked = false
-		a:FlushDeferredWork("test restrictions ended")
-		Equal(frame.shown, true)
-		Equal(frame.request, second)
-		-- Expiry does not require a successful layout/render callback either.
-		a.blocked = true
-		a.now = 171
-		queue(a)
-		Equal(frame.shown, false)
-		Equal(frame.request, nil)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"retired consent prompts quarantine protected and forbidden frames until safe teardown",
+	function()
+		for _, boundary in ipairs({ "protected", "forbidden" }) do
+			local a = Fixture()
+			AttachUI(a)
+			local frame = Frame()
+			frame.request, frame[boundary] = {}, true
+			a.partyQuestSharePrompt = frame
+			a.partyQuestShareState = { incoming = {} }
+			a.blocked = true
+			local hides = 0
+			local hide = frame.Hide
+			function frame:Hide()
+				assert(not self.protected and not self.forbidden, "quarantined prompt must not mutate")
+				hides = hides + 1
+				hide(self)
+			end
+			a:RenderPartyQuestSharePrompt()
+			Equal(hides, 0)
+			Equal(frame.request, nil)
+			frame[boundary] = false
+			a:RenderPartyQuestSharePrompt()
+			Equal(hides, 1)
+			Equal(frame.shown, false)
+		end
+	end
+)
+
+local function ObjectiveFixture(name)
+	local a = Fixture(name, { Quest(1, "A shared quest", true), Quest(2, "Another quest", false) })
+	a.objectiveRows = {
+		[1] = {
+			{ text = "Bandanas collected: 3/8", kind = "item", current = 3, required = 8, finished = false },
+			{ text = "Speak to the watch", kind = "event", finished = true },
+		},
+		[2] = { { text = "Inspect the cave", kind = "event", finished = false } },
+	}
+	a.API.GetQuestLogIndexForQuestID = function(id)
+		for i, entry in ipairs(a.entries) do
+			if entry.questId == id then
+				return i
+			end
+		end
+	end
+	a.API.GetNumQuestLeaderBoards = function(index)
+		local entry = a.entries[index]
+		local rows = entry and a.objectiveRows[entry.questId]
+		return rows and #rows or 0
+	end
+	a.API.GetQuestObjectiveInfo = function(id, index)
+		local row = a.objectiveRows[id] and a.objectiveRows[id][index]
+		if row then
+			return row.text, row.kind, row.finished, row.current, row.required
+		end
+	end
+	a.API.GetQuestProgressBarPercent = function()
+		return a.percent
+	end
+	a.wireRoutes = {}
+	function a:SendWireMessageToAnnouncementRoutes(wire, _, routes)
+		Equal(#routes, 1)
+		self.wire[#self.wire + 1], self.wireRoutes[#self.wireRoutes + 1] = wire, routes[1]
+		return not self.sendFails
+	end
+	return a
+end
+
+local function BeginObjectiveExchange()
+	local a, b = ObjectiveFixture("Barbara Myers"), ObjectiveFixture("Sam Othername")
+	a:Roster(a.name, b.name)
+	b:Roster(a.name, b.name)
+	a:RefreshPartyQuestCompare()
+	a:Advance(0)
+	b:OnCommReceived(b.commPrefix, a.wire[1], "PARTY", a.name)
+	for _ = 1, 4 do
+		b:Advance(0.2)
+	end
+	for _, wire in ipairs(b.wire) do
+		a:OnCommReceived(a.commPrefix, wire, "PARTY", b.name)
+	end
+	Equal(a.partyQuestCompareSession.byName[b.name].supportsObjectives, true)
+	a:TogglePartyQuestObjectives(1)
+	a:Advance(0)
+	Equal(a.wireRoutes[#a.wireRoutes].distribution, "WHISPER")
+	Equal(a.wireRoutes[#a.wireRoutes].target, b.name)
+	Equal(a.wireRoutes[#a.wireRoutes].requiresGroup, true)
+	-- Re-routing an already private request must retain its party-only scope.
+	function a:SupportsDirectComms()
+		return true
+	end
+	Equal(
+		a:GetTargetedCommRoutes(b.name, { { distribution = "WHISPER", target = b.name, requiresGroup = true } })[1].requiresGroup,
+		true
+	)
+	b.wire, b.wireRoutes = {}, {}
+	b:OnCommReceived(b.commPrefix, a.wire[#a.wire], "WHISPER", a.name)
+	for _ = 1, 6 do
+		b:Advance(0.2)
+	end
+	Equal(#b.wire, 4) -- one quest, two objectives, one completion marker
+	for _, route in ipairs(b.wireRoutes) do
+		Equal(route.distribution, "WHISPER")
+		Equal(route.target, a.name)
+	end
+	return a, b
+end
+
+QuestTogether:RegisterTest(
+	"expanded comparison objectives use scoped whispers and assemble reordered complete snapshots",
+	function()
+		local a, b = BeginObjectiveExchange()
+		local member = a.partyQuestCompareSession.byName[b.name]
+		local pendingId = member.objectiveDetails[1].requestId
+		-- Neither a forged sender nor a different quest can fill this request.
+		local row = a:DecodeQuestCompareObjectivePayload(b.wire[2]:sub(6))
+		Equal(a:HandleQuestCompareObjective(row, "Other Player"), false)
+		row.questId = 2
+		Equal(a:HandleQuestCompareObjective(row, b.name), false)
+		row.questId, row.objectiveIndex = 1, 20
+		a:HandleQuestCompareObjective(row, b.name)
+		for i = #b.wire, 2, -1 do
+			a:OnCommReceived(a.commPrefix, b.wire[i], "WHISPER", b.name)
+		end
+		Equal(member.objectiveDetails[1].state, "loading")
+		assert(a.pendingQuestCompareRequests[pendingId])
+		a:OnCommReceived(a.commPrefix, b.wire[1], "WHISPER", b.name)
+		Equal(member.objectiveDetails[1].state, "ready")
+		Equal(#member.objectiveDetails[1].objectives, 2)
+		Equal(member.objectiveDetails[1].objectives[1].current, 3)
+		Equal(member.objectiveDetails[1].objectives[1].required, 8)
+		Equal(member.objectiveDetails[1].objectives[2].finished, true)
+		Equal(a.pendingQuestCompareRequests[pendingId], nil)
+		Equal(member.entries[2].questTitle, "Another quest") -- scoped absence is not a whole-log snapshot
+		a:OnCommReceived(a.commPrefix, b.wire[2], "WHISPER", b.name)
+		Equal(#member.objectiveDetails[1].objectives, 2)
+	end
+)
+
+QuestTogether:RegisterTest("partial objective snapshots time out as unknown without losing quest ownership", function()
+	local a, b = BeginObjectiveExchange()
+	local member = a.partyQuestCompareSession.byName[b.name]
+	for _, i in ipairs({ 1, 2, 4 }) do
+		a:OnCommReceived(a.commPrefix, b.wire[i], "WHISPER", b.name)
+	end
+	Equal(member.objectiveDetails[1].state, "loading")
+	a:Advance(181)
+	Equal(member.objectiveDetails[1].state, "unknown")
+	Equal(member.state, "ready")
+	Equal(member.entries[1].isComplete, false)
+	local display = a:BuildPartyQuestCompareDisplayRows(a:BuildPartyQuestDiffRows())
+	local found = false
+	for _, row in ipairs(display) do
+		if row.kind == "member" and row.title == b.name then
+			Equal(row.hint, "Unknown")
+			found = true
+		end
+	end
+	assert(found)
+end)
+
+QuestTogether:RegisterTest("collapsed closed and ignored comparisons reject late objective replies", function()
+	for _, change in ipairs({ "collapse", "close", "refresh", "ignore", "depart", "disable", "filter" }) do
+		local a, b = BeginObjectiveExchange()
+		local session = a.partyQuestCompareSession
+		local member = session.byName[b.name]
+		local id = member.objectiveDetails[1].requestId
+		if change == "collapse" then
+			a:TogglePartyQuestObjectives(1)
+		elseif change == "filter" then
+			a:SetPartyQuestCompareFilter("search", "Other quest")
+		elseif change == "close" then
+			a:CancelPartyQuestCompare()
+		elseif change == "refresh" then
+			a:RefreshPartyQuestCompare()
+		elseif change == "ignore" then
+			a.ignored = b.name
+			a:CancelIgnoredPlayerQuestCompare()
+		elseif change == "depart" then
+			a:Roster(a.name)
+			a:OnPartyQuestRosterChanged()
+		else
+			a.isEnabled = false
+			a:ResetPartyQuestCompare()
+		end
+		Equal(a.pendingQuestCompareRequests[id], nil)
+		for _, wire in ipairs(b.wire) do
+			a:OnCommReceived(a.commPrefix, wire, "WHISPER", b.name)
+		end
+		assert(not member.objectiveDetails or not member.objectiveDetails[1])
 	end
 end)
 
-QuestTogether:RegisterTest("retired consent prompts quarantine protected and forbidden frames until safe teardown", function()
-	for _, boundary in ipairs({ "protected", "forbidden" }) do
-		local a = Fixture()
-		AttachUI(a)
-		local frame = Frame()
-		frame.request, frame[boundary] = {}, true
-		a.partyQuestSharePrompt = frame
-		a.partyQuestShareState = { incoming = {} }
+QuestTogether:RegisterTest(
+	"objective reads preserve text and distinguish percentages binary objectives and unavailable data",
+	function()
+		local a = ObjectiveFixture()
+		local rows = a:ReadQuestCompareObjectives(1)
+		Equal(rows[1].text, "Bandanas collected: 3/8")
+		Equal(rows[2].finished, true)
+		a.objectiveRows[1][1] =
+			{ text = "Clear the area (36%)", kind = "progressbar", current = 7, required = 9, finished = false }
+		a.percent = 36
+		rows = a:ReadQuestCompareObjectives(1)
+		Equal(rows[1].current, 36)
+		Equal(rows[1].required, 100)
+		a.percent = nil
+		Equal(a:ReadQuestCompareObjectives(1)[1].current, nil)
 		a.blocked = true
-		local hides = 0
-		local hide = frame.Hide
-		function frame:Hide()
-			assert(not self.protected and not self.forbidden, "quarantined prompt must not mutate")
-			hides = hides + 1
-			hide(self)
+		Equal(a:ReadQuestCompareObjectives(1), nil)
+		a.blocked = false
+		a.objectiveRows[1] = {}
+		Equal(a:ReadQuestCompareObjectives(1), nil)
+		a.objectiveRows[1] = { { text = "", kind = "item" } }
+		Equal(a:ReadQuestCompareObjectives(1), nil)
+		a.objectiveRows[1] = { { text = "Feinde besiegt: 4/8", kind = "monster", current = 4, required = 8 } }
+		Equal(a:ReadQuestCompareObjectives(1)[1].text, "Feinde besiegt: 4/8")
+		local count = 0
+		a.API.GetQuestLogIndexForQuestID = function()
+			count = count + 1
+			return count == 1 and 1 or 2
 		end
-		a:RenderPartyQuestSharePrompt()
-		Equal(hides, 0)
-		Equal(frame.request, nil)
-		frame[boundary] = false
-		a:RenderPartyQuestSharePrompt()
-		Equal(hides, 1)
-		Equal(frame.shown, false)
+		Equal(a:ReadQuestCompareObjectives(1), nil)
 	end
+)
+
+QuestTogether:RegisterTest(
+	"objective detail codecs bound payloads sanitize markup and reject malformed counters",
+	function()
+		local a = ObjectiveFixture()
+		Equal(a:SendQuestCompareEntry("request", nil), false)
+		local row = {
+			questId = 1,
+			objectiveIndex = 1,
+			kind = "item",
+			text = string.rep("任務,|", 150),
+			current = 3,
+			required = 8,
+			finished = false,
+		}
+		local encoded = a:EncodeQuestCompareObjectivePayload("request", row)
+		assert(#encoded + 5 <= 255)
+		local decoded = assert(a:DecodeQuestCompareObjectivePayload(encoded))
+		assert(not decoded.text:find("|", 1, true))
+		Equal(decoded.current, 3)
+		Equal(a:CleanQuestCompareObjectiveText("|cffffffffText|r |Hquest:1|hQuest|h |Tfoo:12|t"), "Text Quest")
+		for _, packet in ipairs({
+			"1,r,1,0,Text,item,0,1,2",
+			"1,r,1,21,Text,item,0,1,2",
+			"1,r,1.5,1,Text,item,0,1,2",
+			"1,r,1,1,Text,item,0,-1,2",
+			"1,r,1,1,Text,item,0,nan,2",
+			"1,r,1,1,Text,item,2,1,2",
+			"1,r,1,1,Text,item,0,1.5,2",
+			"1,r,1,1,,item,0,1,2",
+			"1,r,1,1,Text,item,0,1,2,extra",
+		}) do
+			Equal(a:DecodeQuestCompareObjectivePayload(packet), nil)
+		end
+		Equal(a:DecodeQuestCompareRequestPayload("1,r,A,B,1.5"), nil)
+		Equal(a:DecodeQuestCompareRequestPayload("1,r,A,B").objectiveQuestId, nil)
+		Equal(a:DecodeQuestCompareDonePayload("1,r,B,MAGE,1,share1").supportsObjectives, false)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"older peers and unanswered members remain explicit in expanded comparisons without extra requests",
+	function()
+		local a = ObjectiveFixture()
+		a:Roster(a.name, "Old Peer", "Quiet Peer")
+		a:RefreshPartyQuestCompare()
+		a:Advance(0)
+		Reply(a, "Old Peer", { Quest(1, "Quest", true) }, true, true)
+		local count = #a.wire
+		a:TogglePartyQuestObjectives(1)
+		a:Advance(0)
+		Equal(#a.wire, count)
+		local rows = a:BuildPartyQuestCompareDisplayRows(a:BuildPartyQuestDiffRows())
+		for _, row in ipairs(rows) do
+			if row.title == "Old Peer" then
+				Equal(row.hint, "Update QuestTogether for objective details.")
+			end
+			if row.title == "Quiet Peer" then
+				Equal(row.hint, "Loading")
+			end
+		end
+		a:Advance(181)
+		rows = a:BuildPartyQuestCompareDisplayRows(a:BuildPartyQuestDiffRows())
+		for _, row in ipairs(rows) do
+			if row.title == "Quiet Peer" then
+				Equal(row.hint, "Unknown")
+			end
+		end
+	end
+)
+
+QuestTogether:RegisterTest(
+	"objective preview expands in the reused row pool without changing quest totals or sending messages",
+	function()
+		local a = ObjectiveFixture()
+		AttachUI(a)
+		a:OpenPartyQuestComparePreview()
+		local p, frame = a.partyQuestComparePreview, a.partyQuestComparePreview.partyQuestCompareWindow
+		local count = #p:BuildPartyQuestDiffRows()
+		local row = frame.rows[1]
+		local id = row.data.questId
+		row.scripts.OnMouseUp(row, "LeftButton")
+		FinishExpansion(frame)
+		Equal(p.partyQuestCompareSession.expandedQuestIds[id], true)
+		Equal(#p:BuildPartyQuestDiffRows(), count)
+		assert(#p:BuildPartyQuestCompareDisplayRows(p:BuildPartyQuestDiffRows()) > count)
+		Equal(#frame.rows, 24)
+		Equal(frame.rows[2].data.kind, "member")
+		Equal(frame.rows[3].data.kind, "objective")
+		Equal(frame.rows[3].action:IsShown(), false)
+		Equal(frame.rows[3].hint.text, "2/8")
+		frame.vertical:SetValue(5 * 42)
+		Equal(#frame.rows, 24)
+		Equal(#a.wire, 0)
+		frame.vertical:SetValue(0)
+		frame.rows[1].scripts.OnMouseUp(frame.rows[1], "LeftButton")
+		FinishExpansion(frame)
+		Equal(p.partyQuestCompareSession.expandedQuestIds[id], nil)
+		Equal(frame.rows[2].data.kind, nil)
+		Equal(frame.rows[2].title.width, 314)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"local expanded progress refreshes without polling remote players and Refresh replaces detail requests",
+	function()
+		local a, b = BeginObjectiveExchange()
+		for _, wire in ipairs(b.wire) do
+			a:OnCommReceived(a.commPrefix, wire, "WHISPER", b.name)
+		end
+		local session = a.partyQuestCompareSession
+		local count = #a.wire
+		a.objectiveRows[1][1].current = 7
+		a:OnPartyQuestLogChanged()
+		a:Advance(1)
+		Equal(session.byName[a.name].objectiveDetails[1].objectives[1].current, 7)
+		Equal(session.byName[b.name].objectiveDetails[1].objectives[1].current, 3)
+		Equal(#a.wire, count)
+		a:RefreshPartyQuestCompare()
+		a:Advance(0)
+		assert(a.partyQuestCompareSession ~= session)
+		Equal(a.partyQuestCompareSession.expandedQuestIds[1], true)
+		local member = a.partyQuestCompareSession.byName[b.name]
+		assert(not member.objectiveDetails or not member.objectiveDetails[1])
+		Reply(a, b.name, { Quest(1, "Updated title", true) }, true, true)
+		-- An old peer's refresh has no obj1 capability; it never receives details requests.
+		assert(not member.objectiveDetails or not member.objectiveDetails[1])
+	end
+)
+
+QuestTogether:RegisterTest(
+	"objective reply retries defer restricted reads and never fabricate zero objectives",
+	function()
+		local a, b = BeginObjectiveExchange()
+		local request = a.wire[#a.wire]
+		b.wire, b.wireRoutes = {}, {}
+		b.blocked = true
+		-- A different id supersedes the earlier request; dispatch through real codecs.
+		local data = b:DecodeQuestCompareRequestPayload(request:sub(6))
+		data.requestId = "restricted-objectives"
+		b:OnCommReceived(b.commPrefix, "QCMP|" .. b:EncodeQuestCompareRequestPayload(data), "WHISPER", a.name)
+		for _ = 1, 8 do
+			b:Advance(1)
+		end
+		Equal(#b.wire, 0)
+		b.blocked = false
+		for _ = 1, 6 do
+			b:Advance(1)
+		end
+		Equal(#b.wire, 4)
+		local entry = b:DecodeQuestCompareEntryPayload(b.wire[1]:sub(6))
+		Equal(entry.objectiveCount, 2)
+		b.objectiveRows[1] = {}
+		local entries = b:BuildQuestCompareResponseEntries(1)
+		Equal(#entries, 1)
+		Equal(entries[1].objectiveCount, nil)
+		local all = b:BuildQuestCompareResponseEntries()
+		Equal(#all, 2)
+		Equal(all[1].objectiveCount, nil)
+	end
+)
+
+QuestTogether:RegisterTest("party readiness counts missing and unknown members without inferring completion", function()
+	local a = ObjectiveFixture()
+	a.partyQuestCompareSession = { members = { { state = "ready" }, { state = "ready" }, { state = "ready" } } }
+	local row = { cells = { "Ready", "Ready", "Ready" } }
+	local text, state = a:GetPartyQuestReadiness(row)
+	Equal(text, "Everyone ready")
+	Equal(state, "Ready")
+	row.cells[2], row.cells[3] = "Have", "Missing"
+	text, state = a:GetPartyQuestReadiness(row)
+	Equal(text, "1/3 ready · 1 missing")
+	Equal(state, "Missing")
+	-- Even a received ready entry cannot certify an incomplete snapshot.
+	a.partyQuestCompareSession.members[1].state = "loading"
+	text, state = a:GetPartyQuestReadiness(row)
+	Equal(text, "0/3 ready · 1 missing · 1 unknown")
+	Equal(state, "Unknown")
+	a.partyQuestCompareSession.members[1].state = "timeout"
+	Equal(a:GetPartyQuestReadiness(row), text)
+end)
+
+QuestTogether:RegisterTest(
+	"compare preview class accents and objective progress clear when pooled rows are reused",
+	function()
+		local a = ObjectiveFixture()
+		a.options.lightMode = true
+		AttachUI(a)
+		function a:GetClassColorCode(classFile)
+			return ({ PALADIN = "|cfff58cba", MAGE = "|cff3fc7eb", WARRIOR = "|cffc79c6e" })[classFile] or "|cffffffff"
+		end
+		a:OpenPartyQuestComparePreview()
+		local preview, frame = a.partyQuestComparePreview, a.partyQuestComparePreview.partyQuestCompareWindow
+		Equal(frame.headers[1].textColor[1], 245 / 255 * 0.48)
+		Equal(frame.headers[2].textColor[1], 63 / 255 * 0.48)
+		Equal(frame.headers[3].textColor[1], 199 / 255 * 0.48)
+		for i = 1, 3 do
+			local shade = frame.rows[1].cellShades[i]
+			Equal(frame.focusButtons[i].points[1][2], shade.points[1][2])
+			Equal(frame.focusButtons[i].width, shade.width)
+			Equal(frame.headerAccents[i].points[1][2], shade.points[1][2])
+			Equal(frame.headerAccents[i].width, shade.width)
+		end
+		assert(frame.rows[1].partySummary.text:find("missing", 1, true))
+		frame.rows[1].scripts.OnMouseUp(frame.rows[1], "LeftButton")
+		FinishExpansion(frame)
+		local objective = frame.rows[3]
+		assert(objective.progressTrack:IsShown() and objective.progressFill:IsShown())
+		Equal(objective.progressFill.width / objective.progressTrack.width, 0.25)
+		assert(not objective.cellShades[1]:IsShown())
+		assert(not objective.accent:IsShown() and not frame.rows[2].accent:IsShown())
+		Equal(frame.rows[2].title.textColor[1], 245 / 255 * 0.32)
+		assert(frame.rows[1].accent:IsShown()) -- Selected parent remains identifiable.
+		assert(frame.rows[2].panelEdges[3]:IsShown()) -- Inset begins below the parent.
+		assert(frame.rows[2].panelCorners[1]:IsShown() and frame.rows[2].panelCorners[2]:IsShown())
+		assert(not frame.rows[2].panelCorners[3]:IsShown())
+		assert(frame.rows[2].background.panelParts[3]:IsShown())
+		assert(not frame.rows[2].hover.panelParts[3]:IsShown())
+		assert(objective.paper:IsShown() and objective.panelEdges[1]:IsShown() and objective.panelEdges[2]:IsShown())
+		assert(not objective.panelEdges[3]:IsShown() and not objective.panelEdges[4]:IsShown())
+		-- Scrolling into a section must clip its continuing panel, then clear all
+		-- decoration when these same row frames become ordinary quests again.
+		frame.vertical:SetValue(2 * 42)
+		assert(frame.rows[1].data.kind == "objective" and not frame.rows[1].panelEdges[3]:IsShown())
+		frame.vertical:SetValue(0)
+		frame.rows[1].scripts.OnMouseUp(frame.rows[1], "LeftButton")
+		FinishExpansion(frame)
+		assert(not objective.progressTrack:IsShown() and not objective.progressFill:IsShown())
+		assert(objective.cellShades[1]:IsShown())
+		assert(not objective.accent:IsShown())
+		assert(not objective.paper:IsShown())
+		for _, edge in ipairs(objective.panelEdges) do
+			assert(not edge:IsShown())
+		end
+		for _, corner in ipairs(frame.rows[2].panelCorners or {}) do assert(not corner:IsShown()) end
+		for _, part in ipairs(frame.rows[2].background.panelParts or {}) do assert(not part:IsShown()) end
+		Equal(objective.title.textColor[1], 0.18)
+		Equal(#a.wire, 0)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"quest log pixel scrolling animates without rebuilding snapshots and cancels on lifecycle changes",
+	function()
+		local a = ObjectiveFixture()
+		AttachUI(a)
+		a:OpenPartyQuestComparePreview()
+		local p, frame = a.partyQuestComparePreview, a.partyQuestComparePreview.partyQuestCompareWindow
+		local build = p.BuildPartyQuestDiffRows
+		function p:BuildPartyQuestDiffRows()
+			error("scrolling must not rebuild the quest model")
+		end
+		local header = frame.headers[1].text
+		frame.vertical:SetValue(10)
+		Equal(p.partyQuestCompareSession.scrollPixels, 10)
+		Equal(p.partyQuestCompareSession.offset, 0)
+		Equal(frame.rowsViewport.verticalScroll, 10)
+		frame.vertical:SetValue(49)
+		Equal(p.partyQuestCompareSession.offset, 1)
+		Equal(frame.rowsViewport.verticalScroll, 7)
+		Equal(frame.rows[1].data.questId, frame.displayRows[2].questId)
+		frame.rowsViewport.scripts.OnMouseWheel(frame.rowsViewport, -1)
+		local target = frame.wheelTarget
+		frame.scripts.OnUpdate(frame, 1 / 60)
+		local moved = p.partyQuestCompareSession.scrollPixels
+		assert(moved > 49 and moved < target)
+		a.blocked = true
+		frame.scripts.OnUpdate(frame, 1 / 60)
+		Equal(p.partyQuestCompareSession.scrollPixels, moved)
+		a.blocked = false
+		for _ = 1, 90 do
+			if frame.scripts.OnUpdate then
+				frame.scripts.OnUpdate(frame, 1 / 60)
+			end
+		end
+		Equal(p.partyQuestCompareSession.scrollPixels, target)
+		Equal(frame.scripts.OnUpdate, nil)
+		Equal(frame.headers[1].text, header)
+		Equal(#frame.rows, 24)
+		p.BuildPartyQuestDiffRows = build
+		frame.viewport.scripts.OnMouseWheel(frame.viewport, -1)
+		p:SetPartyQuestCompareFilter("search", "Herbalist")
+		Equal(frame.scripts.OnUpdate, nil)
+		Equal(frame.rowsViewport.verticalScroll, 0)
+		Equal(frame.vertical:GetValue(), 0)
+		p:ResetPartyQuestCompareFilters()
+		frame.viewport.scripts.OnMouseWheel(frame.viewport, -1)
+		frame.refresh.scripts.OnClick()
+		Equal(frame.scripts.OnUpdate, nil)
+		Equal(frame.rowsViewport.verticalScroll, 0)
+		frame.viewport.scripts.OnMouseWheel(frame.viewport, -1)
+		frame.close.scripts.OnClick()
+		Equal(frame.scripts.OnUpdate, nil)
+		Equal(#a.wire, 0)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"objective expansion reveals clipped rows reverses smoothly and retires stale animation callbacks",
+	function()
+		local a = ObjectiveFixture()
+		AttachUI(a)
+		a:OpenPartyQuestComparePreview()
+		local p, frame = a.partyQuestComparePreview, a.partyQuestComparePreview.partyQuestCompareWindow
+		local id = frame.rows[1].data.questId
+		local function Click()
+			frame.rows[1].scripts.OnMouseUp(frame.rows[1], "LeftButton")
+		end
+		local function Tick(elapsed)
+			frame.expansionAnimator.scripts.OnUpdate(frame.expansionAnimator, elapsed)
+		end
+		Click()
+		assert(frame.expansions and frame.expansions[id].target > 0)
+		Equal(frame.expansions[id].reveal, 0)
+		local build = p.BuildPartyQuestDiffRows
+		function p:BuildPartyQuestDiffRows()
+			error("animation must not rebuild quest snapshots")
+		end
+		Tick(0.05)
+		assert(frame.expansions[id].reveal > 0 and frame.expansions[id].reveal < frame.expansions[id].target)
+		local clipped = false
+		for _, row in ipairs(frame.rows) do
+			if row.data and row.data.kind and row.clip.height < 42 then
+				clipped = true
+			end
+		end
+		assert(clipped, "the revealed last row must be clipped instead of scaling its text")
+		a.blocked = true
+		local paused = frame.expansions[id].reveal
+		Tick(0.05)
+		Equal(frame.expansions[id].reveal, paused)
+		a.blocked = false
+		FinishExpansion(frame)
+		p.BuildPartyQuestDiffRows = build
+		Equal(frame.expansions, nil)
+		Click()
+		Equal(frame.expansions[id].target, 0)
+		Tick(0.05)
+		local reversingFrom = frame.expansions[id].reveal
+		local retired = frame.expansionAnimator.scripts.OnUpdate
+		Click()
+		Equal(frame.expansions[id].from, reversingFrom)
+		local current = frame.expansions[id]
+		retired(frame.expansionAnimator, 0.1)
+		Equal(frame.expansions[id], current)
+		Equal(current.reveal, reversingFrom)
+		FinishExpansion(frame)
+		Click()
+		frame.viewport.scripts.OnMouseWheel(frame.viewport, -1)
+		for _ = 1, 60 do
+			if frame.expansionAnimator.scripts.OnUpdate then
+				Tick(1 / 60)
+			end
+			if frame.scripts.OnUpdate then
+				frame.scripts.OnUpdate(frame, 1 / 60)
+			end
+		end
+		Equal(frame.expansions, nil)
+		Equal(frame.scripts.OnUpdate, nil)
+		frame.vertical:SetValue(0)
+		Click()
+		retired = frame.expansionAnimator.scripts.OnUpdate
+		p:SetPartyQuestCompareFilter("search", "Herbalist")
+		Equal(frame.expansions, nil)
+		retired(frame.expansionAnimator, 0.1)
+		Equal(frame.expansions, nil)
+		p:ResetPartyQuestCompareFilters()
+		Click()
+		frame.close.scripts.OnClick()
+		Equal(frame.expansionAnimator.scripts.OnUpdate, nil)
+		Equal(#a.wire, 0)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"quest log filters combine ownership progress action and literal localized search",
+	function()
+		local a = Fixture(nil, { Quest(1, "ÄPFEL [1]", true, true), Quest(2, "Local supplies", true) })
+		a:RefreshPartyQuestCompare()
+		a:Advance(0)
+		Reply(
+			a,
+			"Friend-Realm",
+			{ Quest(1, "Apples", true, true), Quest(3, "Remote supplies", true), Quest(4, "Letters", true, true) },
+			true,
+			true
+		)
+		local sent = #a.wire
+		local function Count(key, value, expected)
+			a:SetPartyQuestCompareFilter(key, value)
+			Equal(#a:BuildPartyQuestDiffRows(), expected)
+		end
+		Count("ownership", "mine", 2)
+		Count("progress", "active", 1)
+		Count("action", "share", 1)
+		Count("search", "Local", 1)
+		Count("search", "Remote", 0)
+		a:ResetPartyQuestCompareFilters()
+		Count("ownership", "missing", 2)
+		Count("action", "request", 2)
+		a:ResetPartyQuestCompareFilters()
+		Count("ownership", "shared", 1)
+		Count("progress", "ready", 1)
+		Count("search", "äpfel [1]", 1)
+		Count("search", "APPLES", 1) -- The peer's wording is searchable too.
+		Count("search", "[", 1) -- No Lua pattern interpretation.
+		Count("search", "1", 1)
+		a:ResetPartyQuestCompareFilters()
+		Count("progress", "someReady", 2)
+		a:ResetPartyQuestCompareFilters()
+		Count("ownership", "someoneMissing", 3)
+		a:ResetPartyQuestCompareFilters()
+		a.partyQuestCompareSession.byName["Friend-Realm"].state = "timeout"
+		Count("progress", "ready", 0)
+		Count("progress", "unknown", 4)
+		Count("ownership", "shared", 0)
+		a:ResetPartyQuestCompareFilters()
+		Equal(#a:BuildPartyQuestDiffRows(), 4)
+		Equal(#a.wire, sent)
+	end
+)
+
+QuestTogether:RegisterTest("quest log filter menu search reset and preview incomplete data stay isolated", function()
+	local a = ObjectiveFixture()
+	AttachUI(a)
+	local function Menu()
+		local node = { items = {} }
+		function node:CreateButton(label, click)
+			local child = Menu()
+			child.label, child.click = label, click
+			self.items[#self.items + 1] = child
+			return child
+		end
+		function node:CreateCheckbox(label, checked, click)
+			local child = self:CreateButton(label, click)
+			child.checked = checked
+			return child
+		end
+		function node:CreateDivider() end
+		return node
+	end
+	local menu
+	function a:CreatePartyQuestFilterMenu(owner, generator)
+		menu = Menu()
+		generator(owner, menu)
+		return true
+	end
+	a:OpenPartyQuestComparePreview()
+	local p, frame = a.partyQuestComparePreview, a.partyQuestComparePreview.partyQuestCompareWindow
+	frame.filter.scripts.OnClick(frame.filter)
+	menu.items[1].items[2].click()
+	assert(menu.items[1].items[2].checked())
+	Equal(frame.filter.text, "Filters (1)")
+	frame.search:SetText("  HERBALIST  ")
+	Equal(#p:BuildPartyQuestDiffRows(), 1)
+	Equal(frame.reset.enabled, true)
+	frame.reset.scripts.OnClick()
+	Equal(frame.search:GetText(), "")
+	Equal(#p:BuildPartyQuestDiffRows(), 16)
+	Equal(frame.reset.enabled, false)
+	menu.items[5].click() -- Preview-only missing snapshot toggle.
+	menu.items[2].items[5].click()
+	Equal(#p:BuildPartyQuestDiffRows(), 16)
+	Equal(p:GetPartyQuestCompareFilters().progress, "unknown")
+	local oldClick = menu.items[1].items[2].click
+	frame.refresh.scripts.OnClick()
+	oldClick()
+	Equal(p:GetPartyQuestCompareFilters().ownership, "all")
+	Equal(p.incompleteData, false)
+	Equal(a.options.compareQuestOwnership, nil)
+	Equal(#a.wire, 0)
+end)
+
+QuestTogether:RegisterTest(
+	"multiple expanded quests retain separate snapshots and serialize requests to each peer",
+	function()
+		local a, b = BeginObjectiveExchange()
+		local session, sent = a.partyQuestCompareSession, #a.wire
+		local member = session.byName[b.name]
+		a:TogglePartyQuestObjectives(2)
+		a:Advance(0)
+		Equal(#a.wire, sent)
+		assert(session.expandedQuestIds[1] and session.expandedQuestIds[2])
+		Equal(member.objectiveRequestQuestId, 1)
+		for _, wire in ipairs(b.wire) do
+			a:OnCommReceived(a.commPrefix, wire, "WHISPER", b.name)
+		end
+		Equal(member.objectiveDetails[1].state, "ready")
+		Equal(member.objectiveRequestQuestId, 2)
+		Equal(#a.wire, sent + 1)
+		Equal(a:DecodeQuestCompareRequestPayload(a.wire[#a.wire]:sub(6)).objectiveQuestId, 2)
+		-- Closing a completed section must not cancel another quest's active request.
+		local secondRequest = member.objectiveDetails[2].requestId
+		a:TogglePartyQuestObjectives(1)
+		assert(a.pendingQuestCompareRequests[secondRequest])
+		b.wire = {}
+		b:OnCommReceived(b.commPrefix, a.wire[#a.wire], "WHISPER", a.name)
+		for _ = 1, 6 do
+			b:Advance(0.2)
+		end
+		for _, wire in ipairs(b.wire) do
+			a:OnCommReceived(a.commPrefix, wire, "WHISPER", b.name)
+		end
+		Equal(member.objectiveDetails[2].state, "ready")
+		Equal(member.objectiveDetails[2].objectives[1].text, "Inspect the cave")
+		Equal(member.objectiveRequestQuestId, nil)
+		Equal(member.objectiveDetails[1], nil)
+		Equal(session.expandedQuestIds[2], true)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"objective request pipeline advances on timeout or collapse without accepting cancelled replies",
+	function()
+		for _, action in ipairs({ "timeout", "collapse" }) do
+			local a, b = BeginObjectiveExchange()
+			local session = a.partyQuestCompareSession
+			local member = session.byName[b.name]
+			a:TogglePartyQuestObjectives(2)
+			local first = member.objectiveDetails[1].requestId
+			if action == "timeout" then
+				a:Advance(181)
+			else
+				a:TogglePartyQuestObjectives(1)
+			end
+			Equal(a.pendingQuestCompareRequests[first], nil)
+			Equal(member.objectiveRequestQuestId, 2)
+			for _, wire in ipairs(b.wire) do
+				a:OnCommReceived(a.commPrefix, wire, "WHISPER", b.name)
+			end
+			Equal(member.objectiveDetails[2].state, "loading")
+			if action == "timeout" then
+				Equal(member.objectiveDetails[1].state, "unknown")
+			else
+				Equal(member.objectiveDetails[1], nil)
+			end
+			a:CancelPartyQuestCompare()
+			Equal(member.objectiveRequestQuestId, nil)
+			Equal(next(member.objectiveDetails), nil)
+		end
+	end
+)
+
+QuestTogether:RegisterTest("quest log preview independently animates multiple open sections", function()
+	local a = ObjectiveFixture()
+	AttachUI(a)
+	a:OpenPartyQuestComparePreview()
+	local p, frame = a.partyQuestComparePreview, a.partyQuestComparePreview.partyQuestCompareWindow
+	local quests = p:BuildPartyQuestDiffRows()
+	local first, second = quests[1].questId, quests[2].questId
+	local function Toggle(id)
+		frame.animateExpansion = { session = p.partyQuestCompareSession, questId = id }
+		p:TogglePartyQuestObjectives(id)
+	end
+	Toggle(first)
+	frame.expansionAnimator.scripts.OnUpdate(frame.expansionAnimator, 0.05)
+	Toggle(second)
+	assert(frame.expansions[first] and frame.expansions[second])
+	FinishExpansion(frame)
+	local function Details(id)
+		local n = 0
+		for _, row in ipairs(frame.displayRows) do
+			if row.kind and row.questId == id then
+				n = n + 1
+			end
+		end
+		return n
+	end
+	assert(Details(first) > 0 and Details(second) > 0)
+	Toggle(first)
+	FinishExpansion(frame)
+	Equal(Details(first), 0)
+	assert(Details(second) > 0)
+	Equal(p.partyQuestCompareSession.expandedQuestIds[second], true)
+	Equal(#a.wire, 0)
+end)
+
+QuestTogether:RegisterTest(
+	"quest log resizing updates cached layout bounds and row capacity without traffic",
+	function()
+		local a = ObjectiveFixture()
+		local parent = AttachUI(a)
+		parent:SetSize(1920, 1200)
+		a:OpenPartyQuestComparePreview()
+		local p, frame = a.partyQuestComparePreview, a.partyQuestComparePreview.partyQuestCompareWindow
+		local session = p.partyQuestCompareSession
+		frame.rows[1].scripts.OnMouseUp(frame.rows[1], "LeftButton")
+		FinishExpansion(frame)
+		local expanded = frame.rows[1].data.questId
+		function p:BuildPartyQuestDiffRows()
+			error("resizing must reuse the cached quest model")
+		end
+		frame.resizeGrip.scripts.OnMouseDown(nil, "RightButton")
+		Equal(frame.sizing, nil)
+		a.blocked = true
+		frame.resizeGrip.scripts.OnMouseDown(nil, "LeftButton")
+		Equal(frame.sizing, nil)
+		a.blocked = false
+		local originalWidth, originalHeight = frame:GetWidth(), frame:GetHeight()
+		frame.resizeGrip.scripts.OnMouseDown(nil, "LeftButton")
+		Equal(frame.sizing, "BOTTOMRIGHT")
+		Equal(frame.sizingFromMouse, true)
+		Equal(frame:GetWidth(), originalWidth)
+		Equal(frame:GetHeight(), originalHeight)
+		frame:SetSize(1600, 1100)
+		Equal(frame.rowsViewport:GetHeight(), 842)
+		Equal(frame.viewport:GetWidth(), 1538)
+		Equal(#frame.rows, 44)
+		Equal(frame.horizontal:IsShown(), false)
+		assert(session.expandedQuestIds[expanded])
+		frame.vertical:SetValue(99999)
+		frame:SetSize(100, 100) -- Native resize bounds, modeled by the private fixture.
+		Equal(frame:GetWidth(), 962)
+		Equal(frame:GetHeight(), 500)
+		Equal(frame.rowsViewport:GetHeight(), 242)
+		Equal(frame.footer, nil)
+		Equal(frame.detail, nil)
+		Equal(frame.horizontal:IsShown(), false)
+		Equal(#frame.rows, 44) -- Existing rows are reused rather than destroyed/recreated.
+		for i = #frame.visibleRows + 1, #frame.rows do
+			assert(not frame.rows[i]:IsShown())
+		end
+		frame.resizeGrip.scripts.OnMouseUp()
+		Equal(frame.sizing, nil)
+		frame:SetSize(1600, 1100)
+		assert(session.scrollPixels <= frame.vertical.maximum)
+		frame.resizeGrip.scripts.OnMouseDown(nil, "LeftButton")
+		frame.close.scripts.OnClick()
+		Equal(frame.sizing, nil)
+		Equal(#a.wire, 0)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"quest log dark mode changes contrast preserves state and restores the light theme",
+	function()
+		local a = ObjectiveFixture()
+		a.options.lightMode = true
+		AttachUI(a)
+		a:OpenPartyQuestComparePreview()
+		local p, frame = a.partyQuestComparePreview, a.partyQuestComparePreview.partyQuestCompareWindow
+		Equal(QuestTogether.DEFAULTS.profile.lightMode, false)
+		local id = frame.rows[1].data.questId
+		frame.rows[1].scripts.OnMouseUp(frame.rows[1], "LeftButton")
+		FinishExpansion(frame)
+		local lightInk, lightHeader = frame.rows[1].title.textColor[1], frame.headers[1].textColor[1]
+		a.options.lightMode = false
+		a:RefreshWindowThemes()
+		a:Advance(0)
+		assert(frame.parchment.vertexColor[1] < 0.2)
+		assert(frame.rows[1].title.textColor[1] > lightInk)
+		assert(frame.headers[1].textColor[1] > lightHeader)
+		assert(frame.rows[2].background.textureColor[4] < frame.rows[3].background.textureColor[4])
+		assert(not frame.rows[2].accent:IsShown() and frame.rows[2].panelEdges[1]:IsShown())
+		assert(p.partyQuestCompareSession.expandedQuestIds[id])
+		a.options.lightMode = true
+		a:RefreshWindowThemes()
+		a:Advance(0)
+		Equal(frame.parchment.vertexColor[1], 1)
+		Equal(frame.rows[1].title.textColor[1], lightInk)
+		Equal(frame.headers[1].textColor[1], lightHeader)
+		assert(frame.rows[2].background.textureColor[4] > frame.rows[3].background.textureColor[4])
+		Equal(#a.wire, 0)
+	end
+)
+
+QuestTogether:RegisterTest("light mode option persists only booleans and schedules a theme refresh", function()
+	local a = Fixture()
+	a.db = { profile = { lightMode = false } }
+	local refreshes = 0
+	function a:RefreshWindowThemes()
+		refreshes = refreshes + 1
+	end
+	Equal(QuestTogether.SetOption(a, "lightMode", "true"), false)
+	Equal(a.db.profile.lightMode, false)
+	Equal(refreshes, 0)
+	Equal(QuestTogether.SetOption(a, "lightMode", true), true)
+	Equal(a.db.profile.lightMode, true)
+	Equal(refreshes, 1)
+	Equal(QuestTogether.SetOption(a, "lightMode", false), true)
+	Equal(a.db.profile.lightMode, false)
+	Equal(refreshes, 2)
+end)
+
+QuestTogether:RegisterTest(
+	"quest log minimum width follows the visible party and closes the gap before share actions",
+	function()
+		local a = Fixture(nil, { Quest(1, "Local quest", true) })
+		local parent = AttachUI(a)
+		parent:SetSize(1920, 1200)
+		a:Roster(a.name, "Friend-Realm", "Third-Realm")
+		a:OpenPartyQuestCompare()
+		a:Advance(0)
+		Reply(a, "Friend-Realm", {}, true, true)
+		a:RenderPartyQuestCompare()
+		local frame = a.partyQuestCompareWindow
+		frame:SetSize(1, 500)
+		Equal(frame:GetWidth(), 962)
+		Equal(frame.horizontal:IsShown(), false)
+		local row = frame.rows[1]
+		assert(row.action:IsShown())
+		Equal(row.action:GetWidth(), 148)
+		local actionX = row.action.points[1][2]
+		Equal(actionX, 740) -- Immediately after the quest and three member columns.
+		assert(actionX + row.action:GetWidth() <= frame.viewport:GetWidth())
+		assert(frame.search:GetWidth() + 88 < frame.filter.points[1][2])
+		local firstSession = a.partyQuestCompareSession
+		a:Roster(a.name, "Friend-Realm", "Third-Realm", "Fourth-Realm", "Fifth-Realm")
+		a:OnPartyQuestRosterChanged()
+		a:Advance(0)
+		a:RenderPartyQuestCompare()
+		assert(a.partyQuestCompareSession ~= firstSession)
+		Equal(frame:GetWidth(), 1222) -- Grow enough to avoid hiding newly added columns.
+		Equal(frame.horizontal:IsShown(), false)
+		a:Roster(a.name, "Friend-Realm")
+		a:OnPartyQuestRosterChanged()
+		a:Advance(0)
+		a:RenderPartyQuestCompare()
+		Equal(frame:GetWidth(), 1222) -- Departure unlocks resizing, without moving the window.
+		frame:SetSize(1, 500)
+		Equal(frame:GetWidth(), 832)
+		Equal(frame.horizontal:IsShown(), false)
+		a:Roster(a.name)
+		a:OnPartyQuestRosterChanged()
+		a:Advance(0)
+		a:RenderPartyQuestCompare()
+		frame:SetSize(1, 500)
+		Equal(frame:GetWidth(), 780)
+		assert(frame.search:GetWidth() + 88 < frame.filter.points[1][2])
+		Equal(frame.horizontal:IsShown(), false)
+	end
+)
+
+QuestTogether:RegisterTest("quest log focus preview follows stops and preserves selection for missing quests", function()
+	local a = ObjectiveFixture()
+	AttachUI(a)
+	a:OpenPartyQuestComparePreview()
+	local p, frame = a.partyQuestComparePreview, a.partyQuestComparePreview.partyQuestCompareWindow
+	local menu = {}
+	function menu:CreateTitle() end
+	function menu:CreateButton(_, click) self.click = click end
+	p:PopulatePartyFocusMenu(menu, "Aria-AeriePeak")
+	menu.click()
+	Equal(p.previewFocus, 2)
+	assert(frame.followStatus.text:find("Aria", 1, true))
+	p:PopulatePartyFocusMenu(menu, "Borin-AeriePeak")
+	menu.click()
+	Equal(p.previewFocus, 2)
+	assert(frame.followStatus.text:find("You don't have this quest", 1, true))
+	p:StopPartyQuestFollow()
+	Equal(p:GetPartyFollowingText(), "")
+	p:RefreshPartyQuestCompare()
+	Equal(p.previewFocus, nil)
+	Equal(p.previewFollowing, nil)
+	Equal(#a.wire, 0)
 end)

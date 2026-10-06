@@ -4,12 +4,24 @@
 
 ## 6.2.3
 
-Menos anuncios repetidos de misiones listas para entregar.
+Un nuevo registro de misiones del grupo, destinos compartidos y seguimiento opcional de misiones facilitan jugar juntos.
 
-### Correcciones del estado de las misiones
+### Registro de misiones del grupo
 
-- Las misiones que ya están listas para entregar o completadas al comenzar el seguimiento se registran sin anuncios. La falta de datos de entrega y las actualizaciones posteriores ya no repiten anuncios de misiones listas para entregar que ya se habían registrado.
-- Las nuevas finalizaciones siguen anunciándose, y volver a aceptar una misión reinicia su historial de notificaciones. El jugador que envía los anuncios necesita esta actualización; las versiones anteriores todavía pueden enviar ráfagas de anuncios.
+- El comparador ahora se llama Registro de misiones del grupo. Expande varias misiones a la vez para ver los objetivos y el progreso de cada miembro, con un resumen de las misiones listas para entregar.
+- Busca misiones y combina filtros de posesión, progreso y opciones para compartir. Actualizar renueva los datos de otros jugadores; los clientes antiguos pueden comparar listas, pero no proporcionar detalles de objetivos.
+- Cambia el tamaño de la ventana de pergamino y desplázate con suavidad. Las columnas con colores de clase, los encabezados de jugador con espacio interior y opción de hacer clic y los paneles de objetivos redondeados mejoran la lectura.
+
+### Misión activa y puntos de ruta compartidos
+
+- La misión activa aparece bajo el nombre de cada miembro. Elige seguir su misión desde su encabezado o menú QT para activar misiones que tengas. Si te falta la misión o deja de seleccionar una, tu navegación se conserva; navegar manualmente, salir del grupo o recargar la interfaz detiene el seguimiento.
+- Los puntos de ruta de Blizzard de otros miembros aparecen con colores de clase en el mapa del mundo y, si están cerca, en el minimapa. Los marcadores superpuestos muestran a todos sus propietarios; Navegar aquí usa TomTom o la navegación nativa. Recibir un punto nunca cambia tu destino ni garantiza estar en la misma fase.
+- Compartir mi misión activa, Compartir mi punto de ruta y Mostrar puntos del grupo están activados de forma predeterminada en Grupos y compartir, independientemente de la ubicación pública y la búsqueda de compañeros. Seguir una misión requiere elegirlo. Estas funciones necesitan compañeros actualizados en grupos de hasta cinco, incluidos calabozos, pero no bandas.
+
+### Ventanas y menús
+
+- Las notas del parche también usan pergamino oscuro, con modo claro opcional. Mueve o cambia el tamaño de la ventana, consulta un historial más limpio y usa las flechas para cambiar de versión o saltar a los extremos. Discord y Configuración están en el pie.
+- Las descripciones de los jugadores se ajustan mejor al contenido. El menú del minimapa separa las herramientas de misiones de las notas, la ubicación del registro y la visibilidad del ícono. Configuración y Enviar mensaje de chat QT se eliminan de ese menú; la configuración sigue disponible con /qt options.
 
 ## 6.2.2
 

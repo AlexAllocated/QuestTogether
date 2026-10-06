@@ -308,31 +308,30 @@ QuestTogether:RegisterTest(
 		end
 		Equal(#a.menus, 2)
 		local entries = a.menus[1].entries
-		Equal(#entries, 9)
+		Equal(#entries, 8)
 		Equal(entries[1].label, "Looking for Questing Partners")
 		Equal(entries[1].isSelected(), false)
-		Equal(entries[2].label, "Settings")
-		Equal(entries[3].label, "Compare Party Quests")
+		assert(entries[2].divider)
+		Equal(entries[3].label, "Party Quest Log")
 		Equal(entries[4].label, "Open Quest Journal")
-		Equal(entries[5].label, "Patch Notes")
-		Equal(entries[6].label, "Send QT chat message")
-		assert(entries[7].divider)
-		Equal(entries[8].label, "Move QuestTogether Logs to Separate Window")
-		Equal(entries[9].label, "Hide Minimap Icon")
-		for _, index in ipairs({ 2, 3, 4, 5, 6, 8 }) do
+		assert(entries[5].divider)
+		Equal(entries[6].label, "Patch Notes")
+		Equal(entries[7].label, "Move QuestTogether Logs to Separate Window")
+		Equal(entries[8].label, "Hide Minimap Icon")
+		for _, index in ipairs({ 3, 4, 6, 7 }) do
 			entries[index].callback()
 		end
-		Equal(a.settings, 1)
+		Equal(a.settings, 0)
 		Equal(a.compares, 1)
 		Equal(a.journals, 1)
 		Equal(a.notes, 1)
-		Equal(a.chatDrafts, 1)
+		Equal(a.chatDrafts, nil)
 		Equal(a:GetOption("chatLogDestination"), "separate")
 		assert(a.separateOpened)
 		local menu = Menu()
 		a:PopulateMinimapMenu(menu)
-		Equal(menu.entries[8].label, "Move QuestTogether Logs to Main Window")
-		menu.entries[8].callback()
+		Equal(menu.entries[7].label, "Move QuestTogether Logs to Main Window")
+		menu.entries[7].callback()
 		Equal(a:GetOption("chatLogDestination"), "main")
 		Equal(a.separateOpened, false)
 	end
@@ -344,14 +343,13 @@ QuestTogether:RegisterTest("minimap stale menu actions recheck restrictions and 
 	a:ShowMinimapMenu(a.minimapButton)
 	local menu = a.menus[1]
 	a.blocked = true
-	for index = 1, 5 do
+	for _, index in ipairs({ 1, 3, 4, 6 }) do
 		menu.entries[index].callback()
 	end
-	menu.entries[6].callback()
 	Equal(a.chatDrafts, nil)
-	menu.entries[8].callback()
+	menu.entries[7].callback()
 	local messages = #a.messages
-	menu.entries[9].callback()
+	menu.entries[8].callback()
 	Equal(#a.messages, messages)
 	Equal(a:GetOption("showMinimapButton"), true)
 	assert(a.minimapButton.shown)
@@ -364,16 +362,14 @@ QuestTogether:RegisterTest("minimap stale menu actions recheck restrictions and 
 	a.blocked, a.isEnabled = false, false
 	menu.entries[3].callback()
 	Equal(a.compares, 0)
-	menu.entries[6].callback()
-	Equal(a.chatDrafts, nil)
 	local disabled = Menu()
 	a:PopulateMinimapMenu(disabled)
 	Equal(disabled.entries[3].enabled, false)
-	Equal(disabled.entries[6].enabled, false)
-	assert(disabled.entries[2].enabled and disabled.entries[4].enabled)
-	disabled.entries[2].callback()
+	assert(disabled.entries[6].enabled and disabled.entries[4].enabled)
+	disabled.entries[6].callback()
+	Equal(a.notes, 1)
 	disabled.entries[4].callback()
-	Equal(a.settings, 1)
+	Equal(a.settings, 0)
 	Equal(a.journals, 1)
 	a.journalAvailable = false
 	menu.entries[4].callback()
@@ -516,7 +512,7 @@ QuestTogether:RegisterTest(
 		a:InitializeMinimapLauncher()
 		a:ShowMinimapMenu(a.minimapButton)
 		a:ShowMinimapTooltip(a.minimapButton)
-		a.menus[1].entries[9].callback()
+		a.menus[1].entries[8].callback()
 		Equal(a:GetOption("showMinimapButton"), false)
 		Equal(a.minimapButton.shown, false)
 		Equal(a.minimapTooltip.shown, false)
@@ -532,7 +528,7 @@ QuestTogether:RegisterTest(
 		function a:SetOption()
 			return false
 		end
-		a.menus[1].entries[9].callback()
+		a.menus[1].entries[8].callback()
 		Equal(#a.messages, 1)
 		Equal(refreshed, 1)
 	end

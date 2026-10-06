@@ -487,6 +487,7 @@ end
 
 function QuestTogether:HandleGroupRosterChanged(reason)
 	local previousFingerprint = self.partyRosterFingerprint
+	if self.isEnabled then self:QueuePartyNavigationUpdate() end
 	if self.RefreshPartyRoster then
 		self:RefreshPartyRoster()
 	end
@@ -693,7 +694,12 @@ function QuestTogether:QUEST_REMOVED(_, questId)
 	end)
 end
 
+function QuestTogether:USER_WAYPOINT_UPDATED()
+	self:QueuePartyNavigationUpdate()
+end
+
 function QuestTogether:SUPER_TRACKING_CHANGED()
+	self:OnPartyNavigationTrackingChanged()
 	self:ScheduleTaskAreaRefresh(true, 0)
 end
 

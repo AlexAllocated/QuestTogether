@@ -111,6 +111,13 @@ local function Frame(addon, parent, kind)
 		self:Check()
 		self.text = value
 	end
+	function frame:GetStringWidth()
+		self:CheckRead()
+		local text = (self.text or ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+		local widest = 0
+		for line in (text .. "\n"):gmatch("([^\n]*)\n") do widest = math.max(widest, #line * 7) end
+		return widest
+	end
 	function frame:GetStringHeight()
 		self:CheckRead()
 		return 96
@@ -119,6 +126,7 @@ local function Frame(addon, parent, kind)
 		self:Check()
 		self.color = { r, g, b, a }
 	end
+	function frame:SetVertexColor(...) self:Check(); self.vertexColor = { ... } end
 	function frame:SetTexture(value) self:Check(); self.texture = value end
 	function frame:SetAlpha(value) self:Check(); self.alpha = value end
 	for _, method in ipairs({
@@ -556,19 +564,27 @@ Register("player tooltip reuses faction and class styling without leaking the pr
 	pin.frame.scripts.OnEnter({})
 	local state = a.locationPinState
 	local regions = #a.regions
+	function state.tooltipTitle:GetStringHeight() self:CheckRead(); return self.testHeight or 18 end
 	row.faction, row.race, row.className, row.classFile, row.level = "Horde", "Troll", "Warlock", "WARLOCK", 13
 	pin.frame.scripts.OnEnter({})
 	Equal(#a.regions, regions)
 	Equal(state.tooltipFaction.texture, "Interface\\TargetingFrame\\UI-PVP-Horde")
 	Equal(state.tooltipFaction.width,36); Equal(state.tooltipFaction.height,36)
-	Equal(state.tooltipTitle.width,228)
+	Equal(state.tooltipTitle.width, state.tooltip.width - 28 - 44)
 	assert(state.tooltipFaction.shown)
+	Equal(state.tooltipDivider.points[1][5], -6)
+	Equal(state.tooltipIntro.points[1][5], -16)
+	Equal(state.tooltipDivider.width, state.tooltip.width - 28)
+	state.tooltipTitle.testHeight = 48
+	pin.frame.scripts.OnEnter({})
+	Equal(state.tooltipDivider.points[1][5], -6)
 	assert(state.tooltipIntro.text:find("Level 13 Troll ", 1, true))
 	assert(state.tooltipIntro.text:find(a:GetClassColorCode("WARLOCK") .. "Warlock|r", 1, true))
 	row.faction = "Unknown"
 	pin.frame.scripts.OnEnter({})
 	Equal(state.tooltipFaction.shown, false)
-	Equal(state.tooltipTitle.width, 272)
+	Equal(state.tooltipTitle.width, state.tooltip.width - 28)
+	Equal(state.tooltipDivider.width, state.tooltip.width - 28)
 end)
 
 Register("own chat tooltip reads live super tracking without a received peer record or sharing consent", function()
@@ -987,7 +1003,7 @@ Register("chat speaker hover reuses dot tooltip content and cleans up independen
 	Equal(state.tooltipLabel.text, expected)
 	Equal(state.tooltipTitle.font, "GameFontNormalLarge")
 	Equal(state.tooltipLabel.font, "GameFontHighlight")
-	Equal(state.tooltip.width, 300)
+	assert(state.tooltip.width >= 188 and state.tooltip.width <= 300)
 	assert(state.tooltipTitle.text:find("|cff40c7eb", 1, true))
 	Equal(state.tooltip.points[1][2], a.tooltipParent)
 	Equal(state.tooltip.points[1][4], 212)
@@ -1212,4 +1228,103 @@ Register("hover refresh queries only on entry and incoming details update only t
 	a:HideChatLogPlayerTooltip()
 	a:UpdateChatLogPlayerTooltip()
 	Equal(a.chatLogPlayerTooltipState.tooltip.shown, false)
+end)
+
+Register("player tooltip width fits content expands for party names and shrinks on reuse", function()
+	local a = Fixture()
+	a.warModeFeature = false
+	local party = { size = 0 }
+	function a:GetPlayerPartyVisualInfo() return party end
+	local row = Row("Ari-Realm")
+	a.rows.map = { row }
+	a:RefreshPlayerLocationPins()
+	local pin = Pin(a, "map")
+	pin.frame.scripts.OnEnter()
+	local state = a.locationPinState
+	local compact = state.tooltip.width
+	assert(compact < 300)
+	Equal(state.tooltipDivider.width, compact - 28)
+	Equal(state.tooltipIntro.width, compact - 28)
+	Equal(state.tooltipTitle.width + 44, compact - 28)
+	row.name = string.rep("Long", 10) .. "-Realm"
+	a:RefreshPlayerLocationPins()
+	pin.frame.scripts.OnEnter()
+	Equal(state.tooltip.width, 300)
+	Equal(state.tooltipDivider.width, 272)
+	row.name = "Ari-Realm"
+	party = { key = "group", size = 2, leader = string.rep("LongLeaderName", 8), members = {} }
+	a:RefreshPlayerLocationPins()
+	pin.frame.scripts.OnEnter()
+	Equal(state.tooltip.width, 300)
+	Equal(state.partyRows[1].frame.width, 272)
+	Equal(state.partyRows[1].label.width, 234)
+	local allocated = #a.regions
+	party = { size = 0 }
+	pin.frame.scripts.OnEnter()
+	Equal(state.tooltip.width, compact)
+	Equal(state.tooltipDivider.width, compact - 28)
+	Equal(state.partyRows[1].active, false)
+	assert(not state.partyRows[1].frame.shown)
+	Equal(#a.regions, allocated)
+end)
+
+local function WaypointFixture()
+	local a = Fixture()
+	a.waypoints = {
+		{ name = "First-Realm", mapID = 1, x = 0.5, y = 0.5, classFile = "MAGE" },
+		{ name = "Second-Realm", mapID = 1, x = 0.5, y = 0.5, classFile = "WARRIOR" },
+	}
+	function a:GetPartyWaypointRows() return self.waypoints end
+	function a:GetPartyNavigationPeer(name)
+		for _, row in ipairs(self.waypoints) do if row.name == name then return row end end
+	end
+	function a:GetGroupedSenderClassFile(name)
+		local p = self:GetPartyNavigationPeer(name); return p and p.classFile
+	end
+	a.API.GetMapInfo = function() return { name = "Stormwind" } end
+	function a:CreatePartyQuestFilterMenu(_, generator)
+		self.waypointMenu = {}
+		local root = {}
+		function root:CreateTitle(text) a.waypointMenu[#a.waypointMenu + 1] = text end
+		function root:CreateButton(text, callback) a.waypointMenu[#a.waypointMenu + 1] = { text = text, callback = callback } end
+		generator(nil, root)
+	end
+	function a:NavigateToPartyWaypoint(name) self.navigated = name end
+	return a
+end
+Register("party waypoint pins expose overlapping owners and reuse independent map and minimap pools", function()
+	local a = WaypointFixture()
+	a:RefreshPartyWaypointPins()
+	local s = a.partyWaypointPinState
+	Equal(#s.surfaces.map.pins, 2); Equal(#s.surfaces.minimap.pins, 2)
+	local pin = s.surfaces.map.pins[1]
+	Equal(#pin.names, 2)
+	pin.frame.scripts.OnEnter()
+	assert(s.tooltip.shown and s.label.text:find("First-Realm", 1, true) and s.label.text:find("Second-Realm", 1, true))
+	pin.frame.scripts.OnClick()
+	Equal(#a.waypointMenu, 4)
+	a.waypointMenu[4].callback(); Equal(a.navigated, "Second-Realm")
+	local count = #a.frames
+	a:RefreshPartyWaypointPins(); Equal(#a.frames, count)
+	a.waypoints[2] = nil; a.waypoints[1].x = 0.52
+	a:RefreshPartyWaypointPins()
+	Equal(#pin.names, 1); Equal(s.surfaces.map.pins[2].frame.shown, false)
+	Equal(a.mapParent.writes, 0); Equal(a.miniParent.writes, 0)
+	a.waypoints = {}; a:RefreshPartyWaypointPins()
+	Equal(s.surfaces.map.frame.shown, false); Equal(s.tooltip.shown, false)
+end)
+Register("party waypoint surfaces hide for restrictions unavailable geometry and forbidden parents", function()
+	local a = WaypointFixture(); a:RefreshPartyWaypointPins()
+	local s = a.partyWaypointPinState
+	a.blocked = true; a:RefreshPartyWaypointPins()
+	Equal(s.surfaces.map.frame.shown, false)
+	a.blocked = false; a:RefreshPartyWaypointPins()
+	Equal(s.surfaces.map.frame.shown, true)
+	s.surfaces.map.pins[1].frame.scripts.OnEnter()
+	assert(s.tooltip.shown)
+	a.mapParent.forbidden = true; a:RefreshPartyWaypointPins()
+	Equal(s.tooltip.shown, false)
+	a.mapParent.forbidden = false; a.geometry.map = nil
+	a:RefreshPartyWaypointPins(); Equal(s.surfaces.map.frame.shown, false)
+	a:HidePartyWaypointPins(); Equal(s.surfaces.minimap.frame.shown, false)
 end)

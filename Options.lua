@@ -576,10 +576,14 @@ local CHECKBOX_OPTION_KEYS = {
 	"emoteOnLevelUp",
 	"emoteOnNearbyPlayerLevelUp",
 	"autoAcceptPartyShareRequests",
+	"sharePartyFocus",
+	"sharePartyWaypoint",
+	"showPartyWaypoints",
 	"autoInviteFriends",
 	"autoInviteWhileLFG",
 	"lookingForQuestPartners",
 	"showMinimapButton",
+	"lightMode",
 	"sharePlayerLocation",
 	"showPlayerLocations",
 	"onlyShowQuestPartners",
@@ -823,6 +827,7 @@ local function RefreshQuestPlatesPreview(controls)
 end
 
 function QuestTogether:RefreshOptionsWindow()
+	self:RefreshWindowThemes()
 	self:RefreshHomeWindow()
 	self:RefreshAnnouncementsWindow()
 	self:RefreshWhereToAnnounceWindow()
@@ -908,7 +913,7 @@ function QuestTogether:RefreshHomeWindow()
 		controls.statusPanel:SetHeight(math.max(304, height))
 		-- Include wrapped introduction/tips and the controls below both panels.
 		controls.content:SetHeight(math.max(304, height) + controls.description:GetStringHeight()
-			+ controls.tipsText:GetStringHeight() + 300)
+			+ controls.tipsText:GetStringHeight() + 332)
 	end
 
 	if controls.openHudEditMode then
@@ -1898,7 +1903,7 @@ function QuestTogether:InitializeGroupsWindow(parentCategory)
 	if self.groupsFrame then return end
 	local frame = CreateFrame("Frame", "QuestTogetherGroupsPanel")
 	frame.name, frame.parent = L("Groups & Sharing"), "QuestTogether"
-	local _, content = CreateScrollablePanelContent(frame, 500)
+	local _, content = CreateScrollablePanelContent(frame, 680)
 	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", 16, -16)
 	title:SetText(L("Groups & Sharing"))
@@ -1915,7 +1920,14 @@ function QuestTogether:InitializeGroupsWindow(parentCategory)
 	Header(L("Finding Partners"), -90)
 	Header(L("Join Requests"), -272)
 	Header(L("Quest Sharing"), -372)
+	Header(L("Party Navigation"), -462)
 	self.groupsControls = {
+		sharePartyFocus = CreateCheckbox(content, "sharePartyFocus", L("Share my focused quest"),
+			L("Let your party see your active quest and choose to follow your quest focus. Works independently of public location sharing."), 16, -490),
+		sharePartyWaypoint = CreateCheckbox(content, "sharePartyWaypoint", L("Share my waypoint"),
+			L("Automatically share your normal map pin with your party when you place, move, or clear it."), 16, -536),
+		showPartyWaypoints = CreateCheckbox(content, "showPartyWaypoints", L("Show party waypoints"),
+			L("Show your party's shared pins on the world map and nearby on the minimap. Receiving a pin never changes your navigation."), 16, -582),
 		lookingForQuestPartners = CreateCheckbox(content, "lookingForQuestPartners", L("Looking for Questing Partners"),
 			L("Show that you're looking for questing partners. Turning this on announces your search throughout your zone when location sharing is enabled. Saved per profile; toggle with /qt lfg."), 16, -118),
 		autoInviteWhileLFG = CreateCheckbox(content, "autoInviteWhileLFG", L("Automatically invite others while looking for partners"),
@@ -2059,7 +2071,7 @@ function QuestTogether:InitializeOptionsWindow()
 	actionsHeader:SetText(L("Quick Actions"))
 
 	local actionHelp = {
-		[L("Compare Party Quests")] = L("Compare your party's quests and share quests that other members are missing."),
+		[L("Party Quest Log")] = L("Compare your party's quests and share quests that other members are missing."),
 		[L("Find Questing Partners")] = L("Open options for finding partners, joining groups, and sharing quests."),
 		[L("Open What to Announce")] = L("Choose which quest events and partner searches to announce and display."),
 		[L("Open Where to Announce")] = L("Choose chat output, bubbles, and celebration emotes."),
@@ -2082,7 +2094,7 @@ function QuestTogether:InitializeOptionsWindow()
 		return button
 	end
 
-	local comparePartyQuests = CreateHomeActionButton(actionsPanel, L("Compare Party Quests"), 12, -34, function()
+	local comparePartyQuests = CreateHomeActionButton(actionsPanel, L("Party Quest Log"), 12, -34, function()
 		QuestTogether:OpenPartyQuestCompare()
 	end)
 	local openGroups = CreateHomeActionButton(actionsPanel, L("Find Questing Partners"), 12, -60, function()
@@ -2122,8 +2134,12 @@ function QuestTogether:InitializeOptionsWindow()
 		L("Show the QuestTogether minimap menu. Drag the button to move it around the minimap."), 16, -456)
 	showMinimapButton:ClearAllPoints()
 	showMinimapButton:SetPoint("TOPLEFT", generalHeader, "BOTTOMLEFT", 0, -10)
+	local lightMode = CreateCheckbox(content, "lightMode", L("Light mode"),
+		L("Use light parchment and dark text in the Party Quest Log and welcome window. Leave this off for dark mode."), 16, -488)
+	lightMode:ClearAllPoints()
+	lightMode:SetPoint("TOPLEFT", showMinimapButton, "BOTTOMLEFT", 0, -6)
 	local troubleshooting = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	troubleshooting:SetPoint("TOPLEFT", generalHeader, "BOTTOMLEFT", 0, -66)
+	troubleshooting:SetPoint("TOPLEFT", generalHeader, "BOTTOMLEFT", 0, -98)
 	troubleshooting:SetText(L("Troubleshooting"))
 	local debugButton = CreateHomeActionButton(content, L("Open Debug Window"), 16, -550, function()
 		QuestTogether:ShowDebugWindow()
@@ -2160,6 +2176,7 @@ function QuestTogether:InitializeOptionsWindow()
 		description = description,
 		tipsText = tipsText,
 		showMinimapButton = showMinimapButton,
+		lightMode = lightMode,
 		comparePartyQuests = comparePartyQuests,
 		openGroups = openGroups,
 		debugButton = debugButton,

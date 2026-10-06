@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="512" viewBox="0 0 1024 512">
+  <defs>
+    <linearGradient id="paper" x2="1" y2="0">
+      <stop stop-color="#b68b4e"/><stop offset=".025" stop-color="#dfc18b"/>
+      <stop offset=".15" stop-color="#efdab0"/><stop offset=".5" stop-color="#f5e4be"/>
+      <stop offset=".85" stop-color="#efdab0"/><stop offset=".975" stop-color="#dfc18b"/>
+      <stop offset="1" stop-color="#a67b41"/>
+    </linearGradient>
+    <linearGradient id="roll" x2="0" y2="1">
+      <stop stop-color="#68451f"/><stop offset=".14" stop-color="#bb8d47"/>
+      <stop offset=".38" stop-color="#f8e8c1"/><stop offset=".68" stop-color="#e3c18a"/>
+      <stop offset=".9" stop-color="#a47a3d"/><stop offset="1" stop-color="#694621"/>
+    </linearGradient>
+    <pattern id="grain" width="83" height="71" patternUnits="userSpaceOnUse">
+      <path d="M4 19h17m37 33h15M13 61h8M40 8h17" stroke="#78552a" opacity=".035"/>
+      <circle cx="32" cy="36" r=".7" fill="#916b35" opacity=".1"/>
+    </pattern>
+  </defs>
+  <rect x="14" y="10" width="998" height="499" rx="10" fill="#160e06" opacity=".45"/>
+  <path d="M20 18H1004L1000 129 1005 241 1001 369 1004 493H20L24 389 19 276 23 146Z" fill="url(#paper)" stroke="#886237" stroke-width="2"/>
+  <path d="M29 28H995V488H29Z" fill="url(#grain)"/>
+  <path d="M29 35H995M29 478H995" stroke="#987341" opacity=".35"/>
+  <rect x="7" y="4" width="1010" height="28" rx="13" fill="url(#roll)" stroke="#785126" stroke-width="2"/>
+  <rect x="7" y="480" width="1010" height="28" rx="13" fill="url(#roll)" stroke="#785126" stroke-width="2"/>
+  <ellipse cx="16" cy="18" rx="8" ry="13" fill="#ac7e3f" stroke="#65441e"/>
+  <ellipse cx="1008" cy="494" rx="8" ry="13" fill="#ac7e3f" stroke="#65441e"/>
+  <ellipse cx="16" cy="18" rx="3" ry="7" fill="#704c24"/>
+  <ellipse cx="1008" cy="494" rx="3" ry="7" fill="#704c24"/>
+</svg>

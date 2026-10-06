@@ -1,14 +1,213 @@
 local L = _G.QuestTogether.Translate
 local QuestTogether = _G.QuestTogether
-local VISIBLE_ROWS, ROW_HEIGHT = 13, 28
-local QUEST_WIDTH, MEMBER_WIDTH, ACTION_WIDTH = 300, 108, 228
+local VISIBLE_ROWS, ROW_HEIGHT = 11, 42
+local QUEST_WIDTH, MEMBER_WIDTH, ACTION_WIDTH = 350, 130, 160
+local COLUMN_WIDTH = MEMBER_WIDTH - 4
+local function ColumnLeft(index)
+	return QUEST_WIDTH + (index - 1) * MEMBER_WIDTH - 4
+end
+local MIN_WIDTH = 780
+local function MinimumWidth(memberCount)
+	return math.max(MIN_WIDTH, QUEST_WIDTH + math.min(memberCount, 5) * MEMBER_WIDTH + ACTION_WIDTH + 62)
+end
 local COLORS = {
-	Have = { 0.75, 0.85, 1 },
-	Ready = { 0.35, 1, 0.55 },
-	Missing = { 1, 0.7, 0.3 },
-	Loading = { 0.65, 0.65, 0.65 },
-	Unknown = { 0.65, 0.65, 0.65 },
+	Have = { 0.24, 0.20, 0.14 },
+	Ready = { 0.12, 0.38, 0.18 },
+	Missing = { 0.55, 0.25, 0.06 },
+	Loading = { 0.38, 0.32, 0.24 },
+	Unknown = { 0.38, 0.32, 0.24 },
 }
+
+local DARK_COLORS = {
+	Have = { 0.86, 0.86, 0.84 },
+	Ready = { 0.40, 0.90, 0.48 },
+	Missing = { 1, 0.68, 0.30 },
+	Loading = { 0.68, 0.70, 0.73 },
+	Unknown = { 0.68, 0.70, 0.73 },
+}
+
+local function MemberColor(addon, classFile, brightness)
+	-- Use the existing access-checked class-color adapter, never raw registries.
+	local code = addon:GetClassColorCode(classFile)
+	brightness = addon:GetOption("lightMode") ~= true and 1 or brightness or 0.48
+	return tonumber(code:sub(5, 6), 16) / 255 * brightness,
+		tonumber(code:sub(7, 8), 16) / 255 * brightness,
+		tonumber(code:sub(9, 10), 16) / 255 * brightness
+end
+
+local CORNER_RADIUS = 6
+local CORNER_FILL = "Interface\\AddOns\\QuestTogether\\Media\\PanelCornerFill"
+local CORNER_BORDER = "Interface\\AddOns\\QuestTogether\\Media\\PanelCornerBorder"
+local CORNER_UV = { { 0, 0.5, 0, 0.5 }, { 0.5, 1, 0, 0.5 }, { 0, 0.5, 0.5, 1 }, { 0.5, 1, 0.5, 1 } }
+local function ShowPanel(region, shown)
+	region.panelShown = shown
+	region[shown and "Show" or "Hide"](region)
+	for _, part in ipairs(region.panelParts or {}) do
+		part[shown and part.panelActive and "Show" or "Hide"](part)
+	end
+end
+local function ColorPanel(region, ...)
+	region:SetColorTexture(...)
+	for index, part in ipairs(region.panelParts or {}) do
+		if index <= 2 then
+			part:SetColorTexture(...)
+		else
+			part:SetVertexColor(...)
+		end
+	end
+end
+local function LayoutPanel(region, parent, layer, sublevel, x, y, width, height, roundedTop, roundedBottom)
+	local radius = (roundedTop or roundedBottom) and CORNER_RADIUS or 0
+	region:ClearAllPoints()
+	region:SetPoint("TOPLEFT", parent, "TOPLEFT", x + radius, -y)
+	region:SetSize(width - radius * 2, height)
+	if radius > 0 and not region.panelParts then
+		region.panelParts = {}
+		for index = 1, 6 do
+			local part = parent:CreateTexture(nil, layer, nil, sublevel)
+			region.panelParts[index] = part
+			if index > 2 then
+				part:SetTexture(CORNER_FILL)
+				part:SetTexCoord(unpack(CORNER_UV[index - 2]))
+			end
+		end
+	end
+	for index, part in ipairs(region.panelParts or {}) do
+		part:ClearAllPoints()
+		part.panelActive = radius > 0 and (index <= 2 or (index <= 4 and roundedTop) or (index >= 5 and roundedBottom))
+		if index <= 2 then
+			local top = roundedTop and radius or 0
+			part:SetPoint("TOPLEFT", parent, "TOPLEFT", x + (index == 1 and 0 or width - radius), -y - top)
+			part:SetSize(math.max(1, radius), height - top - (roundedBottom and radius or 0))
+		else
+			local right, bottom = index % 2 == 0, index >= 5
+			part:SetPoint(
+				"TOPLEFT",
+				parent,
+				"TOPLEFT",
+				x + (right and width - radius or 0),
+				-y - (bottom and height - radius or 0)
+			)
+			part:SetSize(CORNER_RADIUS, CORNER_RADIUS)
+		end
+	end
+	ShowPanel(region, region.panelShown ~= false)
+end
+
+local function LayoutDetailsPanel(row, width, details, first, last, expanded, dark)
+	local left, right = details and 28 or 0, details and 14 or 0
+	local top, bottom = details and first and 6 or 0, details and last and 6 or 0
+	-- Each pooled row supplies one slice of the same inset panel. Only the
+	-- true section edges get end caps; scrolling clips the panel naturally.
+	local roundTop, roundBottom = details and first, details and last
+	LayoutPanel(
+		row.paper,
+		row,
+		"BACKGROUND",
+		-1,
+		left,
+		top,
+		width - left - right,
+		ROW_HEIGHT - top - bottom,
+		roundTop,
+		roundBottom
+	)
+	LayoutPanel(
+		row.background,
+		row,
+		"BACKGROUND",
+		0,
+		left,
+		top,
+		width - left - right,
+		ROW_HEIGHT - top - bottom,
+		roundTop,
+		roundBottom
+	)
+	LayoutPanel(
+		row.hover,
+		row,
+		"BORDER",
+		0,
+		left,
+		top,
+		width - left - right,
+		ROW_HEIGHT - top - bottom,
+		roundTop,
+		roundBottom
+	)
+	if dark then
+		ColorPanel(row.paper, 0.10, 0.12, 0.15, details and 0.98 or 0.6)
+	else
+		ColorPanel(row.paper, 1, 0.94, 0.79, details and 0.85 or 0.35)
+	end
+	if details or expanded then
+		ShowPanel(row.paper, true)
+	else
+		ShowPanel(row.paper, false)
+	end
+	for _, edge in ipairs(row.panelEdges) do
+		edge:Hide()
+		edge:ClearAllPoints()
+		if dark then
+			edge:SetColorTexture(0.64, 0.58, 0.42, 0.65)
+		else
+			edge:SetColorTexture(0.32, 0.22, 0.10, 0.65)
+		end
+	end
+	if details then
+		for i, x in ipairs({ left, width - right - 1 }) do
+			local edge = row.panelEdges[i]
+			edge:SetPoint("TOPLEFT", row, "TOPLEFT", x, -top - (roundTop and CORNER_RADIUS or 0))
+			edge:SetSize(
+				1,
+				ROW_HEIGHT - top - bottom - (roundTop and CORNER_RADIUS or 0) - (roundBottom and CORNER_RADIUS or 0)
+			)
+			edge:Show()
+		end
+	end
+	if (details and first) or expanded then
+		row.panelEdges[3]:SetPoint("TOPLEFT", row, "TOPLEFT", left + (roundTop and CORNER_RADIUS or 0), -top)
+		row.panelEdges[3]:SetSize(width - left - right - (roundTop and CORNER_RADIUS * 2 or 0), 1)
+		row.panelEdges[3]:Show()
+	end
+	if (details and last) or expanded then
+		row.panelEdges[4]:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", left + (roundBottom and CORNER_RADIUS or 0), bottom)
+		row.panelEdges[4]:SetSize(width - left - right - (roundBottom and CORNER_RADIUS * 2 or 0), 1)
+		row.panelEdges[4]:Show()
+	end
+	if (roundTop or roundBottom) and not row.panelCorners then
+		row.panelCorners = {}
+		for index = 1, 4 do
+			local corner = row:CreateTexture(nil, "ARTWORK")
+			corner:SetTexture(CORNER_BORDER)
+			corner:SetTexCoord(unpack(CORNER_UV[index]))
+			corner:SetSize(CORNER_RADIUS, CORNER_RADIUS)
+			row.panelCorners[index] = corner
+		end
+	end
+	for index, corner in ipairs(row.panelCorners or {}) do
+		corner:ClearAllPoints()
+		local rightSide, bottomSide = index % 2 == 0, index > 2
+		corner:SetPoint(
+			"TOPLEFT",
+			row,
+			"TOPLEFT",
+			rightSide and width - right - CORNER_RADIUS or left,
+			bottomSide and -ROW_HEIGHT + bottom + CORNER_RADIUS or -top
+		)
+		if dark then
+			corner:SetVertexColor(0.64, 0.58, 0.42, 0.65)
+		else
+			corner:SetVertexColor(0.32, 0.22, 0.10, 0.65)
+		end
+		corner[((bottomSide and roundBottom) or (not bottomSide and roundTop)) and "Show" or "Hide"](corner)
+	end
+	row.accent:ClearAllPoints()
+	row.accent:SetPoint("TOPLEFT", row, "TOPLEFT", details and left + 3 or 0, -top)
+	row.accent:SetSize(3, ROW_HEIGHT - top - bottom)
+	return top, bottom
+end
 
 local function Label(parent, x, y, width, text, font)
 	local label = parent:CreateFontString(nil, "OVERLAY", font or "GameFontHighlightSmall")
@@ -47,7 +246,7 @@ local function TiledBackground(parent, file)
 	texture:SetVertTile(true)
 end
 
-local function Window(addon, width, height, title)
+local function Window(addon, width, height, title, parchment)
 	local frame = addon:CreatePartyQuestUIFrame("Frame", nil, addon:GetPartyQuestUIParent())
 	frame:Hide()
 	frame:SetSize(width, height)
@@ -60,34 +259,84 @@ local function Window(addon, width, height, title)
 	frame:EnableMouse(true)
 	frame:RegisterForDrag("LeftButton")
 	frame:SetScript("OnDragStart", function(self)
+		if addon:IsWorkBlocked("foreign_frame_mutation") then
+			return
+		end
 		self:StartMoving()
 	end)
 	frame:SetScript("OnDragStop", function(self)
 		self:StopMovingOrSizing()
 	end)
-	TiledBackground(frame, "Interface\\FrameGeneral\\UI-Background-Marble")
-	local topLeft = NativeTexture(frame, "UI-Frame-TopLeftCorner", "OVERLAY", 33, 33)
-	topLeft:SetPoint("TOPLEFT", -6, 1)
-	local topRight = NativeTexture(frame, "UI-Frame-TopCornerRight", "OVERLAY", 33, 33)
-	topRight:SetPoint("TOPRIGHT", 0, 1)
-	local bottomLeft = NativeTexture(frame, "UI-Frame-BotCornerLeft", "BORDER", 14, 14)
-	bottomLeft:SetPoint("BOTTOMLEFT", -6, -5)
-	local bottomRight = NativeTexture(frame, "UI-Frame-BotCornerRight", "BORDER", 11, 11)
-	bottomRight:SetPoint("BOTTOMRIGHT", 0, -5)
-	for _, edge in ipairs({
-		{ "_UI-Frame-TitleTile", "TOPLEFT", topLeft, "TOPRIGHT", "TOPRIGHT", topRight, "TOPLEFT", 256, 28 },
-		{ "_UI-Frame-Bot", "BOTTOMLEFT", bottomLeft, "BOTTOMRIGHT", "BOTTOMRIGHT", bottomRight, "BOTTOMLEFT", 256, 9 },
-		{ "!UI-Frame-LeftTile", "TOPLEFT", topLeft, "BOTTOMLEFT", "BOTTOMLEFT", bottomLeft, "TOPLEFT", 16, 256 },
-		{ "!UI-Frame-RightTile", "TOPRIGHT", topRight, "BOTTOMRIGHT", "BOTTOMRIGHT", bottomRight, "TOPRIGHT", 10, 256 },
-	}) do
-		local texture = NativeTexture(frame, edge[1], "BORDER", edge[8], edge[9])
-		texture:SetPoint(edge[2], edge[3], edge[4])
-		texture:SetPoint(edge[5], edge[6], edge[7])
+	if parchment then
+		frame.parchment = NativeTexture(frame, nil, "BACKGROUND")
+		frame.parchment:SetPoint("TOPLEFT", -16, 12)
+		frame.parchment:SetPoint("BOTTOMRIGHT", 16, -12)
+		frame.parchment:SetTexture(addon:GetScrollWindowTheme().texture)
+	else
+		TiledBackground(frame, "Interface\\FrameGeneral\\UI-Background-Marble")
+		local topLeft = NativeTexture(frame, "UI-Frame-TopLeftCorner", "OVERLAY", 33, 33)
+		topLeft:SetPoint("TOPLEFT", -6, 1)
+		local topRight = NativeTexture(frame, "UI-Frame-TopCornerRight", "OVERLAY", 33, 33)
+		topRight:SetPoint("TOPRIGHT", 0, 1)
+		local bottomLeft = NativeTexture(frame, "UI-Frame-BotCornerLeft", "BORDER", 14, 14)
+		bottomLeft:SetPoint("BOTTOMLEFT", -6, -5)
+		local bottomRight = NativeTexture(frame, "UI-Frame-BotCornerRight", "BORDER", 11, 11)
+		bottomRight:SetPoint("BOTTOMRIGHT", 0, -5)
+		for _, edge in ipairs({
+			{ "_UI-Frame-TitleTile", "TOPLEFT", topLeft, "TOPRIGHT", "TOPRIGHT", topRight, "TOPLEFT", 256, 28 },
+			{
+				"_UI-Frame-Bot",
+				"BOTTOMLEFT",
+				bottomLeft,
+				"BOTTOMRIGHT",
+				"BOTTOMRIGHT",
+				bottomRight,
+				"BOTTOMLEFT",
+				256,
+				9,
+			},
+			{ "!UI-Frame-LeftTile", "TOPLEFT", topLeft, "BOTTOMLEFT", "BOTTOMLEFT", bottomLeft, "TOPLEFT", 16, 256 },
+			{
+				"!UI-Frame-RightTile",
+				"TOPRIGHT",
+				topRight,
+				"BOTTOMRIGHT",
+				"BOTTOMRIGHT",
+				bottomRight,
+				"TOPRIGHT",
+				10,
+				256,
+			},
+		}) do
+			local texture = NativeTexture(frame, edge[1], "BORDER", edge[8], edge[9])
+			texture:SetPoint(edge[2], edge[3], edge[4])
+			texture:SetPoint(edge[5], edge[6], edge[7])
+		end
+		local titleBackground = NativeTexture(frame, "_UI-Frame-TitleTileBg", "BACKGROUND", 256, 18)
+		titleBackground:SetPoint("TOPLEFT", 2, -1)
+		titleBackground:SetPoint("TOPRIGHT", -25, -1)
 	end
-	local titleBackground = NativeTexture(frame, "_UI-Frame-TitleTileBg", "BACKGROUND", 256, 18)
-	titleBackground:SetPoint("TOPLEFT", 2, -1)
-	titleBackground:SetPoint("TOPRIGHT", -25, -1)
-	frame.title = Label(frame, 16, -5, width - 70, title, "GameFontNormal")
+	frame.title = Label(
+		frame,
+		parchment and 50 or 16,
+		-5,
+		width - (parchment and 100 or 70),
+		title,
+		parchment and "GameFontNormalLarge" or "GameFontNormal"
+	)
+	if parchment then
+		frame.title:SetTextColor(0.22, 0.13, 0.06)
+		local logo = NativeTexture(frame, nil, "ARTWORK", 26, 26)
+		logo:SetPoint("TOPLEFT", 18, 0)
+		frame.title:ClearAllPoints()
+		frame.title:SetPoint("LEFT", logo, "RIGHT", 10, 0)
+		frame.title:SetHeight(30)
+		frame.title:SetJustifyV("MIDDLE")
+		frame.title:SetMaxLines(1)
+		logo:SetTexture(
+			addon.NAMEPLATE_PLAYER_ICON_TEXTURE or "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon"
+		)
+	end
 	return frame
 end
 
@@ -124,6 +373,391 @@ function QuestTogether:GetPartyQuestUIParent()
 	return UIParent
 end
 
+local function DrawCompareRows(self, frame, session, rows, width, actionX)
+	local dark = self:GetOption("lightMode") ~= true
+	local colors = dark and DARK_COLORS or COLORS
+	for i, row in ipairs(frame.rows) do
+		local slot = frame.visibleRows[i]
+		local data = slot and rows[slot.index]
+		row.data = data
+		row.session = session
+		if not data then
+			row:Hide()
+			row.clip:Hide()
+		else
+			row:Show()
+			row.clip:Show()
+			row:SetWidth(width)
+			local expanded = not data.kind and session.expandedQuestIds and session.expandedQuestIds[data.questId]
+			local previous, following = rows[slot.index - 1], rows[slot.index + 1]
+			local first = not previous or not previous.kind or previous.questId ~= data.questId
+			local last = not following or not following.kind or following.questId ~= data.questId
+			local top, bottom = LayoutDetailsPanel(row, width, data.kind ~= nil, first, last, expanded, dark)
+			row.expander:SetTextColor(dark and 0.92 or 0.4, dark and 0.78 or 0.25, dark and 0.45 or 0.08)
+			row.expander:SetText(data.kind and "" or (expanded and "-" or "+"))
+			row.title:SetText(data.title)
+			ShowPanel(row.hover, false)
+			ColorPanel(row.hover, dark and 1 or 0.35, dark and 1 or 0.24, dark and 1 or 0.10, 0.08)
+			row.title:ClearAllPoints()
+			local indent = data.kind == "objective" and 64 or data.kind == "member" and 48 or 28
+			row.title:SetPoint("TOPLEFT", indent, (data.kind == "member" and -12 or -5) - top)
+			row.title:SetWidth(data.kind and (actionX - indent - 16) or (QUEST_WIDTH - 36))
+			row.partySummary:SetText(data.partySummary or "")
+			row.partySummary:SetTextColor(unpack(colors[data.partySummaryState or "Unknown"]))
+			if data.kind then
+				row.accent:Hide()
+				local r, g, b = MemberColor(self, data.classFile)
+				ColorPanel(row.background, r, g, b, data.kind == "member" and (dark and 0.12 or 0.34) or 0.20)
+			else
+				if expanded then
+					row.accent:SetColorTexture(0.46, 0.30, 0.08, 1)
+					row.accent:Show()
+				else
+					row.accent:Hide()
+				end
+				ColorPanel(
+					row.background,
+					dark and 1 or 0.4,
+					dark and 0.85 or 0.28,
+					dark and 0.55 or 0.12,
+					expanded and 0.16 or (slot.index % 2 == 0 and 0.055 or 0.015)
+				)
+			end
+			if data.fraction then
+				local barWidth = actionX - 80
+				row.progressTrack:ClearAllPoints()
+				row.progressTrack:SetPoint("TOPLEFT", 64, -32)
+				row.progressFill:ClearAllPoints()
+				row.progressFill:SetPoint("TOPLEFT", 64, -32)
+				row.progressTrack:SetWidth(barWidth)
+				row.progressTrack:SetColorTexture(
+					dark and 0.75 or 0.3,
+					dark and 0.78 or 0.2,
+					dark and 0.8 or 0.08,
+					dark and 0.22 or 0.15
+				)
+				row.progressTrack:Show()
+				row.progressFill:SetWidth(math.max(1, barWidth * data.fraction))
+				if dark then
+					row.progressFill:SetColorTexture(
+						data.complete and 0.40 or 0.86,
+						data.complete and 0.90 or 0.65,
+						data.complete and 0.48 or 0.32,
+						0.9
+					)
+				else
+					row.progressFill:SetColorTexture(
+						data.complete and 0.12 or 0.50,
+						data.complete and 0.38 or 0.32,
+						0.12,
+						0.85
+					)
+				end
+				if data.fraction > 0 then
+					row.progressFill:Show()
+				else
+					row.progressFill:Hide()
+				end
+			else
+				row.progressTrack:Hide()
+				row.progressFill:Hide()
+			end
+			if data.kind == "member" then
+				row.title:SetTextColor(MemberColor(self, data.classFile, 0.32))
+			elseif dark then
+				row.title:SetTextColor(0.93, 0.92, 0.88)
+			elseif data.kind == "objective" then
+				row.title:SetTextColor(0.23, 0.17, 0.10)
+			else
+				row.title:SetTextColor(0.18, 0.12, 0.06)
+			end
+			for j, status in ipairs(data.cells) do
+				if not row.cells[j] then
+					row.cells[j] =
+						Label(row, QUEST_WIDTH + (j - 1) * MEMBER_WIDTH, -12, MEMBER_WIDTH - 6, "", "GameFontHighlight")
+					row.cellShades[j] = row:CreateTexture(nil, "BORDER")
+					row.cellShades[j]:SetPoint("TOPLEFT", ColumnLeft(j), 0)
+					row.cellShades[j]:SetSize(COLUMN_WIDTH, ROW_HEIGHT - 1)
+				end
+				local r, g, b = MemberColor(self, session.members[j].classFile)
+				row.cellShades[j]:SetColorTexture(r, g, b, 0.20)
+				row.cellShades[j]:Show()
+				row.cells[j]:SetText(L(status))
+				row.cells[j]:SetTextColor(unpack(colors[status]))
+				row.cells[j]:Show()
+			end
+			for j = #data.cells + 1, #row.cells do
+				row.cells[j]:Hide()
+				row.cellShades[j]:Hide()
+			end
+			row.action:ClearAllPoints()
+			row.action:SetPoint("TOPLEFT", actionX, -9)
+			row.action:SetHeight(24)
+			row.hint:SetMaxLines(2)
+			row.hint:ClearAllPoints()
+			row.hint:SetHeight(data.kind and (ROW_HEIGHT - top - bottom - 4) or (ROW_HEIGHT - 8))
+			local status, waiting = self:GetPartyQuestShareStatus(data.questId)
+			if data.kind then
+				status, waiting = nil, false
+			end
+			row.hint:SetTextColor(unpack(data.complete and colors.Ready or colors.Have))
+			if data.action and not waiting then
+				local cooldown = data.action == "request"
+						and self.GetPartyQuestShareRequestCooldown
+						and self:GetPartyQuestShareRequestCooldown(data.owner)
+					or 0
+				local coolingDown = cooldown > 0
+				row.action:SetText(
+					coolingDown and L("Please wait") or (data.action == "share" and L("Share") or L("Request Share"))
+				)
+				row.action:SetEnabled(not coolingDown and not self:IsWorkBlocked("quest_share"))
+				row.action:Show()
+				if status and status ~= "" then
+					-- Keep terminal feedback visible below a retry action, without
+					-- increasing row height or changing the scroll pool's geometry.
+					row.action:ClearAllPoints()
+					row.action:SetPoint("TOPLEFT", actionX, -1)
+					row.action:SetSize(ACTION_WIDTH - 12, 22)
+					row.hint:SetPoint("TOPLEFT", actionX, -24)
+					row.hint:SetSize(ACTION_WIDTH - 12, 18)
+					row.hint:SetMaxLines(1)
+					row.hint:SetText(L(status))
+					row.hint:Show()
+				else
+					row.action:SetWidth(ACTION_WIDTH - 12)
+					row.hint:Hide()
+				end
+			else
+				row.action:Hide()
+				row.hint:SetPoint("TOPLEFT", actionX, (data.kind and -2 or -4) - top)
+				row.hint:SetWidth(ACTION_WIDTH - (data.kind and 28 or 8))
+				row.hint:SetText(L(status or data.hint or ""))
+				row.hint:Show()
+			end
+		end
+	end
+end
+
+local function DetailHeights(rows)
+	local heights = {}
+	for _, row in ipairs(rows) do
+		if row.kind then
+			heights[row.questId] = (heights[row.questId] or 0) + ROW_HEIGHT
+		end
+	end
+	return heights
+end
+
+local function CompareHeight(frame)
+	local height = #frame.displayRows * ROW_HEIGHT
+	for id, full in pairs(DetailHeights(frame.displayRows)) do
+		local transition = frame.expansions and frame.expansions[id]
+		if transition then
+			height = height - full + math.min(full, transition.reveal)
+		end
+	end
+	return height
+end
+
+local function ScrollCompare(self, frame, session, pixels, force)
+	if
+		self.partyQuestCompareSession ~= session
+		or frame.displaySession ~= session
+		or self:IsWorkBlocked("foreign_frame_mutation")
+	then
+		return
+	end
+	local rows = frame.displayRows
+	local heights, seen = DetailHeights(rows), {}
+	local maximum = math.max(0, CompareHeight(frame) - frame.rowsViewport:GetHeight())
+	pixels = math.max(0, math.min(pixels, maximum))
+	local visible, keys, y = {}, {}, 0
+	for index, data in ipairs(rows) do
+		local height = ROW_HEIGHT
+		if data.kind then
+			local id = data.questId
+			local transition = frame.expansions and frame.expansions[id]
+			local reveal = transition and transition.reveal or heights[id]
+			height = math.max(0, math.min(ROW_HEIGHT, reveal - (seen[id] or 0)))
+			seen[id] = (seen[id] or 0) + ROW_HEIGHT
+		end
+		if height > 0 and y + height > pixels and y < pixels + frame.rowsViewport:GetHeight() then
+			visible[#visible + 1] = { index = index, top = y, height = height }
+			keys[#keys + 1] = index
+		end
+		y = y + height
+	end
+	local origin = visible[1] and visible[1].top or 0
+	session.scrollPixels, session.offset = pixels, visible[1] and visible[1].index - 1 or 0
+	frame.visibleRows = visible
+	for i, row in ipairs(frame.rows) do
+		local slot = visible[i]
+		if slot then
+			row.clip:ClearAllPoints()
+			row.clip:SetPoint("TOPLEFT", frame.rowsContent, "TOPLEFT", 0, -(slot.top - origin))
+			row.clip:SetSize(frame.content:GetWidth(), math.max(0.01, slot.height))
+		end
+	end
+	local key = table.concat(keys, ",")
+	if force or frame.drawnKey ~= key then
+		DrawCompareRows(self, frame, session, rows, frame.content:GetWidth(), frame.content:GetWidth() - ACTION_WIDTH)
+		frame.drawnKey = key
+	end
+	frame.rowsViewport:SetVerticalScroll(pixels - origin)
+	frame.scrolling = true
+	frame.vertical:SetMinMaxValues(0, maximum)
+	frame.vertical:SetValue(pixels)
+	frame.scrolling = false
+	if maximum > 0 then
+		frame.vertical:Show()
+	else
+		frame.vertical:Hide()
+	end
+end
+
+local function StopExpansion(frame)
+	frame.expansions, frame.animateExpansion, frame.expansionGeneration = nil, nil, nil
+	if frame.expansionAnimator then
+		frame.expansionAnimator:SetScript("OnUpdate", nil)
+	end
+end
+
+local function AnimateExpansions(self, frame, session)
+	local transitions, generation = frame.expansions, {}
+	frame.expansionGeneration = generation
+	frame.expansionAnimator:SetScript("OnUpdate", function(_, elapsed)
+		if frame.expansions ~= transitions or frame.expansionGeneration ~= generation then
+			return
+		end
+		if self.partyQuestCompareSession ~= session or frame.displaySession ~= session then
+			StopExpansion(frame)
+			return
+		end
+		if self:IsWorkBlocked("foreign_frame_mutation") then
+			return
+		end
+		local remove, finished = {}, false
+		for id, transition in pairs(transitions) do
+			transition.elapsed = math.min(0.18, transition.elapsed + math.min(elapsed, 0.1))
+			local t = transition.elapsed / 0.18
+			transition.reveal = transition.from + (transition.target - transition.from) * t * t * (3 - 2 * t)
+			if t >= 1 then
+				if transition.closingRows then
+					remove[id] = true
+				end
+				transitions[id], finished = nil, true
+			end
+		end
+		if next(remove) then
+			local rows = {}
+			for _, row in ipairs(frame.displayRows) do
+				if not (row.kind and remove[row.questId]) then
+					rows[#rows + 1] = row
+				end
+			end
+			frame.displayRows = rows
+		end
+		if not next(transitions) then
+			StopExpansion(frame)
+		end
+		ScrollCompare(self, frame, session, session.scrollPixels or 0, finished)
+	end)
+end
+
+local function PrepareExpansions(self, frame, session, rows)
+	local intent = frame.animateExpansion
+	frame.animateExpansion = nil
+	local transitions = frame.expansions or {}
+	local full, oldFull = DetailHeights(rows), DetailHeights(frame.displayRows or {})
+	local roots, oldDetails = {}, {}
+	for _, row in ipairs(rows) do
+		if not row.kind then
+			roots[row.questId] = true
+		end
+	end
+	for _, row in ipairs(frame.displayRows or {}) do
+		if row.kind then
+			oldDetails[row.questId] = oldDetails[row.questId] or {}
+			local list = oldDetails[row.questId]
+			list[#list + 1] = row
+		end
+	end
+	if intent and intent.session == session and roots[intent.questId] then
+		local id = intent.questId
+		local opening = session.expandedQuestIds and session.expandedQuestIds[id]
+		local old = transitions[id]
+		local from = old and old.reveal or (opening and 0 or oldFull[id] or 0)
+		transitions[id] = {
+			from = from,
+			reveal = from,
+			target = opening and (full[id] or 0) or 0,
+			elapsed = 0,
+			closingRows = not opening and oldDetails[id] or nil,
+		}
+	end
+	for id, transition in pairs(transitions) do
+		if not roots[id] then
+			transitions[id] = nil
+		elseif not transition.closingRows and transition.target ~= (full[id] or 0) then
+			transition.from, transition.elapsed, transition.target = transition.reveal, 0, full[id] or 0
+		end
+	end
+	local display = {}
+	for _, row in ipairs(rows) do
+		display[#display + 1] = row
+		local transition = transitions[row.questId]
+		if not row.kind and transition and transition.closingRows then
+			for _, detail in ipairs(transition.closingRows) do
+				display[#display + 1] = detail
+			end
+		end
+	end
+	frame.displayRows = display
+	if next(transitions) then
+		frame.expansions = transitions
+		AnimateExpansions(self, frame, session)
+	else
+		StopExpansion(frame)
+	end
+end
+
+local function StopCompareScroll(frame)
+	frame.wheelTarget, frame.wheelSession = nil, nil
+	frame:SetScript("OnUpdate", nil)
+end
+
+local function WheelCompare(self, frame, delta)
+	local session = self.partyQuestCompareSession
+	if not session or frame.displaySession ~= session or self:IsWorkBlocked("foreign_frame_mutation") then
+		return
+	end
+	local maximum = math.max(0, CompareHeight(frame) - frame.rowsViewport:GetHeight())
+	frame.wheelTarget =
+		math.max(0, math.min(maximum, (frame.wheelTarget or session.scrollPixels or 0) - delta * ROW_HEIGHT * 1.5))
+	frame.wheelSession = session
+	frame:SetScript("OnUpdate", function(_, elapsed)
+		if self.partyQuestCompareSession ~= session or frame.displaySession ~= session then
+			StopCompareScroll(frame)
+			return
+		end
+		if self:IsWorkBlocked("foreign_frame_mutation") then
+			return
+		end
+		if frame.wheelTarget == nil then
+			return
+		end
+		local current = session.scrollPixels or 0
+		local target = math.min(frame.wheelTarget, math.max(0, CompareHeight(frame) - frame.rowsViewport:GetHeight()))
+		frame.wheelTarget = target
+		local nextValue = current + (target - current) * (1 - math.exp(-18 * math.min(elapsed, 0.1)))
+		local done = math.abs(target - nextValue) < 0.5
+		ScrollCompare(self, frame, session, done and target or nextValue)
+		if done then
+			StopCompareScroll(frame)
+		end
+	end)
+end
+
 function QuestTogether:CreatePartyQuestCompareWindow()
 	if self.partyQuestCompareWindow then
 		return self.partyQuestCompareWindow
@@ -132,18 +766,41 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	if not self:CanAccessForeignFrame(parent) then
 		return nil
 	end
-	local width = math.min(1180, parent:GetWidth() * 0.94)
-	local frame = Window(self, width, 590, L("Party Quest Compare"))
-	frame:SetScale(math.min(1, parent:GetHeight() * 0.94 / 590))
+	local width = math.max(MIN_WIDTH, math.min(1280, parent:GetWidth() * 0.94))
+	local frame = Window(self, width, 720, L("Party Quest Log"), true)
+	-- Use the ordinary panel layer; HIGH also covers client quest-log panels.
+	-- Top-level focus can reorder this window within MEDIUM.
+	frame:SetFrameStrata("MEDIUM")
+	local scale = math.min(1, parent:GetHeight() * 0.94 / 690, parent:GetWidth() * 0.94 / width)
+	frame:SetScale(scale)
 	self.partyQuestCompareWindow = frame
-	frame.summary = Label(frame, 20, -47, width - 40, "")
-	frame.filter = Checkbox(self, frame, 16, -69, L("Hide quests I don't have"), function(check)
-		self:SetOption("compareHideOtherQuests", check:GetChecked() == true)
-		if self.partyQuestCompareSession then
-			self.partyQuestCompareSession.offset = 0
+	frame.expansionAnimator = self:CreatePartyQuestUIFrame("Frame", nil, frame)
+	frame.summary = Label(frame, 20, -47, width - 40, "", "GameFontHighlight")
+	frame.searchLabel = Label(frame, 20, -80, 65, L("Search:"), "GameFontHighlight")
+	frame.search = self:CreatePartyQuestUIFrame("EditBox", nil, frame, "InputBoxTemplate")
+	frame.search:SetPoint("TOPLEFT", 88, -74)
+	frame.search:SetSize(math.max(100, math.min(300, width - 500)), 26)
+	frame.search:SetAutoFocus(false)
+	frame.search:SetMaxLetters(96)
+	frame.search:SetScript("OnTextChanged", function(edit)
+		if not frame.rendering then
+			self:SetPartyQuestCompareFilter("search", edit:GetText())
 		end
-		self:QueuePartyQuestCompareRender()
 	end)
+	frame.search:SetScript("OnEscapePressed", function(edit)
+		edit:ClearFocus()
+	end)
+	frame.search:SetScript("OnEnterPressed", function(edit)
+		edit:ClearFocus()
+	end)
+	frame.filter = Button(self, frame, width - 386, -74, 124, L("Filters"), function(button)
+		self:ShowPartyQuestCompareFilters(button)
+	end)
+	frame.reset = Button(self, frame, width - 250, -74, 100, L("Reset"), function()
+		self:ResetPartyQuestCompareFilters()
+	end)
+	frame.activeFilters = Label(frame, 20, -111, width - 62, "", "GameFontHighlight")
+	frame.activeFilters:SetMaxLines(1)
 	frame.refresh = Button(self, frame, width - 140, -72, 112, L("Refresh"), function()
 		self:RefreshPartyRoster()
 		self:RefreshPartyQuestCompare()
@@ -158,6 +815,12 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 		frame:Hide()
 	end)
 	frame:SetScript("OnHide", function(hiddenFrame)
+		StopCompareScroll(frame)
+		StopExpansion(frame)
+		if frame.resizing then
+			frame:StopMovingOrSizing()
+			frame.resizing = nil
+		end
 		-- Parent visibility changes must not leave a still-shown window with
 		-- stale rows and no session when the parent becomes visible again.
 		if not hiddenFrame:IsShown() then
@@ -166,54 +829,105 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	end)
 
 	frame.viewport = self:CreatePartyQuestUIFrame("ScrollFrame", nil, frame)
-	frame.viewport:SetPoint("TOPLEFT", 20, -110)
-	frame.viewport:SetSize(width - 62, VISIBLE_ROWS * ROW_HEIGHT + 40)
+	frame.viewport:SetPoint("TOPLEFT", 20, -140)
+	frame.viewport:SetSize(width - 62, VISIBLE_ROWS * ROW_HEIGHT + 78)
 	frame.content = self:CreatePartyQuestUIFrame("Frame", nil, frame.viewport)
-	frame.content:SetSize(QUEST_WIDTH + ACTION_WIDTH, VISIBLE_ROWS * ROW_HEIGHT + 40)
+	frame.content:SetSize(QUEST_WIDTH + ACTION_WIDTH, VISIBLE_ROWS * ROW_HEIGHT + 78)
 	frame.viewport:SetScrollChild(frame.content)
-	frame.questHeader = Label(frame.content, 4, 0, QUEST_WIDTH - 8, L("QUEST"), "GameFontNormalSmall")
-	frame.headers, frame.rows = {}, {}
-	for i = 1, VISIBLE_ROWS do
-		local row = self:CreatePartyQuestUIFrame("Frame", nil, frame.content)
-		row:SetPoint("TOPLEFT", 0, -36 - (i - 1) * ROW_HEIGHT)
-		row:SetSize(QUEST_WIDTH + ACTION_WIDTH, ROW_HEIGHT)
-		row.background = row:CreateTexture(nil, "BACKGROUND")
-		row.background:SetAllPoints()
-		row.background:SetColorTexture(1, 1, 1, i % 2 == 0 and 0.055 or 0.015)
-		row.title = Label(row, 4, -6, QUEST_WIDTH - 12, "")
-		row.title:SetMaxLines(1)
-		row:EnableMouse(true)
-		row:SetScript("OnEnter", function()
-			if row.data then
-				frame.detail:SetText(
-					row.data.title
-						.. " (#"
-						.. row.data.questId
-						.. ")"
-						.. (row.data.owner and (L(" — Request from ") .. row.data.owner) or "")
-				)
+	frame.questHeader = Label(frame.content, 4, 0, QUEST_WIDTH - 8, L("QUEST"), "GameFontNormal")
+	frame.rowsViewport = self:CreatePartyQuestUIFrame("ScrollFrame", nil, frame.content)
+	frame.rowsViewport:SetPoint("TOPLEFT", 0, -78)
+	frame.rowsViewport:SetSize(QUEST_WIDTH + ACTION_WIDTH, VISIBLE_ROWS * ROW_HEIGHT)
+	frame.rowsContent = self:CreatePartyQuestUIFrame("Frame", nil, frame.rowsViewport)
+	frame.rowsContent:SetSize(QUEST_WIDTH + ACTION_WIDTH, (VISIBLE_ROWS * 2 + 2) * ROW_HEIGHT)
+	frame.rowsViewport:SetScrollChild(frame.rowsContent)
+	frame.headers, frame.headerAccents, frame.rows = {}, {}, {}
+	frame.focusHeaders, frame.focusButtons, frame.headerStatuses = {}, {}, {}
+	frame.followStatus = Label(frame.content, 4, -26, QUEST_WIDTH - 130, "", "GameFontHighlightSmall")
+	frame.followStatus:SetHeight(44)
+	frame.stopFollowing = Button(self, frame.content, QUEST_WIDTH - 124, -32, 116, L("Stop following"), function()
+		self:StopPartyQuestFollow()
+	end)
+	frame.stopFollowing:Hide()
+	local function EnsureRows(count)
+		for i = #frame.rows + 1, count do
+			local clip = self:CreatePartyQuestUIFrame("ScrollFrame", nil, frame.rowsContent)
+			local row = self:CreatePartyQuestUIFrame("Frame", nil, clip)
+			row.clip = clip
+			clip:SetScrollChild(row)
+			row:SetSize(QUEST_WIDTH + ACTION_WIDTH, ROW_HEIGHT)
+			row.paper = row:CreateTexture(nil, "BACKGROUND", nil, -1)
+			row.panelEdges = {}
+			for edge = 1, 4 do
+				row.panelEdges[edge] = row:CreateTexture(nil, "ARTWORK")
+				row.panelEdges[edge]:SetColorTexture(0.32, 0.22, 0.10, 0.65)
 			end
-		end)
-		row.cells = {}
-		row.action = Button(self, row, QUEST_WIDTH, -2, ACTION_WIDTH - 12, "", function()
-			local data = row.data
-			if not data or row.session ~= self.partyQuestCompareSession then
-				return
-			end
-			if data.action == "share" then
-				self:SharePartyDiffQuest(data.questId)
-			elseif data.action == "request" then
-				self:RequestPartyQuestShare(data.questId, data.owner)
-			end
-		end)
-		row.hint = Label(row, QUEST_WIDTH, -7, ACTION_WIDTH - 8, "")
-		row.hint:SetMaxLines(2)
-		row.hint:SetHeight(ROW_HEIGHT - 2)
-		row.hint:SetJustifyV("MIDDLE")
-		frame.rows[i] = row
+			row.background = row:CreateTexture(nil, "BACKGROUND")
+			row.background:SetAllPoints()
+			ColorPanel(row.background, 1, 1, 1, i % 2 == 0 and 0.055 or 0.015)
+			row.expander = Label(row, 6, -8, 18, "", "GameFontNormalLarge")
+			row.expander:SetTextColor(0.4, 0.25, 0.08)
+			row.title = Label(row, 28, -5, QUEST_WIDTH - 36, "", "GameFontHighlightLarge")
+			row.partySummary = Label(row, 28, -25, QUEST_WIDTH - 36, "", "GameFontHighlight")
+			row.partySummary:SetMaxLines(1)
+			row.accent = row:CreateTexture(nil, "ARTWORK")
+			row.accent:SetPoint("TOPLEFT", 8, 0)
+			row.accent:SetSize(2, ROW_HEIGHT)
+			row.accent:SetColorTexture(0.46, 0.30, 0.12, 0.5)
+			row.progressTrack = row:CreateTexture(nil, "ARTWORK")
+			row.progressTrack:SetPoint("TOPLEFT", 44, -32)
+			row.progressTrack:SetHeight(3)
+			row.progressTrack:SetColorTexture(0.3, 0.2, 0.08, 0.15)
+			row.progressFill = row:CreateTexture(nil, "OVERLAY")
+			row.progressFill:SetPoint("TOPLEFT", 44, -32)
+			row.progressFill:SetHeight(3)
+			row.hover = row:CreateTexture(nil, "BORDER")
+			row.hover:SetAllPoints()
+			ColorPanel(row.hover, 0.35, 0.24, 0.10, 0.08)
+			ShowPanel(row.hover, false)
+			row:SetScript("OnMouseUp", function(_, button)
+				if
+					button == "LeftButton"
+					and row.data
+					and not row.data.kind
+					and row.session == self.partyQuestCompareSession
+				then
+					frame.animateExpansion = { session = self.partyQuestCompareSession, questId = row.data.questId }
+					self:TogglePartyQuestObjectives(row.data.questId)
+				end
+			end)
+			row.title:SetMaxLines(1)
+			row:EnableMouse(true)
+			row:SetScript("OnEnter", function()
+				if row.data then
+					ShowPanel(row.hover, true)
+				end
+			end)
+			row:SetScript("OnLeave", function()
+				ShowPanel(row.hover, false)
+			end)
+			row.cells, row.cellShades = {}, {}
+			row.action = Button(self, row, QUEST_WIDTH, -9, ACTION_WIDTH - 12, "", function()
+				local data = row.data
+				if not data or row.session ~= self.partyQuestCompareSession then
+					return
+				end
+				if data.action == "share" then
+					self:SharePartyDiffQuest(data.questId)
+				elseif data.action == "request" then
+					self:RequestPartyQuestShare(data.questId, data.owner)
+				end
+			end)
+			row.hint = Label(row, QUEST_WIDTH, -7, ACTION_WIDTH - 8, "", "GameFontHighlight")
+			row.hint:SetMaxLines(2)
+			row.hint:SetHeight(ROW_HEIGHT - 8)
+			row.hint:SetJustifyV("MIDDLE")
+			frame.rows[i] = row
+		end
 	end
+	EnsureRows(VISIBLE_ROWS * 2 + 2)
 	frame.vertical = Slider(self, frame, true)
-	frame.vertical:SetPoint("TOPRIGHT", -18, -146)
+	frame.vertical:SetPoint("TOPRIGHT", -18, -188)
 	frame.vertical:SetSize(16, VISIBLE_ROWS * ROW_HEIGHT)
 	frame.vertical:SetMinMaxValues(0, 0)
 	frame.vertical:SetValueStep(1)
@@ -221,32 +935,135 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	frame.vertical:SetValue(0)
 	frame.vertical:SetScript("OnValueChanged", function(_, value)
 		local session = self.partyQuestCompareSession
-		if session and not frame.rendering then
-			session.offset = math.floor(value + 0.5)
-			self:RenderPartyQuestCompare()
+		if session and not frame.rendering and not frame.scrolling then
+			StopCompareScroll(frame)
+			ScrollCompare(self, frame, session, value)
 		end
 	end)
 	frame.viewport:EnableMouseWheel(true)
 	frame.viewport:SetScript("OnMouseWheel", function(_, delta)
-		frame.vertical:SetValue(frame.vertical:GetValue() - delta * 3)
+		WheelCompare(self, frame, delta)
+	end)
+	frame.rowsViewport:EnableMouseWheel(true)
+	frame.rowsViewport:SetScript("OnMouseWheel", function(_, delta)
+		WheelCompare(self, frame, delta)
 	end)
 	frame.horizontal = Slider(self, frame, false)
-	frame.horizontal:SetPoint("TOPLEFT", 26, -520)
+	frame.horizontal:SetPoint("TOPLEFT", 26, -618)
 	frame.horizontal:SetSize(width - 70, 16)
 	frame.horizontal:SetMinMaxValues(0, 0)
 	frame.horizontal:SetValue(0)
-	frame.horizontal:SetValueStep(20)
+	frame.horizontal:SetValueStep(1)
 	frame.horizontal:SetScript("OnValueChanged", function(_, value)
 		frame.viewport:SetHorizontalScroll(value)
 	end)
-	frame.detail = Label(
-		frame,
-		20,
-		-543,
-		width - 40,
-		L("Ready = ready to turn in. Unknown = no complete snapshot; use Refresh to retry.")
-	)
-	frame.footer = Label(frame, 20, -566, width - 40, "")
+	for _, text in ipairs({
+		frame.summary,
+		frame.searchLabel,
+		frame.activeFilters,
+		frame.questHeader,
+	}) do
+		text:SetTextColor(0.27, 0.19, 0.10)
+	end
+	-- Layout changes use the cached display model, so dragging never performs
+	-- quest reads or starts communication. Grow the reusable row pool only as needed.
+	function frame:Layout()
+		local w, h = self:GetWidth(), self:GetHeight()
+		local rowsHeight = math.max(42, h - 258)
+		self.title:SetWidth(w - 100)
+		self.summary:SetWidth(w - 40)
+		self.search:SetWidth(math.max(100, math.min(300, w - 500)))
+		for _, control in ipairs({ { self.filter, 386 }, { self.reset, 250 }, { self.refresh, 140 } }) do
+			control[1]:ClearAllPoints()
+			control[1]:SetPoint("TOPLEFT", w - control[2], -74)
+		end
+		self.activeFilters:SetWidth(w - 62)
+		self.viewport:SetSize(w - 62, rowsHeight + 78)
+		self.content:SetHeight(rowsHeight + 78)
+		self.rowsViewport:SetHeight(rowsHeight)
+		local capacity = 2 * math.ceil(rowsHeight / ROW_HEIGHT) + 2
+		EnsureRows(capacity)
+		self.rowsContent:SetHeight(#self.rows * ROW_HEIGHT)
+		self.vertical:SetHeight(rowsHeight)
+		self.horizontal:ClearAllPoints()
+		self.horizontal:SetPoint("BOTTOMLEFT", 26, 18)
+		self.horizontal:SetWidth(w - 70)
+	end
+	local screenWidth, screenHeight = parent:GetWidth(), parent:GetHeight()
+	frame:SetResizable(true)
+	function frame:UpdateResizeBounds(memberCount)
+		local minimum = MinimumWidth(memberCount)
+		if self.minimumWidth == minimum then
+			return
+		end
+		self.minimumWidth = minimum
+		-- A growing party must still fit on a small display. Do not increase
+		-- the scale again on departure and unexpectedly enlarge the window.
+		scale = math.min(scale, screenWidth * 0.94 / minimum)
+		self:SetScale(scale)
+		local maxWidth = math.max(minimum, math.min(1600, screenWidth * 0.98 / scale))
+		local maxHeight = math.max(500, math.min(1100, screenHeight * 0.98 / scale))
+		if type(self.SetResizeBounds) == "function" then
+			self:SetResizeBounds(minimum, 500, maxWidth, maxHeight)
+		else
+			self:SetMinResize(minimum, 500)
+			self:SetMaxResize(maxWidth, maxHeight)
+		end
+		if self:GetWidth() < minimum then
+			self:SetSize(minimum, self:GetHeight())
+		end
+	end
+	frame:UpdateResizeBounds(self.partyQuestCompareSession and #self.partyQuestCompareSession.members or 1)
+	frame.resizeGrip = self:CreatePartyQuestUIFrame("Button", nil, frame)
+	frame.resizeGrip:SetSize(24, 24)
+	frame.resizeGrip:SetPoint("BOTTOMRIGHT", -1, 0)
+	frame.resizeGrip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+	frame.resizeGrip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+	frame.resizeGrip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+	frame.resizeGrip:SetScript("OnMouseDown", function(_, button)
+		if button ~= "LeftButton" or self:IsWorkBlocked("foreign_frame_mutation") then
+			return
+		end
+		frame.resizing = true
+		-- Match PanelResizeButtonMixin: preserve the cursor-to-grip offset.
+		frame:StartSizing("BOTTOMRIGHT", true)
+	end)
+	frame.resizeGrip:SetScript("OnMouseUp", function()
+		if frame.resizing then
+			frame:StopMovingOrSizing()
+			frame.resizing = nil
+		end
+	end)
+	frame:SetScript("OnSizeChanged", function()
+		if self:IsWorkBlocked("foreign_frame_mutation") then
+			if frame.resizing then
+				frame:StopMovingOrSizing()
+				frame.resizing = nil
+			end
+			self:QueuePartyQuestCompareRender()
+			return
+		end
+		frame:Layout()
+		local session = self.partyQuestCompareSession
+		if not session or frame.displaySession ~= session then
+			return
+		end
+		local contentWidth =
+			math.max(frame.viewport:GetWidth(), QUEST_WIDTH + #session.members * MEMBER_WIDTH + ACTION_WIDTH)
+		frame.content:SetWidth(contentWidth)
+		frame.rowsViewport:SetWidth(contentWidth)
+		frame.rowsContent:SetWidth(contentWidth)
+		local maximum = math.max(0, contentWidth - frame.viewport:GetWidth())
+		frame.horizontal:SetMinMaxValues(0, maximum)
+		frame.horizontal:SetValue(math.min(frame.horizontal:GetValue(), maximum))
+		if maximum > 0 then
+			frame.horizontal:Show()
+		else
+			frame.horizontal:Hide()
+		end
+		ScrollCompare(self, frame, session, session.scrollPixels or 0, true)
+	end)
+	frame:Layout()
 	return frame
 end
 
@@ -256,14 +1073,22 @@ function QuestTogether:QueuePartyQuestCompareRender()
 		return
 	end
 	self:ScheduleDeferredWork("foreign_frame_mutation", "party_compare_render", function()
-		if self.partyQuestCompareSession == session then self:RenderPartyQuestCompare() end
+		if self.partyQuestCompareSession == session then
+			self:RenderPartyQuestCompare()
+		end
 	end, 0.05, "party compare render")
 end
 
 function QuestTogether:QueuePartyQuestTitleRefresh(rows)
 	local session, api = self.partyQuestCompareSession, self.API or {}
-	if not session or session.titleRefreshPending or type(api.RequestLocalizedQuestTitle) ~= "function"
-		or type(api.GetLocalizedQuestTitle) ~= "function" then return end
+	if
+		not session
+		or session.titleRefreshPending
+		or type(api.RequestLocalizedQuestTitle) ~= "function"
+		or type(api.GetLocalizedQuestTitle) ~= "function"
+	then
+		return
+	end
 	local now = self:SafeToNumber(api.GetTime and api.GetTime()) or 0
 	for _, row in ipairs(rows) do
 		local attempt = session.titleRequests and session.titleRequests[row.questId]
@@ -273,7 +1098,9 @@ function QuestTogether:QueuePartyQuestTitleRefresh(rows)
 			session.titleRefreshPending = true
 			self:ScheduleDeferredWork("quest_snapshot_refresh", "party_compare_titles", function()
 				session.titleRefreshPending = nil
-				if self.partyQuestCompareSession == session then self:RenderPartyQuestCompare() end
+				if self.partyQuestCompareSession == session then
+					self:RenderPartyQuestCompare()
+				end
 			end, 30, "party compare titles")
 			return
 		end
@@ -285,47 +1112,190 @@ function QuestTogether:RenderPartyQuestCompare()
 	if not frame or not session or self:IsWorkBlocked("foreign_frame_mutation") then
 		return
 	end
-	local rows = self:BuildPartyQuestDiffRows()
+	frame:UpdateResizeBounds(#session.members)
+	frame:Layout()
+	local theme = self:GetScrollWindowTheme()
+	local dark = theme.dark
+	frame.parchment:SetVertexColor(unpack(theme.tint))
+	frame.title:SetTextColor(unpack(theme.heading))
+	for _, label in ipairs({
+		frame.summary,
+		frame.searchLabel,
+		frame.activeFilters,
+		frame.questHeader,
+	}) do
+		label:SetTextColor(unpack(theme.muted))
+	end
+	local quests = self:BuildPartyQuestDiffRows()
+	local rows = self:BuildPartyQuestCompareDisplayRows(quests)
 	-- The isolated debug preview supplies its own title and has no mode.
 	if session.mode then
-		frame.title:SetText(session.mode == "target" and L("Compare Quests") or L("Party Quest Compare"))
+		frame.title:SetText(session.mode == "target" and L("Compare Quests") or L("Party Quest Log"))
 	end
-	local width = QUEST_WIDTH + #session.members * MEMBER_WIDTH + ACTION_WIDTH
+	local width = math.max(frame.viewport:GetWidth(), QUEST_WIDTH + #session.members * MEMBER_WIDTH + ACTION_WIDTH)
 	local actionX = width - ACTION_WIDTH
 	frame.rendering = true
-	frame.filter:SetChecked(self:GetOption("compareHideOtherQuests") == true)
+	local filters = self:GetPartyQuestCompareFilters()
+	local filterCount, filterLabel = self:GetPartyQuestCompareFilterLabel()
+	frame.filter:SetText(filterCount > 0 and string.format(L("Filters (%d)"), filterCount) or L("Filters"))
+	frame.activeFilters:SetText(filterLabel ~= "" and filterLabel or L("All quests · Any progress · Any action"))
+	frame.reset:SetEnabled(filterCount > 0 or filters.search ~= "")
+	if frame.search:GetText() ~= filters.search then
+		frame.search:SetText(filters.search)
+	end
 	frame.content:SetWidth(width)
+	frame.rowsViewport:SetWidth(width)
+	frame.rowsContent:SetWidth(width)
+	if frame.displaySession ~= session then
+		StopCompareScroll(frame)
+		StopExpansion(frame)
+	end
+	frame.displaySession = session
+	PrepareExpansions(self, frame, session, rows)
 	local ready = 0
 	for i, member in ipairs(session.members) do
 		if member.state == "ready" then
 			ready = ready + 1
 		end
 		if not frame.headers[i] then
-			frame.headers[i] = Label(frame.content, 0, 0, MEMBER_WIDTH - 6, "", "GameFontNormalSmall")
+			frame.headers[i] = Label(frame.content, 0, 0, MEMBER_WIDTH - 6, "", "GameFontNormal")
+			frame.headerAccents[i] = frame.content:CreateTexture(nil, "ARTWORK")
+			frame.headerAccents[i]:SetSize(COLUMN_WIDTH, 3)
+			frame.headerAccents[i]:SetPoint("TOPLEFT", ColumnLeft(i), -72)
 		end
 		local header = frame.headers[i]
+		local r, g, b = MemberColor(self, member.classFile)
+		header:SetTextColor(r, g, b)
+		frame.headerAccents[i]:SetColorTexture(r, g, b, 1)
+		frame.headerAccents[i]:Show()
 		header:ClearAllPoints()
-		header:SetPoint("TOPLEFT", QUEST_WIDTH + (i - 1) * MEMBER_WIDTH, 0)
-		header:SetHeight(32)
-		header:SetText(
-			(member.isLocal and L("You") or member.name)
-				.. "\n"
-				.. (member.state == "ready" and L("Synced") or member.state == "loading" and (L("Loading") .. "…") or L("No snapshot"))
+		header:SetPoint("TOPLEFT", ColumnLeft(i) + 8, -6)
+		header:SetHeight(16)
+		header:SetMaxLines(1)
+		header:SetJustifyV("TOP")
+		header:SetText(member.isLocal and L("You") or member.name)
+		if not frame.headerStatuses[i] then
+			frame.headerStatuses[i] = Label(frame.content, 0, 0, COLUMN_WIDTH - 16, "", "GameFontHighlightSmall")
+		end
+		local status = frame.headerStatuses[i]
+		status:ClearAllPoints()
+		status:SetPoint("TOPLEFT", ColumnLeft(i) + 8, -23)
+		status:SetHeight(14)
+		status:SetTextColor(unpack(theme.muted))
+		status:SetText(
+			member.state == "ready" and L("Synced")
+				or member.state == "loading" and (L("Loading") .. "…")
+				or L("No snapshot")
 		)
+		status:Show()
+		local enabled = session.mode ~= "target" and self.GetPartyFocusLabel ~= nil
+		if not frame.focusHeaders[i] then
+			frame.focusHeaders[i] = Label(frame.content, 0, 0, MEMBER_WIDTH - 8, "", "GameFontHighlightSmall")
+			frame.focusHeaders[i]:SetHeight(24)
+			frame.focusHeaders[i]:SetJustifyV("TOP")
+			frame.focusHeaders[i]:SetMaxLines(2)
+			local button = self:CreatePartyQuestUIFrame("Button", nil, frame.content)
+			frame.focusButtons[i] = button
+			-- Decoration stays beneath the existing header text. The transparent
+			-- button owns input and the small downward menu arrow.
+			button.paper = frame.content:CreateTexture(nil, "BACKGROUND")
+			button.paper:SetAllPoints(button)
+			button.hover = frame.content:CreateTexture(nil, "BORDER")
+			button.hover:SetAllPoints(button)
+			ShowPanel(button.hover, false)
+			button.arrow = {}
+			for line = 1, 5 do
+				local strip = button:CreateTexture(nil, "ARTWORK")
+				strip:SetSize(11 - line * 2, 1)
+				strip:SetPoint("TOPRIGHT", button, "TOPRIGHT", -5 - line, -9 - line)
+				button.arrow[line] = strip
+			end
+			local function Leave()
+				if QuestTogether.LibChev.CanMutateOwnedRegion(button.hover) then
+					ShowPanel(button.hover, false)
+				end
+				self:HideSettingsTooltip(button)
+			end
+			button:SetScript("OnEnter", function()
+				if
+					not button.navClickable
+					or self.partyQuestCompareSession ~= button.navSession
+					or self:IsWorkBlocked("foreign_frame_mutation")
+				then
+					return
+				end
+				ShowPanel(button.hover, true)
+				self:ShowSettingsTooltip(button, button.navName, L("Click to open this player's quest focus menu."))
+			end)
+			button:SetScript("OnLeave", Leave)
+			button:SetScript("OnHide", function()
+				Leave()
+				if QuestTogether.LibChev.CanMutateOwnedRegion(button.paper) then
+					ShowPanel(button.paper, false)
+				end
+			end)
+			button:SetScript("OnClick", function()
+				Leave()
+				if
+					self.partyQuestCompareSession ~= button.navSession or self:IsWorkBlocked("foreign_frame_mutation")
+				then
+					return
+				end
+				self:CreatePartyQuestFilterMenu(button, function(_, root)
+					if self.partyQuestCompareSession == button.navSession then
+						self:PopulatePartyFocusMenu(root, button.navName)
+					end
+				end)
+			end)
+		end
+		local focus, button = frame.focusHeaders[i], frame.focusButtons[i]
+		focus:ClearAllPoints()
+		focus:SetPoint("TOPLEFT", ColumnLeft(i) + 8, -42)
+		focus:SetWidth(COLUMN_WIDTH - 16)
+		focus:SetTextColor(unpack(theme.body))
+		focus:SetText(enabled and self:GetPartyFocusLabel(member.name) or "")
+		button:ClearAllPoints()
+		button:SetPoint("TOPLEFT", ColumnLeft(i), 0)
+		button:SetSize(COLUMN_WIDTH, 70)
+		button.navSession, button.navName = session, member.name
+		local clickable = enabled and not member.isLocal
+		button.navClickable = clickable
+		button:SetEnabled(clickable)
+		header:SetWidth(COLUMN_WIDTH - (clickable and 30 or 16))
+		LayoutPanel(button.paper, frame.content, "BACKGROUND", 0, ColumnLeft(i), 0, COLUMN_WIDTH, 70, true, false)
+		LayoutPanel(button.hover, frame.content, "BORDER", 0, ColumnLeft(i), 0, COLUMN_WIDTH, 70, true, false)
+		ColorPanel(button.paper, r, g, b, dark and 0.14 or 0.10)
+		ColorPanel(button.hover, r, g, b, dark and 0.22 or 0.16)
+		for _, strip in ipairs(button.arrow) do
+			strip:SetColorTexture(r, g, b, 1)
+		end
+		if clickable then
+			button:Show()
+			ShowPanel(button.paper, true)
+		else
+			button:Hide()
+			ShowPanel(button.paper, false)
+		end
+		focus:Show()
 		header:Show()
 	end
 	for i = #session.members + 1, #frame.headers do
 		frame.headers[i]:Hide()
+		frame.headerStatuses[i]:Hide()
+		frame.headerAccents[i]:Hide()
+		frame.focusHeaders[i]:Hide()
+		frame.focusButtons[i]:Hide()
 	end
-	local maxOffset = math.max(0, #rows - VISIBLE_ROWS)
-	session.offset = math.min(session.offset or 0, maxOffset)
-	frame.vertical:SetMinMaxValues(0, maxOffset)
-	frame.vertical:SetValue(session.offset)
-	if maxOffset > 0 then
-		frame.vertical:Show()
+
+	local followingText = session.mode ~= "target" and self.GetPartyFollowingText and self:GetPartyFollowingText() or ""
+	frame.followStatus:SetText(followingText)
+	frame.followStatus:SetTextColor(unpack(theme.body))
+	if followingText ~= "" then
+		frame.stopFollowing:Show()
 	else
-		frame.vertical:Hide()
+		frame.stopFollowing:Hide()
 	end
+
 	local maxHorizontal = math.max(0, width - frame.viewport:GetWidth())
 	local horizontalOffset = math.max(0, math.min(frame.horizontal:GetValue(), maxHorizontal))
 	frame.horizontal:SetMinMaxValues(0, maxHorizontal)
@@ -336,67 +1306,12 @@ function QuestTogether:RenderPartyQuestCompare()
 	else
 		frame.horizontal:Hide()
 	end
-	for i, row in ipairs(frame.rows) do
-		local data = rows[session.offset + i]
-		row.data = data
-		row.session = session
-		if not data then
-			row:Hide()
-		else
-			row:Show()
-			row:SetWidth(width)
-			row.title:SetText(data.title)
-			for j, status in ipairs(data.cells) do
-				if not row.cells[j] then
-					row.cells[j] = Label(row, QUEST_WIDTH + (j - 1) * MEMBER_WIDTH, -6, MEMBER_WIDTH - 6, "")
-				end
-				row.cells[j]:SetText(L(status))
-				row.cells[j]:SetTextColor(unpack(COLORS[status]))
-				row.cells[j]:Show()
-			end
-			for j = #data.cells + 1, #row.cells do
-				row.cells[j]:Hide()
-			end
-			row.action:ClearAllPoints()
-			row.action:SetPoint("TOPLEFT", actionX, -2)
-			row.hint:ClearAllPoints()
-			local status, waiting = self:GetPartyQuestShareStatus(data.questId)
-			if data.action and not waiting then
-				local cooldown = data.action == "request"
-						and self.GetPartyQuestShareRequestCooldown
-						and self:GetPartyQuestShareRequestCooldown(data.owner)
-					or 0
-				local coolingDown = cooldown > 0
-				row.action:SetText(
-					coolingDown and L("Please wait") or (data.action == "share" and L("Share") or L("Request Share"))
-				)
-				row.action:SetEnabled(not coolingDown and not self:IsWorkBlocked("quest_share"))
-				row.action:Show()
-				if status and status ~= "" then
-					-- Keep terminal feedback visible beside a retry action, without
-					-- increasing row height or changing the scroll pool's geometry.
-					row.action:SetWidth(140)
-					row.hint:SetPoint("TOPLEFT", actionX + 144, -1)
-					row.hint:SetWidth(ACTION_WIDTH - 148)
-					row.hint:SetText(L(status))
-					row.hint:Show()
-				else
-					row.action:SetWidth(ACTION_WIDTH - 12)
-					row.hint:Hide()
-				end
-			else
-				row.action:Hide()
-				row.hint:SetPoint("TOPLEFT", actionX, -1)
-				row.hint:SetWidth(ACTION_WIDTH - 8)
-				row.hint:SetText(L(status or data.hint or ""))
-				row.hint:Show()
-			end
-		end
-	end
+
 	frame.summary:SetText(
 		string.format(
-			L("%d quests shown · %d/%d snapshots received · Refresh to update quests"),
-			#rows,
+			L("%d of %d quests · %d/%d snapshots received"),
+			#quests,
+			session.totalQuests or #quests,
 			ready,
 			#session.members
 		)
@@ -412,23 +1327,19 @@ function QuestTogether:RenderPartyQuestCompare()
 	elseif not message and session.mode == "target" and not self:IsGroupedSender(session.targetName) then
 		message = L("Join a party together to share quests. The selected player needs QuestTogether to respond.")
 	elseif not message and #rows == 0 then
-		message = self:GetOption("compareHideOtherQuests") == true
-				and L("No quests to display. Uncheck ‘Hide quests I don't have’ to include other players' quests.")
+		message = (filterCount > 0 or filters.search ~= "")
+				and L("No quests match. Try another search or reset the filters.")
 			or L("No quests to display.")
 	elseif not message and #session.members == 1 then
 		message = L("Join a party to compare quests. Party members need QuestTogether to respond.")
 	end
-	frame.footer:SetText(
-		message
-			or string.format(
-				L("Showing %d–%d of %d · Shareability does not guarantee another player's eligibility."),
-				math.min(#rows, session.offset + 1),
-				math.min(#rows, session.offset + VISIBLE_ROWS),
-				#rows
-			)
-	)
+	frame.statusMessage = message
+	if message then
+		frame.summary:SetText(message)
+	end
+	ScrollCompare(self, frame, session, session.scrollPixels or 0, true)
 	frame.rendering = false
-	self:QueuePartyQuestTitleRefresh(rows)
+	self:QueuePartyQuestTitleRefresh(session.unfilteredQuests or quests)
 end
 
 function QuestTogether:CreatePartyQuestSharePrompt()
@@ -462,7 +1373,9 @@ end
 function QuestTogether:HideRetiredPartyRequestPrompt(frame, request)
 	if frame and (not request or frame.request ~= request) then
 		frame.request = nil
-		if self.LibChev.CanMutateOwnedRegion(frame) then frame:Hide() end
+		if self.LibChev.CanMutateOwnedRegion(frame) then
+			frame:Hide()
+		end
 	end
 end
 
@@ -470,7 +1383,10 @@ function QuestTogether:QueuePartyQuestSharePrompt()
 	if not self.partyQuestShareState then
 		return
 	end
-	self:HideRetiredPartyRequestPrompt(self.partyQuestSharePrompt, self.isEnabled and self:GetNextPartyQuestShareRequest() or nil)
+	self:HideRetiredPartyRequestPrompt(
+		self.partyQuestSharePrompt,
+		self.isEnabled and self:GetNextPartyQuestShareRequest() or nil
+	)
 	self:ScheduleDeferredWork("foreign_frame_mutation", "party_share_prompt", function()
 		self:RenderPartyQuestSharePrompt()
 	end, 0, "party share prompt")
@@ -483,7 +1399,9 @@ function QuestTogether:RenderPartyQuestSharePrompt()
 	if self:IsWorkBlocked("foreign_frame_mutation") then
 		return
 	end
-	if not request then return end
+	if not request then
+		return
+	end
 	frame = frame or self:CreatePartyQuestSharePrompt()
 	if not self.LibChev.CanMutateOwnedRegion(frame) then
 		return
@@ -491,17 +1409,22 @@ function QuestTogether:RenderPartyQuestSharePrompt()
 	if frame.request ~= request then
 		frame.request = request
 		frame.always:SetChecked(false)
-		frame.message:SetText(string.format(
-			L("%s would like you to share\n[%s]\nwith the party."),
-			request.sender, self:GetQuestTitle(request.questId)
-		))
+		frame.message:SetText(
+			string.format(
+				L("%s would like you to share\n[%s]\nwith the party."),
+				request.sender,
+				self:GetQuestTitle(request.questId)
+			)
+		)
 	end
 	frame:Show()
 end
 
 function QuestTogether:CreatePartyJoinPrompt()
 	local parent = self:GetPartyQuestUIParent()
-	if not self:CanAccessForeignFrame(parent) then return nil end
+	if not self:CanAccessForeignFrame(parent) then
+		return nil
+	end
 	local frame = Window(self, 580, 280, L("QuestTogether · Join request"))
 	frame:SetFrameStrata("FULLSCREEN_DIALOG")
 	frame:SetScale(math.min(1, parent:GetWidth() * 0.94 / 580, parent:GetHeight() * 0.94 / 280))
@@ -531,10 +1454,16 @@ function QuestTogether:RenderPartyJoinPrompt()
 	local request = self.isEnabled and self:GetNextPartyJoinRequest() or nil
 	local frame = rawget(self, "partyJoinPrompt")
 	self:HideRetiredPartyRequestPrompt(frame, request)
-	if self:IsWorkBlocked("foreign_frame_mutation") then return end
-	if not request then return end
+	if self:IsWorkBlocked("foreign_frame_mutation") then
+		return
+	end
+	if not request then
+		return
+	end
 	frame = frame or self:CreatePartyJoinPrompt()
-	if not self.LibChev.CanMutateOwnedRegion(frame) then return end
+	if not self.LibChev.CanMutateOwnedRegion(frame) then
+		return
+	end
 	if frame.request ~= request then
 		frame.request = request
 		frame.friends:SetChecked(self:GetOption("autoInviteFriends") == true)
@@ -548,18 +1477,26 @@ function QuestTogether:RenderPartyChatReminder(request)
 	local frameKey = request and request.preview and "partyChatReminderPreviewFrame" or "partyChatReminderFrame"
 	local frame = rawget(self, frameKey)
 	self:HideRetiredPartyRequestPrompt(frame, request)
-	if not request or self:IsWorkBlocked("foreign_frame_mutation") then return end
+	if not request or self:IsWorkBlocked("foreign_frame_mutation") then
+		return
+	end
 	local parent = self:GetPartyQuestUIParent()
-	if not self:CanAccessForeignFrame(parent) then return end
+	if not self:CanAccessForeignFrame(parent) then
+		return
+	end
 	local function Dimension(method)
 		local getter = self:GetAccessibleFrameMember(parent, method)
-		if type(getter) ~= "function" then return nil end
+		if type(getter) ~= "function" then
+			return nil
+		end
 		local ok, value = pcall(getter, parent)
 		value = ok and self:SafeToNumber(value) or nil
 		return value and value > 0 and value or nil
 	end
 	local width, parentHeight = Dimension("GetWidth"), Dimension("GetHeight")
-	if not width or not parentHeight then return end
+	if not width or not parentHeight then
+		return
+	end
 	if not frame then
 		frame = Window(self, 520, 300, L("QuestTogether · Party chat announcements"))
 		self[frameKey] = frame
@@ -572,14 +1509,30 @@ function QuestTogether:RenderPartyChatReminder(request)
 		frame.heading:SetWordWrap(true)
 		frame.preview = Label(frame, 94, -76, 398, "", "GameFontHighlightSmall")
 		frame.preview:SetTextColor(0.65, 0.65, 0.65)
-		frame.message = Label(frame, 24, -116, 472, L("Your quest updates can also appear in party chat, so party members without QuestTogether can follow along."), "GameFontHighlight")
+		frame.message = Label(
+			frame,
+			24,
+			-116,
+			472,
+			L(
+				"Your quest updates can also appear in party chat, so party members without QuestTogether can follow along."
+			),
+			"GameFontHighlight"
+		)
 		frame.message:SetWordWrap(true)
 		frame.memberPanel = NativeTexture(frame, nil, "BACKGROUND")
 		frame.memberPanel:SetColorTexture(0, 0, 0, 0.3)
 		frame.memberLabel = Label(frame, 36, 0, 448, L("QT hasn't been detected for:"), "GameFontNormalSmall")
 		frame.members = Label(frame, 36, 0, 448, "", "GameFontHighlight")
 		frame.members:SetWordWrap(true)
-		frame.hint = Label(frame, 24, 0, 472, L('Change this anytime in Settings under "Where to Announce".'), "GameFontHighlightSmall")
+		frame.hint = Label(
+			frame,
+			24,
+			0,
+			472,
+			L('Change this anytime in Settings under "Where to Announce".'),
+			"GameFontHighlightSmall"
+		)
 		frame.hint:SetTextColor(0.7, 0.7, 0.7)
 		frame.hint:SetWordWrap(true)
 		frame.remember = Checkbox(self, frame, 16, -210, L("Don't remind me again"))
@@ -598,19 +1551,27 @@ function QuestTogether:RenderPartyChatReminder(request)
 		frame.close:SetScript("OnClick", function()
 			-- Safe dismissal remains available during combat. A restricted close
 			-- does not acknowledge or save preferences; the reminder resumes later.
-			if self.LibChev.CanMutateOwnedRegion(frame) then frame:Hide() end
+			if self.LibChev.CanMutateOwnedRegion(frame) then
+				frame:Hide()
+			end
 			if self.LibChev.CanMutateOwnedRegion(frame.remember) then
 				self:AcknowledgePartyChatReminder(frame.request, frame.remember:GetChecked() == true, false)
 			end
 		end)
 		frame:SetScript("OnDragStart", function()
-			if not self:IsWorkBlocked("foreign_frame_mutation") and self.LibChev.CanMutateOwnedRegion(frame) then frame:StartMoving() end
+			if not self:IsWorkBlocked("foreign_frame_mutation") and self.LibChev.CanMutateOwnedRegion(frame) then
+				frame:StartMoving()
+			end
 		end)
 		frame:SetScript("OnDragStop", function()
-			if self.LibChev.CanMutateOwnedRegion(frame) then frame:StopMovingOrSizing() end
+			if self.LibChev.CanMutateOwnedRegion(frame) then
+				frame:StopMovingOrSizing()
+			end
 		end)
 	end
-	if not self.LibChev.CanMutateOwnedRegion(frame) then return end
+	if not self.LibChev.CanMutateOwnedRegion(frame) then
+		return
+	end
 	if frame.request ~= request then
 		frame.request = request
 		frame.remember:SetChecked(false)
@@ -624,7 +1585,8 @@ function QuestTogether:RenderPartyChatReminder(request)
 		end
 		local headingHeight = frame.heading:GetStringHeight()
 		Place(frame.preview, 94, 47 + headingHeight + 6)
-		local headerBottom = math.max(95, 47 + headingHeight + (request.preview and frame.preview:GetStringHeight() + 6 or 0))
+		local headerBottom =
+			math.max(95, 47 + headingHeight + (request.preview and frame.preview:GetStringHeight() + 6 or 0))
 		local y = headerBottom + 18
 		Place(frame.message, 24, y)
 		y = y + frame.message:GetStringHeight() + 16

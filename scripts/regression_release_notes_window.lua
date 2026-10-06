@@ -55,10 +55,16 @@ local function Region(addon, parent, kind)
 	function region:Hide()
 		self:Check(true)
 		self.shown = false
+		if self.scripts.OnHide then
+			self.scripts.OnHide(self)
+		end
 	end
 	function region:SetSize(width, height)
 		self:Check()
 		self.width, self.height = width, height
+		if self.scripts.OnSizeChanged then
+			self.scripts.OnSizeChanged(self, width, height)
+		end
 	end
 	function region:SetWidth(value)
 		self:Check()
@@ -92,9 +98,25 @@ local function Region(addon, parent, kind)
 		self:Check()
 		self.text = value
 	end
+	function region:SetTextColor(...)
+		self:Check()
+		self.textColor = { ... }
+	end
+	function region:SetVertexColor(...)
+		self:Check()
+		self.vertexColor = { ... }
+	end
+	function region:SetFrameStrata(value)
+		self:Check()
+		self.strata = value
+	end
 	function region:SetFontObject(value)
 		self:Check()
 		self.font = value
+	end
+	function region:GetStringWidth()
+		self:CheckRead()
+		return #(self.text or "") * 7
 	end
 	function region:GetStringHeight()
 		self:CheckRead()
@@ -149,6 +171,17 @@ local function Region(addon, parent, kind)
 			self.scripts.OnValueChanged(self, value)
 		end
 	end
+	function region:SetButtonState(state, locked)
+		self:Check()
+		self.buttonState, self.buttonStateLocked = state, locked
+	end
+	for _, method in ipairs({ "SetNormalTexture", "SetPushedTexture", "SetHighlightTexture", "SetDisabledTexture" }) do
+		region[method] = function(self, texture)
+			self:Check()
+			self.buttonTextures = self.buttonTextures or {}
+			self.buttonTextures[method] = texture
+		end
+	end
 	function region:SetEnabled(enabled)
 		self:Check()
 		self.enabled = enabled
@@ -157,9 +190,30 @@ local function Region(addon, parent, kind)
 		self:Check()
 		self.texture = value
 	end
+	function region:StartMoving()
+		self:Check()
+		self.moving = true
+	end
+	function region:StartSizing(point, fromMouse)
+		self:Check()
+		self.sizing = true
+		self.sizingPoint, self.sizingFromMouse = point, fromMouse
+		self.resizeArmedOnStart = self.resizing
+	end
+	function region:StopMovingOrSizing()
+		self:Check(true)
+		self.moving, self.sizing = false, false
+	end
+	function region:SetResizeBounds(...)
+		self:Check()
+		self.resizeBounds = { ... }
+	end
 	for _, method in ipairs({
-		"SetFrameStrata",
 		"SetAlpha",
+		"SetMovable",
+		"SetResizable",
+		"RegisterForDrag",
+		"SetTexCoord",
 		"SetToplevel",
 		"SetFlattensRenderLayers",
 		"SetClampedToScreen",
@@ -168,15 +222,11 @@ local function Region(addon, parent, kind)
 		"SetHorizTile",
 		"SetVertTile",
 		"SetBlendMode",
-		"SetVertexColor",
 		"AddMaskTexture",
 		"SetColorTexture",
 		"SetJustifyH",
 		"SetJustifyV",
 		"SetWordWrap",
-		"SetNormalTexture",
-		"SetPushedTexture",
-		"SetHighlightTexture",
 		"EnableMouseWheel",
 		"SetOrientation",
 		"SetValueStep",
@@ -190,9 +240,15 @@ local function Region(addon, parent, kind)
 end
 
 local function Fixture()
-	local addon = setmetatable({ regions = {}, frames = {}, settingsOpened = 0 }, { __index = QuestTogether })
+	local addon = setmetatable(
+		{ options = {}, regions = {}, frames = {}, settingsOpened = 0 },
+		{ __index = QuestTogether }
+	)
 	addon.parent = Region(addon, nil, "Parent")
 	addon.parent.width, addon.parent.height = 1920, 1080
+	function addon:GetOption(key)
+		return self.options[key]
+	end
 	function addon:GetReleaseNotesUIParent()
 		return self.parent
 	end
@@ -244,8 +300,9 @@ Register("release notes window sizes to content and reuses only owned frames", f
 	local frame, frameCount = a.releaseNotesWindow, #a.frames
 	assert(frame:IsVisible())
 	Equal(frame.title.text, "QuestTogether 5.9.2")
-	Equal(frame.logo.texture, "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon")
-	assert(-frame.labels[1].points[1][3] > frame.logo.height, "welcome text must clear the logo")
+	Equal(frame.headerLogo.texture, "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon")
+	Equal(frame.logo, nil)
+	Equal(frame.labels[1].points[1][3], 0)
 	Equal(frame.labels[1].text, "Welcome to QuestTogether")
 	Equal(frame.labels[3].text, "Latest changes")
 	assert(frame.labels[4].text:find("Improvement 1", 1, true))
@@ -271,13 +328,15 @@ Register("release notes window sizes to content and reuses only owned frames", f
 	assert(a:RenderReleaseNotesWindow(Notes(1), "5.10.0", false))
 	frame.close.scripts.OnClick({})
 	Equal(frame:IsVisible(), false)
-	assert(frame.footer.text:find("/qt notes", 1, true))
+	Equal(frame.discord.label.text, "Join our Discord")
 end)
 
 Register("release notes browse history by page or dated picker and reopen at latest", function()
 	local a = Fixture()
 	a.hasLoggedIn, a.db = true, { global = {} }
-	a.GetAddonVersion = function() return "5.9.2" end
+	a.GetAddonVersion = function()
+		return "5.9.2"
+	end
 	a.releaseNotes = Notes(2)
 	a.releaseNotesDates = { ["5.9.2"] = "2026-09-27" }
 	local older, oldest = Notes(40), Notes(1)
@@ -290,17 +349,37 @@ Register("release notes browse history by page or dated picker and reopen at lat
 	assert(a:OpenReleaseNotes())
 	local frame = a.releaseNotesWindow
 	Equal(a.releaseNotesBrowser.index, 1)
-	Equal(frame.navigation[2].enabled, false)
 	Equal(frame.navigation[4].enabled, false)
-	frame.navigation[1].scripts.OnClick({})
-	Equal(frame.title.text, "QuestTogether 5.9.1")
-	Equal(frame.navigation[4].enabled, true)
-	assert(frame.maximumScroll > 0 and frame.partnerExamples.shown)
-	frame.scroll.scripts.OnMouseWheel({}, -10)
-	assert(frame.scrollOffset > 0)
+	Equal(frame.navigation[5].enabled, false)
+	Equal(#frame.navigation, 5)
+	assert(frame.navigation[1].enabled)
+	for _, index in ipairs({ 1, 2, 4, 5 }) do
+		local button = frame.navigation[index]
+		for _, method in ipairs({ "SetPushedTexture", "SetHighlightTexture", "SetDisabledTexture" }) do
+			Equal(button.buttonTextures[method].texture, button.buttonTextures.SetNormalTexture.texture)
+		end
+	end
+	frame.navigation[1].buttonState = "PUSHED"
 	frame.navigation[1].scripts.OnClick({})
 	Equal(a.releaseNotesBrowser.index, 3)
 	Equal(frame.navigation[1].enabled, false)
+	Equal(frame.navigation[1].buttonState, "NORMAL")
+	Equal(frame.navigation[1].buttonStateLocked, false)
+	Equal(frame.navigation[2].enabled, false)
+	frame.navigation[5].buttonState = "PUSHED"
+	frame.navigation[5].scripts.OnClick({})
+	Equal(frame.navigation[5].buttonState, "NORMAL")
+	Equal(frame.navigation[5].enabled, false)
+	Equal(a.releaseNotesBrowser.index, 1)
+	frame.navigation[2].scripts.OnClick({})
+	Equal(frame.title.text, "QuestTogether 5.9.1")
+	Equal(frame.navigation[5].enabled, true)
+	assert(frame.maximumScroll > 0 and frame.partnerExamples.shown)
+	frame.scroll.scripts.OnMouseWheel({}, -10)
+	assert(frame.scrollOffset > 0)
+	frame.navigation[2].scripts.OnClick({})
+	Equal(a.releaseNotesBrowser.index, 3)
+	Equal(frame.navigation[2].enabled, false)
 	Equal(frame.scrollOffset, 0)
 	Equal(frame.partnerExamples.shown, false)
 	Equal(a:ShowReleaseNotesPage(4), false)
@@ -308,34 +387,34 @@ Register("release notes browse history by page or dated picker and reopen at lat
 	Equal(a:ShowReleaseNotesPage(1.5), false)
 	frame.navigation[3].scripts.OnClick({})
 	assert(a.releaseNotesBrowser.history)
-	Equal(frame.logo.shown, false)
-	assert(frame.historyRows[3].label.text:find("2026-09-26", 1, true))
+	Equal(frame.logo, nil)
+	assert(frame.historyRows[3].date.text:find("2026-09-26", 1, true))
 	frame.historyRows[2].scripts.OnClick({})
 	Equal(a.releaseNotesBrowser.index, 2)
 	Equal(a.releaseNotesBrowser.history, false)
-	Equal(frame.logo.shown, true)
+	Equal(frame.headerLogo.shown, true)
 	Equal(frame.historyRows[2].shown, false)
 	Equal(a.db.global.releaseNotesSeenVersion, "5.9.2")
 	local frames = #a.frames
 	frame.navigation[3].scripts.OnClick({})
 	frame.navigation[3].scripts.OnClick({})
 	Equal(#a.frames, frames)
-	frame.navigation[4].scripts.OnClick({})
+	frame.navigation[5].scripts.OnClick({})
 	Equal(a.releaseNotesBrowser.index, 1)
-	Equal(frame.navigation[4].enabled, false)
+	Equal(frame.navigation[5].enabled, false)
 	frame.navigation[3].scripts.OnClick({})
-	Equal(frame.navigation[4].enabled, true)
-	frame.navigation[4].scripts.OnClick({})
+	Equal(frame.navigation[5].enabled, true)
+	frame.navigation[5].scripts.OnClick({})
 	Equal(a.releaseNotesBrowser.history, false)
-	Equal(frame.navigation[4].enabled, false)
-	frame.navigation[1].scripts.OnClick({})
+	Equal(frame.navigation[5].enabled, false)
+	frame.navigation[2].scripts.OnClick({})
 	frame.close.scripts.OnClick({})
 	assert(a:OpenReleaseNotes())
 	Equal(a.releaseNotesBrowser.index, 1)
 	Equal(a.releaseNotesBrowser.history, false)
 	-- Retained UI callbacks must respect restrictions and never acknowledge history.
 	a.blocked = true
-	frame.navigation[1].scripts.OnClick({})
+	frame.navigation[2].scripts.OnClick({})
 	frame.historyRows[3].scripts.OnClick({})
 	Equal(a.releaseNotesBrowser.index, 1)
 	Equal(a:ShowReleaseNotesPage(2), false)
@@ -532,7 +611,7 @@ end)
 
 Register("release notes visual examples occupy scroll space and hide when absent", function()
 	local a = Fixture()
-	local notes = Notes()
+	local notes = Notes(8)
 	assert(a:RenderReleaseNotesWindow(notes, "5.13.0", false))
 	local frame = a.releaseNotesWindow
 	local initialHeight = frame.content.height
@@ -573,7 +652,7 @@ Register("release notes render translated content with owned controls in every l
 		assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
 		Equal(a.releaseNotesWindow.labels[1].text, QuestTogether.TranslateForLocale("What's new", locale))
 		Equal(a.releaseNotesWindow.labels[2].text, notes.welcome)
-		Equal(a.releaseNotesWindow.footer.text, QuestTogether.TranslateForLocale("Read this again: /qt notes", locale))
+		Equal(a.releaseNotesWindow.discord.label.text, QuestTogether.TranslateForLocale("Join our Discord", locale))
 	end
 	QuestTogether.localizationTestLocale = previous
 end)
@@ -586,5 +665,145 @@ Register("client locale renders current notes and window navigation", function()
 	assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
 	Equal(a.releaseNotesWindow.labels[1].text, QuestTogether.TranslateForLocale("What's new", locale))
 	Equal(a.releaseNotesWindow.labels[2].text, notes.welcome)
-	Equal(a.releaseNotesWindow.footer.text, QuestTogether.TranslateForLocale("Read this again: /qt notes", locale))
+	Equal(a.releaseNotesWindow.discord.label.text, QuestTogether.TranslateForLocale("Join our Discord", locale))
 end, { locale = "client" })
+
+Register("release notes share the scroll theme without resetting browsing or acknowledging versions", function()
+	local a = Fixture()
+	local notes = Notes(40)
+	notes.sections[1].illustration = "quest-partners"
+	assert(a:RenderReleaseNotesWindow(notes, "6.2.3", false))
+	local frame = a.releaseNotesWindow
+	Equal(frame.strata, "MEDIUM")
+	Equal(frame.parchmentPieces[1].texture, a:GetScrollWindowTheme().texture)
+	Equal(frame.parchmentPieces[1].vertexColor[1], 0.14)
+	Equal(frame.title.font, "GameFontNormalLarge")
+	Equal(frame.headerLogo.texture, "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon")
+	frame.scroll.scripts.OnMouseWheel({}, -3)
+	local offset, count, heading = frame.scrollOffset, #a.regions, frame.labels[1].text
+	a.releaseNotesBrowser = { index = 2, history = false }
+	a.db = { global = { releaseNotesSeenVersion = "6.2.3" } }
+	function a:ScheduleDeferredWork(kind, key, callback)
+		Equal(kind, "foreign_frame_mutation")
+		Equal(key, "release_notes_theme")
+		self.themeUpdate = callback
+	end
+	a.options.lightMode = true
+	a:QueueReleaseNotesThemeRefresh()
+	a.themeUpdate()
+	Equal(frame.parchmentPieces[1].vertexColor[1], 1)
+	assert(frame.labels[1].textColor[1] < 0.3)
+	assert(frame.labels[2].textColor[1] < 0.3)
+	for _, label in ipairs(frame.partnerExamples.themeLabels) do
+		assert(label.textColor[1] < 0.3)
+	end
+	Equal(frame.labels[1].text, heading)
+	Equal(frame.scrollOffset, offset)
+	Equal(a.releaseNotesBrowser.index, 2)
+	Equal(a.db.global.releaseNotesSeenVersion, "6.2.3")
+	Equal(#a.regions, count)
+	a.options.lightMode = false
+	a:QueueReleaseNotesThemeRefresh()
+	a.blocked = true
+	a.themeUpdate()
+	Equal(frame.parchmentPieces[1].vertexColor[1], 1)
+	a.blocked = false
+	a.themeUpdate()
+	Equal(frame.parchmentPieces[1].vertexColor[1], 0.14)
+	assert(frame.labels[2].textColor[1] > 0.8)
+	frame:Hide()
+	a.options.lightMode = true
+	a:QueueReleaseNotesThemeRefresh()
+	a.themeUpdate()
+	Equal(frame.shown, false)
+	local retired = a.themeUpdate
+	a.releaseNotesWindow = nil
+	a.releaseNotesBrowser = nil
+	assert(a:RenderReleaseNotesWindow(notes, "6.2.3", false))
+	local writes = frame.parchmentPieces[1].writes
+	retired()
+	Equal(frame.parchmentPieces[1].writes, writes)
+end)
+
+Register("release notes resizing preserves pages and scroll while fixed rolls contain controls", function()
+	local a = Fixture()
+	a.db = { global = { releaseNotesSeenVersion = "6.2.3" } }
+	assert(a:RenderReleaseNotesWindow(Notes(40), "6.2.3", false))
+	local f = a.releaseNotesWindow
+	Equal(#f.parchmentPieces, 9)
+	Equal(f.parchmentPieces[2].height, 48)
+	Equal(f.parchmentPieces[8].height, 40)
+	Equal(f.logo, nil)
+	assert(f.headerLogo.height + 11 <= 48)
+	assert(f.settings.height + 8 <= 40 and f.discord.height + 8 <= 40)
+	f.scroll.scripts.OnMouseWheel({}, -4)
+	local offset, count = f.scrollOffset, #a.regions
+	f.dragHandle.scripts.OnDragStart({})
+	assert(f.moving)
+	f.dragHandle.scripts.OnDragStop({})
+	Equal(f.moving, false)
+	local originalWidth, originalHeight = f.width, f.height
+	f.resizeGrip.scripts.OnMouseDown({}, "LeftButton")
+	assert(f.sizing)
+	Equal(f.sizingPoint, "BOTTOMRIGHT")
+	Equal(f.sizingFromMouse, true)
+	Equal(f.resizeArmedOnStart, true)
+	Equal(f.userWidth, originalWidth)
+	Equal(f.userHeight, originalHeight)
+	Equal(f.width, originalWidth)
+	Equal(f.height, originalHeight)
+	f:SetSize(520, 380)
+	Equal(f.width, 520)
+	Equal(f.height, 380)
+	Equal(f.scrollOffset, offset)
+	Equal(f.scroll.height, 380 - 108 - 56)
+	Equal(#a.regions, count)
+	Equal(f.rendering, nil)
+	f.resizeGrip.scripts.OnMouseUp({})
+	Equal(f.sizing, false)
+	assert(a:RenderReleaseNotesWindow(Notes(1), "6.2.2", false))
+	Equal(f.width, 520)
+	Equal(f.height, 380)
+	Equal(f.scrollOffset, 0)
+	Equal(a.db.global.releaseNotesSeenVersion, "6.2.3")
+	f.resizeGrip.scripts.OnMouseDown({}, "LeftButton")
+	a.blocked = true
+	local writes = f.writes
+	f.scripts.OnSizeChanged({}, 700, 500)
+	Equal(f.writes, writes)
+	f.close.scripts.OnClick({})
+	Equal(f.sizing, false)
+	Equal(f.resizing, nil)
+	a.blocked = false
+end)
+
+Register("release history uses reusable themed list rows with separate version date and title", function()
+	local a = Fixture()
+	local notes = Notes(2)
+	local older = Notes(2)
+	older.sections[1].title = string.rep("Long translated release title ", 8)
+	a.releaseNotesBrowser = {
+		index = 1,
+		history = true,
+		entries = {
+			{ version = "6.2.3", date = "2026-10-06", notes = notes },
+			{ version = "6.2.2", date = "2026-10-05", notes = older },
+		},
+	}
+	assert(a:RenderReleaseNotesWindow(notes, "6.2.3", false))
+	local f = a.releaseNotesWindow
+	Equal(f.historyRows[1].version.text, "6.2.3")
+	Equal(f.historyRows[1].date.text, "2026-10-06")
+	Equal(f.historyRows[1].label.text, "Latest changes")
+	assert(f.historyRows[2].height > f.historyRows[1].height)
+	for _, region in ipairs(a.regions) do
+		if region.parent == f.historyRows[1] then
+			Equal(region.template, nil)
+		end
+	end
+	local count = #a.regions
+	a.options.lightMode = true
+	assert(a:RenderReleaseNotesWindow(notes, "6.2.3", false))
+	Equal(#a.regions, count)
+	assert(f.historyRows[1].label.textColor[1] < 0.3)
+end)

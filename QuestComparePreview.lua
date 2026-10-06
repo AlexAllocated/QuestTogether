@@ -23,13 +23,38 @@ local QUESTS = {
 	{ title = "An Old Family Heirloom", shareable = false, progress = { "Have", false, false } },
 }
 
+local OBJECTIVES = {
+	{ "Recover shipment crates", "Search the wrecked wagon" },
+	{ "Coastal bandits defeated", "Find the bandit camp" },
+	{ "Gather watch supplies", "Deliver supplies to the watch" },
+	{ "Collect scattered ledger pages", "Return to the miller" },
+	{ "Quarry prowlers defeated", "Inspect the abandoned tools" },
+	{ "Letters delivered", "Speak to the harbormaster" },
+	{ "Orchard wolves defeated", "Check the damaged fence" },
+	{ "Collect lamp oil", "Relight the beacon" },
+	{ "Collect overdue payments", "Return to the innkeeper" },
+	{ "Gather lengths of twine", "Mend the fishing nets" },
+	{ "Recover lost belongings", "Find the traveler's family" },
+	{ "Collect smuggler markings", "Inspect the hidden landing" },
+	{ "Gather coastal herbs", "Return to the herbalist" },
+	{ "Collect courier satchels", "Find the courier's last camp" },
+	{ "Defeat creatures beneath the breakwater", "Inspect the flooded tunnel" },
+	{ "Recover heirloom fragments", "Speak to the family elder" },
+}
+
 local function Populate(preview)
 	local members = {
-		{ name = "Rowan-AeriePeak", state = "ready", isLocal = true },
-		{ name = "Aria-AeriePeak", state = "ready", supportsShareRequests = true },
-		{ name = "Borin-AeriePeak", state = "ready", supportsShareRequests = true },
+		{ name = "Rowan-AeriePeak", state = "ready", isLocal = true, classFile = "PALADIN" },
+		{ name = "Aria-AeriePeak", state = "ready", supportsShareRequests = true, classFile = "MAGE" },
+		{ name = "Borin-AeriePeak", state = "ready", supportsShareRequests = true, classFile = "WARRIOR" },
 	}
-	local session = { playerName = members[1].name, members = members, byName = {}, offset = 0 }
+	local session = {
+		playerName = members[1].name,
+		members = members,
+		byName = {},
+		offset = 0,
+		search = preview.partyQuestCompareSession and preview.partyQuestCompareSession.search or "",
+	}
 	for _, member in ipairs(members) do
 		member.entries = {}
 		session.byName[member.name] = member
@@ -47,7 +72,9 @@ local function Populate(preview)
 		end
 	end
 	preview.partyQuestCompareSession = session
+	preview.incompleteData = false
 	preview.statuses = {}
+	preview.previewFollowing, preview.previewFocus, preview.previewFollowStatus = nil, nil, nil
 end
 
 function QuestTogether:CreatePartyQuestComparePreview()
@@ -57,14 +84,53 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	-- methods below are shared. This controller has no API or comms adapters.
 	local preview = {
 		options = { compareHideOtherQuests = false },
+		GetScrollWindowTheme = self.GetScrollWindowTheme,
 		BuildPartyQuestDiffRows = self.BuildPartyQuestDiffRows,
+		BuildPartyQuestCompareDisplayRows = self.BuildPartyQuestCompareDisplayRows,
+		GetPartyQuestReadiness = self.GetPartyQuestReadiness,
 		CreatePartyQuestCompareWindow = self.CreatePartyQuestCompareWindow,
 	}
+	for _, method in ipairs({
+		"GetPartyQuestCompareFilters",
+		"SetPartyQuestCompareFilter",
+		"ResetPartyQuestCompareFilters",
+		"GetPartyQuestCompareFilterLabel",
+		"ShowPartyQuestCompareFilters",
+		"FilterPartyQuestCompareRows",
+	}) do
+		preview[method] = self[method]
+	end
+	function preview:CreatePartyQuestFilterMenu(frame, generator)
+		local session = self.partyQuestCompareSession
+		return owner:CreatePartyQuestFilterMenu(frame, function(menuOwner, root)
+			generator(menuOwner, root)
+			root:CreateDivider()
+			root:CreateCheckbox(L("Preview incomplete data"), function()
+				return self.incompleteData
+			end, function()
+				if self.partyQuestCompareSession ~= session then
+					return
+				end
+				self.incompleteData = not self.incompleteData
+				session.members[3].state = self.incompleteData and "timeout" or "ready"
+				self:QueuePartyQuestCompareRender()
+			end)
+		end)
+	end
 	function preview:GetPartyQuestUIParent()
 		return owner:GetPartyQuestUIParent()
 	end
+	function preview:GetClassColorCode(classFile)
+		return owner:GetClassColorCode(classFile)
+	end
 	function preview:CreatePartyQuestUIFrame(...)
 		return owner:CreatePartyQuestUIFrame(...)
+	end
+	function preview:ShowSettingsTooltip(...)
+		return owner:ShowSettingsTooltip(...)
+	end
+	function preview:HideSettingsTooltip(...)
+		return owner:HideSettingsTooltip(...)
 	end
 	function preview:CanAccessForeignFrame(...)
 		return owner:CanAccessForeignFrame(...)
@@ -73,14 +139,48 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		return owner:IsWorkBlocked(kind)
 	end
 	function preview:GetOption(key)
+		if key == "lightMode" then
+			return owner:GetOption(key)
+		end
 		return self.options[key]
 	end
 	function preview:SetOption(key, value)
 		self.options[key] = value
 	end
-	function preview:GetLocalizedQuestTitle() return nil end
+	function preview:GetLocalizedQuestTitle()
+		return nil
+	end
 	function preview:QueuePartyQuestTitleRefresh() end
 	function preview:RefreshPartyRoster() end
+	function preview:TogglePartyQuestObjectives(id)
+		local session = self.partyQuestCompareSession
+		if not session or self:IsWorkBlocked("foreign_frame_mutation") then
+			return
+		end
+		session.expandedQuestIds = session.expandedQuestIds or {}
+		session.expandedQuestIds[id] = not session.expandedQuestIds[id] or nil
+		for i, member in ipairs(session.members) do
+			local quest = member.entries[id]
+			local complete = quest and quest.isComplete
+			member.supportsObjectives = true
+			member.objectiveDetails = member.objectiveDetails or {}
+			member.objectiveDetails[id] = {
+				questId = id,
+				state = "ready",
+				objectives = {
+					{
+						text = OBJECTIVES[id][1],
+						kind = "item",
+						current = complete and 8 or (i * 2),
+						required = 8,
+						finished = complete,
+					},
+					{ text = OBJECTIVES[id][2], kind = "event", finished = complete or i == 2 },
+				},
+			}
+		end
+		self:QueuePartyQuestCompareRender()
+	end
 	function preview:CancelPartyQuestCompare()
 		self.partyQuestCompareSession = nil
 	end
@@ -88,11 +188,14 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		if self.partyQuestCompareSession and not self:IsWorkBlocked("foreign_frame_mutation") then
 			render(self)
 			self.partyQuestCompareWindow.summary:SetText(
-				string.format(
-					L("DEBUG PREVIEW · %d mock players · %d quests shown · Actions are simulated · Refresh resets mock data"),
-					#self.partyQuestCompareSession.members,
-					#self:BuildPartyQuestDiffRows()
-				)
+				self.partyQuestCompareWindow.statusMessage
+					or string.format(
+						L(
+							"DEBUG PREVIEW · %d mock players · %d quests shown · Actions are simulated · Refresh resets mock data"
+						),
+						#self.partyQuestCompareSession.members,
+						#self:BuildPartyQuestDiffRows()
+					)
 			)
 		end
 	end
@@ -128,6 +231,47 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	function preview:RequestPartyQuestShare(id, target)
 		return Simulate(self, id, "request", target)
 	end
+	function preview:GetPartyFocusLabel(name)
+		local session = self.partyQuestCompareSession
+		local member = session and session.byName[name]
+		if not member then
+			return L("Focus unavailable")
+		end
+		local id = member.isLocal and (self.previewFocus or 1) or (member.name == "Aria-AeriePeak" and 2 or 15)
+		return QUESTS[id].title
+	end
+	function preview:GetPartyFollowingText()
+		return self.previewFollowing
+				and (string.format(L("Following: %s"), self.previewFollowing) .. (self.previewFollowStatus and ("\n" .. self.previewFollowStatus) or ""))
+			or ""
+	end
+	function preview:StopPartyQuestFollow()
+		self.previewFollowing, self.previewFollowStatus = nil, nil
+		self:QueuePartyQuestCompareRender()
+	end
+	function preview:PopulatePartyFocusMenu(root, name)
+		local session = self.partyQuestCompareSession
+		local member = session and session.byName[name]
+		if not member or member.isLocal then
+			return
+		end
+		root:CreateTitle(self:GetPartyFocusLabel(name))
+		root:CreateButton(self.previewFollowing == name and L("Stop following") or L("Follow quest focus"), function()
+			if self.previewFollowing == name then
+				self:StopPartyQuestFollow()
+			else
+				self.previewFollowing = name
+				local id = name == "Aria-AeriePeak" and 2 or 15
+				if session.byName[session.playerName].entries[id] then
+					self.previewFocus, self.previewFollowStatus = id, nil
+				else
+					self.previewFollowStatus = L("You don't have this quest")
+				end
+				self:QueuePartyQuestCompareRender()
+			end
+		end)
+	end
+
 	return preview
 end
 
@@ -145,7 +289,7 @@ function QuestTogether:OpenPartyQuestComparePreview()
 	if not frame then
 		return false
 	end
-	frame.title:SetText(L("Party Quest Compare — Debug Preview"))
+	frame.title:SetText(L("Party Quest Log — Debug Preview"))
 	preview:RefreshPartyQuestCompare()
 	frame:Show()
 	return true

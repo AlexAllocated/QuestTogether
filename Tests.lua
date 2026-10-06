@@ -245,7 +245,7 @@ local function WithIsolatedState(testFn)
 			"announcementBubbleScreenHostFrame", "personalBubbleEditModeDialog", "mapWorkWakeFrame", "mapWorkWakeState",
 			"optionsFrame", "whereToAnnounceFrame", "questPlatesFrame", "groupsFrame", "announcementsFrame", "profilesFrame",
 			"personalBubbleEditSession", "announcementChannelLocalID", "legacyAnnouncementChannelLocalID", "channelOrderWork", "questCompareResponseQueue",
-			"partyChatReminderState", "partyChatReminderFrame", "partyChatReminderPreview", "partyChatReminderPreviewFrame", "partyJoinState", "partyVisualState", "partyJoinPrompt", "partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
+			"partyNavigationState", "partyWaypointPinState", "partyChatReminderState", "partyChatReminderFrame", "partyChatReminderPreview", "partyChatReminderPreviewFrame", "partyJoinState", "partyVisualState", "partyJoinPrompt", "partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
 			"minimapButton", "minimapTooltip", "minimapTooltipPendingHide", "minimapLauncherFrame", "minimapDragState", "minimapSuppressClick",
 			"settingsTooltip", "settingsTooltipOwner", "settingsTooltipPendingHide",
 			"releaseNotesWindow", "releaseNotesWakeFrame", "pendingReleaseNotes", "releaseNotesBrowser", "addonUpdateState",
@@ -4580,7 +4580,7 @@ QuestTogether:RegisterTest("quest clicks open Share journal and party compare wi
 		AssertEquals(root.buttons[2].label, "Open in Quest Journal")
 		AssertTrue(root.buttons[2].enabled)
 		AssertEquals(#state.opened, 0, "opening a menu must not open the journal")
-		AssertEquals(root.buttons[3].label, "Compare Party Quests")
+		AssertEquals(root.buttons[3].label, "Party Quest Log")
 		AssertTrue(root.buttons[3].enabled)
 		AssertEquals(state.compares, nil, "opening a menu must not open party compare")
 		AssertEquals(#root.dividers, 0)

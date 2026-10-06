@@ -135,6 +135,45 @@ return pushable end or nil,
 			assert(addon.API.OpenQTChatComposer() == false)
 			ChatFrameUtil, ChatFrame_OpenChat, addon.IsRuntimeRestricted = oldUtil, oldLegacy, oldRestricted
 		end
+		do
+			local oldMap, oldTrack, oldQuest, oldBlocked = C_Map, C_SuperTrack, C_QuestLog, addon.IsRuntimeRestricted
+			local blocked, active, id, owns, writes = false, true, 123, true, 0
+			local waypoint = { uiMapID = 37, position = { GetXY = function() return 0.4, 0.5 end } }
+			addon.IsRuntimeRestricted = function() return blocked end
+			C_Map = { GetUserWaypoint = function() return waypoint end }
+			C_QuestLog = { IsOnQuest = function() return owns end }
+			C_SuperTrack = {
+				IsSuperTrackingQuest = function() return active end,
+				GetSuperTrackedQuestID = function() return id end,
+				SetSuperTrackedQuestID = function(value) writes = writes + 1; id = value; active = true end,
+			}
+			local p = addon.API.GetPartyNavigationNativeState()
+			assert(p.questID == 123 and p.mapID == 37 and p.x == 0.4 and p.y == 0.5)
+			assert(addon.API.SetPartyNavigationQuest(456) == true and writes == 1)
+			owns = false; assert(addon.API.SetPartyNavigationQuest(789) == false and writes == 1)
+			owns = true; C_SuperTrack.SetSuperTrackedQuestID = function() writes = writes + 1 end
+			assert(addon.API.SetPartyNavigationQuest(789) == false and writes == 2)
+			active, waypoint = false, nil
+			p = addon.API.GetPartyNavigationNativeState(); assert(p.questID == 0 and p.mapID == 0)
+			for _, value in ipairs({ secret, inaccessible }) do
+				waypoint = value; assert(addon.API.GetPartyNavigationNativeState() == nil)
+				waypoint = { uiMapID = value, position = { GetXY = function() return 0.4, 0.5 end } }
+				assert(addon.API.GetPartyNavigationNativeState() == nil)
+				waypoint = { uiMapID = 37, position = value }
+				assert(addon.API.GetPartyNavigationNativeState() == nil)
+				waypoint = { uiMapID = 37, position = { GetXY = value } }
+				assert(addon.API.GetPartyNavigationNativeState() == nil)
+				C_SuperTrack.SetSuperTrackedQuestID = value
+				assert(addon.API.SetPartyNavigationQuest(123) == false)
+			end
+			blocked = true
+			C_Map.GetUserWaypoint = function() error("restricted read") end
+			assert(addon.API.GetPartyNavigationNativeState() == nil and addon.API.SetPartyNavigationQuest(123) == false)
+			blocked = false; C_Map, C_SuperTrack = {}, {}
+			p = addon.API.GetPartyNavigationNativeState(); assert(p.questID == -1 and p.mapID == -1)
+			C_Map, C_SuperTrack, C_QuestLog, addon.IsRuntimeRestricted = oldMap, oldTrack, oldQuest, oldBlocked
+			assert(inaccessibleReads == 0)
+		end
 		-- Native tracking is read-only: a waypoint is not a quest, even if a
 		-- previously tracked quest ID remains cached by the engine.
 		do
