@@ -722,6 +722,8 @@ local function Frame(parent)
 		SetShown(self, false)
 	end
 	function methods:SetAtlas(atlas) self.atlas = atlas end
+	function methods:GetAtlas() return self.atlas end
+	function methods:SetTexture(texture) self.texture, self.atlas = texture, nil end
 	function methods:SetDesaturated(value) self.desaturated = value end
 	-- These presentation-only methods are intentionally stubbed; behavioral
 	-- methods above are implemented and all other method names are rejected.
@@ -756,7 +758,6 @@ local function Frame(parent)
 		"SetBackdropColor",
 		"SetBackdropBorderColor",
 		"SetAllPoints",
-		"SetTexture",
 		"SetHorizTile",
 		"SetVertTile",
 		"SetOrientation",
@@ -3932,4 +3933,63 @@ QuestTogether:RegisterTest("closing native preview resumes an already applied re
 	Equal(a.nativeFocus, 101)
 	Equal(a.partyNavigationState.following, "Real Friend")
 	Equal(a.partyNavigationState.resuming, nil)
+end)
+
+QuestTogether:RegisterTest("reused focus textures reset atlas crops across readiness and selection changes", function()
+	local a = Fixture(nil, { Quest(1, "Recycled quest", false, false) })
+	AttachUI(a)
+	function a:GetPartyQuestFocusID() return self.focusID or 0 end
+	function a:GetPartyQuestFollowTarget() return self.followTarget end
+	a:OpenPartyQuestCompare(); a:Advance(0); a:RenderPartyQuestCompare()
+	local frame = a.partyQuestCompareWindow
+	local button = frame.rows[1].focusCells[1]
+	local appliedWithFullCrop = {}
+	for _, texture in ipairs({ button.normal, button.pushed, button.icon }) do
+		function texture:SetAtlas(atlas)
+			appliedWithFullCrop[self] = table.concat(self.texCoords or {}, ",") == "0,1,0,1"
+			self.atlas = atlas
+			-- Model a previously cropped atlas on this same recycled texture.
+			self.texCoords = { 0.7, 0.8, 0.2, 0.3 }
+		end
+		texture.texCoords = { 0.7, 0.8, 0.2, 0.3 }
+	end
+	local entry = a.partyQuestCompareSession.members[1].entries[1]
+	for _, state in ipairs({ { true, 1 }, { true, 0 }, { false, 0 }, { false, 1 }, { true, 1, "Friend-Realm" } }) do
+		entry.isComplete, a.focusID, a.followTarget = state[1], state[2], state[3]
+		a:RenderPartyQuestCompare()
+		Equal(frame.rows[1].focusCells[1], button)
+		for _, texture in ipairs({ button.normal, button.pushed, button.icon }) do
+			assert(appliedWithFullCrop[texture], "previous atlas crop must be reset before applying new artwork")
+			Equal(texture.desaturated, state[3] ~= nil)
+		end
+		Equal(button.icon.atlas, state[1] and "UI-QuestIcon-TurnIn-Normal"
+			or (state[2] == 1 and "Quest-In-Progress-Icon-Brown" or "Quest-In-Progress-Icon-yellow"))
+		Equal(button.icon:GetWidth(), 16)
+		Equal(button.icon:GetHeight(), 16)
+	end
+end)
+
+QuestTogether:RegisterTest("focus artwork falls back on failed or silently rejected atlas changes and recovers", function()
+	for _, failure in ipairs({ "missing", "throw", "false", "unchanged", "cleared", "unreadable" }) do
+		local a = Fixture(nil, { Quest(1, "Ready quest", false, true) }); AttachUI(a)
+		a:OpenPartyQuestCompare(); a:Advance(0); a:RenderPartyQuestCompare()
+		local button = a.partyQuestCompareWindow.rows[1].focusCells[1]
+		local icon = button.icon
+		local originalSet, originalGet = icon.SetAtlas, icon.GetAtlas
+		icon.atlas, icon.texCoords = "Quest-In-Progress-Icon-yellow", { 0.7, 0.8, 0.2, 0.3 }
+		icon.SetAtlas = function(self)
+			if failure == "throw" then error("fixture missing atlas") end
+			if failure == "false" then return false end
+			if failure == "cleared" then self.atlas = nil end
+		end
+		if failure == "missing" then icon.SetAtlas = false end
+		if failure == "unreadable" then icon.GetAtlas = function() error("fixture unavailable atlas") end end
+		a:RenderPartyQuestCompare()
+		Equal(icon.texture, "Interface\\GossipFrame\\ActiveQuestIcon")
+		Equal(table.concat(icon.texCoords, ","), "0,1,0,1")
+		assert(button:IsShown())
+		icon.SetAtlas, icon.GetAtlas = originalSet, originalGet
+		a:RenderPartyQuestCompare()
+		Equal(icon.atlas, "UI-QuestIcon-TurnIn-Normal")
+	end
 end)

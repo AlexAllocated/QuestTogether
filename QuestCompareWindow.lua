@@ -336,8 +336,21 @@ end
 -- QT owns these buttons and textures; use Blizzard's ordinary mini quest POI
 -- artwork without registering remote quests with Blizzard's POI button mixins.
 local function FocusAtlas(texture, atlas, fallback)
-	if not texture.SetAtlas or not pcall(texture.SetAtlas, texture, atlas) then
+	-- Like Blizzard's POIButton_SetAtlas: recycled textures must discard the
+	-- previous atlas crop before switching between progress dots and turn-in art.
+	texture:SetTexCoord(0, 1, 0, 1)
+	local applied = false
+	if texture.SetAtlas then
+		local ok, result = pcall(texture.SetAtlas, texture, atlas)
+		applied = ok and result ~= false
+		if applied and texture.GetAtlas then
+			local readOK, current = pcall(texture.GetAtlas, texture)
+			applied = readOK and current == atlas
+		end
+	end
+	if not applied then
 		texture:SetTexture(fallback)
+		texture:SetTexCoord(0, 1, 0, 1)
 	end
 end
 local function CreateFocusButton(addon, row, column)
