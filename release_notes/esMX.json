@@ -1,41 +1,25 @@
 {
-  "source_sha256": "3b293ec67fa3c85ef6184861c74e946ee08cf16dc122b6114f4908952ccca099",
+  "source_sha256": "0a12a063adc9ac68dbc22cb23653b5251cf3dc9294c5d9cbc2ba2c61eced96ca",
   "notes": {
-    "version": "6.4.2",
-    "welcome": "¡Gracias por usar QuestTogether! Esta actualización agrega más control sobre las instantáneas de progreso de misiones, las visualizaciones de ubicación de jugadores y la accesibilidad de las ventanas. Las opciones son más fáciles de ajustar, y Discord sigue siendo el mejor lugar para enviar comentarios y recibir ayuda.",
+    "version": "6.4.3",
+    "welcome": "Correcciones del enfoque de misión y de las descripciones de grupo, con opciones de mapa más sencillas.",
     "sections": [
       {
-        "title": "Actualizaciones del Registro de misiones de grupo",
+        "title": "Tu misión enfocada",
         "items": [
-          "Los encabezados de jugador ahora muestran qué tan reciente es cada instantánea de misiones. Abre el menú de encabezado de un jugador para actualizar solo a ese jugador sin actualizar a todos.",
-          "Los filtros ahora incluyen una opción opcional de actualización automática. Al activarla, el Registro de misiones de grupo se actualiza aproximadamente cada 30 segundos mientras la ventana real está abierta.",
-          "La actualización conserva tu búsqueda, las misiones expandidas, la posición horizontal y la posición visible de la misión cuando es posible mientras llegan nuevos datos de instantáneas.",
-          "Las etiquetas de enfoque de misión ahora explican los datos en espera, vencidos o no compatibles, o indican «No compartido o no disponible» cuando QT no puede distinguir esos casos. El menú también avisa si seguir crearía un bucle."
+          "Tu encabezado del Registro de misiones de grupo ahora lee directamente tu misión enfocada, incluso cuando juegas en solitario o tienes desactivado compartir el enfoque. Cambiar la misión seleccionada para la navegación actualiza el encabezado sin necesidad de presionar Actualizar."
         ]
       },
       {
-        "title": "Accesibilidad y diseño de ventanas",
+        "title": "Miembros del grupo en las descripciones",
         "items": [
-          "Las opciones ahora incluyen opciones de Accesibilidad para la escala de ventana del 80% al 150% y movimiento reducido para desplazamiento y expansión de objetivos instantáneos.",
-          "La escala de ventana agranda el texto y los controles a la vez, pero puede limitarse cuando sea necesario para mantener la ventana completa en pantalla.",
-          "El Registro de misiones de grupo y la ventana de bienvenida ahora guardan su tamaño y posición relativa a la pantalla por perfil, y las ventanas de QuestTogether se reajustan después de cambios en el tamaño de pantalla o la escala de la IU.",
-          "Usa Restablecer diseño de ventanas en Accesibilidad, o /qt resetlayout, para borrar los diseños guardados de ventanas de QuestTogether y volver a centrarlas."
+          "En grupos de hasta cinco jugadores, la descripción muestra inmediatamente al jugador bajo el cursor junto al líder mientras se carga la lista completa. El mensaje de carga solo aparece si aún faltan otros miembros. Los grupos más grandes siguen mostrando solo al líder."
         ]
       },
       {
-        "title": "Controles de ubicación de jugadores",
+        "title": "Opciones de mapa más sencillas",
         "items": [
-          "La visualización en el mapa del mundo y el minimapa ahora se puede activar o desactivar por separado de compartir ubicación, para que puedas ocultar los marcadores locales sin cambiar lo que compartes.",
-          "El filtro de ubicación de jugadores ahora ofrece todos los jugadores de QuestTogether, compañeros de misiones o solo grupo.",
-          "Mostrar siempre mi grupo está activado de forma predeterminada, así que los miembros del grupo seguirán apareciendo al usar el filtro de compañeros de misiones si sus permisos de ubicación lo permiten."
-        ]
-      },
-      {
-        "title": "Correcciones y pulido",
-        "items": [
-          "La detección experimental de capas conserva las mismas opciones y la misma IU, con un manejo de solicitudes más fluido cuando la evidencia local cambia o los candidatos cercanos están en tiempo de reutilización.",
-          "Los cuadros de diálogo de QuestTogether ahora manejan Escape mediante sus acciones normales de cierre, y el Registro de misiones de grupo puede asignarse a una tecla en el menú nativo de Atajos de teclado sin ninguna tecla predeterminada configurada.",
-          "Pasa el cursor sobre las filas de misiones y objetivos para leer el texto completo. Los deslizadores de escala de ventana y alcance cercano ahora tienen pistas más claras con bordes oscuros para mejorar su visibilidad."
+          "Una sola casilla para mostrar a otros jugadores en el mapa y el minimapa controla ahora ambas vistas. Compartir tu propia ubicación sigue siendo independiente. Si cualquiera de las vistas estaba activada, ambas quedan activadas; si las dos estaban desactivadas, la visualización permanece desactivada."
         ]
       }
     ]

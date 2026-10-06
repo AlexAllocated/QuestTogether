@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.4.3
+
+Korrekturen am Quest-Fokus und an Gruppen-Tooltips sowie einfachere Karteneinstellungen.
+
+### Dein Quest-Fokus
+
+- Deine Überschrift im Gruppen-Questlog liest die aktuell fokussierte Quest jetzt direkt aus, auch wenn du allein bist oder die Freigabe des Quest-Fokus deaktiviert ist. Änderungen an deiner Navigationsquest aktualisieren die Überschrift ohne manuelles Aktualisieren.
+
+### Gruppenlisten in Tooltips
+
+- Bei Gruppen mit bis zu fünf Spielern zeigt der Tooltip sofort den Spieler unter dem Mauszeiger neben dem Anführer, während die vollständige Liste geladen wird. Der Ladehinweis erscheint nur, solange weitere Mitglieder fehlen. Bei größeren Gruppen wird weiterhin nur der Anführer angezeigt.
+
+### Einfachere Karteneinstellungen
+
+- Ein einziges Kontrollkästchen zum Anzeigen anderer Spieler auf Karte und Minimap steuert jetzt beide Ansichten. Die Freigabe deines eigenen Standorts bleibt unabhängig davon. War zuvor mindestens eine Ansicht aktiviert, bleiben beide sichtbar; waren beide deaktiviert, bleibt die Anzeige aus.
+
 ## 6.4.2
 
 Danke, dass du QuestTogether verwendest! Dieses Update bietet mehr Kontrolle über Quest-Fortschritts-Schnappschüsse, Spielerstandort-Anzeigen und die Zugänglichkeit von Fenstern. Einstellungen lassen sich leichter anpassen, und Discord ist weiterhin der beste Ort für Feedback und Support.

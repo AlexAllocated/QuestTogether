@@ -4,6 +4,22 @@
 
 [Other languages](changelogs/README.md)
 
+## 6.4.3
+
+Fixes for quest focus and party tooltips, plus simpler map display settings.
+
+### Your quest focus
+
+- Your Party Quest Log header now reads your own focused quest directly, including while solo or with quest-focus sharing off. Changing your super-tracked quest updates the header without needing Refresh.
+
+### Party tooltip rosters
+
+- Small-party tooltips immediately list the hovered player alongside the leader while the full roster loads. The loading message appears only when other members are still missing; groups larger than five still show only the leader.
+
+### Simpler map settings
+
+- One Show other players on the map and minimap checkbox now controls both displays. Sharing your own location stays independent. Existing settings keep display enabled if either map was enabled, or disabled if both were off.
+
 ## 6.4.2
 
 Thanks for using QuestTogether! This update adds more control over quest progress snapshots, player location displays, and window accessibility. Settings are easier to tune, and Discord is still the best place for feedback and support.

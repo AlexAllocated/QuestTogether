@@ -3,41 +3,25 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "6.4.2",
-	welcome = "Thanks for using QuestTogether! This update adds more control over quest progress snapshots, player location displays, and window accessibility. Settings are easier to tune, and Discord is still the best place for feedback and support.",
+	version = "6.4.3",
+	welcome = "Fixes for quest focus and party tooltips, plus simpler map display settings.",
 	sections = {
 		{
-			title = "Party Quest Log updates",
+			title = "Your quest focus",
 			items = {
-				"Player headers now show how fresh each quest snapshot is. Open a player header menu to refresh just that player without refreshing everyone.",
-				"Filters now includes an optional auto-refresh setting. When enabled, the Party Quest Log refreshes about every 30 seconds while the real window is open.",
-				"Refreshing keeps your search, expanded quests, horizontal position, and visible quest position when possible while new snapshot data arrives.",
-				"Quest focus labels now explain waiting, expired and unsupported data, or say \"not shared or unavailable\" when QT cannot distinguish those cases. The menu also warns when following would create a loop.",
+				"Your Party Quest Log header now reads your own focused quest directly, including while solo or with quest-focus sharing off. Changing your super-tracked quest updates the header without needing Refresh.",
 			},
 		},
 		{
-			title = "Accessibility and window layout",
+			title = "Party tooltip rosters",
 			items = {
-				"Settings now includes Accessibility options for window scale from 80% to 150% and reduced motion for instant scrolling and objective expansion.",
-				"Window scale enlarges text and controls together, but may be capped when needed to keep the full window on screen.",
-				"The Party Quest Log and welcome window now save their size and screen-relative position per profile, and QuestTogether windows are refit after display size or UI scale changes.",
-				"Use Reset window layout in Accessibility, or /qt resetlayout, to clear saved QuestTogether window layouts and recenter them.",
+				"Small-party tooltips immediately list the hovered player alongside the leader while the full roster loads. The loading message appears only when other members are still missing; groups larger than five still show only the leader.",
 			},
 		},
 		{
-			title = "Player location controls",
+			title = "Simpler map settings",
 			items = {
-				"World map and minimap display can now be toggled separately from location sharing, so you can hide local pins without changing what you share.",
-				"The player location filter now offers all QuestTogether players, questing partners, or party only.",
-				"Always show my party is on by default, so party members still appear when using the questing-partner filter if their location permissions allow it.",
-			},
-		},
-		{
-			title = "Fixes and polish",
-			items = {
-				"Experimental layer detection keeps the same settings and UI, with smoother request handling when local evidence changes or nearby candidates are cooling down.",
-				"QuestTogether dialogs now handle Escape through their normal close actions, and the Party Quest Log can be assigned a key in the native Key Bindings menu with no default key set.",
-				"Hover quest and objective rows to read their full text. The window-scale and nearby-range sliders now have brighter tracks with dark outlines for better visibility.",
+				"One Show other players on the map and minimap checkbox now controls both displays. Sharing your own location stays independent. Existing settings keep display enabled if either map was enabled, or disabled if both were off.",
 			},
 		},
 	},

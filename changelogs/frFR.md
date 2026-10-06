@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.4.3
+
+Corrections du suivi de quête et des infobulles de groupe, avec des réglages de carte simplifiés.
+
+### Votre quête suivie
+
+- Votre en-tête dans le journal des quêtes de groupe lit désormais directement votre quête suivie, même en solo ou lorsque le partage du suivi est désactivé. Changer la quête choisie pour la navigation met à jour l’en-tête sans actualisation manuelle.
+
+### Membres du groupe dans les infobulles
+
+- Pour les groupes de cinq joueurs maximum, l’infobulle affiche immédiatement le joueur survolé avec le chef pendant le chargement de la liste complète. Le message de chargement apparaît uniquement si d’autres membres manquent encore. Les groupes plus grands affichent toujours seulement le chef.
+
+### Réglages de carte simplifiés
+
+- Une seule case permettant d’afficher les autres joueurs sur la carte et la minicarte contrôle désormais les deux affichages. Le partage de votre position reste indépendant. Si l’un des affichages était activé, les deux restent activés ; si les deux étaient désactivés, l’affichage reste désactivé.
+
 ## 6.4.2
 
 Merci d’utiliser QuestTogether ! Cette mise à jour ajoute davantage de contrôle sur les instantanés de progression des quêtes, l’affichage de la position des joueurs et l’accessibilité des fenêtres. Les paramètres sont plus faciles à ajuster, et Discord reste le meilleur endroit pour les retours et l’assistance.

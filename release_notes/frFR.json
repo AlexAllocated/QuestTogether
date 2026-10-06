@@ -1,41 +1,25 @@
 {
-  "source_sha256": "3b293ec67fa3c85ef6184861c74e946ee08cf16dc122b6114f4908952ccca099",
+  "source_sha256": "0a12a063adc9ac68dbc22cb23653b5251cf3dc9294c5d9cbc2ba2c61eced96ca",
   "notes": {
-    "version": "6.4.2",
-    "welcome": "Merci d’utiliser QuestTogether ! Cette mise à jour ajoute davantage de contrôle sur les instantanés de progression des quêtes, l’affichage de la position des joueurs et l’accessibilité des fenêtres. Les paramètres sont plus faciles à ajuster, et Discord reste le meilleur endroit pour les retours et l’assistance.",
+    "version": "6.4.3",
+    "welcome": "Corrections du suivi de quête et des infobulles de groupe, avec des réglages de carte simplifiés.",
     "sections": [
       {
-        "title": "Mises à jour du journal des quêtes de groupe",
+        "title": "Votre quête suivie",
         "items": [
-          "Les en-têtes des joueurs indiquent désormais la fraîcheur de chaque instantané de quête. Ouvrez le menu d’en-tête d’un joueur pour actualiser uniquement ce joueur sans actualiser tout le monde.",
-          "Les filtres incluent désormais un paramètre optionnel d’actualisation automatique. Lorsqu’il est activé, le journal des quêtes de groupe s’actualise environ toutes les 30 secondes tant que la vraie fenêtre est ouverte.",
-          "L’actualisation conserve autant que possible votre recherche, les quêtes développées, la position horizontale et la position de quête visible pendant l’arrivée des nouvelles données d’instantané.",
-          "Les libellés de suivi de quête expliquent désormais les données en attente, expirées ou non prises en charge, ou indiquent « Non partagé ou indisponible » lorsque QT ne peut pas distinguer ces cas. Le menu avertit aussi des boucles de suivi."
+          "Votre en-tête dans le journal des quêtes de groupe lit désormais directement votre quête suivie, même en solo ou lorsque le partage du suivi est désactivé. Changer la quête choisie pour la navigation met à jour l’en-tête sans actualisation manuelle."
         ]
       },
       {
-        "title": "Accessibilité et disposition des fenêtres",
+        "title": "Membres du groupe dans les infobulles",
         "items": [
-          "Les paramètres incluent désormais des options d’accessibilité pour une échelle de fenêtre de 80 % à 150 % et une réduction des mouvements pour le défilement instantané et l’ouverture instantanée des objectifs.",
-          "L’échelle de fenêtre agrandit le texte et les commandes ensemble, mais peut être limitée si nécessaire pour garder toute la fenêtre à l’écran.",
-          "Le journal des quêtes de groupe et la fenêtre de bienvenue enregistrent désormais leur taille et leur position relative à l’écran par profil, et les fenêtres QuestTogether sont réajustées après les changements de taille d’affichage ou d’échelle de l’interface.",
-          "Utilisez Réinitialiser la disposition des fenêtres dans Accessibilité, ou /qt resetlayout, pour effacer les dispositions de fenêtres QuestTogether enregistrées et les recentrer."
+          "Pour les groupes de cinq joueurs maximum, l’infobulle affiche immédiatement le joueur survolé avec le chef pendant le chargement de la liste complète. Le message de chargement apparaît uniquement si d’autres membres manquent encore. Les groupes plus grands affichent toujours seulement le chef."
         ]
       },
       {
-        "title": "Commandes de position des joueurs",
+        "title": "Réglages de carte simplifiés",
         "items": [
-          "L’affichage sur la carte du monde et la minicarte peut désormais être activé ou désactivé séparément du partage de position, afin que vous puissiez masquer les repères locaux sans modifier ce que vous partagez.",
-          "Le filtre de position des joueurs propose désormais tous les joueurs QuestTogether, les partenaires de quête ou uniquement le groupe.",
-          "Toujours afficher mon groupe est activé par défaut, afin que les membres du groupe apparaissent quand même avec le filtre des partenaires de quête si leurs autorisations de position le permettent."
-        ]
-      },
-      {
-        "title": "Corrections et finitions",
-        "items": [
-          "La détection expérimentale de couche conserve les mêmes paramètres et la même interface, avec une gestion des requêtes plus fluide lorsque les indices locaux changent ou que les candidats proches sont en recharge.",
-          "Les boîtes de dialogue QuestTogether gèrent désormais Échap via leurs actions de fermeture normales, et une touche peut être assignée au journal des quêtes de groupe dans le menu natif Raccourcis clavier, sans touche définie par défaut.",
-          "Survolez les lignes de quêtes et d’objectifs pour lire leur texte complet. Les curseurs d’échelle de fenêtre et de portée à proximité ont désormais des pistes plus claires avec des contours sombres pour une meilleure visibilité."
+          "Une seule case permettant d’afficher les autres joueurs sur la carte et la minicarte contrôle désormais les deux affichages. Le partage de votre position reste indépendant. Si l’un des affichages était activé, les deux restent activés ; si les deux étaient désactivés, l’affichage reste désactivé."
         ]
       }
     ]

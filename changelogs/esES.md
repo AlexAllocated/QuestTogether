@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.4.3
+
+Correcciones del enfoque de misión y de las descripciones de grupo, con ajustes de mapa más sencillos.
+
+### Tu misión enfocada
+
+- Tu encabezado del Registro de misiones del grupo ahora lee directamente tu misión enfocada, incluso cuando juegas en solitario o tienes desactivado compartir el enfoque. Cambiar la misión seleccionada para la navegación actualiza el encabezado sin necesidad de pulsar Actualizar.
+
+### Miembros del grupo en las descripciones
+
+- En grupos de hasta cinco jugadores, la descripción muestra inmediatamente al jugador bajo el cursor junto al líder mientras se carga la lista completa. El mensaje de carga solo aparece si aún faltan otros miembros. Los grupos más grandes siguen mostrando solo al líder.
+
+### Ajustes de mapa más sencillos
+
+- Una sola casilla para mostrar a otros jugadores en el mapa y el minimapa controla ahora ambas vistas. Compartir tu propia ubicación sigue siendo independiente. Si cualquiera de las vistas estaba activada, ambas quedan activadas; si las dos estaban desactivadas, la visualización permanece desactivada.
+
 ## 6.4.2
 
 ¡Gracias por usar QuestTogether! Esta actualización añade más control sobre las instantáneas del progreso de las misiones, la visualización de la ubicación de los jugadores y la accesibilidad de las ventanas. Los ajustes son más fáciles de configurar, y Discord sigue siendo el mejor sitio para comentarios y asistencia.

@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.4.3
+
+Correções do foco de missão e das dicas de grupo, além de configurações de mapa mais simples.
+
+### Seu foco de missão
+
+- Seu cabeçalho no Registro de Missões do Grupo agora lê diretamente sua missão em foco, mesmo quando você está sozinho ou com o compartilhamento de foco desativado. Alterar a missão selecionada para navegação atualiza o cabeçalho sem precisar clicar em Atualizar.
+
+### Membros do grupo nas dicas
+
+- Em grupos de até cinco jogadores, as dicas mostram imediatamente o jogador sob o cursor junto com o líder enquanto a lista completa é carregada. A mensagem de carregamento aparece apenas quando ainda faltam outros membros. Grupos maiores continuam mostrando apenas o líder.
+
+### Configurações de mapa mais simples
+
+- Uma única caixa para mostrar outros jogadores no mapa e no minimapa agora controla ambas as exibições. Compartilhar sua própria localização continua independente. Se uma das exibições estava ativada, ambas ficam ativadas; se as duas estavam desativadas, a exibição permanece desativada.
+
 ## 6.4.2
 
 Obrigado por usar o QuestTogether! Esta atualização adiciona mais controle sobre os instantâneos de progresso de missões, a exibição da localização dos jogadores e a acessibilidade das janelas. As configurações estão mais fáceis de ajustar, e o Discord continua sendo o melhor lugar para feedback e suporte.

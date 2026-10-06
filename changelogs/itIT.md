@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.4.3
+
+Correzioni al focus missione e ai tooltip del gruppo, con impostazioni della mappa più semplici.
+
+### Il tuo focus missione
+
+- La tua intestazione nel Registro missioni del gruppo ora legge direttamente la missione selezionata per la navigazione, anche quando sei da solo o la condivisione del focus è disattivata. Cambiare la missione aggiorna l’intestazione senza dover premere Aggiorna.
+
+### Membri del gruppo nei tooltip
+
+- Per i gruppi fino a cinque giocatori, i tooltip mostrano subito il giocatore sotto il cursore insieme al capogruppo mentre viene caricato l’elenco completo. Il messaggio di caricamento appare solo quando mancano ancora altri membri. I gruppi più grandi continuano a mostrare solo il capogruppo.
+
+### Impostazioni della mappa più semplici
+
+- Un’unica casella per mostrare gli altri giocatori sulla mappa e sulla minimappa controlla ora entrambe le visualizzazioni. La condivisione della tua posizione resta indipendente. Se una delle visualizzazioni era attiva, entrambe restano attive; se entrambe erano disattivate, la visualizzazione resta disattivata.
+
 ## 6.4.2
 
 Grazie per usare QuestTogether! Questo aggiornamento aggiunge più controllo sulle istantanee dei progressi delle missioni, sulla visualizzazione della posizione dei giocatori e sull'accessibilità delle finestre. Le impostazioni sono più facili da regolare, e Discord resta il posto migliore per feedback e supporto.

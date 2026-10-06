@@ -1,41 +1,25 @@
 {
-  "source_sha256": "3b293ec67fa3c85ef6184861c74e946ee08cf16dc122b6114f4908952ccca099",
+  "source_sha256": "0a12a063adc9ac68dbc22cb23653b5251cf3dc9294c5d9cbc2ba2c61eced96ca",
   "notes": {
-    "version": "6.4.2",
-    "welcome": "Danke, dass du QuestTogether verwendest! Dieses Update bietet mehr Kontrolle über Quest-Fortschritts-Schnappschüsse, Spielerstandort-Anzeigen und die Zugänglichkeit von Fenstern. Einstellungen lassen sich leichter anpassen, und Discord ist weiterhin der beste Ort für Feedback und Support.",
+    "version": "6.4.3",
+    "welcome": "Korrekturen am Quest-Fokus und an Gruppen-Tooltips sowie einfachere Karteneinstellungen.",
     "sections": [
       {
-        "title": "Aktualisierungen am Gruppen-Questlog",
+        "title": "Dein Quest-Fokus",
         "items": [
-          "Spielerüberschriften zeigen jetzt an, wie aktuell jeder Quest-Schnappschuss ist. Öffne das Menü einer Spielerüberschrift, um nur diesen Spieler zu aktualisieren, ohne alle anderen zu aktualisieren.",
-          "Filter enthalten jetzt eine optionale Einstellung zur automatischen Aktualisierung. Wenn sie aktiviert ist, wird das Gruppen-Questlog etwa alle 30 Sekunden aktualisiert, während das eigentliche Fenster geöffnet ist.",
-          "Beim Aktualisieren bleiben deine Suche, aufgeklappte Quests, horizontale Position und sichtbare Questposition nach Möglichkeit erhalten, während neue Schnappschussdaten eintreffen.",
-          "Die Quest-Fokus-Anzeige erklärt jetzt wartende, abgelaufene und nicht unterstützte Daten. Wenn QT die Ursache nicht unterscheiden kann, zeigt sie „Nicht geteilt oder nicht verfügbar“. Das Menü warnt außerdem vor Schleifen beim Folgen."
+          "Deine Überschrift im Gruppen-Questlog liest die aktuell fokussierte Quest jetzt direkt aus, auch wenn du allein bist oder die Freigabe des Quest-Fokus deaktiviert ist. Änderungen an deiner Navigationsquest aktualisieren die Überschrift ohne manuelles Aktualisieren."
         ]
       },
       {
-        "title": "Zugänglichkeit und Fensterlayout",
+        "title": "Gruppenlisten in Tooltips",
         "items": [
-          "Einstellungen enthalten jetzt Zugänglichkeitsoptionen für eine Fensterskalierung von 80 % bis 150 % sowie reduzierte Bewegung für sofortiges Scrollen und sofortiges Aufklappen von Zielen.",
-          "Die Fensterskalierung vergrößert Text und Bedienelemente gemeinsam, kann aber bei Bedarf begrenzt werden, damit das gesamte Fenster auf dem Bildschirm bleibt.",
-          "Das Gruppen-Questlog und das Willkommensfenster speichern jetzt ihre Größe und bildschirmrelative Position pro Profil, und QuestTogether-Fenster werden nach Änderungen der Anzeigegröße oder UI-Skalierung neu angepasst.",
-          "Verwende Fensterlayout zurücksetzen in Zugänglichkeit oder /qt resetlayout, um gespeicherte QuestTogether-Fensterlayouts zu löschen und sie wieder zu zentrieren."
+          "Bei Gruppen mit bis zu fünf Spielern zeigt der Tooltip sofort den Spieler unter dem Mauszeiger neben dem Anführer, während die vollständige Liste geladen wird. Der Ladehinweis erscheint nur, solange weitere Mitglieder fehlen. Bei größeren Gruppen wird weiterhin nur der Anführer angezeigt."
         ]
       },
       {
-        "title": "Spielerstandort-Steuerung",
+        "title": "Einfachere Karteneinstellungen",
         "items": [
-          "Die Anzeige auf Weltkarte und Minimap kann jetzt getrennt von der Standortfreigabe umgeschaltet werden, sodass du lokale Markierungen ausblenden kannst, ohne zu ändern, was du teilst.",
-          "Der Spielerstandortfilter bietet jetzt alle QuestTogether-Spieler, Questpartner oder nur die Gruppe an.",
-          "Meine Gruppe immer anzeigen ist standardmäßig aktiviert, sodass Gruppenmitglieder weiterhin angezeigt werden, wenn der Questpartner-Filter verwendet wird, sofern ihre Standortberechtigungen dies zulassen."
-        ]
-      },
-      {
-        "title": "Korrekturen und Feinschliff",
-        "items": [
-          "Die experimentelle Layer-Erkennung behält dieselben Einstellungen und dieselbe UI bei, mit flüssigerer Anfrageverarbeitung, wenn sich lokale Hinweise ändern oder nahe Kandidaten eine Abklingzeit haben.",
-          "QuestTogether-Dialoge behandeln Escape jetzt über ihre normalen Schließen-Aktionen, und dem Gruppen-Questlog kann im nativen Menü für Tastaturbelegungen eine Taste zugewiesen werden, wobei standardmäßig keine Taste festgelegt ist.",
-          "Bewege den Mauszeiger über Quest- und Zielzeilen, um den vollständigen Text zu lesen. Die Schieberegler für Fensterskalierung und Umkreis haben jetzt hellere Leisten mit dunklen Umrandungen für bessere Sichtbarkeit."
+          "Ein einziges Kontrollkästchen zum Anzeigen anderer Spieler auf Karte und Minimap steuert jetzt beide Ansichten. Die Freigabe deines eigenen Standorts bleibt unabhängig davon. War zuvor mindestens eine Ansicht aktiviert, bleiben beide sichtbar; waren beide deaktiviert, bleibt die Anzeige aus."
         ]
       }
     ]
