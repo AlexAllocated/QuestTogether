@@ -923,17 +923,33 @@ QT:RegisterTest("map display filters keep party exception independent of sharing
  Equal(#a:GetVisiblePlayerLocations("map"), 1)
  a.db.profile.mapPartyOnly, a.db.profile.onlyShowQuestPartners = true, false
  Equal(a:GetVisiblePlayerLocations("map")[1].name, "Friend-Realm")
- a.db.profile.showWorldMapPlayers = false
+ a.db.profile.showPlayerLocations = false
  Equal(#a:GetVisiblePlayerLocations("map"), 0)
- Equal(#a:GetVisiblePlayerLocations("minimap"), 1)
+ Equal(#a:GetVisiblePlayerLocations("minimap"), 0)
  assert(a.db.profile.sharePlayerLocation)
+end)
+
+QT:RegisterTest("split map viewing preferences migrate once without changing sharing", function()
+ for _, pair in ipairs({{false,false},{false,true},{true,false},{true,true}}) do
+  local profile = { showWorldMapPlayers=pair[1], showMinimapPlayers=pair[2], sharePlayerLocation=false }
+  QT:MigratePlayerLocationOptions(profile)
+  Equal(profile.showPlayerLocations, pair[1] or pair[2])
+  Equal(profile.sharePlayerLocation, false)
+  Equal(profile.showWorldMapPlayers, nil); Equal(profile.showMinimapPlayers, nil)
+  profile.showPlayerLocations=false
+  QT:MigratePlayerLocationOptions(profile)
+  Equal(profile.showPlayerLocations, false)
+ end
+ local profile = { showPlayerLocations=false, showWorldMapPlayers=true, sharePlayerLocation=true }
+ QT:MigratePlayerLocationOptions(profile)
+ Equal(profile.showPlayerLocations,true); Equal(profile.sharePlayerLocation,true)
 end)
 
 QT:RegisterTest("display preferences do not withdraw streams shared with other players", function()
  local a = Fixture()
  local subscribers = { ["Friend-Realm"] = { at = 100 } }
  a.nearbyStreamState = { subscribers = subscribers, wanted = {}, nextCapability = 130 }
- a:OnPlayerLocationOptionsChanged("showWorldMapPlayers")
+ a:OnPlayerLocationOptionsChanged("showPlayerLocations")
  Equal(a.nearbyStreamState.subscribers, subscribers)
  Equal(a.nearbyStreamState.nextCapability, 130)
 end)

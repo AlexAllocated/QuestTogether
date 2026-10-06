@@ -586,19 +586,28 @@ local function LayoutPartyTooltipRows(addon, state, width)
 	return height > 0 and height + 8 or 0
 end
 
-local function PartyTooltipRows(addon, state, info)
-	state.partyRows = state.partyRows or {}
-	local members = {}
+local function PartyTooltipMembers(addon, info, row)
+	local members, seen, known = {}, {}, 0
+	local function Add(member)
+		if not member.name or seen[member.name] then return end
+		seen[member.name], known = true, known + 1
+		if not addon:IsIgnoredPlayerName(member.name) then members[#members + 1] = member end
+	end
 	if info and info.leader then
-		if not addon:IsIgnoredPlayerName(info.leader) then
-			members[1] = { name = info.leader, classFile = info.leaderClass }
-		end
+		Add({ name = info.leader, classFile = info.leader == row.name and row.classFile or info.leaderClass })
 		if info.size <= 5 and info.members then
-			for _, member in ipairs(info.members) do
-				if member.name ~= info.leader and not addon:IsIgnoredPlayerName(member.name) then members[#members + 1] = member end
-			end
+			for _, member in ipairs(info.members) do Add(member) end
+		elseif info.size <= 5 then
+			-- Their party metadata already confirms the hovered player's membership.
+			-- Keep this partial list presentation-only so roster requests still run.
+			Add({ name = row.name, classFile = row.classFile })
 		end
 	end
+	return members, known
+end
+
+local function PartyTooltipRows(addon, state, info, members)
+	state.partyRows = state.partyRows or {}
 	local width = 0
 	for index, member in ipairs(members) do
 		local item = state.partyRows[index]
@@ -702,6 +711,7 @@ local function Tooltip(addon, state, pin, row)
 	Call(addon, state.tooltipTitle, "SetText", classColor .. Text(addon, row.name) .. "|r")
 	local text, introText, lastUpdate
 	local party = not row.questID and addon:GetPlayerPartyVisualInfo(row.name) or nil
+	local partyMembers, knownPartyMembers = PartyTooltipMembers(addon, party, row)
 	if party and party.key and party.size <= 5 and not party.members then addon:RequestPartyVisualRoster(row.name) end
 	if row.questID then
 		text = row.questText
@@ -737,7 +747,7 @@ local function Tooltip(addon, state, pin, row)
 		text = text:gsub("^\n+", "")
 		text = text .. (text ~= "" and "\n\n" or "") .. "|cff909090" .. (lastUpdate and (lastUpdate .. "\n") or "") .. (version and ("v" .. Text(addon, version)) or L("Unknown")) .. "|r"
 		introText = introText .. "\n\n" .. partyText
-		if party and party.key and party.size <= 5 and not party.members then
+		if party and party.key and party.size <= 5 and not party.members and knownPartyMembers < party.size then
 			introText = introText .. "\n|cff909090" .. L("Loading party members…") .. "|r"
 		end
 	end
@@ -746,7 +756,7 @@ local function Tooltip(addon, state, pin, row)
 	local contentWidth = math.min(272, math.max(160,
 		TooltipTextWidth(addon, state.tooltipTitle) + (factionTexture and 44 or 0),
 		TooltipTextWidth(addon, state.tooltipIntro), TooltipTextWidth(addon, state.tooltipLabel),
-		PartyTooltipRows(addon, state, party)))
+		PartyTooltipRows(addon, state, party, partyMembers)))
 	Call(addon, state.tooltipTitle, "SetWidth", contentWidth - (factionTexture and 44 or 0))
 	Call(addon, state.tooltipIntro, "SetWidth", contentWidth)
 	Call(addon, state.tooltipLabel, "SetWidth", contentWidth)

@@ -394,8 +394,6 @@ QuestTogether.DEFAULTS = {
 		onlyShowQuestPartners = false,
 		mapPartyOnly = false,
 		mapAlwaysShowParty = true,
-		showWorldMapPlayers = true,
-		showMinimapPlayers = true,
 		emoteOnNearbyPlayerLevelUp = true,
 		nameplateQuestIconEnabled = true,
 		nameplatePlayerIconEnabled = true,
@@ -2860,8 +2858,16 @@ function QuestTogether:MigratePlayerLocationOptions(profile)
 		profile.showPlayerLocations = (profile.showLocationsOnMap == nil or profile.showLocationsOnMap == true)
 			or (profile.showLocationsOnMinimap == nil or profile.showLocationsOnMinimap == true)
 	end
-	if profile.showWorldMapPlayers == nil then profile.showWorldMapPlayers = profile.showPlayerLocations end
-	if profile.showMinimapPlayers == nil then profile.showMinimapPlayers = profile.showPlayerLocations end
+	-- Fold the 6.4.2 split display controls back into one preference. Preserve
+	-- viewing when either surface was enabled; sharing remains independent.
+	if profile.showWorldMapPlayers ~= nil or profile.showMinimapPlayers ~= nil then
+		local world = profile.showWorldMapPlayers
+		local minimap = profile.showMinimapPlayers
+		if world == nil then world = profile.showPlayerLocations end
+		if minimap == nil then minimap = profile.showPlayerLocations end
+		profile.showPlayerLocations = world == true or minimap == true
+	end
+	profile.showWorldMapPlayers, profile.showMinimapPlayers = nil, nil
 	if profile.onlyShowQuestPartners == nil then
 		profile.onlyShowQuestPartners = false
 	end
@@ -5475,12 +5481,13 @@ function QuestTogether:SetOption(key, value)
 	if (key == "announceToNonQTParty" or key == "hidePartyChatReminder")
 		and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
 	if key == "shareLocationOnMap" or key == "shareLocationOnMinimap"
-		or key == "showLocationsOnMap" or key == "showLocationsOnMinimap" then
+		or key == "showLocationsOnMap" or key == "showLocationsOnMinimap"
+		or key == "showWorldMapPlayers" or key == "showMinimapPlayers" then
 		return false
 	end
 	local isPartyNavigationOption = key == "sharePartyFocus" or key == "sharePartyWaypoint" or key == "showPartyWaypoints"
 	if isPartyNavigationOption and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
-	local isLocationOption = key == "sharePlayerLocation" or key == "showPlayerLocations" or key == "onlyShowQuestPartners" or key == "mapPartyOnly" or key == "mapAlwaysShowParty" or key == "showWorldMapPlayers" or key == "showMinimapPlayers"
+	local isLocationOption = key == "sharePlayerLocation" or key == "showPlayerLocations" or key == "onlyShowQuestPartners" or key == "mapPartyOnly" or key == "mapAlwaysShowParty"
 	if (isLocationOption or key == "nameplatePlayerIconEnabled") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
 	if (key == "showMinimapButton" or key == "lightMode" or key == "experimentalLayerDetection" or key == "reduceMotion" or key == "compareAutoRefresh") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
 		return false
@@ -5543,11 +5550,6 @@ function QuestTogether:SetOption(key, value)
 	local startedLooking = key == "lookingForQuestPartners" and value == true
 		and self.db.profile[key] ~= true
 	self.db.profile[key] = value
-	if key == "showPlayerLocations" then
-		self.db.profile.showWorldMapPlayers, self.db.profile.showMinimapPlayers = value, value
-	elseif key == "showWorldMapPlayers" or key == "showMinimapPlayers" then
-		self.db.profile.showPlayerLocations = self.db.profile.showWorldMapPlayers == true or self.db.profile.showMinimapPlayers == true
-	end
 	if isPartyNavigationOption then self:QueuePartyNavigationUpdate() end
 	if key == "experimentalLayerDetection" or key == "sharePlayerLocation" then
 		self.playerPhaseState = nil

@@ -106,11 +106,12 @@ local range = QuestTogether:GetOption("nearbyAnnouncementRange")
 slider:SetValue(125)
 assert(QuestTogether:GetOption("windowScale") == 125)
 assert(QuestTogether:GetOption("nearbyAnnouncementRange") == range)
-local control = QuestTogether.playerLocationsControls.showWorldMapPlayers
+local control = QuestTogether.playerLocationsControls.showPlayerLocations
 control.checked = false
 control.scripts.OnClick(control)
-assert(QuestTogether:GetOption("showWorldMapPlayers") == false)
-assert(QuestTogether:GetOption("showMinimapPlayers") == true)
+assert(QuestTogether:GetOption("showPlayerLocations") == false)
+assert(QuestTogether.playerLocationsControls.showWorldMapPlayers == nil)
+assert(QuestTogether.playerLocationsControls.showMinimapPlayers == nil)
 assert(QuestTogether:GetOption("sharePlayerLocation") == true)
 local menu = {}
 function QuestTogether:CreatePartyQuestFilterMenu(owner, generate)

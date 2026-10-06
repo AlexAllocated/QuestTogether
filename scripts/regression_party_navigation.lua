@@ -408,3 +408,55 @@ QT:RegisterTest("focus labels distinguish unsupported waiting expired and unavai
  a.peer.questID = 0
  Equal(a:GetPartyFocusLabel("Friend"), "No focused quest")
 end)
+
+QT:RegisterTest("own focus reads native selection while solo without sharing or cached party state", function()
+	local a = Fixture()
+	a:Roster(a.name)
+	a.options.sharePartyFocus = false
+	a.localized = { [1] = "Localized first quest", [2] = "Localized second quest" }
+	Equal(a:GetPartyNavigationRoute(), nil)
+	Equal(a:GetPartyFocusLabel(a.name), "Localized first quest")
+	Equal(rawget(a, "partyNavigationState"), nil)
+	a.native.questID = 2
+	Equal(a:GetPartyFocusLabel(a.name), "Localized second quest")
+	a.native.questID = 0
+	Equal(a:GetPartyFocusLabel(a.name), "No focused quest")
+	a:Tick()
+	Equal(#a.wire, 0)
+end)
+
+QT:RegisterTest("own focus ignores stale shared state and handles native read restrictions", function()
+	local a = Fixture()
+	a:Tick()
+	a.native.questID = 2
+	Equal(a.partyNavigationState.localState.questID, 1)
+	Equal(a:GetPartyFocusLabel(a.name), "Quest title 2")
+	a.raid = true
+	Equal(a:GetPartyFocusLabel(a.name), "Quest title 2")
+	a.blocked = true
+	Equal(a:GetPartyFocusLabel(a.name), "Waiting for restrictions")
+	a.blocked, a.unreadable = false, true
+	Equal(a:GetPartyFocusLabel(a.name), "Focus unavailable")
+	a.unreadable = false
+	a.native.questID = -1
+	Equal(a:GetPartyFocusLabel(a.name), "Focus unavailable")
+	a.native.questID = 2
+	Equal(a:GetPartyFocusLabel(a.name), "Quest title 2")
+end)
+
+QT:RegisterTest("tracking changes refresh open local PQL without sending party messages", function()
+	local a = Fixture()
+	a:Roster(a.name)
+	a.partyQuestCompareSession = {}
+	function a:QueuePartyQuestCompareRender()
+		self.renderedFocus = self:GetPartyFocusLabel(self.name)
+	end
+	a.native.questID = 2
+	a:OnPartyNavigationTrackingChanged()
+	Equal(a.renderedFocus, "Quest title 2")
+	Equal(#a.wire, 0)
+	Equal(rawget(a, "partyNavigationState"), nil)
+	a.native.questID = 0
+	a:OnPartyNavigationTrackingChanged()
+	Equal(a.renderedFocus, "No focused quest")
+end)

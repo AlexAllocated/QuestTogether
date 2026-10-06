@@ -188,6 +188,8 @@ function QT:OnPartyNavigationTrackingChanged()
 		s.checkExternal = true
 	end
 	self:QueuePartyNavigationUpdate()
+	-- The local PQL header must update even without a party transport route.
+	Changed(self)
 end
 function QT:SamplePartyNavigation()
 	if self:IsRuntimeRestricted() then
@@ -407,7 +409,18 @@ function QT:WithdrawPartyNavigation()
 	end
 end
 function QT:GetPartyFocusLabel(name)
-	local p = self:GetPartyNavigationPeer(name)
+	local p
+	if self:IsSelfSender(name) then
+		-- Own navigation is local UI state, not a received/shared snapshot. In
+		-- particular, being solo or disabling sharing must not hide our focus.
+		if self:IsRuntimeRestricted() then return L("Waiting for restrictions") end
+		local ok, native = pcall(self.API.GetPartyNavigationNativeState)
+		local id = ok and self:CanAccessTable(native) and Number(self, native.questID, -1, 1000000000)
+		if not id or id < 0 then return L("Focus unavailable") end
+		p = { questID = id, title = id > 0 and self:GetQuestTitle(id) or "" }
+	else
+		p = self:GetPartyNavigationPeer(name)
+	end
 	if not p then
 		local state = rawget(self, "partyNavigationState")
 		if state and state.seen[name] then return L("Focus data expired") end

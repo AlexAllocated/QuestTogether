@@ -590,8 +590,6 @@ local CHECKBOX_OPTION_KEYS = {
 	"onlyShowQuestPartners",
 	"mapPartyOnly",
 	"mapAlwaysShowParty",
-	"showWorldMapPlayers",
-	"showMinimapPlayers",
 	"reduceMotion",
 	"compareAutoRefresh",
 }
@@ -2012,14 +2010,14 @@ function QuestTogether:InitializePlayerLocationsWindow(parentCategory)
 	for index, option in ipairs({
 		{ key = "sharePlayerLocation", label = L("Share my location on the map and minimap"),
 			tooltip = L("Let other QuestTogether players see my location on both the world map and minimap.") },
-		{ key = "showWorldMapPlayers", label = L("Show players on the world map"), tooltip = L("Show shared player locations on the world map.") },
-		{ key = "showMinimapPlayers", label = L("Show players on the minimap"), tooltip = L("Show nearby shared player locations on the minimap.") },
+		{ key = "showPlayerLocations", label = L("Show other players on the map and minimap"),
+			tooltip = L("Show shared player locations on the world map and nearby players on the minimap.") },
 		{ key = "mapAlwaysShowParty", label = L("Always show my party"), tooltip = L("Keep party members visible when filtering for questing partners. This does not override their location sharing settings.") },
 	}) do
 		self.playerLocationsControls[option.key] = CreateCheckbox(content, option.key, option.label, option.tooltip, 16, -120 - 44 * (index - 1))
 	end
 	local filter = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
-	filter:SetPoint("TOPLEFT", 16, -310)
+	filter:SetPoint("TOPLEFT", 16, -266)
 	filter:SetSize(310, 28)
 	local function RefreshFilter()
 		filter:SetText(QuestTogether:GetOption("mapPartyOnly") and L("Party only")

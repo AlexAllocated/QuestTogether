@@ -410,8 +410,6 @@ function QT:GetVisiblePlayerLocations(surface)
 		or self.isLoggingOut
 		or self:IsRuntimeRestricted()
 		or self:GetOption("showPlayerLocations") ~= true
-		or (surface == "map" and self:GetOption("showWorldMapPlayers") == false)
-		or (surface == "minimap" and self:GetOption("showMinimapPlayers") == false)
 	then
 		return {}
 	end

@@ -1082,8 +1082,32 @@ Register("party tooltip lists class colored members crowned leader first and onl
 	Equal(#a.regions,allocated)
 	info.size=3; info.members=nil; a:RefreshPlayerLocationPins()
 	assert(s.tooltipIntro.text:find("Loading party members",1,true)); assert(s.partyRows[1].frame.shown)
+	assert(s.partyRows[2].frame.shown and s.partyRows[2].label.text:find("Friend-Realm",1,true))
+	assert(not s.partyRows[2].crown.shown and not s.partyRows[3].frame.shown)
+	Equal(info.members,nil) -- partial display must not become an authoritative roster
 	a.visualMembers={}; a:RefreshPlayerLocationPins()
-	assert(not s.partyRows[1].frame.shown)
+	assert(not s.partyRows[1].frame.shown and not s.partyRows[2].frame.shown)
+end)
+Register("incomplete party tooltip shows hovered member immediately without duplicating the leader", function()
+	local a=Fixture(); local info=VisualParty(a)
+	info.size,info.members=2,nil
+	a.rows.map={Row("Friend-Realm")}; a:RefreshPlayerLocationPins(); Pin(a,"map").frame.scripts.OnEnter()
+	local s=a.locationPinState
+	Equal(#s.partyRows,2)
+	assert(s.partyRows[1].crown.shown and not s.partyRows[2].crown.shown)
+	assert(s.partyRows[2].label.text:find(a:GetClassColorCode(a.rows.map[1].classFile).."Friend-Realm|r",1,true))
+	assert(not s.tooltipIntro.text:find("Loading party members",1,true))
+	assert(a.rosterRequests>0); Equal(info.members,nil)
+	-- Hovering the leader gives us one known member, not two copies of them.
+	Pin(a,"map").frame.scripts.OnLeave()
+	a.rows.map={Row("Leader-Realm")}; a:RefreshPlayerLocationPins(); Pin(a,"map").frame.scripts.OnEnter()
+	assert(s.partyRows[1].frame.shown and not s.partyRows[2].frame.shown)
+	assert(s.tooltipIntro.text:find("Loading party members",1,true))
+	-- An authoritative reply fills the reused rows without duplicates.
+	info.members={{name="Leader-Realm",classFile="MAGE"},{name="Friend-Realm",classFile="WARRIOR"}}
+	a:RefreshPlayerLocationPins()
+	assert(s.partyRows[2].frame.shown); Equal(#s.partyRows,2)
+	assert(not s.tooltipIntro.text:find("Loading party members",1,true))
 end)
 Register("party highlights reset for recycled pins and restriction cleanup never mutates protected regions", function()
 	local a=Fixture(); VisualParty(a)
