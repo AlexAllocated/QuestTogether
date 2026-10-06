@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.2.3
+## 6.3.0
 
 Un nouveau journal de quêtes du groupe, des destinations partagées et le suivi facultatif d'une quête facilitent les aventures ensemble.
 
@@ -22,6 +22,15 @@ Un nouveau journal de quêtes du groupe, des destinations partagées et le suivi
 
 - Les notes de mise à jour adoptent aussi le parchemin sombre, avec un mode clair facultatif. Déplacez ou redimensionnez la fenêtre, parcourez un historique plus lisible et utilisez les flèches pour changer de version ou atteindre une extrémité. Discord et Paramètres sont dans le pied de page.
 - Les infobulles des joueurs s'ajustent mieux au contenu. Le menu de la minicarte sépare les outils de quête des notes, de l'emplacement du journal et de la visibilité de l'icône. Paramètres et Envoyer un message QT en sont retirés ; les paramètres restent accessibles avec /qt options.
+
+## 6.2.3
+
+Moins d’annonces répétées de quêtes prêtes à être rendues.
+
+### Corrections du suivi des quêtes prêtes à être rendues
+
+- Les quêtes déjà prêtes à être rendues ou terminées au début du suivi sont enregistrées sans annonce. Les données manquantes et les actualisations ultérieures ne répètent plus les annonces de quêtes prêtes à être rendues déjà prises en compte.
+- Les nouvelles quêtes terminées sont toujours annoncées, et accepter à nouveau une quête réinitialise son historique de notifications. Le joueur qui envoie les annonces doit installer cette mise à jour ; les anciennes versions peuvent encore envoyer des rafales d’annonces.
 
 ## 6.2.2
 

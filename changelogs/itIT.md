@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.2.3
+## 6.3.0
 
 Un nuovo Registro missioni del gruppo, destinazioni condivise e il seguito facoltativo delle missioni rendono più facile giocare insieme.
 
@@ -22,6 +22,15 @@ Un nuovo Registro missioni del gruppo, destinazioni condivise e il seguito facol
 
 - Anche le note di aggiornamento usano la pergamena scura, con modalità chiara facoltativa. Sposta o ridimensiona la finestra, sfoglia una cronologia più ordinata e usa le frecce per cambiare versione o saltare alle estremità. Discord e Impostazioni sono nel piè di pagina.
 - I suggerimenti dei giocatori si adattano meglio al contenuto. Il menu della minimappa separa gli strumenti delle missioni da note, posizione del registro e visibilità dell'icona. Impostazioni e Invia messaggio nella chat QT sono rimossi da questo menu; le impostazioni restano disponibili con /qt options.
+
+## 6.2.3
+
+Meno annunci ripetuti di missioni pronte da consegnare.
+
+### Correzioni al rilevamento delle missioni pronte
+
+- Le missioni già pronte da consegnare o completate all’inizio del monitoraggio vengono registrate senza annunci. I dati di consegna mancanti e gli aggiornamenti successivi non ripetono più gli annunci di missioni pronte da consegnare già rilevati.
+- I nuovi completamenti vengono ancora annunciati e accettare nuovamente una missione ne azzera la cronologia delle notifiche. Il giocatore che invia gli annunci deve installare questo aggiornamento; le versioni precedenti possono ancora inviarne molti tutti insieme.
 
 ## 6.2.2
 

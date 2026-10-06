@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 6.2.3
+## 6.3.0
 
 A new Party Quest Log, shared destinations, and optional quest following make it easier to quest together.
 
@@ -24,6 +24,15 @@ A new Party Quest Log, shared destinations, and optional quest following make it
 
 - Patch notes now share the dark parchment theme, with optional Light mode. Drag or resize the window, browse cleaner history rows, and use arrows to move between releases or jump to either end. Join our Discord and Settings are in the footer.
 - Player tooltips fit their content more closely. The minimap menu now separates questing tools from patch notes, log placement, and icon visibility. Settings and Send QT chat message are removed from that menu; settings remain available through /qt options.
+
+## 6.2.3
+
+Fewer repeated ready-to-turn-in announcements.
+
+### Quest readiness fixes
+
+- Quests already ready or complete when tracking starts are recorded quietly. Missing readiness data and later refreshes no longer replay already-observed ready-to-turn-in announcements.
+- New completions still announce, and accepting a quest again resets its notification history. The sending player needs this update; older versions can still send bursts.
 
 ## 6.2.2
 

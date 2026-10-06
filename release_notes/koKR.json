@@ -1,7 +1,7 @@
 {
   "source_sha256": "f1e76cded13345a77a0ee6c9f4a910741ff222710e3a9793f4f2b54f5bb3caf0",
   "notes": {
-    "version": "6.2.3",
+    "version": "6.3.0",
     "welcome": "새로운 파티 퀘스트 일지, 공유 목적지, 선택 가능한 퀘스트 따라가기로 함께 퀘스트를 진행하기 쉬워집니다.",
     "sections": [
       {

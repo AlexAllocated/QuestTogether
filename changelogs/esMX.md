@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.2.3
+## 6.3.0
 
 Un nuevo registro de misiones del grupo, destinos compartidos y seguimiento opcional de misiones facilitan jugar juntos.
 
@@ -22,6 +22,15 @@ Un nuevo registro de misiones del grupo, destinos compartidos y seguimiento opci
 
 - Las notas del parche también usan pergamino oscuro, con modo claro opcional. Mueve o cambia el tamaño de la ventana, consulta un historial más limpio y usa las flechas para cambiar de versión o saltar a los extremos. Discord y Configuración están en el pie.
 - Las descripciones de los jugadores se ajustan mejor al contenido. El menú del minimapa separa las herramientas de misiones de las notas, la ubicación del registro y la visibilidad del ícono. Configuración y Enviar mensaje de chat QT se eliminan de ese menú; la configuración sigue disponible con /qt options.
+
+## 6.2.3
+
+Menos anuncios repetidos de misiones listas para entregar.
+
+### Correcciones del estado de las misiones
+
+- Las misiones que ya están listas para entregar o completadas al comenzar el seguimiento se registran sin anuncios. La falta de datos de entrega y las actualizaciones posteriores ya no repiten anuncios de misiones listas para entregar que ya se habían registrado.
+- Las nuevas finalizaciones siguen anunciándose, y volver a aceptar una misión reinicia su historial de notificaciones. El jugador que envía los anuncios necesita esta actualización; las versiones anteriores todavía pueden enviar ráfagas de anuncios.
 
 ## 6.2.2
 

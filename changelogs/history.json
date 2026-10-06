@@ -3,6 +3,151 @@
   "releases": [
     {
       "enUS": {
+        "version": "6.2.3",
+        "welcome": "Fewer repeated ready-to-turn-in announcements.",
+        "sections": [
+          {
+            "title": "Quest readiness fixes",
+            "items": [
+              "Quests already ready or complete when tracking starts are recorded quietly. Missing readiness data and later refreshes no longer replay already-observed ready-to-turn-in announcements.",
+              "New completions still announce, and accepting a quest again resets its notification history. The sending player needs this update; older versions can still send bursts."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "6.2.3",
+        "welcome": "Weniger wiederholte Meldungen über abgabebereite Quests.",
+        "sections": [
+          {
+            "title": "Korrekturen bei abgabebereiten Quests",
+            "items": [
+              "Quests, die beim Start der Verfolgung bereits abgabebereit oder abgeschlossen sind, werden still erfasst. Fehlende Bereitschaftsdaten und spätere Aktualisierungen lösen bereits erfasste Meldungen zur Abgabebereitschaft nicht erneut aus.",
+              "Neue Abschlüsse werden weiterhin gemeldet. Wird eine Quest erneut angenommen, wird ihr Benachrichtigungsverlauf zurückgesetzt. Der sendende Spieler benötigt dieses Update; ältere Versionen können weiterhin Meldungen in Schüben senden."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "6.2.3",
+        "welcome": "Moins d’annonces répétées de quêtes prêtes à être rendues.",
+        "sections": [
+          {
+            "title": "Corrections du suivi des quêtes prêtes à être rendues",
+            "items": [
+              "Les quêtes déjà prêtes à être rendues ou terminées au début du suivi sont enregistrées sans annonce. Les données manquantes et les actualisations ultérieures ne répètent plus les annonces de quêtes prêtes à être rendues déjà prises en compte.",
+              "Les nouvelles quêtes terminées sont toujours annoncées, et accepter à nouveau une quête réinitialise son historique de notifications. Le joueur qui envoie les annonces doit installer cette mise à jour ; les anciennes versions peuvent encore envoyer des rafales d’annonces."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "6.2.3",
+        "welcome": "Menos anuncios repetidos de misiones listas para entregar.",
+        "sections": [
+          {
+            "title": "Correcciones del estado de las misiones",
+            "items": [
+              "Las misiones que ya están listas para entregar o completadas al comenzar el seguimiento se registran sin anuncios. La falta de datos de entrega y las actualizaciones posteriores ya no repiten anuncios de misiones listas para entregar que ya se habían registrado.",
+              "Las nuevas finalizaciones siguen anunciándose, y volver a aceptar una misión reinicia su historial de notificaciones. El jugador que envía los anuncios necesita esta actualización; las versiones anteriores aún pueden enviar ráfagas de anuncios."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "6.2.3",
+        "welcome": "Menos anuncios repetidos de misiones listas para entregar.",
+        "sections": [
+          {
+            "title": "Correcciones del estado de las misiones",
+            "items": [
+              "Las misiones que ya están listas para entregar o completadas al comenzar el seguimiento se registran sin anuncios. La falta de datos de entrega y las actualizaciones posteriores ya no repiten anuncios de misiones listas para entregar que ya se habían registrado.",
+              "Las nuevas finalizaciones siguen anunciándose, y volver a aceptar una misión reinicia su historial de notificaciones. El jugador que envía los anuncios necesita esta actualización; las versiones anteriores todavía pueden enviar ráfagas de anuncios."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "6.2.3",
+        "welcome": "Menos anúncios repetidos de missões prontas para entregar.",
+        "sections": [
+          {
+            "title": "Correções no estado das missões",
+            "items": [
+              "Missões já prontas para entregar ou concluídas quando o acompanhamento começa são registradas sem anúncios. Dados de entrega ausentes e atualizações posteriores não repetem mais anúncios de missões prontas para entregar já registrados.",
+              "Novas conclusões continuam sendo anunciadas, e aceitar uma missão novamente reinicia seu histórico de notificações. O jogador que envia os anúncios precisa desta atualização; versões antigas ainda podem enviar rajadas de anúncios."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "6.2.3",
+        "welcome": "Меньше повторных объявлений о заданиях, готовых к сдаче.",
+        "sections": [
+          {
+            "title": "Исправления отслеживания готовности заданий",
+            "items": [
+              "Задания, уже готовые к сдаче или выполненные в начале отслеживания, учитываются без объявлений. Отсутствующие данные о готовности и последующие обновления больше не вызывают повторных объявлений об уже учтённой готовности к сдаче.",
+              "Новые выполнения по-прежнему объявляются, а повторное принятие задания сбрасывает историю его уведомлений. Обновление требуется игроку, отправляющему объявления; старые версии всё ещё могут отправлять их пачками."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "6.2.3",
+        "welcome": "Meno annunci ripetuti di missioni pronte da consegnare.",
+        "sections": [
+          {
+            "title": "Correzioni al rilevamento delle missioni pronte",
+            "items": [
+              "Le missioni già pronte da consegnare o completate all’inizio del monitoraggio vengono registrate senza annunci. I dati di consegna mancanti e gli aggiornamenti successivi non ripetono più gli annunci di missioni pronte da consegnare già rilevati.",
+              "I nuovi completamenti vengono ancora annunciati e accettare nuovamente una missione ne azzera la cronologia delle notifiche. Il giocatore che invia gli annunci deve installare questo aggiornamento; le versioni precedenti possono ancora inviarne molti tutti insieme."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "6.2.3",
+        "welcome": "반복되는 퀘스트 완료 보고 가능 알림을 줄였습니다.",
+        "sections": [
+          {
+            "title": "퀘스트 완료 보고 가능 상태 추적 수정",
+            "items": [
+              "추적을 시작할 때 이미 완료 보고가 가능하거나 목표가 완료된 퀘스트는 알림 없이 기록됩니다. 완료 보고 가능 상태 정보가 없거나 나중에 갱신되어도 이미 확인한 완료 보고 가능 알림이 다시 표시되지 않습니다.",
+              "새로 완료한 퀘스트는 계속 알림이 표시되며, 퀘스트를 다시 수락하면 알림 기록이 초기화됩니다. 알림을 보내는 플레이어가 이 업데이트를 설치해야 합니다. 이전 버전에서는 여전히 알림이 한꺼번에 전송될 수 있습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "6.2.3",
+        "welcome": "减少重复的任务可交付通知。",
+        "sections": [
+          {
+            "title": "任务交付状态修复",
+            "items": [
+              "开始追踪时已经可以交付或已完成的任务会被静默记录。交付状态数据缺失或后续刷新，不再重复发送已经记录过的任务可交付通知。",
+              "新完成的任务仍会发送通知，重新接受任务会重置其通知记录。发送通知的玩家需要安装此更新；旧版本仍可能一次发送大量通知。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "6.2.3",
+        "welcome": "減少重複的任務可回報通知。",
+        "sections": [
+          {
+            "title": "任務回報狀態修正",
+            "items": [
+              "開始追蹤時已經可以回報或已完成的任務會被靜默記錄。回報狀態資料缺失或後續重新整理，不再重複傳送已經記錄過的任務可回報通知。",
+              "新完成的任務仍會傳送通知，重新接受任務會重設其通知紀錄。傳送通知的玩家需要安裝此更新；舊版本仍可能一次傳送大量通知。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "6.2.2",
         "welcome": "Readable quest progress in every language.",
         "sections": [

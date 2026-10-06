@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.2.3
+## 6.3.0
 
 Ein neues Gruppenquestlog, geteilte Ziele und optionales Folgen aktiver Quests erleichtern das gemeinsame Questen.
 
@@ -22,6 +22,15 @@ Ein neues Gruppenquestlog, geteilte Ziele und optionales Folgen aktiver Quests e
 
 - Patchnotes verwenden jetzt ebenfalls das dunkle Pergamentdesign mit optionalem hellem Modus. Verschiebt oder skaliert das Fenster, durchsucht übersichtlichere Verlaufseinträge und wechselt mit Pfeilen zwischen Versionen oder zum Anfang und Ende. Discord und Einstellungen stehen im Fußbereich.
 - Spieler-Tooltips passen sich ihrem Inhalt besser an. Das Minikartenmenü trennt Questwerkzeuge von Patchnotes, Logfenster-Auswahl und Symbolanzeige. Einstellungen und „QT-Chatnachricht senden“ wurden daraus entfernt; Einstellungen bleiben über /qt options erreichbar.
+
+## 6.2.3
+
+Weniger wiederholte Meldungen über abgabebereite Quests.
+
+### Korrekturen bei abgabebereiten Quests
+
+- Quests, die beim Start der Verfolgung bereits abgabebereit oder abgeschlossen sind, werden still erfasst. Fehlende Bereitschaftsdaten und spätere Aktualisierungen lösen bereits erfasste Meldungen zur Abgabebereitschaft nicht erneut aus.
+- Neue Abschlüsse werden weiterhin gemeldet. Wird eine Quest erneut angenommen, wird ihr Benachrichtigungsverlauf zurückgesetzt. Der sendende Spieler benötigt dieses Update; ältere Versionen können weiterhin Meldungen in Schüben senden.
 
 ## 6.2.2
 

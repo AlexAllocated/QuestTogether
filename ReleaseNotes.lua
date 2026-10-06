@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "6.2.3",
+	version = "6.3.0",
 	welcome = "A new Party Quest Log, shared destinations, and optional quest following make it easier to quest together.",
 	sections = {
 		{
