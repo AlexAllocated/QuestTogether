@@ -3,6 +3,272 @@
   "releases": [
     {
       "enUS": {
+        "version": "6.4.3",
+        "welcome": "Fixes for quest focus and party tooltips, plus simpler map display settings.",
+        "sections": [
+          {
+            "title": "Your quest focus",
+            "items": [
+              "Your Party Quest Log header now reads your own focused quest directly, including while solo or with quest-focus sharing off. Changing your super-tracked quest updates the header without needing Refresh."
+            ]
+          },
+          {
+            "title": "Party tooltip rosters",
+            "items": [
+              "Small-party tooltips immediately list the hovered player alongside the leader while the full roster loads. The loading message appears only when other members are still missing; groups larger than five still show only the leader."
+            ]
+          },
+          {
+            "title": "Simpler map settings",
+            "items": [
+              "One Show other players on the map and minimap checkbox now controls both displays. Sharing your own location stays independent. Existing settings keep display enabled if either map was enabled, or disabled if both were off."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "6.4.3",
+        "welcome": "Korrekturen am Quest-Fokus und an Gruppen-Tooltips sowie einfachere Karteneinstellungen.",
+        "sections": [
+          {
+            "title": "Dein Quest-Fokus",
+            "items": [
+              "Deine Überschrift im Gruppen-Questlog liest die aktuell fokussierte Quest jetzt direkt aus, auch wenn du allein bist oder die Freigabe des Quest-Fokus deaktiviert ist. Änderungen an deiner Navigationsquest aktualisieren die Überschrift ohne manuelles Aktualisieren."
+            ]
+          },
+          {
+            "title": "Gruppenlisten in Tooltips",
+            "items": [
+              "Bei Gruppen mit bis zu fünf Spielern zeigt der Tooltip sofort den Spieler unter dem Mauszeiger neben dem Anführer, während die vollständige Liste geladen wird. Der Ladehinweis erscheint nur, solange weitere Mitglieder fehlen. Bei größeren Gruppen wird weiterhin nur der Anführer angezeigt."
+            ]
+          },
+          {
+            "title": "Einfachere Karteneinstellungen",
+            "items": [
+              "Ein einziges Kontrollkästchen zum Anzeigen anderer Spieler auf Karte und Minimap steuert jetzt beide Ansichten. Die Freigabe deines eigenen Standorts bleibt unabhängig davon. War zuvor mindestens eine Ansicht aktiviert, bleiben beide sichtbar; waren beide deaktiviert, bleibt die Anzeige aus."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "6.4.3",
+        "welcome": "Corrections du suivi de quête et des infobulles de groupe, avec des réglages de carte simplifiés.",
+        "sections": [
+          {
+            "title": "Votre quête suivie",
+            "items": [
+              "Votre en-tête dans le journal des quêtes de groupe lit désormais directement votre quête suivie, même en solo ou lorsque le partage du suivi est désactivé. Changer la quête choisie pour la navigation met à jour l’en-tête sans actualisation manuelle."
+            ]
+          },
+          {
+            "title": "Membres du groupe dans les infobulles",
+            "items": [
+              "Pour les groupes de cinq joueurs maximum, l’infobulle affiche immédiatement le joueur survolé avec le chef pendant le chargement de la liste complète. Le message de chargement apparaît uniquement si d’autres membres manquent encore. Les groupes plus grands affichent toujours seulement le chef."
+            ]
+          },
+          {
+            "title": "Réglages de carte simplifiés",
+            "items": [
+              "Une seule case permettant d’afficher les autres joueurs sur la carte et la minicarte contrôle désormais les deux affichages. Le partage de votre position reste indépendant. Si l’un des affichages était activé, les deux restent activés ; si les deux étaient désactivés, l’affichage reste désactivé."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "6.4.3",
+        "welcome": "Correcciones del enfoque de misión y de las descripciones de grupo, con ajustes de mapa más sencillos.",
+        "sections": [
+          {
+            "title": "Tu misión enfocada",
+            "items": [
+              "Tu encabezado del Registro de misiones del grupo ahora lee directamente tu misión enfocada, incluso cuando juegas en solitario o tienes desactivado compartir el enfoque. Cambiar la misión seleccionada para la navegación actualiza el encabezado sin necesidad de pulsar Actualizar."
+            ]
+          },
+          {
+            "title": "Miembros del grupo en las descripciones",
+            "items": [
+              "En grupos de hasta cinco jugadores, la descripción muestra inmediatamente al jugador bajo el cursor junto al líder mientras se carga la lista completa. El mensaje de carga solo aparece si aún faltan otros miembros. Los grupos más grandes siguen mostrando solo al líder."
+            ]
+          },
+          {
+            "title": "Ajustes de mapa más sencillos",
+            "items": [
+              "Una sola casilla para mostrar a otros jugadores en el mapa y el minimapa controla ahora ambas vistas. Compartir tu propia ubicación sigue siendo independiente. Si cualquiera de las vistas estaba activada, ambas quedan activadas; si las dos estaban desactivadas, la visualización permanece desactivada."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "6.4.3",
+        "welcome": "Correcciones del enfoque de misión y de las descripciones de grupo, con opciones de mapa más sencillas.",
+        "sections": [
+          {
+            "title": "Tu misión enfocada",
+            "items": [
+              "Tu encabezado del Registro de misiones de grupo ahora lee directamente tu misión enfocada, incluso cuando juegas en solitario o tienes desactivado compartir el enfoque. Cambiar la misión seleccionada para la navegación actualiza el encabezado sin necesidad de presionar Actualizar."
+            ]
+          },
+          {
+            "title": "Miembros del grupo en las descripciones",
+            "items": [
+              "En grupos de hasta cinco jugadores, la descripción muestra inmediatamente al jugador bajo el cursor junto al líder mientras se carga la lista completa. El mensaje de carga solo aparece si aún faltan otros miembros. Los grupos más grandes siguen mostrando solo al líder."
+            ]
+          },
+          {
+            "title": "Opciones de mapa más sencillas",
+            "items": [
+              "Una sola casilla para mostrar a otros jugadores en el mapa y el minimapa controla ahora ambas vistas. Compartir tu propia ubicación sigue siendo independiente. Si cualquiera de las vistas estaba activada, ambas quedan activadas; si las dos estaban desactivadas, la visualización permanece desactivada."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "6.4.3",
+        "welcome": "Correções do foco de missão e das dicas de grupo, além de configurações de mapa mais simples.",
+        "sections": [
+          {
+            "title": "Seu foco de missão",
+            "items": [
+              "Seu cabeçalho no Registro de Missões do Grupo agora lê diretamente sua missão em foco, mesmo quando você está sozinho ou com o compartilhamento de foco desativado. Alterar a missão selecionada para navegação atualiza o cabeçalho sem precisar clicar em Atualizar."
+            ]
+          },
+          {
+            "title": "Membros do grupo nas dicas",
+            "items": [
+              "Em grupos de até cinco jogadores, as dicas mostram imediatamente o jogador sob o cursor junto com o líder enquanto a lista completa é carregada. A mensagem de carregamento aparece apenas quando ainda faltam outros membros. Grupos maiores continuam mostrando apenas o líder."
+            ]
+          },
+          {
+            "title": "Configurações de mapa mais simples",
+            "items": [
+              "Uma única caixa para mostrar outros jogadores no mapa e no minimapa agora controla ambas as exibições. Compartilhar sua própria localização continua independente. Se uma das exibições estava ativada, ambas ficam ativadas; se as duas estavam desativadas, a exibição permanece desativada."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "6.4.3",
+        "welcome": "Исправления фокуса задания и подсказок группы, а также упрощённые настройки карты.",
+        "sections": [
+          {
+            "title": "Ваше выбранное задание",
+            "items": [
+              "Ваш заголовок в журнале заданий группы теперь напрямую считывает задание, выбранное для навигации, даже вне группы или при отключённой передаче фокуса. Выбор другого задания обновляет заголовок без нажатия кнопки обновления."
+            ]
+          },
+          {
+            "title": "Состав группы в подсказках",
+            "items": [
+              "Для групп до пяти игроков подсказка сразу показывает игрока под курсором вместе с лидером, пока загружается полный список. Сообщение о загрузке появляется только если сведения о других участниках ещё отсутствуют. Для более крупных групп по-прежнему показывается только лидер."
+            ]
+          },
+          {
+            "title": "Упрощённые настройки карты",
+            "items": [
+              "Один флажок отображения других игроков на карте и мини-карте теперь управляет обоими видами. Передача вашего местоположения остаётся независимой. Если хотя бы один вид был включён, оба будут включены; если оба были выключены, отображение останется выключенным."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "6.4.3",
+        "welcome": "Correzioni al focus missione e ai tooltip del gruppo, con impostazioni della mappa più semplici.",
+        "sections": [
+          {
+            "title": "Il tuo focus missione",
+            "items": [
+              "La tua intestazione nel Registro missioni del gruppo ora legge direttamente la missione selezionata per la navigazione, anche quando sei da solo o la condivisione del focus è disattivata. Cambiare la missione aggiorna l’intestazione senza dover premere Aggiorna."
+            ]
+          },
+          {
+            "title": "Membri del gruppo nei tooltip",
+            "items": [
+              "Per i gruppi fino a cinque giocatori, i tooltip mostrano subito il giocatore sotto il cursore insieme al capogruppo mentre viene caricato l’elenco completo. Il messaggio di caricamento appare solo quando mancano ancora altri membri. I gruppi più grandi continuano a mostrare solo il capogruppo."
+            ]
+          },
+          {
+            "title": "Impostazioni della mappa più semplici",
+            "items": [
+              "Un’unica casella per mostrare gli altri giocatori sulla mappa e sulla minimappa controlla ora entrambe le visualizzazioni. La condivisione della tua posizione resta indipendente. Se una delle visualizzazioni era attiva, entrambe restano attive; se entrambe erano disattivate, la visualizzazione resta disattivata."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "6.4.3",
+        "welcome": "퀘스트 초점과 파티 툴팁을 수정하고 지도 표시 설정을 간소화했습니다.",
+        "sections": [
+          {
+            "title": "내 퀘스트 초점",
+            "items": [
+              "파티 퀘스트 목록의 내 헤더가 이제 현재 초점 퀘스트를 직접 읽습니다. 혼자 플레이하거나 퀘스트 초점 공유를 꺼도 표시됩니다. 길 안내 대상으로 선택한 퀘스트를 변경하면 새로 고침을 누르지 않아도 헤더가 갱신됩니다."
+            ]
+          },
+          {
+            "title": "파티 툴팁의 구성원 목록",
+            "items": [
+              "다섯 명 이하의 파티 툴팁은 전체 목록을 불러오는 동안에도 마우스를 올린 플레이어를 파티장과 함께 즉시 표시합니다. 다른 구성원의 정보가 아직 없을 때만 불러오는 중 메시지가 나타납니다. 다섯 명보다 큰 그룹은 계속 파티장만 표시합니다."
+            ]
+          },
+          {
+            "title": "더 간단한 지도 설정",
+            "items": [
+              "이제 지도와 미니맵에 다른 플레이어를 표시하는 체크박스 하나로 두 표시를 모두 제어합니다. 내 위치 공유는 별도로 유지됩니다. 기존에 어느 한쪽이라도 켜져 있었다면 두 표시가 켜지고, 둘 다 꺼져 있었다면 계속 꺼진 상태로 유지됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "6.4.3",
+        "welcome": "修复任务关注和队伍提示框，并简化地图显示设置。",
+        "sections": [
+          {
+            "title": "你的任务关注",
+            "items": [
+              "队伍任务日志中你的标题现在会直接读取你当前关注的任务，即使你独自游玩或已关闭任务关注共享。更改用于导航的超级追踪任务后，标题会自动更新，无需点击刷新。"
+            ]
+          },
+          {
+            "title": "提示框中的队伍成员",
+            "items": [
+              "对于不超过五人的队伍，提示框会在完整名单加载期间立即显示鼠标悬停的玩家和队长。只有其他成员信息仍然缺失时才显示加载提示。超过五人的队伍仍然只显示队长。"
+            ]
+          },
+          {
+            "title": "更简单的地图设置",
+            "items": [
+              "现在只需一个“在地图和小地图上显示其他玩家”复选框即可控制两种显示。共享自己的位置仍是独立设置。原先任一地图显示已开启时，两种显示都会开启；原先都已关闭时，则保持关闭。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "6.4.3",
+        "welcome": "修正任務焦點和隊伍提示框，並簡化地圖顯示設定。",
+        "sections": [
+          {
+            "title": "你的任務焦點",
+            "items": [
+              "隊伍任務記錄中你的標題現在會直接讀取你目前關注的任務，即使你獨自遊玩或已關閉任務焦點分享。變更用於導航的超級追蹤任務後，標題會自動更新，無須按下重新整理。"
+            ]
+          },
+          {
+            "title": "提示框中的隊伍成員",
+            "items": [
+              "對於不超過五人的隊伍，提示框會在完整名單載入期間立即顯示滑鼠指向的玩家和隊長。只有其他成員資訊仍然缺少時才會顯示載入提示。超過五人的隊伍仍然只顯示隊長。"
+            ]
+          },
+          {
+            "title": "更簡單的地圖設定",
+            "items": [
+              "現在只需一個「在地圖和小地圖上顯示其他玩家」核取方塊即可控制兩種顯示。分享自己的位置仍是獨立設定。原先任一地圖顯示已開啟時，兩種顯示都會開啟；原先都已關閉時，則保持關閉。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "6.4.2",
         "welcome": "Thanks for using QuestTogether! This update adds more control over quest progress snapshots, player location displays, and window accessibility. Settings are easier to tune, and Discord is still the best place for feedback and support.",
         "sections": [

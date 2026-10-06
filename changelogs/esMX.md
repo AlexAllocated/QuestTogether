@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.0
+
+Controla tu misión activa desde el registro del grupo y sigue a tus compañeros incluso tras recargar.
+
+### Botones de misión activa
+
+- Ahora hay botones de misión al estilo de Blizzard en la columna de cada jugador, en lugar de los títulos en los encabezados. Haz clic en tu columna para cambiar la misión seleccionada para navegar. Los botones seleccionados muestran la misión activa de tus compañeros; haz clic en ellos para seguirlos.
+
+### Seguimiento duradero
+
+- Tu elección se guarda por personaje entre recargas y se mantiene durante interrupciones temporales de datos. Las nuevas actualizaciones del grupo ajustan tu misión activa si la tienes. Elegir tu propia navegación, la salida del compañero, la disolución del grupo o su conversión en banda detiene el seguimiento.
+
+### Si te falta la misión
+
+- Si el jugador al que sigues selecciona una misión que no tienes, el seguimiento se detiene sin cambiar tu navegación. Un diálogo con el tema de QT lo explica y abre el registro del grupo para solicitar la misión y volver a seguirlo. Prueba /qt preview focus para el diálogo o /qt preview compare para los botones y cambios de misión simulados.
+
 ## 6.4.3
 
 Correcciones del enfoque de misión y de las descripciones de grupo, con opciones de mapa más sencillas.

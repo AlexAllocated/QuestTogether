@@ -1,25 +1,25 @@
 {
-  "source_sha256": "0a12a063adc9ac68dbc22cb23653b5251cf3dc9294c5d9cbc2ba2c61eced96ca",
+  "source_sha256": "dff0abba7f50548a68532c181b1d74637f6b77c8ddb72dbedc5f7f902ccfbe59",
   "notes": {
-    "version": "6.4.3",
-    "welcome": "Corrections du suivi de quête et des infobulles de groupe, avec des réglages de carte simplifiés.",
+    "version": "6.5.0",
+    "welcome": "Choisissez votre quête ciblée directement dans le journal du groupe et continuez à suivre après un rechargement.",
     "sections": [
       {
-        "title": "Votre quête suivie",
+        "title": "Boutons de ciblage des quêtes",
         "items": [
-          "Votre en-tête dans le journal des quêtes de groupe lit désormais directement votre quête suivie, même en solo ou lorsque le partage du suivi est désactivé. Changer la quête choisie pour la navigation met à jour l’en-tête sans actualisation manuelle."
+          "Des boutons de quête de style Blizzard apparaissent dans la colonne de chaque joueur, à la place des titres de quête dans les en-têtes. Cliquez dans votre colonne pour changer votre quête de navigation. Les boutons sélectionnés indiquent la quête ciblée par vos coéquipiers ; cliquez dessus pour les suivre."
         ]
       },
       {
-        "title": "Membres du groupe dans les infobulles",
+        "title": "Un suivi durable",
         "items": [
-          "Pour les groupes de cinq joueurs maximum, l’infobulle affiche immédiatement le joueur survolé avec le chef pendant le chargement de la liste complète. Le message de chargement apparaît uniquement si d’autres membres manquent encore. Les groupes plus grands affichent toujours seulement le chef."
+          "Votre choix est enregistré par personnage après un rechargement et conservé pendant les interruptions temporaires de données. Les nouvelles données du groupe ajustent votre cible si vous avez la quête. Choisir votre propre navigation, le départ du coéquipier, la dissolution du groupe ou sa conversion en raid arrête le suivi."
         ]
       },
       {
-        "title": "Réglages de carte simplifiés",
+        "title": "Si vous n’avez pas la quête",
         "items": [
-          "Une seule case permettant d’afficher les autres joueurs sur la carte et la minicarte contrôle désormais les deux affichages. Le partage de votre position reste indépendant. Si l’un des affichages était activé, les deux restent activés ; si les deux étaient désactivés, l’affichage reste désactivé."
+          "Si le joueur suivi cible une quête que vous n’avez pas, le suivi s’arrête sans modifier votre navigation. Une fenêtre au thème QT explique la situation et ouvre le journal du groupe pour demander la quête, puis suivre à nouveau. Essayez /qt preview focus pour la fenêtre ou /qt preview compare pour les boutons et les changements de cible simulés."
         ]
       }
     ]

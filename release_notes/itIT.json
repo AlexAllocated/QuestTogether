@@ -1,25 +1,25 @@
 {
-  "source_sha256": "0a12a063adc9ac68dbc22cb23653b5251cf3dc9294c5d9cbc2ba2c61eced96ca",
+  "source_sha256": "dff0abba7f50548a68532c181b1d74637f6b77c8ddb72dbedc5f7f902ccfbe59",
   "notes": {
-    "version": "6.4.3",
-    "welcome": "Correzioni al focus missione e ai tooltip del gruppo, con impostazioni della mappa più semplici.",
+    "version": "6.5.0",
+    "welcome": "Seleziona la missione attiva dal registro del gruppo e continua a seguire anche dopo un ricaricamento.",
     "sections": [
       {
-        "title": "Il tuo focus missione",
+        "title": "Pulsanti della missione attiva",
         "items": [
-          "La tua intestazione nel Registro missioni del gruppo ora legge direttamente la missione selezionata per la navigazione, anche quando sei da solo o la condivisione del focus è disattivata. Cambiare la missione aggiorna l’intestazione senza dover premere Aggiorna."
+          "I pulsanti di missione in stile Blizzard appaiono ora nella colonna di ogni giocatore, al posto dei titoli nelle intestazioni. Clicca nella tua colonna per cambiare la missione di navigazione. I pulsanti selezionati mostrano la missione attiva dei compagni; cliccali per seguirli."
         ]
       },
       {
-        "title": "Membri del gruppo nei tooltip",
+        "title": "Un seguito persistente",
         "items": [
-          "Per i gruppi fino a cinque giocatori, i tooltip mostrano subito il giocatore sotto il cursore insieme al capogruppo mentre viene caricato l’elenco completo. Il messaggio di caricamento appare solo quando mancano ancora altri membri. I gruppi più grandi continuano a mostrare solo il capogruppo."
+          "La tua scelta viene salvata per personaggio tra i ricaricamenti e mantenuta durante le interruzioni temporanee dei dati. I nuovi aggiornamenti del gruppo cambiano il tuo obiettivo se possiedi la missione. Scegliere la tua navigazione, l’uscita del compagno, lo scioglimento del gruppo o la conversione in incursione interrompe il seguito."
         ]
       },
       {
-        "title": "Impostazioni della mappa più semplici",
+        "title": "Se non hai la missione",
         "items": [
-          "Un’unica casella per mostrare gli altri giocatori sulla mappa e sulla minimappa controlla ora entrambe le visualizzazioni. La condivisione della tua posizione resta indipendente. Se una delle visualizzazioni era attiva, entrambe restano attive; se entrambe erano disattivate, la visualizzazione resta disattivata."
+          "Se il giocatore seguito seleziona una missione che non hai, il seguito si interrompe senza cambiare la tua navigazione. Una finestra a tema QT lo spiega e apre il registro del gruppo per richiedere la missione e riprendere a seguire. Prova /qt preview focus per la finestra o /qt preview compare per i pulsanti e i cambi di missione simulati."
         ]
       }
     ]

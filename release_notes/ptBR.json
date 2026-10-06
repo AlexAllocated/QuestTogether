@@ -1,25 +1,25 @@
 {
-  "source_sha256": "0a12a063adc9ac68dbc22cb23653b5251cf3dc9294c5d9cbc2ba2c61eced96ca",
+  "source_sha256": "dff0abba7f50548a68532c181b1d74637f6b77c8ddb72dbedc5f7f902ccfbe59",
   "notes": {
-    "version": "6.4.3",
-    "welcome": "Correções do foco de missão e das dicas de grupo, além de configurações de mapa mais simples.",
+    "version": "6.5.0",
+    "welcome": "Controle o foco de missão no Registro de Missões do Grupo e continue seguindo após recarregar.",
     "sections": [
       {
-        "title": "Seu foco de missão",
+        "title": "Botões de foco de missão",
         "items": [
-          "Seu cabeçalho no Registro de Missões do Grupo agora lê diretamente sua missão em foco, mesmo quando você está sozinho ou com o compartilhamento de foco desativado. Alterar a missão selecionada para navegação atualiza o cabeçalho sem precisar clicar em Atualizar."
+          "Botões de missão no estilo da Blizzard agora aparecem na coluna de cada jogador, substituindo os títulos nos cabeçalhos. Clique na sua coluna para mudar sua missão de navegação. Os botões selecionados mostram o foco dos colegas; clique neles para segui-los."
         ]
       },
       {
-        "title": "Membros do grupo nas dicas",
+        "title": "Seguimento persistente",
         "items": [
-          "Em grupos de até cinco jogadores, as dicas mostram imediatamente o jogador sob o cursor junto com o líder enquanto a lista completa é carregada. A mensagem de carregamento aparece apenas quando ainda faltam outros membros. Grupos maiores continuam mostrando apenas o líder."
+          "Sua escolha é salva por personagem entre recarregamentos e mantida durante falhas temporárias de dados. Novas atualizações do grupo ajustam seu foco se você tiver a missão. Escolher sua própria navegação, a saída do colega, o fim do grupo ou sua conversão em raide encerra o seguimento."
         ]
       },
       {
-        "title": "Configurações de mapa mais simples",
+        "title": "Quando você não tem a missão",
         "items": [
-          "Uma única caixa para mostrar outros jogadores no mapa e no minimapa agora controla ambas as exibições. Compartilhar sua própria localização continua independente. Se uma das exibições estava ativada, ambas ficam ativadas; se as duas estavam desativadas, a exibição permanece desativada."
+          "Se o jogador seguido selecionar uma missão que você não tem, você para de segui-lo sem alterar sua navegação. Uma janela com o tema do QT explica e abre o Registro de Missões do Grupo para solicitar a missão e seguir novamente. Teste a janela com /qt preview focus ou os botões e mudanças simuladas com /qt preview compare."
         ]
       }
     ]

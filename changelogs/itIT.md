@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.0
+
+Seleziona la missione attiva dal registro del gruppo e continua a seguire anche dopo un ricaricamento.
+
+### Pulsanti della missione attiva
+
+- I pulsanti di missione in stile Blizzard appaiono ora nella colonna di ogni giocatore, al posto dei titoli nelle intestazioni. Clicca nella tua colonna per cambiare la missione di navigazione. I pulsanti selezionati mostrano la missione attiva dei compagni; cliccali per seguirli.
+
+### Un seguito persistente
+
+- La tua scelta viene salvata per personaggio tra i ricaricamenti e mantenuta durante le interruzioni temporanee dei dati. I nuovi aggiornamenti del gruppo cambiano il tuo obiettivo se possiedi la missione. Scegliere la tua navigazione, l’uscita del compagno, lo scioglimento del gruppo o la conversione in incursione interrompe il seguito.
+
+### Se non hai la missione
+
+- Se il giocatore seguito seleziona una missione che non hai, il seguito si interrompe senza cambiare la tua navigazione. Una finestra a tema QT lo spiega e apre il registro del gruppo per richiedere la missione e riprendere a seguire. Prova /qt preview focus per la finestra o /qt preview compare per i pulsanti e i cambi di missione simulati.
+
 ## 6.4.3
 
 Correzioni al focus missione e ai tooltip del gruppo, con impostazioni della mappa più semplici.

@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.0
+
+Steuere den Questfokus direkt im Gruppen-Questlog und folge deiner Gruppe auch nach dem Neuladen weiter.
+
+### Schaltflächen für den Questfokus
+
+- Questschaltflächen im Blizzard-Stil erscheinen jetzt in der Questspalte jedes Spielers und ersetzen die Questtitel in den Kopfzeilen. Klicke in deiner Spalte, um deine Navigationsquest zu ändern. Ausgewählte Schaltflächen zeigen den Fokus deiner Mitspieler; klicke darauf, um ihnen zu folgen.
+
+### Dauerhaft folgen
+
+- Deine Auswahl wird pro Charakter über das Neuladen hinaus gespeichert und bleibt bei vorübergehenden Datenlücken erhalten. Neue Gruppendaten passen deinen Fokus an, wenn du die Quest besitzt. Eine eigene Navigationsauswahl, das Verlassen des Mitspielers, die Auflösung der Gruppe oder die Umwandlung in einen Schlachtzug beendet das Folgen.
+
+### Wenn dir die Quest fehlt
+
+- Wählt der Spieler, dem du folgst, eine Quest, die du nicht hast, endet das Folgen, ohne deine Navigation zu ändern. Ein Dialog im QT-Design erklärt dies und öffnet das Gruppen-Questlog, damit du die Quest anfordern und erneut folgen kannst. Teste den Dialog mit /qt preview focus oder die Schaltflächen und simulierte Fokuswechsel mit /qt preview compare.
+
 ## 6.4.3
 
 Korrekturen am Quest-Fokus und an Gruppen-Tooltips sowie einfachere Karteneinstellungen.

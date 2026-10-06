@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.0
+
+Choisissez votre quête ciblée directement dans le journal du groupe et continuez à suivre après un rechargement.
+
+### Boutons de ciblage des quêtes
+
+- Des boutons de quête de style Blizzard apparaissent dans la colonne de chaque joueur, à la place des titres de quête dans les en-têtes. Cliquez dans votre colonne pour changer votre quête de navigation. Les boutons sélectionnés indiquent la quête ciblée par vos coéquipiers ; cliquez dessus pour les suivre.
+
+### Un suivi durable
+
+- Votre choix est enregistré par personnage après un rechargement et conservé pendant les interruptions temporaires de données. Les nouvelles données du groupe ajustent votre cible si vous avez la quête. Choisir votre propre navigation, le départ du coéquipier, la dissolution du groupe ou sa conversion en raid arrête le suivi.
+
+### Si vous n’avez pas la quête
+
+- Si le joueur suivi cible une quête que vous n’avez pas, le suivi s’arrête sans modifier votre navigation. Une fenêtre au thème QT explique la situation et ouvre le journal du groupe pour demander la quête, puis suivre à nouveau. Essayez /qt preview focus pour la fenêtre ou /qt preview compare pour les boutons et les changements de cible simulés.
+
 ## 6.4.3
 
 Corrections du suivi de quête et des infobulles de groupe, avec des réglages de carte simplifiés.

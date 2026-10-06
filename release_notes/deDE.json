@@ -1,25 +1,25 @@
 {
-  "source_sha256": "0a12a063adc9ac68dbc22cb23653b5251cf3dc9294c5d9cbc2ba2c61eced96ca",
+  "source_sha256": "dff0abba7f50548a68532c181b1d74637f6b77c8ddb72dbedc5f7f902ccfbe59",
   "notes": {
-    "version": "6.4.3",
-    "welcome": "Korrekturen am Quest-Fokus und an Gruppen-Tooltips sowie einfachere Karteneinstellungen.",
+    "version": "6.5.0",
+    "welcome": "Steuere den Questfokus direkt im Gruppen-Questlog und folge deiner Gruppe auch nach dem Neuladen weiter.",
     "sections": [
       {
-        "title": "Dein Quest-Fokus",
+        "title": "Schaltflächen für den Questfokus",
         "items": [
-          "Deine Überschrift im Gruppen-Questlog liest die aktuell fokussierte Quest jetzt direkt aus, auch wenn du allein bist oder die Freigabe des Quest-Fokus deaktiviert ist. Änderungen an deiner Navigationsquest aktualisieren die Überschrift ohne manuelles Aktualisieren."
+          "Questschaltflächen im Blizzard-Stil erscheinen jetzt in der Questspalte jedes Spielers und ersetzen die Questtitel in den Kopfzeilen. Klicke in deiner Spalte, um deine Navigationsquest zu ändern. Ausgewählte Schaltflächen zeigen den Fokus deiner Mitspieler; klicke darauf, um ihnen zu folgen."
         ]
       },
       {
-        "title": "Gruppenlisten in Tooltips",
+        "title": "Dauerhaft folgen",
         "items": [
-          "Bei Gruppen mit bis zu fünf Spielern zeigt der Tooltip sofort den Spieler unter dem Mauszeiger neben dem Anführer, während die vollständige Liste geladen wird. Der Ladehinweis erscheint nur, solange weitere Mitglieder fehlen. Bei größeren Gruppen wird weiterhin nur der Anführer angezeigt."
+          "Deine Auswahl wird pro Charakter über das Neuladen hinaus gespeichert und bleibt bei vorübergehenden Datenlücken erhalten. Neue Gruppendaten passen deinen Fokus an, wenn du die Quest besitzt. Eine eigene Navigationsauswahl, das Verlassen des Mitspielers, die Auflösung der Gruppe oder die Umwandlung in einen Schlachtzug beendet das Folgen."
         ]
       },
       {
-        "title": "Einfachere Karteneinstellungen",
+        "title": "Wenn dir die Quest fehlt",
         "items": [
-          "Ein einziges Kontrollkästchen zum Anzeigen anderer Spieler auf Karte und Minimap steuert jetzt beide Ansichten. Die Freigabe deines eigenen Standorts bleibt unabhängig davon. War zuvor mindestens eine Ansicht aktiviert, bleiben beide sichtbar; waren beide deaktiviert, bleibt die Anzeige aus."
+          "Wählt der Spieler, dem du folgst, eine Quest, die du nicht hast, endet das Folgen, ohne deine Navigation zu ändern. Ein Dialog im QT-Design erklärt dies und öffnet das Gruppen-Questlog, damit du die Quest anfordern und erneut folgen kannst. Teste den Dialog mit /qt preview focus oder die Schaltflächen und simulierte Fokuswechsel mit /qt preview compare."
         ]
       }
     ]

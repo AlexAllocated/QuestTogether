@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.0
+
+Controle o foco de missão no Registro de Missões do Grupo e continue seguindo após recarregar.
+
+### Botões de foco de missão
+
+- Botões de missão no estilo da Blizzard agora aparecem na coluna de cada jogador, substituindo os títulos nos cabeçalhos. Clique na sua coluna para mudar sua missão de navegação. Os botões selecionados mostram o foco dos colegas; clique neles para segui-los.
+
+### Seguimento persistente
+
+- Sua escolha é salva por personagem entre recarregamentos e mantida durante falhas temporárias de dados. Novas atualizações do grupo ajustam seu foco se você tiver a missão. Escolher sua própria navegação, a saída do colega, o fim do grupo ou sua conversão em raide encerra o seguimento.
+
+### Quando você não tem a missão
+
+- Se o jogador seguido selecionar uma missão que você não tem, você para de segui-lo sem alterar sua navegação. Uma janela com o tema do QT explica e abre o Registro de Missões do Grupo para solicitar a missão e seguir novamente. Teste a janela com /qt preview focus ou os botões e mudanças simuladas com /qt preview compare.
+
 ## 6.4.3
 
 Correções do foco de missão e das dicas de grupo, além de configurações de mapa mais simples.
