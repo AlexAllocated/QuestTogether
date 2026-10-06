@@ -4,24 +4,12 @@
 
 ## 6.3.0
 
-Un nouveau journal de quêtes du groupe, des destinations partagées et le suivi facultatif d'une quête facilitent les aventures ensemble.
+Un espacement plus agréable dans le journal de quêtes du groupe.
 
-### Journal de quêtes du groupe
+### Espacement des panneaux d’objectifs
 
-- Le comparateur devient le journal de quêtes du groupe. Développez plusieurs quêtes à la fois pour voir les objectifs et la progression de chacun, avec un bilan des quêtes prêtes à être rendues dans le groupe.
-- Recherchez des quêtes et combinez les filtres de possession, de progression et de partage. Actualiser met à jour les données des autres joueurs ; les anciens clients peuvent toujours comparer les listes, mais pas fournir les détails des objectifs.
-- Redimensionnez la fenêtre en parchemin et faites défiler son contenu en douceur. Les colonnes aux couleurs des classes, les en-têtes cliquables et espacés et les panneaux d'objectifs arrondis améliorent la lisibilité.
-
-### Quête active et points de passage partagés
-
-- La quête active de chaque membre apparaît sous son nom. Choisissez de suivre sa quête depuis son en-tête ou son menu QT pour activer les quêtes que vous possédez. Une quête absente ou désélectionnée conserve votre navigation ; naviguer manuellement, quitter le groupe ou recharger l'interface arrête le suivi.
-- Les points de passage Blizzard des autres membres apparaissent aux couleurs des classes sur la carte du monde et, à proximité, sur la minicarte. Les marqueurs superposés indiquent tous les propriétaires ; Naviguer ici utilise TomTom ou la navigation native. Recevoir un point ne vous redirige jamais et ne garantit pas une phase commune.
-- Partager ma quête active, Partager mon point de passage et Afficher les points du groupe sont activés par défaut dans Groupes et partage, indépendamment de la position publique et de la recherche de partenaires. Le suivi exige un choix explicite. Ces fonctions nécessitent des clients à jour dans un groupe de cinq au maximum, donjons compris, hors raids.
-
-### Fenêtres et menus
-
-- Les notes de mise à jour adoptent aussi le parchemin sombre, avec un mode clair facultatif. Déplacez ou redimensionnez la fenêtre, parcourez un historique plus lisible et utilisez les flèches pour changer de version ou atteindre une extrémité. Discord et Paramètres sont dans le pied de page.
-- Les infobulles des joueurs s'ajustent mieux au contenu. Le menu de la minicarte sépare les outils de quête des notes, de l'emplacement du journal et de la visibilité de l'icône. Paramètres et Envoyer un message QT en sont retirés ; les paramètres restent accessibles avec /qt options.
+- Les panneaux d’objectifs développés ont désormais plus d’espace en bas pour éviter que les barres de progression touchent la bordure. Le défilement et les animations tiennent compte de cet espace.
+- Les messages tels que « Aucun détail d’objectif disponible » sont centrés verticalement à côté du nom du joueur au lieu d’être collés à la bordure supérieure.
 
 ## 6.2.3
 

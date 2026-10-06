@@ -1,30 +1,14 @@
 {
-  "source_sha256": "f1e76cded13345a77a0ee6c9f4a910741ff222710e3a9793f4f2b54f5bb3caf0",
+  "source_sha256": "cc2a434f085b1c811a66e90a993aadd2c083311be57fa002ea2f723c11eb3e2c",
   "notes": {
     "version": "6.3.0",
-    "welcome": "Un nuevo registro de misiones del grupo, destinos compartidos y seguimiento opcional de misiones facilitan jugar juntos.",
+    "welcome": "Mejor espaciado en el registro de misiones del grupo.",
     "sections": [
       {
-        "title": "Registro de misiones del grupo",
+        "title": "Espaciado de los paneles de objetivos",
         "items": [
-          "El comparador pasa a llamarse Registro de misiones del grupo. Despliega varias misiones a la vez para ver los objetivos y el progreso de cada miembro, con un resumen de las misiones listas para entregar.",
-          "Busca misiones y combina filtros de posesión, progreso y opciones para compartir. Actualizar renueva los datos de otros jugadores; los clientes antiguos pueden comparar listas, pero no proporcionar detalles de objetivos.",
-          "Redimensiona la ventana de pergamino y desplázate con suavidad. Las columnas con colores de clase, los encabezados de jugador pulsables y con margen interior y los paneles de objetivos redondeados mejoran la lectura."
-        ]
-      },
-      {
-        "title": "Misión activa y puntos de ruta compartidos",
-        "items": [
-          "La misión activa aparece bajo el nombre de cada miembro. Elige seguir su misión desde su encabezado o menú QT para activar misiones que tengas. Si te falta la misión o deja de seleccionar una, tu navegación se conserva; navegar manualmente, salir del grupo o recargar la interfaz detiene el seguimiento.",
-          "Los puntos de ruta de Blizzard de otros miembros aparecen con colores de clase en el mapa del mundo y, si están cerca, en el minimapa. Los marcadores superpuestos muestran todos los propietarios; Navegar aquí usa TomTom o la navegación nativa. Recibir un punto nunca cambia tu destino ni garantiza estar en la misma fase.",
-          "Compartir mi misión activa, Compartir mi punto de ruta y Mostrar puntos del grupo están activados por defecto en Grupos y compartir, independientemente de la ubicación pública y la búsqueda de compañeros. Seguir una misión requiere elegirlo. Estas funciones necesitan compañeros actualizados en grupos de hasta cinco, incluidas mazmorras, pero no bandas."
-        ]
-      },
-      {
-        "title": "Ventanas y menús",
-        "items": [
-          "Las notas del parche también usan pergamino oscuro, con modo claro opcional. Mueve o redimensiona la ventana, consulta un historial más limpio y usa las flechas para cambiar de versión o saltar a los extremos. Discord y Ajustes están en el pie.",
-          "Las ayudas de los jugadores se ajustan mejor al contenido. El menú del minimapa separa las herramientas de misiones de las notas, la ubicación del registro y la visibilidad del icono. Ajustes y Enviar mensaje de chat QT se eliminan de ese menú; los ajustes siguen disponibles con /qt options."
+          "Los paneles de objetivos desplegados tienen más espacio interior inferior para que las barras de progreso no toquen el borde. El desplazamiento y las animaciones de expansión tienen en cuenta este espacio.",
+          "Los mensajes como «No hay detalles de objetivos disponibles» se centran verticalmente junto al nombre del jugador en lugar de quedar pegados al borde superior."
         ]
       }
     ]

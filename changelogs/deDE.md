@@ -4,24 +4,12 @@
 
 ## 6.3.0
 
-Ein neues Gruppenquestlog, geteilte Ziele und optionales Folgen aktiver Quests erleichtern das gemeinsame Questen.
+Angenehmere Abstände im Gruppenquestlog.
 
-### Gruppenquestlog
+### Abstände in den Zielfeldern
 
-- Der Gruppenquestvergleich heißt jetzt Gruppenquestlog. Klappt mehrere Quests gleichzeitig auf, um Ziele und Fortschritt jedes Mitglieds sowie eine Übersicht der Abgabebereitschaft der Gruppe zu sehen.
-- Sucht Quests und kombiniert Filter für Questbesitz, Fortschritt und Teilen. Aktualisieren lädt neue Daten anderer Spieler; ältere Clients können weiterhin Questlisten vergleichen, aber keine Zieldetails liefern.
-- Passt die Größe des Pergamentfensters an und scrollt flüssig. Klassenfarbene Spalten, anklickbare Spielerüberschriften mit Innenabstand und abgerundete Zielbereiche machen den Fortschritt leichter lesbar.
-
-### Questfokus und geteilte Wegpunkte
-
-- Unter jedem Namen steht die aktive Quest. Wählt im Spielerkopf oder QT-Menü „Questfokus folgen“, um eigenen Quests zu folgen. Fehlende oder aufgehobene Quests lassen eure Navigation unverändert; manuelle Navigation, Verlassen der Gruppe oder Neuladen beendet das Folgen.
-- Blizzard-Wegpunkte anderer Mitglieder erscheinen als klassenfarbene Markierungen auf Weltkarte und naher Minikarte. Überlappende Markierungen nennen alle Besitzer; „Hierhin navigieren“ nutzt TomTom oder die integrierte Navigation. Empfangene Markierungen ändern nie euer Ziel und bedeuten keine gemeinsame Phase.
-- „Meine aktive Quest teilen“, „Meinen Wegpunkt teilen“ und „Gruppenwegpunkte anzeigen“ sind unter „Gruppen & Teilen“ standardmäßig an, unabhängig von öffentlicher Standortfreigabe und Partnersuche. Folgen wird ausdrücklich aktiviert. Die Funktionen benötigen aktualisierte Mitspieler in Gruppen bis fünf, auch in Dungeons; Schlachtzüge sind ausgeschlossen.
-
-### Fenster und Menüs
-
-- Patchnotes verwenden jetzt ebenfalls das dunkle Pergamentdesign mit optionalem hellem Modus. Verschiebt oder skaliert das Fenster, durchsucht übersichtlichere Verlaufseinträge und wechselt mit Pfeilen zwischen Versionen oder zum Anfang und Ende. Discord und Einstellungen stehen im Fußbereich.
-- Spieler-Tooltips passen sich ihrem Inhalt besser an. Das Minikartenmenü trennt Questwerkzeuge von Patchnotes, Logfenster-Auswahl und Symbolanzeige. Einstellungen und „QT-Chatnachricht senden“ wurden daraus entfernt; Einstellungen bleiben über /qt options erreichbar.
+- Ausgeklappte Zielfelder haben jetzt unten mehr Innenabstand, damit Fortschrittsbalken den Rand nicht berühren. Scrollen und Ausklappanimationen berücksichtigen den zusätzlichen Platz.
+- Meldungen wie „Keine Zieldetails verfügbar“ werden neben dem Spielernamen vertikal zentriert, statt zu dicht am oberen Rand zu stehen.
 
 ## 6.2.3
 

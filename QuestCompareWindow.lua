@@ -1,6 +1,12 @@
 local L = _G.QuestTogether.Translate
 local QuestTogether = _G.QuestTogether
 local VISIBLE_ROWS, ROW_HEIGHT = 11, 42
+local DETAIL_BOTTOM_PADDING = 10
+local function CompareRowHeight(rows, index)
+	local row, following = rows[index], rows[index + 1]
+	local lastDetail = row.kind and (not following or not following.kind or following.questId ~= row.questId)
+	return ROW_HEIGHT + (lastDetail and DETAIL_BOTTOM_PADDING or 0)
+end
 local QUEST_WIDTH, MEMBER_WIDTH, ACTION_WIDTH = 350, 130, 160
 local COLUMN_WIDTH = MEMBER_WIDTH - 4
 local function ColumnLeft(index)
@@ -95,6 +101,7 @@ local function LayoutPanel(region, parent, layer, sublevel, x, y, width, height,
 end
 
 local function LayoutDetailsPanel(row, width, details, first, last, expanded, dark)
+	local height = row:GetHeight()
 	local left, right = details and 28 or 0, details and 14 or 0
 	local top, bottom = details and first and 6 or 0, details and last and 6 or 0
 	-- Each pooled row supplies one slice of the same inset panel. Only the
@@ -108,7 +115,7 @@ local function LayoutDetailsPanel(row, width, details, first, last, expanded, da
 		left,
 		top,
 		width - left - right,
-		ROW_HEIGHT - top - bottom,
+		height - top - bottom,
 		roundTop,
 		roundBottom
 	)
@@ -120,7 +127,7 @@ local function LayoutDetailsPanel(row, width, details, first, last, expanded, da
 		left,
 		top,
 		width - left - right,
-		ROW_HEIGHT - top - bottom,
+		height - top - bottom,
 		roundTop,
 		roundBottom
 	)
@@ -132,7 +139,7 @@ local function LayoutDetailsPanel(row, width, details, first, last, expanded, da
 		left,
 		top,
 		width - left - right,
-		ROW_HEIGHT - top - bottom,
+		height - top - bottom,
 		roundTop,
 		roundBottom
 	)
@@ -161,7 +168,7 @@ local function LayoutDetailsPanel(row, width, details, first, last, expanded, da
 			edge:SetPoint("TOPLEFT", row, "TOPLEFT", x, -top - (roundTop and CORNER_RADIUS or 0))
 			edge:SetSize(
 				1,
-				ROW_HEIGHT - top - bottom - (roundTop and CORNER_RADIUS or 0) - (roundBottom and CORNER_RADIUS or 0)
+				height - top - bottom - (roundTop and CORNER_RADIUS or 0) - (roundBottom and CORNER_RADIUS or 0)
 			)
 			edge:Show()
 		end
@@ -194,7 +201,7 @@ local function LayoutDetailsPanel(row, width, details, first, last, expanded, da
 			row,
 			"TOPLEFT",
 			rightSide and width - right - CORNER_RADIUS or left,
-			bottomSide and -ROW_HEIGHT + bottom + CORNER_RADIUS or -top
+			bottomSide and -height + bottom + CORNER_RADIUS or -top
 		)
 		if dark then
 			corner:SetVertexColor(0.64, 0.58, 0.42, 0.65)
@@ -205,7 +212,7 @@ local function LayoutDetailsPanel(row, width, details, first, last, expanded, da
 	end
 	row.accent:ClearAllPoints()
 	row.accent:SetPoint("TOPLEFT", row, "TOPLEFT", details and left + 3 or 0, -top)
-	row.accent:SetSize(3, ROW_HEIGHT - top - bottom)
+	row.accent:SetSize(3, height - top - bottom)
 	return top, bottom
 end
 
@@ -388,6 +395,7 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 			row:Show()
 			row.clip:Show()
 			row:SetWidth(width)
+			row:SetHeight(CompareRowHeight(rows, slot.index))
 			local expanded = not data.kind and session.expandedQuestIds and session.expandedQuestIds[data.questId]
 			local previous, following = rows[slot.index - 1], rows[slot.index + 1]
 			local first = not previous or not previous.kind or previous.questId ~= data.questId
@@ -529,7 +537,14 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 				end
 			else
 				row.action:Hide()
-				row.hint:SetPoint("TOPLEFT", actionX, (data.kind and -2 or -4) - top)
+				if data.kind == "member" then
+					-- Center two-line notices beside the name instead of crowding
+					-- the panel's top edge with a fixed top-aligned text box.
+					row.hint:SetPoint("LEFT", row.title, "RIGHT", 16, 0)
+					row.hint:SetHeight(28)
+				else
+					row.hint:SetPoint("TOPLEFT", actionX, (data.kind and -2 or -4) - top)
+				end
 				row.hint:SetWidth(ACTION_WIDTH - (data.kind and 28 or 8))
 				row.hint:SetText(L(status or data.hint or ""))
 				row.hint:Show()
@@ -540,16 +555,19 @@ end
 
 local function DetailHeights(rows)
 	local heights = {}
-	for _, row in ipairs(rows) do
+	for index, row in ipairs(rows) do
 		if row.kind then
-			heights[row.questId] = (heights[row.questId] or 0) + ROW_HEIGHT
+			heights[row.questId] = (heights[row.questId] or 0) + CompareRowHeight(rows, index)
 		end
 	end
 	return heights
 end
 
 local function CompareHeight(frame)
-	local height = #frame.displayRows * ROW_HEIGHT
+	local height = 0
+	for index in ipairs(frame.displayRows) do
+		height = height + CompareRowHeight(frame.displayRows, index)
+	end
 	for id, full in pairs(DetailHeights(frame.displayRows)) do
 		local transition = frame.expansions and frame.expansions[id]
 		if transition then
@@ -573,13 +591,14 @@ local function ScrollCompare(self, frame, session, pixels, force)
 	pixels = math.max(0, math.min(pixels, maximum))
 	local visible, keys, y = {}, {}, 0
 	for index, data in ipairs(rows) do
-		local height = ROW_HEIGHT
+		local fullHeight = CompareRowHeight(rows, index)
+		local height = fullHeight
 		if data.kind then
 			local id = data.questId
 			local transition = frame.expansions and frame.expansions[id]
 			local reveal = transition and transition.reveal or heights[id]
-			height = math.max(0, math.min(ROW_HEIGHT, reveal - (seen[id] or 0)))
-			seen[id] = (seen[id] or 0) + ROW_HEIGHT
+			height = math.max(0, math.min(fullHeight, reveal - (seen[id] or 0)))
+			seen[id] = (seen[id] or 0) + fullHeight
 		end
 		if height > 0 and y + height > pixels and y < pixels + frame.rowsViewport:GetHeight() then
 			visible[#visible + 1] = { index = index, top = y, height = height }
