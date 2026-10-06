@@ -4,6 +4,26 @@
 
 [Other languages](changelogs/README.md)
 
+## 6.5.1
+
+Clearer quest focus buttons, safer changes while following, and icons that match the native quest tracker.
+
+### Clear focus controls
+
+- While following, only the followed player’s active quest button stays colored. Without a follow, your buttons and teammates’ active quests stay colored. All other buttons are gray, with no fading. Teammates’ active quests remain clickable to start or switch following.
+
+### Confirm before changing focus
+
+- Choosing your own quest or switching teammates asks before ending the current follow. Changing or clearing quest focus through Blizzard’s tracker now asks too: QT restores the followed focus while you decide. Cancel keeps following; Change focus applies your choice. Preview the dialog with /qt preview unfollow.
+
+### Matching quest icons
+
+- Quest readiness now uses the same completion query as Blizzard’s tracker, fixing delivery quests that showed an in-progress icon instead of a question mark. The corrected Ready status is also included in shared Party Quest Log snapshots.
+
+### Test with your own quests
+
+- The compare preview now uses your real quest log with four simulated teammates and extra missing quests. Focus controls change your real Blizzard navigation; sharing stays simulated. Use a teammate’s name menu to advance their focused quest. Quests that cannot be shared now show a centered Not shareable or Shareability unknown label instead of a blank action column.
+
 ## 6.5.0
 
 Control quest focus directly in Party Quest Log, and keep following your party through reloads.

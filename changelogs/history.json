@@ -3,6 +3,272 @@
   "releases": [
     {
       "enUS": {
+        "version": "6.5.0",
+        "welcome": "Control quest focus directly in Party Quest Log, and keep following your party through reloads.",
+        "sections": [
+          {
+            "title": "Quest focus buttons",
+            "items": [
+              "Blizzard-style quest buttons now appear in each player’s quest column, replacing focused quest titles in the headers. Click a button in your column to change your super-tracked quest. Selected buttons show each teammate’s focus; click theirs to follow them."
+            ]
+          },
+          {
+            "title": "Following that lasts",
+            "items": [
+              "Your follow choice is saved per character across reloads and waits through temporary data gaps. Fresh party updates keep your focus matched when you own the quest. Choosing your own navigation stops following, as do a departed teammate, a disbanded party, or conversion to a raid."
+            ]
+          },
+          {
+            "title": "When you are missing the quest",
+            "items": [
+              "If the player you follow focuses a quest you do not have, following stops without changing your navigation. A themed dialog explains and opens Party Quest Log so you can request the quest and follow again. Try /qt preview focus for the dialog, or /qt preview compare to test the buttons and simulated focus changes."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "6.5.0",
+        "welcome": "Steuere den Questfokus direkt im Gruppen-Questlog und folge deiner Gruppe auch nach dem Neuladen weiter.",
+        "sections": [
+          {
+            "title": "Schaltflächen für den Questfokus",
+            "items": [
+              "Questschaltflächen im Blizzard-Stil erscheinen jetzt in der Questspalte jedes Spielers und ersetzen die Questtitel in den Kopfzeilen. Klicke in deiner Spalte, um deine Navigationsquest zu ändern. Ausgewählte Schaltflächen zeigen den Fokus deiner Mitspieler; klicke darauf, um ihnen zu folgen."
+            ]
+          },
+          {
+            "title": "Dauerhaft folgen",
+            "items": [
+              "Deine Auswahl wird pro Charakter über das Neuladen hinaus gespeichert und bleibt bei vorübergehenden Datenlücken erhalten. Neue Gruppendaten passen deinen Fokus an, wenn du die Quest besitzt. Eine eigene Navigationsauswahl, das Verlassen des Mitspielers, die Auflösung der Gruppe oder die Umwandlung in einen Schlachtzug beendet das Folgen."
+            ]
+          },
+          {
+            "title": "Wenn dir die Quest fehlt",
+            "items": [
+              "Wählt der Spieler, dem du folgst, eine Quest, die du nicht hast, endet das Folgen, ohne deine Navigation zu ändern. Ein Dialog im QT-Design erklärt dies und öffnet das Gruppen-Questlog, damit du die Quest anfordern und erneut folgen kannst. Teste den Dialog mit /qt preview focus oder die Schaltflächen und simulierte Fokuswechsel mit /qt preview compare."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "6.5.0",
+        "welcome": "Choisissez votre quête ciblée directement dans le journal du groupe et continuez à suivre après un rechargement.",
+        "sections": [
+          {
+            "title": "Boutons de ciblage des quêtes",
+            "items": [
+              "Des boutons de quête de style Blizzard apparaissent dans la colonne de chaque joueur, à la place des titres de quête dans les en-têtes. Cliquez dans votre colonne pour changer votre quête de navigation. Les boutons sélectionnés indiquent la quête ciblée par vos coéquipiers ; cliquez dessus pour les suivre."
+            ]
+          },
+          {
+            "title": "Un suivi durable",
+            "items": [
+              "Votre choix est enregistré par personnage après un rechargement et conservé pendant les interruptions temporaires de données. Les nouvelles données du groupe ajustent votre cible si vous avez la quête. Choisir votre propre navigation, le départ du coéquipier, la dissolution du groupe ou sa conversion en raid arrête le suivi."
+            ]
+          },
+          {
+            "title": "Si vous n’avez pas la quête",
+            "items": [
+              "Si le joueur suivi cible une quête que vous n’avez pas, le suivi s’arrête sans modifier votre navigation. Une fenêtre au thème QT explique la situation et ouvre le journal du groupe pour demander la quête, puis suivre à nouveau. Essayez /qt preview focus pour la fenêtre ou /qt preview compare pour les boutons et les changements de cible simulés."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "6.5.0",
+        "welcome": "Controla tu misión activa desde el registro del grupo y sigue a tus compañeros incluso tras recargar.",
+        "sections": [
+          {
+            "title": "Botones de misión activa",
+            "items": [
+              "Ahora hay botones de misión al estilo de Blizzard en la columna de cada jugador, en lugar de los títulos en los encabezados. Haz clic en tu columna para cambiar la misión seleccionada para navegar. Los botones seleccionados muestran la misión activa de tus compañeros; haz clic en ellos para seguirlos."
+            ]
+          },
+          {
+            "title": "Seguimiento duradero",
+            "items": [
+              "Tu elección se guarda por personaje entre recargas y se mantiene durante interrupciones temporales de datos. Las nuevas actualizaciones del grupo ajustan tu misión activa si la tienes. Elegir tu propia navegación, la salida del compañero, la disolución del grupo o su conversión en banda detiene el seguimiento."
+            ]
+          },
+          {
+            "title": "Si te falta la misión",
+            "items": [
+              "Si el jugador al que sigues selecciona una misión que no tienes, el seguimiento se detiene sin cambiar tu navegación. Un diálogo con el tema de QT lo explica y abre el registro del grupo para solicitar la misión y volver a seguirlo. Prueba /qt preview focus para el diálogo o /qt preview compare para los botones y cambios de misión simulados."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "6.5.0",
+        "welcome": "Controla tu misión activa desde el registro del grupo y sigue a tus compañeros incluso tras recargar.",
+        "sections": [
+          {
+            "title": "Botones de misión activa",
+            "items": [
+              "Ahora hay botones de misión al estilo de Blizzard en la columna de cada jugador, en lugar de los títulos en los encabezados. Haz clic en tu columna para cambiar la misión seleccionada para navegar. Los botones seleccionados muestran la misión activa de tus compañeros; haz clic en ellos para seguirlos."
+            ]
+          },
+          {
+            "title": "Seguimiento duradero",
+            "items": [
+              "Tu elección se guarda por personaje entre recargas y se mantiene durante interrupciones temporales de datos. Las nuevas actualizaciones del grupo ajustan tu misión activa si la tienes. Elegir tu propia navegación, la salida del compañero, la disolución del grupo o su conversión en banda detiene el seguimiento."
+            ]
+          },
+          {
+            "title": "Si te falta la misión",
+            "items": [
+              "Si el jugador al que sigues selecciona una misión que no tienes, el seguimiento se detiene sin cambiar tu navegación. Un diálogo con el tema de QT lo explica y abre el registro del grupo para solicitar la misión y volver a seguirlo. Prueba /qt preview focus para el diálogo o /qt preview compare para los botones y cambios de misión simulados."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "6.5.0",
+        "welcome": "Controle o foco de missão no Registro de Missões do Grupo e continue seguindo após recarregar.",
+        "sections": [
+          {
+            "title": "Botões de foco de missão",
+            "items": [
+              "Botões de missão no estilo da Blizzard agora aparecem na coluna de cada jogador, substituindo os títulos nos cabeçalhos. Clique na sua coluna para mudar sua missão de navegação. Os botões selecionados mostram o foco dos colegas; clique neles para segui-los."
+            ]
+          },
+          {
+            "title": "Seguimento persistente",
+            "items": [
+              "Sua escolha é salva por personagem entre recarregamentos e mantida durante falhas temporárias de dados. Novas atualizações do grupo ajustam seu foco se você tiver a missão. Escolher sua própria navegação, a saída do colega, o fim do grupo ou sua conversão em raide encerra o seguimento."
+            ]
+          },
+          {
+            "title": "Quando você não tem a missão",
+            "items": [
+              "Se o jogador seguido selecionar uma missão que você não tem, você para de segui-lo sem alterar sua navegação. Uma janela com o tema do QT explica e abre o Registro de Missões do Grupo para solicitar a missão e seguir novamente. Teste a janela com /qt preview focus ou os botões e mudanças simuladas com /qt preview compare."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "6.5.0",
+        "welcome": "Выбирайте активное задание прямо в журнале группы и продолжайте следовать после перезагрузки интерфейса.",
+        "sections": [
+          {
+            "title": "Кнопки выбора задания",
+            "items": [
+              "Кнопки заданий в стиле Blizzard теперь находятся в столбце каждого игрока вместо названий заданий в заголовках. Нажмите кнопку в своём столбце, чтобы выбрать задание для навигации. Выделенные кнопки показывают выбор товарищей; нажмите такую кнопку, чтобы следовать за игроком."
+            ]
+          },
+          {
+            "title": "Сохранение следования",
+            "items": [
+              "Выбор сохраняется для каждого персонажа после перезагрузки и при временном отсутствии данных. Свежие данные группы меняют вашу цель, если у вас есть задание. Собственная навигация, выход товарища, роспуск группы или преобразование в рейд прекращают следование."
+            ]
+          },
+          {
+            "title": "Если у вас нет задания",
+            "items": [
+              "Если выбранный игрок начинает отслеживать задание, которого у вас нет, следование прекращается без изменения вашей навигации. Диалог в стиле QT объясняет причину и открывает журнал группы, чтобы запросить задание и снова включить следование. Используйте /qt preview focus для диалога или /qt preview compare для кнопок и имитации смены заданий."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "6.5.0",
+        "welcome": "Seleziona la missione attiva dal registro del gruppo e continua a seguire anche dopo un ricaricamento.",
+        "sections": [
+          {
+            "title": "Pulsanti della missione attiva",
+            "items": [
+              "I pulsanti di missione in stile Blizzard appaiono ora nella colonna di ogni giocatore, al posto dei titoli nelle intestazioni. Clicca nella tua colonna per cambiare la missione di navigazione. I pulsanti selezionati mostrano la missione attiva dei compagni; cliccali per seguirli."
+            ]
+          },
+          {
+            "title": "Un seguito persistente",
+            "items": [
+              "La tua scelta viene salvata per personaggio tra i ricaricamenti e mantenuta durante le interruzioni temporanee dei dati. I nuovi aggiornamenti del gruppo cambiano il tuo obiettivo se possiedi la missione. Scegliere la tua navigazione, l’uscita del compagno, lo scioglimento del gruppo o la conversione in incursione interrompe il seguito."
+            ]
+          },
+          {
+            "title": "Se non hai la missione",
+            "items": [
+              "Se il giocatore seguito seleziona una missione che non hai, il seguito si interrompe senza cambiare la tua navigazione. Una finestra a tema QT lo spiega e apre il registro del gruppo per richiedere la missione e riprendere a seguire. Prova /qt preview focus per la finestra o /qt preview compare per i pulsanti e i cambi di missione simulati."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "6.5.0",
+        "welcome": "파티 퀘스트 목록에서 집중 추적을 직접 변경하고, UI를 다시 불러온 후에도 파티원을 따라가세요.",
+        "sections": [
+          {
+            "title": "퀘스트 집중 추적 버튼",
+            "items": [
+              "머리글의 퀘스트 제목 대신 각 플레이어의 퀘스트 열에 블리자드 스타일 버튼이 표시됩니다. 자신의 열에서 버튼을 클릭하면 길 안내할 퀘스트를 변경할 수 있습니다. 선택된 버튼은 파티원이 집중 추적하는 퀘스트를 표시하며, 클릭하면 해당 플레이어를 따라갑니다."
+            ]
+          },
+          {
+            "title": "계속 유지되는 따라가기",
+            "items": [
+              "따라갈 대상은 캐릭터별로 저장되어 UI 재시작 후에도 유지되며, 일시적인 데이터 공백 동안 기다립니다. 새 파티 정보가 도착하면 보유한 퀘스트에 맞춰 집중 추적을 변경합니다. 직접 길 안내를 선택하거나, 대상이 파티를 떠나거나, 파티가 해산되거나 공격대로 전환되면 따라가기가 중지됩니다."
+            ]
+          },
+          {
+            "title": "퀘스트가 없는 경우",
+            "items": [
+              "따라가는 플레이어가 보유하지 않은 퀘스트를 선택하면 현재 길 안내를 변경하지 않고 따라가기를 중지합니다. QT 테마 대화 상자가 이유를 설명하고 파티 퀘스트 목록을 열어 공유를 요청한 뒤 다시 따라갈 수 있게 합니다. /qt preview focus로 대화 상자를, /qt preview compare로 버튼과 모의 집중 추적 변경을 확인하세요."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "6.5.0",
+        "welcome": "直接在队伍任务日志中控制重点追踪，重新加载界面后也能继续跟随队友。",
+        "sections": [
+          {
+            "title": "任务重点追踪按钮",
+            "items": [
+              "每位玩家的任务列现在显示暴雪风格的任务按钮，替代列标题下的任务名称。点击自己列中的按钮即可更改导航任务。选中按钮显示队友的重点追踪任务；点击即可跟随该队友。"
+            ]
+          },
+          {
+            "title": "持续跟随",
+            "items": [
+              "跟随选择按角色保存，重新加载界面后仍然有效，并会等待暂时缺失的数据。收到新的队伍信息后，如果你拥有该任务，就会同步重点追踪。主动选择导航、队友离队、队伍解散或转换为团队都会停止跟随。"
+            ]
+          },
+          {
+            "title": "缺少任务时",
+            "items": [
+              "如果跟随的玩家重点追踪了你没有的任务，跟随会停止，当前导航保持不变。QT主题对话框会说明原因，并可打开队伍任务日志，让你请求分享任务后重新跟随。使用 /qt preview focus 预览对话框，或使用 /qt preview compare 测试按钮和模拟任务切换。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "6.5.0",
+        "welcome": "直接在隊伍任務日誌中控制重點追蹤，重新載入介面後也能繼續跟隨隊友。",
+        "sections": [
+          {
+            "title": "任務重點追蹤按鈕",
+            "items": [
+              "每位玩家的任務欄現在顯示暴雪風格的任務按鈕，取代欄位標題下的任務名稱。點擊自己欄中的按鈕即可更改導航任務。選取的按鈕顯示隊友的重點追蹤任務；點擊即可跟隨該隊友。"
+            ]
+          },
+          {
+            "title": "持續跟隨",
+            "items": [
+              "跟隨選擇依角色儲存，重新載入介面後仍然有效，並會等待暫時缺失的資料。收到新的隊伍資訊後，如果你擁有該任務，就會同步重點追蹤。主動選擇導航、隊友離隊、隊伍解散或轉換為團隊都會停止跟隨。"
+            ]
+          },
+          {
+            "title": "缺少任務時",
+            "items": [
+              "如果跟隨的玩家重點追蹤了你沒有的任務，跟隨會停止，目前導航保持不變。QT主題對話框會說明原因，並可開啟隊伍任務日誌，讓你要求分享任務後重新跟隨。使用 /qt preview focus 預覽對話框，或使用 /qt preview compare 測試按鈕和模擬任務切換。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "6.4.3",
         "welcome": "Fixes for quest focus and party tooltips, plus simpler map display settings.",
         "sections": [

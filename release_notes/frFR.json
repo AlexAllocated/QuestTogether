@@ -1,25 +1,31 @@
 {
-  "source_sha256": "dff0abba7f50548a68532c181b1d74637f6b77c8ddb72dbedc5f7f902ccfbe59",
+  "source_sha256": "8e10d473802a6dc5f6d47ea033e4777b3baaf45dec85652e897d5aabd96274a3",
   "notes": {
-    "version": "6.5.0",
-    "welcome": "Choisissez votre quête ciblée directement dans le journal du groupe et continuez à suivre après un rechargement.",
+    "version": "6.5.1",
+    "welcome": "Des boutons de quête plus clairs, des changements confirmés pendant le suivi et des icônes conformes au suivi Blizzard.",
     "sections": [
       {
-        "title": "Boutons de ciblage des quêtes",
+        "title": "Des commandes plus claires",
         "items": [
-          "Des boutons de quête de style Blizzard apparaissent dans la colonne de chaque joueur, à la place des titres de quête dans les en-têtes. Cliquez dans votre colonne pour changer votre quête de navigation. Les boutons sélectionnés indiquent la quête ciblée par vos coéquipiers ; cliquez dessus pour les suivre."
+          "Pendant le suivi, seul le bouton de la quête active du joueur suivi reste coloré. Sans suivi, vos boutons et les quêtes actives de vos coéquipiers restent colorés. Les autres boutons sont gris, sans transparence. Les quêtes actives des coéquipiers restent cliquables pour commencer le suivi ou changer de joueur."
         ]
       },
       {
-        "title": "Un suivi durable",
+        "title": "Confirmer le changement",
         "items": [
-          "Votre choix est enregistré par personnage après un rechargement et conservé pendant les interruptions temporaires de données. Les nouvelles données du groupe ajustent votre cible si vous avez la quête. Choisir votre propre navigation, le départ du coéquipier, la dissolution du groupe ou sa conversion en raid arrête le suivi."
+          "Choisir votre propre quête ou un autre coéquipier demande confirmation avant d’arrêter le suivi actuel. Changer ou effacer la cible dans le suivi Blizzard demande aussi confirmation : QT rétablit la cible suivie pendant votre décision. Annuler conserve le suivi ; Changer de cible applique votre choix. Aperçu : /qt preview unfollow."
         ]
       },
       {
-        "title": "Si vous n’avez pas la quête",
+        "title": "Des icônes cohérentes",
         "items": [
-          "Si le joueur suivi cible une quête que vous n’avez pas, le suivi s’arrête sans modifier votre navigation. Une fenêtre au thème QT explique la situation et ouvre le journal du groupe pour demander la quête, puis suivre à nouveau. Essayez /qt preview focus pour la fenêtre ou /qt preview compare pour les boutons et les changements de cible simulés."
+          "L’état des quêtes utilise désormais la même vérification d’achèvement que le suivi Blizzard. Les quêtes de livraison affichent ainsi un point d’interrogation au lieu d’une icône de progression. L’état Prêt corrigé est également inclus dans les données partagées du journal du groupe."
+        ]
+      },
+      {
+        "title": "Testez avec vos quêtes",
+        "items": [
+          "L’aperçu utilise votre vrai journal avec quatre coéquipiers simulés et des quêtes supplémentaires manquantes. Le ciblage change votre navigation Blizzard réelle ; le partage reste simulé. Le menu du nom d’un coéquipier permet de changer sa quête active. La colonne d’action affiche désormais Non partageable ou Partage possible inconnu, centré, au lieu de rester vide."
         ]
       }
     ]

@@ -1,25 +1,31 @@
 {
-  "source_sha256": "dff0abba7f50548a68532c181b1d74637f6b77c8ddb72dbedc5f7f902ccfbe59",
+  "source_sha256": "8e10d473802a6dc5f6d47ea033e4777b3baaf45dec85652e897d5aabd96274a3",
   "notes": {
-    "version": "6.5.0",
-    "welcome": "Steuere den Questfokus direkt im Gruppen-Questlog und folge deiner Gruppe auch nach dem Neuladen weiter.",
+    "version": "6.5.1",
+    "welcome": "Klarere Questfokus-Schaltflächen, sichere Wechsel beim Folgen und passende Symbole zur Blizzard-Questverfolgung.",
     "sections": [
       {
-        "title": "Schaltflächen für den Questfokus",
+        "title": "Klarer Questfokus",
         "items": [
-          "Questschaltflächen im Blizzard-Stil erscheinen jetzt in der Questspalte jedes Spielers und ersetzen die Questtitel in den Kopfzeilen. Klicke in deiner Spalte, um deine Navigationsquest zu ändern. Ausgewählte Schaltflächen zeigen den Fokus deiner Mitspieler; klicke darauf, um ihnen zu folgen."
+          "Beim Folgen bleibt nur die aktive Quest des verfolgten Spielers farbig. Ohne Folgen bleiben deine Schaltflächen und die aktiven Quests deiner Mitspieler farbig. Alle anderen sind grau, ohne Transparenz. Aktive Quests von Mitspielern bleiben anklickbar, um das Folgen zu starten oder das Ziel zu wechseln."
         ]
       },
       {
-        "title": "Dauerhaft folgen",
+        "title": "Fokuswechsel bestätigen",
         "items": [
-          "Deine Auswahl wird pro Charakter über das Neuladen hinaus gespeichert und bleibt bei vorübergehenden Datenlücken erhalten. Neue Gruppendaten passen deinen Fokus an, wenn du die Quest besitzt. Eine eigene Navigationsauswahl, das Verlassen des Mitspielers, die Auflösung der Gruppe oder die Umwandlung in einen Schlachtzug beendet das Folgen."
+          "Die Wahl einer eigenen Quest oder eines anderen Mitspielers fragt vor dem Ende des bisherigen Folgens nach. Auch Fokuswechsel oder das Aufheben des Fokus über Blizzards Questverfolgung fragen jetzt nach: QT stellt den bisherigen Fokus während der Entscheidung wieder her. Abbrechen behält das Folgen bei; Fokus ändern übernimmt die Auswahl. Vorschau: /qt preview unfollow."
         ]
       },
       {
-        "title": "Wenn dir die Quest fehlt",
+        "title": "Passende Questsymbole",
         "items": [
-          "Wählt der Spieler, dem du folgst, eine Quest, die du nicht hast, endet das Folgen, ohne deine Navigation zu ändern. Ein Dialog im QT-Design erklärt dies und öffnet das Gruppen-Questlog, damit du die Quest anfordern und erneut folgen kannst. Teste den Dialog mit /qt preview focus oder die Schaltflächen und simulierte Fokuswechsel mit /qt preview compare."
+          "Der Queststatus nutzt jetzt dieselbe Abschlussabfrage wie Blizzards Questverfolgung. Dadurch zeigen Lieferquests ein Fragezeichen statt eines Fortschrittssymbols. Der korrigierte Bereit-Status wird auch mit dem Gruppen-Questlog geteilt."
+        ]
+      },
+      {
+        "title": "Mit eigenen Quests testen",
+        "items": [
+          "Die Vergleichsvorschau nutzt dein echtes Questlog mit vier simulierten Mitspielern und zusätzlichen fehlenden Quests. Fokuswechsel ändern deine echte Blizzard-Navigation; Teilen bleibt simuliert. Über das Namensmenü eines Mitspielers wechselst du dessen Fokus weiter. Statt einer leeren Aktionsspalte zeigen nicht teilbare Quests nun zentriert Nicht teilbar oder Teilbarkeit unbekannt."
         ]
       }
     ]

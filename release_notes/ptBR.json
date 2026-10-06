@@ -1,25 +1,31 @@
 {
-  "source_sha256": "dff0abba7f50548a68532c181b1d74637f6b77c8ddb72dbedc5f7f902ccfbe59",
+  "source_sha256": "8e10d473802a6dc5f6d47ea033e4777b3baaf45dec85652e897d5aabd96274a3",
   "notes": {
-    "version": "6.5.0",
-    "welcome": "Controle o foco de missão no Registro de Missões do Grupo e continue seguindo após recarregar.",
+    "version": "6.5.1",
+    "welcome": "Botões de missão mais claros, confirmação ao mudar o foco seguido e ícones iguais aos do rastreador da Blizzard.",
     "sections": [
       {
-        "title": "Botões de foco de missão",
+        "title": "Controles mais claros",
         "items": [
-          "Botões de missão no estilo da Blizzard agora aparecem na coluna de cada jogador, substituindo os títulos nos cabeçalhos. Clique na sua coluna para mudar sua missão de navegação. Os botões selecionados mostram o foco dos colegas; clique neles para segui-los."
+          "Ao seguir alguém, apenas o botão da missão ativa desse jogador mantém a cor. Sem seguir, seus botões e as missões ativas dos colegas mantêm a cor. Os demais ficam cinza, sem transparência. As missões ativas dos colegas continuam clicáveis para começar a segui-los ou trocar de jogador."
         ]
       },
       {
-        "title": "Seguimento persistente",
+        "title": "Confirme antes de mudar",
         "items": [
-          "Sua escolha é salva por personagem entre recarregamentos e mantida durante falhas temporárias de dados. Novas atualizações do grupo ajustam seu foco se você tiver a missão. Escolher sua própria navegação, a saída do colega, o fim do grupo ou sua conversão em raide encerra o seguimento."
+          "Escolher sua própria missão ou outro colega pede confirmação antes de encerrar o seguimento atual. Mudar ou limpar o foco pelo rastreador da Blizzard também pede confirmação: o QT restaura o foco seguido enquanto você decide. Cancelar mantém o seguimento; Mudar foco aplica sua escolha. Prévia: /qt preview unfollow."
         ]
       },
       {
-        "title": "Quando você não tem a missão",
+        "title": "Ícones consistentes",
         "items": [
-          "Se o jogador seguido selecionar uma missão que você não tem, você para de segui-lo sem alterar sua navegação. Uma janela com o tema do QT explica e abre o Registro de Missões do Grupo para solicitar a missão e seguir novamente. Teste a janela com /qt preview focus ou os botões e mudanças simuladas com /qt preview compare."
+          "O estado das missões agora usa a mesma consulta de conclusão do rastreador da Blizzard, corrigindo missões de entrega que exibiam um ícone de progresso em vez de uma interrogação. O estado Pronto corrigido também é incluído nos dados compartilhados do Registro de Missões do Grupo."
+        ]
+      },
+      {
+        "title": "Teste com suas missões",
+        "items": [
+          "A prévia usa seu registro real com quatro colegas simulados e missões extras que você não tem. Os controles mudam sua navegação real da Blizzard; o compartilhamento continua simulado. Use o menu do nome de um colega para avançar a missão ativa dele. A coluna de ações agora mostra Não compartilhável ou Compartilhamento desconhecido, centralizado, em vez de ficar vazia."
         ]
       }
     ]

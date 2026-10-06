@@ -1,25 +1,31 @@
 {
-  "source_sha256": "dff0abba7f50548a68532c181b1d74637f6b77c8ddb72dbedc5f7f902ccfbe59",
+  "source_sha256": "8e10d473802a6dc5f6d47ea033e4777b3baaf45dec85652e897d5aabd96274a3",
   "notes": {
-    "version": "6.5.0",
-    "welcome": "Controla tu misión activa desde el registro del grupo y sigue a tus compañeros incluso tras recargar.",
+    "version": "6.5.1",
+    "welcome": "Botones de misión más claros, cambios confirmados al seguir a alguien e iconos que coinciden con el seguimiento de Blizzard.",
     "sections": [
       {
-        "title": "Botones de misión activa",
+        "title": "Controles más claros",
         "items": [
-          "Ahora hay botones de misión al estilo de Blizzard en la columna de cada jugador, en lugar de los títulos en los encabezados. Haz clic en tu columna para cambiar la misión seleccionada para navegar. Los botones seleccionados muestran la misión activa de tus compañeros; haz clic en ellos para seguirlos."
+          "Mientras sigues a alguien, solo conserva su color el botón de su misión activa. Sin seguimiento, tus botones y las misiones activas de tus compañeros conservan su color. Los demás botones son grises, sin transparencia. Las misiones activas de tus compañeros siguen siendo pulsables para empezar a seguirlos o cambiar de objetivo."
         ]
       },
       {
-        "title": "Seguimiento duradero",
+        "title": "Confirmar los cambios",
         "items": [
-          "Tu elección se guarda por personaje entre recargas y se mantiene durante interrupciones temporales de datos. Las nuevas actualizaciones del grupo ajustan tu misión activa si la tienes. Elegir tu propia navegación, la salida del compañero, la disolución del grupo o su conversión en banda detiene el seguimiento."
+          "Elegir tu propia misión o cambiar de compañero pide confirmación antes de terminar el seguimiento actual. Cambiar o quitar la misión activa desde el seguimiento de Blizzard también: QT restaura la misión seguida mientras decides. Cancelar mantiene el seguimiento; Cambiar misión aplica tu elección. Vista previa: /qt preview unfollow."
         ]
       },
       {
-        "title": "Si te falta la misión",
+        "title": "Iconos coherentes",
         "items": [
-          "Si el jugador al que sigues selecciona una misión que no tienes, el seguimiento se detiene sin cambiar tu navegación. Un diálogo con el tema de QT lo explica y abre el registro del grupo para solicitar la misión y volver a seguirlo. Prueba /qt preview focus para el diálogo o /qt preview compare para los botones y cambios de misión simulados."
+          "El estado de las misiones ahora usa la misma consulta de finalización que el seguimiento de Blizzard. Así se corrigen las misiones de entrega que mostraban un icono de progreso en vez de una interrogación. El estado Listo corregido también se incluye en los datos compartidos del registro del grupo."
+        ]
+      },
+      {
+        "title": "Prueba con tus misiones",
+        "items": [
+          "La vista previa usa tu registro real con cuatro compañeros simulados y misiones adicionales que no tienes. Los controles de misión cambian tu navegación real de Blizzard; compartir sigue siendo simulado. Usa el menú del nombre de un compañero para avanzar su misión activa. La columna de acciones muestra ahora No se puede compartir o Disponibilidad de compartir desconocida, centrado, en vez de quedar vacía."
         ]
       }
     ]

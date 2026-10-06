@@ -3,25 +3,31 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "6.5.0",
-	welcome = "Control quest focus directly in Party Quest Log, and keep following your party through reloads.",
+	version = "6.5.1",
+	welcome = "Clearer quest focus buttons, safer changes while following, and icons that match the native quest tracker.",
 	sections = {
 		{
-			title = "Quest focus buttons",
+			title = "Clear focus controls",
 			items = {
-				"Blizzard-style quest buttons now appear in each player’s quest column, replacing focused quest titles in the headers. Click a button in your column to change your super-tracked quest. Selected buttons show each teammate’s focus; click theirs to follow them.",
+				"While following, only the followed player’s active quest button stays colored. Without a follow, your buttons and teammates’ active quests stay colored. All other buttons are gray, with no fading. Teammates’ active quests remain clickable to start or switch following.",
 			},
 		},
 		{
-			title = "Following that lasts",
+			title = "Confirm before changing focus",
 			items = {
-				"Your follow choice is saved per character across reloads and waits through temporary data gaps. Fresh party updates keep your focus matched when you own the quest. Choosing your own navigation stops following, as do a departed teammate, a disbanded party, or conversion to a raid.",
+				"Choosing your own quest or switching teammates asks before ending the current follow. Changing or clearing quest focus through Blizzard’s tracker now asks too: QT restores the followed focus while you decide. Cancel keeps following; Change focus applies your choice. Preview the dialog with /qt preview unfollow.",
 			},
 		},
 		{
-			title = "When you are missing the quest",
+			title = "Matching quest icons",
 			items = {
-				"If the player you follow focuses a quest you do not have, following stops without changing your navigation. A themed dialog explains and opens Party Quest Log so you can request the quest and follow again. Try /qt preview focus for the dialog, or /qt preview compare to test the buttons and simulated focus changes.",
+				"Quest readiness now uses the same completion query as Blizzard’s tracker, fixing delivery quests that showed an in-progress icon instead of a question mark. The corrected Ready status is also included in shared Party Quest Log snapshots.",
+			},
+		},
+		{
+			title = "Test with your own quests",
+			items = {
+				"The compare preview now uses your real quest log with four simulated teammates and extra missing quests. Focus controls change your real Blizzard navigation; sharing stays simulated. Use a teammate’s name menu to advance their focused quest. Quests that cannot be shared now show a centered Not shareable or Shareability unknown label instead of a blank action column.",
 			},
 		},
 	},
