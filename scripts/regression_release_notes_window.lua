@@ -845,3 +845,25 @@ Register("release history uses reusable themed list rows with separate version d
 	Equal(#a.regions, count)
 	assert(f.historyRows[1].label.textColor[1] < 0.3)
 end)
+
+Register("party quest guide screenshots retain aspect ratio across clients and clear on reuse", function()
+	for _, regional in ipairs({ false, true }) do
+		local a = Fixture()
+		function a:UsesRegionalPlayerNames() return regional end
+		local notes = Notes()
+		notes.sections = {
+			{ title = "Overview", items = { "Guide" }, illustration = "party-quest-overview" },
+			{ title = "Following", items = { "Guide" }, illustration = "party-quest-following" },
+			{ title = "Warning", items = { "Guide" }, illustration = "party-quest-focus-warning" },
+		}
+		assert(a:RenderReleaseNotesWindow(notes, "6.5.3", false))
+		local frame = a.releaseNotesWindow
+		for asset, ratio in pairs({ PartyQuestOverviewForever = 580 / 1467,
+			PartyQuestFollowingForever = 254 / 1210, PartyQuestFocusWarningForever = 540 / 1824 }) do
+			local image = frame.releaseScreenshots[asset]
+			assert(image and image.shown and math.abs(image.height / image.width - ratio) < 0.0001)
+		end
+		assert(a:RenderReleaseNotesWindow(Notes(), "6.5.2", false))
+		for _, image in pairs(frame.releaseScreenshots) do assert(not image.shown) end
+	end
+end)

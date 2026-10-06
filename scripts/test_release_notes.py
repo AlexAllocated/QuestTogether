@@ -35,7 +35,7 @@ class NotesTests(unittest.TestCase):
         notes["sections"][0]["illustration"] = "quest-partners"
         parsed = CHECKER.parse_notes(json.dumps(notes))
         self.assertIn('illustration = "quest-partners"', CHECKER.render_lua(parsed))
-        for illustration in ('party-quest-log', 'party-quest-objectives'):
+        for illustration in ('party-quest-log', 'party-quest-objectives', 'party-quest-overview', 'party-quest-following', 'party-quest-focus-warning'):
             notes['sections'][0]['illustration'] = illustration
             self.assertIn('illustration = "' + illustration + '"', CHECKER.render_lua(CHECKER.parse_notes(json.dumps(notes))))
         notes["sections"][0]["illustration"] = "unknown"

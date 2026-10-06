@@ -79,6 +79,12 @@ def illustration_images(illustration):
         return [('Retail', 'PartyQuestLogRetail'), ('Forever', 'PartyQuestLogForever')]
     if illustration == 'party-quest-objectives':
         return [('Forever', 'PartyQuestObjectivesForever')]
+    if illustration == 'party-quest-overview':
+        return [('Forever', 'PartyQuestOverviewForever')]
+    if illustration == 'party-quest-following':
+        return [('Forever', 'PartyQuestFollowingForever')]
+    if illustration == 'party-quest-focus-warning':
+        return [('Forever', 'PartyQuestFocusWarningForever')]
     return []
 
 

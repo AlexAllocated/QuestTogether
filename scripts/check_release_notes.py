@@ -102,7 +102,7 @@ def parse_notes(text, label=NOTES_FILE):
         prefix = label + ".sections[" + str(index) + "]"
         if not isinstance(section, dict) or not {"title", "items"} <= set(section) or set(section) - {"title", "items", "illustration"}:
             raise NotesError(prefix + " must contain title and items, with an optional illustration")
-        if "illustration" in section and section["illustration"] not in ("quest-partners", "party-quest-log", "party-quest-objectives"):
+        if "illustration" in section and section["illustration"] not in ("quest-partners", "party-quest-log", "party-quest-objectives", "party-quest-overview", "party-quest-following", "party-quest-focus-warning"):
             raise NotesError(prefix + ".illustration is unsupported")
         title = meaningful_text(section["title"], prefix + ".title", 80, single_line=True)
         if title.casefold() in titles:

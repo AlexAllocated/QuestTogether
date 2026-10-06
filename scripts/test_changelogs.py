@@ -31,6 +31,20 @@ class ChangelogTests(unittest.TestCase):
         self.assertIn('**Retail**', markdown)
         self.assertIn('**Forever**', markdown)
 
+    def test_party_focus_guide_attaches_all_three_original_screenshots(self):
+        from discord_changelog import message_files
+        names = ('party-quest-overview', 'party-quest-following', 'party-quest-focus-warning')
+        assets = ('PartyQuestOverviewForever', 'PartyQuestFollowingForever', 'PartyQuestFocusWarningForever')
+        notes = {'version': '6.5.3', 'welcome': 'An illustrated guide.', 'sections': [
+            {'title': name, 'items': ['Read the guide.'], 'illustration': name} for name in names]}
+        markdown = c.render('enUS', [{'enUS': notes}])
+        messages = build_messages(notes, DEFAULT_REPOSITORY, 'v6.5.3')
+        files = [file for message in messages for file in message_files(Path(__file__).resolve().parent.parent, message)]
+        self.assertEqual([name for name, data in files], [name + '.png' for name in assets])
+        for name, data in files:
+            self.assertIn('/v6.5.3/Media/ReleaseNotes/' + name, markdown)
+            self.assertTrue(data.startswith(b'\x89PNG\r\n\x1a\n'))
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

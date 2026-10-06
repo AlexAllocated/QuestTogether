@@ -440,7 +440,7 @@ def posted_markers(history, planned, repository, tag, locale="enUS"):
 def message_files(root, payload):
     """Read only the canonical, locally checked-in PNGs referenced by this part."""
     from changelogs import illustration_images
-    allowed = {asset + ".png" for name in ("party-quest-log", "party-quest-objectives")
+    allowed = {asset + ".png" for name in ("party-quest-log", "party-quest-objectives", "party-quest-overview", "party-quest-following", "party-quest-focus-warning")
                for _, asset in illustration_images(name)}
     files = []
     for index, attachment in enumerate(payload.get("attachments", [])):
