@@ -21,6 +21,22 @@ class LocalizationTests(unittest.TestCase):
         with self.assertRaises(ValueError):L.validate_translation('Value %s','Wert %z %s')
         with self.assertRaises(ValueError):L.validate_translation('/qt options opens settings','/qt einstellungen öffnet Optionen')
         with self.assertRaises(ValueError):L.validate_translation('/qt options opens settings','Einstellungen öffnen')
+    def test_release_note_percentages_are_plain_text(self):
+        source = 'Scale from 80% to 150% and use /qt resetlayout.'
+        target = 'Skalierung von 80 % bis 150 %; verwende /qt resetlayout.'
+        L.validate_translation(source, target, formatted=False)
+        with self.assertRaises(ValueError):
+            L.validate_translation(source, target.replace('/qt resetlayout', '/qt reset'), formatted=False)
+        with self.assertRaises(ValueError):
+            L.validate_translation('Value %s', 'Wert %d')
+    def test_notes_request_disables_only_printf_validation(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            (root/'release_notes.json').write_text(json.dumps({'version':'1.0.0','welcome':'Scale 150% and more','sections':[{'title':'New','items':['One']}]}))
+            with patch('translate_locales.request_translation', return_value=['150 % und mehr', 'Neu', 'Eins']) as request:
+                translate(root, 'deDE', notes=True)
+                self.assertIs(request.call_args.kwargs['formatted'], False)
     def test_command_names_allow_korean_particles_but_reject_renames(self):
         L.validate_translation('Open /qtd, then run /qt test.', '/qtd를 열고 /qt test를 실행하세요.')
         for target in ['/qtdx를 열고 /qt test를 실행하세요.', '/qtd를 열고 /qt 검사 실행하세요.']:

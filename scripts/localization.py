@@ -36,9 +36,9 @@ def source_strings(root):
     # Dynamic, canonical status identifiers are translated only at presentation.
     keys.update(read(root/'locales/dynamic.json'))
     return sorted(keys)
-def validate_translation(source,target):
+def validate_translation(source,target,formatted=True):
     if not isinstance(target,str) or not target.strip(): raise ValueError('empty translation: '+source)
-    if FORMAT.findall(source):
+    if formatted and FORMAT.findall(source):
         position=0
         while True:
             position=target.find('%',position)
@@ -51,7 +51,7 @@ def validate_translation(source,target):
     if re.findall(commands,source)!=re.findall(commands,target):raise ValueError('command changed: '+source)
     for argument in re.findall(r'<[^>]+>|\[(?:on|questID)[^\]]*\]|emoteOnQuestCompletion|on\|off\|toggle|true/false, on/off, 1/0',source):
         if '/qt' in source and argument not in target:raise ValueError('command argument changed: '+source)
-    if FORMAT.findall(source)!=FORMAT.findall(target): raise ValueError('format placeholders differ: '+source)
+    if formatted and FORMAT.findall(source)!=FORMAT.findall(target): raise ValueError('format placeholders differ: '+source)
     if re.match(r'^\s*',source)[0]!=re.match(r'^\s*',target)[0] or re.search(r'\s*$',source)[0]!=re.search(r'\s*$',target)[0]:
         raise ValueError('boundary whitespace differs: '+repr(source))
     if any(ord(c)<32 and c not in '\n\t' for c in target): raise ValueError('control character in translation')
