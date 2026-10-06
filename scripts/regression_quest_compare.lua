@@ -3910,3 +3910,26 @@ QuestTogether:RegisterTest("native preview defers unreadable ownership and restr
 	Equal(#a.wire, 0)
 	Equal(a.pushes, 0)
 end)
+
+QuestTogether:RegisterTest("closing native preview resumes an already applied real party focus", function()
+	local a = NativePreviewFixture()
+	a:Roster(a.name, "Real Friend")
+	a.API.IsInRaid = function() return false end
+	function a:GetPartyNavigationPeer(name)
+		if name == "Real Friend" then return { questID = 101, title = "Real quest one" } end
+	end
+	a.partyNavigationState = { following = "Real Friend", followToken = {}, expectedQuest = 101, attempt = 101 }
+	assert(a:OpenPartyQuestComparePreview())
+	local p = a.partyQuestComparePreview
+	assert(p:SelectPartyQuestFocus(a.name, 102))
+	Equal(a.nativeFocus, 102)
+	a:ApplyPartyQuestFocus()
+	Equal(a.nativeFocus, 102)
+	a:ClosePartyQuestComparePreview()
+	assert(a.partyNavigationState.resuming)
+	Equal(a.partyNavigationState.attempt, nil)
+	a:ApplyPartyQuestFocus()
+	Equal(a.nativeFocus, 101)
+	Equal(a.partyNavigationState.following, "Real Friend")
+	Equal(a.partyNavigationState.resuming, nil)
+end)

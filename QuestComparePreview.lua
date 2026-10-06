@@ -363,10 +363,20 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		self:QueuePartyQuestCompareRender()
 	end
 	function preview:CancelPartyQuestCompare()
+		local wasNative = self.liveQuestData and self.partyQuestCompareSession ~= nil
 		self.partyQuestCompareSession, self.partyNavigationState = nil, nil
 		if self.navigationObserver then
 			if self.navigationObserver.UnregisterAllEvents then self.navigationObserver:UnregisterAllEvents() end
 			self.navigationObserver:Hide()
+		end
+		if wasNative then
+			local state = rawget(owner, "partyNavigationState")
+			if state and state.following then
+				-- The preview can have changed native focus after the live model's
+				-- last successful attempt. Establish a new baseline before resuming.
+				state.attempt, state.checkExternal, state.resuming = nil, nil, true
+			end
+			owner:QueuePartyNavigationUpdate()
 		end
 	end
 	function preview:RenderPartyQuestCompare()
