@@ -1,7 +1,7 @@
 {
-  "source_sha256": "8e10d473802a6dc5f6d47ea033e4777b3baaf45dec85652e897d5aabd96274a3",
+  "source_sha256": "c97bf4f73ed99ec17b14910f6b5c9a1ff000e96a46c2ed71abeb0829fee58aa8",
   "notes": {
-    "version": "6.5.1",
+    "version": "6.5.2",
     "welcome": "Klarere Questfokus-Schaltflächen, sichere Wechsel beim Folgen und passende Symbole zur Blizzard-Questverfolgung.",
     "sections": [
       {
@@ -25,7 +25,7 @@
       {
         "title": "Mit eigenen Quests testen",
         "items": [
-          "Die Vergleichsvorschau nutzt dein echtes Questlog mit vier simulierten Mitspielern und zusätzlichen fehlenden Quests. Fokuswechsel ändern deine echte Blizzard-Navigation; Teilen bleibt simuliert. Über das Namensmenü eines Mitspielers wechselst du dessen Fokus weiter. Statt einer leeren Aktionsspalte zeigen nicht teilbare Quests nun zentriert Nicht teilbar oder Teilbarkeit unbekannt."
+          "Die Vergleichsvorschau nutzt dein echtes Questlog mit vier simulierten Mitspielern und zusätzlichen fehlenden Quests. Fokuswechsel ändern deine echte Blizzard-Navigation; Teilen bleibt simuliert. Über das Namensmenü eines Mitspielers wechselst du dessen Fokus weiter. Statt einer leeren Aktionsspalte zeigen nicht teilbare Quests nun zentriert Nicht teilbar oder Teilbarkeit unbekannt. Beim Schließen der Vorschau wird ein bestehendes Folgen in der echten Gruppe fortgesetzt."
         ]
       }
     ]

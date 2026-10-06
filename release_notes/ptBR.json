@@ -1,7 +1,7 @@
 {
-  "source_sha256": "8e10d473802a6dc5f6d47ea033e4777b3baaf45dec85652e897d5aabd96274a3",
+  "source_sha256": "c97bf4f73ed99ec17b14910f6b5c9a1ff000e96a46c2ed71abeb0829fee58aa8",
   "notes": {
-    "version": "6.5.1",
+    "version": "6.5.2",
     "welcome": "Botões de missão mais claros, confirmação ao mudar o foco seguido e ícones iguais aos do rastreador da Blizzard.",
     "sections": [
       {
@@ -25,7 +25,7 @@
       {
         "title": "Teste com suas missões",
         "items": [
-          "A prévia usa seu registro real com quatro colegas simulados e missões extras que você não tem. Os controles mudam sua navegação real da Blizzard; o compartilhamento continua simulado. Use o menu do nome de um colega para avançar a missão ativa dele. A coluna de ações agora mostra Não compartilhável ou Compartilhamento desconhecido, centralizado, em vez de ficar vazia."
+          "A prévia usa seu registro real com quatro colegas simulados e missões extras que você não tem. Os controles mudam sua navegação real da Blizzard; o compartilhamento continua simulado. Use o menu do nome de um colega para avançar a missão ativa dele. A coluna de ações agora mostra Não compartilhável ou Compartilhamento desconhecido, centralizado, em vez de ficar vazia. Fechar a prévia retoma o seguimento existente no grupo real."
         ]
       }
     ]

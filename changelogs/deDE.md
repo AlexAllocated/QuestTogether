@@ -2,6 +2,26 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.2
+
+Klarere Questfokus-Schaltflächen, sichere Wechsel beim Folgen und passende Symbole zur Blizzard-Questverfolgung.
+
+### Klarer Questfokus
+
+- Beim Folgen bleibt nur die aktive Quest des verfolgten Spielers farbig. Ohne Folgen bleiben deine Schaltflächen und die aktiven Quests deiner Mitspieler farbig. Alle anderen sind grau, ohne Transparenz. Aktive Quests von Mitspielern bleiben anklickbar, um das Folgen zu starten oder das Ziel zu wechseln.
+
+### Fokuswechsel bestätigen
+
+- Die Wahl einer eigenen Quest oder eines anderen Mitspielers fragt vor dem Ende des bisherigen Folgens nach. Auch Fokuswechsel oder das Aufheben des Fokus über Blizzards Questverfolgung fragen jetzt nach: QT stellt den bisherigen Fokus während der Entscheidung wieder her. Abbrechen behält das Folgen bei; Fokus ändern übernimmt die Auswahl. Vorschau: /qt preview unfollow.
+
+### Passende Questsymbole
+
+- Der Queststatus nutzt jetzt dieselbe Abschlussabfrage wie Blizzards Questverfolgung. Dadurch zeigen Lieferquests ein Fragezeichen statt eines Fortschrittssymbols. Der korrigierte Bereit-Status wird auch mit dem Gruppen-Questlog geteilt.
+
+### Mit eigenen Quests testen
+
+- Die Vergleichsvorschau nutzt dein echtes Questlog mit vier simulierten Mitspielern und zusätzlichen fehlenden Quests. Fokuswechsel ändern deine echte Blizzard-Navigation; Teilen bleibt simuliert. Über das Namensmenü eines Mitspielers wechselst du dessen Fokus weiter. Statt einer leeren Aktionsspalte zeigen nicht teilbare Quests nun zentriert Nicht teilbar oder Teilbarkeit unbekannt. Beim Schließen der Vorschau wird ein bestehendes Folgen in der echten Gruppe fortgesetzt.
+
 ## 6.5.1
 
 Klarere Questfokus-Schaltflächen, sichere Wechsel beim Folgen und passende Symbole zur Blizzard-Questverfolgung.

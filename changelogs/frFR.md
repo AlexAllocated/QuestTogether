@@ -2,6 +2,26 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.2
+
+Des boutons de quête plus clairs, des changements confirmés pendant le suivi et des icônes conformes au suivi Blizzard.
+
+### Des commandes plus claires
+
+- Pendant le suivi, seul le bouton de la quête active du joueur suivi reste coloré. Sans suivi, vos boutons et les quêtes actives de vos coéquipiers restent colorés. Les autres boutons sont gris, sans transparence. Les quêtes actives des coéquipiers restent cliquables pour commencer le suivi ou changer de joueur.
+
+### Confirmer le changement
+
+- Choisir votre propre quête ou un autre coéquipier demande confirmation avant d’arrêter le suivi actuel. Changer ou effacer la cible dans le suivi Blizzard demande aussi confirmation : QT rétablit la cible suivie pendant votre décision. Annuler conserve le suivi ; Changer de cible applique votre choix. Aperçu : /qt preview unfollow.
+
+### Des icônes cohérentes
+
+- L’état des quêtes utilise désormais la même vérification d’achèvement que le suivi Blizzard. Les quêtes de livraison affichent ainsi un point d’interrogation au lieu d’une icône de progression. L’état Prêt corrigé est également inclus dans les données partagées du journal du groupe.
+
+### Testez avec vos quêtes
+
+- L’aperçu utilise votre vrai journal avec quatre coéquipiers simulés et des quêtes supplémentaires manquantes. Le ciblage change votre navigation Blizzard réelle ; le partage reste simulé. Le menu du nom d’un coéquipier permet de changer sa quête active. La colonne d’action affiche désormais Non partageable ou Partage possible inconnu, centré, au lieu de rester vide. Fermer l’aperçu reprend le suivi existant dans votre vrai groupe.
+
 ## 6.5.1
 
 Des boutons de quête plus clairs, des changements confirmés pendant le suivi et des icônes conformes au suivi Blizzard.

@@ -2,6 +2,26 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.2
+
+Pulsanti delle missioni più chiari, conferme durante il seguito e icone coerenti con il tracciatore Blizzard.
+
+### Comandi più chiari
+
+- Quando segui un giocatore, solo il pulsante della sua missione attiva resta colorato. Senza seguito, i tuoi pulsanti e le missioni attive dei compagni restano colorati. Gli altri pulsanti sono grigi, senza trasparenza. Le missioni attive dei compagni restano cliccabili per iniziare a seguirli o cambiare giocatore.
+
+### Conferma prima di cambiare
+
+- Scegliere una propria missione o un altro compagno richiede conferma prima di interrompere il seguito. Anche cambiare o rimuovere la missione attiva dal tracciatore Blizzard richiede conferma: QT ripristina la missione seguita mentre decidi. Annulla mantiene il seguito; Cambia obiettivo applica la scelta. Anteprima: /qt preview unfollow.
+
+### Icone coerenti
+
+- Lo stato delle missioni usa ora la stessa verifica di completamento del tracciatore Blizzard, correggendo le missioni di consegna che mostravano un’icona di avanzamento invece di un punto interrogativo. Lo stato Pronto corretto viene incluso anche nei dati condivisi del registro del gruppo.
+
+### Prova con le tue missioni
+
+- L’anteprima usa il tuo vero registro con quattro compagni simulati e missioni aggiuntive mancanti. I comandi cambiano la tua navigazione Blizzard reale; la condivisione resta simulata. Usa il menu del nome di un compagno per cambiare la sua missione attiva. La colonna delle azioni mostra ora Non condivisibile o Condivisione sconosciuta, centrato, invece di rimanere vuota. Chiudendo l’anteprima riprende il seguito esistente nel gruppo reale.
+
 ## 6.5.1
 
 Pulsanti delle missioni più chiari, conferme durante il seguito e icone coerenti con il tracciatore Blizzard.

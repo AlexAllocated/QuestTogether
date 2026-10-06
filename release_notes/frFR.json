@@ -1,7 +1,7 @@
 {
-  "source_sha256": "8e10d473802a6dc5f6d47ea033e4777b3baaf45dec85652e897d5aabd96274a3",
+  "source_sha256": "c97bf4f73ed99ec17b14910f6b5c9a1ff000e96a46c2ed71abeb0829fee58aa8",
   "notes": {
-    "version": "6.5.1",
+    "version": "6.5.2",
     "welcome": "Des boutons de quête plus clairs, des changements confirmés pendant le suivi et des icônes conformes au suivi Blizzard.",
     "sections": [
       {
@@ -25,7 +25,7 @@
       {
         "title": "Testez avec vos quêtes",
         "items": [
-          "L’aperçu utilise votre vrai journal avec quatre coéquipiers simulés et des quêtes supplémentaires manquantes. Le ciblage change votre navigation Blizzard réelle ; le partage reste simulé. Le menu du nom d’un coéquipier permet de changer sa quête active. La colonne d’action affiche désormais Non partageable ou Partage possible inconnu, centré, au lieu de rester vide."
+          "L’aperçu utilise votre vrai journal avec quatre coéquipiers simulés et des quêtes supplémentaires manquantes. Le ciblage change votre navigation Blizzard réelle ; le partage reste simulé. Le menu du nom d’un coéquipier permet de changer sa quête active. La colonne d’action affiche désormais Non partageable ou Partage possible inconnu, centré, au lieu de rester vide. Fermer l’aperçu reprend le suivi existant dans votre vrai groupe."
         ]
       }
     ]

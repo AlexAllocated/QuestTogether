@@ -1,7 +1,7 @@
 {
-  "source_sha256": "8e10d473802a6dc5f6d47ea033e4777b3baaf45dec85652e897d5aabd96274a3",
+  "source_sha256": "c97bf4f73ed99ec17b14910f6b5c9a1ff000e96a46c2ed71abeb0829fee58aa8",
   "notes": {
-    "version": "6.5.1",
+    "version": "6.5.2",
     "welcome": "Botones de misión más claros, cambios confirmados al seguir a alguien e iconos que coinciden con el seguimiento de Blizzard.",
     "sections": [
       {
@@ -25,7 +25,7 @@
       {
         "title": "Prueba con tus misiones",
         "items": [
-          "La vista previa usa tu registro real con cuatro compañeros simulados y misiones adicionales que no tienes. Los controles de misión cambian tu navegación real de Blizzard; compartir sigue siendo simulado. Usa el menú del nombre de un compañero para avanzar su misión activa. La columna de acciones muestra ahora No se puede compartir o Disponibilidad de compartir desconocida, centrado, en vez de quedar vacía."
+          "La vista previa usa tu registro real con cuatro compañeros simulados y misiones adicionales que no tienes. Los controles de misión cambian tu navegación real de Blizzard; compartir sigue siendo simulado. Usa el menú del nombre de un compañero para avanzar su misión activa. La columna de acciones muestra ahora No se puede compartir o Disponibilidad de compartir desconocida, centrado, en vez de quedar vacía. Al cerrar la vista previa se reanuda el seguimiento existente del grupo real."
         ]
       }
     ]

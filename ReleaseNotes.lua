@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "6.5.1",
+	version = "6.5.2",
 	welcome = "Clearer quest focus buttons, safer changes while following, and icons that match the native quest tracker.",
 	sections = {
 		{
@@ -27,7 +27,7 @@ QuestTogether.releaseNotes = {
 		{
 			title = "Test with your own quests",
 			items = {
-				"The compare preview now uses your real quest log with four simulated teammates and extra missing quests. Focus controls change your real Blizzard navigation; sharing stays simulated. Use a teammate’s name menu to advance their focused quest. Quests that cannot be shared now show a centered Not shareable or Shareability unknown label instead of a blank action column.",
+				"The compare preview now uses your real quest log with four simulated teammates and extra missing quests. Focus controls change your real Blizzard navigation; sharing stays simulated. Use a teammate’s name menu to advance their focused quest. Quests that cannot be shared now show a centered Not shareable or Shareability unknown label instead of a blank action column. Closing the preview resumes any existing real-party follow.",
 			},
 		},
 	},

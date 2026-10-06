@@ -2,6 +2,26 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.2
+
+Botones de misión más claros, cambios confirmados al seguir a alguien e iconos que coinciden con el seguimiento de Blizzard.
+
+### Controles más claros
+
+- Mientras sigues a alguien, solo conserva su color el botón de su misión activa. Sin seguimiento, tus botones y las misiones activas de tus compañeros conservan su color. Los demás botones son grises, sin transparencia. Las misiones activas de tus compañeros siguen siendo pulsables para empezar a seguirlos o cambiar de objetivo.
+
+### Confirmar los cambios
+
+- Elegir tu propia misión o cambiar de compañero pide confirmación antes de terminar el seguimiento actual. Cambiar o quitar la misión activa desde el seguimiento de Blizzard también: QT restaura la misión seguida mientras decides. Cancelar mantiene el seguimiento; Cambiar misión aplica tu elección. Vista previa: /qt preview unfollow.
+
+### Iconos coherentes
+
+- El estado de las misiones ahora usa la misma consulta de finalización que el seguimiento de Blizzard. Así se corrigen las misiones de entrega que mostraban un icono de progreso en vez de una interrogación. El estado Listo corregido también se incluye en los datos compartidos del registro del grupo.
+
+### Prueba con tus misiones
+
+- La vista previa usa tu registro real con cuatro compañeros simulados y misiones adicionales que no tienes. Los controles de misión cambian tu navegación real de Blizzard; compartir sigue siendo simulado. Usa el menú del nombre de un compañero para avanzar su misión activa. La columna de acciones muestra ahora No se puede compartir o Disponibilidad de compartir desconocida, centrado, en vez de quedar vacía. Al cerrar la vista previa se reanuda el seguimiento existente del grupo real.
+
 ## 6.5.1
 
 Botones de misión más claros, cambios confirmados al seguir a alguien e iconos que coinciden con el seguimiento de Blizzard.

@@ -2,6 +2,26 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.2
+
+Botões de missão mais claros, confirmação ao mudar o foco seguido e ícones iguais aos do rastreador da Blizzard.
+
+### Controles mais claros
+
+- Ao seguir alguém, apenas o botão da missão ativa desse jogador mantém a cor. Sem seguir, seus botões e as missões ativas dos colegas mantêm a cor. Os demais ficam cinza, sem transparência. As missões ativas dos colegas continuam clicáveis para começar a segui-los ou trocar de jogador.
+
+### Confirme antes de mudar
+
+- Escolher sua própria missão ou outro colega pede confirmação antes de encerrar o seguimento atual. Mudar ou limpar o foco pelo rastreador da Blizzard também pede confirmação: o QT restaura o foco seguido enquanto você decide. Cancelar mantém o seguimento; Mudar foco aplica sua escolha. Prévia: /qt preview unfollow.
+
+### Ícones consistentes
+
+- O estado das missões agora usa a mesma consulta de conclusão do rastreador da Blizzard, corrigindo missões de entrega que exibiam um ícone de progresso em vez de uma interrogação. O estado Pronto corrigido também é incluído nos dados compartilhados do Registro de Missões do Grupo.
+
+### Teste com suas missões
+
+- A prévia usa seu registro real com quatro colegas simulados e missões extras que você não tem. Os controles mudam sua navegação real da Blizzard; o compartilhamento continua simulado. Use o menu do nome de um colega para avançar a missão ativa dele. A coluna de ações agora mostra Não compartilhável ou Compartilhamento desconhecido, centralizado, em vez de ficar vazia. Fechar a prévia retoma o seguimento existente no grupo real.
+
 ## 6.5.1
 
 Botões de missão mais claros, confirmação ao mudar o foco seguido e ícones iguais aos do rastreador da Blizzard.
