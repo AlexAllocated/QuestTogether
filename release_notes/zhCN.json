@@ -1,8 +1,15 @@
 {
-  "source_sha256": "8c00b4de799abc0397cd8bdd2a463cd2f53e8ca6a1376c26e484660d2c287c07",
+  "source_sha256": "b50b944ed94595e24e44c1225aa668e72cbbc6d43769bf22867f667b80cedf18",
   "notes": {
-    "version": "6.5.4",
-    "welcome": "",
-    "sections": []
+    "version": "6.5.5",
+    "welcome": "修复了队伍任务日志中任务图标缺失的问题。",
+    "sections": [
+      {
+        "title": "队伍任务日志图标",
+        "items": [
+          "修复了滚动或刷新列表后，任务追踪按钮有时显示为空心圆的问题。重复使用的按钮现在会正确重置图像；如果无法应用所需图像，则会显示备用图标。"
+        ]
+      }
+    ]
   }
 }

@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.5
+
+Eine Korrektur für fehlende Questsymbole im Gruppenquestlog.
+
+### Symbole im Gruppenquestlog
+
+- Ein Fehler wurde behoben, durch den Schaltflächen für den Questfokus nach dem Scrollen oder Aktualisieren der Liste manchmal als leere Kreise erschienen. Wiederverwendete Schaltflächen setzen ihre Grafiken nun korrekt zurück und verwenden ein Ersatzsymbol, falls die gewünschte Grafik nicht angewendet werden kann.
+
 ## 6.5.3
 
 Das Gruppen-Questlog im Detail: Vergleiche Quests, plane das nächste Ziel und folge dem Questfokus eines Mitspielers. Dieser Patch erweitert die Anleitung um drei Screenshots; das Spielverhalten bleibt unverändert. Die Bilder zeigen Forever-Vorschaudaten mit simulierten Mitspielern.

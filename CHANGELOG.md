@@ -4,6 +4,14 @@
 
 [Other languages](changelogs/README.md)
 
+## 6.5.5
+
+A fix for missing quest icons in Party Quest Log.
+
+### Party Quest Log icons
+
+- Fixed quest focus buttons sometimes appearing as empty circles after scrolling or updating the list. Reused buttons now reset their artwork correctly, with a fallback icon if the requested artwork cannot be applied.
+
 ## 6.5.3
 
 A closer look at Party Quest Log: compare quests, coordinate your next objective, and follow a teammate’s quest focus. This patch expands the guide and adds three screenshots; gameplay is unchanged. The screenshots show Forever preview data with simulated teammates.

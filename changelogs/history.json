@@ -3,6 +3,63 @@
   "releases": [
     {
       "enUS": {
+        "version": "6.5.4",
+        "welcome": "",
+        "sections": []
+      },
+      "deDE": {
+        "version": "6.5.4",
+        "welcome": "",
+        "sections": []
+      },
+      "frFR": {
+        "version": "6.5.4",
+        "welcome": "",
+        "sections": []
+      },
+      "esES": {
+        "version": "6.5.4",
+        "welcome": "",
+        "sections": []
+      },
+      "esMX": {
+        "version": "6.5.4",
+        "welcome": "",
+        "sections": []
+      },
+      "ptBR": {
+        "version": "6.5.4",
+        "welcome": "",
+        "sections": []
+      },
+      "ruRU": {
+        "version": "6.5.4",
+        "welcome": "",
+        "sections": []
+      },
+      "itIT": {
+        "version": "6.5.4",
+        "welcome": "",
+        "sections": []
+      },
+      "koKR": {
+        "version": "6.5.4",
+        "welcome": "",
+        "sections": []
+      },
+      "zhCN": {
+        "version": "6.5.4",
+        "welcome": "",
+        "sections": []
+      },
+      "zhTW": {
+        "version": "6.5.4",
+        "welcome": "",
+        "sections": []
+      }
+    },
+    {
+      "enUS": {
         "version": "6.5.3",
         "welcome": "A closer look at Party Quest Log: compare quests, coordinate your next objective, and follow a teammate’s quest focus. This patch expands the guide and adds three screenshots; gameplay is unchanged. The screenshots show Forever preview data with simulated teammates.",
         "sections": [

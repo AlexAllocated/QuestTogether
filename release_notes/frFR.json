@@ -1,8 +1,15 @@
 {
-  "source_sha256": "8c00b4de799abc0397cd8bdd2a463cd2f53e8ca6a1376c26e484660d2c287c07",
+  "source_sha256": "b50b944ed94595e24e44c1225aa668e72cbbc6d43769bf22867f667b80cedf18",
   "notes": {
-    "version": "6.5.4",
-    "welcome": "",
-    "sections": []
+    "version": "6.5.5",
+    "welcome": "Correction des icônes de quête manquantes dans le journal de quêtes du groupe.",
+    "sections": [
+      {
+        "title": "Icônes du journal de quêtes du groupe",
+        "items": [
+          "Correction des boutons de suivi de quête qui apparaissaient parfois sous forme de cercles vides après un défilement ou une actualisation de la liste. Les boutons réutilisés réinitialisent désormais correctement leurs graphismes et utilisent une icône de remplacement si le graphisme demandé ne peut pas être appliqué."
+        ]
+      }
+    ]
   }
 }

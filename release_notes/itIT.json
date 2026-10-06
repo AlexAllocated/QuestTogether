@@ -1,8 +1,15 @@
 {
-  "source_sha256": "8c00b4de799abc0397cd8bdd2a463cd2f53e8ca6a1376c26e484660d2c287c07",
+  "source_sha256": "b50b944ed94595e24e44c1225aa668e72cbbc6d43769bf22867f667b80cedf18",
   "notes": {
-    "version": "6.5.4",
-    "welcome": "",
-    "sections": []
+    "version": "6.5.5",
+    "welcome": "Una correzione per le icone delle missioni mancanti nel registro missioni del gruppo.",
+    "sections": [
+      {
+        "title": "Icone del registro missioni del gruppo",
+        "items": [
+          "Risolto un problema per cui i pulsanti di tracciamento delle missioni a volte apparivano come cerchi vuoti dopo aver scorso o aggiornato la lista. I pulsanti riutilizzati ora ripristinano correttamente la grafica e usano un’icona alternativa se quella richiesta non può essere applicata."
+        ]
+      }
+    ]
   }
 }

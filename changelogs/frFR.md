@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.5
+
+Correction des icônes de quête manquantes dans le journal de quêtes du groupe.
+
+### Icônes du journal de quêtes du groupe
+
+- Correction des boutons de suivi de quête qui apparaissaient parfois sous forme de cercles vides après un défilement ou une actualisation de la liste. Les boutons réutilisés réinitialisent désormais correctement leurs graphismes et utilisent une icône de remplacement si le graphisme demandé ne peut pas être appliqué.
+
 ## 6.5.3
 
 Découvrez le journal de quêtes du groupe : comparez les quêtes, préparez le prochain objectif et suivez la cible d’un coéquipier. Ce patch enrichit le guide avec trois captures, sans changer le fonctionnement du jeu. Les images montrent un aperçu Forever avec des coéquipiers simulés.

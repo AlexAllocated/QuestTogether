@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.5
+
+Correção dos ícones de missão ausentes no Registro de Missões do Grupo.
+
+### Ícones do Registro de Missões do Grupo
+
+- Corrigido um problema que às vezes fazia os botões de foco de missão aparecerem como círculos vazios após rolar ou atualizar a lista. Os botões reutilizados agora redefinem seus gráficos corretamente e usam um ícone alternativo se o gráfico solicitado não puder ser aplicado.
+
 ## 6.5.3
 
 Conheça o Registro de Missões do Grupo: compare missões, combine o próximo objetivo e siga o foco de um colega. Este patch amplia o guia com três capturas; o funcionamento não mudou. As imagens mostram a prévia do Forever com colegas simulados.

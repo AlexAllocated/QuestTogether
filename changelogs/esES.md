@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.5
+
+Corrección de los iconos de misión ausentes en el registro de misiones del grupo.
+
+### Iconos del registro de misiones del grupo
+
+- Se ha corregido un error que hacía que los botones de seguimiento de misiones aparecieran a veces como círculos vacíos al desplazarse o actualizar la lista. Los botones reutilizados ahora restablecen sus gráficos correctamente y usan un icono alternativo si no se puede aplicar el gráfico solicitado.
+
 ## 6.5.3
 
 Conoce el registro de misiones del grupo: compara misiones, coordina el siguiente objetivo y sigue la misión activa de un compañero. Este parche amplía la guía con tres capturas; el funcionamiento no cambia. Las imágenes muestran la vista previa de Forever con compañeros simulados.
