@@ -2969,3 +2969,35 @@ QuestTogether:RegisterTest("ping localizes available identity and zone while pre
 	text = a:BuildPingResponseMessage(pong)
 	assert(text:find("Magier", 1, true) and text:find("Wald", 1, true))
 end)
+
+QuestTogether:RegisterTest("compare completion matches native tracker and survives wire encoding", function()
+	for _, native in ipairs({ true, false }) do
+		local addon = NewSnapshotComparisonFixture()
+		function addon:GetQuestShareableStatusLabel() return "Yes" end
+		addon.API.GetQuestLogInfo = function() return { questID = 123, title = "Delivery quest", isComplete = not native } end
+		addon.API.IsQuestComplete = function(id) Equal(id, 123); return native end
+		local entry = addon:BuildQuestCompareEntries()[1]
+		Equal(entry.isComplete, native)
+		assert(addon:SendQuestCompareEntry("native-completion", entry))
+		local _, payload = addon:DeserializeWireMessage(addon.wire[1][2])
+		Equal(addon:DecodeQuestCompareEntryPayload(payload).isComplete, native)
+	end
+end)
+QuestTogether:RegisterTest("compare completion falls back safely when native data cannot be read", function()
+	for _, value in ipairs({ "missing", "nil", "invalid", "throws", "inaccessible" }) do
+		local addon = NewSnapshotComparisonFixture()
+		function addon:GetQuestShareableStatusLabel() return "Yes" end
+		addon.API.GetQuestLogInfo = function() return { questID = 123, title = "Ready quest", isComplete = true } end
+		local unreadable = {}
+		function addon:CanAccessValue(v) return v ~= unreadable end
+		if value ~= "missing" then addon.API.IsQuestComplete = function()
+			if value == "throws" then error("unavailable") end
+			if value == "invalid" then return "false" end
+			if value == "inaccessible" then return unreadable end
+		end end
+		Equal(addon:BuildQuestCompareEntries()[1].isComplete, true)
+		function addon:IsWorkBlocked() return true end
+		addon.API.IsQuestComplete = function() error("restricted native read") end
+		Equal(addon:BuildQuestCompareEntries(), nil)
+	end
+end)

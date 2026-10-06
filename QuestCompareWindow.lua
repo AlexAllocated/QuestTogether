@@ -343,6 +343,7 @@ end
 local function CreateFocusButton(addon, row, column)
 	local button = addon:CreatePartyQuestUIFrame("Button", nil, row)
 	button:SetSize(26, 26)
+	if button.SetMotionScriptsWhileDisabled then button:SetMotionScriptsWhileDisabled(true) end
 	button:SetPoint("TOPLEFT", ColumnLeft(column) + COLUMN_WIDTH - 31, -8)
 	button.normal = button:CreateTexture(nil, "BACKGROUND")
 	button.pushed = button:CreateTexture(nil, "BACKGROUND")
@@ -366,17 +367,20 @@ local function CreateFocusButton(addon, row, column)
 		local hint = button.localPlayer and L("Click to focus this quest.")
 			or (button.selected and L("Click to follow this player's quest focus.") or L("This player is not focusing this quest."))
 		if not button.localPlayer and not button.knownFocus then hint = addon:GetPartyFocusLabel(button.memberName) end
+		if button.muted and button.clickable then
+			hint = hint .. "\n\n" .. string.format(L("Changing focus will stop following %s."), button.following)
+		end
 		addon:ShowSettingsTooltip(button, button.memberName, hint)
 	end)
 	button:SetScript("OnClick", function()
 		Leave()
 		if Current() and button.clickable and not addon:IsWorkBlocked("foreign_frame_mutation") then
-			addon:SelectPartyQuestFocus(button.memberName, row.data.questId)
+			addon:RequestPartyQuestFocus(button.memberName, row.data.questId)
 		end
 	end)
 	return button
 end
-local function PaintFocusButton(button, selected, complete)
+local function PaintFocusButton(button, selected, complete, muted)
 	button.selected = selected
 	local suffix = selected and "-SuperTracked" or ""
 	FocusAtlas(button.normal, "UI-QuestPoi-QuestNumber" .. suffix, "Interface\\Buttons\\UI-Quickslot2")
@@ -384,11 +388,17 @@ local function PaintFocusButton(button, selected, complete)
 	FocusAtlas(button.icon, complete and "UI-QuestIcon-TurnIn-Normal"
 		or (selected and "Quest-In-Progress-Icon-Brown" or "Quest-In-Progress-Icon-yellow"),
 		"Interface\\GossipFrame\\ActiveQuestIcon")
+	for _, texture in ipairs({ button.normal, button.pushed, button.icon }) do
+		if texture.SetDesaturated then texture:SetDesaturated(muted) end
+		local shade = muted and 0.55 or 1
+		texture:SetVertexColor(shade, shade, shade, 1)
+	end
 end
 
 local function DrawCompareRows(self, frame, session, rows, width, actionX)
 	local dark = self:GetOption("lightMode") ~= true
 	local colors = dark and DARK_COLORS or COLORS
+	local followTarget = self.GetPartyQuestFollowTarget and self:GetPartyQuestFollowTarget()
 	local focusIDs = {}
 	for i, member in ipairs(session.members) do
 		focusIDs[i] = self.GetPartyQuestFocusID and self:GetPartyQuestFocusID(member.name)
@@ -519,8 +529,15 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 				button.memberName, button.localPlayer = member.name, member.isLocal
 				button.knownFocus = focusIDs[j] ~= nil and focusIDs[j] >= 0
 				local selected = focusIDs[j] == data.questId
-				button.clickable = member.isLocal or (selected and session.mode ~= "target")
-				PaintFocusButton(button, selected, status == "Ready")
+				button.clickable = member.isLocal == true or selected
+				button:SetEnabled(button.clickable)
+				button.following = followTarget
+				if followTarget then
+					button.muted = not (selected and followTarget == member.name)
+				else
+					button.muted = not (member.isLocal or selected)
+				end
+				PaintFocusButton(button, selected, status == "Ready", button.muted)
 				if status == "Have" or status == "Ready" then button:Show() else button:Hide() end
 			end
 			for j = #data.cells + 1, #row.cells do
@@ -532,6 +549,7 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 			row.action:SetPoint("TOPLEFT", actionX, -9)
 			row.action:SetHeight(24)
 			row.hint:SetMaxLines(2)
+			row.hint:SetJustifyH(data.kind and "LEFT" or "CENTER")
 			row.hint:ClearAllPoints()
 			row.hint:SetHeight(data.kind and (row:GetHeight() - top - bottom - 4) or (ROW_HEIGHT - 8))
 			local status, waiting = self:GetPartyQuestShareStatus(data.questId)
@@ -575,7 +593,7 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 				else
 					row.hint:SetPoint("TOPLEFT", actionX, (data.kind and -2 or -4) - top)
 				end
-				row.hint:SetWidth(ACTION_WIDTH - (data.kind and 28 or 8))
+				row.hint:SetWidth(ACTION_WIDTH - (data.kind and 28 or 12))
 				row.hint:SetText(L(status or data.hint or ""))
 				row.hint:Show()
 			end

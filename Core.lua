@@ -2020,7 +2020,15 @@ QuestTogether.API = QuestTogether.API or {
 					local id = QuestTogether.API.GetActiveTrackedQuestID()
 					if not id then return nil end
 					result.questID = id
-				else result.questID = 0 end
+				else
+					result.questID = 0
+					local anything = C_SuperTrack.IsSuperTrackingAnything
+					if CanAccessForeignValue(anything) and type(anything) == "function" then
+						local got, tracking = pcall(anything)
+						if not got or not CanAccessForeignValue(tracking) or type(tracking) ~= "boolean" then return nil end
+						result.questCleared = tracking == false
+					end
+				end
 			end
 			if CanAccessForeignTable(C_Map) and CanAccessForeignValue(C_Map.GetUserWaypoint) and type(C_Map.GetUserWaypoint) == "function" then
 				local ok, point = pcall(C_Map.GetUserWaypoint)
@@ -2044,7 +2052,16 @@ QuestTogether.API = QuestTogether.API or {
 			if QuestTogether:IsRuntimeRestricted() or not CanAccessForeignTable(C_SuperTrack) then return false end
 			local setter = C_SuperTrack.SetSuperTrackedQuestID
 			if not CanAccessForeignValue(setter) or type(setter) ~= "function" then return false end
-			local id = QuestTogether:NormalizeQuestID(questID)
+			local id = QuestTogether:SafeToNumber(questID)
+			if id == 0 then
+				local anything = C_SuperTrack.IsSuperTrackingAnything
+				if not CanAccessForeignValue(anything) or type(anything) ~= "function" then return false end
+				local ok = pcall(setter, 0)
+				if not ok then return false end
+				local got, tracking = pcall(anything)
+				return got and CanAccessForeignValue(tracking) and tracking == false
+			end
+			id = QuestTogether:NormalizeQuestID(id)
 			if not id then return false end
 			if QuestTogether.API.IsOnQuest(id) ~= true then return false end
 			local ok = pcall(setter, id)
@@ -5950,7 +5967,7 @@ function QuestTogether:PrintDebugHelp()
 end
 
 function QuestTogether:PrintPreviewHelp()
-	self:Print(L("/qt preview share|join|partychat|bubble|discord|focus - Preview a QT dialog without changing settings"))
+	self:Print(L("/qt preview share|join|partychat|bubble|discord|focus|unfollow - Preview a QT dialog without changing settings"))
 	self:Print(L("/qt preview compare - Preview Party Quest Log with mock data (no sharing)"))
 	self:Print(L("/qt preview notes - Preview the welcome and patch-notes window"))
 	self:Print(L("/qt preview announcement <text> - Run a local bubble preview for your current target"))
@@ -5966,7 +5983,7 @@ function QuestTogether:HandlePreviewCommand(input)
 	if arguments and arguments ~= "" then self:PrintPreviewHelp(); return false end
 	if kind == "compare" then return self:OpenPartyQuestComparePreview() end
 	if kind == "notes" or kind == "welcome" then return self:OpenReleaseNotes() end
-	if kind == "share" or kind == "join" or kind == "partychat" or kind == "bubble" or kind == "discord" or kind == "focus" then
+	if kind == "share" or kind == "join" or kind == "partychat" or kind == "bubble" or kind == "discord" or kind == "focus" or kind == "unfollow" then
 		return self:ShowDialogPreview(kind)
 	end
 	-- Empty/unknown preview commands are help, never outgoing QT chat.

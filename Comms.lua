@@ -1528,10 +1528,18 @@ function QuestTogether:BuildQuestCompareEntries()
 			elseif shareableLabel == "No" then
 				isPushable = false
 			end
+			-- Blizzard's quest tracker uses QuestMixin:IsComplete(), backed by
+			-- C_QuestLog.IsComplete. GetInfo/legacy title flags can disagree (for
+			-- example delivery quests), so keep their flag only as a fallback.
+			local complete = self:CanAccessValue(questInfo.isComplete) and questInfo.isComplete == true or false
+			if type(self.API.IsQuestComplete) == "function" then
+				local ok, value = pcall(self.API.IsQuestComplete, questId)
+				if ok and self:CanAccessValue(value) and type(value) == "boolean" then complete = value end
+			end
 			entries[#entries + 1] = {
 				questId = SafeAddonString(self, questId, ""),
 				questTitle = questTitle,
-				isComplete = self:CanAccessValue(questInfo.isComplete) and questInfo.isComplete == true or false,
+				isComplete = complete,
 				isPushable = isPushable,
 			}
 		end

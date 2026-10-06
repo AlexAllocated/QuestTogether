@@ -181,6 +181,7 @@ return pushable end or nil,
 			C_QuestLog = { IsOnQuest = function() return owns end }
 			C_SuperTrack = {
 				IsSuperTrackingQuest = function() return active end,
+				IsSuperTrackingAnything = function() return active end,
 				GetSuperTrackedQuestID = function() return id end,
 				SetSuperTrackedQuestID = function(value) writes = writes + 1; id = value; active = true end,
 			}
@@ -191,7 +192,19 @@ return pushable end or nil,
 			owns = true; C_SuperTrack.SetSuperTrackedQuestID = function() writes = writes + 1 end
 			assert(addon.API.SetPartyNavigationQuest(789) == false and writes == 2)
 			active, waypoint = false, nil
-			p = addon.API.GetPartyNavigationNativeState(); assert(p.questID == 0 and p.mapID == 0)
+			p = addon.API.GetPartyNavigationNativeState(); assert(p.questID == 0 and p.mapID == 0 and p.questCleared)
+			C_SuperTrack.IsSuperTrackingAnything = function() return true end
+			assert(not addon.API.GetPartyNavigationNativeState().questCleared)
+			assert(addon.API.SetPartyNavigationQuest(0) == false)
+			C_SuperTrack.IsSuperTrackingAnything = function() return active end
+			C_SuperTrack.SetSuperTrackedQuestID = function(value) id = value; active = value > 0 end
+			assert(addon.API.SetPartyNavigationQuest(123))
+			assert(addon.API.SetPartyNavigationQuest(0) and not active)
+			for _, invalid in ipairs({ secret, inaccessible, function() return secret end, function() error("unavailable") end }) do
+				C_SuperTrack.IsSuperTrackingAnything = invalid
+				assert(addon.API.SetPartyNavigationQuest(0) == false)
+			end
+			C_SuperTrack.IsSuperTrackingAnything = function() return active end
 			for _, value in ipairs({ secret, inaccessible }) do
 				waypoint = value; assert(addon.API.GetPartyNavigationNativeState() == nil)
 				waypoint = { uiMapID = value, position = { GetXY = function() return 0.4, 0.5 end } }
@@ -884,6 +897,22 @@ return rawRow end
 		assert(addon.API.GetQuestLogInfo(7).questID == 12345)
 		assert(addon.API.GetQuestLogInfo(7).isComplete == false)
 		assert(addon.API.GetQuestLogIndexForQuestID(12345) == 7)
+		-- Native tracker completion may differ from the log-row completion flag.
+		local oldComplete = C_QuestLog.IsComplete
+		local comparison = setmetatable({ API = {
+			GetNumQuestLogEntries = function() return 1 end,
+			GetQuestLogInfo = function() return addon.API.GetQuestLogInfo(7) end,
+			IsQuestComplete = addon.API.IsQuestComplete,
+		} }, { __index = addon })
+		function comparison:IsWorkBlocked() return false end
+		function comparison:GetQuestShareableStatusLabel() return "Yes" end
+		for _, complete in ipairs({ true, false }) do
+			C_QuestLog.IsComplete = function(id) assert(id == 12345); return complete end
+			assert(comparison:BuildQuestCompareEntries()[1].isComplete == complete)
+		end
+		C_QuestLog.IsComplete = function() return secret end
+		assert(comparison:BuildQuestCompareEntries()[1].isComplete == false)
+		C_QuestLog.IsComplete = oldComplete
 		local originalTitleGetter, originalInfoGetter = GetQuestLogTitle, C_QuestLog.GetInfo
 		local completion
 		GetQuestLogTitle = function(index)

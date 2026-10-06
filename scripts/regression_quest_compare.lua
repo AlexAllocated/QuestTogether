@@ -722,6 +722,7 @@ local function Frame(parent)
 		SetShown(self, false)
 	end
 	function methods:SetAtlas(atlas) self.atlas = atlas end
+	function methods:SetDesaturated(value) self.desaturated = value end
 	-- These presentation-only methods are intentionally stubbed; behavioral
 	-- methods above are implemented and all other method names are rejected.
 	for _, name in ipairs({
@@ -1159,7 +1160,6 @@ local function PreviewFixture()
 	end
 	for _, method in ipairs({
 		"RefreshPartyRoster",
-		"BuildQuestCompareEntries",
 		"RequestQuestCompare",
 		"GetQuestShareAvailability",
 		"SharePartyDiffQuest",
@@ -1171,6 +1171,7 @@ local function PreviewFixture()
 	}) do
 		addon[method] = RejectLiveAccess
 	end
+	function addon:BuildQuestCompareEntries() return nil end -- Standalone fictional fixture.
 	addon.API.PushQuestToParty = RejectLiveAccess
 	return addon
 end
@@ -3499,7 +3500,7 @@ QuestTogether:RegisterTest("isolated compare preview delegates drag callbacks wi
 	frame:Hide()
 	Equal(frame.dragging, nil)
 	Equal(a.partyQuestCompareSession, liveSession)
-	Equal(preview.API, nil)
+	Equal(preview.API.SendAddonMessage, nil)
 	Equal(#a.wire, 0)
 	Equal(a.pushes, 0)
 end)
@@ -3604,37 +3605,74 @@ QuestTogether:RegisterTest("reduced motion preview changes expansion and scrolli
  assert(p.partyQuestCompareSession.scrollPixels > 0 and not f.scripts.OnUpdate)
 end)
 
-QuestTogether:RegisterTest("PQL cell buttons select local focus and follow only current selected remote focus", function()
+QuestTogether:RegisterTest("PQL focus buttons gray by active follow and switch only after confirmation", function()
 	local a = PreviewFixture()
+	a:GetPartyQuestUIParent():SetSize(1920, 2000)
 	a:OpenPartyQuestComparePreview()
 	local p = a.partyQuestComparePreview
 	local frame = p.partyQuestCompareWindow
-	local function Find(id)
-		for _, row in ipairs(frame.rows) do if row.data and not row.data.kind and row.data.questId == id then return row end end
+	frame:SetSize(frame:GetWidth(), 1500)
+	p:RenderPartyQuestCompare()
+	local function Find(id, column)
+		for _, row in ipairs(frame.rows) do
+			if row.data and not row.data.kind and row.data.questId == id then return row.focusCells[column] end
+		end
 		error("quest not visible")
 	end
-	local row = Find(2)
-	local own, remote = row.focusCells[1], row.focusCells[2]
+	local own, remote = Find(2, 1), Find(2, 2)
 	assert(not own.selected and remote.selected)
+	assert(own.enabled and remote.enabled)
+	assert(not own.icon.desaturated and not remote.icon.desaturated)
+	assert(Find(13, 2).icon.desaturated and not Find(13, 2).enabled)
 	Equal(remote.normal.atlas, "UI-QuestPoi-QuestNumber-SuperTracked")
+	Equal(remote.icon.atlas, "Quest-In-Progress-Icon-Brown")
+	Equal(Find(6, 1).icon.atlas, "UI-QuestIcon-TurnIn-Normal")
 	own.scripts.OnClick()
 	Equal(p.previewFocus, 2)
-	assert(own.selected)
 	remote.scripts.OnClick()
 	Equal(p.previewFollowing, p.partyQuestCompareSession.members[2].name)
-	local unchanged = Find(13).focusCells[2]
-	assert(not unchanged.selected)
-	unchanged.scripts.OnClick()
-	Equal(p.previewFocus, 2)
+	assert(own.icon.desaturated)
+	assert(not remote.icon.desaturated)
+	assert(Find(13, 2).icon.desaturated)
+	assert(Find(13, 3).icon.desaturated)
+	-- Celia's active quest is gray but remains clickable to change follow target.
+	local otherActive = Find(5, 4)
+	assert(otherActive.selected and otherActive.enabled and otherActive.icon.desaturated)
+	otherActive.scripts.OnClick()
+	local warning = a.partyFocusChangePreview
+	assert(warning:IsShown())
+	Equal(p.previewFollowing, p.partyQuestCompareSession.members[2].name)
+	warning.cancel.scripts.OnClick()
+	Equal(p.previewFollowing, p.partyQuestCompareSession.members[2].name)
+	otherActive.scripts.OnClick()
+	warning.confirm.scripts.OnClick()
+	Equal(p.previewFollowing, p.partyQuestCompareSession.members[4].name)
+	assert(not otherActive.icon.desaturated)
+	assert(remote.icon.desaturated)
+	-- Peer focus changes transfer the only colored button within that column.
 	p:AdvancePartyQuestFocus(p.previewFollowing)
-	Equal(p.previewFocus, 3)
-	Find(13).focusCells[1].scripts.OnClick()
+	Equal(p.previewFocus, 6)
+	assert(otherActive.icon.desaturated)
+	assert(not Find(6, 4).icon.desaturated)
+	Find(13, 1).scripts.OnClick()
+	Equal(p.previewFocus, 6)
+	warning.confirm.scripts.OnClick()
 	Equal(p.previewFocus, 13)
 	Equal(p.previewFollowing, nil)
+	assert(not Find(13, 1).icon.desaturated)
+	assert(not remote.icon.desaturated and not Find(6, 4).icon.desaturated)
+	assert(Find(13, 2).icon.desaturated)
+	for _, row in ipairs(frame.rows) do
+		if row.data and not row.data.kind then
+			for _, button in ipairs(row.focusCells) do
+				Equal(button.icon.vertexColor[4], 1)
+				Equal(button.normal.vertexColor[4], 1)
+			end
+		end
+	end
 	Equal(#a.wire, 0)
-	local stale = row.focusCells[1]
 	p:CancelPartyQuestCompare()
-	stale.scripts.OnClick()
+	own.scripts.OnClick()
 	Equal(p.previewFocus, 13)
 end)
 QuestTogether:RegisterTest("missing focus dialog preview is isolated and opens only mock PQL", function()
@@ -3680,4 +3718,195 @@ QuestTogether:RegisterTest("missing focus notices defer during restrictions and 
 	Equal(a.partyFocusMissingNotice, nil)
 	assert(not frame:IsShown())
 	Equal(#a.wire, 0)
+end)
+
+QuestTogether:RegisterTest("focus-change preview rejects stale confirmations and restrictions", function()
+	local a = PreviewFixture()
+	a:OpenPartyQuestComparePreview()
+	local p = a.partyQuestComparePreview
+	local session = p.partyQuestCompareSession
+	local first, second = session.members[2].name, session.members[4].name
+	assert(p:SelectPartyQuestFocus(first, 2))
+	assert(p:RequestPartyQuestFocus(second, 5))
+	local dialog = a.partyFocusChangePreview
+	Equal(p.previewFollowing, first)
+	a.blocked = true
+	dialog.confirm.scripts.OnClick()
+	Equal(p.previewFollowing, first)
+	assert(dialog:IsShown())
+	a.blocked = false
+	dialog.confirm.scripts.OnClick()
+	Equal(p.previewFollowing, second)
+	assert(p:RequestPartyQuestFocus(session.playerName, 13))
+	p:StopPartyQuestFollow()
+	p:SelectPartyQuestFocus(first, 2)
+	p:SelectPartyQuestFocus(second, 5)
+	dialog.confirm.scripts.OnClick()
+	Equal(p.previewFollowing, second)
+	Equal(p.previewFocus, 5)
+	assert(p:RequestPartyQuestFocus(session.playerName, 13))
+	dialog.escapeAction()
+	Equal(p.previewFollowing, second)
+	Equal(#a.wire, 0)
+	assert(a:HandleSlashCommand("preview unfollow"))
+	dialog.confirm.scripts.OnClick()
+	Equal(p.previewFollowing, second)
+end)
+
+local function NativePreviewFixture()
+	local a = PreviewFixture()
+	a.nativeFocus, a.nativeWrites = 101, {}
+	a.actualEntries = { Quest(101, "Real quest one", true), Quest(102, "Real quest two", false), Quest(103, "Real quest three", true, true) }
+	function a:BuildQuestCompareEntries() return self.actualEntries end
+	function a:ReadQuestCompareObjectives(id)
+		return { { text = "Real objective " .. id, kind = "item", current = 3, required = 7, finished = false } }
+	end
+	a.API.GetActiveTrackedQuestID = function() return a.nativeFocus > 0 and a.nativeFocus or nil end
+	a.API.GetPartyNavigationNativeState = function()
+		return { questID = a.nativeFocus, questCleared = a.nativeFocus == 0, mapID = 0, x = 0, y = 0 }
+	end
+	a.API.IsOnQuest = function(id)
+		for _, entry in ipairs(a.actualEntries) do if entry.questId == id then return true end end
+		return false
+	end
+	a.API.SetPartyNavigationQuest = function(id)
+		assert(id == 0 or a.API.IsOnQuest(id), "synthetic quest reached native setter")
+		a.nativeWrites[#a.nativeWrites + 1] = id
+		if a.reject then return false end
+		a.nativeFocus = id
+		local p = a.partyQuestComparePreview
+		if p and p.navigationObserver then p.navigationObserver.scripts.OnEvent() end
+		return true
+	end
+	function a:ExternalFocus(id)
+		self.nativeFocus = id
+		local p = self.partyQuestComparePreview
+		p.navigationObserver.scripts.OnEvent()
+		p.navigationObserver.scripts.OnUpdate(p.navigationObserver, 0.3)
+	end
+	return a
+end
+
+QuestTogether:RegisterTest("native compare preview copies real quests and isolates simulated party progress", function()
+	local a = NativePreviewFixture()
+	assert(a:OpenPartyQuestComparePreview())
+	local p = a.partyQuestComparePreview
+	assert(p.liveQuestData)
+	local session = p.partyQuestCompareSession
+	Equal(session.playerName, a.name)
+	Equal(session.members[1].classFile, "MAGE")
+	Equal(#p:BuildPartyQuestDiffRows(), 5)
+	Equal(session.members[1].entries[101].questTitle, "Real quest one")
+	Equal(session.members[1].entries[102].isPushable, false)
+	Equal(session.members[1].entries[103].isComplete, true)
+	Equal(session.members[1].entries[900000000], nil)
+	assert(session.members[2].entries[900000000])
+	p:TogglePartyQuestObjectives(101)
+	Equal(session.members[1].objectiveDetails[101].objectives[1].current, 3)
+	Equal(session.members[2].objectiveDetails[101].objectives[1].text, "Real objective 101")
+	session.members[2].entries[101].questTitle = "Edited simulation"
+	Equal(a.actualEntries[1].questTitle, "Real quest one")
+	Equal(#a.nativeWrites, 0)
+	Equal(#a.wire, 0)
+	Equal(a.pushes, 0)
+end)
+
+QuestTogether:RegisterTest("native compare preview follows mock changes and warns for Blizzard changes", function()
+	local a = NativePreviewFixture()
+	assert(a:OpenPartyQuestComparePreview())
+	local p = a.partyQuestComparePreview
+	local name = p.partyQuestCompareSession.members[2].name
+	assert(p:SelectPartyQuestFocus(name, 101))
+	Equal(p:GetPartyQuestFollowTarget(), name)
+	p:AdvancePartyQuestFocus(name)
+	Equal(a.nativeFocus, 102)
+	Equal(p:GetPartyQuestFocusID(name), 102)
+	a:ExternalFocus(103)
+	Equal(a.nativeFocus, 102)
+	Equal(p:GetPartyQuestFollowTarget(), name)
+	local dialog = a.partyFocusChangePreview
+	assert(dialog:IsShown())
+	assert(dialog.message.text:find("affect your navigation", 1, true))
+	dialog.cancel.scripts.OnClick()
+	Equal(p:GetPartyQuestFollowTarget(), name)
+	a:ExternalFocus(103)
+	dialog.confirm.scripts.OnClick()
+	Equal(a.nativeFocus, 103)
+	Equal(p:GetPartyQuestFollowTarget(), nil)
+	assert(p:SelectPartyQuestFocus(name, 102))
+	p.partyQuestCompareSession.members[2].focusQuestId = 900000000
+	p:ApplyPartyQuestFocus()
+	Equal(p:GetPartyQuestFollowTarget(), nil)
+	Equal(a.nativeFocus, 102)
+	assert(a.partyFocusMissingPreview:IsShown())
+	Equal(#a.wire, 0)
+end)
+
+QuestTogether:RegisterTest("native preview closes pending choices and never overwrites live follow intent", function()
+	local a = NativePreviewFixture()
+	a.partyNavigationState = { following = "Real Friend", followToken = {}, expectedQuest = 101 }
+	a.db = { global = { partyQuestFollowByCharacter = { Me = "Real Friend" } } }
+	a.activeCharacterKey = "Me"
+	assert(a:OpenPartyQuestComparePreview())
+	local p = a.partyQuestComparePreview
+	local name = p.partyQuestCompareSession.members[2].name
+	assert(p:SelectPartyQuestFocus(name, 101))
+	a:ExternalFocus(102)
+	local stale = a.partyFocusChangePreview.confirmAction
+	a:ApplyPartyQuestFocus()
+	Equal(a.partyNavigationState.following, "Real Friend")
+	Equal(a.db.global.partyQuestFollowByCharacter.Me, "Real Friend")
+	a:ClosePartyQuestComparePreview()
+	Equal(p.partyQuestCompareSession, nil)
+	Equal(p.partyNavigationState, nil)
+	Equal(a:IsPartyQuestCompareNavigationPreviewActive(), false)
+	Equal(stale(), false)
+	Equal(p.API.SetPartyNavigationQuest(102), false)
+	Equal(a.nativeFocus, 101)
+	Equal(#a.wire, 0)
+end)
+
+QuestTogether:RegisterTest("party diff explains nonshareable and unknown quests without implying recipient eligibility", function()
+	local a = Fixture("Me", { Quest(1, "Not shareable", false), Quest(2, "Unknown", nil), Quest(3, "Shared", true) })
+	a.partyQuestCompareSession = { playerName = "Me", members = {
+		{ name = "Me", state = "ready", isLocal = true, entries = { [1] = a.entries[1], [2] = a.entries[2], [3] = a.entries[3] } },
+		{ name = "Other", state = "ready", supportsShareRequests = true, entries = { [4] = Quest(4, "Remote nonshareable", false), [5] = Quest(5, "Remote unknown", nil) } },
+	}, byName = {} }
+	for _, member in ipairs(a.partyQuestCompareSession.members) do a.partyQuestCompareSession.byName[member.name] = member end
+	local rows = {}
+	for _, row in ipairs(a:BuildPartyQuestDiffRows()) do rows[row.questId] = row end
+	Equal(rows[1].hint, "Not shareable")
+	Equal(rows[2].hint, "Shareability unknown")
+	Equal(rows[3].action, "share")
+	Equal(rows[3].hint, nil)
+	Equal(rows[4].hint, "Not shareable")
+	Equal(rows[5].hint, "Shareability unknown")
+end)
+
+QuestTogether:RegisterTest("native preview defers unreadable ownership and restrictions then refreshes real data", function()
+	local a = NativePreviewFixture()
+	assert(a:OpenPartyQuestComparePreview())
+	local p = a.partyQuestComparePreview
+	local name = p.partyQuestCompareSession.members[2].name
+	assert(p:SelectPartyQuestFocus(name, 101))
+	a.blocked = true
+	p:AdvancePartyQuestFocus(name)
+	Equal(a.nativeFocus, 101)
+	a.blocked = false
+	local getter = a.API.IsOnQuest
+	a.API.IsOnQuest = function() return nil end
+	p:ApplyPartyQuestFocus()
+	Equal(p:GetPartyQuestFollowTarget(), name)
+	Equal(a.nativeFocus, 101)
+	a.API.IsOnQuest = getter
+	p.navigationObserver.scripts.OnUpdate(p.navigationObserver, 0.3)
+	Equal(a.nativeFocus, 102)
+	-- Refresh reads a new owned snapshot, with no fabricated ownership.
+	a.actualEntries = { Quest(201, "New real quest", true) }
+	p:RefreshPartyQuestCompare()
+	Equal(p:GetPartyQuestFollowTarget(), nil)
+	Equal(p.partyQuestCompareSession.members[1].entries[101], nil)
+	Equal(p.partyQuestCompareSession.members[1].entries[201].questTitle, "New real quest")
+	Equal(#a.wire, 0)
+	Equal(a.pushes, 0)
 end)

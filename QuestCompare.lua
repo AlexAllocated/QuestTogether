@@ -435,10 +435,17 @@ function QuestTogether:BuildPartyQuestDiffRows()
 			end
 		end
 		if own.entries[id] then
-			if row.missing > 0 and own.entries[id].isPushable == true then
-				row.action = "share"
+			if row.missing > 0 then
+				if own.entries[id].isPushable == true then row.action = "share"
+				elseif own.entries[id].isPushable == false then row.hint = L("Not shareable")
+				else row.hint = L("Shareability unknown") end
 			end
 		elseif own.state == "ready" then
+			local unknown = false
+			for _, member in ipairs(session.members) do
+				if member.state ~= "ready" or (member.entries[id] and member.entries[id].isPushable == nil) then unknown = true end
+			end
+			row.hint = unknown and L("Shareability unknown") or L("Not shareable")
 			for _, member in ipairs(session.members) do
 				if member.state == "ready" and member.entries[id] and member.entries[id].isPushable == true then
 					row.hint = L("Owner needs an update")

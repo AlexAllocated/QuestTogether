@@ -40,7 +40,7 @@ local function Fixture(name)
 			if a.unreadable then
 				return nil
 			end
-			return { questID = a.native.questID, mapID = a.native.mapID, x = a.native.x, y = a.native.y }
+			return { questID = a.native.questID, mapID = a.native.mapID, x = a.native.x, y = a.native.y, questCleared = a.native.questCleared }
 		end,
 		GetActiveTrackedQuestID = function()
 			return a.native.questID > 0 and a.native.questID or nil
@@ -70,6 +70,13 @@ local function Fixture(name)
 		self.noticeCount = (self.noticeCount or 0) + 1
 	end
 	function a:ClearPartyFocusMissingNotice() self.notice = nil end
+	function a:GetPlayerFullName() return self.name end
+	function a:IsWorkBlocked() return self.blocked == true end
+	function a:ShowPartyFocusChangeDialog(name, callback)
+		self.confirmName, self.confirmAction = name, callback
+		self.dialogCount = (self.dialogCount or 0) + 1
+		return true
+	end
 	function a:GetOption(key)
 		return self.options[key]
 	end
@@ -187,7 +194,7 @@ QT:RegisterTest("party navigation rejects public nonmember malformed replayed an
 	a:Tick()
 	Equal(a:GetPartyNavigationPeer(b.name), nil)
 end)
-QT:RegisterTest("party quest following applies once and stops for external navigation", function()
+QT:RegisterTest("party quest following asks before applying external quest navigation", function()
 	local a, b = Pair()
 	b.native.questID = 2
 	b:QueuePartyNavigationUpdate()
@@ -205,6 +212,10 @@ QT:RegisterTest("party quest following applies once and stops for external navig
 	a.native.questID = 1
 	a:OnPartyNavigationTrackingChanged()
 	a:Tick()
+	Equal(a.partyNavigationState.following, b.name)
+	Equal(a.native.questID, 2)
+	Equal(a.dialogCount, 1)
+	assert(a.confirmAction())
 	Equal(a.partyNavigationState.following, nil)
 	Equal(a.native.questID, 1)
 end)
@@ -543,12 +554,12 @@ QT:RegisterTest("unavailable focus preserves intent but ignore raid and disable 
 		if reason == "ignore" then a.ignored[b.name] = true; a:Tick()
 		elseif reason == "raid" then a.raid = true; a:Tick()
 		elseif reason == "disable" then a:ResetPartyNavigation()
-		else a.native.questID = 2; a:OnPartyNavigationTrackingChanged(); a:Tick() end
+		else a.native.questID = 2; a:OnPartyNavigationTrackingChanged(); a:Tick(); assert(a.confirmAction()) end
 		Equal(a.db.global.partyQuestFollowByCharacter.Me, nil)
 	end
 end)
 
-QT:RegisterTest("manual navigation during reload recovery cancels follow before peer arrives", function()
+QT:RegisterTest("manual navigation during reload recovery asks before ending saved follow", function()
 	local a, b = Pair()
 	a.db, a.activeCharacterKey = { global = {} }, "Me"
 	assert(a:FollowPartyQuestFocus(b.name))
@@ -558,8 +569,93 @@ QT:RegisterTest("manual navigation during reload recovery cancels follow before 
 	restored.native.questID = 2
 	restored:OnPartyNavigationTrackingChanged()
 	b:Tick(30); b:Deliver(restored)
+	Equal(restored.native.questID, 1)
+	Equal(restored.partyNavigationState.following, b.name)
+	assert(restored.confirmAction())
 	Equal(restored.native.questID, 2)
 	Equal(restored.partyNavigationState.following, nil)
 	Equal(restored.db.global.partyQuestFollowByCharacter.Me, nil)
-	Equal(#restored.writes, 0)
+	Equal(#restored.writes, 2)
+end)
+
+QT:RegisterTest("focus override waits for confirmation and rejects an obsolete follow token", function()
+	local a, b = Pair()
+	function a:ShowPartyFocusChangeDialog(name, callback)
+		self.confirmName, self.confirmAction = name, callback
+		return true
+	end
+	assert(a:FollowPartyQuestFocus(b.name))
+	assert(a:RequestPartyQuestFocus(a.name, 2))
+	Equal(a.partyNavigationState.following, b.name)
+	Equal(a.native.questID, 1)
+	local old = a.confirmAction
+	a:StopPartyQuestFollow()
+	assert(a:FollowPartyQuestFocus(b.name))
+	Equal(old(), false)
+	Equal(a.partyNavigationState.following, b.name)
+	assert(a:RequestPartyQuestFocus(a.name, 2))
+	assert(a.confirmAction())
+	Equal(a.native.questID, 2)
+	Equal(a.partyNavigationState.following, nil)
+end)
+
+QT:RegisterTest("native focus warning preserves follow on cancel and rejects older choices", function()
+	local a, b = Pair()
+	assert(a:FollowPartyQuestFocus(b.name))
+	a.native.questID = 2; a:OnPartyNavigationTrackingChanged(); a:Tick()
+	local obsolete = a.confirmAction
+	Equal(a.native.questID, 1)
+	Equal(a.partyNavigationState.following, b.name)
+	-- Closing the dialog has no action. Repeated ticks/echoes do not reopen it.
+	a.confirmAction = nil
+	a:OnPartyNavigationTrackingChanged()
+	for _ = 1, 5 do a:Tick() end
+	Equal(a.dialogCount, 1)
+	Equal(#a.writes, 1)
+	a.native.questID = 0; a.native.questCleared = true
+	a:OnPartyNavigationTrackingChanged(); a:Tick()
+	Equal(a.native.questID, 1)
+	Equal(a.dialogCount, 2)
+	Equal(obsolete(), false)
+	assert(a.confirmAction())
+	Equal(a.native.questID, 0)
+	Equal(a.partyNavigationState.following, nil)
+end)
+
+QT:RegisterTest("native focus warning defers restrictions and guards departed or missing choices", function()
+	for _, reason in ipairs({ "departed", "missing", "restricted", "failed" }) do
+		local a, b = Pair()
+		assert(a:FollowPartyQuestFocus(b.name))
+		a.blocked = true
+		a.native.questID = 2; a:OnPartyNavigationTrackingChanged(); a:Tick()
+		Equal(#a.writes, 0)
+		Equal(a.dialogCount, nil)
+		a.blocked = false; a:Tick()
+		Equal(a.native.questID, 1)
+		if reason == "departed" then a:Roster(a.name)
+		elseif reason == "missing" then a.owned[2] = nil
+		elseif reason == "restricted" then a.blocked = true
+		else a.reject = true end
+		Equal(a.confirmAction(), false)
+		Equal(a.native.questID, 1)
+		if reason == "departed" then Equal(a.partyNavigationState.following, nil)
+		else Equal(a.partyNavigationState.following, b.name) end
+	end
+end)
+
+QT:RegisterTest("failed native focus restoration stops safely without repeated writes", function()
+	for _, throws in ipairs({ false, true }) do
+		local a, b = Pair()
+		assert(a:FollowPartyQuestFocus(b.name))
+		a.reject = true
+		if throws then a.API.SetPartyNavigationQuest = function()
+			a.writes[#a.writes + 1] = 1; error("native unavailable")
+		end end
+		a.native.questID = 2; a:OnPartyNavigationTrackingChanged(); a:Tick()
+		Equal(a.partyNavigationState.following, nil)
+		Equal(a.native.questID, 2)
+		Equal(a.dialogCount, nil)
+		for _ = 1, 5 do a:Tick() end
+		Equal(#a.writes, 1)
+	end
 end)

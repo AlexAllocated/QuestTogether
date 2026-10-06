@@ -276,6 +276,7 @@ function QuestTogether:ShowDialogPreview(kind)
 		self:Print(L("Dialog previews are unavailable while UI restrictions are active."))
 		return false
 	end
+	if kind == "unfollow" then return self:ShowPartyFocusChangeDialog(L("Example Player"), function() end, true) end
 	if kind == "focus" then return self:ShowPartyFocusMissingDialog({ name = L("Example Player"), questID = 1, title = L("Example Quest") }, true) end
 	if kind == "partychat" then return self:ShowPartyChatReminderPreview() end
 	if kind == "discord" then return self:OpenDiscordSupport() end
@@ -378,5 +379,59 @@ function QuestTogether:ShowPartyFocusMissingDialog(notice, preview)
 	self:ApplyScrollDialogTheme(frame)
 	self:FitScrollDialog(frame)
 	frame:Show(); frame:Raise()
+	return true
+end
+
+-- The warning is also used by the isolated compare controller. Preview callbacks
+-- can only change that controller, never the live party navigation model.
+function QuestTogether:ShowPartyFocusChangeDialog(name, callback, preview, liveNavigation)
+	if self:IsWorkBlocked("foreign_frame_mutation") then return false end
+	local key = preview and "partyFocusChangePreview" or "partyFocusChangeDialog"
+	local frame = rawget(self, key)
+	if not frame then
+		frame = self:CreateScrollDialog(620, 300, L("Stop following quest focus?"))
+		if not frame then return false end
+		self[key] = frame
+		frame.message = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+		frame.message:SetPoint("TOPLEFT", frame.contentInset, -frame.contentTop)
+		frame.message:SetWidth(frame.contentWidth)
+		frame.message:SetJustifyH("LEFT")
+		frame.message:SetWordWrap(true)
+		self:AddScrollDialogLabel(frame, frame.message)
+		local function Close()
+			frame.confirmAction = nil
+			if self.LibChev.CanMutateOwnedRegion(frame) then frame:Hide() end
+		end
+		frame.escapeAction = Close
+		frame:SetScript("OnHide", function() frame.confirmAction = nil end)
+		frame.close = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelCloseButton")
+		frame.close:SetPoint("TOPRIGHT", -12, -8)
+		frame.close:SetScript("OnClick", Close)
+		frame.cancel = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelButtonTemplate")
+		frame.cancel:SetSize(160, 26)
+		frame.cancel:SetPoint("BOTTOMLEFT", frame.contentInset, frame.contentBottom)
+		frame.cancel:SetText(L("Cancel"))
+		frame.cancel:SetScript("OnClick", Close)
+		frame.confirm = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelButtonTemplate")
+		frame.confirm:SetSize(220, 26)
+		frame.confirm:SetPoint("BOTTOMRIGHT", -frame.contentInset, frame.contentBottom)
+		frame.confirm:SetText(L("Change focus"))
+		frame.confirm:SetScript("OnClick", function()
+			if self:IsWorkBlocked("foreign_frame_mutation") then return end
+			local action = frame.confirmAction
+			Close()
+			if action then action() end
+		end)
+	end
+	if not self.LibChev.CanMutateOwnedRegion(frame) then return false end
+	frame.confirmAction = callback
+	frame.message:SetText(string.format(L("Changing focus will stop following %s. Continue?"), name)
+		.. (preview and ("\n\n" .. (liveNavigation and L("Preview - quest focus changes affect your navigation.") or L("Preview - no settings will change."))) or ""))
+	frame.message:SetHeight(frame.message:GetStringHeight())
+	frame:SetHeight(math.max(260, frame.contentTop + frame.message:GetStringHeight() + frame.contentBottom + 54))
+	self:ApplyScrollDialogTheme(frame)
+	self:FitScrollDialog(frame)
+	frame:Show()
+	frame:Raise()
 	return true
 end

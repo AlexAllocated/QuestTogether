@@ -68,6 +68,7 @@ function QT:GetPartyNavigationState()
 		local target = store and Name(self, store[owner])
 		if target and not self:IsSelfSender(target) then
 			s.following, s.resuming, s.followStatus = target, true, L("Waiting for quest focus")
+			s.followToken = {}
 		elseif store then store[owner] = nil end
 		self.partyNavigationState = s
 	end
@@ -142,6 +143,7 @@ function QT:FollowPartyQuestFocus(name)
 	local s = self:GetPartyNavigationState()
 	s.following, s.attempt, s.expectedQuest = name, nil, self.API.GetActiveTrackedQuestID() or 0
 	s.checkExternal, s.resuming = nil, nil
+	s.followToken = {}
 	self:SavePartyQuestFollow(name)
 	self:ClearPartyFocusMissingNotice()
 	self:QueuePartyNavigationUpdate()
@@ -150,6 +152,7 @@ function QT:FollowPartyQuestFocus(name)
 	return true
 end
 function QT:ApplyPartyQuestFocus()
+	if self.IsPartyQuestCompareNavigationPreviewActive and self:IsPartyQuestCompareNavigationPreviewActive() then return end
 	local s = rawget(self, "partyNavigationState")
 	if not s or not s.following then
 		return
@@ -172,7 +175,7 @@ function QT:ApplyPartyQuestFocus()
 		self:SamplePartyNavigation()
 		if s.resuming then return end
 	end
-	-- Manual navigation wins even if a peer packet arrives before the next tick.
+	-- Resolve a native navigation change before an arriving peer can overwrite it.
 	if s.checkExternal then
 		self:SamplePartyNavigation()
 		if not s.following or s.checkExternal then
@@ -217,6 +220,11 @@ function QT:ApplyPartyQuestFocus()
 	end
 end
 function QT:OnPartyNavigationTrackingChanged()
+	if self.IsPartyQuestCompareNavigationPreviewActive and self:IsPartyQuestCompareNavigationPreviewActive() then
+		self:QueuePartyNavigationUpdate()
+		Changed(self)
+		return
+	end
 	local s = rawget(self, "partyNavigationState")
 	if s and s.following and not s.applying and not s.resuming then
 		-- Defer unreadable observations, never treat an inaccessible quest as a
@@ -236,15 +244,34 @@ function QT:SamplePartyNavigation()
 		return nil
 	end
 	local s = self:GetPartyNavigationState()
+	local previewActive = self.IsPartyQuestCompareNavigationPreviewActive and self:IsPartyQuestCompareNavigationPreviewActive()
 	-- Establish a local baseline during reload, independently of peer arrival.
 	-- Later manual changes still win while waiting for fresh remote state.
-	if s.resuming and native.questID >= 0 then
+	if s.resuming and not previewActive and native.questID >= 0 then
 		s.expectedQuest, s.resuming = native.questID, nil
 	end
-	if s.checkExternal and native.questID >= 0 then
+	if s.checkExternal and not previewActive and native.questID >= 0 then
 		s.checkExternal = nil
 		if s.following and native.questID >= 0 then
 			if native.questID ~= s.expectedQuest then
+				-- Native tracker events arrive after selection. Restore our last
+				-- followed focus before asking; never replace Blizzard callbacks.
+				local previous = Number(self, s.expectedQuest, 0, 1000000000)
+				if previous and (native.questID > 0 or native.questCleared == true) then
+					if self:IsWorkBlocked("foreign_frame_mutation") then
+						s.checkExternal = true
+						return nil
+					end
+					s.applying = true
+					local restored, applied = pcall(self.API.SetPartyNavigationQuest, previous)
+					s.applying = nil
+					if restored and applied == true then
+						self:RequestPartyQuestFocus(self:GetPlayerFullName(), native.questID)
+						return self:SamplePartyNavigation()
+					end
+				end
+				-- Other navigation (waypoints, etc.) or a failed restoration wins.
+				-- Stop rather than repeatedly fighting a rejected native setter.
 				self:StopPartyQuestFollow()
 			end
 		end
@@ -265,7 +292,7 @@ function QT:SamplePartyNavigation()
 		mapID = map,
 		x = map > 0 and native.x or 0,
 		y = map > 0 and native.y or 0,
-		following = s.following or "",
+		following = not previewActive and s.following or "",
 	}
 end
 function QT:EncodePartyNavigation(p, hello)
@@ -465,13 +492,41 @@ function QT:GetPartyQuestFocusID(name)
 	local peer = self:GetPartyNavigationPeer(name)
 	return peer and peer.questID or nil
 end
+function QT:GetPartyQuestFollowTarget()
+	local state = rawget(self, "partyNavigationState")
+	if state and state.following then return state.following, state.followToken end
+end
+-- Capture the choice, not a pooled row/button. Confirming an obsolete dialog
+-- must never cancel a newer follow, even if it targets the same player again.
+function QT:RequestPartyQuestFocus(name, questID)
+	if self:IsWorkBlocked("foreign_frame_mutation") then return false end
+	local following, token = self:GetPartyQuestFollowTarget()
+	local choice = {}
+	self.partyFocusChangeToken = choice
+	if following and following ~= name then
+		return self:ShowPartyFocusChangeDialog(following, function()
+			local current, currentToken = self:GetPartyQuestFollowTarget()
+			if current ~= following or currentToken ~= token or self.partyFocusChangeToken ~= choice then return false end
+			if rawget(self, "partyNavigationState") then self:ReconcilePartyQuestFollow() end
+			if self:GetPartyQuestFollowTarget() ~= following then return false end
+			return self:SelectPartyQuestFocus(name, questID)
+		end)
+	end
+	return self:SelectPartyQuestFocus(name, questID)
+end
 function QT:SelectPartyQuestFocus(name, questID)
 	if self:IsRuntimeRestricted() then return false end
 	if self:IsSelfSender(name) then
-		if self.API.IsOnQuest(questID) ~= true then return false end
-		self:StopPartyQuestFollow()
+		if questID ~= 0 and self.API.IsOnQuest(questID) ~= true then return false end
+		local s = rawget(self, "partyNavigationState")
+		if s then s.applying = true end
 		local ok, applied = pcall(self.API.SetPartyNavigationQuest, questID)
-		if ok and applied == true then self:OnPartyNavigationTrackingChanged(); return true end
+		if s then s.applying = nil end
+		if ok and applied == true then
+			self:StopPartyQuestFollow()
+			self:OnPartyNavigationTrackingChanged()
+			return true
+		end
 		return false
 	end
 	if self:GetPartyQuestFocusID(name) ~= questID then return false end
