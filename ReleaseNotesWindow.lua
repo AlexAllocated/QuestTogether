@@ -658,9 +658,9 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll)
 					elseif section.illustration == "party-quest-objectives" and regional then
 						asset, imageWidth, imageHeight = "PartyQuestObjectivesForever", 1564, 893
 					elseif section.illustration == "party-quest-overview" then
-						asset, imageWidth, imageHeight = "PartyQuestOverviewForever", 1467, 580
+						asset, imageWidth, imageHeight = "PartyQuestOverviewForever", 1465, 635
 					elseif section.illustration == "party-quest-following" then
-						asset, imageWidth, imageHeight = "PartyQuestFollowingForever", 1210, 254
+						asset, imageWidth, imageHeight = "PartyQuestFollowingForever", 1198, 199
 					elseif section.illustration == "party-quest-focus-warning" then
 						asset, imageWidth, imageHeight = "PartyQuestFocusWarningForever", 1824, 540
 					end

@@ -858,8 +858,8 @@ Register("party quest guide screenshots retain aspect ratio across clients and c
 		}
 		assert(a:RenderReleaseNotesWindow(notes, "6.5.3", false))
 		local frame = a.releaseNotesWindow
-		for asset, ratio in pairs({ PartyQuestOverviewForever = 580 / 1467,
-			PartyQuestFollowingForever = 254 / 1210, PartyQuestFocusWarningForever = 540 / 1824 }) do
+		for asset, ratio in pairs({ PartyQuestOverviewForever = 635 / 1465,
+			PartyQuestFollowingForever = 199 / 1198, PartyQuestFocusWarningForever = 540 / 1824 }) do
 			local image = frame.releaseScreenshots[asset]
 			assert(image and image.shown and math.abs(image.height / image.width - ratio) < 0.0001)
 		end
