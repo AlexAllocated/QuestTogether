@@ -2,6 +2,21 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.8
+
+Menus déroulants natifs de WoW, options de carte plus claires et diagnostics développeur.
+
+### Paramètres et cartes des joueurs
+
+- Les neuf menus déroulants des paramètres utilisent désormais les contrôles natifs de WoW : sélection dorée, menus noirs et boutons précédent/suivant.
+- Joueurs affichés sur les cartes remplace les cases séparées de visibilité et d’exception pour le groupe. Choisissez tous les joueurs QT, ceux qui cherchent des partenaires de quête avec ou sans votre groupe, votre groupe uniquement ou Aucun. Les préférences existantes sont conservées ; le partage de votre position reste séparé.
+- La nouvelle catégorie Développeur regroupe l’ouverture de la fenêtre de débogage, la relecture du journal des quêtes et le partage des données de diagnostic.
+
+### Réponses de diagnostic
+
+- Le partage des données de diagnostic avec le développeur est activé par défaut. Il autorise les demandes authentifiées du développeur concernant les diagnostics QT, les paramètres de l’addon et les données de personnage, de groupe et de position en jeu, même si le partage public de position est désactivé. Désactivez cette option sous Développeur pour arrêter ce partage.
+- Les réponses utilisent des messages privés d’addon, répartis en pages espacées pour conserver tous les champs des réponses volumineuses. Les diagnostics à distance exigent la version 6.5.8 ou ultérieure chez les deux joueurs ; les clients 6.5.7 publiés ne peuvent pas répondre à ces demandes.
+
 ## 6.5.7
 
 Ciblage sur la minicarte et icônes de groupe plus visibles.

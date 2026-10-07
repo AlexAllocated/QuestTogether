@@ -1,15 +1,22 @@
 {
-  "source_sha256": "a02be11488301ef0bcd534693851680df3a662da04ad9a9a18beb5fd6bc7ecdb",
+  "source_sha256": "40274e8405d889f5449dbe079f73b7b5e88c3911d2f6dc6cb3f1c8e38b1c8311",
   "notes": {
-    "version": "6.5.7",
-    "welcome": "Ciblage sur la minicarte et icônes de groupe plus visibles.",
+    "version": "6.5.8",
+    "welcome": "Menus déroulants natifs de WoW, options de carte plus claires et diagnostics développeur.",
     "sections": [
       {
-        "title": "Points des joueurs et icônes de groupe",
+        "title": "Paramètres et cartes des joueurs",
         "items": [
-          "Hors combat, cliquez avec le bouton gauche sur le point d’un joueur sur la minicarte pour le cibler, si le jeu le permet. Le clic droit ouvre toujours le menu, avec Cibler en première position. Les menus des points sur la carte du monde restent inchangés.",
-          "Les icônes de recherche de partenaires ont désormais un contour doré bien plus marqué. Les listes de groupe dans les infobulles affichent aussi le logo QT lumineux pour les membres qui cherchent actuellement des partenaires de quête.",
-          "Les symboles de suivi du journal de quêtes du groupe sont désormais affichés sur leur propre couche de premier plan, afin que les arrière-plans des boutons ne puissent pas les masquer."
+          "Les neuf menus déroulants des paramètres utilisent désormais les contrôles natifs de WoW : sélection dorée, menus noirs et boutons précédent/suivant.",
+          "Joueurs affichés sur les cartes remplace les cases séparées de visibilité et d’exception pour le groupe. Choisissez tous les joueurs QT, ceux qui cherchent des partenaires de quête avec ou sans votre groupe, votre groupe uniquement ou Aucun. Les préférences existantes sont conservées ; le partage de votre position reste séparé.",
+          "La nouvelle catégorie Développeur regroupe l’ouverture de la fenêtre de débogage, la relecture du journal des quêtes et le partage des données de diagnostic."
+        ]
+      },
+      {
+        "title": "Réponses de diagnostic",
+        "items": [
+          "Le partage des données de diagnostic avec le développeur est activé par défaut. Il autorise les demandes authentifiées du développeur concernant les diagnostics QT, les paramètres de l’addon et les données de personnage, de groupe et de position en jeu, même si le partage public de position est désactivé. Désactivez cette option sous Développeur pour arrêter ce partage.",
+          "Les réponses utilisent des messages privés d’addon, répartis en pages espacées pour conserver tous les champs des réponses volumineuses. Les diagnostics à distance exigent la version 6.5.8 ou ultérieure chez les deux joueurs ; les clients 6.5.7 publiés ne peuvent pas répondre à ces demandes."
         ]
       }
     ]

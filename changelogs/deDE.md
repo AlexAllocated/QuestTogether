@@ -2,6 +2,21 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.8
+
+Native WoW-Auswahlmenüs, klarere Kartenoptionen und Entwicklerdiagnosen.
+
+### Einstellungen und Spielerkarten
+
+- Alle neun Auswahlmenüs in den Einstellungen verwenden jetzt native WoW-Steuerelemente mit goldener Auswahl, schwarzen Menüs und Zurück-/Weiter-Schaltflächen.
+- Auf Karten angezeigte Spieler ersetzt die getrennten Kontrollkästchen für Sichtbarkeit und Gruppenausnahme. Wähle alle QT-Spieler, Spieler auf Questpartnersuche mit oder ohne deine Gruppe, nur deine Gruppe oder Keine. Vorhandene Einstellungen bleiben erhalten; die Freigabe deines eigenen Standorts bleibt getrennt.
+- Die neue Einstellungskategorie Entwickler enthält Debugfenster öffnen, Questlog neu einlesen und die Freigabe von Diagnosedaten.
+
+### Diagnoseantworten
+
+- Diagnosedaten mit dem Entwickler teilen ist standardmäßig aktiviert. Die Option erlaubt authentifizierte Entwickleranfragen nach QT-Diagnosen, Addon-Einstellungen sowie Charakter-, Gruppen- und Standortdaten im Spiel, auch bei deaktivierter öffentlicher Standortfreigabe. Deaktiviere sie unter Entwickler, um diese Daten nicht mehr zu teilen.
+- Diagnoseantworten verwenden private Addon-Flüsternachrichten und werden zeitversetzt in Seiten aufgeteilt, damit größere Antworten ihre Felder behalten. Ferndiagnosen erfordern bei beiden Spielern Version 6.5.8 oder neuer; veröffentlichte 6.5.7-Clients können diese Anfragen nicht beantworten.
+
 ## 6.5.7
 
 Spieler über die Minikarte anvisieren und deutlichere Gruppensymbole.

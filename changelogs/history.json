@@ -3,6 +3,162 @@
   "releases": [
     {
       "enUS": {
+        "version": "6.5.7",
+        "welcome": "Minimap targeting and clearer party icons.",
+        "sections": [
+          {
+            "title": "Player dots and party icons",
+            "items": [
+              "Outside combat, left-click a minimap player dot to target that player when the game can target them. Right-click still opens the menu, with Target first. World-map dot menus keep their existing behavior.",
+              "Looking-for-partners icons now have a much bolder gold outline. Party rosters in tooltips also show the glowing QT logo for members with an active looking-for-partners status.",
+              "Quest focus symbols in Party Quest Log now render on their own foreground layer so the button backgrounds cannot cover them."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "6.5.7",
+        "welcome": "Spieler über die Minikarte anvisieren und deutlichere Gruppensymbole.",
+        "sections": [
+          {
+            "title": "Spielerpunkte und Gruppensymbole",
+            "items": [
+              "Außerhalb des Kampfes kannst du einen Spielerpunkt auf der Minikarte mit Linksklick anvisieren, sofern das Spiel diesen Spieler als Ziel erfassen kann. Rechtsklick öffnet weiterhin das Menü, jetzt mit Anvisieren an erster Stelle. Die Menüs der Weltkartenpunkte bleiben unverändert.",
+              "Symbole für die Questpartnersuche haben jetzt eine deutlich kräftigere goldene Kontur. Gruppenlisten in Tooltips zeigen außerdem das leuchtende QT-Logo für Mitglieder, die gerade Questpartner suchen.",
+              "Die Questfokussymbole im Gruppenquestlog werden jetzt auf einer eigenen Vordergrundebene dargestellt, damit die Schaltflächenhintergründe sie nicht verdecken können."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "6.5.7",
+        "welcome": "Ciblage sur la minicarte et icônes de groupe plus visibles.",
+        "sections": [
+          {
+            "title": "Points des joueurs et icônes de groupe",
+            "items": [
+              "Hors combat, cliquez avec le bouton gauche sur le point d’un joueur sur la minicarte pour le cibler, si le jeu le permet. Le clic droit ouvre toujours le menu, avec Cibler en première position. Les menus des points sur la carte du monde restent inchangés.",
+              "Les icônes de recherche de partenaires ont désormais un contour doré bien plus marqué. Les listes de groupe dans les infobulles affichent aussi le logo QT lumineux pour les membres qui cherchent actuellement des partenaires de quête.",
+              "Les symboles de suivi du journal de quêtes du groupe sont désormais affichés sur leur propre couche de premier plan, afin que les arrière-plans des boutons ne puissent pas les masquer."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "6.5.7",
+        "welcome": "Selección de objetivos en el minimapa e iconos de grupo más claros.",
+        "sections": [
+          {
+            "title": "Puntos de jugadores e iconos de grupo",
+            "items": [
+              "Fuera de combate, haz clic izquierdo en el punto de un jugador en el minimapa para seleccionarlo como objetivo, si el juego lo permite. El clic derecho sigue abriendo el menú, con Seleccionar objetivo en primer lugar. Los menús de los puntos del mapa del mundo conservan su comportamiento.",
+              "Los iconos de búsqueda de compañeros tienen ahora un contorno dorado mucho más marcado. Las listas de grupo en las descripciones emergentes también muestran el logo QT brillante para los miembros que están buscando compañeros de misiones.",
+              "Los símbolos de seguimiento del registro de misiones del grupo ahora se dibujan en su propia capa en primer plano, para que los fondos de los botones no puedan taparlos."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "6.5.7",
+        "welcome": "Selección de objetivos en el minimapa e íconos de grupo más claros.",
+        "sections": [
+          {
+            "title": "Puntos de jugadores e íconos de grupo",
+            "items": [
+              "Fuera de combate, haz clic izquierdo en el punto de un jugador en el minimapa para seleccionarlo como objetivo, si el juego lo permite. El clic derecho sigue abriendo el menú, con Seleccionar objetivo en primer lugar. Los menús de los puntos del mapa del mundo conservan su comportamiento.",
+              "Los íconos de búsqueda de compañeros tienen ahora un contorno dorado mucho más marcado. Las listas de grupo en las descripciones emergentes también muestran el logo QT brillante para los miembros que están buscando compañeros de misiones.",
+              "Los símbolos de seguimiento del registro de misiones del grupo ahora se dibujan en su propia capa en primer plano, para que los fondos de los botones no puedan taparlos."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "6.5.7",
+        "welcome": "Seleção de alvos no minimapa e ícones de grupo mais claros.",
+        "sections": [
+          {
+            "title": "Pontos de jogadores e ícones de grupo",
+            "items": [
+              "Fora de combate, clique com o botão esquerdo no ponto de um jogador no minimapa para selecioná-lo como alvo, quando o jogo permitir. O botão direito continua abrindo o menu, com Selecionar alvo em primeiro lugar. Os menus dos pontos no mapa-múndi mantêm o comportamento atual.",
+              "Os ícones de busca de parceiros agora têm um contorno dourado muito mais forte. As listas de grupo nas dicas também mostram o logo QT brilhante para membros que estão procurando parceiros de missão.",
+              "Os símbolos de foco no Registro de Missões do Grupo agora são desenhados em sua própria camada de primeiro plano, para que os fundos dos botões não possam cobri-los."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "6.5.7",
+        "welcome": "Выбор цели на миникарте и более заметные значки группы.",
+        "sections": [
+          {
+            "title": "Точки игроков и значки группы",
+            "items": [
+              "Вне боя щёлкните левой кнопкой по точке игрока на миникарте, чтобы выбрать его целью, если игра это позволяет. Правая кнопка по-прежнему открывает меню, где первым пунктом теперь идёт «Выбрать целью». Меню точек на карте мира не изменились.",
+              "Значки поиска напарников теперь имеют гораздо более заметную золотую обводку. В списках группы во всплывающих подсказках также показывается светящийся логотип QT у участников, которые сейчас ищут напарников для заданий.",
+              "Символы отслеживания в журнале заданий группы теперь рисуются на отдельном переднем слое, чтобы фон кнопок не мог их закрывать."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "6.5.7",
+        "welcome": "Selezione dei bersagli sulla minimappa e icone di gruppo più chiare.",
+        "sections": [
+          {
+            "title": "Punti dei giocatori e icone di gruppo",
+            "items": [
+              "Fuori dal combattimento, fai clic sinistro sul punto di un giocatore sulla minimappa per selezionarlo come bersaglio, quando il gioco lo consente. Il clic destro apre ancora il menu, con Seleziona bersaglio come prima voce. I menu dei punti sulla mappa del mondo restano invariati.",
+              "Le icone di ricerca dei compagni ora hanno un contorno dorato molto più marcato. Gli elenchi del gruppo nei suggerimenti mostrano anche il logo QT luminoso per i membri che stanno cercando compagni per le missioni.",
+              "I simboli di tracciamento nel registro missioni del gruppo ora vengono disegnati su un livello in primo piano separato, così gli sfondi dei pulsanti non possono coprirli."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "6.5.7",
+        "welcome": "미니맵 대상 선택과 더 선명한 파티 아이콘.",
+        "sections": [
+          {
+            "title": "플레이어 점과 파티 아이콘",
+            "items": [
+              "전투 중이 아닐 때 미니맵의 플레이어 점을 왼쪽 클릭하면 게임에서 허용하는 경우 해당 플레이어를 대상으로 선택합니다. 오른쪽 클릭은 계속 메뉴를 열며, 대상 선택이 첫 번째 항목으로 표시됩니다. 세계 지도 점의 메뉴 동작은 그대로입니다.",
+              "퀘스트 동료 찾기 아이콘의 금색 테두리를 훨씬 굵게 만들었습니다. 툴팁의 파티 명단에서도 퀘스트 동료를 찾는 중인 파티원에게 빛나는 QT 로고가 표시됩니다.",
+              "파티 퀘스트 목록의 퀘스트 추적 기호를 별도의 전경 레이어에 표시하여 버튼 배경이 기호를 가리지 않도록 했습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "6.5.7",
+        "welcome": "小地图目标选择和更清晰的队伍图标。",
+        "sections": [
+          {
+            "title": "玩家圆点和队伍图标",
+            "items": [
+              "非战斗状态下，左键点击小地图上的玩家圆点，可在游戏允许时将该玩家选为目标。右键仍打开菜单，“选为目标”现在排在第一项。世界地图圆点菜单的行为保持不变。",
+              "寻找任务伙伴图标现在拥有更醒目的粗金色轮廓。提示框中的队伍名单也会为正在寻找任务伙伴的成员显示发光的 QT 标志。",
+              "队伍任务日志中的任务追踪符号现在绘制在独立的前景层上，避免被按钮背景遮挡。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "6.5.7",
+        "welcome": "小地圖目標選取與更清楚的隊伍圖示。",
+        "sections": [
+          {
+            "title": "玩家圓點與隊伍圖示",
+            "items": [
+              "非戰鬥狀態下，左鍵點擊小地圖上的玩家圓點，可在遊戲允許時將該玩家選為目標。右鍵仍會開啟選單，「選為目標」現在排在第一項。世界地圖圓點選單的行為維持不變。",
+              "尋找任務夥伴圖示現在擁有更醒目的粗金色輪廓。提示框中的隊伍名單也會為正在尋找任務夥伴的成員顯示發光的 QT 標誌。",
+              "隊伍任務日誌中的任務追蹤符號現在繪製於獨立的前景圖層，避免被按鈕背景遮住。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "6.5.6",
         "welcome": "See who is looking for questing partners in your logs.",
         "sections": [

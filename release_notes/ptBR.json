@@ -1,15 +1,22 @@
 {
-  "source_sha256": "a02be11488301ef0bcd534693851680df3a662da04ad9a9a18beb5fd6bc7ecdb",
+  "source_sha256": "40274e8405d889f5449dbe079f73b7b5e88c3911d2f6dc6cb3f1c8e38b1c8311",
   "notes": {
-    "version": "6.5.7",
-    "welcome": "Seleção de alvos no minimapa e ícones de grupo mais claros.",
+    "version": "6.5.8",
+    "welcome": "Menus nativos do WoW, controles de mapa mais claros e diagnósticos para o desenvolvedor.",
     "sections": [
       {
-        "title": "Pontos de jogadores e ícones de grupo",
+        "title": "Configurações e mapas de jogadores",
         "items": [
-          "Fora de combate, clique com o botão esquerdo no ponto de um jogador no minimapa para selecioná-lo como alvo, quando o jogo permitir. O botão direito continua abrindo o menu, com Selecionar alvo em primeiro lugar. Os menus dos pontos no mapa-múndi mantêm o comportamento atual.",
-          "Os ícones de busca de parceiros agora têm um contorno dourado muito mais forte. As listas de grupo nas dicas também mostram o logo QT brilhante para membros que estão procurando parceiros de missão.",
-          "Os símbolos de foco no Registro de Missões do Grupo agora são desenhados em sua própria camada de primeiro plano, para que os fundos dos botões não possam cobri-los."
+          "Os nove menus suspensos das configurações agora usam controles nativos do WoW com seleção dourada, menus pretos e botões anterior/próximo.",
+          "Jogadores exibidos nos mapas substitui as caixas separadas de visibilidade e exceção para o grupo. Escolha todos os jogadores QT, jogadores buscando parceiros de missões com ou sem seu grupo, apenas seu grupo ou Nenhum. As preferências existentes são mantidas; compartilhar sua própria localização continua separado.",
+          "A nova categoria Desenvolvedor reúne Abrir janela de depuração, Verificar novamente o registro de missões e a opção de compartilhar diagnósticos."
+        ]
+      },
+      {
+        "title": "Respostas de diagnóstico",
+        "items": [
+          "Compartilhar dados de diagnóstico com o desenvolvedor está ativado por padrão. Isso permite solicitações autenticadas do desenvolvedor para diagnósticos QT, configurações do addon e dados de personagem, grupo e localização no jogo, mesmo quando o compartilhamento público de localização está desativado. Desative em Desenvolvedor para parar de compartilhar esses dados.",
+          "As respostas usam sussurros privados do addon, divididos em páginas enviadas em intervalos para preservar os campos de respostas maiores. Diagnósticos remotos exigem que ambos os jogadores usem 6.5.8 ou posterior; clientes publicados da versão 6.5.7 não podem responder a essas solicitações."
         ]
       }
     ]

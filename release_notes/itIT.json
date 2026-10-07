@@ -1,15 +1,22 @@
 {
-  "source_sha256": "a02be11488301ef0bcd534693851680df3a662da04ad9a9a18beb5fd6bc7ecdb",
+  "source_sha256": "40274e8405d889f5449dbe079f73b7b5e88c3911d2f6dc6cb3f1c8e38b1c8311",
   "notes": {
-    "version": "6.5.7",
-    "welcome": "Selezione dei bersagli sulla minimappa e icone di gruppo più chiare.",
+    "version": "6.5.8",
+    "welcome": "Menu nativi di WoW, controlli della mappa più chiari e diagnostica per lo sviluppatore.",
     "sections": [
       {
-        "title": "Punti dei giocatori e icone di gruppo",
+        "title": "Impostazioni e mappe dei giocatori",
         "items": [
-          "Fuori dal combattimento, fai clic sinistro sul punto di un giocatore sulla minimappa per selezionarlo come bersaglio, quando il gioco lo consente. Il clic destro apre ancora il menu, con Seleziona bersaglio come prima voce. I menu dei punti sulla mappa del mondo restano invariati.",
-          "Le icone di ricerca dei compagni ora hanno un contorno dorato molto più marcato. Gli elenchi del gruppo nei suggerimenti mostrano anche il logo QT luminoso per i membri che stanno cercando compagni per le missioni.",
-          "I simboli di tracciamento nel registro missioni del gruppo ora vengono disegnati su un livello in primo piano separato, così gli sfondi dei pulsanti non possono coprirli."
+          "Tutti e nove i menu a discesa delle impostazioni ora usano i controlli nativi di WoW, con selezione dorata, menu neri e pulsanti precedente/successivo.",
+          "Giocatori mostrati sulle mappe sostituisce le caselle separate per visibilità ed eccezione del gruppo. Scegli tutti i giocatori QT, quelli in cerca di compagni di missione con o senza il tuo gruppo, solo il tuo gruppo o Nessuno. Le preferenze esistenti vengono mantenute; la condivisione della tua posizione resta separata.",
+          "La nuova categoria Sviluppatore contiene Apri finestra di debug, Rileggi registro missioni e l’opzione di condivisione dei dati diagnostici."
+        ]
+      },
+      {
+        "title": "Risposte diagnostiche",
+        "items": [
+          "Condividi dati diagnostici con lo sviluppatore è attivo per impostazione predefinita. Consente richieste autenticate dello sviluppatore per diagnostica QT, impostazioni dell’addon e dati di personaggio, gruppo e posizione nel gioco, anche se la condivisione pubblica della posizione è disattivata. Disattivalo in Sviluppatore per interrompere questa condivisione.",
+          "Le risposte usano messaggi privati dell’addon, suddivisi in pagine inviate a intervalli per conservare tutti i campi delle risposte più grandi. La diagnostica remota richiede che entrambi i giocatori usino la versione 6.5.8 o successiva; i client pubblicati della 6.5.7 non possono rispondere a queste richieste."
         ]
       }
     ]

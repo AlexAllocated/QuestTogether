@@ -1,15 +1,22 @@
 {
-  "source_sha256": "a02be11488301ef0bcd534693851680df3a662da04ad9a9a18beb5fd6bc7ecdb",
+  "source_sha256": "40274e8405d889f5449dbe079f73b7b5e88c3911d2f6dc6cb3f1c8e38b1c8311",
   "notes": {
-    "version": "6.5.7",
-    "welcome": "Spieler über die Minikarte anvisieren und deutlichere Gruppensymbole.",
+    "version": "6.5.8",
+    "welcome": "Native WoW-Auswahlmenüs, klarere Kartenoptionen und Entwicklerdiagnosen.",
     "sections": [
       {
-        "title": "Spielerpunkte und Gruppensymbole",
+        "title": "Einstellungen und Spielerkarten",
         "items": [
-          "Außerhalb des Kampfes kannst du einen Spielerpunkt auf der Minikarte mit Linksklick anvisieren, sofern das Spiel diesen Spieler als Ziel erfassen kann. Rechtsklick öffnet weiterhin das Menü, jetzt mit Anvisieren an erster Stelle. Die Menüs der Weltkartenpunkte bleiben unverändert.",
-          "Symbole für die Questpartnersuche haben jetzt eine deutlich kräftigere goldene Kontur. Gruppenlisten in Tooltips zeigen außerdem das leuchtende QT-Logo für Mitglieder, die gerade Questpartner suchen.",
-          "Die Questfokussymbole im Gruppenquestlog werden jetzt auf einer eigenen Vordergrundebene dargestellt, damit die Schaltflächenhintergründe sie nicht verdecken können."
+          "Alle neun Auswahlmenüs in den Einstellungen verwenden jetzt native WoW-Steuerelemente mit goldener Auswahl, schwarzen Menüs und Zurück-/Weiter-Schaltflächen.",
+          "Auf Karten angezeigte Spieler ersetzt die getrennten Kontrollkästchen für Sichtbarkeit und Gruppenausnahme. Wähle alle QT-Spieler, Spieler auf Questpartnersuche mit oder ohne deine Gruppe, nur deine Gruppe oder Keine. Vorhandene Einstellungen bleiben erhalten; die Freigabe deines eigenen Standorts bleibt getrennt.",
+          "Die neue Einstellungskategorie Entwickler enthält Debugfenster öffnen, Questlog neu einlesen und die Freigabe von Diagnosedaten."
+        ]
+      },
+      {
+        "title": "Diagnoseantworten",
+        "items": [
+          "Diagnosedaten mit dem Entwickler teilen ist standardmäßig aktiviert. Die Option erlaubt authentifizierte Entwickleranfragen nach QT-Diagnosen, Addon-Einstellungen sowie Charakter-, Gruppen- und Standortdaten im Spiel, auch bei deaktivierter öffentlicher Standortfreigabe. Deaktiviere sie unter Entwickler, um diese Daten nicht mehr zu teilen.",
+          "Diagnoseantworten verwenden private Addon-Flüsternachrichten und werden zeitversetzt in Seiten aufgeteilt, damit größere Antworten ihre Felder behalten. Ferndiagnosen erfordern bei beiden Spielern Version 6.5.8 oder neuer; veröffentlichte 6.5.7-Clients können diese Anfragen nicht beantworten."
         ]
       }
     ]

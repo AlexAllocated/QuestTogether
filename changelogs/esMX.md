@@ -2,6 +2,21 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.8
+
+Menús desplegables nativos de WoW, controles de mapa más claros y diagnósticos para el desarrollador.
+
+### Ajustes y mapas de jugadores
+
+- Los nueve desplegables de ajustes ahora usan controles nativos de WoW con selección dorada, menús negros y botones anterior/siguiente.
+- Jugadores mostrados en los mapas sustituye las casillas separadas de visibilidad y excepción para el grupo. Elige todos los jugadores QT, quienes buscan compañeros de misiones con o sin tu grupo, solo tu grupo o Ninguno. Se conservan las preferencias existentes; compartir tu ubicación sigue siendo independiente.
+- La nueva categoría Desarrollador reúne Abrir ventana de depuración, Volver a explorar el registro de misiones y la opción de compartir diagnósticos.
+
+### Respuestas de diagnóstico
+
+- Compartir datos de diagnóstico con el desarrollador está activado por defecto. Permite solicitudes autenticadas del desarrollador sobre diagnósticos QT, ajustes del addon y datos de personaje, grupo y ubicación dentro del juego, incluso si el uso compartido público de la ubicación está desactivado. Desactívalo en Desarrollador para dejar de compartir estos datos.
+- Las respuestas usan susurros privados del addon, divididos en páginas enviadas de forma espaciada para conservar los campos de las respuestas grandes. Los diagnósticos remotos requieren que ambos jugadores usen 6.5.8 o posterior; los clientes publicados de 6.5.7 no pueden responder a estas solicitudes.
+
 ## 6.5.7
 
 Selección de objetivos en el minimapa e íconos de grupo más claros.
