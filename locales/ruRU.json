@@ -618,7 +618,8 @@
   "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.": "v%s загружена! Теперь поддерживает %s. Введите %s для настроек. Если у вас возникнут проблемы, оставьте отзыв на %s или %s.",
   "|cff33ff99QuestTogether|r: Pong: ": "|cff33ff99QuestTogether|r: Понг: ",
   "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Понг: <недопустимые данные>",
-  "Usage: /qt ad <channel> (for example: /qt ad 1 or /qt ad General)": "Использование: /qt ad <channel> (например: /qt ad 1 или /qt ad General)",
   "That chat channel is not joined. Use its current number or name.": "Вы не подключены к этому каналу чата. Укажите его текущий номер или название.",
-  "The ad could not be sent. Try again when chat is available.": "Не удалось отправить рекламу. Попробуйте снова, когда чат будет доступен."
+  "The ad could not be sent. Try again when chat is available.": "Не удалось отправить рекламу. Попробуйте снова, когда чат будет доступен.",
+  "Target": "Выбрать целью",
+  "Usage: /qt ad <channel> (for example: /qt ad 1, /qt ad say, or /qt ad yell)": "Использование: /qt ad <channel> (например: /qt ad 1, /qt ad say или /qt ad yell)"
 }

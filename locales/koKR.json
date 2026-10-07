@@ -618,7 +618,8 @@
   "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.": "v%s 로드 완료! 이제 %s|을(를) 지원합니다. 설정을 보려면 %s|을(를) 입력하세요. 문제가 발생하면 %s 또는 %s에 피드백을 남겨 주세요.",
   "|cff33ff99QuestTogether|r: Pong: ": "|cff33ff99QuestTogether|r: 퐁: ",
   "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: 퐁: <invalid payload>",
-  "Usage: /qt ad <channel> (for example: /qt ad 1 or /qt ad General)": "사용법: /qt ad <channel> (예: /qt ad 1 또는 /qt ad General)",
   "That chat channel is not joined. Use its current number or name.": "해당 대화 채널에 참가하지 않았습니다. 현재 채널 번호나 이름을 사용하세요.",
-  "The ad could not be sent. Try again when chat is available.": "홍보 메시지를 보내지 못했습니다. 대화를 사용할 수 있을 때 다시 시도하세요."
+  "The ad could not be sent. Try again when chat is available.": "홍보 메시지를 보내지 못했습니다. 대화를 사용할 수 있을 때 다시 시도하세요.",
+  "Target": "대상 선택",
+  "Usage: /qt ad <channel> (for example: /qt ad 1, /qt ad say, or /qt ad yell)": "사용법: /qt ad <channel> (예: /qt ad 1, /qt ad say 또는 /qt ad yell)"
 }

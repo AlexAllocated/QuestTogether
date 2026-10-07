@@ -256,10 +256,15 @@ local function Fixture()
 	function a:GetClassColorCode(class)
 		return class == "MAGE" and "|cff40c7eb" or "|cffffffff"
 	end
-	function a:ShowChatLogSpeakerMenu(frame, name)
-		self.menus[#self.menus + 1] = { owner = frame, name = name }
+	function a:ShowChatLogSpeakerMenu(frame, name, firstAction)
+		self.menus[#self.menus + 1] = { owner = frame, name = name, firstAction = firstAction }
 		return true
 	end
+	function a:ShowLocationTargetButton(owner, name, isCurrent, onEnter, onLeave, onClick)
+		self.targetHover = { owner = owner, name = name, isCurrent = isCurrent, onClick = onClick }
+		return true
+	end
+	function a:HideLocationTargetButton() self.targetHover = nil end
 	activeFixtures[#activeFixtures + 1] = a
 	return a
 end
@@ -267,6 +272,39 @@ end
 local function Pin(a, surface, index)
 	return a.locationPinState.surfaces[surface].pins[index or 1]
 end
+
+Register("minimap dots target on primary click and offer Target before other menu actions only on minimap", function()
+	local a = Fixture()
+	a.rows.map, a.rows.minimap = { Row() }, { Row() }
+	a:RefreshPlayerLocationPins()
+	local mini, map = Pin(a, "minimap"), Pin(a, "map")
+	mini.frame.scripts.OnEnter()
+	local hover = a.targetHover
+	Equal(hover.name, "Friend-Realm")
+	assert(hover.isCurrent())
+	hover.onClick("LeftButton")
+	Equal(#a.menus, 0)
+	hover.onClick("RightButton")
+	Equal(#a.menus, 1)
+	local observed
+	function a:PopulateLocationTargetMenu(root, name, isCurrent)
+		observed = { root = root, name = name, valid = isCurrent }
+	end
+	local root = {}
+	a.menus[1].firstAction(root)
+	Equal(observed.root, root)
+	Equal(observed.name, hover.name)
+	assert(observed.valid())
+	a.rows.minimap = { Row("Replacement-Realm") }
+	Equal(hover.isCurrent(), false)
+	Equal(observed.valid(), false)
+	map.frame.scripts.OnClick(nil, "LeftButton")
+	Equal(a.menus[2].firstAction, nil)
+	map.frame.scripts.OnClick(nil, "RightButton")
+	Equal(a.menus[3].firstAction, nil)
+	a:HidePlayerLocationPins()
+	Equal(a.targetHover, nil)
+end)
 
 Register("location map projection follows zoom pan and clips the full dot", function()
 	local a = Fixture()
@@ -1124,7 +1162,8 @@ end)
 Register("party tooltip reserves aligned QT icon slots and updates recognition on reused rows", function()
 	local a = Fixture()
 	local info = VisualParty(a)
-	a.API.GetTime = function() return 100 end
+	local now = 100
+	a.API.GetTime = function() return now end
 	function a:GetPlayerFullName() return "Third-Realm" end
 	function a:NormalizeMemberName(name) return name end
 	a.qtPlayerPresenceState = { peers = { ["Leader-Realm"] = 90 } }
@@ -1139,11 +1178,21 @@ Register("party tooltip reserves aligned QT icon slots and updates recognition o
 		Equal(row.label.points[1][2], rows[1].label.points[1][2])
 	end
 	local allocated = #a.regions
+	local glow = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon"
+	a.qtPlayerPresenceState.questPartners = { ["Leader-Realm"] = { looking = true, receivedAt = 99, lifetime = 10 } }
+	a:RefreshPlayerLocationPins()
+	Equal(rows[1].qtIcon.texture, glow)
+	Equal(rows[3].qtIcon.texture, a.NAMEPLATE_PLAYER_ICON_TEXTURE)
+	now = 111
+	a:RefreshPlayerLocationPins()
+	Equal(rows[1].qtIcon.texture, a.NAMEPLATE_PLAYER_ICON_TEXTURE)
 	a.qtPlayerPresenceState.peers["Leader-Realm"] = nil
 	a.qtPlayerPresenceState.peers["Friend-Realm"] = 100
+	a.qtPlayerPresenceState.questPartners["Friend-Realm"] = { looking = true, receivedAt = 111 }
 	info.members[3] = { name = "Other-Realm", classFile = "MAGE" }
 	a:RefreshPlayerLocationPins()
 	assert(not rows[1].qtIcon.shown and rows[2].qtIcon.shown and not rows[3].qtIcon.shown)
+	Equal(rows[2].qtIcon.texture, glow)
 	assert(rows[1].crown.shown)
 	Equal(#a.regions, allocated)
 	local chat = Frame(a)
@@ -1152,6 +1201,10 @@ Register("party tooltip reserves aligned QT icon slots and updates recognition o
 	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Friend-Realm"))
 	local chatRows = a.chatLogPlayerTooltipState.partyRows
 	assert(not chatRows[1].qtIcon.shown and chatRows[2].qtIcon.shown and not chatRows[3].qtIcon.shown)
+	Equal(chatRows[2].qtIcon.texture, glow)
+	a.qtPlayerPresenceState.questPartners["Friend-Realm"].looking = false
+	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Friend-Realm"))
+	Equal(chatRows[2].qtIcon.texture, a.NAMEPLATE_PLAYER_ICON_TEXTURE)
 end)
 
 Register("nearby stream animation moves only owned minimap pins and respects foreign frame guards", function()

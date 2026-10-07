@@ -906,6 +906,13 @@ QuestTogether.API = QuestTogether.API or {
 		local ok, result = pcall(send, message, "CHANNEL", nil, channelID)
 		return ok and result ~= false
 	end,
+	SendLocalChatMessage = function(message, distribution)
+		if distribution ~= "SAY" and distribution ~= "YELL" then return false end
+		local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
+		if type(send) ~= "function" then return false end
+		local ok, result = pcall(send, message, distribution)
+		return ok and result ~= false
+	end,
 	SendPartyChatMessage = function(message, distribution)
 		if distribution ~= "PARTY" and distribution ~= "INSTANCE_CHAT" then return false end
 		local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
@@ -4885,13 +4892,13 @@ function QuestTogether:PrintConsoleAnnouncement(message, targetName, classFile, 
 	)
 end
 
-function QuestTogether:ShowChatLogSpeakerMenu(ownerFrame, speakerName)
+function QuestTogether:ShowChatLogSpeakerMenu(ownerFrame, speakerName, firstAction)
 	if not MenuUtil or not MenuUtil.CreateContextMenu then
 		return false
 	end
 
 	MenuUtil.CreateContextMenu(ownerFrame, function(_, rootDescription)
-		self:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, speakerName)
+		self:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, speakerName, firstAction)
 	end)
 	return true
 end
@@ -4968,7 +4975,7 @@ function QuestTogether:CompareQuestsWithChatLogSpeaker(speakerName)
 	return self:OpenPlayerQuestCompare(fullName)
 end
 
-function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, speakerName)
+function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, speakerName, firstAction)
 	if not rootDescription then
 		return false
 	end
@@ -4990,6 +4997,7 @@ function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, s
 	end
 
 	if fullName ~= "" then
+		if firstAction then firstAction(rootDescription) end
 		local requestJoin = self.ShouldRequestPartyJoin and self:ShouldRequestPartyJoin(fullName)
 		rootDescription:CreateButton(requestJoin and L("Request to Join") or L("Invite"), function()
 			if requestJoin then

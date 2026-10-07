@@ -40,29 +40,26 @@ def main():
     })
     emblem = copy.deepcopy(scrolls)
     if args.glow:
-        # Bake both a bright contour and a broad gold halo into the texture.
-        # A blurred halo alone disappears at the log's 14px inline size.
-        # Keep the original vector paths and dark outline intact for contrast.
+        # A full pixel of solid gold must survive the log's 14px inline size.
+        # Draw an explicit vector contour instead of relying on morphology,
+        # whose rasterized outline was too thin at this scale.
         defs = ET.SubElement(icon, f"{{{SVG_NS}}}defs")
         glow = ET.SubElement(defs, f"{{{SVG_NS}}}filter", {
             "id": "partner-glow", "x": "-30%", "y": "-30%", "width": "160%", "height": "160%",
             "color-interpolation-filters": "sRGB",
         })
-        ET.SubElement(glow, f"{{{SVG_NS}}}feMorphology", {
-            "in": "SourceAlpha", "operator": "dilate", "radius": "24", "result": "outline",
-        })
-        ET.SubElement(glow, f"{{{SVG_NS}}}feGaussianBlur", {"in": "outline", "stdDeviation": "22", "result": "soft-halo"})
-        strength = ET.SubElement(glow, f"{{{SVG_NS}}}feComponentTransfer", {"in": "soft-halo", "result": "halo"})
-        ET.SubElement(strength, f"{{{SVG_NS}}}feFuncA", {"type": "linear", "slope": "1.8"})
-        ET.SubElement(glow, f"{{{SVG_NS}}}feFlood", {"flood-color": "#FFC62E", "result": "gold"})
-        ET.SubElement(glow, f"{{{SVG_NS}}}feComposite", {"in": "gold", "in2": "halo", "operator": "in", "result": "gold-halo"})
-        ET.SubElement(glow, f"{{{SVG_NS}}}feFlood", {"flood-color": "#FFF18A", "result": "bright-gold"})
-        ET.SubElement(glow, f"{{{SVG_NS}}}feComposite", {"in": "bright-gold", "in2": "outline", "operator": "in", "result": "gold-rim"})
-        merge = ET.SubElement(glow, f"{{{SVG_NS}}}feMerge")
-        ET.SubElement(merge, f"{{{SVG_NS}}}feMergeNode", {"in": "gold-halo"})
-        ET.SubElement(merge, f"{{{SVG_NS}}}feMergeNode", {"in": "gold-rim"})
-        ET.SubElement(merge, f"{{{SVG_NS}}}feMergeNode", {"in": "SourceGraphic"})
-        emblem.set("filter", "url(#partner-glow)")
+        ET.SubElement(glow, f"{{{SVG_NS}}}feGaussianBlur", {"stdDeviation": "12"})
+        contour = copy.deepcopy(scrolls)
+        for element in contour.iter():
+            element.attrib.pop("id", None)
+            element.set("stroke", "#FFE438")
+            element.set("stroke-width", "132")
+            if element.get("fill") != "none":
+                element.set("fill", "#FFE438")
+        halo = copy.deepcopy(contour)
+        halo.set("filter", "url(#partner-glow)")
+        icon.append(halo)
+        icon.append(contour)
     icon.append(emblem)
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="questtogether-icon-") as temp:

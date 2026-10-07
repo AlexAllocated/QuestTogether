@@ -360,7 +360,13 @@ local function CreateFocusButton(addon, row, column)
 	button:SetPoint("TOPLEFT", ColumnLeft(column) + COLUMN_WIDTH - 31, -8)
 	button.normal = button:CreateTexture(nil, "BACKGROUND")
 	button.pushed = button:CreateTexture(nil, "BACKGROUND")
-	button.icon = button:CreateTexture(nil, "ARTWORK")
+	-- Match Blizzard's POI Display frame: the symbol must render above native
+	-- normal/pushed button textures regardless of their draw-layer ordering.
+	button.display = addon:CreatePartyQuestUIFrame("Frame", nil, button)
+	button.display:SetAllPoints()
+	button.display:SetFrameLevel(button:GetFrameLevel() + 1)
+	button.display:EnableMouse(false)
+	button.icon = button.display:CreateTexture(nil, "OVERLAY")
 	button.highlight = button:CreateTexture(nil, "HIGHLIGHT")
 	for _, texture in ipairs({ button.normal, button.pushed, button.highlight }) do texture:SetAllPoints() end
 	button.icon:SetSize(16, 16)

@@ -589,6 +589,10 @@ local function Frame(parent)
 	function methods:CreateTexture()
 		return Frame(self)
 	end
+	function methods:GetFrameLevel()
+		return self.frameLevel or (self.parent and self.parent:GetFrameLevel() + 1) or 1
+	end
+	function methods:SetFrameLevel(level) self.frameLevel = level end
 	function methods:SetText(value)
 		self.text = value
 		if self.scripts.OnTextChanged then
@@ -741,7 +745,6 @@ local function Frame(parent)
 		"SetJustifyV",
 		"SetMaxLines",
 		"SetFrameStrata",
-		"SetFrameLevel",
 		"SetWordWrap",
 		"SetToplevel",
 		"SetFlattensRenderLayers",
@@ -3944,6 +3947,9 @@ QuestTogether:RegisterTest("reused focus textures reset atlas crops across readi
 	local frame = a.partyQuestCompareWindow
 	local button = frame.rows[1].focusCells[1]
 	local appliedWithFullCrop = {}
+	assert(button.icon.parent ~= button.normal.parent, "fresh focus symbols must not share the button-state texture plane")
+	Equal(button.icon.parent.parent, button)
+	assert(button.icon.parent:GetFrameLevel() > button.normal.parent:GetFrameLevel(), "focus symbol must render above the circle")
 	for _, texture in ipairs({ button.normal, button.pushed, button.icon }) do
 		function texture:SetAtlas(atlas)
 			appliedWithFullCrop[self] = table.concat(self.texCoords or {}, ",") == "0,1,0,1"

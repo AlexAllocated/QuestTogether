@@ -618,7 +618,8 @@
   "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.": "v%s carregado! Agora oferece suporte a %s. Digite %s para configurações. Se encontrar algum problema, deixe seu feedback em %s ou %s.",
   "|cff33ff99QuestTogether|r: Pong: ": "|cff33ff99QuestTogether|r: Pong: ",
   "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Pong: <payload inválido>",
-  "Usage: /qt ad <channel> (for example: /qt ad 1 or /qt ad General)": "Uso: /qt ad <channel> (por exemplo: /qt ad 1 ou /qt ad General)",
   "That chat channel is not joined. Use its current number or name.": "Você não entrou nesse canal de bate-papo. Use o número atual ou o nome dele.",
-  "The ad could not be sent. Try again when chat is available.": "Não foi possível enviar o anúncio. Tente novamente quando o bate-papo estiver disponível."
+  "The ad could not be sent. Try again when chat is available.": "Não foi possível enviar o anúncio. Tente novamente quando o bate-papo estiver disponível.",
+  "Target": "Selecionar alvo",
+  "Usage: /qt ad <channel> (for example: /qt ad 1, /qt ad say, or /qt ad yell)": "Uso: /qt ad <channel> (por exemplo: /qt ad 1, /qt ad say ou /qt ad yell)"
 }

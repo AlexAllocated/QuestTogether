@@ -142,6 +142,7 @@
       "Rejected option change key=%s invalid icon style=%s",
       "Rejected option change key=%s invalidValue=%s",
       "Right",
+      "SAY",
       "Separate Chat Window",
       "Separate QuestTogether chat window unavailable; falling back to main chat",
       "Skipping unavailable runtime event=%s",
@@ -151,6 +152,7 @@
       "Version",
       "Wrapperactivequesticon",
       "Wrapperavailablequesticon",
+      "YELL",
       "Yes",
       "announcement ",
       "devLogAllAnnouncements = ",
@@ -660,6 +662,7 @@
       "Questing doesn't have to be a solo grind. QuestTogether helps you find questing partners, compare quests, and keep up with each other's progress. Come make some questing friends :)",
       "Questing with friends on another client language? QuestTogether can display their updates using localized quest titles when available. Progress is easier to follow in your own language!",
       "Questing with regular buddies? QuestTogether can automatically approve join requests from your character friends list. It's optional, and you stay in control of your party.",
+      "SAY",
       "See a questing group you'd like to join? QuestTogether lets you request an invite from another QT player's menu. They get a prompt, and you still accept the normal party invite!",
       "Someone making questing less fun? QuestTogether respects WoW's ignore list for new chat, bubbles, player dots, and icons. You decide whose company you keep.",
       "Spot fellow QuestTogether users in the wild! QT can add its little scroll logo beside friendly player nameplates, with a gold glow when they're looking for questing partners.",
@@ -675,7 +678,15 @@
       "Which mobs do I still need? QuestTogether can add quest icons and optional health-bar tints to quest objectives on Blizzard nameplates. Spot the mobs you need at a glance!",
       "Who's grouped with whom? Hover a party member's map dot in QuestTogether to highlight their nearby party dots and crown their leader. Find the whole crew at a glance!",
       "Who's ready to turn in, and who still needs help? QuestTogether's Party Quest Log shows the whole party at a glance. Expand a quest to see everyone's objectives and progress!",
+      "YELL",
       "You don't have to turn on every bell and whistle. QuestTogether lets you use player maps and party quest comparisons while keeping chat logs, bubbles, and celebrations quiet."
+    ],
+    "LocationTargeting.lua": [
+      "/targetexact [nocombat] ",
+      "BOTTOMLEFT",
+      "Button",
+      "TOOLTIP",
+      "[combat] hide"
     ]
   }
 }

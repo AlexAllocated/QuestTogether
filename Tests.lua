@@ -439,6 +439,11 @@ local function NewAdFixture()
 			if addon.throw then error("fixture send failure") end
 			return not addon.fail
 		end,
+		SendLocalChatMessage = function(message, distribution)
+			addon.sends[#addon.sends + 1] = { message = message, distribution = distribution }
+			if addon.throw then error("fixture send failure") end
+			return not addon.fail
+		end,
 	}
 	return addon
 end
@@ -471,7 +476,8 @@ QuestTogether:RegisterTest("ads exhaust a shuffled pool before refilling across 
 		for cycle = 1, 4 do
 			local seen = {}
 			for draw = 1, count do
-				AssertTrue(addon:HandleSlashCommand(draw % 2 == 0 and "ad 1" or "ad 2"))
+				local routes = { "ad 1", "ad 2", "ad say", "ad yell" }
+				AssertTrue(addon:HandleSlashCommand(routes[(draw - 1) % #routes + 1]))
 				local text = addon.sends[#addon.sends].message
 				AssertFalse(seen[text] == true, "every ad must appear once per cycle")
 				AssertFalse(text == previous, "refills must not immediately repeat the last ad")
@@ -485,6 +491,31 @@ QuestTogether:RegisterTest("ads exhaust a shuffled pool before refilling across 
 			end
 			allMessages = seen
 		end
+	end
+end)
+
+QuestTogether:RegisterTest("Say and Yell ads bypass numbered channels and retain unsuccessful draws", function()
+	for _, channel in ipairs({ "sAy", "YELL" }) do
+		local addon = NewAdFixture()
+		addon.API.GetChannelName = function() error("local chat must not resolve a numbered channel") end
+		AssertTrue(addon:HandleSlashCommand("ad " .. channel))
+		AssertEquals(#addon.sends, 1)
+		AssertEquals(addon.sends[1].distribution, channel:upper())
+		AssertEquals(addon.sends[1].id, nil)
+		local pending = addon:PickAdvertisement()
+		local remaining = #addon.advertisementPool
+		for _, reason in ipairs({ "fail", "throw", "blocked", "noSender" }) do
+			addon[reason] = true
+			local sender = addon.API.SendLocalChatMessage
+			if reason == "noSender" then addon.API.SendLocalChatMessage = nil end
+			AssertFalse(addon:HandleSlashCommand("ad " .. channel))
+			AssertEquals(#addon.advertisementPool, remaining)
+			addon[reason] = nil
+			addon.API.SendLocalChatMessage = sender
+		end
+		AssertEquals(#addon.sends, 3, "blocked or missing sends must not fall back to another chat route")
+		AssertTrue(addon:HandleSlashCommand("ad " .. channel))
+		AssertEquals(addon.sends[#addon.sends].message, pending)
 	end
 end)
 

@@ -67,29 +67,33 @@ end
 function QT:HandleAdvertisementCommand(input)
 	local channel = self:SafeTrimString(input, "")
 	if channel == "" or #channel > 128 or channel:find("[%c|]") then
-		self:Print(L("Usage: /qt ad <channel> (for example: /qt ad 1 or /qt ad General)"))
+		self:Print(L("Usage: /qt ad <channel> (for example: /qt ad 1, /qt ad say, or /qt ad yell)"))
 		return false
 	end
 	channel = channel:gsub("^/(%d+)$", "%1")
 	local number = tonumber(channel)
 	local api = self.API or {}
+	local mode = channel:upper()
+	local localChat = mode == "SAY" or mode == "YELL"
 	-- Resolve on every keypress: channel numbers can change when zoning or joining.
 	local ok, id
-	if type(api.GetChannelName) == "function" and (not number or (number > 0 and number % 1 == 0)) then
+	if not localChat and type(api.GetChannelName) == "function" and (not number or (number > 0 and number % 1 == 0)) then
 		ok, id = pcall(api.GetChannelName, number or channel)
 	end
 	id = ok and self:SafeToNumber(id) or nil
-	if not id or id <= 0 or id % 1 ~= 0 then
+	if not localChat and (not id or id <= 0 or id % 1 ~= 0) then
 		self:Print(L("That chat channel is not joined. Use its current number or name."))
 		return false
 	end
-	if self:IsRuntimeRestrictionTypeActive("chat") or type(api.SendChannelChatMessage) ~= "function" then
+	local send = api.SendChannelChatMessage
+	if localChat then send = api.SendLocalChatMessage end
+	if self:IsRuntimeRestrictionTypeActive("chat") or type(send) ~= "function" then
 		self:Print(L("The ad could not be sent. Try again when chat is available."))
 		return false
 	end
 	local message, index = self:PickAdvertisement()
 	-- Send synchronously from the slash/macro invocation. Never queue or retry ads.
-	local sentOK, sent = pcall(api.SendChannelChatMessage, message, id)
+	local sentOK, sent = pcall(send, message, localChat and mode or id)
 	if not sentOK or sent ~= true then
 		self:Print(L("The ad could not be sent. Try again when chat is available."))
 		return false

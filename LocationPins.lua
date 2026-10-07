@@ -486,6 +486,7 @@ local function HideSurface(addon, state, surface)
 end
 
 function QuestTogether:HidePlayerLocationPins()
+	self:HideLocationTargetButton()
 	local state = rawget(self, "locationPinState")
 	if not state then
 		return
@@ -518,11 +519,20 @@ local function FreshRow(addon, pin)
 	end
 end
 
-function QuestTogether:OpenLocationPinPlayerMenu(frame, name)
+function QuestTogether:OpenLocationPinPlayerMenu(frame, name, pin)
 	if not self.isEnabled or self:IsRuntimeRestricted() or not Guard(self, frame) or self:IsIgnoredPlayerName(name) then
 		return false
 	end
-	return self:ShowChatLogSpeakerMenu(frame, name)
+	local firstAction
+	if pin and pin.surface == "minimap" then
+		firstAction = function(root)
+			self:PopulateLocationTargetMenu(root, name, function()
+				local row = FreshRow(self, pin)
+				return row ~= nil and row.name == name
+			end)
+		end
+	end
+	return self:ShowChatLogSpeakerMenu(frame, name, firstAction)
 end
 
 local function Color(addon, classFile)
@@ -618,7 +628,6 @@ local function PartyTooltipRows(addon, state, info, members)
 			item.qtIcon = Call(addon, item.frame, "CreateTexture", nil, "ARTWORK")
 			Call(addon, item.qtIcon, "SetSize", 14, 14)
 			Call(addon, item.qtIcon, "SetPoint", "LEFT", 0, 0)
-			Call(addon, item.qtIcon, "SetTexture", addon.NAMEPLATE_PLAYER_ICON_TEXTURE)
 			item.dot = Call(addon, item.frame, "CreateTexture", nil, "ARTWORK")
 			Call(addon, item.dot, "SetSize", 10, 10)
 			Call(addon, item.dot, "SetPoint", "LEFT", 20, 0)
@@ -636,6 +645,8 @@ local function PartyTooltipRows(addon, state, info, members)
 		local r, g, b = Color(addon, member.classFile)
 		-- Reserve the same icon column for every member, including unknown peers.
 		local usesQT = addon:IsSelfSender(member.name) or addon:IsKnownQTPlayer(member.name)
+		Call(addon, item.qtIcon, "SetTexture", addon:IsPlayerLookingForQuestPartners(member.name)
+			and "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon" or addon.NAMEPLATE_PLAYER_ICON_TEXTURE)
 		Call(addon, item.qtIcon, usesQT and "Show" or "Hide")
 		Call(addon, item.dot, "SetColorTexture", r, g, b, 1)
 		local leader = member.name == info.leader
@@ -957,8 +968,8 @@ local function CreatePin(addon, state, surface)
 		end
 		local ok, row = pcall(FreshRow, addon, pin)
 		HideTooltip(addon, state)
-		if ok and row then
-			pcall(addon.OpenLocationPinPlayerMenu, addon, pin.frame, row.name)
+		if ok and row and (pin.surface ~= "minimap" or button == "RightButton") then
+			pcall(addon.OpenLocationPinPlayerMenu, addon, pin.frame, row.name, pin)
 		end
 	end)
 	Call(addon, pin.frame, "SetScript", "OnEnter", function()
@@ -968,6 +979,19 @@ local function CreatePin(addon, state, surface)
 			addon:RequestPlayerPhaseComparison(row.name)
 			if not pcall(Tooltip, addon, state, pin, row) then
 				HideTooltip(addon, state)
+			end
+			if pin.surface == "minimap" then
+				local name = row.name
+				addon:ShowLocationTargetButton(pin.frame, name, function()
+					local current = FreshRow(addon, pin)
+					return current ~= nil and current.name == name
+				end, function()
+					local current = FreshRow(addon, pin)
+					if current and current.name == name then Tooltip(addon, state, pin, current) end
+				end, function() HideTooltip(addon, state) end, function(button)
+					HideTooltip(addon, state)
+					if button == "RightButton" then addon:OpenLocationPinPlayerMenu(pin.frame, name, pin) end
+				end)
 			end
 		end
 	end)
