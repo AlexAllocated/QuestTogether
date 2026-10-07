@@ -1,22 +1,31 @@
 {
-  "source_sha256": "40274e8405d889f5449dbe079f73b7b5e88c3911d2f6dc6cb3f1c8e38b1c8311",
+  "source_sha256": "0db2d1d99777aff013026df9354c57e066370e93e3279d54cd4e114ec03305ed",
   "notes": {
-    "version": "6.5.8",
-    "welcome": "Menus déroulants natifs de WoW, options de carte plus claires et diagnostics développeur.",
+    "version": "6.5.9",
+    "welcome": "Des mises à jour de groupe plus fiables, des cartes de joueurs plus claires et des corrections lors du masquage de l’interface avec Alt+Z.",
     "sections": [
       {
-        "title": "Paramètres et cartes des joueurs",
+        "title": "Journal de quêtes du groupe et fenêtres",
         "items": [
-          "Les neuf menus déroulants des paramètres utilisent désormais les contrôles natifs de WoW : sélection dorée, menus noirs et boutons précédent/suivant.",
-          "Joueurs affichés sur les cartes remplace les cases séparées de visibilité et d’exception pour le groupe. Choisissez tous les joueurs QT, ceux qui cherchent des partenaires de quête avec ou sans votre groupe, votre groupe uniquement ou Aucun. Les préférences existantes sont conservées ; le partage de votre position reste séparé.",
-          "La nouvelle catégorie Développeur regroupe l’ouverture de la fenêtre de débogage, la relecture du journal des quêtes et le partage des données de diagnostic."
+          "Masquer puis réafficher l’interface avec Alt+Z conserve désormais les confirmations de changement de quête prioritaire en attente et les arrière-plans aux couleurs des classes derrière les noms des joueurs.",
+          "Les demandes du journal de quêtes du groupe reprennent plus fiablement après un rechargement, un écran de chargement ou la perte de pages de messages, au lieu de laisser les joueurs bloqués sur « Chargement ».",
+          "Les dispositions des fenêtres et les bulles de progression personnelles s’adaptent mieux aux petits écrans. Réinitialiser les dispositions conserve les choix en attente dans les boîtes de dialogue."
         ]
       },
       {
-        "title": "Réponses de diagnostic",
+        "title": "Cartes et mises à jour de groupe",
         "items": [
-          "Le partage des données de diagnostic avec le développeur est activé par défaut. Il autorise les demandes authentifiées du développeur concernant les diagnostics QT, les paramètres de l’addon et les données de personnage, de groupe et de position en jeu, même si le partage public de position est désactivé. Désactivez cette option sous Développeur pour arrêter ce partage.",
-          "Les réponses utilisent des messages privés d’addon, répartis en pages espacées pour conserver tous les champs des réponses volumineuses. Les diagnostics à distance exigent la version 6.5.8 ou ultérieure chez les deux joueurs ; les clients 6.5.7 publiés ne peuvent pas répondre à ces demandes."
+          "Les mises à jour de position, de groupe et de quête prioritaire rejettent les messages obsolètes : les réponses retardées ne peuvent plus faire réapparaître des joueurs partis ni remplacer des données plus récentes.",
+          "QT envoie un avis lorsque vous quittez le monde, afin que les autres joueurs puissent retirer votre point plus tôt si cet avis arrive. L’expiration normale prend toujours le relais si l’avis se perd, et la disponibilité pour rejoindre un groupe est rétablie après les écrans de chargement.",
+          "Les membres de votre groupe utilisent désormais les marqueurs de Blizzard sur la carte et la minicarte, sans points QT en double. Joueurs affichés sur les cartes propose Tous les joueurs QuestTogether, Joueurs cherchant des partenaires de quête ou Aucun ; le partage de votre propre position reste indépendant."
+        ]
+      },
+      {
+        "title": "Suivi et communication",
+        "items": [
+          "Le suivi des quêtes se rétablit lorsque le journal est incomplet à la connexion, et un grand nombre d’événements de quête ne repousse plus indéfiniment les actualisations en attente.",
+          "Les messages sortants partagent une file d’envoi cadencée, et la vérification des demandes du développeur se fait par petites étapes pour réduire les blocages d’image. Désactiver le partage des diagnostics annule les tâches de diagnostic en attente.",
+          "Les réponses de diagnostic volumineuses disposent de plus de temps pour se terminer. Les anciens clients demandeurs reçoivent une réponse explicite de dépassement de taille lorsqu’un rapport ne tient pas, au lieu d’attendre sans réponse jusqu’à l’expiration du délai."
         ]
       }
     ]

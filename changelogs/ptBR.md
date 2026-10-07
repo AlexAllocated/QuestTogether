@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.9
+
+Atualizações de grupo mais confiáveis, mapas de jogadores mais claros e correções ao ocultar a interface com Alt+Z.
+
+### Registro de missões do grupo e janelas
+
+- Ocultar e restaurar a interface com Alt+Z agora preserva as confirmações pendentes de foco de missão e os fundos com a cor da classe atrás dos nomes dos jogadores.
+- As solicitações do Registro de missões do grupo se recuperam com mais confiabilidade após recarregar a interface, passar por telas de carregamento ou perder páginas de mensagens, evitando que jogadores fiquem presos em Carregando.
+- Os layouts das janelas e os balões pessoais de progresso se ajustam melhor a telas menores. Redefinir os layouts preserva as escolhas pendentes nas caixas de diálogo.
+
+### Mapas e atualizações de grupo
+
+- Atualizações de localização, grupo e foco de missão rejeitam mensagens desatualizadas para que respostas atrasadas não façam reaparecer jogadores que saíram nem substituam dados mais recentes.
+- O QT envia um aviso de saída ao deixar o mundo para que outros jogadores possam remover seu ponto mais cedo quando o aviso chegar. A expiração normal continua cuidando dos avisos que não chegarem, e a opção de entrar no grupo volta a ficar disponível após telas de carregamento.
+- Os membros do grupo agora usam os marcadores da própria Blizzard no mapa e no minimapa, sem pontos QT duplicados. Jogadores exibidos nos mapas oferece Todos os jogadores do QuestTogether, Jogadores buscando parceiros de missões ou Nenhum; compartilhar sua própria localização continua separado.
+
+### Rastreamento e comunicação
+
+- O rastreamento de missões se recupera quando o registro de missões está incompleto ao entrar no jogo, e sequências intensas de eventos de missão não ficam mais adiando as atualizações pendentes.
+- As mensagens enviadas compartilham uma fila com intervalos de envio, e a verificação de solicitações do desenvolvedor é feita em pequenas etapas para reduzir travamentos momentâneos. Desativar o compartilhamento de diagnósticos cancela o trabalho de diagnóstico que está na fila.
+- Respostas de diagnóstico grandes têm mais tempo para terminar. Quando um relatório não cabe, solicitantes de versões anteriores recebem uma resposta explícita sobre o limite de tamanho, em vez de apenas esperar até o tempo limite sem explicação.
+
 ## 6.5.8
 
 Menus nativos do WoW, controles de mapa mais claros e diagnósticos para o desenvolvedor.

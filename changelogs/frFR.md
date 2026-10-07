@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.9
+
+Des mises à jour de groupe plus fiables, des cartes de joueurs plus claires et des corrections lors du masquage de l’interface avec Alt+Z.
+
+### Journal de quêtes du groupe et fenêtres
+
+- Masquer puis réafficher l’interface avec Alt+Z conserve désormais les confirmations de changement de quête prioritaire en attente et les arrière-plans aux couleurs des classes derrière les noms des joueurs.
+- Les demandes du journal de quêtes du groupe reprennent plus fiablement après un rechargement, un écran de chargement ou la perte de pages de messages, au lieu de laisser les joueurs bloqués sur « Chargement ».
+- Les dispositions des fenêtres et les bulles de progression personnelles s’adaptent mieux aux petits écrans. Réinitialiser les dispositions conserve les choix en attente dans les boîtes de dialogue.
+
+### Cartes et mises à jour de groupe
+
+- Les mises à jour de position, de groupe et de quête prioritaire rejettent les messages obsolètes : les réponses retardées ne peuvent plus faire réapparaître des joueurs partis ni remplacer des données plus récentes.
+- QT envoie un avis lorsque vous quittez le monde, afin que les autres joueurs puissent retirer votre point plus tôt si cet avis arrive. L’expiration normale prend toujours le relais si l’avis se perd, et la disponibilité pour rejoindre un groupe est rétablie après les écrans de chargement.
+- Les membres de votre groupe utilisent désormais les marqueurs de Blizzard sur la carte et la minicarte, sans points QT en double. Joueurs affichés sur les cartes propose Tous les joueurs QuestTogether, Joueurs cherchant des partenaires de quête ou Aucun ; le partage de votre propre position reste indépendant.
+
+### Suivi et communication
+
+- Le suivi des quêtes se rétablit lorsque le journal est incomplet à la connexion, et un grand nombre d’événements de quête ne repousse plus indéfiniment les actualisations en attente.
+- Les messages sortants partagent une file d’envoi cadencée, et la vérification des demandes du développeur se fait par petites étapes pour réduire les blocages d’image. Désactiver le partage des diagnostics annule les tâches de diagnostic en attente.
+- Les réponses de diagnostic volumineuses disposent de plus de temps pour se terminer. Les anciens clients demandeurs reçoivent une réponse explicite de dépassement de taille lorsqu’un rapport ne tient pas, au lieu d’attendre sans réponse jusqu’à l’expiration du délai.
+
 ## 6.5.8
 
 Menus déroulants natifs de WoW, options de carte plus claires et diagnostics développeur.

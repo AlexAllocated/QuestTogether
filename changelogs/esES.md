@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.9
+
+Actualizaciones de grupo más fiables, mapas de jugadores más claros y correcciones al ocultar la interfaz con Alt+Z.
+
+### Registro de misiones del grupo y ventanas
+
+- Ocultar y restaurar la interfaz con Alt+Z ahora conserva las confirmaciones pendientes para cambiar la misión prioritaria y los fondos con los colores de clase detrás de los nombres de los jugadores.
+- Las solicitudes del registro de misiones del grupo se recuperan con más fiabilidad tras recargas, pantallas de carga o páginas de mensajes perdidas, en lugar de dejar a los jugadores bloqueados en Cargando.
+- La disposición de las ventanas y las burbujas de progreso personales se adaptan mejor a las pantallas pequeñas. Restablecer las disposiciones conserva las decisiones pendientes en los cuadros de diálogo.
+
+### Mapas y actualizaciones de grupo
+
+- Las actualizaciones de ubicación, grupo y misión prioritaria rechazan los mensajes obsoletos para que las respuestas retrasadas no hagan reaparecer a jugadores que se han marchado ni sobrescriban datos más recientes.
+- QT envía un aviso al salir del mundo para que otros jugadores puedan retirar tu punto antes si reciben el aviso. La caducidad habitual sigue cubriendo los avisos perdidos, y la disponibilidad para unirse a grupos se recupera tras las pantallas de carga.
+- Los miembros del grupo ahora usan los marcadores de Blizzard en el mapa y el minimapa, sin puntos QT duplicados. Jugadores mostrados en los mapas ofrece Todos los jugadores de QuestTogether, Jugadores buscando compañeros de misiones o Ninguno; compartir tu propia ubicación sigue siendo independiente.
+
+### Seguimiento y comunicación
+
+- El seguimiento de misiones se recupera cuando el registro está incompleto al iniciar sesión, y una gran cantidad de eventos de misiones ya no retrasa continuamente las actualizaciones pendientes.
+- Los mensajes salientes comparten una cola con envíos espaciados, y la verificación de las solicitudes del desarrollador se realiza en pequeños pasos para reducir las pausas de imagen. Desactivar el uso compartido de diagnósticos cancela el trabajo de diagnóstico en cola.
+- Las respuestas de diagnóstico grandes disponen de más tiempo para completarse. Los clientes antiguos que solicitan un informe reciben una respuesta explícita sobre el límite de tamaño cuando este no cabe, en lugar de agotar el tiempo de espera sin respuesta.
+
 ## 6.5.8
 
 Menús desplegables nativos de WoW, controles de mapa más claros y diagnósticos para el desarrollador.

@@ -1,20 +1,29 @@
 {
-  "version": "6.5.8",
-  "welcome": "Native WoW dropdowns, clearer map controls, and developer diagnostics.",
+  "version": "6.5.9",
+  "welcome": "More reliable party updates, cleaner player maps, and fixes for hiding the UI with Alt+Z.",
   "sections": [
     {
-      "title": "Settings and player maps",
+      "title": "Party Quest Log and windows",
       "items": [
-        "All nine settings dropdowns now use native WoW controls with gold selected text, black menus, and previous/next buttons.",
-        "Players shown on maps replaces the separate visibility and party-override checkboxes. Choose all QT players, players looking for questing partners with or without your party, party only, or None. Existing preferences are retained; sharing your own location stays separate.",
-        "The new Developer settings category contains Open Debug Window, Rescan Quest Log, and the diagnostic-sharing option."
+        "Hiding and restoring the UI with Alt+Z now preserves pending quest-focus confirmations and the class-colored backgrounds behind player names.",
+        "Party Quest Log requests recover more reliably after reloads, loading screens, or missing message pages, instead of leaving players stuck on Loading.",
+        "Window layouts and personal progress bubbles fit smaller displays more reliably. Resetting layouts preserves pending dialog choices."
       ]
     },
     {
-      "title": "Diagnostic replies",
+      "title": "Maps and party updates",
       "items": [
-        "Share diagnostic data with the developer is enabled by default. It allows authenticated developer requests for QT diagnostics, addon settings, and in-game character, party, and location data, even when public location sharing is off. Disable it under Developer to stop sharing this data.",
-        "Diagnostic replies use private addon whispers, split into paced pages so larger replies retain their fields. Remote diagnostics requires both players to use 6.5.8 or newer; published 6.5.7 clients cannot answer these requests."
+        "Location, party, and quest-focus updates reject outdated messages so delayed replies cannot revive departed players or overwrite newer data.",
+        "QT sends a departure notice when leaving the world so other players can clear your dot sooner when the notice arrives. Normal expiration still handles missed notices, and party join availability recovers after loading screens.",
+        "Party members now use Blizzard's own map and minimap markers without duplicate QT dots. Players shown on maps offers All QuestTogether players, Players looking for questing partners, or None; sharing your own location remains separate."
+      ]
+    },
+    {
+      "title": "Tracking and communication",
+      "items": [
+        "Quest tracking recovers when the quest log is incomplete at login, and busy quest events no longer keep postponing pending refreshes.",
+        "Outgoing messages share a paced queue, and developer-request verification runs in small steps to reduce frame stalls. Turning off diagnostic sharing cancels queued diagnostic work.",
+        "Large diagnostic replies have more time to finish. Older requesters receive an explicit size-limit response when a report cannot fit, instead of silently timing out."
       ]
     }
   ]

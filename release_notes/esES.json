@@ -1,22 +1,31 @@
 {
-  "source_sha256": "40274e8405d889f5449dbe079f73b7b5e88c3911d2f6dc6cb3f1c8e38b1c8311",
+  "source_sha256": "0db2d1d99777aff013026df9354c57e066370e93e3279d54cd4e114ec03305ed",
   "notes": {
-    "version": "6.5.8",
-    "welcome": "Menús desplegables nativos de WoW, controles de mapa más claros y diagnósticos para el desarrollador.",
+    "version": "6.5.9",
+    "welcome": "Actualizaciones de grupo más fiables, mapas de jugadores más claros y correcciones al ocultar la interfaz con Alt+Z.",
     "sections": [
       {
-        "title": "Ajustes y mapas de jugadores",
+        "title": "Registro de misiones del grupo y ventanas",
         "items": [
-          "Los nueve desplegables de ajustes ahora usan controles nativos de WoW con selección dorada, menús negros y botones anterior/siguiente.",
-          "Jugadores mostrados en los mapas sustituye las casillas separadas de visibilidad y excepción para el grupo. Elige todos los jugadores QT, quienes buscan compañeros de misiones con o sin tu grupo, solo tu grupo o Ninguno. Se conservan las preferencias existentes; compartir tu ubicación sigue siendo independiente.",
-          "La nueva categoría Desarrollador reúne Abrir ventana de depuración, Volver a explorar el registro de misiones y la opción de compartir diagnósticos."
+          "Ocultar y restaurar la interfaz con Alt+Z ahora conserva las confirmaciones pendientes para cambiar la misión prioritaria y los fondos con los colores de clase detrás de los nombres de los jugadores.",
+          "Las solicitudes del registro de misiones del grupo se recuperan con más fiabilidad tras recargas, pantallas de carga o páginas de mensajes perdidas, en lugar de dejar a los jugadores bloqueados en Cargando.",
+          "La disposición de las ventanas y las burbujas de progreso personales se adaptan mejor a las pantallas pequeñas. Restablecer las disposiciones conserva las decisiones pendientes en los cuadros de diálogo."
         ]
       },
       {
-        "title": "Respuestas de diagnóstico",
+        "title": "Mapas y actualizaciones de grupo",
         "items": [
-          "Compartir datos de diagnóstico con el desarrollador está activado por defecto. Permite solicitudes autenticadas del desarrollador sobre diagnósticos QT, ajustes del addon y datos de personaje, grupo y ubicación dentro del juego, incluso si el uso compartido público de la ubicación está desactivado. Desactívalo en Desarrollador para dejar de compartir estos datos.",
-          "Las respuestas usan susurros privados del addon, divididos en páginas enviadas de forma espaciada para conservar los campos de las respuestas grandes. Los diagnósticos remotos requieren que ambos jugadores usen 6.5.8 o posterior; los clientes publicados de 6.5.7 no pueden responder a estas solicitudes."
+          "Las actualizaciones de ubicación, grupo y misión prioritaria rechazan los mensajes obsoletos para que las respuestas retrasadas no hagan reaparecer a jugadores que se han marchado ni sobrescriban datos más recientes.",
+          "QT envía un aviso al salir del mundo para que otros jugadores puedan retirar tu punto antes si reciben el aviso. La caducidad habitual sigue cubriendo los avisos perdidos, y la disponibilidad para unirse a grupos se recupera tras las pantallas de carga.",
+          "Los miembros del grupo ahora usan los marcadores de Blizzard en el mapa y el minimapa, sin puntos QT duplicados. Jugadores mostrados en los mapas ofrece Todos los jugadores de QuestTogether, Jugadores buscando compañeros de misiones o Ninguno; compartir tu propia ubicación sigue siendo independiente."
+        ]
+      },
+      {
+        "title": "Seguimiento y comunicación",
+        "items": [
+          "El seguimiento de misiones se recupera cuando el registro está incompleto al iniciar sesión, y una gran cantidad de eventos de misiones ya no retrasa continuamente las actualizaciones pendientes.",
+          "Los mensajes salientes comparten una cola con envíos espaciados, y la verificación de las solicitudes del desarrollador se realiza en pequeños pasos para reducir las pausas de imagen. Desactivar el uso compartido de diagnósticos cancela el trabajo de diagnóstico en cola.",
+          "Las respuestas de diagnóstico grandes disponen de más tiempo para completarse. Los clientes antiguos que solicitan un informe reciben una respuesta explícita sobre el límite de tamaño cuando este no cabe, en lugar de agotar el tiempo de espera sin respuesta."
         ]
       }
     ]

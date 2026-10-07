@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.9
+
+Aggiornamenti del gruppo più affidabili, mappe dei giocatori più chiare e correzioni quando si nasconde l’interfaccia con Alt+Z.
+
+### Registro missioni del gruppo e finestre
+
+- Nascondere e ripristinare l’interfaccia con Alt+Z ora mantiene le conferme in attesa per il cambio di missione prioritaria e gli sfondi con i colori delle classi dietro i nomi dei giocatori.
+- Le richieste del registro missioni del gruppo riprendono in modo più affidabile dopo ricaricamenti, schermate di caricamento o pagine di messaggi mancanti, senza lasciare i giocatori bloccati su Caricamento.
+- Le disposizioni delle finestre e le bolle dei progressi personali si adattano meglio agli schermi più piccoli. Il ripristino delle disposizioni mantiene le scelte in sospeso nelle finestre di dialogo.
+
+### Mappe e aggiornamenti del gruppo
+
+- Gli aggiornamenti di posizione, gruppo e missione prioritaria rifiutano i messaggi obsoleti, così le risposte in ritardo non possono far ricomparire giocatori che se ne sono andati o sovrascrivere dati più recenti.
+- QT invia un avviso quando lasci il mondo di gioco, così gli altri giocatori possono rimuovere prima il tuo punto se l’avviso arriva. La normale scadenza continua a gestire gli avvisi persi e la disponibilità a unirsi ai gruppi viene ripristinata dopo le schermate di caricamento.
+- I membri del gruppo ora usano i segnalini di Blizzard sulla mappa e sulla minimappa, senza punti QT duplicati. Giocatori mostrati sulle mappe offre Tutti i giocatori di QuestTogether, Giocatori in cerca di compagni di missione o Nessuno; la condivisione della tua posizione resta separata.
+
+### Tracciamento e comunicazione
+
+- Il tracciamento delle missioni si ripristina quando il registro è incompleto all’accesso e i numerosi eventi delle missioni non continuano più a rimandare gli aggiornamenti in attesa.
+- I messaggi in uscita condividono una coda con invii cadenzati e la verifica delle richieste dello sviluppatore avviene a piccoli passi per ridurre i blocchi dell’immagine. Disattivare la condivisione della diagnostica annulla le attività diagnostiche in coda.
+- Le risposte diagnostiche grandi hanno più tempo per completarsi. I client meno recenti che richiedono un rapporto ricevono una risposta esplicita sul limite di dimensione se il rapporto non rientra, invece di attendere senza risposta fino alla scadenza.
+
 ## 6.5.8
 
 Menu nativi di WoW, controlli della mappa più chiari e diagnostica per lo sviluppatore.

@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.9
+
+Zuverlässigere Gruppenaktualisierungen, übersichtlichere Spielerkarten und Korrekturen beim Ausblenden der Benutzeroberfläche mit Alt+Z.
+
+### Gruppenquestlog und Fenster
+
+- Beim Ausblenden und Wiederherstellen der Benutzeroberfläche mit Alt+Z bleiben ausstehende Bestätigungen zum Wechsel des Questfokus und die Hintergründe in Klassenfarben hinter Spielernamen erhalten.
+- Anfragen des Gruppenquestlogs werden nach Neuladen, Ladebildschirmen oder fehlenden Nachrichtenseiten zuverlässiger fortgesetzt, statt Spieler dauerhaft mit „Laden“ anzuzeigen.
+- Fensterlayouts und persönliche Fortschrittsblasen passen sich kleineren Bildschirmen zuverlässiger an. Beim Zurücksetzen der Layouts bleiben ausstehende Dialogentscheidungen erhalten.
+
+### Karten und Gruppenaktualisierungen
+
+- Aktualisierungen von Standort, Gruppe und Questfokus weisen veraltete Nachrichten zurück, damit verspätete Antworten abgemeldete Spieler nicht wieder anzeigen oder neuere Daten überschreiben.
+- QT sendet beim Verlassen der Spielwelt eine Abmeldung, damit andere Spieler deinen Punkt früher entfernen können, wenn die Nachricht ankommt. Bei verlorenen Nachrichten greift weiterhin der normale Ablauf der Gültigkeit; die Verfügbarkeit für Gruppenbeitritte wird nach Ladebildschirmen wiederhergestellt.
+- Gruppenmitglieder verwenden jetzt Blizzards eigene Markierungen auf Karte und Minikarte, ohne zusätzliche QT-Punkte. Auf Karten angezeigte Spieler bietet Alle QuestTogether-Spieler, Spieler auf Questpartnersuche oder Keine; die Freigabe deines eigenen Standorts bleibt getrennt.
+
+### Questverfolgung und Kommunikation
+
+- Die Questverfolgung erholt sich von einem beim Anmelden unvollständigen Questlog. Viele aufeinanderfolgende Questereignisse verschieben ausstehende Aktualisierungen nicht mehr immer weiter.
+- Ausgehende Nachrichten nutzen eine gemeinsame Warteschlange mit geregeltem Versandtempo. Die Prüfung von Entwickleranfragen erfolgt in kleinen Schritten, um kurze Bildstillstände zu verringern. Das Deaktivieren der Diagnosefreigabe bricht vorgemerkte Diagnoseaufgaben ab.
+- Große Diagnoseantworten haben mehr Zeit, vollständig anzukommen. Ältere anfragende Clients erhalten eine ausdrückliche Meldung zur Größenbegrenzung, wenn ein Bericht nicht hineinpasst, statt ohne Rückmeldung in eine Zeitüberschreitung zu laufen.
+
 ## 6.5.8
 
 Native WoW-Auswahlmenüs, klarere Kartenoptionen und Entwicklerdiagnosen.

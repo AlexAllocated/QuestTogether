@@ -4,6 +4,28 @@
 
 [Other languages](changelogs/README.md)
 
+## 6.5.9
+
+More reliable party updates, cleaner player maps, and fixes for hiding the UI with Alt+Z.
+
+### Party Quest Log and windows
+
+- Hiding and restoring the UI with Alt+Z now preserves pending quest-focus confirmations and the class-colored backgrounds behind player names.
+- Party Quest Log requests recover more reliably after reloads, loading screens, or missing message pages, instead of leaving players stuck on Loading.
+- Window layouts and personal progress bubbles fit smaller displays more reliably. Resetting layouts preserves pending dialog choices.
+
+### Maps and party updates
+
+- Location, party, and quest-focus updates reject outdated messages so delayed replies cannot revive departed players or overwrite newer data.
+- QT sends a departure notice when leaving the world so other players can clear your dot sooner when the notice arrives. Normal expiration still handles missed notices, and party join availability recovers after loading screens.
+- Party members now use Blizzard's own map and minimap markers without duplicate QT dots. Players shown on maps offers All QuestTogether players, Players looking for questing partners, or None; sharing your own location remains separate.
+
+### Tracking and communication
+
+- Quest tracking recovers when the quest log is incomplete at login, and busy quest events no longer keep postponing pending refreshes.
+- Outgoing messages share a paced queue, and developer-request verification runs in small steps to reduce frame stalls. Turning off diagnostic sharing cancels queued diagnostic work.
+- Large diagnostic replies have more time to finish. Older requesters receive an explicit size-limit response when a report cannot fit, instead of silently timing out.
+
 ## 6.5.8
 
 Native WoW dropdowns, clearer map controls, and developer diagnostics.

@@ -1,22 +1,31 @@
 {
-  "source_sha256": "40274e8405d889f5449dbe079f73b7b5e88c3911d2f6dc6cb3f1c8e38b1c8311",
+  "source_sha256": "0db2d1d99777aff013026df9354c57e066370e93e3279d54cd4e114ec03305ed",
   "notes": {
-    "version": "6.5.8",
-    "welcome": "Native WoW-Auswahlmenüs, klarere Kartenoptionen und Entwicklerdiagnosen.",
+    "version": "6.5.9",
+    "welcome": "Zuverlässigere Gruppenaktualisierungen, übersichtlichere Spielerkarten und Korrekturen beim Ausblenden der Benutzeroberfläche mit Alt+Z.",
     "sections": [
       {
-        "title": "Einstellungen und Spielerkarten",
+        "title": "Gruppenquestlog und Fenster",
         "items": [
-          "Alle neun Auswahlmenüs in den Einstellungen verwenden jetzt native WoW-Steuerelemente mit goldener Auswahl, schwarzen Menüs und Zurück-/Weiter-Schaltflächen.",
-          "Auf Karten angezeigte Spieler ersetzt die getrennten Kontrollkästchen für Sichtbarkeit und Gruppenausnahme. Wähle alle QT-Spieler, Spieler auf Questpartnersuche mit oder ohne deine Gruppe, nur deine Gruppe oder Keine. Vorhandene Einstellungen bleiben erhalten; die Freigabe deines eigenen Standorts bleibt getrennt.",
-          "Die neue Einstellungskategorie Entwickler enthält Debugfenster öffnen, Questlog neu einlesen und die Freigabe von Diagnosedaten."
+          "Beim Ausblenden und Wiederherstellen der Benutzeroberfläche mit Alt+Z bleiben ausstehende Bestätigungen zum Wechsel des Questfokus und die Hintergründe in Klassenfarben hinter Spielernamen erhalten.",
+          "Anfragen des Gruppenquestlogs werden nach Neuladen, Ladebildschirmen oder fehlenden Nachrichtenseiten zuverlässiger fortgesetzt, statt Spieler dauerhaft mit „Laden“ anzuzeigen.",
+          "Fensterlayouts und persönliche Fortschrittsblasen passen sich kleineren Bildschirmen zuverlässiger an. Beim Zurücksetzen der Layouts bleiben ausstehende Dialogentscheidungen erhalten."
         ]
       },
       {
-        "title": "Diagnoseantworten",
+        "title": "Karten und Gruppenaktualisierungen",
         "items": [
-          "Diagnosedaten mit dem Entwickler teilen ist standardmäßig aktiviert. Die Option erlaubt authentifizierte Entwickleranfragen nach QT-Diagnosen, Addon-Einstellungen sowie Charakter-, Gruppen- und Standortdaten im Spiel, auch bei deaktivierter öffentlicher Standortfreigabe. Deaktiviere sie unter Entwickler, um diese Daten nicht mehr zu teilen.",
-          "Diagnoseantworten verwenden private Addon-Flüsternachrichten und werden zeitversetzt in Seiten aufgeteilt, damit größere Antworten ihre Felder behalten. Ferndiagnosen erfordern bei beiden Spielern Version 6.5.8 oder neuer; veröffentlichte 6.5.7-Clients können diese Anfragen nicht beantworten."
+          "Aktualisierungen von Standort, Gruppe und Questfokus weisen veraltete Nachrichten zurück, damit verspätete Antworten abgemeldete Spieler nicht wieder anzeigen oder neuere Daten überschreiben.",
+          "QT sendet beim Verlassen der Spielwelt eine Abmeldung, damit andere Spieler deinen Punkt früher entfernen können, wenn die Nachricht ankommt. Bei verlorenen Nachrichten greift weiterhin der normale Ablauf der Gültigkeit; die Verfügbarkeit für Gruppenbeitritte wird nach Ladebildschirmen wiederhergestellt.",
+          "Gruppenmitglieder verwenden jetzt Blizzards eigene Markierungen auf Karte und Minikarte, ohne zusätzliche QT-Punkte. Auf Karten angezeigte Spieler bietet Alle QuestTogether-Spieler, Spieler auf Questpartnersuche oder Keine; die Freigabe deines eigenen Standorts bleibt getrennt."
+        ]
+      },
+      {
+        "title": "Questverfolgung und Kommunikation",
+        "items": [
+          "Die Questverfolgung erholt sich von einem beim Anmelden unvollständigen Questlog. Viele aufeinanderfolgende Questereignisse verschieben ausstehende Aktualisierungen nicht mehr immer weiter.",
+          "Ausgehende Nachrichten nutzen eine gemeinsame Warteschlange mit geregeltem Versandtempo. Die Prüfung von Entwickleranfragen erfolgt in kleinen Schritten, um kurze Bildstillstände zu verringern. Das Deaktivieren der Diagnosefreigabe bricht vorgemerkte Diagnoseaufgaben ab.",
+          "Große Diagnoseantworten haben mehr Zeit, vollständig anzukommen. Ältere anfragende Clients erhalten eine ausdrückliche Meldung zur Größenbegrenzung, wenn ein Bericht nicht hineinpasst, statt ohne Rückmeldung in eine Zeitüberschreitung zu laufen."
         ]
       }
     ]

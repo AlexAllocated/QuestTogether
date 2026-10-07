@@ -3,6 +3,239 @@
   "releases": [
     {
       "enUS": {
+        "version": "6.5.8",
+        "welcome": "Native WoW dropdowns, clearer map controls, and developer diagnostics.",
+        "sections": [
+          {
+            "title": "Settings and player maps",
+            "items": [
+              "All nine settings dropdowns now use native WoW controls with gold selected text, black menus, and previous/next buttons.",
+              "Players shown on maps replaces the separate visibility and party-override checkboxes. Choose all QT players, players looking for questing partners with or without your party, party only, or None. Existing preferences are retained; sharing your own location stays separate.",
+              "The new Developer settings category contains Open Debug Window, Rescan Quest Log, and the diagnostic-sharing option."
+            ]
+          },
+          {
+            "title": "Diagnostic replies",
+            "items": [
+              "Share diagnostic data with the developer is enabled by default. It allows authenticated developer requests for QT diagnostics, addon settings, and in-game character, party, and location data, even when public location sharing is off. Disable it under Developer to stop sharing this data.",
+              "Diagnostic replies use private addon whispers, split into paced pages so larger replies retain their fields. Remote diagnostics requires both players to use 6.5.8 or newer; published 6.5.7 clients cannot answer these requests."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "6.5.8",
+        "welcome": "Native WoW-Auswahlmenüs, klarere Kartenoptionen und Entwicklerdiagnosen.",
+        "sections": [
+          {
+            "title": "Einstellungen und Spielerkarten",
+            "items": [
+              "Alle neun Auswahlmenüs in den Einstellungen verwenden jetzt native WoW-Steuerelemente mit goldener Auswahl, schwarzen Menüs und Zurück-/Weiter-Schaltflächen.",
+              "Auf Karten angezeigte Spieler ersetzt die getrennten Kontrollkästchen für Sichtbarkeit und Gruppenausnahme. Wähle alle QT-Spieler, Spieler auf Questpartnersuche mit oder ohne deine Gruppe, nur deine Gruppe oder Keine. Vorhandene Einstellungen bleiben erhalten; die Freigabe deines eigenen Standorts bleibt getrennt.",
+              "Die neue Einstellungskategorie Entwickler enthält Debugfenster öffnen, Questlog neu einlesen und die Freigabe von Diagnosedaten."
+            ]
+          },
+          {
+            "title": "Diagnoseantworten",
+            "items": [
+              "Diagnosedaten mit dem Entwickler teilen ist standardmäßig aktiviert. Die Option erlaubt authentifizierte Entwickleranfragen nach QT-Diagnosen, Addon-Einstellungen sowie Charakter-, Gruppen- und Standortdaten im Spiel, auch bei deaktivierter öffentlicher Standortfreigabe. Deaktiviere sie unter Entwickler, um diese Daten nicht mehr zu teilen.",
+              "Diagnoseantworten verwenden private Addon-Flüsternachrichten und werden zeitversetzt in Seiten aufgeteilt, damit größere Antworten ihre Felder behalten. Ferndiagnosen erfordern bei beiden Spielern Version 6.5.8 oder neuer; veröffentlichte 6.5.7-Clients können diese Anfragen nicht beantworten."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "6.5.8",
+        "welcome": "Menus déroulants natifs de WoW, options de carte plus claires et diagnostics développeur.",
+        "sections": [
+          {
+            "title": "Paramètres et cartes des joueurs",
+            "items": [
+              "Les neuf menus déroulants des paramètres utilisent désormais les contrôles natifs de WoW : sélection dorée, menus noirs et boutons précédent/suivant.",
+              "Joueurs affichés sur les cartes remplace les cases séparées de visibilité et d’exception pour le groupe. Choisissez tous les joueurs QT, ceux qui cherchent des partenaires de quête avec ou sans votre groupe, votre groupe uniquement ou Aucun. Les préférences existantes sont conservées ; le partage de votre position reste séparé.",
+              "La nouvelle catégorie Développeur regroupe l’ouverture de la fenêtre de débogage, la relecture du journal des quêtes et le partage des données de diagnostic."
+            ]
+          },
+          {
+            "title": "Réponses de diagnostic",
+            "items": [
+              "Le partage des données de diagnostic avec le développeur est activé par défaut. Il autorise les demandes authentifiées du développeur concernant les diagnostics QT, les paramètres de l’addon et les données de personnage, de groupe et de position en jeu, même si le partage public de position est désactivé. Désactivez cette option sous Développeur pour arrêter ce partage.",
+              "Les réponses utilisent des messages privés d’addon, répartis en pages espacées pour conserver tous les champs des réponses volumineuses. Les diagnostics à distance exigent la version 6.5.8 ou ultérieure chez les deux joueurs ; les clients 6.5.7 publiés ne peuvent pas répondre à ces demandes."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "6.5.8",
+        "welcome": "Menús desplegables nativos de WoW, controles de mapa más claros y diagnósticos para el desarrollador.",
+        "sections": [
+          {
+            "title": "Ajustes y mapas de jugadores",
+            "items": [
+              "Los nueve desplegables de ajustes ahora usan controles nativos de WoW con selección dorada, menús negros y botones anterior/siguiente.",
+              "Jugadores mostrados en los mapas sustituye las casillas separadas de visibilidad y excepción para el grupo. Elige todos los jugadores QT, quienes buscan compañeros de misiones con o sin tu grupo, solo tu grupo o Ninguno. Se conservan las preferencias existentes; compartir tu ubicación sigue siendo independiente.",
+              "La nueva categoría Desarrollador reúne Abrir ventana de depuración, Volver a explorar el registro de misiones y la opción de compartir diagnósticos."
+            ]
+          },
+          {
+            "title": "Respuestas de diagnóstico",
+            "items": [
+              "Compartir datos de diagnóstico con el desarrollador está activado por defecto. Permite solicitudes autenticadas del desarrollador sobre diagnósticos QT, ajustes del addon y datos de personaje, grupo y ubicación dentro del juego, incluso si el uso compartido público de la ubicación está desactivado. Desactívalo en Desarrollador para dejar de compartir estos datos.",
+              "Las respuestas usan susurros privados del addon, divididos en páginas enviadas de forma espaciada para conservar los campos de las respuestas grandes. Los diagnósticos remotos requieren que ambos jugadores usen 6.5.8 o posterior; los clientes publicados de 6.5.7 no pueden responder a estas solicitudes."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "6.5.8",
+        "welcome": "Menús desplegables nativos de WoW, controles de mapa más claros y diagnósticos para el desarrollador.",
+        "sections": [
+          {
+            "title": "Ajustes y mapas de jugadores",
+            "items": [
+              "Los nueve desplegables de ajustes ahora usan controles nativos de WoW con selección dorada, menús negros y botones anterior/siguiente.",
+              "Jugadores mostrados en los mapas sustituye las casillas separadas de visibilidad y excepción para el grupo. Elige todos los jugadores QT, quienes buscan compañeros de misiones con o sin tu grupo, solo tu grupo o Ninguno. Se conservan las preferencias existentes; compartir tu ubicación sigue siendo independiente.",
+              "La nueva categoría Desarrollador reúne Abrir ventana de depuración, Volver a explorar el registro de misiones y la opción de compartir diagnósticos."
+            ]
+          },
+          {
+            "title": "Respuestas de diagnóstico",
+            "items": [
+              "Compartir datos de diagnóstico con el desarrollador está activado por defecto. Permite solicitudes autenticadas del desarrollador sobre diagnósticos QT, ajustes del addon y datos de personaje, grupo y ubicación dentro del juego, incluso si el uso compartido público de la ubicación está desactivado. Desactívalo en Desarrollador para dejar de compartir estos datos.",
+              "Las respuestas usan susurros privados del addon, divididos en páginas enviadas de forma espaciada para conservar los campos de las respuestas grandes. Los diagnósticos remotos requieren que ambos jugadores usen 6.5.8 o posterior; los clientes publicados de 6.5.7 no pueden responder a estas solicitudes."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "6.5.8",
+        "welcome": "Menus nativos do WoW, controles de mapa mais claros e diagnósticos para o desenvolvedor.",
+        "sections": [
+          {
+            "title": "Configurações e mapas de jogadores",
+            "items": [
+              "Os nove menus suspensos das configurações agora usam controles nativos do WoW com seleção dourada, menus pretos e botões anterior/próximo.",
+              "Jogadores exibidos nos mapas substitui as caixas separadas de visibilidade e exceção para o grupo. Escolha todos os jogadores QT, jogadores buscando parceiros de missões com ou sem seu grupo, apenas seu grupo ou Nenhum. As preferências existentes são mantidas; compartilhar sua própria localização continua separado.",
+              "A nova categoria Desenvolvedor reúne Abrir janela de depuração, Verificar novamente o registro de missões e a opção de compartilhar diagnósticos."
+            ]
+          },
+          {
+            "title": "Respostas de diagnóstico",
+            "items": [
+              "Compartilhar dados de diagnóstico com o desenvolvedor está ativado por padrão. Isso permite solicitações autenticadas do desenvolvedor para diagnósticos QT, configurações do addon e dados de personagem, grupo e localização no jogo, mesmo quando o compartilhamento público de localização está desativado. Desative em Desenvolvedor para parar de compartilhar esses dados.",
+              "As respostas usam sussurros privados do addon, divididos em páginas enviadas em intervalos para preservar os campos de respostas maiores. Diagnósticos remotos exigem que ambos os jogadores usem 6.5.8 ou posterior; clientes publicados da versão 6.5.7 não podem responder a essas solicitações."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "6.5.8",
+        "welcome": "Стандартные списки WoW, понятные настройки карты и диагностика для разработчика.",
+        "sections": [
+          {
+            "title": "Настройки и карты игроков",
+            "items": [
+              "Все девять раскрывающихся списков настроек теперь используют стандартные элементы WoW: золотой текст выбранного пункта, чёрное меню и кнопки перехода назад/вперёд.",
+              "Игроки на картах заменяет отдельные флажки видимости и исключения для группы. Выберите всех игроков QT, игроков в поиске напарников для заданий с вашей группой или без неё, только группу или Нет. Существующие предпочтения сохраняются; отправка вашего местоположения остаётся отдельной настройкой.",
+              "Новая категория Разработчик содержит открытие окна отладки, повторное сканирование журнала заданий и отправку диагностических данных."
+            ]
+          },
+          {
+            "title": "Диагностические ответы",
+            "items": [
+              "Отправка диагностических данных разработчику включена по умолчанию. Она разрешает подтверждённые запросы разработчика на получение диагностики QT, настроек аддона и игровых данных персонажа, группы и местоположения, даже если публичная отправка местоположения выключена. Отключите эту настройку в категории Разработчик, чтобы прекратить отправку этих данных.",
+              "Ответы отправляются личными сообщениями аддона и разбиваются на страницы с интервалами, чтобы большие ответы сохраняли все поля. Для удалённой диагностики обоим игрокам нужна версия 6.5.8 или новее; опубликованные клиенты 6.5.7 не могут отвечать на такие запросы."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "6.5.8",
+        "welcome": "Menu nativi di WoW, controlli della mappa più chiari e diagnostica per lo sviluppatore.",
+        "sections": [
+          {
+            "title": "Impostazioni e mappe dei giocatori",
+            "items": [
+              "Tutti e nove i menu a discesa delle impostazioni ora usano i controlli nativi di WoW, con selezione dorata, menu neri e pulsanti precedente/successivo.",
+              "Giocatori mostrati sulle mappe sostituisce le caselle separate per visibilità ed eccezione del gruppo. Scegli tutti i giocatori QT, quelli in cerca di compagni di missione con o senza il tuo gruppo, solo il tuo gruppo o Nessuno. Le preferenze esistenti vengono mantenute; la condivisione della tua posizione resta separata.",
+              "La nuova categoria Sviluppatore contiene Apri finestra di debug, Rileggi registro missioni e l’opzione di condivisione dei dati diagnostici."
+            ]
+          },
+          {
+            "title": "Risposte diagnostiche",
+            "items": [
+              "Condividi dati diagnostici con lo sviluppatore è attivo per impostazione predefinita. Consente richieste autenticate dello sviluppatore per diagnostica QT, impostazioni dell’addon e dati di personaggio, gruppo e posizione nel gioco, anche se la condivisione pubblica della posizione è disattivata. Disattivalo in Sviluppatore per interrompere questa condivisione.",
+              "Le risposte usano messaggi privati dell’addon, suddivisi in pagine inviate a intervalli per conservare tutti i campi delle risposte più grandi. La diagnostica remota richiede che entrambi i giocatori usino la versione 6.5.8 o successiva; i client pubblicati della 6.5.7 non possono rispondere a queste richieste."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "6.5.8",
+        "welcome": "WoW 기본 드롭다운, 더 명확한 지도 설정, 개발자 진단 기능.",
+        "sections": [
+          {
+            "title": "설정 및 플레이어 지도",
+            "items": [
+              "설정의 드롭다운 9개가 모두 WoW 기본 컨트롤을 사용합니다. 선택한 항목은 금색으로 표시되며 검은 메뉴와 이전/다음 버튼이 제공됩니다.",
+              "지도에 표시할 플레이어가 별도의 표시 여부 및 파티 예외 체크박스를 대체합니다. 모든 QT 플레이어, 퀘스트 동료를 찾는 플레이어와 내 파티, 퀘스트 동료를 찾는 플레이어만, 내 파티만 또는 없음을 선택할 수 있습니다. 기존 설정은 유지되며 내 위치 공유는 별도입니다.",
+              "새 개발자 설정 범주에 디버그 창 열기, 퀘스트 목록 다시 검색, 진단 데이터 공유 옵션을 모았습니다."
+            ]
+          },
+          {
+            "title": "진단 응답",
+            "items": [
+              "개발자와 진단 데이터 공유는 기본적으로 활성화됩니다. 인증된 개발자 요청에 QT 진단, 애드온 설정, 게임 내 캐릭터·파티·위치 데이터를 제공하며, 공개 위치 공유가 꺼져 있어도 적용됩니다. 이 데이터 공유를 중지하려면 개발자 설정에서 옵션을 끄세요.",
+              "진단 응답은 애드온 전용 비공개 귓속말로 전송되며, 큰 응답의 필드를 유지하도록 페이지로 나누어 간격을 두고 보냅니다. 원격 진단은 두 플레이어 모두 6.5.8 이상이어야 합니다. 배포된 6.5.7 클라이언트는 이 요청에 응답할 수 없습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "6.5.8",
+        "welcome": "WoW 原生下拉菜单、更清晰的地图设置和开发者诊断。",
+        "sections": [
+          {
+            "title": "设置与玩家地图",
+            "items": [
+              "全部九个设置下拉菜单现已使用 WoW 原生控件，提供金色选中项、黑色菜单以及上一个/下一个按钮。",
+              "地图上显示的玩家替代了独立的显示开关和小队例外复选框。可选择所有 QT 玩家、正在寻找任务伙伴的玩家（包含或不包含你的小队）、仅小队或无。已有偏好会保留，分享自己的位置仍是独立选项。",
+              "新的开发者设置分类包含打开调试窗口、重新扫描任务日志和诊断数据共享选项。"
+            ]
+          },
+          {
+            "title": "诊断回复",
+            "items": [
+              "与开发者共享诊断数据默认开启。它允许经过身份验证的开发者请求 QT 诊断、插件设置以及游戏内角色、小队和位置数据，即使公开位置共享已关闭也会生效。可在开发者设置中关闭此选项以停止共享这些数据。",
+              "诊断回复通过插件专用私密密语发送，并分成间隔发送的页面，以保留较大回复中的所有字段。远程诊断要求双方均使用 6.5.8 或更新版本；已发布的 6.5.7 客户端无法回应这些请求。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "6.5.8",
+        "welcome": "WoW 原生下拉選單、更清楚的地圖設定與開發者診斷。",
+        "sections": [
+          {
+            "title": "設定與玩家地圖",
+            "items": [
+              "全部九個設定下拉選單現已使用 WoW 原生控制項，提供金色選取項目、黑色選單以及上一個/下一個按鈕。",
+              "地圖上顯示的玩家取代了獨立的顯示開關與小隊例外核取方塊。可選擇所有 QT 玩家、正在尋找任務夥伴的玩家（包含或不包含你的小隊）、僅小隊或無。既有偏好會保留，分享自己的位置仍是獨立選項。",
+              "新的開發者設定分類包含開啟除錯視窗、重新掃描任務日誌與診斷資料分享選項。"
+            ]
+          },
+          {
+            "title": "診斷回覆",
+            "items": [
+              "與開發者分享診斷資料預設開啟。它允許通過身分驗證的開發者請求 QT 診斷、插件設定以及遊戲內角色、小隊與位置資料，即使公開位置分享已關閉也會生效。可在開發者設定中關閉此選項以停止分享這些資料。",
+              "診斷回覆透過插件專用私密悄悄話傳送，並分成間隔傳送的頁面，以保留較大回覆中的所有欄位。遠端診斷要求雙方均使用 6.5.8 或更新版本；已發布的 6.5.7 用戶端無法回應這些請求。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "6.5.7",
         "welcome": "Minimap targeting and clearer party icons.",
         "sections": [
