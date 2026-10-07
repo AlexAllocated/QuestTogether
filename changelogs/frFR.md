@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.7
+
+Ciblage sur la minicarte et icônes de groupe plus visibles.
+
+### Points des joueurs et icônes de groupe
+
+- Hors combat, cliquez avec le bouton gauche sur le point d’un joueur sur la minicarte pour le cibler, si le jeu le permet. Le clic droit ouvre toujours le menu, avec Cibler en première position. Les menus des points sur la carte du monde restent inchangés.
+- Les icônes de recherche de partenaires ont désormais un contour doré bien plus marqué. Les listes de groupe dans les infobulles affichent aussi le logo QT lumineux pour les membres qui cherchent actuellement des partenaires de quête.
+- Les symboles de suivi du journal de quêtes du groupe sont désormais affichés sur leur propre couche de premier plan, afin que les arrière-plans des boutons ne puissent pas les masquer.
+
 ## 6.5.6
 
 Repérez dans vos messages les joueurs qui cherchent des partenaires de quête.

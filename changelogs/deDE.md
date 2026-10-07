@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.7
+
+Spieler über die Minikarte anvisieren und deutlichere Gruppensymbole.
+
+### Spielerpunkte und Gruppensymbole
+
+- Außerhalb des Kampfes kannst du einen Spielerpunkt auf der Minikarte mit Linksklick anvisieren, sofern das Spiel diesen Spieler als Ziel erfassen kann. Rechtsklick öffnet weiterhin das Menü, jetzt mit Anvisieren an erster Stelle. Die Menüs der Weltkartenpunkte bleiben unverändert.
+- Symbole für die Questpartnersuche haben jetzt eine deutlich kräftigere goldene Kontur. Gruppenlisten in Tooltips zeigen außerdem das leuchtende QT-Logo für Mitglieder, die gerade Questpartner suchen.
+- Die Questfokussymbole im Gruppenquestlog werden jetzt auf einer eigenen Vordergrundebene dargestellt, damit die Schaltflächenhintergründe sie nicht verdecken können.
+
 ## 6.5.6
 
 Erkenne im Chatlog, wer Questpartner sucht.

@@ -1,14 +1,15 @@
 {
-  "source_sha256": "eb8476f368711d9eea64fbb944b249d4ada199048ce031601530ae335ad700ec",
+  "source_sha256": "a02be11488301ef0bcd534693851680df3a662da04ad9a9a18beb5fd6bc7ecdb",
   "notes": {
-    "version": "6.5.6",
-    "welcome": "Identifica en tus mensajes quién busca compañeros de misiones.",
+    "version": "6.5.7",
+    "welcome": "Selección de objetivos en el minimapa e íconos de grupo más claros.",
     "sections": [
       {
-        "title": "Búsqueda de compañeros de misiones",
+        "title": "Puntos de jugadores e íconos de grupo",
         "items": [
-          "El ícono de búsqueda de compañeros tiene un contorno dorado más brillante y un resplandor más intenso para distinguirlo mejor en los mensajes a tamaño reducido.",
-          "El ícono QT al inicio de los mensajes ahora brilla cuando el jugador busca compañeros de misiones. Los íconos específicos de misiones y las burbujas de chat conservan su aspecto habitual."
+          "Fuera de combate, haz clic izquierdo en el punto de un jugador en el minimapa para seleccionarlo como objetivo, si el juego lo permite. El clic derecho sigue abriendo el menú, con Seleccionar objetivo en primer lugar. Los menús de los puntos del mapa del mundo conservan su comportamiento.",
+          "Los íconos de búsqueda de compañeros tienen ahora un contorno dorado mucho más marcado. Las listas de grupo en las descripciones emergentes también muestran el logo QT brillante para los miembros que están buscando compañeros de misiones.",
+          "Los símbolos de seguimiento del registro de misiones del grupo ahora se dibujan en su propia capa en primer plano, para que los fondos de los botones no puedan taparlos."
         ]
       }
     ]

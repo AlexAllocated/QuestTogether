@@ -1,12 +1,13 @@
 {
-  "version": "6.5.6",
-  "welcome": "See who is looking for questing partners in your logs.",
+  "version": "6.5.7",
+  "welcome": "Minimap targeting and clearer party icons.",
   "sections": [
     {
-      "title": "Looking for questing partners",
+      "title": "Player dots and party icons",
       "items": [
-        "The LFQP icon has a brighter gold outline and stronger glow, making it easier to spot at small sizes in the log.",
-        "The QT icon prefix in log lines now glows when the player is looking for questing partners. Quest-specific icons and chat-bubble icons keep their usual appearance."
+        "Outside combat, left-click a minimap player dot to target that player when the game can target them. Right-click still opens the menu, with Target first. World-map dot menus keep their existing behavior.",
+        "Looking-for-partners icons now have a much bolder gold outline. Party rosters in tooltips also show the glowing QT logo for members with an active looking-for-partners status.",
+        "Quest focus symbols in Party Quest Log now render on their own foreground layer so the button backgrounds cannot cover them."
       ]
     }
   ]

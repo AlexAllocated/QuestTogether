@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.7
+
+Selezione dei bersagli sulla minimappa e icone di gruppo più chiare.
+
+### Punti dei giocatori e icone di gruppo
+
+- Fuori dal combattimento, fai clic sinistro sul punto di un giocatore sulla minimappa per selezionarlo come bersaglio, quando il gioco lo consente. Il clic destro apre ancora il menu, con Seleziona bersaglio come prima voce. I menu dei punti sulla mappa del mondo restano invariati.
+- Le icone di ricerca dei compagni ora hanno un contorno dorato molto più marcato. Gli elenchi del gruppo nei suggerimenti mostrano anche il logo QT luminoso per i membri che stanno cercando compagni per le missioni.
+- I simboli di tracciamento nel registro missioni del gruppo ora vengono disegnati su un livello in primo piano separato, così gli sfondi dei pulsanti non possono coprirli.
+
 ## 6.5.6
 
 Scopri nei messaggi chi cerca compagni per le missioni.

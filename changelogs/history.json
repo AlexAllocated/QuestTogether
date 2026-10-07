@@ -3,6 +3,151 @@
   "releases": [
     {
       "enUS": {
+        "version": "6.5.6",
+        "welcome": "See who is looking for questing partners in your logs.",
+        "sections": [
+          {
+            "title": "Looking for questing partners",
+            "items": [
+              "The LFQP icon has a brighter gold outline and stronger glow, making it easier to spot at small sizes in the log.",
+              "The QT icon prefix in log lines now glows when the player is looking for questing partners. Quest-specific icons and chat-bubble icons keep their usual appearance."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "6.5.6",
+        "welcome": "Erkenne im Chatlog, wer Questpartner sucht.",
+        "sections": [
+          {
+            "title": "Questpartner gesucht",
+            "items": [
+              "Das Symbol für die Questpartnersuche hat eine hellere goldene Kontur und leuchtet stärker, damit es auch in kleiner Darstellung im Chatlog leichter zu erkennen ist.",
+              "Das QT-Symbol am Anfang von Chatlog-Zeilen leuchtet jetzt, wenn der Spieler Questpartner sucht. Questspezifische Symbole und Sprechblasensymbole behalten ihr gewohntes Aussehen."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "6.5.6",
+        "welcome": "Repérez dans vos messages les joueurs qui cherchent des partenaires de quête.",
+        "sections": [
+          {
+            "title": "Recherche de partenaires de quête",
+            "items": [
+              "L’icône de recherche de partenaires a un contour doré plus lumineux et une lueur renforcée pour rester bien visible en petit format dans les messages.",
+              "L’icône QT au début des messages brille désormais lorsque le joueur cherche des partenaires de quête. Les icônes propres aux quêtes et les bulles de discussion conservent leur apparence habituelle."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "6.5.6",
+        "welcome": "Identifica en tus mensajes quién busca compañeros de misiones.",
+        "sections": [
+          {
+            "title": "Búsqueda de compañeros de misiones",
+            "items": [
+              "El icono de búsqueda de compañeros tiene un contorno dorado más brillante y un resplandor más intenso para distinguirlo mejor en los mensajes a tamaño reducido.",
+              "El icono QT al inicio de los mensajes ahora brilla cuando el jugador busca compañeros de misiones. Los iconos específicos de misiones y las burbujas de chat conservan su aspecto habitual."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "6.5.6",
+        "welcome": "Identifica en tus mensajes quién busca compañeros de misiones.",
+        "sections": [
+          {
+            "title": "Búsqueda de compañeros de misiones",
+            "items": [
+              "El ícono de búsqueda de compañeros tiene un contorno dorado más brillante y un resplandor más intenso para distinguirlo mejor en los mensajes a tamaño reducido.",
+              "El ícono QT al inicio de los mensajes ahora brilla cuando el jugador busca compañeros de misiones. Los íconos específicos de misiones y las burbujas de chat conservan su aspecto habitual."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "6.5.6",
+        "welcome": "Veja nas mensagens quem está procurando parceiros de missão.",
+        "sections": [
+          {
+            "title": "Procurando parceiros de missão",
+            "items": [
+              "O ícone de busca de parceiros tem um contorno dourado mais claro e um brilho mais forte, ficando mais visível em tamanhos pequenos nas mensagens.",
+              "O ícone QT no início das mensagens agora brilha quando o jogador está procurando parceiros de missão. Os ícones específicos de missões e os balões de conversa mantêm a aparência habitual."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "6.5.6",
+        "welcome": "Узнавайте из сообщений, кто ищет напарников для заданий.",
+        "sections": [
+          {
+            "title": "Поиск напарников для заданий",
+            "items": [
+              "У значка поиска напарников стала ярче золотая обводка и усилилось свечение, чтобы его было легче заметить в небольшом размере в сообщениях.",
+              "Значок QT в начале сообщений теперь светится, если игрок ищет напарников для заданий. Значки отдельных заданий и облачков чата сохраняют обычный вид."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "6.5.6",
+        "welcome": "Scopri nei messaggi chi cerca compagni per le missioni.",
+        "sections": [
+          {
+            "title": "Ricerca di compagni per le missioni",
+            "items": [
+              "L’icona di ricerca dei compagni ha un contorno dorato più luminoso e un bagliore più intenso, per essere più visibile anche in piccolo nei messaggi.",
+              "L’icona QT all’inizio dei messaggi ora si illumina quando il giocatore cerca compagni per le missioni. Le icone specifiche delle missioni e i fumetti della chat mantengono il loro aspetto abituale."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "6.5.6",
+        "welcome": "로그에서 퀘스트 동료를 찾는 플레이어를 확인하세요.",
+        "sections": [
+          {
+            "title": "퀘스트 동료 찾기",
+            "items": [
+              "퀘스트 동료 찾기 아이콘의 금색 테두리와 광채를 더 밝게 조정하여 로그에서 작게 표시되어도 쉽게 알아볼 수 있습니다.",
+              "플레이어가 퀘스트 동료를 찾고 있으면 로그 메시지 앞의 QT 아이콘이 빛납니다. 퀘스트별 아이콘과 말풍선 아이콘은 기존 모양을 유지합니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "6.5.6",
+        "welcome": "在日志中查看谁正在寻找任务伙伴。",
+        "sections": [
+          {
+            "title": "寻找任务伙伴",
+            "items": [
+              "寻找任务伙伴图标现在拥有更明亮的金色轮廓和更强的光晕，在日志中以小尺寸显示时也更醒目。",
+              "当玩家正在寻找任务伙伴时，日志消息前的 QT 图标现在会发光。任务专用图标和聊天气泡图标保持原有外观。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "6.5.6",
+        "welcome": "在日誌中查看誰正在尋找任務夥伴。",
+        "sections": [
+          {
+            "title": "尋找任務夥伴",
+            "items": [
+              "尋找任務夥伴圖示現在擁有更明亮的金色輪廓和更強的光暈，在日誌中以小尺寸顯示時也更醒目。",
+              "當玩家正在尋找任務夥伴時，日誌訊息前的 QT 圖示現在會發光。任務專用圖示和聊天泡泡圖示維持原有外觀。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "6.5.5",
         "welcome": "A fix for missing quest icons in Party Quest Log.",
         "sections": [

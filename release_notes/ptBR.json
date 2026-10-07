@@ -1,14 +1,15 @@
 {
-  "source_sha256": "eb8476f368711d9eea64fbb944b249d4ada199048ce031601530ae335ad700ec",
+  "source_sha256": "a02be11488301ef0bcd534693851680df3a662da04ad9a9a18beb5fd6bc7ecdb",
   "notes": {
-    "version": "6.5.6",
-    "welcome": "Veja nas mensagens quem está procurando parceiros de missão.",
+    "version": "6.5.7",
+    "welcome": "Seleção de alvos no minimapa e ícones de grupo mais claros.",
     "sections": [
       {
-        "title": "Procurando parceiros de missão",
+        "title": "Pontos de jogadores e ícones de grupo",
         "items": [
-          "O ícone de busca de parceiros tem um contorno dourado mais claro e um brilho mais forte, ficando mais visível em tamanhos pequenos nas mensagens.",
-          "O ícone QT no início das mensagens agora brilha quando o jogador está procurando parceiros de missão. Os ícones específicos de missões e os balões de conversa mantêm a aparência habitual."
+          "Fora de combate, clique com o botão esquerdo no ponto de um jogador no minimapa para selecioná-lo como alvo, quando o jogo permitir. O botão direito continua abrindo o menu, com Selecionar alvo em primeiro lugar. Os menus dos pontos no mapa-múndi mantêm o comportamento atual.",
+          "Os ícones de busca de parceiros agora têm um contorno dourado muito mais forte. As listas de grupo nas dicas também mostram o logo QT brilhante para membros que estão procurando parceiros de missão.",
+          "Os símbolos de foco no Registro de Missões do Grupo agora são desenhados em sua própria camada de primeiro plano, para que os fundos dos botões não possam cobri-los."
         ]
       }
     ]

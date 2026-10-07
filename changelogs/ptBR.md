@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.7
+
+Seleção de alvos no minimapa e ícones de grupo mais claros.
+
+### Pontos de jogadores e ícones de grupo
+
+- Fora de combate, clique com o botão esquerdo no ponto de um jogador no minimapa para selecioná-lo como alvo, quando o jogo permitir. O botão direito continua abrindo o menu, com Selecionar alvo em primeiro lugar. Os menus dos pontos no mapa-múndi mantêm o comportamento atual.
+- Os ícones de busca de parceiros agora têm um contorno dourado muito mais forte. As listas de grupo nas dicas também mostram o logo QT brilhante para membros que estão procurando parceiros de missão.
+- Os símbolos de foco no Registro de Missões do Grupo agora são desenhados em sua própria camada de primeiro plano, para que os fundos dos botões não possam cobri-los.
+
 ## 6.5.6
 
 Veja nas mensagens quem está procurando parceiros de missão.

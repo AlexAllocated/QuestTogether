@@ -1,14 +1,15 @@
 {
-  "source_sha256": "eb8476f368711d9eea64fbb944b249d4ada199048ce031601530ae335ad700ec",
+  "source_sha256": "a02be11488301ef0bcd534693851680df3a662da04ad9a9a18beb5fd6bc7ecdb",
   "notes": {
-    "version": "6.5.6",
-    "welcome": "Erkenne im Chatlog, wer Questpartner sucht.",
+    "version": "6.5.7",
+    "welcome": "Spieler über die Minikarte anvisieren und deutlichere Gruppensymbole.",
     "sections": [
       {
-        "title": "Questpartner gesucht",
+        "title": "Spielerpunkte und Gruppensymbole",
         "items": [
-          "Das Symbol für die Questpartnersuche hat eine hellere goldene Kontur und leuchtet stärker, damit es auch in kleiner Darstellung im Chatlog leichter zu erkennen ist.",
-          "Das QT-Symbol am Anfang von Chatlog-Zeilen leuchtet jetzt, wenn der Spieler Questpartner sucht. Questspezifische Symbole und Sprechblasensymbole behalten ihr gewohntes Aussehen."
+          "Außerhalb des Kampfes kannst du einen Spielerpunkt auf der Minikarte mit Linksklick anvisieren, sofern das Spiel diesen Spieler als Ziel erfassen kann. Rechtsklick öffnet weiterhin das Menü, jetzt mit Anvisieren an erster Stelle. Die Menüs der Weltkartenpunkte bleiben unverändert.",
+          "Symbole für die Questpartnersuche haben jetzt eine deutlich kräftigere goldene Kontur. Gruppenlisten in Tooltips zeigen außerdem das leuchtende QT-Logo für Mitglieder, die gerade Questpartner suchen.",
+          "Die Questfokussymbole im Gruppenquestlog werden jetzt auf einer eigenen Vordergrundebene dargestellt, damit die Schaltflächenhintergründe sie nicht verdecken können."
         ]
       }
     ]

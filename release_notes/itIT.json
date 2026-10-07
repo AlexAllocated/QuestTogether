@@ -1,14 +1,15 @@
 {
-  "source_sha256": "eb8476f368711d9eea64fbb944b249d4ada199048ce031601530ae335ad700ec",
+  "source_sha256": "a02be11488301ef0bcd534693851680df3a662da04ad9a9a18beb5fd6bc7ecdb",
   "notes": {
-    "version": "6.5.6",
-    "welcome": "Scopri nei messaggi chi cerca compagni per le missioni.",
+    "version": "6.5.7",
+    "welcome": "Selezione dei bersagli sulla minimappa e icone di gruppo più chiare.",
     "sections": [
       {
-        "title": "Ricerca di compagni per le missioni",
+        "title": "Punti dei giocatori e icone di gruppo",
         "items": [
-          "L’icona di ricerca dei compagni ha un contorno dorato più luminoso e un bagliore più intenso, per essere più visibile anche in piccolo nei messaggi.",
-          "L’icona QT all’inizio dei messaggi ora si illumina quando il giocatore cerca compagni per le missioni. Le icone specifiche delle missioni e i fumetti della chat mantengono il loro aspetto abituale."
+          "Fuori dal combattimento, fai clic sinistro sul punto di un giocatore sulla minimappa per selezionarlo come bersaglio, quando il gioco lo consente. Il clic destro apre ancora il menu, con Seleziona bersaglio come prima voce. I menu dei punti sulla mappa del mondo restano invariati.",
+          "Le icone di ricerca dei compagni ora hanno un contorno dorato molto più marcato. Gli elenchi del gruppo nei suggerimenti mostrano anche il logo QT luminoso per i membri che stanno cercando compagni per le missioni.",
+          "I simboli di tracciamento nel registro missioni del gruppo ora vengono disegnati su un livello in primo piano separato, così gli sfondi dei pulsanti non possono coprirli."
         ]
       }
     ]

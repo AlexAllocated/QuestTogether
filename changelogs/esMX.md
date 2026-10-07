@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.7
+
+Selección de objetivos en el minimapa e íconos de grupo más claros.
+
+### Puntos de jugadores e íconos de grupo
+
+- Fuera de combate, haz clic izquierdo en el punto de un jugador en el minimapa para seleccionarlo como objetivo, si el juego lo permite. El clic derecho sigue abriendo el menú, con Seleccionar objetivo en primer lugar. Los menús de los puntos del mapa del mundo conservan su comportamiento.
+- Los íconos de búsqueda de compañeros tienen ahora un contorno dorado mucho más marcado. Las listas de grupo en las descripciones emergentes también muestran el logo QT brillante para los miembros que están buscando compañeros de misiones.
+- Los símbolos de seguimiento del registro de misiones del grupo ahora se dibujan en su propia capa en primer plano, para que los fondos de los botones no puedan taparlos.
+
 ## 6.5.6
 
 Identifica en tus mensajes quién busca compañeros de misiones.

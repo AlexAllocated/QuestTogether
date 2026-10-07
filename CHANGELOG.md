@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 6.5.7
+
+Minimap targeting and clearer party icons.
+
+### Player dots and party icons
+
+- Outside combat, left-click a minimap player dot to target that player when the game can target them. Right-click still opens the menu, with Target first. World-map dot menus keep their existing behavior.
+- Looking-for-partners icons now have a much bolder gold outline. Party rosters in tooltips also show the glowing QT logo for members with an active looking-for-partners status.
+- Quest focus symbols in Party Quest Log now render on their own foreground layer so the button backgrounds cannot cover them.
+
 ## 6.5.6
 
 See who is looking for questing partners in your logs.
