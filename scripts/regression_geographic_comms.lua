@@ -6,6 +6,7 @@ end
 local function BaseFixture(name)
 	local a = setmetatable({
 		isEnabled = true,
+		isLocalDeveloper = true,
 		hasLoggedIn = true,
 		now = 100,
 		sent = {},
@@ -29,6 +30,7 @@ local function BaseFixture(name)
 			a.API[key] = function() end
 		end
 	end
+	function a:PrepareDeveloperPingRequest(request) return request end
 	a.API.GetTime = function()
 		return a.now
 	end
@@ -745,7 +747,7 @@ QT:RegisterTest("manual developer ping stays global and does not change backgrou
 			end
 		end
 	end
-	assert(global and party)
+	assert(global and not party)
 	Equal(a:GetGeographicAnnouncementRoutes()[2].channelName, "QuestTogetherZ12")
 end)
 

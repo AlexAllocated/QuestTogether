@@ -991,7 +991,7 @@ QT:RegisterTest("home status distinguishes runtime state and conditional sharing
 	assert(groups[1].text:find(L("Saved preferences below apply when QuestTogether is enabled."), 1, true))
 	assert(groups[1].text:find("5.16.3", 1, true))
 	assert(groups[2].text:find(L("Other requests while looking for partners"), 1, true))
-	assert(groups[3].text:find(L("Questing partners only"), 1, true))
+	assert(groups[3].text:find(L("Players looking for questing partners"), 1, true))
 	assert(groups[4].text == L("Ask before sharing quests"))
 	assert(not groups[5].text:find("DESTINATION_SENTINEL", 1, true))
 	for _, group in ipairs(groups) do assert(type(group.categoryKey) == "string") end
@@ -1004,7 +1004,7 @@ QT:RegisterTest("home status distinguishes runtime state and conditional sharing
 	assert(not groups[1].text:find(L("Newer version detected"), 1, true))
 	assert(not groups[1].text:find(L("Saved preferences below apply when QuestTogether is enabled."), 1, true))
 	assert(groups[2].text:find(L("Ask first"), 1, true))
-	assert(not groups[3].text:find(L("Questing partners only"), 1, true))
+	assert(not groups[3].text:find(L("Players looking for questing partners"), 1, true))
 	assert(groups[4].text == L("Automatically approve party share requests"))
 	assert(groups[5].text:find("DESTINATION_SENTINEL", 1, true))
 end)

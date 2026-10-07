@@ -32,6 +32,7 @@
       "PARTY",
       "PING",
       "PONG",
+      "PONP",
       "PublishAnnouncementEvent dropped eventType=%s due to empty payload",
       "QCDN",
       "QCMP",
@@ -687,6 +688,10 @@
       "Button",
       "TOOLTIP",
       "[combat] hide"
+    ],
+    "PingPages.lua": [
+      "WHISPER",
+      "paged pong"
     ]
   }
 }

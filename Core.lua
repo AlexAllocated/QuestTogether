@@ -390,6 +390,7 @@ QuestTogether.DEFAULTS = {
 		showMinimapButton = true,
 		minimapButtonPosition = 225,
 		sharePlayerLocation = true,
+		shareDeveloperDiagnostics = true,
 		showPlayerLocations = true,
 		onlyShowQuestPartners = false,
 		mapPartyOnly = false,
@@ -4735,6 +4736,9 @@ function QuestTogether:BuildPingResponseMessage(pongData)
 	if #locationBits > 0 then
 		parts[#parts + 1] = "- " .. table.concat(locationBits, " | ")
 	end
+	if pongData.developer then
+		parts[#parts + 1] = "- " .. L("Share my location") .. ": " .. (pongData.locationShared and L("On") or L("Off"))
+	end
 
 	return L("|cff33ff99QuestTogether|r: Pong: ") .. table.concat(parts, " ")
 end
@@ -5520,7 +5524,7 @@ function QuestTogether:SetOption(key, value)
 	local isPartyNavigationOption = key == "sharePartyFocus" or key == "sharePartyWaypoint" or key == "showPartyWaypoints"
 	if isPartyNavigationOption and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
 	local isLocationOption = key == "sharePlayerLocation" or key == "showPlayerLocations" or key == "onlyShowQuestPartners" or key == "mapPartyOnly" or key == "mapAlwaysShowParty"
-	if (isLocationOption or key == "nameplatePlayerIconEnabled") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
+	if (isLocationOption or key == "nameplatePlayerIconEnabled" or key == "shareDeveloperDiagnostics") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
 	if (key == "showMinimapButton" or key == "lightMode" or key == "experimentalLayerDetection" or key == "reduceMotion" or key == "compareAutoRefresh") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
 		return false
 	end
@@ -5974,7 +5978,6 @@ function QuestTogether:PrintDebugHelp()
 	self:PrintPreviewHelp()
 	self:Print(L("/qt debug - Open the shared QuestTogether debug window"))
 	self:Print(L("/qt devlogall [on|off|toggle] - Show or control dev all-announcements logging"))
-	self:Print(L("/qt ping - Request pong metadata from all QuestTogether clients in the shared channel"))
 	self:Print(L("/qt test - Run in-game unit tests, then open /qt dump filtered to TEST"))
 	self:Print(L("/qt dump [clear|CATEGORY] - Open the shared QuestTogether debug window"))
 	self:Print(L("/qt diagnostics [questID] - Copy client, runtime, and recent event diagnostics"))
@@ -6092,6 +6095,9 @@ function QuestTogether:HandleSlashCommand(input)
 	end
 
 	-- Generic debug commands and their presentation belong to the shared controller.
+	if command == "debug" and rest ~= "" and rawget(self,"isLocalDeveloper") == true then
+		return self:RequestRemoteDiagnostics(rest)
+	end
 	local debugCommand = command == "debuglog" and "dump" or command
 	if (debugCommand == "dump" or debugCommand == "debug") and rest ~= "" then
 		debugCommand = "dump " .. rest
@@ -6177,7 +6183,8 @@ function QuestTogether:HandleSlashCommand(input)
 	end
 
 	if command == "ping" then
-		if not self.SendPingRequest then
+		if rawget(self, "isLocalDeveloper") ~= true or not self.SendPingRequest
+			or (rest ~= "" and string.lower(rest) ~= "global") then
 			self:Print(L("Ping is unavailable."))
 			return
 		end

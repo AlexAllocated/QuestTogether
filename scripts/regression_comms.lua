@@ -10,6 +10,7 @@ end
 local function NewCommsFixture()
 	local addon = setmetatable({
 		isEnabled = true,
+		isLocalDeveloper = true,
 		partyMembers = {},
 		pendingPingRequests = {},
 		pendingQuestCompareRequests = {},
@@ -64,6 +65,7 @@ local function NewCommsFixture()
 			return 0
 		end,
 	}
+	function addon:PrepareDeveloperPingRequest(request) return request end
 	function addon:GetRuntimeWorkStateStore()
 		return self.runtime
 	end
@@ -107,6 +109,179 @@ local function Event(text)
 		questId = "12345",
 	}
 end
+
+local function DeveloperFixture(name)
+	local a=NewCommsFixture()
+	a.db={profile=QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile),global={}}
+	a.name=name or "Dev-Realm"
+	a.PrepareDeveloperPingRequest=QuestTogether.PrepareDeveloperPingRequest
+	a.API.GetServerTime=function() return 1791300000+math.floor(a.now) end
+	function a:GetPlayerFullName() return self.name end
+	function a:IsSelfSender(n) return self:NormalizeMemberName(n)==self.name end
+	function a:IsRuntimeRestricted() return false end
+	function a:RefreshQTPlayerPlatePresence() end
+	function a:RefreshPlayerLocationPins() end
+	function a:HideAnnouncementChannelFromChatWindows() end
+	function a:BuildPartyVisualMetadataPayload() return "" end
+	function a:ReadLocalPlayerLocation()
+		self.reads=(self.reads or 0)+1
+		return {mapID=12,x=0.42,y=0.63,faction="Alliance",warMode=false}
+	end
+	function a:BuildDiagnosticReport() return "QT diagnostic snapshot\n"..string.rep("Long diagnostic state\n",70) end
+	local seed=("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60"):gsub("..",function(x) return string.char(tonumber(x,16)) end)
+	a.developerPublicKeyHex="d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"
+	function a:SignDeveloperRequest(message) return self.Ed25519.Sign(seed,message) end
+	function a:GetDebugController() return {ShowReport=function(_,body,title) a.report,a.reportTitle=body,title end} end
+	function a:PrintPingResponse(response) self.printed[#self.printed+1]=response end
+	local clock=a:CreateTestClock(100)
+	a.API.GetTime=function() return clock:GetTime() end
+	a.API.Delay=function(seconds,callback) clock:After(seconds,callback) end
+	a.clock=clock
+	return a
+end
+
+QuestTogether:RegisterTest("developer Ed25519 signatures match RFC8032 and reject altered content",function()
+	local E=QuestTogether.Ed25519
+	local function unhex(s) return (s:gsub("..",function(x) return string.char(tonumber(x,16)) end)) end
+	local seed=unhex("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60")
+	local key=unhex("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a")
+	local sig=unhex("e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e065224901555fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b")
+	Equal(E.PublicKey(seed),key)
+	Equal(E.Sign(seed,""),sig)
+	Equal(E.Verify(key,"",sig),true)
+	Equal(E.Verify(key,"changed",sig),false)
+	Equal(E.Verify(key,"",sig:sub(1,63)),false)
+	Equal(E.Verify(key,"",sig:sub(1,32)..string.rep(string.char(255),32)),false)
+end)
+
+QuestTogether:RegisterTest("signed global pong keeps opted-in private position separate from public locations",function()
+	local dev,peer=DeveloperFixture(),DeveloperFixture("Friend-Realm")
+	peer.db.profile.sharePlayerLocation=false
+	local ok,id=dev:SendPingRequest()
+	Equal(ok,true)
+	Equal(#dev.wire[1][2]<=255,true)
+	peer:OnCommReceived(peer.commPrefix,dev.wire[1][2],"CHANNEL",dev.name,7,peer.announcementChannelName)
+	for _=1,100 do peer.clock:Advance(0.2) end
+	assert(#peer.wire>=1)
+	-- Reverse delivery and duplicates must still produce one complete report.
+	for i=#peer.wire,1,-1 do
+		local packet=peer.wire[i]
+		Equal(packet[3],"WHISPER"); Equal(packet[4],dev.name); assert(#packet[2]<=255)
+		dev:OnCommReceived(dev.commPrefix,packet[2],"WHISPER",peer.name)
+		dev:OnCommReceived(dev.commPrefix,packet[2],"WHISPER",peer.name)
+	end
+	Equal(dev.pendingPingRequests[id].remoteReplies,1)
+	Equal(dev.printed[2].coordX,"42.0")
+	Equal(dev.printed[2].locationShared,false)
+	local rows={}; dev:AppendDeveloperLocationRows(rows)
+	Equal(#rows,1); Equal(rows[1].publicLocationHidden,true)
+	Equal(rawget(dev,"playerLocationState"),nil)
+	dev.clock:Advance(121); rows={}; dev:AppendDeveloperLocationRows(rows); Equal(#rows,0)
+end)
+
+QuestTogether:RegisterTest("developer diagnostic permission blocks reads and cancels a paged reply mid-send",function()
+	local dev,peer=DeveloperFixture(),DeveloperFixture("Friend-Realm")
+	peer.db.profile.shareDeveloperDiagnostics=false
+	local ok=dev:SendPingRequest(); Equal(ok,true)
+	peer:OnCommReceived(peer.commPrefix,dev.wire[1][2],"CHANNEL",dev.name,7,peer.announcementChannelName)
+	Equal(#peer.wire,0); Equal(peer.reads,nil)
+	peer.db.profile.shareDeveloperDiagnostics=true
+	peer.recentCommMessageSignatures={}
+	peer:OnCommReceived(peer.commPrefix,dev.wire[1][2],"CHANNEL",dev.name,7,peer.announcementChannelName)
+	Equal(#peer.wire,1)
+	peer.db.profile.shareDeveloperDiagnostics=false
+	for _=1,100 do peer.clock:Advance(0.2) end
+	Equal(#peer.wire,1)
+end)
+
+QuestTogether:RegisterTest("developer request signatures bind sender target purpose and time",function()
+	local dev=DeveloperFixture()
+	local ok=dev:SendPingRequest("Friend-Realm",true); Equal(ok,true)
+	local wire=dev.wire[1][2]
+	for _,change in ipairs({"sender","target","purpose","expired","signature"}) do
+		local peer=DeveloperFixture("Friend-Realm")
+		local _,payload=peer:DeserializeWireMessage(wire)
+		local request=peer:DecodePingRequestPayload(payload)
+		local sender=dev.name
+		if change=="sender" then sender="Impostor-Realm"
+		elseif change=="target" then request.targetName="Other-Realm"
+		elseif change=="purpose" then request.debugRequest=false
+		elseif change=="expired" then request.issuedAt=request.issuedAt-400
+		else request.signature=string.rep("0",128) end
+		Equal(peer:VerifyDeveloperPingRequest(request,sender),false)
+	end
+	local peer=DeveloperFixture("Friend-Realm")
+	local request=peer:DecodePingRequestPayload(wire:sub(6))
+	Equal(peer:VerifyDeveloperPingRequest(request,dev.name),true)
+	peer.clock:Advance(6)
+	Equal(peer:VerifyDeveloperPingRequest(request,dev.name),false)
+end)
+
+QuestTogether:RegisterTest("targeted remote debug opens the peer report without changing the local log",function()
+	local dev,peer=DeveloperFixture(),DeveloperFixture("Friend-Realm")
+	dev.debugLogLines={{text="local only",category="DEBUG"}}
+	local ok,id=dev:SendPingRequest(peer.name,true); Equal(ok,true)
+	Equal(dev.wire[1][3],"WHISPER"); Equal(dev.wire[1][4],peer.name)
+	Equal(#dev.printed,0)
+	peer:OnCommReceived(peer.commPrefix,dev.wire[1][2],"WHISPER",dev.name)
+	for _=1,400 do peer.clock:Advance(0.2) end
+	for _,packet in ipairs(peer.wire) do dev:OnCommReceived(dev.commPrefix,packet[2],"WHISPER",peer.name) end
+	Equal(dev.pendingPingRequests[id].remoteReplies,1)
+	Equal(dev.report,peer:BuildDeveloperDiagnosticSnapshot())
+	Equal(dev.reportTitle,peer.name)
+	Equal(dev.debugLogLines[1].text,"local only")
+end)
+
+QuestTogether:RegisterTest("pong paging rejects unsolicited conflicting excessive and expired fragments",function()
+	local a=DeveloperFixture()
+	local _,id=a:SendPingRequest()
+	local payload=a:EncodePingResponsePayload({requestId=id,senderName="Friend-Realm",zoneName=string.rep("Координаты",60)},true)
+	local pages=a:BuildPongPages(id,payload)
+	assert(#pages>1)
+	Equal(a:HandlePongPage(pages[1]:sub(6),"Friend-Realm"),true)
+	Equal(a:HandlePongPage(pages[1]:sub(6,-2).."x","Friend-Realm"),false)
+	for i=2,#pages do Equal(a:HandlePongPage(pages[i]:sub(6),"Friend-Realm"),false) end
+	Equal(a:HandlePongPage("1,unsolicited,1,2,hello","Other-Realm"),false)
+	Equal(a:HandlePongPage("1,"..id..",1,999999,hello","Other-Realm"),false)
+	Equal(a:HandlePongPage(pages[1]:sub(6),"Other-Realm"),true)
+	a.clock:Advance(301)
+	Equal(a:HandlePongPage(pages[2]:sub(6),"Other-Realm"),false)
+	Equal(a:BuildPongPages(id,string.rep("x",17000)),nil)
+end)
+
+QuestTogether:RegisterTest("paged pong reassembles long localized fields exactly and waits for every page",function()
+	local a=DeveloperFixture()
+	local _,id=a:SendPingRequest()
+	local zone=string.rep("Долина, остров | 漢字 % ",70)
+	local response={requestId=id,senderName="Untrusted-Realm",zoneName=zone,raceName="Ночная эльфийка",coordX="42.5",coordY="63.2",mapID="12"}
+	local payload=a:EncodePingResponsePayload(response,true)
+	local pages=a:BuildPongPages(id,payload)
+	assert(#pages>3)
+	for i=#pages,2,-1 do
+		assert(#pages[i]<=255)
+		Equal(a:HandlePongPage(pages[i]:sub(6),"Friend-Realm"),true)
+	end
+	Equal(a.pendingPingRequests[id].remoteReplies,0)
+	Equal(a:HandlePongPage(pages[1]:sub(6),"Friend-Realm"),true)
+	Equal(a.pendingPingRequests[id].remoteReplies,1)
+	Equal(a.printed[2].senderName,"Friend-Realm")
+	Equal(a.printed[2].zoneName,zone)
+	Equal(a.printed[2].raceName,response.raceName)
+	Equal(a.printed[2].coordX,"42.5")
+	Equal(a:HandlePongPage(pages[1]:sub(6),"Friend-Realm"),false)
+end)
+
+QuestTogether:RegisterTest("delayed diagnostic replies honor opt-out and reset before reading private positions",function()
+	for _,reason in ipairs({"opt-out","reset"}) do
+		local a=DeveloperFixture("Friend-Realm")
+		a.geographicCommsState={}
+		Equal(a:ScheduleGeographicPingReply("test",{{distribution="WHISPER",target="Dev-Realm"}},true,{developerVerified=true}),true)
+		if reason=="opt-out" then a.db.profile.shareDeveloperDiagnostics=false else a.geographicCommsState={} end
+		a.clock:Advance(30)
+		Equal(a.reads,nil)
+		Equal(#a.wire,0)
+	end
+end)
 
 QuestTogether:RegisterTest("announcement timestamps measure delayed delivery and leave old peers unknown", function()
 	local sender, receiver = NewCommsFixture(), NewCommsFixture()

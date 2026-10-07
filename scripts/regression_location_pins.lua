@@ -890,6 +890,34 @@ Register("quest partner dots gain a gold glow and return to normal on expiry or 
 	Equal(#a.regions, regions)
 end)
 
+Register("developer diagnostic dots use red halos and reset color when reused for partners", function()
+	local a = Fixture()
+	for _,surface in ipairs({"map","minimap"}) do
+		local row=Row(); row.developerOnly,row.publicLocationHidden=true,true
+		a.rows[surface]={row}
+	end
+	assert(a:RefreshPlayerLocationPins())
+	for _,surface in ipairs({"map","minimap"}) do
+		local pin=Pin(a,surface)
+		Equal(pin.frame.width,16)
+		for _,glow in ipairs(pin.glow) do
+			assert(glow.shown); Near(glow.color[1],1); Near(glow.color[2],0.12); Near(glow.color[3],0.12)
+		end
+		a.rows[surface][1].publicLocationHidden=false
+		a.rows[surface][1].lookingForQuestPartners=true
+	end
+	assert(a:RefreshPlayerLocationPins())
+	for _,surface in ipairs({"map","minimap"}) do
+		local pin=Pin(a,surface)
+		for _,glow in ipairs(pin.glow) do assert(glow.shown); Near(glow.color[2],0.8); Near(glow.color[3],0.15) end
+		a.rows[surface]={Row("Other-Realm")}
+	end
+	assert(a:RefreshPlayerLocationPins())
+	for _,surface in ipairs({"map","minimap"}) do
+		for _,glow in ipairs(Pin(a,surface).glow) do assert(not glow.shown) end
+	end
+end)
+
 Register("quest partner dot projection clips the complete larger glow on both maps", function()
 	local a = Fixture()
 	function a:IsPlayerLookingForQuestPartners() return self.looking == true end

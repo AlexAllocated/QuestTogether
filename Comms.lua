@@ -423,6 +423,12 @@ function QuestTogether:EncodePingRequestPayload(requestData)
 	}
 
 	if requestData.supportsDirectComms then fields[4] = "direct1" end
+	if requestData.supportsPagedPong then fields[4], fields[5] = "direct1", "pages1" end
+	if requestData.developerRequest then
+		fields[6], fields[7] = "dev1", tostring(requestData.issuedAt)
+		fields[8], fields[9], fields[10] = requestData.debugRequest and "debug" or "snapshot",
+			self:EscapePayload(requestData.targetName or ""), requestData.signature
+	end
 	return table.concat(fields, ",")
 end
 
@@ -449,10 +455,16 @@ function QuestTogether:DecodePingRequestPayload(payload)
 		requestId = requestId,
 		requesterName = requesterName,
 		supportsDirectComms = fields[4] == "direct1",
+		supportsPagedPong = fields[4] == "direct1" and fields[5] == "pages1",
+		developerRequest = fields[6] == "dev1",
+		issuedAt = SafeNumber(self, fields[7]),
+		debugRequest = fields[8] == "debug",
+		targetName = fields[9] and fields[9] ~= "" and self:UnescapePayload(fields[9]) or nil,
+		signature = fields[10],
 	}
 end
 
-function QuestTogether:EncodePingResponsePayload(responseData)
+function QuestTogether:EncodePingResponsePayload(responseData, preserveAll)
 	local fields = {
 		SafeAddonString(self, PING_RESPONSE_VERSION),
 		self:EscapePayload(responseData.requestId or ""),
@@ -469,6 +481,14 @@ function QuestTogether:EncodePingResponsePayload(responseData)
 		self:EscapePayload(responseData.mapID or ""),
 		self:EscapePayload(responseData.addonVersion or ""),
 	}
+	if preserveAll then
+		if responseData.developer then
+			fields[15], fields[16], fields[17] = "dev1", responseData.locationShared and "1" or "0", responseData.lookingForQuestPartners and "1" or "0"
+			fields[18], fields[19] = self:EscapePayload(responseData.faction or ""), self:EscapePayload(responseData.diagnosticText or "")
+			fields[20], fields[21] = self:EscapePayload(responseData.partyPayload or ""), tostring(responseData.sampledAt or "")
+		end
+		return table.concat(fields, ",")
+	end
 
 	-- All descriptive fields are optional to old receivers. Drop whole labels,
 	-- not fragments of a player's name or a localized place/race/class name.
@@ -523,6 +543,13 @@ function QuestTogether:DecodePingResponsePayload(payload)
 		warMode = warMode,
 		mapID = mapID,
 		addonVersion = addonVersion,
+		developer = fields[15] == "dev1",
+		locationShared = fields[16] == "1",
+		lookingForQuestPartners = fields[17] == "1",
+		faction = self:UnescapePayload(fields[18] or ""),
+		diagnosticText = self:UnescapePayload(fields[19] or ""),
+		partyPayload = self:UnescapePayload(fields[20] or ""),
+		sampledAt = SafeNumber(self, fields[21]),
 	}
 end
 
@@ -893,7 +920,7 @@ end
 -- Fixed command buckets keep unknown traffic from growing diagnostic state.
 local TRAFFIC_COMMANDS = { QTNAV = true, ANN = true, LVL = true, LOC = true, QTPR = true, QTVR = true,
 	QTLF = true, QTLQ = true, QJST = true, QJON = true, QTPG = true, QPGR = true, QPGM = true, QCMP = true, QCQE = true,
-	QCDN = true, QCOB = true, QTB1 = true, QTDQ = true, QTCI = true, QTHQ = true, QTHD = true, QTPH = true, QTSR = true, QTSP = true, QTSX = true, QSHR = true, PING = true, PONG = true }
+	QCDN = true, QCOB = true, QTB1 = true, QTDQ = true, QTCI = true, QTHQ = true, QTHD = true, QTPH = true, QTSR = true, QTSP = true, QTSX = true, QSHR = true, PING = true, PONG = true, PONP = true }
 function QuestTogether:RecordCommsTraffic(kind, message, result)
 	local diagnostics = self:GetCommsDiagnostics()
 	local now = SafeNumber(self, self.API.GetTime and self.API.GetTime())
@@ -945,7 +972,7 @@ end
 -- One-recipient controls use whispers only after capability discovery or a
 -- valid direct exchange. Older peers retain their established group/channel path.
 local DIRECT_COMMANDS = { QCMP = true, QCQE = true, QCOB = true, QCDN = true, QJON = true,
-	QPGR = true, QPGM = true, QSHR = true, PONG = true }
+	QPGR = true, QPGM = true, QSHR = true, PONG = true, PONP = true, PING = true }
 
 function QuestTogether:RememberDirectCommPeer(sender, supported, lifetime)
 	local name = self:NormalizeMemberName(sender)
@@ -1334,6 +1361,9 @@ function QuestTogether:ResetCommsState()
 	-- Pending timer closures retain the old state only; they cannot send after
 	-- disable/re-enable or remove work from a replacement queue.
 	self.questCompareResponseQueue = nil
+	self.pingPageQueue = nil
+	self.developerPlayerData = nil
+	self.developerRequestState = nil
 	self.directCommPeers = nil
 	self.playerDetailsState = nil
 end
@@ -1360,7 +1390,7 @@ function QuestTogether:GetPlayerPingMetadata()
 	end
 	local level = self.API.UnitLevel and self.API.UnitLevel("player") or ""
 	local locationInfo = (not self.CanPublishPlayerLocation or self:CanPublishPlayerLocation())
-		and self.GetPlayerAnnouncementLocationInfo and self:GetPlayerAnnouncementLocationInfo() or {}
+		and not self:IsRuntimeRestricted() and self.GetPlayerAnnouncementLocationInfo and self:GetPlayerAnnouncementLocationInfo() or {}
 	local numericCoordX = locationInfo and self.SafeToNumber and self:SafeToNumber(locationInfo.coordX) or nil
 	local numericCoordY = locationInfo and self.SafeToNumber and self:SafeToNumber(locationInfo.coordY) or nil
 	local warMode
@@ -2059,34 +2089,38 @@ function QuestTogether:SendAnnouncementWireEvent(eventData)
 	)
 end
 
-function QuestTogether:SendPingRequest()
+function QuestTogether:SendPingRequest(target, debugRequest)
+	if rawget(self, "isLocalDeveloper") ~= true then return false, L("Ping is unavailable.") end
 	if not self.isEnabled then
 		return false, L("QuestTogether is disabled.")
 	end
 
 	local requestId = self:BuildChannelRequestId("ping")
 	local requesterName = self:GetPlayerFullName() or self:GetPlayerName() or ""
+	local requestData = self:PrepareDeveloperPingRequest({ requestId=requestId, requesterName=requesterName,
+		supportsDirectComms=true, supportsPagedPong=true }, target, debugRequest)
+	if not requestData then return false, L("Ping is unavailable.") end
+	requestId = requestData.requestId
 	self.pendingPingRequests = self.pendingPingRequests or {}
 	local now = SafeNumber(self, self.API.GetTime and self.API.GetTime()) or 0
-	local pendingRequest = { responders = {}, remoteReplies = 0, responderCount = 0, startedAt = now, expiresAt = now + PING_REQUEST_TIMEOUT_SECONDS }
+	local pendingRequest = { responders = {}, remoteReplies = 0, responderCount = 0, startedAt = now, expiresAt = now + PING_REQUEST_TIMEOUT_SECONDS,
+		targetName=requestData.targetName, developerRequest=requestData.developerRequest, debugRequest=requestData.debugRequest }
 	self.pendingPingRequests[requestId] = pendingRequest
 	self.API.Delay(PING_REQUEST_TIMEOUT_SECONDS, function()
 		if self.pendingPingRequests and self.pendingPingRequests[requestId] == pendingRequest then
 			self:Debugf("comms", "ping complete id=%s remoteReplies=%d", requestId, pendingRequest.remoteReplies)
+			if pendingRequest.debugRequest and pendingRequest.remoteReplies == 0 then self:Print(L("Diagnostics unavailable.")) end
 			self.pendingPingRequests[requestId] = nil
 		end
 	end)
 
-	local requestData = {
-		requestId = requestId,
-		requesterName = requesterName,
-		supportsDirectComms = true,
-	}
 	local wireMessage = self:SerializeWireMessage(PING_REQUEST_COMMAND, self:EncodePingRequestPayload(requestData))
+	local routes = requestData.targetName and { { distribution="WHISPER", target=requestData.targetName } }
+		or { { distribution="CHANNEL",channelName=self.announcementChannelName,requiresChannelJoin=true } }
 	if
 		not self:SendWireMessageToAnnouncementRoutes(
 			wireMessage,
-			"ping request id=" .. SafeAddonString(self, requestId, "")
+			"ping request id=" .. SafeAddonString(self, requestId, ""), routes
 		)
 	then
 		self.pendingPingRequests[requestId] = nil
@@ -2107,20 +2141,27 @@ function QuestTogether:SendPingRequest()
 	end
 
 	local localResponse = self:BuildPingResponse(requestId)
-	if localResponse and self.HandlePingResponse then
+	if not target and localResponse and self.HandlePingResponse then
 		self:HandlePingResponse(localResponse)
 	end
 
 	return true, requestId
 end
 
-function QuestTogether:SendPingResponse(requestId, selectedRoutes)
+function QuestTogether:SendPingResponse(requestId, selectedRoutes, supportsPages, developerRequest)
 	local responseData = self:BuildPingResponse(requestId)
 	if not responseData then
 		return false
 	end
+	if developerRequest and not self:AddDeveloperPingMetadata(responseData, developerRequest) then return false end
 
-	local wireMessage = self:SerializeWireMessage(PING_RESPONSE_COMMAND, self:EncodePingResponsePayload(responseData))
+	local payload = self:EncodePingResponsePayload(responseData, supportsPages)
+	if supportsPages and #payload + #PING_RESPONSE_COMMAND + 1 > ADDON_MESSAGE_MAX_BYTES then
+		return self:SendPagedPong(requestId, payload, selectedRoutes, developerRequest ~= nil)
+	end
+	-- Developer snapshots share the same paced, revocable path, even at one page.
+	if developerRequest then return self:SendPagedPong(requestId, payload, selectedRoutes, true) end
+	local wireMessage = self:SerializeWireMessage(PING_RESPONSE_COMMAND, payload)
 	return self:SendWireMessageToAnnouncementRoutes(
 		wireMessage,
 		"ping response id=" .. SafeAddonString(self, requestId, ""),
@@ -2131,6 +2172,10 @@ end
 function QuestTogether:HandlePingRequest(requestData, channel, localID, channelName)
 	if type(requestData) ~= "table" or type(requestData.requestId) ~= "string" or requestData.requestId == "" then
 		return false
+	end
+	if requestData.developerRequest then
+		if not self:VerifyDeveloperPingRequest(requestData, requestData.requesterName) then return false end
+		requestData.developerVerified = true
 	end
 	self:Debugf("comms", "ping request received id=%s sender=%s", requestData.requestId, requestData.requesterName or "")
 	local routes
@@ -2151,6 +2196,8 @@ function QuestTogether:HandlePingRequest(requestData, channel, localID, channelN
 			end
 		end
 		if not routes then return false end
+	elseif channel == "WHISPER" and requestData.developerVerified then
+		routes = { { distribution="WHISPER",target=requestData.requesterName } }
 	elseif channel ~= nil then
 		return false
 	end
@@ -2160,8 +2207,10 @@ function QuestTogether:HandlePingRequest(requestData, channel, localID, channelN
 		if requestData.supportsDirectComms then self:RememberDirectCommPeer(requestData.requesterName, true) end
 		routes = self:GetTargetedCommRoutes(requestData.requesterName, routes)
 	end
-	if rawget(self, "geographicCommsState") then return self:ScheduleGeographicPingReply(requestData.requestId, routes) end
-	return self:SendPingResponse(requestData.requestId, routes)
+	if requestData.supportsDirectComms then routes = { { distribution="WHISPER",target=requestData.requesterName } } end
+	local developerRequest = requestData.developerVerified and requestData or nil
+	if rawget(self, "geographicCommsState") then return self:ScheduleGeographicPingReply(requestData.requestId, routes, requestData.supportsPagedPong, developerRequest) end
+	return self:SendPingResponse(requestData.requestId, routes, requestData.supportsPagedPong, developerRequest)
 end
 
 function QuestTogether:HandlePingResponse(responseData)
@@ -2186,6 +2235,7 @@ function QuestTogether:HandlePingResponse(responseData)
 	if not senderName then
 		return false
 	end
+	if type(pending) == "table" and pending.targetName and pending.targetName ~= senderName then return false end
 	if type(pending) ~= "table" then
 		pending = { responders = {} }
 		self.pendingPingRequests[responseData.requestId] = pending
@@ -2205,6 +2255,7 @@ function QuestTogether:HandlePingResponse(responseData)
 	if self.PrintPingResponse then
 		self:PrintPingResponse(responseData)
 	end
+	self:AcceptDeveloperPingResponse(responseData, pending)
 	return true
 end
 
@@ -2699,6 +2750,10 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 		self:ObserveAddonVersion(responseData.addonVersion)
 		self:RememberPlayerAddonVersion(transportSenderName, responseData.addonVersion)
 		if self:HandlePingResponse(responseData) and isWhisper then self:RememberDirectCommPeer(transportSenderName, true) end
+		return
+	end
+	if command == "PONP" and isWhisper then
+		self:HandlePongPage(payload, transportSenderName)
 		return
 	end
 

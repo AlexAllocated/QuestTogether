@@ -414,22 +414,36 @@ local function CreateColorSwatch(parent, optionKey, labelText, tooltipText, fall
 	return swatchButton
 end
 
+local function BuildDropdownEntries(dropdown)
+	dropdown.entries = {}
+	dropdown.initializeMenu(dropdown)
+	return dropdown.entries
+end
+
 local function CreateDropdown(parent, titleText, tooltipText, x, y, width, initializeMenu)
 	local title = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	title:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
 	title:SetText(titleText)
 
-	local dropdown = CreateFrame("Frame", nil, parent, "UIDropDownMenuTemplate")
-	dropdown:SetPoint("TOPLEFT", title, "BOTTOMLEFT", -16, -2)
-	dropdown.initializeMenu = initializeMenu
-	dropdown.title = title
-
-	QuestTogether:AttachSettingsTooltip(dropdown, titleText, tooltipText)
-	if dropdown.Button then QuestTogether:AttachSettingsTooltip(dropdown.Button, titleText, tooltipText) end
-
-	UIDropDownMenu_SetWidth(dropdown, width or 180)
-	UIDropDownMenu_Initialize(dropdown, initializeMenu)
-	return dropdown
+	local control = CreateFrame("Frame", nil, parent, "SettingsDropdownWithButtonsTemplate")
+	control:SetSize((width or 180) + 62, 25)
+	control:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
+	control.initializeMenu = initializeMenu
+	control.title = title
+	control.Label:Hide()
+	local dropdown = control.Dropdown
+	dropdown:SetWidth(width or 180)
+	dropdown:SetMenuAnchor(AnchorUtil.CreateAnchor("TOPRIGHT", dropdown, "BOTTOMRIGHT", 0, -2))
+	for _, region in ipairs({ dropdown, control.DecrementButton, control.IncrementButton }) do
+		QuestTogether:AttachSettingsTooltip(region, titleText, tooltipText)
+	end
+	dropdown:SetupMenu(function(_, root)
+		root:SetMinimumWidth(dropdown:GetWidth())
+		for _, entry in ipairs(BuildDropdownEntries(control)) do
+			root:CreateHighlightRadio(entry.text, entry.checked, entry.func)
+		end
+	end)
+	return control
 end
 
 local function CreateScrollablePanelContent(parent, minimumHeight)
@@ -464,17 +478,15 @@ local function CreateOptionDropdown(parent, titleText, tooltipText, x, y, width,
 		x,
 		y,
 		width,
-		function(_, level)
+		function(dropdown)
 			for _, value in ipairs(values) do
-					local info = UIDropDownMenu_CreateInfo()
-					info.text = getLabel(value)
-					info.func = function()
-						if QuestTogether:ApplyOptionsDropdownSelection(optionKey, value) then
-							CloseDropDownMenus()
-						end
+				local info = {}
+				info.text = getLabel(value)
+				info.func = function()
+					QuestTogether:ApplyOptionsDropdownSelection(optionKey, value)
 				end
-				info.checked = currentValueGetter() == value
-				UIDropDownMenu_AddButton(info, level)
+				info.checked = function() return currentValueGetter() == value end
+				dropdown.entries[#dropdown.entries + 1] = info
 			end
 		end
 	)
@@ -502,7 +514,7 @@ end
 local function CreateQTChatScopeDropdown(parent, x, y)
 	return CreateOptionDropdown(parent, L("QT Chat Scope"),
 		L("Global shows all received QT chat. Zone Only shows players whose recent shared location is in your zone; unknown or stale locations are hidden."),
-		x, y, 200, { "zone_only", "global" },
+		x, y, 140, { "zone_only", "global" },
 		function(value) return value == "zone_only" and L("Zone Only") or L("Global") end,
 		"qtChatScope", function() return QuestTogether:GetOption("qtChatScope") end)
 end
@@ -586,6 +598,7 @@ local CHECKBOX_OPTION_KEYS = {
 	"lightMode",
 	"experimentalLayerDetection",
 	"sharePlayerLocation",
+	"shareDeveloperDiagnostics",
 	"showPlayerLocations",
 	"onlyShowQuestPartners",
 	"mapPartyOnly",
@@ -609,8 +622,8 @@ local function RefreshCheckboxOptions(controls, addon)
 end
 
 local function RefreshDropdownControl(dropdown, labelText)
-	UIDropDownMenu_Initialize(dropdown, dropdown.initializeMenu)
-	UIDropDownMenu_SetText(dropdown, labelText)
+	dropdown.Dropdown:SetDefaultText(labelText)
+	dropdown.Dropdown:GenerateMenu()
 end
 
 local function SetLabeledControlShown(control, shown)
@@ -840,11 +853,31 @@ function QuestTogether:RefreshOptionsWindow()
 	self:RefreshQuestPlatesWindow(true)
 	self:RefreshGroupsWindow()
 	RefreshCheckboxOptions(self.experimentalControls)
+	RefreshCheckboxOptions(self.developerControls, self)
 	self:RefreshPlayerLocationsWindow()
 end
 
+local function GetPlayerLocationFilterChoice(addon)
+	if not addon:GetOption("showPlayerLocations") then return 5 end
+	if addon:GetOption("mapPartyOnly") then return 4 end
+	if addon:GetOption("onlyShowQuestPartners") then
+		return addon:GetOption("mapAlwaysShowParty") and 2 or 3
+	end
+	return 1
+end
+
+local function GetPlayerLocationFilterLabels()
+	return { L("All QuestTogether players"), L("Players looking for questing partners + my party"),
+		L("Players looking for questing partners"), L("Party only"), L("None") }
+end
+
 function QuestTogether:RefreshPlayerLocationsWindow()
-	if self.playerLocationsFrame then RefreshCheckboxOptions(self.playerLocationsControls, self) end
+	if not self.playerLocationsFrame then return end
+	RefreshCheckboxOptions(self.playerLocationsControls, self)
+	local filter = self.playerLocationsControls.filterDropdown
+	if filter then
+		RefreshDropdownControl(filter, GetPlayerLocationFilterLabels()[GetPlayerLocationFilterChoice(self)])
+	end
 end
 
 -- Summarize saved choices; the prominent runtime state distinguishes these
@@ -862,10 +895,7 @@ function QuestTogether:GetHomeStatusGroups()
 	local update = self:GetAvailableAddonUpdate()
 	if update then general = general .. "\n" .. Line(L("Newer version detected"), SafeText(update)) end
 	if not self.isEnabled then general = general .. "\n" .. L("Saved preferences below apply when QuestTogether is enabled.") end
-	local locations = L("Off")
-	if self:GetOption("showPlayerLocations") then
-		locations = self:GetOption("mapPartyOnly") and L("Party only") or self:GetOption("onlyShowQuestPartners") and L("Questing partners only") or L("All QuestTogether players")
-	end
+	local locations = GetPlayerLocationFilterLabels()[GetPlayerLocationFilterChoice(self)]
 	local invites = {}
 	if self:GetOption("autoInviteFriends") then invites[#invites + 1] = L("Friends who request to join") end
 	if self:GetOption("autoInviteWhileLFG") then invites[#invites + 1] = L("Other requests while looking for partners") end
@@ -964,13 +994,7 @@ function QuestTogether:RefreshWhereToAnnounceWindow()
 	local showChatLogControls = self:GetOption("showChatLogs")
 	local showMirrorChatLogControl = showChatLogControls and self:GetOption("chatLogDestination") == "separate"
 	if controls.chatLogDestinationDropdown then
-		if UIDropDownMenu_EnableDropDown and UIDropDownMenu_DisableDropDown then
-			if showChatLogControls then
-				UIDropDownMenu_EnableDropDown(controls.chatLogDestinationDropdown)
-			else
-				UIDropDownMenu_DisableDropDown(controls.chatLogDestinationDropdown)
-			end
-		end
+		controls.chatLogDestinationDropdown:SetEnabled(showChatLogControls)
 		controls.chatLogDestinationDropdown:SetAlpha(showChatLogControls and 1 or 0.5)
 		if controls.chatLogDestinationDropdown.title then
 			controls.chatLogDestinationDropdown.title:SetAlpha(showChatLogControls and 1 or 0.5)
@@ -1178,19 +1202,8 @@ function QuestTogether:RefreshProfilesWindow()
 	local canCopy = uiState.copyFromProfileKey ~= nil
 	local canDelete = uiState.deleteProfileKey ~= nil
 
-	if UIDropDownMenu_EnableDropDown and UIDropDownMenu_DisableDropDown then
-		if canCopy then
-			UIDropDownMenu_EnableDropDown(controls.copyFromProfileDropdown)
-		else
-			UIDropDownMenu_DisableDropDown(controls.copyFromProfileDropdown)
-		end
-
-		if canDelete then
-			UIDropDownMenu_EnableDropDown(controls.deleteProfileDropdown)
-		else
-			UIDropDownMenu_DisableDropDown(controls.deleteProfileDropdown)
-		end
-	end
+	controls.copyFromProfileDropdown:SetEnabled(canCopy)
+	controls.deleteProfileDropdown:SetEnabled(canDelete)
 
 	controls.copyButton:SetEnabled(canCopy)
 	controls.deleteButton:SetEnabled(canDelete)
@@ -1236,21 +1249,20 @@ function QuestTogether:InitializeProfilesWindow(parentCategory)
 		16,
 		-92,
 		240,
-		function(_, level)
+		function(dropdown)
 			local currentProfileKey = QuestTogether:GetCurrentProfileKey()
 			for _, profileKey in ipairs(QuestTogether:GetProfileKeys()) do
-				local info = UIDropDownMenu_CreateInfo()
+				local info = {}
 				info.text = profileKey
-				info.checked = profileKey == currentProfileKey
+				info.checked = function() return QuestTogether:GetCurrentProfileKey() == profileKey end
 				info.func = function()
 					local ok, err = QuestTogether:SetActiveProfile(profileKey)
 					if not ok then
 						QuestTogether:Print(SafeText(err, L("Unknown error")))
 					end
 					QuestTogether:RefreshProfilesWindow()
-					CloseDropDownMenus()
 				end
-				UIDropDownMenu_AddButton(info, level)
+				dropdown.entries[#dropdown.entries + 1] = info
 			end
 		end
 	)
@@ -1262,26 +1274,25 @@ function QuestTogether:InitializeProfilesWindow(parentCategory)
 		16,
 		-160,
 		240,
-		function(_, level)
+		function(dropdown)
 			local currentProfileKey = QuestTogether:GetCurrentProfileKey()
 			for _, profileKey in ipairs(BuildProfileKeyList(currentProfileKey)) do
-				local info = UIDropDownMenu_CreateInfo()
+				local info = {}
 				info.text = profileKey
-				info.checked = QuestTogether.profileUIState.copyFromProfileKey == profileKey
+				info.checked = function() return QuestTogether.profileUIState.copyFromProfileKey == profileKey end
 				info.func = function()
 					QuestTogether.profileUIState.copyFromProfileKey = profileKey
 					QuestTogether:RefreshProfilesWindow()
-					CloseDropDownMenus()
 				end
-				UIDropDownMenu_AddButton(info, level)
+				dropdown.entries[#dropdown.entries + 1] = info
 			end
 		end
 	)
 
 	local copyButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
 	copyButton:SetSize(90, 22)
-	if copyFromDropdown and copyFromDropdown.Button then
-		copyButton:SetPoint("LEFT", copyFromDropdown.Button, "RIGHT", 16, 0)
+	if copyFromDropdown and copyFromDropdown.IncrementButton then
+		copyButton:SetPoint("LEFT", copyFromDropdown.IncrementButton, "RIGHT", 16, 0)
 	else
 		copyButton:SetPoint("TOPLEFT", content, "TOPLEFT", 280, -185)
 	end
@@ -1362,26 +1373,25 @@ function QuestTogether:InitializeProfilesWindow(parentCategory)
 		16,
 		-370,
 		240,
-		function(_, level)
+		function(dropdown)
 			local currentProfileKey = QuestTogether:GetCurrentProfileKey()
 			for _, profileKey in ipairs(BuildProfileKeyList(currentProfileKey)) do
-				local info = UIDropDownMenu_CreateInfo()
+				local info = {}
 				info.text = profileKey
-				info.checked = QuestTogether.profileUIState.deleteProfileKey == profileKey
+				info.checked = function() return QuestTogether.profileUIState.deleteProfileKey == profileKey end
 				info.func = function()
 					QuestTogether.profileUIState.deleteProfileKey = profileKey
 					QuestTogether:RefreshProfilesWindow()
-					CloseDropDownMenus()
 				end
-				UIDropDownMenu_AddButton(info, level)
+				dropdown.entries[#dropdown.entries + 1] = info
 			end
 		end
 	)
 
 	local deleteButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
 	deleteButton:SetSize(90, 22)
-	if deleteProfileDropdown and deleteProfileDropdown.Button then
-		deleteButton:SetPoint("LEFT", deleteProfileDropdown.Button, "RIGHT", 16, 0)
+	if deleteProfileDropdown and deleteProfileDropdown.IncrementButton then
+		deleteButton:SetPoint("LEFT", deleteProfileDropdown.IncrementButton, "RIGHT", 16, 0)
 	else
 		deleteButton:SetPoint("TOPLEFT", content, "TOPLEFT", 280, -395)
 	end
@@ -2010,37 +2020,73 @@ function QuestTogether:InitializePlayerLocationsWindow(parentCategory)
 	for index, option in ipairs({
 		{ key = "sharePlayerLocation", label = L("Share my location on the map and minimap"),
 			tooltip = L("Let other QuestTogether players see my location on both the world map and minimap.") },
-		{ key = "showPlayerLocations", label = L("Show other players on the map and minimap"),
-			tooltip = L("Show shared player locations on the world map and nearby players on the minimap.") },
-		{ key = "mapAlwaysShowParty", label = L("Always show my party"), tooltip = L("Keep party members visible when filtering for questing partners. This does not override their location sharing settings.") },
 	}) do
 		self.playerLocationsControls[option.key] = CreateCheckbox(content, option.key, option.label, option.tooltip, 16, -120 - 44 * (index - 1))
 	end
-	local filter = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
-	filter:SetPoint("TOPLEFT", 16, -266)
-	filter:SetSize(310, 28)
-	local function RefreshFilter()
-		filter:SetText(QuestTogether:GetOption("mapPartyOnly") and L("Party only")
-			or QuestTogether:GetOption("onlyShowQuestPartners") and L("Questing partners only") or L("All QuestTogether players"))
-	end
-	filter:SetScript("OnClick", function()
-		QuestTogether:CreatePartyQuestFilterMenu(filter, function(_, root)
-			for i, label in ipairs({ L("All QuestTogether players"), L("Questing partners only"), L("Party only") }) do
+	self.playerLocationsControls.filterDropdown = CreateDropdown(content, L("Players shown on maps"),
+		L("Choose whose dots appear on the world map and minimap. Looking for questing partners means players with that status enabled. None hides all player dots. This does not change who can see your location."),
+		16, -178, 310, function(dropdown)
+			for i, label in ipairs(GetPlayerLocationFilterLabels()) do
 				local choice = i
-				root:CreateButton(label, function()
-					QuestTogether:SetOption("mapPartyOnly", choice == 3)
-					QuestTogether:SetOption("onlyShowQuestPartners", choice == 2)
-					RefreshFilter()
-				end)
+				local info = {}
+				info.text = label
+				info.checked = function() return GetPlayerLocationFilterChoice(QuestTogether) == choice end
+				info.func = function()
+					QuestTogether:SetOption("mapPartyOnly", choice == 4)
+					QuestTogether:SetOption("onlyShowQuestPartners", choice == 2 or choice == 3)
+					QuestTogether:SetOption("mapAlwaysShowParty", choice == 2)
+					QuestTogether:SetOption("showPlayerLocations", choice ~= 5)
+					QuestTogether:RefreshPlayerLocationsWindow()
+				end
+				dropdown.entries[#dropdown.entries + 1] = info
 			end
 		end)
-	end)
-	filter:SetScript("OnShow", RefreshFilter)
-	RefreshFilter()
 	self.playerLocationsFrame = frame
 	frame:SetScript("OnShow", function() QuestTogether:RefreshPlayerLocationsWindow() end)
 	self.playerLocationsCategory = RegisterSubcategory(parentCategory, frame, frame.name)
 	self:RefreshPlayerLocationsWindow()
+end
+
+function QuestTogether:InitializeDeveloperWindow(parentCategory)
+	if self.developerFrame then return end
+	local frame = CreateFrame("Frame", "QuestTogetherDeveloperPanel")
+	frame.name, frame.parent = L("Developer"), "QuestTogether"
+	local _, content = CreateScrollablePanelContent(frame, 320)
+	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	title:SetPoint("TOPLEFT", 16, -16)
+	title:SetText(L("Developer"))
+	local description = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	description:SetPoint("TOPLEFT", 16, -48)
+	description:SetWidth(640)
+	description:SetJustifyH("LEFT")
+	description:SetText(L("Debugging tools and diagnostic sharing."))
+	self.developerControls = {
+		shareDeveloperDiagnostics = CreateCheckbox(content, "shareDeveloperDiagnostics",
+			L("Share diagnostic data with the developer"),
+			L("Share QT diagnostics and in-game character/location data with the developer, independently of public location sharing."), 16, -92),
+	}
+	local troubleshooting = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	troubleshooting:SetPoint("TOPLEFT", 16, -154)
+	troubleshooting:SetText(L("Troubleshooting"))
+	local function Action(key, label, tooltip, y, callback)
+		local button = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+		button:SetPoint("TOPLEFT", 16, y)
+		button:SetSize(300, 26)
+		button:SetText(label)
+		QuestTogether:AttachSettingsTooltip(button, label, tooltip)
+		button:SetScript("OnClick", callback)
+		self.developerControls[key] = button
+	end
+	Action("debugButton", L("Open Debug Window"),
+		L("Open diagnostic logs and tests to help troubleshoot addon problems."), -184,
+		function() QuestTogether:ShowDebugWindow() end)
+	Action("rescanQuestLog", L("Rescan Quest Log"),
+		L("Refresh QuestTogether's quest information from your current quest log."), -226,
+		function() QuestTogether:ScanQuestLog() end)
+	self.developerFrame = frame
+	frame:SetScript("OnShow", function() RefreshCheckboxOptions(QuestTogether.developerControls) end)
+	self.developerCategory = RegisterSubcategory(parentCategory, frame, frame.name)
+	RefreshCheckboxOptions(self.developerControls, self)
 end
 
 function QuestTogether:InitializeAccessibilityWindow(parentCategory)
@@ -2186,8 +2232,6 @@ function QuestTogether:InitializeOptionsWindow()
 		[L("Print /qt Help")] = L("Print the available QuestTogether commands in your chat log."),
 		[L("Patch Notes")] = L("Read the latest QuestTogether changes and new features."),
 		[L("Discord — Feedback & Support")] = L("Open the Discord invite link to share feedback or ask for help."),
-		[L("Open Debug Window")] = L("Open diagnostic logs and tests to help troubleshoot addon problems."),
-		[L("Rescan Quest Log")] = L("Refresh QuestTogether's quest information from your current quest log."),
 	}
 	local function CreateHomeActionButton(parent, text, x, y, onClick)
 		local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
@@ -2243,22 +2287,8 @@ function QuestTogether:InitializeOptionsWindow()
 		L("Use light parchment and dark text in the Party Quest Log and welcome window. Leave this off for dark mode."), 16, -488)
 	lightMode:ClearAllPoints()
 	lightMode:SetPoint("TOPLEFT", showMinimapButton, "BOTTOMLEFT", 0, -6)
-	local troubleshooting = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	troubleshooting:SetPoint("TOPLEFT", generalHeader, "BOTTOMLEFT", 0, -98)
-	troubleshooting:SetText(L("Troubleshooting"))
-	local debugButton = CreateHomeActionButton(content, L("Open Debug Window"), 16, -550, function()
-		QuestTogether:ShowDebugWindow()
-	end)
-	debugButton:ClearAllPoints()
-	debugButton:SetPoint("TOPLEFT", troubleshooting, "BOTTOMLEFT", 0, -12)
-	local rescanQuestLog = CreateHomeActionButton(content, L("Rescan Quest Log"), 260, -550, function()
-		QuestTogether:ScanQuestLog()
-	end)
-	rescanQuestLog:ClearAllPoints()
-	rescanQuestLog:SetPoint("LEFT", debugButton, "RIGHT", 12, 0)
-
 	local tipsHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	tipsHeader:SetPoint("TOPLEFT", debugButton, "BOTTOMLEFT", 0, -24)
+	tipsHeader:SetPoint("TOPLEFT", lightMode, "BOTTOMLEFT", 0, -24)
 	tipsHeader:SetText(L("Tips"))
 
 	local tipsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -2284,13 +2314,11 @@ function QuestTogether:InitializeOptionsWindow()
 		lightMode = lightMode,
 		comparePartyQuests = comparePartyQuests,
 		openGroups = openGroups,
-		debugButton = debugButton,
 		openWhatToAnnounce = openWhatToAnnounce,
 		openWhereToAnnounce = openWhereToAnnounce,
 		openQuestPlates = openQuestPlates,
 		openProfiles = openProfiles,
 		openHudEditMode = openHudEditMode,
-		rescanQuestLog = rescanQuestLog,
 		printHelp = printHelp,
 		patchNotes = patchNotes,
 		discord = discord,
@@ -2332,6 +2360,7 @@ function QuestTogether:InitializeOptionsWindow()
 	self:InitializeAccessibilityWindow(category)
 	self:InitializeExperimentalWindow(category)
 	self:InitializeProfilesWindow(category)
+	self:InitializeDeveloperWindow(category)
 
 	self:RefreshOptionsWindow()
 	self:RefreshProfilesWindow()

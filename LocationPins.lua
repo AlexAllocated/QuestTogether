@@ -4,8 +4,9 @@ local LibChev = QuestTogether.LibChev
 local MAX_PINS, MAX_LOCATION_ROWS, DOT_SIZE = 128, 512, 12
 local PARTNER_DOT_SIZE = 16
 
-local function PinSize(addon, name)
-	return addon:IsPlayerLookingForQuestPartners(name)
+local function PinSize(addon, name, row)
+	return (addon:IsPlayerLookingForQuestPartners(name)
+		or (row and row.developerOnly and (row.publicLocationHidden or row.lookingForQuestPartners)))
 		and PARTNER_DOT_SIZE or DOT_SIZE
 end
 
@@ -316,7 +317,7 @@ function QuestTogether:ProjectPlayerLocationPin(surface, row, geometry, markerSi
 	if not self:AreLocationPinMapLayersCompatible(row.mapID, geometry.mapID) then
 		return nil
 	end
-	local dotSize = markerSize or PinSize(self, row.name)
+	local dotSize = markerSize or PinSize(self, row.name, row)
 	local x, y
 	if surface == "map" then
 		local nx, ny = self:GetLocationPinMapPosition(row, geometry.mapID)
@@ -739,7 +740,7 @@ local function Tooltip(addon, state, pin, row)
 		if addon:SupportsWarMode() == true and type(row.warMode) == "boolean" then
 			text = text .. L("\nWar Mode: ") .. (row.warMode and L("On") or L("Off"))
 		end
-		if addon:IsPlayerLookingForQuestPartners(row.name) then
+		if addon:IsPlayerLookingForQuestPartners(row.name) or (row.developerOnly and row.lookingForQuestPartners) then
 			text = text .. "\n" .. L("\n|cff40ff40Looking for Questing Partners|r"):gsub("|cff40ff40", "|cffffd200")
 			local questID, sourceTitle = addon:GetPlayerPartnerQuestID(row.name)
 			if questID then
@@ -1061,15 +1062,18 @@ local function RefreshSurface(addon, state, name, rows)
 			Call(addon, pin.phaseIcon, addon:GetPlayerPhaseStatus(row.name) == "different" and "Show" or "Hide")
 			local r, g, b = Color(addon, row.classFile)
 			Call(addon, pin.texture, "SetColorTexture", r, g, b, 1)
-			local size = PinSize(addon, row.name)
-			if pin.size ~= size then
+			local private = row.developerOnly and row.publicLocationHidden
+			local size = PinSize(addon, row.name, row)
+			if pin.size ~= size or pin.private ~= private then
 				local looking = size == PARTNER_DOT_SIZE
 				Call(addon, pin.border, "SetColorTexture", 0, 0, 0, looking and 0 or 1)
-				for _, glow in ipairs(pin.glow) do
+				for index, glow in ipairs(pin.glow) do
+					Call(addon, glow, "SetColorTexture", 1, private and 0.12 or 0.8, private and 0.12 or 0.15, 0.06 + index * 0.07)
 					Call(addon, glow, looking and "Show" or "Hide")
 				end
 				Call(addon, pin.frame, "SetSize", size, size)
 				pin.size = size
+				pin.private = private
 			end
 			Call(addon, pin.frame, "ClearAllPoints")
 			Call(addon, pin.frame, "SetPoint", "CENTER", surface.frame, "TOPLEFT", x, -y)

@@ -430,6 +430,7 @@ function QT:GetVisiblePlayerLocations(surface)
 			result[#result + 1] = surface == "minimap" and self:GetNearbyStreamPosition(peer, true) or peer
 		end
 	end
+	self:AppendDeveloperLocationRows(result)
 	table.sort(result, function(a, b)
 		return a.name < b.name
 	end)

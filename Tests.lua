@@ -224,7 +224,7 @@ local function WithIsolatedState(testFn)
 	local original = {}
 	for key, value in pairs(QuestTogether) do original[key] = value end
 	local sharedTables = {
-		LibChev = true, tests = true, DEFAULTS = true, API = true, releaseNotes = true, localizations = true, releaseNotesByLocale = true,
+		LibChev = true, Ed25519 = true, tests = true, DEFAULTS = true, API = true, releaseNotes = true, localizations = true, releaseNotesByLocale = true,
 		releaseNotesHistory = true, releaseNotesDates = true,
 		nameplateQuestIconStyleLabels = true, nameplateQuestIconStyleOrder = true,
 		showProgressForLabels = true, showProgressForOrder = true,
@@ -241,7 +241,7 @@ local function WithIsolatedState(testFn)
 	end
 	local ok, err = pcall(function()
 		for _, key in ipairs({
-			"nearbyStreamState", "playerDetailsState", "directCommPeers", "geographicCommsState", "announcementChannelBindings", "recentCommSignatureIndex", "localizedQuestTitles", "runtimeStateStore", "debugController", "nameplateTooltipGuidByUnitToken", "nameplateScanTooltip",
+			"pingPageQueue", "developerRequestState", "developerPlayerData", "nearbyStreamState", "playerDetailsState", "directCommPeers", "geographicCommsState", "announcementChannelBindings", "recentCommSignatureIndex", "localizedQuestTitles", "runtimeStateStore", "debugController", "nameplateTooltipGuidByUnitToken", "nameplateScanTooltip",
 			"announcementBubbleScreenHostFrame", "personalBubbleEditModeDialog", "mapWorkWakeFrame", "mapWorkWakeState",
 			"optionsFrame", "whereToAnnounceFrame", "questPlatesFrame", "groupsFrame", "announcementsFrame", "profilesFrame",
 			"personalBubbleEditSession", "announcementChannelLocalID", "legacyAnnouncementChannelLocalID", "channelOrderWork", "questCompareResponseQueue",
@@ -397,9 +397,10 @@ QuestTogether:RegisterTest("help slash dispatch requires the explicit debug topi
 	addon.messages = {}
 	addon:HandleSlashCommand("  HeLp   DeBuG  ")
 	local text = table.concat(addon.messages, "\n")
-	for _, command in ipairs({ "debug", "devlogall", "preview compare", "ping", "preview announcement", "test", "dump", "diagnostics" }) do
+	for _, command in ipairs({ "debug", "devlogall", "preview compare", "preview announcement", "test", "dump", "diagnostics" }) do
 		AssertTrue(text:find("/qt " .. command, 1, true), "debug help must include " .. command)
 	end
+	AssertFalse(text:find("/qt ping", 1, true))
 	AssertTrue(text:find("/qtd", 1, true))
 	AssertFalse(text:find("/qt options", 1, true), "debug help must show its own command list")
 	AssertEquals(#addon.debugCommands, 0, "displaying debug help must not execute debug commands")
@@ -7315,152 +7316,45 @@ QuestTogether:RegisterTest("announcement wire uses both party and channel routes
 	AssertTrue(string.find(sent[2].message, "^ANN|", 1) ~= nil)
 end)
 
-QuestTogether:RegisterTest("ping request uses both party and channel routes when grouped", function()
-	local sent = {}
-	QuestTogether.isEnabled = true
-	QuestTogether.API = CreateApiWithOverrides({
-		IsInInstanceGroup = function()
-			return false
-		end,
-		IsInRaid = function()
-			return false
-		end,
-		IsInParty = function()
-			return true
-		end,
-		GetChannelName = function(channelName)
-			AssertTrue(channelName == QuestTogether.announcementChannelName)
-			return 12
-		end,
-		SendAddonMessage = function(prefix, message, channel, target)
-			sent[#sent + 1] = {
-				prefix = prefix,
-				message = message,
-				channel = channel,
-				target = target,
-			}
-			return 0
-		end,
-		Delay = function() end,
-		UnitFullName = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "MyPlayer", "Realm"
-		end,
-		UnitName = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "MyPlayer"
-		end,
-		UnitClass = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "Mage", "MAGE"
-		end,
-		UnitRace = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "Human"
-		end,
-		UnitLevel = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return 70
-		end,
-		UnitGUID = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "Player-1-ABC"
-		end,
-	})
-
-	WithPatchedMethod(QuestTogether, "GetPlayerAnnouncementLocationInfo", function()
-		return {}
-	end, function()
-		WithPatchedMethod(QuestTogether, "HandlePingResponse", function()
-			return true
-		end, function()
-			local success, requestId = QuestTogether:SendPingRequest()
-			AssertTrue(success)
-			AssertTrue(type(requestId) == "string" and requestId ~= "")
-		end)
-	end)
-
-	AssertEquals(#sent, 2)
-	AssertEquals(sent[1].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[1].channel, "PARTY")
-	AssertEquals(sent[1].target, nil)
-	AssertTrue(string.find(sent[1].message, "^PING|", 1) ~= nil)
-	AssertEquals(sent[2].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[2].channel, "CHANNEL")
-	AssertEquals(sent[2].target, 12)
-	AssertTrue(string.find(sent[2].message, "^PING|", 1) ~= nil)
+QuestTogether:RegisterTest("manual ping requires the private companion and uses only the global channel", function()
+	local addon = NewHelpFixture()
+	addon.isEnabled = true
+	addon.pendingPingRequests = {}
+	addon.API = { GetTime=function() return 100 end, Random=function() return 1234 end, Delay=function() end }
+	function addon:GetPlayerFullName() return "MyPlayer-Realm" end
+	function addon:GetPlayerName() return "MyPlayer" end
+	function addon:PrepareDeveloperPingRequest(request) return request end
+	function addon:HandlePingResponse() return true end
+	function addon:BuildPingResponse() return {} end
+	local routes
+	function addon:SendWireMessageToAnnouncementRoutes(_, _, selected) routes=selected; return true end
+	AssertFalse(addon:SendPingRequest())
+	AssertEquals(routes,nil)
+	addon.isLocalDeveloper=true
+	AssertTrue(addon:SendPingRequest())
+	AssertEquals(#routes,1)
+	AssertEquals(routes[1].distribution,"CHANNEL")
+	AssertEquals(routes[1].channelName,addon.announcementChannelName)
 end)
 
-QuestTogether:RegisterTest("ping request still sends to group when channel join is unavailable", function()
-	local sent = {}
-	QuestTogether.isEnabled = true
-	QuestTogether.API = CreateApiWithOverrides({
-		IsInInstanceGroup = function()
-			return false
-		end,
-		IsInRaid = function()
-			return false
-		end,
-		IsInParty = function()
-			return true
-		end,
-		GetChannelName = function()
-			return nil
-		end,
-		JoinPermanentChannel = function() end,
-		SendAddonMessage = function(prefix, message, channel, target)
-			sent[#sent + 1] = {
-				prefix = prefix,
-				message = message,
-				channel = channel,
-				target = target,
-			}
-			return 0
-		end,
-		Delay = function() end,
-		UnitFullName = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "MyPlayer", "Realm"
-		end,
-		UnitName = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "MyPlayer"
-		end,
-		UnitClass = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "Mage", "MAGE"
-		end,
-		UnitRace = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "Human"
-		end,
-		UnitLevel = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return 70
-		end,
-		UnitGUID = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "Player-1-ABC"
-		end,
-	})
-
-	WithPatchedMethod(QuestTogether, "GetPlayerAnnouncementLocationInfo", function()
-		return {}
-	end, function()
-		WithPatchedMethod(QuestTogether, "HandlePingResponse", function()
-			return true
-		end, function()
-			local success, requestId = QuestTogether:SendPingRequest()
-			AssertTrue(success)
-			AssertTrue(type(requestId) == "string" and requestId ~= "")
-		end)
-	end)
-
-	AssertEquals(#sent, 1)
-	AssertEquals(sent[1].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[1].channel, "PARTY")
-	AssertEquals(sent[1].target, nil)
-	AssertTrue(string.find(sent[1].message, "^PING|", 1) ~= nil)
+QuestTogether:RegisterTest("global ping does not fall back to the party after a failed send", function()
+	local addon = NewHelpFixture()
+	addon.isEnabled,addon.isLocalDeveloper=true,true
+	addon.pendingPingRequests={}
+	addon.API={GetTime=function() return 100 end,Random=function() return 1234 end,Delay=function() end}
+	function addon:GetPlayerFullName() return "MyPlayer-Realm" end
+	function addon:GetPlayerName() return "MyPlayer" end
+	function addon:PrepareDeveloperPingRequest(request) return request end
+	local attempts=0
+	function addon:SendWireMessageToAnnouncementRoutes(_,_,routes)
+		attempts=attempts+1
+		AssertEquals(#routes,1)
+		AssertEquals(routes[1].distribution,"CHANNEL")
+		return false
+	end
+	AssertFalse(addon:SendPingRequest())
+	AssertEquals(attempts,1)
+	AssertEquals(next(addon.pendingPingRequests),nil)
 end)
 
 QuestTogether:RegisterTest("ping response uses both party and channel routes when grouped", function()

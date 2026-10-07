@@ -756,7 +756,7 @@ function QT:FlushGeographicDeparture()
 	s.latest = {}
 end
 
-function QT:ScheduleGeographicPingReply(id, routes)
+function QT:ScheduleGeographicPingReply(id, routes, supportsPages, developerRequest)
 	local s, now = rawget(self, "geographicCommsState"), Now(self)
 	if not s or not self.API.Delay then
 		return false
@@ -778,7 +778,7 @@ function QT:ScheduleGeographicPingReply(id, routes)
 		if rawget(self, "geographicCommsState") ~= s or not self.isEnabled or self.isLoggingOut then
 			return
 		end
-		self:SendPingResponse(id, routes)
+		self:SendPingResponse(id, routes, supportsPages, developerRequest)
 	end)
 	return true
 end
