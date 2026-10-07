@@ -409,7 +409,11 @@ function QuestTogether:ShowPartyFocusChangeDialog(name, callback, preview, liveN
 			if self.LibChev.CanMutateOwnedRegion(frame) then frame:Hide() end
 		end
 		frame.escapeAction = Close
-		frame:SetScript("OnHide", function() frame.confirmAction = nil end)
+		frame:SetScript("OnHide", function()
+			-- UIParent visibility (Alt+Z) does not dismiss this still-shown
+			-- dialog. Preserve its choice until an explicit close or confirmation.
+			if not frame:IsShown() then frame.confirmAction = nil end
+		end)
 		frame.close = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelCloseButton")
 		frame.close:SetPoint("TOPRIGHT", -12, -8)
 		frame.close:SetScript("OnClick", Close)

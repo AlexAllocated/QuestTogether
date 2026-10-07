@@ -1387,7 +1387,9 @@ function QuestTogether:RenderPartyQuestCompare()
 			button:SetScript("OnLeave", Leave)
 			button:SetScript("OnHide", function()
 				Leave()
-				if QuestTogether.LibChev.CanMutateOwnedRegion(button.paper) then
+				-- The paper is a sibling of the button so it stays below the
+				-- header text. Parent hiding must preserve its own shown state.
+				if not button:IsShown() and QuestTogether.LibChev.CanMutateOwnedRegion(button.paper) then
 					ShowPanel(button.paper, false)
 				end
 			end)
@@ -1439,6 +1441,9 @@ function QuestTogether:RenderPartyQuestCompare()
 		frame.headerAccents[i]:Hide()
 		frame.headerCrowns[i]:Hide()
 		frame.focusButtons[i]:Hide()
+		-- Hiding an already-invisible button does not fire OnHide. Retire its
+		-- sibling artwork explicitly when the roster shrinks while UI is hidden.
+		ShowPanel(frame.focusButtons[i].paper, false)
 	end
 
 	local followingText = session.mode ~= "target" and self.GetPartyFollowingText and self:GetPartyFollowingText() or ""

@@ -1536,6 +1536,57 @@ QuestTogether:RegisterTest("party diff inherited visibility preserves sessions b
 	end
 end)
 
+QuestTogether:RegisterTest("party headers survive inherited visibility and retire hidden roster columns", function()
+	for _, kind in ipairs({ "live", "preview" }) do
+		local a = Fixture(nil, { Quest(1, "Local", true) })
+		local parent = AttachUI(a)
+		local function Open()
+			if kind == "preview" then
+				assert(a:OpenPartyQuestComparePreview())
+				return a.partyQuestComparePreview
+			end
+			assert(a:OpenPartyQuestCompare())
+			a:RenderPartyQuestCompare()
+			return a
+		end
+		local controller = Open()
+		local frame = controller.partyQuestCompareWindow
+		local header = frame.focusButtons[2]
+		assert(header:IsVisible() and header.paper:IsVisible())
+		for _ = 1, 2 do
+			parent:Hide()
+			assert(header:IsShown() and not header:IsVisible())
+			parent:Show()
+			-- No new snapshot or render is needed to recover the header artwork.
+			assert(header.paper:IsVisible())
+			for _, part in ipairs(header.paper.panelParts) do
+				Equal(part:IsShown(), part.panelActive == true)
+			end
+		end
+		parent:Hide()
+		frame.close.scripts.OnClick()
+		parent:Show()
+		Equal(frame:IsVisible(), false)
+		controller = Open()
+		Equal(controller.partyQuestCompareWindow, frame)
+		assert(header.paper:IsVisible())
+		if kind == "live" then
+			parent:Hide()
+			a:Roster(a.name)
+			a:RefreshPartyQuestCompare()
+			a:RenderPartyQuestCompare()
+			Equal(header:IsShown(), false)
+			parent:Show()
+			Equal(header.paper:IsVisible(), false)
+			for _, part in ipairs(header.paper.panelParts) do Equal(part:IsVisible(), false) end
+			a:Roster(a.name, "Friend-Realm")
+			a:RefreshPartyQuestCompare()
+			a:RenderPartyQuestCompare()
+			assert(header:IsVisible() and header.paper:IsVisible())
+		end
+	end
+end)
+
 QuestTogether:RegisterTest("party diff renders cooldown and terminal feedback beside retry actions", function()
 	local a = Fixture()
 	AttachUI(a)
@@ -3912,6 +3963,65 @@ QuestTogether:RegisterTest("native compare preview follows mock changes and warn
 	Equal(a.nativeFocus, 102)
 	assert(a.partyFocusMissingPreview:IsShown())
 	Equal(#a.wire, 0)
+end)
+
+QuestTogether:RegisterTest("native focus warning survives inherited visibility and confirms the original choice", function()
+	local a = NativePreviewFixture()
+	local parent = AttachUI(a)
+	assert(a:OpenPartyQuestComparePreview())
+	local preview = a.partyQuestComparePreview
+	local name = preview.partyQuestCompareSession.members[2].name
+	assert(preview:SelectPartyQuestFocus(name, 101))
+	a:ExternalFocus(102)
+	local dialog = a.partyFocusChangePreview
+	local original = dialog.confirmAction
+	Equal(a.nativeFocus, 101)
+	for _ = 1, 2 do
+		parent:Hide()
+		assert(dialog:IsShown() and not dialog:IsVisible())
+		Equal(dialog.confirmAction, original)
+		parent:Show()
+		assert(dialog:IsVisible())
+	end
+	dialog.confirm.scripts.OnClick()
+	Equal(a.nativeFocus, 102)
+	Equal(preview:GetPartyQuestFollowTarget(), nil)
+	Equal(dialog:IsShown(), false)
+	Equal(dialog.confirmAction, nil)
+	Equal(#a.wire, 0)
+end)
+
+QuestTogether:RegisterTest("focus warning dismissal clears hidden choices and reopening replaces the callback", function()
+	for _, preview in ipairs({ false, true }) do
+		for _, dismissal in ipairs({ "cancel", "close", "escape", "hide" }) do
+			local a = Fixture()
+			local parent = AttachUI(a)
+			local accepted, replacement = 0, 0
+			assert(a:ShowPartyFocusChangeDialog("Friend-Realm", function() accepted = accepted + 1 end, preview))
+			local dialog = preview and a.partyFocusChangePreview or a.partyFocusChangeDialog
+			if dismissal == "hide" then
+				-- Direct explicit hiding also invalidates a visible dialog.
+				dialog:Hide()
+			else
+				-- An explicit action must clear state even when inherited hiding
+				-- already delivered OnHide and another Hide cannot deliver it again.
+				parent:Hide()
+				if dismissal == "escape" then dialog.escapeAction()
+				else dialog[dismissal].scripts.OnClick() end
+			end
+			Equal(dialog.confirmAction, nil)
+			parent:Show()
+			Equal(dialog:IsVisible(), false)
+			assert(a:ShowPartyFocusChangeDialog("Other-Realm", function() replacement = replacement + 1 end, preview))
+			Equal(preview and a.partyFocusChangePreview or a.partyFocusChangeDialog, dialog)
+			parent:Hide()
+			parent:Show()
+			dialog.confirm.scripts.OnClick()
+			Equal(accepted, 0)
+			Equal(replacement, 1)
+			Equal(dialog.confirmAction, nil)
+		end
+	end
 end)
 
 QuestTogether:RegisterTest("native preview closes pending choices and never overwrites live follow intent", function()
