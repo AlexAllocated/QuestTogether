@@ -4,6 +4,15 @@
 
 [Other languages](changelogs/README.md)
 
+## 6.5.6
+
+See who is looking for questing partners in your logs.
+
+### Looking for questing partners
+
+- The LFQP icon has a brighter gold outline and stronger glow, making it easier to spot at small sizes in the log.
+- The QT icon prefix in log lines now glows when the player is looking for questing partners. Quest-specific icons and chat-bubble icons keep their usual appearance.
+
 ## 6.5.5
 
 A fix for missing quest icons in Party Quest Log.

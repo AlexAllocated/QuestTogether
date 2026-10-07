@@ -1,13 +1,14 @@
 {
-  "source_sha256": "b50b944ed94595e24e44c1225aa668e72cbbc6d43769bf22867f667b80cedf18",
+  "source_sha256": "eb8476f368711d9eea64fbb944b249d4ada199048ce031601530ae335ad700ec",
   "notes": {
-    "version": "6.5.5",
-    "welcome": "Corrección de los iconos de misión ausentes en el registro de misiones del grupo.",
+    "version": "6.5.6",
+    "welcome": "Identifica en tus mensajes quién busca compañeros de misiones.",
     "sections": [
       {
-        "title": "Iconos del registro de misiones del grupo",
+        "title": "Búsqueda de compañeros de misiones",
         "items": [
-          "Se ha corregido un error que hacía que los botones de seguimiento de misiones aparecieran a veces como círculos vacíos al desplazarse o actualizar la lista. Los botones reutilizados ahora restablecen sus gráficos correctamente y usan un icono alternativo si no se puede aplicar el gráfico solicitado."
+          "El icono de búsqueda de compañeros tiene un contorno dorado más brillante y un resplandor más intenso para distinguirlo mejor en los mensajes a tamaño reducido.",
+          "El icono QT al inicio de los mensajes ahora brilla cuando el jugador busca compañeros de misiones. Los iconos específicos de misiones y las burbujas de chat conservan su aspecto habitual."
         ]
       }
     ]

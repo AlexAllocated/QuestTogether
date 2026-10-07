@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.6
+
+Repérez dans vos messages les joueurs qui cherchent des partenaires de quête.
+
+### Recherche de partenaires de quête
+
+- L’icône de recherche de partenaires a un contour doré plus lumineux et une lueur renforcée pour rester bien visible en petit format dans les messages.
+- L’icône QT au début des messages brille désormais lorsque le joueur cherche des partenaires de quête. Les icônes propres aux quêtes et les bulles de discussion conservent leur apparence habituelle.
+
 ## 6.5.5
 
 Correction des icônes de quête manquantes dans le journal de quêtes du groupe.

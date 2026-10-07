@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.6
+
+Veja nas mensagens quem está procurando parceiros de missão.
+
+### Procurando parceiros de missão
+
+- O ícone de busca de parceiros tem um contorno dourado mais claro e um brilho mais forte, ficando mais visível em tamanhos pequenos nas mensagens.
+- O ícone QT no início das mensagens agora brilha quando o jogador está procurando parceiros de missão. Os ícones específicos de missões e os balões de conversa mantêm a aparência habitual.
+
 ## 6.5.5
 
 Correção dos ícones de missão ausentes no Registro de Missões do Grupo.

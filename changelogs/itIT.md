@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.6
+
+Scopri nei messaggi chi cerca compagni per le missioni.
+
+### Ricerca di compagni per le missioni
+
+- L’icona di ricerca dei compagni ha un contorno dorato più luminoso e un bagliore più intenso, per essere più visibile anche in piccolo nei messaggi.
+- L’icona QT all’inizio dei messaggi ora si illumina quando il giocatore cerca compagni per le missioni. Le icone specifiche delle missioni e i fumetti della chat mantengono il loro aspetto abituale.
+
 ## 6.5.5
 
 Una correzione per le icone delle missioni mancanti nel registro missioni del gruppo.

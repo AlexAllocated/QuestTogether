@@ -1,13 +1,14 @@
 {
-  "source_sha256": "b50b944ed94595e24e44c1225aa668e72cbbc6d43769bf22867f667b80cedf18",
+  "source_sha256": "eb8476f368711d9eea64fbb944b249d4ada199048ce031601530ae335ad700ec",
   "notes": {
-    "version": "6.5.5",
-    "welcome": "Una correzione per le icone delle missioni mancanti nel registro missioni del gruppo.",
+    "version": "6.5.6",
+    "welcome": "Scopri nei messaggi chi cerca compagni per le missioni.",
     "sections": [
       {
-        "title": "Icone del registro missioni del gruppo",
+        "title": "Ricerca di compagni per le missioni",
         "items": [
-          "Risolto un problema per cui i pulsanti di tracciamento delle missioni a volte apparivano come cerchi vuoti dopo aver scorso o aggiornato la lista. I pulsanti riutilizzati ora ripristinano correttamente la grafica e usano un’icona alternativa se quella richiesta non può essere applicata."
+          "L’icona di ricerca dei compagni ha un contorno dorato più luminoso e un bagliore più intenso, per essere più visibile anche in piccolo nei messaggi.",
+          "L’icona QT all’inizio dei messaggi ora si illumina quando il giocatore cerca compagni per le missioni. Le icone specifiche delle missioni e i fumetti della chat mantengono il loro aspetto abituale."
         ]
       }
     ]

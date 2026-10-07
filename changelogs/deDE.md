@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.6
+
+Erkenne im Chatlog, wer Questpartner sucht.
+
+### Questpartner gesucht
+
+- Das Symbol für die Questpartnersuche hat eine hellere goldene Kontur und leuchtet stärker, damit es auch in kleiner Darstellung im Chatlog leichter zu erkennen ist.
+- Das QT-Symbol am Anfang von Chatlog-Zeilen leuchtet jetzt, wenn der Spieler Questpartner sucht. Questspezifische Symbole und Sprechblasensymbole behalten ihr gewohntes Aussehen.
+
 ## 6.5.5
 
 Eine Korrektur für fehlende Questsymbole im Gruppenquestlog.

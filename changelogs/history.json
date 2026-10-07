@@ -3,6 +3,140 @@
   "releases": [
     {
       "enUS": {
+        "version": "6.5.5",
+        "welcome": "A fix for missing quest icons in Party Quest Log.",
+        "sections": [
+          {
+            "title": "Party Quest Log icons",
+            "items": [
+              "Fixed quest focus buttons sometimes appearing as empty circles after scrolling or updating the list. Reused buttons now reset their artwork correctly, with a fallback icon if the requested artwork cannot be applied."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "6.5.5",
+        "welcome": "Eine Korrektur für fehlende Questsymbole im Gruppenquestlog.",
+        "sections": [
+          {
+            "title": "Symbole im Gruppenquestlog",
+            "items": [
+              "Ein Fehler wurde behoben, durch den Schaltflächen für den Questfokus nach dem Scrollen oder Aktualisieren der Liste manchmal als leere Kreise erschienen. Wiederverwendete Schaltflächen setzen ihre Grafiken nun korrekt zurück und verwenden ein Ersatzsymbol, falls die gewünschte Grafik nicht angewendet werden kann."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "6.5.5",
+        "welcome": "Correction des icônes de quête manquantes dans le journal de quêtes du groupe.",
+        "sections": [
+          {
+            "title": "Icônes du journal de quêtes du groupe",
+            "items": [
+              "Correction des boutons de suivi de quête qui apparaissaient parfois sous forme de cercles vides après un défilement ou une actualisation de la liste. Les boutons réutilisés réinitialisent désormais correctement leurs graphismes et utilisent une icône de remplacement si le graphisme demandé ne peut pas être appliqué."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "6.5.5",
+        "welcome": "Corrección de los iconos de misión ausentes en el registro de misiones del grupo.",
+        "sections": [
+          {
+            "title": "Iconos del registro de misiones del grupo",
+            "items": [
+              "Se ha corregido un error que hacía que los botones de seguimiento de misiones aparecieran a veces como círculos vacíos al desplazarse o actualizar la lista. Los botones reutilizados ahora restablecen sus gráficos correctamente y usan un icono alternativo si no se puede aplicar el gráfico solicitado."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "6.5.5",
+        "welcome": "Corrección de los íconos de misión faltantes en el registro de misiones del grupo.",
+        "sections": [
+          {
+            "title": "Íconos del registro de misiones del grupo",
+            "items": [
+              "Se corrigió un error que hacía que los botones de seguimiento de misiones aparecieran a veces como círculos vacíos al desplazarse o actualizar la lista. Los botones reutilizados ahora restablecen sus gráficos correctamente y usan un ícono alternativo si no se puede aplicar el gráfico solicitado."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "6.5.5",
+        "welcome": "Correção dos ícones de missão ausentes no Registro de Missões do Grupo.",
+        "sections": [
+          {
+            "title": "Ícones do Registro de Missões do Grupo",
+            "items": [
+              "Corrigido um problema que às vezes fazia os botões de foco de missão aparecerem como círculos vazios após rolar ou atualizar a lista. Os botões reutilizados agora redefinem seus gráficos corretamente e usam um ícone alternativo se o gráfico solicitado não puder ser aplicado."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "6.5.5",
+        "welcome": "Исправлены пропадающие значки заданий в журнале заданий группы.",
+        "sections": [
+          {
+            "title": "Значки в журнале заданий группы",
+            "items": [
+              "Исправлена ошибка, из-за которой кнопки отслеживания заданий иногда отображались пустыми кружками после прокрутки или обновления списка. Повторно используемые кнопки теперь правильно сбрасывают графику и показывают запасной значок, если нужное изображение не удалось применить."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "6.5.5",
+        "welcome": "Una correzione per le icone delle missioni mancanti nel registro missioni del gruppo.",
+        "sections": [
+          {
+            "title": "Icone del registro missioni del gruppo",
+            "items": [
+              "Risolto un problema per cui i pulsanti di tracciamento delle missioni a volte apparivano come cerchi vuoti dopo aver scorso o aggiornato la lista. I pulsanti riutilizzati ora ripristinano correttamente la grafica e usano un’icona alternativa se quella richiesta non può essere applicata."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "6.5.5",
+        "welcome": "파티 퀘스트 목록에서 퀘스트 아이콘이 사라지는 문제를 수정했습니다.",
+        "sections": [
+          {
+            "title": "파티 퀘스트 목록 아이콘",
+            "items": [
+              "목록을 스크롤하거나 새로 고친 뒤 퀘스트 추적 버튼이 간혹 빈 원으로 표시되던 문제를 수정했습니다. 재사용되는 버튼은 이제 그래픽을 올바르게 초기화하며, 요청한 그래픽을 적용할 수 없으면 대체 아이콘을 표시합니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "6.5.5",
+        "welcome": "修复了队伍任务日志中任务图标缺失的问题。",
+        "sections": [
+          {
+            "title": "队伍任务日志图标",
+            "items": [
+              "修复了滚动或刷新列表后，任务追踪按钮有时显示为空心圆的问题。重复使用的按钮现在会正确重置图像；如果无法应用所需图像，则会显示备用图标。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "6.5.5",
+        "welcome": "修正了隊伍任務日誌中任務圖示遺失的問題。",
+        "sections": [
+          {
+            "title": "隊伍任務日誌圖示",
+            "items": [
+              "修正了捲動或重新整理清單後，任務追蹤按鈕有時顯示為空心圓的問題。重複使用的按鈕現在會正確重設圖像；如果無法套用所需圖像，則會顯示備用圖示。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "6.5.4",
         "welcome": "",
         "sections": []

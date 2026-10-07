@@ -1,13 +1,14 @@
 {
-  "source_sha256": "b50b944ed94595e24e44c1225aa668e72cbbc6d43769bf22867f667b80cedf18",
+  "source_sha256": "eb8476f368711d9eea64fbb944b249d4ada199048ce031601530ae335ad700ec",
   "notes": {
-    "version": "6.5.5",
-    "welcome": "Correction des icônes de quête manquantes dans le journal de quêtes du groupe.",
+    "version": "6.5.6",
+    "welcome": "Repérez dans vos messages les joueurs qui cherchent des partenaires de quête.",
     "sections": [
       {
-        "title": "Icônes du journal de quêtes du groupe",
+        "title": "Recherche de partenaires de quête",
         "items": [
-          "Correction des boutons de suivi de quête qui apparaissaient parfois sous forme de cercles vides après un défilement ou une actualisation de la liste. Les boutons réutilisés réinitialisent désormais correctement leurs graphismes et utilisent une icône de remplacement si le graphisme demandé ne peut pas être appliqué."
+          "L’icône de recherche de partenaires a un contour doré plus lumineux et une lueur renforcée pour rester bien visible en petit format dans les messages.",
+          "L’icône QT au début des messages brille désormais lorsque le joueur cherche des partenaires de quête. Les icônes propres aux quêtes et les bulles de discussion conservent leur apparence habituelle."
         ]
       }
     ]

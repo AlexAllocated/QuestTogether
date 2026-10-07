@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.6
+
+Identifica en tus mensajes quién busca compañeros de misiones.
+
+### Búsqueda de compañeros de misiones
+
+- El ícono de búsqueda de compañeros tiene un contorno dorado más brillante y un resplandor más intenso para distinguirlo mejor en los mensajes a tamaño reducido.
+- El ícono QT al inicio de los mensajes ahora brilla cuando el jugador busca compañeros de misiones. Los íconos específicos de misiones y las burbujas de chat conservan su aspecto habitual.
+
 ## 6.5.5
 
 Corrección de los íconos de misión faltantes en el registro de misiones del grupo.

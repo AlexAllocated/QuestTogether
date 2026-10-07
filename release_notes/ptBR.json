@@ -1,13 +1,14 @@
 {
-  "source_sha256": "b50b944ed94595e24e44c1225aa668e72cbbc6d43769bf22867f667b80cedf18",
+  "source_sha256": "eb8476f368711d9eea64fbb944b249d4ada199048ce031601530ae335ad700ec",
   "notes": {
-    "version": "6.5.5",
-    "welcome": "Correção dos ícones de missão ausentes no Registro de Missões do Grupo.",
+    "version": "6.5.6",
+    "welcome": "Veja nas mensagens quem está procurando parceiros de missão.",
     "sections": [
       {
-        "title": "Ícones do Registro de Missões do Grupo",
+        "title": "Procurando parceiros de missão",
         "items": [
-          "Corrigido um problema que às vezes fazia os botões de foco de missão aparecerem como círculos vazios após rolar ou atualizar a lista. Os botões reutilizados agora redefinem seus gráficos corretamente e usam um ícone alternativo se o gráfico solicitado não puder ser aplicado."
+          "O ícone de busca de parceiros tem um contorno dourado mais claro e um brilho mais forte, ficando mais visível em tamanhos pequenos nas mensagens.",
+          "O ícone QT no início das mensagens agora brilha quando o jogador está procurando parceiros de missão. Os ícones específicos de missões e os balões de conversa mantêm a aparência habitual."
         ]
       }
     ]
