@@ -88,6 +88,43 @@ local function PartnerPayload(addon, looking, session, sequence)
 	return string.format("1,%s,%d,%d", session or "10-1234", sequence or addon.partnerTestSequence, looking and 1 or 0)
 end
 
+QT:RegisterTest("log QT prefixes reflect current local and remote partner status without replacing specific icons", function()
+	local a = Peer()
+	local logo = a.NAMEPLATE_PLAYER_ICON_TEXTURE
+	local glow = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon"
+	local function Prefix(name, expected, event, asset, kind)
+		local message = a:BuildConsoleAnnouncementMessage(name, "hello", "MAGE", event or "SCAN_STATUS", asset, kind)
+		local tag = a:GetIconChatTagFromAsset(expected, kind or "texture", 14)
+		Equal(message:sub(1, #tag), tag)
+	end
+	Prefix(a.name, logo)
+	a.db.profile.lookingForQuestPartners = true
+	Prefix(a.name, glow)
+	a.db.profile.lookingForQuestPartners = false
+	Prefix(a.name, logo)
+
+	local remote = "Friend-Realm"
+	Prefix(remote, logo)
+	assert(a:HandleQuestPartnerStatusMessage(PartnerPayload(a, true), remote))
+	Prefix(remote, glow)
+	Prefix(remote, glow, "SCAN_STATUS", logo:gsub("\\", "/"), "texture")
+	Prefix(remote, glow, "SCAN_STATUS", a.NAMEPLATE_QUEST_ICON_TEXTURE, "texture")
+	Prefix(remote, "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon", "QT_CHAT")
+	Prefix(remote, "UI-QuestIcon-TurnIn-Normal", "QUEST_COMPLETED", "UI-QuestIcon-TurnIn-Normal", "atlas")
+	Prefix(remote, "Interface/GossipFrame/AvailableQuestIcon", "QUEST_ACCEPTED", "Interface/GossipFrame/AvailableQuestIcon", "texture")
+	a.ignored = remote
+	Prefix(remote, logo)
+	a.ignored = nil
+	assert(a:HandleQuestPartnerStatusMessage(PartnerPayload(a, false), remote))
+	Prefix(remote, logo)
+	assert(a:HandleQuestPartnerStatusMessage(PartnerPayload(a, true), remote))
+	a.now = a.now + 1000
+	Prefix(remote, logo)
+	-- The LFQP announcement itself retains its existing glow, even without status.
+	Prefix(remote, glow, "LOOKING_FOR_QUEST_PARTNERS")
+	Equal(a:GetAnnouncementIconChatTag("SCAN_STATUS", 14), a:GetIconChatTagFromAsset(logo, "texture", 14))
+end)
+
 QT:RegisterTest("joining a group optionally clears partner status without announcements or roster churn", function()
 	local a = Peer()
 	local changes = 0

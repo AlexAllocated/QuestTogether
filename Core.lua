@@ -4145,8 +4145,15 @@ function QuestTogether:ResolveAnnouncementDisplayIcon(eventType, iconAsset, icon
 	return self:GetAnnouncementIconInfo(eventType, nil)
 end
 
-function QuestTogether:GetAnnouncementIconChatTag(eventType, size, iconAsset, iconKind)
+function QuestTogether:GetAnnouncementIconChatTag(eventType, size, iconAsset, iconKind, targetName)
 	local asset, kind = self:ResolveAnnouncementDisplayIcon(eventType, iconAsset, iconKind)
+	-- Decorate only the generic QT prefix; quest-specific and chat icons keep
+	-- their meaning. Resolve current LFQP status locally, without changing wire data.
+	if targetName and kind ~= "atlas" and type(asset) == "string"
+		and asset:lower():gsub("/", "\\") == self.NAMEPLATE_PLAYER_ICON_TEXTURE:lower()
+		and self:IsPlayerLookingForQuestPartners(targetName) then
+		asset = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon"
+	end
 	if type(asset) == "string" and asset ~= "" then
 		return self:GetIconChatTagFromAsset(asset, kind, size)
 	end
@@ -4646,7 +4653,7 @@ function QuestTogether:PrintQuestCompareDone(remoteName, count, classFile)
 end
 
 function QuestTogether:BuildConsoleAnnouncementMessage(targetName, message, classFile, eventType, iconAsset, iconKind, locationInfo)
-	local iconTag = self:GetAnnouncementIconChatTag(eventType, 14, iconAsset, iconKind)
+	local iconTag = self:GetAnnouncementIconChatTag(eventType, 14, iconAsset, iconKind, targetName)
 	local questId = type(locationInfo) == "table" and locationInfo.questId or nil
 	local trimmedMessage = self:DecorateAnnouncementMessageWithQuestLink(tostring(message or ""), eventType, questId)
 	local body = trimmedMessage
