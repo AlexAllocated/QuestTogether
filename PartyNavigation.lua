@@ -92,6 +92,19 @@ function QT:StopPartyQuestFollow()
 	Changed(self)
 	return true
 end
+-- A public goodbye retires transient navigation, never the user's saved follow
+-- preference. Keep sequence/session tombstones so delayed packets cannot revive it.
+function QT:RetirePartyNavigationPeer(name)
+	local state = rawget(self, "partyNavigationState")
+	if not state or not state.peers[name] then return end
+	state.peers[name] = nil
+	if state.following == name then
+		state.attempt = nil
+		state.followStatus = L("Waiting for quest focus")
+	end
+	Changed(self)
+	if self.RefreshPartyWaypointPins then self:RefreshPartyWaypointPins() end
+end
 function QT:GetPartyNavigationPeer(name)
 	name = Name(self, name)
 	local s = rawget(self, "partyNavigationState")
@@ -293,14 +306,16 @@ function QT:SamplePartyNavigation()
 		x = map > 0 and native.x or 0,
 		y = map > 0 and native.y or 0,
 		following = not previewActive and s.following or "",
+		sampledAt = self.GetAnnouncementServerTime and self:GetAnnouncementServerTime() or nil,
 	}
 end
-function QT:EncodePartyNavigation(p, hello)
+function QT:EncodePartyNavigation(p, hello, modern)
 	local s = self:GetPartyNavigationState()
-	local prefix = string.format(
-		"QTNAV|1,%s,%d,%d,%d,%d,%d,%d,%s,",
-		s.session,
-		s.sequence,
+	local header = modern and ("QTN2|1," .. modern.sampledAt .. ",") or "QTNAV|1,"
+	local prefix = header .. string.format(
+		"%s,%d,%d,%d,%d,%d,%d,%s,",
+		modern and modern.session or s.session,
+		modern and modern.sequence or s.sequence,
 		hello and 1 or 0,
 		p.questID,
 		p.mapID,
@@ -314,7 +329,26 @@ function QT:EncodePartyNavigation(p, hello)
 	end
 	return #prefix <= 255 and prefix .. title or nil
 end
-function QT:HandlePartyNavigationMessage(payload, sender, route)
+-- Modern navigation shares the public envelope clock/counter. Its sequence is
+-- therefore comparable with a QTB1 goodbye even when both occur in one second.
+-- Keep the legacy companion until older party members upgrade.
+function QT:SendPartyNavigationSnapshot(p, hello, routes, direct)
+	local state, geographic = self:GetPartyNavigationState(), rawget(self, "geographicCommsState")
+	local sampledAt = p.sampledAt or (self.GetAnnouncementServerTime and self:GetAnnouncementServerTime())
+	local modernSent = false
+	if geographic and geographic.session and sampledAt then
+		geographic.sequence = geographic.sequence + 1
+		state.modernSession, state.modernSequence = geographic.session, geographic.sequence
+		local modern = self:EncodePartyNavigation(p, hello, {
+			session = geographic.session, sequence = geographic.sequence, sampledAt = sampledAt,
+		})
+		if modern then modernSent = self:SendWireMessageToAnnouncementRoutes(modern, "party navigation snapshot", routes, direct) end
+	end
+	local wire = self:EncodePartyNavigation(p, hello)
+	local legacySent = wire and self:SendWireMessageToAnnouncementRoutes(wire, "party navigation", routes, direct)
+	return modernSent or legacySent or false
+end
+function QT:HandlePartyNavigationMessage(payload, sender, route, modern)
 	if route ~= self:GetPartyNavigationRoute() then
 		return false
 	end
@@ -325,9 +359,17 @@ function QT:HandlePartyNavigationMessage(payload, sender, route)
 		or not self:IsGroupedSender(name)
 		or self:IsIgnoredPlayerName(name)
 		or type(payload) ~= "string"
-		or #payload > 249
+		or #payload > (modern and 250 or 249)
 	then
 		return false
+	end
+	local stamp, sampledAt
+	if modern then
+		local rawStamp, rest = payload:match("^1,(%d+),(.*)$")
+		stamp = Number(self, rawStamp, 1000000000, 99999999999)
+		local serverNow = self.GetAnnouncementServerTime and self:GetAnnouncementServerTime()
+		if not stamp or not serverNow or stamp > serverNow + 5 or serverNow - stamp >= TTL then return false end
+		sampledAt, payload = Now(self) - math.max(0, serverNow - stamp), "1," .. rest
 	end
 	local session, seq, hello, qid, map, x, y, following, title =
 		payload:match("^1,(%d+%-%d+),(%d+),([01]),(-?%d+),(-?%d+),(%d+),(%d+),([^,]*),([^,]*)$")
@@ -350,14 +392,25 @@ function QT:HandlePartyNavigationMessage(payload, sender, route)
 		return false
 	end
 	local s, now = self:GetPartyNavigationState(), Now(self)
-	local retired = s.retired[name] or {}
+	local retired = {}
+	for old, at in pairs(s.retired[name] or {}) do
+		if now >= at and now - at <= TTL then retired[old] = at end
+	end
 	local prior = s.peers[name] or s.seen[name]
-	if retired[session] or (prior and prior.session == session and seq <= prior.sequence) then
+	if modern then
+		if not self:CanAcceptPeerEpoch(name, session, stamp) then return false end
+		if prior and prior.modern and stamp < prior.stamp then return false end
+		if not self:CanAcceptPeerUpdate(name, "QTN2", sampledAt, session, seq) then return false end
+	else
+		-- Once the peer supports stamped navigation, a delayed legacy companion
+		-- must never become a fallback after its modern snapshot or a departure.
+		if (prior and prior.modern) or not self:CanRecordPeerPresence(name) then return false end
+	end
+	if retired[session] or (prior and prior.modern == (modern == true) and prior.session == session and seq <= prior.sequence) then
 		return false
 	end
-	if prior and prior.session ~= session then
+	if prior and prior.modern == (modern == true) and prior.session ~= session then
 		retired[prior.session] = now
-		s.retired[name] = retired
 	end
 	for key, at in pairs(retired) do
 		if now - at > TTL then
@@ -371,10 +424,17 @@ function QT:HandlePartyNavigationMessage(payload, sender, route)
 	if count > 8 then
 		return false
 	end
+	if modern then
+		if not self:RecordPeerUpdate(name, "QTN2", sampledAt, session, seq) then return false end
+		self:RecordPeerEpoch(name, session, stamp)
+	end
+	s.retired[name] = retired
 	s.peers[name] = {
+		modern = modern == true,
+		stamp = stamp,
 		session = session,
 		sequence = seq,
-		at = now,
+		at = modern and sampledAt or now,
 		questID = qid,
 		title = title,
 		mapID = map,
@@ -444,13 +504,7 @@ function QT:UpdatePartyNavigation()
 		return
 	end
 	s.sequence = s.sequence + 1
-	local wire = self:EncodePartyNavigation(p, s.hello)
-	local sent = wire
-		and self:SendWireMessageToAnnouncementRoutes(
-			wire,
-			"party navigation",
-			{ { distribution = route, requiresGroup = true } }
-		)
+	local sent = self:SendPartyNavigationSnapshot(p, s.hello, { { distribution = route, requiresGroup = true } })
 	if sent then
 		s.hello, s.dirtyAt, s.nextSend = false, nil, now + self.API.Random(28, 32)
 	else
@@ -474,14 +528,8 @@ function QT:WithdrawPartyNavigation()
 	end
 	local s = self:GetPartyNavigationState()
 	s.sequence = s.sequence + 1
-	local wire = self:EncodePartyNavigation({ questID = -1, mapID = -1, x = 0, y = 0 }, false)
-	if wire then
-		self:SendWireMessageToAnnouncementRoutes(
-			wire,
-			"party navigation clear",
-			{ { distribution = route, requiresGroup = true } }
-		)
-	end
+	self:SendPartyNavigationSnapshot({ questID = -1, mapID = -1, x = 0, y = 0 }, false,
+		{ { distribution = route, requiresGroup = true } })
 end
 function QT:GetPartyQuestFocusID(name)
 	if self:IsSelfSender(name) then

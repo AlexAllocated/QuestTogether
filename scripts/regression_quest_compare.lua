@@ -225,13 +225,13 @@ QuestTogether:RegisterTest(
 		Equal(#a:BuildPartyQuestDiffRows(), 1)
 		Equal(a:BuildPartyQuestDiffRows()[1].cells[2], "Loading")
 		Reply(a, "Friend-Realm", { Quest(2, "Other", true, true) }, false)
-		Equal(#a:BuildPartyQuestDiffRows(), 2)
+		Equal(#a:BuildPartyQuestDiffRows(), 1) -- Uncertified remote rows stay private.
 		a:SetOption("compareHideOtherQuests", true)
 		Equal(#a:BuildPartyQuestDiffRows(), 1)
 		Equal(a:BuildPartyQuestDiffRows()[1].title, "Local")
 		a:SetOption("compareHideOtherQuests", false)
-		Equal(#a:BuildPartyQuestDiffRows(), 2)
-		Equal(a:BuildPartyQuestDiffRows()[1].cells[1], "Missing")
+		Equal(#a:BuildPartyQuestDiffRows(), 1) -- Uncertified remote rows stay private.
+		Equal(a:BuildPartyQuestDiffRows()[1].cells[1], "Have")
 		local member = a.partyQuestCompareSession.byName["Friend-Realm"]
 		a:HandleQuestCompareDone({
 			senderName = member.name,

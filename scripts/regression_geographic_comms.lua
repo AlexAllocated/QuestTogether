@@ -936,7 +936,7 @@ QT:RegisterTest("targeted comparisons whisper every quest only to the requester 
 		assert(complete and entries["42"] and entries["43"])
 		Equal(a.pendingQuestCompareRequests[id], nil)
 		Equal(#observer.received, 0)
-		Equal(#a.sent, 1); Equal(#b.sent, 3)
+		Equal(#a.sent, 1); Equal(#b.sent, 4) -- Snapshot/count header plus two entries and completion.
 		for _, row in ipairs(a.sent) do Equal(row.route, "WHISPER"); Equal(row.target, b.name) end
 		for _, row in ipairs(b.sent) do Equal(row.route, "WHISPER"); Equal(row.target, a.name) end
 	end
@@ -944,6 +944,11 @@ end)
 
 QT:RegisterTest("older comparison peers keep one supported broadcast route", function()
 	local a, b, observer, advance = DirectNetwork(false)
+	-- Model an old requester, which does not negotiate snapshot identity.
+	function a:EncodeQuestCompareRequestPayload(request)
+		local copy=self:DeepCopy(request);copy.supportsSnapshotIdentity=nil
+		return QT.EncodeQuestCompareRequestPayload(self,copy)
+	end
 	function b:BuildQuestCompareEntries() return {} end
 	local complete = false
 	assert(a:RequestQuestCompare(b.name, { onEntry = function() end, onDone = function() complete = true end, onTimeout = function() end }))
@@ -1946,7 +1951,7 @@ QT:RegisterTest("disable and world departure deliver navigation withdrawal after
 		assert(a:SendWireMessageToAnnouncementRoutes(wire,"navigation",{{distribution="PARTY",requiresGroup=true}}))
 		a[event](a)
 		local peer=b:GetPartyNavigationPeer(a.name)
-		Equal(peer.questID,-1);Equal(peer.mapID,-1)
+		Equal(peer,nil) -- A confirmed goodbye retires all transient navigation.
 		Equal(follow.following,a.name)
 		local navigationPackets=0
 		for _,packet in ipairs(a.sent) do
@@ -1954,5 +1959,354 @@ QT:RegisterTest("disable and world departure deliver navigation withdrawal after
 			assert(packet.wire~=wire) -- The unsent newer position was fenced.
 		end
 		Equal(navigationPackets,2) -- Original navigation and the direct clear.
+	end
+end)
+
+QT:RegisterTest("comparison retries across zoning reload and legacy peers never publish mixed snapshots", function()
+	for _, mode in ipairs({"zone", "reload", "legacy", "preserve"}) do
+		local peers, byName, advance = FairTransportNetwork(2, 3)
+		local receiver, sender = peers[1], peers[2]
+		receiver:RememberDirectCommPeer(sender.name, true)
+		local result, completed, dropped, oldEntry, oldDone, requests = {}, 0, false, nil, nil, {}
+		local firstRequest
+		local function InstallWire(a)
+			if mode == "legacy" and a == sender then
+				function a:DecodeQuestCompareRequestPayload(payload)
+					local data = QT.DecodeQuestCompareRequestPayload(self, payload)
+					if data then data.supportsSnapshotIdentity = nil end
+					return data
+				end
+			end
+			a.API.SendAddonMessage = function(prefix, wire, route, target)
+				local other = route == "WHISPER" and assert(byName[target]) or (a == sender and receiver or sender)
+				local command, payload = a:DeserializeWireMessage(wire)
+				if a == receiver and command == "QCMP" then
+					local request = a:DecodeQuestCompareRequestPayload(payload)
+					requests[request.requestId] = true
+					firstRequest = firstRequest or request.requestId
+					if request.requestId ~= firstRequest and oldEntry then
+						-- Late packets from the first correlation arrive after the
+						-- replacement has already installed its own receive buffer.
+						receiver:OnCommReceived(prefix, oldEntry, "WHISPER", sender.name)
+						if oldDone then receiver:OnCommReceived(prefix, oldDone, "WHISPER", sender.name) end
+					end
+				elseif a == sender and command == "QCQE" then
+					local entry = a:DecodeQuestCompareEntryPayload(payload)
+					if entry.requestId == firstRequest and entry.questId == "2" and not dropped then
+						dropped, oldEntry = true, wire
+						return 0
+					end
+				elseif a == sender and command == "QCDN" and not oldDone then oldDone = wire end
+				other:OnCommReceived(prefix, wire, route, a.name, 6, "QuestTogether")
+				return 0
+			end
+		end
+		InstallWire(receiver); InstallWire(sender)
+		assert(receiver:RequestQuestCompare(sender.name, {
+			onEntry = function(entry) result[entry.questId] = entry.questTitle end,
+			onDone = function() completed = completed + 1 end,
+			onTimeout = function() error("snapshot restart timed out: " .. mode) end,
+		}))
+		advance(5)
+		assert(dropped and oldDone)
+		Equal(completed, 0); Equal(next(result), nil)
+		local cache = sender.questCompareResponseCache
+		sender:PLAYER_LEAVING_WORLD()
+		if mode == "reload" then
+			local prior = sender
+			sender = Fixture(prior.name)
+			sender.API.GetTime, sender.API.Delay = prior.API.GetTime, prior.API.Delay
+			sender.API.GetServerTime = function() return 1700000000 + math.floor(sender.API.GetTime()) end
+			peers[2], byName[sender.name] = sender, sender
+			InstallWire(sender)
+		else
+			sender.isLoggingOut = false
+			if mode == "preserve" then sender.questCompareResponseCache = cache end
+			sender:ResumeCommsWorldSession()
+		end
+		function sender:BuildQuestCompareEntries()
+			return {{questId="3",questTitle="Current 3"},{questId="4",questTitle="Current 4"},{questId="5",questTitle="Current 5"}}
+		end
+		advance(90)
+		Equal(completed, 1); Equal(next(receiver.pendingQuestCompareRequests), nil)
+		if mode == "preserve" then
+			Equal(result["1"], "Quest 1"); Equal(result["2"], "Quest 2"); Equal(result["3"], "Quest 3")
+			Equal(result["4"], nil); Equal(result["5"], nil)
+		else
+			Equal(result["1"], nil); Equal(result["2"], nil)
+			for id=3,5 do Equal(result[tostring(id)], "Current " .. id) end
+			local count=0; for _ in pairs(requests) do count=count+1 end
+			assert(count >= 2, "changed or legacy snapshot gets a fresh wire correlation")
+		end
+	end
+end)
+
+QT:RegisterTest("objective generations restart atomically and reject late legacy or prior snapshot packets", function()
+	local peers, byName, advance = FairTransportNetwork(2, 1)
+	local receiver, sender = peers[1], peers[2]
+	receiver:RememberDirectCommPeer(sender.name, true)
+	local phase, dropped, oldObjective, completed, entry = 1, false, nil, 0, nil
+	function sender:BuildQuestCompareEntries() return {{questId="1",questTitle="Objective quest"}} end
+	function sender:ReadQuestCompareObjectives()
+		return {{questId=1,objectiveIndex=1,text="Step "..phase.." one",kind="monster",current=phase,required=5,finished=false},
+			{questId=1,objectiveIndex=2,text="Step "..phase.." two",kind="monster",current=phase,required=5,finished=false}}
+	end
+	for _, a in ipairs(peers) do
+		a.API.SendAddonMessage = function(prefix, wire, route, target)
+			if route ~= "WHISPER" then return 0 end
+			local other=assert(byName[target])
+			if a == sender and wire:match("^QCOB|") then
+				local row=a:DecodeQuestCompareObjectivePayload(wire:sub(6))
+				if row.objectiveIndex == 2 and not dropped then dropped,oldObjective=true,wire;return 0 end
+			end
+			other:OnCommReceived(prefix,wire,route,a.name)
+			return 0
+		end
+	end
+	assert(receiver:RequestQuestCompare(sender.name, {objectiveQuestId=1,
+		onEntry=function(row) entry=row end, onDone=function() completed=completed+1 end,
+		onTimeout=function() error("objective generation timed out") end}))
+	advance(5); Equal(entry,nil); Equal(completed,0)
+	sender:EndCommsWorldSession(); sender:ResumeCommsWorldSession(); phase=2
+	advance(65)
+	Equal(completed,1); Equal(entry.objectives[1].text,"Step 2 one"); Equal(entry.objectives[2].text,"Step 2 two")
+	receiver:OnCommReceived(receiver.commPrefix,oldObjective,"WHISPER",sender.name)
+	Equal(completed,1); Equal(entry.objectives[2].current,2)
+end)
+
+QT:RegisterTest("comparison retry aliases respect caller cancellation and bounded generation churn", function()
+	local peers,_,advance=FairTransportNetwork(1,0)
+	local receiver=peers[1]
+	local done,timeouts=0,0
+	local ok,id=receiver:RequestQuestCompare("Other-Realm",{onEntry=function() error("must not publish partial rows") end,
+		onDone=function() done=done+1 end,onTimeout=function() timeouts=timeouts+1 end})
+	assert(ok)
+	for index=1,5 do
+		local pending=receiver.pendingQuestCompareRequests[id]
+		assert(pending)
+		local wireId=pending.wireRequestId
+		assert(receiver:HandleQuestCompareDone{requestId=wireId,senderName="Other-Realm",count=2,snapshotId="1-"..index})
+		Equal(receiver:HandleQuestCompareEntry{requestId=wireId,senderName="Other-Realm",questId="1",snapshotId="2-"..index},false)
+		advance(0.2)
+	end
+	Equal(done,0); Equal(timeouts,1); Equal(next(receiver.pendingQuestCompareRequests),nil)
+	local _,nextId=receiver:RequestQuestCompare("Other-Realm",{onEntry=function() error("cancelled") end,onDone=function() error("cancelled") end,onTimeout=function() error("cancelled") end})
+	local pending=receiver.pendingQuestCompareRequests[nextId]
+	pending.snapshotId="1-1"
+	receiver:HandleQuestCompareDone{requestId=nextId,senderName="Other-Realm",count=1,snapshotId="2-2"}
+	advance(0.2)
+	local retryId=pending.wireRequestId
+	assert(retryId~=nextId)
+	receiver.pendingQuestCompareRequests[nextId]=nil
+	Equal(receiver:GetPendingQuestCompare(retryId),nil)
+	Equal(receiver:IsQueuedCommRequestCurrent("QCMP|"..receiver:EncodeQuestCompareRequestPayload{requestId=retryId,targetName="Other-Realm"}),false)
+	advance(31)
+	Equal(next(receiver.pendingQuestCompareRequests),nil)
+end)
+
+QT:RegisterTest("legacy full party retries with fresh correlations converge alongside normal movement traffic", function()
+	for _, questCount in ipairs({40,100}) do
+		local peers,byName,advance=FairTransportNetwork(5,questCount)
+		local lost,completed,timeouts={},{},0
+		for _,a in ipairs(peers) do
+			for _,b in ipairs(peers) do if a~=b then a:RememberDirectCommPeer(b.name,true) end end
+			function a:DecodeQuestCompareRequestPayload(payload)
+				local request=QT.DecodeQuestCompareRequestPayload(self,payload)
+				if request then request.supportsSnapshotIdentity=nil end
+				return request
+			end
+			a.API.SendAddonMessage=function(prefix,wire,route,target)
+				if route~="WHISPER" then return 0 end
+				local b=assert(byName[target])
+				local key=a.name..":"..b.name
+				if wire:match("^QCQE|") and not lost[key] then lost[key]=true;return 0 end
+				b:OnCommReceived(prefix,wire,route,a.name)
+				return 0
+			end
+		end
+		for _,a in ipairs(peers) do for _,b in ipairs(peers) do if a~=b then
+			local count,key=0,a.name..":"..b.name
+			assert(a:RequestQuestCompare(b.name,{onEntry=function() count=count+1 end,
+				onDone=function() Equal(count,questCount); assert(not completed[key]); completed[key]=true end,
+				onTimeout=function() timeouts=timeouts+1 end}))
+		end end end
+		for tick=1,6600 do
+			for _,a in ipairs(peers) do
+				a.position.x=0.2+tick%100*0.001
+				a:UpdateGeographicComms()
+			end
+			advance(0.1)
+		end
+		local count=0;for _ in pairs(completed) do count=count+1 end
+		Equal(count,20);Equal(timeouts,0)
+		for _,a in ipairs(peers) do Equal(next(a.pendingQuestCompareRequests),nil) end
+	end
+end)
+
+QT:RegisterTest("modern navigation goodbye clears transient state despite restrictions or lost clears and permits same second reentry", function()
+	for _, mode in ipairs({ "normal", "restricted", "lost-clear" }) do
+		local a, b = Fixture("Leader-Realm"), Fixture("Follower-Realm")
+		a.other = b
+		for _, peer in ipairs({ a, b }) do
+			peer.inParty = true
+			peer.partyMembers, peer.partyMemberOrder = { [a.name] = {}, [b.name] = {} }, { a.name, b.name }
+			peer.db.profile.sharePartyFocus, peer.db.profile.sharePartyWaypoint, peer.db.profile.showPartyWaypoints = true, true, true
+		end
+		b.db.global, b.activeCharacterKey, b.nativeFocus, b.focusWrites = {}, b.name, 7, {}
+		b.API.GetActiveTrackedQuestID = function() return b.nativeFocus end
+		b.API.IsOnQuest = function(id) return id == 7 or id == 8 end
+		b.API.SetPartyNavigationQuest = function(id)
+			b.nativeFocus = id; b.focusWrites[#b.focusWrites + 1] = id; return true
+		end
+		local state = a:GetPartyNavigationState()
+		state.sequence = 1
+		assert(a:SendPartyNavigationSnapshot({questID=7,mapID=12,x=0.2,y=0.3}, false,
+			{{distribution="PARTY",requiresGroup=true}}))
+		a:DrainGeographicQueue(); a:DrainGeographicQueue()
+		assert(b:GetPartyNavigationPeer(a.name).modern)
+		assert(b:FollowPartyQuestFocus(a.name))
+		state.sequence = 2
+		assert(a:SendPartyNavigationSnapshot({questID=8,mapID=12,x=0.4,y=0.5}, false,
+			{{distribution="PARTY",requiresGroup=true}}))
+		local delayed = {}
+		for _, row in ipairs(a.geographicCommsState.queue) do delayed[#delayed + 1] = row.wire end
+		if mode == "restricted" then a.restricted = true end
+		if mode == "lost-clear" then
+			local send = a.API.SendAddonMessage
+			a.API.SendAddonMessage = function(prefix, wire, route, target)
+				if wire:match("^QTN[2A]") then return 0 end
+				return send(prefix, wire, route, target)
+			end
+		end
+		a:PLAYER_LEAVING_WORLD()
+		assert(b.peerSnapshotState.peers[a.name].departed.session)
+		Equal(b:IsKnownQTPlayer(a.name), false)
+		Equal(b:GetPartyNavigationPeer(a.name), nil)
+		Equal(#b:GetPartyWaypointRows(), 0)
+		Equal(b.partyNavigationState.following, a.name)
+		Equal(b.db.global.partyQuestFollowByCharacter[b.name], a.name)
+		for _, wire in ipairs(delayed) do b:OnCommReceived(b.commPrefix, wire, "PARTY", a.name) end
+		Equal(b:GetPartyNavigationPeer(a.name), nil); Equal(#b.focusWrites, 0)
+		-- Same public session and server second; only its shared counter advances.
+		a.restricted, a.isLoggingOut = false, false
+		a:ResumeCommsWorldSession()
+		-- Restore the fixture's native transport after intentionally losing clears.
+		if mode == "lost-clear" then
+			a.API.SendAddonMessage = function(prefix, wire, route)
+				if route == "PARTY" then b:OnCommReceived(prefix, wire, route, a.name) end
+				return 0
+			end
+		end
+		state.sequence = state.sequence + 1
+		assert(a:SendPartyNavigationSnapshot({questID=8,mapID=12,x=0.4,y=0.5}, true,
+			{{distribution="PARTY",requiresGroup=true}}))
+		for _ = 1, 4 do a:DrainGeographicQueue() end
+		Equal(b:GetPartyNavigationPeer(a.name).questID, 8)
+		Equal(b.nativeFocus, 8); Equal(#b.focusWrites, 1)
+		Equal(#b:GetPartyWaypointRows(), 1)
+		-- A newly available presence witness never re-enables legacy companions.
+		for _, wire in ipairs(delayed) do b:OnCommReceived(b.commPrefix, wire, "PARTY", a.name) end
+		Equal(b:GetPartyNavigationPeer(a.name).questID, 8)
+		Equal(#b.focusWrites, 1)
+	end
+end)
+
+QT:RegisterTest("modern navigation fences stale unknown epochs before cache mutation and retains legacy peers", function()
+	local a = Fixture("Me-Realm")
+	a.inParty = true
+	a.partyMembers = { [a.name] = {}, ["Friend-Realm"] = {} }
+	local function Nav(stamp, session, seq, quest)
+		return "QTN2|1," .. stamp .. "," .. session .. "," .. seq .. ",0," .. quest .. ",12,2000,3000,,"
+	end
+	local now = a:GetAnnouncementServerTime()
+	local legacy = "QTNAV|1,10000-1000,1,0,7,12,2000,3000,,"
+	a:OnCommReceived(a.commPrefix, legacy, "PARTY", "Friend-Realm")
+	Equal(a:GetPartyNavigationPeer("Friend-Realm").questID, 7)
+	a:OnCommReceived(a.commPrefix, Nav(now, "30000-1000", 10, 8), "PARTY", "Friend-Realm")
+	local current = a:GetPartyNavigationPeer("Friend-Realm")
+	assert(current.modern)
+	for _, wire in ipairs({ Nav(now-5,"20000-1000",99,7), Nav(now,"40000-1000",1,7),
+		Nav(now-90,"10000-1000",99,7), "QTNAV|1,99999-9999,99,0,7,12,2000,3000,," }) do
+		a:OnCommReceived(a.commPrefix, wire, "PARTY", "Friend-Realm")
+		Equal(a:GetPartyNavigationPeer("Friend-Realm"), current)
+	end
+	a.now = a.now + 1
+	a:OnCommReceived(a.commPrefix, Nav(now+1,"30000-1000",11,7), "PARTY", "Friend-Realm")
+	Equal(a:GetPartyNavigationPeer("Friend-Realm").questID, 7)
+	-- An accepted modern navigation epoch also protects later public envelopes.
+	a:OnCommReceived(a.commPrefix, "QTB1|1,"..now..",20000-1000,999;0,8:QTPR|1,0", "PARTY", "Friend-Realm")
+	Equal(a:GetPartyNavigationPeer("Friend-Realm").questID, 7)
+	assert(a:IsKnownQTPlayer("Friend-Realm"))
+end)
+
+QT:RegisterTest("queued modern navigation retains sampled timestamp and expires by sample age", function()
+	local a, b = Fixture("Leader-Realm"), Fixture("Follower-Realm")
+	a.other = b
+	for _, peer in ipairs({a,b}) do
+		peer.inParty=true; peer.partyMembers={[a.name]={},[b.name]={}}
+		peer.db.profile.sharePartyFocus,peer.db.profile.sharePartyWaypoint=true,true
+	end
+	local state=a:GetPartyNavigationState(); state.sequence=1
+	local sampled=a:GetAnnouncementServerTime()
+	assert(a:SendPartyNavigationSnapshot({questID=7,mapID=12,x=.2,y=.3,sampledAt=sampled},false,
+		{{distribution="PARTY",requiresGroup=true}}))
+	a.now=a.now+10
+	a:DrainGeographicQueue(); a:DrainGeographicQueue()
+	local peer=b:GetPartyNavigationPeer(a.name)
+	Equal(peer.stamp,sampled); Equal(peer.at,100)
+	b.now=190
+	Equal(b:GetPartyNavigationPeer(a.name),nil)
+end)
+
+QT:RegisterTest("evicted modern comparison snapshots rebuild with new identity while legacy tombstones remain closed", function()
+	local peers,byName,advance=FairTransportNetwork(2,3)
+	local receiver,sender=peers[1],peers[2]
+	receiver:RememberDirectCommPeer(sender.name,true)
+	local dropped,completed,result=false,0,{}
+	for _,a in ipairs(peers) do
+		a.API.SendAddonMessage=function(prefix,wire,route,target)
+			if route~="WHISPER" then return 0 end
+			if a==sender and wire:match("^QCQE|") then
+				local row=a:DecodeQuestCompareEntryPayload(wire:sub(6))
+				if row.questId=="2" and not dropped then dropped=true;return 0 end
+			end
+			byName[target]:OnCommReceived(prefix,wire,route,a.name)
+			return 0
+		end
+	end
+	local _,id=receiver:RequestQuestCompare(sender.name,{onEntry=function(row) result[row.questId]=row.questTitle end,
+		onDone=function()completed=completed+1 end,onTimeout=function()error("eviction recovery timed out")end})
+	advance(5);assert(dropped);Equal(next(result),nil)
+	local key=receiver.name.."|"..id
+	local originalToken=sender.questCompareResponseCache[key].snapshotId
+	for index=1,4 do
+		assert(sender:GetQuestCompareResponseCache("Other"..index.."-Realm","replacement-"..index,{{questId="90",questTitle="Other query"}}))
+	end
+	Equal(sender.questCompareResponseCache[key].entries,nil)
+	Equal(sender:HandleQuestCompareRequest{requestId=id,requesterName=receiver.name,targetName=sender.name,replyDistribution="WHISPER"},false)
+	function sender:BuildQuestCompareEntries()return {{questId="3",questTitle="Current 3"},{questId="4",questTitle="Current 4"},{questId="5",questTitle="Current 5"}}end
+	advance(65)
+	Equal(completed,1);Equal(result["1"],nil);Equal(result["2"],nil)
+	for quest=3,5 do Equal(result[tostring(quest)],"Current "..quest) end
+	assert(sender.questCompareResponseCache[key].snapshotId~=originalToken)
+	Equal(next(receiver.pendingQuestCompareRequests),nil)
+end)
+
+QT:RegisterTest("requester world transitions settle real PQL member and objective loading state", function()
+	for _,kind in ipairs({"log","objectives"}) do
+		local peers,_,advance=FairTransportNetwork(1,0)
+		local a=peers[1]
+		a.inParty=true;a.partyMembers["Other-Realm"]={}
+		local member={name="Other-Realm",state="ready",entries={[1]={questId="1"}},supportsObjectives=true}
+		a.partyQuestCompareSession={mode="party",members={member},byName={[member.name]=member},expandedQuestIds={[1]=true}}
+		if kind=="log" then a:RefreshPartyQuestCompareMember(member.name)
+		else a:LoadPartyQuestObjectives(member) end
+		local detail=member.objectiveDetails and member.objectiveDetails[1]
+		if kind=="log" then Equal(member.state,"loading") else Equal(detail.state,"loading") end
+		a:EndCommsWorldSession();a:ResumeCommsWorldSession()
+		advance(31)
+		Equal(next(a.pendingQuestCompareRequests),nil)
+		if kind=="log" then Equal(member.state,"timeout")
+		else Equal(detail.state,"unknown");Equal(member.objectiveRequestQuestId,nil) end
 	end
 end)

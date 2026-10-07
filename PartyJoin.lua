@@ -70,20 +70,22 @@ function QT:ResetPartyJoin()
 	end
 end
 
-local function RetirePeerSession(state, name, peer, now)
+local function RetirePeerSession(state, name, peer, now, departure)
 	if not peer then
 		return
 	end
 	if Count(state.retired) >= 512 then
 		local oldest, expires
-		for key, at in pairs(state.retired) do
-			if not expires or at < expires then
-				oldest, expires = key, at
+		for key, retired in pairs(state.retired) do
+			if not expires or retired.expires < expires then
+				oldest, expires = key, retired.expires
 			end
 		end
 		state.retired[oldest] = nil
 	end
-	state.retired[name .. ":" .. peer.session] = now + PEER_LIFETIME
+	state.retired[name .. ":" .. peer.session] = {
+		expires = now + PEER_LIFETIME, sequence = peer.sequence, departure = departure == true,
+	}
 end
 
 function QT:ForgetPartyJoinPeer(name)
@@ -91,7 +93,7 @@ function QT:ForgetPartyJoinPeer(name)
 	if not state then
 		return
 	end
-	RetirePeerSession(state, name, state.peers[name], Now(self))
+	RetirePeerSession(state, name, state.peers[name], Now(self), true)
 	state.peers[name], state.incoming[name], state.reservations[name] = nil, nil, nil
 	if state.outgoing and (state.outgoing.target == name or state.outgoing.origin == name) then
 		state.outgoing = nil
@@ -105,8 +107,8 @@ function QT:PrunePartyJoin()
 		return
 	end
 	local now, changed = Now(self), false
-	for key, expires in pairs(state.retired) do
-		if now >= expires or expires - now > PEER_LIFETIME then
+	for key, retired in pairs(state.retired) do
+		if now >= retired.expires or retired.expires - now > PEER_LIFETIME then
 			state.retired[key] = nil
 		end
 	end
@@ -180,8 +182,19 @@ function QT:HandlePartyJoinMetadata(payload, sender)
 	self:PrunePartyJoin()
 	local state, now = self:GetPartyJoinState(), Now(self)
 	local previous = state.peers[sender]
-	if state.retired[sender .. ":" .. session] then
-		return false
+	local retiredKey = sender .. ":" .. session
+	local retired = state.retired[retiredKey]
+	if retired then
+		-- Older senders keep this inner session across loading screens. Only a
+		-- newer authenticated snapshot can restore its departure-retired state;
+		-- raw legacy packets and truly replaced inner sessions remain retired.
+		local context = rawget(self, "peerUpdateContext")
+		if not retired.departure or previous or sequence <= retired.sequence
+			or not context or context.name ~= sender or not context.session or not context.sequence
+			or not self:CanAcceptPeerUpdate(sender, "QJST", context.sampledAt, context.session, context.sequence) then
+			return false
+		end
+		state.retired[retiredKey] = nil
 	end
 	if previous and previous.session == session and sequence <= previous.sequence then
 		return false

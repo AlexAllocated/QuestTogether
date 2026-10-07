@@ -39,6 +39,7 @@ function QT:RecordQTPlayerPresence(name, active)
 	local wasKnown = self:IsKnownQTPlayer(name)
 	local hadRecord = state.peers[name] ~= nil
 	if not active then
+		if self.RetirePartyNavigationPeer then self:RetirePartyNavigationPeer(name) end
 		local locations, private = rawget(self, "playerLocationState"), rawget(self, "developerPlayerData")
 		if locations and locations.peers[name] and locations.peers[name].mask ~= 0 then
 			local previous = locations.peers[name]

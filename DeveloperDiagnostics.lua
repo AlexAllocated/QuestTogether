@@ -136,7 +136,7 @@ function QT:QueueDeveloperPingVerification(request, sender, callback)
 		or (failure and tick < failure.untilAt) or self:IsIgnoredPlayerName(senderName) then return false end
 	local copy = {}
 	for _, field in ipairs({ "requestId", "issuedAt", "targetName", "debugRequest", "developerRequest",
-		"signature", "supportsPagedPong", "supportsDirectComms" }) do copy[field] = request[field] end
+		"signature", "supportsPagedPong", "supportsDirectComms", "supportsLargePong" }) do copy[field] = request[field] end
 	copy.requesterName = senderName
 	state.seen[key], state.pendingSenders[senderName] = now, true
 	state.jobs[#state.jobs + 1] = { request = copy, sender = senderName, callback = callback, startedAt = tick,
@@ -154,7 +154,7 @@ function QT:QueueDeveloperPingVerification(request, sender, callback)
 end
 
 function QT:BuildDeveloperDiagnosticSnapshot()
-	local lines = { self:BuildDiagnosticReport() }
+	local fields = {}
 	-- Only QT-owned, explicitly declared primitive settings. No SavedVariables
 	-- dump, chat history, arbitrary globals, other addons, or private key material.
 	local keys = {}
@@ -165,10 +165,12 @@ function QT:BuildDeveloperDiagnosticSnapshot()
 	for _, key in ipairs(keys) do
 		local value = self:GetOption(key)
 		if self:CanAccessValue(value) and (type(value)=="boolean" or type(value)=="number" or type(value)=="string") then
-			lines[#lines+1] = "option." .. key .. "=" .. tostring(value)
+			fields[#fields+1] = { "option." .. key, value }
 		end
 	end
-	return table.concat(lines,"\n")
+	-- Settings share the report window's 32 KiB budget and explicit truncation
+	-- marker instead of being appended outside the diagnostic report's bound.
+	return self:BuildDiagnosticReport(nil, fields)
 end
 
 function QT:AddDeveloperPingMetadata(response, request)
@@ -195,6 +197,11 @@ function QT:AcceptDeveloperPingResponse(response, pending)
 	if rawget(self,"isLocalDeveloper") ~= true or not pending.developerRequest or not response.developer then return end
 	local name = Name(self,response.senderName)
 	if not name or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then return end
+	-- A correlated report remains useful after departure. Its sampled player
+	-- metadata still has to pass the freshness fence below before updating peers.
+	if pending.debugRequest and pending.targetName==name and response.diagnosticText and response.diagnosticText~="" then
+		self:GetDebugController():ShowReport(response.diagnosticText, name)
+	end
 	local now = self.API.GetTime()
 	local serverNow, sampled = self:GetAnnouncementServerTime(), self:SafeToNumber(response.sampledAt)
 	local age = serverNow and sampled and serverNow-sampled
@@ -223,9 +230,6 @@ function QT:AcceptDeveloperPingResponse(response, pending)
 					lookingForQuestPartners=response.lookingForQuestPartners,addonVersion=response.addonVersion }
 			end
 		end
-	end
-	if pending.debugRequest and pending.targetName==name and response.diagnosticText and response.diagnosticText~="" then
-		self:GetDebugController():ShowReport(response.diagnosticText, name)
 	end
 	self:RefreshPlayerLocationPins()
 end

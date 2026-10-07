@@ -430,6 +430,9 @@ function QuestTogether:EncodePingRequestPayload(requestData)
 		fields[6], fields[7] = "dev1", tostring(requestData.issuedAt)
 		fields[8], fields[9], fields[10] = requestData.debugRequest and "debug" or "snapshot",
 			self:EscapePayload(requestData.targetName or ""), requestData.signature
+		-- Keep pages1 for old peers; the trailing extension opts targeted reports
+		-- into larger bounded replies without changing the signed request text.
+		if requestData.supportsLargePong and requestData.debugRequest then fields[11] = "2" end
 	end
 	return table.concat(fields, ",")
 end
@@ -458,6 +461,7 @@ function QuestTogether:DecodePingRequestPayload(payload)
 		requesterName = requesterName,
 		supportsDirectComms = fields[4] == "direct1",
 		supportsPagedPong = fields[4] == "direct1" and fields[5] == "pages1",
+		supportsLargePong = fields[4] == "direct1" and fields[5] == "pages1" and fields[11] == "2",
 		developerRequest = fields[6] == "dev1",
 		issuedAt = SafeNumber(self, fields[7]),
 		debugRequest = fields[8] == "debug",
@@ -563,6 +567,7 @@ function QuestTogether:EncodeQuestCompareRequestPayload(requestData)
 		self:EscapePayload(requestData.targetName or ""),
 	}
 	if requestData.objectiveQuestId then fields[5] = tostring(requestData.objectiveQuestId) end
+	if requestData.supportsSnapshotIdentity then fields[5], fields[6] = fields[5] or "", "snap1" end
 
 	return table.concat(fields, ",")
 end
@@ -594,7 +599,12 @@ function QuestTogether:DecodeQuestCompareRequestPayload(payload)
 		requesterName = requesterName,
 		targetName = targetName,
 		objectiveQuestId = objectiveQuestId,
+		supportsSnapshotIdentity = fields[6] == "snap1",
 	}
+end
+
+local function ValidCompareSnapshotID(value)
+	return type(value) == "string" and #value > 0 and #value <= 64 and not value:find("[^%d%-]")
 end
 
 function QuestTogether:EncodeQuestCompareEntryPayload(entryData)
@@ -615,6 +625,7 @@ function QuestTogether:EncodeQuestCompareEntryPayload(entryData)
 		pushable,
 	}
 	if entryData.objectiveCount ~= nil then fields[9] = tostring(entryData.objectiveCount) end
+	if entryData.snapshotId then fields[9], fields[10] = fields[9] or "", entryData.snapshotId end
 
 	return FitPayloadText(self, fields, 6, QUEST_COMPARE_ENTRY_COMMAND)
 end
@@ -663,6 +674,7 @@ function QuestTogether:DecodeQuestCompareEntryPayload(payload)
 	local objectiveCount = fields[9] and fields[9] ~= "" and SafeNumber(self, fields[9]) or nil
 	if fields[9] and fields[9] ~= "" and (not objectiveCount or objectiveCount < 0 or objectiveCount > 20 or objectiveCount ~= math.floor(objectiveCount)) then return nil end
 
+	if fields[10] and not ValidCompareSnapshotID(fields[10]) then return nil end
 	return {
 		version = version,
 		requestId = requestId,
@@ -673,21 +685,24 @@ function QuestTogether:DecodeQuestCompareEntryPayload(payload)
 		isComplete = isComplete,
 		isPushable = isPushable,
 		objectiveCount = objectiveCount,
+		snapshotId = fields[10],
 	}
 end
 
 -- Objective replies are scoped to a requested quest. One bounded packet per
 -- objective avoids truncating an entire list or adding unsolicited log traffic.
-function QuestTogether:EncodeQuestCompareObjectivePayload(requestId, row)
+function QuestTogether:EncodeQuestCompareObjectivePayload(requestId, row, snapshotId)
 	local fields = { "1", self:EscapePayload(requestId), tostring(row.questId), tostring(row.objectiveIndex),
 		self:EscapePayload(row.text), self:EscapePayload(row.kind), row.finished == true and "1" or row.finished == false and "0" or "",
 		row.current ~= nil and tostring(row.current) or "", row.required ~= nil and tostring(row.required) or "" }
+	if snapshotId then fields[10] = snapshotId end
 	return FitPayloadText(self, fields, 5, "QCOB")
 end
 
 function QuestTogether:DecodeQuestCompareObjectivePayload(payload)
 	local f = SplitByDelimiter(SafePrimitiveString(self, payload, ""), ",")
-	if #f ~= 9 or f[1] ~= "1" or f[2] == "" then return nil end
+	if (#f ~= 9 and #f ~= 10) or f[1] ~= "1" or f[2] == ""
+		or (f[10] and not ValidCompareSnapshotID(f[10])) then return nil end
 	local id, index = SafeNumber(self, f[3]), SafeNumber(self, f[4])
 	if not id or id < 1 or id > 1000000000 or id ~= math.floor(id) or not index or index < 1 or index > 20 or index ~= math.floor(index) then return nil end
 	if f[7] ~= "" and f[7] ~= "0" and f[7] ~= "1" then return nil end
@@ -704,15 +719,46 @@ function QuestTogether:DecodeQuestCompareObjectivePayload(payload)
 	if text == "" then return nil end
 	return { requestId = self:UnescapePayload(f[2]), questId = id, objectiveIndex = index,
 		text = text, kind = kind,
-		finished = finished, current = current, required = required }
+		finished = finished, current = current, required = required, snapshotId = f[10] }
+end
+
+-- Callers keep one logical handle across retries. Only its current wire ID
+-- accepts packets; cancellation of that handle also invalidates retry aliases.
+function QuestTogether:GetPendingQuestCompare(requestId)
+	local pending = self.pendingQuestCompareRequests and self.pendingQuestCompareRequests[requestId]
+	if not pending or (pending.logicalRequestId and self.pendingQuestCompareRequests[pending.logicalRequestId] ~= pending)
+		or (pending.wireRequestId and pending.wireRequestId ~= requestId) or pending.restartPending then return nil end
+	return pending
+end
+
+function QuestTogether:AcceptQuestCompareSnapshot(pending, snapshotId)
+	local identity = snapshotId or false -- Explicit legacy identity; never mix negotiated and old packets.
+	if pending.snapshotId ~= nil and pending.snapshotId ~= identity then
+		if pending.restart then pending.restart() end
+		return false
+	end
+	pending.snapshotId = identity
+	return true
+end
+
+function QuestTogether:ClearPendingQuestCompare(requestId, pending)
+	if self.pendingQuestCompareRequests[requestId] == pending then self.pendingQuestCompareRequests[requestId] = nil end
+	if pending.logicalRequestId and self.pendingQuestCompareRequests[pending.logicalRequestId] == pending then
+		self.pendingQuestCompareRequests[pending.logicalRequestId] = nil
+	end
+	if pending.wireRequestId and self.pendingQuestCompareRequests[pending.wireRequestId] == pending then
+		self.pendingQuestCompareRequests[pending.wireRequestId] = nil
+	end
 end
 
 function QuestTogether:HandleQuestCompareObjective(row, sender)
-	local pending = self.pendingQuestCompareRequests and self.pendingQuestCompareRequests[row.requestId]
+	local pending = self:GetPendingQuestCompare(row.requestId)
 	if not pending or pending.targetName ~= self:NormalizeMemberName(sender) or pending.objectiveQuestId ~= row.questId then return false end
+	if not self:AcceptQuestCompareSnapshot(pending, row.snapshotId) then return false end
 	pending.objectives = pending.objectives or {}
 	if pending.objectives[row.objectiveIndex] then return false end
 	pending.objectives[row.objectiveIndex] = row
+	pending.lastProgressAt, pending.receivedData = self.API.GetTime(), true
 	self:TryCompleteQuestCompare(row.requestId)
 	return true
 end
@@ -728,6 +774,7 @@ function QuestTogether:EncodeQuestCompareDonePayload(doneData)
 		doneData.supportsObjectives and "obj1" or "",
 	}
 
+	if doneData.snapshotId then fields[8] = doneData.snapshotId end
 	return table.concat(fields, ",")
 end
 
@@ -761,6 +808,7 @@ function QuestTogether:DecodeQuestCompareDonePayload(payload)
 	if not numericCount or numericCount < 0 or numericCount ~= math.floor(numericCount) then
 		return nil
 	end
+	if fields[8] and not ValidCompareSnapshotID(fields[8]) then return nil end
 	return {
 		version = version,
 		requestId = requestId,
@@ -769,6 +817,7 @@ function QuestTogether:DecodeQuestCompareDonePayload(payload)
 		count = numericCount,
 		supportsShareRequests = fields[6] == "share1",
 		supportsObjectives = fields[7] == "obj1",
+		snapshotId = fields[8],
 	}
 end
 
@@ -920,7 +969,7 @@ function QuestTogether:GetCommsDiagnostics()
 end
 
 -- Fixed command buckets keep unknown traffic from growing diagnostic state.
-local TRAFFIC_COMMANDS = { QTNAV = true, ANN = true, LVL = true, LOC = true, QTPR = true, QTVR = true,
+local TRAFFIC_COMMANDS = { QTNAV = true, QTN2 = true, ANN = true, LVL = true, LOC = true, QTPR = true, QTVR = true,
 	QTLF = true, QTLQ = true, QJST = true, QJON = true, QTPG = true, QPGR = true, QPGM = true, QCMP = true, QCQE = true,
 	QCDN = true, QCOB = true, QTB1 = true, QTDQ = true, QTCI = true, QTHQ = true, QTHD = true, QTPH = true, QTSR = true, QTSP = true, QTSX = true, QSHR = true, PING = true, PONG = true, PONP = true }
 function QuestTogether:RecordCommsTraffic(kind, message, result)
@@ -1139,7 +1188,7 @@ end
 function QuestTogether:IsQueuedCommRequestCurrent(wire)
 	if wire:sub(1, 5) ~= "QCMP|" then return true end
 	local request = self:DecodeQuestCompareRequestPayload(wire:sub(6))
-	local pending = request and self.pendingQuestCompareRequests and self.pendingQuestCompareRequests[request.requestId]
+	local pending = request and self:GetPendingQuestCompare(request.requestId)
 	return pending ~= nil and not self:IsIgnoredPlayerName(pending.targetName)
 		and pending.targetName == self:NormalizeMemberName(request.targetName)
 end
@@ -1585,12 +1634,12 @@ function QuestTogether:BuildQuestCompareEntries()
 	return entries
 end
 
-function QuestTogether:SendQuestCompareEntry(requestId, entryData, selectedRoutes, completion)
+function QuestTogether:SendQuestCompareEntry(requestId, entryData, selectedRoutes, completion, snapshotId)
 	if type(requestId) ~= "string" or requestId == "" or type(entryData) ~= "table" then
 		return false
 	end
 	if entryData.objectiveIndex then
-		return self:SendWireMessageToAnnouncementRoutes("QCOB|" .. self:EncodeQuestCompareObjectivePayload(requestId, entryData),
+		return self:SendWireMessageToAnnouncementRoutes("QCOB|" .. self:EncodeQuestCompareObjectivePayload(requestId, entryData, snapshotId),
 			"quest compare objective", selectedRoutes, false, completion)
 	end
 
@@ -1605,6 +1654,7 @@ function QuestTogether:SendQuestCompareEntry(requestId, entryData, selectedRoute
 			isComplete = entryData.isComplete and true or false,
 			isPushable = entryData.isPushable,
 			objectiveCount = entryData.objectiveCount,
+			snapshotId = snapshotId,
 		})
 	)
 	return self:SendWireMessageToAnnouncementRoutes(
@@ -1614,7 +1664,7 @@ function QuestTogether:SendQuestCompareEntry(requestId, entryData, selectedRoute
 	)
 end
 
-function QuestTogether:SendQuestCompareDone(requestId, count, selectedRoutes, completion)
+function QuestTogether:SendQuestCompareDone(requestId, count, selectedRoutes, completion, snapshotId)
 	if type(requestId) ~= "string" or requestId == "" then
 		return false
 	end
@@ -1628,6 +1678,7 @@ function QuestTogether:SendQuestCompareDone(requestId, count, selectedRoutes, co
 			count = SafeNumber(self, count) or 0,
 			supportsShareRequests = true,
 			supportsObjectives = true,
+			snapshotId = snapshotId,
 		})
 	)
 	return self:SendWireMessageToAnnouncementRoutes(
@@ -1649,7 +1700,7 @@ function QuestTogether:GetQuestCompareResponseCache(requester, requestId, entrie
 	end
 	local key = (requester or "") .. "|" .. requestId
 	local record = cache[key]
-	if record then return record.entries, not record.entries and "retired" or nil end
+	if record then return record.entries, not record.entries and "retired" or nil, record.snapshotId end
 	if not entries then return nil end
 	local active = {}
 	for _, job in ipairs(self.questCompareResponseQueue and self.questCompareResponseQueue.jobs or {}) do
@@ -1671,8 +1722,11 @@ function QuestTogether:GetQuestCompareResponseCache(requester, requestId, entrie
 		cache[oldest].entries=nil
 	end
 	if count>=64 and oldestRecord then cache[oldestRecord]=nil end
-	cache[key]={entries=entries,createdAt=now,expiresAt=now+QUEST_COMPARE_CACHE_LIFETIME_SECONDS}
-	return entries
+	self.questCompareSnapshotSequence = (rawget(self, "questCompareSnapshotSequence") or 0) + 1
+	local snapshotId = string.format("%d-%d-%d-%d", self:GetAnnouncementServerTime() or 0,
+		math.floor(now * 1000), self.API.Random(1, 1000000000), self.questCompareSnapshotSequence)
+	cache[key]={entries=entries,snapshotId=snapshotId,createdAt=now,expiresAt=now+QUEST_COMPARE_CACHE_LIFETIME_SECONDS}
+	return entries, nil, snapshotId
 end
 
 function QuestTogether:DrainQuestCompareResponses()
@@ -1727,8 +1781,9 @@ function QuestTogether:DrainQuestCompareResponses()
 					finished = true
 					self:RecordCommsDiagnostic("failedComparisons", "response snapshot exceeds queue limits requestId=" .. job.requestId)
 				elseif entries then
-					job.entries = self:GetQuestCompareResponseCache(job.requesterName, job.requestId, entries)
-					if not job.objectiveQuestId and #entries > 40 then self:SendQuestCompareDone(job.requestId, #entries, job.routes) end
+					local unused
+					job.entries, unused, job.snapshotId = self:GetQuestCompareResponseCache(job.requesterName, job.requestId, entries)
+					if not job.objectiveQuestId and ((job.supportsSnapshotIdentity and rawget(self, "geographicCommsState")) or #entries > 40) then self:SendQuestCompareDone(job.requestId, #entries, job.routes, nil, job.supportsSnapshotIdentity and job.snapshotId) end
 					queue.packets = queue.packets + #entries
 					job.remaining = #entries + 1
 					nextDelay = QUEST_COMPARE_SEND_INTERVAL_SECONDS
@@ -1760,11 +1815,11 @@ function QuestTogether:DrainQuestCompareResponses()
 					end }
 				end
 				if entry then
-					sent, reason = self:SendQuestCompareEntry(job.requestId, entry, job.routes, completion)
+					sent, reason = self:SendQuestCompareEntry(job.requestId, entry, job.routes, completion, job.supportsSnapshotIdentity and job.snapshotId)
 				else
 					-- Queue admission is not delivery: certify only after all entries
 					-- have actually left the common transport scheduler.
-					sent, reason = self:SendQuestCompareDone(job.requestId, job.objectiveQuestId and (#job.entries > 0 and 1 or 0) or #job.entries, job.routes, completion)
+					sent, reason = self:SendQuestCompareDone(job.requestId, job.objectiveQuestId and (#job.entries > 0 and 1 or 0) or #job.entries, job.routes, completion, job.supportsSnapshotIdentity and job.snapshotId)
 				end
 				if reason == "queued" then job.inFlight = true; return end
 			end
@@ -1827,7 +1882,7 @@ function QuestTogether:HandleQuestCompareRequest(requestData)
 	for index, job in ipairs(queue.jobs) do
 		if job.requestId == requestData.requestId and job.requesterName == requesterName then
 			local entries = self:GetQuestCompareResponseCache(requesterName, job.requestId)
-			if not job.objectiveQuestId and entries and #entries > 40 then self:SendQuestCompareDone(job.requestId, #entries, job.routes) end
+			if not job.objectiveQuestId and entries and ((job.supportsSnapshotIdentity and rawget(self, "geographicCommsState")) or #entries > 40) then self:SendQuestCompareDone(job.requestId, #entries, job.routes, nil, job.supportsSnapshotIdentity and job.snapshotId) end
 			return true
 		end
 		if requesterName and job.requesterName == requesterName then
@@ -1836,8 +1891,14 @@ function QuestTogether:HandleQuestCompareRequest(requestData)
 		end
 	end
 	if #queue.jobs - #superseded >= QUEST_COMPARE_MAX_QUEUED_RESPONSES then return false end
-	local entries, reason = self:GetQuestCompareResponseCache(requesterName, requestData.requestId)
-	if reason=="retired" then return false end
+	local entries, reason, snapshotId = self:GetQuestCompareResponseCache(requesterName, requestData.requestId)
+	if reason=="retired" then
+		if not requestData.supportsSnapshotIdentity then return false end
+		-- Only negotiated receivers can detect a rebuilt generation. Their
+		-- changed token forces a fresh correlation before any rows are committed.
+		self.questCompareResponseCache[(requesterName or "") .. "|" .. requestData.requestId] = nil
+		reason = nil
+	end
 	if not entries then entries,reason=self:BuildQuestCompareResponseEntries(requestData.objectiveQuestId) end
 	local packetCount = entries and #entries + 1 or 1
 	local snapshotCount = entries and #entries
@@ -1846,7 +1907,7 @@ function QuestTogether:HandleQuestCompareRequest(requestData)
 		self:RecordCommsDiagnostic("failedComparisons", "response queue full")
 		return false
 	end
-	if entries then entries=self:GetQuestCompareResponseCache(requesterName,requestData.requestId,entries) end
+	if entries then entries,reason,snapshotId=self:GetQuestCompareResponseCache(requesterName,requestData.requestId,entries) end
 	local waitingForCapacity = queue.packets - supersededPackets + packetCount > QUEST_COMPARE_MAX_QUEUED_PACKETS
 	if waitingForCapacity then entries, reason, packetCount = nil, "capacity", 1 end
 	-- Admit atomically, preserving unrelated callers' order and the existing
@@ -1866,6 +1927,8 @@ function QuestTogether:HandleQuestCompareRequest(requestData)
 		requestId = requestData.requestId,
 		requesterName = requesterName,
 		objectiveQuestId = requestData.objectiveQuestId,
+		supportsSnapshotIdentity = requestData.supportsSnapshotIdentity == true,
+		snapshotId = snapshotId,
 		entries = entries,
 		nextEntry = 1,
 		remaining = packetCount,
@@ -1881,8 +1944,8 @@ function QuestTogether:HandleQuestCompareRequest(requestData)
 	-- Count-before-entries is already part of the reordered-delivery protocol.
 	-- Announce large jobs immediately so waiting callers can extend their own
 	-- deadline, even when three other full logs are ahead of them in the queue.
-	if not requestData.objectiveQuestId and snapshotCount and snapshotCount > 40 then
-		self:SendQuestCompareDone(requestData.requestId, snapshotCount, queue.jobs[#queue.jobs].routes)
+	if not requestData.objectiveQuestId and snapshotCount and ((requestData.supportsSnapshotIdentity and rawget(self, "geographicCommsState")) or snapshotCount > 40) then
+		self:SendQuestCompareDone(requestData.requestId, snapshotCount, queue.jobs[#queue.jobs].routes, nil, requestData.supportsSnapshotIdentity and snapshotId)
 	end
 	self:DrainQuestCompareResponses()
 	return true
@@ -1894,7 +1957,7 @@ function QuestTogether:HandleQuestCompareEntry(entryData)
 	end
 
 	self.pendingQuestCompareRequests = self.pendingQuestCompareRequests or {}
-	local pending = self.pendingQuestCompareRequests[entryData.requestId]
+	local pending = self:GetPendingQuestCompare(entryData.requestId)
 	if type(pending) ~= "table" then
 		return false
 	end
@@ -1907,29 +1970,28 @@ function QuestTogether:HandleQuestCompareEntry(entryData)
 	if not questId or (pending.objectiveQuestId and questId ~= pending.objectiveQuestId) then
 		return false
 	end
+	if not self:AcceptQuestCompareSnapshot(pending, entryData.snapshotId) then return false end
 	pending.entriesByQuestId = pending.entriesByQuestId or {}
 	if pending.entriesByQuestId[questId] or (pending.count or 0) >= QUEST_COMPARE_MAX_ENTRIES then
 		return false
 	end
 	pending.entriesByQuestId[questId] = entryData
+	pending.entryOrder = pending.entryOrder or {}
+	pending.entryOrder[#pending.entryOrder + 1] = questId
+	pending.lastProgressAt, pending.receivedData = self.API.GetTime(), true
 
 	if type(entryData.classFile) == "string" and entryData.classFile ~= "" then
 		pending.classFile = entryData.classFile
 	end
 	pending.count = (pending.count or 0) + 1
 	if pending.count > 40 then pending.largeResponse = true end
-	if pending.receiver then
-		pending.receiver.onEntry(entryData)
-	elseif self.PrintQuestCompareMessage then
-		self:PrintQuestCompareMessage(senderName, entryData, pending.classFile)
-	end
 	self:TryCompleteQuestCompare(entryData.requestId)
 	return true
 end
 
 function QuestTogether:TryCompleteQuestCompare(requestId)
-	local pending = self.pendingQuestCompareRequests and self.pendingQuestCompareRequests[requestId]
-	if not pending or pending.expectedCount == nil or (pending.count or 0) < pending.expectedCount then
+	local pending = self:GetPendingQuestCompare(requestId)
+	if not pending or pending.expectedCount == nil or (pending.count or 0) ~= pending.expectedCount then
 		return false
 	end
 	if pending.objectiveQuestId and pending.expectedCount > 0 then
@@ -1944,7 +2006,14 @@ function QuestTogether:TryCompleteQuestCompare(requestId)
 			entry.objectives = objectives
 		end
 	end
-	self.pendingQuestCompareRequests[requestId] = nil
+	self:ClearPendingQuestCompare(requestId, pending)
+	-- Partial generations remain private. Publish only after entries, objectives,
+	-- and the completion marker agree, including after a legacy fresh-ID retry.
+	for _, questId in ipairs(pending.entryOrder or {}) do
+		local entry = pending.entriesByQuestId[questId]
+		if pending.receiver then pending.receiver.onEntry(entry)
+		elseif self.PrintQuestCompareMessage then self:PrintQuestCompareMessage(pending.targetName, entry, pending.classFile) end
+	end
 	if pending.receiver then
 		pending.receiver.onDone(pending.supportsShareRequests == true, pending.supportsObjectives == true, pending.classFile)
 	elseif self.PrintQuestCompareDone then
@@ -1959,7 +2028,7 @@ function QuestTogether:HandleQuestCompareDone(doneData)
 	end
 
 	self.pendingQuestCompareRequests = self.pendingQuestCompareRequests or {}
-	local pending = self.pendingQuestCompareRequests[doneData.requestId]
+	local pending = self:GetPendingQuestCompare(doneData.requestId)
 	if type(pending) ~= "table" then
 		return false
 	end
@@ -1976,8 +2045,10 @@ function QuestTogether:HandleQuestCompareDone(doneData)
 	if type(doneData.classFile) == "string" and doneData.classFile ~= "" then
 		pending.classFile = doneData.classFile
 	end
+	if not self:AcceptQuestCompareSnapshot(pending, doneData.snapshotId) then return false end
 	-- The completion marker can arrive on one route before entries from the
 	-- other. Retain the request until the advertised unique entries arrive.
+	if pending.expectedCount == nil then pending.lastProgressAt = self.API.GetTime() end
 	pending.expectedCount = expectedCount
 	if expectedCount > 40 then pending.largeResponse = true end
 	pending.supportsShareRequests = doneData.supportsShareRequests == true
@@ -2022,75 +2093,107 @@ function QuestTogether:RequestQuestCompare(speakerName, receiver)
 	local requestId = self:BuildChannelRequestId("qcmp")
 	self.pendingQuestCompareRequests = self.pendingQuestCompareRequests or {}
 	local pendingRequest = {
-		startedAt = self.API.GetTime(),
+		startedAt = self.API.GetTime(), lastProgressAt = self.API.GetTime(),
+		logicalRequestId = requestId, wireRequestId = requestId,
 		targetName = targetName,
 		classFile = self:GetGroupedSenderClassFile(targetName),
 		receiver = receiver,
 		objectiveQuestId = receiver and receiver.objectiveQuestId,
-		count = 0,
-		entriesByQuestId = {},
+		count = 0, entriesByQuestId = {}, entryOrder = {},
 	}
 	self.pendingQuestCompareRequests[requestId] = pendingRequest
-	local function Timeout()
-		local pending = self.pendingQuestCompareRequests and self.pendingQuestCompareRequests[requestId]
-		if pending == pendingRequest then
-			local remaining = pending.startedAt + QUEST_COMPARE_LARGE_TIMEOUT_SECONDS - self.API.GetTime()
-			if pending.largeResponse and remaining > 0 then
-				self.API.Delay(remaining, Timeout)
-				return
-			end
-			self.pendingQuestCompareRequests[requestId] = nil
-			if receiver then
-				receiver.onTimeout()
-			elseif self.isEnabled and self.PrintConsoleAnnouncement then
-				self:PrintConsoleAnnouncement(
-					string.format(L("Quest comparison timed out (%d quests received)."), pending.count or 0),
-					pending.targetName,
-					pending.classFile,
-					"QUEST_PROGRESS"
-				)
-			end
+	local generation = rawget(self,"commsWorldGeneration") or 0
+	local function Current()
+		return (rawget(self,"commsWorldGeneration") or 0) == generation and self.isEnabled and not self.isLoggingOut
+			and self.pendingQuestCompareRequests[requestId] == pendingRequest and not self:IsIgnoredPlayerName(targetName)
+	end
+	local function Fail()
+		self:ClearPendingQuestCompare(requestId, pendingRequest)
+		if receiver then receiver.onTimeout()
+		elseif self.isEnabled and self.PrintConsoleAnnouncement then
+			self:PrintConsoleAnnouncement(string.format(L("Quest comparison timed out (%d quests received)."), pendingRequest.count or 0),
+				pendingRequest.targetName, pendingRequest.classFile, "QUEST_PROGRESS")
 		end
 	end
-	self.API.Delay(QUEST_COMPARE_TIMEOUT_SECONDS, Timeout)
-
-	local wireMessage = self:SerializeWireMessage(
-		QUEST_COMPARE_REQUEST_COMMAND,
-		self:EncodeQuestCompareRequestPayload({
-			requestId = requestId,
-			requesterName = playerName,
-			targetName = targetName,
-			objectiveQuestId = receiver and receiver.objectiveQuestId,
-		})
-	)
-	if
-		not self:SendWireMessageToAnnouncementRoutes(
-			wireMessage,
-			"quest compare request requestId=" .. SafeAddonString(self, requestId, ""),
-			self:GetTargetedCommRoutes(targetName, receiver and receiver.routes)
-		)
-	then
-		self.pendingQuestCompareRequests[requestId] = nil
-		return false
+	local function Retire()
+		if self.pendingQuestCompareRequests[requestId] == pendingRequest and self.isEnabled
+			and not self:IsIgnoredPlayerName(targetName) and (rawget(self,"commsWorldGeneration") or 0) ~= generation then
+			-- The consumer is still current across a loading screen. Settle it so
+			-- PQL can refresh again instead of retaining Loading without a request.
+			Fail()
+		else self:ClearPendingQuestCompare(requestId, pendingRequest) end
 	end
-
-	-- Addon-message acceptance is not delivery. Re-request the same bounded
-	-- snapshot after silence/loss; retained unique entries merge idempotently,
-	-- and a responder already sending this ID keeps its existing job.
-	local retries, generation = 0, rawget(self,"commsWorldGeneration") or 0
+	local function Timeout()
+		if self.pendingQuestCompareRequests[requestId] ~= pendingRequest then
+			self:ClearPendingQuestCompare(requestId, pendingRequest)
+			return
+		end
+		local remaining = pendingRequest.startedAt + QUEST_COMPARE_LARGE_TIMEOUT_SECONDS - self.API.GetTime()
+		if (pendingRequest.largeResponse or pendingRequest.legacyRecovery) and remaining > 0 then
+			self.API.Delay(remaining, Timeout); return
+		end
+		-- Fresh-ID retries must retransmit an entire old-client log. Give an
+		-- actively arriving final transfer a short grace, never an unbounded wait.
+		local grace = remaining + 60
+		if pendingRequest.legacyRecovery and pendingRequest.receivedData and grace > 0
+			and self.API.GetTime() - pendingRequest.lastProgressAt < 30 then
+			self.API.Delay(math.min(30, grace), Timeout); return
+		end
+		Fail()
+	end
+	self.API.Delay(QUEST_COMPARE_TIMEOUT_SECONDS, Timeout)
+	local function Send(fresh)
+		if fresh then
+			if pendingRequest.snapshotId == false then pendingRequest.legacyRecovery = true end
+			local previous = pendingRequest.wireRequestId
+			if previous ~= requestId then self.pendingQuestCompareRequests[previous] = nil end
+			pendingRequest.wireRequestId = self:BuildChannelRequestId("qcmp")
+			pendingRequest.entriesByQuestId, pendingRequest.entryOrder, pendingRequest.objectives = {}, {}, nil
+			pendingRequest.count, pendingRequest.expectedCount, pendingRequest.snapshotId = 0, nil, nil
+			pendingRequest.receivedData = nil
+			pendingRequest.supportsShareRequests, pendingRequest.supportsObjectives = nil, nil
+			pendingRequest.lastProgressAt = self.API.GetTime()
+			self.pendingQuestCompareRequests[pendingRequest.wireRequestId] = pendingRequest
+		end
+		local wireMessage = self:SerializeWireMessage(QUEST_COMPARE_REQUEST_COMMAND, self:EncodeQuestCompareRequestPayload({
+			requestId = pendingRequest.wireRequestId, requesterName = playerName, targetName = targetName,
+			objectiveQuestId = receiver and receiver.objectiveQuestId, supportsSnapshotIdentity = true,
+		}))
+		return self:SendWireMessageToAnnouncementRoutes(wireMessage, "quest compare request requestId=" .. pendingRequest.wireRequestId,
+			self:GetTargetedCommRoutes(targetName, receiver and receiver.routes))
+	end
+	-- A responder can lose its immutable cache on zoning/reload. Move to a new
+	-- wire correlation; old packets cannot repopulate the replacement buffer.
+	local restarts = 0
+	pendingRequest.restart = function()
+		if pendingRequest.restartPending then return end
+		pendingRequest.restartPending = true
+		self.API.Delay(0.1, function()
+			if not Current() then Retire(); return end
+			pendingRequest.restartPending = nil
+			restarts = restarts + 1
+			if restarts > 4 or not Send(true) then Fail() end
+		end)
+	end
+	if not Send(false) then self:ClearPendingQuestCompare(requestId, pendingRequest); return false end
+	local retries = 0
 	local function Recover()
-		if (rawget(self,"commsWorldGeneration") or 0) ~= generation
-			or not self.isEnabled or self.isLoggingOut or self.pendingQuestCompareRequests[requestId] ~= pendingRequest
-			or self:IsIgnoredPlayerName(targetName) then return end
-		if retries >= (pendingRequest.largeResponse and 20 or 4) then
-			-- The count may arrive late from a busy peer. Ordinary requests keep
-			-- their four-send cap while waiting for that size declaration.
-			if not pendingRequest.largeResponse then self.API.Delay(30, Recover) end
+		if not Current() then Retire(); return end
+		if pendingRequest.restartPending then self.API.Delay(30, Recover); return end
+		local modern = type(pendingRequest.snapshotId) == "string"
+		-- Legacy responders cannot prove snapshot identity. Wait for actual
+		-- progress to stop, then retry from scratch with a new wire request ID.
+		-- Modern immutable responses may safely merge retransmitted packets.
+		local silence = not pendingRequest.receivedData and (pendingRequest.largeResponse and 240 or 120) or 30
+		if not modern and self.API.GetTime() - pendingRequest.lastProgressAt < silence then
+			self.API.Delay(30, Recover); return
+		end
+		if retries >= ((pendingRequest.largeResponse or pendingRequest.legacyRecovery) and 20 or 4) then
+			if not pendingRequest.largeResponse and not pendingRequest.legacyRecovery then self.API.Delay(30, Recover) end
 			return
 		end
 		retries = retries + 1
-		self:SendWireMessageToAnnouncementRoutes(wireMessage, "quest comparison recovery",
-			self:GetTargetedCommRoutes(targetName, receiver and receiver.routes))
+		Send(not modern)
 		self.API.Delay(30, Recover)
 	end
 	self.API.Delay(30, Recover)
@@ -2221,21 +2324,30 @@ function QuestTogether:SendPingRequest(target, debugRequest)
 	local requestId = self:BuildChannelRequestId("ping")
 	local requesterName = self:GetPlayerFullName() or self:GetPlayerName() or ""
 	local requestData = self:PrepareDeveloperPingRequest({ requestId=requestId, requesterName=requesterName,
-		supportsDirectComms=true, supportsPagedPong=true }, target, debugRequest)
+		supportsDirectComms=true, supportsPagedPong=true, supportsLargePong=debugRequest == true }, target, debugRequest)
 	if not requestData then return false, L("Ping is unavailable.") end
 	requestId = requestData.requestId
 	self.pendingPingRequests = self.pendingPingRequests or {}
 	local now = SafeNumber(self, self.API.GetTime and self.API.GetTime()) or 0
 	local pendingRequest = { responders = {}, remoteReplies = 0, responderCount = 0, startedAt = now, expiresAt = now + PING_REQUEST_TIMEOUT_SECONDS,
-		targetName=requestData.targetName, developerRequest=requestData.developerRequest, debugRequest=requestData.debugRequest }
+		targetName=requestData.targetName, developerRequest=requestData.developerRequest, debugRequest=requestData.debugRequest,
+		supportsLargePong=requestData.supportsLargePong }
 	self.pendingPingRequests[requestId] = pendingRequest
-	self.API.Delay(PING_REQUEST_TIMEOUT_SECONDS, function()
+	local function ExpireRequest()
 		if self.pendingPingRequests and self.pendingPingRequests[requestId] == pendingRequest then
+			local current = SafeNumber(self, self.API.GetTime and self.API.GetTime())
+			if current and current >= pendingRequest.startedAt and current < pendingRequest.expiresAt then
+				-- The first negotiated large-report page can extend this one
+				-- request. Keep the original timer fenced to its request object.
+				self.API.Delay(pendingRequest.expiresAt - current, ExpireRequest)
+				return
+			end
 			self:Debugf("comms", "ping complete id=%s remoteReplies=%d", requestId, pendingRequest.remoteReplies)
 			if pendingRequest.debugRequest and pendingRequest.remoteReplies == 0 then self:Print(L("Diagnostics unavailable.")) end
 			self.pendingPingRequests[requestId] = nil
 		end
-	end)
+	end
+	self.API.Delay(PING_REQUEST_TIMEOUT_SECONDS, ExpireRequest)
 
 	local wireMessage = self:SerializeWireMessage(PING_REQUEST_COMMAND, self:EncodePingRequestPayload(requestData))
 	local routes = requestData.targetName and { { distribution="WHISPER", target=requestData.targetName } }
@@ -2279,11 +2391,20 @@ function QuestTogether:SendPingResponse(requestId, selectedRoutes, supportsPages
 	if developerRequest and not self:AddDeveloperPingMetadata(responseData, developerRequest) then return false end
 
 	local payload = self:EncodePingResponsePayload(responseData, supportsPages)
+	local pageVersion = developerRequest and developerRequest.debugRequest and developerRequest.supportsLargePong and 2 or 1
+	if developerRequest and developerRequest.debugRequest and not self:BuildPongPages(requestId, payload, pageVersion) then
+		-- Even an older requester must receive an explicit failure rather than
+		-- wait five minutes for a response that was never queued. Keep metadata.
+		responseData.diagnosticText = "diagnostics.status=report_too_large\n"
+			.. "diagnostics.encodedBytes=" .. #payload .. "\n"
+			.. "diagnostics.detail=Report exceeds the negotiated transfer limit. Update both clients and retry."
+		payload = self:EncodePingResponsePayload(responseData, true)
+	end
 	if supportsPages and #payload + #PING_RESPONSE_COMMAND + 1 > ADDON_MESSAGE_MAX_BYTES then
-		return self:SendPagedPong(requestId, payload, selectedRoutes, developerRequest ~= nil)
+		return self:SendPagedPong(requestId, payload, selectedRoutes, developerRequest ~= nil, pageVersion)
 	end
 	-- Developer snapshots share the same paced, revocable path, even at one page.
-	if developerRequest then return self:SendPagedPong(requestId, payload, selectedRoutes, true) end
+	if developerRequest then return self:SendPagedPong(requestId, payload, selectedRoutes, true, pageVersion) end
 	local wireMessage = self:SerializeWireMessage(PING_RESPONSE_COMMAND, payload)
 	return self:SendWireMessageToAnnouncementRoutes(
 		wireMessage,
@@ -2814,8 +2935,8 @@ function QuestTogether:OnCommReceived(prefix, message, channel, sender, localID,
 	end
 	-- Discovery has a shared response cooldown. Validate its narrow route before
 	-- any dedup bookkeeping so a copy on another channel cannot suppress it.
-	if command == "QTNAV" then
-		self:HandlePartyNavigationMessage(payload, transportSenderName, channel)
+	if command == "QTNAV" or command == "QTN2" then
+		self:HandlePartyNavigationMessage(payload, transportSenderName, channel, command == "QTN2")
 		return
 	end
 	if command == "QTDQ" then

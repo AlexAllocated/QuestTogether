@@ -127,7 +127,11 @@ local function DeveloperFixture(name)
 		self.reads=(self.reads or 0)+1
 		return {mapID=12,x=0.42,y=0.63,faction="Alliance",warMode=false}
 	end
-	function a:BuildDiagnosticReport() return "QT diagnostic snapshot\n"..string.rep("Long diagnostic state\n",70) end
+	function a:BuildDiagnosticReport(_, extraFields)
+		local lines = { "QT diagnostic snapshot\n"..string.rep("Long diagnostic state\n",70) }
+		for _, field in ipairs(extraFields or {}) do lines[#lines+1] = field[1] .. "=" .. tostring(field[2]) end
+		return table.concat(lines, "\n")
+	end
 	local seed=("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60"):gsub("..",function(x) return string.char(tonumber(x,16)) end)
 	a.developerPublicKeyHex="d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"
 	function a:SignDeveloperRequest(message) return self.Ed25519.Sign(seed,message) end
@@ -548,6 +552,137 @@ QuestTogether:RegisterTest("targeted remote debug opens the peer report without 
 	Equal(dev.report,peer:BuildDeveloperDiagnosticSnapshot())
 	Equal(dev.reportTitle,peer.name)
 	Equal(dev.debugLogLines[1].text,"local only")
+end)
+
+local function BusyDiagnosticFixture()
+	local peer = DeveloperFixture("Friend-Realm")
+	peer.BuildDiagnosticReport = QuestTogether.BuildDiagnosticReport
+	peer.GetRuntimeWorkStateStore = QuestTogether.GetRuntimeWorkStateStore
+	function peer:GetDiagnosticEnvironment() return {} end
+	function peer:GetPlayerTracker() return {} end
+	function peer:IsWorkBlocked() return true end
+	peer.API.IsWorldMapVisible = function() return false end
+	for _, command in ipairs({ "QTNAV", "QTN2", "ANN", "LVL", "LOC", "QTPR", "QTVR", "QTLF", "QTLQ", "QJST",
+		"QJON", "QTPG", "QPGR", "QPGM", "QCMP", "QCQE", "QCDN", "QCOB", "QTB1", "QTDQ", "QTCI",
+		"QTHQ", "QTHD", "QTPH", "QTSR", "QTSP", "QTSX", "QSHR", "PING", "PONG", "PONP" }) do
+		peer:RecordCommsTraffic("received", command .. "|1")
+	end
+	for index = 1, 20 do
+		peer:ScheduleDeferredWork("nameplate_tint_refresh", "nameplate" .. index, function() end,
+			0, "ScheduleNameplateHealthTintRefresh")
+	end
+	peer:RecordDiagnosticError("outbound completion", string.rep("Lua error in addon callback; ", 43))
+	function peer:BuildDeveloperDiagnosticSnapshot()
+		self.builtReport = QuestTogether.BuildDeveloperDiagnosticSnapshot(self)
+		return self.builtReport
+	end
+	return peer
+end
+
+QuestTogether:RegisterTest("large signed diagnostic reports survive real paging and reordered delivery", function()
+	local dev, peer = DeveloperFixture(), BusyDiagnosticFixture()
+	local ok, id = dev:SendPingRequest(peer.name, true)
+	Equal(ok, true)
+	assert(#dev.wire[1][2] <= 255)
+	local request = peer:DecodePingRequestPayload(dev.wire[1][2]:sub(6))
+	Equal(request.supportsLargePong, true)
+	peer:OnCommReceived(peer.commPrefix, dev.wire[1][2], "WHISPER", dev.name)
+	FinishDeveloperVerification(peer)
+	for _ = 1, 1200 do
+		if not peer.pingPageQueue or #peer.pingPageQueue.jobs == 0 then break end
+		peer.clock:Advance(0.2)
+	end
+	assert(peer.builtReport and #peer:EscapePayload(peer.builtReport) > 16384)
+	assert(#peer.builtReport <= 32768)
+	Equal(#peer.pingPageQueue.jobs, 0)
+	for index = #peer.wire, 1, -1 do
+		local wire = peer.wire[index][2]
+		assert(wire:match("^PONP|2,") and #wire <= 255)
+		dev:OnCommReceived(dev.commPrefix, wire, "WHISPER", peer.name)
+	end
+	Equal(dev.pendingPingRequests[id].remoteReplies, 1)
+	Equal(dev.report, peer.builtReport)
+	assert(dev.report:find("option.shareDeveloperDiagnostics=true", 1, true))
+end)
+
+QuestTogether:RegisterTest("completed diagnostic reports survive departure without reviving sampled player state", function()
+	for _, shared in ipairs({ true, false }) do
+		local dev, name = DeveloperFixture(), "Friend-Realm"
+		dev.API.GetServerTime = function() return 1791300000 + math.floor(dev.clock:GetTime()) end
+		local ok, id = dev:SendPingRequest(name, true)
+		Equal(ok, true)
+		local response = Pong(dev, shared)
+		response.requestId, response.diagnosticText = id, string.rep("Completed diagnostic report\n", 100)
+		response.lookingForQuestPartners = true
+		local pages = assert(dev:BuildPongPages(id, dev:EncodePingResponsePayload(response, true), 2))
+		dev:RecordQTPlayerPresence(name, true)
+		Equal(dev:IsKnownQTPlayer(name), true)
+		dev.clock:Advance(2)
+		assert(dev:RecordPeerDeparture(name, dev.API.GetTime(), "100000-1234", 2))
+		for _, wire in ipairs(pages) do dev:OnCommReceived(dev.commPrefix, wire, "WHISPER", name) end
+		Equal(dev.pendingPingRequests[id].remoteReplies, 1)
+		Equal(dev.report, response.diagnosticText)
+		Equal(dev.reportTitle, name)
+		Equal(dev:IsKnownQTPlayer(name), false)
+		Equal(dev:IsPlayerLookingForQuestPartners(name), false)
+		Equal(#dev:GetVisiblePlayerLocations("map"), 0)
+		Equal(dev.developerPlayerData[name], nil)
+	end
+end)
+
+QuestTogether:RegisterTest("legacy diagnostic requesters receive an explicit oversized report result", function()
+	local dev, peer = DeveloperFixture(), BusyDiagnosticFixture()
+	local ok, id = dev:SendPingRequest(peer.name, true)
+	Equal(ok, true)
+	local request = peer:DecodePingRequestPayload(dev.wire[1][2]:sub(6))
+	request.supportsLargePong = false
+	peer:OnCommReceived(peer.commPrefix, "PING|" .. peer:EncodePingRequestPayload(request), "WHISPER", dev.name)
+	FinishDeveloperVerification(peer)
+	for _ = 1, 100 do peer.clock:Advance(0.2) end
+	for _, packet in ipairs(peer.wire) do
+		assert(packet[2]:match("^PONP|1,") and #packet[2] <= 255)
+		dev:OnCommReceived(dev.commPrefix, packet[2], "WHISPER", peer.name)
+	end
+	Equal(dev.pendingPingRequests[id].remoteReplies, 1)
+	assert(dev.report:find("diagnostics.status=report_too_large", 1, true))
+end)
+
+QuestTogether:RegisterTest("large pong budget covers worst case escaping and remains targeted and negotiated", function()
+	local dev = DeveloperFixture()
+	local _, id = dev:SendPingRequest("Friend-Realm", true)
+	local report = string.rep("%,|\n", 8192)
+	local payload = dev:EncodePingResponsePayload({ requestId=id, senderName="Friend-Realm", developer=true,
+		diagnosticText=report }, true)
+	local pages = assert(dev:BuildPongPages(id, payload, 2))
+	assert(#payload > 98000 and #pages < 1024)
+	Equal(dev:BuildPongPages(id, string.rep("x", 102401), 2), nil)
+	Equal(dev:HandlePongPage(pages[1]:sub(6), "Other-Realm"), false)
+	dev.pendingPingRequests[id].supportsLargePong = false
+	Equal(dev:HandlePongPage(pages[1]:sub(6), "Friend-Realm"), false)
+	dev.pendingPingRequests[id].supportsLargePong = true
+	for _, wire in ipairs(pages) do
+		assert(#wire <= 255)
+		dev:OnCommReceived(dev.commPrefix, wire, "WHISPER", "Friend-Realm")
+	end
+	Equal(dev.report, report)
+	local _, globalID = dev:SendPingRequest()
+	Equal(dev:HandlePongPage("2," .. globalID .. ",1,2,hello", "Friend-Realm"), false)
+end)
+
+QuestTogether:RegisterTest("large pong assembly rejects format changes and expires within its request", function()
+	local dev = DeveloperFixture()
+	local _, id = dev:SendPingRequest("Friend-Realm", true)
+	Equal(dev:HandlePongPage("2," .. id .. ",1,2,hello", "Friend-Realm"), true)
+	Equal(dev:HandlePongPage("1," .. id .. ",2,2,world", "Friend-Realm"), false)
+	Equal(dev:HandlePongPage("2," .. id .. ",2,2,world", "Friend-Realm"), false)
+	local _, nextID = dev:SendPingRequest("Friend-Realm", true)
+	local pending = dev.pendingPingRequests[nextID]
+	Equal(pending.expiresAt, pending.startedAt + 300)
+	Equal(dev:HandlePongPage("2," .. nextID .. ",1,2,hello", "Friend-Realm"), true)
+	Equal(pending.expiresAt, pending.startedAt + 600)
+	dev.clock:Advance(541)
+	Equal(dev.pendingPingRequests[nextID], pending, "the original request timer honors the negotiated deadline")
+	Equal(dev:HandlePongPage("2," .. nextID .. ",2,2,world", "Friend-Realm"), false)
 end)
 
 QuestTogether:RegisterTest("pong paging rejects unsolicited conflicting excessive and expired fragments",function()
@@ -1228,7 +1363,7 @@ QuestTogether:RegisterTest("quest comparison deduplicates entries for the entire
 	addon.now = 105
 	Equal(addon:HandleQuestCompareEntry(entry), false)
 	Equal(addon.pendingQuestCompareRequests.test.count, 1)
-	Equal(#addon.printed, 1)
+	Equal(#addon.printed, 0) -- Partial generations stay private until complete.
 end)
 
 QuestTogether:RegisterTest("quest comparison waits for entries after early completion marker", function()
@@ -1258,6 +1393,9 @@ QuestTogether:RegisterTest("ping round trip reaches current-channel peers with d
 	for _, regional in ipairs({ false, true }) do
 		local function Peer(first, surname, currentID, legacyID)
 			local addon = NewCommsFixture()
+			addon.clock = addon:CreateTestClock(addon.now)
+			addon.API.GetTime = function() return addon.clock:GetTime() end
+			addon.API.Delay = function(seconds, callback) addon.clock:After(seconds, callback) end
 			addon.channelRequestSequence = 0
 			addon.logs = {}
 			addon.API.RegionalUniqueNamesEnabled = function() return regional end
@@ -1291,11 +1429,11 @@ QuestTogether:RegisterTest("ping round trip reaches current-channel peers with d
 		Equal(#localPeer.printed, 2)
 		Equal(localPeer.printed[2], remote:GetPlayerFullName())
 		Equal(localPeer.pendingPingRequests[id].remoteReplies, 1)
-		localPeer.delayed[1]()
+		localPeer.clock:Advance(300)
 		Equal(localPeer.pendingPingRequests[id], nil)
 		assert(table.concat(localPeer.logs, "\n"):find("remoteReplies=1", 1, true))
 		-- Late responses remain identifiable in diagnostics after the timeout.
-		localPeer.now = localPeer.now + 11
+		localPeer.clock:Advance(11)
 		localPeer:OnCommReceived(localPeer.commPrefix, remote.wire[1][2], "CHANNEL", remote:GetPlayerFullName(), 9, localPeer.announcementChannelName)
 		Equal(#localPeer.printed, 2)
 		assert(table.concat(localPeer.logs, "\n"):find("ping reply unmatched", 1, true))
@@ -1377,7 +1515,7 @@ QuestTogether:RegisterTest("incomplete quest comparison reports timeout instead 
 	addon:HandleQuestCompareEntry({ requestId = requestId, senderName = "Friend-Realm", questId = "100" })
 	addon.delayed[1]()
 	Equal(addon.pendingQuestCompareRequests[requestId], nil)
-	Equal(addon.printed[2], "Quest comparison timed out (1 quests received).")
+	Equal(addon.printed[1], "Quest comparison timed out (1 quests received).")
 end)
 
 QuestTogether:RegisterTest("leaving comm channel clears outstanding response and replay state", function()
@@ -3508,4 +3646,120 @@ QuestTogether:RegisterTest("expired pong assemblies release active capacity inde
 	local count=0;for _ in pairs(pending.pages) do count=count+1 end
 	Equal(count,1)
 	assert(#pending.failedPageOrder<=64)
+end)
+
+QuestTogether:RegisterTest("snapshot identity negotiates without changing legacy comparison layouts or packet bounds", function()
+	local a=NewCommsFixture()
+	local token="1700000000-100000-123456789-1"
+	local request={requestId="comparison",requesterName="Me-Realm",targetName="Peer-Realm",supportsSnapshotIdentity=true}
+	Equal(a:DecodeQuestCompareRequestPayload(a:EncodeQuestCompareRequestPayload(request)).supportsSnapshotIdentity,true)
+	request.supportsSnapshotIdentity=nil
+	Equal(a:EncodeQuestCompareRequestPayload(request),"1,comparison,Me-Realm,Peer-Realm")
+	local entry={requestId="comparison",senderName="Peer-Realm",classFile="MAGE",questId="1",questTitle=string.rep("é",200),snapshotId=token}
+	local payload=a:EncodeQuestCompareEntryPayload(entry)
+	assert(#payload+5<=255)
+	local decoded=assert(a:DecodeQuestCompareEntryPayload(payload))
+	Equal(decoded.snapshotId,token);Equal(#decoded.questTitle%2,0)
+	local row={questId=1,objectiveIndex=1,text=string.rep("é",200),kind="monster",current=1,required=5,finished=false}
+	payload=a:EncodeQuestCompareObjectivePayload("comparison",row,token)
+	assert(#payload+5<=255)
+	decoded=assert(a:DecodeQuestCompareObjectivePayload(payload))
+	Equal(decoded.snapshotId,token);Equal(#decoded.text%2,0)
+	payload=a:EncodeQuestCompareObjectivePayload("comparison",row)
+	Equal(a:DecodeQuestCompareObjectivePayload(payload).snapshotId,nil)
+	local done={requestId="comparison",senderName="Peer-Realm",classFile="MAGE",count=1,supportsObjectives=true,snapshotId=token}
+	Equal(a:DecodeQuestCompareDonePayload(a:EncodeQuestCompareDonePayload(done)).snapshotId,token)
+	for _,invalid in ipairs({"bad!",string.rep("1",65)}) do
+		entry.snapshotId=invalid;done.snapshotId=invalid
+		Equal(a:DecodeQuestCompareEntryPayload(a:EncodeQuestCompareEntryPayload(entry)),nil)
+		Equal(a:DecodeQuestCompareDonePayload(a:EncodeQuestCompareDonePayload(done)),nil)
+		Equal(a:DecodeQuestCompareObjectivePayload(a:EncodeQuestCompareObjectivePayload("comparison",row,invalid)),nil)
+	end
+end)
+
+QuestTogether:RegisterTest("large diagnostic replies finish through the real queue with concurrent ordinary traffic", function()
+	local dev, peer = DeveloperFixture(), BusyDiagnosticFixture()
+	local report = string.rep("%,|\n", 8192)
+	function peer:BuildDeveloperDiagnosticSnapshot() return report end
+	peer:InitializeGeographicComms()
+	local nativeSend = peer.API.SendAddonMessage
+	local pageCount = 0
+	peer.API.SendAddonMessage = function(prefix, wire, distribution, target)
+		assert(#wire <= 255)
+		local result = nativeSend(prefix, wire, distribution, target)
+		if wire:match("^PONP|2,") then
+			pageCount = pageCount + 1
+			Equal(distribution, "WHISPER"); Equal(target, dev.name)
+			dev:OnCommReceived(prefix, wire, distribution, peer.name)
+		end
+		return result
+	end
+	local ok, id = dev:SendPingRequest(peer.name, true)
+	Equal(ok, true)
+	local pending = dev.pendingPingRequests[id]
+	peer:OnCommReceived(peer.commPrefix, dev.wire[1][2], "WHISPER", dev.name)
+	-- Half a message per second of normal traffic leaves the bulk stream
+	-- roughly 1.5 messages/second under the production shared token budget.
+	local background = "ANN|" .. peer:EncodeAnnouncementPayload(Event("1/5 Things"))
+	for step = 1, 2500 do
+		dev.clock:Advance(0.2)
+		peer.clock:Advance(0.2)
+		if step % 10 == 0 then
+			assert(peer:QueueGeographicWire(background, "concurrent announcement", {
+				distribution = "WHISPER", target = dev.name,
+			}))
+		end
+		peer:DrainGeographicQueue()
+		if dev.report then break end
+	end
+	assert(pageCount > 450)
+	Equal(dev.report, report)
+	assert(dev.API.GetTime() - pending.startedAt > 300, "exercise the extended request timer")
+	Equal(dev.pendingPingRequests[id], pending)
+	Equal(pending.remoteReplies, 1)
+	Equal(pending.expiresAt, pending.startedAt + 600)
+	Equal(#peer.pingPageQueue.jobs, 0)
+end)
+
+QuestTogether:RegisterTest("large diagnostic job expiry and consent cancellation fence queued pages", function()
+	for _, revoke in ipairs({ false, true }) do
+		local peer = DeveloperFixture("Friend-Realm")
+		peer:InitializeGeographicComms()
+		peer.geographicCommsState.blockedUntil = peer.API.GetTime() + 600
+		assert(peer:SendPagedPong("dev-1791300100-1234-1", string.rep("x", 98000), {
+			{ distribution = "WHISPER", target = "Dev-Realm" },
+		}, true, 2))
+		Equal(#peer.pingPageQueue.jobs, 1)
+		Equal(#peer.geographicCommsState.queue, 1)
+		Equal(peer.pingPageQueue.jobs[1].expiresAt - peer.pingPageQueue.jobs[1].createdAt, 540)
+		if revoke then peer:SetOption("shareDeveloperDiagnostics", false)
+		else peer.clock:Advance(541) end
+		peer:DrainGeographicQueue()
+		Equal(#peer.pingPageQueue.jobs, 0)
+		Equal(#peer.geographicCommsState.queue, 0)
+		Equal(#peer.wire, 0)
+	end
+end)
+
+QuestTogether:RegisterTest("only valid negotiated large diagnostic pages extend the bounded request deadline", function()
+	local dev = DeveloperFixture()
+	local _, silentID = dev:SendPingRequest("Silent-Realm", true)
+	local _, legacyID = dev:SendPingRequest("Legacy-Realm", true)
+	local _, largeID = dev:SendPingRequest("Large-Realm", true)
+	local pending = dev.pendingPingRequests[largeID]
+	Equal(dev:HandlePongPage("2," .. silentID .. ",0,2,invalid", "Silent-Realm"), false)
+	Equal(dev.pendingPingRequests[silentID].expiresAt, pending.startedAt + 300)
+	Equal(dev:HandlePongPage("1," .. legacyID .. ",1,2,legacy", "Legacy-Realm"), true)
+	Equal(dev.pendingPingRequests[legacyID].expiresAt, pending.startedAt + 300)
+	Equal(dev:HandlePongPage("2," .. largeID .. ",1,3,large", "Large-Realm"), true)
+	Equal(pending.expiresAt, pending.startedAt + 600)
+	dev.clock:Advance(301)
+	Equal(dev.pendingPingRequests[silentID], nil)
+	Equal(dev.pendingPingRequests[legacyID], nil)
+	Equal(dev.pendingPingRequests[largeID], pending)
+	Equal(dev:HandlePongPage("2," .. largeID .. ",2,3,more", "Large-Realm"), true)
+	Equal(pending.expiresAt, pending.startedAt + 600, "later pages cannot keep extending a request")
+	dev.clock:Advance(299)
+	Equal(dev.pendingPingRequests[largeID], nil)
+	Equal(dev:HandlePongPage("2," .. largeID .. ",3,3,last", "Large-Realm"), false)
 end)

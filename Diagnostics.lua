@@ -21,7 +21,7 @@ function QuestTogether:GetDiagnosticEnvironment()
 	return LibChev.ReadEnvironment({ GetBuildInfo = GetBuildInfo, GetLocale = GetLocale })
 end
 
-function QuestTogether:BuildDiagnosticReport(questId)
+function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 	local environment = self:GetDiagnosticEnvironment()
 	local runtime = self:EnsureRuntimeStateStore()
 	local report = LibChev.DiagnosticReport("QuestTogether", self:GetAddonVersion(), environment)
@@ -123,6 +123,7 @@ function QuestTogether:BuildDiagnosticReport(questId)
 			end
 		end
 	end
+	for _, field in ipairs(extraFields or {}) do Add(field[1], field[2]) end
 	return report:Text()
 end
 

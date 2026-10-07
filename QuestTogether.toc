@@ -96,6 +96,7 @@ scripts/regression_release_notes.lua
 scripts/regression_release_notes_window.lua
 scripts/regression_player_locations.lua
 scripts/regression_peer_state.lua
+scripts/regression_peer_lifecycle.lua
 scripts/regression_location_pins.lua
 scripts/regression_location_targeting.lua
 scripts/regression_location_ignores.lua

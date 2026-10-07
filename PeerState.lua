@@ -27,6 +27,36 @@ local function Record(a, name, create)
 	return row, now
 end
 
+-- Stamped protocols share epoch ownership. A parsed packet is not evidence of
+-- a new session until one of its fields has passed freshness/content validation.
+function QT:CanAcceptPeerEpoch(name, session, stamp)
+	local row = Record(self, name, false)
+	local epoch = row and row.epoch
+	if not epoch or epoch.session == session then return true end
+	if epoch.retired[session] then return false end
+	-- A legacy unstamped packet or a same-second tie cannot establish which
+	-- unknown epoch is newer. A subsequent stamped publication resolves it.
+	if epoch.stamp and epoch.stamp > 0 and (not stamp or stamp <= epoch.stamp) then return false end
+	return true
+end
+
+function QT:RecordPeerEpoch(name, session, stamp)
+	if not self:CanAcceptPeerEpoch(name, session, stamp) then return false end
+	local row, now = Record(self, name, true)
+	if not row then return false end
+	local epoch = row.epoch
+	if not epoch then epoch = { session = session, retired = {}, order = {} }; row.epoch = epoch end
+	if epoch.session ~= session then
+		epoch.retired[epoch.session] = true
+		epoch.order[#epoch.order + 1] = epoch.session
+		if #epoch.order > 8 then epoch.retired[table.remove(epoch.order, 1)] = nil end
+		epoch.session, epoch.stamp = session, nil
+	end
+	if stamp and stamp > 0 then epoch.stamp = math.max(epoch.stamp or 0, stamp) end
+	row.at = now
+	return true
+end
+
 function QT:CanAcceptPeerUpdate(name, field, sampledAt, session, sequence)
 	local row, now = Record(self, name, false)
 	if not now or not sampledAt or sampledAt > now + 1 or now - sampledAt >= TTL

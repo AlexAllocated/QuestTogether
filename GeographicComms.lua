@@ -391,7 +391,10 @@ function QT:HandleGeographicSnapshot(payload, sender)
 		return false
 	end
 	sender = name
+	if not self:CanAcceptPeerEpoch(sender, session, stamp) then return false end
 	local peer = s.peers[sender]
+	local previous = peer
+	local provisional = false
 	if peer and now >= peer.at and now - peer.at < SNAPSHOT_LIFETIME then
 		for _, retired in ipairs(peer.retired) do
 			if retired == session then
@@ -399,22 +402,27 @@ function QT:HandleGeographicSnapshot(payload, sender)
 			end
 		end
 		if peer.session ~= session then
-			peer.retired[#peer.retired + 1] = peer.session
-			if #peer.retired > 4 then
-				table.remove(peer.retired, 1)
-			end
-			peer.session, peer.commands = session, {}
+			-- Independent global, zone and requested-detail routes can deliver an
+			-- old epoch for the first time after its replacement. Never retire the
+			-- working session just because that unseen packet parsed successfully.
+			-- An unstamped or same-second candidate cannot prove that it replaced
+			-- this epoch. Wait for a strictly newer publication instead of retiring
+			-- a live session on an ambiguous cross-route arrival.
+			if peer.stamp and (stamp == 0 or stamp <= peer.stamp) then return false end
+			local retired = {}
+			for index, old in ipairs(peer.retired) do retired[index] = old end
+			retired[#retired + 1] = peer.session
+			if #retired > 4 then table.remove(retired, 1) end
+			peer = { session = session, commands = {}, retired = retired,
+				at = now, zone = peer.zone, mapID = peer.mapID }
+			provisional = true
 		end
 	else
-		if not peer then s.peerCount = (s.peerCount or 0) + 1 end
 		peer = { session = session, commands = {}, retired = {}, at = now }
-		s.peers[sender] = peer
+		provisional = true
 	end
 	for _, entry in ipairs(entries) do
 		local newer = sequence > (peer.commands[entry.command] or 0)
-		if newer then
-			peer.commands[entry.command] = sequence
-		end
 		local sampledAt = now - entry.age
 		local permitted = newer and entry.age < SNAPSHOT_LIFETIME
 			and (not self.CanAcceptPeerUpdate or self:CanAcceptPeerUpdate(sender, entry.command, sampledAt, session, sequence))
@@ -436,6 +444,13 @@ function QT:HandleGeographicSnapshot(payload, sender)
 			end
 		end
 		if accepted then
+			self:RecordPeerEpoch(sender, session, stamp)
+			if provisional then
+				if not previous then s.peerCount = (s.peerCount or 0) + 1 end
+				s.peers[sender], provisional = peer, false
+			end
+			peer.commands[entry.command], peer.at = sequence, now
+			if stamp ~= 0 then peer.stamp = math.max(peer.stamp or 0, stamp) end
 			local name = self:NormalizeMemberName(sender)
 			local locations, presence, joins =
 				rawget(self, "playerLocationState"),
@@ -473,10 +488,6 @@ function QT:HandleGeographicSnapshot(payload, sender)
 	end
 	local s = rawget(self, "geographicCommsState")
 	if s then
-		local peer = s.peers[sender]
-		if peer then
-			peer.at = now
-		end
 		-- Expiry is coarse (minutes), so scanning every peer for every packet
 		-- adds quadratic work during a busy-zone burst without improving freshness.
 		if not s.prunedAt or now < s.prunedAt or now - s.prunedAt >= 1 then
@@ -570,10 +581,17 @@ local BULK_COMMANDS = { QCQE=true, QCOB=true, QCDN=true, PONP=true }
 local SEND_CLASSES = { "event", "control", "bulk", "bulk", "bulk", "snapshot" }
 
 function QT:IsPartyNavigationQueuedWireCurrent(wire)
-	if wire:sub(1,6) ~= "QTNAV|" then return true end
-	local session, sequence, questID, mapID = wire:match("^QTNAV|1,([^,]+),(%d+),%d+,(-?%d+),(-?%d+),")
+	local modern = wire:sub(1, 5) == "QTN2|"
+	if not modern and wire:sub(1, 6) ~= "QTNAV|" then return true end
+	local session, sequence, questID, mapID
+	if modern then
+		session, sequence, questID, mapID = wire:match("^QTN2|1,%d+,([^,]+),(%d+),%d+,(-?%d+),(-?%d+),")
+	else
+		session, sequence, questID, mapID = wire:match("^QTNAV|1,([^,]+),(%d+),%d+,(-?%d+),(-?%d+),")
+	end
 	local state = rawget(self, "partyNavigationState")
-	return state and session == state.session and tonumber(sequence) == state.sequence
+	return state and session == (modern and state.modernSession or state.session)
+		and tonumber(sequence) == (modern and state.modernSequence or state.sequence)
 		and (tonumber(questID) == -1 or self:GetOption("sharePartyFocus") == true)
 		and (tonumber(mapID) == -1 or self:GetOption("sharePartyWaypoint") == true) or false
 end
@@ -585,8 +603,8 @@ function QT:QueueGeographicWire(wire, context, route, snapshot, key, options)
 	end
 	-- Focus and waypoint edits replace unsent navigation, including withdrawals.
 	-- A delayed queue must never publish an older selection or old consent.
-	if wire:sub(1,6) == "QTNAV|" then
-		key = "party-navigation:" .. route.distribution .. ":" .. (route.target or "")
+	if wire:sub(1,6) == "QTNAV|" or wire:sub(1,5) == "QTN2|" then
+		key = "party-navigation:" .. wire:match("^([^|]+)") .. ":" .. route.distribution .. ":" .. (route.target or "")
 	end
 	if key then
 		for i = #s.queue, 1, -1 do
@@ -805,6 +823,7 @@ function QT:ResumeCommsWorldSession()
 	local s = rawget(self, "geographicCommsState")
 	if not s then return end
 	local now = Now(self)
+	local reentering = s.departing == true
 	s.departing, s.latest, s.locationFingerprints = nil, {}, {}
 	s.nextGlobal, s.nextLocal, s.nextLocalMetadata = now, now, now
 	s.checkedAt = nil
@@ -813,6 +832,21 @@ function QT:ResumeCommsWorldSession()
 	self:BroadcastQTPlayerPresence()
 	self:BroadcastQuestPartnerStatus(true)
 	self:BroadcastPlayerLocation(true)
+	local joins = rawget(self, "partyJoinState")
+	if joins then
+		-- Old receivers retire a departed QJST session even across zoning. A new
+		-- inner epoch lets them recover too; the outer geographic epoch retains
+		-- its ordering. Include the world generation so even same-tick resumes
+		-- cannot recreate the retired session.
+		if reentering then
+			joins.session = s.session .. "-" .. tostring(s.worldGeneration or 0)
+			joins.sequence = 0
+		end
+		joins.lastAttempt, joins.lastSent = nil, nil
+	end
+	self:BroadcastPartyJoinMetadata()
+	local navigation = rawget(self, "partyNavigationState")
+	if navigation then navigation.nextSend, navigation.dirtyAt, navigation.hello = now, now, true end
 end
 
 function QT:ResetGeographicComms()
@@ -841,11 +875,8 @@ function QT:FlushGeographicDeparture()
 	local navigationRoute = navigation and self:GetPartyNavigationRoute()
 	if navigationRoute and not self:IsRuntimeRestricted() then
 		navigation.sequence = navigation.sequence + 1
-		local clearNavigation = self:EncodePartyNavigation({questID=-1,mapID=-1,x=0,y=0}, false)
-		if clearNavigation then
-			self:SendWireMessageToAnnouncementRoutes(clearNavigation, "navigation departure",
-				{{distribution=navigationRoute,requiresGroup=true}}, true)
-		end
+		self:SendPartyNavigationSnapshot({questID=-1,mapID=-1,x=0,y=0}, false,
+			{{distribution=navigationRoute,requiresGroup=true}}, true)
 	end
 	local location = s.latest.LOC
 	-- Never serialize an old nonzero position during departure.

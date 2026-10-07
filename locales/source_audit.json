@@ -110,6 +110,7 @@
       "announcement eventType=",
       "announcement metadata leaves no room for text",
       "channel join failed ",
+      "diagnostics.detail=Report exceeds the negotiated transfer limit. Update both clients and retry.",
       "local=%s sender=%s event=%s quest=%s bubbles=%s hideOwn=%s text=%s",
       "option event=",
       "ping complete id=%s remoteReplies=%d",
@@ -127,7 +128,6 @@
       "quest compare entry requestId=",
       "quest compare objective",
       "quest compare request requestId=",
-      "quest comparison recovery",
       "requester left group requestId=",
       "response expired requestId=",
       "response queue full",
@@ -254,7 +254,6 @@
       "QTVR",
       "WHISPER",
       "expired or departed route",
-      "navigation departure",
       "outbound completion",
       "outbound queue full",
       "presence departure",
@@ -408,7 +407,7 @@
     "PartyNavigation.lua": [
       "PARTY",
       "party navigation",
-      "party navigation clear"
+      "party navigation snapshot"
     ],
     "PartyVisuals.lua": [
       "CHANNEL",
