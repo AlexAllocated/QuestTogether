@@ -40,21 +40,27 @@ def main():
     })
     emblem = copy.deepcopy(scrolls)
     if args.glow:
-        # Bake the gold contour into a static texture: inline chat textures
-        # cannot own animation groups. Keep the original vector paths intact.
+        # Bake both a bright contour and a broad gold halo into the texture.
+        # A blurred halo alone disappears at the log's 14px inline size.
+        # Keep the original vector paths and dark outline intact for contrast.
         defs = ET.SubElement(icon, f"{{{SVG_NS}}}defs")
         glow = ET.SubElement(defs, f"{{{SVG_NS}}}filter", {
             "id": "partner-glow", "x": "-30%", "y": "-30%", "width": "160%", "height": "160%",
             "color-interpolation-filters": "sRGB",
         })
         ET.SubElement(glow, f"{{{SVG_NS}}}feMorphology", {
-            "in": "SourceAlpha", "operator": "dilate", "radius": "12", "result": "outline",
+            "in": "SourceAlpha", "operator": "dilate", "radius": "24", "result": "outline",
         })
-        ET.SubElement(glow, f"{{{SVG_NS}}}feGaussianBlur", {"in": "outline", "stdDeviation": "24", "result": "halo"})
-        ET.SubElement(glow, f"{{{SVG_NS}}}feFlood", {"flood-color": "#FFD447", "result": "gold"})
+        ET.SubElement(glow, f"{{{SVG_NS}}}feGaussianBlur", {"in": "outline", "stdDeviation": "22", "result": "soft-halo"})
+        strength = ET.SubElement(glow, f"{{{SVG_NS}}}feComponentTransfer", {"in": "soft-halo", "result": "halo"})
+        ET.SubElement(strength, f"{{{SVG_NS}}}feFuncA", {"type": "linear", "slope": "1.8"})
+        ET.SubElement(glow, f"{{{SVG_NS}}}feFlood", {"flood-color": "#FFC62E", "result": "gold"})
         ET.SubElement(glow, f"{{{SVG_NS}}}feComposite", {"in": "gold", "in2": "halo", "operator": "in", "result": "gold-halo"})
+        ET.SubElement(glow, f"{{{SVG_NS}}}feFlood", {"flood-color": "#FFF18A", "result": "bright-gold"})
+        ET.SubElement(glow, f"{{{SVG_NS}}}feComposite", {"in": "bright-gold", "in2": "outline", "operator": "in", "result": "gold-rim"})
         merge = ET.SubElement(glow, f"{{{SVG_NS}}}feMerge")
         ET.SubElement(merge, f"{{{SVG_NS}}}feMergeNode", {"in": "gold-halo"})
+        ET.SubElement(merge, f"{{{SVG_NS}}}feMergeNode", {"in": "gold-rim"})
         ET.SubElement(merge, f"{{{SVG_NS}}}feMergeNode", {"in": "SourceGraphic"})
         emblem.set("filter", "url(#partner-glow)")
     icon.append(emblem)
