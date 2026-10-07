@@ -36,6 +36,15 @@ for index,c in ipairs(cases) do
     assert(E.Sign(seed,message)==sig,"sign case "..index)
     assert(E.Verify(key,message,sig),"verify case "..index)
     assert(not E.Verify(key,message.."x",sig),"tamper case "..index)
+    for _,candidate in ipairs({message,message.."x"}) do
+        local verifier,steps=E.NewVerification(key,candidate,sig),0
+        while coroutine.status(verifier)~="dead" do
+            local ok,value=coroutine.resume(verifier)
+            assert(ok,value);steps=steps+1
+            if coroutine.status(verifier)=="dead" then assert(value==(candidate==message),"incremental case "..index) end
+        end
+        assert(steps>100,"missing incremental checkpoints "..index)
+    end
 end
 print("OpenSSL interoperability: "..#cases.." cases passed")
 ''' % (json.dumps(str(root / 'Libs/Ed25519/Ed25519.lua')), '{' + ','.join('{' + ','.join(json.dumps(s) for s in row) + '}' for row in cases) + '}')

@@ -308,7 +308,7 @@ QT:RegisterTest("rapid presence departures and rejoins cannot retain a partner a
 	end
 end)
 
-QT:RegisterTest("delayed legacy departure cannot clear a newer ordered partner status", function()
+QT:RegisterTest("legacy departure conservatively hides partners until a newer ordered heartbeat", function()
 	local a, b = Peer(), Peer("Friend-Realm")
 	a.other = b
 	a:SetOption("lookingForQuestPartners", true)
@@ -317,6 +317,8 @@ QT:RegisterTest("delayed legacy departure cannot clear a newer ordered partner s
 	assert(b:IsPlayerLookingForQuestPartners(a.name))
 	b.now = 101
 	b:OnCommReceived(a.commPrefix, "QTPR|1,0", "CHANNEL", a.name, 7, "QuestTogether")
+	Equal(b:IsPlayerLookingForQuestPartners(a.name), false)
+	a:BroadcastQuestPartnerStatus(true)
 	assert(b:IsPlayerLookingForQuestPartners(a.name))
 	a:SetOption("lookingForQuestPartners", false)
 	Equal(b:IsPlayerLookingForQuestPartners(a.name), false)
@@ -666,6 +668,7 @@ local function WithPlate(run)
 	QT.isEnabled = true
 	QT.db.profile.nameplatePlayerIconEnabled = true
 	QT.qtPlayerPresenceState = { peers = { [state.name] = state.now } }
+	QT.peerSnapshotState, QT.peerUpdateContext = nil, nil
 	QT.qtPlayerIconStateByFrame = {}
 	Patch({
 		API = {

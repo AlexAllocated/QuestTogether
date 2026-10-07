@@ -5,6 +5,10 @@ local function Equal(actual, expected, message)
 	assert(actual == expected, (message or "values differ") .. ": " .. tostring(actual) .. " ~= " .. tostring(expected))
 end
 local function WithPlate(fn)
+	-- Each invocation models a separate UI lifetime, including looped cases.
+	-- Preserve the real scheduler/reset path; never inherit blocked work from
+	-- the previous fixture's private clock.
+	QT:ResetRuntimeWorkStateStore()
 	local state = {
 		guid = "Creature-0-0-0-0-12345-0000000000", combat = true,
 		present = true, shown = true, fillReady = true, tooltipReady = true,

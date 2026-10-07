@@ -805,6 +805,8 @@ end
 
 function QuestTogether:QUEST_LOG_UPDATE()
 	if self.OnPartyQuestLogChanged then self:OnPartyQuestLogChanged() end
+	-- Progress initialization must recover even with nameplate features off.
+	if self.ScheduleQuestStateRefreshWork then self:ScheduleQuestStateRefreshWork("QUEST_LOG_UPDATE") end
 	if (type(self.onQuestLogUpdate) == "table" and #self.onQuestLogUpdate > 0)
 		or self:GetRuntimeFlag("pendingQuestLogScan", false) then
 		if self.ScheduleQuestLogTaskDrain then

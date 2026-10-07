@@ -33,8 +33,80 @@ function QT:PrepareDeveloperPingRequest(request, target, debugRequest)
 	return request
 end
 
-function QT:VerifyDeveloperPingRequest(request, sender)
-	if self:GetOption("shareDeveloperDiagnostics") ~= true then return false end
+local function VerificationEnabled(addon)
+	return addon.isEnabled and not addon.isLoggingOut and addon:GetOption("shareDeveloperDiagnostics") == true
+end
+
+local function ProfileMilliseconds(addon)
+	local read = addon.API.ProfileMilliseconds
+	return read and addon:SafeToNumber(read()) or nil
+end
+
+function QT:DrainDeveloperPingVerifications()
+	local state = rawget(self, "developerRequestState")
+	if not state or state.scheduled then return end
+	if not VerificationEnabled(self) then self.developerRequestState = nil; return end
+	local job = state.jobs[1]
+	if not job then return end
+	local now, serverNow = self.API.GetTime(), self:GetAnnouncementServerTime()
+	if state.lastAt and now < state.lastAt then self.developerRequestState = nil; return end
+	state.lastAt = now
+	local expired = not serverNow or now < job.startedAt or serverNow - job.request.issuedAt > 300
+		or self:IsIgnoredPlayerName(job.sender)
+	local done, valid = expired, false
+	if not done and now >= state.nextAllowed then
+		local started = ProfileMilliseconds(self)
+		-- Both bounds apply: a missing/paused/reset profiler still cannot turn
+		-- this into one synchronous 100ms verification. Yield between frames.
+		for _ = 1, 8 do
+			local ok, result = coroutine.resume(job.verifier)
+			if not ok or coroutine.status(job.verifier) == "dead" then
+				done, valid = true, ok and result == true
+				break
+			end
+			local current = started and ProfileMilliseconds(self)
+			if current and (current < started or current - started >= 1) then break end
+		end
+	end
+	if done then
+		table.remove(state.jobs, 1)
+		state.pendingSenders[job.sender] = nil
+		state.nextAllowed = now + 5
+		local failure = state.failures[job.sender]
+		if valid then
+			state.failures[job.sender] = nil
+			job.request.developerVerified = true
+			-- State identity fences disable, profile changes, opt-out, and leaving
+			-- the world. No diagnostic reads occur before this boundary.
+			if rawget(self, "developerRequestState") == state and VerificationEnabled(self) then
+				local ok = pcall(job.callback, job.request)
+				if not ok then self:Debug("Developer ping callback failed", "comms") end
+			end
+		elseif not expired then
+			local count = math.min(5, (failure and failure.count or 0) + 1)
+			if not failure then
+				local entries, oldest, oldestAt = 0
+				for name, row in pairs(state.failures) do
+					entries = entries + 1
+					if not oldestAt or row.failedAt < oldestAt then oldest, oldestAt = name, row.failedAt end
+				end
+				if entries >= 64 then state.failures[oldest] = nil end
+			end
+			state.failures[job.sender] = { count = count, failedAt = now,
+				untilAt = now + math.min(60, 5 * 2 ^ (count - 1)) }
+		end
+	end
+	if rawget(self, "developerRequestState") ~= state or #state.jobs == 0 then return end
+	state.scheduled = true
+	self.API.Delay(math.max(0.01, state.nextAllowed - now), function()
+		if rawget(self, "developerRequestState") ~= state then return end
+		state.scheduled = false
+		self:DrainDeveloperPingVerifications()
+	end)
+end
+
+function QT:QueueDeveloperPingVerification(request, sender, callback)
+	if not VerificationEnabled(self) or type(callback) ~= "function" then return false end
 	local now, senderName = self:GetAnnouncementServerTime(), Name(self, sender)
 	local issued = self:SafeToNumber(request.issuedAt)
 	local target = request.targetName
@@ -47,19 +119,37 @@ function QT:VerifyDeveloperPingRequest(request, sender)
 	local signature, public = Unhex(request.signature,64), Unhex(self.developerPublicKeyHex,32)
 	if not signature or not public then return false end
 	local state = rawget(self, "developerRequestState")
-	if not state then state = { seen = {} }; self.developerRequestState = state end
-	-- Bound crypto work before verification, and bound all attacker-controlled state.
 	local tick = self.API.GetTime()
-	if state.lastCheck and tick >= state.lastCheck and tick - state.lastCheck < 0.5 then return false end
-	state.lastCheck = tick
+	if not state or tick < state.startedAt or (state.lastAt and tick < state.lastAt) then
+		state = { seen = {}, jobs = {}, failures = {}, pendingSenders = {}, startedAt = tick, lastAt = tick, nextAllowed = tick }
+		self.developerRequestState = state
+	end
+	state.lastAt = tick
 	local count = 0
 	for key, at in pairs(state.seen) do if now-at > 300 or now < at then state.seen[key]=nil else count=count+1 end end
+	for name, failure in pairs(state.failures) do
+		if tick < failure.failedAt or tick >= failure.untilAt + 300 then state.failures[name] = nil end
+	end
 	local key = senderName .. "|" .. request.requestId
-	if state.seen[key] or count >= 64 then return false end
-	if state.lastAccepted and tick >= state.lastAccepted and tick-state.lastAccepted < 5 then return false end
-	local ok, valid = pcall(self.Ed25519.Verify, public, SignedText(request,senderName),signature)
-	if not ok or not valid then return false end
-	state.seen[key], state.lastAccepted = now, tick
+	local failure = state.failures[senderName]
+	if state.seen[key] or count >= 64 or #state.jobs >= 4 or state.pendingSenders[senderName]
+		or (failure and tick < failure.untilAt) or self:IsIgnoredPlayerName(senderName) then return false end
+	local copy = {}
+	for _, field in ipairs({ "requestId", "issuedAt", "targetName", "debugRequest", "developerRequest",
+		"signature", "supportsPagedPong", "supportsDirectComms" }) do copy[field] = request[field] end
+	copy.requesterName = senderName
+	state.seen[key], state.pendingSenders[senderName] = now, true
+	state.jobs[#state.jobs + 1] = { request = copy, sender = senderName, callback = callback, startedAt = tick,
+		verifier = self.Ed25519.NewVerification(public, SignedText(copy, senderName), signature) }
+	-- Schedule even the first slice. Incoming-message handling stays cheap.
+	if not state.scheduled then
+		state.scheduled = true
+		self.API.Delay(math.max(0.01, state.nextAllowed - tick), function()
+			if rawget(self, "developerRequestState") ~= state then return end
+			state.scheduled = false
+			self:DrainDeveloperPingVerifications()
+		end)
+	end
 	return true
 end
 
@@ -104,8 +194,7 @@ end
 function QT:AcceptDeveloperPingResponse(response, pending)
 	if rawget(self,"isLocalDeveloper") ~= true or not pending.developerRequest or not response.developer then return end
 	local name = Name(self,response.senderName)
-	if not name then return end
-	if response.partyPayload and response.partyPayload ~= "" then self:HandlePartyVisualMetadata(response.partyPayload,name) end
+	if not name or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then return end
 	local now = self.API.GetTime()
 	local serverNow, sampled = self:GetAnnouncementServerTime(), self:SafeToNumber(response.sampledAt)
 	local age = serverNow and sampled and serverNow-sampled
@@ -113,13 +202,26 @@ function QT:AcceptDeveloperPingResponse(response, pending)
 	if not data then data={}; self.developerPlayerData=data end
 	local count=0
 	for key,row in pairs(data) do if now < row.receivedAt or now-row.receivedAt>=120 then data[key]=nil else count=count+1 end end
-	if age and age >= -30 and age < 120 and (count < 512 or data[name]) then
-		local map,x,y,level = self:SafeToNumber(response.mapID),self:SafeToNumber(response.coordX),self:SafeToNumber(response.coordY),self:SafeToNumber(response.level)
-		if map and map>0 and map==math.floor(map) and map<=1000000 and x and x>=0 and x<=100 and y and y>=0 and y<=100 then
-			data[name]={ name=name,mapID=map,x=x/100,y=y/100,classFile=response.classFile,className=response.className,
-				race=response.raceName,level=level,faction=response.faction,warMode=self:NormalizeAnnouncementWarModeValue(response.warMode),
-				receivedAt=now-math.max(0,age),lifetime=120,mask=3,developerOnly=true,publicLocationHidden=response.locationShared==false,
-				lookingForQuestPartners=response.lookingForQuestPartners,addonVersion=response.addonVersion }
+	if age and age >= -30 and age < self:GetGeographicSnapshotLifetime() then
+		age = math.max(0, age)
+		if not self:CanAcceptPeerUpdate(name, nil, now - age) then return end
+		-- Each field keeps its own ordering. A newer location need not suppress a
+		-- useful party refresh, but old party data must never replace a newer one.
+		if response.partyPayload and response.partyPayload ~= "" then
+			self:WithPeerUpdateContext(name, now - age, nil, nil, self.HandlePartyVisualMetadata, self, response.partyPayload, name, age)
+		end
+		self:RefreshQuestPartnerStatusFromPing(name, response.lookingForQuestPartners, age)
+		local previous = data[name]
+		local fresh = not previous or now - age >= previous.receivedAt
+		local accepted = fresh and self:RefreshPlayerLocationFromPing(name, response, age)
+		if accepted and response.locationShared == false and age < 120 and (count < 512 or previous) then
+			local map,x,y,level = self:SafeToNumber(response.mapID),self:SafeToNumber(response.coordX),self:SafeToNumber(response.coordY),self:SafeToNumber(response.level)
+			if map and map>0 and map==math.floor(map) and map<=1000000 and x and x>=0 and x<=100 and y and y>=0 and y<=100 then
+				data[name]={ name=name,mapID=map,x=x/100,y=y/100,classFile=response.classFile,className=response.className,
+					race=response.raceName,level=level,faction=response.faction,warMode=self:NormalizeAnnouncementWarModeValue(response.warMode),
+					receivedAt=now-math.max(0,age),lifetime=120,mask=3,developerOnly=true,publicLocationHidden=true,
+					lookingForQuestPartners=response.lookingForQuestPartners,addonVersion=response.addonVersion }
+			end
 		end
 	end
 	if pending.debugRequest and pending.targetName==name and response.diagnosticText and response.diagnosticText~="" then
@@ -135,7 +237,7 @@ function QT:AppendDeveloperLocationRows(rows)
 	for index,row in ipairs(rows) do indices[row.name]=index end
 	for name,row in pairs(data or {}) do
 		if now < row.receivedAt or now-row.receivedAt>=120 or self:IsIgnoredPlayerName(name) then data[name]=nil
-		elseif not self:IsSelfSender(name) then
+		elseif self:ShouldShowPlayerLocation(name) then
 			-- A newer live public sample wins over an older diagnostic snapshot.
 			local index=indices[name]
 			if not index then rows[#rows+1]=row

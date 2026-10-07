@@ -451,6 +451,11 @@ local function Create(addon, parent)
 		end
 	end)
 	frame.labels, frame.ready = {}, true
+	frame.LayoutManagedWindow = function()
+		if frame.notes and not frame.rendering then
+			addon:RenderReleaseNotesWindow(frame.notes, frame.version, frame.isFirstUse, true, true)
+		end
+	end
 	addon:RegisterManagedWindow(frame, "releaseNotes", 520, 320)
 	return frame
 end
@@ -496,7 +501,7 @@ function QuestTogether:QueueReleaseNotesThemeRefresh()
 	end, 0, "release notes theme")
 end
 
-local function Render(addon, notes, version, isFirstUse, preserveScroll)
+local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutOnly)
 	if addon:IsRuntimeRestricted() or not addon:CanAccessTable(notes) then
 		return false
 	end
@@ -705,13 +710,16 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll)
 	ApplyTheme(addon, frame)
 	frame.rendering = nil
 	addon:ApplyWindowLayout(frame)
+	if layoutOnly then
+		return true
+	end
 	Call(addon, frame, "Show")
 	local visible = Call(addon, frame, "IsVisible")
 	return addon:CanAccessValue(visible) and visible == true
 end
 
-function QuestTogether:RenderReleaseNotesWindow(notes, version, isFirstUse, preserveScroll)
-	local ok, visible = pcall(Render, self, notes, version, isFirstUse, preserveScroll)
+function QuestTogether:RenderReleaseNotesWindow(notes, version, isFirstUse, preserveScroll, layoutOnly)
+	local ok, visible = pcall(Render, self, notes, version, isFirstUse, preserveScroll, layoutOnly)
 	if not ok then
 		local frame = rawget(self, "releaseNotesWindow")
 		if Guard(self, frame) then

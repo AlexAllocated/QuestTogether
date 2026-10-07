@@ -147,3 +147,43 @@ QT:RegisterTest("QT window keyboard input propagates normal keys and uses dismis
 	f.scripts.OnKeyDown(f, "ESCAPE")
 	assert(dismissals == 1)
 end)
+
+QT:RegisterTest("managed layout reflows restored and deferred reset dimensions before screen fit", function()
+	local a, f, root = Fixture()
+	local calls = 0
+	f.LayoutManagedWindow = function()
+		calls = calls + 1
+		assert(not a:ApplyWindowLayout(f), "reflow must not recursively fit the window")
+		-- A measured dialog may be taller than its construction-time frame.
+		f:SetSize(f.w, f.userHeight or 900)
+	end
+	a.db.profile.windowLayouts = { log = { width = 880, height = 610, x = 0.9, y = 0.9 } }
+	a:RefreshManagedWindowLayouts()
+	Near(f.w, 880)
+	Near(f.h, 610)
+	assert(calls == 1)
+	f:Hide()
+	a.blocked = true
+	a:ResetWindowLayouts()
+	assert(calls == 1)
+	root.w, root.h = 1024, 768
+	a:DISPLAY_SIZE_CHANGED()
+	a.blocked = false
+	a.pending.window_layouts()
+	Near(f.w, 1250)
+	Near(f.h, 900)
+	assert(calls == 2 and not f.shown)
+	assert(f.bottom * f.scale >= 0 and (f.bottom + f.h) * f.scale <= root.h)
+	assert(next(a.db.profile.windowLayouts) == nil)
+end)
+
+QT:RegisterTest("failed managed layout callback releases its guard for a later recovery", function()
+	local a, f = Fixture()
+	f.LayoutManagedWindow = function() error("fixture measurement unavailable") end
+	assert(not pcall(a.ApplyWindowLayout, a, f, true))
+	assert(not a.managedWindows[f].applying)
+	f.LayoutManagedWindow = function() f:SetSize(900, 550) end
+	assert(a:ApplyWindowLayout(f, true))
+	Near(f.w, 900)
+	Near(f.h, 550)
+end)

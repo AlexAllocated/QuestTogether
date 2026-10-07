@@ -3415,6 +3415,74 @@ QuestTogether:RegisterTest("bubble dialog preview uses private controls without 
 	Equal(#a.wire, 0)
 end)
 
+QuestTogether:RegisterTest("layout reset preserves measured dialogs and pending choices without reopening", function()
+	local a = Fixture()
+	local parent = AttachUI(a)
+	a.db = { profile = {} }
+	function a:Print() end
+	local actions = 0
+	local confirm = function() actions = actions + 1 end
+	assert(a:ShowDialogPreview("share"))
+	assert(a:ShowDialogPreview("join"))
+	assert(a:ShowPartyFocusMissingDialog({ name = "Friend", questID = 1, title = "Long quest title" }, true))
+	assert(a:ShowPartyFocusChangeDialog("Friend", confirm, true))
+	assert(a:ShowDiscordLinkDialog("https://example.invalid/fixture"))
+	a:RenderPartyChatReminder({ preview = true, names = { "First Friend", "Second Friend" } })
+	local share, join = a.partyQuestSharePreviewPrompt, a.partyJoinPreviewPrompt
+	share.always:SetChecked(true)
+	join.friends:SetChecked(true)
+	join:Hide()
+	local frames = {
+		share, join, a.partyFocusMissingPreview, a.partyFocusChangePreview,
+		a.discordLinkDialog, a.partyChatReminderPreviewFrame,
+	}
+	local sizes = {}
+	for _, frame in ipairs(frames) do
+		sizes[frame] = { frame:GetWidth(), frame:GetHeight(), frame:IsShown() }
+	end
+	a:ResetWindowLayouts()
+	parent:SetSize(800, 600)
+	a:DISPLAY_SIZE_CHANGED()
+	for _, frame in ipairs(frames) do
+		Equal(frame:GetWidth(), sizes[frame][1])
+		Equal(frame:GetHeight(), sizes[frame][2])
+		Equal(frame:IsShown(), sizes[frame][3])
+		assert(frame:GetWidth() * frame:GetScale() <= 800)
+		assert(frame:GetHeight() * frame:GetScale() <= 600)
+	end
+	assert(share.always:GetChecked() and join.friends:GetChecked())
+	Equal(a.partyFocusChangePreview.confirmAction, confirm)
+	Equal(actions, 0)
+	Equal(#a.wire, 0)
+end)
+
+QuestTogether:RegisterTest("bubble settings reset keeps measured wrapped labels inside the dialog", function()
+	local a = Fixture()
+	local parent = AttachUI(a)
+	a.db = { profile = {} }
+	function a:Print() end
+	function a:ConfigurePersonalBubbleDialogSlider(frame, data, callback)
+		frame.Label, frame.Slider = Frame(frame), Frame(frame)
+		frame.Slider.RightText = Frame(frame.Slider)
+		function frame.Label:GetStringHeight() return 28 end
+	end
+	assert(a:ShowPersonalBubbleSettingsPreview())
+	local frame = a.personalBubbleEditModePreviewDialog
+	function frame.SaveStatus:GetStringHeight() return 28 end
+	a:LayoutPersonalBubbleDialog(frame)
+	local width, height = frame:GetWidth(), frame:GetHeight()
+	assert(height > a.managedWindows[frame].height)
+	frame:Hide()
+	a:ResetWindowLayouts()
+	parent:SetSize(640, 360)
+	a:DISPLAY_SIZE_CHANGED()
+	Equal(frame:GetWidth(), width)
+	Equal(frame:GetHeight(), height)
+	assert(frame:GetHeight() * frame:GetScale() <= 360)
+	assert(not frame:IsShown())
+	Equal(#a.wire, 0)
+end)
+
 QuestTogether:RegisterTest("window dragging preserves pickup position and scaled cursor offset", function()
 	local a = Fixture()
 	local root = AttachUI(a)

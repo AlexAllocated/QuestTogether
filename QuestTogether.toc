@@ -50,6 +50,7 @@ HotPathRuntime.lua
 TaskArea.lua
 Nameplates.lua
 PartyState.lua
+PeerState.lua
 Comms.lua
 PingPages.lua
 DeveloperDiagnostics.lua
@@ -94,6 +95,7 @@ scripts/regression_minimap.lua
 scripts/regression_release_notes.lua
 scripts/regression_release_notes_window.lua
 scripts/regression_player_locations.lua
+scripts/regression_peer_state.lua
 scripts/regression_location_pins.lua
 scripts/regression_location_targeting.lua
 scripts/regression_location_ignores.lua

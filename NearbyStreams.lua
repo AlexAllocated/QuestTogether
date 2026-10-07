@@ -31,8 +31,7 @@ local function BasePeer(a, name, now)
 		row
 		and row.mask >= 2
 		and Fresh(now, row.receivedAt, row.lifetime or 120)
-		and not a:IsIgnoredPlayerName(name)
-		and (a:GetOption("onlyShowQuestPartners") ~= true or a:IsPlayerLookingForQuestPartners(name))
+		and a:ShouldShowPlayerLocation(name)
 	then
 		return row
 	end
@@ -157,17 +156,9 @@ local function Send(a, s, name, wire, now)
 	if now < s.nextSend or (geo and geo.blockedUntil and now < geo.blockedUntil) then
 		return nil
 	end
-	-- Never compete with pending quest announcements or interactive responses.
-	for _, queued in ipairs(geo and geo.queue or {}) do
-		if not queued.snapshot then
-			return nil
-		end
-	end
-	local responses = rawget(a, "questCompareResponseQueue")
-	local response = responses and responses.jobs[1]
-	if response and response.entries and now < response.expiresAt then
-		return nil
-	end
+	-- One admission/backoff policy owns all native sends. Nearby movement keeps
+	-- its separate five-per-second allowance and yields to pending player actions.
+	if geo and not a:TakeCommsSendToken(false, "nearby") then return nil end
 	s.nextSend = now + 0.2
 	local ok, result = pcall(a.API.SendAddonMessage, a.commPrefix, wire, "WHISPER", name)
 	local sent = ok and a:CanAccessValue(result) and (result == true or result == 0)

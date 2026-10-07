@@ -45,21 +45,41 @@ function QT:DrainPongPages()
 	local queue = rawget(self, "pingPageQueue")
 	if not queue or queue.scheduled or not self.isEnabled or self.isLoggingOut then return end
 	local job = queue.jobs[1]
-	if not job then return end
+	if not job or job.inFlight then return end
 	local now = self.API.GetTime()
-	local current = now >= job.createdAt and now < job.expiresAt
-		and not self:IsIgnoredPlayerName(job.route.target)
-		and (not job.route.requiresGroup or self:IsGroupedSender(job.route.target))
-		and ((job.developer and self:GetOption("shareDeveloperDiagnostics") == true)
-			or (not job.developer and (not job.sharedLocation or self:CanPublishPlayerLocation())))
+	local function Current()
+		local tick = self.API.GetTime()
+		return rawget(self, "pingPageQueue") == queue and queue.jobs[1] == job and not self.isLoggingOut
+			and tick >= job.createdAt and tick < job.expiresAt
+			and not self:IsIgnoredPlayerName(job.route.target)
+			and (not job.route.requiresGroup or self:IsGroupedSender(job.route.target))
+			and ((job.developer and self:GetOption("shareDeveloperDiagnostics") == true)
+				or (not job.developer and (not job.sharedLocation or self:CanPublishPlayerLocation())))
+	end
+	local current = Current()
 	local done = not current
 	if current then
-		local sent, reason = self:SendWireMessageToAnnouncementRoutes(job.pages[job.index], "paged pong", { job.route })
+		local sent, reason
+		if job.delivery then
+			sent, reason = job.delivery.sent, job.delivery.reason
+			job.delivery = nil
+		else
+			local completion
+			if rawget(self, "geographicCommsState") then
+				completion = { owner=job, expires=job.expiresAt, isCurrent=Current, onComplete=function(ok, failure)
+					if rawget(self, "pingPageQueue") ~= queue or queue.jobs[1] ~= job then return end
+					job.inFlight, job.delivery = nil, { sent=ok, reason=failure }
+					self:DrainPongPages()
+				end }
+			end
+			sent, reason = self:SendWireMessageToAnnouncementRoutes(job.pages[job.index], "paged pong", { job.route }, false, completion)
+			if reason == "queued" then job.inFlight=true; return end
+		end
 		if sent then
 			job.index, job.failures = job.index + 1, 0
 			done = job.index > #job.pages
 		elseif reason ~= "paced" then
-			job.failures = job.failures + 1
+			job.failures = reason == "cancelled" and 5 or job.failures + 1
 			done = job.failures >= 5
 		end
 	end
@@ -70,6 +90,37 @@ function QT:DrainPongPages()
 		queue.scheduled = false
 		self:DrainPongPages()
 	end)
+end
+
+function QT:CancelDeveloperDiagnosticReplies()
+	self.diagnosticReplyGeneration = (rawget(self, "diagnosticReplyGeneration") or 0) + 1
+	local queue = rawget(self, "pingPageQueue")
+	local cancelled = {}
+	for index = #(queue and queue.jobs or {}), 1, -1 do
+		local job = queue.jobs[index]
+		if job.developer then cancelled[job]=true; table.remove(queue.jobs,index) end
+	end
+	local geo = rawget(self, "geographicCommsState")
+	for index = #(geo and geo.queue or {}), 1, -1 do
+		if cancelled[geo.queue[index].owner] then table.remove(geo.queue,index) end
+	end
+	-- A cancelled in-flight job has no timer; restart remaining ordinary replies.
+	if queue and not queue.scheduled and #queue.jobs > 0 then self:DrainPongPages() end
+end
+
+local function RetirePartial(pending, name)
+	pending.pages[name] = nil
+	pending.failedPages = pending.failedPages or {}
+	-- Tombstones never consume active-assembly slots; their fixed ring is
+	-- bounded independently and dies with this ping request.
+	pending.failedPageOrder = pending.failedPageOrder or {}
+	if not pending.failedPages[name] then
+		pending.failedPageOrder[#pending.failedPageOrder+1] = name
+		pending.failedPages[name] = true
+		if #pending.failedPageOrder > MAX_PARTIALS then
+			pending.failedPages[table.remove(pending.failedPageOrder,1)] = nil
+		end
+	end
 end
 
 function QT:HandlePongPage(payload, sender)
@@ -86,6 +137,12 @@ function QT:HandlePongPage(payload, sender)
 		or now < pending.startedAt or now >= pending.expiresAt or pending.responders[name]
 		or (pending.targetName and pending.targetName ~= name) then return false end
 	pending.pages = pending.pages or {}
+	for peer, active in pairs(pending.pages) do
+		if active.failed or now < active.startedAt or now-active.startedAt >= LIFETIME then
+			RetirePartial(pending, peer)
+		end
+	end
+	if pending.failedPages and pending.failedPages[name] then return false end
 	local part = pending.pages[name]
 	if not part then
 		local count = 0
@@ -97,23 +154,22 @@ function QT:HandlePongPage(payload, sender)
 	if part.failed then return false end
 	if now < part.startedAt or now - part.startedAt >= LIFETIME or part.total ~= total
 		or (part.chunks[index] and part.chunks[index] ~= fragment) then
-		part.failed, part.chunks = true, nil
+		RetirePartial(pending, name)
 		return false
 	end
 	if part.chunks[index] then return false end
 	part.bytes = part.bytes + #fragment
-	if part.bytes > MAX_BYTES then part.failed, part.chunks = true, nil; return false end
+	if part.bytes > MAX_BYTES then RetirePartial(pending, name); return false end
 	part.chunks[index], part.count = fragment, part.count + 1
 	if part.count ~= total then return true end
 	local response = self:DecodePingResponsePayload(table.concat(part.chunks))
 	if not response or response.requestId ~= id then
-		part.failed, part.chunks = true, nil
+		RetirePartial(pending, name)
 		return false
 	end
 	response.senderName = name -- The transport owns identity, not the payload.
 	pending.pages[name] = nil
 	if not self:HandlePingResponse(response) then return false end
-	self:RecordQTPlayerPresence(name, true)
 	self:ObserveAddonVersion(response.addonVersion)
 	self:RememberPlayerAddonVersion(name, response.addonVersion)
 	self:RememberDirectCommPeer(name, true)

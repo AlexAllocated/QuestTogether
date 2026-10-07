@@ -150,7 +150,7 @@ local function CallAccessibleFrameMethod(frame, methodName)
 	return nil
 end
 
-function SafeText(value, fallback)
+SafeText = function(value, fallback)
 	if QuestTogether and QuestTogether.SafeToString then
 		return QuestTogether:SafeToString(value, fallback or "")
 	end
@@ -843,6 +843,9 @@ local function EnsurePersonalBubbleEditModeDialog(addon, preview)
 	end)
 	dialog.escapeAction = function()
 		if preview then dialog:Hide() else addon:DeselectPersonalBubbleAnchor() end
+	end
+	dialog.LayoutManagedWindow = function()
+		addon:LayoutPersonalBubbleDialog(dialog)
 	end
 
 	addon[key] = dialog
@@ -4102,6 +4105,12 @@ function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, tex
 	if bubble.SetClampRectInsets then
 		bubble:SetClampRectInsets(0, 0, 0, 0)
 	end
+	-- The personal host is a one-pixel anchor outside Edit Mode. Clamp the
+	-- measured bubble itself so a saved edge position also fits smaller displays.
+	-- Nearby players' bubbles remain attached to their nameplates as before.
+	if isPersonalBubble then
+		bubble:SetClampedToScreen(true)
+	end
 
 	SetAnnouncementBubbleState(bubble, {
 		text = message,
@@ -4786,7 +4795,7 @@ function QuestTogether:InvalidateNameplateQuestState(reason)
 	-- when rebuilding the quest log must wait for a restricted context to end.
 	self:ClearNameplateQuestDetectionCache()
 	self:ClearNameplateResolvedQuestState()
-	self:ScheduleDeferredWork("nameplate_quest_refresh", "quest_relevance", function()
+	self:ScheduleBoundedRefreshWork("nameplate_quest_refresh", "quest_relevance", function()
 		-- This work class permits readable structured unit tooltips in ordinary
 		-- combat. Map/encounter/PvP restrictions and per-frame guards still apply.
 		-- Health events may have repopulated the cache before new quest tooltip

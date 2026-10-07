@@ -34,10 +34,21 @@ function QT:RecordQTPlayerPresence(name, active)
 	if not now or not name or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then
 		return false
 	end
+	if active and not self:CanRecordPeerPresence(name) then return false end
 	local state = self:GetQTPlayerPresenceState()
 	local wasKnown = self:IsKnownQTPlayer(name)
 	local hadRecord = state.peers[name] ~= nil
 	if not active then
+		local locations, private = rawget(self, "playerLocationState"), rawget(self, "developerPlayerData")
+		if locations and locations.peers[name] and locations.peers[name].mask ~= 0 then
+			local previous = locations.peers[name]
+			locations.peers[name] = { name = name, session = previous.session, sequence = previous.sequence,
+				retired = previous.retired, mask = 0, receivedAt = now, sampledAt = now,
+				lifetime = self:GetGeographicSnapshotLifetime() }
+		end
+		if private then private[name] = nil end
+		local phases = rawget(self, "playerPhaseState")
+		if phases then phases.peers[name], phases.attempts[name], phases.replies[name] = nil, nil, nil end
 		local details = rawget(self, "playerDetailsState")
 		if details then
 			details.pending[name], details.attempts[name], details.replies[name], details.identities[name] = nil, nil, nil, nil
@@ -81,7 +92,10 @@ function QT:HandleQTPlayerPresenceMessage(payload, sender)
 	if payload ~= "1,1" and payload ~= "1,0" then
 		return false
 	end
-	return self:RecordQTPlayerPresence(sender, payload == "1,1")
+	local name = self:NormalizeMemberName(sender)
+	if not name or self:IsIgnoredPlayerName(name) or self:IsSelfSender(name) then return false end
+	if rawget(self, "peerUpdateContext") then return self:RecordQTPlayerPresence(name, payload == "1,1") end
+	return self:RecordLegacyPeerPresence(name, payload == "1,1")
 end
 
 function QT:BroadcastQTPlayerPresence(inactive)
@@ -147,7 +161,7 @@ function QT:IsPlayerLookingForQuestPartners(name)
 		and now - record.receivedAt < (record.lifetime or LIFETIME)
 end
 
-function QT:HandleQuestPartnerStatusMessage(payload, sender)
+function QT:HandleQuestPartnerStatusMessage(payload, sender, sampleAge, source)
 	if not self.isEnabled or not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 80 then
 		return false
 	end
@@ -160,6 +174,9 @@ function QT:HandleQuestPartnerStatusMessage(payload, sender)
 	if not name or not now or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then
 		return false
 	end
+	local sampledAt = now - (sampleAge or 0)
+	source = source or { session = "QTLF:" .. session, sequence = sequence }
+	if not self:CanAcceptPeerUpdate(name, "QTLF", sampledAt, source and source.session, source and source.sequence) then return false end
 	self:PruneQTPlayerPresence()
 	local state = self:GetQTPlayerPresenceState()
 	state.questPartners = state.questPartners or {}
@@ -193,7 +210,7 @@ function QT:HandleQuestPartnerStatusMessage(payload, sender)
 	end
 	-- Off can be a delayed departure withdrawal. It clears partner status while
 	-- preserving an existing identity, but must not restore a departed logo.
-	if looking == "1" and not self:RecordQTPlayerPresence(name, true) then
+	if looking == "1" and not self:RecordPeerPresenceFromSnapshot(name, sampledAt, source.session, source.sequence) then
 		return false
 	end
 	-- Keep Off records until expiry too: a delayed copy of On must not revive it.
@@ -202,8 +219,40 @@ function QT:HandleQuestPartnerStatusMessage(payload, sender)
 		sequence = sequence,
 		looking = looking == "1",
 		receivedAt = now,
+		sampledAt = sampledAt,
+		lifetime = sampleAge and self:GetGeographicSnapshotLifetime() - sampleAge or nil,
 		retired = retired,
 	}
+	self:RecordPeerUpdate(name, "QTLF", sampledAt, source and source.session, source and source.sequence)
+	if self.RefreshQTPlayerPartnerIndicators then self:RefreshQTPlayerPartnerIndicators() end
+	return true
+end
+
+-- Manual snapshots refresh normal LFQP state without inventing a QTLF sequence.
+function QT:RefreshQuestPartnerStatusFromPing(name, looking, age)
+	local now = Now(self)
+	if not self.isEnabled or type(looking) ~= "boolean" or not now then return false end
+	local sampledAt = now - age
+	if not self:CanAcceptPeerUpdate(name, "QTLF", sampledAt) then return false end
+	self:PruneQTPlayerPresence()
+	local state = self:GetQTPlayerPresenceState()
+	state.questPartners = state.questPartners or {}
+	local previous = state.questPartners[name]
+	if previous and sampledAt < (previous.sampledAt or previous.receivedAt) then return false end
+	if not previous then
+		local count, oldest, at = 0
+		for peer, record in pairs(state.questPartners) do
+			count = count + 1
+			if not at or record.receivedAt < at then oldest, at = peer, record.receivedAt end
+		end
+		if count >= MAX_PEERS then state.questPartners[oldest] = nil end
+	end
+	state.questPartners[name] = { session = previous and previous.session or "0-0",
+		sequence = previous and previous.sequence or 1, retired = previous and previous.retired or {},
+		looking = looking, receivedAt = now, sampledAt = sampledAt,
+		lifetime = self:GetGeographicSnapshotLifetime() - age }
+	self:RecordPeerUpdate(name, "QTLF", sampledAt)
+	if looking then self:RecordPeerPresenceFromSnapshot(name, sampledAt) end
 	if self.RefreshQTPlayerPartnerIndicators then self:RefreshQTPlayerPartnerIndicators() end
 	return true
 end

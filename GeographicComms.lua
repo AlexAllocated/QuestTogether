@@ -15,6 +15,10 @@ local HANDLERS = {
 	QTHI = "HandlePlayerDetailsIdentity",
 }
 local SNAPSHOT_LIFETIME = 600
+
+function QT:GetGeographicSnapshotLifetime()
+	return SNAPSHOT_LIFETIME
+end
 local function Now(a)
 	return a:SafeToNumber(a.API.GetTime and a.API.GetTime()) or 0
 end
@@ -411,7 +415,27 @@ function QT:HandleGeographicSnapshot(payload, sender)
 		if newer then
 			peer.commands[entry.command] = sequence
 		end
-		if newer and entry.age < SNAPSHOT_LIFETIME and self[HANDLERS[entry.command]](self, entry.data, sender) then
+		local sampledAt = now - entry.age
+		local permitted = newer and entry.age < SNAPSHOT_LIFETIME
+			and (not self.CanAcceptPeerUpdate or self:CanAcceptPeerUpdate(sender, entry.command, sampledAt, session, sequence))
+		local accepted = false
+		if permitted then
+			if entry.command == "QTPR" and entry.data == "1,0" and self.RecordPeerDeparture then
+				accepted = self:RecordPeerDeparture(sender, sampledAt, session, sequence)
+			else
+				local handler = self[HANDLERS[entry.command]]
+				if self.WithPeerUpdateContext then
+					accepted = self:WithPeerUpdateContext(sender, sampledAt, session, sequence, handler,
+						self, entry.data, sender, entry.age, {session=session,sequence=sequence})
+				else
+					accepted = handler(self, entry.data, sender, entry.age, {session=session,sequence=sequence})
+				end
+				if accepted and self.RecordPeerUpdate then
+					self:RecordPeerUpdate(sender, entry.command, sampledAt, session, sequence)
+				end
+			end
+		end
+		if accepted then
 			local name = self:NormalizeMemberName(sender)
 			local locations, presence, joins =
 				rawget(self, "playerLocationState"),
@@ -480,7 +504,7 @@ function QT:HandleGeographicSnapshot(payload, sender)
 	return true
 end
 
-function QT:TakeCommsSendToken(background)
+function QT:TakeCommsSendToken(background, lane)
 	local s, now = rawget(self, "geographicCommsState"), Now(self)
 	if not s then
 		return true
@@ -492,6 +516,17 @@ function QT:TakeCommsSendToken(background)
 	s.tokenAt = now
 	if s.blockedUntil and now < s.blockedUntil then
 		return false
+	end
+	if s.departing then return false end
+	if lane == "nearby" then
+		-- Nearby movement has its own five-per-second allowance, but shares
+		-- transport backoff and yields to waiting player actions/announcements.
+		if now < (s.nextNearbySend or 0) then return false end
+		for _, row in ipairs(s.queue) do
+			if row.priority == "event" or row.priority == "control" or (not row.priority and not row.snapshot) then return false end
+		end
+		s.nextNearbySend = now + 0.2
+		return true
 	end
 	if s.tokens < (background and 2 or 1) then
 		return false
@@ -525,10 +560,33 @@ local function PublishesLocation(addon, wire)
 	return false
 end
 
-function QT:QueueGeographicWire(wire, context, route, snapshot, key)
+local function FinishQueuedWire(addon, row, sent, reason)
+	if row.onComplete then
+		local ok, detail = pcall(row.onComplete, sent, reason)
+		if not ok then addon:RecordDiagnosticError("outbound completion", detail) end
+	end
+end
+local BULK_COMMANDS = { QCQE=true, QCOB=true, QCDN=true, PONP=true }
+local SEND_CLASSES = { "event", "control", "bulk", "bulk", "bulk", "snapshot" }
+
+function QT:IsPartyNavigationQueuedWireCurrent(wire)
+	if wire:sub(1,6) ~= "QTNAV|" then return true end
+	local session, sequence, questID, mapID = wire:match("^QTNAV|1,([^,]+),(%d+),%d+,(-?%d+),(-?%d+),")
+	local state = rawget(self, "partyNavigationState")
+	return state and session == state.session and tonumber(sequence) == state.sequence
+		and (tonumber(questID) == -1 or self:GetOption("sharePartyFocus") == true)
+		and (tonumber(mapID) == -1 or self:GetOption("sharePartyWaypoint") == true) or false
+end
+
+function QT:QueueGeographicWire(wire, context, route, snapshot, key, options)
 	local s = rawget(self, "geographicCommsState")
-	if not s or not self.isEnabled then
+	if not s or not self.isEnabled or self.isLoggingOut or s.departing then
 		return false
+	end
+	-- Focus and waypoint edits replace unsent navigation, including withdrawals.
+	-- A delayed queue must never publish an older selection or old consent.
+	if wire:sub(1,6) == "QTNAV|" then
+		key = "party-navigation:" .. route.distribution .. ":" .. (route.target or "")
 	end
 	if key then
 		for i = #s.queue, 1, -1 do
@@ -541,7 +599,14 @@ function QT:QueueGeographicWire(wire, context, route, snapshot, key)
 		self:RecordCommsDiagnostic("queueDropped", "outbound queue full")
 		return false
 	end
+	local command = wire:match("^([^|]+)|")
+	local priority = snapshot and "snapshot" or (BULK_COMMANDS[command] and "bulk")
+		or ((command == "ANN" or command == "LVL") and "event") or "control"
 	s.queue[#s.queue + 1] = {
+		priority = priority,
+		onComplete = options and options.onComplete,
+		owner = options and options.owner,
+		isCurrent = options and options.isCurrent,
 		wire = wire,
 		context = context,
 		route = route,
@@ -549,7 +614,7 @@ function QT:QueueGeographicWire(wire, context, route, snapshot, key)
 		key = key,
 		groupFingerprint = self.partyRosterFingerprint,
 		publishesLocation = PublishesLocation(self, wire),
-		expires = Now(self) + (snapshot and 15 or 30),
+		expires = options and options.expires or (Now(self) + (snapshot and 15 or 30)),
 	}
 	self:RecordCommsTraffic("queued", wire)
 	return true
@@ -557,9 +622,10 @@ end
 
 function QT:DrainGeographicQueue()
 	local s, now = rawget(self, "geographicCommsState"), Now(self)
-	if not s or not self.isEnabled or self.isLoggingOut then
+	if not s or not self.isEnabled or self.isLoggingOut or s.departing then
 		return
 	end
+	local cancelled = {}
 	for i = #s.queue, 1, -1 do
 		local row = s.queue[i]
 		local route = row.route
@@ -580,31 +646,43 @@ function QT:DrainGeographicQueue()
 			staleRoute = self:IsIgnoredPlayerName(route.target) or (route.requiresGroup and
 				(not self:IsGroupedSender(route.target) or row.groupFingerprint ~= self.partyRosterFingerprint))
 		end
-		if now >= row.expires or now < row.expires - 30 or staleRoute or staleDiscovery
+		if now >= row.expires or (not row.onComplete and now < row.expires - 30) or staleRoute or staleDiscovery
+			or (row.isCurrent and not row.isCurrent())
 			or not self:IsPartyVisualQueuedWireCurrent(row.wire) or not self:IsQueuedCommRequestCurrent(row.wire)
+			or not self:IsPartyNavigationQueuedWireCurrent(row.wire)
 			or not self:IsPlayerDetailsQueuedWireCurrent(row.wire, route.target)
 			or not self:IsPlayerPhaseQueuedWireCurrent(row.wire, route.target) then
 			table.remove(s.queue, i)
+			cancelled[#cancelled+1] = row
 			self:RecordCommsDiagnostic("queueDropped", "expired or departed route")
 		end
 	end
-	-- Events precede heartbeats; one actual attempt per tick, with a shared
-	-- token reserve for immediate request/response traffic.
-	local index
-	for i, row in ipairs(s.queue) do
-		if not row.retryAt or now >= row.retryAt then
-			if not index or (s.queue[index].snapshot and not row.snapshot) then index = i end
-			if not row.snapshot then break end
+	-- Complete removed work after traversal; callbacks may enqueue replacements.
+	for _, row in ipairs(cancelled) do FinishQueuedWire(self, row, false, "cancelled") end
+	-- Weighted round robin gives player actions prompt service without starving
+	-- bulk snapshots or heartbeats. Every normal native send has this owner.
+	local index, selectedClass
+	for offset = 1, #SEND_CLASSES do
+		local slot = ((s.sendClassCursor or 0) + offset - 1) % #SEND_CLASSES + 1
+		for i, row in ipairs(s.queue) do
+			if row.priority == SEND_CLASSES[slot] and (not row.retryAt or now >= row.retryAt) then
+				index, selectedClass = i, slot
+				break
+			end
 		end
+		if index then break end
 	end
 	local row = index and s.queue[index]
-	if not row or not self:TakeCommsSendToken(true) then
-		return
-	end
+	if not row or not self:TakeCommsSendToken(false) then return end
+	s.sendClassCursor = selectedClass
 	-- The direct path does not recursively stage or queue.
 	local sent = self:SendWireMessageToAnnouncementRoutes(row.wire, row.context, { row.route }, true)
 	if sent then
 		table.remove(s.queue, index)
+		FinishQueuedWire(self, row, true)
+	elseif row.onComplete then
+		table.remove(s.queue, index)
+		FinishQueuedWire(self, row, false, "failed")
 	else
 		-- Native throttles already pause the whole transport. A missing channel
 		-- or rejected target must not prevent unrelated routes from draining.
@@ -710,6 +788,33 @@ function QT:UpdateGeographicComms()
 	return sampledLocation
 end
 
+-- All asynchronous senders belong to one world lifetime. The final goodbye
+-- alone is allowed through the direct path after this fence has been raised.
+function QT:EndCommsWorldSession()
+	self.commsWorldGeneration = (rawget(self,"commsWorldGeneration") or 0) + 1
+	self.questCompareResponseQueue, self.pingPageQueue, self.developerRequestState = nil, nil, nil
+	self.questCompareResponseCache = nil
+	local s = rawget(self, "geographicCommsState")
+	if s then
+		s.worldGeneration = (s.worldGeneration or 0) + 1
+		s.departing, s.queue, s.pingReplies = true, {}, {}
+	end
+end
+
+function QT:ResumeCommsWorldSession()
+	local s = rawget(self, "geographicCommsState")
+	if not s then return end
+	local now = Now(self)
+	s.departing, s.latest, s.locationFingerprints = nil, {}, {}
+	s.nextGlobal, s.nextLocal, s.nextLocalMetadata = now, now, now
+	s.checkedAt = nil
+	local presence = rawget(self, "qtPlayerPresenceState")
+	if presence then presence.lastSentAt, presence.lastPartnerSentAt = nil, nil end
+	self:BroadcastQTPlayerPresence()
+	self:BroadcastQuestPartnerStatus(true)
+	self:BroadcastPlayerLocation(true)
+end
+
 function QT:ResetGeographicComms()
 	local s = rawget(self, "geographicCommsState")
 	if s then
@@ -728,6 +833,20 @@ function QT:FlushGeographicDeparture()
 		return
 	end
 	s.queue = {}
+	-- Disable previously sent this clear immediately. With one queued transport,
+	-- it must join the final goodbye instead of being discarded by the fence.
+	-- A clear removes stale focus/waypoints while preserving the peer's follow
+	-- preference for their return after zoning or a reload.
+	local navigation = rawget(self, "partyNavigationState")
+	local navigationRoute = navigation and self:GetPartyNavigationRoute()
+	if navigationRoute and not self:IsRuntimeRestricted() then
+		navigation.sequence = navigation.sequence + 1
+		local clearNavigation = self:EncodePartyNavigation({questID=-1,mapID=-1,x=0,y=0}, false)
+		if clearNavigation then
+			self:SendWireMessageToAnnouncementRoutes(clearNavigation, "navigation departure",
+				{{distribution=navigationRoute,requiresGroup=true}}, true)
+		end
+	end
 	local location = s.latest.LOC
 	-- Never serialize an old nonzero position during departure.
 	local clear = location and location.wire:match("^LOC|1,[^,]+,%d+,0$") and location.wire
@@ -774,8 +893,12 @@ function QT:ScheduleGeographicPingReply(id, routes, supportsPages, developerRequ
 		return false
 	end
 	s.pingReplies[id] = now
+	local generation = s.worldGeneration or 0
+	local diagnosticGeneration = rawget(self, "diagnosticReplyGeneration") or 0
 	self.API.Delay(Random(self, 1, 20), function()
-		if rawget(self, "geographicCommsState") ~= s or not self.isEnabled or self.isLoggingOut then
+		if rawget(self, "geographicCommsState") ~= s or (s.worldGeneration or 0) ~= generation
+			or (developerRequest and (rawget(self, "diagnosticReplyGeneration") or 0) ~= diagnosticGeneration)
+			or not self.isEnabled or self.isLoggingOut or s.departing then
 			return
 		end
 		self:SendPingResponse(id, routes, supportsPages, developerRequest)

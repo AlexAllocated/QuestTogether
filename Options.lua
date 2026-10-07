@@ -858,17 +858,11 @@ function QuestTogether:RefreshOptionsWindow()
 end
 
 local function GetPlayerLocationFilterChoice(addon)
-	if not addon:GetOption("showPlayerLocations") then return 5 end
-	if addon:GetOption("mapPartyOnly") then return 4 end
-	if addon:GetOption("onlyShowQuestPartners") then
-		return addon:GetOption("mapAlwaysShowParty") and 2 or 3
-	end
-	return 1
+	return addon:GetPlayerMapVisibilityChoice()
 end
 
 local function GetPlayerLocationFilterLabels()
-	return { L("All QuestTogether players"), L("Players looking for questing partners + my party"),
-		L("Players looking for questing partners"), L("Party only"), L("None") }
+	return { L("All QuestTogether players"), L("Players looking for questing partners"), L("None") }
 end
 
 function QuestTogether:RefreshPlayerLocationsWindow()
@@ -2024,7 +2018,7 @@ function QuestTogether:InitializePlayerLocationsWindow(parentCategory)
 		self.playerLocationsControls[option.key] = CreateCheckbox(content, option.key, option.label, option.tooltip, 16, -120 - 44 * (index - 1))
 	end
 	self.playerLocationsControls.filterDropdown = CreateDropdown(content, L("Players shown on maps"),
-		L("Choose whose dots appear on the world map and minimap. Looking for questing partners means players with that status enabled. None hides all player dots. This does not change who can see your location."),
+		L("Choose which other players QT shows on maps. Party members use Blizzard's dots. None hides QT's dots. This does not change who can see your location."),
 		16, -178, 310, function(dropdown)
 			for i, label in ipairs(GetPlayerLocationFilterLabels()) do
 				local choice = i
@@ -2032,10 +2026,8 @@ function QuestTogether:InitializePlayerLocationsWindow(parentCategory)
 				info.text = label
 				info.checked = function() return GetPlayerLocationFilterChoice(QuestTogether) == choice end
 				info.func = function()
-					QuestTogether:SetOption("mapPartyOnly", choice == 4)
-					QuestTogether:SetOption("onlyShowQuestPartners", choice == 2 or choice == 3)
-					QuestTogether:SetOption("mapAlwaysShowParty", choice == 2)
-					QuestTogether:SetOption("showPlayerLocations", choice ~= 5)
+					QuestTogether:SetOption("onlyShowQuestPartners", choice == 2)
+					QuestTogether:SetOption("showPlayerLocations", choice ~= 3)
 					QuestTogether:RefreshPlayerLocationsWindow()
 				end
 				dropdown.entries[#dropdown.entries + 1] = info

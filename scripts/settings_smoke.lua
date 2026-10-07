@@ -193,20 +193,17 @@ for _, f in ipairs(regions) do
 		f.scripts.OnClick(f)
 	end
 end
-assert(#menu == 5)
+assert(#menu == 3)
 for _, case in ipairs({
-	{ 5, "None", false, false, false, false },
-	{ 4, "Party only", true, true, false, false },
-	{ 2, "Players looking for questing partners + my party", true, false, true, true },
-	{ 3, "Players looking for questing partners", true, false, true, false },
-	{ 1, "All QuestTogether players", true, false, false, false },
+	{ 3, "None", false, false },
+	{ 2, "Players looking for questing partners", true, true },
+	{ 1, "All QuestTogether players", true, false },
 }) do
 	filter.Dropdown.menu[case[1]].func()
 	assert(filter.Dropdown.text == case[2] and filter.Dropdown.menu[case[1]].selected())
 	assert(QuestTogether:GetOption("showPlayerLocations") == case[3])
-	assert(QuestTogether:GetOption("mapPartyOnly") == case[4])
-	assert(QuestTogether:GetOption("onlyShowQuestPartners") == case[5])
-	assert(QuestTogether:GetOption("mapAlwaysShowParty") == case[6])
+	assert(QuestTogether:GetOption("onlyShowQuestPartners") == case[4])
+	assert(QuestTogether:GetOption("mapPartyOnly") == nil and QuestTogether:GetOption("mapAlwaysShowParty") == nil)
 	assert(QuestTogether:GetOption("sharePlayerLocation") == true)
 end
 -- Native steppers use the same selection actions and stop at the ends.
@@ -222,12 +219,11 @@ assert(filter.Dropdown.menu[1].selected())
 filter:SetEnabled(true)
 -- Existing preferences and profile changes map to the matching selection.
 QuestTogether:SetOption("onlyShowQuestPartners", true)
-QuestTogether:SetOption("mapAlwaysShowParty", true)
 QuestTogether:RefreshPlayerLocationsWindow()
 assert(filter.Dropdown.menu[2].selected())
 QuestTogether:SetOption("showPlayerLocations", false)
 QuestTogether:RefreshPlayerLocationsWindow()
-assert(filter.Dropdown.text == "None" and filter.Dropdown.menu[5].selected())
+assert(filter.Dropdown.text == "None" and filter.Dropdown.menu[3].selected())
 assert(QuestTogether:GetOption("reduceMotion"))
 local found = false
 for _, f in ipairs(regions) do

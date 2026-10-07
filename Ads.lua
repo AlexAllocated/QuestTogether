@@ -39,7 +39,7 @@ local ADS = {
 	"Questing with friends on another client language? QuestTogether can display their updates using localized quest titles when available. Progress is easier to follow in your own language!",
 	"Someone making questing less fun? QuestTogether respects WoW's ignore list for new chat, bubbles, player dots, and icons. You decide whose company you keep.",
 	"You don't have to turn on every bell and whistle. QuestTogether lets you use player maps and party quest comparisons while keeping chat logs, bubbles, and celebrations quiet.",
-	"Want a map focused on your own group? QuestTogether can show only your party's player locations. Or open it up to other QT players when you're looking for new company!",
+	"Want a cleaner map? Hide QuestTogether's player dots and keep Blizzard's party markers, or show only players looking for questing partners when you want company!",
 	"Found your questing group? QuestTogether can automatically turn off Looking for Questing Partners when you join a party. Turn it back on whenever you're ready to recruit more!",
 }
 local SIGNOFF = " This msg is a macro, but I am not a bot. Just spreading the word :)"

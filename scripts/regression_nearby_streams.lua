@@ -446,11 +446,11 @@ QT:RegisterTest("nearby capability withdrawals and data from departed subscripti
 	Equal(Count(a.nearbyStreamState.wanted), 0)
 end)
 
-QT:RegisterTest("nearby streams yield to ready comparison replies but not unavailable quest reads", function()
+QT:RegisterTest("nearby movement retains its separate budget while comparisons use the fair scheduler", function()
 	local a, b = Pair()
 	a.questCompareResponseQueue = { jobs = { { entries = {}, expiresAt = a.now + 60 } } }
 	Tick(a, b, 4)
-	Equal(#a.sent, 0)
+	assert(#a.sent > 0)
 	a.questCompareResponseQueue.jobs[1].entries = nil
 	Tick(a, b, 4)
 	assert(#a.sent > 0)

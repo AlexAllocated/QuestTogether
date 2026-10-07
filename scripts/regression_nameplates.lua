@@ -596,6 +596,10 @@ local function WithRecycledBubble(fn)
 			Mutate(self)
 			self.textColor = { r, g, b, a }
 		end
+		function region:SetClampedToScreen(value)
+			Mutate(self)
+			self.clamped = value
+		end
 		for _, name in ipairs({ "SetFrameStrata", "SetFrameLevel", "SetAlpha", "ClearAllPoints", "SetPoint", "SetSize", "SetClampRectInsets", "SetWidth", "SetText", "SetFont", "SetAtlas", "SetTexCoord" }) do
 			region[name] = Mutate
 		end
@@ -665,6 +669,25 @@ QT:RegisterTest("bubble reuse never reparents forbidden bubbles or during restri
 		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Restricted"), false)
 		Equal(state.mutationAttempts, 0)
 		Equal(state.reparentAttempts, 0)
+	end)
+end)
+
+QT:RegisterTest("only personal announcement bubbles clamp their measured bounds to the display", function()
+	WithRecycledBubble(function(state)
+		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Nearby player progress"), true)
+		Equal(state.bubble.clamped, nil, "nameplate bubble placement must remain unchanged")
+	end)
+	WithRecycledBubble(function(state)
+		Patch({ announcementBubbleScreenHostFrame = state.newBase }, function()
+			state.restricted, state.bubble.protected = true, true
+			Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Deferred personal progress"), false)
+			Equal(state.mutationAttempts, 0)
+			Equal(state.bubble.clamped, nil)
+			state.restricted, state.bubble.protected = false, false
+			Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Personal progress"), true)
+			Equal(state.bubble.clamped, true)
+			Equal(QT.nameplateBubbleStateByFrame[state.bubble].unitToken, "player")
+		end)
 	end)
 end)
 

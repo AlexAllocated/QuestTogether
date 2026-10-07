@@ -172,6 +172,93 @@ local function NewTaskLifecycleFixture(taskType)
 	return addon, clock
 end
 
+QuestTogether:RegisterTest("empty initial quest log recovers tracking from later log updates without nameplates", function()
+	local addon, clock = NewTaskLifecycleFixture("quest")
+	addon.PrintConsoleAnnouncement = function() end
+	addon.BuildLocalAnnouncementEvent = function() end
+	local loaded = addon.rows
+	addon.rows = {}
+	addon:ScanQuestLog()
+	AssertEqual(addon:GetRuntimeFlag("questTrackerReady"), true)
+	AssertEqual(next(addon.tracker), nil)
+	addon.rows = loaded
+	addon:QUEST_LOG_UPDATE() -- Deliberately do not dispatch HandleNameplateEvent.
+	clock:Drain()
+	local tracked = assert(addon.tracker[99999], "late quest log must initialize progress tracking")
+	AssertEqual(#addon.announcements, 0, "recover existing quests silently")
+	addon:QUEST_LOG_UPDATE(); clock:Drain()
+	AssertEqual(addon.tracker[99999], tracked, "never reset an existing objective baseline")
+	addon.objectiveValue = 2
+	ObserveObjectiveUpdate(addon)
+	AssertEqual(addon.announcements[1], "QUEST_PROGRESS")
+end)
+
+QuestTogether:RegisterTest("quest reconciliation preserves acceptance retirement and unreadable snapshot ownership", function()
+	local addon, clock = NewTaskLifecycleFixture("quest")
+	addon.PrintConsoleAnnouncement = function() end
+	addon.BuildLocalAnnouncementEvent = function() end
+	addon:ScanQuestLog()
+	addon:AddQuest(false)
+	addon.pendingQuestAcceptances[12345] = {}
+	addon:QUEST_LOG_UPDATE(); clock:Drain()
+	AssertEqual(addon.tracker[12345], nil)
+	addon.pendingQuestAcceptances[12345] = nil
+	addon.retiredQuestIds[12345] = {}
+	addon:QUEST_LOG_UPDATE(); clock:Drain()
+	AssertEqual(addon.tracker[12345], nil)
+	addon.retiredQuestIds[12345] = nil
+	local read = addon.API.GetQuestLogInfo
+	addon.API.GetQuestLogInfo = function() end
+	addon:QUEST_LOG_UPDATE(); clock:Drain()
+	AssertEqual(addon.tracker[12345], nil)
+	addon.API.GetQuestLogInfo = read
+	addon:QUEST_LOG_UPDATE(); clock:Drain()
+	assert(addon.tracker[12345]); AssertEqual(#addon.announcements, 0)
+end)
+
+QuestTogether:RegisterTest("continuous quest events cannot postpone nameplate refresh and reset cancels pending work", function()
+	local addon, clock = NewTaskLifecycleFixture("quest")
+	local snapshots, presentations = 0, 0
+	addon.RebuildQuestSnapshotStore = function(self)
+		snapshots = snapshots + 1
+		return QuestTogether.RebuildQuestSnapshotStore(self)
+	end
+	addon.RefreshNameplatesForQuestStateChange = function() presentations = presentations + 1 end
+	for _ = 1, 60 do
+		addon:ScheduleQuestStateRefreshWork("QUEST_LOG_UPDATE", 1)
+		clock:Advance(0.5)
+	end
+	AssertEqual(snapshots, 30); AssertEqual(presentations, 30)
+	addon:ScheduleQuestStateRefreshWork("QUEST_LOG_UPDATE", 1)
+	addon:ResetRuntimeWorkStateStore()
+	clock:Advance(1)
+	AssertEqual(snapshots, 30); AssertEqual(presentations, 30)
+end)
+
+QuestTogether:RegisterTest("continuous combat quest events refresh readable plates while snapshot waits for restriction release", function()
+	local addon, clock = NewTaskLifecycleFixture("quest")
+	local snapshots, presentations = 0, 0
+	addon.blocked = true
+	addon.IsWorkBlocked = function(self, kind) return self.blocked and kind == "quest_snapshot_refresh" end
+	addon.IsMapTooltipSensitiveStateActive = function() return false end
+	addon.ClearNameplateQuestDetectionCache = function() end
+	addon.ClearNameplateResolvedQuestState = function() end
+	addon.RefreshVisibleNameplates = function() presentations = presentations + 1 end
+	addon.RebuildQuestSnapshotStore = function(self)
+		snapshots = snapshots + 1
+		return QuestTogether.RebuildQuestSnapshotStore(self)
+	end
+	for _ = 1, 60 do
+		addon:InvalidateNameplateQuestState("QUEST_LOG_UPDATE")
+		addon:ScheduleQuestStateRefreshWork("QUEST_LOG_UPDATE", 1)
+		clock:Advance(0.5)
+	end
+	AssertEqual(snapshots, 0); AssertEqual(presentations, 30)
+	addon.blocked = false
+	addon:FlushDeferredWork("PLAYER_REGEN_ENABLED")
+	AssertEqual(snapshots, 1)
+end)
+
 local function NewInitialScanRecoveryFixture(unavailable)
 	local addon, clock = NewTaskLifecycleFixture("quest")
 	addon:AddQuest(false)

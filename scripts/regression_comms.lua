@@ -140,6 +140,154 @@ local function DeveloperFixture(name)
 	return a
 end
 
+local function FinishDeveloperVerification(peer)
+	local steps = 0
+	while peer.developerRequestState and #peer.developerRequestState.jobs > 0 do
+		steps = steps + 1
+		assert(steps < 2000, "incremental verifier did not finish")
+		peer.clock:RunNext()
+	end
+end
+
+QuestTogether:RegisterTest("developer verification budgets work and cancels on opt-out without reading diagnostics", function()
+	local peer = DeveloperFixture("Friend-Realm")
+	local work, callback = 0, false
+	peer.Ed25519 = { NewVerification = function()
+		return coroutine.create(function()
+			for _ = 1, 100 do work = work + 1; coroutine.yield() end
+			return true
+		end)
+	end }
+	local request = { requestId = "dev-1791300100-1234-1", issuedAt = peer:GetAnnouncementServerTime(),
+		developerRequest = true, supportsPagedPong = true, supportsDirectComms = true,
+		signature = string.rep("0", 128) }
+	Equal(peer:QueueDeveloperPingVerification(request, "Dev-Realm", function() callback = true end), true)
+	Equal(work, 0)
+	peer.clock:RunNext()
+	Equal(work, 8, "missing profiler still has a hard step limit")
+	Equal(callback, false); Equal(peer.reads, nil)
+	local milliseconds = 0
+	peer.API.ProfileMilliseconds = function() milliseconds = milliseconds + 0.6; return milliseconds end
+	peer.clock:RunNext()
+	Equal(work, 10, "frame budget yields before the step limit")
+	peer:SetOption("shareDeveloperDiagnostics", false)
+	peer:SetOption("shareDeveloperDiagnostics", true)
+	peer.clock:Drain()
+	Equal(work, 10); Equal(callback, false); Equal(peer.reads, nil)
+end)
+
+QuestTogether:RegisterTest("developer verification copies requests bounds admission and backs off invalid senders", function()
+	local peer, verified = DeveloperFixture("Friend-Realm"), {}
+	peer.Ed25519 = { NewVerification = function(_, message)
+		return coroutine.create(function() coroutine.yield(); return not message:find("Bad-Realm", 1, true) end)
+	end }
+	local function request(id)
+		return { requestId = "dev-1791300100-1234-" .. id, issuedAt = peer:GetAnnouncementServerTime(),
+			developerRequest = true, supportsPagedPong = true, signature = string.rep("0", 128) }
+	end
+	local original = request(1)
+	Equal(peer:QueueDeveloperPingVerification(original, "Good-Realm", function(copy) verified[#verified + 1] = copy end), true)
+	original.requestId, original.targetName = "tampered", "Other-Realm"
+	Equal(peer:QueueDeveloperPingVerification(request(2), "Good-Realm", function() end), false, "one pending job per sender")
+	for index = 2, 4 do Equal(peer:QueueDeveloperPingVerification(request(index), "Peer" .. index .. "-Realm", function() end), true) end
+	Equal(peer:QueueDeveloperPingVerification(request(5), "Overflow-Realm", function() end), false)
+	FinishDeveloperVerification(peer)
+	Equal(verified[1].requestId, "dev-1791300100-1234-1"); Equal(verified[1].targetName, nil)
+	Equal(verified[1].developerVerified, true)
+	Equal(peer:QueueDeveloperPingVerification(request(6), "Bad-Realm", function() error("invalid request accepted") end), true)
+	FinishDeveloperVerification(peer)
+	Equal(peer:QueueDeveloperPingVerification(request(7), "Bad-Realm", function() end), false)
+	peer.clock:Advance(5)
+	Equal(peer:QueueDeveloperPingVerification(request(7), "Bad-Realm", function() end), true)
+	peer.developerRequestState = nil -- Same cancellation fence used by departure/reset.
+	peer.clock:Drain()
+end)
+
+QuestTogether:RegisterTest("profile switches copies and resets retire developer verification and queued replies", function()
+	for _, change in ipairs({ "switch", "copy", "reset" }) do
+		local peer = DeveloperFixture("Friend-Realm")
+		local work, callbacks = 0, 0
+		peer.Ed25519 = { NewVerification = function()
+			return coroutine.create(function()
+				for _ = 1, 40 do work = work + 1; coroutine.yield() end
+				return true
+			end)
+		end }
+		-- Exercise the real profile methods; UI refreshes belong to separate
+		-- private fixtures and must not touch the player's live windows here.
+		for _, method in ipairs({ "NormalizeAnnouncementDisplayOptions", "NormalizeNameplateOptions",
+			"EnsureQuestLogChatFrame", "CloseQuestLogChatFrame", "RefreshPartyRoster", "RefreshNameplateAugmentation",
+			"RefreshActiveAnnouncementBubbles", "RefreshPersonalBubbleAnchorVisualState",
+			"RefreshPersonalBubbleEditModeDialog", "RefreshMinimapButton", "RefreshManagedWindowLayouts",
+			"OnPlayerLocationOptionsChanged", "BroadcastQuestPartnerStatus", "RefreshOptionsWindow",
+			"RefreshProfilesWindow" }) do peer[method] = function() end end
+		peer.hasLoggedIn = true
+		peer.activeCharacterKey, peer.activeProfileKey = peer.name, "Initial"
+		peer.db.profile.chatLogDestination = "main"
+		peer.db.profiles = { Initial = peer.db.profile, Private = peer:DeepCopy(peer.db.profile) }
+		peer.db.profiles.Private.shareDeveloperDiagnostics = false
+		peer.db.profileKeys = { [peer.name] = "Initial" }
+		local request = { requestId = "dev-1791300100-1234-1", issuedAt = peer:GetAnnouncementServerTime(),
+			developerRequest = true, supportsPagedPong = true, signature = string.rep("0", 128) }
+		assert(peer:QueueDeveloperPingVerification(request, "Dev-Realm", function()
+			callbacks = callbacks + 1
+			peer:ReadLocalPlayerLocation()
+		end))
+		peer.clock:RunNext()
+		Equal(work, 8)
+		assert(peer:SendPagedPong("old-profile", string.rep("x", 800), { { distribution = "WHISPER", target = "Dev-Realm" } }, true))
+		local sent = #peer.wire
+		if change == "switch" then
+			assert(peer:SetActiveProfile("Private"))
+			assert(peer:SetActiveProfile("Initial"))
+		elseif change == "copy" then
+			assert(peer:CopyProfileIntoActiveProfile("Private"))
+			peer:SetOption("shareDeveloperDiagnostics", true)
+		else
+			-- Reset also replaces an opted-in profile with another opted-in one.
+			assert(peer:ResetActiveProfile())
+		end
+		peer.clock:Drain()
+		Equal(work, 8); Equal(callbacks, 0); Equal(peer.reads, nil)
+		Equal(#peer.wire, sent)
+		Equal(peer.developerRequestState, nil)
+	end
+end)
+
+QuestTogether:RegisterTest("developer verification bounds failed senders and discards work when the clock rewinds", function()
+	local peer = DeveloperFixture("Friend-Realm")
+	peer.API.GetServerTime = function() return 1791300000 + math.floor(peer.clock:GetTime()) end
+	peer.Ed25519 = { NewVerification = function() return coroutine.create(function() return false end) end }
+	local function Reject(id, sender)
+		local request = { requestId = "dev-1791300100-1234-" .. id, issuedAt = peer:GetAnnouncementServerTime(),
+			developerRequest = true, supportsPagedPong = true, signature = string.rep("0", 128) }
+		assert(peer:QueueDeveloperPingVerification(request, sender, function() error("invalid signature accepted") end))
+		FinishDeveloperVerification(peer)
+		local count = 0
+		for _ in pairs(peer.developerRequestState.failures) do count = count + 1 end
+		assert(count <= 64, "invalid identities must not grow an unbounded failure cache")
+		peer.clock:Advance(5)
+	end
+	-- Build long backoffs through actual failures, then churn fresh identities.
+	-- Their longer retention overlaps enough newcomers to exercise eviction.
+	for round = 1, 5 do
+		for index = 1, 8 do Reject(round * 10 + index, "Repeat" .. index .. "-Realm") end
+	end
+	for index = 1, 150 do Reject(1000 + index, "Peer" .. index .. "-Realm") end
+	peer.Ed25519 = { NewVerification = function()
+		return coroutine.create(function() for _ = 1, 40 do coroutine.yield() end; return true end)
+	end }
+	local request = { requestId = "dev-1791300100-1234-999", issuedAt = peer:GetAnnouncementServerTime(),
+		developerRequest = true, supportsPagedPong = true, signature = string.rep("0", 128) }
+	assert(peer:QueueDeveloperPingVerification(request, "Dev-Realm", function() error("retired clock lifetime accepted") end))
+	peer.clock:RunNext()
+	peer.clock.now = peer.clock.now - 1
+	-- Model the timer firing after a reset of the monotonic clock.
+	peer.clock.timers[1].callback()
+	Equal(peer.developerRequestState, nil)
+	peer.clock:Drain()
+end)
+
 QuestTogether:RegisterTest("developer Ed25519 signatures match RFC8032 and reject altered content",function()
 	local E=QuestTogether.Ed25519
 	local function unhex(s) return (s:gsub("..",function(x) return string.char(tonumber(x,16)) end)) end
@@ -152,6 +300,15 @@ QuestTogether:RegisterTest("developer Ed25519 signatures match RFC8032 and rejec
 	Equal(E.Verify(key,"changed",sig),false)
 	Equal(E.Verify(key,"",sig:sub(1,63)),false)
 	Equal(E.Verify(key,"",sig:sub(1,32)..string.rep(string.char(255),32)),false)
+	for _, message in ipairs({ "", "changed" }) do
+		local verifier, slices = E.NewVerification(key, message, sig), 0
+		while coroutine.status(verifier) ~= "dead" do
+			local ok, valid = coroutine.resume(verifier)
+			assert(ok); slices = slices + 1
+			if coroutine.status(verifier) == "dead" then Equal(valid, message == "") end
+		end
+		assert(slices > 100, "verification must expose bounded arithmetic steps")
+	end
 end)
 
 QuestTogether:RegisterTest("signed global pong keeps opted-in private position separate from public locations",function()
@@ -161,6 +318,7 @@ QuestTogether:RegisterTest("signed global pong keeps opted-in private position s
 	Equal(ok,true)
 	Equal(#dev.wire[1][2]<=255,true)
 	peer:OnCommReceived(peer.commPrefix,dev.wire[1][2],"CHANNEL",dev.name,7,peer.announcementChannelName)
+	FinishDeveloperVerification(peer)
 	for _=1,100 do peer.clock:Advance(0.2) end
 	assert(#peer.wire>=1)
 	-- Reverse delivery and duplicates must still produce one complete report.
@@ -175,8 +333,159 @@ QuestTogether:RegisterTest("signed global pong keeps opted-in private position s
 	Equal(dev.printed[2].locationShared,false)
 	local rows={}; dev:AppendDeveloperLocationRows(rows)
 	Equal(#rows,1); Equal(rows[1].publicLocationHidden,true)
-	Equal(rawget(dev,"playerLocationState"),nil)
+	Equal(dev.playerLocationState.peers[peer.name].mask,0)
+	Equal(dev.playerLocationState.peers[peer.name].mapID,nil)
 	dev.clock:Advance(121); rows={}; dev:AppendDeveloperLocationRows(rows); Equal(#rows,0)
+end)
+
+local function Pong(a, shared, sampleTime)
+	return { senderName = "Friend-Realm", developer = true, locationShared = shared,
+		mapID = "12", coordX = "42", coordY = "63", classFile = "MAGE", className = "Mage",
+		raceName = "Human", faction = "Alliance", level = "60", warMode = "0",
+		sampledAt = sampleTime or a:GetAnnouncementServerTime() }
+end
+
+QuestTogether:RegisterTest("shared developer pong refreshes the normal cache and obeys normal map filters",function()
+	local a = DeveloperFixture()
+	a:AcceptDeveloperPingResponse(Pong(a, true), {developerRequest=true})
+	local row = a:GetVisiblePlayerLocations("map")[1]
+	assert(row); Equal(row, a.playerLocationState.peers["Friend-Realm"])
+	Equal(row.x, 0.42); Equal(row.level, 60); Equal(row.classFile, "MAGE")
+	Equal(row.developerOnly, nil); Equal(a.developerPlayerData["Friend-Realm"], nil)
+	Equal(a:GetRecentPlayerLocationMapID("Friend-Realm"), 12)
+	Equal(#a:GetVisiblePlayerLocations("minimap"), 1)
+	a.db.profile.mapPartyOnly = true
+	Equal(#a:GetVisiblePlayerLocations("map"), 0)
+	a.db.profile.mapPartyOnly = false
+	a.db.profile.onlyShowQuestPartners = true
+	Equal(#a:GetVisiblePlayerLocations("map"), 0)
+	a.db.profile.onlyShowQuestPartners = false
+	a.clock:Advance(211) -- Longer than the old dev TTL and a global update interval.
+	Equal(#a:GetVisiblePlayerLocations("map"), 1)
+	a.clock:Advance(389)
+	Equal(#a:GetVisiblePlayerLocations("map"), 0)
+end)
+
+QuestTogether:RegisterTest("manual location refresh preserves sample age and real LOC sequence",function()
+	local a = DeveloperFixture()
+	local payload = "1,1000-1,8,3,12,0.1,0.2,MAGE,Mage,Human,Alliance,60,0"
+	assert(a:HandlePlayerLocationMessage(payload, "Friend-Realm", 30))
+	a:AcceptDeveloperPingResponse(Pong(a, true, a:GetAnnouncementServerTime()-20), {developerRequest=true})
+	local row = a.playerLocationState.peers["Friend-Realm"]
+	Equal(row.sampledAt, 80); Equal(row.lifetime, 580)
+	Equal(row.session, "1000-1"); Equal(row.sequence, 8)
+	Equal(row.x, 0.42)
+	-- A higher sequence may still contain a sample older than the manual refresh.
+	Equal(a:HandlePlayerLocationMessage(payload:gsub(",8,", ",9,", 1), "Friend-Realm", 25), false)
+	Equal(a:HandlePlayerLocationMessage(payload:gsub(",8,", ",10,", 1), "Friend-Realm", 5), true)
+	Equal(a.playerLocationState.peers["Friend-Realm"].x, 0.1)
+	-- Delayed pongs cannot move the location back again.
+	a:AcceptDeveloperPingResponse(Pong(a, true, a:GetAnnouncementServerTime()-20), {developerRequest=true})
+	Equal(a.playerLocationState.peers["Friend-Realm"].sequence, 10)
+	Equal(a.playerLocationState.peers["Friend-Realm"].x, 0.1)
+	a.clock:Advance(595)
+	Equal(#a:GetVisiblePlayerLocations("map"), 0)
+end)
+
+QuestTogether:RegisterTest("hidden pongs withdraw public positions without persisting private coordinates",function()
+	local a = DeveloperFixture()
+	a.activeCharacterKey = a.name
+	a:AcceptDeveloperPingResponse(Pong(a, true, a:GetAnnouncementServerTime()-10), {developerRequest=true})
+	a:AcceptDeveloperPingResponse(Pong(a, false), {developerRequest=true})
+	local row = a.playerLocationState.peers["Friend-Realm"]
+	Equal(row.mask, 0); Equal(row.x, nil); Equal(row.mapID, nil)
+	Equal(a:GetVisiblePlayerLocations("map")[1].publicLocationHidden, true)
+	a:SavePlayerLocationCache()
+	Equal(#a.db.global.playerLocationCache.rows, 0)
+	-- Neither an older nor a tied shared pong can undo a privacy withdrawal.
+	for _, age in ipairs({0, 10}) do
+		a:AcceptDeveloperPingResponse(Pong(a, true, a:GetAnnouncementServerTime()-age), {developerRequest=true})
+		Equal(a.playerLocationState.peers["Friend-Realm"].mask, 0)
+	end
+	a.clock:Advance(121)
+	Equal(#a:GetVisiblePlayerLocations("map"), 0)
+	Equal(a:GetRecentPlayerLocationMapID("Friend-Realm"), nil)
+end)
+
+QuestTogether:RegisterTest("new public broadcasts replace hidden developer snapshots even with filtered maps",function()
+	local a = DeveloperFixture()
+	a:AcceptDeveloperPingResponse(Pong(a, false), {developerRequest=true})
+	a.clock:Advance(1)
+	assert(a:HandlePlayerLocationMessage("1,1000-1,1,3,12,0.1,0.2,MAGE,Mage,Human,Alliance,60,0", "Friend-Realm", 0))
+	Equal(a.developerPlayerData["Friend-Realm"], nil)
+	a.db.profile.mapPartyOnly = true
+	Equal(#a:GetVisiblePlayerLocations("map"), 0)
+end)
+
+QuestTogether:RegisterTest("shared pong locations survive normal reload caching and later live LOC updates",function()
+	local a = DeveloperFixture()
+	a.activeCharacterKey = a.name
+	a:AcceptDeveloperPingResponse(Pong(a, true), {developerRequest=true})
+	a:SavePlayerLocationCache()
+	Equal(#a.db.global.playerLocationCache.rows, 1)
+	local b = DeveloperFixture()
+	b.activeCharacterKey, b.db.global = a.name, a.db.global
+	b:RestorePlayerLocationCache()
+	Equal(b:GetVisiblePlayerLocations("map")[1].x, 0.42)
+	assert(b:HandlePlayerLocationMessage("1,1000-1,1,3,12,0.1,0.2,MAGE,Mage,Human,Alliance,60,0", "Friend-Realm", 0))
+	Equal(b:GetVisiblePlayerLocations("map")[1].x, 0.1)
+end)
+
+QuestTogether:RegisterTest("newer shared pong removes red private dot and stale hidden replies cannot undo it",function()
+	local a = DeveloperFixture()
+	a:AcceptDeveloperPingResponse(Pong(a, false, a:GetAnnouncementServerTime()-10), {developerRequest=true})
+	a:AcceptDeveloperPingResponse(Pong(a, true), {developerRequest=true})
+	Equal(a.developerPlayerData["Friend-Realm"], nil)
+	Equal(a:GetVisiblePlayerLocations("map")[1].developerOnly, nil)
+	a:AcceptDeveloperPingResponse(Pong(a, false, a:GetAnnouncementServerTime()-5), {developerRequest=true})
+	Equal(a.developerPlayerData["Friend-Realm"], nil)
+	Equal(a.playerLocationState.peers["Friend-Realm"].mask, 3)
+end)
+
+QuestTogether:RegisterTest("signed shared pong pages refresh normal locations through the real response handler",function()
+	local dev, peer = DeveloperFixture(), DeveloperFixture("Friend-Realm")
+	peer.db.profile.sharePlayerLocation = true
+	local ok, id = dev:SendPingRequest(); Equal(ok, true)
+	peer:OnCommReceived(peer.commPrefix, dev.wire[1][2], "CHANNEL", dev.name, 7, peer.announcementChannelName)
+	FinishDeveloperVerification(peer)
+	for _=1,100 do peer.clock:Advance(0.2) end
+	for i=#peer.wire,1,-1 do
+		dev:OnCommReceived(dev.commPrefix, peer.wire[i][2], "WHISPER", peer.name)
+	end
+	Equal(dev.pendingPingRequests[id].remoteReplies, 1)
+	Equal(dev.playerLocationState.peers[peer.name].x, 0.42)
+	Equal(dev.developerPlayerData[peer.name], nil)
+	dev.clock:Advance(211)
+	Equal(#dev:GetVisiblePlayerLocations("map"), 1)
+end)
+
+QuestTogether:RegisterTest("manual public refreshes use the normal bounded location cache",function()
+	local a = DeveloperFixture()
+	function a:GetPlayerLocationPriorityOrigin() return nil end
+	for i=1,513 do
+		local response = Pong(a, true)
+		response.senderName = "Peer" .. i .. "-Realm"
+		a:AcceptDeveloperPingResponse(response, {developerRequest=true})
+	end
+	local count = 0
+	for _ in pairs(a.playerLocationState.peers) do count = count + 1 end
+	Equal(count, 512)
+	Equal(next(a.developerPlayerData), nil)
+end)
+
+QuestTogether:RegisterTest("malformed expired and unverified pongs cannot refresh public locations",function()
+	local a = DeveloperFixture()
+	for _, change in ipairs({"coordinates", "expired", "future", "consent", "unverified", "ignored"}) do
+		local pong, pending = Pong(a, true), {developerRequest=true}
+		if change == "coordinates" then pong.coordX = "nan"
+		elseif change == "expired" then pong.sampledAt = pong.sampledAt - 600
+		elseif change == "future" then pong.sampledAt = pong.sampledAt + 31
+		elseif change == "consent" then pong.locationShared = nil
+		elseif change == "unverified" then pending.developerRequest = false
+		else function a:IsIgnoredPlayerName() return true end end
+		a:AcceptDeveloperPingResponse(pong, pending)
+		Equal(#a:GetVisiblePlayerLocations("map"), 0)
+	end
 end)
 
 QuestTogether:RegisterTest("developer diagnostic permission blocks reads and cancels a paged reply mid-send",function()
@@ -188,6 +497,7 @@ QuestTogether:RegisterTest("developer diagnostic permission blocks reads and can
 	peer.db.profile.shareDeveloperDiagnostics=true
 	peer.recentCommMessageSignatures={}
 	peer:OnCommReceived(peer.commPrefix,dev.wire[1][2],"CHANNEL",dev.name,7,peer.announcementChannelName)
+	FinishDeveloperVerification(peer)
 	Equal(#peer.wire,1)
 	peer.db.profile.shareDeveloperDiagnostics=false
 	for _=1,100 do peer.clock:Advance(0.2) end
@@ -208,13 +518,20 @@ QuestTogether:RegisterTest("developer request signatures bind sender target purp
 		elseif change=="purpose" then request.debugRequest=false
 		elseif change=="expired" then request.issuedAt=request.issuedAt-400
 		else request.signature=string.rep("0",128) end
-		Equal(peer:VerifyDeveloperPingRequest(request,sender),false)
+		local accepted = false
+		peer:QueueDeveloperPingVerification(request,sender,function() accepted = true end)
+		FinishDeveloperVerification(peer)
+		Equal(accepted,false)
 	end
 	local peer=DeveloperFixture("Friend-Realm")
 	local request=peer:DecodePingRequestPayload(wire:sub(6))
-	Equal(peer:VerifyDeveloperPingRequest(request,dev.name),true)
+	local accepted = false
+	Equal(peer:QueueDeveloperPingVerification(request,dev.name,function() accepted = true end),true)
+	Equal(accepted,false, "no synchronous verification")
+	FinishDeveloperVerification(peer)
+	Equal(accepted,true)
 	peer.clock:Advance(6)
-	Equal(peer:VerifyDeveloperPingRequest(request,dev.name),false)
+	Equal(peer:QueueDeveloperPingVerification(request,dev.name,function() end),false)
 end)
 
 QuestTogether:RegisterTest("targeted remote debug opens the peer report without changing the local log",function()
@@ -224,6 +541,7 @@ QuestTogether:RegisterTest("targeted remote debug opens the peer report without 
 	Equal(dev.wire[1][3],"WHISPER"); Equal(dev.wire[1][4],peer.name)
 	Equal(#dev.printed,0)
 	peer:OnCommReceived(peer.commPrefix,dev.wire[1][2],"WHISPER",dev.name)
+	FinishDeveloperVerification(peer)
 	for _=1,400 do peer.clock:Advance(0.2) end
 	for _,packet in ipairs(peer.wire) do dev:OnCommReceived(dev.commPrefix,packet[2],"WHISPER",peer.name) end
 	Equal(dev.pendingPingRequests[id].remoteReplies,1)
@@ -1577,20 +1895,19 @@ end
 
 QuestTogether:RegisterTest("comparison send pacing does not consume failed-native-send retries", function()
 	local a = NewCommsFixture()
-	InstallResponseClock(a)
+	local clock = QuestTogether:CreateTestClock(100)
+	a.API.GetTime = function() return clock:GetTime() end
+	a.API.Delay = function(delay, callback) clock:After(delay, callback) end
 	SetComparisonEntries(a, 2)
 	a:InitializeGeographicComms()
-	a.geographicCommsState.blockedUntil = a.now + 10
-	assert(a:HandleQuestCompareRequest({ requestId = "paced-response", requesterName = "Peer-Realm",
-		targetName = "MyPlayer-Realm", replyDistribution = "CHANNEL" }))
-	for _ = 1, 7 do assert(RunResponseTimer(a)) end
-	Equal(#a.wire, 0)
-	Equal(#a.questCompareResponseQueue.jobs, 1)
-	Equal(a.questCompareResponseQueue.jobs[1].attempts, 0)
-	for _ = 1, 20 do if not RunResponseTimer(a) then break end end
-	Equal(#a.questCompareResponseQueue.jobs, 0)
-	Equal(#a.wire, 3)
-	assert(a.wire[3][2]:find("QCDN|", 1, true))
+	a.geographicCommsState.blockedUntil = 110
+	assert(a:HandleQuestCompareRequest({requestId="paced-response",requesterName="Peer-Realm",targetName="MyPlayer-Realm",replyDistribution="CHANNEL"}))
+	for _=1,35 do clock:Advance(0.2); a:DrainGeographicQueue() end
+	Equal(#a.wire,0); Equal(#a.questCompareResponseQueue.jobs,1)
+	Equal(a.questCompareResponseQueue.jobs[1].attempts,0)
+	for _=1,35 do clock:Advance(0.2); a:DrainGeographicQueue() end
+	Equal(#a.questCompareResponseQueue.jobs,0); Equal(#a.wire,3)
+	assert(a.wire[3][2]:find("QCDN|",1,true))
 end)
 
 QuestTogether:RegisterTest("existing channels install filters once and avoid per-packet chat cleanup", function()
@@ -1693,7 +2010,7 @@ QuestTogether:RegisterTest("quest comparison queues expire and old callbacks can
 	local request = { requestId = "old", targetName = "MyPlayer-Realm", replyDistribution = "PARTY" }
 	Equal(addon:HandleQuestCompareRequest(request), true)
 	local expiredCount = #addon.wire
-	addon.now = addon.now + 151
+	addon.now = addon.now + 451
 	RunResponseTimer(addon)
 	Equal(#addon.wire, expiredCount)
 	Equal(#addon.questCompareResponseQueue.jobs, 0)
@@ -1726,7 +2043,9 @@ QuestTogether:RegisterTest("quest comparison response memory has job and packet 
 	for index = 1, 3 do
 		Equal(addon:HandleQuestCompareRequest({ requestId = tostring(index), targetName = "MyPlayer-Realm" }), true)
 	end
-	Equal(addon:HandleQuestCompareRequest({ requestId = "overflow", targetName = "MyPlayer-Realm" }), false)
+	Equal(addon:HandleQuestCompareRequest({ requestId = "fourth", targetName = "MyPlayer-Realm" }), true)
+	Equal(#addon.questCompareResponseQueue.jobs, 4)
+	Equal(addon.questCompareResponseQueue.jobs[4].entries, nil)
 	Equal(addon.questCompareResponseQueue.packets <= 128, true)
 	addon:ResetCommsState()
 	SetComparisonEntries(addon, 101)
@@ -2067,7 +2386,7 @@ QuestTogether:RegisterTest("restricted comparison jobs still expire without read
 	local addon, clock = NewSnapshotComparisonFixture()
 	addon.restrictions.map = true
 	ReceiveSnapshotComparisonRequest(addon, "expired-map")
-	for _ = 1, 149 do clock:Advance(1) end
+	for _ = 1, 449 do clock:Advance(1) end
 	Equal(#addon.questCompareResponseQueue.jobs, 1)
 	clock:Advance(1)
 	Equal(#addon.questCompareResponseQueue.jobs, 0)
@@ -2514,9 +2833,10 @@ QuestTogether:RegisterTest("comparison supersession uses transport identity and 
 	Equal(queue.packets, 121) -- One Alpha entry has already left the queue.
 	SetComparisonEntries(addon, 100)
 	Receive("too-large-replacement", "Alpha-Realm")
-	Equal(queue.jobs[1], old) -- Failed admission must not discard the valid old job.
-	Equal(queue.jobs[2], other)
-	Equal(queue.packets, 121)
+	Equal(queue.jobs[1], other)
+	Equal(queue.jobs[2].requestId, "too-large-replacement")
+	Equal(queue.jobs[2].entries, nil)
+	Equal(queue.packets, 62)
 	SetComparisonEntries(addon, 1)
 	Receive("small-replacement", "Alpha-Realm")
 	Equal(queue.jobs[1], other)
@@ -3175,4 +3495,17 @@ QuestTogether:RegisterTest("compare completion falls back safely when native dat
 		addon.API.IsQuestComplete = function() error("restricted native read") end
 		Equal(addon:BuildQuestCompareEntries(), nil)
 	end
+end)
+
+QuestTogether:RegisterTest("expired pong assemblies release active capacity independently from failed sender tombstones",function()
+	local a=NewCommsFixture()
+	a.pendingPingRequests.paged={startedAt=a.now,expiresAt=a.now+300,responders={}}
+	for index=1,64 do assert(a:HandlePongPage("1,paged,1,2,fragment","Peer"..index.."-Realm")) end
+	a.now=a.now+121
+	assert(a:HandlePongPage("1,paged,1,2,new","Fresh-Realm"))
+	Equal(a:HandlePongPage("1,paged,2,2,old","Peer1-Realm"),false)
+	local pending=a.pendingPingRequests.paged
+	local count=0;for _ in pairs(pending.pages) do count=count+1 end
+	Equal(count,1)
+	assert(#pending.failedPageOrder<=64)
 end)

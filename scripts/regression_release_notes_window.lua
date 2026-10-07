@@ -824,6 +824,43 @@ Register("release notes resizing preserves pages and scroll while fixed rolls co
 	a.blocked = false
 end)
 
+Register("release notes reflow on reset profile restore and smaller display without reopening", function()
+	local a = Fixture()
+	a.db = { profile = {}, global = { releaseNotesSeenVersion = "6.2.3" } }
+	function a:Print() end
+	local notes = Notes(40)
+	assert(a:RenderReleaseNotesWindow(notes, "6.2.2", false))
+	local f = a.releaseNotesWindow
+	f.scroll.scripts.OnMouseWheel({}, -4)
+	local offset = f.scrollOffset
+	a.db.profile.windowLayouts = { releaseNotes = { width = 520, height = 380, x = 0.85, y = 0.8 } }
+	a:RefreshManagedWindowLayouts()
+	Equal(f.width, 520)
+	Equal(f.height, 380)
+	Equal(f.scroll.width, 520 - 76)
+	Equal(f.scroll.height, 380 - 164)
+	Equal(f.slider.height, f.scroll.height)
+	Equal(f.scrollOffset, offset)
+	Equal(f.notes, notes)
+	Equal(f.version, "6.2.2")
+	assert(f:IsShown())
+	f:Hide()
+	a:ResetWindowLayouts()
+	Equal(f.width, 700)
+	Equal(f.height, 650)
+	Equal(f.scroll.height, 650 - 164)
+	Equal(f.scrollOffset, offset)
+	assert(not f:IsShown(), "reset must not reopen dismissed notes")
+	a.parent.width, a.parent.height = 640, 400
+	a:DISPLAY_SIZE_CHANGED()
+	Equal(f.scroll.width, f.width - 76)
+	Equal(f.scroll.height, f.height - 164)
+	Equal(f.slider.height, f.scroll.height)
+	assert(f.height * f.scale <= a.parent.height and f.width * f.scale <= a.parent.width)
+	assert(not f:IsShown())
+	Equal(a.db.global.releaseNotesSeenVersion, "6.2.3")
+end)
+
 Register("release history uses reusable themed list rows with separate version date and title", function()
 	local a = Fixture()
 	local notes = Notes(2)

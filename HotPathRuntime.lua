@@ -238,6 +238,18 @@ function QuestTogether:ScheduleDeferredWork(workClass, key, callback, delaySecon
 	return LibChev.ScheduleWork(WorkPolicy(self), workClass, key, callback, delaySeconds, reason)
 end
 
+function QuestTogether:ScheduleBoundedRefreshWork(workClass, key, callback, delaySeconds, reason)
+	local state = self:GetDeferredWorkStateStore()
+	local pending = state.entries[LibChev.WorkKey(workClass, key)]
+	if pending then
+		-- Read current state when the original deadline arrives. Preserve the
+		-- settling delay, but never push it out indefinitely during a burst.
+		pending.reason = reason or pending.reason
+		return true
+	end
+	return self:ScheduleDeferredWork(workClass, key, callback, delaySeconds, reason)
+end
+
 function QuestTogether:RunOrDeferWork(workClass, key, callback, delaySeconds, reason)
 	local policy = WorkPolicy(self)
 	-- Explicit clicks on existing waypoint links remain usable while QT is disabled.
@@ -278,10 +290,11 @@ function QuestTogether:ScheduleTaskAreaRefreshWork(shouldAnnounce, delaySeconds,
 end
 
 function QuestTogether:ScheduleQuestStateRefreshWork(reason, delaySeconds)
-	return self:ScheduleDeferredWork("quest_snapshot_refresh", "quest_snapshot_refresh", function()
+	return self:ScheduleBoundedRefreshWork("quest_snapshot_refresh", "quest_snapshot_refresh", function()
 		self:SetRuntimeFlag("pendingDeferredNameplateQuestStateRefresh", false)
 		if self.RebuildQuestSnapshotStore then
-			self:RebuildQuestSnapshotStore()
+			local snapshot = self:RebuildQuestSnapshotStore()
+			if self.ReconcileQuestTracking then self:ReconcileQuestTracking(snapshot) end
 		end
 		if self.RefreshNameplatesForQuestStateChange then
 			self:RefreshNameplatesForQuestStateChange(reason)

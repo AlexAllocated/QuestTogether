@@ -339,7 +339,7 @@ function QT:PrunePlayerLocations(force)
 	end
 end
 
-function QT:HandlePlayerLocationMessage(payload, sender)
+function QT:HandlePlayerLocationMessage(payload, sender, sampleAge, source)
 	if not self.isEnabled then
 		return false
 	end
@@ -354,6 +354,13 @@ function QT:HandlePlayerLocationMessage(payload, sender)
 	self:PrunePlayerLocations()
 	local state = self:GetPlayerLocationState()
 	local previous = state.peers[name]
+	-- Geographic envelopes carry the actual sample age. A delayed broadcast
+	-- must not replace a newer position (or withdrawal) learned from a pong.
+	local sampledAt = now - (sampleAge or 0)
+	source = source or { session = "LOC:" .. data.session, sequence = data.sequence }
+	if not self:CanAcceptPeerUpdate(name, "LOC", sampledAt, source and source.session, source and source.sequence) then return false end
+	if previous and sampledAt < (previous.sampledAt or previous.receivedAt)
+		and (not source or previous.manualSnapshot or (previous.sampledAt or previous.receivedAt) - sampledAt >= 1) then return false end
 	if previous and (previous.session == data.session and previous.sequence >= data.sequence) then
 		return false
 	end
@@ -369,8 +376,20 @@ function QT:HandlePlayerLocationMessage(payload, sender)
 			table.remove(retired, 1)
 		end
 	end
-	data.name, data.receivedAt, data.retired = name, now, retired
+	data.retired = retired
+	return self:StorePlayerLocationRecord(name, data, now, sampledAt,
+		sampleAge and self:GetGeographicSnapshotLifetime() - sampleAge or nil, source)
+end
+
+-- Both public broadcasts and manual refreshes use the same bounded cache.
+function QT:StorePlayerLocationRecord(name, data, now, sampledAt, lifetime, source)
+	local state = self:GetPlayerLocationState()
+	local previous = state.peers[name]
+	data.name, data.receivedAt, data.sampledAt, data.lifetime = name, now, sampledAt, lifetime
+	self:RecordPeerUpdate(name, "LOC", sampledAt, source and source.session, source and source.sequence)
 	state.peers[name] = data
+	local private = rawget(self, "developerPlayerData")
+	if data.mask ~= 0 and private and private[name] and sampledAt >= private[name].receivedAt then private[name] = nil end
 	if not previous then
 		local count = 0
 		for _ in pairs(state.peers) do count = count + 1 end
@@ -391,8 +410,41 @@ function QT:HandlePlayerLocationMessage(payload, sender)
 
 	-- Withdrawals can arrive after QTPR departure on another route. Preserve any
 	-- existing identity for privacy opt-outs, but only a position establishes it.
-	if data.mask ~= 0 then self:RecordQTPlayerPresence(name, true) end
+	if data.mask ~= 0 then self:RecordPeerPresenceFromSnapshot(name, sampledAt, source and source.session, source and source.sequence) end
 	return true
+end
+
+-- A pong has a sample timestamp, but no LOC stream sequence. Retain the
+-- last real sequence; 0-0 is a local bootstrap session until the first LOC.
+-- Hidden replies store only a withdrawal here, never their coordinates.
+function QT:RefreshPlayerLocationFromPing(name, response, age)
+	local now = Now(self)
+	if not self.isEnabled or not now or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name)
+		or type(response.locationShared) ~= "boolean" then return false end
+	self:PrunePlayerLocations()
+	local state = self:GetPlayerLocationState()
+	local previous = state.peers[name]
+	local sampledAt = now - age
+	if not self:CanAcceptPeerUpdate(name, "LOC", sampledAt) then return false end
+	if previous and (sampledAt < (previous.sampledAt or previous.receivedAt)
+		or (sampledAt == (previous.sampledAt or previous.receivedAt)
+			and previous.mask == 0 and response.locationShared)) then return false end
+	local data = { session = previous and previous.session or "0-0",
+		sequence = previous and previous.sequence or 1, mask = response.locationShared and 3 or 0, manualSnapshot = true }
+	if response.locationShared then
+		data.mapID = Number(self, response.mapID, 1, 1000000, true)
+		local x, y = Number(self, response.coordX, 0, 100), Number(self, response.coordY, 0, 100)
+		if not data.mapID or not x or not y then return false end
+		data.x, data.y = x / 100, y / 100
+		data.classFile = CLASSES[response.classFile] and response.classFile or ""
+		data.className, data.race = Text(self, response.className, 48), Text(self, response.raceName, 48)
+		data.faction = (response.faction == "Alliance" or response.faction == "Horde" or response.faction == "Neutral")
+			and response.faction or ""
+		data.level = Number(self, response.level, 1, 1000, true)
+		data.warMode = self:NormalizeAnnouncementWarModeValue(response.warMode)
+	end
+	data.retired = previous and previous.retired or {}
+	return self:StorePlayerLocationRecord(name, data, now, sampledAt, self:GetGeographicSnapshotLifetime() - age)
 end
 
 function QT:GetRecentPlayerLocationMapID(name)
@@ -415,7 +467,6 @@ function QT:GetVisiblePlayerLocations(surface)
 	end
 	self:PrunePlayerLocations()
 	local state, result, now = rawget(self, "playerLocationState"), {}, Now(self)
-	local onlyPartners = self:GetOption("onlyShowQuestPartners") == true
 	for _, peer in pairs(state and state.peers or {}) do
 		if
 			now
@@ -423,9 +474,7 @@ function QT:GetVisiblePlayerLocations(surface)
 			and now - peer.receivedAt < (peer.lifetime or LIFETIME)
 			-- Older peers can still grant permission for just one surface.
 			and ((surface == "map" and peer.mask % 2 == 1) or (surface == "minimap" and peer.mask >= 2))
-			and (self:GetOption("mapPartyOnly") ~= true or self:IsGroupedSender(peer.name))
-			and (not onlyPartners or self:IsPlayerLookingForQuestPartners(peer.name)
-				or (self:GetOption("mapAlwaysShowParty") == true and self:IsGroupedSender(peer.name)))
+			and self:ShouldShowPlayerLocation(peer.name)
 		then
 			result[#result + 1] = surface == "minimap" and self:GetNearbyStreamPosition(peer, true) or peer
 		end
@@ -502,6 +551,7 @@ function QT:ResetPlayerLocations()
 	self:HideChatLogPlayerTooltip()
 	self:HidePlayerTooltipBadge()
 	self.playerLocationState = nil
+	self.locationPriorityCache = nil
 	self.nearbyStreamState = nil
 	self.playerPhaseState = nil
 	local frame = rawget(self, "playerLocationUpdateFrame")

@@ -910,7 +910,7 @@ QT:RegisterTest("full location cache retains nearby peers over fresh distant arr
 	assert(a.playerLocationState.peers["NewNear-Realm"])
 end)
 
-QT:RegisterTest("map display filters keep party exception independent of sharing and surfaces", function()
+QT:RegisterTest("map display filters always exclude native party dots independently of sharing", function()
  local a = Fixture()
  a.playerLocationState = { peers = {
   ["Friend-Realm"] = {name="Friend-Realm",receivedAt=100,mask=3,mapID=12,x=0.4,y=0.6},
@@ -918,11 +918,10 @@ QT:RegisterTest("map display filters keep party exception independent of sharing
  function a:IsGroupedSender(name) return name == "Friend-Realm" end
  function a:IsPlayerLookingForQuestPartners(name) return name == "Other-Realm" end
  a.db.profile.onlyShowQuestPartners = true
- Equal(#a:GetVisiblePlayerLocations("map"), 2)
- a.db.profile.mapAlwaysShowParty = false
  Equal(#a:GetVisiblePlayerLocations("map"), 1)
- a.db.profile.mapPartyOnly, a.db.profile.onlyShowQuestPartners = true, false
- Equal(a:GetVisiblePlayerLocations("map")[1].name, "Friend-Realm")
+ Equal(a:GetVisiblePlayerLocations("minimap")[1].name, "Other-Realm")
+ a.db.profile.onlyShowQuestPartners = false
+ Equal(a:GetVisiblePlayerLocations("map")[1].name, "Other-Realm")
  a.db.profile.showPlayerLocations = false
  Equal(#a:GetVisiblePlayerLocations("map"), 0)
  Equal(#a:GetVisiblePlayerLocations("minimap"), 0)

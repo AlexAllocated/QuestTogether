@@ -1559,6 +1559,7 @@ function QuestTogether:CreatePartyQuestSharePrompt(preview)
 	frame.decline:ClearAllPoints()
 	frame.decline:SetPoint("BOTTOMRIGHT", -frame.contentInset, frame.contentBottom)
 	frame.LayoutRequest = function() LayoutRequestPrompt(self, frame) end
+	frame.LayoutManagedWindow = frame.LayoutRequest
 	frame.close = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelCloseButton")
 	frame.close:SetPoint("TOPRIGHT", -12, -8)
 	frame.close:SetScript("OnClick", function()
@@ -1668,6 +1669,7 @@ function QuestTogether:CreatePartyJoinPrompt(preview)
 	frame.decline:ClearAllPoints()
 	frame.decline:SetPoint("BOTTOMRIGHT", -frame.contentInset, frame.contentBottom)
 	frame.LayoutRequest = function() LayoutRequestPrompt(self, frame) end
+	frame.LayoutManagedWindow = frame.LayoutRequest
 	frame.close = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelCloseButton")
 	frame.close:SetPoint("TOPRIGHT", -12, -8)
 	frame.close:SetScript("OnClick", function()
@@ -1799,6 +1801,39 @@ function QuestTogether:RenderPartyChatReminder(request)
 		for _, region in ipairs({ frame.preview, frame.hint }) do self:AddScrollDialogLabel(frame, region, "muted") end
 		for _, region in ipairs({ frame.message, frame.members }) do self:AddScrollDialogLabel(frame, region) end
 
+		frame.LayoutManagedWindow = function()
+			if not frame.request then return end
+			-- Lay out each wrapped section from its actual height. No fixed blank
+			-- message area, and long translations/member names grow the dialog.
+			local function Place(region, x, y)
+				region:ClearAllPoints()
+				region:SetPoint("TOPLEFT", frame, "TOPLEFT", x, -y)
+			end
+			local headingHeight = frame.heading:GetStringHeight()
+			Place(frame.preview, inset, frame.contentTop + headingHeight + 8)
+			local headerBottom =
+				frame.contentTop + headingHeight + (frame.request.preview and frame.preview:GetStringHeight() + 8 or 0)
+			local y = headerBottom + 18
+			Place(frame.message, inset, y)
+			y = y + frame.message:GetStringHeight() + 16
+			Place(frame.memberPanel, inset, y)
+			Place(frame.memberLabel, inset + 12, y + 10)
+			Place(frame.members, inset + 12, y + 10 + frame.memberLabel:GetStringHeight() + 6)
+			local panelHeight = 20 + frame.memberLabel:GetStringHeight() + 6 + frame.members:GetStringHeight()
+			frame.memberPanel:SetSize(bodyWidth, panelHeight)
+			y = y + panelHeight + 14
+			Place(frame.hint, inset, y)
+			y = y + frame.hint:GetStringHeight() + 14
+			Place(frame.remember, inset - 4, y)
+			frame.remember.label:SetWordWrap(true)
+			frame.remember.label:SetHeight(frame.remember.label:GetStringHeight())
+			y = y + math.max(26, frame.remember.label:GetStringHeight() + 8) + 12
+			Place(frame.keep, inset, y + 24)
+			Place(frame.disable, inset + buttonWidth + 12, y + 24)
+			frame:SetHeight(y + 24 + 24 + frame.contentBottom)
+			self:FitScrollDialog(frame)
+		end
+
 		frame:SetScript("OnDragStart", function()
 			if not self:IsWorkBlocked("foreign_frame_mutation") and self.LibChev.CanMutateOwnedRegion(frame) then
 				self:StartWindowDrag(frame)
@@ -1818,35 +1853,7 @@ function QuestTogether:RenderPartyChatReminder(request)
 		frame.remember:SetChecked(false)
 		frame.preview:SetText(request.preview and L("Preview - no settings will change.") or "")
 		frame.members:SetText(table.concat(request.names, "\n"):gsub("|", "||"))
-		-- Lay out each wrapped section from its actual height. No fixed blank
-		-- message area, and long translations/member names grow the dialog.
-		local function Place(region, x, y)
-			region:ClearAllPoints()
-			region:SetPoint("TOPLEFT", frame, "TOPLEFT", x, -y)
-		end
-		local headingHeight = frame.heading:GetStringHeight()
-		Place(frame.preview, inset, frame.contentTop + headingHeight + 8)
-		local headerBottom =
-			frame.contentTop + headingHeight + (request.preview and frame.preview:GetStringHeight() + 8 or 0)
-		local y = headerBottom + 18
-		Place(frame.message, inset, y)
-		y = y + frame.message:GetStringHeight() + 16
-		Place(frame.memberPanel, inset, y)
-		Place(frame.memberLabel, inset + 12, y + 10)
-		Place(frame.members, inset + 12, y + 10 + frame.memberLabel:GetStringHeight() + 6)
-		local panelHeight = 20 + frame.memberLabel:GetStringHeight() + 6 + frame.members:GetStringHeight()
-		frame.memberPanel:SetSize(bodyWidth, panelHeight)
-		y = y + panelHeight + 14
-		Place(frame.hint, inset, y)
-		y = y + frame.hint:GetStringHeight() + 14
-		Place(frame.remember, inset - 4, y)
-		frame.remember.label:SetWordWrap(true)
-		frame.remember.label:SetHeight(frame.remember.label:GetStringHeight())
-		y = y + math.max(26, frame.remember.label:GetStringHeight() + 8) + 12
-		Place(frame.keep, inset, y + 24)
-		Place(frame.disable, inset + buttonWidth + 12, y + 24)
-		frame:SetHeight(y + 24 + 24 + frame.contentBottom)
-		self:FitScrollDialog(frame)
+		frame:LayoutManagedWindow()
 	end
 	frame:Show()
 end

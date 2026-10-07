@@ -232,8 +232,11 @@ function QuestTogether:ShowDiscordLinkDialog(url)
 		frame.box = self:CreatePartyQuestUIFrame("EditBox", nil, frame)
 		frame.box:SetPoint("TOPLEFT", hint, "BOTTOMLEFT", 0, -20)
 		frame.box:SetSize(frame.contentWidth, 32)
-		frame:SetHeight(frame.contentTop + hint:GetStringHeight() + 20 + 32 + 24 + 24 + frame.contentBottom)
-		self:FitScrollDialog(frame)
+		frame.LayoutManagedWindow = function()
+			frame:SetHeight(frame.contentTop + hint:GetStringHeight() + 20 + 32 + 24 + 24 + frame.contentBottom)
+			self:FitScrollDialog(frame)
+		end
+		frame:LayoutManagedWindow()
 		frame.box:SetAutoFocus(false)
 		frame.box:SetFontObject("ChatFontNormal")
 		frame.box:SetTextInsets(8, 8, 4, 4)
@@ -368,16 +371,19 @@ function QuestTogether:ShowPartyFocusMissingDialog(notice, preview)
 			else self:OpenPartyQuestCompare() end
 			Close()
 		end)
+		frame.LayoutManagedWindow = function()
+			frame.message:SetHeight(frame.message:GetStringHeight())
+			frame:SetHeight(math.max(280, frame.contentTop + frame.message:GetStringHeight() + frame.contentBottom + 54))
+			self:FitScrollDialog(frame)
+		end
 	end
 	if not self.LibChev.CanMutateOwnedRegion(frame) or not self.LibChev.CanMutateOwnedRegion(frame.message) then return false end
 	local title = preview and notice.title or self:GetLocalizedQuestTitle(notice.questID)
 		or (notice.title and notice.title ~= "" and notice.title) or self:GetQuestTitle(notice.questID)
 	frame.message:SetText(string.format(L("%s is tracking %s, which you don't have. Following has stopped. Your current navigation is unchanged.\n\nOpen Party Quest Log to request the quest, then follow this player again."), notice.name, title)
 		.. (preview and ("\n\n" .. L("Preview - no settings will change.")) or ""))
-	frame.message:SetHeight(frame.message:GetStringHeight())
-	frame:SetHeight(math.max(280, frame.contentTop + frame.message:GetStringHeight() + frame.contentBottom + 54))
+	frame:LayoutManagedWindow()
 	self:ApplyScrollDialogTheme(frame)
-	self:FitScrollDialog(frame)
 	frame:Show(); frame:Raise()
 	return true
 end
@@ -422,15 +428,18 @@ function QuestTogether:ShowPartyFocusChangeDialog(name, callback, preview, liveN
 			Close()
 			if action then action() end
 		end)
+		frame.LayoutManagedWindow = function()
+			frame.message:SetHeight(frame.message:GetStringHeight())
+			frame:SetHeight(math.max(260, frame.contentTop + frame.message:GetStringHeight() + frame.contentBottom + 54))
+			self:FitScrollDialog(frame)
+		end
 	end
 	if not self.LibChev.CanMutateOwnedRegion(frame) then return false end
 	frame.confirmAction = callback
 	frame.message:SetText(string.format(L("Changing focus will stop following %s. Continue?"), name)
 		.. (preview and ("\n\n" .. (liveNavigation and L("Preview - quest focus changes affect your navigation.") or L("Preview - no settings will change."))) or ""))
-	frame.message:SetHeight(frame.message:GetStringHeight())
-	frame:SetHeight(math.max(260, frame.contentTop + frame.message:GetStringHeight() + frame.contentBottom + 54))
+	frame:LayoutManagedWindow()
 	self:ApplyScrollDialogTheme(frame)
-	self:FitScrollDialog(frame)
 	frame:Show()
 	frame:Raise()
 	return true

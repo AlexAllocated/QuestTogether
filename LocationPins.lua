@@ -125,9 +125,26 @@ function QuestTogether:GetPlayerLocationPriorityOrigin()
 	if continent and north and west then return { continent = continent, north = north, west = west } end
 end
 
+function QuestTogether:GetCachedPlayerLocationWorldPosition(row)
+	if self:IsRuntimeRestricted() then return nil end
+	local cache = rawget(self, "locationPriorityCache")
+	if not cache then cache = setmetatable({}, { __mode = "k" }); self.locationPriorityCache = cache end
+	local saved = cache[row]
+	if saved and saved.mapID == row.mapID and saved.x == row.x and saved.y == row.y then
+		return saved.continent, saved.north, saved.west
+	end
+	local continent, north, west = self:GetLocationPinWorldPosition(row.mapID, row.x, row.y)
+	-- Do not cache a transient native failure; successful coordinates are fixed
+	-- for this map and position and need not be projected for every admission.
+	if continent and north and west then
+		cache[row] = { mapID = row.mapID, x = row.x, y = row.y, continent = continent, north = north, west = west }
+	end
+	return continent, north, west
+end
+
 function QuestTogether:GetPlayerLocationPriorityDistance(row, origin)
 	if not origin or row.mask == 0 then return math.huge end
-	local continent, north, west = self:GetLocationPinWorldPosition(row.mapID, row.x, row.y)
+	local continent, north, west = self:GetCachedPlayerLocationWorldPosition(row)
 	if continent ~= origin.continent or not north or not west then return math.huge end
 	return (north - origin.north)^2 + (west - origin.west)^2
 end
@@ -1157,8 +1174,7 @@ function QuestTogether:RefreshNearbyStreamPins()
 		for _, pin in ipairs(surface.pins) do
 			if pin.name and streams.wanted[pin.name] then
 				local row = locations and locations.peers[pin.name]
-				if not row or row.mask < 2 or self:IsIgnoredPlayerName(pin.name)
-					or (self:GetOption("onlyShowQuestPartners") == true and not self:IsPlayerLookingForQuestPartners(pin.name)) then
+				if not row or row.mask < 2 or not self:ShouldShowPlayerLocation(pin.name) then
 					Hide(self, state, pin.frame)
 				else
 					row = self:GetNearbyStreamPosition(row, true)

@@ -393,8 +393,6 @@ QuestTogether.DEFAULTS = {
 		shareDeveloperDiagnostics = true,
 		showPlayerLocations = true,
 		onlyShowQuestPartners = false,
-		mapPartyOnly = false,
-		mapAlwaysShowParty = true,
 		emoteOnNearbyPlayerLevelUp = true,
 		nameplateQuestIconEnabled = true,
 		nameplatePlayerIconEnabled = true,
@@ -968,6 +966,11 @@ QuestTogether.API = QuestTogether.API or {
 	end,
 		GetTime = function()
 			return GetTime()
+		end,
+		ProfileMilliseconds = function()
+			if type(debugprofilestop) ~= "function" then return nil end
+			local ok, value = pcall(debugprofilestop)
+			return ok and QuestTogether:SafeToNumber(value) or nil
 		end,
 		GetServerTime = function()
 			if type(GetServerTime) ~= "function" then return nil end
@@ -2898,6 +2901,7 @@ function QuestTogether:MigratePlayerLocationOptions(profile)
 	end
 	profile.shareLocationOnMap, profile.shareLocationOnMinimap = nil, nil
 	profile.showLocationsOnMap, profile.showLocationsOnMinimap = nil, nil
+	if self.MigratePlayerMapVisibility then self:MigratePlayerMapVisibility(profile) end
 end
 
 function QuestTogether:EnsureProfileStorage()
@@ -2964,6 +2968,10 @@ function QuestTogether:ApplyActiveProfileState(changeReason)
 	if not self.db or not self.db.profile then
 		return false
 	end
+	-- Replacing a profile bypasses SetOption. Retire requests from its old
+	-- permission lifetime even if another profile is selected before a timer runs.
+	self.developerRequestState = nil
+	if self.CancelDeveloperDiagnosticReplies then self:CancelDeveloperDiagnosticReplies() end
 
 	self:NormalizeAnnouncementDisplayOptions()
 	self:NormalizeNameplateOptions()
@@ -5586,6 +5594,11 @@ function QuestTogether:SetOption(key, value)
 	local startedLooking = key == "lookingForQuestPartners" and value == true
 		and self.db.profile[key] ~= true
 	self.db.profile[key] = value
+	if key == "shareDeveloperDiagnostics" and value ~= true then
+		-- A later re-enable must not resurrect an in-flight verification.
+		self.developerRequestState = nil
+		if self.CancelDeveloperDiagnosticReplies then self:CancelDeveloperDiagnosticReplies() end
+	end
 	if isPartyNavigationOption then self:QueuePartyNavigationUpdate() end
 	if key == "experimentalLayerDetection" or key == "sharePlayerLocation" then
 		self.playerPhaseState = nil
@@ -5803,6 +5816,7 @@ function QuestTogether:Enable()
 	self:RegisterRuntimeEvents()
 	self.API.RegisterAddonPrefix(self.commPrefix)
 	self.isEnabled = true
+	if self.ResumeCommsWorldSession then self:ResumeCommsWorldSession() end
 	if self.RefreshMinimapPartnerGlow then self:RefreshMinimapPartnerGlow() end
 	self:ResetQuestEventState()
 	-- Events may have been missed while disabled/offline, including a repeatable
@@ -5859,6 +5873,7 @@ function QuestTogether:Disable()
 		return true
 	end
 	if self.WithdrawPartyNavigation then self:WithdrawPartyNavigation() end
+	if self.EndCommsWorldSession then self:EndCommsWorldSession() end
 	if self.BroadcastQTPlayerPresence then self:BroadcastQTPlayerPresence(true) end
 	if self.BroadcastPlayerLocation then self:BroadcastPlayerLocation(true, true) end
 	if self.FlushGeographicDeparture then self:FlushGeographicDeparture() end
@@ -6207,6 +6222,23 @@ function QuestTogether:HandleSlashCommand(input)
 end
 
 -- Full quest log scan to build local objective snapshots.
+function QuestTogether:ReconcileQuestTracking(snapshot)
+	if not self:GetRuntimeFlag("questTrackerReady", false) or not self.db or not self.db.global
+		or not snapshot or snapshot.lastUnreadableRow then return end
+	local tracker = self:GetPlayerTracker()
+	-- Later complete log data can contain quests missing from an initially
+	-- empty/partial login snapshot. Initialize only missing entries; acceptance
+	-- and removal events retain ownership of their own lifecycle and messages.
+	for _, questID in ipairs(snapshot.order or {}) do
+		local info = snapshot.byQuestID[questID]
+		if info and not info.isHidden and not tracker[questID]
+			and not (self.pendingQuestAcceptances and self.pendingQuestAcceptances[questID])
+			and not (self.retiredQuestIds and self.retiredQuestIds[questID]) then
+			self:WatchQuest(questID, info)
+		end
+	end
+end
+
 function QuestTogether:ScanQuestLog(shouldAnnounceTaskAreas)
 	if not self.db or not self.db.global then
 		return
@@ -6419,6 +6451,7 @@ function QuestTogether:PLAYER_ENTERING_WORLD()
 	self.playerPhaseState = nil
 	self.isLoggingOut = false
 	if not self.isEnabled then return end
+	if self.ResumeCommsWorldSession then self:ResumeCommsWorldSession() end
 	-- Refresh after loading screens without synthetic enter/leave announcements.
 	self:SetRuntimeFlag("pendingScheduledTaskAreaRefreshShouldAnnounce", false)
 	self:RefreshTaskAreaStates(false)
@@ -6431,6 +6464,7 @@ end
 function QuestTogether:PLAYER_LEAVING_WORLD()
 	self.playerPhaseState = nil
 	if self.isEnabled then
+		if self.EndCommsWorldSession then self:EndCommsWorldSession() end
 		if self.BroadcastQTPlayerPresence then self:BroadcastQTPlayerPresence(true) end
 		if self.BroadcastPlayerLocation then self:BroadcastPlayerLocation(true, true) end
 		if self.FlushGeographicDeparture then self:FlushGeographicDeparture() end

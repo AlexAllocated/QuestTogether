@@ -103,6 +103,7 @@ function QT:ApplyWindowLayout(frame, restore)
 	if type(saved) ~= "table" then
 		saved = nil
 	end
+	local relayout = restore or info.resetRequested
 	info.applying = true
 	if info.resetRequested then
 		frame.userWidth, frame.userHeight = nil, nil
@@ -118,6 +119,17 @@ function QT:ApplyWindowLayout(frame, restore)
 	end
 	if frame.UpdateResizeBounds then
 		frame:UpdateResizeBounds(frame.displaySession and #frame.displaySession.members or 1)
+	end
+	-- Reset/restoration can resize a hidden window without a drag event. Let
+	-- content-sized dialogs and resizable views remeasure their owned children
+	-- before fitting the resulting size to this display. The callback must not
+	-- show the window or acknowledge its current request.
+	if relayout and type(frame.LayoutManagedWindow) == "function" then
+		local ok, err = pcall(frame.LayoutManagedWindow, frame)
+		if not ok then
+			info.applying = nil
+			error(err)
+		end
 	end
 	local w, h = Read(self, frame, "GetWidth"), Read(self, frame, "GetHeight")
 	if not w or not h then

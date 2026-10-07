@@ -127,7 +127,7 @@ local K = {
 {0x6c44198c,0x4a475817},
 }
 
-function E.Hash(message)
+function E.Hash(message, checkpoint)
 	local length = #message
 	local tail = bytes32(floor(length*8/MOD)) .. bytes32(length*8%MOD)
 	message = message .. string.char(128) .. string.rep(string.char(0),(111-length)%128+8) .. tail
@@ -136,7 +136,10 @@ function E.Hash(message)
 	for offset=1,#message,128 do
 		local w={}
 		for i=1,16 do local p=offset+(i-1)*8; w[i]={word(message,p),word(message,p+4)} end
-		for i=17,80 do w[i]=add64(add64(add64(w[i-16],sigma(w[i-15],1,8,7,true)),w[i-7]),sigma(w[i-2],19,61,6,true)) end
+		for i=17,80 do
+			w[i]=add64(add64(add64(w[i-16],sigma(w[i-15],1,8,7,true)),w[i-7]),sigma(w[i-2],19,61,6,true))
+			if checkpoint then checkpoint() end
+		end
 		local a,b,c,d,e,f,g,h=H[1],H[2],H[3],H[4],H[5],H[6],H[7],H[8]
 		for i=1,80 do
 			local ch={xor(band(e[1],f[1]),band(MOD-1-e[1],g[1])),xor(band(e[2],f[2]),band(MOD-1-e[2],g[2]))}
@@ -144,6 +147,7 @@ function E.Hash(message)
 			local t1=add64(add64(add64(add64(h,sigma(e,14,18,41)),ch),K[i]),w[i])
 			local t2=add64(sigma(a,28,34,39),maj)
 			h,g,f,e,d,c,b,a=g,f,e,add64(d,t1),c,b,a,add64(t1,t2)
+			if checkpoint then checkpoint() end
 		end
 		local values={a,b,c,d,e,f,g,h}
 		for i=1,8 do H[i]=add64(H[i],values[i]) end
@@ -198,9 +202,12 @@ local function M(a,b)
 	local o=gf(t); car(o); car(o); return o
 end
 local function S(a) return M(a,a) end
-local function power(a,first,skip1,skip2)
+local function power(a,first,skip1,skip2,checkpoint)
 	local c=gf(a)
-	for i=first,0,-1 do c=S(c); if i~=skip1 and i~=skip2 then c=M(c,a) end end
+	for i=first,0,-1 do
+		c=S(c); if i~=skip1 and i~=skip2 then c=M(c,a) end
+		if checkpoint then checkpoint() end
+	end
 	return c
 end
 local function parity(a) return pack25519(a):byte(1)%2 end
@@ -213,23 +220,24 @@ local function add(p,q)
 	local e,f,g,h=Z(b,a),Z(d,c),A(d,c),A(b,a)
 	p[1],p[2],p[3],p[4]=M(e,f),M(h,g),M(g,f),M(e,h)
 end
-local function pack(p)
-	local zi=power(p[3],253,2,4)
+local function pack(p,checkpoint)
+	local zi=power(p[3],253,2,4,checkpoint)
 	local x,y=M(p[1],zi),M(p[2],zi)
 	local r=pack25519(y)
 	return r:sub(1,31)..string.char(r:byte(32)+parity(x)*128)
 end
-local function scalar(q,s)
+local function scalar(q,s,checkpoint)
 	local p={gf(),gf(one),gf(one),gf()}
 	for i=255,0,-1 do
 		local b=floor((s[floor(i/8)+1] or 0)/2^(i%8))%2
 		for j=1,4 do sel(p[j],q[j],b) end
 		add(q,p); add(p,p)
 		for j=1,4 do sel(p[j],q[j],b) end
+		if checkpoint then checkpoint() end
 	end
 	return p
 end
-local function base(s) return scalar({gf(X),gf(Y),gf(one),M(X,Y)},s) end
+local function base(s,checkpoint) return scalar({gf(X),gf(Y),gf(one),M(X,Y)},s,checkpoint) end
 local order={0xed,0xd3,0xf5,0x5c,0x1a,0x63,0x12,0x58,0xd6,0x9c,0xf7,0xa2,0xde,0xf9,0xde,0x14,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,16}
 local function modL(x)
 	for i=64,33,-1 do
@@ -250,11 +258,11 @@ end
 local function bytearray(s) local a={}; for i=1,#s do a[i]=s:byte(i) end; return a end
 local function bytes(a,n) local s={}; for i=1,n or #a do s[i]=string.char(a[i]) end; return table.concat(s) end
 local function reduce(s) return modL(bytearray(s)) end
-local function unpackneg(s)
+local function unpackneg(s,checkpoint)
 	local r={gf(),unpack25519(s),gf(one),gf()}
 	local num=S(r[2]); local den=M(num,D); num=Z(num,one); den=A(one,den)
 	local den2=S(den); local den4=S(den2); local den6=M(den4,den2)
-	local t=M(M(den6,num),den); t=power(t,250,1)
+	local t=M(M(den6,num),den); t=power(t,250,1,nil,checkpoint)
 	t=M(M(M(t,num),den),den); r[1]=M(t,den)
 	if neq(M(S(r[1]),den),num) then r[1]=M(r[1],I) end
 	if neq(M(S(r[1]),den),num) then return nil end
@@ -277,16 +285,25 @@ function E.Sign(seed,message)
 	for i=1,32 do for j=1,32 do x[i+j-1]=x[i+j-1]+h[i]*d[j] end end
 	return R..bytes(modL(x),32)
 end
-function E.Verify(public,message,signature)
+function E.Verify(public,message,signature,checkpoint)
 	if type(public)~="string" or #public~=32 or type(message)~="string" or type(signature)~="string" or #signature~=64 then return false end
 	-- Reject noncanonical S; do not accept equivalent signatures S + k*L.
 	local s=bytearray(signature:sub(33)); local less=false
 	for i=32,1,-1 do if s[i]~=order[i] then less=s[i]<order[i]; break end end
 	if not less then return false end
-	local q=unpackneg(public); if not q then return false end
+	local q=unpackneg(public,checkpoint); if not q then return false end
 	local y=pack25519(q[2]); local canonical=public:sub(1,31)..string.char(public:byte(32)%128)
 	if y~=canonical then return false end
-	local h=reduce(E.Hash(signature:sub(1,32)..public..message))
-	local p=scalar(q,h); add(p,base(s))
-	return pack(p)==signature:sub(1,32)
+	local h=reduce(E.Hash(signature:sub(1,32)..public..message,checkpoint))
+	local p=scalar(q,h,checkpoint); add(p,base(s,checkpoint))
+	return pack(p,checkpoint)==signature:sub(1,32)
+end
+
+-- Only verification is incremental. Each checkpoint is a bounded arithmetic
+-- step; callers own the frame/work budget and cancellation. No debug hooks or
+-- mutable shared crypto context, and no yield through pcall on Lua 5.1.
+function E.NewVerification(public,message,signature)
+	return coroutine.create(function()
+		return E.Verify(public,message,signature,coroutine.yield)
+	end)
 end

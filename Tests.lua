@@ -241,10 +241,10 @@ local function WithIsolatedState(testFn)
 	end
 	local ok, err = pcall(function()
 		for _, key in ipairs({
-			"pingPageQueue", "developerRequestState", "developerPlayerData", "nearbyStreamState", "playerDetailsState", "directCommPeers", "geographicCommsState", "announcementChannelBindings", "recentCommSignatureIndex", "localizedQuestTitles", "runtimeStateStore", "debugController", "nameplateTooltipGuidByUnitToken", "nameplateScanTooltip",
+			"pingPageQueue", "developerRequestState", "developerPlayerData", "peerSnapshotState", "peerUpdateContext", "locationPriorityCache", "commsWorldGeneration", "diagnosticReplyGeneration", "nearbyStreamState", "playerDetailsState", "directCommPeers", "geographicCommsState", "announcementChannelBindings", "recentCommSignatureIndex", "localizedQuestTitles", "runtimeStateStore", "debugController", "nameplateTooltipGuidByUnitToken", "nameplateScanTooltip",
 			"announcementBubbleScreenHostFrame", "personalBubbleEditModeDialog", "mapWorkWakeFrame", "mapWorkWakeState",
 			"optionsFrame", "whereToAnnounceFrame", "questPlatesFrame", "groupsFrame", "announcementsFrame", "profilesFrame",
-			"personalBubbleEditSession", "announcementChannelLocalID", "legacyAnnouncementChannelLocalID", "channelOrderWork", "questCompareResponseQueue",
+			"personalBubbleEditSession", "announcementChannelLocalID", "legacyAnnouncementChannelLocalID", "channelOrderWork", "questCompareResponseQueue", "questCompareResponseCache",
 			"partyNavigationState", "partyWaypointPinState", "partyChatReminderState", "partyChatReminderFrame", "partyChatReminderPreview", "partyChatReminderPreviewFrame", "partyJoinState", "partyVisualState", "partyJoinPrompt", "partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
 			"minimapButton", "minimapTooltip", "minimapTooltipPendingHide", "minimapLauncherFrame", "minimapDragState", "minimapSuppressClick",
 			"settingsTooltip", "settingsTooltipOwner", "settingsTooltipPendingHide",

@@ -266,7 +266,7 @@ function QT:BroadcastPartyVisualMetadata()
 	end
 	return self:SendWireMessageToAnnouncementRoutes("QTPG|" .. payload, "party visual metadata")
 end
-function QT:HandlePartyVisualMetadata(payload, sender)
+function QT:HandlePartyVisualMetadata(payload, sender, sampleAge, source)
 	if not Allowed(self) or not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 200 then
 		return false
 	end
@@ -276,6 +276,12 @@ function QT:HandlePartyVisualMetadata(payload, sender)
 	if not name or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) or not size or size > 40 or size == 1 then
 		return false
 	end
+	local now = Now(self)
+	local sampledAt = now - (sampleAge or 0)
+	if not self:CanAcceptPeerUpdate(name, "QTPG", sampledAt, source and source.session, source and source.sequence) then return false end
+	local previous = self:GetPartyVisualState().peers[name]
+	if previous and sampledAt < (previous.sampledAt or previous.at)
+		and (not source or previous.manualSnapshot or (previous.sampledAt or previous.at) - sampledAt >= 1) then return false end
 	if size == 0 then
 		if leader ~= "" or class ~= "" or revision ~= "" then
 			return false
@@ -296,8 +302,12 @@ function QT:HandlePartyVisualMetadata(payload, sender)
 		leaderClass = class,
 		revision = revision,
 		key = size > 0 and leader .. ":" .. revision or nil,
-		at = Now(self),
+		at = now,
+		sampledAt = sampledAt,
+		lifetime = sampleAge and self:GetGeographicSnapshotLifetime() - sampleAge or nil,
+		manualSnapshot = sampleAge ~= nil and source == nil,
 	}
+	self:RecordPeerUpdate(name, "QTPG", sampledAt, source and source.session, source and source.sequence)
 	Bound(s.peers, 512)
 	return true
 end

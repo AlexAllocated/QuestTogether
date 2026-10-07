@@ -461,7 +461,7 @@ QT:RegisterTest("snapshot fragments may reorder but old publications cannot undo
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 end)
 
-QT:RegisterTest("send pacing reserves interactive capacity bounds queues and cancels stale routes", function()
+QT:RegisterTest("send pacing bounds queues and cancels stale routes while all traffic shares scheduling", function()
 	local a = Fixture()
 	a:UpdateGeographicSubscriptions()
 	local routes = a:GetGeographicAnnouncementRoutes()
@@ -472,9 +472,8 @@ QT:RegisterTest("send pacing reserves interactive capacity bounds queues and can
 	for _ = 1, 10 do
 		a:DrainGeographicQueue()
 	end
-	Equal(#a.sent, 3)
-	assert(a:TakeCommsSendToken(false)) -- last token reserved for interactive sends
-	Equal(a:TakeCommsSendToken(false), false)
+	Equal(#a.sent, 4)
+	Equal(a:TakeCommsSendToken(false), false) -- Player actions share the fair queue rather than bypassing it.
 	a.mapID = 45
 	Tick(a, 4)
 	Equal(#a.geographicCommsState.queue, 0)
@@ -625,6 +624,33 @@ QT:RegisterTest("snapshot retired sessions and delayed coordinates cannot restor
 	end
 end)
 
+QT:RegisterTest("delayed geographic envelopes cannot undo a pong and subsequent broadcasts refresh normally", function()
+	local a, b = Fixture("Alice-Realm"), Fixture("Bob-Realm")
+	Stage(a, true)
+	local delayed = a:BuildGeographicSnapshots()
+	b.now = 120
+	b:AcceptDeveloperPingResponse({senderName=a.name, developer=true, locationShared=true,
+		mapID="12",coordX="80",coordY="60",sampledAt=b:GetAnnouncementServerTime()}, {developerRequest=true})
+	for _, packet in ipairs(delayed) do
+		assert(b:HandleGeographicSnapshot(packet:sub(6), a.name))
+	end
+	Equal(b.playerLocationState.peers[a.name].x, 0.8)
+	Equal(b.playerLocationState.peers[a.name].sampledAt, 120)
+	Equal(b.playerLocationState.peers[a.name].lifetime, 600)
+	a.now, b.now, a.position.x = 310, 310, 0.9
+	Stage(a, true)
+	for _, packet in ipairs(a:BuildGeographicSnapshots()) do
+		assert(b:HandleGeographicSnapshot(packet:sub(6), a.name))
+	end
+	Equal(b.playerLocationState.peers[a.name].x, 0.9)
+	Equal(b.playerLocationState.peers[a.name].sampledAt, 310)
+	Equal(b.playerLocationState.peers[a.name].lifetime, 600)
+	b.now = 909
+	Equal(#b:GetVisiblePlayerLocations("map"), 1)
+	b.now = 910
+	Equal(#b:GetVisiblePlayerLocations("map"), 0)
+end)
+
 QT:RegisterTest("crowded zones back off without unrelated worldwide peers slowing local updates", function()
 	local a = Fixture()
 	a:UpdateGeographicSubscriptions()
@@ -736,6 +762,7 @@ QT:RegisterTest("manual developer ping stays global and does not change backgrou
 	a:UpdateGeographicSubscriptions()
 	local ok = a:SendPingRequest()
 	Equal(ok, true)
+	a:DrainGeographicQueue()
 	local global, party = false, false
 	for _, packet in ipairs(a.sent) do
 		if packet.wire:match("^PING|") then
@@ -1370,9 +1397,9 @@ QT:RegisterTest("location opt out preserves queued comparisons and non-location 
 	-- still transmits after the existing pacing delay, without resubmission.
 	a.now = a.now + 3
 	a:DrainGeographicQueue()
-	Equal(#a.sent,1); assert(a.sent[1].wire:match("^QCMP|"))
+	Equal(#a.sent,1); Equal(a.sent[1].wire,redacted)
 	a.now = a.now + 1; a:DrainGeographicQueue()
-	Equal(#a.sent,2); Equal(a.sent[2].wire,redacted)
+	Equal(#a.sent,2); assert(a.sent[2].wire:match("^QCMP|"))
 end)
 
 QT:RegisterTest("reload restores LFQP filtered dots without renewing status or establishing live presence", function()
@@ -1606,4 +1633,326 @@ QT:RegisterTest("roster reload expiry follows original revision confirmation inc
 	c.now=32
 	Equal(c:GetPlayerPartyVisualInfo("Peer-Realm"),nil)
 	Equal(#c:GetVisiblePlayerLocations("map"),1,"fresher position may remain after party confirmation expires")
+end)
+
+-- These networks use the real sender queue, native admission, decoders and
+-- completion handlers; only the clock and external wire are private adapters.
+local function FairTransportNetwork(count, questCount)
+	local peers, byName = {}, {}
+	local clock = QT:CreateTestClock(100)
+	for index=1,count do
+		local a = Fixture("Transport"..index.."-Realm")
+		a.API.GetTime = function() return clock:GetTime() end
+		a.API.Delay = function(delay, callback) clock:After(delay, callback) end
+		function a:BuildQuestCompareEntries()
+			local entries={}
+			for id=1,questCount do entries[id]={questId=tostring(id),questTitle="Quest "..id,isPushable=true} end
+			return entries
+		end
+		peers[index],byName[a.name]=a,a
+	end
+	local function Advance(seconds)
+		for _=1,math.floor(seconds*10) do
+			for _,a in ipairs(peers) do a.now=clock:GetTime()+0.1 end
+			clock:Advance(0.1)
+			for _,a in ipairs(peers) do a:DrainGeographicQueue() end
+		end
+	end
+	return peers,byName,Advance
+end
+
+QT:RegisterTest("five full quest logs converge through loss duplicate reorder and native throttle",function()
+	local peers,byName,advance=FairTransportNetwork(5,40)
+	local dropped,throttled,held=false,false,nil
+	for _,a in ipairs(peers) do
+		for _,b in ipairs(peers) do if a~=b then a:RememberDirectCommPeer(b.name,true) end end
+		a.API.SendAddonMessage=function(prefix,wire,route,target)
+			local b=byName[target]
+			assert(b and route=="WHISPER")
+			local command,payload=a:DeserializeWireMessage(wire)
+			local entry=command=="QCQE" and a:DecodeQuestCompareEntryPayload(payload)
+			if a==peers[2] and entry and not throttled then throttled=true;return 3 end
+			if a==peers[1] and b==peers[2] and entry and entry.questId=="1" and not dropped then dropped=true;return 0 end
+			if a==peers[1] and b==peers[3] and entry and entry.questId=="2" and not held then held=wire;return 0 end
+			b:OnCommReceived(prefix,wire,route,a.name)
+			b:OnCommReceived(prefix,wire,route,a.name) -- duplicated delivery is harmless
+			if a==peers[1] and b==peers[3] and command=="QCDN" and held then
+				b:OnCommReceived(prefix,held,route,a.name)
+			end
+			return 0
+		end
+	end
+	local completed,timedOut=0,0
+	for _,a in ipairs(peers) do
+		for _,b in ipairs(peers) do if a~=b then
+			local entries={}
+			assert(a:RequestQuestCompare(b.name,{
+				onEntry=function(entry) entries[entry.questId]=true end,
+				onDone=function()
+					local n=0;for _ in pairs(entries) do n=n+1 end
+					Equal(n,40);completed=completed+1
+				end,
+				onTimeout=function() timedOut=timedOut+1 end,
+			}))
+		end end
+	end
+	advance(145)
+	assert(dropped and throttled and held)
+	Equal(completed,20);Equal(timedOut,0)
+	for _,a in ipairs(peers) do
+		Equal(next(a.pendingQuestCompareRequests),nil)
+		Equal(#a.questCompareResponseQueue.jobs,0)
+		Equal(a.questCompareResponseQueue.packets,0)
+	end
+end)
+
+QT:RegisterTest("fair transport sends announcements and actions promptly during large diagnostic replies",function()
+	local peers,_,advance=FairTransportNetwork(1,0)
+	local a=peers[1]
+	local eventAt,actionAt,pages=nil,nil,0
+	a.API.SendAddonMessage=function(_,wire)
+		if wire:match("^ANN|") then eventAt=a.API.GetTime() end
+		if wire:match("^PING|") then actionAt=a.API.GetTime() end
+		if wire:match("^PONP|") then pages=pages+1 end
+		return 0
+	end
+	local id="dev-1791300000-1234-1"
+	local payload=a:EncodePingResponsePayload({requestId=id,senderName=a.name,developer=true,diagnosticText=string.rep("diagnostic state\n",800)},true)
+	assert(#payload<16384 and #payload>14000)
+	assert(a:SendPagedPong(id,payload,{{distribution="WHISPER",target="Reader-Realm"}},true))
+	advance(1)
+	local started=a.API.GetTime()
+	assert(a:SendAnnouncementWireEvent{eventType="QUEST_PROGRESS",senderName=a.name,text="1/5 Wolf Pelts"})
+	assert(a:SendWireMessageToAnnouncementRoutes("PING|1,interactive,"..a.name,"player action",{{distribution="WHISPER",target="Reader-Realm"}}))
+	advance(5)
+	assert(eventAt and eventAt-started<2)
+	assert(actionAt and actionAt-started<2)
+	advance(65)
+	Equal(pages,#a:BuildPongPages(id,payload))
+	Equal(#a.pingPageQueue.jobs,0)
+end)
+
+QT:RegisterTest("world departure fences all response owners and reentry publishes only fresh state",function()
+	local peers,_,advance=FairTransportNetwork(1,5)
+	local a=peers[1]
+	assert(a:HandleQuestCompareRequest{requestId="old",targetName=a.name,requesterName="Reader-Realm",replyDistribution="WHISPER"})
+	local payload=a:EncodePingResponsePayload{requestId="old-pong",senderName=a.name}
+	assert(a:SendPagedPong("old-pong",payload,{{distribution="WHISPER",target="Reader-Realm"}},true))
+	a:PLAYER_LEAVING_WORLD()
+	local before=#a.sent
+	advance(10)
+	Equal(#a.sent,before)
+	Equal(rawget(a,"questCompareResponseQueue"),nil)
+	Equal(rawget(a,"pingPageQueue"),nil)
+	a.isLoggingOut=false
+	a:ResumeCommsWorldSession()
+	advance(1)
+	for index=before+1,#a.sent do assert(not a.sent[index].wire:match("^QC") and not a.sent[index].wire:match("^PONP")) end
+	assert(a.geographicCommsState.latest.LOC)
+	Equal(a.geographicCommsState.departing,nil)
+end)
+
+QT:RegisterTest("diagnostic opt out permanently cancels queued developer pages without cancelling ordinary replies",function()
+	local peers,_,advance=FairTransportNetwork(1,0)
+	local a=peers[1]
+	local function Payload(id) return a:EncodePingResponsePayload({requestId=id,senderName=a.name,diagnosticText=string.rep("x",400),developer=true},true) end
+	assert(a:SendPagedPong("private",Payload("private"),{{distribution="WHISPER",target="Reader-Realm"}},true))
+	assert(a:SendPagedPong("public",Payload("public"),{{distribution="WHISPER",target="Reader-Realm"}},false))
+	a:CancelDeveloperDiagnosticReplies()
+	advance(5)
+	assert(#a.sent>0)
+	for _,packet in ipairs(a.sent) do assert(packet.wire:match("^PONP|1,public,")) end
+end)
+
+QT:RegisterTest("same comparison correlation replays an immutable log after loss and quest changes",function()
+	local peers,byName,advance=FairTransportNetwork(2,3)
+	local receiver,sender=peers[1],peers[2]
+	receiver:RememberDirectCommPeer(sender.name,true)
+	local dropped=false
+	for _,a in ipairs(peers) do
+		a.API.SendAddonMessage=function(prefix,wire,route,target)
+			local b=assert(byName[target])
+			if a==sender and wire:match("^QCQE|") then
+				local row=a:DecodeQuestCompareEntryPayload(wire:sub(6))
+				if row.questId=="2" and not dropped then dropped=true;return 0 end
+			end
+			b:OnCommReceived(prefix,wire,route,a.name)
+			return 0
+		end
+	end
+	local result,done={},false
+	assert(receiver:RequestQuestCompare(sender.name,{
+		onEntry=function(row) result[row.questId]=row.questTitle end,
+		onDone=function() done=true end,
+		onTimeout=function() error("immutable recovery timed out") end,
+	}))
+	advance(5)
+	assert(dropped and not done)
+	function sender:BuildQuestCompareEntries()
+		return {{questId="3",questTitle="Changed third quest"},{questId="4",questTitle="New quest"}}
+	end
+	advance(40)
+	assert(done)
+	Equal(result["1"],"Quest 1");Equal(result["2"],"Quest 2");Equal(result["3"],"Quest 3")
+	Equal(result["4"],nil)
+end)
+
+QT:RegisterTest("delayed ping callbacks cannot cross a leave and return within the same geographic object",function()
+	local peers,_,advance=FairTransportNetwork(1,0)
+	local a=peers[1]
+	local replies=0
+	function a:SendPingResponse() replies=replies+1;return true end
+	assert(a:ScheduleGeographicPingReply("old",{{distribution="WHISPER",target="Reader-Realm"}},true))
+	a:EndCommsWorldSession()
+	a:ResumeCommsWorldSession()
+	advance(25)
+	Equal(replies,0)
+	assert(a:ScheduleGeographicPingReply("new",{{distribution="WHISPER",target="Reader-Realm"}},true))
+	advance(25)
+	Equal(replies,1)
+end)
+
+QT:RegisterTest("queued party navigation coalesces edits and rechecks focus and waypoint consent",function()
+	local peers,_,advance=FairTransportNetwork(1,0)
+	local a=peers[1]
+	a.inParty=true
+	a.partyMembers={[a.name]={},["Friend-Realm"]={}}
+	a.db.profile.sharePartyFocus,a.db.profile.sharePartyWaypoint=true,true
+	local state=a:GetPartyNavigationState()
+	local function Queue(questID,mapID)
+		state.sequence=state.sequence+1
+		local wire=a:EncodePartyNavigation({questID=questID,mapID=mapID,x=0.2,y=0.3},false)
+		assert(a:SendWireMessageToAnnouncementRoutes(wire,"party navigation",{{distribution="PARTY",requiresGroup=true}}))
+		return wire
+	end
+	Queue(1,12)
+	local latest=Queue(2,12)
+	Equal(#a.geographicCommsState.queue,1)
+	advance(1)
+	Equal(#a.sent,1);Equal(a.sent[1].wire,latest)
+	Queue(3,12)
+	a.db.profile.sharePartyFocus=false
+	advance(1)
+	Equal(#a.sent,1)
+	Queue(-1,12)
+	a.db.profile.sharePartyWaypoint=false
+	advance(1)
+	Equal(#a.sent,1)
+	local withdrawn=Queue(-1,-1)
+	advance(1)
+	Equal(#a.sent,2);Equal(a.sent[2].wire,withdrawn)
+end)
+
+QT:RegisterTest("deferred response at queue head can reclaim unsent tail packet reservations",function()
+	local peers,_,advance=FairTransportNetwork(1,40)
+	local a=peers[1]
+	a.restricted=true
+	assert(a:HandleQuestCompareRequest{requestId="first",targetName=a.name,requesterName="First-Realm",replyDistribution="WHISPER"})
+	a.restricted=false
+	for index=2,4 do
+		assert(a:HandleQuestCompareRequest{requestId=tostring(index),targetName=a.name,requesterName="Other"..index.."-Realm",replyDistribution="WHISPER"})
+	end
+	local done={}
+	a.API.SendAddonMessage=function(_,wire,_,target)
+		if wire:match("^QCDN|") then done[target]=true end
+		return 0
+	end
+	advance(110)
+	assert(done["First-Realm"] and done["Other2-Realm"] and done["Other3-Realm"] and done["Other4-Realm"])
+	Equal(#a.questCompareResponseQueue.jobs,0)
+	Equal(a.questCompareResponseQueue.packets,0)
+end)
+
+QT:RegisterTest("five maximum quest logs recover every comparison after a lost entry with bounded large deadlines",function()
+	local peers,byName,advance=FairTransportNetwork(5,100)
+	local lost={}
+	for _,a in ipairs(peers) do
+		for _,b in ipairs(peers) do if a~=b then a:RememberDirectCommPeer(b.name,true) end end
+		a.API.SendAddonMessage=function(prefix,wire,route,target)
+			local b=assert(byName[target])
+			local key=a.name..":"..b.name
+			if wire:match("^QCQE|") and not lost[key] then lost[key]=true;return 0 end
+			b:OnCommReceived(prefix,wire,route,a.name)
+			return 0
+		end
+	end
+	local completed,timedOut=0,0
+	for _,a in ipairs(peers) do
+		for _,b in ipairs(peers) do if a~=b then
+			local count=0
+			assert(a:RequestQuestCompare(b.name,{
+				onEntry=function() count=count+1 end,
+				onDone=function() Equal(count,100);completed=completed+1 end,
+				onTimeout=function() timedOut=timedOut+1 end,
+			}))
+		end end
+	end
+	advance(15)
+	for _,a in ipairs(peers) do
+		for _,pending in pairs(a.pendingQuestCompareRequests) do Equal(pending.largeResponse,true) end
+	end
+	advance(530)
+	Equal(completed,20);Equal(timedOut,0)
+	for _,a in ipairs(peers) do
+		Equal(next(a.pendingQuestCompareRequests),nil)
+		Equal(#a.questCompareResponseQueue.jobs,0)
+		Equal(a.questCompareResponseQueue.packets,0)
+		Equal(#a.geographicCommsState.queue,0)
+	end
+end)
+
+QT:RegisterTest("diagnostic opt out and back in cancels randomized private replies but preserves ordinary replies",function()
+	local peers,_,advance=FairTransportNetwork(1,0)
+	local a=peers[1]
+	local replies={}
+	function a:SendPingResponse(id) replies[id]=true;return true end
+	local routes={{distribution="WHISPER",target="Reader-Realm"}}
+	assert(a:ScheduleGeographicPingReply("private",routes,true,{developerVerified=true}))
+	assert(a:ScheduleGeographicPingReply("public",routes,true))
+	a.db.profile.shareDeveloperDiagnostics=false
+	a:CancelDeveloperDiagnosticReplies()
+	a.db.profile.shareDeveloperDiagnostics=true
+	advance(25)
+	Equal(replies.private,nil);Equal(replies.public,true)
+	assert(a:ScheduleGeographicPingReply("fresh",routes,true,{developerVerified=true}))
+	advance(25)
+	Equal(replies.fresh,true)
+end)
+
+QT:RegisterTest("disable and world departure deliver navigation withdrawal after fencing the actual queue",function()
+	for _,event in ipairs({"Disable","PLAYER_LEAVING_WORLD"}) do
+		local a,b=Fixture("Leader-Realm"),Fixture("Follower-Realm")
+		a.other=b
+		for _,peer in ipairs({a,b}) do
+			peer.inParty=true
+			peer.partyMembers={[a.name]={},[b.name]={}}
+			peer.db.profile.sharePartyFocus,peer.db.profile.sharePartyWaypoint=true,true
+		end
+		-- Only unrelated UI teardown is stubbed; the queue, departure methods,
+		-- native transport adapter and remote navigation decoder all execute.
+		for _,method in ipairs({"UnregisterRuntimeEvents","RefreshMinimapPartnerGlow","ResetQuestEventState",
+			"ResetTaskAreaStateStore","ResetRuntimeWorkStateStore","DisableNameplateAugmentation",
+			"RefreshPersonalBubbleAnchorVisualState"}) do a[method]=function() end end
+		local state=a:GetPartyNavigationState()
+		state.sequence=1
+		local wire=a:EncodePartyNavigation({questID=7,mapID=12,x=0.2,y=0.3},false)
+		assert(a:SendWireMessageToAnnouncementRoutes(wire,"navigation",{{distribution="PARTY",requiresGroup=true}}))
+		a:DrainGeographicQueue()
+		Equal(b:GetPartyNavigationPeer(a.name).questID,7)
+		local follow=b:GetPartyNavigationState()
+		follow.following=a.name
+		state.sequence=2
+		wire=a:EncodePartyNavigation({questID=8,mapID=12,x=0.4,y=0.5},false)
+		assert(a:SendWireMessageToAnnouncementRoutes(wire,"navigation",{{distribution="PARTY",requiresGroup=true}}))
+		a[event](a)
+		local peer=b:GetPartyNavigationPeer(a.name)
+		Equal(peer.questID,-1);Equal(peer.mapID,-1)
+		Equal(follow.following,a.name)
+		local navigationPackets=0
+		for _,packet in ipairs(a.sent) do
+			if packet.wire:match("^QTNAV|") then navigationPackets=navigationPackets+1 end
+			assert(packet.wire~=wire) -- The unsent newer position was fenced.
+		end
+		Equal(navigationPackets,2) -- Original navigation and the direct clear.
+	end
 end)
