@@ -43,7 +43,10 @@ local function Fresh(record, now, ttl)
 end
 local function SendRoster(a, wire, context, target, direct)
 	local routes = direct and { { distribution = "WHISPER", target = target } }
-		or a:GetTargetedCommRoutes(target, { { distribution = "CHANNEL", channelName = a.announcementChannelName, requiresChannelJoin = true } })
+		or a:GetTargetedCommRoutes(
+			target,
+			{ { distribution = "CHANNEL", channelName = a.announcementChannelName, requiresChannelJoin = true } }
+		)
 	return a:SendWireMessageToAnnouncementRoutes(wire, context, routes)
 end
 local function Revision(leader, members)
@@ -63,41 +66,68 @@ end
 -- presence or starts a roster/stream subscription.
 local RELOAD_TTL = 180
 local function CacheTimes(record, now, wall, ttl)
-	if not record or not Fresh(record, now, ttl) then return nil end
+	if not record or not Fresh(record, now, ttl) then
+		return nil
+	end
 	local sampled = record.sampledAt or record.at
 	local age = now - sampled
 	local remaining = math.min(RELOAD_TTL - age, (record.lifetime or ttl) - (now - record.at))
-	if age < 0 or remaining <= 0 then return nil end
+	if age < 0 or remaining <= 0 then
+		return nil
+	end
 	return wall - age, wall + remaining
 end
 local function RestoreTimes(a, record, now, wall, ttl)
-	if type(record) ~= "table" then return nil end
+	if type(record) ~= "table" then
+		return nil
+	end
 	local sampled, expires = a:SafeToNumber(record.sampledAt), a:SafeToNumber(record.expiresAt)
-	if not sampled or sampled < 1000000000 or sampled > wall or wall - sampled >= ttl
-		or not expires or expires <= wall or expires > wall + ttl then return nil end
+	if
+		not sampled
+		or sampled < 1000000000
+		or sampled > wall
+		or wall - sampled >= ttl
+		or not expires
+		or expires <= wall
+		or expires > wall + ttl
+	then
+		return nil
+	end
 	return now - (wall - sampled), math.min(expires - wall, ttl - (wall - sampled))
 end
 local function FreshCachedLocation(a, name, now)
 	local locations = rawget(a, "playerLocationState")
 	local location = locations and locations.peers[name]
-	return location and location.cached == true and location.mask ~= 0 and location.receivedAt
-		and now >= location.receivedAt and now - location.receivedAt < (location.lifetime or 120)
+	return location
+		and location.cached == true
+		and location.mask ~= 0
+		and location.receivedAt
+		and now >= location.receivedAt
+		and now - location.receivedAt < (location.lifetime or 120)
 end
 
 function QT:SavePlayerPartyCacheEntry(name, now, wall)
 	local s, presence = rawget(self, "partyVisualState"), rawget(self, "qtPlayerPresenceState")
 	local info = s and s.peers[name]
-	if not Fresh(info, now, TTL) then info = nil end
+	if not Fresh(info, now, TTL) then
+		info = nil
+	end
 	local stats = presence and presence.peerTooltipStats and presence.peerTooltipStats[name]
-	if not Fresh(stats, now, TTL) or stats.partySize == nil then stats = nil end
+	if not Fresh(stats, now, TTL) or stats.partySize == nil then
+		stats = nil
+	end
 	-- A newer size report supersedes an obsolete party identity, just as it does
 	-- in the live tooltip getter. Keep QTVR-only solo/group sizes too.
-	if stats and (not info or (stats.partySize ~= info.size
-		and (stats.sampledAt or stats.at) > (info.sampledAt or info.at))) then
+	if
+		stats
+		and (not info or (stats.partySize ~= info.size and (stats.sampledAt or stats.at) > (info.sampledAt or info.at)))
+	then
 		info = { size = stats.partySize, at = stats.at, sampledAt = stats.sampledAt, lifetime = stats.lifetime }
 	end
 	local sampled, expires = CacheTimes(info, now, wall, TTL)
-	if not sampled then return nil end
+	if not sampled then
+		return nil
+	end
 	local result = { size = info.size, sampledAt = sampled, expiresAt = expires }
 	if info.key then
 		result.leader, result.leaderClass, result.revision = info.leader, info.leaderClass, info.revision
@@ -117,36 +147,72 @@ function QT:SavePlayerPartyCacheEntry(name, now, wall)
 end
 
 function QT:RestorePlayerPartyCacheEntry(name, cached, now, wall)
-	if not self.isEnabled or self:IsIgnoredPlayerName(name) or self:IsSelfSender(name)
-		or not FreshCachedLocation(self, name, now) then return false end
+	if
+		not self.isEnabled
+		or self:IsIgnoredPlayerName(name)
+		or self:IsSelfSender(name)
+		or not FreshCachedLocation(self, name, now)
+	then
+		return false
+	end
 	local sampled, lifetime = RestoreTimes(self, cached, now, wall, RELOAD_TTL)
 	local size = type(cached) == "table" and self:SafeToNumber(cached.size)
-	if not sampled or not size or size < 0 or size > 40 or size ~= math.floor(size) then return false end
+	if not sampled or not size or size < 0 or size > 40 or size ~= math.floor(size) then
+		return false
+	end
 	local leader, class, revision, key
 	if cached.leader ~= nil or cached.leaderClass ~= nil or cached.revision ~= nil then
 		leader, class, revision = Name(self, cached.leader), Class(cached.leaderClass), cached.revision
-		if size < 2 or not leader or not class or type(revision) ~= "string"
-			or #revision > 10 or not revision:match("^%d+$") then return false end
+		if
+			size < 2
+			or not leader
+			or not class
+			or type(revision) ~= "string"
+			or #revision > 10
+			or not revision:match("^%d+$")
+		then
+			return false
+		end
 		key = leader .. ":" .. revision
 	end
 	local s, presence = self:GetPartyVisualState(), rawget(self, "qtPlayerPresenceState")
 	local current, stats = s.peers[name], presence and presence.peerTooltipStats and presence.peerTooltipStats[name]
-	if Fresh(current, now, TTL) or (Fresh(stats, now, TTL) and stats.partySize ~= nil) then return false end
-	s.peers[name] = { size = size, leader = leader, leaderClass = class, revision = revision,
-		key = key, at = now, sampledAt = sampled, lifetime = lifetime, cached = true }
+	if Fresh(current, now, TTL) or (Fresh(stats, now, TTL) and stats.partySize ~= nil) then
+		return false
+	end
+	s.peers[name] = {
+		size = size,
+		leader = leader,
+		leaderClass = class,
+		revision = revision,
+		key = key,
+		at = now,
+		sampledAt = sampled,
+		lifetime = lifetime,
+		cached = true,
+	}
 	Bound(s.peers, 512)
 	-- A corrupt/expired member list does not invalidate a separately valid size
 	-- or leader. Require the same revision hash used by actual roster responses.
 	local roster = cached.roster
 	local rosterSampled, rosterLifetime = RestoreTimes(self, roster, now, wall, RELOAD_TTL)
-	if key and size <= 5 and rosterSampled and type(roster.members) == "table" and #roster.members == size
-		and not s.rosters[key] then
+	if
+		key
+		and size <= 5
+		and rosterSampled
+		and type(roster.members) == "table"
+		and #roster.members == size
+		and not s.rosters[key]
+	then
 		local members, seen, valid = {}, {}, true
 		for i = 1, size do
 			local member = roster.members[i]
 			local memberName = type(member) == "table" and Name(self, member.name)
 			local memberClass = type(member) == "table" and Class(member.classFile)
-			if not memberName or not memberClass or seen[memberName] then valid = false; break end
+			if not memberName or not memberClass or seen[memberName] then
+				valid = false
+				break
+			end
 			seen[memberName] = true
 			members[i] = { name = memberName, classFile = memberClass }
 		end
@@ -244,7 +310,9 @@ function QT:GetLocalPartyVisualInfo()
 end
 function QT:BuildPartyVisualMetadataPayload()
 	local info = self:GetLocalPartyVisualInfo()
-	if not info then return nil end
+	if not info then
+		return nil
+	end
 	return table.concat({ "1", info.size, info.leader or "", info.leaderClass or "", info.revision or "" }, ","), info
 end
 
@@ -257,8 +325,16 @@ function QT:BroadcastPartyVisualMetadata()
 	-- Solo size is already carried by QTVR. Only publish a withdrawal if we
 	-- previously advertised a party during this session.
 	local lifetime = rawget(self, "geographicCommsState") and 600 or TTL
-	if info.size == 0 and (not state.advertisedGroup
-		or (state.lastGroupAdvertisedAt and (now < state.lastGroupAdvertisedAt or now - state.lastGroupAdvertisedAt >= lifetime))) then
+	if
+		info.size == 0
+		and (
+			not state.advertisedGroup
+			or (
+				state.lastGroupAdvertisedAt
+				and (now < state.lastGroupAdvertisedAt or now - state.lastGroupAdvertisedAt >= lifetime)
+			)
+		)
+	then
 		return false
 	end
 	if info.size > 1 then
@@ -277,11 +353,20 @@ function QT:HandlePartyVisualMetadata(payload, sender, sampleAge, source)
 		return false
 	end
 	local now = Now(self)
-	local sampledAt = now - (sampleAge or 0)
-	if not self:CanAcceptPeerUpdate(name, "QTPG", sampledAt, source and source.session, source and source.sequence) then return false end
+	local observation = self:ResolvePeerObservation(name, "QTPG", sampleAge, source, nil, nil, TTL)
+	if not self:CanAcceptPeerObservation(observation) then
+		return false
+	end
+	local sampledAt = observation.sampledAt
+	source = observation.source ~= "diagnostic" and observation or nil
 	local previous = self:GetPartyVisualState().peers[name]
-	if previous and sampledAt < (previous.sampledAt or previous.at)
-		and (not source or previous.manualSnapshot or (previous.sampledAt or previous.at) - sampledAt >= 1) then return false end
+	if
+		previous
+		and sampledAt < (previous.sampledAt or previous.at)
+		and (not source or previous.manualSnapshot or (previous.sampledAt or previous.at) - sampledAt >= 1)
+	then
+		return false
+	end
 	if size == 0 then
 		if leader ~= "" or class ~= "" or revision ~= "" then
 			return false
@@ -292,11 +377,11 @@ function QT:HandlePartyVisualMetadata(payload, sender, sampleAge, source)
 			return false
 		end
 	end
-	if not self:RecordQTPlayerPresence(name, true) then
+	if not self:CanRecordPeerPresence(name, observation) then
 		return false
 	end
 	local s = self:GetPartyVisualState()
-	s.peers[name] = {
+	local record = {
 		size = size,
 		leader = size > 0 and leader or nil,
 		leaderClass = class,
@@ -304,10 +389,13 @@ function QT:HandlePartyVisualMetadata(payload, sender, sampleAge, source)
 		key = size > 0 and leader .. ":" .. revision or nil,
 		at = now,
 		sampledAt = sampledAt,
-		lifetime = sampleAge and self:GetGeographicSnapshotLifetime() - sampleAge or nil,
+		lifetime = observation.expiresAt - now,
 		manualSnapshot = sampleAge ~= nil and source == nil,
 	}
-	self:RecordPeerUpdate(name, "QTPG", sampledAt, source and source.session, source and source.sequence)
+	if not self:CommitPeerObservation(observation, record, true) then
+		return false
+	end
+	s.peers[name] = record
 	Bound(s.peers, 512)
 	return true
 end
@@ -331,16 +419,35 @@ function QT:GetPlayerPartyVisualInfo(sender)
 		-- peers that cannot answer hover queries. It cannot supply a member count.
 		local joins = rawget(self, "partyJoinState")
 		local join = joins and joins.peers[name]
-		if not self:IsKnownQTPlayer(name) or not Fresh(join, now, 125)
-			or (join.grouped ~= "0" and join.grouped ~= "1") then return current end
+		if
+			not self:IsKnownQTPlayer(name)
+			or not Fresh(join, now, 125)
+			or (join.grouped ~= "0" and join.grouped ~= "1")
+		then
+			return current
+		end
 		local grouped = join.grouped == "1"
-		if current and ((current.size ~= nil and (current.size > 0) == grouped)
-			or (current.sampledAt or current.at or 0) >= (join.sampledAt or join.at)) then return current end
-		return { size = not grouped and 0 or nil, grouped = grouped,
-			at = join.at, sampledAt = join.sampledAt, lifetime = join.lifetime }
+		if
+			current
+			and (
+				(current.size ~= nil and (current.size > 0) == grouped)
+				or (current.sampledAt or current.at or 0) >= (join.sampledAt or join.at)
+			)
+		then
+			return current
+		end
+		return {
+			size = not grouped and 0 or nil,
+			grouped = grouped,
+			at = join.at,
+			sampledAt = join.sampledAt,
+			lifetime = join.lifetime,
+		}
 	end
-	if not (self:IsKnownQTPlayer(name) or (info and info.cached and FreshCachedLocation(self, name, now)))
-		or not Fresh(info, now, TTL) then
+	if
+		not (self:IsKnownQTPlayer(name) or (info and info.cached and FreshCachedLocation(self, name, now)))
+		or not Fresh(info, now, TTL)
+	then
 		s.peers[name] = nil
 		local size = self:GetPlayerPartySize(name)
 		return Summary(size and { size = size, at = stats and stats.at, sampledAt = stats and stats.sampledAt } or nil)
@@ -427,12 +534,16 @@ function QT:HandlePartyVisualRosterRequest(payload, sender, direct)
 	s.lastReply, s.replies[name] = now, { at = now }
 	Bound(s.replies, 128)
 	self:RecordQTPlayerPresence(name, true)
-	if direct then self:RememberDirectCommPeer(name, true) end
+	if direct then
+		self:RememberDirectCommPeer(name, true)
+	end
 	for index, member in ipairs(info.members) do
 		SendRoster(
 			self,
 			table.concat({ "QPGM|1", id, revision, index, member.name, member.classFile }, ","),
-			"party roster member", name, direct
+			"party roster member",
+			name,
+			direct
 		)
 	end
 	return true
@@ -510,4 +621,19 @@ function QT:IsPartyVisualQueuedWireCurrent(wire)
 		return info and info.revision == revision or false
 	end
 	return true
+end
+
+QT:RegisterCommSendPolicy("QPGR", function(addon, wire, route, options)
+	options.isCurrent = function()
+		return addon:IsPartyVisualQueuedWireCurrent(wire, route.target)
+	end
+end)
+QT:RegisterCommSendPolicy("QPGM", function(addon, wire, route, options)
+	options.isCurrent = function()
+		return addon:IsPartyVisualQueuedWireCurrent(wire, route.target)
+	end
+end)
+
+function QT:ResetPartyVisuals()
+	self.partyVisualState = nil
 end

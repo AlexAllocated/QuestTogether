@@ -557,233 +557,19 @@ QuestTogether:RegisterTest("party share incoming queue has a hard bound", functi
 	Equal(next(a.partyQuestShareState.incoming), nil)
 end)
 
--- Owned frame doubles model local vs inherited visibility and slider clamping.
--- Unknown members stay nil, so missing methods cannot silently pass as no-ops.
-local function Frame(parent)
-	local frame = {
-		scripts = {},
-		shown = true,
-		enabled = true,
-		value = 0,
-		width = 1200,
-		height = 800,
-		parent = parent,
-		children = {},
-	}
-	if parent then
-		parent.children[#parent.children + 1] = frame
-	end
-	local methods = {}
-	function methods:IsForbidden()
-		return self.forbidden == true or (self.parent and self.parent:IsForbidden()) or false
-	end
-	function methods:IsProtected()
-		return self.protected == true or (self.parent and self.parent:IsProtected()) or false
-	end
-	function methods:SetScript(event, callback)
-		self.scripts[event] = callback
-	end
-	function methods:CreateFontString()
-		return Frame(self)
-	end
-	function methods:CreateTexture()
-		return Frame(self)
-	end
-	function methods:GetFrameLevel()
-		return self.frameLevel or (self.parent and self.parent:GetFrameLevel() + 1) or 1
-	end
-	function methods:SetFrameLevel(level) self.frameLevel = level end
-	function methods:SetText(value)
-		self.text = value
-		if self.scripts.OnTextChanged then
-			self.scripts.OnTextChanged(self)
-		end
-	end
-	function methods:SetTextColor(...)
-		self.textColor = { ... }
-	end
-	function methods:SetColorTexture(...)
-		self.textureColor = { ... }
-	end
-	function methods:SetTexCoord(...)
-		self.texCoords = { ... }
-	end
-	function methods:SetVertexColor(...)
-		self.vertexColor = { ... }
-	end
-	function methods:GetText()
-		return self.text or ""
-	end
-	function methods:SetPoint(...)
-		self.points = self.points or {}
-		self.points[#self.points + 1] = { ... }
-	end
-	function methods:ClearAllPoints()
-		self.points = {}
-	end
-	function methods:SetWidth(value)
-		self.width = value
-	end
-	function methods:SetHeight(value)
-		self.height = value
-	end
-	function methods:SetSize(width, height)
-		if self.resizeBounds then
-			width = math.max(self.resizeBounds[1], math.min(self.resizeBounds[3], width))
-			height = math.max(self.resizeBounds[2], math.min(self.resizeBounds[4], height))
-		end
-		self.width, self.height = width, height
-		if self.scripts.OnSizeChanged then
-			self.scripts.OnSizeChanged(self, width, height)
-		end
-	end
-	function methods:SetResizeBounds(...)
-		self.resizeBounds = { ... }
-	end
-	function methods:StartSizing(point, fromMouse)
-		self.sizing = point
-		self.sizingFromMouse = fromMouse
-	end
-	function methods:StopMovingOrSizing()
-		self.sizing = nil
-	end
-	function methods:SetScale(value) self.scale = value end
-	function methods:GetScale() return self.scale or 1 end
-
-	function methods:GetWidth()
-		return self.width
-	end
-	function methods:GetHeight()
-		return self.height
-	end
-	function methods:GetStringHeight()
-		return 180
-	end
-	function methods:SetChecked(value)
-		self.checked = value
-	end
-	function methods:GetChecked()
-		return self.checked
-	end
-	function methods:SetEnabled(value)
-		self.enabled = value
-	end
-	function methods:SetValue(value)
-		if self.minimum then
-			value = math.max(self.minimum, math.min(self.maximum, value))
-		end
-		if self.value == value then
-			return
-		end
-		self.value = value
-		if self.scripts.OnValueChanged then
-			self.scripts.OnValueChanged(self, value)
-		end
-	end
-	function methods:SetMinMaxValues(minimum, maximum)
-		self.minimum, self.maximum = minimum, maximum
-		self:SetValue(self.value)
-	end
-	function methods:GetValue()
-		return self.value
-	end
-	function methods:SetVerticalScroll(value)
-		self.verticalScroll = value
-	end
-	function methods:SetHorizontalScroll(value)
-		self.horizontalScroll = value
-	end
-	function methods:IsShown()
-		return self.shown
-	end
-	function methods:IsVisible()
-		return self.shown and (not self.parent or self.parent:IsVisible())
-	end
-	local function SetShown(self, shown)
-		local previous = {}
-		local function Gather(node)
-			previous[#previous + 1] = { node = node, visible = node:IsVisible() }
-			for _, child in ipairs(node.children) do
-				Gather(child)
-			end
-		end
-		Gather(self)
-		self.shown = shown
-		for _, old in ipairs(previous) do
-			local visible = old.node:IsVisible()
-			if visible ~= old.visible then
-				local callback = old.node.scripts[visible and "OnShow" or "OnHide"]
-				if callback then
-					callback(old.node)
-				end
-			end
-		end
-	end
-	function methods:Show()
-		SetShown(self, true)
-	end
-	function methods:Hide()
-		SetShown(self, false)
-	end
-	function methods:SetAtlas(atlas) self.atlas = atlas end
-	function methods:GetAtlas() return self.atlas end
-	function methods:SetTexture(texture) self.texture, self.atlas = texture, nil end
-	function methods:SetDesaturated(value) self.desaturated = value end
-	-- These presentation-only methods are intentionally stubbed; behavioral
-	-- methods above are implemented and all other method names are rejected.
-	for _, name in ipairs({
-		"SetAutoFocus",
-		"EnableKeyboard",
-		"SetFontObject",
-		"SetTextInsets",
-		"HighlightText",
-		"SetFocus",
-		"Raise",
-		"SetMaxLetters",
-		"ClearFocus",
-		"SetJustifyH",
-		"SetJustifyV",
-		"SetMaxLines",
-		"SetFrameStrata",
-		"SetWordWrap",
-		"SetToplevel",
-		"SetFlattensRenderLayers",
-		"SetClampedToScreen",
-		"SetMovable",
-		"EnableMouse",
-		"RegisterForDrag",
-		"StartMoving",
-		"SetResizable",
-		"SetNormalTexture",
-		"SetHighlightTexture",
-		"SetPushedTexture",
-		"SetBackdrop",
-		"SetBackdropColor",
-		"SetBackdropBorderColor",
-		"SetAllPoints",
-		"SetHorizTile",
-		"SetVertTile",
-		"SetOrientation",
-		"SetThumbTexture",
-		"SetScrollChild",
-		"SetValueStep",
-		"SetObeyStepOnDrag",
-		"EnableMouseWheel",
-	}) do
-		methods[name] = function() end
-	end
-	return setmetatable(frame, { __index = methods })
+local function Frame(parent, owner)
+	return QuestTogether:CreateTestUIRegion(owner or (parent and parent.owner), parent, "Frame")
 end
 
 local function AttachUI(addon)
-	local parent = Frame()
-	function addon:GetPartyQuestUIParent()
+	local parent = Frame(nil, addon)
+	function addon:GetOwnedUIParent()
 		return parent
 	end
 	function addon:CanAccessForeignFrame()
 		return true
 	end
-	function addon:CreatePartyQuestUIFrame(_, _, owner)
+	function addon:CreateOwnedWindowFrame(_, _, owner)
 		return Frame(owner)
 	end
 	return parent
@@ -1058,13 +844,13 @@ QuestTogether:RegisterTest(
 
 QuestTogether:RegisterTest("party diff UI renders a bounded row pool and filter and share callbacks", function()
 	local a = Fixture(nil, { Quest(1, "Share me", true) })
-	function a:GetPartyQuestUIParent()
+	function a:GetOwnedUIParent()
 		return Frame()
 	end
 	function a:CanAccessForeignFrame()
 		return true
 	end
-	function a:CreatePartyQuestUIFrame()
+	function a:CreateOwnedWindowFrame()
 		return Frame()
 	end
 	a:OpenPartyQuestCompare()
@@ -1117,13 +903,13 @@ end)
 
 QuestTogether:RegisterTest("party share consent UI resets checkbox between requests and hides on expiry", function()
 	local a = Fixture(nil, { Quest(1, "Share me", true) })
-	function a:GetPartyQuestUIParent()
+	function a:GetOwnedUIParent()
 		return Frame()
 	end
 	function a:CanAccessForeignFrame()
 		return true
 	end
-	function a:CreatePartyQuestUIFrame()
+	function a:CreateOwnedWindowFrame()
 		return Frame()
 	end
 	function a:GetQuestTitle()
@@ -1149,13 +935,13 @@ end)
 local function PreviewFixture()
 	local addon = Fixture()
 	addon.createdFrames = 0
-	function addon:GetPartyQuestUIParent()
+	function addon:GetOwnedUIParent()
 		return Frame()
 	end
 	function addon:CanAccessForeignFrame()
 		return true
 	end
-	function addon:CreatePartyQuestUIFrame()
+	function addon:CreateOwnedWindowFrame()
 		self.createdFrames = self.createdFrames + 1
 		return Frame()
 	end
@@ -2095,13 +1881,13 @@ QuestTogether:RegisterTest("party compare renders every locale while canonical a
 	for _, locale in ipairs({ "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW" }) do
 		QuestTogether.localizationTestLocale = locale
 		local a = Fixture(nil, { Quest(1, "Untranslated quest title", true) })
-		function a:GetPartyQuestUIParent()
+		function a:GetOwnedUIParent()
 			return Frame()
 		end
 		function a:CanAccessForeignFrame()
 			return true
 		end
-		function a:CreatePartyQuestUIFrame()
+		function a:CreateOwnedWindowFrame()
 			return Frame()
 		end
 		a:OpenPartyQuestCompare()
@@ -3623,7 +3409,7 @@ QuestTogether:RegisterTest("isolated compare preview delegates drag callbacks wi
 	frame:Hide()
 	Equal(frame.dragging, nil)
 	Equal(a.partyQuestCompareSession, liveSession)
-	Equal(preview.API.SendAddonMessage, nil)
+	Equal(preview.API, nil)
 	Equal(#a.wire, 0)
 	Equal(a.pushes, 0)
 end)
@@ -3730,7 +3516,7 @@ end)
 
 QuestTogether:RegisterTest("PQL focus buttons gray by active follow and switch only after confirmation", function()
 	local a = PreviewFixture()
-	a:GetPartyQuestUIParent():SetSize(1920, 2000)
+	a:GetOwnedUIParent():SetSize(1920, 2000)
 	a:OpenPartyQuestComparePreview()
 	local p = a.partyQuestComparePreview
 	local frame = p.partyQuestCompareWindow
@@ -4043,7 +3829,7 @@ QuestTogether:RegisterTest("native preview closes pending choices and never over
 	Equal(p.partyNavigationState, nil)
 	Equal(a:IsPartyQuestCompareNavigationPreviewActive(), false)
 	Equal(stale(), false)
-	Equal(p.API.SetPartyNavigationQuest(102), false)
+	Equal(p:SelectPartyQuestFocus("Me", 102), false)
 	Equal(a.nativeFocus, 101)
 	Equal(#a.wire, 0)
 end)

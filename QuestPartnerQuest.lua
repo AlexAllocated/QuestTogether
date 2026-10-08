@@ -77,7 +77,7 @@ function QT:PruneQuestPartnerQuests(now)
 	end
 end
 
-function QT:HandleQuestPartnerQuestMessage(payload, sender)
+function QT:HandleQuestPartnerQuestMessage(payload, sender, sampleAge, source)
 	if not self.isEnabled or not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 250 then
 		return false
 	end
@@ -100,6 +100,10 @@ function QT:HandleQuestPartnerQuestMessage(payload, sender)
 	end
 	local name, now = self:NormalizeMemberName(sender), Now(self)
 	if not name or not now or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then
+		return false
+	end
+	local observation = self:ResolvePeerObservation(name, "QTLQ", sampleAge, source, nil, nil, 65)
+	if not self:CanAcceptPeerObservation(observation) then
 		return false
 	end
 	self:PruneQuestPartnerQuests(now)
@@ -134,7 +138,7 @@ function QT:HandleQuestPartnerQuestMessage(payload, sender)
 		end
 	end
 	-- This packet alone cannot renew LFG status or restore a departed identity.
-	state.partnerQuests[name] = {
+	local record = {
 		session = session,
 		sequence = sequence,
 		questID = id,
@@ -142,6 +146,10 @@ function QT:HandleQuestPartnerQuestMessage(payload, sender)
 		receivedAt = now,
 		retired = retired,
 	}
+	if not self:CommitPeerObservation(observation, record, false) then
+		return false
+	end
+	state.partnerQuests[name] = record
 	return true
 end
 
@@ -151,9 +159,13 @@ function QT:GetPlayerPartnerQuestID(name)
 		return nil
 	end
 	if self:IsSelfSender(name) then
-		if self:IsRuntimeRestricted() then return nil end
+		if self:IsRuntimeRestricted() then
+			return nil
+		end
 		local getter = self.API.GetActiveTrackedQuestID
-		if not self:CanAccessValue(getter) or type(getter) ~= "function" then return nil end
+		if not self:CanAccessValue(getter) or type(getter) ~= "function" then
+			return nil
+		end
 		local ok, value = pcall(getter)
 		return ok and QuestID(self, value) or nil
 	end

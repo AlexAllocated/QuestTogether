@@ -1,31 +1,10 @@
 local QT = _G.QuestTogether
 local L = QT.Translate
-local Lib = QT.LibChev
-local function Guard(a, frame)
-	return not a:IsRuntimeRestricted() and Lib.CanMutateOwnedRegion(frame)
-end
-local function Call(a, frame, method, ...)
-	if not Guard(a, frame) then
-		error("party waypoint region unavailable", 0)
-	end
-	return frame[method](frame, ...)
-end
-local function New(a, kind, parent)
-	if a:IsRuntimeRestricted() or not a:CanAccessForeignFrame(parent) then
-		error("party waypoint parent unavailable", 0)
-	end
-	local f = a:CreateLocationPinFrame(kind, nil, parent)
-	if not Guard(a, f) then
-		error("party waypoint frame unavailable", 0)
-	end
-	return f
-end
-local function Hide(f)
-	if Lib.CanMutateOwnedRegion(f) then
-		f:Hide()
-	end
-end
-local function HideSurface(s, surface)
+local function Guard(a, frame) return a:CanMutateOwnedUI(frame) end
+local function Call(a, frame, method, ...) return a:CallOwnedUI(frame, method, ...) end
+local function New(a, kind, parent) return a:CreateOwnedUIFrame(a.CreateLocationPinFrame, kind, parent) end
+local function Hide(a, frame) a:HideOwnedUI(frame) end
+local function HideSurface(a, s, surface)
 	if not surface then
 		return
 	end
@@ -33,11 +12,11 @@ local function HideSurface(s, surface)
 		pin.names = {}
 		if s.hovered == pin then
 			s.hovered = nil
-			Hide(s.tooltip)
+			Hide(a, s.tooltip)
 		end
-		Hide(pin.frame)
+		Hide(a, pin.frame)
 	end
-	Hide(surface.frame)
+	Hide(a, surface.frame)
 end
 function QT:HidePartyWaypointPins()
 	local s = rawget(self, "partyWaypointPinState")
@@ -45,9 +24,9 @@ function QT:HidePartyWaypointPins()
 		return
 	end
 	s.hovered = nil
-	Hide(s.tooltip)
+	Hide(self, s.tooltip)
 	for _, surface in pairs(s.surfaces) do
-		HideSurface(s, surface)
+		HideSurface(self, s, surface)
 	end
 end
 local function Color(a, name)
@@ -65,7 +44,7 @@ local function Tooltip(a, s, pin)
 		end
 	end
 	if #lines == 0 then
-		Hide(s.tooltip)
+		Hide(a, s.tooltip)
 		return
 	end
 	if not s.tooltip then
@@ -85,7 +64,7 @@ local function Tooltip(a, s, pin)
 	Call(a, s.label, "SetText", table.concat(lines, "\n"))
 	local height = a:SafeToNumber(Call(a, s.label, "GetStringHeight"))
 	if not height then
-		Hide(s.tooltip)
+		Hide(a, s.tooltip)
 		return
 	end
 	Call(a, s.tooltip, "SetSize", 284, height + 20)
@@ -108,7 +87,7 @@ local function CreatePin(a, s, surface)
 	Call(a, pin.frame, "SetScript", "OnLeave", function()
 		if s.hovered == pin then
 			s.hovered = nil
-			Hide(s.tooltip)
+			Hide(a, s.tooltip)
 		end
 	end)
 	Call(a, pin.frame, "SetScript", "OnClick", function()
@@ -140,32 +119,11 @@ local function Surface(a, s, name, rows)
 	local surface = s.surfaces[name]
 	local g = #rows > 0 and a:GetLocationPinSurface(name)
 	if not g then
-		HideSurface(s, surface)
+		HideSurface(a, s, surface)
 		return
 	end
-	if not surface then
-		surface = { frame = New(a, "Frame", g.parent), pins = {} }
-		s.surfaces[name] = surface
-		Call(a, surface.frame, "EnableMouse", false)
-		Call(a, surface.frame, "SetClipsChildren", true)
-	end
-	if surface.parent ~= g.parent then
-		Call(a, surface.frame, "SetParent", g.parent)
-		Call(a, surface.frame, "ClearAllPoints")
-		Call(a, surface.frame, "SetAllPoints", g.parent)
-		surface.parent = g.parent
-	end
-	local getter = a:GetAccessibleFrameMember(g.parent, "GetFrameLevel")
-	local ok, level
-	if type(getter) == "function" then
-		ok, level = pcall(getter, g.parent)
-	end
-	level = ok and a:SafeToNumber(level)
-	if not level then
-		HideSurface(s, surface)
-		return
-	end
-	Call(a, surface.frame, "SetFrameLevel", level + 55)
+	surface = a:AcquireMapOverlaySurface(s, name, g, 55, function(old) HideSurface(a, s, old) end)
+	if not surface then return end
 	local placed = {}
 	for _, row in ipairs(rows) do
 		local x, y = a:ProjectPlayerLocationPin(name, row, g, 26)
@@ -174,11 +132,7 @@ local function Surface(a, s, name, rows)
 		end
 	end
 	for index, row in ipairs(placed) do
-		local pin = surface.pins[index]
-		if not pin then
-			pin = CreatePin(a, s, surface)
-			surface.pins[index] = pin
-		end
+		local pin = a:AcquireMapOverlayPin(surface, index, function(host) return CreatePin(a, s, host) end)
 		pin.names = {}
 		for _, other in ipairs(placed) do
 			if math.abs(other.x - row.x) <= 22 and math.abs(other.y - row.y) <= 26 then
@@ -200,10 +154,10 @@ local function Surface(a, s, name, rows)
 		Call(a, pin.frame, "SetPoint", "CENTER", surface.frame, "TOPLEFT", row.x, -row.y)
 		Call(a, pin.frame, "Show")
 	end
-	for i = #placed + 1, #surface.pins do
-		surface.pins[i].names = {}
-		Hide(surface.pins[i].frame)
-	end
+	a:ReleaseMapOverlayPins(surface, #placed, function(pin)
+		pin.names = {}
+		if s.hovered == pin then s.hovered = nil; Hide(a, s.tooltip) end
+	end)
 	Call(a, surface.frame, #placed > 0 and "Show" or "Hide")
 end
 function QT:RefreshPartyWaypointPins()
@@ -223,7 +177,7 @@ function QT:RefreshPartyWaypointPins()
 	for _, name in ipairs({ "map", "minimap" }) do
 		local ok = pcall(Surface, self, s, name, rows)
 		if not ok and s.surfaces[name] then
-			HideSurface(s, s.surfaces[name])
+			HideSurface(self, s, s.surfaces[name])
 		end
 	end
 	if
@@ -231,6 +185,6 @@ function QT:RefreshPartyWaypointPins()
 		and (not Guard(self, s.hovered.frame) or #s.hovered.names == 0 or not pcall(Tooltip, self, s, s.hovered))
 	then
 		s.hovered = nil
-		Hide(s.tooltip)
+		Hide(self, s.tooltip)
 	end
 end

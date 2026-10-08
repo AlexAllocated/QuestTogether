@@ -219,12 +219,11 @@ QuestTogether:RegisterTest("profile switches copies and resets retire developer 
 		end }
 		-- Exercise the real profile methods; UI refreshes belong to separate
 		-- private fixtures and must not touch the player's live windows here.
-		for _, method in ipairs({ "NormalizeAnnouncementDisplayOptions", "NormalizeNameplateOptions",
-			"EnsureQuestLogChatFrame", "CloseQuestLogChatFrame", "RefreshPartyRoster", "RefreshNameplateAugmentation",
+		for _, method in ipairs({ "EnsureQuestLogChatFrame", "CloseQuestLogChatFrame", "RefreshPartyRoster", "RefreshNameplateAugmentation",
 			"RefreshActiveAnnouncementBubbles", "RefreshPersonalBubbleAnchorVisualState",
 			"RefreshPersonalBubbleEditModeDialog", "RefreshMinimapButton", "RefreshManagedWindowLayouts",
 			"OnPlayerLocationOptionsChanged", "BroadcastQuestPartnerStatus", "RefreshOptionsWindow",
-			"RefreshProfilesWindow" }) do peer[method] = function() end end
+			"RefreshProfilesWindow", "QueuePartyNavigationUpdate", "RefreshWindowThemes" }) do peer[method] = function() end end
 		peer.hasLoggedIn = true
 		peer.activeCharacterKey, peer.activeProfileKey = peer.name, "Initial"
 		peer.db.profile.chatLogDestination = "main"
@@ -727,9 +726,9 @@ end)
 QuestTogether:RegisterTest("delayed diagnostic replies honor opt-out and reset before reading private positions",function()
 	for _,reason in ipairs({"opt-out","reset"}) do
 		local a=DeveloperFixture("Friend-Realm")
-		a.geographicCommsState={}
+		a:InitializeGeographicComms()
 		Equal(a:ScheduleGeographicPingReply("test",{{distribution="WHISPER",target="Dev-Realm"}},true,{developerVerified=true}),true)
-		if reason=="opt-out" then a.db.profile.shareDeveloperDiagnostics=false else a.geographicCommsState={} end
+		if reason=="opt-out" then a.db.profile.shareDeveloperDiagnostics=false else a:ResetCommsState() end
 		a.clock:Advance(30)
 		Equal(a.reads,nil)
 		Equal(#a.wire,0)
@@ -1909,12 +1908,12 @@ QuestTogether:RegisterTest("level-up options migrate existing profiles and prese
 	local addon = NewLevelUpFixture()
 	addon.db.profile.emoteOnLevelUp = nil
 	addon.db.profile.emoteOnNearbyPlayerLevelUp = nil
-	addon:NormalizeAnnouncementDisplayOptions()
+	addon:NormalizeSettingsProfile()
 	Equal(addon:GetOption("emoteOnLevelUp"), true)
 	Equal(addon:GetOption("emoteOnNearbyPlayerLevelUp"), true)
 	addon:SetOption("emoteOnLevelUp", false)
 	addon:SetOption("emoteOnNearbyPlayerLevelUp", false)
-	addon:NormalizeAnnouncementDisplayOptions()
+	addon:NormalizeSettingsProfile()
 	Equal(addon:GetOption("emoteOnLevelUp"), false)
 	Equal(addon:GetOption("emoteOnNearbyPlayerLevelUp"), false)
 end)
@@ -2038,7 +2037,7 @@ QuestTogether:RegisterTest("comparison send pacing does not consume failed-nativ
 	a.API.Delay = function(delay, callback) clock:After(delay, callback) end
 	SetComparisonEntries(a, 2)
 	a:InitializeGeographicComms()
-	a.geographicCommsState.blockedUntil = 110
+	a:GetTransportState().blockedUntil = 110
 	assert(a:HandleQuestCompareRequest({requestId="paced-response",requesterName="Peer-Realm",targetName="MyPlayer-Realm",replyDistribution="CHANNEL"}))
 	for _=1,35 do clock:Advance(0.2); a:DrainGeographicQueue() end
 	Equal(#a.wire,0); Equal(#a.questCompareResponseQueue.jobs,1)
@@ -3444,7 +3443,7 @@ QuestTogether:RegisterTest("nearby range and QT chat scope persist valid profile
 	Equal(addon:SetOption("qtChatScope", "invalid"), false)
 	Equal(addon:GetOption("qtChatScope"), "zone_only")
 	addon.db.profile.nearbyAnnouncementRange = "invalid"
-	addon:NormalizeAnnouncementDisplayOptions()
+	addon:NormalizeSettingsProfile()
 	Equal(addon:GetNearbyAnnouncementRange(), 25)
 end)
 
@@ -3725,18 +3724,18 @@ QuestTogether:RegisterTest("large diagnostic job expiry and consent cancellation
 	for _, revoke in ipairs({ false, true }) do
 		local peer = DeveloperFixture("Friend-Realm")
 		peer:InitializeGeographicComms()
-		peer.geographicCommsState.blockedUntil = peer.API.GetTime() + 600
+		peer:GetTransportState().blockedUntil = peer.API.GetTime() + 600
 		assert(peer:SendPagedPong("dev-1791300100-1234-1", string.rep("x", 98000), {
 			{ distribution = "WHISPER", target = "Dev-Realm" },
 		}, true, 2))
 		Equal(#peer.pingPageQueue.jobs, 1)
-		Equal(#peer.geographicCommsState.queue, 1)
+		Equal(#peer:GetTransportState().queue, 1)
 		Equal(peer.pingPageQueue.jobs[1].expiresAt - peer.pingPageQueue.jobs[1].createdAt, 540)
 		if revoke then peer:SetOption("shareDeveloperDiagnostics", false)
 		else peer.clock:Advance(541) end
 		peer:DrainGeographicQueue()
 		Equal(#peer.pingPageQueue.jobs, 0)
-		Equal(#peer.geographicCommsState.queue, 0)
+		Equal(#peer:GetTransportState().queue, 0)
 		Equal(#peer.wire, 0)
 	end
 end)

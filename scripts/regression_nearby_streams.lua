@@ -241,10 +241,10 @@ QT:RegisterTest("nearby streams back off on throttling and yield to queued annou
 	Tick(a, nil, 15)
 	Equal(#a.sent, sent)
 	a.fail = false
-	a.geographicCommsState.queue = { { snapshot = false } }
+	a:GetTransportState().queue = { { priority = "control", snapshot = false } }
 	Tick(a, nil, 30)
 	Equal(#a.sent, sent)
-	a.geographicCommsState.queue = {}
+	a:GetTransportState().queue = {}
 	Tick(a, b, 5)
 	assert(#a.sent > sent)
 end)

@@ -83,7 +83,7 @@ local function Fixture()
 	end
 	local root, frame = Frame(3440, 1440)
 	frame = Frame(1250, 720, root)
-	function a:GetPartyQuestUIParent()
+	function a:GetOwnedUIParent()
 		return root
 	end
 	function a:CanAccessForeignFrame(f)

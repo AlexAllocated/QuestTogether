@@ -175,7 +175,7 @@ function QuestTogether:OpenPlayerQuestCompare(name)
 	return true
 end
 
-function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName)
+function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName, conditional)
 	local previous = self.partyQuestCompareSession
 	local anchor = self:CapturePartyQuestScrollAnchor()
 	if not targetName and previous and previous.mode == "target" then
@@ -223,14 +223,14 @@ function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName)
 	for _, name in ipairs(names) do
 		local member = { name = name, entries = {}, state = "loading", isLocal = name == ownName }
 		local prior = previous and previous.byName[member.name]
-		if prior then member.entries, member.sampledAt = prior.entries, prior.sampledAt end
+		if prior then member.entries, member.sampledAt, member.revision = prior.entries, prior.sampledAt, prior.revision end
 		member.classFile = member.isLocal and self:GetPlayerClassFile() or self:GetGroupedSenderClassFile(name)
 		session.members[#session.members + 1] = member
 		session.byName[name] = member
 	end
 	self:RefreshLocalPartyQuestCompare()
 	for _, member in ipairs(session.members) do
-		if not member.isLocal then self:RefreshPartyQuestCompareMember(member.name) end
+		if not member.isLocal then self:RefreshPartyQuestCompareMember(member.name, conditional) end
 	end
 	self:QueuePartyQuestCompareRender()
 	return true
@@ -253,7 +253,7 @@ function QuestTogether:GetPartyQuestSnapshotLabel(member)
 	return string.format(L("Updated %ds ago"), age)
 end
 
-function QuestTogether:RefreshPartyQuestCompareMember(name)
+function QuestTogether:RefreshPartyQuestCompareMember(name, conditional)
 	local session = self.partyQuestCompareSession
 	local member = session and session.byName[name]
 	if not member or not self.isEnabled then return false end
@@ -286,6 +286,8 @@ function QuestTogether:RefreshPartyQuestCompareMember(name)
 	if routes and not self:IsIgnoredPlayerName(member.name) then
 		sent, requestId = self:RequestQuestCompare(member.name, {
 			routes = routes,
+			knownRevision = conditional and member.revision or nil,
+			previousEntries = conditional and member.entries or nil,
 			onEntry = function(entry)
 				if not Current() then
 					return
@@ -295,11 +297,11 @@ function QuestTogether:RefreshPartyQuestCompareMember(name)
 				if entry.classFile and entry.classFile ~= "" then member.classFile = entry.classFile end
 				self:QueuePartyQuestCompareRender()
 			end,
-			onDone = function(supportsShareRequests, supportsObjectives, classFile)
+			onDone = function(supportsShareRequests, supportsObjectives, classFile, revision)
 				if not Current() then
 					return
 				end
-				member.entries = entries
+				member.entries, member.revision = entries, revision
 				member.sampledAt = self:GetPartyQuestCompareTime()
 				member.state = "ready"
 				member.supportsShareRequests = supportsShareRequests
@@ -340,7 +342,7 @@ function QuestTogether:UpdatePartyQuestCompareFreshness()
 		for _, member in ipairs(session.members) do
 			if member.state == "loading" or member.objectiveRequestQuestId then return end
 		end
-		self:RefreshPartyQuestCompare()
+		self:RefreshPartyQuestCompare(nil, nil, true)
 	end
 end
 

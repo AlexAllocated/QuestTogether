@@ -296,12 +296,7 @@ local function ClearAnnouncementBubbleState(bubble)
 end
 
 local function DeferAnnouncementBubbleCleanup(addon, bubble)
-	if bubble then
-		local state = addon:GetNameplateStateStore()
-		state.pendingVisualCleanupByFrame = state.pendingVisualCleanupByFrame or {}
-		state.pendingVisualCleanupByFrame[bubble] = "bubble"
-		addon.pendingNameplateVisualCleanup = true
-	end
+	if bubble then addon:QueueNameplateVisualCleanup(bubble, "bubble") end
 	return false
 end
 
@@ -767,14 +762,14 @@ local function EnsurePersonalBubbleEditModeDialog(addon, preview)
 
 	dialog.Title = dialog.title
 
-	local closeButton = addon:CreatePartyQuestUIFrame("Button", nil, dialog, "UIPanelCloseButton")
+	local closeButton = addon:CreateOwnedWindowFrame("Button", nil, dialog, "UIPanelCloseButton")
 	closeButton:SetPoint("TOPRIGHT", dialog, "TOPRIGHT", -10, -8)
 	closeButton:SetScript("OnClick", function()
 		if preview then dialog:Hide() else addon:DeselectPersonalBubbleAnchor() end
 	end)
 	dialog.CloseButton = closeButton
 
-	local dragHandle = addon:CreatePartyQuestUIFrame("Frame", nil, dialog)
+	local dragHandle = addon:CreateOwnedWindowFrame("Frame", nil, dialog)
 	dragHandle:SetPoint("TOPLEFT", dialog, "TOPLEFT", 8, -8)
 	dragHandle:SetPoint("TOPRIGHT", closeButton, "TOPLEFT", -4, -8)
 	dragHandle:SetHeight(28)
@@ -789,11 +784,11 @@ local function EnsurePersonalBubbleEditModeDialog(addon, preview)
 	end)
 	dialog.DragHandle = dragHandle
 
-	local sizeSlider = addon:CreatePartyQuestUIFrame("Frame", nil, dialog, "EditModeSettingSliderTemplate")
+	local sizeSlider = addon:CreateOwnedWindowFrame("Frame", nil, dialog, "EditModeSettingSliderTemplate")
 	sizeSlider:SetPoint("TOPLEFT", dialog, "TOPLEFT", dialog.contentInset, -dialog.contentTop)
 	dialog.SizeSlider = sizeSlider
 
-	local durationSlider = addon:CreatePartyQuestUIFrame("Frame", nil, dialog, "EditModeSettingSliderTemplate")
+	local durationSlider = addon:CreateOwnedWindowFrame("Frame", nil, dialog, "EditModeSettingSliderTemplate")
 	durationSlider:SetPoint("TOPLEFT", sizeSlider, "BOTTOMLEFT", 0, -24)
 	dialog.DurationSlider = durationSlider
 
@@ -804,7 +799,7 @@ local function EnsurePersonalBubbleEditModeDialog(addon, preview)
 	dialog.SaveStatus = saveStatus
 	addon:AddScrollDialogLabel(dialog, saveStatus, "muted")
 
-	local saveButton = addon:CreatePartyQuestUIFrame("Button", nil, dialog, "UIPanelButtonTemplate")
+	local saveButton = addon:CreateOwnedWindowFrame("Button", nil, dialog, "UIPanelButtonTemplate")
 	saveButton:SetSize(dialog.contentWidth, 28)
 	saveButton:SetPoint("BOTTOMLEFT", dialog, "BOTTOMLEFT", dialog.contentInset, dialog.contentBottom + 40)
 	saveButton:SetText(L("Save Changes"))
@@ -813,7 +808,7 @@ local function EnsurePersonalBubbleEditModeDialog(addon, preview)
 	end)
 	dialog.SaveButton = saveButton
 
-	local revertButton = addon:CreatePartyQuestUIFrame("Button", nil, dialog, "UIPanelButtonTemplate")
+	local revertButton = addon:CreateOwnedWindowFrame("Button", nil, dialog, "UIPanelButtonTemplate")
 	revertButton:SetSize((dialog.contentWidth - 12) / 2, 28)
 	revertButton:SetPoint("BOTTOMLEFT", dialog, "BOTTOMLEFT", dialog.contentInset, dialog.contentBottom)
 	revertButton:SetText(L("Revert Changes"))
@@ -822,7 +817,7 @@ local function EnsurePersonalBubbleEditModeDialog(addon, preview)
 	end)
 	dialog.RevertButton = revertButton
 
-	local resetButton = addon:CreatePartyQuestUIFrame("Button", nil, dialog, "UIPanelButtonTemplate")
+	local resetButton = addon:CreateOwnedWindowFrame("Button", nil, dialog, "UIPanelButtonTemplate")
 	resetButton:SetSize((dialog.contentWidth - 12) / 2, 28)
 	resetButton:SetPoint("BOTTOMRIGHT", dialog, "BOTTOMRIGHT", -dialog.contentInset, dialog.contentBottom)
 	resetButton:SetText(L("Reset To Default"))
@@ -3055,7 +3050,7 @@ local function DeferBlockedQuestPlatePresentation(addon, plate, unitToken)
 	end
 	addon:HideNameplateIcon(plate)
 	if addon.isEnabled and addon:IsNameplateUnitToken(unitToken)
-		and not addon.nameplateRefreshPendingByUnitToken[unitToken] then
+		and not addon:IsRuntimeWorkPending("nameplate_refresh", unitToken) then
 		addon:ScheduleNameplateRefresh(unitToken)
 	end
 	return true
@@ -3880,9 +3875,7 @@ function QuestTogether:ClearIgnoredAnnouncementBubbles()
 				-- Stop already removed replayable data, even when the attached
 				-- visual is forbidden or restricted. Finish hiding it when safe.
 				local nameplateState = self:GetNameplateStateStore()
-				nameplateState.pendingVisualCleanupByFrame = nameplateState.pendingVisualCleanupByFrame or {}
-				nameplateState.pendingVisualCleanupByFrame[bubble] = "bubble"
-				self.pendingNameplateVisualCleanup = true
+				self:QueueNameplateVisualCleanup(bubble, "bubble")
 			end
 		end
 	end
@@ -4339,7 +4332,7 @@ function QuestTogether:ScheduleNameplateHealthTintRefresh(unitToken, delaySecond
 	end
 
 	if self.ScheduleDeferredWork then
-		self:ScheduleDeferredWork("nameplate_tint_refresh", unitToken, refreshTint, delaySeconds, "ScheduleNameplateHealthTintRefresh")
+		self:ScheduleRuntimeWork("nameplate_tint_refresh", unitToken, refreshTint, { delay = delaySeconds, owner = self:GetNameplateWorkOwner(unitToken), reason = "ScheduleNameplateHealthTintRefresh" })
 		return
 	end
 
@@ -4351,45 +4344,17 @@ function QuestTogether:ScheduleNameplateRefresh(unitToken)
 		return
 	end
 
-	local delayFn = self.API and self.API.Delay
-	local generations = self.nameplateRefreshGenerationByUnitToken
-	local generation = (self.nameplateRefreshGenerationByUnitToken[unitToken] or 0) + 1
-	self.nameplateRefreshGenerationByUnitToken[unitToken] = generation
+	local generations = self:GetNameplateStateStore().identityGenerationByUnitToken
+	local generation = generations[unitToken]
 	self.nameplateRefreshPendingByUnitToken[unitToken] = true
-
-	-- Give Blizzard one frame to finish building/restyling the plate. The
-	-- generation check also cancels work for removed or recycled unit tokens.
-	local function refreshScheduledNameplate()
-		if self.nameplateRefreshGenerationByUnitToken ~= generations
-			or generations[unitToken] ~= generation then
-			return
-		end
+	return self:ScheduleRuntimeWork("nameplate_refresh", unitToken, function()
+		if self:GetNameplateStateStore().identityGenerationByUnitToken ~= generations
+			or generations[unitToken] ~= generation then return end
 		self.nameplateRefreshPendingByUnitToken[unitToken] = nil
-		if not self.isEnabled then
-			return
-		end
-		if self.IsWorkBlocked and self:IsWorkBlocked("nameplate_refresh") then
-			self:ScheduleDeferredWork("nameplate_refresh", unitToken, refreshScheduledNameplate, 0, "ScheduleNameplateRefresh")
-			return
-		end
-
-		local namePlateFrameBase = self:GetAccessibleNameplateFrameForUnit(unitToken, true)
-		if not namePlateFrameBase then
-			self:MaybeScheduleNameplateTooltipRetry(unitToken, "ScheduleNameplateRefresh")
-			return
-		end
-
-		self:RefreshNameplateIcon(namePlateFrameBase)
-	end
-
-	if type(delayFn) ~= "function" then
-		refreshScheduledNameplate()
-		return
-	end
-
-	delayFn(0, function()
-		refreshScheduledNameplate()
-	end)
+		local plate = self:GetAccessibleNameplateFrameForUnit(unitToken, true)
+		if not plate then self:MaybeScheduleNameplateTooltipRetry(unitToken, "ScheduleNameplateRefresh"); return end
+		self:RefreshNameplateIcon(plate)
+	end, { mode = "nextFrame", coalesce = true, owner = self:GetNameplateWorkOwner(unitToken), reason = "ScheduleNameplateRefresh" })
 end
 
 function QuestTogether:HideQTPlayerIcon(icon)
@@ -4401,10 +4366,7 @@ function QuestTogether:HideQTPlayerIcon(icon)
 		icon:Hide()
 		self:CancelNameplateVisualCleanup(icon)
 	else
-		local state = self:GetNameplateStateStore()
-		state.pendingVisualCleanupByFrame = state.pendingVisualCleanupByFrame or {}
-		state.pendingVisualCleanupByFrame[icon] = "icon"
-		self.pendingNameplateVisualCleanup = true
+		self:QueueNameplateVisualCleanup(icon, "icon")
 	end
 end
 
@@ -4429,7 +4391,7 @@ function QuestTogether:RefreshQTPlayerPartnerIndicators()
 		if
 			(info.partnerIndicatorPending == true or (info.lookingForPartners == true) ~= looking)
 			and self:IsNameplateUnitToken(info.unitToken)
-			and not self.nameplateRefreshPendingByUnitToken[info.unitToken]
+			and not self:IsRuntimeWorkPending("nameplate_refresh", info.unitToken)
 		then
 			self:ScheduleNameplateRefresh(info.unitToken)
 			scheduled = true
@@ -4550,9 +4512,8 @@ function QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
 		self:RefreshQTPlayerNameplate(namePlateFrameBase, unitToken, unitFrame)
 		return
 	end
-	-- Defer before resolving negative caches or spending a tooltip retry. A
-	-- presentation refresh advances the token generation and would invalidate
-	-- a retry queued immediately before it. Resume discovery after restrictions.
+	-- Presentation is cache-only. Discovery uses a separate next-frame worker
+	-- fenced by plate identity, never by another presentation refresh.
 	if DeferBlockedQuestPlatePresentation(self, namePlateFrameBase, unitToken) then
 		return
 	end
@@ -4834,27 +4795,24 @@ function QuestTogether:SchedulePlaterStartupNameplateRefreshes()
 	if not self.API or type(self.API.Delay) ~= "function" then
 		return false
 	end
-	local startupState = self.nameplateRefreshGenerationByUnitToken
+	local state = self:GetNameplateStateStore()
+	self:CancelRuntimeWorkOwner(state.startupWorkOwner)
+	local owner = self:NewRuntimeWorkOwner()
+	state.startupWorkOwner = owner
 
 	-- Mirrors Plater startup bootstrap in local retail Plater.lua:6357-6362:
 	-- queue QuestLogUpdated() after 4.1 seconds, which then waits the standard
 	-- 1-second quest-cache throttle, and separately trigger FullRefreshAllPlates()
 	-- at 5.1 seconds after initialization.
-	self.API.Delay(PLATER_INITIAL_QUEST_LOG_UPDATED_DELAY_SECONDS, function()
-		if not self.isEnabled or self.nameplateRefreshGenerationByUnitToken ~= startupState then
-			return
-		end
-		QuestTogether:ScheduleDeferredNameplateQuestStateRefresh(
+	self:ScheduleRuntimeWork("nameplate_quest_refresh", "startup_quest_log", function()
+		self:ScheduleDeferredNameplateQuestStateRefresh(
 			"EnableNameplateAugmentationStartup",
 			PLATER_QUEST_STATE_REFRESH_DELAY_SECONDS
 		)
-	end)
-	self.API.Delay(PLATER_INITIAL_FULL_REFRESH_DELAY_SECONDS, function()
-		if not self.isEnabled or self.nameplateRefreshGenerationByUnitToken ~= startupState then
-			return
-		end
-		QuestTogether:FullRefreshVisibleNameplates("EnableNameplateAugmentationStartupFullRefresh")
-	end)
+	end, { owner = owner, delay = PLATER_INITIAL_QUEST_LOG_UPDATED_DELAY_SECONDS })
+	self:ScheduleRuntimeWork("nameplate_refresh", "startup_full", function()
+		self:FullRefreshVisibleNameplates("EnableNameplateAugmentationStartupFullRefresh")
+	end, { owner = owner, delay = PLATER_INITIAL_FULL_REFRESH_DELAY_SECONDS })
 
 	return true
 end
@@ -4891,6 +4849,7 @@ function QuestTogether:OnNameplateAdded(unitToken)
 	if not self:IsNameplateUnitToken(unitToken) then
 		return
 	end
+	self:RetireNameplateWork(unitToken)
 	self.nameplateRefreshGenerationByUnitToken[unitToken] =
 		(self.nameplateRefreshGenerationByUnitToken[unitToken] or 0) + 1
 	self.nameplateRefreshPendingByUnitToken[unitToken] = nil
@@ -4932,6 +4891,7 @@ function QuestTogether:OnNameplateRemoved(unitToken)
 	self:ClearNameplateTooltipResolveRetryCount(unitToken)
 	self.nameplateRefreshPendingByUnitToken[unitToken] = nil
 	-- Never reuse a generation after a token is removed and assigned again.
+	self:RetireNameplateWork(unitToken)
 	self.nameplateRefreshGenerationByUnitToken[unitToken] = (self.nameplateRefreshGenerationByUnitToken[unitToken] or 0)
 		+ 1
 	self.nameplateHealthTintRefreshPendingByUnitToken[unitToken] = nil
@@ -4982,13 +4942,6 @@ end
 function QuestTogether:HandleNameplateEvent(eventName, ...)
 	if self.pendingNameplateVisualCleanup then
 		self:RetryPendingNameplateVisualCleanup()
-		if not self.isEnabled then
-			if not self.pendingNameplateVisualCleanup and self.nameplateEventFrame then
-				self.nameplateEventFrame:UnregisterAllEvents()
-				wipe(self.nameplateRegisteredEvents)
-			end
-			return
-		end
 	end
 	if not self.isEnabled then
 		return
@@ -5018,7 +4971,7 @@ function QuestTogether:HandleNameplateEvent(eventName, ...)
 			-- Blizzard has laid out the buffs, and coalesce same-frame events.
 			for _, info in pairs(self.qtPlayerIconStateByFrame or {}) do
 				if info.unitToken == unitToken then
-					if not self.nameplateRefreshPendingByUnitToken[unitToken] and self:IsNameplateUnitPlayer(unitToken) then
+					if not self:IsRuntimeWorkPending("nameplate_refresh", unitToken) and self:IsNameplateUnitPlayer(unitToken) then
 						self:ScheduleNameplateRefresh(unitToken)
 					end
 					break
@@ -5156,43 +5109,44 @@ function QuestTogether:EnableNameplateAugmentation()
 	self:SchedulePlaterStartupNameplateRefreshes()
 end
 
+function QuestTogether:QueueNameplateVisualCleanup(visual, kind)
+	local state = self:GetNameplateStateStore()
+	state.pendingVisualCleanupByFrame = state.pendingVisualCleanupByFrame or {}
+	state.pendingVisualCleanupByFrame[visual] = kind
+	self.pendingNameplateVisualCleanup = true
+	self:QueueOwnedUICleanup(visual, function(region)
+		if kind == "bubble" then return self:StopAndHideAnnouncementBubblePlayback(region, "teardown") end
+		region:Hide()
+	end, function()
+		state.pendingVisualCleanupByFrame[visual] = nil
+		self.pendingNameplateVisualCleanup = next(state.pendingVisualCleanupByFrame) ~= nil
+	end, CanMutateFrame)
+end
+
 function QuestTogether:CancelNameplateVisualCleanup(visual)
+	self:CancelOwnedUICleanup(visual)
 	local state = self.runtimeStateStore and self.runtimeStateStore.nameplate
 	local pending = state and state.pendingVisualCleanupByFrame
 	if pending then
-		-- This handle now presents a new live state. A previous disabled
-		-- lifetime must never hide it after its protection/forbidden state clears.
 		pending[visual] = nil
 		self.pendingNameplateVisualCleanup = next(pending) ~= nil
 	end
 end
 
 function QuestTogether:RetryPendingNameplateVisualCleanup()
+	self:FlushOwnedUICleanup()
 	local pending = self:GetNameplateStateStore().pendingVisualCleanupByFrame
-	for visual, kind in pairs(pending or {}) do
-		local hidden = false
-		if kind == "bubble" then
-			hidden = self:StopAndHideAnnouncementBubblePlayback(visual, "disable")
-		elseif CanMutateFrame(visual) then
-			visual:Hide()
-			hidden = true
-		end
-		if hidden then pending[visual] = nil end
-	end
 	self.pendingNameplateVisualCleanup = pending ~= nil and next(pending) ~= nil
 	return not self.pendingNameplateVisualCleanup
 end
 
 function QuestTogether:HideAllNameplateVisuals()
-	local state = self:GetNameplateStateStore()
-	state.pendingVisualCleanupByFrame = state.pendingVisualCleanupByFrame or {}
-	local pending = state.pendingVisualCleanupByFrame
 	-- Capture the disabled lifetime once. Subsequent events retry only failed
 	-- handles, so one quarantined frame cannot hide unrelated current visuals.
-	for _, bubble in pairs(self.nameplateBubbleByUnitFrame) do pending[bubble] = "bubble" end
-	for _, icon in pairs(self.nameplateIconByUnitFrame) do pending[icon] = "icon" end
+	for _, bubble in pairs(self.nameplateBubbleByUnitFrame) do self:QueueNameplateVisualCleanup(bubble, "bubble") end
+	for _, icon in pairs(self.nameplateIconByUnitFrame) do self:QueueNameplateVisualCleanup(icon, "icon") end
 	for _, overlay in pairs(self.nameplateHealthOverlayByUnitFrame) do
-		for _, texture in pairs(overlay) do pending[texture] = "texture" end
+		for _, texture in pairs(overlay) do self:QueueNameplateVisualCleanup(texture, "texture") end
 	end
 	return self:RetryPendingNameplateVisualCleanup()
 end
@@ -5215,16 +5169,6 @@ function QuestTogether:DisableNameplateAugmentation()
 	if self.nameplateRegisteredEvents then
 		wipe(self.nameplateRegisteredEvents)
 	end
-	if self.pendingNameplateVisualCleanup then
-		-- The normal runtime scheduler is stopped while disabled. Keep only
-		-- event-driven teardown until protected visuals can be hidden safely.
-		for _, eventName in ipairs({ "PLAYER_REGEN_ENABLED", "ADDON_RESTRICTION_STATE_CHANGED", "PLAYER_ENTERING_WORLD" }) do
-			if pcall(self.nameplateEventFrame.RegisterEvent, self.nameplateEventFrame, eventName) then
-				self.nameplateRegisteredEvents[eventName] = true
-			end
-		end
-	end
-
 	-- Hide our icon overlays and clear cached quest objective state.
 	self:ClearNameplateQuestDetectionCache()
 	self:SetRuntimeFlag("pendingDeferredNameplateQuestStateRefresh", false)

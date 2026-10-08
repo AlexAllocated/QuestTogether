@@ -63,12 +63,6 @@ function QuestTogether:EnsureRuntimeStateStore()
 	if type(state.taskArea.resolutionOrder) ~= "table" then
 		state.taskArea.resolutionOrder = {}
 	end
-	if type(state.taskArea.displayAsObjectiveByQuestID) ~= "table" then
-		state.taskArea.displayAsObjectiveByQuestID = {}
-	end
-	if type(state.taskArea.isWorldQuestByQuestID) ~= "table" then
-		state.taskArea.isWorldQuestByQuestID = {}
-	end
 	if type(state.taskArea.generation) ~= "number" then
 		state.taskArea.generation = 0
 	end
@@ -113,6 +107,9 @@ function QuestTogether:EnsureRuntimeStateStore()
 	end
 	if type(state.nameplate.textCache) ~= "table" then
 		state.nameplate.textCache = type(self.nameplateQuestTextCache) == "table" and self.nameplateQuestTextCache or {}
+	end
+	if type(state.nameplate.identityGenerationByUnitToken) ~= "table" then
+		state.nameplate.identityGenerationByUnitToken = {}
 	end
 	if type(state.nameplate.refreshGenerationByUnitToken) ~= "table" then
 		state.nameplate.refreshGenerationByUnitToken = type(self.nameplateRefreshGenerationByUnitToken) == "table"
@@ -243,6 +240,7 @@ function QuestTogether:ResetQuestSnapshotStateStore()
 	local state = self:GetQuestSnapshotStateStore()
 	wipe(state.byQuestID)
 	wipe(state.order)
+	self:ResetQuestClassifications()
 	state.generation = 0
 	return state
 end
@@ -253,8 +251,7 @@ function QuestTogether:ResetTaskAreaStateStore()
 	wipe(state.taskArea.bonusByQuestID)
 	wipe(state.taskArea.resolvedByQuestID)
 	wipe(state.taskArea.resolutionOrder)
-	wipe(state.taskArea.displayAsObjectiveByQuestID)
-	wipe(state.taskArea.isWorldQuestByQuestID)
+	self:ResetQuestClassifications()
 	state.taskArea.generation = 0
 	state.taskArea.pendingAnnounce = false
 	return state.taskArea
@@ -272,6 +269,13 @@ function QuestTogether:ResetNameplateStateStore()
 	wipe(state.nameplate.questStateByUnitToken)
 	wipe(state.nameplate.questGuidByUnitToken)
 	wipe(state.nameplate.textCache)
+	for _, owner in pairs(state.nameplate.workOwnersByUnitToken or {}) do
+		self:CancelRuntimeWorkOwner(owner)
+	end
+	self:CancelRuntimeWorkOwner(state.nameplate.startupWorkOwner)
+	state.nameplate.startupWorkOwner = nil
+	state.nameplate.workOwnersByUnitToken = {}
+	state.nameplate.identityGenerationByUnitToken = {}
 	state.nameplate.refreshGenerationByUnitToken = {}
 	wipe(state.nameplate.refreshPendingByUnitToken)
 	wipe(state.nameplate.healthTintRefreshPendingByUnitToken)

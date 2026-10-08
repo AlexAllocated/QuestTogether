@@ -20,227 +20,7 @@ local function Equal(actual, expected)
 end
 
 local function Region(addon, parent, kind)
-	local region = { parent = parent, kind = kind, shown = true, scripts = {}, points = {}, writes = 0 }
-	function region:IsForbidden()
-		return self.forbidden == true or (self.parent and self.parent:IsForbidden()) or false
-	end
-	function region:IsProtected()
-		return self.protected == true or (self.parent and self.parent:IsProtected()) or false
-	end
-	function region:IsShown()
-		self:CheckRead()
-		return self.shown
-	end
-	function region:IsVisible()
-		self:CheckRead()
-		return self.shown and (not self.parent or self.parent:IsVisible())
-	end
-	function region:CheckRead()
-		if self:IsForbidden() then
-			addon.invalidCalls = (addon.invalidCalls or 0) + 1
-			error("unsafe owned read")
-		end
-	end
-	function region:Check(teardown)
-		if (addon.blocked and not teardown) or self:IsForbidden() or self:IsProtected() then
-			addon.invalidCalls = (addon.invalidCalls or 0) + 1
-			error("unsafe owned mutation")
-		end
-		self.writes = self.writes + 1
-	end
-	function region:Show()
-		self:Check()
-		self.shown = true
-	end
-	function region:Hide()
-		self:Check(true)
-		self.shown = false
-		if self.scripts.OnHide then
-			self.scripts.OnHide(self)
-		end
-	end
-	function region:SetSize(width, height)
-		self:Check()
-		self.width, self.height = width, height
-		if self.scripts.OnSizeChanged then
-			self.scripts.OnSizeChanged(self, width, height)
-		end
-	end
-	function region:SetWidth(value)
-		self:Check()
-		self.width = value
-	end
-	function region:SetHeight(value)
-		self:Check()
-		self.height = value
-	end
-	function region:GetWidth()
-		self:CheckRead()
-		return self.width
-	end
-	function region:GetHeight()
-		self:CheckRead()
-		return self.height
-	end
-	function region:GetEffectiveScale() self:CheckRead(); return self.scale or 1 end
-	function region:GetLeft() self:CheckRead(); return self.parent and 200 or 0 end
-	function region:GetTop() self:CheckRead(); return 800 end
-	function region:GetBottom() self:CheckRead(); return 0 end
-	function region:SetScale(value)
-		self:Check()
-		self.scale = value
-	end
-	function region:SetPoint(...)
-		self:Check()
-		self.points[#self.points + 1] = { ... }
-	end
-	function region:ClearAllPoints()
-		self:Check()
-		self.points = {}
-	end
-	function region:SetText(value)
-		self:Check()
-		self.text = value
-	end
-	function region:SetTextColor(...)
-		self:Check()
-		self.textColor = { ... }
-	end
-	function region:SetVertexColor(...)
-		self:Check()
-		self.vertexColor = { ... }
-	end
-	function region:SetFrameStrata(value)
-		self:Check()
-		self.strata = value
-	end
-	function region:SetFontObject(value)
-		self:Check()
-		self.font = value
-	end
-	function region:GetStringWidth()
-		self:CheckRead()
-		return #(self.text or "") * 7
-	end
-	function region:GetStringHeight()
-		self:CheckRead()
-		if addon.measureUnavailable then
-			return nil
-		end
-		local size = self.font == "GameFontNormalLarge" and 20 or 14
-		local columns = math.max(1, math.floor((self.width or 500) / 7))
-		return math.max(1, math.ceil(#(self.text or "") / columns)) * size
-	end
-	function region:SetScript(event, callback)
-		self:Check(callback == nil)
-		self.scripts[event] = callback
-	end
-	function region:CreateTexture(_, _, template)
-		self:Check()
-		if addon.failTextureCreate then
-			addon.failTextureCreate = false
-			error("fixture texture creation interrupted")
-		end
-		local texture = Region(addon, self, "Texture")
-		texture.template = template
-		addon.regions[#addon.regions + 1] = texture
-		return texture
-	end
-	function region:CreateMaskTexture()
-		return self:CreateTexture()
-	end
-	function region:CreateFontString(_, _, font)
-		self:Check()
-		local label = Region(addon, self, "FontString")
-		label.font = font
-		addon.regions[#addon.regions + 1] = label
-		return label
-	end
-	function region:SetScrollChild(child)
-		self:Check()
-		self.child = child
-	end
-	function region:SetVerticalScroll(value)
-		self:Check()
-		self.offset = value
-	end
-	function region:SetMinMaxValues(minimum, maximum)
-		self:Check()
-		self.minimum, self.maximum = minimum, maximum
-	end
-	function region:SetValue(value)
-		self:Check()
-		self.value = value
-		if self.scripts.OnValueChanged then
-			self.scripts.OnValueChanged(self, value)
-		end
-	end
-	function region:SetButtonState(state, locked)
-		self:Check()
-		self.buttonState, self.buttonStateLocked = state, locked
-	end
-	for _, method in ipairs({ "SetNormalTexture", "SetPushedTexture", "SetHighlightTexture", "SetDisabledTexture" }) do
-		region[method] = function(self, texture)
-			self:Check()
-			self.buttonTextures = self.buttonTextures or {}
-			self.buttonTextures[method] = texture
-		end
-	end
-	function region:SetEnabled(enabled)
-		self:Check()
-		self.enabled = enabled
-	end
-	function region:SetTexture(value)
-		self:Check()
-		self.texture = value
-	end
-	function region:StartMoving()
-		self:Check()
-		self.moving = true
-	end
-	function region:StartSizing(point, fromMouse)
-		self:Check()
-		self.sizing = true
-		self.sizingPoint, self.sizingFromMouse = point, fromMouse
-		self.resizeArmedOnStart = self.resizing
-	end
-	function region:StopMovingOrSizing()
-		self:Check(true)
-		self.moving, self.sizing = false, false
-	end
-	function region:SetResizeBounds(...)
-		self:Check()
-		self.resizeBounds = { ... }
-	end
-	for _, method in ipairs({
-		"SetAlpha",
-		"SetMovable",
-		"SetResizable",
-		"RegisterForDrag",
-		"SetTexCoord",
-		"SetToplevel",
-		"SetFlattensRenderLayers",
-		"SetClampedToScreen",
-		"EnableMouse",
-		"SetAllPoints",
-		"SetHorizTile",
-		"SetVertTile",
-		"SetBlendMode",
-		"AddMaskTexture",
-		"SetColorTexture",
-		"SetJustifyH",
-		"SetJustifyV",
-		"SetWordWrap",
-		"EnableMouseWheel",
-		"SetOrientation",
-		"SetValueStep",
-		"SetThumbTexture",
-	}) do
-		region[method] = function(self)
-			self:Check()
-		end
-	end
-	return region
+	return QuestTogether:CreateTestUIRegion(addon, parent, kind)
 end
 
 local function Fixture()
@@ -266,8 +46,8 @@ local function Fixture()
 		self.regions[#self.regions + 1] = frame
 		return frame
 	end
-	addon.GetPartyQuestUIParent = addon.GetReleaseNotesUIParent
-	addon.CreatePartyQuestUIFrame = addon.CreateReleaseNotesUIFrame
+	addon.GetOwnedUIParent = addon.GetReleaseNotesUIParent
+	addon.CreateOwnedWindowFrame = addon.CreateReleaseNotesUIFrame
 	function addon:GetWindowDragCursor() return 600, 500 end
 	function addon:IsRuntimeRestricted()
 		return self.blocked == true
@@ -530,7 +310,8 @@ Register("release notes stale callbacks and rendering respect restrictions and q
 		for _, region in ipairs(a.regions) do
 			after = after + region.writes
 		end
-		Equal(after, writes + (boundary == "restricted" and 1 or 0))
+		if boundary == "restricted" then assert(after > writes, "owned teardown should hide and stop descendants")
+		else Equal(after, writes) end
 		Equal(frame.shown, boundary ~= "restricted")
 		a.blocked, a.parent.forbidden, a.parent.protected = false, false, false
 		assert(a:RenderReleaseNotesWindow(Notes(), "5.9.2", false))
@@ -578,7 +359,6 @@ Register("settings chat destination selection rejects restrictions without chang
 			error("a blocked settings choice must not be queued")
 		end,
 	}
-	function a:NormalizeAnnouncementDisplayOptions() end
 	function a:GetResolvedChatLogDestination()
 		return self.db.profile.chatLogDestination
 	end
@@ -807,7 +587,7 @@ Register("release notes resizing preserves pages and scroll while fixed rolls co
 	Equal(#a.regions, count)
 	Equal(f.rendering, nil)
 	f.resizeGrip.scripts.OnMouseUp({})
-	Equal(f.sizing, false)
+	Equal(f.sizing, nil)
 	assert(a:RenderReleaseNotesWindow(Notes(1), "6.2.2", false))
 	Equal(f.width, 520)
 	Equal(f.height, 380)
@@ -819,7 +599,7 @@ Register("release notes resizing preserves pages and scroll while fixed rolls co
 	f.scripts.OnSizeChanged({}, 700, 500)
 	Equal(f.writes, writes)
 	f.close.scripts.OnClick({})
-	Equal(f.sizing, false)
+	Equal(f.sizing, nil)
 	Equal(f.resizing, nil)
 	a.blocked = false
 end)

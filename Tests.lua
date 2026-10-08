@@ -241,16 +241,16 @@ local function WithIsolatedState(testFn)
 	end
 	local ok, err = pcall(function()
 		for _, key in ipairs({
-			"pingPageQueue", "developerRequestState", "developerPlayerData", "peerSnapshotState", "peerUpdateContext", "locationPriorityCache", "commsWorldGeneration", "diagnosticReplyGeneration", "nearbyStreamState", "playerDetailsState", "directCommPeers", "geographicCommsState", "announcementChannelBindings", "recentCommSignatureIndex", "localizedQuestTitles", "runtimeStateStore", "debugController", "nameplateTooltipGuidByUnitToken", "nameplateScanTooltip",
+			"windowControllers", "pingReplyState", "questCompareLocalRevision", "ownedUICleanupState", "runtimeCoordinatorState", "runtimeCoordinatorFrame", "transportState", "bulkTransferState", "pingPageQueue", "developerRequestState", "developerPlayerData", "peerSnapshotState", "locationPriorityCache", "commsWorldGeneration", "diagnosticReplyGeneration", "nearbyStreamState", "playerDetailsState", "directCommPeers", "geographicCommsState", "announcementChannelBindings", "recentCommSignatureIndex", "localizedQuestTitles", "runtimeStateStore", "debugController", "nameplateTooltipGuidByUnitToken", "nameplateScanTooltip",
 			"announcementBubbleScreenHostFrame", "personalBubbleEditModeDialog", "mapWorkWakeFrame", "mapWorkWakeState",
 			"optionsFrame", "whereToAnnounceFrame", "questPlatesFrame", "groupsFrame", "announcementsFrame", "profilesFrame",
 			"personalBubbleEditSession", "announcementChannelLocalID", "legacyAnnouncementChannelLocalID", "channelOrderWork", "questCompareResponseQueue", "questCompareResponseCache",
-			"partyNavigationState", "partyWaypointPinState", "partyChatReminderState", "partyChatReminderFrame", "partyChatReminderPreview", "partyChatReminderPreviewFrame", "partyJoinState", "partyVisualState", "partyJoinPrompt", "partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
-			"minimapButton", "minimapTooltip", "minimapTooltipPendingHide", "minimapLauncherFrame", "minimapDragState", "minimapSuppressClick",
-			"settingsTooltip", "settingsTooltipOwner", "settingsTooltipPendingHide",
+			"partyFocusController", "nativePartyFocusOwner", "partyNavigationState", "partyWaypointPinState", "partyChatReminderState", "partyChatReminderFrame", "partyChatReminderPreview", "partyChatReminderPreviewFrame", "partyJoinState", "partyVisualState", "partyJoinPrompt", "partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
+			"minimapButton", "minimapTooltip", "minimapTooltipSession", "minimapLauncherFrame", "minimapDragState", "minimapSuppressClick",
+			"settingsTooltip", "settingsTooltipOwner", "settingsTooltipSession",
 			"releaseNotesWindow", "releaseNotesWakeFrame", "pendingReleaseNotes", "releaseNotesBrowser", "addonUpdateState",
 			"playerTooltipBadge", "discordSupportWindowOwner", "qtPlayerPresenceState", "playerPlatesFrame", "qtPlayerIconStateByFrame",
-			"playerLocationState", "playerLocationUpdateFrame", "locationPinState", "chatLogPlayerTooltipState", "playerLocationsFrame",
+			"playerLocationState", "locationPinState", "chatLogPlayerTooltipState", "playerLocationsFrame",
 			"worldQuestAreaStateByQuestID", "bonusObjectiveAreaStateByQuestID", "questSnapshotByQuestID", "questSnapshotOrder",
 			"nameplateQuestTextCache", "nameplateQuestStateByGuid", "nameplateQuestStateByUnitToken", "nameplateQuestGuidByUnitToken",
 			"nameplateIconByUnitFrame", "nameplateHealthOverlayByUnitFrame", "nameplateBubbleByUnitFrame", "nameplateBubbleStateByFrame",
@@ -283,8 +283,9 @@ local function WithIsolatedState(testFn)
 			"registeredRuntimeEvents", "nameplateRegisteredEvents" }) do QuestTogether[key] = {} end
 		QuestTogether.eventFrame = CreateTestEventFrame()
 		QuestTogether.nameplateEventFrame = CreateTestEventFrame()
+		QuestTogether.CreateOwnedUICleanupFrame = CreateTestEventFrame
+		QuestTogether.CreateRuntimeCoordinatorFrame = CreateTestEventFrame
 		QuestTogether.CreateMapWorkWakeFrame = CreateTestEventFrame
-		QuestTogether.CreatePlayerLocationUpdateFrame = CreateTestEventFrame
 		QuestTogether.GetPlayerTooltipHost = function() return nil end
 		QuestTogether.IsRuntimeRestrictionTypeActive = function() return false end
 		QuestTogether.IsNameplateUnitTapDenied = function() return false end
@@ -1613,7 +1614,7 @@ QuestTogether:RegisterTest("task area snapshot treats world quests as tasks when
 		end,
 	})
 
-	WithPatchedMethod(QuestTogether, "IsWorldQuest", function(_, questId)
+	WithPatchedMethod(QuestTogether.API, "IsWorldQuest", function(questId)
 		AssertEquals(questId, 33333)
 		return true
 	end, function()
@@ -1717,7 +1718,7 @@ QuestTogether:RegisterTest("task area snapshot avoids map task API reads that ta
 	AssertEquals(bonusSnapshot[33335], "Bonus Objective Without Map Arrays")
 end)
 
-QuestTogether:RegisterTest("task announcement type falls back to IsWorldQuest API when snapshots are falsey", function()
+QuestTogether:RegisterTest("event-time task classification observes API before snapshot-only announcement reads", function()
 	QuestTogether.API = CreateApiWithOverrides({
 		IsWorldQuest = function(questId)
 			AssertEquals(questId, 44444)
@@ -1730,6 +1731,8 @@ QuestTogether:RegisterTest("task announcement type falls back to IsWorldQuest AP
 		QuestTogether:ResetQuestSnapshotStore()
 	end
 
+	AssertEquals(QuestTogether:GetTaskAnnouncementType(44444), nil)
+	AssertEquals(QuestTogether:ObserveQuestAnnouncementType(44444), "world")
 	AssertEquals(QuestTogether:GetTaskAnnouncementType(44444), "world")
 end)
 
@@ -3692,6 +3695,7 @@ QuestTogether:RegisterTest("nameplate quest text cache uses quest log titles wit
 		end,
 	})
 	local snapshotState = QuestTogether:GetQuestSnapshotStateStore()
+	snapshotState.generation = 1
 	snapshotState.byQuestID = {
 		[10101] = {
 			questID = 10101,
@@ -3719,6 +3723,7 @@ end)
 
 QuestTogether:RegisterTest("nameplate quest text cache includes hidden quest log titles like Plater", function()
 	local snapshotState = QuestTogether:GetQuestSnapshotStateStore()
+	snapshotState.generation = 1
 	snapshotState.byQuestID = {
 		[20202] = {
 			questID = 20202,
@@ -3741,6 +3746,7 @@ end)
 
 QuestTogether:RegisterTest("nameplate quest text cache includes live unfinished objective texts", function()
 	local snapshotState = QuestTogether:GetQuestSnapshotStateStore()
+	snapshotState.generation = 1
 	local tracker = QuestTogether:GetPlayerTracker()
 	wipe(tracker)
 	snapshotState.byQuestID = {
@@ -3784,6 +3790,7 @@ end)
 
 QuestTogether:RegisterTest("nameplate quest text cache normalizes live progressbar objective texts", function()
 	local snapshotState = QuestTogether:GetQuestSnapshotStateStore()
+	snapshotState.generation = 1
 	local tracker = QuestTogether:GetPlayerTracker()
 	wipe(tracker)
 	snapshotState.byQuestID = {

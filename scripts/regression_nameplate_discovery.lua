@@ -240,8 +240,8 @@ QT:RegisterTest("instance exit rebuilds quest evidence without an additional que
 		QT:HandleNameplateEvent("ZONE_CHANGED_NEW_AREA")
 		local snapshotGeneration = QT:GetQuestSnapshotStateStore().generation
 		state.advance(1.1)
-		Equal(QT:GetQuestSnapshotStateStore().generation, snapshotGeneration + 1,
-			"exit events must coalesce one snapshot rebuild")
+		Equal(QT:GetQuestSnapshotStateStore().generation, snapshotGeneration + 2,
+			"the coalesced area refresh and snapshot refresh each acquire once")
 		QT:OnNameplateAdded("nameplate1")
 		QT:HandleNameplateEvent("UPDATE_MOUSEOVER_UNIT")
 		state.drain()
@@ -449,6 +449,8 @@ QT:RegisterTest("late tooltip data retries even when the mob already has a guid"
 	WithPlate(function(state)
 		state.tooltipReady = false
 		QT:OnNameplateAdded("nameplate1")
+		Equal(state.reads, 0, "presentation must not scan inline")
+		state.step() -- The resolver observes the initially unavailable/negative tooltip.
 		Equal(state.icon.shown, false)
 		state.tooltipReady = true
 		state.drain()
@@ -461,6 +463,8 @@ QT:RegisterTest("initial negative tooltip result receives a bounded follow up", 
 	WithPlate(function(state)
 		state.complete = true
 		QT:OnNameplateAdded("nameplate1")
+		Equal(state.reads, 0, "presentation must not scan inline")
+		state.step() -- The resolver observes the initially unavailable/negative tooltip.
 		Equal(state.icon.shown, false)
 		state.complete = false
 		state.drain()
@@ -557,6 +561,7 @@ for _, restriction in ipairs({ "map_visible", "encounter", "challenge", "pvp", "
 			-- Quest titles can arrive before their objective rows on a new plate.
 			state.tooltipData = { lines = { { type = "QuestTitle", leftText = "Wolf Hunt" } } }
 			QT:HandleNameplateEvent("NAME_PLATE_UNIT_ADDED", "nameplate1")
+			state.step() -- First resolver frame, before the restriction begins.
 			Equal(QT.nameplateQuestStateByGuid[state.guid], false)
 			local reads = state.reads
 			Equal(reads > 0, true)
@@ -657,7 +662,7 @@ QT:RegisterTest("delayed tooltip callback cannot resolve a removed or recycled p
 		state.guid = "Creature-0-0-0-0-54321-0000000000"
 		state.tooltipReady = true
 		state.drain()
-		Equal(state.reads, 1)
+		Equal(state.reads, 0, "removal before the next frame cancels discovery entirely")
 		Equal(state.icon.shown, false)
 		Equal(state.fill.shown, false)
 	end)

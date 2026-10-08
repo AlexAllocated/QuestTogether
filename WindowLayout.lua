@@ -44,7 +44,7 @@ function QT:SaveWindowLayout(frame)
 	then
 		return
 	end
-	local root = self:GetPartyQuestUIParent()
+	local root = self:GetOwnedUIParent()
 	if not self:CanAccessForeignFrame(root) then
 		return
 	end
@@ -90,7 +90,7 @@ function QT:ApplyWindowLayout(frame, restore)
 	then
 		return false
 	end
-	local root = self:GetPartyQuestUIParent()
+	local root = self:GetOwnedUIParent()
 	if not self:CanAccessForeignFrame(root) then
 		return false
 	end
@@ -168,6 +168,7 @@ function QT:RegisterManagedWindow(frame, key, minWidth, minHeight)
 			(Read(self, frame, "GetHeight") or 0) > 0 and Read(self, frame, "GetHeight") or 500
 		),
 	}
+	self:ConfigureWindowController(frame)
 	-- Do not write UISpecialFrames or another native registry. Input belongs to
 	-- our frames; ordinary keys propagate, Escape dismisses only the top QT window.
 	if type(frame.EnableKeyboard) == "function" and type(frame.SetPropagateKeyboardInput) == "function" then
@@ -186,7 +187,7 @@ function QT:RegisterManagedWindow(frame, key, minWidth, minHeight)
 			elseif frame.close and type(frame.close.Click) == "function" then
 				frame.close:Click()
 			else
-				frame:Hide()
+				self:DismissManagedWindow(frame, "escape")
 			end
 			frame:SetPropagateKeyboardInput(false)
 		end)
@@ -224,7 +225,7 @@ function QT:RefreshManagedWindowLayouts()
 					frame.minimumWidth = nil
 					frame:UpdateResizeBounds(frame.displaySession and #frame.displaySession.members or 1)
 				end
-				self:ApplyWindowLayout(frame, true)
+				self:RefreshManagedWindow(frame, true)
 			end
 		end
 	end)

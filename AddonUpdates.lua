@@ -119,7 +119,9 @@ end
 
 function QT:RememberPlayerAddonVersion(sender, version)
 	local name = self:NormalizeMemberName(sender)
-	if not name or not self:ParseAddonVersion(version) or not self:IsKnownQTPlayer(name) then return false end
+	if not name or not self:ParseAddonVersion(version) or not self:IsKnownQTPlayer(name) then
+		return false
+	end
 	local state = self:GetQTPlayerPresenceState()
 	state.peerVersions = state.peerVersions or {}
 	state.peerVersions[name] = version
@@ -128,36 +130,58 @@ end
 
 function QT:GetPlayerAddonVersion(sender)
 	local name = self:NormalizeMemberName(sender)
-	if not name then return nil end
-	if self:IsSelfSender(name) then return self:GetAddonVersion() end
-	if not self:IsKnownQTPlayer(name) then return nil end
+	if not name then
+		return nil
+	end
+	if self:IsSelfSender(name) then
+		return self:GetAddonVersion()
+	end
+	if not self:IsKnownQTPlayer(name) then
+		return nil
+	end
 	local state = rawget(self, "qtPlayerPresenceState")
 	return state and state.peerVersions and state.peerVersions[name] or nil
 end
 
 function QT:GetLocalPartySize()
-	if self:IsRuntimeRestricted() then return nil end
+	if self:IsRuntimeRestricted() then
+		return nil
+	end
 	local getter = self.API and self.API.GetPartyJoinInfo
-	if type(getter) ~= "function" then return nil end
+	if type(getter) ~= "function" then
+		return nil
+	end
 	local ok, grouped, _, size = pcall(getter)
-	if not ok or not self:CanAccessValue(grouped) or type(grouped) ~= "boolean" then return nil end
+	if not ok or not self:CanAccessValue(grouped) or type(grouped) ~= "boolean" then
+		return nil
+	end
 	size = self:SafeToNumber(size)
-	if not size or size < 0 or size > 40 or size ~= math.floor(size) then return nil end
-	if not grouped then return size == 0 and 0 or nil end
+	if not size or size < 0 or size > 40 or size ~= math.floor(size) then
+		return nil
+	end
+	if not grouped then
+		return size == 0 and 0 or nil
+	end
 	return size > 0 and size or nil
 end
 
 function QT:GetPlayerTooltipStats(sender)
 	local name = self:NormalizeMemberName(sender)
-	if not name then return nil end
+	if not name then
+		return nil
+	end
 	if self:IsSelfSender(name) then
 		return { count = self:GetMonitoredQuestCount(), partySize = self:GetLocalPartySize() }
 	end
-	if not self:IsKnownQTPlayer(name) then return nil end
+	if not self:IsKnownQTPlayer(name) then
+		return nil
+	end
 	local state = rawget(self, "qtPlayerPresenceState")
 	local record = state and state.peerTooltipStats and state.peerTooltipStats[name]
 	local now = self.API.GetTime and self:SafeToNumber(self.API.GetTime())
-	if record and now and now >= record.at and now - record.at < (record.lifetime or 180) then return record end
+	if record and now and now >= record.at and now - record.at < (record.lifetime or 180) then
+		return record
+	end
 end
 
 function QT:GetPlayerMonitoredQuestCount(sender)
@@ -170,7 +194,7 @@ function QT:GetPlayerPartySize(sender)
 	return stats and stats.partySize
 end
 
-function QT:HandleAddonVersionMessage(payload, sender)
+function QT:HandleAddonVersionMessage(payload, sender, sampleAge, source)
 	if not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 64 then
 		return false
 	end
@@ -179,26 +203,35 @@ function QT:HandleAddonVersionMessage(payload, sender)
 	if not version then
 		local rawCount, rawSize
 		version, rawCount, rawSize = payload:match("^2,([^,]+),(%d*),(%d*)$")
-		if not version then return false end
+		if not version then
+			return false
+		end
 		extended = true
 		if rawCount ~= "" then
 			count = self:SafeToNumber(rawCount)
-			if not count or count < 0 or count > 20000 or count ~= math.floor(count) then return false end
+			if not count or count < 0 or count > 20000 or count ~= math.floor(count) then
+				return false
+			end
 		end
 		if rawSize ~= "" then
 			partySize = self:SafeToNumber(rawSize)
-			if not partySize or partySize > 40 or partySize < 0 or partySize ~= math.floor(partySize) then return false end
+			if not partySize or partySize > 40 or partySize < 0 or partySize ~= math.floor(partySize) then
+				return false
+			end
 		end
 	end
 	local now = self.API.GetTime and self:SafeToNumber(self.API.GetTime())
-	if not now or not self:ParseAddonVersion(version) or not self:RecordQTPlayerPresence(sender, true) then
+	local name = self:NormalizeMemberName(sender)
+	local observation = name and self:ResolvePeerObservation(name, "QTVR", sampleAge, source, nil, nil, 180)
+	local record = { count = count, partySize = partySize, at = now }
+	if not now or not self:ParseAddonVersion(version) or not self:CommitPeerObservation(observation, record, true) then
 		return false
 	end
 	self:RememberPlayerAddonVersion(sender, version)
 	if extended then
 		local state = self:GetQTPlayerPresenceState()
 		state.peerTooltipStats = state.peerTooltipStats or {}
-		state.peerTooltipStats[self:NormalizeMemberName(sender)] = { count = count, partySize = partySize, at = now }
+		state.peerTooltipStats[self:NormalizeMemberName(sender)] = record
 	end
 	self:ObserveAddonVersion(version)
 	return true
@@ -213,13 +246,16 @@ function QT:BroadcastAddonVersion(forPresenceHeartbeat)
 		return false
 	end
 	local state = self:GetAddonUpdateState()
-	local interval = forPresenceHeartbeat and math.min(state.interval or RETRY_INTERVAL, RETRY_INTERVAL) or state.interval
+	local interval = forPresenceHeartbeat and math.min(state.interval or RETRY_INTERVAL, RETRY_INTERVAL)
+		or state.interval
 	if state.lastAttempt and now >= state.lastAttempt and now - state.lastAttempt < interval then
 		return false
 	end
 	state.lastAttempt, state.interval = now, RETRY_INTERVAL
 	local geographic = rawget(self, "geographicCommsState")
-	if forPresenceHeartbeat and not geographic then self:BroadcastPartyVisualMetadata() end
+	if forPresenceHeartbeat and not geographic then
+		self:BroadcastPartyVisualMetadata()
+	end
 	local version = self:GetAddonVersion()
 	if not self:ParseAddonVersion(version) then
 		return false
@@ -232,7 +268,12 @@ function QT:BroadcastAddonVersion(forPresenceHeartbeat)
 	if forPresenceHeartbeat and (geographic or not state.lastVersionIncludedStats) then
 		local count = self:GetMonitoredQuestCount()
 		local partySize = self:GetLocalPartySize()
-		payload = "2," .. version .. "," .. (count and tostring(count) or "") .. "," .. (partySize and tostring(partySize) or "")
+		payload = "2,"
+			.. version
+			.. ","
+			.. (count and tostring(count) or "")
+			.. ","
+			.. (partySize and tostring(partySize) or "")
 		state.lastVersionIncludedStats = true
 	else
 		state.lastVersionIncludedStats = false

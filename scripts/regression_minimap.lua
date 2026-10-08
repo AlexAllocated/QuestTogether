@@ -247,6 +247,7 @@ local function Fixture()
 		self.frames[#self.frames + 1] = frame
 		return frame
 	end
+	function addon:CreateOwnedUICleanupFrame() return Frame() end
 	function addon:GetMinimapCursorPosition()
 		return self.cursorX, self.cursorY
 	end
@@ -274,7 +275,6 @@ local function Fixture()
 	function addon:OpenReleaseNotes()
 		self.notes = (self.notes or 0) + 1
 	end
-	function addon:NormalizeAnnouncementDisplayOptions() end
 	-- The existing menu reports visible chat windows, not only the saved option.
 	function addon:GetResolvedChatLogDestination()
 		return self.separateOpened and "separate" or "main"
@@ -914,10 +914,11 @@ QuestTogether:RegisterTest("minimap tooltip checks its independent parent and qu
 		tooltip[boundary] = false
 		-- A hide requested during quarantine must finish after access returns,
 		-- even while the launcher remains hovered and otherwise eligible.
-		tooltip.scripts.OnUpdate(tooltip, 0.2)
+		local cleanup = a:GetOwnedUICleanupState()
+		cleanup.driver.scripts.OnUpdate(cleanup.driver, 0.3)
 		Equal(tooltip.shown, false)
 		Equal(tooltip.scripts.OnUpdate, nil)
-		Equal(rawget(a, "minimapTooltipPendingHide"), nil)
+		Equal(cleanup.pending[tooltip], nil)
 		a.minimapButton.scripts.OnEnter()
 		assert(tooltip.shown)
 		Equal(#a.frames, 3)

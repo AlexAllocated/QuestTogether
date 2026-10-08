@@ -574,6 +574,14 @@ def verify_archive(release, repository, tag, notes, *, download=download_archive
         raise ChangelogError("release ZIP size differs from its published asset metadata")
     try:
         with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            # New packages attest their complete install payload, not just the
+            # notes. Older releases remain readable for historical reposting.
+            if "QuestTogether/package-manifest.json" in archive.namelist():
+                from package import verify_archive as verify_package, PackageError
+                try:
+                    verify_package(data)
+                except PackageError as error:
+                    raise ChangelogError(str(error)) from error
             entries = archive.infolist()
             if len(entries) > 1000:
                 raise ChangelogError("release ZIP has too many entries")

@@ -463,10 +463,10 @@ QT:RegisterTest("join consent popup callbacks invite decline and reset preferenc
 	local a = Peer()
 	local parent = Frame()
 	a.RenderPartyJoinPrompt = QT.RenderPartyJoinPrompt
-	function a:GetPartyQuestUIParent()
+	function a:GetOwnedUIParent()
 		return parent
 	end
-	function a:CreatePartyQuestUIFrame()
+	function a:CreateOwnedWindowFrame()
 		return Frame()
 	end
 	function a:CanAccessForeignFrame(f)

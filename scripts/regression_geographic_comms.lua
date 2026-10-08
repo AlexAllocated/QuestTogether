@@ -115,7 +115,7 @@ local function BaseFixture(name)
 	function a:HidePlayerLocationPins()
 		self.hidden = true
 	end
-	function a:CreatePlayerLocationUpdateFrame()
+	function a:CreateRuntimeCoordinatorFrame()
 		return {
 			scripts = {},
 			IsForbidden = function()
@@ -200,6 +200,12 @@ local function Fixture(name)
 		return 0
 	end
 	a:InitializeGeographicComms()
+	-- Exercise the same producer/transport ordering as the runtime coordinator.
+	function a:UpdateGeographicComms()
+		local sampled = QT.UpdateGeographicComms(self)
+		self:DrainTransport()
+		return sampled
+	end
 	return a
 end
 local function Stage(a, looking)
@@ -257,8 +263,8 @@ QT:RegisterTest("unavailable channels back off independently without stalling he
 	a:DrainGeographicQueue()
 	Equal(#a.sent, 2)
 	Equal(a.sent[2].route, "PARTY")
-	Equal(#a.geographicCommsState.queue, 1)
-	assert(not a.geographicCommsState.blockedUntil)
+	Equal(#a:GetTransportState().queue, 1)
+	assert(not a:GetTransportState().blockedUntil)
 end)
 
 QT:RegisterTest("repeated privacy clears retain normal global heartbeat rather than urgent broadcast storms", function()
@@ -324,7 +330,7 @@ QT:RegisterTest("new full snapshots replace all old fragments without displacing
 	s.nextGlobal, s.nextLocalMetadata = a.now + 1000, a.now
 	a:UpdateGeographicComms()
 	for _, packet in ipairs(a.sent) do assert(packet.wire ~= "QTB1|obsolete") end
-	for _, packet in ipairs(s.queue) do assert(packet.wire ~= "QTB1|obsolete") end
+	for _, packet in ipairs(a:GetTransportState().queue) do assert(packet.wire ~= "QTB1|obsolete") end
 	Equal(a.sent[1].wire, "ANN|preserve")
 end)
 
@@ -348,7 +354,7 @@ QT:RegisterTest("large party comparison requests are paced and cancelled request
 		Equal(packet.route, "PARTY")
 		assert(not packet.wire:find(ids[1] .. ",", 1, true))
 	end
-	Equal(#a.geographicCommsState.queue, 0)
+	Equal(#a:GetTransportState().queue, 0)
 end)
 
 QT:RegisterTest(
@@ -468,7 +474,7 @@ QT:RegisterTest("send pacing bounds queues and cancels stale routes while all tr
 	for i = 1, 100 do
 		a:QueueGeographicWire("ANN|event" .. i, "event", routes[1], false)
 	end
-	Equal(#a.geographicCommsState.queue, 96)
+	Equal(#a:GetTransportState().queue, 96)
 	for _ = 1, 10 do
 		a:DrainGeographicQueue()
 	end
@@ -476,11 +482,11 @@ QT:RegisterTest("send pacing bounds queues and cancels stale routes while all tr
 	Equal(a:TakeCommsSendToken(false), false) -- Player actions share the fair queue rather than bypassing it.
 	a.mapID = 45
 	Tick(a, 4)
-	Equal(#a.geographicCommsState.queue, 0)
+	Equal(#a:GetTransportState().queue, 0)
 	a:QueueGeographicWire("ANN|expired", "event", a:GetGeographicAnnouncementRoutes()[1], false)
 	a.now = a.now + 31
 	a:DrainGeographicQueue()
-	Equal(#a.geographicCommsState.queue, 0)
+	Equal(#a:GetTransportState().queue, 0)
 end)
 
 QT:RegisterTest("privacy opt out removes packed snapshots and queued location bearing events", function()
@@ -491,12 +497,12 @@ QT:RegisterTest("privacy opt out removes packed snapshots and queued location be
 	a:QueueGeographicWire(a:BuildGeographicSnapshots()[1], "snapshot", a:GetGeographicAnnouncementRoutes()[1], true)
 	a.db.profile.sharePlayerLocation = false
 	a:BroadcastPlayerLocation(true)
-	Equal(#a.geographicCommsState.queue, 0)
+	Equal(#a:GetTransportState().queue, 0)
 	assert(
 		a:SendAnnouncementWireEvent({ eventType = "QUEST_PROGRESS", senderName = a.name, text = "Private progress" })
 	)
 	a:BroadcastPlayerLocation(true) -- repeated clears must not cancel newly redacted events
-	Equal(#a.geographicCommsState.queue, 1)
+	Equal(#a:GetTransportState().queue, 1)
 	local packets = a:BuildGeographicSnapshots()
 	assert(table.concat(packets):find("LOC|1,", 1, true))
 	assert(not table.concat(packets):find("0.40000", 1, true))
@@ -529,7 +535,7 @@ QT:RegisterTest("native throttle pauses all outgoing work and queue does not sur
 	Stage(a, false)
 	a.sendFails = true
 	Tick(a, 15)
-	assert(a.geographicCommsState.blockedUntil)
+	assert(a:GetTransportState().blockedUntil)
 	Equal(#a.sent, 0)
 	a.sendFails = false
 	Tick(a, 20)
@@ -703,7 +709,7 @@ QT:RegisterTest("one-second zone updates resample movement without repeating ful
 	for step = 1, 10 do
 		a.position.x = 0.4 + step * 0.001
 		Tick(a, 1.2)
-		assert(#s.queue <= 2, "fast updates coalesce rather than accumulating")
+		assert(#a:GetTransportState().queue <= 2, "fast updates coalesce rather than accumulating")
 	end
 	assert(math.abs(b.playerLocationState.peers[a.name].x - a.position.x) < 0.00001, "receiver must get newly sampled coordinates")
 	assert(#a.sent > before + 5, "low-density updates must actually leave the queue")
@@ -719,7 +725,7 @@ QT:RegisterTest("one-second zone updates resample movement without repeating ful
 	a.sendFails = true
 	a.db.profile.sharePlayerLocation = false
 	a:BroadcastPlayerLocation(true)
-	for _, pending in ipairs(s.queue) do assert(not pending.publishesLocation) end
+	for _, pending in ipairs(a:GetTransportState().queue) do assert(not pending.publishesLocation) end
 	Equal(#a:BuildGeographicSnapshots(true), 0, "privacy withdrawals use full snapshots, not a perpetual one-second broadcast")
 	a.sendFails = false
 	Tick(a, 4)
@@ -738,19 +744,19 @@ QT:RegisterTest("metadata heartbeat is independent of movement jitter and surviv
 		a.position.x = 0.4 + step * 0.001
 		if step % 10 == 0 then Stage(a, true) end
 		Tick(a, 1.2)
-		assert(#s.queue <= 12, "party copies and metadata cannot create an unbounded movement backlog")
+		assert(#a:GetTransportState().queue <= 12, "party copies and metadata cannot create an unbounded movement backlog")
 	end
 	local peer = assert(b.playerLocationState.peers[a.name])
 	assert(math.abs(peer.x - a.position.x) < 0.004, "party traffic cannot starve fresh movement")
 	Equal(b:GetPlayerAddonVersion(a.name), "6.0.0")
 	Equal(b:IsPlayerLookingForQuestPartners(a.name), true)
 	-- Full state is due even when a separately jittered location timer is later.
-	s.queue, s.nextLocal, s.nextLocalMetadata = {}, a.now + 40, a.now
+	a:GetTransportState().queue, s.nextLocal, s.nextLocalMetadata = {}, a.now + 40, a.now
 	a:UpdateGeographicComms()
 	Equal(s.nextLocal, a.now + 40)
 	assert(s.nextLocalMetadata > a.now)
 	local foundMetadata = false
-	for _, pending in ipairs(s.queue) do
+	for _, pending in ipairs(a:GetTransportState().queue) do
 		if pending.wire:find("QTVR|", 1, true) then foundMetadata = true end
 	end
 	assert(foundMetadata, "metadata must not wait for the next position timer")
@@ -785,10 +791,10 @@ QT:RegisterTest("delayed group and zone event copies deduplicate without merging
 	local event =
 		{ eventType = "QUEST_PROGRESS", senderName = a.name, questId = 12, text = "Progress", occurredAt = 1700000100 }
 	assert(a:SendAnnouncementWireEvent(event))
-	local first = a.geographicCommsState.queue[1].wire
-	a.geographicCommsState.queue = {}
+	local first = a:GetTransportState().queue[1].wire
+	a:GetTransportState().queue = {}
 	assert(a:SendAnnouncementWireEvent(event))
-	local second = a.geographicCommsState.queue[1].wire
+	local second = a:GetTransportState().queue[1].wire
 	assert(first ~= second)
 	local count = 0
 	function b:HandleAnnouncementEvent()
@@ -1194,11 +1200,11 @@ QT:RegisterTest("zone discovery rejects foreign routes and coalesces arrivals wi
 	assert(not a:HandleGeographicDiscovery("1,12", "Ignored-Realm", "CHANNEL",7,"QuestTogetherZ12"))
 	a.now = 105
 	a:UpdateGeographicDiscovery()
-	assert(#s.queue > 0)
+	assert(#a:GetTransportState().queue > 0)
 	a:OnCommReceived(a.commPrefix, "QTDQ|1,12", "CHANNEL", "New-Realm", 7, "QuestTogetherZ12")
 	assert(a:IsKnownQTPlayer("New-Realm"))
 	Equal(s.nextLocalMetadata, 107); Equal(s.nextGlobal, 999)
-	Equal(s.discoveryRequestAt, nil); Equal(#s.queue, 0)
+	Equal(s.discoveryRequestAt, nil); Equal(#a:GetTransportState().queue, 0)
 	for i = 1, 100 do
 		a.now = 105 + i / 10
 		assert(a:HandleGeographicDiscovery("1,12", "New" .. i .. "-Realm", "CHANNEL",7,"QuestTogetherZ12"))
@@ -1244,22 +1250,22 @@ QT:RegisterTest("discovery waits for its channel and cancels queued queries afte
 	a.joinFails = true
 	a:UpdateGeographicSubscriptions()
 	a.now = 110
-	a:UpdateGeographicDiscovery(); Equal(#a.geographicCommsState.queue, 0)
+	a:UpdateGeographicDiscovery(); Equal(#a:GetTransportState().queue, 0)
 	a.joinFails = false
 	a:UpdateGeographicSubscriptions()
 	a.db.profile.showPlayerLocations = false
-	a:UpdateGeographicDiscovery(); Equal(#a.geographicCommsState.queue, 0)
+	a:UpdateGeographicDiscovery(); Equal(#a:GetTransportState().queue, 0)
 	a.db.profile.showPlayerLocations = true
-	a:UpdateGeographicDiscovery(); Equal(#a.geographicCommsState.queue, 1)
+	a:UpdateGeographicDiscovery(); Equal(#a:GetTransportState().queue, 1)
 	local s = a.geographicCommsState
 	a.mapID, a.viewedMap = 45, 12
 	a.now = 120; a:UpdateGeographicSubscriptions()
 	-- Even if the previous channel is retained for the world-map view, do not query it.
 	s.subscriptions.QuestTogetherZ12 = true
-	a:DrainGeographicQueue(); Equal(#a.sent, 0); Equal(#s.queue, 0)
-	a.now = 130; a:UpdateGeographicDiscovery(); Equal(#s.queue, 0)
-	a.now = 170; a:UpdateGeographicDiscovery(); Equal(#s.queue, 1)
-	Equal(s.queue[1].route.channelName, "QuestTogetherZ45")
+	a:DrainGeographicQueue(); Equal(#a.sent, 0); Equal(#a:GetTransportState().queue, 0)
+	a.now = 130; a:UpdateGeographicDiscovery(); Equal(#a:GetTransportState().queue, 0)
+	a.now = 170; a:UpdateGeographicDiscovery(); Equal(#a:GetTransportState().queue, 1)
+	Equal(a:GetTransportState().queue[1].route.channelName, "QuestTogetherZ45")
 end)
 
 local function CachedLocationFixture(name, now, wall, database)
@@ -1376,7 +1382,7 @@ QT:RegisterTest("location opt out preserves queued comparisons and non-location 
 	Stage(a)
 	a:UpdateGeographicSubscriptions()
 	local s = a.geographicCommsState
-	s.tokens, s.blockedUntil = 0, a.now + 2
+	a:GetTransportState().tokens, a:GetTransportState().blockedUntil = 0, a.now + 2
 	local sent, id = a:RequestQuestCompare("Other-Realm", {
 		routes = { {distribution="CHANNEL",channelName="QuestTogether",requiresChannelJoin=true} },
 		onEntry=function() end,onDone=function() end,onTimeout=function() end,
@@ -1392,9 +1398,9 @@ QT:RegisterTest("location opt out preserves queued comparisons and non-location 
 	assert(not a:TakeCommsSendToken(false)); Equal(#a.sent,0)
 	a.db.profile.sharePlayerLocation = false
 	a:BroadcastPlayerLocation(true)
-	Equal(#s.queue,4)
+	Equal(#a:GetTransportState().queue,4)
 	local retained = {}
-	for _, row in ipairs(s.queue) do retained[row.wire]=true; assert(not row.publishesLocation) end
+	for _, row in ipairs(a:GetTransportState().queue) do retained[row.wire]=true; assert(not row.publishesLocation) end
 	assert(retained[redacted] and retained["QPGR|request"] and retained["QPGM|member"])
 	assert(not retained[location] and not retained[pong])
 	assert(a.pendingQuestCompareRequests[id])
@@ -1666,6 +1672,205 @@ local function FairTransportNetwork(count, questCount)
 	return peers,byName,Advance
 end
 
+local function RevisionNetwork(count, quests)
+	local peers, byName, advance = FairTransportNetwork(count, quests)
+	for _, a in ipairs(peers) do
+		a.inParty, a.packets = true, {}
+		for _, b in ipairs(peers) do
+			a.partyMembers[b.name] = {}
+			if a ~= b then a:RememberDirectCommPeer(b.name, true) end
+		end
+		a.API.SendAddonMessage = function(prefix, wire, route, target)
+			assert(#wire <= 255 and route == "WHISPER")
+			a.packets[#a.packets + 1] = wire
+			if a.drop and a.drop(wire) then return 0 end
+			assert(byName[target]):OnCommReceived(prefix, wire, route, a.name)
+			return 0
+		end
+	end
+	return peers, advance
+end
+local function RefreshRevision(a, b, baseline, force)
+	local result = { entries = {}, completed = false }
+	local ok, id = a:RequestQuestCompare(b.name, {
+		knownRevision = not force and baseline and baseline.revision,
+		previousEntries = baseline and baseline.entries,
+		onEntry = function(entry) result.entries[tonumber(entry.questId)] = entry end,
+		onDone = function(_, _, _, revision) result.completed, result.revision = true, revision end,
+		onTimeout = function() result.timedOut = true end,
+	})
+	assert(ok); result.id = id
+	return result
+end
+local function EntryPackets(a, first)
+	local count = 0
+	for index = (first or 0) + 1, #a.packets do
+		if a.packets[index]:match("^QCQE|") then count = count + 1 end
+	end
+	return count
+end
+
+QT:RegisterTest("revisioned comparisons validate unchanged baselines and force changed or explicit refreshes", function()
+	local peers, advance = RevisionNetwork(2, 3)
+	local a, b = peers[1], peers[2]
+	local first = RefreshRevision(a, b)
+	advance(5); assert(first.completed and first.revision); Equal(EntryPackets(b), 3)
+	local before = #b.packets
+	local unchanged = RefreshRevision(a, b, first)
+	advance(3); assert(unchanged.completed); Equal(unchanged.revision, first.revision)
+	Equal(EntryPackets(b, before), 0); Equal(#b.packets - before, 1)
+	Equal(unchanged.entries[2].questTitle, "Quest 2")
+	before = #b.packets
+	local forced = RefreshRevision(a, b, first, true)
+	advance(5); assert(forced.completed); Equal(EntryPackets(b, before), 3)
+	function b:BuildQuestCompareEntries()
+		return {{questId="2",questTitle="Updated quest",isPushable=false,isComplete=true}}
+	end
+	before = #b.packets
+	local changed = RefreshRevision(a, b, unchanged)
+	advance(4); assert(changed.completed and changed.revision ~= first.revision)
+	Equal(EntryPackets(b, before), 1); Equal(changed.entries[1], nil)
+	assert(changed.entries[2].isComplete and changed.entries[2].isPushable == false)
+	function b:BuildQuestCompareEntries() return {} end
+	local empty = RefreshRevision(a, b, changed)
+	advance(3); assert(empty.completed and empty.revision ~= changed.revision); Equal(next(empty.entries), nil)
+	local sameEmpty = RefreshRevision(a, b, empty)
+	advance(3); assert(sameEmpty.completed); Equal(sameEmpty.revision, empty.revision)
+end)
+
+QT:RegisterTest("comparison revisions are invalidated by responder world sessions and retain legacy full replies", function()
+	local peers, advance = RevisionNetwork(2, 2)
+	local a, b = peers[1], peers[2]
+	local first = RefreshRevision(a, b)
+	advance(5); assert(first.completed)
+	b:EndCommsWorldSession(); b:ResumeTransportSession()
+	local before = #b.packets
+	local afterZone = RefreshRevision(a, b, first)
+	advance(5); assert(afterZone.completed and afterZone.revision ~= first.revision)
+	Equal(EntryPackets(b, before), 2)
+	b.questCompareLocalRevision, b.questCompareResponseCache = nil, nil
+	local afterReload = RefreshRevision(a, b, afterZone)
+	advance(5); assert(afterReload.completed and afterReload.revision ~= afterZone.revision)
+	function a:EncodeQuestCompareRequestPayload(request)
+		local copy = self:DeepCopy(request)
+		copy.supportsRevision, copy.supportsSnapshotIdentity = nil, nil
+		return QT.EncodeQuestCompareRequestPayload(self, copy)
+	end
+	before = #b.packets
+	local legacy = RefreshRevision(a, b, afterReload)
+	advance(5); assert(legacy.completed); Equal(legacy.revision, nil)
+	Equal(EntryPackets(b, before), 2)
+end)
+
+QT:RegisterTest("lost unchanged certificates recover without entries and the next refresh observes changed content", function()
+	local peers, advance = RevisionNetwork(2, 3)
+	local a, b = peers[1], peers[2]
+	local first = RefreshRevision(a, b)
+	advance(5); assert(first.completed and first.revision)
+	local dropped, before = false, #b.packets
+	b.drop = function(wire)
+		if not dropped and wire:match("^QCDN|") then dropped = true; return true end
+	end
+	local lost = RefreshRevision(a, b, first)
+	advance(3); assert(dropped and not lost.completed)
+	-- With the only response lost, no snapshot header proves that this request
+	-- reached a modern peer. The bounded silent-peer recovery restarts safely.
+	advance(125)
+	assert(lost.completed and not lost.timedOut)
+	Equal(lost.revision, first.revision); Equal(EntryPackets(b, before), 0)
+	Equal(lost.entries[1].questTitle, "Quest 1"); Equal(lost.entries[4], nil)
+	function b:BuildQuestCompareEntries() return {{questId="4",questTitle="New quest",isPushable=true}} end
+	local changed = RefreshRevision(a, b, lost)
+	advance(4); assert(changed.completed and changed.revision ~= lost.revision)
+	Equal(changed.entries[1], nil); Equal(changed.entries[4].questTitle, "New quest")
+end)
+
+QT:RegisterTest("unchanged certificates cannot complete a missing wrong or partial comparison baseline", function()
+	local peers, advance = RevisionNetwork(2, 2)
+	local a, b = peers[1], peers[2]
+	local first = RefreshRevision(a, b)
+	advance(5); assert(first.completed)
+	local result = RefreshRevision(a, b, first)
+	local function Certificate(revision, count, sender)
+		return a:HandleQuestCompareDone({requestId=result.id,senderName=sender or b.name,count=count,
+			snapshotId="1-2-3",revision=revision,unchanged=true})
+	end
+	Equal(Certificate(first.revision, 2, "Unrelated-Realm"), false)
+	Equal(Certificate("8-8-8", 2), false)
+	Equal(Certificate(first.revision, 1), false)
+	assert(not result.completed)
+	a.pendingQuestCompareRequests[result.id] = nil
+	result = RefreshRevision(a, b)
+	Equal(Certificate(first.revision, 2), false)
+	assert(not result.completed)
+end)
+
+QT:RegisterTest("five unchanged party logs refresh with twenty certificates instead of eight hundred quest packets", function()
+	local peers, advance = RevisionNetwork(5, 40)
+	local baseline = {}
+	for _, a in ipairs(peers) do
+		baseline[a] = {}
+		for _, b in ipairs(peers) do if a ~= b then baseline[a][b] = RefreshRevision(a, b) end end
+	end
+	advance(145)
+	local firstEntries = 0
+	for _, a in ipairs(peers) do
+		firstEntries = firstEntries + EntryPackets(a)
+		for _, result in pairs(baseline[a]) do assert(result.completed and result.revision and not result.timedOut) end
+		a.packets = {}
+	end
+	Equal(firstEntries, 800)
+	local results = {}
+	for _, a in ipairs(peers) do for _, b in ipairs(peers) do if a ~= b then
+		results[#results + 1] = RefreshRevision(a, b, baseline[a][b])
+	end end end
+	advance(8)
+	for _, result in ipairs(results) do assert(result.completed and not result.timedOut) end
+	local packets = 0
+	for _, a in ipairs(peers) do packets = packets + #a.packets; Equal(EntryPackets(a), 0) end
+	Equal(packets, 40) -- Twenty private requests plus twenty completion certificates.
+end)
+
+QT:RegisterTest("neutral transport works without geographic state and completes cancelled owners once", function()
+	local a = BaseFixture()
+	a:InitializeTransport()
+	Equal(rawget(a, "geographicCommsState"), nil)
+	local owner, completed = {}, 0
+	local ok, status = a:SendWireMessageToAnnouncementRoutes("PONG|test", "transport fixture",
+		{{distribution="WHISPER",target="Peer-Realm"}}, false,
+		{owner=owner,onComplete=function(sent, reason) assert(not sent and reason == "cancelled"); completed=completed+1 end})
+	assert(ok); Equal(status, "queued"); Equal(#a.sent, 0)
+	a:CancelTransportOwner(owner); a:CancelTransportOwner(owner); a:DrainTransport()
+	Equal(completed, 1); Equal(#a.sent, 0)
+	ok, status = a:SendWireMessageToAnnouncementRoutes("PONG|test", "transport fixture", {{distribution="WHISPER",target="Peer-Realm"}})
+	assert(ok); Equal(status, "queued"); a:DrainTransport(); Equal(#a.sent, 1)
+	local completion = {onComplete=function() completed=completed+1 end}
+	ok, status = a:SendWireMessageToAnnouncementRoutes("PONG|test", "transport fixture",
+		{{distribution="WHISPER",target="Peer-Realm"},{distribution="PARTY"}}, false, completion)
+	assert(not ok); Equal(status, "invalid")
+	ok, status = a:SendWireMessageToAnnouncementRoutes("PONG|test", "transport fixture", nil, false, completion)
+	assert(not ok); Equal(status, "invalid"); a:DrainTransport()
+	Equal(#a.sent, 1); Equal(completed, 1); Equal(#a:GetTransportState().queue, 0)
+end)
+
+QT:RegisterTest("revision negotiation never makes a previously valid comparison packet exceed the wire budget", function()
+	local a = BaseFixture()
+	local covered = false
+	for size = 180, 245 do
+		local request = {requestId=string.rep("x",size),requesterName="Me",targetName="Peer",supportsSnapshotIdentity=true}
+		local legacy = a:EncodeQuestCompareRequestPayload(request)
+		request.supportsRevision, request.knownRevision = true, "1700000100-100000-1234-1"
+		local modern = a:EncodeQuestCompareRequestPayload(request)
+		if #legacy <= 250 then
+			assert(#modern <= 250)
+			local decoded = assert(a:DecodeQuestCompareRequestPayload(modern))
+			assert(decoded.supportsSnapshotIdentity)
+			if not decoded.supportsRevision then covered = true end
+		end
+	end
+	assert(covered)
+end)
+
 QT:RegisterTest("five full quest logs converge through loss duplicate reorder and native throttle",function()
 	local peers,byName,advance=FairTransportNetwork(5,40)
 	local dropped,throttled,held=false,false,nil
@@ -1832,7 +2037,7 @@ QT:RegisterTest("queued party navigation coalesces edits and rechecks focus and 
 	end
 	Queue(1,12)
 	local latest=Queue(2,12)
-	Equal(#a.geographicCommsState.queue,1)
+	Equal(#a:GetTransportState().queue,1)
 	advance(1)
 	Equal(#a.sent,1);Equal(a.sent[1].wire,latest)
 	Queue(3,12)
@@ -1902,7 +2107,7 @@ QT:RegisterTest("five maximum quest logs recover every comparison after a lost e
 		Equal(next(a.pendingQuestCompareRequests),nil)
 		Equal(#a.questCompareResponseQueue.jobs,0)
 		Equal(a.questCompareResponseQueue.packets,0)
-		Equal(#a.geographicCommsState.queue,0)
+		Equal(#a:GetTransportState().queue,0)
 	end
 end)
 
@@ -2169,7 +2374,7 @@ QT:RegisterTest("modern navigation goodbye clears transient state despite restri
 		assert(a:SendPartyNavigationSnapshot({questID=8,mapID=12,x=0.4,y=0.5}, false,
 			{{distribution="PARTY",requiresGroup=true}}))
 		local delayed = {}
-		for _, row in ipairs(a.geographicCommsState.queue) do delayed[#delayed + 1] = row.wire end
+		for _, row in ipairs(a:GetTransportState().queue) do delayed[#delayed + 1] = row.wire end
 		if mode == "restricted" then a.restricted = true end
 		if mode == "lost-clear" then
 			local send = a.API.SendAddonMessage

@@ -25,19 +25,15 @@ canaccesstable = function(value)
 	return value ~= inaccessible
 end
 local namespace = {}
-for _, name in ipairs({
-	"Libs/libchev/libchev.lua",
-	"Localization.lua",
-	"Locales.lua",
-	"Core.lua",
-	"HotPathRuntime.lua",
-	"Minimap.lua",
-	"PartyState.lua",
-	"PlayerPlates.lua",
-	"LocationPins.lua",
-	"PlayerPhases.lua",
-}) do
-	assert(loadfile(root .. "/" .. name))("QuestTogether", namespace)
+-- Exercise the same dependency graph as the client; no second hand-maintained
+-- module list can silently omit a new boundary adapter or service.
+GetLocale = function() return "enUS" end
+for line in io.lines(root .. "/QuestTogether.toc") do
+	local name = line:match("^%s*(.-)%s*$")
+	if name ~= "" and not name:match("^#") then
+		assert(name:match("%.lua$"), "unsupported manifest entry: " .. name)
+		assert(loadfile(root .. "/" .. name:gsub("\\", "/")))("QuestTogether", namespace)
+	end
 end
 local addon = QuestTogether
 addon.isEnabled = true

@@ -230,7 +230,7 @@ local function Label(parent, x, y, width, text, font)
 end
 
 local function Button(addon, parent, x, y, width, text, callback)
-	local button = addon:CreatePartyQuestUIFrame("Button", nil, parent, "UIPanelButtonTemplate")
+	local button = addon:CreateOwnedWindowFrame("Button", nil, parent, "UIPanelButtonTemplate")
 	button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
 	button:SetSize(width, 24)
 	button:SetText(text)
@@ -251,7 +251,7 @@ end
 
 local function Window(addon, width, height, title, parchment)
 	if not parchment then return addon:CreateScrollDialog(width, height, title) end
-	local frame = addon:CreatePartyQuestUIFrame("Frame", nil, addon:GetPartyQuestUIParent())
+	local frame = addon:CreateOwnedWindowFrame("Frame", nil, addon:GetOwnedUIParent())
 	frame:Hide()
 	frame:SetSize(width, height)
 	frame:SetPoint("CENTER")
@@ -300,7 +300,7 @@ local function Window(addon, width, height, title, parchment)
 end
 
 local function Checkbox(addon, parent, x, y, text, callback)
-	local check = addon:CreatePartyQuestUIFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
+	local check = addon:CreateOwnedWindowFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
 	check:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
 	check:SetSize(26, 26)
 	check.label = Label(check, 30, -7, (parent.contentWidth or (parent:GetWidth() - 48)) - 26, text)
@@ -310,7 +310,7 @@ local function Checkbox(addon, parent, x, y, text, callback)
 end
 
 local function Slider(addon, parent, vertical)
-	local slider = addon:CreatePartyQuestUIFrame("Slider", nil, parent)
+	local slider = addon:CreateOwnedWindowFrame("Slider", nil, parent)
 	slider:Hide()
 	slider:SetOrientation(vertical and "VERTICAL" or "HORIZONTAL")
 	slider:EnableMouse(true)
@@ -326,11 +326,11 @@ end
 
 -- These factories are addon-owned seams for live-safe UI fixtures.
 function QuestTogether:CreatePartyQuestUIFrame(...)
-	return CreateFrame(...)
+	return self:CreateOwnedWindowFrame(...)
 end
 
 function QuestTogether:GetPartyQuestUIParent()
-	return UIParent
+	return self:GetOwnedUIParent()
 end
 
 -- QT owns these buttons and textures; use Blizzard's ordinary mini quest POI
@@ -354,7 +354,7 @@ local function FocusAtlas(texture, atlas, fallback)
 	end
 end
 local function CreateFocusButton(addon, row, column)
-	local button = addon:CreatePartyQuestUIFrame("Button", nil, row)
+	local button = addon:CreateOwnedWindowFrame("Button", nil, row)
 	button:SetSize(26, 26)
 	if button.SetMotionScriptsWhileDisabled then button:SetMotionScriptsWhileDisabled(true) end
 	button:SetPoint("TOPLEFT", ColumnLeft(column) + COLUMN_WIDTH - 31, -8)
@@ -362,7 +362,7 @@ local function CreateFocusButton(addon, row, column)
 	button.pushed = button:CreateTexture(nil, "BACKGROUND")
 	-- Match Blizzard's POI Display frame: the symbol must render above native
 	-- normal/pushed button textures regardless of their draw-layer ordering.
-	button.display = addon:CreatePartyQuestUIFrame("Frame", nil, button)
+	button.display = addon:CreateOwnedWindowFrame("Frame", nil, button)
 	button.display:SetAllPoints()
 	button.display:SetFrameLevel(button:GetFrameLevel() + 1)
 	button.display:EnableMouse(false)
@@ -728,7 +728,7 @@ end
 
 local function StopExpansion(frame)
 	frame.expansions, frame.animateExpansion, frame.expansionGeneration = nil, nil, nil
-	if frame.expansionAnimator then
+	if frame.expansionAnimator and QuestTogether.LibChev.CanMutateOwnedRegion(frame.expansionAnimator) then
 		frame.expansionAnimator:SetScript("OnUpdate", nil)
 	end
 end
@@ -837,7 +837,7 @@ end
 
 local function StopCompareScroll(frame)
 	frame.wheelTarget, frame.wheelSession = nil, nil
-	frame:SetScript("OnUpdate", nil)
+	if QuestTogether.LibChev.CanMutateOwnedRegion(frame) then frame:SetScript("OnUpdate", nil) end
 end
 
 local function WheelCompare(self, frame, delta)
@@ -881,7 +881,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	if self.partyQuestCompareWindow then
 		return self.partyQuestCompareWindow
 	end
-	local parent = self:GetPartyQuestUIParent()
+	local parent = self:GetOwnedUIParent()
 	if not self:CanAccessForeignFrame(parent) then
 		return nil
 	end
@@ -893,10 +893,10 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	local scale = math.min(1, parent:GetHeight() * 0.94 / 690, parent:GetWidth() * 0.94 / width)
 	frame:SetScale(scale)
 	self.partyQuestCompareWindow = frame
-	frame.expansionAnimator = self:CreatePartyQuestUIFrame("Frame", nil, frame)
+	frame.expansionAnimator = self:CreateOwnedWindowFrame("Frame", nil, frame)
 	frame.summary = Label(frame, 20, -47, width - 40, "", "GameFontHighlight")
 	frame.searchLabel = Label(frame, 20, -80, 65, L("Search:"), "GameFontHighlight")
-	frame.search = self:CreatePartyQuestUIFrame("EditBox", nil, frame, "InputBoxTemplate")
+	frame.search = self:CreateOwnedWindowFrame("EditBox", nil, frame, "InputBoxTemplate")
 	frame.search:SetPoint("TOPLEFT", 88, -74)
 	frame.search:SetSize(math.max(100, math.min(300, width - 500)), 26)
 	frame.search:SetAutoFocus(false)
@@ -924,40 +924,29 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 		self:RefreshPartyRoster()
 		self:RefreshPartyQuestCompare()
 	end)
-	local close = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelCloseButton")
+	local close = self:CreateOwnedWindowFrame("Button", nil, frame, "UIPanelCloseButton")
 	frame.close = close
 	close:SetPoint("TOPRIGHT", 2, 1)
-	close:SetScript("OnClick", function()
-		-- An explicitly closed child may already be invisible with UIParent,
-		-- in which case Hide does not dispatch another OnHide callback.
-		self:CancelPartyQuestCompare()
-		frame:Hide()
-	end)
-	frame:SetScript("OnHide", function(hiddenFrame)
-		StopCompareScroll(frame)
-		StopExpansion(frame)
-		if frame.resizing then
-			frame:StopMovingOrSizing()
-			frame.resizing = nil
-		end
-		-- Parent visibility changes must not leave a still-shown window with
-		-- stale rows and no session when the parent becomes visible again.
-		if not hiddenFrame:IsShown() then
-			self:CancelPartyQuestCompare()
-		end
-	end)
+	close:SetScript("OnClick", function() self:DismissManagedWindow(frame) end)
+	self:ConfigureWindowController(frame, {
+		dismiss = function() self:CancelPartyQuestCompare() end,
+		suspend = function() StopCompareScroll(frame); StopExpansion(frame) end,
+		theme = function()
+			if self.partyQuestCompareSession then self:RenderPartyQuestCompare() end
+		end,
+	})
 
-	frame.viewport = self:CreatePartyQuestUIFrame("ScrollFrame", nil, frame)
+	frame.viewport = self:CreateOwnedWindowFrame("ScrollFrame", nil, frame)
 	frame.viewport:SetPoint("TOPLEFT", 20, -140)
 	frame.viewport:SetSize(width - 62, VISIBLE_ROWS * ROW_HEIGHT + 54)
-	frame.content = self:CreatePartyQuestUIFrame("Frame", nil, frame.viewport)
+	frame.content = self:CreateOwnedWindowFrame("Frame", nil, frame.viewport)
 	frame.content:SetSize(QUEST_WIDTH + ACTION_WIDTH, VISIBLE_ROWS * ROW_HEIGHT + 54)
 	frame.viewport:SetScrollChild(frame.content)
 	frame.questHeader = Label(frame.content, 4, 0, QUEST_WIDTH - 8, L("QUEST"), "GameFontNormal")
-	frame.rowsViewport = self:CreatePartyQuestUIFrame("ScrollFrame", nil, frame.content)
+	frame.rowsViewport = self:CreateOwnedWindowFrame("ScrollFrame", nil, frame.content)
 	frame.rowsViewport:SetPoint("TOPLEFT", 0, -54)
 	frame.rowsViewport:SetSize(QUEST_WIDTH + ACTION_WIDTH, VISIBLE_ROWS * ROW_HEIGHT)
-	frame.rowsContent = self:CreatePartyQuestUIFrame("Frame", nil, frame.rowsViewport)
+	frame.rowsContent = self:CreateOwnedWindowFrame("Frame", nil, frame.rowsViewport)
 	frame.rowsContent:SetSize(QUEST_WIDTH + ACTION_WIDTH, (VISIBLE_ROWS * 2 + 2) * ROW_HEIGHT)
 	frame.rowsViewport:SetScrollChild(frame.rowsContent)
 	frame.headers, frame.headerAccents, frame.rows = {}, {}, {}
@@ -971,8 +960,8 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	frame.stopFollowing:Hide()
 	local function EnsureRows(count)
 		for i = #frame.rows + 1, count do
-			local clip = self:CreatePartyQuestUIFrame("ScrollFrame", nil, frame.rowsContent)
-			local row = self:CreatePartyQuestUIFrame("Frame", nil, clip)
+			local clip = self:CreateOwnedWindowFrame("ScrollFrame", nil, frame.rowsContent)
+			local row = self:CreateOwnedWindowFrame("Frame", nil, clip)
 			row.clip = clip
 			clip:SetScrollChild(row)
 			row:SetSize(QUEST_WIDTH + ACTION_WIDTH, ROW_HEIGHT)
@@ -1017,7 +1006,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 				end
 			end)
 			row.title:SetMaxLines(1)
-			row.journal = self:CreatePartyQuestUIFrame("Button", nil, row)
+			row.journal = self:CreateOwnedWindowFrame("Button", nil, row)
 			row.journal:SetSize(22, 22)
 			row.journal:SetPoint("TOPLEFT", QUEST_WIDTH - 32, -4)
 			row.journal:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
@@ -1163,7 +1152,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 		end
 	end
 	frame:UpdateResizeBounds(self.partyQuestCompareSession and #self.partyQuestCompareSession.members or 1)
-	frame.resizeGrip = self:CreatePartyQuestUIFrame("Button", nil, frame)
+	frame.resizeGrip = self:CreateOwnedWindowFrame("Button", nil, frame)
 	frame.resizeGrip:SetSize(24, 24)
 	frame.resizeGrip:SetPoint("BOTTOMRIGHT", -1, 0)
 	frame.resizeGrip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
@@ -1347,7 +1336,7 @@ function QuestTogether:RenderPartyQuestCompare()
 		status:SetText(self:GetPartyQuestSnapshotLabel(member))
 		status:Show()
 		if not frame.focusButtons[i] then
-			local button = self:CreatePartyQuestUIFrame("Button", nil, frame.content)
+			local button = self:CreateOwnedWindowFrame("Button", nil, frame.content)
 			frame.focusButtons[i] = button
 			-- Decoration stays beneath the existing header text. The transparent
 			-- button owns input and the small downward menu arrow.
@@ -1535,7 +1524,7 @@ end
 function QuestTogether:CreatePartyQuestSharePrompt(preview)
 	local key = preview and "partyQuestSharePreviewPrompt" or "partyQuestSharePrompt"
 	if rawget(self, key) then return self[key] end
-	local parent = self:GetPartyQuestUIParent()
+	local parent = self:GetOwnedUIParent()
 	if not self:CanAccessForeignFrame(parent) then
 		return nil
 	end
@@ -1565,15 +1554,10 @@ function QuestTogether:CreatePartyQuestSharePrompt(preview)
 	frame.decline:SetPoint("BOTTOMRIGHT", -frame.contentInset, frame.contentBottom)
 	frame.LayoutRequest = function() LayoutRequestPrompt(self, frame) end
 	frame.LayoutManagedWindow = frame.LayoutRequest
-	frame.close = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelCloseButton")
+	frame.close = self:CreateOwnedWindowFrame("Button", nil, frame, "UIPanelCloseButton")
 	frame.close:SetPoint("TOPRIGHT", -12, -8)
-	frame.close:SetScript("OnClick", function()
-		if self.LibChev.CanMutateOwnedRegion(frame) then frame:Hide() end
-		if not frame.preview then
-			if frame.always then self:FinishPartyQuestShare(frame.request, "declined")
-			else self:FinishPartyJoin(frame.request, "declined") end
-		end
-	end)
+	self:ConfigureRequestPrompt(frame, function(request) self:FinishPartyQuestShare(request, "declined") end)
+	frame.close:SetScript("OnClick", function() self:DismissManagedWindow(frame) end)
 
 	self[key] = frame
 	return frame
@@ -1584,9 +1568,7 @@ end
 function QuestTogether:HideRetiredPartyRequestPrompt(frame, request)
 	if frame and (not request or frame.request ~= request) then
 		frame.request = nil
-		if self.LibChev.CanMutateOwnedRegion(frame) then
-			frame:Hide()
-		end
+		self:HideOwnedUI(frame)
 	end
 end
 
@@ -1636,7 +1618,7 @@ end
 function QuestTogether:CreatePartyJoinPrompt(preview)
 	local key = preview and "partyJoinPreviewPrompt" or "partyJoinPrompt"
 	if rawget(self, key) then return self[key] end
-	local parent = self:GetPartyQuestUIParent()
+	local parent = self:GetOwnedUIParent()
 	if not self:CanAccessForeignFrame(parent) then
 		return nil
 	end
@@ -1649,7 +1631,7 @@ function QuestTogether:CreatePartyJoinPrompt(preview)
 	self:AddScrollDialogLabel(frame, frame.message)
 	frame.message:SetHeight(65)
 	local function Preference(y, text)
-		local check = self:CreatePartyQuestUIFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
+		local check = self:CreateOwnedWindowFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
 		check:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, y)
 		check:SetSize(26, 26)
 		local label = Label(check, 30, -4, frame.contentWidth - 26, text)
@@ -1675,15 +1657,10 @@ function QuestTogether:CreatePartyJoinPrompt(preview)
 	frame.decline:SetPoint("BOTTOMRIGHT", -frame.contentInset, frame.contentBottom)
 	frame.LayoutRequest = function() LayoutRequestPrompt(self, frame) end
 	frame.LayoutManagedWindow = frame.LayoutRequest
-	frame.close = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelCloseButton")
+	frame.close = self:CreateOwnedWindowFrame("Button", nil, frame, "UIPanelCloseButton")
 	frame.close:SetPoint("TOPRIGHT", -12, -8)
-	frame.close:SetScript("OnClick", function()
-		if self.LibChev.CanMutateOwnedRegion(frame) then frame:Hide() end
-		if not frame.preview then
-			if frame.always then self:FinishPartyQuestShare(frame.request, "declined")
-			else self:FinishPartyJoin(frame.request, "declined") end
-		end
-	end)
+	self:ConfigureRequestPrompt(frame, function(request) self:FinishPartyJoin(request, "declined") end)
+	frame.close:SetScript("OnClick", function() self:DismissManagedWindow(frame) end)
 
 	self[key] = frame
 	return frame
@@ -1724,7 +1701,7 @@ function QuestTogether:RenderPartyChatReminder(request)
 	if not request or self:IsWorkBlocked("foreign_frame_mutation") then
 		return
 	end
-	local parent = self:GetPartyQuestUIParent()
+	local parent = self:GetOwnedUIParent()
 	if not self:CanAccessForeignFrame(parent) then
 		return
 	end
@@ -1790,7 +1767,7 @@ function QuestTogether:RenderPartyChatReminder(request)
 				self:AcknowledgePartyChatReminder(frame.request, frame.remember:GetChecked() == true, true)
 			end
 		end)
-		frame.close = self:CreatePartyQuestUIFrame("Button", nil, frame, "UIPanelCloseButton")
+		frame.close = self:CreateOwnedWindowFrame("Button", nil, frame, "UIPanelCloseButton")
 		frame.close:SetPoint("TOPRIGHT", -12, -8)
 		frame.close:SetScript("OnClick", function()
 			-- Safe dismissal remains available during combat. A restricted close

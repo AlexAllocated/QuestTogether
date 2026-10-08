@@ -53,12 +53,14 @@ local function Position(entry, now, smooth)
 	}
 end
 
-function QT:HandlePlayerCapabilityMetadata(payload, sender)
+function QT:HandlePlayerCapabilityMetadata(payload, sender, sampleAge, source)
 	if not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 32 then
 		return false
 	end
 	local streams, raceID, direct = payload:match("^1,([01]),(%d+),([01])$")
-	if not streams then streams, raceID = payload:match("^1,([01]),(%d+)$") end
+	if not streams then
+		streams, raceID = payload:match("^1,([01]),(%d+)$")
+	end
 	raceID = tonumber(raceID)
 	if not streams or not raceID or raceID > 100000 then
 		return false
@@ -68,10 +70,20 @@ function QT:HandlePlayerCapabilityMetadata(payload, sender)
 		return false
 	end
 	local s, now = State(self), Now(self)
+	local observation = self:ResolvePeerObservation(name, "QTCI", sampleAge, source, nil, nil, 600)
+	if not self:CanAcceptPeerObservation(observation) then
+		return false
+	end
 	local cap = s.capabilities[name] or {}
 	cap.receivedAt, cap.lifetime, cap.raceID, cap.streams = now, nil, raceID, streams == "1"
 	cap.direct = direct == "1"
+	if not self:CommitPeerObservation(observation, cap, false) then
+		return false
+	end
 	s.capabilities[name] = cap
+	if observation.source == "snapshot" then
+		self:RememberDirectCommPeer(name, cap.direct, cap.lifetime)
+	end
 	if not cap.streams then
 		s.wanted[name], s.subscribers[name] = nil, nil
 	end
@@ -152,25 +164,15 @@ function QT:GetNearbyStreamPosition(row, smooth)
 end
 
 local function Send(a, s, name, wire, now)
-	local geo = rawget(a, "geographicCommsState")
-	if now < s.nextSend or (geo and geo.blockedUntil and now < geo.blockedUntil) then
+	if now < s.nextSend then
 		return nil
 	end
-	-- One admission/backoff policy owns all native sends. Nearby movement keeps
-	-- its separate five-per-second allowance and yields to pending player actions.
-	if geo and not a:TakeCommsSendToken(false, "nearby") then return nil end
-	s.nextSend = now + 0.2
-	local ok, result = pcall(a.API.SendAddonMessage, a.commPrefix, wire, "WHISPER", name)
-	local sent = ok and a:CanAccessValue(result) and (result == true or result == 0)
-	a:RecordCommsTraffic(sent and "sent" or "failed", wire, a:SafeToNumber(result))
-	if not sent then
-		-- Drop this sample and back off, instead of replaying stale movement.
-		s.nextSend = now + 5
-		if geo and a:CanAccessValue(result) and (result == 3 or result == 8) then
-			geo.blockedUntil = now + 2
-		end
-		a:RecordCommsDiagnostic("failedRoutes", "nearby position whisper")
+	local sent, reason =
+		a:SendTransportNow(wire, "nearby position whisper", { distribution = "WHISPER", target = name }, "nearby")
+	if reason == "paced" then
+		return nil
 	end
+	s.nextSend = now + (sent and 0.2 or 5)
 	return sent
 end
 
@@ -418,4 +420,15 @@ function QT:UpdateNearbyStreams(currentSample)
 			s.subscribers[target] = nil
 		end
 	end
+end
+
+function QT:RetireNearbyStreamPeer(name)
+	local state = rawget(self, "nearbyStreamState")
+	if state then
+		state.capabilities[name], state.wanted[name], state.subscribers[name] = nil, nil, nil
+	end
+end
+
+function QT:ResetNearbyStreams()
+	self.nearbyStreamState = nil
 end

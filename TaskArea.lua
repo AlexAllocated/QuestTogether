@@ -70,96 +70,19 @@ local function BuildTaskAreaStateSummary(stateByQuestId)
 	return table.concat(parts, " | ")
 end
 
-local function ReadLocationFlag(addon, value)
-	if addon:CanAccessValue(value) and type(value) == "boolean" then
-		return value
-	end
-	return nil
-end
-
-local function BuildMergedTaskAreaQuestInfo(addon, questId, liveQuestInfo, snapshotInfo)
-	local mergedQuestInfo = {}
-	local liveInfo = type(liveQuestInfo) == "table" and liveQuestInfo or nil
-	local snapshot = type(snapshotInfo) == "table" and snapshotInfo or nil
-
-	mergedQuestInfo.questID = liveInfo and liveInfo.questID or (snapshot and snapshot.questID) or questId
-	mergedQuestInfo.title = liveInfo and liveInfo.title or (snapshot and snapshot.title) or nil
-	mergedQuestInfo.questLogIndex = liveInfo and liveInfo.questLogIndex or (snapshot and snapshot.questLogIndex) or nil
-	mergedQuestInfo.isHeader = liveInfo and liveInfo.isHeader == true or false
-	mergedQuestInfo.isTask = liveInfo and liveInfo.isTask == true or (snapshot and snapshot.isTask == true) or false
-	mergedQuestInfo.isOnMap = ReadLocationFlag(addon, liveInfo and liveInfo.isOnMap)
-	mergedQuestInfo.hasLocalPOI = ReadLocationFlag(addon, liveInfo and liveInfo.hasLocalPOI)
-	mergedQuestInfo.isComplete = liveInfo and liveInfo.isComplete == true or (snapshot and snapshot.isComplete == true) or false
-	mergedQuestInfo.isWorldQuest = addon:ResolveTaskQuestIsWorldQuest(questId, liveInfo)
-
-	local displayAsObjective = false
-	if mergedQuestInfo.isWorldQuest ~= true then
-		displayAsObjective = addon:ResolveTaskQuestDisplayAsObjective(questId)
-	end
-	mergedQuestInfo.displayAsObjective = displayAsObjective
-	mergedQuestInfo.isBonusObjective = displayAsObjective == true
-	mergedQuestInfo.taskAnnouncementType = mergedQuestInfo.isWorldQuest and "world"
-		or (mergedQuestInfo.isBonusObjective and "bonus" or nil)
-
-	local shouldTreatHiddenAsRelevant = mergedQuestInfo.isTask == true
-		or mergedQuestInfo.isWorldQuest == true
-		or mergedQuestInfo.isBonusObjective == true
-	mergedQuestInfo.isHidden = liveInfo ~= nil and liveInfo.isHidden == true and not shouldTreatHiddenAsRelevant
-
-	return mergedQuestInfo
-end
-
-local function BuildQuestLogQuestInfoIndex(addon)
-	local questInfoByQuestId = {}
-
-	if not (addon and addon.API and addon.API.GetNumQuestLogEntries and addon.API.GetQuestLogInfo) then
-		return nil, "api_unavailable"
-	end
-
-	if addon.EnsureQuestSnapshotStore then
-		addon:EnsureQuestSnapshotStore()
-	end
-	local snapshotByQuestID = addon.GetQuestSnapshotByQuestID and addon:GetQuestSnapshotByQuestID() or nil
-
-	local totalEntries = addon:SafeToNumber(addon.API.GetNumQuestLogEntries())
-	if totalEntries == nil or totalEntries < 0 then
-		return nil, "count"
-	end
-	totalEntries = math.floor(totalEntries + 0.5)
-	for entryIndex = 1, totalEntries do
-		local liveQuestInfo = addon.API.GetQuestLogInfo(entryIndex)
-		if type(liveQuestInfo) ~= "table" then
-			return nil, "row:" .. tostring(entryIndex)
-		end
-		if type(liveQuestInfo) == "table" then
-			local normalizedQuestId = NormalizeQuestId(addon, liveQuestInfo.questID)
-			if liveQuestInfo.isHeader ~= true and not normalizedQuestId then
-				return nil, "row:" .. tostring(entryIndex)
-			end
-			if normalizedQuestId
-				and not questInfoByQuestId[normalizedQuestId]
-				and not (addon.retiredQuestIds and addon.retiredQuestIds[normalizedQuestId])
-			then
-				local snapshotInfo = snapshotByQuestID and snapshotByQuestID[normalizedQuestId] or nil
-				local mergedQuestInfo = BuildMergedTaskAreaQuestInfo(addon, normalizedQuestId, liveQuestInfo, snapshotInfo)
-				if mergedQuestInfo.isHeader ~= true and mergedQuestInfo.isHidden ~= true then
-					questInfoByQuestId[normalizedQuestId] = mergedQuestInfo
-				end
-			end
+local function BuildQuestLogQuestInfoIndex(addon, observation)
+	-- Area refreshes keep their fast cadence, but acquisition has one owner.
+	local snapshot, complete = observation, observation ~= nil
+	if not snapshot then snapshot, complete = addon:RebuildQuestSnapshotStore() end
+	if not complete then return nil, snapshot and snapshot.lastUnreadableRow or "blocked" end
+	local result = {}
+	for id, info in pairs(snapshot.byQuestID) do
+		if not (addon.retiredQuestIds and addon.retiredQuestIds[id])
+			and (not info.isHidden or info.isTask or info.isWorldQuest or info.isBonusObjective) then
+			result[id] = info
 		end
 	end
-
-	return questInfoByQuestId
-end
-
-local function BuildTaskAreaCandidateQuestIds(questInfoByQuestId)
-	local candidateQuestIds = {}
-
-	for normalizedQuestId in pairs(questInfoByQuestId or {}) do
-		candidateQuestIds[normalizedQuestId] = true
-	end
-
-	return candidateQuestIds
+	return result
 end
 
 local function BuildActiveTaskAreaSnapshot(taskAreaState, taskType)
@@ -207,8 +130,6 @@ local function ResolveQuestAreaSignals(taskType, questInfo, isBonusObjective)
 	return {
 		mapFlags = mapFlags,
 		areaActive = areaActive,
-		taskActiveForArea = false,
-		canUseTaskActiveWorldFallback = false,
 	}
 end
 
@@ -216,10 +137,7 @@ local function BuildTaskAreaResolution(addon, normalizedQuestId, questInfo, prev
 	local title = addon:GetQuestTitle(normalizedQuestId, questInfo)
 	local explicitWorld = questInfo and questInfo.isWorldQuest == true or false
 	local explicitTask = questInfo and questInfo.isTask == true or false
-	local fallbackWorld = addon:IsWorldQuest(normalizedQuestId)
-	-- The public reader shares classification history with both scan readers.
-	-- Its newer explicit false must also override an earlier true merge result.
-	local isWorldQuest = fallbackWorld
+	local isWorldQuest = explicitWorld
 	local explicitBonus = questInfo and (questInfo.isBonusObjective == true or questInfo.displayAsObjective == true) or false
 	local isBonusObjective = isWorldQuest ~= true and explicitBonus
 	local taskAnnouncementType = isWorldQuest and "world" or (isBonusObjective and "bonus" or nil)
@@ -228,19 +146,6 @@ local function BuildTaskAreaResolution(addon, normalizedQuestId, questInfo, prev
 	local worldSignals = ResolveQuestAreaSignals("world", questInfo, isBonusObjective)
 	local bonusSignals = ResolveQuestAreaSignals("bonus", questInfo, isBonusObjective)
 
-	local isWorldQuestByActiveTaskFallback = false
-	if not isWorldQuest and worldSignals.canUseTaskActiveWorldFallback and not isBonusObjective then
-		isWorldQuest = true
-		isWorldQuestByActiveTaskFallback = true
-	end
-
-	local shouldPromoteToTask = worldSignals.areaActive == true or bonusSignals.areaActive == true
-	if bonusSignals.taskActiveForArea == true then
-		shouldPromoteToTask = true
-	end
-	if not isTask and shouldPromoteToTask then
-		isTask = true
-	end
 
 	local includeWorld = isTask and worldSignals.areaActive == true and isWorldQuest == true
 	local includeBonus = isTask and bonusSignals.areaActive == true and isWorldQuest ~= true
@@ -257,14 +162,12 @@ local function BuildTaskAreaResolution(addon, normalizedQuestId, questInfo, prev
 		title = title,
 		taskAnnouncementType = taskAnnouncementType,
 		explicitWorld = explicitWorld,
-		fallbackWorld = fallbackWorld,
 		explicitTask = explicitTask,
 		explicitBonus = explicitBonus,
 		isWorldQuest = isWorldQuest and true or false,
 		isBonusObjective = isBonusObjective and true or false,
 		displayAsObjective = questInfo and questInfo.displayAsObjective,
 		isTask = isTask and true or false,
-		isWorldQuestByActiveTaskFallback = isWorldQuestByActiveTaskFallback,
 		includeWorld = includeWorld and true or false,
 		includeBonus = includeBonus and true or false,
 		worldSignals = worldSignals,
@@ -272,7 +175,7 @@ local function BuildTaskAreaResolution(addon, normalizedQuestId, questInfo, prev
 	}
 end
 
-function QuestTogether:RebuildTaskAreaResolverStore()
+function QuestTogether:RebuildTaskAreaResolverStore(observation)
 	local taskAreaState = self.GetTaskAreaSubsystemStateStore and self:GetTaskAreaSubsystemStateStore() or nil
 	if type(taskAreaState) ~= "table" then
 		return nil, false
@@ -283,7 +186,7 @@ function QuestTogether:RebuildTaskAreaResolverStore()
 	local resolvedByQuestID = {}
 	local resolutionOrder = {}
 
-	local scanOK, questInfoByQuestId, failureReason = pcall(BuildQuestLogQuestInfoIndex, self)
+	local scanOK, questInfoByQuestId, failureReason = pcall(BuildQuestLogQuestInfoIndex, self, observation)
 	if not scanOK or not questInfoByQuestId then
 		local reason = scanOK and failureReason or ("read_error:" .. SafeText(questInfoByQuestId, "unknown"))
 		if taskAreaState.lastScanFailure ~= reason then
@@ -292,10 +195,7 @@ function QuestTogether:RebuildTaskAreaResolverStore()
 		taskAreaState.lastScanFailure = reason
 		return taskAreaState, false
 	end
-	self:PruneTaskQuestClassifications(questInfoByQuestId)
-	local candidateQuestIds = BuildTaskAreaCandidateQuestIds(questInfoByQuestId)
-
-	local candidateOrder = SortedQuestIdKeys(candidateQuestIds)
+	local candidateOrder = SortedQuestIdKeys(questInfoByQuestId)
 	local scanSignature = table.concat(candidateOrder, ",")
 	if taskAreaState.lastScanSignature ~= scanSignature then
 		self:Debugf("DEBUG", "task_area_scan rows=%d candidates=%d", CountKeys(questInfoByQuestId), #candidateOrder)
@@ -478,7 +378,7 @@ function QuestTogether:ScheduleTaskAreaRefresh(shouldAnnounce, delaySeconds)
 	self:RefreshTaskAreaStates(shouldAnnounce)
 end
 
-function QuestTogether:RefreshTaskAreaStates(shouldAnnounce)
+function QuestTogether:RefreshTaskAreaStates(shouldAnnounce, observation)
 	if self.IsWorkBlocked and self:IsWorkBlocked("task_area_refresh") then
 		if shouldAnnounce then
 			self:SetRuntimeFlag("pendingScheduledTaskAreaRefreshShouldAnnounce", true)
@@ -489,7 +389,7 @@ function QuestTogether:RefreshTaskAreaStates(shouldAnnounce)
 
 	local pendingAnnounce = self:GetRuntimeFlag("pendingScheduledTaskAreaRefreshShouldAnnounce", false)
 	local resolvedShouldAnnounce = shouldAnnounce or (pendingAnnounce and true or false)
-	local _, rebuilt = self:RebuildTaskAreaResolverStore()
+	local _, rebuilt = self:RebuildTaskAreaResolverStore(observation)
 	if rebuilt == false then
 		-- Keep the last confirmed state and announcement intent for a later normal
 		-- quest event. Do not turn an unreadable log into synthetic exits or loop.
@@ -500,4 +400,15 @@ function QuestTogether:RefreshTaskAreaStates(shouldAnnounce)
 	self:RefreshWorldQuestAreaState(resolvedShouldAnnounce)
 	self:RefreshBonusObjectiveAreaState(resolvedShouldAnnounce)
 	return true
+end
+
+-- Domain-owned reaction to a complete acquisition. This ends retained location
+-- history even if a removed quest reappears before the next area refresh.
+function QuestTogether:OnQuestObservationsCommitted(snapshot)
+	local state = self:GetTaskAreaSubsystemStateStore()
+	for id in pairs(state.resolvedByQuestID) do
+		if not snapshot.byQuestID[id] or (self.retiredQuestIds and self.retiredQuestIds[id]) then
+			state.resolvedByQuestID[id] = nil
+		end
+	end
 end

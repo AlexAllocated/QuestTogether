@@ -10,11 +10,19 @@ local QUESTS = {
 	{ title = "Supplies for the Watch", shareable = true, progress = { "Ready", "Ready", "Ready", "Ready", "Ready" } },
 	{ title = "The Miller's Lost Ledger", shareable = true, progress = { "Have", "Ready", "Have", "Have", "Ready" } },
 	{ title = "Trouble at the Old Quarry", shareable = true, progress = { "Have", "Have", "Have", "Ready", "Have" } },
-	{ title = "A Letter for the Harbormaster", shareable = false, progress = { "Ready", "Ready", "Ready", "Ready", "Ready" } },
+	{
+		title = "A Letter for the Harbormaster",
+		shareable = false,
+		progress = { "Ready", "Ready", "Ready", "Ready", "Ready" },
+	},
 	{ title = "Wolves at the Orchard", shareable = true, progress = { "Have", "Have", "Have", "Have", "Have" } },
 	{ title = "The Lighthouse Keeper", shareable = true, progress = { "Ready", "Have", "Have", "Have", "Have" } },
 	{ title = "A Debt to the Innkeeper", shareable = false, progress = { "Have", "Have", "Have", "Have", "Have" } },
-	{ title = "Mending the Fishermen's Nets", shareable = true, progress = { "Have", "Ready", "Have", "Ready", "Have" } },
+	{
+		title = "Mending the Fishermen's Nets",
+		shareable = true,
+		progress = { "Have", "Ready", "Have", "Ready", "Have" },
+	},
 	{ title = "A Long Way from Home", shareable = true, progress = { "Have", "Have", "Have", "Have", "Have" } },
 	{ title = "Signs of the Smugglers", shareable = true, progress = { "Have", "Have", "Have", "Have", "Have" } },
 	{ title = "A Favor for the Herbalist", shareable = true, progress = { "Have", false, "Have", "Have", false } },
@@ -48,10 +56,34 @@ local OBJECTIVES = {
 local function Populate(preview)
 	local members = {
 		{ name = "Rowan-AeriePeak", state = "ready", isLocal = true, classFile = "PALADIN", focusQuestId = 1 },
-		{ name = "Aria-AeriePeak", state = "ready", supportsShareRequests = true, classFile = "MAGE", focusQuestId = 2 },
-		{ name = "Borin-AeriePeak", state = "ready", supportsShareRequests = true, classFile = "WARRIOR", focusQuestId = 15 },
-		{ name = "Celia-AeriePeak", state = "ready", supportsShareRequests = true, classFile = "HUNTER", focusQuestId = 5 },
-		{ name = "Dara-AeriePeak", state = "ready", supportsShareRequests = true, classFile = "ROGUE", focusQuestId = 14 },
+		{
+			name = "Aria-AeriePeak",
+			state = "ready",
+			supportsShareRequests = true,
+			classFile = "MAGE",
+			focusQuestId = 2,
+		},
+		{
+			name = "Borin-AeriePeak",
+			state = "ready",
+			supportsShareRequests = true,
+			classFile = "WARRIOR",
+			focusQuestId = 15,
+		},
+		{
+			name = "Celia-AeriePeak",
+			state = "ready",
+			supportsShareRequests = true,
+			classFile = "HUNTER",
+			focusQuestId = 5,
+		},
+		{
+			name = "Dara-AeriePeak",
+			state = "ready",
+			supportsShareRequests = true,
+			classFile = "ROGUE",
+			focusQuestId = 14,
+		},
 	}
 	if preview.regionalNames then
 		for i, member in ipairs(members) do
@@ -104,13 +136,35 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		regionalNames = self:UsesRegionalPlayerNames(),
 		options = { compareHideOtherQuests = false },
 		GetScrollWindowTheme = self.GetScrollWindowTheme,
-		RequestPartyQuestFocus = self.RequestPartyQuestFocus,
 		GetPartyQuestSnapshotLabel = self.GetPartyQuestSnapshotLabel,
 		BuildPartyQuestDiffRows = self.BuildPartyQuestDiffRows,
 		BuildPartyQuestCompareDisplayRows = self.BuildPartyQuestCompareDisplayRows,
 		GetPartyQuestReadiness = self.GetPartyQuestReadiness,
 		CreatePartyQuestCompareWindow = self.CreatePartyQuestCompareWindow,
 	}
+	-- Presentation infrastructure is owned by this preview instance; only native
+	-- frame construction and settings reads are delegated to the live addon.
+	preview.windowControllers, preview.ownedUICleanupState = {}, nil
+	for _, method in ipairs({
+		"ConfigureWindowController",
+		"GetWindowController",
+		"DismissManagedWindow",
+		"StopWindowInteraction",
+		"RefreshManagedWindow",
+		"ConfigureRequestPrompt",
+		"CanMutateOwnedUI",
+		"CallOwnedUI",
+		"CreateOwnedUIFrame",
+		"HideOwnedUI",
+		"QueueOwnedUICleanup",
+		"CancelOwnedUICleanup",
+		"GetOwnedUICleanupState",
+		"FlushOwnedUICleanup",
+		"GetOwnedUIParent",
+		"CreateOwnedWindowFrame",
+	}) do
+		preview[method] = self[method]
+	end
 	for _, method in ipairs({
 		"GetPartyQuestCompareFilters",
 		"SetPartyQuestCompareFilter",
@@ -122,17 +176,26 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		preview[method] = self[method]
 	end
 	function preview:PopulateLocalQuests(session)
-		if not owner.API or type(owner.API.GetActiveTrackedQuestID) ~= "function"
+		if
+			not owner.API
+			or type(owner.API.GetActiveTrackedQuestID) ~= "function"
 			or type(owner.API.GetPartyNavigationNativeState) ~= "function"
-			or type(owner.API.SetPartyNavigationQuest) ~= "function" then return end
+			or type(owner.API.SetPartyNavigationQuest) ~= "function"
+		then
+			return
+		end
 		local entries = owner:BuildQuestCompareEntries()
-		if not entries then return end -- Keep the standalone fixture when data is unavailable.
+		if not entries then
+			return
+		end -- Keep the standalone fixture when data is unavailable.
 		self.liveQuestData, self.questCatalog, self.questOrder = true, {}, {}
 		local own = session.members[1]
 		own.name, own.classFile = owner:GetPlayerFullName(), owner:GetPlayerClassFile()
 		session.playerName, session.byName = own.name, {}
 		for _, member in ipairs(session.members) do
-			if not member.isLocal and member.name == own.name then member.name = member.name .. " (QT)" end
+			if not member.isLocal and member.name == own.name then
+				member.name = member.name .. " (QT)"
+			end
 			member.entries, member.focusQuestId = {}, 0
 			session.byName[member.name] = member
 		end
@@ -144,9 +207,15 @@ function QuestTogether:CreatePartyQuestComparePreview()
 				local pattern = QUESTS[(index - 1) % #QUESTS + 1]
 				for i, member in ipairs(session.members) do
 					if i == 1 or pattern.progress[i] then
-						member.entries[id] = { questId = id, questTitle = entry.questTitle, isPushable = entry.isPushable,
-							isComplete = i == 1 and entry.isComplete or (i ~= 1 and pattern.progress[i] == "Ready") }
-						if member.focusQuestId == 0 then member.focusQuestId = id end
+						member.entries[id] = {
+							questId = id,
+							questTitle = entry.questTitle,
+							isPushable = entry.isPushable,
+							isComplete = i == 1 and entry.isComplete or (i ~= 1 and pattern.progress[i] == "Ready"),
+						}
+						if member.focusQuestId == 0 then
+							member.focusQuestId = id
+						end
 					end
 				end
 			end
@@ -155,15 +224,20 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		-- never passed to native navigation or sent to any peer.
 		local id = 900000000
 		for _, mockIndex in ipairs({ 14, 15 }) do
-			while self.questCatalog[id] do id = id + 1 end
+			while self.questCatalog[id] do
+				id = id + 1
+			end
 			local quest = QUESTS[mockIndex]
 			self.questCatalog[id] = { title = quest.title, mockIndex = mockIndex }
 			self.questOrder[#self.questOrder + 1] = id
 			for i = 2, #session.members do
 				local member = session.members[i]
 				if quest.progress[i] then
-					member.entries[id] = { questId = id, questTitle = quest.title, isPushable = true, isComplete = false }
-					if member.focusQuestId == 0 then member.focusQuestId = id end
+					member.entries[id] =
+						{ questId = id, questTitle = quest.title, isPushable = true, isComplete = false }
+					if member.focusQuestId == 0 then
+						member.focusQuestId = id
+					end
 				end
 			end
 			id = id + 1
@@ -171,76 +245,191 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		for i = 2, #session.members do
 			local available = {}
 			for _, questId in ipairs(self.questOrder) do
-				if session.members[i].entries[questId] then available[#available + 1] = questId end
+				if session.members[i].entries[questId] then
+					available[#available + 1] = questId
+				end
 			end
-			if #available > 0 then session.members[i].focusQuestId = available[(i - 2) % #available + 1] end
+			if #available > 0 then
+				session.members[i].focusQuestId = available[(i - 2) % #available + 1]
+			end
 		end
 	end
-	-- Use the production follow state machine against a private party model.
-	-- Its transport and persistence adapters intentionally do nothing.
-	preview.API = {
-		GetActiveTrackedQuestID = function() return owner.API.GetActiveTrackedQuestID() end,
-		GetPartyNavigationNativeState = function() return owner.API.GetPartyNavigationNativeState() end,
-		IsOnQuest = function(id)
+	-- Preview and live use the same controller with different adapters. Synthetic
+	-- ownership and native-focus permission stay explicit at this boundary.
+	local function Owns(id)
+		local session = preview.partyQuestCompareSession
+		if not session or not session.byName[session.playerName].entries[id] then
+			return false
+		end
+		return not preview.liveQuestData or owner.API.IsOnQuest(id)
+	end
+	local function CurrentQuest()
+		if preview.liveQuestData then
+			return owner.API.GetActiveTrackedQuestID()
+		end
+		local session = preview.partyQuestCompareSession
+		local own = session and session.byName[session.playerName]
+		return preview.previewFocus or (own and own.focusQuestId) or 0
+	end
+	preview.focusController = owner:CreatePartyFocusController({
+		state = function()
+			return preview.partyNavigationState
+		end,
+		peek = function()
+			return preview.partyNavigationState
+		end,
+		ownName = function()
+			return preview.partyQuestCompareSession and preview.partyQuestCompareSession.playerName
+		end,
+		normalize = function(name)
+			return name
+		end,
+		peer = function(name)
 			local session = preview.partyQuestCompareSession
-			if not session or not session.byName[session.playerName].entries[id] then return false end
-			return owner.API.IsOnQuest(id)
+			local member = session and session.byName[name]
+			return member and { questID = member.focusQuestId, title = preview:GetPartyFocusLabel(name) }
 		end,
-		SetPartyNavigationQuest = function(id)
-			if not preview.partyQuestCompareSession or preview:IsRuntimeRestricted()
-				or (id ~= 0 and not preview.API.IsOnQuest(id)) then return false end
-			return owner.API.SetPartyNavigationQuest(id)
+		member = function(name)
+			return preview.partyQuestCompareSession and preview.partyQuestCompareSession.byName[name] ~= nil
 		end,
-	}
-	for _, method in ipairs({ "ApplyPartyQuestFocus", "SamplePartyNavigation", "OnPartyNavigationTrackingChanged",
-		"FollowPartyQuestFocus", "ReconcilePartyQuestFollow", "SelectPartyQuestFocus" }) do
-		preview["Native" .. method] = owner[method]
+		ignored = function()
+			return false
+		end,
+		raid = function()
+			return false
+		end,
+		groupInvalid = function()
+			return false
+		end,
+		loggingOut = function()
+			return owner.isLoggingOut
+		end,
+		restricted = function()
+			return owner:IsRuntimeRestricted()
+		end,
+		blocked = function()
+			return owner:IsWorkBlocked("foreign_frame_mutation")
+		end,
+		active = function()
+			return preview.partyQuestCompareSession ~= nil
+				and (not preview.liveQuestData or rawget(owner, "nativePartyFocusOwner") == preview.focusController)
+		end,
+		currentQuest = CurrentQuest,
+		native = function()
+			if preview.liveQuestData then
+				return owner.API.GetPartyNavigationNativeState()
+			end
+			return { questID = CurrentQuest(), mapID = -1, x = 0, y = 0 }
+		end,
+		readable = function(value)
+			return owner:CanAccessTable(value)
+		end,
+		owns = Owns,
+		setQuest = function(id)
+			if not preview.partyQuestCompareSession or owner:IsRuntimeRestricted() or (id ~= 0 and not Owns(id)) then
+				return false
+			end
+			if preview.liveQuestData then
+				return owner.API.SetPartyNavigationQuest(id)
+			end
+			preview.previewFocus = id
+			return true
+		end,
+		questID = function(id)
+			local n = owner:SafeToNumber(id)
+			return n and n >= 0 and n <= 1000000000 and n == math.floor(n) and n
+		end,
+		save = function() end,
+		clearMissing = function() end,
+		publish = function() end,
+		missing = function(name, id, title)
+			owner:ShowPartyFocusMissingDialog({ name = name, questID = id, title = title }, true)
+		end,
+		confirm = function(name, callback)
+			return owner:ShowPartyFocusChangeDialog(name, callback, true, preview.liveQuestData)
+		end,
+		changed = function()
+			-- Presentation-only compatibility fields; controller state is authoritative.
+			preview.previewFollowing = preview.focusController:GetTarget()
+			preview:QueuePartyQuestCompareRender()
+		end,
+	})
+	function preview:IsRuntimeRestricted()
+		return owner:IsRuntimeRestricted()
 	end
-	function preview:IsRuntimeRestricted() return owner:IsRuntimeRestricted() end
-	function preview:CanAccessValue(value) return owner:CanAccessValue(value) end
-	function preview:CanAccessTable(value) return owner:CanAccessTable(value) end
-	function preview:SafeToNumber(value) return owner:SafeToNumber(value) end
-	function preview:NormalizeMemberName(value) return value end
-	function preview:GetPlayerFullName() return self.partyQuestCompareSession and self.partyQuestCompareSession.playerName end
-	function preview:IsSelfSender(name) return name == self:GetPlayerFullName() end
-	function preview:IsGroupedSender(name) return self.partyQuestCompareSession and self.partyQuestCompareSession.byName[name] ~= nil end
-	function preview:IsIgnoredPlayerName() return false end
-	function preview:WouldPartyQuestFollowCycle() return false end
-	function preview:SavePartyQuestFollow() end
-	function preview:ClearPartyFocusMissingNotice() end
-	function preview:QueuePartyNavigationUpdate() end
-	function preview:GetPartyNavigationState() return self.partyNavigationState end
-	function preview:GetPartyNavigationPeer(name)
-		local member = self.partyQuestCompareSession and self.partyQuestCompareSession.byName[name]
-		return member and { questID = member.focusQuestId, title = self:GetPartyFocusLabel(name) } or nil
+	function preview:CanAccessValue(value)
+		return owner:CanAccessValue(value)
 	end
-	function preview:QueuePartyFocusMissingNotice(name, id, title)
-		owner:ShowPartyFocusMissingDialog({ name = name, questID = id, title = title }, true)
+	function preview:CanAccessTable(value)
+		return owner:CanAccessTable(value)
 	end
-	function preview:OnPartyNavigationTrackingChanged() return self:NativeOnPartyNavigationTrackingChanged() end
-	function preview:FollowPartyQuestFocus(name) return self:NativeFollowPartyQuestFocus(name) end
-	function preview:ApplyPartyQuestFocus() return self:NativeApplyPartyQuestFocus() end
-	function preview:SamplePartyNavigation() return self:NativeSamplePartyNavigation() end
-	function preview:ReconcilePartyQuestFollow() return self:NativeReconcilePartyQuestFollow() end
+	function preview:SafeToNumber(value)
+		return owner:SafeToNumber(value)
+	end
+	function preview:NormalizeMemberName(value)
+		return value
+	end
+	function preview:GetPlayerFullName()
+		return self.partyQuestCompareSession and self.partyQuestCompareSession.playerName
+	end
+	function preview:IsSelfSender(name)
+		return name == self:GetPlayerFullName()
+	end
+	function preview:IsGroupedSender(name)
+		return self.partyQuestCompareSession and self.partyQuestCompareSession.byName[name] ~= nil
+	end
+	function preview:IsIgnoredPlayerName()
+		return false
+	end
+	function preview:OnPartyNavigationTrackingChanged()
+		return self.focusController:OnTrackingChanged()
+	end
+	function preview:FollowPartyQuestFocus(name)
+		return self.focusController:Follow(name)
+	end
+	function preview:ApplyPartyQuestFocus()
+		return self.focusController:Apply()
+	end
+	function preview:SamplePartyNavigation()
+		return self.focusController:ObserveNative()
+	end
+	function preview:ReconcilePartyQuestFollow()
+		return self.focusController:Reconcile()
+	end
+	function preview:RequestPartyQuestFocus(name, id)
+		return self.focusController:Request(name, id)
+	end
 	function preview:StartNavigationObserver()
-		if not self.liveQuestData then return end
+		if not self.liveQuestData then
+			return
+		end
 		local observer = self.navigationObserver
 		if not observer then
-			observer = self:CreatePartyQuestUIFrame("Frame", nil, self.partyQuestCompareWindow)
+			observer = self:CreateOwnedWindowFrame("Frame", nil, self.partyQuestCompareWindow)
 			self.navigationObserver = observer
 			observer:SetScript("OnEvent", function()
-				if self.liveQuestData and self.partyQuestCompareSession then self:NativeOnPartyNavigationTrackingChanged() end
+				if self.liveQuestData and self.partyQuestCompareSession then
+					self:OnPartyNavigationTrackingChanged()
+				end
 			end)
 			observer:SetScript("OnUpdate", function(_, elapsed)
-				if not self.liveQuestData or not self.partyQuestCompareSession then return end
+				if not self.liveQuestData or not self.partyQuestCompareSession then
+					return
+				end
 				self.navigationElapsed = (self.navigationElapsed or 0) + elapsed
-				if self.navigationElapsed < 0.25 then return end
+				if self.navigationElapsed < 0.25 then
+					return
+				end
 				self.navigationElapsed = 0
-				if self.partyNavigationState.checkExternal then self:SamplePartyNavigation() end
+				if self.partyNavigationState.checkExternal then
+					self:SamplePartyNavigation()
+				end
 				self:ApplyPartyQuestFocus()
 			end)
 		end
-		if observer.RegisterEvent then observer:RegisterEvent("SUPER_TRACKING_CHANGED") end
+		if observer.RegisterEvent then
+			observer:RegisterEvent("SUPER_TRACKING_CHANGED")
+		end
 		observer:Show()
 	end
 	function preview:CreatePartyQuestFilterMenu(frame, generator)
@@ -249,7 +438,9 @@ function QuestTogether:CreatePartyQuestComparePreview()
 			generator(menuOwner, root)
 			if frame.navName then
 				root:CreateButton(L("Preview next focused quest"), function()
-					if self.partyQuestCompareSession == session then self:AdvancePartyQuestFocus(frame.navName) end
+					if self.partyQuestCompareSession == session then
+						self:AdvancePartyQuestFocus(frame.navName)
+					end
 				end)
 			end
 			root:CreateDivider()
@@ -265,17 +456,27 @@ function QuestTogether:CreatePartyQuestComparePreview()
 			end)
 		end)
 	end
-	function preview:RegisterManagedWindow(frame, _, minWidth, minHeight) return owner:RegisterManagedWindow(frame, nil, minWidth, minHeight) end
-	function preview:SaveWindowLayout(frame) return owner:SaveWindowLayout(frame) end
-	function preview:ApplyWindowLayout(frame) return owner:ApplyWindowLayout(frame) end
-	function preview:GetPartyQuestCompareTime() return owner:GetPartyQuestCompareTime() end
+	function preview:RegisterManagedWindow(frame, _, minWidth, minHeight)
+		return owner:RegisterManagedWindow(frame, nil, minWidth, minHeight)
+	end
+	function preview:SaveWindowLayout(frame)
+		return owner:SaveWindowLayout(frame)
+	end
+	function preview:ApplyWindowLayout(frame)
+		return owner:ApplyWindowLayout(frame)
+	end
+	function preview:GetPartyQuestCompareTime()
+		return owner:GetPartyQuestCompareTime()
+	end
 	function preview:RefreshPartyQuestCompareMember(name)
 		local member = self.partyQuestCompareSession.byName[name]
-		if member then member.state, member.sampledAt = "ready", self:GetPartyQuestCompareTime() end
+		if member then
+			member.state, member.sampledAt = "ready", self:GetPartyQuestCompareTime()
+		end
 		self:QueuePartyQuestCompareRender()
 	end
-	function preview:GetPartyQuestUIParent()
-		return owner:GetPartyQuestUIParent()
+	function preview:GetOwnedUIParent()
+		return owner:GetOwnedUIParent()
 	end
 	function preview:GetPartyQuestLeaderName()
 		return self.partyQuestCompareSession and self.partyQuestCompareSession.playerName
@@ -283,8 +484,8 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	function preview:GetClassColorCode(classFile)
 		return owner:GetClassColorCode(classFile)
 	end
-	function preview:CreatePartyQuestUIFrame(...)
-		return owner:CreatePartyQuestUIFrame(...)
+	function preview:CreateOwnedWindowFrame(...)
+		return owner:CreateOwnedWindowFrame(...)
 	end
 	-- Window movement stays owned by QT; no Blizzard frame state is patched.
 	function preview:StartWindowDrag(frame)
@@ -327,8 +528,11 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		session.expandedQuestIds = session.expandedQuestIds or {}
 		session.expandedQuestIds[id] = not session.expandedQuestIds[id] or nil
 		local catalog = self.questCatalog[id]
-		if not catalog then return end
-		local nativeObjectives = self.liveQuestData and not catalog.mockIndex and owner:ReadQuestCompareObjectives(id) or nil
+		if not catalog then
+			return
+		end
+		local nativeObjectives = self.liveQuestData and not catalog.mockIndex and owner:ReadQuestCompareObjectives(id)
+			or nil
 		for i, member in ipairs(session.members) do
 			local quest = member.entries[id]
 			local complete = quest and quest.isComplete
@@ -337,18 +541,27 @@ function QuestTogether:CreatePartyQuestComparePreview()
 			local objectives
 			if catalog.mockIndex then
 				objectives = {
-					{ text = OBJECTIVES[catalog.mockIndex][1], kind = "item", current = complete and 8 or OBJECTIVE_COUNTS[i], required = 8, finished = complete },
+					{
+						text = OBJECTIVES[catalog.mockIndex][1],
+						kind = "item",
+						current = complete and 8 or OBJECTIVE_COUNTS[i],
+						required = 8,
+						finished = complete,
+					},
 					{ text = OBJECTIVES[catalog.mockIndex][2], kind = "event", finished = complete or i == 2 },
 				}
 			elseif nativeObjectives then
 				objectives = {}
 				for index, objective in ipairs(nativeObjectives) do
 					local copy = {}
-					for key, value in pairs(objective) do copy[key] = value end
+					for key, value in pairs(objective) do
+						copy[key] = value
+					end
 					if not member.isLocal then
 						copy.finished = complete == true
 						if copy.required then
-							copy.current = complete and copy.required or math.floor(copy.required * OBJECTIVE_COUNTS[i] / 9)
+							copy.current = complete and copy.required
+								or math.floor(copy.required * OBJECTIVE_COUNTS[i] / 9)
 						end
 					end
 					objectives[index] = copy
@@ -366,17 +579,13 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		local wasNative = self.liveQuestData and self.partyQuestCompareSession ~= nil
 		self.partyQuestCompareSession, self.partyNavigationState = nil, nil
 		if self.navigationObserver then
-			if self.navigationObserver.UnregisterAllEvents then self.navigationObserver:UnregisterAllEvents() end
+			if self.navigationObserver.UnregisterAllEvents then
+				self.navigationObserver:UnregisterAllEvents()
+			end
 			self.navigationObserver:Hide()
 		end
 		if wasNative then
-			local state = rawget(owner, "partyNavigationState")
-			if state and state.following then
-				-- The preview can have changed native focus after the live model's
-				-- last successful attempt. Establish a new baseline before resuming.
-				state.attempt, state.checkExternal, state.resuming = nil, nil, true
-			end
-			owner:QueuePartyNavigationUpdate()
+			owner:ReleasePartyFocusController(self.focusController)
 		end
 	end
 	function preview:RenderPartyQuestCompare()
@@ -384,7 +593,9 @@ function QuestTogether:CreatePartyQuestComparePreview()
 			render(self)
 			self.partyQuestCompareWindow.summary:SetText(
 				self.partyQuestCompareWindow.statusMessage
-					or (self.liveQuestData and L("PREVIEW · Your quest log + 4 simulated teammates · Focus changes affect your real navigation"))
+					or (self.liveQuestData and L(
+						"PREVIEW · Your quest log + 4 simulated teammates · Focus changes affect your real navigation"
+					))
 					or string.format(
 						L(
 							"DEBUG PREVIEW · %d mock players · %d quests shown · Actions are simulated · Refresh resets mock data"
@@ -400,6 +611,11 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	end
 	function preview:RefreshPartyQuestCompare()
 		Populate(self)
+		if self.liveQuestData then
+			owner:AcquirePartyFocusController(self.focusController)
+		else
+			owner:ReleasePartyFocusController(self.focusController)
+		end
 		self:StartNavigationObserver()
 		self.partyQuestCompareWindow.horizontal:SetValue(0)
 		self:QueuePartyQuestCompareRender()
@@ -431,23 +647,23 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	function preview:OpenPartyQuestJournal(id)
 		local session = self.partyQuestCompareSession
 		local quest = session and session.byName[session.playerName].entries[id]
-		if not quest or self:IsWorkBlocked("foreign_frame_mutation") then return false end
+		if not quest or self:IsWorkBlocked("foreign_frame_mutation") then
+			return false
+		end
 		session.message = L("Preview only: ") .. L("Open in Quest Log") .. ": " .. quest.questTitle
 		self:QueuePartyQuestCompareRender()
 		return true
 	end
 	function preview:GetPartyQuestFollowTarget()
-		if self.liveQuestData then return QuestTogether.GetPartyQuestFollowTarget(self) end
-		return self.previewFollowing, self.previewFollowToken
-	end
-	function preview:ShowPartyFocusChangeDialog(name, callback)
-		return owner:ShowPartyFocusChangeDialog(name, callback, true, self.liveQuestData)
+		return self.focusController:GetTarget()
 	end
 	function preview:GetPartyQuestFocusID(name)
 		local member = self.partyQuestCompareSession and self.partyQuestCompareSession.byName[name]
 		if member and member.isLocal and self.liveQuestData then
-			if self:IsRuntimeRestricted() then return nil end
-			return self.API.GetActiveTrackedQuestID() or 0
+			if self:IsRuntimeRestricted() then
+				return nil
+			end
+			return CurrentQuest() or 0
 		end
 		return member and (member.isLocal and (self.previewFocus or member.focusQuestId) or member.focusQuestId)
 	end
@@ -456,36 +672,27 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		return self.questCatalog[id] and self.questCatalog[id].title or L("No focused quest")
 	end
 	function preview:SelectPartyQuestFocus(name, id)
-		if self.liveQuestData then return self:NativeSelectPartyQuestFocus(name, id) end
-		local session = self.partyQuestCompareSession
-		local member = session and session.byName[name]
-		if not member or not member.entries[id] then return false end
-		if member.isLocal then
-			self.previewFollowing, self.previewFocus = nil, id
-		elseif member.focusQuestId == id then
-			if session.byName[session.playerName].entries[id] then
-				if self.previewFollowing ~= name then self.previewFollowToken = {} end
-				self.previewFollowing, self.previewFocus = name, id
-			else
-				self.previewFollowing = nil
-				owner:ShowPartyFocusMissingDialog({ name = name, questID = id, title = self.questCatalog[id].title }, true)
-			end
-		else return false end
-		self:QueuePartyQuestCompareRender()
-		return true
+		return self.focusController:Select(name, id)
 	end
 	function preview:AdvancePartyQuestFocus(name)
 		local session = self.partyQuestCompareSession
 		local member = session and session.byName[name]
-		if not member or member.isLocal then return end
+		if not member or member.isLocal then
+			return
+		end
 		local start = 0
-		for index, id in ipairs(self.questOrder) do if id == member.focusQuestId then start = index; break end end
+		for index, id in ipairs(self.questOrder) do
+			if id == member.focusQuestId then
+				start = index
+				break
+			end
+		end
 		for offset = 1, #self.questOrder do
 			local id = self.questOrder[(start + offset - 1) % #self.questOrder + 1]
 			if member.entries[id] then
 				member.focusQuestId = id
 				if self:GetPartyQuestFollowTarget() == name then
-					if self.liveQuestData then self:ApplyPartyQuestFocus() else self:SelectPartyQuestFocus(name, id) end
+					self:ApplyPartyQuestFocus()
 				end
 				break
 			end
@@ -494,15 +701,12 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	end
 
 	function preview:GetPartyFollowingText()
-		if self.liveQuestData then return QuestTogether.GetPartyFollowingText(self) end
-		return self.previewFollowing
-				and (string.format(L("Following: %s"), self.previewFollowing) .. (self.previewFollowStatus and ("\n" .. self.previewFollowStatus) or ""))
-			or ""
+		local name = self.focusController:GetTarget()
+		local status = self.partyNavigationState and self.partyNavigationState.followStatus
+		return name and (string.format(L("Following: %s"), name) .. (status and ("\n" .. status) or "")) or ""
 	end
 	function preview:StopPartyQuestFollow()
-		if self.liveQuestData then return QuestTogether.StopPartyQuestFollow(self) end
-		self.previewFollowing, self.previewFollowStatus = nil, nil
-		self:QueuePartyQuestCompareRender()
+		return self.focusController:Stop()
 	end
 	function preview:PopulatePartyFocusMenu(root, name)
 		local session = self.partyQuestCompareSession
@@ -511,13 +715,16 @@ function QuestTogether:CreatePartyQuestComparePreview()
 			return
 		end
 		root:CreateTitle(self:GetPartyFocusLabel(name))
-		root:CreateButton(self:GetPartyQuestFollowTarget() == name and L("Stop following") or L("Follow quest focus"), function()
-			if self:GetPartyQuestFollowTarget() == name then
-				self:StopPartyQuestFollow()
-			else
-				self:SelectPartyQuestFocus(name, member.focusQuestId)
+		root:CreateButton(
+			self:GetPartyQuestFollowTarget() == name and L("Stop following") or L("Follow quest focus"),
+			function()
+				if self:GetPartyQuestFollowTarget() == name then
+					self:StopPartyQuestFollow()
+				else
+					self:SelectPartyQuestFocus(name, member.focusQuestId)
+				end
 			end
-		end)
+		)
 	end
 
 	return preview

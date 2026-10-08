@@ -5,24 +5,21 @@ local function Eq(a, b)
 end
 local function Noop() end
 local function Peer(name, forever)
-	local a = setmetatable(
-		{
-			name = name,
-			now = 100,
-			isEnabled = true,
-			hasLoggedIn = true,
-			partyMembers = {},
-			partyMemberOrder = {},
-			partyRosterFingerprint = "solo",
-			count = 0,
-			db = { profile = QT:DeepCopy(QT.DEFAULTS.profile), global = {} },
-			out = {},
-			recentCommMessageSignatures = {},
-			runtimeStateStore = {},
-			sent = {},
-		},
-		{ __index = QT }
-	)
+	local a = setmetatable({
+		name = name,
+		now = 100,
+		isEnabled = true,
+		hasLoggedIn = true,
+		partyMembers = {},
+		partyMemberOrder = {},
+		partyRosterFingerprint = "solo",
+		count = 0,
+		db = { profile = QT:DeepCopy(QT.DEFAULTS.profile), global = {} },
+		out = {},
+		recentCommMessageSignatures = {},
+		runtimeStateStore = {},
+		sent = {},
+	}, { __index = QT })
 	a.API = {}
 	for key, value in pairs(QT.API) do
 		if type(value) == "function" then
@@ -249,11 +246,11 @@ QT:RegisterTest(
 		a:RecordQTPlayerPresence("Other-Realm", true)
 		Eq(a:RequestPlayerDetails("Other-Realm"), false)
 		Eq(b:HandlePlayerDetailsMessage("QTHQ", "1,1-2-3", a.name), true)
-		local queued = #b.geographicCommsState.queue
+		local queued = #b:GetTransportState().queue
 		for i = 1, 100 do
 			Eq(b:HandlePlayerDetailsMessage("QTHQ", "1,1-2-" .. i, "Other" .. i .. "-Realm"), false)
 		end
-		Eq(#b.geographicCommsState.queue, queued)
+		Eq(#b:GetTransportState().queue, queued)
 		b.now = b.now + 5
 		Eq(b:HandlePlayerDetailsMessage("QTHQ", "1,1-2-4", a.name), false)
 	end
@@ -298,7 +295,7 @@ QT:RegisterTest(
 			a:HandleGeographicSnapshot(packet:sub(6), b.name)
 		end
 		Eq(a:RequestPlayerDetails(b.name), false)
-		Eq(#a.geographicCommsState.queue, 0)
+		Eq(#a:GetTransportState().queue, 0)
 	end
 )
 

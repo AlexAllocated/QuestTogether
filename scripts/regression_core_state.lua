@@ -28,6 +28,7 @@ local function NewFixture()
 		blocked = false,
 	}, { __index = QT })
 	addon.API = {
+		GetTime = function() return 100 end,
 		GetNumQuestLogEntries = function()
 			if addon.unreadableCount then
 				return nil
@@ -302,7 +303,7 @@ QT:RegisterTest("unavailable world classification preserves active area and acce
 	Equal(#addon.announcements, 1, "unknown must not resurrect the old positive")
 end)
 
-QT:RegisterTest("independent world classification readers use the newest boolean in either order", function()
+QT:RegisterTest("quest acquisitions retain newest boolean while classification consumers do not re-read APIs", function()
 	for _, original in ipairs({ true, false }) do
 		for _, reader in ipairs({ "snapshot", "resolver" }) do
 			local addon = NewTaskClassificationFixture()
@@ -311,9 +312,9 @@ QT:RegisterTest("independent world classification readers use the newest boolean
 			addon:RefreshTaskAreaStates(false)
 			addon.worldClassification = nil
 			addon.worldReadQueue = reader == "snapshot"
-				and { not original, "unknown", "unknown" } or { "unknown", not original, "unknown" }
+				and { not original, "unknown" } or { "unknown", not original }
 			addon:ObserveTaskAreaChange()
-			Equal(#addon.worldReadQueue, 0, "the independent snapshot, merge, and public reader all run")
+			Equal(#addon.worldReadQueue, 0, "only the two scheduled acquisitions read live classification")
 			Equal(addon:IsWorldQuest(12345), not original, reader)
 			Equal(addon:GetTaskAnnouncementType(12345), not original and "world" or nil, reader)
 			Equal(addon:GetTaskAreaStateStore("world")[12345] ~= nil, not original, reader)
@@ -467,7 +468,7 @@ local function ObserveWorldLifecycleWork(addon)
 	addon.BroadcastQTPlayerPresence = function() calls.presence = calls.presence + 1 end
 	addon.BroadcastPlayerLocation = function() calls.location = calls.location + 1 end
 	addon.InitializeMinimapLauncher, addon.NotifyAddonUpdate = Noop, Noop
-	addon.InitializePlayerLocations = Noop
+	addon.InitializePlayerLocations, addon.InitializeRuntimeCoordinator = Noop, Noop
 	return calls
 end
 
@@ -1260,4 +1261,45 @@ QT:RegisterTest("ready notification history resets after turn-in or abandonment 
 		a:ObserveReady()
 		Equal(#a.readyAnnouncements, 2, "a new quest lifetime can announce again")
 	end
+end)
+
+QT:RegisterTest("quest acquisition publishes classification and rows atomically after a complete scan", function()
+	local a = NewFixture()
+	a.API.IsWorldQuest = function() return a.worldClassification end
+	a.worldClassification = true
+	local snapshot, complete = a:RebuildQuestSnapshotStore()
+	assert(complete and a:GetQuestClassification(12345).isWorldQuest == true)
+	local generation = snapshot.generation
+	a.worldClassification = false
+	a.API.GetNumQuestLogEntries = function() return 2 end
+	local _, finished = a:RebuildQuestSnapshotStore()
+	assert(not finished and snapshot.generation == generation)
+	assert(a:GetQuestClassification(12345).isWorldQuest == true, "partial reads cannot leak new classifications")
+	a.API.GetNumQuestLogEntries = function() return 1 end
+	assert(select(2, a:RebuildQuestSnapshotStore()))
+	assert(a:GetQuestClassification(12345).isWorldQuest == false)
+end)
+
+QT:RegisterTest("classification consumers and area reduction share an observation without new native reads", function()
+	local a = NewTaskClassificationFixture()
+	local reads = 0
+	a.API.IsWorldQuest = function() reads = reads + 1; return true end
+	local snapshot = a:RebuildQuestSnapshotStore()
+	assert(reads == 1)
+	assert(a:IsWorldQuest(12345) and not a:IsBonusObjective(12345))
+	assert(a:GetTaskAnnouncementType(12345) == "world")
+	assert(a:RefreshTaskAreaStates(false, snapshot))
+	assert(reads == 1, "presentation and reducers cannot acquire classification")
+end)
+
+QT:RegisterTest("a successfully observed empty log is cached until explicit acquisition", function()
+	local a = NewTaskClassificationFixture()
+	a.row = nil
+	local reads = 0
+	a.API.GetNumQuestLogEntries = function() reads = reads + 1; return 0 end
+	a:EnsureQuestSnapshotStore()
+	a:EnsureQuestSnapshotStore()
+	assert(reads == 1)
+	a:RebuildQuestSnapshotStore()
+	assert(reads == 2)
 end)

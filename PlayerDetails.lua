@@ -47,7 +47,11 @@ local function Bound(t)
 	end
 end
 local function Send(a, name, wire)
-	return a:QueueGeographicWire(wire, "hover player details", { distribution = "WHISPER", target = name }, false)
+	return a:SendWireMessageToAnnouncementRoutes(
+		wire,
+		"hover player details",
+		{ { distribution = "WHISPER", target = name } }
+	)
 end
 
 function QT:RequestPlayerDetails(sender)
@@ -353,7 +357,7 @@ function QT:BuildPlayerDetailsIdentityPayload()
 	return payload
 end
 
-function QT:HandlePlayerDetailsIdentity(payload, sender)
+function QT:HandlePlayerDetailsIdentity(payload, sender, sampleAge, source)
 	if not Enabled(self) or type(payload) ~= "string" or #payload > 240 then
 		return false
 	end
@@ -376,7 +380,8 @@ function QT:HandlePlayerDetailsIdentity(payload, sender)
 		return false
 	end
 	local s, now = State(self), Now(self)
-	s.identities[name] = {
+	local observation = self:ResolvePeerObservation(name, "QTHI", sampleAge, source, nil, nil, 180)
+	local record = {
 		classFile = classFile,
 		level = level,
 		faction = faction,
@@ -385,6 +390,10 @@ function QT:HandlePlayerDetailsIdentity(payload, sender)
 		receivedAt = now,
 		at = now,
 	}
+	if not self:CommitPeerObservation(observation, record, false) then
+		return false
+	end
+	s.identities[name] = record
 	Bound(s.identities)
 	return true
 end
@@ -413,4 +422,26 @@ function QT:GetPlayerDetailsTooltipRow(row)
 		end
 	end
 	return copy
+end
+
+function QT:RetirePlayerDetailsPeer(name)
+	local state = rawget(self, "playerDetailsState")
+	if state then
+		state.pending[name], state.attempts[name], state.replies[name], state.identities[name] = nil, nil, nil, nil
+	end
+end
+
+QT:RegisterCommSendPolicy("QTHQ", function(addon, wire, route, options)
+	options.isCurrent = function()
+		return addon:IsPlayerDetailsQueuedWireCurrent(wire, route.target)
+	end
+end)
+QT:RegisterCommSendPolicy("QTHD", function(addon, wire, route, options)
+	options.isCurrent = function()
+		return addon:IsPlayerDetailsQueuedWireCurrent(wire, route.target)
+	end
+end)
+
+function QT:ResetPlayerDetails()
+	self.playerDetailsState = nil
 end

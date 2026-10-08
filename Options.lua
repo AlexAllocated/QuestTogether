@@ -195,13 +195,12 @@ end
 
 function QuestTogether:HideSettingsTooltip(owner)
 	if owner and rawget(self, "settingsTooltipOwner") ~= owner then return end
-	self.settingsTooltipPendingHide = true
+	self.settingsTooltipOwner, self.settingsTooltipSession = nil, nil
 	local tooltip = rawget(self, "settingsTooltip")
-	if self.LibChev.CanMutateOwnedRegion(tooltip) then
-		tooltip:Hide()
-		tooltip:SetScript("OnUpdate", nil)
-		self.settingsTooltipOwner, self.settingsTooltipPendingHide = nil, nil
-	end
+	self:QueueOwnedUICleanup(tooltip, function(frame)
+		frame:SetScript("OnUpdate", nil)
+		frame:Hide()
+	end)
 end
 
 function QuestTogether:ShowSettingsTooltip(owner, title, text)
@@ -241,14 +240,17 @@ function QuestTogether:ShowSettingsTooltip(owner, title, text)
 	tooltip:SetSize(320, tooltip.title:GetStringHeight() + tooltip.text:GetStringHeight() + 32)
 	tooltip:ClearAllPoints()
 	tooltip:SetPoint("TOPLEFT", owner, "TOPRIGHT", 8, 0)
-	self.settingsTooltipOwner, self.settingsTooltipPendingHide = owner, nil
+	local session = {}
+	self.settingsTooltipOwner, self.settingsTooltipSession = owner, session
+	self:CancelOwnedUICleanup(tooltip)
 	local elapsedSinceCheck = 0
 	tooltip:SetScript("OnUpdate", function(_, elapsed)
+		if rawget(self, "settingsTooltipSession") ~= session then return end
 		elapsedSinceCheck = elapsedSinceCheck + elapsed
 		if elapsedSinceCheck < 0.1 then return end
 		elapsedSinceCheck = 0
 		local current = rawget(self, "settingsTooltipOwner")
-		if self.settingsTooltipPendingHide or self:IsRuntimeRestricted()
+		if self:IsRuntimeRestricted()
 			or not self.LibChev.CanMutateOwnedRegion(current) or not current:IsVisible() then
 			self:HideSettingsTooltip()
 		end
@@ -2026,8 +2028,7 @@ function QuestTogether:InitializePlayerLocationsWindow(parentCategory)
 				info.text = label
 				info.checked = function() return GetPlayerLocationFilterChoice(QuestTogether) == choice end
 				info.func = function()
-					QuestTogether:SetOption("onlyShowQuestPartners", choice == 2)
-					QuestTogether:SetOption("showPlayerLocations", choice ~= 3)
+					QuestTogether:SetOptions({ onlyShowQuestPartners = choice == 2, showPlayerLocations = choice ~= 3 })
 					QuestTogether:RefreshPlayerLocationsWindow()
 				end
 				dropdown.entries[#dropdown.entries + 1] = info

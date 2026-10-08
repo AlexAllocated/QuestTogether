@@ -263,3 +263,29 @@ publishing and regenerate with `python3 scripts/check_release_notes.py --write`.
 CI rejects missing dates, incomplete historical translations, duplicate versions,
 and stale generated history. Include `ReleaseNotesHistory.lua` and the dates file
 in release commits alongside the existing notes and changelogs.
+
+## Reproducible installation packages
+
+Build a reviewed commit or tag with the checked-in packager:
+
+```sh
+python3 scripts/package.py --ref HEAD --output dist/QuestTogether.zip
+python3 scripts/test_package.py
+```
+
+Use the release tag instead of `HEAD` when packaging a published version. The
+source is read directly from Git, so local edits and unrelated screenshots
+cannot enter that archive. Omitting `--ref` builds a working-tree preview.
+The TOC determines Lua load contents; explicit asset rules include game textures,
+release screenshots, localized changelogs and required vendor notices. The
+packager verifies the pinned library manifest and writes a SHA-256 sidecar.
+
+Every archive contains `package-manifest.json` with its source commit and hashes
+of all installed files. The packager validates the ZIP against those inputs,
+and the Discord release verifier validates the whole installation manifest
+when present. Historical archives without this manifest retain their existing
+notes/version validation so old releases can still be reposted.
+
+CI runs the package tests, builds the exact tested commit, and uploads
+`QuestTogether-validated-package`. Use that artifact or the same local command;
+do not maintain a release-specific file-copy script.

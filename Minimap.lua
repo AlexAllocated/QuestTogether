@@ -211,12 +211,11 @@ end
 
 function QuestTogether:HideMinimapTooltip()
 	local tooltip = rawget(self, "minimapTooltip")
-	self.minimapTooltipPendingHide = tooltip and true or nil
-	if self.LibChev.CanMutateOwnedRegion(tooltip) then
-		tooltip:SetScript("OnUpdate", nil)
-		tooltip:Hide()
-		self.minimapTooltipPendingHide = nil
-	end
+	self.minimapTooltipSession = nil
+	self:QueueOwnedUICleanup(tooltip, function(frame)
+		frame:SetScript("OnUpdate", nil)
+		frame:Hide()
+	end)
 end
 
 function QuestTogether:ShowMinimapTooltip(button)
@@ -269,21 +268,24 @@ function QuestTogether:ShowMinimapTooltip(button)
 	-- or becomes quarantined. Check that boundary only while the tooltip is up.
 	local elapsedSinceCheck = 0
 	local elapsedSinceStatus = 0
+	local session = {}
+	self.minimapTooltipSession = session
+	self:CancelOwnedUICleanup(tooltip)
 	tooltip:SetScript("OnUpdate", function(_, elapsed)
+		if rawget(self, "minimapTooltipSession") ~= session then return end
 		elapsedSinceCheck = elapsedSinceCheck + elapsed
 		elapsedSinceStatus = elapsedSinceStatus + elapsed
 		if elapsedSinceCheck < 0.1 then
 			return
 		end
 		elapsedSinceCheck = 0
-		if rawget(self, "minimapTooltipPendingHide") or not CanShowMinimapTooltip(self, button) then
+		if not CanShowMinimapTooltip(self, button) then
 			self:HideMinimapTooltip()
 		elseif elapsedSinceStatus >= 1 then
 			elapsedSinceStatus = 0
 			self:RefreshMinimapTooltipStatus()
 		end
 	end)
-	self.minimapTooltipPendingHide = nil
 	tooltip:Show()
 end
 

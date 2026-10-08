@@ -109,7 +109,6 @@
       "announcement age sender=%s event=%s reportedAgeSeconds=%s",
       "announcement eventType=",
       "announcement metadata leaves no room for text",
-      "channel join failed ",
       "diagnostics.detail=Report exceeds the negotiated transfer limit. Update both clients and retry.",
       "local=%s sender=%s event=%s quest=%s bubbles=%s hideOwn=%s text=%s",
       "option event=",
@@ -122,38 +121,26 @@
       "ping request id=",
       "ping request received id=%s sender=%s",
       "ping response id=",
-      "ping route join failed channel=%s %s",
-      "ping route=%s channel=%s target=%s callOK=%s result=%s %s",
       "quest compare done requestId=",
       "quest compare entry requestId=",
       "quest compare objective",
       "quest compare request requestId=",
-      "requester left group requestId=",
-      "response expired requestId=",
+      "response failed requestId=",
       "response queue full",
-      "response retries exhausted requestId=",
-      "response snapshot exceeds queue limits requestId=",
-      "response snapshot unavailable requestId=",
-      "route=%s bytes=%d %s",
-      "route=%s bytes=%d result=%s %s",
       "scope sender=",
-      "send rejected bytes=%d %s",
+      "send rejected bytes=",
       "sender=%s route=%s bytes=%d",
-      "wire message"
+      "snapshot unavailable"
     ],
     "Core.lua": [
-      " samples: ",
-      "#%d title=%s header=%s questID=%s task=%s onMap=%s poi=%s",
       "...(%d more)",
       "/qt resetlayout - ",
       "ALL",
       "Adopted existing QuestTogether chat window id=%s on login",
-      "Applied active profile state reason=%s character=%s profile=%s",
       "Applied main chat font size=%s to QuestTogether chat frame id=%s",
       "CENTER",
       "CHANNEL",
       "CHATLINK",
-      "Character",
       "Closed QuestTogether chat window id=%s",
       "Complete",
       "Completed",
@@ -173,18 +160,12 @@
       "Party & Nearby Players",
       "Party Only",
       "Prefix",
-      "QUEST",
       "QuestTogether %.1f, %.1f",
       "QuestTogether chat window was closed; reverting chat log destination to main chat window",
       "Reactivated existing QuestTogether chat window id=%s",
       "Ready to Turn In",
       "Recurringactivequesticon",
       "Recurringavailablequesticon",
-      "Rejected option change key=%s invalid bubble duration",
-      "Rejected option change key=%s invalid bubble size",
-      "Rejected option change key=%s invalid chat destination=%s",
-      "Rejected option change key=%s invalid icon style=%s",
-      "Rejected option change key=%s invalidValue=%s",
       "Right",
       "SAY",
       "Separate Chat Window",
@@ -201,10 +182,7 @@
       "announcement ",
       "devLogAllAnnouncements = ",
       "dump ",
-      "empty quest snapshot. totalEntries=",
       "libchev must load before Core.lua",
-      "snapshot_deferred reason=unknown_count",
-      "snapshot_deferred unreadable_row=%d rows=%d generation=%d",
       "|cff33ff99QuestTogether|r: "
     ],
     "Debug.lua": [
@@ -214,7 +192,8 @@
       "Refresh"
     ],
     "DeveloperDiagnostics.lua": [
-      "Developer ping callback failed"
+      "Developer ping callback failed",
+      "QTPG"
     ],
     "EventHandlers.lua": [
       "QUEST",
@@ -239,11 +218,8 @@
       "World Quest Entered: "
     ],
     "GeographicComms.lua": [
-      "ANN",
       "CHANNEL",
       "LOC",
-      "LVL",
-      "PONG",
       "QJST",
       "QTCI",
       "QTHI",
@@ -252,46 +228,31 @@
       "QTPG",
       "QTPR",
       "QTVR",
-      "WHISPER",
-      "expired or departed route",
-      "outbound completion",
-      "outbound queue full",
       "presence departure",
       "presence snapshot",
       "zone discovery"
     ],
     "HotPathRuntime.lua": [
       "Frame",
+      "invalid work mode",
       "work_failed class=%s key=%s reason=%s error=%s"
     ],
     "LocationPins.lua": [
       "ADD",
       "ARTWORK",
-      "Alliance",
       "BACKGROUND",
-      "BORDER",
       "BOTTOM",
-      "BOTTOMLEFT",
       "BOTTOMRIGHT",
       "Button",
       "CENTER",
       "CLAMPTOBLACKADDITIVE",
-      "Frame",
       "Hide",
-      "Horde",
-      "LEFT",
       "OVERLAY",
-      "RIGHT",
       "ROUND",
       "SQUARE",
       "Show",
-      "TOOLTIP",
       "TOP",
-      "TOPLEFT",
-      "TOPRIGHT",
-      "location pin frame unavailable",
-      "location pin parent unavailable",
-      "location pin region unavailable"
+      "TOPLEFT"
     ],
     "LocationTargeting.lua": [
       "/targetexact [nocombat] ",
@@ -299,6 +260,10 @@
       "Button",
       "TOOLTIP",
       "[combat] hide"
+    ],
+    "MapOverlayPool.lua": [
+      "Frame",
+      "Hide"
     ],
     "Minimap.lua": [
       "ADD",
@@ -356,6 +321,7 @@
       "visual_cleanup deferred until restrictions end"
     ],
     "NearbyStreams.lua": [
+      "QTCI",
       "QTSP",
       "QTSR",
       "QTSX",
@@ -396,6 +362,13 @@
       "Wifebeast",
       "settings controls require explanatory tooltip text"
     ],
+    "OwnedUI.lua": [
+      "Frame",
+      "Show",
+      "owned UI frame unavailable",
+      "owned UI parent unavailable",
+      "owned UI region unavailable"
+    ],
     "PartyJoin.lua": [
       "PARTY",
       "QJON",
@@ -406,6 +379,8 @@
     ],
     "PartyNavigation.lua": [
       "PARTY",
+      "QTNAV",
+      "QTNAV:",
       "party navigation",
       "party navigation snapshot"
     ],
@@ -432,10 +407,7 @@
       "Show",
       "TOOLTIP",
       "TOPLEFT",
-      "TOPRIGHT",
-      "party waypoint frame unavailable",
-      "party waypoint parent unavailable",
-      "party waypoint region unavailable"
+      "TOPRIGHT"
     ],
     "PeerState.lua": [
       "QTPR"
@@ -462,7 +434,6 @@
     ],
     "PlayerLocations.lua": [
       "Alliance",
-      "Frame",
       "Horde",
       "LOC",
       "LOC:",
@@ -470,6 +441,7 @@
       "player location"
     ],
     "PlayerPhases.lua": [
+      "QTPH",
       "WHISPER",
       "layer comparison"
     ],
@@ -479,6 +451,26 @@
       "QTPR",
       "player presence",
       "quest partner status"
+    ],
+    "PlayerTooltipPresenter.lua": [
+      "ARTWORK",
+      "Alliance",
+      "BACKGROUND",
+      "BORDER",
+      "BOTTOM",
+      "BOTTOMLEFT",
+      "CLAMPTOBLACKADDITIVE",
+      "Frame",
+      "Hide",
+      "Horde",
+      "LEFT",
+      "OVERLAY",
+      "RIGHT",
+      "Show",
+      "TOOLTIP",
+      "TOP",
+      "TOPLEFT",
+      "TOPRIGHT"
     ],
     "PlayerTooltips.lua": [
       "ARTWORK",
@@ -561,7 +553,6 @@
       "MAGE",
       "Mend the fishing nets",
       "Mending the Fishermen's Nets",
-      "Native",
       "Orchard wolves defeated",
       "PALADIN",
       "Quarry prowlers defeated",
@@ -620,6 +611,25 @@
       "party compare titles",
       "party share prompt"
     ],
+    "QuestDialogs.lua": [
+      "BACKGROUND",
+      "BOTTOMLEFT",
+      "BOTTOMRIGHT",
+      "Button",
+      "LEFT",
+      "OVERLAY",
+      "TOPLEFT",
+      "TOPRIGHT",
+      "party focus missing quest"
+    ],
+    "QuestObservations.lua": [
+      " samples: ",
+      "#%d title=%s header=%s questID=%s task=%s onMap=%s poi=%s",
+      "QUEST",
+      "empty quest snapshot. totalEntries=",
+      "snapshot_deferred reason=unknown_count",
+      "snapshot_deferred unreadable_row=%d rows=%d generation=%d"
+    ],
     "QuestPartnerQuest.lua": [
       "QTLQ",
       "quest partner tracked quest"
@@ -656,11 +666,16 @@
       "TOPLEFT",
       "TOPRIGHT",
       "VERTICAL",
-      "release notes frame unavailable",
-      "release notes parent unavailable",
-      "release notes region unavailable",
       "release notes text measurement unavailable",
       "release notes theme"
+    ],
+    "RuntimeCoordinator.lua": [
+      "Frame"
+    ],
+    "Settings.lua": [
+      "Applied active profile state reason=%s character=%s profile=%s",
+      "Character",
+      "Unknown"
     ],
     "TaskArea.lua": [
       "...(%d more)",
@@ -673,6 +688,13 @@
       "world_area_enter questId=%s title=%s",
       "world_area_left questId=%s title=%s",
       "world_area_state announce=%s prev=%d curr=%d current=%s"
+    ],
+    "Transport.lua": [
+      " bytes=",
+      "channel join failed ",
+      "outbound completion",
+      "outbound queue full",
+      "wire message"
     ],
     "Welcome.lua": [
       "Frame"
@@ -689,7 +711,6 @@
       "BOTTOM",
       "BOTTOMLEFT",
       "BOTTOMRIGHT",
-      "Button",
       "CENTER",
       "DIALOG",
       "Frame",
@@ -699,9 +720,7 @@
       "RIGHT",
       "TOP",
       "TOPLEFT",
-      "TOPRIGHT",
       "party compare preview theme",
-      "party focus missing quest",
       "scroll dialog themes"
     ]
   }

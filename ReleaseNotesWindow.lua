@@ -15,16 +15,8 @@ function QuestTogether:CreateReleaseNotesUIFrame(...)
 	return CreateFrame(...)
 end
 
-local function Guard(addon, region)
-	return not addon:IsRuntimeRestricted() and LibChev.CanMutateOwnedRegion(region)
-end
-
-local function Call(addon, region, method, ...)
-	if not Guard(addon, region) then
-		error("release notes region unavailable", 0)
-	end
-	return region[method](region, ...)
-end
+local function Guard(addon, region) return addon:CanMutateOwnedUI(region) end
+local function Call(addon, region, method, ...) return addon:CallOwnedUI(region, method, ...) end
 
 local function ParentDimension(addon, parent, methodName)
 	local method = addon:GetAccessibleFrameMember(parent, methodName)
@@ -37,14 +29,7 @@ local function ParentDimension(addon, parent, methodName)
 end
 
 local function New(addon, kind, parent)
-	if addon:IsRuntimeRestricted() or not addon:CanAccessForeignFrame(parent) then
-		error("release notes parent unavailable", 0)
-	end
-	local frame = addon:CreateReleaseNotesUIFrame(kind, nil, parent)
-	if not Guard(addon, frame) then
-		error("release notes frame unavailable", 0)
-	end
-	return frame
+	return addon:CreateOwnedUIFrame(addon.CreateReleaseNotesUIFrame, kind, parent)
 end
 
 local function Texture(addon, parent, template, layer, width, height)
@@ -326,7 +311,7 @@ local function Create(addon, parent)
 	-- combat starts after presentation. Keep layout/native actions restricted.
 	Call(addon, frame.close, "SetScript", "OnClick", function()
 		if LibChev.CanMutateOwnedRegion(frame) and LibChev.CanMutateOwnedRegion(frame.close) then
-			frame:Hide()
+			addon:DismissManagedWindow(frame)
 		end
 	end)
 	frame.settings = Button(addon, frame, frame, L("Settings"), function()
@@ -430,17 +415,9 @@ local function Create(addon, parent)
 		end
 	end)
 	-- Stopping an owned drag remains safe if restrictions start mid-gesture.
-	local function StopDrag()
-		addon:StopWindowDrag(frame)
-		if LibChev.CanMutateOwnedRegion(frame) and (frame.dragging or frame.resizing) then
-			frame:StopMovingOrSizing()
-			frame.dragging, frame.resizing = nil, nil
-			addon:SaveWindowLayout(frame)
-		end
-	end
+	local function StopDrag() addon:StopWindowInteraction(frame) end
 	Call(addon, frame.dragHandle, "SetScript", "OnDragStop", StopDrag)
 	Call(addon, frame.resizeGrip, "SetScript", "OnMouseUp", StopDrag)
-	Call(addon, frame, "SetScript", "OnHide", StopDrag)
 	Script(addon, frame, frame, "OnSizeChanged", function(width, height)
 		if frame.resizing and not frame.rendering then
 			width, height = addon:SafeToNumber(width), addon:SafeToNumber(height)
@@ -457,6 +434,7 @@ local function Create(addon, parent)
 		end
 	end
 	addon:RegisterManagedWindow(frame, "releaseNotes", 520, 320)
+	addon:ConfigureWindowController(frame, { theme = frame.LayoutManagedWindow })
 	return frame
 end
 

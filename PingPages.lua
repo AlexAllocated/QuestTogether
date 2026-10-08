@@ -55,68 +55,25 @@ end
 
 function QT:DrainPongPages()
 	local queue = rawget(self, "pingPageQueue")
-	if not queue or queue.scheduled or not self.isEnabled or self.isLoggingOut then return end
-	local job = queue.jobs[1]
-	if not job or job.inFlight then return end
-	local now = self.API.GetTime()
-	local function Current()
-		local tick = self.API.GetTime()
-		return rawget(self, "pingPageQueue") == queue and queue.jobs[1] == job and not self.isLoggingOut
-			and tick >= job.createdAt and tick < job.expiresAt
-			and not self:IsIgnoredPlayerName(job.route.target)
-			and (not job.route.requiresGroup or self:IsGroupedSender(job.route.target))
-			and ((job.developer and self:GetOption("shareDeveloperDiagnostics") == true)
-				or (not job.developer and (not job.sharedLocation or self:CanPublishPlayerLocation())))
-	end
-	local current = Current()
-	local done = not current
-	if current then
-		local sent, reason
-		if job.delivery then
-			sent, reason = job.delivery.sent, job.delivery.reason
-			job.delivery = nil
-		else
-			local completion
-			if rawget(self, "geographicCommsState") then
-				completion = { owner=job, expires=job.expiresAt, isCurrent=Current, onComplete=function(ok, failure)
-					if rawget(self, "pingPageQueue") ~= queue or queue.jobs[1] ~= job then return end
-					job.inFlight, job.delivery = nil, { sent=ok, reason=failure }
-					self:DrainPongPages()
-				end }
-			end
-			sent, reason = self:SendWireMessageToAnnouncementRoutes(job.pages[job.index], "paged pong", { job.route }, false, completion)
-			if reason == "queued" then job.inFlight=true; return end
-		end
-		if sent then
-			job.index, job.failures = job.index + 1, 0
-			done = job.index > #job.pages
-		elseif reason ~= "paced" then
-			job.failures = reason == "cancelled" and 5 or job.failures + 1
-			done = job.failures >= 5
-		end
-	end
-	if done then table.remove(queue.jobs, 1) end
-	queue.scheduled = true
-	self.API.Delay(INTERVAL, function()
-		if rawget(self, "pingPageQueue") ~= queue then return end
-		queue.scheduled = false
-		self:DrainPongPages()
-	end)
+	if not queue then return end
+	self:PumpBulkTransfer(queue, {
+		field = "pingPageQueue", interval = INTERVAL,
+		isCurrent = function(job)
+			return not self:IsIgnoredPlayerName(job.route.target)
+				and (not job.route.requiresGroup or self:IsGroupedSender(job.route.target))
+				and ((job.developer and self:GetOption("shareDeveloperDiagnostics") == true)
+					or (not job.developer and (not job.sharedLocation or self:CanPublishPlayerLocation())))
+		end,
+		send = function(job, completion)
+			return self:SendWireMessageToAnnouncementRoutes(job.pages[job.index], "paged pong", { job.route }, false, completion)
+		end,
+		accept = function(job) job.index = job.index + 1; return job.index > #job.pages end,
+	})
 end
 
 function QT:CancelDeveloperDiagnosticReplies()
 	self.diagnosticReplyGeneration = (rawget(self, "diagnosticReplyGeneration") or 0) + 1
-	local queue = rawget(self, "pingPageQueue")
-	local cancelled = {}
-	for index = #(queue and queue.jobs or {}), 1, -1 do
-		local job = queue.jobs[index]
-		if job.developer then cancelled[job]=true; table.remove(queue.jobs,index) end
-	end
-	local geo = rawget(self, "geographicCommsState")
-	for index = #(geo and geo.queue or {}), 1, -1 do
-		if cancelled[geo.queue[index].owner] then table.remove(geo.queue,index) end
-	end
-	-- A cancelled in-flight job has no timer; restart remaining ordinary replies.
+	local queue = self:CancelBulkTransfers("pingPageQueue", function(job) return job.developer end)
 	if queue and not queue.scheduled and #queue.jobs > 0 then self:DrainPongPages() end
 end
 
@@ -196,5 +153,38 @@ function QT:HandlePongPage(payload, sender)
 	self:ObserveAddonVersion(response.addonVersion)
 	self:RememberPlayerAddonVersion(name, response.addonVersion)
 	self:RememberDirectCommPeer(name, true)
+	return true
+end
+
+function QT:SchedulePingReply(id, routes, supportsPages, developerRequest)
+	local now = self.API.GetTime()
+	local s = rawget(self, "pingReplyState")
+	if not s then s = { pingReplies = {} }; self.pingReplyState = s end
+	if not s or not self.API.Delay then
+		return false
+	end
+	s.pingReplies = s.pingReplies or {}
+	local count = 0
+	for key, at in pairs(s.pingReplies) do
+		if now < at or now - at > 300 then
+			s.pingReplies[key] = nil
+		else
+			count = count + 1
+		end
+	end
+	if s.pingReplies[id] or count >= 16 then
+		return false
+	end
+	s.pingReplies[id] = now
+	local generation = rawget(self, "commsWorldGeneration") or 0
+	local diagnosticGeneration = rawget(self, "diagnosticReplyGeneration") or 0
+	self.API.Delay(math.max(1, math.min(20, self:SafeToNumber(self.API.Random(1, 20)) or 1)), function()
+		if rawget(self, "pingReplyState") ~= s or (rawget(self, "commsWorldGeneration") or 0) ~= generation
+			or (developerRequest and (rawget(self, "diagnosticReplyGeneration") or 0) ~= diagnosticGeneration)
+			or not self.isEnabled or self.isLoggingOut then
+			return
+		end
+		self:SendPingResponse(id, routes, supportsPages, developerRequest)
+	end)
 	return true
 end

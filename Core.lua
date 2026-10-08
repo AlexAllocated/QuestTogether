@@ -232,21 +232,6 @@ local function MergeSanitizedQuestLogInfo(primaryInfo, fallbackInfo)
 	return mergedInfo
 end
 
-local function GetSnapshotBuilderQuestLogInfo(addon, questLogIndex)
-	local numericQuestLogIndex = addon and addon.SafeToNumber
-		and addon:SafeToNumber(questLogIndex)
-		or nil
-	if not numericQuestLogIndex or numericQuestLogIndex <= 0 then
-		return nil
-	end
-	numericQuestLogIndex = math.floor(numericQuestLogIndex + 0.5)
-
-	local questInfo = addon and addon.API and addon.API.GetQuestLogInfo
-		and addon.API.GetQuestLogInfo(numericQuestLogIndex)
-		or nil
-	return questInfo
-end
-
 local function SafeText(value, fallback)
 	if QuestTogether and QuestTogether.SafeToString then
 		return QuestTogether:SafeToString(value, fallback ~= nil and fallback or "<secret>")
@@ -2826,321 +2811,6 @@ function QuestTogether:ApplyDefaults(destination, defaults)
 	end
 end
 
-local function NormalizeProfileKey(profileKey)
-	if type(profileKey) ~= "string" then
-		return nil
-	end
-
-	local trimmed = QuestTogether:SafeTrimString(profileKey, "")
-	if trimmed == "" then
-		return nil
-	end
-	return trimmed
-end
-
-function QuestTogether:GetCurrentCharacterKey()
-	-- Keep existing Forever profile assignments: earlier versions interpreted
-	-- UnitFullName's second return as a realm and stored First-Surname keys.
-	-- This legacy storage key must not become a display or transport identity.
-	local regionalNames = self:UsesRegionalPlayerNames()
-	if regionalNames then
-		local first, last = self.API.UnitFullName("player")
-		first = self:SafeTrimString(first, "")
-		last = self:SafeStripWhitespace(last, "")
-		if first ~= "" and last ~= "" then
-			return first .. "-" .. last
-		end
-	end
-	local fullName = self.GetPlayerFullName and self:GetPlayerFullName() or nil
-	if type(fullName) == "string" and fullName ~= "" then
-		return fullName
-	end
-
-	local playerName = self:GetPlayerName() or "Unknown"
-	if SafeFind(playerName, "-", 1, true) then
-		return playerName
-	end
-
-	if not regionalNames then
-		local realmName = self:SafeStripWhitespace(self.API.GetRealmName and self.API.GetRealmName() or "", "")
-		if realmName ~= "" then
-			return playerName .. "-" .. realmName
-		end
-	end
-
-	return playerName
-end
-
-function QuestTogether:MigratePlayerLocationOptions(profile)
-	if type(profile) ~= "table" then
-		return
-	end
-	-- Read the old settings before filling defaults. Missing settings used to
-	-- default on; every present value had to be exactly true to grant permission.
-	-- Combining sharing uses AND, while combining viewing uses OR.
-	if profile.sharePlayerLocation == nil then
-		profile.sharePlayerLocation = (profile.shareLocationOnMap == nil or profile.shareLocationOnMap == true)
-			and (profile.shareLocationOnMinimap == nil or profile.shareLocationOnMinimap == true)
-	end
-	if profile.showPlayerLocations == nil then
-		profile.showPlayerLocations = (profile.showLocationsOnMap == nil or profile.showLocationsOnMap == true)
-			or (profile.showLocationsOnMinimap == nil or profile.showLocationsOnMinimap == true)
-	end
-	-- Fold the 6.4.2 split display controls back into one preference. Preserve
-	-- viewing when either surface was enabled; sharing remains independent.
-	if profile.showWorldMapPlayers ~= nil or profile.showMinimapPlayers ~= nil then
-		local world = profile.showWorldMapPlayers
-		local minimap = profile.showMinimapPlayers
-		if world == nil then world = profile.showPlayerLocations end
-		if minimap == nil then minimap = profile.showPlayerLocations end
-		profile.showPlayerLocations = world == true or minimap == true
-	end
-	profile.showWorldMapPlayers, profile.showMinimapPlayers = nil, nil
-	if profile.onlyShowQuestPartners == nil then
-		profile.onlyShowQuestPartners = false
-	end
-	profile.shareLocationOnMap, profile.shareLocationOnMinimap = nil, nil
-	profile.showLocationsOnMap, profile.showLocationsOnMinimap = nil, nil
-	if self.MigratePlayerMapVisibility then self:MigratePlayerMapVisibility(profile) end
-end
-
-function QuestTogether:EnsureProfileStorage()
-	if not self.db then
-		return false
-	end
-
-	if type(self.db.profiles) ~= "table" then
-		self.db.profiles = {}
-	end
-	if type(self.db.profileKeys) ~= "table" then
-		self.db.profileKeys = {}
-	end
-	-- Inactive profiles can be selected or copied later in this session.
-	for _, profile in pairs(self.db.profiles) do
-		self:MigratePlayerLocationOptions(profile)
-	end
-	self:MigratePlayerLocationOptions(self.db.profile)
-
-	return true
-end
-
-function QuestTogether:GetCurrentProfileKey()
-	return self.activeProfileKey
-end
-
-function QuestTogether:GetProfileKeys()
-	if not self.db then
-		return {}
-	end
-	self:EnsureProfileStorage()
-
-	local keys = {}
-	for profileKey, profileData in pairs(self.db.profiles) do
-		if type(profileKey) == "string" and type(profileData) == "table" then
-			keys[#keys + 1] = profileKey
-		end
-	end
-	table.sort(keys, function(left, right)
-		return tostring(left) < tostring(right)
-	end)
-	return keys
-end
-
-function QuestTogether:EnsureProfile(profileKey, sourceProfile)
-	if not self.db or not self:EnsureProfileStorage() then
-		return nil, nil
-	end
-
-	local normalizedKey = NormalizeProfileKey(profileKey)
-	if not normalizedKey then
-		return nil, nil
-	end
-
-	if type(self.db.profiles[normalizedKey]) ~= "table" then
-		self.db.profiles[normalizedKey] = self:DeepCopy(sourceProfile or self.DEFAULTS.profile)
-	end
-	self:MigratePlayerLocationOptions(self.db.profiles[normalizedKey])
-	self:ApplyDefaults(self.db.profiles[normalizedKey], self.DEFAULTS.profile)
-	return normalizedKey, self.db.profiles[normalizedKey]
-end
-
-function QuestTogether:ApplyActiveProfileState(changeReason)
-	if not self.db or not self.db.profile then
-		return false
-	end
-	-- Replacing a profile bypasses SetOption. Retire requests from its old
-	-- permission lifetime even if another profile is selected before a timer runs.
-	self.developerRequestState = nil
-	if self.CancelDeveloperDiagnosticReplies then self:CancelDeveloperDiagnosticReplies() end
-
-	self:NormalizeAnnouncementDisplayOptions()
-	self:NormalizeNameplateOptions()
-
-	if self.db.profile.chatLogDestination == "separate" then
-		local chatFrame = self:EnsureQuestLogChatFrame()
-		if chatFrame then
-			self:ApplyMainChatFontSizeToChatFrame(chatFrame)
-		end
-	else
-		self:CloseQuestLogChatFrame()
-	end
-
-	if self.hasLoggedIn then
-		if self.db.profile.enabled then
-			self:Enable()
-		else
-			self:Disable()
-		end
-	end
-
-	if self.RefreshPartyRoster then
-		self:RefreshPartyRoster()
-	end
-	if self.RefreshNameplateAugmentation then
-		self:RefreshNameplateAugmentation()
-	end
-	if self.RefreshActiveAnnouncementBubbles then
-		self:RefreshActiveAnnouncementBubbles()
-	end
-	if self.RefreshPersonalBubbleAnchorVisualState then
-		self:RefreshPersonalBubbleAnchorVisualState()
-	end
-	if self.RefreshPersonalBubbleEditModeDialog then
-		self:RefreshPersonalBubbleEditModeDialog()
-	end
-	if self.RefreshMinimapButton then self:RefreshMinimapButton() end
-	if self.RefreshManagedWindowLayouts then self:RefreshManagedWindowLayouts() end
-	if self.OnPlayerLocationOptionsChanged then self:OnPlayerLocationOptionsChanged() end
-	if self.BroadcastQuestPartnerStatus then self:BroadcastQuestPartnerStatus(true) end
-	if self.RefreshOptionsWindow then
-		self:RefreshOptionsWindow()
-	end
-	if self.RefreshProfilesWindow then
-		self:RefreshProfilesWindow()
-	end
-
-	self:Debugf(
-		"profile",
-		"Applied active profile state reason=%s character=%s profile=%s",
-		tostring(changeReason or "unknown"),
-		tostring(self.activeCharacterKey),
-		tostring(self.activeProfileKey)
-	)
-	return true
-end
-
-function QuestTogether:SetActiveProfile(profileKey)
-	if not self.db or not self:EnsureProfileStorage() then
-		return false, L("Profile database is unavailable.")
-	end
-
-	local normalizedKey, profileData = self:EnsureProfile(profileKey)
-	if not normalizedKey or not profileData then
-		return false, L("Profile name cannot be empty.")
-	end
-
-	local characterKey = self.activeCharacterKey or self:GetCurrentCharacterKey()
-	self.activeCharacterKey = characterKey
-	self.activeProfileKey = normalizedKey
-	self.db.profileKeys[characterKey] = normalizedKey
-	self.db.profile = profileData
-
-	self:ApplyActiveProfileState("switch")
-	return true
-end
-
-function QuestTogether:CreateProfile(profileKey, sourceProfileKey)
-	if not self.db or not self:EnsureProfileStorage() then
-		return false, L("Profile database is unavailable.")
-	end
-
-	local normalizedKey = NormalizeProfileKey(profileKey)
-	if not normalizedKey then
-		return false, L("Profile name cannot be empty.")
-	end
-	if type(self.db.profiles[normalizedKey]) == "table" then
-		return false, L("A profile with that name already exists.")
-	end
-
-	local sourceProfile = self.db.profile
-	local normalizedSource = NormalizeProfileKey(sourceProfileKey)
-	if normalizedSource and type(self.db.profiles[normalizedSource]) == "table" then
-		sourceProfile = self.db.profiles[normalizedSource]
-	end
-
-	self.db.profiles[normalizedKey] = self:DeepCopy(sourceProfile or self.DEFAULTS.profile)
-	self:MigratePlayerLocationOptions(self.db.profiles[normalizedKey])
-	self:ApplyDefaults(self.db.profiles[normalizedKey], self.DEFAULTS.profile)
-	return true
-end
-
-function QuestTogether:CopyProfileIntoActiveProfile(sourceProfileKey)
-	if not self.db or not self:EnsureProfileStorage() then
-		return false, L("Profile database is unavailable.")
-	end
-
-	local sourceKey = NormalizeProfileKey(sourceProfileKey)
-	if not sourceKey then
-		return false, L("Profile name cannot be empty.")
-	end
-	if type(self.db.profiles[sourceKey]) ~= "table" then
-		return false, L("Profile not found: ") .. tostring(sourceKey)
-	end
-	if not self.activeProfileKey then
-		return false, L("No active profile is set.")
-	end
-
-	self.db.profiles[self.activeProfileKey] = self:DeepCopy(self.db.profiles[sourceKey])
-	self:MigratePlayerLocationOptions(self.db.profiles[self.activeProfileKey])
-	self:ApplyDefaults(self.db.profiles[self.activeProfileKey], self.DEFAULTS.profile)
-	self.db.profile = self.db.profiles[self.activeProfileKey]
-	self:ApplyActiveProfileState("copy")
-	return true
-end
-
-function QuestTogether:ResetActiveProfile()
-	if not self.db or not self:EnsureProfileStorage() then
-		return false, L("Profile database is unavailable.")
-	end
-	if not self.activeProfileKey then
-		return false, L("No active profile is set.")
-	end
-
-	self.db.profiles[self.activeProfileKey] = self:DeepCopy(self.DEFAULTS.profile)
-	self.db.profile = self.db.profiles[self.activeProfileKey]
-	self:ApplyActiveProfileState("reset")
-	return true
-end
-
-function QuestTogether:DeleteProfile(profileKey)
-	if not self.db or not self:EnsureProfileStorage() then
-		return false, L("Profile database is unavailable.")
-	end
-
-	local normalizedKey = NormalizeProfileKey(profileKey)
-	if not normalizedKey then
-		return false, L("Profile name cannot be empty.")
-	end
-	if normalizedKey == self.activeProfileKey then
-		return false, L("You cannot delete the active profile.")
-	end
-	if type(self.db.profiles[normalizedKey]) ~= "table" then
-		return false, L("Profile not found: ") .. tostring(normalizedKey)
-	end
-
-	self.db.profiles[normalizedKey] = nil
-
-	for characterKey, mappedProfileKey in pairs(self.db.profileKeys) do
-		if mappedProfileKey == normalizedKey then
-			-- The character's default key can be the profile just deleted.
-			-- Resolve its default lazily on that character's next initialization.
-			self.db.profileKeys[characterKey] = nil
-		end
-	end
-
-	return true
-end
-
 function QuestTogether:Print(message)
 	local text = "|cff33ff99QuestTogether|r: " .. self:SafeToString(message)
 	local chatFrame = self:GetChatLogFrame()
@@ -3750,195 +3420,6 @@ function QuestTogether:SupportsWarMode()
 	local ok, enabled = pcall(getter)
 	if ok and self:CanAccessValue(enabled) and type(enabled) == "boolean" then return enabled end
 	return nil
-end
-
-function QuestTogether:ResolveTaskQuestIsWorldQuest(questId, questInfo)
-	local classifications = self:GetTaskAreaSubsystemStateStore().isWorldQuestByQuestID
-	local retired = self.retiredQuestIds and self.retiredQuestIds[questId]
-	if retired then
-		classifications[questId] = nil
-	end
-	local isWorldQuest = questInfo and questInfo.isWorldQuest
-	if not self:CanAccessValue(isWorldQuest) or type(isWorldQuest) ~= "boolean" then
-		isWorldQuest = self.API and self.API.IsWorldQuest and self.API.IsWorldQuest(questId)
-	end
-	if self:CanAccessValue(isWorldQuest) and type(isWorldQuest) == "boolean" then
-		if not retired then classifications[questId] = isWorldQuest end
-		return isWorldQuest
-	end
-	return classifications[questId]
-end
-
-function QuestTogether:ResolveTaskQuestDisplayAsObjective(questId)
-	local classifications = self:GetTaskAreaSubsystemStateStore().displayAsObjectiveByQuestID
-	if self.retiredQuestIds and self.retiredQuestIds[questId] then
-		classifications[questId] = nil
-		return nil
-	end
-	local taskInfo = self.API and self.API.GetTaskQuestInfoByQuestID and self.API.GetTaskQuestInfoByQuestID(questId)
-	if self:CanAccessTable(taskInfo) and type(taskInfo) == "table" then
-		local displayAsObjective = taskInfo.displayAsObjective
-		if self:CanAccessValue(displayAsObjective) and type(displayAsObjective) == "boolean" then
-			classifications[questId] = displayAsObjective
-		end
-	end
-	-- Both readers share the latest confirmed value, including explicit false.
-	return classifications[questId]
-end
-
-function QuestTogether:PruneTaskQuestClassifications(questInfoByQuestID)
-	local state = self:GetTaskAreaSubsystemStateStore()
-	for _, classifications in ipairs({ state.displayAsObjectiveByQuestID, state.isWorldQuestByQuestID }) do
-		for questId in pairs(classifications) do
-			if not questInfoByQuestID[questId] or (self.retiredQuestIds and self.retiredQuestIds[questId]) then
-				classifications[questId] = nil
-			end
-		end
-	end
-	-- A complete log scan also ends retained location observations for removed
-	-- quests. Leave announced-area state intact until the normal exit diff runs.
-	for questId in pairs(state.resolvedByQuestID) do
-		if not questInfoByQuestID[questId] or (self.retiredQuestIds and self.retiredQuestIds[questId]) then
-			state.resolvedByQuestID[questId] = nil
-		end
-	end
-end
-
-function QuestTogether:RebuildQuestSnapshotStore()
-	local snapshotState = self.GetQuestSnapshotStateStore and self:GetQuestSnapshotStateStore() or nil
-	if type(snapshotState) ~= "table" then
-		return nil
-	end
-	if self.IsWorkBlocked and self:IsWorkBlocked("quest_snapshot_refresh") then
-		return snapshotState
-	end
-
-	-- Build privately, then publish atomically. An unreadable row must not erase
-	-- the previous snapshot or make an active quest look removed.
-	local snapshotByQuestID = {}
-	local snapshotOrder = {}
-
-	local totalEntries = self.API and self.API.GetNumQuestLogEntries and self.API.GetNumQuestLogEntries()
-	totalEntries = self:SafeToNumber(totalEntries)
-	if totalEntries == nil then
-		if snapshotState.lastUnreadableRow ~= "count" then
-			self:Debug("snapshot_deferred reason=unknown_count", "QUEST")
-		end
-		snapshotState.lastUnreadableRow = "count"
-		return snapshotState
-	end
-	totalEntries = math.max(0, math.floor(totalEntries + 0.5))
-	local sampleRows = {}
-
-	for questLogIndex = 1, totalEntries do
-		local questInfo = GetSnapshotBuilderQuestLogInfo(self, questLogIndex)
-		if not questInfo or (questInfo.isHeader ~= true and not self:NormalizeQuestID(questInfo.questID)) then
-			if snapshotState.lastUnreadableRow ~= questLogIndex then
-				self:Debugf("quest", "snapshot_deferred unreadable_row=%d rows=%d generation=%d",
-					questLogIndex, totalEntries, snapshotState.generation or 0)
-			end
-			snapshotState.lastUnreadableRow = questLogIndex
-			return snapshotState
-		end
-		if questLogIndex <= 5 then
-			sampleRows[#sampleRows + 1] = {
-				index = questLogIndex,
-				title = questInfo and questInfo.title or nil,
-				isHeader = questInfo and questInfo.isHeader == true or false,
-				questID = questInfo and questInfo.questID or nil,
-				isTask = questInfo and questInfo.isTask == true or false,
-				isOnMap = NormalizeQuestLocationFlag(questInfo and questInfo.isOnMap),
-				hasLocalPOI = NormalizeQuestLocationFlag(questInfo and questInfo.hasLocalPOI),
-			}
-		end
-		if questInfo and questInfo.isHeader ~= true then
-			local numericQuestID = self:NormalizeQuestID(questInfo.questID)
-			if numericQuestID then
-				local isWorldQuest = self:ResolveTaskQuestIsWorldQuest(numericQuestID, questInfo)
-				local isTaskQuest = questInfo.isTask == true or isWorldQuest == true
-				local displayAsObjective = false
-				if isTaskQuest and not isWorldQuest then
-					displayAsObjective = self:ResolveTaskQuestDisplayAsObjective(numericQuestID)
-				end
-
-				local snapshot = {
-					questID = numericQuestID,
-					questLogIndex = self:SafeToNumber(questInfo.questLogIndex) or questLogIndex,
-					title = type(questInfo.title) == "string" and questInfo.title or nil,
-					isHidden = questInfo.isHidden == true,
-					isTask = isTaskQuest and true or false,
-					isOnMap = NormalizeQuestLocationFlag(questInfo.isOnMap),
-					hasLocalPOI = NormalizeQuestLocationFlag(questInfo.hasLocalPOI),
-					isComplete = questInfo.isComplete == true,
-					isWorldQuest = isWorldQuest,
-					displayAsObjective = displayAsObjective,
-					isBonusObjective = displayAsObjective,
-					tagInfo = nil,
-					poiIcon = nil,
-				}
-				snapshot.taskAnnouncementType = snapshot.isWorldQuest and "world"
-					or (snapshot.isBonusObjective and "bonus" or nil)
-
-				snapshotByQuestID[numericQuestID] = snapshot
-				snapshotOrder[#snapshotOrder + 1] = numericQuestID
-			end
-		end
-	end
-
-	self:PruneTaskQuestClassifications(snapshotByQuestID)
-	wipe(snapshotState.byQuestID)
-	wipe(snapshotState.order)
-	for questID, snapshot in pairs(snapshotByQuestID) do
-		snapshotState.byQuestID[questID] = snapshot
-	end
-	for index, questID in ipairs(snapshotOrder) do
-		snapshotState.order[index] = questID
-	end
-	snapshotState.lastUnreadableRow = nil
-	snapshotState.generation = (snapshotState.generation or 0) + 1
-
-	if totalEntries > 0 and #snapshotOrder == 0 and not snapshotState.didLogEmptyBuildDiagnostics then
-		snapshotState.didLogEmptyBuildDiagnostics = true
-		local sampleParts = {}
-		for index = 1, #sampleRows do
-			local row = sampleRows[index]
-			sampleParts[#sampleParts + 1] = string.format(
-				"#%d title=%s header=%s questID=%s task=%s onMap=%s poi=%s",
-				row.index,
-				self:SafeToString(row.title, "<nil>"),
-				tostring(row.isHeader),
-				self:SafeToString(row.questID, "<nil>"),
-				tostring(row.isTask),
-				tostring(row.isOnMap),
-				tostring(row.hasLocalPOI)
-			)
-		end
-		self:Debug(
-			"empty quest snapshot. totalEntries="
-				.. tostring(totalEntries)
-				.. " samples: "
-				.. table.concat(sampleParts, " | "),
-			"quest"
-		)
-	elseif #snapshotOrder > 0 then
-		snapshotState.didLogEmptyBuildDiagnostics = false
-	end
-
-	return snapshotState
-end
-
-function QuestTogether:EnsureQuestSnapshotStore()
-	local snapshotState = self.GetQuestSnapshotStateStore and self:GetQuestSnapshotStateStore() or nil
-	if type(snapshotState) ~= "table" then
-		return nil
-	end
-	if type(snapshotState.byQuestID) ~= "table" or next(snapshotState.byQuestID) == nil then
-		if self.IsWorkBlocked and self:IsWorkBlocked("quest_snapshot_refresh") then
-			return snapshotState
-		end
-		return self:RebuildQuestSnapshotStore()
-	end
-	return snapshotState
 end
 
 local function IsQuestRecurringFrequency(frequency)
@@ -5287,58 +4768,6 @@ function QuestTogether:ShouldDisplayAnnouncementType(eventType)
 	return self:GetOption(optionKey) and true or false
 end
 
-function QuestTogether:IsWorldQuest(questId)
-	local numericQuestId = self:NormalizeQuestID(questId)
-	if not numericQuestId then
-		return false
-	end
-
-	local classification = self:ResolveTaskQuestIsWorldQuest(numericQuestId)
-	if classification ~= nil then
-		return classification == true
-	end
-
-	if self.EnsureQuestSnapshotStore then
-		self:EnsureQuestSnapshotStore()
-	end
-	local snapshot = self.GetQuestSnapshot and self:GetQuestSnapshot(numericQuestId) or nil
-	if snapshot and snapshot.isWorldQuest ~= nil then
-		return snapshot.isWorldQuest == true
-	end
-
-	local tracker = self.GetPlayerTracker and self:GetPlayerTracker() or nil
-	local trackedQuest = tracker and tracker[numericQuestId] or nil
-	if trackedQuest and trackedQuest.taskAnnouncementType == "world" then
-		return true
-	end
-
-	return false
-end
-
-function QuestTogether:IsBonusObjective(questId)
-	local numericQuestId = self:NormalizeQuestID(questId)
-	if not numericQuestId then
-		return false
-	end
-
-	if self.EnsureQuestSnapshotStore then
-		self:EnsureQuestSnapshotStore()
-	end
-	local classification = self:GetTaskAreaSubsystemStateStore().displayAsObjectiveByQuestID[numericQuestId]
-	if classification ~= nil then
-		return classification == true
-	end
-	local bonusState = self.GetTaskAreaStateStore and self:GetTaskAreaStateStore("bonus") or nil
-	if type(bonusState) == "table" and bonusState[numericQuestId] then
-		return true
-	end
-	local snapshot = self.GetQuestSnapshot and self:GetQuestSnapshot(numericQuestId) or nil
-	if snapshot and snapshot.isBonusObjective ~= nil then
-		return snapshot.isBonusObjective == true
-	end
-	return false
-end
-
 function QuestTogether:GetQuestTitle(questId, questInfo)
 	local numericQuestId = self:NormalizeQuestID(questId)
 	if not numericQuestId then
@@ -5467,226 +4896,6 @@ function QuestTogether:GetNormalizedQuestObjectiveInfo(questId, objectiveIndex, 
 	return objectiveText, objectiveType, finished, currentValue, requiredValue
 end
 
-function QuestTogether:NormalizeNameplateOptions()
- local profile = self.db.profile
- if not self:IsNameplateQuestIconStyle(profile.nameplatePlayerIconStyle) then
-  profile.nameplatePlayerIconStyle = self.DEFAULTS.profile.nameplatePlayerIconStyle
- end
-	if not self:IsNameplateQuestIconStyle(profile.nameplateQuestIconStyle) then
-		profile.nameplateQuestIconStyle = self.DEFAULTS.profile.nameplateQuestIconStyle
-	end
-end
-
-function QuestTogether:NormalizeAnnouncementDisplayOptions()
-	local profile = self.db.profile
-	if profile.emoteOnQuestCompletion == nil then
-		profile.emoteOnQuestCompletion = self.DEFAULTS.profile.emoteOnQuestCompletion
-	end
-	if profile.emoteOnNearbyPlayerQuestCompletion == nil then
-		profile.emoteOnNearbyPlayerQuestCompletion = self.DEFAULTS.profile.emoteOnNearbyPlayerQuestCompletion
-	end
-	if profile.emoteOnLevelUp == nil then
-		profile.emoteOnLevelUp = self.DEFAULTS.profile.emoteOnLevelUp
-	end
-	if profile.emoteOnNearbyPlayerLevelUp == nil then
-		profile.emoteOnNearbyPlayerLevelUp = self.DEFAULTS.profile.emoteOnNearbyPlayerLevelUp
-	end
-	if not self:IsChatLogDestination(profile.chatLogDestination) then
-		profile.chatLogDestination = self.DEFAULTS.profile.chatLogDestination
-	end
-	if profile.mirrorChatLogsToMainChat == nil then
-		profile.mirrorChatLogsToMainChat = self.DEFAULTS.profile.mirrorChatLogsToMainChat
-	end
-	if not self:IsShowProgressFor(profile.showProgressFor) then
-		profile.showProgressFor = self.DEFAULTS.profile.showProgressFor
-	end
-	if profile.qtChatScope ~= "global" and profile.qtChatScope ~= "zone_only" then profile.qtChatScope = "global" end
-	profile.nearbyAnnouncementRange = self:NormalizeNearbyAnnouncementRange(profile.nearbyAnnouncementRange) or self.DEFAULTS.profile.nearbyAnnouncementRange
-	profile.chatBubbleSize = self:NormalizeChatBubbleSizeValue(profile.chatBubbleSize)
-		or self.DEFAULTS.profile.chatBubbleSize
-	profile.chatBubbleDuration = self:NormalizeChatBubbleDurationValue(profile.chatBubbleDuration)
-		or self.DEFAULTS.profile.chatBubbleDuration
-end
-
-function QuestTogether:GetOption(key)
-	if not self.db or not self.db.profile then
-		return nil
-	end
-	if key == "chatLogDestination" then
-		return self:GetResolvedChatLogDestination()
-	end
-	return self.db.profile[key]
-end
-
-function QuestTogether:SetOption(key, value)
-	if not self.db or not self.db.profile then
-		return false
-	end
-	if (key == "announceToNonQTParty" or key == "hidePartyChatReminder")
-		and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
-	if key == "shareLocationOnMap" or key == "shareLocationOnMinimap"
-		or key == "showLocationsOnMap" or key == "showLocationsOnMinimap"
-		or key == "showWorldMapPlayers" or key == "showMinimapPlayers" then
-		return false
-	end
-	local isPartyNavigationOption = key == "sharePartyFocus" or key == "sharePartyWaypoint" or key == "showPartyWaypoints"
-	if isPartyNavigationOption and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
-	local isLocationOption = key == "sharePlayerLocation" or key == "showPlayerLocations" or key == "onlyShowQuestPartners" or key == "mapPartyOnly" or key == "mapAlwaysShowParty"
-	if (isLocationOption or key == "nameplatePlayerIconEnabled" or key == "shareDeveloperDiagnostics") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then return false end
-	if (key == "showMinimapButton" or key == "lightMode" or key == "experimentalLayerDetection" or key == "reduceMotion" or key == "compareAutoRefresh") and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
-		return false
-	end
-	if (key == "lookingForQuestPartners" or key == "announceQuestPartners" or key == "stopLookingForPartnersOnJoin")
-		and (not self:CanAccessValue(value) or type(value) ~= "boolean") then
-		return false
-	end
-	if key == "minimapButtonPosition" then
-		value = self:SafeToNumber(value)
-		if not value then return false end
-		value = value % 360
-	end
-	if key == "enabled" then
-		if not self:CanAccessValue(value) or type(value) ~= "boolean" then
-			return false
-		end
-		-- Use the same guarded lifecycle as the dedicated slash commands.
-		-- Enable also retains the pre-login deferral of runtime work.
-		if value then
-			return self:Enable()
-		end
-		return self:Disable()
-	end
-	if key == "showProgressFor" and not self:IsShowProgressFor(value) then
-		self:Debugf("options", "Rejected option change key=%s invalidValue=%s", tostring(key), FormatDebugValue(value))
-		return false
-	end
-	if key == "chatLogDestination" and not self:IsChatLogDestination(value) then
-		self:Debugf("options", "Rejected option change key=%s invalid chat destination=%s", tostring(key), tostring(value))
-		return false
-	end
-	if key == "qtChatScope" and (not self:CanAccessValue(value) or (value ~= "global" and value ~= "zone_only")) then return false end
-	if key == "nearbyAnnouncementRange" then
-		value = self:NormalizeNearbyAnnouncementRange(value)
-		if value == nil then return false end
-	end
-	if key == "chatBubbleSize" then
-		value = self:NormalizeChatBubbleSizeValue(value)
-		if not value then
-			self:Debugf("options", "Rejected option change key=%s invalid bubble size", tostring(key))
-			return false
-		end
-	end
-	if key == "chatBubbleDuration" then
-		value = self:NormalizeChatBubbleDurationValue(value)
-		if not value then
-			self:Debugf("options", "Rejected option change key=%s invalid bubble duration", tostring(key))
-			return false
-		end
-	end
-	if (key == "nameplateQuestIconStyle" or key == "nameplatePlayerIconStyle") and not self:IsNameplateQuestIconStyle(value) then
-		self:Debugf("options", "Rejected option change key=%s invalid icon style=%s", tostring(key), tostring(value))
-		return false
-	end
-	if key == "windowScale" then
-		value = self:SafeToNumber(value)
-		if not value or value < 80 or value > 150 then return false end
-	end
-	local startedLooking = key == "lookingForQuestPartners" and value == true
-		and self.db.profile[key] ~= true
-	self.db.profile[key] = value
-	if key == "shareDeveloperDiagnostics" and value ~= true then
-		-- A later re-enable must not resurrect an in-flight verification.
-		self.developerRequestState = nil
-		if self.CancelDeveloperDiagnosticReplies then self:CancelDeveloperDiagnosticReplies() end
-	end
-	if isPartyNavigationOption then self:QueuePartyNavigationUpdate() end
-	if key == "experimentalLayerDetection" or key == "sharePlayerLocation" then
-		self.playerPhaseState = nil
-		if self.RefreshPlayerLocationPins then self:RefreshPlayerLocationPins() end
-	end
-	if key == "lightMode" or key == "reduceMotion" then self:RefreshWindowThemes() end
-	if key == "windowScale" then self:RefreshManagedWindowLayouts() end
-	if key == "announceToNonQTParty" or key == "hidePartyChatReminder" then self:UpdatePartyChatReminder() end
-	if key == "lookingForQuestPartners" and self.BroadcastQuestPartnerStatus then self:BroadcastQuestPartnerStatus(true) end
-	if startedLooking then self:AnnounceQuestPartnerSearch() end
-	if key == "lookingForQuestPartners" and self.RefreshMinimapPartnerGlow then self:RefreshMinimapPartnerGlow() end
-	if isLocationOption and self.OnPlayerLocationOptionsChanged then self:OnPlayerLocationOptionsChanged(key) end
-	if (key == "showMinimapButton" or key == "minimapButtonPosition") and self.RefreshMinimapButton then
-		self:RefreshMinimapButton()
-	end
-	if key == "nameplateQuestIconStyle" or key == "nameplatePlayerIconStyle" then
-		self:NormalizeNameplateOptions()
-	end
-	if
-		key == "chatLogDestination"
-		or key == "mirrorChatLogsToMainChat"
-		or key == "showProgressFor"
-		or key == "nearbyAnnouncementRange"
-		or key == "chatBubbleSize"
-		or key == "chatBubbleDuration"
-	then
-		self:NormalizeAnnouncementDisplayOptions()
-	end
-	if key == "chatLogDestination" and value == "separate" then
-		local chatFrame = self:EnsureQuestLogChatFrame()
-		if chatFrame then
-			self:ApplyMainChatFontSizeToChatFrame(chatFrame)
-			if self.isEnabled and self.hasLoggedIn then
-				self:PrintChatLogDestinationMessage()
-			end
-		end
-	end
-	if key == "chatLogDestination" and value == "main" then
-		self:CloseQuestLogChatFrame()
-	end
-	if
-		key == "showChatBubbles"
-		or key == "hideMyOwnChatBubbles"
-		or key == "chatBubbleSize"
-		or key == "chatBubbleDuration"
-	then
-		if self.RefreshActiveAnnouncementBubbles then
-			self:RefreshActiveAnnouncementBubbles()
-		end
-		if self.RefreshPersonalBubbleAnchorVisualState then
-			self:RefreshPersonalBubbleAnchorVisualState()
-		end
-		if self.RefreshPersonalBubbleEditModeDialog then
-			self:RefreshPersonalBubbleEditModeDialog()
-		end
-	end
-	if
-		key == "nameplateQuestIconEnabled"
-		or key == "nameplatePlayerIconEnabled"
-		or key == "nameplatePlayerIconStyle"
-		or key == "nameplateQuestIconStyle"
-		or key == "nameplateQuestHealthColorEnabled"
-		or key == "nameplateQuestHealthColor"
-	then
-		if self.RefreshNameplateAugmentation then
-			self:RefreshNameplateAugmentation()
-		end
-	end
-	return true
-end
-
--- Compatibility helpers so old option-style code still works.
-function QuestTogether:GetValue(infoOrKey)
-	local key = infoOrKey
-	if type(infoOrKey) == "table" then
-		key = infoOrKey[#infoOrKey]
-	end
-	return self:GetOption(key)
-end
-
-function QuestTogether:SetValue(infoOrKey, value)
-	local key = infoOrKey
-	if type(infoOrKey) == "table" then
-		key = infoOrKey[#infoOrKey]
-	end
-	return self:SetOption(key, value)
-end
-
 function QuestTogether:GetPlayerTracker()
 	local characterKey = self.activeCharacterKey or self:GetCurrentCharacterKey() or self:GetPlayerName() or "Unknown"
 	if not self.db.global.questTrackers[characterKey] then
@@ -5719,61 +4928,6 @@ function QuestTogether:ResetQuestEventState()
 	self.pendingQuestRemovals = {}
 	self.pendingQuestAcceptances = {}
 	self.retiredQuestIds = {}
-end
-
--- SavedVariables initializer.
-function QuestTogether:InitializeDatabase(savedDatabase)
-	if type(savedDatabase) == "table" then
-		-- Private fixtures exercise normalization without rebinding SavedVariables.
-		self.db = savedDatabase
-	else
-		if type(_G.QuestTogetherDB) ~= "table" then
-			_G.QuestTogetherDB = {}
-		end
-		self.db = _G.QuestTogetherDB
-	end
-
-	if type(self.db.global) ~= "table" then
-		self.db.global = {}
-	end
-	self:ApplyDefaults(self.db.global, self.DEFAULTS.global)
-	self.db.global.debugLogLines = nil
-	if type(self.db.global.debugLogSearchFilter) ~= "string" then
-		if type(self.db.global.debugLogPrefixFilter) == "string" then
-			self.db.global.debugLogSearchFilter = self.db.global.debugLogPrefixFilter
-		else
-			self.db.global.debugLogSearchFilter = self.db.global.debugLogSearchFilter ~= nil
-				and tostring(self.db.global.debugLogSearchFilter)
-				or ""
-		end
-	end
-	if type(self.db.global.debugLogCategoryFilter) ~= "string" then
-		self.db.global.debugLogCategoryFilter = self.DEBUG_ALL_CATEGORIES
-	end
-	self.debugLogLines = {}
-	self.debugLogStoreNormalized = false
-	self.debugLogTextLengthSum = 0
-	self:EnsureProfileStorage()
-
-	local characterKey = self:GetCurrentCharacterKey()
-	local defaultProfileKey = NormalizeProfileKey(characterKey) or "Character"
-	local assignedProfileKey = NormalizeProfileKey(self.db.profileKeys[characterKey])
-	if not assignedProfileKey then
-		assignedProfileKey = defaultProfileKey
-		self.db.profileKeys[characterKey] = assignedProfileKey
-	end
-
-	if type(self.db.profiles[assignedProfileKey]) ~= "table" then
-		self.db.profiles[assignedProfileKey] = self:DeepCopy(self.DEFAULTS.profile)
-	end
-
-	self.activeCharacterKey = characterKey
-	self.activeProfileKey = assignedProfileKey
-	self.db.profile = self.db.profiles[assignedProfileKey]
-	self:ApplyDefaults(self.db.profile, self.DEFAULTS.profile)
-
-	self:NormalizeAnnouncementDisplayOptions()
-	self:NormalizeNameplateOptions()
 end
 
 function QuestTogether:RegisterRuntimeEvents()
@@ -5828,6 +4982,7 @@ function QuestTogether:Enable()
 	if self.ResetRuntimeWorkStateStore then
 		self:ResetRuntimeWorkStateStore()
 	end
+	if self.InitializeTransport then self:InitializeTransport() end
 	if self.InitializeGeographicComms then self:InitializeGeographicComms() end
 	if self.API.LeaveChannelByName then pcall(self.API.LeaveChannelByName, self.retiredAnnouncementChannelName) end
 	if self.EnsureAnnouncementChannelJoined then
@@ -5862,6 +5017,7 @@ function QuestTogether:Enable()
 		end
 	end)
 	if self.InitializePlayerLocations then self:InitializePlayerLocations() end
+	if self.InitializeRuntimeCoordinator then self:InitializeRuntimeCoordinator() end
 
 	return true
 end
@@ -5879,6 +5035,7 @@ function QuestTogether:Disable()
 	if self.FlushGeographicDeparture then self:FlushGeographicDeparture() end
 
 	self:UnregisterRuntimeEvents()
+	if self.ResetRuntimeCoordinator then self:ResetRuntimeCoordinator() end
 	self.isEnabled = false
 	if self.RefreshMinimapPartnerGlow then self:RefreshMinimapPartnerGlow() end
 	self:ResetQuestEventState()
@@ -6248,8 +5405,9 @@ function QuestTogether:ScanQuestLog(shouldAnnounceTaskAreas)
 		self:ScheduleDeferredWork("quest_log_drain", "full_scan", function() self:ScanQuestLog(shouldAnnounceTaskAreas) end)
 		return
 	end
+	local snapshot
 	if self.RebuildQuestSnapshotStore then
-		local snapshot = self:RebuildQuestSnapshotStore()
+		snapshot = self:RebuildQuestSnapshotStore()
 		if snapshot and snapshot.lastUnreadableRow then
 			-- Keep one retry intent for the next real log update. A successful
 			-- snapshot refresh alone does not initialize objective tracking.
@@ -6279,7 +5437,7 @@ function QuestTogether:ScanQuestLog(shouldAnnounceTaskAreas)
 	end
 
 	if self.RefreshTaskAreaStates then
-		self:RefreshTaskAreaStates(shouldAnnounceTaskAreas == true)
+		self:RefreshTaskAreaStates(shouldAnnounceTaskAreas == true, snapshot)
 	end
 
 	-- Area task quests can exist outside normal quest-log rows.
@@ -6448,7 +5606,7 @@ function QuestTogether:PLAYER_LOGIN()
 end
 
 function QuestTogether:PLAYER_ENTERING_WORLD()
-	self.playerPhaseState = nil
+	self:ResetPlayerPhases()
 	self.isLoggingOut = false
 	if not self.isEnabled then return end
 	if self.ResumeCommsWorldSession then self:ResumeCommsWorldSession() end
@@ -6462,7 +5620,7 @@ function QuestTogether:PLAYER_ENTERING_WORLD()
 end
 
 function QuestTogether:PLAYER_LEAVING_WORLD()
-	self.playerPhaseState = nil
+	self:ResetPlayerPhases()
 	if self.isEnabled then
 		if self.EndCommsWorldSession then self:EndCommsWorldSession() end
 		if self.BroadcastQTPlayerPresence then self:BroadcastQTPlayerPresence(true) end

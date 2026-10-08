@@ -77,7 +77,7 @@ function QT:HidePlayerTooltipBadge()
 	end
 	-- Its UIParent-owned host remains hideable even if GameTooltip is forbidden.
 	self:SetQTPlayerIconLookingForPartners(state.icon, false)
-	Owned(self, state.frame, "Hide")
+	self:HideOwnedUI(state.frame)
 	state.name, state.guid = nil, nil
 end
 
@@ -193,6 +193,7 @@ function QT:UpdatePlayerTooltipBadge()
 		return false
 	end
 	state.name, state.guid = row.name, row.guid
+	self:CancelOwnedUICleanup(state.frame)
 	Owned(self, state.frame, "Show")
 	return true
 end

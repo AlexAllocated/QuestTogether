@@ -123,7 +123,7 @@ local function Fixture()
 	QT.isEnabled = true
 	QT.db.profile.nameplatePlayerIconEnabled = true
 	QT.qtPlayerPresenceState = { peers = { [s.name] = 100 } }
-	QT.peerSnapshotState, QT.peerUpdateContext = nil, nil
+	QT.peerSnapshotState = nil
 	QT.recentCommMessageSignatures = {}
 	QT.nameplateRegisteredEvents.NAME_PLATE_UNIT_ADDED = true
 	QT.API = {

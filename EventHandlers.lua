@@ -364,6 +364,7 @@ function QuestTogether:BuildTrackedQuestRemovalData(questId)
 		return nil
 	end
 
+	local capturedTaskType = self:ObserveQuestAnnouncementType(questId)
 	local iconAsset, iconKind = self:GetTrackedQuestAnnouncementIcon(trackedQuest)
 	local questTitle = trackedQuest.title
 	if self.IsPlaceholderQuestTitle and self:IsPlaceholderQuestTitle(questId, questTitle) then
@@ -376,7 +377,7 @@ function QuestTogether:BuildTrackedQuestRemovalData(questId)
 	return {
 		questId = questId,
 		title = questTitle or (L("Quest ") .. SafeText(questId, "?")),
-		taskAnnouncementType = self:GetTaskAnnouncementType(questId),
+		taskAnnouncementType = capturedTaskType,
 		iconAsset = iconAsset,
 		iconKind = iconKind,
 	}
@@ -404,11 +405,13 @@ function QuestTogether:BuildTrackedQuestCompletionData(questId)
 	else
 		completionData = self:BuildTrackedQuestRemovalData(questId)
 	end
-	completionData = completionData or {
-		questId = questId,
-		title = self:GetQuestTitle(questId),
-		taskAnnouncementType = self:GetTaskAnnouncementType(questId),
-	}
+	if not completionData then
+		completionData = {
+			questId = questId,
+			title = self:GetQuestTitle(questId),
+			taskAnnouncementType = self:ObserveQuestAnnouncementType(questId),
+		}
+	end
 
 	completionData.title = ResolveCapturedQuestTitle(self, questId, completionData.title)
 
@@ -540,8 +543,7 @@ function QuestTogether:QUEST_ACCEPTED(_, questIndexOrId, classicQuestId)
 	-- must not erase an active observation and replay its area entry.
 	if not self:GetPlayerTracker()[normalizedQuestId]
 		and not (self.pendingQuestAcceptances and self.pendingQuestAcceptances[normalizedQuestId]) then
-		self:GetTaskAreaSubsystemStateStore().displayAsObjectiveByQuestID[normalizedQuestId] = nil
-		self:GetTaskAreaSubsystemStateStore().isWorldQuestByQuestID[normalizedQuestId] = nil
+		self:ForgetQuestClassification(normalizedQuestId)
 		self:ResetTaskQuestAreaObservation(normalizedQuestId)
 	end
 	self.questsCompleted[normalizedQuestId] = nil
@@ -566,9 +568,10 @@ function QuestTogether:QUEST_ACCEPTED(_, questIndexOrId, classicQuestId)
 		if not questLogIndex or questLogIndex <= 0 then
 			-- Only current metadata or this acceptance lifetime may identify an
 			-- off-log task. A delayed snapshot can still describe a retired quest.
-			if self:ResolveTaskQuestIsWorldQuest(normalizedQuestId) == true then
+			local classification = self:ObserveQuestClassification(normalizedQuestId)
+			if classification.isWorldQuest == true then
 				taskAnnouncementType = "world"
-			elseif self:ResolveTaskQuestDisplayAsObjective(normalizedQuestId) == true then
+			elseif classification.displayAsObjective == true then
 				taskAnnouncementType = "bonus"
 			end
 			if taskAnnouncementType then
@@ -590,14 +593,15 @@ function QuestTogether:QUEST_ACCEPTED(_, questIndexOrId, classicQuestId)
 		if questInfo.isHeader == true or NormalizeQuestId(self, questInfo.questID) ~= normalizedQuestId then
 			return false
 		end
-		local isWorldQuest = self:ResolveTaskQuestIsWorldQuest(normalizedQuestId, questInfo)
+		local classification = self:ObserveQuestClassification(normalizedQuestId, questInfo)
+		local isWorldQuest = classification.isWorldQuest
 		if isWorldQuest == true then
 			taskAnnouncementType = "world"
 		elseif questInfo.isTask == true then
 			-- Acceptance can drain before either area/snapshot reader has seen
 			-- this task. Read its classification before deciding whether to hide
 			-- it or announce an ordinary quest; unknown metadata stays queued.
-			local isBonusObjective = self:ResolveTaskQuestDisplayAsObjective(normalizedQuestId)
+			local isBonusObjective = classification.displayAsObjective
 			if isBonusObjective == true then
 				taskAnnouncementType = "bonus"
 			elseif isWorldQuest == nil or isBonusObjective == nil then

@@ -266,6 +266,8 @@ local function Fixture()
 	end
 	function a:HideLocationTargetButton() self.targetHover = nil end
 	activeFixtures[#activeFixtures + 1] = a
+	function a:CreateOwnedUICleanupFrame() return Frame(self) end
+
 	return a
 end
 
@@ -755,24 +757,24 @@ Register("location forbidden cleanup survives disable and cannot hide a reused a
 		a:HidePlayerLocationPins()
 		Equal(surface.frame.writes, writes)
 		Equal(Pin(a, "map").name, nil)
-		assert(state.pending[surface.frame] and state.wake.scripts.OnUpdate)
-		state.wake.scripts.OnUpdate({}, 0.5)
+		assert(a:GetOwnedUICleanupState().pending[surface.frame] and a:GetOwnedUICleanupState().driver.scripts.OnUpdate)
+		a:GetOwnedUICleanupState().driver.scripts.OnUpdate({}, 0.5)
 		Equal(surface.frame.writes, writes)
 		a.mapParent[boundary] = false
-		state.wake.scripts.OnUpdate({}, 0.5)
+		a:GetOwnedUICleanupState().driver.scripts.OnUpdate({}, 0.5)
 		Equal(surface.frame.shown, false)
-		Equal(next(state.pending), nil)
-		Equal(state.wake.scripts.OnUpdate, nil)
+		Equal(next(a:GetOwnedUICleanupState().pending), nil)
+		Equal(a:GetOwnedUICleanupState().driver.scripts.OnUpdate, nil)
 		a.isEnabled = true
 		assert(a:RefreshPlayerLocationPins())
 		a.mapParent[boundary] = true
 		a:HidePlayerLocationPins()
-		local staleWake = state.wake.scripts.OnUpdate
+		local staleWake = a:GetOwnedUICleanupState().driver.scripts.OnUpdate
 		a.mapParent[boundary] = false
 		assert(a:RefreshPlayerLocationPins())
 		staleWake({}, 0.5)
 		assert(surface.frame.shown)
-		Equal(state.pending[surface.frame], nil)
+		Equal(a:GetOwnedUICleanupState().pending[surface.frame], nil)
 	end
 end)
 
@@ -807,11 +809,11 @@ Register("location hidden expired or ignored peer never keeps a stale tooltip", 
 	a:RefreshPlayerLocationPins()
 	Equal(state.tooltip.writes, writes)
 	Equal(state.hovered, nil)
-	assert(state.pending[state.tooltip])
+	assert(a:GetOwnedUICleanupState().pending[state.tooltip])
 	state.tooltip.forbidden = false
-	state.wake.scripts.OnUpdate({}, 0.5)
+	a:GetOwnedUICleanupState().driver.scripts.OnUpdate({}, 0.5)
 	Equal(state.tooltip.shown, false)
-	Equal(next(state.pending), nil)
+	Equal(next(a:GetOwnedUICleanupState().pending), nil)
 end)
 
 Register("location hover refreshes explicit quest partner status without replacing the pin", function()
@@ -1338,6 +1340,8 @@ end)
 
 Register("player tooltip width fits content expands for party names and shrinks on reuse", function()
 	local a = Fixture()
+	a.API.GetRealmName = function() return "Realm" end
+	a.API.GetTime = function() return 100 end
 	a.warModeFeature = false
 	local party = { size = 0 }
 	function a:GetPlayerPartyVisualInfo() return party end

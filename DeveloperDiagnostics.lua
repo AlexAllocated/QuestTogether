@@ -215,7 +215,7 @@ function QT:AcceptDeveloperPingResponse(response, pending)
 		-- Each field keeps its own ordering. A newer location need not suppress a
 		-- useful party refresh, but old party data must never replace a newer one.
 		if response.partyPayload and response.partyPayload ~= "" then
-			self:WithPeerUpdateContext(name, now - age, nil, nil, self.HandlePartyVisualMetadata, self, response.partyPayload, name, age)
+			self:HandlePartyVisualMetadata(response.partyPayload, name, age, self:CreatePeerObservation(name, "QTPG", { source = "diagnostic", age = age, lifetime = self:GetGeographicSnapshotLifetime() }))
 		end
 		self:RefreshQuestPartnerStatusFromPing(name, response.lookingForQuestPartners, age)
 		local previous = data[name]
@@ -258,4 +258,14 @@ function QT:RequestRemoteDiagnostics(input)
 	local ok,detail=self:SendPingRequest(target,true)
 	self:Print(ok and L("Ping sent.") or detail or L("Ping is unavailable."))
 	return ok
+end
+
+function QT:RetireDeveloperLocationPeer(name)
+	local data = rawget(self, "developerPlayerData")
+	if data then data[name] = nil end
+end
+
+function QT:ResetDeveloperDiagnostics()
+	self.developerPlayerData = nil
+	self.developerRequestState = nil
 end

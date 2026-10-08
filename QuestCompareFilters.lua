@@ -55,6 +55,15 @@ local function Groups()
 	}
 end
 
+function QT:IsPartyQuestCompareFilterValue(key, value)
+	for _, group in ipairs(Groups()) do
+		if group.key == key then
+			for _, choice in ipairs(group.choices) do if choice[1] == value then return true end end
+		end
+	end
+	return false
+end
+
 function QT:GetPartyQuestCompareFilters()
 	local filters = { search = self.partyQuestCompareSession and self.partyQuestCompareSession.search or "" }
 	for _, group in ipairs(Groups()) do

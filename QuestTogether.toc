@@ -34,11 +34,15 @@ Libs/libchev/SelfTests.lua
 Localization.lua
 Locales.lua
 Core.lua
+Settings.lua
 Libs/Ed25519/Ed25519.lua
 DeveloperPublicKey.lua
 Ads.lua
+OwnedUI.lua
+WindowController.lua
 WindowTheme.lua
 WindowLayout.lua
+QuestDialogs.lua
 ReleaseNotes.lua
 LocalizedReleaseNotes.lua
 ReleaseNotesHistory.lua
@@ -47,11 +51,15 @@ ReleaseNotesWindow.lua
 Debug.lua
 HotPathState.lua
 HotPathRuntime.lua
+QuestObservations.lua
 TaskArea.lua
 Nameplates.lua
 PartyState.lua
 PeerState.lua
+PeerLifecycle.lua
 Comms.lua
+Transport.lua
+BulkTransfer.lua
 PingPages.lua
 DeveloperDiagnostics.lua
 GeographicComms.lua
@@ -64,6 +72,7 @@ QuestCompareWindow.lua
 PartyChatReminder.lua
 PartyJoin.lua
 PartyVisuals.lua
+PartyFocusController.lua
 PartyNavigation.lua
 QuestComparePreview.lua
 Minimap.lua
@@ -72,15 +81,19 @@ PlayerPlates.lua
 QuestPartnerQuest.lua
 PlayerTooltips.lua
 LocationTargeting.lua
+MapOverlayPool.lua
+PlayerTooltipPresenter.lua
 LocationPins.lua
 PartyWaypointPins.lua
 NearbyStreams.lua
 PlayerDetails.lua
 PlayerPhases.lua
+RuntimeCoordinator.lua
 EventHandlers.lua
 Options.lua
 Diagnostics.lua
 Tests.lua
+scripts/ui_fixture.lua
 scripts/regression_runtime.lua
 scripts/regression_quest_state.lua
 scripts/regression_core_state.lua
@@ -115,3 +128,7 @@ scripts/regression_player_phases.lua
 scripts/regression_party_navigation.lua
 
 scripts/regression_window_layout.lua
+
+scripts/regression_ui_runtime.lua
+
+scripts/regression_settings.lua

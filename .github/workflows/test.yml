@@ -31,6 +31,8 @@ jobs:
       - run: python3 scripts/test_release_notes.py
       - run: python3 scripts/test_generate_release_notes.py
       - run: python3 scripts/test_discord_changelog.py
+      - run: python3 scripts/test_package.py
+      - run: python3 scripts/check_architecture.py
       - run: lua${{ matrix.lua }} scripts/test.lua
       - run: python3 scripts/test_developer_crypto.py lua${{ matrix.lua }}
       - run: lua${{ matrix.lua }} scripts/settings_smoke.lua
@@ -53,3 +55,9 @@ jobs:
             luac${{ matrix.lua }} -p "$file" || exit "$?"
           done < <(find . -name '*.lua' -print0)
       - run: bash -n scripts/bump_version.sh && git diff --check
+      - run: python3 scripts/package.py --ref HEAD --output dist/QuestTogether.zip
+      - uses: actions/upload-artifact@v4
+        if: matrix.lua == '5.1'
+        with:
+          name: QuestTogether-validated-package
+          path: addon/dist/*

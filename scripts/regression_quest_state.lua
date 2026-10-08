@@ -576,7 +576,7 @@ QuestTogether:RegisterTest("reacceptance cannot use a retired world snapshot bef
 	addon.rows[2] = nil
 	addon:QUEST_REMOVED(nil, 12345)
 	clock:Advance(0)
-	AssertEqual(addon:GetQuestSnapshot(12345).isWorldQuest, true, "the delayed snapshot still describes the old lifetime")
+	AssertEqual(addon:GetQuestSnapshot(12345), nil, "the completed area acquisition publishes the removal")
 	addon.worldClassification, addon.bonusClassification = nil, nil
 	addon:QUEST_ACCEPTED(nil, 12345)
 	addon:QUEST_LOG_UPDATE()
@@ -631,7 +631,7 @@ QuestTogether:RegisterTest("captured ordinary completion is not reclassified by 
 	addon.rows[2].isTask, addon.bonusClassification = true, true
 	addon:RebuildQuestSnapshotStore()
 	-- Model a later positive source independently of the retired-row scan.
-	addon:GetTaskAreaSubsystemStateStore().displayAsObjectiveByQuestID[12345] = true
+	addon:GetQuestSnapshotStateStore().classificationsByQuestID[12345] = { displayAsObjective = true }
 	addon:QUEST_REMOVED(nil, 12345)
 	clock:Drain()
 	AssertEqual(addon.announcements[#addon.announcements], "QUEST_COMPLETED")
@@ -641,7 +641,7 @@ QuestTogether:RegisterTest("untracked world turn-in uses readable classification
 	local addon = NewTaskLifecycleFixture("world")
 	addon:QUEST_TURNED_IN(nil, 12345)
 	AssertEqual(addon.announcements[1], "WORLD_QUEST_COMPLETED")
-	AssertEqual(addon:GetTaskAreaSubsystemStateStore().isWorldQuestByQuestID[12345], nil)
+	AssertEqual(addon:GetQuestClassification(12345), nil)
 end)
 
 QuestTogether:RegisterTest("retirement captures a world classification first observed by the area reader in both event orders", function()

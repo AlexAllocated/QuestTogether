@@ -66,11 +66,15 @@ end
 -- restarts; GetTime timestamps do not. Never renew a sample by saving it again.
 function QT:SavePlayerLocationCache()
 	local global = self.db and self.db.global
-	if not global then return end
+	if not global then
+		return
+	end
 	global.playerLocationCache = nil
 	local state, now, wall = rawget(self, "playerLocationState"), Now(self), self:GetAnnouncementServerTime()
 	local owner = self.activeCharacterKey or self:GetCurrentCharacterKey()
-	if not self.isEnabled or not state or not now or not wall or not owner then return end
+	if not self.isEnabled or not state or not now or not wall or not owner then
+		return
+	end
 	local rows = {}
 	local presence = rawget(self, "qtPlayerPresenceState")
 	for name, peer in pairs(state.peers) do
@@ -87,40 +91,68 @@ function QT:SavePlayerLocationCache()
 				local partner = presence and presence.questPartners and presence.questPartners[name]
 				if partner and partner.looking == true then
 					local partnerAge = now - (partner.sampledAt or partner.receivedAt)
-					local partnerRemaining = math.min(RELOAD_CACHE_LIFETIME - partnerAge,
-						(partner.lifetime or PARTNER_LIFETIME) - (now - partner.receivedAt))
+					local partnerRemaining = math.min(
+						RELOAD_CACHE_LIFETIME - partnerAge,
+						(partner.lifetime or PARTNER_LIFETIME) - (now - partner.receivedAt)
+					)
 					if partnerAge >= 0 and partnerRemaining > 0 then
-						row.partner = { session = partner.session, sequence = partner.sequence,
-							sampledAt = wall - partnerAge, expiresAt = wall + partnerRemaining }
+						row.partner = {
+							session = partner.session,
+							sequence = partner.sequence,
+							sampledAt = wall - partnerAge,
+							expiresAt = wall + partnerRemaining,
+						}
 					end
 				end
 				rows[#rows + 1] = row
 			end
 		end
-		if #rows >= MAX_PEERS then break end
+		if #rows >= MAX_PEERS then
+			break
+		end
 	end
 	global.playerLocationCache = { version = 1, owner = owner, savedAt = wall, rows = rows }
 end
 
 function QT:RestorePlayerLocationCache()
 	local state = self:GetPlayerLocationState()
-	if state.cacheRestored then return end
+	if state.cacheRestored then
+		return
+	end
 	state.cacheRestored = true
 	local global = self.db and self.db.global
 	local cache = global and global.playerLocationCache
 	-- Consume it once. Disable/re-enable must not resurrect withdrawn positions.
-	if global then global.playerLocationCache = nil end
+	if global then
+		global.playerLocationCache = nil
+	end
 	local now, wall = Now(self), self:GetAnnouncementServerTime()
 	local owner = self.activeCharacterKey or self:GetCurrentCharacterKey()
-	if not self.isEnabled or not now or not wall or not owner or type(cache) ~= "table"
-		or cache.version ~= 1 or cache.owner ~= owner or type(cache.rows) ~= "table"
-		or not Number(self, cache.savedAt, wall - RELOAD_CACHE_LIFETIME, wall) then return end
+	if
+		not self.isEnabled
+		or not now
+		or not wall
+		or not owner
+		or type(cache) ~= "table"
+		or cache.version ~= 1
+		or cache.owner ~= owner
+		or type(cache.rows) ~= "table"
+		or not Number(self, cache.savedAt, wall - RELOAD_CACHE_LIFETIME, wall)
+	then
+		return
+	end
 	local count, partnerCount = 0, 0
-	for _ in pairs(state.peers) do count = count + 1 end
+	for _ in pairs(state.peers) do
+		count = count + 1
+	end
 	local presence = rawget(self, "qtPlayerPresenceState")
-	for _ in pairs(presence and presence.questPartners or {}) do partnerCount = partnerCount + 1 end
+	for _ in pairs(presence and presence.questPartners or {}) do
+		partnerCount = partnerCount + 1
+	end
 	for i = 1, math.min(#cache.rows, MAX_PEERS) do
-		if count >= MAX_PEERS then break end
+		if count >= MAX_PEERS then
+			break
+		end
 		local row = cache.rows[i]
 		if type(row) == "table" then
 			local sampled = Number(self, row.sampledAt, 1000000000, wall)
@@ -128,9 +160,18 @@ function QT:RestorePlayerLocationCache()
 			local name = Text(self, row.name, 150)
 			name = name ~= "" and self:NormalizeMemberName(name) or nil
 			local data = self:DecodePlayerLocationPayload(row.payload)
-			if sampled and expires and expires > wall and wall - sampled < RELOAD_CACHE_LIFETIME
-				and name and not self:IsSelfSender(name) and not self:IsIgnoredPlayerName(name)
-				and data and data.mask ~= 0 and not state.peers[name] then
+			if
+				sampled
+				and expires
+				and expires > wall
+				and wall - sampled < RELOAD_CACHE_LIFETIME
+				and name
+				and not self:IsSelfSender(name)
+				and not self:IsIgnoredPlayerName(name)
+				and data
+				and data.mask ~= 0
+				and not state.peers[name]
+			then
 				data.name, data.receivedAt, data.sampledAt, data.retired = name, now, now - (wall - sampled), {}
 				data.cached = true
 				data.lifetime = math.min(expires - wall, RELOAD_CACHE_LIFETIME - (wall - sampled))
@@ -138,20 +179,36 @@ function QT:RestorePlayerLocationCache()
 				count = count + 1
 				self:RestorePlayerPartyCacheEntry(name, row.party, now, wall)
 				local partner = row.partner
-				if type(partner) == "table" and partnerCount < MAX_CACHED_PARTNERS
-					and not (presence and presence.questPartners and presence.questPartners[name]) then
+				if
+					type(partner) == "table"
+					and partnerCount < MAX_CACHED_PARTNERS
+					and not (presence and presence.questPartners and presence.questPartners[name])
+				then
 					local partnerSampled = Number(self, partner.sampledAt, 1000000000, wall)
 					local partnerExpires = Number(self, partner.expiresAt, wall, wall + RELOAD_CACHE_LIFETIME)
 					local sequence = Number(self, partner.sequence, 1, 2147483647, true)
 					local session = partner.session
-					if sequence and type(session) == "string" and #session <= 40
-						and session:match("^%d+%-%d+$") and partnerSampled and partnerExpires
-						and partnerExpires > wall and wall - partnerSampled < RELOAD_CACHE_LIFETIME then
+					if
+						sequence
+						and type(session) == "string"
+						and #session <= 40
+						and session:match("^%d+%-%d+$")
+						and partnerSampled
+						and partnerExpires
+						and partnerExpires > wall
+						and wall - partnerSampled < RELOAD_CACHE_LIFETIME
+					then
 						presence = presence or self:GetQTPlayerPresenceState()
 						presence.questPartners = presence.questPartners or {}
-						presence.questPartners[name] = { session = session, sequence = sequence,
-							looking = true, receivedAt = now, sampledAt = now - (wall - partnerSampled), retired = {},
-							lifetime = math.min(partnerExpires - wall, RELOAD_CACHE_LIFETIME - (wall - partnerSampled)) }
+						presence.questPartners[name] = {
+							session = session,
+							sequence = sequence,
+							looking = true,
+							receivedAt = now,
+							sampledAt = now - (wall - partnerSampled),
+							retired = {},
+							lifetime = math.min(partnerExpires - wall, RELOAD_CACHE_LIFETIME - (wall - partnerSampled)),
+						}
 						partnerCount = partnerCount + 1
 					end
 				end
@@ -284,13 +341,24 @@ function QT:BroadcastPlayerLocation(force, withdraw)
 	-- each revoked surface until its last published point expires. Publications
 	-- on a retained surface must not prolong another surface's revocation window.
 	local mapEnabled, minimapEnabled = mask % 2 == 1, mask >= 2
-	local withdrawing = NeedsWithdrawalRetry(mapEnabled, state.lastMapLocationSentAt, now, rawget(self, "geographicCommsState") and 600 or LIFETIME)
-		or NeedsWithdrawalRetry(minimapEnabled, state.lastMinimapLocationSentAt, now, rawget(self, "geographicCommsState") and 600 or LIFETIME)
+	local withdrawing = NeedsWithdrawalRetry(
+		mapEnabled,
+		state.lastMapLocationSentAt,
+		now,
+		rawget(self, "geographicCommsState") and 600 or LIFETIME
+	) or NeedsWithdrawalRetry(
+		minimapEnabled,
+		state.lastMinimapLocationSentAt,
+		now,
+		rawget(self, "geographicCommsState") and 600 or LIFETIME
+	)
 	local location = mask ~= 0 and self:ReadLocalPlayerLocation() or nil
 	if mask ~= 0 and not location then
 		-- A transient read outage is not a privacy change. Do not renew stale
 		-- coordinates or withdraw an otherwise permitted last-reported point.
-		if not withdrawing then return false end
+		if not withdrawing then
+			return false
+		end
 		-- A partial opt-out still needs immediate withdrawal when no fresh
 		-- position can be published for the remaining permitted surface.
 		mask, mapEnabled, minimapEnabled = 0, false, false
@@ -317,8 +385,12 @@ function QT:BroadcastPlayerLocation(force, withdraw)
 	local sent = self:SendWireMessageToAnnouncementRoutes(self:SerializeWireMessage("LOC", payload), "player location")
 	if sent then
 		state.lastFingerprint = fingerprint
-		if mapEnabled then state.lastMapLocationSentAt = now end
-		if minimapEnabled then state.lastMinimapLocationSentAt = now end
+		if mapEnabled then
+			state.lastMapLocationSentAt = now
+		end
+		if minimapEnabled then
+			state.lastMinimapLocationSentAt = now
+		end
 	end
 	return sent, location
 end
@@ -333,7 +405,12 @@ function QT:PrunePlayerLocations(force)
 	end
 	state.lastPruneAt = now
 	for name, peer in pairs(state.peers) do
-		if not now or now < peer.receivedAt or now - peer.receivedAt >= (peer.lifetime or LIFETIME) or self:IsIgnoredPlayerName(name) then
+		if
+			not now
+			or now < peer.receivedAt
+			or now - peer.receivedAt >= (peer.lifetime or LIFETIME)
+			or self:IsIgnoredPlayerName(name)
+		then
 			state.peers[name] = nil
 		end
 	end
@@ -356,11 +433,20 @@ function QT:HandlePlayerLocationMessage(payload, sender, sampleAge, source)
 	local previous = state.peers[name]
 	-- Geographic envelopes carry the actual sample age. A delayed broadcast
 	-- must not replace a newer position (or withdrawal) learned from a pong.
-	local sampledAt = now - (sampleAge or 0)
-	source = source or { session = "LOC:" .. data.session, sequence = data.sequence }
-	if not self:CanAcceptPeerUpdate(name, "LOC", sampledAt, source and source.session, source and source.sequence) then return false end
-	if previous and sampledAt < (previous.sampledAt or previous.receivedAt)
-		and (not source or previous.manualSnapshot or (previous.sampledAt or previous.receivedAt) - sampledAt >= 1) then return false end
+	local observation =
+		self:ResolvePeerObservation(name, "LOC", sampleAge, source, "LOC:" .. data.session, data.sequence, LIFETIME)
+	if not self:CanAcceptPeerObservation(observation) then
+		return false
+	end
+	local sampledAt = observation.sampledAt
+	source = observation
+	if
+		previous
+		and sampledAt < (previous.sampledAt or previous.receivedAt)
+		and (not source or previous.manualSnapshot or (previous.sampledAt or previous.receivedAt) - sampledAt >= 1)
+	then
+		return false
+	end
 	if previous and (previous.session == data.session and previous.sequence >= data.sequence) then
 		return false
 	end
@@ -377,8 +463,7 @@ function QT:HandlePlayerLocationMessage(payload, sender, sampleAge, source)
 		end
 	end
 	data.retired = retired
-	return self:StorePlayerLocationRecord(name, data, now, sampledAt,
-		sampleAge and self:GetGeographicSnapshotLifetime() - sampleAge or nil, source)
+	return self:StorePlayerLocationRecord(name, data, now, sampledAt, observation.expiresAt - now, observation)
 end
 
 -- Both public broadcasts and manual refreshes use the same bounded cache.
@@ -386,21 +471,40 @@ function QT:StorePlayerLocationRecord(name, data, now, sampledAt, lifetime, sour
 	local state = self:GetPlayerLocationState()
 	local previous = state.peers[name]
 	data.name, data.receivedAt, data.sampledAt, data.lifetime = name, now, sampledAt, lifetime
-	self:RecordPeerUpdate(name, "LOC", sampledAt, source and source.session, source and source.sequence)
+	local observation = source and source.field and source
+		or self:CreatePeerObservation(name, "LOC", {
+			source = source and "snapshot" or "diagnostic",
+			age = now - sampledAt,
+			lifetime = (lifetime or LIFETIME) + now - sampledAt,
+			session = source and source.session,
+			sequence = source and source.sequence,
+		})
+	if not self:CommitPeerObservation(observation, data, data.mask ~= 0) then
+		return false
+	end
 	state.peers[name] = data
 	local private = rawget(self, "developerPlayerData")
-	if data.mask ~= 0 and private and private[name] and sampledAt >= private[name].receivedAt then private[name] = nil end
+	if data.mask ~= 0 and private and private[name] and sampledAt >= private[name].receivedAt then
+		private[name] = nil
+	end
 	if not previous then
 		local count = 0
-		for _ in pairs(state.peers) do count = count + 1 end
+		for _ in pairs(state.peers) do
+			count = count + 1
+		end
 		if count > MAX_PEERS then
 			local origin = self:GetPlayerLocationPriorityOrigin()
 			local worstName, worstDistance, oldestTime
 			for peerName, peer in pairs(state.peers) do
 				local distance = self:GetPlayerLocationPriorityDistance(peer, origin)
-				if not worstName or distance > worstDistance
-					or (distance == worstDistance and (peer.receivedAt < oldestTime
-						or (peer.receivedAt == oldestTime and peerName > worstName))) then
+				if
+					not worstName
+					or distance > worstDistance
+					or (
+						distance == worstDistance
+						and (peer.receivedAt < oldestTime or (peer.receivedAt == oldestTime and peerName > worstName))
+					)
+				then
 					worstName, worstDistance, oldestTime = peerName, distance, peer.receivedAt
 				end
 			end
@@ -410,8 +514,7 @@ function QT:StorePlayerLocationRecord(name, data, now, sampledAt, lifetime, sour
 
 	-- Withdrawals can arrive after QTPR departure on another route. Preserve any
 	-- existing identity for privacy opt-outs, but only a position establishes it.
-	if data.mask ~= 0 then self:RecordPeerPresenceFromSnapshot(name, sampledAt, source and source.session, source and source.sequence) end
-	return true
+	return true, data
 end
 
 -- A pong has a sample timestamp, but no LOC stream sequence. Retain the
@@ -419,27 +522,53 @@ end
 -- Hidden replies store only a withdrawal here, never their coordinates.
 function QT:RefreshPlayerLocationFromPing(name, response, age)
 	local now = Now(self)
-	if not self.isEnabled or not now or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name)
-		or type(response.locationShared) ~= "boolean" then return false end
+	if
+		not self.isEnabled
+		or not now
+		or self:IsSelfSender(name)
+		or self:IsIgnoredPlayerName(name)
+		or type(response.locationShared) ~= "boolean"
+	then
+		return false
+	end
 	self:PrunePlayerLocations()
 	local state = self:GetPlayerLocationState()
 	local previous = state.peers[name]
 	local sampledAt = now - age
-	if not self:CanAcceptPeerUpdate(name, "LOC", sampledAt) then return false end
-	if previous and (sampledAt < (previous.sampledAt or previous.receivedAt)
-		or (sampledAt == (previous.sampledAt or previous.receivedAt)
-			and previous.mask == 0 and response.locationShared)) then return false end
-	local data = { session = previous and previous.session or "0-0",
-		sequence = previous and previous.sequence or 1, mask = response.locationShared and 3 or 0, manualSnapshot = true }
+	if not self:CanAcceptPeerUpdate(name, "LOC", sampledAt) then
+		return false
+	end
+	if
+		previous
+		and (
+			sampledAt < (previous.sampledAt or previous.receivedAt)
+			or (
+				sampledAt == (previous.sampledAt or previous.receivedAt)
+				and previous.mask == 0
+				and response.locationShared
+			)
+		)
+	then
+		return false
+	end
+	local data = {
+		session = previous and previous.session or "0-0",
+		sequence = previous and previous.sequence or 1,
+		mask = response.locationShared and 3 or 0,
+		manualSnapshot = true,
+	}
 	if response.locationShared then
 		data.mapID = Number(self, response.mapID, 1, 1000000, true)
 		local x, y = Number(self, response.coordX, 0, 100), Number(self, response.coordY, 0, 100)
-		if not data.mapID or not x or not y then return false end
+		if not data.mapID or not x or not y then
+			return false
+		end
 		data.x, data.y = x / 100, y / 100
 		data.classFile = CLASSES[response.classFile] and response.classFile or ""
 		data.className, data.race = Text(self, response.className, 48), Text(self, response.raceName, 48)
 		data.faction = (response.faction == "Alliance" or response.faction == "Horde" or response.faction == "Neutral")
-			and response.faction or ""
+				and response.faction
+			or ""
 		data.level = Number(self, response.level, 1, 1000, true)
 		data.warMode = self:NormalizeAnnouncementWarModeValue(response.warMode)
 	end
@@ -451,7 +580,15 @@ function QT:GetRecentPlayerLocationMapID(name)
 	local state = rawget(self, "playerLocationState")
 	local peer = state and state.peers and state.peers[name]
 	local now = Now(self)
-	if not peer or not now or peer.mask == 0 or now < peer.receivedAt or now - peer.receivedAt >= (peer.lifetime or LIFETIME) then return nil end
+	if
+		not peer
+		or not now
+		or peer.mask == 0
+		or now < peer.receivedAt
+		or now - peer.receivedAt >= (peer.lifetime or LIFETIME)
+	then
+		return nil
+	end
 	return peer.mapID
 end
 
@@ -486,88 +623,27 @@ function QT:GetVisiblePlayerLocations(surface)
 	return result
 end
 
--- One owner for periodic publication. Share this tick's addon-owned location
--- sample with nearby streams; never retain it across frames or privacy changes.
-function QT:UpdatePlayerCommunications()
-	self:UpdatePartyQuestCompareFreshness()
-	self:UpdatePlayerPhaseObservations()
-	if self.UpdateQTPlayerPresence then self:UpdateQTPlayerPresence() end
-	local sample
-	if rawget(self, "geographicCommsState") then
-		sample = self:UpdateGeographicComms()
-	else
-		self:BroadcastPlayerLocation()
-	end
-	self:UpdateNearbyStreams(sample)
-end
-
-function QT:CreatePlayerLocationUpdateFrame()
-	return CreateFrame("Frame")
-end
-
 function QT:InitializePlayerLocations()
 	if not self.isEnabled or not self.hasLoggedIn then
 		return false
 	end
-	local state = self:GetPlayerLocationState()
+	self:GetPlayerLocationState()
 	self:RestorePlayerLocationCache()
-	local frame = rawget(self, "playerLocationUpdateFrame")
-	if not frame then
-		frame = self:CreatePlayerLocationUpdateFrame()
-		self.playerLocationUpdateFrame = frame
-	end
-	if not self.LibChev.CanMutateOwnedRegion(frame) then
-		return false
-	end
-	local elapsed, animationElapsed = 0, 0
-	frame:SetScript("OnUpdate", function(_, delta)
-		if rawget(self, "playerLocationState") ~= state or not self.isEnabled then
-			return
-		end
-		local step = Number(self, delta, 0, 1000) or 0
-		elapsed, animationElapsed = elapsed + step, animationElapsed + step
-		if animationElapsed >= 1 / 30 then
-			animationElapsed = 0
-			self:RefreshNearbyStreamPins()
-		end
-		if elapsed < UPDATE_INTERVAL then
-			return
-		end
-		elapsed = 0
-		self:UpdatePartyNavigation()
-		self:RefreshPartyWaypointPins()
-		self:UpdatePlayerCommunications()
-		self:PrunePlayerLocations()
-		self:RefreshPlayerLocationPins()
-		self:UpdatePlayerTooltipBadge()
-		self:UpdateChatLogPlayerTooltip()
-	end)
-	-- First update uses the same paced path as recovery and movement.
 	return true
 end
 
 function QT:ResetPlayerLocations()
-	self:ResetPartyNavigation()
-	self:HideChatLogPlayerTooltip()
-	self:HidePlayerTooltipBadge()
-	self.playerLocationState = nil
-	self.locationPriorityCache = nil
-	self.nearbyStreamState = nil
-	self.playerPhaseState = nil
-	local frame = rawget(self, "playerLocationUpdateFrame")
-	if frame and self.LibChev.CanMutateOwnedRegion(frame) then
-		frame:SetScript("OnUpdate", nil)
-	end
-	if self.HidePlayerLocationPins then
-		self:HidePlayerLocationPins()
-	end
+	self.playerLocationState, self.locationPriorityCache = nil, nil
+	self:HidePlayerLocationPins()
 end
 
 function QT:OnPlayerLocationOptionsChanged(key)
 	local streams = rawget(self, "nearbyStreamState")
 	if streams then
 		streams.wanted, streams.nextScan = {}, 0
-		if not key or key == "sharePlayerLocation" then streams.subscribers, streams.nextCapability = {}, 0 end
+		if not key or key == "sharePlayerLocation" then
+			streams.subscribers, streams.nextCapability = {}, 0
+		end
 	end
 	if not self.isEnabled then
 		return
@@ -583,19 +659,50 @@ end
 -- optional QTCI metadata; legacy clients retain their readable sender labels.
 function QT:GetPlayerTooltipIdentity(row)
 	local race, class = row.race, row.className
-	if self:IsRuntimeRestricted() then return race, class end
+	if self:IsRuntimeRestricted() then
+		return race, class
+	end
 	local state = rawget(self, "nearbyStreamState")
 	local now = state and Now(self)
 	local name = state and self:NormalizeMemberName(row.name)
 	local metadata = state and name and state.capabilities[name]
-	if metadata and now and now >= metadata.receivedAt and now - metadata.receivedAt < (metadata.lifetime or 600)
-		and metadata.raceID and metadata.raceID > 0 and not self:IsIgnoredPlayerName(name) and self.API.GetLocalizedRaceName then
+	if
+		metadata
+		and now
+		and now >= metadata.receivedAt
+		and now - metadata.receivedAt < (metadata.lifetime or 600)
+		and metadata.raceID
+		and metadata.raceID > 0
+		and not self:IsIgnoredPlayerName(name)
+		and self.API.GetLocalizedRaceName
+	then
 		local localized = self:SafeTrimString(self.API.GetLocalizedRaceName(metadata.raceID), "")
-		if localized ~= "" then race = localized end
+		if localized ~= "" then
+			race = localized
+		end
 	end
 	if self.API.GetLocalizedClassName then
 		local localized = self:SafeTrimString(self.API.GetLocalizedClassName(row.classFile), "")
-		if localized ~= "" then class = localized end
+		if localized ~= "" then
+			class = localized
+		end
 	end
 	return race, class
+end
+
+function QT:RetirePlayerLocationPeer(name)
+	local state, now = rawget(self, "playerLocationState"), Now(self)
+	local previous = state and state.peers[name]
+	if previous and previous.mask ~= 0 then
+		state.peers[name] = {
+			name = name,
+			session = previous.session,
+			sequence = previous.sequence,
+			retired = previous.retired,
+			mask = 0,
+			receivedAt = now,
+			sampledAt = now,
+			lifetime = self:GetGeographicSnapshotLifetime(),
+		}
+	end
 end

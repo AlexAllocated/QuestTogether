@@ -103,6 +103,7 @@ local function Fixture(name)
 	end
 	function a:RecordQTPlayerPresence(n)
 		self.discovered = n
+		return true
 	end
 	function a:RecordCommsDiagnostic() end
 	function a:RecordCommsTraffic() end
@@ -658,4 +659,25 @@ QT:RegisterTest("failed native focus restoration stops safely without repeated w
 		for _ = 1, 5 do a:Tick() end
 		Equal(#a.writes, 1)
 	end
+end)
+
+QT:RegisterTest("focus controller leases invalidate old choices while preserving live follow intent", function()
+ local a,b = Pair()
+ assert(a:FollowPartyQuestFocus(b.name))
+ assert(a:RequestPartyQuestFocus(a.name, 2))
+ local stale, token = a.confirmAction, a.partyNavigationState.followToken
+ local preview = a:CreatePartyFocusController({ active=function() return true end })
+ a:AcquirePartyFocusController(preview)
+ Equal(a:ApplyPartyQuestFocus(), nil)
+ Equal(a.partyNavigationState.following,b.name)
+ Equal(a.partyNavigationState.followToken,token)
+ Equal(stale(),false)
+ assert(a:ReleasePartyFocusController(preview))
+ Equal(stale(),false)
+ Equal(a.partyNavigationState.following,b.name)
+ Equal(a.partyNavigationState.resuming,true)
+ local fresh = Fixture()
+ fresh:AcquirePartyFocusController(preview)
+ assert(fresh:ReleasePartyFocusController(preview))
+ Equal(rawget(fresh,"partyNavigationState"),nil)
 end)
