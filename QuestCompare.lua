@@ -36,6 +36,27 @@ local function EntryMap(addon, entries)
 	return result
 end
 
+-- Publish a snapshot and its certificate together. Installed entry maps are not
+-- mutated in place: refreshes stage privately and detail updates replace the map.
+-- Passing nil retires all evidence owned by the previous snapshot.
+function QuestTogether:SetPartyQuestMemberSnapshot(member, entries, revision, sampledAt)
+	member.entries, member.revision, member.sampledAt = entries or {}, entries and revision or nil, entries and sampledAt or nil
+end
+
+function QuestTogether:UpdatePartyQuestMemberEntry(member, questId, entry)
+	local previous = member.entries[questId]
+	local sameSummary = previous and entry
+		and (previous.questTitle or "") == (entry.questTitle or "")
+		and (previous.isComplete == true) == (entry.isComplete == true)
+		and previous.isPushable == entry.isPushable
+	local entries = {}
+	for id, value in pairs(member.entries) do entries[id] = value end
+	entries[questId] = entry
+	-- Objective progress alone does not change the certified log. Ownership,
+	-- title, readiness or shareability changes require a new full certificate.
+	self:SetPartyQuestMemberSnapshot(member, entries, sameSummary and member.revision or nil, member.sampledAt)
+end
+
 function QuestTogether:CancelPartyQuestCompare()
 	local session = self.partyQuestCompareSession
 	self:CancelPartyQuestObjectiveRequests(session)
@@ -91,7 +112,8 @@ function QuestTogether:CancelIgnoredPlayerQuestCompare()
 				if detail.requestId then self.pendingQuestCompareRequests[detail.requestId] = nil end
 			end
 			member.objectiveDetails, member.objectiveRequestQuestId = {}, nil
-			member.entries, member.state, member.supportsShareRequests = {}, "unavailable", nil
+			self:SetPartyQuestMemberSnapshot(member, nil)
+			member.state, member.supportsShareRequests = "unavailable", nil
 		end
 	end
 	self:QueuePartyQuestCompareRender()
@@ -223,7 +245,7 @@ function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName, condi
 	for _, name in ipairs(names) do
 		local member = { name = name, entries = {}, state = "loading", isLocal = name == ownName }
 		local prior = previous and previous.byName[member.name]
-		if prior then member.entries, member.sampledAt, member.revision = prior.entries, prior.sampledAt, prior.revision end
+		if prior then self:SetPartyQuestMemberSnapshot(member, prior.entries, prior.revision, prior.sampledAt) end
 		member.classFile = member.isLocal and self:GetPlayerClassFile() or self:GetGroupedSenderClassFile(name)
 		session.members[#session.members + 1] = member
 		session.byName[name] = member
@@ -293,16 +315,13 @@ function QuestTogether:RefreshPartyQuestCompareMember(name, conditional)
 					return
 				end
 				entries[self:NormalizeQuestID(entry.questId)] = entry
-				member.entries[self:NormalizeQuestID(entry.questId)] = entry
 				if entry.classFile and entry.classFile ~= "" then member.classFile = entry.classFile end
-				self:QueuePartyQuestCompareRender()
 			end,
 			onDone = function(supportsShareRequests, supportsObjectives, classFile, revision)
 				if not Current() then
 					return
 				end
-				member.entries, member.revision = entries, revision
-				member.sampledAt = self:GetPartyQuestCompareTime()
+				self:SetPartyQuestMemberSnapshot(member, entries, revision, self:GetPartyQuestCompareTime())
 				member.state = "ready"
 				member.supportsShareRequests = supportsShareRequests
 				member.supportsObjectives = supportsObjectives
@@ -361,9 +380,8 @@ function QuestTogether:RefreshLocalPartyQuestCompare(delaySeconds)
 			return
 		end
 		local entries = self:BuildQuestCompareEntries()
-		member.entries = EntryMap(self, entries)
+		self:SetPartyQuestMemberSnapshot(member, EntryMap(self, entries), nil, entries and self:GetPartyQuestCompareTime() or nil)
 		member.state = entries and "ready" or "unavailable"
-		member.sampledAt = entries and self:GetPartyQuestCompareTime() or nil
 		member.objectiveDetails = {}
 		for id in pairs(session.expandedQuestIds or {}) do
 			member.objectiveDetails[id] = { questId = id, state = "ready",

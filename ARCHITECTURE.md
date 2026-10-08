@@ -45,7 +45,9 @@ private `.local` notes are historical context, not the source of truth.
   Arrival time does not rejuvenate the source's sample time. Public metadata,
   location, nearby movement, party navigation and developer diagnostics keep
   their own TTL and consent rules. Hidden diagnostic coordinates never become
-  public location state.
+  public location state. Correlated legacy public ping replies use the request's
+  start time as a conservative sample bound and pass the same location admission
+  checks; missing coordinates are unknown, not a withdrawal.
 - Schedule work with a deliberate mode: `immediate`, `nextFrame`, `bounded` or
   `debounce`. A next-frame request cannot run inline or be made due by a flush.
   Bounded refreshes retain their original deadline under repeated events.
@@ -65,7 +67,9 @@ private `.local` notes are historical context, not the source of truth.
   missing, expired or incompatible baselines request full data. Manual Refresh
   is an explicit full refresh. Objective detail remains separately requested;
   any detail response that changes ownership or summary fields invalidates the
-  certified revision before updating the member's displayed entry.
+  certified revision before updating the member's displayed entry. Publish and
+  retire member entries, revisions and sample times together through the shared
+  snapshot helpers; installed entry maps are not mutated in place.
 - Settings validate a whole edit before committing any key. `SetOptions` batches
   related changes and dispatches each affected service once. Profile activation
   uses the same effects, including themes, scale, privacy and navigation; it
@@ -83,6 +87,9 @@ window's session. Explicit close retires it even if its parent is already hidden
 A dismissed presentation is hidden before its callback may display a successor
 on the same frame. Temporary native Edit Mode hiding preserves its Revert
 baseline until the editing session actually ends.
+Window geometry belongs to the profile that last restored it. Replacing that
+profile restores its saved geometry or the window defaults, while display
+changes fit the current layout without erasing the user's saved dimensions.
 A region queued for cleanup carries ownership: reuse cancels old cleanup.
 Cleanup can outlive addon disable; stale feature work cannot.
 

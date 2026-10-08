@@ -193,7 +193,7 @@ function QT:AddDeveloperPingMetadata(response, request)
 	return true
 end
 
-function QT:AcceptDeveloperPingResponse(response, pending)
+function QT:AcceptDeveloperPingResponse(response, pending, observation)
 	if rawget(self,"isLocalDeveloper") ~= true or not pending.developerRequest or not response.developer then return end
 	local name = Name(self,response.senderName)
 	if not name or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then return end
@@ -203,8 +203,8 @@ function QT:AcceptDeveloperPingResponse(response, pending)
 		self:GetDebugController():ShowReport(response.diagnosticText, name)
 	end
 	local now = self.API.GetTime()
-	local serverNow, sampled = self:GetAnnouncementServerTime(), self:SafeToNumber(response.sampledAt)
-	local age = serverNow and sampled and serverNow-sampled
+	if observation == nil then observation = self:CreatePingResponseObservation(response, pending) end
+	local age = observation and now - observation.sampledAt
 	local data = rawget(self,"developerPlayerData")
 	if not data then data={}; self.developerPlayerData=data end
 	local count=0
@@ -220,7 +220,7 @@ function QT:AcceptDeveloperPingResponse(response, pending)
 		self:RefreshQuestPartnerStatusFromPing(name, response.lookingForQuestPartners, age)
 		local previous = data[name]
 		local fresh = not previous or now - age >= previous.receivedAt
-		local accepted = fresh and self:RefreshPlayerLocationFromPing(name, response, age)
+		local accepted = fresh and self:RefreshPlayerLocationFromPing(name, response, observation)
 		if accepted and response.locationShared == false and age < 120 and (count < 512 or previous) then
 			local map,x,y,level = self:SafeToNumber(response.mapID),self:SafeToNumber(response.coordX),self:SafeToNumber(response.coordY),self:SafeToNumber(response.level)
 			if map and map>0 and map==math.floor(map) and map<=1000000 and x and x>=0 and x<=100 and y and y>=0 and y<=100 then

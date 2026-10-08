@@ -188,3 +188,103 @@ QT:RegisterTest("failed managed layout callback releases its guard for a later r
 	Near(f.w, 900)
 	Near(f.h, 550)
 end)
+
+local function ProfileFixture()
+	local a, frame, root = Fixture()
+	a.activeProfileKey, a.activeCharacterKey = "A", "Me-Realm"
+	a.db.profiles, a.db.profileKeys = { A = a.db.profile }, { ["Me-Realm"] = "A" }
+	a.db.profiles.Blank = a:DeepCopy(QT.DEFAULTS.profile)
+	a.hasLoggedIn, a.isEnabled = true, true
+	function a:IsRuntimeRestricted() return self.blocked == true end
+	function a:Enable() self.isEnabled = true end
+	function a:Disable() self.isEnabled = false end
+	-- Keep real profile validation/effect dispatch and the whole window path.
+	-- Other services use private no-op adapters, never live UI/network state.
+	for _, name in ipairs({ "CancelDeveloperDiagnosticReplies", "RefreshPartyRoster", "ResetPlayerPhases",
+		"RefreshPlayerLocationPins", "RefreshWindowThemes", "UpdatePartyChatReminder", "BroadcastQuestPartnerStatus",
+		"RefreshMinimapPartnerGlow", "OnPlayerLocationOptionsChanged", "RefreshMinimapButton", "EnsureQuestLogChatFrame",
+		"CloseQuestLogChatFrame", "RefreshActiveAnnouncementBubbles", "RefreshPersonalBubbleAnchorVisualState",
+		"RefreshPersonalBubbleEditModeDialog", "RefreshNameplateAugmentation", "RefreshOptionsWindow",
+		"RefreshProfilesWindow", "Debugf", "QueuePartyNavigationUpdate" }) do
+		a[name] = function() end
+	end
+	frame:SetSize(1600, 900)
+	frame.userWidth, frame.userHeight = 1600, 900
+	frame.left, frame.bottom = 1700, 420
+	a:SaveWindowLayout(frame)
+	return a, frame, root
+end
+
+local function AssertDefaultLayout(frame, root)
+	Near(frame.w, 1250)
+	Near(frame.h, 720)
+	Near((frame.left + frame.w / 2) * frame.scale / root.w, 0.5)
+	Near((frame.bottom + frame.h / 2) * frame.scale / root.h, 0.5)
+	assert(frame.userWidth == nil and frame.userHeight == nil)
+end
+
+QT:RegisterTest("profile reset switch and copy restore defaults when window geometry is absent", function()
+	for _, operation in ipairs({ "reset", "switch", "copy" }) do
+		local a, frame, root = ProfileFixture()
+		local previous = a.db.profile
+		if operation == "reset" then assert(a:ResetActiveProfile())
+		elseif operation == "switch" then assert(a:SetActiveProfile("Blank"))
+		else assert(a:CopyProfileIntoActiveProfile("Blank")) end
+		AssertDefaultLayout(frame, root)
+		assert(a.db.profile.windowLayouts == nil)
+		Near(previous.windowLayouts.log.width, 1600)
+	end
+end)
+
+QT:RegisterTest("profile saved window geometry survives display and scale changes", function()
+	local a, frame, root = ProfileFixture()
+	local saved = { width = 880, height = 610, x = 0.7, y = 0.6 }
+	a.db.profiles.Blank.windowLayouts = { log = saved }
+	assert(a:SetActiveProfile("Blank"))
+	Near(frame.w, 880)
+	Near(frame.h, 610)
+	Near((frame.left + frame.w / 2) / root.w, 0.7)
+	root.w, root.h, root.scale = 1024, 768, 0.7
+	a:DISPLAY_SIZE_CHANGED()
+	assert(a:SetOption("windowScale", 130))
+	Near(frame.w, 880)
+	Near(frame.h, 610)
+	assert(frame.left * frame.scale >= 0 and (frame.left + frame.w) * frame.scale <= root.w)
+	assert(frame.bottom * frame.scale >= 0 and (frame.bottom + frame.h) * frame.scale <= root.h)
+	assert(a.db.profile.windowLayouts.log == saved)
+	Near(saved.x, 0.7)
+	root.w, root.h, root.scale = 3440, 1440, 1
+	a:UI_SCALE_CHANGED()
+	Near((frame.left + frame.w / 2) * frame.scale / root.w, 0.7)
+	frame.left, frame.bottom = 800, 250
+	a:SaveWindowLayout(frame)
+	assert(a.db.profile.windowLayouts.log ~= saved, "ordinary saves still belong to the active profile")
+end)
+
+QT:RegisterTest("deferred profile geometry survives display events on hidden disabled windows", function()
+	local a, frame, root = ProfileFixture()
+	frame:Hide()
+	a.blocked, a.db.profiles.Blank.enabled = true, false
+	assert(a:SetActiveProfile("Blank"))
+	Near(frame.w, 1600)
+	root.w, root.h, root.scale = 1024, 768, 0.7
+	a:DISPLAY_SIZE_CHANGED() -- Replaces the pending callback without losing the profile transition.
+	a.blocked = false
+	a:SaveWindowLayout(frame) -- A gesture ending before restoration cannot pollute the new profile.
+	assert(a.db.profile.windowLayouts == nil)
+	a.pending.window_layouts()
+	AssertDefaultLayout(frame, root)
+	assert(not frame.shown and not a.isEnabled)
+	assert(frame.scale < 1 and frame.left * frame.scale >= 0)
+	assert((frame.left + frame.w) * frame.scale <= root.w)
+end)
+
+QT:RegisterTest("quarantined window keeps its profile transition until a later show can restore it", function()
+	local a, frame, root = ProfileFixture()
+	frame.forbidden = true
+	assert(a:SetActiveProfile("Blank"))
+	Near(frame.w, 1600)
+	frame.forbidden = false
+	frame.scripts.OnShow() -- Uses ApplyWindowLayout without an explicit restore argument.
+	AssertDefaultLayout(frame, root)
+end)

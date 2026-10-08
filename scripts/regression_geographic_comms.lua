@@ -1746,10 +1746,63 @@ local function CollapseRevisionObjective(addon)
 	addon:CancelPartyQuestObjectiveRequests(session, 1)
 end
 
+QT:RegisterTest("party comparison auto refresh reacquires an ignored then unignored snapshot before reusing revisions", function()
+	local a, b, _, advance = ObjectiveRevisionNetwork()
+	a.runtimeStateStore = {}
+	a.API.IsWorldMapVisible = function() return false end
+	a.partyMemberOrder = { a.name, b.name }
+	a.db.profile.compareAutoRefresh = true
+	-- Only presentation is private. Exercise the real visible-window freshness
+	-- clock, whole-session refresh, ignore event, transport and reply callbacks.
+	a.partyQuestCompareWindow = a:CreateTestUIRegion(a)
+	a.partyQuestCompareWindow.headerStatuses = {}
+	assert(a:RefreshPartyQuestCompare())
+	advance(5)
+	local function Member() return a.partyQuestCompareSession.byName[b.name] end
+	local function AutoRefresh()
+		advance(31)
+		local previous = a.partyQuestCompareSession
+		a:UpdatePartyQuestCompareFreshness()
+		assert(a.partyQuestCompareSession ~= previous, "the visible-window auto refresh must replace its session")
+		advance(5)
+	end
+	local revision = Member().revision
+	assert(revision and Member().entries[1])
+	local before = #b.packets
+	AutoRefresh()
+	Equal(Member().state, "ready")
+	Equal(EntryPackets(b, before), 0) -- A valid unchanged baseline still saves traffic.
+	a.ignored[b.name] = true
+	a:IGNORELIST_UPDATE()
+	Equal(Member().state, "unavailable")
+	Equal(next(Member().entries), nil)
+	before = #b.packets
+	AutoRefresh()
+	Equal(Member().state, "unavailable")
+	Equal(#b.packets, before) -- No request is sent while the member stays ignored.
+	a.ignored[b.name] = nil
+	a:IGNORELIST_UPDATE()
+	before = #b.packets
+	AutoRefresh()
+	Equal(Member().state, "ready")
+	Equal(Member().entries[1].questTitle, "Collect supplies")
+	Equal(Member().revision, revision)
+	Equal(EntryPackets(b, before), 1) -- Unignore must reacquire the discarded list.
+	before = #b.packets
+	AutoRefresh()
+	Equal(Member().state, "ready")
+	Equal(EntryPackets(b, before), 0) -- The newly certified baseline can be reused.
+	before = #b.packets
+	assert(a:RefreshPartyQuestCompare())
+	advance(5)
+	Equal(Member().state, "ready")
+	Equal(EntryPackets(b, before), 1) -- Manual refresh remains explicitly full.
+end)
+
 QT:RegisterTest("objective summary changes retire comparison revisions before changed then restored refreshes", function()
 	for _, field in ipairs({ "isComplete", "questTitle", "isPushable", "unknownShareability" }) do
 		local a, b, member, advance = ObjectiveRevisionNetwork()
-		local original, revision = b:DeepCopy(b.quest), member.revision
+		local original, revision, certifiedEntries = b:DeepCopy(b.quest), member.revision, member.entries
 		if field == "unknownShareability" then b.quest.isPushable = nil
 		elseif field == "questTitle" then b.quest.questTitle = "Updated supplies"
 		elseif field == "isComplete" then b.quest.isComplete = true
@@ -1758,6 +1811,10 @@ QT:RegisterTest("objective summary changes retire comparison revisions before ch
 		advance(5)
 		Equal(member.objectiveDetails[1].state, "ready")
 		Equal(member.revision, nil)
+		assert(member.entries ~= certifiedEntries, "detail updates cannot mutate a certified snapshot in place")
+		Equal(certifiedEntries[1].questTitle, original.questTitle)
+		Equal(certifiedEntries[1].isComplete, original.isComplete)
+		Equal(certifiedEntries[1].isPushable, original.isPushable)
 		CollapseRevisionObjective(a)
 		-- The responder legitimately reuses its original revision after the quest
 		-- returns to that state; our altered baseline must request the full log.

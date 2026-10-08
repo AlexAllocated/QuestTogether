@@ -39,6 +39,7 @@ function QT:SaveWindowLayout(frame)
 	if
 		not info
 		or info.applying
+		or info.profile ~= (self.db and self.db.profile)
 		or self:IsWorkBlocked("foreign_frame_mutation")
 		or not self.LibChev.CanMutateOwnedRegion(frame)
 	then
@@ -98,14 +99,20 @@ function QT:ApplyWindowLayout(frame, restore)
 	if not rw or not rh or rw <= 0 or rh <= 0 then
 		return false
 	end
-	local layouts = self.db and self.db.profile and self.db.profile.windowLayouts
+	local profile = self.db and self.db.profile
+	local profileChanged = info.profile ~= profile
+	local layouts = profile and profile.windowLayouts
 	local saved = info.key and type(layouts) == "table" and layouts[info.key]
 	if type(saved) ~= "table" then
 		saved = nil
 	end
+	-- Geometry belongs to the profile that last completed restoration. Keep
+	-- that identity until success so a deferred profile change survives later
+	-- display events, and an unsaved profile cannot inherit the previous layout.
+	restore = restore or profileChanged
 	local relayout = restore or info.resetRequested
 	info.applying = true
-	if info.resetRequested then
+	if info.resetRequested or (profileChanged and not saved) then
 		frame.userWidth, frame.userHeight = nil, nil
 		frame:SetSize(math.max(info.width, frame.minimumWidth or 1), info.height)
 		info.x, info.y, info.resetRequested = 0.5, 0.5, nil
@@ -144,6 +151,7 @@ function QT:ApplyWindowLayout(frame, restore)
 	frame:ClearAllPoints()
 	frame:SetPoint("CENTER", root, "BOTTOMLEFT", x * rw / scale, y * rh / scale)
 	frame:SetClampedToScreen(true)
+	info.profile = profile
 	info.applying = nil
 	return true
 end

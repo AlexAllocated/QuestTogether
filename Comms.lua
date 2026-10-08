@@ -533,6 +533,10 @@ function QuestTogether:DecodePingResponsePayload(payload)
 	if requestId == "" or senderName == "" then
 		return nil
 	end
+	local function OptionalFlag(value)
+		if value == "1" then return true end
+		if value == "0" then return false end
+	end
 
 	return {
 		version = version,
@@ -550,8 +554,8 @@ function QuestTogether:DecodePingResponsePayload(payload)
 		mapID = mapID,
 		addonVersion = addonVersion,
 		developer = fields[15] == "dev1",
-		locationShared = fields[16] == "1",
-		lookingForQuestPartners = fields[17] == "1",
+		locationShared = OptionalFlag(fields[16]),
+		lookingForQuestPartners = OptionalFlag(fields[17]),
 		faction = self:UnescapePayload(fields[18] or ""),
 		diagnosticText = self:UnescapePayload(fields[19] or ""),
 		partyPayload = self:UnescapePayload(fields[20] or ""),
@@ -2512,6 +2516,35 @@ function QuestTogether:HandlePingRequest(requestData, channel, localID, channelN
 	return self:SendPingResponse(requestData.requestId, routes, requestData.supportsPagedPong, developerRequest)
 end
 
+-- Correlated legacy pongs predate sample timestamps. Their request start is a
+-- conservative lower bound; arrival must not refresh an older position. Keep
+-- the same explicit observation boundary for diagnostic and public replies.
+function QuestTogether:CreatePingResponseObservation(response, pending)
+	local name = self:NormalizeMemberName(response.senderName)
+	local now = SafeNumber(self, self.API.GetTime and self.API.GetTime())
+	if not name or not now or type(pending) ~= "table" then return nil end
+	local age, source
+	if response.developer then
+		if rawget(self, "isLocalDeveloper") ~= true or not pending.developerRequest then return nil end
+		local stamp, serverNow = SafeNumber(self, response.sampledAt), self:GetAnnouncementServerTime()
+		age = stamp and serverNow and serverNow - stamp
+		if not age or age < -30 then return nil end
+		age, source = math.max(0, age), "diagnostic"
+	else
+		-- Legacy senders do not carry this setting. An explicit flag without
+		-- the diagnostic marker is not a legacy public-coordinate response.
+		if response.locationShared ~= nil then return nil end
+		local startedAt = SafeNumber(self, pending.startedAt)
+		if not startedAt or now < startedAt then return nil end
+		age, source = now - startedAt, "pong"
+	end
+	local observation = self:CreatePeerObservation(name, "LOC", {
+		source = source, age = age, lifetime = self:GetGeographicSnapshotLifetime(),
+	})
+	if observation then observation.manual = true end
+	return observation
+end
+
 function QuestTogether:HandlePingResponse(responseData)
 	if type(responseData) ~= "table" or type(responseData.requestId) ~= "string" or responseData.requestId == "" then
 		return false
@@ -2554,16 +2587,16 @@ function QuestTogether:HandlePingResponse(responseData)
 	if self.PrintPingResponse then
 		self:PrintPingResponse(responseData)
 	end
-	self:AcceptDeveloperPingResponse(responseData, pending)
+	local observation = self:CreatePingResponseObservation(responseData, pending)
+	if responseData.developer then
+		self:AcceptDeveloperPingResponse(responseData, pending, observation or false)
+	elseif observation and self:RefreshPlayerLocationFromPing(senderName, responseData, observation) then
+		self:RefreshPlayerLocationPins()
+	end
 	-- A completed, correlated response is a presence witness at its sample
 	-- time, not its arrival time. Legacy replies have only the request's lower
 	-- bound, so a reply queued before departure cannot resurrect that player.
-	local sampledAt = pending.startedAt
-	local stamp, serverNow = SafeNumber(self, responseData.sampledAt), self:GetAnnouncementServerTime()
-	if stamp and serverNow and now then
-		local age = serverNow - stamp
-		if age >= -30 and age < self:GetGeographicSnapshotLifetime() then sampledAt = now - math.max(0, age) end
-	end
+	local sampledAt = observation and observation.sampledAt or pending.startedAt
 	if sampledAt and self.RecordPeerPresenceFromSnapshot then
 		self:RecordPeerPresenceFromSnapshot(senderName, sampledAt)
 	else

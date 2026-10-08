@@ -348,6 +348,139 @@ local function Pong(a, shared, sampleTime)
 		sampledAt = sampleTime or a:GetAnnouncementServerTime() }
 end
 
+-- The exact 14-field PONG layout emitted by 6.5.7: public coordinates, no
+-- diagnostic consent/sample extension. Exercise current correlation/dispatch.
+local function LegacyPongWire(id, changes)
+	local fields = { "2", id, "Friend-Realm", "Realm", "Human", "MAGE", "Mage", "10", "Elwynn", "42", "63", "", "12", "6.5.7" }
+	for index, value in pairs(changes or {}) do fields[index] = value end
+	return "PONG|" .. table.concat(fields, ",")
+end
+local function StartLegacyPong(a, target)
+	local ok, id = a:SendPingRequest(target)
+	assert(ok)
+	return id
+end
+local function ReceiveLegacyPong(a, id, changes)
+	a:OnCommReceived(a.commPrefix, LegacyPongWire(id, changes), "WHISPER", "Friend-Realm")
+end
+
+QuestTogether:RegisterTest("correlated legacy pongs refresh normal locations using request sample age", function()
+	local a = DeveloperFixture()
+	local id = StartLegacyPong(a)
+	a.clock:Advance(10)
+	ReceiveLegacyPong(a, id)
+	local row = assert(a.playerLocationState.peers["Friend-Realm"])
+	Equal(a.pendingPingRequests[id].remoteReplies, 1)
+	Equal(row.x, 0.42); Equal(row.y, 0.63); Equal(row.mapID, 12)
+	Equal(row.sampledAt, 100); Equal(row.receivedAt, 110); Equal(row.lifetime, 590)
+	Equal(row.observationSource, "pong"); Equal(row.manualSnapshot, true)
+	Equal(row.developerOnly, nil); Equal(a.developerPlayerData, nil)
+	Equal(a.printed[#a.printed].locationShared, nil)
+	Equal(a.printed[#a.printed].lookingForQuestPartners, nil)
+	Equal(#a:GetVisiblePlayerLocations("map"), 1)
+	Equal(#a:GetVisiblePlayerLocations("minimap"), 1)
+	a.activeCharacterKey = a.name
+	a:SavePlayerLocationCache()
+	Equal(#a.db.global.playerLocationCache.rows, 1)
+	a.clock:Advance(590)
+	Equal(#a:GetVisiblePlayerLocations("map"), 0)
+end)
+
+QuestTogether:RegisterTest("legacy pong refreshes preserve surface consent and unknown identity fields", function()
+	for _, mask in ipairs({ 1, 2 }) do
+		local a = DeveloperFixture()
+		assert(a:HandlePlayerLocationMessage("1,1000-1,8," .. mask .. ",12,0.1,0.2,MAGE,Mage,Human,Alliance,60,0", "Friend-Realm", 10))
+		local id = StartLegacyPong(a)
+		a.clock:Advance(2)
+		ReceiveLegacyPong(a, id, { [5] = "", [6] = "", [7] = "", [8] = "" })
+		local row = a.playerLocationState.peers["Friend-Realm"]
+		Equal(row.x, 0.42); Equal(row.mask, mask)
+		Equal(row.session, "1000-1"); Equal(row.sequence, 8)
+		Equal(row.classFile, "MAGE"); Equal(row.className, "Mage"); Equal(row.race, "Human")
+		Equal(row.faction, "Alliance"); Equal(row.level, 60); Equal(row.warMode, false)
+		Equal(#a:GetVisiblePlayerLocations(mask == 1 and "minimap" or "map"), 0)
+	end
+end)
+
+QuestTogether:RegisterTest("missing or malformed legacy pong coordinates never withdraw a normal location", function()
+	for _, changes in ipairs({ { [10] = "" }, { [11] = "" }, { [13] = "" }, { [10] = "nan" }, { [11] = "101" }, { [13] = "0" } }) do
+		local a = DeveloperFixture()
+		assert(a:HandlePlayerLocationMessage("1,1000-1,8,3,12,0.1,0.2,MAGE,Mage,Human,Alliance,60,0", "Friend-Realm", 10))
+		local row = a.playerLocationState.peers["Friend-Realm"]
+		local id = StartLegacyPong(a)
+		a.clock:Advance(2)
+		ReceiveLegacyPong(a, id, changes)
+		Equal(a.playerLocationState.peers["Friend-Realm"], row)
+		Equal(row.x, 0.1); Equal(row.sampledAt, 90); Equal(row.mask, 3)
+	end
+end)
+
+QuestTogether:RegisterTest("late legacy pongs cannot undo newer pongs locations withdrawals or departure", function()
+	local a = DeveloperFixture()
+	local first = StartLegacyPong(a)
+	a.clock:Advance(5)
+	local second = StartLegacyPong(a)
+	a.clock:Advance(1)
+	ReceiveLegacyPong(a, second, { [10] = "70" })
+	ReceiveLegacyPong(a, first)
+	Equal(a.playerLocationState.peers["Friend-Realm"].x, 0.7)
+	Equal(a.playerLocationState.peers["Friend-Realm"].sampledAt, 105)
+	Equal(a:HandlePlayerLocationMessage("1,1000-1,1,3,12,0.1,0.2,MAGE,Mage,Human,Alliance,60,0", "Friend-Realm", 7), false)
+	assert(a:HandlePlayerLocationMessage("1,1000-1,2,3,12,0.1,0.2,MAGE,Mage,Human,Alliance,60,0", "Friend-Realm", 0))
+	Equal(a.playerLocationState.peers["Friend-Realm"].x, 0.1)
+	for _, change in ipairs({ "location", "withdrawal", "tied withdrawal", "departure" }) do
+		local b = DeveloperFixture()
+		local id = StartLegacyPong(b)
+		if change ~= "tied withdrawal" then b.clock:Advance(1) end
+		if change == "departure" then
+			assert(b:RecordPeerDeparture("Friend-Realm", b.API.GetTime(), "100000-1234", 2))
+		elseif change == "location" then
+			assert(b:HandlePlayerLocationMessage("1,1000-1,1,3,12,0.1,0.2,MAGE,Mage,Human,Alliance,60,0", "Friend-Realm"))
+		else
+			assert(b:HandlePlayerLocationMessage("1,1000-1,1,0", "Friend-Realm"))
+		end
+		local previous = b.playerLocationState and b.playerLocationState.peers["Friend-Realm"]
+		b.clock:Advance(1)
+		ReceiveLegacyPong(b, id)
+		Equal(b.playerLocationState and b.playerLocationState.peers["Friend-Realm"], previous)
+		if change == "departure" then Equal(b:IsKnownQTPlayer("Friend-Realm"), false) end
+	end
+end)
+
+QuestTogether:RegisterTest("legacy location imports require live matching unignored pong correlation", function()
+	for _, change in ipairs({ "unmatched", "expired", "ignored", "wrong target", "duplicate", "clock reset" }) do
+		local a = DeveloperFixture()
+		local id = StartLegacyPong(a, change == "wrong target" and "Other-Realm" or nil)
+		if change == "unmatched" then id = "unknown-request"
+		elseif change == "expired" then a.clock:Advance(301)
+		elseif change == "ignored" then function a:IsIgnoredPlayerName(name) return name == "Friend-Realm" end
+		elseif change == "duplicate" then ReceiveLegacyPong(a, id, { [10] = "" })
+		elseif change == "clock reset" then a.clock.now = 99 end
+		ReceiveLegacyPong(a, id)
+		Equal(a.playerLocationState and a.playerLocationState.peers["Friend-Realm"], nil)
+	end
+end)
+
+QuestTogether:RegisterTest("invalid diagnostic metadata cannot fall back to public legacy pong import", function()
+	for _, change in ipairs({ "missing flag", "invalid flag", "missing sample", "old sample", "future sample", "missing marker" }) do
+		local a = DeveloperFixture()
+		local id = StartLegacyPong(a)
+		local flag, marker, stamp = "1", "dev1", a:GetAnnouncementServerTime()
+		if change == "missing flag" then flag = ""
+		elseif change == "invalid flag" then flag = "invalid"
+		elseif change == "missing sample" then stamp = ""
+		elseif change == "old sample" then stamp = stamp - 600
+		elseif change == "future sample" then stamp = stamp + 31
+		elseif change == "missing marker" then marker, flag = "", "0" end
+		local wire = LegacyPongWire(id) .. "," .. marker .. "," .. flag .. ",1,Alliance,,," .. stamp
+		a:OnCommReceived(a.commPrefix, wire, "WHISPER", "Friend-Realm")
+		Equal(a.pendingPingRequests[id].remoteReplies, 1)
+		if change == "missing flag" or change == "invalid flag" then Equal(a.printed[#a.printed].locationShared, nil) end
+		Equal(a.playerLocationState and a.playerLocationState.peers["Friend-Realm"], nil)
+		Equal(a.developerPlayerData and a.developerPlayerData["Friend-Realm"], nil)
+	end
+end)
+
 QuestTogether:RegisterTest("shared developer pong refreshes the normal cache and obeys normal map filters",function()
 	local a = DeveloperFixture()
 	a:AcceptDeveloperPingResponse(Pong(a, true), {developerRequest=true})

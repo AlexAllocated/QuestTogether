@@ -517,27 +517,33 @@ function QT:StorePlayerLocationRecord(name, data, now, sampledAt, lifetime, sour
 	return true, data
 end
 
--- A pong has a sample timestamp, but no LOC stream sequence. Retain the
+-- A pong observation has a sample time, but no LOC stream sequence. Retain the
 -- last real sequence; 0-0 is a local bootstrap session until the first LOC.
 -- Hidden replies store only a withdrawal here, never their coordinates.
-function QT:RefreshPlayerLocationFromPing(name, response, age)
+function QT:RefreshPlayerLocationFromPing(name, response, observation)
 	local now = Now(self)
+	local legacy = observation and observation.source == "pong" and not response.developer
 	if
 		not self.isEnabled
 		or not now
 		or self:IsSelfSender(name)
 		or self:IsIgnoredPlayerName(name)
-		or type(response.locationShared) ~= "boolean"
+		or (not legacy and type(response.locationShared) ~= "boolean")
+		or not observation
+		or observation.name ~= name
+		or observation.field ~= "LOC"
+		or not self:CanAcceptPeerObservation(observation)
 	then
 		return false
 	end
 	self:PrunePlayerLocations()
 	local state = self:GetPlayerLocationState()
 	local previous = state.peers[name]
-	local sampledAt = now - age
-	if not self:CanAcceptPeerUpdate(name, "LOC", sampledAt) then
-		return false
-	end
+	local sampledAt = observation.sampledAt
+	-- Public coordinates in the legacy protocol are affirmative sharing. Missing
+	-- coordinates are unknown, never a withdrawal. Diagnostic replies require
+	-- their explicit setting even when they contain private coordinates.
+	local shared = legacy or response.locationShared
 	if
 		previous
 		and (
@@ -545,7 +551,7 @@ function QT:RefreshPlayerLocationFromPing(name, response, age)
 			or (
 				sampledAt == (previous.sampledAt or previous.receivedAt)
 				and previous.mask == 0
-				and response.locationShared
+				and shared
 			)
 		)
 	then
@@ -554,10 +560,10 @@ function QT:RefreshPlayerLocationFromPing(name, response, age)
 	local data = {
 		session = previous and previous.session or "0-0",
 		sequence = previous and previous.sequence or 1,
-		mask = response.locationShared and 3 or 0,
+		mask = shared and 3 or 0,
 		manualSnapshot = true,
 	}
-	if response.locationShared then
+	if shared then
 		data.mapID = Number(self, response.mapID, 1, 1000000, true)
 		local x, y = Number(self, response.coordX, 0, 100), Number(self, response.coordY, 0, 100)
 		if not data.mapID or not x or not y then
@@ -571,9 +577,17 @@ function QT:RefreshPlayerLocationFromPing(name, response, age)
 			or ""
 		data.level = Number(self, response.level, 1, 1000, true)
 		data.warMode = self:NormalizeAnnouncementWarModeValue(response.warMode)
+		if legacy and previous then
+			-- Older clients may publish only one surface and omit identity fields.
+			-- A pong does not grant additional surface consent or erase known data.
+			if previous.mask == 1 or previous.mask == 2 then data.mask = previous.mask end
+			for _, field in ipairs({ "classFile", "className", "race", "faction", "level", "warMode" }) do
+				if data[field] == nil or data[field] == "" then data[field] = previous[field] end
+			end
+		end
 	end
 	data.retired = previous and previous.retired or {}
-	return self:StorePlayerLocationRecord(name, data, now, sampledAt, self:GetGeographicSnapshotLifetime() - age)
+	return self:StorePlayerLocationRecord(name, data, now, sampledAt, observation.expiresAt - now, observation)
 end
 
 function QT:GetRecentPlayerLocationMapID(name)
