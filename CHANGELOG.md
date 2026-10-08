@@ -4,6 +4,28 @@
 
 [Other languages](changelogs/README.md)
 
+## 6.5.10
+
+Smoother Party Quest Log updates, more reliable requests and map refreshes, and fixes for profiles and progress bubbles.
+
+### Party Quest Log
+
+- With automatic refresh enabled, unchanged quest lists use less addon traffic. Manual Refresh still requests a full update.
+- Quest lists recover correctly after objective changes or ignoring and unignoring a player, instead of keeping stale progress or getting stuck loading.
+
+### Windows and profiles
+
+- Switching, copying, or resetting a profile restores its saved window layouts or the defaults. Changing display size still keeps windows on-screen without discarding your preferred size and position.
+- Closing a party-join or quest-share confirmation now correctly shows the next waiting request.
+- Opening settings during Blizzard Edit Mode no longer prevents Revert from restoring your personal progress bubble's original layout.
+- Open support windows continue adapting to theme and display changes while QuestTogether is disabled.
+
+### Tracking and communication
+
+- Expired or no-longer-needed party-join and quest-share requests are cancelled before they are sent.
+- Bonus objective and world quest completions keep their correct announcement type even when the quest disappears from the log before the completion event arrives.
+- Manual location refreshes now use public replies from older QuestTogether versions to update normal map dots, while preserving newer positions and location-sharing choices.
+
 ## 6.5.9
 
 More reliable party updates, cleaner player maps, and fixes for hiding the UI with Alt+Z.

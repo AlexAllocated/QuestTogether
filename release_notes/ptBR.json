@@ -1,31 +1,31 @@
 {
-  "source_sha256": "0db2d1d99777aff013026df9354c57e066370e93e3279d54cd4e114ec03305ed",
+  "source_sha256": "5b02461b857e5a5790ec93078b78b50553487a2132bcf0b1befaf9d98d3cc0bb",
   "notes": {
-    "version": "6.5.9",
-    "welcome": "Atualizações de grupo mais confiáveis, mapas de jogadores mais claros e correções ao ocultar a interface com Alt+Z.",
+    "version": "6.5.10",
+    "welcome": "Atualizações mais fluidas no Registro de missões do grupo, solicitações e atualizações do mapa mais confiáveis, além de correções para perfis e balões de progresso.",
     "sections": [
       {
-        "title": "Registro de missões do grupo e janelas",
+        "title": "Registro de missões do grupo",
         "items": [
-          "Ocultar e restaurar a interface com Alt+Z agora preserva as confirmações pendentes de foco de missão e os fundos com a cor da classe atrás dos nomes dos jogadores.",
-          "As solicitações do Registro de missões do grupo se recuperam com mais confiabilidade após recarregar a interface, passar por telas de carregamento ou perder páginas de mensagens, evitando que jogadores fiquem presos em Carregando.",
-          "Os layouts das janelas e os balões pessoais de progresso se ajustam melhor a telas menores. Redefinir os layouts preserva as escolhas pendentes nas caixas de diálogo."
+          "Com a atualização automática ativada, listas de missões que não mudaram geram menos tráfego do addon. Clicar em Atualizar ainda solicita uma atualização completa.",
+          "As listas de missões se recuperam corretamente após mudanças nos objetivos ou ao ignorar e deixar de ignorar um jogador, sem manter progresso desatualizado nem ficar presas no carregamento."
         ]
       },
       {
-        "title": "Mapas e atualizações de grupo",
+        "title": "Janelas e perfis",
         "items": [
-          "Atualizações de localização, grupo e foco de missão rejeitam mensagens desatualizadas para que respostas atrasadas não façam reaparecer jogadores que saíram nem substituam dados mais recentes.",
-          "O QT envia um aviso de saída ao deixar o mundo para que outros jogadores possam remover seu ponto mais cedo quando o aviso chegar. A expiração normal continua cuidando dos avisos que não chegarem, e a opção de entrar no grupo volta a ficar disponível após telas de carregamento.",
-          "Os membros do grupo agora usam os marcadores da própria Blizzard no mapa e no minimapa, sem pontos QT duplicados. Jogadores exibidos nos mapas oferece Todos os jogadores do QuestTogether, Jogadores buscando parceiros de missões ou Nenhum; compartilhar sua própria localização continua separado."
+          "Trocar, copiar ou redefinir um perfil restaura os layouts de janela salvos nele ou os padrões. Ao mudar o tamanho da tela, as janelas continuam visíveis sem descartar o tamanho e a posição que você escolheu.",
+          "Fechar uma confirmação de entrada no grupo ou de compartilhamento de missão agora exibe corretamente a próxima solicitação pendente.",
+          "Abrir as configurações durante o Modo de Edição da Blizzard não impede mais que Reverter restaure o layout original do seu balão pessoal de progresso.",
+          "As janelas de suporte abertas continuam se adaptando a mudanças de tema e tela mesmo com o QuestTogether desativado."
         ]
       },
       {
         "title": "Rastreamento e comunicação",
         "items": [
-          "O rastreamento de missões se recupera quando o registro de missões está incompleto ao entrar no jogo, e sequências intensas de eventos de missão não ficam mais adiando as atualizações pendentes.",
-          "As mensagens enviadas compartilham uma fila com intervalos de envio, e a verificação de solicitações do desenvolvedor é feita em pequenas etapas para reduzir travamentos momentâneos. Desativar o compartilhamento de diagnósticos cancela o trabalho de diagnóstico que está na fila.",
-          "Respostas de diagnóstico grandes têm mais tempo para terminar. Quando um relatório não cabe, solicitantes de versões anteriores recebem uma resposta explícita sobre o limite de tamanho, em vez de apenas esperar até o tempo limite sem explicação."
+          "Solicitações de entrada no grupo e de compartilhamento de missões que expiraram ou deixaram de ser necessárias são canceladas antes do envio.",
+          "As conclusões de objetivos bônus e missões mundiais mantêm o tipo correto de anúncio, mesmo quando a missão desaparece do registro antes da chegada do evento de conclusão.",
+          "As atualizações manuais de localização agora usam respostas públicas de versões anteriores do QuestTogether para atualizar os pontos normais do mapa, preservando posições mais recentes e as opções de compartilhamento de localização."
         ]
       }
     ]

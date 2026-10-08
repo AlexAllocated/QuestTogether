@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.10
+
+Flüssigere Aktualisierungen im Gruppenquestlog, zuverlässigere Anfragen und Kartenaktualisierungen sowie Korrekturen für Profile und Fortschrittsblasen.
+
+### Gruppenquestlog
+
+- Bei aktivierter automatischer Aktualisierung verursachen unveränderte Questlisten weniger Addon-Datenverkehr. Ein manueller Klick auf „Aktualisieren“ fordert weiterhin eine vollständige Aktualisierung an.
+- Questlisten werden nach Änderungen an Questzielen oder nachdem ein Spieler ignoriert und wieder von der Ignorierliste entfernt wurde korrekt aktualisiert, statt veralteten Fortschritt anzuzeigen oder beim Laden hängen zu bleiben.
+
+### Fenster und Profile
+
+- Beim Wechseln, Kopieren oder Zurücksetzen eines Profils werden dessen gespeicherte Fensterlayouts oder die Standardlayouts wiederhergestellt. Bei Änderungen der Bildschirmgröße bleiben Fenster weiterhin im sichtbaren Bereich, ohne deine bevorzugte Größe und Position zu verwerfen.
+- Wenn du eine Bestätigung für einen Gruppenbeitritt oder eine Questfreigabe schließt, wird jetzt die nächste wartende Anfrage korrekt angezeigt.
+- Das Öffnen der Einstellungen während Blizzards Bearbeitungsmodus verhindert nicht mehr, dass „Zurücksetzen“ das ursprüngliche Layout deiner persönlichen Fortschrittsblase wiederherstellt.
+- Geöffnete Hilfsfenster passen sich auch bei deaktiviertem QuestTogether weiterhin an Änderungen des Designs und der Anzeige an.
+
+### Questverfolgung und Kommunikation
+
+- Abgelaufene oder nicht mehr benötigte Anfragen für Gruppenbeitritte und Questfreigaben werden vor dem Versand abgebrochen.
+- Abschlüsse von Bonuszielen und Weltquests behalten den richtigen Ankündigungstyp, auch wenn die Quest aus dem Questlog verschwindet, bevor das Abschlussereignis eintrifft.
+- Manuelle Standortaktualisierungen nutzen jetzt öffentliche Antworten älterer QuestTogether-Versionen, um normale Kartenpunkte zu aktualisieren. Neuere Positionen und die Einstellungen zur Standortfreigabe bleiben dabei erhalten.
+
 ## 6.5.9
 
 Zuverlässigere Gruppenaktualisierungen, übersichtlichere Spielerkarten und Korrekturen beim Ausblenden der Benutzeroberfläche mit Alt+Z.

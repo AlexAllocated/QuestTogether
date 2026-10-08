@@ -1,29 +1,29 @@
 {
-  "version": "6.5.9",
-  "welcome": "More reliable party updates, cleaner player maps, and fixes for hiding the UI with Alt+Z.",
+  "version": "6.5.10",
+  "welcome": "Smoother Party Quest Log updates, more reliable requests and map refreshes, and fixes for profiles and progress bubbles.",
   "sections": [
     {
-      "title": "Party Quest Log and windows",
+      "title": "Party Quest Log",
       "items": [
-        "Hiding and restoring the UI with Alt+Z now preserves pending quest-focus confirmations and the class-colored backgrounds behind player names.",
-        "Party Quest Log requests recover more reliably after reloads, loading screens, or missing message pages, instead of leaving players stuck on Loading.",
-        "Window layouts and personal progress bubbles fit smaller displays more reliably. Resetting layouts preserves pending dialog choices."
+        "With automatic refresh enabled, unchanged quest lists use less addon traffic. Manual Refresh still requests a full update.",
+        "Quest lists recover correctly after objective changes or ignoring and unignoring a player, instead of keeping stale progress or getting stuck loading."
       ]
     },
     {
-      "title": "Maps and party updates",
+      "title": "Windows and profiles",
       "items": [
-        "Location, party, and quest-focus updates reject outdated messages so delayed replies cannot revive departed players or overwrite newer data.",
-        "QT sends a departure notice when leaving the world so other players can clear your dot sooner when the notice arrives. Normal expiration still handles missed notices, and party join availability recovers after loading screens.",
-        "Party members now use Blizzard's own map and minimap markers without duplicate QT dots. Players shown on maps offers All QuestTogether players, Players looking for questing partners, or None; sharing your own location remains separate."
+        "Switching, copying, or resetting a profile restores its saved window layouts or the defaults. Changing display size still keeps windows on-screen without discarding your preferred size and position.",
+        "Closing a party-join or quest-share confirmation now correctly shows the next waiting request.",
+        "Opening settings during Blizzard Edit Mode no longer prevents Revert from restoring your personal progress bubble's original layout.",
+        "Open support windows continue adapting to theme and display changes while QuestTogether is disabled."
       ]
     },
     {
       "title": "Tracking and communication",
       "items": [
-        "Quest tracking recovers when the quest log is incomplete at login, and busy quest events no longer keep postponing pending refreshes.",
-        "Outgoing messages share a paced queue, and developer-request verification runs in small steps to reduce frame stalls. Turning off diagnostic sharing cancels queued diagnostic work.",
-        "Large diagnostic replies have more time to finish. Older requesters receive an explicit size-limit response when a report cannot fit, instead of silently timing out."
+        "Expired or no-longer-needed party-join and quest-share requests are cancelled before they are sent.",
+        "Bonus objective and world quest completions keep their correct announcement type even when the quest disappears from the log before the completion event arrives.",
+        "Manual location refreshes now use public replies from older QuestTogether versions to update normal map dots, while preserving newer positions and location-sharing choices."
       ]
     }
   ]

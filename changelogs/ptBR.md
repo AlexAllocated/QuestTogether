@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.10
+
+Atualizações mais fluidas no Registro de missões do grupo, solicitações e atualizações do mapa mais confiáveis, além de correções para perfis e balões de progresso.
+
+### Registro de missões do grupo
+
+- Com a atualização automática ativada, listas de missões que não mudaram geram menos tráfego do addon. Clicar em Atualizar ainda solicita uma atualização completa.
+- As listas de missões se recuperam corretamente após mudanças nos objetivos ou ao ignorar e deixar de ignorar um jogador, sem manter progresso desatualizado nem ficar presas no carregamento.
+
+### Janelas e perfis
+
+- Trocar, copiar ou redefinir um perfil restaura os layouts de janela salvos nele ou os padrões. Ao mudar o tamanho da tela, as janelas continuam visíveis sem descartar o tamanho e a posição que você escolheu.
+- Fechar uma confirmação de entrada no grupo ou de compartilhamento de missão agora exibe corretamente a próxima solicitação pendente.
+- Abrir as configurações durante o Modo de Edição da Blizzard não impede mais que Reverter restaure o layout original do seu balão pessoal de progresso.
+- As janelas de suporte abertas continuam se adaptando a mudanças de tema e tela mesmo com o QuestTogether desativado.
+
+### Rastreamento e comunicação
+
+- Solicitações de entrada no grupo e de compartilhamento de missões que expiraram ou deixaram de ser necessárias são canceladas antes do envio.
+- As conclusões de objetivos bônus e missões mundiais mantêm o tipo correto de anúncio, mesmo quando a missão desaparece do registro antes da chegada do evento de conclusão.
+- As atualizações manuais de localização agora usam respostas públicas de versões anteriores do QuestTogether para atualizar os pontos normais do mapa, preservando posições mais recentes e as opções de compartilhamento de localização.
+
 ## 6.5.9
 
 Atualizações de grupo mais confiáveis, mapas de jogadores mais claros e correções ao ocultar a interface com Alt+Z.

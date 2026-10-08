@@ -1,31 +1,31 @@
 {
-  "source_sha256": "0db2d1d99777aff013026df9354c57e066370e93e3279d54cd4e114ec03305ed",
+  "source_sha256": "5b02461b857e5a5790ec93078b78b50553487a2132bcf0b1befaf9d98d3cc0bb",
   "notes": {
-    "version": "6.5.9",
-    "welcome": "Zuverlässigere Gruppenaktualisierungen, übersichtlichere Spielerkarten und Korrekturen beim Ausblenden der Benutzeroberfläche mit Alt+Z.",
+    "version": "6.5.10",
+    "welcome": "Flüssigere Aktualisierungen im Gruppenquestlog, zuverlässigere Anfragen und Kartenaktualisierungen sowie Korrekturen für Profile und Fortschrittsblasen.",
     "sections": [
       {
-        "title": "Gruppenquestlog und Fenster",
+        "title": "Gruppenquestlog",
         "items": [
-          "Beim Ausblenden und Wiederherstellen der Benutzeroberfläche mit Alt+Z bleiben ausstehende Bestätigungen zum Wechsel des Questfokus und die Hintergründe in Klassenfarben hinter Spielernamen erhalten.",
-          "Anfragen des Gruppenquestlogs werden nach Neuladen, Ladebildschirmen oder fehlenden Nachrichtenseiten zuverlässiger fortgesetzt, statt Spieler dauerhaft mit „Laden“ anzuzeigen.",
-          "Fensterlayouts und persönliche Fortschrittsblasen passen sich kleineren Bildschirmen zuverlässiger an. Beim Zurücksetzen der Layouts bleiben ausstehende Dialogentscheidungen erhalten."
+          "Bei aktivierter automatischer Aktualisierung verursachen unveränderte Questlisten weniger Addon-Datenverkehr. Ein manueller Klick auf „Aktualisieren“ fordert weiterhin eine vollständige Aktualisierung an.",
+          "Questlisten werden nach Änderungen an Questzielen oder nachdem ein Spieler ignoriert und wieder von der Ignorierliste entfernt wurde korrekt aktualisiert, statt veralteten Fortschritt anzuzeigen oder beim Laden hängen zu bleiben."
         ]
       },
       {
-        "title": "Karten und Gruppenaktualisierungen",
+        "title": "Fenster und Profile",
         "items": [
-          "Aktualisierungen von Standort, Gruppe und Questfokus weisen veraltete Nachrichten zurück, damit verspätete Antworten abgemeldete Spieler nicht wieder anzeigen oder neuere Daten überschreiben.",
-          "QT sendet beim Verlassen der Spielwelt eine Abmeldung, damit andere Spieler deinen Punkt früher entfernen können, wenn die Nachricht ankommt. Bei verlorenen Nachrichten greift weiterhin der normale Ablauf der Gültigkeit; die Verfügbarkeit für Gruppenbeitritte wird nach Ladebildschirmen wiederhergestellt.",
-          "Gruppenmitglieder verwenden jetzt Blizzards eigene Markierungen auf Karte und Minikarte, ohne zusätzliche QT-Punkte. Auf Karten angezeigte Spieler bietet Alle QuestTogether-Spieler, Spieler auf Questpartnersuche oder Keine; die Freigabe deines eigenen Standorts bleibt getrennt."
+          "Beim Wechseln, Kopieren oder Zurücksetzen eines Profils werden dessen gespeicherte Fensterlayouts oder die Standardlayouts wiederhergestellt. Bei Änderungen der Bildschirmgröße bleiben Fenster weiterhin im sichtbaren Bereich, ohne deine bevorzugte Größe und Position zu verwerfen.",
+          "Wenn du eine Bestätigung für einen Gruppenbeitritt oder eine Questfreigabe schließt, wird jetzt die nächste wartende Anfrage korrekt angezeigt.",
+          "Das Öffnen der Einstellungen während Blizzards Bearbeitungsmodus verhindert nicht mehr, dass „Zurücksetzen“ das ursprüngliche Layout deiner persönlichen Fortschrittsblase wiederherstellt.",
+          "Geöffnete Hilfsfenster passen sich auch bei deaktiviertem QuestTogether weiterhin an Änderungen des Designs und der Anzeige an."
         ]
       },
       {
         "title": "Questverfolgung und Kommunikation",
         "items": [
-          "Die Questverfolgung erholt sich von einem beim Anmelden unvollständigen Questlog. Viele aufeinanderfolgende Questereignisse verschieben ausstehende Aktualisierungen nicht mehr immer weiter.",
-          "Ausgehende Nachrichten nutzen eine gemeinsame Warteschlange mit geregeltem Versandtempo. Die Prüfung von Entwickleranfragen erfolgt in kleinen Schritten, um kurze Bildstillstände zu verringern. Das Deaktivieren der Diagnosefreigabe bricht vorgemerkte Diagnoseaufgaben ab.",
-          "Große Diagnoseantworten haben mehr Zeit, vollständig anzukommen. Ältere anfragende Clients erhalten eine ausdrückliche Meldung zur Größenbegrenzung, wenn ein Bericht nicht hineinpasst, statt ohne Rückmeldung in eine Zeitüberschreitung zu laufen."
+          "Abgelaufene oder nicht mehr benötigte Anfragen für Gruppenbeitritte und Questfreigaben werden vor dem Versand abgebrochen.",
+          "Abschlüsse von Bonuszielen und Weltquests behalten den richtigen Ankündigungstyp, auch wenn die Quest aus dem Questlog verschwindet, bevor das Abschlussereignis eintrifft.",
+          "Manuelle Standortaktualisierungen nutzen jetzt öffentliche Antworten älterer QuestTogether-Versionen, um normale Kartenpunkte zu aktualisieren. Neuere Positionen und die Einstellungen zur Standortfreigabe bleiben dabei erhalten."
         ]
       }
     ]

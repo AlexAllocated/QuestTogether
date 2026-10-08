@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.10
+
+Actualizaciones más fluidas del registro de misiones del grupo, solicitudes y actualizaciones del mapa más confiables, y correcciones para perfiles y burbujas de progreso.
+
+### Registro de misiones del grupo
+
+- Con la actualización automática activada, las listas de misiones que no han cambiado generan menos tráfico del addon. Hacer clic en «Actualizar» manualmente sigue solicitando una actualización completa.
+- Las listas de misiones se recuperan correctamente después de cambios en los objetivos o de ignorar y dejar de ignorar a un jugador, en lugar de conservar un progreso obsoleto o quedarse atascadas al cargar.
+
+### Ventanas y perfiles
+
+- Al cambiar, copiar o restablecer un perfil, se recuperan sus distribuciones de ventanas guardadas o las predeterminadas. Cambiar el tamaño de la pantalla sigue manteniendo las ventanas visibles sin descartar tu tamaño y posición preferidos.
+- Al cerrar una confirmación para unirse a un grupo o compartir una misión, ahora se muestra correctamente la siguiente solicitud pendiente.
+- Abrir la configuración durante el modo de edición de Blizzard ya no impide que «Revertir» restaure la distribución original de tu burbuja de progreso personal.
+- Las ventanas de ayuda abiertas siguen adaptándose a los cambios de tema y pantalla mientras QuestTogether está desactivado.
+
+### Seguimiento y comunicación
+
+- Las solicitudes para unirse a un grupo o compartir una misión que han vencido o ya no son necesarias se cancelan antes de enviarse.
+- Las finalizaciones de objetivos de bonificación y misiones de mundo conservan el tipo de anuncio correcto, incluso si la misión desaparece del registro antes de que llegue el evento de finalización.
+- Las actualizaciones manuales de ubicación ahora usan las respuestas públicas de versiones anteriores de QuestTogether para actualizar los puntos normales del mapa, conservando las posiciones más recientes y las preferencias para compartir la ubicación.
+
 ## 6.5.9
 
 Actualizaciones de grupo más confiables, mapas de jugadores más claros y correcciones al ocultar la interfaz con Alt+Z.

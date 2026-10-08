@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.10
+
+Aggiornamenti più fluidi del Registro missioni del gruppo, richieste e aggiornamenti della mappa più affidabili e correzioni per profili e bolle dei progressi.
+
+### Registro missioni del gruppo
+
+- Con l’aggiornamento automatico attivo, gli elenchi delle missioni invariati richiedono meno traffico dell’addon. Il pulsante Aggiorna continua a richiedere un aggiornamento completo.
+- Gli elenchi delle missioni si ripristinano correttamente dopo modifiche agli obiettivi o dopo aver ignorato un giocatore e averlo rimosso dall’elenco degli ignorati, senza mantenere progressi obsoleti o restare bloccati in caricamento.
+
+### Finestre e profili
+
+- Cambiare, copiare o reimpostare un profilo ripristina le disposizioni delle finestre salvate nel profilo o quelle predefinite. Quando cambiano le dimensioni dello schermo, le finestre restano visibili senza perdere le dimensioni e le posizioni che preferisci.
+- Chiudere una conferma per entrare in un gruppo o condividere una missione ora mostra correttamente la richiesta successiva in attesa.
+- Aprire le impostazioni durante la Modalità modifica di Blizzard non impedisce più all’annullamento delle modifiche di ripristinare la disposizione originale della tua bolla dei progressi personale.
+- Le finestre di supporto aperte continuano ad adattarsi ai cambiamenti del tema e dello schermo anche quando QuestTogether è disattivato.
+
+### Tracciamento e comunicazione
+
+- Le richieste per entrare in un gruppo o condividere una missione scadute o non più necessarie vengono annullate prima dell’invio.
+- Gli annunci di completamento degli obiettivi bonus e delle missioni mondiali mantengono il tipo corretto anche quando la missione scompare dal registro prima che arrivi l’evento di completamento.
+- Gli aggiornamenti manuali della posizione ora usano le risposte pubbliche delle versioni precedenti di QuestTogether per aggiornare i normali punti sulla mappa, preservando le posizioni più recenti e le scelte sulla condivisione della posizione.
+
 ## 6.5.9
 
 Aggiornamenti del gruppo più affidabili, mappe dei giocatori più chiare e correzioni quando si nasconde l’interfaccia con Alt+Z.

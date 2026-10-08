@@ -1,31 +1,31 @@
 {
-  "source_sha256": "0db2d1d99777aff013026df9354c57e066370e93e3279d54cd4e114ec03305ed",
+  "source_sha256": "5b02461b857e5a5790ec93078b78b50553487a2132bcf0b1befaf9d98d3cc0bb",
   "notes": {
-    "version": "6.5.9",
-    "welcome": "Des mises à jour de groupe plus fiables, des cartes de joueurs plus claires et des corrections lors du masquage de l’interface avec Alt+Z.",
+    "version": "6.5.10",
+    "welcome": "Des mises à jour plus fluides du journal de quêtes du groupe, des demandes et des actualisations de carte plus fiables, et des corrections pour les profils et les bulles de progression.",
     "sections": [
       {
-        "title": "Journal de quêtes du groupe et fenêtres",
+        "title": "Journal de quêtes du groupe",
         "items": [
-          "Masquer puis réafficher l’interface avec Alt+Z conserve désormais les confirmations de changement de quête prioritaire en attente et les arrière-plans aux couleurs des classes derrière les noms des joueurs.",
-          "Les demandes du journal de quêtes du groupe reprennent plus fiablement après un rechargement, un écran de chargement ou la perte de pages de messages, au lieu de laisser les joueurs bloqués sur « Chargement ».",
-          "Les dispositions des fenêtres et les bulles de progression personnelles s’adaptent mieux aux petits écrans. Réinitialiser les dispositions conserve les choix en attente dans les boîtes de dialogue."
+          "Lorsque l’actualisation automatique est activée, les listes de quêtes inchangées génèrent moins de trafic d’addon. Cliquer manuellement sur « Actualiser » demande toujours une mise à jour complète.",
+          "Les listes de quêtes se rétablissent correctement après un changement d’objectif ou après avoir ignoré puis cessé d’ignorer un joueur, au lieu de conserver une progression obsolète ou de rester bloquées en chargement."
         ]
       },
       {
-        "title": "Cartes et mises à jour de groupe",
+        "title": "Fenêtres et profils",
         "items": [
-          "Les mises à jour de position, de groupe et de quête prioritaire rejettent les messages obsolètes : les réponses retardées ne peuvent plus faire réapparaître des joueurs partis ni remplacer des données plus récentes.",
-          "QT envoie un avis lorsque vous quittez le monde, afin que les autres joueurs puissent retirer votre point plus tôt si cet avis arrive. L’expiration normale prend toujours le relais si l’avis se perd, et la disponibilité pour rejoindre un groupe est rétablie après les écrans de chargement.",
-          "Les membres de votre groupe utilisent désormais les marqueurs de Blizzard sur la carte et la minicarte, sans points QT en double. Joueurs affichés sur les cartes propose Tous les joueurs QuestTogether, Joueurs cherchant des partenaires de quête ou Aucun ; le partage de votre propre position reste indépendant."
+          "Changer, copier ou réinitialiser un profil rétablit ses dispositions de fenêtres enregistrées ou les dispositions par défaut. Les changements de taille d’affichage gardent les fenêtres à l’écran sans effacer vos préférences de taille et de position.",
+          "Fermer une confirmation de demande pour rejoindre un groupe ou partager une quête affiche désormais correctement la demande suivante en attente.",
+          "Ouvrir les paramètres dans le mode Édition de Blizzard n’empêche plus l’annulation des modifications de rétablir la disposition initiale de votre bulle de progression personnelle.",
+          "Les fenêtres d’assistance ouvertes continuent de s’adapter aux changements de thème et d’affichage lorsque QuestTogether est désactivé."
         ]
       },
       {
         "title": "Suivi et communication",
         "items": [
-          "Le suivi des quêtes se rétablit lorsque le journal est incomplet à la connexion, et un grand nombre d’événements de quête ne repousse plus indéfiniment les actualisations en attente.",
-          "Les messages sortants partagent une file d’envoi cadencée, et la vérification des demandes du développeur se fait par petites étapes pour réduire les blocages d’image. Désactiver le partage des diagnostics annule les tâches de diagnostic en attente.",
-          "Les réponses de diagnostic volumineuses disposent de plus de temps pour se terminer. Les anciens clients demandeurs reçoivent une réponse explicite de dépassement de taille lorsqu’un rapport ne tient pas, au lieu d’attendre sans réponse jusqu’à l’expiration du délai."
+          "Les demandes pour rejoindre un groupe ou partager une quête qui ont expiré ou ne sont plus nécessaires sont annulées avant leur envoi.",
+          "Les objectifs bonus et les expéditions terminés conservent le bon type d’annonce, même si la quête disparaît du journal avant l’arrivée de l’événement de fin.",
+          "Les actualisations manuelles de position utilisent désormais les réponses publiques des anciennes versions de QuestTogether pour mettre à jour les points habituels sur la carte, tout en conservant les positions plus récentes et les choix de partage de position."
         ]
       }
     ]

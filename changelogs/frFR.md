@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.10
+
+Des mises à jour plus fluides du journal de quêtes du groupe, des demandes et des actualisations de carte plus fiables, et des corrections pour les profils et les bulles de progression.
+
+### Journal de quêtes du groupe
+
+- Lorsque l’actualisation automatique est activée, les listes de quêtes inchangées génèrent moins de trafic d’addon. Cliquer manuellement sur « Actualiser » demande toujours une mise à jour complète.
+- Les listes de quêtes se rétablissent correctement après un changement d’objectif ou après avoir ignoré puis cessé d’ignorer un joueur, au lieu de conserver une progression obsolète ou de rester bloquées en chargement.
+
+### Fenêtres et profils
+
+- Changer, copier ou réinitialiser un profil rétablit ses dispositions de fenêtres enregistrées ou les dispositions par défaut. Les changements de taille d’affichage gardent les fenêtres à l’écran sans effacer vos préférences de taille et de position.
+- Fermer une confirmation de demande pour rejoindre un groupe ou partager une quête affiche désormais correctement la demande suivante en attente.
+- Ouvrir les paramètres dans le mode Édition de Blizzard n’empêche plus l’annulation des modifications de rétablir la disposition initiale de votre bulle de progression personnelle.
+- Les fenêtres d’assistance ouvertes continuent de s’adapter aux changements de thème et d’affichage lorsque QuestTogether est désactivé.
+
+### Suivi et communication
+
+- Les demandes pour rejoindre un groupe ou partager une quête qui ont expiré ou ne sont plus nécessaires sont annulées avant leur envoi.
+- Les objectifs bonus et les expéditions terminés conservent le bon type d’annonce, même si la quête disparaît du journal avant l’arrivée de l’événement de fin.
+- Les actualisations manuelles de position utilisent désormais les réponses publiques des anciennes versions de QuestTogether pour mettre à jour les points habituels sur la carte, tout en conservant les positions plus récentes et les choix de partage de position.
+
 ## 6.5.9
 
 Des mises à jour de groupe plus fiables, des cartes de joueurs plus claires et des corrections lors du masquage de l’interface avec Alt+Z.
