@@ -470,13 +470,13 @@ function QuestTogether:QueueReleaseNotesThemeRefresh()
 	if not frame or not frame.ready then
 		return
 	end
-	self:ScheduleDeferredWork("foreign_frame_mutation", "release_notes_theme", function()
+	self:ScheduleRuntimeWork("foreign_frame_mutation", "release_notes_theme", function()
 		if rawget(self, "releaseNotesWindow") == frame and Guard(self, frame) then
 			-- Recolor existing regions only: do not change pages, scroll, visibility,
 			-- or the version acknowledgement when the preference changes.
 			pcall(ApplyTheme, self, frame)
 		end
-	end, 0, "release notes theme")
+	end, { lifetime = "ui", delay = 0, reason = "release notes theme" })
 end
 
 local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutOnly)

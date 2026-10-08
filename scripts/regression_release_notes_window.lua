@@ -509,9 +509,10 @@ Register("release notes share the scroll theme without resetting browsing or ack
 	local offset, count, heading = frame.scrollOffset, #a.regions, frame.labels[1].text
 	a.releaseNotesBrowser = { index = 2, history = false }
 	a.db = { global = { releaseNotesSeenVersion = "6.2.3" } }
-	function a:ScheduleDeferredWork(kind, key, callback)
+	function a:ScheduleRuntimeWork(kind, key, callback, options)
 		Equal(kind, "foreign_frame_mutation")
 		Equal(key, "release_notes_theme")
+		Equal(options.lifetime, "ui")
 		self.themeUpdate = callback
 	end
 	a.options.lightMode = true

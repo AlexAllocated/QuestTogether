@@ -1241,6 +1241,13 @@ function QuestTogether:BindPersonalBubbleEditModeCallbacks(manager, revertButton
 	end)
 	manager:HookScript("OnHide", function()
 		self:DeselectPersonalBubbleAnchor()
+		-- Blizzard temporarily hides and locks Edit Mode when opening settings
+		-- or Quick Keybind mode. That is still the same editing/revert session.
+		local isActive = self:GetAccessibleFrameMember(manager, "IsEditModeActive")
+		if type(isActive) == "function" then
+			local ok, active = pcall(isActive, manager)
+			if ok and self:CanAccessValue(active) and active == true then return end
+		end
 		-- Addon settings persist immediately. Keep dirty/revert state entirely
 		-- addon-owned instead of writing Blizzard's shared layout manager.
 		self:CommitPersonalBubbleEditSession()

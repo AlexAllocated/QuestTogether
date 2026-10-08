@@ -535,6 +535,30 @@ function QuestTogether:SendPartyQuestShareMessage(target, questId, requestId, st
 	)
 end
 
+QuestTogether:RegisterCommSendPolicy("QSHR", function(addon, wire, _, options)
+	local id, target, questId = wire:match("^QSHR|1,([^,]+),([^,]+),([^,]+),request$")
+	if not id then return end -- Acknowledgements are not new sharing actions.
+	id, target = addon:UnescapePayload(id), addon:NormalizeMemberName(addon:UnescapePayload(target))
+	questId = addon:NormalizeQuestID(addon:UnescapePayload(questId))
+	local state, db = rawget(addon, "partyQuestShareState"), rawget(addon, "db")
+	local request, profile = state and state.outgoing[id], db and db.profile
+	options.owner = request
+	options.isCurrent = function()
+		local currentDB, now = rawget(addon, "db"), addon.API.GetTime()
+		if not request or rawget(addon, "partyQuestShareState") ~= state or state.outgoing[id] ~= request
+			or request.target ~= target or request.questId ~= questId or request.status ~= "request"
+			or (currentDB and currentDB.profile) ~= profile or now >= request.expires
+			or not addon.isEnabled or addon:IsWorkBlocked("quest_share")
+			or not addon:IsGroupedSender(target) or addon:IsIgnoredPlayerName(target) then return false end
+		-- A native share or questgiver may have supplied the quest while this
+		-- request waited for transport. Only confirmed absence authorizes sending;
+		-- unreadable ownership must not look like a missing quest. This guarded
+		-- lookup avoids rebuilding every quest on each queue drain.
+		local owns = addon.API.IsOnQuest and addon.API.IsOnQuest(questId)
+		return addon:CanAccessValue(owns) and owns == false
+	end
+end)
+
 function QuestTogether:GetPartyQuestShareRequestCooldown(target)
 	local state = self.partyQuestShareState
 	local expires = state and state.outgoingCooldowns and state.outgoingCooldowns[target]

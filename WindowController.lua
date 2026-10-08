@@ -68,7 +68,11 @@ function QT:DismissManagedWindow(frame, reason)
 	self:StopWindowInteraction(frame)
 	if not controller.dismissed then
 		controller.dismissed = true
+		-- A request's dismissal may synchronously show its successor on this
+		-- same frame. Retire the old presentation before invoking that callback.
+		self:HideOwnedUI(frame)
 		Invoke(controller, "dismiss", reason or "close")
+		return
 	end
 	self:HideOwnedUI(frame)
 end

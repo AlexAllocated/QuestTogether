@@ -1,6 +1,6 @@
 local QT = _G.QuestTogether
 local function Fixture()
-	local a = setmetatable({ isEnabled = true, db = { profile = {} }, options = {} }, { __index = QT })
+	local a = setmetatable({ isEnabled = true, db = { profile = {} }, options = {}, runtimeStateStore = {} }, { __index = QT })
 	local clock = QT:CreateTestClock(0)
 	a.API = {
 		Delay = function(delay, run)
@@ -21,6 +21,10 @@ local function Fixture()
 	end
 	function a:CreateOwnedUICleanupFrame()
 		return QT:CreateTestUIRegion(self)
+	end
+	function a:CreateRuntimeUIWorkFrame()
+		-- This parentless observer has no protected geometry or feature UI.
+		return QT:CreateTestUIRegion({})
 	end
 	function a:CreateLocationPinFrame(_, _, parent)
 		return QT:CreateTestUIRegion(self, parent)
@@ -419,4 +423,123 @@ QT:RegisterTest("nameplate startup work obeys restrictions and is retired with i
 	a:ResetNameplateStateStore()
 	clock:Advance(6)
 	assert(quest == 1 and full == 1 and not next(a:GetDeferredWorkStateStore().entries))
+end)
+
+QT:RegisterTest("UI work survives disabled runtime resets and stops polling after completion or cancellation", function()
+	local a, clock = Fixture()
+	local featureCalls, uiCalls = 0, 0
+	a.blocked = true
+	a:ScheduleRuntimeWork("foreign_frame_mutation", "feature", function() featureCalls = featureCalls + 1 end)
+	a:ScheduleRuntimeWork("foreign_frame_mutation", "window", function() uiCalls = uiCalls + 1 end,
+		{ lifetime = "ui", delay = 0 })
+	local owner = a:NewRuntimeWorkOwner()
+	a:ScheduleRuntimeWork("foreign_frame_mutation", "retired-window", function()
+		error("cancelled UI owner executed")
+	end, { lifetime = "ui", mode = "nextFrame", owner = owner })
+	a:CancelRuntimeWorkOwner(owner)
+	local driver = a.runtimeUIWorkFrame
+	assert(driver.scripts.OnUpdate and featureCalls == 0 and uiCalls == 0)
+	a.isEnabled = false
+	a:ResetRuntimeWorkStateStore()
+	driver.scripts.OnUpdate(driver, 0.3)
+	assert(uiCalls == 0, "UI lifetime must still obey restrictions")
+	a.blocked = false
+	driver.scripts.OnUpdate(driver, 0.3)
+	assert(uiCalls == 1 and featureCalls == 0)
+	assert(not driver.scripts.OnUpdate and not next(a:GetRuntimeUIWorkState().entries))
+	clock:Advance(0)
+	a.isEnabled = true
+	a:FlushDeferredWork("enabled again")
+	assert(featureCalls == 0, "disabled feature work must remain retired")
+	local lastOwner = a:NewRuntimeWorkOwner()
+	a.blocked = true
+	a:ScheduleRuntimeWork("foreign_frame_mutation", "last-window", function()
+		error("last cancelled UI owner executed")
+	end, { lifetime = "ui", owner = lastOwner })
+	assert(driver.scripts.OnUpdate)
+	a:CancelRuntimeWorkOwner(lastOwner)
+	assert(not driver.scripts.OnUpdate and not next(a:GetRuntimeUIWorkState().entries))
+end)
+
+QT:RegisterTest("visible support windows update themes and fit the display while the addon is disabled", function()
+	for _, disableAfterQueue in ipairs({ false, true }) do
+		local a, _, root = Fixture()
+		a.GetReleaseNotesUIParent = a.GetOwnedUIParent
+		a.CreateReleaseNotesUIFrame = a.CreateOwnedWindowFrame
+		a.isEnabled = disableAfterQueue
+		local dialog = a:CreateScrollDialog(520, 300, "Support")
+		dialog:Show()
+		assert(a:RenderReleaseNotesWindow({ version = "6.5.9", welcome = "Welcome",
+			sections = { { title = "Features", items = { "A feature" } } } }, "6.5.9", false))
+		local notes = a.releaseNotesWindow
+		assert(dialog.scrollPieces[1].vertexColor[1] == 0.14 and notes.parchmentPieces[1].vertexColor[1] == 0.14)
+		root:SetSize(500, 300)
+		a.options.lightMode, a.blocked = true, true
+		a:QueueScrollDialogThemeRefresh()
+		a:QueueReleaseNotesThemeRefresh()
+		a:RefreshManagedWindowLayouts()
+		local driver = a.runtimeUIWorkFrame
+		assert(driver.scripts.OnUpdate)
+		if disableAfterQueue then
+			a.isEnabled = false
+			a:ResetRuntimeWorkStateStore()
+		end
+		a.blocked = false
+		-- No enabled runtime event is needed to resume presentation maintenance.
+		driver.scripts.OnUpdate(driver, 0.3)
+		assert(dialog.scrollPieces[1].vertexColor[1] == 1 and notes.parchmentPieces[1].vertexColor[1] == 1)
+		assert(dialog:IsShown() and notes:IsShown())
+		for _, frame in ipairs({ dialog, notes }) do
+			assert(frame:GetWidth() * frame:GetScale() <= root:GetWidth() * 0.94 + 0.01)
+			assert(frame:GetHeight() * frame:GetScale() <= root:GetHeight() * 0.94 + 0.01)
+		end
+		assert(not driver.scripts.OnUpdate and (a.invalidCalls or 0) == 0)
+		-- Ordinary, unrestricted changes while disabled run immediately too.
+		a.options.lightMode = false
+		a:QueueScrollDialogThemeRefresh()
+		a:QueueReleaseNotesThemeRefresh()
+		assert(dialog.scrollPieces[1].vertexColor[1] == 0.14 and notes.parchmentPieces[1].vertexColor[1] == 0.14)
+		assert(not driver.scripts.OnUpdate)
+	end
+end)
+
+QT:RegisterTest("temporary native Edit Mode settings visits preserve the bubble revert baseline", function()
+	local a, _, root = Fixture()
+	a.options.chatBubbleSize, a.options.chatBubbleDuration = 100, 3
+	function a:GetPersonalBubbleAnchor() return { point = "CENTER", relativePoint = "CENTER", x = 0, y = 0 } end
+	function a:RefreshPersonalBubbleAnchorVisualState() end
+	function a:RefreshPersonalBubbleEditModeDialog() end
+	function a:DeselectPersonalBubbleAnchor() end
+	function a:ApplyPersonalBubbleEditSnapshot(snapshot)
+		self.options.chatBubbleSize, self.options.chatBubbleDuration = snapshot.chatBubbleSize, snapshot.chatBubbleDuration
+	end
+	local manager, revert = QT:CreateTestUIRegion(a, root), QT:CreateTestUIRegion(a, root)
+	manager.editModeActive = true
+	function manager:IsEditModeActive() return self.editModeActive end
+	-- Native Settings/Quick Keybind transitions hide a locked manager without
+	-- ending Edit Mode; ordinary exit clears editModeActive before OnHide hooks.
+	manager:SetScript("OnHide", function()
+		if not manager.locked then manager.editModeActive = false end
+	end)
+	manager:SetScript("OnShow", function() manager.editModeActive = true end)
+	a:BindPersonalBubbleEditModeCallbacks(manager, revert, function() end)
+	a:EnsurePersonalBubbleEditSession()
+	a.options.chatBubbleSize = 140
+	local session = a.personalBubbleEditSession
+	manager.locked = true
+	manager:Hide()
+	assert(manager.editModeActive and a.personalBubbleEditSession == session)
+	manager:Show()
+	revert:Click()
+	assert(a.options.chatBubbleSize == 100)
+	-- An actual exit commits immediate edits and starts a fresh baseline.
+	a.options.chatBubbleSize = 160
+	manager.locked = false
+	manager:Hide()
+	assert(not manager.editModeActive and not a.personalBubbleEditSession)
+	manager:Show()
+	assert(a.personalBubbleEditSession.saved.chatBubbleSize == 160)
+	a.options.chatBubbleSize = 180
+	revert:Click()
+	assert(a.options.chatBubbleSize == 160)
 end)

@@ -110,6 +110,13 @@ function QT:CancelPartyQuestObjectiveRequests(session, questId)
 	end
 end
 
+local function SameQuestSummary(previous, current)
+	return previous and current
+		and (previous.questTitle or "") == (current.questTitle or "")
+		and (previous.isComplete == true) == (current.isComplete == true)
+		and previous.isPushable == current.isPushable
+end
+
 function QT:LoadPartyQuestObjectives(member)
 	local session = self.partyQuestCompareSession
 	if
@@ -167,6 +174,12 @@ function QT:LoadPartyQuestObjectives(member)
 				return
 			end
 			detail.state, detail.objectives = "ready", entry and entry.objectives
+			-- The revision certifies the complete ownership snapshot. An objective
+			-- reply can update one quest's summary or remove it, but cannot certify
+			-- the resulting log. Pure objective progress leaves that summary intact.
+			if not SameQuestSummary(member.entries[id], entry) then
+				member.revision = nil
+			end
 			member.entries[id] = entry
 			Continue()
 		end,

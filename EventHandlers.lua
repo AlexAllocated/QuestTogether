@@ -657,6 +657,7 @@ function QuestTogether:QUEST_TURNED_IN(_, questId)
 	-- Capture the latest known classification before retirement can prune it.
 	self.retiredQuestIds[questId] = retiredData
 	self.questsCompleted[questId] = completionData
+	self:ForgetQuestCompletionClassification(questId)
 	if self.pendingQuestRemovals[questId] then
 		self:ResolvePendingQuestRemoval(questId)
 	elseif not self:GetPlayerTracker()[questId] then
@@ -694,6 +695,7 @@ function QuestTogether:QUEST_REMOVED(_, questId)
 
 	retiredData.removalData = removalData
 	self.pendingQuestRemovals[questId] = removalData
+	self:ForgetQuestCompletionClassification(questId)
 	self.API.Delay(0, function()
 		-- Compare the actual removal instance: an older timer must not consume a
 		-- new acceptance/removal cycle for the same repeatable quest ID.

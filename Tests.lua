@@ -241,7 +241,7 @@ local function WithIsolatedState(testFn)
 	end
 	local ok, err = pcall(function()
 		for _, key in ipairs({
-			"windowControllers", "pingReplyState", "questCompareLocalRevision", "ownedUICleanupState", "runtimeCoordinatorState", "runtimeCoordinatorFrame", "transportState", "bulkTransferState", "pingPageQueue", "developerRequestState", "developerPlayerData", "peerSnapshotState", "locationPriorityCache", "commsWorldGeneration", "diagnosticReplyGeneration", "nearbyStreamState", "playerDetailsState", "directCommPeers", "geographicCommsState", "announcementChannelBindings", "recentCommSignatureIndex", "localizedQuestTitles", "runtimeStateStore", "debugController", "nameplateTooltipGuidByUnitToken", "nameplateScanTooltip",
+			"windowControllers", "runtimeUIWorkState", "runtimeUIWorkFrame", "pingReplyState", "questCompareLocalRevision", "ownedUICleanupState", "runtimeCoordinatorState", "runtimeCoordinatorFrame", "transportState", "bulkTransferState", "pingPageQueue", "developerRequestState", "developerPlayerData", "peerSnapshotState", "locationPriorityCache", "commsWorldGeneration", "diagnosticReplyGeneration", "nearbyStreamState", "playerDetailsState", "directCommPeers", "geographicCommsState", "announcementChannelBindings", "recentCommSignatureIndex", "localizedQuestTitles", "runtimeStateStore", "debugController", "nameplateTooltipGuidByUnitToken", "nameplateScanTooltip",
 			"announcementBubbleScreenHostFrame", "personalBubbleEditModeDialog", "mapWorkWakeFrame", "mapWorkWakeState",
 			"optionsFrame", "whereToAnnounceFrame", "questPlatesFrame", "groupsFrame", "announcementsFrame", "profilesFrame",
 			"personalBubbleEditSession", "announcementChannelLocalID", "legacyAnnouncementChannelLocalID", "channelOrderWork", "questCompareResponseQueue", "questCompareResponseCache",
@@ -284,6 +284,7 @@ local function WithIsolatedState(testFn)
 		QuestTogether.eventFrame = CreateTestEventFrame()
 		QuestTogether.nameplateEventFrame = CreateTestEventFrame()
 		QuestTogether.CreateOwnedUICleanupFrame = CreateTestEventFrame
+		QuestTogether.CreateRuntimeUIWorkFrame = CreateTestEventFrame
 		QuestTogether.CreateRuntimeCoordinatorFrame = CreateTestEventFrame
 		QuestTogether.CreateMapWorkWakeFrame = CreateTestEventFrame
 		QuestTogether.GetPlayerTooltipHost = function() return nil end
@@ -1732,7 +1733,7 @@ QuestTogether:RegisterTest("event-time task classification observes API before s
 	end
 
 	AssertEquals(QuestTogether:GetTaskAnnouncementType(44444), nil)
-	AssertEquals(QuestTogether:ObserveQuestAnnouncementType(44444), "world")
+	AssertEquals(QuestTogether:ObserveQuestClassification(44444).isWorldQuest, true)
 	AssertEquals(QuestTogether:GetTaskAnnouncementType(44444), "world")
 end)
 
@@ -2439,6 +2440,10 @@ QuestTogether:RegisterTest("world quest turn in preserves world quest completion
 		Delay = function(_, callback)
 			delayed[#delayed + 1] = callback
 		end,
+		IsWorldQuest = function(questId)
+			AssertEquals(questId, 54321)
+			return true
+		end,
 	})
 
 	WithPatchedMethod(QuestTogether, "GetPlayerName", function()
@@ -2451,29 +2456,24 @@ QuestTogether:RegisterTest("world quest turn in preserves world quest completion
 			iconKind = "atlas",
 		}
 
-		WithPatchedMethod(QuestTogether, "GetTaskAnnouncementType", function(_, questId)
-			AssertEquals(questId, 54321)
-			return "world"
+		WithPatchedMethod(QuestTogether, "HandleQuestCompleted", function(_, questTitle, questId, extraData)
+			completed = {
+				questTitle = questTitle,
+				questId = questId,
+				extraData = extraData,
+			}
 		end, function()
-			WithPatchedMethod(QuestTogether, "HandleQuestCompleted", function(_, questTitle, questId, extraData)
-				completed = {
-					questTitle = questTitle,
-					questId = questId,
-					extraData = extraData,
-				}
-			end, function()
-				WithPatchedMethod(QuestTogether, "PublishAnnouncementEvent", function() end, function()
-					WithPatchedMethod(QuestTogether, "RefreshTaskAreaStates", function() end, function()
-						WithPatchedMethod(QuestTogether, "GetAnnouncementIconInfo", function(_, eventType, questId)
-							AssertEquals(eventType, "WORLD_QUEST_COMPLETED")
-							AssertEquals(questId, 54321)
-							return "worldquest-icon", "atlas"
-						end, function()
-							QuestTogether:QUEST_TURNED_IN(nil, 54321)
-							QuestTogether:QUEST_REMOVED(nil, 54321)
-							AssertEquals(#delayed, 1)
-							delayed[1]()
-						end)
+			WithPatchedMethod(QuestTogether, "PublishAnnouncementEvent", function() end, function()
+				WithPatchedMethod(QuestTogether, "RefreshTaskAreaStates", function() end, function()
+					WithPatchedMethod(QuestTogether, "GetAnnouncementIconInfo", function(_, eventType, questId)
+						AssertEquals(eventType, "WORLD_QUEST_COMPLETED")
+						AssertEquals(questId, 54321)
+						return "worldquest-icon", "atlas"
+					end, function()
+						QuestTogether:QUEST_TURNED_IN(nil, 54321)
+						QuestTogether:QUEST_REMOVED(nil, 54321)
+						AssertEquals(#delayed, 1)
+						delayed[1]()
 					end)
 				end)
 			end)

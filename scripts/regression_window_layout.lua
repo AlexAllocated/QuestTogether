@@ -10,7 +10,8 @@ local function Fixture()
 	function a:IsWorkBlocked()
 		return self.blocked == true
 	end
-	function a:ScheduleDeferredWork(_, key, callback)
+	function a:ScheduleRuntimeWork(_, key, callback, options)
+		assert(options.lifetime == "ui")
 		self.pending[key] = callback
 	end
 	function a:Print(text)

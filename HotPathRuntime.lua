@@ -198,11 +198,12 @@ local function WorkPolicy(owner, options)
 	local delay = owner.API and owner.API.Delay
 	return {
 		getState = function()
+			if options.lifetime == "ui" then return owner:GetRuntimeUIWorkState() end
 			return owner:GetDeferredWorkStateStore()
 		end,
 		enabled = function()
 			return (not options.owner or options.owner.active ~= false)
-				and (options.lifetime == "cleanup" or owner.isEnabled == true)
+				and (options.lifetime == "cleanup" or options.lifetime == "ui" or owner.isEnabled == true)
 		end,
 		blocked = function(workClass)
 			local blocked = owner:IsWorkBlocked(workClass)
@@ -236,6 +237,55 @@ local function WorkPolicy(owner, options)
 	}
 end
 
+-- Support windows can remain open while the enabled feature runtime is gone.
+-- Their maintenance owns a separate work lifetime and a wakeup only while
+-- pending, because runtime restriction events are unregistered on disable.
+function QuestTogether:GetRuntimeUIWorkState()
+	local state = rawget(self, "runtimeUIWorkState")
+	if not state then
+		state = LibChev.NewWorkState()
+		self.runtimeUIWorkState = state
+	end
+	return state
+end
+
+function QuestTogether:CreateRuntimeUIWorkFrame()
+	return CreateFrame("Frame")
+end
+
+function QuestTogether:StopRuntimeUIWorkWakeup()
+	local state = rawget(self, "runtimeUIWorkState")
+	if state then state.armed = nil end
+	local frame = rawget(self, "runtimeUIWorkFrame")
+	if frame and LibChev.CanMutateOwnedRegion(frame) then
+		frame:SetScript("OnUpdate", nil)
+	end
+end
+
+function QuestTogether:EnsureRuntimeUIWorkWakeup()
+	local state = rawget(self, "runtimeUIWorkState")
+	if not state or not next(state.entries) then
+		self:StopRuntimeUIWorkWakeup()
+		return
+	end
+	local frame = rawget(self, "runtimeUIWorkFrame")
+	if not frame then
+		frame = self:CreateRuntimeUIWorkFrame()
+		self.runtimeUIWorkFrame = frame
+	end
+	if not LibChev.CanMutateOwnedRegion(frame) then return end
+	if state.armed then return end
+	local elapsed = 0
+	frame:SetScript("OnUpdate", function(_, delta)
+		elapsed = elapsed + (self:SafeToNumber(delta) or 0)
+		if elapsed >= 0.25 then
+			elapsed = 0
+			self:FlushRuntimeUIWork("UI restrictions cleared")
+		end
+	end)
+	state.armed = true
+end
+
 -- QT owns timing/lifetime policy; LibChev owns keyed coalescing and guarded
 -- dispatch. A zero debounce is immediate; nextFrame always uses the timer seam.
 function QuestTogether:NewRuntimeWorkOwner()
@@ -246,9 +296,12 @@ function QuestTogether:CancelRuntimeWorkOwner(owner)
 	if not owner then return end
 	owner.active = false
 	local state = self:GetDeferredWorkStateStore()
-	for key, entry in pairs(state.entries) do
-		if entry.owner == owner then state.entries[key], state.generations[key] = nil, nil end
+	for _, store in ipairs({ state, rawget(self, "runtimeUIWorkState") }) do
+		for key, entry in pairs(store.entries) do
+			if entry.owner == owner then store.entries[key], store.generations[key] = nil, nil end
+		end
 	end
+	self:EnsureRuntimeUIWorkWakeup()
 end
 
 function QuestTogether:IsRuntimeWorkPending(workClass, key)
@@ -264,7 +317,8 @@ end
 function QuestTogether:ScheduleRuntimeWork(workClass, key, callback, options)
 	options = options or {}
 	if type(callback) ~= "function" or (options.owner and options.owner.active == false) then return false end
-	local state = self:GetDeferredWorkStateStore()
+	local policy = WorkPolicy(self, options)
+	local state = policy.getState()
 	local workKey = LibChev.WorkKey(workClass, key)
 	local mode = options.mode or "debounce"
 	assert(mode == "immediate" or mode == "nextFrame" or mode == "bounded" or mode == "debounce", "invalid work mode")
@@ -273,7 +327,6 @@ function QuestTogether:ScheduleRuntimeWork(workClass, key, callback, options)
 		pending.reason = options.reason or pending.reason
 		return true
 	end
-	local policy = WorkPolicy(self, options)
 	local dispatch = function() return callback() end
 	local delay = options.delay
 	if mode == "nextFrame" then
@@ -288,11 +341,13 @@ function QuestTogether:ScheduleRuntimeWork(workClass, key, callback, options)
 		local ran = LibChev.RunOrDeferWork(policy, workClass, key, dispatch, delay, options.reason)
 		local entry = state.entries[workKey]
 		if entry and entry.callback == dispatch then entry.owner, entry.policy = options.owner, policy end
+		if options.lifetime == "ui" then self:EnsureRuntimeUIWorkWakeup() end
 		return ran
 	end
 	local queued = LibChev.ScheduleWork(policy, workClass, key, dispatch, delay, options.reason)
 	local entry = state.entries[workKey]
 	if entry and entry.callback == dispatch then entry.owner, entry.policy = options.owner, policy end
+	if options.lifetime == "ui" then self:EnsureRuntimeUIWorkWakeup() end
 	return queued
 end
 
@@ -311,12 +366,12 @@ function QuestTogether:RunOrDeferWork(workClass, key, callback, delaySeconds, re
 	})
 end
 
-function QuestTogether:FlushDeferredWork(reason)
-	local state = self:GetDeferredWorkStateStore()
+local function FlushWorkStore(self, getState, reason)
+	local state = getState(self)
 	local pending = {}
 	for key, entry in pairs(state.entries) do pending[#pending + 1] = { key, entry } end
 	for _, pair in ipairs(pending) do
-		if self:GetDeferredWorkStateStore() ~= state then break end
+		if getState(self) ~= state then break end
 		local key, entry = pair[1], pair[2]
 		local policy = entry.policy or WorkPolicy(self)
 		if state.entries[key] == entry and entry.delayElapsed and policy.enabled() and not policy.blocked(entry.workClass) then
@@ -324,6 +379,18 @@ function QuestTogether:FlushDeferredWork(reason)
 			policy.invoke(entry.workClass, entry.key, reason or entry.reason, entry.callback)
 		end
 	end
+end
+
+function QuestTogether:FlushRuntimeUIWork(reason)
+	if rawget(self, "runtimeUIWorkState") then
+		FlushWorkStore(self, self.GetRuntimeUIWorkState, reason)
+		self:EnsureRuntimeUIWorkWakeup()
+	end
+end
+
+function QuestTogether:FlushDeferredWork(reason)
+	FlushWorkStore(self, self.GetDeferredWorkStateStore, reason)
+	self:FlushRuntimeUIWork(reason)
 	return self.isEnabled == true
 end
 

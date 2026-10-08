@@ -234,6 +234,7 @@
     ],
     "HotPathRuntime.lua": [
       "Frame",
+      "UI restrictions cleared",
       "invalid work mode",
       "work_failed class=%s key=%s reason=%s error=%s"
     ],

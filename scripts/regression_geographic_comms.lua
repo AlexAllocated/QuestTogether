@@ -1710,6 +1710,139 @@ local function EntryPackets(a, first)
 	return count
 end
 
+local function ObjectiveRevisionNetwork()
+	local peers, advance = RevisionNetwork(2, 1)
+	local a, b = peers[1], peers[2]
+	b.quest = { questId = "1", questTitle = "Collect supplies", isComplete = false, isPushable = true }
+	b.progress = 1
+	function b:BuildQuestCompareEntries()
+		return self.quest and { self:DeepCopy(self.quest) } or {}
+	end
+	function b:ReadQuestCompareObjectives()
+		return { { questId = 1, objectiveIndex = 1, text = "Supplies collected", kind = "item",
+			finished = false, current = self.progress, required = 10 } }
+	end
+	-- Rendering is outside this protocol fixture. Real member refresh, objective
+	-- callbacks, wire codecs, bounded queues and delivery all remain connected.
+	function a:QueuePartyQuestCompareRender() end
+	local member = { name = b.name, entries = {}, state = "loading" }
+	a.partyQuestCompareSession = {
+		mode = "party", members = { member }, byName = { [b.name] = member }, expandedQuestIds = {},
+	}
+	assert(a:RefreshPartyQuestCompareMember(b.name, false))
+	advance(5)
+	assert(member.state == "ready" and member.revision)
+	return a, b, member, advance
+end
+
+local function ExpandRevisionObjective(addon, member)
+	addon.partyQuestCompareSession.expandedQuestIds[1] = true
+	addon:LoadPartyQuestObjectives(member)
+end
+
+local function CollapseRevisionObjective(addon)
+	local session = addon.partyQuestCompareSession
+	session.expandedQuestIds[1] = nil
+	addon:CancelPartyQuestObjectiveRequests(session, 1)
+end
+
+QT:RegisterTest("objective summary changes retire comparison revisions before changed then restored refreshes", function()
+	for _, field in ipairs({ "isComplete", "questTitle", "isPushable", "unknownShareability" }) do
+		local a, b, member, advance = ObjectiveRevisionNetwork()
+		local original, revision = b:DeepCopy(b.quest), member.revision
+		if field == "unknownShareability" then b.quest.isPushable = nil
+		elseif field == "questTitle" then b.quest.questTitle = "Updated supplies"
+		elseif field == "isComplete" then b.quest.isComplete = true
+		else b.quest.isPushable = false end
+		ExpandRevisionObjective(a, member)
+		advance(5)
+		Equal(member.objectiveDetails[1].state, "ready")
+		Equal(member.revision, nil)
+		CollapseRevisionObjective(a)
+		-- The responder legitimately reuses its original revision after the quest
+		-- returns to that state; our altered baseline must request the full log.
+		b.quest = original
+		local before = #b.packets
+		assert(a:RefreshPartyQuestCompareMember(b.name, true))
+		advance(10)
+		Equal(member.state, "ready")
+		Equal(EntryPackets(b, before), 1)
+		Equal(member.revision, revision)
+		Equal(member.entries[1].questTitle, original.questTitle)
+		Equal(member.entries[1].isComplete, false)
+		Equal(member.entries[1].isPushable, true)
+	end
+end)
+
+QT:RegisterTest("objective removal then reacquisition recovers through a full conditional comparison", function()
+	local a, b, member, advance = ObjectiveRevisionNetwork()
+	local original, revision = b.quest, member.revision
+	b.quest = nil
+	ExpandRevisionObjective(a, member)
+	advance(5)
+	Equal(member.objectiveDetails[1].state, "ready")
+	Equal(member.entries[1], nil)
+	Equal(member.revision, nil)
+	CollapseRevisionObjective(a)
+	b.quest = original
+	local before = #b.packets
+	assert(a:RefreshPartyQuestCompareMember(b.name, true))
+	advance(10)
+	Equal(member.state, "ready")
+	Equal(EntryPackets(b, before), 1)
+	Equal(member.revision, revision)
+	Equal(member.entries[1].questTitle, original.questTitle)
+end)
+
+QT:RegisterTest("repeated objective progress preserves unchanged comparison certificates and explicit full refresh", function()
+	local a, b, member, advance = ObjectiveRevisionNetwork()
+	local revision = member.revision
+	for progress = 2, 3 do
+		b.progress = progress
+		ExpandRevisionObjective(a, member)
+		advance(5)
+		Equal(member.objectiveDetails[1].objectives[1].current, progress)
+		Equal(member.revision, revision)
+		CollapseRevisionObjective(a)
+	end
+	local before = #b.packets
+	assert(a:RefreshPartyQuestCompareMember(b.name, true))
+	advance(5)
+	Equal(member.state, "ready")
+	Equal(member.revision, revision)
+	Equal(EntryPackets(b, before), 0)
+	before = #b.packets
+	assert(a:RefreshPartyQuestCompareMember(b.name, false))
+	advance(5)
+	Equal(member.state, "ready")
+	Equal(EntryPackets(b, before), 1)
+end)
+
+QT:RegisterTest("incomplete full comparison replies preserve the certified baseline through timeout", function()
+	local a, b, member, advance = ObjectiveRevisionNetwork()
+	local revision = member.revision
+	b.quest.isComplete = true
+	function b:BuildQuestCompareEntries()
+		return { self:DeepCopy(self.quest), { questId = "2", questTitle = "Another quest", isComplete = false } }
+	end
+	b.drop = function(wire)
+		local payload = wire:match("^QCQE|(.*)$")
+		local row = payload and b:DecodeQuestCompareEntryPayload(payload)
+		return row and row.questId == "2"
+	end
+	assert(a:RefreshPartyQuestCompareMember(b.name, false))
+	advance(10)
+	local pending = a.pendingQuestCompareRequests[member.requestId]
+	Equal(pending.count, 1)
+	Equal(pending.entriesByQuestId[1].isComplete, true)
+	Equal(member.entries[1].isComplete, false)
+	Equal(member.revision, revision)
+	advance(180)
+	Equal(member.state, "timeout")
+	Equal(member.entries[1].isComplete, false)
+	Equal(member.revision, revision)
+end)
+
 QT:RegisterTest("revisioned comparisons validate unchanged baselines and force changed or explicit refreshes", function()
 	local peers, advance = RevisionNetwork(2, 3)
 	local a, b = peers[1], peers[2]

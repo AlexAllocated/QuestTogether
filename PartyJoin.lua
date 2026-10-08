@@ -398,6 +398,26 @@ function QT:SendPartyJoinMessage(target, id, status, leader)
 	)
 end
 
+QT:RegisterCommSendPolicy("QJON", function(addon, wire, _, options)
+	local id, target = wire:match("^QJON|1,([^,]+),([^,]+),request$")
+	if not id then return end -- Replies survive retiring their incoming request.
+	id, target = addon:UnescapePayload(id), Name(addon, addon:UnescapePayload(target))
+	local state, profile = rawget(addon, "partyJoinState"), Profile(addon)
+	local request = state and state.outgoing
+	options.owner = request
+	options.isCurrent = function()
+		local now = Now(addon)
+		return request ~= nil and rawget(addon, "partyJoinState") == state and state.outgoing == request
+			and request.id == id and request.target == target and not request.pending
+			and Profile(addon) == profile and now >= request.created and now < request.expires
+			and Allowed(addon) and ReadInfo(addon) == false
+			and not addon:IsIgnoredPlayerName(target)
+			and (not request.origin or not addon:IsIgnoredPlayerName(request.origin))
+			-- A forwarded leader may not have advertised metadata to us yet.
+			and ((request.redirected and not state.peers[target]) or addon:ShouldRequestPartyJoin(target))
+	end
+end)
+
 function QT:RequestPartyJoin(target)
 	target = Name(self, target)
 	if not Allowed(self) or not target or self:IsSelfSender(target) or self:IsIgnoredPlayerName(target) then

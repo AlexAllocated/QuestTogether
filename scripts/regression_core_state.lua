@@ -184,8 +184,138 @@ local function NewTaskClassificationFixture()
 		clock:Drain()
 	end
 	addon:EnsureRuntimeStateStore()
-	return addon
+	return addon, clock
 end
+
+local function NewCompletionClassificationFixture()
+	local a, clock = NewTaskClassificationFixture()
+	a:ResetQuestEventState()
+	a:RebuildQuestSnapshotStore()
+	a:RefreshTaskAreaStates(false)
+	a.tracker[12345] = { title = "Bonus Area", taskAnnouncementType = "bonus", objectives = {} }
+	a.PickRandomCompletionEmote = function() return "cheer" end
+	a.PlayLocalCompletionEmote = Noop
+	a.GetAnnouncementIconInfo = Noop
+	a.PrintConsoleAnnouncement = Noop
+	a.BuildLocalAnnouncementEvent = Noop
+	return a, clock
+end
+
+QT:RegisterTest("completion retains bonus classification after snapshot and tracker disappearance in either event order", function()
+	for _, scan in ipairs({ "snapshot", "full_scan" }) do
+		for _, first in ipairs({ "QUEST_REMOVED", "QUEST_TURNED_IN" }) do
+			local a, clock = NewCompletionClassificationFixture()
+			a.row, a.taskInfo = nil, nil
+			if scan == "snapshot" then a:RebuildQuestSnapshotStore() else a:ScanQuestLog() end
+			Equal(a:GetQuestClassification(12345), nil, "absent quest is not an active classification")
+			if scan == "full_scan" then Equal(a.tracker[12345], nil) end
+			a[first](a, first, 12345)
+			local second = first == "QUEST_REMOVED" and "QUEST_TURNED_IN" or "QUEST_REMOVED"
+			a[second](a, second, 12345)
+			clock:Advance(0) -- Removal resolves after the native one-frame turn-in window.
+			Equal(a.announcements[1], "BONUS_OBJECTIVE_COMPLETED", scan .. " " .. first)
+			Equal(#a.announcements, 1)
+			Equal(a:GetQuestSnapshotStateStore().completionClassificationsByQuestID[12345], nil,
+				"event capture takes ownership from temporary classification retention")
+		end
+	end
+end)
+
+QT:RegisterTest("completion classification preserves independent unknown fields and respects the latest explicit false", function()
+	for _, timing in ipairs({ "before_disappearance", "at_completion" }) do
+		local a = NewCompletionClassificationFixture()
+		if timing == "before_disappearance" then
+			a.taskInfo = { displayAsObjective = false }
+			a:RebuildQuestSnapshotStore()
+		end
+		a.row, a.taskInfo = nil, nil
+		a:RebuildQuestSnapshotStore()
+		if timing == "at_completion" then a.taskInfo = { displayAsObjective = false } end
+		Equal(a:ObserveQuestAnnouncementType(12345), nil, timing)
+		a:QUEST_REMOVED(nil, 12345)
+		a:QUEST_TURNED_IN(nil, 12345)
+		Equal(a.announcements[1], "QUEST_COMPLETED", "old bonus evidence cannot override explicit false")
+	end
+	local a = NewCompletionClassificationFixture()
+	a.row, a.taskInfo = nil, nil
+	a:RebuildQuestSnapshotStore()
+	Equal(a:ObserveQuestAnnouncementType(12345), "bonus", "world=false does not discard unknown bonus evidence")
+	Equal(a:GetQuestClassification(12345), nil, "completion reads do not republish retired classifications")
+end)
+
+QT:RegisterTest("retained completion classifications cannot cross reappearance acceptance or runtime boundaries", function()
+	for _, boundary in ipairs({ "reappearance", "acceptance", "runtime" }) do
+		local a = NewCompletionClassificationFixture()
+		local row = a.row
+		a.row, a.taskInfo = nil, nil
+		a:ScanQuestLog()
+		Equal(a:ObserveQuestAnnouncementType(12345), "bonus")
+		if boundary == "reappearance" then
+			a.row = row
+			a:RebuildQuestSnapshotStore()
+		elseif boundary == "acceptance" then
+			a:QUEST_ACCEPTED(nil, 12345)
+		else
+			a:ResetTaskAreaStateStore()
+		end
+		Equal(a:ObserveQuestAnnouncementType(12345), nil, boundary)
+	end
+end)
+
+QT:RegisterTest("completion retention is bounded and missing or incomplete snapshots do not extend its lifetime", function()
+	local a, clock = NewCompletionClassificationFixture()
+	a.row, a.taskInfo = nil, nil
+	a:RebuildQuestSnapshotStore()
+	clock:Advance(30)
+	a:RebuildQuestSnapshotStore()
+	Equal(a:ObserveQuestAnnouncementType(12345), "bonus")
+	-- An incomplete scan cannot create a retirement record for an unreadable row.
+	a.API.GetNumQuestLogEntries = function() return 1 end
+	local _, complete = a:RebuildQuestSnapshotStore()
+	Equal(complete, false)
+	clock:Advance(30)
+	Equal(a:ObserveQuestAnnouncementType(12345), nil, "repeated absence/capture cannot extend retention")
+	a.API.GetNumQuestLogEntries = function() return 0 end
+	local state = a:GetQuestSnapshotStateStore()
+	for id = 1, 300 do state.classificationsByQuestID[id] = { isWorldQuest = false, displayAsObjective = true } end
+	a:RebuildQuestSnapshotStore()
+	local count = 0
+	for _ in pairs(state.completionClassificationsByQuestID) do count = count + 1 end
+	assert(count <= 256, "missing native events must not grow unbounded classification history")
+end)
+
+QT:RegisterTest("completion cannot resurrect a stale world tracker after reappearance or retention expiry", function()
+	for _, boundary in ipairs({ "reappearance", "expiry" }) do
+		for _, first in ipairs({ "QUEST_REMOVED", "QUEST_TURNED_IN" }) do
+			local a, clock = NewCompletionClassificationFixture()
+			a.worldClassification, a.taskInfo = true, nil
+			a.tracker[12345].taskAnnouncementType = "world"
+			a:RebuildQuestSnapshotStore()
+			Equal(a:ObserveQuestAnnouncementType(12345), "world", "current confirmed world classification remains usable")
+			-- Snapshot refreshes update classification without replacing the tracker.
+			a.worldClassification, a.taskInfo = false, { displayAsObjective = false }
+			a:RebuildQuestSnapshotStore()
+			local row = a.row
+			a.row, a.taskInfo, a.worldClassification = nil, nil, nil
+			a:RebuildQuestSnapshotStore()
+			Equal(a:ObserveQuestAnnouncementType(12345), nil, "retained explicit false overrides the old tracker")
+			if boundary == "reappearance" then
+				a.row = row
+				a:RebuildQuestSnapshotStore()
+			else
+				clock:Advance(60)
+			end
+			Equal(a.tracker[12345].taskAnnouncementType, "world", "the stale presentation fixture is still present")
+			Equal(a:ObserveQuestAnnouncementType(12345), nil, boundary .. " cannot revive previous world classification")
+			a[first](a, first, 12345)
+			local second = first == "QUEST_REMOVED" and "QUEST_TURNED_IN" or "QUEST_REMOVED"
+			a[second](a, second, 12345)
+			clock:Advance(0)
+			Equal(a.announcements[1], "QUEST_COMPLETED", boundary .. " " .. first)
+			Equal(#a.announcements, 1)
+		end
+	end
+end)
 
 QT:RegisterTest("unavailable bonus metadata preserves confirmed area through real scheduled refreshes", function()
 	local addon = NewTaskClassificationFixture()

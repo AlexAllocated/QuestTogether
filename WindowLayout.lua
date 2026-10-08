@@ -210,7 +210,8 @@ function QT:QueueWindowLayout(callback)
 		callback()
 		return
 	end
-	self:ScheduleDeferredWork("foreign_frame_mutation", "window_layouts", callback, 0, "fit windows to display")
+	self:ScheduleRuntimeWork("foreign_frame_mutation", "window_layouts", callback,
+		{ lifetime = "ui", delay = 0, reason = "fit windows to display" })
 end
 function QT:RefreshManagedWindowLayouts()
 	self:QueueWindowLayout(function()

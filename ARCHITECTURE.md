@@ -38,7 +38,9 @@ private `.local` notes are historical context, not the source of truth.
   observation into the reducer. Ordinary classification readers do not query
   native APIs. Acceptance, removal and completion may explicitly capture fresh
   classification at their event boundary. Completion captures stay with that
-  quest lifetime.
+  quest lifetime. A complete scan retains departed classification briefly in a
+  bounded, completion-only store; it cannot repopulate active state or survive
+  reacquisition. Unknown fields may use that evidence, explicit false cannot.
 - Each peer field passes an explicit observation through admission and commit.
   Arrival time does not rejuvenate the source's sample time. Public metadata,
   location, nearby movement, party navigation and developer diagnostics keep
@@ -49,14 +51,21 @@ private `.local` notes are historical context, not the source of truth.
   Bounded refreshes retain their original deadline under repeated events.
   Delayed callbacks validate owner, generation, identity and current consent.
   Nameplate identity generations are independent of presentation coalescing.
+  Support-window maintenance explicitly uses the UI lifetime, which survives
+  feature disable and wakes only while work is pending. It retains the same
+  restriction and owner checks as enabled-runtime work.
 - A send returning `queued` is admission, not delivery. Only native acceptance
   advances packet progression. Queued work retains an owner/currentness check;
   cancellation, departure, opt-out and world replacement retire it. Nearby
   movement can drop obsolete samples but shares native throttle/backoff.
+  Action requests also recheck their premise at delivery: a join request still
+  needs a solo requester, and a share request needs confirmed quest absence.
 - PQL revisions certify an exact complete snapshot. They are negotiated;
   unchanged replies reuse only the matching validated baseline. Changed,
   missing, expired or incompatible baselines request full data. Manual Refresh
-  is an explicit full refresh. Objective detail remains separately requested.
+  is an explicit full refresh. Objective detail remains separately requested;
+  any detail response that changes ownership or summary fields invalidates the
+  certified revision before updating the member's displayed entry.
 - Settings validate a whole edit before committing any key. `SetOptions` batches
   related changes and dispatches each affected service once. Profile activation
   uses the same effects, including themes, scale, privacy and navigation; it
@@ -71,6 +80,9 @@ applicable restrictions clear. Treat a forbidden frame as quarantined.
 
 Inherited hiding (including Alt+Z) suspends interaction without dismissing the
 window's session. Explicit close retires it even if its parent is already hidden.
+A dismissed presentation is hidden before its callback may display a successor
+on the same frame. Temporary native Edit Mode hiding preserves its Revert
+baseline until the editing session actually ends.
 A region queued for cleanup carries ownership: reuse cancels old cleanup.
 Cleanup can outlive addon disable; stale feature work cannot.
 

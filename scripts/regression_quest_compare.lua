@@ -1952,6 +1952,45 @@ QuestTogether:RegisterTest("direct share controls retain group authorization and
 	Equal(a.pushes, 0)
 end)
 
+QuestTogether:RegisterTest("closing share and join prompts preserves a synchronously displayed successor", function()
+	for _, kind in ipairs({ "share", "join" }) do
+		for _, action in ipairs({ "close", "escape" }) do
+			for _, parentHidden in ipairs({ false, true }) do
+				local a = Fixture(nil, { Quest(1, "Share me", true) })
+				local parent = AttachUI(a)
+				a.QueuePartyQuestSharePrompt = QuestTogether.QueuePartyQuestSharePrompt
+				function a:GetQuestTitle() return "Share me" end
+				function a:SendPartyQuestShareMessage() return true end
+				function a:SendPartyJoinMessage() return true end
+				local first = { sender = kind == "share" and "Friend-Realm" or "Visitor-Realm",
+					key = "first", questId = 1, requestId = "r1", id = "j1", order = 1, created = 100, expires = 160 }
+				local second = { sender = kind == "share" and "Friend-Realm" or "Other-Realm",
+					key = "second", questId = 1, requestId = "r2", id = "j2", order = 2, created = 101, expires = 170 }
+				local frame, state
+				if kind == "share" then
+					a.partyQuestShareState = { incoming = { first = first, second = second } }
+					a:RenderPartyQuestSharePrompt()
+					frame, state = a.partyQuestSharePrompt, a.partyQuestShareState
+				else
+					a.partyJoinState = { incoming = { [first.sender] = first, [second.sender] = second } }
+					a:RenderPartyJoinPrompt()
+					frame, state = a.partyJoinPrompt, a.partyJoinState
+				end
+				assert(frame.request == first and frame:IsShown())
+				if parentHidden then parent:Hide() end
+				if action == "close" then frame.close:Click() else frame.scripts.OnKeyDown(frame, "ESCAPE") end
+				assert(frame.request == second and frame:IsShown(), "closing the first request must not hide its successor")
+				assert(state.incoming[kind == "share" and "first" or first.sender] == nil)
+				assert(state.incoming[kind == "share" and "second" or second.sender] == second)
+				if parentHidden then parent:Show() end
+				assert(frame:IsVisible())
+				frame.close:Click()
+				assert(not frame:IsShown() and not next(state.incoming))
+			end
+		end
+	end
+end)
+
 QuestTogether:RegisterTest(
 	"retired share and join prompts dismiss safely during restrictions without showing their successors",
 	function()
@@ -3961,5 +4000,110 @@ QuestTogether:RegisterTest("focus artwork falls back on failed or silently rejec
 		icon.SetAtlas, icon.GetAtlas = originalSet, originalGet
 		a:RenderPartyQuestCompare()
 		Equal(icon.atlas, "UI-QuestIcon-TurnIn-Normal")
+	end
+end)
+
+local function QueuedSharePair(direct)
+	local a, b = Fixture("Me-Realm"), Fixture("Friend-Realm", { Quest(1, "Together", true) })
+	a:Roster(a.name, b.name)
+	b:Roster(a.name, b.name)
+	a:SetOption("compareHideOtherQuests", false)
+	a:RefreshPartyQuestCompare()
+	Reply(a, b.name, b.entries, true, true)
+	for _, pair in ipairs({ { a, b }, { b, a } }) do
+		local sender, receiver = pair[1], pair[2]
+		sender.SendWireMessageToAnnouncementRoutes = nil
+		sender.db, sender.nativeWire, sender.nativeAttempts = { profile = {} }, {}, 0
+		sender:InitializeTransport()
+		if direct then sender:RememberDirectCommPeer(receiver.name, true) end
+		sender.API.IsOnQuest = function(id)
+			for _, entry in ipairs(sender.entries) do
+				if entry.questId == id then return true end
+			end
+			return false
+		end
+		sender.API.SendAddonMessage = function(prefix, wire, route, target)
+			sender.nativeAttempts = sender.nativeAttempts + 1
+			if sender.throttled then return 1 end
+			assert(route == "PARTY" or (route == "WHISPER" and target == receiver.name))
+			sender.nativeWire[#sender.nativeWire + 1] = wire
+			receiver:OnCommReceived(prefix, wire, route, sender.name)
+			return 0
+		end
+	end
+	return a, b
+end
+
+QuestTogether:RegisterTest("queued share requests retire when accepted cancelled or no longer eligible", function()
+	for _, direct in ipairs({ true, false }) do
+		for _, mode in ipairs({ "accepted", "ignored", "left-party", "roster", "profile", "retired", "replaced",
+			"expired", "unavailable", "restricted", "world", "retry" }) do
+			local a, b = QueuedSharePair(direct)
+			b.options.autoAcceptPartyShareRequests = true
+			assert(a:RequestPartyQuestShare(1, b.name))
+			Equal(b.pushes, 0)
+			local id, request = next(a.partyQuestShareState.outgoing)
+			if mode == "accepted" or mode == "retry" then
+				if mode == "retry" then a.throttled = true; a:DrainTransport(); a.throttled = nil; a.now = a.now + 2 end
+				a.entries = { Quest(1, "Together", true) }
+			elseif mode == "ignored" then a.ignored = b.name; a:CancelIgnoredPlayerQuestCompare()
+			elseif mode == "left-party" then a.grouped = false; a:Roster(a.name); a.partyRosterFingerprint = "alone"
+			elseif mode == "roster" then a.partyRosterFingerprint = "changed"
+			elseif mode == "profile" then a.db.profile = {}
+			elseif mode == "retired" then a.partyQuestShareState = nil
+			elseif mode == "replaced" then a.partyQuestShareState.outgoing[id] = a:DeepCopy(request)
+			elseif mode == "expired" then request.expires = a.now
+			elseif mode == "unavailable" then request.status = "unavailable"
+			elseif mode == "restricted" then a.blocked = true
+			elseif mode == "world" then a:EndTransportSession(); a:ResumeTransportSession() end
+			a:DrainTransport()
+			assert(#a.nativeWire == 0 and b.pushes == 0, "stale share delivered: " .. mode)
+			Equal(#a.transportState.queue, 0)
+			Equal(a.nativeAttempts, mode == "retry" and 1 or 0)
+		end
+	end
+end)
+
+QuestTogether:RegisterTest("queued share requests require confirmed ownership absence", function()
+	for _, direct in ipairs({ true, false }) do
+		for _, mode in ipairs({ "unknown", "missing", "failed", "invalid" }) do
+			local a, b = QueuedSharePair(direct)
+			b.options.autoAcceptPartyShareRequests = true
+			assert(a:RequestPartyQuestShare(1, b.name))
+			-- The log was readable when requested; losing that proof before
+			-- native delivery must not authorize a party-wide share attempt.
+			if mode == "unknown" then a.API.IsOnQuest = function() return nil end
+			elseif mode == "missing" then a.API.IsOnQuest = nil
+			elseif mode == "failed" then a.API.IsOnQuest = function() error("unreadable ownership") end
+			else a.API.IsOnQuest = function() return 0 end end
+			a:DrainTransport()
+			Equal(#a.nativeWire, 0)
+			Equal(b.pushes, 0)
+			Equal(#a.transportState.queue, 0)
+		end
+	end
+end)
+
+QuestTogether:RegisterTest("queued share acknowledgements survive retiring accepted or declined requests", function()
+	for _, direct in ipairs({ true, false }) do
+		for _, accepted in ipairs({ true, false }) do
+			local a, b = QueuedSharePair(direct)
+			b.options.autoAcceptPartyShareRequests = accepted
+			assert(a:RequestPartyQuestShare(1, b.name))
+			local requestId = next(a.partyQuestShareState.outgoing)
+			a:DrainTransport()
+			Equal(#a.nativeWire, 1)
+			if not accepted then
+				local request = b:GetNextPartyQuestShareRequest()
+				assert(request)
+				b:DrainTransport()
+				Equal(a.partyQuestShareState.outgoing[requestId].status, "pending")
+				assert(b:FinishPartyQuestShare(request, "declined"))
+			end
+			Equal(next(b.partyQuestShareState.incoming), nil)
+			b:DrainTransport()
+			Equal(a.partyQuestShareState.outgoing[requestId].status, accepted and "sent" or "declined")
+			Equal(b.pushes, accepted and 1 or 0)
+		end
 	end
 end)

@@ -213,9 +213,9 @@ function QuestTogether:CreateScrollDialog(width, height, title)
 end
 
 function QuestTogether:QueueScrollDialogThemeRefresh()
-	self:ScheduleDeferredWork("foreign_frame_mutation", "scroll_dialog_themes", function()
+	self:ScheduleRuntimeWork("foreign_frame_mutation", "scroll_dialog_themes", function()
 		for frame in pairs(rawget(self, "scrollDialogs") or {}) do self:ApplyScrollDialogTheme(frame) end
-	end, 0, "scroll dialog themes")
+	end, { lifetime = "ui", delay = 0, reason = "scroll dialog themes" })
 end
 
 function QuestTogether:FitScrollDialog(frame)

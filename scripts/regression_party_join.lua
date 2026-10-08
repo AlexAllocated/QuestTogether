@@ -789,3 +789,101 @@ QT:RegisterTest("direct join requests acknowledge by whisper and still require i
 	Equal(#a.invites, 0)
 	Equal(a.lastRoutes[1].distribution, "WHISPER")
 end)
+
+local function QueueJoinPeer(peer, others, direct)
+	peer.SendWireMessageToAnnouncementRoutes = nil
+	peer:InitializeTransport()
+	peer.nativeWire, peer.nativeAttempts = {}, 0
+	function peer:EnsureAnnouncementChannelJoined() return true end
+	for _, other in ipairs(others) do
+		if direct then peer:RememberDirectCommPeer(other.name, true) end
+	end
+	peer.API.SendAddonMessage = function(prefix, wire, route, target)
+		peer.nativeAttempts = peer.nativeAttempts + 1
+		if peer.throttled then return 1 end
+		peer.nativeWire[#peer.nativeWire + 1] = wire
+		for _, other in ipairs(others) do
+			if route ~= "WHISPER" or target == other.name then
+				other:OnCommReceived(prefix, wire, route, peer.name, 7, "QuestTogether")
+			end
+		end
+		return 0
+	end
+end
+
+QT:RegisterTest("queued join requests retire with their owner eligibility profile and world", function()
+	for _, direct in ipairs({ true, false }) do
+		for _, mode in ipairs({ "joined", "pruned", "ignored", "profile", "retired", "replaced", "expired",
+			"host-left", "restricted", "unknown", "world", "retry" }) do
+			local a, b = Pair()
+			QueueJoinPeer(a, { b }, direct)
+			QueueJoinPeer(b, { a }, direct)
+			b.options.autoInviteFriends, b.friend = true, a.name
+			assert(a:RequestPartyJoin(b.name))
+			Equal(#b.invites, 0)
+			local state, request = a.partyJoinState, a.partyJoinState.outgoing
+			if mode == "joined" or mode == "pruned" or mode == "retry" then
+				if mode == "retry" then a.throttled = true; a:DrainTransport(); a.throttled = nil; a.now = a.now + 2 end
+				a.grouped, a.count, a.partyRosterFingerprint = true, 2, "another party"
+				if mode ~= "joined" then a:PrunePartyJoin() end
+			elseif mode == "ignored" then a.ignored = b.name; a:PrunePartyJoin()
+			elseif mode == "profile" then a.db.profile = {}
+			elseif mode == "retired" then state.outgoing = nil
+			elseif mode == "replaced" then state.outgoing = a:DeepCopy(request)
+			elseif mode == "expired" then request.expires = a.now
+			elseif mode == "host-left" then assert(a:HandlePartyJoinMetadata("1,new-session,1,0,0", b.name))
+			elseif mode == "restricted" then a.blocked = true
+			elseif mode == "unknown" then a.unknown = true
+			elseif mode == "world" then a:EndTransportSession(); a:ResumeTransportSession() end
+			a:DrainTransport()
+			assert(#a.nativeWire == 0 and #b.invites == 0, "stale join delivered: " .. mode)
+			Equal(#a.transportState.queue, 0)
+			Equal(a.nativeAttempts, mode == "retry" and 1 or 0)
+		end
+	end
+end)
+
+QT:RegisterTest("queued join acknowledgements survive retiring the accepted or declined request", function()
+	for _, direct in ipairs({ true, false }) do
+		for _, accepted in ipairs({ true, false }) do
+			local a, b = Pair()
+			QueueJoinPeer(a, { b }, direct)
+			QueueJoinPeer(b, { a }, direct)
+			if accepted then b.options.autoInviteFriends, b.friend = true, a.name end
+			assert(a:RequestPartyJoin(b.name))
+			a:DrainTransport()
+			Equal(#a.nativeWire, 1)
+			if not accepted then
+				local request = b:GetNextPartyJoinRequest()
+				assert(request)
+				b:DrainTransport() -- The pending acknowledgement is independent too.
+				assert(a.partyJoinState.outgoing.pending)
+				assert(b:FinishPartyJoin(request, "declined"))
+			end
+			Equal(next(b.partyJoinState.incoming), nil)
+			b:DrainTransport()
+			Equal(a.partyJoinState.outgoing, nil)
+			Equal(#b.invites, accepted and 1 or 0)
+		end
+	end
+end)
+
+QT:RegisterTest("queued join redirects preserve forwarding without requiring leader discovery", function()
+	for _, direct in ipairs({ true, false }) do
+		local a, member, leader = RelayParty()
+		a.partyJoinState.peers[leader.name] = nil
+		QueueJoinPeer(a, { member, leader }, direct)
+		QueueJoinPeer(member, { a, leader }, direct)
+		QueueJoinPeer(leader, { a, member }, direct)
+		leader.options.autoInviteFriends, leader.friend = true, a.name
+		assert(a:RequestPartyJoin(member.name))
+		a:DrainTransport()
+		member:DrainTransport()
+		Equal(a.partyJoinState.outgoing.target, leader.name)
+		a.now = a.now + 1 -- A second request uses the control lane again.
+		a:DrainTransport()
+		leader:DrainTransport()
+		Equal(#leader.invites, 1)
+		Equal(a.partyJoinState.outgoing, nil)
+	end
+end)

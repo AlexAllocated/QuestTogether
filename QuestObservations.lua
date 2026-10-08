@@ -2,6 +2,61 @@
 -- A complete scan publishes atomically; consumers never independently re-read
 -- live classification. Event-time captures use ObserveQuestClassification.
 local QuestTogether = _G.QuestTogether
+local COMPLETION_RETENTION_SECONDS = 60
+local MAX_COMPLETION_CLASSIFICATIONS = 256
+
+local function ObservationTime(addon)
+	return addon:SafeToNumber(addon.API.GetTime and addon.API.GetTime()) or 0
+end
+
+local function PruneCompletionClassifications(state, now)
+	local retained = state.completionClassificationsByQuestID or {}
+	state.completionClassificationsByQuestID = retained
+	for id, entry in pairs(retained) do
+		if now < entry.removedAt or now - entry.removedAt >= COMPLETION_RETENTION_SECONDS then
+			retained[id] = nil
+		end
+	end
+	return retained
+end
+
+local function RetainDepartedClassifications(addon, state, nextClassifications)
+	local now = ObservationTime(addon)
+	local retained = PruneCompletionClassifications(state, now)
+	-- Retain terminal metadata separately from the active snapshot. Missing rows
+	-- may precede removal/turn-in events, or a manual scan may prune the tracker.
+	for id, value in pairs(state.classificationsByQuestID or {}) do
+		if
+			not nextClassifications[id]
+			and not (addon.retiredQuestIds and addon.retiredQuestIds[id])
+			and not retained[id]
+			and (value.isWorldQuest ~= nil or value.displayAsObjective ~= nil)
+		then
+			retained[id] =
+				{ removedAt = now, isWorldQuest = value.isWorldQuest, displayAsObjective = value.displayAsObjective }
+		end
+	end
+	for id in pairs(nextClassifications) do
+		retained[id] = nil
+	end
+	-- Dropped native events must not grow an unbounded history. This is never
+	-- refreshed by another empty scan or by reading a completion capture.
+	local order = {}
+	for id in pairs(retained) do
+		order[#order + 1] = id
+	end
+	if #order > MAX_COMPLETION_CLASSIFICATIONS then
+		table.sort(order, function(a, b)
+			if retained[a].removedAt == retained[b].removedAt then
+				return a < b
+			end
+			return retained[a].removedAt < retained[b].removedAt
+		end)
+		for i = 1, #order - MAX_COMPLETION_CLASSIFICATIONS do
+			retained[order[i]] = nil
+		end
+	end
+end
 
 local function ReadBoolean(addon, value)
 	if addon:CanAccessValue(value) and type(value) == "boolean" then
@@ -14,7 +69,7 @@ function QuestTogether:GetQuestClassification(questId)
 	return state.classificationsByQuestID and state.classificationsByQuestID[questId]
 end
 
-local function ReadClassification(addon, questId, info)
+local function ReadClassification(addon, questId, info, completionFallback)
 	local retired = addon.retiredQuestIds and addon.retiredQuestIds[questId]
 	local previous = not retired and addon:GetQuestClassification(questId) or nil
 	local world = addon.API.IsWorldQuest and ReadBoolean(addon, addon.API.IsWorldQuest(questId))
@@ -23,6 +78,9 @@ local function ReadClassification(addon, questId, info)
 	end
 	if world == nil and previous then
 		world = previous.isWorldQuest
+	end
+	if world == nil and completionFallback then
+		world = completionFallback.isWorldQuest
 	end
 	local bonus
 	if world == true then
@@ -34,6 +92,9 @@ local function ReadClassification(addon, questId, info)
 		end
 		if bonus == nil and previous then
 			bonus = previous.displayAsObjective
+		end
+		if bonus == nil and completionFallback then
+			bonus = completionFallback.displayAsObjective
 		end
 	end
 	return { isWorldQuest = world, displayAsObjective = bonus }
@@ -58,10 +119,19 @@ function QuestTogether:ForgetQuestClassification(questId)
 	if state.classificationsByQuestID then
 		state.classificationsByQuestID[questId] = nil
 	end
+	self:ForgetQuestCompletionClassification(questId)
+end
+
+function QuestTogether:ForgetQuestCompletionClassification(questId)
+	local state = self:GetQuestSnapshotStateStore()
+	if state.completionClassificationsByQuestID then
+		state.completionClassificationsByQuestID[questId] = nil
+	end
 end
 
 function QuestTogether:ResetQuestClassifications()
-	self:GetQuestSnapshotStateStore().classificationsByQuestID = {}
+	local state = self:GetQuestSnapshotStateStore()
+	state.classificationsByQuestID, state.completionClassificationsByQuestID = {}, {}
 end
 
 function QuestTogether:RebuildQuestSnapshotStore()
@@ -156,6 +226,7 @@ function QuestTogether:RebuildQuestSnapshotStore()
 		end
 	end
 
+	RetainDepartedClassifications(self, snapshotState, classifications)
 	snapshotState.classificationsByQuestID = classifications
 	wipe(snapshotState.byQuestID)
 	wipe(snapshotState.order)
@@ -244,14 +315,21 @@ end
 -- Completion/removal events can arrive after the row disappears. Capture once
 -- at that boundary; ordinary presentation readers remain snapshot-only.
 function QuestTogether:ObserveQuestAnnouncementType(questId)
-	local value = self:ObserveQuestClassification(questId)
+	local id = self:NormalizeQuestID(questId)
+	if not id then
+		return nil
+	end
+	local state = self:GetQuestSnapshotStateStore()
+	local retained = PruneCompletionClassifications(state, ObservationTime(self))
+	-- This event-boundary read must not republish an absent quest into the live
+	-- classification store. Its caller owns the immutable removal/turn-in capture.
+	local value = ReadClassification(self, id, nil, retained[id])
 	if value.isWorldQuest == true then
 		return "world"
 	end
 	if value.displayAsObjective == true then
 		return "bonus"
 	end
-	if value.isWorldQuest == nil and value.displayAsObjective == nil then
-		return self:GetTaskAnnouncementType(questId)
-	end
+	-- Tracker and area presentation caches can outlive a confirmed disappearance.
+	-- Only observed fields from this lifetime may classify a terminal capture.
 end
