@@ -1,3 +1,10 @@
 <Bindings>
- <Binding name="QUESTTOGETHER_PARTY_LOG" header="QUESTTOGETHER">QuestTogether:TogglePartyQuestCompare()</Binding>
+ <Binding name="QUESTTOGETHER_PARTY_LOG" category="BINDING_HEADER_QUESTTOGETHER">QuestTogether:HandleKeybinding("party_log")</Binding>
+ <Binding name="QUESTTOGETHER_MENU" category="BINDING_HEADER_QUESTTOGETHER" runOnUp="true">
+  if keystate == "up" then QuestTogether:HandleKeybinding("menu") end
+ </Binding>
+ <Binding name="QUESTTOGETHER_QUEST_PARTNERS" category="BINDING_HEADER_QUESTTOGETHER">QuestTogether:HandleKeybinding("quest_partners")</Binding>
+ <Binding name="QUESTTOGETHER_STOP_FOLLOW" category="BINDING_HEADER_QUESTTOGETHER">QuestTogether:HandleKeybinding("stop_follow")</Binding>
+ <Binding name="QUESTTOGETHER_CHAT" category="BINDING_HEADER_QUESTTOGETHER">QuestTogether:HandleKeybinding("chat")</Binding>
+ <Binding name="QUESTTOGETHER_SETTINGS" category="BINDING_HEADER_QUESTTOGETHER">QuestTogether:HandleKeybinding("settings")</Binding>
 </Bindings>

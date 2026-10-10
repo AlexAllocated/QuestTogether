@@ -21,6 +21,7 @@ private `.local` notes are historical context, not the source of truth.
 | QuestCompare | Atomic party log assembly, local snapshots and negotiated revision reuse | Native UI mutation or independent transport pumps |
 | PartyFocusController | Following and manual-choice state machine, missing-quest and confirmation policy | Party networking, persistence policy or preview fixtures |
 | PartyNavigation / QuestComparePreview | Live/preview adapters, persistence and ownership of native focus | Copies of the following state machine or repair of another controller's fields |
+| Keybindings | Fixed player actions delegated to existing feature operations | Key assignment, binding overrides, native input state |
 | OwnedUI | Guarded owned-region access and a durable cleanup queue | Permission to modify Blizzard-owned frames |
 | WindowController / WindowLayout / WindowTheme | Window visibility and dismissal, geometry, chrome respectively | Quest-specific dialogs or protocol sessions |
 | QuestDialogs | Focus/share-related presentation and callbacks | Window geometry rules |
@@ -92,6 +93,12 @@ profile restores its saved geometry or the window defaults, while display
 changes fit the current layout without erasing the user's saved dimensions.
 A region queued for cleanup carries ownership: reuse cancels old cleanup.
 Cleanup can outlive addon disable; stale feature work cannot.
+
+Bindings declare an explicit localized category instead of a legacy header row.
+Existing action IDs remain stable so saved assignments survive. Keybindings
+dispatch through existing feature operations; they never assign keys or duplicate
+action logic. The quick-menu binding uses the ordinary native menu and remains
+available when the minimap icon is hidden.
 
 Use native settings controls through the shared constructors. Player-facing
 text is localized at presentation; wire facts and diagnostic identifiers stay

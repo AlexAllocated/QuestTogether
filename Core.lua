@@ -320,6 +320,11 @@ QuestTogether.bonusObjectiveAreaStateByQuestID = QuestTogether.bonusObjectiveAre
 -- Default settings for SavedVariables.
 BINDING_HEADER_QUESTTOGETHER = "QuestTogether"
 BINDING_NAME_QUESTTOGETHER_PARTY_LOG = L("Toggle Party Quest Log")
+BINDING_NAME_QUESTTOGETHER_MENU = L("Open QuestTogether menu")
+BINDING_NAME_QUESTTOGETHER_QUEST_PARTNERS = L("Toggle Looking for Questing Partners")
+BINDING_NAME_QUESTTOGETHER_STOP_FOLLOW = L("Stop following quest focus")
+BINDING_NAME_QUESTTOGETHER_CHAT = L("Open QuestTogether chat")
+BINDING_NAME_QUESTTOGETHER_SETTINGS = L("Open QuestTogether settings")
 
 QuestTogether.DEFAULTS = {
 	profile = {

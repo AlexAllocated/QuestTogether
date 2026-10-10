@@ -218,6 +218,9 @@ local function Fixture()
 	function addon:GetMinimapTooltipParent()
 		return self.tooltipParent
 	end
+	function addon:GetOwnedUIParent()
+		return self.tooltipParent
+	end
 	addon.API = {
 		OpenQTChatComposer = function()
 			addon.chatDrafts = (addon.chatDrafts or 0) + 1
@@ -288,6 +291,69 @@ local function Fixture()
 	function addon:RefreshOptionsWindow() end
 	return addon
 end
+
+QuestTogether:RegisterTest("quick menu uses the native menu API without requiring a visible minimap icon", function()
+	for _, missing in ipairs({ true, false }) do
+		local a = Fixture()
+		if missing then
+			assert(rawget(a, "minimapButton") == nil)
+		else
+			a:InitializeMinimapLauncher()
+			a:SetOption("showMinimapButton", false)
+			assert(not a.minimapButton:IsVisible())
+		end
+		local count = #a.frames
+		assert(a:OpenQuickMenu())
+		Equal(#a.menus, 1)
+		local menu = a.menus[1]
+		Equal(menu.owner, a.tooltipParent)
+		assert(menu.owner:IsVisible())
+		Equal(#a.frames, count)
+		if not missing then assert(not a.minimapButton:IsVisible()) end
+		Equal(#menu.entries, 9)
+		Equal(menu.entries[1].label, "Looking for Questing Partners")
+		Equal(menu.entries[3].label, "Party Quest Log")
+		Equal(menu.entries[4].label, "Open Quest Log")
+		Equal(menu.entries[6].label, "Settings")
+		Equal(menu.entries[7].label, "Patch Notes")
+		Equal(menu.entries[8].label, "Move QuestTogether Logs to Separate Window")
+		Equal(menu.entries[9].label, "Hide Minimap Icon")
+		assert(menu.entries[2].divider and menu.entries[5].divider)
+		for _, index in ipairs({ 3, 4, 6, 7 }) do menu.entries[index].callback() end
+		Equal(a.compares, 1)
+		Equal(a.journals, 1)
+		Equal(a.settings, 1)
+		Equal(a.notes, 1)
+	end
+end)
+
+QuestTogether:RegisterTest("quick menu retires its tooltip and guards restricted or forbidden entry", function()
+	local a = Fixture()
+	a:InitializeMinimapLauncher()
+	a:ShowMinimapTooltip(a.minimapButton)
+	local tooltip = a.minimapTooltip
+	assert(tooltip:IsShown())
+	assert(a:OpenQuickMenu())
+	assert(not tooltip:IsShown() and tooltip.scripts.OnUpdate == nil)
+	local hidden = 0
+	function a:HideMinimapTooltip() hidden = hidden + 1 end
+	a.blocked = true
+	assert(not a:OpenQuickMenu())
+	Equal(hidden, 0)
+	Equal(#a.menus, 1)
+	a.blocked = false
+	a.tooltipParent.forbidden = true
+	assert(not a:OpenQuickMenu())
+	Equal(#a.menus, 1)
+	Equal(a.tooltipParent.unsafeCalls, nil)
+	a.tooltipParent.forbidden = false
+	a.isEnabled = false
+	assert(a:OpenQuickMenu())
+	Equal(#a.menus, 2)
+	Equal(a.menus[2].entries[3].enabled, false)
+	a.menus[2].entries[6].callback()
+	Equal(a.settings, 1)
+end)
 
 QuestTogether:RegisterTest(
 	"minimap creates one owned launcher with the scroll texture and exact menu actions",

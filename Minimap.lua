@@ -189,6 +189,13 @@ function QuestTogether:ShowMinimapMenu(button)
 	end) == true
 end
 
+-- The menu binding stays available when the minimap icon is hidden.
+function QuestTogether:OpenQuickMenu()
+	if self:IsRuntimeRestricted() then return false end
+	self:HideMinimapTooltip()
+	return self:ShowMinimapMenu(self:GetOwnedUIParent())
+end
+
 function QuestTogether:GetMinimapTooltipParent()
 	return UIParent
 end

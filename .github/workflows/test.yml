@@ -36,6 +36,7 @@ jobs:
       - run: lua${{ matrix.lua }} scripts/test.lua
       - run: python3 scripts/test_developer_crypto.py lua${{ matrix.lua }}
       - run: lua${{ matrix.lua }} scripts/settings_smoke.lua
+      - run: python3 scripts/bindings_smoke.py lua${{ matrix.lua }}
       - run: lua${{ matrix.lua }} scripts/test.lua . reverse
       - run: |
           for locale in enGB deDE frFR esES esMX ptBR ruRU itIT koKR zhCN zhTW; do
