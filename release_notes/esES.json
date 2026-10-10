@@ -1,31 +1,15 @@
 {
-  "source_sha256": "5b02461b857e5a5790ec93078b78b50553487a2132bcf0b1befaf9d98d3cc0bb",
+  "source_sha256": "83cbdd87c48efdbcf6f4f44cfe2b0c145f5a41e8afaecd27aaa50c51dc40d753",
   "notes": {
-    "version": "6.5.10",
-    "welcome": "Actualizaciones más fluidas del registro de misiones del grupo, solicitudes y actualizaciones del mapa más fiables, y correcciones para perfiles y burbujas de progreso.",
+    "version": "6.5.11",
+    "welcome": "Los nuevos atajos de teclado facilitan el acceso a las herramientas de QuestTogether y la gestión de compañeros para misiones.",
     "sections": [
       {
-        "title": "Registro de misiones del grupo",
+        "title": "Atajos de teclado",
         "items": [
-          "Con la actualización automática activada, las listas de misiones que no han cambiado generan menos tráfico del addon. Pulsar «Actualizar» manualmente sigue solicitando una actualización completa.",
-          "Las listas de misiones se recuperan correctamente tras cambios en los objetivos o después de ignorar y dejar de ignorar a un jugador, en lugar de conservar un progreso obsoleto o quedarse bloqueadas al cargar."
-        ]
-      },
-      {
-        "title": "Ventanas y perfiles",
-        "items": [
-          "Al cambiar, copiar o restablecer un perfil, se recuperan sus disposiciones de ventanas guardadas o las predeterminadas. Cambiar el tamaño de la pantalla sigue manteniendo las ventanas visibles sin descartar tu tamaño y posición preferidos.",
-          "Al cerrar una confirmación para unirse a un grupo o compartir una misión, ahora se muestra correctamente la siguiente solicitud pendiente.",
-          "Abrir los ajustes durante el modo de edición de Blizzard ya no impide que «Revertir» restaure la disposición original de tu burbuja de progreso personal.",
-          "Las ventanas de asistencia abiertas siguen adaptándose a los cambios de tema y pantalla mientras QuestTogether está desactivado."
-        ]
-      },
-      {
-        "title": "Seguimiento y comunicación",
-        "items": [
-          "Las solicitudes para unirse a un grupo o compartir una misión que han caducado o ya no son necesarias se cancelan antes de enviarse.",
-          "Las finalizaciones de objetivos de bonificación y misiones del mundo conservan el tipo de anuncio correcto, incluso si la misión desaparece del registro antes de que llegue el evento de finalización.",
-          "Las actualizaciones manuales de ubicación ahora usan las respuestas públicas de versiones antiguas de QuestTogether para actualizar los puntos normales del mapa, conservando las posiciones más recientes y las preferencias para compartir la ubicación."
+          "QuestTogether ahora aparece correctamente en Ajustes > Asignación de teclas, en lugar de la entrada incorrecta HEADER_QUESTTOGETHER.",
+          "Asigna teclas para abrir el menú de QuestTogether, mostrar u ocultar el registro de misiones del grupo, activar o desactivar la búsqueda de compañeros para misiones, dejar de seguir la misión del compañero, abrir el chat de QuestTogether o abrir sus ajustes.",
+          "Se conserva tu asignación actual para el registro de misiones del grupo. Las nuevas acciones comienzan sin una tecla asignada, y la tecla del menú funciona incluso si el icono del minimapa está oculto."
         ]
       }
     ]

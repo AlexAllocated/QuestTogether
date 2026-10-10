@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.11
+
+新增快捷键，让你更方便地打开 QuestTogether 工具和管理任务伙伴功能。
+
+### 快捷键
+
+- QuestTogether 现在会正确显示在设置 > 按键设置中，替代原先错误的 HEADER_QUESTTOGETHER 条目。
+- 你可以为打开 QuestTogether 菜单、显示或隐藏队伍任务日志、开启或关闭寻找任务伙伴、停止跟随任务焦点、打开 QuestTogether 聊天以及打开 QuestTogether 设置分配按键。
+- 已有的队伍任务日志按键绑定会保留。新动作默认不绑定按键，即使隐藏了小地图图标，菜单快捷键也能使用。
+
 ## 6.5.10
 
 更流畅的队伍任务日志更新、更可靠的请求与地图刷新，以及配置文件和进度气泡问题修复。

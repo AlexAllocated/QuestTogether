@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.11
+
+Novos atalhos de teclado facilitam o acesso às ferramentas do QuestTogether e o gerenciamento de parceiros de missão.
+
+### Atalhos de teclado
+
+- O QuestTogether agora aparece corretamente em Configurações > Teclas de atalho, substituindo a entrada incorreta HEADER_QUESTTOGETHER.
+- Atribua teclas para abrir o menu do QuestTogether, mostrar ou ocultar o Registro de Missões do Grupo, ativar ou desativar a busca por parceiros de missão, parar de seguir o foco de missão, abrir o bate-papo do QuestTogether ou abrir suas configurações.
+- Seu atalho atual para o Registro de Missões do Grupo é preservado. As novas ações começam sem teclas atribuídas, e o atalho do menu funciona mesmo quando o ícone do minimapa está oculto.
+
 ## 6.5.10
 
 Atualizações mais fluidas no Registro de missões do grupo, solicitações e atualizações do mapa mais confiáveis, além de correções para perfis e balões de progresso.

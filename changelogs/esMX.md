@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.11
+
+Los nuevos atajos de teclado facilitan el acceso a las herramientas de QuestTogether y la gestión de compañeros para hacer misiones.
+
+### Atajos de teclado
+
+- QuestTogether ahora aparece correctamente en Configuración > Asignación de teclas, en lugar de la entrada incorrecta HEADER_QUESTTOGETHER.
+- Asigna teclas para abrir el menú de QuestTogether, mostrar u ocultar el registro de misiones del grupo, activar o desactivar la búsqueda de compañeros para hacer misiones, dejar de seguir la misión del compañero, abrir el chat de QuestTogether o abrir su configuración.
+- Se conserva tu asignación actual para el registro de misiones del grupo. Las nuevas acciones comienzan sin una tecla asignada, y la tecla del menú funciona incluso si el ícono del minimapa está oculto.
+
 ## 6.5.10
 
 Actualizaciones más fluidas del registro de misiones del grupo, solicitudes y actualizaciones del mapa más confiables, y correcciones para perfiles y burbujas de progreso.

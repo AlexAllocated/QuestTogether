@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.11
+
+Neue Tastenbelegungen erleichtern das Öffnen der QuestTogether-Funktionen und die Verwaltung deiner Suche nach Questpartnern.
+
+### Tastenbelegungen
+
+- QuestTogether wird jetzt unter Einstellungen > Tastenbelegung korrekt angezeigt und ersetzt den fehlerhaften Eintrag HEADER_QUESTTOGETHER.
+- Du kannst Tasten zuweisen, um das QuestTogether-Menü zu öffnen, das Gruppenquestlog ein- oder auszublenden, die Suche nach Questpartnern ein- oder auszuschalten, dem Questfokus nicht mehr zu folgen, den QuestTogether-Chat zu öffnen oder die QuestTogether-Einstellungen aufzurufen.
+- Deine bisherige Tastenbelegung für das Gruppenquestlog bleibt erhalten. Die neuen Aktionen haben zunächst keine zugewiesenen Tasten. Die Taste für das Menü funktioniert auch bei ausgeblendetem Minikartensymbol.
+
 ## 6.5.10
 
 Flüssigere Aktualisierungen im Gruppenquestlog, zuverlässigere Anfragen und Kartenaktualisierungen sowie Korrekturen für Profile und Fortschrittsblasen.

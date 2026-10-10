@@ -1,31 +1,15 @@
 {
-  "source_sha256": "5b02461b857e5a5790ec93078b78b50553487a2132bcf0b1befaf9d98d3cc0bb",
+  "source_sha256": "83cbdd87c48efdbcf6f4f44cfe2b0c145f5a41e8afaecd27aaa50c51dc40d753",
   "notes": {
-    "version": "6.5.10",
-    "welcome": "Aggiornamenti più fluidi del Registro missioni del gruppo, richieste e aggiornamenti della mappa più affidabili e correzioni per profili e bolle dei progressi.",
+    "version": "6.5.11",
+    "welcome": "Nuovi tasti assegnabili facilitano l’accesso agli strumenti di QuestTogether e la gestione dei compagni di missione.",
     "sections": [
       {
-        "title": "Registro missioni del gruppo",
+        "title": "Assegnazione tasti",
         "items": [
-          "Con l’aggiornamento automatico attivo, gli elenchi delle missioni invariati richiedono meno traffico dell’addon. Il pulsante Aggiorna continua a richiedere un aggiornamento completo.",
-          "Gli elenchi delle missioni si ripristinano correttamente dopo modifiche agli obiettivi o dopo aver ignorato un giocatore e averlo rimosso dall’elenco degli ignorati, senza mantenere progressi obsoleti o restare bloccati in caricamento."
-        ]
-      },
-      {
-        "title": "Finestre e profili",
-        "items": [
-          "Cambiare, copiare o reimpostare un profilo ripristina le disposizioni delle finestre salvate nel profilo o quelle predefinite. Quando cambiano le dimensioni dello schermo, le finestre restano visibili senza perdere le dimensioni e le posizioni che preferisci.",
-          "Chiudere una conferma per entrare in un gruppo o condividere una missione ora mostra correttamente la richiesta successiva in attesa.",
-          "Aprire le impostazioni durante la Modalità modifica di Blizzard non impedisce più all’annullamento delle modifiche di ripristinare la disposizione originale della tua bolla dei progressi personale.",
-          "Le finestre di supporto aperte continuano ad adattarsi ai cambiamenti del tema e dello schermo anche quando QuestTogether è disattivato."
-        ]
-      },
-      {
-        "title": "Tracciamento e comunicazione",
-        "items": [
-          "Le richieste per entrare in un gruppo o condividere una missione scadute o non più necessarie vengono annullate prima dell’invio.",
-          "Gli annunci di completamento degli obiettivi bonus e delle missioni mondiali mantengono il tipo corretto anche quando la missione scompare dal registro prima che arrivi l’evento di completamento.",
-          "Gli aggiornamenti manuali della posizione ora usano le risposte pubbliche delle versioni precedenti di QuestTogether per aggiornare i normali punti sulla mappa, preservando le posizioni più recenti e le scelte sulla condivisione della posizione."
+          "QuestTogether ora appare correttamente in Impostazioni > Assegnazione tasti, sostituendo la voce errata HEADER_QUESTTOGETHER.",
+          "Assegna tasti per aprire il menu di QuestTogether, mostrare o nascondere il Registro missioni del gruppo, attivare o disattivare la ricerca di compagni di missione, smettere di seguire la missione, aprire la chat di QuestTogether o aprire le sue impostazioni.",
+          "Il tasto già assegnato al Registro missioni del gruppo viene mantenuto. Le nuove azioni inizialmente non hanno tasti assegnati, e il tasto del menu funziona anche quando l’icona della minimappa è nascosta."
         ]
       }
     ]

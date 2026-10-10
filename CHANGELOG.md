@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 6.5.11
+
+New keybindings make it easier to open QuestTogether tools and manage questing partners.
+
+### Keybindings
+
+- QuestTogether now appears correctly in Settings > Key Bindings, replacing the broken HEADER_QUESTTOGETHER entry.
+- Assign keys to open the QuestTogether menu, toggle the Party Quest Log, toggle Looking for Questing Partners, stop following quest focus, open QuestTogether chat, or open QuestTogether settings.
+- Your existing Party Quest Log binding is preserved. New actions start unassigned, and the menu binding works even when the minimap icon is hidden.
+
 ## 6.5.10
 
 Smoother Party Quest Log updates, more reliable requests and map refreshes, and fixes for profiles and progress bubbles.

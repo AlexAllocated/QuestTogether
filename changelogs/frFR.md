@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.11
+
+De nouveaux raccourcis clavier facilitent l’accès aux outils de QuestTogether et la gestion des partenaires de quête.
+
+### Raccourcis clavier
+
+- QuestTogether s’affiche désormais correctement dans Paramètres > Raccourcis, à la place de l’entrée incorrecte HEADER_QUESTTOGETHER.
+- Assignez des touches pour ouvrir le menu QuestTogether, afficher ou masquer le journal de quêtes du groupe, activer ou désactiver la recherche de partenaires de quête, arrêter le suivi de quête, ouvrir la discussion QuestTogether ou accéder aux paramètres de QuestTogether.
+- Votre raccourci actuel pour le journal de quêtes du groupe est conservé. Les nouvelles actions n’ont aucune touche assignée par défaut, et le raccourci du menu fonctionne même lorsque l’icône de la minicarte est masquée.
+
 ## 6.5.10
 
 Des mises à jour plus fluides du journal de quêtes du groupe, des demandes et des actualisations de carte plus fiables, et des corrections pour les profils et les bulles de progression.

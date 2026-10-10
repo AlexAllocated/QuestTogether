@@ -3,6 +3,338 @@
   "releases": [
     {
       "enUS": {
+        "version": "6.5.10",
+        "welcome": "Smoother Party Quest Log updates, more reliable requests and map refreshes, and fixes for profiles and progress bubbles.",
+        "sections": [
+          {
+            "title": "Party Quest Log",
+            "items": [
+              "With automatic refresh enabled, unchanged quest lists use less addon traffic. Manual Refresh still requests a full update.",
+              "Quest lists recover correctly after objective changes or ignoring and unignoring a player, instead of keeping stale progress or getting stuck loading."
+            ]
+          },
+          {
+            "title": "Windows and profiles",
+            "items": [
+              "Switching, copying, or resetting a profile restores its saved window layouts or the defaults. Changing display size still keeps windows on-screen without discarding your preferred size and position.",
+              "Closing a party-join or quest-share confirmation now correctly shows the next waiting request.",
+              "Opening settings during Blizzard Edit Mode no longer prevents Revert from restoring your personal progress bubble's original layout.",
+              "Open support windows continue adapting to theme and display changes while QuestTogether is disabled."
+            ]
+          },
+          {
+            "title": "Tracking and communication",
+            "items": [
+              "Expired or no-longer-needed party-join and quest-share requests are cancelled before they are sent.",
+              "Bonus objective and world quest completions keep their correct announcement type even when the quest disappears from the log before the completion event arrives.",
+              "Manual location refreshes now use public replies from older QuestTogether versions to update normal map dots, while preserving newer positions and location-sharing choices."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "6.5.10",
+        "welcome": "Flüssigere Aktualisierungen im Gruppenquestlog, zuverlässigere Anfragen und Kartenaktualisierungen sowie Korrekturen für Profile und Fortschrittsblasen.",
+        "sections": [
+          {
+            "title": "Gruppenquestlog",
+            "items": [
+              "Bei aktivierter automatischer Aktualisierung verursachen unveränderte Questlisten weniger Addon-Datenverkehr. Ein manueller Klick auf „Aktualisieren“ fordert weiterhin eine vollständige Aktualisierung an.",
+              "Questlisten werden nach Änderungen an Questzielen oder nachdem ein Spieler ignoriert und wieder von der Ignorierliste entfernt wurde korrekt aktualisiert, statt veralteten Fortschritt anzuzeigen oder beim Laden hängen zu bleiben."
+            ]
+          },
+          {
+            "title": "Fenster und Profile",
+            "items": [
+              "Beim Wechseln, Kopieren oder Zurücksetzen eines Profils werden dessen gespeicherte Fensterlayouts oder die Standardlayouts wiederhergestellt. Bei Änderungen der Bildschirmgröße bleiben Fenster weiterhin im sichtbaren Bereich, ohne deine bevorzugte Größe und Position zu verwerfen.",
+              "Wenn du eine Bestätigung für einen Gruppenbeitritt oder eine Questfreigabe schließt, wird jetzt die nächste wartende Anfrage korrekt angezeigt.",
+              "Das Öffnen der Einstellungen während Blizzards Bearbeitungsmodus verhindert nicht mehr, dass „Zurücksetzen“ das ursprüngliche Layout deiner persönlichen Fortschrittsblase wiederherstellt.",
+              "Geöffnete Hilfsfenster passen sich auch bei deaktiviertem QuestTogether weiterhin an Änderungen des Designs und der Anzeige an."
+            ]
+          },
+          {
+            "title": "Questverfolgung und Kommunikation",
+            "items": [
+              "Abgelaufene oder nicht mehr benötigte Anfragen für Gruppenbeitritte und Questfreigaben werden vor dem Versand abgebrochen.",
+              "Abschlüsse von Bonuszielen und Weltquests behalten den richtigen Ankündigungstyp, auch wenn die Quest aus dem Questlog verschwindet, bevor das Abschlussereignis eintrifft.",
+              "Manuelle Standortaktualisierungen nutzen jetzt öffentliche Antworten älterer QuestTogether-Versionen, um normale Kartenpunkte zu aktualisieren. Neuere Positionen und die Einstellungen zur Standortfreigabe bleiben dabei erhalten."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "6.5.10",
+        "welcome": "Des mises à jour plus fluides du journal de quêtes du groupe, des demandes et des actualisations de carte plus fiables, et des corrections pour les profils et les bulles de progression.",
+        "sections": [
+          {
+            "title": "Journal de quêtes du groupe",
+            "items": [
+              "Lorsque l’actualisation automatique est activée, les listes de quêtes inchangées génèrent moins de trafic d’addon. Cliquer manuellement sur « Actualiser » demande toujours une mise à jour complète.",
+              "Les listes de quêtes se rétablissent correctement après un changement d’objectif ou après avoir ignoré puis cessé d’ignorer un joueur, au lieu de conserver une progression obsolète ou de rester bloquées en chargement."
+            ]
+          },
+          {
+            "title": "Fenêtres et profils",
+            "items": [
+              "Changer, copier ou réinitialiser un profil rétablit ses dispositions de fenêtres enregistrées ou les dispositions par défaut. Les changements de taille d’affichage gardent les fenêtres à l’écran sans effacer vos préférences de taille et de position.",
+              "Fermer une confirmation de demande pour rejoindre un groupe ou partager une quête affiche désormais correctement la demande suivante en attente.",
+              "Ouvrir les paramètres dans le mode Édition de Blizzard n’empêche plus l’annulation des modifications de rétablir la disposition initiale de votre bulle de progression personnelle.",
+              "Les fenêtres d’assistance ouvertes continuent de s’adapter aux changements de thème et d’affichage lorsque QuestTogether est désactivé."
+            ]
+          },
+          {
+            "title": "Suivi et communication",
+            "items": [
+              "Les demandes pour rejoindre un groupe ou partager une quête qui ont expiré ou ne sont plus nécessaires sont annulées avant leur envoi.",
+              "Les objectifs bonus et les expéditions terminés conservent le bon type d’annonce, même si la quête disparaît du journal avant l’arrivée de l’événement de fin.",
+              "Les actualisations manuelles de position utilisent désormais les réponses publiques des anciennes versions de QuestTogether pour mettre à jour les points habituels sur la carte, tout en conservant les positions plus récentes et les choix de partage de position."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "6.5.10",
+        "welcome": "Actualizaciones más fluidas del registro de misiones del grupo, solicitudes y actualizaciones del mapa más fiables, y correcciones para perfiles y burbujas de progreso.",
+        "sections": [
+          {
+            "title": "Registro de misiones del grupo",
+            "items": [
+              "Con la actualización automática activada, las listas de misiones que no han cambiado generan menos tráfico del addon. Pulsar «Actualizar» manualmente sigue solicitando una actualización completa.",
+              "Las listas de misiones se recuperan correctamente tras cambios en los objetivos o después de ignorar y dejar de ignorar a un jugador, en lugar de conservar un progreso obsoleto o quedarse bloqueadas al cargar."
+            ]
+          },
+          {
+            "title": "Ventanas y perfiles",
+            "items": [
+              "Al cambiar, copiar o restablecer un perfil, se recuperan sus disposiciones de ventanas guardadas o las predeterminadas. Cambiar el tamaño de la pantalla sigue manteniendo las ventanas visibles sin descartar tu tamaño y posición preferidos.",
+              "Al cerrar una confirmación para unirse a un grupo o compartir una misión, ahora se muestra correctamente la siguiente solicitud pendiente.",
+              "Abrir los ajustes durante el modo de edición de Blizzard ya no impide que «Revertir» restaure la disposición original de tu burbuja de progreso personal.",
+              "Las ventanas de asistencia abiertas siguen adaptándose a los cambios de tema y pantalla mientras QuestTogether está desactivado."
+            ]
+          },
+          {
+            "title": "Seguimiento y comunicación",
+            "items": [
+              "Las solicitudes para unirse a un grupo o compartir una misión que han caducado o ya no son necesarias se cancelan antes de enviarse.",
+              "Las finalizaciones de objetivos de bonificación y misiones del mundo conservan el tipo de anuncio correcto, incluso si la misión desaparece del registro antes de que llegue el evento de finalización.",
+              "Las actualizaciones manuales de ubicación ahora usan las respuestas públicas de versiones antiguas de QuestTogether para actualizar los puntos normales del mapa, conservando las posiciones más recientes y las preferencias para compartir la ubicación."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "6.5.10",
+        "welcome": "Actualizaciones más fluidas del registro de misiones del grupo, solicitudes y actualizaciones del mapa más confiables, y correcciones para perfiles y burbujas de progreso.",
+        "sections": [
+          {
+            "title": "Registro de misiones del grupo",
+            "items": [
+              "Con la actualización automática activada, las listas de misiones que no han cambiado generan menos tráfico del addon. Hacer clic en «Actualizar» manualmente sigue solicitando una actualización completa.",
+              "Las listas de misiones se recuperan correctamente después de cambios en los objetivos o de ignorar y dejar de ignorar a un jugador, en lugar de conservar un progreso obsoleto o quedarse atascadas al cargar."
+            ]
+          },
+          {
+            "title": "Ventanas y perfiles",
+            "items": [
+              "Al cambiar, copiar o restablecer un perfil, se recuperan sus distribuciones de ventanas guardadas o las predeterminadas. Cambiar el tamaño de la pantalla sigue manteniendo las ventanas visibles sin descartar tu tamaño y posición preferidos.",
+              "Al cerrar una confirmación para unirse a un grupo o compartir una misión, ahora se muestra correctamente la siguiente solicitud pendiente.",
+              "Abrir la configuración durante el modo de edición de Blizzard ya no impide que «Revertir» restaure la distribución original de tu burbuja de progreso personal.",
+              "Las ventanas de ayuda abiertas siguen adaptándose a los cambios de tema y pantalla mientras QuestTogether está desactivado."
+            ]
+          },
+          {
+            "title": "Seguimiento y comunicación",
+            "items": [
+              "Las solicitudes para unirse a un grupo o compartir una misión que han vencido o ya no son necesarias se cancelan antes de enviarse.",
+              "Las finalizaciones de objetivos de bonificación y misiones de mundo conservan el tipo de anuncio correcto, incluso si la misión desaparece del registro antes de que llegue el evento de finalización.",
+              "Las actualizaciones manuales de ubicación ahora usan las respuestas públicas de versiones anteriores de QuestTogether para actualizar los puntos normales del mapa, conservando las posiciones más recientes y las preferencias para compartir la ubicación."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "6.5.10",
+        "welcome": "Atualizações mais fluidas no Registro de missões do grupo, solicitações e atualizações do mapa mais confiáveis, além de correções para perfis e balões de progresso.",
+        "sections": [
+          {
+            "title": "Registro de missões do grupo",
+            "items": [
+              "Com a atualização automática ativada, listas de missões que não mudaram geram menos tráfego do addon. Clicar em Atualizar ainda solicita uma atualização completa.",
+              "As listas de missões se recuperam corretamente após mudanças nos objetivos ou ao ignorar e deixar de ignorar um jogador, sem manter progresso desatualizado nem ficar presas no carregamento."
+            ]
+          },
+          {
+            "title": "Janelas e perfis",
+            "items": [
+              "Trocar, copiar ou redefinir um perfil restaura os layouts de janela salvos nele ou os padrões. Ao mudar o tamanho da tela, as janelas continuam visíveis sem descartar o tamanho e a posição que você escolheu.",
+              "Fechar uma confirmação de entrada no grupo ou de compartilhamento de missão agora exibe corretamente a próxima solicitação pendente.",
+              "Abrir as configurações durante o Modo de Edição da Blizzard não impede mais que Reverter restaure o layout original do seu balão pessoal de progresso.",
+              "As janelas de suporte abertas continuam se adaptando a mudanças de tema e tela mesmo com o QuestTogether desativado."
+            ]
+          },
+          {
+            "title": "Rastreamento e comunicação",
+            "items": [
+              "Solicitações de entrada no grupo e de compartilhamento de missões que expiraram ou deixaram de ser necessárias são canceladas antes do envio.",
+              "As conclusões de objetivos bônus e missões mundiais mantêm o tipo correto de anúncio, mesmo quando a missão desaparece do registro antes da chegada do evento de conclusão.",
+              "As atualizações manuais de localização agora usam respostas públicas de versões anteriores do QuestTogether para atualizar os pontos normais do mapa, preservando posições mais recentes e as opções de compartilhamento de localização."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "6.5.10",
+        "welcome": "Более плавные обновления журнала заданий группы, надёжнее работающие запросы и обновления карты, а также исправления профилей и облачков прогресса.",
+        "sections": [
+          {
+            "title": "Журнал заданий группы",
+            "items": [
+              "При включённом автоматическом обновлении неизменившиеся списки заданий требуют меньше обмена данными аддона. Кнопка «Обновить» по-прежнему запрашивает полное обновление.",
+              "Списки заданий корректно восстанавливаются после изменения целей или добавления игрока в список игнорирования и его удаления оттуда: прогресс не остаётся устаревшим, а загрузка не зависает."
+            ]
+          },
+          {
+            "title": "Окна и профили",
+            "items": [
+              "При смене, копировании или сбросе профиля восстанавливаются сохранённые в нём размеры и расположение окон либо значения по умолчанию. При изменении размера экрана окна остаются в его пределах, а выбранные вами размеры и положение сохраняются.",
+              "Закрытие подтверждения вступления в группу или передачи задания теперь корректно показывает следующий ожидающий запрос.",
+              "Открытие настроек в режиме редактирования Blizzard больше не мешает отмене изменений восстановить исходные размеры и положение вашего личного облачка прогресса.",
+              "Открытые окна справки продолжают адаптироваться к изменениям темы и экрана, даже когда QuestTogether отключён."
+            ]
+          },
+          {
+            "title": "Отслеживание и обмен сообщениями",
+            "items": [
+              "Запросы на вступление в группу и передачу заданий с истёкшим сроком действия или потерявшие актуальность отменяются до отправки.",
+              "Сообщения о выполнении дополнительных задач и локальных заданий сохраняют правильный тип, даже если задание исчезает из журнала до получения события о его выполнении.",
+              "Ручное обновление местоположений теперь использует общедоступные ответы старых версий QuestTogether для обновления обычных точек на карте, сохраняя более свежие позиции и выбранные настройки передачи местоположения."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "6.5.10",
+        "welcome": "Aggiornamenti più fluidi del Registro missioni del gruppo, richieste e aggiornamenti della mappa più affidabili e correzioni per profili e bolle dei progressi.",
+        "sections": [
+          {
+            "title": "Registro missioni del gruppo",
+            "items": [
+              "Con l’aggiornamento automatico attivo, gli elenchi delle missioni invariati richiedono meno traffico dell’addon. Il pulsante Aggiorna continua a richiedere un aggiornamento completo.",
+              "Gli elenchi delle missioni si ripristinano correttamente dopo modifiche agli obiettivi o dopo aver ignorato un giocatore e averlo rimosso dall’elenco degli ignorati, senza mantenere progressi obsoleti o restare bloccati in caricamento."
+            ]
+          },
+          {
+            "title": "Finestre e profili",
+            "items": [
+              "Cambiare, copiare o reimpostare un profilo ripristina le disposizioni delle finestre salvate nel profilo o quelle predefinite. Quando cambiano le dimensioni dello schermo, le finestre restano visibili senza perdere le dimensioni e le posizioni che preferisci.",
+              "Chiudere una conferma per entrare in un gruppo o condividere una missione ora mostra correttamente la richiesta successiva in attesa.",
+              "Aprire le impostazioni durante la Modalità modifica di Blizzard non impedisce più all’annullamento delle modifiche di ripristinare la disposizione originale della tua bolla dei progressi personale.",
+              "Le finestre di supporto aperte continuano ad adattarsi ai cambiamenti del tema e dello schermo anche quando QuestTogether è disattivato."
+            ]
+          },
+          {
+            "title": "Tracciamento e comunicazione",
+            "items": [
+              "Le richieste per entrare in un gruppo o condividere una missione scadute o non più necessarie vengono annullate prima dell’invio.",
+              "Gli annunci di completamento degli obiettivi bonus e delle missioni mondiali mantengono il tipo corretto anche quando la missione scompare dal registro prima che arrivi l’evento di completamento.",
+              "Gli aggiornamenti manuali della posizione ora usano le risposte pubbliche delle versioni precedenti di QuestTogether per aggiornare i normali punti sulla mappa, preservando le posizioni più recenti e le scelte sulla condivisione della posizione."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "6.5.10",
+        "welcome": "더 원활한 파티 퀘스트 목록 업데이트, 더 안정적인 요청과 지도 새로 고침, 프로필 및 진행 상황 말풍선 문제 수정.",
+        "sections": [
+          {
+            "title": "파티 퀘스트 목록",
+            "items": [
+              "자동 새로 고침을 켜면 변경되지 않은 퀘스트 목록을 갱신할 때 애드온 통신량이 줄어듭니다. 수동으로 새로고침을 누르면 계속 전체 업데이트를 요청합니다.",
+              "퀘스트 목표가 변경되거나 플레이어를 차단했다가 해제한 뒤에도 퀘스트 목록이 올바르게 복구됩니다. 오래된 진행 상황이 남거나 불러오는 중에 멈추던 문제를 수정했습니다."
+            ]
+          },
+          {
+            "title": "창 및 프로필",
+            "items": [
+              "프로필을 전환, 복사 또는 초기화하면 해당 프로필에 저장된 창 배치나 기본 배치가 복원됩니다. 화면 크기가 바뀌어도 선호하는 크기와 위치를 잃지 않고 창이 화면 안에 유지됩니다.",
+              "파티 참가 또는 퀘스트 공유 확인 창을 닫으면 이제 대기 중인 다음 요청이 올바르게 표시됩니다.",
+              "블리자드 편집 모드에서 설정을 열어도 되돌리기를 통해 개인 진행 상황 말풍선을 원래 배치로 복원할 수 있습니다.",
+              "QuestTogether가 비활성화된 동안에도 열려 있는 보조 창은 테마 및 화면 변경에 계속 맞춰집니다."
+            ]
+          },
+          {
+            "title": "추적 및 통신",
+            "items": [
+              "만료되었거나 더 이상 필요하지 않은 파티 참가 및 퀘스트 공유 요청은 전송 전에 취소됩니다.",
+              "완료 이벤트가 전달되기 전에 퀘스트가 목록에서 사라져도 추가 목표 및 전역 퀘스트 완료 알림은 올바른 유형을 유지합니다.",
+              "수동으로 위치를 새로 고치면 이제 이전 QuestTogether 버전의 공개 위치 응답으로 일반 지도 점을 갱신합니다. 더 최신인 위치와 위치 공유 설정은 그대로 유지됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "6.5.10",
+        "welcome": "更流畅的队伍任务日志更新、更可靠的请求与地图刷新，以及配置文件和进度气泡问题修复。",
+        "sections": [
+          {
+            "title": "队伍任务日志",
+            "items": [
+              "开启自动刷新后，未发生变化的任务列表会减少插件通信量。手动点击“刷新”仍会请求完整更新。",
+              "任务目标发生变化，或屏蔽玩家后又解除屏蔽时，任务列表现在能正确恢复，不再保留过时的进度或卡在加载状态。"
+            ]
+          },
+          {
+            "title": "窗口与配置文件",
+            "items": [
+              "切换、复制或重置配置文件时，会恢复相应的已保存窗口布局或默认布局。更改屏幕尺寸后，窗口仍会保持在屏幕范围内，同时保留你偏好的大小和位置。",
+              "关闭加入队伍或任务分享确认窗口后，现在会正确显示下一个等待处理的请求。",
+              "在暴雪编辑模式中打开设置，不再影响“还原”恢复个人进度气泡的原始布局。",
+              "QuestTogether 停用期间，已打开的辅助窗口仍会随主题和显示变化进行调整。"
+            ]
+          },
+          {
+            "title": "追踪与通信",
+            "items": [
+              "已过期或不再需要的加入队伍及任务分享请求，会在发送前取消。",
+              "即使任务在完成事件到达前就从任务日志中消失，奖励目标和世界任务完成通知仍会保持正确的类型。",
+              "手动刷新位置时，现在会使用旧版 QuestTogether 的公开位置回复来更新常规地图圆点，同时保留较新的位置和位置分享设置。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "6.5.10",
+        "welcome": "更順暢的隊伍任務日誌更新、更可靠的請求與地圖重新整理，以及設定檔和進度泡泡問題修正。",
+        "sections": [
+          {
+            "title": "隊伍任務日誌",
+            "items": [
+              "啟用自動重新整理後，未變更的任務列表會減少插件通訊量。手動點擊「重新整理」仍會要求完整更新。",
+              "任務目標變更，或忽略玩家後又解除忽略時，任務列表現在能正確恢復，不再保留過時的進度或卡在載入狀態。"
+            ]
+          },
+          {
+            "title": "視窗與設定檔",
+            "items": [
+              "切換、複製或重設設定檔時，會恢復對應的已儲存視窗配置或預設配置。變更螢幕尺寸後，視窗仍會保持在螢幕範圍內，同時保留你偏好的大小和位置。",
+              "關閉加入隊伍或任務分享確認視窗後，現在會正確顯示下一個等待處理的請求。",
+              "在暴雪編輯模式中開啟設定，不再影響「還原」恢復個人進度泡泡的原始配置。",
+              "QuestTogether 停用期間，已開啟的輔助視窗仍會隨佈景主題和顯示變更進行調整。"
+            ]
+          },
+          {
+            "title": "追蹤與通訊",
+            "items": [
+              "已到期或不再需要的加入隊伍及任務分享請求，會在傳送前取消。",
+              "即使任務在完成事件抵達前就從任務日誌中消失，獎勵目標和世界任務完成通知仍會保持正確的類型。",
+              "手動重新整理位置時，現在會使用舊版 QuestTogether 的公開位置回覆來更新一般地圖圓點，同時保留較新的位置和位置分享設定。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "6.5.9",
         "welcome": "More reliable party updates, cleaner player maps, and fixes for hiding the UI with Alt+Z.",
         "sections": [

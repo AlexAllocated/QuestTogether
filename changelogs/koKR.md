@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.11
+
+새 단축키로 QuestTogether 도구를 열고 퀘스트 동료 찾기를 더 편리하게 관리할 수 있습니다.
+
+### 단축키
+
+- 설정 > 단축키에서 잘못된 HEADER_QUESTTOGETHER 항목 대신 QuestTogether가 올바르게 표시됩니다.
+- QuestTogether 메뉴 열기, 파티 퀘스트 목록 표시 전환, 퀘스트 동료 찾기 켜기/끄기, 퀘스트 따라가기 중지, QuestTogether 대화창 열기, QuestTogether 설정 열기에 키를 지정할 수 있습니다.
+- 기존 파티 퀘스트 목록 단축키는 유지됩니다. 새 행동에는 기본 단축키가 지정되어 있지 않으며, 미니맵 아이콘을 숨겨도 메뉴 단축키를 사용할 수 있습니다.
+
 ## 6.5.10
 
 더 원활한 파티 퀘스트 목록 업데이트, 더 안정적인 요청과 지도 새로 고침, 프로필 및 진행 상황 말풍선 문제 수정.

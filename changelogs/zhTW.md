@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.11
+
+新增快捷鍵，讓你更方便地開啟 QuestTogether 工具及管理任務夥伴功能。
+
+### 快捷鍵
+
+- QuestTogether 現在會正確顯示在設定 > 按鍵設定中，取代原先錯誤的 HEADER_QUESTTOGETHER 項目。
+- 你可以為開啟 QuestTogether 選單、顯示或隱藏隊伍任務日誌、開啟或關閉尋找任務夥伴、停止跟隨任務焦點、開啟 QuestTogether 聊天以及開啟 QuestTogether 設定指定按鍵。
+- 既有的隊伍任務日誌按鍵綁定會保留。新動作預設不綁定按鍵，即使隱藏了小地圖圖示，選單快捷鍵也能使用。
+
 ## 6.5.10
 
 更順暢的隊伍任務日誌更新、更可靠的請求與地圖重新整理，以及設定檔和進度泡泡問題修正。

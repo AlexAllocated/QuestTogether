@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 6.5.11
+
+Nuovi tasti assegnabili facilitano l’accesso agli strumenti di QuestTogether e la gestione dei compagni di missione.
+
+### Assegnazione tasti
+
+- QuestTogether ora appare correttamente in Impostazioni > Assegnazione tasti, sostituendo la voce errata HEADER_QUESTTOGETHER.
+- Assegna tasti per aprire il menu di QuestTogether, mostrare o nascondere il Registro missioni del gruppo, attivare o disattivare la ricerca di compagni di missione, smettere di seguire la missione, aprire la chat di QuestTogether o aprire le sue impostazioni.
+- Il tasto già assegnato al Registro missioni del gruppo viene mantenuto. Le nuove azioni inizialmente non hanno tasti assegnati, e il tasto del menu funziona anche quando l’icona della minimappa è nascosta.
+
 ## 6.5.10
 
 Aggiornamenti più fluidi del Registro missioni del gruppo, richieste e aggiornamenti della mappa più affidabili e correzioni per profili e bolle dei progressi.
