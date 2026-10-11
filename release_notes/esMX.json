@@ -1,7 +1,7 @@
 {
   "source_sha256": "8b2ef9b74731cf0b5d63a428e7f88a1385be922b3cf906a11579030289afd4ee",
   "notes": {
-    "version": "6.5.11",
+    "version": "7.0.0",
     "welcome": "Reconstruimos el sistema de comunicación de QuestTogether en preparación para el lanzamiento de WoW Forever. Este cambio importante de protocolo requiere que todos actualicen juntos.",
     "sections": [
       {

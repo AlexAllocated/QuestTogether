@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.5.11
+## 7.0.0
 
 O sistema de comunicação do QuestTogether foi reformulado em preparação para o lançamento do WoW Forever. Esta grande mudança de protocolo exige que todos atualizem juntos.
 
@@ -25,6 +25,16 @@ O sistema de comunicação do QuestTogether foi reformulado em preparação para
 - Atualizações de missões, transferências do registro de missões do grupo, detalhes de jogadores e diagnósticos compartilham um envio controlado para que respostas grandes deixem espaço para outras atividades.
 - Respostas grandes podem recuperar partes ausentes sem reiniciar toda a transferência. Atualizações de posição atrasadas mantêm sua idade original e não podem substituir posições mais recentes nem retiradas de localização.
 - Alterações no compartilhamento de localização cancelam coordenadas públicas na fila de envio. Ao desconectar ou durante uma tela de carregamento, o QuestTogether tenta enviar uma última mensagem de saída; se ela não chegar, os dados continuam expirando automaticamente.
+
+## 6.5.11
+
+Novos atalhos de teclado facilitam o acesso às ferramentas do QuestTogether e o gerenciamento de parceiros de missão.
+
+### Atalhos de teclado
+
+- O QuestTogether agora aparece corretamente em Configurações > Teclas de atalho, substituindo a entrada incorreta HEADER_QUESTTOGETHER.
+- Atribua teclas para abrir o menu do QuestTogether, mostrar ou ocultar o Registro de Missões do Grupo, ativar ou desativar a busca por parceiros de missão, parar de seguir o foco de missão, abrir o bate-papo do QuestTogether ou abrir suas configurações.
+- Seu atalho atual para o Registro de Missões do Grupo é preservado. As novas ações começam sem teclas atribuídas, e o atalho do menu funciona mesmo quando o ícone do minimapa está oculto.
 
 ## 6.5.10
 

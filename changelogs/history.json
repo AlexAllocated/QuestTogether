@@ -3,6 +3,162 @@
   "releases": [
     {
       "enUS": {
+        "version": "6.5.11",
+        "welcome": "New keybindings make it easier to open QuestTogether tools and manage questing partners.",
+        "sections": [
+          {
+            "title": "Keybindings",
+            "items": [
+              "QuestTogether now appears correctly in Settings > Key Bindings, replacing the broken HEADER_QUESTTOGETHER entry.",
+              "Assign keys to open the QuestTogether menu, toggle the Party Quest Log, toggle Looking for Questing Partners, stop following quest focus, open QuestTogether chat, or open QuestTogether settings.",
+              "Your existing Party Quest Log binding is preserved. New actions start unassigned, and the menu binding works even when the minimap icon is hidden."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "6.5.11",
+        "welcome": "Neue Tastenbelegungen erleichtern das Öffnen der QuestTogether-Funktionen und die Verwaltung deiner Suche nach Questpartnern.",
+        "sections": [
+          {
+            "title": "Tastenbelegungen",
+            "items": [
+              "QuestTogether wird jetzt unter Einstellungen > Tastenbelegung korrekt angezeigt und ersetzt den fehlerhaften Eintrag HEADER_QUESTTOGETHER.",
+              "Du kannst Tasten zuweisen, um das QuestTogether-Menü zu öffnen, das Gruppenquestlog ein- oder auszublenden, die Suche nach Questpartnern ein- oder auszuschalten, dem Questfokus nicht mehr zu folgen, den QuestTogether-Chat zu öffnen oder die QuestTogether-Einstellungen aufzurufen.",
+              "Deine bisherige Tastenbelegung für das Gruppenquestlog bleibt erhalten. Die neuen Aktionen haben zunächst keine zugewiesenen Tasten. Die Taste für das Menü funktioniert auch bei ausgeblendetem Minikartensymbol."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "6.5.11",
+        "welcome": "De nouveaux raccourcis clavier facilitent l’accès aux outils de QuestTogether et la gestion des partenaires de quête.",
+        "sections": [
+          {
+            "title": "Raccourcis clavier",
+            "items": [
+              "QuestTogether s’affiche désormais correctement dans Paramètres > Raccourcis, à la place de l’entrée incorrecte HEADER_QUESTTOGETHER.",
+              "Assignez des touches pour ouvrir le menu QuestTogether, afficher ou masquer le journal de quêtes du groupe, activer ou désactiver la recherche de partenaires de quête, arrêter le suivi de quête, ouvrir la discussion QuestTogether ou accéder aux paramètres de QuestTogether.",
+              "Votre raccourci actuel pour le journal de quêtes du groupe est conservé. Les nouvelles actions n’ont aucune touche assignée par défaut, et le raccourci du menu fonctionne même lorsque l’icône de la minicarte est masquée."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "6.5.11",
+        "welcome": "Los nuevos atajos de teclado facilitan el acceso a las herramientas de QuestTogether y la gestión de compañeros para misiones.",
+        "sections": [
+          {
+            "title": "Atajos de teclado",
+            "items": [
+              "QuestTogether ahora aparece correctamente en Ajustes > Asignación de teclas, en lugar de la entrada incorrecta HEADER_QUESTTOGETHER.",
+              "Asigna teclas para abrir el menú de QuestTogether, mostrar u ocultar el registro de misiones del grupo, activar o desactivar la búsqueda de compañeros para misiones, dejar de seguir la misión del compañero, abrir el chat de QuestTogether o abrir sus ajustes.",
+              "Se conserva tu asignación actual para el registro de misiones del grupo. Las nuevas acciones comienzan sin una tecla asignada, y la tecla del menú funciona incluso si el icono del minimapa está oculto."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "6.5.11",
+        "welcome": "Los nuevos atajos de teclado facilitan el acceso a las herramientas de QuestTogether y la gestión de compañeros para hacer misiones.",
+        "sections": [
+          {
+            "title": "Atajos de teclado",
+            "items": [
+              "QuestTogether ahora aparece correctamente en Configuración > Asignación de teclas, en lugar de la entrada incorrecta HEADER_QUESTTOGETHER.",
+              "Asigna teclas para abrir el menú de QuestTogether, mostrar u ocultar el registro de misiones del grupo, activar o desactivar la búsqueda de compañeros para hacer misiones, dejar de seguir la misión del compañero, abrir el chat de QuestTogether o abrir su configuración.",
+              "Se conserva tu asignación actual para el registro de misiones del grupo. Las nuevas acciones comienzan sin una tecla asignada, y la tecla del menú funciona incluso si el ícono del minimapa está oculto."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "6.5.11",
+        "welcome": "Novos atalhos de teclado facilitam o acesso às ferramentas do QuestTogether e o gerenciamento de parceiros de missão.",
+        "sections": [
+          {
+            "title": "Atalhos de teclado",
+            "items": [
+              "O QuestTogether agora aparece corretamente em Configurações > Teclas de atalho, substituindo a entrada incorreta HEADER_QUESTTOGETHER.",
+              "Atribua teclas para abrir o menu do QuestTogether, mostrar ou ocultar o Registro de Missões do Grupo, ativar ou desativar a busca por parceiros de missão, parar de seguir o foco de missão, abrir o bate-papo do QuestTogether ou abrir suas configurações.",
+              "Seu atalho atual para o Registro de Missões do Grupo é preservado. As novas ações começam sem teclas atribuídas, e o atalho do menu funciona mesmo quando o ícone do minimapa está oculto."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "6.5.11",
+        "welcome": "Новые назначения клавиш упрощают доступ к инструментам QuestTogether и управление поиском партнеров для заданий.",
+        "sections": [
+          {
+            "title": "Назначение клавиш",
+            "items": [
+              "QuestTogether теперь правильно отображается в разделе Настройки > Назначение клавиш вместо ошибочной записи HEADER_QUESTTOGETHER.",
+              "Назначайте клавиши для открытия меню QuestTogether, показа и скрытия журнала заданий группы, включения и выключения поиска партнеров для заданий, прекращения следования заданию, открытия чата QuestTogether или настроек аддона.",
+              "Текущее назначение клавиши для журнала заданий группы сохраняется. У новых действий по умолчанию нет назначенных клавиш, а клавиша меню работает даже при скрытом значке у мини-карты."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "6.5.11",
+        "welcome": "Nuovi tasti assegnabili facilitano l’accesso agli strumenti di QuestTogether e la gestione dei compagni di missione.",
+        "sections": [
+          {
+            "title": "Assegnazione tasti",
+            "items": [
+              "QuestTogether ora appare correttamente in Impostazioni > Assegnazione tasti, sostituendo la voce errata HEADER_QUESTTOGETHER.",
+              "Assegna tasti per aprire il menu di QuestTogether, mostrare o nascondere il Registro missioni del gruppo, attivare o disattivare la ricerca di compagni di missione, smettere di seguire la missione, aprire la chat di QuestTogether o aprire le sue impostazioni.",
+              "Il tasto già assegnato al Registro missioni del gruppo viene mantenuto. Le nuove azioni inizialmente non hanno tasti assegnati, e il tasto del menu funziona anche quando l’icona della minimappa è nascosta."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "6.5.11",
+        "welcome": "새 단축키로 QuestTogether 도구를 열고 퀘스트 동료 찾기를 더 편리하게 관리할 수 있습니다.",
+        "sections": [
+          {
+            "title": "단축키",
+            "items": [
+              "설정 > 단축키에서 잘못된 HEADER_QUESTTOGETHER 항목 대신 QuestTogether가 올바르게 표시됩니다.",
+              "QuestTogether 메뉴 열기, 파티 퀘스트 목록 표시 전환, 퀘스트 동료 찾기 켜기/끄기, 퀘스트 따라가기 중지, QuestTogether 대화창 열기, QuestTogether 설정 열기에 키를 지정할 수 있습니다.",
+              "기존 파티 퀘스트 목록 단축키는 유지됩니다. 새 행동에는 기본 단축키가 지정되어 있지 않으며, 미니맵 아이콘을 숨겨도 메뉴 단축키를 사용할 수 있습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "6.5.11",
+        "welcome": "新增快捷键，让你更方便地打开 QuestTogether 工具和管理任务伙伴功能。",
+        "sections": [
+          {
+            "title": "快捷键",
+            "items": [
+              "QuestTogether 现在会正确显示在设置 > 按键设置中，替代原先错误的 HEADER_QUESTTOGETHER 条目。",
+              "你可以为打开 QuestTogether 菜单、显示或隐藏队伍任务日志、开启或关闭寻找任务伙伴、停止跟随任务焦点、打开 QuestTogether 聊天以及打开 QuestTogether 设置分配按键。",
+              "已有的队伍任务日志按键绑定会保留。新动作默认不绑定按键，即使隐藏了小地图图标，菜单快捷键也能使用。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "6.5.11",
+        "welcome": "新增快捷鍵，讓你更方便地開啟 QuestTogether 工具及管理任務夥伴功能。",
+        "sections": [
+          {
+            "title": "快捷鍵",
+            "items": [
+              "QuestTogether 現在會正確顯示在設定 > 按鍵設定中，取代原先錯誤的 HEADER_QUESTTOGETHER 項目。",
+              "你可以為開啟 QuestTogether 選單、顯示或隱藏隊伍任務日誌、開啟或關閉尋找任務夥伴、停止跟隨任務焦點、開啟 QuestTogether 聊天以及開啟 QuestTogether 設定指定按鍵。",
+              "既有的隊伍任務日誌按鍵綁定會保留。新動作預設不綁定按鍵，即使隱藏了小地圖圖示，選單快捷鍵也能使用。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "6.5.10",
         "welcome": "Smoother Party Quest Log updates, more reliable requests and map refreshes, and fixes for profiles and progress bubbles.",
         "sections": [

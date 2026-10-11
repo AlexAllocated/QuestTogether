@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 6.5.11
+## 7.0.0
 
 QuestTogether's communication system has been rebuilt in preparation for WoW Forever's release. This major protocol change requires everyone to update together.
 
@@ -27,6 +27,16 @@ QuestTogether's communication system has been rebuilt in preparation for WoW For
 - Quest updates, Party Quest Log transfers, player details, and diagnostics share paced delivery so large replies leave room for other activity.
 - Large replies can recover missing pieces without restarting the whole transfer. Delayed location updates retain their original age and cannot overwrite newer positions or withdrawals.
 - Location-sharing changes cancel queued public coordinates. On logout or a loading screen, QuestTogether attempts a final departure message; expiry remains the fallback.
+
+## 6.5.11
+
+New keybindings make it easier to open QuestTogether tools and manage questing partners.
+
+### Keybindings
+
+- QuestTogether now appears correctly in Settings > Key Bindings, replacing the broken HEADER_QUESTTOGETHER entry.
+- Assign keys to open the QuestTogether menu, toggle the Party Quest Log, toggle Looking for Questing Partners, stop following quest focus, open QuestTogether chat, or open QuestTogether settings.
+- Your existing Party Quest Log binding is preserved. New actions start unassigned, and the menu binding works even when the minimap icon is hidden.
 
 ## 6.5.10
 

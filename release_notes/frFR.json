@@ -1,7 +1,7 @@
 {
   "source_sha256": "8b2ef9b74731cf0b5d63a428e7f88a1385be922b3cf906a11579030289afd4ee",
   "notes": {
-    "version": "6.5.11",
+    "version": "7.0.0",
     "welcome": "Le système de communication de QuestTogether a été reconstruit en préparation de la sortie de WoW Forever. Ce changement majeur de protocole nécessite que tout le monde mette l’addon à jour ensemble.",
     "sections": [
       {

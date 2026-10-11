@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "6.5.11",
+	version = "7.0.0",
 	welcome = "QuestTogether's communication system has been rebuilt in preparation for WoW Forever's release. This major protocol change requires everyone to update together.",
 	sections = {
 		{

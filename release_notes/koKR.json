@@ -1,7 +1,7 @@
 {
   "source_sha256": "8b2ef9b74731cf0b5d63a428e7f88a1385be922b3cf906a11579030289afd4ee",
   "notes": {
-    "version": "6.5.11",
+    "version": "7.0.0",
     "welcome": "WoW Forever 출시를 준비하며 QuestTogether의 통신 시스템을 새로 만들었습니다. 이번 대규모 프로토콜 변경으로 모두 함께 업데이트해야 합니다.",
     "sections": [
       {

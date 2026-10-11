@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.5.11
+## 7.0.0
 
 Il sistema di comunicazione di QuestTogether è stato ricostruito in preparazione all’uscita di WoW Forever. Questa importante modifica al protocollo richiede che tutti aggiornino insieme.
 
@@ -25,6 +25,16 @@ Il sistema di comunicazione di QuestTogether è stato ricostruito in preparazion
 - Gli aggiornamenti delle missioni, i trasferimenti del registro missioni del gruppo, i dettagli dei giocatori e i dati diagnostici condividono un invio regolato, così le risposte grandi lasciano spazio alle altre attività.
 - Le risposte grandi possono recuperare le parti mancanti senza ricominciare l’intero trasferimento. Le posizioni ricevute in ritardo mantengono la loro età originale e non possono sovrascrivere posizioni più recenti o ritiri della posizione.
 - Le modifiche alla condivisione della posizione annullano le coordinate pubbliche in attesa di invio. Alla disconnessione o durante una schermata di caricamento, QuestTogether tenta di inviare un ultimo messaggio di uscita; in caso contrario, i dati continuano a scadere automaticamente.
+
+## 6.5.11
+
+Nuovi tasti assegnabili facilitano l’accesso agli strumenti di QuestTogether e la gestione dei compagni di missione.
+
+### Assegnazione tasti
+
+- QuestTogether ora appare correttamente in Impostazioni > Assegnazione tasti, sostituendo la voce errata HEADER_QUESTTOGETHER.
+- Assegna tasti per aprire il menu di QuestTogether, mostrare o nascondere il Registro missioni del gruppo, attivare o disattivare la ricerca di compagni di missione, smettere di seguire la missione, aprire la chat di QuestTogether o aprire le sue impostazioni.
+- Il tasto già assegnato al Registro missioni del gruppo viene mantenuto. Le nuove azioni inizialmente non hanno tasti assegnati, e il tasto del menu funziona anche quando l’icona della minimappa è nascosta.
 
 ## 6.5.10
 

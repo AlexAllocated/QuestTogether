@@ -1,7 +1,7 @@
 {
   "source_sha256": "8b2ef9b74731cf0b5d63a428e7f88a1385be922b3cf906a11579030289afd4ee",
   "notes": {
-    "version": "6.5.11",
+    "version": "7.0.0",
     "welcome": "为迎接 WoW Forever 发布，QuestTogether 重构了通信系统。这次重大协议变更需要所有玩家一起更新。",
     "sections": [
       {

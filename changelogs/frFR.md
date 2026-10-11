@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.5.11
+## 7.0.0
 
 Le système de communication de QuestTogether a été reconstruit en préparation de la sortie de WoW Forever. Ce changement majeur de protocole nécessite que tout le monde mette l’addon à jour ensemble.
 
@@ -25,6 +25,16 @@ Le système de communication de QuestTogether a été reconstruit en préparatio
 - Les mises à jour de quêtes, les transferts du journal de quêtes du groupe, les détails des joueurs et les diagnostics partagent un envoi régulé pour que les réponses volumineuses laissent de la place aux autres activités.
 - Les réponses volumineuses peuvent récupérer les parties manquantes sans recommencer tout le transfert. Les positions reçues en retard conservent leur ancienneté et ne peuvent pas remplacer des positions plus récentes ou leur retrait.
 - Les changements de partage de position annulent les coordonnées publiques en attente d’envoi. À la déconnexion ou lors d’un écran de chargement, QuestTogether tente d’envoyer un dernier message de départ ; sinon, les données finissent toujours par expirer.
+
+## 6.5.11
+
+De nouveaux raccourcis clavier facilitent l’accès aux outils de QuestTogether et la gestion des partenaires de quête.
+
+### Raccourcis clavier
+
+- QuestTogether s’affiche désormais correctement dans Paramètres > Raccourcis, à la place de l’entrée incorrecte HEADER_QUESTTOGETHER.
+- Assignez des touches pour ouvrir le menu QuestTogether, afficher ou masquer le journal de quêtes du groupe, activer ou désactiver la recherche de partenaires de quête, arrêter le suivi de quête, ouvrir la discussion QuestTogether ou accéder aux paramètres de QuestTogether.
+- Votre raccourci actuel pour le journal de quêtes du groupe est conservé. Les nouvelles actions n’ont aucune touche assignée par défaut, et le raccourci du menu fonctionne même lorsque l’icône de la minicarte est masquée.
 
 ## 6.5.10
 

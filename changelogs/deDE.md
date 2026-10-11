@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 6.5.11
+## 7.0.0
 
 Das Kommunikationssystem von QuestTogether wurde in Vorbereitung auf die Veröffentlichung von WoW Forever neu aufgebaut. Diese grundlegende Protokolländerung erfordert, dass alle gemeinsam aktualisieren.
 
@@ -25,6 +25,16 @@ Das Kommunikationssystem von QuestTogether wurde in Vorbereitung auf die Veröff
 - Questaktualisierungen, Übertragungen des Gruppenquestlogs, Spielerdetails und Diagnosedaten werden gemeinsam dosiert versendet, damit große Antworten Platz für andere Aktivitäten lassen.
 - Bei großen Antworten können fehlende Teile nachgeliefert werden, ohne die gesamte Übertragung neu zu starten. Verspätete Positionsdaten behalten ihr ursprüngliches Alter und können neuere Positionen oder Rücknahmen nicht überschreiben.
 - Änderungen an der Standortfreigabe verwerfen öffentliche Koordinaten in der Warteschlange. Beim Ausloggen oder einem Ladebildschirm versucht QuestTogether, eine letzte Abmeldung zu senden. Falls das nicht gelingt, laufen die Daten weiterhin automatisch ab.
+
+## 6.5.11
+
+Neue Tastenbelegungen erleichtern das Öffnen der QuestTogether-Funktionen und die Verwaltung deiner Suche nach Questpartnern.
+
+### Tastenbelegungen
+
+- QuestTogether wird jetzt unter Einstellungen > Tastenbelegung korrekt angezeigt und ersetzt den fehlerhaften Eintrag HEADER_QUESTTOGETHER.
+- Du kannst Tasten zuweisen, um das QuestTogether-Menü zu öffnen, das Gruppenquestlog ein- oder auszublenden, die Suche nach Questpartnern ein- oder auszuschalten, dem Questfokus nicht mehr zu folgen, den QuestTogether-Chat zu öffnen oder die QuestTogether-Einstellungen aufzurufen.
+- Deine bisherige Tastenbelegung für das Gruppenquestlog bleibt erhalten. Die neuen Aktionen haben zunächst keine zugewiesenen Tasten. Die Taste für das Menü funktioniert auch bei ausgeblendetem Minikartensymbol.
 
 ## 6.5.10
 
