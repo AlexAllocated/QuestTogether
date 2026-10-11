@@ -51,6 +51,12 @@ local function NewReceiver()
 		GetRealmName = function()
 			return "Realm"
 		end,
+		GetServerTime = function()
+			return 1700000100
+		end,
+		Random = function(low)
+			return low
+		end,
 		GetTime = function()
 			return 100
 		end,
@@ -71,6 +77,9 @@ local function NewReceiver()
 		return true
 	end
 	function addon:RecordCommsDiagnostic() end
+	function addon:RecordDiagnosticError(where, detail)
+		error(where .. ": " .. tostring(detail))
+	end
 	function addon:Debug() end
 	function addon:Debugf() end
 	function addon:FindVisiblePlayerNameplateForSender()
@@ -94,15 +103,24 @@ local function NewReceiver()
 	return addon
 end
 
+local function Frames(a, event)
+	return assert(a:BuildCommFrames("ANN", event, { session = "100-1", messageId = "1", stamp = 1700000100 }))
+end
+local function Deliver(a, prefix, frames, route, name, id, channel)
+	for _, wire in ipairs(frames) do
+		a:ReceiveCommunication(prefix, wire, route, name, id, channel)
+	end
+end
+
 QT:RegisterTest("ignored transport sender cannot bypass suppression with an allowed payload name", function()
 	local addon = NewReceiver()
-	local wire = "ANN|" .. addon:EncodeAnnouncementPayload(RemoteEvent("Allowed-Realm"))
-	addon:OnCommReceived(addon.commPrefix, wire, "PARTY", "Ignored-Realm")
-	addon:OnCommReceived(addon.commPrefix, wire, "CHANNEL", "Ignored-Realm", 7, addon.announcementChannelName)
+	local wire = Frames(addon, RemoteEvent("Allowed-Realm"))
+	Deliver(addon, addon.commPrefix, wire, "PARTY", "Ignored-Realm")
+	Deliver(addon, addon.commPrefix, wire, "CHANNEL", "Ignored-Realm", 7, addon.announcementChannelName)
 	Equal(addon.prints, 0)
 	Equal(addon.bubbles, 0)
 	Equal(addon.emotes, 0)
-	addon:OnCommReceived(addon.commPrefix, wire, "PARTY", "Allowed-Realm")
+	Deliver(addon, addon.commPrefix, wire, "PARTY", "Allowed-Realm")
 	Equal(addon.prints, 1, "an allowed sender remains visible")
 	Equal(addon.bubbles, 1)
 	Equal(addon.emotes, 1)
@@ -131,12 +149,12 @@ QT:RegisterTest("regional ignore suppression preserves full surname identity", f
 		return name == "Anakin Ofthesea"
 	end
 	Equal(addon:HandleAnnouncementEvent(RemoteEvent("Anakin-Ofthesea"), false), false)
-	local wire = "ANN|" .. addon:EncodeAnnouncementPayload(RemoteEvent("Allowed Else"))
-	addon:OnCommReceived(addon.commPrefix, wire, "PARTY", "Anakin Ofthesea")
+	local wire = Frames(addon, RemoteEvent("Anakin Else"))
+	Deliver(addon, addon.commPrefix, wire, "PARTY", "Anakin Ofthesea")
 	Equal(addon.prints, 0)
 	Equal(addon.bubbles, 0)
 	Equal(addon.emotes, 0)
-	addon:OnCommReceived(addon.commPrefix, wire, "PARTY", "Anakin Else")
+	Deliver(addon, addon.commPrefix, wire, "PARTY", "Anakin Else")
 	Equal(addon.prints, 1)
 	Equal(addon.bubbles, 1)
 	Equal(addon.emotes, 1)

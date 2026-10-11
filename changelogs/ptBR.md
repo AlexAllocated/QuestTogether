@@ -4,13 +4,27 @@
 
 ## 6.5.11
 
-Novos atalhos de teclado facilitam o acesso às ferramentas do QuestTogether e o gerenciamento de parceiros de missão.
+O sistema de comunicação do QuestTogether foi reformulado em preparação para o lançamento do WoW Forever. Esta grande mudança de protocolo exige que todos atualizem juntos.
 
-### Atalhos de teclado
+### Importante: versões antigas não podem se comunicar
 
-- O QuestTogether agora aparece corretamente em Configurações > Teclas de atalho, substituindo a entrada incorreta HEADER_QUESTTOGETHER.
-- Atribua teclas para abrir o menu do QuestTogether, mostrar ou ocultar o Registro de Missões do Grupo, ativar ou desativar a busca por parceiros de missão, parar de seguir o foco de missão, abrir o bate-papo do QuestTogether ou abrir suas configurações.
-- Seu atalho atual para o Registro de Missões do Grupo é preservado. As novas ações começam sem teclas atribuídas, e o atalho do menu funciona mesmo quando o ícone do minimapa está oculto.
+- Esta versão introduz um novo protocolo de comunicação. O QuestTogether 7.x não pode trocar localizações de jogadores, progresso de missões, dados do registro de missões do grupo ou outras mensagens do addon com as versões 6.x e anteriores. Peça aos seus parceiros de missões que também atualizem.
+
+### Preparação para o WoW Forever
+
+- Estamos fazendo estas mudanças maiores, que rompem a compatibilidade, agora, antes do lançamento do WoW Forever, para dar uma base mais sólida ao sistema de comunicação do QuestTogether.
+- Após o lançamento do WoW Forever, teremos mais cuidado para preservar a compatibilidade entre versões novas e antigas do addon e evitar exigências de atualização que atrapalhem os jogadores. Se outra quebra de compatibilidade do protocolo se tornar necessária, avisaremos com clareza.
+
+### Encontre jogadores onde você está procurando
+
+- As atualizações de jogadores priorizam sua área atual e uma área que você mantém aberta no mapa, enquanto as posições mais distantes são atualizadas em segundo plano.
+- O movimento próximo usa atualizações curtas e direcionadas. As solicitações de busca são compartilhadas e distribuídas ao longo do tempo para reduzir o tráfego em áreas movimentadas.
+
+### Troca de dados mais confiável
+
+- Atualizações de missões, transferências do registro de missões do grupo, detalhes de jogadores e diagnósticos compartilham um envio controlado para que respostas grandes deixem espaço para outras atividades.
+- Respostas grandes podem recuperar partes ausentes sem reiniciar toda a transferência. Atualizações de posição atrasadas mantêm sua idade original e não podem substituir posições mais recentes nem retiradas de localização.
+- Alterações no compartilhamento de localização cancelam coordenadas públicas na fila de envio. Ao desconectar ou durante uma tela de carregamento, o QuestTogether tenta enviar uma última mensagem de saída; se ela não chegar, os dados continuam expirando automaticamente.
 
 ## 6.5.10
 

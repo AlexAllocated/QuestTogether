@@ -117,7 +117,7 @@ end
 
 function QT:UpdatePlayerPhaseObservations()
 	if not Enabled(self) then
-		self.playerPhaseState = nil
+		self:ResetPlayerPhases()
 		return
 	end
 	local s, now = State(self), Now(self)
@@ -131,7 +131,7 @@ function QT:UpdatePlayerPhaseObservations()
 		return
 	end
 	if s.observation and s.observation.map ~= observation.map then
-		self.playerPhaseState = nil
+		self:ResetPlayerPhases()
 		s = State(self)
 		s.nextScan = now + 1
 	end
@@ -162,6 +162,9 @@ function QT:UpdatePlayerPhaseObservations()
 		s.peers = {}
 		-- A local evidence change is not a failed/unsupported peer. Retire
 		-- the nonce and allow a fresh probe after the global pacing interval.
+		for _, attempt in pairs(s.attempts) do
+			self:CancelCommRequest(attempt.id, "cancelled")
+		end
 		s.attempts = {}
 	end
 	s.observation = observation
@@ -193,35 +196,32 @@ local function Eligible(a, name)
 		and not a:IsIgnoredPlayerName(name)
 		and not a:IsSelfSender(name)
 end
-local function Wire(s, kind, id)
+local function Record(s, kind, id)
 	local o = s.observation
-	if kind == "Q" then
-		return "QTPH|1,Q," .. id .. "," .. o.map
-	end
-	local wire = "QTPH|1," .. kind .. "," .. id .. "," .. o.map .. "," .. (o.key or "-") .. "," .. o.guid .. ","
-	local players = {}
-	for guid in pairs(o.players) do
-		if guid ~= o.guid then
-			players[#players + 1] = guid
+	local record = { requestId = id, kind = kind, mapID = o.map }
+	if kind == "R" then
+		record.routingKey, record.guid, record.players = o.key, o.guid, {}
+		local players = {}
+		for guid in pairs(o.players) do
+			if guid ~= o.guid then
+				players[#players + 1] = guid
+			end
+		end
+		table.sort(players)
+		for index = 1, math.min(8, #players) do
+			record.players[index] = { guid = players[index] }
 		end
 	end
-	table.sort(players)
-	-- A bounded exact-GUID sample: omitted players and empty overlap prove nothing.
-	for index = 1, math.min(8, #players) do
-		local entry = (index == 1 and "" or "/") .. players[index]
-		if #wire + #entry > 255 then
-			break
-		end
-		wire = wire .. entry
-	end
-	return wire
+	return record
 end
-local function Send(a, name, wire)
-	return a:SendWireMessageToAnnouncementRoutes(
-		wire,
-		"layer comparison",
-		{ { distribution = "WHISPER", target = name } }
-	)
+local function Current(a, s, name, row, replying)
+	return rawget(a, "playerPhaseState") == s
+		and Eligible(a, name)
+		and (replying and s.replies[name] or s.attempts[name]) == row
+		and Fresh(Now(a), row.at, TRANSIT)
+		and row.map == s.observation.map
+		and row.key == s.observation.key
+		and (replying or row.pending == true)
 end
 function QT:RequestPlayerPhaseComparison(sender)
 	local name = self:NormalizeMemberName(sender)
@@ -229,113 +229,112 @@ function QT:RequestPlayerPhaseComparison(sender)
 		return false
 	end
 	local s, now = State(self), Now(self)
-	local attempt = s.attempts[name]
-	if Fresh(now, s.lastRequest, 2) or (attempt and Fresh(now, attempt.at, attempt.success and 30 or 120)) then
+	local previous = s.attempts[name]
+	if Fresh(now, s.lastRequest, 2) or (previous and Fresh(now, previous.at, previous.success and 30 or 120)) then
 		return false
 	end
-	self.playerPhaseSequence = (rawget(self, "playerPhaseSequence") or 0) + 1
-	local session = rawget(self, "geographicCommsState")
-	if not session then
-		return false
-	end
-	local id = session.session .. "-" .. self.playerPhaseSequence
-	if #id > 64 then
-		return false
-	end
-	s.attempts[name] = { at = now, id = id, map = s.observation.map, key = s.observation.key, pending = true }
-	s.lastRequest = now
-	return Send(self, name, Wire(s, "Q", id))
-end
-local function Decode(payload)
-	if type(payload) ~= "string" or #payload > 250 then
-		return
-	end
-	local requestID, requestMap = payload:match("^1,Q,([%d%-]+),(%d+)$")
-	if requestID then
-		requestMap = tonumber(requestMap)
-		if #requestID <= 64 and requestMap >= 1 and requestMap <= 1000000 then
-			return { kind = "Q", id = requestID, map = requestMap }
-		end
-		return
-	end
-	local kind, id, map, key, guid, list = payload:match("^1,(R),([%d%-]+),(%d+),([%d:%-]+),([^,]+),(.*)$")
-	map = tonumber(map)
-	if not kind or #id > 64 or not map or map < 1 or map > 1000000 or not PlayerGUID(guid) then
-		return
-	end
-	if key ~= "-" and (#key > 32 or not key:match("^%d+:%d+:%d+$")) then
-		return
-	end
-	local players, count = {}, 0
-	if list ~= "" then
-		for value in (list .. "/"):gmatch("(.-)/") do
-			count = count + 1
-			if count > 8 or not PlayerGUID(value) or players[value] then
-				return
+	local id = self:GetCommunicationSession() .. "-phase-" .. self:NextCommunicationSequence()
+	local attempt = { at = now, id = id, map = s.observation.map, key = s.observation.key, pending = true }
+	s.attempts[name], s.lastRequest = attempt, now
+	local ok = self:Request("QTPH", Record(s, "Q", id), { { distribution = "WHISPER", target = name } }, {
+		owner = s,
+		expires = now + TRANSIT,
+		publishesLocation = true,
+		isCurrent = function()
+			return Current(self, s, name, attempt, false)
+		end,
+		onResponse = function(data, origin)
+			return self:HandlePlayerPhaseMessage(data, origin)
+		end,
+		onComplete = function(sent)
+			if not sent and s.attempts[name] == attempt then
+				attempt.pending = false
+				self:CancelCommRequest(id, "cancelled")
 			end
-			players[value] = true
-		end
+		end,
+		onExpire = function()
+			if s.attempts[name] == attempt then
+				attempt.pending = false
+			end
+		end,
+	})
+	if not ok then
+		attempt.pending = false
 	end
-	return { kind = kind, id = id, map = map, key = key ~= "-" and key or nil, guid = guid, players = players }
+	return ok
 end
-function QT:HandlePlayerPhaseMessage(payload, sender)
-	if not self:CanAccessValue(payload) then
-		return false
+local function Validate(data)
+	if
+		type(data) ~= "table"
+		or type(data.requestId) ~= "string"
+		or #data.requestId > 80
+		or not data.requestId:match("^[%w%-]+$")
+		or (data.kind ~= "Q" and data.kind ~= "R")
+		or type(data.mapID) ~= "number"
+		or data.mapID ~= math.floor(data.mapID)
+		or data.mapID < 1
+		or data.mapID > 1000000
+	then
+		return
 	end
+	local row = { kind = data.kind, id = data.requestId, map = data.mapID }
+	if row.kind == "Q" then
+		return row
+	end
+	if
+		not PlayerGUID(data.guid)
+		or (data.routingKey ~= nil and (type(data.routingKey) ~= "string" or #data.routingKey > 32 or not data.routingKey:match(
+			"^%d+:%d+:%d+$"
+		)))
+		or type(data.players) ~= "table"
+		or #data.players > 8
+	then
+		return
+	end
+	row.key, row.guid, row.players = data.routingKey, data.guid, {}
+	for _, entry in ipairs(data.players) do
+		if type(entry) ~= "table" or not PlayerGUID(entry.guid) or row.players[entry.guid] then
+			return
+		end
+		row.players[entry.guid] = true
+	end
+	return row
+end
+function QT:HandlePlayerPhaseMessage(data, sender)
 	local name = self:NormalizeMemberName(sender)
 	if not name or not Eligible(self, name) then
 		return false
 	end
-	local row = Decode(payload)
+	local row = Validate(data)
 	local s, now = State(self), Now(self)
 	if not row or row.map ~= s.observation.map then
 		return false
 	end
 	if row.kind == "Q" then
-		-- Requests are not evidence: only a timely reply to our nonce is accepted.
 		local previous = s.replies[name]
 		if Fresh(now, s.lastReply, 2) or (previous and Fresh(now, previous.at, 25)) then
 			return false
 		end
-		s.replies[name] = { at = now, id = row.id, map = row.map, key = s.observation.key }
-		s.lastReply = now
-		return Send(self, name, Wire(s, "R", row.id))
+		local reply = { at = now, id = row.id, map = row.map, key = s.observation.key }
+		s.replies[name], s.lastReply = reply, now
+		return self:Respond("QTPH", Record(s, "R", row.id), { { distribution = "WHISPER", target = name } }, {
+			owner = s,
+			expires = now + TRANSIT,
+			publishesLocation = true,
+			isCurrent = function()
+				return Current(self, s, name, reply, true)
+			end,
+		})
 	end
 	local attempt = s.attempts[name]
-	if
-		not attempt
-		or not attempt.pending
-		or attempt.id ~= row.id
-		or attempt.map ~= row.map
-		or attempt.key ~= s.observation.key
-		or not Fresh(now, attempt.at, TRANSIT)
-	then
+	if not attempt or not Current(self, s, name, attempt, false) or attempt.id ~= row.id then
 		return false
 	end
 	attempt.pending, attempt.success = false, true
+	self:CancelCommRequest(row.id, "complete")
 	row.at, row.localKey = now, s.observation.key
 	s.peers[name] = row
 	return true
-end
-function QT:IsPlayerPhaseQueuedWireCurrent(wire, name)
-	if wire:sub(1, 5) ~= "QTPH|" then
-		return true
-	end
-	if not Eligible(self, name) then
-		return false
-	end
-	local row = Decode(wire:sub(6))
-	if not row then
-		return false
-	end
-	local s = State(self)
-	local record = row.kind == "Q" and s.attempts[name] or s.replies[name]
-	return record
-		and record.id == row.id
-		and Fresh(Now(self), record.at, TRANSIT)
-		and row.map == s.observation.map
-		and record.key == s.observation.key
-		and (row.kind == "R" or record.pending == true)
 end
 function QT:GetPlayerPhaseStatus(name)
 	if not Eligible(self, name) then
@@ -364,16 +363,21 @@ end
 function QT:RetirePlayerPhasePeer(name)
 	local state = rawget(self, "playerPhaseState")
 	if state then
+		local attempt = state.attempts[name]
 		state.peers[name], state.attempts[name], state.replies[name] = nil, nil, nil
+		if attempt then
+			self:CancelCommRequest(attempt.id, "cancelled")
+		end
 	end
 end
 
-QT:RegisterCommSendPolicy("QTPH", function(addon, wire, route, options)
-	options.isCurrent = function()
-		return addon:IsPlayerPhaseQueuedWireCurrent(wire, route.target)
-	end
-end)
-
 function QT:ResetPlayerPhases()
+	local state = rawget(self, "playerPhaseState")
 	self.playerPhaseState = nil
+	if state then
+		self:CancelTransportOwner(state)
+		for _, attempt in pairs(state.attempts) do
+			self:CancelCommRequest(attempt.id, "cancelled")
+		end
+	end
 end

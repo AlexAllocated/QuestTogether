@@ -10,9 +10,7 @@ local function Now(addon)
 	return addon:SafeToNumber(addon.API.GetTime and addon.API.GetTime())
 end
 
--- QTLF and LOC have strict legacy decoders. A separate, small optional packet
--- keeps older peers' partner status and map dots working unchanged. Its sequence
--- must match QTLF before we display it, including when transport reorders them.
+-- Focus is an independently sampled topic paired with the LFQP revision.
 function QT:BuildQuestPartnerQuestPayload(state, looking)
 	local questID
 	if looking and self:CanPublishPlayerLocation() and not self:IsRuntimeRestricted() then
@@ -24,7 +22,7 @@ function QT:BuildQuestPartnerQuestPayload(state, looking)
 			end
 		end
 	end
-	local payload = string.format("1,%s,%d,%d", state.partnerSession, state.partnerSequence, questID or 0)
+	local payload = { session = state.partnerSession, sequence = state.partnerSequence, questID = questID or 0 }
 	local title = ""
 	if questID then
 		title = self:GetLocalizedQuestTitle(questID) or self:GetQuestTitle(questID)
@@ -32,14 +30,9 @@ function QT:BuildQuestPartnerQuestPayload(state, looking)
 		if self:IsPlaceholderQuestTitle(questID, title) then
 			title = ""
 		end
-		title = self:EscapePayload(title)
-		-- Omit exceptionally long titles rather than split UTF-8 characters or
-		-- percent escapes. The receiver can still resolve the unchanged quest ID.
-		if #payload + 1 + #title > 250 then
-			title = ""
-		end
 	end
-	return payload .. "," .. title, questID
+	payload.title = title
+	return payload, questID
 end
 
 function QT:BroadcastQuestPartnerQuest(state, looking)
@@ -51,15 +44,16 @@ function QT:BroadcastQuestPartnerQuest(state, looking)
 	if not questID and (not now or not last or now < last or now - last >= withdrawalLifetime) then
 		return false
 	end
-	local sent = self:SendWireMessageToAnnouncementRoutes(
-		self:SerializeWireMessage("QTLQ", payload),
-		"quest partner tracked quest"
-	)
+	local sent = self:Publish("QTLQ", payload, nil, {
+		owner = state,
+		onComplete = function(accepted)
+			if accepted and self:GetQTPlayerPresenceState() == state then
+				self:RecordQuestPartnerQuestPublication(payload)
+			end
+		end,
+	})
 	-- A partially successful route can still publish data. Keep sending clears on
 	-- subsequent LFG heartbeats even if the overall send reported failure.
-	if questID then
-		state.lastPartnerQuestOnAt = now
-	end
 	return sent
 end
 
@@ -77,32 +71,28 @@ function QT:PruneQuestPartnerQuests(now)
 	end
 end
 
-function QT:HandleQuestPartnerQuestMessage(payload, sender, sampleAge, source)
-	if not self.isEnabled or not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 250 then
+function QT:HandleQuestPartnerQuestMessage(payload, sender, observation)
+	if not self.isEnabled or type(payload) ~= "table" then
 		return false
 	end
-	local session, sequence, id, title = payload:match("^1,(%d+%-%d+),(%d+),(%d+),([^,]*)$")
-	if not session then
-		session, sequence, id = payload:match("^1,(%d+%-%d+),(%d+),(%d+)$")
-	end
-	title = self:SafeTrimString(self:UnescapePayload(title or ""), ""):gsub("[%c]", " ")
-	sequence, id = self:SafeToNumber(sequence), self:SafeToNumber(id)
+	local session, sequence, id, title = payload.session, payload.sequence, payload.questID, payload.title or ""
 	if
-		not session
-		or #session > 40
-		or not sequence
+		type(session) ~= "string"
+		or #session > 64
+		or type(sequence) ~= "number"
 		or sequence < 1
 		or sequence > 2147483647
-		or not id
+		or type(id) ~= "number"
 		or (id ~= 0 and not QuestID(self, id))
 	then
 		return false
 	end
+	title = self:SafeTrimString(title, ""):gsub("[%c]", " ")
 	local name, now = self:NormalizeMemberName(sender), Now(self)
 	if not name or not now or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then
 		return false
 	end
-	local observation = self:ResolvePeerObservation(name, "QTLQ", sampleAge, source, nil, nil, 65)
+	observation = self:ResolvePeerObservation(name, "QTLQ", observation)
 	if not self:CanAcceptPeerObservation(observation) then
 		return false
 	end
@@ -182,5 +172,11 @@ function QT:GetPlayerPartnerQuestID(name)
 		and record.sequence == status.sequence
 	then
 		return QuestID(self, record.questID), record.title
+	end
+end
+
+function QuestTogether:RecordQuestPartnerQuestPublication(record)
+	if record.questID and record.questID > 0 and self:GetOption("lookingForQuestPartners") == true then
+		self:GetQTPlayerPresenceState().lastPartnerQuestOnAt = Now(self)
 	end
 end

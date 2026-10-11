@@ -6,13 +6,27 @@
 
 ## 6.5.11
 
-New keybindings make it easier to open QuestTogether tools and manage questing partners.
+QuestTogether's communication system has been rebuilt in preparation for WoW Forever's release. This major protocol change requires everyone to update together.
 
-### Keybindings
+### Important: older versions cannot communicate
 
-- QuestTogether now appears correctly in Settings > Key Bindings, replacing the broken HEADER_QUESTTOGETHER entry.
-- Assign keys to open the QuestTogether menu, toggle the Party Quest Log, toggle Looking for Questing Partners, stop following quest focus, open QuestTogether chat, or open QuestTogether settings.
-- Your existing Party Quest Log binding is preserved. New actions start unassigned, and the menu binding works even when the minimap icon is hidden.
+- This release introduces a new communication protocol. QuestTogether 7.x cannot exchange player locations, quest progress, Party Quest Log data, or other addon messages with 6.x and earlier. Ask your questing partners to update too.
+
+### Preparing for WoW Forever
+
+- We're making these larger, breaking changes now, ahead of WoW Forever's release, to put QuestTogether's communication system on a stronger foundation.
+- After WoW Forever launches, we'll take greater care to preserve backward compatibility between addon versions and avoid disruptive update requirements. If another protocol break becomes necessary, we'll communicate it clearly.
+
+### Find players where you're looking
+
+- Player updates prioritize your current zone and a zone you keep open on the map, while more distant locations refresh in the background.
+- Nearby movement uses short, focused updates. Discovery requests are shared and staggered to reduce traffic in crowded areas.
+
+### More reliable sharing
+
+- Quest updates, Party Quest Log transfers, player details, and diagnostics share paced delivery so large replies leave room for other activity.
+- Large replies can recover missing pieces without restarting the whole transfer. Delayed location updates retain their original age and cannot overwrite newer positions or withdrawals.
+- Location-sharing changes cancel queued public coordinates. On logout or a loading screen, QuestTogether attempts a final departure message; expiry remains the fallback.
 
 ## 6.5.10
 

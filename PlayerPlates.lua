@@ -81,70 +81,44 @@ function QT:RecordQTPlayerPresence(name, active, observation)
 	return true
 end
 
-function QT:HandleQTPlayerPresenceMessage(payload, sender, observation)
-	if payload ~= "1,1" and payload ~= "1,0" then
+function QT:HandleQTPlayerPresenceMessage(data, sender, observation)
+	if type(data) ~= "table" or type(data.active) ~= "boolean" then
 		return false
 	end
 	local name = self:NormalizeMemberName(sender)
 	if not name or self:IsIgnoredPlayerName(name) or self:IsSelfSender(name) then
 		return false
 	end
-	if type(observation) == "table" then
-		observation = self:ResolvePeerObservation(name, "QTPR", observation)
-		if not self:CanAcceptPeerObservation(observation) then
-			return false
-		end
-		if payload == "1,0" then
-			return self:RecordPeerDeparture(name, observation.sampledAt, observation.session, observation.sequence)
-		end
-		return self:CommitPeerObservation(observation, nil, true)
+	observation = self:ResolvePeerObservation(name, "QTPR", observation)
+	if not self:CanAcceptPeerObservation(observation) then
+		return false
 	end
-	return self:RecordLegacyPeerPresence(name, payload == "1,1")
+	if not data.active then
+		return self:RecordPeerDeparture(name, observation.sampledAt, observation.session, observation.sequence)
+	end
+	return self:CommitPeerObservation(observation, nil, true)
 end
 
 function QT:BroadcastQTPlayerPresence(inactive)
-	if not self.isEnabled then
+	if not self.isEnabled or (self.isLoggingOut and not inactive) then
 		return false
 	end
-	local now = Now(self)
-	if not now then
-		return false
-	end
-	local state = self:GetQTPlayerPresenceState()
-	if not inactive and (self.isLoggingOut or (state.lastSentAt and now - state.lastSentAt < HEARTBEAT)) then
+	local state, now = self:GetQTPlayerPresenceState(), Now(self)
+	if not now or (not inactive and state.lastSentAt and now - state.lastSentAt < HEARTBEAT) then
 		return false
 	end
 	state.lastSentAt = now
-	if inactive and (state.lastPartnerOnAt or self:GetOption("lookingForQuestPartners") == true) then
+	if inactive then
 		self:BroadcastQuestPartnerStatus(true, true)
 	end
-	if not inactive and rawget(self, "geographicCommsState") then
-		-- One current metadata heartbeat. Party visuals must not depend on a
-		-- valid version string or the version broadcaster's legacy alternation.
-		self:BroadcastPartyVisualMetadata()
-		if self:ParseAddonVersion(self:GetAddonVersion()) then
-			return self:BroadcastAddonVersion(true)
-		end
-	end
 	if not inactive then
-		local includeVersion = state.nextPresenceIncludesVersion
-		state.nextPresenceIncludesVersion = not includeVersion
-		-- Legacy QTPR receivers require an exact payload. Alternate with QTVR,
-		-- which also establishes presence, instead of extending that payload or
-		-- adding traffic. Invalid local version metadata still permits discovery.
-		if includeVersion and self:ParseAddonVersion(self:GetAddonVersion()) then
-			return self:BroadcastAddonVersion(true)
-		end
+		self:BroadcastPartyVisualMetadata()
+		self:BroadcastAddonVersion(true)
 	end
-	-- This presence packet contains no position and is independent of map consent.
-	return self:SendWireMessageToAnnouncementRoutes(
-		self:SerializeWireMessage("QTPR", inactive and "1,0" or "1,1"),
-		"player presence"
-	)
+	return self:Publish("QTPR", { active = not inactive })
 end
 
--- Keep the original QTPR packet intact for older clients. Only explicit QTLF
--- updates renew this status; announcements and other presence cannot do so.
+-- Only an explicit LFQP observation renews partner status.
 function QT:IsPlayerLookingForQuestPartners(name)
 	name = self:NormalizeMemberName(name)
 	if not name or not self.isEnabled then
@@ -165,21 +139,25 @@ function QT:IsPlayerLookingForQuestPartners(name)
 		and now - record.receivedAt < (record.lifetime or LIFETIME)
 end
 
-function QT:HandleQuestPartnerStatusMessage(payload, sender, sampleAge, source)
-	if not self.isEnabled or not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 80 then
+function QT:HandleQuestPartnerStatusMessage(payload, sender, observation)
+	if not self.isEnabled or type(payload) ~= "table" or type(payload.looking) ~= "boolean" then
 		return false
 	end
-	local session, sequence, looking = payload:match("^1,(%d+%-%d+),(%d+),([01])$")
-	sequence = self:SafeToNumber(sequence)
-	if not session or #session > 40 or not sequence or sequence < 1 or sequence > 2147483647 then
+	local session, sequence, looking = payload.session, payload.sequence, payload.looking
+	if
+		type(session) ~= "string"
+		or #session > 64
+		or type(sequence) ~= "number"
+		or sequence < 1
+		or sequence > 2147483647
+	then
 		return false
 	end
 	local name, now = self:NormalizeMemberName(sender), Now(self)
 	if not name or not now or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then
 		return false
 	end
-	local observation =
-		self:ResolvePeerObservation(name, "QTLF", sampleAge, source, "QTLF:" .. session, sequence, LIFETIME)
+	observation = self:ResolvePeerObservation(name, "QTLF", observation)
 	if not self:CanAcceptPeerObservation(observation) then
 		return false
 	end
@@ -221,13 +199,13 @@ function QT:HandleQuestPartnerStatusMessage(payload, sender, sampleAge, source)
 	local record = {
 		session = session,
 		sequence = sequence,
-		looking = looking == "1",
+		looking = looking,
 		receivedAt = now,
 		sampledAt = sampledAt,
 		lifetime = observation.expiresAt - now,
 		retired = retired,
 	}
-	if not self:CommitPeerObservation(observation, record, looking == "1") then
+	if not self:CommitPeerObservation(observation, record, looking) then
 		return false
 	end
 	state.questPartners[name] = record
@@ -336,19 +314,9 @@ end
 
 -- Allocate ordering exactly once for either a heartbeat or a requested refresh.
 function QT:BuildQuestPartnerStatusPayload(state, looking)
-	local now = Now(self)
-	if not state.partnerSession then
-		local random = self:SafeToNumber(self.API.Random and self.API.Random(1000, 999999)) or 1000
-		state.partnerSession = string.format(
-			"%d-%d",
-			math.max(0, math.floor(now * 1000)),
-			math.max(1000, math.min(999999, math.floor(random)))
-		)
-		state.partnerSequence = 0
-	end
-	state.partnerSequence = state.partnerSequence % 2147483647 + 1
-	local payload = string.format("1,%s,%d,%d", state.partnerSession, state.partnerSequence, looking and 1 or 0)
-	return payload
+	state.partnerSession = self:GetCommunicationSession()
+	state.partnerSequence = self:NextCommunicationSequence()
+	return { session = state.partnerSession, sequence = state.partnerSequence, looking = looking == true }
 end
 
 function QT:BroadcastQuestPartnerStatus(force, inactive)
@@ -379,12 +347,15 @@ function QT:BroadcastQuestPartnerStatus(force, inactive)
 	end
 	local payload = self:BuildQuestPartnerStatusPayload(state, looking)
 	state.lastPartnerSentAt = now -- Pace failed sends too.
-	local sent =
-		self:SendWireMessageToAnnouncementRoutes(self:SerializeWireMessage("QTLF", payload), "quest partner status")
+	local sent = self:Publish("QTLF", payload, nil, {
+		owner = state,
+		onComplete = function(accepted)
+			if accepted and self:GetQTPlayerPresenceState() == state then
+				self:RecordQuestPartnerPublication(payload)
+			end
+		end,
+	})
 	self:BroadcastQuestPartnerQuest(state, looking)
-	if sent and looking then
-		state.lastPartnerOnAt = now
-	end
 	return sent
 end
 
@@ -498,4 +469,10 @@ end
 
 function QT:ResetQTPlayerPresence()
 	self.qtPlayerPresenceState = nil
+end
+
+function QuestTogether:RecordQuestPartnerPublication(record)
+	if record.looking == true and self:GetOption("lookingForQuestPartners") == true then
+		self:GetQTPlayerPresenceState().lastPartnerOnAt = Now(self)
+	end
 end

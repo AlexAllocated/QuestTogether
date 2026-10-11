@@ -4,22 +4,19 @@ local function Eq(a, b)
 	assert(a == b, tostring(a) .. " ~= " .. tostring(b))
 end
 local function Peer(name, guid, key)
-	local a = setmetatable(
-		{
-			name = name,
-			now = 100,
-			isEnabled = true,
-			sent = {},
-			nearby = {},
-			options = { experimentalLayerDetection = true },
-			map = 1,
-			guid = guid,
-			key = key,
-			players = {},
-			geographicCommsState = { session = "100-123" },
-		},
-		{ __index = QT }
-	)
+	local a = setmetatable({
+		name = name,
+		now = 100,
+		isEnabled = true,
+		sent = {},
+		nearby = {},
+		options = { experimentalLayerDetection = true },
+		map = 1,
+		guid = guid,
+		key = key,
+		players = {},
+		geographicCommsState = { session = "100-123" },
+	}, { __index = QT })
 	a.API = {
 		GetTime = function()
 			return a.now
@@ -72,12 +69,25 @@ local function Peer(name, guid, key)
 		end
 		return { map = self.map, guid = self.guid, npcs = npcs, players = self:DeepCopy(self.players) }
 	end
-	function a:SendWireMessageToAnnouncementRoutes(wire, _, routes)
-		local route = routes[1]
-		assert(#wire <= 255 and route.distribution == "WHISPER")
-		self.sent[#self.sent + 1] = { wire = wire, target = route.target }
+	function a:GetCommunicationSession()
+		return "100-123"
+	end
+	function a:NextCommunicationSequence()
+		self.sequence = (self.sequence or 0) + 1
+		return self.sequence
+	end
+	function a:CancelCommRequest(id)
+		self.cancelled = self.cancelled or {}
+		self.cancelled[id] = true
+	end
+	function a:CancelTransportOwner() end
+	function a:Request(op, record, routes, options)
+		assert(op == "QTPH" and routes[1].distribution == "WHISPER")
+		self.sent[#self.sent + 1] = { record = record, target = routes[1].target, options = options }
 		return true
 	end
+	a.Respond = a.Request
+
 	return a
 end
 local function Pair()
@@ -98,8 +108,8 @@ local function Deliver(from, to)
 	local sent = from.sent
 	from.sent = {}
 	for _, row in ipairs(sent) do
-		if from:IsPlayerPhaseQueuedWireCurrent(row.wire, row.target) then
-			to:HandlePlayerPhaseMessage(row.wire:sub(6), from.name)
+		if row.options.isCurrent() then
+			to:HandlePlayerPhaseMessage(row.record, from.name)
 		end
 	end
 end
@@ -162,7 +172,7 @@ QT:RegisterTest(
 	function()
 		for _, case in ipairs({ "off", "private", "blocked", "chatBlocked", "instance" }) do
 			local a, b = Pair()
-			local wire = a.sent[1].wire
+			local queued = a.sent[1]
 			Exchange(a, b)
 			Eq(a:GetPlayerPhaseStatus("B"), "different")
 			if case == "off" then
@@ -171,7 +181,7 @@ QT:RegisterTest(
 				a[case] = true
 			end
 			Eq(a:GetPlayerPhaseStatus("B"), nil)
-			Eq(a:IsPlayerPhaseQueuedWireCurrent(wire, "B"), false)
+			Eq(queued.options.isCurrent(), false)
 			a:UpdatePlayerPhaseObservations()
 			Eq(rawget(a, "playerPhaseState"), nil)
 		end
@@ -180,19 +190,19 @@ QT:RegisterTest(
 QT:RegisterTest("experimental phases reject unsolicited duplicate reordered expired and cross-map replies", function()
 	local a, b = Pair()
 	Deliver(a, b)
-	local reply = b.sent[#b.sent].wire:sub(6)
+	local reply = b.sent[#b.sent].record
 	Eq(a:HandlePlayerPhaseMessage(reply, "Stranger"), false)
 	Eq(a:HandlePlayerPhaseMessage(reply, "B"), true)
 	Eq(a:HandlePlayerPhaseMessage(reply, "B"), false)
 	a, b = Pair()
 	Deliver(a, b)
-	reply = b.sent[#b.sent].wire:sub(6)
+	reply = b.sent[#b.sent].record
 	a.now = 109
 	a:UpdatePlayerPhaseObservations()
 	Eq(a:HandlePlayerPhaseMessage(reply, "B"), false)
 	a, b = Pair()
 	Deliver(a, b)
-	reply = b.sent[#b.sent].wire:sub(6)
+	reply = b.sent[#b.sent].record
 	a.map = 2
 	a.now = 104
 	a:UpdatePlayerPhaseObservations()
@@ -210,9 +220,9 @@ QT:RegisterTest("experimental phases reject malformed payloads and bound visibil
 	b.now = 104
 	b:UpdatePlayerPhaseObservations()
 	Deliver(a, b)
-	local wire = b.sent[#b.sent].wire
-	assert(#wire <= 255)
-	Eq(a:HandlePlayerPhaseMessage(wire:sub(6), "B"), true)
+	local record = b.sent[#b.sent].record
+	Eq(#record.players, 8)
+	Eq(a:HandlePlayerPhaseMessage(record, "B"), true)
 	for _, payload in ipairs({
 		"",
 		"2,Q,1,1,-,Player-1-ABC,",
@@ -330,13 +340,13 @@ QT:RegisterTest("phase startup evidence changes retire nonce without peer failur
 	local a = Peer("A", "Player-1-ABC", "1:0:100")
 	a.nearby = { { name = "B" } }
 	a:UpdatePlayerPhaseObservations()
-	local first = a.sent[1].wire
+	local first = a.sent[1]
 	a.now = 101
 	a:UpdatePlayerPhaseObservations()
 	a.now = 102
 	a:UpdatePlayerPhaseObservations()
 	Eq(#a.sent, 2)
-	Eq(a:IsPlayerPhaseQueuedWireCurrent(first, "B"), false)
+	Eq(first.options.isCurrent(), false)
 	Eq(a.playerPhaseState.attempts.B.key, "1:0:100")
 end)
 QT:RegisterTest("phase probes reach compatible candidates beyond four cooling peers", function()
@@ -350,4 +360,44 @@ QT:RegisterTest("phase probes reach compatible candidates beyond four cooling pe
 	end
 	Eq(#a.sent, 6)
 	Eq(a.sent[6].target, "Peer6")
+end)
+
+QT:RegisterTest("phase comparison uses typed multipart replies without truncating long visibility GUIDs", function()
+	local net = QT:CreateTestNetwork({ fps = 30, latency = 0.03 })
+	local a, b = net:AddPeer("Alpha-Realm"), net:AddPeer("Beta-Realm")
+	for index, peer in ipairs({ a, b }) do
+		peer.db.profile.experimentalLayerDetection = true
+		peer.API.IsInInstance = function()
+			return false
+		end
+		function peer:GetPlayerPhaseCandidates()
+			return self.candidates or {}
+		end
+		function peer:GetPlayerPhaseObservation()
+			local players = {}
+			for n = 1, 8 do
+				players["Player-123456-" .. string.format("%032X", n)] = true
+			end
+			return { map = 1, guid = "Player-1-" .. (index == 1 and "ABC" or "DEF"), players = players, npcs = {} }
+		end
+		peer.OnCommReceived = peer.ReceiveCommunication
+		peer:InitializeCommunications()
+		local frame = net:CreateFrame(peer)
+		frame:SetScript("OnUpdate", function()
+			peer:UpdatePlayerPhaseObservations()
+			peer:UpdateCommunicationRuntime()
+		end)
+	end
+	net:Advance(1)
+	a.candidates, b.candidates = { { name = b.name } }, { { name = a.name } }
+	net:Advance(4)
+	Eq(a:GetPlayerPhaseStatus(b.name), "shared")
+	Eq(b:GetPlayerPhaseStatus(a.name), "shared")
+	local count = 0
+	for _ in pairs(a.playerPhaseState.peers[b.name].players) do
+		count = count + 1
+	end
+	Eq(count, 8)
+	Eq(next(a.communicationState.requests), nil)
+	Eq(next(b.communicationState.requests), nil)
 end)

@@ -15,6 +15,9 @@ function QuestTogether:RegisterTest(name, fn, options)
 	self.tests[#self.tests + 1] = {
 		name = name,
 		locale = locale,
+		-- Full stress, soak, and matrix cases remain registered for offline CI;
+		-- the live runner executes only the bounded smoke and contract cases.
+		offline = options and options.offline == true,
 		fn = function()
 			QuestTogether.localizationTestLocale = locale == "enUS" and "enUS" or nil
 			fn()
@@ -70,7 +73,9 @@ function QuestTogether:CreateTestClock(initialTime)
 			return first.due < second.due or (first.due == second.due and first.sequence < second.sequence)
 		end)
 		-- Timers scheduled from a callback always wait for another tick.
-		for _, timer in ipairs(ready) do timer.callback() end
+		for _, timer in ipairs(ready) do
+			timer.callback()
+		end
 		return #ready
 	end
 	function clock:RunNext()
@@ -78,7 +83,9 @@ function QuestTogether:CreateTestClock(initialTime)
 		for _, timer in ipairs(self.timers) do
 			nextTime = nextTime and math.min(nextTime, timer.due) or timer.due
 		end
-		if not nextTime then return 0 end
+		if not nextTime then
+			return 0
+		end
 		return self:Advance(math.max(0, nextTime - self.now))
 	end
 	function clock:Drain(limit)
@@ -97,26 +104,64 @@ local function CreateApiWithOverrides(overrides)
 	for key, value in pairs(QuestTogether.API or {}) do
 		-- Unknown adapters fail closed instead of inheriting access to the live
 		-- client. Each test supplies the behavior it actually needs.
-		if type(value) == "function" then merged[key] = function() end end
+		if type(value) == "function" then
+			merged[key] = function() end
+		end
 	end
 	local clock = QuestTogether.testClock or QuestTogether:CreateTestClock(100)
 	local safeFixtureDefaults = {
-		Delay = function(delay, callback) clock:After(delay, callback) end,
-		GetTime = function() return clock:GetTime() end,
-		InCombatLockdown = function() return false end,
-		UnitExists = function() return false end,
-		UnitIsPlayer = function() return false end,
-		UnitIsUnit = function(first, second) return first == second end,
-		UnitFullName = function(unit) if unit == "player" then return "MyPlayer", "Realm" end end,
-		UnitName = function(unit) if unit == "player" then return "MyPlayer" end end,
-		GetRealmName = function() return "Realm" end,
-		GetNamePlates = function() return {} end,
-		GetChatFrames = function() return {} end,
-		GetNumGroupMembers = function() return 0 end,
-		GetNumSubgroupMembers = function() return 0 end,
-		GetNumQuestLogEntries = function() return 0 end,
-		GetNumQuestLeaderBoards = function() return 0 end,
-		Random = function(first) return first end,
+		Delay = function(delay, callback)
+			clock:After(delay, callback)
+		end,
+		GetTime = function()
+			return clock:GetTime()
+		end,
+		InCombatLockdown = function()
+			return false
+		end,
+		UnitExists = function()
+			return false
+		end,
+		UnitIsPlayer = function()
+			return false
+		end,
+		UnitIsUnit = function(first, second)
+			return first == second
+		end,
+		UnitFullName = function(unit)
+			if unit == "player" then
+				return "MyPlayer", "Realm"
+			end
+		end,
+		UnitName = function(unit)
+			if unit == "player" then
+				return "MyPlayer"
+			end
+		end,
+		GetRealmName = function()
+			return "Realm"
+		end,
+		GetNamePlates = function()
+			return {}
+		end,
+		GetChatFrames = function()
+			return {}
+		end,
+		GetNumGroupMembers = function()
+			return 0
+		end,
+		GetNumSubgroupMembers = function()
+			return 0
+		end,
+		GetNumQuestLogEntries = function()
+			return 0
+		end,
+		GetNumQuestLeaderBoards = function()
+			return 0
+		end,
+		Random = function(first)
+			return first
+		end,
 		Ambiguate = function(name, context)
 			return context == "short" and (string.match(name or "", "^([^-]+)")) or name
 		end,
@@ -208,13 +253,27 @@ local function CreateTestEventFrame()
 	return {
 		scripts = {},
 		events = {},
-		SetScript = function(self, event, callback) self.scripts[event] = callback end,
-		RegisterEvent = function(self, event) self.events[event] = true end,
-		UnregisterEvent = function(self, event) self.events[event] = nil end,
-		UnregisterAllEvents = function(self) self.events = {} end,
-		IsShown = function() return false end,
-		IsForbidden = function() return false end,
-		IsProtected = function() return false end,
+		SetScript = function(self, event, callback)
+			self.scripts[event] = callback
+		end,
+		RegisterEvent = function(self, event)
+			self.events[event] = true
+		end,
+		UnregisterEvent = function(self, event)
+			self.events[event] = nil
+		end,
+		UnregisterAllEvents = function(self)
+			self.events = {}
+		end,
+		IsShown = function()
+			return false
+		end,
+		IsForbidden = function()
+			return false
+		end,
+		IsProtected = function()
+			return false
+		end,
 	}
 end
 
@@ -222,42 +281,155 @@ local function WithIsolatedState(testFn)
 	-- Test callbacks execute synchronously. Preserve the exact live references
 	-- without invoking teardown, touching SavedVariables, or registering events.
 	local original = {}
-	for key, value in pairs(QuestTogether) do original[key] = value end
+	for key, value in pairs(QuestTogether) do
+		original[key] = value
+	end
 	local sharedTables = {
-		LibChev = true, Ed25519 = true, tests = true, DEFAULTS = true, API = true, releaseNotes = true, localizations = true, releaseNotesByLocale = true,
-		releaseNotesHistory = true, releaseNotesDates = true,
-		nameplateQuestIconStyleLabels = true, nameplateQuestIconStyleOrder = true,
-		showProgressForLabels = true, showProgressForOrder = true,
-		chatLogDestinationLabels = true, chatLogDestinationOrder = true,
-		questTitleLinkEventTypes = true, completionEmotes = true, runtimeEvents = true,
-		runtimeRestrictionTypes = true, runtimeWorkDelayByClass = true,
+		LibChev = true,
+		Ed25519 = true,
+		tests = true,
+		DEFAULTS = true,
+		API = true,
+		releaseNotes = true,
+		localizations = true,
+		releaseNotesByLocale = true,
+		releaseNotesHistory = true,
+		releaseNotesDates = true,
+		nameplateQuestIconStyleLabels = true,
+		nameplateQuestIconStyleOrder = true,
+		showProgressForLabels = true,
+		showProgressForOrder = true,
+		chatLogDestinationLabels = true,
+		chatLogDestinationOrder = true,
+		questTitleLinkEventTypes = true,
+		completionEmotes = true,
+		runtimeEvents = true,
+		runtimeRestrictionTypes = true,
+		runtimeWorkDelayByClass = true,
 	}
 	for key, value in pairs(original) do
 		if type(value) == "table" and not sharedTables[key] and not string.match(key, "^[A-Z_]+$") then
-			QuestTogether[key] = {}
+			-- A structured store cannot be replaced with {}: that looks initialized
+			-- but lacks the fields its constructor owns. Detach runtime objects and
+			-- let their normal constructors run; seed required flat stores below.
+			QuestTogether[key] = nil
 		elseif type(value) == "userdata" then
 			QuestTogether[key] = nil
 		end
 	end
 	local ok, err = pcall(function()
 		for _, key in ipairs({
-			"windowControllers", "runtimeUIWorkState", "runtimeUIWorkFrame", "pingReplyState", "questCompareLocalRevision", "ownedUICleanupState", "runtimeCoordinatorState", "runtimeCoordinatorFrame", "transportState", "bulkTransferState", "pingPageQueue", "developerRequestState", "developerPlayerData", "peerSnapshotState", "locationPriorityCache", "commsWorldGeneration", "diagnosticReplyGeneration", "nearbyStreamState", "playerDetailsState", "directCommPeers", "geographicCommsState", "announcementChannelBindings", "recentCommSignatureIndex", "localizedQuestTitles", "runtimeStateStore", "debugController", "nameplateTooltipGuidByUnitToken", "nameplateScanTooltip",
-			"announcementBubbleScreenHostFrame", "personalBubbleEditModeDialog", "mapWorkWakeFrame", "mapWorkWakeState",
-			"optionsFrame", "whereToAnnounceFrame", "questPlatesFrame", "groupsFrame", "announcementsFrame", "profilesFrame",
-			"personalBubbleEditSession", "announcementChannelLocalID", "legacyAnnouncementChannelLocalID", "channelOrderWork", "questCompareResponseQueue", "questCompareResponseCache",
-			"partyFocusController", "nativePartyFocusOwner", "partyNavigationState", "partyWaypointPinState", "partyChatReminderState", "partyChatReminderFrame", "partyChatReminderPreview", "partyChatReminderPreviewFrame", "partyJoinState", "partyVisualState", "partyJoinPrompt", "partyQuestCompareWindow", "partyQuestSharePrompt", "partyQuestCompareSession", "partyQuestShareState", "partyQuestComparePreview",
-			"minimapButton", "minimapTooltip", "minimapTooltipSession", "minimapLauncherFrame", "minimapDragState", "minimapSuppressClick",
-			"settingsTooltip", "settingsTooltipOwner", "settingsTooltipSession",
-			"releaseNotesWindow", "releaseNotesWakeFrame", "pendingReleaseNotes", "releaseNotesBrowser", "addonUpdateState",
-			"playerTooltipBadge", "discordSupportWindowOwner", "qtPlayerPresenceState", "playerPlatesFrame", "qtPlayerIconStateByFrame",
-			"playerLocationState", "locationPinState", "chatLogPlayerTooltipState", "playerLocationsFrame",
-			"worldQuestAreaStateByQuestID", "bonusObjectiveAreaStateByQuestID", "questSnapshotByQuestID", "questSnapshotOrder",
-			"nameplateQuestTextCache", "nameplateQuestStateByGuid", "nameplateQuestStateByUnitToken", "nameplateQuestGuidByUnitToken",
-			"nameplateIconByUnitFrame", "nameplateHealthOverlayByUnitFrame", "nameplateBubbleByUnitFrame", "nameplateBubbleStateByFrame",
-			"nameplateRefreshPendingByUnitToken", "nameplateRefreshGenerationByUnitToken", "nameplateHealthTintRefreshPendingByUnitToken",
-			"nameplateTooltipResolveRetryCountByUnitToken", "personalBubbleSliderHandlesByFrame", "personalBubbleDialogPositionByFrame",
-			"deferredWorkState", "diagnosticLogSequence", "diagnosticDroppedLogLines", "diagnosticErrorCount", "diagnosticLastError",
-		}) do QuestTogether[key] = nil end
+			"windowControllers",
+			"runtimeUIWorkState",
+			"runtimeUIWorkFrame",
+			"pingReplyState",
+			"questCompareLocalRevision",
+			"ownedUICleanupState",
+			"runtimeCoordinatorState",
+			"runtimeCoordinatorFrame",
+			"transportState",
+			"communicationState",
+			"commTransferState",
+			"bulkTransferState",
+			"pingPageQueue",
+			"developerRequestState",
+			"developerPlayerData",
+			"peerSnapshotState",
+			"locationPriorityCache",
+			"commsWorldGeneration",
+			"diagnosticReplyGeneration",
+			"nearbyStreamState",
+			"playerDetailsState",
+			"directCommPeers",
+			"geographicCommsState",
+			"announcementChannelBindings",
+			"recentCommSignatureIndex",
+			"localizedQuestTitles",
+			"runtimeStateStore",
+			"debugController",
+			"nameplateTooltipGuidByUnitToken",
+			"nameplateScanTooltip",
+			"announcementBubbleScreenHostFrame",
+			"personalBubbleEditModeDialog",
+			"mapWorkWakeFrame",
+			"mapWorkWakeState",
+			"optionsFrame",
+			"whereToAnnounceFrame",
+			"questPlatesFrame",
+			"groupsFrame",
+			"announcementsFrame",
+			"profilesFrame",
+			"personalBubbleEditSession",
+			"announcementChannelLocalID",
+			"legacyAnnouncementChannelLocalID",
+			"channelOrderWork",
+			"questCompareResponseQueue",
+			"questCompareResponseCache",
+			"partyFocusController",
+			"nativePartyFocusOwner",
+			"partyNavigationState",
+			"partyWaypointPinState",
+			"partyChatReminderState",
+			"partyChatReminderFrame",
+			"partyChatReminderPreview",
+			"partyChatReminderPreviewFrame",
+			"partyJoinState",
+			"partyVisualState",
+			"partyJoinPrompt",
+			"partyQuestCompareWindow",
+			"partyQuestSharePrompt",
+			"partyQuestCompareSession",
+			"partyQuestShareState",
+			"partyQuestComparePreview",
+			"minimapButton",
+			"minimapTooltip",
+			"minimapTooltipSession",
+			"minimapLauncherFrame",
+			"minimapDragState",
+			"minimapSuppressClick",
+			"settingsTooltip",
+			"settingsTooltipOwner",
+			"settingsTooltipSession",
+			"releaseNotesWindow",
+			"releaseNotesWakeFrame",
+			"pendingReleaseNotes",
+			"releaseNotesBrowser",
+			"addonUpdateState",
+			"playerTooltipBadge",
+			"discordSupportWindowOwner",
+			"qtPlayerPresenceState",
+			"playerPlatesFrame",
+			"qtPlayerIconStateByFrame",
+			"playerLocationState",
+			"locationPinState",
+			"chatLogPlayerTooltipState",
+			"playerLocationsFrame",
+			"worldQuestAreaStateByQuestID",
+			"bonusObjectiveAreaStateByQuestID",
+			"questSnapshotByQuestID",
+			"questSnapshotOrder",
+			"nameplateQuestTextCache",
+			"nameplateQuestStateByGuid",
+			"nameplateQuestStateByUnitToken",
+			"nameplateQuestGuidByUnitToken",
+			"nameplateIconByUnitFrame",
+			"nameplateHealthOverlayByUnitFrame",
+			"nameplateBubbleByUnitFrame",
+			"nameplateBubbleStateByFrame",
+			"nameplateRefreshPendingByUnitToken",
+			"nameplateRefreshGenerationByUnitToken",
+			"nameplateHealthTintRefreshPendingByUnitToken",
+			"nameplateTooltipResolveRetryCountByUnitToken",
+			"personalBubbleSliderHandlesByFrame",
+			"personalBubbleDialogPositionByFrame",
+			"deferredWorkState",
+			"diagnosticLogSequence",
+			"diagnosticDroppedLogLines",
+			"diagnosticErrorCount",
+			"diagnosticLastError",
+		}) do
+			QuestTogether[key] = nil
+		end
 		local profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
 		QuestTogether.db = {
 			profile = profile,
@@ -269,6 +441,10 @@ local function WithIsolatedState(testFn)
 		QuestTogether.activeProfileKey = "MyPlayer-Realm"
 		QuestTogether.db.profile.enabled = false
 		QuestTogether.isEnabled = false
+		-- Suppression belongs to this synchronous fixture only. Real events must
+		-- see normal addon state between the staggered runner's callbacks.
+		QuestTogether.isRunningTests = true
+		QuestTogether.suppressLocalAnnouncementDisplayDuringTests = true
 		QuestTogether.localizationTestLocale = nil
 		QuestTogether.isInitialized = true
 		QuestTogether.isLoggingOut = false
@@ -278,20 +454,41 @@ local function WithIsolatedState(testFn)
 		QuestTogether.debugLogStoreNormalized = true
 		QuestTogether.partyMembers, QuestTogether.partyMemberOrder = {}, {}
 		QuestTogether.partyRosterFingerprint = ""
-		for _, key in ipairs({ "pendingPingRequests", "pendingQuestCompareRequests", "recentCommMessageSignatures",
-			"pendingQuestRemovals", "onQuestLogUpdate", "questsCompleted", "pendingQuestAcceptances", "retiredQuestIds",
-			"registeredRuntimeEvents", "nameplateRegisteredEvents" }) do QuestTogether[key] = {} end
+		for _, key in ipairs({
+			"pendingPingRequests",
+			"pendingQuestCompareRequests",
+			"recentCommMessageSignatures",
+			"pendingQuestRemovals",
+			"onQuestLogUpdate",
+			"questsCompleted",
+			"pendingQuestAcceptances",
+			"retiredQuestIds",
+			"registeredRuntimeEvents",
+			"nameplateRegisteredEvents",
+		}) do
+			QuestTogether[key] = {}
+		end
 		QuestTogether.eventFrame = CreateTestEventFrame()
 		QuestTogether.nameplateEventFrame = CreateTestEventFrame()
 		QuestTogether.CreateOwnedUICleanupFrame = CreateTestEventFrame
 		QuestTogether.CreateRuntimeUIWorkFrame = CreateTestEventFrame
 		QuestTogether.CreateRuntimeCoordinatorFrame = CreateTestEventFrame
 		QuestTogether.CreateMapWorkWakeFrame = CreateTestEventFrame
-		QuestTogether.GetPlayerTooltipHost = function() return nil end
-		QuestTogether.IsRuntimeRestrictionTypeActive = function() return false end
-		QuestTogether.IsNameplateUnitTapDenied = function() return false end
-		QuestTogether.GetQuestieQuestObjectiveTooltipLines = function() return nil end
-		QuestTogether.GetOrCreateNameplateScanTooltip = function() return nil end
+		QuestTogether.GetPlayerTooltipHost = function()
+			return nil
+		end
+		QuestTogether.IsRuntimeRestrictionTypeActive = function()
+			return false
+		end
+		QuestTogether.IsNameplateUnitTapDenied = function()
+			return false
+		end
+		QuestTogether.GetQuestieQuestObjectiveTooltipLines = function()
+			return nil
+		end
+		QuestTogether.GetOrCreateNameplateScanTooltip = function()
+			return nil
+		end
 		QuestTogether.TryInstallNameplateHooks = function() end
 		QuestTogether.TryInstallPersonalBubbleEditModeHooks = function() end
 		QuestTogether.CreateNameplateQuestIconFrame = function()
@@ -299,76 +496,126 @@ local function WithIsolatedState(testFn)
 		end
 		QuestTogether.testClock = QuestTogether:CreateTestClock(100)
 		QuestTogether.API = CreateApiWithOverrides({})
-		local chatSink = { messages = {}, AddMessage = function(self, message) self.messages[#self.messages + 1] = message end }
-		QuestTogether.GetMainChatFrame = function() return chatSink end
+		local chatSink = {
+			messages = {},
+			AddMessage = function(self, message)
+				self.messages[#self.messages + 1] = message
+			end,
+		}
+		QuestTogether.GetMainChatFrame = function()
+			return chatSink
+		end
 		QuestTogether:EnsureRuntimeStateStore()
 		testFn()
 	end)
 	for key in pairs(QuestTogether) do
-		if original[key] == nil then QuestTogether[key] = nil end
+		if original[key] == nil then
+			QuestTogether[key] = nil
+		end
 	end
-	for key, value in pairs(original) do QuestTogether[key] = value end
-	if not ok then error(err, 0) end
+	for key, value in pairs(original) do
+		QuestTogether[key] = value
+	end
+	if not ok then
+		error(err, 0)
+	end
 end
 
-function QuestTogether:GetDebugTestOptions()
-	return { run = WithIsolatedState }
+function QuestTogether:GetDebugTestOptions(present)
+	local options = { run = WithIsolatedState }
+	if present == true then
+		local delay = self.API.Delay
+		options.schedule = function(callback)
+			-- Capture the real adapter before any fixture installs private APIs.
+			-- No isolated case is allowed to span a frame boundary.
+			delay(0, callback)
+		end
+		options.include = function(case)
+			return case.offline ~= true
+		end
+	end
+	return options
 end
 
 function QuestTogether:RunTests(reverse, present)
 	return self:GetDebugController():RunTests(reverse, present)
 end
 
-QuestTogether:RegisterTest("group options refresh saved sharing and partner status through profiles resets and slash changes", function()
-	local optionKeys = { "autoAcceptPartyShareRequests", "lookingForQuestPartners", "autoInviteFriends", "autoInviteWhileLFG", "stopLookingForPartnersOnJoin" }
-	local profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
-	for _, key in ipairs(optionKeys) do profile[key] = true end
-	profile.enabled = false
-	QuestTogether.hasLoggedIn = false
-	QuestTogether:InitializeDatabase({
-		global = {},
-		profiles = { ["MyPlayer-Realm"] = profile },
-		profileKeys = { ["MyPlayer-Realm"] = "MyPlayer-Realm" },
-	})
-	QuestTogether.groupsFrame, QuestTogether.groupsControls = {}, {}
-	for _, key in ipairs(optionKeys) do
-		local checkbox = { checked = false, writes = 0 }
-		function checkbox:SetChecked(value)
-			self.checked, self.writes = value, self.writes + 1
-		end
-		QuestTogether.groupsControls[key] = checkbox
-	end
-	local function AssertChecks(expected, reason)
+QuestTogether:RegisterTest(
+	"group options refresh saved sharing and partner status through profiles resets and slash changes",
+	function()
+		local optionKeys = {
+			"autoAcceptPartyShareRequests",
+			"lookingForQuestPartners",
+			"autoInviteFriends",
+			"autoInviteWhileLFG",
+			"stopLookingForPartnersOnJoin",
+		}
+		local profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
 		for _, key in ipairs(optionKeys) do
-			AssertEquals(QuestTogether.groupsControls[key].checked, expected, key .. ": " .. reason)
+			profile[key] = true
+		end
+		profile.enabled = false
+		QuestTogether.hasLoggedIn = false
+		QuestTogether:InitializeDatabase({
+			global = {},
+			profiles = { ["MyPlayer-Realm"] = profile },
+			profileKeys = { ["MyPlayer-Realm"] = "MyPlayer-Realm" },
+		})
+		QuestTogether.groupsFrame, QuestTogether.groupsControls = {}, {}
+		for _, key in ipairs(optionKeys) do
+			local checkbox = { checked = false, writes = 0 }
+			function checkbox:SetChecked(value)
+				self.checked, self.writes = value, self.writes + 1
+			end
+			QuestTogether.groupsControls[key] = checkbox
+		end
+		local function AssertChecks(expected, reason)
+			for _, key in ipairs(optionKeys) do
+				AssertEquals(QuestTogether.groupsControls[key].checked, expected, key .. ": " .. reason)
+			end
+		end
+		QuestTogether:RefreshOptionsWindow()
+		AssertChecks(true, "saved values must be checked when settings open")
+		for _, key in ipairs(optionKeys) do
+			AssertEquals(QuestTogether.groupsControls[key].writes, 1)
+		end
+
+		AssertTrue(QuestTogether:SetActiveProfile("Other"))
+		AssertChecks(false, "default profile must clear old checks")
+		AssertTrue(QuestTogether:SetActiveProfile("MyPlayer-Realm"))
+		AssertChecks(true, "switching back must restore saved checks")
+		AssertTrue(QuestTogether:ResetActiveProfile())
+		AssertChecks(false, "reset must show current defaults")
+		for _, key in ipairs(optionKeys) do
+			AssertTrue(QuestTogether:SetOption(key, true))
+		end
+		QuestTogether:RefreshGroupsWindow()
+		AssertChecks(true, "model changes must appear when the panel reopens")
+		for _, key in ipairs(optionKeys) do
+			QuestTogether:HandleSlashCommand("set " .. key .. " off")
+		end
+		AssertChecks(false, "real slash commands must refresh an already open panel")
+		for _, key in ipairs(optionKeys) do
+			AssertFalse(QuestTogether:GetOption(key))
 		end
 	end
-	QuestTogether:RefreshOptionsWindow()
-	AssertChecks(true, "saved values must be checked when settings open")
-	for _, key in ipairs(optionKeys) do AssertEquals(QuestTogether.groupsControls[key].writes, 1) end
-
-	AssertTrue(QuestTogether:SetActiveProfile("Other"))
-	AssertChecks(false, "default profile must clear old checks")
-	AssertTrue(QuestTogether:SetActiveProfile("MyPlayer-Realm"))
-	AssertChecks(true, "switching back must restore saved checks")
-	AssertTrue(QuestTogether:ResetActiveProfile())
-	AssertChecks(false, "reset must show current defaults")
-	for _, key in ipairs(optionKeys) do AssertTrue(QuestTogether:SetOption(key, true)) end
-	QuestTogether:RefreshGroupsWindow()
-	AssertChecks(true, "model changes must appear when the panel reopens")
-	for _, key in ipairs(optionKeys) do QuestTogether:HandleSlashCommand("set " .. key .. " off") end
-	AssertChecks(false, "real slash commands must refresh an already open panel")
-	for _, key in ipairs(optionKeys) do AssertFalse(QuestTogether:GetOption(key)) end
-end)
+)
 
 local function NewHelpFixture()
 	local addon = setmetatable({ messages = {}, debugCommands = {} }, { __index = QuestTogether })
-	function addon:Print(message) self.messages[#self.messages + 1] = message end
-	local controller = { HandleCommand = function(_, command)
-		addon.debugCommands[#addon.debugCommands + 1] = command
-		return false
-	end }
-	function addon:GetDebugController() return controller end
+	function addon:Print(message)
+		self.messages[#self.messages + 1] = message
+	end
+	local controller = {
+		HandleCommand = function(_, command)
+			addon.debugCommands[#addon.debugCommands + 1] = command
+			return false
+		end,
+	}
+	function addon:GetDebugController()
+		return controller
+	end
 	return addon
 end
 
@@ -376,10 +623,28 @@ QuestTogether:RegisterTest("normal help lists user commands without developer co
 	local addon = NewHelpFixture()
 	addon:PrintHelp()
 	local text = table.concat(addon.messages, "\n")
-	for _, command in ipairs({ "options", "enable | disable", "compare -", "notes | changelog | patchnotes", "set", "get", "scan", "help debug" }) do
+	for _, command in ipairs({
+		"options",
+		"enable | disable",
+		"compare -",
+		"notes | changelog | patchnotes",
+		"set",
+		"get",
+		"scan",
+		"help debug",
+	}) do
 		AssertTrue(text:find("/qt " .. command, 1, true), "normal help must include " .. command)
 	end
-	for _, command in ipairs({ "debug", "devlogall", "preview compare", "ping", "preview announcement", "test", "dump", "diagnostics" }) do
+	for _, command in ipairs({
+		"debug",
+		"devlogall",
+		"preview compare",
+		"ping",
+		"preview announcement",
+		"test",
+		"dump",
+		"diagnostics",
+	}) do
 		AssertFalse(text:find("/qt " .. command, 1, true), "normal help must omit " .. command)
 	end
 	AssertFalse(text:find("/qtd", 1, true))
@@ -399,7 +664,15 @@ QuestTogether:RegisterTest("help slash dispatch requires the explicit debug topi
 	addon.messages = {}
 	addon:HandleSlashCommand("  HeLp   DeBuG  ")
 	local text = table.concat(addon.messages, "\n")
-	for _, command in ipairs({ "debug", "devlogall", "preview compare", "preview announcement", "test", "dump", "diagnostics" }) do
+	for _, command in ipairs({
+		"debug",
+		"devlogall",
+		"preview compare",
+		"preview announcement",
+		"test",
+		"dump",
+		"diagnostics",
+	}) do
 		AssertTrue(text:find("/qt " .. command, 1, true), "debug help must include " .. command)
 	end
 	AssertFalse(text:find("/qt ping", 1, true))
@@ -411,7 +684,10 @@ end)
 QuestTogether:RegisterTest("unknown slash commands send their original text while help remains a command", function()
 	local addon = NewHelpFixture()
 	local sent = {}
-	function addon:SendQTChannelChat(message) sent[#sent + 1] = message; return true end
+	function addon:SendQTChannelChat(message)
+		sent[#sent + 1] = message
+		return true
+	end
 	addon:HandleSlashCommand("Anyone in Westfall?")
 	AssertEquals(sent[1], "Anyone in Westfall?")
 	AssertEquals(#addon.messages, 0)
@@ -421,11 +697,22 @@ QuestTogether:RegisterTest("unknown slash commands send their original text whil
 end)
 
 local function NewAdFixture()
-	local addon = setmetatable({ messages = {}, sends = {}, lastAdvertisementIndex = false }, { __index = QuestTogether })
-	function addon:Print(message) self.messages[#self.messages + 1] = message end
-	function addon:IsRuntimeRestrictionTypeActive() return self.blocked == true end
-	function addon:SendQTChannelChat() error("Ad commands must not fall through to QT chat") end
-	function addon:GetDebugController() error("Ad commands must not reach debug dispatch") end
+	local addon = setmetatable(
+		{ messages = {}, sends = {}, lastAdvertisementIndex = false },
+		{ __index = QuestTogether }
+	)
+	function addon:Print(message)
+		self.messages[#self.messages + 1] = message
+	end
+	function addon:IsRuntimeRestrictionTypeActive()
+		return self.blocked == true
+	end
+	function addon:SendQTChannelChat()
+		error("Ad commands must not fall through to QT chat")
+	end
+	function addon:GetDebugController()
+		error("Ad commands must not reach debug dispatch")
+	end
 	addon.API = {
 		Random = function(low, high)
 			addon.randomCalls = (addon.randomCalls or 0) + 1
@@ -433,18 +720,26 @@ local function NewAdFixture()
 		end,
 		GetChannelName = function(channel)
 			addon.resolved = channel
-			if channel == 1 or channel == "General" then return addon.channelID or 1 end
-			if channel == 2 then return 2 end
+			if channel == 1 or channel == "General" then
+				return addon.channelID or 1
+			end
+			if channel == 2 then
+				return 2
+			end
 			return 0
 		end,
 		SendChannelChatMessage = function(message, id)
 			addon.sends[#addon.sends + 1] = { message = message, id = id }
-			if addon.throw then error("fixture send failure") end
+			if addon.throw then
+				error("fixture send failure")
+			end
 			return not addon.fail
 		end,
 		SendLocalChatMessage = function(message, distribution)
 			addon.sends[#addon.sends + 1] = { message = message, distribution = distribution }
-			if addon.throw then error("fixture send failure") end
+			if addon.throw then
+				error("fixture send failure")
+			end
 			return not addon.fail
 		end,
 	}
@@ -488,7 +783,9 @@ QuestTogether:RegisterTest("ads exhaust a shuffled pool before refilling across 
 				AssertTrue(text:find("QuestTogether", 1, true))
 				AssertTrue(text:find("This msg is a macro, but I am not a bot. Just spreading the word :)", 1, true))
 				AssertFalse(text:find("[%c|]") ~= nil)
-				if allMessages then AssertTrue(allMessages[text] == true) end
+				if allMessages then
+					AssertTrue(allMessages[text] == true)
+				end
 				seen[text], previous = true, text
 				AssertEquals(#addon.advertisementPool, count - draw)
 			end
@@ -500,7 +797,9 @@ end)
 QuestTogether:RegisterTest("Say and Yell ads bypass numbered channels and retain unsuccessful draws", function()
 	for _, channel in ipairs({ "sAy", "YELL" }) do
 		local addon = NewAdFixture()
-		addon.API.GetChannelName = function() error("local chat must not resolve a numbered channel") end
+		addon.API.GetChannelName = function()
+			error("local chat must not resolve a numbered channel")
+		end
 		AssertTrue(addon:HandleSlashCommand("ad " .. channel))
 		AssertEquals(#addon.sends, 1)
 		AssertEquals(addon.sends[1].distribution, channel:upper())
@@ -510,7 +809,9 @@ QuestTogether:RegisterTest("Say and Yell ads bypass numbered channels and retain
 		for _, reason in ipairs({ "fail", "throw", "blocked", "noSender" }) do
 			addon[reason] = true
 			local sender = addon.API.SendLocalChatMessage
-			if reason == "noSender" then addon.API.SendLocalChatMessage = nil end
+			if reason == "noSender" then
+				addon.API.SendLocalChatMessage = nil
+			end
 			AssertFalse(addon:HandleSlashCommand("ad " .. channel))
 			AssertEquals(#addon.advertisementPool, remaining)
 			addon[reason] = nil
@@ -542,7 +843,18 @@ QuestTogether:RegisterTest("failed ad sends retain the pending draw for the next
 end)
 
 QuestTogether:RegisterTest("invalid restricted and failed ads never retry or advance the previous selection", function()
-	for _, input in ipairs({ "", "0", "-1", "1.5", "999", "Unknown", "1 extra", "1\n2", "|Hchannel", string.rep("x", 129) }) do
+	for _, input in ipairs({
+		"",
+		"0",
+		"-1",
+		"1.5",
+		"999",
+		"Unknown",
+		"1 extra",
+		"1\n2",
+		"|Hchannel",
+		string.rep("x", 129),
+	}) do
 		local addon = NewAdFixture()
 		AssertFalse(addon:HandleSlashCommand("ad " .. input))
 		AssertEquals(#addon.sends, 0)
@@ -552,9 +864,17 @@ QuestTogether:RegisterTest("invalid restricted and failed ads never retry or adv
 		local addon = NewAdFixture()
 		addon.lastAdvertisementIndex = 3
 		addon[failure] = true
-		if failure == "noSender" then addon.API.SendChannelChatMessage = nil end
-		if failure == "noResolver" then addon.API.GetChannelName = nil end
-		if failure == "badResolver" then addon.API.GetChannelName = function() error("fixture lookup failure") end end
+		if failure == "noSender" then
+			addon.API.SendChannelChatMessage = nil
+		end
+		if failure == "noResolver" then
+			addon.API.GetChannelName = nil
+		end
+		if failure == "badResolver" then
+			addon.API.GetChannelName = function()
+				error("fixture lookup failure")
+			end
+		end
 		AssertFalse(addon:HandleSlashCommand("ad 1"))
 		AssertEquals(addon.lastAdvertisementIndex, 3)
 		AssertEquals(#addon.messages, 1)
@@ -565,31 +885,53 @@ end)
 local function NewHudEditModeFixture()
 	local state = { available = true, eligible = true, loads = 0, gets = 0, shows = 0, eligibilityChecks = 0 }
 	local manager = {
-		IsForbidden = function() return state.forbidden == true end,
-		IsProtected = function() return false, false end,
-		IsShown = function() return state.shown == true end,
+		IsForbidden = function()
+			return state.forbidden == true
+		end,
+		IsProtected = function()
+			return false, false
+		end,
+		IsShown = function()
+			return state.shown == true
+		end,
 		CanEnterEditMode = function()
 			state.eligibilityChecks = state.eligibilityChecks + 1
-			if state.eligibilityThrows then error("eligibility unavailable") end
-			if state.restrictDuringEligibility then state.restriction = "encounter" end
+			if state.eligibilityThrows then
+				error("eligibility unavailable")
+			end
+			if state.restrictDuringEligibility then
+				state.restriction = "encounter"
+			end
 			return state.eligible
 		end,
-		EnterEditMode = function() error("do not call internal edit initialization directly") end,
+		EnterEditMode = function()
+			error("do not call internal edit initialization directly")
+		end,
 	}
 	local addon = setmetatable({ API = {} }, { __index = QuestTogether })
-	addon.IsRuntimeRestrictionTypeActive = function(_, kind) return state.restriction == kind end
+	addon.IsRuntimeRestrictionTypeActive = function(_, kind)
+		return state.restriction == kind
+	end
 	addon.CanAccessValue = function(self, value)
 		return (state.inaccessible == nil or value ~= state.inaccessible) and QuestTogether.CanAccessValue(self, value)
 	end
-	addon.API.InCombatLockdown = function() return state.restriction == "combat" end
+	addon.API.InCombatLockdown = function()
+		return state.restriction == "combat"
+	end
 	addon.API.GetEditModeManagerFrame = function()
 		state.gets = state.gets + 1
-		if state.available then return manager end
+		if state.available then
+			return manager
+		end
 	end
 	addon.API.LoadEditMode = function()
 		state.loads = state.loads + 1
-		if state.loadFails then return false end
-		if state.restrictDuringLoad then state.restriction = "map" end
+		if state.loadFails then
+			return false
+		end
+		if state.restrictDuringLoad then
+			state.restriction = "map"
+		end
 		state.available = not state.noFrameAfterLoad
 		return true
 	end
@@ -598,8 +940,12 @@ local function NewHudEditModeFixture()
 		state.shows = state.shows + 1
 		AssertEquals(state.eligibilityChecks, 1)
 		AssertEquals(state.restriction, nil)
-		if state.showFails then return false end
-		if not state.showDeclined then state.shown = true end
+		if state.showFails then
+			return false
+		end
+		if not state.showDeclined then
+			state.shown = true
+		end
 		return true
 	end
 	return addon, state, manager
@@ -619,7 +965,9 @@ QuestTogether:RegisterTest("HUD edit mode can load its manager and rejects unava
 		state.available = false
 		state.loadFails = outcome == "failure"
 		state.noFrameAfterLoad = outcome == "no_frame"
-		if outcome == "no_loader" then addon.API.LoadEditMode = nil end
+		if outcome == "no_loader" then
+			addon.API.LoadEditMode = nil
+		end
 		AssertEquals(addon:OpenHudEditMode(), outcome == "ready", outcome)
 		AssertEquals(state.loads, outcome == "no_loader" and 0 or 1)
 		AssertEquals(state.shows, outcome == "ready" and 1 or 0)
@@ -640,12 +988,20 @@ end)
 QuestTogether:RegisterTest("HUD edit mode requires readable positive native eligibility", function()
 	for _, outcome in ipairs({ "false", "nil", "string", "error", "inaccessible", "missing_method" }) do
 		local addon, state, manager = NewHudEditModeFixture()
-		if outcome == "false" then state.eligible = false
-		elseif outcome == "nil" then state.eligible = nil
-		elseif outcome == "string" then state.eligible = "true"
-		elseif outcome == "error" then state.eligibilityThrows = true
-		elseif outcome == "inaccessible" then state.inaccessible = {}; state.eligible = state.inaccessible
-		elseif outcome == "missing_method" then manager.CanEnterEditMode = nil end
+		if outcome == "false" then
+			state.eligible = false
+		elseif outcome == "nil" then
+			state.eligible = nil
+		elseif outcome == "string" then
+			state.eligible = "true"
+		elseif outcome == "error" then
+			state.eligibilityThrows = true
+		elseif outcome == "inaccessible" then
+			state.inaccessible = {}
+			state.eligible = state.inaccessible
+		elseif outcome == "missing_method" then
+			manager.CanEnterEditMode = nil
+		end
 		AssertFalse(addon:OpenHudEditMode(), outcome)
 		AssertEquals(state.shows, 0)
 	end
@@ -654,9 +1010,15 @@ end)
 QuestTogether:RegisterTest("HUD edit mode refuses forbidden and inaccessible manager handles", function()
 	for _, outcome in ipairs({ "forbidden", "inaccessible", "failed_guard" }) do
 		local addon, state, manager = NewHudEditModeFixture()
-		if outcome == "forbidden" then state.forbidden = true
-		elseif outcome == "inaccessible" then state.inaccessible = manager
-		else manager.IsForbidden = function() error("frame unavailable") end end
+		if outcome == "forbidden" then
+			state.forbidden = true
+		elseif outcome == "inaccessible" then
+			state.inaccessible = manager
+		else
+			manager.IsForbidden = function()
+				error("frame unavailable")
+			end
+		end
 		AssertFalse(addon:OpenHudEditMode(), outcome)
 		AssertEquals(state.eligibilityChecks, 0)
 		AssertEquals(state.shows, 0)
@@ -667,7 +1029,9 @@ QuestTogether:RegisterTest("HUD edit mode reports native panel refusal without c
 	for _, outcome in ipairs({ "failure", "hidden", "missing_show" }) do
 		local addon, state = NewHudEditModeFixture()
 		state.showFails, state.showDeclined = outcome == "failure", outcome == "hidden"
-		if outcome == "missing_show" then addon.API.ShowUIPanel = nil end
+		if outcome == "missing_show" then
+			addon.API.ShowUIPanel = nil
+		end
 		AssertFalse(addon:OpenHudEditMode(), outcome)
 		AssertFalse(state.shown)
 	end
@@ -688,9 +1052,13 @@ QuestTogether:RegisterTest("test clock preserves deadlines and defers callbacks 
 	local clock, observed = QuestTogether:CreateTestClock(10), {}
 	clock:After(0.2, function()
 		observed[#observed + 1] = "first"
-		clock:After(0, function() observed[#observed + 1] = "next tick" end)
+		clock:After(0, function()
+			observed[#observed + 1] = "next tick"
+		end)
 	end)
-	clock:After(0.5, function() observed[#observed + 1] = "later" end)
+	clock:After(0.5, function()
+		observed[#observed + 1] = "later"
+	end)
 	AssertEquals(clock:Advance(0.1), 0)
 	AssertEquals(#observed, 0)
 	AssertEquals(clock:RunNext(), 1)
@@ -705,11 +1073,21 @@ end)
 QuestTogether:RegisterTest("isolated tests preserve live stores frames callbacks and saved variables", function()
 	local touched = 0
 	local sentinelFrame = {
-		SetScript = function() touched = touched + 1 end,
-		RegisterEvent = function() touched = touched + 1 end,
-		UnregisterEvent = function() touched = touched + 1 end,
-		UnregisterAllEvents = function() touched = touched + 1 end,
-		Hide = function() touched = touched + 1 end,
+		SetScript = function()
+			touched = touched + 1
+		end,
+		RegisterEvent = function()
+			touched = touched + 1
+		end,
+		UnregisterEvent = function()
+			touched = touched + 1
+		end,
+		UnregisterAllEvents = function()
+			touched = touched + 1
+		end,
+		Hide = function()
+			touched = touched + 1
+		end,
 	}
 	local liveDB, liveProfile = QuestTogether.db, QuestTogether.db.profile
 	local liveRuntime = QuestTogether.runtimeStateStore
@@ -757,6 +1135,56 @@ QuestTogether:RegisterTest("isolated tests preserve live stores frames callbacks
 	AssertEquals(QuestTogether.Print, liveMethod)
 end)
 
+QuestTogether:RegisterTest("isolated tests detach initialized structured stores and restore live ownership", function()
+	local phase = {
+		peers = { ["Peer-Realm"] = { at = 100 } },
+		attempts = { ["Peer-Realm"] = { id = "live-request" } },
+		replies = {},
+		nextScan = 101,
+	}
+	local touched = 0
+	local target = { button = {
+		Hide = function()
+			touched = touched + 1
+		end,
+	} }
+	local futureStore = { entries = { "live" }, generation = 7 }
+	local queue = { "live packet" }
+	QuestTogether.playerPhaseState = phase
+	QuestTogether.locationTargetState = target
+	QuestTogether.testFutureStructuredStore = futureStore
+	QuestTogether.transportState = { queue = queue }
+	local reachedEnd = false
+	local ok, failure = pcall(function()
+		WithIsolatedState(function()
+			AssertEquals(QuestTogether.playerPhaseState, nil)
+			AssertEquals(QuestTogether.locationTargetState, nil)
+			AssertEquals(QuestTogether.testFutureStructuredStore, nil)
+			QuestTogether:RetirePlayerPhasePeer("Peer-Realm")
+			QuestTogether:ResetPlayerPhases()
+			QuestTogether.testFutureStructuredStore = { entries = { "fixture" } }
+			reachedEnd = true
+			error("intentional structured fixture failure")
+		end)
+	end)
+	AssertFalse(ok)
+	AssertTrue(reachedEnd)
+	AssertTrue(tostring(failure):find("intentional structured fixture failure", 1, true) ~= nil)
+	AssertEquals(QuestTogether.playerPhaseState, phase)
+	AssertEquals(phase.attempts["Peer-Realm"].id, "live-request")
+	AssertEquals(QuestTogether.locationTargetState, target)
+	AssertEquals(touched, 0)
+	AssertEquals(QuestTogether.testFutureStructuredStore, futureStore)
+	AssertEquals(futureStore.entries[1], "live")
+	AssertEquals(QuestTogether.transportState.queue, queue)
+	WithIsolatedState(function()
+		AssertEquals(QuestTogether.testFutureStructuredStore, nil)
+		QuestTogether.testFutureStructuredStore = { entries = {} }
+	end)
+	AssertEquals(QuestTogether.testFutureStructuredStore, futureStore)
+	AssertEquals(futureStore.entries[1], "live")
+end)
+
 QuestTogether:RegisterTest("debug window category filter and search support fuzzy and quoted exact matches", function()
 	WithIsolatedState(function()
 		QuestTogether:ClearDebugLog()
@@ -775,19 +1203,19 @@ QuestTogether:RegisterTest("debug window category filter and search support fuzz
 		AssertTrue(string.find(fuzzyText, "alpha three", 1, true) ~= nil)
 		AssertFalse(string.find(fuzzyText, "beta two", 1, true) ~= nil)
 
-		local exactText = QuestTogether:GetDebugLogText("QUEST", "\"alpha t\"")
+		local exactText = QuestTogether:GetDebugLogText("QUEST", '"alpha t"')
 		AssertFalse(string.find(exactText, "alpha one", 1, true) ~= nil)
 		AssertTrue(string.find(exactText, "alpha three", 1, true) ~= nil)
 		AssertFalse(string.find(exactText, "beta two", 1, true) ~= nil)
 
-		local shownCount, _, totalCount = QuestTogether:GetDebugLogMetrics("QUEST", "\"alpha\"")
+		local shownCount, _, totalCount = QuestTogether:GetDebugLogMetrics("QUEST", '"alpha"')
 		AssertEquals(shownCount, 2)
 		AssertEquals(totalCount, 3)
 
 		QuestTogether:SetDebugLogCategoryFilter("quest")
 		AssertEquals(QuestTogether:GetDebugLogCategoryFilter(), "QUEST")
-		QuestTogether:SetDebugLogSearchFilter("\"alpha t\"")
-		AssertEquals(QuestTogether:GetDebugLogSearchFilter(), "\"alpha t\"")
+		QuestTogether:SetDebugLogSearchFilter('"alpha t"')
+		AssertEquals(QuestTogether:GetDebugLogSearchFilter(), '"alpha t"')
 	end)
 end)
 
@@ -837,10 +1265,16 @@ QuestTogether:RegisterTest("debug window ALL category stays selected when alread
 	WithIsolatedState(function()
 		QuestTogether.db.global.debugLogCategoryFilter = QuestTogether.DEBUG_ALL_CATEGORIES
 		local controller = QuestTogether:GetDebugController()
-		controller.policy.ui.restricted = function() return false end
+		controller.policy.ui.restricted = function()
+			return false
+		end
 		controller.window = {
-			IsForbidden = function() return false end,
-			IsProtected = function() return false end,
+			IsForbidden = function()
+				return false
+			end,
+			IsProtected = function()
+				return false
+			end,
 			IsShown = function()
 				return true
 			end,
@@ -919,47 +1353,50 @@ QuestTogether:RegisterTest("WatchQuest does not refresh announcement icon metada
 	end)
 end)
 
-QuestTogether:RegisterTest("UNIT_QUEST_LOG_CHANGED does not refresh announcement icon metadata during status sync", function()
-	local tracker = QuestTogether:GetPlayerTracker()
-	tracker[12345] = {
-		title = "Any Quest",
-		objectives = {},
-		objectiveValues = {},
-		isComplete = false,
-		isReadyForTurnIn = false,
-	}
-	QuestTogether.API = CreateApiWithOverrides({
-		GetQuestLogIndexForQuestID = function(questId)
-			AssertEquals(questId, 12345)
-			return 1
-		end,
-		GetNumQuestLeaderBoards = function(questLogIndex)
-			AssertEquals(questLogIndex, 1)
-			return 0
-		end,
-	})
+QuestTogether:RegisterTest(
+	"UNIT_QUEST_LOG_CHANGED does not refresh announcement icon metadata during status sync",
+	function()
+		local tracker = QuestTogether:GetPlayerTracker()
+		tracker[12345] = {
+			title = "Any Quest",
+			objectives = {},
+			objectiveValues = {},
+			isComplete = false,
+			isReadyForTurnIn = false,
+		}
+		QuestTogether.API = CreateApiWithOverrides({
+			GetQuestLogIndexForQuestID = function(questId)
+				AssertEquals(questId, 12345)
+				return 1
+			end,
+			GetNumQuestLeaderBoards = function(questLogIndex)
+				AssertEquals(questLogIndex, 1)
+				return 0
+			end,
+		})
 
-	WithPatchedMethod(QuestTogether, "QueueQuestLogTask", function(_, taskFn)
-		taskFn()
-	end, function()
-		WithPatchedMethod(QuestTogether, "GetTrackedQuestStatusState", function(_, questId, allowLiveFallback)
-			AssertEquals(questId, 12345)
-			AssertTrue(allowLiveFallback)
-			return {
-				isComplete = true,
-				isReadyForTurnIn = true,
-			}
+		WithPatchedMethod(QuestTogether, "QueueQuestLogTask", function(_, taskFn)
+			taskFn()
 		end, function()
-			WithPatchedMethod(QuestTogether, "RefreshTrackedQuestAnnouncementIcon", function()
-				error("UNIT_QUEST_LOG_CHANGED should not refresh announcement icon metadata during status sync")
+			WithPatchedMethod(QuestTogether, "GetTrackedQuestStatusState", function(_, questId, allowLiveFallback)
+				AssertEquals(questId, 12345)
+				AssertTrue(allowLiveFallback)
+				return {
+					isComplete = true,
+					isReadyForTurnIn = true,
+				}
 			end, function()
-				WithPatchedMethod(QuestTogether, "PublishAnnouncementEvent", function() end, function()
-					QuestTogether:UNIT_QUEST_LOG_CHANGED(nil, "player")
+				WithPatchedMethod(QuestTogether, "RefreshTrackedQuestAnnouncementIcon", function()
+					error("UNIT_QUEST_LOG_CHANGED should not refresh announcement icon metadata during status sync")
+				end, function()
+					WithPatchedMethod(QuestTogether, "PublishAnnouncementEvent", function() end, function()
+						QuestTogether:UNIT_QUEST_LOG_CHANGED(nil, "player")
+					end)
 				end)
 			end)
 		end)
-	end)
-end)
+	end
+)
 
 QuestTogether:RegisterTest("objective progress identity follows the objective label instead of its count", function()
 	AssertEquals(
@@ -977,22 +1414,8 @@ QuestTogether:RegisterTest("objective progress identity follows the objective la
 end)
 
 QuestTogether:RegisterTest("objective progress rejects increases from a replaced objective slot", function()
-	AssertTrue(
-		QuestTogether:DidObjectiveProgressIncrease(
-			"1/3 Gather Apples",
-			1,
-			"2/3 Gather Apples",
-			2
-		)
-	)
-	AssertFalse(
-		QuestTogether:DidObjectiveProgressIncrease(
-			"1/3 Gather Apples",
-			1,
-			"5/8 Rescue Villagers",
-			5
-		)
-	)
+	AssertTrue(QuestTogether:DidObjectiveProgressIncrease("1/3 Gather Apples", 1, "2/3 Gather Apples", 2))
+	AssertFalse(QuestTogether:DidObjectiveProgressIncrease("1/3 Gather Apples", 1, "5/8 Rescue Villagers", 5))
 end)
 
 QuestTogether:RegisterTest("UNIT_QUEST_LOG_CHANGED does not announce a replaced objective slot", function()
@@ -1167,7 +1590,7 @@ QuestTogether:RegisterTest("profile operations support create, copy, reset, and 
 		AssertEquals(QuestTogether.db.profiles.Disposable, nil)
 	end)
 
-AssertEquals(applyCalls, 2)
+	AssertEquals(applyCalls, 2)
 end)
 
 QuestTogether:RegisterTest("task area refresh defers during combat and resumes on regen", function()
@@ -1208,9 +1631,13 @@ QuestTogether:RegisterTest("task area refresh defers during combat and resumes o
 			QuestTogether:PLAYER_REGEN_ENABLED()
 			AssertEquals(#refreshCalls, 0, "combat release must preserve the pending refresh deadline")
 			AssertFalse(deferredEntry.delayElapsed)
-			AssertEquals(QuestTogether:GetDeferredWorkStateStore().entries[LibChev.WorkKey(
-				"task_area_refresh", "task_area_refresh"
-			)], deferredEntry)
+			AssertEquals(
+				QuestTogether:GetDeferredWorkStateStore().entries[LibChev.WorkKey(
+					"task_area_refresh",
+					"task_area_refresh"
+				)],
+				deferredEntry
+			)
 			local delay = QuestTogether.runtimeWorkDelayByClass.task_area_refresh
 			AssertTrue(type(delay) == "number" and delay > 0)
 			QuestTogether.testClock:Advance(delay / 2)
@@ -1268,45 +1695,48 @@ QuestTogether:RegisterTest("task area refresh defers through runtime gate and re
 	AssertEquals(refreshCalls[2], "bonus:true")
 end)
 
-QuestTogether:RegisterTest("task area snapshot falls back to IsWorldQuest when questInfo world flag is falsey", function()
-	QuestTogether.API = CreateApiWithOverrides({
-		GetNumQuestLogEntries = function()
-			return 1
-		end,
-		GetQuestLogInfo = function(questLogIndex)
-			AssertEquals(questLogIndex, 1)
-			return {
-				questID = 12345,
-				title = "Fallback Classified World Quest",
-				isHeader = false,
-				isHidden = false,
-				isTask = true,
-				isOnMap = true,
-				hasLocalPOI = true,
-				isWorldQuest = false,
-			}
-		end,
-		GetLocalTaskQuests = function()
-			error("GetLocalTaskQuests should not be called")
-		end,
-		GetTaskInfo = function()
-			error("GetTaskInfo should not be called")
-		end,
-		IsTaskQuestActive = function()
-			error("IsTaskQuestActive should not be called")
-		end,
-		IsWorldQuest = function(questId)
-			AssertEquals(questId, 12345)
-			return true
-		end,
-	})
+QuestTogether:RegisterTest(
+	"task area snapshot falls back to IsWorldQuest when questInfo world flag is falsey",
+	function()
+		QuestTogether.API = CreateApiWithOverrides({
+			GetNumQuestLogEntries = function()
+				return 1
+			end,
+			GetQuestLogInfo = function(questLogIndex)
+				AssertEquals(questLogIndex, 1)
+				return {
+					questID = 12345,
+					title = "Fallback Classified World Quest",
+					isHeader = false,
+					isHidden = false,
+					isTask = true,
+					isOnMap = true,
+					hasLocalPOI = true,
+					isWorldQuest = false,
+				}
+			end,
+			GetLocalTaskQuests = function()
+				error("GetLocalTaskQuests should not be called")
+			end,
+			GetTaskInfo = function()
+				error("GetTaskInfo should not be called")
+			end,
+			IsTaskQuestActive = function()
+				error("IsTaskQuestActive should not be called")
+			end,
+			IsWorldQuest = function(questId)
+				AssertEquals(questId, 12345)
+				return true
+			end,
+		})
 
-	QuestTogether:RefreshTaskAreaStates(false)
-	local worldSnapshot = QuestTogether:GetTaskAreaSnapshot("world")
-	local bonusSnapshot = QuestTogether:GetTaskAreaSnapshot("bonus")
-	AssertEquals(worldSnapshot[12345], "Fallback Classified World Quest")
-	AssertEquals(bonusSnapshot[12345], nil)
-end)
+		QuestTogether:RefreshTaskAreaStates(false)
+		local worldSnapshot = QuestTogether:GetTaskAreaSnapshot("world")
+		local bonusSnapshot = QuestTogether:GetTaskAreaSnapshot("bonus")
+		AssertEquals(worldSnapshot[12345], "Fallback Classified World Quest")
+		AssertEquals(bonusSnapshot[12345], nil)
+	end
+)
 
 QuestTogether:RegisterTest("task area snapshot ignores live task helper APIs and out-of-area world quests", function()
 	local forbiddenReads = 0
@@ -1464,52 +1894,55 @@ QuestTogether:RegisterTest("task area snapshot treats world quests as tasks when
 	AssertEquals(worldSnapshot[33333], "World Quest Without Task Flag")
 end)
 
-QuestTogether:RegisterTest("task area snapshot derives bonus objectives from displayAsObjective plus snapshot map flags", function()
-	QuestTogether.API = CreateApiWithOverrides({
-		GetNumQuestLogEntries = function()
-			return 1
-		end,
-		GetQuestLogInfo = function(questLogIndex)
-			AssertEquals(questLogIndex, 1)
-			return {
-				questID = 33335,
-				title = "Bonus Objective Without Live Helpers",
-				isHeader = false,
-				isHidden = false,
-				isTask = true,
-				isOnMap = false,
-				hasLocalPOI = true,
-				isWorldQuest = false,
-			}
-		end,
-		GetLocalTaskQuests = function()
-			error("GetLocalTaskQuests should not be called")
-		end,
-		GetTaskInfo = function()
-			error("GetTaskInfo should not be called")
-		end,
-		IsTaskQuestActive = function()
-			error("IsTaskQuestActive should not be called")
-		end,
-		GetTaskQuestInfoByQuestID = function(questId)
-			AssertEquals(questId, 33335)
-			return {
-				displayAsObjective = true,
-			}
-		end,
-	})
+QuestTogether:RegisterTest(
+	"task area snapshot derives bonus objectives from displayAsObjective plus snapshot map flags",
+	function()
+		QuestTogether.API = CreateApiWithOverrides({
+			GetNumQuestLogEntries = function()
+				return 1
+			end,
+			GetQuestLogInfo = function(questLogIndex)
+				AssertEquals(questLogIndex, 1)
+				return {
+					questID = 33335,
+					title = "Bonus Objective Without Live Helpers",
+					isHeader = false,
+					isHidden = false,
+					isTask = true,
+					isOnMap = false,
+					hasLocalPOI = true,
+					isWorldQuest = false,
+				}
+			end,
+			GetLocalTaskQuests = function()
+				error("GetLocalTaskQuests should not be called")
+			end,
+			GetTaskInfo = function()
+				error("GetTaskInfo should not be called")
+			end,
+			IsTaskQuestActive = function()
+				error("IsTaskQuestActive should not be called")
+			end,
+			GetTaskQuestInfoByQuestID = function(questId)
+				AssertEquals(questId, 33335)
+				return {
+					displayAsObjective = true,
+				}
+			end,
+		})
 
-	WithPatchedMethod(QuestTogether, "IsWorldQuest", function(_, questId)
-		AssertEquals(questId, 33335)
-		return false
-	end, function()
-		QuestTogether:RefreshTaskAreaStates(false)
-		local bonusSnapshot = QuestTogether:GetTaskAreaSnapshot("bonus")
-		AssertEquals(bonusSnapshot[33335], "Bonus Objective Without Live Helpers")
-		AssertTrue(QuestTogether:IsBonusObjective(33335))
-		AssertEquals(QuestTogether:GetTaskAnnouncementType(33335), "bonus")
-	end)
-end)
+		WithPatchedMethod(QuestTogether, "IsWorldQuest", function(_, questId)
+			AssertEquals(questId, 33335)
+			return false
+		end, function()
+			QuestTogether:RefreshTaskAreaStates(false)
+			local bonusSnapshot = QuestTogether:GetTaskAreaSnapshot("bonus")
+			AssertEquals(bonusSnapshot[33335], "Bonus Objective Without Live Helpers")
+			AssertTrue(QuestTogether:IsBonusObjective(33335))
+			AssertEquals(QuestTogether:GetTaskAnnouncementType(33335), "bonus")
+		end)
+	end
+)
 
 QuestTogether:RegisterTest("task area snapshot does not classify normal task quests as bonus objectives", function()
 	local events = {}
@@ -1719,23 +2152,26 @@ QuestTogether:RegisterTest("task area snapshot avoids map task API reads that ta
 	AssertEquals(bonusSnapshot[33335], "Bonus Objective Without Map Arrays")
 end)
 
-QuestTogether:RegisterTest("event-time task classification observes API before snapshot-only announcement reads", function()
-	QuestTogether.API = CreateApiWithOverrides({
-		IsWorldQuest = function(questId)
-			AssertEquals(questId, 44444)
-			return true
-		end,
-	})
+QuestTogether:RegisterTest(
+	"event-time task classification observes API before snapshot-only announcement reads",
+	function()
+		QuestTogether.API = CreateApiWithOverrides({
+			IsWorldQuest = function(questId)
+				AssertEquals(questId, 44444)
+				return true
+			end,
+		})
 
-	QuestTogether:ResetTaskAreaStateStore()
-	if QuestTogether.ResetQuestSnapshotStore then
-		QuestTogether:ResetQuestSnapshotStore()
+		QuestTogether:ResetTaskAreaStateStore()
+		if QuestTogether.ResetQuestSnapshotStore then
+			QuestTogether:ResetQuestSnapshotStore()
+		end
+
+		AssertEquals(QuestTogether:GetTaskAnnouncementType(44444), nil)
+		AssertEquals(QuestTogether:ObserveQuestClassification(44444).isWorldQuest, true)
+		AssertEquals(QuestTogether:GetTaskAnnouncementType(44444), "world")
 	end
-
-	AssertEquals(QuestTogether:GetTaskAnnouncementType(44444), nil)
-	AssertEquals(QuestTogether:ObserveQuestClassification(44444).isWorldQuest, true)
-	AssertEquals(QuestTogether:GetTaskAnnouncementType(44444), "world")
-end)
+)
 
 QuestTogether:RegisterTest("world quest area refresh publishes enter and leave events from snapshot diffs", function()
 	local events = {}
@@ -1772,9 +2208,9 @@ QuestTogether:RegisterTest("world quest area refresh publishes enter and leave e
 	AssertEquals(events[1].eventType, "WORLD_QUEST_ENTERED")
 	AssertEquals(events[1].questId, 12345)
 	AssertTrue(string.find(events[1].text, "Snapshot World Quest", 1, true) ~= nil)
-AssertEquals(events[2].eventType, "WORLD_QUEST_LEFT")
-AssertEquals(events[2].questId, 12345)
-AssertTrue(string.find(events[2].text, "Snapshot World Quest", 1, true) ~= nil)
+	AssertEquals(events[2].eventType, "WORLD_QUEST_LEFT")
+	AssertEquals(events[2].questId, 12345)
+	AssertTrue(string.find(events[2].text, "Snapshot World Quest", 1, true) ~= nil)
 end)
 
 QuestTogether:RegisterTest("task area refresh reacts to live world area changes across repeated refreshes", function()
@@ -1853,40 +2289,43 @@ QuestTogether:RegisterTest("task area refresh reacts to live world area changes 
 	AssertTrue(string.find(events[2].text, "Fresh World Quest Area State", 1, true) ~= nil)
 end)
 
-QuestTogether:RegisterTest("clearing tracked world quest state preserves prior area snapshot for left announcement diff", function()
-	local events = {}
+QuestTogether:RegisterTest(
+	"clearing tracked world quest state preserves prior area snapshot for left announcement diff",
+	function()
+		local events = {}
 
-	QuestTogether.API = CreateApiWithOverrides({
-		GetNumQuestLogEntries = function()
-			return 0
-		end,
-	})
+		QuestTogether.API = CreateApiWithOverrides({
+			GetNumQuestLogEntries = function()
+				return 0
+			end,
+		})
 
-	if QuestTogether.ResetTaskAreaStateStore then
-		QuestTogether:ResetTaskAreaStateStore()
-	end
+		if QuestTogether.ResetTaskAreaStateStore then
+			QuestTogether:ResetTaskAreaStateStore()
+		end
 
-	local worldState = QuestTogether:GetTaskAreaStateStore("world")
-	worldState[66666] = "Tracked World Quest"
-	QuestTogether:GetPlayerTracker()[66666] = {
-		title = "Tracked World Quest",
-		taskAnnouncementType = "world",
-	}
-
-	WithPatchedMethod(QuestTogether, "PublishAnnouncementEvent", function(_, eventType, text, questId)
-		events[#events + 1] = {
-			eventType = eventType,
-			text = text,
-			questId = questId,
+		local worldState = QuestTogether:GetTaskAreaStateStore("world")
+		worldState[66666] = "Tracked World Quest"
+		QuestTogether:GetPlayerTracker()[66666] = {
+			title = "Tracked World Quest",
+			taskAnnouncementType = "world",
 		}
-	end, function()
-		QuestTogether:ClearTrackedQuestState(66666)
-	end)
 
-	AssertEquals(events[1].eventType, "WORLD_QUEST_LEFT")
-	AssertEquals(events[1].questId, 66666)
-	AssertTrue(string.find(events[1].text, "Tracked World Quest", 1, true) ~= nil)
-end)
+		WithPatchedMethod(QuestTogether, "PublishAnnouncementEvent", function(_, eventType, text, questId)
+			events[#events + 1] = {
+				eventType = eventType,
+				text = text,
+				questId = questId,
+			}
+		end, function()
+			QuestTogether:ClearTrackedQuestState(66666)
+		end)
+
+		AssertEquals(events[1].eventType, "WORLD_QUEST_LEFT")
+		AssertEquals(events[1].questId, 66666)
+		AssertTrue(string.find(events[1].text, "Tracked World Quest", 1, true) ~= nil)
+	end
+)
 
 QuestTogether:RegisterTest("clearing tracked completed world quest state suppresses left announcement diff", function()
 	local events = {}
@@ -2009,79 +2448,85 @@ QuestTogether:RegisterTest("task area refresh reacts to live bonus area changes 
 	AssertTrue(string.find(events[2].text, "Fresh Bonus Objective Area State", 1, true) ~= nil)
 end)
 
-QuestTogether:RegisterTest("clearing tracked bonus objective state preserves prior area snapshot for left announcement diff", function()
-	local events = {}
+QuestTogether:RegisterTest(
+	"clearing tracked bonus objective state preserves prior area snapshot for left announcement diff",
+	function()
+		local events = {}
 
-	QuestTogether.API = CreateApiWithOverrides({
-		GetNumQuestLogEntries = function()
-			return 0
-		end,
-	})
+		QuestTogether.API = CreateApiWithOverrides({
+			GetNumQuestLogEntries = function()
+				return 0
+			end,
+		})
 
-	if QuestTogether.ResetTaskAreaStateStore then
-		QuestTogether:ResetTaskAreaStateStore()
-	end
+		if QuestTogether.ResetTaskAreaStateStore then
+			QuestTogether:ResetTaskAreaStateStore()
+		end
 
-	local bonusState = QuestTogether:GetTaskAreaStateStore("bonus")
-	bonusState[77771] = "Tracked Bonus Objective"
-	QuestTogether:GetPlayerTracker()[77771] = {
-		title = "Tracked Bonus Objective",
-		taskAnnouncementType = "bonus",
-	}
-
-	WithPatchedMethod(QuestTogether, "PublishAnnouncementEvent", function(_, eventType, text, questId)
-		events[#events + 1] = {
-			eventType = eventType,
-			text = text,
-			questId = questId,
+		local bonusState = QuestTogether:GetTaskAreaStateStore("bonus")
+		bonusState[77771] = "Tracked Bonus Objective"
+		QuestTogether:GetPlayerTracker()[77771] = {
+			title = "Tracked Bonus Objective",
+			taskAnnouncementType = "bonus",
 		}
-	end, function()
-		QuestTogether:ClearTrackedQuestState(77771)
-	end)
 
-	AssertEquals(events[1].eventType, "BONUS_OBJECTIVE_LEFT")
-	AssertEquals(events[1].questId, 77771)
-	AssertTrue(string.find(events[1].text, "Tracked Bonus Objective", 1, true) ~= nil)
-end)
+		WithPatchedMethod(QuestTogether, "PublishAnnouncementEvent", function(_, eventType, text, questId)
+			events[#events + 1] = {
+				eventType = eventType,
+				text = text,
+				questId = questId,
+			}
+		end, function()
+			QuestTogether:ClearTrackedQuestState(77771)
+		end)
 
-QuestTogether:RegisterTest("clearing tracked completed bonus objective state suppresses left announcement diff", function()
-	local events = {}
-
-	QuestTogether.API = CreateApiWithOverrides({
-		GetNumQuestLogEntries = function()
-			return 0
-		end,
-	})
-
-	if QuestTogether.ResetTaskAreaStateStore then
-		QuestTogether:ResetTaskAreaStateStore()
+		AssertEquals(events[1].eventType, "BONUS_OBJECTIVE_LEFT")
+		AssertEquals(events[1].questId, 77771)
+		AssertTrue(string.find(events[1].text, "Tracked Bonus Objective", 1, true) ~= nil)
 	end
+)
 
-	local bonusState = QuestTogether:GetTaskAreaStateStore("bonus")
-	bonusState[77772] = "Completed Bonus Objective"
-	QuestTogether:GetPlayerTracker()[77772] = {
-		title = "Completed Bonus Objective",
-		taskAnnouncementType = "bonus",
-	}
-	QuestTogether.questsCompleted[77772] = {
-		questId = 77772,
-		title = "Completed Bonus Objective",
-		taskAnnouncementType = "bonus",
-	}
+QuestTogether:RegisterTest(
+	"clearing tracked completed bonus objective state suppresses left announcement diff",
+	function()
+		local events = {}
 
-	WithPatchedMethod(QuestTogether, "PublishAnnouncementEvent", function(_, eventType, text, questId)
-		events[#events + 1] = {
-			eventType = eventType,
-			text = text,
-			questId = questId,
+		QuestTogether.API = CreateApiWithOverrides({
+			GetNumQuestLogEntries = function()
+				return 0
+			end,
+		})
+
+		if QuestTogether.ResetTaskAreaStateStore then
+			QuestTogether:ResetTaskAreaStateStore()
+		end
+
+		local bonusState = QuestTogether:GetTaskAreaStateStore("bonus")
+		bonusState[77772] = "Completed Bonus Objective"
+		QuestTogether:GetPlayerTracker()[77772] = {
+			title = "Completed Bonus Objective",
+			taskAnnouncementType = "bonus",
 		}
-	end, function()
-		QuestTogether:ClearTrackedQuestState(77772)
-	end)
+		QuestTogether.questsCompleted[77772] = {
+			questId = 77772,
+			title = "Completed Bonus Objective",
+			taskAnnouncementType = "bonus",
+		}
 
-	AssertEquals(#events, 0)
-	AssertEquals(QuestTogether.questsCompleted[77772], nil)
-end)
+		WithPatchedMethod(QuestTogether, "PublishAnnouncementEvent", function(_, eventType, text, questId)
+			events[#events + 1] = {
+				eventType = eventType,
+				text = text,
+				questId = questId,
+			}
+		end, function()
+			QuestTogether:ClearTrackedQuestState(77772)
+		end)
+
+		AssertEquals(#events, 0)
+		AssertEquals(QuestTogether.questsCompleted[77772], nil)
+	end
+)
 
 QuestTogether:RegisterTest("super tracking changed defers task area refresh off the live event stack", function()
 	local refreshCalls = 0
@@ -2596,7 +3041,10 @@ QuestTogether:RegisterTest("quest removal without turn in announces removal", fu
 end)
 
 QuestTogether:RegisterTest("quest acceptance keeps Classic quest ID separate from log index", function()
-	local addon = setmetatable({ pendingQuestRemovals = {}, questsCompleted = {}, pendingQuestAcceptances = {} }, { __index = QuestTogether })
+	local addon = setmetatable(
+		{ pendingQuestRemovals = {}, questsCompleted = {}, pendingQuestAcceptances = {} },
+		{ __index = QuestTogether }
+	)
 	function addon:QueueQuestLogTask() end
 	function addon:Debugf() end
 	addon:QUEST_ACCEPTED("QUEST_ACCEPTED", 7, 12345)
@@ -2605,7 +3053,9 @@ QuestTogether:RegisterTest("quest acceptance keeps Classic quest ID separate fro
 	addon:QUEST_ACCEPTED("QUEST_ACCEPTED", 54321)
 	AssertTrue(addon.pendingQuestAcceptances[54321] ~= nil)
 	local secret = {}
-	addon.CanAccessValue = function(_, value) return value ~= secret end
+	addon.CanAccessValue = function(_, value)
+		return value ~= secret
+	end
 	addon:QUEST_ACCEPTED("QUEST_ACCEPTED", 8, secret)
 	AssertEquals(addon.pendingQuestAcceptances[8], nil)
 	addon:QUEST_ACCEPTED("QUEST_ACCEPTED", 9, false)
@@ -2614,13 +3064,23 @@ end)
 
 QuestTogether:RegisterTest("quest sharing distinguishes unavailable from not shareable", function()
 	local addon = setmetatable({ API = {} }, { __index = QuestTogether })
-	function addon:GetTrackedQuestStatusState() return { isOnQuest = true } end
-	function addon:IsWorkBlocked() return false end
-	addon.API.IsPushableQuest = function() return nil end
+	function addon:GetTrackedQuestStatusState()
+		return { isOnQuest = true }
+	end
+	function addon:IsWorkBlocked()
+		return false
+	end
+	addon.API.IsPushableQuest = function()
+		return nil
+	end
 	AssertEquals(addon:GetQuestShareableStatusLabel(12345), "Unknown")
-	addon.API.IsPushableQuest = function() return false end
+	addon.API.IsPushableQuest = function()
+		return false
+	end
 	AssertEquals(addon:GetQuestShareableStatusLabel(12345), "No")
-	addon.API.IsPushableQuest = function() return true end
+	addon.API.IsPushableQuest = function()
+		return true
+	end
 	AssertEquals(addon:GetQuestShareableStatusLabel(12345), "Yes")
 end)
 
@@ -2700,14 +3160,8 @@ QuestTogether:RegisterTest("chat bubble option validation rejects unknown values
 end)
 
 QuestTogether:RegisterTest("progressbar objective text strips trailing parenthetical percent", function()
-	AssertEquals(
-		QuestTogether:StripTrailingParentheticalPercent("Fill the vial (34%)"),
-		"Fill the vial"
-	)
-	AssertEquals(
-		QuestTogether:StripTrailingParentheticalPercent("Refine potadpalate"),
-		"Refine potadpalate"
-	)
+	AssertEquals(QuestTogether:StripTrailingParentheticalPercent("Fill the vial (34%)"), "Fill the vial")
+	AssertEquals(QuestTogether:StripTrailingParentheticalPercent("Refine potadpalate"), "Refine potadpalate")
 end)
 
 QuestTogether:RegisterTest("normalized quest objective info formats progressbar objectives consistently", function()
@@ -2772,7 +3226,9 @@ QuestTogether:RegisterTest("quest nameplate icon display no longer requires atta
 								AssertEquals(unitToken, "nameplate1")
 								return false
 							end, function()
-								AssertTrue(QuestTogether:ShouldShowQuestNameplateIconForResolvedState(nil, unitFrame, true))
+								AssertTrue(
+									QuestTogether:ShouldShowQuestNameplateIconForResolvedState(nil, unitFrame, true)
+								)
 								AssertTrue(QuestTogether:ShouldApplyQuestHealthTint(unitFrame, true))
 							end)
 						end)
@@ -2785,7 +3241,8 @@ end)
 
 QuestTogether:RegisterTest("tooltip quest detection uses isolated tooltip line scan for objectives", function()
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
-	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
+	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
+		or "QuestObjective"
 	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
 
 	WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
@@ -2847,90 +3304,108 @@ QuestTogether:RegisterTest("tooltip quest detection recognizes fallback-style pr
 				WithPatchedMethod(QuestTogether, "GetQuestieQuestObjectiveTooltipLines", function()
 					return nil
 				end, function()
-					WithPatchedMethod(QuestTogether, "GetStructuredQuestObjectiveTooltipLines", function(_, unitToken, unitGuid)
-						AssertEquals(unitToken, "nameplate1")
-						AssertEquals(unitGuid, "Creature-0-0-0-0-12345-0000000000")
-						return {
-							{
-								leftText = "Tracking the Trail",
-							},
-							{
-								leftText = "- Subdue Creatures or Kill Players (40%)",
-							},
+					WithPatchedMethod(
+						QuestTogether,
+						"GetStructuredQuestObjectiveTooltipLines",
+						function(_, unitToken, unitGuid)
+							AssertEquals(unitToken, "nameplate1")
+							AssertEquals(unitGuid, "Creature-0-0-0-0-12345-0000000000")
+							return {
+								{
+									leftText = "Tracking the Trail",
+								},
+								{
+									leftText = "- Subdue Creatures or Kill Players (40%)",
+								},
 							}
-						end, function()
+						end,
+						function()
 							WithPatchedMethod(QuestTogether, "GetHiddenQuestObjectiveTooltipLines", function()
-								error("hidden tooltip fallback should not run when structured tooltip lines were returned")
+								error(
+									"hidden tooltip fallback should not run when structured tooltip lines were returned"
+								)
 							end, function()
 								AssertTrue(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
 							end)
-					end)
+						end
+					)
 				end)
 			end)
 		end)
 	end)
 end)
 
-QuestTogether:RegisterTest("structured tooltip sanitizer and evaluator prefer readable line text without reading args", function()
-	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
-	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
-	local argsReads = 0
-	-- Observe the args field itself: Lua 5.1 does not honor an empty table's
-	-- __pairs trap. A counter also detects reads swallowed by protected calls.
-	local objectiveLine = setmetatable({
-		type = objectiveLineType,
-		leftText = "1/8 Digested Object",
-	}, { __index = function(_, key)
-		if key == "args" then
-			argsReads = argsReads + 1
-			return { { stringVal = "8/8 Conflicting Metadata" } }
-		end
-	end })
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
-	local tooltipLines = QuestTogether:ExtractQuestObjectiveTooltipLinesFromTooltipData({ lines = {
-		{ type = titleLineType, leftText = "Tracking the Trail" },
-		objectiveLine,
-	} })
-	AssertEquals(#tooltipLines, 2)
-	AssertEquals(tooltipLines[2].leftText, "1/8 Digested Object")
-	AssertTrue(QuestTogether:EvaluateTooltipQuestObjectiveLines(tooltipLines))
-	AssertEquals(argsReads, 0, "readable primary text must not inspect structured args")
-end)
+QuestTogether:RegisterTest(
+	"structured tooltip sanitizer and evaluator prefer readable line text without reading args",
+	function()
+		local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
+		local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
+			or "QuestObjective"
+		local argsReads = 0
+		-- Observe the args field itself: Lua 5.1 does not honor an empty table's
+		-- __pairs trap. A counter also detects reads swallowed by protected calls.
+		local objectiveLine = setmetatable({
+			type = objectiveLineType,
+			leftText = "1/8 Digested Object",
+		}, {
+			__index = function(_, key)
+				if key == "args" then
+					argsReads = argsReads + 1
+					return { { stringVal = "8/8 Conflicting Metadata" } }
+				end
+			end,
+		})
+		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+		local tooltipLines = QuestTogether:ExtractQuestObjectiveTooltipLinesFromTooltipData({
+			lines = {
+				{ type = titleLineType, leftText = "Tracking the Trail" },
+				objectiveLine,
+			},
+		})
+		AssertEquals(#tooltipLines, 2)
+		AssertEquals(tooltipLines[2].leftText, "1/8 Digested Object")
+		AssertTrue(QuestTogether:EvaluateTooltipQuestObjectiveLines(tooltipLines))
+		AssertEquals(argsReads, 0, "readable primary text must not inspect structured args")
+	end
+)
 
-QuestTogether:RegisterTest("tooltip quest detection blocks live scans while map-sensitive runtime gate is active", function()
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
-	QuestTogether.API = CreateApiWithOverrides({
-		IsWorldMapVisible = function()
+QuestTogether:RegisterTest(
+	"tooltip quest detection blocks live scans while map-sensitive runtime gate is active",
+	function()
+		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+		QuestTogether.API = CreateApiWithOverrides({
+			IsWorldMapVisible = function()
+				return true
+			end,
+		})
+
+		WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
 			return true
-		end,
-	})
-
-	WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
-		return true
-	end, function()
-		WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
-			return false
 		end, function()
-			WithPatchedMethod(QuestTogether, "GetNameplateTooltipScanGuid", function()
-				return "Creature-0-0-0-0-12345-0000000000"
+			WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
+				return false
 			end, function()
-				WithPatchedMethod(QuestTogether, "GetQuestieQuestObjectiveTooltipLines", function()
-					error("map-sensitive runtime gate should not touch Questie or tooltip APIs")
+				WithPatchedMethod(QuestTogether, "GetNameplateTooltipScanGuid", function()
+					return "Creature-0-0-0-0-12345-0000000000"
 				end, function()
-					WithPatchedMethod(QuestTogether, "GetStructuredQuestObjectiveTooltipLines", function()
-						error("map-sensitive runtime gate should not touch live structured tooltip scans")
+					WithPatchedMethod(QuestTogether, "GetQuestieQuestObjectiveTooltipLines", function()
+						error("map-sensitive runtime gate should not touch Questie or tooltip APIs")
 					end, function()
-						WithPatchedMethod(QuestTogether, "GetHiddenQuestObjectiveTooltipLines", function()
-							error("map-sensitive runtime gate should not touch hidden tooltip fallback")
+						WithPatchedMethod(QuestTogether, "GetStructuredQuestObjectiveTooltipLines", function()
+							error("map-sensitive runtime gate should not touch live structured tooltip scans")
 						end, function()
-							AssertFalse(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
+							WithPatchedMethod(QuestTogether, "GetHiddenQuestObjectiveTooltipLines", function()
+								error("map-sensitive runtime gate should not touch hidden tooltip fallback")
+							end, function()
+								AssertFalse(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
+							end)
 						end)
 					end)
 				end)
 			end)
 		end)
-	end)
-end)
+	end
+)
 
 QuestTogether:RegisterTest("tooltip quest detection skips hidden and Questie sources during combat", function()
 	local hiddenScanCount, structuredScanCount, questieScanCount = 0, 0, 0
@@ -2985,72 +3460,78 @@ QuestTogether:RegisterTest("tooltip quest detection skips hidden and Questie sou
 	AssertTrue(structuredScanCount > 0, "readable structured sources are still permitted")
 end)
 
-QuestTogether:RegisterTest("tooltip quest detection reuses cached state while runtime gate blocks live scans", function()
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
-	QuestTogether.nameplateQuestStateByGuid["Creature-0-0-0-0-12345-0000000000"] = true
-	QuestTogether.nameplateQuestStateByUnitToken["nameplate1"] = true
-	QuestTogether.nameplateQuestGuidByUnitToken["nameplate1"] = "Creature-0-0-0-0-12345-0000000000"
+QuestTogether:RegisterTest(
+	"tooltip quest detection reuses cached state while runtime gate blocks live scans",
+	function()
+		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+		QuestTogether.nameplateQuestStateByGuid["Creature-0-0-0-0-12345-0000000000"] = true
+		QuestTogether.nameplateQuestStateByUnitToken["nameplate1"] = true
+		QuestTogether.nameplateQuestGuidByUnitToken["nameplate1"] = "Creature-0-0-0-0-12345-0000000000"
 
-	WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
-		return true
-	end, function()
-		WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
-			return false
+		WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
+			return true
 		end, function()
-			WithPatchedMethod(QuestTogether, "GetNameplateTooltipScanGuid", function()
-				return "Creature-0-0-0-0-12345-0000000000"
+			WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
+				return false
 			end, function()
-				WithPatchedMethod(QuestTogether, "IsWorkBlocked", function(_, workClass)
-					return workClass == "nameplate_tooltip_resolve"
+				WithPatchedMethod(QuestTogether, "GetNameplateTooltipScanGuid", function()
+					return "Creature-0-0-0-0-12345-0000000000"
 				end, function()
-					WithPatchedMethod(QuestTogether, "GetQuestieQuestObjectiveTooltipLines", function()
-						error("runtime-gated detection should not touch Questie or tooltip APIs")
+					WithPatchedMethod(QuestTogether, "IsWorkBlocked", function(_, workClass)
+						return workClass == "nameplate_tooltip_resolve"
 					end, function()
-						WithPatchedMethod(QuestTogether, "GetStructuredQuestObjectiveTooltipLines", function()
-							error("runtime-gated detection should not touch live structured tooltip scans")
+						WithPatchedMethod(QuestTogether, "GetQuestieQuestObjectiveTooltipLines", function()
+							error("runtime-gated detection should not touch Questie or tooltip APIs")
 						end, function()
-							AssertTrue(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
-						end)
-					end)
-				end)
-			end)
-		end)
-	end)
-end)
-
-QuestTogether:RegisterTest("tooltip quest detection skips live scans while runtime gate blocks them without cache", function()
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
-
-	WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
-		return true
-	end, function()
-		WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
-			return false
-		end, function()
-			WithPatchedMethod(QuestTogether, "GetNameplateTooltipScanGuid", function()
-				return "Creature-0-0-0-0-12345-0000000000"
-			end, function()
-				WithPatchedMethod(QuestTogether, "IsWorkBlocked", function(_, workClass)
-					return workClass == "nameplate_tooltip_resolve"
-				end, function()
-					WithPatchedMethod(QuestTogether, "GetQuestieQuestObjectiveTooltipLines", function()
-						error("runtime-gated detection should not touch Questie or tooltip APIs")
-					end, function()
-						WithPatchedMethod(QuestTogether, "GetStructuredQuestObjectiveTooltipLines", function()
-							error("runtime-gated detection should not touch live structured tooltip scans")
-						end, function()
-							WithPatchedMethod(QuestTogether, "GetHiddenQuestObjectiveTooltipLines", function()
-								error("runtime-gated detection should not touch hidden tooltip scans")
+							WithPatchedMethod(QuestTogether, "GetStructuredQuestObjectiveTooltipLines", function()
+								error("runtime-gated detection should not touch live structured tooltip scans")
 							end, function()
-								AssertFalse(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
+								AssertTrue(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
 							end)
 						end)
 					end)
 				end)
 			end)
 		end)
-	end)
-end)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"tooltip quest detection skips live scans while runtime gate blocks them without cache",
+	function()
+		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+
+		WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
+			return true
+		end, function()
+			WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
+				return false
+			end, function()
+				WithPatchedMethod(QuestTogether, "GetNameplateTooltipScanGuid", function()
+					return "Creature-0-0-0-0-12345-0000000000"
+				end, function()
+					WithPatchedMethod(QuestTogether, "IsWorkBlocked", function(_, workClass)
+						return workClass == "nameplate_tooltip_resolve"
+					end, function()
+						WithPatchedMethod(QuestTogether, "GetQuestieQuestObjectiveTooltipLines", function()
+							error("runtime-gated detection should not touch Questie or tooltip APIs")
+						end, function()
+							WithPatchedMethod(QuestTogether, "GetStructuredQuestObjectiveTooltipLines", function()
+								error("runtime-gated detection should not touch live structured tooltip scans")
+							end, function()
+								WithPatchedMethod(QuestTogether, "GetHiddenQuestObjectiveTooltipLines", function()
+									error("runtime-gated detection should not touch hidden tooltip scans")
+								end, function()
+									AssertFalse(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
+								end)
+							end)
+						end)
+					end)
+				end)
+			end)
+		end)
+	end
+)
 
 QuestTogether:RegisterTest("nameplate quest detection cache is keyed by guid and reused across token churn", function()
 	local scanCalls = 0
@@ -3081,16 +3562,10 @@ QuestTogether:RegisterTest("nameplate quest detection cache is keyed by guid and
 					},
 				}
 			end, function()
-				local hasResolvedFirst, isQuestObjectiveFirst = QuestTogether:TryResolveNameplateQuestObjectiveState(
-					"nameplate1",
-					firstUnitFrame,
-					true
-				)
-				local hasResolvedSecond, isQuestObjectiveSecond = QuestTogether:TryResolveNameplateQuestObjectiveState(
-					"nameplate2",
-					secondUnitFrame,
-					true
-				)
+				local hasResolvedFirst, isQuestObjectiveFirst =
+					QuestTogether:TryResolveNameplateQuestObjectiveState("nameplate1", firstUnitFrame, true)
+				local hasResolvedSecond, isQuestObjectiveSecond =
+					QuestTogether:TryResolveNameplateQuestObjectiveState("nameplate2", secondUnitFrame, true)
 
 				AssertTrue(hasResolvedFirst)
 				AssertTrue(isQuestObjectiveFirst)
@@ -3098,113 +3573,130 @@ QuestTogether:RegisterTest("nameplate quest detection cache is keyed by guid and
 				AssertTrue(isQuestObjectiveSecond)
 				AssertEquals(scanCalls, 1)
 				AssertEquals(QuestTogether.nameplateQuestStateByGuid["Creature-0-0-0-0-12345-0000000000"], true)
-				AssertEquals(QuestTogether.nameplateQuestGuidByUnitToken["nameplate2"], "Creature-0-0-0-0-12345-0000000000")
+				AssertEquals(
+					QuestTogether.nameplateQuestGuidByUnitToken["nameplate2"],
+					"Creature-0-0-0-0-12345-0000000000"
+				)
 			end)
 		end)
 	end)
 end)
 
-QuestTogether:RegisterTest("deferred nameplate resolution ignores recycled tokens whose live guid no longer matches", function()
-	local namePlateFrameBase = {
-		namePlateUnitToken = "nameplate1",
-		UnitFrame = {},
-	}
+QuestTogether:RegisterTest(
+	"deferred nameplate resolution ignores recycled tokens whose live guid no longer matches",
+	function()
+		local namePlateFrameBase = {
+			namePlateUnitToken = "nameplate1",
+			UnitFrame = {},
+		}
 
-	QuestTogether.isEnabled = true
+		QuestTogether.isEnabled = true
 
-	WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
-		return false
-	end, function()
-		WithPatchedMethod(QuestTogether, "GetAccessibleNameplateFrameForUnit", function(_, unitToken, requireShown)
-			AssertEquals(unitToken, "nameplate1")
-			AssertEquals(requireShown, true)
-			return namePlateFrameBase, namePlateFrameBase.UnitFrame
-		end, function()
-			WithPatchedMethod(QuestTogether, "GetNameplateUnitGuid", function(_, unitToken)
-				AssertEquals(unitToken, "nameplate1")
-				return "Player-0-0-0-0-99999-0000000000"
-			end, function()
-				WithPatchedMethod(QuestTogether, "TryResolveNameplateQuestObjectiveState", function()
-					error("recycled token should be rejected before live resolution")
-				end, function()
-					WithPatchedMethod(QuestTogether, "HideNameplateIcon", function()
-						error("recycled token should not mutate the current frame")
-					end, function()
-						AssertFalse(
-							QuestTogether:ResolveNameplateQuestStateForUnitToken(
-								"nameplate1",
-								"Creature-0-0-0-0-12345-0000000000",
-								"test"
-							)
-						)
-					end)
-				end)
-			end)
-		end)
-	end)
-end)
-
-QuestTogether:RegisterTest("nameplate retry schedules only the affected unit even before its guid is queryable", function()
-	local scheduledReason = nil
-	local scheduledDelay = nil
-
-	WithPatchedMethod(QuestTogether, "IsNameplateUnitToken", function(_, unitToken)
-		return unitToken == "nameplate1"
-	end, function()
-		WithPatchedMethod(QuestTogether, "ScheduleNameplateTooltipResolution", function(_, unitToken, unitGuid, delaySeconds, reason)
-			AssertEquals(unitToken, "nameplate1")
-			AssertEquals(unitGuid, nil)
-			scheduledReason = reason
-			scheduledDelay = delaySeconds
-		end, function()
-			AssertTrue(QuestTogether:MaybeScheduleNameplateTooltipRetry("nameplate1", "RefreshNameplateIcon"))
-		end)
-	end)
-
-	AssertEquals(scheduledReason, "RefreshNameplateIcon")
-	AssertEquals(scheduledDelay, 0.2)
-	AssertEquals(QuestTogether.nameplateTooltipResolveRetryCountByUnitToken["nameplate1"], 1)
-end)
-
-QuestTogether:RegisterTest("tooltip quest detection reuses cached results while map-sensitive runtime gate blocks rescanning", function()
-	local structuredScanCount = 0
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
-	QuestTogether.nameplateQuestStateByGuid["Creature-0-0-0-0-12345-0000000000"] = true
-	QuestTogether.nameplateQuestStateByUnitToken["nameplate1"] = true
-	QuestTogether.nameplateQuestGuidByUnitToken["nameplate1"] = "Creature-0-0-0-0-12345-0000000000"
-	QuestTogether.API = CreateApiWithOverrides({
-		IsWorldMapVisible = function()
-			return true
-		end,
-	})
-
-	WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
-		return true
-	end, function()
 		WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
 			return false
 		end, function()
-			WithPatchedMethod(QuestTogether, "GetNameplateTooltipScanGuid", function()
-				return "Creature-0-0-0-0-12345-0000000000"
+			WithPatchedMethod(QuestTogether, "GetAccessibleNameplateFrameForUnit", function(_, unitToken, requireShown)
+				AssertEquals(unitToken, "nameplate1")
+				AssertEquals(requireShown, true)
+				return namePlateFrameBase, namePlateFrameBase.UnitFrame
 			end, function()
-				WithPatchedMethod(QuestTogether, "GetQuestieQuestObjectiveTooltipLines", function()
-					error("map-sensitive runtime gate should reuse cached state instead of scanning")
+				WithPatchedMethod(QuestTogether, "GetNameplateUnitGuid", function(_, unitToken)
+					AssertEquals(unitToken, "nameplate1")
+					return "Player-0-0-0-0-99999-0000000000"
 				end, function()
-					WithPatchedMethod(QuestTogether, "GetStructuredQuestObjectiveTooltipLines", function()
-						structuredScanCount = structuredScanCount + 1
-						error("map-sensitive runtime gate should reuse cached state instead of rescanning")
+					WithPatchedMethod(QuestTogether, "TryResolveNameplateQuestObjectiveState", function()
+						error("recycled token should be rejected before live resolution")
 					end, function()
-						AssertTrue(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
-						AssertTrue(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
-						AssertEquals(structuredScanCount, 0)
+						WithPatchedMethod(QuestTogether, "HideNameplateIcon", function()
+							error("recycled token should not mutate the current frame")
+						end, function()
+							AssertFalse(
+								QuestTogether:ResolveNameplateQuestStateForUnitToken(
+									"nameplate1",
+									"Creature-0-0-0-0-12345-0000000000",
+									"test"
+								)
+							)
+						end)
 					end)
 				end)
 			end)
 		end)
-	end)
+	end
+)
 
-	AssertEquals(structuredScanCount, 0)
-end)
+QuestTogether:RegisterTest(
+	"nameplate retry schedules only the affected unit even before its guid is queryable",
+	function()
+		local scheduledReason = nil
+		local scheduledDelay = nil
+
+		WithPatchedMethod(QuestTogether, "IsNameplateUnitToken", function(_, unitToken)
+			return unitToken == "nameplate1"
+		end, function()
+			WithPatchedMethod(
+				QuestTogether,
+				"ScheduleNameplateTooltipResolution",
+				function(_, unitToken, unitGuid, delaySeconds, reason)
+					AssertEquals(unitToken, "nameplate1")
+					AssertEquals(unitGuid, nil)
+					scheduledReason = reason
+					scheduledDelay = delaySeconds
+				end,
+				function()
+					AssertTrue(QuestTogether:MaybeScheduleNameplateTooltipRetry("nameplate1", "RefreshNameplateIcon"))
+				end
+			)
+		end)
+
+		AssertEquals(scheduledReason, "RefreshNameplateIcon")
+		AssertEquals(scheduledDelay, 0.2)
+		AssertEquals(QuestTogether.nameplateTooltipResolveRetryCountByUnitToken["nameplate1"], 1)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"tooltip quest detection reuses cached results while map-sensitive runtime gate blocks rescanning",
+	function()
+		local structuredScanCount = 0
+		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+		QuestTogether.nameplateQuestStateByGuid["Creature-0-0-0-0-12345-0000000000"] = true
+		QuestTogether.nameplateQuestStateByUnitToken["nameplate1"] = true
+		QuestTogether.nameplateQuestGuidByUnitToken["nameplate1"] = "Creature-0-0-0-0-12345-0000000000"
+		QuestTogether.API = CreateApiWithOverrides({
+			IsWorldMapVisible = function()
+				return true
+			end,
+		})
+
+		WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
+			return true
+		end, function()
+			WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
+				return false
+			end, function()
+				WithPatchedMethod(QuestTogether, "GetNameplateTooltipScanGuid", function()
+					return "Creature-0-0-0-0-12345-0000000000"
+				end, function()
+					WithPatchedMethod(QuestTogether, "GetQuestieQuestObjectiveTooltipLines", function()
+						error("map-sensitive runtime gate should reuse cached state instead of scanning")
+					end, function()
+						WithPatchedMethod(QuestTogether, "GetStructuredQuestObjectiveTooltipLines", function()
+							structuredScanCount = structuredScanCount + 1
+							error("map-sensitive runtime gate should reuse cached state instead of rescanning")
+						end, function()
+							AssertTrue(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
+							AssertTrue(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
+							AssertEquals(structuredScanCount, 0)
+						end)
+					end)
+				end)
+			end)
+		end)
+
+		AssertEquals(structuredScanCount, 0)
+	end
+)
 
 QuestTogether:RegisterTest("uncached tooltip evaluation retries after unresolved structured data", function()
 	local structuredScanCount = 0
@@ -3220,40 +3712,45 @@ QuestTogether:RegisterTest("uncached tooltip evaluation retries after unresolved
 			WithPatchedMethod(QuestTogether, "GetNameplateTooltipScanGuid", function()
 				return "Creature-0-0-0-0-12345-0000000000"
 			end, function()
-					WithPatchedMethod(QuestTogether, "GetQuestieQuestObjectiveTooltipLines", function()
-						return nil
+				WithPatchedMethod(QuestTogether, "GetQuestieQuestObjectiveTooltipLines", function()
+					return nil
+				end, function()
+					WithPatchedMethod(QuestTogether, "GetStructuredQuestObjectiveTooltipLines", function()
+						structuredScanCount = structuredScanCount + 1
+						if structuredScanCount <= 2 then
+							return nil
+						end
+						return {
+							{
+								leftText = "Tracking the Trail",
+							},
+							{
+								leftText = "- Subdue Creatures or Kill Players (40%)",
+							},
+						}
 					end, function()
-						WithPatchedMethod(QuestTogether, "GetStructuredQuestObjectiveTooltipLines", function()
-							structuredScanCount = structuredScanCount + 1
-							if structuredScanCount <= 2 then
-								return nil
-							end
-								return {
-									{
-										leftText = "Tracking the Trail",
-								},
-								{
-									leftText = "- Subdue Creatures or Kill Players (40%)",
-								},
-							}
-						end, function()
-							WithPatchedMethod(QuestTogether, "GetHiddenQuestObjectiveTooltipLines", function(_, unitToken, unitGuid)
+						WithPatchedMethod(
+							QuestTogether,
+							"GetHiddenQuestObjectiveTooltipLines",
+							function(_, unitToken, unitGuid)
 								AssertEquals(unitToken, "nameplate1")
 								AssertEquals(unitGuid, "Creature-0-0-0-0-12345-0000000000")
 								hiddenScanCount = hiddenScanCount + 1
 								return nil
-							end, function()
+							end,
+							function()
 								AssertFalse(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
 								AssertTrue(QuestTogether:IsQuestObjectiveViaTooltip("nameplate1", {}))
-								end)
-							end)
+							end
+						)
 					end)
 				end)
 			end)
 		end)
+	end)
 
-		AssertEquals(structuredScanCount, 3)
-		AssertEquals(hiddenScanCount, 1)
+	AssertEquals(structuredScanCount, 3)
+	AssertEquals(hiddenScanCount, 1)
 end)
 
 QuestTogether:RegisterTest("quest objective detection uses tooltip parsing as the only decision path", function()
@@ -3294,93 +3791,104 @@ QuestTogether:RegisterTest("quest objective detection returns false when tooltip
 	end)
 end)
 
-QuestTogether:RegisterTest("quest objective detection ignores false frame flags and still uses tooltip parsing", function()
-	local tooltipChecked = false
-	local unitFrame = {
-		namePlateIsQuestObjective = false,
-		isQuestObjective = false,
-	}
+QuestTogether:RegisterTest(
+	"quest objective detection ignores false frame flags and still uses tooltip parsing",
+	function()
+		local tooltipChecked = false
+		local unitFrame = {
+			namePlateIsQuestObjective = false,
+			isQuestObjective = false,
+		}
 
-	WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function(_, unitToken)
-		AssertEquals(unitToken, "nameplate1")
-		return true
-	end, function()
-		WithPatchedMethod(QuestTogether, "IsQuestObjectiveViaTooltip", function(_, unitToken, candidateFrame)
+		WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function(_, unitToken)
 			AssertEquals(unitToken, "nameplate1")
-			AssertEquals(candidateFrame, unitFrame)
-			tooltipChecked = true
 			return true
 		end, function()
-			AssertTrue(QuestTogether:IsQuestObjectiveUnit("nameplate1", unitFrame))
-		end)
-	end)
-
-	AssertTrue(tooltipChecked)
-end)
-
-QuestTogether:RegisterTest("tooltip quest detection prefers current unit identity over a recycled frame hint", function()
-	local unitFrame = {
-		namePlateUnitGUID = "Creature-0-0-0-0-12345-0000000000",
-	}
-
-	WithPatchedMethod(QuestTogether, "GetNameplateUnitGuid", function()
-		return "Creature-0-0-0-0-67890-0000000000"
-	end, function()
-		AssertEquals(
-			QuestTogether:GetNameplateTooltipScanGuid("nameplate1", unitFrame),
-			"Creature-0-0-0-0-67890-0000000000"
-		)
+			WithPatchedMethod(QuestTogether, "IsQuestObjectiveViaTooltip", function(_, unitToken, candidateFrame)
+				AssertEquals(unitToken, "nameplate1")
+				AssertEquals(candidateFrame, unitFrame)
+				tooltipChecked = true
+				return true
+			end, function()
+				AssertTrue(QuestTogether:IsQuestObjectiveUnit("nameplate1", unitFrame))
 			end)
-end)
+		end)
 
-QuestTogether:RegisterTest("tooltip quest detection rejects frame identity when live identity is unavailable", function()
-	local unitFrame = {
-		unitGUID = "Creature-0-0-0-0-12345-0000000000",
-	}
+		AssertTrue(tooltipChecked)
+	end
+)
 
-	WithPatchedMethod(QuestTogether, "GetNameplateUnitGuid", function()
-		return nil
-	end, function()
-		AssertEquals(
-			QuestTogether:GetNameplateTooltipScanGuid("nameplate1", unitFrame),
-			nil
-		)
-	end)
-end)
+QuestTogether:RegisterTest(
+	"tooltip quest detection prefers current unit identity over a recycled frame hint",
+	function()
+		local unitFrame = {
+			namePlateUnitGUID = "Creature-0-0-0-0-12345-0000000000",
+		}
 
-QuestTogether:RegisterTest("tooltip quest detection can resolve live scans without a guid when unit tooltip sources succeed", function()
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
-	QuestTogether.isEnabled = true
+		WithPatchedMethod(QuestTogether, "GetNameplateUnitGuid", function()
+			return "Creature-0-0-0-0-67890-0000000000"
+		end, function()
+			AssertEquals(
+				QuestTogether:GetNameplateTooltipScanGuid("nameplate1", unitFrame),
+				"Creature-0-0-0-0-67890-0000000000"
+			)
+		end)
+	end
+)
 
-	WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
-		return false
-	end, function()
-		WithPatchedMethod(QuestTogether, "GetNameplateTooltipScanGuid", function()
+QuestTogether:RegisterTest(
+	"tooltip quest detection rejects frame identity when live identity is unavailable",
+	function()
+		local unitFrame = {
+			unitGUID = "Creature-0-0-0-0-12345-0000000000",
+		}
+
+		WithPatchedMethod(QuestTogether, "GetNameplateUnitGuid", function()
 			return nil
 		end, function()
-			WithPatchedMethod(QuestTogether, "GetQuestObjectiveTooltipLines", function(_, unitToken, unitGuid)
-				AssertEquals(unitToken, "nameplate1")
-				AssertEquals(unitGuid, nil)
-				return {
-					{
-						leftText = "Tracking the Trail",
-					},
-					{
-						leftText = "1/8 Digested Object",
-					},
-				}, "structured_unit", 1
-			end, function()
-				local hasResolved, isQuestObjective, resolvedGuid =
-					QuestTogether:TryResolveNameplateQuestObjectiveState("nameplate1", {}, true)
+			AssertEquals(QuestTogether:GetNameplateTooltipScanGuid("nameplate1", unitFrame), nil)
+		end)
+	end
+)
 
-				AssertTrue(hasResolved)
-				AssertTrue(isQuestObjective)
-				AssertEquals(resolvedGuid, nil)
-				AssertEquals(QuestTogether.nameplateQuestGuidByUnitToken["nameplate1"], nil)
+QuestTogether:RegisterTest(
+	"tooltip quest detection can resolve live scans without a guid when unit tooltip sources succeed",
+	function()
+		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+		QuestTogether.isEnabled = true
+
+		WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
+			return false
+		end, function()
+			WithPatchedMethod(QuestTogether, "GetNameplateTooltipScanGuid", function()
+				return nil
+			end, function()
+				WithPatchedMethod(QuestTogether, "GetQuestObjectiveTooltipLines", function(_, unitToken, unitGuid)
+					AssertEquals(unitToken, "nameplate1")
+					AssertEquals(unitGuid, nil)
+					return {
+						{
+							leftText = "Tracking the Trail",
+						},
+						{
+							leftText = "1/8 Digested Object",
+						},
+					},
+						"structured_unit",
+						1
+				end, function()
+					local hasResolved, isQuestObjective, resolvedGuid =
+						QuestTogether:TryResolveNameplateQuestObjectiveState("nameplate1", {}, true)
+
+					AssertTrue(hasResolved)
+					AssertTrue(isQuestObjective)
+					AssertEquals(resolvedGuid, nil)
+					AssertEquals(QuestTogether.nameplateQuestGuidByUnitToken["nameplate1"], nil)
+				end)
 			end)
 		end)
-	end)
-end)
+	end
+)
 
 QuestTogether:RegisterTest("hidden tooltip quest scan uses addon-owned helpers", function()
 	local unitGuid = "Creature-0-0-0-0-12345-0000000000"
@@ -3427,120 +3935,142 @@ QuestTogether:RegisterTest("hidden tooltip quest scan uses addon-owned helpers",
 					AssertEquals(unitToken, "nameplate1")
 					return true
 				end, function()
-					WithPatchedMethod(QuestTogether, "GetNameplateScanTooltipLeftText", function(_, scanTooltip, lineIndex)
-						AssertEquals(scanTooltip, fakeTooltip)
-						if lineIndex == 1 then
-							return "Gnarlidin Trophies"
+					WithPatchedMethod(
+						QuestTogether,
+						"GetNameplateScanTooltipLeftText",
+						function(_, scanTooltip, lineIndex)
+							AssertEquals(scanTooltip, fakeTooltip)
+							if lineIndex == 1 then
+								return "Gnarlidin Trophies"
+							end
+							if lineIndex == 2 then
+								return "0/35 Gnarlidin Trophies"
+							end
+							return nil
+						end,
+						function()
+							local tooltipLines = QuestTogether:GetQuestObjectiveTooltipLines("nameplate1", unitGuid)
+							AssertEquals(fakeTooltip.unitToken, "nameplate1")
+							AssertEquals(fakeTooltip.hyperlink, nil)
+							AssertEquals(fakeTooltip.anchor, "ANCHOR_NONE")
+							AssertEquals(type(tooltipLines), "table")
+							AssertEquals(#tooltipLines, 2)
+							AssertEquals(tooltipLines[1].type, nil)
+							AssertEquals(tooltipLines[1].leftText, "Gnarlidin Trophies")
+							AssertEquals(tooltipLines[2].type, nil)
+							AssertEquals(tooltipLines[2].leftText, "0/35 Gnarlidin Trophies")
+							AssertEquals(fakeTooltip.hideCount, 2)
+							AssertEquals(fakeTooltip.clearCount, 2)
 						end
-						if lineIndex == 2 then
-							return "0/35 Gnarlidin Trophies"
-						end
-						return nil
-					end, function()
-						local tooltipLines = QuestTogether:GetQuestObjectiveTooltipLines("nameplate1", unitGuid)
-						AssertEquals(fakeTooltip.unitToken, "nameplate1")
-						AssertEquals(fakeTooltip.hyperlink, nil)
-						AssertEquals(fakeTooltip.anchor, "ANCHOR_NONE")
-						AssertEquals(type(tooltipLines), "table")
-						AssertEquals(#tooltipLines, 2)
-						AssertEquals(tooltipLines[1].type, nil)
-						AssertEquals(tooltipLines[1].leftText, "Gnarlidin Trophies")
-						AssertEquals(tooltipLines[2].type, nil)
-						AssertEquals(tooltipLines[2].leftText, "0/35 Gnarlidin Trophies")
-						AssertEquals(fakeTooltip.hideCount, 2)
-						AssertEquals(fakeTooltip.clearCount, 2)
-					end)
+					)
 				end)
 			end)
 		end)
 	end)
 end)
 
-QuestTogether:RegisterTest("structured tooltip map gate prevents native provider calls and resumes after closing", function()
-	local unitGuid = "Creature-0-0-0-0-12345-0000000000"
-	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
-	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
-	local mapVisible, hyperlinkCalls, unitCalls, surfaceCalls = true, 0, 0, 0
-	local tooltipData = { lines = {
-		{ type = titleLineType, leftText = "Gnarlidin Trophies" },
-		{ type = objectiveLineType, leftText = "0/35 Gnarlidin Trophies" },
-	} }
-	QuestTogether.nameplateQuestTextCache["Gnarlidin Trophies"] = true
-	QuestTogether.API = CreateApiWithOverrides({
-		IsWorldMapVisible = function() return mapVisible end,
-		GetTooltipDataForHyperlink = function(hyperlink)
-			hyperlinkCalls = hyperlinkCalls + 1
-			AssertEquals(hyperlink, "unit:" .. unitGuid)
-			return tooltipData
-		end,
-		GetTooltipDataForUnit = function(unitToken)
-			unitCalls = unitCalls + 1
+QuestTogether:RegisterTest(
+	"structured tooltip map gate prevents native provider calls and resumes after closing",
+	function()
+		local unitGuid = "Creature-0-0-0-0-12345-0000000000"
+		local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
+		local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
+			or "QuestObjective"
+		local mapVisible, hyperlinkCalls, unitCalls, surfaceCalls = true, 0, 0, 0
+		local tooltipData = {
+			lines = {
+				{ type = titleLineType, leftText = "Gnarlidin Trophies" },
+				{ type = objectiveLineType, leftText = "0/35 Gnarlidin Trophies" },
+			},
+		}
+		QuestTogether.nameplateQuestTextCache["Gnarlidin Trophies"] = true
+		QuestTogether.API = CreateApiWithOverrides({
+			IsWorldMapVisible = function()
+				return mapVisible
+			end,
+			GetTooltipDataForHyperlink = function(hyperlink)
+				hyperlinkCalls = hyperlinkCalls + 1
+				AssertEquals(hyperlink, "unit:" .. unitGuid)
+				return tooltipData
+			end,
+			GetTooltipDataForUnit = function(unitToken)
+				unitCalls = unitCalls + 1
+				AssertEquals(unitToken, "nameplate1")
+				return tooltipData
+			end,
+			SurfaceTooltipDataArgs = function(data)
+				surfaceCalls = surfaceCalls + 1
+				return data
+			end,
+		})
+		AssertEquals(QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid), nil)
+		AssertEquals(QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid, "hyperlink"), nil)
+		AssertEquals(QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid, "unit"), nil)
+		AssertEquals(hyperlinkCalls, 0, "map gate must run before the native hyperlink source")
+		AssertEquals(unitCalls, 0, "map gate must run before the native unit source")
+		AssertEquals(surfaceCalls, 0, "map gate must run before surfacing native data")
+
+		mapVisible = false
+		AssertEquals(#QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid), 2)
+		AssertEquals(#QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid, "unit"), 2)
+		AssertEquals(hyperlinkCalls, 1)
+		AssertEquals(unitCalls, 1)
+		AssertEquals(surfaceCalls, 2)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"structured tooltip suppression still falls back to hidden tooltip when both structured sources fail",
+	function()
+		local unitGuid = "Creature-0-0-0-0-12345-0000000000"
+		local hiddenTooltipCalls = 0
+
+		QuestTogether.API = CreateApiWithOverrides({
+			GetTooltipDataForHyperlink = function(hyperlink)
+				AssertEquals(hyperlink, "unit:" .. unitGuid)
+				return nil
+			end,
+			GetTooltipDataForUnit = function(unitToken)
+				AssertEquals(unitToken, "nameplate1")
+				return nil
+			end,
+		})
+
+		WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function(_, unitToken)
 			AssertEquals(unitToken, "nameplate1")
-			return tooltipData
-		end,
-		SurfaceTooltipDataArgs = function(data)
-			surfaceCalls = surfaceCalls + 1
-			return data
-		end,
-	})
-	AssertEquals(QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid), nil)
-	AssertEquals(QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid, "hyperlink"), nil)
-	AssertEquals(QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid, "unit"), nil)
-	AssertEquals(hyperlinkCalls, 0, "map gate must run before the native hyperlink source")
-	AssertEquals(unitCalls, 0, "map gate must run before the native unit source")
-	AssertEquals(surfaceCalls, 0, "map gate must run before surfacing native data")
-
-	mapVisible = false
-	AssertEquals(#QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid), 2)
-	AssertEquals(#QuestTogether:GetStructuredQuestObjectiveTooltipLines("nameplate1", unitGuid, "unit"), 2)
-	AssertEquals(hyperlinkCalls, 1)
-	AssertEquals(unitCalls, 1)
-	AssertEquals(surfaceCalls, 2)
-end)
-
-QuestTogether:RegisterTest("structured tooltip suppression still falls back to hidden tooltip when both structured sources fail", function()
-	local unitGuid = "Creature-0-0-0-0-12345-0000000000"
-	local hiddenTooltipCalls = 0
-
-	QuestTogether.API = CreateApiWithOverrides({
-		GetTooltipDataForHyperlink = function(hyperlink)
-			AssertEquals(hyperlink, "unit:" .. unitGuid)
-			return nil
-		end,
-		GetTooltipDataForUnit = function(unitToken)
-			AssertEquals(unitToken, "nameplate1")
-			return nil
-		end,
-	})
-
-	WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function(_, unitToken)
-		AssertEquals(unitToken, "nameplate1")
-		return true
-	end, function()
-		WithPatchedMethod(QuestTogether, "GetHiddenQuestObjectiveTooltipLines", function(_, candidateUnitToken, candidateGuid)
-			AssertEquals(candidateUnitToken, "nameplate1")
-			AssertEquals(candidateGuid, unitGuid)
-			hiddenTooltipCalls = hiddenTooltipCalls + 1
-			return {
-				{
-					leftText = "0/35 Gnarlidin Trophies",
-				},
-			}
+			return true
 		end, function()
-			local tooltipLines = QuestTogether:GetQuestObjectiveTooltipLines("nameplate1", unitGuid)
-			AssertEquals(type(tooltipLines), "table")
-			AssertEquals(#tooltipLines, 1)
-			AssertEquals(tooltipLines[1].leftText, "0/35 Gnarlidin Trophies")
+			WithPatchedMethod(
+				QuestTogether,
+				"GetHiddenQuestObjectiveTooltipLines",
+				function(_, candidateUnitToken, candidateGuid)
+					AssertEquals(candidateUnitToken, "nameplate1")
+					AssertEquals(candidateGuid, unitGuid)
+					hiddenTooltipCalls = hiddenTooltipCalls + 1
+					return {
+						{
+							leftText = "0/35 Gnarlidin Trophies",
+						},
+					}
+				end,
+				function()
+					local tooltipLines = QuestTogether:GetQuestObjectiveTooltipLines("nameplate1", unitGuid)
+					AssertEquals(type(tooltipLines), "table")
+					AssertEquals(#tooltipLines, 1)
+					AssertEquals(tooltipLines[1].leftText, "0/35 Gnarlidin Trophies")
+				end
+			)
 		end)
-	end)
 
-	AssertEquals(hiddenTooltipCalls, 1)
-end)
+		AssertEquals(hiddenTooltipCalls, 1)
+	end
+)
 
 QuestTogether:RegisterTest("structured-tooltip clients allow Blizzard tooltip scans when map is closed", function()
 	local unitGuid = "Creature-0-0-0-0-12345-0000000000"
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
-	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
+	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
+		or "QuestObjective"
 
 	QuestTogether.API = CreateApiWithOverrides({
 		IsWorldMapVisible = function()
@@ -3586,7 +4116,8 @@ end)
 QuestTogether:RegisterTest("structured-tooltip clients fall back from unit payloads to hyperlink payloads", function()
 	local unitGuid = "Creature-0-0-0-0-12345-0000000000"
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
-	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
+	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
+		or "QuestObjective"
 
 	QuestTogether.API = CreateApiWithOverrides({
 		IsWorldMapVisible = function()
@@ -3671,55 +4202,61 @@ QuestTogether:RegisterTest("structured tooltip clients keep the hidden tooltip f
 	AssertTrue(QuestTogether:IsNameplateTooltipScanEnabled())
 end)
 
-QuestTogether:RegisterTest("hidden tooltip fallback stays enabled when structured tooltip APIs are unavailable", function()
-	QuestTogether.API = CreateApiWithOverrides({
-		GetTooltipDataForHyperlink = false,
-		GetTooltipDataForUnit = false,
-	})
-	AssertTrue(QuestTogether:IsNameplateTooltipScanEnabled())
-end)
+QuestTogether:RegisterTest(
+	"hidden tooltip fallback stays enabled when structured tooltip APIs are unavailable",
+	function()
+		QuestTogether.API = CreateApiWithOverrides({
+			GetTooltipDataForHyperlink = false,
+			GetTooltipDataForUnit = false,
+		})
+		AssertTrue(QuestTogether:IsNameplateTooltipScanEnabled())
+	end
+)
 
-QuestTogether:RegisterTest("nameplate quest text cache uses quest log titles without reading map task arrays", function()
-	QuestTogether.API = CreateApiWithOverrides({
-		IsInInstance = function()
-			return false
-		end,
-		GetPlayerMapID = function(unitToken)
-			error("map task text cache reads should stay disabled for Blizzard map safety")
-		end,
-		GetTaskQuestsOnMap = function(mapID)
-			error("map task text cache reads should stay disabled for Blizzard map safety")
-		end,
-		GetTaskQuestTitle = function(questID)
-			error("map task text cache reads should stay disabled for Blizzard map safety")
-		end,
-	})
-	local snapshotState = QuestTogether:GetQuestSnapshotStateStore()
-	snapshotState.generation = 1
-	snapshotState.byQuestID = {
-		[10101] = {
-			questID = 10101,
-			title = "Log Quest",
-			isHeader = false,
-			isHidden = false,
-		},
-	}
-	snapshotState.order = { 10101 }
+QuestTogether:RegisterTest(
+	"nameplate quest text cache uses quest log titles without reading map task arrays",
+	function()
+		QuestTogether.API = CreateApiWithOverrides({
+			IsInInstance = function()
+				return false
+			end,
+			GetPlayerMapID = function(unitToken)
+				error("map task text cache reads should stay disabled for Blizzard map safety")
+			end,
+			GetTaskQuestsOnMap = function(mapID)
+				error("map task text cache reads should stay disabled for Blizzard map safety")
+			end,
+			GetTaskQuestTitle = function(questID)
+				error("map task text cache reads should stay disabled for Blizzard map safety")
+			end,
+		})
+		local snapshotState = QuestTogether:GetQuestSnapshotStateStore()
+		snapshotState.generation = 1
+		snapshotState.byQuestID = {
+			[10101] = {
+				questID = 10101,
+				title = "Log Quest",
+				isHeader = false,
+				isHidden = false,
+			},
+		}
+		snapshotState.order = { 10101 }
 
-	WithPatchedMethod(QuestTogether, "GetActiveWorldQuestAreaSnapshot", function()
-		error("area snapshot fallback is not part of Plater's quest cache")
-	end, function()
-		WithPatchedMethod(QuestTogether, "GetQuestTitle", function()
-			error("quest-title fallback is not part of Plater's world quest cache")
+		WithPatchedMethod(QuestTogether, "GetActiveWorldQuestAreaSnapshot", function()
+			error("area snapshot fallback is not part of Plater's quest cache")
 		end, function()
-			QuestTogether:RebuildNameplateQuestTextCache()
+			WithPatchedMethod(QuestTogether, "GetQuestTitle", function()
+				error("quest-title fallback is not part of Plater's world quest cache")
+			end, function()
+				QuestTogether:RebuildNameplateQuestTextCache()
+			end)
 		end)
-	end)
 
-	AssertTrue(QuestTogether.nameplateQuestTextCache["Log Quest"])
-	AssertEquals(QuestTogether.nameplateQuestTextCache["Tracked Quest"], nil)
-	AssertEquals(QuestTogether.nameplateQuestTextCache["Bonus Objective"], nil)
-end)
+		AssertTrue(QuestTogether.nameplateQuestTextCache["Log Quest"])
+		AssertEquals(QuestTogether.nameplateQuestTextCache["Tracked Quest"], nil)
+		AssertEquals(QuestTogether.nameplateQuestTextCache["Bonus Objective"], nil)
+	end
+)
 
 QuestTogether:RegisterTest("nameplate quest text cache includes hidden quest log titles like Plater", function()
 	local snapshotState = QuestTogether:GetQuestSnapshotStateStore()
@@ -3873,7 +4410,8 @@ end)
 
 QuestTogether:RegisterTest("structured tooltip extraction surfaces args text when leftText is missing", function()
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
-	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
+	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
+		or "QuestObjective"
 	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
 
 	local tooltipLines = QuestTogether:ExtractQuestObjectiveTooltipLinesFromTooltipData({
@@ -3908,7 +4446,8 @@ end)
 
 QuestTogether:RegisterTest("structured tooltip extraction surfaces tooltip args through the API helper", function()
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
-	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
+	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
+		or "QuestObjective"
 	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
 
 	local tooltipData = {
@@ -3946,17 +4485,25 @@ QuestTogether:RegisterTest("announcement refresh discards stopped addon-owned pl
 	local unitFrame = {}
 	local bubble = {
 		SetAlpha = function() end,
-		Hide = function() hidden = true end,
+		Hide = function()
+			hidden = true
+		end,
 	}
 	local host = { UnitFrame = unitFrame }
 	QuestTogether.isEnabled = true
 	QuestTogether.announcementBubbleScreenHostFrame = host
 	QuestTogether.nameplateBubbleByUnitFrame[unitFrame] = bubble
 	QuestTogether.nameplateBubbleStateByFrame[bubble] = {
-		unitToken = "player", text = "Quest Completed: Widgets", eventType = "QUEST_COMPLETED",
+		unitToken = "player",
+		text = "Quest Completed: Widgets",
+		eventType = "QUEST_COMPLETED",
 	}
-	WithPatchedMethod(QuestTogether, "GetAnnouncementBubbleHostFrameForUnit", function() return host end, function()
-		WithPatchedMethod(QuestTogether, "ShowAnnouncementBubbleOnNameplate", function() shows = shows + 1 end, function()
+	WithPatchedMethod(QuestTogether, "GetAnnouncementBubbleHostFrameForUnit", function()
+		return host
+	end, function()
+		WithPatchedMethod(QuestTogether, "ShowAnnouncementBubbleOnNameplate", function()
+			shows = shows + 1
+		end, function()
 			QuestTogether:RefreshActiveAnnouncementBubbles()
 		end)
 	end)
@@ -3967,58 +4514,67 @@ QuestTogether:RegisterTest("announcement refresh discards stopped addon-owned pl
 	AssertEquals(bubble.qtHostFrame, nil)
 end)
 
-QuestTogether:RegisterTest("tooltip objective evaluation accepts party-member progress lines within matched quest blocks", function()
-	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
-	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
-	local playerLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestPlayer or "QuestPlayer"
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+QuestTogether:RegisterTest(
+	"tooltip objective evaluation accepts party-member progress lines within matched quest blocks",
+	function()
+		local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
+		local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
+			or "QuestObjective"
+		local playerLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestPlayer
+			or "QuestPlayer"
+		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
 
-	local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
-		{
-			type = titleLineType,
-			leftText = "Tracking the Trail",
-		},
-		{
-			type = objectiveLineType,
-			leftText = "8/8 Digested Object",
-		},
-		{
-			type = playerLineType,
-			leftText = "Friend-Realm",
-		},
-		{
-			type = objectiveLineType,
-			leftText = "3/8 Digested Object",
-		},
-	})
+		local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
+			{
+				type = titleLineType,
+				leftText = "Tracking the Trail",
+			},
+			{
+				type = objectiveLineType,
+				leftText = "8/8 Digested Object",
+			},
+			{
+				type = playerLineType,
+				leftText = "Friend-Realm",
+			},
+			{
+				type = objectiveLineType,
+				leftText = "3/8 Digested Object",
+			},
+		})
 
-	AssertTrue(hasObjective)
-end)
+		AssertTrue(hasObjective)
+	end
+)
 
-QuestTogether:RegisterTest("tooltip objective evaluation accepts normalized string line types inside matched quest blocks", function()
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+QuestTogether:RegisterTest(
+	"tooltip objective evaluation accepts normalized string line types inside matched quest blocks",
+	function()
+		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
 
-	local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
-		{
-			type = "QuestTitle",
-			leftText = "Tracking the Trail",
-		},
-		{
-			type = "QuestPlayer",
-			leftText = "Friend-Realm",
-		},
-		{
-			type = "QuestObjective",
-			leftText = "3/8 Digested Object",
-		},
-	})
+		local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
+			{
+				type = "QuestTitle",
+				leftText = "Tracking the Trail",
+			},
+			{
+				type = "QuestPlayer",
+				leftText = "Friend-Realm",
+			},
+			{
+				type = "QuestObjective",
+				leftText = "3/8 Digested Object",
+			},
+		})
 
-	AssertTrue(hasObjective)
-end)
+		AssertTrue(hasObjective)
+	end
+)
 
 QuestTogether:RegisterTest("tooltip objective evaluation ignores complete-only objective blocks", function()
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
-	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
+	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
+		or "QuestObjective"
 	local playerLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestPlayer or "QuestPlayer"
 	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
 
@@ -4059,7 +4615,8 @@ QuestTogether:RegisterTest("tooltip objective evaluation ignores quest-title-onl
 end)
 
 QuestTogether:RegisterTest("tooltip objective evaluation requires matched known quest text before progress", function()
-	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
+	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
+		or "QuestObjective"
 	local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
 		{
 			type = objectiveLineType,
@@ -4071,7 +4628,8 @@ QuestTogether:RegisterTest("tooltip objective evaluation requires matched known 
 end)
 
 QuestTogether:RegisterTest("tooltip objective evaluation accepts standalone tracked objective lines", function()
-	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
+	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
+		or "QuestObjective"
 	QuestTogether.nameplateQuestTextCache["In War Mode obtain Hardin Steellock's Head"] = true
 
 	local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
@@ -4084,23 +4642,28 @@ QuestTogether:RegisterTest("tooltip objective evaluation accepts standalone trac
 	AssertTrue(hasObjective)
 end)
 
-QuestTogether:RegisterTest("tooltip objective evaluation ignores complete standalone tracked objective lines", function()
-	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
-	QuestTogether.nameplateQuestTextCache["In War Mode obtain Hardin Steellock's Head"] = true
+QuestTogether:RegisterTest(
+	"tooltip objective evaluation ignores complete standalone tracked objective lines",
+	function()
+		local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
+			or "QuestObjective"
+		QuestTogether.nameplateQuestTextCache["In War Mode obtain Hardin Steellock's Head"] = true
 
-	local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
-		{
-			type = objectiveLineType,
-			leftText = "1/1 In War Mode obtain Hardin Steellock's Head",
-		},
-	})
+		local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
+			{
+				type = objectiveLineType,
+				leftText = "1/1 In War Mode obtain Hardin Steellock's Head",
+			},
+		})
 
-	AssertFalse(hasObjective)
-end)
+		AssertFalse(hasObjective)
+	end
+)
 
 QuestTogether:RegisterTest("tooltip objective evaluation ignores unmatched quest title blocks", function()
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
-	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
+	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
+		or "QuestObjective"
 	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
 
 	local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
@@ -4119,7 +4682,8 @@ end)
 
 QuestTogether:RegisterTest("tooltip objective evaluation stops at threat marker", function()
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
-	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
+	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
+		or "QuestObjective"
 	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
 
 	local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
@@ -4142,7 +4706,8 @@ end)
 
 QuestTogether:RegisterTest("tooltip objective evaluation stops when tooltip line metadata is secret", function()
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
-	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
+	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
+		or "QuestObjective"
 	local secretLine = {}
 	setmetatable(secretLine, {
 		__index = function()
@@ -4208,39 +4773,47 @@ QuestTogether:RegisterTest("personal bubble anchor persists per character and re
 	end)
 end)
 
-QuestTogether:RegisterTest("announcement bubbles use their own context policy instead of quest-nameplate instance policy", function()
-	local delegated = 0
+QuestTogether:RegisterTest(
+	"announcement bubbles use their own context policy instead of quest-nameplate instance policy",
+	function()
+		local delegated = 0
 
-	WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
-		return true
-	end, function()
-		WithPatchedMethod(QuestTogether, "IsAnnouncementBubbleAugmentationBlockedInCurrentContext", function()
-			return false
+		WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
+			return true
 		end, function()
-			WithPatchedMethod(QuestTogether, "TryShowAnnouncementBubbleOnUnitNameplate", function(_, unitToken, text, eventType, iconAsset, iconKind)
-				delegated = delegated + 1
-				AssertEquals(unitToken, "player")
-				AssertEquals(text, "Test bubble")
-				AssertEquals(eventType, "QUEST_PROGRESS")
-				AssertEquals(iconAsset, "Interface\\Icons\\INV_Misc_QuestionMark")
-				AssertEquals(iconKind, "texture")
-				return true, "player"
+			WithPatchedMethod(QuestTogether, "IsAnnouncementBubbleAugmentationBlockedInCurrentContext", function()
+				return false
 			end, function()
-				local ok, unitName = QuestTogether:ShowAnnouncementBubbleOnUnitNameplate(
-					"player",
-					"Test bubble",
-					"QUEST_PROGRESS",
-					"Interface\\Icons\\INV_Misc_QuestionMark",
-					"texture"
+				WithPatchedMethod(
+					QuestTogether,
+					"TryShowAnnouncementBubbleOnUnitNameplate",
+					function(_, unitToken, text, eventType, iconAsset, iconKind)
+						delegated = delegated + 1
+						AssertEquals(unitToken, "player")
+						AssertEquals(text, "Test bubble")
+						AssertEquals(eventType, "QUEST_PROGRESS")
+						AssertEquals(iconAsset, "Interface\\Icons\\INV_Misc_QuestionMark")
+						AssertEquals(iconKind, "texture")
+						return true, "player"
+					end,
+					function()
+						local ok, unitName = QuestTogether:ShowAnnouncementBubbleOnUnitNameplate(
+							"player",
+							"Test bubble",
+							"QUEST_PROGRESS",
+							"Interface\\Icons\\INV_Misc_QuestionMark",
+							"texture"
+						)
+						AssertTrue(ok)
+						AssertEquals(unitName, "player")
+					end
 				)
-				AssertTrue(ok)
-				AssertEquals(unitName, "player")
 			end)
 		end)
-	end)
 
-	AssertEquals(delegated, 1)
-end)
+		AssertEquals(delegated, 1)
+	end
+)
 
 QuestTogether:RegisterTest("announcement bubbles can still be blocked by their own context policy", function()
 	local delegated = 0
@@ -4261,15 +4834,18 @@ QuestTogether:RegisterTest("announcement bubbles can still be blocked by their o
 	AssertEquals(delegated, 0)
 end)
 
-QuestTogether:RegisterTest("nearby bubbles honor runtime restrictions while personal bubbles remain addon-owned", function()
-	WithPatchedMethod(QuestTogether, "IsWorkBlocked", function(_, workClass)
-		AssertEquals(workClass, "foreign_frame_mutation")
-		return true
-	end, function()
-		AssertTrue(QuestTogether:IsAnnouncementBubbleAugmentationBlockedInCurrentContext("nameplate1"))
-		AssertFalse(QuestTogether:IsAnnouncementBubbleAugmentationBlockedInCurrentContext("player"))
-	end)
-end)
+QuestTogether:RegisterTest(
+	"nearby bubbles honor runtime restrictions while personal bubbles remain addon-owned",
+	function()
+		WithPatchedMethod(QuestTogether, "IsWorkBlocked", function(_, workClass)
+			AssertEquals(workClass, "foreign_frame_mutation")
+			return true
+		end, function()
+			AssertTrue(QuestTogether:IsAnnouncementBubbleAugmentationBlockedInCurrentContext("nameplate1"))
+			AssertFalse(QuestTogether:IsAnnouncementBubbleAugmentationBlockedInCurrentContext("player"))
+		end)
+	end
+)
 
 QuestTogether:RegisterTest("personal bubble host construction waits until runtime restrictions end", function()
 	QuestTogether.announcementBubbleScreenHostFrame = nil
@@ -4281,71 +4857,77 @@ QuestTogether:RegisterTest("personal bubble host construction waits until runtim
 	AssertEquals(QuestTogether.announcementBubbleScreenHostFrame, nil)
 end)
 
-QuestTogether:RegisterTest("nameplate capability notice reports quest plates unavailable while quest bubbles remain available in scenario-like instances", function()
-	QuestTogether.isEnabled = true
-	QuestTogether.db.profile.nameplateQuestIconEnabled = true
-	QuestTogether.db.profile.showChatBubbles = true
-	QuestTogether.db.profile.hideMyOwnChatBubbles = false
-	QuestTogether.API = CreateApiWithOverrides({
-		IsInInstance = function()
-			return true
-		end,
-		GetInstanceInfo = function()
-			return {
-				instanceType = "scenario",
-			}
-		end,
-	})
+QuestTogether:RegisterTest(
+	"nameplate capability notice reports quest plates unavailable while quest bubbles remain available in scenario-like instances",
+	function()
+		QuestTogether.isEnabled = true
+		QuestTogether.db.profile.nameplateQuestIconEnabled = true
+		QuestTogether.db.profile.showChatBubbles = true
+		QuestTogether.db.profile.hideMyOwnChatBubbles = false
+		QuestTogether.API = CreateApiWithOverrides({
+			IsInInstance = function()
+				return true
+			end,
+			GetInstanceInfo = function()
+				return {
+					instanceType = "scenario",
+				}
+			end,
+		})
 
-	local report = QuestTogether:GetNameplateCapabilityNoticeReport()
+		local report = QuestTogether:GetNameplateCapabilityNoticeReport()
 
-	AssertTrue(report ~= nil)
-	AssertEquals(report.header, "QuestTogether detects limited functionality in the current instance.")
-	AssertEquals(#report.lines, 3)
-	AssertEquals(report.lines[1], "|cffffd200Quest Plates: |r|cffff4444unavailable|r")
-	AssertEquals(report.lines[2], "|cffffd200Personal Announcement Bubbles: |r|cff33ff99available|r")
-	AssertEquals(report.lines[3], "|cffffd200Nearby-Player Announcement Bubbles: |r|cff33ff99available|r")
-	AssertEquals(
-		report.key,
-		"QuestTogether detects limited functionality in the current instance.\n"
-			.. "Quest Plates: unavailable\n"
-			.. "Personal Announcement Bubbles: available\n"
-			.. "Nearby-Player Announcement Bubbles: available"
-	)
-end)
+		AssertTrue(report ~= nil)
+		AssertEquals(report.header, "QuestTogether detects limited functionality in the current instance.")
+		AssertEquals(#report.lines, 3)
+		AssertEquals(report.lines[1], "|cffffd200Quest Plates: |r|cffff4444unavailable|r")
+		AssertEquals(report.lines[2], "|cffffd200Personal Announcement Bubbles: |r|cff33ff99available|r")
+		AssertEquals(report.lines[3], "|cffffd200Nearby-Player Announcement Bubbles: |r|cff33ff99available|r")
+		AssertEquals(
+			report.key,
+			"QuestTogether detects limited functionality in the current instance.\n"
+				.. "Quest Plates: unavailable\n"
+				.. "Personal Announcement Bubbles: available\n"
+				.. "Nearby-Player Announcement Bubbles: available"
+		)
+	end
+)
 
-QuestTogether:RegisterTest("nameplate capability notice reports group-instance bubble limits separately from quest plates", function()
-	QuestTogether.isEnabled = true
-	QuestTogether.db.profile.nameplateQuestIconEnabled = true
-	QuestTogether.db.profile.showChatBubbles = true
-	QuestTogether.db.profile.hideMyOwnChatBubbles = false
-	QuestTogether.API = CreateApiWithOverrides({
-		IsInInstance = function()
-			return true
-		end,
-		GetInstanceInfo = function()
-			return {
-				instanceType = "party",
-			}
-		end,
-	})
+QuestTogether:RegisterTest(
+	"nameplate capability notice reports group-instance bubble limits separately from quest plates",
+	function()
+		QuestTogether.isEnabled = true
+		QuestTogether.db.profile.nameplateQuestIconEnabled = true
+		QuestTogether.db.profile.showChatBubbles = true
+		QuestTogether.db.profile.hideMyOwnChatBubbles = false
+		QuestTogether.API = CreateApiWithOverrides({
+			IsInInstance = function()
+				return true
+			end,
+			GetInstanceInfo = function()
+				return {
+					instanceType = "party",
+				}
+			end,
+		})
 
-	local report = QuestTogether:GetNameplateCapabilityNoticeReport()
+		local report = QuestTogether:GetNameplateCapabilityNoticeReport()
 
-	AssertTrue(report ~= nil)
-	AssertEquals(report.header, "QuestTogether detects limited functionality in the current instance.")
-	AssertEquals(#report.lines, 3)
-	AssertEquals(report.lines[1], "|cffffd200Quest Plates: |r|cffff4444unavailable|r")
-	AssertEquals(report.lines[2], "|cffffd200Personal Announcement Bubbles: |r|cff33ff99available|r")
-	AssertEquals(report.lines[3], "|cffffd200Nearby-Player Announcement Bubbles: |r|cffff4444unavailable|r")
-	AssertEquals(
-		report.key,
-		"QuestTogether detects limited functionality in the current instance.\n"
-			.. "Quest Plates: unavailable\n"
-			.. "Personal Announcement Bubbles: available\n"
-			.. "Nearby-Player Announcement Bubbles: unavailable"
-	)
-end)
+		AssertTrue(report ~= nil)
+		AssertEquals(report.header, "QuestTogether detects limited functionality in the current instance.")
+		AssertEquals(#report.lines, 3)
+		AssertEquals(report.lines[1], "|cffffd200Quest Plates: |r|cffff4444unavailable|r")
+		AssertEquals(report.lines[2], "|cffffd200Personal Announcement Bubbles: |r|cff33ff99available|r")
+		AssertEquals(report.lines[3], "|cffffd200Nearby-Player Announcement Bubbles: |r|cffff4444unavailable|r")
+		AssertEquals(
+			report.key,
+			"QuestTogether detects limited functionality in the current instance.\n"
+				.. "Quest Plates: unavailable\n"
+				.. "Personal Announcement Bubbles: available\n"
+				.. "Nearby-Player Announcement Bubbles: unavailable"
+		)
+	end
+)
 
 QuestTogether:RegisterTest("nameplate capability report ignores features disabled by user options", function()
 	QuestTogether.isEnabled = true
@@ -4371,134 +4953,142 @@ QuestTogether:RegisterTest("nameplate capability report ignores features disable
 	AssertEquals(report.lines[1], "|cffffd200Nearby-Player Announcement Bubbles: |r|cffff4444unavailable|r")
 end)
 
-QuestTogether:RegisterTest("nameplate capability report returns full availability status when enabled features are available", function()
-	QuestTogether.isEnabled = true
-	QuestTogether.db.profile.nameplateQuestIconEnabled = true
-	QuestTogether.db.profile.showChatBubbles = true
-	QuestTogether.db.profile.hideMyOwnChatBubbles = false
-	QuestTogether.API = CreateApiWithOverrides({
-		IsInInstance = function()
-			return false
-		end,
-		GetInstanceInfo = function()
-			return {
-				instanceType = "",
-			}
-		end,
-	})
+QuestTogether:RegisterTest(
+	"nameplate capability report returns full availability status when enabled features are available",
+	function()
+		QuestTogether.isEnabled = true
+		QuestTogether.db.profile.nameplateQuestIconEnabled = true
+		QuestTogether.db.profile.showChatBubbles = true
+		QuestTogether.db.profile.hideMyOwnChatBubbles = false
+		QuestTogether.API = CreateApiWithOverrides({
+			IsInInstance = function()
+				return false
+			end,
+			GetInstanceInfo = function()
+				return {
+					instanceType = "",
+				}
+			end,
+		})
 
-	local report = QuestTogether:GetNameplateCapabilityNoticeReport()
+		local report = QuestTogether:GetNameplateCapabilityNoticeReport()
 
-	AssertTrue(report ~= nil)
-	AssertEquals(report.mode, "full")
-	AssertEquals(report.header, "Full QuestTogether functionality is available again.")
-	AssertEquals(#report.lines, 3)
-	AssertEquals(report.lines[1], "|cffffd200Quest Plates: |r|cff33ff99available|r")
-	AssertEquals(report.lines[2], "|cffffd200Personal Announcement Bubbles: |r|cff33ff99available|r")
-	AssertEquals(report.lines[3], "|cffffd200Nearby-Player Announcement Bubbles: |r|cff33ff99available|r")
-	AssertEquals(
-		report.key,
-		"Full QuestTogether functionality is available again.\n"
-			.. "Quest Plates: available\n"
-			.. "Personal Announcement Bubbles: available\n"
-			.. "Nearby-Player Announcement Bubbles: available"
-	)
-end)
+		AssertTrue(report ~= nil)
+		AssertEquals(report.mode, "full")
+		AssertEquals(report.header, "Full QuestTogether functionality is available again.")
+		AssertEquals(#report.lines, 3)
+		AssertEquals(report.lines[1], "|cffffd200Quest Plates: |r|cff33ff99available|r")
+		AssertEquals(report.lines[2], "|cffffd200Personal Announcement Bubbles: |r|cff33ff99available|r")
+		AssertEquals(report.lines[3], "|cffffd200Nearby-Player Announcement Bubbles: |r|cff33ff99available|r")
+		AssertEquals(
+			report.key,
+			"Full QuestTogether functionality is available again.\n"
+				.. "Quest Plates: available\n"
+				.. "Personal Announcement Bubbles: available\n"
+				.. "Nearby-Player Announcement Bubbles: available"
+		)
+	end
+)
 
-QuestTogether:RegisterTest("nameplate capability notices are one-shot per blocked context and reset when availability returns", function()
-	local warnings = {}
-	local warningDetails = {}
-	local infos = {}
-	local infoDetails = {}
+QuestTogether:RegisterTest(
+	"nameplate capability notices are one-shot per blocked context and reset when availability returns",
+	function()
+		local warnings = {}
+		local warningDetails = {}
+		local infos = {}
+		local infoDetails = {}
 
-	QuestTogether.isEnabled = true
-	QuestTogether.db.profile.nameplateQuestIconEnabled = true
-	QuestTogether.db.profile.showChatBubbles = true
-	QuestTogether.db.profile.hideMyOwnChatBubbles = false
-	QuestTogether.API = CreateApiWithOverrides({
-		IsInInstance = function()
-			return true
-		end,
-		GetInstanceInfo = function()
-			return {
-				instanceType = "scenario",
-			}
-		end,
-	})
+		QuestTogether.isEnabled = true
+		QuestTogether.db.profile.nameplateQuestIconEnabled = true
+		QuestTogether.db.profile.showChatBubbles = true
+		QuestTogether.db.profile.hideMyOwnChatBubbles = false
+		QuestTogether.API = CreateApiWithOverrides({
+			IsInInstance = function()
+				return true
+			end,
+			GetInstanceInfo = function()
+				return {
+					instanceType = "scenario",
+				}
+			end,
+		})
 
-	WithPatchedMethod(QuestTogether, "PrintChatLogSystemMessage", function(_, message)
-		warnings[#warnings + 1] = message
-	end, function()
-		WithPatchedMethod(QuestTogether, "PrintChatLogWarningMessage", function(_, message)
+		WithPatchedMethod(QuestTogether, "PrintChatLogSystemMessage", function(_, message)
 			warnings[#warnings + 1] = message
 		end, function()
-			WithPatchedMethod(QuestTogether, "PrintChatLogWarningDetailMessage", function(_, message)
-				warningDetails[#warningDetails + 1] = message
-				return true
+			WithPatchedMethod(QuestTogether, "PrintChatLogWarningMessage", function(_, message)
+				warnings[#warnings + 1] = message
 			end, function()
-				WithPatchedMethod(QuestTogether, "PrintChatLogInfoMessage", function(_, message)
-					infos[#infos + 1] = message
+				WithPatchedMethod(QuestTogether, "PrintChatLogWarningDetailMessage", function(_, message)
+					warningDetails[#warningDetails + 1] = message
+					return true
 				end, function()
-					WithPatchedMethod(QuestTogether, "PrintChatLogInfoDetailMessage", function(_, message)
-						infoDetails[#infoDetails + 1] = message
-						return true
+					WithPatchedMethod(QuestTogether, "PrintChatLogInfoMessage", function(_, message)
+						infos[#infos + 1] = message
 					end, function()
-						WithPatchedMethod(QuestTogether, "ForEachVisibleNamePlate", function() end, function()
-							WithPatchedMethod(QuestTogether, "RefreshActiveAnnouncementBubbles", function() end, function()
-								QuestTogether:RefreshNameplateAugmentation()
-								QuestTogether:RefreshNameplateAugmentation()
+						WithPatchedMethod(QuestTogether, "PrintChatLogInfoDetailMessage", function(_, message)
+							infoDetails[#infoDetails + 1] = message
+							return true
+						end, function()
+							WithPatchedMethod(QuestTogether, "ForEachVisibleNamePlate", function() end, function()
+								WithPatchedMethod(
+									QuestTogether,
+									"RefreshActiveAnnouncementBubbles",
+									function() end,
+									function()
+										QuestTogether:RefreshNameplateAugmentation()
+										QuestTogether:RefreshNameplateAugmentation()
 
-								QuestTogether.API = CreateApiWithOverrides({
-									IsInInstance = function()
-										return false
-									end,
-									GetInstanceInfo = function()
-										return {
-											instanceType = "",
-										}
-									end,
-								})
-								QuestTogether:RefreshNameplateAugmentation()
+										QuestTogether.API = CreateApiWithOverrides({
+											IsInInstance = function()
+												return false
+											end,
+											GetInstanceInfo = function()
+												return {
+													instanceType = "",
+												}
+											end,
+										})
+										QuestTogether:RefreshNameplateAugmentation()
 
-								QuestTogether.API = CreateApiWithOverrides({
-									IsInInstance = function()
-										return true
-									end,
-									GetInstanceInfo = function()
-										return {
-											instanceType = "scenario",
-										}
-									end,
-								})
-								QuestTogether:RefreshNameplateAugmentation()
+										QuestTogether.API = CreateApiWithOverrides({
+											IsInInstance = function()
+												return true
+											end,
+											GetInstanceInfo = function()
+												return {
+													instanceType = "scenario",
+												}
+											end,
+										})
+										QuestTogether:RefreshNameplateAugmentation()
+									end
+								)
 							end)
 						end)
 					end)
 				end)
 			end)
 		end)
-	end)
 
-	AssertEquals(#warnings, 2)
-	AssertEquals(#warningDetails, 6)
-	AssertEquals(#infos, 1)
-	AssertEquals(#infoDetails, 3)
-	AssertEquals(
-		warnings[1],
-		"QuestTogether detects limited functionality in the current instance."
-	)
-	AssertEquals(warnings[2], warnings[1])
-	AssertEquals(warningDetails[1], "|cffffd200Quest Plates: |r|cffff4444unavailable|r")
-	AssertEquals(warningDetails[2], "|cffffd200Personal Announcement Bubbles: |r|cff33ff99available|r")
-	AssertEquals(warningDetails[3], "|cffffd200Nearby-Player Announcement Bubbles: |r|cff33ff99available|r")
-	AssertEquals(warningDetails[4], warningDetails[1])
-	AssertEquals(warningDetails[5], warningDetails[2])
-	AssertEquals(warningDetails[6], warningDetails[3])
-	AssertEquals(infos[1], "Full QuestTogether functionality is available again.")
-	AssertEquals(infoDetails[1], "|cffffd200Quest Plates: |r|cff33ff99available|r")
-	AssertEquals(infoDetails[2], "|cffffd200Personal Announcement Bubbles: |r|cff33ff99available|r")
-	AssertEquals(infoDetails[3], "|cffffd200Nearby-Player Announcement Bubbles: |r|cff33ff99available|r")
-end)
+		AssertEquals(#warnings, 2)
+		AssertEquals(#warningDetails, 6)
+		AssertEquals(#infos, 1)
+		AssertEquals(#infoDetails, 3)
+		AssertEquals(warnings[1], "QuestTogether detects limited functionality in the current instance.")
+		AssertEquals(warnings[2], warnings[1])
+		AssertEquals(warningDetails[1], "|cffffd200Quest Plates: |r|cffff4444unavailable|r")
+		AssertEquals(warningDetails[2], "|cffffd200Personal Announcement Bubbles: |r|cff33ff99available|r")
+		AssertEquals(warningDetails[3], "|cffffd200Nearby-Player Announcement Bubbles: |r|cff33ff99available|r")
+		AssertEquals(warningDetails[4], warningDetails[1])
+		AssertEquals(warningDetails[5], warningDetails[2])
+		AssertEquals(warningDetails[6], warningDetails[3])
+		AssertEquals(infos[1], "Full QuestTogether functionality is available again.")
+		AssertEquals(infoDetails[1], "|cffffd200Quest Plates: |r|cff33ff99available|r")
+		AssertEquals(infoDetails[2], "|cffffd200Personal Announcement Bubbles: |r|cff33ff99available|r")
+		AssertEquals(infoDetails[3], "|cffffd200Nearby-Player Announcement Bubbles: |r|cff33ff99available|r")
+	end
+)
 
 QuestTogether:RegisterTest("chat log warning message uses warning styling", function()
 	local printed = {}
@@ -4511,10 +5101,7 @@ QuestTogether:RegisterTest("chat log warning message uses warning styling", func
 	QuestTogether:PrintChatLogWarningMessage("Quest plates are unavailable here.")
 
 	AssertEquals(#printed, 1)
-	AssertEquals(
-		printed[1],
-		expectedIcon .. "|cffff8800Warning:|r |cffffd200Quest plates are unavailable here.|r"
-	)
+	AssertEquals(printed[1], expectedIcon .. "|cffff8800Warning:|r |cffffd200Quest plates are unavailable here.|r")
 end)
 
 QuestTogether:RegisterTest("chat log warning detail message uses report styling", function()
@@ -4527,10 +5114,7 @@ QuestTogether:RegisterTest("chat log warning detail message uses report styling"
 	QuestTogether:PrintChatLogWarningDetailMessage("|cffffd200Quest Plates: |r|cffff4444unavailable|r")
 
 	AssertEquals(#printed, 1)
-	AssertEquals(
-		printed[1],
-		"|cffff8800 - |r|cffffd200Quest Plates: |r|cffff4444unavailable|r"
-	)
+	AssertEquals(printed[1], "|cffff8800 - |r|cffffd200Quest Plates: |r|cffff4444unavailable|r")
 end)
 
 QuestTogether:RegisterTest("chat log info message uses info styling", function()
@@ -4560,10 +5144,7 @@ QuestTogether:RegisterTest("chat log info detail message uses report styling", f
 	QuestTogether:PrintChatLogInfoDetailMessage("|cffffd200Quest Plates: |r|cff33ff99available|r")
 
 	AssertEquals(#printed, 1)
-	AssertEquals(
-		printed[1],
-		"|cff33ff99 - |r|cffffd200Quest Plates: |r|cff33ff99available|r"
-	)
+	AssertEquals(printed[1], "|cff33ff99 - |r|cffffd200Quest Plates: |r|cff33ff99available|r")
 end)
 
 QuestTogether:RegisterTest("console announcement message includes icon and player name", function()
@@ -4652,38 +5233,68 @@ QuestTogether:RegisterTest("chat log quest status action prints local quest stat
 end)
 
 local function NewQuestShareMenuFixture()
-	local state = { index = 7, grouped = true, capable = true, pushable = true, sends = {}, messages = {}, statuses = {}, reads = 0 }
+	local state = {
+		index = 7,
+		grouped = true,
+		capable = true,
+		pushable = true,
+		sends = {},
+		messages = {},
+		statuses = {},
+		reads = 0,
+	}
 	state.journalCapable, state.journalReads, state.opened = true, 0, {}
 	local addon = setmetatable({ isEnabled = true }, { __index = QuestTogether })
 	local root = { buttons = {}, dividers = {} }
-	function addon:GetPlayerTracker() return {} end
+	function addon:GetPlayerTracker()
+		return {}
+	end
 	function root:CreateDivider()
 		self.dividers[#self.dividers + 1] = #self.buttons
 	end
 	function root:CreateButton(label, callback)
 		local button = { label = label, callback = callback }
-		function button:SetEnabled(enabled) self.enabled = enabled end
-		function button:SetTooltip(callback) self.tooltip = callback end
+		function button:SetEnabled(enabled)
+			self.enabled = enabled
+		end
+		function button:SetTooltip(callback)
+			self.tooltip = callback
+		end
 		self.buttons[#self.buttons + 1] = button
 		return button
 	end
 	addon.API = CreateApiWithOverrides({
-		IsInGroup = function() return state.grouped end,
-		CanShareQuests = function() return state.capable end,
-		IsModifiedClick = function() return state.modified end,
-		IsWorldMapVisible = function() return state.mapVisible == true end,
-		InCombatLockdown = function() return state.combat == true end,
+		IsInGroup = function()
+			return state.grouped
+		end,
+		CanShareQuests = function()
+			return state.capable
+		end,
+		IsModifiedClick = function()
+			return state.modified
+		end,
+		IsWorldMapVisible = function()
+			return state.mapVisible == true
+		end,
+		InCombatLockdown = function()
+			return state.combat == true
+		end,
 		GetQuestLogIndexForSharing = function(id)
 			AssertEquals(id, 12345)
 			state.reads = state.reads + 1
 			return state.index
 		end,
-		IsPushableQuest = function(id) AssertEquals(id, 12345); return state.pushable end,
+		IsPushableQuest = function(id)
+			AssertEquals(id, 12345)
+			return state.pushable
+		end,
 		PushQuestToParty = function(index)
 			state.sends[#state.sends + 1] = index
 			return not state.sendFails
 		end,
-		CanOpenQuestJournal = function() return state.journalCapable end,
+		CanOpenQuestJournal = function()
+			return state.journalCapable
+		end,
 		GetQuestLogIndexForQuestID = function(id)
 			AssertEquals(id, 12345)
 			state.journalReads = state.journalReads + 1
@@ -4699,10 +5310,18 @@ local function NewQuestShareMenuFixture()
 			return not state.menuFails
 		end,
 	})
-	function addon:IsRuntimeRestrictionTypeActive(kind) return state.restriction == kind end
-	function addon:Print(message) state.messages[#state.messages + 1] = message end
-	function addon:PrintQuestStatus(id, title) state.statuses[#state.statuses + 1] = { id, title } end
-	function addon:OpenPartyQuestCompare() state.compares = (state.compares or 0) + 1 end
+	function addon:IsRuntimeRestrictionTypeActive(kind)
+		return state.restriction == kind
+	end
+	function addon:Print(message)
+		state.messages[#state.messages + 1] = message
+	end
+	function addon:PrintQuestStatus(id, title)
+		state.statuses[#state.statuses + 1] = { id, title }
+	end
+	function addon:OpenPartyQuestCompare()
+		state.compares = (state.compares or 0) + 1
+	end
 	state.destination = "main"
 	function addon:GetOption(key)
 		AssertEquals(key, "chatLogDestination")
@@ -4712,51 +5331,61 @@ local function NewQuestShareMenuFixture()
 		AssertEquals(key, "chatLogDestination")
 		state.destination = value
 	end
-	function addon:RefreshOptionsWindow() state.optionsRefreshed = true end
+	function addon:RefreshOptionsWindow()
+		state.optionsRefreshed = true
+	end
 	return addon, state, root
 end
 
-QuestTogether:RegisterTest("quest clicks open Share journal and party compare without log destination actions", function()
-	local addon, state, root = NewQuestShareMenuFixture()
-	local owner = {}
-	for _, button in ipairs({ "LeftButton", "RightButton" }) do
+QuestTogether:RegisterTest(
+	"quest clicks open Share journal and party compare without log destination actions",
+	function()
+		local addon, state, root = NewQuestShareMenuFixture()
+		local owner = {}
+		for _, button in ipairs({ "LeftButton", "RightButton" }) do
+			root.buttons, root.dividers = {}, {}
+			local response = addon:HandleChatLogQuestLink(
+				nil,
+				"[Test Quest]",
+				{ options = "12345" },
+				{ button = button, frame = owner }
+			)
+			AssertEquals(response, LinkProcessorResponse.Handled)
+			AssertEquals(state.owner, owner)
+			AssertEquals(#state.statuses, 0, "opening a menu must not print status")
+			AssertEquals(#root.buttons, 3)
+			AssertEquals(root.buttons[1].label, "Share")
+			AssertEquals(root.buttons[2].label, "Open in Quest Log")
+			AssertTrue(root.buttons[2].enabled)
+			AssertEquals(#state.opened, 0, "opening a menu must not open the journal")
+			AssertEquals(root.buttons[3].label, "Party Quest Log")
+			AssertTrue(root.buttons[3].enabled)
+			AssertEquals(state.compares, nil, "opening a menu must not open party compare")
+			AssertEquals(#root.dividers, 0)
+			AssertEquals(state.destination, "main", "opening a menu must not move logs")
+			AssertTrue(root.buttons[1].enabled)
+			AssertEquals(#state.sends, 0, "opening a menu must not share")
+		end
+		AssertEquals(#state.statuses, 0)
+		-- A log index can change while the menu is open.
+		state.index = 9
+		root.buttons[1].callback()
+		AssertEquals(#state.sends, 1)
+		AssertEquals(state.sends[1], 9)
+		AssertEquals(#state.messages, 0, "a native attempt is not a confirmed acceptance")
+		root.buttons[2].callback()
+		AssertEquals(#state.opened, 1)
+		AssertEquals(state.opened[1], 12345, "journal uses quest ID, not its changed log index")
+		root.buttons[3].callback()
+		AssertEquals(state.compares, 1)
+		state.destination = "separate"
 		root.buttons, root.dividers = {}, {}
-		local response = addon:HandleChatLogQuestLink(nil, "[Test Quest]", { options = "12345" }, { button = button, frame = owner })
-		AssertEquals(response, LinkProcessorResponse.Handled)
-		AssertEquals(state.owner, owner)
-		AssertEquals(#state.statuses, 0, "opening a menu must not print status")
+		addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
 		AssertEquals(#root.buttons, 3)
-		AssertEquals(root.buttons[1].label, "Share")
-		AssertEquals(root.buttons[2].label, "Open in Quest Log")
-		AssertTrue(root.buttons[2].enabled)
-		AssertEquals(#state.opened, 0, "opening a menu must not open the journal")
-		AssertEquals(root.buttons[3].label, "Party Quest Log")
-		AssertTrue(root.buttons[3].enabled)
-		AssertEquals(state.compares, nil, "opening a menu must not open party compare")
 		AssertEquals(#root.dividers, 0)
-		AssertEquals(state.destination, "main", "opening a menu must not move logs")
-		AssertTrue(root.buttons[1].enabled)
-		AssertEquals(#state.sends, 0, "opening a menu must not share")
+		AssertEquals(state.destination, "separate")
 	end
-	AssertEquals(#state.statuses, 0)
-	-- A log index can change while the menu is open.
-	state.index = 9
-	root.buttons[1].callback()
-	AssertEquals(#state.sends, 1)
-	AssertEquals(state.sends[1], 9)
-	AssertEquals(#state.messages, 0, "a native attempt is not a confirmed acceptance")
-	root.buttons[2].callback()
-	AssertEquals(#state.opened, 1)
-	AssertEquals(state.opened[1], 12345, "journal uses quest ID, not its changed log index")
-	root.buttons[3].callback()
-	AssertEquals(state.compares, 1)
-	state.destination = "separate"
-	root.buttons, root.dividers = {}, {}
-	addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
-	AssertEquals(#root.buttons, 3)
-	AssertEquals(#root.dividers, 0)
-	AssertEquals(state.destination, "separate")
-end)
+)
 
 QuestTogether:RegisterTest("quest menu preserves modified clicks and rejects malformed links", function()
 	local addon, state, root = NewQuestShareMenuFixture()
@@ -4768,9 +5397,17 @@ QuestTogether:RegisterTest("quest menu preserves modified clicks and rejects mal
 	for _, id in ipairs({ "", "abc", "0", "-1", "12345.5", math.huge, false }) do
 		addon:HandleChatLogQuestLink(nil, nil, { options = id }, { button = "RightButton" })
 	end
-	local unreadable = setmetatable({}, { __index = function() error("unreadable link must not be indexed") end })
-	addon.CanAccessValue = function(_, value) return value ~= unreadable end
-	addon.CanAccessTable = function(_, value) return type(value) == "table" and value ~= unreadable end
+	local unreadable = setmetatable({}, {
+		__index = function()
+			error("unreadable link must not be indexed")
+		end,
+	})
+	addon.CanAccessValue = function(_, value)
+		return value ~= unreadable
+	end
+	addon.CanAccessTable = function(_, value)
+		return type(value) == "table" and value ~= unreadable
+	end
 	addon:HandleChatLogQuestLink(nil, nil, unreadable, {})
 	addon:HandleChatLogQuestLink(nil, nil, { options = unreadable }, {})
 	addon:HandleChatLogQuestLink(nil, nil, { options = "12345" }, unreadable)
@@ -4783,18 +5420,38 @@ end)
 
 QuestTogether:RegisterTest("quest share menu disables unavailable actions and rechecks stale clicks", function()
 	local cases = {
-		function(a) a.isEnabled = false end,
-		function(_, s) s.grouped = false end,
-		function(_, s) s.capable = false end,
-		function(_, s) s.index = nil end,
-		function(_, s) s.index = 0 end,
-		function(_, s) s.index = 1.5 end,
-		function(_, s) s.pushable = false end,
-		function(_, s) s.pushable = nil end,
-		function(_, s) s.pushable = "unknown" end,
+		function(a)
+			a.isEnabled = false
+		end,
+		function(_, s)
+			s.grouped = false
+		end,
+		function(_, s)
+			s.capable = false
+		end,
+		function(_, s)
+			s.index = nil
+		end,
+		function(_, s)
+			s.index = 0
+		end,
+		function(_, s)
+			s.index = 1.5
+		end,
+		function(_, s)
+			s.pushable = false
+		end,
+		function(_, s)
+			s.pushable = nil
+		end,
+		function(_, s)
+			s.pushable = "unknown"
+		end,
 		function(a, s)
 			local secret = {}
-			a.CanAccessValue = function(_, value) return value ~= secret end
+			a.CanAccessValue = function(_, value)
+				return value ~= secret
+			end
 			s.pushable = secret
 		end,
 	}
@@ -4809,7 +5466,11 @@ QuestTogether:RegisterTest("quest share menu disables unavailable actions and re
 		root.buttons, root.dividers = {}, {}
 		addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
 		AssertFalse(root.buttons[1].enabled)
-		local tooltip = { SetText = function(_, message) AssertEquals(message, state.messages[1]) end }
+		local tooltip = {
+			SetText = function(_, message)
+				AssertEquals(message, state.messages[1])
+			end,
+		}
 		root.buttons[1].tooltip(tooltip)
 	end
 end)
@@ -4834,10 +5495,18 @@ end)
 
 QuestTogether:RegisterTest("quest log rechecks stale entries and reports unavailable or failed opens", function()
 	for _, change in ipairs({
-		function(s) s.index = nil end,
-		function(s) s.index = 0 end,
-		function(s) s.index = 1.5 end,
-		function(s) s.journalCapable = false end,
+		function(s)
+			s.index = nil
+		end,
+		function(s)
+			s.index = 0
+		end,
+		function(s)
+			s.index = 1.5
+		end,
+		function(s)
+			s.journalCapable = false
+		end,
 	}) do
 		local addon, state, root = NewQuestShareMenuFixture()
 		addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
@@ -4849,7 +5518,11 @@ QuestTogether:RegisterTest("quest log rechecks stale entries and reports unavail
 		root.buttons = {}
 		addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
 		AssertFalse(root.buttons[2].enabled)
-		root.buttons[2].tooltip({ SetText = function(_, reason) AssertEquals(reason, state.messages[1]) end })
+		root.buttons[2].tooltip({
+			SetText = function(_, reason)
+				AssertEquals(reason, state.messages[1])
+			end,
+		})
 	end
 	local addon, state = NewQuestShareMenuFixture()
 	state.journalFails = true
@@ -4969,60 +5642,99 @@ QuestTogether:RegisterTest("chat log quest status action falls back to clicked q
 	AssertTrue(string.find(printed[1] or "", "Not Started", 1, true) ~= nil)
 end)
 
-QuestTogether:RegisterTest("quest status selects the clicked quest from full chat messages without nested brackets", function()
-	local addon, _, root = NewQuestShareMenuFixture()
-	local printed = {}
-	addon.PrintQuestStatus = QuestTogether.PrintQuestStatus
-	function addon:GetQuestTitle(id) return "Quest " .. tostring(id) end
-	function addon:GetQuestStatusLabel() return "Not Started" end
-	function addon:GetQuestShareableStatusLabel() return "Unknown" end
-	function addon:PrintConsoleAnnouncement(message) printed[#printed + 1] = message end
-	local questLink = "|Hquesttogetherquest:12345|h[Rude Awakening]|h"
-	local speaker = "|cffffffff|Hquesttogetherlog:Joe Bucket|h[Joe Bucket]|h|r|cffffd200: "
-	for _, text in ipairs({
-		"|TInterface\\GossipFrame\\AvailableQuestIcon:14|t" .. speaker .. "Quest Removed: " .. questLink .. "|r",
-		speaker .. "Quest Status: " .. questLink .. " - Not Started | Shareable: Unknown|r",
-		"|Hquesttogetherquest:12345|h[" .. speaker .. "Quest Removed: " .. questLink .. "]|h",
-		"|Hquesttogetherquest:99|h[Another Quest]|h then " .. questLink
-			.. " |Hquesttogethercoord:1:10:20|h[10, 20]|h",
-	}) do
-		root.buttons, root.dividers = {}, {}
-		local row = addon:GetChatLogQuestTooltipRow(12345, text)
-		AssertEquals(row.name, "Rude Awakening")
-		addon:PrintQuestStatus(12345, text)
-		-- Exercise the real label builder. Offline it also supports clients
-		-- without LinkUtil; live it uses the native, read-only link formatter.
-		AssertEquals(printed[#printed], "Quest Status: " .. addon:BuildChatLogQuestLabel(12345, "Rude Awakening")
-			.. " - Not Started | Shareable: Unknown")
-		AssertFalse(string.find(printed[#printed], "Quest Removed", 1, true))
-		AssertFalse(string.find(printed[#printed], "]]", 1, true))
+QuestTogether:RegisterTest(
+	"quest status selects the clicked quest from full chat messages without nested brackets",
+	function()
+		local addon, _, root = NewQuestShareMenuFixture()
+		local printed = {}
+		addon.PrintQuestStatus = QuestTogether.PrintQuestStatus
+		function addon:GetQuestTitle(id)
+			return "Quest " .. tostring(id)
+		end
+		function addon:GetQuestStatusLabel()
+			return "Not Started"
+		end
+		function addon:GetQuestShareableStatusLabel()
+			return "Unknown"
+		end
+		function addon:PrintConsoleAnnouncement(message)
+			printed[#printed + 1] = message
+		end
+		local questLink = "|Hquesttogetherquest:12345|h[Rude Awakening]|h"
+		local speaker = "|cffffffff|Hquesttogetherlog:Joe Bucket|h[Joe Bucket]|h|r|cffffd200: "
+		for _, text in ipairs({
+			"|TInterface\\GossipFrame\\AvailableQuestIcon:14|t" .. speaker .. "Quest Removed: " .. questLink .. "|r",
+			speaker .. "Quest Status: " .. questLink .. " - Not Started | Shareable: Unknown|r",
+			"|Hquesttogetherquest:12345|h[" .. speaker .. "Quest Removed: " .. questLink .. "]|h",
+			"|Hquesttogetherquest:99|h[Another Quest]|h then "
+				.. questLink
+				.. " |Hquesttogethercoord:1:10:20|h[10, 20]|h",
+		}) do
+			root.buttons, root.dividers = {}, {}
+			local row = addon:GetChatLogQuestTooltipRow(12345, text)
+			AssertEquals(row.name, "Rude Awakening")
+			addon:PrintQuestStatus(12345, text)
+			-- Exercise the real label builder. Offline it also supports clients
+			-- without LinkUtil; live it uses the native, read-only link formatter.
+			AssertEquals(
+				printed[#printed],
+				"Quest Status: "
+					.. addon:BuildChatLogQuestLabel(12345, "Rude Awakening")
+					.. " - Not Started | Shareable: Unknown"
+			)
+			AssertFalse(string.find(printed[#printed], "Quest Removed", 1, true))
+			AssertFalse(string.find(printed[#printed], "]]", 1, true))
+		end
 	end
-end)
+)
 
-QuestTogether:RegisterTest("quest link title fallback preserves punctuation and rejects unrelated or incomplete hyperlinks", function()
-	local addon = setmetatable({}, { __index = QuestTogether })
-	AssertEquals(addon:NormalizeQuestLinkTitleText("[Rude Awakening]", 12345), "Rude Awakening")
-	AssertEquals(addon:NormalizeQuestLinkTitleText("Plain Title: Part Two", 12345), "Plain Title: Part Two")
-	AssertEquals(addon:NormalizeQuestLinkTitleText("|cffffd200|Hquesttogetherquest:12345|h[Title: [Part Two]]|h|r", 12345), "Title: [Part Two]")
-	AssertEquals(addon:NormalizeQuestLinkTitleText("|Hquesttogetherquest:12345|h[|cffffd200Rude Awakening|r]|h", 12345), "Rude Awakening")
-	for _, text in ipairs({
-		"|Hquesttogetherquest:99|h[Other quest]|h",
-		"|Hquesttogetherlog:12345|h[Player]|h",
-		"|Hquesttogetherquest:12345|h[Unfinished]",
-		"|Hquesttogetherquest:12345|h[Unfinished] |Hquesttogetherquest:99|h[Other quest]|h",
-	}) do
-		AssertEquals(addon:NormalizeQuestLinkTitleText(text, 12345), "")
+QuestTogether:RegisterTest(
+	"quest link title fallback preserves punctuation and rejects unrelated or incomplete hyperlinks",
+	function()
+		local addon = setmetatable({}, { __index = QuestTogether })
+		AssertEquals(addon:NormalizeQuestLinkTitleText("[Rude Awakening]", 12345), "Rude Awakening")
+		AssertEquals(addon:NormalizeQuestLinkTitleText("Plain Title: Part Two", 12345), "Plain Title: Part Two")
+		AssertEquals(
+			addon:NormalizeQuestLinkTitleText("|cffffd200|Hquesttogetherquest:12345|h[Title: [Part Two]]|h|r", 12345),
+			"Title: [Part Two]"
+		)
+		AssertEquals(
+			addon:NormalizeQuestLinkTitleText("|Hquesttogetherquest:12345|h[|cffffd200Rude Awakening|r]|h", 12345),
+			"Rude Awakening"
+		)
+		for _, text in ipairs({
+			"|Hquesttogetherquest:99|h[Other quest]|h",
+			"|Hquesttogetherlog:12345|h[Player]|h",
+			"|Hquesttogetherquest:12345|h[Unfinished]",
+			"|Hquesttogetherquest:12345|h[Unfinished] |Hquesttogetherquest:99|h[Other quest]|h",
+		}) do
+			AssertEquals(addon:NormalizeQuestLinkTitleText(text, 12345), "")
+		end
+		function addon:GetQuestSnapshot()
+			return self.knownTitle and { title = self.knownTitle } or nil
+		end
+		function addon:GetQuestStatusLabel()
+			return "Not Started"
+		end
+		function addon:GetQuestShareableStatusLabel()
+			return "Unknown"
+		end
+		local unrelated = "|Hquesttogetherquest:99|h[Other quest]|h"
+		AssertEquals(
+			addon:BuildQuestStatusMessage(12345, unrelated),
+			"Quest Status: "
+				.. addon:BuildChatLogQuestLabel(12345, "Quest 12345")
+				.. " - Not Started | Shareable: Unknown"
+		)
+		addon.knownTitle = "Current title"
+		AssertEquals(
+			addon:BuildQuestStatusMessage(12345, "|Hquesttogetherquest:12345|h[Old title]|h"),
+			"Quest Status: "
+				.. addon:BuildChatLogQuestLabel(12345, "Current title")
+				.. " - Not Started | Shareable: Unknown"
+		)
 	end
-	function addon:GetQuestSnapshot() return self.knownTitle and { title = self.knownTitle } or nil end
-	function addon:GetQuestStatusLabel() return "Not Started" end
-	function addon:GetQuestShareableStatusLabel() return "Unknown" end
-	local unrelated = "|Hquesttogetherquest:99|h[Other quest]|h"
-	AssertEquals(addon:BuildQuestStatusMessage(12345, unrelated), "Quest Status: " .. addon:BuildChatLogQuestLabel(12345, "Quest 12345")
-		.. " - Not Started | Shareable: Unknown")
-	addon.knownTitle = "Current title"
-	AssertEquals(addon:BuildQuestStatusMessage(12345, "|Hquesttogetherquest:12345|h[Old title]|h"),
-		"Quest Status: " .. addon:BuildChatLogQuestLabel(12345, "Current title") .. " - Not Started | Shareable: Unknown")
-end)
+)
 
 QuestTogether:RegisterTest("chat log coord link handler opens ping waypoint", function()
 	local opened = nil
@@ -5077,9 +5789,16 @@ end)
 
 QuestTogether:RegisterTest("chat coordinate link reports a rejected waypoint", function()
 	local messages = {}
-	QuestTogether.Print = function(_, message) messages[#messages + 1] = message end
-	QuestTogether.OpenPingWaypoint = function() return false end
-	AssertEquals(QuestTogether:HandleChatLogCoordLink(nil, nil, { options = "999:47.1:69.9" }), LinkProcessorResponse.Handled)
+	QuestTogether.Print = function(_, message)
+		messages[#messages + 1] = message
+	end
+	QuestTogether.OpenPingWaypoint = function()
+		return false
+	end
+	AssertEquals(
+		QuestTogether:HandleChatLogCoordLink(nil, nil, { options = "999:47.1:69.9" }),
+		LinkProcessorResponse.Handled
+	)
 	AssertEquals(#messages, 1)
 	AssertEquals(messages[1], "Unable to set that waypoint.")
 end)
@@ -5135,7 +5854,7 @@ QuestTogether:RegisterTest("player ping metadata includes addon version", functi
 end)
 
 QuestTogether:RegisterTest("ping response payload round trip preserves addon version", function()
-	local payload = QuestTogether:EncodePingResponsePayload({
+	local payload = QuestTogether:EncodeCommRecord("PONG", {
 		requestId = "req-1",
 		senderName = "Remote-Realm",
 		realmName = "Realm",
@@ -5150,34 +5869,25 @@ QuestTogether:RegisterTest("ping response payload round trip preserves addon ver
 		mapID = "84",
 		addonVersion = "3.0.0",
 	})
-	local decoded = QuestTogether:DecodePingResponsePayload(payload)
+	local decoded = QuestTogether:DecodeCommRecord("PONG", payload)
 
 	AssertTrue(decoded ~= nil)
 	AssertEquals(decoded.addonVersion, "3.0.0")
 end)
 
-QuestTogether:RegisterTest("announcement decode rejects nonnumeric version without raw tonumber fallback", function()
-	WithPatchedMethod(QuestTogether, "SafeToNumber", function(_, value)
-		AssertEquals(value, "secret")
-		return nil
-	end, function()
-		AssertEquals(QuestTogether:DecodeAnnouncementPayload("secret,event,senderGuid,MAGE,Sender,text"), nil)
-	end)
+QuestTogether:RegisterTest("announcement framing rejects malformed protocol versions", function()
+	AssertEquals(QuestTogether:DecodeCommFrame("secret|ANN|session|1||1|1|100|payload"), nil)
+	AssertEquals(QuestTogether:DecodeCommFrame("1|ANN|session|1||1|1|100|payload"), nil)
 end)
 
-QuestTogether:RegisterTest("quest compare done rejects invalid counts instead of completing an empty result", function()
-	WithPatchedMethod(QuestTogether, "SafeToNumber", function(_, value)
-		if value == "1" then
-			return 1
-		end
-		if value == "secret" then
-			return nil
-		end
-		return tonumber(value)
-	end, function()
-		local decoded = QuestTogether:DecodeQuestCompareDonePayload("1,req,Remote-Realm,secret")
-		AssertEquals(decoded, nil)
-	end)
+QuestTogether:RegisterTest("typed quest snapshots reject invalid counts instead of certifying empty results", function()
+	AssertEquals(
+		QuestTogether:EncodeCommRecord(
+			"QCRS",
+			{ requestId = "request", snapshotId = "snapshot", count = "secret", entries = {} }
+		),
+		nil
+	)
 end)
 
 QuestTogether:RegisterTest("chat log speaker menu includes player actions", function()
@@ -5247,7 +5957,12 @@ end)
 QuestTogether:RegisterTest("chat log speaker menu whisper action uses owner frame", function()
 	local whisperedName = nil
 	local whisperedFrame = nil
-	local chatFrame = { editBox = {}, IsShown = function() return true end }
+	local chatFrame = {
+		editBox = {},
+		IsShown = function()
+			return true
+		end,
+	}
 	WithPatchedMethod(QuestTogether.API, "SendTell", function(name, chatFrame)
 		whisperedName = name
 		whisperedFrame = chatFrame
@@ -5260,7 +5975,9 @@ QuestTogether:RegisterTest("chat log speaker menu whisper action uses owner fram
 end)
 
 QuestTogether:RegisterTest("chat log speaker whisper reports native failure", function()
-	WithPatchedMethod(QuestTogether.API, "SendTell", function() return false end, function()
+	WithPatchedMethod(QuestTogether.API, "SendTell", function()
+		return false
+	end, function()
 		AssertEquals(QuestTogether:WhisperChatLogSpeaker("MyPlayer-Realm", {}), false)
 	end)
 end)
@@ -5305,62 +6022,69 @@ QuestTogether:RegisterTest("chat log speaker menu shows unignore for ignored spe
 	AssertEquals(buttons[4], "Unignore")
 end)
 
-QuestTogether:RegisterTest("request quest compare sends compare request for remote speaker", function()
-	local sent = {}
-	local startedWith = nil
-	local startedClass = nil
+-- Private framed peers exercise the actual ingress without borrowing live state.
+local function AnnouncementPeers()
+	local net = QuestTogether:CreateTestNetwork({ fps = 30, latency = 0.02 })
+	local a, b = net:AddPeer("Actual-Realm", { group = "party" }), net:AddPeer("Viewer-Realm", { group = "party" })
+	for _, peer in ipairs({ a, b }) do
+		peer.OnCommReceived = peer.ReceiveCommunication
+		peer:InitializeCommunications()
+		local frame = net:CreateFrame(peer)
+		frame:SetScript("OnUpdate", function()
+			peer:UpdateCommunicationRuntime()
+		end)
+	end
+	return net, a, b
+end
+local function AnnouncementFrames(a, operation, record, id)
+	a.fixtureSequence = (a.fixtureSequence or 0) + 1
+	return assert(a:BuildCommFrames(operation, record, {
+		session = "incoming-session",
+		messageId = tostring(a.fixtureSequence),
+		requestId = id,
+		stamp = a:GetAnnouncementServerTime(),
+	}))
+end
+local function ReceiveAnnouncementFrames(a, sender, frames, route)
+	for _, wire in ipairs(frames) do
+		a:ReceiveCommunication(a.commPrefix, wire, route or "WHISPER", sender)
+	end
+end
 
-	QuestTogether.isEnabled = true
-	QuestTogether.partyMembers = {
-		["Remote-Realm"] = {
-			fullName = "Remote-Realm",
-			classFile = "DRUID",
-		},
-	}
-	QuestTogether.API = CreateApiWithOverrides({
-		IsInInstanceGroup = function()
-			return false
-		end,
-		IsInRaid = function()
-			return false
-		end,
-		IsInParty = function()
-			return false
-		end,
-		GetChannelName = function(channelName)
-			AssertTrue(channelName == QuestTogether.announcementChannelName)
-			return 9
-		end,
-		SendAddonMessage = function(prefix, message, channel, target)
-			sent[#sent + 1] = {
-				prefix = prefix,
-				message = message,
-				channel = channel,
-				target = target,
-			}
-			return 0
-		end,
-		Delay = function() end,
-		UnitFullName = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "LocalPlayer", "Realm"
-		end,
-	})
+local function AcceptedOperation(net, operation)
+	local found = {}
+	for _, row in ipairs(net.trace) do
+		if row.kind == "accepted" then
+			local frame = QuestTogether:DecodeCommFrame(row.packet.wire)
+			if frame and frame.operation == operation then
+				found[#found + 1] = row.packet
+			end
+		end
+	end
+	return found
+end
 
-	WithPatchedMethod(QuestTogether, "PrintQuestCompareStart", function(_, remoteName, classFile)
-		startedWith = remoteName
-		startedClass = classFile
-	end, function()
-		AssertTrue(QuestTogether:RequestQuestCompare("Remote-Realm"))
-	end)
-
-	AssertEquals(startedWith, "Remote-Realm")
+QuestTogether:RegisterTest("request quest compare sends a private request for a remote speaker", function()
+	local net, a, b = AnnouncementPeers()
+	net:SetGroup(a, nil)
+	net:SetGroup(b, nil)
+	a.partyMembers = { [b.name] = { fullName = b.name, classFile = "DRUID" } }
+	local started, startedClass
+	function a:PrintQuestCompareStart(name, class)
+		started, startedClass = name, class
+	end
+	function b:HandleQuestCompareRequest()
+		return true
+	end
+	AssertTrue(a:RequestQuestCompare(b.name))
+	AssertEquals(started, b.name)
 	AssertEquals(startedClass, "DRUID")
+	AssertEquals(#AcceptedOperation(net, "QCMP"), 0)
+	net:Advance(1)
+	local sent = AcceptedOperation(net, "QCMP")
 	AssertEquals(#sent, 1)
-	AssertEquals(sent[1].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[1].channel, "CHANNEL")
-	AssertEquals(sent[1].target, 9)
-	AssertTrue(string.find(sent[1].message, "^QCMP|", 1) ~= nil)
+	AssertEquals(sent[1].route, "WHISPER")
+	AssertEquals(sent[1].target, b.name)
 end)
 
 QuestTogether:RegisterTest("quest compare entry prints local status and shareable state", function()
@@ -5389,28 +6113,41 @@ QuestTogether:RegisterTest("quest compare entry prints local status and shareabl
 		end,
 	})
 
-	WithPatchedMethod(QuestTogether, "PrintConsoleAnnouncement", function(_, message, targetName, classFile, eventType, iconAsset, iconKind, locationInfo)
-		printed[#printed + 1] = {
-			message = message,
-			rendered = QuestTogether:BuildConsoleAnnouncementMessage(targetName, message, classFile, eventType, iconAsset, iconKind, locationInfo),
-			targetName = targetName,
-			classFile = classFile,
-			eventType = eventType,
-		}
-	end, function()
-		WithPatchedMethod(QuestTogether, "BuildChatLogQuestLabel", function(_, questId, title)
-			AssertEquals(questId, 12345)
-			AssertEquals(title, "Test Quest: Part Two", "comparison must not link an already formatted message")
-			return questLink
-		end, function()
-			QuestTogether:PrintQuestCompareMessage("Remote-Realm", {
-				questId = "12345",
-				questTitle = "Test Quest: Part Two",
-				isComplete = true,
-				isPushable = true,
-			}, "WARRIOR")
-		end)
-	end)
+	WithPatchedMethod(
+		QuestTogether,
+		"PrintConsoleAnnouncement",
+		function(_, message, targetName, classFile, eventType, iconAsset, iconKind, locationInfo)
+			printed[#printed + 1] = {
+				message = message,
+				rendered = QuestTogether:BuildConsoleAnnouncementMessage(
+					targetName,
+					message,
+					classFile,
+					eventType,
+					iconAsset,
+					iconKind,
+					locationInfo
+				),
+				targetName = targetName,
+				classFile = classFile,
+				eventType = eventType,
+			}
+		end,
+		function()
+			WithPatchedMethod(QuestTogether, "BuildChatLogQuestLabel", function(_, questId, title)
+				AssertEquals(questId, 12345)
+				AssertEquals(title, "Test Quest: Part Two", "comparison must not link an already formatted message")
+				return questLink
+			end, function()
+				QuestTogether:PrintQuestCompareMessage("Remote-Realm", {
+					questId = "12345",
+					questTitle = "Test Quest: Part Two",
+					isComplete = true,
+					isPushable = true,
+				}, "WARRIOR")
+			end)
+		end
+	)
 
 	AssertEquals(#printed, 1)
 	AssertEquals(printed[1].targetName, "Remote-Realm")
@@ -5420,79 +6157,67 @@ QuestTogether:RegisterTest("quest compare entry prints local status and shareabl
 	AssertTrue(string.find(printed[1].message, "Them: Complete", 1, true) ~= nil)
 	AssertTrue(string.find(printed[1].message, "You: In Progress", 1, true) ~= nil)
 	AssertTrue(string.find(printed[1].message, "Shareable to You: Yes", 1, true) ~= nil)
-	AssertTrue(string.find(printed[1].rendered, questLink .. " | Them: Complete | You: In Progress | Shareable to You: Yes", 1, true) ~= nil)
+	AssertTrue(
+		string.find(
+			printed[1].rendered,
+			questLink .. " | Them: Complete | You: In Progress | Shareable to You: Yes",
+			1,
+			true
+		) ~= nil
+	)
 	local _, questLinkCount = string.gsub(printed[1].rendered, "|Hquesttogetherquest:", "")
 	AssertEquals(questLinkCount, 1)
 end)
 
-QuestTogether:RegisterTest("quest compare response prints entries and clears pending request on done", function()
+QuestTogether:RegisterTest("atomic quest compare response prints entries then clears its pending request", function()
+	local _, a, b = AnnouncementPeers()
 	local printed = {}
-	QuestTogether.pendingQuestCompareRequests = {
-		["qcmp-123"] = {
-			targetName = "Remote-Realm",
-			classFile = nil,
-			count = 0,
-		},
-	}
-
-	QuestTogether.API = CreateApiWithOverrides({
-		IsQuestFlaggedCompleted = function()
-			return false
-		end,
-		IsQuestReadyForTurnIn = function()
-			return false
-		end,
-		GetQuestLogIndexForQuestID = function()
-			return nil
-		end,
-		IsOnQuest = function()
-			return false
-		end,
-		IsQuestComplete = function()
-			return false
-		end,
-	})
-
-	WithPatchedMethod(QuestTogether, "PrintConsoleAnnouncement", function(_, message, targetName, classFile, eventType)
-		printed[#printed + 1] = {
-			message = message,
-			targetName = targetName,
-			classFile = classFile,
-			eventType = eventType,
-		}
-	end, function()
-		AssertTrue(QuestTogether:HandleQuestCompareEntry({
-			requestId = "qcmp-123",
-			senderName = "Remote-Realm",
-			classFile = "WARRIOR",
-			questId = "12345",
-			questTitle = "Remote Quest",
-			isComplete = false,
-			isPushable = false,
-		}))
-		AssertTrue(QuestTogether:HandleQuestCompareDone({
-			requestId = "qcmp-123",
-			senderName = "Remote-Realm",
-			classFile = "",
-			count = 1,
-		}))
-	end)
-
+	a.pendingQuestCompareRequests = { ["qcmp-123"] = { targetName = b.name } }
+	a.API.IsOnQuest = function()
+		return false
+	end
+	a.API.IsQuestFlaggedCompleted = function()
+		return false
+	end
+	a.API.IsQuestReadyForTurnIn = function()
+		return false
+	end
+	a.API.IsQuestComplete = function()
+		return false
+	end
+	a.API.GetQuestLogIndexForQuestID = function()
+		return nil
+	end
+	function a:PrintConsoleAnnouncement(message, name, class, event)
+		printed[#printed + 1] = { message = message, name = name, class = class, event = event }
+	end
+	AssertTrue(a:HandleQuestCompareResponse({
+		requestId = "qcmp-123",
+		snapshotId = "snap",
+		revision = "rev",
+		classFile = "WARRIOR",
+		entries = { { questId = 12345, questTitle = "Remote Quest", isComplete = false, isPushable = false } },
+		count = 1,
+	}, b.name))
 	AssertEquals(#printed, 2)
-	AssertEquals(printed[1].targetName, "Remote-Realm")
-	AssertEquals(printed[1].classFile, "WARRIOR")
-	AssertEquals(printed[1].eventType, "QUEST_PROGRESS")
-	AssertTrue(string.find(printed[1].message, "Remote Quest", 1, true) ~= nil)
-	AssertEquals(printed[2].targetName, "Remote-Realm")
-	AssertEquals(printed[2].classFile, "WARRIOR")
-	AssertEquals(printed[2].eventType, "QUEST_COMPLETED")
-	AssertTrue(string.find(printed[2].message, "Finished comparing quests", 1, true) ~= nil)
-	AssertEquals(QuestTogether.pendingQuestCompareRequests["qcmp-123"], nil)
+	AssertEquals(printed[1].name, b.name)
+	AssertEquals(printed[1].class, "WARRIOR")
+	AssertEquals(printed[1].event, "QUEST_PROGRESS")
+	AssertTrue(printed[1].message:find("Remote Quest", 1, true) ~= nil)
+	AssertEquals(printed[2].name, b.name)
+	AssertEquals(printed[2].class, "WARRIOR")
+	AssertEquals(printed[2].event, "QUEST_COMPLETED")
+	AssertTrue(printed[2].message:find("Finished comparing quests", 1, true) ~= nil)
+	AssertEquals(a.pendingQuestCompareRequests["qcmp-123"], nil)
 end)
 
 QuestTogether:RegisterTest("world quest console announcement uses world quest icon", function()
-	local message =
-		QuestTogether:BuildConsoleAnnouncementMessage("MyPlayer-Realm", "entered the area", "MAGE", "WORLD_QUEST_ENTERED")
+	local message = QuestTogether:BuildConsoleAnnouncementMessage(
+		"MyPlayer-Realm",
+		"entered the area",
+		"MAGE",
+		"WORLD_QUEST_ENTERED"
+	)
 	AssertTrue(string.find(message, "|A:worldquest%-icon:14:14|a") ~= nil)
 	AssertTrue(string.find(message, "MyPlayer", 1, true) ~= nil)
 	AssertTrue(string.find(message, "|cffffd200: entered the area|r", 1, true) ~= nil)
@@ -5560,11 +6285,14 @@ QuestTogether:RegisterTest("bonus objective announcement icon info prefers owned
 	AssertEquals(kind, "atlas")
 end)
 
-QuestTogether:RegisterTest("bonus objective announcement icon info falls back to static atlas without quest id", function()
-	local asset, kind = QuestTogether:GetAnnouncementIconInfo("BONUS_OBJECTIVE_PROGRESS", nil)
-	AssertEquals(asset, "Bonus-Objective-Star")
-	AssertEquals(kind, "atlas")
-end)
+QuestTogether:RegisterTest(
+	"bonus objective announcement icon info falls back to static atlas without quest id",
+	function()
+		local asset, kind = QuestTogether:GetAnnouncementIconInfo("BONUS_OBJECTIVE_PROGRESS", nil)
+		AssertEquals(asset, "Bonus-Objective-Star")
+		AssertEquals(kind, "atlas")
+	end
+)
 
 QuestTogether:RegisterTest("quest accepted announcement icon info uses owned classification resolver", function()
 	QuestTogether.API = CreateApiWithOverrides({
@@ -5708,10 +6436,11 @@ QuestTogether:RegisterTest("local announcement event prefers provided icon metad
 		AssertEquals(questId, 12345)
 		return "QuestNormal", "texture"
 	end, function()
-		local eventData = QuestTogether:BuildLocalAnnouncementEvent("QUEST_COMPLETED", "Quest Completed: Test Quest", 12345, {
-			iconAsset = "CampaignCompletedQuestIcon",
-			iconKind = "atlas",
-		})
+		local eventData =
+			QuestTogether:BuildLocalAnnouncementEvent("QUEST_COMPLETED", "Quest Completed: Test Quest", 12345, {
+				iconAsset = "CampaignCompletedQuestIcon",
+				iconKind = "atlas",
+			})
 		AssertEquals(eventData.iconAsset, "CampaignCompletedQuestIcon")
 		AssertEquals(eventData.iconKind, "atlas")
 	end)
@@ -5730,11 +6459,12 @@ QuestTogether:RegisterTest("local announcement event ignores non primitive metad
 		AssertEquals(questId, 12345)
 		return "QuestNormal", "texture"
 	end, function()
-		local eventData = QuestTogether:BuildLocalAnnouncementEvent("QUEST_COMPLETED", "Quest Completed: Test Quest", 12345, {
-			iconAsset = {},
-			iconKind = {},
-			emoteToken = {},
-		})
+		local eventData =
+			QuestTogether:BuildLocalAnnouncementEvent("QUEST_COMPLETED", "Quest Completed: Test Quest", 12345, {
+				iconAsset = {},
+				iconKind = {},
+				emoteToken = {},
+			})
 		AssertEquals(eventData.iconAsset, "QuestNormal")
 		AssertEquals(eventData.iconKind, "texture")
 		AssertEquals(eventData.emoteToken, "")
@@ -5742,10 +6472,22 @@ QuestTogether:RegisterTest("local announcement event ignores non primitive metad
 end)
 
 QuestTogether:RegisterTest("announcement decode sanitizes invalid quest and location metadata", function()
-	local decoded = QuestTogether:DecodeAnnouncementPayload(
-		"3,QUEST_PROGRESS,Player-1-ABC,MAGE,Remote-Realm,1%2F3%20Objectives,badquest,CampaignCompletedQuestIcon,atlas,Stormwind,north,45.678,maybe,cheer"
-	)
-
+	local payload = QuestTogether:EncodeCommRecord("ANN", {
+		eventType = "QUEST_PROGRESS",
+		senderGUID = "Player-1-ABC",
+		classFile = "MAGE",
+		senderName = "Remote-Realm",
+		text = "1/3 Objectives",
+		questId = "badquest",
+		iconAsset = "CampaignCompletedQuestIcon",
+		iconKind = "atlas",
+		zoneName = "Stormwind",
+		coordX = "north",
+		coordY = "45.678",
+		warMode = "maybe",
+		emoteToken = "cheer",
+	})
+	local decoded = QuestTogether:SanitizeAnnouncementEventData(QuestTogether:DecodeCommRecord("ANN", payload))
 	AssertTrue(decoded ~= nil)
 	AssertEquals(decoded.questId, "")
 	AssertEquals(decoded.coordX, "")
@@ -5757,7 +6499,9 @@ end)
 
 QuestTogether:RegisterTest("local announcement event includes location metadata", function()
 	QuestTogether.API = CreateApiWithOverrides({
-		IsWarModeFeatureEnabled = function() return true end,
+		IsWarModeFeatureEnabled = function()
+			return true
+		end,
 		UnitGUID = function()
 			return "Player-1-ABC"
 		end,
@@ -5989,7 +6733,9 @@ QuestTogether:RegisterTest("nameplate health tint helpers use overlays without t
 	local setColorCalls = 0
 	local createdTextures = {}
 	local liveFillTexture = {
-		IsShown = function() return true end,
+		IsShown = function()
+			return true
+		end,
 		points = {},
 		SetPoint = function(self, ...)
 			self.points[#self.points + 1] = { ... }
@@ -6001,7 +6747,9 @@ QuestTogether:RegisterTest("nameplate health tint helpers use overlays without t
 	local unitFrame = {
 		unit = "nameplate1",
 		healthBar = {
-			IsShown = function() return true end,
+			IsShown = function()
+				return true
+			end,
 			SetStatusBarColor = function()
 				setColorCalls = setColorCalls + 1
 			end,
@@ -6177,37 +6925,45 @@ QuestTogether:RegisterTest("nameplate health tint hides overlay when live fill t
 	AssertEquals(restoredUnitFrame, unitFrame)
 end)
 
-QuestTogether:RegisterTest("nameplate health tint schedules a bounded retry when live fill texture is unavailable", function()
-	local scheduledUnitToken = nil
-	local scheduledDelay = nil
-	local namePlateFrameBase = {
-		UnitFrame = {
-			unit = "nameplate1",
-			healthBar = {},
-		},
-	}
+QuestTogether:RegisterTest(
+	"nameplate health tint schedules a bounded retry when live fill texture is unavailable",
+	function()
+		local scheduledUnitToken = nil
+		local scheduledDelay = nil
+		local namePlateFrameBase = {
+			UnitFrame = {
+				unit = "nameplate1",
+				healthBar = {},
+			},
+		}
 
-	WithPatchedMethod(QuestTogether, "ShouldApplyQuestHealthTint", function(_, unitFrame, isQuestObjective)
-		AssertEquals(unitFrame, namePlateFrameBase.UnitFrame)
-		AssertEquals(isQuestObjective, true)
-		return true
-	end, function()
-		WithPatchedMethod(QuestTogether, "ApplyQuestTintToNameplate", function(_, unitFrame)
+		WithPatchedMethod(QuestTogether, "ShouldApplyQuestHealthTint", function(_, unitFrame, isQuestObjective)
 			AssertEquals(unitFrame, namePlateFrameBase.UnitFrame)
-			return false
+			AssertEquals(isQuestObjective, true)
+			return true
 		end, function()
-			WithPatchedMethod(QuestTogether, "ScheduleNameplateHealthTintRefresh", function(_, unitToken, delaySeconds)
-				scheduledUnitToken = unitToken
-				scheduledDelay = delaySeconds
+			WithPatchedMethod(QuestTogether, "ApplyQuestTintToNameplate", function(_, unitFrame)
+				AssertEquals(unitFrame, namePlateFrameBase.UnitFrame)
+				return false
 			end, function()
-				QuestTogether:RefreshNameplateHealthTint(namePlateFrameBase, true)
+				WithPatchedMethod(
+					QuestTogether,
+					"ScheduleNameplateHealthTintRefresh",
+					function(_, unitToken, delaySeconds)
+						scheduledUnitToken = unitToken
+						scheduledDelay = delaySeconds
+					end,
+					function()
+						QuestTogether:RefreshNameplateHealthTint(namePlateFrameBase, true)
+					end
+				)
 			end)
 		end)
-	end)
 
-	AssertEquals(scheduledUnitToken, "nameplate1")
-	AssertEquals(scheduledDelay, 0.05)
-end)
+		AssertEquals(scheduledUnitToken, "nameplate1")
+		AssertEquals(scheduledDelay, 0.05)
+	end
+)
 
 QuestTogether:RegisterTest("nameplate icon refresh schedules a short follow-up tint refresh for quest units", function()
 	local scheduledUnitToken = nil
@@ -6218,37 +6974,56 @@ QuestTogether:RegisterTest("nameplate icon refresh schedules a short follow-up t
 		end,
 		UnitFrame = {
 			unit = "nameplate1",
-			healthBar = {
-			},
+			healthBar = {},
 		},
 	}
 
 	QuestTogether.isEnabled = true
-	WithPatchedMethod(QuestTogether, "ShouldShowQuestNameplateIconForResolvedState", function(_, unitToken, unitFrame, isQuestObjective)
-		AssertEquals(unitToken, "nameplate1")
-		AssertEquals(unitFrame, namePlateFrameBase.UnitFrame)
-		AssertEquals(isQuestObjective, true)
-		return false
-	end, function()
-		WithPatchedMethod(QuestTogether, "TryResolveNameplateQuestObjectiveState", function(_, unitToken, unitFrame, allowLiveScan)
+	WithPatchedMethod(
+		QuestTogether,
+		"ShouldShowQuestNameplateIconForResolvedState",
+		function(_, unitToken, unitFrame, isQuestObjective)
 			AssertEquals(unitToken, "nameplate1")
 			AssertEquals(unitFrame, namePlateFrameBase.UnitFrame)
-			AssertEquals(allowLiveScan, false)
-			return true, true, "Creature-0-0-0-0-11111-0000000000"
-		end, function()
-			WithPatchedMethod(QuestTogether, "RefreshNameplateHealthTint", function(_, frameBase, isQuestObjective)
-				AssertEquals(frameBase, namePlateFrameBase)
-				AssertEquals(isQuestObjective, true)
-			end, function()
-		WithPatchedMethod(QuestTogether, "ScheduleNameplateHealthTintRefresh", function(_, unitToken, delaySeconds)
-			scheduledUnitToken = unitToken
-			scheduledDelay = delaySeconds
-		end, function()
-					QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
-				end)
-			end)
-		end)
-	end)
+			AssertEquals(isQuestObjective, true)
+			return false
+		end,
+		function()
+			WithPatchedMethod(
+				QuestTogether,
+				"TryResolveNameplateQuestObjectiveState",
+				function(_, unitToken, unitFrame, allowLiveScan)
+					AssertEquals(unitToken, "nameplate1")
+					AssertEquals(unitFrame, namePlateFrameBase.UnitFrame)
+					AssertEquals(allowLiveScan, false)
+					return true, true, "Creature-0-0-0-0-11111-0000000000"
+				end,
+				function()
+					WithPatchedMethod(
+						QuestTogether,
+						"RefreshNameplateHealthTint",
+						function(_, frameBase, isQuestObjective)
+							AssertEquals(frameBase, namePlateFrameBase)
+							AssertEquals(isQuestObjective, true)
+						end,
+						function()
+							WithPatchedMethod(
+								QuestTogether,
+								"ScheduleNameplateHealthTintRefresh",
+								function(_, unitToken, delaySeconds)
+									scheduledUnitToken = unitToken
+									scheduledDelay = delaySeconds
+								end,
+								function()
+									QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
+								end
+							)
+						end
+					)
+				end
+			)
+		end
+	)
 
 	AssertEquals(scheduledUnitToken, "nameplate1")
 	AssertEquals(scheduledDelay, 0.05)
@@ -6271,46 +7046,56 @@ QuestTogether:RegisterTest("nameplate health tint uses resolved quest state from
 	WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
 		return false
 	end, function()
-		WithPatchedMethod(QuestTogether, "ShouldShowQuestNameplateIconForResolvedState", function(_, unitToken, unitFrame, isQuestObjective)
-			AssertEquals(unitToken, "nameplate1")
-			AssertEquals(unitFrame, namePlateFrameBase.UnitFrame)
-			AssertEquals(isQuestObjective, true)
-			return false
-		end, function()
-			WithPatchedMethod(QuestTogether, "TryResolveNameplateQuestObjectiveState", function(_, unitToken, unitFrame, allowLiveScan)
+		WithPatchedMethod(
+			QuestTogether,
+			"ShouldShowQuestNameplateIconForResolvedState",
+			function(_, unitToken, unitFrame, isQuestObjective)
 				AssertEquals(unitToken, "nameplate1")
 				AssertEquals(unitFrame, namePlateFrameBase.UnitFrame)
-				AssertEquals(allowLiveScan, false)
-				return true, true, "Creature-0-0-0-0-11111-0000000000"
-			end, function()
-				WithPatchedMethod(QuestTogether, "ApplyQuestTintToNameplate", function(_, unitFrame)
-					appliedUnitFrame = unitFrame
-					return true
-				end, function()
-					WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
-						return true
-					end, function()
-						WithPatchedMethod(QuestTogether, "IsNameplateUnitPlayer", function()
-							return false
+				AssertEquals(isQuestObjective, true)
+				return false
+			end,
+			function()
+				WithPatchedMethod(
+					QuestTogether,
+					"TryResolveNameplateQuestObjectiveState",
+					function(_, unitToken, unitFrame, allowLiveScan)
+						AssertEquals(unitToken, "nameplate1")
+						AssertEquals(unitFrame, namePlateFrameBase.UnitFrame)
+						AssertEquals(allowLiveScan, false)
+						return true, true, "Creature-0-0-0-0-11111-0000000000"
+					end,
+					function()
+						WithPatchedMethod(QuestTogether, "ApplyQuestTintToNameplate", function(_, unitFrame)
+							appliedUnitFrame = unitFrame
+							return true
 						end, function()
-							WithPatchedMethod(QuestTogether, "IsNameplateUnitConnected", function()
+							WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
 								return true
 							end, function()
-								WithPatchedMethod(QuestTogether, "IsNameplateUnitDead", function()
+								WithPatchedMethod(QuestTogether, "IsNameplateUnitPlayer", function()
 									return false
 								end, function()
-									WithPatchedMethod(QuestTogether, "IsNameplateUnitTapDenied", function()
-										return false
+									WithPatchedMethod(QuestTogether, "IsNameplateUnitConnected", function()
+										return true
 									end, function()
-										QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
+										WithPatchedMethod(QuestTogether, "IsNameplateUnitDead", function()
+											return false
+										end, function()
+											WithPatchedMethod(QuestTogether, "IsNameplateUnitTapDenied", function()
+												return false
+											end, function()
+												QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
+											end)
+										end)
 									end)
 								end)
 							end)
 						end)
-					end)
-				end)
-			end)
-		end)
+					end
+				)
+			end
+		)
 	end)
 
 	AssertEquals(appliedUnitFrame, namePlateFrameBase.UnitFrame)
@@ -6327,16 +7112,21 @@ QuestTogether:RegisterTest("nameplate icon refresh resolves namePlateUnitToken l
 	}
 
 	QuestTogether.isEnabled = true
-	WithPatchedMethod(QuestTogether, "TryResolveNameplateQuestObjectiveState", function(_, unitToken, unitFrame, allowLiveScan)
-		resolvedUnitToken = unitToken
-		AssertEquals(unitFrame, namePlateFrameBase.UnitFrame)
-		AssertEquals(allowLiveScan, false)
-		return true, false, nil
-	end, function()
-		WithPatchedMethod(QuestTogether, "RefreshNameplateHealthTint", function() end, function()
-			QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
-		end)
-	end)
+	WithPatchedMethod(
+		QuestTogether,
+		"TryResolveNameplateQuestObjectiveState",
+		function(_, unitToken, unitFrame, allowLiveScan)
+			resolvedUnitToken = unitToken
+			AssertEquals(unitFrame, namePlateFrameBase.UnitFrame)
+			AssertEquals(allowLiveScan, false)
+			return true, false, nil
+		end,
+		function()
+			WithPatchedMethod(QuestTogether, "RefreshNameplateHealthTint", function() end, function()
+				QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
+			end)
+		end
+	)
 
 	AssertEquals(resolvedUnitToken, "nameplate9")
 end)
@@ -6366,19 +7156,24 @@ QuestTogether:RegisterTest("nameplate icon refresh uses cached state without que
 	WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
 		return false
 	end, function()
-		WithPatchedMethod(QuestTogether, "ApplyResolvedQuestStateToNameplate", function(_, frameBase, unitToken, unitFrame, isQuestObjective, scheduleTintFollowUp)
-			appliedQuestState = isQuestObjective
-		end, function()
-			WithPatchedMethod(QuestTogether, "TryEvaluateQuestObjectiveViaTooltip", function()
-				error("cached icon refresh should not perform a live quest scan")
-			end, function()
-				WithPatchedMethod(QuestTogether, "ScheduleNameplateTooltipResolution", function(_, unitToken)
-					resolverUnitToken = unitToken
+		WithPatchedMethod(
+			QuestTogether,
+			"ApplyResolvedQuestStateToNameplate",
+			function(_, frameBase, unitToken, unitFrame, isQuestObjective, scheduleTintFollowUp)
+				appliedQuestState = isQuestObjective
+			end,
+			function()
+				WithPatchedMethod(QuestTogether, "TryEvaluateQuestObjectiveViaTooltip", function()
+					error("cached icon refresh should not perform a live quest scan")
 				end, function()
-					QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
+					WithPatchedMethod(QuestTogether, "ScheduleNameplateTooltipResolution", function(_, unitToken)
+						resolverUnitToken = unitToken
+					end, function()
+						QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
+					end)
 				end)
-			end)
-		end)
+			end
+		)
 	end)
 
 	AssertEquals(appliedQuestState, true)
@@ -6563,30 +7358,45 @@ QuestTogether:RegisterTest("nameplate icon hide restores stale health tint when 
 	}
 	QuestTogether.nameplateIconByUnitFrame[unitFrame] = icon
 
-	WithPatchedMethod(QuestTogether, "ShouldShowQuestNameplateIconForResolvedState", function(_, unitToken, candidateFrame, isQuestObjective)
-		AssertEquals(unitToken, "nameplate1")
-		AssertEquals(candidateFrame, unitFrame)
-		AssertEquals(isQuestObjective, false)
-		return false
-	end, function()
-		WithPatchedMethod(QuestTogether, "TryResolveNameplateQuestObjectiveState", function(_, unitToken, candidateFrame, allowLiveScan)
+	WithPatchedMethod(
+		QuestTogether,
+		"ShouldShowQuestNameplateIconForResolvedState",
+		function(_, unitToken, candidateFrame, isQuestObjective)
 			AssertEquals(unitToken, "nameplate1")
 			AssertEquals(candidateFrame, unitFrame)
-			AssertEquals(allowLiveScan, false)
-			return true, false, "Creature-0-0-0-0-11111-0000000000"
-		end, function()
-			WithPatchedMethod(QuestTogether, "RefreshNameplateHealthTint", function(_, frameBase, isQuestObjective)
-				AssertEquals(frameBase, namePlateFrameBase)
-				AssertEquals(isQuestObjective, false)
-			end, function()
-				WithPatchedMethod(QuestTogether, "RestoreNameplateHealthColor", function(_, candidateFrame)
-					restoredUnitFrame = candidateFrame
-				end, function()
-					QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
-				end)
-			end)
-		end)
-	end)
+			AssertEquals(isQuestObjective, false)
+			return false
+		end,
+		function()
+			WithPatchedMethod(
+				QuestTogether,
+				"TryResolveNameplateQuestObjectiveState",
+				function(_, unitToken, candidateFrame, allowLiveScan)
+					AssertEquals(unitToken, "nameplate1")
+					AssertEquals(candidateFrame, unitFrame)
+					AssertEquals(allowLiveScan, false)
+					return true, false, "Creature-0-0-0-0-11111-0000000000"
+				end,
+				function()
+					WithPatchedMethod(
+						QuestTogether,
+						"RefreshNameplateHealthTint",
+						function(_, frameBase, isQuestObjective)
+							AssertEquals(frameBase, namePlateFrameBase)
+							AssertEquals(isQuestObjective, false)
+						end,
+						function()
+							WithPatchedMethod(QuestTogether, "RestoreNameplateHealthColor", function(_, candidateFrame)
+								restoredUnitFrame = candidateFrame
+							end, function()
+								QuestTogether:RefreshNameplateIcon(namePlateFrameBase)
+							end)
+						end
+					)
+				end
+			)
+		end
+	)
 
 	AssertTrue(iconHidden)
 	AssertEquals(restoredUnitFrame, unitFrame)
@@ -6600,21 +7410,26 @@ QuestTogether:RegisterTest("nameplate threat events schedule tint refresh for na
 	WithPatchedMethod(QuestTogether, "IsNameplateUnitToken", function(_, unitToken)
 		return unitToken == "nameplate7" or unitToken == "nameplate8"
 	end, function()
-		WithPatchedMethod(QuestTogether, "ScheduleNameplateHealthTintRefresh", function(_, unitToken, delaySeconds, preferCachedQuestState)
-			scheduled[#scheduled + 1] = {
-				unitToken = unitToken,
-				delaySeconds = delaySeconds,
-				preferCachedQuestState = preferCachedQuestState,
-			}
-		end, function()
-			WithPatchedMethod(QuestTogether, "IsNameplateUnitTapDenied", function()
-				return false
-			end, function()
-				QuestTogether:HandleNameplateEvent("UNIT_THREAT_SITUATION_UPDATE", "nameplate7")
-				QuestTogether:HandleNameplateEvent("UNIT_THREAT_LIST_UPDATE", "nameplate8")
-				QuestTogether:HandleNameplateEvent("UNIT_THREAT_SITUATION_UPDATE", "target")
-			end)
-		end)
+		WithPatchedMethod(
+			QuestTogether,
+			"ScheduleNameplateHealthTintRefresh",
+			function(_, unitToken, delaySeconds, preferCachedQuestState)
+				scheduled[#scheduled + 1] = {
+					unitToken = unitToken,
+					delaySeconds = delaySeconds,
+					preferCachedQuestState = preferCachedQuestState,
+				}
+			end,
+			function()
+				WithPatchedMethod(QuestTogether, "IsNameplateUnitTapDenied", function()
+					return false
+				end, function()
+					QuestTogether:HandleNameplateEvent("UNIT_THREAT_SITUATION_UPDATE", "nameplate7")
+					QuestTogether:HandleNameplateEvent("UNIT_THREAT_LIST_UPDATE", "nameplate8")
+					QuestTogether:HandleNameplateEvent("UNIT_THREAT_SITUATION_UPDATE", "target")
+				end)
+			end
+		)
 	end)
 
 	AssertEquals(scheduled[1].unitToken, "nameplate7")
@@ -6823,21 +7638,24 @@ QuestTogether:RegisterTest("visible nameplate refresh clears cache and refreshes
 	AssertEquals(augmentationCalls, 1)
 end)
 
-QuestTogether:RegisterTest("zone changed new area schedules nameplate presentation refresh through shared runtime", function()
-	QuestTogether.isEnabled = true
-	local scheduledReason = nil
-	local scheduledDelay = nil
+QuestTogether:RegisterTest(
+	"zone changed new area schedules nameplate presentation refresh through shared runtime",
+	function()
+		QuestTogether.isEnabled = true
+		local scheduledReason = nil
+		local scheduledDelay = nil
 
-	WithPatchedMethod(QuestTogether, "ScheduleNameplatePresentationRefresh", function(_, reason, delaySeconds)
-		scheduledReason = reason
-		scheduledDelay = delaySeconds
-	end, function()
-		QuestTogether:HandleNameplateEvent("ZONE_CHANGED_NEW_AREA")
-	end)
+		WithPatchedMethod(QuestTogether, "ScheduleNameplatePresentationRefresh", function(_, reason, delaySeconds)
+			scheduledReason = reason
+			scheduledDelay = delaySeconds
+		end, function()
+			QuestTogether:HandleNameplateEvent("ZONE_CHANGED_NEW_AREA")
+		end)
 
-	AssertEquals(scheduledReason, "ZONE_CHANGED_NEW_AREA")
-	AssertEquals(scheduledDelay, 0)
-end)
+		AssertEquals(scheduledReason, "ZONE_CHANGED_NEW_AREA")
+		AssertEquals(scheduledDelay, 0)
+	end
+)
 
 QuestTogether:RegisterTest("scheduled nameplate tint refresh can preserve cached quest state", function()
 	local appliedUnitFrame = nil
@@ -6885,18 +7703,23 @@ QuestTogether:RegisterTest("scheduled nameplate tint refresh can preserve cached
 					liveObjectiveChecks = liveObjectiveChecks + 1
 					return true, false, "Creature-0-0-0-0-99999-0000000000"
 				end, function()
-					WithPatchedMethod(QuestTogether, "ShouldApplyQuestHealthTint", function(_, candidateFrame, isQuestObjective)
-						AssertEquals(candidateFrame, unitFrame)
-						AssertEquals(isQuestObjective, true)
-						return true
-					end, function()
-						WithPatchedMethod(QuestTogether, "ApplyQuestTintToNameplate", function(_, candidateFrame)
-							appliedUnitFrame = candidateFrame
+					WithPatchedMethod(
+						QuestTogether,
+						"ShouldApplyQuestHealthTint",
+						function(_, candidateFrame, isQuestObjective)
+							AssertEquals(candidateFrame, unitFrame)
+							AssertEquals(isQuestObjective, true)
 							return true
-						end, function()
-							QuestTogether:ScheduleNameplateHealthTintRefresh("nameplate9", 0, true)
-						end)
-					end)
+						end,
+						function()
+							WithPatchedMethod(QuestTogether, "ApplyQuestTintToNameplate", function(_, candidateFrame)
+								appliedUnitFrame = candidateFrame
+								return true
+							end, function()
+								QuestTogether:ScheduleNameplateHealthTintRefresh("nameplate9", 0, true)
+							end)
+						end
+					)
 				end)
 			end)
 		end)
@@ -6907,146 +7730,182 @@ QuestTogether:RegisterTest("scheduled nameplate tint refresh can preserve cached
 	AssertEquals(QuestTogether.nameplateQuestStateByUnitToken["nameplate9"], true)
 end)
 
-QuestTogether:RegisterTest("scheduled nameplate tint refresh queues resolver when cached state is unavailable", function()
-	local appliedUnitFrame = nil
-	local scheduledUnitToken = nil
-	local healthBar = {}
-	local unitFrame = {
-		unit = "nameplate9",
-		namePlateUnitGUID = "Creature-0-0-0-0-11111-0000000000",
-		healthBar = healthBar,
-	}
-	local namePlateFrameBase = {
-		UnitFrame = unitFrame,
-		GetUnit = function()
-			return "nameplate9"
-		end,
-		IsShown = function()
-			return true
-		end,
-	}
+QuestTogether:RegisterTest(
+	"scheduled nameplate tint refresh queues resolver when cached state is unavailable",
+	function()
+		local appliedUnitFrame = nil
+		local scheduledUnitToken = nil
+		local healthBar = {}
+		local unitFrame = {
+			unit = "nameplate9",
+			namePlateUnitGUID = "Creature-0-0-0-0-11111-0000000000",
+			healthBar = healthBar,
+		}
+		local namePlateFrameBase = {
+			UnitFrame = unitFrame,
+			GetUnit = function()
+				return "nameplate9"
+			end,
+			IsShown = function()
+				return true
+			end,
+		}
 
-	QuestTogether.isEnabled = true
-	QuestTogether.nameplateQuestStateByGuid["Creature-0-0-0-0-11111-0000000000"] = true
-	QuestTogether.nameplateQuestStateByUnitToken["nameplate9"] = true
-	QuestTogether.nameplateQuestGuidByUnitToken["nameplate9"] = "Creature-0-0-0-0-11111-0000000000"
-	QuestTogether.API = CreateApiWithOverrides({
-		Delay = function(_, callback)
-			callback()
-		end,
-		GetNamePlateForUnit = function(unitToken)
-			AssertEquals(unitToken, "nameplate9")
-			return namePlateFrameBase
-		end,
-	})
-
-	WithPatchedMethod(QuestTogether, "IsNameplateUnitToken", function(_, unitToken)
-		return unitToken == "nameplate9"
-	end, function()
-		WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
-			return false
-		end, function()
-			WithPatchedMethod(QuestTogether, "GetNameplateUnitGuid", function(_, unitToken)
+		QuestTogether.isEnabled = true
+		QuestTogether.nameplateQuestStateByGuid["Creature-0-0-0-0-11111-0000000000"] = true
+		QuestTogether.nameplateQuestStateByUnitToken["nameplate9"] = true
+		QuestTogether.nameplateQuestGuidByUnitToken["nameplate9"] = "Creature-0-0-0-0-11111-0000000000"
+		QuestTogether.API = CreateApiWithOverrides({
+			Delay = function(_, callback)
+				callback()
+			end,
+			GetNamePlateForUnit = function(unitToken)
 				AssertEquals(unitToken, "nameplate9")
-				return "Creature-0-0-0-0-11111-0000000000"
-			end, function()
-				WithPatchedMethod(QuestTogether, "TryResolveNameplateQuestObjectiveState", function()
-					return false, false, "Creature-0-0-0-0-11111-0000000000"
-				end, function()
-					WithPatchedMethod(QuestTogether, "ShouldApplyQuestHealthTint", function(_, candidateFrame, isQuestObjective)
-						AssertEquals(candidateFrame, unitFrame)
-						AssertEquals(isQuestObjective, nil)
-						return false
-					end, function()
-						WithPatchedMethod(QuestTogether, "ApplyQuestTintToNameplate", function(_, candidateFrame)
-							appliedUnitFrame = candidateFrame
-							return true
-						end, function()
-							WithPatchedMethod(QuestTogether, "ScheduleNameplateTooltipResolution", function(_, unitToken)
-								scheduledUnitToken = unitToken
-							end, function()
-								QuestTogether:ScheduleNameplateHealthTintRefresh("nameplate9", 0, true)
-							end)
-						end)
-					end)
-				end)
-			end)
-		end)
-	end)
-	AssertEquals(appliedUnitFrame, nil)
-	AssertEquals(scheduledUnitToken, "nameplate9")
-end)
+				return namePlateFrameBase
+			end,
+		})
 
-QuestTogether:RegisterTest("scheduled nameplate tint refresh ignores cached quest state when unit guid changes", function()
-	local restoredUnitFrame = nil
-	local liveObjectiveChecks = 0
-	local healthBar = {}
-	local unitFrame = {
-		unit = "nameplate10",
-		healthBar = healthBar,
-	}
-	local namePlateFrameBase = {
-		UnitFrame = unitFrame,
-		GetUnit = function()
-			return "nameplate10"
-		end,
-		IsShown = function()
-			return true
-		end,
-	}
-
-	QuestTogether.isEnabled = true
-	QuestTogether.nameplateQuestStateByGuid["Creature-0-0-0-0-11111-0000000000"] = true
-	QuestTogether.nameplateQuestStateByUnitToken["nameplate10"] = true
-	QuestTogether.nameplateQuestGuidByUnitToken["nameplate10"] = "Creature-0-0-0-0-11111-0000000000"
-	QuestTogether.API = CreateApiWithOverrides({
-		Delay = function(_, callback)
-			callback()
-		end,
-		GetNamePlateForUnit = function(unitToken)
-			AssertEquals(unitToken, "nameplate10")
-			return namePlateFrameBase
-		end,
-	})
-
-	WithPatchedMethod(QuestTogether, "IsNameplateUnitToken", function(_, unitToken)
-		return unitToken == "nameplate10"
-	end, function()
-		WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
-			return false
+		WithPatchedMethod(QuestTogether, "IsNameplateUnitToken", function(_, unitToken)
+			return unitToken == "nameplate9"
 		end, function()
-			WithPatchedMethod(QuestTogether, "GetNameplateUnitGuid", function(_, unitToken)
-				AssertEquals(unitToken, "nameplate10")
-				return "Creature-0-0-0-0-22222-0000000000"
+			WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
+				return false
 			end, function()
-				WithPatchedMethod(QuestTogether, "TryEvaluateQuestObjectiveViaTooltip", function(_, unitToken, candidateFrame, unitGuid)
-					AssertEquals(unitToken, "nameplate10")
-					AssertEquals(candidateFrame, unitFrame)
-					AssertEquals(unitGuid, "Creature-0-0-0-0-22222-0000000000")
-					liveObjectiveChecks = liveObjectiveChecks + 1
-					return true, false, "Creature-0-0-0-0-22222-0000000000"
+				WithPatchedMethod(QuestTogether, "GetNameplateUnitGuid", function(_, unitToken)
+					AssertEquals(unitToken, "nameplate9")
+					return "Creature-0-0-0-0-11111-0000000000"
 				end, function()
-					WithPatchedMethod(QuestTogether, "ShouldApplyQuestHealthTint", function(_, candidateFrame, isQuestObjective)
-						AssertEquals(candidateFrame, unitFrame)
-						AssertEquals(isQuestObjective, false)
-						return false
+					WithPatchedMethod(QuestTogether, "TryResolveNameplateQuestObjectiveState", function()
+						return false, false, "Creature-0-0-0-0-11111-0000000000"
 					end, function()
-						WithPatchedMethod(QuestTogether, "RestoreNameplateHealthColor", function(_, candidateFrame)
-							restoredUnitFrame = candidateFrame
-						end, function()
-							QuestTogether:ScheduleNameplateHealthTintRefresh("nameplate10", 0, true)
-						end)
+						WithPatchedMethod(
+							QuestTogether,
+							"ShouldApplyQuestHealthTint",
+							function(_, candidateFrame, isQuestObjective)
+								AssertEquals(candidateFrame, unitFrame)
+								AssertEquals(isQuestObjective, nil)
+								return false
+							end,
+							function()
+								WithPatchedMethod(
+									QuestTogether,
+									"ApplyQuestTintToNameplate",
+									function(_, candidateFrame)
+										appliedUnitFrame = candidateFrame
+										return true
+									end,
+									function()
+										WithPatchedMethod(
+											QuestTogether,
+											"ScheduleNameplateTooltipResolution",
+											function(_, unitToken)
+												scheduledUnitToken = unitToken
+											end,
+											function()
+												QuestTogether:ScheduleNameplateHealthTintRefresh("nameplate9", 0, true)
+											end
+										)
+									end
+								)
+							end
+						)
 					end)
 				end)
 			end)
 		end)
-	end)
+		AssertEquals(appliedUnitFrame, nil)
+		AssertEquals(scheduledUnitToken, "nameplate9")
+	end
+)
 
-	AssertEquals(liveObjectiveChecks, 5)
-	AssertEquals(restoredUnitFrame, unitFrame)
-	AssertEquals(QuestTogether.nameplateQuestStateByUnitToken["nameplate10"], false)
-	AssertEquals(QuestTogether.nameplateQuestGuidByUnitToken["nameplate10"], "Creature-0-0-0-0-22222-0000000000")
-end)
+QuestTogether:RegisterTest(
+	"scheduled nameplate tint refresh ignores cached quest state when unit guid changes",
+	function()
+		local restoredUnitFrame = nil
+		local liveObjectiveChecks = 0
+		local healthBar = {}
+		local unitFrame = {
+			unit = "nameplate10",
+			healthBar = healthBar,
+		}
+		local namePlateFrameBase = {
+			UnitFrame = unitFrame,
+			GetUnit = function()
+				return "nameplate10"
+			end,
+			IsShown = function()
+				return true
+			end,
+		}
+
+		QuestTogether.isEnabled = true
+		QuestTogether.nameplateQuestStateByGuid["Creature-0-0-0-0-11111-0000000000"] = true
+		QuestTogether.nameplateQuestStateByUnitToken["nameplate10"] = true
+		QuestTogether.nameplateQuestGuidByUnitToken["nameplate10"] = "Creature-0-0-0-0-11111-0000000000"
+		QuestTogether.API = CreateApiWithOverrides({
+			Delay = function(_, callback)
+				callback()
+			end,
+			GetNamePlateForUnit = function(unitToken)
+				AssertEquals(unitToken, "nameplate10")
+				return namePlateFrameBase
+			end,
+		})
+
+		WithPatchedMethod(QuestTogether, "IsNameplateUnitToken", function(_, unitToken)
+			return unitToken == "nameplate10"
+		end, function()
+			WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
+				return false
+			end, function()
+				WithPatchedMethod(QuestTogether, "GetNameplateUnitGuid", function(_, unitToken)
+					AssertEquals(unitToken, "nameplate10")
+					return "Creature-0-0-0-0-22222-0000000000"
+				end, function()
+					WithPatchedMethod(
+						QuestTogether,
+						"TryEvaluateQuestObjectiveViaTooltip",
+						function(_, unitToken, candidateFrame, unitGuid)
+							AssertEquals(unitToken, "nameplate10")
+							AssertEquals(candidateFrame, unitFrame)
+							AssertEquals(unitGuid, "Creature-0-0-0-0-22222-0000000000")
+							liveObjectiveChecks = liveObjectiveChecks + 1
+							return true, false, "Creature-0-0-0-0-22222-0000000000"
+						end,
+						function()
+							WithPatchedMethod(
+								QuestTogether,
+								"ShouldApplyQuestHealthTint",
+								function(_, candidateFrame, isQuestObjective)
+									AssertEquals(candidateFrame, unitFrame)
+									AssertEquals(isQuestObjective, false)
+									return false
+								end,
+								function()
+									WithPatchedMethod(
+										QuestTogether,
+										"RestoreNameplateHealthColor",
+										function(_, candidateFrame)
+											restoredUnitFrame = candidateFrame
+										end,
+										function()
+											QuestTogether:ScheduleNameplateHealthTintRefresh("nameplate10", 0, true)
+										end
+									)
+								end
+							)
+						end
+					)
+				end)
+			end)
+		end)
+
+		AssertEquals(liveObjectiveChecks, 5)
+		AssertEquals(restoredUnitFrame, unitFrame)
+		AssertEquals(QuestTogether.nameplateQuestStateByUnitToken["nameplate10"], false)
+		AssertEquals(QuestTogether.nameplateQuestGuidByUnitToken["nameplate10"], "Creature-0-0-0-0-22222-0000000000")
+	end
+)
 
 QuestTogether:RegisterTest("separate chat window inherits main chat font size when enabled", function()
 	local appliedFontSize = nil
@@ -7222,370 +8081,216 @@ QuestTogether:RegisterTest("login adopts visible QuestTogether chat window as se
 end)
 
 QuestTogether:RegisterTest("local progress announcement publishes player identity to the realm channel", function()
-	local sent = {}
-	QuestTogether.isEnabled = true
-		QuestTogether.API = CreateApiWithOverrides({
-			IsInInstanceGroup = function()
-				return false
-			end,
-			IsInRaid = function()
-				return false
-			end,
-			IsInParty = function()
-				return false
-			end,
-			GetChannelName = function(channelName)
-				AssertTrue(channelName == QuestTogether.announcementChannelName)
-				return 7
-		end,
-		SendAddonMessage = function(prefix, message, channel, target)
-			sent[#sent + 1] = {
-				prefix = prefix,
-				message = message,
-				channel = channel,
-				target = target,
-			}
-			return 0
-		end,
-		UnitFullName = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "MyPlayer", "Realm"
-		end,
-		UnitClass = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "Mage", "MAGE"
-		end,
-		UnitGUID = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "Player-1-ABC"
-		end,
-	})
-
-	local success = QuestTogether:SendAnnouncementEvent("QUEST_PROGRESS", "8/8 Lightblooming Bulb")
-	AssertTrue(success)
-	AssertEquals(#sent, 1)
-	AssertEquals(sent[1].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[1].channel, "CHANNEL")
-	AssertEquals(sent[1].target, 7)
-	AssertTrue(string.find(sent[1].message, "^ANN|", 1) ~= nil)
+	local net, a, b = AnnouncementPeers()
+	net:SetGroup(a, nil)
+	net:SetGroup(b, nil)
+	net:Join(a, a.announcementChannelName, true)
+	net:Join(b, b.announcementChannelName, true)
+	local received
+	function b:HandleAnnouncementEvent(event)
+		received = event
+		return true
+	end
+	AssertTrue(a:SendAnnouncementEvent("QUEST_PROGRESS", "8/8 Lightblooming Bulb"))
+	net:Advance(3)
+	local sent = AcceptedOperation(net, "ANN")
+	AssertTrue(#sent > 0)
+	for _, packet in ipairs(sent) do
+		AssertEquals(packet.route, "CHANNEL")
+		AssertEquals(packet.channel, a.announcementChannelName)
+	end
+	AssertEquals(received.senderName, a.name)
+	AssertEquals(received.text, "8/8 Lightblooming Bulb")
 end)
 
 QuestTogether:RegisterTest("announcement wire uses both party and channel routes when grouped", function()
-	local sent = {}
-	QuestTogether.isEnabled = true
-	QuestTogether.API = CreateApiWithOverrides({
-		IsInInstanceGroup = function()
-			return false
-		end,
-		IsInRaid = function()
-			return false
-		end,
-		IsInParty = function()
-			return true
-		end,
-		GetChannelName = function(channelName)
-			AssertTrue(channelName == QuestTogether.announcementChannelName)
-			return 8
-		end,
-		SendAddonMessage = function(prefix, message, channel, target)
-			sent[#sent + 1] = {
-				prefix = prefix,
-				message = message,
-				channel = channel,
-				target = target,
-			}
-			return 0
-		end,
-		UnitFullName = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "MyPlayer", "Realm"
-		end,
-		UnitClass = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "Mage", "MAGE"
-		end,
-		UnitGUID = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "Player-1-ABC"
-		end,
-	})
-
-	local success = QuestTogether:SendAnnouncementEvent("QUEST_PROGRESS", "9/9 Things")
-	AssertTrue(success)
-	AssertEquals(#sent, 2)
-	AssertEquals(sent[1].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[1].channel, "PARTY")
-	AssertEquals(sent[1].target, nil)
-	AssertTrue(string.find(sent[1].message, "^ANN|", 1) ~= nil)
-	AssertEquals(sent[2].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[2].channel, "CHANNEL")
-	AssertEquals(sent[2].target, 8)
-	AssertTrue(string.find(sent[2].message, "^ANN|", 1) ~= nil)
+	local net, a, b = AnnouncementPeers()
+	net:Join(a, a.announcementChannelName, true)
+	net:Join(b, b.announcementChannelName, true)
+	local received = 0
+	function b:HandleAnnouncementEvent()
+		received = received + 1
+		return true
+	end
+	AssertTrue(a:SendAnnouncementEvent("QUEST_PROGRESS", "9/9 Things"))
+	net:Advance(3)
+	local routes = {}
+	for _, packet in ipairs(AcceptedOperation(net, "ANN")) do
+		routes[packet.route] = true
+	end
+	AssertTrue(routes.PARTY)
+	AssertTrue(routes.CHANNEL)
+	AssertEquals(received, 1)
 end)
 
 QuestTogether:RegisterTest("manual ping requires the private companion and uses only the global channel", function()
 	local addon = NewHelpFixture()
 	addon.isEnabled = true
 	addon.pendingPingRequests = {}
-	addon.API = { GetTime=function() return 100 end, Random=function() return 1234 end, Delay=function() end }
-	function addon:GetPlayerFullName() return "MyPlayer-Realm" end
-	function addon:GetPlayerName() return "MyPlayer" end
-	function addon:PrepareDeveloperPingRequest(request) return request end
-	function addon:HandlePingResponse() return true end
-	function addon:BuildPingResponse() return {} end
+	addon.API = {
+		GetTime = function()
+			return 100
+		end,
+		Random = function()
+			return 1234
+		end,
+		Delay = function() end,
+	}
+	function addon:GetPlayerFullName()
+		return "MyPlayer-Realm"
+	end
+	function addon:GetPlayerName()
+		return "MyPlayer"
+	end
+	function addon:PrepareDeveloperPingRequest(request)
+		return request
+	end
+	function addon:HandlePingResponse()
+		return true
+	end
+	function addon:BuildPingResponse()
+		return {}
+	end
 	local routes
-	function addon:SendWireMessageToAnnouncementRoutes(_, _, selected) routes=selected; return true end
+	function addon:Request(operation, _, selected)
+		AssertEquals(operation, "PING")
+		routes = selected
+		return true
+	end
 	AssertFalse(addon:SendPingRequest())
-	AssertEquals(routes,nil)
-	addon.isLocalDeveloper=true
+	AssertEquals(routes, nil)
+	addon.isLocalDeveloper = true
 	AssertTrue(addon:SendPingRequest())
-	AssertEquals(#routes,1)
-	AssertEquals(routes[1].distribution,"CHANNEL")
-	AssertEquals(routes[1].channelName,addon.announcementChannelName)
+	AssertEquals(#routes, 1)
+	AssertEquals(routes[1].distribution, "CHANNEL")
+	AssertEquals(routes[1].channelName, addon.announcementChannelName)
 end)
 
 QuestTogether:RegisterTest("global ping does not fall back to the party after a failed send", function()
 	local addon = NewHelpFixture()
-	addon.isEnabled,addon.isLocalDeveloper=true,true
-	addon.pendingPingRequests={}
-	addon.API={GetTime=function() return 100 end,Random=function() return 1234 end,Delay=function() end}
-	function addon:GetPlayerFullName() return "MyPlayer-Realm" end
-	function addon:GetPlayerName() return "MyPlayer" end
-	function addon:PrepareDeveloperPingRequest(request) return request end
-	local attempts=0
-	function addon:SendWireMessageToAnnouncementRoutes(_,_,routes)
-		attempts=attempts+1
-		AssertEquals(#routes,1)
-		AssertEquals(routes[1].distribution,"CHANNEL")
+	addon.isEnabled, addon.isLocalDeveloper = true, true
+	addon.pendingPingRequests = {}
+	addon.API = {
+		GetTime = function()
+			return 100
+		end,
+		Random = function()
+			return 1234
+		end,
+		Delay = function() end,
+	}
+	function addon:GetPlayerFullName()
+		return "MyPlayer-Realm"
+	end
+	function addon:GetPlayerName()
+		return "MyPlayer"
+	end
+	function addon:PrepareDeveloperPingRequest(request)
+		return request
+	end
+	local attempts = 0
+	function addon:Request(operation, _, routes)
+		AssertEquals(operation, "PING")
+		attempts = attempts + 1
+		AssertEquals(#routes, 1)
+		AssertEquals(routes[1].distribution, "CHANNEL")
 		return false
 	end
 	AssertFalse(addon:SendPingRequest())
-	AssertEquals(attempts,1)
-	AssertEquals(next(addon.pendingPingRequests),nil)
+	AssertEquals(attempts, 1)
+	AssertEquals(next(addon.pendingPingRequests), nil)
 end)
 
-QuestTogether:RegisterTest("ping response uses both party and channel routes when grouped", function()
-	local sent = {}
-	QuestTogether.isEnabled = true
-	QuestTogether.API = CreateApiWithOverrides({
-		IsInInstanceGroup = function()
-			return false
-		end,
-		IsInRaid = function()
-			return false
-		end,
-		IsInParty = function()
-			return true
-		end,
-		GetChannelName = function(channelName)
-			AssertTrue(channelName == QuestTogether.announcementChannelName)
-			return 14
-		end,
-		SendAddonMessage = function(prefix, message, channel, target)
-			sent[#sent + 1] = {
-				prefix = prefix,
-				message = message,
-				channel = channel,
-				target = target,
-			}
-			return 0
-		end,
-	})
+QuestTogether:RegisterTest("verified ping replies use only the requesting developer whisper", function()
+	local net, a, b = AnnouncementPeers()
+	b.API.Random = function()
+		return 1
+	end
+	function b:BuildPingResponse(id)
+		return { requestId = id, senderName = self.name, addonVersion = "7.0.0" }
+	end
+	function b:AddDeveloperPingMetadata()
+		return true
+	end
+	AssertTrue(
+		b:HandlePingRequest({
+			requestId = "ping-2",
+			requesterName = a.name,
+			developerRequest = true,
+			developerVerified = true,
+		})
+	)
+	net:Advance(3)
+	local sent = AcceptedOperation(net, "PONG")
+	AssertTrue(#sent > 0)
+	for _, packet in ipairs(sent) do
+		AssertEquals(packet.route, "WHISPER")
+		AssertEquals(packet.target, a.name)
+	end
+end)
 
-	WithPatchedMethod(QuestTogether, "BuildPingResponse", function(_, requestId)
+QuestTogether:RegisterTest("quest compare requests remain private for grouped peers", function()
+	local net, a, b = AnnouncementPeers()
+	function b:HandleQuestCompareRequest()
+		return true
+	end
+	AssertTrue(a:RequestQuestCompare(b.name))
+	net:Advance(1)
+	local sent = AcceptedOperation(net, "QCMP")
+	AssertEquals(#sent, 1)
+	AssertEquals(sent[1].route, "WHISPER")
+	AssertEquals(sent[1].target, b.name)
+end)
+
+QuestTogether:RegisterTest("quest compare does not depend on public channel membership", function()
+	local net, a, b = AnnouncementPeers()
+	a.API.GetChannelName = function()
+		return nil
+	end
+	a.API.JoinPermanentChannel = function()
+		error("private comparison must not join channels")
+	end
+	function b:HandleQuestCompareRequest()
+		return true
+	end
+	AssertTrue(a:RequestQuestCompare(b.name))
+	net:Advance(1)
+	local sent = AcceptedOperation(net, "QCMP")
+	AssertEquals(#sent, 1)
+	AssertEquals(sent[1].route, "WHISPER")
+	AssertEquals(sent[1].target, b.name)
+end)
+
+QuestTogether:RegisterTest("quest compare returns one atomic private snapshot without public rows", function()
+	local net, a, b = AnnouncementPeers()
+	local entries, done = {}, 0
+	function b:BuildRevisionedQuestCompareEntries()
 		return {
-			requestId = requestId,
-			senderName = "LocalPlayer-Realm",
-			realmName = "Realm",
-			raceName = "Human",
-			classFile = "MAGE",
-			className = "Mage",
-			level = "70",
-			zoneName = "Elwynn Forest",
-			coordX = "50.0",
-			coordY = "50.0",
-			warMode = "0",
-			mapID = "37",
-			addonVersion = "1.0.0",
+			{ questId = 12345, questTitle = "A Test Quest", isComplete = false, isPushable = true },
+			revision = "one",
 		}
-	end, function()
-		AssertTrue(QuestTogether:SendPingResponse("ping-2"))
-	end)
-
-	AssertEquals(#sent, 2)
-	AssertEquals(sent[1].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[1].channel, "PARTY")
-	AssertEquals(sent[1].target, nil)
-	AssertTrue(string.find(sent[1].message, "^PONG|", 1) ~= nil)
-	AssertEquals(sent[2].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[2].channel, "CHANNEL")
-	AssertEquals(sent[2].target, 14)
-	AssertTrue(string.find(sent[2].message, "^PONG|", 1) ~= nil)
-end)
-
-QuestTogether:RegisterTest("quest compare request uses only the recipient group route for an older peer", function()
-	local sent = {}
-	QuestTogether.isEnabled = true
-	QuestTogether.partyMembers = {
-		["Remote-Realm"] = {
-			fullName = "Remote-Realm",
-			classFile = "DRUID",
-		},
-	}
-	QuestTogether.API = CreateApiWithOverrides({
-		IsInInstanceGroup = function()
-			return false
+	end
+	AssertTrue(a:RequestQuestCompare(b.name, {
+		onEntry = function(entry)
+			entries[#entries + 1] = entry
 		end,
-		IsInRaid = function()
-			return false
+		onDone = function()
+			done = done + 1
 		end,
-		IsInParty = function()
-			return true
+		onTimeout = function()
+			error("unexpected timeout")
 		end,
-		GetChannelName = function(channelName)
-			AssertTrue(channelName == QuestTogether.announcementChannelName)
-			return 13
-		end,
-		SendAddonMessage = function(prefix, message, channel, target)
-			sent[#sent + 1] = {
-				prefix = prefix,
-				message = message,
-				channel = channel,
-				target = target,
-			}
-			return 0
-		end,
-		Delay = function() end,
-		UnitFullName = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "LocalPlayer", "Realm"
-		end,
-	})
-
-	WithPatchedMethod(QuestTogether, "PrintQuestCompareStart", function() end, function()
-		AssertTrue(QuestTogether:RequestQuestCompare("Remote-Realm"))
-	end)
-
-	AssertEquals(#sent, 1)
-	AssertEquals(sent[1].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[1].channel, "PARTY")
-	AssertEquals(sent[1].target, nil)
-	AssertTrue(string.find(sent[1].message, "^QCMP|", 1) ~= nil)
-end)
-
-QuestTogether:RegisterTest("quest compare request still sends to group when channel join is unavailable", function()
-	local sent = {}
-	QuestTogether.isEnabled = true
-	QuestTogether.partyMembers = {
-		["Remote-Realm"] = {
-			fullName = "Remote-Realm",
-			classFile = "DRUID",
-		},
-	}
-	QuestTogether.API = CreateApiWithOverrides({
-		IsInInstanceGroup = function()
-			return false
-		end,
-		IsInRaid = function()
-			return false
-		end,
-		IsInParty = function()
-			return true
-		end,
-		GetChannelName = function()
-			return nil
-		end,
-		JoinPermanentChannel = function() end,
-		SendAddonMessage = function(prefix, message, channel, target)
-			sent[#sent + 1] = {
-				prefix = prefix,
-				message = message,
-				channel = channel,
-				target = target,
-			}
-			return 0
-		end,
-		Delay = function() end,
-		UnitFullName = function(unitToken)
-			AssertEquals(unitToken, "player")
-			return "LocalPlayer", "Realm"
-		end,
-	})
-
-	WithPatchedMethod(QuestTogether, "PrintQuestCompareStart", function() end, function()
-		AssertTrue(QuestTogether:RequestQuestCompare("Remote-Realm"))
-	end)
-
-	AssertEquals(#sent, 1)
-	AssertEquals(sent[1].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[1].channel, "PARTY")
-	AssertEquals(sent[1].target, nil)
-	AssertTrue(string.find(sent[1].message, "^QCMP|", 1) ~= nil)
-end)
-
-QuestTogether:RegisterTest("quest compare entry and done use both party and channel routes when grouped", function()
-	local sent = {}
-	QuestTogether.isEnabled = true
-	QuestTogether.API = CreateApiWithOverrides({
-		IsInInstanceGroup = function()
-			return false
-		end,
-		IsInRaid = function()
-			return false
-		end,
-		IsInParty = function()
-			return true
-		end,
-		GetChannelName = function(channelName)
-			AssertTrue(channelName == QuestTogether.announcementChannelName)
-			return 15
-		end,
-		SendAddonMessage = function(prefix, message, channel, target)
-			sent[#sent + 1] = {
-				prefix = prefix,
-				message = message,
-				channel = channel,
-				target = target,
-			}
-			return 0
-		end,
-	})
-
-	WithPatchedMethod(QuestTogether, "GetPlayerFullName", function()
-		return "LocalPlayer-Realm"
-	end, function()
-		WithPatchedMethod(QuestTogether, "GetPlayerName", function()
-			return "LocalPlayer"
-		end, function()
-			WithPatchedMethod(QuestTogether, "GetPlayerClassFile", function()
-				return "MAGE"
-			end, function()
-				AssertTrue(QuestTogether:SendQuestCompareEntry("qcmp-1", {
-					questId = "12345",
-					questTitle = "A Test Quest",
-					isComplete = false,
-					isPushable = true,
-				}))
-				AssertTrue(QuestTogether:SendQuestCompareDone("qcmp-1", 1))
-			end)
-		end)
-	end)
-
-	AssertEquals(#sent, 4)
-	AssertEquals(sent[1].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[1].channel, "PARTY")
-	AssertTrue(string.find(sent[1].message, "^QCQE|", 1) ~= nil)
-	AssertEquals(sent[2].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[2].channel, "CHANNEL")
-	AssertEquals(sent[2].target, 15)
-	AssertTrue(string.find(sent[2].message, "^QCQE|", 1) ~= nil)
-	AssertEquals(sent[3].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[3].channel, "PARTY")
-	AssertTrue(string.find(sent[3].message, "^QCDN|", 1) ~= nil)
-	AssertEquals(sent[4].prefix, QuestTogether.commPrefix)
-	AssertEquals(sent[4].channel, "CHANNEL")
-	AssertEquals(sent[4].target, 15)
-	AssertTrue(string.find(sent[4].message, "^QCDN|", 1) ~= nil)
+	}))
+	net:Advance(3)
+	AssertEquals(done, 1)
+	AssertEquals(#entries, 1)
+	AssertEquals(entries[1].questTitle, "A Test Quest")
+	local sent = AcceptedOperation(net, "QCRS")
+	AssertTrue(#sent > 0)
+	for _, packet in ipairs(sent) do
+		AssertEquals(packet.route, "WHISPER")
+		AssertEquals(packet.target, a.name)
+	end
 end)
 
 QuestTogether:RegisterTest("announcement comm filter accepts grouped distributions", function()
@@ -7596,256 +8301,127 @@ QuestTogether:RegisterTest("announcement comm filter accepts grouped distributio
 end)
 
 QuestTogether:RegisterTest("incoming announcements use the transport sender name", function()
-	QuestTogether.isEnabled = true
-	local handledEvent = nil
-	local payload = QuestTogether:EncodeAnnouncementPayload({
-		version = 3,
+	local _, a, b = AnnouncementPeers()
+	local received
+	function b:HandleAnnouncementEvent(event)
+		received = event
+		return true
+	end
+	local frames = AnnouncementFrames(a, "ANN", {
 		eventType = "QUEST_PROGRESS",
 		senderGUID = "Player-2-DEF",
 		classFile = "WARRIOR",
 		senderName = "Forged-Realm",
 		text = "2/3 Gather Apples",
 		questId = "12345",
-		iconAsset = "",
-		iconKind = "",
-		zoneName = "",
-		coordX = "",
-		coordY = "",
-		warMode = "0",
-		emoteToken = "",
 	})
-	local wireMessage = QuestTogether:SerializeWireMessage("ANN", payload)
-
-	WithPatchedMethod(QuestTogether, "IsSelfSender", function()
-		return false
-	end, function()
-		WithPatchedMethod(QuestTogether, "IsIgnoredPlayerName", function()
-			return false
-		end, function()
-			WithPatchedMethod(QuestTogether, "HandleAnnouncementEvent", function(_, eventData)
-				handledEvent = eventData
-				return true
-			end, function()
-				QuestTogether:OnCommReceived(
-					QuestTogether.commPrefix,
-					wireMessage,
-					"PARTY",
-					"Actual-Realm",
-					nil,
-					nil
-				)
-			end)
-		end)
-	end)
-
-	AssertTrue(handledEvent ~= nil)
-	AssertEquals(handledEvent.senderName, "Actual-Realm")
-end)
-
-QuestTogether:RegisterTest("publish announcement sends even when local option is disabled", function()
-	local sent = {}
-	local printed = {}
-	QuestTogether.isEnabled = true
-	QuestTogether.db.profile.announceRemoved = false
-	QuestTogether.db.profile.showChatBubbles = false
-	QuestTogether.db.profile.showChatLogs = true
-
-	QuestTogether.API = CreateApiWithOverrides({
-		IsInInstanceGroup = function()
-			return false
-		end,
-		IsInRaid = function()
-			return false
-		end,
-		IsInParty = function()
-			return false
-		end,
-		GetChannelName = function()
-			return 4
-		end,
-		SendAddonMessage = function(_, message)
-			sent[#sent + 1] = message
-			return 0
-		end,
-		UnitFullName = function()
-			return "MyPlayer", "Realm"
-		end,
-		UnitClass = function()
-			return "Mage", "MAGE"
-		end,
-		UnitGUID = function()
-			return "Player-1-ABC"
-		end,
-	})
-	QuestTogether.PrintRaw = function(_, message)
-		printed[#printed + 1] = message
-	end
-
-	local success = QuestTogether:PublishAnnouncementEvent("QUEST_REMOVED", "Quest Removed: Test Quest")
-	AssertTrue(success)
-	AssertEquals(#sent, 1)
-	AssertEquals(#printed, 0)
-end)
-
-QuestTogether:RegisterTest("duplicate announcements from party and channel are processed once", function()
-	local handledCount = 0
-	QuestTogether.isEnabled = true
-	QuestTogether.announcementChannelLocalID = 6
-
-	local payload = QuestTogether:EncodeAnnouncementPayload({
-		version = 3,
+	ReceiveAnnouncementFrames(b, a.name, frames)
+	AssertEquals(received, nil) -- A conflicting claimed identity is rejected.
+	frames = AnnouncementFrames(a, "ANN", {
 		eventType = "QUEST_PROGRESS",
 		senderGUID = "Player-2-DEF",
 		classFile = "WARRIOR",
-		senderName = "Friend-Realm",
-		text = "6/8 Things",
+		text = "2/3 Gather Apples",
 		questId = "12345",
-		iconAsset = "",
-		iconKind = "",
-		zoneName = "",
-		coordX = "",
-		coordY = "",
-		warMode = "0",
-		emoteToken = "",
 	})
-	local wireMessage = QuestTogether:SerializeWireMessage("ANN", payload)
-
-	WithPatchedMethod(QuestTogether, "IsSelfSender", function()
-		return false
-	end, function()
-		WithPatchedMethod(QuestTogether, "HandleAnnouncementEvent", function()
-			handledCount = handledCount + 1
-			return true
-		end, function()
-			QuestTogether:OnCommReceived(
-				QuestTogether.commPrefix,
-				wireMessage,
-				"PARTY",
-				"Friend-Realm",
-				nil,
-				nil
-			)
-			QuestTogether:OnCommReceived(
-				QuestTogether.commPrefix,
-				wireMessage,
-				"CHANNEL",
-				"Friend-Realm",
-				6,
-				QuestTogether.announcementChannelName
-			)
-		end)
-	end)
-
-	AssertEquals(handledCount, 1)
+	ReceiveAnnouncementFrames(b, a.name, frames)
+	AssertTrue(received ~= nil)
+	AssertEquals(received.senderName, a.name)
 end)
 
-QuestTogether:RegisterTest("duplicate ping responses from party and channel are processed once", function()
-	local handledCount = 0
-	QuestTogether.isEnabled = true
-	QuestTogether.announcementChannelLocalID = 6
-	QuestTogether.pendingPingRequests = {
-		["ping-1"] = true,
-	}
-
-	local payload = QuestTogether:EncodePingResponsePayload({
-		version = 2,
-		requestId = "ping-1",
-		senderName = "Friend-Realm",
-		realmName = "Realm",
-		raceName = "Night Elf",
-		classFile = "DRUID",
-		className = "Druid",
-		level = "70",
-		zoneName = "Elwynn Forest",
-		coordX = "50.0",
-		coordY = "50.0",
-		warMode = "0",
-		mapID = "37",
-		addonVersion = "1.0.0",
-	})
-	local wireMessage = QuestTogether:SerializeWireMessage("PONG", payload)
-
-	WithPatchedMethod(QuestTogether, "IsSelfSender", function()
+QuestTogether:RegisterTest("publish announcement sends even when local option is disabled", function()
+	local net, a, b = AnnouncementPeers()
+	a.db.profile.announceRemoved = false
+	local printed, received = 0, 0
+	a.suppressLocalAnnouncementDisplayDuringTests = false
+	function a:PrintConsoleAnnouncement()
+		printed = printed + 1
+	end
+	function a:AnnounceToNonQTParty()
 		return false
-	end, function()
-		WithPatchedMethod(QuestTogether, "HandlePingResponse", function()
-			handledCount = handledCount + 1
-			return true
-		end, function()
-			QuestTogether:OnCommReceived(
-				QuestTogether.commPrefix,
-				wireMessage,
-				"PARTY",
-				"Friend-Realm",
-				nil,
-				nil
-			)
-			QuestTogether:OnCommReceived(
-				QuestTogether.commPrefix,
-				wireMessage,
-				"CHANNEL",
-				"Friend-Realm",
-				6,
-				QuestTogether.announcementChannelName
-			)
-		end)
-	end)
-
-	AssertEquals(handledCount, 1)
+	end
+	function a:GetGeographicAnnouncementRoutes()
+		return { { distribution = "WHISPER", target = b.name } }
+	end
+	function b:HandleAnnouncementEvent()
+		received = received + 1
+		return true
+	end
+	AssertTrue(a:PublishAnnouncementEvent("QUEST_REMOVED", "Quest Removed: Test Quest"))
+	net:Advance(3)
+	AssertEquals(received, 1)
+	AssertEquals(printed, 0)
 end)
 
-QuestTogether:RegisterTest("duplicate quest compare entries from party and channel are processed once", function()
-	local handledCount = 0
-	QuestTogether.isEnabled = true
-	QuestTogether.announcementChannelLocalID = 6
-	QuestTogether.pendingQuestCompareRequests = {
-		["qcmp-dup"] = {
-			targetName = "Friend-Realm",
+QuestTogether:RegisterTest("duplicate framed announcements from whisper and party are processed once", function()
+	local _, a, b = AnnouncementPeers()
+	local count = 0
+	function b:HandleAnnouncementEvent()
+		count = count + 1
+		return true
+	end
+	local frames = AnnouncementFrames(
+		a,
+		"ANN",
+		{ eventType = "QUEST_PROGRESS", senderGUID = "Player-2-DEF", classFile = "WARRIOR", text = "6/8 Things" }
+	)
+	ReceiveAnnouncementFrames(b, a.name, frames, "PARTY")
+	ReceiveAnnouncementFrames(b, a.name, frames, "WHISPER")
+	AssertEquals(count, 1)
+end)
+
+QuestTogether:RegisterTest("duplicate framed ping replies are accepted once and require request correlation", function()
+	local _, a, b = AnnouncementPeers()
+	local count = 0
+	AssertTrue(b:Request("PING", { requestId = "ping-1" }, { { distribution = "WHISPER", target = a.name } }, {
+		onResponse = function()
+			count = count + 1
+			return true
+		end,
+	}))
+	local frames = AnnouncementFrames(
+		a,
+		"PONG",
+		{ requestId = "ping-1", classFile = "DRUID", level = "70", addonVersion = "7.0.0" },
+		"ping-1"
+	)
+	ReceiveAnnouncementFrames(b, "Impostor-Realm", frames)
+	AssertEquals(count, 0)
+	ReceiveAnnouncementFrames(b, a.name, frames)
+	ReceiveAnnouncementFrames(b, a.name, frames)
+	AssertEquals(count, 1)
+end)
+
+QuestTogether:RegisterTest(
+	"duplicate framed quest snapshots are accepted once and require request correlation",
+	function()
+		local _, a, b = AnnouncementPeers()
+		local count = 0
+		AssertTrue(
+			b:Request(
+				"QCMP",
+				{ requestId = "qcmp-dup", targetName = a.name },
+				{ { distribution = "WHISPER", target = a.name } },
+				{
+					onResponse = function()
+						count = count + 1
+						return true
+					end,
+				}
+			)
+		)
+		local frames = AnnouncementFrames(a, "QCRS", {
+			requestId = "qcmp-dup",
+			snapshotId = "snapshot",
 			classFile = "WARRIOR",
-			count = 0,
-		},
-	}
-
-	local payload = QuestTogether:EncodeQuestCompareEntryPayload({
-		version = 1,
-		requestId = "qcmp-dup",
-		senderName = "Friend-Realm",
-		classFile = "WARRIOR",
-		questId = "12345",
-		questTitle = "Test Quest",
-		isComplete = false,
-		isPushable = false,
-	})
-	local wireMessage = QuestTogether:SerializeWireMessage("QCQE", payload)
-
-	WithPatchedMethod(QuestTogether, "IsSelfSender", function()
-		return false
-	end, function()
-		WithPatchedMethod(QuestTogether, "HandleQuestCompareEntry", function()
-			handledCount = handledCount + 1
-			return true
-		end, function()
-			QuestTogether:OnCommReceived(
-				QuestTogether.commPrefix,
-				wireMessage,
-				"PARTY",
-				"Friend-Realm",
-				nil,
-				nil
-			)
-			QuestTogether:OnCommReceived(
-				QuestTogether.commPrefix,
-				wireMessage,
-				"CHANNEL",
-				"Friend-Realm",
-				6,
-				QuestTogether.announcementChannelName
-			)
-		end)
-	end)
-
-	AssertEquals(handledCount, 1)
-end)
+			entries = { { questId = 12345, questTitle = "Test Quest" } },
+			count = 1,
+		}, "qcmp-dup")
+		ReceiveAnnouncementFrames(b, a.name, frames)
+		ReceiveAnnouncementFrames(b, a.name, frames)
+		AssertEquals(count, 1)
+	end
+)
 
 QuestTogether:RegisterTest("publish announcement is suppressed while player is dead", function()
 	local sent = 0
@@ -7879,7 +8455,8 @@ QuestTogether:RegisterTest("publish announcement is suppressed while player is d
 		handled = handled + 1
 		return true
 	end, function()
-		local success = QuestTogether:PublishAnnouncementEvent("WORLD_QUEST_ENTERED", "World Quest Entered: Test Quest", 12345)
+		local success =
+			QuestTogether:PublishAnnouncementEvent("WORLD_QUEST_ENTERED", "World Quest Entered: Test Quest", 12345)
 		AssertFalse(success)
 	end)
 
@@ -7902,7 +8479,16 @@ QuestTogether:RegisterTest("announcement channel chat filter hides QuestTogether
 			"1. " .. QuestTogether.announcementChannelName
 		)
 	)
-	AssertFalse(QuestTogether:AnnouncementChannelChatFilter(nil, "CHAT_MSG_CHANNEL_NOTICE_USER", "JOINED", "Azethmis", "", "General"))
+	AssertFalse(
+		QuestTogether:AnnouncementChannelChatFilter(
+			nil,
+			"CHAT_MSG_CHANNEL_NOTICE_USER",
+			"JOINED",
+			"Azethmis",
+			"",
+			"General"
+		)
+	)
 end)
 
 QuestTogether:RegisterTest("joining announcement channel removes it from chat windows", function()
@@ -7945,19 +8531,19 @@ QuestTogether:RegisterTest("target bubble preview handles locally as remote with
 	local handledEvent = nil
 
 	QuestTogether.isEnabled = true
-		QuestTogether.API = CreateApiWithOverrides({
-			IsInInstanceGroup = function()
-				return false
-			end,
-			IsInRaid = function()
-				return false
-			end,
-			IsInParty = function()
-				return false
-			end,
-			UnitExists = function(unitToken)
-				AssertEquals(unitToken, "target")
-				return true
+	QuestTogether.API = CreateApiWithOverrides({
+		IsInInstanceGroup = function()
+			return false
+		end,
+		IsInRaid = function()
+			return false
+		end,
+		IsInParty = function()
+			return false
+		end,
+		UnitExists = function(unitToken)
+			AssertEquals(unitToken, "target")
+			return true
 		end,
 		UnitFullName = function(unitToken)
 			AssertEquals(unitToken, "target")
@@ -8068,7 +8654,8 @@ QuestTogether:RegisterTest("bubble test announcement uses explicit visible playe
 				}
 				return true
 			end, function()
-				local ok, senderName = QuestTogether:SendBubbleAnnouncementTest("Testing nearby player bubble", "Nearby")
+				local ok, senderName =
+					QuestTogether:SendBubbleAnnouncementTest("Testing nearby player bubble", "Nearby")
 				AssertTrue(ok)
 				AssertEquals(senderName, "Nearby-Realm")
 			end)
@@ -8184,11 +8771,21 @@ QuestTogether:RegisterTest("remote nearby completion plays synced emote", functi
 	QuestTogether.db.profile.emoteOnNearbyPlayerQuestCompletion = true
 
 	QuestTogether.API = CreateApiWithOverrides({
-		CanTargetUnitForEmote = function(unit) return unit == "target" end,
-		UnitExists = function(unit) return unit == "target" end,
-		UnitIsPlayer = function() return true end,
-		UnitGUID = function() return "Player-4-JKL" end,
-		UnitFullName = function() return "Nearby", "Realm" end,
+		CanTargetUnitForEmote = function(unit)
+			return unit == "target"
+		end,
+		UnitExists = function(unit)
+			return unit == "target"
+		end,
+		UnitIsPlayer = function()
+			return true
+		end,
+		UnitGUID = function()
+			return "Player-4-JKL"
+		end,
+		UnitFullName = function()
+			return "Nearby", "Realm"
+		end,
 		DoEmote = function(token, target)
 			emoteCalls[#emoteCalls + 1] = token .. ":" .. tostring(target)
 		end,
@@ -8264,11 +8861,21 @@ QuestTogether:RegisterTest("remote nearby completion emote obeys nearby-player e
 	QuestTogether.db.profile.emoteOnNearbyPlayerQuestCompletion = false
 
 	QuestTogether.API = CreateApiWithOverrides({
-		CanTargetUnitForEmote = function(unit) return unit == "target" end,
-		UnitExists = function(unit) return unit == "target" end,
-		UnitIsPlayer = function() return true end,
-		UnitGUID = function() return "Player-4-JKL" end,
-		UnitFullName = function() return "Nearby", "Realm" end,
+		CanTargetUnitForEmote = function(unit)
+			return unit == "target"
+		end,
+		UnitExists = function(unit)
+			return unit == "target"
+		end,
+		UnitIsPlayer = function()
+			return true
+		end,
+		UnitGUID = function()
+			return "Player-4-JKL"
+		end,
+		UnitFullName = function()
+			return "Nearby", "Realm"
+		end,
 		DoEmote = function()
 			emoteCalls = emoteCalls + 1
 		end,
@@ -8500,55 +9107,55 @@ QuestTogether:RegisterTest("restricted sender lookup does not enumerate foreign 
 		WithPatchedMethod(QuestTogether, "ForEachVisibleNamePlate", function()
 			error("restricted sender lookup must not enumerate nameplates")
 		end, function()
-			AssertEquals(
-				QuestTogether:FindVisiblePlayerNameplateForSender("Player-1-LIVE", "Nearby-Realm"),
-				nil
-			)
+			AssertEquals(QuestTogether:FindVisiblePlayerNameplateForSender("Player-1-LIVE", "Nearby-Realm"), nil)
 		end)
 	end)
 end)
 
-QuestTogether:RegisterTest("refresh active announcement bubbles does not replay an already playing personal bubble", function()
-	QuestTogether.isEnabled = true
-	local showCalls = 0
-	local unitFrame = {}
-	local bubble = {
-		animationGroup = {
-			IsPlaying = function()
-				return true
-			end,
-		},
-	}
-	local screenHostFrame = {
-		UnitFrame = unitFrame,
-	}
+QuestTogether:RegisterTest(
+	"refresh active announcement bubbles does not replay an already playing personal bubble",
+	function()
+		QuestTogether.isEnabled = true
+		local showCalls = 0
+		local unitFrame = {}
+		local bubble = {
+			animationGroup = {
+				IsPlaying = function()
+					return true
+				end,
+			},
+		}
+		local screenHostFrame = {
+			UnitFrame = unitFrame,
+		}
 
-	QuestTogether.announcementBubbleScreenHostFrame = screenHostFrame
-	QuestTogether.nameplateBubbleByUnitFrame[unitFrame] = bubble
-	QuestTogether.nameplateBubbleStateByFrame[bubble] = {
-		text = "80% Locations Photographed",
-		eventType = "QUEST_PROGRESS",
-		unitToken = "player",
-	}
+		QuestTogether.announcementBubbleScreenHostFrame = screenHostFrame
+		QuestTogether.nameplateBubbleByUnitFrame[unitFrame] = bubble
+		QuestTogether.nameplateBubbleStateByFrame[bubble] = {
+			text = "80% Locations Photographed",
+			eventType = "QUEST_PROGRESS",
+			unitToken = "player",
+		}
 
-	WithPatchedMethod(QuestTogether, "IsAnnouncementBubbleAugmentationBlockedInCurrentContext", function()
-		return false
-	end, function()
-		WithPatchedMethod(QuestTogether, "GetAnnouncementBubbleHostFrameForUnit", function(_, unitToken)
-			AssertEquals(unitToken, "player")
-			return screenHostFrame
+		WithPatchedMethod(QuestTogether, "IsAnnouncementBubbleAugmentationBlockedInCurrentContext", function()
+			return false
 		end, function()
-			WithPatchedMethod(QuestTogether, "ShowAnnouncementBubbleOnNameplate", function()
-				showCalls = showCalls + 1
-				return true
+			WithPatchedMethod(QuestTogether, "GetAnnouncementBubbleHostFrameForUnit", function(_, unitToken)
+				AssertEquals(unitToken, "player")
+				return screenHostFrame
 			end, function()
-				QuestTogether:RefreshActiveAnnouncementBubbles()
+				WithPatchedMethod(QuestTogether, "ShowAnnouncementBubbleOnNameplate", function()
+					showCalls = showCalls + 1
+					return true
+				end, function()
+					QuestTogether:RefreshActiveAnnouncementBubbles()
+				end)
 			end)
 		end)
-	end)
 
-	AssertEquals(showCalls, 0)
-end)
+		AssertEquals(showCalls, 0)
+	end
+)
 
 QuestTogether:RegisterTest("restricted bubble refresh clears side-table state without mutating the visual", function()
 	local unitFrame = {}
@@ -8684,22 +9291,32 @@ QuestTogether:RegisterTest("completed protected bubble playback avoids visual mu
 	AssertEquals(QuestTogether.nameplateBubbleStateByFrame[bubble], nil)
 end)
 
-QuestTogether:RegisterTest("generic announcement icons use QT logo while specific icons retain their meaning", function()
-	local logo = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon"
-	local asset, kind = QuestTogether:GetAnnouncementIconInfo("SCAN_STATUS")
-	AssertEquals(asset, logo)
-	AssertEquals(kind, "texture")
-	for _, old in ipairs({ QuestTogether.NAMEPLATE_QUEST_ICON_TEXTURE, "Interface/OPTIONSFRAME/UI-OptionsFrame-NewFeatureIcon" }) do
-		asset, kind = QuestTogether:ResolveAnnouncementDisplayIcon("SCAN_STATUS", old, "texture")
+QuestTogether:RegisterTest(
+	"generic announcement icons use QT logo while specific icons retain their meaning",
+	function()
+		local logo = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon"
+		local asset, kind = QuestTogether:GetAnnouncementIconInfo("SCAN_STATUS")
 		AssertEquals(asset, logo)
+		AssertEquals(kind, "texture")
+		for _, old in ipairs({
+			QuestTogether.NAMEPLATE_QUEST_ICON_TEXTURE,
+			"Interface/OPTIONSFRAME/UI-OptionsFrame-NewFeatureIcon",
+		}) do
+			asset, kind = QuestTogether:ResolveAnnouncementDisplayIcon("SCAN_STATUS", old, "texture")
+			AssertEquals(asset, logo)
+		end
+		asset, kind = QuestTogether:ResolveAnnouncementDisplayIcon(
+			"QUEST_ACCEPTED",
+			"Interface/GossipFrame/AvailableQuestIcon",
+			"texture"
+		)
+		AssertEquals(asset, "Interface/GossipFrame/AvailableQuestIcon")
+		asset, kind = QuestTogether:ResolveAnnouncementDisplayIcon("WORLD_QUEST_PROGRESS")
+		AssertEquals(asset, "worldquest-icon")
+		AssertEquals(kind, "atlas")
+		asset = QuestTogether:ResolveAnnouncementDisplayIcon("QT_CHAT")
+		AssertEquals(asset, "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon")
+		asset = QuestTogether:ResolveAnnouncementDisplayIcon("LOOKING_FOR_QUEST_PARTNERS")
+		AssertEquals(asset, "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon")
 	end
-	asset, kind = QuestTogether:ResolveAnnouncementDisplayIcon("QUEST_ACCEPTED", "Interface/GossipFrame/AvailableQuestIcon", "texture")
-	AssertEquals(asset, "Interface/GossipFrame/AvailableQuestIcon")
-	asset, kind = QuestTogether:ResolveAnnouncementDisplayIcon("WORLD_QUEST_PROGRESS")
-	AssertEquals(asset, "worldquest-icon")
-	AssertEquals(kind, "atlas")
-	asset = QuestTogether:ResolveAnnouncementDisplayIcon("QT_CHAT")
-	AssertEquals(asset, "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon")
-	asset = QuestTogether:ResolveAnnouncementDisplayIcon("LOOKING_FOR_QUEST_PARTNERS")
-	AssertEquals(asset, "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon")
-end)
+)

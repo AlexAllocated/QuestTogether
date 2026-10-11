@@ -22,6 +22,7 @@ class PackagingTests(unittest.TestCase):
             self.assertIn("Libs/libchev/LICENSE", manifest["files"])
             self.assertIn("Media/QuestTogetherIcon.tga", manifest["files"])
             self.assertNotIn("scripts/test.lua", manifest["files"])
+            self.assertNotIn("scripts/offline_numeric_tests.lua", manifest["files"])
             self.assertFalse(any(p.startswith(".local/") or p.endswith("image.png") for p in manifest["files"]))
 
     def test_ref_is_independent_of_working_tree(self):
@@ -56,8 +57,21 @@ class PackagingTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "native addon sends belong to Transport"):
                 check_architecture.check(ROOT, {"NearbyStreams.lua": source})
 
+    def test_architecture_guard_catches_retired_network_ownership(self):
+        for call, expected in (
+            ("function QT:Request(op, record) end", "typed submissions"),
+            ("self:SerializeWireMessage(record)", "retired communication paths"),
+            ("function QT:EncodeCommRecord(op, record) end", "wire schemas"),
+        ):
+            source = (ROOT / "NearbyStreams.lua").read_text() + "\n" + call
+            with self.assertRaisesRegex(ValueError, expected):
+                check_architecture.check(ROOT, {"NearbyStreams.lua": source})
+        source = (ROOT / "CommsTransfer.lua").read_text() + "\nself.API.Delay(1, pump)"
+        with self.assertRaisesRegex(ValueError, "network progression"):
+            check_architecture.check(ROOT, {"CommsTransfer.lua": source})
+
     def test_manifest_rejects_duplicates_offline_tools_and_traversal(self):
-        for text in ("Core.lua\ncore.lua", "scripts/test.lua", "../Core.lua", "/Core.lua"):
+        for text in ("Core.lua\ncore.lua", "scripts/test.lua", "scripts/offline_numeric_tests.lua", "../Core.lua", "/Core.lua"):
             with self.assertRaises(package.PackageError): package.toc_entries(text)
 
 if __name__ == "__main__": unittest.main()

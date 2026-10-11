@@ -155,7 +155,7 @@ function QT:RecordPeerUpdate(name, field, sampledAt, session, sequence, establis
 		if establishesPresence ~= false then
 			row.activeAfterDeparture = true
 		end
-		-- Inner LOC/QTLF stream counters are not comparable to QTB1 envelopes.
+		-- Shared wire observations carry the same session and sequence across topics.
 		if session:match("^%d+%-%d+$") then
 			if row.session ~= session then
 				row.session, row.sequence = session, sequence
@@ -170,7 +170,15 @@ end
 -- Explicit, addon-owned observation metadata travels with the decoded field.
 -- Producers retain distinct freshness policies; transport never edits payload stores.
 function QT:CreatePeerObservation(name, field, options)
-	options = options or {}
+	if
+		type(options) ~= "table"
+		or not self:CanAccessTable(options)
+		or not self:CanAccessValue(options.source)
+		or type(options.source) ~= "string"
+		or options.source == ""
+	then
+		return nil
+	end
 	local now = Now(self)
 	local age = self:SafeToNumber(options.age) or 0
 	local lifetime = self:SafeToNumber(options.lifetime) or TTL
@@ -180,7 +188,7 @@ function QT:CreatePeerObservation(name, field, options)
 	return {
 		name = name,
 		field = field,
-		source = options.source or "legacy",
+		source = options.source,
 		receivedAt = now,
 		sampledAt = now - age,
 		expiresAt = now - age + lifetime,
@@ -191,20 +199,21 @@ function QT:CreatePeerObservation(name, field, options)
 	}
 end
 
-function QT:ResolvePeerObservation(name, field, value, source, legacySession, legacySequence, lifetime)
-	if type(value) == "table" then
-		if value.name ~= name or value.field ~= field then
-			return nil
-		end
-		return value
+function QT:ResolvePeerObservation(name, field, observation)
+	if
+		type(observation) ~= "table"
+		or not self:CanAccessTable(observation)
+		or not self:CanAccessValue(observation.name)
+		or not self:CanAccessValue(observation.field)
+		or observation.name ~= name
+		or observation.field ~= field
+		or not self:CanAccessValue(observation.source)
+		or type(observation.source) ~= "string"
+		or observation.source == ""
+	then
+		return nil
 	end
-	return self:CreatePeerObservation(name, field, {
-		source = source and "snapshot" or (value ~= nil and "diagnostic" or "legacy"),
-		age = value or 0,
-		lifetime = value ~= nil and TTL or lifetime,
-		session = source and source.session or legacySession,
-		sequence = source and source.sequence or legacySequence,
-	})
+	return observation
 end
 
 function QT:CanAcceptPeerObservation(observation)
@@ -298,29 +307,6 @@ function QT:RecordPeerPresenceFromSnapshot(name, sampledAt, session, sequence)
 	return accepted
 end
 
-function QT:RecordLegacyPeerPresence(name, active)
-	local now = Now(self)
-	if not now then
-		return false
-	end
-	local row = Record(self, name, false)
-	if not active then
-		if row and row.activeAfterDeparture and row.departed and not row.departed.session then
-			row.departed = nil
-		end
-		return self:RecordPeerDeparture(name, now)
-	end
-	-- Legacy has no timestamp/counter. Explicit On is its reentry witness;
-	-- it cannot override a sequenced modern departure with a delayed packet.
-	if row and row.departed and row.departed.session then
-		return self:RecordQTPlayerPresence(name, true)
-	end
-	if row then
-		row.departed = nil
-	end
-	return self:RecordPeerPresenceFromSnapshot(name, now, "QTPR:legacy", 1)
-end
-
 function QT:RecordPeerDeparture(name, sampledAt, session, sequence)
 	if not self:CanAcceptPeerUpdate(name, "QTPR", sampledAt, session, sequence) then
 		return false
@@ -390,4 +376,28 @@ end
 
 function QT:ResetPeerSnapshots()
 	self.peerSnapshotState = nil
+end
+
+-- Read admitted sample times through their owner instead of traversing feature caches.
+function QT:ArePeerFieldsFresh(name, fields, maxAge)
+	name = self:NormalizeMemberName(name)
+	local row, now
+	if name then
+		row, now = Record(self, name, false)
+	end
+	if not row or not now then
+		return false
+	end
+	for _, field in ipairs(fields) do
+		local sample = row.fields[field]
+		if
+			not sample
+			or now < sample.sampledAt
+			or now - sample.sampledAt >= maxAge
+			or not self:CanAcceptPeerUpdate(name, nil, sample.sampledAt, sample.session, sample.sequence)
+		then
+			return false
+		end
+	end
+	return true
 end

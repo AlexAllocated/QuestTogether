@@ -82,9 +82,9 @@ function QT:SavePlayerLocationCache()
 		local age = now - sampled
 		local remaining = math.min(RELOAD_CACHE_LIFETIME - age, (peer.lifetime or LIFETIME) - (now - peer.receivedAt))
 		if peer.mask ~= 0 and age >= 0 and remaining > 0 and not self:IsIgnoredPlayerName(name) then
-			local payload = self:EncodePlayerLocationPayload(peer, peer.mask, peer)
-			if self:DecodePlayerLocationPayload(payload) then
-				local row = { name = name, payload = payload, sampledAt = wall - age, expiresAt = wall + remaining }
+			local data = self:ValidatePlayerLocationRecord(peer)
+			if data then
+				local row = { name = name, data = data, sampledAt = wall - age, expiresAt = wall + remaining }
 				row.party = self:SavePlayerPartyCacheEntry(name, now, wall)
 				-- Preserve independently fresh LFQP status for the existing map filter.
 				-- Neither saving nor restoring it establishes a new live presence.
@@ -111,7 +111,7 @@ function QT:SavePlayerLocationCache()
 			break
 		end
 	end
-	global.playerLocationCache = { version = 1, owner = owner, savedAt = wall, rows = rows }
+	global.playerLocationCache = { version = 2, owner = owner, savedAt = wall, rows = rows }
 end
 
 function QT:RestorePlayerLocationCache()
@@ -134,7 +134,7 @@ function QT:RestorePlayerLocationCache()
 		or not wall
 		or not owner
 		or type(cache) ~= "table"
-		or cache.version ~= 1
+		or cache.version ~= 2
 		or cache.owner ~= owner
 		or type(cache.rows) ~= "table"
 		or not Number(self, cache.savedAt, wall - RELOAD_CACHE_LIFETIME, wall)
@@ -159,7 +159,7 @@ function QT:RestorePlayerLocationCache()
 			local expires = Number(self, row.expiresAt, wall, wall + RELOAD_CACHE_LIFETIME)
 			local name = Text(self, row.name, 150)
 			name = name ~= "" and self:NormalizeMemberName(name) or nil
-			local data = self:DecodePlayerLocationPayload(row.payload)
+			local data = self:ValidatePlayerLocationRecord(row.data)
 			if
 				sampled
 				and expires
@@ -259,67 +259,42 @@ function QT:ReadLocalPlayerLocation()
 	}
 end
 
-function QT:EncodePlayerLocationPayload(state, mask, location)
-	local fields = { "1", state.session, tostring(state.sequence), tostring(mask) }
-	if mask ~= 0 then
-		fields[5], fields[6], fields[7] =
-			tostring(location.mapID), string.format("%.5f", location.x), string.format("%.5f", location.y)
-		fields[8], fields[9], fields[10] =
-			location.classFile, self:EscapePayload(location.className), self:EscapePayload(location.race)
-		fields[11], fields[12] = location.faction, location.level and tostring(location.level) or ""
-		fields[13] = location.warMode == nil and "" or (location.warMode and "1" or "0")
-		-- Optional localized labels never displace position or consent flags.
-		if #table.concat(fields, ",") > 251 then
-			fields[9] = ""
+function QT:ValidatePlayerLocationRecord(record)
+	if type(record) ~= "table" or not self:CanAccessTable(record) then
+		return nil
+	end
+	local mask = Number(self, record.mask, 0, 3, true)
+	if not mask then
+		return nil
+	end
+	local data = { mask = mask }
+	if record.session ~= nil then
+		if type(record.session) ~= "string" or #record.session > 64 or not record.session:match("^[%w%-]+$") then
+			return nil
 		end
-		if #table.concat(fields, ",") > 251 then
-			fields[10] = ""
+		data.session = record.session
+	end
+	if record.sequence ~= nil then
+		data.sequence = Number(self, record.sequence, 1, 2147483647, true)
+		if not data.sequence then
+			return nil
 		end
 	end
-	return table.concat(fields, ",")
-end
-
-function QT:DecodePlayerLocationPayload(payload)
-	if not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 251 then
-		return nil
-	end
-	local fields = {}
-	for field in (payload .. ","):gmatch("(.-),") do
-		fields[#fields + 1] = field
-	end
-	local mask = Number(self, fields[4], 0, 3, true)
-	local sequence = Number(self, fields[3], 1, 2147483647, true)
-	if
-		fields[1] ~= "1"
-		or not mask
-		or not sequence
-		or not fields[2]
-		or #fields[2] > 40
-		or not fields[2]:match("^%d+%-%d+$")
-	then
-		return nil
-	end
-	if #fields ~= (mask == 0 and 4 or 13) then
-		return nil
-	end
-	local data = { session = fields[2], sequence = sequence, mask = mask }
 	if mask == 0 then
 		return data
 	end
-	data.mapID = Number(self, fields[5], 1, 1000000, true)
-	data.x, data.y = Number(self, fields[6], 0, 1), Number(self, fields[7], 0, 1)
+	data.mapID, data.x, data.y =
+		Number(self, record.mapID, 1, 1000000, true), Number(self, record.x, 0, 1), Number(self, record.y, 0, 1)
 	if not data.mapID or not data.x or not data.y then
 		return nil
 	end
-	data.classFile = CLASSES[fields[8]] and fields[8] or ""
-	data.className, data.race =
-		Text(self, self:UnescapePayload(fields[9]), 48), Text(self, self:UnescapePayload(fields[10]), 48)
-	data.faction = (fields[11] == "Alliance" or fields[11] == "Horde" or fields[11] == "Neutral") and fields[11] or ""
-	data.level = Number(self, fields[12], 1, 1000, true)
-	if fields[13] == "1" then
-		data.warMode = true
-	elseif fields[13] == "0" then
-		data.warMode = false
+	data.classFile = CLASSES[record.classFile] and record.classFile or ""
+	data.className, data.race = Text(self, record.className, 80), Text(self, record.race, 80)
+	local faction = self:SafeToString(record.faction, "")
+	data.faction = (faction == "Alliance" or faction == "Horde" or faction == "Neutral") and faction or ""
+	data.level = Number(self, record.level, 1, 1000, true)
+	if self:CanAccessValue(record.warMode) and type(record.warMode) == "boolean" then
+		data.warMode = record.warMode
 	end
 	return data
 end
@@ -337,62 +312,60 @@ function QT:BroadcastPlayerLocation(force, withdraw)
 	end
 	state.lastSampleAt = now
 	local mask = withdraw and 0 or self:GetPlayerLocationShareMask()
-	-- One route can accept a permission change while another rejects it. Retry
-	-- each revoked surface until its last published point expires. Publications
-	-- on a retained surface must not prolong another surface's revocation window.
 	local mapEnabled, minimapEnabled = mask % 2 == 1, mask >= 2
-	local withdrawing = NeedsWithdrawalRetry(
-		mapEnabled,
-		state.lastMapLocationSentAt,
-		now,
-		rawget(self, "geographicCommsState") and 600 or LIFETIME
-	) or NeedsWithdrawalRetry(
-		minimapEnabled,
-		state.lastMinimapLocationSentAt,
-		now,
-		rawget(self, "geographicCommsState") and 600 or LIFETIME
-	)
+	local lifetime = self:GetGeographicSnapshotLifetime()
+	local withdrawing = NeedsWithdrawalRetry(mapEnabled, state.lastMapLocationSentAt, now, lifetime)
+		or NeedsWithdrawalRetry(minimapEnabled, state.lastMinimapLocationSentAt, now, lifetime)
 	local location = mask ~= 0 and self:ReadLocalPlayerLocation() or nil
 	if mask ~= 0 and not location then
-		-- A transient read outage is not a privacy change. Do not renew stale
-		-- coordinates or withdraw an otherwise permitted last-reported point.
 		if not withdrawing then
 			return false
 		end
-		-- A partial opt-out still needs immediate withdrawal when no fresh
-		-- position can be published for the remaining permitted surface.
 		mask, mapEnabled, minimapEnabled = 0, false, false
 	end
 	if mask == 0 and not force and not withdrawing then
 		return false
 	end
-	if not state.session then
-		local random = Number(self, self.API.Random and self.API.Random(1000, 999999), 1000, 999999, true) or 1000
-		state.session = string.format("%d-%d", math.max(0, math.floor(now * 1000)), random)
+	local record = { mask = mask }
+	if mask ~= 0 then
+		for field, value in pairs(location) do
+			record[field] = value
+		end
 	end
-	local fingerprint = mask == 0 and "0"
-		or self:EncodePlayerLocationPayload({ session = "0-0", sequence = 1 }, mask, location)
-	local changed = fingerprint ~= state.lastFingerprint
-	local interval = withdrawing and WITHDRAWAL_INTERVAL or (changed and MOVING_INTERVAL or HEARTBEAT_INTERVAL)
-	local due = not state.lastSentAt or now - state.lastSentAt >= interval
-	if not force and not due then
+	-- Fingerprinting is local change detection, never a second wire format.
+	local fingerprint = self:EncodeCommRecord("LOC", record)
+	if not fingerprint then
 		return false
 	end
-	state.sequence = state.sequence % 2147483647 + 1
-	local payload = self:EncodePlayerLocationPayload(state, mask, location)
-	-- Failed sends are paced too; no per-frame retry or postponed manual action.
-	state.lastSentAt = now
-	local sent = self:SendWireMessageToAnnouncementRoutes(self:SerializeWireMessage("LOC", payload), "player location")
-	if sent then
-		state.lastFingerprint = fingerprint
-		if mapEnabled then
-			state.lastMapLocationSentAt = now
-		end
-		if minimapEnabled then
-			state.lastMinimapLocationSentAt = now
-		end
+	local changed = fingerprint ~= state.lastFingerprint
+	local interval = withdrawing and WITHDRAWAL_INTERVAL or changed and MOVING_INTERVAL or HEARTBEAT_INTERVAL
+	if not force and state.lastAttemptAt and now - state.lastAttemptAt < interval then
+		return false
 	end
-	return sent, location
+	state.lastAttemptAt = now
+	local admitted = self:Publish("LOC", record, nil, {
+		owner = state,
+		publishesLocation = mask ~= 0,
+		isCurrent = function()
+			return rawget(self, "playerLocationState") == state
+				and self.isEnabled
+				and (mask == 0 or self:GetPlayerLocationShareMask() == mask)
+		end,
+		onComplete = function(sent)
+			if not sent or rawget(self, "playerLocationState") ~= state then
+				return
+			end
+			local acceptedAt = Now(self)
+			state.lastSentAt, state.lastFingerprint = acceptedAt, fingerprint
+			if mapEnabled then
+				state.lastMapLocationSentAt = acceptedAt
+			end
+			if minimapEnabled then
+				state.lastMinimapLocationSentAt = acceptedAt
+			end
+		end,
+	})
+	return admitted, location
 end
 
 function QT:PrunePlayerLocations(force)
@@ -416,7 +389,7 @@ function QT:PrunePlayerLocations(force)
 	end
 end
 
-function QT:HandlePlayerLocationMessage(payload, sender, sampleAge, source)
+function QT:HandlePlayerLocationMessage(payload, sender, observation)
 	if not self.isEnabled then
 		return false
 	end
@@ -424,61 +397,37 @@ function QT:HandlePlayerLocationMessage(payload, sender, sampleAge, source)
 	if not name or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then
 		return false
 	end
-	local data, now = self:DecodePlayerLocationPayload(payload), Now(self)
+	local data, now = self:ValidatePlayerLocationRecord(payload), Now(self)
 	if not data or not now then
 		return false
 	end
 	self:PrunePlayerLocations()
-	local state = self:GetPlayerLocationState()
-	local previous = state.peers[name]
-	-- Geographic envelopes carry the actual sample age. A delayed broadcast
-	-- must not replace a newer position (or withdrawal) learned from a pong.
-	local observation =
-		self:ResolvePeerObservation(name, "LOC", sampleAge, source, "LOC:" .. data.session, data.sequence, LIFETIME)
+	local previous = self:GetPlayerLocationState().peers[name]
+	observation = self:ResolvePeerObservation(name, "LOC", observation)
 	if not self:CanAcceptPeerObservation(observation) then
 		return false
 	end
 	local sampledAt = observation.sampledAt
-	source = observation
 	if
 		previous
 		and sampledAt < (previous.sampledAt or previous.receivedAt)
-		and (not source or previous.manualSnapshot or (previous.sampledAt or previous.receivedAt) - sampledAt >= 1)
+		and (previous.manualSnapshot or (previous.sampledAt or previous.receivedAt) - sampledAt >= 1)
 	then
 		return false
 	end
-	if previous and (previous.session == data.session and previous.sequence >= data.sequence) then
-		return false
-	end
-	local retired = previous and previous.retired or {}
-	for _, session in ipairs(retired) do
-		if session == data.session then
-			return false
-		end
-	end
-	if previous and previous.session ~= data.session then
-		retired[#retired + 1] = previous.session
-		if #retired > 4 then
-			table.remove(retired, 1)
-		end
-	end
-	data.retired = retired
+	-- One admitted envelope owns ordering; LOC no longer maintains a parallel
+	-- inner session/retired-epoch protocol that can disagree with other metadata.
+	data.session, data.sequence = observation.session, observation.sequence
+	data.retired = {}
 	return self:StorePlayerLocationRecord(name, data, now, sampledAt, observation.expiresAt - now, observation)
 end
 
 -- Both public broadcasts and manual refreshes use the same bounded cache.
-function QT:StorePlayerLocationRecord(name, data, now, sampledAt, lifetime, source)
+function QT:StorePlayerLocationRecord(name, data, now, sampledAt, lifetime, observation)
 	local state = self:GetPlayerLocationState()
 	local previous = state.peers[name]
 	data.name, data.receivedAt, data.sampledAt, data.lifetime = name, now, sampledAt, lifetime
-	local observation = source and source.field and source
-		or self:CreatePeerObservation(name, "LOC", {
-			source = source and "snapshot" or "diagnostic",
-			age = now - sampledAt,
-			lifetime = (lifetime or LIFETIME) + now - sampledAt,
-			session = source and source.session,
-			sequence = source and source.sequence,
-		})
+	observation = self:ResolvePeerObservation(name, "LOC", observation)
 	if not self:CommitPeerObservation(observation, data, data.mask ~= 0) then
 		return false
 	end
@@ -522,13 +471,12 @@ end
 -- Hidden replies store only a withdrawal here, never their coordinates.
 function QT:RefreshPlayerLocationFromPing(name, response, observation)
 	local now = Now(self)
-	local legacy = observation and observation.source == "pong" and not response.developer
 	if
 		not self.isEnabled
 		or not now
 		or self:IsSelfSender(name)
 		or self:IsIgnoredPlayerName(name)
-		or (not legacy and type(response.locationShared) ~= "boolean")
+		or type(response.locationShared) ~= "boolean"
 		or not observation
 		or observation.name ~= name
 		or observation.field ~= "LOC"
@@ -540,19 +488,14 @@ function QT:RefreshPlayerLocationFromPing(name, response, observation)
 	local state = self:GetPlayerLocationState()
 	local previous = state.peers[name]
 	local sampledAt = observation.sampledAt
-	-- Public coordinates in the legacy protocol are affirmative sharing. Missing
-	-- coordinates are unknown, never a withdrawal. Diagnostic replies require
-	-- their explicit setting even when they contain private coordinates.
-	local shared = legacy or response.locationShared
+	-- Coordinates alone never grant public consent. Diagnostic replies can
+	-- contain a private position while their explicit sharing setting is false.
+	local shared = response.locationShared
 	if
 		previous
 		and (
 			sampledAt < (previous.sampledAt or previous.receivedAt)
-			or (
-				sampledAt == (previous.sampledAt or previous.receivedAt)
-				and previous.mask == 0
-				and shared
-			)
+			or (sampledAt == (previous.sampledAt or previous.receivedAt) and previous.mask == 0 and shared)
 		)
 	then
 		return false
@@ -577,12 +520,16 @@ function QT:RefreshPlayerLocationFromPing(name, response, observation)
 			or ""
 		data.level = Number(self, response.level, 1, 1000, true)
 		data.warMode = self:NormalizeAnnouncementWarModeValue(response.warMode)
-		if legacy and previous then
-			-- Older clients may publish only one surface and omit identity fields.
-			-- A pong does not grant additional surface consent or erase known data.
-			if previous.mask == 1 or previous.mask == 2 then data.mask = previous.mask end
+		if not response.developer and previous then
+			-- A public pong does not grant additional surface consent or erase
+			-- identity fields that are absent from its response.
+			if previous.mask == 1 or previous.mask == 2 then
+				data.mask = previous.mask
+			end
 			for _, field in ipairs({ "classFile", "className", "race", "faction", "level", "warMode" }) do
-				if data[field] == nil or data[field] == "" then data[field] = previous[field] end
+				if data[field] == nil or data[field] == "" then
+					data[field] = previous[field]
+				end
 			end
 		end
 	end
@@ -590,20 +537,28 @@ function QT:RefreshPlayerLocationFromPing(name, response, observation)
 	return self:StorePlayerLocationRecord(name, data, now, sampledAt, observation.expiresAt - now, observation)
 end
 
-function QT:GetRecentPlayerLocationMapID(name)
-	local state = rawget(self, "playerLocationState")
-	local peer = state and state.peers and state.peers[name]
-	local now = Now(self)
+function QT:GetFreshPlayerLocation(name, surface)
+	name = self:NormalizeMemberName(name)
+	local state, now = rawget(self, "playerLocationState"), Now(self)
+	local peer = name and state and state.peers[name]
 	if
 		not peer
 		or not now
+		or self:IsIgnoredPlayerName(name)
 		or peer.mask == 0
 		or now < peer.receivedAt
 		or now - peer.receivedAt >= (peer.lifetime or LIFETIME)
 	then
 		return nil
 	end
-	return peer.mapID
+	if surface == "map" and peer.mask % 2 ~= 1 or surface == "minimap" and peer.mask < 2 then
+		return nil
+	end
+	return peer
+end
+function QT:GetRecentPlayerLocationMapID(name)
+	local peer = self:GetFreshPlayerLocation(name)
+	return peer and peer.mapID or nil
 end
 
 function QT:GetVisiblePlayerLocations(surface)
@@ -623,7 +578,7 @@ function QT:GetVisiblePlayerLocations(surface)
 			now
 			and now >= peer.receivedAt
 			and now - peer.receivedAt < (peer.lifetime or LIFETIME)
-			-- Older peers can still grant permission for just one surface.
+			-- Surface permissions are evaluated independently from viewer filters.
 			and ((surface == "map" and peer.mask % 2 == 1) or (surface == "minimap" and peer.mask >= 2))
 			and self:ShouldShowPlayerLocation(peer.name)
 		then
@@ -652,13 +607,7 @@ function QT:ResetPlayerLocations()
 end
 
 function QT:OnPlayerLocationOptionsChanged(key)
-	local streams = rawget(self, "nearbyStreamState")
-	if streams then
-		streams.wanted, streams.nextScan = {}, 0
-		if not key or key == "sharePlayerLocation" then
-			streams.subscribers, streams.nextCapability = {}, 0
-		end
-	end
+	self:OnNearbyLocationOptionsChanged(key)
 	if not self.isEnabled then
 		return
 	end
@@ -670,26 +619,15 @@ function QT:OnPlayerLocationOptionsChanged(key)
 end
 
 -- Race/class labels belong to the viewer's client locale. Race IDs arrive in
--- optional QTCI metadata; legacy clients retain their readable sender labels.
+-- QTCI metadata; unknown custom races retain their readable sender labels.
 function QT:GetPlayerTooltipIdentity(row)
 	local race, class = row.race, row.className
 	if self:IsRuntimeRestricted() then
 		return race, class
 	end
-	local state = rawget(self, "nearbyStreamState")
-	local now = state and Now(self)
-	local name = state and self:NormalizeMemberName(row.name)
-	local metadata = state and name and state.capabilities[name]
-	if
-		metadata
-		and now
-		and now >= metadata.receivedAt
-		and now - metadata.receivedAt < (metadata.lifetime or 600)
-		and metadata.raceID
-		and metadata.raceID > 0
-		and not self:IsIgnoredPlayerName(name)
-		and self.API.GetLocalizedRaceName
-	then
+	local name = self:NormalizeMemberName(row.name)
+	local metadata = name and self:GetPlayerCapabilities(name)
+	if metadata and metadata.raceID and metadata.raceID > 0 and self.API.GetLocalizedRaceName then
 		local localized = self:SafeTrimString(self.API.GetLocalizedRaceName(metadata.raceID), "")
 		if localized ~= "" then
 			race = localized

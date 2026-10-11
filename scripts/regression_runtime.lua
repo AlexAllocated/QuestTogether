@@ -31,25 +31,33 @@ end
 
 QT:RegisterTest("personal bubble edit state always supplies a boolean", function()
 	local addon = setmetatable({ isEnabled = true }, { __index = QT })
-	function addon:CanAccessForeignFrame() return true end
+	function addon:CanAccessForeignFrame()
+		return true
+	end
 	for _, case in ipairs({ { nil, false }, { false, false }, { true, true }, { "legacy", true }, { 0, true } }) do
-		function addon:GetOption() return case[1] end
+		function addon:GetOption()
+			return case[1]
+		end
 		Equal(addon:IsPersonalBubbleAnchorInEditMode(), case[2])
 	end
 	addon.isEnabled = nil
 	Equal(addon:IsPersonalBubbleAnchorInEditMode(), false)
 	addon.isEnabled = true
-	function addon:CanAccessForeignFrame() return false end
+	function addon:CanAccessForeignFrame()
+		return false
+	end
 	Equal(addon:IsPersonalBubbleAnchorInEditMode(), false)
 end)
 
 QT:RegisterTest("bubble option controls receive boolean visibility values", function()
 	local shown = {}
 	local function NewControl()
-		return { SetShown = function(_, value)
-			assert(type(value) == "boolean", "widget visibility must be boolean")
-			shown[#shown + 1] = value
-		end }
+		return {
+			SetShown = function(_, value)
+				assert(type(value) == "boolean", "widget visibility must be boolean")
+				shown[#shown + 1] = value
+			end,
+		}
 	end
 	local addon = setmetatable({
 		whereToAnnounceFrame = {},
@@ -60,7 +68,9 @@ QT:RegisterTest("bubble option controls receive boolean visibility values", func
 	}, { __index = QT })
 	for _, case in ipairs({ { nil, false }, { false, false }, { true, true }, { "legacy", true } }) do
 		shown = {}
-		function addon:GetOption(key) return key == "showChatBubbles" and case[1] or nil end
+		function addon:GetOption(key)
+			return key == "showChatBubbles" and case[1] or nil
+		end
 		addon:RefreshWhereToAnnounceWindow()
 		Equal(#shown, 2)
 		Equal(shown[1], case[2])
@@ -84,7 +94,34 @@ local function NewDebugSession()
 		API = {},
 		tests = {},
 		opened = {},
+		pendingTestFrames = {},
+		testFrame = 0,
 	}, { __index = QT })
+	addon.API.GetTime = function()
+		return addon.testFrame / 60
+	end
+	addon.API.Delay = function(delay, callback)
+		Equal(delay, 0)
+		addon.pendingTestFrames[#addon.pendingTestFrames + 1] = callback
+	end
+	function addon:AdvanceTestFrame()
+		self.testFrame = self.testFrame + 1
+		local pending = self.pendingTestFrames
+		self.pendingTestFrames = {}
+		for _, callback in ipairs(pending) do
+			callback()
+		end
+	end
+	function addon:FinishTests()
+		for _ = 1, #self.tests + 2 do
+			if not self:GetDebugController().runningTests then
+				return
+			end
+			assert(#self.pendingTestFrames > 0, "running suite must have its next frame queued")
+			self:AdvanceTestFrame()
+		end
+		assert(not self:GetDebugController().runningTests, "private test frames did not finish the suite")
+	end
 	function addon:IsRuntimeRestricted()
 		return false
 	end
@@ -108,11 +145,13 @@ QT:RegisterTest("debug test command presents fresh results and preserves unrelat
 	addon:SetDebugLogSearchFilter("hide all results")
 	addon.tests = { { name = "private passing fixture", fn = function() end } }
 	addon:HandleSlashCommand("test")
-	Equal(#addon.opened, 1)
-	Equal(addon.opened[1].category, "TEST")
-	Equal(addon.opened[1].search, "")
-	assert(addon.opened[1].text:find("1 passed, 0 failed", 1, true))
-	local _, firstSummaryCount = addon.opened[1].text:gsub("Test summary:", "")
+	assert(addon:GetDebugController().runningTests)
+	addon:FinishTests()
+	local first = assert(addon.opened[#addon.opened])
+	Equal(first.category, "TEST")
+	Equal(first.search, "")
+	assert(first.text:find("1 passed, 0 failed", 1, true))
+	local _, firstSummaryCount = first.text:gsub("Test summary:", "")
 	Equal(firstSummaryCount, 1)
 	assert(not addon:GetDebugLogText("ALL", ""):find("obsolete test result", 1, true))
 	assert(addon:GetDebugLogText("QUEST", ""):find("keep domain event", 1, true))
@@ -122,13 +161,16 @@ QT:RegisterTest("debug test command presents fresh results and preserves unrelat
 			error("fixture failure")
 		end,
 	} }
-	Equal(addon:RunTests(false, true), false)
-	Equal(#addon.opened, 2)
-	assert(addon.opened[2].text:find("0 passed, 1 failed", 1, true))
-	local _, secondSummaryCount = addon.opened[2].text:gsub("Test summary:", "")
+	local _, _, _, result = addon:RunTests(false, true)
+	Equal(result.status, "running")
+	addon:FinishTests()
+	Equal(result.failed, 1)
+	local second = assert(addon.opened[#addon.opened])
+	assert(second.text:find("0 passed, 1 failed", 1, true))
+	local _, secondSummaryCount = second.text:gsub("Test summary:", "")
 	Equal(secondSummaryCount, 1)
-	assert(addon.opened[2].text:find("private failing fixture", 1, true))
-	assert(not addon.opened[2].text:find("1 passed, 0 failed", 1, true))
+	assert(second.text:find("private failing fixture", 1, true))
+	assert(not second.text:find("1 passed, 0 failed", 1, true))
 	Equal(addon.isRunningTests, false)
 	Equal(addon.suppressLocalAnnouncementDisplayDuringTests, false)
 end)
@@ -149,11 +191,114 @@ QT:RegisterTest("debug test presentation preserves a visible ALL view but clears
 	addon:LogDebugLine("domain event", { category = "QUEST" })
 	addon:SetDebugLogSearchFilter("obsolete search")
 	addon.tests = { { name = "private fixture", fn = function() end } }
-	Equal(addon:RunTests(false, true), true)
-	Equal(addon.opened[1].category, "ALL")
-	Equal(addon.opened[1].search, "")
-	assert(addon.opened[1].text:find("domain event", 1, true))
-	assert(addon.opened[1].text:find("1 passed, 0 failed", 1, true))
+	local _, _, _, result = addon:RunTests(false, true)
+	Equal(result.status, "running")
+	addon:FinishTests()
+	Equal(result.passed, 1)
+	local latest = assert(addon.opened[#addon.opened])
+	Equal(latest.category, "ALL")
+	Equal(latest.search, "")
+	assert(latest.text:find("domain event", 1, true))
+	assert(latest.text:find("1 passed, 0 failed", 1, true))
+end)
+
+QT:RegisterTest("live test frames restore owner state and keep ordinary work active between cases", function()
+	local addon = NewDebugSession()
+	local originalDB, originalAPI, originalMarker = QT.db, QT.API, QT.testFrameIsolationMarker
+	local calls = {}
+	addon.tests = {
+		{
+			name = "first isolated case",
+			fn = function()
+				assert(QT.db ~= originalDB and QT.API ~= originalAPI)
+				assert(QT.isRunningTests and QT.suppressLocalAnnouncementDisplayDuringTests)
+				QT.testFrameIsolationMarker = "first fixture"
+				calls[#calls + 1] = addon.testFrame
+			end,
+		},
+		{
+			name = "offline stress case",
+			offline = true,
+			fn = function()
+				error("live run must not execute offline stress cases")
+			end,
+		},
+		{
+			name = "second isolated case",
+			fn = function()
+				Equal(QT.testFrameIsolationMarker, originalMarker)
+				calls[#calls + 1] = addon.testFrame
+				error("intentional second case failure")
+			end,
+		},
+	}
+	local _, _, _, result = addon:RunTests(false, true)
+	Equal(result.status, "running")
+	Equal(#calls, 0)
+	addon:AdvanceTestFrame()
+	Equal(#calls, 1)
+	Equal(QT.db, originalDB)
+	Equal(QT.API, originalAPI)
+	Equal(QT.testFrameIsolationMarker, originalMarker)
+	Equal(addon.isRunningTests, false)
+	Equal(addon.suppressLocalAnnouncementDisplayDuringTests, false)
+	addon:LogDebugLine("ordinary owner work between cases", { category = "QUEST" })
+	addon:FinishTests()
+	Equal(#calls, 2)
+	assert(calls[2] > calls[1], "cases must execute on different frames")
+	Equal(result.completed, 2)
+	Equal(result.skipped, 1)
+	Equal(result.passed, 1)
+	Equal(result.failed, 1)
+	Equal(QT.db, originalDB)
+	Equal(QT.API, originalAPI)
+	Equal(QT.testFrameIsolationMarker, originalMarker)
+	assert(addon:GetDebugLogText("QUEST", ""):find("ordinary owner work between cases", 1, true))
+end)
+
+QT:RegisterTest("cancelled live test runs retain partial results and reject stale scheduled callbacks", function()
+	local addon, calls = NewDebugSession(), 0
+	addon.tests = {
+		{
+			name = "first case",
+			fn = function()
+				calls = calls + 1
+			end,
+		},
+		{
+			name = "cancelled case",
+			fn = function()
+				error("cancelled case executed")
+			end,
+		},
+	}
+	local controller = addon:GetDebugController()
+	local _, _, _, cancelled = addon:RunTests(false, true)
+	addon:AdvanceTestFrame()
+	Equal(calls, 1)
+	local stale = assert(addon.pendingTestFrames[1])
+	assert(controller:CancelTests("fixture cancellation"))
+	Equal(cancelled.status, "cancelled")
+	Equal(cancelled.completed, 1)
+	Equal(cancelled.passed, 1)
+	Equal(controller.runningTests, false)
+	addon.tests = { {
+		name = "replacement case",
+		fn = function()
+			calls = calls + 1
+		end,
+	} }
+	local _, _, _, replacement = addon:RunTests(false, true)
+	stale()
+	Equal(calls, 1)
+	Equal(cancelled.status, "cancelled")
+	Equal(replacement.completed, 0)
+	addon:FinishTests()
+	Equal(calls, 2)
+	Equal(replacement.passed, 1)
+	Equal(replacement.failed, 0)
+	Equal(addon.isRunningTests, false)
+	Equal(addon.suppressLocalAnnouncementDisplayDuringTests, false)
 end)
 
 QT:RegisterTest("debug slash aliases display selected category and clear resets the view", function()
@@ -550,10 +695,14 @@ end)
 QT:RegisterTest("login initializes release notes without the old chat welcome", function()
 	local addon = setmetatable({ db = { profile = { enabled = true } } }, { __index = QT })
 	local initializations = 0
-	function addon:Print() error("login must not print a welcome message") end
+	function addon:Print()
+		error("login must not print a welcome message")
+	end
 	function addon:ReconcileQuestLogChatDestination() end
 	function addon:InitializeMinimapLauncher() end
-	function addon:Enable() self.isEnabled = true end
+	function addon:Enable()
+		self.isEnabled = true
+	end
 	function addon:InitializeReleaseNotes()
 		assert(self.hasLoggedIn)
 		initializations = initializations + 1
@@ -573,26 +722,38 @@ local function NewMapWakeFixture()
 	local addon = NewRuntime()
 	addon.mapVisible, addon.combat, addon.encounter = true, false, false
 	addon.createdFrames = 0
-	addon.API.IsWorldMapVisible = function() return addon.mapVisible end
-	addon.API.InCombatLockdown = function() return addon.combat end
+	addon.API.IsWorldMapVisible = function()
+		return addon.mapVisible
+	end
+	addon.API.InCombatLockdown = function()
+		return addon.combat
+	end
 	addon.IsWorkBlocked = QT.IsWorkBlocked
 	function addon:IsRuntimeRestrictionTypeActive(kind)
 		return kind == "encounter" and self.encounter
 	end
 	function addon:CreateMapWorkWakeFrame()
 		self.createdFrames = self.createdFrames + 1
-		return { SetScript = function(frame, name, callback) frame[name] = callback end }
+		return {
+			SetScript = function(frame, name, callback)
+				frame[name] = callback
+			end,
+		}
 	end
 	function addon:Tick(elapsed)
 		local frame = self.mapWorkWakeFrame
-		if frame and frame.OnUpdate then frame.OnUpdate(frame, elapsed or 0.2) end
+		if frame and frame.OnUpdate then
+			frame.OnUpdate(frame, elapsed or 0.2)
+		end
 	end
 	return addon
 end
 
 QT:RegisterTest("closing the map resumes parked work through the actual watcher", function()
 	local addon, calls = NewMapWakeFixture(), 0
-	addon:ScheduleDeferredWork("nameplate_tooltip_resolve", "plate", function() calls = calls + 1 end, 0)
+	addon:ScheduleDeferredWork("nameplate_tooltip_resolve", "plate", function()
+		calls = calls + 1
+	end, 0)
 	Equal(calls, 0)
 	Equal(addon.createdFrames, 1)
 	addon:Tick(1)
@@ -609,8 +770,12 @@ end)
 QT:RegisterTest("map-close recovery keeps combat and encounter restrictions intact", function()
 	local addon, scans, plates = NewMapWakeFixture(), 0, 0
 	addon.combat, addon.encounter = true, true
-	addon:ScheduleDeferredWork("quest_log_drain", "scan", function() scans = scans + 1 end, 0)
-	addon:ScheduleDeferredWork("nameplate_refresh", "plates", function() plates = plates + 1 end, 0)
+	addon:ScheduleDeferredWork("quest_log_drain", "scan", function()
+		scans = scans + 1
+	end, 0)
+	addon:ScheduleDeferredWork("nameplate_refresh", "plates", function()
+		plates = plates + 1
+	end, 0)
 	Equal(addon.createdFrames, 1, "many blocked jobs share a watcher")
 	addon.mapVisible = false
 	addon:Tick()
@@ -627,14 +792,18 @@ end)
 
 QT:RegisterTest("map watcher stops on disable and cannot revive another work lifetime", function()
 	local addon, calls = NewMapWakeFixture(), 0
-	addon:ScheduleDeferredWork("nameplate_refresh", "plates", function() calls = calls + 1 end, 0)
+	addon:ScheduleDeferredWork("nameplate_refresh", "plates", function()
+		calls = calls + 1
+	end, 0)
 	local oldUpdate = addon.mapWorkWakeFrame.OnUpdate
 	addon.isEnabled = false
 	addon:Tick()
 	Equal(addon.mapWorkWakeFrame.OnUpdate, nil)
 	addon.isEnabled = true
 	addon.state = { entries = {}, generations = {} }
-	addon:ScheduleDeferredWork("nameplate_refresh", "new", function() calls = calls + 1 end, 0)
+	addon:ScheduleDeferredWork("nameplate_refresh", "new", function()
+		calls = calls + 1
+	end, 0)
 	oldUpdate(addon.mapWorkWakeFrame, 1)
 	assert(addon.mapWorkWakeFrame.OnUpdate, "stale callback must not stop current watcher")
 	addon.mapVisible = false
@@ -644,14 +813,22 @@ end)
 
 QT:RegisterTest("unreadable map visibility keeps deferred tooltip work blocked", function()
 	local addon, calls = NewMapWakeFixture(), 0
-	addon.API.IsWorldMapVisible = function() error("inaccessible visibility") end
-	addon:ScheduleDeferredWork("nameplate_tooltip_resolve", "plate", function() calls = calls + 1 end, 0)
+	addon.API.IsWorldMapVisible = function()
+		error("inaccessible visibility")
+	end
+	addon:ScheduleDeferredWork("nameplate_tooltip_resolve", "plate", function()
+		calls = calls + 1
+	end, 0)
 	addon:Tick()
 	Equal(calls, 0)
-	addon.API.IsWorldMapVisible = function() return nil end
+	addon.API.IsWorldMapVisible = function()
+		return nil
+	end
 	addon:Tick()
 	Equal(calls, 0, "unknown visibility must not release pending work")
-	addon.API.IsWorldMapVisible = function() return false end
+	addon.API.IsWorldMapVisible = function()
+		return false
+	end
 	addon:Tick()
 	Equal(calls, 1)
 end)

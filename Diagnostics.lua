@@ -86,20 +86,51 @@ function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 	end
 	Add("comms.trafficSeconds", math.max(0, (comms.trafficObservedAt or 0) - (comms.trafficStartedAt or 0)))
 	local trafficCommands = {}
-	for command in pairs(comms.traffic or {}) do trafficCommands[#trafficCommands + 1] = command end
+	for command in pairs(comms.traffic or {}) do
+		trafficCommands[#trafficCommands + 1] = command
+	end
 	table.sort(trafficCommands)
 	for _, command in ipairs(trafficCommands) do
 		local bucket = comms.traffic[command]
-		for _, key in ipairs({ "queued", "queuedBytes", "sent", "sentBytes", "failed", "failedBytes", "throttled", "received", "receivedBytes", "duplicate", "duplicateBytes" }) do
+		for _, key in ipairs({
+			"queued",
+			"queuedBytes",
+			"sent",
+			"sentBytes",
+			"failed",
+			"failedBytes",
+			"throttled",
+			"received",
+			"receivedBytes",
+			"duplicate",
+			"duplicateBytes",
+		}) do
 			Add("comms.traffic." .. command .. "." .. key, bucket[key] or 0)
 		end
 	end
 	for _, key in ipairs({ "announcementAgeSamples", "announcementAgeUnknown" }) do
 		Add("comms." .. key, comms[key] or 0)
 	end
-	for _, key in ipairs({ "announcementAgeLast", "announcementAgeMax" }) do Add("comms." .. key, comms[key] or "unknown") end
-	Add("comms.announcementAgeMean", (comms.announcementAgeSamples or 0) > 0
-		and comms.announcementAgeTotal / comms.announcementAgeSamples or "unknown")
+	for _, key in ipairs({ "announcementAgeLast", "announcementAgeMax" }) do
+		Add("comms." .. key, comms[key] or "unknown")
+	end
+	Add(
+		"comms.announcementAgeMean",
+		(comms.announcementAgeSamples or 0) > 0 and comms.announcementAgeTotal / comms.announcementAgeSamples
+			or "unknown"
+	)
+	for _, group in ipairs({
+		{ "transport", self:GetTransportMetrics() },
+		{ "communication", self:GetCommunicationMetrics() },
+		{ "transfer", self:GetCommTransferMetrics() },
+		{ "authentication", self:GetDeveloperCommunicationMetrics() },
+	}) do
+		for key, value in pairs(group[2] or {}) do
+			if type(value) == "number" or type(value) == "string" then
+				Add("comms." .. group[1] .. "." .. key, value)
+			end
+		end
+	end
 	Add("log.lines", #self:GetDebugLogStore())
 	Add("log.limit", self.DEBUG_LOG_MAX_LINES)
 	Add("log.dropped", self.diagnosticDroppedLogLines or 0)
@@ -123,7 +154,9 @@ function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 			end
 		end
 	end
-	for _, field in ipairs(extraFields or {}) do Add(field[1], field[2]) end
+	for _, field in ipairs(extraFields or {}) do
+		Add(field[1], field[2])
+	end
 	return report:Text()
 end
 

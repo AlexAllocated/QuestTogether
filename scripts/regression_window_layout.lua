@@ -113,7 +113,8 @@ QT:RegisterTest("window layout survives ultrawide to tablet and UI scale changes
 end)
 QT:RegisterTest("window restoration sanitizes corrupt geometry and defers restricted mutations", function()
 	local a, f, root = Fixture()
-	a.db.profile.windowLayouts = { log = { width = 0 / 0, height = -999, x = math.huge, y = -1000 } }
+	-- Nonfinite constants are live-safe; true NaN restoration is checked offline.
+	a.db.profile.windowLayouts = { log = { width = math.huge, height = -999, x = math.huge, y = -1000 } }
 	a.blocked = true
 	assert(not a:ApplyWindowLayout(f, true))
 	a:DISPLAY_SIZE_CHANGED()

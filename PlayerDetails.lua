@@ -1,25 +1,30 @@
--- On-demand tooltip metadata. Requests and bounded replies share the ordinary
--- send budget; hovering never broadcasts or starts another heartbeat.
+-- On-demand public metadata. Correlation, fragmentation and delivery are owned
+-- by the communications coordinator; this domain owns interest and cooldowns.
 local QT = _G.QuestTogether
 local TTL, COOLDOWN, LIMIT = 15, 30, 128
-local ALLOWED = { QTVR = true, QTPG = true, QJST = true, QTLF = true, QTLQ = true, QTCI = true, QTHI = true }
+local TOPICS = { QTVR = true, QTPG = true, QJST = true, QTLF = true, QTLQ = true, QTCI = true, QTHI = true }
+local FIELDS = { "QTVR", "QTPG", "QJST", "QTLF", "QTLQ", "QTCI", "QTHI" }
 local function Now(a)
 	return a:SafeToNumber(a.API.GetTime()) or 0
 end
 local function Fresh(now, at, age)
 	return at and now >= at and now - at < age
 end
+local function PendingFresh(a, pending)
+	local now = Now(a)
+	local deadline = a:GetCommunicationRequestDeadline(pending.id) or (pending.at + TTL)
+	return now >= pending.at and now < deadline
+end
 local function Enabled(a)
 	return a.isEnabled
 		and not a.isLoggingOut
-		and rawget(a, "geographicCommsState") ~= nil
 		and not a:IsRuntimeRestricted()
 		and not a:IsRuntimeRestrictionTypeActive("chat")
 end
 local function State(a)
 	local s = rawget(a, "playerDetailsState")
 	if not s then
-		s = { attempts = {}, pending = {}, replies = {}, identities = {}, sequence = 0 }
+		s = { attempts = {}, pending = {}, replies = {}, identities = {} }
 		a.playerDetailsState = s
 	end
 	return s
@@ -46,12 +51,15 @@ local function Bound(t)
 		t[oldest] = nil
 	end
 end
-local function Send(a, name, wire)
-	return a:SendWireMessageToAnnouncementRoutes(
-		wire,
-		"hover player details",
-		{ { distribution = "WHISPER", target = name } }
-	)
+local function CancelPending(a, pending, reason)
+	if not pending then
+		return
+	end
+	a:CancelCommRequest(pending.id, reason)
+	a:CancelCommunicationOwner(pending, reason)
+end
+local function Route(name)
+	return { { distribution = "WHISPER", target = name } }
 end
 
 function QT:RequestPlayerDetails(sender)
@@ -59,277 +67,179 @@ function QT:RequestPlayerDetails(sender)
 		return false
 	end
 	local name = Name(self, sender)
-	if not name then
+	if not name or not (self:IsKnownQTPlayer(name) or self:GetFreshPlayerLocation(name)) then
 		return false
 	end
-	local locations = rawget(self, "playerLocationState")
-	local cached = locations and locations.peers[name]
-	if
-		not self:IsKnownQTPlayer(name)
-		and not (cached and cached.mask ~= 0 and Fresh(Now(self), cached.receivedAt, cached.lifetime or 120))
-	then
+	if self:ArePeerFieldsFresh(name, FIELDS, COOLDOWN) then
 		return false
 	end
 	local s, now = State(self), Now(self)
 	local attempt = s.attempts[name]
-	local stats = self:GetPlayerTooltipStats(name)
-	local visuals = rawget(self, "partyVisualState")
-	local party = visuals and visuals.peers[name]
-	local presence, streams, joins =
-		rawget(self, "qtPlayerPresenceState"), rawget(self, "nearbyStreamState"), rawget(self, "partyJoinState")
-	local function Current(record)
-		return record
-			and Fresh(now, record.sampledAt or record.receivedAt or record.at, COOLDOWN)
-			and Fresh(now, record.receivedAt or record.at, record.lifetime or COOLDOWN)
-	end
-	if
-		Current(stats)
-		and (stats.partySize == 0 or Current(party))
-		and Current(presence and presence.questPartners and presence.questPartners[name])
-		and Current(presence and presence.partnerQuests and presence.partnerQuests[name])
-		and Current(streams and streams.capabilities[name])
-		and Current(joins and joins.peers[name])
-		and Current(s.identities[name])
-	then
-		return false
-	end
-
-	-- Unknown/old peers receive one harmless probe, then a longer failure cooldown.
-	if attempt and Fresh(now, attempt.at, attempt.success and COOLDOWN or 120) then
-		return false
-	end
-	if Fresh(now, s.lastRequest, 2) then
+	if attempt and Fresh(now, attempt.at, attempt.success and COOLDOWN or 120) or Fresh(now, s.lastRequest, 2) then
 		return false
 	end
 	local count = 0
 	for peer, pending in pairs(s.pending) do
-		if not Fresh(now, pending.at, TTL) then
+		if not PendingFresh(self, pending) then
 			s.pending[peer] = nil
+			CancelPending(self, pending, "expired")
 		else
 			count = count + 1
 		end
 	end
-	if count >= 8 then
+	if s.pending[name] or count >= 8 then
 		return false
 	end
-	s.sequence = s.sequence % 1000000 + 1
-	local id = self.geographicCommsState.session .. "-" .. s.sequence
-	s.pending[name] = { id = id, at = now, parts = {} }
-	s.attempts[name], s.lastRequest = { at = now }, now
-	Bound(s.attempts)
-	if not Send(self, name, "QTHQ|1," .. id) then
+	local id = self:GetCommunicationSession() .. "-details-" .. self:NextCommunicationSequence()
+	local pending = { id = id, at = now }
+	s.pending[name], s.lastRequest = pending, now
+	local admitted = self:Request("QTHQ", {}, Route(name), {
+		owner = pending,
+		requestId = id,
+		responseOperations = { QTHD = true },
+		expires = now + TTL,
+		key = "details:request:" .. name,
+		priority = "control",
+		isCurrent = function()
+			return rawget(self, "playerDetailsState") == s
+				and s.pending[name] == pending
+				and Enabled(self)
+				and PendingFresh(self, pending)
+				and not self:IsIgnoredPlayerName(name)
+		end,
+		onComplete = function(sent)
+			if rawget(self, "playerDetailsState") ~= s or s.pending[name] ~= pending then
+				return
+			end
+			s.attempts[name] = { at = Now(self) }
+			Bound(s.attempts)
+			if sent then
+				pending.sentAt = Now(self)
+			else
+				s.pending[name] = nil
+				CancelPending(self, pending, "cancelled")
+			end
+		end,
+		onResponse = function(record, responder, context)
+			return self:HandlePlayerDetailsMessage("QTHD", record, responder, context)
+		end,
+	})
+	if not admitted and s.pending[name] == pending then
 		s.pending[name] = nil
-		return false
 	end
-	return true
+	return admitted == true
 end
 
-function QT:BuildPlayerDetailsPackets()
+function QT:BuildPlayerDetailsRecords()
 	if not Enabled(self) then
 		return {}
 	end
-	local entries, now = {}, Now(self)
-	local function Add(command, payload)
-		if payload then
-			entries[command] = { wire = command .. "|" .. payload, at = now }
-		end
-	end
-	Add("QTHI", self:BuildPlayerDetailsIdentityPayload())
-	local version = self:GetAddonVersion()
-	if self:ParseAddonVersion(version) then
-		local size = self:GetLocalPartySize()
-		local count = self:GetMonitoredQuestCount()
-		Add(
-			"QTVR",
-			"2," .. version .. "," .. (count and tostring(count) or "") .. "," .. (size and tostring(size) or "")
-		)
-	end
-	local partyPayload, party = self:BuildPartyVisualMetadataPayload()
-	Add("QTPG", partyPayload)
-	if party and party.size > 1 then
-		local visuals = self:GetPartyVisualState()
-		visuals.advertisedGroup, visuals.lastGroupAdvertisedAt = true, now
-	end
-	Add("QJST", self:BuildPartyJoinMetadataPayload())
-	local presence = self:GetQTPlayerPresenceState()
-	local looking = self:GetOption("lookingForQuestPartners") == true
-	Add("QTLF", self:BuildQuestPartnerStatusPayload(presence, looking))
-	local questPayload, questID = self:BuildQuestPartnerQuestPayload(presence, looking)
-	Add("QTLQ", questPayload)
-	-- Direct publication also needs future withdrawals on normal routes.
-	if looking then
-		presence.lastPartnerOnAt = now
-	end
-	if questID then
-		presence.lastPartnerQuestOnAt = now
-	end
-	local raceID = self.API.GetPlayerRaceID and self:SafeToNumber(self.API.GetPlayerRaceID()) or 0
-	raceID = raceID and raceID >= 0 and raceID <= 100000 and raceID == math.floor(raceID) and raceID or 0
-	local streams = self:CanPublishPlayerLocation() and self:GetOption("showPlayerLocations") == true
-	Add("QTCI", "1," .. (streams and "1" or "0") .. "," .. raceID .. ",1")
-	-- Existing session/sequence ordering prevents delayed public heartbeats from
-	-- replacing a newer direct reply. No LOC is included, even with sharing on.
-	return self:BuildGeographicSnapshots(false, entries)
+	return self:BuildLocalCommunicationState(TOPICS)
 end
 
--- Validate the complete response before dispatching any metadata. Fragments
--- are byte slices (possibly inside UTF-8); only assembled strings are decoded.
-local function DecodePackets(text)
-	local packets = {}
-	while text ~= "" do
-		local length, start = text:match("^(%d+):()")
-		length = tonumber(length)
-		if not length or length < 6 or length > 255 or length > #text - start + 1 then
-			return nil
-		end
-		local packet = text:sub(start, start + length - 1)
-		local rest = packet:match("^QTB1|1,%d+,%d+%-%d+,%d+;(.*)$")
-		if not rest or rest == "" then
-			return nil
-		end
-		while rest ~= "" do
-			local age, size, offset = rest:match("^(%d+),(%d+):()")
-			age, size = tonumber(age), tonumber(size)
-			if not age or age ~= 0 or not size or size < 6 or size > #rest - offset + 1 then
-				return nil
-			end
-			local wire = rest:sub(offset, offset + size - 1)
-			if not ALLOWED[wire:match("^([^|]+)|")] then
-				return nil
-			end
-			rest = rest:sub(offset + size)
-		end
-		packets[#packets + 1] = packet
-		if #packets > 8 then
-			return nil
-		end
-		text = text:sub(start + length)
-	end
-	return #packets > 0 and packets or nil
-end
-
-function QT:HandlePlayerDetailsMessage(command, payload, sender)
-	if not Enabled(self) or not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 250 then
+function QT:HandlePlayerDetailsMessage(command, payload, sender, context)
+	if not Enabled(self) or type(payload) ~= "table" or type(context) ~= "table" then
 		return false
 	end
 	local name = Name(self, sender)
-	if not name then
+	local id = context.requestId or payload.requestId
+	if not name or type(id) ~= "string" or #id < 1 or #id > 80 then
 		return false
 	end
 	local s, now = State(self), Now(self)
 	if command == "QTHQ" then
-		local id = payload:match("^1,(%d+%-%d+%-%d+)$")
+		local previous = s.replies[name]
+		if Fresh(now, s.lastReply, 5) or previous and Fresh(now, previous.at, previous.pending and TTL or COOLDOWN) then
+			return false
+		end
+		local records, completed = self:BuildPlayerDetailsRecords()
+		if #records == 0 then
+			return false
+		end
+		local reply = {
+			id = id,
+			at = now,
+			pending = true,
+			roster = self.partyRosterFingerprint,
+			looking = self:GetOption("lookingForQuestPartners") == true,
+			sharing = self:CanPublishPlayerLocation(),
+			showing = self:GetOption("showPlayerLocations") == true,
+		}
+		s.replies[name], s.lastReply = reply, now
+		Bound(s.replies)
+		local admitted = self:Respond("QTHD", { records = records }, Route(name), {
+			owner = reply,
+			requestId = id,
+			key = "details:reply:" .. name,
+			priority = "control",
+			expires = now + 600,
+			isCurrent = function()
+				return rawget(self, "playerDetailsState") == s
+					and s.replies[name] == reply
+					and Enabled(self)
+					and reply.roster == self.partyRosterFingerprint
+					and reply.looking == (self:GetOption("lookingForQuestPartners") == true)
+					and reply.sharing == self:CanPublishPlayerLocation()
+					and reply.showing == (self:GetOption("showPlayerLocations") == true)
+					and Fresh(Now(self), reply.at, 600)
+					and not self:IsIgnoredPlayerName(name)
+			end,
+			onComplete = function(sent)
+				if rawget(self, "playerDetailsState") ~= s or s.replies[name] ~= reply then
+					return
+				end
+				if sent then
+					reply.pending, reply.acceptedAt = nil, Now(self)
+					if completed then
+						completed(true)
+					end
+				else
+					s.replies[name] = nil
+				end
+			end,
+		})
+		if not admitted and s.replies[name] == reply then
+			s.replies[name] = nil
+		end
+		return admitted == true
+	elseif command == "QTHD" then
+		local pending, records = s.pending[name], payload.records
 		if
-			not id
-			or #id > 60
-			or Fresh(now, s.lastReply, 5)
-			or (s.replies[name] and Fresh(now, s.replies[name].at, COOLDOWN))
+			not pending
+			or id ~= pending.id
+			or not PendingFresh(self, pending)
+			or type(records) ~= "table"
+			or #records < 1
+			or #records > #FIELDS
 		then
 			return false
 		end
-		s.lastReply = now
-		s.replies[name] =
-			{ id = id, at = now, sharing = self:CanPublishPlayerLocation(), roster = self.partyRosterFingerprint }
-		Bound(s.replies)
-		local packets, text = self:BuildPlayerDetailsPackets(), ""
-		for _, packet in ipairs(packets) do
-			text = text .. #packet .. ":" .. packet
-		end
-		local count = math.ceil(#text / 175)
-		if count < 1 or count > 8 then
-			return false
-		end
-		self:RecordQTPlayerPresence(name, true)
-		for index = 1, count do
-			if
-				not Send(
-					self,
-					name,
-					"QTHD|1,"
-						.. id
-						.. ","
-						.. index
-						.. ","
-						.. count
-						.. ";"
-						.. text:sub((index - 1) * 175 + 1, index * 175)
-				)
-			then
+		local seen = {}
+		-- A metadata request never invents coordinates or location permission.
+		-- Validate the entire response before letting any topic reach its domain.
+		for _, record in ipairs(records) do
+			if type(record) ~= "table" or not TOPICS[record.topic] or seen[record.topic] then
 				return false
 			end
+			seen[record.topic] = true
 		end
-		return true
-	elseif command == "QTHD" then
-		local id, index, count, part = payload:match("^1,([%d%-]+),(%d+),(%d+);(.+)$")
-		index, count = tonumber(index), tonumber(count)
-		local pending = s.pending[name]
-		if
-			not id
-			or #id > 60
-			or not index
-			or not count
-			or count < 1
-			or count > 8
-			or index < 1
-			or index > count
-			or #part > 175
-			or not pending
-			or pending.id ~= id
-			or not Fresh(now, pending.at, TTL)
-			or (pending.count and pending.count ~= count)
-			or pending.parts[index]
-		then
+		local accepted = self:ApplyCommunicationState(records, name, context)
+		if not accepted then
 			return false
-		end
-		pending.count, pending.parts[index] = count, part
-		for i = 1, count do
-			if not pending.parts[i] then
-				return true
-			end
 		end
 		s.pending[name] = nil
-		local packets = DecodePackets(table.concat(pending.parts))
-		if not packets then
-			return false
-		end
-		for _, packet in ipairs(packets) do
-			if not self:HandleGeographicSnapshot(packet:sub(6), name) then
-				return false
-			end
-		end
+		CancelPending(self, pending, "complete")
 		s.attempts[name] = { at = now, success = true }
 		Bound(s.attempts)
-		self:RememberDirectCommPeer(name, true)
-		-- Owned tooltips already repaint at their normal cadence, including the
-		-- follow-up roster request. Never reopen a tooltip after hover ended.
 		return true
 	end
 	return false
 end
 
-function QT:IsPlayerDetailsQueuedWireCurrent(wire, target)
-	local command, id = wire:match("^(QTH[QD])|1,([%d%-]+)")
-	if not command then
-		return true
-	end
-	if not Enabled(self) then
-		return false
-	end
-	local s, now = rawget(self, "playerDetailsState"), Now(self)
-	local record = s and (command == "QTHQ" and s.pending[target] or command == "QTHD" and s.replies[target])
-	return record
-			and record.id == id
-			and Fresh(now, record.at, TTL)
-			and (command ~= "QTHD" or (record.roster == self.partyRosterFingerprint and (not record.sharing or self:CanPublishPlayerLocation())))
-		or false
-end
-
--- Identity is public character information, independent from location consent.
--- Keep it separate from LOC so a query cannot invent or renew a map position.
+-- Identity is public character metadata, independent of location consent.
 function QT:BuildPlayerDetailsIdentityPayload()
 	local className, classFile = self.API.UnitClass("player")
-	local race = self.API.UnitRace("player")
-	local level = self:SafeToNumber(self.API.UnitLevel("player"))
+	local race, level = self.API.UnitRace("player"), self:SafeToNumber(self.API.UnitLevel("player"))
 	local faction = self:SafeToString(self.API.GetFaction(), "")
 	classFile = self:SafeTrimString(classFile, "")
 	if
@@ -339,63 +249,51 @@ function QT:BuildPlayerDetailsIdentityPayload()
 		or level < 1
 		or level > 1000
 		or level ~= math.floor(level)
-		or (faction ~= "Alliance" and faction ~= "Horde" and faction ~= "Neutral")
+		or faction ~= "Alliance" and faction ~= "Horde" and faction ~= "Neutral"
 	then
 		return nil
 	end
 	local function Label(value)
 		value = self:SafeTrimString(value, ""):gsub("[%c|]", "")
-		return #value <= 80 and self:EscapePayload(value) or ""
+		return #value <= 80 and value or ""
 	end
-	local payload = table.concat({ "1", classFile, level, faction, Label(race), Label(className) }, ",")
-	if #payload > 160 then
-		payload = table.concat({ "1", classFile, level, faction, Label(race), "" }, ",")
-	end
-	if #payload > 160 then
-		payload = table.concat({ "1", classFile, level, faction, "", "" }, ",")
-	end
-	return payload
+	return { classFile = classFile, level = level, faction = faction, race = Label(race), className = Label(className) }
 end
-
-function QT:HandlePlayerDetailsIdentity(payload, sender, sampleAge, source)
-	if not Enabled(self) or type(payload) ~= "string" or #payload > 240 then
+function QT:HandlePlayerDetailsIdentity(payload, sender, observation)
+	if not Enabled(self) or type(payload) ~= "table" then
 		return false
 	end
-	local classFile, level, faction, race, className = payload:match("^1,([A-Z]+),(%d+),([^,]+),([^,]*),([^,]*)$")
-	level = tonumber(level)
 	local name = Name(self, sender)
+	local classFile, level, faction =
+		self:SafeToString(payload.classFile, ""),
+		self:SafeToNumber(payload.level),
+		self:SafeToString(payload.faction, "")
 	if
 		not name
-		or not classFile
+		or not classFile:match("^[A-Z]+$")
 		or #classFile > 24
 		or not level
 		or level < 1
 		or level > 1000
-		or (faction ~= "Alliance" and faction ~= "Horde" and faction ~= "Neutral")
+		or level ~= math.floor(level)
+		or faction ~= "Alliance" and faction ~= "Horde" and faction ~= "Neutral"
 	then
 		return false
 	end
-	race, className = self:UnescapePayload(race), self:UnescapePayload(className)
+	local race, className = self:SafeToString(payload.race, ""), self:SafeToString(payload.className, "")
 	if #race > 80 or #className > 80 or race:find("[%c|]") or className:find("[%c|]") then
 		return false
 	end
 	local s, now = State(self), Now(self)
-	local observation = self:ResolvePeerObservation(name, "QTHI", sampleAge, source, nil, nil, 180)
-	local record = {
-		classFile = classFile,
-		level = level,
-		faction = faction,
-		race = race,
-		className = className,
-		receivedAt = now,
-		at = now,
-	}
+	observation = self:ResolvePeerObservation(name, "QTHI", observation)
+	local record =
+		{ classFile = classFile, level = level, faction = faction, race = race, className = className, at = now }
 	if not self:CommitPeerObservation(observation, record, false) then
 		return false
 	end
 	s.identities[name] = record
 	Bound(s.identities)
-	return true
+	return true, record
 end
 
 function QT:GetPlayerDetailsTooltipRow(row)
@@ -425,23 +323,28 @@ function QT:GetPlayerDetailsTooltipRow(row)
 end
 
 function QT:RetirePlayerDetailsPeer(name)
-	local state = rawget(self, "playerDetailsState")
-	if state then
-		state.pending[name], state.attempts[name], state.replies[name], state.identities[name] = nil, nil, nil, nil
+	local s = rawget(self, "playerDetailsState")
+	if not s then
+		return
+	end
+	local pending, reply = s.pending[name], s.replies[name]
+	s.pending[name], s.attempts[name], s.replies[name], s.identities[name] = nil, nil, nil, nil
+	if pending then
+		CancelPending(self, pending, "cancelled")
+	end
+	if reply then
+		self:CancelCommunicationOwner(reply, "cancelled")
 	end
 end
-
-QT:RegisterCommSendPolicy("QTHQ", function(addon, wire, route, options)
-	options.isCurrent = function()
-		return addon:IsPlayerDetailsQueuedWireCurrent(wire, route.target)
-	end
-end)
-QT:RegisterCommSendPolicy("QTHD", function(addon, wire, route, options)
-	options.isCurrent = function()
-		return addon:IsPlayerDetailsQueuedWireCurrent(wire, route.target)
-	end
-end)
-
 function QT:ResetPlayerDetails()
+	local s = rawget(self, "playerDetailsState")
 	self.playerDetailsState = nil
+	if s then
+		for _, pending in pairs(s.pending) do
+			CancelPending(self, pending, "cancelled")
+		end
+		for _, reply in pairs(s.replies) do
+			self:CancelCommunicationOwner(reply, "cancelled")
+		end
+	end
 end

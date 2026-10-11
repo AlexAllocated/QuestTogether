@@ -15,9 +15,12 @@ private `.local` notes are historical context, not the source of truth.
 | TaskArea | Reducing observations into world/bonus area state and announcement diffs | Native quest-log/classification reads |
 | PeerState | Observation source, sample time, lifetime, field/epoch admission and commit | Domain payloads, private coordinates, presentation |
 | PeerLifecycle | Reasons for departure, expiry and ignore retirement; invoking domain hooks | Editing another feature's internal tables |
-| Transport | Bounded queue, pacing, backoff, native acceptance, delivery callbacks, world lifetime | Geographic routing or feature authorization decisions |
-| BulkTransfer | Response delivery progression, retry budget, deadlines and cancellation | Payload formats, snapshot assembly, diagnostics consent |
-| GeographicComms / NearbyStreams | Route subscriptions, geographic codecs and snapshot/movement publication | Generic transport queue or rewriting received feature caches |
+| CommunicationCoordinator | Typed submissions, request correlation, audiences, policy checks, source revisions, cancellation and session fences | Feature consent decisions, native sends, arbitrary serialization |
+| CommsProtocol | Operation catalog, bounded schemas, route declarations, envelope and length-prefixed codecs | Feature scheduling loops or domain caches |
+| Transport | Single native adapter, bounded queue, fairness, pacing, native outcomes and exactly-once tickets | Geographic policy, remote delivery guarantees or feature authorization |
+| CommsTransfer | Shared fragmentation, atomic assembly, bounded repair, retained response replay and aggregate payload budget | Domain snapshot installation or diagnostic consent |
+| GeographicComms / NearbyStreams | Current/viewed interests, subscriptions, discovery policy and owned state/movement producers | Another native queue or rewriting received feature caches |
+| QuestCompareCommunication / PingCommunication | Domain request premises and response construction | Wire encoding, fragment pumps or independent timers |
 | QuestCompare | Atomic party log assembly, local snapshots and negotiated revision reuse | Native UI mutation or independent transport pumps |
 | PartyFocusController | Following and manual-choice state machine, missing-quest and confirmation policy | Party networking, persistence policy or preview fixtures |
 | PartyNavigation / QuestComparePreview | Live/preview adapters, persistence and ownership of native focus | Copies of the following state machine or repair of another controller's fields |
@@ -46,9 +49,9 @@ private `.local` notes are historical context, not the source of truth.
   Arrival time does not rejuvenate the source's sample time. Public metadata,
   location, nearby movement, party navigation and developer diagnostics keep
   their own TTL and consent rules. Hidden diagnostic coordinates never become
-  public location state. Correlated legacy public ping replies use the request's
-  start time as a conservative sample bound and pass the same location admission
-  checks; missing coordinates are unknown, not a withdrawal.
+  public location state. Every location-bearing observation preserves its source
+  sample time. Missing coordinates are unknown, not a withdrawal. Pongs carry an
+  explicit sharing flag; coordinates alone do not establish consent.
 - Schedule work with a deliberate mode: `immediate`, `nextFrame`, `bounded` or
   `debounce`. A next-frame request cannot run inline or be made due by a flush.
   Bounded refreshes retain their original deadline under repeated events.
@@ -75,6 +78,106 @@ private `.local` notes are historical context, not the source of truth.
   related changes and dispatches each affected service once. Profile activation
   uses the same effects, including themes, scale, privacy and navigation; it
   revokes old diagnostic request ownership even when both profiles allow it.
+
+## Communication generation 2
+
+The only gameplay prefix is `QuestTogether2`. Existing global and regional chat
+channel names remain unchanged. Generation 1 traffic is ignored, with no legacy
+decoder, companion packet, capability negotiation or fallback transmission.
+Communicating peers must upgrade together. Ed25519 developer requests bind the
+native sender, request identity, issue time, target and purpose to `QTDEV2`.
+Signatures authenticate requests; they do not encrypt replies.
+
+Features submit owned records through `Publish`, `Emit`, `Request` and `Respond`.
+The catalog supplies semantics, priority, lifetime, size bounds and legal routes.
+Producers attach an owner and currentness predicate; they never encode a payload
+only to decode it again for scheduling or privacy. A logical submission preserves
+one envelope identity across audience fan-out. Native sender identity is
+authoritative; conflicting payload identities are rejected.
+
+`RuntimeCoordinator` alone advances periodic network work. Authentication,
+request deadlines, transfer progression and transport drain advance each frame;
+feature sampling uses deliberate cadences. Geographic interest policy retains at
+most the current and viewed zone subscriptions, with four-second view dwell.
+Both zones trigger coalesced discovery; each responder can advance at most one
+publication per zone cooldown. Public whole-world baselines use 150–210-second
+jitter and a maximum 600-second source lifetime. Regional cadence varies with
+density and renews stationary locations. Nearby streams keep four leases, with
+replaceable per-recipient samples that expire after two seconds. UI settings and
+presentation consumers do not drive network progression.
+
+Inbound processing has a separate per-frame ceiling: 96 datagrams/24 KiB total,
+with public traffic limited to 64 datagrams/16 KiB. The reserve admits actual
+party traffic and peers with live targeted requests. Cheap admission checks run
+before decoding; the runtime alone resets the allowance. There is no unbounded
+receive queue or accumulated idle credit. Excess packets are counted and dropped;
+ordinary state renewal and bounded request/transfer recovery remain responsible
+for repair. Generated timestamp IDs use fixed-point decimal formatting because
+Forever's integer format conversions are 32-bit.
+
+The shared scheduler uses QT policy limits, not claims about Blizzard limits:
+
+| Limit | Value |
+| --- | --- |
+| Byte rate / burst | 800 bytes/s / 1,600 bytes, charging prefix and estimated overhead |
+| Packet rate / burst | 4 packets/s / 4 packets |
+| Queue / control reserve | 96 datagrams / 16 slots |
+| Weighted class rotation | control 1, events 1, active state 3, bulk 2, background 1 |
+| Native attempts per frame | 2 |
+| Outgoing / incoming transfers | 16 / 64, with reserved incoming party/targeted capacity |
+| Aggregate retained payload / object | 512 KiB / 128 KiB |
+| Fragments per object / datagram | 1,024 / 255 bytes |
+
+Buckets start empty on world entry. Class rotation also rotates destinations and
+transfers and borrows unused capacity. `AddonMessageThrottle` pauses the prefix
+for one second and reduces its packet rate to one/second. Thirty seconds of
+successful active traffic recovers 0.5/second, capped at four; idle time earns no
+rate recovery. `ChannelThrottle` is an ambiguous native outcome and is not
+resubmitted automatically. Native acceptance never claims remote delivery.
+Tickets settle exactly once, including replacement, cancellation and expiry.
+
+State samples replace older queued samples for the same topic/audience. Events
+retain immutable identities and finite duplicate suppression. Requests preserve
+identity across bounded retries; accepted actions cannot prompt or act twice.
+A transiently busy receiver must not tombstone an unaccepted request. Immutable
+cached responses can replay after loss without rereading a changed domain
+snapshot. PQL installs complete snapshots atomically and reuses only an exact
+revision; objective detail is a separate request.
+
+Large transfers share one fragment format, validate correlation before allocating
+response buffers, and interleave across recipients. Completion/END starts missing
+fragment repair, with at most two rounds. Thirty seconds without progress and a
+missing END permits a bounded status query. Queueing alone is not packet loss.
+The original request bounds transfer lifetime to at most 600 seconds. Retirement
+releases buffers on completion, cancellation or expiry. Oversize and capacity
+failures are explicit; requested fields are not stripped to fit.
+
+Pongs have **no arrival-time cutoff**. They must match one of the eight most recent
+locally owned ping identities in the current session, match a target when one was
+specified, and pass sender deduplication. This finite bookkeeping is independent
+of reply age. Old source locations cannot be made fresh by a late pong. Detailed
+diagnostic reports retain their separate request/transfer expiry, signature and
+consent checks. Publicly shared diagnostic positions update ordinary peer state;
+hidden diagnostic positions remain in their separate authorized store.
+
+Privacy withdrawal cancels queued coordinate publications and their parent
+transfers before sending a clear. Ignore, group changes, profile replacement,
+world departure and disable fence both pending work and stale callbacks. Departure
+cancels old queues, then attempts a small BYE through the same native adapter with
+available budget. It never flushes old work or earns more budget after retirement;
+expiry remains the fallback. Re-entry starts empty and republishes fresh state.
+
+Diagnostics are bounded counters/gauges for queue age and charged bytes, native
+outcomes, replacement/expiry, request timing, authentication queue/work time and
+transfer progress. They distinguish native acceptance, authentication and remote
+response assembly. Reading diagnostics must not start network activity.
+
+The private multi-peer network harness runs actual coordinators with independent
+clocks/state, frame-rounded timers, asynchronous channel joins and delivery
+separate from native acceptance. It exercises loss, reorder, duplicates, throttle,
+ambiguous outcomes, low FPS, mixed workloads and lifecycle changes. Run the
+[live communication release gate](docs/COMMUNICATION_LIVE_TESTS.md) before publishing
+the major upgrade; offline results alone do not validate real delivery or coexistence.
 
 ## UI and client boundaries
 
@@ -111,12 +214,23 @@ upstream followed by a deliberate vendor update.
 never patch Blizzard globals, shared native tables, secure-adjacent APIs or
 live frames. UI fixtures model parent visibility, frame reuse and independently
 forbidden/protected regions. `scripts/test.lua` alone owns offline engine stubs.
+Presented runs schedule one complete isolated case per frame through LibChev;
+fixtures and announcement suppression are restored before each frame returns.
+Explicitly marked `offline` stress, soak and expensive matrix cases remain in
+the full headless suite and are counted as skipped in live reports. Never yield
+inside a fixture or silently time out a case. CI exercises the real staggered
+controller in both orders with live-state updates between callbacks.
+Fixtures detach unknown runtime tables to `nil`, so component constructors own
+their shape; they must not turn initialized stores into empty placeholder tables.
+Offline runs seed populated phase/target stores to exercise tests after gameplay.
+WoW can reject division by zero: live numeric fixtures use supported nonfinite
+constants, while mandatory real NaN assertions remain outside the TOC.
 
 Run Lua 5.1 and 5.2 suites in both orders; settings construction, all locale and
 client profiles, crypto, localization, release-note and packaging checks are CI
 requirements. `scripts/check_architecture.py` protects key ownership boundaries;
 behavioral tests cover cancellation, incomplete observations, replay, recovery
-and protocol compatibility. Do not replace those with only source-pattern tests.
+and the protocol upgrade boundary. Do not replace those with only source-pattern tests.
 
 `scripts/package.py` derives installed Lua from the TOC and includes only the
 explicit runtime asset/document rules. It checks pinned dependency hashes and

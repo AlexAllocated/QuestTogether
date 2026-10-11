@@ -16,7 +16,6 @@ function QT:UpdatePlayerCommunications()
 		self:BroadcastPlayerLocation()
 	end
 	self:UpdateNearbyStreams(sample)
-	self:DrainTransport()
 end
 
 function QT:CreateRuntimeCoordinatorFrame()
@@ -39,6 +38,10 @@ function QT:InitializeRuntimeCoordinator()
 	end
 	local elapsed, animationElapsed = 0, 0
 	frame:SetScript("OnUpdate", function(_, delta)
+		if rawget(self, "runtimeCoordinatorState") ~= state or not self.isEnabled then
+			return
+		end
+		self:UpdateCommunicationRuntime()
 		if rawget(self, "runtimeCoordinatorState") ~= state or not self.isEnabled then
 			return
 		end

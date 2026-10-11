@@ -38,9 +38,9 @@ Switch the log destination from settings or QuestTogether's minimap menu.
 
 **QuestTogether chat:** Type `/qt <message>` to talk to other players receiving the QuestTogether channel. Recognized commands still run normally. Conversations use the same chat log and nearby-player bubbles, with a speech-bubble icon. Disable **Show QuestTogether Chat** in **Where to Announce** to hide conversations without changing quest announcements. Hover player names in the log for the same player details shown on map dots.
 
-Version 6.0 uses **QuestTogether** for global chat and occasional worldwide player updates. Frequent updates and quest announcements use a channel for your current zone; viewing another zone on the world map temporarily subscribes to its updates too. Party announcements still cross zone boundaries. Where supported, QT keeps its channels after your other chat channels, with QuestTogether first. The old **QuestTogetherAnnounce1** channel is retired.
+QuestTogether uses **QuestTogether** for global chat and occasional worldwide player updates. Frequent updates and quest announcements use a channel for your current zone; keeping another zone open on the world map temporarily subscribes to its updates and requests local discovery too. Party announcements still cross zone boundaries. Where supported, QT keeps its channels after your other chat channels, with QuestTogether first. The old **QuestTogetherAnnounce1** channel is retired.
 
-Map dots remain available worldwide, but distant locations update less often; hover a dot to see the age of older information. Manual `/qt ping` requests remain global for discovering other QT users, with replies collected for up to five minutes. Replies are best effort, so this is not an exact online-player count.
+Map dots remain available worldwide, but distant locations update less often; hover a dot to see the age of older information. Discovery is paced and shared to reduce duplicate traffic. **This major communication upgrade requires everyone to update: older addon versions cannot exchange QuestTogether data with it.**
 
 > **SCREENSHOT 02 — Chat your way:** QuestTogether updates in a dedicated chat window, showing player names, clickable quest names, objective progress, and completion messages.
 
@@ -107,13 +107,13 @@ The **Player Locations** settings have two independent controls, each applying t
 - **Share my location** — let other QuestTogether users see your dot.
 - **Show other players** — display players who share their location.
 
-Both start enabled for new profiles. Turning sharing off also removes location details from your quest announcements and ping replies. Existing sharing opt-outs are preserved when upgrading.
+Both start enabled for new profiles. Turning sharing off also removes location details from public quest announcements and public map updates. Diagnostic sharing has its own setting. Existing sharing opt-outs are preserved when upgrading.
 
 Enable **Only show players looking for questing partners** to filter both maps to LFG players. This filter starts off.
 
 On Retail, tooltips also show War Mode when available. Forever omits realm and War Mode labels. Dots remain visible across phases to help you find people to group with.
 
-Locations update periodically. Brief gaps retain the last reported dot for up to two minutes; older reports show their age in the tooltip. Turning location sharing off removes the dot when the withdrawal arrives, with expiry as a fallback. Both players need a version that supports location sharing. A dot represents a recently reported location; it does not guarantee that the player is in your phase or layer.
+Locations update periodically. Gaps retain the last reported public dot for up to ten minutes from its original sample; older reports show their age in the tooltip. Turning location sharing off removes the dot when the withdrawal arrives, with expiry as a fallback. Both players need the current communication upgrade. A dot represents a recently reported location; it does not guarantee that the player is in your phase or layer.
 
 > **SCREENSHOT 06 — Players on the map:** World-map and minimap views with several class-colored dots. Hover one dot to show the player-details tooltip.
 
@@ -170,7 +170,7 @@ The settings preview shows your choices using the current WoW nameplate style. D
 
 Enable friendly nameplates in WoW, then choose **Left**, **Right**, **Top**, or **Prefix** placement in QuestTogether's Player Plates settings. Player icons start enabled with Left placement, include a gap between the logo and the bar or name text, and have their own preview and visibility toggle.
 
-Player icons leave health-bar colors alone. Identification works from any supported QuestTogether message, even when location sharing is off. Recognized players remain known for the current UI session in a bounded cache; missed heartbeats do not remove their icons. Explicit departures and ignored players are cleared.
+Player icons leave health-bar colors alone. Identification uses validated QuestTogether activity, even when location sharing is off. Recognized players remain known for the current UI session in a bounded cache; missed heartbeats do not remove their icons. Explicit departures and ignored players are cleared.
 
 Quest and player decorations follow the addon's open-world nameplate policy. Instances, unavailable nameplates, and game restrictions can limit their display.
 
@@ -245,7 +245,7 @@ Revisit the notes from the minimap menu, main settings page, or `/qt notes`, `/q
 4. Enable the appropriate WoW nameplates for quest and player icons. Use HUD Edit Mode if you want to reposition your personal bubble.
 5. Start questing. Open `/qt compare` whenever you want to check everyone's quest lists.
 
-QuestTogether exchanges its updates through addon communication. Other players need QuestTogether to receive those updates, and comparison data depends on a responding peer. The **Party Only** progress filter controls displayed announcements; location sharing and viewing have their own independent settings.
+QuestTogether exchanges its updates through addon communication. Other players need the same communication generation to receive those updates, and comparison data depends on a responding peer. Large replies share paced delivery with other activity and can recover missing pieces without restarting the whole response. The **Party Only** progress filter controls displayed announcements; location sharing and viewing have their own independent settings.
 
 The addon bundles its required library, so no separate library download is needed. TomTom is optional. The package includes client adapters for Retail, Forever, Era/Hardcore/Season of Discovery, Anniversary/Burning Crusade, Mists Classic, and Titan Reforged; individual features depend on the APIs available in your client. Nameplate enhancements are built around Blizzard nameplates, so replacement nameplate addons may affect their appearance or availability.
 
@@ -264,7 +264,7 @@ The addon bundles its required library, so no separate library download is neede
 | `/qt help` | Show normal command help |
 | `/qt help debug` | Show diagnostics, tests, and preview commands |
 
-For troubleshooting, QuestTogether includes a searchable, filterable debug window (`/qt debug` or `/qtd`), copyable diagnostics (`/qt diagnostics [questID]`), and an in-game test suite (`/qt test`). `/qt ping` requests metadata from other reachable QuestTogether clients. Local bubble previews and `/qt compare debug` let you preview UI with test data; comparison previews do not share quests.
+For troubleshooting, QuestTogether includes a searchable, filterable debug window (`/qt debug` or `/qtd`), copyable diagnostics (`/qt diagnostics [questID]`), and an in-game test suite (`/qt test`). Local bubble previews and `/qt compare debug` let you preview UI with test data; comparison previews do not share quests.
 
 ## Feedback and support
 

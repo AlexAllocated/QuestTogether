@@ -194,35 +194,24 @@ function QT:GetPlayerPartySize(sender)
 	return stats and stats.partySize
 end
 
-function QT:HandleAddonVersionMessage(payload, sender, sampleAge, source)
-	if not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 64 then
+function QT:HandleAddonVersionMessage(payload, sender, observation)
+	if type(payload) ~= "table" or not self:CanAccessTable(payload) then
 		return false
 	end
-	local version = payload:match("^1,(.+)$")
-	local extended, count, partySize
-	if not version then
-		local rawCount, rawSize
-		version, rawCount, rawSize = payload:match("^2,([^,]+),(%d*),(%d*)$")
-		if not version then
-			return false
-		end
-		extended = true
-		if rawCount ~= "" then
-			count = self:SafeToNumber(rawCount)
-			if not count or count < 0 or count > 20000 or count ~= math.floor(count) then
-				return false
-			end
-		end
-		if rawSize ~= "" then
-			partySize = self:SafeToNumber(rawSize)
-			if not partySize or partySize > 40 or partySize < 0 or partySize ~= math.floor(partySize) then
-				return false
-			end
-		end
+	local version, count, partySize = payload.version, payload.count, payload.partySize
+	local extended = true
+	if count ~= nil and (type(count) ~= "number" or count < 0 or count > 20000 or count ~= math.floor(count)) then
+		return false
+	end
+	if
+		partySize ~= nil
+		and (type(partySize) ~= "number" or partySize < 0 or partySize > 40 or partySize ~= math.floor(partySize))
+	then
+		return false
 	end
 	local now = self.API.GetTime and self:SafeToNumber(self.API.GetTime())
 	local name = self:NormalizeMemberName(sender)
-	local observation = name and self:ResolvePeerObservation(name, "QTVR", sampleAge, source, nil, nil, 180)
+	observation = self:ResolvePeerObservation(name, "QTVR", observation)
 	local record = { count = count, partySize = partySize, at = now }
 	if not now or not self:ParseAddonVersion(version) or not self:CommitPeerObservation(observation, record, true) then
 		return false
@@ -260,27 +249,14 @@ function QT:BroadcastAddonVersion(forPresenceHeartbeat)
 	if not self:ParseAddonVersion(version) then
 		return false
 	end
-	-- Advertise only our installed version, never relay another peer's claim.
-	-- Keep legacy presence unchanged and reuse the existing paced update frame.
-	local payload = "1," .. version
-	-- Alternate extended and legacy version heartbeats. Old clients require an
-	-- exact version string; they must continue receiving readable advertisements.
-	if forPresenceHeartbeat and (geographic or not state.lastVersionIncludedStats) then
-		local count = self:GetMonitoredQuestCount()
-		local partySize = self:GetLocalPartySize()
-		payload = "2,"
-			.. version
-			.. ","
-			.. (count and tostring(count) or "")
-			.. ","
-			.. (partySize and tostring(partySize) or "")
-		state.lastVersionIncludedStats = true
-	else
-		state.lastVersionIncludedStats = false
-	end
-	local sent = self:SendWireMessageToAnnouncementRoutes(self:SerializeWireMessage("QTVR", payload), "addon version")
-	if sent then
-		state.interval = BROADCAST_INTERVAL
-	end
+	local payload = { version = version, count = self:GetMonitoredQuestCount(), partySize = self:GetLocalPartySize() }
+	local sent = self:Publish("QTVR", payload, nil, {
+		owner = state,
+		onComplete = function(accepted)
+			if accepted and self:GetAddonUpdateState() == state then
+				state.interval = BROADCAST_INTERVAL
+			end
+		end,
+	})
 	return sent
 end

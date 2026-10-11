@@ -41,14 +41,6 @@ end
 local function Fresh(record, now, ttl)
 	return record and now >= record.at and now - record.at < (record.lifetime or ttl)
 end
-local function SendRoster(a, wire, context, target, direct)
-	local routes = direct and { { distribution = "WHISPER", target = target } }
-		or a:GetTargetedCommRoutes(
-			target,
-			{ { distribution = "CHANNEL", channelName = a.announcementChannelName, requiresChannelJoin = true } }
-		)
-	return a:SendWireMessageToAnnouncementRoutes(wire, context, routes)
-end
 local function Revision(leader, members)
 	local entries = {}
 	for _, member in ipairs(members) do
@@ -241,6 +233,7 @@ function QT:ForgetPartyVisualPeer(name)
 	for id, pending in pairs(s.pending) do
 		if pending.name == name then
 			s.pending[id] = nil
+			self:CancelCommRequest(id, "cancelled")
 		end
 	end
 end
@@ -308,22 +301,31 @@ function QT:GetLocalPartyVisualInfo()
 	}
 	return s.localInfo
 end
-function QT:BuildPartyVisualMetadataPayload()
+function QT:BuildPartyVisualMetadata()
 	local info = self:GetLocalPartyVisualInfo()
 	if not info then
 		return nil
 	end
-	return table.concat({ "1", info.size, info.leader or "", info.leaderClass or "", info.revision or "" }, ","), info
+	return { size = info.size, leader = info.leader, leaderClass = info.leaderClass, revision = info.revision }, info
+end
+
+function QT:RecordPartyVisualPublication(record)
+	local state = rawget(self, "partyVisualState")
+	if not state or type(record) ~= "table" or type(record.size) ~= "number" or record.size <= 1 then
+		return
+	end
+	local current = self:GetLocalPartyVisualInfo()
+	if current and current.size == record.size and current.revision == record.revision then
+		state.advertisedGroup, state.lastGroupAdvertisedAt = true, Now(self)
+	end
 end
 
 function QT:BroadcastPartyVisualMetadata()
-	local payload, info = self:BuildPartyVisualMetadataPayload()
+	local record, info = self:BuildPartyVisualMetadata()
 	if not info then
 		return false
 	end
 	local state, now = self:GetPartyVisualState(), Now(self)
-	-- Solo size is already carried by QTVR. Only publish a withdrawal if we
-	-- previously advertised a party during this session.
 	local lifetime = rawget(self, "geographicCommsState") and 600 or TTL
 	if
 		info.size == 0
@@ -337,28 +339,51 @@ function QT:BroadcastPartyVisualMetadata()
 	then
 		return false
 	end
-	if info.size > 1 then
-		state.advertisedGroup, state.lastGroupAdvertisedAt = true, now
-	end
-	return self:SendWireMessageToAnnouncementRoutes("QTPG|" .. payload, "party visual metadata")
+	local revision, roster = info.revision, self:GetPartyRosterFingerprint()
+	return self:Publish("QTPG", record, nil, {
+		owner = state,
+		isCurrent = function()
+			local current = self:GetLocalPartyVisualInfo()
+			return rawget(self, "partyVisualState") == state
+				and Allowed(self)
+				and roster == self:GetPartyRosterFingerprint()
+				and current ~= nil
+				and current.size == info.size
+				and current.revision == revision
+		end,
+		onComplete = function(sent)
+			if sent and rawget(self, "partyVisualState") == state then
+				self:RecordPartyVisualPublication(record)
+			end
+		end,
+	})
 end
-function QT:HandlePartyVisualMetadata(payload, sender, sampleAge, source)
-	if not Allowed(self) or not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 200 then
+function QT:HandlePartyVisualMetadata(data, sender, observation)
+	if not Allowed(self) or type(data) ~= "table" then
 		return false
 	end
-	local size, leader, class, revision = payload:match("^1,(%d+),([^,]*),([^,]*),(%d*)$")
-	size = tonumber(size)
+	local size = self:SafeToNumber(data.size)
+	local leader, class, revision = data.leader or "", data.leaderClass or "", data.revision or ""
 	local name = Name(self, sender)
-	if not name or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) or not size or size > 40 or size == 1 then
+	if
+		not name
+		or self:IsSelfSender(name)
+		or self:IsIgnoredPlayerName(name)
+		or not size
+		or size < 0
+		or size > 40
+		or size == 1
+		or size ~= math.floor(size)
+	then
 		return false
 	end
 	local now = Now(self)
-	local observation = self:ResolvePeerObservation(name, "QTPG", sampleAge, source, nil, nil, TTL)
+	observation = self:ResolvePeerObservation(name, "QTPG", observation)
 	if not self:CanAcceptPeerObservation(observation) then
 		return false
 	end
 	local sampledAt = observation.sampledAt
-	source = observation.source ~= "diagnostic" and observation or nil
+	local source = observation.source ~= "diagnostic" and observation or nil
 	local previous = self:GetPartyVisualState().peers[name]
 	if
 		previous
@@ -373,7 +398,13 @@ function QT:HandlePartyVisualMetadata(payload, sender, sampleAge, source)
 		end
 	else
 		leader = Name(self, leader)
-		if not leader or not Class(class) or #revision > 10 or not tonumber(revision) then
+		if
+			not leader
+			or not Class(class)
+			or type(revision) ~= "string"
+			or #revision > 10
+			or not revision:match("^%d+$")
+		then
 			return false
 		end
 	end
@@ -390,7 +421,7 @@ function QT:HandlePartyVisualMetadata(payload, sender, sampleAge, source)
 		at = now,
 		sampledAt = sampledAt,
 		lifetime = observation.expiresAt - now,
-		manualSnapshot = sampleAge ~= nil and source == nil,
+		manualSnapshot = observation.manual == true,
 	}
 	if not self:CommitPeerObservation(observation, record, true) then
 		return false
@@ -475,13 +506,13 @@ function QT:RequestPartyVisualRoster(sender)
 		return false
 	end
 	local s = self:GetPartyVisualState()
-	for id, p in pairs(s.pending) do
-		if now < p.at or now - p.at >= REQUEST_TTL then
+	for id, pending in pairs(s.pending) do
+		if not Fresh(pending, now, REQUEST_TTL) then
 			s.pending[id] = nil
+			self:CancelCommRequest(id, "expired")
 		end
 	end
-	local attempt = s.attempts[info.key]
-	if Fresh(attempt, now, REQUEST_TTL) or Count(s.pending) >= 16 then
+	if Fresh(s.attempts[info.key], now, REQUEST_TTL) or Count(s.pending) >= 16 then
 		return false
 	end
 	s.attempts[info.key] = { at = now }
@@ -489,33 +520,54 @@ function QT:RequestPartyVisualRoster(sender)
 	s.sequence = s.sequence + 1
 	local random = self.API.Random and self:SafeToNumber(self.API.Random(1, 99999999)) or 1
 	local id = math.floor(now * 1000) .. "-" .. math.floor(random or 1) .. "-" .. s.sequence
-	s.pending[id] = {
-		at = now,
-		name = name,
-		key = info.key,
-		revision = info.revision,
-		size = info.size,
-		leader = info.leader,
-		members = {},
-	}
-	local sent = SendRoster(self, "QPGR|1," .. name .. "," .. id .. "," .. info.revision, "party roster request", name)
-	if not sent then
+	local pending =
+		{ at = now, name = name, key = info.key, revision = info.revision, size = info.size, leader = info.leader }
+	s.pending[id] = pending
+	local admitted = self:Request(
+		"QPGR",
+		{ requestId = id, targetName = name, revision = info.revision },
+		{ { distribution = "WHISPER", target = name } },
+		{
+			owner = pending,
+			expires = now + REQUEST_TTL,
+			isCurrent = function()
+				local current = self:GetPlayerPartyVisualInfo(name)
+				return rawget(self, "partyVisualState") == s
+					and s.pending[id] == pending
+					and Fresh(pending, Now(self), REQUEST_TTL)
+					and current ~= nil
+					and current.key == pending.key
+			end,
+			onResponse = function(record, peer, context)
+				return self:HandlePartyVisualRosterMember(record, peer, context)
+			end,
+			onComplete = function(sent)
+				if not sent and s.pending[id] == pending then
+					s.pending[id] = nil
+					self:CancelCommRequest(id, "cancelled")
+				end
+			end,
+		}
+	)
+	if not admitted and s.pending[id] == pending then
 		s.pending[id] = nil
 	end
-	return sent
+	return admitted
 end
-function QT:HandlePartyVisualRosterRequest(payload, sender, direct)
-	if not Allowed(self) or not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 240 then
+function QT:HandlePartyVisualRosterRequest(data, sender)
+	if not Allowed(self) or type(data) ~= "table" then
 		return false
 	end
-	local target, id, revision = payload:match("^1,([^,]+),([%d%-]+),(%d+)$")
-	local name = Name(self, sender)
+	local id, revision, name = data.requestId, data.revision, Name(self, sender)
 	if
-		not id
-		or #id > 48
+		type(id) ~= "string"
+		or #id > 80
+		or not id:match("^[%w%-]+$")
+		or type(revision) ~= "string"
 		or #revision > 10
-		or not Name(self, target)
-		or not self:IsSelfSender(target)
+		or not revision:match("^%d+$")
+		or not Name(self, data.targetName)
+		or not self:IsSelfSender(data.targetName)
 		or not name
 		or self:IsSelfSender(name)
 		or self:IsIgnoredPlayerName(name)
@@ -527,113 +579,80 @@ function QT:HandlePartyVisualRosterRequest(payload, sender, direct)
 		return false
 	end
 	local s, now = self:GetPartyVisualState(), Now(self)
-	-- Bound amplification even if many clients hover or a sender varies IDs.
-	if Fresh(s.replies[name], now, 20) or (s.lastReply and now - s.lastReply < 5) then
+	if Fresh(s.replies[name], now, 20) or (s.lastReply and now >= s.lastReply and now - s.lastReply < 5) then
 		return false
 	end
-	s.lastReply, s.replies[name] = now, { at = now }
+	local pending, roster = { at = now }, self:GetPartyRosterFingerprint()
+	s.lastReply, s.replies[name] = now, pending
 	Bound(s.replies, 128)
 	self:RecordQTPlayerPresence(name, true)
-	if direct then
-		self:RememberDirectCommPeer(name, true)
-	end
-	for index, member in ipairs(info.members) do
-		SendRoster(
-			self,
-			table.concat({ "QPGM|1", id, revision, index, member.name, member.classFile }, ","),
-			"party roster member",
-			name,
-			direct
-		)
-	end
-	return true
+	return self:Respond(
+		"QPGM",
+		{ requestId = id, revision = revision, members = info.members },
+		{ { distribution = "WHISPER", target = name } },
+		{
+			owner = pending,
+			expires = now + REQUEST_TTL,
+			isCurrent = function()
+				local current = self:GetLocalPartyVisualInfo()
+				return rawget(self, "partyVisualState") == s
+					and s.replies[name] == pending
+					and Allowed(self)
+					and not self:IsIgnoredPlayerName(name)
+					and roster == self:GetPartyRosterFingerprint()
+					and current ~= nil
+					and current.revision == revision
+			end,
+		}
+	)
 end
-function QT:HandlePartyVisualRosterMember(payload, sender)
-	if not Allowed(self) or not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 240 then
+function QT:HandlePartyVisualRosterMember(data, sender)
+	if not Allowed(self) or type(data) ~= "table" then
 		return false
 	end
-	local id, revision, index, member, class = payload:match("^1,([%d%-]+),(%d+),(%d+),([^,]+),([^,]*)$")
-	local name = Name(self, sender)
-	if not id or #id > 48 or #revision > 10 or not name or self:IsIgnoredPlayerName(name) then
+	local id, revision, name = data.requestId, data.revision, Name(self, sender)
+	if type(id) ~= "string" or not name or self:IsIgnoredPlayerName(name) or type(data.members) ~= "table" then
 		return false
 	end
 	local s, now = self:GetPartyVisualState(), Now(self)
-	local p = s.pending[id]
-	local info = self:GetPlayerPartyVisualInfo(name)
-	index, member = tonumber(index), Name(self, member)
+	local pending, info = s.pending[id], self:GetPlayerPartyVisualInfo(name)
 	if
-		not Fresh(p, now, REQUEST_TTL)
-		or p.name ~= name
-		or p.revision ~= revision
+		not Fresh(pending, now, REQUEST_TTL)
+		or pending.name ~= name
+		or pending.revision ~= revision
 		or not info
-		or p.key ~= info.key
-		or not index
-		or index < 1
-		or index > p.size
-		or not member
-		or not Class(class)
+		or pending.key ~= info.key
+		or #data.members ~= pending.size
 	then
 		return false
 	end
-	local previous = p.members[index]
-	if previous then
-		return previous.name == member and previous.classFile == class
-	end
-	for _, existing in pairs(p.members) do
-		if existing.name == member then
+	local members, seen = {}, {}
+	for index, member in ipairs(data.members) do
+		local memberName = type(member) == "table" and Name(self, member.name)
+		local class = type(member) == "table" and Class(member.classFile or "")
+		if not memberName or not class or seen[memberName] then
 			return false
 		end
+		seen[memberName] = true
+		members[index] = { name = memberName, classFile = class }
 	end
-	p.members[index] = { name = member, classFile = class }
-	if Count(p.members) == p.size then
-		local hasLeader, hasSender = false, false
-		for _, m in ipairs(p.members) do
-			hasLeader = hasLeader or m.name == p.leader
-			hasSender = hasSender or m.name == name
-		end
-		if not hasLeader or not hasSender or Revision(p.leader, p.members) ~= revision then
-			s.pending[id] = nil
-			return false
-		end
-		s.rosters[p.key] = { at = now, members = p.members }
-		Bound(s.rosters, 128)
-		s.pending[id] = nil
+	if not seen[pending.leader] or not seen[name] or Revision(pending.leader, members) ~= revision then
+		return false
 	end
+	s.rosters[pending.key] = { at = now, members = members }
+	Bound(s.rosters, 128)
+	s.pending[id] = nil
+	self:CancelCommRequest(id, "complete")
 	return true
 end
-
--- The transport may hold a chunk while waiting for tokens. Do not deliver an
--- obsolete roster or ask about a party that changed while the request waited.
-function QT:IsPartyVisualQueuedWireCurrent(wire)
-	local command, payload = wire:match("^([^|]+)|(.*)$")
-	if command == "QPGR" then
-		local id = payload:match("^1,[^,]+,([%d%-]+),")
-		local state = rawget(self, "partyVisualState")
-		local pending = state and state.pending[id]
-		if not Fresh(pending, Now(self), REQUEST_TTL) then
-			return false
-		end
-		local info = self:GetPlayerPartyVisualInfo(pending.name)
-		return info and info.key == pending.key or false
-	elseif command == "QPGM" then
-		local revision = payload:match("^1,[%d%-]+,(%d+),")
-		local info = self:GetLocalPartyVisualInfo()
-		return info and info.revision == revision or false
-	end
-	return true
-end
-
-QT:RegisterCommSendPolicy("QPGR", function(addon, wire, route, options)
-	options.isCurrent = function()
-		return addon:IsPartyVisualQueuedWireCurrent(wire, route.target)
-	end
-end)
-QT:RegisterCommSendPolicy("QPGM", function(addon, wire, route, options)
-	options.isCurrent = function()
-		return addon:IsPartyVisualQueuedWireCurrent(wire, route.target)
-	end
-end)
 
 function QT:ResetPartyVisuals()
+	local state = rawget(self, "partyVisualState")
 	self.partyVisualState = nil
+	if state then
+		self:CancelTransportOwner(state)
+		for id in pairs(state.pending) do
+			self:CancelCommRequest(id, "cancelled")
+		end
+	end
 end

@@ -1,6 +1,40 @@
 -- Offline WoW test environment. Never load this script from the addon TOC.
 -- Run from the repository root: lua scripts/test.lua
 local addonRoot = arg[1] or "."
+-- Forever's embedded formatter narrows integer conversions to 32 bits, while
+-- the host Lua builds use wider integers. Model that engine contract offline so
+-- epoch milliseconds cannot pass CI and then fail during addon initialization.
+local nativeFormat = string.format
+string.format = function(format, ...)
+	local values, argument, cursor = { ... }, 0, 1
+	while type(format) == "string" do
+		local start = format:find("%", cursor, true)
+		if not start then
+			break
+		end
+		if format:sub(start + 1, start + 1) == "%" then
+			cursor = start + 2
+		else
+			local conversion, finish = format:sub(start):match("^%%[-+ #0]*%d*%.?%d*([cdiouxXeEfgGqs])()")
+			if not conversion then
+				break
+			end -- The native formatter diagnoses invalid formats.
+			argument = argument + 1
+			cursor = start + finish - 1
+			if conversion:find("[diouxX]") then
+				local value = tonumber(values[argument])
+				local maximum = (conversion == "d" or conversion == "i") and 2147483647 or 4294967295
+				if value and (value < -2147483648 or value > maximum or value ~= value) then
+					error("integer overflow in 32-bit WoW string.format", 2)
+				end
+			end
+		end
+	end
+	return nativeFormat(format, ...)
+end
+assert(not pcall(string.format, "%d", 1791753535000), "offline formatter must reject the reported Forever overflow")
+assert(string.format("%.0f", 1791753535000) == "1791753535000")
+assert(string.format("%%d %s %04d", "label", 42) == "%d label 0042")
 QuestTogether = nil
 QuestTogetherDB = nil
 issecretvalue = function()
@@ -117,7 +151,9 @@ local clientChecks = arg[3] and assert(loadfile(addonRoot .. "/scripts/client_pr
 local namespace = {}
 -- Load the exact live manifest. Missing/omitted test modules must not be hidden
 -- by a second, independently maintained offline file list.
-GetLocale = function() return os.getenv("QT_TEST_LOCALE") or "enUS" end
+GetLocale = function()
+	return os.getenv("QT_TEST_LOCALE") or "enUS"
+end
 for line in io.lines(addonRoot .. "/QuestTogether.toc") do
 	local file = line:match("^%s*(.-)%s*$")
 	if file ~= "" and not file:match("^#") then
@@ -131,6 +167,9 @@ end
 QuestTogether:InitializeDatabase()
 QuestTogether:EnsureRuntimeStateStore()
 QuestTogether.isInitialized = true
+-- True NaN fixtures belong only to host Lua: Forever rejects their construction
+-- as division by zero. These checks remain mandatory in every offline run.
+assert(loadfile(addonRoot .. "/scripts/offline_numeric_tests.lua"))()(QuestTogether)
 local selectedTestLocale = os.getenv("QT_TEST_LOCALE") or "enUS"
 local expectedTestLocale = selectedTestLocale == "enGB" and "enUS" or selectedTestLocale
 assert(QuestTogether.locale == expectedTestLocale, "client locale must survive addon initialization")
@@ -176,16 +215,109 @@ QuestLogPushQuest = RejectEngineCall("QuestLogPushQuest")
 QuestMapFrame_OpenToQuestDetails = RejectEngineCall("QuestMapFrame_OpenToQuestDetails")
 OpenQuestLog = RejectEngineCall("OpenQuestLog")
 MenuUtil = { CreateContextMenu = RejectEngineCall("CreateContextMenu") }
+-- A real /qt test starts after gameplay has created lazy stores. Keep populated
+-- structured owners present even offline: replacing these with {} in a fixture
+-- must fail here instead of passing only because a fresh process has nil state.
+local livePhaseState = {
+	peers = { ["LivePeer-Realm"] = { at = 100 } },
+	attempts = { ["LivePeer-Realm"] = { id = "live-phase-request" } },
+	replies = {},
+	nextScan = 101,
+}
+local liveTargetState = { button = { Hide = RejectEngineCall("live target button") } }
+QuestTogether.playerPhaseState = livePhaseState
+QuestTogether.locationTargetState = liveTargetState
+
+local function CheckLiveStructuredStores()
+	assert(QuestTogether.playerPhaseState == livePhaseState, "phase owner replaced by test fixture")
+	assert(
+		livePhaseState.attempts["LivePeer-Realm"].id == "live-phase-request",
+		"live phase request changed by fixture"
+	)
+	assert(QuestTogether.locationTargetState == liveTargetState, "target owner replaced by test fixture")
+end
+
 -- Exercise the same controller and QT-owned isolation used by the live command.
-local success, passed, failed, result = QuestTogether:RunTests(arg[2] == "reverse", false)
+-- The live modes also model independent frame callbacks and real addon work
+-- between cases. Engine replacements remain confined to this offline harness.
+local success, passed, failed, result
+if arg[2] == "live" or arg[2] == "live-reverse" then
+	local callbacks, frames, maxCaseSeconds = {}, 0, 0
+	local api = {}
+	for key, value in pairs(QuestTogether.API) do
+		api[key] = value
+	end
+	api.Delay = function(delay, callback)
+		assert(delay == 0, "the live runner must schedule a later frame")
+		callbacks[#callbacks + 1] = callback
+	end
+	QuestTogether.API = api
+	QuestTogether.isRunningTests = false
+	QuestTogether.suppressLocalAnnouncementDisplayDuringTests = false
+	local db, runtime, registry = QuestTogether.db, QuestTogether.runtimeStateStore, QuestTogether.tests
+	local controller = QuestTogether:GetDebugController()
+	-- Presentation is tested separately with owned UI fixtures. The actual
+	-- report and progress storage still run here without touching native UI.
+	controller.ShowLog = function()
+		return true
+	end
+	success, passed, failed, result = QuestTogether:RunTests(arg[2] == "live-reverse", true)
+	assert(success and result.status == "running" and result.completed == 0, "test start must yield before any cases")
+	local selected = 0
+	for _, case in ipairs(registry) do
+		if not case.offline then
+			selected = selected + 1
+		end
+	end
+	assert(
+		result.total == selected and result.skipped == #registry - selected,
+		"live selection must report offline coverage honestly"
+	)
+	assert(controller:RunTests() == false, "overlapping runs must not enter the live singleton")
+	while result.status == "running" do
+		frames = frames + 1
+		assert(frames <= selected + 1, "staggered run failed to complete")
+		local current = callbacks
+		callbacks = {}
+		assert(#current == 1, "each frame must run exactly one callback")
+		local started = os.clock()
+		current[1]()
+		maxCaseSeconds = math.max(maxCaseSeconds, os.clock() - started)
+		assert(
+			QuestTogether.API == api and QuestTogether.db == db and QuestTogether.runtimeStateStore == runtime,
+			"live stores or APIs leaked an isolated fixture between frames"
+		)
+		assert(QuestTogether.tests == registry, "test registry must survive the run")
+		CheckLiveStructuredStores()
+		assert(
+			QuestTogether.isRunningTests == false and QuestTogether.suppressLocalAnnouncementDisplayDuringTests == false,
+			"real addon behavior remained suppressed between frames"
+		)
+		assert(
+			db.profile.runnerSmokeFrame == (frames > 1 and frames - 1 or nil),
+			"live work was overwritten by a later test"
+		)
+		db.profile.runnerSmokeFrame = frames
+	end
+	assert(result.completed == selected and frames == selected, "one complete case must run per frame")
+	assert(controller.runningTests == false and #callbacks == 0, "completed run must retire its scheduled work")
+	success, passed, failed = result.failed == 0, result.passed, result.failed
+	print(controller:GetText("TEST", ""))
+	print(string.format("liveFrames=%d offlineOnly=%d maxFrameCPU=%.4fs", frames, result.skipped, maxCaseSeconds))
+else
+	success, passed, failed, result = QuestTogether:RunTests(arg[2] == "reverse", false)
+end
 assert(result, "Shared debug controller did not return a test result")
+CheckLiveStructuredStores()
 assert(#engineBoundaryCalls == 0, "live-test isolation failure: " .. table.concat(engineBoundaryCalls, ", "))
 -- The shared headless runner already prints failures and the summary through
 -- QT's console adapter; avoid duplicating its presentation here.
 print("registered=" .. tostring(result.total))
 local presentationCases = 0
 for _, case in ipairs(QuestTogether.tests) do
-	if case.locale == "client" then presentationCases = presentationCases + 1 end
+	if case.locale == "client" then
+		presentationCases = presentationCases + 1
+	end
 end
 assert(presentationCases >= 6, "client-locale presentation coverage must be registered")
 print("presentationLocale=" .. QuestTogether.locale .. " cases=" .. presentationCases)

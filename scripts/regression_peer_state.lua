@@ -1,3 +1,16 @@
+-- Explicit typed observation supplied at the private receive boundary.
+-- Short per-field lifetimes exercise expiry boundaries; public v2 snapshots use 600 seconds.
+local function ObserveState(addon, method, field, record, sender)
+	local lifetimes = { QTLF = 65, QTLQ = 65, QTVR = 180, QTPG = 180, QJST = 125, QTHI = 180 }
+	local observation = addon:CreatePeerObservation(sender, field, {
+		source = "snapshot",
+		lifetime = lifetimes[field] or 600,
+		session = type(record) == "table" and record.session or nil,
+		sequence = type(record) == "table" and record.sequence or nil,
+	})
+	return addon[method](addon, record, sender, observation)
+end
+
 -- Private models only: no live frame/global/native API replacement.
 local QT = _G.QuestTogether
 local function Equal(a, b)
@@ -70,7 +83,32 @@ local function Pong(a, shared, age, looking)
 	}
 end
 local function Location(sequence, x)
-	return "1,1000-1," .. sequence .. ",3,12," .. (x or "0.4") .. ",0.6,MAGE,Mage,Human,Alliance,60,0"
+	return {
+		session = "1000-1",
+		sequence = sequence,
+		mask = 3,
+		mapID = 12,
+		x = tonumber(x or 0.4),
+		y = 0.6,
+		classFile = "MAGE",
+		className = "Mage",
+		race = "Human",
+		faction = "Alliance",
+		level = 60,
+		warMode = false,
+	}
+end
+
+local function ReceiveLocation(a, data, name, age, source)
+	local observation = type(age) == "table" and age
+		or a:CreatePeerObservation(name, "LOC", {
+			source = "snapshot",
+			age = age or 0,
+			lifetime = 600,
+			session = source and source.session or data.session,
+			sequence = source and source.sequence or data.sequence,
+		})
+	return a:HandlePlayerLocationMessage(data, name, observation)
 end
 
 QT:RegisterTest("party map filter migration preserves sharing and collapses retired choices", function()
@@ -100,7 +138,7 @@ end)
 QT:RegisterTest("party members never get public or private QT dots or nearby stream slots", function()
 	local a = Fixture()
 	a:AcceptDeveloperPingResponse(Pong(a, true, 0, true), { developerRequest = true })
-	assert(a:HandlePlayerCapabilityMetadata("1,1,0", "Friend-Realm"))
+	assert(ObserveState(a, "HandlePlayerCapabilityMetadata", "QTCI", { streams = true, raceID = 0 }, "Friend-Realm"))
 	Equal(#a:GetNearbyStreamCandidates(), 1)
 	a.partyMembers["Friend-Realm"] = { classFile = "MAGE" }
 	for _, surface in ipairs({ "map", "minimap" }) do
@@ -124,16 +162,37 @@ end)
 
 QT:RegisterTest("diagnostic LFQP refresh uses normal filters and preserves public ordering", function()
 	local a = Fixture()
-	assert(a:HandleQuestPartnerStatusMessage("1,2000-1,5,1", "Friend-Realm"))
+	assert(
+		ObserveState(
+			a,
+			"HandleQuestPartnerStatusMessage",
+			"QTLF",
+			{ session = "2000-1", sequence = 5, looking = true },
+			"Friend-Realm"
+		)
+	)
 	a.now = 105
 	a:AcceptDeveloperPingResponse(Pong(a, true, 0, false), { developerRequest = true })
 	Equal(a:IsPlayerLookingForQuestPartners("Friend-Realm"), false)
 	Equal(a.qtPlayerPresenceState.questPartners["Friend-Realm"].sequence, 5)
 	a.db.profile.onlyShowQuestPartners = true
 	Equal(#a:GetVisiblePlayerLocations("map"), 0)
-	Equal(a:HandleQuestPartnerStatusMessage("1,2000-1,6,1", "Friend-Realm", 20), false)
+	Equal(
+		a:HandleQuestPartnerStatusMessage(
+			{ session = "2000-1", sequence = 6, looking = true },
+			"Friend-Realm",
+			a:CreatePeerObservation("Friend-Realm", "QTLF", { source = "diagnostic", age = 20 })
+		),
+		false
+	)
 	a.now = 110
-	assert(a:HandleQuestPartnerStatusMessage("1,2000-1,6,1", "Friend-Realm", 0))
+	assert(
+		a:HandleQuestPartnerStatusMessage(
+			{ session = "2000-1", sequence = 6, looking = true },
+			"Friend-Realm",
+			a:CreatePeerObservation("Friend-Realm", "QTLF", { source = "diagnostic", age = 0 })
+		)
+	)
 	Equal(#a:GetVisiblePlayerLocations("map"), 1)
 	a:AcceptDeveloperPingResponse(Pong(a, true, 6, false), { developerRequest = true })
 	Equal(a:IsPlayerLookingForQuestPartners("Friend-Realm"), true)
@@ -144,10 +203,10 @@ end)
 
 QT:RegisterTest("diagnostic party imports reject stale snapshots independently from fresh location", function()
 	local a = Fixture()
-	assert(a:HandlePartyVisualMetadata("1,0,,,", "Friend-Realm"))
+	assert(ObserveState(a, "HandlePartyVisualMetadata", "QTPG", { size = 0 }, "Friend-Realm"))
 	a.now = 101
 	local response = Pong(a, true, 20, true)
-	response.partyPayload = "1,2,OldLeader-Realm,MAGE,123"
+	response.party = { size = 2, leader = "OldLeader-Realm", leaderClass = "MAGE", revision = "123" }
 	a:AcceptDeveloperPingResponse(response, { developerRequest = true })
 	Equal(a.partyVisualState.peers["Friend-Realm"].size, 0)
 	Equal(a.playerLocationState.peers["Friend-Realm"].sampledAt, 81)
@@ -156,7 +215,14 @@ QT:RegisterTest("diagnostic party imports reject stale snapshots independently f
 	a:AcceptDeveloperPingResponse(response, { developerRequest = true })
 	Equal(a.partyVisualState.peers["Friend-Realm"].size, 2)
 	Equal(a.partyVisualState.peers["Friend-Realm"].sampledAt, 102)
-	Equal(a:HandlePartyVisualMetadata("1,0,,,", "Friend-Realm", 10), false)
+	Equal(
+		a:HandlePartyVisualMetadata(
+			{ size = 0 },
+			"Friend-Realm",
+			a:CreatePeerObservation("Friend-Realm", "QTPG", { source = "diagnostic", age = 10 })
+		),
+		false
+	)
 end)
 
 QT:RegisterTest("ordered departure clears private dots and fences late replies but permits fresh reentry", function()
@@ -211,34 +277,45 @@ QT:RegisterTest("peer observations carry independent source and lifetime without
 	Equal(a:CreatePeerObservation("Friend-Realm", "LOC", { age = 600 }), nil)
 end)
 
-QT:RegisterTest("legacy departure retains stream counters and permits explicit legacy reentry", function()
+QT:RegisterTest("ordered departure retains topic counters and permits only fresh v2 reentry", function()
 	local a = Fixture()
-	assert(a:HandlePlayerLocationMessage(Location(5), "Friend-Realm"))
-	assert(a:HandleQuestPartnerStatusMessage("1,2000-1,7,1", "Friend-Realm"))
+	assert(ReceiveLocation(a, Location(5), "Friend-Realm"))
+	assert(
+		ObserveState(
+			a,
+			"HandleQuestPartnerStatusMessage",
+			"QTLF",
+			{ session = "2000-1", sequence = 7, looking = true },
+			"Friend-Realm"
+		)
+	)
 	a.now = 101
-	assert(a:HandleQTPlayerPresenceMessage("1,0", "Friend-Realm"))
+	assert(a:RecordPeerDeparture("Friend-Realm", 101, "1000-1", 8))
 	Equal(a:IsKnownQTPlayer("Friend-Realm"), false)
 	Equal(a:IsPlayerLookingForQuestPartners("Friend-Realm"), false)
 	Equal(a.playerLocationState.peers["Friend-Realm"].mask, 0)
 	Equal(a.playerLocationState.peers["Friend-Realm"].x, nil)
 	Equal(a.playerLocationState.peers["Friend-Realm"].sequence, 5)
-	Equal(a.qtPlayerPresenceState.questPartners["Friend-Realm"].sequence, 7)
 	a.now = 102
-	Equal(a:HandlePlayerLocationMessage(Location(5), "Friend-Realm"), false)
-	Equal(a:HandleQuestPartnerStatusMessage("1,2000-1,7,1", "Friend-Realm"), false)
+	Equal(ReceiveLocation(a, Location(5), "Friend-Realm"), false)
 	Equal(a:RecordQTPlayerPresence("Friend-Realm", true), false)
-	assert(a:HandlePlayerLocationMessage(Location(6), "Friend-Realm"))
+	assert(ReceiveLocation(a, Location(9), "Friend-Realm"))
 	Equal(a:IsKnownQTPlayer("Friend-Realm"), true)
 	a.now = 103
-	assert(a:HandleQTPlayerPresenceMessage("1,0", "Friend-Realm"))
-	assert(a:HandleQuestPartnerStatusMessage("1,2000-1,8,1", "Friend-Realm"))
-	Equal(a:IsPlayerLookingForQuestPartners("Friend-Realm"), true)
-	assert(a:HandleQTPlayerPresenceMessage("1,0", "Friend-Realm"))
-	assert(a:HandleQTPlayerPresenceMessage("1,1", "Friend-Realm"))
+	assert(a:RecordPeerDeparture("Friend-Realm", 103, "1000-1", 10))
+	local stale = a:CreatePeerObservation(
+		"Friend-Realm",
+		"QTPR",
+		{ source = "snapshot", age = 1, session = "1000-1", sequence = 9 }
+	)
+	Equal(a:HandleQTPlayerPresenceMessage({ active = true }, "Friend-Realm", stale), false)
+	local fresh = a:CreatePeerObservation(
+		"Friend-Realm",
+		"QTPR",
+		{ source = "snapshot", age = 0, session = "1000-1", sequence = 11 }
+	)
+	assert(a:HandleQTPlayerPresenceMessage({ active = true }, "Friend-Realm", fresh))
 	Equal(a:IsKnownQTPlayer("Friend-Realm"), true)
-	a.now = 104
-	assert(a:RecordPeerDeparture("Friend-Realm", 104, "9000-1", 20))
-	Equal(a:HandleQTPlayerPresenceMessage("1,1", "Friend-Realm"), false)
 end)
 
 QT:RegisterTest(
@@ -246,19 +323,14 @@ QT:RegisterTest(
 	function()
 		local a = Fixture()
 		a.now = 100.8
-		assert(a:HandlePlayerLocationMessage(Location(1), "Friend-Realm", 0, { session = "9000-1", sequence = 1 }))
+		assert(ReceiveLocation(a, Location(1), "Friend-Realm", 0, { session = "9000-1", sequence = 1 }))
 		a.now = 101.2
-		assert(
-			a:HandlePlayerLocationMessage(Location(2, "0.5"), "Friend-Realm", 1, { session = "9000-1", sequence = 2 })
-		)
+		assert(ReceiveLocation(a, Location(2, "0.5"), "Friend-Realm", 1, { session = "9000-1", sequence = 2 }))
 		Equal(a.playerLocationState.peers["Friend-Realm"].x, 0.5)
 		a.now = 102.8
 		a:AcceptDeveloperPingResponse(Pong(a, true, 0, false), { developerRequest = true })
 		a.now = 103.2
-		Equal(
-			a:HandlePlayerLocationMessage(Location(3), "Friend-Realm", 1, { session = "9000-1", sequence = 3 }),
-			false
-		)
+		Equal(ReceiveLocation(a, Location(3), "Friend-Realm", 1, { session = "9000-1", sequence = 3 }), false)
 		Equal(a.playerLocationState.peers["Friend-Realm"].x, 0.42)
 	end
 )
@@ -266,12 +338,12 @@ QT:RegisterTest(
 QT:RegisterTest("dense location admission reuses unchanged peer world projections", function()
 	local a = Fixture()
 	for i = 1, 512 do
-		assert(a:HandlePlayerLocationMessage(Location(1), "Peer" .. i .. "-Realm"))
+		assert(ReceiveLocation(a, Location(1), "Peer" .. i .. "-Realm"))
 	end
-	assert(a:HandlePlayerLocationMessage(Location(1, "0.9"), "Far-Realm"))
+	assert(ReceiveLocation(a, Location(1, "0.9"), "Far-Realm"))
 	local first = a.projections
 	assert(first >= 512 and first <= 514)
-	assert(a:HandlePlayerLocationMessage(Location(1, "0.95"), "Farther-Realm"))
+	assert(ReceiveLocation(a, Location(1, "0.95"), "Farther-Realm"))
 	Equal(a.projections - first, 1)
 	local row = a.playerLocationState.peers["Peer1-Realm"]
 	local origin = a:GetPlayerLocationPriorityOrigin()
@@ -286,10 +358,10 @@ QT:RegisterTest(
 	"observation admission rejects expired and mismatched producers without retiring a live peer",
 	function()
 		local a = Fixture()
-		assert(a:HandleQTPlayerPresenceMessage("1,1", "Friend-Realm"))
+		assert(ObserveState(a, "HandleQTPlayerPresenceMessage", "QTPR", { active = true }, "Friend-Realm"))
 		local wrong =
 			a:CreatePeerObservation("Other-Realm", "QTPR", { source = "snapshot", session = "1-1", sequence = 1 })
-		Equal(a:HandleQTPlayerPresenceMessage("1,0", "Friend-Realm", wrong), false)
+		Equal(a:HandleQTPlayerPresenceMessage({ active = false }, "Friend-Realm", wrong), false)
 		Equal(a:IsKnownQTPlayer("Friend-Realm"), true)
 		local expired = a:CreatePeerObservation(
 			"Friend-Realm",
@@ -297,7 +369,7 @@ QT:RegisterTest(
 			{ source = "snapshot", lifetime = 65, session = "1-1", sequence = 1 }
 		)
 		a.now = 165
-		Equal(a:HandleQTPlayerPresenceMessage("1,0", "Friend-Realm", expired), false)
+		Equal(a:HandleQTPlayerPresenceMessage({ active = false }, "Friend-Realm", expired), false)
 		Equal(a:IsKnownQTPlayer("Friend-Realm"), true)
 	end
 )
@@ -311,10 +383,16 @@ QT:RegisterTest("metadata observations stamp domain records without extending sa
 			{ source = "snapshot", age = 20, session = "1-1", sequence = 1, stamp = 1700000000 }
 		)
 	end
-	assert(a:HandlePlayerLocationMessage(Location(1), "Friend-Realm", Observe("LOC")))
-	assert(a:HandlePartyVisualMetadata("1,0,,,", "Friend-Realm", Observe("QTPG")))
-	assert(a:HandlePlayerCapabilityMetadata("1,1,0,1", "Friend-Realm", Observe("QTCI")))
-	assert(a:HandleQuestPartnerStatusMessage("1,2000-1,1,1", "Friend-Realm", Observe("QTLF")))
+	assert(ReceiveLocation(a, Location(1), "Friend-Realm", Observe("LOC")))
+	assert(a:HandlePartyVisualMetadata({ size = 0 }, "Friend-Realm", Observe("QTPG")))
+	assert(a:HandlePlayerCapabilityMetadata({ streams = true, raceID = 0 }, "Friend-Realm", Observe("QTCI")))
+	assert(
+		a:HandleQuestPartnerStatusMessage(
+			{ session = "2000-1", sequence = 1, looking = true },
+			"Friend-Realm",
+			Observe("QTLF")
+		)
+	)
 	local records = {
 		a.playerLocationState.peers["Friend-Realm"],
 		a.partyVisualState.peers["Friend-Realm"],
@@ -329,6 +407,19 @@ QT:RegisterTest("metadata observations stamp domain records without extending sa
 		Equal(row.observationSource, "snapshot")
 	end
 	a.now = 110
-	Equal(a:HandlePlayerLocationMessage(Location(2), "Friend-Realm", Observe("LOC")), false)
+	Equal(ReceiveLocation(a, Location(2), "Friend-Realm", Observe("LOC")), false)
 	Equal(records[1].expiresAt, 680)
+end)
+
+QT:RegisterTest("peer metadata rejects missing scalar or misbound observations", function()
+	local a = Fixture()
+	local name = "Friend-Realm"
+	Equal(a:CreatePeerObservation(name, "QTVR"), nil)
+	Equal(a:ResolvePeerObservation(name, "QTVR", 0), nil)
+	Equal(a:HandleAddonVersionMessage({ version = "7.0.0" }, name), false)
+	Equal(a:HandleAddonVersionMessage({ version = "7.0.0" }, name, 0), false)
+	local wrong = a:CreatePeerObservation(name, "LOC", { source = "snapshot" })
+	Equal(a:HandleAddonVersionMessage({ version = "7.0.0" }, name, wrong), false)
+	local correct = a:CreatePeerObservation(name, "QTVR", { source = "snapshot" })
+	assert(a:HandleAddonVersionMessage({ version = "7.0.0" }, name, correct))
 end)

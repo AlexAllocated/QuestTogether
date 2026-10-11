@@ -1,24 +1,12 @@
--- Addon-owned subscriptions, bounded outbound scheduling, and compact presence.
--- No server phase identifiers: regional names depend only on the zone map ID.
+-- Geographic interest and publication cadence. Encoding, admission, framing and
+-- native delivery belong to the shared communications coordinator/transport.
 local QT = _G.QuestTogether
-local STATE_COMMANDS = { LOC = true, QTPR = true, QTVR = true, QTLF = true, QTLQ = true, QJST = true, QTPG = true, QTCI = true, QTHI = true }
 local ORDER = { "QTPR", "QTVR", "QJST", "QTLF", "QTLQ", "LOC", "QTPG", "QTCI", "QTHI" }
-local HANDLERS = {
-	LOC = "HandlePlayerLocationMessage",
-	QTPR = "HandleQTPlayerPresenceMessage",
-	QTVR = "HandleAddonVersionMessage",
-	QTLF = "HandleQuestPartnerStatusMessage",
-	QTLQ = "HandleQuestPartnerQuestMessage",
-	QJST = "HandlePartyJoinMetadata",
-	QTPG = "HandlePartyVisualMetadata",
-	QTCI = "HandlePlayerCapabilityMetadata",
-	QTHI = "HandlePlayerDetailsIdentity",
-}
-local SNAPSHOT_LIFETIME = 600
-
-function QT:GetGeographicSnapshotLifetime()
-	return SNAPSHOT_LIFETIME
+local TOPICS = {}
+for _, topic in ipairs(ORDER) do
+	TOPICS[topic] = true
 end
+local SNAPSHOT_LIFETIME = 600
 local function Now(a)
 	return a:SafeToNumber(a.API.GetTime and a.API.GetTime()) or 0
 end
@@ -29,25 +17,63 @@ local function Random(a, low, high)
 	local n = a:SafeToNumber(a.API.Random and a.API.Random(low, high)) or low
 	return math.max(low, math.min(high, n))
 end
+local function Active(a)
+	return a.isEnabled
+		and not a.isLoggingOut
+		and not a:IsRuntimeRestricted()
+		and not a:IsRuntimeRestrictionTypeActive("chat")
+end
+local function Copy(record)
+	local copy = {}
+	for key, value in pairs(record) do
+		copy[key] = value
+	end
+	return copy
+end
+local function Equal(a, b)
+	if not a or not b then
+		return a == b
+	end
+	for key, value in pairs(a) do
+		if b[key] ~= value then
+			return false
+		end
+	end
+	for key, value in pairs(b) do
+		if a[key] ~= value then
+			return false
+		end
+	end
+	return true
+end
+local function FinishReceipt(receipt, sent, reason, code, ticket)
+	if not receipt or receipt.done then
+		return
+	end
+	receipt.done = true
+	if receipt.options.onComplete then
+		pcall(receipt.options.onComplete, sent, reason, code, ticket)
+	end
+end
 
+function QT:GetGeographicSnapshotLifetime()
+	return SNAPSHOT_LIFETIME
+end
 function QT:InitializeGeographicComms()
-	self:InitializeTransport()
 	if rawget(self, "geographicCommsState") then
 		return
 	end
+	local now = Now(self)
 	self.geographicCommsState = {
 		subscriptions = {},
 		latest = {},
-		locationFingerprints = {},
+		routes = {},
+		discovery = {},
 		peers = {},
 		peerCount = 0,
-		startedAt = Now(self),
-		sequence = 0,
-		session = string.format("%d-%d", math.floor(Now(self) * 1000), Random(self, 1000, 999999)),
-		nextGlobal = Now(self) + Random(self, 2, 12),
-		nextLocal = Now(self) + Random(self, 1, 10),
+		startedAt = now,
+		nextGlobal = now + Random(self, 2, 12),
 	}
-	self.geographicCommsState.nextLocalMetadata = self.geographicCommsState.nextLocal
 end
 
 function QT:GetGeographicZoneID(mapID)
@@ -152,9 +178,17 @@ function QT:UpdateGeographicSubscriptions()
 			for index = 2, #channels, 3 do
 				local name = self:SafeToString(channels[index], "")
 				local zone = tonumber(name:lower():match("^questtogetherz([1-9]%d*)$"))
-				if zone and zone <= 1000000 and not desired["QuestTogetherZ" .. zone] and not s.subscriptions["QuestTogetherZ" .. zone] and self.API.LeaveChannelByName then
+				if
+					zone
+					and zone <= 1000000
+					and not desired["QuestTogetherZ" .. zone]
+					and not s.subscriptions["QuestTogetherZ" .. zone]
+					and self.API.LeaveChannelByName
+				then
 					local left, result = pcall(self.API.LeaveChannelByName, name)
-					if not left or result == false then s.reconciledChannels = false end
+					if not left or result == false then
+						s.reconciledChannels = false
+					end
 				end
 			end
 		end
@@ -165,11 +199,21 @@ function QT:UpdateGeographicSubscriptions()
 				pcall(self.API.LeaveChannelByName, name)
 			end
 			s.subscriptions[name] = nil
-			s.locationFingerprints[name] = nil
-			if self.announcementChannelBindings then self.announcementChannelBindings[name] = nil end
+			s.routes[name] = nil
+			self:CancelCommunicationOwner("geography:" .. name, "cancelled")
+			if self.announcementChannelBindings then
+				self.announcementChannelBindings[name] = nil
+			end
 		end
 	end
 	for name in pairs(desired) do
+		if not s.subscriptions[name] then
+			local zone = tonumber(name:match("(%d+)$"))
+			local query = s.discovery[zone] or {}
+			s.discovery[zone] = query
+			query.dueAt =
+				math.max(now + Random(self, 2, 5), (query.heardAt or -60) + 60, (query.acceptedAt or -60) + 60)
+		end
 		s.subscriptions[name] = true
 		if not self:GetAnnouncementChannelLocalID(name) and self:EnsureAnnouncementChannelJoined(name) then
 			self:ScheduleAnnouncementChannelOrder()
@@ -178,59 +222,128 @@ function QT:UpdateGeographicSubscriptions()
 	s.currentZone = current
 	local channel = current and ("QuestTogetherZ" .. current) or nil
 	if channel ~= s.currentChannel then
-		s.currentChannel, s.nextLocal = channel, now + Random(self, 1, 10)
-		s.nextLocalMetadata = s.nextLocal
-		s.discoveryRequestAt = channel and (now + Random(self, 2, 5)) or nil
+		s.currentChannel = channel
+		if channel then
+			s.routes[channel] = nil
+		end
 	end
 end
 
--- A startup/zone-entry nudge, not another heartbeat. All arrivals benefit from
--- one shared regional response; never solicit the global or viewed-zone audience.
+-- Interest queries are shared by everyone subscribed to a zone. A viewed-zone
+-- query never asks the global audience, and only residents of that zone answer.
 function QT:UpdateGeographicDiscovery()
 	local s, now = rawget(self, "geographicCommsState"), Now(self)
-	if not s or not self.isEnabled or self.isLoggingOut or self:IsRuntimeRestricted()
-		or self:IsRuntimeRestrictionTypeActive("chat") or not s.discoveryRequestAt
-		or self:GetOption("showPlayerLocations") ~= true
-		or now < s.discoveryRequestAt or not s.currentChannel
-		or not self:GetAnnouncementChannelLocalID(s.currentChannel) then return end
-	if s.lastDiscoveryRequestAt and now - s.lastDiscoveryRequestAt < 60 then return end
-	if self:QueueGeographicWire("QTDQ|1," .. s.currentZone, "zone discovery", Channel(s.currentChannel), true, "zone-discovery") then
-		s.discoveryRequestAt, s.lastDiscoveryRequestAt = nil, now
+	if not s or not Active(self) or self:GetOption("showPlayerLocations") ~= true then
+		return
+	end
+	for channel in pairs(s.subscriptions) do
+		local zone = tonumber(channel:match("(%d+)$"))
+		local query = s.discovery[zone]
+		if
+			query
+			and query.dueAt
+			and now >= query.dueAt
+			and not query.pending
+			and self:GetAnnouncementChannelLocalID(channel)
+		then
+			local pending = {}
+			query.pending = pending
+			local admitted = self:Emit("QTDQ", { zone = zone }, { Channel(channel) }, {
+				owner = query,
+				key = "discovery:" .. zone,
+				priority = "background",
+				expires = now + 5,
+				isCurrent = function()
+					return rawget(self, "geographicCommsState") == s
+						and Active(self)
+						and s.subscriptions[channel]
+						and query.pending == pending
+						and self:GetOption("showPlayerLocations") == true
+				end,
+				onComplete = function(sent)
+					if query.pending ~= pending then
+						return
+					end
+					query.pending = nil
+					if sent then
+						query.acceptedAt, query.dueAt = Now(self), nil
+					else
+						query.dueAt = math.max(Now(self) + 5, (query.heardAt or -60) + 60)
+					end
+				end,
+			})
+			if not admitted and query.pending == pending then
+				query.pending, query.dueAt = nil, now + 5
+			end
+		end
+	end
+	-- Visiting many zones must not grow historical query bookkeeping forever.
+	for zone, query in pairs(s.discovery) do
+		if
+			not s.subscriptions["QuestTogetherZ" .. zone]
+			and not query.pending
+			and now - math.max(query.heardAt or 0, query.acceptedAt or 0, query.dueAt or 0) > 60
+		then
+			s.discovery[zone] = nil
+		end
 	end
 end
 
-function QT:HandleGeographicDiscovery(payload, sender, channel, id, name)
+function QT:HandleGeographicDiscovery(record, sender, context)
 	local s, now = rawget(self, "geographicCommsState"), Now(self)
-	if not s or not self.isEnabled or self.isLoggingOut or self:IsRuntimeRestricted()
-		or self:IsRuntimeRestrictionTypeActive("chat") or self:SafeToString(channel, "") ~= "CHANNEL" then return false end
-	local zone = self:CanAccessValue(payload) and type(payload) == "string" and tonumber(payload:match("^1,([1-9]%d*)$"))
-	if not zone or zone ~= s.currentZone or not s.currentChannel then return false end
-	-- Check the actual channel, not merely the zone claimed in the payload.
-	local actual = self:SafeToString(name, ""):gsub("^%d+%.%s+", ""):lower()
+	if not s or not Active(self) or type(record) ~= "table" or type(context) ~= "table" then
+		return false
+	end
+	local zone = self:SafeToNumber(record.zone)
+	if not zone or zone < 1 or zone > 1000000 or zone ~= math.floor(zone) then
+		return false
+	end
+	local channel = "QuestTogetherZ" .. zone
+	if not s.subscriptions[channel] or (context.distribution or context.channel) ~= "CHANNEL" then
+		return false
+	end
+	local actual = self:SafeToString(context.channelName, ""):gsub("^%d+%.%s+", ""):lower()
 	if actual ~= "" then
-		if actual ~= s.currentChannel:lower() then return false end
-	else
-		local expected = self:GetAnnouncementChannelLocalID(s.currentChannel)
-		if not expected or self:SafeToNumber(id) ~= expected then return false end
+		if actual ~= channel:lower() then
+			return false
+		end
+	elseif
+		not self:GetAnnouncementChannelLocalID(channel)
+		or self:SafeToNumber(context.localID or context.channelID) ~= self:GetAnnouncementChannelLocalID(channel)
+	then
+		return false
 	end
-	local peer = self:NormalizeMemberName(sender)
-	if not peer or self:IsSelfSender(peer) or self:IsIgnoredPlayerName(peer) then return false end
-	self:RecordQTPlayerPresence(peer, true)
-	-- A neighbor already asked for the same shared snapshots. Coalesce our own
-	-- pending query as well as repeated requests from different newcomers.
-	s.discoveryRequestAt = nil
-	self:CancelTransportWhere(function(row) return row.key == "zone-discovery" end)
-	if s.lastDiscoveryResponseAt and now - s.lastDiscoveryResponseAt < 60 then return true end
-	s.lastDiscoveryResponseAt = now
-	if not self:CanPublishPlayerLocation() then return true end
-	local count = 0
-	for _, record in pairs(s.peers) do
-		if record.zone == zone and now >= record.at and now - record.at < SNAPSHOT_LIFETIME then count = count + 1 end
+	local name = self:NormalizeMemberName(sender)
+	if not name or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then
+		return false
 	end
-	-- Around 32 responders per request in a known crowded zone, not thousands.
-	-- This is a probabilistic traffic budget; normal heartbeats fill the remainder.
-	if count > 32 and Random(self, 1, count) > 32 then return true end
-	s.nextLocalMetadata = math.min(s.nextLocalMetadata or s.nextLocal, now + Random(self, 2, 20))
+	local query = s.discovery[zone] or {}
+	s.discovery[zone] = query
+	query.heardAt, query.dueAt = now, nil
+	local pending = query.pending
+	query.pending = nil
+	if pending then
+		self:CancelCommunicationOwner(query, "cancelled")
+	end
+	if zone ~= s.currentZone or not self:CanPublishPlayerLocation() then
+		return true
+	end
+	if query.responseAt and now - query.responseAt < 60 then
+		return true
+	end
+	query.responseAt = now
+	local count = self:GetGeographicZonePopulation(zone)
+	-- Each resident answers at most once/minute. Density-aware selection reduces
+	-- a known crowded zone's expected response burst; ordinary updates fill gaps.
+	if count > 32 and Random(self, 1, count) > 32 then
+		return true
+	end
+	local route = s.routes[channel]
+	if not route then
+		route = { nextLocation = now + 1, nextMetadata = now + 20 }
+		s.routes[channel] = route
+	end
+	route.nextMetadata = math.min(route.nextMetadata, now + Random(self, 2, 20))
 	return true
 end
 
@@ -243,380 +356,289 @@ function QT:GetGeographicAnnouncementRoutes()
 	if group then
 		routes[#routes + 1] = { distribution = group }
 	end
-	-- Current zone only, never the remote zone the map happens to display.
-	local name = s.currentChannel
-	if not name or not self:GetAnnouncementChannelLocalID(name) then
-		name = self.announcementChannelName
+	local channel = s.currentChannel
+	if not channel or not self:GetAnnouncementChannelLocalID(channel) then
+		channel = self.announcementChannelName
 	end
-	routes[#routes + 1] = Channel(name)
+	routes[#routes + 1] = Channel(channel)
 	return routes
 end
 
--- Staging acknowledges bounded addon-owned storage, not native delivery.
--- Every state has just one slot; a withdrawal replaces the old publication.
-function QT:StageGeographicState(wire)
-	local s = rawget(self, "geographicCommsState")
-	local command, payload = self:DeserializeWireMessage(wire)
-	if not s or not STATE_COMMANDS[command] then
-		return nil
+-- Producer-owned primitive records are copied when staged. Their sample time is
+-- retained through later publication; receipt cannot make old metadata fresh.
+function QT:StageCommunicationState(topic, record, options)
+	local s, now = rawget(self, "geographicCommsState"), Now(self)
+	if not s or not TOPICS[topic] or type(record) ~= "table" then
+		return false
 	end
-	local now, old = Now(self), s.latest[command]
-	-- Retain extended tooltip metadata when alternating legacy QTVR forms.
-	if command == "QTVR" and payload:sub(1, 2) == "1," and old and old.wire:sub(6, 7) == "2," then
-		return true
+	options = options or {}
+	local old = s.latest[topic]
+	local sampledAt = options.sampledAt or self:GetAnnouncementServerTime() or 0
+	local revision = old and old.sampledAt == sampledAt and Equal(old.data, record) and old.revision
+		or self:NextCommunicationSequence()
+	local receipt = old and Equal(old.data, record) and not old.receipt.done and old.receipt or nil
+	if not receipt then
+		if old then
+			FinishReceipt(old.receipt, false, "superseded")
+		end
+		receipt = {}
 	end
-	s.latest[command] = { wire = wire, at = now }
-	local changedStatus = (old ~= nil or now - s.startedAt > 12)
-		and command == "QTLF"
-		and (not old or old.wire:match(",([01])$") ~= wire:match(",([01])$"))
-	local changedParty = command == "QTPG" and (not old or old.wire ~= wire)
-	local withdrawal = command == "LOC" and payload:match("^1,[^,]+,%d+,0$")
-	local changedLocationConsent = withdrawal and (not old or not old.wire:match("^LOC|1,[^,]+,%d+,0$"))
-	if changedLocationConsent or changedStatus or changedParty or (command == "QTPR" and payload == "1,0") then
+	receipt.options = options
+	s.latest[topic] = {
+		data = Copy(record),
+		at = now,
+		sampledAt = sampledAt,
+		revision = revision,
+		options = options,
+		receipt = receipt,
+	}
+	local withdrawal = topic == "LOC" and record.mask == 0
+	local changed = topic == "QTPR" and record.active == false
+		or topic == "QTLF" and old and old.data.looking ~= record.looking
+		or topic == "QTPG" and (not old or not Equal(old.data, record))
+		or withdrawal and (not old or old.data.mask ~= 0)
+	if changed then
 		s.nextGlobal = math.min(s.nextGlobal, math.max(now + 1, (s.lastGlobal or 0) + 10))
-		s.nextLocal = math.min(s.nextLocal, now + 1)
-		s.nextLocalMetadata = math.min(s.nextLocalMetadata or 0, now + 1)
-		-- Discard already packed positions/status; never let them follow a clear.
-		self:CancelTransportWhere(function(row) return row.snapshot or (withdrawal and row.publishesLocation) end)
+		for key, route in pairs(s.routes) do
+			route.nextLocation, route.nextMetadata =
+				math.min(route.nextLocation, now + 1), math.min(route.nextMetadata, now + 1)
+			self:CancelCommunicationOwner("geography:" .. key, "cancelled")
+		end
+		if withdrawal then
+			self:CancelCommunicationWhere(function(row)
+				return row.publishesLocation == true
+			end)
+		end
 	end
 	return true
 end
 
--- Length-prefixed inner messages retain the existing strict decoders. The
--- envelope permits only presence data, never recursively nested/control messages.
-function QT:BuildGeographicSnapshots(locationOnly, entries)
+function QT:BuildCommunicationStateRecords(locationOnly, topics)
 	local s, now = rawget(self, "geographicCommsState"), Now(self)
+	local records, entries = {}, {}
 	if not s then
-		return {}
+		return records, entries
 	end
-	local stamp = self:GetAnnouncementServerTime() or 0
-	s.sequence = s.sequence + 1
-	local header = "QTB1|1," .. stamp .. "," .. s.session .. "," .. s.sequence .. ";"
-	local packets, packet = {}, header
-	local latest = entries or s.latest
-	local version = latest.QTVR
-	local versionText = version and (version.wire:match("^QTVR|1,(.+)$") or version.wire:match("^QTVR|2,([^,]+),%d*,%d*$"))
-	local hasVersionPresence = version and now >= version.at and now - version.at <= 180
-		and self:ParseAddonVersion(versionText)
-	for _, command in ipairs(ORDER) do
-		local entry = latest[command]
-		local maxAge = command == "LOC" and 35 or (command == "QTVR" and 180 or 90)
-		local isLocationUpdate = command == "LOC" and entry and not entry.wire:match("^LOC|1,[^,]+,%d+,0$")
-		local redundantPresence = command == "QTPR" and entry and entry.wire == "QTPR|1,1" and hasVersionPresence
-		if entry and not redundantPresence and (not locationOnly or isLocationUpdate) and now >= entry.at and now - entry.at <= maxAge then
-			local wire = entry.wire
-			-- Optional localized labels never displace position/status. Receivers
-			-- resolve quest titles locally when the title cannot fit the envelope.
-			if #wire > 160 and command == "QTLQ" then
-				wire = wire:match("^(QTLQ|1,[^,]+,%d+,%d+,)") or wire
-			end
-			if #wire > 160 and command == "LOC" then
-				local fields = {}
-				for field in (wire .. ","):gmatch("(.-),") do
-					fields[#fields + 1] = field
-				end
-				fields[9], fields[10] = "", ""
-				wire = table.concat(fields, ",")
-			end
-			local part = math.floor(now - entry.at) .. "," .. #wire .. ":" .. wire
-			if #header + #part <= 255 then
-				-- Older receivers reject unknown inner commands. Isolate new metadata
-				-- so their established location/presence packets remain readable.
-				if #packet + #part > 255 or ((command == "QTPG" or command == "QTCI") and packet ~= header) then
-					packets[#packets + 1], packet = packet, header
-				end
-				packet = packet .. part
-			end
+	for _, topic in ipairs(ORDER) do
+		local entry = s.latest[topic]
+		local maxAge = topic == "LOC" and 35 or (topic == "QTVR" and 180 or 90)
+		if
+			entry
+			and (not topics or topics[topic])
+			and (not locationOnly or topic == "LOC")
+			and now >= entry.at
+			and now - entry.at <= maxAge
+			and (not entry.options.isCurrent or entry.options.isCurrent())
+		then
+			records[#records + 1] =
+				{ topic = topic, data = Copy(entry.data), sampledAt = entry.sampledAt, revision = entry.revision }
+			entries[#entries + 1] = { topic = topic, receipt = entry.receipt }
 		end
 	end
-	if packet ~= header then
-		packets[#packets + 1] = packet
-	end
-	return packets
+	return records, entries
 end
 
-function QT:HandleGeographicSnapshot(payload, sender)
-	if not self:CanAccessValue(payload) or type(payload) ~= "string" or #payload > 250 then
-		return false
+-- The coordinator invokes this only after normal LOC admission. This index is
+-- routing density, not another location source or a second freshness authority.
+function QT:RecordGeographicPeerLocation(name, record, observation)
+	local s = rawget(self, "geographicCommsState")
+	if not s then
+		return
 	end
-	local stamp, session, sequence, rest = payload:match("^1,(%d+),(%d+%-%d+),(%d+);(.*)$")
-	sequence = self:SafeToNumber(sequence)
-	if not session or #session > 40 or not sequence or sequence < 1 or sequence > 2147483647 then
-		return false
-	end
-	stamp = self:SafeToNumber(stamp)
-	if not stamp or (stamp ~= 0 and (stamp < 1000000000 or stamp >= 100000000000)) then
-		return false
-	end
-	local serverNow = self:GetAnnouncementServerTime()
-	local transit = stamp ~= 0 and serverNow and serverNow - stamp or 0
-	if transit < -5 or transit >= SNAPSHOT_LIFETIME then
-		return false
-	end
-	transit = math.max(0, transit)
-	local entries, seen = {}, {}
-	while rest ~= "" do
-		local age, length, start = rest:match("^(%d+),(%d+):()")
-		age, length = tonumber(age), tonumber(length)
-		if not age or age > 180 or not length or length < 6 or length > #rest - (start or 1) + 1 then
-			return false
+	s.density = nil
+	if not record or record.mask == 0 then
+		if s.peers[name] then
+			s.peerCount = math.max(0, (s.peerCount or 1) - 1)
 		end
-		local wire = rest:sub(start, start + length - 1)
-		local command, data = self:DeserializeWireMessage(wire)
-		if not STATE_COMMANDS[command] or seen[command] then
-			return false
-		end
-		seen[command] = true
-		entries[#entries + 1] = { command = command, data = data, age = age + transit }
-		rest = rest:sub(start + length)
-	end
-	if #entries == 0 then
-		return false
+		s.peers[name] = nil
+		return
 	end
 	local now = Now(self)
-	local s = rawget(self, "geographicCommsState")
+	if not s.peers[name] then
+		s.peerCount = (s.peerCount or 0) + 1
+	end
+	s.peers[name] = {
+		zone = self:GetGeographicZoneID(record.mapID),
+		expires = observation and observation.expiresAt or now + SNAPSHOT_LIFETIME,
+		at = now,
+	}
+	if not s.prunedAt or now < s.prunedAt or now - s.prunedAt >= 1 then
+		s.prunedAt, s.peerCount = now, 0
+		for peer, value in pairs(s.peers) do
+			if now >= value.expires or now < value.at then
+				s.peers[peer] = nil
+			else
+				s.peerCount = s.peerCount + 1
+			end
+		end
+	end
+	if s.peerCount > 2048 then
+		local oldest, oldestAt
+		for peer, value in pairs(s.peers) do
+			if not oldestAt or value.at < oldestAt then
+				oldest, oldestAt = peer, value.at
+			end
+		end
+		s.peers[oldest], s.peerCount = nil, s.peerCount - 1
+	end
+end
+function QT:GetGeographicZonePopulation(zone)
+	local s, now, count = rawget(self, "geographicCommsState"), Now(self), 0
 	if not s then
-		return false
+		return count
 	end
-	local name = self:NormalizeMemberName(sender)
-	if not name or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then
-		return false
+	local cached = s.density
+	if cached and cached.zone == zone and now >= cached.at and now < cached.untilAt then
+		return cached.count
 	end
-	sender = name
-	if not self:CanAcceptPeerEpoch(sender, session, stamp) then return false end
-	local peer = s.peers[sender]
-	local previous = peer
-	local provisional = false
-	if peer and now >= peer.at and now - peer.at < SNAPSHOT_LIFETIME then
-		for _, retired in ipairs(peer.retired) do
-			if retired == session then
-				return false
-			end
+	local untilAt = now + 1
+	for _, peer in pairs(s.peers) do
+		if peer.zone == zone and now >= peer.at and now < peer.expires then
+			count = count + 1
+			untilAt = math.min(untilAt, peer.expires)
 		end
-		if peer.session ~= session then
-			-- Independent global, zone and requested-detail routes can deliver an
-			-- old epoch for the first time after its replacement. Never retire the
-			-- working session just because that unseen packet parsed successfully.
-			-- An unstamped or same-second candidate cannot prove that it replaced
-			-- this epoch. Wait for a strictly newer publication instead of retiring
-			-- a live session on an ambiguous cross-route arrival.
-			if peer.stamp and (stamp == 0 or stamp <= peer.stamp) then return false end
-			local retired = {}
-			for index, old in ipairs(peer.retired) do retired[index] = old end
-			retired[#retired + 1] = peer.session
-			if #retired > 4 then table.remove(retired, 1) end
-			peer = { session = session, commands = {}, retired = retired,
-				at = now, zone = peer.zone, mapID = peer.mapID }
-			provisional = true
-		end
+	end
+	s.density = { zone = zone, at = now, untilAt = untilAt, count = count }
+	return count
+end
+local function Intervals(a, count)
+	local interval
+	if count < 10 then
+		interval = 1
+	elseif count < 20 then
+		interval = 5
+	elseif count < 100 then
+		interval = 5 + math.floor((count - 20) / 8)
+	elseif count < 500 then
+		interval = 15 + math.floor((count - 100) * 30 / 400)
 	else
-		peer = { session = session, commands = {}, retired = {}, at = now }
-		provisional = true
+		interval = math.min(90, 20 + math.floor(count / 20))
 	end
- for _, entry in ipairs(entries) do
-  local observation = self:CreatePeerObservation(sender, entry.command, {
-   source = "snapshot", age = entry.age, lifetime = SNAPSHOT_LIFETIME,
-   session = session, sequence = sequence, stamp = stamp,
-  })
-  if sequence > (peer.commands[entry.command] or 0) and self:CanAcceptPeerObservation(observation) then
-   local accepted, record = self[HANDLERS[entry.command]](self, entry.data, sender, observation)
-   if accepted then
-    self:RecordPeerEpoch(sender, session, stamp)
-    if provisional then
-     if not previous then s.peerCount = (s.peerCount or 0) + 1 end
-     s.peers[sender], provisional = peer, false
-    end
-    peer.commands[entry.command], peer.at = sequence, now
-    if stamp ~= 0 then peer.stamp = math.max(peer.stamp or 0, stamp) end
-    -- Routing consumes the domain result; it never reaches into payload caches.
-    if entry.command == "LOC" and record then
-     if record.mask == 0 then peer.zone, peer.mapID = nil, nil
-     elseif record.mapID ~= peer.mapID then
-      peer.zone, peer.mapID = self:GetGeographicZoneID(record.mapID), record.mapID
-     end
-    end
-   end
-  end
- end
-	local s = rawget(self, "geographicCommsState")
-	if s then
-		-- Expiry is coarse (minutes), so scanning every peer for every packet
-		-- adds quadratic work during a busy-zone burst without improving freshness.
-		if not s.prunedAt or now < s.prunedAt or now - s.prunedAt >= 1 then
-			s.prunedAt, s.peerCount = now, 0
-			for name, record in pairs(s.peers) do
-				local at = record.at
-				if now < at or now - at >= SNAPSHOT_LIFETIME then
-					s.peers[name] = nil
-				else
-					s.peerCount = s.peerCount + 1
-				end
-			end
-		end
-		if s.peerCount > 2048 then
-			local oldest, at
-			for name, record in pairs(s.peers) do
-				if not at or record.at < at then
-					oldest, at = name, record.at
-				end
-			end
-			s.peers[oldest] = nil
-			s.peerCount = s.peerCount - 1
-		end
-	end
-	return true
+	return interval + (count < 10 and 0 or Random(a, 0, 5)), math.min(90, 20 + math.floor(count / 20)) + Random(a, 0, 5)
 end
-
--- Geographic producers submit ordinary transport descriptors; transport state
--- and delivery policy no longer live in subscriptions/presence state.
-function QT:QueueGeographicWire(wire, context, route, snapshot, key, options)
-	local descriptor = {}
-	for field, value in pairs(options or {}) do descriptor[field] = value end
-	descriptor.snapshot, descriptor.key = snapshot, key or descriptor.key
-	if snapshot then descriptor.priority = "snapshot" end
-	return self:SendWireMessageToAnnouncementRoutes(wire, context, { route }, false, descriptor)
-end
-function QT:DrainGeographicQueue() return self:DrainTransport() end
 
 function QT:UpdateGeographicComms()
 	local s, now = rawget(self, "geographicCommsState"), Now(self)
-	if not s or not self.isEnabled or self.isLoggingOut then
+	if not s or not Active(self) or s.departing then
 		return
 	end
 	self:UpdateGeographicSubscriptions()
 	self:UpdateGeographicDiscovery()
-	local global, locationDue = now >= s.nextGlobal, now >= s.nextLocal
-	local fullLocal = now >= (s.nextLocalMetadata or s.nextLocal)
-	local regional = locationDue or fullLocal
-	local sampledLocation
-	if global or regional then
-		-- Sample now instead of republishing the producer's older 10/20-second
-		-- location. Staging is local; the same bounded queue owns actual sends.
-		local staged
-		staged, sampledLocation = self:BroadcastPlayerLocation(self:CanPublishPlayerLocation())
-		local fullPackets = (global or fullLocal) and self:BuildGeographicSnapshots() or nil
-		local localPackets = regional and (fullLocal and fullPackets or self:BuildGeographicSnapshots(true)) or nil
-		local routes = {}
-		if global then
-			routes[#routes + 1] = Channel(self.announcementChannelName)
+	local routes = { { route = Channel(self.announcementChannelName), global = true } }
+	if s.currentChannel and self:GetAnnouncementChannelLocalID(s.currentChannel) then
+		routes[#routes + 1] = { route = Channel(s.currentChannel) }
+	end
+	local group = self:GetGroupAnnouncementDistribution()
+	if group then
+		routes[#routes + 1] = { route = { distribution = group }, roster = self.partyRosterFingerprint }
+	end
+	local locationInterval, metadataInterval = Intervals(self, self:GetGeographicZonePopulation(s.currentZone))
+	local sampled, sampledLocation = false, nil
+	for _, item in ipairs(routes) do
+		local key = item.route.channelName or item.route.distribution
+		local route = s.routes[key]
+		if not route then
+			local initial = item.global and s.nextGlobal or now + Random(self, 1, 10)
+			route = { nextLocation = initial, nextMetadata = initial }
+			s.routes[key] = route
 		end
-		if regional then
-			if s.currentChannel and self:GetAnnouncementChannelLocalID(s.currentChannel) then
-				routes[#routes + 1] = Channel(s.currentChannel)
-			end
-			local group = self:GetGroupAnnouncementDistribution()
-			if group then
-				routes[#routes + 1] = { distribution = group }
-			end
+		if item.global then
+			route.nextMetadata = math.min(route.nextMetadata, s.nextGlobal)
 		end
-		for _, route in ipairs(routes) do
-			local isGlobal = route.channelName == self.announcementChannelName
-			local packets = isGlobal and fullPackets or localPackets
-			local locationOnly = not isGlobal and not fullLocal
-			local routeKey = route.channelName or route.distribution
-			local location = s.latest.LOC
-			local fingerprint = location and location.wire:match("^LOC|1,[^,]+,%d+,(.+)$")
-			if route.distribution ~= "CHANNEL" and fingerprint then
-				fingerprint = fingerprint .. ":" .. (self.partyRosterFingerprint or "")
-			end
-			-- Full metadata must not be displaced by the next one-second location
-			-- sample. A full snapshot supersedes any older queued location-only one.
-			if not locationOnly then
-				self:CancelTransportWhere(function(row)
-					local key = row.key
-					return key == routeKey .. ":location:1" or (key and key:sub(1, #routeKey + 7) == routeKey .. ":state:")
-				end)
-			end
-			-- Full heartbeats still renew stationary dots and discover newcomers.
-			-- Fast updates only need to publish changed coordinates/identity.
-			local changed = not locationOnly or fingerprint ~= s.locationFingerprints[routeKey]
-			local queued = false
-			for i, packet in ipairs(changed and packets or {}) do
-				queued = self:QueueGeographicWire(
-					packet,
-					"presence snapshot",
-					route,
-					true,
-					routeKey .. (locationOnly and ":location:" or ":state:") .. i
-					) or queued
-			end
-			if queued and fingerprint then s.locationFingerprints[routeKey] = fingerprint end
+		if route.roster ~= item.roster then
+			route.roster, route.nextMetadata = item.roster, now
 		end
-		if global then
-			s.lastGlobal, s.nextGlobal = now, now + Random(self, 150, 210)
-		end
-		if regional then
-			local count = 0
-			for _, peer in pairs(s.peers) do
-				if peer.zone == s.currentZone and now >= peer.at and now - peer.at < SNAPSHOT_LIFETIME then
-					count = count + 1
+		local full = now >= route.nextMetadata
+		if
+			not route.pending
+			and now >= (route.retryAt or 0)
+			and (full or not item.global and now >= route.nextLocation)
+		then
+			if not sampled then
+				local staged
+				staged, sampledLocation = self:BroadcastPlayerLocation(self:CanPublishPlayerLocation())
+				sampled = true
+			end
+			local records, entries = self:BuildCommunicationStateRecords(not full)
+			local location = s.latest.LOC and Copy(s.latest.LOC.data)
+			-- Envelope sequencing owns order. Position equality ignores producer-local
+			-- counters, so stationary dots do not generate one-second traffic.
+			if location then
+				location.session, location.sequence = nil, nil
+			end
+			if not full and Equal(location, route.location) then
+				route.nextLocation = now + locationInterval
+			elseif #records == 0 then
+				route.retryAt = now + 1
+			else
+				local pending, roster = {}, item.roster
+				local publishesLocation = false
+				for _, record in ipairs(records) do
+					if record.topic == "LOC" and record.data.mask ~= 0 then
+						publishesLocation = true
+					end
 				end
-			end
-			-- Sparse zones get smooth positions; retain the previous density
-			-- backoff at 500+ known peers. Interpolate between the smaller anchors.
-			local interval
-			if count < 10 then interval = 1
-			elseif count < 20 then interval = 5
-			elseif count < 100 then interval = 5 + math.floor((count - 20) / 8)
-			elseif count < 500 then interval = 15 + math.floor((count - 100) * 30 / 400)
-			else interval = math.min(90, 20 + math.floor(count / 20)) end
-			if locationDue then
-				s.nextLocal = now + interval + (count < 10 and 0 or Random(self, 0, 5))
-			end
-			-- Compact LOC-only envelopes carry fast movement updates. Version,
-			-- party and partner metadata retain their existing heartbeat cadence.
-			if fullLocal then
-				s.nextLocalMetadata = now + math.min(90, 20 + math.floor(count / 20)) + Random(self, 0, 5)
+				route.pending = pending
+				local admitted = self:Emit("STATE", { records = records }, { item.route }, {
+					owner = "geography:" .. key,
+					key = "geography:" .. key,
+					priority = full and "background" or "active",
+					expires = now + (full and 15 or 2),
+					publishesLocation = publishesLocation,
+					isCurrent = function()
+						return rawget(self, "geographicCommsState") == s
+							and not s.departing
+							and Active(self)
+							and route.pending == pending
+							and (not publishesLocation or self:CanPublishPlayerLocation())
+							and (item.global or item.route.distribution ~= "CHANNEL" or s.currentChannel == key)
+							and (not roster or roster == self.partyRosterFingerprint)
+							and (
+								item.route.distribution == "CHANNEL"
+								or self:GetGroupAnnouncementDistribution() == item.route.distribution
+							)
+					end,
+					onComplete = function(sent, reason, code, ticket)
+						if route.pending ~= pending then
+							return
+						end
+						route.pending = nil
+						if not sent then
+							route.retryAt = Now(self) + 1
+							return
+						end
+						local acceptedAt = Now(self)
+						route.location, route.acceptedAt, route.retryAt = location, acceptedAt, nil
+						route.nextLocation = acceptedAt + locationInterval
+						if full then
+							route.nextMetadata = acceptedAt
+								+ (item.global and Random(self, 150, 210) or metadataInterval)
+						end
+						if item.global then
+							s.lastGlobal, s.nextGlobal = acceptedAt, route.nextMetadata
+						end
+						for _, selected in ipairs(entries) do
+							local latest = s.latest[selected.topic]
+							if latest and latest.receipt == selected.receipt then
+								local current = not latest.options.isCurrent or latest.options.isCurrent()
+								FinishReceipt(
+									selected.receipt,
+									current == true,
+									current and reason or "cancelled",
+									code,
+									ticket
+								)
+							end
+						end
+					end,
+				})
+				if not admitted and route.pending == pending then
+					route.pending, route.retryAt = nil, now + 1
+				end
 			end
 		end
 	end
 	return sampledLocation
-end
-
--- All asynchronous senders belong to one world lifetime. The final goodbye
--- alone is allowed through the direct path after this fence has been raised.
-function QT:EndCommsWorldSession()
-	self.commsWorldGeneration = (rawget(self,"commsWorldGeneration") or 0) + 1
-	self.questCompareResponseQueue, self.pingPageQueue, self.developerRequestState = nil, nil, nil
-	self.pingReplyState = nil
-	self:EndTransportSession()
-	self.questCompareResponseCache = nil
-	local s = rawget(self, "geographicCommsState")
-	if s then
-		s.worldGeneration = (s.worldGeneration or 0) + 1
-		s.departing = true
-	end
-end
-
-function QT:ResumeCommsWorldSession()
-	self:ResumeTransportSession()
-	local s = rawget(self, "geographicCommsState")
-	if not s then return end
-	local now = Now(self)
-	local reentering = s.departing == true
-	s.departing, s.latest, s.locationFingerprints = nil, {}, {}
-	s.nextGlobal, s.nextLocal, s.nextLocalMetadata = now, now, now
-	s.checkedAt = nil
-	local presence = rawget(self, "qtPlayerPresenceState")
-	if presence then presence.lastSentAt, presence.lastPartnerSentAt = nil, nil end
-	self:BroadcastQTPlayerPresence()
-	self:BroadcastQuestPartnerStatus(true)
-	self:BroadcastPlayerLocation(true)
-	local joins = rawget(self, "partyJoinState")
-	if joins then
-		-- Old receivers retire a departed QJST session even across zoning. A new
-		-- inner epoch lets them recover too; the outer geographic epoch retains
-		-- its ordering. Include the world generation so even same-tick resumes
-		-- cannot recreate the retired session.
-		if reentering then
-			joins.session = s.session .. "-" .. tostring(s.worldGeneration or 0)
-			joins.sequence = 0
-		end
-		joins.lastAttempt, joins.lastSent = nil, nil
-	end
-	self:BroadcastPartyJoinMetadata()
-	local navigation = rawget(self, "partyNavigationState")
-	if navigation then navigation.nextSend, navigation.dirtyAt, navigation.hello = now, now, true end
 end
 
 function QT:ResetGeographicComms()
@@ -627,54 +649,88 @@ function QT:ResetGeographicComms()
 				pcall(self.API.LeaveChannelByName, name)
 			end
 		end
+		for key in pairs(s.routes) do
+			self:CancelCommunicationOwner("geography:" .. key, "cancelled")
+		end
+		for _, query in pairs(s.discovery) do
+			self:CancelCommunicationOwner(query, "cancelled")
+		end
+		for _, entry in pairs(s.latest) do
+			FinishReceipt(entry.receipt, false, "cancelled")
+		end
 	end
 	self.geographicCommsState = nil
 end
 
-function QT:FlushGeographicDeparture()
+function QT:ResumeGeographicComms()
 	local s = rawget(self, "geographicCommsState")
 	if not s then
 		return
 	end
-	self:CancelTransportWhere(function() return true end)
-	-- Disable previously sent this clear immediately. With one queued transport,
-	-- it must join the final goodbye instead of being discarded by the fence.
-	-- A clear removes stale focus/waypoints while preserving the peer's follow
-	-- preference for their return after zoning or a reload.
-	local navigation = rawget(self, "partyNavigationState")
-	local navigationRoute = navigation and self:GetPartyNavigationRoute()
-	if navigationRoute and not self:IsRuntimeRestricted() then
-		navigation.sequence = navigation.sequence + 1
-		self:SendPartyNavigationSnapshot({questID=-1,mapID=-1,x=0,y=0}, false,
-			{{distribution=navigationRoute,requiresGroup=true}}, true)
+	for key in pairs(s.routes) do
+		self:CancelCommunicationOwner("geography:" .. key, "cancelled")
 	end
-	local location = s.latest.LOC
-	-- Never serialize an old nonzero position during departure.
-	local clear = location and location.wire:match("^LOC|1,[^,]+,%d+,0$") and location.wire
-	s.sequence = s.sequence + 1
-	local wire = "QTB1|1," .. (self:GetAnnouncementServerTime() or 0) .. "," .. s.session .. "," .. s.sequence .. ";"
-	if clear then
-		wire = wire .. "0," .. #clear .. ":" .. clear
+	for _, query in pairs(s.discovery) do
+		self:CancelCommunicationOwner(query, "cancelled")
 	end
-	local partner = s.latest.QTLF and s.latest.QTLF.wire
-	if partner and partner:sub(-2) == ",0" then
-		wire = wire .. "0," .. #partner .. ":" .. partner
+	for _, entry in pairs(s.latest) do
+		FinishReceipt(entry.receipt, false, "cancelled")
 	end
-	wire = wire .. "0,8:QTPR|1,0"
-	local routes = self:GetGeographicAnnouncementRoutes() or {}
-	local hasGlobal = false
-	for _, route in ipairs(routes) do
-		if route.channelName == self.announcementChannelName then
-			hasGlobal = true
+	s.departing, s.latest, s.routes, s.checkedAt = nil, {}, {}, nil
+	local now = Now(self)
+	for zone, query in pairs(s.discovery) do
+		query.pending = nil
+		if s.subscriptions["QuestTogetherZ" .. zone] then
+			query.dueAt =
+				math.max(now + Random(self, 2, 5), (query.heardAt or -60) + 60, (query.acceptedAt or -60) + 60)
 		end
 	end
-	if not hasGlobal then
-		routes[#routes + 1] = Channel(self.announcementChannelName)
-	end
-	-- Best effort now: disable/logout must never leave deferred publications.
-	self:SendWireMessageToAnnouncementRoutes(wire, "presence departure", routes, true)
-	s.latest = {}
+	s.nextGlobal = now
 end
 
--- Kept as a producer alias for callers using the old geographic API.
-function QT:ScheduleGeographicPingReply(...) return self:SchedulePingReply(...) end
+-- Requested metadata is sampled directly from domain builders. It never reads
+-- peer caches, stages a broadcast, or grants the requester's location consent.
+function QT:BuildLocalCommunicationState(topics)
+	if not Active(self) then
+		return {}
+	end
+	local records, callbacks, stamp = {}, {}, self:GetAnnouncementServerTime() or 0
+	local function Add(topic, record, completed)
+		if record and (not topics or topics[topic]) then
+			local owned = self:CopyCommRecord(topic, record)
+			if owned then
+				records[#records + 1] =
+					{ topic = topic, data = owned, sampledAt = stamp, revision = self:NextCommunicationSequence() }
+				if completed then
+					callbacks[#callbacks + 1] = function()
+						completed(self, owned)
+					end
+				end
+			end
+		end
+	end
+	local presence = self:GetQTPlayerPresenceState()
+	local looking = self:GetOption("lookingForQuestPartners") == true
+	Add("QTPR", { active = true })
+	local version = self:GetAddonVersion()
+	if self:ParseAddonVersion(version) then
+		Add("QTVR", { version = version, count = self:GetMonitoredQuestCount(), partySize = self:GetLocalPartySize() })
+	end
+	Add("QTPG", self:BuildPartyVisualMetadata(), self.RecordPartyVisualPublication)
+	Add("QJST", self:BuildPartyJoinMetadataPayload(), self.RecordPartyJoinPublication)
+	Add("QTLF", self:BuildQuestPartnerStatusPayload(presence, looking), self.RecordQuestPartnerPublication)
+	Add("QTLQ", self:BuildQuestPartnerQuestPayload(presence, looking), self.RecordQuestPartnerQuestPublication)
+	Add("QTCI", self:BuildPlayerCapabilityRecord())
+	Add("QTHI", self:BuildPlayerDetailsIdentityPayload())
+	local completed = false
+	return records,
+		function(sent)
+			if not sent or completed then
+				return
+			end
+			completed = true
+			for _, callback in ipairs(callbacks) do
+				callback()
+			end
+		end
+end

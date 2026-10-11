@@ -1,9 +1,41 @@
+-- Explicit typed observation supplied at the private receive boundary.
+-- Short per-field lifetimes exercise expiry boundaries; public v2 snapshots use 600 seconds.
+local function ObserveState(addon, method, field, record, sender)
+	local lifetimes = { QTLF = 65, QTLQ = 65, QTVR = 180, QTPG = 180, QJST = 125, QTHI = 180 }
+	local observation = addon:CreatePeerObservation(sender, field, {
+		source = "snapshot",
+		lifetime = lifetimes[field] or 600,
+		session = type(record) == "table" and record.session or nil,
+		sequence = type(record) == "table" and record.sequence or nil,
+	})
+	return addon[method](addon, record, sender, observation)
+end
+
 -- Private peers, SavedVariables tables and transport adapters only. Live-safe.
 local QT = _G.QuestTogether
 local function Equal(actual, expected)
 	assert(actual == expected, tostring(actual) .. " ~= " .. tostring(expected))
 end
 
+local function ReceiveRecord(a, operation, record, sender, route, prefix, localID, channelName)
+	a.fixtureSequence = (a.fixtureSequence or 0) + 1
+	local frames = assert(a:BuildCommFrames(operation, record, {
+		session = "100-1234",
+		messageId = tostring(a.fixtureSequence),
+		requestId = record.requestId,
+		stamp = 1700000000 + math.floor(a.now),
+	}))
+	for _, wire in ipairs(frames) do
+		a:ReceiveCommunication(
+			prefix or a.commPrefix,
+			wire,
+			route or "WHISPER",
+			sender or "Friend-Realm",
+			localID or 7,
+			channelName or "QuestTogether"
+		)
+	end
+end
 local function Peer(version, global, name)
 	local a = setmetatable({
 		version = version or "5.12.0",
@@ -21,6 +53,12 @@ local function Peer(version, global, name)
 		db = { global = global or QT:DeepCopy(QT.DEFAULTS.global), profile = QT:DeepCopy(QT.DEFAULTS.profile) },
 	}, { __index = QT })
 	a.API = {
+		GetServerTime = function()
+			return 1700000000 + math.floor(a.now)
+		end,
+		Random = function()
+			return 1234
+		end,
 		GetTime = function()
 			return a.now
 		end,
@@ -47,6 +85,23 @@ local function Peer(version, global, name)
 			return 0
 		end,
 	}
+	function a:IsGroupedSender()
+		return true
+	end
+	function a:Publish(operation, record, routes, options)
+		local copy = assert(self:CopyCommRecord(operation, record))
+		self.sent[#self.sent + 1] = { operation = operation, record = copy }
+		if self.sendFails then
+			return false
+		end
+		if self.other then
+			ReceiveRecord(self.other, operation, copy, self.name)
+		end
+		if options and options.onComplete then
+			options.onComplete(true, "sent")
+		end
+		return true
+	end
 	function a:GetAddonVersion()
 		return self.version
 	end
@@ -80,9 +135,9 @@ QT:RegisterTest("player tooltip versions come from identified peers and clear wi
 	local a = Peer()
 	Equal(a:GetPlayerAddonVersion(a.name), a.version)
 	Equal(a:GetPlayerAddonVersion("Friend-Realm"), nil)
-	assert(a:HandleAddonVersionMessage("1,5.11.0", "Friend-Realm"))
+	assert(ObserveState(a, "HandleAddonVersionMessage", "QTVR", { version = "5.11.0" }, "Friend-Realm"))
 	Equal(a:GetPlayerAddonVersion("Friend-Realm"), "5.11.0")
-	assert(a:HandleAddonVersionMessage("1,5.17.0-beta.1", "Friend-Realm"))
+	assert(ObserveState(a, "HandleAddonVersionMessage", "QTVR", { version = "5.17.0-beta.1" }, "Friend-Realm"))
 	Equal(a:GetPlayerAddonVersion("Friend-Realm"), "5.17.0-beta.1")
 	Equal(a:GetAvailableAddonUpdate(), nil) -- Display beta versions without promoting beta update notices.
 	Equal(a:RememberPlayerAddonVersion("Friend-Realm", "|Hbad|h"), false)
@@ -90,7 +145,7 @@ QT:RegisterTest("player tooltip versions come from identified peers and clear wi
 	a:RecordQTPlayerPresence("Friend-Realm", false)
 	Equal(a:GetPlayerAddonVersion("Friend-Realm"), nil)
 	Equal(a.qtPlayerPresenceState.peerVersions["Friend-Realm"], nil)
-	assert(a:HandleAddonVersionMessage("1,5.11.1", "Friend-Realm"))
+	assert(ObserveState(a, "HandleAddonVersionMessage", "QTVR", { version = "5.11.1" }, "Friend-Realm"))
 	a.ignored = "Friend-Realm"
 	Equal(a:GetPlayerAddonVersion("Friend-Realm"), nil)
 	a:PruneQTPlayerPresence(true)
@@ -98,31 +153,40 @@ QT:RegisterTest("player tooltip versions come from identified peers and clear wi
 end)
 
 local function Receive(a, version, sender, route)
-	a:OnCommReceived(a.commPrefix, "QTVR|1," .. version, route or "PARTY", sender or "Friend-Realm")
+	ReceiveRecord(a, "QTVR", { version = version }, sender, route)
 end
 
 QT:RegisterTest("monitored quest and party counts share version heartbeats and expire without extra traffic", function()
 	local a, b = Peer("5.17.0", nil, "Alice-Realm"), Peer("5.17.0", nil, "Bob-Realm")
 	a.other = b
 	local tracker = { [1] = {}, [2] = {}, [3] = {} }
-	function a:GetPlayerTracker() return tracker end
-	function a:IsRuntimeRestricted() return self.blocked == true end
+	function a:GetPlayerTracker()
+		return tracker
+	end
+	function a:IsRuntimeRestricted()
+		return self.blocked == true
+	end
 	local grouped, size = true, 3
-	a.API.GetPartyJoinInfo = function() return grouped, false, size end
+	a.API.GetPartyJoinInfo = function()
+		return grouped, false, size
+	end
 	function a:UpdatePartyJoin() end -- Only the discovery heartbeat is under test.
-	a.API.GetTrackedQuestCount = function() error("must not count WoW quest watches") end
+	a.API.GetTrackedQuestCount = function()
+		error("must not count WoW quest watches")
+	end
 	Equal(a:GetMonitoredQuestCount(), nil)
 	a:SetRuntimeFlag("questTrackerReady", true)
 	Equal(a:GetMonitoredQuestCount(), 3)
 	a:UpdateQTPlayerPresence()
-	Equal(b:GetPlayerMonitoredQuestCount(a.name), nil)
+	Equal(b:GetPlayerMonitoredQuestCount(a.name), 3)
 	a.now, b.now = 120, 120
 	a:UpdateQTPlayerPresence()
-	Equal(a.sent[3], "QTVR|2,5.17.0,3,3")
+	Equal(a.sent[3].record.count, 3)
+	Equal(a.sent[3].record.partySize, 3)
 	Equal(b:GetPlayerMonitoredQuestCount(a.name), 3)
 	Equal(b:GetPlayerPartySize(a.name), 3)
 	Equal(a:GetPlayerPartySize(a.name), 3)
-	Equal(#a.sent, 3)
+	Equal(#a.sent, 4)
 	Equal(#b.sent, 0)
 	tracker[1], tracker[2], tracker[3] = nil, nil, nil
 	grouped, size = false, 0
@@ -131,11 +195,12 @@ QT:RegisterTest("monitored quest and party counts share version heartbeats and e
 		a.now, b.now = now, now
 		a:UpdateQTPlayerPresence()
 	end
-	Equal(a.sent[5], "QTVR|1,5.17.0") -- Old readers still receive exact legacy versions.
-	Equal(a.sent[7], "QTVR|2,5.17.0,0,0")
+	Equal(a.sent[5].record.version, "5.17.0")
+	Equal(a.sent[7].record.count, 0)
+	Equal(a.sent[7].record.partySize, 0)
 	Equal(b:GetPlayerMonitoredQuestCount(a.name), 0)
 	Equal(b:GetPlayerPartySize(a.name), 0)
-	b.now = 380
+	b.now = 801
 	Equal(b:GetPlayerMonitoredQuestCount(a.name), nil)
 	Equal(b:GetPlayerPartySize(a.name), nil)
 	assert(b:IsKnownQTPlayer(a.name))
@@ -147,20 +212,51 @@ end)
 
 QT:RegisterTest("peer tooltip stats validate payloads and clear with unknown reports departures and ignores", function()
 	local a = Peer()
-	assert(a:HandleAddonVersionMessage("2,5.12.0,0,0", "Friend-Realm"))
+	assert(
+		ObserveState(
+			a,
+			"HandleAddonVersionMessage",
+			"QTVR",
+			{ version = "5.12.0", count = 0, partySize = 0 },
+			"Friend-Realm"
+		)
+	)
 	Equal(a:GetPlayerMonitoredQuestCount("Friend-Realm"), 0)
 	Equal(a:GetPlayerPartySize("Friend-Realm"), 0)
-	for _, payload in ipairs({ "2,5.12.0,-1,2", "2,5.12.0,1.5,2", "2,5.12.0,20001,2", "2,5.12.0,2,41", "2,5.12.0,2,-1", "2,5.12.0,2,2,spoof", "2,5.12.0,2", "2,bad,2,2" }) do
-		Equal(a:HandleAddonVersionMessage(payload, "Stranger-Realm"), false)
+	for _, payload in ipairs({
+		{ version = "5.12.0", count = -1 },
+		{ version = "5.12.0", count = 1.5 },
+		{ version = "5.12.0", count = 20001 },
+		{ version = "5.12.0", partySize = 41 },
+		{ version = "5.12.0", partySize = -1 },
+		{ version = "bad", count = 2, partySize = 2 },
+	}) do
+		Equal(ObserveState(a, "HandleAddonVersionMessage", "QTVR", payload, "Stranger-Realm"), false)
 		Equal(a:IsKnownQTPlayer("Stranger-Realm"), false)
 	end
-	assert(a:HandleAddonVersionMessage("2,5.12.0,,", "Friend-Realm"))
+	assert(ObserveState(a, "HandleAddonVersionMessage", "QTVR", { version = "5.12.0" }, "Friend-Realm"))
 	Equal(a:GetPlayerMonitoredQuestCount("Friend-Realm"), nil)
 	Equal(a:GetPlayerPartySize("Friend-Realm"), nil)
-	assert(a:HandleAddonVersionMessage("2,5.12.0,8,4", "Friend-Realm"))
+	assert(
+		ObserveState(
+			a,
+			"HandleAddonVersionMessage",
+			"QTVR",
+			{ version = "5.12.0", count = 8, partySize = 4 },
+			"Friend-Realm"
+		)
+	)
 	a:RecordQTPlayerPresence("Friend-Realm", false)
 	Equal(a.qtPlayerPresenceState.peerTooltipStats["Friend-Realm"], nil)
-	assert(a:HandleAddonVersionMessage("2,5.12.0,8,4", "Friend-Realm"))
+	assert(
+		ObserveState(
+			a,
+			"HandleAddonVersionMessage",
+			"QTVR",
+			{ version = "5.12.0", count = 8, partySize = 4 },
+			"Friend-Realm"
+		)
+	)
 	a.ignored = "Friend-Realm"
 	a:PruneQTPlayerPresence(true)
 	Equal(a:GetPlayerPartySize("Friend-Realm"), nil)
@@ -315,13 +411,13 @@ QT:RegisterTest("unknown local versions preserve observed releases until an inst
 end)
 
 QT:RegisterTest("version discovery honors transport sender channel ignore and enabled boundaries", function()
-	for _, boundary in ipairs({ "prefix", "whisper", "channel", "self", "ignored", "disabled", "sender" }) do
+	for _, boundary in ipairs({ "prefix", "guild", "channel", "self", "ignored", "disabled", "sender" }) do
 		local a = Peer()
 		local prefix, route, sender, localID = a.commPrefix, "PARTY", "Friend-Realm", 7
 		if boundary == "prefix" then
 			prefix = "OtherAddon"
-		elseif boundary == "whisper" then
-			route = "WHISPER"
+		elseif boundary == "guild" then
+			route = "GUILD"
 		elseif boundary == "channel" then
 			route, localID = "CHANNEL", 8
 		elseif boundary == "self" then
@@ -333,7 +429,7 @@ QT:RegisterTest("version discovery honors transport sender channel ignore and en
 		else
 			sender = ""
 		end
-		a:OnCommReceived(prefix, "QTVR|1,6.0.0", route, sender, localID, "OtherChannel")
+		ReceiveRecord(a, "QTVR", { version = "6.0.0" }, sender, route, prefix, localID, "OtherChannel")
 		Equal(a:GetAvailableAddonUpdate(), nil)
 		Equal(#a.messages, 0)
 	end
@@ -359,7 +455,8 @@ QT:RegisterTest("version broadcasts work through real routing on Retail and Fore
 		sender.regional, receiver.regional, sender.other = regional, regional, receiver
 		sender.db.profile.sharePlayerLocation = false
 		assert(sender:BroadcastAddonVersion())
-		Equal(sender.sent[1], "QTVR|1,5.13.0")
+		Equal(sender.sent[1].operation, "QTVR")
+		Equal(sender.sent[1].record.version, "5.13.0")
 		Equal(receiver:GetAvailableAddonUpdate(), "5.13.0")
 		Equal(#receiver.messages, 1)
 		assert(receiver:IsKnownQTPlayer(sender.name))
@@ -399,50 +496,43 @@ QT:RegisterTest("receiving a newer release never makes us advertise its version"
 	local a = Peer()
 	Receive(a, "6.0.0")
 	assert(a:BroadcastAddonVersion())
-	Equal(a.sent[1], "QTVR|1,5.12.0")
+	Equal(a.sent[1].record.version, "5.12.0")
 	a:ResetCommsState()
 	Equal(a:GetAvailableAddonUpdate(), "6.0.0")
 	Equal(a:NotifyAddonUpdate(), false)
 	Equal(#a.messages, 1)
 end)
 
-QT:RegisterTest("validated legacy ping responses discover versions without requiring an active ping", function()
+QT:RegisterTest("unsolicited legacy and uncorrelated v2 pong cannot establish a peer version", function()
 	local a = Peer()
-	local payload =
-		a:EncodePingResponsePayload({ requestId = "older-peer", senderName = "Claimed-Realm", addonVersion = "5.13.0" })
-	a:OnCommReceived(a.commPrefix, "PONG|" .. payload, "PARTY", "Friend-Realm")
-	Equal(a:GetAvailableAddonUpdate(), "5.13.0")
-	Equal(#a.messages, 1)
-	assert(a:IsKnownQTPlayer("Friend-Realm"))
-	Equal(a:IsKnownQTPlayer("Claimed-Realm"), false)
-	local old = Peer()
-	payload = old:EncodePingResponsePayload({ requestId = "old", senderName = "Friend-Realm" })
-	old:OnCommReceived(old.commPrefix, "PONG|" .. payload, "PARTY", "Friend-Realm")
-	Equal(old:GetAvailableAddonUpdate(), nil)
-	Equal(#old.messages, 0)
+	a:OnCommReceived(a.commPrefix, "PONG|legacy", "PARTY", "Friend-Realm")
+	ReceiveRecord(
+		a,
+		"PONG",
+		{ requestId = "old", senderName = "Friend-Realm", addonVersion = "5.13.0" },
+		"Friend-Realm"
+	)
+	Equal(a:GetAvailableAddonUpdate(), nil)
+	Equal(#a.messages, 0)
+	Equal(a:IsKnownQTPlayer("Friend-Realm"), false)
 end)
 
-QT:RegisterTest("presence alternates compatible version packets without adding heartbeat messages", function()
+QT:RegisterTest("presence publishes one typed version record per heartbeat without request amplification", function()
 	local a = Peer()
-	a:UpdateQTPlayerPresence()
-	Equal(a.sent[1], "QTPR|1,1")
-	Equal(a.sent[2], "QTVR|1,5.12.0")
-	Equal(#a.sent, 2)
-	a.now = 120
-	a:UpdateQTPlayerPresence()
-	Equal(a.sent[3], "QTVR|2,5.12.0,,")
-	Equal(#a.sent, 3)
-	a.now = 140
-	a:UpdateQTPlayerPresence()
-	Equal(a.sent[4], "QTPR|1,1")
-	Equal(#a.sent, 4)
-	a.now = 160
-	a:UpdateQTPlayerPresence()
-	Equal(a.sent[5], "QTVR|1,5.12.0")
-	Equal(#a.sent, 5)
+	for _, now in ipairs({ 100, 120, 140, 160 }) do
+		a.now = now
+		a:UpdateQTPlayerPresence()
+	end
+	Equal(#a.sent, 8)
+	for i = 1, 8, 2 do
+		Equal(a.sent[i].operation, "QTVR")
+		Equal(a.sent[i].record.version, "5.12.0")
+		Equal(a.sent[i + 1].operation, "QTPR")
+		Equal(a.sent[i + 1].record.active, true)
+	end
 	a:BroadcastQTPlayerPresence(true)
-	Equal(a.sent[6], "QTPR|1,0")
-	Equal(#a.sent, 6)
+	Equal(a.sent[#a.sent].operation, "QTPR")
+	Equal(a.sent[#a.sent].record.active, false)
 end)
 
 QT:RegisterTest("a reloaded observer learns versions from heartbeats without ping or location sharing", function()
@@ -453,8 +543,8 @@ QT:RegisterTest("a reloaded observer learns versions from heartbeats without pin
 		sender.db.profile.sharePlayerLocation = false
 		sender:UpdateQTPlayerPresence()
 		Equal(receiver:GetPlayerAddonVersion(sender.name), "5.13.0")
-		-- Reload after the last version packet, then see a legacy heartbeat
-		-- before the next version slot. Neither observer sends any requests.
+		-- Reload after a heartbeat. The next publication provides the complete
+		-- typed version observation without requests from either observer.
 		sender.now = 120
 		sender:UpdateQTPlayerPresence()
 		receiver.qtPlayerPresenceState = nil
@@ -463,11 +553,11 @@ QT:RegisterTest("a reloaded observer learns versions from heartbeats without pin
 		sender.now, receiver.now = 140, 140
 		sender:UpdateQTPlayerPresence()
 		assert(receiver:IsKnownQTPlayer(sender.name))
-		Equal(receiver:GetPlayerAddonVersion(sender.name), nil)
+		Equal(receiver:GetPlayerAddonVersion(sender.name), "5.13.0")
 		sender.now, receiver.now = 160, 160
 		sender:UpdateQTPlayerPresence()
 		Equal(receiver:GetPlayerAddonVersion(sender.name), "5.13.0")
-		Equal(#sender.sent, 5)
+		Equal(#sender.sent, 8)
 		Equal(#receiver.sent, 0)
 		Equal(#receiver.messages, 0)
 		sender:BroadcastQTPlayerPresence(true)
@@ -475,20 +565,22 @@ QT:RegisterTest("a reloaded observer learns versions from heartbeats without pin
 	end
 end)
 
-QT:RegisterTest("version heartbeat failures remain paced and invalid versions retain legacy discovery", function()
+QT:RegisterTest("version heartbeat failures remain paced and invalid versions retain presence discovery", function()
 	local a = Peer()
 	a:UpdateQTPlayerPresence()
+	Equal(#a.sent, 2)
 	a.now, a.sendFails = 120, true
 	a:UpdateQTPlayerPresence()
-	Equal(#a.sent, 3)
+	Equal(#a.sent, 4)
 	a.now = 121
 	a:UpdateQTPlayerPresence()
-	Equal(#a.sent, 3)
+	Equal(#a.sent, 4)
 	a.now, a.sendFails = 140, false
 	a:UpdateQTPlayerPresence()
-	Equal(#a.sent, 5) -- Legacy heartbeat plus the due failed-version retry.
+	Equal(#a.sent, 6)
 	a.version, a.now = "unknown", 160
 	a:UpdateQTPlayerPresence()
-	Equal(a.sent[6], "QTPR|1,1")
-	Equal(#a.sent, 6)
+	Equal(#a.sent, 7)
+	Equal(a.sent[7].operation, "QTPR")
+	Equal(a.sent[7].record.active, true)
 end)

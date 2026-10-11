@@ -28,7 +28,9 @@ local function NewFixture()
 		blocked = false,
 	}, { __index = QT })
 	addon.API = {
-		GetTime = function() return 100 end,
+		GetTime = function()
+			return 100
+		end,
 		GetNumQuestLogEntries = function()
 			if addon.unreadableCount then
 				return nil
@@ -141,26 +143,53 @@ end
 local function NewTaskClassificationFixture()
 	local clock = QT:CreateTestClock(100)
 	local addon = setmetatable({
-		runtimeStateStore = {}, db = { global = {}, profile = {} },
-		isEnabled = true, questsCompleted = {}, retiredQuestIds = {}, announcements = {},
-		worldQuestAreaStateByQuestID = {}, bonusObjectiveAreaStateByQuestID = {},
-		questSnapshotByQuestID = {}, questSnapshotOrder = {},
-		row = { questID = 12345, questLogIndex = 1, title = "Bonus Area", isTask = true, isOnMap = true, hasLocalPOI = false },
+		runtimeStateStore = {},
+		db = { global = {}, profile = {} },
+		isEnabled = true,
+		questsCompleted = {},
+		retiredQuestIds = {},
+		announcements = {},
+		worldQuestAreaStateByQuestID = {},
+		bonusObjectiveAreaStateByQuestID = {},
+		questSnapshotByQuestID = {},
+		questSnapshotOrder = {},
+		row = {
+			questID = 12345,
+			questLogIndex = 1,
+			title = "Bonus Area",
+			isTask = true,
+			isOnMap = true,
+			hasLocalPOI = false,
+		},
 		taskInfo = { displayAsObjective = true },
-		worldClassification = false, tracker = {},
-		IsWorkBlocked = function() return false end,
+		worldClassification = false,
+		tracker = {},
+		IsWorkBlocked = function()
+			return false
+		end,
 		RefreshNameplatesForQuestStateChange = Noop,
-		Debug = Noop, Debugf = Noop,
+		Debug = Noop,
+		Debugf = Noop,
 	}, { __index = QT })
 	addon.API = {
-		Delay = function(delay, callback) clock:After(delay, callback) end,
-		GetTime = function() return clock:GetTime() end,
-		GetNumQuestLogEntries = function() return addon.row and 1 or 0 end,
-		GetQuestLogInfo = function() return addon.row end,
+		Delay = function(delay, callback)
+			clock:After(delay, callback)
+		end,
+		GetTime = function()
+			return clock:GetTime()
+		end,
+		GetNumQuestLogEntries = function()
+			return addon.row and 1 or 0
+		end,
+		GetQuestLogInfo = function()
+			return addon.row
+		end,
 		IsWorldQuest = function()
 			if addon.worldReadQueue and #addon.worldReadQueue > 0 then
 				local observation = table.remove(addon.worldReadQueue, 1)
-				if observation == "unknown" then return nil end
+				if observation == "unknown" then
+					return nil
+				end
 				return observation
 			end
 			return addon.worldClassification
@@ -176,7 +205,9 @@ local function NewTaskClassificationFixture()
 	function addon:PublishAnnouncementEvent(event)
 		self.announcements[#self.announcements + 1] = event
 	end
-	function addon:GetPlayerTracker() return self.tracker end
+	function addon:GetPlayerTracker()
+		return self.tracker
+	end
 	function addon:ObserveTaskAreaChange()
 		self:ScheduleQuestStateRefreshWork("QUEST_LOG_UPDATE", 1)
 		clock:Advance(1)
@@ -193,7 +224,9 @@ local function NewCompletionClassificationFixture()
 	a:RebuildQuestSnapshotStore()
 	a:RefreshTaskAreaStates(false)
 	a.tracker[12345] = { title = "Bonus Area", taskAnnouncementType = "bonus", objectives = {} }
-	a.PickRandomCompletionEmote = function() return "cheer" end
+	a.PickRandomCompletionEmote = function()
+		return "cheer"
+	end
 	a.PlayLocalCompletionEmote = Noop
 	a.GetAnnouncementIconInfo = Noop
 	a.PrintConsoleAnnouncement = Noop
@@ -201,88 +234,119 @@ local function NewCompletionClassificationFixture()
 	return a, clock
 end
 
-QT:RegisterTest("completion retains bonus classification after snapshot and tracker disappearance in either event order", function()
-	for _, scan in ipairs({ "snapshot", "full_scan" }) do
-		for _, first in ipairs({ "QUEST_REMOVED", "QUEST_TURNED_IN" }) do
-			local a, clock = NewCompletionClassificationFixture()
-			a.row, a.taskInfo = nil, nil
-			if scan == "snapshot" then a:RebuildQuestSnapshotStore() else a:ScanQuestLog() end
-			Equal(a:GetQuestClassification(12345), nil, "absent quest is not an active classification")
-			if scan == "full_scan" then Equal(a.tracker[12345], nil) end
-			a[first](a, first, 12345)
-			local second = first == "QUEST_REMOVED" and "QUEST_TURNED_IN" or "QUEST_REMOVED"
-			a[second](a, second, 12345)
-			clock:Advance(0) -- Removal resolves after the native one-frame turn-in window.
-			Equal(a.announcements[1], "BONUS_OBJECTIVE_COMPLETED", scan .. " " .. first)
-			Equal(#a.announcements, 1)
-			Equal(a:GetQuestSnapshotStateStore().completionClassificationsByQuestID[12345], nil,
-				"event capture takes ownership from temporary classification retention")
+QT:RegisterTest(
+	"completion retains bonus classification after snapshot and tracker disappearance in either event order",
+	function()
+		for _, scan in ipairs({ "snapshot", "full_scan" }) do
+			for _, first in ipairs({ "QUEST_REMOVED", "QUEST_TURNED_IN" }) do
+				local a, clock = NewCompletionClassificationFixture()
+				a.row, a.taskInfo = nil, nil
+				if scan == "snapshot" then
+					a:RebuildQuestSnapshotStore()
+				else
+					a:ScanQuestLog()
+				end
+				Equal(a:GetQuestClassification(12345), nil, "absent quest is not an active classification")
+				if scan == "full_scan" then
+					Equal(a.tracker[12345], nil)
+				end
+				a[first](a, first, 12345)
+				local second = first == "QUEST_REMOVED" and "QUEST_TURNED_IN" or "QUEST_REMOVED"
+				a[second](a, second, 12345)
+				clock:Advance(0) -- Removal resolves after the native one-frame turn-in window.
+				Equal(a.announcements[1], "BONUS_OBJECTIVE_COMPLETED", scan .. " " .. first)
+				Equal(#a.announcements, 1)
+				Equal(
+					a:GetQuestSnapshotStateStore().completionClassificationsByQuestID[12345],
+					nil,
+					"event capture takes ownership from temporary classification retention"
+				)
+			end
 		end
 	end
-end)
+)
 
-QT:RegisterTest("completion classification preserves independent unknown fields and respects the latest explicit false", function()
-	for _, timing in ipairs({ "before_disappearance", "at_completion" }) do
-		local a = NewCompletionClassificationFixture()
-		if timing == "before_disappearance" then
-			a.taskInfo = { displayAsObjective = false }
+QT:RegisterTest(
+	"completion classification preserves independent unknown fields and respects the latest explicit false",
+	function()
+		for _, timing in ipairs({ "before_disappearance", "at_completion" }) do
+			local a = NewCompletionClassificationFixture()
+			if timing == "before_disappearance" then
+				a.taskInfo = { displayAsObjective = false }
+				a:RebuildQuestSnapshotStore()
+			end
+			a.row, a.taskInfo = nil, nil
 			a:RebuildQuestSnapshotStore()
+			if timing == "at_completion" then
+				a.taskInfo = { displayAsObjective = false }
+			end
+			Equal(a:ObserveQuestAnnouncementType(12345), nil, timing)
+			a:QUEST_REMOVED(nil, 12345)
+			a:QUEST_TURNED_IN(nil, 12345)
+			Equal(a.announcements[1], "QUEST_COMPLETED", "old bonus evidence cannot override explicit false")
 		end
+		local a = NewCompletionClassificationFixture()
 		a.row, a.taskInfo = nil, nil
 		a:RebuildQuestSnapshotStore()
-		if timing == "at_completion" then a.taskInfo = { displayAsObjective = false } end
-		Equal(a:ObserveQuestAnnouncementType(12345), nil, timing)
-		a:QUEST_REMOVED(nil, 12345)
-		a:QUEST_TURNED_IN(nil, 12345)
-		Equal(a.announcements[1], "QUEST_COMPLETED", "old bonus evidence cannot override explicit false")
+		Equal(a:ObserveQuestAnnouncementType(12345), "bonus", "world=false does not discard unknown bonus evidence")
+		Equal(a:GetQuestClassification(12345), nil, "completion reads do not republish retired classifications")
 	end
-	local a = NewCompletionClassificationFixture()
-	a.row, a.taskInfo = nil, nil
-	a:RebuildQuestSnapshotStore()
-	Equal(a:ObserveQuestAnnouncementType(12345), "bonus", "world=false does not discard unknown bonus evidence")
-	Equal(a:GetQuestClassification(12345), nil, "completion reads do not republish retired classifications")
-end)
+)
 
-QT:RegisterTest("retained completion classifications cannot cross reappearance acceptance or runtime boundaries", function()
-	for _, boundary in ipairs({ "reappearance", "acceptance", "runtime" }) do
-		local a = NewCompletionClassificationFixture()
-		local row = a.row
-		a.row, a.taskInfo = nil, nil
-		a:ScanQuestLog()
-		Equal(a:ObserveQuestAnnouncementType(12345), "bonus")
-		if boundary == "reappearance" then
-			a.row = row
-			a:RebuildQuestSnapshotStore()
-		elseif boundary == "acceptance" then
-			a:QUEST_ACCEPTED(nil, 12345)
-		else
-			a:ResetTaskAreaStateStore()
+QT:RegisterTest(
+	"retained completion classifications cannot cross reappearance acceptance or runtime boundaries",
+	function()
+		for _, boundary in ipairs({ "reappearance", "acceptance", "runtime" }) do
+			local a = NewCompletionClassificationFixture()
+			local row = a.row
+			a.row, a.taskInfo = nil, nil
+			a:ScanQuestLog()
+			Equal(a:ObserveQuestAnnouncementType(12345), "bonus")
+			if boundary == "reappearance" then
+				a.row = row
+				a:RebuildQuestSnapshotStore()
+			elseif boundary == "acceptance" then
+				a:QUEST_ACCEPTED(nil, 12345)
+			else
+				a:ResetTaskAreaStateStore()
+			end
+			Equal(a:ObserveQuestAnnouncementType(12345), nil, boundary)
 		end
-		Equal(a:ObserveQuestAnnouncementType(12345), nil, boundary)
 	end
-end)
+)
 
-QT:RegisterTest("completion retention is bounded and missing or incomplete snapshots do not extend its lifetime", function()
-	local a, clock = NewCompletionClassificationFixture()
-	a.row, a.taskInfo = nil, nil
-	a:RebuildQuestSnapshotStore()
-	clock:Advance(30)
-	a:RebuildQuestSnapshotStore()
-	Equal(a:ObserveQuestAnnouncementType(12345), "bonus")
-	-- An incomplete scan cannot create a retirement record for an unreadable row.
-	a.API.GetNumQuestLogEntries = function() return 1 end
-	local _, complete = a:RebuildQuestSnapshotStore()
-	Equal(complete, false)
-	clock:Advance(30)
-	Equal(a:ObserveQuestAnnouncementType(12345), nil, "repeated absence/capture cannot extend retention")
-	a.API.GetNumQuestLogEntries = function() return 0 end
-	local state = a:GetQuestSnapshotStateStore()
-	for id = 1, 300 do state.classificationsByQuestID[id] = { isWorldQuest = false, displayAsObjective = true } end
-	a:RebuildQuestSnapshotStore()
-	local count = 0
-	for _ in pairs(state.completionClassificationsByQuestID) do count = count + 1 end
-	assert(count <= 256, "missing native events must not grow unbounded classification history")
-end)
+QT:RegisterTest(
+	"completion retention is bounded and missing or incomplete snapshots do not extend its lifetime",
+	function()
+		local a, clock = NewCompletionClassificationFixture()
+		a.row, a.taskInfo = nil, nil
+		a:RebuildQuestSnapshotStore()
+		clock:Advance(30)
+		a:RebuildQuestSnapshotStore()
+		Equal(a:ObserveQuestAnnouncementType(12345), "bonus")
+		-- An incomplete scan cannot create a retirement record for an unreadable row.
+		a.API.GetNumQuestLogEntries = function()
+			return 1
+		end
+		local _, complete = a:RebuildQuestSnapshotStore()
+		Equal(complete, false)
+		clock:Advance(30)
+		Equal(a:ObserveQuestAnnouncementType(12345), nil, "repeated absence/capture cannot extend retention")
+		a.API.GetNumQuestLogEntries = function()
+			return 0
+		end
+		local state = a:GetQuestSnapshotStateStore()
+		for id = 1, 300 do
+			state.classificationsByQuestID[id] = { isWorldQuest = false, displayAsObjective = true }
+		end
+		a:RebuildQuestSnapshotStore()
+		local count = 0
+		for _ in pairs(state.completionClassificationsByQuestID) do
+			count = count + 1
+		end
+		assert(count <= 256, "missing native events must not grow unbounded classification history")
+	end
+)
 
 QT:RegisterTest("completion cannot resurrect a stale world tracker after reappearance or retention expiry", function()
 	for _, boundary in ipairs({ "reappearance", "expiry" }) do
@@ -291,7 +355,11 @@ QT:RegisterTest("completion cannot resurrect a stale world tracker after reappea
 			a.worldClassification, a.taskInfo = true, nil
 			a.tracker[12345].taskAnnouncementType = "world"
 			a:RebuildQuestSnapshotStore()
-			Equal(a:ObserveQuestAnnouncementType(12345), "world", "current confirmed world classification remains usable")
+			Equal(
+				a:ObserveQuestAnnouncementType(12345),
+				"world",
+				"current confirmed world classification remains usable"
+			)
 			-- Snapshot refreshes update classification without replacing the tracker.
 			a.worldClassification, a.taskInfo = false, { displayAsObjective = false }
 			a:RebuildQuestSnapshotStore()
@@ -306,7 +374,11 @@ QT:RegisterTest("completion cannot resurrect a stale world tracker after reappea
 				clock:Advance(60)
 			end
 			Equal(a.tracker[12345].taskAnnouncementType, "world", "the stale presentation fixture is still present")
-			Equal(a:ObserveQuestAnnouncementType(12345), nil, boundary .. " cannot revive previous world classification")
+			Equal(
+				a:ObserveQuestAnnouncementType(12345),
+				nil,
+				boundary .. " cannot revive previous world classification"
+			)
 			a[first](a, first, 12345)
 			local second = first == "QUEST_REMOVED" and "QUEST_TURNED_IN" or "QUEST_REMOVED"
 			a[second](a, second, 12345)
@@ -322,9 +394,13 @@ QT:RegisterTest("unavailable bonus metadata preserves confirmed area through rea
 	addon:RebuildQuestSnapshotStore()
 	Equal(addon:RefreshTaskAreaStates(false), true)
 	for _, shape in ipairs({ "missing_record", "missing_flag", "invalid_flag" }) do
-		if shape == "missing_record" then addon.taskInfo = nil
-		elseif shape == "missing_flag" then addon.taskInfo = { questTitle = "Bonus Area" }
-		else addon.taskInfo = { displayAsObjective = "unknown" } end
+		if shape == "missing_record" then
+			addon.taskInfo = nil
+		elseif shape == "missing_flag" then
+			addon.taskInfo = { questTitle = "Bonus Area" }
+		else
+			addon.taskInfo = { displayAsObjective = "unknown" }
+		end
 		addon:ObserveTaskAreaChange()
 		Equal(addon:GetTaskAreaStateStore("bonus")[12345], "Bonus Area", shape)
 		Equal(#addon.announcements, 0, "unavailable metadata must not invent an exit")
@@ -347,7 +423,11 @@ QT:RegisterTest("bonus classification distinguishes unknown from explicit false 
 	Equal(addon:GetTaskAreaStateStore("bonus")[12345], "Bonus Area")
 	addon.taskInfo = nil
 	addon:ObserveTaskAreaChange()
-	Equal(addon:GetTaskAreaStateStore("bonus")[12345], "Bonus Area", "retain a classification first observed by the area reader")
+	Equal(
+		addon:GetTaskAreaStateStore("bonus")[12345],
+		"Bonus Area",
+		"retain a classification first observed by the area reader"
+	)
 	Equal(#addon.announcements, 0)
 	addon.taskInfo = { displayAsObjective = false }
 	addon:ObserveTaskAreaChange()
@@ -379,16 +459,26 @@ QT:RegisterTest("independent task classification readers retain the newest confi
 			addon:ObserveTaskAreaChange()
 			Equal(#addon.taskInfoReadQueue, 0, "both real readers must consume their independent observation")
 			Equal(addon:GetTaskAreaResolution(12345).displayAsObjective, not original, reader)
-			Equal(addon:IsBonusObjective(12345), not original, "public classification must use the latest confirmed value")
-			Equal(addon:GetTaskAnnouncementType(12345), not original and "bonus" or nil,
-				"announcements must use the latest confirmed classification")
+			Equal(
+				addon:IsBonusObjective(12345),
+				not original,
+				"public classification must use the latest confirmed value"
+			)
+			Equal(
+				addon:GetTaskAnnouncementType(12345),
+				not original and "bonus" or nil,
+				"announcements must use the latest confirmed classification"
+			)
 			Equal(addon:GetTaskAreaStateStore("bonus")[12345] ~= nil, not original, reader)
 			Equal(#addon.announcements, 1, "a confirmed classification transition publishes exactly once")
 			Equal(addon.announcements[1], original and "BONUS_OBJECTIVE_LEFT" or "BONUS_OBJECTIVE_ENTERED")
 
 			addon:ObserveTaskAreaChange()
-			Equal(addon:GetTaskAreaResolution(12345).displayAsObjective, not original,
-				"unavailable reads must retain the newest observation, whichever reader observed it")
+			Equal(
+				addon:GetTaskAreaResolution(12345).displayAsObjective,
+				not original,
+				"unavailable reads must retain the newest observation, whichever reader observed it"
+			)
 			Equal(#addon.announcements, 1, "older reader state must not replay the opposite transition")
 		end
 	end
@@ -433,55 +523,61 @@ QT:RegisterTest("unavailable world classification preserves active area and acce
 	Equal(#addon.announcements, 1, "unknown must not resurrect the old positive")
 end)
 
-QT:RegisterTest("quest acquisitions retain newest boolean while classification consumers do not re-read APIs", function()
-	for _, original in ipairs({ true, false }) do
-		for _, reader in ipairs({ "snapshot", "resolver" }) do
-			local addon = NewTaskClassificationFixture()
-			addon.worldClassification, addon.taskInfo = original, { displayAsObjective = false }
-			addon:RebuildQuestSnapshotStore()
-			addon:RefreshTaskAreaStates(false)
-			addon.worldClassification = nil
-			addon.worldReadQueue = reader == "snapshot"
-				and { not original, "unknown" } or { "unknown", not original }
-			addon:ObserveTaskAreaChange()
-			Equal(#addon.worldReadQueue, 0, "only the two scheduled acquisitions read live classification")
-			Equal(addon:IsWorldQuest(12345), not original, reader)
-			Equal(addon:GetTaskAnnouncementType(12345), not original and "world" or nil, reader)
-			Equal(addon:GetTaskAreaStateStore("world")[12345] ~= nil, not original, reader)
-			Equal(#addon.announcements, 1)
-			Equal(addon.announcements[1], original and "WORLD_QUEST_LEFT" or "WORLD_QUEST_ENTERED")
-			addon:ObserveTaskAreaChange()
-			Equal(#addon.announcements, 1, "unknown after the newest observation must not replay transitions")
+QT:RegisterTest(
+	"quest acquisitions retain newest boolean while classification consumers do not re-read APIs",
+	function()
+		for _, original in ipairs({ true, false }) do
+			for _, reader in ipairs({ "snapshot", "resolver" }) do
+				local addon = NewTaskClassificationFixture()
+				addon.worldClassification, addon.taskInfo = original, { displayAsObjective = false }
+				addon:RebuildQuestSnapshotStore()
+				addon:RefreshTaskAreaStates(false)
+				addon.worldClassification = nil
+				addon.worldReadQueue = reader == "snapshot" and { not original, "unknown" }
+					or { "unknown", not original }
+				addon:ObserveTaskAreaChange()
+				Equal(#addon.worldReadQueue, 0, "only the two scheduled acquisitions read live classification")
+				Equal(addon:IsWorldQuest(12345), not original, reader)
+				Equal(addon:GetTaskAnnouncementType(12345), not original and "world" or nil, reader)
+				Equal(addon:GetTaskAreaStateStore("world")[12345] ~= nil, not original, reader)
+				Equal(#addon.announcements, 1)
+				Equal(addon.announcements[1], original and "WORLD_QUEST_LEFT" or "WORLD_QUEST_ENTERED")
+				addon:ObserveTaskAreaChange()
+				Equal(#addon.announcements, 1, "unknown after the newest observation must not replay transitions")
+			end
 		end
 	end
-end)
+)
 
-QT:RegisterTest("world classification starts unknown and resets on removal acceptance and runtime boundaries", function()
-	for _, boundary in ipairs({ "removal", "acceptance", "runtime" }) do
-		local addon = NewTaskClassificationFixture()
-		addon.worldClassification, addon.taskInfo = nil, { displayAsObjective = false }
-		addon:RebuildQuestSnapshotStore()
-		Equal(addon:GetQuestSnapshot(12345).isWorldQuest, nil, "a first unknown read is not explicit false")
-		addon.worldClassification = true
-		addon:ObserveTaskAreaChange()
-		Equal(addon:GetTaskAreaStateStore("world")[12345], "Bonus Area")
-		if boundary == "removal" then
-			local row = addon.row
-			addon.row = nil
+QT:RegisterTest(
+	"world classification starts unknown and resets on removal acceptance and runtime boundaries",
+	function()
+		for _, boundary in ipairs({ "removal", "acceptance", "runtime" }) do
+			local addon = NewTaskClassificationFixture()
+			addon.worldClassification, addon.taskInfo = nil, { displayAsObjective = false }
+			addon:RebuildQuestSnapshotStore()
+			Equal(addon:GetQuestSnapshot(12345).isWorldQuest, nil, "a first unknown read is not explicit false")
+			addon.worldClassification = true
 			addon:ObserveTaskAreaChange()
-			addon.row = row
-		elseif boundary == "acceptance" then
-			addon.pendingQuestRemovals, addon.onQuestLogUpdate = {}, {}
-			addon:QUEST_ACCEPTED(nil, 12345)
-		else
-			addon:ResetTaskAreaStateStore()
+			Equal(addon:GetTaskAreaStateStore("world")[12345], "Bonus Area")
+			if boundary == "removal" then
+				local row = addon.row
+				addon.row = nil
+				addon:ObserveTaskAreaChange()
+				addon.row = row
+			elseif boundary == "acceptance" then
+				addon.pendingQuestRemovals, addon.onQuestLogUpdate = {}, {}
+				addon:QUEST_ACCEPTED(nil, 12345)
+			else
+				addon:ResetTaskAreaStateStore()
+			end
+			addon.worldClassification = nil
+			addon:ObserveTaskAreaChange()
+			Equal(addon:GetTaskAreaStateStore("world")[12345], nil, boundary)
+			Equal(addon:GetTaskAnnouncementType(12345), nil, boundary)
 		end
-		addon.worldClassification = nil
-		addon:ObserveTaskAreaChange()
-		Equal(addon:GetTaskAreaStateStore("world")[12345], nil, boundary)
-		Equal(addon:GetTaskAnnouncementType(12345), nil, boundary)
 	end
-end)
+)
 
 QT:RegisterTest("task classification resets with the runtime and fresh acceptance lifetimes", function()
 	for _, boundary in ipairs({ "runtime", "acceptance" }) do
@@ -513,24 +609,48 @@ local function NewEnabledOptionFixture(enabled)
 	addon.registeredRuntimeEvents = {}
 	addon.eventFrame = {
 		scripts = {},
-		SetScript = function(frame, event, callback) frame.scripts[event] = callback end,
-		RegisterEvent = function(_, event) addon.events[event] = true end,
-		UnregisterEvent = function(_, event) addon.events[event] = nil end,
+		SetScript = function(frame, event, callback)
+			frame.scripts[event] = callback
+		end,
+		RegisterEvent = function(_, event)
+			addon.events[event] = true
+		end,
+		UnregisterEvent = function(_, event)
+			addon.events[event] = nil
+		end,
 	}
 	addon.RegisterRuntimeEvents = QT.RegisterRuntimeEvents
-	addon.EnableNameplateAugmentation = function() addon.visualsEnabled = true end
-	addon.DisableNameplateAugmentation = function() addon.visualsEnabled = false end
-	addon.LeaveAnnouncementChannel = function() addon:ResetCommsState() end
-	addon.GetDebugController = function() return { HandleCommand = function() return false end } end
-	addon.Print = function(_, message) addon.messages[#addon.messages + 1] = message end
+	addon.EnableNameplateAugmentation = function()
+		addon.visualsEnabled = true
+	end
+	addon.DisableNameplateAugmentation = function()
+		addon.visualsEnabled = false
+	end
+	addon.LeaveAnnouncementChannel = function()
+		addon:ResetCommsState()
+	end
+	addon.GetDebugController = function()
+		return {
+			HandleCommand = function()
+				return false
+			end,
+		}
+	end
+	addon.Print = function(_, message)
+		addon.messages[#addon.messages + 1] = message
+	end
 	addon.RefreshOptionsWindow = Noop
 	addon.ReconcileQuestLogChatDestination = Noop
 	addon.InitializeReleaseNotes = Noop
 	addon.visualsEnabled = addon.isEnabled
 	addon:RegisterBootstrapEvents()
-	if addon.isEnabled then addon:RegisterRuntimeEvents() end
+	if addon.isEnabled then
+		addon:RegisterRuntimeEvents()
+	end
 	function addon:DeliverRegisteredEvent(event, ...)
-		if not self.events[event] then return false end
+		if not self.events[event] then
+			return false
+		end
 		self.eventFrame.scripts.OnEvent(self.eventFrame, event, ...)
 		return true
 	end
@@ -549,14 +669,14 @@ QT:RegisterTest("generic enabled option applies the actual disable and enable li
 	local addon = NewEnabledOptionFixture()
 	local priorWorkState = addon:GetDeferredWorkStateStore()
 	addon.pendingQuestAcceptances[12345] = {}
-	addon.questCompareResponseQueue = { jobs = {} }
+	addon.questCompareResponseCache = { jobs = {} }
 	addon:HandleSlashCommand("set enabled off")
 	Equal(addon.db.profile.enabled, false)
 	Equal(addon.isEnabled, false)
 	AssertRuntimeEventsUnregistered(addon)
 	Equal(next(addon.registeredRuntimeEvents), nil)
 	Equal(next(addon.pendingQuestAcceptances), nil)
-	Equal(addon.questCompareResponseQueue, nil)
+	Equal(addon.questCompareResponseCache, nil)
 	Equal(addon.visualsEnabled, false)
 	assert(addon:GetDeferredWorkStateStore() ~= priorWorkState, "disable must invalidate pending callbacks")
 	Equal(addon.messages[#addon.messages], "enabled = false")
@@ -593,10 +713,18 @@ end)
 
 local function ObserveWorldLifecycleWork(addon)
 	local calls = { refresh = 0, join = 0, presence = 0, location = 0 }
-	addon.RefreshTaskAreaStates = function() calls.refresh = calls.refresh + 1 end
-	addon.EnsureAnnouncementChannelJoined = function() calls.join = calls.join + 1 end
-	addon.BroadcastQTPlayerPresence = function() calls.presence = calls.presence + 1 end
-	addon.BroadcastPlayerLocation = function() calls.location = calls.location + 1 end
+	addon.RefreshTaskAreaStates = function()
+		calls.refresh = calls.refresh + 1
+	end
+	addon.EnsureAnnouncementChannelJoined = function()
+		calls.join = calls.join + 1
+	end
+	addon.BroadcastQTPlayerPresence = function()
+		calls.presence = calls.presence + 1
+	end
+	addon.BroadcastPlayerLocation = function()
+		calls.location = calls.location + 1
+	end
 	addon.InitializeMinimapLauncher, addon.NotifyAddonUpdate = Noop, Noop
 	addon.InitializePlayerLocations, addon.InitializeRuntimeCoordinator = Noop, Noop
 	return calls
@@ -620,7 +748,9 @@ QT:RegisterTest("bootstrap world events survive disable and re-enable without di
 	Equal(addon:DeliverRegisteredEvent("PLAYER_ENTERING_WORLD"), true)
 	Equal(addon.isLoggingOut, false, "disabled zoning must clear the leaving-world flag")
 	Equal(addon:DeliverRegisteredEvent("QUEST_LOG_UPDATE"), false)
-	for name, count in pairs(calls) do Equal(count, 0, "disabled " .. name) end
+	for name, count in pairs(calls) do
+		Equal(count, 0, "disabled " .. name)
+	end
 	addon:Enable()
 	Equal(addon.isEnabled, true)
 	Equal(addon.isLoggingOut, false, "re-enable must not inherit a completed loading screen")
@@ -641,7 +771,9 @@ QT:RegisterTest("initially disabled login and zoning retain bootstrap state with
 		Equal(addon:DeliverRegisteredEvent("PLAYER_ENTERING_WORLD"), true)
 		Equal(addon.isLoggingOut, false)
 	end
-	for name, count in pairs(calls) do Equal(count, 0, "initially disabled " .. name) end
+	for name, count in pairs(calls) do
+		Equal(count, 0, "initially disabled " .. name)
+	end
 	Equal(next(addon.registeredRuntimeEvents), nil)
 	Equal(addon.events.QUEST_LOG_UPDATE, nil)
 	addon:Enable()
@@ -657,9 +789,11 @@ end)
 local function NewProfileDeletionFixture()
 	local main = { enabled = true }
 	local addon = setmetatable({
-		activeCharacterKey = "Main-Realm", activeProfileKey = "Main-Realm",
+		activeCharacterKey = "Main-Realm",
+		activeProfileKey = "Main-Realm",
 		db = {
-			global = {}, profile = main,
+			global = {},
+			profile = main,
 			profiles = { ["Main-Realm"] = main, ["Alt-Realm"] = { showChatBubbles = false } },
 			profileKeys = { ["Main-Realm"] = "Main-Realm", ["Alt-Realm"] = "Alt-Realm" },
 		},
@@ -679,7 +813,9 @@ QT:RegisterTest("deleting an assigned character profile persists until that char
 	Equal(addon:DeleteProfile("Main-Realm"), false)
 	-- Exercise the real initializer against private saved data, never _G.
 	local returningAlt = setmetatable({
-		GetCurrentCharacterKey = function() return "Alt-Realm" end,
+		GetCurrentCharacterKey = function()
+			return "Alt-Realm"
+		end,
 	}, { __index = QT })
 	returningAlt:InitializeDatabase({ global = {}, profiles = addon.db.profiles, profileKeys = addon.db.profileKeys })
 	Equal(returningAlt.activeProfileKey, "Alt-Realm")
@@ -700,7 +836,9 @@ QT:RegisterTest("deleting a shared profile clears all assignments without recrea
 	Equal(addon.db.profiles["Alt-Realm"], altDefault)
 	Equal(addon.db.profiles["Another-Realm"], nil)
 	local returningAlt = setmetatable({
-		GetCurrentCharacterKey = function() return "Alt-Realm" end,
+		GetCurrentCharacterKey = function()
+			return "Alt-Realm"
+		end,
 	}, { __index = QT })
 	returningAlt:InitializeDatabase({ global = {}, profiles = addon.db.profiles, profileKeys = addon.db.profileKeys })
 	Equal(returningAlt.db.profile, altDefault)
@@ -874,19 +1012,35 @@ QT:RegisterTest("rejected waypoint writes cannot report success or track the pre
 		addon.CanAccessValue = function(self, value)
 			return value ~= secret and canAccessValue(self, value)
 		end
-		addon.API.CanSetUserWaypointOnMap = function() return true end
-		addon.API.CreateUiMapPoint = function(mapID, x, y) return { mapID = mapID, x = x, y = y } end
+		addon.API.CanSetUserWaypointOnMap = function()
+			return true
+		end
+		addon.API.CreateUiMapPoint = function(mapID, x, y)
+			return { mapID = mapID, x = x, y = y }
+		end
 		addon.API.SetUserWaypoint = function(point)
 			writes = writes + 1
-			if result == "throw" then error("waypoint rejected") end
-			if result == "secret" then return secret end
-			if result == "wrong type" then return "true" end
-			if result == "missing" then return nil end
-			if result == "reject" then return false end
+			if result == "throw" then
+				error("waypoint rejected")
+			end
+			if result == "secret" then
+				return secret
+			end
+			if result == "wrong type" then
+				return "true"
+			end
+			if result == "missing" then
+				return nil
+			end
+			if result == "reject" then
+				return false
+			end
 			currentPoint = point
 			return true
 		end
-		addon.API.SetSuperTrackedUserWaypoint = function() tracks = tracks + 1 end
+		addon.API.SetSuperTrackedUserWaypoint = function()
+			tracks = tracks + 1
+		end
 		Equal(addon:CreateBlizzardWaypoint(100, 25, 50), result == "accept", result)
 		Equal(writes, 1)
 		Equal(tracks, result == "accept" and 1 or 0)
@@ -901,19 +1055,35 @@ local function NewWaypointLifecycleFixture(restriction)
 	local clock = QT:CreateTestClock(0)
 	addon.restriction = restriction
 	addon.IsWorkBlocked = QT.IsWorkBlocked
-	addon.IsRuntimeRestrictionTypeActive = function(self, kind) return self.restriction == kind end
-	addon.API.InCombatLockdown = function() return addon.restriction == "combat" end
-	addon.API.IsWorldMapVisible = function() return false end
-	addon.API.Delay = function(delay, callback) clock:After(delay, callback) end
-	addon.API.GetTime = function() return clock:GetTime() end
-	addon.API.CanSetUserWaypointOnMap = function() return true end
-	addon.API.CreateUiMapPoint = function(mapID, x, y) return { mapID = mapID, x = x, y = y } end
+	addon.IsRuntimeRestrictionTypeActive = function(self, kind)
+		return self.restriction == kind
+	end
+	addon.API.InCombatLockdown = function()
+		return addon.restriction == "combat"
+	end
+	addon.API.IsWorldMapVisible = function()
+		return false
+	end
+	addon.API.Delay = function(delay, callback)
+		clock:After(delay, callback)
+	end
+	addon.API.GetTime = function()
+		return clock:GetTime()
+	end
+	addon.API.CanSetUserWaypointOnMap = function()
+		return true
+	end
+	addon.API.CreateUiMapPoint = function(mapID, x, y)
+		return { mapID = mapID, x = x, y = y }
+	end
 	addon.waypointWrites, addon.waypointTracks = {}, 0
 	addon.API.SetUserWaypoint = function(point)
 		addon.waypointWrites[#addon.waypointWrites + 1] = point
 		return true
 	end
-	addon.API.SetSuperTrackedUserWaypoint = function() addon.waypointTracks = addon.waypointTracks + 1 end
+	addon.API.SetSuperTrackedUserWaypoint = function()
+		addon.waypointTracks = addon.waypointTracks + 1
+	end
 	addon.RefreshNameplatesForQuestStateChange = Noop
 	addon.OnNameplatePlayerRegenEnabled = Noop
 	addon.FlushPendingAnnouncementIntents = Noop
@@ -958,7 +1128,9 @@ QT:RegisterTest("enabled waypoint clicks resume once through registered restrict
 		clock:Advance(1)
 		Equal(#addon.waypointWrites, 0)
 		addon.restriction = nil
-		addon:DeliverRegisteredEvent(restriction == "combat" and "PLAYER_REGEN_ENABLED" or "ADDON_RESTRICTION_STATE_CHANGED")
+		addon:DeliverRegisteredEvent(
+			restriction == "combat" and "PLAYER_REGEN_ENABLED" or "ADDON_RESTRICTION_STATE_CHANGED"
+		)
 		clock:Advance(60)
 		Equal(#addon.waypointWrites, 1)
 		Equal(addon.waypointWrites[1].mapID, 85, "latest accepted click replaces older intent")
@@ -987,7 +1159,10 @@ QT:RegisterTest("deferred waypoint rejection leaves tracking untouched and permi
 	Equal(next(addon:GetDeferredWorkStateStore().entries), nil)
 	addon:DeliverRegisteredEvent("PLAYER_REGEN_ENABLED")
 	Equal(attempts, 1, "native rejection must not produce an automatic retry loop")
-	addon.API.SetUserWaypoint = function() attempts = attempts + 1; return true end
+	addon.API.SetUserWaypoint = function()
+		attempts = attempts + 1
+		return true
+	end
 	Equal(addon:CreateBlizzardWaypoint(84, 10, 20), true)
 	Equal(attempts, 2)
 	Equal(addon.waypointTracks, 1)
@@ -1030,7 +1205,10 @@ end)
 QT:RegisterTest("audit newer color picker invalidates callbacks from an older picker", function()
 	local addon = NewFixture()
 	local writes = 0
-	function addon:SetOption() writes = writes + 1; return true end
+	function addon:SetOption()
+		writes = writes + 1
+		return true
+	end
 	local oldEditor = addon:CreateProfileOptionEditCallback("nameplateQuestHealthColor")
 	local newEditor = addon:CreateProfileOptionEditCallback("nameplateQuestHealthColor")
 	Equal(oldEditor({ r = 1, g = 0, b = 0 }), false)
@@ -1047,7 +1225,9 @@ QT:RegisterTest("audit bubble edit revert cannot restore another profile's setti
 		pending = true,
 	}
 	addon.db.profile = { chatBubbleSize = 80, chatBubbleDuration = 2 }
-	function addon:ApplyPersonalBubbleEditSnapshot() error("stale profile snapshot applied") end
+	function addon:ApplyPersonalBubbleEditSnapshot()
+		error("stale profile snapshot applied")
+	end
 	addon:RevertPersonalBubbleEditSession()
 	Equal(addon.db.profile.chatBubbleSize, 80)
 	Equal(addon.db.profile.chatBubbleDuration, 2)
@@ -1082,9 +1262,18 @@ end)
 QT:RegisterTest("moved celebration and general controls preserve existing profile values", function()
 	local addon = QT
 	local function Checkbox()
-		return { SetChecked = function(self, value) self.checked = value end }
+		return {
+			SetChecked = function(self, value)
+				self.checked = value
+			end,
+		}
 	end
-	local emotes = { "emoteOnQuestCompletion", "emoteOnNearbyPlayerQuestCompletion", "emoteOnLevelUp", "emoteOnNearbyPlayerLevelUp" }
+	local emotes = {
+		"emoteOnQuestCompletion",
+		"emoteOnNearbyPlayerQuestCompletion",
+		"emoteOnLevelUp",
+		"emoteOnNearbyPlayerLevelUp",
+	}
 	addon.whereToAnnounceFrame, addon.whereToAnnounceControls = {}, {}
 	addon.optionsFrame, addon.homeControls = {}, { showMinimapButton = Checkbox() }
 	for i, key in ipairs(emotes) do
@@ -1093,27 +1282,49 @@ QT:RegisterTest("moved celebration and general controls preserve existing profil
 	end
 	addon.db.profile.showMinimapButton = false
 	addon:RefreshOptionsWindow()
-	for i, key in ipairs(emotes) do assert(addon.whereToAnnounceControls[key].checked == (i % 2 == 1)) end
+	for i, key in ipairs(emotes) do
+		assert(addon.whereToAnnounceControls[key].checked == (i % 2 == 1))
+	end
 	assert(addon.homeControls.showMinimapButton.checked == false)
-	for i, key in ipairs(emotes) do addon.db.profile[key] = i % 2 == 0 end
+	for i, key in ipairs(emotes) do
+		addon.db.profile[key] = i % 2 == 0
+	end
 	addon.db.profile.showMinimapButton = true
 	addon:RefreshOptionsWindow()
-	for i, key in ipairs(emotes) do assert(addon.whereToAnnounceControls[key].checked == (i % 2 == 0)) end
+	for i, key in ipairs(emotes) do
+		assert(addon.whereToAnnounceControls[key].checked == (i % 2 == 0))
+	end
 	assert(addon.homeControls.showMinimapButton.checked == true)
 end)
 
 QT:RegisterTest("home status distinguishes runtime state and conditional sharing preferences", function()
 	local addon = NewFixture()
 	local options = {
-		showPlayerLocations = true, onlyShowQuestPartners = true, sharePlayerLocation = false,
-		lookingForQuestPartners = false, autoInviteWhileLFG = true, autoInviteFriends = false,
-		showChatLogs = false, chatLogDestination = "separate", mirrorChatLogsToMainChat = true,
+		showPlayerLocations = true,
+		onlyShowQuestPartners = true,
+		sharePlayerLocation = false,
+		lookingForQuestPartners = false,
+		autoInviteWhileLFG = true,
+		autoInviteFriends = false,
+		showChatLogs = false,
+		chatLogDestination = "separate",
+		mirrorChatLogsToMainChat = true,
 	}
-	addon.GetOption = function(_, key) return options[key] end
-	addon.GetCurrentProfileKey = function() return "Private fixture" end
-	addon.GetAddonVersion = function() return "5.16.2" end
-	addon.GetShowProgressForLabel = function() return "Everyone" end
-	addon.GetChatLogDestinationLabel = function() return "DESTINATION_SENTINEL" end
+	addon.GetOption = function(_, key)
+		return options[key]
+	end
+	addon.GetCurrentProfileKey = function()
+		return "Private fixture"
+	end
+	addon.GetAddonVersion = function()
+		return "5.16.2"
+	end
+	addon.GetShowProgressForLabel = function()
+		return "Everyone"
+	end
+	addon.GetChatLogDestinationLabel = function()
+		return "DESTINATION_SENTINEL"
+	end
 	addon.isEnabled = false
 	addon.db.global.availableAddonVersion = "5.16.3"
 	local L = QT.Translate
@@ -1125,7 +1336,9 @@ QT:RegisterTest("home status distinguishes runtime state and conditional sharing
 	assert(groups[3].text:find(L("Players looking for questing partners"), 1, true))
 	assert(groups[4].text == L("Ask before sharing quests"))
 	assert(not groups[5].text:find("DESTINATION_SENTINEL", 1, true))
-	for _, group in ipairs(groups) do assert(type(group.categoryKey) == "string") end
+	for _, group in ipairs(groups) do
+		assert(type(group.categoryKey) == "string")
+	end
 
 	addon.isEnabled = true
 	addon.db.global.availableAddonVersion = "5.16.2"
@@ -1145,28 +1358,54 @@ QT:RegisterTest("home status layout grows for wrapped translations and shrinks a
 	addon.optionsFrame = {}
 	local textHeight = 70
 	local function Sized()
-		return { SetHeight = function(self, height) self.height = height end }
+		return {
+			SetHeight = function(self, height)
+				self.height = height
+			end,
+		}
 	end
 	local rows = {}
 	for i = 1, 7 do
 		rows[i] = {
-			frame = Sized(), button = { SetText = Noop },
-			text = { SetText = Noop, GetStringHeight = function() return textHeight end },
+			frame = Sized(),
+			button = { SetText = Noop },
+			text = {
+				SetText = Noop,
+				GetStringHeight = function()
+					return textHeight
+				end,
+			},
 		}
 	end
 	local groups = {}
-	for i = 1, 7 do groups[i] = { title = "Section", text = "Wrapped text", categoryKey = "groupsCategory" } end
-	addon.GetHomeStatusGroups = function() return groups end
+	for i = 1, 7 do
+		groups[i] = { title = "Section", text = "Wrapped text", categoryKey = "groupsCategory" }
+	end
+	addon.GetHomeStatusGroups = function()
+		return groups
+	end
 	addon.homeControls = {
-		statusGroups = rows, statusPanel = Sized(), content = Sized(),
-		description = { GetStringHeight = function() return 40 end },
-		tipsText = { GetStringHeight = function() return 60 end },
+		statusGroups = rows,
+		statusPanel = Sized(),
+		content = Sized(),
+		description = {
+			GetStringHeight = function()
+				return 40
+			end,
+		},
+		tipsText = {
+			GetStringHeight = function()
+				return 60
+			end,
+		},
 	}
 	addon:RefreshHomeWindow()
 	local expanded = addon.homeControls.statusPanel.height
 	assert(expanded >= 7 * (70 + 26 + 12))
 	assert(addon.homeControls.content.height >= expanded + 400)
-	for _, row in ipairs(rows) do assert(row.frame.height >= textHeight + 26) end
+	for _, row in ipairs(rows) do
+		assert(row.frame.height >= textHeight + 26)
+	end
 	textHeight = 14
 	addon:RefreshHomeWindow()
 	assert(addon.homeControls.statusPanel.height < expanded)
@@ -1178,18 +1417,34 @@ QT:RegisterTest("bubble save enables for edits and reverts to the last explicit 
 	addon.db.profile.chatBubbleSize = 100
 	addon.db.profile.chatBubbleDuration = 4
 	local anchor = { point = "CENTER", relativePoint = "CENTER", x = 0, y = 0 }
-	addon.GetPersonalBubbleAnchor = function() return anchor end
+	addon.GetPersonalBubbleAnchor = function()
+		return anchor
+	end
 	addon.SetPersonalBubbleAnchor = function(_, point, relativePoint, x, y)
 		anchor = { point = point, relativePoint = relativePoint, x = x, y = y }
 	end
-	addon.SetOption = function(self, key, value) self.db.profile[key] = value; return true end
+	addon.SetOption = function(self, key, value)
+		self.db.profile[key] = value
+		return true
+	end
 	addon.RefreshPersonalBubbleAnchorVisualState = Noop
 	addon.AttachPersonalBubbleEditModeDialog = Noop
 	addon.RefreshPersonalBubbleEditModeDialog = Noop
-	local function Button() return { SetEnabled = function(self, enabled) self.enabled = enabled end } end
+	local function Button()
+		return {
+			SetEnabled = function(self, enabled)
+				self.enabled = enabled
+			end,
+		}
+	end
 	addon.personalBubbleEditModeDialog = {
-		SaveButton = Button(), RevertButton = Button(),
-		SaveStatus = { SetText = function(self, text) self.text = text end },
+		SaveButton = Button(),
+		RevertButton = Button(),
+		SaveStatus = {
+			SetText = function(self, text)
+				self.text = text
+			end,
+		},
 	}
 	local dialog = addon.personalBubbleEditModeDialog
 	addon:EnsurePersonalBubbleEditSession()
@@ -1228,7 +1483,9 @@ QT:RegisterTest("closing native edit mode preserves bubble edits while explicit 
 	local addon = NewFixture()
 	addon.db.profile.chatBubbleSize, addon.db.profile.chatBubbleDuration = 100, 3
 	addon.personalBubbleEditModeDialog = false
-	addon.GetPersonalBubbleAnchor = function() return { point = "CENTER", relativePoint = "CENTER", x = 0, y = 0 } end
+	addon.GetPersonalBubbleAnchor = function()
+		return { point = "CENTER", relativePoint = "CENTER", x = 0, y = 0 }
+	end
 	addon.RefreshPersonalBubbleAnchorVisualState = Noop
 	addon.RefreshPersonalBubbleEditModeDialog = Noop
 	addon.DeselectPersonalBubbleAnchor = Noop
@@ -1237,15 +1494,24 @@ QT:RegisterTest("closing native edit mode preserves bubble edits while explicit 
 		self.db.profile.chatBubbleDuration = snapshot.chatBubbleDuration
 	end
 	local function Frame()
-		return { scripts = {}, HookScript = function(self, name, callback) self.scripts[name] = callback end }
+		return {
+			scripts = {},
+			HookScript = function(self, name, callback)
+				self.scripts[name] = callback
+			end,
+		}
 	end
 	local manager, button, hooks = Frame(), Frame(), {}
-	addon:BindPersonalBubbleEditModeCallbacks(manager, button, function(_, method, callback) hooks[method] = callback end)
+	addon:BindPersonalBubbleEditModeCallbacks(manager, button, function(_, method, callback)
+		hooks[method] = callback
+	end)
 	manager.scripts.OnShow()
 	addon.db.profile.chatBubbleSize = 140
 	addon.db.profile.chatBubbleDuration = 6
 	-- Native ExitEditMode calls RevertAllChanges before addon OnHide hooks.
-	if hooks.RevertAllChanges then hooks.RevertAllChanges() end
+	if hooks.RevertAllChanges then
+		hooks.RevertAllChanges()
+	end
 	manager.scripts.OnHide()
 	Equal(addon.db.profile.chatBubbleSize, 140)
 	Equal(addon.db.profile.chatBubbleDuration, 6)
@@ -1267,7 +1533,12 @@ QT:RegisterTest("boolean slash setter preserves nonboolean options and still cha
 	a.Print, a.RefreshOptionsWindow, a.Debugf = Noop, Noop, Noop
 	local color = { r = 0.1, g = 0.2, b = 0.3 }
 	a.db.profile.nameplateQuestHealthColor = color
-	for _, key in ipairs({ "nameplateQuestHealthColor", "nearbyAnnouncementRange", "chatLogDestination", "nameplatePlayerIconStyle" }) do
+	for _, key in ipairs({
+		"nameplateQuestHealthColor",
+		"nearbyAnnouncementRange",
+		"chatLogDestination",
+		"nameplatePlayerIconStyle",
+	}) do
 		local original = a.db.profile[key]
 		a:HandleSlashCommand("set " .. key .. " off")
 		Equal(a.db.profile[key], original)
@@ -1287,7 +1558,9 @@ local function NewReadyMilestoneFixture(count)
 	for index = 1, count or 1 do
 		a.rows[index] = { questID = 12344 + index, questLogIndex = index, title = "Existing Quest " .. index }
 	end
-	a.API.GetNumQuestLeaderBoards = function() return 0 end
+	a.API.GetNumQuestLeaderBoards = function()
+		return 0
+	end
 	function a:PublishAnnouncementEvent(kind, _, id)
 		if kind == "QUEST_READY_TO_TURN_IN" then
 			self.readyAnnouncements[#self.readyAnnouncements + 1] = id
@@ -1296,7 +1569,9 @@ local function NewReadyMilestoneFixture(count)
 	function a:GetAnnouncementIconInfo() end
 	function a:GetTrackedQuestAnnouncementIcon() end
 	function a:HandleQuestCompleted() end
-	function a:GetQuestDisplayTitle(_, title) return title end
+	function a:GetQuestDisplayTitle(_, title)
+		return title
+	end
 	function a:ObserveReady()
 		self:UNIT_QUEST_LOG_CHANGED(nil, "player")
 		self:DrainQueuedQuestLogTasks()
@@ -1313,7 +1588,9 @@ QT:RegisterTest("readiness without any readable baseline stays unknown including
 	a:ObserveReady()
 	Equal(a.tracker[12345].isReadyForTurnIn, nil)
 	a.blocked = true
-	a.API.IsQuestReadyForTurnIn = function() error("must not read restricted readiness") end
+	a.API.IsQuestReadyForTurnIn = function()
+		error("must not read restricted readiness")
+	end
 	Equal(a:GetTrackedQuestStatusState(12345, true).isReadyForTurnIn, nil)
 end)
 
@@ -1322,14 +1599,22 @@ QT:RegisterTest("initial ready and late readable completed quests never announce
 		local a = NewReadyMilestoneFixture(10)
 		a.liveReady = condition == "ready"
 		a.liveComplete = condition == "false_complete" or condition == "ready"
-		if condition == "unknown" then a.liveReady, a.liveComplete = nil, nil end
-		if condition == "missing_api" then a.API.IsQuestReadyForTurnIn = nil end
+		if condition == "unknown" then
+			a.liveReady, a.liveComplete = nil, nil
+		end
+		if condition == "missing_api" then
+			a.API.IsQuestReadyForTurnIn = nil
+		end
 		if condition == "false_snapshot_complete" then
-			for _, row in ipairs(a.rows) do row.isComplete = true end
+			for _, row in ipairs(a.rows) do
+				row.isComplete = true
+			end
 		end
 		a:ScanQuestLog()
 		Equal(#a.readyAnnouncements, 0)
-		a.API.IsQuestReadyForTurnIn = function() return a.liveReady end
+		a.API.IsQuestReadyForTurnIn = function()
+			return a.liveReady
+		end
 		a.liveReady, a.liveComplete = true, true
 		a:ObserveReady()
 		a:ObserveReady()
@@ -1348,9 +1633,13 @@ QT:RegisterTest("ready notifications survive false unknown and rescan refreshes 
 		Equal(#a.readyAnnouncements, expected, "genuine unfinished-to-ready transitions still announce")
 		for _, condition in ipairs({ "unknown", "false", "rescan_false" }) do
 			a.liveReady, a.liveComplete = false, false
-			if condition == "unknown" then a.liveReady, a.liveComplete = nil, nil end
+			if condition == "unknown" then
+				a.liveReady, a.liveComplete = nil, nil
+			end
 			a:ObserveReady()
-			if condition == "rescan_false" then a:ScanQuestLog() end
+			if condition == "rescan_false" then
+				a:ScanQuestLog()
+			end
 			a.liveReady, a.liveComplete = true, true
 			a:ObserveReady()
 			Equal(#a.readyAnnouncements, expected, condition)
@@ -1379,7 +1668,9 @@ QT:RegisterTest("ready notification history resets after turn-in or abandonment 
 		a.liveReady, a.liveComplete = true, true
 		a:ObserveReady()
 		Equal(#a.readyAnnouncements, 1)
-		if turnedIn then a:QUEST_TURNED_IN(nil, 12345) end
+		if turnedIn then
+			a:QUEST_TURNED_IN(nil, 12345)
+		end
 		a:QUEST_REMOVED(nil, 12345)
 		a:ResolvePendingQuestRemoval(12345)
 		Equal(a.tracker[12345], nil)
@@ -1395,17 +1686,23 @@ end)
 
 QT:RegisterTest("quest acquisition publishes classification and rows atomically after a complete scan", function()
 	local a = NewFixture()
-	a.API.IsWorldQuest = function() return a.worldClassification end
+	a.API.IsWorldQuest = function()
+		return a.worldClassification
+	end
 	a.worldClassification = true
 	local snapshot, complete = a:RebuildQuestSnapshotStore()
 	assert(complete and a:GetQuestClassification(12345).isWorldQuest == true)
 	local generation = snapshot.generation
 	a.worldClassification = false
-	a.API.GetNumQuestLogEntries = function() return 2 end
+	a.API.GetNumQuestLogEntries = function()
+		return 2
+	end
 	local _, finished = a:RebuildQuestSnapshotStore()
 	assert(not finished and snapshot.generation == generation)
 	assert(a:GetQuestClassification(12345).isWorldQuest == true, "partial reads cannot leak new classifications")
-	a.API.GetNumQuestLogEntries = function() return 1 end
+	a.API.GetNumQuestLogEntries = function()
+		return 1
+	end
 	assert(select(2, a:RebuildQuestSnapshotStore()))
 	assert(a:GetQuestClassification(12345).isWorldQuest == false)
 end)
@@ -1413,7 +1710,10 @@ end)
 QT:RegisterTest("classification consumers and area reduction share an observation without new native reads", function()
 	local a = NewTaskClassificationFixture()
 	local reads = 0
-	a.API.IsWorldQuest = function() reads = reads + 1; return true end
+	a.API.IsWorldQuest = function()
+		reads = reads + 1
+		return true
+	end
 	local snapshot = a:RebuildQuestSnapshotStore()
 	assert(reads == 1)
 	assert(a:IsWorldQuest(12345) and not a:IsBonusObjective(12345))
@@ -1426,7 +1726,10 @@ QT:RegisterTest("a successfully observed empty log is cached until explicit acqu
 	local a = NewTaskClassificationFixture()
 	a.row = nil
 	local reads = 0
-	a.API.GetNumQuestLogEntries = function() reads = reads + 1; return 0 end
+	a.API.GetNumQuestLogEntries = function()
+		reads = reads + 1
+		return 0
+	end
 	a:EnsureQuestSnapshotStore()
 	a:EnsureQuestSnapshotStore()
 	assert(reads == 1)

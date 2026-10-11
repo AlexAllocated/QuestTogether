@@ -1,15 +1,35 @@
 {
-  "source_sha256": "83cbdd87c48efdbcf6f4f44cfe2b0c145f5a41e8afaecd27aaa50c51dc40d753",
+  "source_sha256": "8b2ef9b74731cf0b5d63a428e7f88a1385be922b3cf906a11579030289afd4ee",
   "notes": {
     "version": "6.5.11",
-    "welcome": "Los nuevos atajos de teclado facilitan el acceso a las herramientas de QuestTogether y la gestión de compañeros para hacer misiones.",
+    "welcome": "Reconstruimos el sistema de comunicación de QuestTogether en preparación para el lanzamiento de WoW Forever. Este cambio importante de protocolo requiere que todos actualicen juntos.",
     "sections": [
       {
-        "title": "Atajos de teclado",
+        "title": "Importante: las versiones anteriores no pueden comunicarse",
         "items": [
-          "QuestTogether ahora aparece correctamente en Configuración > Asignación de teclas, en lugar de la entrada incorrecta HEADER_QUESTTOGETHER.",
-          "Asigna teclas para abrir el menú de QuestTogether, mostrar u ocultar el registro de misiones del grupo, activar o desactivar la búsqueda de compañeros para hacer misiones, dejar de seguir la misión del compañero, abrir el chat de QuestTogether o abrir su configuración.",
-          "Se conserva tu asignación actual para el registro de misiones del grupo. Las nuevas acciones comienzan sin una tecla asignada, y la tecla del menú funciona incluso si el ícono del minimapa está oculto."
+          "Esta versión introduce un nuevo protocolo de comunicación. QuestTogether 7.x no puede intercambiar ubicaciones de jugadores, progreso de misiones, datos del registro de misiones del grupo ni otros mensajes del addon con las versiones 6.x y anteriores. Pídeles a tus compañeros de misiones que también actualicen."
+        ]
+      },
+      {
+        "title": "Preparándonos para WoW Forever",
+        "items": [
+          "Estamos haciendo estos cambios importantes que rompen la compatibilidad ahora, antes del lanzamiento de WoW Forever, para darle una base más sólida al sistema de comunicación de QuestTogether.",
+          "Después del lanzamiento de WoW Forever, tendremos más cuidado de preservar la compatibilidad con versiones anteriores del addon y evitar actualizaciones obligatorias que interrumpan el juego. Si fuera necesario volver a romper la compatibilidad del protocolo, lo comunicaremos claramente."
+        ]
+      },
+      {
+        "title": "Encuentra jugadores donde estás buscando",
+        "items": [
+          "Las actualizaciones de jugadores priorizan tu zona actual y una zona que mantengas abierta en el mapa, mientras que las ubicaciones más lejanas se actualizan en segundo plano.",
+          "El movimiento cercano usa actualizaciones breves y específicas. Las solicitudes de búsqueda se comparten y se escalonan para reducir el tráfico en zonas concurridas."
+        ]
+      },
+      {
+        "title": "Intercambio más confiable",
+        "items": [
+          "Las actualizaciones de misiones, las transferencias del registro de misiones del grupo, los detalles de jugadores y los diagnósticos comparten un envío regulado para que las respuestas grandes dejen espacio a otras actividades.",
+          "Las respuestas grandes pueden recuperar las partes faltantes sin reiniciar toda la transferencia. Las ubicaciones recibidas con retraso conservan su antigüedad y no pueden sobrescribir posiciones más recientes ni retiros de ubicación.",
+          "Los cambios al compartir ubicación cancelan las coordenadas públicas pendientes de envío. Al cerrar sesión o durante una pantalla de carga, QuestTogether intenta enviar un último aviso de salida; si no llega, los datos siguen venciendo automáticamente."
         ]
       }
     ]

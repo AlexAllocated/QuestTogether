@@ -1,3 +1,16 @@
+-- Explicit typed observation supplied at the private receive boundary.
+-- Short per-field lifetimes exercise expiry boundaries; public v2 snapshots use 600 seconds.
+local function ObserveState(addon, method, field, record, sender)
+	local lifetimes = { QTLF = 65, QTLQ = 65, QTVR = 180, QTPG = 180, QJST = 125, QTHI = 180 }
+	local observation = addon:CreatePeerObservation(sender, field, {
+		source = "snapshot",
+		lifetime = lifetimes[field] or 600,
+		session = type(record) == "table" and record.session or nil,
+		sequence = type(record) == "table" and record.sequence or nil,
+	})
+	return addon[method](addon, record, sender, observation)
+end
+
 -- Private addon models and transport only; safe in a live /qt test run.
 local QT = _G.QuestTogether
 local function Equal(a, b)
@@ -30,13 +43,21 @@ local function Fixture(name)
 		end,
 	}
 	a.API.SendAddonMessage = function(prefix, wire, route, target)
-		a.sent[#a.sent + 1] = { wire = wire, route = route, target = target, at = a.now }
+		local frame, body = a:DecodeCommFrame(wire)
+		a.sent[#a.sent + 1] = {
+			wire = wire,
+			route = route,
+			target = target,
+			at = a.now,
+			operation = frame and frame.operation,
+			record = frame and frame.total == 1 and a:DecodeCommRecord(frame.operation, body),
+		}
 		if a.fail then
 			return 3
 		end
 		local receiver = a.network and a.network[target]
 		if receiver then
-			receiver:OnCommReceived(prefix, wire, route, a.name)
+			receiver:ReceiveCommunication(prefix, wire, route, a.name)
 		end
 		return 0
 	end
@@ -73,6 +94,22 @@ local function Fixture(name)
 		end
 		return 100 + (row.x - self.position.x) * 1000, 100 + (row.y - self.position.y) * 1000
 	end
+	function a:GetPartyRosterFingerprint()
+		return "solo"
+	end
+	function a:GetGroupAnnouncementDistribution()
+		return nil
+	end
+	function a:IsGroupedSender()
+		return false
+	end
+	function a:IsRuntimeRestrictionTypeActive()
+		return false
+	end
+	function a:IsAnnouncementChannelEvent()
+		return false
+	end
+	a:InitializeCommunications()
 	a:InitializeGeographicComms()
 	return a
 end
@@ -87,7 +124,7 @@ local function Discover(a, b)
 		classFile = "MAGE",
 		sequence = 7,
 	}
-	assert(a:HandlePlayerCapabilityMetadata("1,1,0", b.name))
+	assert(ObserveState(a, "HandlePlayerCapabilityMetadata", "QTCI", { streams = true, raceID = 0 }, b.name))
 end
 local function Pair()
 	local a, b = Fixture(), Fixture("Bob Smith")
@@ -104,8 +141,10 @@ local function Tick(a, b, steps)
 			b.now = a.now
 		end
 		a:UpdateNearbyStreams()
+		a:UpdateCommunicationRuntime()
 		if b then
 			b:UpdateNearbyStreams()
+			b:UpdateCommunicationRuntime()
 		end
 	end
 end
@@ -114,7 +153,7 @@ QT:RegisterTest("nearby streams exchange correlated position whispers and preser
 	Tick(a, b, 8)
 	local stream = a.nearbyStreamState.wanted[b.name]
 	assert(stream.sample)
-	Equal(a.sent[1].wire:sub(1, 5), "QTSR|")
+	Equal(a.sent[1].operation, "QTSR")
 	b.position.x = 0.52
 	Tick(a, b, 3)
 	local baseline = a.playerLocationState.peers[b.name]
@@ -126,7 +165,7 @@ QT:RegisterTest("nearby streams exchange correlated position whispers and preser
 	for _, packet in ipairs(a.sent) do
 		Equal(packet.route, "WHISPER")
 		Equal(packet.target, b.name)
-		assert(#packet.wire < 160)
+		assert(#packet.wire <= 255)
 	end
 end)
 QT:RegisterTest("nearby stream movement is interpolated and never extrapolated", function()
@@ -149,7 +188,15 @@ QT:RegisterTest("nearby streams restrict unknown senders routes payloads and exp
 	Tick(a, b, 3)
 	local peer = a.nearbyStreamState.wanted[b.name]
 	local function Packet(token, seq, stamp, position)
-		return "1," .. token .. "," .. seq .. "," .. stamp .. "," .. (position or "1,0.51000,0.50000")
+		local mapID, x, y = (position or "1,0.51000,0.50000"):match("([^,]+),([^,]+),([^,]+)")
+		return {
+			token = token,
+			sequence = seq,
+			stamp = stamp,
+			mapID = tonumber(mapID),
+			x = tonumber(x),
+			y = tonumber(y),
+		}
 	end
 	local stamp = a:GetAnnouncementServerTime()
 	assert(not a:HandleNearbyStreamMessage("QTSP", Packet("wrong", 99, stamp), b.name))
@@ -219,7 +266,7 @@ QT:RegisterTest("nearby stream budget is bounded and prioritizes four closest pe
 	assert(a.nearbyStreamState.wanted[peers[1].name])
 	assert(not a.nearbyStreamState.wanted[peers[5].name])
 	for i = 1, 20 do
-		local accepted = a:HandleNearbyStreamMessage("QTSR", "1,token-" .. i, peers[i].name)
+		local accepted = a:HandleNearbyStreamMessage("QTSR", { token = "token-" .. i }, peers[i].name)
 		Equal(accepted, i <= 4)
 	end
 	for _ = 1, 100 do
@@ -231,46 +278,50 @@ QT:RegisterTest("nearby stream budget is bounded and prioritizes four closest pe
 	end
 	assert(Count(a.nearbyStreamState.subscribers) <= 4)
 end)
-QT:RegisterTest("nearby streams back off on throttling and yield to queued announcements", function()
+QT:RegisterTest("nearby streams use common throttle backoff and yield to control traffic", function()
 	local a, b = Pair()
 	Tick(a, b, 8)
 	a.fail = true
 	a.position.x = 0.51
 	Tick(a, nil, 1)
-	local sent = #a.sent
+	local before = #a.sent
 	Tick(a, nil, 15)
-	Equal(#a.sent, sent)
+	assert(#a.sent - before < 10, "native throttle must not retry every frame")
 	a.fail = false
-	a:GetTransportState().queue = { { priority = "control", snapshot = false } }
-	Tick(a, nil, 30)
-	Equal(#a.sent, sent)
-	a:GetTransportState().queue = {}
-	Tick(a, b, 5)
-	assert(#a.sent > sent)
+	a:Emit("QTPR", { active = true }, { { distribution = "WHISPER", target = b.name } }, { priority = "control" })
+	Tick(a, b, 30)
+	local found = false
+	for index = before + 1, #a.sent do
+		if a.sent[index].operation == "QTPR" then
+			found = true
+		end
+	end
+	assert(found, "control work shares and drains the same queue")
+	assert(a.nearbyStreamState.wanted[b.name].sample)
 end)
-QT:RegisterTest("nearby stream capability packets are isolated from older geographic metadata", function()
+QT:RegisterTest("nearby capabilities share one typed state envelope without legacy companions", function()
 	local a = Fixture()
-	a:StageGeographicState("QTPR|1,1")
-	a:StageGeographicState("QTPG|1,0")
-	a:StageGeographicState("QTCI|1,1,0")
-	local packets = a:BuildGeographicSnapshots()
-	Equal(#packets, 3)
-	assert(packets[1]:find("QTPR|", 1, true))
-	assert(packets[2]:find("QTPG|", 1, true))
-	assert(packets[3]:find("QTCI|", 1, true))
-	Equal(#a:BuildGeographicSnapshots(true), 0)
+	a:Publish("QTPR", { active = true })
+	a:Publish("QTPG", { size = 0 })
+	a:Publish("QTCI", { streams = true, raceID = 0 })
+	local records = a:BuildCommunicationStateRecords()
+	Equal(#records, 3)
+	Equal(records[1].topic, "QTPR")
+	Equal(records[2].topic, "QTPG")
+	Equal(records[3].topic, "QTCI")
+	Equal(#a:BuildCommunicationStateRecords(true), 0)
 end)
 QT:RegisterTest("nearby streams never probe older clients without advertised support", function()
 	local a, b = Pair()
 	a.nearbyStreamState.capabilities = {}
 	Tick(a, nil, 100)
 	Equal(#a.sent, 0)
-	assert(not a:HandleNearbyStreamMessage("QTSR", "1,token", b.name))
+	assert(not a:HandleNearbyStreamMessage("QTSR", { token = "token" }, b.name))
 end)
 QT:RegisterTest("nearby stream capability storage and abandoned subscriptions are bounded", function()
 	local a, b = Pair()
 	for i = 1, 600 do
-		a:HandlePlayerCapabilityMetadata("1,1,0", "Peer " .. i)
+		ObserveState(a, "HandlePlayerCapabilityMetadata", "QTCI", { streams = true, raceID = 0 }, "Peer " .. i)
 	end
 	assert(Count(a.nearbyStreamState.capabilities) <= 512)
 	Discover(a, b)
@@ -290,13 +341,13 @@ QT:RegisterTest("nearby streams replace crowded subscribers without exceeding th
 		peers[i] = b
 	end
 	for i = 1, 4 do
-		assert(a:HandleNearbyStreamMessage("QTSR", "1,old", peers[i].name))
+		assert(a:HandleNearbyStreamMessage("QTSR", { token = "old" }, peers[i].name))
 	end
 	for i = 1, 4 do
 		a.playerLocationState.peers[peers[i].name].x = 0.9
 	end
 	for i = 5, 8 do
-		assert(a:HandleNearbyStreamMessage("QTSR", "1,new", peers[i].name))
+		assert(a:HandleNearbyStreamMessage("QTSR", { token = "new" }, peers[i].name))
 		assert(Count(a.nearbyStreamState.subscribers) <= 4)
 	end
 	assert(not a.nearbyStreamState.subscribers[peers[1].name])
@@ -309,29 +360,40 @@ QT:RegisterTest("nearby stream reset never reuses correlations from the geograph
 	Discover(a, b)
 	Tick(a, nil, 1)
 	assert(a.nearbyStreamState.wanted[b.name].token ~= oldToken)
-	assert(not a:HandleNearbyStreamMessage("QTSP", "1," .. oldToken .. ",99,0,1,0.50000,0.50000", b.name))
+	assert(
+		not a:HandleNearbyStreamMessage(
+			"QTSP",
+			{ token = oldToken, sequence = 99, stamp = 0, mapID = 1, x = 0.5, y = 0.5 },
+			b.name
+		)
+	)
 end)
-QT:RegisterTest("nearby stream capability follows geographic packet age and rejects whisper advertisements", function()
+QT:RegisterTest("nearby capability freshness follows the original sample timestamp", function()
 	local a, b = Pair()
 	a.nearbyStreamState.capabilities[b.name] = nil
-	a:OnCommReceived(a.commPrefix, "QTCI|1,1,0", "WHISPER", b.name)
-	Equal(a.nearbyStreamState.capabilities[b.name], nil)
-	b:StageGeographicState("QTCI|1,1,0")
-	local wire = b:BuildGeographicSnapshots()[1]
+	local context = {
+		session = b:GetCommunicationSession(),
+		sequence = b:NextCommunicationSequence(),
+		stamp = b:GetAnnouncementServerTime(),
+	}
+	local records =
+		{ { topic = "QTCI", data = { streams = true, raceID = 0 }, sampledAt = b:GetAnnouncementServerTime() } }
 	a.now = b.now + 10
-	assert(a:HandleGeographicSnapshot(wire:sub(6), b.name))
+	assert(a:ApplyCommunicationState(records, b.name, context))
 	Equal(a.nearbyStreamState.capabilities[b.name].lifetime, 590)
+	a.now = a.now + 590
+	Equal(a:GetPlayerCapabilities(b.name), nil)
 end)
 QT:RegisterTest("nearby streams cannot renew by replaying requests every frame", function()
 	local a, b = Pair()
-	assert(a:HandleNearbyStreamMessage("QTSR", "1,token", b.name))
+	assert(a:HandleNearbyStreamMessage("QTSR", { token = "token" }, b.name))
 	for _ = 1, 10 do
-		assert(not a:HandleNearbyStreamMessage("QTSR", "1,new-token", b.name))
+		assert(not a:HandleNearbyStreamMessage("QTSR", { token = "new-token" }, b.name))
 	end
 	Equal(#a.sent, 0)
 	Equal(a.nearbyStreamState.subscribers[b.name].token, "token")
-	assert(not a:HandleNearbyStreamMessage("QTSX", "1,wrong", b.name))
-	assert(a:HandleNearbyStreamMessage("QTSX", "1,token", b.name))
+	assert(not a:HandleNearbyStreamMessage("QTSX", { token = "wrong" }, b.name))
+	assert(a:HandleNearbyStreamMessage("QTSX", { token = "token" }, b.name))
 	Equal(a.nearbyStreamState.subscribers[b.name], nil)
 end)
 
@@ -347,21 +409,28 @@ QT:RegisterTest("player identity localizes race and class without guessing legac
 	local race, class = a:GetPlayerTooltipIdentity(row)
 	Equal(race, "Zwerg")
 	Equal(class, "Mage")
-	assert(a:HandlePlayerCapabilityMetadata("1,1,3", b.name))
+	assert(ObserveState(a, "HandlePlayerCapabilityMetadata", "QTCI", { streams = true, raceID = 3 }, b.name))
 	race, class = a:GetPlayerTooltipIdentity(row)
 	Equal(race, "Dwarf")
 	Equal(class, "Mage")
-	assert(a:HandlePlayerCapabilityMetadata("1,0,3", b.name))
+	assert(ObserveState(a, "HandlePlayerCapabilityMetadata", "QTCI", { streams = false, raceID = 3 }, b.name))
 	Equal(a:GetPlayerTooltipIdentity(row), "Dwarf")
 	Tick(a, nil, 2)
 	Equal(Count(a.nearbyStreamState.wanted), 0)
-	assert(a:HandlePlayerCapabilityMetadata("1,1,999", b.name))
+	assert(ObserveState(a, "HandlePlayerCapabilityMetadata", "QTCI", { streams = true, raceID = 999 }, b.name))
 	Equal(a:GetPlayerTooltipIdentity(row), "Zwerg")
-	assert(a:HandlePlayerCapabilityMetadata("1,1,3", b.name))
+	assert(ObserveState(a, "HandlePlayerCapabilityMetadata", "QTCI", { streams = true, raceID = 3 }, b.name))
 	a.now = a.now + 601
 	Equal(a:GetPlayerTooltipIdentity(row), "Zwerg")
-	for _, payload in ipairs({ "1,1,nan", "1,1,-1", "1,1,1.5", "1,1,100001", "2,1,3", "1,2,3" }) do
-		assert(not a:HandlePlayerCapabilityMetadata(payload, b.name))
+	for _, payload in ipairs({
+		{ streams = true, raceID = "nan" },
+		{ streams = true, raceID = -1 },
+		{ streams = true, raceID = 1.5 },
+		{ streams = true, raceID = 100001 },
+		{ raceID = 3 },
+		{ streams = 2, raceID = 3 },
+	}) do
+		assert(not ObserveState(a, "HandlePlayerCapabilityMetadata", "QTCI", payload, b.name))
 	end
 end)
 
@@ -372,12 +441,14 @@ QT:RegisterTest("nearby stream publishing includes race ID while viewing or shar
 	end
 	a.db.profile.showPlayerLocations = false
 	a:UpdateNearbyStreams()
-	Equal(a.geographicCommsState.latest.QTCI.wire, "QTCI|1,0,3,1")
+	Equal(a.geographicCommsState.latest.QTCI.data.streams, false)
+	Equal(a.geographicCommsState.latest.QTCI.data.raceID, 3)
 	Equal(#a.sent, 0)
 	a.db.profile.showPlayerLocations = true
 	a.now = a.now + 20
 	a:UpdateNearbyStreams()
-	Equal(a.geographicCommsState.latest.QTCI.wire, "QTCI|1,1,3,1")
+	Equal(a.geographicCommsState.latest.QTCI.data.streams, true)
+	Equal(a.geographicCommsState.latest.QTCI.data.raceID, 3)
 end)
 
 QT:RegisterTest("unreachable whisper recipients do not permanently stall other nearby peers", function()
@@ -438,26 +509,71 @@ QT:RegisterTest("nearby capability withdrawals and data from departed subscripti
 	local a, b = Pair()
 	Tick(a, b, 8)
 	local token = a.nearbyStreamState.wanted[b.name].token
-	assert(a:HandlePlayerCapabilityMetadata("1,0,3", b.name))
+	assert(ObserveState(a, "HandlePlayerCapabilityMetadata", "QTCI", { streams = false, raceID = 3 }, b.name))
 	Equal(a.nearbyStreamState.wanted[b.name], nil)
 	Equal(a.nearbyStreamState.subscribers[b.name], nil)
-	assert(not a:HandleNearbyStreamMessage("QTSP", "1," .. token .. ",999,0,1,0.51000,0.50000", b.name))
+	assert(
+		not a:HandleNearbyStreamMessage(
+			"QTSP",
+			{ token = token, sequence = 999, stamp = 0, mapID = 1, x = 0.51, y = 0.5 },
+			b.name
+		)
+	)
 	Tick(a, nil, 5)
 	Equal(Count(a.nearbyStreamState.wanted), 0)
 end)
 
-QT:RegisterTest("nearby movement retains its separate budget while comparisons use the fair scheduler", function()
+QT:RegisterTest("nearby movement remains responsive while actual bulk traffic shares the transport", function()
 	local a, b = Pair()
-	a.questCompareResponseQueue = { jobs = { { entries = {}, expiresAt = a.now + 60 } } }
-	Tick(a, b, 4)
-	assert(#a.sent > 0)
-	a.questCompareResponseQueue.jobs[1].entries = nil
-	Tick(a, b, 4)
-	assert(#a.sent > 0)
-	local before = #a.sent
-	a.questCompareResponseQueue.jobs[1] = { entries = {}, expiresAt = a.now - 1 }
-	Tick(a, b, 30)
-	assert(#a.sent > before)
+	Tick(a, b, 8)
+	local owner = {}
+	local wire = assert(
+		a:BuildCommFrames(
+			"QCRS",
+			{ requestId = "pressure", snapshotId = "load", entries = {}, count = 0 },
+			{ session = "100-1234", messageId = "900", requestId = "pressure", stamp = a:GetAnnouncementServerTime() }
+		)
+	)[1]
+	for index = 1, 60 do
+		assert(
+			a:QueueTransportWire(
+				wire,
+				"QCRS",
+				{ distribution = "WHISPER", target = b.name },
+				{ priority = "bulk", flow = "bulk:" .. (index % 3), owner = owner, expires = a.now + 60 }
+			)
+		)
+	end
+	Equal(#a:GetTransportState().queue >= 60, true)
+	local start = #a.sent
+	for step = 1, 40 do
+		a.position.x = 0.5 + step * 0.0001
+		Tick(a, b, 1)
+	end
+	local bulk, movement = 0, 0
+	for index = start + 1, #a.sent do
+		local packet = a.sent[index]
+		if packet.operation == "QCRS" then
+			bulk = bulk + 1
+		elseif packet.operation == "QTSP" then
+			movement = movement + 1
+		end
+	end
+	assert(bulk >= 6, "bulk traffic must receive service during nearby movement")
+	assert(movement >= 4, "nearby movement must receive service during bulk pressure")
+	assert(#a:GetTransportState().queue > 0, "pressure must still be present")
+	a:CancelTransportOwner(owner, "cancelled")
+	local accepted = movement
+	start = #a.sent
+	a.position.x = 0.51
+	Tick(a, b, 8)
+	for index = start + 1, #a.sent do
+		assert(a.sent[index].operation ~= "QCRS", "cancelled bulk packets must stop")
+		if a.sent[index].operation == "QTSP" then
+			movement = movement + 1
+		end
+	end
+	assert(movement > accepted)
 end)
 
 QT:RegisterTest("nearby streams reuse only the current tick location sample and respect consent", function()
@@ -465,18 +581,23 @@ QT:RegisterTest("nearby streams reuse only the current tick location sample and 
 	Tick(a, b, 8)
 	local state = a.nearbyStreamState
 	state.wanted[b.name].nextRequest = a.now + 20
-	state.nextSend, state.nextScan = a.now, a.now + 20
+	state.nextSubmit, state.nextScan = a.now, a.now + 20
 	local reads = 0
-	function a:ReadLocalPlayerLocation() reads = reads + 1; return self.position end
-	local sample = {mapID=1, x=0.51, y=0.5}
+	function a:ReadLocalPlayerLocation()
+		reads = reads + 1
+		return self.position
+	end
+	local sample = { mapID = 1, x = 0.51, y = 0.5 }
 	a:UpdateNearbyStreams(sample)
+	a:UpdateCommunicationRuntime()
 	Equal(reads, 0)
-	assert(a.sent[#a.sent].wire:find("1,0.51000,0.50000", 1, true))
+	Equal(a.sent[#a.sent].record.x, 0.51)
 	a.now = a.now + 0.3
 	a.position.x = 0.52
 	a:UpdateNearbyStreams()
+	a:UpdateCommunicationRuntime()
 	Equal(reads, 1)
-	assert(a.sent[#a.sent].wire:find("1,0.52000,0.50000", 1, true))
+	Equal(a.sent[#a.sent].record.x, 0.52)
 	local before = #a.sent
 	a.db.profile.sharePlayerLocation = false
 	a.now = a.now + 0.3

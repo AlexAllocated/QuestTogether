@@ -4,13 +4,27 @@
 
 ## 6.5.11
 
-Neue Tastenbelegungen erleichtern das Öffnen der QuestTogether-Funktionen und die Verwaltung deiner Suche nach Questpartnern.
+Das Kommunikationssystem von QuestTogether wurde in Vorbereitung auf die Veröffentlichung von WoW Forever neu aufgebaut. Diese grundlegende Protokolländerung erfordert, dass alle gemeinsam aktualisieren.
 
-### Tastenbelegungen
+### Wichtig: Ältere Versionen können nicht kommunizieren
 
-- QuestTogether wird jetzt unter Einstellungen > Tastenbelegung korrekt angezeigt und ersetzt den fehlerhaften Eintrag HEADER_QUESTTOGETHER.
-- Du kannst Tasten zuweisen, um das QuestTogether-Menü zu öffnen, das Gruppenquestlog ein- oder auszublenden, die Suche nach Questpartnern ein- oder auszuschalten, dem Questfokus nicht mehr zu folgen, den QuestTogether-Chat zu öffnen oder die QuestTogether-Einstellungen aufzurufen.
-- Deine bisherige Tastenbelegung für das Gruppenquestlog bleibt erhalten. Die neuen Aktionen haben zunächst keine zugewiesenen Tasten. Die Taste für das Menü funktioniert auch bei ausgeblendetem Minikartensymbol.
+- Diese Version führt ein neues Kommunikationsprotokoll ein. QuestTogether 7.x kann keine Spielerpositionen, Questfortschritte, Daten des Gruppenquestlogs oder andere Addon-Nachrichten mit 6.x und früheren Versionen austauschen. Bitte deine Questpartner, ebenfalls zu aktualisieren.
+
+### Vorbereitung auf WoW Forever
+
+- Wir nehmen diese größeren, inkompatiblen Änderungen jetzt vor der Veröffentlichung von WoW Forever vor, um das Kommunikationssystem von QuestTogether auf eine solidere Grundlage zu stellen.
+- Nach dem Start von WoW Forever werden wir stärker darauf achten, die Abwärtskompatibilität zwischen Addon-Versionen zu erhalten und störende Aktualisierungspflichten zu vermeiden. Sollte ein weiterer Protokollbruch notwendig werden, werden wir klar darauf hinweisen.
+
+### Spieler dort finden, wo du suchst
+
+- Spieleraktualisierungen haben in deinem aktuellen Gebiet und in einem Gebiet, das du auf der Karte geöffnet lässt, Vorrang. Weiter entfernte Positionen werden im Hintergrund aktualisiert.
+- Bewegungen in der Nähe werden mit kurzen, gezielten Aktualisierungen übertragen. Suchanfragen werden gemeinsam genutzt und zeitlich verteilt, um den Datenverkehr in belebten Gebieten zu verringern.
+
+### Zuverlässigerer Datenaustausch
+
+- Questaktualisierungen, Übertragungen des Gruppenquestlogs, Spielerdetails und Diagnosedaten werden gemeinsam dosiert versendet, damit große Antworten Platz für andere Aktivitäten lassen.
+- Bei großen Antworten können fehlende Teile nachgeliefert werden, ohne die gesamte Übertragung neu zu starten. Verspätete Positionsdaten behalten ihr ursprüngliches Alter und können neuere Positionen oder Rücknahmen nicht überschreiben.
+- Änderungen an der Standortfreigabe verwerfen öffentliche Koordinaten in der Warteschlange. Beim Ausloggen oder einem Ladebildschirm versucht QuestTogether, eine letzte Abmeldung zu senden. Falls das nicht gelingt, laufen die Daten weiterhin automatisch ab.
 
 ## 6.5.10
 

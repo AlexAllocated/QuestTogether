@@ -40,17 +40,21 @@ end
 -- mutated in place: refreshes stage privately and detail updates replace the map.
 -- Passing nil retires all evidence owned by the previous snapshot.
 function QuestTogether:SetPartyQuestMemberSnapshot(member, entries, revision, sampledAt)
-	member.entries, member.revision, member.sampledAt = entries or {}, entries and revision or nil, entries and sampledAt or nil
+	member.entries, member.revision, member.sampledAt =
+		entries or {}, entries and revision or nil, entries and sampledAt or nil
 end
 
 function QuestTogether:UpdatePartyQuestMemberEntry(member, questId, entry)
 	local previous = member.entries[questId]
-	local sameSummary = previous and entry
+	local sameSummary = previous
+		and entry
 		and (previous.questTitle or "") == (entry.questTitle or "")
 		and (previous.isComplete == true) == (entry.isComplete == true)
 		and previous.isPushable == entry.isPushable
 	local entries = {}
-	for id, value in pairs(member.entries) do entries[id] = value end
+	for id, value in pairs(member.entries) do
+		entries[id] = value
+	end
 	entries[questId] = entry
 	-- Objective progress alone does not change the certified log. Ownership,
 	-- title, readiness or shareability changes require a new full certificate.
@@ -109,7 +113,9 @@ function QuestTogether:CancelIgnoredPlayerQuestCompare()
 				self.pendingQuestCompareRequests[member.requestId] = nil
 			end
 			for _, detail in pairs(member.objectiveDetails or {}) do
-				if detail.requestId then self.pendingQuestCompareRequests[detail.requestId] = nil end
+				if detail.requestId then
+					self.pendingQuestCompareRequests[detail.requestId] = nil
+				end
 			end
 			member.objectiveDetails, member.objectiveRequestQuestId = {}, nil
 			self:SetPartyQuestMemberSnapshot(member, nil)
@@ -132,18 +138,24 @@ function QuestTogether:ResetPartyQuestCompare()
 end
 
 function QuestTogether:TogglePartyQuestCompare()
-	if self:IsWorkBlocked("foreign_frame_mutation") then return false end
+	if self:IsWorkBlocked("foreign_frame_mutation") then
+		return false
+	end
 	local closed = false
 	for _, controller in ipairs({ self, rawget(self, "partyQuestComparePreview") }) do
 		local frame = rawget(controller, "partyQuestCompareWindow")
-		if frame and not self.LibChev.CanMutateOwnedRegion(frame) then return false end
+		if frame and not self.LibChev.CanMutateOwnedRegion(frame) then
+			return false
+		end
 		if frame and frame:IsShown() then
 			controller:CancelPartyQuestCompare()
 			frame:Hide()
 			closed = true
 		end
 	end
-	if closed then return true end
+	if closed then
+		return true
+	end
 	return self:OpenPartyQuestCompare()
 end
 
@@ -245,19 +257,22 @@ function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName, condi
 	for _, name in ipairs(names) do
 		local member = { name = name, entries = {}, state = "loading", isLocal = name == ownName }
 		local prior = previous and previous.byName[member.name]
-		if prior then self:SetPartyQuestMemberSnapshot(member, prior.entries, prior.revision, prior.sampledAt) end
+		if prior then
+			self:SetPartyQuestMemberSnapshot(member, prior.entries, prior.revision, prior.sampledAt)
+		end
 		member.classFile = member.isLocal and self:GetPlayerClassFile() or self:GetGroupedSenderClassFile(name)
 		session.members[#session.members + 1] = member
 		session.byName[name] = member
 	end
 	self:RefreshLocalPartyQuestCompare()
 	for _, member in ipairs(session.members) do
-		if not member.isLocal then self:RefreshPartyQuestCompareMember(member.name, conditional) end
+		if not member.isLocal then
+			self:RefreshPartyQuestCompareMember(member.name, conditional)
+		end
 	end
 	self:QueuePartyQuestCompareRender()
 	return true
 end
-
 
 function QuestTogether:GetPartyQuestCompareTime()
 	return self.API and self.API.GetTime and self:SafeToNumber(self.API.GetTime()) or 0
@@ -267,10 +282,18 @@ function QuestTogether:GetPartyQuestSnapshotLabel(member)
 	if member.state == "loading" then
 		return self:IsWorkBlocked("quest_snapshot_refresh") and L("Waiting for restrictions") or L("Loading")
 	end
-	if member.state == "timeout" then return L("No response") end
-	if member.state ~= "ready" then return L("Snapshot unavailable") end
-	if member.isLocal then return L("Up to date") end
-	if not member.sampledAt then return L("Snapshot received") end
+	if member.state == "timeout" then
+		return L("No response")
+	end
+	if member.state ~= "ready" then
+		return L("Snapshot unavailable")
+	end
+	if member.isLocal then
+		return L("Up to date")
+	end
+	if not member.sampledAt then
+		return L("Snapshot received")
+	end
 	local age = math.max(0, math.floor(self:GetPartyQuestCompareTime() - member.sampledAt))
 	return string.format(L("Updated %ds ago"), age)
 end
@@ -278,16 +301,24 @@ end
 function QuestTogether:RefreshPartyQuestCompareMember(name, conditional)
 	local session = self.partyQuestCompareSession
 	local member = session and session.byName[name]
-	if not member or not self.isEnabled then return false end
-	if member.isLocal then self:RefreshLocalPartyQuestCompare(); return true end
-	if member.requestId and self.pendingQuestCompareRequests then self.pendingQuestCompareRequests[member.requestId] = nil end
+	if not member or not self.isEnabled then
+		return false
+	end
+	if member.isLocal then
+		self:RefreshLocalPartyQuestCompare()
+		return true
+	end
+	if member.requestId and self.pendingQuestCompareRequests then
+		self.pendingQuestCompareRequests[member.requestId] = nil
+	end
 	for _, detail in pairs(member.objectiveDetails or {}) do
-		if detail.requestId and self.pendingQuestCompareRequests then self.pendingQuestCompareRequests[detail.requestId] = nil end
+		if detail.requestId and self.pendingQuestCompareRequests then
+			self.pendingQuestCompareRequests[detail.requestId] = nil
+		end
 	end
 	member.objectiveDetails, member.objectiveRequestQuestId, member.objectiveRequestId = {}, nil, nil
 	local entries, token = {}, {}
 	member.state, member.refreshToken = "loading", token
-	local route = self:GetGroupAnnouncementDistribution()
 	local function Current()
 		return self.isEnabled
 			and self.partyQuestCompareSession == session
@@ -297,14 +328,7 @@ function QuestTogether:RefreshPartyQuestCompareMember(name, conditional)
 			and (session.mode == "target" or self:IsGroupedSender(member.name))
 	end
 	local sent, requestId
-	local routes
-	if self:IsGroupedSender(member.name) then
-		routes = route and { { distribution = route } } or nil
-	elseif session.mode == "target" then
-		-- The request helper upgrades this legacy route to a whisper when
-		-- the peer advertises direct controls. Unrelated groups never receive it.
-		routes = { { distribution = "CHANNEL", requiresChannelJoin = true } }
-	end
+	local routes = { { distribution = "WHISPER", target = member.name, requiresGroup = session.mode ~= "target" } }
 	if routes and not self:IsIgnoredPlayerName(member.name) then
 		sent, requestId = self:RequestQuestCompare(member.name, {
 			routes = routes,
@@ -315,7 +339,9 @@ function QuestTogether:RefreshPartyQuestCompareMember(name, conditional)
 					return
 				end
 				entries[self:NormalizeQuestID(entry.questId)] = entry
-				if entry.classFile and entry.classFile ~= "" then member.classFile = entry.classFile end
+				if entry.classFile and entry.classFile ~= "" then
+					member.classFile = entry.classFile
+				end
 			end,
 			onDone = function(supportsShareRequests, supportsObjectives, classFile, revision)
 				if not Current() then
@@ -325,7 +351,9 @@ function QuestTogether:RefreshPartyQuestCompareMember(name, conditional)
 				member.state = "ready"
 				member.supportsShareRequests = supportsShareRequests
 				member.supportsObjectives = supportsObjectives
-				if classFile and classFile ~= "" then member.classFile = classFile end
+				if classFile and classFile ~= "" then
+					member.classFile = classFile
+				end
 				self:LoadPartyQuestObjectives(member)
 				self:QueuePartyQuestCompareRender()
 			end,
@@ -348,18 +376,34 @@ end
 
 function QuestTogether:UpdatePartyQuestCompareFreshness()
 	local session, frame = rawget(self, "partyQuestCompareSession"), rawget(self, "partyQuestCompareWindow")
-	if not session or not frame or self:IsWorkBlocked("foreign_frame_mutation")
-		or not self.LibChev.CanMutateOwnedRegion(frame) or not frame:IsVisible() then return end
+	if
+		not session
+		or not frame
+		or self:IsWorkBlocked("foreign_frame_mutation")
+		or not self.LibChev.CanMutateOwnedRegion(frame)
+		or not frame:IsVisible()
+	then
+		return
+	end
 	local now = self:GetPartyQuestCompareTime()
-	if now < (session.nextFreshnessUpdate or 0) then return end
+	if now < (session.nextFreshnessUpdate or 0) then
+		return
+	end
 	session.nextFreshnessUpdate = now + 1
 	for i, member in ipairs(session.members) do
-		if frame.headerStatuses[i] then frame.headerStatuses[i]:SetText(self:GetPartyQuestSnapshotLabel(member)) end
+		if frame.headerStatuses[i] then
+			frame.headerStatuses[i]:SetText(self:GetPartyQuestSnapshotLabel(member))
+		end
 	end
-	if self:GetOption("compareAutoRefresh") and now - (session.refreshedAt or now) >= 30
-		and not self:IsWorkBlocked("quest_snapshot_refresh") then
+	if
+		self:GetOption("compareAutoRefresh")
+		and now - (session.refreshedAt or now) >= 30
+		and not self:IsWorkBlocked("quest_snapshot_refresh")
+	then
 		for _, member in ipairs(session.members) do
-			if member.state == "loading" or member.objectiveRequestQuestId then return end
+			if member.state == "loading" or member.objectiveRequestQuestId then
+				return
+			end
 		end
 		self:RefreshPartyQuestCompare(nil, nil, true)
 	end
@@ -380,12 +424,20 @@ function QuestTogether:RefreshLocalPartyQuestCompare(delaySeconds)
 			return
 		end
 		local entries = self:BuildQuestCompareEntries()
-		self:SetPartyQuestMemberSnapshot(member, EntryMap(self, entries), nil, entries and self:GetPartyQuestCompareTime() or nil)
+		self:SetPartyQuestMemberSnapshot(
+			member,
+			EntryMap(self, entries),
+			nil,
+			entries and self:GetPartyQuestCompareTime() or nil
+		)
 		member.state = entries and "ready" or "unavailable"
 		member.objectiveDetails = {}
 		for id in pairs(session.expandedQuestIds or {}) do
-			member.objectiveDetails[id] = { questId = id, state = "ready",
-				objectives = member.entries[id] and self:ReadQuestCompareObjectives(id) or nil }
+			member.objectiveDetails[id] = {
+				questId = id,
+				state = "ready",
+				objectives = member.entries[id] and self:ReadQuestCompareObjectives(id) or nil,
+			}
 		end
 		self:QueuePartyQuestCompareRender()
 	end, delaySeconds or 0, "party compare local snapshot")
@@ -396,14 +448,26 @@ function QuestTogether:OnPartyQuestLogChanged()
 end
 
 function QuestTogether:GetPartyQuestLeaderName()
-	if self:IsWorkBlocked("foreign_frame_mutation") then return nil end
+	if self:IsWorkBlocked("foreign_frame_mutation") then
+		return nil
+	end
 	local getter = self.API and self.API.GetPartyVisualLeaderUnit
-	if type(getter) ~= "function" then return nil end
+	if type(getter) ~= "function" then
+		return nil
+	end
 	local ok, unit = pcall(getter)
-	if not ok or not self:CanAccessValue(unit) or type(unit) ~= "string"
-		or not (unit == "player" or unit:match("^party[1-4]$") or unit:match("^raid%d+$")) then return nil end
+	if
+		not ok
+		or not self:CanAccessValue(unit)
+		or type(unit) ~= "string"
+		or not (unit == "player" or unit:match("^party[1-4]$") or unit:match("^raid%d+$"))
+	then
+		return nil
+	end
 	local named, name = pcall(self.GetUnitFullName, self, unit)
-	if not named or not self:CanAccessValue(name) or type(name) ~= "string" then return nil end
+	if not named or not self:CanAccessValue(name) or type(name) ~= "string" then
+		return nil
+	end
 	return self:NormalizeMemberName(name)
 end
 
@@ -445,7 +509,13 @@ function QuestTogether:BuildPartyQuestDiffRows()
 	end
 	for id, entry in pairs(union) do
 		local localTitle = self:GetLocalizedQuestTitle(id)
-		local row = { questId = id, title = localTitle or entry.questTitle, needsLocalTitle = not localTitle, cells = {}, missing = 0 }
+		local row = {
+			questId = id,
+			title = localTitle or entry.questTitle,
+			needsLocalTitle = not localTitle,
+			cells = {},
+			missing = 0,
+		}
 		for i, member in ipairs(session.members) do
 			local quest = member.entries[id]
 			row.cells[i] = quest and (quest.isComplete and "Ready" or "Have")
@@ -456,14 +526,20 @@ function QuestTogether:BuildPartyQuestDiffRows()
 		end
 		if own.entries[id] then
 			if row.missing > 0 then
-				if own.entries[id].isPushable == true then row.action = "share"
-				elseif own.entries[id].isPushable == false then row.hint = L("Not shareable")
-				else row.hint = L("Shareability unknown") end
+				if own.entries[id].isPushable == true then
+					row.action = "share"
+				elseif own.entries[id].isPushable == false then
+					row.hint = L("Not shareable")
+				else
+					row.hint = L("Shareability unknown")
+				end
 			end
 		elseif own.state == "ready" then
 			local unknown = false
 			for _, member in ipairs(session.members) do
-				if member.state ~= "ready" or (member.entries[id] and member.entries[id].isPushable == nil) then unknown = true end
+				if member.state ~= "ready" or (member.entries[id] and member.entries[id].isPushable == nil) then
+					unknown = true
+				end
 			end
 			row.hint = unknown and L("Shareability unknown") or L("Not shareable")
 			for _, member in ipairs(session.members) do
@@ -496,7 +572,9 @@ end
 function QuestTogether:OpenPartyQuestJournal(questId)
 	local session = self.partyQuestCompareSession
 	local own = session and session.byName[session.playerName]
-	if self:IsWorkBlocked("foreign_frame_mutation") or not own or not own.entries[questId] then return false end
+	if self:IsWorkBlocked("foreign_frame_mutation") or not own or not own.entries[questId] then
+		return false
+	end
 	-- The shared journal adapter rechecks native ownership before opening.
 	return self:OpenQuestJournalFromChatLog(questId)
 end
@@ -542,40 +620,52 @@ function QuestTogether:SendPartyQuestShareMessage(target, questId, requestId, st
 	if not route or not self:IsGroupedSender(target) or self:IsIgnoredPlayerName(target) then
 		return false
 	end
-	local fields = { "1", requestId, target, tostring(questId), status }
-	for i = 2, #fields do
-		fields[i] = self:EscapePayload(fields[i])
+	local record = { requestId = requestId, targetName = target, questID = questId, status = status }
+	local routes = { { distribution = "WHISPER", target = target, requiresGroup = true } }
+	if status ~= "request" then
+		return self:Respond("QSHR", record, routes, { expires = self.API.GetTime() + SHARE_LIFETIME })
 	end
-	return self:SendWireMessageToAnnouncementRoutes(
-		self:SerializeWireMessage("QSHR", table.concat(fields, ",")),
-		"party quest share",
-		self:GetTargetedCommRoutes(target, { { distribution = route } })
-	)
+	local state, db = rawget(self, "partyQuestShareState"), rawget(self, "db")
+	local request, profile = state and state.outgoing[requestId], db and db.profile
+	local function Current()
+		local currentDB, now = rawget(self, "db"), self.API.GetTime()
+		return request ~= nil
+			and rawget(self, "partyQuestShareState") == state
+			and state.outgoing[requestId] == request
+			and request.target == target
+			and request.questId == questId
+			and (request.status == "request" or request.status == "pending")
+			and (currentDB and currentDB.profile) == profile
+			and now < request.expires
+			and self.isEnabled
+			and not self:IsWorkBlocked("quest_share")
+			and self:IsGroupedSender(target)
+			and not self:IsIgnoredPlayerName(target)
+	end
+	return self:Request("QSHR", record, routes, {
+		owner = request,
+		expires = request and request.expires or self.API.GetTime() + SHARE_LIFETIME,
+		responseCurrent = Current,
+		isCurrent = function()
+			if not Current() or request.status ~= "request" then
+				return false
+			end
+			-- Only confirmed absence authorizes a delayed share request.
+			local owns = self.API.IsOnQuest and self.API.IsOnQuest(questId)
+			return self:CanAccessValue(owns) and owns == false
+		end,
+		onResponse = function(data, sender, context)
+			return self:HandlePartyQuestShareMessage(data, sender, context)
+		end,
+		onComplete = function(sent)
+			if not sent and state and state.outgoing[requestId] == request then
+				state.outgoing[requestId] = nil
+				self:CancelCommRequest(requestId, "cancelled")
+				self:QueuePartyQuestCompareRender()
+			end
+		end,
+	})
 end
-
-QuestTogether:RegisterCommSendPolicy("QSHR", function(addon, wire, _, options)
-	local id, target, questId = wire:match("^QSHR|1,([^,]+),([^,]+),([^,]+),request$")
-	if not id then return end -- Acknowledgements are not new sharing actions.
-	id, target = addon:UnescapePayload(id), addon:NormalizeMemberName(addon:UnescapePayload(target))
-	questId = addon:NormalizeQuestID(addon:UnescapePayload(questId))
-	local state, db = rawget(addon, "partyQuestShareState"), rawget(addon, "db")
-	local request, profile = state and state.outgoing[id], db and db.profile
-	options.owner = request
-	options.isCurrent = function()
-		local currentDB, now = rawget(addon, "db"), addon.API.GetTime()
-		if not request or rawget(addon, "partyQuestShareState") ~= state or state.outgoing[id] ~= request
-			or request.target ~= target or request.questId ~= questId or request.status ~= "request"
-			or (currentDB and currentDB.profile) ~= profile or now >= request.expires
-			or not addon.isEnabled or addon:IsWorkBlocked("quest_share")
-			or not addon:IsGroupedSender(target) or addon:IsIgnoredPlayerName(target) then return false end
-		-- A native share or questgiver may have supplied the quest while this
-		-- request waited for transport. Only confirmed absence authorizes sending;
-		-- unreadable ownership must not look like a missing quest. This guarded
-		-- lookup avoids rebuilding every quest on each queue drain.
-		local owns = addon.API.IsOnQuest and addon.API.IsOnQuest(questId)
-		return addon:CanAccessValue(owns) and owns == false
-	end
-end)
 
 function QuestTogether:GetPartyQuestShareRequestCooldown(target)
 	local state = self.partyQuestShareState
@@ -618,6 +708,7 @@ function QuestTogether:RequestPartyQuestShare(questId, target)
 			or (request.questId == questId and request.status ~= "request" and request.status ~= "pending")
 		then
 			state.outgoing[key] = nil
+			self:CancelCommRequest(key, "expired")
 		else
 			count = count + 1
 			if request.questId == questId then
@@ -661,6 +752,7 @@ function QuestTogether:RequestPartyQuestShare(questId, target)
 		if request.status == "request" or request.status == "pending" then
 			request.status = "expired"
 		end
+		self:CancelCommRequest(id, "expired")
 		self:QueuePartyQuestCompareRender()
 	end)
 	self:QueuePartyQuestCompareRender()
@@ -690,38 +782,37 @@ function QuestTogether:GetPartyQuestShareStatus(questId)
 	end
 end
 
-function QuestTogether:HandlePartyQuestShareMessage(payload, sender, route)
+function QuestTogether:HandlePartyQuestShareMessage(data, sender, context)
+	local route = type(context) == "table" and context.distribution or context
 	if
 		not self.isEnabled
 		or (not GROUP_ROUTES[route] and route ~= "WHISPER")
-		or (route == "WHISPER" and not self:IsGroupedSender(sender))
+		or not self:IsGroupedSender(sender)
 		or sender == PlayerName(self)
 		or self:IsIgnoredPlayerName(sender)
+		or type(data) ~= "table"
 	then
 		return false
 	end
-	if type(payload) ~= "string" or #payload > 255 then
+	local requestId, target, status = data.requestId, self:NormalizeMemberName(data.targetName), data.status
+	local questId = self:SafeToNumber(data.questID)
+	if
+		not questId
+		or questId <= 0
+		or questId > 2147483647
+		or questId ~= math.floor(questId)
+		or not target
+		or type(requestId) ~= "string"
+		or #requestId > 80
+		or not requestId:match("^[%w%-]+$")
+		or not SHARE_STATUS[status]
+	then
 		return false
 	end
-	local version, requestId, target, rawId, status = payload:match("^([^,]+),([^,]+),([^,]+),([^,]+),([^,]+)$")
-	if version ~= "1" then
-		return false
-	end
-	requestId, target = self:UnescapePayload(requestId), self:NormalizeMemberName(self:UnescapePayload(target))
-	local questId = self:SafeToNumber(self:UnescapePayload(rawId))
-	if not questId or questId <= 0 or questId > 2147483647 or questId ~= math.floor(questId) then
-		return false
-	end
-	if not target or requestId == "" or #requestId > 100 or not SHARE_STATUS[status] then
-		return false
-	end
-	-- Group messages addressed to somebody else still identify their actual
-	-- sender as a QT user. Recognition grants no share or response authority.
 	self:RecordQTPlayerPresence(sender, true)
-	if target ~= PlayerName(self) or not self:IsGroupedSender(sender) then
+	if target ~= PlayerName(self) then
 		return false
 	end
-	if route == "WHISPER" then self:RememberDirectCommPeer(sender, true) end
 	local state, now = self:GetPartyQuestShareState(), self.API.GetTime()
 	if status ~= "request" then
 		local request = state.outgoing[requestId]
@@ -735,6 +826,9 @@ function QuestTogether:HandlePartyQuestShareMessage(payload, sender, route)
 			return false
 		end
 		request.status = status
+		if status ~= "pending" then
+			self:CancelCommRequest(requestId, "complete")
+		end
 		self:QueuePartyQuestCompareRender()
 		return true
 	end

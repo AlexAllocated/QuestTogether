@@ -84,11 +84,8 @@ function QT:BuildQuestCompareResponseEntries(questId)
 			end
 			local objectives = self:ReadQuestCompareObjectives(questId)
 			copy.objectiveCount = objectives and #objectives or nil
-			local packets = { copy }
-			for _, row in ipairs(objectives or {}) do
-				packets[#packets + 1] = row
-			end
-			return packets
+			copy.objectives = objectives
+			return { copy }
 		end
 	end
 	return {}
@@ -99,7 +96,7 @@ function QT:CancelPartyQuestObjectiveRequests(session, questId)
 		for id, detail in pairs(member.objectiveDetails or {}) do
 			if not questId or id == questId then
 				if detail.requestId and self.pendingQuestCompareRequests then
-					self.pendingQuestCompareRequests[detail.requestId] = nil
+					self:ClearPendingQuestCompare(detail.requestId, self.pendingQuestCompareRequests[detail.requestId])
 				end
 				member.objectiveDetails[id] = nil
 				if member.objectiveRequestQuestId == id then

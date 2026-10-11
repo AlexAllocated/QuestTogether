@@ -1,3 +1,16 @@
+-- Explicit typed observation supplied at the private receive boundary.
+-- Short per-field lifetimes exercise expiry boundaries; public v2 snapshots use 600 seconds.
+local function ObserveState(addon, method, field, record, sender)
+	local lifetimes = { QTLF = 65, QTLQ = 65, QTVR = 180, QTPG = 180, QJST = 125, QTHI = 180 }
+	local observation = addon:CreatePeerObservation(sender, field, {
+		source = "snapshot",
+		lifetime = lifetimes[field] or 600,
+		session = type(record) == "table" and record.session or nil,
+		sequence = type(record) == "table" and record.sequence or nil,
+	})
+	return addon[method](addon, record, sender, observation)
+end
+
 -- Live-safe fixtures: only QT-owned adapters and private regions are replaced.
 local QT = _G.QuestTogether
 local function Equal(actual, expected)
@@ -56,23 +69,40 @@ local function Fixture()
 			return texture
 		end
 		function r:CreateAnimationGroup()
-			if s.animationUnsupported then error("animation unavailable") end
+			if s.animationUnsupported then
+				error("animation unavailable")
+			end
 			Write(self)
 			local group = { animations = {}, plays = 0, stops = 0 }
-			function group:SetLooping(value) self.looping = value end
+			function group:SetLooping(value)
+				self.looping = value
+			end
 			function group:CreateAnimation(kind)
 				Equal(kind, "Alpha")
 				local animation = {}
 				for _, field in ipairs({ "Order", "FromAlpha", "ToAlpha", "Duration", "Smoothing" }) do
 					local key = field
-					animation["Set" .. key] = function(_, value) animation[key] = value end
+					animation["Set" .. key] = function(_, value)
+						animation[key] = value
+					end
 				end
 				self.animations[#self.animations + 1] = animation
 				return animation
 			end
-			function group:IsPlaying() Read(r); return self.playing == true end
-			function group:Play() Write(r); self.playing = true; self.plays = self.plays + 1 end
-			function group:Stop() Write(r, true); self.playing = false; self.stops = self.stops + 1 end
+			function group:IsPlaying()
+				Read(r)
+				return self.playing == true
+			end
+			function group:Play()
+				Write(r)
+				self.playing = true
+				self.plays = self.plays + 1
+			end
+			function group:Stop()
+				Write(r, true)
+				self.playing = false
+				self.stops = self.stops + 1
+			end
 			return group
 		end
 		function r:SetTexture(value)
@@ -188,10 +218,11 @@ local function Fixture()
 	end
 	function s:Status(looking)
 		self.sequence = (self.sequence or 0) + 1
-		QT:OnCommReceived(
-			QT.commPrefix,
-			"QTLF|1,100-1234," .. self.sequence .. "," .. (looking and "1" or "0"),
-			"PARTY",
+		ObserveState(
+			QT,
+			"HandleQuestPartnerStatusMessage",
+			"QTLF",
+			{ session = "100-1234", sequence = self.sequence, looking = looking },
 			self.name
 		)
 	end
@@ -287,7 +318,13 @@ QT:RegisterTest("evicted partner status removes a remembered player's glow witho
 			retired = {},
 		}
 	end
-	QT:OnCommReceived(QT.commPrefix, "QTLF|1,100-1234,1,0", "PARTY", "Newest Othername")
+	ObserveState(
+		QT,
+		"HandleQuestPartnerStatusMessage",
+		"QTLF",
+		{ session = "100-1234", sequence = 1, looking = false },
+		"Newest Othername"
+	)
 	s.clock:Advance(0)
 	Equal(state.questPartners[s.name], nil)
 	assert(QT:IsKnownQTPlayer(s.name) and icon.shown)
@@ -305,7 +342,13 @@ QT:RegisterTest("delayed old partner status cannot relight the glow after an ord
 	s.clock:Advance(1)
 	Glow(icon, false)
 	local mutations = s.mutations
-	QT:OnCommReceived(QT.commPrefix, "QTLF|1,100-1234,1,1", "PARTY", s.name)
+	ObserveState(
+		QT,
+		"HandleQuestPartnerStatusMessage",
+		"QTLF",
+		{ session = "100-1234", sequence = 1, looking = true },
+		s.name
+	)
 	s.clock:Advance(0)
 	Glow(icon, false)
 	Equal(s.mutations, mutations)
@@ -416,7 +459,7 @@ QT:RegisterTest("queued and quarantined partner changes cannot revive retired pl
 				QT.isEnabled = false
 				QT:DisableNameplateAugmentation()
 			elseif action == "departed" then
-				QT:OnCommReceived(QT.commPrefix, "QTPR|1,0", "PARTY", s.name)
+				ObserveState(QT, "HandleQTPlayerPresenceMessage", "QTPR", { active = false }, s.name)
 			else
 				s.ignored = s.name
 				QT:PruneQTPlayerPresence(true)
@@ -481,6 +524,8 @@ QT:RegisterTest("unsupported native animation keeps the partner logo bright and 
 	end
 	s:Status(false)
 	s.clock:Advance(0)
-	for _, layer in ipairs(icon.qtPartnerGlow) do assert(not layer.shown) end
+	for _, layer in ipairs(icon.qtPartnerGlow) do
+		assert(not layer.shown)
+	end
 	Equal(s.invalid, 0)
 end)

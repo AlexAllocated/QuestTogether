@@ -115,7 +115,9 @@ local function Frame(addon, parent, kind)
 		self:CheckRead()
 		local text = (self.text or ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
 		local widest = 0
-		for line in (text .. "\n"):gmatch("([^\n]*)\n") do widest = math.max(widest, #line * 7) end
+		for line in (text .. "\n"):gmatch("([^\n]*)\n") do
+			widest = math.max(widest, #line * 7)
+		end
 		return widest
 	end
 	function frame:GetStringHeight()
@@ -126,10 +128,22 @@ local function Frame(addon, parent, kind)
 		self:Check()
 		self.color = { r, g, b, a }
 	end
-	function frame:SetVertexColor(...) self:Check(); self.vertexColor = { ... } end
-	function frame:SetTexture(value) self:Check(); self.texture = value end
-	function frame:SetTexCoord(...) self:Check(); self.texCoord = { ... } end
-	function frame:SetAlpha(value) self:Check(); self.alpha = value end
+	function frame:SetVertexColor(...)
+		self:Check()
+		self.vertexColor = { ... }
+	end
+	function frame:SetTexture(value)
+		self:Check()
+		self.texture = value
+	end
+	function frame:SetTexCoord(...)
+		self:Check()
+		self.texCoord = { ... }
+	end
+	function frame:SetAlpha(value)
+		self:Check()
+		self.alpha = value
+	end
 	for _, method in ipairs({
 		"EnableMouse",
 		"SetClipsChildren",
@@ -152,6 +166,8 @@ end
 local function Row(name, x, y, mapID)
 	return {
 		name = name or "Friend-Realm",
+		receivedAt = 100,
+		mask = 3,
 		mapID = mapID or 1,
 		x = x or 0.5,
 		y = y or 0.5,
@@ -171,8 +187,15 @@ local function Fixture()
 	)
 	a.mapParent, a.miniParent, a.tooltipParent = Frame(a), Frame(a), Frame(a)
 	a.API = {
-		RegionalUniqueNamesEnabled = function() return a.forever == true end,
-		IsWarModeFeatureEnabled = function() return a.warModeFeature end,
+		GetTime = function()
+			return 100
+		end,
+		RegionalUniqueNamesEnabled = function()
+			return a.forever == true
+		end,
+		IsWarModeFeatureEnabled = function()
+			return a.warModeFeature
+		end,
 	}
 	a.warModeFeature = true
 	a.geometry = {
@@ -215,7 +238,9 @@ local function Fixture()
 		return source == target or not self.floorMismatch
 	end
 	function a:GetPlayerLocationPriorityOrigin()
-		if self.worldUnavailable then return nil end
+		if self.worldUnavailable then
+			return nil
+		end
 		return { continent = 0, north = 500, west = self.playerWest or 500 }
 	end
 	function a:GetLocationPinWorldPosition(mapID, x, y)
@@ -264,9 +289,13 @@ local function Fixture()
 		self.targetHover = { owner = owner, name = name, isCurrent = isCurrent, onClick = onClick }
 		return true
 	end
-	function a:HideLocationTargetButton() self.targetHover = nil end
+	function a:HideLocationTargetButton()
+		self.targetHover = nil
+	end
 	activeFixtures[#activeFixtures + 1] = a
-	function a:CreateOwnedUICleanupFrame() return Frame(self) end
+	function a:CreateOwnedUICleanupFrame()
+		return Frame(self)
+	end
 
 	return a
 end
@@ -360,6 +389,7 @@ Register("location minimap cardinal directions rotation radius and masks are exa
 	Equal(a:ProjectPlayerLocationPin("minimap", Row(nil, math.huge, 0.5), g), nil)
 end)
 
+-- Full map-candidate and pooled-renderer capacity stress runs offline.
 Register("location dots reuse a bounded pool and copy no state to native parents", function()
 	local a = Fixture()
 	for _, surface in ipairs({ "map", "minimap" }) do
@@ -390,7 +420,7 @@ Register("location dots reuse a bounded pool and copy no state to native parents
 	a.rows.map[1].classFile = nil
 	a:RefreshPlayerLocationPins()
 	Equal(Pin(a, "map").texture.color[1], 1)
-end)
+end, { offline = true })
 
 Register("location renderer finds visible players after off-map candidates and preserves interaction", function()
 	for _, surface in ipairs({ "map", "minimap" }) do
@@ -414,6 +444,7 @@ Register("location renderer finds visible players after off-map candidates and p
 	end
 end)
 
+-- Full map-candidate and pooled-renderer capacity stress runs offline.
 Register("location renderer bounds candidates independently from its visible pin pool", function()
 	for _, surface in ipairs({ "map", "minimap" }) do
 		local a = Fixture()
@@ -454,7 +485,7 @@ Register("location renderer bounds candidates independently from its visible pin
 		Equal(#a.locationPinState.surfaces[surface].pins, 128)
 		Equal(#a.frames, frames)
 	end
-end)
+end, { offline = true })
 
 Register("location tooltip and clicks revalidate live permissions identity and map", function()
 	local a = Fixture()
@@ -564,10 +595,18 @@ end)
 Register("remote dot and chat tooltips show fresh party size without tracked quest counts", function()
 	local a = Fixture()
 	local now = 100
-	a.API.GetTime = function() return now end
-	a.API.GetRealmName = function() return "Realm" end
-	function a:GetPlayerFullName() return "Me-Realm" end
-	function a:GetChatLogTooltipCursorPosition() return 100, 200 end
+	a.API.GetTime = function()
+		return now
+	end
+	a.API.GetRealmName = function()
+		return "Realm"
+	end
+	function a:GetPlayerFullName()
+		return "Me-Realm"
+	end
+	function a:GetChatLogTooltipCursorPosition()
+		return 100, 200
+	end
 	local row = Row("Friend-Realm")
 	a.qtPlayerPresenceState = {
 		peers = { [row.name] = now },
@@ -605,12 +644,16 @@ Register("player tooltip reuses faction and class styling without leaking the pr
 	pin.frame.scripts.OnEnter({})
 	local state = a.locationPinState
 	local regions = #a.regions
-	function state.tooltipTitle:GetStringHeight() self:CheckRead(); return self.testHeight or 18 end
+	function state.tooltipTitle:GetStringHeight()
+		self:CheckRead()
+		return self.testHeight or 18
+	end
 	row.faction, row.race, row.className, row.classFile, row.level = "Horde", "Troll", "Warlock", "WARLOCK", 13
 	pin.frame.scripts.OnEnter({})
 	Equal(#a.regions, regions)
 	Equal(state.tooltipFaction.texture, "Interface\\TargetingFrame\\UI-PVP-Horde")
-	Equal(state.tooltipFaction.width,36); Equal(state.tooltipFaction.height,36)
+	Equal(state.tooltipFaction.width, 36)
+	Equal(state.tooltipFaction.height, 36)
 	Equal(state.tooltipTitle.width, state.tooltip.width - 28 - 44)
 	assert(state.tooltipFaction.shown)
 	Equal(state.tooltipDivider.points[1][5], -6)
@@ -631,18 +674,40 @@ end)
 Register("own chat tooltip reads live super tracking without a received peer record or sharing consent", function()
 	local a = Fixture()
 	local id = 42
-	a.API.GetRealmName = function() return "Realm" end
-	a.API.GetActiveTrackedQuestID = function() return id end
-	function a:GetPlayerFullName() return "Me-Realm" end
-	function a:GetAddonVersion() return "5.16.7" end
+	a.API.GetRealmName = function()
+		return "Realm"
+	end
+	a.API.GetActiveTrackedQuestID = function()
+		return id
+	end
+	function a:GetPlayerFullName()
+		return "Me-Realm"
+	end
+	function a:GetAddonVersion()
+		return "5.16.7"
+	end
 	local count, size = 8, 0
-	function a:GetMonitoredQuestCount() return count end
-	a.API.GetPartyJoinInfo = function() return size > 0, false, size end
-	function a:GetOption(key) return key == "lookingForQuestPartners" end
-	function a:ReadLocalPlayerLocation() return Row("Me-Realm") end
-	function a:CanPublishPlayerLocation() error("self tooltip must not depend on sharing") end
-	function a:GetLocalizedQuestTitle(questID) return "Local quest " .. questID end
-	function a:GetChatLogTooltipCursorPosition() return 100, 100 end
+	function a:GetMonitoredQuestCount()
+		return count
+	end
+	a.API.GetPartyJoinInfo = function()
+		return size > 0, false, size
+	end
+	function a:GetOption(key)
+		return key == "lookingForQuestPartners"
+	end
+	function a:ReadLocalPlayerLocation()
+		return Row("Me-Realm")
+	end
+	function a:CanPublishPlayerLocation()
+		error("self tooltip must not depend on sharing")
+	end
+	function a:GetLocalizedQuestTitle(questID)
+		return "Local quest " .. questID
+	end
+	function a:GetChatLogTooltipCursorPosition()
+		return 100, 100
+	end
 	local chat = Frame(a, a.tooltipParent)
 	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Me-Realm"))
 	local state = a.chatLogPlayerTooltipState
@@ -670,21 +735,42 @@ Register("quest hover shows local status and objectives at the cursor and clears
 	local a = Fixture()
 	a.db = { global = {} }
 	local tracker = { [42] = { objectives = { "Wolves slain: 3/8", "|Hbad|hText|h" } } }
-	function a:GetPlayerTracker() return tracker end
-	function a:GetQuestTitle(id) return "Quest " .. id end
+	function a:GetPlayerTracker()
+		return tracker
+	end
+	function a:GetQuestTitle(id)
+		return "Quest " .. id
+	end
 	local status, shareable = "In Progress", "Yes"
-	function a:GetQuestStatusLabel() return status end
-	function a:GetQuestShareableStatusLabel() return shareable end
-	function a:GetChatLogTooltipCursorPosition() return 100, 200 end
-	function a:PrintQuestStatus() error("hover must not print") end
-	function a:RegisterChatLogHoverCallbacks(enter, leave) self.enter, self.leave = enter, leave; return true end
+	function a:GetQuestStatusLabel()
+		return status
+	end
+	function a:GetQuestShareableStatusLabel()
+		return shareable
+	end
+	function a:GetChatLogTooltipCursorPosition()
+		return 100, 200
+	end
+	function a:PrintQuestStatus()
+		error("hover must not print")
+	end
+	function a:RegisterChatLogHoverCallbacks(enter, leave)
+		self.enter, self.leave = enter, leave
+		return true
+	end
 	a:InitializeChatLogPlayerTooltips()
 	local chat = Frame(a, a.tooltipParent)
 	a.enter(nil, chat, "questtogetherquest:42", "|Hquesttogetherquest:42|h[Wolf Hunt]|h")
 	local state = a.chatLogPlayerTooltipState
 	assert(state.tooltip.shown)
 	assert(state.tooltipTitle.text:find("Wolf Hunt", 1, true))
-	for _, text in ipairs({ "Your quest status: In Progress", "Shareable: Yes", "Quest ID: 42", "Wolves slain: 3/8", "||Hbad||hText||h" }) do
+	for _, text in ipairs({
+		"Your quest status: In Progress",
+		"Shareable: Yes",
+		"Quest ID: 42",
+		"Wolves slain: 3/8",
+		"||Hbad||hText||h",
+	}) do
 		assert(state.tooltipLabel.text:find(text, 1, true), text)
 	end
 	Equal(state.tooltipFaction.shown, false)
@@ -704,7 +790,14 @@ Register("quest hover shows local status and objectives at the cursor and clears
 	a:UpdateChatLogPlayerTooltip()
 	Equal(state.tooltip.shown, false)
 	a.blocked = false
-	for _, link in ipairs({ "item:42", "questtogetherquest:0", "questtogetherquest:-1", "questtogetherquest:abc", "questtogetherquest:1.5", "questtogetherquest:1e999" }) do
+	for _, link in ipairs({
+		"item:42",
+		"questtogetherquest:0",
+		"questtogetherquest:-1",
+		"questtogetherquest:abc",
+		"questtogetherquest:1.5",
+		"questtogetherquest:1e999",
+	}) do
 		Equal(a:ShowChatLogPlayerTooltip(chat, link), false)
 	end
 	a.enter(nil, chat, "questtogetherquest:42", "[Wolf Hunt]")
@@ -820,12 +913,23 @@ Register("location hover refreshes explicit quest partner status without replaci
 	local a = Fixture()
 	a.now = 100
 	a.API = {
-		GetTime = function() return a.now end,
-		GetRealmName = function() return "Realm" end,
-		RegionalUniqueNamesEnabled = function() return false end,
+		GetTime = function()
+			return a.now
+		end,
+		GetRealmName = function()
+			return "Realm"
+		end,
+		RegionalUniqueNamesEnabled = function()
+			return false
+		end,
 	}
-	function a:GetPlayerFullName() return "Me-Realm" end
-	a.qtPlayerPresenceState = { peers = { ["Friend-Realm"] = 100 }, questPartners = { ["Friend-Realm"] = { receivedAt = 100, looking = true } } }
+	function a:GetPlayerFullName()
+		return "Me-Realm"
+	end
+	a.qtPlayerPresenceState = {
+		peers = { ["Friend-Realm"] = 100 },
+		questPartners = { ["Friend-Realm"] = { receivedAt = 100, looking = true } },
+	}
 	a.rows.map = { Row() }
 	a:RefreshPlayerLocationPins()
 	local pin = Pin(a, "map")
@@ -848,11 +952,19 @@ end)
 Register("quest partner dots gain a gold glow and return to normal on expiry or pin reuse", function()
 	local a = Fixture()
 	a.now = 100
-	a.API.GetTime = function() return a.now end
-	a.API.GetRealmName = function() return "Realm" end
-	function a:GetPlayerFullName() return "Me-Realm" end
+	a.API.GetTime = function()
+		return a.now
+	end
+	a.API.GetRealmName = function()
+		return "Realm"
+	end
+	function a:GetPlayerFullName()
+		return "Me-Realm"
+	end
 	a.qtPlayerPresenceState = { peers = {}, questPartners = {} }
-	for _, surface in ipairs({ "map", "minimap" }) do a.rows[surface] = { Row() } end
+	for _, surface in ipairs({ "map", "minimap" }) do
+		a.rows[surface] = { Row() }
+	end
 	assert(a:RefreshPlayerLocationPins())
 	local frames, regions = #a.frames, #a.regions
 	a.qtPlayerPresenceState.questPartners["Friend-Realm"] = { receivedAt = 100, looking = true }
@@ -877,16 +989,22 @@ Register("quest partner dots gain a gold glow and return to normal on expiry or 
 	for _, surface in ipairs({ "map", "minimap" }) do
 		Equal(Pin(a, surface).border.width, 12)
 		Equal(Pin(a, surface).border.color[1], 0)
-		for _, glow in ipairs(Pin(a, surface).glow) do assert(not glow.shown) end
+		for _, glow in ipairs(Pin(a, surface).glow) do
+			assert(not glow.shown)
+		end
 	end
 	a.qtPlayerPresenceState.questPartners["Friend-Realm"].receivedAt = 165
 	assert(a:RefreshPlayerLocationPins())
-	for _, surface in ipairs({ "map", "minimap" }) do a.rows[surface] = { Row("Other-Realm") } end
+	for _, surface in ipairs({ "map", "minimap" }) do
+		a.rows[surface] = { Row("Other-Realm") }
+	end
 	assert(a:RefreshPlayerLocationPins())
 	for _, surface in ipairs({ "map", "minimap" }) do
 		Equal(Pin(a, surface).frame.width, 12)
 		Equal(Pin(a, surface).border.color[2], 0)
-		for _, glow in ipairs(Pin(a, surface).glow) do assert(not glow.shown) end
+		for _, glow in ipairs(Pin(a, surface).glow) do
+			assert(not glow.shown)
+		end
 	end
 	Equal(#a.frames, frames)
 	Equal(#a.regions, regions)
@@ -894,35 +1012,47 @@ end)
 
 Register("developer diagnostic dots use red halos and reset color when reused for partners", function()
 	local a = Fixture()
-	for _,surface in ipairs({"map","minimap"}) do
-		local row=Row(); row.developerOnly,row.publicLocationHidden=true,true
-		a.rows[surface]={row}
+	for _, surface in ipairs({ "map", "minimap" }) do
+		local row = Row()
+		row.developerOnly, row.publicLocationHidden = true, true
+		a.rows[surface] = { row }
 	end
 	assert(a:RefreshPlayerLocationPins())
-	for _,surface in ipairs({"map","minimap"}) do
-		local pin=Pin(a,surface)
-		Equal(pin.frame.width,16)
-		for _,glow in ipairs(pin.glow) do
-			assert(glow.shown); Near(glow.color[1],1); Near(glow.color[2],0.12); Near(glow.color[3],0.12)
+	for _, surface in ipairs({ "map", "minimap" }) do
+		local pin = Pin(a, surface)
+		Equal(pin.frame.width, 16)
+		for _, glow in ipairs(pin.glow) do
+			assert(glow.shown)
+			Near(glow.color[1], 1)
+			Near(glow.color[2], 0.12)
+			Near(glow.color[3], 0.12)
 		end
-		a.rows[surface][1].publicLocationHidden=false
-		a.rows[surface][1].lookingForQuestPartners=true
+		a.rows[surface][1].publicLocationHidden = false
+		a.rows[surface][1].lookingForQuestPartners = true
 	end
 	assert(a:RefreshPlayerLocationPins())
-	for _,surface in ipairs({"map","minimap"}) do
-		local pin=Pin(a,surface)
-		for _,glow in ipairs(pin.glow) do assert(glow.shown); Near(glow.color[2],0.8); Near(glow.color[3],0.15) end
-		a.rows[surface]={Row("Other-Realm")}
+	for _, surface in ipairs({ "map", "minimap" }) do
+		local pin = Pin(a, surface)
+		for _, glow in ipairs(pin.glow) do
+			assert(glow.shown)
+			Near(glow.color[2], 0.8)
+			Near(glow.color[3], 0.15)
+		end
+		a.rows[surface] = { Row("Other-Realm") }
 	end
 	assert(a:RefreshPlayerLocationPins())
-	for _,surface in ipairs({"map","minimap"}) do
-		for _,glow in ipairs(Pin(a,surface).glow) do assert(not glow.shown) end
+	for _, surface in ipairs({ "map", "minimap" }) do
+		for _, glow in ipairs(Pin(a, surface).glow) do
+			assert(not glow.shown)
+		end
 	end
 end)
 
 Register("quest partner dot projection clips the complete larger glow on both maps", function()
 	local a = Fixture()
-	function a:IsPlayerLookingForQuestPartners() return self.looking == true end
+	function a:IsPlayerLookingForQuestPartners()
+		return self.looking == true
+	end
 	local nearMapEdge, nearMiniEdge = Row(nil, 0.007, 0.5), Row(nil, 0.593, 0.5)
 	assert(a:ProjectPlayerLocationPin("map", nearMapEdge, a.geometry.map))
 	assert(a:ProjectPlayerLocationPin("minimap", nearMiniEdge, a.geometry.minimap))
@@ -935,7 +1065,9 @@ end)
 
 Register("quest partner glow changes respect restrictions and forbidden parents", function()
 	local a = Fixture()
-	function a:IsPlayerLookingForQuestPartners() return self.looking == true end
+	function a:IsPlayerLookingForQuestPartners()
+		return self.looking == true
+	end
 	a.rows.map = { Row() }
 	assert(a:RefreshPlayerLocationPins())
 	local pin = Pin(a, "map")
@@ -953,9 +1085,13 @@ end)
 
 Register("location tooltip distinguishes an older last reported position from a fresh update", function()
 	local a = Fixture()
-	function a:GetPlayerAddonVersion() return "6.0.3" end
+	function a:GetPlayerAddonVersion()
+		return "6.0.3"
+	end
 	a.now = 500
-	a.API.GetTime = function() return a.now end
+	a.API.GetTime = function()
+		return a.now
+	end
 	a.rows.map = { Row() }
 	a.rows.map[1].receivedAt = 450
 	a:RefreshPlayerLocationPins()
@@ -976,9 +1112,15 @@ Register("partner dot tooltips show localized super-tracking and clear it on new
 	for _, surface in ipairs({ "map", "minimap" }) do
 		local a = Fixture()
 		a.now = 100
-		a.API.GetTime = function() return a.now end
-		a.API.GetRealmName = function() return "Realm" end
-		function a:GetPlayerFullName() return "Me-Realm" end
+		a.API.GetTime = function()
+			return a.now
+		end
+		a.API.GetRealmName = function()
+			return "Realm"
+		end
+		function a:GetPlayerFullName()
+			return "Me-Realm"
+		end
 		function a:GetLocalizedQuestTitle(id)
 			Equal(id, 42)
 			return self.title
@@ -986,7 +1128,9 @@ Register("partner dot tooltips show localized super-tracking and clear it on new
 		a.title = "Une quête |cffff0000test"
 		a.qtPlayerPresenceState = {
 			peers = {},
-			questPartners = { ["Friend-Realm"] = { session = "10-1234", sequence = 1, receivedAt = 100, looking = true } },
+			questPartners = {
+				["Friend-Realm"] = { session = "10-1234", sequence = 1, receivedAt = 100, looking = true },
+			},
 			partnerQuests = { ["Friend-Realm"] = { session = "10-1234", sequence = 1, receivedAt = 100, questID = 42 } },
 		}
 		a.rows[surface] = { Row() }
@@ -1010,11 +1154,14 @@ Register("partner dot tooltips show localized super-tracking and clear it on new
 	end
 end)
 
+-- Full map-candidate and pooled-renderer capacity stress runs offline.
 Register("crowded maps prioritize closest players independently of names and map pan", function()
 	for _, surface in ipairs({ "map", "minimap" }) do
 		local a = Fixture()
 		local rows = {}
-		for i = 1, 128 do rows[i] = Row(string.format("A%03d-Realm", i), 0.55, 0.5) end
+		for i = 1, 128 do
+			rows[i] = Row(string.format("A%03d-Realm", i), 0.55, 0.5)
+		end
 		rows[129] = Row("ZClosest-Realm", 0.501, 0.5)
 		a.rows[surface] = rows
 		assert(a:RefreshPlayerLocationPins())
@@ -1029,7 +1176,7 @@ Register("crowded maps prioritize closest players independently of names and map
 		Equal(Pin(a, surface, 128).name, "A128-Realm")
 		Equal(rows[129].name, "ZClosest-Realm", "source ordering must not be mutated")
 	end
-end)
+end, { offline = true })
 
 Register("location distance ranks shared world coordinates and uses stable unknown fallback", function()
 	local a = Fixture()
@@ -1046,7 +1193,9 @@ Register("chat speaker hover reuses dot tooltip content and cleans up independen
 	local a = Fixture()
 	local row = Row("Friend-Realm", 0.5, 0.5)
 	local chat = Frame(a)
-	function a:GetChatLogTooltipCursorPosition() return 200, 100 end
+	function a:GetChatLogTooltipCursorPosition()
+		return 200, 100
+	end
 	a.playerLocationState = { peers = { [row.name] = row } }
 	a.rows.map = { row }
 	a:RefreshPlayerLocationPins()
@@ -1054,10 +1203,14 @@ Register("chat speaker hover reuses dot tooltip content and cleans up independen
 	local expected = a.locationPinState.tooltipLabel.text
 	-- Reproduce a live client whose real addon has already installed callbacks.
 	-- Private fixture initialization must not inherit that instance's state.
-	setmetatable(a, { __index = function(_, key)
-		if key == "chatLogHoverCallbacksInstalled" then return true end
-		return QuestTogether[key]
-	end })
+	setmetatable(a, {
+		__index = function(_, key)
+			if key == "chatLogHoverCallbacksInstalled" then
+				return true
+			end
+			return QuestTogether[key]
+		end,
+	})
 	local registrations, enter, leave = 0
 	function a:RegisterChatLogHoverCallbacks(onEnter, onLeave)
 		registrations = registrations + 1
@@ -1103,99 +1256,149 @@ Register("chat speaker hover reuses dot tooltip content and cleans up independen
 end)
 
 local function VisualParty(a)
-	local info = { key = "Leader:123", size = 3, leader = "Leader-Realm", leaderClass = "MAGE", members = {
-		{ name = "Leader-Realm", classFile = "MAGE" }, { name = "Friend-Realm", classFile = "WARRIOR" },
-		{ name = "Third-Realm", classFile = "MAGE" },
-	} }
+	local info = {
+		key = "Leader:123",
+		size = 3,
+		leader = "Leader-Realm",
+		leaderClass = "MAGE",
+		members = {
+			{ name = "Leader-Realm", classFile = "MAGE" },
+			{ name = "Friend-Realm", classFile = "WARRIOR" },
+			{ name = "Third-Realm", classFile = "MAGE" },
+		},
+	}
 	a.visualMembers = { ["Leader-Realm"] = info, ["Friend-Realm"] = info, ["Third-Realm"] = info }
-	function a:GetPlayerPartyVisualInfo(name) return self.visualMembers[name] end
-	function a:RequestPartyVisualRoster() self.rosterRequests = (self.rosterRequests or 0) + 1 end
+	function a:GetPlayerPartyVisualInfo(name)
+		return self.visualMembers[name]
+	end
+	function a:RequestPartyVisualRoster()
+		self.rosterRequests = (self.rosterRequests or 0) + 1
+	end
 	return info
 end
 Register("party map badges hover outline leader crown and dimming span both surfaces and clear on leave", function()
-	local a = Fixture(); VisualParty(a)
-	a.rows.map = { Row("Friend-Realm"), Row("Leader-Realm",0.6,0.5), Row("Unrelated-Realm",0.7,0.5) }
+	local a = Fixture()
+	VisualParty(a)
+	a.rows.map = { Row("Friend-Realm"), Row("Leader-Realm", 0.6, 0.5), Row("Unrelated-Realm", 0.7, 0.5) }
 	a.rows.minimap = { Row("Third-Realm") }
-	function a:IsPlayerLookingForQuestPartners(name) return name == "Leader-Realm" end
+	function a:IsPlayerLookingForQuestPartners(name)
+		return name == "Leader-Realm"
+	end
 	assert(a:RefreshPlayerLocationPins())
-	local member,leader,other,mini=Pin(a,"map",1),Pin(a,"map",2),Pin(a,"map",3),Pin(a,"minimap")
+	local member, leader, other, mini = Pin(a, "map", 1), Pin(a, "map", 2), Pin(a, "map", 3), Pin(a, "minimap")
 	assert(member.partyBadge.shown and leader.partyBadge.shown and not other.partyBadge.shown)
 	assert(not leader.partyCrown.shown and not member.partyOutline.shown)
 	member.frame.scripts.OnEnter()
 	assert(member.partyOutline.shown and leader.partyOutline.shown and mini.partyOutline.shown)
 	assert(leader.partyCrown.shown and not member.partyCrown.shown and not other.partyCrown.shown)
-	Near(other.frame.alpha,0.45); Near(leader.frame.alpha,1)
+	Near(other.frame.alpha, 0.45)
+	Near(leader.frame.alpha, 1)
 	assert(leader.glow[1].shown) -- gold LFQP identity survives the independent white ring
 	member.frame.scripts.OnLeave()
 	assert(not leader.partyCrown.shown and not mini.partyOutline.shown)
-	Near(other.frame.alpha,1); assert(leader.glow[1].shown)
+	Near(other.frame.alpha, 1)
+	assert(leader.glow[1].shown)
 end)
 Register("party tooltip lists class colored members crowned leader first and only the leader above five", function()
-	local a=Fixture(); local info=VisualParty(a)
-	a.rows.map={Row("Friend-Realm")}; a:RefreshPlayerLocationPins(); Pin(a,"map").frame.scripts.OnEnter()
-	local s=a.locationPinState
-	assert(s.tooltipIntro.text:find("\n\nParty of 3",1,true))
-	Equal(s.partyRows[1].frame.points[1][2],s.tooltipIntro)
-	Equal(s.tooltipLabel.points[1][2],s.tooltipIntro)
-	local rosterHeight=8
-	for _,item in ipairs(s.partyRows) do rosterHeight=rosterHeight+item.frame.height end
-	Equal(s.tooltipLabel.points[1][5],-rosterHeight-14)
-	Equal(#s.partyRows,3); assert(s.partyRows[1].label.text:find("|cff40c7ebLeader-Realm|r",1,true))
+	local a = Fixture()
+	local info = VisualParty(a)
+	a.rows.map = { Row("Friend-Realm") }
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnEnter()
+	local s = a.locationPinState
+	assert(s.tooltipIntro.text:find("\n\nParty of 3", 1, true))
+	Equal(s.partyRows[1].frame.points[1][2], s.tooltipIntro)
+	Equal(s.tooltipLabel.points[1][2], s.tooltipIntro)
+	local rosterHeight = 8
+	for _, item in ipairs(s.partyRows) do
+		rosterHeight = rosterHeight + item.frame.height
+	end
+	Equal(s.tooltipLabel.points[1][5], -rosterHeight - 14)
+	Equal(#s.partyRows, 3)
+	assert(s.partyRows[1].label.text:find("|cff40c7ebLeader-Realm|r", 1, true))
 	assert(s.partyRows[1].crown.shown and not s.partyRows[2].crown.shown)
-	Near(s.partyRows[1].dot.color[2],0.78039215686275)
-	Equal(s.partyRows[1].crown.texture,Pin(a,"map").partyCrown.texture)
-	local allocated=#a.regions
-	info.size=6; a:RefreshPlayerLocationPins()
+	Near(s.partyRows[1].dot.color[2], 0.78039215686275)
+	Equal(s.partyRows[1].crown.texture, Pin(a, "map").partyCrown.texture)
+	local allocated = #a.regions
+	info.size = 6
+	a:RefreshPlayerLocationPins()
 	assert(s.partyRows[1].frame.shown and not s.partyRows[2].frame.shown and not s.partyRows[3].frame.shown)
-	Equal(#a.regions,allocated)
-	info.size=3; info.members=nil; a:RefreshPlayerLocationPins()
-	assert(s.tooltipIntro.text:find("Loading party members",1,true)); assert(s.partyRows[1].frame.shown)
-	assert(s.partyRows[2].frame.shown and s.partyRows[2].label.text:find("Friend-Realm",1,true))
+	Equal(#a.regions, allocated)
+	info.size = 3
+	info.members = nil
+	a:RefreshPlayerLocationPins()
+	assert(s.tooltipIntro.text:find("Loading party members", 1, true))
+	assert(s.partyRows[1].frame.shown)
+	assert(s.partyRows[2].frame.shown and s.partyRows[2].label.text:find("Friend-Realm", 1, true))
 	assert(not s.partyRows[2].crown.shown and not s.partyRows[3].frame.shown)
-	Equal(info.members,nil) -- partial display must not become an authoritative roster
-	a.visualMembers={}; a:RefreshPlayerLocationPins()
+	Equal(info.members, nil) -- partial display must not become an authoritative roster
+	a.visualMembers = {}
+	a:RefreshPlayerLocationPins()
 	assert(not s.partyRows[1].frame.shown and not s.partyRows[2].frame.shown)
 end)
 Register("incomplete party tooltip shows hovered member immediately without duplicating the leader", function()
-	local a=Fixture(); local info=VisualParty(a)
-	info.size,info.members=2,nil
-	a.rows.map={Row("Friend-Realm")}; a:RefreshPlayerLocationPins(); Pin(a,"map").frame.scripts.OnEnter()
-	local s=a.locationPinState
-	Equal(#s.partyRows,2)
-	assert(s.partyRows[1].crown.shown and not s.partyRows[2].crown.shown)
-	assert(s.partyRows[2].label.text:find(a:GetClassColorCode(a.rows.map[1].classFile).."Friend-Realm|r",1,true))
-	assert(not s.tooltipIntro.text:find("Loading party members",1,true))
-	assert(a.rosterRequests>0); Equal(info.members,nil)
-	-- Hovering the leader gives us one known member, not two copies of them.
-	Pin(a,"map").frame.scripts.OnLeave()
-	a.rows.map={Row("Leader-Realm")}; a:RefreshPlayerLocationPins(); Pin(a,"map").frame.scripts.OnEnter()
-	assert(s.partyRows[1].frame.shown and not s.partyRows[2].frame.shown)
-	assert(s.tooltipIntro.text:find("Loading party members",1,true))
-	-- An authoritative reply fills the reused rows without duplicates.
-	info.members={{name="Leader-Realm",classFile="MAGE"},{name="Friend-Realm",classFile="WARRIOR"}}
+	local a = Fixture()
+	local info = VisualParty(a)
+	info.size, info.members = 2, nil
+	a.rows.map = { Row("Friend-Realm") }
 	a:RefreshPlayerLocationPins()
-	assert(s.partyRows[2].frame.shown); Equal(#s.partyRows,2)
-	assert(not s.tooltipIntro.text:find("Loading party members",1,true))
+	Pin(a, "map").frame.scripts.OnEnter()
+	local s = a.locationPinState
+	Equal(#s.partyRows, 2)
+	assert(s.partyRows[1].crown.shown and not s.partyRows[2].crown.shown)
+	assert(s.partyRows[2].label.text:find(a:GetClassColorCode(a.rows.map[1].classFile) .. "Friend-Realm|r", 1, true))
+	assert(not s.tooltipIntro.text:find("Loading party members", 1, true))
+	assert(a.rosterRequests > 0)
+	Equal(info.members, nil)
+	-- Hovering the leader gives us one known member, not two copies of them.
+	Pin(a, "map").frame.scripts.OnLeave()
+	a.rows.map = { Row("Leader-Realm") }
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnEnter()
+	assert(s.partyRows[1].frame.shown and not s.partyRows[2].frame.shown)
+	assert(s.tooltipIntro.text:find("Loading party members", 1, true))
+	-- An authoritative reply fills the reused rows without duplicates.
+	info.members = { { name = "Leader-Realm", classFile = "MAGE" }, { name = "Friend-Realm", classFile = "WARRIOR" } }
+	a:RefreshPlayerLocationPins()
+	assert(s.partyRows[2].frame.shown)
+	Equal(#s.partyRows, 2)
+	assert(not s.tooltipIntro.text:find("Loading party members", 1, true))
 end)
 Register("party highlights reset for recycled pins and restriction cleanup never mutates protected regions", function()
-	local a=Fixture(); VisualParty(a)
-	a.rows.map={Row("Friend-Realm"),Row("Leader-Realm",0.6,0.5)}; a:RefreshPlayerLocationPins()
-	local pin=Pin(a,"map"); pin.frame.scripts.OnEnter()
-	a.rows.map[1]=Row("Unrelated-Realm"); a:RefreshPlayerLocationPins()
-	Equal(a.locationPinState.hovered,nil); assert(not pin.partyOutline.shown); Near(pin.frame.alpha,1)
-	Pin(a,"map",2).frame.scripts.OnEnter(); a.blocked=true; a:RefreshPlayerLocationPins()
+	local a = Fixture()
+	VisualParty(a)
+	a.rows.map = { Row("Friend-Realm"), Row("Leader-Realm", 0.6, 0.5) }
+	a:RefreshPlayerLocationPins()
+	local pin = Pin(a, "map")
+	pin.frame.scripts.OnEnter()
+	a.rows.map[1] = Row("Unrelated-Realm")
+	a:RefreshPlayerLocationPins()
+	Equal(a.locationPinState.hovered, nil)
+	assert(not pin.partyOutline.shown)
+	Near(pin.frame.alpha, 1)
+	Pin(a, "map", 2).frame.scripts.OnEnter()
+	a.blocked = true
+	a:RefreshPlayerLocationPins()
 	assert(not a.locationPinState.tooltip.shown)
-	a.blocked=false; a:RefreshPlayerLocationPins()
-	assert(not Pin(a,"map",2).partyCrown.shown); Near(pin.frame.alpha,1)
+	a.blocked = false
+	a:RefreshPlayerLocationPins()
+	assert(not Pin(a, "map", 2).partyCrown.shown)
+	Near(pin.frame.alpha, 1)
 end)
 
 Register("party tooltip reserves aligned QT icon slots and updates recognition on reused rows", function()
 	local a = Fixture()
 	local info = VisualParty(a)
 	local now = 100
-	a.API.GetTime = function() return now end
-	function a:GetPlayerFullName() return "Third-Realm" end
-	function a:NormalizeMemberName(name) return name end
+	a.API.GetTime = function()
+		return now
+	end
+	function a:GetPlayerFullName()
+		return "Third-Realm"
+	end
+	function a:NormalizeMemberName(name)
+		return name
+	end
 	a.qtPlayerPresenceState = { peers = { ["Leader-Realm"] = 90 } }
 	a.rows.map = { Row("Friend-Realm") }
 	a:RefreshPlayerLocationPins()
@@ -1226,7 +1429,9 @@ Register("party tooltip reserves aligned QT icon slots and updates recognition o
 	assert(rows[1].crown.shown)
 	Equal(#a.regions, allocated)
 	local chat = Frame(a)
-	function a:GetChatLogTooltipCursorPosition() return 200, 100 end
+	function a:GetChatLogTooltipCursorPosition()
+		return 200, 100
+	end
 	a.playerLocationState = { peers = { ["Friend-Realm"] = a.rows.map[1] } }
 	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Friend-Realm"))
 	local chatRows = a.chatLogPlayerTooltipState.partyRows
@@ -1240,15 +1445,29 @@ end)
 Register("nearby stream animation moves only owned minimap pins and respects foreign frame guards", function()
 	local a = Fixture()
 	a.now = 100
-	a.API.GetTime = function() return a.now end
+	a.API.GetTime = function()
+		return a.now
+	end
 	a.db = { profile = { showPlayerLocations = true, sharePlayerLocation = true } }
 	local row = Row(nil, 0.5, 0.5)
 	row.receivedAt, row.mask = 100, 3
 	a.playerLocationState = { peers = { [row.name] = row } }
-	a.rows.map, a.rows.minimap = {row}, {row}
-	a.nearbyStreamState = { wanted = { [row.name] = { sample = {
-		mapID = 1, x = 0.54, y = 0.5, fromX = 0.5, fromY = 0.5, at = 100, duration = 1,
-	} } } }
+	a.rows.map, a.rows.minimap = { row }, { row }
+	a.nearbyStreamState = {
+		wanted = {
+			[row.name] = {
+				sample = {
+					mapID = 1,
+					x = 0.54,
+					y = 0.5,
+					fromX = 0.5,
+					fromY = 0.5,
+					at = 100,
+					duration = 1,
+				},
+			},
+		},
+	}
 	a:RefreshPlayerLocationPins()
 	local pin, mapPin = Pin(a, "minimap"), Pin(a, "map")
 	local frames, mapWrites, miniWrites = #a.frames, mapPin.frame.writes, pin.frame.writes
@@ -1272,9 +1491,15 @@ end)
 Register("map and chat tooltip intro use native localized race and class labels", function()
 	local a = Fixture()
 	a.now = 100
-	a.API.GetTime = function() return a.now end
-	a.API.GetLocalizedRaceName = function(id) return id == 3 and "Dwarf" or nil end
-	a.API.GetLocalizedClassName = function(token) return token == "MAGE" and "Mage" or nil end
+	a.API.GetTime = function()
+		return a.now
+	end
+	a.API.GetLocalizedRaceName = function(id)
+		return id == 3 and "Dwarf" or nil
+	end
+	a.API.GetLocalizedClassName = function(token)
+		return token == "MAGE" and "Mage" or nil
+	end
 	local row = Row()
 	row.race, row.className = "Zwerg", "Magier"
 	a.nearbyStreamState = { capabilities = { [row.name] = { receivedAt = 100, raceID = 3 } }, wanted = {} }
@@ -1289,17 +1514,36 @@ end)
 Register("client locale paints quest hover labels and local native title", function()
 	assert(QuestTogether.localizationTestLocale == nil)
 	local locale = QuestTogether:GetEventLocale()
-	local function T(key) return QuestTogether.TranslateForLocale(key, locale) end
+	local function T(key)
+		return QuestTogether.TranslateForLocale(key, locale)
+	end
 	local a = Fixture()
 	a.db = { global = {} }
-	function a:GetPlayerTracker() return {} end
-	function a:GetQuestSnapshot() return nil end
-	function a:IsWorkBlocked() return self.blocked == true end
-	a.API.GetLocalizedQuestTitle = function() return "Local title " .. locale end
-	function a:GetQuestStatusLabel() return "Not Started" end
-	function a:GetQuestShareableStatusLabel() return "Unknown" end
-	function a:GetChatLogTooltipCursorPosition() return 100, 200 end
-	function a:RegisterChatLogHoverCallbacks(enter, leave) self.enter, self.leave = enter, leave; return true end
+	function a:GetPlayerTracker()
+		return {}
+	end
+	function a:GetQuestSnapshot()
+		return nil
+	end
+	function a:IsWorkBlocked()
+		return self.blocked == true
+	end
+	a.API.GetLocalizedQuestTitle = function()
+		return "Local title " .. locale
+	end
+	function a:GetQuestStatusLabel()
+		return "Not Started"
+	end
+	function a:GetQuestShareableStatusLabel()
+		return "Unknown"
+	end
+	function a:GetChatLogTooltipCursorPosition()
+		return 100, 200
+	end
+	function a:RegisterChatLogHoverCallbacks(enter, leave)
+		self.enter, self.leave = enter, leave
+		return true
+	end
 	a:InitializeChatLogPlayerTooltips()
 	local chat = Frame(a, a.tooltipParent)
 	a.enter(nil, chat, "questtogetherquest:42", "|Hquesttogetherquest:42|h[Foreign title]|h")
@@ -1315,21 +1559,35 @@ end, { locale = "client" })
 Register("hover refresh queries only on entry and incoming details update only the current tooltip", function()
 	local a = Fixture()
 	a.requests = {}
-	function a:RequestPlayerDetails(name) self.requests[#self.requests + 1] = name end
-	function a:GetChatLogTooltipCursorPosition() return 200, 100 end
-	a.API = { GetTime = function() return 100 end }
+	function a:RequestPlayerDetails(name)
+		self.requests[#self.requests + 1] = name
+	end
+	function a:GetChatLogTooltipCursorPosition()
+		return 200, 100
+	end
+	a.API = {
+		GetTime = function()
+			return 100
+		end,
+	}
 	local row = Row("Friend-Realm")
 	a.rows.map = { row }
 	a.playerLocationState = { peers = { [row.name] = row } }
 	a:RefreshPlayerLocationPins()
 	Pin(a, "map").frame.scripts.OnEnter()
 	Equal(#a.requests, 1)
-	for _ = 1, 10 do a:RefreshPlayerLocationPins() end
+	for _ = 1, 10 do
+		a:RefreshPlayerLocationPins()
+	end
 	Equal(#a.requests, 1)
 	local chat = Frame(a)
 	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Friend-Realm"))
 	Equal(#a.requests, 2)
-	a.playerDetailsState = { identities = { [row.name] = { receivedAt = 100, level = 42, classFile = "MAGE", race = "Dwarf", faction = "Alliance" } } }
+	a.playerDetailsState = {
+		identities = {
+			[row.name] = { receivedAt = 100, level = 42, classFile = "MAGE", race = "Dwarf", faction = "Alliance" },
+		},
+	}
 	a:UpdateChatLogPlayerTooltip()
 	assert(a.chatLogPlayerTooltipState.tooltipIntro.text:find("42", 1, true))
 	Equal(#a.requests, 2)
@@ -1340,11 +1598,17 @@ end)
 
 Register("player tooltip width fits content expands for party names and shrinks on reuse", function()
 	local a = Fixture()
-	a.API.GetRealmName = function() return "Realm" end
-	a.API.GetTime = function() return 100 end
+	a.API.GetRealmName = function()
+		return "Realm"
+	end
+	a.API.GetTime = function()
+		return 100
+	end
 	a.warModeFeature = false
 	local party = { size = 0 }
-	function a:GetPlayerPartyVisualInfo() return party end
+	function a:GetPlayerPartyVisualInfo()
+		return party
+	end
 	local row = Row("Ari-Realm")
 	a.rows.map = { row }
 	a:RefreshPlayerLocationPins()
@@ -1384,64 +1648,96 @@ local function WaypointFixture()
 		{ name = "First-Realm", mapID = 1, x = 0.5, y = 0.5, classFile = "MAGE" },
 		{ name = "Second-Realm", mapID = 1, x = 0.5, y = 0.5, classFile = "WARRIOR" },
 	}
-	function a:GetPartyWaypointRows() return self.waypoints end
+	function a:GetPartyWaypointRows()
+		return self.waypoints
+	end
 	function a:GetPartyNavigationPeer(name)
-		for _, row in ipairs(self.waypoints) do if row.name == name then return row end end
+		for _, row in ipairs(self.waypoints) do
+			if row.name == name then
+				return row
+			end
+		end
 	end
 	function a:GetGroupedSenderClassFile(name)
-		local p = self:GetPartyNavigationPeer(name); return p and p.classFile
+		local p = self:GetPartyNavigationPeer(name)
+		return p and p.classFile
 	end
-	a.API.GetMapInfo = function() return { name = "Stormwind" } end
+	a.API.GetMapInfo = function()
+		return { name = "Stormwind" }
+	end
 	function a:CreatePartyQuestFilterMenu(_, generator)
 		self.waypointMenu = {}
 		local root = {}
-		function root:CreateTitle(text) a.waypointMenu[#a.waypointMenu + 1] = text end
-		function root:CreateButton(text, callback) a.waypointMenu[#a.waypointMenu + 1] = { text = text, callback = callback } end
+		function root:CreateTitle(text)
+			a.waypointMenu[#a.waypointMenu + 1] = text
+		end
+		function root:CreateButton(text, callback)
+			a.waypointMenu[#a.waypointMenu + 1] = { text = text, callback = callback }
+		end
 		generator(nil, root)
 	end
-	function a:NavigateToPartyWaypoint(name) self.navigated = name end
+	function a:NavigateToPartyWaypoint(name)
+		self.navigated = name
+	end
 	return a
 end
 Register("party waypoint pins expose overlapping owners and reuse independent map and minimap pools", function()
 	local a = WaypointFixture()
 	a:RefreshPartyWaypointPins()
 	local s = a.partyWaypointPinState
-	Equal(#s.surfaces.map.pins, 2); Equal(#s.surfaces.minimap.pins, 2)
+	Equal(#s.surfaces.map.pins, 2)
+	Equal(#s.surfaces.minimap.pins, 2)
 	local pin = s.surfaces.map.pins[1]
 	Equal(#pin.names, 2)
 	pin.frame.scripts.OnEnter()
 	assert(s.tooltip.shown and s.label.text:find("First-Realm", 1, true) and s.label.text:find("Second-Realm", 1, true))
 	pin.frame.scripts.OnClick()
 	Equal(#a.waypointMenu, 4)
-	a.waypointMenu[4].callback(); Equal(a.navigated, "Second-Realm")
+	a.waypointMenu[4].callback()
+	Equal(a.navigated, "Second-Realm")
 	local count = #a.frames
-	a:RefreshPartyWaypointPins(); Equal(#a.frames, count)
-	a.waypoints[2] = nil; a.waypoints[1].x = 0.52
 	a:RefreshPartyWaypointPins()
-	Equal(#pin.names, 1); Equal(s.surfaces.map.pins[2].frame.shown, false)
-	Equal(a.mapParent.writes, 0); Equal(a.miniParent.writes, 0)
-	a.waypoints = {}; a:RefreshPartyWaypointPins()
-	Equal(s.surfaces.map.frame.shown, false); Equal(s.tooltip.shown, false)
+	Equal(#a.frames, count)
+	a.waypoints[2] = nil
+	a.waypoints[1].x = 0.52
+	a:RefreshPartyWaypointPins()
+	Equal(#pin.names, 1)
+	Equal(s.surfaces.map.pins[2].frame.shown, false)
+	Equal(a.mapParent.writes, 0)
+	Equal(a.miniParent.writes, 0)
+	a.waypoints = {}
+	a:RefreshPartyWaypointPins()
+	Equal(s.surfaces.map.frame.shown, false)
+	Equal(s.tooltip.shown, false)
 end)
 Register("party waypoint surfaces hide for restrictions unavailable geometry and forbidden parents", function()
-	local a = WaypointFixture(); a:RefreshPartyWaypointPins()
+	local a = WaypointFixture()
+	a:RefreshPartyWaypointPins()
 	local s = a.partyWaypointPinState
-	a.blocked = true; a:RefreshPartyWaypointPins()
+	a.blocked = true
+	a:RefreshPartyWaypointPins()
 	Equal(s.surfaces.map.frame.shown, false)
-	a.blocked = false; a:RefreshPartyWaypointPins()
+	a.blocked = false
+	a:RefreshPartyWaypointPins()
 	Equal(s.surfaces.map.frame.shown, true)
 	s.surfaces.map.pins[1].frame.scripts.OnEnter()
 	assert(s.tooltip.shown)
-	a.mapParent.forbidden = true; a:RefreshPartyWaypointPins()
+	a.mapParent.forbidden = true
+	a:RefreshPartyWaypointPins()
 	Equal(s.tooltip.shown, false)
-	a.mapParent.forbidden = false; a.geometry.map = nil
-	a:RefreshPartyWaypointPins(); Equal(s.surfaces.map.frame.shown, false)
-	a:HidePartyWaypointPins(); Equal(s.surfaces.minimap.frame.shown, false)
+	a.mapParent.forbidden = false
+	a.geometry.map = nil
+	a:RefreshPartyWaypointPins()
+	Equal(s.surfaces.map.frame.shown, false)
+	a:HidePartyWaypointPins()
+	Equal(s.surfaces.minimap.frame.shown, false)
 end)
 
 Register("experimental phase decoration clears when a pooled pin changes occupant", function()
 	local a = Fixture()
-	function a:GetPlayerPhaseStatus(name) return name == "Other-Realm" and "different" or nil end
+	function a:GetPlayerPhaseStatus(name)
+		return name == "Other-Realm" and "different" or nil
+	end
 	a.rows.map = { Row("Other-Realm") }
 	assert(a:RefreshPlayerLocationPins())
 	local pin = Pin(a, "map")

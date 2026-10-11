@@ -48,7 +48,9 @@ local function Fixture()
 	end
 	addon.GetOwnedUIParent = addon.GetReleaseNotesUIParent
 	addon.CreateOwnedWindowFrame = addon.CreateReleaseNotesUIFrame
-	function addon:GetWindowDragCursor() return 600, 500 end
+	function addon:GetWindowDragCursor()
+		return 600, 500
+	end
 	function addon:IsRuntimeRestricted()
 		return self.blocked == true
 	end
@@ -310,8 +312,11 @@ Register("release notes stale callbacks and rendering respect restrictions and q
 		for _, region in ipairs(a.regions) do
 			after = after + region.writes
 		end
-		if boundary == "restricted" then assert(after > writes, "owned teardown should hide and stop descendants")
-		else Equal(after, writes) end
+		if boundary == "restricted" then
+			assert(after > writes, "owned teardown should hide and stop descendants")
+		else
+			Equal(after, writes)
+		end
 		Equal(frame.shown, boundary ~= "restricted")
 		a.blocked, a.parent.forbidden, a.parent.protected = false, false, false
 		assert(a:RenderReleaseNotesWindow(Notes(), "5.9.2", false))
@@ -418,10 +423,13 @@ end)
 Register("release notes screenshots match client names resize reuse and hide on other pages", function()
 	for _, regional in ipairs({ false, true }) do
 		local a = Fixture()
-		function a:UsesRegionalPlayerNames() return regional end
+		function a:UsesRegionalPlayerNames()
+			return regional
+		end
 		local notes = Notes()
 		notes.sections[1].illustration = "party-quest-log"
-		notes.sections[2] = { title = "Objectives", items = { "Expand progress." }, illustration = "party-quest-objectives" }
+		notes.sections[2] =
+			{ title = "Objectives", items = { "Expand progress." }, illustration = "party-quest-objectives" }
 		assert(a:RenderReleaseNotesWindow(notes, "6.4.0", false))
 		local frame = a.releaseNotesWindow
 		local asset = regional and "PartyQuestLogForever" or "PartyQuestLogRetail"
@@ -437,7 +445,9 @@ Register("release notes screenshots match client names resize reuse and hide on 
 		Equal(#a.regions, count)
 		assert(math.abs(screenshot.height / screenshot.width - expectedRatio) < 0.0001)
 		assert(a:RenderReleaseNotesWindow(Notes(), "6.3.1", false))
-		for _, image in pairs(frame.releaseScreenshots) do assert(not image.shown) end
+		for _, image in pairs(frame.releaseScreenshots) do
+			assert(not image.shown)
+		end
 		screenshot.forbidden = true
 		local writes = screenshot.writes
 		Equal(a:RenderReleaseNotesWindow(notes, "6.4.0", false), false)
@@ -469,6 +479,7 @@ local function LatestVisibleNotes(locale)
 	return notes
 end
 
+-- Full locale-by-locale UI construction matrix runs offline.
 Register("release notes render translated content with owned controls in every locale", function()
 	local previous = QuestTogether.localizationTestLocale
 	for _, locale in ipairs({ "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW" }) do
@@ -481,7 +492,7 @@ Register("release notes render translated content with owned controls in every l
 		Equal(a.releaseNotesWindow.discord.label.text, QuestTogether.TranslateForLocale("Join our Discord", locale))
 	end
 	QuestTogether.localizationTestLocale = previous
-end)
+end, { offline = true })
 
 Register("client locale renders current notes and window navigation", function()
 	assert(QuestTogether.localizationTestLocale == nil)
@@ -676,7 +687,9 @@ end)
 Register("party quest guide screenshots retain aspect ratio across clients and clear on reuse", function()
 	for _, regional in ipairs({ false, true }) do
 		local a = Fixture()
-		function a:UsesRegionalPlayerNames() return regional end
+		function a:UsesRegionalPlayerNames()
+			return regional
+		end
 		local notes = Notes()
 		notes.sections = {
 			{ title = "Overview", items = { "Guide" }, illustration = "party-quest-overview" },
@@ -685,12 +698,17 @@ Register("party quest guide screenshots retain aspect ratio across clients and c
 		}
 		assert(a:RenderReleaseNotesWindow(notes, "6.5.3", false))
 		local frame = a.releaseNotesWindow
-		for asset, ratio in pairs({ PartyQuestOverviewForever = 635 / 1465,
-			PartyQuestFollowingForever = 199 / 1198, PartyQuestFocusWarningForever = 540 / 1824 }) do
+		for asset, ratio in pairs({
+			PartyQuestOverviewForever = 635 / 1465,
+			PartyQuestFollowingForever = 199 / 1198,
+			PartyQuestFocusWarningForever = 540 / 1824,
+		}) do
 			local image = frame.releaseScreenshots[asset]
 			assert(image and image.shown and math.abs(image.height / image.width - ratio) < 0.0001)
 		end
 		assert(a:RenderReleaseNotesWindow(Notes(), "6.5.2", false))
-		for _, image in pairs(frame.releaseScreenshots) do assert(not image.shown) end
+		for _, image in pairs(frame.releaseScreenshots) do
+			assert(not image.shown)
+		end
 	end
 end)

@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: AlexAllocated/libchev
-          ref: 22ac914101983edb4da5726e07795450c68e74ad
+          ref: 0a2924cbe44e504d2d31102cd0cf587c2d1833ab
           path: library
       - run: sudo apt-get update && sudo apt-get install -y lua${{ matrix.lua }} openssl
       - run: python3 scripts/check_release_notes.py --check --release-history
@@ -33,11 +33,15 @@ jobs:
       - run: python3 scripts/test_discord_changelog.py
       - run: python3 scripts/test_package.py
       - run: python3 scripts/check_architecture.py
+      - run: python3 scripts/check_live_test_numeric.py
+      - run: python3 scripts/test_live_test_numeric.py
       - run: lua${{ matrix.lua }} scripts/test.lua
       - run: python3 scripts/test_developer_crypto.py lua${{ matrix.lua }}
       - run: lua${{ matrix.lua }} scripts/settings_smoke.lua
       - run: python3 scripts/bindings_smoke.py lua${{ matrix.lua }}
       - run: lua${{ matrix.lua }} scripts/test.lua . reverse
+      - run: lua${{ matrix.lua }} scripts/test.lua . live
+      - run: lua${{ matrix.lua }} scripts/test.lua . live-reverse
       - run: |
           for locale in enGB deDE frFR esES esMX ptBR ruRU itIT koKR zhCN zhTW; do
             QT_TEST_LOCALE="$locale" lua${{ matrix.lua }} scripts/test.lua

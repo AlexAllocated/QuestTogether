@@ -40,7 +40,13 @@ local function Fixture(name)
 			if a.unreadable then
 				return nil
 			end
-			return { questID = a.native.questID, mapID = a.native.mapID, x = a.native.x, y = a.native.y, questCleared = a.native.questCleared }
+			return {
+				questID = a.native.questID,
+				mapID = a.native.mapID,
+				x = a.native.x,
+				y = a.native.y,
+				questCleared = a.native.questCleared,
+			}
 		end,
 		GetActiveTrackedQuestID = function()
 			return a.native.questID > 0 and a.native.questID or nil
@@ -60,18 +66,20 @@ local function Fixture(name)
 			a:OnPartyNavigationTrackingChanged()
 			return true
 		end,
-		SendAddonMessage = function(_, wire, route, target)
-			a.wire[#a.wire + 1] = { wire = wire, route = route, target = target }
-			return a.sendResult or 0
-		end,
 	}
 	function a:QueuePartyFocusMissingNotice(name, id, title)
 		self.notice = { name = name, questID = id, title = title }
 		self.noticeCount = (self.noticeCount or 0) + 1
 	end
-	function a:ClearPartyFocusMissingNotice() self.notice = nil end
-	function a:GetPlayerFullName() return self.name end
-	function a:IsWorkBlocked() return self.blocked == true end
+	function a:ClearPartyFocusMissingNotice()
+		self.notice = nil
+	end
+	function a:GetPlayerFullName()
+		return self.name
+	end
+	function a:IsWorkBlocked()
+		return self.blocked == true
+	end
 	function a:ShowPartyFocusChangeDialog(name, callback)
 		self.confirmName, self.confirmAction = name, callback
 		self.dialogCount = (self.dialogCount or 0) + 1
@@ -108,8 +116,31 @@ local function Fixture(name)
 	function a:RecordCommsDiagnostic() end
 	function a:RecordCommsTraffic() end
 	function a:Debugf() end
-	function a:TakeCommsSendToken()
-		return self.token
+	function a:GetAnnouncementServerTime()
+		return 1800000000 + math.floor(self.time)
+	end
+	function a:Publish(operation, data, routes, options)
+		assert(operation == "QTN2")
+		if not self.token then
+			return false, "capacity"
+		end
+		self.messageSequence = (self.messageSequence or 0) + 1
+		local record = {
+			data = QT:DeepCopy(data),
+			route = routes[1].distribution,
+			options = options,
+			context = {
+				distribution = routes[1].distribution,
+				session = "navigation-1",
+				sequence = self.messageSequence,
+				stamp = options.sampledAt or self:GetAnnouncementServerTime(),
+			},
+		}
+		self.wire[#self.wire + 1] = record
+		if not self.holdAcceptance and options.onComplete then
+			options.onComplete(true, "accepted")
+		end
+		return true, "queued"
 	end
 	function a:IsAnnouncementChannelEvent()
 		return true
@@ -127,7 +158,9 @@ local function Fixture(name)
 	end
 	function a:Deliver(b, index, route)
 		local message = self.wire[index or #self.wire]
-		b:OnCommReceived(b.commPrefix, message.wire, route or message.route, self.name)
+		local context = QT:DeepCopy(message.context)
+		context.distribution = route or message.route
+		return b:HandlePartyNavigationMessage(QT:DeepCopy(message.data), self.name, context)
 	end
 	a:Roster(a.name, "Friend Realm")
 	return a
@@ -182,8 +215,10 @@ QT:RegisterTest("party navigation rejects public nonmember malformed replayed an
 	Equal(a:GetPartyNavigationPeer(b.name).questID, 2)
 	b:Deliver(a, 1)
 	Equal(a:GetPartyNavigationPeer(b.name).questID, 2)
-	Equal(a:HandlePartyNavigationMessage("1,100-1,99,0,1,37,10001,0,,", b.name, "PARTY"), false)
-	Equal(a:HandlePartyNavigationMessage("1,100-1,99,0,1,37,1,0,,", "Stranger Realm", "PARTY"), false)
+	local context =
+		{ distribution = "PARTY", session = "malformed-1", sequence = 99, stamp = a:GetAnnouncementServerTime() }
+	Equal(a:HandlePartyNavigationMessage({ questID = 1, mapID = 37, x = 1.0001, y = 0 }, b.name, context), false)
+	Equal(a:HandlePartyNavigationMessage({ questID = 1, mapID = 37, x = 0.1, y = 0 }, "Stranger Realm", context), false)
 	b:ResetPartyNavigation()
 	b:Tick()
 	b:Tick()
@@ -237,7 +272,9 @@ QT:RegisterTest("party focus stops for missing quests and defers restricted nati
 	assert(a:FollowPartyQuestFocus(b.name))
 	a.blocked = true
 	b.native.questID = 2
-	b:QueuePartyNavigationUpdate(); b:Tick(); b:Deliver(a)
+	b:QueuePartyNavigationUpdate()
+	b:Tick()
+	b:Deliver(a)
 	a:Tick()
 	Equal(#a.writes, 0)
 	a.blocked, a.reject = false, true
@@ -316,7 +353,7 @@ QT:RegisterTest("party snapshot pacing sends latest state and bounds idle heartb
 	a.token = true
 	a:Tick(2)
 	Equal(#a.wire, 1)
-	assert(#a.wire[1].wire <= 255)
+	Equal(a.wire[1].data.questID, 2)
 	Equal(a.partyNavigationState.localState.questID, 2)
 	for _ = 1, 100 do
 		a:Tick(0.2)
@@ -419,20 +456,27 @@ QT:RegisterTest("explicit coordinate navigation stops following even with TomTom
 	Equal(a.partyNavigationState.following, nil)
 end)
 
-QT:RegisterTest("focus labels distinguish unsupported waiting expired and unavailable without guessing privacy", function()
- local a = Fixture()
- function a:GetPartyNavigationPeer() return self.peer end
- function a:GetPlayerAddonVersion() return self.peerVersion end
- Equal(a:GetPartyFocusLabel("Friend"), "Waiting for quest focus")
- a.peerVersion = "6.2.3"
- Equal(a:GetPartyFocusLabel("Friend"), "Quest focus unsupported")
- a.partyNavigationState = { seen = { Friend = {} } }
- Equal(a:GetPartyFocusLabel("Friend"), "Focus data expired")
- a.peer = { questID = -1 }
- Equal(a:GetPartyFocusLabel("Friend"), "Focus not shared or unavailable")
- a.peer.questID = 0
- Equal(a:GetPartyFocusLabel("Friend"), "No focused quest")
-end)
+QT:RegisterTest(
+	"focus labels distinguish unsupported waiting expired and unavailable without guessing privacy",
+	function()
+		local a = Fixture()
+		function a:GetPartyNavigationPeer()
+			return self.peer
+		end
+		function a:GetPlayerAddonVersion()
+			return self.peerVersion
+		end
+		Equal(a:GetPartyFocusLabel("Friend"), "Waiting for quest focus")
+		a.peerVersion = "6.2.3"
+		Equal(a:GetPartyFocusLabel("Friend"), "Quest focus unsupported")
+		a.partyNavigationState = { seen = { Friend = {} } }
+		Equal(a:GetPartyFocusLabel("Friend"), "Focus data expired")
+		a.peer = { questID = -1 }
+		Equal(a:GetPartyFocusLabel("Friend"), "Focus not shared or unavailable")
+		a.peer.questID = 0
+		Equal(a:GetPartyFocusLabel("Friend"), "No focused quest")
+	end
+)
 
 QT:RegisterTest("own focus reads native selection while solo without sharing or cached party state", function()
 	local a = Fixture()
@@ -500,13 +544,16 @@ QT:RegisterTest("party follow restores per character only after fresh validated 
 	restored:OnPartyNavigationTrackingChanged()
 	restored:Tick()
 	b.native.questID = 2
-	b:QueuePartyNavigationUpdate(); b:Tick(); b:Deliver(restored)
+	b:QueuePartyNavigationUpdate()
+	b:Tick()
+	b:Deliver(restored)
 	Equal(restored.native.questID, 2)
 	Equal(#restored.writes, 1)
 	restored:Tick(91)
 	Equal(restored.partyNavigationState.following, b.name)
 	Equal(restored.db.global.partyQuestFollowByCharacter.Me, b.name)
-	b:Tick(95); b:Deliver(restored)
+	b:Tick(95)
+	b:Deliver(restored)
 	Equal(#restored.writes, 1)
 	local other = Fixture()
 	other.db, other.activeCharacterKey = a.db, "Other"
@@ -522,13 +569,17 @@ QT:RegisterTest("missing focus stops persisted following once without changing n
 	assert(a:FollowPartyQuestFocus(b.name))
 	a.owned[2] = nil
 	b.native.questID = 2
-	b:QueuePartyNavigationUpdate(); b:Tick(); b:Deliver(a)
+	b:QueuePartyNavigationUpdate()
+	b:Tick()
+	b:Deliver(a)
 	Equal(a.native.questID, 1)
 	Equal(a.partyNavigationState.following, nil)
 	Equal(a.db.global.partyQuestFollowByCharacter.Me, nil)
 	Equal(a.notice.name, b.name)
 	Equal(a.notice.questID, 2)
-	b:Tick(35); b:Deliver(a); a:Tick()
+	b:Tick(35)
+	b:Deliver(a)
+	a:Tick()
 	Equal(a.noticeCount, 1)
 end)
 QT:RegisterTest("own PQL focus selection stops following and validates ownership and restrictions", function()
@@ -550,12 +601,24 @@ QT:RegisterTest("unavailable focus preserves intent but ignore raid and disable 
 		a.db, a.activeCharacterKey = { global = {} }, "Me"
 		assert(a:FollowPartyQuestFocus(b.name))
 		b.options.sharePartyFocus = false
-		b:QueuePartyNavigationUpdate(); b:Tick(); b:Deliver(a)
+		b:QueuePartyNavigationUpdate()
+		b:Tick()
+		b:Deliver(a)
 		Equal(a.partyNavigationState.following, b.name)
-		if reason == "ignore" then a.ignored[b.name] = true; a:Tick()
-		elseif reason == "raid" then a.raid = true; a:Tick()
-		elseif reason == "disable" then a:ResetPartyNavigation()
-		else a.native.questID = 2; a:OnPartyNavigationTrackingChanged(); a:Tick(); assert(a.confirmAction()) end
+		if reason == "ignore" then
+			a.ignored[b.name] = true
+			a:Tick()
+		elseif reason == "raid" then
+			a.raid = true
+			a:Tick()
+		elseif reason == "disable" then
+			a:ResetPartyNavigation()
+		else
+			a.native.questID = 2
+			a:OnPartyNavigationTrackingChanged()
+			a:Tick()
+			assert(a.confirmAction())
+		end
 		Equal(a.db.global.partyQuestFollowByCharacter.Me, nil)
 	end
 end)
@@ -569,7 +632,9 @@ QT:RegisterTest("manual navigation during reload recovery asks before ending sav
 	restored:Tick()
 	restored.native.questID = 2
 	restored:OnPartyNavigationTrackingChanged()
-	b:Tick(30); b:Deliver(restored)
+	b:Tick(30)
+	restored.time = b.time -- Both peers observe the same wall time for the new envelope.
+	b:Deliver(restored)
 	Equal(restored.native.questID, 1)
 	Equal(restored.partyNavigationState.following, b.name)
 	assert(restored.confirmAction())
@@ -603,18 +668,24 @@ end)
 QT:RegisterTest("native focus warning preserves follow on cancel and rejects older choices", function()
 	local a, b = Pair()
 	assert(a:FollowPartyQuestFocus(b.name))
-	a.native.questID = 2; a:OnPartyNavigationTrackingChanged(); a:Tick()
+	a.native.questID = 2
+	a:OnPartyNavigationTrackingChanged()
+	a:Tick()
 	local obsolete = a.confirmAction
 	Equal(a.native.questID, 1)
 	Equal(a.partyNavigationState.following, b.name)
 	-- Closing the dialog has no action. Repeated ticks/echoes do not reopen it.
 	a.confirmAction = nil
 	a:OnPartyNavigationTrackingChanged()
-	for _ = 1, 5 do a:Tick() end
+	for _ = 1, 5 do
+		a:Tick()
+	end
 	Equal(a.dialogCount, 1)
 	Equal(#a.writes, 1)
-	a.native.questID = 0; a.native.questCleared = true
-	a:OnPartyNavigationTrackingChanged(); a:Tick()
+	a.native.questID = 0
+	a.native.questCleared = true
+	a:OnPartyNavigationTrackingChanged()
+	a:Tick()
 	Equal(a.native.questID, 1)
 	Equal(a.dialogCount, 2)
 	Equal(obsolete(), false)
@@ -628,19 +699,30 @@ QT:RegisterTest("native focus warning defers restrictions and guards departed or
 		local a, b = Pair()
 		assert(a:FollowPartyQuestFocus(b.name))
 		a.blocked = true
-		a.native.questID = 2; a:OnPartyNavigationTrackingChanged(); a:Tick()
+		a.native.questID = 2
+		a:OnPartyNavigationTrackingChanged()
+		a:Tick()
 		Equal(#a.writes, 0)
 		Equal(a.dialogCount, nil)
-		a.blocked = false; a:Tick()
+		a.blocked = false
+		a:Tick()
 		Equal(a.native.questID, 1)
-		if reason == "departed" then a:Roster(a.name)
-		elseif reason == "missing" then a.owned[2] = nil
-		elseif reason == "restricted" then a.blocked = true
-		else a.reject = true end
+		if reason == "departed" then
+			a:Roster(a.name)
+		elseif reason == "missing" then
+			a.owned[2] = nil
+		elseif reason == "restricted" then
+			a.blocked = true
+		else
+			a.reject = true
+		end
 		Equal(a.confirmAction(), false)
 		Equal(a.native.questID, 1)
-		if reason == "departed" then Equal(a.partyNavigationState.following, nil)
-		else Equal(a.partyNavigationState.following, b.name) end
+		if reason == "departed" then
+			Equal(a.partyNavigationState.following, nil)
+		else
+			Equal(a.partyNavigationState.following, b.name)
+		end
 	end
 end)
 
@@ -649,35 +731,159 @@ QT:RegisterTest("failed native focus restoration stops safely without repeated w
 		local a, b = Pair()
 		assert(a:FollowPartyQuestFocus(b.name))
 		a.reject = true
-		if throws then a.API.SetPartyNavigationQuest = function()
-			a.writes[#a.writes + 1] = 1; error("native unavailable")
-		end end
-		a.native.questID = 2; a:OnPartyNavigationTrackingChanged(); a:Tick()
+		if throws then
+			a.API.SetPartyNavigationQuest = function()
+				a.writes[#a.writes + 1] = 1
+				error("native unavailable")
+			end
+		end
+		a.native.questID = 2
+		a:OnPartyNavigationTrackingChanged()
+		a:Tick()
 		Equal(a.partyNavigationState.following, nil)
 		Equal(a.native.questID, 2)
 		Equal(a.dialogCount, nil)
-		for _ = 1, 5 do a:Tick() end
+		for _ = 1, 5 do
+			a:Tick()
+		end
 		Equal(#a.writes, 1)
 	end
 end)
 
 QT:RegisterTest("focus controller leases invalidate old choices while preserving live follow intent", function()
- local a,b = Pair()
- assert(a:FollowPartyQuestFocus(b.name))
- assert(a:RequestPartyQuestFocus(a.name, 2))
- local stale, token = a.confirmAction, a.partyNavigationState.followToken
- local preview = a:CreatePartyFocusController({ active=function() return true end })
- a:AcquirePartyFocusController(preview)
- Equal(a:ApplyPartyQuestFocus(), nil)
- Equal(a.partyNavigationState.following,b.name)
- Equal(a.partyNavigationState.followToken,token)
- Equal(stale(),false)
- assert(a:ReleasePartyFocusController(preview))
- Equal(stale(),false)
- Equal(a.partyNavigationState.following,b.name)
- Equal(a.partyNavigationState.resuming,true)
- local fresh = Fixture()
- fresh:AcquirePartyFocusController(preview)
- assert(fresh:ReleasePartyFocusController(preview))
- Equal(rawget(fresh,"partyNavigationState"),nil)
+	local a, b = Pair()
+	assert(a:FollowPartyQuestFocus(b.name))
+	assert(a:RequestPartyQuestFocus(a.name, 2))
+	local stale, token = a.confirmAction, a.partyNavigationState.followToken
+	local preview = a:CreatePartyFocusController({
+		active = function()
+			return true
+		end,
+	})
+	a:AcquirePartyFocusController(preview)
+	Equal(a:ApplyPartyQuestFocus(), nil)
+	Equal(a.partyNavigationState.following, b.name)
+	Equal(a.partyNavigationState.followToken, token)
+	Equal(stale(), false)
+	assert(a:ReleasePartyFocusController(preview))
+	Equal(stale(), false)
+	Equal(a.partyNavigationState.following, b.name)
+	Equal(a.partyNavigationState.resuming, true)
+	local fresh = Fixture()
+	fresh:AcquirePartyFocusController(preview)
+	assert(fresh:ReleasePartyFocusController(preview))
+	Equal(rawget(fresh, "partyNavigationState"), nil)
 end)
+
+QT:RegisterTest("party navigation advances heartbeat only after acceptance and invalidates queued old focus", function()
+	local a = Fixture()
+	a.holdAcceptance = true
+	a:Tick(0)
+	a:Tick()
+	local first = a.wire[1]
+	Equal(a.partyNavigationState.hello, true)
+	assert(a.partyNavigationState.pending)
+	a:Tick(5)
+	Equal(#a.wire, 1)
+	a.native.questID = 2
+	a:QueuePartyNavigationUpdate()
+	a:Tick()
+	local second = a.wire[2]
+	Equal(first.options.isCurrent(), false)
+	Equal(second.options.isCurrent(), true)
+	first.options.onComplete(false, "superseded")
+	assert(a.partyNavigationState.pending)
+	second.options.onComplete(true, "accepted")
+	Equal(a.partyNavigationState.pending, nil)
+	Equal(a.partyNavigationState.hello, false)
+	Equal(a.partyNavigationState.nextSend, a.time + 28)
+	a:Tick(20)
+	Equal(#a.wire, 2)
+end)
+
+QT:RegisterTest(
+	"party navigation failed admission waits before retrying and stale envelopes cannot revive focus",
+	function()
+		local a = Fixture()
+		a.token = false
+		a:Tick(0)
+		a:Tick()
+		Equal(a.partyNavigationState.dirtyAt, nil)
+		a.token = true
+		a:Tick(1)
+		Equal(#a.wire, 0)
+		a:Tick(1)
+		Equal(#a.wire, 1)
+		local b = Fixture("Friend Realm")
+		b:Roster(a.name, b.name)
+		b.time = a.time
+		assert(a:Deliver(b))
+		local previous = b:GetPartyNavigationPeer(a.name)
+		local record = QT:DeepCopy(a.wire[1].data)
+		record.questID = 2
+		local context = QT:DeepCopy(a.wire[1].context)
+		context.sequence = context.sequence + 1
+		context.stamp = b:GetAnnouncementServerTime() + 2
+		Equal(b:HandlePartyNavigationMessage(record, a.name, context), false)
+		context.stamp = b:GetAnnouncementServerTime() - 90
+		Equal(b:HandlePartyNavigationMessage(record, a.name, context), false)
+		Equal(b:GetPartyNavigationPeer(a.name), previous)
+	end
+)
+
+-- Full multi-peer recovery simulations run offline.
+QT:RegisterTest("party navigation crosses the shared protocol atomically and refreshes a lost snapshot", function()
+	local net = QT:CreateTestNetwork({ fps = 20, latency = 0.05 })
+	local a = net:AddPeer("Focus-Realm", { group = "party" })
+	local b = net:AddPeer("Follower-Realm", { group = "party", clockOffset = -40 })
+	local title = string.rep("Quest title ", 35):sub(1, -2)
+	for _, peer in ipairs({ a, b }) do
+		peer.native = { questID = 7, mapID = 37, x = 0.25, y = 0.75 }
+		peer.API.GetPartyNavigationNativeState = function()
+			return QT:DeepCopy(peer.native)
+		end
+		peer.API.GetActiveTrackedQuestID = function()
+			return peer.native.questID
+		end
+		peer.API.IsOnQuest = function()
+			return true
+		end
+		function peer:GetQuestTitle()
+			return title
+		end
+		function peer:GetLocalizedQuestTitle()
+			return nil
+		end
+		peer.OnCommReceived = peer.ReceiveCommunication
+		peer:InitializeCommunications()
+		local frame = net:CreateFrame(peer)
+		frame:SetScript("OnUpdate", function()
+			if peer == a then
+				peer:UpdatePartyNavigation()
+			end
+			peer:UpdateCommunicationRuntime()
+		end)
+	end
+	local lost, generation
+	net.deliveryRule = function(packet, receiver)
+		local frame = a:DecodeCommFrame(packet.wire)
+		if receiver == b and frame and frame.operation == "QTN2" then
+			generation = generation or frame.messageId
+			if frame.messageId == generation and frame.part == 2 then
+				lost = true
+				return { drop = true }
+			end
+			return { copies = 2, delay = frame.part == 1 and 0.2 or 0.05 }
+		end
+	end
+	net:Advance(5)
+	assert(lost, "long navigation records must exercise actual framing")
+	Equal(b:GetPartyNavigationPeer(a.name), nil, "partial state must not reach focus consumers")
+	net:Advance(35)
+	local info = b:GetPartyNavigationPeer(a.name)
+	assert(info)
+	Equal(info.title, title)
+	Equal(info.questID, 7)
+	Equal(info.x, 0.25)
+	Equal(b:GetCommTransferMetrics().received, 1, "duplicate fragments must not dispatch another snapshot")
+end, { offline = true })

@@ -34,6 +34,7 @@
   "Party Only",
   "Prefix",
   "Press Ctrl+C to copy this address, then open it in your browser.",
+  "Quest progress chat bubbles and logs for party and nearby players.",
   "Ready",
   "Ready to Turn In",
   "Recent events:",
@@ -58,12 +59,12 @@
   "Share attempted",
   "Sharing unavailable",
   "Test summary: %d passed, %d failed (%d total).",
+  "Tests running: %d/%d complete.",
   "Top",
   "Unknown",
   "Yes",
   "[diagnostics truncated]",
   "[older events omitted]",
   "unknown",
-  "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.",
-  "Quest progress chat bubbles and logs for party and nearby players."
+  "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s."
 ]

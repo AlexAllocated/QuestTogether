@@ -78,25 +78,12 @@ function QuestTogether:GetDebugController()
 		getTests = function()
 			return owner.tests or {}
 		end,
-		testOptions = function()
-			return owner:GetDebugTestOptions()
+		testOptions = function(_, present)
+			return owner:GetDebugTestOptions(present)
 		end,
 		beforeTests = function()
 			if not owner.isInitialized then
 				owner:OnInitialize()
-			end
-			local token = {
-				isRunningTests = owner.isRunningTests,
-				suppress = owner.suppressLocalAnnouncementDisplayDuringTests,
-			}
-			owner.isRunningTests = true
-			owner.suppressLocalAnnouncementDisplayDuringTests = true
-			return token
-		end,
-		afterTests = function(token)
-			if token then
-				owner.isRunningTests = token.isRunningTests
-				owner.suppressLocalAnnouncementDisplayDuringTests = token.suppress
 			end
 		end,
 		getVersion = function()

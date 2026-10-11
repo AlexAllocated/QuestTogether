@@ -36,7 +36,7 @@ def toc_entries(text):
     if len({p.casefold() for p in entries}) != len(entries):
         raise PackageError("duplicate live manifest entry")
     if any(not p.endswith(".lua") or (p.startswith("scripts/") and not
-            (p.startswith("scripts/regression_") or p == "scripts/ui_fixture.lua")) for p in entries):
+            (p.startswith("scripts/regression_") or p in ("scripts/ui_fixture.lua", "scripts/network_fixture.lua"))) for p in entries):
         raise PackageError("TOC contains an unsupported or offline-only file")
     return entries
 

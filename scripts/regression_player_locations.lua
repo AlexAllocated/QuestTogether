@@ -32,6 +32,9 @@ local function Fixture(name)
 	a.API.GetTime = function()
 		return a.now
 	end
+	a.API.GetServerTime = function()
+		return 1700000000 + math.floor(a.now)
+	end
 	a.API.Random = function()
 		return 1234
 	end
@@ -77,14 +80,45 @@ local function Fixture(name)
 	a.API.IsInParty = function()
 		return a.inParty == true
 	end
+	function a:AdvanceRuntime(now)
+		self.now = now or self.now
+		if self.runtimeAdvancedAt ~= self.now then
+			self.runtimeAdvancedAt = self.now
+			-- A changed fixture clock represents a new client frame. Keep the
+			-- production ingress budget and advance its real runtime owner.
+			self:UpdateCommunicationRuntime()
+		end
+	end
 	a.API.SendAddonMessage = function(prefix, message, route, target)
-		a.sent[#a.sent + 1] = { prefix = prefix, message = message, route = route, target = target }
+		local frame, body = a:DecodeCommFrame(message)
+		a.sent[#a.sent + 1] = {
+			prefix = prefix,
+			message = message,
+			route = route,
+			target = target,
+			frame = frame,
+			data = frame and frame.total == 1 and a:DecodeCommRecord(frame.operation, body),
+		}
 		if a.sendFails or (a.failedRoutes and a.failedRoutes[route]) then
 			return false
 		end
 		local other = a.peersByRoute and a.peersByRoute[route] or a.other
 		if other then
-			other:OnCommReceived(prefix, message, route, a.name, 7, "QuestTogether")
+			other:AdvanceRuntime(a.now)
+			if route == "PARTY" then
+				-- This domain fixture isolates per-route publication outcomes;
+				-- group membership and native-dot filtering have separate tests.
+				local data = frame and other:DecodeCommRecord(frame.operation, body)
+				if data then
+					other:ApplyCommunicationState(
+						{ { topic = frame.operation, data = data } },
+						a.name,
+						{ session = frame.session, sequence = tonumber(frame.messageId), stamp = frame.stamp }
+					)
+				end
+			else
+				other:ReceiveCommunication(prefix, message, route, a.name, 7, "QuestTogether")
+			end
 		end
 		return 0
 	end
@@ -130,23 +164,86 @@ local function Fixture(name)
 	a.GetPlayerLocationPriorityOrigin = function()
 		return nil
 	end
+	function a:IsGroupedSender()
+		return self.inParty == true
+	end
+	-- The publication seam completes synchronously here so domain cadence tests
+	-- can use exact sample times. Real packet budgets/fragment delivery are
+	-- exercised by network_v2 and presence_v2 rather than bypassed in production.
+	function a:Publish(operation, record, routes, options)
+		self:AdvanceRuntime()
+		options = options or {}
+		local data = self:CopyCommRecord(operation, record)
+		if not data then
+			return false
+		end
+		local sequence = self:NextCommunicationSequence()
+		local context = {
+			session = self:GetCommunicationSession(),
+			messageId = tostring(sequence),
+			sequence = sequence,
+			stamp = self:GetAnnouncementServerTime(),
+		}
+		local frames = assert(self:BuildCommFrames(operation, data, context))
+		local accepted = true
+		for _, route in ipairs(routes or self:GetAnnouncementWireRoutes()) do
+			for _, wire in ipairs(frames) do
+				accepted = self.API.SendAddonMessage(self.commPrefix, wire, route.distribution, route.target) == 0
+					and accepted
+			end
+		end
+		if options.onComplete then
+			options.onComplete(accepted, accepted and "accepted" or "rejected")
+		end
+		return true
+	end
+	a.Emit = a.Publish
+	a:InitializeCommunications()
 	return a
 end
 
--- Old releases can still send mask 1/2. Keep exercising their authenticated
--- wire traffic and bounded permission withdrawals, without exposing obsolete
--- per-surface settings in this release's publisher or profile schema.
-local function LegacySenderFixture(name)
+-- Surface masks are an explicit typed record permission. The public profile
+-- uses the combined mask; this fixture exercises independent revocation fences.
+local function SurfacePermissionFixture(name)
 	local a = Fixture(name)
-	a.legacyShareMask = 3
+	a.surfaceShareMask = 3
 	function a:GetPlayerLocationShareMask()
-		return self.legacyShareMask
+		return self.surfaceShareMask
 	end
-	function a:SetLegacyShareMask(mask)
-		self.legacyShareMask = mask
+	function a:SetSurfaceShareMask(mask)
+		self.surfaceShareMask = mask
 		return self:BroadcastPlayerLocation(true)
 	end
 	return a
+end
+
+local function LatestLocation(a)
+	for i = #a.sent, 1, -1 do
+		if a.sent[i].frame.operation == "LOC" then
+			return a.sent[i].data
+		end
+	end
+end
+local function Location(x)
+	return {
+		mask = 3,
+		mapID = 12,
+		x = x or 0.4,
+		y = 0.6,
+		classFile = "MAGE",
+		className = "Mage",
+		race = "Human",
+		faction = "Alliance",
+		level = 60,
+		warMode = false,
+	}
+end
+local function ObserveLocation(a, name, data, sequence)
+	return a:ApplyCommunicationState(
+		{ { topic = "LOC", data = data } },
+		name,
+		{ session = "1700000100000-1234", sequence = sequence or 1, stamp = a:GetAnnouncementServerTime() }
+	)
 end
 
 QT:RegisterTest("location settings migrate every stored profile before applying defaults", function()
@@ -292,10 +389,10 @@ QT:RegisterTest("location partner filter follows authenticated active status wit
 	a.now, b.now = 164, 164
 	assert(a:BroadcastPlayerLocation(true))
 	Equal(#b:GetVisiblePlayerLocations("minimap"), 1)
-	b.now = 165 -- Quest-partner status expires before the fresh location does.
+	b.now = 700 -- Typed public status uses the common ten-minute lifetime.
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 	assert(b.playerLocationState.peers[a.name])
-	a.now = 165
+	a.now = 700
 	assert(a:BroadcastQuestPartnerStatus(true))
 	Equal(#b:GetVisiblePlayerLocations("map"), 1)
 	b.ignored[a.name] = true
@@ -345,15 +442,15 @@ QT:RegisterTest("player location settings refresh both combined toggles and the 
 	Equal(a.playerLocationsControls.onlyShowQuestPartners.checked, true)
 end)
 
-QT:RegisterTest("partner filtering and combined viewing retain legacy per-surface sender permissions", function()
-	local a, b = LegacySenderFixture(), Fixture("Friend-Realm")
+QT:RegisterTest("partner filtering and combined viewing retain explicit per-surface record permissions", function()
+	local a, b = SurfacePermissionFixture(), Fixture("Friend-Realm")
 	a.other = b
 	assert(b:SetOption("onlyShowQuestPartners", true))
 	assert(a:SetOption("lookingForQuestPartners", true))
-	assert(a:SetLegacyShareMask(1))
+	assert(a:SetSurfaceShareMask(1))
 	Equal(#b:GetVisiblePlayerLocations("map"), 1)
 	Equal(#b:GetVisiblePlayerLocations("minimap"), 0)
-	assert(a:SetLegacyShareMask(2))
+	assert(a:SetSurfaceShareMask(2))
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 	Equal(#b:GetVisiblePlayerLocations("minimap"), 1)
 	assert(b:SetOption("showPlayerLocations", false))
@@ -446,7 +543,7 @@ QT:RegisterTest(
 		assert(a:SetOption("sharePlayerLocation", false))
 		Equal(#b:GetVisiblePlayerLocations("map"), 0)
 		Equal(#b:GetVisiblePlayerLocations("minimap"), 0)
-		assert(a.sent[#a.sent].message:match(",0$"))
+		Equal(LatestLocation(a).mask, 0)
 		assert(not a:SetOption("sharePlayerLocation", "true"))
 		Equal(a:GetPlayerLocationShareMask(), 0)
 		assert(a:SetOption("sharePlayerLocation", true))
@@ -481,7 +578,7 @@ QT:RegisterTest("location sends pace position reads movement heartbeat and faile
 	a.now = 130
 	assert(a:BroadcastPlayerLocation())
 	a.sendFails, a.position.x, a.now = true, 0.42, 140
-	assert(not a:BroadcastPlayerLocation())
+	assert(a:BroadcastPlayerLocation())
 	Equal(#a.sent, 4)
 	a.now = 141
 	assert(not a:BroadcastPlayerLocation())
@@ -491,7 +588,8 @@ end)
 QT:RegisterTest("failed location sends never deliver a point to the receiver", function()
 	local a, b = Fixture(), Fixture("Friend-Realm")
 	a.other, a.sendFails = b, true
-	Equal(a:BroadcastPlayerLocation(), false)
+	Equal(a:BroadcastPlayerLocation(), true)
+	Equal(a:GetPlayerLocationState().lastSentAt, nil)
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 	a.now, b.now, a.sendFails = 110, 110, false
 	assert(a:BroadcastPlayerLocation())
@@ -544,13 +642,13 @@ QT:RegisterTest("location withdrawal retries stop at old-position expiry even wh
 		a.db.profile.sharePlayerLocation = false
 		a.sendFails = failed
 		a:BroadcastPlayerLocation(true)
-		for now = 105, 215, 5 do
+		for now = 105, 695, 5 do
 			a.now, b.now = now, now
 			a:BroadcastPlayerLocation()
 		end
-		Equal(#a.sent, 25) -- one point, one opt-out, twenty-three bounded retries
+		Equal(#a.sent, 121) -- one point, one opt-out,119 bounded retries
 		local attempts = #a.sent
-		for now = 220, 275, 5 do
+		for now = 700, 755, 5 do
 			a.now, b.now = now, now
 			Equal(a:BroadcastPlayerLocation(), false)
 		end
@@ -563,20 +661,20 @@ QT:RegisterTest("location withdrawal retries stop at old-position expiry even wh
 		Equal(b:GetVisiblePlayerLocations("map")[1].x, 0.7)
 		a.db.profile.sharePlayerLocation = false
 		assert(a:BroadcastPlayerLocation(true))
-		a.now = 280
+		a.now = 760
 		assert(a:BroadcastPlayerLocation())
 		Equal(#b:GetVisiblePlayerLocations("map"), 0)
 	end
 end)
 
-QT:RegisterTest("legacy single-surface location opt-out retries every route before the stationary heartbeat", function()
+QT:RegisterTest("single-surface location opt-out retries every route before the stationary heartbeat", function()
 	for _, surface in ipairs({ "map", "minimap" }) do
 		for _, failures in ipairs({ { PARTY = true }, { CHANNEL = true }, { PARTY = true, CHANNEL = true } }) do
-			local a, party, channel = LegacySenderFixture(), Fixture("Party-Realm"), Fixture("Channel-Realm")
+			local a, party, channel = SurfacePermissionFixture(), Fixture("Party-Realm"), Fixture("Channel-Realm")
 			a.inParty, a.peersByRoute = true, { PARTY = party, CHANNEL = channel }
 			assert(a:BroadcastPlayerLocation())
 			a.failedRoutes = failures
-			Equal(a:SetLegacyShareMask(surface == "map" and 2 or 1), not (failures.PARTY and failures.CHANNEL))
+			Equal(a:SetSurfaceShareMask(surface == "map" and 2 or 1), true)
 			Equal(#party:GetVisiblePlayerLocations(surface), failures.PARTY and 1 or 0)
 			Equal(#channel:GetVisiblePlayerLocations(surface), failures.CHANNEL and 1 or 0)
 			local attempts = #a.sent
@@ -597,48 +695,46 @@ QT:RegisterTest("legacy single-surface location opt-out retries every route befo
 	end
 end)
 
-QT:RegisterTest(
-	"legacy location permission retry expiry belongs to each surface and resets for fresh sharing",
-	function()
-		local a, b = LegacySenderFixture(), Fixture("Friend-Realm")
-		a.other = b
+-- Full location-capacity and publication-retry matrices run offline.
+QT:RegisterTest("location permission retry expiry belongs to each surface and resets for fresh sharing", function()
+	local a, b = SurfacePermissionFixture(), Fixture("Friend-Realm")
+	a.other = b
+	assert(a:BroadcastPlayerLocation())
+	assert(a:SetSurfaceShareMask(1))
+	for now = 105, 695, 5 do
+		a.now, b.now = now, now
 		assert(a:BroadcastPlayerLocation())
-		assert(a:SetLegacyShareMask(1))
-		for now = 105, 215, 5 do
-			a.now, b.now = now, now
-			assert(a:BroadcastPlayerLocation())
-			Equal(#b:GetVisiblePlayerLocations("map"), 1)
-			Equal(#b:GetVisiblePlayerLocations("minimap"), 0)
-		end
-		-- Updating the retained map surface must not extend the minimap revocation.
-		local attempts = #a.sent
-		for now = 220, 230, 5 do
-			a.now, b.now = now, now
-			Equal(a:BroadcastPlayerLocation(), false)
-		end
-		Equal(#a.sent, attempts)
-		a.now, b.now = 235, 235
-		assert(a:BroadcastPlayerLocation(), "the remaining surface resumes its ordinary heartbeat")
-		assert(a:SetLegacyShareMask(0))
-		local reads = a.reads
-		for now = 240, 350, 5 do
-			a.now, b.now = now, now
-			assert(a:BroadcastPlayerLocation(), "the newly revoked map has its own expiry")
-		end
-		Equal(a.reads, reads)
-		a.now = 355
-		Equal(a:BroadcastPlayerLocation(), false)
-		a.now, b.now, a.position.x = 360, 360, 0.7
-		assert(a:SetLegacyShareMask(2))
-		Equal(b:GetVisiblePlayerLocations("minimap")[1].x, 0.7)
-		assert(a:SetLegacyShareMask(0))
-		a.now = 365
-		assert(a:BroadcastPlayerLocation(), "fresh sharing starts a new bounded revocation lifetime")
-		a:ResetPlayerLocations()
-		a.now = 370
-		Equal(a:BroadcastPlayerLocation(), false, "reset must not retain old publication history")
+		Equal(#b:GetVisiblePlayerLocations("map"), 1)
+		Equal(#b:GetVisiblePlayerLocations("minimap"), 0)
 	end
-)
+	-- Updating the retained map surface must not extend the minimap revocation.
+	local attempts = #a.sent
+	for now = 700, 710, 5 do
+		a.now, b.now = now, now
+		Equal(a:BroadcastPlayerLocation(), false)
+	end
+	Equal(#a.sent, attempts)
+	a.now, b.now = 715, 715
+	assert(a:BroadcastPlayerLocation(), "the remaining surface resumes its ordinary heartbeat")
+	assert(a:SetSurfaceShareMask(0))
+	local reads = a.reads
+	for now = 720, 1310, 5 do
+		a.now, b.now = now, now
+		assert(a:BroadcastPlayerLocation(), "the newly revoked map has its own expiry")
+	end
+	Equal(a.reads, reads)
+	a.now = 1315
+	Equal(a:BroadcastPlayerLocation(), false)
+	a.now, b.now, a.position.x = 1320, 1320, 0.7
+	assert(a:SetSurfaceShareMask(2))
+	Equal(b:GetVisiblePlayerLocations("minimap")[1].x, 0.7)
+	assert(a:SetSurfaceShareMask(0))
+	a.now = 1325
+	assert(a:BroadcastPlayerLocation(), "fresh sharing starts a new bounded revocation lifetime")
+	a:ResetPlayerLocations()
+	a.now = 1330
+	Equal(a:BroadcastPlayerLocation(), false, "reset must not retain old publication history")
+end, { offline = true })
 
 QT:RegisterTest("location restrictions and unreadable positions retain the last point without renewing it", function()
 	local a, b = Fixture(), Fixture("Friend-Realm")
@@ -659,13 +755,13 @@ QT:RegisterTest("location restrictions and unreadable positions retain the last 
 	Equal(b:GetVisiblePlayerLocations("map")[1].x, 0)
 	Equal(b:GetVisiblePlayerLocations("map")[1].receivedAt, 120)
 	a.position = nil
-	for now = 125, 235, 5 do
+	for now = 125, 715, 5 do
 		a.now, b.now = now, now
 		Equal(a:BroadcastPlayerLocation(), false)
 		Equal(#b:GetVisiblePlayerLocations("map"), 1)
 	end
 	Equal(#a.sent, 2)
-	b.now = 240
+	b.now = 720
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 end)
 
@@ -693,50 +789,50 @@ QT:RegisterTest("location runtime ticks tolerate lost heartbeats and publish onl
 		Equal(#b:GetVisiblePlayerLocations("map"), 1)
 		Equal(b:GetVisiblePlayerLocations("map")[1].receivedAt, 100)
 	end
-	Equal(#a.sent, 4, "stationary traffic stays at one attempt per twenty seconds")
+	Equal(#a.sent, 8, "failed attempts do not advance accepted fingerprints and retry every ten seconds")
 	a.sendFails, a.position = false, { x = 0.7, y = 0.8 }
 	Tick(180)
 	Equal(b:GetVisiblePlayerLocations("map")[1].x, 0.7)
 	Equal(b:GetVisiblePlayerLocations("map")[1].receivedAt, 180)
 	a.restricted = true
 	local reads, sends = a.reads, #a.sent
-	for now = 185, 295, 5 do
+	for now = 185, 775, 5 do
 		Tick(now)
 		Equal(#b:GetVisiblePlayerLocations("map"), 1)
 	end
 	Equal(a.reads, reads)
 	Equal(#a.sent, sends)
-	Tick(300)
+	Tick(780)
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 end)
 
 QT:RegisterTest("location privacy changes withdraw immediately while fresh position is unavailable", function()
 	for _, action in ipairs({ "legacy-map", "legacy-minimap", "both", "disable" }) do
 		local legacy = action == "legacy-map" or action == "legacy-minimap"
-		local a, b = legacy and LegacySenderFixture() or Fixture(), Fixture("Friend-Realm")
+		local a, b = legacy and SurfacePermissionFixture() or Fixture(), Fixture("Friend-Realm")
 		a.other = b
 		assert(a:BroadcastPlayerLocation())
 		a.restricted, a.now, b.now = true, 101, 101
 		if action == "disable" then
 			assert(a:BroadcastPlayerLocation(true, true))
 		elseif legacy then
-			assert(a:SetLegacyShareMask(action == "legacy-map" and 2 or 1))
+			assert(a:SetSurfaceShareMask(action == "legacy-map" and 2 or 1))
 		else
 			assert(a:SetOption("sharePlayerLocation", false))
 		end
 		Equal(#b:GetVisiblePlayerLocations("map"), 0)
 		Equal(#b:GetVisiblePlayerLocations("minimap"), 0)
-		assert(a.sent[#a.sent].message:match(",0$"))
+		Equal(LatestLocation(a).mask, 0)
 		Equal(a.reads, 1)
 	end
 end)
 
-QT:RegisterTest("legacy location partial privacy withdrawal retries failed routes during a position outage", function()
-	local a, party, channel = LegacySenderFixture(), Fixture("Party-Realm"), Fixture("Channel-Realm")
+QT:RegisterTest("partial location privacy withdrawal retries failed routes during a position outage", function()
+	local a, party, channel = SurfacePermissionFixture(), Fixture("Party-Realm"), Fixture("Channel-Realm")
 	a.inParty, a.peersByRoute = true, { PARTY = party, CHANNEL = channel }
 	assert(a:BroadcastPlayerLocation())
 	a.restricted, a.now, a.failedRoutes = true, 101, { PARTY = true }
-	assert(a:SetLegacyShareMask(2))
+	assert(a:SetSurfaceShareMask(2))
 	Equal(#party:GetVisiblePlayerLocations("map"), 1)
 	Equal(#channel:GetVisiblePlayerLocations("map"), 0)
 	local attempts = #a.sent
@@ -772,9 +868,9 @@ QT:RegisterTest("location ordering session replacement and expiry prevent stale 
 	b.now = 103
 	b:OnCommReceived(a.commPrefix, a.sent[2].message, "CHANNEL", a.name, 7, "QuestTogether")
 	Equal(#b:GetVisiblePlayerLocations("map"), 1)
-	b.now = 221
+	b.now = 700
 	Equal(#b:GetVisiblePlayerLocations("map"), 1)
-	b.now = 222
+	b.now = 701
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 end)
 
@@ -783,7 +879,7 @@ QT:RegisterTest("location transport ignores unsupported routes and uses authorit
 	a.forever, b.forever = true, true
 	assert(a:BroadcastPlayerLocation())
 	local wire = a.sent[1].message
-	b:OnCommReceived(a.commPrefix, wire, "WHISPER", a.name)
+	b:OnCommReceived(a.commPrefix, wire, "SAY", a.name)
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 	b:OnCommReceived(a.commPrefix, wire, "CHANNEL", a.name, 8, "OtherChannel")
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
@@ -797,61 +893,73 @@ QT:RegisterTest("location transport ignores unsupported routes and uses authorit
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 end)
 
+-- Full location-capacity and publication-retry matrices run offline.
 QT:RegisterTest("location records and malformed wire input are bounded", function()
 	local a = Fixture()
-	local valid = "1,100-1234,1,3,12,0.4,0.6,MAGE,Mage,Human,Alliance,60,0"
-	for _, payload in ipairs({
-		"",
-		"2,100-1234,1,0",
-		"1,100-1234,1,7",
-		valid .. ",extra",
-		"1,100-1234,1,3,12,nan,0.6,MAGE,Mage,Human,Alliance,60,0",
-		"1,100-1234,1,3,12,-0.1,0.6,MAGE,Mage,Human,Alliance,60,0",
-		string.rep("x", 256),
+	for _, record in ipairs({
+		{},
+		{ mask = 7 },
+		{ mask = 3, mapID = 12, x = math.huge, y = 0.6 },
+		{ mask = 3, mapID = 12, x = -0.1, y = 0.6 },
+		{ mask = 3, mapID = 12, x = 0.4 },
 	}) do
-		Equal(a:DecodePlayerLocationPayload(payload), nil)
+		Equal(a:ValidatePlayerLocationRecord(record), nil)
+	end
+	for _, wire in ipairs({ "", "LOC|1,100-1234,1,0", string.rep("x", 256) }) do
+		Equal(a:ReceiveCommunication(a.commPrefix, wire, "CHANNEL", "Bad-Realm", 7, "QuestTogether"), false)
 	end
 	for i = 1, 540 do
 		a.now = 100 + i / 100
-		assert(a:HandlePlayerLocationMessage(valid, "Peer" .. i .. "-Realm"))
+		assert(ObserveLocation(a, "Peer" .. i .. "-Realm", Location()))
 	end
 	Equal(#a:GetVisiblePlayerLocations("map"), 512)
-end)
+end, { offline = true })
 
+-- Full location-capacity and publication-retry matrices run offline.
 QT:RegisterTest("location channel retains fresh positions from two hundred fifty active peers", function()
 	local a = Fixture()
-	local payload = "LOC|1,100-1234,1,3,12,0.4,0.6,MAGE,Mage,Human,Alliance,60,0"
-	for i = 1, 250 do
-		a.now = 100 + i / 100
-		a:OnCommReceived(a.commPrefix, payload, "CHANNEL", "Peer" .. i .. "-Realm", 7, "QuestTogether")
+	local function Send(sequence)
+		local frames = assert(a:BuildCommFrames("LOC", Location(), {
+			session = "1700000100000-1234",
+			messageId = tostring(sequence),
+			sequence = sequence,
+			stamp = a:GetAnnouncementServerTime(),
+		}))
+		for i = 1, 250 do
+			if (i - 1) % 32 == 0 then
+				-- Deliver the population over successive frames, with room for
+				-- other client traffic under the real per-frame ingress cap.
+				a:AdvanceRuntime(a.now + 1 / 60)
+			end
+			for _, wire in ipairs(frames) do
+				assert(
+					a:ReceiveCommunication(a.commPrefix, wire, "CHANNEL", "Peer" .. i .. "-Realm", 7, "QuestTogether")
+				)
+			end
+		end
 	end
+	Send(1)
 	Equal(#a:GetVisiblePlayerLocations("map"), 250)
-	assert(a.playerLocationState.peers["Peer1-Realm"], "healthy first peers must survive an active shared channel")
-	for i = 1, 250 do
-		a.now = 120 + i / 100
-		a:OnCommReceived(
-			a.commPrefix,
-			payload:gsub(",1,3,", ",2,3,"),
-			"CHANNEL",
-			"Peer" .. i .. "-Realm",
-			7,
-			"QuestTogether"
-		)
-	end
+	assert(a.playerLocationState.peers["Peer1-Realm"])
+	a.now = 120
+	Send(2)
 	Equal(#a:GetVisiblePlayerLocations("minimap"), 250)
 	Equal(a.playerLocationState.peers["Peer1-Realm"].sequence, 2)
-end)
+end, { offline = true })
 
 QT:RegisterTest("location runtime replacement cancels old update callbacks and clears owned pins", function()
 	local a = Fixture()
+	function a:UpdateQTPlayerPresence() end
+	function a:UpdateGeographicComms() end
+	function a:UpdateNearbyStreams() end
+	function a:UpdatePlayerDetails() end
 	assert(a:InitializePlayerLocations())
 	assert(a:InitializeRuntimeCoordinator())
 	local frame, state = a.runtimeCoordinatorFrame, a.playerLocationState
 	local callback = frame.scripts.OnUpdate
 	callback(frame, 0.2)
-	Equal(#a.sent, 2)
-	Equal(a.sent[1].message, "QTPR|1,1")
-	assert(a.sent[2].message:find("LOC|", 1, true) == 1)
+	Equal(#a.sent, 1)
+	Equal(a.sent[1].frame.operation, "LOC")
 	a:ResetRuntimeCoordinator()
 	a:ResetPlayerLocations()
 	Equal(rawget(a, "playerLocationState"), nil)
@@ -862,9 +970,9 @@ QT:RegisterTest("location runtime replacement cancels old update callbacks and c
 	assert(a.playerLocationState ~= state)
 	a.now = 110
 	callback(frame, 1)
-	Equal(#a.sent, 2)
+	Equal(#a.sent, 1)
 	frame.scripts.OnUpdate(frame, 0.2)
-	Equal(#a.sent, 3)
+	Equal(#a.sent, 2)
 end)
 
 QT:RegisterTest("disabling combined location sharing also removes coordinates from quest and ping messages", function()
@@ -890,8 +998,7 @@ QT:RegisterTest("disabling combined location sharing also removes coordinates fr
 	-- Even a caller supplying already-built metadata cannot bypass the send gate.
 	event.coordX, event.coordY, event.mapID, event.zoneName = "40", "60", "12", "Example Zone"
 	assert(a:SendAnnouncementWireEvent(event))
-	local _, payload = a:DeserializeWireMessage(a.sent[1].message)
-	local sent = a:DecodeAnnouncementPayload(payload)
+	local sent = a.sent[1].data
 	Equal(sent.coordX, "")
 	Equal(sent.coordY, "")
 	Equal(sent.zoneName, "")
@@ -919,8 +1026,7 @@ QT:RegisterTest(
 		end
 		assert(a:BroadcastPlayerLocation())
 		assert(#a.sent[1].message <= 255)
-		local _, payload = a:DeserializeWireMessage(a.sent[1].message)
-		local data = a:DecodePlayerLocationPayload(payload)
+		local data = a.sent[1].data
 		Equal(data.mask, 3)
 		Equal(data.classFile, "")
 		assert(not data.className:find("|", 1, true))
@@ -931,6 +1037,7 @@ QT:RegisterTest(
 	end
 )
 
+-- Full location-capacity and publication-retry matrices run offline.
 QT:RegisterTest("full location cache retains nearby peers over fresh distant arrivals", function()
 	local a = Fixture()
 	a.GetPlayerLocationPriorityOrigin = function()
@@ -940,24 +1047,24 @@ QT:RegisterTest("full location cache retains nearby peers over fresh distant arr
 		return row.mask == 0 and math.huge or row.x
 	end
 	local function Payload(x, sequence)
-		return "1,100-1234," .. (sequence or 1) .. ",3,12," .. x .. ",0.6,MAGE,Mage,Human,Alliance,60,0"
+		return Location(tonumber(x))
 	end
 	for i = 1, 512 do
-		assert(a:HandlePlayerLocationMessage(Payload("0.1"), "Near" .. i .. "-Realm"))
+		assert(ObserveLocation(a, "Near" .. i .. "-Realm", Payload("0.1")))
 	end
 	a.now = 101
-	assert(a:HandlePlayerLocationMessage(Payload("0.9"), "Far-Realm"))
+	assert(ObserveLocation(a, "Far-Realm", Payload("0.9")))
 	assert(not a.playerLocationState.peers["Far-Realm"])
 	Equal(#a:GetVisiblePlayerLocations("map"), 512)
-	assert(a:HandlePlayerLocationMessage(Payload("0.01"), "Closest-Realm"))
+	assert(ObserveLocation(a, "Closest-Realm", Payload("0.01")))
 	assert(a.playerLocationState.peers["Closest-Realm"])
 	Equal(#a:GetVisiblePlayerLocations("map"), 512)
 	-- Existing peers still accept a move, then become eligible for eviction.
-	assert(a:HandlePlayerLocationMessage(Payload("0.95", 2), "Closest-Realm"))
-	assert(a:HandlePlayerLocationMessage(Payload("0.02"), "NewNear-Realm"))
+	assert(ObserveLocation(a, "Closest-Realm", Payload("0.95"), 2))
+	assert(ObserveLocation(a, "NewNear-Realm", Payload("0.02")))
 	assert(not a.playerLocationState.peers["Closest-Realm"])
 	assert(a.playerLocationState.peers["NewNear-Realm"])
-end)
+end, { offline = true })
 
 QT:RegisterTest("map display filters always exclude native party dots independently of sharing", function()
 	local a = Fixture()
@@ -1009,4 +1116,39 @@ QT:RegisterTest("display preferences do not withdraw streams shared with other p
 	a:OnPlayerLocationOptionsChanged("showPlayerLocations")
 	Equal(a.nearbyStreamState.subscribers, subscribers)
 	Equal(a.nearbyStreamState.nextCapability, 130)
+end)
+
+QT:RegisterTest("v2 pong imports require explicit sharing and preserve public field permissions", function()
+	local a, name = Fixture(), "Friend-Realm"
+	local initial = Location()
+	initial.mask = 1
+	assert(ObserveLocation(a, name, initial))
+	a.now = 101
+	local function Import(response)
+		local observation = a:CreatePeerObservation(name, "LOC", { source = "pong", age = 0, lifetime = 600 })
+		observation.manual = true
+		return a:RefreshPlayerLocationFromPing(name, response, observation)
+	end
+	local response = { mapID = "12", coordX = "70", coordY = "80" }
+	Equal(Import(response), false)
+	Equal(a.playerLocationState.peers[name].x, 0.4)
+	response.locationShared = true
+	assert(Import(response))
+	local row = a.playerLocationState.peers[name]
+	Equal(row.x, 0.7)
+	Equal(row.mask, 1)
+	Equal(row.classFile, "MAGE")
+	Equal(row.faction, "Alliance")
+	a.now = 102
+	response.locationShared = false
+	assert(Import(response))
+	Equal(a.playerLocationState.peers[name].mask, 0)
+	Equal(a.playerLocationState.peers[name].x, nil)
+	response.locationShared = true
+	Equal(Import(response), false)
+	Equal(a.playerLocationState.peers[name].mask, 0)
+	a.now = 103
+	response.coordY = nil
+	Equal(Import(response), false)
+	Equal(a.playerLocationState.peers[name].mask, 0)
 end)

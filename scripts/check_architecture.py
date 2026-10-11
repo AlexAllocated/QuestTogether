@@ -24,6 +24,15 @@ def check(root=ROOT, source_overrides=None):
          {"Settings.lua"}, "settings mutations belong to Settings")
     only(r"function (?:QuestTogether|QT):(?:UpdatePlayerCommunications|InitializeRuntimeCoordinator)\(",
          {"RuntimeCoordinator.lua"}, "periodic publication belongs to RuntimeCoordinator")
+    only(r"function (?:QuestTogether|QT):(?:Publish|Emit|Request|Respond|SubmitCommunication)\(",
+         {"CommunicationCoordinator.lua"}, "typed submissions belong to CommunicationCoordinator")
+    only(r"function (?:QuestTogether|QT):(?:BuildCommFrames|DecodeCommFrame|EncodeCommRecord|DecodeCommRecord)\(",
+         {"CommsProtocol.lua"}, "wire schemas and framing belong to CommsProtocol")
+    only(r"\b(?:BulkTransfer|PingPages|EncodePingResponsePayload|SerializeWireMessage|DeserializeWireMessage|SendWireMessageToAnnouncementRoutes|RememberDirectCommPeer|ScheduleGeographicPingReply)\b",
+         set(), "retired communication paths must not return")
+    for name in ("CommsTransfer.lua", "Transport.lua", "CommunicationCoordinator.lua", "PingCommunication.lua", "QuestCompareCommunication.lua", "DeveloperDiagnostics.lua"):
+        if re.search(r"\.API\.(?:Delay|NewTicker|NewTimer)\s*\(", sources.get(name, "")):
+            errors.append(name + ": network progression belongs to RuntimeCoordinator")
     if re.search(r"API\.(?:GetQuestLogInfo|GetNumQuestLogEntries)", sources["TaskArea.lua"]):
         errors.append("TaskArea must reduce observations, not scan the log")
     if re.search(r"(?:owner|live)\.partyNavigationState\s*=", sources["QuestComparePreview.lua"]):
@@ -34,7 +43,11 @@ def check(root=ROOT, source_overrides=None):
     order = [("Core.lua", "Settings.lua"), ("OwnedUI.lua", "WindowController.lua"),
              ("WindowController.lua", "WindowTheme.lua"), ("HotPathState.lua", "QuestObservations.lua"),
              ("QuestObservations.lua", "TaskArea.lua"), ("PeerState.lua", "PeerLifecycle.lua"),
-             ("Transport.lua", "BulkTransfer.lua"), ("BulkTransfer.lua", "PingPages.lua"),
+             ("CommsProtocol.lua", "Transport.lua"), ("Transport.lua", "CommsTransfer.lua"),
+             ("CommsTransfer.lua", "CommunicationCoordinator.lua"),
+             ("CommunicationCoordinator.lua", "QuestCompareCommunication.lua"),
+             ("CommunicationCoordinator.lua", "PingCommunication.lua"),
+             ("scripts/network_fixture.lua", "scripts/regression_network_v2.lua"),
              ("PartyFocusController.lua", "PartyNavigation.lua"), ("MapOverlayPool.lua", "LocationPins.lua"),
              ("PlayerTooltipPresenter.lua", "LocationPins.lua"), ("Tests.lua", "scripts/ui_fixture.lua")]
     for before, after in order:

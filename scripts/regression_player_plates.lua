@@ -1,3 +1,16 @@
+-- Explicit typed observation supplied at the private receive boundary.
+-- Short per-field lifetimes exercise expiry boundaries; public v2 snapshots use 600 seconds.
+local function ObserveState(addon, method, field, record, sender)
+	local lifetimes = { QTLF = 65, QTLQ = 65, QTVR = 180, QTPG = 180, QJST = 125, QTHI = 180 }
+	local observation = addon:CreatePeerObservation(sender, field, {
+		source = "snapshot",
+		lifetime = lifetimes[field] or 600,
+		session = type(record) == "table" and record.session or nil,
+		sequence = type(record) == "table" and record.sequence or nil,
+	})
+	return addon[method](addon, record, sender, observation)
+end
+
 -- Live-safe: only addon-owned adapters and private frames are replaced.
 local QT = _G.QuestTogether
 local function Equal(actual, expected)
@@ -14,6 +27,34 @@ local function Patch(values, run)
 	end
 	assert(ok, err)
 end
+local function ReceiveRecord(a, operation, record, sender, route, prefix, localID, channelName, sequence, stamp)
+	a.fixtureSequence = math.max(a.fixtureSequence or 0, sequence or 0) + (sequence and 0 or 1)
+	local now = a.API.GetTime()
+	local frames = assert(a:BuildCommFrames(operation, record, {
+		session = "100-1234",
+		messageId = tostring(sequence or a.fixtureSequence),
+		requestId = record.requestId,
+		stamp = stamp or 1700000000 + math.floor(now),
+	}))
+	for _, wire in ipairs(frames) do
+		a:ReceiveCommunication(
+			prefix or a.commPrefix,
+			wire,
+			route or "WHISPER",
+			sender or "Friend-Realm",
+			localID or 7,
+			channelName or "QuestTogether"
+		)
+	end
+	return frames
+end
+local handlers = {
+	QTLF = "HandleQuestPartnerStatusMessage",
+	QTLQ = "HandleQuestPartnerQuestMessage",
+	QTVR = "HandleAddonVersionMessage",
+	QTPR = "HandleQTPlayerPresenceMessage",
+	LOC = "HandlePlayerLocationMessage",
+}
 local function Peer(name)
 	local a = setmetatable({
 		isEnabled = true,
@@ -29,6 +70,12 @@ local function Peer(name)
 	function a:AnnounceQuestPartnerSearch() end
 	a.db = { profile = QT:DeepCopy(QT.DEFAULTS.profile) }
 	a.API = {
+		GetServerTime = function()
+			return 1700000000 + math.floor(a.now)
+		end,
+		Random = function()
+			return 1234
+		end,
 		GetTime = function()
 			return a.now
 		end,
@@ -55,6 +102,32 @@ local function Peer(name)
 			return 0
 		end,
 	}
+	function a:IsGroupedSender()
+		return true
+	end
+	function a:Publish(operation, record, routes, options)
+		local copy = self:CopyCommRecord(operation, record)
+		if not copy then
+			return false
+		end
+		self.sent[#self.sent + 1] = { operation = operation, record = copy }
+		if self.sendFails then
+			return false
+		end
+		if self.other and handlers[operation] then
+			local observation = self.other:CreatePeerObservation(self.name, operation, {
+				session = self:GetCommunicationSession(),
+				sequence = self:NextCommunicationSequence(),
+				lifetime = 65,
+				source = "fixture",
+			})
+			self.other[handlers[operation]](self.other, copy, self.name, observation)
+		end
+		if options and options.onComplete then
+			options.onComplete(true, "sent")
+		end
+		return true
+	end
 	function a:GetPlayerFullName()
 		return self.name
 	end
@@ -85,7 +158,7 @@ end
 
 local function PartnerPayload(addon, looking, session, sequence)
 	addon.partnerTestSequence = (addon.partnerTestSequence or 0) + 1
-	return string.format("1,%s,%d,%d", session or "10-1234", sequence or addon.partnerTestSequence, looking and 1 or 0)
+	return { session = session or "10-1234", sequence = sequence or addon.partnerTestSequence, looking = looking }
 end
 
 QT:RegisterTest(
@@ -108,7 +181,7 @@ QT:RegisterTest(
 
 		local remote = "Friend-Realm"
 		Prefix(remote, logo)
-		assert(a:HandleQuestPartnerStatusMessage(PartnerPayload(a, true), remote))
+		assert(ObserveState(a, "HandleQuestPartnerStatusMessage", "QTLF", PartnerPayload(a, true), remote))
 		Prefix(remote, glow)
 		Prefix(remote, glow, "SCAN_STATUS", logo:gsub("\\", "/"), "texture")
 		Prefix(remote, glow, "SCAN_STATUS", a.NAMEPLATE_QUEST_ICON_TEXTURE, "texture")
@@ -124,9 +197,9 @@ QT:RegisterTest(
 		a.ignored = remote
 		Prefix(remote, logo)
 		a.ignored = nil
-		assert(a:HandleQuestPartnerStatusMessage(PartnerPayload(a, false), remote))
+		assert(ObserveState(a, "HandleQuestPartnerStatusMessage", "QTLF", PartnerPayload(a, false), remote))
 		Prefix(remote, logo)
-		assert(a:HandleQuestPartnerStatusMessage(PartnerPayload(a, true), remote))
+		assert(ObserveState(a, "HandleQuestPartnerStatusMessage", "QTLF", PartnerPayload(a, true), remote))
 		a.now = a.now + 1000
 		Prefix(remote, logo)
 		-- The LFQP announcement itself retains its existing glow, even without status.
@@ -152,7 +225,7 @@ QT:RegisterTest("joining a group optionally clears partner status without announ
 	end
 	a:GROUP_JOINED()
 	Equal(a:GetOption("lookingForQuestPartners"), false)
-	assert(a.sent[#a.sent]:match("^QTLF|.+,0$"), "joining must withdraw advertised partner status")
+	Equal(a.sent[#a.sent].record.looking, false)
 	local sent = #a.sent
 	a:GROUP_JOINED()
 	Equal(#a.sent, sent)
@@ -170,44 +243,31 @@ QT:RegisterTest("joining a group optionally clears partner status without announ
 	Equal(changes, 6)
 end)
 local function PartnerWire(message, looking)
-	assert(message:match("^QTLF|1,%d+%-%d+,%d+," .. (looking and "1" or "0") .. "$"), message)
+	Equal(message.operation, "QTLF")
+	Equal(message.record.looking, looking)
+	assert(type(message.record.session) == "string" and message.record.sequence >= 1)
 end
-
 local function DiscoveryMessages(addon)
-	-- Claimed payload identities and compare/share recipients deliberately differ
-	-- from the transport sender. They must never receive the sender's logo.
 	return {
-		ANN = addon:EncodeAnnouncementPayload({
-			eventType = "QUEST_ACCEPTED",
-			senderName = "Claimed-Realm",
-			text = "Quest accepted",
-			questId = 42,
-		}),
-		LVL = addon:EncodeAnnouncementPayload({
-			eventType = "PLAYER_LEVEL_UP",
-			senderName = "Claimed-Realm",
-			text = "Level 60",
-			questId = 0,
-		}),
-		PING = addon:EncodePingRequestPayload({ requestId = "discovery", requesterName = "Claimed-Realm" }),
-		PONG = addon:EncodePingResponsePayload({ requestId = "discovery", senderName = "Claimed-Realm" }),
-		QCMP = addon:EncodeQuestCompareRequestPayload({
-			requestId = "discovery",
-			requesterName = "Claimed-Realm",
-			targetName = "Third-Realm",
-		}),
-		QCQE = addon:EncodeQuestCompareEntryPayload({
-			requestId = "discovery",
-			senderName = "Claimed-Realm",
-			questId = 42,
-			questTitle = "A quest",
-		}),
-		QCDN = addon:EncodeQuestCompareDonePayload({ requestId = "discovery", senderName = "Claimed-Realm", count = 0 }),
-		QSHR = "1,discovery,Third-Realm,42,request",
-		QTPR = "1,1",
-		QTVR = "1,5.12.0",
-		QTLF = "1,100-1234,1,1",
-		LOC = "1,100-1234,1,3,12,0.4,0.6,MAGE,Mage,Human,Alliance,60,0",
+		ANN = { eventType = "QUEST_ACCEPTED", text = "Quest accepted", questId = 42 },
+		LVL = { eventType = "PLAYER_LEVEL_UP", text = "Level 60", questId = 0 },
+		QTPR = { active = true },
+		QTVR = { version = "5.12.0" },
+		QTLF = { session = "100-1234", sequence = 1, looking = true },
+		LOC = {
+			session = "100-1234",
+			sequence = 1,
+			mask = 3,
+			mapID = 12,
+			x = 0.4,
+			y = 0.6,
+			classFile = "MAGE",
+			className = "Mage",
+			race = "Human",
+			faction = "Alliance",
+			level = 60,
+			warMode = false,
+		},
 	}
 end
 
@@ -225,62 +285,65 @@ local function IgnoreDiscoveryActions(addon)
 	end
 end
 
-QT:RegisterTest("every supported communication discovers only its authenticated QT sender", function()
-	for command, payload in pairs(DiscoveryMessages(QT)) do
+QT:RegisterTest("valid discovery observations identify only their authenticated QT sender", function()
+	for operation, record in pairs(DiscoveryMessages(QT)) do
 		for _, regional in ipairs({ false, true }) do
 			local a = Peer(regional and "Joe Bucket" or "Me-Realm")
 			a.forever = regional
 			IgnoreDiscoveryActions(a)
-			local sender = regional and "Anakin Othername" or "Friend-Realm"
-			local message = command .. "|" .. payload
-			a:OnCommReceived("UnrelatedPrefix", message, "PARTY", sender)
-			a:OnCommReceived(a.commPrefix, message, "GUILD", sender)
-			a:OnCommReceived(a.commPrefix, message, "CHANNEL", sender, 8, "OtherChannel")
-			a:OnCommReceived(a.commPrefix, message, "PARTY", a.name)
-			a:OnCommReceived(a.commPrefix, command .. "|malformed", "PARTY", sender)
-			Equal(a:IsKnownQTPlayer(sender), false)
-			a.ignored = sender
-			a:OnCommReceived(a.commPrefix, message, "PARTY", sender)
-			Equal(a:IsKnownQTPlayer(sender), false)
+			local name = regional and "Anakin Othername" or "Friend-Realm"
+			ReceiveRecord(a, operation, record, name, "PARTY", "OtherPrefix")
+			ReceiveRecord(a, operation, record, name, "GUILD")
+			ReceiveRecord(a, operation, record, name, "CHANNEL", nil, 8, "Other")
+			ReceiveRecord(a, operation, record, a.name, "PARTY")
+			Equal(a:IsKnownQTPlayer(name), false)
+			a.ignored = name
+			ReceiveRecord(a, operation, record, name, "PARTY")
+			Equal(a:IsKnownQTPlayer(name), false)
 			a.ignored, a.isEnabled = nil, false
-			a:OnCommReceived(a.commPrefix, message, "PARTY", sender)
-			Equal(a:IsKnownQTPlayer(sender), false)
+			ReceiveRecord(a, operation, record, name, "PARTY")
+			Equal(a:IsKnownQTPlayer(name), false)
 			a.isEnabled = true
-			a:OnCommReceived(a.commPrefix, message, "PARTY", sender)
-			assert(a:IsKnownQTPlayer(sender), command .. " should identify its sender")
+			ReceiveRecord(a, operation, record, name, "PARTY")
+			assert(a:IsKnownQTPlayer(name), operation)
 			Equal(a:IsKnownQTPlayer("Claimed-Realm"), false)
-			Equal(a:IsKnownQTPlayer("Third-Realm"), false)
 			Equal(a:IsKnownQTPlayer(a.name), false)
 			Equal(a.refreshes, 1)
-			Equal(#a.sent, 0, "recognition must not add traffic")
-			Equal(a:IsPlayerLookingForQuestPartners(sender), command == "QTLF")
+			Equal(#a.sent, 0)
+			Equal(a:IsPlayerLookingForQuestPartners(name), operation == "QTLF")
 		end
 	end
 end)
-
-QT:RegisterTest("share replies identify peers independently of a current outgoing request", function()
+QT:RegisterTest("uncorrelated share replies cannot identify peers or create outgoing requests", function()
 	for _, status in ipairs({ "pending", "sent", "declined", "expired", "unavailable" }) do
 		local a = Peer()
-		a.IsGroupedSender = function()
-			return true
-		end
-		a:OnCommReceived(a.commPrefix, "QSHR|1,old-request,Me-Realm,42," .. status, "PARTY", "Friend-Realm")
-		assert(a:IsKnownQTPlayer("Friend-Realm"), status)
+		ReceiveRecord(
+			a,
+			"QSHR",
+			{ requestId = "old-request", targetName = a.name, questID = 42, status = status },
+			"Friend-Realm"
+		)
+		Equal(a:IsKnownQTPlayer("Friend-Realm"), false)
 		Equal(next(a:GetPartyQuestShareState().outgoing), nil)
 		Equal(#a.sent, 0)
 	end
 end)
-
-QT:RegisterTest("share traffic identifies a sender before the roster catches up without authorizing a share", function()
+QT:RegisterTest("unverified group share traffic cannot discover peers or authorize a share", function()
 	local a = Peer()
-	a.IsGroupedSender = function()
+	function a:IsGroupedSender()
 		return false
 	end
-	a.GetQuestShareAvailability = function()
-		error("unverified party member cannot request a share")
+	function a:GetQuestShareAvailability()
+		error("unverified sender")
 	end
-	a:OnCommReceived(a.commPrefix, "QSHR|1,discovery,Me-Realm,42,request", "PARTY", "Friend-Realm")
-	assert(a:IsKnownQTPlayer("Friend-Realm"))
+	ReceiveRecord(
+		a,
+		"QSHR",
+		{ requestId = "discovery", targetName = a.name, questID = 42, status = "request" },
+		"Friend-Realm",
+		"PARTY"
+	)
+	Equal(a:IsKnownQTPlayer("Friend-Realm"), false)
 	Equal(rawget(a, "partyQuestShareState"), nil)
 	Equal(#a.sent, 0)
 end)
@@ -293,19 +356,19 @@ QT:RegisterTest("ordered partner updates reject delayed routes and retired sessi
 	a:SetOption("lookingForQuestPartners", false)
 	Equal(b:IsPlayerLookingForQuestPartners(a.name), false)
 	b.now = 101 -- Beyond content deduplication; sequence ordering must still reject the copy.
-	b:OnCommReceived(a.commPrefix, oldOn, "CHANNEL", a.name, 7, "QuestTogether")
+	ObserveState(b, "HandleQuestPartnerStatusMessage", "QTLF", oldOn.record, a.name)
 	Equal(b:IsPlayerLookingForQuestPartners(a.name), false)
 	local offRecord = b.qtPlayerPresenceState.questPartners[a.name]
 	Equal(offRecord.receivedAt, 100)
 	-- Departure must retain ordering information; legacy presence cannot renew it.
 	a:BroadcastQTPlayerPresence(true)
 	b.now = 102
-	b:OnCommReceived(a.commPrefix, oldOn, "PARTY", a.name)
+	ObserveState(b, "HandleQuestPartnerStatusMessage", "QTLF", oldOn.record, a.name)
 	Equal(b:IsPlayerLookingForQuestPartners(a.name), false)
-	assert(b:HandleQuestPartnerStatusMessage(PartnerPayload(b, true, "200-1234", 1), a.name))
+	assert(ObserveState(b, "HandleQuestPartnerStatusMessage", "QTLF", PartnerPayload(b, true, "200-1234", 1), a.name))
 	assert(b:IsPlayerLookingForQuestPartners(a.name))
 	b.now = 103
-	b:OnCommReceived(a.commPrefix, oldOn, "PARTY", a.name)
+	ObserveState(b, "HandleQuestPartnerStatusMessage", "QTLF", oldOn.record, a.name)
 	assert(b:IsPlayerLookingForQuestPartners(a.name))
 	Equal(b.qtPlayerPresenceState.questPartners[a.name].session, "200-1234")
 end)
@@ -322,7 +385,7 @@ QT:RegisterTest("rapid presence departures and rejoins cannot retain a partner a
 	end
 end)
 
-QT:RegisterTest("legacy departure conservatively hides partners until a newer ordered heartbeat", function()
+QT:RegisterTest("departure conservatively hides partners until a newer ordered heartbeat", function()
 	local a, b = Peer(), Peer("Friend-Realm")
 	a.other = b
 	a:SetOption("lookingForQuestPartners", true)
@@ -330,7 +393,7 @@ QT:RegisterTest("legacy departure conservatively hides partners until a newer or
 	a:SetOption("lookingForQuestPartners", true)
 	assert(b:IsPlayerLookingForQuestPartners(a.name))
 	b.now = 101
-	b:OnCommReceived(a.commPrefix, "QTPR|1,0", "CHANNEL", a.name, 7, "QuestTogether")
+	ObserveState(b, "HandleQTPlayerPresenceMessage", "QTPR", { active = false }, a.name)
 	Equal(b:IsPlayerLookingForQuestPartners(a.name), false)
 	a:BroadcastQuestPartnerStatus(true)
 	assert(b:IsPlayerLookingForQuestPartners(a.name))
@@ -356,13 +419,14 @@ QT:RegisterTest("partner status stays quiet by default and ends withdrawal retri
 	Equal(#a.sent, 5)
 end)
 
-QT:RegisterTest("quest partner status is opt in and independent of location and legacy presence", function()
+QT:RegisterTest("quest partner status is opt in and independent of location and presence", function()
 	local a, b = Peer("Anakin Othername"), Peer("Luke Bucket")
 	a.forever, b.forever, a.other = true, true, b
 	a.db.profile.sharePlayerLocation = false
 	Equal(a:GetOption("lookingForQuestPartners"), false)
 	a:UpdateQTPlayerPresence()
-	Equal(a.sent[1], "QTPR|1,1")
+	Equal(a.sent[1].operation, "QTPR")
+	Equal(a.sent[1].record.active, true)
 	Equal(#a.sent, 1)
 	Equal(a:BroadcastQuestPartnerStatus(), false)
 	assert(b:IsKnownQTPlayer(a.name))
@@ -384,23 +448,25 @@ end)
 
 QT:RegisterTest("quest partner status expires independently and prunes ignored evicted and expired peers", function()
 	local a = Peer()
-	assert(a:HandleQuestPartnerStatusMessage(PartnerPayload(a, true), "Friend-Realm"))
+	assert(ObserveState(a, "HandleQuestPartnerStatusMessage", "QTLF", PartnerPayload(a, true), "Friend-Realm"))
 	a.now = 164
 	assert(a:IsPlayerLookingForQuestPartners("Friend-Realm"))
-	assert(a:HandleQTPlayerPresenceMessage("1,1", "Friend-Realm"))
+	assert(ObserveState(a, "HandleQTPlayerPresenceMessage", "QTPR", { active = true }, "Friend-Realm"))
 	a.now = 165
 	assert(a:IsKnownQTPlayer("Friend-Realm"))
 	Equal(a:IsPlayerLookingForQuestPartners("Friend-Realm"), false)
 	a:PruneQTPlayerPresence(true)
 	Equal(a.qtPlayerPresenceState.questPartners["Friend-Realm"], nil)
-	a:HandleQuestPartnerStatusMessage(PartnerPayload(a, true), "Friend-Realm")
+	ObserveState(a, "HandleQuestPartnerStatusMessage", "QTLF", PartnerPayload(a, true), "Friend-Realm")
 	a.now = 164 -- A regressed clock must not keep a status alive.
 	Equal(a:IsPlayerLookingForQuestPartners("Friend-Realm"), false)
 	a:PruneQTPlayerPresence(true)
 	Equal(next(a.qtPlayerPresenceState.questPartners), nil)
 	for i = 1, 270 do
 		a.now = 200 + i / 10
-		assert(a:HandleQuestPartnerStatusMessage(PartnerPayload(a, true), "Peer" .. i .. "-Realm"))
+		assert(
+			ObserveState(a, "HandleQuestPartnerStatusMessage", "QTLF", PartnerPayload(a, true), "Peer" .. i .. "-Realm")
+		)
 	end
 	local count = 0
 	for name in pairs(a.qtPlayerPresenceState.questPartners) do
@@ -419,23 +485,22 @@ end)
 
 QT:RegisterTest("quest partner messages validate routes identity payload and disabled state", function()
 	local a = Peer()
-	for _, payload in ipairs({ "", "2,1", "1,2", "1,true", "1,1,Someone-Realm" }) do
+	for _, payload in ipairs({ "", "2,1", "1,true" }) do
 		a:OnCommReceived(a.commPrefix, "QTLF|" .. payload, "PARTY", "Friend-Realm")
 	end
-	a:OnCommReceived(a.commPrefix, "QTLF|" .. PartnerPayload(a, true), "WHISPER", "Friend-Realm")
-	a:OnCommReceived(a.commPrefix, "QTLF|" .. PartnerPayload(a, true), "CHANNEL", "Friend-Realm", 8, "Other")
-	a:OnCommReceived(a.commPrefix, "QTLF|" .. PartnerPayload(a, true), "PARTY", a.name)
+	ReceiveRecord(a, "QTLF", PartnerPayload(a, true), "Friend-Realm", "CHANNEL", nil, 8, "Other")
+	ReceiveRecord(a, "QTLF", PartnerPayload(a, true), a.name, "PARTY")
 	a.ignored = "Ignored-Realm"
-	a:OnCommReceived(a.commPrefix, "QTLF|" .. PartnerPayload(a, true), "PARTY", a.ignored)
+	ReceiveRecord(a, "QTLF", PartnerPayload(a, true), a.ignored, "PARTY")
 	Equal(rawget(a, "qtPlayerPresenceState"), nil)
-	for _, route in ipairs({ "PARTY", "RAID", "INSTANCE_CHAT" }) do
-		a:OnCommReceived(a.commPrefix, "QTLF|" .. PartnerPayload(a, true), route, "Friend-Realm")
+	for _, route in ipairs({ "PARTY", "RAID", "INSTANCE_CHAT", "WHISPER" }) do
+		ReceiveRecord(a, "QTLF", PartnerPayload(a, true), "Friend-Realm", route)
 		assert(a:IsPlayerLookingForQuestPartners("Friend-Realm"))
-		a:OnCommReceived(a.commPrefix, "QTLF|" .. PartnerPayload(a, false), route, "Friend-Realm")
+		ReceiveRecord(a, "QTLF", PartnerPayload(a, false), "Friend-Realm", route)
 		Equal(a:IsPlayerLookingForQuestPartners("Friend-Realm"), false)
 	end
 	a.isEnabled = false
-	a:OnCommReceived(a.commPrefix, "QTLF|" .. PartnerPayload(a, true), "PARTY", "Friend-Realm")
+	ReceiveRecord(a, "QTLF", PartnerPayload(a, true), "Friend-Realm", "PARTY")
 	Equal(a.qtPlayerPresenceState.questPartners["Friend-Realm"].looking, false)
 end)
 
@@ -504,11 +569,11 @@ QT:RegisterTest("player menus advertise only a current explicit quest partner st
 		return titles
 	end
 	Equal(#Menu(), 1)
-	a:HandleQuestPartnerStatusMessage(PartnerPayload(a, true), "Friend-Realm")
+	ObserveState(a, "HandleQuestPartnerStatusMessage", "QTLF", PartnerPayload(a, true), "Friend-Realm")
 	Equal(Menu()[2], "Looking for Questing Partners")
 	a.now = 165
 	Equal(#Menu(), 1)
-	a:HandleQuestPartnerStatusMessage(PartnerPayload(a, true), "Friend-Realm")
+	ObserveState(a, "HandleQuestPartnerStatusMessage", "QTLF", PartnerPayload(a, true), "Friend-Realm")
 	a.ignored = "Friend-Realm"
 	Equal(#Menu(), 1)
 end)
@@ -548,7 +613,8 @@ QT:RegisterTest("QT presence authenticates transport and survives disabled locat
 	a.forever, b.forever, a.other = true, true, b
 	a.db.profile.sharePlayerLocation = false
 	assert(a:BroadcastQTPlayerPresence())
-	Equal(a.sent[1], "QTPR|1,1")
+	Equal(a.sent[1].operation, "QTPR")
+	Equal(a.sent[1].record.active, true)
 	assert(b:IsKnownQTPlayer(a.name))
 	Equal(b:IsKnownQTPlayer("Anakin Someoneelse"), false)
 	b:OnCommReceived(a.commPrefix, "QTPR|1,1", "WHISPER", "Other Person")
@@ -556,12 +622,12 @@ QT:RegisterTest("QT presence authenticates transport and survives disabled locat
 	b:OnCommReceived(a.commPrefix, "QTPR|1,1", "CHANNEL", "Other Person", 8, "OtherChannel")
 	Equal(b:IsKnownQTPlayer("Other Person"), false)
 	for _, payload in ipairs({ "", "2,1", "1,2", "1,1,spoof", "1,Friend-Realm" }) do
-		Equal(b:HandleQTPlayerPresenceMessage(payload, "Other Person"), false)
+		Equal(ObserveState(b, "HandleQTPlayerPresenceMessage", "QTPR", payload, "Other Person"), false)
 	end
 	b.ignored = a.name
 	b:PruneQTPlayerPresence(true)
 	Equal(b:IsKnownQTPlayer(a.name), false)
-	Equal(b:HandleQTPlayerPresenceMessage("1,1", a.name), false)
+	Equal(ObserveState(b, "HandleQTPlayerPresenceMessage", "QTPR", { active = true }, a.name), false)
 end)
 
 QT:RegisterTest("QT discovery survives silence is bounded and processes explicit departure", function()
@@ -617,7 +683,9 @@ local function WithPlate(run)
 		questReads = 0,
 		tints = 0,
 	}
-	function state.tick() clock:Advance(0) end
+	function state.tick()
+		clock:Advance(0)
+	end
 	local function Region(parent)
 		local r = { parent = parent, shown = true, writes = 0 }
 		function r:IsForbidden()
@@ -688,7 +756,15 @@ local function WithPlate(run)
 	QT.qtPlayerIconStateByFrame = {}
 	Patch({
 		API = {
-			Delay = function(delay, callback) clock:After(delay, callback) end,
+			GetServerTime = function()
+				return 1700000000 + math.floor(state.now)
+			end,
+			Random = function()
+				return 1234
+			end,
+			Delay = function(delay, callback)
+				clock:After(delay, callback)
+			end,
 			GetTime = function()
 				return state.now
 			end,
@@ -791,7 +867,7 @@ QT:RegisterTest("all QT communications identify players before or after their fr
 							QT:OnNameplateAdded("nameplate1")
 							Equal(QT.nameplateIconByUnitFrame[s.frame], nil)
 						end
-						QT:OnCommReceived(QT.commPrefix, command .. "|" .. payload, "PARTY", s.name)
+						ReceiveRecord(QT, command, payload, s.name, "PARTY")
 						assert(QT:IsKnownQTPlayer(s.name), command .. " proves the sender is running QT")
 						Equal(s.refreshes, 1)
 						if alreadyVisible then
@@ -818,37 +894,42 @@ end)
 
 QT:RegisterTest("only fresh authenticated location messages renew QT player identification", function()
 	local a = Peer()
-	local wire = "LOC|1,100-1234,1,3,12,0.4,0.6,MAGE,Mage,Human,Alliance,60,0"
-	a:OnCommReceived(a.commPrefix, wire, "WHISPER", "Friend-Realm")
-	a:OnCommReceived(a.commPrefix, wire, "PARTY", a.name)
-	a:OnCommReceived(a.commPrefix, wire .. ",spoof", "PARTY", "Friend-Realm")
-	Equal(a:IsKnownQTPlayer("Friend-Realm"), false)
-	a.ignored = "Friend-Realm"
-	a:OnCommReceived(a.commPrefix, wire, "PARTY", "Friend-Realm")
-	Equal(a:IsKnownQTPlayer("Friend-Realm"), false)
+	local name = "Friend-Realm"
+	local record = { session = "100-1234", sequence = 1, mask = 3, mapID = 12, x = 0.4, y = 0.6, classFile = "MAGE" }
+	ReceiveRecord(a, "LOC", record, name, "GUILD")
+	ReceiveRecord(a, "LOC", record, a.name, "PARTY")
+	Equal(a:IsKnownQTPlayer(name), false)
+	a.ignored = name
+	ReceiveRecord(a, "LOC", record, name)
+	Equal(a:IsKnownQTPlayer(name), false)
 	a.ignored, a.now = nil, 101
-	a:OnCommReceived(a.commPrefix, wire, "PARTY", "Friend-Realm")
-	assert(a:IsKnownQTPlayer("Friend-Realm"))
+	local old = ReceiveRecord(a, "LOC", record, name, "PARTY", nil, nil, nil, 10)
+	assert(a:IsKnownQTPlayer(name))
 	local refreshes = a.refreshes
 	a.now = 121
-	a:OnCommReceived(a.commPrefix, wire:gsub(",1,3,", ",2,3,"), "PARTY", "Friend-Realm")
-	Equal(a.refreshes, refreshes, "heartbeats should not refresh every known plate")
+	record.sequence = 2
+	ReceiveRecord(a, "LOC", record, name, "PARTY", nil, nil, nil, 11)
+	Equal(a.refreshes, refreshes)
 	a.now = 150
-	a:OnCommReceived(a.commPrefix, wire, "PARTY", "Friend-Realm")
-	Equal(a.qtPlayerPresenceState.peers["Friend-Realm"], 121, "obsolete location must not renew presence")
+	for _, wire in ipairs(old) do
+		a:ReceiveCommunication(a.commPrefix, wire, "PARTY", name)
+	end
+	Equal(a.qtPlayerPresenceState.peers[name], 121)
 	a.now = 186
-	assert(a:IsKnownQTPlayer("Friend-Realm"))
-	-- Turning location sharing off is not the same as turning the addon off.
-	a:OnCommReceived(a.commPrefix, "LOC|1,100-1234,3,0", "PARTY", "Friend-Realm")
-	assert(a:IsKnownQTPlayer("Friend-Realm"))
-	a:OnCommReceived(a.commPrefix, "QTPR|1,0", "PARTY", "Friend-Realm")
-	Equal(a:IsKnownQTPlayer("Friend-Realm"), false)
+	assert(a:IsKnownQTPlayer(name))
+	local clear =
+		ReceiveRecord(a, "LOC", { session = "100-1234", sequence = 3, mask = 0 }, name, "PARTY", nil, nil, nil, 12)
+	assert(a:IsKnownQTPlayer(name))
+	ReceiveRecord(a, "BYE", { reason = "departure" }, name, "PARTY", nil, nil, nil, 13)
+	Equal(a:IsKnownQTPlayer(name), false)
 	a.now = 188
-	a:OnCommReceived(a.commPrefix, "LOC|1,100-1234,3,0", "PARTY", "Friend-Realm")
-	Equal(a:IsKnownQTPlayer("Friend-Realm"), false, "replayed location must not undo departure")
+	for _, wire in ipairs(clear) do
+		a:ReceiveCommunication(a.commPrefix, wire, "PARTY", name)
+	end
+	Equal(a:IsKnownQTPlayer(name), false)
 	a.isEnabled, a.now = false, 190
-	a:OnCommReceived(a.commPrefix, "LOC|1,100-1234,4,0", "PARTY", "Friend-Realm")
-	Equal(a.qtPlayerPresenceState.peers["Friend-Realm"], nil)
+	ReceiveRecord(a, "LOC", record, name, "PARTY", nil, nil, nil, 14)
+	Equal(a.qtPlayerPresenceState.peers[name], nil)
 end)
 
 local function LocationSender(name)
@@ -910,7 +991,7 @@ QT:RegisterTest("actual departure withdrawals never restore logos in either chan
 				local icon = QT.nameplateIconByUnitFrame[s.frame]
 				assert(icon.shown and QT:IsPlayerLookingForQuestPartners(s.name))
 				sender.queue = {}
-				-- Run the real lifecycle and all three real withdrawal senders. Only
+				-- Run the real lifecycle and the shared BYE sender. Only
 				-- unrelated sender-side UI/runtime teardown uses private no-op seams.
 				for _, method in ipairs({
 					"UnregisterRuntimeEvents",
@@ -923,8 +1004,24 @@ QT:RegisterTest("actual departure withdrawals never restore logos in either chan
 				}) do
 					sender[method] = function() end
 				end
+				sender:InitializeTransport()
+				sender.now, s.now = 101, 101
+				local delayed = assert(sender:BuildCommFrames("QTPR", { active = true }, {
+					session = sender:GetCommunicationSession(),
+					messageId = tostring(sender:NextCommunicationSequence()),
+					stamp = 1700000100,
+				}))[1]
+				assert(
+					sender:SendTransportNow(
+						delayed,
+						"QTPR",
+						{ distribution = "CHANNEL", channelName = "QuestTogether" }
+					)
+				)
+				-- This accepted positive heartbeat is still in flight as departure begins.
 				sender[lifecycle](sender)
-				Equal(#sender.queue, 6) -- QTLF Off, QTPR departure, LOC withdrawal on both routes.
+				Equal(#sender.queue, 2) -- Delayed positive heartbeat plus one bounded BYE.
+				Equal(assert(sender:DecodeCommFrame(sender.queue[2].wire)).operation, "BYE")
 				local delivered = {}
 				local function Deliver(index)
 					s.now = s.now + 1 -- Exercise sequence checks after content deduplication expires.
@@ -938,7 +1035,7 @@ QT:RegisterTest("actual departure withdrawals never restore logos in either chan
 				else
 					if order == "presence-first" then
 						for index, packet in ipairs(sender.queue) do
-							if packet.wire == "QTPR|1,0" then
+							if assert(sender:DecodeCommFrame(packet.wire)).operation == "BYE" then
 								Deliver(index)
 							end
 						end
@@ -976,30 +1073,31 @@ end)
 
 QT:RegisterTest("location and partner opt outs preserve known identity without discovering unknown senders", function()
 	for _, known in ipairs({ false, true }) do
-		for _, command in ipairs({ "LOC", "QTLF" }) do
+		for _, operation in ipairs({ "LOC", "QTLF" }) do
 			local a = Peer()
-			local sender = "Friend-Realm"
+			local name = "Friend-Realm"
 			if known then
-				assert(a:RecordQTPlayerPresence(sender, true))
+				assert(a:RecordQTPlayerPresence(name, true))
 			end
 			a.now = 101
-			local wire = command .. "|1,100-1234,1,0"
-			a:OnCommReceived(a.commPrefix, wire, "PARTY", sender)
-			Equal(a:IsKnownQTPlayer(sender), known)
+			local record = operation == "LOC" and { session = "100-1234", sequence = 1, mask = 0 }
+				or { session = "100-1234", sequence = 1, looking = false }
+			ReceiveRecord(a, operation, record, name, "PARTY", nil, nil, nil, 1)
+			Equal(a:IsKnownQTPlayer(name), known)
 			if known then
-				Equal(a.qtPlayerPresenceState.peers[sender], 100)
+				Equal(a.qtPlayerPresenceState.peers[name], 100)
 			end
-			-- Withdrawal ordering is retained even when it supplied no identity.
-			local state = command == "LOC" and a.playerLocationState.peers[sender]
-				or a.qtPlayerPresenceState.questPartners[sender]
+			local state = operation == "LOC" and a.playerLocationState.peers[name]
+				or a.qtPlayerPresenceState.questPartners[name]
 			Equal(state.sequence, 1)
-			Equal(a:IsPlayerLookingForQuestPartners(sender), false)
-			a:OnCommReceived(a.commPrefix, "QTPR|1,1", "PARTY", sender)
-			assert(a:IsKnownQTPlayer(sender))
+			Equal(a:IsPlayerLookingForQuestPartners(name), false)
+			ReceiveRecord(a, "QTPR", { active = true }, name, "PARTY", nil, nil, nil, 2)
+			assert(a:IsKnownQTPlayer(name))
 			a.now = 102
-			a:OnCommReceived(a.commPrefix, command .. "|1,100-1234,2,0", "CHANNEL", sender, 7, "QuestTogether")
-			assert(a:IsKnownQTPlayer(sender))
-			Equal(a.qtPlayerPresenceState.peers[sender], 101)
+			record.sequence = 2
+			ReceiveRecord(a, operation, record, name, "CHANNEL", nil, nil, nil, 3)
+			assert(a:IsKnownQTPlayer(name))
+			Equal(a.qtPlayerPresenceState.peers[name], 101)
 		end
 	end
 end)
@@ -1130,12 +1228,12 @@ QT:RegisterTest("QT departure after silence cleans visible logos before periodic
 		local icon = QT.nameplateIconByUnitFrame[s.frame]
 		assert(icon.shown)
 		s.now = 165.01
-		QT:OnCommReceived(QT.commPrefix, "QTPR|1,0", "PARTY", s.name)
+		ObserveState(QT, "HandleQTPlayerPresenceMessage", "QTPR", { active = false }, s.name)
 		Equal(QT.qtPlayerPresenceState.peers[s.name], nil)
 		Equal(QT:IsKnownQTPlayer(s.name), false)
 		Equal(icon.shown, false, "departure must clean up a stored peer")
 		local refreshes = s.refreshes
-		QT:OnCommReceived(QT.commPrefix, "QTPR|1,0", "PARTY", s.name)
+		ObserveState(QT, "HandleQTPlayerPresenceMessage", "QTPR", { active = false }, s.name)
 		Equal(s.refreshes, refreshes, "duplicate departure must not schedule another refresh")
 		local frame = {
 			IsForbidden = function()
@@ -1181,7 +1279,7 @@ QT:RegisterTest("departure after silence quarantines forbidden logos until safe 
 			QT:RefreshNameplateIcon(s.plate)
 			local icon = QT.nameplateIconByUnitFrame[s.frame]
 			icon[guard], s.restricted, s.now = true, guard == "protected", 165.01
-			QT:OnCommReceived(QT.commPrefix, "QTPR|1,0", "PARTY", s.name)
+			ObserveState(QT, "HandleQTPlayerPresenceMessage", "QTPR", { active = false }, s.name)
 			Equal(QT.qtPlayerPresenceState.peers[s.name], nil)
 			Equal(QT.qtPlayerIconStateByFrame[icon], nil)
 			Equal(QT:GetNameplateStateStore().pendingVisualCleanupByFrame[icon], "icon")
@@ -1433,7 +1531,8 @@ QT:RegisterTest("super-tracked partner quests use bounded heartbeat packets and 
 	a.db.profile.lookingForQuestPartners = true
 	a:BroadcastQuestPartnerStatus(true)
 	Equal(b:GetPlayerPartnerQuestID(a.name), 42)
-	assert(a.sent[#a.sent]:match("^QTLQ|1,%d+%-%d+,%d+,42,$"))
+	Equal(a.sent[#a.sent].operation, "QTLQ")
+	Equal(a.sent[#a.sent].record.questID, 42)
 	local count = #a.sent
 	a:BroadcastQuestPartnerStatus()
 	Equal(#a.sent, count)
@@ -1462,27 +1561,115 @@ QT:RegisterTest(
 	"partner quest metadata tolerates reordering without resurrecting stale quests or partner status",
 	function()
 		local a, name = Peer(), "Alice-Realm"
-		assert(a:HandleQuestPartnerQuestMessage("1,10-1234,1,42", name))
+		assert(
+			ObserveState(
+				a,
+				"HandleQuestPartnerQuestMessage",
+				"QTLQ",
+				{ session = "10-1234", sequence = 1, questID = 42 },
+				name
+			)
+		)
 		Equal(a:GetPlayerPartnerQuestID(name), nil)
 		assert(not a:IsKnownQTPlayer(name))
-		assert(a:HandleQuestPartnerStatusMessage("1,10-1234,1,1", name))
+		assert(
+			ObserveState(
+				a,
+				"HandleQuestPartnerStatusMessage",
+				"QTLF",
+				{ session = "10-1234", sequence = 1, looking = true },
+				name
+			)
+		)
 		Equal(a:GetPlayerPartnerQuestID(name), 42)
-		assert(a:HandleQuestPartnerQuestMessage("1,10-1234,2,43", name))
+		assert(
+			ObserveState(
+				a,
+				"HandleQuestPartnerQuestMessage",
+				"QTLQ",
+				{ session = "10-1234", sequence = 2, questID = 43 },
+				name
+			)
+		)
 		Equal(a:GetPlayerPartnerQuestID(name), nil)
-		assert(a:HandleQuestPartnerStatusMessage("1,10-1234,2,1", name))
+		assert(
+			ObserveState(
+				a,
+				"HandleQuestPartnerStatusMessage",
+				"QTLF",
+				{ session = "10-1234", sequence = 2, looking = true },
+				name
+			)
+		)
 		Equal(a:GetPlayerPartnerQuestID(name), 43)
-		assert(not a:HandleQuestPartnerQuestMessage("1,10-1234,1,42", name))
-		assert(a:HandleQuestPartnerStatusMessage("1,10-1234,3,0", name))
-		assert(a:HandleQuestPartnerQuestMessage("1,10-1234,3,43", name))
+		assert(
+			not ObserveState(
+				a,
+				"HandleQuestPartnerQuestMessage",
+				"QTLQ",
+				{ session = "10-1234", sequence = 1, questID = 42 },
+				name
+			)
+		)
+		assert(
+			ObserveState(
+				a,
+				"HandleQuestPartnerStatusMessage",
+				"QTLF",
+				{ session = "10-1234", sequence = 3, looking = false },
+				name
+			)
+		)
+		assert(
+			ObserveState(
+				a,
+				"HandleQuestPartnerQuestMessage",
+				"QTLQ",
+				{ session = "10-1234", sequence = 3, questID = 43 },
+				name
+			)
+		)
 		Equal(a:GetPlayerPartnerQuestID(name), nil)
-		assert(a:HandleQuestPartnerStatusMessage("1,20-1234,1,1", name))
+		assert(
+			ObserveState(
+				a,
+				"HandleQuestPartnerStatusMessage",
+				"QTLF",
+				{ session = "20-1234", sequence = 1, looking = true },
+				name
+			)
+		)
 		Equal(a:GetPlayerPartnerQuestID(name), nil)
-		assert(a:HandleQuestPartnerQuestMessage("1,20-1234,1,44", name))
+		assert(
+			ObserveState(
+				a,
+				"HandleQuestPartnerQuestMessage",
+				"QTLQ",
+				{ session = "20-1234", sequence = 1, questID = 44 },
+				name
+			)
+		)
 		Equal(a:GetPlayerPartnerQuestID(name), 44)
-		assert(not a:HandleQuestPartnerQuestMessage("1,10-1234,99,42", name))
+		assert(
+			not ObserveState(
+				a,
+				"HandleQuestPartnerQuestMessage",
+				"QTLQ",
+				{ session = "10-1234", sequence = 99, questID = 42 },
+				name
+			)
+		)
 		a.ignored = name
 		Equal(a:GetPlayerPartnerQuestID(name), nil)
-		assert(not a:HandleQuestPartnerQuestMessage("1,20-1234,2,45", name))
+		assert(
+			not ObserveState(
+				a,
+				"HandleQuestPartnerQuestMessage",
+				"QTLQ",
+				{ session = "20-1234", sequence = 2, questID = 45 },
+				name
+			)
+		)
 		a.ignored = nil
 		a.now = 165
 		Equal(a:GetPlayerPartnerQuestID(name), nil)
@@ -1491,6 +1678,7 @@ QT:RegisterTest(
 	end
 )
 
+-- Full partner-metadata peer-capacity stress runs offline.
 QT:RegisterTest("partner quest metadata rejects invalid IDs and bounds independent peer storage", function()
 	local a = Peer()
 	for _, payload in ipairs({
@@ -1503,11 +1691,27 @@ QT:RegisterTest("partner quest metadata rejects invalid IDs and bounds independe
 		"1,10-1234,1,1000000001",
 		"1,10-1234,1,42,extra,field",
 	}) do
-		assert(not a:HandleQuestPartnerQuestMessage(payload, "Alice-Realm"), payload)
+		assert(not ObserveState(a, "HandleQuestPartnerQuestMessage", "QTLQ", payload, "Alice-Realm"), payload)
 	end
-	assert(not a:HandleQuestPartnerQuestMessage("1,10-1234,1,42", a.name))
+	assert(
+		not ObserveState(
+			a,
+			"HandleQuestPartnerQuestMessage",
+			"QTLQ",
+			{ session = "10-1234", sequence = 1, questID = 42 },
+			a.name
+		)
+	)
 	for i = 1, 270 do
-		assert(a:HandleQuestPartnerQuestMessage("1,10-1234,1,42", "Peer" .. i .. "-Realm"))
+		assert(
+			ObserveState(
+				a,
+				"HandleQuestPartnerQuestMessage",
+				"QTLQ",
+				{ session = "10-1234", sequence = 1, questID = 42 },
+				"Peer" .. i .. "-Realm"
+			)
+		)
 	end
 	local count = 0
 	for _ in pairs(a.qtPlayerPresenceState.partnerQuests) do
@@ -1515,8 +1719,16 @@ QT:RegisterTest("partner quest metadata rejects invalid IDs and bounds independe
 	end
 	Equal(count, 256)
 	a.isEnabled = false
-	assert(not a:HandleQuestPartnerQuestMessage("1,10-1234,1,42", "Alice-Realm"))
-end)
+	assert(
+		not ObserveState(
+			a,
+			"HandleQuestPartnerQuestMessage",
+			"QTLQ",
+			{ session = "10-1234", sequence = 1, questID = 42 },
+			"Alice-Realm"
+		)
+	)
+end, { offline = true })
 
 QT:RegisterTest(
 	"missing or cleared super-tracking never substitutes a watched quest and failures remain paced",
@@ -1585,11 +1797,35 @@ QT:RegisterTest("partner quest titles preserve UTF-8 and framing within the addo
 	local id, received = b:GetPlayerPartnerQuestID(a.name)
 	Equal(id, 42)
 	Equal(received, "龍, quête | 100% next")
-	assert(#a.sent[#a.sent] <= 255)
+	for _, wire in
+		ipairs(
+			assert(
+				a:BuildCommFrames(
+					"QTLQ",
+					a.sent[#a.sent].record,
+					{ session = "100-1234", messageId = "999", stamp = 1700000100 }
+				)
+			)
+		)
+	do
+		assert(#wire <= 255)
+	end
 	title = string.rep("龍,%|", 150)
 	a:BroadcastQuestPartnerStatus(true)
 	id, received = b:GetPlayerPartnerQuestID(a.name)
 	Equal(id, 42)
-	Equal(received, nil)
-	assert(#a.sent[#a.sent] <= 255)
+	Equal(received, title)
+	for _, wire in
+		ipairs(
+			assert(
+				a:BuildCommFrames(
+					"QTLQ",
+					a.sent[#a.sent].record,
+					{ session = "100-1234", messageId = "999", stamp = 1700000100 }
+				)
+			)
+		)
+	do
+		assert(#wire <= 255)
+	end
 end)

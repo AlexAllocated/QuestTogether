@@ -1,3 +1,16 @@
+-- Explicit typed observation supplied at the private receive boundary.
+-- Short per-field lifetimes exercise expiry boundaries; public v2 snapshots use 600 seconds.
+local function ObserveState(addon, method, field, record, sender)
+	local lifetimes = { QTLF = 65, QTLQ = 65, QTVR = 180, QTPG = 180, QJST = 125, QTHI = 180 }
+	local observation = addon:CreatePeerObservation(sender, field, {
+		source = "snapshot",
+		lifetime = lifetimes[field] or 600,
+		session = type(record) == "table" and record.session or nil,
+		sequence = type(record) == "table" and record.sequence or nil,
+	})
+	return addon[method](addon, record, sender, observation)
+end
+
 -- Isolated addon peers use production codecs, request queues and dispatch.
 local QT = _G.QuestTogether
 local function Eq(a, b)
@@ -99,6 +112,7 @@ local function Peer(name, forever)
 	function a:Debugf() end
 	function a:Debug() end
 	function a:Print() end
+	a:InitializeCommunications()
 	a:InitializeGeographicComms()
 	return a
 end
@@ -120,12 +134,12 @@ local function Deliver(a, b, reverse)
 	for n = 1, #out do
 		local row = out[reverse and #out + 1 - n or n]
 		Eq(row.target, b.name)
-		b:OnCommReceived(row.prefix, row.wire, row.route, a.name)
+		b:ReceiveCommunication(row.prefix, row.wire, row.route, a.name)
 	end
 end
 local function Drain(a)
 	for _ = 1, 12 do
-		a:DrainGeographicQueue()
+		a:UpdateCommunicationRuntime()
 		a.now = a.now + 0.25
 	end
 end
@@ -185,7 +199,12 @@ QT:RegisterTest(
 QT:RegisterTest("hover metadata respects privacy and cannot be replaced by older public snapshots", function()
 	local a, b = Pair()
 	Group(b, 3)
-	local old = b:BuildPlayerDetailsPackets()
+	local old = b:BuildPlayerDetailsRecords()
+	local oldContext = {
+		session = b:GetCommunicationSession(),
+		sequence = b:NextCommunicationSequence(),
+		stamp = b:GetAnnouncementServerTime(),
+	}
 	Group(b, 0)
 	b.db.profile.sharePlayerLocation = false
 	b.db.profile.lookingForQuestPartners = true
@@ -194,12 +213,11 @@ QT:RegisterTest("hover metadata respects privacy and cannot be replaced by older
 	Eq(a:GetPlayerPartyVisualInfo(b.name).size, 0)
 	Eq(a:GetPlayerPartnerQuestID(b.name), nil)
 	Eq(rawget(a, "playerLocationState"), nil)
-	for _, packet in ipairs(old) do
-		a:HandleGeographicSnapshot(packet:sub(6), b.name)
-	end
+	a:ApplyCommunicationState(old, b.name, oldContext)
 	Eq(a:GetPlayerPartyVisualInfo(b.name).size, 0)
 	for _, row in ipairs(b.sent) do
-		assert(not row.wire:find("LOC|", 1, true))
+		local frame = a:DecodeCommFrame(row.wire)
+		assert(frame and frame.operation ~= "LOC")
 	end
 end)
 
@@ -215,18 +233,19 @@ QT:RegisterTest(
 		local original = b.out
 		assert(#original > 1)
 		for _, row in ipairs(original) do
-			a:OnCommReceived(row.prefix, row.wire, "WHISPER", "Wrong-Realm")
-			a:OnCommReceived(row.prefix, row.wire, "PARTY", b.name)
+			a:ReceiveCommunication(row.prefix, row.wire, "WHISPER", "Wrong-Realm")
+			a:ReceiveCommunication(row.prefix, row.wire, "PARTY", b.name)
 		end
 		Eq(a:GetPlayerPartyVisualInfo(b.name), nil)
 		local first = original[1]
-		a:OnCommReceived(first.prefix, first.wire, "WHISPER", b.name)
-		a:OnCommReceived(first.prefix, first.wire, "WHISPER", b.name)
+		a:ReceiveCommunication(first.prefix, first.wire, "WHISPER", b.name)
+		a:ReceiveCommunication(first.prefix, first.wire, "WHISPER", b.name)
 		Eq(a:GetPlayerPartyVisualInfo(b.name), nil)
-		a.now = a.now + 16
+		a.now = a.now + 601
 		Deliver(b, a, true)
 		Eq(a:GetPlayerPartyVisualInfo(b.name), nil)
 		a:ResetCommsState()
+		a:InitializeCommunications()
 		a:InitializeGeographicComms()
 		b.out = original
 		Deliver(b, a)
@@ -239,20 +258,21 @@ QT:RegisterTest(
 	function()
 		local a, b = Pair()
 		Eq(a:RequestPlayerDetails(b.name), true)
+		Drain(a)
 		a.now = a.now + 16
 		Eq(a:RequestPlayerDetails(b.name), false)
 		a.now = a.now + 105
 		Eq(a:RequestPlayerDetails(b.name), true)
 		a:RecordQTPlayerPresence("Other-Realm", true)
 		Eq(a:RequestPlayerDetails("Other-Realm"), false)
-		Eq(b:HandlePlayerDetailsMessage("QTHQ", "1,1-2-3", a.name), true)
+		Eq(b:HandlePlayerDetailsMessage("QTHQ", {}, a.name, { requestId = "1-2-3" }), true)
 		local queued = #b:GetTransportState().queue
 		for i = 1, 100 do
-			Eq(b:HandlePlayerDetailsMessage("QTHQ", "1,1-2-" .. i, "Other" .. i .. "-Realm"), false)
+			Eq(b:HandlePlayerDetailsMessage("QTHQ", {}, "Other" .. i .. "-Realm", { requestId = "1-2-" .. i }), false)
 		end
 		Eq(#b:GetTransportState().queue, queued)
 		b.now = b.now + 5
-		Eq(b:HandlePlayerDetailsMessage("QTHQ", "1,1-2-4", a.name), false)
+		Eq(b:HandlePlayerDetailsMessage("QTHQ", {}, a.name, { requestId = "1-2-4" }), false)
 	end
 )
 
@@ -291,9 +311,11 @@ QT:RegisterTest(
 		a.ignored = b.name
 		Eq(a:RequestPlayerDetails(b.name), false)
 		a.ignored = nil
-		for _, packet in ipairs(b:BuildPlayerDetailsPackets()) do
-			a:HandleGeographicSnapshot(packet:sub(6), b.name)
-		end
+		a:ApplyCommunicationState(b:BuildPlayerDetailsRecords(), b.name, {
+			session = b:GetCommunicationSession(),
+			sequence = b:NextCommunicationSequence(),
+			stamp = b:GetAnnouncementServerTime(),
+		})
 		Eq(a:RequestPlayerDetails(b.name), false)
 		Eq(#a:GetTransportState().queue, 0)
 	end
@@ -313,7 +335,7 @@ end)
 
 QT:RegisterTest("fresh party size alone cannot suppress hover repair of missing status metadata", function()
 	local a, b = Pair()
-	a:HandleAddonVersionMessage("2,6.1.2,,0", b.name)
+	ObserveState(a, "HandleAddonVersionMessage", "QTVR", { version = "6.1.2", partySize = 0 }, b.name)
 	Eq(a:RequestPlayerDetails(b.name), true)
 	Exchange(a, b)
 	Eq(a:RequestPlayerDetails(b.name), false)
@@ -328,7 +350,7 @@ QT:RegisterTest("private party advertisements participate in normal solo withdra
 	Eq(a:GetPlayerPartyVisualInfo(b.name).size, 3)
 	Group(b, 0)
 	Eq(b:BroadcastPartyVisualMetadata(), true)
-	assert(b.geographicCommsState.latest.QTPG.wire:find("QTPG|1,0,,,", 1, true))
+	Eq(b.geographicCommsState.latest.QTPG.data.size, 0)
 end)
 
 QT:RegisterTest("hover fills private chat tooltip identity without requiring location sharing", function()
@@ -352,23 +374,34 @@ QT:RegisterTest("hover fills private chat tooltip identity without requiring loc
 	Eq(a:GetPlayerDetailsTooltipRow(base), base)
 end)
 
-QT:RegisterTest("hover rejects injected location envelopes and oversized or inconsistent chunks", function()
+QT:RegisterTest("hover rejects injected location and duplicate or oversized metadata records", function()
 	local a, b = Pair()
 	Eq(a:RequestPlayerDetails(b.name), true)
 	local id = a.playerDetailsState.pending[b.name].id
-	local wire = "LOC|1,100-1,1,0"
-	local packet = "QTB1|1,1800000100,100-1,1;0," .. #wire .. ":" .. wire
-	local body = #packet .. ":" .. packet
-	Eq(a:HandlePlayerDetailsMessage("QTHD", "1," .. id .. ",1,1;" .. body, b.name), false)
+	local context = {
+		requestId = id,
+		session = b:GetCommunicationSession(),
+		sequence = b:NextCommunicationSequence(),
+		stamp = b:GetAnnouncementServerTime(),
+	}
+	Eq(
+		a:HandlePlayerDetailsMessage("QTHD", { records = { { topic = "LOC", data = { mask = 0 } } } }, b.name, context),
+		false
+	)
 	Eq(rawget(a, "playerLocationState"), nil)
-	a.now = a.now + 121
-	Eq(a:RequestPlayerDetails(b.name), true)
-	id = a.playerDetailsState.pending[b.name].id
-	Eq(a:HandlePlayerDetailsMessage("QTHD", "1," .. id .. ",1,9;x", b.name), false)
-	Eq(a:HandlePlayerDetailsMessage("QTHD", "1," .. id .. ",1,2;" .. string.rep("x", 176), b.name), false)
-	Eq(a:HandlePlayerDetailsMessage("QTHD", "1," .. id .. ",1,2;x", b.name), true)
-	Eq(a:HandlePlayerDetailsMessage("QTHD", "1," .. id .. ",2,3;x", b.name), false)
+	local record =
+		{ topic = "QTHI", data = b:BuildPlayerDetailsIdentityPayload(), sampledAt = b:GetAnnouncementServerTime() }
+	Eq(a:HandlePlayerDetailsMessage("QTHD", { records = { record, record } }, b.name, context), false)
+	local tooMany = {}
+	for i = 1, 8 do
+		tooMany[i] = record
+	end
+	Eq(a:HandlePlayerDetailsMessage("QTHD", { records = tooMany }, b.name, context), false)
+	Eq(a:HandlePlayerDetailsMessage("QTHD", { records = {} }, b.name, context), false)
 	Eq(a:GetPlayerPartyVisualInfo(b.name), nil)
+	local invalid = b:BuildPlayerDetailsIdentityPayload()
+	invalid.race = string.rep("x", 97)
+	Eq(b:EncodeCommRecord("QTHI", invalid), nil)
 end)
 
 QT:RegisterTest("hover metadata preserves long UTF8 names across fragment boundaries", function()
@@ -398,8 +431,8 @@ QT:RegisterTest("hover identity stays inside snapshot envelopes even with long l
 	b.API.UnitClass = function()
 		return string.rep("界", 26), "DEATHKNIGHT"
 	end
-	b.geographicCommsState.session = string.rep("1", 20) .. "-" .. string.rep("2", 19)
-	b.geographicCommsState.sequence = 2000000000
+	b.communicationState.session = string.rep("1", 20) .. "-" .. string.rep("2", 19)
+	b.communicationState.sequence = 2000000000
 	Eq(a:RequestPlayerDetails(b.name), true)
 	Exchange(a, b)
 	local row = a:GetPlayerDetailsTooltipRow({ name = b.name })
@@ -408,4 +441,39 @@ QT:RegisterTest("hover identity stays inside snapshot envelopes even with long l
 	for _, sent in ipairs(b.sent) do
 		assert(#sent.wire <= 255)
 	end
+end)
+
+QT:RegisterTest("partial hover replies retain source age and recover beyond the initial request deadline", function()
+	local a, b = Pair()
+	Group(b, 3)
+	assert(a:RequestPlayerDetails(b.name))
+	local pending = a.playerDetailsState.pending[b.name]
+	Drain(a)
+	local request = a.sent[1]
+	Deliver(a, b)
+	Drain(b)
+	local first = b.out[1]
+	assert(first and #b.out > 1)
+	assert(a:ReceiveCommunication(first.prefix, first.wire, "WHISPER", b.name))
+	Eq(a:GetCommunicationRequestDeadline(pending.id), pending.at + 600)
+	local owner = b.playerDetailsState.replies[a.name]
+	local sourceAt = owner.at
+	assert(not owner.pending)
+	a.now, b.now = 130, 130
+	-- The original request solicits repair from the immutable retained response;
+	-- it must not rebuild its source samples or fail a15-second queue guard.
+	b.out = {}
+	b:ReceiveCommunication(request.prefix, request.wire, "WHISPER", a.name)
+	Drain(b)
+	assert(#b.out > 0)
+	Deliver(b, a, true)
+	local info = assert(a:GetPlayerPartyVisualInfo(b.name))
+	Eq(info.size, 3)
+	assert(info.sampledAt <= sourceAt + 1 and info.sampledAt < a.now - 20)
+	Eq(a.playerDetailsState.pending[b.name], nil)
+	b.db.profile.sharePlayerLocation = false
+	b.out = {}
+	b:ReceiveCommunication(request.prefix, request.wire, "WHISPER", a.name)
+	Drain(b)
+	Eq(#b.out, 0, "retained replies still obey changed consent")
 end)
