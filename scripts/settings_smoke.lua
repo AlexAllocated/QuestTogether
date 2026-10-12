@@ -544,15 +544,17 @@ assert(startupTips:GetChecked() == true, "the home checkbox must refresh from th
 print("Startup tip checkbox, explanatory tooltip, saved opt-out, and profile refresh passed")
 
 local home = QuestTogether.homeControls
-assert(home.generalHeader.points[1][2] == home.description)
+assert(home.statusText.points[1][2] == home.description)
+assert(home.generalHeader.points[1][2] == home.statusText)
 assert(home.showMinimapButton.points[1][2] == home.generalHeader)
 assert(home.showStartupTips.points[1][2] == home.showMinimapButton)
 local theme = assert(home.themeDropdown)
 assert(home.lightMode == nil, "the old Light mode checkbox must not remain beside the dropdown")
 assert(theme.template == "SettingsDropdownWithButtonsTemplate" and theme.title.text == "Theme")
 assert(theme.title.points[1][2] == home.showStartupTips)
-assert(home.statusPanel.points[1][2] == theme, "General settings must come before the status overview")
-assert(home.tipsHeader.points[1][2] == home.statusPanel)
+assert(home.comparePartyQuests.points[1][2] == theme)
+assert(home.patchNotes.points[1][2] == home.comparePartyQuests)
+assert(home.discord.points[1][2] == home.patchNotes)
 assert(theme.Dropdown.menuAnchor[1] == "TOPRIGHT" and theme.Dropdown.menuAnchor[3] == "BOTTOMRIGHT")
 assert(#theme.Dropdown.menu == 2 and theme.Dropdown.menu[1].text == "Dark" and theme.Dropdown.menu[2].text == "Light")
 local themesRefreshed, refreshThemes = 0, QuestTogether.RefreshWindowThemes
@@ -579,24 +581,40 @@ QuestTogether.optionsFrame.scripts.OnShow()
 assert(theme.Dropdown.text == "Light" and theme.Dropdown.menu[2].selected())
 assert(themeWrites == writesBeforeRefresh, "profile refresh must not write the theme selection back")
 QuestTogether.SetOption = setOption
-
-assert(#home.statusGroups == 7 and home.statusPanel.height == 304)
-assert(home.statusPanel.height >= home.actionsPanel.height, "footer must clear the adjacent action buttons")
-assert(not home.statusGroups[1].text.hidden and home.statusGroups[1].text.text:find("Active profile", 1, true))
-for index = 2, #home.statusGroups do
-	assert(home.statusGroups[index].text.hidden and home.statusGroups[index].frame.height == 22)
+local generations, generateMenu = 0, theme.Dropdown.GenerateMenu
+theme.Dropdown.GenerateMenu = function(self)
+	generations = generations + 1
+	return generateMenu(self)
 end
-local partners = home.statusGroups[2]
-QuestTogether.ShowSettingsTooltip = function(_, owner, title, text)
-	assert(owner == partners.button and title == "Finding Partners")
-	capturedTooltip = text
-end
-partners.button.scripts.OnEnter(partners.button)
-assert(capturedTooltip:find("Looking for Questing Partners: Off", 1, true))
-QuestTogether.db.profile.lookingForQuestPartners = true
 QuestTogether.optionsFrame.scripts.OnUpdate(QuestTogether.optionsFrame, 1)
-partners.button.scripts.OnEnter(partners.button)
-assert(capturedTooltip:find("Looking for Questing Partners: On", 1, true), "hover details must follow current settings")
-assert(capturedTooltip:find("Open the settings for this section.", 1, true))
-QuestTogether.ShowSettingsTooltip = showTooltip
-print("General-first home layout, compact live status tooltips, and native Theme dropdown/profile effects passed")
+assert(generations == 0, "status polling must not rebuild an unchanged open theme menu")
+theme.Dropdown.GenerateMenu = generateMenu
+
+assert(home.statusText.text:find("Active profile", 1, true) and home.statusText.text:find("Version", 1, true))
+assert(home.statusGroups == nil and home.statusPanel == nil and home.actionsPanel == nil)
+assert(home.tipsText == nil and home.tipsHeader == nil, "duplicated navigation footer must be absent")
+assert(home.content.height <= 400, "the lean default home page should fit a typical settings viewport")
+local shortcuts = 0
+for _, child in ipairs(home.content.children) do
+	if child.template == "UIPanelButtonTemplate" then shortcuts = shortcuts + 1 end
+end
+assert(shortcuts == 3, "the home page should have only the three requested shortcuts")
+for _, button in ipairs({ home.comparePartyQuests, home.patchNotes, home.discord }) do
+	assert(button.template == "UIPanelButtonTemplate" and button.width == 300 and button.height == 26)
+end
+local pql, notes, support = QuestTogether.OpenPartyQuestCompare, QuestTogether.OpenReleaseNotes, QuestTogether.OpenDiscordSupport
+local opened = {}
+QuestTogether.OpenPartyQuestCompare = function() opened.pql = true end
+QuestTogether.OpenReleaseNotes = function() opened.notes = true end
+QuestTogether.OpenDiscordSupport = function() opened.support = true end
+home.comparePartyQuests.scripts.OnClick()
+home.patchNotes.scripts.OnClick()
+home.discord.scripts.OnClick()
+assert(opened.pql and opened.notes and opened.support)
+QuestTogether.OpenPartyQuestCompare, QuestTogether.OpenReleaseNotes, QuestTogether.OpenDiscordSupport = pql, notes, support
+local wasEnabled = QuestTogether.isEnabled
+QuestTogether.isEnabled = not wasEnabled
+QuestTogether.optionsFrame.scripts.OnUpdate(QuestTogether.optionsFrame, 1)
+assert(home.statusText.text:find("QuestTogether: " .. (QuestTogether.isEnabled and "Enabled" or "Disabled"), 1, true))
+QuestTogether.isEnabled = wasEnabled
+print("Lean home layout, current runtime metadata, three shortcuts, and native Theme dropdown/profile effects passed")

@@ -1297,133 +1297,70 @@ QT:RegisterTest("moved celebration and general controls preserve existing profil
 	assert(addon.homeControls.showMinimapButton.checked == true)
 end)
 
-QT:RegisterTest("home status distinguishes runtime state and conditional sharing preferences", function()
+QT:RegisterTest("home status shows current runtime profile version and newer-version notices", function()
 	local addon = NewFixture()
-	local options = {
-		showPlayerLocations = true,
-		onlyShowQuestPartners = true,
-		sharePlayerLocation = false,
-		lookingForQuestPartners = false,
-		autoInviteWhileLFG = true,
-		autoInviteFriends = false,
-		showChatLogs = false,
-		chatLogDestination = "separate",
-		mirrorChatLogsToMainChat = true,
-	}
-	addon.GetOption = function(_, key)
-		return options[key]
-	end
+	local profile = "Private fixture"
 	addon.GetCurrentProfileKey = function()
-		return "Private fixture"
+		return profile
 	end
 	addon.GetAddonVersion = function()
 		return "5.16.2"
 	end
-	addon.GetShowProgressForLabel = function()
-		return "Everyone"
-	end
-	addon.GetChatLogDestinationLabel = function()
-		return "DESTINATION_SENTINEL"
-	end
 	addon.isEnabled = false
 	addon.db.global.availableAddonVersion = "5.16.3"
 	local L = QT.Translate
-	local groups = addon:GetHomeStatusGroups()
-	assert(groups[1].text:find(L("Disabled"), 1, true))
-	assert(groups[1].text:find(L("Saved preferences below apply when QuestTogether is enabled."), 1, true))
-	assert(groups[1].text:find("5.16.3", 1, true))
-	assert(groups[2].text:find(L("Other requests while looking for partners"), 1, true))
-	assert(groups[3].text:find(L("Players looking for questing partners"), 1, true))
-	assert(groups[4].text == L("Ask before sharing quests"))
-	assert(not groups[5].text:find("DESTINATION_SENTINEL", 1, true))
-	for _, group in ipairs(groups) do
-		assert(type(group.categoryKey) == "string")
-	end
-
+	local status = addon:GetHomeStatusText()
+	assert(status:find(L("QuestTogether") .. ": " .. L("Disabled"), 1, true))
+	assert(status:find(L("Active profile") .. ": Private fixture", 1, true))
+	assert(status:find(L("Version") .. ": 5.16.2", 1, true))
+	assert(status:find(L("Newer version detected") .. ": 5.16.3", 1, true))
 	addon.isEnabled = true
 	addon.db.global.availableAddonVersion = "5.16.2"
-	options.showPlayerLocations, options.showChatLogs = false, true
-	options.autoInviteWhileLFG, options.autoAcceptPartyShareRequests = false, true
-	groups = addon:GetHomeStatusGroups()
-	assert(not groups[1].text:find(L("Newer version detected"), 1, true))
-	assert(not groups[1].text:find(L("Saved preferences below apply when QuestTogether is enabled."), 1, true))
-	assert(groups[2].text:find(L("Ask first"), 1, true))
-	assert(not groups[3].text:find(L("Players looking for questing partners"), 1, true))
-	assert(groups[4].text == L("Automatically approve party share requests"))
-	assert(groups[5].text:find("DESTINATION_SENTINEL", 1, true))
+	profile = "Another profile"
+	status = addon:GetHomeStatusText()
+	assert(status:find(L("QuestTogether") .. ": " .. L("Enabled"), 1, true))
+	assert(status:find(L("Active profile") .. ": Another profile", 1, true))
+	assert(not status:find(L("Newer version detected"), 1, true))
 end)
 
-QT:RegisterTest("home status keeps feature details compact and grows only for its visible overview", function()
+QT:RegisterTest("lean home layout grows for wrapped metadata and shrinks after refresh", function()
 	local addon = NewFixture()
 	addon.optionsFrame = {}
-	local textHeight = 180
-	local function Sized()
-		return {
+	local textHeight, status = 14, "Initial metadata"
+	addon.GetHomeStatusText = function()
+		return status
+	end
+	addon.homeControls = {
+		content = {
 			SetHeight = function(self, height)
 				self.height = height
 			end,
-		}
-	end
-	local rows = {}
-	for i = 1, 7 do
-		rows[i] = {
-			frame = Sized(),
-			button = { SetText = Noop },
-			text = {
-				SetText = Noop,
-				SetShown = function(self, shown)
-					self.shown = shown
-				end,
-				GetStringHeight = function()
-					return textHeight
-				end,
-			},
-		}
-	end
-	local groups = {}
-	for i = 1, 7 do
-		groups[i] = {
-			title = "Section",
-			text = "Detailed settings for the tooltip",
-			summary = i == 1 and "Visible overview" or nil,
-			categoryKey = "groupsCategory",
-		}
-	end
-	addon.GetHomeStatusGroups = function()
-		return groups
-	end
-	addon.homeControls = {
-		statusGroups = rows,
-		statusPanel = Sized(),
-		content = Sized(),
+		},
 		description = {
 			GetStringHeight = function()
 				return 40
 			end,
 		},
-		tipsText = {
+		statusText = {
+			SetText = function(self, value)
+				self.text = value
+			end,
 			GetStringHeight = function()
-				return 60
+				return textHeight
 			end,
 		},
 	}
 	addon:RefreshHomeWindow()
-	local expanded = addon.homeControls.statusPanel.height
-	assert(expanded >= textHeight + 7 * 26)
-	assert(addon.homeControls.content.height >= expanded + 400)
-	for i, row in ipairs(rows) do
-		assert(row.frame.height == 22 + (i == 1 and 4 + textHeight or 0))
-		assert(row.text.shown == (i == 1))
-		assert(row.details == groups[i].text)
-	end
-	groups[2].text = string.rep("Long localized details. ", 40)
+	local initialHeight = addon.homeControls.content.height
+	assert(initialHeight <= 400, "ordinary metadata should keep the simple page compact")
+	assert(addon.homeControls.statusText.text == status)
+	textHeight, status = 180, "A long translated profile and update notice"
 	addon:RefreshHomeWindow()
-	assert(addon.homeControls.statusPanel.height == expanded, "tooltip details must not expand the overview")
-	assert(rows[2].details == groups[2].text, "refresh must replace stale tooltip details")
+	assert(addon.homeControls.content.height == initialHeight + 166)
+	assert(addon.homeControls.statusText.text == status)
 	textHeight = 14
 	addon:RefreshHomeWindow()
-	assert(addon.homeControls.statusPanel.height < expanded)
-	assert(addon.homeControls.statusPanel.height >= 304)
+	assert(addon.homeControls.content.height == initialHeight)
 end)
 
 QT:RegisterTest("bubble save enables for edits and reverts to the last explicit save", function()

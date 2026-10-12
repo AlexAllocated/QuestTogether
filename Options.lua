@@ -261,12 +261,10 @@ end
 
 -- Only attach to controls created by this addon. No shared GameTooltip state.
 function QuestTogether:AttachSettingsTooltip(control, title, text)
-	assert(type(text) == "function" or (type(text) == "string" and text ~= ""), "settings controls require explanatory tooltip text")
+	assert(type(text) == "string" and text ~= "", "settings controls require explanatory tooltip text")
 	control:EnableMouse(true)
 	if control.SetMotionScriptsWhileDisabled then control:SetMotionScriptsWhileDisabled(true) end
-	control:HookScript("OnEnter", function()
-		self:ShowSettingsTooltip(control, title, type(text) == "function" and text() or text)
-	end)
+	control:HookScript("OnEnter", function() self:ShowSettingsTooltip(control, title, text) end)
 	control:HookScript("OnLeave", function() self:HideSettingsTooltip(control) end)
 	control:HookScript("OnHide", function() self:HideSettingsTooltip(control) end)
 end
@@ -934,47 +932,16 @@ function QuestTogether:RefreshPlayerLocationsWindow()
 	end
 end
 
--- Summarize saved choices; the prominent runtime state distinguishes these
--- preferences from features currently running. No native player data is read.
-function QuestTogether:GetHomeStatusGroups()
-	local function OnOff(key) return self:GetOption(key) and L("On") or L("Off") end
+-- Only addon runtime/profile metadata belongs on the home page. Feature choices
+-- live in their settings categories; do not maintain a second summary dashboard.
+function QuestTogether:GetHomeStatusText()
 	local function Line(label, value) return label .. ": " .. value end
-	local destination = self:GetChatLogDestinationLabel(self:GetOption("chatLogDestination"))
-	if self:GetOption("chatLogDestination") == "separate" and self:GetOption("mirrorChatLogsToMainChat") then
-		destination = destination .. L(" + Main Chat When Docked")
-	end
-	local general = Line(L("QuestTogether"), self.isEnabled and L("Enabled") or L("Disabled"))
-		.. "\n" .. Line(L("Active profile"), SafeText(self:GetCurrentProfileKey() or self.activeProfileKey, L("Unknown")))
-		.. "\n" .. Line(L("Version"), SafeText(self:GetAddonVersion(), L("Unknown")))
+	local text = Line(L("QuestTogether"), self.isEnabled and L("Enabled") or L("Disabled"))
+		.. " · " .. Line(L("Active profile"), SafeText(self:GetCurrentProfileKey() or self.activeProfileKey, L("Unknown")))
+		.. " · " .. Line(L("Version"), SafeText(self:GetAddonVersion(), L("Unknown")))
 	local update = self:GetAvailableAddonUpdate()
-	if update then general = general .. "\n" .. Line(L("Newer version detected"), SafeText(update)) end
-	if not self.isEnabled then general = general .. "\n" .. L("Saved preferences below apply when QuestTogether is enabled.") end
-	local locations = GetPlayerLocationFilterLabels()[GetPlayerLocationFilterChoice(self)]
-	local invites = {}
-	if self:GetOption("autoInviteFriends") then invites[#invites + 1] = L("Friends who request to join") end
-	if self:GetOption("autoInviteWhileLFG") then invites[#invites + 1] = L("Other requests while looking for partners") end
-	local inviteText = #invites > 0 and table.concat(invites, "; ") or L("Ask first")
-	return {
-		{ title = L("General"), categoryKey = "profilesCategory", text = general, summary = general },
-		{ title = L("Finding Partners"), categoryKey = "groupsCategory", text =
-			Line(L("Looking for Questing Partners"), OnOff("lookingForQuestPartners")) .. "\n"
-			.. Line(L("Automatic invitations"), inviteText) },
-		{ title = L("Player Locations"), categoryKey = "playerLocationsCategory", text =
-			Line(L("Share my location"), OnOff("sharePlayerLocation")) .. "\n"
-			.. Line(L("Show player locations"), locations) },
-		{ title = L("Quest Sharing"), categoryKey = "groupsCategory", text =
-			self:GetOption("autoAcceptPartyShareRequests") and L("Automatically approve party share requests") or L("Ask before sharing quests") },
-		{ title = L("Announcements"), categoryKey = "whereToAnnounceCategory", text =
-			Line(L("Show progress for"), SafeText(self:GetShowProgressForLabel(self:GetOption("showProgressFor")), L("Unknown"))) .. "\n"
-			.. Line(L("Chat logs"), self:GetOption("showChatLogs") and SafeText(destination) or L("Off")) .. "\n"
-			.. Line(L("Chat bubbles"), OnOff("showChatBubbles")) .. "\n"
-			.. Line(L("Party chat for non-QT members"), OnOff("announceToNonQTParty")) },
-		{ title = L("Quest Plates"), categoryKey = "questPlatesCategory", text =
-			Line(L("Quest icons"), OnOff("nameplateQuestIconEnabled")) .. "\n"
-			.. Line(L("Quest health tint"), OnOff("nameplateQuestHealthColorEnabled")) },
-		{ title = L("Player Plates"), categoryKey = "playerPlatesCategory", text =
-			Line(L("QuestTogether icons"), OnOff("nameplatePlayerIconEnabled")) },
-	}
+	if update then text = text .. "\n" .. Line(L("Newer version detected"), SafeText(update)) end
+	return text
 end
 
 function QuestTogether:RefreshHomeWindow()
@@ -988,34 +955,18 @@ function QuestTogether:RefreshHomeWindow()
 		return
 	end
 	if controls.themeDropdown then
-		RefreshDropdownControl(controls.themeDropdown, self:GetOption("lightMode") and L("Light") or L("Dark"))
-	end
-
-	if controls.statusGroups then
-		local groups = self:GetHomeStatusGroups()
-		local height = 36
-		for i, group in ipairs(groups) do
-			local row = controls.statusGroups[i]
-			row.text:SetText(group.summary or "")
-			row.text:SetShown(group.summary ~= nil)
-			row.button:SetText(group.title .. " >")
-			row.details = group.text
-			row.categoryKey = group.categoryKey
-			local rowHeight = 22 + (group.summary and 4 + row.text:GetStringHeight() or 0)
-			row.frame:SetHeight(rowHeight)
-			height = height + rowHeight + 4
+		local lightMode = self:GetOption("lightMode") == true
+		if controls.themeValue ~= lightMode then
+			controls.themeValue = lightMode
+			RefreshDropdownControl(controls.themeDropdown, lightMode and L("Light") or L("Dark"))
 		end
-		controls.statusPanel:SetHeight(math.max(304, height))
-		-- General controls come first. Reserve the taller of the status overview
-		-- and the fixed-height Quick Actions panel before placing the tips below.
-		controls.content:SetHeight(math.max(304, height) + controls.description:GetStringHeight()
-			+ controls.tipsText:GetStringHeight() + 320)
 	end
 
-	if controls.openHudEditMode then
-		local bubblesEnabled = self:GetOption("showChatBubbles") == true
-		controls.openHudEditMode:SetEnabled(bubblesEnabled)
-		controls.openHudEditMode:SetAlpha(bubblesEnabled and 1 or 0.5)
+	if controls.statusText then
+		controls.statusText:SetText(self:GetHomeStatusText())
+		-- Text can wrap for long profile names, translations, or an update notice.
+		-- The remaining vertical stack contains three settings and three buttons.
+		controls.content:SetHeight(controls.description:GetStringHeight() + controls.statusText:GetStringHeight() + 340)
 	end
 end
 
@@ -1185,15 +1136,6 @@ local function RegisterSubcategory(parentCategory, frame, categoryName)
 		Settings.RegisterAddOnCategory(subcategory)
 	end
 	return subcategory
-end
-
-local function OpenSettingsCategory(category)
-	if not (Settings and Settings.OpenToCategory and category and category.GetID) then
-		return false
-	end
-
-	Settings.OpenToCategory(category:GetID())
-	return true
 end
 
 local function BuildProfileKeyList(excludedKey)
@@ -2154,7 +2096,7 @@ function QuestTogether:InitializeOptionsWindow()
 	local frame = CreateFrame("Frame", "QuestTogetherHomePanel")
 	frame.name = "QuestTogether"
 
-	local _, content = CreateScrollablePanelContent(frame, 730)
+	local _, content = CreateScrollablePanelContent(frame, 420)
 
 	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -16)
@@ -2168,8 +2110,14 @@ function QuestTogether:InitializeOptionsWindow()
 			L("QuestTogether shares quest progress between party members and nearby players so everyone can see objectives move in real time.")
 	)
 
+	local statusText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	statusText:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -10)
+	statusText:SetWidth(640)
+	statusText:SetJustifyH("LEFT")
+	statusText:SetWordWrap(true)
+
 	local generalHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	generalHeader:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -18)
+	generalHeader:SetPoint("TOPLEFT", statusText, "BOTTOMLEFT", 0, -20)
 	generalHeader:SetText(L("General"))
 	local showMinimapButton = CreateCheckbox(content, "showMinimapButton", L("Show minimap icon"),
 		L("Show the QuestTogether minimap menu. Drag the button to move it around the minimap."), 16, 0)
@@ -2186,161 +2134,34 @@ function QuestTogether:InitializeOptionsWindow()
 	themeDropdown.title:ClearAllPoints()
 	themeDropdown.title:SetPoint("TOPLEFT", showStartupTips, "BOTTOMLEFT", 0, -14)
 
-	local statusPanel = CreateFrame("Frame", nil, content)
-	statusPanel:SetPoint("TOPLEFT", themeDropdown, "BOTTOMLEFT", 0, -18)
-	statusPanel:SetSize(360, 304)
-
-	local statusPanelBackground = statusPanel:CreateTexture(nil, "BACKGROUND")
-	statusPanelBackground:SetAllPoints()
-	statusPanelBackground:SetColorTexture(0.03, 0.03, 0.05, 0.62)
-
-	local statusPanelBorder = statusPanel:CreateTexture(nil, "BORDER")
-	statusPanelBorder:SetAllPoints()
-	statusPanelBorder:SetColorTexture(1, 1, 1, 0.08)
-
-	local statusHeader = statusPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	statusHeader:SetPoint("TOPLEFT", statusPanel, "TOPLEFT", 12, -10)
-	statusHeader:SetText(L("Quick Status"))
-
-	local statusGroups = {}
-	local previous = statusHeader
-	for i, group in ipairs(self:GetHomeStatusGroups()) do
-		local row = {}
-		row.frame = CreateFrame("Frame", nil, statusPanel)
-		row.frame:SetPoint("TOPLEFT", previous, "BOTTOMLEFT", 0, -4)
-		row.frame:SetSize(336, 22)
-		row.button = CreateFrame("Button", nil, row.frame)
-		row.button:SetPoint("TOPLEFT")
-		row.button:SetSize(336, 22)
-		row.button:SetNormalFontObject("GameFontNormal")
-		row.button:SetHighlightFontObject("GameFontHighlight")
-		row.button:SetText(group.title .. " >")
-		row.details = group.text
-		self:AttachSettingsTooltip(row.button, group.title, function()
-			return row.details .. "\n\n" .. L("Open the settings for this section.")
-		end)
-		row.button:GetFontString():SetJustifyH("LEFT")
-		row.categoryKey = group.categoryKey
-		row.button:SetScript("OnClick", function()
-			OpenSettingsCategory(QuestTogether[row.categoryKey])
-		end)
-		row.text = row.frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-		row.text:SetPoint("TOPLEFT", row.button, "BOTTOMLEFT", 0, -4)
-		row.text:SetWidth(336)
-		row.text:SetJustifyH("LEFT")
-		row.text:SetSpacing(2)
-		statusGroups[i] = row
-		previous = row.frame
-	end
-
-	local actionsPanel = CreateFrame("Frame", nil, content)
-	actionsPanel:SetPoint("TOPLEFT", statusPanel, "TOPRIGHT", 16, 0)
-	actionsPanel:SetSize(260, 304)
-
-	local actionsPanelBackground = actionsPanel:CreateTexture(nil, "BACKGROUND")
-	actionsPanelBackground:SetAllPoints()
-	actionsPanelBackground:SetColorTexture(0.03, 0.03, 0.05, 0.62)
-
-	local actionsPanelBorder = actionsPanel:CreateTexture(nil, "BORDER")
-	actionsPanelBorder:SetAllPoints()
-	actionsPanelBorder:SetColorTexture(1, 1, 1, 0.08)
-
-	local actionsHeader = actionsPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	actionsHeader:SetPoint("TOPLEFT", actionsPanel, "TOPLEFT", 12, -10)
-	actionsHeader:SetText(L("Quick Actions"))
-
-	local actionHelp = {
-		[L("Party Quest Log")] = L("Compare your party's quests and share quests that other members are missing."),
-		[L("Find Questing Partners")] = L("Open options for finding partners, joining groups, and sharing quests."),
-		[L("Open What to Announce")] = L("Choose which quest events and partner searches to announce and display."),
-		[L("Open Where to Announce")] = L("Choose chat output, bubbles, and celebration emotes."),
-		[L("Open Quest Plates")] = L("Customize quest objective visuals on Blizzard nameplates."),
-		[L("Open Profiles")] = L("Switch, copy, create, reset, or delete saved settings profiles."),
-		[L("Open HUD Edit Mode")] = L("Use HUD Edit Mode to move your personal bubble and adjust its size and duration from the QuestTogether Bubble settings panel."),
-		[L("Print /qt Help")] = L("Print the available QuestTogether commands in your chat log."),
-		[L("Patch Notes")] = L("Read the latest QuestTogether changes and new features."),
-		[L("Discord — Feedback & Support")] = L("Open the Discord invite link to share feedback or ask for help."),
-	}
-	local function CreateHomeActionButton(parent, text, x, y, onClick)
-		local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-		button:SetSize(232, 22)
-		button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+	local function CreateHomeActionButton(text, tooltip, previous, gap, onClick)
+		local button = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+		button:SetSize(300, 26)
+		button:SetPoint("TOPLEFT", previous, "BOTTOMLEFT", 0, -gap)
 		button:SetText(text)
-		QuestTogether:AttachSettingsTooltip(button, text, actionHelp[text])
+		QuestTogether:AttachSettingsTooltip(button, text, tooltip)
 		button:SetScript("OnClick", onClick)
 		return button
 	end
-
-	local comparePartyQuests = CreateHomeActionButton(actionsPanel, L("Party Quest Log"), 12, -34, function()
-		QuestTogether:OpenPartyQuestCompare()
-	end)
-	local openGroups = CreateHomeActionButton(actionsPanel, L("Find Questing Partners"), 12, -60, function()
-		OpenSettingsCategory(QuestTogether.groupsCategory)
-	end)
-	local openWhatToAnnounce = CreateHomeActionButton(actionsPanel, L("Open What to Announce"), 12, -86, function()
-		OpenSettingsCategory(QuestTogether.announcementsCategory)
-	end)
-	local openWhereToAnnounce = CreateHomeActionButton(actionsPanel, L("Open Where to Announce"), 12, -112, function()
-		OpenSettingsCategory(QuestTogether.whereToAnnounceCategory)
-	end)
-	local openQuestPlates = CreateHomeActionButton(actionsPanel, L("Open Quest Plates"), 12, -138, function()
-		OpenSettingsCategory(QuestTogether.questPlatesCategory)
-	end)
-	local openProfiles = CreateHomeActionButton(actionsPanel, L("Open Profiles"), 12, -164, function()
-		OpenSettingsCategory(QuestTogether.profilesCategory)
-	end)
-	local openHudEditMode = CreateHomeActionButton(actionsPanel, L("Open HUD Edit Mode"), 12, -190, function()
-		if not QuestTogether:OpenHudEditMode() then
-			QuestTogether:Print(L("HUD Edit Mode is unavailable right now."))
-		end
-	end)
-	local printHelp = CreateHomeActionButton(actionsPanel, L("Print /qt Help"), 12, -216, function()
-		QuestTogether:PrintHelp()
-	end)
-	local patchNotes = CreateHomeActionButton(actionsPanel, L("Patch Notes"), 12, -242, function()
-		QuestTogether:OpenReleaseNotes()
-	end)
-	local discord = CreateHomeActionButton(actionsPanel, L("Discord — Feedback & Support"), 12, -268, function()
-		QuestTogether:OpenDiscordSupport()
-	end)
-
-	local tipsHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	tipsHeader:SetPoint("TOPLEFT", statusPanel, "BOTTOMLEFT", 0, -20)
-	tipsHeader:SetText(L("Tips"))
-
-	local tipsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	tipsText:SetPoint("TOPLEFT", tipsHeader, "BOTTOMLEFT", 0, -8)
-	tipsText:SetWidth(640)
-	tipsText:SetJustifyH("LEFT")
-	if tipsText.SetSpacing then
-		tipsText:SetSpacing(3)
-	end
-	tipsText:SetText(
-		L("/qt options opens these settings.\n")
-			.. L("Use What to Announce for event types, Where to Announce for output targets,\n")
-			.. L("and Groups & Sharing for questing partners and request approvals.")
-	)
+	local comparePartyQuests = CreateHomeActionButton(L("Party Quest Log"),
+		L("Compare your party's quests and share quests that other members are missing."), themeDropdown, 20,
+		function() QuestTogether:OpenPartyQuestCompare() end)
+	local patchNotes = CreateHomeActionButton(L("Patch Notes"),
+		L("Read the latest QuestTogether changes and new features."), comparePartyQuests, 8,
+		function() QuestTogether:OpenReleaseNotes() end)
+	local discord = CreateHomeActionButton(L("Discord — Feedback & Support"),
+		L("Open the Discord invite link to share feedback or ask for help."), patchNotes, 8,
+		function() QuestTogether:OpenDiscordSupport() end)
 
 	self.homeControls = {
-		statusGroups = statusGroups,
-		statusPanel = statusPanel,
-		actionsPanel = actionsPanel,
 		generalHeader = generalHeader,
-		tipsHeader = tipsHeader,
 		content = content,
 		description = description,
-		tipsText = tipsText,
+		statusText = statusText,
 		showMinimapButton = showMinimapButton,
 		showStartupTips = showStartupTips,
 		themeDropdown = themeDropdown,
 		comparePartyQuests = comparePartyQuests,
-		openGroups = openGroups,
-		openWhatToAnnounce = openWhatToAnnounce,
-		openWhereToAnnounce = openWhereToAnnounce,
-		openQuestPlates = openQuestPlates,
-		openProfiles = openProfiles,
-		openHudEditMode = openHudEditMode,
-		printHelp = printHelp,
 		patchNotes = patchNotes,
 		discord = discord,
 	}

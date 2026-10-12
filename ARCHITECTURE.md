@@ -253,9 +253,10 @@ text is localized at presentation; wire facts and diagnostic identifiers stay
 stable. Vendored LibChev is immutable under its pinned manifest: fixes belong
 upstream followed by a deliberate vendor update.
 
-The settings home page puts General controls before its compact status overview
-and shortcuts. Status links read the same current summaries for their tooltips.
-The Theme dropdown presents the existing `lightMode` profile preference.
+The settings home page keeps General controls with a compact status readout and
+shortcuts for the Party Quest Log, patch notes, and support. Category navigation
+stays in the native settings sidebar. The Theme dropdown presents the existing
+`lightMode` profile preference.
 
 Use Blizzard templates for ordinary buttons, checkboxes, swatches, searches
 and scrollbars. Preserve inherited search and control behavior on owned instances.
