@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.1.1
+## 7.1.2
 
 Scopri altre funzionalità di QuestTogether con consigli utili.
 
@@ -10,6 +10,16 @@ Scopri altre funzionalità di QuestTogether con consigli utili.
 
 - QT ora mostra un consiglio all’accesso o al ricaricamento dell’interfaccia, pescando da un elenco mescolato senza ripetizioni finché non sono stati mostrati tutti.
 - Puoi disattivare i consigli automatici in Generale nella pagina principale delle impostazioni di QuestTogether. /qt tip e /qt hint restano disponibili.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.2/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Consiglio: Digita «/qt tip» o «/qt hint» per vedere un altro consiglio di QuestTogether quando vuoi.
+
+## 7.1.1
+
+Scopri altre funzionalità di QuestTogether con consigli utili.
+
+### Consigli di QuestTogether
+
+- QT ora mostra un consiglio all’accesso o al ricaricamento dell’interfaccia, pescando da un elenco mescolato senza ripetizioni finché non sono stati mostrati tutti.
 
 > <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Consiglio: Digita «/qt tip» o «/qt hint» per vedere un altro consiglio di QuestTogether quando vuoi.
 

@@ -3,6 +3,184 @@
   "releases": [
     {
       "enUS": {
+        "version": "7.1.1",
+        "welcome": "Discover more of QuestTogether with helpful tips.",
+        "sections": [
+          {
+            "title": "QuestTogether Tips",
+            "items": [
+              "QT now shows a tip when you log in or reload, drawing from a shuffled pool without repeats until it runs out."
+            ],
+            "tip": {
+              "label": "Tip:",
+              "text": "Type /qt tip or /qt hint to see another QuestTogether tip whenever you like."
+            }
+          }
+        ]
+      },
+      "deDE": {
+        "version": "7.1.1",
+        "welcome": "Entdecke mit hilfreichen Tipps mehr von QuestTogether.",
+        "sections": [
+          {
+            "title": "QuestTogether-Tipps",
+            "items": [
+              "QT zeigt jetzt bei der Anmeldung oder beim Neuladen der Benutzeroberfläche einen Tipp aus einem gemischten Vorrat an. Erst wenn alle Tipps gezeigt wurden, wiederholen sie sich."
+            ],
+            "tip": {
+              "label": "Tipp:",
+              "text": "Gib „/qt tip“ oder „/qt hint“ ein, um jederzeit einen weiteren QuestTogether-Tipp zu sehen."
+            }
+          }
+        ]
+      },
+      "frFR": {
+        "version": "7.1.1",
+        "welcome": "Découvrez davantage de fonctionnalités de QuestTogether grâce à des astuces utiles.",
+        "sections": [
+          {
+            "title": "Astuces QuestTogether",
+            "items": [
+              "QT affiche désormais une astuce à la connexion ou au rechargement de l’interface, tirée d’une liste mélangée sans répétition tant que toutes les astuces n’ont pas été affichées."
+            ],
+            "tip": {
+              "label": "Astuce :",
+              "text": "Saisissez « /qt tip » ou « /qt hint » pour voir une autre astuce QuestTogether quand vous le souhaitez."
+            }
+          }
+        ]
+      },
+      "esES": {
+        "version": "7.1.1",
+        "welcome": "Descubre más de QuestTogether con consejos útiles.",
+        "sections": [
+          {
+            "title": "Consejos de QuestTogether",
+            "items": [
+              "QT ahora muestra un consejo al iniciar sesión o recargar la interfaz, elegido de una lista barajada sin repeticiones hasta agotarla."
+            ],
+            "tip": {
+              "label": "Consejo:",
+              "text": "Escribe /qt tip o /qt hint para ver otro consejo de QuestTogether cuando quieras."
+            }
+          }
+        ]
+      },
+      "esMX": {
+        "version": "7.1.1",
+        "welcome": "Descubre más de QuestTogether con consejos útiles.",
+        "sections": [
+          {
+            "title": "Consejos de QuestTogether",
+            "items": [
+              "QT ahora muestra un consejo al iniciar sesión o recargar la interfaz, elegido de una lista barajada sin repeticiones hasta agotarla."
+            ],
+            "tip": {
+              "label": "Consejo:",
+              "text": "Escribe /qt tip o /qt hint para ver otro consejo de QuestTogether cuando quieras."
+            }
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "7.1.1",
+        "welcome": "Descubra mais do QuestTogether com dicas úteis.",
+        "sections": [
+          {
+            "title": "Dicas do QuestTogether",
+            "items": [
+              "O QT agora mostra uma dica ao entrar no jogo ou recarregar a interface, escolhida de uma lista embaralhada sem repetições até ela se esgotar."
+            ],
+            "tip": {
+              "label": "Dica:",
+              "text": "Digite /qt tip ou /qt hint para ver outra dica do QuestTogether quando quiser."
+            }
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "7.1.1",
+        "welcome": "Узнайте больше о QuestTogether с полезными советами.",
+        "sections": [
+          {
+            "title": "Советы QuestTogether",
+            "items": [
+              "Теперь QT показывает совет при входе в игру или перезагрузке интерфейса. Советы выбираются из перемешанного списка без повторов, пока он не закончится."
+            ],
+            "tip": {
+              "label": "Совет:",
+              "text": "Введите /qt tip или /qt hint, чтобы в любой момент увидеть ещё один совет QuestTogether."
+            }
+          }
+        ]
+      },
+      "itIT": {
+        "version": "7.1.1",
+        "welcome": "Scopri altre funzionalità di QuestTogether con consigli utili.",
+        "sections": [
+          {
+            "title": "Consigli di QuestTogether",
+            "items": [
+              "QT ora mostra un consiglio all’accesso o al ricaricamento dell’interfaccia, pescando da un elenco mescolato senza ripetizioni finché non sono stati mostrati tutti."
+            ],
+            "tip": {
+              "label": "Consiglio:",
+              "text": "Digita «/qt tip» o «/qt hint» per vedere un altro consiglio di QuestTogether quando vuoi."
+            }
+          }
+        ]
+      },
+      "koKR": {
+        "version": "7.1.1",
+        "welcome": "유용한 도움말로 QuestTogether의 더 많은 기능을 알아보세요.",
+        "sections": [
+          {
+            "title": "QuestTogether 도움말",
+            "items": [
+              "이제 로그인하거나 UI를 다시 불러오면 도움말이 표시됩니다. 섞인 목록에서 하나씩 뽑으며, 목록을 모두 볼 때까지 반복되지 않습니다."
+            ],
+            "tip": {
+              "label": "도움말:",
+              "text": "언제든 /qt tip 또는 /qt hint를 입력하면 다른 QuestTogether 도움말을 볼 수 있습니다."
+            }
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "7.1.1",
+        "welcome": "通过实用提示，了解 QuestTogether 的更多功能。",
+        "sections": [
+          {
+            "title": "QuestTogether 提示",
+            "items": [
+              "QT 现在会在登录或重载界面时显示一条提示，从打乱的列表中抽取，整轮看完之前不会重复。"
+            ],
+            "tip": {
+              "label": "提示：",
+              "text": "随时输入 /qt tip 或 /qt hint，即可查看另一条 QuestTogether 提示。"
+            }
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "7.1.1",
+        "welcome": "透過實用提示，認識 QuestTogether 的更多功能。",
+        "sections": [
+          {
+            "title": "QuestTogether 提示",
+            "items": [
+              "QT 現在會在登入或重新載入介面時顯示一則提示，從打亂的清單中抽取，整輪看完之前不會重複。"
+            ],
+            "tip": {
+              "label": "提示：",
+              "text": "隨時輸入 /qt tip 或 /qt hint，即可查看另一則 QuestTogether 提示。"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "7.1.0",
         "welcome": "Discover more of QuestTogether with helpful tips.",
         "sections": [

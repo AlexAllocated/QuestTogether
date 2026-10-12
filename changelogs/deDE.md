@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.1.1
+## 7.1.2
 
 Entdecke mit hilfreichen Tipps mehr von QuestTogether.
 
@@ -10,6 +10,16 @@ Entdecke mit hilfreichen Tipps mehr von QuestTogether.
 
 - QT zeigt jetzt bei der Anmeldung oder beim Neuladen der Benutzeroberfläche einen Tipp aus einem gemischten Vorrat an. Erst wenn alle Tipps gezeigt wurden, wiederholen sie sich.
 - Du kannst automatische Tipps unter Allgemein auf der Hauptseite der QuestTogether-Einstellungen deaktivieren. /qt tip und /qt hint bleiben verfügbar.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.2/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tipp: Gib „/qt tip“ oder „/qt hint“ ein, um jederzeit einen weiteren QuestTogether-Tipp zu sehen.
+
+## 7.1.1
+
+Entdecke mit hilfreichen Tipps mehr von QuestTogether.
+
+### QuestTogether-Tipps
+
+- QT zeigt jetzt bei der Anmeldung oder beim Neuladen der Benutzeroberfläche einen Tipp aus einem gemischten Vorrat an. Erst wenn alle Tipps gezeigt wurden, wiederholen sie sich.
 
 > <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tipp: Gib „/qt tip“ oder „/qt hint“ ein, um jederzeit einen weiteren QuestTogether-Tipp zu sehen.
 

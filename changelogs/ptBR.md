@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.1.1
+## 7.1.2
 
 Descubra mais do QuestTogether com dicas úteis.
 
@@ -10,6 +10,16 @@ Descubra mais do QuestTogether com dicas úteis.
 
 - O QT agora mostra uma dica ao entrar no jogo ou recarregar a interface, escolhida de uma lista embaralhada sem repetições até ela se esgotar.
 - Você pode desativar as dicas automáticas em Geral, na página principal de configurações do QuestTogether. /qt tip e /qt hint continuam disponíveis.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.2/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Dica: Digite /qt tip ou /qt hint para ver outra dica do QuestTogether quando quiser.
+
+## 7.1.1
+
+Descubra mais do QuestTogether com dicas úteis.
+
+### Dicas do QuestTogether
+
+- O QT agora mostra uma dica ao entrar no jogo ou recarregar a interface, escolhida de uma lista embaralhada sem repetições até ela se esgotar.
 
 > <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Dica: Digite /qt tip ou /qt hint para ver outra dica do QuestTogether quando quiser.
 

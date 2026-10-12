@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.1.1
+## 7.1.2
 
 通过实用提示，了解 QuestTogether 的更多功能。
 
@@ -10,6 +10,16 @@
 
 - QT 现在会在登录或重载界面时显示一条提示，从打乱的列表中抽取，整轮看完之前不会重复。
 - 你可以在 QuestTogether 设置主页的“常规”部分关闭自动提示。/qt tip 和 /qt hint 仍可使用。
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.2/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> 提示： 随时输入 /qt tip 或 /qt hint，即可查看另一条 QuestTogether 提示。
+
+## 7.1.1
+
+通过实用提示，了解 QuestTogether 的更多功能。
+
+### QuestTogether 提示
+
+- QT 现在会在登录或重载界面时显示一条提示，从打乱的列表中抽取，整轮看完之前不会重复。
 
 > <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> 提示： 随时输入 /qt tip 或 /qt hint，即可查看另一条 QuestTogether 提示。
 
