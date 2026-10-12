@@ -333,6 +333,7 @@ local function WithIsolatedState(testFn)
 			"bulkTransferState",
 			"pingPageQueue",
 			"developerRequestState",
+			"developerAnnouncementState",
 			"developerPlayerData",
 			"peerSnapshotState",
 			"locationPriorityCache",
@@ -5244,6 +5245,7 @@ local function NewQuestShareMenuFixture()
 		reads = 0,
 	}
 	state.journalCapable, state.journalReads, state.opened = true, 0, {}
+	state.detailsCapable, state.detailsOpened = true, {}
 	local addon = setmetatable({ isEnabled = true }, { __index = QuestTogether })
 	local root = { buttons = {}, dividers = {} }
 	function addon:GetPlayerTracker()
@@ -5292,6 +5294,9 @@ local function NewQuestShareMenuFixture()
 			state.sends[#state.sends + 1] = index
 			return not state.sendFails
 		end,
+		CanOpenQuestDetails = function()
+			return state.detailsCapable
+		end,
 		CanOpenQuestJournal = function()
 			return state.journalCapable
 		end,
@@ -5310,6 +5315,10 @@ local function NewQuestShareMenuFixture()
 			return not state.menuFails
 		end,
 	})
+	function addon:ShowQuestDetails(id, title)
+		state.detailsOpened[#state.detailsOpened + 1] = { id = id, title = title }
+		return not state.detailsFail
+	end
 	function addon:IsRuntimeRestrictionTypeActive(kind)
 		return state.restriction == kind
 	end
@@ -5338,7 +5347,7 @@ local function NewQuestShareMenuFixture()
 end
 
 QuestTogether:RegisterTest(
-	"quest clicks open Share journal and party compare without log destination actions",
+	"quest clicks offer details sharing journal and party compare",
 	function()
 		local addon, state, root = NewQuestShareMenuFixture()
 		local owner = {}
@@ -5353,39 +5362,87 @@ QuestTogether:RegisterTest(
 			AssertEquals(response, LinkProcessorResponse.Handled)
 			AssertEquals(state.owner, owner)
 			AssertEquals(#state.statuses, 0, "opening a menu must not print status")
-			AssertEquals(#root.buttons, 3)
-			AssertEquals(root.buttons[1].label, "Share")
-			AssertEquals(root.buttons[2].label, "Open in Quest Log")
-			AssertTrue(root.buttons[2].enabled)
-			AssertEquals(#state.opened, 0, "opening a menu must not open the journal")
-			AssertEquals(root.buttons[3].label, "Party Quest Log")
+			AssertEquals(#root.buttons, 4)
+			AssertEquals(root.buttons[1].label, "Quest Details")
+			AssertTrue(root.buttons[1].enabled)
+			AssertEquals(#state.detailsOpened, 0, "opening a menu must not show quest details")
+			AssertEquals(root.buttons[2].label, "Share")
+			AssertEquals(root.buttons[3].label, "Open in Quest Log")
 			AssertTrue(root.buttons[3].enabled)
+			AssertEquals(#state.opened, 0, "opening a menu must not open the journal")
+			AssertEquals(root.buttons[4].label, "Party Quest Log")
+			AssertTrue(root.buttons[4].enabled)
 			AssertEquals(state.compares, nil, "opening a menu must not open party compare")
 			AssertEquals(#root.dividers, 0)
 			AssertEquals(state.destination, "main", "opening a menu must not move logs")
-			AssertTrue(root.buttons[1].enabled)
+			AssertTrue(root.buttons[2].enabled)
 			AssertEquals(#state.sends, 0, "opening a menu must not share")
 		end
 		AssertEquals(#state.statuses, 0)
 		-- A log index can change while the menu is open.
 		state.index = 9
-		root.buttons[1].callback()
+		root.buttons[2].callback()
 		AssertEquals(#state.sends, 1)
 		AssertEquals(state.sends[1], 9)
 		AssertEquals(#state.messages, 0, "a native attempt is not a confirmed acceptance")
-		root.buttons[2].callback()
+		root.buttons[3].callback()
 		AssertEquals(#state.opened, 1)
 		AssertEquals(state.opened[1], 12345, "journal uses quest ID, not its changed log index")
-		root.buttons[3].callback()
+		root.buttons[4].callback()
 		AssertEquals(state.compares, 1)
 		state.destination = "separate"
 		root.buttons, root.dividers = {}, {}
 		addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
-		AssertEquals(#root.buttons, 3)
+		AssertEquals(#root.buttons, 4)
 		AssertEquals(#root.dividers, 0)
 		AssertEquals(state.destination, "separate")
 	end
 )
+
+QuestTogether:RegisterTest("quest details work for unowned quests without sharing or opening the journal", function()
+	local addon, state, root = NewQuestShareMenuFixture()
+	state.index, state.grouped = nil, false
+	addon:PopulateChatLogQuestMenu(root, 12345, "[Someone else's quest]")
+	AssertTrue(root.buttons[1].enabled)
+	AssertFalse(root.buttons[2].enabled)
+	AssertFalse(root.buttons[3].enabled)
+	local reads = state.journalReads
+	root.buttons[1].callback()
+	AssertEquals(state.detailsOpened[1].id, 12345)
+	AssertEquals(state.detailsOpened[1].title, "[Someone else's quest]")
+	AssertEquals(state.journalReads, reads, "quest details must not require a quest-log entry")
+	AssertEquals(#state.opened, 0)
+	AssertEquals(#state.sends, 0)
+	AssertEquals(#state.messages, 0)
+end)
+
+QuestTogether:RegisterTest("quest details recheck stale restrictions and unavailable client data", function()
+	for _, kind in ipairs({ "combat", "encounter", "challenge", "pvp", "map", "unavailable" }) do
+		local addon, state, root = NewQuestShareMenuFixture()
+		addon:PopulateChatLogQuestMenu(root, 12345, nil)
+		state.combat, state.restriction = kind == "combat", kind
+		state.detailsCapable = kind ~= "unavailable"
+		root.buttons[1].callback()
+		AssertEquals(#state.detailsOpened, 0)
+		AssertEquals(#state.messages, 1)
+		root.buttons = {}
+		addon:PopulateChatLogQuestMenu(root, 12345, nil)
+		AssertFalse(root.buttons[1].enabled)
+		root.buttons[1].tooltip({ SetText = function(_, text) AssertEquals(text, state.messages[1]) end })
+		state.combat, state.restriction, state.detailsCapable = false, nil, true
+		AssertEquals(next(addon:GetDeferredWorkStateStore().entries), nil)
+		AssertEquals(#state.detailsOpened, 0, "old clicks must not open a tooltip later")
+		AssertTrue(addon:OpenQuestDetailsFromChatLog(12345))
+	end
+	local addon, state = NewQuestShareMenuFixture()
+	state.detailsFail = true
+	AssertFalse(addon:OpenQuestDetailsFromChatLog(12345))
+	AssertEquals(state.messages[1], "Unable to show details for that quest.")
+	for _, id in ipairs({ 0, -1, 1.5, 2147483648, math.huge, "invalid", false }) do
+		AssertEquals(addon:GetQuestDetailsAvailability(id), nil)
+	end
+	AssertEquals(#state.detailsOpened, 1)
+end)
 
 QuestTogether:RegisterTest("quest menu preserves modified clicks and rejects malformed links", function()
 	local addon, state, root = NewQuestShareMenuFixture()
@@ -5458,33 +5515,33 @@ QuestTogether:RegisterTest("quest share menu disables unavailable actions and re
 	for _, change in ipairs(cases) do
 		local addon, state, root = NewQuestShareMenuFixture()
 		addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
-		AssertTrue(root.buttons[1].enabled)
+		AssertTrue(root.buttons[2].enabled)
 		change(addon, state)
-		root.buttons[1].callback()
+		root.buttons[2].callback()
 		AssertEquals(#state.sends, 0, "stale menu must not authorize sharing")
 		AssertEquals(#state.messages, 1)
 		root.buttons, root.dividers = {}, {}
 		addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
-		AssertFalse(root.buttons[1].enabled)
+		AssertFalse(root.buttons[2].enabled)
 		local tooltip = {
 			SetText = function(_, message)
 				AssertEquals(message, state.messages[1])
 			end,
 		}
-		root.buttons[1].tooltip(tooltip)
+		root.buttons[2].tooltip(tooltip)
 	end
 end)
 
 QuestTogether:RegisterTest("quest menu party compare rechecks disabled and restricted clicks", function()
 	local addon, state, root = NewQuestShareMenuFixture()
 	addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
-	local compare = root.buttons[3]
+	local compare = root.buttons[4]
 	addon.isEnabled = false
 	compare.callback()
 	AssertEquals(state.compares, nil)
 	root.buttons = {}
 	addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
-	AssertFalse(root.buttons[3].enabled)
+	AssertFalse(root.buttons[4].enabled)
 	addon.isEnabled, state.combat = true, true
 	compare.callback()
 	AssertEquals(state.compares, nil)
@@ -5510,15 +5567,15 @@ QuestTogether:RegisterTest("quest log rechecks stale entries and reports unavail
 	}) do
 		local addon, state, root = NewQuestShareMenuFixture()
 		addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
-		AssertTrue(root.buttons[2].enabled)
+		AssertTrue(root.buttons[3].enabled)
 		change(state)
-		root.buttons[2].callback()
+		root.buttons[3].callback()
 		AssertEquals(#state.opened, 0)
 		AssertEquals(#state.messages, 1)
 		root.buttons = {}
 		addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
-		AssertFalse(root.buttons[2].enabled)
-		root.buttons[2].tooltip({
+		AssertFalse(root.buttons[3].enabled)
+		root.buttons[3].tooltip({
 			SetText = function(_, reason)
 				AssertEquals(reason, state.messages[1])
 			end,
@@ -5539,9 +5596,9 @@ QuestTogether:RegisterTest("quest log works solo and with an open map but never 
 	addon.isEnabled = false
 	state.grouped, state.pushable, state.mapVisible = false, false, true
 	addon:PopulateChatLogQuestMenu(root, 12345, "[Test Quest]")
-	AssertFalse(root.buttons[1].enabled)
-	AssertTrue(root.buttons[2].enabled)
-	root.buttons[2].callback()
+	AssertFalse(root.buttons[2].enabled)
+	AssertTrue(root.buttons[3].enabled)
+	root.buttons[3].callback()
 	AssertEquals(state.opened[1], 12345)
 	for _, kind in ipairs({ "combat", "encounter", "challenge", "pvp", "map" }) do
 		local restrictedAddon, restrictedState, restrictedRoot = NewQuestShareMenuFixture()
@@ -5549,7 +5606,7 @@ QuestTogether:RegisterTest("quest log works solo and with an open map but never 
 		local reads = restrictedState.journalReads
 		restrictedState.combat = kind == "combat"
 		restrictedState.restriction = kind
-		restrictedRoot.buttons[2].callback()
+		restrictedRoot.buttons[3].callback()
 		AssertEquals(#restrictedState.opened, 0)
 		AssertEquals(restrictedState.journalReads, reads)
 		AssertEquals(restrictedAddon:GetQuestJournalAvailability(12345), nil)
@@ -5567,7 +5624,7 @@ QuestTogether:RegisterTest("quest sharing blocks every runtime restriction and n
 		local reads = state.reads
 		state.combat, state.mapVisible = kind == "combat", kind == "visible_map"
 		state.restriction = kind
-		root.buttons[1].callback()
+		root.buttons[2].callback()
 		AssertEquals(#state.sends, 0)
 		AssertEquals(state.reads, reads, "restricted actions must stop before reading quests")
 		AssertEquals(#state.messages, 1)

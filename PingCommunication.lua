@@ -295,6 +295,7 @@ function QT:UpdateCommunicationRequests(now)
 end
 
 function QT:CancelDeveloperDiagnosticReplies()
+	self:ResetDeveloperAnnouncementSubscriptions()
 	self.diagnosticReplyGeneration = (rawget(self, "diagnosticReplyGeneration") or 0) + 1
 	local state = rawget(self, "pingReplyState")
 	self.pingReplyState = nil

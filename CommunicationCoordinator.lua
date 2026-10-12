@@ -116,11 +116,18 @@ function QT:GetCommunicationRoutes(operation, routes)
 		return distribution and { { distribution = distribution, requiresGroup = true } } or {}
 	end
 	if spec.semantic == "event" and (operation == "ANN" or operation == "LVL") then
-		return self:GetGeographicAnnouncementRoutes() or self:GetAnnouncementWireRoutes()
+		local routes = self:GetGeographicAnnouncementRoutes() or self:GetAnnouncementWireRoutes()
+		for _, route in ipairs(self:GetDeveloperAnnouncementRoutes()) do
+			routes[#routes + 1] = route
+		end
+		return routes
 	end
 	return self:GetAnnouncementWireRoutes()
 end
 function QT:IsCommunicationRouteCurrent(route, fingerprint)
+	if route.developerAnnouncement and not self:IsDeveloperAnnouncementRouteCurrent(route) then
+		return false
+	end
 	if route.distribution == "WHISPER" then
 		return Name(self, route.target) ~= nil
 			and not self:IsIgnoredPlayerName(route.target)
@@ -169,6 +176,13 @@ function QT:NormalizeCommunicationRoutes(operation, routes)
 			return nil
 		end
 		local route = { distribution = distribution, requiresGroup = original.requiresGroup == true }
+		if
+			original.developerAnnouncement
+			and (operation == "ANN" or operation == "LVL")
+			and distribution == "WHISPER"
+		then
+			route.developerAnnouncement = original.developerAnnouncement
+		end
 		if distribution == "WHISPER" then
 			route.target = Name(self, original.target)
 			if not route.target then
@@ -191,6 +205,12 @@ function QT:NormalizeCommunicationRoutes(operation, routes)
 			return nil
 		end
 		local key = RouteKey(route)
+		if
+			self:GetCommOperation(operation).globalOnly
+			and (distribution ~= "CHANNEL" or route.channelName ~= self.announcementChannelName)
+		then
+			return nil
+		end
 		if seen[key] then
 			seen[key].requiresGroup = seen[key].requiresGroup or route.requiresGroup
 		else
@@ -394,6 +414,9 @@ function QT:SubmitCommunication(operation, record, routes, options)
 				self:CacheCommResponse(context, frames[1], route, descriptor)
 			end
 			Complete(ok, status, code, ticket)
+		end
+		if route.developerAnnouncement then
+			self:ConfigureDeveloperAnnouncementDelivery(route, descriptor)
 		end
 		local ok, status, ticket
 		if options.direct then
@@ -710,12 +733,16 @@ local function DispatchOperation(self, frame, data, sender, context)
 		then
 			return false
 		end
-		return self:RecordPeerDeparture(
+		local accepted = self:RecordPeerDeparture(
 			sender,
 			Now(self) - math.max(0, now - frame.stamp),
 			frame.session,
 			context.sequence
 		)
+		if accepted then
+			self:RemoveDeveloperAnnouncementSubscriber(sender, context)
+		end
+		return accepted
 	end
 	if STATE_HANDLERS[operation] then
 		return self:ApplyCommunicationState(
@@ -726,6 +753,12 @@ local function DispatchOperation(self, frame, data, sender, context)
 	end
 	if operation == "QTDQ" then
 		return self:HandleGeographicDiscovery(data, sender, context)
+	end
+	if operation == "HELLO" then
+		return self:HandleDeveloperAnnouncementHello(data, sender, context)
+	end
+	if operation == "DEVANN" then
+		return self:HandleDeveloperAnnouncementSubscription(data, sender, context)
 	end
 	if operation == "QTN2" then
 		return self:HandlePartyNavigationMessage(data, sender, context)
@@ -812,7 +845,9 @@ function QT:DispatchCommRecord(frame, data, sender, context)
 	end
 	local key = sender .. ":" .. frame.session .. ":" .. frame.messageId
 	local isRequest = spec.semantic == "request" and not response
-	if Seen(s, key, Now(self), not isRequest) then
+	-- Authenticated subscriptions own replay admission. A cached signed offer
+	-- must be usable again after consent/session reset or verifier congestion.
+	if not spec.authenticatedEvent and Seen(s, key, Now(self), not isRequest) then
 		self:GetCommunicationMetrics().duplicates = self:GetCommunicationMetrics().duplicates + 1
 		if spec.semantic == "request" and not response then
 			self:ReplayCommResponses(sender, frame.requestId)
@@ -849,6 +884,15 @@ end
 local function AdmitIncoming(a, wire, distribution, sender)
 	local s = a:InitializeCommunications()
 	if not Current(a, s) then
+		return false
+	end
+	-- Extra announcement copies get a smaller allowance before consuming the
+	-- shared ingress budget, preserving room for normal zone and party work.
+	if
+		distribution == "WHISPER"
+		and (wire:sub(1, 6) == "2|ANN|" or wire:sub(1, 6) == "2|LVL|")
+		and not a:AdmitDeveloperAnnouncementPacket()
+	then
 		return false
 	end
 	local reserved = (GROUP[distribution] or distribution == "WHISPER")
@@ -926,6 +970,11 @@ local function Receive(self, prefix, wire, distribution, sender, localID, channe
 	if spec.regionalOnly and not self:IsGeographicChannelEvent(distribution, localID, channelName) then
 		return false
 	end
+	if spec.globalOnly and not self:IsGlobalAnnouncementChannelEvent(distribution, localID, channelName) then
+		return false
+	end
+	context.backgroundAnnouncement = distribution == "WHISPER"
+		and (frame.operation == "ANN" or frame.operation == "LVL")
 	if spec.semantic == "response" then
 		if not self:IsCommResponseExpected(frame, sender) then
 			return false
@@ -963,6 +1012,7 @@ function QT:UpdateCommunicationRuntime()
 		self:EndCommunicationSession()
 		return
 	end
+	self:UpdateDeveloperAnnouncements(now)
 	local requests = {}
 	for id, request in pairs(s.requests) do
 		requests[#requests + 1] = { id, request }
@@ -1021,6 +1071,7 @@ function QT:UpdateCommunicationRuntime()
 	end
 end
 function QT:EndCommunicationSession()
+	self:ResetDeveloperAnnouncements()
 	local s = rawget(self, "communicationState")
 	local requests = s and s.requests or {}
 	if s then
@@ -1049,6 +1100,7 @@ function QT:ResumeCommunicationSession()
 	s.departing = nil
 	s.startedAt = Now(self)
 	self:ResumeTransportSession()
+	self:InitializeDeveloperAnnouncements()
 	if self.ResumeGeographicComms then
 		self:ResumeGeographicComms()
 	end

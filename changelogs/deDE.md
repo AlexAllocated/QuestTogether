@@ -4,18 +4,12 @@
 
 ## 7.0.1
 
-Die Bedienelemente von QuestTogether passen jetzt besser zu Blizzards aktueller Benutzeroberfläche.
+Einige Verbesserungen an Questinformationen und optionalen Diagnosedaten.
 
-### Bedienelemente im Blizzard-Stil
+### Verbesserungen
 
-- Die Schieberegler in den Einstellungen haben jetzt Pfeiltasten zur Feinabstimmung und zeigen ihren Wert neben der Leiste an.
-- Kontrollkästchen, Farbfelder, Bildlaufleisten und Standardschaltflächen entsprechen jetzt Blizzards aktuellem Erscheinungsbild.
-- Die Suchfelder im Gruppenquestlog und im Debugfenster haben jetzt ein Suchsymbol und eine Schaltfläche zum Leeren.
-
-### Verbesserungen beim Scrollen
-
-- Das Scrollen in den Einstellungen, im Gruppenquestlog, in den Patchnotes und im Debugfenster wurde überarbeitet, einschließlich Größenänderungen und der Ausrichtung der Questzeilen.
-- Beim Schließen eines Fensters werden das Scrollen mit den nativen Bildlaufpfeilen und das Ziehen der Bildlaufleiste zuverlässig beendet.
+- Ein Fenster mit Questdetails zum Lesen verfügbarer Questtexte wurde hinzugefügt.
+- Die optionale Entwicklerdiagnose und die Zuverlässigkeit der Kommunikation wurden verbessert. Deine Einstellung zum Teilen von Diagnosedaten wird berücksichtigt.
 
 ## 7.0.0
 

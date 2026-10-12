@@ -253,7 +253,7 @@ local function FinishIncoming(a, state, key, item)
 	end
 	-- A structurally valid request rejected by a busy domain can be retried
 	-- under its original identity. Malformed/conflicting payloads stay fenced.
-	if accepted or not item.request then
+	if (accepted or not item.request) and not a:GetCommOperation(item.frame.operation).authenticatedEvent then
 		Tombstone(state, key, item, accepted)
 	end
 	if accepted then
@@ -430,9 +430,12 @@ function QT:ReceiveCommFragment(frame, body, sender, routeContext)
 		return false
 	end
 	if not item then
-		local count, own = 0, 0
+		local count, own, background = 0, 0, 0
 		for _, candidate in pairs(state.incoming) do
 			count = count + 1
+			if candidate.routeContext and candidate.routeContext.backgroundAnnouncement then
+				background = background + 1
+			end
 			if candidate.sender == sender then
 				own = own + 1
 			end
@@ -441,6 +444,7 @@ function QT:ReceiveCommFragment(frame, body, sender, routeContext)
 		if
 			count >= (reserved and MAX_IN or MAX_IN - RESERVED)
 			or (spec.semantic ~= "response" and own >= MAX_UNSOLICITED_PER_SENDER)
+			or (routeContext and routeContext.backgroundAnnouncement and background >= 8)
 		then
 			Count(state, "capacity")
 			return false

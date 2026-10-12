@@ -742,6 +742,72 @@ return rawRow end
 			MenuUtil = nil
 			assert(addon.API.CreateContextMenu(owner, function() end) == false)
 		end
+		-- Offline-only quest-tooltip data contracts. The live suite tests QT's
+		-- owned adapter instead of replacing native tooltip APIs or globals.
+		do
+			local keys = { "SetItemRef", "GetQuestLink", "ItemRefTooltip", "UIParent", "C_TooltipInfo" }
+			local saved = {}
+			for _, key in ipairs(keys) do saved[key] = _G[key] end
+			local originalRestricted, originalIndex = addon.IsRuntimeRestricted, C_QuestLog.GetLogIndexForQuestID
+			local restricted, nativeText, linkReads = false, nil, 0
+			local displayCalls, tooltipReads, frameReads = 0, 0, 0
+			local readOnly = {
+				__index = function(_, key) frameReads = frameReads + 1; error("quest details must not inspect native frame " .. key) end,
+				__newindex = function() error("addon must not store state on native tooltip frames") end,
+			}
+			addon.IsRuntimeRestricted = function() return restricted end
+			C_QuestLog.GetLogIndexForQuestID = function() error("quest details must not require an owned quest") end
+			ItemRefTooltip, UIParent = setmetatable({}, readOnly), setmetatable({}, readOnly)
+			SetItemRef = function() displayCalls = displayCalls + 1; error("quest details must not open a native tooltip") end
+			GetQuestLink, C_TooltipInfo = nil, nil
+			assert(addon.API.CanOpenQuestDetails() == false)
+			assert(addon.API.GetQuestDetailsLink(12345) == nil)
+			C_TooltipInfo = {}
+			assert(addon.API.CanOpenQuestDetails() == false)
+			assert(addon.API.GetQuestDetailsLink(12345) == nil)
+			C_TooltipInfo.GetHyperlink = function() tooltipReads = tooltipReads + 1; error("link creation must not retrieve tooltip contents") end
+			assert(addon.API.CanOpenQuestDetails() == true)
+			assert(addon.API.GetQuestDetailsLink("12345") == "quest:12345:0")
+			assert(addon.API.GetQuestDetailsLink(12345) == "quest:12345:0")
+			GetQuestLink = function(id)
+				assert(id == 12345)
+				linkReads = linkReads + 1
+				return nativeText
+			end
+			nativeText = "|cffffff00|Hquest:12345:20:10:70:1234|h[Native Wolf Hunt]|h|r"
+			assert(addon.API.GetQuestDetailsLink(12345) == "quest:12345:20:10:70:1234",
+				"the client's complete scaling fields must survive")
+			for _, value in ipairs({ false, 12, secret, inaccessible, "not a link",
+				"|Hquest:54321:0|h[Wrong quest]|h", "|Hitem:12345:0|h[Not a quest]|h",
+				"|Hquest:12345garbage|h[Malformed]|h", "|Hquest:12345:0:bad|h[Bad field]|h",
+				"|Hquest:12345:0|h[Incomplete]" }) do
+				nativeText = value
+				assert(addon.API.GetQuestDetailsLink(12345) == "quest:12345:0",
+					"unusable client links must use the requested quest's fallback")
+			end
+			nativeText = nil
+			assert(addon.API.GetQuestDetailsLink(12345) == "quest:12345:0")
+			GetQuestLink = function() error("quest not cached") end
+			assert(addon.API.GetQuestDetailsLink(12345) == "quest:12345:0")
+			GetQuestLink = function() linkReads = linkReads + 1; return nil end
+			local beforeReads = linkReads
+			for _, id in ipairs({ 0, -1, 12345.5, 2147483648, math.huge, "bad", false, secret, inaccessible }) do
+				assert(addon.API.GetQuestDetailsLink(id) == nil)
+			end
+			assert(addon.API.GetQuestDetailsLink(nil) == nil)
+			restricted = true
+			assert(addon.API.GetQuestDetailsLink(12345) == nil)
+			restricted = false
+			C_TooltipInfo = nil
+			assert(addon.API.GetQuestDetailsLink(12345) == nil)
+			assert(linkReads == beforeReads,
+				"invalid, restricted, or unavailable actions must stop before native link lookup")
+			assert(displayCalls == 0 and tooltipReads == 0 and frameReads == 0,
+				"link creation must not display, retrieve, or inspect native tooltip UI")
+			assert(selected == 7, "details must preserve the selected quest")
+			for _, key in ipairs(keys) do _G[key] = saved[key] end
+			addon.IsRuntimeRestricted, C_QuestLog.GetLogIndexForQuestID = originalRestricted, originalIndex
+		end
 		-- Journal navigation uses Blizzard's quest-ID entry point and verifies
 		-- visible details. All native frames/functions here exist only offline.
 		do

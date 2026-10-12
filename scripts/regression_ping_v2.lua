@@ -51,6 +51,7 @@ local function Setup(realCrypto)
 		-- Only the communication progression is under test; regular publishers have
 		-- independent tests and are disabled here to expose diagnostic-only leakage.
 		function p:UpdatePlayerCommunications() end
+		function p:UpdateDeveloperAnnouncements() end
 	end
 	return net, dev, peer
 end

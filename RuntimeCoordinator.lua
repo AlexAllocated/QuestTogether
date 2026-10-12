@@ -26,6 +26,7 @@ function QT:InitializeRuntimeCoordinator()
 	if not self.isEnabled or not self.hasLoggedIn then
 		return false
 	end
+	self:InitializeDeveloperAnnouncements()
 	local state = {}
 	self.runtimeCoordinatorState = state
 	local frame = rawget(self, "runtimeCoordinatorFrame")

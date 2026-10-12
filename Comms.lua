@@ -836,6 +836,18 @@ function QuestTogether:IsAnnouncementChannelEvent(channel, localID, name)
 		and (expectedLocalID == incomingLocalID or self:IsGeographicChannelEvent(channel, incomingLocalID))
 end
 
+function QuestTogether:IsGlobalAnnouncementChannelEvent(distribution, localID, name)
+	if distribution ~= "CHANNEL" then
+		return false
+	end
+	name = SafePrimitiveString(self, name, "")
+	if name ~= "" then
+		return MatchesAnnouncementChannelName(self, name)
+	end
+	local expected = self:GetAnnouncementChannelLocalID(self.announcementChannelName)
+	return expected ~= nil and expected == SafeChannelNumber(self, localID)
+end
+
 function QuestTogether:SendAnnouncementEvent(eventType, text, questId, extraData)
 	if not self.isEnabled then
 		return false

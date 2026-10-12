@@ -75,12 +75,14 @@
     "CommsProtocol.lua": [
       "ANN",
       "BYE",
+      "DEVANN",
       "DREPORT",
       "ERROR",
       "FXACK",
       "FXEND",
       "FXMISS",
       "FXSTAT",
+      "HELLO",
       "LOC",
       "LVL",
       "MEMBER",
@@ -129,8 +131,10 @@
       "BYE",
       "CHANNEL",
       "Count",
+      "DEVANN",
       "DREPORT",
       "ERROR",
+      "HELLO",
       "LOC",
       "LVL",
       "Last",
@@ -220,7 +224,7 @@
       "Refresh"
     ],
     "DeveloperDiagnostics.lua": [
-      "Developer ping callback failed",
+      "Developer request callback failed",
       "Last",
       "Max",
       "QTPG",
@@ -632,6 +636,19 @@
       "party compare titles",
       "party share prompt"
     ],
+    "QuestDetails.lua": [
+      "Button",
+      "Frame",
+      "LEFT",
+      "OVERLAY",
+      "Raise",
+      "Show",
+      "TOP",
+      "TOPLEFT",
+      "TOPRIGHT",
+      "quest details cache update",
+      "quest details cache wait"
+    ],
     "QuestDialogs.lua": [
       "BACKGROUND",
       "BOTTOMLEFT",
@@ -741,6 +758,12 @@
       "TOPLEFT",
       "party compare preview theme",
       "scroll dialog themes"
+    ],
+    "DeveloperAnnouncements.lua": [
+      "CHANNEL",
+      "DEVANN",
+      "HELLO",
+      "WHISPER"
     ]
   }
 }

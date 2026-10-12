@@ -1,22 +1,14 @@
 {
-  "source_sha256": "a300648c0c88040cd81a33bd3d703865ebf605647146010217fea3ebb41624e8",
+  "source_sha256": "2c6335e216a45204298db1f63c30addda6634cd3c95b66b3d74cb460174001f2",
   "notes": {
     "version": "7.0.1",
-    "welcome": "Los controles de QuestTogether ahora se ajustan mejor a la interfaz actual de Blizzard.",
+    "welcome": "Algunas mejoras en la información de las misiones y los diagnósticos opcionales.",
     "sections": [
       {
-        "title": "Controles al estilo de Blizzard",
+        "title": "Mejoras",
         "items": [
-          "Los deslizadores de la configuración ahora tienen botones de flecha para hacer ajustes precisos y muestran su valor junto a la barra.",
-          "Las casillas, las muestras de color, las barras de desplazamiento y los botones estándar ahora siguen la apariencia actual de Blizzard.",
-          "Los campos de búsqueda del Registro de misiones del grupo y de la ventana de depuración ahora incluyen un ícono de búsqueda y un botón para borrar el texto."
-        ]
-      },
-      {
-        "title": "Mejoras de desplazamiento",
-        "items": [
-          "Se actualizó el desplazamiento en la configuración, el Registro de misiones del grupo, las notas del parche y la ventana de depuración, incluidos el cambio de tamaño y la alineación de las filas de misiones.",
-          "El desplazamiento con las flechas y el arrastre de las barras nativas se detienen correctamente al cerrar una ventana."
+          "Se agregó una ventana de Detalles de la misión para leer los textos de misión disponibles.",
+          "Se mejoraron los diagnósticos opcionales para el desarrollador y la confiabilidad de las comunicaciones. Se respeta tu configuración para compartir datos de diagnóstico."
         ]
       }
     ]

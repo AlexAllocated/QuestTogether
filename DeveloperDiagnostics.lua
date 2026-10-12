@@ -14,7 +14,18 @@ local function Unhex(s, length)
 		return string.char(tonumber(pair, 16))
 	end))
 end
-local function SignedText(request, sender)
+local function SignedText(request, sender, purpose)
+	if purpose == "announcements" then
+		return table.concat({
+			"QTDEVFEED2",
+			sender,
+			request.requestId,
+			tostring(request.issuedAt),
+			request.active and "start" or "stop",
+			request.subscriptionSession,
+			request.targetName or "",
+		}, "\n")
+	end
 	return table.concat({
 		"QTDEV2",
 		sender,
@@ -32,33 +43,56 @@ local function Name(addon, name)
 	return name
 end
 
-function QT:PrepareDeveloperPingRequest(request, target, debugRequest)
-	local sign = rawget(self, "SignDeveloperRequest")
-	if rawget(self, "isLocalDeveloper") ~= true or type(sign) ~= "function" then
+local function PrepareRequest(addon, request, target, purpose)
+	local sign = rawget(addon, "SignDeveloperRequest")
+	if type(request) ~= "table" or rawget(addon, "isLocalDeveloper") ~= true or type(sign) ~= "function" then
 		return nil
 	end
-	local now = self:GetAnnouncementServerTime()
-	local sender = Name(self, self:GetPlayerFullName())
+	local now = addon:GetAnnouncementServerTime()
+	local sender = Name(addon, addon:GetPlayerFullName())
 	if not now or not sender then
 		return nil
 	end
 	if target then
-		target = Name(self, target)
+		target = Name(addon, target)
 		if not target then
 			return nil
 		end
 	end
 	request.requestId =
-		string.format("dev-%.0f-%d-%.0f", now, self.API.Random(1000, 9999), self:NextCommunicationSequence())
+		string.format("dev-%.0f-%d-%.0f", now, addon.API.Random(1000, 9999), addon:NextCommunicationSequence())
 	request.requesterName = "" -- Transport identity is authoritative; do not spend packet bytes repeating it.
-	request.issuedAt, request.targetName, request.debugRequest = now, target, debugRequest == true
+	request.issuedAt, request.targetName = now, target
 	request.developerRequest = true
-	local ok, signature = pcall(sign, self, SignedText(request, sender))
+	local ok, signature = pcall(sign, addon, SignedText(request, sender, purpose))
 	if not ok or type(signature) ~= "string" or #signature ~= 64 then
 		return nil
 	end
 	request.signature = Hex(signature)
 	return request
+end
+
+local function ValidSubscription(request)
+	return type(request) == "table"
+		and type(request.active) == "boolean"
+		and type(request.subscriptionSession) == "string"
+		and #request.subscriptionSession <= 64
+		and request.subscriptionSession:match("^[%w%-]+$") ~= nil
+end
+
+function QT:PrepareDeveloperPingRequest(request, target, debugRequest)
+	if type(request) ~= "table" then
+		return nil
+	end
+	request.debugRequest = debugRequest == true
+	return PrepareRequest(self, request, target, "ping")
+end
+
+function QT:PrepareDeveloperAnnouncementSubscription(request, target)
+	if not ValidSubscription(request) then
+		return nil
+	end
+	return PrepareRequest(self, request, target, "announcements")
 end
 
 local function VerificationEnabled(addon)
@@ -94,6 +128,15 @@ function QT:GetDeveloperCommunicationMetrics()
 	return result
 end
 
+function QT:CancelIgnoredDeveloperRequests()
+	local state = rawget(self, "developerRequestState")
+	for _, job in ipairs(state and state.jobs or {}) do
+		if self:IsIgnoredPlayerName(job.sender) then
+			job.request.cancelled = true
+		end
+	end
+end
+
 function QT:DrainDeveloperPingVerifications()
 	local state = rawget(self, "developerRequestState")
 	if not state then
@@ -114,6 +157,7 @@ function QT:DrainDeveloperPingVerifications()
 	end
 	state.lastAt = now
 	local expired = not serverNow
+		or job.request.cancelled
 		or now < job.startedAt
 		or serverNow - job.request.issuedAt > 300
 		or self:IsIgnoredPlayerName(job.sender)
@@ -165,7 +209,7 @@ function QT:DrainDeveloperPingVerifications()
 			if rawget(self, "developerRequestState") == state and VerificationEnabled(self) then
 				local ok = pcall(job.callback, job.request)
 				if not ok then
-					self:Debug("Developer ping callback failed", "comms")
+					self:Debug("Developer request callback failed", "comms")
 				end
 			end
 		elseif not expired then
@@ -188,8 +232,8 @@ function QT:DrainDeveloperPingVerifications()
 	end
 end
 
-function QT:QueueDeveloperPingVerification(request, sender, callback)
-	if not VerificationEnabled(self) or type(callback) ~= "function" then
+local function QueueVerification(self, request, sender, callback, purpose)
+	if type(request) ~= "table" or not VerificationEnabled(self) or type(callback) ~= "function" then
 		return false
 	end
 	local now, senderName = self:GetAnnouncementServerTime(), Name(self, sender)
@@ -206,7 +250,8 @@ function QT:QueueDeveloperPingVerification(request, sender, callback)
 		or #request.requestId > 64
 		or not request.requestId:match("^dev%-%d+%-%d+%-%d+$")
 		or (target and target ~= self:NormalizeMemberName(self:GetPlayerFullName()))
-		or (request.debugRequest and not target)
+		or (purpose == "ping" and request.debugRequest and not target)
+		or (purpose == "announcements" and not ValidSubscription(request))
 	then
 		return false
 	end
@@ -259,6 +304,10 @@ function QT:QueueDeveloperPingVerification(request, sender, callback)
 	for _, field in ipairs({ "requestId", "issuedAt", "targetName", "debugRequest", "developerRequest", "signature" }) do
 		copy[field] = request[field]
 	end
+	if purpose == "announcements" then
+		copy.active, copy.subscriptionSession = request.active, request.subscriptionSession
+	end
+	copy.developerPurpose = purpose
 	copy.requesterName = senderName
 	state.metrics.admitted = (state.metrics.admitted or 0) + 1
 	state.seen[key], state.pendingSenders[senderName] = now, true
@@ -267,11 +316,19 @@ function QT:QueueDeveloperPingVerification(request, sender, callback)
 		sender = senderName,
 		callback = callback,
 		startedAt = tick,
-		verifier = self.Ed25519.NewVerification(public, SignedText(copy, senderName), signature),
+		verifier = self.Ed25519.NewVerification(public, SignedText(copy, senderName, purpose), signature),
 	}
 	-- RuntimeCoordinator advances verification in bounded slices.
 
 	return true
+end
+
+function QT:QueueDeveloperPingVerification(request, sender, callback)
+	return QueueVerification(self, request, sender, callback, "ping")
+end
+
+function QT:QueueDeveloperAnnouncementVerification(request, sender, callback)
+	return QueueVerification(self, request, sender, callback, "announcements")
 end
 
 function QT:BuildDeveloperDiagnosticSnapshot()

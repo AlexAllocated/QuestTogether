@@ -1,20 +1,12 @@
 {
   "version": "7.0.1",
-  "welcome": "QuestTogether's controls now match Blizzard's current interface more closely.",
+  "welcome": "A few improvements to quest information and optional diagnostics.",
   "sections": [
     {
-      "title": "Blizzard-style controls",
+      "title": "Improvements",
       "items": [
-        "Settings sliders now have arrow buttons for fine adjustments and show their value beside the track.",
-        "Checkboxes, color swatches, scrollbars, and standard buttons now follow Blizzard's current appearance.",
-        "Party Quest Log and debug searches now include a search icon and a clear button."
-      ]
-    },
-    {
-      "title": "Scrolling improvements",
-      "items": [
-        "Updated scrolling in settings, Party Quest Log, patch notes, and the debug window, including resizing and quest-row alignment.",
-        "Native scrollbar arrows and dragging stop cleanly when a window closes."
+        "Added a Quest Details window for reading available quest text.",
+        "Improved optional developer diagnostics and communication reliability. Your diagnostic sharing setting is respected."
       ]
     }
   ]

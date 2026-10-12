@@ -43,6 +43,7 @@ WindowController.lua
 WindowTheme.lua
 WindowLayout.lua
 QuestDialogs.lua
+QuestDetails.lua
 ReleaseNotes.lua
 LocalizedReleaseNotes.lua
 ReleaseNotesHistory.lua
@@ -65,6 +66,7 @@ CommunicationCoordinator.lua
 QuestCompareCommunication.lua
 PingCommunication.lua
 DeveloperDiagnostics.lua
+DeveloperAnnouncements.lua
 GeographicComms.lua
 EventLocalization.lua
 AddonUpdates.lua
@@ -98,7 +100,10 @@ Options.lua
 Diagnostics.lua
 Tests.lua
 scripts/ui_fixture.lua
+scripts/regression_quest_details.lua
 scripts/network_fixture.lua
+scripts/regression_developer_feed_auth.lua
+scripts/regression_developer_announcements.lua
 scripts/regression_network_v2.lua
 scripts/regression_protocol_v2.lua
 scripts/regression_transport_v2.lua

@@ -2043,6 +2043,34 @@ QuestTogether.API = QuestTogether.API
 		GetMinimapAnchor = function()
 			return Minimap
 		end,
+		CanOpenQuestDetails = function()
+			return C_TooltipInfo ~= nil and type(C_TooltipInfo.GetHyperlink) == "function"
+		end,
+		GetQuestDetailsLink = function(questID)
+			local id = QuestTogether:SafeToNumber(questID)
+			if
+				not id
+				or id <= 0
+				or id > 2147483647
+				or id ~= math.floor(id)
+				or QuestTogether:IsWorkBlocked("foreign_frame_mutation")
+				or not QuestTogether.API.CanOpenQuestDetails()
+			then
+				return nil
+			end
+			-- Preserve native scaling fields when available; an unowned quest may
+			-- not have a cached link. Reading details never opens Blizzard's UI.
+			if type(GetQuestLink) == "function" then
+				local ok, nativeText = pcall(GetQuestLink, id)
+				if ok and CanAccessForeignValue(nativeText) and type(nativeText) == "string" then
+					local nativeLink, nativeID = nativeText:match("|H(quest:(%d+):[%d:%-]*)|h[^|]*|h")
+					if nativeLink and tonumber(nativeID) == id then
+						return nativeLink
+					end
+				end
+			end
+			return string.format("quest:%d:0", id)
+		end,
 		CanOpenQuestJournal = function()
 			if
 				type(QuestMapFrame_OpenToQuestDetails) ~= "function"
@@ -5141,7 +5169,44 @@ function QuestTogether:OpenQuestJournalFromChatLog(questId)
 	return true
 end
 
+function QuestTogether:GetQuestDetailsAvailability(questId)
+	local id = self:SafeToNumber(questId)
+	if not id or id <= 0 or id > 2147483647 or id ~= math.floor(id) then
+		return nil, L("Invalid quest.")
+	end
+	if self:IsWorkBlocked("foreign_frame_mutation") then
+		return nil, L("Quest details are unavailable while restricted.")
+	end
+	if not self.API.CanOpenQuestDetails or self.API.CanOpenQuestDetails() ~= true then
+		return nil, L("Quest details are unavailable on this client.")
+	end
+	return id
+end
+
+function QuestTogether:OpenQuestDetailsFromChatLog(questId, fallbackTitle)
+	local id, reason = self:GetQuestDetailsAvailability(questId)
+	if not id then
+		self:Print(reason)
+		return false
+	end
+	if self:ShowQuestDetails(id, fallbackTitle) ~= true then
+		self:Print(L("Unable to show details for that quest."))
+		return false
+	end
+	return true
+end
+
 function QuestTogether:PopulateChatLogQuestMenu(rootDescription, questId, fallbackTitle)
+	local details = rootDescription:CreateButton(L("Quest Details"), function()
+		self:OpenQuestDetailsFromChatLog(questId, fallbackTitle)
+	end)
+	local detailsID, detailsReason = self:GetQuestDetailsAvailability(questId)
+	details:SetEnabled(detailsID ~= nil)
+	details:SetTooltip(function(tooltip)
+		if self:CanAccessForeignFrame(tooltip) then
+			tooltip:SetText(detailsReason or L("Show the game's available information for this quest."))
+		end
+	end)
 	local share = rootDescription:CreateButton(L("Share"), function()
 		self:ShareQuestFromChatLog(questId)
 	end)

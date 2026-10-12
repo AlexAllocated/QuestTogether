@@ -21,12 +21,14 @@ private `.local` notes are historical context, not the source of truth.
 | CommsTransfer | Shared fragmentation, atomic assembly, bounded repair, retained response replay and aggregate payload budget | Domain snapshot installation or diagnostic consent |
 | GeographicComms / NearbyStreams | Current/viewed interests, subscriptions, discovery policy and owned state/movement producers | Another native queue or rewriting received feature caches |
 | QuestCompareCommunication / PingCommunication | Domain request premises and response construction | Wire encoding, fragment pumps or independent timers |
+| DeveloperAnnouncements | Signed developer subscriptions, diagnostic consent, mirror audiences and bounded feed work | Normal announcement filters, private location access or a separate transport |
 | QuestCompare | Atomic party log assembly, local snapshots and negotiated revision reuse | Native UI mutation or independent transport pumps |
 | PartyFocusController | Following and manual-choice state machine, missing-quest and confirmation policy | Party networking, persistence policy or preview fixtures |
 | PartyNavigation / QuestComparePreview | Live/preview adapters, persistence and ownership of native focus | Copies of the following state machine or repair of another controller's fields |
 | Keybindings | Fixed player actions delegated to existing feature operations | Key assignment, binding overrides, native input state |
 | OwnedUI | Guarded owned-region access and a durable cleanup queue | Permission to modify Blizzard-owned frames |
 | WindowController / WindowLayout / WindowTheme | Window visibility and dismissal, geometry, chrome respectively | Quest-specific dialogs or protocol sessions |
+| QuestDetails | Bounded copies of native quest-tooltip text and an owned reader session | Native tooltip mutation, quest selection, or peer requests |
 | QuestDialogs | Focus/share-related presentation and callbacks | Window geometry rules |
 | PlayerTooltipPresenter | Shared player tooltip content and measurement | Map projection or marker allocation |
 | MapOverlayPool | Surface attachment, marker reuse and retirement | Player/waypoint content, route or visibility policy |
@@ -87,6 +89,34 @@ decoder, companion packet, capability negotiation or fallback transmission.
 Communicating peers must upgrade together. Ed25519 developer requests bind the
 native sender, request identity, issue time, target and purpose to `QTDEV2`.
 Signatures authenticate requests; they do not encrypt replies.
+
+Developer announcement subscriptions use the separate `QTDEVFEED2` signature
+domain, binding sender, request identity, issue time, action, session and target.
+Local developer identity plus a private signer starts the subscription;
+`devlogall` remains only a presentation filter. All clients publish a compact
+global `HELLO` after channel readiness on startup/re-entry. A developer publishes
+`DEVANN` globally, renews every 90 seconds, and coalesces arrivals into reoffers
+no more often than ten seconds. Reoffers reuse the signed record and envelope;
+verified request identities suppress repeated crypto work. Authentication owns
+subscription replay admission, allowing a previously capacity-rejected offer or
+an offer after a local profile/session reset to be retried. A lease ends 240
+seconds after its signed issue time, never 240 seconds after delayed receipt.
+
+Only clients allowing developer diagnostics add whisper audiences to ANN/LVL.
+They reuse the original sanitized payload and envelope, including public location
+sharing restrictions. Public/group and private copies deduplicate as one event.
+Consent, ignore, profile replacement, departure and session shutdown fence queued
+copies and delayed authentication. Signature verification rechecks peer departure
+ordering before installing a lease. This does not provide historical replay or
+messages from clients on unreachable channels or older unsupported versions.
+
+Mirrors use the existing background class and budgets, at most four outstanding
+copies and four subscribed developer recipients per client. Receiver processing
+allows 32 mirrored datagrams/second, burst 16 and at most eight per frame before
+the ordinary ingress limits. At most eight incoming mirror assemblies (4 KiB
+each) leave capacity for normal traffic. These are QT processing policies, not
+claims about server limits or guaranteed delivery. Extra copies can expire or
+drop under load; bounded counters report queue outcomes and receiver drops.
 
 Features submit owned records through `Publish`, `Emit`, `Request` and `Respond`.
 The catalog supplies semantics, priority, lifetime, size bounds and legal routes.

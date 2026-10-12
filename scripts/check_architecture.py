@@ -30,7 +30,7 @@ def check(root=ROOT, source_overrides=None):
          {"CommsProtocol.lua"}, "wire schemas and framing belong to CommsProtocol")
     only(r"\b(?:BulkTransfer|PingPages|EncodePingResponsePayload|SerializeWireMessage|DeserializeWireMessage|SendWireMessageToAnnouncementRoutes|RememberDirectCommPeer|ScheduleGeographicPingReply)\b",
          set(), "retired communication paths must not return")
-    for name in ("CommsTransfer.lua", "Transport.lua", "CommunicationCoordinator.lua", "PingCommunication.lua", "QuestCompareCommunication.lua", "DeveloperDiagnostics.lua"):
+    for name in ("CommsTransfer.lua", "Transport.lua", "CommunicationCoordinator.lua", "PingCommunication.lua", "QuestCompareCommunication.lua", "DeveloperDiagnostics.lua", "DeveloperAnnouncements.lua"):
         if re.search(r"\.API\.(?:Delay|NewTicker|NewTimer)\s*\(", sources.get(name, "")):
             errors.append(name + ": network progression belongs to RuntimeCoordinator")
     if re.search(r"API\.(?:GetQuestLogInfo|GetNumQuestLogEntries)", sources["TaskArea.lua"]):

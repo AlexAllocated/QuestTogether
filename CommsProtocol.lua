@@ -48,6 +48,15 @@ Add(
 	}, { F("occurredAt", N) })
 )
 Add("LVL", "event", "event", catalog.ANN.fields)
+Add("HELLO", "event", "background", { F("version", S, 40) }, { globalOnly = true, maxBytes = 128 })
+Add("DEVANN", "event", "control", {
+	F("requestId", S, 64, true),
+	F("issuedAt", N, nil, true),
+	F("targetName", S, 120),
+	F("active", B, nil, true),
+	F("subscriptionSession", S, 64, true),
+	F("signature", S, 128, true),
+}, { globalOnly = true, authenticatedEvent = true, maxBytes = 512, lifetime = 30 })
 Add("QTPR", "state", "active", { F("active", B, nil, true) })
 Add("QTVR", "state", "active", { F("version", S, 40, true), F("count", N), F("partySize", N) })
 Add("QTLF", "state", "active", { F("session", S, 64), F("sequence", N), F("looking", B, nil, true) })
