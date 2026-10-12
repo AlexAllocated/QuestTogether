@@ -1,15 +1,18 @@
 {
-  "source_sha256": "2c6335e216a45204298db1f63c30addda6634cd3c95b66b3d74cb460174001f2",
+  "source_sha256": "6b550f4faf51ac6bc49cc752c6d9d7d3e60dcfb4262a52cb70a071561b9d0f17",
   "notes": {
     "version": "7.0.2",
-    "welcome": "Algunas mejoras en la información de las misiones y los diagnósticos opcionales.",
+    "welcome": "Descubre más de QuestTogether con consejos útiles.",
     "sections": [
       {
-        "title": "Mejoras",
+        "title": "Consejos de QuestTogether",
         "items": [
-          "Se agregó una ventana de Detalles de la misión para leer los textos de misión disponibles.",
-          "Se mejoraron los diagnósticos opcionales para el desarrollador y la confiabilidad de las comunicaciones. Se respeta tu configuración para compartir datos de diagnóstico."
-        ]
+          "QT ahora muestra un consejo al iniciar sesión o recargar la interfaz, elegido de una lista barajada sin repeticiones hasta agotarla."
+        ],
+        "tip": {
+          "label": "Consejo:",
+          "text": "Escribe /qt tip o /qt hint para ver otro consejo de QuestTogether cuando quieras."
+        }
       }
     ]
   }

@@ -18,7 +18,7 @@ import urllib.request
 sys.dont_write_bytecode = True
 from check_release_notes import (
     LUA_FILE, LOCALIZED_LUA_FILE, NOTES_FILE, TOC_FILE, NotesError, atomic_write, check_manifest,
-    content_key, git, parse_notes, render_lua, require_full_history, toc_version, unique_object,
+    content_key, git, markdown_tip, parse_notes, render_lua, require_full_history, toc_version, unique_object,
 )
 
 MODEL = "gpt-5.5"  # Same default as Bumblebee's release changelog.
@@ -30,8 +30,14 @@ SCHEMA = {
         "sections": {"type": "array", "items": {
             "type": "object", "additionalProperties": False,
             "properties": {"title": {"type": "string"},
-                           "items": {"type": "array", "items": {"type": "string"}}},
-            "required": ["title", "items"],
+                           "items": {"type": "array", "items": {"type": "string"}},
+                           "tip": {"anyOf": [
+                               {"type": "object", "additionalProperties": False,
+                                "properties": {"label": {"type": "string"}, "text": {"type": "string"}},
+                                "required": ["label", "text"]},
+                               {"type": "null"},
+                           ]}},
+            "required": ["title", "items", "tip"],
         }},
     },
     "required": ["welcome", "sections"],
@@ -41,6 +47,7 @@ INSTRUCTIONS = " ".join([
     "The same welcome and sections are shown inside the addon and posted to Discord.",
     "Use plain text strings without Markdown or WoW formatting codes.",
     "Write a brief friendly welcome and 1 to 5 titled sections with 1 to 4 concise bullets each.",
+    "A section may include one practical tip supported by the changes: label 'Tip:' and a plain text body, without emoji or formatting; otherwise set tip to null.",
     "Put new player-facing features first, then fixes; consolidate related changes without repetition.",
     "Explain meaningful defaults, settings and constraints when supported by the evidence.",
     "Include only changes since the baseline; the prior notes are for exclusion, not new features.",
@@ -169,6 +176,12 @@ def request_notes(evidence, api_key, model=MODEL, opener=None):
         raise NotesError("release-note generation returned invalid JSON") from None
     if not isinstance(draft, dict) or set(draft) != {"welcome", "sections"}:
         raise NotesError("generated notes have unexpected fields")
+    # Strict provider schemas require every field. Null means omission only at
+    # this boundary; the authored canonical schema never accepts a null tip.
+    if isinstance(draft["sections"], list):
+        for section in draft["sections"]:
+            if isinstance(section, dict) and "tip" in section and section["tip"] is None:
+                del section["tip"]
     return draft
 
 
@@ -195,6 +208,8 @@ def markdown(notes):
     lines = ["# QuestTogether " + notes["version"], "", notes["welcome"]]
     for section in notes["sections"]:
         lines += ["", "## " + section["title"], ""] + ["- " + item for item in section["items"]]
+        if "tip" in section:
+            lines += ["", markdown_tip(section["tip"])]
     return "\n".join(lines) + "\n"
 
 

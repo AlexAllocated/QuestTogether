@@ -76,6 +76,23 @@ The JSON must contain `version`, a `welcome` string, and nonempty `sections` of
 versions, a version different from the TOC, and stale/missing generated Lua fail
 validation. The generator emits only a literal Lua table with escaped primitive
 strings. It does not execute JSON contents.
+Sections may also contain one optional `tip` object with exactly `label` and
+`text`. The label is the localized `Tip:` prefix (1–40 characters); the body is
+plain text (1–800 characters). Both must be nonempty and trimmed, and the label
+must be one line. Do not include the lightbulb, Markdown, or WoW formatting:
+the viewers supply the presentation. For example:
+
+```json
+"tip": {
+  "label": "Tip:",
+  "text": "Type /qt tip or /qt hint to see another QuestTogether tip whenever you like."
+}
+```
+
+The in-game viewer shows this as a separate sample. Repository changelogs,
+GitHub release Markdown, and Discord use a blockquote containing the same
+`💡 Tip: ...` text. Discord keeps a whole tip together when splitting long notes.
+Omit `tip` entirely when none is needed; an empty or null tip is invalid.
 Sections may include `illustration`: `quest-partners`, `party-quest-log`, or
 `party-quest-objectives`. Party Quest Log screenshots are checked-in assets:
 web changelogs and Discord label the Retail/Forever captures and link to the
@@ -88,7 +105,9 @@ When the TOC enables `LocalizedReleaseNotes.lua`, it must load exactly once afte
 the English notes, and **all ten translations are mandatory for every release**.
 Each translated JSON contains exactly `source_sha256` and `notes`. Its `notes`
 has the same schema and version as the English source, with the same number of
-sections and items and matching optional illustrations. The source digest is
+sections and items and matching optional illustrations and tip presence. Tip
+labels and bodies must be translated, preserving their commands and arguments.
+The same structure and command checks apply to archived release tips. The source digest is
 SHA-256 over UTF-8 English JSON without `version`, serialized with sorted keys,
 unescaped Unicode, and separators `(',', ':')`. Any English content change makes
 old translations stale. Missing/stale translations, mismatched structure, or stale
@@ -225,7 +244,7 @@ download/validation is not ready.
 
 Do not hand-edit `CHANGELOG.md` or `changelogs/<locale>.md`. They are generated
 by `python3 scripts/check_release_notes.py --write` from the exact welcome,
-section titles, and items used by Discord. Update the canonical JSON and all
+section titles, items, and optional tips used by Discord. Update the canonical JSON and all
 translations first. The check mode, release preflight, CI, and Discord posting
 reject missing or stale Markdown. The release-note preparation workflow stages
 and uploads all generated changelogs with its notes.

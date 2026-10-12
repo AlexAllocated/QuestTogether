@@ -6,8 +6,8 @@ from pathlib import Path
 import sys
 
 sys.dont_write_bytecode = True
-from check_release_notes import NotesError, git, parse_notes, unique_object, version_key
-from localization import LOCALES, digest, dumps, read, release_note_outputs
+from check_release_notes import NotesError, git, markdown_tip, parse_notes, unique_object, version_key
+from localization import LOCALES, digest, dumps, read, release_note_outputs, validate_release_tip
 
 HISTORY = 'changelogs/history.json'
 TITLES = {'enUS': 'Changelog', 'deDE': 'Änderungsprotokoll', 'frFR': 'Journal des modifications',
@@ -27,6 +27,7 @@ def validate_entry(entry):
         for a, b in zip(source['sections'], notes['sections']):
             if len(a['items']) != len(b['items']) or a.get('illustration') != b.get('illustration'):
                 raise NotesError('changelog history item/illustration mismatch: ' + locale)
+            validate_release_tip(a, b, 'changelog history ' + locale)
     return source['version']
 
 
@@ -66,6 +67,8 @@ def render(locale, entries):
             lines += ['### ' + section['title'], '']
             lines += ['- ' + item for item in section['items']]
             lines += ['']
+            if 'tip' in section:
+                lines += [markdown_tip(section['tip']), '']
             for client, asset in illustration_images(section.get('illustration')):
                 url = 'https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v' + notes['version'] + '/Media/ReleaseNotes/' + asset + '.png'
                 lines += ['**' + client + '**', '', '![' + section['title'] + ' — ' + client + '](' + url + ')', '']

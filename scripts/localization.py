@@ -9,6 +9,24 @@ LOCALES = {'deDE':'German', 'frFR':'French', 'esES':'European Spanish', 'esMX':'
 LITERAL = r'''"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*' '''.strip()
 LOOKUP = re.compile(r'\bL\(\s*('+LITERAL+r')\s*\)')
 FORMAT = re.compile(r'%(?:[-+ #0]*\d*(?:\.\d+)?[cdiouxXeEfgGqs%])')
+# Only actual slash-command words belong to the command. Prose such as
+# "Type /qt to open settings" must not freeze the English word "to".
+QT_COMMANDS = ('options', 'enable', 'disable', 'set', 'get', 'compare', 'resetlayout',
+               'lfg', 'notes', 'changelog', 'patchnotes', 'scan', 'help', 'debug',
+               'devlogall', 'test', 'dump', 'diagnostics', 'preview', 'bubbletest',
+               'discord', 'ad', 'debuglog', 'ping', 'tip', 'hint')
+COMMAND = re.compile(r'/qtd?(?![A-Za-z0-9_])(?: (?:'
+                     + '|'.join(QT_COMMANDS) + r')(?![A-Za-z0-9_]))?')
+
+def command_tokens(text):
+    tokens=[]
+    for match in COMMAND.finditer(text):
+        token=match[0]
+        if token == '/qt lfg':
+            argument=re.match(r' (?:on|off|toggle|status)(?![A-Za-z0-9_])',text[match.end():])
+            if argument:token+=argument[0]
+        tokens.append(token)
+    return tokens
 
 def dumps(value): return json.dumps(value,ensure_ascii=False,indent=2)+'\n'
 def digest(notes):
@@ -47,8 +65,7 @@ def validate_translation(source,target,formatted=True):
             if not match:raise ValueError('invalid format token: '+source)
             position=match.end()
     # Korean particles can directly follow a command without changing its ASCII name.
-    commands = r'/qtd?(?![A-Za-z0-9_])(?: [a-z]+)?'
-    if re.findall(commands,source)!=re.findall(commands,target):raise ValueError('command changed: '+source)
+    if command_tokens(source)!=command_tokens(target):raise ValueError('command changed: '+source)
     for argument in re.findall(r'<[^>]+>|\[(?:on|questID)[^\]]*\]|emoteOnQuestCompletion|on\|off\|toggle|true/false, on/off, 1/0',source):
         if '/qt' in source and argument not in target:raise ValueError('command argument changed: '+source)
     if formatted and FORMAT.findall(source)!=FORMAT.findall(target): raise ValueError('format placeholders differ: '+source)
@@ -110,6 +127,16 @@ def check(root,write=False):
         if write:path.write_text(text)
         elif not path.exists() or path.read_text()!=text:raise ValueError('stale generated localization: '+str(path))
     return len(sources)
+def validate_release_tip(source_section,target_section,label):
+    if ('tip' in source_section)!=('tip' in target_section):
+        raise ValueError(label+' section tip presence mismatch')
+    if 'tip' in source_section:
+        for key in ('label','text'):
+            try:
+                validate_translation(source_section['tip'][key],target_section['tip'][key],formatted=False)
+            except ValueError as error:
+                raise ValueError(label+' tip '+key+': '+str(error)) from error
+
 def release_note_outputs(root,notes,previous_version=None):
     from check_release_notes import parse_notes
     root=Path(root); outputs={}; tables={}; expected=digest(notes)
@@ -121,6 +148,7 @@ def release_note_outputs(root,notes,previous_version=None):
         if len(translated['sections'])!=len(notes['sections']):raise ValueError(locale+' translated section count mismatch')
         for a,b in zip(notes['sections'],translated['sections']):
             if len(a['items'])!=len(b['items']) or a.get('illustration')!=b.get('illustration'):raise ValueError(locale+' translated section structure mismatch')
+            validate_release_tip(a,b,locale+' translated')
         translated['version']=notes['version'];tables[locale]=translated
         outputs[path]=dumps({'source_sha256':expected,'notes':translated})
     outputs[root/'LocalizedReleaseNotes.lua']='-- Generated localized release notes.\nlocal _, namespace = ...\nnamespace.releaseNotesByLocale = '+lua(tables)+'\n'

@@ -172,6 +172,20 @@ class GeneratorTests(unittest.TestCase):
             GENERATOR.request_notes("evidence", None, opener=opener)
         opener.assert_not_called()
 
+    def test_generated_optional_tip_normalizes_null_only_at_provider_boundary(self):
+        source=draft()
+        source['sections'][0]['tip']=None
+        self.assertEqual(GENERATOR.request_notes('evidence','fake',opener=opener_for(response(source))),draft())
+        source['sections'][0]['tip']={'label':'Tip:','text':'Use /qt tip or /qt hint.'}
+        actual=GENERATOR.request_notes('evidence','fake',opener=opener_for(response(source)))
+        self.assertEqual(actual,source)
+        self.commit_feature()
+        notes=GENERATOR.generate(self.root,generator=lambda *args:copy.deepcopy(actual))
+        self.assertIn('> 💡 Tip: Use /qt tip or /qt hint.',GENERATOR.markdown(notes))
+        section=GENERATOR.SCHEMA['properties']['sections']['items']
+        self.assertIn('tip',section['required'])
+        self.assertFalse(section['properties']['tip']['anyOf'][0]['additionalProperties'])
+
     def test_status_refusal_and_malformed_envelopes_never_overwrite_notes(self):
         self.commit_feature()
         before = self.saved_notes()

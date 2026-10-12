@@ -4,12 +4,13 @@
 
 ## 7.0.2
 
-Alcuni miglioramenti alle informazioni sulle missioni e alla diagnostica facoltativa.
+Scopri altre funzionalità di QuestTogether con consigli utili.
 
-### Miglioramenti
+### Consigli di QuestTogether
 
-- Aggiunta una finestra Dettagli della missione per leggere i testi delle missioni disponibili.
-- Migliorate la diagnostica facoltativa per lo sviluppatore e l’affidabilità delle comunicazioni. La tua impostazione di condivisione dei dati diagnostici viene rispettata.
+- QT ora mostra un consiglio all’accesso o al ricaricamento dell’interfaccia, pescando da un elenco mescolato senza ripetizioni finché non sono stati mostrati tutti.
+
+> 💡 Consiglio: Digita «/qt tip» o «/qt hint» per vedere un altro consiglio di QuestTogether quando vuoi.
 
 ## 7.0.1
 

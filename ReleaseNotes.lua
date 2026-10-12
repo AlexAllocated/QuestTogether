@@ -4,13 +4,16 @@ local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
 	version = "7.0.2",
-	welcome = "A few improvements to quest information and optional diagnostics.",
+	welcome = "Discover more of QuestTogether with helpful tips.",
 	sections = {
 		{
-			title = "Improvements",
+			title = "QuestTogether Tips",
 			items = {
-				"Added a Quest Details window for reading available quest text.",
-				"Improved optional developer diagnostics and communication reliability. Your diagnostic sharing setting is respected.",
+				"QT now shows a tip when you log in or reload, drawing from a shuffled pool without repeats until it runs out.",
+			},
+			tip = {
+				label = "Tip:",
+				text = "Type /qt tip or /qt hint to see another QuestTogether tip whenever you like.",
 			},
 		},
 	},

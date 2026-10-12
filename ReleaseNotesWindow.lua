@@ -134,6 +134,25 @@ local function SetScroll(addon, frame, value)
 	addon:UpdateOwnedScrollBar(frame.scrollBar, value, frame.maximumScroll, frame.viewportHeight, 36)
 end
 
+local function CreateTipExample(addon, parent)
+	local card = New(addon, "Frame", parent)
+	Call(addon, card, "Hide")
+	card.background = Texture(addon, card, nil, "BACKGROUND")
+	Call(addon, card.background, "SetAllPoints")
+	Call(addon, card.background, "SetColorTexture", 0.025, 0.025, 0.025, 0.94)
+	local rule = Texture(addon, card, nil, "BORDER")
+	Call(addon, rule, "SetPoint", "TOPLEFT")
+	Call(addon, rule, "SetPoint", "BOTTOMLEFT")
+	Call(addon, rule, "SetWidth", 3)
+	Call(addon, rule, "SetColorTexture", 0.85, 0.65, 0.25, 1)
+	card.label = Label(addon, card, "GameFontHighlight")
+	Call(addon, card.label, "SetPoint", "TOPLEFT", 14, -14)
+	-- This is a chat sample: keep its white text and dark background in both
+	-- parchment themes, rather than applying the page's body-text color.
+	Call(addon, card.label, "SetTextColor", 1, 1, 1, 1)
+	return card
+end
+
 local function CreatePartnerExamples(addon, parent)
 	local gallery = New(addon, "Frame", parent)
 	Call(addon, gallery, "Hide")
@@ -399,7 +418,7 @@ local function Create(addon, parent)
 			end
 		end
 	end)
-	frame.labels, frame.ready = {}, true
+	frame.labels, frame.tipExamples, frame.ready = {}, {}, true
 	frame.LayoutManagedWindow = function()
 		if frame.notes and not frame.rendering then
 			addon:RenderReleaseNotesWindow(frame.notes, frame.version, frame.isFirstUse, true, true)
@@ -482,7 +501,7 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 	local maximumHeight = math.max(320, math.min(1000, parentHeight * 0.92 / scale))
 	local width = math.max(520, math.min(frame.userWidth or 700, maximumWidth))
 	Call(addon, frame, "SetResizeBounds", 520, 320, maximumWidth, maximumHeight)
-	local contentWidth, offset, count = width - 76, 0, 0
+	local contentWidth, offset, count, tipCount = width - 76, 0, 0, 0
 	local browser = rawget(addon, "releaseNotesBrowser")
 	local history = browser and browser.history
 	local entry = browser and browser.entries[browser.index]
@@ -545,6 +564,36 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 		end
 		offset = offset + height + gap
 	end
+	local function AddTip(tip)
+		if not addon:CanAccessTable(tip) then
+			return
+		end
+		local text, label = addon:SafeTrimString(tip.text, ""), addon:SafeTrimString(tip.label, "")
+		if text == "" or label == "" then
+			return
+		end
+		tipCount = tipCount + 1
+		local card = frame.tipExamples[tipCount]
+		if not card then
+			card = CreateTipExample(addon, frame.content)
+			frame.tipExamples[tipCount] = card
+		end
+		offset = offset + 4
+		Call(addon, card, "ClearAllPoints")
+		Call(addon, card, "SetPoint", "TOPLEFT", 0, -offset)
+		Call(addon, card.label, "SetWidth", contentWidth - 28)
+		Call(addon, card.label, "SetText", addon:FormatHint(text, label))
+		local height = addon:SafeToNumber(Call(addon, card.label, "GetStringHeight"))
+		if not height or height <= 0 then
+			error("release notes tip measurement unavailable", 0)
+		end
+		Call(addon, card, "SetSize", contentWidth, height + 28)
+		Call(addon, card, "Show")
+		offset = offset + height + 40
+	end
+	for _, card in ipairs(frame.tipExamples) do
+		Call(addon, card, "Hide")
+	end
 	Call(addon, frame.partnerExamples, "Hide")
 	for _, screenshot in pairs(frame.releaseScreenshots or {}) do
 		Call(addon, screenshot, "Hide")
@@ -595,6 +644,7 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 							end
 						end
 					end
+					AddTip(section.tip)
 					if section.illustration == "quest-partners" and not examplesShown then
 						local gallery = frame.partnerExamples
 						Call(addon, gallery, "ClearAllPoints")

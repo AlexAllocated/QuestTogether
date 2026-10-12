@@ -1,0 +1,270 @@
+QUESTTOGETHER HINTS — APPROVED COPY
+
+Each numbered line is one hint. IDs stay stable when wording changes.
+The headings and notes are not part of the hint text.
+
+Show one tip on login or UI reload. /qt tip and /qt hint draw another.
+All draws use one account-wide saved pool without repeats until exhausted.
+The localized light-bulb Tip: prefix is added when printing, not stored here.
+
+Hints requiring optional client features are excluded when unsupported.
+Implementation and translations live in Hints.lua and the locale catalogs.
+
+
+GETTING AROUND QT
+
+001. Type /qt to open QuestTogether's settings, or /qt help to see its commands.
+002. Left-click the QT minimap button to open or close Party Quest Log. Right-click it for the quick menu.
+003. Shift-click the QT minimap button to toggle Looking for Questing Partners.
+004. A glowing QT minimap button is a reminder that you are currently looking for questing partners.
+005. Drag the QT minimap button around the minimap to put it somewhere more convenient.
+006. Hover over the QT minimap button to check your partner status, chat scope, nearby range, and location-sharing setting.
+007. Hidden your QT minimap button? Open /qt options and enable Show Minimap Icon to bring it back.
+008. Find QuestTogether in WoW's Key Bindings to assign shortcuts for its windows, menu, chat, and questing-partner status.
+009. Bind Toggle Party Quest Log to open or close your party's quest comparison with one key.
+010. Bind Open QuestTogether Menu to reach the quick menu even when the minimap button is hidden.
+011. Bind Open QuestTogether Chat to start typing a QT message without entering /qt first.
+012. QT's settings home page summarizes your current preferences and links to the relevant settings pages.
+013. Hover over QT settings to see what each option does.
+
+
+PARTY QUEST LOG
+
+014. Type /qt compare to see your party's quests side by side.
+015. Party Quest Log includes quests your companions have even when those quests are missing from your own log.
+016. Click a quest row in Party Quest Log to expand everyone's objectives and progress. Click again to collapse it.
+017. You can keep several quests expanded in Party Quest Log to compare their objectives at the same time.
+018. Search Party Quest Log by quest name or quest ID.
+019. Party Quest Log can search quest names received from players using another language, too.
+020. Combine quest ownership, party progress, and available-action filters to find what your group should do next.
+021. Use the Everyone has the quest filter to find quests you can work on together.
+022. Use the Someone is missing the quest filter to check that everyone has picked up a quest before heading out.
+023. Use the Quests I don't have filter to find quests your companions have picked up without you.
+024. Use the Everyone ready filter to find quests the whole group can turn in.
+025. Use the Someone is ready filter to spot quests where part of the group may still need help.
+026. Use the Can share and Can request share filters to find quests your party can exchange.
+027. Party Quest Log remembers your filters per profile. Press Reset to clear both the filters and the search.
+028. Loading or Unknown in Party Quest Log does not mean a player is missing the quest; QT does not have their answer yet.
+029. Your own Party Quest Log column updates as you quest. Refresh requests updated quest lists from the other players.
+030. Click a player's heading in Party Quest Log and choose Refresh this player to update just their column.
+031. Enable Auto-refresh while open in Party Quest Log's Filters menu to request updated quest lists periodically.
+032. Check the update time beneath a player's name in Party Quest Log before relying on their last reported progress.
+033. Choose Compare Quests from a player's QT name or map-dot menu to compare your quest lists before grouping up.
+034. Drag Party Quest Log's bottom-right corner to resize it. Widen the window to show more columns at once.
+035. Party Quest Log can scroll sideways when your group's columns do not fit in the window.
+
+
+SHARING QUESTS
+
+036. Use Share in Party Quest Log to offer an eligible quest to party members who are missing it.
+037. Use Request Share in Party Quest Log to ask a party member for a quest you do not have.
+038. You can also share an eligible quest from its quest-name menu in QT chat.
+039. You can compare quests before grouping up, but sharing quests requires being in the same party.
+040. A party share request asks the quest owner for permission unless they have enabled Always allow party share requests.
+041. Always allow party share requests automatically approves eligible requests from your party. Recipients still accept quests through WoW's normal prompt.
+042. QT follows WoW's quest-sharing rules. A quest may be unshareable, or its recipient may need to meet prerequisites first.
+
+
+FINDING QUESTING PARTNERS
+
+043. Type /qt lfg to toggle Looking for Questing Partners, or use the checkbox in the minimap menu.
+044. Use /qt lfg on or /qt lfg off to set your partner-seeking status explicitly. Use /qt lfg status to check it.
+045. A gold glow on a QT player dot or logo means that player is looking for questing partners.
+046. Set Players shown on maps to Players looking for questing partners to focus on people who want company.
+047. Looking for Questing Partners does not turn on location sharing. Enable Share my location as well if you want others to find your map dot.
+048. Looking for Questing Partners is saved in your profile, so it can remain on when you next load that character.
+049. Enable Stop looking for partners when joining a group to clear your recruiting status when you join or form a group.
+050. Still recruiting after joining a group? You can turn Looking for Questing Partners back on.
+051. Click a QT player name or world-map dot to whisper, invite, add a friend, or compare quests.
+052. A grouped player's menu can offer Request to Join, letting you ask for an invitation without first writing a whisper.
+053. If the player you contact cannot invite, QT can pass your join request to their party leader when the leader also supports QT join requests.
+054. Automatically invite friends who request to join applies to your character friends list, not every Battle.net friend.
+055. You can automatically approve join requests while Looking for Questing Partners is on. You still need permission and room to invite.
+056. QT's automatic join-request approvals do not accept invitations for you or leave your current group.
+
+
+MAPS, MINIMAP DOTS, AND PLAYER TOOLTIPS
+
+057. QT's player dots are class-colored. Hover a dot for the player's level, class, and other available details.
+058. Left-click a QT minimap dot to try to target that player while out of combat. Right-click it for the player menu, with Target first.
+059. A small party badge on a QT player dot means that player is grouped.
+060. Hover a player's QT dot to check their addon version when it is known.
+061. QT leaves your own party's location markers to WoW instead of drawing duplicate player dots.
+062. Players shown on maps controls which QT dots you see. It does not change who can see your location.
+063. You can view other players' public dots while keeping Share my location turned off.
+064. Choose None under Players shown on maps to hide QT's player dots while keeping WoW's own party markers.
+065. Missing dots? Check Players shown on maps: the questing-partners filter hides players who are not currently looking for partners.
+066. Nearby Range controls nearby quest announcements. Players shown on maps is the separate control for which player dots you see.
+067. Map dots show recently reported locations. Hover an older dot to see how old its location information is.
+068. QT updates distant locations less frequently than locations in your current zone or the zone you are viewing.
+069. Keep a zone open on your world map for a few seconds to let QT discover players and receive updates there.
+070. A dot at your location does not guarantee that you can see its player in the world; they may be in another phase or layer.
+071. Hover a grouped player's QT dot to highlight the visible dots belonging to their party and identify their leader with a crown.
+072. Player tooltips can show the hovered player's party roster, with the leader listed first.
+073. Hover a player name in QT chat to see the same available player details used by map-dot tooltips.
+074. A glowing QT logo in a party roster identifies a member who is looking for questing partners.
+075. Ignoring someone in WoW also hides their new QT messages, bubbles, player dots, and player logos. Existing chat history stays in your log.
+
+
+ANNOUNCEMENTS AND QT CHAT
+
+076. Use What to Announce to choose which event announcements you see, and Where to Announce to choose how they appear.
+077. Set Show Announcements For to Party Only if you want quest updates just from your group.
+078. Choose Party & Nearby Players to include quest updates from other QT players around you.
+079. Adjust Nearby Range in What to Announce to change how far away nearby players' quest updates are shown.
+080. With Party & Nearby Players selected, set Nearby Range to Entire Zone if you want announcements from across your current zone.
+081. Ready To Turn In means the objectives are finished; Quest Completion means the quest has been turned in.
+082. You can hide objective-progress announcements while keeping quest acceptance, ready-to-turn-in, or completion announcements.
+083. Quest-removal announcements can help you notice when a companion abandons a quest.
+084. Looking-for-partners announcements can reach your whole zone, beyond your normal nearby range.
+085. Turn off Announce Looking for Questing Partners to quiet those announcements while keeping players' glowing partner-status icons.
+086. Type /qt followed by a message to chat with other QuestTogether players.
+087. Show QuestTogether Chat controls player conversations without hiding quest announcements.
+088. QT Chat Scope affects conversations, while Show Announcements For controls whose quest updates you see.
+089. Choose Global in QT Chat Scope to see all QT conversations your client receives.
+090. Choose Zone Only in QT Chat Scope to show conversations from players whose recent shared location is in your zone.
+091. Missing someone in Zone Only chat? That filter hides players with unknown or outdated shared locations.
+092. Move QT logs into a separate chat window using Chat Log Destination in Where to Announce, or the minimap menu.
+093. You can keep the separate QT chat window docked as a tab or float it beside your other windows.
+094. If your QT chat window is docked as a tab, you can also print its logs to main chat. Floating QT windows keep their logs separate.
+095. Closing the separate QT chat window sends later QT logs back to main chat.
+096. QT can send your enabled event announcements to normal party chat when someone in the party is not using the addon.
+097. QT's fallback party-chat announcements go to the whole party, including members who use QT. You can turn them off in Where to Announce.
+098. QT's automatic party-chat announcements do not post to raids.
+099. You can turn off Show Chat Logs and keep progress bubbles enabled, or use chat logs without bubbles.
+
+
+PROGRESS BUBBLES, CELEBRATIONS, AND NAMEPLATES
+
+100. Hide My Own Chat Bubbles removes your personal bubbles while continuing to share your progress with other QT players.
+101. Quest-completion celebrations and level-up celebrations have separate settings in Where to Announce.
+102. You can turn off reactions to nearby players' celebrations without turning off your own celebration emotes.
+103. Quest Plates can mark quest targets on Blizzard nameplates with an icon, a colored health bar, or both.
+104. Choose your own Quest Health Color in Quest Plates. The Reset button beside it restores the default color.
+105. Quest icons can appear to the left, right, above, or before the name on a nameplate.
+106. Quest Plates includes a preview so you can check your icon placement and highlight color.
+107. Enable friendly nameplates in WoW to see QT logos beside friendly players who use QuestTogether.
+108. Player Plates lets you choose where QT logos appear on friendly nameplates, independently of quest-target icons.
+109. A player's QT nameplate logo does not require them to share their map location.
+110. Hover a player in the world to see a QT tooltip badge when the addon recognizes them as a QuestTogether user.
+111. QT's nameplate decorations are intended for the open world; they are disabled in instances.
+112. Using a replacement nameplate addon? QT's quest-target visuals are designed for Blizzard nameplates, so their appearance or availability may differ.
+
+
+CUSTOMIZATION AND PROFILES
+
+113. Increase Window scale in Accessibility to make QT's window text and controls larger together.
+114. QT fits its saved windows to your current display and limits their scale when needed to keep them on screen.
+115. Enable Reduce motion in Accessibility to make scrolling and objective expansion immediate.
+116. Use /qt resetlayout if a QT window's saved position or size is getting in your way.
+117. Press Escape to close QT windows.
+118. Enable Light mode for light parchment and dark text in QT's parchment windows.
+119. Each character starts with its own QT profile. Use Profiles to choose another saved setup.
+120. Want the same QT settings on multiple characters? Select the same profile on each character.
+121. Use Copy Into Current Profile to copy another profile's settings without making the two characters share future changes.
+122. Create a new profile to make a copy of your current settings and try a different setup.
+123. Reset Active Profile restores that profile's settings to their defaults.
+124. You can use QT's maps and quest comparisons while keeping chat logs, bubbles, and celebrations quiet.
+
+
+UPDATES AND HELP
+
+125. Type /qt notes to read the latest patch notes. Use History in that window to browse older releases.
+126. Type /qt discord to open QT's feedback and support invite.
+127. Type /qt scan to refresh QT's information from your current quest log.
+128. Type /qt disable to pause QT's runtime features, and /qt enable to turn them back on.
+129. QT can notify you in its chat log when another player is using a newer stable release.
+130. Having trouble comparing quests with a friend? Check that both of you are running compatible, up-to-date versions of QT.
+131. When reporting a QT problem, include your game client, addon version, what happened, and how to reproduce it. Screenshots help, too.
+132. Type /qt debug to open QT's diagnostic window when you need information for a bug report.
+133. Optional diagnostic sharing can be changed under QT's Developer settings.
+
+
+CONDITIONAL CANDIDATES — QUEST DETAILS / NATIVE QUEST LOG SUPPORT
+
+Review note: use these only when the corresponding client feature is available.
+
+134. Click a quest name in QT chat and choose Quest Details to read the information WoW has available for it, even if you have not accepted the quest.
+135. Click the book icon beside a quest you own in Party Quest Log to open it in WoW's quest log.
+136. A quest's name menu in QT chat also offers Open in Quest Log when the quest is in your log.
+
+
+CONDITIONAL CANDIDATES — PARTY QUEST FOCUS
+
+Review note: requires quest-focus support and a compatible party of up to five.
+
+137. Click the round quest-focus button in your own Party Quest Log column to make that quest your active focus.
+138. Click a party member's highlighted quest-focus button in Party Quest Log to follow their quest focus.
+139. Hover a party member's heading in Party Quest Log to see their current quest focus.
+140. Follow quest focus follows a party member's quest selection, not their character's movement.
+141. If the player you follow chooses a quest you do not have, following stops and your current navigation stays unchanged. Get the quest, then follow them again.
+142. Choosing a different quest while following someone asks you to confirm ending the follow.
+143. Use Stop following in Party Quest Log, or assign Stop following quest focus in WoW's QT keybindings.
+144. QT remembers whom you are following across reloads and resumes when fresh party information becomes available.
+145. Share my focused quest works independently of public location sharing. Your party can see your active quest even with your public dot hidden.
+146. Quest-focus following supports parties of up to five, including dungeon groups, rather than raids.
+
+
+CONDITIONAL CANDIDATE — SHARED QUESTING-PARTNER FOCUS
+
+Review note: the sender needs native quest-focus support, Looking for Questing
+Partners, and location sharing enabled.
+
+147. Hover a player who is looking for questing partners to see their currently focused quest when they are sharing it.
+
+
+CONDITIONAL CANDIDATES — WAYPOINT SUPPORT
+
+Review note: shared pins need a compatible party of up to five and WoW's waypoint
+APIs. Navigation needs TomTom or supported native waypoint navigation.
+
+148. With Share my waypoint enabled, placing, moving, or clearing your normal WoW map pin updates your party's shared destination.
+149. Receiving a party waypoint does not redirect you. Click its pin and choose Navigate here when you want to head there.
+150. Hover a party waypoint to see its owner, zone, and coordinates. Overlapping pins list everyone sharing that spot.
+151. Shared party waypoints appear on the world map and, when nearby, the minimap.
+152. Share my waypoint and Show party waypoints are separate settings, so you can choose what to share and what to display.
+153. QT uses TomTom for waypoint navigation when available, with WoW's waypoint navigation as a fallback.
+154. Click a coordinate link in a QT message to create a waypoint when TomTom or the client's waypoint support is available.
+155. Navigating to a waypoint ends quest-focus following.
+
+
+CONDITIONAL CANDIDATES — HUD EDIT MODE
+
+Review note: use these only when QT's HUD Edit Mode integration is available.
+
+156. Move your personal progress bubble in HUD Edit Mode to keep updates away from the middle of the action.
+157. Select QuestTogether Bubble in HUD Edit Mode to adjust bubble size and display duration.
+158. Increase the bubble duration if progress messages disappear before you finish reading them.
+159. QT bubble changes apply automatically in HUD Edit Mode; Blizzard's Save button is not required.
+160. Use Revert Changes in QT bubble settings to undo edits made since opening HUD Edit Mode or your last Save Changes.
+
+
+CONDITIONAL CANDIDATES — RETAIL ACTIVITIES
+
+Review note: do not include these in Forever's pool or on clients without the
+corresponding activity.
+
+161. World-quest announcements have separate controls for entering an area, leaving, progress, and completion in What to Announce.
+162. Bonus-objective announcements have their own controls in What to Announce.
+
+
+CONDITIONAL CANDIDATES — FOREVER LAYER DETECTION
+
+Review note: gate these on experimental layer detection being available. NPC
+layer inference applies to Forever's open world and is not a confirmed phase ID.
+
+163. See a phasing icon on a QT player dot? Hover it for an experimental warning that the player may be on a different layer.
+164. QT's experimental layer detection uses nearby observations. Its warnings are estimates; a missing player alone does not prove a different layer.
+165. Detect different layers is an optional setting under Experimental. It needs location sharing and compatible QT clients.
+
+
+CONDITIONAL CANDIDATE — RETAIL WAR MODE
+
+Review note: show only on clients where QT supports War Mode information.
+
+166. Hover a player's QT dot to see their shared War Mode status when it is available.
+
+
+ABOUT TIPS
+
+167. Type /qt tip or /qt hint to see another QuestTogether tip whenever you like.

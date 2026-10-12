@@ -98,9 +98,12 @@ class HistoryTests(test_changelogs.ChangelogTests):
             check_manifest('Core.lua\nReleaseNotesHistory.lua\nReleaseNotes.lua\nLocalizedReleaseNotes.lua\n')
 
     def test_version_bump_records_date_once_and_archives_baseline(self):
+        self.notes['sections'][0]['tip']={'label':'Tip:','text':'Try /qt compare for party quests.'}
+        self.write_source(self.notes)
         self.generate()
         self.git('init', '-q'); self.git('add', '.'); self.git('commit', '-qm', 'Baseline'); self.git('tag', 'v1.0.0')
         draft = copy.deepcopy(self.notes); draft['welcome'] = 'A new release with browsing.'
+        draft['sections'][0]['tip']['text']='Try /qt hint for a new tip.'
         self.write_source(draft)
         toc = self.root / 'QuestTogether.toc'; toc.write_text(toc.read_text().replace('1.0.0', '1.0.1'))
         self.assertEqual(notes_main(['--root', str(self.root), '--write', '--set-version', '1.0.1']), 0)
@@ -109,6 +112,8 @@ class HistoryTests(test_changelogs.ChangelogTests):
         output = (self.root / h.LUA_FILE).read_text()
         self.assertIn('Find questing partners.', output)
         self.assertNotIn('A new release with browsing.', output)
+        self.assertIn('["tip"]={["label"]="Tip:",["text"]="Try /qt compare for party quests."}',output)
+        self.assertNotIn('Try /qt hint for a new tip.',output)
         with patch.object(h, 'datetime') as clock:
             self.assertEqual(notes_main(['--root', str(self.root), '--check']), 0)
             clock.now.assert_not_called()

@@ -67,8 +67,8 @@ def unique_object(pairs):
     return result
 
 
-def meaningful_text(value, label, limit, single_line=False):
-    if not isinstance(value, str) or len(value.strip()) < 3:
+def meaningful_text(value, label, limit, single_line=False, minimum=3):
+    if not isinstance(value, str) or len(value.strip()) < minimum:
         raise NotesError(label + " must contain meaningful text")
     if value != value.strip() or len(value) > limit:
         raise NotesError(label + " must be trimmed and at most " + str(limit) + " characters")
@@ -83,6 +83,28 @@ def meaningful_text(value, label, limit, single_line=False):
     if value.casefold().rstrip(".!:") in {"todo", "tbd", "placeholder", "coming soon", "release notes", "none", "n/a"}:
         raise NotesError(label + " must not be a placeholder")
     return value
+
+
+def parse_tip(value, label):
+    if not isinstance(value, dict) or set(value) != {"label", "text"}:
+        raise NotesError(label + " must contain exactly label and text")
+    meaningful_text(value["label"], label + ".label", 40, single_line=True, minimum=1)
+    meaningful_text(value["text"], label + ".text", 800, minimum=1)
+    # Tips are content, not preformatted chat/Markdown. Renderers add the bulb
+    # and blockquote; WoW markup would leak into web and Discord output.
+    for key, text in value.items():
+        if re.search(r"\|(?:c[0-9a-fA-F]{8}|r\b|[HTA][^|]*\|[hta])|`|\*\*|__|~~|!?\[[^\]]*\]\([^)]*\)", text):
+            raise NotesError(label + "." + key + " must contain plain text")
+    return value
+
+
+def format_tip(tip):
+    """One plain sample line shared by every external release-note renderer."""
+    return "💡 " + tip["label"] + " " + tip["text"]
+
+
+def markdown_tip(tip):
+    return "\n".join("> " + line for line in format_tip(tip).split("\n"))
 
 
 def parse_notes(text, label=NOTES_FILE):
@@ -103,8 +125,8 @@ def parse_notes(text, label=NOTES_FILE):
     titles = set()
     for index, section in enumerate(sections, 1):
         prefix = label + ".sections[" + str(index) + "]"
-        if not isinstance(section, dict) or not {"title", "items"} <= set(section) or set(section) - {"title", "items", "illustration"}:
-            raise NotesError(prefix + " must contain title and items, with an optional illustration")
+        if not isinstance(section, dict) or not {"title", "items"} <= set(section) or set(section) - {"title", "items", "illustration", "tip"}:
+            raise NotesError(prefix + " must contain title and items, with optional illustration and tip")
         if "illustration" in section and section["illustration"] not in ("quest-partners", "party-quest-log", "party-quest-objectives", "party-quest-overview", "party-quest-following", "party-quest-focus-warning"):
             raise NotesError(prefix + ".illustration is unsupported")
         title = meaningful_text(section["title"], prefix + ".title", 80, single_line=True)
@@ -116,6 +138,8 @@ def parse_notes(text, label=NOTES_FILE):
             raise NotesError(prefix + ".items must contain 1 to 16 items")
         for item_index, item in enumerate(items, 1):
             meaningful_text(item, prefix + ".items[" + str(item_index) + "]", 800)
+        if "tip" in section:
+            parse_tip(section["tip"], prefix + ".tip")
     return notes
 
 
@@ -142,6 +166,9 @@ def render_lua(notes):
         lines += ["\t\t\t},"]
         if "illustration" in section:
             lines += ["\t\t\tillustration = " + lua_string(section["illustration"]) + ","]
+        if "tip" in section:
+            lines += ["\t\t\ttip = {", "\t\t\t\tlabel = " + lua_string(section["tip"]["label"]) + ",",
+                      "\t\t\t\ttext = " + lua_string(section["tip"]["text"]) + ",", "\t\t\t},"]
         lines += ["\t\t},"]
     lines += ["\t},", "}", ""]
     return "\n".join(lines)

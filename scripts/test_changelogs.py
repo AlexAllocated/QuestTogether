@@ -22,6 +22,36 @@ class ChangelogTests(unittest.TestCase):
         self.assertNotIn('1.0.1', c.render('enUS', [{'enUS': notes}]))
         self.assertEqual(build_messages(notes, DEFAULT_REPOSITORY, 'v1.0.1'), [])
 
+    def test_tip_uses_same_plain_sample_in_markdown_github_and_discord(self):
+        from check_release_notes import format_tip
+        from generate_release_notes import markdown as github_markdown
+        self.notes['sections'][0]['tip']={'label':'提示：','text':'Use /qt tip or /qt hint.'}
+        self.write_source(self.notes)
+        self.generate()
+        text='> '+format_tip(self.notes['sections'][0]['tip'])
+        self.assertIn('\n\n'+text+'\n',github_markdown(self.notes))
+        for locale in c.TITLES:
+            filename='CHANGELOG.md' if locale=='enUS' else 'changelogs/'+locale+'.md'
+            self.assertIn('\n\n'+text+'\n',(self.root/filename).read_text())
+            messages=build_messages(self.notes,DEFAULT_REPOSITORY,'v1.0.0',locale)
+            descriptions=[e['description'] for m in messages for e in m['embeds']]
+            self.assertEqual(sum(d.count(text) for d in descriptions),1)
+            self.assertNotIn('- '+text,'\n'.join(descriptions))
+
+    def test_archived_tips_require_translation_presence_and_unchanged_commands(self):
+        source=copy.deepcopy(self.notes)
+        source['sections'][0]['tip']={'label':'Tip:','text':'Try /qt tip or /qt hint.'}
+        translated=copy.deepcopy(source)
+        translated['sections'][0]['tip']={'label':'Tipp:','text':'Teste /qt tip oder /qt hint.'}
+        self.assertEqual(c.validate_entry({'enUS':source,'deDE':translated}),'1.0.0')
+        for mutate in (lambda section:section.pop('tip'),
+                       lambda section:section['tip'].update(text='Try /qt help or /qt hint.')):
+            bad=copy.deepcopy(translated);mutate(bad['sections'][0])
+            with self.assertRaisesRegex(ValueError,'tip'):
+                c.validate_entry({'enUS':source,'deDE':bad})
+        with self.assertRaisesRegex(ValueError,'tip'):
+            c.validate_entry({'enUS':self.notes,'deDE':translated})
+
     def test_client_screenshots_are_tag_pinned_on_web_and_attached_in_discord(self):
         notes = {'version': '6.4.0', 'welcome': 'Explore party quests.', 'sections': [
             {'title': 'Party Quest Log', 'items': ['Compare your party.'], 'illustration': 'party-quest-log'},

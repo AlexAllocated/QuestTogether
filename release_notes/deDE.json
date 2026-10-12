@@ -1,15 +1,18 @@
 {
-  "source_sha256": "2c6335e216a45204298db1f63c30addda6634cd3c95b66b3d74cb460174001f2",
+  "source_sha256": "6b550f4faf51ac6bc49cc752c6d9d7d3e60dcfb4262a52cb70a071561b9d0f17",
   "notes": {
     "version": "7.0.2",
-    "welcome": "Einige Verbesserungen an Questinformationen und optionalen Diagnosedaten.",
+    "welcome": "Entdecke mit hilfreichen Tipps mehr von QuestTogether.",
     "sections": [
       {
-        "title": "Verbesserungen",
+        "title": "QuestTogether-Tipps",
         "items": [
-          "Ein Fenster mit Questdetails zum Lesen verfügbarer Questtexte wurde hinzugefügt.",
-          "Die optionale Entwicklerdiagnose und die Zuverlässigkeit der Kommunikation wurden verbessert. Deine Einstellung zum Teilen von Diagnosedaten wird berücksichtigt."
-        ]
+          "QT zeigt jetzt bei der Anmeldung oder beim Neuladen der Benutzeroberfläche einen Tipp aus einem gemischten Vorrat an. Erst wenn alle Tipps gezeigt wurden, wiederholen sie sich."
+        ],
+        "tip": {
+          "label": "Tipp:",
+          "text": "Gib „/qt tip“ oder „/qt hint“ ein, um jederzeit einen weiteren QuestTogether-Tipp zu sehen."
+        }
       }
     ]
   }

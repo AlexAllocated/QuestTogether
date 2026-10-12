@@ -1,15 +1,18 @@
 {
-  "source_sha256": "2c6335e216a45204298db1f63c30addda6634cd3c95b66b3d74cb460174001f2",
+  "source_sha256": "6b550f4faf51ac6bc49cc752c6d9d7d3e60dcfb4262a52cb70a071561b9d0f17",
   "notes": {
     "version": "7.0.2",
-    "welcome": "对任务信息和可选诊断功能进行了一些改进。",
+    "welcome": "通过实用提示，了解 QuestTogether 的更多功能。",
     "sections": [
       {
-        "title": "改进内容",
+        "title": "QuestTogether 提示",
         "items": [
-          "新增任务详情窗口，可阅读当前可获取的任务文本。",
-          "改进了可选的开发者诊断功能和通信可靠性，并遵循你的诊断数据共享设置。"
-        ]
+          "QT 现在会在登录或重载界面时显示一条提示，从打乱的列表中抽取，整轮看完之前不会重复。"
+        ],
+        "tip": {
+          "label": "提示：",
+          "text": "随时输入 /qt tip 或 /qt hint，即可查看另一条 QuestTogether 提示。"
+        }
       }
     ]
   }

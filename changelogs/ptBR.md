@@ -4,12 +4,13 @@
 
 ## 7.0.2
 
-Algumas melhorias nas informações de missões e nos diagnósticos opcionais.
+Descubra mais do QuestTogether com dicas úteis.
 
-### Melhorias
+### Dicas do QuestTogether
 
-- Adicionada uma janela de Detalhes da missão para ler os textos de missão disponíveis.
-- Melhorados os diagnósticos opcionais para o desenvolvedor e a confiabilidade da comunicação. Sua configuração de compartilhamento de dados de diagnóstico é respeitada.
+- O QT agora mostra uma dica ao entrar no jogo ou recarregar a interface, escolhida de uma lista embaralhada sem repetições até ela se esgotar.
+
+> 💡 Dica: Digite /qt tip ou /qt hint para ver outra dica do QuestTogether quando quiser.
 
 ## 7.0.1
 

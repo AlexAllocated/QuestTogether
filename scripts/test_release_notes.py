@@ -52,6 +52,64 @@ class NotesTests(unittest.TestCase):
         with self.assertRaises(CHECKER.NotesError):
             CHECKER.parse_notes(json.dumps(notes))
 
+    def test_optional_tip_roundtrips_without_becoming_an_item(self):
+        notes = sample_notes()
+        notes["sections"][0]["tip"] = {"label": "팁:", "text": 'Type /qt tip for "another" tip.'}
+        parsed = CHECKER.parse_notes(json.dumps(notes))
+        self.assertEqual(parsed, notes)
+        self.assertEqual(parsed["sections"][0]["items"], sample_notes()["sections"][0]["items"])
+        self.assertEqual(CHECKER.format_tip(parsed["sections"][0]["tip"]), '💡 팁: Type /qt tip for "another" tip.')
+        rendered = CHECKER.render_lua(parsed)
+        self.assertIn('tip = {\n\t\t\t\tlabel = "팁:",', rendered)
+        self.assertIn('text = "Type /qt tip for \\"another\\" tip.",', rendered)
+        self.enable_localized_notes(notes)
+        self.assertIn('["tip"]=', (self.root / "LocalizedReleaseNotes.lua").read_text())
+        self.assertNotIn("tip =", CHECKER.render_lua(sample_notes()))
+
+    def test_tip_schema_rejects_missing_extra_nonplain_or_unbounded_fields(self):
+        tip = {"label": "Tip:", "text": "Try /qt tip."}
+        invalid = [None, False, [], "Tip", {}, {"label": "Tip:"}, {"text": "Try this."},
+                   {**tip, "unknown": "extra"}, {**tip, "label": ""}, {**tip, "text": " "},
+                   {**tip, "label": 123}, {**tip, "text": {}}, {**tip, "label": " Tip:"},
+                   {**tip, "label": "Tip:\nNext"}, {**tip, "label": "x" * 41},
+                   {**tip, "text": "x" * 801}, {**tip, "text": "bad\x00text"},
+                   {**tip, "text": "bad\ud800text"}, {**tip, "text": "|cffffff00Colored|r"},
+                   {**tip, "text": "**Markdown**"}, {**tip, "text": "Use `/qt tip`."},
+                   {**tip, "text": "[A link](https://example.invalid)"}]
+        for value in invalid:
+            with self.subTest(value=value):
+                notes = sample_notes()
+                notes["sections"][0]["tip"] = value
+                with self.assertRaises(CHECKER.NotesError):
+                    CHECKER.parse_notes(json.dumps(notes))
+        duplicate = json.dumps({**sample_notes(), "sections": [{"title": "Tips", "items": ["Try this."], "tip": tip}]})
+        with self.assertRaisesRegex(CHECKER.NotesError, "duplicate JSON key"):
+            CHECKER.parse_notes(duplicate.replace('"label": "Tip:"', '"label": "Tip:", "label": "Other:"'))
+
+    def test_missing_extra_or_changed_translated_tip_blocks_all_writes(self):
+        notes = sample_notes()
+        notes["sections"][0]["tip"] = {"label": "Tip:", "text": "Use /qt tip or /qt hint."}
+        self.enable_localized_notes(notes)
+        path = self.root / "release_notes/frFR.json"
+        original = path.read_bytes()
+        for mutate in (lambda section: section.pop("tip"),
+                       lambda section: section["tip"].update(text="Use /qt tips or /qt hint."),
+                       lambda section: section["tip"].update(label="Tip: /qt help")):
+            content = json.loads(original)
+            mutate(content["notes"]["sections"][0])
+            path.write_text(json.dumps(content))
+            before = self.release_note_bytes()
+            self.assertIn("tip", self.check("--write", success=False))
+            self.assertEqual(self.release_note_bytes(), before)
+        path.write_bytes(original)
+        no_tip = sample_notes()
+        self.write_notes(no_tip)
+        self.write_translations(no_tip)
+        content = json.loads(path.read_text())
+        content["notes"]["sections"][0]["tip"] = notes["sections"][0]["tip"]
+        path.write_text(json.dumps(content))
+        self.assertIn("tip presence", self.check("--write", success=False))
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="questtogether-notes-")
         self.addCleanup(self.temporary.cleanup)

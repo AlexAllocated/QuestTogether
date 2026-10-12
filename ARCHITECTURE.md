@@ -25,6 +25,7 @@ private `.local` notes are historical context, not the source of truth.
 | QuestCompare | Atomic party log assembly, local snapshots and negotiated revision reuse | Native UI mutation or independent transport pumps |
 | PartyFocusController | Following and manual-choice state machine, missing-quest and confirmation policy | Party networking, persistence policy or preview fixtures |
 | PartyNavigation / QuestComparePreview | Live/preview adapters, persistence and ownership of native focus | Copies of the following state machine or repair of another controller's fields |
+| Hints | Local tip catalog, capability eligibility, account-wide no-repeat pool and startup display | Network announcements or profile settings |
 | Keybindings | Fixed player actions delegated to existing feature operations | Key assignment, binding overrides, native input state |
 | OwnedUI | Guarded owned-region access and a durable cleanup queue | Permission to modify Blizzard-owned frames |
 | WindowController / WindowLayout / WindowTheme | Window visibility and dismissal, geometry, chrome respectively | Quest-specific dialogs or protocol sessions |
@@ -80,6 +81,16 @@ private `.local` notes are historical context, not the source of truth.
   related changes and dispatches each affected service once. Profile activation
   uses the same effects, including themes, scale, privacy and navigation; it
   revokes old diagnostic request ownership even when both profiles allow it.
+
+Tips are local chat-log output. `OnLogin` schedules one through the shared UI work
+lifetime after chat destinations are initialized; zoning and enabling do not draw
+another. `/qt tip` and `/qt hint` draw from the same pool in `db.global.hintPool`.
+Stable IDs survive wording, language and profile changes. Only successfully printed
+tips consume a draw; unsupported client features are excluded. Display adds the
+localized prefix centrally, leaving catalog text reusable.
+Release-note tip examples carry a localized label and body in canonical notes;
+the viewer calls the same hint formatter inside a separate chat-style card.
+Web and Discord render that example as a blockquote without adding a bullet.
 
 ## Communication generation 2
 

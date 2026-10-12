@@ -38,6 +38,7 @@ Settings.lua
 Libs/Ed25519/Ed25519.lua
 DeveloperPublicKey.lua
 Ads.lua
+Hints.lua
 OwnedUI.lua
 WindowController.lua
 WindowTheme.lua
@@ -122,6 +123,7 @@ scripts/regression_addon_updates.lua
 scripts/regression_quest_compare.lua
 scripts/regression_minimap.lua
 scripts/regression_keybindings.lua
+scripts/regression_hints.lua
 scripts/regression_release_notes.lua
 scripts/regression_release_notes_window.lua
 scripts/regression_player_locations.lua

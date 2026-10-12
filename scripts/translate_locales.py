@@ -5,7 +5,7 @@ from functools import partial
 from pathlib import Path
 import sys
 sys.dont_write_bytecode = True
-from localization import LOCALES,check,digest,dumps,read,source_strings,validate_translation,release_note_outputs
+from localization import LOCALES,check,digest,dumps,read,source_strings,validate_translation,release_note_outputs,validate_release_tip
 
 def request_translation(strings,locale,key,model,formatted=True):
     if not key:raise ValueError('OPENAI_API_KEY is required')
@@ -40,9 +40,16 @@ def translate(root,locale,notes=False,key=None,model='gpt-5.5',request=None):
         english=read(root/'release_notes.json');path=root/'release_notes'/f'{locale}.json'
         if path.exists() and read(path).get('source_sha256')==digest(english):return False
         result=copy.deepcopy(english);strings=[english['welcome']]
-        for section in english['sections']:strings += [section['title'],*section['items']]
+        for section in english['sections']:
+            strings += [section['title'],*section['items']]
+            if 'tip' in section:strings += [section['tip']['label'],section['tip']['text']]
         targets=iter(request(strings,locale,key,model));result['welcome']=next(targets)
-        for section in result['sections']:section['title']=next(targets);section['items']=[next(targets) for _ in section['items']]
+        for original,section in zip(english['sections'],result['sections']):
+            section['title']=next(targets);section['items']=[next(targets) for _ in section['items']]
+            if 'tip' in section:section['tip']={'label':next(targets),'text':next(targets)}
+            validate_release_tip(original,section,locale+' translated')
+        from check_release_notes import parse_notes
+        parse_notes(dumps(result))
         content={'source_sha256':digest(english),'notes':result}
     else:
         path=root/'locales'/f'{locale}.json';sources=source_strings(root);existing=read(path) if path.exists() else {};content={k:existing[k] for k in sources if k in existing}

@@ -212,6 +212,27 @@ class FormattingTests(unittest.TestCase):
             self.assertTrue(all(changelog.text_length(embed["description"]) <= 4096 for embed in message["embeds"]))
         self.assertEqual(len({message["nonce"] for message in planned}), len(planned))
 
+    def test_unicode_tip_stays_whole_when_it_overflows_a_nearly_full_section(self):
+        data=notes()
+        data['sections']=[{'title':'Tips '+str(i),
+                           'items':['Part '+str(i)+':'+str(j)+' '+('😀'*390) for j in range(5)],
+                           'tip':{'label':'💬'*40,'text':'Try /qt tip '+str(i)+' '+('😀'*770)}}
+                          for i in range(5)]
+        data=changelog.parse_notes(json.dumps(data))
+        planned=changelog.build_messages(data,REPO,TAG)
+        descriptions=[embed['description'] for message in planned for embed in message['embeds']]
+        self.assertGreater(len(planned),1)
+        for section in data['sections']:
+            tip=changelog.markdown_tip(section['tip'])
+            self.assertEqual(descriptions.count(tip),1)
+            for item in section['items']:
+                self.assertEqual(sum(d.count('- '+item) for d in descriptions),1)
+        for message in planned:
+            self.assertLessEqual(len(message['embeds']),10)
+            self.assertLessEqual(sum(map(changelog.embed_length,message['embeds'])),6000)
+            self.assertTrue(all(changelog.text_length(e['description'])<=4096 for e in message['embeds']))
+            self.assertEqual(message['allowed_mentions']['parse'],[])
+
 
 class AttachmentTests(unittest.TestCase):
     def test_multipart_contains_exact_pngs_and_json_with_nonce_and_mentions_disabled(self):

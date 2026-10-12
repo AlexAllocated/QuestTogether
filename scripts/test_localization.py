@@ -52,6 +52,15 @@ class LocalizationTests(unittest.TestCase):
             (root/'Example.lua').write_text('\n'.join('local text = '+json.dumps(value) for value in strings+ignored)
                 + '\nlocal translated = L(\n "Settings")\n-- "Not a label"\n')
             self.assertEqual(L.untranslated_literals(root), {'Example.lua':sorted(strings)})
+    def test_hint_commands_allow_translated_prose_but_preserve_real_commands(self):
+        L.validate_translation('Type /qt to open settings.', 'Tapez /qt pour ouvrir les options.')
+        L.validate_translation('Type /qt followed by a message.', 'Escribe /qt seguido de un mensaje.')
+        L.validate_translation('Use /qt lfg on or /qt lfg off.', 'Verwende /qt lfg on oder /qt lfg off.')
+        L.validate_translation('Use /qt tip or /qt hint.', 'Utilisez /qt tip ou /qt hint.')
+        for target in ['Use /qt tips or /qt hint.', 'Use /qt tip or /qt indice.']:
+            with self.assertRaises(ValueError):L.validate_translation('Use /qt tip or /qt hint.', target)
+        with self.assertRaises(ValueError):
+            L.validate_translation('Use /qt lfg on.', 'Utilisez /qt lfg off.')
     def test_markup_scanning_preserves_escaped_pipe_literals(self):
         self.assertEqual(L.visible_markup_text('||cffffffff'), '||cffffffff')
         self.assertEqual(L.visible_markup_text('|Hquest:1|h|cffffffffQuest title|r|h'), 'Quest title')
@@ -74,4 +83,23 @@ class LocalizationTests(unittest.TestCase):
             result=L.read(root/'release_notes/frFR.json');self.assertEqual(result['source_sha256'],L.digest(notes))
             self.assertEqual(result['notes']['sections'][0]['illustration'],'quest-partners')
             self.assertFalse(translate(root,'frFR',True,request=request));self.assertEqual(len(calls),1)
+    def test_notes_translation_flattens_tip_label_and_body_in_section_order(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            notes={'version':'1.0.0','welcome':'Welcome','sections':[
+                {'title':'New tips','items':['First'], 'tip':{'label':'Tip:','text':'Use /qt tip; scale to 150%.'}},
+                {'title':'Next section','items':['Second']}]}
+            (root/'release_notes.json').write_text(json.dumps(notes))
+            def request(strings,locale,key,model):
+                self.assertEqual(strings,['Welcome','New tips','First','Tip:','Use /qt tip; scale to 150%.','Next section','Second'])
+                return ['Bienvenue','Conseils','Premier','Conseil :','Utilisez /qt tip ; agrandissez à 150 %.','Suite','Deuxième']
+            self.assertTrue(translate(root,'frFR',True,request=request))
+            result=L.read(root/'release_notes/frFR.json')['notes']
+            self.assertEqual(result['sections'][0]['tip'],{'label':'Conseil :','text':'Utilisez /qt tip ; agrandissez à 150 %.'})
+            self.assertNotIn('tip',result['sections'][1])
+            previous=(root/'release_notes/frFR.json').read_bytes()
+            notes['welcome']='Updated welcome';(root/'release_notes.json').write_text(json.dumps(notes))
+            with self.assertRaises(ValueError):
+                translate(root,'frFR',True,request=lambda strings,*args:[s.replace('/qt tip','/qt conseil') for s in strings])
+            self.assertEqual((root/'release_notes/frFR.json').read_bytes(),previous)
 if __name__=='__main__':unittest.main()

@@ -27,7 +27,7 @@ sys.dont_write_bytecode = True
 
 from check_release_notes import (
     LUA_FILE, NOTES_FILE, TOC_FILE, NotesError, check_baseline, check_manifest,
-    git, parse_notes, previous_release, render_lua, toc_version, unique_object, version_key,
+    git, markdown_tip, parse_notes, previous_release, render_lua, toc_version, unique_object, version_key,
 )
 
 
@@ -305,6 +305,14 @@ def build_messages(notes, repository, tag, locale="enUS"):
             if text_length(combined) > 4096:
                 embeds.append({"title": section["title"], "description": description})
                 description = bullet
+            else:
+                description = combined
+        if "tip" in section:
+            tip = markdown_tip(section["tip"])
+            combined = description + ("\n\n" if description else "") + tip
+            if text_length(combined) > 4096:
+                embeds.append({"title": section["title"], "description": description})
+                description = tip
             else:
                 description = combined
         embeds.append({"title": section["title"], "description": description})

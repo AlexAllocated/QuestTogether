@@ -48,6 +48,102 @@ return pushable end or nil,
 	end or nil
 	return function(addon)
 		do
+			-- Capability discovery is offline-only: probe the real native adapter
+			-- without replacing any Blizzard namespace in the in-game test suite.
+			local keys = {
+				"C_AddOns", "C_Map", "C_NamePlate", "C_PvP", "C_QuestLog", "C_SuperTrack", "C_TaskQuest",
+				"C_TooltipInfo", "EditModeManagerFrame", "LoadAddOn", "MenuUtil", "QuestLogPushQuest",
+				"QuestMapFrame", "QuestMapFrame_GetDetailQuestID", "QuestMapFrame_OpenToQuestDetails",
+				"RegionalUniqueNamesEnabled", "TomTom", "UiMapPoint", "WorldMapFrame",
+				"WOW_PROJECT_ID", "WOW_PROJECT_MAINLINE",
+			}
+			local function Case(callback)
+				local saved = {}
+				for _, key in ipairs(keys) do saved[key], _G[key] = _G[key], nil end
+				local ok, err = pcall(callback)
+				for _, key in ipairs(keys) do _G[key] = saved[key] end
+				assert(ok, err)
+			end
+			local function MustNotRun()
+				error("hint capability discovery must not query or mutate gameplay state")
+			end
+			local function AvailableMainline(regional)
+				WOW_PROJECT_ID, WOW_PROJECT_MAINLINE = 1, 1
+				RegionalUniqueNamesEnabled = function() return regional end
+				MenuUtil = { CreateContextMenu = MustNotRun }
+				QuestLogPushQuest = MustNotRun
+				C_QuestLog = { GetLogIndexForQuestID = MustNotRun, GetInfo = MustNotRun,
+					IsPushableQuest = MustNotRun, IsWorldQuest = MustNotRun }
+				C_TaskQuest = { GetQuestInfoByQuestID = MustNotRun }
+				C_TooltipInfo = { GetHyperlink = MustNotRun }
+				C_NamePlate = { GetNamePlateForUnit = MustNotRun }
+				C_SuperTrack = { IsSuperTrackingQuest = MustNotRun, GetSuperTrackedQuestID = MustNotRun,
+					SetSuperTrackedQuestID = MustNotRun, SetSuperTrackedUserWaypoint = MustNotRun }
+				C_Map = { GetUserWaypoint = MustNotRun, SetUserWaypoint = MustNotRun,
+					CanSetUserWaypointOnMap = MustNotRun }
+				UiMapPoint = { CreateFromCoordinates = MustNotRun }
+				C_PvP = { IsWarModeFeatureEnabled = function() return true end }
+				LoadAddOn = MustNotRun
+				C_AddOns = {
+					LoadAddOn = MustNotRun,
+					GetAddOnInfo = function(name)
+						assert(name == "Blizzard_EditMode")
+						-- The native contract returns a name first, not an info table.
+						return name, "Edit Mode", "", true, nil, "SECURE"
+					end,
+				}
+			end
+			Case(function()
+				local capabilities = addon.API.GetHintCapabilities()
+				for _, name in ipairs({ "menu", "sharing", "details", "journal", "focus", "waypoint", "navigation",
+					"navigationFocus", "hud", "nameplates", "worldQuests", "bonusObjectives", "layers", "warMode" }) do
+					assert(capabilities[name] == false, "missing APIs must exclude hint capability: " .. name)
+				end
+			end)
+			Case(function()
+				local previousReads = inaccessibleReads
+				for _, key in ipairs({ "C_AddOns", "C_Map", "C_NamePlate", "C_SuperTrack", "C_TaskQuest",
+					"MenuUtil", "TomTom", "UiMapPoint" }) do _G[key] = inaccessible end
+				local capabilities = addon.API.GetHintCapabilities()
+				assert(not capabilities.menu and not capabilities.focus and not capabilities.waypoint
+					and not capabilities.navigation and not capabilities.hud and not capabilities.nameplates)
+				assert(inaccessibleReads == previousReads, "inaccessible capability namespaces must not be indexed")
+			end)
+			for _, regional in ipairs({ false, true }) do
+				Case(function()
+					AvailableMainline(regional)
+					local capabilities = addon.API.GetHintCapabilities()
+					for _, name in ipairs({ "menu", "sharing", "details", "focus", "waypoint", "navigation",
+						"navigationFocus", "hud", "nameplates" }) do
+						assert(capabilities[name] == true, "available mainline hint capability missing: " .. name)
+					end
+					assert(EditModeManagerFrame == nil, "discovering HUD hints must not load or open Edit Mode")
+					assert(capabilities.worldQuests == not regional and capabilities.bonusObjectives == not regional,
+						"Forever must exclude Retail activities even when it exports their API functions")
+					assert(capabilities.layers == regional and capabilities.warMode == not regional)
+				end)
+			end
+			Case(function()
+				AvailableMainline(false)
+				WOW_PROJECT_ID = 2
+				local capabilities = addon.API.GetHintCapabilities()
+				assert(not capabilities.worldQuests and not capabilities.bonusObjectives,
+					"non-Retail client profiles must not advertise Retail activities from shared exports")
+			end)
+			for _, result in ipairs({ secret, inaccessible, false, {}, "Other_AddOn" }) do
+				Case(function()
+					AvailableMainline(false)
+					C_AddOns.GetAddOnInfo = function() return result end
+					assert(addon.API.GetHintCapabilities().hud == false, "unusable addon metadata must not enable HUD hints")
+				end)
+			end
+			Case(function()
+				AvailableMainline(false)
+				C_AddOns.GetAddOnInfo = function() error("addon metadata unavailable") end
+				assert(addon.API.GetHintCapabilities().hud == false)
+			end)
+		end
+		do
 			-- Offline-only negative controls for the read-only layer adapter.
 			local saved = { UnitExists = UnitExists, UnitIsVisible = UnitIsVisible,
 				UnitPlayerControlled = UnitPlayerControlled, UnitGUID = UnitGUID, UnitPhaseReason = UnitPhaseReason }

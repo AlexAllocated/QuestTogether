@@ -443,6 +443,101 @@ Register("release notes visual examples occupy scroll space and hide when absent
 	assert(not frame.partnerExamples.shown)
 end)
 
+Register("release notes tip samples use the chat formatter and canonical localized labels", function()
+	local a = Fixture()
+	local locale = QuestTogether:GetEventLocale()
+	local text = QuestTogether.TranslateForLocale(
+		"Type /qt tip or /qt hint to see another QuestTogether tip whenever you like.",
+		locale
+	)
+	local label = QuestTogether.TranslateForLocale("Tip:", locale)
+	local notes = Notes(1)
+	notes.sections[1].tip = { label = label, text = text }
+	notes.sections[2] = {
+		title = "Archived example",
+		items = { "An English-only historical note keeps its own label." },
+		tip = { label = "Example:", text = "This label is explicit release metadata." },
+	}
+	assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
+	local cards = a.releaseNotesWindow.tipExamples
+	Equal(#cards, 2)
+	Equal(cards[1].label.text, a:FormatHint(text))
+	Equal(cards[1].label.text, "💡 " .. label .. " " .. text)
+	Equal(cards[2].label.text, a:FormatHint(notes.sections[2].tip.text, "Example:"))
+	Equal(cards[2].label.text, "💡 Example: This label is explicit release metadata.")
+	for _, card in ipairs(cards) do
+		assert(card:IsVisible())
+		Equal(card.label.textColor[1], 1)
+		Equal(card.label.textColor[2], 1)
+		Equal(card.label.textColor[3], 1)
+		assert(card.background.textureColor[1] < 0.1)
+		Equal(card.label.width, card.width - 28)
+		Equal(card.height, card.label:GetStringHeight() + 28)
+	end
+	Equal(a.parent.writes, 0)
+end, { locale = "client" })
+
+Register("release notes tip cards wrap resize and retire across pages and history", function()
+	local a = Fixture()
+	a.hasLoggedIn = true
+	local notes, older = Notes(1), Notes(1)
+	older.version = "5.9.1"
+	notes.sections[1].tip = { label = "Tip:", text = string.rep("A long translated example. ", 20) }
+	a.releaseNotesBrowser = {
+		index = 1,
+		entries = { { notes = notes, version = notes.version }, { notes = older, version = older.version } },
+	}
+	assert(a:ShowReleaseNotesPage(1))
+	local frame = a.releaseNotesWindow
+	local card, count = frame.tipExamples[1], #a.regions
+	local wideHeight = card.height
+	a.parent.width, a.parent.height = 480, 340
+	frame.userWidth = 520
+	a.options.lightMode = true
+	assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
+	Equal(#a.regions, count)
+	assert(card.height > wideHeight)
+	Equal(card.width, frame.content.width)
+	Equal(card.label.width, card.width - 28)
+	assert(-card.points[1][3] + card.height <= frame.content.height)
+	assert(frame.width * frame.scale <= a.parent.width)
+	assert(frame.height * frame.scale <= a.parent.height)
+	Equal(card.label.textColor[1], 1)
+	assert(frame.labels[1].textColor[1] < 0.3)
+	assert(card.background.textureColor[1] < 0.1)
+	assert(frame.maximumScroll > 0)
+	assert(a:ShowReleaseNotesPage(2))
+	Equal(card:IsVisible(), false)
+	assert(a:ShowReleaseNotesPage(1))
+	Equal(frame.tipExamples[1], card)
+	Equal(card:IsVisible(), true)
+	assert(a:ShowReleaseNotesPage(1, true))
+	Equal(card:IsVisible(), false)
+	assert(a:ShowReleaseNotesPage(1))
+	Equal(card:IsVisible(), true)
+	Equal(a.parent.writes, 0)
+end, { locale = "client" })
+
+Register("release notes tip samples respect owned region quarantine and recover", function()
+	local a = Fixture()
+	local notes = Notes(1)
+	notes.sections[1].tip = { label = "Tip:", text = "A sample tip." }
+	assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
+	local card = a.releaseNotesWindow.tipExamples[1]
+	for _, region in ipairs({ card, card.label }) do
+		region.forbidden = true
+		local writes = region.writes
+		Equal(a:RenderReleaseNotesWindow(notes, notes.version, false), false)
+		Equal(region.writes, writes)
+		region.forbidden = false
+		assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
+		Equal(card:IsVisible(), true)
+	end
+	notes.sections[1].tip = { label = "Tip:" }
+	assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
+	Equal(card:IsVisible(), false)
+end, { locale = "client" })
+
 Register("release notes screenshots match client names resize reuse and hide on other pages", function()
 	for _, regional in ipairs({ false, true }) do
 		local a = Fixture()
@@ -526,6 +621,16 @@ Register("client locale renders current notes and window navigation", function()
 	Equal(a.releaseNotesWindow.labels[1].text, QuestTogether.TranslateForLocale("What's new", locale))
 	Equal(a.releaseNotesWindow.labels[2].text, notes.welcome)
 	Equal(a.releaseNotesWindow.discord.label.text, QuestTogether.TranslateForLocale("Join our Discord", locale))
+	local count = 0
+	for _, section in ipairs(notes.sections) do
+		if section.tip then
+			count = count + 1
+			local card = a.releaseNotesWindow.tipExamples[count]
+			assert(card and card:IsVisible())
+			Equal(card.label.text, a:FormatHint(section.tip.text, section.tip.label))
+		end
+	end
+	Equal(#a.releaseNotesWindow.tipExamples, count)
 end, { locale = "client" })
 
 Register("release notes share the scroll theme without resetting browsing or acknowledging versions", function()

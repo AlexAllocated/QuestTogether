@@ -702,7 +702,8 @@
       "TOPLEFT",
       "TOPRIGHT",
       "release notes text measurement unavailable",
-      "release notes theme"
+      "release notes theme",
+      "release notes tip measurement unavailable"
     ],
     "RuntimeCoordinator.lua": [
       "Frame"

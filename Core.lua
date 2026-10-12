@@ -2043,6 +2043,45 @@ QuestTogether.API = QuestTogether.API
 		GetMinimapAnchor = function()
 			return Minimap
 		end,
+		GetHintCapabilities = function()
+			-- Read capabilities, never the player's current quest, party or map.
+			local function Has(object, ...)
+				if not CanAccessForeignTable(object) then return false end
+				for index = 1, select("#", ...) do
+					local value = object[select(index, ...)]
+					if not CanAccessForeignValue(value) or type(value) ~= "function" then return false end
+				end
+				return true
+			end
+			local focus = Has(C_SuperTrack, "IsSuperTrackingQuest", "GetSuperTrackedQuestID", "SetSuperTrackedQuestID")
+			local waypoint = Has(C_Map, "GetUserWaypoint", "SetUserWaypoint") and Has(UiMapPoint, "CreateFromCoordinates")
+			local nativeNavigation = waypoint and Has(C_Map, "CanSetUserWaypointOnMap")
+				and Has(C_SuperTrack, "SetSuperTrackedUserWaypoint")
+			local navigation = nativeNavigation or Has(TomTom, "AddWaypoint")
+			local editMode = QuestTogether.API.GetEditModeManagerFrame()
+			local hud = QuestTogether:CanAccessForeignFrame(editMode)
+				and type(QuestTogether:GetAccessibleFrameMember(editMode, "CanEnterEditMode")) == "function"
+			if not hud and Has(C_AddOns, "GetAddOnInfo") then
+				local ok, name = pcall(C_AddOns.GetAddOnInfo, "Blizzard_EditMode")
+				hud = ok and CanAccessForeignValue(name) and type(name) == "string" and name == "Blizzard_EditMode"
+			end
+			local retail = CanAccessForeignValue(WOW_PROJECT_ID) and CanAccessForeignValue(WOW_PROJECT_MAINLINE)
+				and WOW_PROJECT_MAINLINE ~= nil and WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
+				and not QuestTogether:UsesRegionalPlayerNames()
+			return {
+				menu = Has(MenuUtil, "CreateContextMenu"),
+				sharing = QuestTogether.API.CanShareQuests(),
+				details = QuestTogether.API.CanOpenQuestDetails(),
+				journal = QuestTogether.API.CanOpenQuestJournal(),
+				focus = focus, waypoint = waypoint, navigation = navigation,
+				navigationFocus = navigation and focus, hud = hud,
+				nameplates = Has(C_NamePlate, "GetNamePlateForUnit"),
+				worldQuests = retail and Has(C_QuestLog, "IsWorldQuest"),
+				bonusObjectives = retail and Has(C_TaskQuest, "GetQuestInfoByQuestID"),
+				layers = QuestTogether:UsesRegionalPlayerNames(),
+				warMode = QuestTogether:SupportsWarMode() == true,
+			}
+		end,
 		CanOpenQuestDetails = function()
 			return C_TooltipInfo ~= nil and type(C_TooltipInfo.GetHyperlink) == "function"
 		end,
@@ -5756,6 +5795,7 @@ function QuestTogether:PrintHelp()
 	self:Print(L("/qt set <option> <value> - Set a boolean option (e.g. emoteOnQuestCompletion off)"))
 	self:Print(L("/qt get <option> - Read an option value"))
 	self:Print(L("/qt compare - Open Party Quest Log"))
+	self:Print(L("/qt tip | hint - Show another QuestTogether tip"))
 	self:Print("/qt resetlayout - " .. L("Reset window layout"))
 	self:Print(L("/qt lfg [on|off|toggle|status] - Set or check Looking for Questing Partners (no argument toggles)"))
 	self:Print(L("/qt notes | changelog | patchnotes - Open the latest welcome and patch notes"))
@@ -5888,6 +5928,10 @@ function QuestTogether:HandleSlashCommand(input)
 
 	if command == "resetlayout" then
 		return self:ResetWindowLayouts()
+	end
+	if command == "tip" or command == "hint" then
+		if not self:ShowHint() then self:Print(L("Tips are unavailable right now.")) end
+		return
 	end
 	if command == "preview" then
 		return self:HandlePreviewCommand(rest)
@@ -6268,6 +6312,7 @@ function QuestTogether:OnLogin()
 	end
 	self:NotifyAddonUpdate()
 	self:InitializeReleaseNotes()
+	self:ScheduleStartupHint()
 end
 
 -- Bootstrap event handlers always registered.
