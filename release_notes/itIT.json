@@ -1,35 +1,22 @@
 {
-  "source_sha256": "8b2ef9b74731cf0b5d63a428e7f88a1385be922b3cf906a11579030289afd4ee",
+  "source_sha256": "a300648c0c88040cd81a33bd3d703865ebf605647146010217fea3ebb41624e8",
   "notes": {
-    "version": "7.0.0",
-    "welcome": "Il sistema di comunicazione di QuestTogether è stato ricostruito in preparazione all’uscita di WoW Forever. Questa importante modifica al protocollo richiede che tutti aggiornino insieme.",
+    "version": "7.0.1",
+    "welcome": "I controlli di QuestTogether ora si integrano meglio con l’interfaccia attuale di Blizzard.",
     "sections": [
       {
-        "title": "Importante: le versioni precedenti non possono comunicare",
+        "title": "Controlli in stile Blizzard",
         "items": [
-          "Questa versione introduce un nuovo protocollo di comunicazione. QuestTogether 7.x non può scambiare posizioni dei giocatori, progressi delle missioni, dati del registro missioni del gruppo o altri messaggi dell’addon con le versioni 6.x e precedenti. Chiedi anche ai tuoi compagni di missione di aggiornare."
+          "I cursori delle impostazioni ora dispongono di pulsanti con frecce per regolazioni precise e mostrano il valore accanto alla barra.",
+          "Caselle di spunta, campioni di colore, barre di scorrimento e pulsanti standard ora riprendono l’aspetto attuale di Blizzard.",
+          "I campi di ricerca del Registro missioni del gruppo e della finestra di debug ora includono un’icona di ricerca e un pulsante per cancellare il testo."
         ]
       },
       {
-        "title": "Preparativi per WoW Forever",
+        "title": "Miglioramenti allo scorrimento",
         "items": [
-          "Stiamo apportando queste modifiche importanti che interrompono la compatibilità ora, prima dell’uscita di WoW Forever, per dare basi più solide al sistema di comunicazione di QuestTogether.",
-          "Dopo il lancio di WoW Forever, faremo più attenzione a preservare la compatibilità con le versioni precedenti dell’addon e a evitare aggiornamenti obbligatori che interrompano l’esperienza di gioco. Se un’altra incompatibilità del protocollo dovesse diventare necessaria, la comunicheremo chiaramente."
-        ]
-      },
-      {
-        "title": "Trova giocatori dove stai cercando",
-        "items": [
-          "Gli aggiornamenti dei giocatori danno priorità alla zona in cui ti trovi e a una zona che lasci aperta sulla mappa, mentre le posizioni più lontane vengono aggiornate in background.",
-          "I movimenti nelle vicinanze usano aggiornamenti brevi e mirati. Le richieste di ricerca sono condivise e scaglionate per ridurre il traffico nelle zone affollate."
-        ]
-      },
-      {
-        "title": "Condivisione più affidabile",
-        "items": [
-          "Gli aggiornamenti delle missioni, i trasferimenti del registro missioni del gruppo, i dettagli dei giocatori e i dati diagnostici condividono un invio regolato, così le risposte grandi lasciano spazio alle altre attività.",
-          "Le risposte grandi possono recuperare le parti mancanti senza ricominciare l’intero trasferimento. Le posizioni ricevute in ritardo mantengono la loro età originale e non possono sovrascrivere posizioni più recenti o ritiri della posizione.",
-          "Le modifiche alla condivisione della posizione annullano le coordinate pubbliche in attesa di invio. Alla disconnessione o durante una schermata di caricamento, QuestTogether tenta di inviare un ultimo messaggio di uscita; in caso contrario, i dati continuano a scadere automaticamente."
+          "Lo scorrimento è stato aggiornato nelle impostazioni, nel Registro missioni del gruppo, nelle note della patch e nella finestra di debug, anche per il ridimensionamento e l’allineamento delle righe delle missioni.",
+          "Lo scorrimento con le frecce e il trascinamento delle barre native si interrompono correttamente alla chiusura di una finestra."
         ]
       }
     ]

@@ -1,33 +1,20 @@
 {
-  "version": "7.0.0",
-  "welcome": "QuestTogether's communication system has been rebuilt in preparation for WoW Forever's release. This major protocol change requires everyone to update together.",
+  "version": "7.0.1",
+  "welcome": "QuestTogether's controls now match Blizzard's current interface more closely.",
   "sections": [
     {
-      "title": "Important: older versions cannot communicate",
+      "title": "Blizzard-style controls",
       "items": [
-        "This release introduces a new communication protocol. QuestTogether 7.x cannot exchange player locations, quest progress, Party Quest Log data, or other addon messages with 6.x and earlier. Ask your questing partners to update too."
+        "Settings sliders now have arrow buttons for fine adjustments and show their value beside the track.",
+        "Checkboxes, color swatches, scrollbars, and standard buttons now follow Blizzard's current appearance.",
+        "Party Quest Log and debug searches now include a search icon and a clear button."
       ]
     },
     {
-      "title": "Preparing for WoW Forever",
+      "title": "Scrolling improvements",
       "items": [
-        "We're making these larger, breaking changes now, ahead of WoW Forever's release, to put QuestTogether's communication system on a stronger foundation.",
-        "After WoW Forever launches, we'll take greater care to preserve backward compatibility between addon versions and avoid disruptive update requirements. If another protocol break becomes necessary, we'll communicate it clearly."
-      ]
-    },
-    {
-      "title": "Find players where you're looking",
-      "items": [
-        "Player updates prioritize your current zone and a zone you keep open on the map, while more distant locations refresh in the background.",
-        "Nearby movement uses short, focused updates. Discovery requests are shared and staggered to reduce traffic in crowded areas."
-      ]
-    },
-    {
-      "title": "More reliable sharing",
-      "items": [
-        "Quest updates, Party Quest Log transfers, player details, and diagnostics share paced delivery so large replies leave room for other activity.",
-        "Large replies can recover missing pieces without restarting the whole transfer. Delayed location updates retain their original age and cannot overwrite newer positions or withdrawals.",
-        "Location-sharing changes cancel queued public coordinates. On logout or a loading screen, QuestTogether attempts a final departure message; expiry remains the fallback."
+        "Updated scrolling in settings, Party Quest Log, patch notes, and the debug window, including resizing and quest-row alignment.",
+        "Native scrollbar arrows and dragging stop cleanly when a window closes."
       ]
     }
   ]

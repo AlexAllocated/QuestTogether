@@ -2,6 +2,21 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.0.1
+
+Die Bedienelemente von QuestTogether passen jetzt besser zu Blizzards aktueller Benutzeroberfläche.
+
+### Bedienelemente im Blizzard-Stil
+
+- Die Schieberegler in den Einstellungen haben jetzt Pfeiltasten zur Feinabstimmung und zeigen ihren Wert neben der Leiste an.
+- Kontrollkästchen, Farbfelder, Bildlaufleisten und Standardschaltflächen entsprechen jetzt Blizzards aktuellem Erscheinungsbild.
+- Die Suchfelder im Gruppenquestlog und im Debugfenster haben jetzt ein Suchsymbol und eine Schaltfläche zum Leeren.
+
+### Verbesserungen beim Scrollen
+
+- Das Scrollen in den Einstellungen, im Gruppenquestlog, in den Patchnotes und im Debugfenster wurde überarbeitet, einschließlich Größenänderungen und der Ausrichtung der Questzeilen.
+- Beim Schließen eines Fensters werden das Scrollen mit den nativen Bildlaufpfeilen und das Ziehen der Bildlaufleiste zuverlässig beendet.
+
 ## 7.0.0
 
 Das Kommunikationssystem von QuestTogether wurde in Vorbereitung auf die Veröffentlichung von WoW Forever neu aufgebaut. Diese grundlegende Protokolländerung erfordert, dass alle gemeinsam aktualisieren.

@@ -1,35 +1,22 @@
 {
-  "source_sha256": "8b2ef9b74731cf0b5d63a428e7f88a1385be922b3cf906a11579030289afd4ee",
+  "source_sha256": "a300648c0c88040cd81a33bd3d703865ebf605647146010217fea3ebb41624e8",
   "notes": {
-    "version": "7.0.0",
-    "welcome": "Le système de communication de QuestTogether a été reconstruit en préparation de la sortie de WoW Forever. Ce changement majeur de protocole nécessite que tout le monde mette l’addon à jour ensemble.",
+    "version": "7.0.1",
+    "welcome": "Les commandes de QuestTogether se rapprochent désormais de celles de l’interface actuelle de Blizzard.",
     "sections": [
       {
-        "title": "Important : les anciennes versions ne peuvent pas communiquer",
+        "title": "Des commandes au style Blizzard",
         "items": [
-          "Cette version introduit un nouveau protocole de communication. QuestTogether 7.x ne peut pas échanger les positions des joueurs, la progression des quêtes, les données du journal de quêtes du groupe ni les autres messages de l’addon avec les versions 6.x et antérieures. Demandez aussi à vos partenaires de quête de le mettre à jour."
+          "Les curseurs des paramètres disposent désormais de boutons fléchés pour les réglages fins et affichent leur valeur à côté de la barre.",
+          "Les cases à cocher, les échantillons de couleur, les barres de défilement et les boutons standard reprennent désormais l’apparence actuelle de Blizzard.",
+          "Les champs de recherche du journal de quêtes du groupe et de la fenêtre de débogage disposent désormais d’une icône de recherche et d’un bouton pour effacer le texte."
         ]
       },
       {
-        "title": "Préparer la sortie de WoW Forever",
+        "title": "Améliorations du défilement",
         "items": [
-          "Nous effectuons ces changements importants qui rompent la compatibilité dès maintenant, avant la sortie de WoW Forever, pour donner des bases plus solides au système de communication de QuestTogether.",
-          "Après le lancement de WoW Forever, nous veillerons davantage à préserver la rétrocompatibilité entre les versions de l’addon et à éviter les mises à jour obligatoires qui perturbent le jeu. Si une nouvelle rupture de protocole devient nécessaire, nous l’annoncerons clairement."
-        ]
-      },
-      {
-        "title": "Trouvez des joueurs là où vous cherchez",
-        "items": [
-          "Les mises à jour des joueurs donnent la priorité à votre zone actuelle et à une zone que vous laissez ouverte sur la carte. Les positions plus éloignées sont actualisées en arrière-plan.",
-          "Les déplacements à proximité utilisent des mises à jour courtes et ciblées. Les demandes de recherche sont mutualisées et échelonnées pour réduire le trafic dans les zones fréquentées."
-        ]
-      },
-      {
-        "title": "Des échanges plus fiables",
-        "items": [
-          "Les mises à jour de quêtes, les transferts du journal de quêtes du groupe, les détails des joueurs et les diagnostics partagent un envoi régulé pour que les réponses volumineuses laissent de la place aux autres activités.",
-          "Les réponses volumineuses peuvent récupérer les parties manquantes sans recommencer tout le transfert. Les positions reçues en retard conservent leur ancienneté et ne peuvent pas remplacer des positions plus récentes ou leur retrait.",
-          "Les changements de partage de position annulent les coordonnées publiques en attente d’envoi. À la déconnexion ou lors d’un écran de chargement, QuestTogether tente d’envoyer un dernier message de départ ; sinon, les données finissent toujours par expirer."
+          "Le défilement a été revu dans les paramètres, le journal de quêtes du groupe, les notes de mise à jour et la fenêtre de débogage, y compris lors du redimensionnement et pour l’alignement des lignes de quêtes.",
+          "Le défilement avec les flèches et le déplacement de la barre de défilement native s’arrêtent correctement à la fermeture d’une fenêtre."
         ]
       }
     ]

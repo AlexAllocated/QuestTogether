@@ -1,35 +1,22 @@
 {
-  "source_sha256": "8b2ef9b74731cf0b5d63a428e7f88a1385be922b3cf906a11579030289afd4ee",
+  "source_sha256": "a300648c0c88040cd81a33bd3d703865ebf605647146010217fea3ebb41624e8",
   "notes": {
-    "version": "7.0.0",
-    "welcome": "Das Kommunikationssystem von QuestTogether wurde in Vorbereitung auf die Veröffentlichung von WoW Forever neu aufgebaut. Diese grundlegende Protokolländerung erfordert, dass alle gemeinsam aktualisieren.",
+    "version": "7.0.1",
+    "welcome": "Die Bedienelemente von QuestTogether passen jetzt besser zu Blizzards aktueller Benutzeroberfläche.",
     "sections": [
       {
-        "title": "Wichtig: Ältere Versionen können nicht kommunizieren",
+        "title": "Bedienelemente im Blizzard-Stil",
         "items": [
-          "Diese Version führt ein neues Kommunikationsprotokoll ein. QuestTogether 7.x kann keine Spielerpositionen, Questfortschritte, Daten des Gruppenquestlogs oder andere Addon-Nachrichten mit 6.x und früheren Versionen austauschen. Bitte deine Questpartner, ebenfalls zu aktualisieren."
+          "Die Schieberegler in den Einstellungen haben jetzt Pfeiltasten zur Feinabstimmung und zeigen ihren Wert neben der Leiste an.",
+          "Kontrollkästchen, Farbfelder, Bildlaufleisten und Standardschaltflächen entsprechen jetzt Blizzards aktuellem Erscheinungsbild.",
+          "Die Suchfelder im Gruppenquestlog und im Debugfenster haben jetzt ein Suchsymbol und eine Schaltfläche zum Leeren."
         ]
       },
       {
-        "title": "Vorbereitung auf WoW Forever",
+        "title": "Verbesserungen beim Scrollen",
         "items": [
-          "Wir nehmen diese größeren, inkompatiblen Änderungen jetzt vor der Veröffentlichung von WoW Forever vor, um das Kommunikationssystem von QuestTogether auf eine solidere Grundlage zu stellen.",
-          "Nach dem Start von WoW Forever werden wir stärker darauf achten, die Abwärtskompatibilität zwischen Addon-Versionen zu erhalten und störende Aktualisierungspflichten zu vermeiden. Sollte ein weiterer Protokollbruch notwendig werden, werden wir klar darauf hinweisen."
-        ]
-      },
-      {
-        "title": "Spieler dort finden, wo du suchst",
-        "items": [
-          "Spieleraktualisierungen haben in deinem aktuellen Gebiet und in einem Gebiet, das du auf der Karte geöffnet lässt, Vorrang. Weiter entfernte Positionen werden im Hintergrund aktualisiert.",
-          "Bewegungen in der Nähe werden mit kurzen, gezielten Aktualisierungen übertragen. Suchanfragen werden gemeinsam genutzt und zeitlich verteilt, um den Datenverkehr in belebten Gebieten zu verringern."
-        ]
-      },
-      {
-        "title": "Zuverlässigerer Datenaustausch",
-        "items": [
-          "Questaktualisierungen, Übertragungen des Gruppenquestlogs, Spielerdetails und Diagnosedaten werden gemeinsam dosiert versendet, damit große Antworten Platz für andere Aktivitäten lassen.",
-          "Bei großen Antworten können fehlende Teile nachgeliefert werden, ohne die gesamte Übertragung neu zu starten. Verspätete Positionsdaten behalten ihr ursprüngliches Alter und können neuere Positionen oder Rücknahmen nicht überschreiben.",
-          "Änderungen an der Standortfreigabe verwerfen öffentliche Koordinaten in der Warteschlange. Beim Ausloggen oder einem Ladebildschirm versucht QuestTogether, eine letzte Abmeldung zu senden. Falls das nicht gelingt, laufen die Daten weiterhin automatisch ab."
+          "Das Scrollen in den Einstellungen, im Gruppenquestlog, in den Patchnotes und im Debugfenster wurde überarbeitet, einschließlich Größenänderungen und der Ausrichtung der Questzeilen.",
+          "Beim Schließen eines Fensters werden das Scrollen mit den nativen Bildlaufpfeilen und das Ziehen der Bildlaufleiste zuverlässig beendet."
         ]
       }
     ]

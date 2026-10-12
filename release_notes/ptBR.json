@@ -1,35 +1,22 @@
 {
-  "source_sha256": "8b2ef9b74731cf0b5d63a428e7f88a1385be922b3cf906a11579030289afd4ee",
+  "source_sha256": "a300648c0c88040cd81a33bd3d703865ebf605647146010217fea3ebb41624e8",
   "notes": {
-    "version": "7.0.0",
-    "welcome": "O sistema de comunicação do QuestTogether foi reformulado em preparação para o lançamento do WoW Forever. Esta grande mudança de protocolo exige que todos atualizem juntos.",
+    "version": "7.0.1",
+    "welcome": "Os controles do QuestTogether agora combinam melhor com a interface atual da Blizzard.",
     "sections": [
       {
-        "title": "Importante: versões antigas não podem se comunicar",
+        "title": "Controles no estilo da Blizzard",
         "items": [
-          "Esta versão introduz um novo protocolo de comunicação. O QuestTogether 7.x não pode trocar localizações de jogadores, progresso de missões, dados do registro de missões do grupo ou outras mensagens do addon com as versões 6.x e anteriores. Peça aos seus parceiros de missões que também atualizem."
+          "Os controles deslizantes das configurações agora têm botões de seta para ajustes finos e mostram o valor ao lado da barra.",
+          "Caixas de seleção, amostras de cor, barras de rolagem e botões padrão agora seguem a aparência atual da Blizzard.",
+          "Os campos de busca do Registro de Missões do Grupo e da janela de depuração agora incluem um ícone de busca e um botão para limpar o texto."
         ]
       },
       {
-        "title": "Preparação para o WoW Forever",
+        "title": "Melhorias na rolagem",
         "items": [
-          "Estamos fazendo estas mudanças maiores, que rompem a compatibilidade, agora, antes do lançamento do WoW Forever, para dar uma base mais sólida ao sistema de comunicação do QuestTogether.",
-          "Após o lançamento do WoW Forever, teremos mais cuidado para preservar a compatibilidade entre versões novas e antigas do addon e evitar exigências de atualização que atrapalhem os jogadores. Se outra quebra de compatibilidade do protocolo se tornar necessária, avisaremos com clareza."
-        ]
-      },
-      {
-        "title": "Encontre jogadores onde você está procurando",
-        "items": [
-          "As atualizações de jogadores priorizam sua área atual e uma área que você mantém aberta no mapa, enquanto as posições mais distantes são atualizadas em segundo plano.",
-          "O movimento próximo usa atualizações curtas e direcionadas. As solicitações de busca são compartilhadas e distribuídas ao longo do tempo para reduzir o tráfego em áreas movimentadas."
-        ]
-      },
-      {
-        "title": "Troca de dados mais confiável",
-        "items": [
-          "Atualizações de missões, transferências do registro de missões do grupo, detalhes de jogadores e diagnósticos compartilham um envio controlado para que respostas grandes deixem espaço para outras atividades.",
-          "Respostas grandes podem recuperar partes ausentes sem reiniciar toda a transferência. Atualizações de posição atrasadas mantêm sua idade original e não podem substituir posições mais recentes nem retiradas de localização.",
-          "Alterações no compartilhamento de localização cancelam coordenadas públicas na fila de envio. Ao desconectar ou durante uma tela de carregamento, o QuestTogether tenta enviar uma última mensagem de saída; se ela não chegar, os dados continuam expirando automaticamente."
+          "A rolagem foi atualizada nas configurações, no Registro de Missões do Grupo, nas notas de atualização e na janela de depuração, incluindo o redimensionamento e o alinhamento das linhas de missões.",
+          "A rolagem pelas setas e o arraste das barras nativas são interrompidos corretamente ao fechar uma janela."
         ]
       }
     ]

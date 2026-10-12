@@ -2,6 +2,21 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.0.1
+
+Los controles de QuestTogether ahora se ajustan mejor a la interfaz actual de Blizzard.
+
+### Controles al estilo de Blizzard
+
+- Los deslizadores de los ajustes ahora tienen botones de flecha para hacer ajustes precisos y muestran su valor junto a la barra.
+- Las casillas, las muestras de color, las barras de desplazamiento y los botones estándar ahora siguen el aspecto actual de Blizzard.
+- Los campos de búsqueda del Registro de misiones del grupo y de la ventana de depuración ahora incluyen un icono de búsqueda y un botón para borrar el texto.
+
+### Mejoras de desplazamiento
+
+- Se ha actualizado el desplazamiento en los ajustes, el Registro de misiones del grupo, las notas del parche y la ventana de depuración, incluidos el cambio de tamaño y la alineación de las filas de misiones.
+- El desplazamiento con las flechas y el arrastre de las barras nativas se detienen correctamente al cerrar una ventana.
+
 ## 7.0.0
 
 El sistema de comunicación de QuestTogether se ha reconstruido en preparación para el lanzamiento de WoW Forever. Este cambio importante de protocolo requiere que todos actualicéis juntos.
