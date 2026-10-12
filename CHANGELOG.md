@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 7.1.3
+
+More reliable quest text in your client’s language.
+
+### Quest Text Fixes
+
+- Quest announcements, Party Quest Log, and quest-following notices now pick up locally available quest names more reliably.
+- Quest updates stay in order while names are loading. Quest Details also recovers correctly when tooltip text arrives late.
+- Improved handling of quest names received from other players.
+
 ## 7.1.2
 
 Discover more of QuestTogether with helpful tips.

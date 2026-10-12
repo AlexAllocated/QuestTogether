@@ -1,19 +1,16 @@
 {
-  "source_sha256": "f543ef6136bb90b265390b1a76abb512fc329f4ba1da5f509d0c6f85cb4a2517",
+  "source_sha256": "65c67811170238a6bde14a9d00290dfaacd7d68797d4d69c676b015cfb234d8d",
   "notes": {
-    "version": "7.1.2",
-    "welcome": "通过实用提示，了解 QuestTogether 的更多功能。",
+    "version": "7.1.3",
+    "welcome": "以客户端语言更可靠地显示任务文本。",
     "sections": [
       {
-        "title": "QuestTogether 提示",
+        "title": "任务文本修复",
         "items": [
-          "QT 现在会在登录或重载界面时显示一条提示，从打乱的列表中抽取，整轮看完之前不会重复。",
-          "你可以在 QuestTogether 设置主页的“常规”部分关闭自动提示。/qt tip 和 /qt hint 仍可使用。"
-        ],
-        "tip": {
-          "label": "提示：",
-          "text": "随时输入 /qt tip 或 /qt hint，即可查看另一条 QuestTogether 提示。"
-        }
+          "任务通告、队伍任务日志和任务跟随提示现在能更可靠地使用客户端中可用的本地化任务名称。",
+          "加载任务名称时，任务更新仍会按顺序显示。任务详情窗口也能在提示文本延迟到达时正确恢复显示。",
+          "改进了对其他玩家发送的任务名称的处理。"
+        ]
       }
     ]
   }

@@ -3,18 +3,15 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "7.1.2",
-	welcome = "Discover more of QuestTogether with helpful tips.",
+	version = "7.1.3",
+	welcome = "More reliable quest text in your client’s language.",
 	sections = {
 		{
-			title = "QuestTogether Tips",
+			title = "Quest Text Fixes",
 			items = {
-				"QT now shows a tip when you log in or reload, drawing from a shuffled pool without repeats until it runs out.",
-				"You can disable automatic tips under General on the main QuestTogether settings page. /qt tip and /qt hint remain available.",
-			},
-			tip = {
-				label = "Tip:",
-				text = "Type /qt tip or /qt hint to see another QuestTogether tip whenever you like.",
+				"Quest announcements, Party Quest Log, and quest-following notices now pick up locally available quest names more reliably.",
+				"Quest updates stay in order while names are loading. Quest Details also recovers correctly when tooltip text arrives late.",
+				"Improved handling of quest names received from other players.",
 			},
 		},
 	},

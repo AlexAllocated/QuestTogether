@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.1.3
+
+Zuverlässigere Questtexte in der Sprache deines Clients.
+
+### Korrekturen an Questtexten
+
+- Questmeldungen, Gruppenquestlog und Hinweise zum Folgen von Quests greifen jetzt zuverlässiger auf lokal verfügbare Questnamen zurück.
+- Questmeldungen bleiben in der richtigen Reihenfolge, während Namen geladen werden. Questdetails zeigt jetzt auch verspätet eintreffende Tooltip-Texte korrekt an.
+- Die Verarbeitung von Questnamen, die von anderen Spielern empfangen werden, wurde verbessert.
+
 ## 7.1.2
 
 Entdecke mit hilfreichen Tipps mehr von QuestTogether.

@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.1.3
+
+Des textes de quête plus fiables dans la langue de votre client.
+
+### Corrections des textes de quête
+
+- Les annonces de quête, le Journal de quêtes du groupe et les notifications de suivi des quêtes utilisent désormais plus fiablement les noms de quêtes disponibles localement.
+- Les mises à jour de quête restent dans l’ordre pendant le chargement des noms. La fenêtre Détails de la quête affiche aussi correctement le texte des infobulles lorsqu’il arrive en retard.
+- Amélioration du traitement des noms de quêtes reçus d’autres joueurs.
+
 ## 7.1.2
 
 Découvrez davantage de fonctionnalités de QuestTogether grâce à des astuces utiles.

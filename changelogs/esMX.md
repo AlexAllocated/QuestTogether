@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.1.3
+
+Textos de misión más confiables en el idioma de tu cliente.
+
+### Correcciones en los textos de misión
+
+- Los anuncios de misión, el Registro de misiones del grupo y los avisos de seguimiento de misiones ahora utilizan de forma más confiable los nombres de misión disponibles localmente.
+- Las actualizaciones de misión mantienen su orden mientras se cargan los nombres. Detalles de la misión también se recupera correctamente cuando el texto de la descripción emergente llega con retraso.
+- Se mejoró el manejo de los nombres de misión recibidos de otros jugadores.
+
 ## 7.1.2
 
 Descubre más de QuestTogether con consejos útiles.
