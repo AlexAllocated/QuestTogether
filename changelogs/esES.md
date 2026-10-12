@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.1.1
+
+Descubre más de QuestTogether con consejos útiles.
+
+### Consejos de QuestTogether
+
+- QT ahora muestra un consejo al iniciar sesión o recargar la interfaz, elegido de una lista barajada sin repeticiones hasta agotarla.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Consejo: Escribe /qt tip o /qt hint para ver otro consejo de QuestTogether cuando quieras.
+
 ## 7.1.0
 
 Descubre más de QuestTogether con consejos útiles.

@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.1.1
+
+Узнайте больше о QuestTogether с полезными советами.
+
+### Советы QuestTogether
+
+- Теперь QT показывает совет при входе в игру или перезагрузке интерфейса. Советы выбираются из перемешанного списка без повторов, пока он не закончится.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Совет: Введите /qt tip или /qt hint, чтобы в любой момент увидеть ещё один совет QuestTogether.
+
 ## 7.1.0
 
 Узнайте больше о QuestTogether с полезными советами.

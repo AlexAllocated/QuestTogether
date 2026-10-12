@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.1.1
+
+透過實用提示，認識 QuestTogether 的更多功能。
+
+### QuestTogether 提示
+
+- QT 現在會在登入或重新載入介面時顯示一則提示，從打亂的清單中抽取，整輪看完之前不會重複。
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> 提示： 隨時輸入 /qt tip 或 /qt hint，即可查看另一則 QuestTogether 提示。
+
 ## 7.1.0
 
 透過實用提示，認識 QuestTogether 的更多功能。

@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.1.1
+
+Découvrez davantage de fonctionnalités de QuestTogether grâce à des astuces utiles.
+
+### Astuces QuestTogether
+
+- QT affiche désormais une astuce à la connexion ou au rechargement de l’interface, tirée d’une liste mélangée sans répétition tant que toutes les astuces n’ont pas été affichées.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Astuce : Saisissez « /qt tip » ou « /qt hint » pour voir une autre astuce QuestTogether quand vous le souhaitez.
+
 ## 7.1.0
 
 Découvrez davantage de fonctionnalités de QuestTogether grâce à des astuces utiles.

@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 7.1.1
+
+Discover more of QuestTogether with helpful tips.
+
+### QuestTogether Tips
+
+- QT now shows a tip when you log in or reload, drawing from a shuffled pool without repeats until it runs out.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tip: Type /qt tip or /qt hint to see another QuestTogether tip whenever you like.
+
 ## 7.1.0
 
 Discover more of QuestTogether with helpful tips.
