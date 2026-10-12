@@ -875,7 +875,12 @@ function QT:GetHintCatalog()
 end
 
 function QT:FormatHint(text, label)
-	return "💡 " .. (label or L("Tip:")) .. " " .. text
+	return self:GetIconChatTagFromAsset("Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherTipIcon", "texture", 14)
+		.. " |cffffd100"
+		.. (label or L("Tip:"))
+		.. "|r |cfffff2cc"
+		.. text
+		.. "|r"
 end
 
 function QT:ShowHint()

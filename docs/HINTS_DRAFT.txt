@@ -5,7 +5,7 @@ The headings and notes are not part of the hint text.
 
 Show one tip on login or UI reload. /qt tip and /qt hint draw another.
 All draws use one account-wide saved pool without repeats until exhausted.
-The localized light-bulb Tip: prefix is added when printing, not stored here.
+The QT logo, gold Tip: label, and cream text are added when printing, not stored here.
 
 Hints requiring optional client features are excluded when unsupported.
 Implementation and translations live in Hints.lua and the locale catalogs.

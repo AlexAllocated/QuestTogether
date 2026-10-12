@@ -27,7 +27,8 @@ sys.dont_write_bytecode = True
 
 from check_release_notes import (
     LUA_FILE, NOTES_FILE, TOC_FILE, NotesError, check_baseline, check_manifest,
-    git, markdown_tip, parse_notes, previous_release, render_lua, toc_version, unique_object, version_key,
+    git, markdown_tip, parse_notes, previous_release, render_lua, tip_icon_path, TIP_ICON_PATH,
+    toc_version, unique_object, version_key,
 )
 
 
@@ -278,7 +279,12 @@ def text_length(value):
 
 def embed_length(embed):
     return sum(text_length(embed.get(key, "")) for key in ("title", "description")) + text_length(
-        embed.get("footer", {}).get("text", ""))
+        embed.get("footer", {}).get("text", "")) + text_length(embed.get("author", {}).get("name", ""))
+
+
+def embed_attachment_urls(embed):
+    """The image fields owned by this renderer, shared by upload and verification."""
+    return (embed.get("image", {}).get("url", ""), embed.get("author", {}).get("icon_url", ""))
 
 
 def release_key(repository, tag, locale="enUS"):
@@ -307,7 +313,7 @@ def build_messages(notes, repository, tag, locale="enUS"):
                 description = bullet
             else:
                 description = combined
-        if "tip" in section:
+        if "tip" in section and not tip_icon_path(notes["version"]):
             tip = markdown_tip(section["tip"])
             combined = description + ("\n\n" if description else "") + tip
             if text_length(combined) > 4096:
@@ -316,6 +322,10 @@ def build_messages(notes, repository, tag, locale="enUS"):
             else:
                 description = combined
         embeds.append({"title": section["title"], "description": description})
+        if "tip" in section and tip_icon_path(notes["version"]):
+            embeds.append({"author": {"name": section["tip"]["label"],
+                                      "icon_url": "attachment://" + Path(TIP_ICON_PATH).name},
+                           "description": section["tip"]["text"]})
         for client, asset in illustration_images(section.get("illustration")):
             embeds.append({"title": section["title"], "description": client,
                            "image": {"url": "attachment://" + asset + ".png"}})
@@ -326,7 +336,9 @@ def build_messages(notes, repository, tag, locale="enUS"):
     reserve = text_length(key + " | part 100/100 | " + digest)
     groups, current = [], []
     for embed in embeds:
-        if not embed["description"] or text_length(embed["description"]) > 4096 or text_length(embed["title"]) > 256:
+        if (not embed["description"] or text_length(embed["description"]) > 4096
+                or text_length(embed.get("title", "")) > 256
+                or text_length(embed.get("author", {}).get("name", "")) > 256):
             raise ChangelogError("a canonical note cannot fit within an embed")
         if current and (len(current) == 10 or sum(map(embed_length, current)) + embed_length(embed) + reserve > 6000):
             groups.append(current)
@@ -339,12 +351,16 @@ def build_messages(notes, repository, tag, locale="enUS"):
     messages = []
     for index, group in enumerate(groups, 1):
         marker = key + " | part " + str(index) + "/" + str(len(groups)) + " | " + digest
-        group[0]["url"] = url
+        if group[0].get("title"):
+            group[0]["url"] = url
+        else:
+            group[0]["author"]["url"] = url
         group[-1]["footer"] = {"text": marker}
         if sum(map(embed_length, group)) > 6000:
             raise ChangelogError("release message exceeds Discord's text budget")
-        filenames = list(dict.fromkeys(embed["image"]["url"].removeprefix("attachment://")
-                                       for embed in group if "image" in embed))
+        filenames = list(dict.fromkeys(url.removeprefix("attachment://")
+                                       for embed in group for url in embed_attachment_urls(embed)
+                                       if url.startswith("attachment://")))
         nonce = hashlib.sha256((key + "|" + str(index) + ("|attachments-v1" if filenames else "")).encode("utf-8")).hexdigest()[:24]
         messages.append({"embeds": group, "allowed_mentions": {"parse": [], "users": [], "roles": [], "replied_user": False},
                          "nonce": nonce, "enforce_nonce": True})
@@ -450,14 +466,16 @@ def posted_markers(history, planned, repository, tag, locale="enUS"):
 def message_files(root, payload):
     """Read only the canonical, locally checked-in PNGs referenced by this part."""
     from changelogs import illustration_images
-    allowed = {asset + ".png" for name in ("party-quest-log", "party-quest-objectives", "party-quest-overview", "party-quest-following", "party-quest-focus-warning")
+    allowed = {asset + ".png": "Media/ReleaseNotes/" + asset + ".png"
+               for name in ("party-quest-log", "party-quest-objectives", "party-quest-overview", "party-quest-following", "party-quest-focus-warning")
                for _, asset in illustration_images(name)}
+    allowed[Path(TIP_ICON_PATH).name] = TIP_ICON_PATH
     files = []
     for index, attachment in enumerate(payload.get("attachments", [])):
         name = attachment.get("filename")
         if name not in allowed or attachment.get("id") != index:
             raise ChangelogError("unknown release illustration attachment")
-        path = root / "Media/ReleaseNotes" / name
+        path = root / allowed[name]
         if path.is_symlink() or not path.is_file() or not 0 < path.stat().st_size <= 8 * 1024 * 1024:
             raise ChangelogError("missing or oversized release illustration: " + name)
         data = path.read_bytes()
@@ -473,18 +491,19 @@ def verify_attachments(message, payload):
     expected = {a["filename"] for a in payload.get("attachments", [])}
     actual = {a.get("filename") for a in message.get("attachments", [])
               if a.get("size", 0) > 0 and a.get("url", "").startswith("https://cdn.discordapp.com/")}
-    # Discord omits files used by embeds from message.attachments. Their image
-    # URL is rewritten from attachment:// to this message channel's CDN path.
+    # Discord omits files used by embeds from message.attachments. Image and
+    # author icon URLs point at this message channel's CDN upload instead.
     channel = message.get("channel_id", "")
     for embed in message.get("embeds", []):
-        image = embed.get("image", {})
-        url = urllib.parse.urlsplit(image.get("url", ""))
-        if (url.scheme == "https" and url.hostname == "cdn.discordapp.com"
-                and url.path.startswith("/attachments/" + channel + "/")
-                and image.get("width", 0) > 0 and image.get("height", 0) > 0):
-            actual.add(urllib.parse.unquote(url.path.rsplit("/", 1)[-1]))
+        for field, value in zip(("image", "author"), embed_attachment_urls(embed)):
+            url = urllib.parse.urlsplit(value)
+            image = embed.get("image", {})
+            loaded = field == "author" or (image.get("width", 0) > 0 and image.get("height", 0) > 0)
+            if (loaded and url.scheme == "https" and url.hostname == "cdn.discordapp.com"
+                    and channel and url.path.startswith("/attachments/" + channel + "/")):
+                actual.add(urllib.parse.unquote(url.path.rsplit("/", 1)[-1]))
     if not expected <= actual:
-        raise ChangelogError("release post is missing uploaded screenshots; inspect before retrying")
+        raise ChangelogError("release post is missing uploaded images; inspect before retrying")
 
 
 def post_missing(api, channel_id, planned, history, repository, tag, locale="enUS", *, root=None):

@@ -89,9 +89,16 @@ the viewers supply the presentation. For example:
 }
 ```
 
-The in-game viewer shows this as a separate sample. Repository changelogs,
-GitHub release Markdown, and Discord use a blockquote containing the same
-`💡 Tip: ...` text. Discord keeps a whole tip together when splitting long notes.
+The in-game viewer shows this as a separate sample with the QT lightbulb icon,
+a gold label, and cream body text, matching chat tips. Repository changelogs and
+GitHub release Markdown use the same icon at 20 pixels in a blockquote. Its PNG
+URL is pinned to the notes' release tag. Discord attaches the PNG once per
+message and displays it beside the localized tip label in a separate embed,
+with the exact body beneath it; it does not require a custom Discord emoji.
+The asset's first release is declared in `TIP_ICON_FIRST_VERSION`; older notes
+retain their original Unicode presentation so archived examples never reference
+an asset missing from their tag. Discord keeps every tip whole when splitting
+messages and includes author labels in its text budget.
 Omit `tip` entirely when none is needed; an empty or null tip is invalid.
 Sections may include `illustration`: `quest-partners`, `party-quest-log`, or
 `party-quest-objectives`. Party Quest Log screenshots are checked-in assets:
@@ -130,6 +137,7 @@ changes outside this explicit allowlist:
 - `QuestTogether.toc`
 - `CHANGELOG.md`, `changelogs/history.json`, and `changelogs/<locale>.md` for the ten supported non-English locales
 - `release_notes.json`
+- `release_notes_reuse.json` when it exists or `--reuse-notes` is specified
 - `ReleaseNotes.lua`
 - `LocalizedReleaseNotes.lua`
 - `ReleaseNotesHistory.lua` and `changelogs/release_dates.json` when the TOC enables history
@@ -158,6 +166,22 @@ not write files, contact remotes, commit, or tag. Missing/unreachable baseline
 tags fail; a version-only, capitalization-only, or whitespace-only notes edit
 does not count as new content. Reviewers still judge whether the notes actually
 describe the release.
+
+If the release owner explicitly requests identical notes, use the narrow
+exception `bash scripts/bump_version.sh patch --reuse-notes --check`. Without
+`--check`, the ordinary authorized publication workflow records the planned
+version and its exact published baseline in `release_notes_reuse.json`:
+
+```json
+{"schema": 1, "releases": {"1.2.4": "1.2.3"}}
+```
+
+Reuse requires identical English and all enabled translated content, including
+tips and illustrations, excluding only the version. The baseline must be the
+reachable published `v<current TOC version>` tag. Check-only never writes this
+acknowledgement. The tracked record lets CI and Discord validate that one release
+normally; it does not waive freshness for subsequent releases. New prose still
+uses the normal workflow. This tooling metadata is not included in addon ZIPs.
 
 After the release has been explicitly authorized, omit `--check`:
 

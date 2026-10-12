@@ -87,10 +87,12 @@ lifetime after chat destinations are initialized; zoning and enabling do not dra
 another. `/qt tip` and `/qt hint` draw from the same pool in `db.global.hintPool`.
 Stable IDs survive wording, language and profile changes. Only successfully printed
 tips consume a draw; unsupported client features are excluded. Display adds the
-localized prefix centrally, leaving catalog text reusable.
+QT tip logo with its gold bulb, gold localized label, and cream tip text centrally,
+leaving catalog text reusable.
 Release-note tip examples carry a localized label and body in canonical notes;
 the viewer calls the same hint formatter inside a separate chat-style card.
-Web and Discord render that example as a blockquote without adding a bullet.
+Web notes render that example as an illustrated blockquote; Discord uses the same
+icon beside the localized tip label in a separate embed.
 
 ## Communication generation 2
 

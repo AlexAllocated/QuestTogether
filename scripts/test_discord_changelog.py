@@ -233,8 +233,103 @@ class FormattingTests(unittest.TestCase):
             self.assertTrue(all(changelog.text_length(e['description'])<=4096 for e in message['embeds']))
             self.assertEqual(message['allowed_mentions']['parse'],[])
 
+    def test_custom_tip_icons_preserve_localized_text_and_fit_all_message_budgets(self):
+        data = notes('7.1.1')
+        data['welcome'] = '😀' * 1200
+        data['sections'] = [{'title': 'Tips ' + str(i),
+                             'items': ['Part ' + str(i) + ':' + str(j) + ' ' + ('😀' * 390) for j in range(5)],
+                             'tip': {'label': '💬' * 40, 'text': 'Try /qt tip ' + str(i) + ' ' + ('😀' * 770)}}
+                            for i in range(5)]
+        original = copy.deepcopy(data)
+        planned = changelog.build_messages(changelog.parse_notes(json.dumps(data)), REPO, 'v7.1.1', 'zhTW')
+        self.assertEqual(data, original)
+        self.assertGreater(len(planned), 1)
+        all_embeds = [e for m in planned for e in m['embeds']]
+        for section in data['sections']:
+            tips = [e for e in all_embeds if e['description'] == section['tip']['text']]
+            self.assertEqual(len(tips), 1)
+            self.assertEqual(tips[0]['author'], {'name': section['tip']['label'],
+                                               'icon_url': 'attachment://QuestTogetherTipIcon.png'})
+            for item in section['items']:
+                self.assertEqual(sum(e['description'].count('- ' + item) for e in all_embeds), 1)
+        for message in planned:
+            self.assertLessEqual(len(message['embeds']), 10)
+            expected_size = sum(changelog.text_length(e.get('title', '')) + changelog.text_length(e['description'])
+                                + changelog.text_length(e.get('author', {}).get('name', ''))
+                                + changelog.text_length(e.get('footer', {}).get('text', '')) for e in message['embeds'])
+            self.assertEqual(sum(map(changelog.embed_length, message['embeds'])), expected_size)
+            self.assertLessEqual(expected_size, 6000)
+            self.assertTrue(all(changelog.text_length(e['description']) <= 4096 for e in message['embeds']))
+            expected = [{'id': 0, 'filename': 'QuestTogetherTipIcon.png'}] if any('author' in e for e in message['embeds']) else []
+            self.assertEqual(message.get('attachments', []), expected)
+            self.assertEqual(message['allowed_mentions']['parse'], [])
+
+    def test_older_tip_payloads_keep_original_unicode_rendering_and_nonce(self):
+        data = notes('7.1.0')
+        data['sections'][0]['tip'] = {'label': 'Tip:', 'text': 'Try /qt tip.'}
+        payload = changelog.build_messages(data, REPO, 'v7.1.0')[0]
+        self.assertEqual(payload['embeds'][1]['description'], '- ' + data['sections'][0]['items'][0] + '\n\n> 💡 Tip: Try /qt tip.')
+        self.assertNotIn('attachments', payload)
+        self.assertFalse(any('author' in embed for embed in payload['embeds']))
+        import hashlib
+        key = changelog.release_key(REPO, 'v7.1.0')
+        self.assertEqual(payload['nonce'], hashlib.sha256((key + '|1').encode()).hexdigest()[:24])
+
+    def test_tip_first_in_split_message_has_clickable_release_label(self):
+        data = notes('7.1.1')
+        data['welcome'] = '😀' * 1200
+        data['sections'][0]['items'] = ['😀' * 790, '😀' * 790]
+        data['sections'][0]['tip'] = {'label': 'Tip:', 'text': '😀' * 800}
+        planned = changelog.build_messages(data, REPO, 'v7.1.1')
+        self.assertEqual(len(planned), 2)
+        first = planned[1]['embeds'][0]
+        self.assertNotIn('title', first)
+        self.assertEqual(first['author']['url'], 'https://github.com/' + REPO + '/releases/tag/v7.1.1')
+        self.assertNotIn('url', first)
+
 
 class AttachmentTests(unittest.TestCase):
+    def test_custom_tip_and_screenshot_uploads_are_deduplicated_and_verified(self):
+        data = notes('7.1.1')
+        data['sections'][0]['illustration'] = 'party-quest-objectives'
+        data['sections'][0]['tip'] = {'label': 'Tip:', 'text': 'Try /qt hint.'}
+        data['sections'].append({'title': 'More tips', 'items': ['Try another tip.'],
+                                 'tip': {'label': 'Tip:', 'text': 'Try /qt tip.'}})
+        payload = changelog.build_messages(data, REPO, 'v7.1.1')[0]
+        expected_names = ['QuestTogetherTipIcon.png', 'PartyQuestObjectivesForever.png']
+        self.assertEqual([a['filename'] for a in payload['attachments']], expected_names)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            folder = root / 'Media/ReleaseNotes'; folder.mkdir(parents=True)
+            png = b'\x89PNG\r\n\x1a\nprivate-fixture'
+            (root / 'Media/QuestTogetherTipIcon.png').write_bytes(png)
+            (folder / 'PartyQuestObjectivesForever.png').write_bytes(png)
+            self.assertEqual(changelog.message_files(root, payload), [(name, png) for name in expected_names])
+            result = response(payload)
+            result['attachments'] = []
+            for embed in result['embeds']:
+                if 'author' in embed:
+                    embed['author']['icon_url'] = 'https://cdn.discordapp.com/attachments/' + CHANNEL + '/123/QuestTogetherTipIcon.png'
+                if 'image' in embed:
+                    embed['image'] = {'url': 'https://cdn.discordapp.com/attachments/' + CHANNEL + '/123/PartyQuestObjectivesForever.png',
+                                      'width': 100, 'height': 100}
+            changelog.verify_attachments(result, payload)
+            for bad_url in ('attachment://QuestTogetherTipIcon.png',
+                            'https://cdn.discordapp.com/attachments/another-channel/123/QuestTogetherTipIcon.png',
+                            'https://example.invalid/attachments/' + CHANNEL + '/123/QuestTogetherTipIcon.png'):
+                bad = copy.deepcopy(result)
+                for embed in bad['embeds']:
+                    if 'author' in embed: embed['author']['icon_url'] = bad_url
+                with self.assertRaisesRegex(changelog.ChangelogError, 'missing uploaded'):
+                    changelog.verify_attachments(bad, payload)
+            icon = root / 'Media/QuestTogetherTipIcon.png'
+            icon.write_bytes(b'not a png')
+            with self.assertRaisesRegex(changelog.ChangelogError, 'not a PNG'):
+                changelog.message_files(root, payload)
+            icon.unlink()
+            with self.assertRaisesRegex(changelog.ChangelogError, 'missing or oversized'):
+                changelog.message_files(root, payload)
+
     def test_multipart_contains_exact_pngs_and_json_with_nonce_and_mentions_disabled(self):
         from email.parser import BytesParser
         from email.policy import default

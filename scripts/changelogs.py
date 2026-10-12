@@ -68,7 +68,7 @@ def render(locale, entries):
             lines += ['- ' + item for item in section['items']]
             lines += ['']
             if 'tip' in section:
-                lines += [markdown_tip(section['tip']), '']
+                lines += [markdown_tip(section['tip'], notes['version']), '']
             for client, asset in illustration_images(section.get('illustration')):
                 url = 'https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v' + notes['version'] + '/Media/ReleaseNotes/' + asset + '.png'
                 lines += ['**' + client + '**', '', '![' + section['title'] + ' — ' + client + '](' + url + ')', '']

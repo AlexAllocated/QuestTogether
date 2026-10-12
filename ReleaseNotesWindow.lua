@@ -147,8 +147,8 @@ local function CreateTipExample(addon, parent)
 	Call(addon, rule, "SetColorTexture", 0.85, 0.65, 0.25, 1)
 	card.label = Label(addon, card, "GameFontHighlight")
 	Call(addon, card.label, "SetPoint", "TOPLEFT", 14, -14)
-	-- This is a chat sample: keep its white text and dark background in both
-	-- parchment themes, rather than applying the page's body-text color.
+	-- The shared hint formatter supplies the text colors; retain a neutral base color
+	-- and dark background in both parchment themes.
 	Call(addon, card.label, "SetTextColor", 1, 1, 1, 1)
 	return card
 end

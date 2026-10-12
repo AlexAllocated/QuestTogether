@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><g transform="translate(-83.4286 -57.8286) scale(.2285714)"><g id="quest-scrolls" stroke="#222B30" stroke-width="32" stroke-linejoin="round" stroke-linecap="round">
+    <path id="rear-scroll" fill="#F5F2E9" d="M455 286 H702 C733 286 752 307 752 343 V573 H766 C789 573 806 593 806 621 C806 649 787 670 758 670 H452 C430 670 416 653 416 630 C416 606 431 590 454 590 H479 V382 H437 C415 382 400 366 400 344 C400 312 425 286 455 286 Z" />
+    <path id="rear-roll" fill="none" d="M440 290 C464 303 480 329 479 359 V382" />
+    </g>
+  </g><g><path d="M77 28 C59 28 45 42 45 60 C45 73 51 80 58 89 L61 97 H93 L96 89 C103 80 109 73 109 60 C109 42 95 28 77 28 Z" fill="#D9A62A" stroke="#222B30" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" /><path d="M61 97 H93 V108 Q93 115 86 115 H68 Q61 115 61 108 Z" fill="#F5F2E9" stroke="#222B30" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" /><path d="M69 96 V78 L62 67 M85 96 V78 L92 67 M62 67 L77 76 L92 67" fill="none" stroke="#222B30" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" /><path d="M67 122 H87" fill="none" stroke="#222B30" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" /></g></svg>

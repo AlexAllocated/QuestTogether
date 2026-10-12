@@ -14,9 +14,13 @@ import tempfile
 VERSION = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-(alpha|beta)\.(0|[1-9][0-9]*))?\Z")
 VERSION_MENTION = re.compile(r"(?<![\w.])v?[0-9]+\.[0-9]+\.[0-9]+(?:-(?:alpha|beta)\.[0-9]+)?(?!\w|\.[0-9])", re.IGNORECASE)
 NOTES_FILE = "release_notes.json"
+REUSE_FILE = "release_notes_reuse.json"
 LUA_FILE = "ReleaseNotes.lua"
 LOCALIZED_LUA_FILE = "LocalizedReleaseNotes.lua"
 TOC_FILE = "QuestTogether.toc"
+# Releases before this asset existed retain their original rendering and URLs.
+TIP_ICON_FIRST_VERSION = "7.1.1"
+TIP_ICON_PATH = "Media/QuestTogetherTipIcon.png"
 sys.dont_write_bytecode = True
 
 
@@ -103,8 +107,18 @@ def format_tip(tip):
     return "💡 " + tip["label"] + " " + tip["text"]
 
 
-def markdown_tip(tip):
-    return "\n".join("> " + line for line in format_tip(tip).split("\n"))
+def tip_icon_path(version):
+    return TIP_ICON_PATH if version and version_key(version) >= version_key(TIP_ICON_FIRST_VERSION) else None
+
+
+def markdown_tip(tip, version=None):
+    icon = tip_icon_path(version)
+    if icon:
+        url = "https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v" + version + "/" + icon
+        text = '<img src="' + url + '" width="20" height="20" alt=""> ' + tip["label"] + " " + tip["text"]
+    else:
+        text = format_tip(tip)
+    return "\n".join("> " + line for line in text.split("\n"))
 
 
 def parse_notes(text, label=NOTES_FILE):
@@ -214,7 +228,50 @@ def previous_release(root, current_version):
     return max(candidates)[1]
 
 
-def check_baseline(root, notes, reference):
+def note_content(notes):
+    # Reuse means identical authored content, not merely equivalent wording.
+    return {"welcome": notes["welcome"], "sections": notes["sections"]}
+
+
+def read_note_reuse(root):
+    path = Path(root) / REUSE_FILE
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique_object)
+    except (ValueError, TypeError) as error:
+        raise NotesError(REUSE_FILE + ": " + str(error)) from error
+    if (not isinstance(data, dict) or set(data) != {"schema", "releases"}
+            or type(data["schema"]) is not int or data["schema"] != 1
+            or not isinstance(data["releases"], dict)):
+        raise NotesError(REUSE_FILE + " must contain schema 1 and a releases mapping")
+    for target, baseline in data["releases"].items():
+        if version_key(target) <= version_key(baseline):
+            raise NotesError(REUSE_FILE + " target must be newer than its baseline")
+    return data["releases"]
+
+
+def check_reused_translations(root, commit):
+    # A repeated release keeps every enabled translation, not only English.
+    manifest = (Path(root) / TOC_FILE).read_text(encoding="utf-8")
+    if not check_manifest(manifest):
+        return
+    from localization import LOCALES
+    for locale in LOCALES:
+        relative = "release_notes/" + locale + ".json"
+        published = json.loads(git(root, "show", commit + ":" + relative).stdout, object_pairs_hook=unique_object)
+        current = json.loads((Path(root) / relative).read_text(encoding="utf-8"), object_pairs_hook=unique_object)
+        for wrapper in (published, current):
+            if not isinstance(wrapper, dict) or set(wrapper) != {"source_sha256", "notes"}:
+                raise NotesError("invalid reused translation: " + locale)
+            parse_notes(json.dumps(wrapper["notes"], ensure_ascii=False), relative)
+        if (current["source_sha256"] != published["source_sha256"]
+                or note_content(current["notes"]) != note_content(published["notes"])):
+            raise NotesError("reused translation differs from published notes: " + locale)
+
+
+def check_baseline(root, notes, reference, reuse_for=None):
+    acknowledged = read_note_reuse(root)
     require_full_history(root)
     commit = git(root, "rev-parse", "--verify", "--end-of-options", reference + "^{commit}").stdout.strip()
     if git(root, "merge-base", "--is-ancestor", commit, "HEAD", allow_failure=True).returncode:
@@ -224,6 +281,8 @@ def check_baseline(root, notes, reference):
         raise NotesError("release-note baseline is newer than the current version")
     present = git(root, "cat-file", "-e", commit + ":" + NOTES_FILE, allow_failure=True)
     if present.returncode:
+        if reuse_for:
+            raise NotesError("cannot reuse a baseline without published release notes")
         history = git(root, "log", "-1", "--format=%H", commit, "--", NOTES_FILE).stdout.strip()
         if history:
             raise NotesError("baseline previously tracked release notes but is missing them: " + reference)
@@ -231,9 +290,29 @@ def check_baseline(root, notes, reference):
     baseline = parse_notes(git(root, "show", commit + ":" + NOTES_FILE).stdout, reference + ":" + NOTES_FILE)
     if baseline["version"] != baseline_version:
         raise NotesError("baseline notes do not match its TOC version: " + reference)
+    # An explicit request is a planned release; saved acknowledgements apply
+    # only to their exact released version. Fresh drafts do not need a waiver.
+    unchanged = content_key(notes) == content_key(baseline)
+    target = reuse_for or (notes["version"] if unchanged and notes["version"] in acknowledged else None)
+    if target:
+        if version_key(target) <= version_key(baseline_version) or notes["version"] not in (baseline_version, target):
+            raise NotesError("note reuse target must be newer than the selected baseline")
+        recorded_baseline = acknowledged.get(target)
+        if recorded_baseline is not None and recorded_baseline != baseline_version:
+            raise NotesError("note reuse acknowledgement does not match the selected baseline")
+        if not reuse_for and recorded_baseline != baseline_version:
+            raise NotesError("note reuse requires an explicit acknowledgement")
+        tag = "refs/tags/v" + baseline_version
+        tagged_commit = git(root, "rev-parse", "--verify", "--end-of-options", tag + "^{commit}").stdout.strip()
+        if commit != tagged_commit:
+            raise NotesError("note reuse baseline must be the published version tag: " + tag)
+        if note_content(notes) != note_content(baseline):
+            raise NotesError("note reuse requires exactly unchanged published content")
+        check_reused_translations(root, commit)
+        return "release notes explicitly reused from " + tag + " for " + target
     if notes["welcome"] == "" and notes["sections"] == []:
         return "silent release; no new release notes"
-    if content_key(notes) == content_key(baseline):
+    if unchanged:
         raise NotesError("release notes are unchanged from " + reference + "; update their content for every release")
     return "release-note content differs from " + reference
 
@@ -261,6 +340,7 @@ def main(argv=None):
     mode.add_argument("--check", action="store_true", help="validate exact generated output (default)")
     mode.add_argument("--write", action="store_true", help="regenerate English and enabled localized release-note data")
     parser.add_argument("--set-version", help="with --write, update canonical version after the TOC bump")
+    parser.add_argument("--reuse-notes-for", metavar="VERSION", help="explicitly reuse identical published notes for this one target version")
     baseline = parser.add_mutually_exclusive_group()
     baseline.add_argument("--baseline-ref", help="require content changes from this explicit Git release baseline")
     baseline.add_argument("--release-history", action="store_true", help="compare the previous reachable release tag; requires full history")
@@ -268,7 +348,12 @@ def main(argv=None):
     try:
         if args.set_version and not args.write:
             raise NotesError("--set-version requires --write")
+        if args.reuse_notes_for:
+            version_key(args.reuse_notes_for)
+            if not args.baseline_ref or (args.write and args.set_version != args.reuse_notes_for):
+                raise NotesError("--reuse-notes-for requires --baseline-ref and, when writing, the same --set-version")
         root = args.root.resolve()
+        acknowledged = read_note_reuse(root)
         notes = parse_notes((root / NOTES_FILE).read_text(encoding="utf-8"))
         previous_version = notes["version"]
         if args.set_version:
@@ -280,7 +365,7 @@ def main(argv=None):
         if notes["version"] != version:
             raise NotesError("release_notes.json version " + notes["version"] + " does not match TOC version " + version)
         reference = previous_release(root, version) if args.release_history else args.baseline_ref
-        baseline_result = check_baseline(root, notes, reference) if reference else None
+        baseline_result = check_baseline(root, notes, reference, reuse_for=args.reuse_notes_for) if reference else None
         outputs = {root / LUA_FILE: render_lua(notes)}
         if localized:
             # Validate all translations before changing any version or generated
@@ -299,6 +384,10 @@ def main(argv=None):
                            previous_version=previous_version if args.set_version else None))
         if args.set_version:
             outputs[root / NOTES_FILE] = json.dumps(notes, ensure_ascii=False, indent=2) + "\n"
+        if args.reuse_notes_for and args.write:
+            baseline_version = toc_version(git(root, "show", args.baseline_ref + ":" + TOC_FILE).stdout)
+            acknowledged[args.reuse_notes_for] = baseline_version
+            outputs[root / REUSE_FILE] = json.dumps({"schema": 1, "releases": acknowledged}, indent=2, sort_keys=True) + "\n"
         if args.write:
             for path, generated in outputs.items():
                 atomic_write(path, generated)

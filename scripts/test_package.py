@@ -21,6 +21,8 @@ class PackagingTests(unittest.TestCase):
             self.assertTrue(set(package.toc_entries((ROOT / "QuestTogether.toc").read_text())) <= set(manifest["files"]))
             self.assertIn("Libs/libchev/LICENSE", manifest["files"])
             self.assertIn("Media/QuestTogetherIcon.tga", manifest["files"])
+            self.assertIn("Media/QuestTogetherTipIcon.tga", manifest["files"])
+            self.assertIn("Media/QuestTogetherTipIcon.png", manifest["files"])
             self.assertNotIn("scripts/test.lua", manifest["files"])
             self.assertNotIn("scripts/offline_numeric_tests.lua", manifest["files"])
             self.assertFalse(any(p.startswith(".local/") or p.endswith("image.png") for p in manifest["files"]))

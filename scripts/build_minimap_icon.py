@@ -21,11 +21,43 @@ SVG_NS = "http://www.w3.org/2000/svg"
 SIZE = 128
 
 
+def tip_icon(scrolls):
+    """Pair the original rear scroll with a large gold tip bulb."""
+    def element(parent, name, **attributes):
+        return ET.SubElement(parent, f"{{{SVG_NS}}}{name}", attributes)
+
+    icon = ET.Element(f"{{{SVG_NS}}}svg", {
+        "width": str(SIZE), "height": str(SIZE), "viewBox": "0 0 128 128",
+    })
+    emblem = element(icon, "g", transform="translate(-83.4286 -57.8286) scale(.2285714)")
+    rear_scroll = copy.deepcopy(scrolls)
+    for shape in list(rear_scroll):
+        if shape.get("id") not in ("rear-scroll", "rear-roll"):
+            rear_scroll.remove(shape)
+    emblem.append(rear_scroll)
+    badge = element(icon, "g")
+
+    def path(shape, fill, stroke="#222B30", width="7", **attributes):
+        return element(badge, "path", d=shape, fill=fill, stroke=stroke,
+                       **{"stroke-width": width, "stroke-linejoin": "round", "stroke-linecap": "round"},
+                       **attributes)
+
+    bulb = "M77 28 C59 28 45 42 45 60 C45 73 51 80 58 89 L61 97 H93 L96 89 C103 80 109 73 109 60 C109 42 95 28 77 28 Z"
+    path(bulb, "#D9A62A")
+    path("M61 97 H93 V108 Q93 115 86 115 H68 Q61 115 61 108 Z", "#F5F2E9")
+    path("M69 96 V78 L62 67 M85 96 V78 L92 67 M62 67 L77 76 L92 67", "none", width="5")
+    path("M67 122 H87", "none", width="6")
+    return icon
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--glow", action="store_true", help="Render the LFQP announcement variant")
+    variant = parser.add_mutually_exclusive_group()
+    variant.add_argument("--glow", action="store_true", help="Render the LFQP announcement variant")
+    variant.add_argument("--tip", action="store_true", help="Render the scroll and gold tip bulb (TGA, PNG and SVG)")
     args = parser.parse_args()
-    output = ROOT / "Media" / "QuestTogetherPartnerIcon.tga" if args.glow else OUTPUT
+    name = "QuestTogetherTipIcon.tga" if args.tip else "QuestTogetherPartnerIcon.tga" if args.glow else OUTPUT.name
+    output = ROOT / "Media" / name
     source = ET.parse(ROOT / "logo.svg")
     scrolls = source.find(f".//{{{SVG_NS}}}g[@id='quest-scrolls']")
     if scrolls is None:
@@ -61,6 +93,8 @@ def main():
         icon.append(halo)
         icon.append(contour)
     icon.append(emblem)
+    if args.tip:
+        icon = tip_icon(scrolls)
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="questtogether-icon-") as temp:
         svg = Path(temp) / "icon.svg"
@@ -85,6 +119,12 @@ def main():
         ):
             raise SystemExit("Expected an uncompressed 128x128 32-bit TGA with 8-bit alpha")
         output.write_bytes(data)
+        if args.tip:
+            ET.ElementTree(icon).write(output.with_suffix(".svg"), encoding="utf-8", xml_declaration=True)
+            subprocess.run([
+                "magick", str(tga), "-strip", "-define", "png:exclude-chunks=date,time",
+                str(output.with_suffix(".png")),
+            ], check=True)
     print(f"Wrote {output.relative_to(ROOT)} ({SIZE}x{SIZE}, 32-bit RGBA)")
 
 

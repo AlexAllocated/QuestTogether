@@ -3,6 +3,7 @@
 Release ZIPs must include all addon-owned runtime textures:
 
 - `Media/QuestTogetherIcon.tga` — scroll logo used by buttons, player plates, and tooltips.
+- `Media/QuestTogetherTipIcon.tga` — QT scroll paired with a large gold bulb for tips. Build with `python3 scripts/build_minimap_icon.py --tip`; this also generates the matching PNG for web/Discord notes and the SVG preview from the original emblem.
 - `Media/QuestTogetherPartnerIcon.tga` — static gold-glow scroll for LFQP announcements; build with `python3 scripts/build_minimap_icon.py --glow`.
 - `Media/ChatBubbleIcon.tga` — transparent speech bubble used by QT chat logs and overhead bubbles.
 - `Media/MinimapPartnerRing.tga` — animated gold halo around the minimap button while LFQP.

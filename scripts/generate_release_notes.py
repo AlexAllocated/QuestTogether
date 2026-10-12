@@ -209,7 +209,7 @@ def markdown(notes):
     for section in notes["sections"]:
         lines += ["", "## " + section["title"], ""] + ["- " + item for item in section["items"]]
         if "tip" in section:
-            lines += ["", markdown_tip(section["tip"])]
+            lines += ["", markdown_tip(section["tip"], notes["version"])]
     return "\n".join(lines) + "\n"
 
 

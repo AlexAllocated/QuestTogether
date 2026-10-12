@@ -2,12 +2,13 @@
 set -euo pipefail
 
 usage() {
-	echo "Usage: $0 <major|minor|patch> [stable|beta|alpha] [--check]"
+	echo "Usage: $0 <major|minor|patch> [stable|beta|alpha] [--check] [--reuse-notes]"
 	echo "--check validates the planned release without writes, network, commits, or tags."
+	echo "--reuse-notes explicitly repeats the current published notes for this release only."
 	exit 1
 }
 
-if [[ $# -lt 1 || $# -gt 3 ]]; then
+if [[ $# -lt 1 ]]; then
 	usage
 fi
 
@@ -18,7 +19,7 @@ fi
 
 shift
 release_channel="stable"
-if [[ $# -gt 0 && "$1" != "--check" ]]; then
+if [[ $# -gt 0 && "$1" != --* ]]; then
 	release_channel="$1"
 	shift
 fi
@@ -26,13 +27,15 @@ if [[ "$release_channel" != "stable" && "$release_channel" != "beta" && "$releas
 	usage
 fi
 check_only=false
-if [[ $# -gt 0 && "$1" == "--check" ]]; then
-	check_only=true
+reuse_notes=false
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+		--check) [[ "$check_only" == false ]] || usage; check_only=true ;;
+		--reuse-notes) [[ "$reuse_notes" == false ]] || usage; reuse_notes=true ;;
+		*) usage ;;
+	esac
 	shift
-fi
-if [[ $# -gt 0 ]]; then
-	usage
-fi
+done
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 if [[ -z "$repo_root" ]]; then
@@ -51,6 +54,9 @@ fi
 # local work before validation, network access, or writes, so a successful tag
 # cannot silently omit the implementation described by its authored notes.
 release_files=("$toc_file" release_notes.json ReleaseNotes.lua)
+if [[ "$reuse_notes" == true || -f release_notes_reuse.json ]]; then
+	release_files+=(release_notes_reuse.json)
+fi
 if grep -Eq '^[[:space:]]*ReleaseNotesHistory\.lua[[:space:]]*$' "$toc_file"; then
 	release_files+=(ReleaseNotesHistory.lua changelogs/release_dates.json)
 fi
@@ -98,7 +104,6 @@ if ! git rev-parse -q --verify "${notes_baseline_ref}^{commit}" >/dev/null; then
 	echo "Error: release-note baseline v${toc_version} is missing. Fetch full history and tags before releasing."
 	exit 1
 fi
-python3 scripts/check_release_notes.py --check --baseline-ref "$notes_baseline_ref"
 
 current_branch="$(git rev-parse --abbrev-ref HEAD)"
 if [[ -z "$current_branch" || "$current_branch" == "HEAD" ]]; then
@@ -178,6 +183,12 @@ if git rev-parse -q --verify "refs/tags/${new_tag}" >/dev/null; then
 	exit 1
 fi
 
+notes_reuse_args=()
+if [[ "$reuse_notes" == true ]]; then
+	notes_reuse_args=(--reuse-notes-for "$new_version")
+fi
+python3 scripts/check_release_notes.py --check --baseline-ref "$notes_baseline_ref" "${notes_reuse_args[@]}"
+
 echo "Stable base version: ${stable_base_version} (from ${stable_base_version_source})"
 echo "Release channel: ${release_channel}"
 echo "Bump type: ${bump_type}"
@@ -213,7 +224,7 @@ END {
 ' "$toc_file" > "$tmp_file"
 mv "$tmp_file" "$toc_file"
 
-python3 scripts/check_release_notes.py --write --set-version "$new_version" --baseline-ref "$notes_baseline_ref"
+python3 scripts/check_release_notes.py --write --set-version "$new_version" --baseline-ref "$notes_baseline_ref" "${notes_reuse_args[@]}"
 python3 scripts/check_release_notes.py --check --baseline-ref "$notes_baseline_ref"
 
 echo "Committing release files: ${release_files[*]}..."

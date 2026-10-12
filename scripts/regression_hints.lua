@@ -218,7 +218,11 @@ QT:RegisterTest("client locale renders hint prefix body command help and meta ti
 	a.pickLast = true
 	a:HandleSlashCommand("tip")
 	local body = QT.Translate("Type /qt tip or /qt hint to see another QuestTogether tip whenever you like.")
-	assert(a.messages[1] == "💡 " .. QT.Translate("Tip:") .. " " .. body)
+	local icon = "|TInterface\\AddOns\\QuestTogether\\Media\\QuestTogetherTipIcon:14:14:0:0|t"
+	assert(a.messages[1] == icon .. " |cffffd100" .. QT.Translate("Tip:") .. "|r |cfffff2cc" .. body .. "|r")
+	local _, textures = a.messages[1]:gsub("|T", "")
+	assert(textures == 1, "chat tips must contain exactly one bundled tip icon")
+	assert(not a.messages[1]:find("💡", 1, true), "chat tips must not rely on Unicode symbols")
 	assert(a.db.global.hintPool.last == "hint167")
 	a:PrintHelp()
 	local found = false

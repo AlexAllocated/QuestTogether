@@ -14,7 +14,7 @@ import zipfile
 ADDON = "QuestTogether"
 MANIFEST = "package-manifest.json"
 MAX_BYTES = 64 * 1024 * 1024
-ASSETS = ("Media/**/*.tga", "Media/*.tga", "Media/ReleaseNotes/*.png", "changelogs/*.md")
+ASSETS = ("Media/**/*.tga", "Media/*.tga", "Media/QuestTogetherTipIcon.png", "Media/ReleaseNotes/*.png", "changelogs/*.md")
 DOCUMENTS = ("Bindings.xml", "Libs/Ed25519/README.md", "Libs/libchev/manifest.json",
              "Libs/libchev/LICENSE", "CHANGELOG.md", "CURSEFORGE_DESCRIPTION.md",
              "CLIENT_COMPATIBILITY.md", "logo.png")

@@ -460,13 +460,17 @@ Register("release notes tip samples use the chat formatter and canonical localiz
 	}
 	assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
 	local cards = a.releaseNotesWindow.tipExamples
+	local icon = "|TInterface\\AddOns\\QuestTogether\\Media\\QuestTogetherTipIcon:14:14:0:0|t"
 	Equal(#cards, 2)
 	Equal(cards[1].label.text, a:FormatHint(text))
-	Equal(cards[1].label.text, "💡 " .. label .. " " .. text)
+	Equal(cards[1].label.text, icon .. " |cffffd100" .. label .. "|r |cfffff2cc" .. text .. "|r")
 	Equal(cards[2].label.text, a:FormatHint(notes.sections[2].tip.text, "Example:"))
-	Equal(cards[2].label.text, "💡 Example: This label is explicit release metadata.")
+	Equal(cards[2].label.text, icon .. " |cffffd100Example:|r |cfffff2ccThis label is explicit release metadata.|r")
 	for _, card in ipairs(cards) do
 		assert(card:IsVisible())
+		local _, textures = card.label.text:gsub("|T", "")
+		Equal(textures, 1)
+		assert(not card.label.text:find("💡", 1, true), "in-game examples must use the bundled tip icon")
 		Equal(card.label.textColor[1], 1)
 		Equal(card.label.textColor[2], 1)
 		Equal(card.label.textColor[3], 1)

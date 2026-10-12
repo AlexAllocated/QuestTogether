@@ -52,6 +52,25 @@ class ChangelogTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'tip'):
             c.validate_entry({'enUS':self.notes,'deDE':translated})
 
+    def test_custom_tip_icon_is_tag_pinned_without_rewriting_older_examples(self):
+        from generate_release_notes import markdown as github_markdown
+        old = copy.deepcopy(self.notes)
+        old['version'] = '7.1.0'
+        old['sections'][0]['tip'] = {'label': '提示：', 'text': 'Use /qt tip or /qt hint.'}
+        current = copy.deepcopy(old)
+        current['version'] = '7.1.1'
+        for locale in c.TITLES:
+            entries = [{locale: current}, {locale: old}]
+            rendered = c.render(locale, entries)
+            self.assertIn('/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20"', rendered)
+            self.assertNotIn('/v7.1.0/Media/QuestTogetherTipIcon.png', rendered)
+            self.assertEqual(rendered.count('> 💡 提示： Use /qt tip or /qt hint.'), 1)
+        self.assertIn('/v7.1.1/Media/QuestTogetherTipIcon.png', github_markdown(current))
+        self.assertIn('> 💡 提示： Use /qt tip or /qt hint.', github_markdown(old))
+        current['version'] = '8.0.0'
+        self.assertIn('/v8.0.0/Media/QuestTogetherTipIcon.png', github_markdown(current))
+        self.assertEqual(old['sections'], current['sections'])
+
     def test_client_screenshots_are_tag_pinned_on_web_and_attached_in_discord(self):
         notes = {'version': '6.4.0', 'welcome': 'Explore party quests.', 'sections': [
             {'title': 'Party Quest Log', 'items': ['Compare your party.'], 'illustration': 'party-quest-log'},

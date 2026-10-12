@@ -192,7 +192,8 @@ class NotesTests(unittest.TestCase):
         self.git("commit", "-qm", "Enable localized release notes")
 
     def release_note_bytes(self):
-        names = ["QuestTogether.toc", "release_notes.json", "ReleaseNotes.lua", "LocalizedReleaseNotes.lua"]
+        names = ["QuestTogether.toc", "release_notes.json", "ReleaseNotes.lua", "LocalizedReleaseNotes.lua",
+                 "release_notes_reuse.json"]
         names += ["release_notes/" + locale + ".json" for locale in LOCALES]
         return {name: (self.root / name).read_bytes() if (self.root / name).exists() else None for name in names}
 
@@ -545,6 +546,110 @@ class NotesTests(unittest.TestCase):
 
     def test_bump_refuses_unchanged_notes_before_any_mutation_or_network(self):
         self.assert_bump_guard(["patch"], success=False, contains="unchanged")
+
+    def test_explicit_reuse_preflight_is_read_only_and_does_not_authorize_other_releases(self):
+        self.assert_bump_guard(["patch", "--reuse-notes", "--check"], success=True,
+                               contains="explicitly reused from refs/tags/v1.2.3 for 1.2.4")
+        self.assert_bump_guard(["patch", "--check", "--reuse-notes"], success=True,
+                               contains="New version: 1.2.4")
+        self.assert_bump_guard(["patch", "--check"], success=False, contains="unchanged")
+
+    def test_reuse_requires_exact_content_including_tip_and_illustration(self):
+        for mutate in (lambda notes: notes.update(welcome=notes["welcome"].upper()),
+                       lambda notes: notes.update(welcome=notes["welcome"].replace(" ", "  ")),
+                       lambda notes: notes["sections"][0].update(items=["A changed feature."]),
+                       lambda notes: notes["sections"][0].update(illustration="quest-partners"),
+                       lambda notes: notes["sections"][0].update(tip={"label": "Tip:", "text": "Use /qt tip."})):
+            notes = sample_notes()
+            mutate(notes)
+            self.write_notes(notes)
+            before = self.release_note_bytes()
+            self.assertIn("exactly unchanged", self.check("--baseline-ref", "v1.2.3",
+                          "--reuse-notes-for", "1.2.4", success=False))
+            self.assertEqual(self.release_note_bytes(), before)
+
+    def test_reuse_registry_schema_is_strict(self):
+        path = self.root / "release_notes_reuse.json"
+        for value in (None, [], {}, {"schema": True, "releases": {}},
+                      {"schema": 2, "releases": {}}, {"schema": 1, "releases": []},
+                      {"schema": 1, "releases": {}, "extra": True},
+                      {"schema": 1, "releases": {"1.2.4": None}},
+                      {"schema": 1, "releases": {"invalid": "1.2.3"}},
+                      {"schema": 1, "releases": {"1.2.3": "1.2.3"}},
+                      {"schema": 1, "releases": {"1.2.2": "1.2.3"}}):
+            with self.subTest(value=value):
+                path.write_text(json.dumps(value))
+                self.check(success=False)
+        path.write_text('{"schema":1,"releases":{"1.2.4":"1.2.3","1.2.4":"1.2.2"}}')
+        self.assertIn("duplicate JSON key", self.check(success=False))
+
+    def test_reuse_rejects_wrong_scope_missing_tag_and_nonpublished_baseline(self):
+        for target in ("1.2.3", "1.2.2", "invalid"):
+            self.check("--baseline-ref", "v1.2.3", "--reuse-notes-for", target, success=False)
+        self.assertIn("requires --baseline-ref", self.check("--reuse-notes-for", "1.2.4", success=False))
+        self.assertIn("same --set-version", self.check("--write", "--baseline-ref", "v1.2.3",
+                      "--reuse-notes-for", "1.2.4", success=False))
+        self.git("commit", "--allow-empty", "-qm", "Not a published baseline")
+        self.assertIn("published version tag", self.check("--baseline-ref", "HEAD",
+                      "--reuse-notes-for", "1.2.4", success=False))
+        path = self.root / "release_notes_reuse.json"
+        path.write_text(json.dumps({"schema": 1, "releases": {"1.2.4": "1.2.2"}}))
+        self.assertIn("does not match", self.check("--baseline-ref", "v1.2.3",
+                      "--reuse-notes-for", "1.2.4", success=False))
+        path.unlink()
+        self.git("tag", "-d", "v1.2.3")
+        self.assertIn("git rev-parse", self.check("--baseline-ref", "HEAD",
+                      "--reuse-notes-for", "1.2.4", success=False))
+
+    def test_reuse_requires_unchanged_translations_before_any_writes(self):
+        self.enable_localized_notes()
+        self.git("tag", "-f", "v1.2.3")
+        self.check("--check", "--baseline-ref", "v1.2.3", "--reuse-notes-for", "1.2.4")
+        path = self.root / "release_notes/frFR.json"
+        content = json.loads(path.read_text())
+        content["notes"]["welcome"] += " Texte modifié."
+        path.write_text(json.dumps(content, ensure_ascii=False))
+        self.check("--write")
+        self.assert_bump_guard(["patch", "--reuse-notes", "--check"], success=False,
+                               contains="reused translation differs")
+        self.set_toc_version("1.2.4")
+        before = self.release_note_bytes()
+        self.assertIn("reused translation differs", self.check("--write", "--set-version", "1.2.4",
+                      "--baseline-ref", "v1.2.3", "--reuse-notes-for", "1.2.4", success=False))
+        self.assertEqual(self.release_note_bytes(), before)
+
+    def test_reuse_release_records_exact_pair_and_normal_history_checks_accept_it(self):
+        self.enable_localized_notes()
+        self.git("tag", "-f", "v1.2.3")
+        published = self.release_note_bytes()
+        remote, branch = self.local_release_remote("reused publication")
+        result = self.run_process(["bash", "scripts/bump_version.sh", "patch", "--reuse-notes"])
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(json.loads((self.root / "release_notes_reuse.json").read_text()),
+                         {"schema": 1, "releases": {"1.2.4": "1.2.3"}})
+        self.assertEqual(self.git("rev-parse", "refs/heads/" + branch, root=remote), self.git("rev-parse", "HEAD"))
+        self.assertEqual(self.git("rev-parse", "v1.2.4^{commit}", root=remote), self.git("rev-parse", "HEAD"))
+        self.assertIn("explicitly reused", self.check("--check", "--release-history"))
+        for filename in ["release_notes.json"] + ["release_notes/" + locale + ".json" for locale in LOCALES]:
+            old = json.loads(published[filename])
+            new = json.loads((self.root / filename).read_text())
+            if filename != "release_notes.json":
+                self.assertEqual(new["source_sha256"], old["source_sha256"])
+                old, new = old["notes"], new["notes"]
+            self.assertEqual(new.pop("version"), "1.2.4")
+            self.assertEqual(old.pop("version"), "1.2.3")
+            self.assertEqual(new, old)
+        self.assertEqual(self.git("status", "--porcelain"), "")
+        from discord_changelog import load_notes
+        accepted, sha = load_notes(self.root, "v1.2.4", exact=True)
+        self.assertEqual(accepted["version"], "1.2.4")
+        self.assertEqual(sha, self.git("rev-parse", "HEAD"))
+        self.assert_bump_guard(["patch", "--check"], success=False, contains="newer than the selected baseline")
+        notes = sample_notes("1.2.4", "New changes in the following release.")
+        self.write_notes(notes)
+        self.write_translations(notes)
+        self.check("--write")
+        self.assert_bump_guard(["patch", "--check"], success=True, contains="New version: 1.2.5")
 
     def test_bump_refuses_stale_generated_notes_before_any_mutation_or_network(self):
         self.write_notes(sample_notes(item="New party comparison options."), generate=False)
