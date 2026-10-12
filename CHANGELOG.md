@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 7.0.1
+## 7.0.2
 
 A few improvements to quest information and optional diagnostics.
 
@@ -12,6 +12,21 @@ A few improvements to quest information and optional diagnostics.
 
 - Added a Quest Details window for reading available quest text.
 - Improved optional developer diagnostics and communication reliability. Your diagnostic sharing setting is respected.
+
+## 7.0.1
+
+QuestTogether's controls now match Blizzard's current interface more closely.
+
+### Blizzard-style controls
+
+- Settings sliders now have arrow buttons for fine adjustments and show their value beside the track.
+- Checkboxes, color swatches, scrollbars, and standard buttons now follow Blizzard's current appearance.
+- Party Quest Log and debug searches now include a search icon and a clear button.
+
+### Scrolling improvements
+
+- Updated scrolling in settings, Party Quest Log, patch notes, and the debug window, including resizing and quest-row alignment.
+- Native scrollbar arrows and dragging stop cleanly when a window closes.
 
 ## 7.0.0
 

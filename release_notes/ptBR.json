@@ -1,7 +1,7 @@
 {
   "source_sha256": "2c6335e216a45204298db1f63c30addda6634cd3c95b66b3d74cb460174001f2",
   "notes": {
-    "version": "7.0.1",
+    "version": "7.0.2",
     "welcome": "Algumas melhorias nas informações de missões e nos diagnósticos opcionais.",
     "sections": [
       {

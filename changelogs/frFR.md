@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.0.1
+## 7.0.2
 
 Quelques améliorations aux informations de quête et aux diagnostics facultatifs.
 
@@ -10,6 +10,21 @@ Quelques améliorations aux informations de quête et aux diagnostics facultatif
 
 - Ajout d’une fenêtre Détails de la quête pour lire les textes de quête disponibles.
 - Amélioration des diagnostics facultatifs destinés au développeur et de la fiabilité des communications. Votre réglage de partage des données de diagnostic est respecté.
+
+## 7.0.1
+
+Les commandes de QuestTogether se rapprochent désormais de celles de l’interface actuelle de Blizzard.
+
+### Des commandes au style Blizzard
+
+- Les curseurs des paramètres disposent désormais de boutons fléchés pour les réglages fins et affichent leur valeur à côté de la barre.
+- Les cases à cocher, les échantillons de couleur, les barres de défilement et les boutons standard reprennent désormais l’apparence actuelle de Blizzard.
+- Les champs de recherche du journal de quêtes du groupe et de la fenêtre de débogage disposent désormais d’une icône de recherche et d’un bouton pour effacer le texte.
+
+### Améliorations du défilement
+
+- Le défilement a été revu dans les paramètres, le journal de quêtes du groupe, les notes de mise à jour et la fenêtre de débogage, y compris lors du redimensionnement et pour l’alignement des lignes de quêtes.
+- Le défilement avec les flèches et le déplacement de la barre de défilement native s’arrêtent correctement à la fermeture d’une fenêtre.
 
 ## 7.0.0
 

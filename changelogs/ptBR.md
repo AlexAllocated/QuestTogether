@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.0.1
+## 7.0.2
 
 Algumas melhorias nas informações de missões e nos diagnósticos opcionais.
 
@@ -10,6 +10,21 @@ Algumas melhorias nas informações de missões e nos diagnósticos opcionais.
 
 - Adicionada uma janela de Detalhes da missão para ler os textos de missão disponíveis.
 - Melhorados os diagnósticos opcionais para o desenvolvedor e a confiabilidade da comunicação. Sua configuração de compartilhamento de dados de diagnóstico é respeitada.
+
+## 7.0.1
+
+Os controles do QuestTogether agora combinam melhor com a interface atual da Blizzard.
+
+### Controles no estilo da Blizzard
+
+- Os controles deslizantes das configurações agora têm botões de seta para ajustes finos e mostram o valor ao lado da barra.
+- Caixas de seleção, amostras de cor, barras de rolagem e botões padrão agora seguem a aparência atual da Blizzard.
+- Os campos de busca do Registro de Missões do Grupo e da janela de depuração agora incluem um ícone de busca e um botão para limpar o texto.
+
+### Melhorias na rolagem
+
+- A rolagem foi atualizada nas configurações, no Registro de Missões do Grupo, nas notas de atualização e na janela de depuração, incluindo o redimensionamento e o alinhamento das linhas de missões.
+- A rolagem pelas setas e o arraste das barras nativas são interrompidos corretamente ao fechar uma janela.
 
 ## 7.0.0
 

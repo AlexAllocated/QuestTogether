@@ -3,6 +3,239 @@
   "releases": [
     {
       "enUS": {
+        "version": "7.0.1",
+        "welcome": "QuestTogether's controls now match Blizzard's current interface more closely.",
+        "sections": [
+          {
+            "title": "Blizzard-style controls",
+            "items": [
+              "Settings sliders now have arrow buttons for fine adjustments and show their value beside the track.",
+              "Checkboxes, color swatches, scrollbars, and standard buttons now follow Blizzard's current appearance.",
+              "Party Quest Log and debug searches now include a search icon and a clear button."
+            ]
+          },
+          {
+            "title": "Scrolling improvements",
+            "items": [
+              "Updated scrolling in settings, Party Quest Log, patch notes, and the debug window, including resizing and quest-row alignment.",
+              "Native scrollbar arrows and dragging stop cleanly when a window closes."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "7.0.1",
+        "welcome": "Die Bedienelemente von QuestTogether passen jetzt besser zu Blizzards aktueller Benutzeroberfläche.",
+        "sections": [
+          {
+            "title": "Bedienelemente im Blizzard-Stil",
+            "items": [
+              "Die Schieberegler in den Einstellungen haben jetzt Pfeiltasten zur Feinabstimmung und zeigen ihren Wert neben der Leiste an.",
+              "Kontrollkästchen, Farbfelder, Bildlaufleisten und Standardschaltflächen entsprechen jetzt Blizzards aktuellem Erscheinungsbild.",
+              "Die Suchfelder im Gruppenquestlog und im Debugfenster haben jetzt ein Suchsymbol und eine Schaltfläche zum Leeren."
+            ]
+          },
+          {
+            "title": "Verbesserungen beim Scrollen",
+            "items": [
+              "Das Scrollen in den Einstellungen, im Gruppenquestlog, in den Patchnotes und im Debugfenster wurde überarbeitet, einschließlich Größenänderungen und der Ausrichtung der Questzeilen.",
+              "Beim Schließen eines Fensters werden das Scrollen mit den nativen Bildlaufpfeilen und das Ziehen der Bildlaufleiste zuverlässig beendet."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "7.0.1",
+        "welcome": "Les commandes de QuestTogether se rapprochent désormais de celles de l’interface actuelle de Blizzard.",
+        "sections": [
+          {
+            "title": "Des commandes au style Blizzard",
+            "items": [
+              "Les curseurs des paramètres disposent désormais de boutons fléchés pour les réglages fins et affichent leur valeur à côté de la barre.",
+              "Les cases à cocher, les échantillons de couleur, les barres de défilement et les boutons standard reprennent désormais l’apparence actuelle de Blizzard.",
+              "Les champs de recherche du journal de quêtes du groupe et de la fenêtre de débogage disposent désormais d’une icône de recherche et d’un bouton pour effacer le texte."
+            ]
+          },
+          {
+            "title": "Améliorations du défilement",
+            "items": [
+              "Le défilement a été revu dans les paramètres, le journal de quêtes du groupe, les notes de mise à jour et la fenêtre de débogage, y compris lors du redimensionnement et pour l’alignement des lignes de quêtes.",
+              "Le défilement avec les flèches et le déplacement de la barre de défilement native s’arrêtent correctement à la fermeture d’une fenêtre."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "7.0.1",
+        "welcome": "Los controles de QuestTogether ahora se ajustan mejor a la interfaz actual de Blizzard.",
+        "sections": [
+          {
+            "title": "Controles al estilo de Blizzard",
+            "items": [
+              "Los deslizadores de los ajustes ahora tienen botones de flecha para hacer ajustes precisos y muestran su valor junto a la barra.",
+              "Las casillas, las muestras de color, las barras de desplazamiento y los botones estándar ahora siguen el aspecto actual de Blizzard.",
+              "Los campos de búsqueda del Registro de misiones del grupo y de la ventana de depuración ahora incluyen un icono de búsqueda y un botón para borrar el texto."
+            ]
+          },
+          {
+            "title": "Mejoras de desplazamiento",
+            "items": [
+              "Se ha actualizado el desplazamiento en los ajustes, el Registro de misiones del grupo, las notas del parche y la ventana de depuración, incluidos el cambio de tamaño y la alineación de las filas de misiones.",
+              "El desplazamiento con las flechas y el arrastre de las barras nativas se detienen correctamente al cerrar una ventana."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "7.0.1",
+        "welcome": "Los controles de QuestTogether ahora se ajustan mejor a la interfaz actual de Blizzard.",
+        "sections": [
+          {
+            "title": "Controles al estilo de Blizzard",
+            "items": [
+              "Los deslizadores de la configuración ahora tienen botones de flecha para hacer ajustes precisos y muestran su valor junto a la barra.",
+              "Las casillas, las muestras de color, las barras de desplazamiento y los botones estándar ahora siguen la apariencia actual de Blizzard.",
+              "Los campos de búsqueda del Registro de misiones del grupo y de la ventana de depuración ahora incluyen un ícono de búsqueda y un botón para borrar el texto."
+            ]
+          },
+          {
+            "title": "Mejoras de desplazamiento",
+            "items": [
+              "Se actualizó el desplazamiento en la configuración, el Registro de misiones del grupo, las notas del parche y la ventana de depuración, incluidos el cambio de tamaño y la alineación de las filas de misiones.",
+              "El desplazamiento con las flechas y el arrastre de las barras nativas se detienen correctamente al cerrar una ventana."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "7.0.1",
+        "welcome": "Os controles do QuestTogether agora combinam melhor com a interface atual da Blizzard.",
+        "sections": [
+          {
+            "title": "Controles no estilo da Blizzard",
+            "items": [
+              "Os controles deslizantes das configurações agora têm botões de seta para ajustes finos e mostram o valor ao lado da barra.",
+              "Caixas de seleção, amostras de cor, barras de rolagem e botões padrão agora seguem a aparência atual da Blizzard.",
+              "Os campos de busca do Registro de Missões do Grupo e da janela de depuração agora incluem um ícone de busca e um botão para limpar o texto."
+            ]
+          },
+          {
+            "title": "Melhorias na rolagem",
+            "items": [
+              "A rolagem foi atualizada nas configurações, no Registro de Missões do Grupo, nas notas de atualização e na janela de depuração, incluindo o redimensionamento e o alinhamento das linhas de missões.",
+              "A rolagem pelas setas e o arraste das barras nativas são interrompidos corretamente ao fechar uma janela."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "7.0.1",
+        "welcome": "Элементы управления QuestTogether теперь лучше соответствуют текущему интерфейсу Blizzard.",
+        "sections": [
+          {
+            "title": "Элементы управления в стиле Blizzard",
+            "items": [
+              "У ползунков в настройках появились кнопки со стрелками для точной регулировки, а их значения теперь отображаются рядом со шкалой.",
+              "Флажки, образцы цветов, полосы прокрутки и стандартные кнопки теперь соответствуют текущему оформлению Blizzard.",
+              "Поля поиска в журнале заданий группы и окне отладки теперь содержат значок поиска и кнопку очистки."
+            ]
+          },
+          {
+            "title": "Улучшения прокрутки",
+            "items": [
+              "Обновлена прокрутка в настройках, журнале заданий группы, описании обновлений и окне отладки, в том числе при изменении размера окон и выравнивании строк заданий.",
+              "Прокрутка стрелками и перетаскивание стандартных полос прокрутки корректно прекращаются при закрытии окна."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "7.0.1",
+        "welcome": "I controlli di QuestTogether ora si integrano meglio con l’interfaccia attuale di Blizzard.",
+        "sections": [
+          {
+            "title": "Controlli in stile Blizzard",
+            "items": [
+              "I cursori delle impostazioni ora dispongono di pulsanti con frecce per regolazioni precise e mostrano il valore accanto alla barra.",
+              "Caselle di spunta, campioni di colore, barre di scorrimento e pulsanti standard ora riprendono l’aspetto attuale di Blizzard.",
+              "I campi di ricerca del Registro missioni del gruppo e della finestra di debug ora includono un’icona di ricerca e un pulsante per cancellare il testo."
+            ]
+          },
+          {
+            "title": "Miglioramenti allo scorrimento",
+            "items": [
+              "Lo scorrimento è stato aggiornato nelle impostazioni, nel Registro missioni del gruppo, nelle note della patch e nella finestra di debug, anche per il ridimensionamento e l’allineamento delle righe delle missioni.",
+              "Lo scorrimento con le frecce e il trascinamento delle barre native si interrompono correttamente alla chiusura di una finestra."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "7.0.1",
+        "welcome": "QuestTogether의 UI 조작 요소가 이제 블리자드의 최신 인터페이스와 더욱 잘 어울립니다.",
+        "sections": [
+          {
+            "title": "블리자드 스타일의 조작 요소",
+            "items": [
+              "설정 슬라이더에 미세 조정용 화살표 버튼을 추가하고, 슬라이더 막대 옆에 현재 값을 표시하도록 변경했습니다.",
+              "체크박스, 색상 견본, 스크롤바, 일반 버튼에 블리자드의 최신 디자인을 적용했습니다.",
+              "파티 퀘스트 목록과 디버그 창의 검색창에 검색 아이콘과 입력 내용 지우기 버튼을 추가했습니다."
+            ]
+          },
+          {
+            "title": "스크롤 개선",
+            "items": [
+              "설정, 파티 퀘스트 목록, 패치 노트, 디버그 창의 스크롤 동작을 개선했습니다. 창 크기 변경과 퀘스트 행 정렬 처리도 포함됩니다.",
+              "창을 닫으면 기본 스크롤바의 화살표를 이용한 스크롤과 드래그 동작이 정상적으로 중단됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "7.0.1",
+        "welcome": "QuestTogether 的控件现在更贴合暴雪当前的界面风格。",
+        "sections": [
+          {
+            "title": "暴雪风格的控件",
+            "items": [
+              "设置中的滑块现在配有用于微调的箭头按钮，并在滑轨旁显示当前数值。",
+              "复选框、色块、滚动条和标准按钮现在采用暴雪当前的外观。",
+              "小队任务日志和调试窗口的搜索框现在包含搜索图标和清除按钮。"
+            ]
+          },
+          {
+            "title": "滚动改进",
+            "items": [
+              "更新了设置、小队任务日志、补丁说明和调试窗口中的滚动行为，包括窗口大小调整和任务行对齐。",
+              "关闭窗口时，原生滚动条的箭头滚动和拖动操作会正确停止。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "7.0.1",
+        "welcome": "QuestTogether 的控制項現在更貼近暴雪目前的介面風格。",
+        "sections": [
+          {
+            "title": "暴雪風格的控制項",
+            "items": [
+              "設定中的滑桿現在配有用於微調的箭頭按鈕，並在滑軌旁顯示目前數值。",
+              "核取方塊、色彩樣本、捲動列和標準按鈕現在採用暴雪目前的外觀。",
+              "隊伍任務日誌和偵錯視窗的搜尋欄現在包含搜尋圖示和清除按鈕。"
+            ]
+          },
+          {
+            "title": "捲動改進",
+            "items": [
+              "更新了設定、隊伍任務日誌、更新說明和偵錯視窗中的捲動行為，包括視窗大小調整和任務列對齊。",
+              "關閉視窗時，原生捲動列的箭頭捲動和拖曳操作會正確停止。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "7.0.0",
         "welcome": "QuestTogether's communication system has been rebuilt in preparation for WoW Forever's release. This major protocol change requires everyone to update together.",
         "sections": [

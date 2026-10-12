@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.0.1
+## 7.0.2
 
 Alcuni miglioramenti alle informazioni sulle missioni e alla diagnostica facoltativa.
 
@@ -10,6 +10,21 @@ Alcuni miglioramenti alle informazioni sulle missioni e alla diagnostica facolta
 
 - Aggiunta una finestra Dettagli della missione per leggere i testi delle missioni disponibili.
 - Migliorate la diagnostica facoltativa per lo sviluppatore e l’affidabilità delle comunicazioni. La tua impostazione di condivisione dei dati diagnostici viene rispettata.
+
+## 7.0.1
+
+I controlli di QuestTogether ora si integrano meglio con l’interfaccia attuale di Blizzard.
+
+### Controlli in stile Blizzard
+
+- I cursori delle impostazioni ora dispongono di pulsanti con frecce per regolazioni precise e mostrano il valore accanto alla barra.
+- Caselle di spunta, campioni di colore, barre di scorrimento e pulsanti standard ora riprendono l’aspetto attuale di Blizzard.
+- I campi di ricerca del Registro missioni del gruppo e della finestra di debug ora includono un’icona di ricerca e un pulsante per cancellare il testo.
+
+### Miglioramenti allo scorrimento
+
+- Lo scorrimento è stato aggiornato nelle impostazioni, nel Registro missioni del gruppo, nelle note della patch e nella finestra di debug, anche per il ridimensionamento e l’allineamento delle righe delle missioni.
+- Lo scorrimento con le frecce e il trascinamento delle barre native si interrompono correttamente alla chiusura di una finestra.
 
 ## 7.0.0
 
