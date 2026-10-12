@@ -509,9 +509,12 @@ function QuestTogether:BuildPartyQuestDiffRows()
 	end
 	for id, entry in pairs(union) do
 		local localTitle = self:GetLocalizedQuestTitle(id)
+		-- Keep the certified sender snapshot unchanged. Only the derived display
+		-- title is plain text, including while local quest data is still loading.
+		local title = self:NormalizeQuestDisplayTitleText(localTitle or entry.questTitle)
 		local row = {
 			questId = id,
-			title = localTitle or entry.questTitle,
+			title = title ~= "" and title or (L("Quest ") .. id),
 			needsLocalTitle = not localTitle,
 			cells = {},
 			missing = 0,

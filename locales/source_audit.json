@@ -1,5 +1,5 @@
 {
-  "policy": "Reviewed exemptions: native frame/API identifiers, stable canonical model labels translated at display, machine diagnostics, brand markup, and fictional player/quest names in the debug preview. All other user-facing prose uses L(). Update this ledger only after reviewing each new literal. Ads.lua contains intentionally English, manually invoked campaign copy; its command feedback is localized.",
+  "policy": "Reviewed exemptions: native frame/API identifiers, stable canonical model labels translated at display, machine diagnostics, brand markup, and fictional player/quest names in the debug preview. All other user-facing prose uses L(). Update this ledger only after reviewing each new literal. Ads.lua contains intentionally English, manually invoked campaign copy; its command feedback is localized. Core.lua loading/unknown constant names refer to Blizzard-localized placeholder globals, not authored UI text.",
   "exemptions": {
     "AddonUpdates.lua": [
       "QTVR"
@@ -183,6 +183,7 @@
       "Ignoring QuestTogether chat window close because a visible replacement exists id=%s",
       "In Progress",
       "Installed chat window hooks",
+      "LOADING",
       "Left",
       "Main Chat Window",
       "Not Started",
@@ -205,6 +206,8 @@
       "Skipping unavailable runtime event=%s",
       "Tab",
       "Top",
+      "UNKNOWN",
+      "UNKNOWNOBJECT",
       "Unknown",
       "Version",
       "Wrapperactivequesticon",

@@ -25,7 +25,7 @@ function QT:ReadQuestDetails(questID)
 	if not link then
 		return nil, "unavailable"
 	end
-	local ok, result, reason = pcall(function()
+	local ok, result, reason, pendingInstanceID = pcall(function()
 		local data = self.API.GetTooltipDataForHyperlink(link)
 		if not self:CanAccessTable(data) or not self:CanAccessTable(data.lines) then
 			return nil, "unavailable"
@@ -33,6 +33,10 @@ function QT:ReadQuestDetails(questID)
 		local lines = data.lines
 		if #lines > MAX_LINES then
 			return nil, "too_large"
+		end
+		local instanceID = self:SafeToNumber(data.dataInstanceID)
+		if not instanceID or instanceID < 0 or instanceID ~= math.floor(instanceID) then
+			instanceID = nil
 		end
 		local copied, bytes = {}, 0
 		for index = 1, #lines do
@@ -57,18 +61,16 @@ function QT:ReadQuestDetails(questID)
 			end
 		end
 		if #copied == 0 then
-			return nil, "empty"
-		end
-		local instanceID = self:SafeToNumber(data.dataInstanceID)
-		if not instanceID or instanceID < 0 or instanceID ~= math.floor(instanceID) then
-			instanceID = nil
+			-- Native data may have its update identity before readable text. Keep
+			-- that primitive so TOOLTIP_DATA_UPDATE can finish the same reader.
+			return nil, "empty", instanceID
 		end
 		return { text = table.concat(copied, "\n\n"), dataInstanceID = instanceID }
 	end)
 	if not ok then
 		return nil, "unavailable"
 	end
-	return result, reason
+	return result, reason, pendingInstanceID
 end
 
 local function Call(addon, region, method, ...)
@@ -105,9 +107,16 @@ local function Refresh(addon, frame, session)
 	if not Current(addon, frame, session, true) then
 		return false
 	end
-	local details, reason = addon:ReadQuestDetails(session.questID)
+	local title = PlainText(addon, addon:GetLocalizedQuestTitle(session.questID))
+	if title and title ~= "" then
+		session.title = title
+	end
+	Call(addon, frame.title, "SetText", session.title or session.fallbackTitle or L("Quest Details"))
+	local details, reason, pendingInstanceID = addon:ReadQuestDetails(session.questID)
 	if details then
 		session.dataInstanceID, session.text = details.dataInstanceID, details.text
+	elseif pendingInstanceID then
+		session.dataInstanceID = pendingInstanceID
 	elseif reason == "too_large" then
 		session.timedOut = true
 	end
@@ -189,7 +198,10 @@ local function Create(addon)
 			or (event == "TOOLTIP_DATA_UPDATE" and (identity == nil or (id and id == session.dataInstanceID)))
 		then
 			addon:ScheduleRuntimeWork("foreign_frame_mutation", "quest_details_refresh", function()
-				Refresh(addon, frame, session)
+				if Current(addon, frame, session, true) then
+					addon:InvalidateLocalizedQuestTitle(session.questID)
+					Refresh(addon, frame, session)
+				end
 			end, {
 				lifetime = "ui",
 				owner = session,
@@ -240,7 +252,8 @@ function QT:ShowQuestDetails(questID, fallbackTitle)
 		session.questID = id
 		frame.session, frame.scrollOffset = session, 0
 		local title = PlainText(self, self:NormalizeQuestLinkTitleText(fallbackTitle, id))
-		Call(self, frame.title, "SetText", title and title ~= "" and title or L("Quest Details"))
+		session.fallbackTitle = title and title ~= "" and title or nil
+		Call(self, frame.title, "SetText", session.fallbackTitle or L("Quest Details"))
 		Call(self, frame.body, "SetText", L("Loading quest details..."))
 		Layout(self, frame)
 		self:ApplyScrollDialogTheme(frame)
@@ -248,7 +261,6 @@ function QT:ShowQuestDetails(questID, fallbackTitle)
 		Call(self, frame, "RegisterEvent", "QUEST_DATA_LOAD_RESULT")
 		Call(self, frame, "Show")
 		Call(self, frame, "Raise")
-		self.API.RequestLocalizedQuestTitle(id)
 		Refresh(self, frame, session)
 		self:ScheduleRuntimeWork("foreign_frame_mutation", "quest_details_timeout", function()
 			if frame.session == session and session.active then

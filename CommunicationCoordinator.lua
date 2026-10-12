@@ -1123,6 +1123,7 @@ function QT:FlushCommunicationDeparture()
 	return self:Emit("BYE", { reason = "departure" }, routes, { direct = true, priority = "control" })
 end
 function QT:EndCommsWorldSession()
+	self:ResetLocalizedQuestTitles()
 	return self:EndCommunicationSession()
 end
 function QT:ResumeCommsWorldSession()

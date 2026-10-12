@@ -253,6 +253,20 @@ text is localized at presentation; wire facts and diagnostic identifiers stay
 stable. Vendored LibChev is immutable under its pinned manifest: fixes belong
 upstream followed by a deliberate vendor update.
 
+EventLocalization owns the shared local quest-title cache and native load budget.
+Core reads local quest titles, links and structured tooltip headers without
+opening or selecting native UI. Foreign-language announcements may wait at most
+two seconds for an already-requested title, with at most 32 pending messages;
+runtime owners cancel them on reset or world exit. Completion rechecks current
+display eligibility and prints once, preserving the sender's title if no local
+title becomes available. Subsequent events for the same player and quest retain
+arrival order and the original deadline; unrelated announcements remain independent.
+Title resolution notifies current views even when another surface filled the
+cache first. Each view owns its deferred refresh and session checks. Quest Details
+uses the same resolver for its heading and retains pending native tooltip IDs
+even before text arrives. Received quest titles are normalized only for display;
+certified snapshots and revision inputs remain unchanged.
+
 The settings home page keeps General controls with a compact status readout and
 shortcuts for the Party Quest Log, patch notes, and support. Category navigation
 stays in the native settings sidebar. The Theme dropdown presents the existing

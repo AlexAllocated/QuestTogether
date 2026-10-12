@@ -40,6 +40,224 @@ local function RoundTrip(a, event)
 	return assert(a:DecodeCommRecord("ANN", assert(a:EncodeCommRecord("ANN", owned))))
 end
 
+local function PresentationFixture()
+	local a, clock = Fixture(), QT:CreateTestClock(100)
+	a.isEnabled, a.chat, a.bubbles, a.emotes = true, {}, {}, 0
+	a.work = { entries = {}, generations = {} }
+	a.API.GetTime = function() return clock:GetTime() end
+	a.API.Delay = function(delay, callback) clock:After(delay, callback) end
+	function a:GetDeferredWorkStateStore() return self.work end
+	function a:IsWorkBlocked(kind) return kind ~= "announcement_presentation" and self.blocked end
+	function a:ShouldDisplayAnnouncementType() return not self.suppressed end
+	function a:IsIgnoredPlayerName() return self.ignored == true end
+	function a:NormalizeMemberName(name) return name end
+	function a:GetGroupedSenderClassFile() return "MAGE" end
+	function a:FindVisiblePlayerNameplateForSender() return {} end
+	function a:GetAccessibleFrameMember() end
+	function a:IsGroupedSender() return self.inScope ~= false end
+	function a:ShouldShowAnnouncementsForRemoteSender() return self.inScope ~= false end
+	function a:GetOption(key) return key == "showChatLogs" or key == "showChatBubbles" end
+	function a:PrintConsoleAnnouncement(text) self.chat[#self.chat + 1] = text end
+	function a:ShowAnnouncementBubbleOnNameplate(_, text) self.bubbles[#self.bubbles + 1] = text end
+	function a:PlayRemoteCelebrationEmote() self.emotes = self.emotes + 1 end
+	function a:RecordCommsDiagnostic() end
+	function a:Debugf(_, _, err) error(tostring(err)) end
+	return a, clock
+end
+
+local function KoreanQuest(kind)
+	kind = kind or "QUEST_COMPLETED"
+	local prefix = kind == "QUEST_ACCEPTED" and "Quest Accepted: " or "Quest Completed: "
+	return Event(kind, "1:koKR:q:::", QT.TranslateForLocale(prefix, "koKR") .. "결속")
+end
+
+QT:RegisterTest("cold foreign quest announcements wait for one local title before printing exactly once", function()
+	local a, clock = PresentationFixture()
+	local accepted, completed = KoreanQuest("QUEST_ACCEPTED"), KoreanQuest()
+	assert(a:HandleAnnouncementEvent(accepted, false))
+	assert(a:HandleAnnouncementEvent(completed, false))
+	assert(#a.chat == 0 and #a.bubbles == 0 and a.emotes == 0 and a.loads == 1)
+	a.titles[12345] = "The Binding"
+	a:QUEST_DATA_LOAD_RESULT(nil, 12345, true)
+	assert(#a.chat == 0, "load event must defer guarded presentation to the next frame")
+	clock:Advance(0)
+	assert(a.chat[1] == "Quest Accepted: The Binding" and a.chat[2] == "Quest Completed: The Binding")
+	assert(a.bubbles[1] == a.chat[1] and a.bubbles[2] == a.chat[2] and a.emotes == 1)
+	a:QUEST_DATA_LOAD_RESULT(nil, 12345, true)
+	clock:Advance(2)
+	assert(#a.chat == 2 and a.localizedQuestTitles.waitingCount == 0 and a.emotes == 1)
+	assert(completed.text:find("결속", 1, true), "incoming event must retain its original wire text")
+end)
+
+QT:RegisterTest("pending quest announcements preserve order through title readiness and progress", function()
+	local a, clock = PresentationFixture()
+	a:HandleAnnouncementEvent(KoreanQuest("QUEST_ACCEPTED"), false)
+	a:HandleAnnouncementEvent(Event("QUEST_PROGRESS", "1:koKR:c:1:1:2", "First objective: 1/2"), false)
+	a.titles[12345] = "The Binding"
+	a:QUEST_DATA_LOAD_RESULT(nil, 12345, true)
+	-- The cache is ready before the next-frame presentation callback runs.
+	a:HandleAnnouncementEvent(KoreanQuest(), false)
+	assert(#a.chat == 0 and #a.bubbles == 0 and a.localizedQuestTitles.waitingCount == 3)
+	clock:Advance(0)
+	assert(table.concat(a.chat, " | ") == "Quest Accepted: The Binding | First objective: 1/2 | Quest Completed: The Binding")
+	assert(table.concat(a.bubbles, " | ") == table.concat(a.chat, " | ") and a.emotes == 1)
+	clock:Advance(2)
+	assert(#a.chat == 3 and a.localizedQuestTitles.waitingCount == 0)
+end)
+
+QT:RegisterTest("quest announcement cohorts retain their deadline without blocking other senders or quests", function()
+	local a, clock = PresentationFixture()
+	a:HandleAnnouncementEvent(KoreanQuest("QUEST_ACCEPTED"), false)
+	clock:Advance(1.9)
+	a:HandleAnnouncementEvent(Event("QUEST_PROGRESS", "1:koKR:c:1:1:2", "Own cohort: 1/2"), false)
+	local other = Event("QUEST_PROGRESS", "1:koKR:c:1:1:2", "Other sender: 1/2")
+	other.senderName = "Other-Realm"
+	a:HandleAnnouncementEvent(other, false)
+	other = Event("QUEST_PROGRESS", "1:koKR:c:1:1:2", "Other quest: 1/2")
+	other.questId = "54321"
+	a:HandleAnnouncementEvent(other, false)
+	assert(#a.chat == 2 and a.chat[1] == "Other sender: 1/2" and a.chat[2] == "Other quest: 1/2")
+	clock:Advance(0.11)
+	assert(a.chat[3] == "Quest Accepted: 결속" and a.chat[4] == "Own cohort: 1/2")
+	assert(a.localizedQuestTitles.waitingCount == 0 and a.loads == 1)
+end)
+
+QT:RegisterTest("quest announcement overflow flushes predecessors once and rechecks the final event", function()
+	for _, stop in ipairs({ false, true }) do
+		local a, clock = PresentationFixture()
+		a:HandleAnnouncementEvent(KoreanQuest("QUEST_ACCEPTED"), false)
+		local stale = clock.timers[1].callback
+		for i = 1, 31 do
+			a:HandleAnnouncementEvent(Event("QUEST_PROGRESS", "1:koKR:c:1:1:2", "Progress " .. i), false)
+		end
+		assert(a.localizedQuestTitles.waitingCount == 32 and #a.chat == 0)
+		if stop then
+			function a:PrintConsoleAnnouncement(text)
+				self.chat[#self.chat + 1] = text
+				if #self.chat == 32 then self.ignored = true end
+			end
+		end
+		a:HandleAnnouncementEvent(KoreanQuest(), false)
+		assert(a.localizedQuestTitles.waitingCount == 0 and #a.chat == (stop and 32 or 33))
+		assert(a.chat[1] == "Quest Accepted: 결속")
+		for i = 1, 31 do assert(a.chat[i + 1] == "Progress " .. i) end
+		if not stop then assert(a.chat[33] == "Quest Completed: 결속") end
+		stale()
+		clock:Advance(2)
+		assert(#a.chat == (stop and 32 or 33), "retired timeout cannot replay the flushed cohort")
+	end
+end)
+
+QT:RegisterTest("retired announcement cohorts release payloads and cannot consume a replacement cohort", function()
+	local a, clock = PresentationFixture()
+	a:HandleAnnouncementEvent(KoreanQuest("QUEST_ACCEPTED"), false)
+	local stale, retired = clock.timers[1].callback, next(a.localizedQuestTitles.waiting)
+	retired = a.localizedQuestTitles.waiting[retired]
+	for i = 1, 32 do
+		a:HandleAnnouncementEvent(Event("QUEST_PROGRESS", "1:koKR:c:1:1:2", "Progress " .. i), false)
+	end
+	assert(#a.chat == 33 and retired.events == nil and retired.owner.active == false)
+	a:HandleAnnouncementEvent(KoreanQuest("QUEST_ACCEPTED"), false)
+	assert(a.localizedQuestTitles.waitingCount == 1)
+	stale()
+	assert(#a.chat == 33 and a.localizedQuestTitles.waitingCount == 1)
+	-- A new packet can arrive after the deadline but before that frame's timer.
+	clock.now = 103
+	a:HandleAnnouncementEvent(Event("QUEST_PROGRESS", "1:koKR:c:1:1:2", "After deadline: 1/2"), false)
+	assert(a.chat[34] == "Quest Accepted: 결속" and a.chat[35] == "After deadline: 1/2")
+	clock:Advance(0)
+	assert(#a.chat == 35 and a.localizedQuestTitles.waitingCount == 0)
+end)
+
+QT:RegisterTest("quest announcement timeout checks newly cached tooltip data and preserves unavailable titles", function()
+	for _, loaded in ipairs({ false, true }) do
+		local a, clock = PresentationFixture()
+		assert(a:HandleAnnouncementEvent(KoreanQuest(), false))
+		clock:Advance(1.99)
+		assert(#a.chat == 0)
+		if loaded then a.titles[12345] = "The Binding" end
+		clock:Advance(0.02)
+		assert(#a.chat == 1 and a.chat[1] == "Quest Completed: " .. (loaded and "The Binding" or "결속"))
+		assert(a.loads == 1, "timeout must reuse the native request budget")
+		a.titles[12345] = "The Binding"
+		a:QUEST_DATA_LOAD_RESULT(nil, 12345, true)
+		clock:Advance(10)
+		assert(#a.chat == 1 and a.emotes == 1, "late success must not double-print or repeat emotes")
+	end
+	local a, clock = PresentationFixture()
+	a:HandleAnnouncementEvent(KoreanQuest(), false)
+	a:QUEST_DATA_LOAD_RESULT(nil, 12345, false)
+	clock:Advance(0)
+	assert(#a.chat == 1 and a.chat[1] == "Quest Completed: 결속")
+end)
+
+QT:RegisterTest("pending localized announcements recheck consent scope and lifetime before presentation", function()
+	for _, change in ipairs({ "ignored", "suppressed", "scope", "disabled", "logout", "reset", "zoning" }) do
+		local a, clock = PresentationFixture()
+		a:HandleAnnouncementEvent(KoreanQuest(), false)
+		local stale = clock.timers[1].callback
+		if change == "ignored" or change == "suppressed" then a[change] = true
+		elseif change == "scope" then a.inScope = false
+		elseif change == "disabled" then a.isEnabled = false
+		elseif change == "logout" then a.isLoggingOut = true
+		elseif change == "zoning" then
+			function a:EndCommunicationSession() end
+			a:EndCommsWorldSession()
+		else a:ResetLocalizedQuestTitles() end
+		a.titles[12345] = "The Binding"
+		a:QUEST_DATA_LOAD_RESULT(nil, 12345, true)
+		clock:Advance(2)
+		stale()
+		assert(#a.chat == 0 and #a.bubbles == 0 and a.emotes == 0, change)
+	end
+end)
+
+QT:RegisterTest("local title waiting is bounded and does not delay same-language progress or restricted display", function()
+	local a, clock = PresentationFixture()
+	for _ = 1, 40 do a:HandleAnnouncementEvent(KoreanQuest(), false) end
+	assert(a.localizedQuestTitles.waitingCount == 7 and #a.chat == 33 and a.loads == 1)
+	clock:Advance(2)
+	assert(#a.chat == 40 and a.localizedQuestTitles.waitingCount == 0)
+	a, clock = PresentationFixture()
+	a:HandleAnnouncementEvent(Event("QUEST_COMPLETED", "1:enUS:q:::", "Quest Completed: The Binding"), false)
+	a:HandleAnnouncementEvent(Event("QUEST_PROGRESS", "1:koKR:c:1:1:2", "Native objective: 1/2"), false)
+	assert(#a.chat == 2 and #clock.timers == 0)
+	a.blocked = true
+	a:HandleAnnouncementEvent(KoreanQuest(), false)
+	assert(#a.chat == 3, "restricted native reads must not hold up local chat")
+	a, clock = PresentationFixture()
+	for id = 1, 10 do a:GetLocalizedQuestTitle(id) end
+	a:HandleAnnouncementEvent(KoreanQuest(), false)
+	assert(#a.chat == 1 and #clock.timers == 0 and a.loads == 10, "budget rejection must not wait")
+	a, clock = PresentationFixture()
+	a.API.RequestLocalizedQuestTitle = function() return false end
+	a:HandleAnnouncementEvent(KoreanQuest(), false)
+	assert(#a.chat == 1 and #clock.timers == 0, "unavailable native loading must not wait")
+end)
+
+QT:RegisterTest("retired title callbacks cannot consume a replacement wait or keep presentation blocked in combat", function()
+	local a, clock = PresentationFixture()
+	a:HandleAnnouncementEvent(KoreanQuest(), false)
+	local stale = clock.timers[1].callback
+	a:ResetLocalizedQuestTitles()
+	a:HandleAnnouncementEvent(KoreanQuest(), false)
+	stale()
+	assert(#a.chat == 0 and a.localizedQuestTitles.waitingCount == 1)
+	a.titles[12345] = "The Binding"
+	a:QUEST_DATA_LOAD_RESULT(nil, 12345, true)
+	clock:Advance(0)
+	clock:Advance(2)
+	assert(#a.chat == 1 and a.chat[1] == "Quest Completed: The Binding")
+	a, clock = PresentationFixture()
+	a:HandleAnnouncementEvent(KoreanQuest(), false)
+	a.blocked = true
+	clock:Advance(2)
+	assert(#a.chat == 1 and a.chat[1] == "Quest Completed: 결속" and a.localizedQuestTitles.waitingCount == 0)
+	a.blocked = false
+	clock:Advance(30)
+	assert(#a.chat == 1)
+end)
+
 QT:RegisterTest("ready announcements replace a captured placeholder with a loaded local title", function()
 	local a = Fixture()
 	a.pendingQuestRemovals, a.questsCompleted = {}, {}
@@ -627,3 +845,31 @@ QT:RegisterTest(
 		assert(a:GetQuestDisplayTitle(54321, fallback) == "Owned snapshot title")
 	end
 )
+
+QT:RegisterTest("quest display title normalization is bounded single-line and idempotent", function()
+	local a = Fixture()
+	local mixed = "|cffff0000|Hquest:1:0|h[결속]|h|r|TIcon:16|t|AAtlas:16|a\nNext\tpart"
+	for _, input in ipairs({
+		"|Hquest:1|h|Hitem:2|hName|h|h",
+		"|Hquest:1|hName |Hitem:2|hInner|h Tail|h",
+		mixed,
+		"Two || pipes | lone",
+		"任务 결속\000\012\n\t\127Quest",
+		"||Hquest:1|hEscaped|h",
+		string.rep("|", 512),
+		string.rep("|TIcon:16|t", 60) .. "Readable title",
+	}) do
+		local plain = a:NormalizeQuestDisplayTitleText(input)
+		assert(#plain <= 1024 and not plain:find("[%c]"))
+		assert(a:NormalizeQuestDisplayTitleText(plain) == plain, "reusing a display title must not change it")
+		assert(not plain:gsub("||", ""):find("|", 1, true), "remaining pipes must be escaped")
+	end
+	assert(a:NormalizeQuestDisplayTitleText(mixed) == "[결속] Next part")
+	assert(a:NormalizeQuestDisplayTitleText("Two || pipes | lone") == "Two || pipes || lone")
+	for _, input in ipairs({ string.rep("x", 513), string.rep("x", 1025), {} }) do
+		assert(a:NormalizeQuestDisplayTitleText(input) == "")
+	end
+	local inaccessible = {}
+	function a:CanAccessValue(value) return value ~= inaccessible end
+	assert(a:NormalizeQuestDisplayTitleText(inaccessible) == "")
+end)

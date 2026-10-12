@@ -1,5 +1,5 @@
--- Receiver-side presentation only. Original text remains in every ANN packet for
--- older peers; the optional trailing field contains facts, never executable text.
+-- Receiver-side presentation only. Preserve the original ANN text on the wire;
+-- localized titles and bounded cache waits belong to the receiving client.
 local QT = _G.QuestTogether
 local L = QT.Translate
 local locales = {
@@ -29,6 +29,7 @@ local prefixes = {
 	BONUS_OBJECTIVE_COMPLETED = "Bonus Objective Completed: ",
 }
 local progressEvents = { QUEST_PROGRESS = true, WORLD_QUEST_PROGRESS = true, BONUS_OBJECTIVE_PROGRESS = true }
+local TITLE_WAIT_SECONDS, MAX_TITLE_WAITERS = 2, 32
 
 local function Integer(addon, value, minimum, maximum)
 	local n = addon:SafeToNumber(value)
@@ -125,6 +126,13 @@ function QT:BuildAnnouncementFacts(eventType, index, objectiveType, finished, cu
 	return table.concat({ "1", self:GetEventLocale(), kind, index or "", current or "", required or "" }, ":")
 end
 
+function QT:NotifyLocalizedQuestTitleChanged(questID)
+	-- Cache reads and load events publish the same notification. Each view owns
+	-- its deferred render and rechecks its current session before touching UI.
+	if self.OnPartyQuestTitleChanged then self:OnPartyQuestTitleChanged(questID) end
+	if self.OnPartyFocusTitleChanged then self:OnPartyFocusTitleChanged(questID) end
+end
+
 function QT:GetLocalizedQuestTitle(questID)
 	local id = Integer(self, questID, 1, 1000000000)
 	if not id then
@@ -175,7 +183,9 @@ function QT:GetLocalizedQuestTitle(questID)
 		entry = {}
 		cache.entries[id] = entry
 	end
+	local previousTitle = entry.title
 	entry.time, entry.title = now, title ~= "" and title or nil
+	if entry.title and entry.title ~= previousTitle then self:NotifyLocalizedQuestTitleChanged(id) end
 	if title == "" and type(api.RequestLocalizedQuestTitle) == "function" then
 		local session = self.partyQuestCompareSession
 		local inCompare = false
@@ -201,27 +211,121 @@ function QT:GetLocalizedQuestTitle(questID)
 				session.titleRequests = session.titleRequests or {}
 				session.titleRequests[id] = { count = (attempts and attempts.count or 0) + 1, time = now }
 			end
-			pcall(api.RequestLocalizedQuestTitle, id)
+			local requestedOK, accepted = pcall(api.RequestLocalizedQuestTitle, id)
+			entry.requestedAt = requestedOK and accepted ~= false and now or nil
 		end
 	end
 	return entry.title
 end
 
+function QT:InvalidateLocalizedQuestTitle(questID)
+	local id = Integer(self, questID, 1, 1000000000)
+	local cache = rawget(self, "localizedQuestTitles")
+	local entry = id and cache and cache.entries[id]
+	if not entry or entry.title then return false end
+	entry.time = -math.huge
+	return true
+end
+
+function QT:ResetLocalizedQuestTitles()
+	local cache = rawget(self, "localizedQuestTitles")
+	self.localizedQuestTitles = nil
+	for _, waiting in pairs(cache and cache.waiting or {}) do
+		self:CancelRuntimeWorkOwner(waiting.owner)
+		waiting.events = nil
+	end
+end
+
+local function FinishAnnouncements(addon, cache, key, waiting)
+	if cache.waiting[key] ~= waiting or not waiting.owner.active
+		or rawget(addon, "localizedQuestTitles") ~= cache then return end
+	local events = waiting.events
+	cache.waiting[key], cache.waitingCount, waiting.events = nil, cache.waitingCount - #events, nil
+	addon:CancelRuntimeWorkOwner(waiting.owner)
+	if not addon.isEnabled or addon.isLoggingOut then return end
+	-- The miss cache normally lasts five seconds. Re-read once at completion so
+	-- tooltip data loaded without a quest-load event can satisfy the two-second wait.
+	addon:InvalidateLocalizedQuestTitle(waiting.questID)
+	-- Recheck current display options, ignores, group/scope and nearby frames.
+	-- Never retain a nameplate or repeat network acceptance/forwarding here.
+	for _, event in ipairs(events) do
+		if rawget(addon, "localizedQuestTitles") ~= cache or not addon.isEnabled or addon.isLoggingOut then return end
+		addon:HandleAnnouncementEvent(event, false, true)
+	end
+end
+
+function QT:QueueLocalizedAnnouncement(event, waitingForTitle)
+	if not self.isEnabled or self.isLoggingOut then return false end
+	local cache = rawget(self, "localizedQuestTitles")
+	local id = Integer(self, event.questId, 1, 1000000000)
+	if not id or not cache then return false end
+	local sender = self:NormalizeMemberName(event.senderName) or event.senderName
+	local key = sender .. "\000" .. id
+	local waiting = cache.waiting and cache.waiting[key]
+	local now = self:SafeToNumber(self.API.GetTime()) or 0
+	if waiting then
+		-- Keep progress and newly resolved titles behind this sender's earlier
+		-- event. Appending never moves the original deadline or adds a timer.
+		if now >= waiting.startedAt and now < waiting.deadline and cache.waitingCount < MAX_TITLE_WAITERS then
+			waiting.events[#waiting.events + 1] = event
+			cache.waitingCount = cache.waitingCount + 1
+			return true
+		end
+		-- An overflow or elapsed deadline cannot let this event overtake its
+		-- predecessors. Other players and quests remain independent.
+		FinishAnnouncements(self, cache, key, waiting)
+		if rawget(self, "localizedQuestTitles") == cache and self.isEnabled and not self.isLoggingOut then
+			self:HandleAnnouncementEvent(event, false, true)
+		end
+		return true
+	end
+	if not waitingForTitle or self:IsWorkBlocked("quest_snapshot_refresh") then return false end
+	local entry = cache.entries[id]
+	-- A failed, unavailable, or budget-limited load should not delay presentation.
+	if not entry or not entry.requestedAt or now < entry.requestedAt or now - entry.requestedAt >= TITLE_WAIT_SECONDS
+		or (cache.waitingCount or 0) >= MAX_TITLE_WAITERS then return false end
+	cache.waiting, cache.waitingCount = cache.waiting or {}, (cache.waitingCount or 0) + 1
+	cache.waitingSerial = (cache.waitingSerial or 0) + 1
+	waiting = {
+		events = { event }, questID = id, owner = self:NewRuntimeWorkOwner(), sequence = cache.waitingSerial,
+		startedAt = entry.requestedAt, deadline = entry.requestedAt + TITLE_WAIT_SECONDS,
+		workKey = "localized_announcement:" .. cache.waitingSerial,
+	}
+	cache.waiting[key] = waiting
+	local queued = self:ScheduleRuntimeWork("announcement_presentation", waiting.workKey, function()
+		FinishAnnouncements(self, cache, key, waiting)
+	end, { owner = waiting.owner, delay = TITLE_WAIT_SECONDS - (now - entry.requestedAt), reason = "localized_announcement_wait" })
+	if not queued then
+		cache.waiting[key], cache.waitingCount = nil, cache.waitingCount - 1
+		self:CancelRuntimeWorkOwner(waiting.owner)
+	end
+	return queued == true
+end
+
 function QT:QUEST_DATA_LOAD_RESULT(_, questID, success)
 	local id = Integer(self, questID, 1, 1000000000)
 	local cache = rawget(self, "localizedQuestTitles")
-	if not id or not cache or not self:CanAccessValue(success) or success ~= true then return end
-	-- Ignore unrelated game loads. Retain the entry/order slot and request budget.
+	if not id or not cache or not self:CanAccessValue(success) or type(success) ~= "boolean" then return end
 	local entry = cache.entries[id]
-	if not entry or entry.title then return end
-	entry.time = -math.huge
-	local session = self.partyQuestCompareSession
-	for _, member in ipairs(session and session.members or {}) do
-		if member.entries[id] then
-			self:QueuePartyQuestCompareRender()
-			break
+	if entry then entry.requestedAt = nil end
+	local ready = {}
+	for key, waiting in pairs(cache.waiting or {}) do
+		if waiting.questID == id then
+			ready[#ready + 1] = { key = key, waiting = waiting }
 		end
 	end
+	table.sort(ready, function(a, b) return a.waiting.sequence < b.waiting.sequence end)
+	for _, row in ipairs(ready) do
+		local key, waiting = row.key, row.waiting
+		self:ScheduleRuntimeWork("announcement_presentation", waiting.workKey, function()
+			FinishAnnouncements(self, cache, key, waiting)
+		end, { owner = waiting.owner, mode = "nextFrame", reason = "localized_quest_title_loaded" })
+	end
+	if not success then return end
+	-- Retain positive cache entries and load budgets, but still notify views:
+	-- another surface may already have resolved this title before the event.
+	self:InvalidateLocalizedQuestTitle(id)
+	self:NotifyLocalizedQuestTitleChanged(id)
 end
 
 -- Presentation resolver only. Keep GetQuestTitle snapshot-only for scan/plate
@@ -267,19 +371,23 @@ function QT:LocalizeAnnouncementEvent(event)
 		-- Event type already identifies these labels. Optional facts can be
 		-- omitted by older senders or packet fitting; recognize only exact known
 		-- prefixes, never guess a title by splitting arbitrary translated prose.
-		local sourceTitle
+		local sourceTitle, sourceLocale
 		local text = self:SafeTrimString(event.text, "")
 		for locale in pairs(locales) do
 			if not facts or facts.locale == locale then
 				local sourcePrefix = self.TranslateForLocale(prefix, locale)
 				if text:sub(1, #sourcePrefix) == sourcePrefix and #text > #sourcePrefix then
 					sourceTitle = text:sub(#sourcePrefix + 1)
+					sourceLocale = locale
 					break
 				end
 			end
 		end
 		if not facts and not sourceTitle then return event.text end
-		local title = self:GetLocalizedQuestTitle(id) or sourceTitle
-		return title and (self.TranslateForLocale(prefix, self:GetEventLocale()) .. title) or event.text
+		local localTitle = self:GetLocalizedQuestTitle(id)
+		local title = localTitle or sourceTitle
+		local origin = facts and facts.locale or sourceLocale
+		return title and (self.TranslateForLocale(prefix, self:GetEventLocale()) .. title) or event.text,
+			not localTitle and origin ~= nil and origin ~= self:GetEventLocale()
 	end
 end

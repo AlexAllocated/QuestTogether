@@ -1,9 +1,12 @@
 -- Private data and frame fixtures only; safe for /qt test.
 local QT = _G.QuestTogether
 local function Fixture()
-	local a = setmetatable({ pending = {}, db = { profile = {} }, frames = {}, reads = 0, requests = 0 }, { __index = QT })
+	local a = setmetatable({ pending = {}, db = { profile = {} }, frames = {}, reads = 0, requests = 0,
+		titles = {}, now = 100 }, { __index = QT })
 	function a:IsRuntimeRestricted() return self.blocked == true end
 	function a:IsWorkBlocked() return self.blocked == true end
+	function a:GetQuestSnapshot() return nil end
+	function a:GetRuntimeFlag() return false end
 	function a:GetOption(key) return key == "windowScale" and 100 or false end
 	function a:ScheduleRuntimeWork(_, key, callback, options)
 		assert(options.lifetime == "ui" and options.owner)
@@ -30,6 +33,8 @@ local function Fixture()
 		return frame
 	end
 	a.API = {
+		GetTime = function() return a.now end,
+		GetLocalizedQuestTitle = function(id) return a.titles[id] end,
 		CanOpenQuestDetails = function() return true end,
 		GetQuestDetailsLink = function(id) return "quest:" .. id .. ":0" end,
 		GetTooltipDataForHyperlink = function(link)
@@ -98,6 +103,85 @@ QT:RegisterTest("quest reader bounds native text and rejects inaccessible fields
 	assert(a:ReadQuestDetails(1) == nil and a.reads == reads)
 end)
 
+QT:RegisterTest("empty quest tooltips retain only validated primitive update identities", function()
+	local a = Fixture()
+	local inaccessible = setmetatable({}, { __index = function() error("inaccessible") end,
+		__tostring = function() error("inaccessible") end })
+	function a:CanAccessValue(value) return value ~= inaccessible end
+	a.data = { dataInstanceID = 42, lines = { { leftText = inaccessible } } }
+	local result, reason, instanceID = a:ReadQuestDetails(1)
+	assert(result == nil and reason == "empty" and instanceID == 42)
+	a.data.dataInstanceID = 43
+	assert(instanceID == 42, "pending metadata must not retain the native tooltip table")
+	for _, value in ipairs({ 0, 42 }) do
+		a.data = { dataInstanceID = value, lines = {} }
+		result, reason, instanceID = a:ReadQuestDetails(1)
+		assert(result == nil and reason == "empty" and instanceID == value)
+	end
+	for _, value in ipairs({ inaccessible, {}, -1, 1.5, math.huge, "invalid" }) do
+		a.data.dataInstanceID = value
+		result, reason, instanceID = a:ReadQuestDetails(1)
+		assert(result == nil and reason == "empty" and instanceID == nil)
+	end
+end)
+
+QT:RegisterTest("empty quest tooltips complete from their own update before or after the reader timeout", function()
+	for _, timedOut in ipairs({ false, true }) do
+		local a = Fixture()
+		a.titles[1] = "Known local title"
+		a.data = { dataInstanceID = 42, lines = {} }
+		assert(a:ShowQuestDetails(1, "Fallback"), a.error)
+		local frame = a.questDetailsWindow
+		assert(frame.session.dataInstanceID == 42 and a.requests == 0)
+		assert(frame.body.text == "Loading quest details...")
+		if timedOut then
+			a.pending.quest_details_timeout.run()
+			assert(frame.body.text == "Quest details are unavailable.")
+		end
+		local before = a.reads
+		a.data.lines[1] = { leftText = "Now-loaded quest text" }
+		frame:RunScript("OnEvent", "TOOLTIP_DATA_UPDATE", 99)
+		assert(a.pending.quest_details_refresh == nil and a.reads == before)
+		frame:RunScript("OnEvent", "TOOLTIP_DATA_UPDATE", 42)
+		assert(a.pending.quest_details_refresh and a.reads == before,
+			"matching native updates must schedule a safe next-frame refresh")
+		FlushRefresh(a)
+		assert(frame.body.text == "Now-loaded quest text" and a.reads == before + 1)
+		assert(a.requests == 0, "tooltip-only completion must not depend on another quest-load event")
+		Check(a)
+	end
+end)
+
+QT:RegisterTest("empty quest tooltip updates cannot cross switched closed or reused reader sessions", function()
+	local a = Fixture()
+	a.data = { dataInstanceID = 42, lines = {} }
+	assert(a:ShowQuestDetails(1, "First"), a.error)
+	local frame = a.questDetailsWindow
+	frame:RunScript("OnEvent", "TOOLTIP_DATA_UPDATE", 42)
+	local oldRefresh = a.pending.quest_details_refresh.run
+	a.data = { dataInstanceID = 43, lines = {} }
+	assert(a:ShowQuestDetails(2, "Second"), a.error)
+	local before = a.reads
+	oldRefresh()
+	frame:RunScript("OnEvent", "TOOLTIP_DATA_UPDATE", 42)
+	assert(a.reads == before and a.pending.quest_details_refresh == nil)
+	assert(frame.session.dataInstanceID == 43 and frame.title.text == "Second")
+	frame:RunScript("OnEvent", "TOOLTIP_DATA_UPDATE", 43)
+	local closedRefresh = a.pending.quest_details_refresh.run
+	a:DismissManagedWindow(frame)
+	closedRefresh()
+	assert(a.reads == before and not frame:IsShown() and frame.session == nil)
+	a.data = { dataInstanceID = 44, lines = {} }
+	assert(a:ShowQuestDetails(3, "Third"), a.error)
+	before = a.reads
+	oldRefresh()
+	closedRefresh()
+	frame:RunScript("OnEvent", "TOOLTIP_DATA_UPDATE", 43)
+	assert(a.reads == before and a.pending.quest_details_refresh == nil)
+	assert(frame.session.dataInstanceID == 44 and frame.title.text == "Third")
+	Check(a)
+end)
+
 QT:RegisterTest("quest details use owned parchment scrolling and reset when another quest opens", function()
 	local a = Fixture()
 	a.data = { dataInstanceID = 42, lines = { { leftText = string.rep("Quest story. ", 250) } } }
@@ -152,6 +236,54 @@ QT:RegisterTest("quest details cache refreshes are scoped and retired callbacks 
 	frame:RunScript("OnEvent", "QUEST_DATA_LOAD_RESULT", 2, true)
 	FlushRefresh(a)
 	assert(not frame:IsShown() and frame.session == nil)
+	Check(a)
+end)
+
+QT:RegisterTest("quest details headings use cached local titles and refresh when native tooltip data arrives", function()
+	local a = Fixture()
+	a.titles[1] = "The Binding"
+	a.data = { dataInstanceID = 42, lines = { { leftText = "Local quest description" } } }
+	assert(a:ShowQuestDetails(1, "[결속]"), a.error)
+	local frame = a.questDetailsWindow
+	assert(frame.title.text == "The Binding" and a.requests == 0)
+
+	assert(a:ShowQuestDetails(2, "[결속]"), a.error)
+	assert(frame.title.text == "결속" and a.requests == 1, "one shared load should serve a cold title")
+	a.titles[2] = "|cffffd100The Binding|r"
+	frame:RunScript("OnEvent", "TOOLTIP_DATA_UPDATE", 42)
+	FlushRefresh(a)
+	assert(frame.title.text == "The Binding" and a.requests == 1,
+		"a known tooltip update must invalidate the negative title cache without requesting again")
+
+	a.now, a.titles[2] = 401, nil
+	frame:RunScript("OnEvent", "TOOLTIP_DATA_UPDATE", 42)
+	FlushRefresh(a)
+	assert(frame.title.text == "The Binding", "temporary cache loss must not restore the foreign fallback")
+	Check(a)
+end)
+
+QT:RegisterTest("quest details late title refreshes cannot change a switched or closed reader", function()
+	local a = Fixture()
+	assert(a:ShowQuestDetails(1, "[First fallback]"), a.error)
+	local frame = a.questDetailsWindow
+	a.titles[1] = "First local title"
+	frame:RunScript("OnEvent", "QUEST_DATA_LOAD_RESULT", 1, true)
+	local stale = a.pending.quest_details_refresh.run
+	assert(a:ShowQuestDetails(2, "[Second fallback]"), a.error)
+	stale()
+	assert(frame.title.text == "Second fallback", "old quest data must not change the new heading")
+
+	a.titles[2] = "Second local title"
+	frame:RunScript("OnEvent", "QUEST_DATA_LOAD_RESULT", 2, true)
+	FlushRefresh(a)
+	assert(frame.title.text == "Second local title")
+	frame:RunScript("OnEvent", "QUEST_DATA_LOAD_RESULT", 2, true)
+	stale = a.pending.quest_details_refresh.run
+	a:DismissManagedWindow(frame)
+	local reads = a.reads
+	stale()
+	assert(not frame:IsShown() and frame.session == nil and a.reads == reads)
+	assert(frame.title.text == "Second local title", "closed readers must not process delayed title refreshes")
 	Check(a)
 end)
 

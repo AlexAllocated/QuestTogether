@@ -1191,6 +1191,28 @@ function QuestTogether:QueuePartyQuestCompareRender()
 	end, 0.05, "party compare render")
 end
 
+function QuestTogether:OnPartyQuestTitleChanged(questID)
+	local session, frame = self.partyQuestCompareSession, rawget(self, "partyQuestCompareWindow")
+	local function Current()
+		if not self.isEnabled or self.isLoggingOut or not session or not frame
+			or self.partyQuestCompareSession ~= session or rawget(self, "partyQuestCompareWindow") ~= frame then
+			return false
+		end
+		for _, member in ipairs(session.members) do
+			if member.entries[questID] then return true end
+		end
+		return false
+	end
+	if not Current() then return false end
+	-- A title can become available after polling has stopped or another surface
+	-- has filled the shared cache. Coalesce those changes without reopening UI.
+	return self:ScheduleDeferredWork("foreign_frame_mutation", "party_compare_title_changed", function()
+		if Current() and self:CanMutateOwnedUI(frame) and frame:IsShown() then
+			self:RenderPartyQuestCompare()
+		end
+	end, 0.05, "party compare titles")
+end
+
 function QuestTogether:QueuePartyQuestTitleRefresh(rows)
 	local session, api = self.partyQuestCompareSession, self.API or {}
 	if

@@ -2409,27 +2409,91 @@ QuestTogether.API = QuestTogether.API
 			return ok and QuestTogether.API.GetActiveTrackedQuestID() == id
 		end,
 		GetLocalizedQuestTitle = function(questID)
-			if not CanAccessForeignTable(C_QuestLog) or type(C_QuestLog.GetTitleForQuestID) ~= "function" then
+			local id = QuestTogether:SafeToNumber(questID)
+			if not id or id <= 0 or id > 1000000000 or id ~= math.floor(id)
+				or QuestTogether:IsWorkBlocked("quest_snapshot_refresh") then
 				return nil
 			end
-			local id = QuestTogether:NormalizeQuestID(questID)
-			if not id or QuestTogether:IsWorkBlocked("quest_snapshot_refresh") then
-				return nil
-			end
-			local ok, title = pcall(C_QuestLog.GetTitleForQuestID, id)
-			if ok and CanAccessForeignValue(title) and type(title) == "string" and title ~= "" then
+			local function Title(value)
+				if not CanAccessForeignValue(value) or type(value) ~= "string" or #value > 512
+					or value:find("[%z\001-\031\127]") then return nil end
+				-- Native tooltip headers can be colored. Never retain links, textures,
+				-- or other markup in a title that will be put into our own quest link.
+				local title = value:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+				title = QuestTogether:SafeTrimString(title, "")
+				if title == "" or title:find("|", 1, true) or title:match("^%d+$")
+					or QuestTogether:IsPlaceholderQuestTitle(id, title) then return nil end
+				for _, key in ipairs({ "RETRIEVING_DATA", "LOADING", "UNKNOWN", "UNKNOWNOBJECT" }) do
+					local placeholder = _G[key]
+					if CanAccessForeignValue(placeholder) and type(placeholder) == "string" and title == placeholder then
+						return nil
+					end
+				end
 				return title
 			end
+			local ok, title = pcall(function()
+				if CanAccessForeignTable(C_QuestLog) then
+					local getter = C_QuestLog.GetTitleForQuestID
+					if CanAccessForeignValue(getter) and type(getter) == "function" then
+						local got, value = pcall(getter, id)
+						local nativeTitle = got and Title(value)
+						if nativeTitle then return nativeTitle end
+					end
+				end
+				-- Some clients cache a local hyperlink/tooltip before the quest-title
+				-- getter is populated. Read native data only; never select or show UI.
+				local hyperlink = string.format("quest:%d:0", id)
+				if CanAccessForeignValue(GetQuestLink) and type(GetQuestLink) == "function" then
+					local got, link = pcall(GetQuestLink, id)
+					if got and CanAccessForeignValue(link) and type(link) == "string" and #link <= 1024 then
+						link = link:gsub("^|c%x%x%x%x%x%x%x%x", ""):gsub("|r$", "")
+						local nativeLink, nativeID, rawTitle = link:match("^|H(quest:(%d+):[%d:%-]+)|h%[([^|%[%]]+)%]|h$")
+						local validFields = nativeLink ~= nil
+						if nativeLink then
+							for field in nativeLink:sub(#nativeID + 8):gmatch("[^:]+") do
+								if not field:match("^%-?%d+$") then validFields = false; break end
+							end
+						end
+						if validFields and tonumber(nativeID) == id then
+							hyperlink = nativeLink
+							local nativeTitle = Title(rawTitle)
+							if nativeTitle then return nativeTitle end
+						end
+					end
+				end
+				if not CanAccessForeignTable(C_TooltipInfo) then return nil end
+				local getter = C_TooltipInfo.GetHyperlink
+				if not CanAccessForeignValue(getter) or type(getter) ~= "function"
+					or not CanAccessForeignTable(Enum) or not CanAccessForeignTable(Enum.TooltipDataType)
+					or not CanAccessForeignTable(Enum.TooltipDataLineType) then return nil end
+				local questType = QuestTogether:SafeToNumber(Enum.TooltipDataType.Quest)
+				local titleType = QuestTogether:SafeToNumber(Enum.TooltipDataLineType.QuestTitle)
+				local genericType = QuestTogether:SafeToNumber(Enum.TooltipDataLineType.None)
+				if not questType or not titleType then return nil end
+				local data = QuestTogether.API.GetTooltipDataForHyperlink(hyperlink)
+				if not CanAccessForeignTable(data) or not CanAccessForeignValue(data.type) or data.type ~= questType
+					or not CanAccessForeignValue(data.id) or (data.id ~= nil and QuestTogether:SafeToNumber(data.id) ~= id)
+					or not CanAccessForeignTable(data.lines) then return nil end
+				-- The first line is the header. Skipping a missing/loading header to
+				-- use a later line could cache objective prose as the quest's name.
+				local header = data.lines[1]
+				if not CanAccessForeignTable(header) or not CanAccessForeignValue(header.type)
+					or (header.type ~= titleType and (genericType == nil or header.type ~= genericType)) then return nil end
+				return Title(header.leftText)
+			end)
+			if ok then return title end
 		end,
 		RequestLocalizedQuestTitle = function(questID)
-			if not CanAccessForeignTable(C_QuestLog) or type(C_QuestLog.RequestLoadQuestByID) ~= "function" then
+			local id = QuestTogether:SafeToNumber(questID)
+			if not id or id <= 0 or id > 1000000000 or id ~= math.floor(id)
+				or QuestTogether:IsWorkBlocked("quest_snapshot_refresh") or not CanAccessForeignTable(C_QuestLog) then
 				return false
 			end
-			local id = QuestTogether:NormalizeQuestID(questID)
-			if not id or QuestTogether:IsWorkBlocked("quest_snapshot_refresh") then
+			local request = C_QuestLog.RequestLoadQuestByID
+			if not CanAccessForeignValue(request) or type(request) ~= "function" then
 				return false
 			end
-			return pcall(C_QuestLog.RequestLoadQuestByID, id)
+			return pcall(request, id)
 		end,
 		GetQuestObjectiveInfo = function(questID, objectiveIndex, displayComplete)
 			if InCombatLockdown and InCombatLockdown() then
@@ -2457,7 +2521,7 @@ QuestTogether.API = QuestTogether.API
 
 			local ok, text, objectiveType, finished, currentValue, requiredValue
 			if type(GetQuestObjectiveInfo) == "function" then
-				ok, text, objectiveType, finished, currentValue =
+				ok, text, objectiveType, finished, currentValue, requiredValue =
 					pcall(GetQuestObjectiveInfo, numericQuestID, numericObjectiveIndex, displayComplete)
 			elseif C_QuestLog and type(C_QuestLog.GetQuestObjectives) == "function" then
 				local queryOK, objectives = pcall(C_QuestLog.GetQuestObjectives, numericQuestID)
@@ -4484,6 +4548,24 @@ function QuestTogether:GetQuestShareableStatusLabel(questId)
 		return "Unknown"
 	end
 	return pushable and "Yes" or "No"
+end
+
+-- UI text only: never rewrite received snapshots or their revision inputs.
+-- Keep quest names bounded and single-line; escaped output is idempotent.
+function QuestTogether:NormalizeQuestDisplayTitleText(value)
+	if not self:CanAccessValue(value) or type(value) ~= "string" or #value > 1024 then return "" end
+	local text = value:gsub("||", "|")
+	local previous
+	repeat
+		previous = text
+		text = text:gsub("|H.-|h(.-)|h", "%1"):gsub("|T.-|t", ""):gsub("|A.-|a", "")
+		text = text:gsub("|K.-|k", ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+		-- Removing malformed nested markup may expose another tag. Every
+		-- changed pass shortens the bounded input; normalize to a fixed point.
+	until text == previous
+	text = self:SafeTrimString(text:gsub("[%c]", " "), "")
+	if #text > 512 then return "" end
+	return text:gsub("|", "||")
 end
 
 function QuestTogether:NormalizeQuestLinkTitleText(titleText, questId)

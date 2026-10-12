@@ -154,6 +154,11 @@ function QuestTogether:EnsureMapWorkWakeup()
 end
 
 function QuestTogether:IsWorkBlocked(workClass)
+	if workClass == "announcement_presentation" then
+		-- Same local display path as immediate announcements. Native title reads,
+		-- nameplate changes and emotes keep their individual restriction guards.
+		return false
+	end
 	if workClass == "waypoint_mutation" then
 		return self:IsRuntimeRestricted()
 	end

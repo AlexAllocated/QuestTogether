@@ -169,6 +169,8 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		preview[method] = self[method]
 	end
 	for _, method in ipairs({
+		"SafeTrimString",
+		"NormalizeQuestDisplayTitleText",
 		"GetPartyQuestCompareFilters",
 		"SetPartyQuestCompareFilter",
 		"ResetPartyQuestCompareFilters",

@@ -150,6 +150,41 @@ function QuestTogether:QueuePartyFocusMissingNotice(name, questID, title)
 	end, 0, "party focus missing quest")
 end
 
+local function RefreshPartyFocusMissingText(addon, frame, notice, preview)
+	local title = preview and notice.title
+		or addon:GetLocalizedQuestTitle(notice.questID)
+		or (notice.title and notice.title ~= "" and notice.title)
+		or addon:GetQuestTitle(notice.questID)
+	title = addon:NormalizeQuestDisplayTitleText(title)
+	if title == "" then title = L("Quest ") .. notice.questID end
+	frame.message:SetText(
+		string.format(
+			L(
+				"%s is tracking %s, which you don't have. Following has stopped. Your current navigation is unchanged.\n\nOpen Party Quest Log to request the quest, then follow this player again."
+			),
+			notice.name,
+			title
+		) .. (preview and ("\n\n" .. L("Preview - no settings will change.")) or "")
+	)
+	frame:LayoutManagedWindow()
+end
+
+function QuestTogether:OnPartyFocusTitleChanged(questID)
+	local notice, frame = rawget(self, "partyFocusMissingNotice"), rawget(self, "partyFocusMissingDialog")
+	if not self.isEnabled or self.isLoggingOut or not notice or notice.questID ~= questID or not frame then
+		return false
+	end
+	return self:ScheduleRuntimeWork("foreign_frame_mutation", "party_focus_title_changed", function()
+		if self.isEnabled and not self.isLoggingOut and rawget(self, "partyFocusMissingNotice") == notice
+			and rawget(self, "partyFocusMissingDialog") == frame and frame.notice == notice
+			and self:CanMutateOwnedUI(frame) and self:CanMutateOwnedUI(frame.message) and frame:IsShown() then
+			-- Update the current warning in place. A load completion is never a
+			-- request to show, raise, or recreate a dismissed or superseded dialog.
+			RefreshPartyFocusMissingText(self, frame, notice, false)
+		end
+	end, { mode = "nextFrame", reason = "party focus missing quest" })
+end
+
 function QuestTogether:ShowPartyFocusMissingDialog(notice, preview)
 	if self:IsWorkBlocked("foreign_frame_mutation") then
 		return false
@@ -208,20 +243,8 @@ function QuestTogether:ShowPartyFocusMissingDialog(notice, preview)
 	if not self.LibChev.CanMutateOwnedRegion(frame) or not self.LibChev.CanMutateOwnedRegion(frame.message) then
 		return false
 	end
-	local title = preview and notice.title
-		or self:GetLocalizedQuestTitle(notice.questID)
-		or (notice.title and notice.title ~= "" and notice.title)
-		or self:GetQuestTitle(notice.questID)
-	frame.message:SetText(
-		string.format(
-			L(
-				"%s is tracking %s, which you don't have. Following has stopped. Your current navigation is unchanged.\n\nOpen Party Quest Log to request the quest, then follow this player again."
-			),
-			notice.name,
-			title
-		) .. (preview and ("\n\n" .. L("Preview - no settings will change.")) or "")
-	)
-	frame:LayoutManagedWindow()
+	frame.notice = notice
+	RefreshPartyFocusMissingText(self, frame, notice, preview)
 	self:ApplyScrollDialogTheme(frame)
 	frame:Show()
 	frame:Raise()

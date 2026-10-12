@@ -44,7 +44,7 @@ return pushable end or nil,
 	}
 	GetQuestObjectiveInfo = not classic and function(id, index)
 		assert(id == 12345 and index == 1)
-		return objective.text, objective.type, objective.finished, objective.numFulfilled
+		return objective.text, objective.type, objective.finished, objective.numFulfilled, objective.numRequired
 	end or nil
 	return function(addon)
 		do
@@ -380,35 +380,104 @@ return pushable end or nil,
 			C_Map, CreateVector2D, addon.IsRuntimeRestricted = oldMap, oldVector, oldBlocked
 		end
 
-		-- Quest-title lookups never select quests and copy only public strings.
+		-- Native title/link/tooltip reads are offline fixtures, never UI mutation.
 		do
-			local oldLog, oldBlocked = C_QuestLog, addon.IsWorkBlocked
-			local blocked, calls, loads, title = false, 0, 0, "Localized title"
+			local keys = { "C_QuestLog", "GetQuestLink", "C_TooltipInfo", "Enum", "SetItemRef",
+				"RETRIEVING_DATA", "LOADING", "UNKNOWN", "UNKNOWNOBJECT" }
+			local saved = {}
+			for _, key in ipairs(keys) do saved[key] = _G[key] end
+			local oldBlocked = addon.IsWorkBlocked
+			local blocked, calls, loads, linkReads, tooltipReads = false, 0, 0, 0, 0
+			local title, link, tooltip = "Localized title", nil, nil
 			addon.IsWorkBlocked = function(_, kind) assert(kind == "quest_snapshot_refresh"); return blocked end
-			C_QuestLog = {
+			local log = {
 				GetTitleForQuestID = function(id) assert(id == 12345); calls = calls + 1; return title end,
 				RequestLoadQuestByID = function(id) assert(id == 12345); loads = loads + 1 end,
 			}
+			C_QuestLog = log
+			GetQuestLink = function(id) assert(id == 12345); linkReads = linkReads + 1; return link end
+			C_TooltipInfo = { GetHyperlink = function(hyperlink)
+				assert(hyperlink == "quest:12345:0" or hyperlink == "quest:12345:20")
+				tooltipReads = tooltipReads + 1
+				return tooltip
+			end }
+			Enum = { TooltipDataType = { Quest = 23 }, TooltipDataLineType = { None = 0, QuestTitle = 17, QuestObjective = 8 } }
+			RETRIEVING_DATA, LOADING, UNKNOWN, UNKNOWNOBJECT = "Retrieving data", "Loading...", "Unknown", "Unknown object"
+			SetItemRef = function() error("title lookup must not mutate native tooltip UI") end
 			assert(addon.API.GetLocalizedQuestTitle(12345) == title and calls == 1)
+			assert(linkReads == 0 and tooltipReads == 0, "resolved title must not invoke fallbacks")
 			assert(addon.API.RequestLocalizedQuestTitle(12345) == true and loads == 1)
 			blocked = true
 			assert(addon.API.GetLocalizedQuestTitle(12345) == nil and calls == 1)
 			assert(addon.API.RequestLocalizedQuestTitle(12345) == false and loads == 1)
+			assert(linkReads == 0 and tooltipReads == 0)
 			blocked = false
-			local before = inaccessibleReads
-			for _, value in ipairs({ secret, inaccessible, {}, 123 }) do
-				title = value; assert(addon.API.GetLocalizedQuestTitle(12345) == nil)
+			for _, value in ipairs({ secret, inaccessible, {}, 0, -1, 1.5, 1000000001, math.huge, "bad" }) do
+				assert(addon.API.GetLocalizedQuestTitle(value) == nil)
+				assert(addon.API.RequestLocalizedQuestTitle(value) == false)
 			end
+			assert(addon.API.GetLocalizedQuestTitle(nil) == nil and addon.API.RequestLocalizedQuestTitle(nil) == false)
+			assert(calls == 1 and loads == 1 and linkReads == 0 and tooltipReads == 0, "invalid IDs must not query native caches")
+			local before = inaccessibleReads
+			for _, value in ipairs({ secret, inaccessible, {}, 123, "", "  ", string.rep("x", 513), "Title\nprose",
+				"|Hquest:54321:0|h[Other]|h", "Quest 12345", RETRIEVING_DATA, LOADING, UNKNOWN }) do
+				title = value
+				assert(addon.API.GetLocalizedQuestTitle(12345) == nil)
+			end
+			title, link = nil, "|cffffff00|Hquest:12345:20|h[The Binding]|h|r"
+			local earlier = tooltipReads
+			assert(addon.API.GetLocalizedQuestTitle("12345") == "The Binding" and tooltipReads == earlier)
+			C_QuestLog = nil
+			assert(addon.API.GetLocalizedQuestTitle(12345) == "The Binding", "native link must work without the quest-title namespace")
+			assert(addon.API.RequestLocalizedQuestTitle(12345) == false)
+			link = nil
+			tooltip = { type = 23, id = 12345, lines = { { type = 0, leftText = "|cffffff00The Binding|r" },
+				{ type = 0, leftText = "Long objective description that is not a title." } } }
+			local header = tooltip.lines[1]
+			assert(addon.API.GetLocalizedQuestTitle(12345) == "The Binding")
+			assert(header.leftText == "|cffffff00The Binding|r" and header.type == 0,
+				"native tooltip data must remain untouched")
+			header.type = 17
+			assert(addon.API.GetLocalizedQuestTitle(12345) == "The Binding")
+			for _, value in ipairs({ secret, inaccessible, "|Hquest:54321:20|h[Wrong quest]|h", "raw text",
+				"|Hitem:12345:0|h[Item title]|h", "prefix |Hquest:12345:20|h[Other title]|h",
+				"|Hquest:12345:--20|h[Invalid native fields]|h",
+				"|Hquest:12345:20|h[Loading...]|h", string.rep("x", 1025) }) do
+				link = value
+				assert(addon.API.GetLocalizedQuestTitle(12345) == "The Binding", "invalid link must fall through to local tooltip")
+			end
+			GetQuestLink = function() error("not cached") end
+			C_QuestLog = { GetTitleForQuestID = function() error("not cached") end }
+			assert(addon.API.GetLocalizedQuestTitle(12345) == "The Binding", "getter failures must not block tooltip fallback")
 			for _, value in ipairs({ secret, inaccessible }) do
 				C_QuestLog = value
-				assert(addon.API.GetLocalizedQuestTitle(12345) == nil)
+				assert(addon.API.GetLocalizedQuestTitle(12345) == "The Binding")
 				assert(addon.API.RequestLocalizedQuestTitle(12345) == false)
 			end
-			assert(inaccessibleReads == before, "inaccessible title API must not be inspected")
-			C_QuestLog = nil
+			C_QuestLog, GetQuestLink = nil, nil
+			local valid = tooltip
+			for _, value in ipairs({ secret, inaccessible, {}, { type = 23, id = 54321, lines = valid.lines },
+				{ type = secret, id = 12345, lines = valid.lines }, { type = 23, id = secret, lines = valid.lines },
+				{ type = 0, id = 12345, lines = valid.lines }, { type = 23, id = 12345, lines = inaccessible },
+				{ type = 23, id = 12345, lines = { inaccessible } },
+				{ type = 23, id = 12345, lines = { { type = 8, leftText = "Objective prose" }, valid.lines[1] } },
+				{ type = 23, id = 12345, lines = { { type = 0, leftText = LOADING }, valid.lines[1] } },
+				{ type = 23, id = 12345, lines = { { type = secret, leftText = "Secret type" } } },
+				{ type = 23, id = 12345, lines = { { type = 17, leftText = secret } } },
+				{ type = 23, id = 12345, lines = { { type = 17, leftText = string.rep("x", 513) } } },
+				{ type = 23, id = 12345, lines = { { type = 17, leftText = "", rightText = "Not the title" } } } }) do
+				tooltip = value
+				assert(addon.API.GetLocalizedQuestTitle(12345) == nil, "invalid header must not become a local title")
+			end
+			assert(inaccessibleReads == before, "inaccessible title values must never be inspected")
+			C_TooltipInfo = { GetHyperlink = function() error("tooltip unavailable") end }
 			assert(addon.API.GetLocalizedQuestTitle(12345) == nil)
-			assert(addon.API.RequestLocalizedQuestTitle(12345) == false)
-			C_QuestLog, addon.IsWorkBlocked = oldLog, oldBlocked
+			for _, value in ipairs({ secret, inaccessible, {}, { GetHyperlink = secret } }) do
+				C_TooltipInfo = value
+				assert(addon.API.GetLocalizedQuestTitle(12345) == nil)
+			end
+			for _, key in ipairs(keys) do _G[key] = saved[key] end
+			addon.IsWorkBlocked = oldBlocked
 		end
 		-- Native party contracts are simulated offline only. Nil InviteUnit return
 		-- means invocation, not confirmed delivery; inaccessible data fails closed.
@@ -713,7 +782,7 @@ return not active end,
 					local callback
 					addon:PopulateChatLogSpeakerMenu({
 						CreateTitle = function() end,
-						CreateButton = function(_, title, run) if title == "Whisper" then callback = run end end,
+						CreateButton = function(_, title, run) if title == addon.Translate("Whisper") then callback = run end end,
 					}, pin, "Friend-Realm")
 					local before = parsed
 					assert(callback)
@@ -1142,6 +1211,45 @@ return rawRow end
 				"legacy location availability: " .. shape)
 		end
 		GetQuestLogTitle, C_QuestLog.GetInfo = originalTitleGetter, originalInfoGetter
+		do
+			local originalObjective, originalRows = GetQuestObjectiveInfo, C_QuestLog.GetQuestObjectives
+			local nativeRequired, rowReads = 5, 0
+			GetQuestObjectiveInfo = function(id, index, displayComplete)
+				assert(id == 12345 and index == 1 and displayComplete == false)
+				return objective.text, objective.type, objective.finished, objective.numFulfilled, nativeRequired
+			end
+			for _, mode in ipairs({ "unavailable", "mismatched", "error" }) do
+				C_QuestLog.GetQuestObjectives = mode ~= "unavailable" and function()
+					rowReads = rowReads + 1
+					if mode == "error" then error("structured data unavailable") end
+					return {{ text = "Another stage: 2/8", type = "monster", numFulfilled = 2, numRequired = 8 }}
+				end or nil
+				local text, kind, done, current, required = addon.API.GetQuestObjectiveInfo(12345, 1, false)
+				assert(text == objective.text and kind == "monster" and done == false and current == 2 and required == 5,
+					"native fifth counter must survive " .. mode .. " structured data")
+			end
+			assert(rowReads == 0, "complete native counters must not query unrelated structured rows")
+			C_QuestLog.GetQuestObjectives = nil
+			local before = inaccessibleReads
+			for _, value in ipairs({ secret, inaccessible }) do
+				nativeRequired = value
+				local _, _, _, current, required = addon.API.GetQuestObjectiveInfo(12345, 1, false)
+				assert(current == 2 and required == nil, "unreadable native required counters must be dropped")
+			end
+			assert(inaccessibleReads == before, "unreadable counters must not be inspected")
+			-- Older native APIs can omit the fifth result. Supplement only an exact
+			-- structured row; retaining the native return must preserve this fallback.
+			nativeRequired = nil
+			C_QuestLog.GetQuestObjectives = function() return { objective } end
+			local _, _, _, current, required = addon.API.GetQuestObjectiveInfo(12345, 1, false)
+			assert(current == 2 and required == 5)
+			C_QuestLog.GetQuestObjectives = function()
+				return {{ text = "Another stage: 2/8", type = "monster", numFulfilled = 2, numRequired = 8 }}
+			end
+			local _, _, _, _, mismatchedRequired = addon.API.GetQuestObjectiveInfo(12345, 1, false)
+			assert(mismatchedRequired == nil, "mismatched rows cannot supplement missing native counters")
+			GetQuestObjectiveInfo, C_QuestLog.GetQuestObjectives = originalObjective, originalRows
+		end
 		local text, kind, done, count, required = addon.API.GetQuestObjectiveInfo(12345, 1, false)
 		assert(text == "Wolves slain: 2/5" and kind == "monster" and done == false and count == 2 and required == 5)
 		objective.numRequired = secret
@@ -1152,7 +1260,7 @@ return rawRow end
 			local originalObjectives = C_QuestLog.GetQuestObjectives
 			C_QuestLog.GetQuestObjectives = function() return {{ text = "Another stage: 2/8", type = "monster", numFulfilled = 2, numRequired = 8 }} end
 			local _, _, _, ownCount, wrongRequired = addon.API.GetQuestObjectiveInfo(12345, 1, false)
-			assert(ownCount == 2 and wrongRequired == nil, "mismatched rows cannot supplement counters")
+			assert(ownCount == 2 and wrongRequired == 5, "mismatched rows cannot replace native counters")
 			C_QuestLog.GetQuestObjectives = originalObjectives
 		end
 		assert(addon.API.IsPushableQuest(12345) == true)

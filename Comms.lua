@@ -628,7 +628,7 @@ function QuestTogether:ResetCommsState()
 	end
 	self.channelOrderWork = nil
 	self.announcementChannelBindings = nil
-	self.localizedQuestTitles = nil
+	self:ResetLocalizedQuestTitles()
 	if self.ResetPartyJoin then
 		self:ResetPartyJoin()
 	end
@@ -1007,7 +1007,7 @@ function QuestTogether:ShouldPlayRemoteEmoteForAnnouncement(eventData)
 		or eventData.eventType == "PLAYER_LEVEL_UP"
 end
 
-function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
+function QuestTogether:HandleAnnouncementEvent(eventData, isLocal, skipTitleWait)
 	eventData = self:SanitizeAnnouncementEventData(eventData)
 	if type(eventData) ~= "table" then
 		self:Debug("Rejected announcement event because payload was invalid", "comms")
@@ -1073,7 +1073,11 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal)
 		and (self:GetOption("showChatLogs") or self:GetOption("showChatBubbles"))
 		and self.LocalizeAnnouncementEvent
 	then
-		eventData.text = self:LocalizeAnnouncementEvent(eventData)
+		local localizedText, waitingForTitle = self:LocalizeAnnouncementEvent(eventData)
+		if not skipTitleWait and self:QueueLocalizedAnnouncement(eventData, waitingForTitle) then
+			return true
+		end
+		eventData.text = localizedText
 	end
 	local isLevelUp = eventData.eventType == "PLAYER_LEVEL_UP"
 	if not isLevelUp and self:GetOption("showChatLogs") then

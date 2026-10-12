@@ -809,6 +809,88 @@ QuestTogether:RegisterTest(
 	end
 )
 
+QuestTogether:RegisterTest("late quest title notifications refresh exhausted PQL polling and surviving cache consumers", function()
+	for _, mode in ipairs({ "cached", "evicted" }) do
+		local a = Fixture()
+		AttachUI(a)
+		a.QueuePartyQuestCompareRender = QuestTogether.QueuePartyQuestCompareRender
+		local loaded = {}
+		function a:GetQuestSnapshot() end
+		a.API.GetLocalizedQuestTitle = function(id) return loaded[id] end
+		a.API.RequestLocalizedQuestTitle = function() return true end
+		assert(a:OpenPartyQuestCompare())
+		Reply(a, "Friend-Realm", { Quest(1, "결속") }, true)
+		a:Advance(0.1)
+		a:Advance(31)
+		a:Advance(31)
+		local frame, session = a.partyQuestCompareWindow, a.partyQuestCompareSession
+		Equal(session.titleRequests[1].count, 2)
+		assert(not session.titleRefreshPending, "fixture must exhaust the bounded title polling")
+		Equal(frame.rows[1].title.text, "결속")
+		loaded[1] = "The Binding"
+		a.now = a.now + 6
+		if mode == "cached" then
+			-- A hover gets the now-available native title before its load event.
+			Equal(a:GetLocalizedQuestTitle(1), "The Binding")
+		else
+			-- Other displayed quests can evict a completed load's negative entry.
+			for id = 2, 258 do
+				loaded[id] = "Other local quest " .. id
+				a:GetLocalizedQuestTitle(id)
+			end
+			assert(not a.localizedQuestTitles.entries[1])
+		end
+		a:QUEST_DATA_LOAD_RESULT(nil, 1, true)
+		a:Advance(0.1)
+		Equal(frame.rows[1].title.text, "The Binding")
+		Equal(session.members[2].entries[1].questTitle, "결속", "presentation cannot rewrite the certified snapshot")
+		-- A queued notification must not refresh a replacement or dismissed UI.
+		a:OnPartyQuestTitleChanged(1)
+		a:CancelPartyQuestCompare()
+		frame:Hide()
+		function a:RenderPartyQuestCompare() error("retired title notification reached the renderer") end
+		a.partyQuestCompareSession = { members = { { entries = { [1] = Quest(1) } } } }
+		a:Advance(0.1)
+		assert(not frame:IsShown())
+	end
+end)
+
+QuestTogether:RegisterTest("remote PQL titles render plain text without rewriting certified wire snapshots", function()
+	local a = Fixture()
+	AttachUI(a)
+	function a:GetQuestSnapshot() end
+	function a:GetLocalizedQuestTitle() end
+	a.QueuePartyQuestCompareRender = QuestTogether.QueuePartyQuestCompareRender
+	assert(a:OpenPartyQuestCompare())
+	local member = a.partyQuestCompareSession.byName["Friend-Realm"]
+	local source = "|cffff0000|Hquest:1:0|h[결속]|h|r|TInterface\\Icons\\INV_Misc_QuestionMark:128:128|t|Aknown:128:128|a\n"
+	local record = {
+		requestId = member.requestId, snapshotId = "plain-title-snapshot", revision = "plain-title-revision",
+		count = 2, entries = { Quest(1, source), Quest(2, "|TOnlyAnIcon:128:128|t") },
+	}
+	local wire = assert(a:EncodeCommRecord("QCRS", record))
+	local decoded = assert(a:DecodeCommRecord("QCRS", wire))
+	assert(a:HandleQuestCompareResponse(decoded, member.name))
+	a:Advance(0.1)
+	local titles = {}
+	for _, row in ipairs(a.partyQuestCompareWindow.rows) do
+		if row.data then titles[row.data.questId] = row.title.text end
+	end
+	Equal(titles[1], "[결속]")
+	Equal(titles[2], "Quest 2")
+	Equal(member.entries[1].questTitle, source)
+	Equal(member.revision, "plain-title-revision")
+	Equal(assert(a:EncodeCommRecord("QCRS", decoded)), wire)
+	-- A reused revision must retain its original certificate and sanitized view.
+	a:RefreshPartyQuestCompare(nil, nil, true)
+	member = a.partyQuestCompareSession.byName[member.name]
+	assert(a:HandleQuestCompareResponse({ requestId = member.requestId, snapshotId = "unchanged-title-snapshot",
+		revision = "plain-title-revision", count = 2, unchanged = true }, member.name))
+	a:Advance(0.1)
+	Equal(member.entries[1].questTitle, source)
+	Equal(member.revision, "plain-title-revision")
+end)
+
 QuestTogether:RegisterTest("comparison titles refresh on load results and drain a bounded load queue", function()
 	local a = Fixture()
 	AttachUI(a)
@@ -4002,6 +4084,47 @@ QuestTogether:RegisterTest(
 		Equal(#a.wire, 0)
 	end
 )
+
+QuestTogether:RegisterTest("late local titles refresh active missing-focus warnings without showing retired dialogs", function()
+	for _, change in ipairs({ "active", "closed", "hidden", "replaced", "disabled", "logout" }) do
+		local a = Fixture()
+		AttachUI(a)
+		local title
+		function a:GetQuestSnapshot() end
+		a.API.GetLocalizedQuestTitle = function() return title end
+		a.API.RequestLocalizedQuestTitle = function() return true end
+		a:QueuePartyFocusMissingNotice("Friend-Realm", 1, "결속")
+		local frame = a.partyFocusMissingDialog
+		assert(frame:IsShown() and frame.message.text:find("결속", 1, true))
+		local original = frame.message.text
+		function frame:Show() error("a title notification must not show a focus warning") end
+		function frame:Raise() error("a title notification must not raise a focus warning") end
+		a.blocked, title = true, "The Binding"
+		a:QUEST_DATA_LOAD_RESULT(nil, 1, true)
+		a:Advance(0.1)
+		Equal(frame.message.text, original, "restrictions must defer text and layout changes")
+		local stale
+		for _, work in pairs(a.workState.entries) do
+			if work.reason == "party focus missing quest" then stale = work.callback end
+		end
+		assert(stale, "blocked title notification must retain a guarded callback")
+		if change == "closed" then a:ClearPartyFocusMissingNotice()
+		elseif change == "hidden" then frame:Hide()
+		elseif change == "replaced" then a.partyFocusMissingNotice = { name = "Other-Realm", questID = 2 }
+		elseif change == "disabled" then a.isEnabled = false
+		elseif change == "logout" then a.isLoggingOut = true end
+		a.blocked = false
+		a:FlushDeferredWork("test resume")
+		stale()
+		if change == "active" then
+			assert(frame.message.text:find("The Binding", 1, true))
+			assert(not frame.message.text:find("결속", 1, true))
+		else
+			Equal(frame.message.text, original, change)
+		end
+		if change == "closed" or change == "hidden" then assert(not frame:IsShown()) end
+	end
+end)
 
 QuestTogether:RegisterTest("focus-change preview rejects stale confirmations and restrictions", function()
 	local a = PreviewFixture()
