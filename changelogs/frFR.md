@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.0.2
+## 7.1.0
 
 Découvrez davantage de fonctionnalités de QuestTogether grâce à des astuces utiles.
 
@@ -11,6 +11,15 @@ Découvrez davantage de fonctionnalités de QuestTogether grâce à des astuces 
 - QT affiche désormais une astuce à la connexion ou au rechargement de l’interface, tirée d’une liste mélangée sans répétition tant que toutes les astuces n’ont pas été affichées.
 
 > 💡 Astuce : Saisissez « /qt tip » ou « /qt hint » pour voir une autre astuce QuestTogether quand vous le souhaitez.
+
+## 7.0.2
+
+Quelques améliorations aux informations de quête et aux diagnostics facultatifs.
+
+### Améliorations
+
+- Ajout d’une fenêtre Détails de la quête pour lire les textes de quête disponibles.
+- Amélioration des diagnostics facultatifs destinés au développeur et de la fiabilité des communications. Votre réglage de partage des données de diagnostic est respecté.
 
 ## 7.0.1
 

@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.0.2
+## 7.1.0
 
 Descubre más de QuestTogether con consejos útiles.
 
@@ -11,6 +11,15 @@ Descubre más de QuestTogether con consejos útiles.
 - QT ahora muestra un consejo al iniciar sesión o recargar la interfaz, elegido de una lista barajada sin repeticiones hasta agotarla.
 
 > 💡 Consejo: Escribe /qt tip o /qt hint para ver otro consejo de QuestTogether cuando quieras.
+
+## 7.0.2
+
+Algunas mejoras en la información de las misiones y los diagnósticos opcionales.
+
+### Mejoras
+
+- Se agregó una ventana de Detalles de la misión para leer los textos de misión disponibles.
+- Se mejoraron los diagnósticos opcionales para el desarrollador y la confiabilidad de las comunicaciones. Se respeta tu configuración para compartir datos de diagnóstico.
 
 ## 7.0.1
 

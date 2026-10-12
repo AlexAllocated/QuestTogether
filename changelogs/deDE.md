@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.0.2
+## 7.1.0
 
 Entdecke mit hilfreichen Tipps mehr von QuestTogether.
 
@@ -11,6 +11,15 @@ Entdecke mit hilfreichen Tipps mehr von QuestTogether.
 - QT zeigt jetzt bei der Anmeldung oder beim Neuladen der Benutzeroberfläche einen Tipp aus einem gemischten Vorrat an. Erst wenn alle Tipps gezeigt wurden, wiederholen sie sich.
 
 > 💡 Tipp: Gib „/qt tip“ oder „/qt hint“ ein, um jederzeit einen weiteren QuestTogether-Tipp zu sehen.
+
+## 7.0.2
+
+Einige Verbesserungen an Questinformationen und optionalen Diagnosedaten.
+
+### Verbesserungen
+
+- Ein Fenster mit Questdetails zum Lesen verfügbarer Questtexte wurde hinzugefügt.
+- Die optionale Entwicklerdiagnose und die Zuverlässigkeit der Kommunikation wurden verbessert. Deine Einstellung zum Teilen von Diagnosedaten wird berücksichtigt.
 
 ## 7.0.1
 
