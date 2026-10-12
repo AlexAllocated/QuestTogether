@@ -1,5 +1,5 @@
 {
-  "source_sha256": "6b550f4faf51ac6bc49cc752c6d9d7d3e60dcfb4262a52cb70a071561b9d0f17",
+  "source_sha256": "f543ef6136bb90b265390b1a76abb512fc329f4ba1da5f509d0c6f85cb4a2517",
   "notes": {
     "version": "7.1.1",
     "welcome": "透過實用提示，認識 QuestTogether 的更多功能。",
@@ -7,7 +7,8 @@
       {
         "title": "QuestTogether 提示",
         "items": [
-          "QT 現在會在登入或重新載入介面時顯示一則提示，從打亂的清單中抽取，整輪看完之前不會重複。"
+          "QT 現在會在登入或重新載入介面時顯示一則提示，從打亂的清單中抽取，整輪看完之前不會重複。",
+          "你可以在 QuestTogether 設定主頁的「一般」區塊關閉自動提示。/qt tip 和 /qt hint 仍可使用。"
         ],
         "tip": {
           "label": "提示：",

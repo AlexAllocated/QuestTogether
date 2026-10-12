@@ -5,7 +5,10 @@ local function Fixture(global)
 		hasLoggedIn = true,
 		isEnabled = true,
 		isLoggingOut = false,
-		db = { global = global or {}, profile = { enabled = true } },
+		db = {
+			global = global or {},
+			profile = { enabled = true, showStartupTips = QT.DEFAULTS.profile.showStartupTips },
+		},
 		runtimeStateStore = {},
 		messages = {},
 		notices = {},
@@ -211,6 +214,51 @@ QT:RegisterTest("startup hints cannot print after logout disable or owner cancel
 	a.blocked = true
 	a:HandleSlashCommand("hint")
 	assert(#a.messages == 2, "manual tips only print chat; combat must not block them")
+end)
+
+QT:RegisterTest("startup tip preference skips automatic draws while keeping manual tips available", function()
+	local a, clock = Fixture()
+	assert(a:GetOption("showStartupTips") == true, "new profiles should show startup tips by default")
+	assert(a:SetOption("showStartupTips", false))
+	a:OnLogin()
+	clock:Drain()
+	assert(#a.messages == 0 and a.outputAttempts == 0 and not a.db.global.hintPool)
+	a:HandleSlashCommand("tip")
+	a:HandleSlashCommand("hint")
+	assert(#a.messages == 2 and a.db.global.hintPool, "manual commands must ignore the automatic preference")
+	assert(a:SetOption("showStartupTips", true))
+	clock:Drain()
+	assert(#a.messages == 2, "turning startup tips on must wait for the next login or reload")
+end)
+
+QT:RegisterTest("deferred startup tips recheck the current preference and profile without consuming a draw", function()
+	for _, optOut in ipairs({
+		function(a)
+			assert(a:SetOption("showStartupTips", false))
+		end,
+		function(a)
+			a.db.profile = { enabled = true, showStartupTips = false }
+		end,
+	}) do
+		local a, clock = Fixture()
+		a:OnLogin()
+		optOut(a)
+		clock:Drain()
+		assert(#a.messages == 0 and a.outputAttempts == 0 and not a.db.global.hintPool)
+		assert(a:SetOption("showStartupTips", true))
+		clock:Drain()
+		assert(#a.messages == 0, "enabling tips must not revive a skipped startup callback")
+		assert(a:ShowHint() and #a.messages == 1)
+	end
+	local a, clock = Fixture()
+	a.failOutput = true
+	a:OnLogin()
+	clock:Advance(0)
+	assert(a.outputAttempts == 1 and not a.db.global.hintPool)
+	assert(a:SetOption("showStartupTips", false))
+	a.failOutput = false
+	clock:Drain()
+	assert(a.outputAttempts == 1 and #a.messages == 0 and not a.db.global.hintPool)
 end)
 
 QT:RegisterTest("client locale renders hint prefix body command help and meta tip", function()

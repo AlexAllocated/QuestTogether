@@ -1,5 +1,5 @@
 {
-  "source_sha256": "6b550f4faf51ac6bc49cc752c6d9d7d3e60dcfb4262a52cb70a071561b9d0f17",
+  "source_sha256": "f543ef6136bb90b265390b1a76abb512fc329f4ba1da5f509d0c6f85cb4a2517",
   "notes": {
     "version": "7.1.1",
     "welcome": "Descubre más de QuestTogether con consejos útiles.",
@@ -7,7 +7,8 @@
       {
         "title": "Consejos de QuestTogether",
         "items": [
-          "QT ahora muestra un consejo al iniciar sesión o recargar la interfaz, elegido de una lista barajada sin repeticiones hasta agotarla."
+          "QT ahora muestra un consejo al iniciar sesión o recargar la interfaz, elegido de una lista barajada sin repeticiones hasta agotarla.",
+          "Puedes desactivar los consejos automáticos en General, en la página principal de ajustes de QuestTogether. /qt tip y /qt hint siguen disponibles."
         ],
         "tip": {
           "label": "Consejo:",

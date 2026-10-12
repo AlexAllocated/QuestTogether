@@ -607,7 +607,10 @@ function QT:GetHintCatalog()
 			text = L("Use /qt resetlayout if a QT window's saved position or size is getting in your way."),
 		},
 		{ id = "hint117", text = L("Press Escape to close QT windows.") },
-		{ id = "hint118", text = L("Enable Light mode for light parchment and dark text in QT's parchment windows.") },
+		{
+			id = "hint118",
+			text = L("Choose the Light theme under General for light parchment and dark text in QT's parchment windows."),
+		},
 		{
 			id = "hint119",
 			text = L("Each character starts with its own QT profile. Use Profiles to choose another saved setup."),
@@ -945,7 +948,13 @@ function QT:ShowHint()
 end
 
 function QT:ScheduleStartupHint()
-	if rawget(self, "startupHintState") or not self.isEnabled or not self.hasLoggedIn or self.isLoggingOut then
+	if
+		rawget(self, "startupHintState")
+		or not self.isEnabled
+		or not self.hasLoggedIn
+		or self.isLoggingOut
+		or self:GetOption("showStartupTips") ~= true
+	then
 		return false
 	end
 	local state = { attempts = 0 }
@@ -957,6 +966,7 @@ function QT:ScheduleStartupHint()
 			or not self.isEnabled
 			or not self.hasLoggedIn
 			or self.isLoggingOut
+			or self:GetOption("showStartupTips") ~= true
 		then
 			return
 		end

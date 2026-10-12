@@ -84,7 +84,9 @@ private `.local` notes are historical context, not the source of truth.
 
 Tips are local chat-log output. `OnLogin` schedules one through the shared UI work
 lifetime after chat destinations are initialized; zoning and enabling do not draw
-another. `/qt tip` and `/qt hint` draw from the same pool in `db.global.hintPool`.
+another. The profile's `showStartupTips` preference defaults on and is checked
+before scheduling and again before printing; manual `/qt tip` and `/qt hint`
+remain available when it is off. All draws share `db.global.hintPool`.
 Stable IDs survive wording, language and profile changes. Only successfully printed
 tips consume a draw; unsupported client features are excluded. Display adds the
 QT tip logo with its gold bulb, gold localized label, and cream tip text centrally,
@@ -250,6 +252,10 @@ Use native settings controls through the shared constructors. Player-facing
 text is localized at presentation; wire facts and diagnostic identifiers stay
 stable. Vendored LibChev is immutable under its pinned manifest: fixes belong
 upstream followed by a deliberate vendor update.
+
+The settings home page puts General controls before its compact status overview
+and shortcuts. Status links read the same current summaries for their tooltips.
+The Theme dropdown presents the existing `lightMode` profile preference.
 
 Use Blizzard templates for ordinary buttons, checkboxes, swatches, searches
 and scrollbars. Preserve inherited search and control behavior on owned instances.

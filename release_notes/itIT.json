@@ -1,5 +1,5 @@
 {
-  "source_sha256": "6b550f4faf51ac6bc49cc752c6d9d7d3e60dcfb4262a52cb70a071561b9d0f17",
+  "source_sha256": "f543ef6136bb90b265390b1a76abb512fc329f4ba1da5f509d0c6f85cb4a2517",
   "notes": {
     "version": "7.1.1",
     "welcome": "Scopri altre funzionalità di QuestTogether con consigli utili.",
@@ -7,7 +7,8 @@
       {
         "title": "Consigli di QuestTogether",
         "items": [
-          "QT ora mostra un consiglio all’accesso o al ricaricamento dell’interfaccia, pescando da un elenco mescolato senza ripetizioni finché non sono stati mostrati tutti."
+          "QT ora mostra un consiglio all’accesso o al ricaricamento dell’interfaccia, pescando da un elenco mescolato senza ripetizioni finché non sono stati mostrati tutti.",
+          "Puoi disattivare i consigli automatici in Generale nella pagina principale delle impostazioni di QuestTogether. /qt tip e /qt hint restano disponibili."
         ],
         "tip": {
           "label": "Consiglio:",

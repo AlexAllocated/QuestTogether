@@ -1,5 +1,5 @@
 {
-  "source_sha256": "6b550f4faf51ac6bc49cc752c6d9d7d3e60dcfb4262a52cb70a071561b9d0f17",
+  "source_sha256": "f543ef6136bb90b265390b1a76abb512fc329f4ba1da5f509d0c6f85cb4a2517",
   "notes": {
     "version": "7.1.1",
     "welcome": "Descubra mais do QuestTogether com dicas úteis.",
@@ -7,7 +7,8 @@
       {
         "title": "Dicas do QuestTogether",
         "items": [
-          "O QT agora mostra uma dica ao entrar no jogo ou recarregar a interface, escolhida de uma lista embaralhada sem repetições até ela se esgotar."
+          "O QT agora mostra uma dica ao entrar no jogo ou recarregar a interface, escolhida de uma lista embaralhada sem repetições até ela se esgotar.",
+          "Você pode desativar as dicas automáticas em Geral, na página principal de configurações do QuestTogether. /qt tip e /qt hint continuam disponíveis."
         ],
         "tip": {
           "label": "Dica:",

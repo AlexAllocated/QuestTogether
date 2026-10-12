@@ -9,6 +9,7 @@
 ### Советы QuestTogether
 
 - Теперь QT показывает совет при входе в игру или перезагрузке интерфейса. Советы выбираются из перемешанного списка без повторов, пока он не закончится.
+- Автоматические советы можно отключить в разделе «Общие» на главной странице настроек QuestTogether. Команды /qt tip и /qt hint останутся доступны.
 
 > <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Совет: Введите /qt tip или /qt hint, чтобы в любой момент увидеть ещё один совет QuestTogether.
 

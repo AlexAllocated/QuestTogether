@@ -81,6 +81,20 @@ QT:RegisterTest("settings copy color values and normalize persisted values throu
 	assert(a.db.profile.compareQuestOwnership == "all" and a.db.profile.minimapButtonPosition == 315)
 end)
 
+QT:RegisterTest("startup tip preference migrates on while preserving an explicit profile opt out", function()
+	local a = Fixture()
+	a.db.profile.showStartupTips = nil
+	a:NormalizeSettingsProfile()
+	assert(a:GetOption("showStartupTips") == true, "existing profiles inherit the enabled default")
+	assert(a:SetOption("showStartupTips", false))
+	a:NormalizeSettingsProfile()
+	assert(a:GetOption("showStartupTips") == false, "normalization must preserve the saved opt out")
+	assert(not a:SetOption("showStartupTips", "false"))
+	assert(a:GetOption("showStartupTips") == false and not next(a.effects))
+	a.db.profile = QT:DeepCopy(QT.DEFAULTS.profile)
+	assert(a:GetOption("showStartupTips") == true, "another profile owns its own preference")
+end)
+
 QT:RegisterTest(
 	"settings diagnostics revocation cancels requests and never reuses an old permission lifetime",
 	function()

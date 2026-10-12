@@ -11,6 +11,7 @@ Discover more of QuestTogether with helpful tips.
 ### QuestTogether Tips
 
 - QT now shows a tip when you log in or reload, drawing from a shuffled pool without repeats until it runs out.
+- You can disable automatic tips under General on the main QuestTogether settings page. /qt tip and /qt hint remain available.
 
 > <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tip: Type /qt tip or /qt hint to see another QuestTogether tip whenever you like.
 

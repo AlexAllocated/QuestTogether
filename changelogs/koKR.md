@@ -9,6 +9,7 @@
 ### QuestTogether 도움말
 
 - 이제 로그인하거나 UI를 다시 불러오면 도움말이 표시됩니다. 섞인 목록에서 하나씩 뽑으며, 목록을 모두 볼 때까지 반복되지 않습니다.
+- QuestTogether 설정의 기본 페이지에서 일반 항목의 자동 도움말을 끌 수 있습니다. /qt tip 및 /qt hint는 계속 사용할 수 있습니다.
 
 > <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> 도움말: 언제든 /qt tip 또는 /qt hint를 입력하면 다른 QuestTogether 도움말을 볼 수 있습니다.
 

@@ -43,6 +43,10 @@ end
 function methods:SetText(text)
 	self.text = text
 end
+function methods:GetFontString()
+	if not self.fontString then self.fontString = Region("FontString", self) end
+	return self.fontString
+end
 function methods:SetChecked(v)
 	self.checked = v
 end
@@ -120,6 +124,11 @@ for _, key in ipairs({
 }) do
 	methods[key] = function() end
 end
+function methods:SetPoint(...)
+	self.points = self.points or {}
+	self.points[#self.points + 1] = { ... }
+end
+function methods:ClearAllPoints() self.points = {} end
 function methods:SetWidth(width) self.width = width end
 function methods:GetWidth() return self.width end
 function methods:SetSize(width, height) self.width, self.height = width, height end
@@ -227,6 +236,9 @@ end
 AnchorUtil = { CreateAnchor = function(...) return { ... } end }
 MinimalSliderWithSteppersMixin = { Label = { Right = 2 }, Event = { OnValueChanged = "OnValueChanged" } }
 Settings = {
+	RegisterCanvasLayoutCategory = function(_, name)
+		return { name = name }
+	end,
 	RegisterCanvasLayoutSubcategory = function(_, _, name)
 		return { name = name }
 	end,
@@ -509,3 +521,82 @@ swatch.scripts.OnLeave(swatch)
 assert(not swatch.nativeHover and not tooltipOwner)
 QuestTogether.ShowSettingsTooltip, QuestTogether.HideSettingsTooltip = showTooltip, hideTooltip
 print("Native checkboxes, swatch cancel/profile safety, and settings scrollbar resize/wheel behavior passed")
+
+QuestTogether:InitializeOptionsWindow()
+QuestTogether.optionsFrame.scripts.OnShow()
+local startupTips = assert(QuestTogether.homeControls.showStartupTips)
+assert(startupTips.template == "MinimalCheckboxTemplate")
+assert(startupTips.Label.text == "Show tips on login" and startupTips:GetChecked() == true)
+local capturedTooltip
+QuestTogether.ShowSettingsTooltip = function(_, owner, title, text)
+	assert(owner == startupTips and title == "Show tips on login")
+	capturedTooltip = text
+end
+startupTips.scripts.OnEnter(startupTips)
+QuestTogether.ShowSettingsTooltip = showTooltip
+assert(capturedTooltip == "Show a QuestTogether tip when you log in or reload. You can still use /qt tip or /qt hint at any time.")
+startupTips:SetChecked(false)
+startupTips.scripts.OnClick(startupTips)
+assert(QuestTogether:GetOption("showStartupTips") == false)
+QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
+QuestTogether.optionsFrame.scripts.OnShow()
+assert(startupTips:GetChecked() == true, "the home checkbox must refresh from the current profile")
+print("Startup tip checkbox, explanatory tooltip, saved opt-out, and profile refresh passed")
+
+local home = QuestTogether.homeControls
+assert(home.generalHeader.points[1][2] == home.description)
+assert(home.showMinimapButton.points[1][2] == home.generalHeader)
+assert(home.showStartupTips.points[1][2] == home.showMinimapButton)
+local theme = assert(home.themeDropdown)
+assert(home.lightMode == nil, "the old Light mode checkbox must not remain beside the dropdown")
+assert(theme.template == "SettingsDropdownWithButtonsTemplate" and theme.title.text == "Theme")
+assert(theme.title.points[1][2] == home.showStartupTips)
+assert(home.statusPanel.points[1][2] == theme, "General settings must come before the status overview")
+assert(home.tipsHeader.points[1][2] == home.statusPanel)
+assert(theme.Dropdown.menuAnchor[1] == "TOPRIGHT" and theme.Dropdown.menuAnchor[3] == "BOTTOMRIGHT")
+assert(#theme.Dropdown.menu == 2 and theme.Dropdown.menu[1].text == "Dark" and theme.Dropdown.menu[2].text == "Light")
+local themesRefreshed, refreshThemes = 0, QuestTogether.RefreshWindowThemes
+QuestTogether.RefreshWindowThemes = function() themesRefreshed = themesRefreshed + 1 end
+local themeWrites, setOption = 0, QuestTogether.SetOption
+QuestTogether.SetOption = function(self, key, value)
+	if key == "lightMode" then themeWrites = themeWrites + 1 end
+	return setOption(self, key, value)
+end
+theme.Dropdown.menu[2].func()
+assert(QuestTogether:GetOption("lightMode") == true and theme.Dropdown.text == "Light")
+assert(theme.Dropdown.menu[2].selected() and not theme.IncrementButton:IsEnabled())
+assert(themeWrites == 1 and themesRefreshed > 0)
+local firstRefreshes = themesRefreshed
+theme.DecrementButton.scripts.OnClick()
+assert(QuestTogether:GetOption("lightMode") == false and theme.Dropdown.text == "Dark")
+assert(theme.Dropdown.menu[1].selected() and not theme.DecrementButton:IsEnabled())
+assert(themeWrites == 2 and themesRefreshed > firstRefreshes, "each selection must save once and apply theme effects")
+QuestTogether.RefreshWindowThemes = refreshThemes
+QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
+QuestTogether.db.profile.lightMode = true
+local writesBeforeRefresh = themeWrites
+QuestTogether.optionsFrame.scripts.OnShow()
+assert(theme.Dropdown.text == "Light" and theme.Dropdown.menu[2].selected())
+assert(themeWrites == writesBeforeRefresh, "profile refresh must not write the theme selection back")
+QuestTogether.SetOption = setOption
+
+assert(#home.statusGroups == 7 and home.statusPanel.height == 304)
+assert(home.statusPanel.height >= home.actionsPanel.height, "footer must clear the adjacent action buttons")
+assert(not home.statusGroups[1].text.hidden and home.statusGroups[1].text.text:find("Active profile", 1, true))
+for index = 2, #home.statusGroups do
+	assert(home.statusGroups[index].text.hidden and home.statusGroups[index].frame.height == 22)
+end
+local partners = home.statusGroups[2]
+QuestTogether.ShowSettingsTooltip = function(_, owner, title, text)
+	assert(owner == partners.button and title == "Finding Partners")
+	capturedTooltip = text
+end
+partners.button.scripts.OnEnter(partners.button)
+assert(capturedTooltip:find("Looking for Questing Partners: Off", 1, true))
+QuestTogether.db.profile.lookingForQuestPartners = true
+QuestTogether.optionsFrame.scripts.OnUpdate(QuestTogether.optionsFrame, 1)
+partners.button.scripts.OnEnter(partners.button)
+assert(capturedTooltip:find("Looking for Questing Partners: On", 1, true), "hover details must follow current settings")
+assert(capturedTooltip:find("Open the settings for this section.", 1, true))
+QuestTogether.ShowSettingsTooltip = showTooltip
+print("General-first home layout, compact live status tooltips, and native Theme dropdown/profile effects passed")

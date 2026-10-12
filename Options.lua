@@ -261,10 +261,12 @@ end
 
 -- Only attach to controls created by this addon. No shared GameTooltip state.
 function QuestTogether:AttachSettingsTooltip(control, title, text)
-	assert(type(text) == "string" and text ~= "", "settings controls require explanatory tooltip text")
+	assert(type(text) == "function" or (type(text) == "string" and text ~= ""), "settings controls require explanatory tooltip text")
 	control:EnableMouse(true)
 	if control.SetMotionScriptsWhileDisabled then control:SetMotionScriptsWhileDisabled(true) end
-	control:HookScript("OnEnter", function() self:ShowSettingsTooltip(control, title, text) end)
+	control:HookScript("OnEnter", function()
+		self:ShowSettingsTooltip(control, title, type(text) == "function" and text() or text)
+	end)
 	control:HookScript("OnLeave", function() self:HideSettingsTooltip(control) end)
 	control:HookScript("OnHide", function() self:HideSettingsTooltip(control) end)
 end
@@ -653,7 +655,7 @@ local CHECKBOX_OPTION_KEYS = {
 	"autoInviteWhileLFG",
 	"lookingForQuestPartners",
 	"showMinimapButton",
-	"lightMode",
+	"showStartupTips",
 	"experimentalLayerDetection",
 	"sharePlayerLocation",
 	"shareDeveloperDiagnostics",
@@ -953,7 +955,7 @@ function QuestTogether:GetHomeStatusGroups()
 	if self:GetOption("autoInviteWhileLFG") then invites[#invites + 1] = L("Other requests while looking for partners") end
 	local inviteText = #invites > 0 and table.concat(invites, "; ") or L("Ask first")
 	return {
-		{ title = L("General"), categoryKey = "profilesCategory", text = general },
+		{ title = L("General"), categoryKey = "profilesCategory", text = general, summary = general },
 		{ title = L("Finding Partners"), categoryKey = "groupsCategory", text =
 			Line(L("Looking for Questing Partners"), OnOff("lookingForQuestPartners")) .. "\n"
 			.. Line(L("Automatic invitations"), inviteText) },
@@ -985,23 +987,29 @@ function QuestTogether:RefreshHomeWindow()
 	if type(controls) ~= "table" then
 		return
 	end
+	if controls.themeDropdown then
+		RefreshDropdownControl(controls.themeDropdown, self:GetOption("lightMode") and L("Light") or L("Dark"))
+	end
 
 	if controls.statusGroups then
 		local groups = self:GetHomeStatusGroups()
 		local height = 36
 		for i, group in ipairs(groups) do
 			local row = controls.statusGroups[i]
-			row.text:SetText(group.text)
+			row.text:SetText(group.summary or "")
+			row.text:SetShown(group.summary ~= nil)
 			row.button:SetText(group.title .. " >")
+			row.details = group.text
 			row.categoryKey = group.categoryKey
-			local rowHeight = 26 + row.text:GetStringHeight()
+			local rowHeight = 22 + (group.summary and 4 + row.text:GetStringHeight() or 0)
 			row.frame:SetHeight(rowHeight)
-			height = height + rowHeight + 12
+			height = height + rowHeight + 4
 		end
 		controls.statusPanel:SetHeight(math.max(304, height))
-		-- Include wrapped introduction/tips and the controls below both panels.
+		-- General controls come first. Reserve the taller of the status overview
+		-- and the fixed-height Quick Actions panel before placing the tips below.
 		controls.content:SetHeight(math.max(304, height) + controls.description:GetStringHeight()
-			+ controls.tipsText:GetStringHeight() + 332)
+			+ controls.tipsText:GetStringHeight() + 320)
 	end
 
 	if controls.openHudEditMode then
@@ -2160,8 +2168,26 @@ function QuestTogether:InitializeOptionsWindow()
 			L("QuestTogether shares quest progress between party members and nearby players so everyone can see objectives move in real time.")
 	)
 
+	local generalHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	generalHeader:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -18)
+	generalHeader:SetText(L("General"))
+	local showMinimapButton = CreateCheckbox(content, "showMinimapButton", L("Show minimap icon"),
+		L("Show the QuestTogether minimap menu. Drag the button to move it around the minimap."), 16, 0)
+	showMinimapButton:ClearAllPoints()
+	showMinimapButton:SetPoint("TOPLEFT", generalHeader, "BOTTOMLEFT", 0, -10)
+	local showStartupTips = CreateCheckbox(content, "showStartupTips", L("Show tips on login"),
+		L("Show a QuestTogether tip when you log in or reload. You can still use /qt tip or /qt hint at any time."), 16, 0)
+	showStartupTips:ClearAllPoints()
+	showStartupTips:SetPoint("TOPLEFT", showMinimapButton, "BOTTOMLEFT", 0, -8)
+	local themeDropdown = CreateOptionDropdown(content, L("Theme"),
+		L("Choose light parchment with dark text or dark parchment with light text for QT windows."),
+		16, 0, 140, { false, true }, function(value) return value and L("Light") or L("Dark") end,
+		"lightMode", function() return QuestTogether:GetOption("lightMode") end)
+	themeDropdown.title:ClearAllPoints()
+	themeDropdown.title:SetPoint("TOPLEFT", showStartupTips, "BOTTOMLEFT", 0, -14)
+
 	local statusPanel = CreateFrame("Frame", nil, content)
-	statusPanel:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -18)
+	statusPanel:SetPoint("TOPLEFT", themeDropdown, "BOTTOMLEFT", 0, -18)
 	statusPanel:SetSize(360, 304)
 
 	local statusPanelBackground = statusPanel:CreateTexture(nil, "BACKGROUND")
@@ -2181,21 +2207,24 @@ function QuestTogether:InitializeOptionsWindow()
 	for i, group in ipairs(self:GetHomeStatusGroups()) do
 		local row = {}
 		row.frame = CreateFrame("Frame", nil, statusPanel)
-		row.frame:SetPoint("TOPLEFT", previous, "BOTTOMLEFT", 0, -12)
-		row.frame:SetSize(336, 48)
+		row.frame:SetPoint("TOPLEFT", previous, "BOTTOMLEFT", 0, -4)
+		row.frame:SetSize(336, 22)
 		row.button = CreateFrame("Button", nil, row.frame)
 		row.button:SetPoint("TOPLEFT")
 		row.button:SetSize(336, 22)
 		row.button:SetNormalFontObject("GameFontNormal")
 		row.button:SetHighlightFontObject("GameFontHighlight")
 		row.button:SetText(group.title .. " >")
-		self:AttachSettingsTooltip(row.button, group.title, L("Open the settings for this section."))
+		row.details = group.text
+		self:AttachSettingsTooltip(row.button, group.title, function()
+			return row.details .. "\n\n" .. L("Open the settings for this section.")
+		end)
 		row.button:GetFontString():SetJustifyH("LEFT")
 		row.categoryKey = group.categoryKey
 		row.button:SetScript("OnClick", function()
 			OpenSettingsCategory(QuestTogether[row.categoryKey])
 		end)
-		row.text = row.frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+		row.text = row.frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 		row.text:SetPoint("TOPLEFT", row.button, "BOTTOMLEFT", 0, -4)
 		row.text:SetWidth(336)
 		row.text:SetJustifyH("LEFT")
@@ -2275,19 +2304,8 @@ function QuestTogether:InitializeOptionsWindow()
 		QuestTogether:OpenDiscordSupport()
 	end)
 
-	local generalHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	generalHeader:SetPoint("TOPLEFT", statusPanel, "BOTTOMLEFT", 0, -20)
-	generalHeader:SetText(L("General"))
-	local showMinimapButton = CreateCheckbox(content, "showMinimapButton", L("Show minimap icon"),
-		L("Show the QuestTogether minimap menu. Drag the button to move it around the minimap."), 16, -456)
-	showMinimapButton:ClearAllPoints()
-	showMinimapButton:SetPoint("TOPLEFT", generalHeader, "BOTTOMLEFT", 0, -10)
-	local lightMode = CreateCheckbox(content, "lightMode", L("Light mode"),
-		L("Use light parchment and dark text in the Party Quest Log and welcome window. Leave this off for dark mode."), 16, -488)
-	lightMode:ClearAllPoints()
-	lightMode:SetPoint("TOPLEFT", showMinimapButton, "BOTTOMLEFT", 0, -6)
 	local tipsHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	tipsHeader:SetPoint("TOPLEFT", lightMode, "BOTTOMLEFT", 0, -24)
+	tipsHeader:SetPoint("TOPLEFT", statusPanel, "BOTTOMLEFT", 0, -20)
 	tipsHeader:SetText(L("Tips"))
 
 	local tipsText = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -2306,11 +2324,15 @@ function QuestTogether:InitializeOptionsWindow()
 	self.homeControls = {
 		statusGroups = statusGroups,
 		statusPanel = statusPanel,
+		actionsPanel = actionsPanel,
+		generalHeader = generalHeader,
+		tipsHeader = tipsHeader,
 		content = content,
 		description = description,
 		tipsText = tipsText,
 		showMinimapButton = showMinimapButton,
-		lightMode = lightMode,
+		showStartupTips = showStartupTips,
+		themeDropdown = themeDropdown,
 		comparePartyQuests = comparePartyQuests,
 		openGroups = openGroups,
 		openWhatToAnnounce = openWhatToAnnounce,

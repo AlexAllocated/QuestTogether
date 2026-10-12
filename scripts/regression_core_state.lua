@@ -1353,10 +1353,10 @@ QT:RegisterTest("home status distinguishes runtime state and conditional sharing
 	assert(groups[5].text:find("DESTINATION_SENTINEL", 1, true))
 end)
 
-QT:RegisterTest("home status layout grows for wrapped translations and shrinks after refresh", function()
+QT:RegisterTest("home status keeps feature details compact and grows only for its visible overview", function()
 	local addon = NewFixture()
 	addon.optionsFrame = {}
-	local textHeight = 70
+	local textHeight = 180
 	local function Sized()
 		return {
 			SetHeight = function(self, height)
@@ -1371,6 +1371,9 @@ QT:RegisterTest("home status layout grows for wrapped translations and shrinks a
 			button = { SetText = Noop },
 			text = {
 				SetText = Noop,
+				SetShown = function(self, shown)
+					self.shown = shown
+				end,
 				GetStringHeight = function()
 					return textHeight
 				end,
@@ -1379,7 +1382,12 @@ QT:RegisterTest("home status layout grows for wrapped translations and shrinks a
 	end
 	local groups = {}
 	for i = 1, 7 do
-		groups[i] = { title = "Section", text = "Wrapped text", categoryKey = "groupsCategory" }
+		groups[i] = {
+			title = "Section",
+			text = "Detailed settings for the tooltip",
+			summary = i == 1 and "Visible overview" or nil,
+			categoryKey = "groupsCategory",
+		}
 	end
 	addon.GetHomeStatusGroups = function()
 		return groups
@@ -1401,11 +1409,17 @@ QT:RegisterTest("home status layout grows for wrapped translations and shrinks a
 	}
 	addon:RefreshHomeWindow()
 	local expanded = addon.homeControls.statusPanel.height
-	assert(expanded >= 7 * (70 + 26 + 12))
+	assert(expanded >= textHeight + 7 * 26)
 	assert(addon.homeControls.content.height >= expanded + 400)
-	for _, row in ipairs(rows) do
-		assert(row.frame.height >= textHeight + 26)
+	for i, row in ipairs(rows) do
+		assert(row.frame.height == 22 + (i == 1 and 4 + textHeight or 0))
+		assert(row.text.shown == (i == 1))
+		assert(row.details == groups[i].text)
 	end
+	groups[2].text = string.rep("Long localized details. ", 40)
+	addon:RefreshHomeWindow()
+	assert(addon.homeControls.statusPanel.height == expanded, "tooltip details must not expand the overview")
+	assert(rows[2].details == groups[2].text, "refresh must replace stale tooltip details")
 	textHeight = 14
 	addon:RefreshHomeWindow()
 	assert(addon.homeControls.statusPanel.height < expanded)

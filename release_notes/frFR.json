@@ -1,5 +1,5 @@
 {
-  "source_sha256": "6b550f4faf51ac6bc49cc752c6d9d7d3e60dcfb4262a52cb70a071561b9d0f17",
+  "source_sha256": "f543ef6136bb90b265390b1a76abb512fc329f4ba1da5f509d0c6f85cb4a2517",
   "notes": {
     "version": "7.1.1",
     "welcome": "Découvrez davantage de fonctionnalités de QuestTogether grâce à des astuces utiles.",
@@ -7,7 +7,8 @@
       {
         "title": "Astuces QuestTogether",
         "items": [
-          "QT affiche désormais une astuce à la connexion ou au rechargement de l’interface, tirée d’une liste mélangée sans répétition tant que toutes les astuces n’ont pas été affichées."
+          "QT affiche désormais une astuce à la connexion ou au rechargement de l’interface, tirée d’une liste mélangée sans répétition tant que toutes les astuces n’ont pas été affichées.",
+          "Vous pouvez désactiver les astuces automatiques dans Général sur la page principale des paramètres de QuestTogether. /qt tip et /qt hint restent disponibles."
         ],
         "tip": {
           "label": "Astuce :",

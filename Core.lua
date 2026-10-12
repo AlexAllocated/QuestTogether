@@ -387,6 +387,7 @@ QuestTogether.DEFAULTS = {
 		lookingForQuestPartners = false,
 		stopLookingForPartnersOnJoin = false,
 		showMinimapButton = true,
+		showStartupTips = true,
 		minimapButtonPosition = 225,
 		sharePlayerLocation = true,
 		shareDeveloperDiagnostics = true,

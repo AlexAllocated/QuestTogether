@@ -3,7 +3,7 @@ QUESTTOGETHER HINTS — APPROVED COPY
 Each numbered line is one hint. IDs stay stable when wording changes.
 The headings and notes are not part of the hint text.
 
-Show one tip on login or UI reload. /qt tip and /qt hint draw another.
+Show one tip on login or UI reload by default (disable under General in QT settings). /qt tip and /qt hint draw another.
 All draws use one account-wide saved pool without repeats until exhausted.
 The QT logo, gold Tip: label, and cream text are added when printing, not stored here.
 
@@ -158,7 +158,7 @@ CUSTOMIZATION AND PROFILES
 115. Enable Reduce motion in Accessibility to make scrolling and objective expansion immediate.
 116. Use /qt resetlayout if a QT window's saved position or size is getting in your way.
 117. Press Escape to close QT windows.
-118. Enable Light mode for light parchment and dark text in QT's parchment windows.
+118. Choose the Light theme under General for light parchment and dark text in QT's parchment windows.
 119. Each character starts with its own QT profile. Use Profiles to choose another saved setup.
 120. Want the same QT settings on multiple characters? Select the same profile on each character.
 121. Use Copy Into Current Profile to copy another profile's settings without making the two characters share future changes.

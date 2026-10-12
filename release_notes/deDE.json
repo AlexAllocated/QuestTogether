@@ -1,5 +1,5 @@
 {
-  "source_sha256": "6b550f4faf51ac6bc49cc752c6d9d7d3e60dcfb4262a52cb70a071561b9d0f17",
+  "source_sha256": "f543ef6136bb90b265390b1a76abb512fc329f4ba1da5f509d0c6f85cb4a2517",
   "notes": {
     "version": "7.1.1",
     "welcome": "Entdecke mit hilfreichen Tipps mehr von QuestTogether.",
@@ -7,7 +7,8 @@
       {
         "title": "QuestTogether-Tipps",
         "items": [
-          "QT zeigt jetzt bei der Anmeldung oder beim Neuladen der Benutzeroberfläche einen Tipp aus einem gemischten Vorrat an. Erst wenn alle Tipps gezeigt wurden, wiederholen sie sich."
+          "QT zeigt jetzt bei der Anmeldung oder beim Neuladen der Benutzeroberfläche einen Tipp aus einem gemischten Vorrat an. Erst wenn alle Tipps gezeigt wurden, wiederholen sie sich.",
+          "Du kannst automatische Tipps unter Allgemein auf der Hauptseite der QuestTogether-Einstellungen deaktivieren. /qt tip und /qt hint bleiben verfügbar."
         ],
         "tip": {
           "label": "Tipp:",

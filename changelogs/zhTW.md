@@ -9,6 +9,7 @@
 ### QuestTogether 提示
 
 - QT 現在會在登入或重新載入介面時顯示一則提示，從打亂的清單中抽取，整輪看完之前不會重複。
+- 你可以在 QuestTogether 設定主頁的「一般」區塊關閉自動提示。/qt tip 和 /qt hint 仍可使用。
 
 > <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> 提示： 隨時輸入 /qt tip 或 /qt hint，即可查看另一則 QuestTogether 提示。
 

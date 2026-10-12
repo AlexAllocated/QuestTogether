@@ -10,6 +10,7 @@ QuestTogether.releaseNotes = {
 			title = "QuestTogether Tips",
 			items = {
 				"QT now shows a tip when you log in or reload, drawing from a shuffled pool without repeats until it runs out.",
+				"You can disable automatic tips under General on the main QuestTogether settings page. /qt tip and /qt hint remain available.",
 			},
 			tip = {
 				label = "Tip:",
