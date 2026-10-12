@@ -300,28 +300,13 @@ local function Window(addon, width, height, title, parchment)
 end
 
 local function Checkbox(addon, parent, x, y, text, callback)
-	local check = addon:CreateOwnedWindowFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
+	local check = addon:CreateOwnedWindowFrame("CheckButton", nil, parent, "MinimalCheckboxTemplate")
 	check:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
 	check:SetSize(26, 26)
 	check.label = Label(check, 30, -7, (parent.contentWidth or (parent:GetWidth() - 48)) - 26, text)
 	if parent.themeLabels then addon:AddScrollDialogLabel(parent, check.label) end
 	check:SetScript("OnClick", callback)
 	return check
-end
-
-local function Slider(addon, parent, vertical)
-	local slider = addon:CreateOwnedWindowFrame("Slider", nil, parent)
-	slider:Hide()
-	slider:SetOrientation(vertical and "VERTICAL" or "HORIZONTAL")
-	slider:EnableMouse(true)
-	local track = slider:CreateTexture(nil, "BACKGROUND")
-	track:SetAllPoints()
-	track:SetColorTexture(0.15, 0.18, 0.23, 0.8)
-	local thumb = slider:CreateTexture(nil, "OVERLAY")
-	thumb:SetSize(vertical and 12 or 30, vertical and 30 or 12)
-	thumb:SetColorTexture(0.55, 0.65, 0.8, 1)
-	slider:SetThumbTexture(thumb)
-	return slider
 end
 
 -- These factories are addon-owned seams for live-safe UI fixtures.
@@ -716,14 +701,8 @@ local function ScrollCompare(self, frame, session, pixels, force)
 	end
 	frame.rowsViewport:SetVerticalScroll(pixels - origin)
 	frame.scrolling = true
-	frame.vertical:SetMinMaxValues(0, maximum)
-	frame.vertical:SetValue(pixels)
+	self:UpdateOwnedScrollBar(frame.vertical, pixels, maximum, frame.rowsViewport:GetHeight(), ROW_HEIGHT)
 	frame.scrolling = false
-	if maximum > 0 then
-		frame.vertical:Show()
-	else
-		frame.vertical:Hide()
-	end
 end
 
 local function StopExpansion(frame)
@@ -896,20 +875,20 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	frame.expansionAnimator = self:CreateOwnedWindowFrame("Frame", nil, frame)
 	frame.summary = Label(frame, 20, -47, width - 40, "", "GameFontHighlight")
 	frame.searchLabel = Label(frame, 20, -80, 65, L("Search:"), "GameFontHighlight")
-	frame.search = self:CreateOwnedWindowFrame("EditBox", nil, frame, "InputBoxTemplate")
+	frame.search = self:CreateOwnedWindowFrame("EditBox", nil, frame, "SearchBoxTemplate")
 	frame.search:SetPoint("TOPLEFT", 88, -74)
 	frame.search:SetSize(math.max(100, math.min(300, width - 500)), 26)
 	frame.search:SetAutoFocus(false)
 	frame.search:SetMaxLetters(96)
-	frame.search:SetScript("OnTextChanged", function(edit)
+	frame.search:HookScript("OnTextChanged", function(edit)
 		if not frame.rendering then
 			self:SetPartyQuestCompareFilter("search", edit:GetText())
 		end
 	end)
-	frame.search:SetScript("OnEscapePressed", function(edit)
+	frame.search:HookScript("OnEscapePressed", function(edit)
 		edit:ClearFocus()
 	end)
-	frame.search:SetScript("OnEnterPressed", function(edit)
+	frame.search:HookScript("OnEnterPressed", function(edit)
 		edit:ClearFocus()
 	end)
 	frame.filter = Button(self, frame, width - 386, -74, 124, L("Filters"), function(button)
@@ -930,7 +909,10 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	close:SetScript("OnClick", function() self:DismissManagedWindow(frame) end)
 	self:ConfigureWindowController(frame, {
 		dismiss = function() self:CancelPartyQuestCompare() end,
-		suspend = function() StopCompareScroll(frame); StopExpansion(frame) end,
+		suspend = function()
+			StopCompareScroll(frame); StopExpansion(frame)
+			self:StopOwnedScrollBar(frame.vertical); self:StopOwnedScrollBar(frame.horizontal)
+		end,
 		theme = function()
 			if self.partyQuestCompareSession then self:RenderPartyQuestCompare() end
 		end,
@@ -1060,21 +1042,18 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 		end
 	end
 	EnsureRows(VISIBLE_ROWS * 2 + 2)
-	frame.vertical = Slider(self, frame, true)
-	frame.vertical:SetPoint("TOPRIGHT", -18, -194)
-	frame.vertical:SetSize(16, VISIBLE_ROWS * ROW_HEIGHT)
-	frame.vertical:SetMinMaxValues(0, 0)
-	frame.vertical:SetValueStep(1)
-	frame.vertical:SetObeyStepOnDrag(true)
-	frame.vertical:SetValue(0)
-	frame.vertical:SetScript("OnValueChanged", function(_, value)
+	frame.vertical = self:CreateOwnedScrollBar(self.CreateOwnedWindowFrame, frame, false, function(value)
 		local session = self.partyQuestCompareSession
 		if session and not frame.rendering and not frame.scrolling then
 			session.restoreAnchor = nil
 			StopCompareScroll(frame)
-			ScrollCompare(self, frame, session, value)
+			-- Preserve the previous one-pixel thumb step. Percentage round trips
+			-- must not leave a row visible at 125.999999 instead of 126 pixels.
+			ScrollCompare(self, frame, session, math.floor(value + 0.5))
 		end
 	end)
+	frame.vertical:SetPoint("TOPRIGHT", -18, -194)
+	frame.vertical:SetSize(16, VISIBLE_ROWS * ROW_HEIGHT)
 	frame.viewport:EnableMouseWheel(true)
 	frame.viewport:SetScript("OnMouseWheel", function(_, delta)
 		WheelCompare(self, frame, delta)
@@ -1083,15 +1062,12 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	frame.rowsViewport:SetScript("OnMouseWheel", function(_, delta)
 		WheelCompare(self, frame, delta)
 	end)
-	frame.horizontal = Slider(self, frame, false)
-	frame.horizontal:SetPoint("TOPLEFT", 26, -618)
-	frame.horizontal:SetSize(width - 70, 16)
-	frame.horizontal:SetMinMaxValues(0, 0)
-	frame.horizontal:SetValue(0)
-	frame.horizontal:SetValueStep(1)
-	frame.horizontal:SetScript("OnValueChanged", function(_, value)
+	frame.horizontal = self:CreateOwnedScrollBar(self.CreateOwnedWindowFrame, frame, true, function(value)
+		frame.horizontalOffset = value
 		frame.viewport:SetHorizontalScroll(value)
 	end)
+	frame.horizontal:SetPoint("TOPLEFT", 26, -618)
+	frame.horizontal:SetSize(width - 70, 25)
 	for _, text in ipairs({
 		frame.summary,
 		frame.searchLabel,
@@ -1121,7 +1097,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 		self.rowsContent:SetHeight(#self.rows * ROW_HEIGHT)
 		self.vertical:SetHeight(rowsHeight)
 		self.horizontal:ClearAllPoints()
-		self.horizontal:SetPoint("BOTTOMLEFT", 26, 18)
+		self.horizontal:SetPoint("BOTTOMLEFT", 26, 12)
 		self.horizontal:SetWidth(w - 70)
 	end
 	local screenWidth, screenHeight = parent:GetWidth(), parent:GetHeight()
@@ -1194,13 +1170,8 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 		frame.rowsViewport:SetWidth(contentWidth)
 		frame.rowsContent:SetWidth(contentWidth)
 		local maximum = math.max(0, contentWidth - frame.viewport:GetWidth())
-		frame.horizontal:SetMinMaxValues(0, maximum)
-		frame.horizontal:SetValue(math.min(frame.horizontal:GetValue(), maximum))
-		if maximum > 0 then
-			frame.horizontal:Show()
-		else
-			frame.horizontal:Hide()
-		end
+		frame.horizontalOffset = self:UpdateOwnedScrollBar(frame.horizontal, frame.horizontalOffset or 0, maximum, frame.viewport:GetWidth(), MEMBER_WIDTH)
+		frame.viewport:SetHorizontalScroll(frame.horizontalOffset)
 		ScrollCompare(self, frame, session, session.scrollPixels or 0, true)
 	end)
 	frame:Layout()
@@ -1445,15 +1416,8 @@ function QuestTogether:RenderPartyQuestCompare()
 	end
 
 	local maxHorizontal = math.max(0, width - frame.viewport:GetWidth())
-	local horizontalOffset = math.max(0, math.min(frame.horizontal:GetValue(), maxHorizontal))
-	frame.horizontal:SetMinMaxValues(0, maxHorizontal)
-	frame.horizontal:SetValue(horizontalOffset)
-	frame.viewport:SetHorizontalScroll(horizontalOffset)
-	if maxHorizontal > 0 then
-		frame.horizontal:Show()
-	else
-		frame.horizontal:Hide()
-	end
+	frame.horizontalOffset = self:UpdateOwnedScrollBar(frame.horizontal, frame.horizontalOffset or 0, maxHorizontal, frame.viewport:GetWidth(), MEMBER_WIDTH)
+	frame.viewport:SetHorizontalScroll(frame.horizontalOffset)
 
 	frame.summary:SetText(
 		string.format(
@@ -1631,7 +1595,7 @@ function QuestTogether:CreatePartyJoinPrompt(preview)
 	self:AddScrollDialogLabel(frame, frame.message)
 	frame.message:SetHeight(65)
 	local function Preference(y, text)
-		local check = self:CreateOwnedWindowFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
+		local check = self:CreateOwnedWindowFrame("CheckButton", nil, frame, "MinimalCheckboxTemplate")
 		check:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, y)
 		check:SetSize(26, 26)
 		local label = Label(check, 30, -4, frame.contentWidth - 26, text)

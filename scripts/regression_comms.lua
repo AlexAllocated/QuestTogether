@@ -3916,25 +3916,20 @@ QuestTogether:RegisterTest(
 			writes = writes + 1
 			return true
 		end
-		local label = {
-			SetText = function(self, text)
-				self.text = text
-			end,
-		}
-		local slider = { scripts = {} }
-		function slider:SetScript(key, callback)
-			self.scripts[key] = callback
+		local slider = { callbacks = {} }
+		function slider:RegisterCallback(event, callback, owner)
+			self.callbacks[event] = { callback, owner }
 		end
 		function slider:SetValue(value)
 			self.value = value
-			if self.scripts.OnValueChanged then
-				self.scripts.OnValueChanged(self, value)
+			local listener = self.callbacks.OnValueChanged
+			if listener then
+				listener[1](listener[2], value)
 			end
 		end
-		addon:ConfigureNearbyRangeSlider(slider, label)
+		addon:ConfigureNearbyRangeSlider(slider)
 		Equal(writes, 0)
 		Equal(slider.value, 25)
-		Equal(label.text:find("25%", 1, true) ~= nil, true)
 		slider:SetValue(60)
 		Equal(writes, 1)
 		Equal(addon.db.profile.nearbyAnnouncementRange, 60)

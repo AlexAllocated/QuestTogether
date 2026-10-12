@@ -270,7 +270,7 @@ function QuestTogether:AttachSettingsTooltip(control, title, text)
 end
 
 local function CreateCheckbox(parent, optionKey, labelText, tooltipText, x, y)
-	local checkbox = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
+	local checkbox = CreateFrame("CheckButton", nil, parent, "MinimalCheckboxTemplate")
 	checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
 
 	local label = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -351,19 +351,9 @@ function QuestTogether:CreateProfileOptionEditCallback(optionKey)
 end
 
 local function CreateColorSwatch(parent, optionKey, labelText, tooltipText, fallbackColor, x, y)
-	local swatchButton = CreateFrame("Button", nil, parent)
+	local swatchButton = CreateFrame("Button", nil, parent, "ColorSwatchTemplate")
 	swatchButton:SetSize(22, 22)
 	swatchButton:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
-
-	local border = swatchButton:CreateTexture(nil, "BORDER")
-	border:SetAllPoints()
-	border:SetColorTexture(0, 0, 0, 1)
-	swatchButton.Border = border
-
-	local colorTexture = swatchButton:CreateTexture(nil, "ARTWORK")
-	colorTexture:SetPoint("TOPLEFT", swatchButton, "TOPLEFT", 1, -1)
-	colorTexture:SetPoint("BOTTOMRIGHT", swatchButton, "BOTTOMRIGHT", -1, 1)
-	swatchButton.ColorTexture = colorTexture
 
 	local label = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	label:SetPoint("LEFT", swatchButton, "RIGHT", 8, 0)
@@ -411,7 +401,7 @@ local function CreateColorSwatch(parent, optionKey, labelText, tooltipText, fall
 	end)
 
 	local startingColor = GetColorOption(optionKey, fallbackColor)
-	swatchButton.ColorTexture:SetColorTexture(startingColor.r, startingColor.g, startingColor.b, 1)
+	swatchButton:SetColorRGB(startingColor.r, startingColor.g, startingColor.b)
 
 	return swatchButton
 end
@@ -448,17 +438,83 @@ local function CreateDropdown(parent, titleText, tooltipText, x, y, width, initi
 	return control
 end
 
+local function CreateSettingsSlider(parent, titleText, tooltipText, x, y, minimum, maximum, step)
+	local control = CreateFrame("Frame", nil, parent, "MinimalSliderWithSteppersTemplate")
+	control:SetSize(360, 20)
+	control:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+	local title = control:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	title:SetPoint("BOTTOMLEFT", control, "TOPLEFT", 0, 8)
+	title:SetText(titleText)
+	control.title = title
+	control:Init(minimum, minimum, maximum, (maximum - minimum) / step, {
+		[MinimalSliderWithSteppersMixin.Label.Right] = function(value)
+			return string.format("%d%%", math.floor(value + 0.5))
+		end,
+	})
+	if control.Slider.SetNarrationLabelRegion then control.Slider:SetNarrationLabelRegion(title) end
+	for _, region in ipairs({ control.Slider, control.Back, control.Forward }) do
+		QuestTogether:AttachSettingsTooltip(region, titleText, tooltipText)
+	end
+	return control
+end
+
+-- The native control owns formatting, arrows and interaction scripts. Profile
+-- refreshes use its value API without persisting the resulting callback.
+local function ConfigureSettingsSlider(control, getValue, onValueChanged)
+	control.RefreshValue = function(self)
+		self.qtRefreshing = true
+		self:SetValue(getValue())
+		self.qtRefreshing = nil
+	end
+	control:RegisterCallback("OnValueChanged", function(self, value)
+		if not self.qtRefreshing then onValueChanged(value) end
+	end, control)
+	control:RefreshValue()
+end
+
+local scrollPanelSequence = 0
 local function CreateScrollablePanelContent(parent, minimumHeight)
-	local scrollFrame = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
+	local scrollFrame = CreateFrame("ScrollFrame", nil, parent)
 	scrollFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
 	scrollFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -28, 0)
 
 	local content = CreateFrame("Frame", nil, scrollFrame)
 	content:SetSize(672, minimumHeight or 600)
 	scrollFrame:SetScrollChild(content)
-	scrollFrame:SetScript("OnSizeChanged", function(_, width)
-		content:SetWidth(math.max(672, width - 8))
+	scrollPanelSequence = scrollPanelSequence + 1
+	local workKey = "settings_scrollbar_" .. scrollPanelSequence
+	local scrollbar, refreshing
+	local function RefreshScroll(value)
+		if refreshing then return end
+		if not QuestTogether:CanMutateOwnedUI(scrollFrame) or not QuestTogether:CanMutateOwnedUI(content) then
+			QuestTogether:ScheduleRuntimeWork("foreign_frame_mutation", workKey, function() RefreshScroll() end,
+				{ lifetime = "ui", reason = "settings scrollbar refresh" })
+			return
+		end
+		refreshing = true
+		content:SetWidth(math.max(672, scrollFrame:GetWidth() - 8))
+		if not scrollbar then
+			scrollbar = QuestTogether:CreateOwnedScrollBar(QuestTogether.CreateOwnedWindowFrame, parent, false,
+				function(offset) RefreshScroll(offset) end)
+			scrollbar:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", 10, -4)
+			scrollbar:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", 10, 4)
+			scrollFrame.ScrollBar = scrollbar
+		end
+		local maximum = math.max(0, scrollFrame:GetVerticalScrollRange())
+		local offset = math.max(0, math.min(maximum, value or scrollFrame:GetVerticalScroll()))
+		scrollFrame:SetVerticalScroll(offset)
+		QuestTogether:UpdateOwnedScrollBar(scrollbar, offset, maximum, scrollFrame:GetHeight(), 30)
+		refreshing = nil
+	end
+	scrollFrame:SetScript("OnSizeChanged", function() RefreshScroll() end)
+	scrollFrame:SetScript("OnScrollRangeChanged", function() RefreshScroll() end)
+	scrollFrame:SetScript("OnVerticalScroll", function() RefreshScroll() end)
+	scrollFrame:SetScript("OnShow", function() RefreshScroll() end)
+	scrollFrame:EnableMouseWheel(true)
+	scrollFrame:SetScript("OnMouseWheel", function(_, delta)
+		if QuestTogether:CanMutateOwnedUI(scrollFrame) then RefreshScroll(scrollFrame:GetVerticalScroll() - delta * 30) end
 	end)
+	RefreshScroll()
 
 	return scrollFrame, content
 end
@@ -1023,7 +1079,7 @@ function QuestTogether:RefreshQuestPlatesWindow(playerPlates)
 		return
 	end
 	local color = GetColorOption("nameplateQuestHealthColor", self.NAMEPLATE_QUEST_HEALTH_COLOR)
-	controls.nameplateQuestHealthColor.ColorTexture:SetColorTexture(color.r, color.g, color.b, 1)
+	controls.nameplateQuestHealthColor:SetColorRGB(color.r, color.g, color.b)
 
 	if controls.resetNameplateQuestHealthColor then
 		if IsColorOptionAtDefault("nameplateQuestHealthColor", self.NAMEPLATE_QUEST_HEALTH_COLOR) then
@@ -1045,65 +1101,37 @@ function QuestTogether:RefreshGroupsWindow()
 end
 
 -- This callback seam configures only QT-owned controls; live tests pass private
--- slider/label fixtures and never patch native slider mixins or globals.
-function QuestTogether:ConfigureNearbyRangeSlider(slider, label)
+-- slider fixtures and never patch native slider mixins or globals.
+function QuestTogether:ConfigureNearbyRangeSlider(slider)
 	local addon = self
 	-- Keep the instance in the closure; private fixtures must not consult QT's profile.
-	slider.RefreshNearbyRange = function(control)
-		control.qtRefreshing = true
-		local value = addon:GetNearbyAnnouncementRange()
-		control:SetValue(value)
-		control.qtRefreshing = nil
-		label:SetText(string.format(L("Nearby Range: %d%% of zone"), value))
-	end
-	slider:SetScript("OnValueChanged", function(control, value)
-		if control.qtRefreshing then return end
+	ConfigureSettingsSlider(slider, function() return addon:GetNearbyAnnouncementRange() end, function(value)
 		value = addon:NormalizeNearbyAnnouncementRange(value)
-		if value and addon:SetOption("nearbyAnnouncementRange", value) then
-			label:SetText(string.format(L("Nearby Range: %d%% of zone"), value))
-		end
+		if value then addon:SetOption("nearbyAnnouncementRange", value) end
 	end)
-	slider:RefreshNearbyRange()
+	slider.RefreshNearbyRange = slider.RefreshValue
 end
 
 local function CreateNearbyRangeSlider(parent, x, y)
-	local slider = CreateFrame("Slider", nil, parent)
-	slider:SetSize(360, 18)
-	slider:SetPoint("TOPLEFT", x, y)
-	slider:SetOrientation("HORIZONTAL")
-	slider:SetMinMaxValues(QuestTogether.NEARBY_RANGE_MIN, QuestTogether.NEARBY_RANGE_MAX)
-	slider:SetValueStep(1)
-	if slider.SetObeyStepOnDrag then slider:SetObeyStepOnDrag(true) end
-	local trackBorder = slider:CreateTexture(nil, "BACKGROUND")
-	trackBorder:SetColorTexture(0.03, 0.03, 0.04, 1)
-	trackBorder:SetPoint("LEFT", -2, 0)
-	trackBorder:SetPoint("RIGHT", 2, 0)
-	trackBorder:SetHeight(12)
-	local track = slider:CreateTexture(nil, "BORDER")
-	track:SetColorTexture(0.50, 0.53, 0.57, 1)
-	track:SetPoint("LEFT")
-	track:SetPoint("RIGHT")
-	track:SetHeight(8)
-	local thumb = slider:CreateTexture(nil, "ARTWORK")
-	thumb:SetTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
-	thumb:SetSize(32, 32)
-	slider:SetThumbTexture(thumb)
-	local label = slider:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	label:SetPoint("BOTTOMLEFT", slider, "TOPLEFT", 0, 6)
-	local minimum = slider:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	minimum:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -6)
+	local tooltip = L("Choose how far away to show quest updates within your current zone. The maximum includes the entire zone. Group members and visible nameplates are always included.")
+	local slider = CreateSettingsSlider(parent, L("Nearby Range"), tooltip, x, y,
+		QuestTogether.NEARBY_RANGE_MIN, QuestTogether.NEARBY_RANGE_MAX, 1)
+	local minimum = slider.MinText
+	minimum:ClearAllPoints()
+	minimum:SetPoint("TOPLEFT", slider.Slider, "BOTTOMLEFT", 0, -6)
 	minimum:SetText(L("Nearby"))
-	local maximum = slider:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	maximum:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", 0, -6)
+	minimum:Show()
+	local maximum = slider.MaxText
+	maximum:ClearAllPoints()
+	maximum:SetPoint("TOPRIGHT", slider.Slider, "BOTTOMRIGHT", 0, -6)
 	maximum:SetText(L("Entire Zone"))
+	maximum:Show()
 	local hint = slider:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	hint:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, -28)
 	hint:SetWidth(590)
 	hint:SetJustifyH("LEFT")
-	hint:SetText(L("Choose how far away to show quest updates within your current zone. The maximum includes the entire zone. Group members and visible nameplates are always included."))
-	QuestTogether:ConfigureNearbyRangeSlider(slider, label)
-	QuestTogether:AttachSettingsTooltip(slider, L("Nearby"),
-		L("Choose how far away to show quest updates within your current zone. The maximum includes the entire zone. Group members and visible nameplates are always included."))
+	hint:SetText(tooltip)
+	QuestTogether:ConfigureNearbyRangeSlider(slider)
 	return slider
 end
 
@@ -2092,34 +2120,13 @@ function QuestTogether:InitializeAccessibilityWindow(parentCategory)
 	local hint = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	hint:SetPoint("TOPLEFT", 16, -50); hint:SetWidth(610); hint:SetJustifyH("LEFT")
 	hint:SetText(L("Resize QT text and controls together. Windows always fit your current display. Use Escape to close a window; assign Toggle Party Quest Log in WoW Key Bindings."))
-	local slider = CreateFrame("Slider", nil, content)
-	slider:SetSize(360, 18); slider:SetPoint("TOPLEFT", 16, -150); slider:SetOrientation("HORIZONTAL")
-	if slider.SetObeyStepOnDrag then slider:SetObeyStepOnDrag(true) end
-	local trackBorder = slider:CreateTexture(nil, "BACKGROUND")
-	trackBorder:SetColorTexture(0.03, 0.03, 0.04, 1)
-	trackBorder:SetPoint("LEFT", -2, 0); trackBorder:SetPoint("RIGHT", 2, 0); trackBorder:SetHeight(12)
-	local track = slider:CreateTexture(nil, "BORDER")
-	track:SetColorTexture(0.50, 0.53, 0.57, 1); track:SetPoint("LEFT"); track:SetPoint("RIGHT"); track:SetHeight(8)
-	local thumb = slider:CreateTexture(nil, "ARTWORK")
-	thumb:SetTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal"); thumb:SetSize(32, 32); slider:SetThumbTexture(thumb)
-	local label = slider:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	label:SetPoint("BOTTOMLEFT", slider, "TOPLEFT", 0, 8)
-	slider:SetScript("OnValueChanged", nil)
-	slider:SetMinMaxValues(80, 150); slider:SetValueStep(5)
-	local updating
-	local function Refresh()
-		updating = true
-		slider:SetValue(QuestTogether:GetOption("windowScale") or 100)
-		label:SetText(string.format(L("Window scale: %d%%"), QuestTogether:GetOption("windowScale") or 100))
-		updating = nil
-	end
-	slider:SetScript("OnValueChanged", function(_, value)
-		if updating then return end
+	local slider = CreateSettingsSlider(content, L("Window scale"),
+		L("Increase text and control size together. The scale is capped when needed to keep the entire window on screen."),
+		16, -150, 80, 150, 5)
+	ConfigureSettingsSlider(slider, function() return QuestTogether:GetOption("windowScale") or 100 end, function(value)
 		value = math.floor(value / 5 + 0.5) * 5
 		QuestTogether:SetOption("windowScale", value)
-		label:SetText(string.format(L("Window scale: %d%%"), value))
 	end)
-	self:AttachSettingsTooltip(slider, L("Accessibility"), L("Increase text and control size together. The scale is capped when needed to keep the entire window on screen."))
 	local motion = CreateCheckbox(content, "reduceMotion", L("Reduce motion"), L("Expand objectives and scroll immediately, without animated transitions."), 16, -215)
 	local reset = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
 	reset:SetPoint("TOPLEFT", 16, -285); reset:SetSize(240, 24); reset:SetText(L("Reset window layout"))
@@ -2127,8 +2134,7 @@ function QuestTogether:InitializeAccessibilityWindow(parentCategory)
 	local resetHint = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	resetHint:SetPoint("TOPLEFT", 16, -325); resetHint:SetWidth(610); resetHint:SetJustifyH("LEFT")
 	resetHint:SetText(L("Also available with /qt resetlayout. Saved windows are fitted automatically after display size or UI scale changes."))
-	frame:SetScript("OnShow", function() Refresh(); RefreshCheckboxOptions({ reduceMotion = motion }, QuestTogether) end)
-	Refresh()
+	frame:SetScript("OnShow", function() slider:RefreshValue(); RefreshCheckboxOptions({ reduceMotion = motion }, QuestTogether) end)
 	self.accessibilityFrame = frame
 	self.accessibilityCategory = RegisterSubcategory(parentCategory, frame, frame.name)
 end

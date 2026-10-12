@@ -15,8 +15,12 @@ function QuestTogether:CreateReleaseNotesUIFrame(...)
 	return CreateFrame(...)
 end
 
-local function Guard(addon, region) return addon:CanMutateOwnedUI(region) end
-local function Call(addon, region, method, ...) return addon:CallOwnedUI(region, method, ...) end
+local function Guard(addon, region)
+	return addon:CanMutateOwnedUI(region)
+end
+local function Call(addon, region, method, ...)
+	return addon:CallOwnedUI(region, method, ...)
+end
 
 local function ParentDimension(addon, parent, methodName)
 	local method = addon:GetAccessibleFrameMember(parent, methodName)
@@ -28,8 +32,8 @@ local function ParentDimension(addon, parent, methodName)
 	return value and value > 0 and value or nil
 end
 
-local function New(addon, kind, parent)
-	return addon:CreateOwnedUIFrame(addon.CreateReleaseNotesUIFrame, kind, parent)
+local function New(addon, kind, parent, template)
+	return addon:CreateOwnedUIFrame(addon.CreateReleaseNotesUIFrame, kind, parent, template)
 end
 
 local function Texture(addon, parent, template, layer, width, height)
@@ -59,40 +63,37 @@ local function Script(addon, frame, region, event, callback)
 end
 
 local function Button(addon, frame, parent, text, callback, arrow, jump)
-	local button = New(addon, "Button", parent)
-	local artwork = {
-		{ "SetNormalTexture", "DialogButtonNormalTexture" },
-		{ "SetPushedTexture", "DialogButtonPushedTexture" },
-		{ "SetHighlightTexture", "DialogButtonHighlightTexture" },
-	}
+	local button = New(addon, "Button", parent, not arrow and "UIPanelButtonTemplate" or nil)
 	if arrow then
-		artwork[#artwork + 1] = { "SetDisabledTexture" }
-	end
-	for _, art in ipairs(artwork) do
-		local texture = Texture(addon, button, not arrow and art[2] or nil, "ARTWORK")
-		if arrow then
-			-- The native Down artwork shifts its glyph. Keep all arrow states in
-			-- the same position so the jump bar and hover overlay stay aligned.
+		-- These four history arrows include first/last jump markers. There is no
+		-- matching native template; retain aligned Blizzard spellbook artwork.
+		for _, method in ipairs({ "SetNormalTexture", "SetPushedTexture", "SetHighlightTexture", "SetDisabledTexture" }) do
+			local texture = Texture(addon, button, nil, "ARTWORK")
 			Call(addon, texture, "SetTexture", "Interface\\Buttons\\UI-SpellbookIcon-" .. arrow .. "-Up")
-			if art[1] == "SetPushedTexture" then
+			if method == "SetPushedTexture" then
 				Call(addon, texture, "SetVertexColor", 0.7, 0.7, 0.7, 1)
-			elseif art[1] == "SetHighlightTexture" then
+			elseif method == "SetHighlightTexture" then
 				Call(addon, texture, "SetBlendMode", "ADD")
 				Call(addon, texture, "SetAlpha", 0.3)
 			end
+			Call(addon, texture, "SetAllPoints")
+			Call(addon, button, method, texture)
 		end
-		Call(addon, texture, "SetAllPoints")
-		Call(addon, button, art[1], texture)
 	end
 	if jump then
 		local bar = Texture(addon, button, nil, "OVERLAY", 2, 12)
 		Call(addon, bar, "SetPoint", arrow == "PrevPage" and "LEFT" or "RIGHT", arrow == "PrevPage" and 9 or -9, 0)
 		Call(addon, bar, "SetColorTexture", 1, 0.85, 0.55, 1)
 	end
-	button.label = Label(addon, button, "GameFontNormalSmall")
-	Call(addon, button.label, "SetPoint", "CENTER")
-	Call(addon, button.label, "SetJustifyH", "CENTER")
-	Call(addon, button.label, "SetText", arrow and "" or text)
+	if arrow then
+		button.label = Label(addon, button, "GameFontNormalSmall")
+		Call(addon, button.label, "SetPoint", "CENTER")
+		Call(addon, button.label, "SetJustifyH", "CENTER")
+		Call(addon, button.label, "SetText", "")
+	else
+		Call(addon, button, "SetText", text)
+		button.label = Call(addon, button, "GetFontString")
+	end
 	if arrow then
 		local tip = New(addon, "Frame", button)
 		Call(addon, tip, "Hide")
@@ -130,12 +131,7 @@ local function SetScroll(addon, frame, value)
 	value = math.max(0, math.min(frame.maximumScroll or 0, value))
 	Call(addon, frame.scroll, "SetVerticalScroll", value)
 	frame.scrollOffset = value
-	frame.syncScroll = true
-	local ok, err = pcall(Call, addon, frame.slider, "SetValue", value)
-	frame.syncScroll = false
-	if not ok then
-		error(err, 0)
-	end
+	addon:UpdateOwnedScrollBar(frame.scrollBar, value, frame.maximumScroll, frame.viewportHeight, 36)
 end
 
 local function CreatePartnerExamples(addon, parent)
@@ -291,22 +287,9 @@ local function Create(addon, parent)
 	Call(addon, frame.title, "SetHeight", 30)
 	Call(addon, frame.title, "SetJustifyV", "MIDDLE")
 	Call(addon, frame.title, "SetWordWrap", false)
-	frame.close = New(addon, "Button", frame)
-	Call(addon, frame.close, "SetSize", 32, 32)
+	frame.close = New(addon, "Button", frame, "UIPanelCloseButton")
+	Call(addon, frame.close, "SetSize", 24, 24)
 	Call(addon, frame.close, "SetPoint", "TOPRIGHT", -18, -8)
-	for _, art in ipairs({
-		{ "SetNormalTexture", "Up" },
-		{ "SetPushedTexture", "Down" },
-		{ "SetHighlightTexture", "Highlight" },
-	}) do
-		local texture = Texture(addon, frame.close, nil, "ARTWORK")
-		Call(addon, texture, "SetAllPoints")
-		Call(addon, texture, "SetTexture", "Interface\\Buttons\\UI-Panel-MinimizeButton-" .. art[2])
-		if art[2] == "Highlight" then
-			Call(addon, texture, "SetBlendMode", "ADD")
-		end
-		Call(addon, frame.close, art[1], texture)
-	end
 	-- Dismissal is safe on accessible, unprotected owned regions even when
 	-- combat starts after presentation. Keep layout/native actions restricted.
 	Call(addon, frame.close, "SetScript", "OnClick", function()
@@ -357,25 +340,13 @@ local function Create(addon, parent)
 	frame.content = New(addon, "Frame", frame.scroll)
 	Call(addon, frame.scroll, "SetScrollChild", frame.content)
 	frame.partnerExamples = CreatePartnerExamples(addon, frame.content)
-	frame.slider = New(addon, "Slider", frame)
-	Call(addon, frame.slider, "Hide")
-	Call(addon, frame.slider, "SetPoint", "TOPLEFT", frame.scroll, "TOPRIGHT", 8, 0)
-	Call(addon, frame.slider, "SetWidth", 14)
-	Call(addon, frame.slider, "SetOrientation", "VERTICAL")
-	Call(addon, frame.slider, "SetMinMaxValues", 0, 0)
-	Call(addon, frame.slider, "SetValueStep", 1)
-	Call(addon, frame.slider, "EnableMouseWheel", true)
-	local track = Texture(addon, frame.slider, nil, "BACKGROUND")
-	Call(addon, track, "SetAllPoints")
-	Call(addon, track, "SetColorTexture", 0.12, 0.12, 0.12, 0.85)
-	local thumb = Texture(addon, frame.slider, nil, "OVERLAY", 18, 30)
-	Call(addon, thumb, "SetTexture", "Interface\\Buttons\\UI-ScrollBar-Knob")
-	Call(addon, frame.slider, "SetThumbTexture", thumb)
-	Script(addon, frame, frame.slider, "OnValueChanged", function(value)
-		if not frame.syncScroll then
+	frame.scrollBar = addon:CreateOwnedScrollBar(addon.CreateReleaseNotesUIFrame, frame, false, function(value)
+		if Guard(addon, frame) then
 			SetScroll(addon, frame, value)
 		end
 	end)
+	Call(addon, frame.scrollBar, "Hide")
+	Call(addon, frame.scrollBar, "SetPoint", "TOPLEFT", frame.scroll, "TOPRIGHT", 8, 0)
 	local function Wheel(delta)
 		delta = addon:SafeToNumber(delta)
 		if delta then
@@ -383,7 +354,6 @@ local function Create(addon, parent)
 		end
 	end
 	Script(addon, frame, frame.scroll, "OnMouseWheel", Wheel)
-	Script(addon, frame, frame.slider, "OnMouseWheel", Wheel)
 	Call(addon, frame, "SetMovable", true)
 	Call(addon, frame, "SetResizable", true)
 	frame.dragHandle = New(addon, "Frame", frame)
@@ -415,7 +385,9 @@ local function Create(addon, parent)
 		end
 	end)
 	-- Stopping an owned drag remains safe if restrictions start mid-gesture.
-	local function StopDrag() addon:StopWindowInteraction(frame) end
+	local function StopDrag()
+		addon:StopWindowInteraction(frame)
+	end
 	Call(addon, frame.dragHandle, "SetScript", "OnDragStop", StopDrag)
 	Call(addon, frame.resizeGrip, "SetScript", "OnMouseUp", StopDrag)
 	Script(addon, frame, frame, "OnSizeChanged", function(width, height)
@@ -538,9 +510,11 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 		-- A click can disable its own navigation button at a history boundary.
 		-- Do not retain the previous press across that page/enable transition.
 		Call(addon, button, "SetButtonState", "NORMAL", false)
-		Call(addon, index ~= 3 and button or button.label, "SetAlpha", enabled and 1 or 0.4)
+		if index ~= 3 then
+			Call(addon, button, "SetAlpha", enabled and 1 or 0.4)
+		end
 	end
-	Call(addon, frame.navigation[3].label, "SetText", history and L("Back") or L("History"))
+	Call(addon, frame.navigation[3], "SetText", history and L("Back") or L("History"))
 	for _, row in ipairs(frame.historyRows) do
 		Call(addon, row, "Hide")
 	end
@@ -653,7 +627,12 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 						if not screenshot then
 							screenshot = Call(addon, frame.content, "CreateTexture", nil, "ARTWORK")
 							frame.releaseScreenshots[asset] = screenshot
-							Call(addon, screenshot, "SetTexture", "Interface\\AddOns\\QuestTogether\\Media\\ReleaseNotes\\" .. asset)
+							Call(
+								addon,
+								screenshot,
+								"SetTexture",
+								"Interface\\AddOns\\QuestTogether\\Media\\ReleaseNotes\\" .. asset
+							)
 							Call(addon, screenshot, "SetTexCoord", 0, imageWidth / 2048, 0, imageHeight / 1024)
 						end
 						local imageDisplayHeight = contentWidth * imageHeight / imageWidth
@@ -680,10 +659,10 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 	Call(addon, frame, "SetSize", width, height)
 	Call(addon, frame.scroll, "SetSize", contentWidth, viewportHeight)
 	Call(addon, frame.content, "SetSize", contentWidth, math.max(contentHeight, viewportHeight))
-	Call(addon, frame.slider, "SetHeight", viewportHeight)
+	Call(addon, frame.scrollBar, "SetHeight", viewportHeight)
 	frame.maximumScroll = math.max(0, contentHeight - viewportHeight)
-	Call(addon, frame.slider, "SetMinMaxValues", 0, frame.maximumScroll)
-	Call(addon, frame.slider, frame.maximumScroll > 0 and "Show" or "Hide")
+	frame.viewportHeight = viewportHeight
+	Call(addon, frame.scrollBar, frame.maximumScroll > 0 and "Show" or "Hide")
 	SetScroll(addon, frame, oldScroll or 0)
 	ApplyTheme(addon, frame)
 	frame.rendering = nil

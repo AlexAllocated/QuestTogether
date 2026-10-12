@@ -633,8 +633,18 @@ QuestTogether:RegisterTest("party share incoming queue has a hard bound", functi
 	Equal(next(a.partyQuestShareState.incoming), nil)
 end)
 
-local function Frame(parent, owner)
-	return QuestTogether:CreateTestUIRegion(owner or (parent and parent.owner), parent, "Frame")
+local function Frame(parent, owner, template)
+	return QuestTogether:ApplyTestUITemplate(
+		QuestTogether:CreateTestUIRegion(owner or (parent and parent.owner), parent, "Frame"), template
+	)
+end
+
+local function SetScrollOffset(bar, pixels)
+	bar:SetScrollPercentage(bar.qtScrollMaximum > 0 and pixels / bar.qtScrollMaximum or 0, true)
+end
+
+local function GetScrollOffset(bar)
+	return bar:GetScrollPercentage() * bar.qtScrollMaximum
 end
 
 local function AttachUI(addon)
@@ -645,11 +655,73 @@ local function AttachUI(addon)
 	function addon:CanAccessForeignFrame()
 		return true
 	end
-	function addon:CreateOwnedWindowFrame(_, _, owner)
-		return Frame(owner)
+	function addon:CreateOwnedWindowFrame(_, _, owner, template)
+		return Frame(owner, nil, template)
 	end
 	return parent
 end
+
+QuestTogether:RegisterTest("native owned scrollbars preserve pixel ranges and retire held input on hide", function()
+	local a = Fixture()
+	local parent = AttachUI(a)
+	local calls, offset = 0, nil
+	local bar = a:CreateOwnedScrollBar(a.CreateOwnedWindowFrame, parent, false, function(value)
+		calls, offset = calls + 1, value
+	end)
+	Equal(bar.template, "MinimalScrollBar")
+	Equal(a:UpdateOwnedScrollBar(bar, 75, 300, 100, 30), 75)
+	Equal(calls, 0) -- Model-to-control updates must not feed back into rendering.
+	Equal(bar:GetVisibleExtentPercentage(), 0.25)
+	Equal(bar:GetScrollPercentage(), 0.25)
+	bar.Forward:RunScript("OnMouseDown", "LeftButton")
+	Equal(calls, 1)
+	Equal(offset, 105)
+	bar:TriggerEvent("OnScroll", "bad")
+	Equal(calls, 1)
+	local heldUpdate = assert(bar:GetScript("OnUpdate"))
+	a.blocked = true
+	bar:TriggerEvent("OnScroll", 0.5)
+	bar.Forward:RunScript("OnMouseDown", "LeftButton")
+	heldUpdate(bar, 0.5)
+	Equal(calls, 1)
+	a.blocked = false
+	heldUpdate(bar, 0.5)
+	Equal(calls, 1)
+	Equal(bar:GetScript("OnUpdate"), nil)
+	bar.Forward:RunScript("OnMouseDown", "LeftButton")
+	Equal(calls, 2)
+	parent:Hide()
+	Equal(bar:GetScript("OnUpdate"), nil)
+	bar:TriggerEvent("OnScroll", 1)
+	bar.Forward:RunScript("OnMouseDown", "LeftButton")
+	Equal(bar:GetScript("OnUpdate"), nil)
+	Equal(calls, 2)
+	parent:Show()
+	Equal(a:UpdateOwnedScrollBar(bar, 75, 0, 100, 30), 0)
+	Equal(bar:IsShown(), false)
+	Equal(bar:GetScrollPercentage(), 0)
+	Equal(calls, 2)
+	Equal(a.invalidCalls, nil)
+end)
+
+QuestTogether:RegisterTest("party quest search retains native clear and focus scripts alongside filtering", function()
+	local a = Fixture(nil, { Quest(1, "Find me"), Quest(2, "Another quest") })
+	AttachUI(a)
+	a:OpenPartyQuestCompare()
+	a:RenderPartyQuestCompare()
+	local search = a.partyQuestCompareWindow.search
+	Equal(search.template, "SearchBoxTemplate")
+	search:SetFocus()
+	search:SetText("Find")
+	Equal(a.partyQuestCompareSession.search, "Find")
+	Equal(search.clearButton:IsShown(), true)
+	Equal(search.Instructions:IsShown(), false)
+	search.clearButton:Click()
+	Equal(a.partyQuestCompareSession.search, "")
+	Equal(search:HasFocus(), false)
+	Equal(search.clearButton:IsShown(), false)
+	Equal(search.Instructions:IsShown(), true)
+end)
 
 QuestTogether:RegisterTest(
 	"party chat reminder renders choices resets checkbox and safely dismisses during restrictions",
@@ -854,12 +926,12 @@ QuestTogether:RegisterTest(
 		a:RenderPartyQuestCompare()
 		Equal(frame.vertical:IsShown(), true)
 		Equal(frame.horizontal:IsShown(), false)
-		frame.vertical:SetValue(1 * 42)
+		SetScrollOffset(frame.vertical, 1 * 42)
 		Equal(a.partyQuestCompareSession.offset, 1)
 		a:SetPartyQuestCompareFilter("ownership", "mine")
 		a:RenderPartyQuestCompare()
 		Equal(frame.vertical:IsShown(), false)
-		Equal(frame.vertical:GetValue(), 0)
+		Equal(GetScrollOffset(frame.vertical), 0)
 		Equal(a.partyQuestCompareSession.offset, 0)
 		a:SetPartyQuestCompareFilter("ownership", "all")
 		a:RenderPartyQuestCompare()
@@ -893,27 +965,27 @@ QuestTogether:RegisterTest(
 		a:RenderPartyQuestCompare()
 		Equal(frame.horizontal:IsShown(), true)
 		Equal(frame.vertical:IsShown(), false)
-		frame.horizontal:SetValue(1)
+		SetScrollOffset(frame.horizontal, 1)
 		Equal(frame.viewport.horizontalScroll, 1)
 		frame:SetSize(originalWidth, frame:GetHeight())
 		a:Roster(a.name, "Friend-Realm")
 		a:OnPartyQuestRosterChanged()
 		a:RenderPartyQuestCompare()
 		Equal(frame.horizontal:IsShown(), false)
-		Equal(frame.horizontal:GetValue(), 0)
+		Equal(GetScrollOffset(frame.horizontal), 0)
 		Equal(frame.viewport.horizontalScroll, 0)
 		a:Roster(a.name, "Friend-Realm", "Third-Realm", "Fourth-Realm", "Fifth-Realm", "Sixth-Realm")
 		a:OnPartyQuestRosterChanged()
 		a:RenderPartyQuestCompare()
 		Equal(frame.horizontal:IsShown(), true)
-		frame.horizontal:SetValue(20)
+		SetScrollOffset(frame.horizontal, 20)
 		Equal(frame.viewport.horizontalScroll, 20)
 		a:Roster(a.name, "Friend-Realm")
 		a:OnPartyQuestRosterChanged()
 		a:RenderPartyQuestCompare()
 		Equal(frame.horizontal:IsShown(), false)
 		Equal(frame.vertical:IsShown(), false)
-		Equal(frame.horizontal:GetValue(), 0)
+		Equal(GetScrollOffset(frame.horizontal), 0)
 		Equal(frame.viewport.horizontalScroll, 0)
 	end
 )
@@ -926,8 +998,8 @@ QuestTogether:RegisterTest("party diff UI renders a bounded row pool and filter 
 	function a:CanAccessForeignFrame()
 		return true
 	end
-	function a:CreateOwnedWindowFrame()
-		return Frame()
+	function a:CreateOwnedWindowFrame(_, _, parent, template)
+		return Frame(parent, nil, template)
 	end
 	a:OpenPartyQuestCompare()
 	Reply(a, "Friend-Realm", { Quest(2, "Request me", true) }, true, true)
@@ -985,8 +1057,8 @@ QuestTogether:RegisterTest("party share consent UI resets checkbox between reque
 	function a:CanAccessForeignFrame()
 		return true
 	end
-	function a:CreateOwnedWindowFrame()
-		return Frame()
+	function a:CreateOwnedWindowFrame(_, _, parent, template)
+		return Frame(parent, nil, template)
 	end
 	function a:GetQuestTitle()
 		return "Share me"
@@ -1017,9 +1089,9 @@ local function PreviewFixture()
 	function addon:CanAccessForeignFrame()
 		return true
 	end
-	function addon:CreateOwnedWindowFrame()
+	function addon:CreateOwnedWindowFrame(_, _, parent, template)
 		self.createdFrames = self.createdFrames + 1
-		return Frame()
+		return Frame(parent, nil, template)
 	end
 	local function RejectLiveAccess()
 		error("preview must not access live quest, sharing or saved-option paths")
@@ -1090,7 +1162,7 @@ QuestTogether:RegisterTest("compare debug command renders the full mock UI witho
 	end
 	assert(shared > #preview:BuildPartyQuestDiffRows() / 2, "most quests should overlap")
 	assert(frame.content.width <= frame.viewport.width, "a typical party should fit without horizontal scrolling")
-	frame.vertical:SetValue(3 * 42)
+	SetScrollOffset(frame.vertical, 3 * 42)
 	Equal(preview.partyQuestCompareSession.offset, 3)
 	assert(frame.summary.text:find("DEBUG PREVIEW", 1, true))
 	Equal(a.partyQuestCompareSession, liveSession)
@@ -1168,7 +1240,7 @@ QuestTogether:RegisterTest("compare preview actions simulate feedback and Refres
 	Equal(preview.statuses[sharedID], nil)
 	Equal(preview.statuses[requestedID], nil)
 	Equal(preview.partyQuestCompareSession.offset, 0)
-	Equal(frame.horizontal.value, 0)
+	Equal(GetScrollOffset(frame.horizontal), 0)
 	Equal(frame.filter.text, "Filters (1)")
 	Equal(#a.wire, 0)
 	Equal(a.pushes, 0)
@@ -1986,8 +2058,8 @@ QuestTogether:RegisterTest("party compare renders every locale while canonical a
 		function a:CanAccessForeignFrame()
 			return true
 		end
-		function a:CreateOwnedWindowFrame()
-			return Frame()
+		function a:CreateOwnedWindowFrame(_, _, parent, template)
+			return Frame(parent, nil, template)
 		end
 		a:OpenPartyQuestCompare()
 		Reply(a, "Friend-Realm", {}, true, true)
@@ -2481,10 +2553,10 @@ QuestTogether:RegisterTest(
 		Equal(frame.rows[3].data.kind, "objective")
 		Equal(frame.rows[3].action:IsShown(), false)
 		Equal(frame.rows[3].hint.text, "2/8")
-		frame.vertical:SetValue(5 * 42)
+		SetScrollOffset(frame.vertical, 5 * 42)
 		Equal(#frame.rows, 26)
 		Equal(#a.wire, 0)
-		frame.vertical:SetValue(0)
+		SetScrollOffset(frame.vertical, 0)
 		frame.rows[1].scripts.OnMouseUp(frame.rows[1], "LeftButton")
 		FinishExpansion(frame)
 		Equal(p.partyQuestCompareSession.expandedQuestIds[id], nil)
@@ -2652,9 +2724,9 @@ QuestTogether:RegisterTest(
 		assert(not objective.panelEdges[3]:IsShown() and not objective.panelEdges[4]:IsShown())
 		-- Scrolling into a section must clip its continuing panel, then clear all
 		-- decoration when these same row frames become ordinary quests again.
-		frame.vertical:SetValue(2 * 42)
+		SetScrollOffset(frame.vertical, 2 * 42)
 		assert(frame.rows[1].data.kind == "objective" and not frame.rows[1].panelEdges[3]:IsShown())
-		frame.vertical:SetValue(0)
+		SetScrollOffset(frame.vertical, 0)
 		frame.rows[1].scripts.OnMouseUp(frame.rows[1], "LeftButton")
 		FinishExpansion(frame)
 		assert(not objective.progressTrack:IsShown() and not objective.progressFill:IsShown())
@@ -2689,11 +2761,11 @@ QuestTogether:RegisterTest(
 			error("scrolling must not rebuild the quest model")
 		end
 		local header = frame.headers[1].text
-		frame.vertical:SetValue(10)
+		SetScrollOffset(frame.vertical, 10)
 		Equal(p.partyQuestCompareSession.scrollPixels, 10)
 		Equal(p.partyQuestCompareSession.offset, 0)
 		Equal(frame.rowsViewport.verticalScroll, 10)
-		frame.vertical:SetValue(49)
+		SetScrollOffset(frame.vertical, 49)
 		Equal(p.partyQuestCompareSession.offset, 1)
 		Equal(frame.rowsViewport.verticalScroll, 7)
 		Equal(frame.rows[1].data.questId, frame.displayRows[2].questId)
@@ -2720,7 +2792,7 @@ QuestTogether:RegisterTest(
 		p:SetPartyQuestCompareFilter("search", "Herbalist")
 		Equal(frame.scripts.OnUpdate, nil)
 		Equal(frame.rowsViewport.verticalScroll, 0)
-		Equal(frame.vertical:GetValue(), 0)
+		Equal(GetScrollOffset(frame.vertical), 0)
 		p:ResetPartyQuestCompareFilters()
 		frame.viewport.scripts.OnMouseWheel(frame.viewport, -1)
 		frame.refresh.scripts.OnClick()
@@ -2797,7 +2869,7 @@ QuestTogether:RegisterTest(
 		end
 		Equal(frame.expansions, nil)
 		Equal(frame.scripts.OnUpdate, nil)
-		frame.vertical:SetValue(0)
+		SetScrollOffset(frame.vertical, 0)
 		Click()
 		retired = frame.expansionAnimator.scripts.OnUpdate
 		p:SetPartyQuestCompareFilter("search", "Herbalist")
@@ -3054,7 +3126,7 @@ QuestTogether:RegisterTest(
 		Equal(#frame.rows, 44)
 		Equal(frame.horizontal:IsShown(), false)
 		assert(session.expandedQuestIds[expanded])
-		frame.vertical:SetValue(99999)
+		SetScrollOffset(frame.vertical, 99999)
 		frame:SetSize(100, 100) -- Native resize bounds, modeled by the private fixture.
 		Equal(frame:GetWidth(), 1222)
 		Equal(frame:GetHeight(), 500)
@@ -3069,7 +3141,7 @@ QuestTogether:RegisterTest(
 		frame.resizeGrip.scripts.OnMouseUp()
 		Equal(frame.sizing, nil)
 		frame:SetSize(1600, 1100)
-		assert(session.scrollPixels <= frame.vertical.maximum)
+		assert(session.scrollPixels <= frame.vertical.qtScrollMaximum)
 		frame.resizeGrip.scripts.OnMouseDown(nil, "LeftButton")
 		frame.close.scripts.OnClick()
 		Equal(frame.sizing, nil)
@@ -3779,7 +3851,7 @@ QuestTogether:RegisterTest("refresh retains scroll anchor and full text is acces
 	Reply(a, "Friend-Realm", entries, true, true)
 	a:RenderPartyQuestCompare()
 	local frame = a.partyQuestCompareWindow
-	frame.vertical:SetValue(300)
+	SetScrollOffset(frame.vertical, 300)
 	local before = a.partyQuestCompareSession.scrollPixels
 	a:RefreshPartyQuestCompare()
 	a:Advance(0)

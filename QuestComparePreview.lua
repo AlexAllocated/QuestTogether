@@ -155,6 +155,9 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		"CanMutateOwnedUI",
 		"CallOwnedUI",
 		"CreateOwnedUIFrame",
+		"CreateOwnedScrollBar",
+		"UpdateOwnedScrollBar",
+		"StopOwnedScrollBar",
 		"HideOwnedUI",
 		"QueueOwnedUICleanup",
 		"CancelOwnedUICleanup",
@@ -617,7 +620,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 			owner:ReleasePartyFocusController(self.focusController)
 		end
 		self:StartNavigationObserver()
-		self.partyQuestCompareWindow.horizontal:SetValue(0)
+		self.partyQuestCompareWindow.horizontalOffset = 0
 		self:QueuePartyQuestCompareRender()
 	end
 	function preview:GetPartyQuestShareStatus(id)

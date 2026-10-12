@@ -208,6 +208,13 @@ text is localized at presentation; wire facts and diagnostic identifiers stay
 stable. Vendored LibChev is immutable under its pinned manifest: fixes belong
 upstream followed by a deliberate vendor update.
 
+Use Blizzard templates for ordinary buttons, checkboxes, swatches, searches
+and scrollbars. Preserve inherited search and control behavior on owned instances.
+OwnedUI translates native scrollbar percentages to the window's pixel offsets;
+features retain their layout, filtering and scroll model. Programmatic refreshes
+must not feed back into input callbacks, and hidden/restricted windows retire
+held scrolling. Debug controls follow the same policy in upstream LibChev.
+
 ## Validation and delivery
 
 `/qt test` loads private fixtures through the same TOC as the addon. Tests must

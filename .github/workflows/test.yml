@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: AlexAllocated/libchev
-          ref: 0a2924cbe44e504d2d31102cd0cf587c2d1833ab
+          ref: 24b06469b4246f8d413fabaa8313de7facadbac0
           path: library
       - run: sudo apt-get update && sudo apt-get install -y lua${{ matrix.lua }} openssl
       - run: python3 scripts/check_release_notes.py --check --release-history

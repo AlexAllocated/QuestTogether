@@ -28,6 +28,65 @@ function QT:CreateOwnedUIFrame(factory, kind, parent, template)
 	return frame
 end
 
+-- Keep pixel-based window layouts separate from Blizzard's percentage-based
+-- scrollbar controller. The frame and its template children are QT-owned.
+function QT:CreateOwnedScrollBar(factory, parent, horizontal, onScroll)
+	local bar = self:CreateOwnedUIFrame(
+		factory,
+		"EventFrame",
+		parent,
+		horizontal and "WowTrimHorizontalScrollBar" or "MinimalScrollBar"
+	)
+	bar.qtScrollMaximum = 0
+	bar.qtCanUseScrollBar, bar.qtStopScrollBar = Lib.GuardOwnedScrollBar(bar, function(region)
+		return self:CanMutateOwnedUI(region)
+	end)
+	bar:Init(1, 0)
+	bar:SetInterpolateScroll(false)
+	bar:SetHideIfUnscrollable(true)
+	bar:RegisterCallback("OnScroll", function(_, percentage)
+		if bar.qtSyncingScroll then
+			return
+		end
+		if not self:CanMutateOwnedUI(bar) or not bar:IsVisible() then
+			self:StopOwnedScrollBar(bar)
+			return
+		end
+		percentage = self:SafeToNumber(percentage)
+		if percentage then
+			onScroll(math.max(0, math.min(1, percentage)) * bar.qtScrollMaximum)
+		end
+	end, bar)
+	bar:HookScript("OnHide", function()
+		self:StopOwnedScrollBar(bar)
+	end)
+	return bar
+end
+
+function QT:StopOwnedScrollBar(bar)
+	if bar then
+		-- Retire native repeats and pressed art. If access is restricted, the
+		-- shared guard cancels the gesture before the next allowed input.
+		bar.qtStopScrollBar()
+	end
+end
+
+function QT:UpdateOwnedScrollBar(bar, offset, maximum, visibleExtent, step)
+	if not bar.qtCanUseScrollBar() then
+		return nil
+	end
+	maximum = math.max(0, maximum)
+	visibleExtent = math.max(0, visibleExtent)
+	offset = math.max(0, math.min(maximum, offset))
+	bar.qtScrollMaximum = maximum
+	bar.qtSyncingScroll = true
+	bar:SetVisibleExtentPercentage(maximum > 0 and visibleExtent / (visibleExtent + maximum) or 1)
+	bar:SetPanExtentPercentage(maximum > 0 and math.min(1, (step or 1) / maximum) or 0)
+	bar:SetScrollPercentage(maximum > 0 and offset / maximum or 0, true)
+	bar.qtSyncingScroll = nil
+	return offset
+end
+
 function QT:GetOwnedUIParent()
 	return UIParent
 end

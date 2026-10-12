@@ -65,6 +65,49 @@ function QT:CreateTestUIRegion(owner, parent, kind)
 		self:CheckRead()
 		return self.rawScripts[event]
 	end
+	function frame:HasScript()
+		self:CheckRead()
+		return self.kind ~= "Texture" and self.kind ~= "FontString"
+	end
+	function frame:GetChildren()
+		self:CheckRead()
+		local children = {}
+		for _, child in ipairs(self.children) do
+			if child.kind ~= "Texture" and child.kind ~= "FontString" then
+				children[#children + 1] = child
+			end
+		end
+		return unpack(children)
+	end
+	function frame:GetRegions()
+		self:CheckRead()
+		local regions = {}
+		for _, child in ipairs(self.children) do
+			if child.kind == "Texture" or child.kind == "FontString" then
+				regions[#regions + 1] = child
+			end
+		end
+		return unpack(regions)
+	end
+	function frame:RegisterCallback(event, callback, callbackOwner)
+		self:Check()
+		self.callbacks = self.callbacks or {}
+		self.callbacks[event] = self.callbacks[event] or {}
+		self.callbacks[event][callbackOwner or callback] = callback
+	end
+	function frame:TriggerEvent(event, ...)
+		for callbackOwner, callback in pairs(self.callbacks and self.callbacks[event] or {}) do
+			callback(callbackOwner, ...)
+		end
+	end
+	function frame:RunScript(event, ...)
+		if self.scripts[event] then
+			self.scripts[event](self, ...)
+		end
+		if self.intrinsicEvents and self.intrinsicEvents[event] then
+			self:TriggerEvent(event, ...)
+		end
+	end
 	function frame:HookScript(event, callback)
 		self:Check()
 		self.hooks[event] = self.hooks[event] or {}
@@ -344,10 +387,20 @@ function QT:CreateTestUIRegion(owner, parent, kind)
 	function frame:SetFocus()
 		self:Check()
 		self.focus = true
+		if self.scripts.OnEditFocusGained then
+			self.scripts.OnEditFocusGained(self)
+		end
 	end
 	function frame:ClearFocus()
 		self:Check(true)
 		self.focus = false
+		if self.scripts.OnEditFocusLost then
+			self.scripts.OnEditFocusLost(self)
+		end
+	end
+	function frame:HasFocus()
+		self:CheckRead()
+		return self.focus == true
 	end
 	function frame:SetPropagateKeyboardInput(v)
 		self:Check()
@@ -423,6 +476,164 @@ function QT:CreateTestUIRegion(owner, parent, kind)
 		frame[method] = function(self)
 			self:Check()
 		end
+	end
+	return frame
+end
+
+-- Model only the native contracts that QT consumes. All children, callback
+-- registries and template scripts remain inside this private fixture tree.
+function QT:ApplyTestUITemplate(frame, template)
+	frame.template = template
+	local function Child(kind)
+		return self:CreateTestUIRegion(frame.owner, frame, kind)
+	end
+	if template == "UIPanelButtonTemplate" then
+		local text = Child("FontString")
+		function frame:GetFontString()
+			return text
+		end
+		local setText = frame.SetText
+		function frame:SetText(value)
+			setText(self, value)
+			text:SetText(value)
+		end
+	elseif template == "SearchBoxTemplate" then
+		frame.Instructions, frame.searchIcon, frame.clearButton = Child("FontString"), Child("Texture"), Child("Button")
+		frame.Instructions:SetText("Search")
+		local function RefreshSearch(edit)
+			local empty = edit:GetText() == ""
+			if empty then
+				edit.Instructions:Show()
+			else
+				edit.Instructions:Hide()
+			end
+			if empty and not edit:HasFocus() then
+				edit.clearButton:Hide()
+			else
+				edit.clearButton:Show()
+			end
+		end
+		frame:SetScript("OnTextChanged", RefreshSearch)
+		frame:SetScript("OnEditFocusGained", RefreshSearch)
+		frame:SetScript("OnEditFocusLost", RefreshSearch)
+		frame:SetScript("OnEscapePressed", function(edit)
+			edit:ClearFocus()
+		end)
+		frame:SetScript("OnEnterPressed", function(edit)
+			edit:ClearFocus()
+		end)
+		frame.clearButton:SetScript("OnClick", function()
+			frame:SetText("")
+			frame:ClearFocus()
+		end)
+		RefreshSearch(frame)
+	elseif template == "MinimalScrollBar" or template == "WowTrimHorizontalScrollBar" then
+		frame.SetValue, frame.GetValue, frame.SetMinMaxValues = nil, nil, nil
+		frame.Back, frame.Forward, frame.Track = Child("Button"), Child("Button"), Child("Frame")
+		frame.Track.Thumb = self:CreateTestUIRegion(frame.owner, frame.Track, "Button")
+		frame.callbacks, frame.scrollPercentage = {}, 0
+		local function Update(bar)
+			local scrollable = bar.visibleExtentPercentage > 0 and bar.visibleExtentPercentage < 1
+			bar.Back:SetEnabled(scrollable and bar.scrollPercentage > 0)
+			bar.Forward:SetEnabled(scrollable and bar.scrollPercentage < 1)
+			if bar.hideIfUnscrollable then
+				if scrollable then
+					bar:Show()
+				else
+					bar:Hide()
+				end
+			end
+		end
+		function frame:Init(visible, pan)
+			self:Check()
+			self.scrollPercentage, self.visibleExtentPercentage, self.panExtentPercentage = 0, visible, pan
+			Update(self)
+		end
+		function frame:SetInterpolateScroll(value)
+			self:Check()
+			self.interpolateScroll = value
+		end
+		function frame:SetHideIfUnscrollable(value)
+			self:Check()
+			self.hideIfUnscrollable = value
+			Update(self)
+		end
+		function frame:SetVisibleExtentPercentage(value)
+			self:Check()
+			self.visibleExtentPercentage = value
+			Update(self)
+		end
+		function frame:GetVisibleExtentPercentage()
+			self:CheckRead()
+			return self.visibleExtentPercentage
+		end
+		function frame:SetPanExtentPercentage(value)
+			self:Check()
+			self.panExtentPercentage = value
+		end
+		function frame:GetPanExtentPercentage()
+			self:CheckRead()
+			return self.panExtentPercentage
+		end
+		function frame:GetScrollPercentage()
+			self:CheckRead()
+			return self.scrollPercentage
+		end
+		function frame:SetScrollPercentage(value, immediate)
+			self:Check()
+			self.scrollPercentage, self.scrollImmediate = math.max(0, math.min(1, value)), immediate
+			Update(self)
+			self:TriggerEvent("OnScroll", self.scrollPercentage)
+		end
+		function frame:ScrollStepInDirection(direction)
+			self:SetScrollPercentage(self.scrollPercentage + self.panExtentPercentage * direction)
+		end
+		function frame:UnregisterUpdate()
+			self:SetScript("OnUpdate", nil)
+			self.requireInternalScope = nil
+		end
+		for _, entry in ipairs({ { frame.Back, -1 }, { frame.Forward, 1 }, { frame.Track.Thumb } }) do
+			local button, direction = entry[1], entry[2]
+			button.intrinsicEvents = { OnMouseDown = true, OnMouseUp = true }
+			button:SetScript("OnMouseDown", function()
+				button:Check()
+				button.down = true
+				return true
+			end)
+			button:SetScript("OnMouseUp", function()
+				button:Check()
+				button.down = nil
+				return true
+			end)
+			button:RegisterCallback("OnMouseDown", function()
+				local function Move()
+					if direction then
+						frame:ScrollStepInDirection(direction)
+					else
+						frame:SetScrollPercentage(frame.fixtureDragPercentage or 0.5)
+					end
+				end
+				if direction then
+					Move()
+				end
+				frame:SetScript("OnUpdate", Move)
+			end, frame)
+			button:RegisterCallback("OnMouseUp", function()
+				frame:UnregisterUpdate()
+			end, frame)
+		end
+		frame.Track:SetScript("OnMouseDown", function()
+			frame:ScrollStepInDirection(1)
+			frame:SetScript("OnUpdate", function()
+				frame:ScrollStepInDirection(1)
+			end)
+			frame.Track:SetScript("OnMouseUp", function()
+				frame:UnregisterUpdate()
+			end)
+		end)
+		frame:SetScript("OnMouseWheel", function(_, delta)
+			frame:SetScrollPercentage(frame.scrollPercentage + frame.panExtentPercentage * (delta < 0 and 2 or -2))
+		end)
 	end
 	return frame
 end

@@ -12,9 +12,10 @@ for line in io.lines(root .. "/QuestTogether.toc") do
 	end
 end
 local regions, methods = {}, {}
-local function Region(kind)
-	local f = setmetatable({ kind = kind, scripts = {}, value = 0 }, { __index = methods })
+local function Region(kind, parent)
+	local f = setmetatable({ kind = kind, parent = parent, children = {}, scripts = {}, value = 0, width = 700, height = 400 }, { __index = methods })
 	regions[#regions + 1] = f
+	if parent then parent.children[#parent.children + 1] = f end
 	return f
 end
 function methods:CreateFontString()
@@ -26,6 +27,10 @@ end
 function methods:SetScript(key, fn)
 	self.scripts[key] = fn
 end
+function methods:GetScript(key) return self.scripts[key] end
+function methods:HasScript() return self.kind ~= "FontString" and self.kind ~= "Texture" end
+function methods:GetChildren() return (unpack or table.unpack)(self.children) end
+function methods:GetRegions() end
 function methods:HookScript(key, fn)
 	local previous = self.scripts[key]
 	self.scripts[key] = function(...)
@@ -45,10 +50,37 @@ function methods:GetChecked()
 	return self.checked
 end
 function methods:SetValue(v)
+	if self.Slider then return self.Slider:SetValue(v) end
+	if self.minimum then v = math.max(self.minimum, math.min(self.maximum, v)) end
 	self.value = v
 	if self.scripts.OnValueChanged then
 		self.scripts.OnValueChanged(self, v)
 	end
+end
+function methods:GetValue() return self.value end
+function methods:RegisterCallback(event, callback, owner)
+	self.callbacks = self.callbacks or {}
+	assert(not self.callbacks[event], "settings slider callbacks must not accumulate")
+	self.callbacks[event] = { callback, owner }
+end
+function methods:Init(value, minimum, maximum, steps, formatters)
+	if self.kind == "EventFrame" then
+		self.visibleExtent, self.panExtent, self.percentage = value, minimum, 0
+		return
+	end
+	self.Slider:SetMinMaxValues(minimum, maximum)
+	self.Slider:SetValueStep((maximum - minimum) / steps)
+	self.Slider:SetValue(value)
+	local function Update(_, current)
+		self.RightText:SetText(formatters[MinimalSliderWithSteppersMixin.Label.Right](current))
+		self.Back:SetEnabled(current > minimum)
+		self.Forward:SetEnabled(current < maximum)
+		local listener = self.callbacks and self.callbacks.OnValueChanged
+		if listener then listener[1](listener[2], current) end
+	end
+	Update(nil, value)
+	self.nativeOnValueChanged = Update
+	self.Slider:SetScript("OnValueChanged", Update)
 end
 function methods:SetMinMaxValues(lo, hi)
 	self.minimum, self.maximum = lo, hi
@@ -78,6 +110,7 @@ for _, key in ipairs({
 	"SetMaxLines",
 	"SetHitRectInsets",
 	"EnableMouse",
+	"EnableMouseWheel",
 	"SetScrollChild",
 	"SetOrientation",
 	"SetObeyStepOnDrag",
@@ -89,6 +122,30 @@ for _, key in ipairs({
 end
 function methods:SetWidth(width) self.width = width end
 function methods:GetWidth() return self.width end
+function methods:SetSize(width, height) self.width, self.height = width, height end
+function methods:SetHeight(height) self.height = height end
+function methods:GetHeight() return self.height end
+function methods:SetScrollChild(child) self.child = child end
+function methods:GetVerticalScrollRange() return math.max(0, self.child.height - self.height) end
+function methods:GetVerticalScroll() return self.offset or 0 end
+function methods:SetVerticalScroll(value)
+	self.offset = value
+	if self.scripts.OnVerticalScroll then self.scripts.OnVerticalScroll(self, value) end
+end
+function methods:SetInterpolateScroll(value) self.interpolate = value end
+function methods:SetHideIfUnscrollable(value) self.hideIfUnscrollable = value end
+function methods:SetVisibleExtentPercentage(value)
+	self.visibleExtent = value
+	if self.hideIfUnscrollable then self:SetShown(value > 0 and value < 1) end
+end
+function methods:SetPanExtentPercentage(value) self.panExtent = value end
+function methods:SetScrollPercentage(value)
+	self.percentage = value
+	local listener = self.callbacks and self.callbacks.OnScroll
+	if listener then listener[1](listener[2], value) end
+end
+function methods:UnregisterUpdate() self.scripts.OnUpdate = nil end
+function methods:SetColorRGB(r, g, b) self.color = { r = r, g = g, b = b } end
 function methods:Hide() self.hidden = true end
 function methods:Show() self.hidden = false end
 function methods:SetShown(shown) self.hidden = not shown end
@@ -98,6 +155,7 @@ function methods:GetFont() return "font", 12, "" end
 function methods:GetFrameStrata() return "LOW" end
 function methods:GetFrameLevel() return 0 end
 function methods:IsVisible() return not self.hidden end
+function methods:IsShown() return not self.hidden end
 function methods:SetEnabled(enabled)
 	self.enabled = enabled
 	if self.Dropdown then self.Dropdown:SetEnabled(enabled); self:UpdateSteppers() end
@@ -128,8 +186,8 @@ function methods:UpdateSteppers()
 	self.DecrementButton:SetEnabled(self.Dropdown:IsEnabled() and index ~= nil and index > 1)
 	self.IncrementButton:SetEnabled(self.Dropdown:IsEnabled() and index ~= nil and index < #self.Dropdown.menu)
 end
-CreateFrame = function(kind, _, _, template)
-	local frame = Region(kind)
+CreateFrame = function(kind, _, parent, template)
+	local frame = Region(kind, parent)
 	frame.template = template
 	if template == "SettingsDropdownWithButtonsTemplate" then
 		frame.Dropdown, frame.Label = Region("DropdownButton"), Region("FontString")
@@ -147,10 +205,27 @@ CreateFrame = function(kind, _, _, template)
 		end
 		frame.IncrementButton:SetScript("OnClick", function() Step(1) end)
 		frame.DecrementButton:SetScript("OnClick", function() Step(-1) end)
+	elseif template == "MinimalSliderWithSteppersTemplate" then
+		frame.Slider, frame.Back, frame.Forward = Region("Slider"), Region("Button"), Region("Button")
+		frame.RightText, frame.MinText, frame.MaxText = Region("FontString"), Region("FontString"), Region("FontString")
+		frame.Slider:SetScript("OnEnter", function() frame.nativeHover = true end)
+		frame.Slider:SetScript("OnLeave", function() frame.nativeHover = false end)
+		local function Step(button, direction)
+			if button:IsEnabled() then frame:SetValue(frame.Slider.value + direction * frame.Slider.step) end
+		end
+		frame.Back:SetScript("OnClick", function() Step(frame.Back, -1) end)
+		frame.Forward:SetScript("OnClick", function() Step(frame.Forward, 1) end)
+	elseif template == "ColorSwatchTemplate" then
+		frame:SetScript("OnEnter", function() frame.nativeHover = true end)
+		frame:SetScript("OnLeave", function() frame.nativeHover = false end)
+	elseif template == "MinimalScrollBar" then
+		frame.Track, frame.Back, frame.Forward = Region("Frame", frame), Region("Button", frame), Region("Button", frame)
+		frame.Track.Thumb = Region("Button", frame.Track)
 	end
 	return frame
 end
 AnchorUtil = { CreateAnchor = function(...) return { ... } end }
+MinimalSliderWithSteppersMixin = { Label = { Right = 2 }, Event = { OnValueChanged = "OnValueChanged" } }
 Settings = {
 	RegisterCanvasLayoutSubcategory = function(_, _, name)
 		return { name = name }
@@ -158,22 +233,82 @@ Settings = {
 	RegisterAddOnCategory = function() end,
 }
 QuestTogether:InitializeDatabase()
+local nativeSetOption, settingWrites = QuestTogether.SetOption, {}
+QuestTogether.SetOption = function(self, key, value)
+	settingWrites[key] = (settingWrites[key] or 0) + 1
+	return nativeSetOption(self, key, value)
+end
 QuestTogether:InitializeAccessibilityWindow({})
+QuestTogether:InitializeAnnouncementsWindow({})
 QuestTogether:InitializePlayerLocationsWindow({})
 QuestTogether:InitializeDeveloperWindow({})
 assert(QuestTogether.accessibilityFrame and QuestTogether.playerLocationsFrame)
 QuestTogether.accessibilityFrame.scripts.OnShow()
-local slider
+local scale, nearby, sliderCount
+sliderCount = 0
 for _, f in ipairs(regions) do
-	if f.kind == "Slider" then
-		slider = f
+	if f.template == "MinimalSliderWithSteppersTemplate" then
+		sliderCount = sliderCount + 1
+		if f.Slider.minimum == 80 then scale = f else nearby = f end
 	end
 end
-assert(slider and slider.minimum == 80 and slider.maximum == 150)
+assert(sliderCount == 2, "both numeric settings must use Blizzard's native slider template")
+assert(scale and scale.Slider.minimum == 80 and scale.Slider.maximum == 150 and scale.Slider.step == 5)
+assert(nearby and nearby.Slider.minimum == 5 and nearby.Slider.maximum == 100 and nearby.Slider.step == 1)
+assert(scale.RightText.text == "100%" and nearby.RightText.text == "25%")
+assert(not settingWrites.windowScale and not settingWrites.nearbyAnnouncementRange,
+	"initializing and showing settings must not persist slider values")
 local range = QuestTogether:GetOption("nearbyAnnouncementRange")
-slider:SetValue(125)
+scale.Slider:SetValue(125) -- Native drag callback, not an addon-installed child script.
 assert(QuestTogether:GetOption("windowScale") == 125)
 assert(QuestTogether:GetOption("nearbyAnnouncementRange") == range)
+assert(scale.RightText.text == "125%" and settingWrites.windowScale == 1)
+scale.Forward.scripts.OnClick()
+assert(QuestTogether:GetOption("windowScale") == 130 and scale.RightText.text == "130%")
+nearby.Slider:SetValue(60)
+nearby.Back.scripts.OnClick()
+assert(QuestTogether:GetOption("nearbyAnnouncementRange") == 59 and nearby.RightText.text == "59%")
+assert(QuestTogether:GetOption("windowScale") == 130)
+for _, control in ipairs({ scale, nearby }) do
+	assert(control.Slider.scripts.OnValueChanged == control.nativeOnValueChanged,
+		"addon configuration must preserve the native slider value handler")
+	control.Slider:SetValue(control.Slider.minimum)
+	assert(not control.Back:IsEnabled() and control.Forward:IsEnabled())
+	control.Back.scripts.OnClick()
+	assert(control.Slider.value == control.Slider.minimum)
+	control.Slider:SetValue(control.Slider.maximum)
+	assert(control.Back:IsEnabled() and not control.Forward:IsEnabled())
+	control.Forward.scripts.OnClick()
+	assert(control.Slider.value == control.Slider.maximum)
+	for _, region in ipairs({ control.Slider, control.Back, control.Forward }) do
+		assert(region.scripts.OnEnter and region.scripts.OnLeave, "slider and both arrows require tooltips")
+	end
+end
+local savedProfile = QuestTogether.db.profile
+local scaleWrites, rangeWrites = settingWrites.windowScale, settingWrites.nearbyAnnouncementRange
+QuestTogether.db.profile = QuestTogether:DeepCopy(savedProfile)
+QuestTogether.db.profile.windowScale, QuestTogether.db.profile.nearbyAnnouncementRange = 85, 10
+QuestTogether.accessibilityFrame.scripts.OnShow()
+nearby:RefreshNearbyRange()
+assert(scale.RightText.text == "85%" and nearby.RightText.text == "10%")
+assert(settingWrites.windowScale == scaleWrites and settingWrites.nearbyAnnouncementRange == rangeWrites,
+	"profile refresh must update values without saving them back")
+QuestTogether.db.profile = savedProfile
+QuestTogether.accessibilityFrame.scripts.OnShow()
+nearby:RefreshNearbyRange()
+local showTooltip, hideTooltip = QuestTogether.ShowSettingsTooltip, QuestTogether.HideSettingsTooltip
+local tooltipOwner
+QuestTogether.ShowSettingsTooltip = function(_, owner) tooltipOwner = owner end
+QuestTogether.HideSettingsTooltip = function(_, owner) assert(tooltipOwner == owner); tooltipOwner = nil end
+for _, control in ipairs({ scale, nearby }) do
+	control.Slider.scripts.OnEnter(control.Slider)
+	assert(control.nativeHover and tooltipOwner == control.Slider, "tooltips must preserve native hover interaction")
+	control.Slider.scripts.OnLeave(control.Slider)
+	assert(not control.nativeHover and not tooltipOwner)
+end
+QuestTogether.ShowSettingsTooltip, QuestTogether.HideSettingsTooltip = showTooltip, hideTooltip
+QuestTogether.SetOption = nativeSetOption
+print("Native settings sliders, stepper bounds, profile refresh, and tooltip interaction passed")
 assert(QuestTogether.playerLocationsControls.showPlayerLocations == nil)
 assert(QuestTogether.playerLocationsControls.mapAlwaysShowParty == nil)
 assert(QuestTogether:GetOption("sharePlayerLocation") == true)
@@ -301,3 +436,76 @@ assert(scope.Dropdown.text == "Global")
 scope.DecrementButton.scripts.OnClick()
 assert(QuestTogether:GetOption("qtChatScope") == "zone_only")
 print("All nine native settings dropdowns, profile changes, and disabled controls passed")
+
+local checkboxCount, scrollbarCount, swatch = 0, 0
+for _, region in ipairs(regions) do
+	if region.kind == "CheckButton" then
+		checkboxCount = checkboxCount + 1
+		assert(region.template == "MinimalCheckboxTemplate")
+	elseif region.kind == "ScrollFrame" then
+		local bar = region.ScrollBar
+		assert(bar and bar.template == "MinimalScrollBar" and not bar.interpolate)
+		scrollbarCount = scrollbarCount + 1
+		local maximum = region:GetVerticalScrollRange()
+		local halfway = maximum / 2
+		bar:SetScrollPercentage(0.5)
+		assert(math.abs(region:GetVerticalScroll() - halfway) < 0.000001)
+		region.scripts.OnMouseWheel(region, -1)
+		assert(math.abs(region:GetVerticalScroll() - math.min(maximum, halfway + 30)) < 0.000001)
+		-- Resize while scrolled: clamp the model and hide an unnecessary bar.
+		region:SetHeight(region.child.height + 50)
+		region:SetWidth(900)
+		region.scripts.OnSizeChanged(region)
+		assert(region:GetVerticalScroll() == 0 and bar.percentage == 0 and bar.hidden)
+		assert(region.child.width == 892)
+		region:SetHeight(200)
+		region.scripts.OnSizeChanged(region)
+		assert(not bar.hidden and bar.visibleExtent == 200 / region.child.height)
+	elseif region.template == "ColorSwatchTemplate" then
+		swatch = region
+	end
+end
+assert(checkboxCount > 20 and scrollbarCount == 8 and swatch)
+local scrollFrame
+for _, region in ipairs(regions) do
+	if region.kind == "ScrollFrame" then scrollFrame = region; break end
+end
+local isRestricted, schedule = QuestTogether.IsRuntimeRestricted, QuestTogether.ScheduleRuntimeWork
+local pending
+QuestTogether.IsRuntimeRestricted = function() return true end
+QuestTogether.ScheduleRuntimeWork = function(_, kind, key, run, options)
+	assert(kind == "foreign_frame_mutation" and type(key) == "string" and options.lifetime == "ui")
+	pending = run
+end
+scrollFrame:SetWidth(1000)
+scrollFrame.scripts.OnSizeChanged(scrollFrame)
+assert(pending and scrollFrame.child.width == 892, "restricted resize must defer native layout changes")
+QuestTogether.IsRuntimeRestricted, QuestTogether.ScheduleRuntimeWork = isRestricted, schedule
+pending()
+assert(scrollFrame.child.width == 992, "deferred refresh must use the latest settings panel width")
+local previous = QuestTogether:DeepCopy(QuestTogether:GetOption("nameplateQuestHealthColor"))
+local picker
+ColorPickerFrame = {
+	SetupColorPickerAndShow = function(_, info) picker = info end,
+	GetColorRGB = function() return 0.2, 0.4, 0.6 end,
+}
+swatch.scripts.OnClick(swatch)
+picker.swatchFunc()
+assert(swatch.color.r == 0.2 and swatch.color.g == 0.4 and swatch.color.b == 0.6)
+picker.cancelFunc()
+assert(swatch.color.r == previous.r and swatch.color.g == previous.g and swatch.color.b == previous.b)
+local activeProfile = QuestTogether.db.profile
+swatch.scripts.OnClick(swatch)
+QuestTogether.db.profile = QuestTogether:DeepCopy(activeProfile)
+picker.swatchFunc()
+assert(QuestTogether:GetOption("nameplateQuestHealthColor").r == previous.r,
+	"an old color picker must not write to a newly selected profile")
+QuestTogether.db.profile = activeProfile
+QuestTogether.ShowSettingsTooltip = function(_, owner) tooltipOwner = owner end
+QuestTogether.HideSettingsTooltip = function() tooltipOwner = nil end
+swatch.scripts.OnEnter(swatch)
+assert(swatch.nativeHover and tooltipOwner == swatch)
+swatch.scripts.OnLeave(swatch)
+assert(not swatch.nativeHover and not tooltipOwner)
+QuestTogether.ShowSettingsTooltip, QuestTogether.HideSettingsTooltip = showTooltip, hideTooltip
+print("Native checkboxes, swatch cancel/profile safety, and settings scrollbar resize/wheel behavior passed")

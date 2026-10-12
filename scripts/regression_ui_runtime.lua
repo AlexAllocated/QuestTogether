@@ -29,8 +29,8 @@ local function Fixture()
 	function a:CreateLocationPinFrame(_, _, parent)
 		return QT:CreateTestUIRegion(self, parent)
 	end
-	function a:CreateOwnedWindowFrame(_, _, parent)
-		return QT:CreateTestUIRegion(self, parent)
+	function a:CreateOwnedWindowFrame(kind, _, parent, template)
+		return QT:ApplyTestUITemplate(QT:CreateTestUIRegion(self, parent, kind), template)
 	end
 	local root = QT:CreateTestUIRegion(a)
 	root:SetSize(1920, 1080)
