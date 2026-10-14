@@ -50,7 +50,17 @@ local DARK_COLORS = {
 	Unknown = { 0.68, 0.70, 0.73 },
 }
 
-local COMPACT_STATUS = { Have = "•", Ready = "✓", Completed = "✓", Missing = "−", Absent = "?", Loading = "…", Unknown = "?" }
+-- Compact cells must not depend on optional font glyphs. Native artwork keeps
+-- turn-in readiness distinct from completed history, even in a narrow column.
+local COMPACT_STATUS = {
+	Have = ".",
+	Ready = "|TInterface\\GossipFrame\\ActiveQuestIcon:16:16|t",
+	Completed = "|TInterface\\Buttons\\UI-CheckBox-Check:16:16|t",
+	Missing = "-",
+	Absent = "?",
+	Loading = "...",
+	Unknown = "?",
+}
 local function StatusLabel(status)
 	return L(status == "Absent" and "Not in log" or status)
 end
@@ -1736,7 +1746,7 @@ function QuestTogether:RenderPartyQuestCompare()
 		toggle.columnSession, toggle.columnName, toggle.collapsed = session, member.name, column.collapsed
 		toggle:ClearAllPoints()
 		toggle:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -3, 3)
-		toggle:SetText(column.collapsed and "+" or "−")
+		toggle:SetText(column.collapsed and "+" or "-")
 		toggle:Show()
 		header:Show()
 	end

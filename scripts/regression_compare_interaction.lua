@@ -192,6 +192,52 @@ QT:RegisterTest("collapsed party columns retain roster comparison data and resto
 	Equal(a.invalidCalls, nil)
 end)
 
+QT:RegisterTest("compact quest states use font-independent markers and retain full labels when recycled", function()
+	local states = { "Have", "Ready", "Completed", "Missing", "Absent", "Loading", "Unknown" }
+	local a, frame, session = Open(#states)
+	local member, originalRows = session.members[2], a.BuildPartyQuestDiffRows
+	local reverse = false
+	function a:BuildPartyQuestDiffRows()
+		local rows = originalRows(self)
+		for index, row in ipairs(rows) do
+			row.cells[2] = states[reverse and (#states + 1 - index) or index]
+		end
+		return rows
+	end
+	local markers = {}
+	for pass = 1, 2 do
+		reverse = pass == 2
+		a:SetPartyQuestColumnCollapsed(member.name, true, session)
+		a:RenderPartyQuestCompare()
+		Equal(frame.columnToggles[2]:GetText(), "+")
+		for index = 1, #states do
+			local state = states[reverse and (#states + 1 - index) or index]
+			local row = frame.rows[index]
+			local marker = row.cells[2]:GetText()
+			assert(marker ~= "" and not marker:find("[\128-\255]"), "compact state depends on a font glyph: " .. state)
+			if state == "Ready" or state == "Completed" then
+				assert(marker:match("^|TInterface\\[^|]+:16:16|t$"), "completion state needs native icon markup")
+				assert(row.cells[2]:GetWidth() >= 16)
+			end
+			if pass == 1 then markers[state] = marker else Equal(marker, markers[state]) end
+			Equal(row.focusCells[2]:IsShown(), state == "Have" or state == "Ready")
+			row.cellTooltips[2]:RunScript("OnEnter")
+			Equal(a.tooltip[1], member.name)
+			Equal(a.tooltip[2], QT.Translate(state == "Absent" and "Not in log" or state))
+		end
+		assert(markers.Ready ~= markers.Completed and markers.Completed ~= markers.Missing)
+		a:SetPartyQuestColumnCollapsed(member.name, false, session)
+		a:RenderPartyQuestCompare()
+		Equal(frame.columnToggles[2]:GetText(), "-")
+		for index = 1, #states do
+			local state = states[reverse and (#states + 1 - index) or index]
+			Equal(frame.rows[index].cells[2]:GetText(), QT.Translate(state == "Absent" and "Not in log" or state))
+			Equal(frame.rows[index].cellTooltips[2]:IsShown(), false)
+		end
+	end
+	Equal(a.invalidCalls, nil)
+end)
+
 QT:RegisterTest("column choices follow player identities across roster reordering and drop departed players", function()
 	local a, frame, session = Open(2)
 	local name = session.members[2].name

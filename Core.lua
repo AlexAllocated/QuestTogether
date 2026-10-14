@@ -6138,6 +6138,11 @@ function QuestTogether:HandleSlashCommand(input)
 	end
 
 	-- Generic debug commands and their presentation belong to the shared controller.
+	if (command == "diagnostics" or command == "diag") and string.lower(self:SafeTrimString(rest, "")) == "cursor" then
+		local captured, reason = self:CapturePlayerNoteCursorDiagnostics()
+		if not captured and reason then self:Print(reason) end
+		return captured
+	end
 	if command == "debug" and rest ~= "" and rawget(self, "isLocalDeveloper") == true then
 		return self:RequestRemoteDiagnostics(rest)
 	end

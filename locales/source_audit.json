@@ -490,11 +490,16 @@
     ],
     "PlayerNotes.lua": [
       "BACKGROUND",
+      "BOTTOM",
       "BOTTOMLEFT",
       "BOTTOMRIGHT",
       "Button",
+      "Frame",
       "LEFT",
       "OVERLAY",
+      "RIGHT",
+      "Show",
+      "TOP",
       "TOPLEFT"
     ],
     "PlayerPhases.lua": [

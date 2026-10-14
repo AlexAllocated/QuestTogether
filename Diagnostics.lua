@@ -187,3 +187,222 @@ function QuestTogether:ADDON_ACTION_BLOCKED(event, addon, action)
 end
 
 QuestTogether.ADDON_ACTION_FORBIDDEN = QuestTogether.ADDON_ACTION_BLOCKED
+
+-- Opt-in, local-only capture of the QT note editor's native caret. Never read
+-- note text, player identity, font-string text, or unrelated/native UI trees.
+local CURSOR_CAPTURE_SECONDS, CURSOR_SAMPLE_INTERVAL = 3, 0.2
+local CURSOR_SAMPLE_LIMIT, CURSOR_REPORT_LIMIT = 16, 16384
+local CURSOR_COUNTERS = {
+	"cursorEvents", "textEvents", "layoutCalls", "boxHeightWrites", "scrollRectWrites", "scrollWrites",
+	"cursorX", "cursorY", "cursorW", "cursorH",
+}
+
+local function CursorValue(addon, value)
+	if not addon:CanAccessValue(value) then return "inaccessible" end
+	local kind = type(value)
+	if kind == "number" then
+		local number = addon:SafeToNumber(value)
+		return number and string.format("%.3f", number) or "invalid"
+	elseif kind == "boolean" then
+		return value and "true" or "false"
+	elseif kind == "string" then
+		return (value:sub(1, 120):gsub("[%c]", " "))
+	end
+	return kind == "nil" and "nil" or "unavailable"
+end
+
+local function CursorMethod(addon, region, method)
+	if not LibChev.CanMutateOwnedRegion(region) then return nil end
+	local ok, callback = pcall(function() return region[method] end)
+	if ok and addon:CanAccessValue(callback) and type(callback) == "function" then return callback end
+end
+
+local function CursorRead(addon, region, method)
+	local callback = CursorMethod(addon, region, method)
+	if not callback then return "unavailable" end
+	-- Fixed return slots bound work and retained data even for unexpected APIs.
+	local ok, first, second, third, fourth = pcall(callback, region)
+	if not ok then return "error" end
+	local values = {
+		CursorValue(addon, first), CursorValue(addon, second), CursorValue(addon, third), CursorValue(addon, fourth),
+	}
+	while #values > 1 and values[#values] == "nil" do values[#values] = nil end
+	return table.concat(values, ",")
+end
+
+local function CursorRegionLine(addon, region, label, extra)
+	local fields = { label }
+	for _, pair in ipairs({
+		{ "shown", "IsShown" }, { "visible", "IsVisible" }, { "alpha", "GetAlpha" },
+		{ "effectiveAlpha", "GetEffectiveAlpha" }, { "rect", "GetRect" },
+		{ "size", "GetSize" }, { "points", "GetNumPoints" }, { "layer", "GetDrawLayer" },
+		{ "effectiveFlatten", "GetEffectivelyFlattensRenderLayers" },
+	}) do
+		fields[#fields + 1] = pair[1] .. "=" .. CursorRead(addon, region, pair[2])
+	end
+	for _, pair in ipairs(extra or {}) do
+		fields[#fields + 1] = pair[1] .. "=" .. CursorRead(addon, region, pair[2])
+	end
+	return table.concat(fields, " ")
+end
+
+local function CursorSnapshot(addon, probe)
+	local frame, lines = probe.window, {}
+	lines[#lines + 1] = CursorRegionLine(addon, frame.box, "box", {
+		{ "focus", "HasFocus" }, { "blink", "GetBlinkSpeed" }, { "font", "GetFont" },
+		{ "insets", "GetTextInsets" }, { "height", "GetHeight" }, { "lines", "GetNumLines" },
+		{ "cursor", "GetCursorPosition" }, { "textColor", "GetTextColor" },
+	})
+	lines[#lines + 1] = CursorRegionLine(addon, frame.scroll, "scroll", {
+		{ "height", "GetHeight" }, { "offset", "GetVerticalScroll" }, { "range", "GetVerticalScrollRange" },
+	})
+	lines[#lines + 1] = CursorRegionLine(addon, frame, "dialog", {
+		{ "ignoreParentAlpha", "IsIgnoringParentAlpha" }, { "topLevel", "IsToplevel" },
+		{ "scale", "GetScale" }, { "effectiveScale", "GetEffectiveScale" },
+		{ "flattenRenderLayers", "GetFlattensRenderLayers" },
+	})
+	local callback = CursorMethod(addon, frame.box, "GetRegions")
+	if callback then
+		local ok, r1, r2, r3, r4, r5, r6, r7, r8 = pcall(callback, frame.box)
+		if ok then
+			local regions = { r1, r2, r3, r4, r5, r6, r7, r8 }
+			for index = 1, 8 do
+				local region = regions[index]
+				if addon:CanAccessValue(region) and region and CursorRead(addon, region, "GetObjectType") == "Texture" then
+					lines[#lines + 1] = CursorRegionLine(addon, region, "texture." .. index, {
+						{ "texture", "GetTexture" }, { "color", "GetVertexColor" },
+					})
+				end
+			end
+		else
+			lines[#lines + 1] = "regions=error"
+		end
+	else
+		lines[#lines + 1] = "regions=unavailable"
+	end
+	return lines
+end
+
+local function CursorCounters(addon, probe)
+	local counters = { "counters" }
+	for index, key in ipairs(CURSOR_COUNTERS) do
+		local value = probe.counters[key]
+		if index <= 6 and value == nil then value = 0 end
+		counters[#counters + 1] = key .. "=" .. CursorValue(addon, value)
+	end
+	return table.concat(counters, " ")
+end
+
+function QuestTogether:CancelPlayerNoteCursorDiagnostics()
+	local probe = rawget(self, "playerNoteCursorProbe")
+	if not probe then return end
+	self.playerNoteCursorProbe = nil
+	if probe.window.noteCursorProbeCounters == probe.counters then
+		probe.window.noteCursorProbeCounters = nil
+	end
+	-- This parentless observer is QT-owned and unprotected. Teardown must work
+	-- after the editor hides or the runtime enters a restricted state.
+	if probe.driver and LibChev.CanMutateOwnedRegion(probe.driver) then probe.driver:SetScript("OnUpdate", nil) end
+end
+
+local function CursorProbeCurrent(addon, probe)
+	return rawget(addon, "playerNoteCursorProbe") == probe
+		and rawget(addon, "playerNoteWindow") == probe.window
+		and addon.isEnabled == true and addon.isLoggingOut ~= true
+		and not addon:IsWorkBlocked("foreign_frame_mutation")
+		and probe.window.noteSession == probe.session
+		and LibChev.CanMutateOwnedRegion(probe.window)
+		and LibChev.CanMutateOwnedRegion(probe.window.box)
+		and LibChev.CanMutateOwnedRegion(probe.window.scroll)
+		and CursorRead(addon, probe.window, "IsVisible") == "true"
+		and CursorRead(addon, probe.window.box, "IsVisible") == "true"
+end
+
+local function CursorAddLine(probe, text)
+	local remaining = CURSOR_REPORT_LIMIT - probe.bytes
+	if remaining <= 1 then probe.truncated = true; return end
+	if #text + 1 > remaining then
+		probe.truncated = true
+		text = text:sub(1, remaining - 1)
+	end
+	probe.lines[#probe.lines + 1] = text
+	probe.bytes = probe.bytes + #text + 1
+end
+
+local function CursorSample(addon, probe)
+	if probe.samples >= CURSOR_SAMPLE_LIMIT then return end
+	probe.samples = probe.samples + 1
+	local snapshot, previous, nextLines, changed = CursorSnapshot(addon, probe), probe.lastLines or {}, {}, {}
+	snapshot[#snapshot + 1] = CursorCounters(addon, probe)
+	for _, line in ipairs(snapshot) do
+		local key = line:match("^([%w%.]+)")
+		nextLines[key] = line
+		if line ~= previous[key] then changed[#changed + 1] = line end
+	end
+	local removed = {}
+	for key in pairs(previous) do
+		if not nextLines[key] then removed[#removed + 1] = key end
+	end
+	table.sort(removed)
+	for _, key in ipairs(removed) do changed[#changed + 1] = key .. "=not returned" end
+	if #changed > 0 then
+		probe.changes = probe.changes + 1
+		CursorAddLine(probe, string.format("sample=%d elapsed=%.3f\n%s", probe.samples, probe.elapsed, table.concat(changed, "\n")))
+	end
+	probe.lastLines = nextLines
+end
+
+function QuestTogether:CapturePlayerNoteCursorDiagnostics()
+	self:CancelPlayerNoteCursorDiagnostics()
+	local frame = rawget(self, "playerNoteWindow")
+	if not frame or not frame.noteSession then return false, "Open a private player note first." end
+	local probe = {
+		window = frame, session = frame.noteSession, counters = {}, elapsed = 0, nextSample = CURSOR_SAMPLE_INTERVAL,
+		samples = 0, changes = 0, bytes = 0, lines = {},
+	}
+	self.playerNoteCursorProbe = probe
+	if not CursorProbeCurrent(self, probe) then self:CancelPlayerNoteCursorDiagnostics(); return false, "Note editor unavailable." end
+	local driver = rawget(self, "playerNoteCursorProbeDriver")
+	if not driver then
+		driver = self:CreateOwnedUICleanupFrame()
+		self.playerNoteCursorProbeDriver = driver
+	end
+	probe.driver = driver
+	if not LibChev.CanMutateOwnedRegion(driver) then self:CancelPlayerNoteCursorDiagnostics(); return false, "Capture unavailable." end
+	frame.noteCursorProbeCounters = probe.counters
+	CursorAddLine(probe, "QuestTogether note cursor capture schema=1; local only; no note content or player identity")
+	CursorAddLine(probe, "version=" .. CursorValue(self, self:GetAddonVersion()))
+	local environment = self:GetDiagnosticEnvironment()
+	for _, key in ipairs({ "version", "build", "interface", "locale" }) do
+		CursorAddLine(probe, "client." .. key .. "=" .. CursorValue(self, environment[key]))
+	end
+	driver:SetScript("OnUpdate", function(_, elapsed)
+		if not CursorProbeCurrent(self, probe) then
+			if rawget(self, "playerNoteCursorProbe") == probe then self:CancelPlayerNoteCursorDiagnostics() end
+			return
+		end
+		if not probe.started then
+			-- Let slash-command cleanup finish before restoring focus once.
+			-- All later samples observe without touching caret or layout.
+			local focus = CursorMethod(self, frame.box, "SetFocus")
+			if not focus or not pcall(focus, frame.box) then self:CancelPlayerNoteCursorDiagnostics(); return end
+			probe.started = true
+			CursorSample(self, probe)
+			return
+		end
+		elapsed = self:SafeToNumber(elapsed)
+		if not elapsed or elapsed < 0 then self:CancelPlayerNoteCursorDiagnostics(); return end
+		probe.elapsed = probe.elapsed + elapsed
+		if probe.elapsed + 0.000001 >= probe.nextSample then
+			CursorSample(self, probe)
+			probe.nextSample = probe.elapsed + CURSOR_SAMPLE_INTERVAL
+		end
+		if probe.elapsed + 0.000001 >= CURSOR_CAPTURE_SECONDS then
+			local summary = string.format("\ncomplete samples=%d changes=%d truncated=%s\n%s", probe.samples, probe.changes, tostring(probe.truncated == true), CursorCounters(self, probe))
+			local report = table.concat(probe.lines, "\n"):sub(1, CURSOR_REPORT_LIMIT - #summary) .. summary
+			self:CancelPlayerNoteCursorDiagnostics()
+			self:GetDebugController():ShowReport(report, "Note cursor diagnostics")
+		end
+	end)
+	return true
+end
