@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 7.2.1
+
+Fixes for private notes and collapsed Party Quest Log columns.
+
+### Fixes and Polish
+
+- Fixed the missing text cursor in private player notes and made the focus border more subtle.
+- Improved scrolling while editing longer player notes.
+- Collapsed Party Quest Log columns now use reliable icons for ready and completed quests instead of characters that could appear as empty boxes.
+
 ## 7.2.0
 
 Private player notes and a more useful Party Quest Log.

@@ -1,35 +1,16 @@
 {
-  "source_sha256": "9eb315d2d09210124164777acfa94794d28740b764d1a5425176f977949de517",
+  "source_sha256": "55141b950781aea40c59902f18f362ce6a1fa905d2942a240db0743fdf52e080",
   "notes": {
-    "version": "7.2.0",
-    "welcome": "Notas privadas sobre jogadores e um registro de missões do grupo mais útil.",
+    "version": "7.2.1",
+    "welcome": "Correções para notas privadas e colunas recolhidas do registro de missões do grupo.",
     "sections": [
       {
-        "title": "Notas privadas sobre jogadores",
+        "title": "Correções e melhorias",
         "items": [
-          "Adicione, edite ou exclua uma nota privada pelo menu do QuestTogether de um jogador. As notas aparecem quando você passa o cursor sobre esse jogador.",
-          "As notas são compartilhadas entre seus personagens e ficam no seu computador. Elas nunca são enviadas a outros jogadores nem incluídas nos diagnósticos."
+          "Corrigido o cursor de texto ausente nas notas privadas sobre jogadores. A borda que indica o campo ativo também ficou mais discreta.",
+          "Melhorada a rolagem ao editar notas mais longas sobre jogadores.",
+          "As colunas recolhidas do registro de missões do grupo agora usam ícones que são exibidos corretamente para missões prontas para entregar e missões concluídas, em vez de caracteres que podiam aparecer como quadrados vazios."
         ]
-      },
-      {
-        "title": "Melhorias no registro de missões do grupo",
-        "items": [
-          "Recolha as colunas dos jogadores individualmente para ganhar espaço e expanda-as novamente quando precisar dos detalhes.",
-          "Use o botão Teclado para navegar pelas missões com as setas, expandir objetivos com Enter e abrir ações da missão com Espaço. Escape retorna aos controles normais.",
-          "As missões concluídas agora são diferenciadas das missões ausentes quando o addon atualizado do outro jogador consegue confirmar o histórico de missões dele. Se o histórico for desconhecido, elas continuam indicadas como fora do registro de missões.",
-          "Explicações mais claras sobre o compartilhamento de missões ajudam a entender por que uma solicitação não pôde prosseguir. As dicas dos jogadores também mostram resultados recentes de compartilhamento informados pelo WoW."
-        ]
-      },
-      {
-        "title": "Dicas e informações de jogadores",
-        "items": [
-          "Muitas dicas do chat agora incluem atalhos clicáveis para a janela ou configuração correspondente.",
-          "Ao passar o cursor sobre um jogador distante, agora são solicitados dados atualizados e a lista completa de integrantes do grupo dele, de até cinco jogadores. Novas tentativas são feitas enquanto você mantiver o cursor sobre ele."
-        ],
-        "tip": {
-          "label": "Dica:",
-          "text": "Digite /qt tip ou /qt hint para ver uma dica e use os atalhos clicáveis dela para explorar o QuestTogether."
-        }
       }
     ]
   }

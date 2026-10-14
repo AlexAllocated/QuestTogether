@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.2.1
+
+Correzioni per le note private e le colonne compresse del registro missioni del gruppo.
+
+### Correzioni e miglioramenti
+
+- Corretto il cursore di testo mancante nelle note private sui giocatori. Il bordo che indica il campo attivo è ora più discreto.
+- Migliorato lo scorrimento durante la modifica di note lunghe sui giocatori.
+- Le colonne compresse del registro missioni del gruppo ora usano icone visualizzate correttamente per le missioni pronte da consegnare e quelle completate, al posto di caratteri che potevano apparire come quadrati vuoti.
+
 ## 7.2.0
 
 Note private sui giocatori e un registro missioni del gruppo più utile.

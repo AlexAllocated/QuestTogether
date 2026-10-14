@@ -1,35 +1,16 @@
 {
-  "source_sha256": "9eb315d2d09210124164777acfa94794d28740b764d1a5425176f977949de517",
+  "source_sha256": "55141b950781aea40c59902f18f362ce6a1fa905d2942a240db0743fdf52e080",
   "notes": {
-    "version": "7.2.0",
-    "welcome": "Note private sui giocatori e un registro missioni del gruppo più utile.",
+    "version": "7.2.1",
+    "welcome": "Correzioni per le note private e le colonne compresse del registro missioni del gruppo.",
     "sections": [
       {
-        "title": "Note private sui giocatori",
+        "title": "Correzioni e miglioramenti",
         "items": [
-          "Aggiungi, modifica o elimina una nota privata dal menu QuestTogether di un giocatore. La nota compare quando passi il cursore su quel giocatore.",
-          "Le note sono condivise tra i tuoi personaggi e restano sul tuo computer. Non vengono mai inviate ad altri giocatori né incluse nei dati diagnostici."
+          "Corretto il cursore di testo mancante nelle note private sui giocatori. Il bordo che indica il campo attivo è ora più discreto.",
+          "Migliorato lo scorrimento durante la modifica di note lunghe sui giocatori.",
+          "Le colonne compresse del registro missioni del gruppo ora usano icone visualizzate correttamente per le missioni pronte da consegnare e quelle completate, al posto di caratteri che potevano apparire come quadrati vuoti."
         ]
-      },
-      {
-        "title": "Miglioramenti al registro missioni del gruppo",
-        "items": [
-          "Comprimi le singole colonne dei giocatori per fare spazio ed espandile quando ti servono i dettagli.",
-          "Usa il pulsante Tastiera per scegliere le missioni con le frecce, espandere gli obiettivi con Invio e aprire le azioni della missione con la barra spaziatrice. Esc ripristina i comandi normali.",
-          "Le missioni completate vengono ora distinte da quelle mancanti quando l’addon aggiornato dell’altro giocatore può confermarne la cronologia. Se la cronologia è sconosciuta, resta l’indicazione «Non nel registro».",
-          "Spiegazioni più chiare sulla condivisione delle missioni aiutano a capire perché una richiesta non è potuta proseguire. Le descrizioni dei giocatori mostrano anche i risultati recenti della condivisione comunicati da WoW."
-        ]
-      },
-      {
-        "title": "Consigli e descrizioni dei giocatori",
-        "items": [
-          "Molti consigli in chat ora includono collegamenti cliccabili alla finestra o all’impostazione pertinente.",
-          "Passare il cursore su un giocatore lontano ora richiede informazioni aggiornate e l’elenco completo del suo gruppo normale. I tentativi proseguono finché il cursore resta sul giocatore."
-        ],
-        "tip": {
-          "label": "Consiglio:",
-          "text": "Digita /qt tip o /qt hint per vedere un consiglio, poi usa i suoi collegamenti cliccabili per esplorare QuestTogether."
-        }
       }
     ]
   }

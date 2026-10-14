@@ -1,35 +1,16 @@
 {
-  "source_sha256": "9eb315d2d09210124164777acfa94794d28740b764d1a5425176f977949de517",
+  "source_sha256": "55141b950781aea40c59902f18f362ce6a1fa905d2942a240db0743fdf52e080",
   "notes": {
-    "version": "7.2.0",
-    "welcome": "Private Spielernotizen und ein nützlicheres Gruppenquestlog.",
+    "version": "7.2.1",
+    "welcome": "Korrekturen für private Notizen und eingeklappte Spalten im Gruppenquestlog.",
     "sections": [
       {
-        "title": "Private Spielernotizen",
+        "title": "Fehlerbehebungen und Feinschliff",
         "items": [
-          "Füge über das QuestTogether-Menü eines Spielers eine private Notiz hinzu, bearbeite oder lösche sie. Die Notiz erscheint, wenn du mit der Maus über den Spieler fährst.",
-          "Notizen sind für alle deine Charaktere verfügbar und bleiben auf deinem Computer. Sie werden niemals an andere Spieler gesendet oder in Diagnosedaten aufgenommen."
+          "Der fehlende Textcursor in privaten Spielernotizen wurde behoben. Der Rahmen, der den Eingabefokus anzeigt, ist jetzt dezenter.",
+          "Das Scrollen beim Bearbeiten längerer Spielernotizen wurde verbessert.",
+          "Eingeklappte Spalten im Gruppenquestlog verwenden jetzt zuverlässig angezeigte Symbole für abgabebereite und abgeschlossene Quests statt Zeichen, die als leere Kästchen erscheinen konnten."
         ]
-      },
-      {
-        "title": "Verbesserungen am Gruppenquestlog",
-        "items": [
-          "Klappe einzelne Spielerspalten ein, um Platz zu schaffen, und wieder aus, wenn du die Details brauchst.",
-          "Mit der Schaltfläche „Tastatur“ kannst du per Pfeiltasten durch Quests navigieren, mit der Eingabetaste Ziele ausklappen und mit der Leertaste Questaktionen öffnen. Escape kehrt zur normalen Steuerung zurück.",
-          "Abgeschlossene Quests werden jetzt von fehlenden Quests unterschieden, wenn das aktualisierte Addon des anderen Spielers dessen Questverlauf bestätigen kann. Ist der Verlauf unbekannt, bleibt die Kennzeichnung „Nicht im Questlog“.",
-          "Verständlichere Erklärungen beim Teilen von Quests zeigen, warum eine Anfrage nicht fortgesetzt werden konnte. Spielertooltips zeigen außerdem kürzlich von WoW gemeldete Ergebnisse des Teilens."
-        ]
-      },
-      {
-        "title": "Tipps und Spielertooltips",
-        "items": [
-          "Viele Tipps im Chat enthalten jetzt anklickbare Verknüpfungen zum passenden Fenster oder zur passenden Einstellung.",
-          "Wenn du mit der Maus über einen weit entfernten Spieler fährst, werden jetzt aktuelle Spielerdaten und die vollständige Mitgliederliste seiner Gruppe mit bis zu fünf Spielern angefordert. Solange du darüber verweilst, wird die Anfrage bei Bedarf wiederholt."
-        ],
-        "tip": {
-          "label": "Tipp:",
-          "text": "Gib /qt tip oder /qt hint ein, um einen Tipp anzuzeigen, und erkunde QuestTogether über dessen anklickbare Verknüpfungen."
-        }
       }
     ]
   }

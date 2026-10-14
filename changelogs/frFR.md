@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.2.1
+
+Corrections pour les notes privées et les colonnes repliées du journal de quêtes du groupe.
+
+### Corrections et améliorations
+
+- Correction de l’absence du curseur de texte dans les notes privées sur les joueurs. La bordure indiquant le champ actif est désormais plus discrète.
+- Amélioration du défilement lors de la modification de longues notes sur les joueurs.
+- Les colonnes repliées du journal de quêtes du groupe utilisent désormais des icônes fiables pour les quêtes prêtes à être rendues et les quêtes terminées, au lieu de caractères qui pouvaient apparaître sous forme de carrés vides.
+
 ## 7.2.0
 
 Des notes privées sur les joueurs et un journal de quêtes du groupe plus pratique.

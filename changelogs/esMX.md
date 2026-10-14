@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.2.1
+
+Correcciones para las notas privadas y las columnas contraídas del registro de misiones del grupo.
+
+### Correcciones y mejoras
+
+- Se corrigió la ausencia del cursor de texto en las notas privadas sobre jugadores y se hizo más discreto el borde que indica que el campo está activo.
+- Se mejoró el desplazamiento al editar notas largas sobre jugadores.
+- Las columnas contraídas del registro de misiones del grupo ahora usan íconos que se muestran correctamente para las misiones listas para entregar y las completadas, en lugar de caracteres que podían aparecer como cuadros vacíos.
+
 ## 7.2.0
 
 Notas privadas sobre jugadores y un registro de misiones del grupo más útil.

@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.2.1
+
+Korrekturen für private Notizen und eingeklappte Spalten im Gruppenquestlog.
+
+### Fehlerbehebungen und Feinschliff
+
+- Der fehlende Textcursor in privaten Spielernotizen wurde behoben. Der Rahmen, der den Eingabefokus anzeigt, ist jetzt dezenter.
+- Das Scrollen beim Bearbeiten längerer Spielernotizen wurde verbessert.
+- Eingeklappte Spalten im Gruppenquestlog verwenden jetzt zuverlässig angezeigte Symbole für abgabebereite und abgeschlossene Quests statt Zeichen, die als leere Kästchen erscheinen konnten.
+
 ## 7.2.0
 
 Private Spielernotizen und ein nützlicheres Gruppenquestlog.
