@@ -4,6 +4,29 @@
 
 [Other languages](changelogs/README.md)
 
+## 7.2.0
+
+Private player notes and a more useful Party Quest Log.
+
+### Private Player Notes
+
+- Add, edit, or delete a private note from a player’s QuestTogether menu. Notes appear when you hover over that player.
+- Notes are shared across your characters and stay on your computer. They are never sent to other players or included in diagnostics.
+
+### Party Quest Log Improvements
+
+- Collapse individual player columns to make more room, then expand them whenever you need the details.
+- Use the Keyboard button to navigate quests with the arrow keys, expand objectives with Enter, and open quest actions with Space. Escape returns to normal controls.
+- Completed quests are now distinguished from missing quests when the other player’s updated addon can confirm their quest history. Unknown history stays labeled as not in the quest log.
+- Clearer quest-sharing explanations help you understand why a request could not proceed. Player tooltips also show recent sharing results reported by WoW.
+
+### Tips and Player Tooltips
+
+- Many chat tips now include clickable shortcuts to the relevant window or setting.
+- Hovering a distant player now requests fresh metadata and the full small-party roster, with retries while you keep hovering.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tip: Type /qt tip or /qt hint to see a tip, then use its clickable shortcuts to explore QuestTogether.
+
 ## 7.1.3
 
 More reliable quest text in your client’s language.

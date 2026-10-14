@@ -2,6 +2,29 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.2.0
+
+Des notes privées sur les joueurs et un journal de quêtes du groupe plus pratique.
+
+### Notes privées sur les joueurs
+
+- Ajoutez, modifiez ou supprimez une note privée depuis le menu QuestTogether d’un joueur. Elle apparaît lorsque vous survolez ce joueur.
+- Les notes sont communes à vos personnages et restent sur votre ordinateur. Elles ne sont jamais envoyées aux autres joueurs ni incluses dans les diagnostics.
+
+### Améliorations du journal de quêtes du groupe
+
+- Réduisez les colonnes des joueurs individuellement pour gagner de la place, puis développez-les lorsque vous avez besoin des détails.
+- Utilisez le bouton Clavier pour parcourir les quêtes avec les flèches, développer les objectifs avec Entrée et ouvrir les actions de quête avec Espace. Échap rétablit les commandes habituelles.
+- Les quêtes terminées sont désormais distinguées des quêtes manquantes lorsque l’addon à jour de l’autre joueur peut confirmer son historique de quêtes. Si cet historique est inconnu, la quête reste indiquée comme absente du journal.
+- Des explications plus claires sur le partage de quêtes vous aident à comprendre pourquoi une demande n’a pas pu aboutir. Les infobulles des joueurs affichent aussi les résultats de partage récents signalés par WoW.
+
+### Astuces et infobulles des joueurs
+
+- De nombreuses astuces du chat proposent désormais des raccourcis cliquables vers la fenêtre ou le réglage correspondant.
+- Survoler un joueur éloigné demande désormais ses informations à jour et la liste complète des membres de son groupe de cinq joueurs maximum. Les demandes sont réessayées tant que vous maintenez le survol.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Astuce : Saisissez /qt tip ou /qt hint pour afficher une astuce, puis utilisez ses raccourcis cliquables pour découvrir QuestTogether.
+
 ## 7.1.3
 
 Des textes de quête plus fiables dans la langue de votre client.

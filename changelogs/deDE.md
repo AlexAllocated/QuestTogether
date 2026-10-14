@@ -2,6 +2,29 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.2.0
+
+Private Spielernotizen und ein nützlicheres Gruppenquestlog.
+
+### Private Spielernotizen
+
+- Füge über das QuestTogether-Menü eines Spielers eine private Notiz hinzu, bearbeite oder lösche sie. Die Notiz erscheint, wenn du mit der Maus über den Spieler fährst.
+- Notizen sind für alle deine Charaktere verfügbar und bleiben auf deinem Computer. Sie werden niemals an andere Spieler gesendet oder in Diagnosedaten aufgenommen.
+
+### Verbesserungen am Gruppenquestlog
+
+- Klappe einzelne Spielerspalten ein, um Platz zu schaffen, und wieder aus, wenn du die Details brauchst.
+- Mit der Schaltfläche „Tastatur“ kannst du per Pfeiltasten durch Quests navigieren, mit der Eingabetaste Ziele ausklappen und mit der Leertaste Questaktionen öffnen. Escape kehrt zur normalen Steuerung zurück.
+- Abgeschlossene Quests werden jetzt von fehlenden Quests unterschieden, wenn das aktualisierte Addon des anderen Spielers dessen Questverlauf bestätigen kann. Ist der Verlauf unbekannt, bleibt die Kennzeichnung „Nicht im Questlog“.
+- Verständlichere Erklärungen beim Teilen von Quests zeigen, warum eine Anfrage nicht fortgesetzt werden konnte. Spielertooltips zeigen außerdem kürzlich von WoW gemeldete Ergebnisse des Teilens.
+
+### Tipps und Spielertooltips
+
+- Viele Tipps im Chat enthalten jetzt anklickbare Verknüpfungen zum passenden Fenster oder zur passenden Einstellung.
+- Wenn du mit der Maus über einen weit entfernten Spieler fährst, werden jetzt aktuelle Spielerdaten und die vollständige Mitgliederliste seiner Gruppe mit bis zu fünf Spielern angefordert. Solange du darüber verweilst, wird die Anfrage bei Bedarf wiederholt.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tipp: Gib /qt tip oder /qt hint ein, um einen Tipp anzuzeigen, und erkunde QuestTogether über dessen anklickbare Verknüpfungen.
+
 ## 7.1.3
 
 Zuverlässigere Questtexte in der Sprache deines Clients.

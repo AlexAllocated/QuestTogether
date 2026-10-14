@@ -3,15 +3,34 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "7.1.3",
-	welcome = "More reliable quest text in your client’s language.",
+	version = "7.2.0",
+	welcome = "Private player notes and a more useful Party Quest Log.",
 	sections = {
 		{
-			title = "Quest Text Fixes",
+			title = "Private Player Notes",
 			items = {
-				"Quest announcements, Party Quest Log, and quest-following notices now pick up locally available quest names more reliably.",
-				"Quest updates stay in order while names are loading. Quest Details also recovers correctly when tooltip text arrives late.",
-				"Improved handling of quest names received from other players.",
+				"Add, edit, or delete a private note from a player’s QuestTogether menu. Notes appear when you hover over that player.",
+				"Notes are shared across your characters and stay on your computer. They are never sent to other players or included in diagnostics.",
+			},
+		},
+		{
+			title = "Party Quest Log Improvements",
+			items = {
+				"Collapse individual player columns to make more room, then expand them whenever you need the details.",
+				"Use the Keyboard button to navigate quests with the arrow keys, expand objectives with Enter, and open quest actions with Space. Escape returns to normal controls.",
+				"Completed quests are now distinguished from missing quests when the other player’s updated addon can confirm their quest history. Unknown history stays labeled as not in the quest log.",
+				"Clearer quest-sharing explanations help you understand why a request could not proceed. Player tooltips also show recent sharing results reported by WoW.",
+			},
+		},
+		{
+			title = "Tips and Player Tooltips",
+			items = {
+				"Many chat tips now include clickable shortcuts to the relevant window or setting.",
+				"Hovering a distant player now requests fresh metadata and the full small-party roster, with retries while you keep hovering.",
+			},
+			tip = {
+				label = "Tip:",
+				text = "Type /qt tip or /qt hint to see a tip, then use its clickable shortcuts to explore QuestTogether.",
 			},
 		},
 	},

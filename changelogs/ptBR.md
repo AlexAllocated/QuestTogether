@@ -2,6 +2,29 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.2.0
+
+Notas privadas sobre jogadores e um registro de missões do grupo mais útil.
+
+### Notas privadas sobre jogadores
+
+- Adicione, edite ou exclua uma nota privada pelo menu do QuestTogether de um jogador. As notas aparecem quando você passa o cursor sobre esse jogador.
+- As notas são compartilhadas entre seus personagens e ficam no seu computador. Elas nunca são enviadas a outros jogadores nem incluídas nos diagnósticos.
+
+### Melhorias no registro de missões do grupo
+
+- Recolha as colunas dos jogadores individualmente para ganhar espaço e expanda-as novamente quando precisar dos detalhes.
+- Use o botão Teclado para navegar pelas missões com as setas, expandir objetivos com Enter e abrir ações da missão com Espaço. Escape retorna aos controles normais.
+- As missões concluídas agora são diferenciadas das missões ausentes quando o addon atualizado do outro jogador consegue confirmar o histórico de missões dele. Se o histórico for desconhecido, elas continuam indicadas como fora do registro de missões.
+- Explicações mais claras sobre o compartilhamento de missões ajudam a entender por que uma solicitação não pôde prosseguir. As dicas dos jogadores também mostram resultados recentes de compartilhamento informados pelo WoW.
+
+### Dicas e informações de jogadores
+
+- Muitas dicas do chat agora incluem atalhos clicáveis para a janela ou configuração correspondente.
+- Ao passar o cursor sobre um jogador distante, agora são solicitados dados atualizados e a lista completa de integrantes do grupo dele, de até cinco jogadores. Novas tentativas são feitas enquanto você mantiver o cursor sobre ele.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Dica: Digite /qt tip ou /qt hint para ver uma dica e use os atalhos clicáveis dela para explorar o QuestTogether.
+
 ## 7.1.3
 
 Textos de missões mais confiáveis no idioma do seu cliente.

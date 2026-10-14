@@ -2,6 +2,29 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.2.0
+
+Note private sui giocatori e un registro missioni del gruppo più utile.
+
+### Note private sui giocatori
+
+- Aggiungi, modifica o elimina una nota privata dal menu QuestTogether di un giocatore. La nota compare quando passi il cursore su quel giocatore.
+- Le note sono condivise tra i tuoi personaggi e restano sul tuo computer. Non vengono mai inviate ad altri giocatori né incluse nei dati diagnostici.
+
+### Miglioramenti al registro missioni del gruppo
+
+- Comprimi le singole colonne dei giocatori per fare spazio ed espandile quando ti servono i dettagli.
+- Usa il pulsante Tastiera per scegliere le missioni con le frecce, espandere gli obiettivi con Invio e aprire le azioni della missione con la barra spaziatrice. Esc ripristina i comandi normali.
+- Le missioni completate vengono ora distinte da quelle mancanti quando l’addon aggiornato dell’altro giocatore può confermarne la cronologia. Se la cronologia è sconosciuta, resta l’indicazione «Non nel registro».
+- Spiegazioni più chiare sulla condivisione delle missioni aiutano a capire perché una richiesta non è potuta proseguire. Le descrizioni dei giocatori mostrano anche i risultati recenti della condivisione comunicati da WoW.
+
+### Consigli e descrizioni dei giocatori
+
+- Molti consigli in chat ora includono collegamenti cliccabili alla finestra o all’impostazione pertinente.
+- Passare il cursore su un giocatore lontano ora richiede informazioni aggiornate e l’elenco completo del suo gruppo normale. I tentativi proseguono finché il cursore resta sul giocatore.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Consiglio: Digita /qt tip o /qt hint per vedere un consiglio, poi usa i suoi collegamenti cliccabili per esplorare QuestTogether.
+
 ## 7.1.3
 
 Testi delle missioni più affidabili nella lingua del tuo client.

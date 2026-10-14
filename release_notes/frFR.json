@@ -1,16 +1,35 @@
 {
-  "source_sha256": "65c67811170238a6bde14a9d00290dfaacd7d68797d4d69c676b015cfb234d8d",
+  "source_sha256": "9eb315d2d09210124164777acfa94794d28740b764d1a5425176f977949de517",
   "notes": {
-    "version": "7.1.3",
-    "welcome": "Des textes de quête plus fiables dans la langue de votre client.",
+    "version": "7.2.0",
+    "welcome": "Des notes privées sur les joueurs et un journal de quêtes du groupe plus pratique.",
     "sections": [
       {
-        "title": "Corrections des textes de quête",
+        "title": "Notes privées sur les joueurs",
         "items": [
-          "Les annonces de quête, le Journal de quêtes du groupe et les notifications de suivi des quêtes utilisent désormais plus fiablement les noms de quêtes disponibles localement.",
-          "Les mises à jour de quête restent dans l’ordre pendant le chargement des noms. La fenêtre Détails de la quête affiche aussi correctement le texte des infobulles lorsqu’il arrive en retard.",
-          "Amélioration du traitement des noms de quêtes reçus d’autres joueurs."
+          "Ajoutez, modifiez ou supprimez une note privée depuis le menu QuestTogether d’un joueur. Elle apparaît lorsque vous survolez ce joueur.",
+          "Les notes sont communes à vos personnages et restent sur votre ordinateur. Elles ne sont jamais envoyées aux autres joueurs ni incluses dans les diagnostics."
         ]
+      },
+      {
+        "title": "Améliorations du journal de quêtes du groupe",
+        "items": [
+          "Réduisez les colonnes des joueurs individuellement pour gagner de la place, puis développez-les lorsque vous avez besoin des détails.",
+          "Utilisez le bouton Clavier pour parcourir les quêtes avec les flèches, développer les objectifs avec Entrée et ouvrir les actions de quête avec Espace. Échap rétablit les commandes habituelles.",
+          "Les quêtes terminées sont désormais distinguées des quêtes manquantes lorsque l’addon à jour de l’autre joueur peut confirmer son historique de quêtes. Si cet historique est inconnu, la quête reste indiquée comme absente du journal.",
+          "Des explications plus claires sur le partage de quêtes vous aident à comprendre pourquoi une demande n’a pas pu aboutir. Les infobulles des joueurs affichent aussi les résultats de partage récents signalés par WoW."
+        ]
+      },
+      {
+        "title": "Astuces et infobulles des joueurs",
+        "items": [
+          "De nombreuses astuces du chat proposent désormais des raccourcis cliquables vers la fenêtre ou le réglage correspondant.",
+          "Survoler un joueur éloigné demande désormais ses informations à jour et la liste complète des membres de son groupe de cinq joueurs maximum. Les demandes sont réessayées tant que vous maintenez le survol."
+        ],
+        "tip": {
+          "label": "Astuce :",
+          "text": "Saisissez /qt tip ou /qt hint pour afficher une astuce, puis utilisez ses raccourcis cliquables pour découvrir QuestTogether."
+        }
       }
     ]
   }

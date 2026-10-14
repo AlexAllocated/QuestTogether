@@ -2,6 +2,29 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.2.0
+
+Notas privadas sobre jugadores y un registro de misiones del grupo más útil.
+
+### Notas privadas sobre jugadores
+
+- Agrega, edita o elimina una nota privada desde el menú de QuestTogether de un jugador. Las notas aparecen al pasar el cursor sobre ese jugador.
+- Las notas se comparten entre tus personajes y permanecen en tu computadora. Nunca se envían a otros jugadores ni se incluyen en los diagnósticos.
+
+### Mejoras del registro de misiones del grupo
+
+- Contrae las columnas de jugadores individualmente para ganar espacio y vuelve a expandirlas cuando necesites ver los detalles.
+- Usa el botón Teclado para recorrer las misiones con las flechas, expandir los objetivos con Intro y abrir las acciones de misión con Espacio. Escape vuelve a los controles habituales.
+- Las misiones completadas ahora se distinguen de las que faltan cuando el addon actualizado del otro jugador puede confirmar su historial de misiones. Si el historial es desconocido, se siguen indicando como ausentes del registro de misiones.
+- Las explicaciones más claras al compartir misiones te ayudan a entender por qué no pudo continuar una solicitud. Las descripciones emergentes de los jugadores también muestran los resultados recientes de compartir misiones comunicados por WoW.
+
+### Consejos y descripciones emergentes de jugadores
+
+- Muchos consejos del chat ahora incluyen enlaces a la ventana o al ajuste correspondiente.
+- Al pasar el cursor sobre un jugador lejano, ahora se solicitan sus datos actualizados y la lista completa de integrantes de su grupo de hasta cinco jugadores. La solicitud se reintenta mientras mantengas el cursor sobre él.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Consejo: Escribe /qt tip o /qt hint para ver un consejo y usa sus enlaces para explorar QuestTogether.
+
 ## 7.1.3
 
 Textos de misión más confiables en el idioma de tu cliente.
