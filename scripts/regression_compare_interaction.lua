@@ -1,0 +1,273 @@
+-- Private fixture UI only: these checks are also safe in a running client.
+local QT = _G.QuestTogether
+local function Equal(actual, expected)
+	if actual ~= expected then error("expected " .. tostring(expected) .. ", got " .. tostring(actual)) end
+end
+local function Open(count)
+	local entries = {}
+	for id = 1, count or 24 do
+		entries[id] = { questId = id, questTitle = string.format("Quest %02d", id), isPushable = true }
+	end
+	local addon = QT:CreateTestPartyQuestCompareFixture(entries)
+	addon.options.reduceMotion = true
+	function addon:ShowSettingsTooltip(_, title, text) self.tooltip = { title, text } end
+	function addon:HideSettingsTooltip() self.tooltip = nil end
+	addon:OpenPartyQuestCompare()
+	addon:RenderPartyQuestCompare()
+	return addon, addon.partyQuestCompareWindow, addon.partyQuestCompareSession
+end
+local function Key(frame, key)
+	local input = frame.keyboardInput:IsVisible() and frame.keyboardInput or frame
+	input:RunScript("OnKeyDown", key)
+	local propagated = input.propagate
+	input:RunScript("OnKeyUp", key)
+	return propagated
+end
+
+QT:RegisterTest("party log keyboard navigation owns only explicitly focused navigation keys", function()
+	local a, frame, session = Open()
+	Equal(Key(frame, "DOWN"), true)
+	Equal(Key(frame, "SPACE"), true)
+	Equal(session.keyboardQuestId, nil)
+	frame.keyboardButton:Click()
+	Equal(frame.keyboardSession, session)
+	Equal(session.keyboardQuestId, 1)
+	Equal(Key(frame, "DOWN"), false)
+	Equal(session.keyboardQuestId, 2)
+	Equal(frame.propagate, true)
+	Equal(Key(frame, "END"), false)
+	Equal(session.keyboardQuestId, 24)
+	assert(session.scrollPixels > 0)
+	Equal(frame.rows[1].clip.points[1][1], "TOPLEFT")
+	Equal(Key(frame, "HOME"), false)
+	Equal(session.keyboardQuestId, 1)
+	Equal(session.scrollPixels, 0)
+	Key(frame, "PAGEDOWN")
+	assert(session.keyboardQuestId > 2 and session.keyboardQuestId < 24)
+	Key(frame, "PAGEUP")
+	Equal(session.keyboardQuestId, 1)
+	Equal(Key(frame, "W"), true)
+	Equal(frame.keyboardSession, nil)
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("party log keyboard capture retires when restrictions begin before key release", function()
+	local a, frame = Open()
+	frame.keyboardButton:Click()
+	frame.keyboardInput:RunScript("OnKeyDown", "DOWN")
+	Equal(frame.keyboardInput.propagate, false)
+	a.blocked = true
+	frame.keyboardInput:RunScript("OnKeyUp", "DOWN")
+	Equal(frame.keyboardSession, nil)
+	Equal(frame.keyboardInput:IsShown(), false)
+	Equal(frame.propagate, true)
+	Equal(a.invalidCalls, nil)
+	a.blocked = false
+	frame.keyboardButton:Click()
+	Equal(frame.keyboardInput.propagate, true)
+	frame.keyboardInput:RunScript("OnKeyDown", "UP")
+	a.blocked = true
+	frame:RunScript("OnEvent", "PLAYER_REGEN_DISABLED")
+	Equal(frame.keyboardInput:IsShown(), false)
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("party log keyboard focus releases for edit focus menus outside clicks and hide", function()
+	local a, frame, session = Open()
+	frame.keyboardButton:Click()
+	frame.search:SetFocus()
+	Equal(frame.keyboardSession, nil)
+	Equal(Key(frame, "DOWN"), true)
+	frame.keyboardButton:Click()
+	Equal(frame.search:HasFocus(), false)
+	Equal(frame.keyboardSession, session)
+	a.keyboardBlocked = true
+	Equal(Key(frame, "DOWN"), true)
+	Equal(frame.keyboardSession, nil)
+	a.keyboardBlocked = false
+	frame.keyboardButton:Click()
+	a.mouseOverWindow = true
+	frame:RunScript("OnEvent", "GLOBAL_MOUSE_DOWN")
+	Equal(frame.keyboardSession, session)
+	a.mouseOverWindow = false
+	frame:RunScript("OnEvent", "GLOBAL_MOUSE_DOWN")
+	Equal(frame.keyboardSession, nil)
+	frame.keyboardButton:Click()
+	frame:Hide()
+	Equal(frame.keyboardSession, nil)
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("party log keyboard Escape releases before dismissing and retired callbacks cannot navigate", function()
+	local a, frame, session = Open()
+	frame.keyboardButton:Click()
+	Equal(Key(frame, "ESCAPE"), false)
+	Equal(frame.keyboardSession, nil)
+	Equal(frame:IsShown(), true)
+	Equal(Key(frame, "ESCAPE"), false)
+	Equal(frame:IsShown(), false)
+	Equal(a.partyQuestCompareSession, nil)
+	Key(frame, "DOWN")
+	Equal(session.keyboardQuestId, 1)
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("party log keyboard expansion and paging use current animated root geometry", function()
+	local a, frame, session = Open()
+	frame.keyboardButton:Click()
+	Key(frame, "RIGHT")
+	Equal(session.expandedQuestIds[1], true)
+	a:RenderPartyQuestCompare()
+	Equal(frame.navigationRows[1].questId, 1)
+	assert(frame.navigationRows[2].top > 42)
+	Key(frame, "DOWN")
+	Equal(session.keyboardQuestId, 2)
+	Key(frame, "UP")
+	Key(frame, "LEFT")
+	Equal(session.expandedQuestIds[1], nil)
+	a:RenderPartyQuestCompare()
+	Equal(frame.navigationRows[2].top, 42)
+	Key(frame, "ENTER")
+	Equal(session.expandedQuestIds[1], true)
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("party log keyboard actions recheck window session and restriction ownership", function()
+	local a, frame, session = Open()
+	local actions = {}
+	function a:CreatePartyQuestFilterMenu(_, generate)
+		generate(nil, {
+			CreateTitle = function() end,
+			CreateButton = function(_, label, callback) actions[#actions + 1] = callback end,
+		})
+		return true
+	end
+	frame.keyboardButton:Click()
+	Equal(Key(frame, "SPACE"), false)
+	Equal(frame.keyboardSession, nil)
+	Equal(frame.keyboardInput:IsShown(), false)
+	assert(#actions > 0)
+	frame.keyboardButton:Click()
+	Equal(Key(frame, "MENU"), false)
+	Equal(frame.keyboardSession, nil)
+	a.blocked = true
+	actions[1]()
+	Equal(session.expandedQuestIds[1], nil)
+	Key(frame, "DOWN")
+	Equal(a.invalidCalls, nil)
+	a.blocked = false
+	frame:Hide()
+	actions[1]()
+	Equal(session.expandedQuestIds[1], nil)
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("collapsed party columns retain roster comparison data and restore exact geometry", function()
+	local a, frame, session = Open(3)
+	local member = session.members[2]
+	local entries, count, before = member.entries, #session.members, a:BuildPartyQuestDiffRows()
+	local wide = frame.memberColumnsWidth
+	frame.horizontalOffset = 9999
+	frame.columnToggles[2]:Click()
+	Equal(session.collapsedPlayers[member.name], true)
+	a:RenderPartyQuestCompare()
+	Equal(frame.memberColumnsWidth, wide - 66)
+	Equal(frame.columns[2].width, 60)
+	Equal(frame.headerAccents[2]:GetWidth(), 60)
+	Equal(frame.rows[1].cellShades[2]:GetWidth(), 60)
+	Equal(frame.rows[1].cellTooltips[2]:IsShown(), true)
+	frame.rows[1].cellTooltips[2]:RunScript("OnEnter")
+	Equal(a.tooltip[1], member.name)
+	assert(a.tooltip[2] ~= "")
+	Equal(#session.members, count)
+	Equal(member.entries, entries)
+	Equal(a:BuildPartyQuestDiffRows()[1].partySummary, before[1].partySummary)
+	Equal(a:BuildPartyQuestDiffRows()[1].cells[2], before[1].cells[2])
+	assert(frame.horizontalOffset <= frame.horizontal.qtScrollMaximum)
+	a:RestorePartyQuestColumns(session)
+	a:RenderPartyQuestCompare()
+	Equal(frame.memberColumnsWidth, wide)
+	Equal(frame.columns[2].width, 126)
+	Equal(frame.rows[1].cellTooltips[2]:IsShown(), false)
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("column choices follow player identities across roster reordering and drop departed players", function()
+	local a, frame, session = Open(2)
+	local name = session.members[2].name
+	a:SetPartyQuestColumnCollapsed(name, true, session)
+	session.members[1], session.members[2] = session.members[2], session.members[1]
+	local columns = a:GetPartyQuestCompareColumns(session)
+	Equal(columns[1].collapsed, true)
+	Equal(columns[2].collapsed, false)
+	table.remove(session.members, 1)
+	a:GetPartyQuestCompareColumns(session)
+	Equal(session.collapsedPlayers[name], nil)
+	Equal(a:SetPartyQuestColumnCollapsed(name, true, session), false)
+	Equal(a:SetPartyQuestColumnCollapsed(session.members[1].name, true, {}), false)
+	a.blocked = true
+	Equal(a:SetPartyQuestColumnCollapsed(session.members[1].name, true, session), false)
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("compact party header menu actions expire with their captured session", function()
+	local a, frame, session = Open(2)
+	local actions = {}
+	function a:CreatePartyQuestFilterMenu(_, generate)
+		local menu = { CreateDivider = function() end, CreateTitle = function() end }
+		function menu:CreateButton(_, callback) actions[#actions + 1] = callback end
+		generate(nil, menu)
+		return true
+	end
+	frame.focusButtons[1]:Click()
+	Equal(#actions, 2)
+	frame:Hide()
+	actions[1]()
+	Equal(session.collapsedPlayers[session.playerName], nil)
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("compact columns retain small-screen bounds and keyboard selection follows filtered roots", function()
+	local a, frame, session = Open(24)
+	a:GetOwnedUIParent():SetSize(720, 540)
+	for _, member in ipairs(session.members) do a:SetPartyQuestColumnCollapsed(member.name, true, session) end
+	a:RenderPartyQuestCompare()
+	assert(frame:GetWidth() * frame:GetScale() <= 720 * 0.94 + 0.01)
+	assert(frame:GetHeight() * frame:GetScale() <= 540 * 0.94 + 0.01)
+	Equal(frame.columns[2].left, frame.columns[1].left + frame.columns[1].width + 4)
+	frame.keyboardButton:Click()
+	Key(frame, "END")
+	Equal(session.keyboardQuestId, 24)
+	a:SetPartyQuestCompareFilter("search", "Quest 01")
+	a:RenderPartyQuestCompare()
+	Equal(session.keyboardQuestId, 1)
+	Equal(frame.navigationRows[1].questId, 1)
+	a:OpenPartyQuestCompare()
+	a:RenderPartyQuestCompare()
+	assert(a.partyQuestCompareSession ~= session)
+	Equal(frame.keyboardSession, nil)
+	Equal(frame.keyboardInput:IsShown(), false)
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("remote column menus include personal notes and player share feedback stays off quest rows", function()
+	local a, frame = Open(2)
+	local noteTarget
+	function a:PopulatePlayerNotesMenu(_, name) noteTarget = name end
+	function a:PopulatePartyFocusMenu() end
+	function a:GetLatestQuestShareResultText(name)
+		return name == "Friend-Realm" and "Latest share result: Quest log full" or nil
+	end
+	function a:CreatePartyQuestFilterMenu(_, generate)
+		generate(nil, { CreateTitle = function() end, CreateDivider = function() end, CreateButton = function() end })
+		return true
+	end
+	frame.focusButtons[2]:RunScript("OnEnter")
+	assert(a.tooltip[2]:find("Latest share result: Quest log full", 1, true))
+	frame.focusButtons[2]:Click()
+	Equal(noteTarget, "Friend-Realm")
+	for _, row in ipairs(frame.rows) do
+		assert(not row.hint:GetText():find("Latest share result:", 1, true))
+	end
+	Equal(a.invalidCalls, nil)
+end)

@@ -110,8 +110,11 @@ local requestFields = {
 	F("objectiveQuestId", N),
 	F("knownRevision", S, 64),
 	F("partyOnly", B),
+	F("historyQuestIds", "QCID[]", 32),
 }
 Add("QCMP", "request", "control", requestFields, { responses = { QCRS = true }, lifetime = 180 })
+Add("QCID", "record", "bulk", { F("questId", N, nil, true) })
+Add("QCHS", "record", "bulk", { F("questId", N, nil, true), F("status", S, 16, true), F("sampledAt", N) })
 Add("QCENTRY", "record", "bulk", {
 	F("questId", N, nil, true),
 	F("questTitle", S, 1024),
@@ -139,6 +142,8 @@ Add("QCRS", "response", "bulk", {
 	F("entries", "QCENTRY[]", 100),
 	F("objectiveQuestId", N),
 	F("count", N),
+	F("supportsQuestHistory", B),
+	F("historyStates", "QCHS[]", 32),
 }, {})
 Add(
 	"QPGR",
@@ -177,7 +182,7 @@ Add(
 	"QSHR",
 	"request",
 	"control",
-	{ F("requestId", S, 80, true), F("targetName", S, 120), F("questID", N), F("status", S, 32) },
+	{ F("requestId", S, 80, true), F("targetName", S, 120), F("questID", N), F("status", S, 32), F("reasonCode", S, 24) },
 	{ groupOnly = true, responses = { QSHR = true } }
 )
 Add("QTSR", "stream", "control", { F("token", S, 80, true) }, { lifetime = 12 })

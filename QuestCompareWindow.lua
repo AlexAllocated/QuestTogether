@@ -13,15 +13,27 @@ local function CompareRowHeight(rows, index)
 end
 local QUEST_WIDTH, MEMBER_WIDTH, ACTION_WIDTH = 350, 130, 160
 local COLUMN_WIDTH = MEMBER_WIDTH - 4
-local function ColumnLeft(index)
-	return QUEST_WIDTH + (index - 1) * MEMBER_WIDTH - 4
+local function ColumnLeft(frame, index)
+	return frame.columns[index].left
+end
+local function ColumnWidth(frame, index)
+	return frame.columns[index].width
+end
+local function ContentWidth(frame)
+	return math.max(frame.viewport:GetWidth(), QUEST_WIDTH + (frame.memberColumnsWidth or 0) + ACTION_WIDTH)
 end
 local MIN_WIDTH = 780
-local function MinimumWidth(memberCount)
-	return math.max(MIN_WIDTH, QUEST_WIDTH + math.min(memberCount, 5) * MEMBER_WIDTH + ACTION_WIDTH + 62)
+local function MinimumWidth(memberCount, columns)
+	local width = 0
+	for index = 1, math.min(memberCount, 5) do
+		width = width + (columns and columns[index] and columns[index].width + 4 or MEMBER_WIDTH)
+	end
+	return math.max(MIN_WIDTH, QUEST_WIDTH + width + ACTION_WIDTH + 62)
 end
 local COLORS = {
 	Have = { 0.24, 0.20, 0.14 },
+	Completed = { 0.12, 0.38, 0.18 },
+	Absent = { 0.38, 0.32, 0.24 },
 	Ready = { 0.12, 0.38, 0.18 },
 	Missing = { 0.55, 0.25, 0.06 },
 	Loading = { 0.38, 0.32, 0.24 },
@@ -30,11 +42,18 @@ local COLORS = {
 
 local DARK_COLORS = {
 	Have = { 0.86, 0.86, 0.84 },
+	Completed = { 0.40, 0.90, 0.48 },
+	Absent = { 0.68, 0.70, 0.73 },
 	Ready = { 0.40, 0.90, 0.48 },
 	Missing = { 1, 0.68, 0.30 },
 	Loading = { 0.68, 0.70, 0.73 },
 	Unknown = { 0.68, 0.70, 0.73 },
 }
+
+local COMPACT_STATUS = { Have = "•", Ready = "✓", Completed = "✓", Missing = "−", Absent = "?", Loading = "…", Unknown = "?" }
+local function StatusLabel(status)
+	return L(status == "Absent" and "Not in log" or status)
+end
 
 local function MemberColor(addon, classFile, brightness)
 	-- Use the existing access-checked class-color adapter, never raw registries.
@@ -342,7 +361,7 @@ local function CreateFocusButton(addon, row, column)
 	local button = addon:CreateOwnedWindowFrame("Button", nil, row)
 	button:SetSize(26, 26)
 	if button.SetMotionScriptsWhileDisabled then button:SetMotionScriptsWhileDisabled(true) end
-	button:SetPoint("TOPLEFT", ColumnLeft(column) + COLUMN_WIDTH - 31, -8)
+	button:SetPoint("TOPLEFT", QUEST_WIDTH + (column - 1) * MEMBER_WIDTH + COLUMN_WIDTH - 35, -8)
 	button.normal = button:CreateTexture(nil, "BACKGROUND")
 	button.pushed = button:CreateTexture(nil, "BACKGROUND")
 	-- Match Blizzard's POI Display frame: the symbol must render above native
@@ -374,7 +393,7 @@ local function CreateFocusButton(addon, row, column)
 		if button.muted and button.clickable then
 			hint = hint .. "\n\n" .. string.format(L("Changing focus will stop following %s."), button.following)
 		end
-		addon:ShowSettingsTooltip(button, button.memberName, hint)
+		addon:ShowSettingsTooltip(button, button.memberName, StatusLabel(button.questStatus or "Unknown") .. "\n" .. hint)
 	end)
 	button:SetScript("OnClick", function()
 		Leave()
@@ -420,6 +439,11 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 			row:Show()
 			row.clip:Show()
 			row:SetWidth(width)
+			if not data.kind and frame.keyboardSession == session and session.keyboardQuestId == data.questId then
+				row.keyboardHighlight:Show()
+			else
+				row.keyboardHighlight:Hide()
+			end
 			row:SetHeight(CompareRowHeight(rows, slot.index))
 			local expanded = not data.kind and session.expandedQuestIds and session.expandedQuestIds[data.questId]
 			local previous, following = rows[slot.index - 1], rows[slot.index + 1]
@@ -519,17 +543,54 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 					row.cells[j] =
 						Label(row, QUEST_WIDTH + (j - 1) * MEMBER_WIDTH, -12, MEMBER_WIDTH - 40, "", "GameFontHighlight")
 					row.cellShades[j] = row:CreateTexture(nil, "BORDER")
-					row.cellShades[j]:SetPoint("TOPLEFT", ColumnLeft(j), 0)
+					row.cellShades[j]:SetPoint("TOPLEFT", ColumnLeft(frame, j), 0)
 					row.cellShades[j]:SetSize(COLUMN_WIDTH, ROW_HEIGHT - 1)
 				end
+				local column = frame.columns[j]
+				row.cellTooltips = row.cellTooltips or {}
+				if not row.cellTooltips[j] then
+					local control = self:CreateOwnedWindowFrame("Button", nil, row)
+					control:SetScript("OnEnter", function()
+						if row.session == self.partyQuestCompareSession and row.data
+							and not self:IsWorkBlocked("foreign_frame_mutation")
+							and QuestTogether.LibChev.CanMutateOwnedRegion(control) and control:IsVisible() then
+							self:ShowSettingsTooltip(control, control.memberName, StatusLabel(control.questStatus))
+						end
+					end)
+					local function Leave() self:HideSettingsTooltip(control) end
+					control:SetScript("OnLeave", Leave)
+					control:SetScript("OnHide", Leave)
+					control:SetScript("OnClick", function()
+						if self:IsWorkBlocked("foreign_frame_mutation") or not QuestTogether.LibChev.CanMutateOwnedRegion(control)
+							or not control:IsVisible() then return end
+						local click = row:GetScript("OnMouseUp")
+						if click then click(row, "LeftButton") end
+					end)
+					row.cellTooltips[j] = control
+				end
+				local statusControl = row.cellTooltips[j]
+				statusControl.memberName, statusControl.questStatus = session.members[j].name, status
+				statusControl:ClearAllPoints()
+				statusControl:SetPoint("TOPLEFT", column.left, 0)
+				statusControl:SetSize(column.width - ((status == "Have" or status == "Ready") and 32 or 0), ROW_HEIGHT - 1)
+				if column.collapsed then statusControl:Show() else statusControl:Hide() end
+				row.cellShades[j]:ClearAllPoints()
+				row.cellShades[j]:SetPoint("TOPLEFT", column.left, 0)
+				row.cellShades[j]:SetSize(column.width, ROW_HEIGHT - 1)
+				row.cells[j]:ClearAllPoints()
+				row.cells[j]:SetPoint("TOPLEFT", column.left + 4, -12)
+				row.cells[j]:SetWidth(column.width - ((status == "Have" or status == "Ready") and 36 or 8))
 				local r, g, b = MemberColor(self, session.members[j].classFile)
 				row.cellShades[j]:SetColorTexture(r, g, b, 0.20)
 				row.cellShades[j]:Show()
-				row.cells[j]:SetText(L(status))
-				row.cells[j]:SetTextColor(unpack(colors[status]))
+				row.cells[j]:SetText(column.collapsed and (COMPACT_STATUS[status] or "?") or StatusLabel(status))
+				row.cells[j]:SetTextColor(unpack(colors[status] or colors.Unknown))
 				row.cells[j]:Show()
 				if not row.focusCells[j] then row.focusCells[j] = CreateFocusButton(self, row, j) end
 				local button, member = row.focusCells[j], session.members[j]
+				button:ClearAllPoints()
+				button:SetPoint("TOPLEFT", column.left + column.width - 31, -8)
+				button.questStatus = status
 				button.memberName, button.localPlayer = member.name, member.isLocal
 				button.knownFocus = focusIDs[j] ~= nil and focusIDs[j] >= 0
 				local selected = focusIDs[j] == data.questId
@@ -548,6 +609,7 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 				row.cells[j]:Hide()
 				row.cellShades[j]:Hide()
 				if row.focusCells[j] then row.focusCells[j]:Hide() end
+				if row.cellTooltips and row.cellTooltips[j] then row.cellTooltips[j]:Hide() end
 			end
 			row.action:ClearAllPoints()
 			row.action:SetPoint("TOPLEFT", actionX, -9)
@@ -667,8 +729,12 @@ local function ScrollCompare(self, frame, session, pixels, force)
 	local maximum = math.max(0, CompareHeight(frame) - frame.rowsViewport:GetHeight())
 	pixels = math.max(0, math.min(pixels, maximum))
 	local visible, keys, y = {}, {}, 0
+	frame.navigationRows = {}
 	for index, data in ipairs(rows) do
 		local fullHeight = CompareRowHeight(rows, index)
+		if not data.kind then
+			frame.navigationRows[#frame.navigationRows + 1] = { questId = data.questId, top = y, height = fullHeight, data = data }
+		end
 		local height = fullHeight
 		if data.kind then
 			local id = data.questId
@@ -681,11 +747,24 @@ local function ScrollCompare(self, frame, session, pixels, force)
 			visible[#visible + 1] = { index = index, top = y, height = height }
 			keys[#keys + 1] = index
 		end
-		y = y + height
+			y = y + height
+	end
+	if frame.keyboardSession == session then
+		local selected = self:GetPartyQuestKeyboardTarget(frame.navigationRows, session.keyboardQuestId)
+		local id = selected and selected.questId
+		if session.keyboardQuestId ~= id then session.keyboardQuestId, force = id, true end
 	end
 	local origin = visible[1] and visible[1].top or 0
 	session.scrollPixels, session.offset = pixels, visible[1] and visible[1].index - 1 or 0
 	frame.visibleRows = visible
+	if self.SetPartyQuestCompletionInterest then
+		local interested, included = {}, {}
+		for _, slot in ipairs(visible) do
+			local id = rows[slot.index].questId
+			if not included[id] then interested[#interested + 1], included[id] = id, true end
+		end
+		self:SetPartyQuestCompletionInterest(interested)
+	end
 	for i, row in ipairs(frame.rows) do
 		local slot = visible[i]
 		if slot then
@@ -819,6 +898,181 @@ local function StopCompareScroll(frame)
 	if QuestTogether.LibChev.CanMutateOwnedRegion(frame) then frame:SetScript("OnUpdate", nil) end
 end
 
+function QuestTogether:SetPartyQuestKeyboardNavigation(frame, active)
+	local session = self.partyQuestCompareSession
+	if active and (not session or frame.displaySession ~= session
+		or self:IsWorkBlocked("foreign_frame_mutation")
+		or not QuestTogether.LibChev.CanMutateOwnedRegion(frame) or not frame:IsVisible()
+		or not self.API.IsPartyQuestKeyboardInputBlocked or self.API.IsPartyQuestKeyboardInputBlocked(frame)) then
+		return false
+	end
+	local wasActive = frame.keyboardSession ~= nil
+	frame.keyboardSession = active and session or nil
+	if wasActive and not active and frame.keyboardInput then self:HideOwnedUI(frame.keyboardInput) end
+	if not self:IsWorkBlocked("foreign_frame_mutation") and QuestTogether.LibChev.CanMutateOwnedRegion(frame) then
+		if active and frame.keyboardInput then
+			self:CancelOwnedUICleanup(frame.keyboardInput)
+			frame.keyboardInput:SetPropagateKeyboardInput(true)
+			frame.keyboardInput:Show()
+		end
+		if frame.keyboardButton then
+			frame.keyboardButton:SetText(active and L("Keyboard: on") or L("Keyboard"))
+		end
+		if session and frame.displaySession == session then
+			if active then
+				local selected = self:GetPartyQuestKeyboardTarget(frame.navigationRows, session.keyboardQuestId)
+				session.keyboardQuestId = selected and selected.questId
+			end
+			ScrollCompare(self, frame, session, session.scrollPixels or 0, true)
+		end
+	end
+	return true
+end
+
+function QuestTogether:ShowPartyQuestKeyboardMenu(frame, selected)
+	local session, questID = self.partyQuestCompareSession, selected and selected.questId
+	if not session or frame.displaySession ~= session or not questID or self:IsWorkBlocked("foreign_frame_mutation")
+		or not QuestTogether.LibChev.CanMutateOwnedRegion(frame) or not frame:IsVisible() then return false end
+	self:SetPartyQuestKeyboardNavigation(frame, false)
+	local function Current()
+		return self.partyQuestCompareSession == session and frame.displaySession == session
+			and QuestTogether.LibChev.CanMutateOwnedRegion(frame) and frame:IsVisible()
+			and not self:IsWorkBlocked("foreign_frame_mutation")
+	end
+	return self:CreatePartyQuestFilterMenu(frame.keyboardButton, function(_, root)
+		if not Current() then return end
+		root:CreateTitle(selected.data.title)
+		root:CreateButton(L("Expand or collapse quest"), function()
+			if Current() then self:TogglePartyQuestObjectives(questID) end
+		end)
+		local own = session.byName and session.byName[session.playerName]
+		if own and own.entries and own.entries[questID] then
+			root:CreateButton(L("Open in Quest Log"), function()
+				if Current() then self:OpenPartyQuestJournal(questID) end
+			end)
+		end
+		if selected.data.action == "share" then
+			root:CreateButton(L("Share"), function()
+				if Current() then self:SharePartyDiffQuest(questID) end
+			end)
+		elseif selected.data.action == "request" then
+			local owner = selected.data.owner
+			root:CreateButton(L("Request Share"), function()
+				if Current() then self:RequestPartyQuestShare(questID, owner) end
+			end)
+		end
+	end)
+end
+
+function QuestTogether:ConfigurePartyQuestKeyboardNavigation(frame)
+	-- Only this child captures navigation keys. Hiding an ordinary owned frame
+	-- retires input during combat without changing a restricted input attribute.
+	local input = self:CreateOwnedWindowFrame("Frame", nil, frame)
+	frame.keyboardInput = input
+	input:SetAllPoints(frame)
+	input:SetFrameLevel(frame:GetFrameLevel() + 20)
+	input:EnableKeyboard(true)
+	input:SetPropagateKeyboardInput(true)
+	input:Hide()
+	frame.keyboardButton = Button(self, frame.content, QUEST_WIDTH - 145, 0, 137, L("Keyboard"), function()
+		if not self:IsWorkBlocked("foreign_frame_mutation") and QuestTogether.LibChev.CanMutateOwnedRegion(frame.search) then
+			frame.search:ClearFocus()
+		end
+		self:SetPartyQuestKeyboardNavigation(frame, not frame.keyboardSession)
+	end)
+	frame.keyboardButton:SetHeight(20)
+	frame.keyboardButton:SetScript("OnEnter", function()
+		self:ShowSettingsTooltip(frame.keyboardButton, L("Keyboard navigation"), L("Click to navigate quests with the arrow keys. Home/End and Page Up/Page Down move through the list. Left/Right or Enter collapse or expand a quest. Space or the Menu key opens quest actions. Escape or a click outside this window returns to normal controls."))
+	end)
+	local function Leave() self:HideSettingsTooltip(frame.keyboardButton) end
+	frame.keyboardButton:SetScript("OnLeave", Leave)
+	frame.keyboardButton:SetScript("OnHide", Leave)
+	frame.questHeader:SetWidth(QUEST_WIDTH - 150)
+	frame.search:HookScript("OnEditFocusGained", function() self:SetPartyQuestKeyboardNavigation(frame, false) end)
+	frame:RegisterEvent("GLOBAL_MOUSE_DOWN")
+	frame:RegisterEvent("PLAYER_REGEN_DISABLED")
+	frame:SetScript("OnEvent", function(_, event)
+		if frame.keyboardSession and (event == "PLAYER_REGEN_DISABLED"
+			or (event == "GLOBAL_MOUSE_DOWN"
+				and (not self.API.IsMouseOverPartyQuestWindow or not self.API.IsMouseOverPartyQuestWindow(frame)))) then
+			self:SetPartyQuestKeyboardNavigation(frame, false)
+		end
+	end)
+	local inherited = frame:GetScript("OnKeyDown")
+	frame:SetScript("OnKeyDown", function(_, key)
+		if not frame.keyboardSession and not self:IsWorkBlocked("foreign_frame_mutation")
+			and QuestTogether.LibChev.CanMutateOwnedRegion(frame)
+			and not (self.API.IsPartyQuestKeyboardInputBlocked and self.API.IsPartyQuestKeyboardInputBlocked(frame)) then
+			if inherited then inherited(frame, key) end
+		end
+	end)
+	input:SetScript("OnKeyDown", function(_, key)
+		local session = self.partyQuestCompareSession
+		if self:IsWorkBlocked("foreign_frame_mutation") or not QuestTogether.LibChev.CanMutateOwnedRegion(frame) then
+			self:SetPartyQuestKeyboardNavigation(frame, false)
+			return
+		end
+		input:SetPropagateKeyboardInput(true)
+		if self.API.IsPartyQuestKeyboardInputBlocked and self.API.IsPartyQuestKeyboardInputBlocked(frame) then
+			self:SetPartyQuestKeyboardNavigation(frame, false)
+			return
+		end
+		if not frame.keyboardSession then
+			return
+		end
+		if not session or frame.keyboardSession ~= session or frame.displaySession ~= session or not frame:IsVisible() then
+			self:SetPartyQuestKeyboardNavigation(frame, false)
+			return
+		end
+		if key == "ESCAPE" then
+			self:SetPartyQuestKeyboardNavigation(frame, false)
+			input:SetPropagateKeyboardInput(false)
+			return
+		end
+		local moves = key == "UP" or key == "DOWN" or key == "HOME" or key == "END"
+			or key == "PAGEUP" or key == "PAGEDOWN"
+		local selected = self:GetPartyQuestKeyboardTarget(frame.navigationRows, session.keyboardQuestId,
+			moves and key or nil, frame.rowsViewport:GetHeight())
+		if not selected then return end
+		if moves then
+			session.keyboardQuestId = selected.questId
+			StopCompareScroll(frame)
+			local pixels = session.scrollPixels or 0
+			if selected.top < pixels then pixels = selected.top
+			elseif selected.top + selected.height > pixels + frame.rowsViewport:GetHeight() then
+				pixels = selected.top + selected.height - frame.rowsViewport:GetHeight()
+			end
+			ScrollCompare(self, frame, session, pixels, true)
+		elseif key == "LEFT" or key == "RIGHT" or key == "ENTER" or key == "NUMPADENTER" then
+			local expanded = session.expandedQuestIds and session.expandedQuestIds[selected.questId]
+			if (key == "LEFT" and expanded) or (key == "RIGHT" and not expanded)
+				or key == "ENTER" or key == "NUMPADENTER" then
+				frame.animateExpansion = { session = session, questId = selected.questId }
+				self:TogglePartyQuestObjectives(selected.questId)
+			end
+		elseif key == "SPACE" or key == "MENU" or key == "APPS" then
+			self:ShowPartyQuestKeyboardMenu(frame, selected)
+		else
+			-- Movement, chat, and other bindings remain untouched.
+			self:SetPartyQuestKeyboardNavigation(frame, false)
+			return
+		end
+		input:SetPropagateKeyboardInput(false)
+	end)
+	input:SetScript("OnKeyUp", function()
+		if self:IsWorkBlocked("foreign_frame_mutation") then
+			self:SetPartyQuestKeyboardNavigation(frame, false)
+		elseif QuestTogether.LibChev.CanMutateOwnedRegion(input) then
+			input:SetPropagateKeyboardInput(true)
+		end
+	end)
+	input:SetScript("OnUpdate", function()
+		if frame.keyboardSession and self:IsWorkBlocked("foreign_frame_mutation") then
+			self:SetPartyQuestKeyboardNavigation(frame, false)
+		end
+	end)
+end
+
 local function WheelCompare(self, frame, delta)
 	local session = self.partyQuestCompareSession
 	if not session or frame.displaySession ~= session or self:IsWorkBlocked("foreign_frame_mutation") then
@@ -892,6 +1146,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 		edit:ClearFocus()
 	end)
 	frame.filter = Button(self, frame, width - 386, -74, 124, L("Filters"), function(button)
+		self:SetPartyQuestKeyboardNavigation(frame, false)
 		self:ShowPartyQuestCompareFilters(button)
 	end)
 	frame.reset = Button(self, frame, width - 250, -74, 100, L("Reset"), function()
@@ -910,6 +1165,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	self:ConfigureWindowController(frame, {
 		dismiss = function() self:CancelPartyQuestCompare() end,
 		suspend = function()
+			self:SetPartyQuestKeyboardNavigation(frame, false)
 			StopCompareScroll(frame); StopExpansion(frame)
 			self:StopOwnedScrollBar(frame.vertical); self:StopOwnedScrollBar(frame.horizontal)
 		end,
@@ -932,7 +1188,8 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	frame.rowsContent:SetSize(QUEST_WIDTH + ACTION_WIDTH, (VISIBLE_ROWS * 2 + 2) * ROW_HEIGHT)
 	frame.rowsViewport:SetScrollChild(frame.rowsContent)
 	frame.headers, frame.headerAccents, frame.rows = {}, {}, {}
-	frame.headerCrowns = {}
+	frame.headerCrowns, frame.columnToggles = {}, {}
+	frame.columns, frame.memberColumnsWidth = self:GetPartyQuestCompareColumns(self.partyQuestCompareSession)
 	frame.focusButtons, frame.headerStatuses = {}, {}
 	frame.followStatus = Label(frame.content, 4, -18, QUEST_WIDTH - 130, "", "GameFontHighlightSmall")
 	frame.followStatus:SetHeight(34)
@@ -972,6 +1229,10 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			row.progressFill = row:CreateTexture(nil, "OVERLAY")
 			row.progressFill:SetPoint("TOPLEFT", 44, -32)
 			row.progressFill:SetHeight(3)
+			row.keyboardHighlight = row:CreateTexture(nil, "OVERLAY")
+			row.keyboardHighlight:SetAllPoints()
+			row.keyboardHighlight:SetColorTexture(0.95, 0.72, 0.20, 0.18)
+			row.keyboardHighlight:Hide()
 			row.hover = row:CreateTexture(nil, "BORDER")
 			row.hover:SetAllPoints()
 			ColorPanel(row.hover, 0.35, 0.24, 0.10, 0.08)
@@ -983,6 +1244,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 					and not row.data.kind
 					and row.session == self.partyQuestCompareSession
 				then
+					self.partyQuestCompareSession.keyboardQuestId = row.data.questId
 					frame.animateExpansion = { session = self.partyQuestCompareSession, questId = row.data.questId }
 					self:TogglePartyQuestObjectives(row.data.questId)
 				end
@@ -1005,6 +1267,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			row.journal:SetScript("OnLeave", HideJournalTooltip)
 			row.journal:SetScript("OnHide", HideJournalTooltip)
 			row.journal:SetScript("OnClick", function()
+				self:SetPartyQuestKeyboardNavigation(frame, false)
 				HideJournalTooltip()
 				if row.data and not row.data.kind and row.session == self.partyQuestCompareSession then
 					self:OpenPartyQuestJournal(row.data.questId)
@@ -1103,7 +1366,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	local screenWidth, screenHeight = parent:GetWidth(), parent:GetHeight()
 	frame:SetResizable(true)
 	function frame:UpdateResizeBounds(memberCount)
-		local minimum = MinimumWidth(memberCount)
+		local minimum = MinimumWidth(memberCount, self.columns)
 		screenWidth, screenHeight = parent:GetWidth(), parent:GetHeight()
 		local currentScale = self:GetScale()
 		if self.minimumWidth == minimum and self.boundsWidth == screenWidth and self.boundsHeight == screenHeight and self.boundsScale == currentScale then
@@ -1112,7 +1375,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 		self.minimumWidth = minimum
 		-- A growing party must still fit on a small display. Do not increase
 		-- the scale again on departure and unexpectedly enlarge the window.
-		scale = math.min(self:GetScale() or scale, screenWidth * 0.94 / minimum, screenHeight * 0.94 / self:GetHeight())
+		scale = math.min(self:GetScale() or scale, screenWidth * 0.94 / math.max(minimum, self:GetWidth()), screenHeight * 0.94 / self:GetHeight())
 		self:SetScale(scale)
 		self.boundsWidth, self.boundsHeight, self.boundsScale = screenWidth, screenHeight, scale
 		local maxWidth = math.max(minimum, math.min(1600, screenWidth * 0.98 / scale))
@@ -1165,7 +1428,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			return
 		end
 		local contentWidth =
-			math.max(frame.viewport:GetWidth(), QUEST_WIDTH + #session.members * MEMBER_WIDTH + ACTION_WIDTH)
+			ContentWidth(frame)
 		frame.content:SetWidth(contentWidth)
 		frame.rowsViewport:SetWidth(contentWidth)
 		frame.rowsContent:SetWidth(contentWidth)
@@ -1176,6 +1439,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	end)
 	frame:Layout()
 	self:RegisterManagedWindow(frame, "partyQuestLog", frame.minimumWidth, 500)
+	self:ConfigurePartyQuestKeyboardNavigation(frame)
 	return frame
 end
 
@@ -1246,6 +1510,7 @@ function QuestTogether:RenderPartyQuestCompare()
 	if not frame or not session or self:IsWorkBlocked("foreign_frame_mutation") then
 		return
 	end
+	frame.columns, frame.memberColumnsWidth = self:GetPartyQuestCompareColumns(session)
 	frame:UpdateResizeBounds(#session.members)
 	frame:Layout()
 	local theme = self:GetScrollWindowTheme()
@@ -1266,7 +1531,7 @@ function QuestTogether:RenderPartyQuestCompare()
 	if session.mode then
 		frame.title:SetText(session.mode == "target" and L("Compare Quests") or L("Party Quest Log"))
 	end
-	local width = math.max(frame.viewport:GetWidth(), QUEST_WIDTH + #session.members * MEMBER_WIDTH + ACTION_WIDTH)
+	local width = ContentWidth(frame)
 	local actionX = width - ACTION_WIDTH
 	frame.rendering = true
 	local filters = self:GetPartyQuestCompareFilters()
@@ -1281,6 +1546,7 @@ function QuestTogether:RenderPartyQuestCompare()
 	frame.rowsViewport:SetWidth(width)
 	frame.rowsContent:SetWidth(width)
 	if frame.displaySession ~= session then
+		self:SetPartyQuestKeyboardNavigation(frame, false)
 		StopCompareScroll(frame)
 		StopExpansion(frame)
 	end
@@ -1298,21 +1564,27 @@ function QuestTogether:RenderPartyQuestCompare()
 			frame.headers[i] = Label(frame.content, 0, 0, MEMBER_WIDTH - 6, "", "GameFontNormal")
 			frame.headerAccents[i] = frame.content:CreateTexture(nil, "ARTWORK")
 			frame.headerAccents[i]:SetSize(COLUMN_WIDTH, 3)
-			frame.headerAccents[i]:SetPoint("TOPLEFT", ColumnLeft(i), -48)
+			frame.headerAccents[i]:SetPoint("TOPLEFT", ColumnLeft(frame, i), -48)
 			frame.headerCrowns[i] = frame.content:CreateTexture(nil, "OVERLAY")
 			frame.headerCrowns[i]:SetTexture("Interface\\AddOns\\QuestTogether\\Media\\PartyLeader")
 			frame.headerCrowns[i]:SetSize(16, 12)
-			frame.headerCrowns[i]:SetPoint("TOPLEFT", ColumnLeft(i) + 8, -7)
+			frame.headerCrowns[i]:SetPoint("TOPLEFT", ColumnLeft(frame, i) + 8, -7)
 		end
+		local column, columnWidth = frame.columns[i], ColumnWidth(frame, i)
+		frame.headerAccents[i]:ClearAllPoints()
+		frame.headerAccents[i]:SetPoint("TOPLEFT", column.left, -48)
+		frame.headerAccents[i]:SetWidth(columnWidth)
+		frame.headerCrowns[i]:ClearAllPoints()
+		frame.headerCrowns[i]:SetPoint("TOPLEFT", column.left + 8, -7)
 		local header = frame.headers[i]
-		local isLeader = member.name == leaderName
+		local isLeader = member.name == leaderName and not column.collapsed
 		if isLeader then frame.headerCrowns[i]:Show() else frame.headerCrowns[i]:Hide() end
 		local r, g, b = MemberColor(self, member.classFile)
 		header:SetTextColor(r, g, b)
 		frame.headerAccents[i]:SetColorTexture(r, g, b, 1)
 		frame.headerAccents[i]:Show()
 		header:ClearAllPoints()
-		header:SetPoint("TOPLEFT", ColumnLeft(i) + (isLeader and 28 or 8), -6)
+		header:SetPoint("TOPLEFT", ColumnLeft(frame, i) + (isLeader and 28 or 8), -6)
 		header:SetHeight(16)
 		header:SetMaxLines(1)
 		header:SetJustifyV("TOP")
@@ -1322,10 +1594,11 @@ function QuestTogether:RenderPartyQuestCompare()
 		end
 		local status = frame.headerStatuses[i]
 		status:ClearAllPoints()
-		status:SetPoint("TOPLEFT", ColumnLeft(i) + 8, -23)
+		status:SetPoint("TOPLEFT", ColumnLeft(frame, i) + 8, -23)
 		status:SetHeight(14)
 		status:SetMaxLines(1)
 		status:SetTextColor(unpack(theme.muted))
+		status:SetWidth(columnWidth - 30)
 		status:SetText(self:GetPartyQuestSnapshotLabel(member))
 		status:Show()
 		if not frame.focusButtons[i] then
@@ -1361,10 +1634,12 @@ function QuestTogether:RenderPartyQuestCompare()
 				end
 				ShowPanel(button.hover, true)
 				local member = button.navSession.byName[button.navName]
+				local shareResult = self.GetLatestQuestShareResultText and self:GetLatestQuestShareResultText(button.navName)
 				self:ShowSettingsTooltip(button, button.navName,
 					(member and self:GetPartyQuestSnapshotLabel(member) or "") .. "\n"
 					.. (button.navSession.mode ~= "target" and self:GetPartyFocusLabel(button.navName) .. "\n" or "")
-					.. L("Click for refresh and quest focus options."))
+					.. (shareResult and shareResult .. "\n" or "")
+					.. L("Click for player column and quest focus options."))
 			end)
 			button:SetScript("OnLeave", Leave)
 			button:SetScript("OnHide", function()
@@ -1382,27 +1657,48 @@ function QuestTogether:RenderPartyQuestCompare()
 				then
 					return
 				end
+				self:SetPartyQuestKeyboardNavigation(frame, false)
+				local expectedSession, name, isLocal = button.navSession, button.navName, button.navLocal
+				local function Current()
+					return self.partyQuestCompareSession == expectedSession and frame.displaySession == expectedSession
+						and QuestTogether.LibChev.CanMutateOwnedRegion(frame) and frame:IsVisible()
+						and not self:IsWorkBlocked("foreign_frame_mutation")
+				end
+				if not Current() then return end
 				self:CreatePartyQuestFilterMenu(button, function(_, root)
-					if self.partyQuestCompareSession == button.navSession then
-						root:CreateTitle(button.navName)
-						root:CreateButton(L("Refresh this player"), function() self:RefreshPartyQuestCompareMember(button.navName) end)
+					if Current() then
+						root:CreateTitle(name)
+						local collapsed = expectedSession.collapsedPlayers and expectedSession.collapsedPlayers[name]
+						root:CreateButton(collapsed and L("Expand player column") or L("Collapse player column"), function()
+							if Current() then self:SetPartyQuestColumnCollapsed(name, not collapsed, expectedSession) end
+						end)
+						root:CreateButton(L("Restore all player columns"), function()
+							if Current() then self:RestorePartyQuestColumns(expectedSession) end
+						end)
 						root:CreateDivider()
-						self:PopulatePartyFocusMenu(root, button.navName)
+						if not isLocal then
+							root:CreateButton(L("Refresh this player"), function()
+								if Current() then self:RefreshPartyQuestCompareMember(name) end
+							end)
+							self:PopulatePartyFocusMenu(root, name)
+							if self.PopulatePlayerNotesMenu then self:PopulatePlayerNotesMenu(root, name) end
+						end
 					end
 				end)
 			end)
 		end
 		local button = frame.focusButtons[i]
 		button:ClearAllPoints()
-		button:SetPoint("TOPLEFT", ColumnLeft(i), 0)
-		button:SetSize(COLUMN_WIDTH, 46)
+		button:SetPoint("TOPLEFT", ColumnLeft(frame, i), 0)
+		button:SetSize(columnWidth, 46)
 		button.navSession, button.navName = session, member.name
-		local clickable = not member.isLocal
+		button.navLocal = member.isLocal
+		local clickable = true
 		button.navClickable = clickable
 		button:SetEnabled(clickable)
-		header:SetWidth(COLUMN_WIDTH - (clickable and 30 or 16) - (isLeader and 20 or 0))
-		LayoutPanel(button.paper, frame.content, "BACKGROUND", 0, ColumnLeft(i), 0, COLUMN_WIDTH, 46, true, false)
-		LayoutPanel(button.hover, frame.content, "BORDER", 0, ColumnLeft(i), 0, COLUMN_WIDTH, 46, true, false)
+		header:SetWidth(columnWidth - 30 - (isLeader and 20 or 0))
+		LayoutPanel(button.paper, frame.content, "BACKGROUND", 0, ColumnLeft(frame, i), 0, columnWidth, 46, true, false)
+		LayoutPanel(button.hover, frame.content, "BORDER", 0, ColumnLeft(frame, i), 0, columnWidth, 46, true, false)
 		ColorPanel(button.paper, r, g, b, dark and 0.14 or 0.10)
 		ColorPanel(button.hover, r, g, b, dark and 0.22 or 0.16)
 		for _, strip in ipairs(button.arrow) do
@@ -1415,6 +1711,33 @@ function QuestTogether:RenderPartyQuestCompare()
 			button:Hide()
 			ShowPanel(button.paper, false)
 		end
+		if not frame.columnToggles[i] then
+			local toggle = Button(self, button, 0, 0, 20, "", function(control)
+				if self.partyQuestCompareSession == control.columnSession and frame.displaySession == control.columnSession
+					and QuestTogether.LibChev.CanMutateOwnedRegion(frame) and frame:IsVisible() then
+					local collapsed = control.columnSession.collapsedPlayers and control.columnSession.collapsedPlayers[control.columnName]
+					self:SetPartyQuestColumnCollapsed(control.columnName, not collapsed, control.columnSession)
+				end
+			end)
+			toggle:SetHeight(18)
+			toggle:SetScript("OnEnter", function(control)
+				if self.partyQuestCompareSession ~= control.columnSession or self:IsWorkBlocked("foreign_frame_mutation")
+					or not QuestTogether.LibChev.CanMutateOwnedRegion(control) or not control:IsVisible() then return end
+				local member = control.columnSession.byName[control.columnName]
+				self:ShowSettingsTooltip(control, control.columnName, (member and self:GetPartyQuestSnapshotLabel(member) or "")
+					.. "\n" .. (control.collapsed and L("Expand player column") or L("Collapse player column")))
+			end)
+			local function LeaveToggle() self:HideSettingsTooltip(toggle) end
+			toggle:SetScript("OnLeave", LeaveToggle)
+			toggle:SetScript("OnHide", LeaveToggle)
+			frame.columnToggles[i] = toggle
+		end
+		local toggle = frame.columnToggles[i]
+		toggle.columnSession, toggle.columnName, toggle.collapsed = session, member.name, column.collapsed
+		toggle:ClearAllPoints()
+		toggle:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -3, 3)
+		toggle:SetText(column.collapsed and "+" or "−")
+		toggle:Show()
 		header:Show()
 	end
 	for i = #session.members + 1, #frame.headers do
@@ -1423,6 +1746,7 @@ function QuestTogether:RenderPartyQuestCompare()
 		frame.headerAccents[i]:Hide()
 		frame.headerCrowns[i]:Hide()
 		frame.focusButtons[i]:Hide()
+		if frame.columnToggles[i] then frame.columnToggles[i]:Hide() end
 		-- Hiding an already-invisible button does not fire OnHide. Retire its
 		-- sibling artwork explicitly when the roster shrinks while UI is hidden.
 		ShowPanel(frame.focusButtons[i].paper, false)
@@ -1582,7 +1906,7 @@ function QuestTogether:RenderPartyQuestSharePrompt()
 		return
 	end
 	frame = frame or self:CreatePartyQuestSharePrompt()
-	if not self.LibChev.CanMutateOwnedRegion(frame) then
+	if not QuestTogether.LibChev.CanMutateOwnedRegion(frame) then
 		return
 	end
 	if frame.request ~= request then
@@ -1663,7 +1987,7 @@ function QuestTogether:RenderPartyJoinPrompt()
 		return
 	end
 	frame = frame or self:CreatePartyJoinPrompt()
-	if not self.LibChev.CanMutateOwnedRegion(frame) then
+	if not QuestTogether.LibChev.CanMutateOwnedRegion(frame) then
 		return
 	end
 	if frame.request ~= request then
@@ -1758,7 +2082,7 @@ function QuestTogether:RenderPartyChatReminder(request)
 		frame.close:SetScript("OnClick", function()
 			-- Safe dismissal remains available during combat. A restricted close
 			-- does not acknowledge or save preferences; the reminder resumes later.
-			if self.LibChev.CanMutateOwnedRegion(frame) then
+			if QuestTogether.LibChev.CanMutateOwnedRegion(frame) then
 				frame:Hide()
 			end
 			if self.LibChev.CanMutateOwnedRegion(frame.remember) then
@@ -1803,17 +2127,17 @@ function QuestTogether:RenderPartyChatReminder(request)
 		end
 
 		frame:SetScript("OnDragStart", function()
-			if not self:IsWorkBlocked("foreign_frame_mutation") and self.LibChev.CanMutateOwnedRegion(frame) then
+			if not self:IsWorkBlocked("foreign_frame_mutation") and QuestTogether.LibChev.CanMutateOwnedRegion(frame) then
 				self:StartWindowDrag(frame)
 			end
 		end)
 		frame:SetScript("OnDragStop", function()
-			if self.LibChev.CanMutateOwnedRegion(frame) then
+			if QuestTogether.LibChev.CanMutateOwnedRegion(frame) then
 				self:StopWindowDrag(frame)
 			end
 		end)
 	end
-	if not self.LibChev.CanMutateOwnedRegion(frame) then
+	if not QuestTogether.LibChev.CanMutateOwnedRegion(frame) then
 		return
 	end
 	if frame.request ~= request then

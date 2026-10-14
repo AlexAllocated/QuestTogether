@@ -586,7 +586,6 @@ local function CreatePin(addon, state, surface)
 	Call(addon, pin.frame, "SetScript", "OnEnter", function()
 		local ok, row = pcall(FreshRow, addon, pin)
 		if ok and row then
-			addon:RequestPlayerDetails(row.name)
 			addon:RequestPlayerPhaseComparison(row.name)
 			if not pcall(Tooltip, addon, state, pin, row) then
 				HideTooltip(addon, state)

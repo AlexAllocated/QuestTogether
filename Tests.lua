@@ -341,6 +341,9 @@ local function WithIsolatedState(testFn)
 			"diagnosticReplyGeneration",
 			"nearbyStreamState",
 			"playerDetailsState",
+			"playerNoteWindow",
+			"playerNoteDrafts",
+			"partyQuestCompletionState",
 			"directCommPeers",
 			"geographicCommsState",
 			"announcementChannelBindings",
@@ -381,6 +384,7 @@ local function WithIsolatedState(testFn)
 			"partyQuestSharePrompt",
 			"partyQuestCompareSession",
 			"partyQuestShareState",
+			"questShareNativeResults",
 			"partyQuestComparePreview",
 			"minimapButton",
 			"minimapTooltip",
@@ -5985,7 +5989,8 @@ QuestTogether:RegisterTest("chat log speaker menu includes player actions", func
 	AssertEquals(buttons[3].text, "Add Friend")
 	AssertEquals(buttons[4].text, "Ignore")
 	AssertEquals(buttons[5].text, "Compare Quests")
-	AssertEquals(#buttons, 5)
+	AssertEquals(buttons[6].text, "Add private note")
+	AssertEquals(#buttons, 6)
 	AssertEquals(dividers, 0)
 end)
 

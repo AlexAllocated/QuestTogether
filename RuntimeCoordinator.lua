@@ -4,7 +4,9 @@ local UPDATE_INTERVAL = 0.2
 -- One owner for periodic publication. Share this tick's addon-owned location
 -- sample with nearby streams; never retain it across frames or privacy changes.
 function QT:UpdatePlayerCommunications()
+	self:UpdatePlayerDetailsInterests()
 	self:UpdatePartyQuestCompareFreshness()
+	if self.UpdatePartyQuestCompletion then self:UpdatePartyQuestCompletion() end
 	self:UpdatePlayerPhaseObservations()
 	if self.UpdateQTPlayerPresence then
 		self:UpdateQTPlayerPresence()

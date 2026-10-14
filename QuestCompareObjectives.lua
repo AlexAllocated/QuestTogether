@@ -211,7 +211,7 @@ local function Progress(row)
 end
 
 function QT:GetPartyQuestReadiness(quest)
-	local ready, missing, unknown, total = 0, 0, 0, #self.partyQuestCompareSession.members
+	local ready, completed, missing, absent, unknown, total = 0, 0, 0, 0, 0, #self.partyQuestCompareSession.members
 	for i, member in ipairs(self.partyQuestCompareSession.members) do
 		if member.state ~= "ready" then
 			unknown = unknown + 1
@@ -219,6 +219,10 @@ function QT:GetPartyQuestReadiness(quest)
 			ready = ready + 1
 		elseif quest.cells[i] == "Missing" then
 			missing = missing + 1
+		elseif quest.cells[i] == "Absent" then
+			absent = absent + 1
+		elseif quest.cells[i] == "Completed" then
+			completed = completed + 1
 		elseif quest.cells[i] ~= "Have" then
 			unknown = unknown + 1
 		end
@@ -227,13 +231,23 @@ function QT:GetPartyQuestReadiness(quest)
 		return L("Everyone ready"), "Ready"
 	end
 	local text = string.format(L("%d/%d ready"), ready, total)
+	if completed > 0 then
+		local completion = string.format(L("%d completed"), completed)
+		if completed == total then
+			return completion, "Completed"
+		end
+		text = text .. " · " .. completion
+	end
 	if missing > 0 then
 		text = text .. " · " .. string.format(L("%d missing"), missing)
+	end
+	if absent > 0 then
+		text = text .. " · " .. string.format(L("%d not in log"), absent)
 	end
 	if unknown > 0 then
 		text = text .. " · " .. string.format(L("%d unknown"), unknown)
 	end
-	return text, unknown > 0 and "Unknown" or missing > 0 and "Missing" or "Have"
+	return text, unknown > 0 and "Unknown" or missing > 0 and "Missing" or absent > 0 and "Absent" or "Have"
 end
 
 function QT:BuildPartyQuestCompareDisplayRows(quests)

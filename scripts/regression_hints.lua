@@ -65,6 +65,170 @@ local function Fixture(global)
 	return a, clock
 end
 
+local function NavigationFixture()
+	local a = Fixture()
+	a.opened = {}
+	a.capabilities.hud = true
+	function a:OpenSettingsCategory(category)
+		self.opened[#self.opened + 1] = "settings:" .. category
+		return true
+	end
+	for method, destination in pairs({
+		OpenPartyQuestCompare = "party_log",
+		OpenReleaseNotes = "patch_notes",
+		OpenDiscordSupport = "support",
+		ShowDebugWindow = "debug",
+		OpenHudEditMode = "hud_edit",
+	}) do
+		a[method] = function(self, ...)
+			assert(select("#", ...) == 0, "links must not supply arbitrary navigation arguments")
+			self.opened[#self.opened + 1] = destination
+			return true
+		end
+	end
+	a.API.OpenKeyBindings = function()
+		a.opened[#a.opened + 1] = "keybindings"
+		return true
+	end
+	function a:SetOption()
+		error("hint links must not change settings")
+	end
+	function a:SetOptions()
+		error("hint links must not change settings")
+	end
+	function a:HandleSlashCommand()
+		error("hint links must not run arbitrary commands")
+	end
+	return a
+end
+
+QT:RegisterTest("actionable hints preserve approved copy formatting and explicit navigation destinations", function()
+	local a = NavigationFixture()
+	local linked, destinations = 0, {}
+	for _, hint in ipairs(a:GetHintCatalog()) do
+		local base, rendered = a:FormatHint(hint.text), a:FormatHintEntry(hint)
+		assert(rendered:sub(1, #base) == base, "navigation links must preserve approved tip wording and colors")
+		if hint.actions then
+			linked = linked + 1
+			assert(#hint.actions > 0 and #hint.actions <= 2)
+			for _, actionID in ipairs(hint.actions) do
+				local action = assert(a:GetHintActionInfo(actionID), actionID)
+				destinations[actionID] = true
+				assert(action.id == actionID and action.tooltip == QT.Translate("Click to open."))
+				assert(rendered:find("|Hquesttogethertip:" .. actionID .. "|h[" .. action.label .. "]|h", 1, true))
+			end
+		else
+			assert(rendered == base)
+		end
+	end
+	assert(linked >= 100 and destinations.settings and destinations.profiles and destinations.hud_edit)
+	assert(#a.opened == 0 and not a.db.global.hintPool, "formatting must not navigate or consume a draw")
+	assert(a:ShowHint())
+	assert(a.messages[1]:find("|Hquesttogethertip:settings|h[" .. QT.Translate("Settings") .. "]|h", 1, true))
+	assert(a.db.global.hintPool.last == "hint001", "adding links must preserve the existing draw identity")
+end)
+
+QT:RegisterTest("hint links open only whitelisted windows and settings without executing commands", function()
+	local a = NavigationFixture()
+	local expected = {
+		settings = "settings:general",
+		announcements = "settings:announcements",
+		where_to_announce = "settings:whereToAnnounce",
+		quest_plates = "settings:questPlates",
+		player_plates = "settings:playerPlates",
+		player_locations = "settings:playerLocations",
+		groups = "settings:groups",
+		accessibility = "settings:accessibility",
+		profiles = "settings:profiles",
+		developer = "settings:developer",
+		experimental = "settings:experimental",
+		party_log = "party_log",
+		patch_notes = "patch_notes",
+		support = "support",
+		debug = "debug",
+		hud_edit = "hud_edit",
+		keybindings = "keybindings",
+	}
+	for actionID, destination in pairs(expected) do
+		assert(a:ParseHintActionLink("questtogethertip:" .. actionID) == actionID)
+		local count = #a.opened
+		assert(a:HandleHintActionLink(actionID))
+		assert(#a.opened == count + 1 and a.opened[#a.opened] == destination)
+	end
+	assert(a.db.global.hintPool == nil and #a.messages == 0, "opening UI must not draw or transmit another tip")
+end)
+
+QT:RegisterTest("hint links reject forged arguments and recheck navigation restrictions and capabilities", function()
+	local a = NavigationFixture()
+	local inaccessible = setmetatable({}, {
+		__index = function()
+			error("unreadable")
+		end,
+	})
+	function a:CanAccessValue(value)
+		return value ~= inaccessible
+	end
+	for _, payload in ipairs({
+		"",
+		"unknown",
+		"SetOption",
+		"settings:enabled:true",
+		"settings|h",
+		"../settings",
+		"/qt lfg on",
+		string.rep("s", 65),
+		false,
+		{},
+		inaccessible,
+	}) do
+		assert(a:GetHintActionInfo(payload) == nil and not a:HandleHintActionLink(payload))
+	end
+	assert(a:GetHintActionInfo(nil) == nil and not a:HandleHintActionLink(nil))
+	for _, link in ipairs({
+		"questtogethertip:unknown",
+		"questtogethertip:settings:extra",
+		"questtogethertip:SETTINGS",
+		" questtogethertip:settings",
+		"questtogethertip:settings|h",
+		"other:settings",
+		inaccessible,
+	}) do
+		assert(a:ParseHintActionLink(link) == nil)
+	end
+	a.blocked = true
+	assert(not a:HandleHintActionLink("settings"))
+	a.blocked, a.isLoggingOut = false, true
+	assert(not a:HandleHintActionLink("settings"))
+	a.isLoggingOut, a.hasLoggedIn = false, false
+	assert(not a:HandleHintActionLink("settings"))
+	a.hasLoggedIn, a.capabilities.hud = true, false
+	assert(a:GetHintActionInfo("hud_edit") == nil and not a:HandleHintActionLink("hud_edit"))
+	assert(a:FormatHintEntry({ text = "Text", actions = { "hud_edit", "unknown" } }) == a:FormatHint("Text"))
+	a.API.OpenKeyBindings = function()
+		return false
+	end
+	assert(not a:HandleHintActionLink("keybindings"))
+	a.API.OpenKeyBindings = function()
+		error("native UI unavailable")
+	end
+	assert(not a:HandleHintActionLink("keybindings"))
+	assert(#a.opened == 0)
+	a.isEnabled = false
+	assert(a:HandleHintActionLink("settings"), "navigation to settings remains available while QT is disabled")
+end)
+
+QT:RegisterTest("client locale renders actionable tip labels and tooltips together", function()
+	local a = NavigationFixture()
+	assert(a:ShowHint())
+	local action = assert(a:GetHintActionInfo("settings"))
+	assert(action.label == QT.Translate("Settings") and action.tooltip == QT.Translate("Click to open."))
+	local hint = a:GetHintCatalog()[1]
+	assert(
+		a.messages[1]
+			== a:FormatHint(hint.text) .. " |cffffd100|Hquesttogethertip:settings|h[" .. action.label .. "]|h|r"
+	)
+end, { locale = "client" })
+
 QT:RegisterTest("hints share a persisted no-repeat pool across loads commands and refills", function()
 	local global, ids, last = {}, {}, nil
 	local first = Fixture(global)

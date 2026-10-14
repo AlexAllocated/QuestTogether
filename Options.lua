@@ -1963,18 +1963,31 @@ function QuestTogether:InitializeGroupsWindow(parentCategory)
 	self:RefreshGroupsWindow()
 end
 
-function QuestTogether:OpenOptionsWindow()
+local SETTINGS_CATEGORY_FIELDS = {
+	general = "optionsCategory", announcements = "announcementsCategory", whereToAnnounce = "whereToAnnounceCategory",
+	questPlates = "questPlatesCategory", playerPlates = "playerPlatesCategory", playerLocations = "playerLocationsCategory",
+	groups = "groupsCategory", accessibility = "accessibilityCategory", profiles = "profilesCategory",
+	developer = "developerCategory", experimental = "experimentalCategory",
+}
+
+function QuestTogether:OpenSettingsCategory(key)
+	local field = SETTINGS_CATEGORY_FIELDS[key]
+	if not field or self:IsWorkBlocked("foreign_frame_mutation") then return false end
 	if not self.optionsCategory and not self.optionsFrame then
 		self:InitializeOptionsWindow()
 	end
-
-	if not (Settings and Settings.OpenToCategory and self.optionsCategory and self.optionsCategory.GetID) then
+	local category = self[field]
+	if not (Settings and type(Settings.OpenToCategory) == "function" and category and type(category.GetID) == "function") then
 		self:Print(L("Settings API is unavailable; unable to open options."))
 		return false
 	end
+	local ok, id = pcall(category.GetID, category)
+	if not ok or not self:CanAccessValue(id) or (type(id) ~= "number" and type(id) ~= "string") then return false end
+	return pcall(Settings.OpenToCategory, id)
+end
 
-	Settings.OpenToCategory(self.optionsCategory:GetID())
-	return true
+function QuestTogether:OpenOptionsWindow()
+	return self:OpenSettingsCategory("general")
 end
 
 function QuestTogether:InitializePlayerLocationsWindow(parentCategory)

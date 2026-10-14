@@ -35,6 +35,7 @@ local function Method(addon, frame, method, ...)
 	return Native(addon, addon:GetAccessibleFrameMember(frame, method), frame, ...)
 end
 function QuestTogether:HidePlayerTooltipPresentation(state)
+	self:ClearPlayerDetailsInterest(state)
 	state.hovered = nil
 	self:HideOwnedUI(state.tooltip)
 	if state.onHoverChanged then
@@ -145,6 +146,10 @@ end
 
 function QuestTogether:BuildPlayerTooltipModel(row)
 	local addon = self
+	if row.tipAction then
+		local info = self:GetHintActionInfo(row.tipAction)
+		return { title = info and info.label or "", text = info and info.tooltip or "", color = { 1, 0.82, 0 }, members = {} }
+	end
 	if not row.questID then
 		row = addon:GetPlayerDetailsTooltipRow(row)
 	end
@@ -158,9 +163,6 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 	local text, introText, lastUpdate
 	local party = not row.questID and addon:GetPlayerPartyVisualInfo(row.name) or nil
 	local partyMembers, knownPartyMembers = PartyTooltipMembers(addon, party, row)
-	if party and party.key and party.size <= 5 and not party.members then
-		addon:RequestPartyVisualRoster(row.name)
-	end
 	if row.questID then
 		text = row.questText
 	else
@@ -202,6 +204,8 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 			or party and party.grouped and L("In a party")
 			or L("Party status unknown")
 		local version = addon:GetPlayerAddonVersion(row.name)
+		local note = addon:GetPlayerNoteTooltipText(row.name)
+		if note then text = text .. "\n\n" .. note end
 		text = text:gsub("^\n+", "")
 		text = text
 			.. (text ~= "" and "\n\n" or "")
@@ -424,7 +428,26 @@ function QuestTogether:RenderPlayerTooltip(state, anchor, model)
 end
 
 function QuestTogether:PresentPlayerTooltip(state, anchor, row)
-	return self:RenderPlayerTooltip(state, anchor, self:BuildPlayerTooltipModel(row))
+	-- IsShown stays true below a hidden UIParent (Alt+Z). No hover interest may
+	-- outlive its visible anchor, including a recycled pin or a different link.
+	local name = row.name
+	local function Current()
+		return state.hovered == anchor and anchor.name == name
+			and not self:IsRuntimeRestricted()
+			and Method(self, anchor.frame, "IsVisible") == true
+			and Method(self, self:GetPlayerTooltipPresentationParent(), "IsVisible") == true
+	end
+	if Method(self, anchor.frame, "IsVisible") ~= true
+		or Method(self, self:GetPlayerTooltipPresentationParent(), "IsVisible") ~= true then
+		self:HidePlayerTooltipPresentation(state)
+		return
+	end
+	self:RenderPlayerTooltip(state, anchor, self:BuildPlayerTooltipModel(row))
+	if not row.questID and not row.tipAction and Current() then
+		self:SetPlayerDetailsInterest(state, name, Current)
+	else
+		self:ClearPlayerDetailsInterest(state)
+	end
 end
 
 -- The same owned tooltip renderer serves dots and QT speaker links. Keep their
@@ -472,14 +495,16 @@ function QuestTogether:UpdateChatLogPlayerTooltip()
 	if
 		not self.isEnabled
 		or self:IsRuntimeRestricted()
-		or (not pin.questID and self:IsIgnoredPlayerName(pin.name))
+		or (not pin.questID and not pin.tipAction and self:IsIgnoredPlayerName(pin.name))
 		or Method(self, pin.frame, "IsShown") ~= true
 	then
 		self:HideChatLogPlayerTooltip()
 		return
 	end
 	local ok, row
-	if pin.questID then
+	if pin.tipAction then
+		ok, row = true, { tipAction = pin.tipAction }
+	elseif pin.questID then
 		ok, row = pcall(self.GetChatLogQuestTooltipRow, self, pin.questID, pin.title)
 	else
 		ok, row = pcall(self.GetChatLogPlayerTooltipRow, self, pin.name)
@@ -496,8 +521,11 @@ function QuestTogether:ShowChatLogPlayerTooltip(frame, link, text)
 	end
 	link = self:SafeTrimString(link, "")
 	local kind, name = link:match("^([^:]+):(.+)$")
-	local questID
-	if kind == self.chatLogQuestLinkType then
+	local questID, tipAction
+	if kind == "questtogethertip" then
+		tipAction = self:ParseHintActionLink(link)
+		if not tipAction then return false end
+	elseif kind == self.chatLogQuestLinkType then
 		questID = self:SafeToNumber(name)
 		if not questID or questID < 1 or questID > 1000000000 or questID ~= math.floor(questID) then
 			return false
@@ -512,11 +540,8 @@ function QuestTogether:ShowChatLogPlayerTooltip(frame, link, text)
 	end
 	local state = rawget(self, "chatLogPlayerTooltipState") or {}
 	self.chatLogPlayerTooltipState = state
-	if not questID then
-		self:RequestPlayerDetails(name)
-	end
 	state.hovered =
-		{ frame = frame, name = name, questID = questID, title = self:SafeTrimString(text, ""), chatLink = true }
+		{ frame = frame, name = name, questID = questID, tipAction = tipAction, title = self:SafeTrimString(text, ""), chatLink = true }
 	self:UpdateChatLogPlayerTooltip()
 	return state.hovered ~= nil
 end

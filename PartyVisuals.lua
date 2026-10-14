@@ -41,6 +41,18 @@ end
 local function Fresh(record, now, ttl)
 	return record and now >= record.at and now - record.at < (record.lifetime or ttl)
 end
+local function PendingFresh(a, id, pending)
+	if not pending then
+		return false
+	end
+	local now = Now(a)
+	local deadline = a:GetCommunicationRequestDeadline(id) or (pending.at + REQUEST_TTL)
+	return now >= pending.at and now < deadline
+end
+local function CancelPending(a, id, pending, reason)
+	a:CancelCommRequest(id, reason)
+	a:CancelCommunicationOwner(pending, reason)
+end
 local function Revision(leader, members)
 	local entries = {}
 	for _, member in ipairs(members) do
@@ -499,7 +511,21 @@ function QT:GetPlayerPartyVisualInfo(sender)
 	info.members = roster and roster.members or nil
 	return Summary(info)
 end
-function QT:RequestPartyVisualRoster(sender)
+function QT:CancelPartyVisualRosterInterest(name)
+	local s = rawget(self, "partyVisualState")
+	if not s then
+		return
+	end
+	for id, pending in pairs(s.pending) do
+		if pending.name == name and pending.hover then
+			s.pending[id] = nil
+			CancelPending(self, id, pending, "cancelled")
+			s.attempts[pending.key] = { at = Now(self), retryAfter = 2 }
+		end
+	end
+end
+
+function QT:RequestPartyVisualRoster(sender, hover)
 	local name, now = Name(self, sender), Now(self)
 	local info = name and self:GetPlayerPartyVisualInfo(name)
 	if not info or info.cached or not info.key or info.size > 5 or info.size < 2 or info.members then
@@ -507,12 +533,15 @@ function QT:RequestPartyVisualRoster(sender)
 	end
 	local s = self:GetPartyVisualState()
 	for id, pending in pairs(s.pending) do
-		if not Fresh(pending, now, REQUEST_TTL) then
+		if not PendingFresh(self, id, pending) then
 			s.pending[id] = nil
-			self:CancelCommRequest(id, "expired")
+			CancelPending(self, id, pending, "expired")
+		elseif pending.key == info.key then
+			return false
 		end
 	end
-	if Fresh(s.attempts[info.key], now, REQUEST_TTL) or Count(s.pending) >= 16 then
+	local attempt = s.attempts[info.key]
+	if Fresh(attempt, now, attempt and attempt.retryAfter or REQUEST_TTL) or Count(s.pending) >= 16 then
 		return false
 	end
 	s.attempts[info.key] = { at = now }
@@ -520,8 +549,15 @@ function QT:RequestPartyVisualRoster(sender)
 	s.sequence = s.sequence + 1
 	local random = self.API.Random and self:SafeToNumber(self.API.Random(1, 99999999)) or 1
 	local id = math.floor(now * 1000) .. "-" .. math.floor(random or 1) .. "-" .. s.sequence
-	local pending =
-		{ at = now, name = name, key = info.key, revision = info.revision, size = info.size, leader = info.leader }
+	local pending = {
+		at = now,
+		name = name,
+		key = info.key,
+		revision = info.revision,
+		size = info.size,
+		leader = info.leader,
+		hover = hover == true,
+	}
 	s.pending[id] = pending
 	local admitted = self:Request(
 		"QPGR",
@@ -534,7 +570,8 @@ function QT:RequestPartyVisualRoster(sender)
 				local current = self:GetPlayerPartyVisualInfo(name)
 				return rawget(self, "partyVisualState") == s
 					and s.pending[id] == pending
-					and Fresh(pending, Now(self), REQUEST_TTL)
+					and PendingFresh(self, id, pending)
+					and (not pending.hover or self:HasPlayerDetailsInterest(name))
 					and current ~= nil
 					and current.key == pending.key
 			end,
@@ -542,15 +579,18 @@ function QT:RequestPartyVisualRoster(sender)
 				return self:HandlePartyVisualRosterMember(record, peer, context)
 			end,
 			onComplete = function(sent)
-				if not sent and s.pending[id] == pending then
+				if not sent and rawget(self, "partyVisualState") == s and s.pending[id] == pending then
 					s.pending[id] = nil
-					self:CancelCommRequest(id, "cancelled")
+					s.attempts[info.key] = { at = Now(self), retryAfter = 2 }
+					CancelPending(self, id, pending, "cancelled")
 				end
 			end,
 		}
 	)
 	if not admitted and s.pending[id] == pending then
 		s.pending[id] = nil
+		s.attempts[info.key] = { at = now, retryAfter = 2 }
+		CancelPending(self, id, pending, "cancelled")
 	end
 	return admitted
 end
@@ -592,7 +632,7 @@ function QT:HandlePartyVisualRosterRequest(data, sender)
 		{ { distribution = "WHISPER", target = name } },
 		{
 			owner = pending,
-			expires = now + REQUEST_TTL,
+			expires = now + 600,
 			isCurrent = function()
 				local current = self:GetLocalPartyVisualInfo()
 				return rawget(self, "partyVisualState") == s
@@ -617,7 +657,7 @@ function QT:HandlePartyVisualRosterMember(data, sender)
 	local s, now = self:GetPartyVisualState(), Now(self)
 	local pending, info = s.pending[id], self:GetPlayerPartyVisualInfo(name)
 	if
-		not Fresh(pending, now, REQUEST_TTL)
+		not PendingFresh(self, id, pending)
 		or pending.name ~= name
 		or pending.revision ~= revision
 		or not info

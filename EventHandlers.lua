@@ -10,6 +10,12 @@ Responsibilities in this file:
 
 local QuestTogether = _G.QuestTogether
 
+function QuestTogether:CHAT_MSG_SYSTEM(message)
+	if self.isEnabled and not self.isLoggingOut and self.HandleQuestShareSystemMessage then
+		self:HandleQuestShareSystemMessage(message)
+	end
+end
+
 local function SafeText(value, fallback)
 	return QuestTogether:SafeToString(value, fallback or "")
 end

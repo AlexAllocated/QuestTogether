@@ -90,6 +90,8 @@
       "PING",
       "PONG",
       "QCENTRY",
+      "QCHS",
+      "QCID",
       "QCMP",
       "QCOB",
       "QCRS",
@@ -167,9 +169,11 @@
     "Core.lua": [
       "...(%d more)",
       "/qt resetlayout - ",
+      "ACCEPTED",
       "ALL",
       "Adopted existing QuestTogether chat window id=%s on login",
       "Applied main chat font size=%s to QuestTogether chat frame id=%s",
+      "BUSY",
       "CENTER",
       "CHANNEL",
       "CHATLINK",
@@ -177,9 +181,12 @@
       "Complete",
       "Completed",
       "Created QuestTogether chat window id=%s",
+      "DEAD",
       "DEBUG",
+      "DECLINED",
       "Failed to close QuestTogether chat window id=%s",
       "Frame",
+      "INVALID",
       "Ignoring QuestTogether chat window close because a visible replacement exists id=%s",
       "In Progress",
       "Installed chat window hooks",
@@ -187,6 +194,7 @@
       "Left",
       "Main Chat Window",
       "Not Started",
+      "ONQUEST",
       "Objectives Complete",
       "PARTY",
       "PRIEST",
@@ -201,6 +209,7 @@
       "Recurringavailablequesticon",
       "Right",
       "SAY",
+      "SUCCESS",
       "Separate Chat Window",
       "Separate QuestTogether chat window unavailable; falling back to main chat",
       "Skipping unavailable runtime event=%s",
@@ -225,6 +234,12 @@
       "Clear",
       "Matches",
       "Refresh"
+    ],
+    "DeveloperAnnouncements.lua": [
+      "CHANNEL",
+      "DEVANN",
+      "HELLO",
+      "WHISPER"
     ],
     "DeveloperDiagnostics.lua": [
       "Developer request callback failed",
@@ -268,6 +283,9 @@
       "QTPR",
       "QTVR",
       "STATE"
+    ],
+    "Hints.lua": [
+      " |cffffd100|Hquesttogethertip:"
     ],
     "HotPathRuntime.lua": [
       "Frame",
@@ -470,6 +488,15 @@
       "LOC",
       "Neutral"
     ],
+    "PlayerNotes.lua": [
+      "BACKGROUND",
+      "BOTTOMLEFT",
+      "BOTTOMRIGHT",
+      "Button",
+      "LEFT",
+      "OVERLAY",
+      "TOPLEFT"
+    ],
     "PlayerPhases.lua": [
       "QTPH",
       "WHISPER"
@@ -511,9 +538,10 @@
       "TOPLEFT"
     ],
     "QuestCompare.lua": [
+      "Absent",
       "Awaiting confirmation",
+      "Completed",
       "Have",
-      "Loading",
       "Missing",
       "QSHR",
       "Ready",
@@ -522,7 +550,6 @@
       "Request sent",
       "Share attempted",
       "Sharing unavailable",
-      "Unknown",
       "WHISPER",
       "party compare local snapshot"
     ],
@@ -534,11 +561,22 @@
       "Yes"
     ],
     "QuestCompareFilters.lua": [
+      "Absent",
+      "Completed",
       "Have",
       "Missing",
       "Ready"
     ],
+    "QuestCompareInteraction.lua": [
+      "DOWN",
+      "END",
+      "HOME",
+      "PAGEDOWN",
+      "PAGEUP"
+    ],
     "QuestCompareObjectives.lua": [
+      "Absent",
+      "Completed",
       "Have",
       "Missing",
       "Ready",
@@ -612,7 +650,9 @@
     ],
     "QuestCompareWindow.lua": [
       "ADD",
+      "APPS",
       "ARTWORK",
+      "Absent",
       "BACKGROUND",
       "BORDER",
       "BOTTOMLEFT",
@@ -620,16 +660,27 @@
       "Button",
       "CENTER",
       "DIALOG",
+      "DOWN",
+      "END",
+      "ENTER",
+      "ESCAPE",
       "Frame",
       "HIGHLIGHT",
+      "HOME",
       "Have",
       "Hide",
       "LEFT",
       "MEDIUM",
+      "MENU",
       "MIDDLE",
+      "NUMPADENTER",
+      "Not in log",
       "OVERLAY",
+      "PAGEDOWN",
+      "PAGEUP",
       "RIGHT",
       "Ready",
+      "SPACE",
       "Show",
       "TOP",
       "TOPLEFT",
@@ -638,6 +689,14 @@
       "party compare render",
       "party compare titles",
       "party share prompt"
+    ],
+    "QuestCompletion.lua": [
+      "Absent",
+      "Completed",
+      "Loading",
+      "Missing",
+      "Unknown",
+      "WHISPER"
     ],
     "QuestDetails.lua": [
       "Button",
@@ -762,12 +821,6 @@
       "TOPLEFT",
       "party compare preview theme",
       "scroll dialog themes"
-    ],
-    "DeveloperAnnouncements.lua": [
-      "CHANNEL",
-      "DEVANN",
-      "HELLO",
-      "WHISPER"
     ]
   }
 }

@@ -172,6 +172,8 @@ function QT:UpdatePlayerTooltipBadge()
 	if row.looking then
 		text = text .. "\n|cffffd34d" .. L("Looking for questing partners") .. "|r"
 	end
+	local note = self:GetPlayerNoteTooltipText(row.name)
+	if note then text = text .. "\n" .. note end
 	Owned(self, state.label, "SetWidth", width - 58)
 	Owned(self, state.label, "SetText", text)
 	local height = self:SafeToNumber(Owned(self, state.label, "GetStringHeight"))

@@ -44,6 +44,7 @@ WindowController.lua
 WindowTheme.lua
 WindowLayout.lua
 QuestDialogs.lua
+PlayerNotes.lua
 QuestDetails.lua
 ReleaseNotes.lua
 LocalizedReleaseNotes.lua
@@ -65,6 +66,8 @@ Transport.lua
 CommsTransfer.lua
 CommunicationCoordinator.lua
 QuestCompareCommunication.lua
+QuestCompletion.lua
+QuestSharingResults.lua
 PingCommunication.lua
 DeveloperDiagnostics.lua
 DeveloperAnnouncements.lua
@@ -74,6 +77,7 @@ AddonUpdates.lua
 QuestCompare.lua
 QuestCompareFilters.lua
 QuestCompareObjectives.lua
+QuestCompareInteraction.lua
 QuestCompareWindow.lua
 PartyChatReminder.lua
 PartyJoin.lua
@@ -101,6 +105,7 @@ Options.lua
 Diagnostics.lua
 Tests.lua
 scripts/ui_fixture.lua
+scripts/regression_player_notes.lua
 scripts/regression_quest_details.lua
 scripts/network_fixture.lua
 scripts/regression_developer_feed_auth.lua
@@ -121,6 +126,8 @@ scripts/regression_nameplate_discovery.lua
 scripts/regression_comms.lua
 scripts/regression_addon_updates.lua
 scripts/regression_quest_compare.lua
+scripts/regression_quest_completion.lua
+scripts/regression_compare_interaction.lua
 scripts/regression_minimap.lua
 scripts/regression_keybindings.lua
 scripts/regression_hints.lua

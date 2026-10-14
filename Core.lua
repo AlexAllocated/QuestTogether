@@ -413,6 +413,7 @@ QuestTogether.DEFAULTS = {
 		addonUpdateAvailable = false,
 		questTrackers = {},
 		personalBubbleAnchors = {},
+		playerNotes = {},
 		debugLogCategoryFilter = "ALL",
 		debugLogSearchFilter = "",
 		debugLogPrefixFilter = "",
@@ -725,6 +726,7 @@ QuestTogether.completionEmotes = {
 QuestTogether.runtimeEvents = {
 	"CHAT_MSG_ADDON",
 	"CHAT_MSG_CHANNEL",
+	"CHAT_MSG_SYSTEM",
 	"CHANNEL_COUNT_UPDATE",
 	"CHANNEL_UI_UPDATE",
 	"PLAYER_LEVEL_UP",
@@ -1331,6 +1333,28 @@ QuestTogether.API = QuestTogether.API
 				return nil
 			end
 			return nil
+		end,
+		GetCharacterQuestHistoryStatus = function(questID)
+			local id = QuestTogether:SafeToNumber(questID)
+			if not id or id < 1 or id > 1000000000 or id % 1 ~= 0
+				or QuestTogether:IsRuntimeRestricted() or not CanAccessForeignTable(C_QuestLog) then return "unknown" end
+			local function Read(method)
+				local fn = C_QuestLog[method]
+				if not CanAccessForeignValue(fn) or type(fn) ~= "function" then return nil end
+				local ok, value = pcall(fn, id)
+				if ok and CanAccessForeignValue(value) and type(value) == "boolean" then return value end
+				return nil
+			end
+			-- Absence from the active log is not itself evidence of completion.
+			local active = Read("IsOnQuest")
+			if active == true then return "active" end
+			if active ~= false then return "unknown" end
+			local repeatable = Read("IsRepeatableQuest")
+			if repeatable == true then return "repeatable" end
+			if repeatable ~= false then return "unknown" end
+			local completed = Read("IsQuestFlaggedCompleted")
+			if completed == true then return "completed" end
+			return completed == false and "incomplete" or "unknown"
 		end,
 		IsQuestReadyForTurnIn = function(questID)
 			local numericQuestID = QuestTogether
@@ -2007,6 +2031,20 @@ QuestTogether.API = QuestTogether.API
 				and type(C_QuestLog.GetInfo) == "function"
 				and type(C_QuestLog.IsPushableQuest) == "function"
 		end,
+		GetQuestShareResultFormats = function()
+			local result = {}
+			if QuestTogether:IsRuntimeRestricted() then return result end
+			for _, suffix in ipairs({ "ACCEPTED", "ALREADY_DONE", "BUSY", "DEAD", "DECLINED",
+				"DIFFERENT_SERVER_DAILY", "INVALID", "LOG_FULL", "NOT_ALLOWED", "NOT_DAILY",
+				"NOT_IN_PARTY", "ONQUEST", "SUCCESS", "TIMER_EXPIRED", "TOO_FAR" }) do
+				local key = "ERR_QUEST_PUSH_" .. suffix .. "_S"
+				local value = _G[key]
+				if CanAccessForeignValue(value) and type(value) == "string" and #value > 0 and #value <= 1024 then
+					result[key] = value
+				end
+			end
+			return result
+		end,
 		GetQuestLogIndexForSharing = function(questID)
 			local id = QuestTogether:SafeToNumber(questID)
 			if not id or id <= 0 or id ~= math.floor(id) or not QuestTogether.API.CanShareQuests() then
@@ -2043,6 +2081,44 @@ QuestTogether.API = QuestTogether.API
 		end,
 		GetMinimapAnchor = function()
 			return Minimap
+		end,
+		IsPartyQuestKeyboardInputBlocked = function(frame)
+			if not QuestTogether:CanMutateOwnedUI(frame) or QuestTogether:IsRuntimeRestricted() then return true end
+			if type(GetCurrentKeyBoardFocus) ~= "function" then return true end
+			local ok, focus = pcall(GetCurrentKeyBoardFocus)
+			if not ok or not CanAccessForeignValue(focus) or focus ~= nil then return true end
+			if Menu and type(Menu.GetManager) == "function" then
+				local managerOK, manager = pcall(Menu.GetManager)
+				if not managerOK or not CanAccessForeignTable(manager) then return true end
+				if type(manager.IsAnyMenuOpen) ~= "function" then return true end
+				local menuOK, opened = pcall(manager.IsAnyMenuOpen, manager)
+				if not menuOK or not CanAccessForeignValue(opened) or opened == true then return true end
+			end
+			return false
+		end,
+		IsMouseOverPartyQuestWindow = function(frame)
+			if not QuestTogether:CanMutateOwnedUI(frame) then return false end
+			local fn = QuestTogether:GetAccessibleFrameMember(frame, "IsMouseOver")
+			if type(fn) ~= "function" then return false end
+			local ok, over = pcall(fn, frame)
+			return ok and CanAccessForeignValue(over) and over == true
+		end,
+		OpenKeyBindings = function()
+			if QuestTogether:IsWorkBlocked("foreign_frame_mutation") or not Settings
+				or type(Settings.OpenToCategory) ~= "function" then return false end
+			local id = QuestTogether:SafeToNumber(Settings.KEYBINDINGS_CATEGORY_ID)
+			if not id then return false end
+			return pcall(Settings.OpenToCategory, id, "QuestTogether")
+		end,
+		GetPlayerNotesNamespace = function()
+			local region = "default"
+			if type(GetCurrentRegion) == "function" then
+				local ok, value = pcall(GetCurrentRegion)
+				local number = ok and QuestTogether:SafeToNumber(value)
+				if number then region = tostring(number) end
+			end
+			local project = QuestTogether:SafeToNumber(WOW_PROJECT_ID) or 0
+			return tostring(project) .. ":" .. region .. ":" .. (QuestTogether:UsesRegionalPlayerNames() and "regional" or "realm")
 		end,
 		GetHintCapabilities = function()
 			-- Read capabilities, never the player's current quest, party or map.
@@ -5154,6 +5230,7 @@ function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, s
 		rootDescription:CreateButton(L("Compare Quests"), function()
 			self:CompareQuestsWithChatLogSpeaker(fullName)
 		end)
+		self:PopulatePlayerNotesMenu(rootDescription, fullName)
 	end
 
 	self:PopulatePartyFocusMenu(rootDescription, fullName)
@@ -5215,30 +5292,30 @@ end
 function QuestTogether:GetQuestShareAvailability(questId)
 	local id = self:SafeToNumber(questId)
 	if not id or id <= 0 or id ~= math.floor(id) then
-		return nil, L("Invalid quest.")
+		return nil, L("Invalid quest."), "invalid"
 	end
 	if not self.isEnabled then
-		return nil, L("Enable QuestTogether to share quests.")
+		return nil, L("Enable QuestTogether to share quests."), "disabled"
 	end
 	if self:IsWorkBlocked("quest_share") then
-		return nil, L("Quest sharing is unavailable while restricted.")
+		return nil, L("Quest sharing is unavailable while restricted."), "restricted"
 	end
 	if not self.API.CanShareQuests or self.API.CanShareQuests() ~= true then
-		return nil, L("Quest sharing is unavailable on this client.")
+		return nil, L("Quest sharing is unavailable on this client."), "unsupported"
 	end
 	if not self.API.IsInGroup or self.API.IsInGroup() ~= true then
-		return nil, L("Join a party to share quests.")
+		return nil, L("Join a party to share quests."), "group"
 	end
 	local index = self:SafeToNumber(self.API.GetQuestLogIndexForSharing(id))
 	if not index or index <= 0 or index ~= math.floor(index) then
-		return nil, L("This quest is not available in your quest log.")
+		return nil, L("This quest is not available in your quest log."), "not_owned"
 	end
 	local pushable = self.API.IsPushableQuest(id)
 	if not self:CanAccessValue(pushable) or type(pushable) ~= "boolean" then
-		return nil, L("Quest shareability is unavailable.")
+		return nil, L("Quest shareability is unavailable."), "unknown"
 	end
 	if not pushable then
-		return nil, L("This quest cannot be shared.")
+		return nil, L("This quest cannot be shared."), "not_shareable"
 	end
 	return index
 end
@@ -5408,6 +5485,16 @@ function QuestTogether:TryInstallChatLogLinkHandler()
 	if not coordRegistered then
 		LinkUtil.RegisterLinkHandler(self.chatLogCoordLinkType, function(link, text, linkData, contextData)
 			return QuestTogether:HandleChatLogCoordLink(link, text, linkData, contextData)
+		end)
+	end
+	local tipType = "questtogethertip"
+	if not (LinkUtil.IsLinkHandlerRegistered and LinkUtil.IsLinkHandlerRegistered(tipType)) then
+		LinkUtil.RegisterLinkHandler(tipType, function(_, _, linkData)
+			if QuestTogether:CanAccessTable(linkData)
+				and not (QuestTogether.API.IsModifiedClick and QuestTogether.API.IsModifiedClick("CHATLINK")) then
+				QuestTogether:HandleHintActionLink(QuestTogether:SafeToString(linkData.options, ""))
+			end
+			return LinkProcessorResponse.Handled
 		end)
 	end
 	self.chatLogLinkHandlerInstalled = true

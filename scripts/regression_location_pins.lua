@@ -34,6 +34,9 @@ local function Frame(addon, parent, kind)
 		self:CheckRead()
 		return self.shown
 	end
+	function frame:IsVisible()
+		return self:IsShown() and (not self.parent or self.parent:IsVisible())
+	end
 	function frame:CheckRead()
 		if self:IsForbidden() then
 			addon.invalidCalls = (addon.invalidCalls or 0) + 1
@@ -1556,45 +1559,46 @@ Register("client locale paints quest hover labels and local native title", funct
 	Equal(state.tooltip.shown, false)
 end, { locale = "client" })
 
-Register("hover refresh queries only on entry and incoming details update only the current tooltip", function()
-	local a = Fixture()
-	a.requests = {}
-	function a:RequestPlayerDetails(name)
-		self.requests[#self.requests + 1] = name
-	end
-	function a:GetChatLogTooltipCursorPosition()
-		return 200, 100
-	end
-	a.API = {
-		GetTime = function()
-			return 100
-		end,
-	}
-	local row = Row("Friend-Realm")
-	a.rows.map = { row }
-	a.playerLocationState = { peers = { [row.name] = row } }
-	a:RefreshPlayerLocationPins()
-	Pin(a, "map").frame.scripts.OnEnter()
-	Equal(#a.requests, 1)
-	for _ = 1, 10 do
+Register(
+	"hover interest deduplicates presentation refresh and incoming details update only the current tooltip",
+	function()
+		local a = Fixture()
+		a.requests = {}
+		function a:RequestPlayerDetails(name)
+			self.requests[#self.requests + 1] = name
+		end
+		function a:GetChatLogTooltipCursorPosition()
+			return 200, 100
+		end
+		a.API = {
+			GetTime = function()
+				return 100
+			end,
+		}
+		local row = Row("Friend-Realm")
+		a.rows.map = { row }
+		a.playerLocationState = { peers = { [row.name] = row } }
 		a:RefreshPlayerLocationPins()
-	end
-	Equal(#a.requests, 1)
-	local chat = Frame(a)
-	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Friend-Realm"))
-	Equal(#a.requests, 2)
-	a.playerDetailsState = {
-		identities = {
+		Pin(a, "map").frame.scripts.OnEnter()
+		Equal(#a.requests, 1)
+		for _ = 1, 10 do
+			a:RefreshPlayerLocationPins()
+		end
+		Equal(#a.requests, 1)
+		local chat = Frame(a)
+		assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:Friend-Realm"))
+		Equal(#a.requests, 2)
+		a.playerDetailsState.identities = {
 			[row.name] = { receivedAt = 100, level = 42, classFile = "MAGE", race = "Dwarf", faction = "Alliance" },
-		},
-	}
-	a:UpdateChatLogPlayerTooltip()
-	assert(a.chatLogPlayerTooltipState.tooltipIntro.text:find("42", 1, true))
-	Equal(#a.requests, 2)
-	a:HideChatLogPlayerTooltip()
-	a:UpdateChatLogPlayerTooltip()
-	Equal(a.chatLogPlayerTooltipState.tooltip.shown, false)
-end)
+		}
+		a:UpdateChatLogPlayerTooltip()
+		assert(a.chatLogPlayerTooltipState.tooltipIntro.text:find("42", 1, true))
+		Equal(#a.requests, 2)
+		a:HideChatLogPlayerTooltip()
+		a:UpdateChatLogPlayerTooltip()
+		Equal(a.chatLogPlayerTooltipState.tooltip.shown, false)
+	end
+)
 
 Register("player tooltip width fits content expands for party names and shrinks on reuse", function()
 	local a = Fixture()
@@ -1748,4 +1752,67 @@ Register("experimental phase decoration clears when a pooled pin changes occupan
 	assert(a:RefreshPlayerLocationPins())
 	Equal(Pin(a, "map"), pin)
 	Equal(pin.phaseIcon.shown, false)
+end)
+
+Register("hover interests follow visible owners across Alt Z recycled pins chat switches and leaves", function()
+	local a = Fixture()
+	a.requests = {}
+	function a:RequestPlayerDetails(name)
+		self.requests[#self.requests + 1] = name
+	end
+	function a:GetChatLogTooltipCursorPosition()
+		return 200, 100
+	end
+	local first, second = Row("Friend-Realm"), Row("Other-Realm")
+	a.rows.map = { first }
+	a.playerLocationState = { peers = { [first.name] = first, [second.name] = second } }
+	a:RefreshPlayerLocationPins()
+	local pin = Pin(a, "map")
+	pin.frame.scripts.OnEnter()
+	local state = a.locationPinState
+	local original = assert(a.playerDetailsState.interests[state])
+	assert(original.isCurrent())
+	local chatParent = Frame(a)
+	local chat = Frame(a, chatParent)
+	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:" .. first.name))
+	local chatState = a.chatLogPlayerTooltipState
+	pin.frame.scripts.OnLeave()
+	Equal(a.playerDetailsState.interests[state], nil)
+	assert(a.playerDetailsState.interests[chatState])
+	chatParent:Hide()
+	assert(chat:IsShown() and not chat:IsVisible())
+	local calls = #a.requests
+	a:UpdatePlayerDetailsInterests()
+	Equal(next(a.playerDetailsState.interests), nil)
+	Equal(#a.requests, calls, "hidden parents must retire interests before runtime retries")
+	a:UpdateChatLogPlayerTooltip()
+	Equal(chatState.hovered, nil)
+	chatParent:Show()
+	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:" .. second.name))
+	local selected = assert(a.playerDetailsState.interests[chatState])
+	Equal(selected.name, second.name)
+	a.playerDetailsState.identities[first.name] = {
+		receivedAt = 100,
+		level = 99,
+		classFile = "MAGE",
+		race = "Dwarf",
+		faction = "Alliance",
+	}
+	a:UpdateChatLogPlayerTooltip()
+	assert(not chatState.tooltipIntro.text:find("99", 1, true), "old response cannot redraw the selected player")
+	pin.frame.scripts.OnEnter()
+	local mapInterest = assert(a.playerDetailsState.interests[state])
+	a.rows.map = { second }
+	a:RefreshPlayerLocationPins()
+	Equal(a.playerDetailsState.interests[state], nil)
+	assert(not mapInterest.isCurrent())
+	pin.frame.scripts.OnEnter()
+	Equal(a.playerDetailsState.interests[state].name, second.name)
+	a.tooltipParent:Hide()
+	a:UpdatePlayerDetailsInterests()
+	Equal(next(a.playerDetailsState.interests), nil)
+	a:RefreshPlayerLocationPins()
+	Equal(state.hovered, nil)
+	a:UpdateChatLogPlayerTooltip()
+	Equal(chatState.hovered, nil)
 end)

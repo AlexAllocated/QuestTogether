@@ -120,6 +120,16 @@ local function Populate(preview)
 		preview.questOrder[#preview.questOrder + 1] = id
 	end
 	preview:PopulateLocalQuests(session)
+	-- This is a simulated, synced party: explicitly provide the fictional
+	-- history evidence instead of treating absent history as incompletion.
+	for _, member in ipairs(members) do
+		member.questHistory = {}
+		for id in pairs(preview.questCatalog) do
+			if not member.entries[id] then
+				member.questHistory[id] = { status = "incomplete", sampledAt = preview:GetPartyQuestCompareTime() }
+			end
+		end
+	end
 	preview.partyNavigationState = { peers = {} }
 	preview.partyQuestCompareSession = session
 	preview.incompleteData = false
@@ -133,6 +143,15 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	-- No inheritance from live state. Only explicit read adapters and the native
 	-- quest setter cross the preview boundary; party traffic and saves stay private.
 	local preview = {
+		API = {
+			GetTime = function() return owner:GetPartyQuestCompareTime() end,
+			IsPartyQuestKeyboardInputBlocked = function(frame)
+				return not owner.API.IsPartyQuestKeyboardInputBlocked or owner.API.IsPartyQuestKeyboardInputBlocked(frame)
+			end,
+			IsMouseOverPartyQuestWindow = function(frame)
+				return owner.API.IsMouseOverPartyQuestWindow and owner.API.IsMouseOverPartyQuestWindow(frame) or false
+			end,
+		},
 		regionalNames = self:UsesRegionalPlayerNames(),
 		options = { compareHideOtherQuests = false },
 		GetScrollWindowTheme = self.GetScrollWindowTheme,
@@ -177,6 +196,15 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		"GetPartyQuestCompareFilterLabel",
 		"ShowPartyQuestCompareFilters",
 		"FilterPartyQuestCompareRows",
+		"GetPartyQuestCompareColumns",
+		"SetPartyQuestColumnCollapsed",
+		"RestorePartyQuestColumns",
+		"GetPartyQuestKeyboardTarget",
+		"CapturePartyQuestScrollAnchor",
+		"SetPartyQuestKeyboardNavigation",
+		"ConfigurePartyQuestKeyboardNavigation",
+		"ShowPartyQuestKeyboardMenu",
+		"GetPartyQuestAbsenceState",
 	}) do
 		preview[method] = self[method]
 	end
@@ -362,6 +390,8 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	function preview:IsRuntimeRestricted()
 		return owner:IsRuntimeRestricted()
 	end
+	function preview:SetPartyQuestCompletionInterest() end
+	function preview:CancelPartyQuestCompletionRequest() end
 	function preview:CanAccessValue(value)
 		return owner:CanAccessValue(value)
 	end
@@ -491,6 +521,9 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	end
 	function preview:CreateOwnedWindowFrame(...)
 		return owner:CreateOwnedWindowFrame(...)
+	end
+	function preview:CreateOwnedUICleanupFrame()
+		return self:CreateOwnedWindowFrame("Frame")
 	end
 	-- Window movement stays owned by QT; no Blizzard frame state is patched.
 	function preview:StartWindowDrag(frame)

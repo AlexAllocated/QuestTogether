@@ -1600,6 +1600,52 @@ return rawRow end
 		native.canSet, C_Map.SetUserWaypoint = true, nil
 		assert(waypoint:CreateBlizzardWaypoint(84, 25, 50) == false and native.tracks == 0)
 		C_Map, UiMapPoint, C_SuperTrack = originalMap, originalPoint, originalTrack
+		-- New QoL adapters use native public queries without collapsing unknown
+		-- or restricted values into negative character-completion evidence.
+		do
+			local savedLog, savedSettings, savedMenu = C_QuestLog, Settings, Menu
+			local savedFocus, savedRestricted, savedBlocked = GetCurrentKeyBoardFocus, addon.IsRuntimeRestricted, addon.IsWorkBlocked
+			local blocked, active, repeatable, completed = false, false, false, false
+			addon.IsRuntimeRestricted = function() return blocked end
+			addon.IsWorkBlocked = function() return blocked end
+			C_QuestLog = {
+				IsOnQuest = function() return active end,
+				IsRepeatableQuest = function() return repeatable end,
+				IsQuestFlaggedCompleted = function() return completed end,
+				IsQuestFlaggedCompletedOnAccount = function() error("account completion is not character completion") end,
+			}
+			local read = addon.API.GetCharacterQuestHistoryStatus
+			assert(read(12345) == "incomplete")
+			completed = true; assert(read(12345) == "completed")
+			repeatable = true; assert(read(12345) == "repeatable")
+			active = true; assert(read(12345) == "active")
+			active, repeatable = false, false
+			for _, value in ipairs({ secret, inaccessible, "false" }) do
+				completed = value; assert(read(12345) == "unknown")
+			end
+			completed = nil; assert(read(12345) == "unknown")
+			completed, blocked = true, true; assert(read(12345) == "unknown")
+			blocked = false
+			C_QuestLog = inaccessible; assert(read(12345) == "unknown")
+			C_QuestLog = {}; assert(read(12345) == "unknown")
+			assert(read(-1) == "unknown")
+			assert(read(1.5) == "unknown" and read(0) == "unknown" and read(1000000001) == "unknown")
+			local opened
+			Settings = { KEYBINDINGS_CATEGORY_ID = 22, OpenToCategory = function(id, header) opened = { id, header } end }
+			assert(addon.API.OpenKeyBindings() and opened[1] == 22 and opened[2] == "QuestTogether")
+			blocked, opened = true, nil
+			assert(not addon.API.OpenKeyBindings() and opened == nil)
+			blocked = false
+			local ownFrame = { IsForbidden = function() return false end, IsProtected = function() return false end }
+			local editFocus, menuOpen
+			GetCurrentKeyBoardFocus = function() return editFocus end
+			Menu = { GetManager = function() return { IsAnyMenuOpen = function() return menuOpen == true end } end }
+			assert(not addon.API.IsPartyQuestKeyboardInputBlocked(ownFrame))
+			menuOpen = true; assert(addon.API.IsPartyQuestKeyboardInputBlocked(ownFrame))
+			menuOpen, editFocus = false, ownFrame; assert(addon.API.IsPartyQuestKeyboardInputBlocked(ownFrame))
+			C_QuestLog, Settings, Menu = savedLog, savedSettings, savedMenu
+			GetCurrentKeyBoardFocus, addon.IsRuntimeRestricted, addon.IsWorkBlocked = savedFocus, savedRestricted, savedBlocked
+		end
 		print("Offline " .. client .. " quest API contract checks passed.")
 	end
 end

@@ -477,3 +477,238 @@ QT:RegisterTest("partial hover replies retain source age and recover beyond the 
 	Drain(b)
 	Eq(#b.out, 0, "retained replies still obey changed consent")
 end)
+
+QT:RegisterTest(
+	"active hover obtains complete distant player metadata and party then renews without duplicate requests",
+	function()
+		local a, b = Pair()
+		Group(b, 5)
+		b.db.profile.sharePlayerLocation = false
+		local map, chat, visible = {}, {}, true
+		local function Current()
+			return visible
+		end
+		assert(a:SetPlayerDetailsInterest(map, b.name, Current))
+		local pending = assert(a.playerDetailsState.pending[b.name])
+		assert(a:SetPlayerDetailsInterest(chat, b.name, Current))
+		for _ = 1, 20 do
+			a:UpdatePlayerDetailsInterests()
+		end
+		Eq(a.playerDetailsState.pending[b.name], pending)
+		Exchange(a, b)
+		Eq(a:GetPlayerPartyVisualInfo(b.name).size, 5)
+		Eq(a:GetPlayerPartyVisualInfo(b.name).members, nil)
+		a:UpdatePlayerDetailsInterests()
+		local id = assert(next(a:GetPartyVisualState().pending))
+		for _ = 1, 20 do
+			a:UpdatePlayerDetailsInterests()
+		end
+		Eq(next(a:GetPartyVisualState().pending), id)
+		Exchange(a, b)
+		local party = a:GetPlayerPartyVisualInfo(b.name)
+		Eq(#party.members, 5)
+		Eq(a:GetPlayerDetailsTooltipRow({ name = b.name }).level, 13)
+		Eq(a:GetFreshPlayerLocation(b.name), nil, "hover must not request or invent hidden coordinates")
+		local requests = #a.sent
+		a:UpdatePlayerDetailsInterests()
+		Eq(#a.sent, requests)
+		Group(b, 0)
+		a.now, b.now = a.now + 31, b.now + 31
+		a:UpdatePlayerDetailsInterests()
+		assert(a.playerDetailsState.pending[b.name], "a sustained hover renews stale metadata")
+		a:ClearPlayerDetailsInterest(map)
+		assert(a.playerDetailsState.pending[b.name], "another visible surface still owns the shared request")
+		Exchange(a, b)
+		Eq(a:GetPlayerPartyVisualInfo(b.name).size, 0)
+		visible = false
+		a:UpdatePlayerDetailsInterests()
+		Eq(next(a.playerDetailsState.interests), nil)
+	end
+)
+
+QT:RegisterTest("active hover retries rejected metadata and roster admissions with bounded shared cooldowns", function()
+	local a, b = Pair()
+	Group(b, 3)
+	local calls, blocked = {}, { QTHQ = true, QPGR = true }
+	function a:Request(operation, record, routes, options)
+		calls[operation] = (calls[operation] or 0) + 1
+		if blocked[operation] then
+			blocked[operation] = nil
+			if options.onComplete then
+				options.onComplete(false, "rejected")
+			end
+			return false, "capacity"
+		end
+		return QT.Request(self, operation, record, routes, options)
+	end
+	assert(a:SetPlayerDetailsInterest({}, b.name, function()
+		return true
+	end))
+	Eq(calls.QTHQ, 1)
+	for _ = 1, 10 do
+		a:UpdatePlayerDetailsInterests()
+	end
+	Eq(calls.QTHQ, 1)
+	a.now = a.now + 2
+	a:UpdatePlayerDetailsInterests()
+	Eq(calls.QTHQ, 2)
+	Exchange(a, b)
+	a:UpdatePlayerDetailsInterests()
+	Eq(calls.QPGR, 1)
+	for _ = 1, 10 do
+		a:UpdatePlayerDetailsInterests()
+	end
+	Eq(calls.QPGR, 1)
+	a.now = a.now + 2
+	a:UpdatePlayerDetailsInterests()
+	Eq(calls.QPGR, 2)
+	Exchange(a, b)
+	Eq(#a:GetPlayerPartyVisualInfo(b.name).members, 3)
+end)
+
+QT:RegisterTest(
+	"active hover recovers a throttled entry and cancels obsolete interests before late callbacks",
+	function()
+		local a, b = Pair()
+		local other = Peer("Other-Realm")
+		a:RecordQTPlayerPresence(other.name, true)
+		local owner, name = {}, b.name
+		local function Current()
+			return name ~= nil
+		end
+		assert(a:SetPlayerDetailsInterest(owner, name, Current))
+		local old = assert(a.playerDetailsState.pending[name])
+		local oldRequest = a.communicationState.requests[old.id]
+		name = other.name
+		assert(a:SetPlayerDetailsInterest(owner, name, Current))
+		Eq(a.communicationState.requests[old.id], nil)
+		Eq(a.playerDetailsState.pending[b.name], nil)
+		Eq(a.playerDetailsState.pending[name], nil, "second entry observes shared request pacing")
+		a.now = a.now + 2
+		a:UpdatePlayerDetailsInterests()
+		assert(a.playerDetailsState.pending[name], "remaining hovered must retry after shared entry throttle")
+		assert(not oldRequest.isCurrent())
+		Eq(oldRequest.onResponse({ records = b:BuildPlayerDetailsRecords() }, b.name, { requestId = old.id }), false)
+		Eq(a:GetPlayerPartyVisualInfo(b.name), nil)
+		name = nil
+		a:UpdatePlayerDetailsInterests()
+		Eq(next(a.playerDetailsState.interests), nil)
+		Eq(next(a.playerDetailsState.pending), nil)
+		Eq(next(a.communicationState.requests), nil)
+		Drain(a)
+		Eq(#a.out, 0, "left and replaced hovers must not drain stale requests")
+	end
+)
+
+QT:RegisterTest("hover interest stops on ignore restrictions disable reset and callback failure", function()
+	for _, mode in ipairs({ "ignored", "blocked", "chatBlocked", "disabled", "reset", "callback" }) do
+		local a, b = Pair()
+		local valid = true
+		assert(a:SetPlayerDetailsInterest({}, b.name, function()
+			if not valid then
+				error("retired UI owner")
+			end
+			return true
+		end))
+		local pending = assert(a.playerDetailsState.pending[b.name])
+		local request = a.communicationState.requests[pending.id]
+		if mode == "disabled" then
+			a.isEnabled = false
+		elseif mode == "reset" then
+			a:ResetPlayerDetails()
+		elseif mode == "callback" then
+			valid = false
+		elseif mode == "ignored" then
+			a.ignored = b.name
+		else
+			a[mode] = true
+		end
+		a:UpdatePlayerDetailsInterests()
+		Eq(a.communicationState.requests[pending.id], nil, mode)
+		assert(not request.isCurrent())
+		Drain(a)
+		Eq(#a.out, 0, mode)
+	end
+end)
+
+QT:RegisterTest(
+	"hover roster assembly honors extended coordinator deadlines without replacement or partial exposure",
+	function()
+		local a, b = Pair()
+		Group(b, 5)
+		for index = 2, 5 do
+			b.partyMembers["Member" .. index .. "-Realm"] = nil
+			b.partyMembers[string.rep("名", 18) .. index .. "-Realm"] = { classFile = "WARRIOR" }
+		end
+		assert(a:SetPlayerDetailsInterest({}, b.name, function()
+			return true
+		end))
+		Exchange(a, b)
+		a:UpdatePlayerDetailsInterests()
+		local id, pending = next(a:GetPartyVisualState().pending)
+		assert(id and pending)
+		Drain(a)
+		Deliver(a, b)
+		Drain(b)
+		local rest, first = {}, nil
+		for _, packet in ipairs(b.out) do
+			local frame = b:DecodeCommFrame(packet.wire)
+			if frame.operation == "QPGM" and not first then
+				first = packet
+			else
+				rest[#rest + 1] = packet
+			end
+		end
+		assert(first and #rest > 0, "actual roster transfer must contain multiple native datagrams")
+		assert(a:ReceiveCommunication(first.prefix, first.wire, first.route, b.name))
+		Eq(a:GetCommunicationRequestDeadline(id), pending.at + 600)
+		a.now, b.now = a.now + 65, b.now + 65
+		Eq(a:RequestPartyVisualRoster(b.name, true), false, "partial transfer retains its existing identity")
+		Eq(a:GetPartyVisualState().pending[id], pending)
+		Eq(a:GetPlayerPartyVisualInfo(b.name).members, nil)
+		b.out = rest
+		Deliver(b, a, true)
+		Eq(#a:GetPlayerPartyVisualInfo(b.name).members, 5)
+		Eq(a:GetPartyVisualState().pending[id], nil)
+	end
+)
+
+QT:RegisterTest(
+	"active hover retries unanswered metadata without the inactive peer backoff and bounds owners",
+	function()
+		local a, b = Pair()
+		local owner = {}
+		assert(a:SetPlayerDetailsInterest(owner, b.name, function()
+			return true
+		end))
+		local old = assert(a.playerDetailsState.pending[b.name])
+		Drain(a)
+		a.out = {}
+		a.now = old.sentAt + 29
+		a:UpdateCommunicationRuntime()
+		a:UpdatePlayerDetailsInterests()
+		Eq(a.communicationState.requests[old.id], nil)
+		Eq(a.playerDetailsState.pending[b.name], old)
+		a.now = old.sentAt + 30
+		a:UpdatePlayerDetailsInterests()
+		local renewed = assert(a.playerDetailsState.pending[b.name])
+		assert(renewed ~= old and renewed.id ~= old.id, "active interest must recover without waiting two minutes")
+		for _ = 1, 7 do
+			assert(a:SetPlayerDetailsInterest({}, b.name, function()
+				return true
+			end))
+		end
+		Eq(
+			a:SetPlayerDetailsInterest({}, b.name, function()
+				return true
+			end),
+			false
+		)
+		local count = 0
+		for _ in pairs(a.playerDetailsState.interests) do
+			count = count + 1
+		end
+		Eq(count, 8)
+		Eq(a.playerDetailsState.pending[b.name], renewed, "more owners must not duplicate the request")
+	end
+)

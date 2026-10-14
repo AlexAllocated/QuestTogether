@@ -12,6 +12,7 @@ local function Current(a, request)
 		and not a.isLoggingOut
 		and not a:IsIgnoredPlayerName(request.targetName)
 		and (not request.requiresGroup or a:IsGroupedSender(request.targetName))
+		and (not request.receiver or not request.receiver.isCurrent or request.receiver.isCurrent())
 end
 function QuestTogether:BuildQuestCompareEntries()
 	if self.IsWorkBlocked and self:IsWorkBlocked("quest_snapshot_refresh") then
@@ -154,6 +155,11 @@ function QuestTogether:HandleQuestCompareResponse(data, sender)
 	if not pending or pending.targetName ~= sender or not Current(self, pending) then
 		return false
 	end
+	if pending.historyQuestIds then
+		return self:HandleQuestHistoryResponse(data, pending)
+	elseif data.historyStates then
+		return false
+	end
 	if data.objectiveQuestId ~= pending.objectiveQuestId then
 		return false
 	end
@@ -220,7 +226,7 @@ function QuestTogether:HandleQuestCompareResponse(data, sender)
 		end
 	end
 	if pending.receiver then
-		pending.receiver.onDone(true, true, data.classFile, data.revision)
+		pending.receiver.onDone(true, true, data.classFile, data.revision, data.supportsQuestHistory == true)
 	elseif self.PrintQuestCompareDone then
 		self:PrintQuestCompareDone(sender, #order, data.classFile)
 	end
@@ -232,7 +238,16 @@ function QuestTogether:RequestQuestCompare(speakerName, receiver)
 	if not self.isEnabled or not target or self:IsIgnoredPlayerName(target) then
 		return false
 	end
+	if receiver and receiver.historyQuestIds and (receiver.objectiveQuestId or receiver.knownRevision
+		or not self:ValidateQuestHistoryQuery(receiver.historyQuestIds)) then
+		return false
+	end
 	if self:IsSelfSender(target) then
+		-- Local completion reads have their own bounded runtime cadence; do not
+		-- route a history-only receiver through the active-log callbacks.
+		if receiver and receiver.historyQuestIds then
+			return false
+		end
 		local entries = self:BuildQuestCompareEntries()
 		if not entries then
 			return false
@@ -258,6 +273,7 @@ function QuestTogether:RequestQuestCompare(speakerName, receiver)
 		receiver = receiver,
 		startedAt = self.API.GetTime(),
 		objectiveQuestId = receiver and receiver.objectiveQuestId,
+		historyQuestIds = receiver and receiver.historyQuestIds,
 		requiresGroup = routes[1] and routes[1].requiresGroup,
 		classFile = self:GetGroupedSenderClassFile(target),
 	}
@@ -311,6 +327,7 @@ function QuestTogether:RequestQuestCompare(speakerName, receiver)
 		objectiveQuestId = pending.objectiveQuestId,
 		knownRevision = pending.knownRevision,
 		partyOnly = pending.requiresGroup == true,
+		historyQuestIds = pending.historyQuestIds,
 	}, routes, { owner = pending, isCurrent = Active, onExpire = Expire })
 	if not ok then
 		self.pendingQuestCompareRequests[id] = nil
@@ -330,6 +347,10 @@ function QuestTogether:HandleQuestCompareRequest(data)
 		or self:IsIgnoredPlayerName(sender)
 		or self:NormalizeMemberName(data.targetName) ~= self:NormalizeMemberName(self:GetPlayerFullName())
 	then
+		return false
+	end
+	if data.historyQuestIds and (data.objectiveQuestId or data.knownRevision
+		or not self:ValidateQuestHistoryQuery(data.historyQuestIds)) then
 		return false
 	end
 	local now = self.API.GetTime()
@@ -370,6 +391,7 @@ function QuestTogether:HandleQuestCompareRequest(data)
 end
 function QuestTogether:ProgressQuestCompareResponses(now)
 	local cache = rawget(self, "questCompareResponseCache")
+	local historyBudget = 16
 	for key, job in pairs(cache or {}) do
 		if
 			now < job.startedAt
@@ -380,7 +402,14 @@ function QuestTogether:ProgressQuestCompareResponses(now)
 			cache[key] = nil
 		elseif not job.submitted and now >= job.nextAttempt then
 			job.nextAttempt = now + 1
-			local entries, reason = self:BuildRevisionedQuestCompareEntries(job.data.objectiveQuestId)
+			local entries, reason
+			if job.data.historyQuestIds then
+				local used
+				entries, reason, used = self:ProgressQuestHistoryResponse(job, math.min(8, historyBudget))
+				historyBudget = historyBudget - used
+			else
+				entries, reason = self:BuildRevisionedQuestCompareEntries(job.data.objectiveQuestId)
+			end
 			if entries then
 				local unchanged = entries.revision ~= nil and entries.revision == job.data.knownRevision
 				local response = {
@@ -390,8 +419,10 @@ function QuestTogether:ProgressQuestCompareResponses(now)
 					unchanged = unchanged,
 					classFile = self:GetPlayerClassFile(),
 					objectiveQuestId = job.data.objectiveQuestId,
-					count = #entries,
+					count = job.historyStates and #job.historyStates or #entries,
 					entries = unchanged and {} or entries,
+					supportsQuestHistory = true,
+					historyStates = job.historyStates,
 				}
 				job.expiresAt = job.startedAt + 600
 				local ok, status = self:Respond(
@@ -430,7 +461,7 @@ function QuestTogether:ProgressQuestCompareResponses(now)
 					)
 					cache[key] = nil
 				end
-			elseif reason ~= "restricted" then
+			elseif reason ~= "restricted" and reason ~= "pending" then
 				job.attempts = job.attempts + 1
 				if job.attempts >= 5 then
 					job.submitted = true

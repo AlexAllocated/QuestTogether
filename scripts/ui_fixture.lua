@@ -402,9 +402,26 @@ function QT:CreateTestUIRegion(owner, parent, kind)
 		self:CheckRead()
 		return self.focus == true
 	end
+	function frame:SetMultiLine(value)
+		self:Check()
+		self.multiLine = value
+	end
+	function frame:SetMaxBytes(value)
+		self:Check()
+		self.maxBytes = value
+	end
 	function frame:SetPropagateKeyboardInput(v)
 		self:Check()
 		self.propagate = v
+	end
+	function frame:RegisterEvent(event)
+		self:Check()
+		self.events = self.events or {}
+		self.events[event] = true
+	end
+	function frame:UnregisterEvent(event)
+		self:Check()
+		if self.events then self.events[event] = nil end
 	end
 	function frame:Click(...)
 		if self.scripts.OnClick then

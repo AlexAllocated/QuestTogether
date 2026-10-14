@@ -24,7 +24,7 @@ end
 local function State(a)
 	local s = rawget(a, "playerDetailsState")
 	if not s then
-		s = { attempts = {}, pending = {}, replies = {}, identities = {} }
+		s = { attempts = {}, pending = {}, replies = {}, identities = {}, interests = {} }
 		a.playerDetailsState = s
 	end
 	return s
@@ -62,7 +62,95 @@ local function Route(name)
 	return { { distribution = "WHISPER", target = name } }
 end
 
-function QT:RequestPlayerDetails(sender)
+local function InterestCurrent(a, interest)
+	if not Enabled(a) or not Name(a, interest.name) then
+		return false
+	end
+	local ok, current = pcall(interest.isCurrent)
+	return ok and current == true
+end
+
+function QT:HasPlayerDetailsInterest(name)
+	local s = rawget(self, "playerDetailsState")
+	for _, interest in pairs(s and s.interests or {}) do
+		if interest.name == name and InterestCurrent(self, interest) then
+			return true
+		end
+	end
+	return false
+end
+
+function QT:ClearPlayerDetailsInterest(owner)
+	local s = rawget(self, "playerDetailsState")
+	local interest = s and s.interests and s.interests[owner]
+	if not interest then
+		return
+	end
+	s.interests[owner] = nil
+	if self:HasPlayerDetailsInterest(interest.name) then
+		return
+	end
+	local pending = s.pending[interest.name]
+	if pending and pending.hover then
+		s.pending[interest.name] = nil
+		CancelPending(self, pending, "cancelled")
+	end
+	self:CancelPartyVisualRosterInterest(interest.name)
+end
+
+local function RefreshInterest(a, name)
+	a:RequestPlayerDetails(name, true)
+	a:RequestPartyVisualRoster(name, true)
+end
+
+-- Presentation owns only the interest. The shared runtime owns retries and
+-- renewal; neither rebuilding a tooltip model nor an incoming response sends.
+function QT:SetPlayerDetailsInterest(owner, sender, isCurrent)
+	local name = Name(self, sender)
+	if type(owner) ~= "table" or type(isCurrent) ~= "function" or not name or not Enabled(self) then
+		if type(owner) == "table" then
+			self:ClearPlayerDetailsInterest(owner)
+		end
+		return false
+	end
+	local s = State(self)
+	s.interests = s.interests or {}
+	local previous = s.interests[owner]
+	if previous and previous.name == name then
+		previous.isCurrent = isCurrent
+		return true
+	end
+	self:ClearPlayerDetailsInterest(owner)
+	local count = 0
+	for _ in pairs(s.interests) do
+		count = count + 1
+	end
+	if count >= 8 then
+		return false
+	end
+	local interest = { name = name, isCurrent = isCurrent }
+	if not InterestCurrent(self, interest) then
+		return false
+	end
+	s.interests[owner] = interest
+	RefreshInterest(self, name)
+	return true
+end
+
+function QT:UpdatePlayerDetailsInterests()
+	local s = rawget(self, "playerDetailsState")
+	local visited = {}
+	for owner, interest in pairs(s and s.interests or {}) do
+		if not InterestCurrent(self, interest) then
+			self:ClearPlayerDetailsInterest(owner)
+		elseif not visited[interest.name] then
+			visited[interest.name] = true
+			RefreshInterest(self, interest.name)
+		end
+	end
+end
+
+function QT:RequestPlayerDetails(sender, hover)
 	if not Enabled(self) then
 		return false
 	end
@@ -75,7 +163,8 @@ function QT:RequestPlayerDetails(sender)
 	end
 	local s, now = State(self), Now(self)
 	local attempt = s.attempts[name]
-	if attempt and Fresh(now, attempt.at, attempt.success and COOLDOWN or 120) or Fresh(now, s.lastRequest, 2) then
+	local cooldown = attempt and (attempt.retryAfter or (attempt.success or hover) and COOLDOWN or 120)
+	if attempt and Fresh(now, attempt.at, cooldown) or Fresh(now, s.lastRequest, 2) then
 		return false
 	end
 	local count = 0
@@ -91,7 +180,7 @@ function QT:RequestPlayerDetails(sender)
 		return false
 	end
 	local id = self:GetCommunicationSession() .. "-details-" .. self:NextCommunicationSequence()
-	local pending = { id = id, at = now }
+	local pending = { id = id, at = now, hover = hover == true }
 	s.pending[name], s.lastRequest = pending, now
 	local admitted = self:Request("QTHQ", {}, Route(name), {
 		owner = pending,
@@ -106,12 +195,13 @@ function QT:RequestPlayerDetails(sender)
 				and Enabled(self)
 				and PendingFresh(self, pending)
 				and not self:IsIgnoredPlayerName(name)
+				and (not pending.hover or self:HasPlayerDetailsInterest(name))
 		end,
 		onComplete = function(sent)
 			if rawget(self, "playerDetailsState") ~= s or s.pending[name] ~= pending then
 				return
 			end
-			s.attempts[name] = { at = Now(self) }
+			s.attempts[name] = { at = Now(self), retryAfter = not sent and 2 or nil }
 			Bound(s.attempts)
 			if sent then
 				pending.sentAt = Now(self)
@@ -126,6 +216,8 @@ function QT:RequestPlayerDetails(sender)
 	})
 	if not admitted and s.pending[name] == pending then
 		s.pending[name] = nil
+		s.attempts[name] = { at = now, retryAfter = 2 }
+		Bound(s.attempts)
 	end
 	return admitted == true
 end
@@ -328,6 +420,11 @@ function QT:RetirePlayerDetailsPeer(name)
 		return
 	end
 	local pending, reply = s.pending[name], s.replies[name]
+	for owner, interest in pairs(s.interests or {}) do
+		if interest.name == name then
+			self:ClearPlayerDetailsInterest(owner)
+		end
+	end
 	s.pending[name], s.attempts[name], s.replies[name], s.identities[name] = nil, nil, nil, nil
 	if pending then
 		CancelPending(self, pending, "cancelled")

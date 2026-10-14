@@ -23,9 +23,14 @@ private `.local` notes are historical context, not the source of truth.
 | QuestCompareCommunication / PingCommunication | Domain request premises and response construction | Wire encoding, fragment pumps or independent timers |
 | DeveloperAnnouncements | Signed developer subscriptions, diagnostic consent, mirror audiences and bounded feed work | Normal announcement filters, private location access or a separate transport |
 | QuestCompare | Atomic party log assembly, local snapshots and negotiated revision reuse | Native UI mutation or independent transport pumps |
+| QuestCompletion | Bounded character-history queries for visible comparisons, evidence age and completed/absent classification | Account-wide completion or full history broadcasts |
+| QuestSharingResults | Exact native share-result matching and recent per-player explanations | Guessing which quest a native result belongs to |
+| QuestCompareInteraction | Column presentation and keyboard selection geometry | Removing members from comparison calculations or global key bindings |
 | PartyFocusController | Following and manual-choice state machine, missing-quest and confirmation policy | Party networking, persistence policy or preview fixtures |
 | PartyNavigation / QuestComparePreview | Live/preview adapters, persistence and ownership of native focus | Copies of the following state machine or repair of another controller's fields |
-| Hints | Local tip catalog, capability eligibility, account-wide no-repeat pool and startup display | Network announcements or profile settings |
+| Hints | Local tip catalog, capability eligibility, account-wide no-repeat pool, startup display and whitelisted navigation links | Network announcements or implicit setting changes |
+| PlayerNotes | Private full-name annotations and their owned editor | Peer state, profile copies, diagnostics or network payloads |
+| PlayerDetails | Active hover interests, metadata refresh and roster fetch coordination | Tooltip drawing or an independent timer |
 | Keybindings | Fixed player actions delegated to existing feature operations | Key assignment, binding overrides, native input state |
 | OwnedUI | Guarded owned-region access and a durable cleanup queue | Permission to modify Blizzard-owned frames |
 | WindowController / WindowLayout / WindowTheme | Window visibility and dismissal, geometry, chrome respectively | Quest-specific dialogs or protocol sessions |
@@ -36,6 +41,34 @@ private `.local` notes are historical context, not the source of truth.
 | LocationPins / PartyWaypointPins | Domain-specific pin placement, visuals and actions | A second tooltip renderer or marker pool lifecycle |
 
 ## Data and time contracts
+
+- Private player notes live in `db.global.playerNotes`, separated by client
+  project, region and naming model, then canonical full player identity. They
+  survive profile/character changes. Neither diagnostic exports nor any
+  communication record may include notes or unsaved editor drafts. Presentation
+  escapes markup; the editor keeps the complete bounded note.
+- A completed active-log snapshot proves absence from that log, not completion
+  history. Comparisons show `Absent` as "Not in log" until character-specific
+  history establishes `Completed` or `Missing`. Repeatable quests never become
+  permanently satisfied from a past completion. Active `Have`/`Ready` entries
+  take precedence, and `Completed` does not mean ready for turn-in. Optional
+  history fields preserve compatibility with older v2 peers. Queries cover at
+  most 32 IDs per request and 100 visible interests, with bounded native work;
+  source sampling time limits history freshness to 60 seconds.
+- Collapsing columns changes only session presentation. All members still
+  participate in readiness, missing-quest and sharing calculations. Keyboard
+  navigation is explicitly activated and uses a temporary owned input child;
+  edit focus, menus, outside clicks, restrictions and hiding retire that child.
+- Native quest-sharing messages have recipient identities but no quest IDs.
+  Their recent localized explanations are labeled as the player's latest share
+  result. They never change a particular QT request to accepted. QT's own
+  request responses may include an optional, validated failure reason code.
+- Active player hovers immediately display cached metadata and register an
+  interest. `RuntimeCoordinator` renews or retries deduplicated metadata and
+  full small-party roster requests; rendering does not pump requests. Hidden,
+  replaced, ignored or departed hover targets retire the interest. Full rosters
+  cover parties of up to five; raids retain the existing size-only summary.
+  Transfer-aware request deadlines are authoritative for fragmented rosters.
 
 - A native API wrapper validates foreign values before copying primitive data
   into addon-owned state. Unknown is distinct from explicit `false`, empty and
@@ -100,8 +133,9 @@ icon beside the localized tip label in a separate embed.
 
 The only gameplay prefix is `QuestTogether2`. Existing global and regional chat
 channel names remain unchanged. Generation 1 traffic is ignored, with no legacy
-decoder, companion packet, capability negotiation or fallback transmission.
-Communicating peers must upgrade together. Ed25519 developer requests bind the
+decoder, companion packet or fallback transmission. Optional feature capabilities
+may extend generation 2, with conservative behavior when a peer lacks support.
+Peers on different protocol generations must upgrade together. Ed25519 developer requests bind the
 native sender, request identity, issue time, target and purpose to `QTDEV2`.
 Signatures authenticate requests; they do not encrypt replies.
 

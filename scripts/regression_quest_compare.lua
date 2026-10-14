@@ -46,6 +46,12 @@ local function Fixture(name, entries)
 		workState = { entries = {}, generations = {} },
 	}, { __index = QuestTogether })
 	addon.API = {
+		IsPartyQuestKeyboardInputBlocked = function(frame)
+			return addon.keyboardBlocked == true or frame.search:HasFocus()
+		end,
+		IsMouseOverPartyQuestWindow = function()
+			return addon.mouseOverWindow == true
+		end,
 		GetTime = function()
 			return addon.now
 		end,
@@ -316,7 +322,7 @@ QuestTogether:RegisterTest(
 		CompleteReply(a, member.name, member.requestId, 1)
 		local rows = a:BuildPartyQuestDiffRows()
 		Equal(rows[1].title, "Local")
-		Equal(rows[1].cells[2], "Missing")
+		Equal(rows[1].cells[2], "Absent")
 		Equal(rows[1].action, "share")
 		Equal(rows[2].cells[2], "Ready")
 		Equal(rows[2].action, "request")
@@ -335,7 +341,7 @@ QuestTogether:RegisterTest(
 		Equal(member.state, "loading")
 		Reply(a, member.name, { Quest(2), Quest(3) }, true)
 		Equal(member.state, "ready")
-		Equal(a:BuildPartyQuestDiffRows()[1].cells[2], "Missing")
+		Equal(a:BuildPartyQuestDiffRows()[1].cells[2], "Absent")
 	end
 )
 
@@ -658,7 +664,18 @@ local function AttachUI(addon)
 	function addon:CreateOwnedWindowFrame(_, _, owner, template)
 		return Frame(owner, nil, template)
 	end
+	function addon:CreateOwnedUICleanupFrame()
+		-- Parentless cleanup observers are independent of a retired UI owner's
+		-- broad combat flag, just as the production cleanup driver is.
+		return Frame(nil, {})
+	end
 	return parent
+end
+
+function QuestTogether:CreateTestPartyQuestCompareFixture(entries)
+	local addon = Fixture(nil, entries)
+	AttachUI(addon)
+	return addon
 end
 
 QuestTogether:RegisterTest("native owned scrollbars preserve pixel ranges and retire held input on hide", function()
@@ -1516,7 +1533,7 @@ QuestTogether:RegisterTest(
 			Equal(#b.wire, 1)
 			a:OnCommReceived(a.commPrefix, b.wire[1], "PARTY", b.name)
 			local status, waiting = a:GetPartyQuestShareStatus(1)
-			Equal(status, "Sharing unavailable")
+			Equal(status, "The other player has too many share requests. Try again shortly.")
 			Equal(waiting, false)
 			Equal(b.pushes, 0)
 			-- Replay suppression remains bounded. An admitted replay-cache entry
@@ -3812,7 +3829,9 @@ QuestTogether:RegisterTest("isolated compare preview delegates drag callbacks wi
 	frame:Hide()
 	Equal(frame.dragging, nil)
 	Equal(a.partyQuestCompareSession, liveSession)
-	Equal(preview.API, nil)
+	assert(preview.API ~= a.API)
+	Equal(preview.API.SendAddonMessage, nil)
+	Equal(preview.API.GetCharacterQuestHistoryStatus, nil)
 	Equal(#a.wire, 0)
 	Equal(a.pushes, 0)
 end)
