@@ -1,13 +1,15 @@
 {
-  "source_sha256": "c172fcb9bbcb4ea0cd154cc0260c6ab8dce42bea4e6ed496219de8412d879f15",
+  "source_sha256": "833888ebe422b43cecf107427e71ca715c19edeeb89154934f89a7d689e43dea",
   "notes": {
-    "version": "7.3.3",
-    "welcome": "Übersichtlichere Tooltips zusammengefasster Kartenpunkte.",
+    "version": "7.3.4",
+    "welcome": "Übersichtlichere Spieler-Tooltips und einheitlichere QuestTogether-Kennzeichnungen.",
     "sections": [
       {
-        "title": "Spieler auf Karten",
+        "title": "Spieler-Tooltips und Chat",
         "items": [
-          "In Tooltips zusammengefasster Kartenpunkte kennzeichnet das Zahnrad in Klassenfarbe den QuestTogether-Entwickler, ohne zusätzlichen Text. In Tooltips einzelner Spieler bleibt der Entwicklerhinweis erhalten."
+          "Gruppenlisten zeigen QT-Symbole jetzt an, sobald gültige Standortdaten des Spielers vorliegen – auch nach dem Neuladen der Benutzeroberfläche.",
+          "In den Mitgliederlisten von Gruppen und zusammengefassten Kartenpunkten bleiben Statusanzeigen kompakt. Erläuterungen zum Entwicklerstatus und zum verborgenen Standort erscheinen nur beim direkten Zeigen auf den jeweiligen Spieler; Hinweise auf verborgene Standorte bleiben ausschließlich für den Entwickler sichtbar.",
+          "Ankündigungen des verifizierten Entwicklers verwenden jetzt ein Symbol aus Schriftrolle und Zahnrad, das bei aktiver Suche nach Questpartnern golden leuchtet."
         ]
       }
     ]

@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 7.3.4
+
+Clearer player tooltips and more consistent QuestTogether indicators.
+
+### Player tooltips and chat
+
+- Party rosters now show QT icons as soon as valid player location data is available, including after a reload.
+- Party and cluster member lists keep status indicators compact. Developer and hidden-location explanations appear only when hovering that player directly; hidden-location indicators remain visible only to the developer.
+- Verified developer announcements now use a scroll-and-gear icon, with a gold glow while looking for questing partners.
+
 ## 7.3.3
 
 Cleaner cluster tooltips.

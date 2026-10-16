@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.4
+
+Dicas de jogadores mais claras e indicadores do QuestTogether mais consistentes.
+
+### Dicas de jogadores e bate-papo
+
+- As listas de grupo agora mostram os ícones do QT assim que há dados válidos de localização do jogador, inclusive após recarregar a interface.
+- As listas de membros de grupos e de marcadores agrupados mantêm os indicadores de status compactos. As explicações sobre o desenvolvedor e a localização oculta só aparecem ao passar o cursor diretamente sobre o jogador; os indicadores de localização oculta continuam visíveis apenas para o desenvolvedor.
+- Os anúncios do desenvolvedor verificado agora usam um ícone de pergaminho e engrenagem, com um brilho dourado enquanto ele procura parceiros de missão.
+
 ## 7.3.3
 
 Dicas dos marcadores agrupados mais claras.

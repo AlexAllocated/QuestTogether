@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.4
+
+Übersichtlichere Spieler-Tooltips und einheitlichere QuestTogether-Kennzeichnungen.
+
+### Spieler-Tooltips und Chat
+
+- Gruppenlisten zeigen QT-Symbole jetzt an, sobald gültige Standortdaten des Spielers vorliegen – auch nach dem Neuladen der Benutzeroberfläche.
+- In den Mitgliederlisten von Gruppen und zusammengefassten Kartenpunkten bleiben Statusanzeigen kompakt. Erläuterungen zum Entwicklerstatus und zum verborgenen Standort erscheinen nur beim direkten Zeigen auf den jeweiligen Spieler; Hinweise auf verborgene Standorte bleiben ausschließlich für den Entwickler sichtbar.
+- Ankündigungen des verifizierten Entwicklers verwenden jetzt ein Symbol aus Schriftrolle und Zahnrad, das bei aktiver Suche nach Questpartnern golden leuchtet.
+
 ## 7.3.3
 
 Übersichtlichere Tooltips zusammengefasster Kartenpunkte.

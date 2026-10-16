@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.4
+
+Des infobulles de joueurs plus claires et des indicateurs QuestTogether plus cohérents.
+
+### Infobulles de joueurs et discussion
+
+- Les listes de groupe affichent désormais les icônes QT dès que des données de position valides sont disponibles pour les joueurs, y compris après un rechargement de l’interface.
+- Les indicateurs d’état restent compacts dans les listes de membres des groupes et des marqueurs regroupés. Les explications concernant le développeur et la position masquée ne s’affichent qu’au survol direct du joueur concerné ; les indicateurs de position masquée restent visibles uniquement par le développeur.
+- Les annonces du développeur vérifié utilisent désormais une icône de parchemin et d’engrenage, entourée d’une lueur dorée lorsqu’il recherche des partenaires de quêtes.
+
 ## 7.3.3
 
 Des infobulles de marqueurs regroupés plus épurées.

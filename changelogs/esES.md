@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.4
+
+Descripciones emergentes de jugadores más claras e indicadores de QuestTogether más coherentes.
+
+### Descripciones emergentes de jugadores y chat
+
+- Las listas de grupo ahora muestran los iconos de QT en cuanto hay datos de ubicación válidos del jugador, incluso después de recargar la interfaz.
+- Las listas de miembros de grupos y de agrupaciones de puntos mantienen compactos los indicadores de estado. Las explicaciones sobre el desarrollador y la ubicación oculta solo aparecen al pasar el cursor directamente sobre ese jugador; los indicadores de ubicación oculta siguen siendo visibles únicamente para el desarrollador.
+- Los anuncios del desarrollador verificado ahora usan un icono de pergamino y engranaje, con un resplandor dorado mientras busca compañeros de misiones.
+
 ## 7.3.3
 
 Descripciones emergentes de agrupaciones de puntos más claras.

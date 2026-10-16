@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.4
+
+Descrizioni dei giocatori più chiare e indicatori di QuestTogether più coerenti.
+
+### Descrizioni dei giocatori e chat
+
+- Gli elenchi del gruppo ora mostrano le icone QT non appena sono disponibili dati validi sulla posizione del giocatore, anche dopo aver ricaricato l’interfaccia.
+- Gli elenchi dei membri del gruppo e dei segnalini raggruppati mantengono compatti gli indicatori di stato. Le spiegazioni sullo sviluppatore e sulla posizione nascosta appaiono solo passando il puntatore direttamente sul giocatore interessato; gli indicatori di posizione nascosta restano visibili solo allo sviluppatore.
+- Gli annunci dello sviluppatore verificato ora usano un’icona con pergamena e ingranaggio, circondata da un bagliore dorato quando cerca compagni di missione.
+
 ## 7.3.3
 
 Descrizioni dei segnalini raggruppati più essenziali.

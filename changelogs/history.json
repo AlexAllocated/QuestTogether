@@ -3,6 +3,140 @@
   "releases": [
     {
       "enUS": {
+        "version": "7.3.3",
+        "welcome": "Cleaner cluster tooltips.",
+        "sections": [
+          {
+            "title": "Player Maps",
+            "items": [
+              "Cluster tooltips identify the QuestTogether developer with the class-colored gear, without an extra text label. The developer label remains in individual player tooltips."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "7.3.3",
+        "welcome": "Übersichtlichere Tooltips zusammengefasster Kartenpunkte.",
+        "sections": [
+          {
+            "title": "Spieler auf Karten",
+            "items": [
+              "In Tooltips zusammengefasster Kartenpunkte kennzeichnet das Zahnrad in Klassenfarbe den QuestTogether-Entwickler, ohne zusätzlichen Text. In Tooltips einzelner Spieler bleibt der Entwicklerhinweis erhalten."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "7.3.3",
+        "welcome": "Des infobulles de marqueurs regroupés plus épurées.",
+        "sections": [
+          {
+            "title": "Joueurs sur les cartes",
+            "items": [
+              "Les infobulles des marqueurs regroupés identifient le développeur de QuestTogether par l’engrenage à la couleur de sa classe, sans libellé supplémentaire. Le libellé du développeur reste affiché dans les infobulles individuelles des joueurs."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "7.3.3",
+        "welcome": "Descripciones emergentes de agrupaciones de puntos más claras.",
+        "sections": [
+          {
+            "title": "Jugadores en los mapas",
+            "items": [
+              "Las descripciones emergentes de las agrupaciones de puntos identifican al desarrollador de QuestTogether mediante el engranaje del color de su clase, sin una etiqueta de texto adicional. La etiqueta de desarrollador se mantiene en las descripciones emergentes de jugadores individuales."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "7.3.3",
+        "welcome": "Descripciones emergentes de agrupaciones de puntos más claras.",
+        "sections": [
+          {
+            "title": "Jugadores en los mapas",
+            "items": [
+              "Las descripciones emergentes de las agrupaciones de puntos identifican al desarrollador de QuestTogether mediante el engranaje del color de su clase, sin una etiqueta de texto adicional. La etiqueta de desarrollador se mantiene en las descripciones emergentes de jugadores individuales."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "7.3.3",
+        "welcome": "Dicas dos marcadores agrupados mais claras.",
+        "sections": [
+          {
+            "title": "Jogadores nos mapas",
+            "items": [
+              "As dicas dos marcadores agrupados identificam o desenvolvedor do QuestTogether pela engrenagem na cor da classe, sem um texto adicional. A identificação por texto continua nas dicas individuais de jogadores."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "7.3.3",
+        "welcome": "Более лаконичные подсказки скоплений меток.",
+        "sections": [
+          {
+            "title": "Игроки на картах",
+            "items": [
+              "В подсказках скоплений меток разработчик QuestTogether обозначается шестерёнкой цвета класса, без дополнительной подписи. Подпись разработчика остаётся в индивидуальных подсказках игроков."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "7.3.3",
+        "welcome": "Descrizioni dei segnalini raggruppati più essenziali.",
+        "sections": [
+          {
+            "title": "Giocatori sulle mappe",
+            "items": [
+              "Le descrizioni dei segnalini raggruppati identificano lo sviluppatore di QuestTogether tramite l’ingranaggio nel colore della classe, senza un’etichetta di testo aggiuntiva. L’etichetta dello sviluppatore rimane nelle descrizioni dei singoli giocatori."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "7.3.3",
+        "welcome": "묶인 표시의 툴팁이 더 간결해졌습니다.",
+        "sections": [
+          {
+            "title": "지도의 플레이어",
+            "items": [
+              "묶인 표시의 툴팁에서는 추가 문구 없이 직업 색상의 톱니바퀴 아이콘으로 QuestTogether 개발자를 표시합니다. 개별 플레이어 툴팁에는 개발자 문구가 계속 표시됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "7.3.3",
+        "welcome": "聚合标记提示更简洁。",
+        "sections": [
+          {
+            "title": "地图上的玩家",
+            "items": [
+              "聚合标记提示使用职业颜色的齿轮图标标识 QuestTogether 开发者，不再额外显示文字标签。单个玩家的提示中仍保留开发者标签。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "7.3.3",
+        "welcome": "合併標記提示更簡潔。",
+        "sections": [
+          {
+            "title": "地圖上的玩家",
+            "items": [
+              "合併標記提示使用職業顏色的齒輪圖示標示 QuestTogether 開發者，不再額外顯示文字標籤。個別玩家的提示中仍保留開發者標籤。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "7.3.2",
         "welcome": "More consistent party information and smarter map navigation.",
         "sections": [
