@@ -103,10 +103,11 @@ local function TooltipTextWidth(addon, label)
 	return width and width >= 0 and math.min(272, math.ceil(width)) or 272
 end
 
-local GROUP_INSET, GROUP_ICON_SPACE, GROUP_PADDING, GROUP_GAP = 6, 24, 4, 8
+local GROUP_INSET, GROUP_ICON_SPACE, GROUP_PADDING, GROUP_GAP = 6, 44, 4, 8
+local GROUP_COUNT_WIDTH, GROUP_COUNT_GAP = 20, 3
 local GROUP_CORNER_UV = { { 0, 0.5, 0, 0.5 }, { 0.5, 1, 0, 0.5 }, { 0, 0.5, 0.5, 1 }, { 0.5, 1, 0.5, 1 } }
 
-local function LayoutPartyTooltipGroup(addon, state, index, anchor, top, width, height, key, first, last)
+local function LayoutPartyTooltipGroup(addon, state, index, anchor, top, width, height, key, size, first, last)
 	state.partyGroups = state.partyGroups or {}
 	local group = state.partyGroups[index]
 	if not group then
@@ -131,11 +132,20 @@ local function LayoutPartyTooltipGroup(addon, state, index, anchor, top, width, 
 		Call(addon, group.edges[2], "SetPoint", "BOTTOMLEFT", group.frame, "BOTTOMLEFT", 6, 0)
 		Call(addon, group.edges[3], "SetPoint", "TOPLEFT", group.frame, "TOPLEFT", 0, -6)
 		Call(addon, group.edges[4], "SetPoint", "TOPRIGHT", group.frame, "TOPRIGHT", 0, -6)
-		group.icon = PartyTexture(addon, group.frame, "PartyBadge", 16, 16, "RIGHT", group.frame, "RIGHT", -6, 0)
+		group.icon = PartyTexture(addon, group.frame, "PartyBadge", 16, 16, "RIGHT", group.frame, "RIGHT", -6 - GROUP_COUNT_WIDTH - GROUP_COUNT_GAP, 0)
 		Call(addon, group.icon, "SetVertexColor", 1, 1, 1, 1)
 		Call(addon, group.icon, "Show")
+		group.count = Call(addon, group.frame, "CreateFontString", nil, "OVERLAY", "GameFontHighlightSmall")
+		Call(addon, group.count, "SetPoint", "RIGHT", group.frame, "RIGHT", -6, 0)
+		Call(addon, group.count, "SetSize", GROUP_COUNT_WIDTH, 16)
+		Call(addon, group.count, "SetJustifyH", "LEFT")
+		Call(addon, group.count, "SetJustifyV", "MIDDLE")
+		Call(addon, group.count, "SetWordWrap", false)
+		Call(addon, group.count, "SetTextColor", 1, 1, 1, 1)
 	end
 	group.active, group.key, group.first, group.last = true, key, first, last
+	group.partySize = size
+	Call(addon, group.count, "SetText", size and tostring(size) or "")
 	Call(addon, group.frame, "ClearAllPoints")
 	Call(addon, group.frame, "SetPoint", "TOPLEFT", anchor, "BOTTOMLEFT", 0, -top)
 	Call(addon, group.frame, "SetSize", width, height)
@@ -170,7 +180,7 @@ local function LayoutPartyTooltipRows(addon, state, width, hasIntro, bodyGap)
 		end
 		if key then
 			height, groups = height + GROUP_PADDING, groups + 1
-			LayoutPartyTooltipGroup(addon, state, groups, anchor, topGap + groupTop, width, height - groupTop, key, first, last)
+			LayoutPartyTooltipGroup(addon, state, groups, anchor, topGap + groupTop, width, height - groupTop, key, rows[first].partySize, first, last)
 			if rows[last + 1] and rows[last + 1].active and not rows[last + 1].partyKey then height = height + GROUP_GAP end
 		end
 		index = last + 1
@@ -178,12 +188,14 @@ local function LayoutPartyTooltipRows(addon, state, width, hasIntro, bodyGap)
 	for unused = groups + 1, #(state.partyGroups or {}) do
 		local group = state.partyGroups[unused]
 		group.active, group.key, group.first, group.last = false, nil, nil, nil
+		group.partySize = nil
+		Call(addon, group.count, "SetText", "")
 		Call(addon, group.frame, "Hide")
 	end
 	return height > 0 and height + (hasIntro and 8 or 0) or 0
 end
 
-local function PartyTooltipMembers(addon, info, row)
+local function PartyTooltipMembers(addon, info)
 	local members, seen, known = {}, {}, 0
 	local function Add(member)
 		if not member.name or seen[member.name] then
@@ -194,16 +206,13 @@ local function PartyTooltipMembers(addon, info, row)
 			members[#members + 1] = member
 		end
 	end
-	if info and info.leader then
-		Add({ name = info.leader, classFile = info.leader == row.name and row.classFile or info.leaderClass })
-		if info.size <= 5 and info.members then
-			for _, member in ipairs(info.members) do
-				Add(member)
-			end
-		elseif info.size <= 5 then
-			-- Their party metadata already confirms the hovered player's membership.
-			-- Keep this partial list presentation-only so roster requests still run.
-			Add({ name = row.name, classFile = row.classFile })
+	if info then
+		local source = info.members or info.knownMembers or {}
+		for _, member in ipairs(source) do
+			if member.name == info.leader then Add(member) end
+		end
+		if info.size and info.size <= 5 then
+			for _, member in ipairs(source) do Add(member) end
 		end
 	end
 	return members, known
@@ -257,7 +266,7 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 		or row.faction == "Horde" and "Interface\\TargetingFrame\\UI-PVP-Horde"
 	local text, introText, lastUpdate
 	local party = not row.questID and addon:GetPlayerPartyVisualInfo(row.name) or nil
-	local partyMembers, knownPartyMembers = PartyTooltipMembers(addon, party, row)
+	local partyMembers, knownPartyMembers = PartyTooltipMembers(addon, party)
 	if row.questID then
 		text = row.questText
 	else
@@ -389,6 +398,7 @@ local function PartyTooltipRows(addon, state, members)
 		local leader = member.leader
 		Call(addon, item.label, "SetText", member.label)
 		item.partyKey = member.partyKey
+		item.partySize = member.partySize
 		width = math.max(width, TooltipTextWidth(addon, item.label) + 38 + (member.partyKey and GROUP_INSET * 2 + GROUP_ICON_SPACE or 0))
 		item.active = true
 		Call(addon, item.crown, leader and "Show" or "Hide")
@@ -397,6 +407,7 @@ local function PartyTooltipRows(addon, state, members)
 	for i = #members + 1, #state.partyRows do
 		state.partyRows[i].active = false
 		state.partyRows[i].partyKey = nil
+		state.partyRows[i].partySize = nil
 		Call(addon, state.partyRows[i].frame, "Hide")
 	end
 	return width

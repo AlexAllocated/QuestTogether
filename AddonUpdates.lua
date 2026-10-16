@@ -222,6 +222,7 @@ function QT:HandleAddonVersionMessage(payload, sender, observation)
 		state.peerTooltipStats = state.peerTooltipStats or {}
 		state.peerTooltipStats[self:NormalizeMemberName(sender)] = record
 	end
+	self:InvalidatePartyVisualMembership(name, record.partySize, record.sampledAt)
 	self:ObserveAddonVersion(version)
 	return true
 end

@@ -73,6 +73,7 @@ QT:RegisterTest("cluster tooltip parties stay adjacent in first appearance order
 	for index, row in ipairs(rows) do
 		Equal(row.name, before[index].name)
 		Equal(row.partyKey, nil)
+		Equal(row.partySize, nil)
 		Equal(row.developer, before[index].developer)
 		assert(row ~= members[index])
 	end
@@ -113,7 +114,33 @@ QT:RegisterTest("cluster tooltip party keys require an explicit valid grouped si
 		Equal(MemberNames(members), "A,B")
 		Equal(members[1].partyKey, nil)
 		Equal(members[2].partyKey, nil)
+		Equal(members[1].partySize, nil)
+		Equal(members[2].partySize, nil)
 	end
+end)
+
+QT:RegisterTest("cluster tooltip party counts retain total membership beyond the cluster or visible page", function()
+	local a, rows = TooltipFixture(), { Row("A"), Row("B"), Row("C") }
+	a.visuals.A, a.visuals.C = { key = "Raid:1", size = 40 }, { key = "Raid:1", size = 40 }
+	rows[2].partySize = 40 -- location records alone cannot establish the count
+	local members = a:BuildPlayerLocationClusterTooltipMembers(rows)
+	Equal(MemberNames(members), "A,C,B")
+	Equal(members[1].partySize, 40)
+	Equal(members[2].partySize, 40)
+	Equal(members[3].partySize, nil)
+	members = a:BuildPlayerLocationClusterTooltipMembers(rows, 3, 3)
+	Equal(#members, 1)
+	Equal(members[1].partyKey, "Raid:1")
+	Equal(members[1].partySize, 40)
+	a.visuals.C = { key = "Party:2", size = 5 }
+	members = a:BuildPlayerLocationClusterTooltipMembers(rows, 3, 3)
+	Equal(members[1].partySize, 5)
+	a.visuals.C = nil
+	Equal(a:BuildPlayerLocationClusterTooltipMembers(rows, 3, 3)[1].partySize, nil)
+	Equal(rows[1].partySize, nil)
+	Equal(rows[2].partySize, 40)
+	Equal(rows[3].partySize, nil)
+	Equal(a.networkCalls, 0)
 end)
 
 QT:RegisterTest("cluster tooltip grouping bounds source queries and member rendering without mutating input", function()

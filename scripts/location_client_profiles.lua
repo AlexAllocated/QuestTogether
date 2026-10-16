@@ -539,6 +539,80 @@ end
 action, target = addon:GetPlayerLocationClusterNavigationAction(allCity, addon:GetLocationPinSurface("map"))
 assert(action == "navigate" and target == 998, "world maps without geographic size retain verified hierarchy descent")
 C_Map.GetWorldPosFromMapPos = geographicWorldProjection
+
+-- A world/cosmic overview can report an ordinary positive size and a world
+-- instance for its center, despite drawing continents from other instances.
+-- Reproduce two Orgrimmar-area players: Durotar contains both; city art does not.
+do
+	local savedRoot, savedBounds = ancestorInfo[1], navigationMapBounds[1]
+	ancestorInfo[946] = { mapID = 946, parentMapID = 0, mapType = 0 }
+	ancestorInfo[947] = { mapID = 947, parentMapID = 946, mapType = 1 }
+	ancestorInfo[12] = { mapID = 12, parentMapID = 947, mapType = 2 }
+	ancestorInfo[1] = { mapID = 1, parentMapID = 12, mapType = 3 }
+	ancestorInfo[85] = { mapID = 85, parentMapID = 12, mapType = 3 }
+	navigationMapBounds[946], navigationMapBounds[947] = { left = 0, width = 1 }, { left = 0, width = 1 }
+	navigationMapBounds[12], navigationMapBounds[1] = { left = 0.15, width = 0.5 }, { left = 0.35, width = 0.15 }
+	navigationMapBounds[85] = { left = 0.44, width = 0.03 }
+	local overviewInstance, overviewSize = 0, 10000
+	C_Map.GetWorldPosFromMapPos = function(mapID, position)
+		local _, point = geographicWorldProjection(mapID, position)
+		return (mapID == 946 or mapID == 947) and overviewInstance or 1, point
+	end
+	C_Map.GetMapWorldSize = function(mapID)
+		if mapID == 946 or mapID == 947 or mapID == 948 then return overviewSize, overviewSize end
+		return geographicWorldSize(mapID)
+	end
+	local geographicMapProjection = C_Map.GetMapPosFromWorldPos
+	C_Map.GetMapPosFromWorldPos = function(instance, position, mapID)
+		assert(instance == 1, "both players physically occupy Kalimdor")
+		return geographicMapProjection(0, position, mapID)
+	end
+	C_Map.GetMapInfoAtPosition = function(mapID, px)
+		if mapID == 946 then return ancestorInfo[947] end
+		if mapID == 947 then return ancestorInfo[12] end
+		local bounds = NavigationBounds(mapID)
+		local wx = bounds.left + px * bounds.width
+		if mapID == 12 or mapID == 1 then return wx < 0.44 and ancestorInfo[1] or ancestorInfo[85] end
+		return ancestorInfo[85]
+	end
+	local nearOrgrimmar = { key = "A\nB", members = {
+		GeographicRow("A", 1, 0.435), GeographicRow("B", 85, 0.445),
+	} }
+	for _, source in ipairs({ 946, 947, 12 }) do
+		displayedMapID = source
+		action, target = addon:GetPlayerLocationClusterNavigationAction(nearOrgrimmar, addon:GetLocationPinSurface("map"))
+		assert(action == "navigate" and target == 1,
+			"world and cosmic overview centers must not prevent finding the deepest containing Kalimdor map")
+	end
+	-- An overview's numeric scale is also not a physical containment ordering.
+	overviewInstance, overviewSize, displayedMapID = 1, 1, 947
+	action, target = addon:GetPlayerLocationClusterNavigationAction(nearOrgrimmar, addon:GetLocationPinSurface("map"))
+	assert(action == "navigate" and target == 1, "a small overview footprint cannot outrank its real zones")
+	local beforeNavigation = #nativeActions
+	assert(addon:TryNavigatePlayerLocationCluster(nearOrgrimmar, addon:GetLocationPinSurface("map")))
+	assert(displayedMapID == 1 and #nativeActions == beforeNavigation + 1 and nativeActions[#nativeActions][2] == 1,
+		"one world-map click opens the final zone without intermediate map changes or canvas zoom")
+	assert(addon:GetPlayerLocationClusterNavigationAction(nearOrgrimmar, addon:GetLocationPinSurface("map")) == "expand",
+		"only the deepest map still containing both players may expand the remaining cluster")
+	addon:ClearPlayerLocationClusterExpansion()
+	ancestorInfo[948] = { mapID = 948, parentMapID = 947, mapType = 1 }
+	navigationMapBounds[948] = navigationMapBounds[947]
+	C_Map.GetMapInfoAtPosition = function() return ancestorInfo[948] end
+	displayedMapID = 947
+	local overviewOnly = { members = { GeographicRow("A", 947, 0.435), GeographicRow("B", 947, 0.445) } }
+	assert(addon:GetPlayerLocationClusterNavigationAction(overviewOnly, addon:GetLocationPinSurface("map")) == "expand",
+		"same-detail equivalent world art does not qualify as a more detailed overview descendant")
+	-- An equal-size descendant at the same detail level is not a useful jump.
+	displayedMapID = 1
+	ancestorInfo[1001] = { mapID = 1001, parentMapID = 1, mapType = 3 }
+	navigationMapBounds[1001] = navigationMapBounds[1]
+	C_Map.GetMapInfoAtPosition = function() return ancestorInfo[1001] end
+	assert(addon:GetPlayerLocationClusterNavigationAction(nearOrgrimmar, addon:GetLocationPinSurface("map")) == "expand",
+		"equivalent descendant map art must not replace the current useful zone")
+	ancestorInfo[1], navigationMapBounds[1] = savedRoot, savedBounds
+	C_Map.GetMapPosFromWorldPos = geographicMapProjection
+	C_Map.GetWorldPosFromMapPos, C_Map.GetMapWorldSize = geographicWorldProjection, geographicWorldSize
+end
 displayedMapID = 1
 assert(forbiddenReads == 0 and inaccessibleReads == 0 and magnificationReads == 0)
 C_Map.GetMapPosFromWorldPos = ordinaryMapProjection

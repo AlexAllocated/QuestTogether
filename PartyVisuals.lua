@@ -27,7 +27,7 @@ local function Count(t)
 	end
 	return n
 end
-local function Bound(t, limit)
+local function Bound(t, limit, remove)
 	while Count(t) > limit do
 		local oldest, at
 		for k, v in pairs(t) do
@@ -35,11 +35,87 @@ local function Bound(t, limit)
 				oldest, at = k, v.at
 			end
 		end
+		if remove then remove(oldest, t[oldest]) end
 		t[oldest] = nil
+	end
+end
+-- Membership indexes point at accepted source records. They never turn a
+-- teammate's report into a new observation or presence for another player.
+local function RemoveMembershipSource(s, name)
+	local indexed = s.sources and s.sources[name]
+	for member in pairs(indexed and indexed.names or {}) do
+		local sources = s.memberships and s.memberships[member]
+		if sources then
+			sources[name] = nil
+			if not next(sources) then s.memberships[member] = nil end
+		end
+	end
+	if s.sources then s.sources[name] = nil end
+end
+local function IndexMembershipSource(s, name, info)
+	RemoveMembershipSource(s, name)
+	if not info or not info.key then return end
+	s.sources, s.memberships = s.sources or {}, s.memberships or {}
+	local names = { [name] = true }
+	if info.leader then names[info.leader] = true end
+	local roster = s.rosters[info.key]
+	for _, member in ipairs(roster and roster.members or {}) do names[member.name] = true end
+	s.sources[name] = { record = info, names = names }
+	for member in pairs(names) do
+		s.memberships[member] = s.memberships[member] or {}
+		s.memberships[member][name] = info
+	end
+end
+local function ReindexParty(s, key)
+	for name, info in pairs(s.peers) do
+		if info.key == key then IndexMembershipSource(s, name, info) end
+	end
+end
+local function BoundPeers(s)
+	Bound(s.peers, 512, function(name) RemoveMembershipSource(s, name) end)
+end
+local function StoreRoster(s, key, roster)
+	if s.rosters[key] then roster.invalidatedAt = s.rosters[key].invalidatedAt end
+	s.rosters[key] = roster
+	ReindexParty(s, key)
+	Bound(s.rosters, 128, function(oldKey)
+		s.rosters[oldKey] = nil
+		ReindexParty(s, oldKey)
+	end)
+end
+local function RetireMembershipProof(s, info, sampledAt)
+	local roster = s.rosters[info.key]
+	if roster then roster.invalidatedAt = math.max(roster.invalidatedAt or sampledAt, sampledAt) end
+	for _, record in pairs(s.peers) do
+		if record.key == info.key and (record.sampledAt or record.at) < sampledAt then
+			record.membershipInvalidated = true
+			record.membershipInvalidatedAt = math.max(record.membershipInvalidatedAt or sampledAt, sampledAt)
+		end
+	end
+end
+local function InvalidateMemberships(s, name, current)
+	local seen = {}
+	for _, info in pairs(s.memberships and s.memberships[name] or {}) do
+		if not seen[info.key] and (current.sampledAt or current.at) > (info.sampledAt or info.at)
+			and (current.key and current.key ~= info.key or current.size ~= nil and current.size ~= info.size) then
+			seen[info.key] = true
+			RetireMembershipProof(s, info, current.sampledAt or current.at)
+		end
 	end
 end
 local function Fresh(record, now, ttl)
 	return record and now >= record.at and now - record.at < (record.lifetime or ttl)
+end
+-- Other metadata owners call this only after committing a size/solo fact.
+-- Retire disproved proofs now, even if no tooltip is open before it expires.
+function QT:InvalidatePartyVisualMembership(sender, size, sampledAt)
+	local state, name = rawget(self, "partyVisualState"), Name(self, sender)
+	size, sampledAt = self:SafeToNumber(size), self:SafeToNumber(sampledAt)
+	local now = Now(self)
+	if not state or not name or not self.isEnabled or self.isLoggingOut or self:IsIgnoredPlayerName(name)
+		or not size or size < 0 or size > 40 or size ~= math.floor(size)
+		or not sampledAt or sampledAt > now + 1 or now - sampledAt >= 600 then return end
+	InvalidateMemberships(state, name, { size = size, sampledAt = sampledAt })
 end
 local function PendingFresh(a, id, pending)
 	if not pending then
@@ -69,6 +145,7 @@ end
 -- the position that made it cacheable. No restored entry establishes live QT
 -- presence or starts a roster/stream subscription.
 local RELOAD_TTL = 180
+local PartyRevisionCurrent
 local function CacheTimes(record, now, wall, ttl)
 	if not record or not Fresh(record, now, ttl) then
 		return nil
@@ -127,6 +204,9 @@ function QT:SavePlayerPartyCacheEntry(name, now, wall)
 		and (not info or (stats.partySize ~= info.size and (stats.sampledAt or stats.at) > (info.sampledAt or info.at)))
 	then
 		info = { size = stats.partySize, at = stats.at, sampledAt = stats.sampledAt, lifetime = stats.lifetime }
+	end
+	if info and info.key and not PartyRevisionCurrent(self, s, info, now) then
+		info = { size = info.size, at = info.at, sampledAt = info.sampledAt, lifetime = info.lifetime }
 	end
 	local sampled, expires = CacheTimes(info, now, wall, TTL)
 	if not sampled then
@@ -195,7 +275,8 @@ function QT:RestorePlayerPartyCacheEntry(name, cached, now, wall)
 		lifetime = lifetime,
 		cached = true,
 	}
-	Bound(s.peers, 512)
+	IndexMembershipSource(s, name, s.peers[name])
+	BoundPeers(s)
 	-- A corrupt/expired member list does not invalidate a separately valid size
 	-- or leader. Require the same revision hash used by actual roster responses.
 	local roster = cached.roster
@@ -221,8 +302,7 @@ function QT:RestorePlayerPartyCacheEntry(name, cached, now, wall)
 			members[i] = { name = memberName, classFile = memberClass }
 		end
 		if valid and seen[leader] and seen[name] and Revision(leader, members) == revision then
-			s.rosters[key] = { at = now, sampledAt = rosterSampled, lifetime = rosterLifetime, members = members }
-			Bound(s.rosters, 128)
+			StoreRoster(s, key, { at = now, sampledAt = rosterSampled, lifetime = rosterLifetime, members = members })
 		end
 	end
 	return true
@@ -241,7 +321,10 @@ function QT:ForgetPartyVisualPeer(name)
 	if not s then
 		return
 	end
+	if Fresh(s.peers[name], Now(self), TTL) then InvalidateMemberships(s, name, s.peers[name]) end
 	s.peers[name] = nil
+	RemoveMembershipSource(s, name)
+	if s.memberships then s.memberships[name] = nil end
 	for id, pending in pairs(s.pending) do
 		if pending.name == name then
 			s.pending[id] = nil
@@ -435,81 +518,150 @@ function QT:HandlePartyVisualMetadata(data, sender, observation)
 		lifetime = observation.expiresAt - now,
 		manualSnapshot = observation.manual == true,
 	}
+	if previous and previous.key == record.key and previous.membershipInvalidatedAt
+		and sampledAt <= previous.membershipInvalidatedAt then
+		record.membershipInvalidated, record.membershipInvalidatedAt = true, previous.membershipInvalidatedAt
+	end
 	if not self:CommitPeerObservation(observation, record, true) then
 		return false
 	end
+	InvalidateMemberships(s, name, record)
 	s.peers[name] = record
-	Bound(s.peers, 512)
+	IndexMembershipSource(s, name, record)
+	BoundPeers(s)
 	return true
+end
+local function Sample(info)
+	return info and (info.sampledAt or info.at) or 0
+end
+local function DirectPartyEvidence(a, s, name, now)
+	local info = s.peers[name]
+	local known = a:IsKnownQTPlayer(name)
+	if not (known or info and info.cached and FreshCachedLocation(a, name, now)) or not Fresh(info, now, TTL) then
+		if info then s.peers[name] = nil; RemoveMembershipSource(s, name) end
+		info = nil
+	end
+	local stats = a:GetPlayerTooltipStats(name)
+	if stats and stats.partySize ~= nil and (not info or stats.partySize ~= info.size and Sample(stats) > Sample(info)) then
+		info = { size = stats.partySize, at = stats.at, sampledAt = stats.sampledAt, lifetime = stats.lifetime }
+	elseif not info then
+		local size = a:GetPlayerPartySize(name)
+		if size ~= nil then info = { size = size, at = stats and stats.at, sampledAt = stats and stats.sampledAt } end
+	end
+	local joins = rawget(a, "partyJoinState")
+	local join = joins and joins.peers[name]
+	if known and Fresh(join, now, 125) and (join.grouped == "0" or join.grouped == "1") then
+		local grouped = join.grouped == "1"
+		if not info or not (info.size ~= nil and (info.size > 0) == grouped) and Sample(join) > Sample(info) then
+			info = { size = not grouped and 0 or nil, grouped = grouped,
+				at = join.at, sampledAt = join.sampledAt, lifetime = join.lifetime }
+		end
+	end
+	return info
+end
+PartyRevisionCurrent = function(a, s, info, now)
+	local roster = s.rosters[info.key]
+	if info.membershipInvalidated or roster and roster.invalidatedAt and Sample(info) <= roster.invalidatedAt then return false end
+	local function Conflicts(name)
+		if not name or a:IsIgnoredPlayerName(name) then return false end
+		local current = DirectPartyEvidence(a, s, name, now)
+		if current and Sample(current) > Sample(info)
+			and (current.key and current.key ~= info.key or current.size ~= nil and current.size ~= info.size) then
+			RetireMembershipProof(s, info, Sample(current))
+			return true
+		end
+		return false
+	end
+	-- A newer report from the same party, or from a listed member who has
+	-- moved/left, invalidates the older shared membership for every consumer.
+	if Conflicts(info.leader) then return false end
+	for name, record in pairs(s.memberships and s.memberships[info.leader] or {}) do
+		if s.peers[name] == record and record.leader == info.leader and record.key ~= info.key
+			and not a:IsIgnoredPlayerName(name) then
+			local current = DirectPartyEvidence(a, s, name, now)
+			if current and current.key and Sample(current) > Sample(info) then
+				RetireMembershipProof(s, info, Sample(current))
+				return false
+			end
+		end
+	end
+	for _, member in ipairs(roster and roster.members or {}) do
+		if Conflicts(member.name) then return false end
+	end
+	return true
+end
+local function KnownPartyMembers(a, s, info, now)
+	local names, members = {}, {}
+	local function Add(name, class)
+		if not name or names[name] or a:IsIgnoredPlayerName(name) then return end
+		names[name] = true
+		members[#members + 1] = { name = name, classFile = Class(class) or "" }
+	end
+	Add(info.leader, info.leaderClass)
+	-- Sources indexed under the leader include every direct reporter for this
+	-- party, without walking all peer records or querying another resolver.
+	for name, record in pairs(s.memberships and s.memberships[info.leader] or {}) do
+		if s.peers[name] == record and record.key == info.key and not a:IsIgnoredPlayerName(name) then
+			local current = DirectPartyEvidence(a, s, name, now)
+			if current and not current.membershipInvalidated and current.key == info.key then Add(name) end
+		end
+	end
+	table.sort(members, function(left, right)
+		if (left.name == info.leader) ~= (right.name == info.leader) then return left.name == info.leader end
+		return left.name < right.name
+	end)
+	while #members > info.size do table.remove(members) end
+	for _, member in ipairs(members) do
+		if member.classFile == "" then
+			local row = a:GetFreshPlayerLocation(member.name) or { name = member.name }
+			member.classFile = Class(a:GetPlayerDetailsTooltipRow(row).classFile) or ""
+		end
+	end
+	return members
 end
 function QT:GetPlayerPartyVisualInfo(sender)
 	local name = Name(self, sender)
-	if not name or not Allowed(self) or self:IsIgnoredPlayerName(name) then
-		return nil
-	end
+	if not name or not Allowed(self) or self:IsIgnoredPlayerName(name) then return nil end
 	-- Native membership is authoritative for our own party, including non-QT members.
 	if self:IsSelfSender(name) or (rawget(self, "partyMembers") or {})[name] then
-		local info = self:GetLocalPartyVisualInfo()
-		if info then
-			return info
-		end
+		local localInfo = self:GetLocalPartyVisualInfo()
+		if localInfo then return localInfo end
 	end
 	local s, now = self:GetPartyVisualState(), Now(self)
-	local info = s.peers[name]
-	local stats = self:GetPlayerTooltipStats(name)
-	local function Summary(current)
-		-- Join availability already carries explicit solo/grouped state, even on
-		-- peers that cannot answer hover queries. It cannot supply a member count.
-		local joins = rawget(self, "partyJoinState")
-		local join = joins and joins.peers[name]
-		if
-			not self:IsKnownQTPlayer(name)
-			or not Fresh(join, now, 125)
-			or (join.grouped ~= "0" and join.grouped ~= "1")
-		then
-			return current
+	local direct = DirectPartyEvidence(self, s, name, now)
+	local raw = s.peers[name]
+	if raw and (not s.sources or not s.sources[name] or s.sources[name].record ~= raw) then
+		IndexMembershipSource(s, name, raw)
+	end
+	local info, source = direct, name
+	-- A roster cannot establish live presence, and removing a subject's index
+	-- on departure/ignore prevents old surviving teammate lists reviving it.
+	if self:IsKnownQTPlayer(name) or FreshCachedLocation(self, name, now) then
+		for reporter, record in pairs(s.memberships and s.memberships[name] or {}) do
+			if reporter ~= name and s.peers[reporter] == record and not self:IsIgnoredPlayerName(reporter) then
+				local candidate = DirectPartyEvidence(self, s, reporter, now)
+				if candidate and not candidate.membershipInvalidated and candidate.key and candidate.key == record.key
+					and self:CanAcceptPeerUpdate(name, "QTPG", Sample(candidate))
+					and (not direct or Sample(candidate) > Sample(direct))
+					and (not info or Sample(candidate) > Sample(info)
+						or Sample(candidate) == Sample(info) and reporter < source) then
+					info, source = candidate, reporter
+				end
+			end
 		end
-		local grouped = join.grouped == "1"
-		if
-			current
-			and (
-				(current.size ~= nil and (current.size > 0) == grouped)
-				or (current.sampledAt or current.at or 0) >= (join.sampledAt or join.at)
-			)
-		then
-			return current
-		end
-		return {
-			size = not grouped and 0 or nil,
-			grouped = grouped,
-			at = join.at,
-			sampledAt = join.sampledAt,
-			lifetime = join.lifetime,
-		}
 	end
-	if
-		not (self:IsKnownQTPlayer(name) or (info and info.cached and FreshCachedLocation(self, name, now)))
-		or not Fresh(info, now, TTL)
-	then
-		s.peers[name] = nil
-		local size = self:GetPlayerPartySize(name)
-		return Summary(size and { size = size, at = stats and stats.at, sampledAt = stats and stats.sampledAt } or nil)
+	if not info or not info.key then return info end
+	if not PartyRevisionCurrent(self, s, info, now) then
+		return { size = info.size, at = info.at, sampledAt = info.sampledAt, lifetime = info.lifetime }
 	end
-	if
-		stats
-		and stats.partySize ~= nil
-		and stats.partySize ~= info.size
-		and (stats.sampledAt or stats.at or 0) > (info.sampledAt or info.at)
-	then
-		s.peers[name] = nil
-		return Summary({ size = stats.partySize, at = stats.at, sampledAt = stats.sampledAt })
-	end
-	local roster = info.key and s.rosters[info.key]
-	-- Fresh party metadata above confirms this exact membership revision. Keep
-	-- the validated list even when its original fetch is older than two minutes;
-	-- changed/expired party metadata cannot expose a list from another revision.
-	info.members = roster and roster.members or nil
-	return Summary(info)
+	local roster = s.rosters[info.key]
+	-- Return a view over shared evidence. No inferred record is installed under
+	-- the subject and no sample/expiry or member-list timestamp is renewed.
+	return { size = info.size, key = info.key, leader = info.leader, leaderClass = info.leaderClass,
+		revision = info.revision, at = info.at, sampledAt = info.sampledAt, lifetime = info.lifetime,
+		cached = info.cached, sourceName = source,
+		members = roster and roster.members or nil,
+		knownMembers = not roster and KnownPartyMembers(self, s, info, now) or nil }
 end
 function QT:CancelPartyVisualRosterInterest(name)
 	local s = rawget(self, "partyVisualState")
@@ -679,8 +831,7 @@ function QT:HandlePartyVisualRosterMember(data, sender)
 	if not seen[pending.leader] or not seen[name] or Revision(pending.leader, members) ~= revision then
 		return false
 	end
-	s.rosters[pending.key] = { at = now, members = members }
-	Bound(s.rosters, 128)
+	StoreRoster(s, pending.key, { at = now, members = members })
 	s.pending[id] = nil
 	self:CancelCommRequest(id, "complete")
 	return true

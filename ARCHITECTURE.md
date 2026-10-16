@@ -33,6 +33,7 @@ private `.local` notes are historical context, not the source of truth.
 | RecentCompanions | Bounded private history from actual group membership and its owned list | Nearby discovery, online status, profile copies or network payloads |
 | ObjectiveAnnouncements | Bounded local objective burst aggregation before publication | Remote-event rewriting, native quest reads or a separate timer |
 | PlayerDetails | Active hover interests, metadata refresh and roster fetch coordination | Tooltip drawing or an independent timer |
+| PartyVisuals | Shared party identity, validated rosters, partial membership evidence and freshness-aware member lookup | Tooltip-specific membership inference or manufacturing peer presence |
 | Keybindings | Fixed player actions delegated to existing feature operations | Key assignment, binding overrides, native input state |
 | OwnedUI | Guarded owned-region access and a durable cleanup queue | Permission to modify Blizzard-owned frames |
 | WindowController / WindowLayout / WindowTheme | Window visibility and dismissal, geometry, chrome respectively | Quest-specific dialogs or protocol sessions |
@@ -129,6 +130,14 @@ private `.local` notes are historical context, not the source of truth.
   replaced, ignored or departed hover targets retire the interest. Full rosters
   cover parties of up to five; raids retain the existing size-only summary.
   Transfer-aware request deadlines are authoritative for fragmented rosters.
+- Player hovers, cluster grouping and party highlighting resolve membership
+  through `GetPlayerPartyVisualInfo`. Direct observations retain their sender
+  and sampling lifetime; a bounded membership index lets every confirmed
+  member reuse the same validated roster. Partial known members remain
+  distinct from a complete roster and do not suppress a needed roster fetch.
+  Newer conflicting membership, departures, ignores and expiry retire the
+  corresponding evidence; reading a roster never renews its source or creates
+  QT presence for its members.
 
 - A native API wrapper validates foreign values before copying primitive data
   into addon-owned state. Unknown is distinct from explicit `false`, empty and

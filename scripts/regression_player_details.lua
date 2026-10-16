@@ -196,6 +196,40 @@ QT:RegisterTest(
 	end
 )
 
+QT:RegisterTest("switching an active hover reuses a teammate's received roster before the new player's metadata reply", function()
+	local a, b = Pair()
+	Group(b, 3)
+	local owner, member = {}, "Member2-Realm"
+	a:RecordQTPlayerPresence(member, true)
+	assert(a:SetPlayerDetailsInterest(owner, b.name, function() return true end))
+	Exchange(a, b)
+	a:UpdatePlayerDetailsInterests()
+	Exchange(a, b)
+	local source = assert(a:GetPlayerPartyVisualInfo(b.name))
+	Eq(#source.members, 3)
+	Eq(a:GetPartyVisualState().peers[member], nil)
+	local sent = #a.sent
+	assert(a:SetPlayerDetailsInterest(owner, member, function() return true end))
+	local party = assert(a:GetPlayerPartyVisualInfo(member))
+	Eq(party.key, source.key)
+	Eq(party.members, source.members)
+	Eq(party.sampledAt, source.sampledAt)
+	for _ = 1, 20 do a:UpdatePlayerDetailsInterests() end
+	assert(a.playerDetailsState.pending[member], "missing personal metadata remains independently requestable")
+	Eq(next(a:GetPartyVisualState().pending), nil)
+	Eq(a:ArePeerFieldsFresh(member, { "QTPG" }, 600), false)
+	Drain(a)
+	assert(#a.sent > sent)
+	for index = sent + 1, #a.sent do
+		local frame = assert(a:DecodeCommFrame(a.sent[index].wire))
+		Eq(frame.operation, "QTHQ")
+		Eq(a.sent[index].target, member)
+	end
+	Eq(a:GetPlayerPartyVisualInfo(member).members, source.members)
+	Eq(a:GetPartyVisualState().peers[member], nil)
+	a:ClearPlayerDetailsInterest(owner)
+end)
+
 QT:RegisterTest("hover metadata respects privacy and cannot be replaced by older public snapshots", function()
 	local a, b = Pair()
 	Group(b, 3)

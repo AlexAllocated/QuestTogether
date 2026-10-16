@@ -172,6 +172,14 @@ local function Frame(addon, parent, kind)
 		self:Check()
 		self.vertexColor = { ... }
 	end
+	function frame:SetTextColor(...)
+		self:Check()
+		self.textColor = { ... }
+	end
+	function frame:SetJustifyV(value)
+		self:Check()
+		self.justifyV = value
+	end
 	function frame:SetTexture(value)
 		self:Check()
 		self.texture = value
@@ -1326,6 +1334,10 @@ local function VisualParty(a)
 		size = 3,
 		leader = "Leader-Realm",
 		leaderClass = "MAGE",
+		knownMembers = {
+			{ name = "Leader-Realm", classFile = "MAGE" },
+			{ name = "Friend-Realm", classFile = "WARRIOR" },
+		},
 		members = {
 			{ name = "Leader-Realm", classFile = "MAGE" },
 			{ name = "Friend-Realm", classFile = "WARRIOR" },
@@ -1400,34 +1412,6 @@ Register("party tooltip lists class colored members crowned leader first and onl
 	a.visualMembers = {}
 	a:RefreshPlayerLocationPins()
 	assert(not s.partyRows[1].frame.shown and not s.partyRows[2].frame.shown)
-end)
-Register("incomplete party tooltip shows hovered member immediately without duplicating the leader", function()
-	local a = Fixture()
-	local info = VisualParty(a)
-	info.size, info.members = 2, nil
-	a.rows.map = { Row("Friend-Realm") }
-	a:RefreshPlayerLocationPins()
-	Pin(a, "map").frame.scripts.OnEnter()
-	local s = a.locationPinState
-	Equal(#s.partyRows, 2)
-	assert(s.partyRows[1].crown.shown and not s.partyRows[2].crown.shown)
-	assert(s.partyRows[2].label.text:find(a:GetClassColorCode(a.rows.map[1].classFile) .. "Friend-Realm|r", 1, true))
-	assert(not s.tooltipIntro.text:find("Loading party members", 1, true))
-	assert(a.rosterRequests > 0)
-	Equal(info.members, nil)
-	-- Hovering the leader gives us one known member, not two copies of them.
-	Pin(a, "map").frame.scripts.OnLeave()
-	a.rows.map = { Row("Leader-Realm") }
-	a:RefreshPlayerLocationPins()
-	Pin(a, "map").frame.scripts.OnEnter()
-	assert(s.partyRows[1].frame.shown and not s.partyRows[2].frame.shown)
-	assert(s.tooltipIntro.text:find("Loading party members", 1, true))
-	-- An authoritative reply fills the reused rows without duplicates.
-	info.members = { { name = "Leader-Realm", classFile = "MAGE" }, { name = "Friend-Realm", classFile = "WARRIOR" } }
-	a:RefreshPlayerLocationPins()
-	assert(s.partyRows[2].frame.shown)
-	Equal(#s.partyRows, 2)
-	assert(not s.tooltipIntro.text:find("Loading party members", 1, true))
 end)
 Register("party highlights reset for recycled pins and restriction cleanup never mutates protected regions", function()
 	local a = Fixture()
@@ -1692,7 +1676,8 @@ Register("player tooltip width fits content expands for party names and shrinks 
 	Equal(state.tooltip.width, 300)
 	Equal(state.tooltipDivider.width, 272)
 	row.name = "Ari-Realm"
-	party = { key = "group", size = 2, leader = string.rep("LongLeaderName", 8), members = {} }
+	party = { key = "group", size = 2, leader = string.rep("LongLeaderName", 8),
+		knownMembers = { { name = string.rep("LongLeaderName", 8), classFile = "MAGE" } } }
 	a:RefreshPlayerLocationPins()
 	pin.frame.scripts.OnEnter()
 	Equal(state.tooltip.width, 300)
@@ -1918,6 +1903,171 @@ local function AssertNoVisibleConnectors(a)
 	end
 end
 
+local function SharedPartyHoverFixture(size)
+	local a = ClusterFixture(3)
+	a.now, a.known, a.rosterWire = 100, {}, {}
+	a.API.GetTime = function() return a.now end
+	a.API.GetRealmName = function() return "Realm" end
+	a.API.Random = function() return 12345 end
+	a.clusterOptions.clusterPlayerLocations = false
+	a.rows.map[2].x, a.rows.map[3].x = 0.55, 0.7
+	a.rows.minimap = { a.rows.map[1], a.rows.map[2] }
+	for _, row in ipairs(a.rows.map) do a.known[row.name] = true end
+	function a:IsSelfSender() return false end
+	function a:IsKnownQTPlayer(name) return self.known[name] == true end
+	function a:RecordQTPlayerPresence(name) self.known[name] = true; return true end
+	function a:GetPlayerTooltipStats() return nil end
+	function a:GetPlayerPartySize() return nil end
+	function a:GetChatLogTooltipCursorPosition() return 200, 100 end
+	function a:GetCommunicationRequestDeadline() return nil end
+	function a:CancelCommRequest() end
+	function a:CancelCommunicationOwner() end
+	function a:Request(operation, record, _, options)
+		Equal(operation, "QPGR")
+		self.rosterWire[#self.rosterWire + 1] = { record = self:DeepCopy(record), options = options }
+		return true
+	end
+	function a:AcceptPartyMetadata(name, record)
+		local observation = self:CreatePeerObservation(name, "QTPG", { source = "snapshot", lifetime = 180 })
+		assert(self:HandlePartyVisualMetadata(record, name, observation))
+	end
+	-- Build the advertised revision through the actual local party owner, then
+	-- receive it through the actual observation/roster boundary on the viewer.
+	local sender, leader = a.rows.map[1].name, a.rows.map[2].name
+	local publisher = setmetatable({ isEnabled = true, partyMembers = {} }, { __index = QuestTogether })
+	publisher.API = {
+		GetTime = function() return a.now end,
+		GetRealmName = function() return "Realm" end,
+		GetPartyVisualLeaderUnit = function() return "party1" end,
+	}
+	function publisher:IsRuntimeRestricted() return false end
+	function publisher:IsSelfSender(name) return name == sender end
+	function publisher:GetUnitFullName() return leader end
+	function publisher:GetLocalPartySize() return size end
+	publisher.partyMembers[sender], publisher.partyMembers[leader] = { classFile = "MAGE" }, { classFile = "MAGE" }
+	if size == 3 then publisher.partyMembers["Remote-Realm"] = { classFile = "WARRIOR" } end
+	local record, info = publisher:BuildPartyVisualMetadata()
+	assert(record and info)
+	a:AcceptPartyMetadata(sender, record)
+	function a:CompletePartyRoster()
+		local request = assert(self.rosterWire[#self.rosterWire]).record
+		assert(self:HandlePartyVisualRosterMember({ requestId = request.requestId, revision = record.revision,
+			members = self:DeepCopy(info.members) }, sender))
+	end
+	return a, sender, leader, record
+end
+
+local function AssertTooltipParty(state, names, loading)
+	local shown = {}
+	for _, item in ipairs(state.partyRows or {}) do
+		if item.active and item.frame:IsVisible() then
+			shown[#shown + 1] = item
+		end
+	end
+	Equal(#shown, #names)
+	for index, name in ipairs(names) do assert(shown[index].label.text:find(name, 1, true)) end
+	assert(not shown[1] or shown[1].crown.shown)
+	for index = 2, #shown do assert(not shown[index].crown.shown) end
+	Equal(state.tooltipIntro.text:find("Loading party members", 1, true) ~= nil, loading)
+end
+
+Register("accepted party roster from one member is reused by another hover chat cluster and map highlights", function()
+	local a, sender, leader = SharedPartyHoverFixture(3)
+	a:RefreshPlayerLocationPins()
+	local first, second, other = Pin(a, "map"), Pin(a, "map", 2), Pin(a, "map", 3)
+	first.frame.scripts.OnEnter()
+	Equal(#a.rosterWire, 1)
+	a:CompletePartyRoster()
+	assert(a:GetPartyVisualState().peers[leader] == nil, "the other member sent no party advertisement")
+	local source = a:GetPlayerPartyVisualInfo(sender)
+	Equal(a:GetPlayerPartyVisualInfo(leader).key, source.key)
+	Equal(#a:GetPlayerPartyVisualInfo(leader).members, 3)
+	first.frame.scripts.OnLeave()
+	second.frame.scripts.OnEnter()
+	AssertTooltipParty(a.locationPinState, { leader, sender, "Remote-Realm" }, false)
+	assert(first.partyOutline.shown and second.partyOutline.shown and second.partyCrown.shown)
+	assert(Pin(a, "minimap").partyOutline.shown and Pin(a, "minimap", 2).partyOutline.shown)
+	assert(not other.partyOutline.shown)
+	Near(other.frame.alpha, 0.45)
+	Equal(#a.rosterWire, 1, "accepted shared roster must prevent a second roster fetch")
+	assert(a:ShowChatLogPlayerTooltip(Frame(a), "questtogetherlog:" .. leader))
+	AssertTooltipParty(a.chatLogPlayerTooltipState, { leader, sender, "Remote-Realm" }, false)
+	a:HideChatLogPlayerTooltip()
+	second.frame.scripts.OnLeave()
+	a.clusterOptions.clusterPlayerLocations, a.rows.map[2].x = true, 0.501
+	a:RefreshPlayerLocationPins()
+	local requests = #a.requests
+	Pin(a, "map").frame.scripts.OnEnter()
+	local summary = a.locationPinState.clusterTooltip
+	Equal(summary.partyRows[1].partyKey, source.key)
+	Equal(summary.partyRows[2].partyKey, source.key)
+	Equal(summary.partyGroups[1].count.text, "3")
+	Equal(#a.rosterWire, 1)
+	Equal(#a.requests, requests, "cluster summary only reads the shared party result")
+	Equal(a:GetPartyVisualState().peers[sender].sampledAt, 100)
+end)
+
+Register("partial party membership is consistent across member and leader hovers without becoming a complete roster", function()
+	for _, size in ipairs({ 2, 3 }) do
+		local a, sender, leader = SharedPartyHoverFixture(size)
+		a:RefreshPlayerLocationPins()
+		local first, second = Pin(a, "map"), Pin(a, "map", 2)
+		first.frame.scripts.OnEnter()
+		AssertTooltipParty(a.locationPinState, { leader, sender }, size == 3)
+		Equal(a:GetPlayerPartyVisualInfo(sender).members, nil)
+		Equal(#a.rosterWire, 1)
+		first.frame.scripts.OnLeave()
+		second.frame.scripts.OnEnter()
+		AssertTooltipParty(a.locationPinState, { leader, sender }, size == 3)
+		Equal(a:GetPlayerPartyVisualInfo(leader).members, nil)
+		assert(first.partyOutline.shown and second.partyOutline.shown and second.partyCrown.shown)
+		second.frame.scripts.OnLeave()
+		a.clusterOptions.clusterPlayerLocations, a.rows.map[2].x = true, 0.501
+		a:RefreshPlayerLocationPins()
+		local requests, rosters = #a.requests, #a.rosterWire
+		Pin(a, "map").frame.scripts.OnEnter()
+		local summary = a.locationPinState.clusterTooltip
+		Equal(summary.partyRows[1].partyKey, summary.partyRows[2].partyKey)
+		assert(summary.partyRows[1].partyKey)
+		Equal(summary.partyGroups[1].count.text, tostring(size))
+		Equal(#a.requests, requests)
+		Equal(#a.rosterWire, rosters)
+		Equal(a:GetPartyVisualState().peers[leader], nil)
+	end
+end)
+
+Register("newer solo evidence removes inferred party membership from active hover cluster and highlights", function()
+	local a, sender, leader = SharedPartyHoverFixture(3)
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnEnter()
+	a:CompletePartyRoster()
+	Pin(a, "map").frame.scripts.OnLeave()
+	local selected = Pin(a, "map", 2)
+	selected.frame.scripts.OnEnter()
+	AssertTooltipParty(a.locationPinState, { leader, sender, "Remote-Realm" }, false)
+	a.now = 101
+	a:AcceptPartyMetadata(leader, { size = 0 })
+	a:RefreshPlayerLocationPins()
+	assert(a.locationPinState.tooltipIntro.text:find("Solo", 1, true))
+	for _, row in ipairs(a.locationPinState.partyRows) do assert(not row.active) end
+	for _, surface in pairs(a.locationPinState.surfaces) do
+		for _, pin in ipairs(surface.pins) do
+			assert(not pin.partyOutline.shown and not pin.partyCrown.shown)
+			Near(pin.frame.alpha, 1)
+		end
+	end
+	selected.frame.scripts.OnLeave()
+	a.clusterOptions.clusterPlayerLocations, a.rows.map[2].x = true, 0.501
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnEnter()
+	local summary = a.locationPinState.clusterTooltip
+	for _, item in ipairs(summary.partyRows) do
+		if item.label.text:find("Peer002", 1, true) then Equal(item.partyKey, nil) end
+	end
+	Equal(a:GetPlayerPartyVisualInfo(leader).key, nil)
+	Equal(#a.rosterWire, 1)
+end)
+
 Register("cluster summary hover requests no details and expansion preserves normal player dots and hover", function()
 	local a = ClusterFixture()
 	VisualParty(a)
@@ -2106,8 +2256,8 @@ end
 
 Register("cluster summary groups known parties into adjacent rounded blocks with multiline rows and centered party icons", function()
 	local a = ClusterPartySummaryFixture()
-	a:SetSummaryParty({ 1, 4 }, "PartyA")
-	a:SetSummaryParty({ 2, 5 }, "PartyB")
+	a:SetSummaryParty({ 1, 4 }, "PartyA", 5)
+	a:SetSummaryParty({ 2, 5 }, "PartyB", 40)
 	a:SetSummaryParty({ 3 }, "UntrustedSoloKey", 0)
 	a.rows.map[6].partyKey = "PartyA" -- raw location fields cannot establish party identity
 	a.verifiedDeveloperName = a.rows.map[1].name
@@ -2121,6 +2271,7 @@ Register("cluster summary groups known parties into adjacent rounded blocks with
 		assert(item.label.text:find("Peer00" .. originalIndex, 1, true))
 		assert(item.active and item.qtIcon.shown and not item.crown.shown)
 		Equal(item.partyKey, index <= 2 and "PartyA" or index <= 4 and "PartyB" or nil)
+		Equal(item.partySize, index <= 2 and 5 or index <= 4 and 40 or nil)
 		Equal(item.frame.points[1][4], index <= 4 and 6 or 0)
 	end
 	Equal(#state.partyGroups, 2)
@@ -2139,6 +2290,17 @@ Register("cluster summary groups known parties into adjacent rounded blocks with
 		Equal(group.icon.points[1][2], group.frame)
 		Equal(group.icon.points[1][3], "RIGHT")
 		Equal(group.icon.points[1][5], 0)
+		Equal(group.partySize, groupIndex == 1 and 5 or 40)
+		Equal(group.count.text, groupIndex == 1 and "5" or "40")
+		assert(group.count:IsVisible())
+		Equal(group.count.parent, group.frame)
+		Equal(group.count.points[1][1], "RIGHT")
+		Equal(group.count.points[1][2], group.frame)
+		Equal(group.count.points[1][3], "RIGHT")
+		Equal(group.count.points[1][5], 0)
+		Equal(group.count.justifyV, "MIDDLE")
+		assert(group.count.width >= group.count:GetStringWidth())
+		for channel = 1, 4 do Near(group.count.textColor[channel], 1) end
 		local firstRow, lastRow = state.partyRows[group.first], state.partyRows[group.last]
 		Near(firstRow.frame.points[1][5], group.frame.points[1][5] - 4)
 		Near(lastRow.frame.points[1][5] - lastRow.frame.height, group.frame.points[1][5] - group.frame.height + 4)
@@ -2163,8 +2325,8 @@ end)
 
 Register("cluster party outlines retire on metadata expiry reuse their frames and reject stale cluster hover", function()
 	local a = ClusterPartySummaryFixture()
-	a:SetSummaryParty({ 1, 4 }, "PartyA")
-	a:SetSummaryParty({ 2, 5 }, "PartyB")
+	a:SetSummaryParty({ 1, 4 }, "PartyA", 40)
+	a:SetSummaryParty({ 2, 5 }, "PartyB", 5)
 	a:RefreshPlayerLocationPins()
 	local cluster = Pin(a, "map")
 	cluster.frame.scripts.OnEnter()
@@ -2179,21 +2341,33 @@ Register("cluster party outlines retire on metadata expiry reuse their frames an
 		Equal(group.key, nil)
 		Equal(group.first, nil)
 		Equal(group.last, nil)
+		Equal(group.partySize, nil)
+		Equal(group.count.text, "")
 	end
 	for index, item in ipairs(state.partyRows) do
 		Equal(item.partyKey, nil)
+		Equal(item.partySize, nil)
 		Equal(item.frame.points[1][4], 0)
 		assert(item.label.text:find("Peer00" .. index, 1, true))
 	end
-	a:SetSummaryParty({ 2, 6 }, "NewParty")
+	a:SetSummaryParty({ 2, 6 }, "NewParty", 3)
 	a:RefreshPlayerLocationPins()
 	Equal(state.partyGroups[1].frame, firstFrame)
 	Equal(state.partyGroups[1].key, "NewParty")
+	Equal(state.partyGroups[1].partySize, 3)
+	Equal(state.partyGroups[1].count.text, "3")
 	assert(state.partyGroups[1].active)
 	Equal(state.partyGroups[2].frame, secondFrame)
 	assert(not state.partyGroups[2].active and not secondFrame:IsVisible())
 	Equal(#a.frames, frames)
 	Equal(#a.regions, regions)
+	a.rows.map = { a.rows.map[2], a.rows.map[6] }
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnEnter()
+	for index = 3, #state.partyRows do
+		assert(not state.partyRows[index].active)
+		Equal(state.partyRows[index].partySize, nil)
+	end
 	local staleEnter = cluster.frame.scripts.OnEnter
 	a.rows.map = { Row("ReplacementA-Realm"), Row("ReplacementB-Realm") }
 	staleEnter()
@@ -2204,7 +2378,7 @@ end)
 
 Register("grouped cluster summaries cap rows after grouping while expanded summaries stay within the visible fanout page", function()
 	local a = ClusterPartySummaryFixture(20)
-	a:SetSummaryParty({ 1, 13 }, "CrossPageParty")
+	a:SetSummaryParty({ 1, 13 }, "CrossPageParty", 5)
 	a:RefreshPlayerLocationPins()
 	local cluster = Pin(a, "map")
 	cluster.frame.scripts.OnEnter()
@@ -2214,10 +2388,12 @@ Register("grouped cluster summaries cap rows after grouping while expanded summa
 	assert(state.partyRows[2].label.text:find("Peer013", 1, true))
 	Equal(state.partyGroups[1].first, 1)
 	Equal(state.partyGroups[1].last, 2)
+	Equal(state.partyGroups[1].count.text, "5")
 	assert(state.tooltipLabel.text:find("…and 14 more", 1, true))
 	cluster.frame.scripts.OnClick(nil, "LeftButton")
 	Equal(cluster.cluster.expansionInfo.page, 1)
 	Equal(state.partyGroups[1].last, 1)
+	Equal(state.partyGroups[1].count.text, "5")
 	for _, item in ipairs(state.partyRows) do
 		assert(not item.label.text:find("Peer013", 1, true))
 	end
@@ -2226,6 +2402,7 @@ Register("grouped cluster summaries cap rows after grouping while expanded summa
 	assert(state.partyRows[1].label.text:find("Peer013", 1, true))
 	Equal(state.partyGroups[1].first, 1)
 	Equal(state.partyGroups[1].last, 1)
+	Equal(state.partyGroups[1].count.text, "5")
 	for _, item in ipairs(state.partyRows) do
 		assert(not item.label.text:find("Peer001", 1, true))
 	end
@@ -2235,7 +2412,7 @@ end)
 Register("grouped summary reserves icon space for wrapped labels and normal player tooltips remain unframed", function()
 	local a = ClusterPartySummaryFixture(2)
 	a.rows.map[1].name = string.rep("Long", 14) .. "-Realm"
-	a:SetSummaryParty({ 1, 2 }, "LongNames")
+	a:SetSummaryParty({ 1, 2 }, "LongNames", 40)
 	a:RefreshPlayerLocationPins()
 	local cluster = Pin(a, "map")
 	cluster.frame.scripts.OnEnter()
@@ -2244,6 +2421,10 @@ Register("grouped summary reserves icon space for wrapped labels and normal play
 	assert(state.tooltip.width <= 300)
 	assert(first.frame.height > second.frame.height and first.frame.height >= first.label:GetStringHeight() + 2)
 	local iconLeft = group.frame.width + group.icon.points[1][4] - group.icon.width
+	local iconRight = iconLeft + group.icon.width
+	local countLeft = group.frame.width + group.count.points[1][4] - group.count.width
+	Equal(group.count.text, "40")
+	assert(iconRight < countLeft and countLeft + group.count:GetStringWidth() < group.frame.width - 4)
 	for _, item in ipairs({ first, second }) do
 		local labelRight = item.frame.points[1][4] + item.label.points[1][2] + item.label.width
 		assert(item.label.width > 0 and labelRight < iconLeft)
@@ -2254,9 +2435,12 @@ Register("grouped summary reserves icon space for wrapped labels and normal play
 	a:RenderPlayerTooltip(state, cluster, model)
 	assert(state.tooltipIntro.shown)
 	assert(not group.active and not group.frame:IsVisible())
+	Equal(group.partySize, nil)
+	Equal(group.count.text, "")
 	for _, item in ipairs(state.partyRows) do
 		if item.active then
 			Equal(item.partyKey, nil)
+			Equal(item.partySize, nil)
 			Equal(item.frame.points[1][4], 0)
 			Equal(item.label.width, item.frame.width - 38)
 		end

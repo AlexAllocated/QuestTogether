@@ -230,12 +230,14 @@ function QuestTogether:GetViewedQuestTogetherMapID()
 	return ID(self, Method(self, WorldMapFrame, "GetMapID"))
 end
 
-local function DescendantLocationPath(addon, info, mapID, parents)
+local function DescendantLocationPath(addon, info, mapID, parents, mapTypes)
 	local path, seen = {}, {}
 	for _ = 1, 16 do
 		if not addon:CanAccessTable(info) then return nil end
 		local child, parent = ID(addon, info.mapID), Number(addon, info.parentMapID)
 		if not child or child > 1000000 or seen[child] then return nil end
+		local mapType = Number(addon, info.mapType)
+		if mapType and mapType >= 0 and mapType <= 6 and mapType == math.floor(mapType) then mapTypes[child] = mapType end
 		if child == mapID then return path end
 		if not parent or parent < 0 or parent > 1000000 or parent ~= math.floor(parent) then return nil end
 		if parents[child] ~= nil and parents[child] ~= parent then return nil end
@@ -268,15 +270,15 @@ local function ClusterPositionsOnMap(addon, members, mapID)
 end
 
 local function DeepestClusterMap(addon, members, mapID, positions, getter)
-	local parents, footprints, candidates, queued = {}, {}, { mapID }, { [mapID] = true }
+	local parents, mapTypes, footprints, candidates, queued = {}, {}, {}, { mapID }, { [mapID] = true }
 	local sourceInfo = API(addon, C_Map, "GetMapInfo", mapID)
 	if not addon:CanAccessTable(sourceInfo) or ID(addon, sourceInfo.mapID) ~= mapID then return nil end
-	local sourcePath = DescendantLocationPath(addon, sourceInfo, nil, parents)
+	local sourcePath = DescendantLocationPath(addon, sourceInfo, nil, parents, mapTypes)
 	if not sourcePath then return nil end
 	local sourceAncestors = {}
 	for _, ancestor in ipairs(sourcePath) do sourceAncestors[ancestor] = true end
 	local function Add(info)
-		local path = DescendantLocationPath(addon, info, nil, parents)
+		local path = DescendantLocationPath(addon, info, nil, parents, mapTypes)
 		if not path then return false end
 		for index = #path, 1, -1 do
 			local candidate = path[index]
@@ -305,6 +307,12 @@ local function DeepestClusterMap(addon, members, mapID, positions, getter)
 		return footprints[candidate]
 	end
 	local function Smaller(candidate, previous)
+		local previousType, candidateType = mapTypes[previous], mapTypes[candidate]
+		-- Cosmic/world overviews combine several physical continents. Their
+		-- center's instance and numeric size do not describe the whole map.
+		-- Verified descent to a more detailed native map is authoritative here.
+		if previousType and previousType <= 1 and candidateType and candidateType > previousType
+			and Descends(candidate, previous) then return true end
 		local a, b = Footprint(candidate), Footprint(previous)
 		if a and b then return a.continent == b.continent and a.area < b.area end
 		-- World/cosmic maps may have no meaningful geographic size. Only a
@@ -327,7 +335,7 @@ local function DeepestClusterMap(addon, members, mapID, positions, getter)
 		if candidate ~= mapID and Smaller(candidate, mapID) then
 			projected = ClusterPositionsOnMap(addon, members, candidate)
 			local footprint = Footprint(candidate)
-			if projected and footprint then
+			if projected and footprint and (not mapTypes[candidate] or mapTypes[candidate] > 1) then
 				for _, row in ipairs(members) do
 					if addon:GetCachedPlayerLocationWorldPosition(row) ~= footprint.continent then projected = nil; break end
 				end
@@ -603,13 +611,6 @@ local function PartyHighlights(addon, state)
 			if (pin.name or pin.cluster) and Guard(addon, pin.frame) then
 				local info = pin.name and addon:GetPlayerPartyVisualInfo(pin.name)
 				local same = key and info and info.key == key
-				-- Older peers can also be identified by a fetched current roster,
-				-- but never override a conflicting explicit party advertisement.
-				if pin.name and key and (not info or not info.key) and hovered.members then
-					for _, member in ipairs(hovered.members) do
-						if member.name == pin.name and (not info or info.size ~= 0) then same = true end
-					end
-				end
 				local dim = pin.name and key and not same and not pin.selected and not surface.highlightingQT
 				local alpha = (pin.baseAlpha or 1) * (dim and 0.45 or 1)
 				Call(addon, pin.frame, "SetAlpha", alpha)

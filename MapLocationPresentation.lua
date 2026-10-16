@@ -30,7 +30,7 @@ function QT:BuildPlayerLocationClusterTooltipMembers(rows, first, last, limit)
 				and type(info.key) == "string" and info.key ~= "" and info.key or nil
 			local group = key and byParty[key]
 			if not group then
-				group = { rows = {}, key = key }
+				group = { rows = {}, key = key, size = key and size or nil }
 				groups[#groups + 1] = group
 				if key then byParty[key] = group end
 			end
@@ -43,6 +43,7 @@ function QT:BuildPlayerLocationClusterTooltipMembers(rows, first, last, limit)
 			local member = self:BuildPlayerTooltipMember(row, { shortName = true, usesQT = true })
 			if member then
 				member.partyKey = group.key
+				member.partySize = group.size
 				members[#members + 1] = member
 				if #members == limit then return members end
 			end

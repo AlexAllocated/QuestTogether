@@ -490,3 +490,255 @@ QT:RegisterTest("party roster uses shared request framing repair and correlation
 	Eq(next(a:GetPartyVisualState().pending), nil)
 	Eq(next(a.communicationState.requests), nil)
 end)
+
+local function SharedRoster()
+	local a, b = Peer(), Peer("Leader-Realm")
+	Start(a, b, 3)
+	assert(Deliver(a, b.wire[2], b.name))
+	return a, b, "Member2-Realm", a:GetPlayerPartyVisualInfo(b.name).key
+end
+
+QT:RegisterTest("shared party roster resolves every known member without copied observations or new requests", function()
+	local a, b, member, key = SharedRoster()
+	local state = a:GetPartyVisualState()
+	Eq(a:GetPlayerPartyVisualInfo(member), nil, "roster membership must not establish QT presence")
+	a.known[member] = true
+	local source, result = state.peers[b.name], a:GetPlayerPartyVisualInfo(member)
+	Eq(result.key, key)
+	Eq(result.members, state.rosters[key].members)
+	Eq(result.sampledAt, source.sampledAt)
+	Eq(result.at, source.at)
+	Eq(result.lifetime, source.lifetime)
+	Eq(state.peers[member], nil)
+	Eq(a:RequestPartyVisualRoster(member), false)
+	Eq(#a.wire, 1)
+	a.now = 200
+	Eq(a:GetPlayerPartyVisualInfo(member).sampledAt, 100)
+	Eq(state.rosters[key].at, 100)
+	a.now = 280
+	Eq(a:GetPlayerPartyVisualInfo(member), nil)
+end)
+
+QT:RegisterTest("shared party partial metadata gives sender and leader one incomplete requestable view", function()
+	local a, b = Peer(), Peer("Sender-Realm")
+	Group(b, 3)
+	b.leader, b.partyMembers["Leader-Realm"] = "Leader-Realm", { classFile = "WARRIOR" }
+	b.partyMembers["Member2-Realm"] = nil
+	assert(b:BroadcastPartyVisualMetadata())
+	assert(Deliver(a, b.wire[1], b.name))
+	a.known[b.leader] = true
+	local sender, leader = a:GetPlayerPartyVisualInfo(b.name), a:GetPlayerPartyVisualInfo(b.leader)
+	Eq(sender.key, leader.key)
+	Eq(sender.members, nil)
+	Eq(leader.members, nil)
+	Eq(#sender.knownMembers, 2)
+	Eq(#leader.knownMembers, 2)
+	for index, row in ipairs(sender.knownMembers) do Eq(leader.knownMembers[index].name, row.name) end
+	Eq(a:GetPartyVisualState().peers[b.leader], nil)
+	assert(a:RequestPartyVisualRoster(b.leader))
+end)
+
+QT:RegisterTest("shared party newer solo or membership evidence invalidates old lists for all their members", function()
+	for _, mode in ipairs({ "solo", "size", "join", "party" }) do
+		local a, b, member, key = SharedRoster()
+		a.known[member], a.now = true, 101
+		if mode == "solo" or mode == "party" then
+			local record = mode == "solo" and { size = 0 }
+				or { size = 2, leader = "Other-Realm", leaderClass = "MAGE", revision = "7" }
+			assert(ObserveState(a, "HandlePartyVisualMetadata", "QTPG", record, member))
+		elseif mode == "size" then
+			a.qtPlayerPresenceState.peerTooltipStats = { [member] = { partySize = 0, at = 101 } }
+		else
+			a.partyJoinState = { peers = { [member] = { grouped = "0", at = 101 } } }
+		end
+		local result = a:GetPlayerPartyVisualInfo(member)
+		Eq(result.size, mode == "party" and 2 or 0)
+		local old = a:GetPlayerPartyVisualInfo(b.name)
+		Eq(old.key, nil)
+		Eq(old.members, nil)
+		assert(a:GetPartyVisualState().rosters[key], "retain validated immutable content for exact future revision reuse")
+	end
+end)
+
+QT:RegisterTest("shared party new same leader revision excludes stale direct members until reconfirmed", function()
+	local a, b, _, key = SharedRoster()
+	local member = "Member3-Realm"
+	assert(ObserveState(a, "HandlePartyVisualMetadata", "QTPG", b.wire[1].record, member))
+	Eq(a:GetPlayerPartyVisualInfo(member).key, key)
+	a.now, b.now = 101, 101
+	Group(b, 2)
+	assert(b:BroadcastPartyVisualMetadata())
+	assert(Deliver(a, b.wire[#b.wire], b.name))
+	local result = a:GetPlayerPartyVisualInfo(member)
+	Eq(result.key, nil)
+	Eq(result.members, nil)
+	assert(a:GetPlayerPartyVisualInfo(b.name).key ~= key)
+end)
+
+QT:RegisterTest("shared party references cannot revive ignored departed evicted or reset subjects and sources", function()
+	for _, mode in ipairs({ "subject", "source", "ignore", "reset" }) do
+		local a, b, member = SharedRoster()
+		a.known[member] = true
+		assert(a:GetPlayerPartyVisualInfo(member).members)
+		if mode == "ignore" then
+			a.ignored = member
+		elseif mode == "reset" then
+			a:ResetPartyVisuals()
+		else
+			local retired = mode == "subject" and member or b.name
+			a:ForgetPartyVisualPeer(retired)
+			a.known[retired] = nil
+		end
+		Eq(a:GetPlayerPartyVisualInfo(member), nil)
+		if mode == "subject" then
+			a.known[member] = true -- independent later presence does not restore removed membership proof
+			Eq(a:GetPlayerPartyVisualInfo(member), nil)
+		end
+	end
+	local a, b, member = SharedRoster()
+	a.known[member], a.now = true, 101
+	assert(a:RecordPeerDeparture(member, 101))
+	a:ForgetPartyVisualPeer(member)
+	a.now = 102
+	local observation = a:CreatePeerObservation(b.name, "QTPG", { source = "snapshot", lifetime = 180, age = 2 })
+	assert(a:HandlePartyVisualMetadata(b.wire[1].record, b.name, observation))
+	Eq(a:GetPlayerPartyVisualInfo(member), nil, "reindexing an old source must not bypass the subject departure fence")
+end)
+
+QT:RegisterTest("shared party restored rosters serve cached members without manufacturing live presence or lifetime", function()
+	local a, b, member, key = SharedRoster()
+	local saved = a:SavePlayerPartyCacheEntry(b.name, 110, 1000000100)
+	for _, order in ipairs({ { b.name, member }, { member, b.name } }) do
+		local restored = Peer()
+		restored.now = 10
+		restored.playerLocationState = { peers = {} }
+		for _, name in ipairs(order) do
+			restored.playerLocationState.peers[name] = { cached = true, mask = 3, receivedAt = 10, lifetime = 150 }
+			if name == b.name then assert(restored:RestorePlayerPartyCacheEntry(name, saved, 10, 1000000120)) end
+		end
+		local result = restored:GetPlayerPartyVisualInfo(member)
+		Eq(result.key, key)
+		Eq(result.cached, true)
+		Eq(result.sampledAt, -20)
+		Eq(result.lifetime, 150)
+		Eq(restored:GetPartyVisualState().peers[member], nil)
+		Eq(restored.known[member], nil)
+		Eq(restored:RequestPartyVisualRoster(member), false)
+		restored.now = 160
+		Eq(restored:GetPlayerPartyVisualInfo(member), nil)
+	end
+end)
+
+QT:RegisterTest("shared party partial leader contradictions and invalidated reload exports stay summary only", function()
+	local a, b = Peer(), Peer("Sender-Realm")
+	Group(b, 2)
+	b.leader = "Member2-Realm"
+	assert(b:BroadcastPartyVisualMetadata())
+	assert(Deliver(a, b.wire[1], b.name))
+	a.now = 101
+	assert(ObserveState(a, "HandlePartyVisualMetadata", "QTPG", { size = 0 }, b.leader))
+	local info = a:GetPlayerPartyVisualInfo(b.name)
+	Eq(info.key, nil)
+	Eq(info.knownMembers, nil)
+	Eq(a:GetPlayerPartyVisualInfo(b.leader).size, 0)
+	local saved = a:SavePlayerPartyCacheEntry(b.name, 101, 1000000101)
+	Eq(saved.leader, nil)
+	Eq(saved.roster, nil)
+	local viewer, publisher, member = SharedRoster()
+	viewer.now = 101
+	assert(ObserveState(viewer, "HandlePartyVisualMetadata", "QTPG", { size = 0 }, member))
+	saved = viewer:SavePlayerPartyCacheEntry(publisher.name, 101, 1000000101)
+	Eq(saved.leader, nil)
+	Eq(saved.roster, nil, "missing cacheable location for the solo member cannot preserve an invalidated list")
+end)
+
+QT:RegisterTest("shared party indexes and partial lists stay bounded across source and roster eviction", function()
+	local a = Peer()
+	for index = 1, 514 do
+		a.now = 100 + index / 1000
+		assert(ObserveState(a, "HandlePartyVisualMetadata", "QTPG",
+			{ size = 3, leader = "SharedLeader-Realm", leaderClass = "MAGE", revision = "123" }, "Source" .. index .. "-Realm"))
+	end
+	local s, sourceCount, referenceCount = a:GetPartyVisualState(), 0, 0
+	for source, indexed in pairs(a:GetPartyVisualState().sources) do
+		sourceCount = sourceCount + 1
+		assert(s.peers[source] == indexed.record)
+	end
+	for _, sources in pairs(s.memberships) do
+		for source, record in pairs(sources) do
+			referenceCount = referenceCount + 1
+			assert(s.peers[source] == record)
+		end
+	end
+	Eq(sourceCount, 512)
+	Eq(referenceCount, 1024)
+	Eq(s.sources["Source1-Realm"], nil)
+	local info = a:GetPlayerPartyVisualInfo("Source514-Realm")
+	assert(#info.knownMembers <= info.size)
+	-- Canonical roster eviction removes full-member references while keeping
+	-- independently advertised sender/leader relationships.
+	local viewer, firstKey, firstLeader = Peer()
+	for index = 1, 129 do
+		viewer.now, viewer.wire = 100 + index, {}
+		local publisher = Peer("Party" .. index .. "-Realm")
+		publisher.now = viewer.now
+		Start(viewer, publisher, 3)
+		assert(Deliver(viewer, publisher.wire[2], publisher.name))
+		if index == 1 then firstKey, firstLeader = viewer:GetPlayerPartyVisualInfo(publisher.name).key, publisher.name end
+	end
+	local state, rosterCount = viewer:GetPartyVisualState(), 0
+	for _ in pairs(state.rosters) do rosterCount = rosterCount + 1 end
+	Eq(rosterCount, 128)
+	Eq(state.rosters[firstKey], nil)
+	Eq(state.memberships["Member2-Realm"][firstLeader], nil)
+	assert(state.memberships[firstLeader][firstLeader])
+end)
+
+QT:RegisterTest("shared party superseded proofs cannot revive when contradictory peers expire or depart", function()
+	for _, mode in ipairs({ "metadata", "join", "forget", "unseen" }) do
+		local a, b, member, key = SharedRoster()
+		a.known[member] = true
+		a:GetPartyVisualState().peers[b.name].lifetime = 600
+		a.now = 101
+		if mode == "join" then
+			a.partyJoinState = { peers = { [member] = { grouped = "0", at = 101 } } }
+		else
+			assert(ObserveState(a, "HandlePartyVisualMetadata", "QTPG", { size = 0 }, member))
+		end
+		if mode ~= "unseen" then Eq(a:GetPlayerPartyVisualInfo(b.name).members, nil) end
+		if mode == "forget" or mode == "unseen" then
+			a:ForgetPartyVisualPeer(member)
+			a.known[member] = nil
+		else
+			a.now = 300
+		end
+		local info = a:GetPlayerPartyVisualInfo(b.name)
+		Eq(info.key, nil)
+		Eq(info.members, nil)
+		assert(a:GetPartyVisualState().rosters[key])
+		-- A genuinely new exact revision can reconfirm the immutable list;
+		-- merely hovering, expiring, or deleting contrary evidence cannot.
+		a.now, b.now = 301, 301
+		assert(b:BroadcastPartyVisualMetadata())
+		assert(Deliver(a, b.wire[#b.wire], b.name))
+		Eq(#a:GetPlayerPartyVisualInfo(b.name).members, 3)
+	end
+end)
+
+QT:RegisterTest("shared party accepted size and join counterfacts retire proofs before any hover observes them", function()
+	for _, mode in ipairs({ "size", "join" }) do
+		local a, b, member = SharedRoster()
+		a.known[member] = true
+		a:GetPartyVisualState().peers[b.name].lifetime = 600
+		a.now = 101
+		if mode == "size" then
+			assert(ObserveState(a, "HandleAddonVersionMessage", "QTVR", { version = "0.0.0", partySize = 0 }, member))
+		else
+			assert(ObserveState(a, "HandlePartyJoinMetadata", "QJST", { grouped = "0", invite = false }, member))
+		end
+		a.now = 300 -- no query between receipt and expiry of the conflicting fact
+		local info = a:GetPlayerPartyVisualInfo(b.name)
+		Eq(info.key, nil)
+		Eq(info.members, nil)
+	end
+end)
