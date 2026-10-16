@@ -2196,7 +2196,7 @@ Register("cluster summary uses capped roster rows with validated indicators and 
 	assert(developer.developerIcon.texture:find("DeveloperGear", 1, true))
 	Near(developer.developerIcon.vertexColor[1], 64 / 255)
 	Near(developer.developerIcon.vertexColor[2], 199 / 255)
-	assert(developer.label.text:find("QuestTogether developer", 1, true))
+	assert(not developer.label.text:find("QuestTogether developer", 1, true))
 	assert(developer.label.text:find("Location sharing is off", 1, true))
 	assert(looking.qtIcon.texture:find("QuestTogetherPartnerIcon", 1, true))
 	local last = summary.partyRows[6]
@@ -2225,6 +2225,32 @@ Register("cluster summary uses capped roster rows with validated indicators and 
 	assert(not summary.tooltipLabel.text:find("more", 1, true))
 	Equal(a.rosterRequests, 0)
 	Equal(#a.requests, 0)
+end)
+
+Register("cluster developer gear omits its text label while individual and party tooltips retain it", function()
+	local a = ClusterFixture(2)
+	VisualParty(a)
+	a.rows.map = { Row("Friend-Realm"), Row("Leader-Realm", 0.501) }
+	a.verifiedDeveloperName = "Friend-Realm"
+	a:RefreshPlayerLocationPins()
+	local cluster = Pin(a, "map")
+	cluster.frame.scripts.OnEnter()
+	local summary = a.locationPinState.clusterTooltip
+	local developer = summary.partyRows[1]
+	assert(developer.label.text:find("Friend", 1, true))
+	assert(developer.developerIcon.shown and not developer.dot.shown)
+	Near(developer.developerIcon.vertexColor[1], 64 / 255)
+	Near(developer.developerIcon.vertexColor[2], 199 / 255)
+	assert(not developer.label.text:find("QuestTogether developer", 1, true))
+	cluster.frame.scripts.OnClick(nil, "LeftButton")
+	local expanded = assert(ExpandedPlayerPin(a, "Friend-Realm"))
+	expanded.frame.scripts.OnEnter()
+	local individual = a.locationPinState
+	assert(individual.tooltipIntro.text:find("QuestTogether developer", 1, true))
+	local partyDeveloper = individual.partyRows[2]
+	assert(partyDeveloper.label.text:find("Friend-Realm", 1, true))
+	assert(partyDeveloper.label.text:find("QuestTogether developer", 1, true))
+	assert(partyDeveloper.developerIcon.shown)
 end)
 
 local function ClusterPartySummaryFixture(count)

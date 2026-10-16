@@ -234,7 +234,9 @@ function QuestTogether:BuildPlayerTooltipMember(member, options)
 	local displayName = options.shortName and self:GetShortDisplayName(name) or name
 	local label = self:GetClassColorCode(member.classFile) .. Text(self, displayName) .. "|r"
 	if leader then label = label .. " — " .. L("Leader") end
-	if developer then label = label .. "\n|cffffd200" .. L("QuestTogether developer") .. "|r" end
+	if developer and options.showDeveloperLabel ~= false then
+		label = label .. "\n|cffffd200" .. L("QuestTogether developer") .. "|r"
+	end
 	if hiddenLocation then label = label .. "\n|cffff8080" .. L("Location sharing is off") .. "|r" end
 	return {
 		name = name,
