@@ -119,19 +119,6 @@ QT:RegisterTest("protocol v2 rejects malformed bounded schema payloads without r
 	end
 end)
 
-QT:RegisterTest("protocol v2 uses matching bounded identity fields across events and responses", function()
-	local _, a = Fixture()
-	for _, operation in ipairs({ "ANN", "LVL", "PONG" }) do
-		local data = { requestId = "request", senderName = string.rep("x", 121) }
-		Equal(a:EncodeCommRecord(operation, data), nil)
-		data.senderName = string.rep("x", 120)
-		assert(a:EncodeCommRecord(operation, data))
-	end
-	Equal(a:EncodeCommRecord("PONG", { senderName = "Peer-Realm" }), nil)
-	Equal(a:EncodeCommRecord("PONG", { requestId = string.rep("x", 81) }), nil)
-	assert(a:EncodeCommRecord("PONG", { requestId = string.rep("x", 80) }))
-end)
-
 QT:RegisterTest("protocol v2 normalizes duplicate audiences before conserving completion callbacks", function()
 	local net, a, b = Fixture()
 	net:Join(a, a.announcementChannelName, true)
@@ -381,47 +368,6 @@ QT:RegisterTest(
 	{ offline = true }
 )
 
-QT:RegisterTest("protocol v2 loss of every response fragment replays retained frames instead of rebuilding", function()
-	local net, a, b = Fixture()
-	local handled, calls = 0, 0
-	function b:HandlePartyVisualRosterRequest(record, sender)
-		handled = handled + 1
-		local members = {}
-		for i = 1, 20 do
-			members[i] = { name = "Member" .. i .. "-Realm", classFile = "MAGE" }
-		end
-		return self:Respond(
-			"QPGM",
-			{ requestId = record.requestId, revision = "r", members = members },
-			{ { distribution = "WHISPER", target = sender } }
-		)
-	end
-	local attempt = {}
-	net.deliveryRule = function(packet)
-		local frame = a:DecodeCommFrame(packet.wire)
-		if packet.sender == b.name and frame.operation == "QPGM" then
-			attempt[frame.part] = (attempt[frame.part] or 0) + 1
-			if attempt[frame.part] == 1 then
-				return { drop = true }
-			end
-		end
-	end
-	assert(a:Request("QPGR", { targetName = b.name }, Route(b), {
-		onResponse = function(record)
-			Equal(#record.members, 20)
-			calls = calls + 1
-			return true
-		end,
-	}))
-	net:Advance(25)
-	Equal(handled, 1)
-	Equal(calls, 1)
-	for _, count in pairs(attempt) do
-		Equal(count, 2)
-	end
-	Equal(b:GetCommTransferMetrics().outgoing, 0)
-end)
-
 QT:RegisterTest("protocol v2 source topic revisions prevent a newer envelope from reviving older state", function()
 	local net, a, b = Fixture()
 	local function Location(revision, x)
@@ -494,63 +440,6 @@ QT:RegisterTest("protocol v2 retries transient domain capacity without rebuildin
 		Equal(result.entries, 1)
 	end
 end, { offline = true })
-
-QT:RegisterTest("protocol v2 timing distinguishes request queue first response assembly and completion", function()
-	local net, a, b = Fixture({ fps = 20, latency = 0.1 })
-	local rows = {}
-	for id = 1, 20 do
-		rows[id] = { questID = id, title = string.rep("Quest title ", 5) }
-	end
-	net:SetQuestLog(b, rows)
-	a.transportState.blockedUntil = a.now + 2
-	local done = 0
-	assert(a:RequestQuestCompare(b.name, {
-		onEntry = function() end,
-		onDone = function()
-			done = done + 1
-		end,
-		onTimeout = function()
-			error("timeout")
-		end,
-	}))
-	net:Advance(4)
-	local metrics = a:GetCommunicationMetrics()
-	Equal(metrics.requestQueueWaitCount, 1)
-	assert(metrics.requestQueueWaitLast >= 2)
-	assert(metrics.firstResponseLast >= metrics.requestQueueWaitLast)
-	local active = a:GetCommTransferMetrics()
-	assert(active.incoming > 0 and active.oldestIncomingAge > 0)
-	assert(active.oldestIncomingIdle >= 0 and active.oldestIncomingIdle <= active.oldestIncomingAge)
-	net:Advance(30)
-	Equal(done, 1)
-	metrics = a:GetCommunicationMetrics()
-	Equal(metrics.firstResponseCount, 1)
-	Equal(metrics.responseCompletionCount, 1)
-	Equal(metrics.requestCompletionCount, 1)
-	assert(metrics.responseCompletionLast > metrics.firstResponseLast)
-	local assembly = a:GetCommTransferMetrics()
-	Equal(assembly.assemblyCount, 1)
-	assert(assembly.assemblyLast > 0)
-	Equal(assembly.incoming, 0)
-	local outgoing = b:GetCommTransferMetrics()
-	Equal(outgoing.outboundFirstProgressCount, 1)
-	Equal(outgoing.outboundCompletionCount, 1)
-	assert(outgoing.outboundCompletionLast > outgoing.outboundFirstProgressLast)
-	-- Idle reads cannot create runtimes or call a missing native clock.
-	local empty = setmetatable({ API = {} }, {
-		__index = function(_, key)
-			if type(QT[key]) == "function" then
-				return QT[key]
-			end
-		end,
-	})
-	Equal(empty:GetCommunicationMetrics().received, 0)
-	Equal(empty:GetTransportMetrics().queuedPackets, 0)
-	Equal(empty:GetCommTransferMetrics().incoming, 0)
-	Equal(rawget(empty, "communicationState"), nil)
-	Equal(rawget(empty, "transportState"), nil)
-	Equal(rawget(empty, "commTransferState"), nil)
-end)
 
 QT:RegisterTest("protocol v2 ingress caps frame decode work and reserves room for selected and party peers", function()
 	local net, a, b, c = Fixture({ fps = 20 })

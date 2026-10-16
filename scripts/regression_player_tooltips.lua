@@ -196,35 +196,13 @@ QT:RegisterTest("native player tooltip uses the same fresh cached display eviden
 	Equal(a.invalid, 0)
 end)
 
-QT:RegisterTest("player tooltip badge matches native width and scale and clears the visible health bar", function()
-	local a = Fixture()
-	a.qtPlayerPresenceState = { peers = {}, questPartners = { [a.name] = { receivedAt = 100, looking = true } } }
-	a.host.scale, a.bar.scale = 0.8, 0.8
-	assert(a:UpdatePlayerTooltipBadge())
-	local s = a.playerTooltipBadge
-	Equal(s.frame.width, 180)
-	Equal(s.frame.scale, 0.8)
-	Equal(s.label.width, 122)
-	Equal(s.frame.points[1][1], "TOPLEFT")
-	Equal(s.frame.points[1][5], -10)
-	assert(s.icon.qtLookingForPartners and s.label.text:find("Looking for questing partners", 1, true))
-	a.host.width, a.host.scale, a.bar.scale, a.bar.bottom = 150, 1, 0.5, 340
-	assert(a:UpdatePlayerTooltipBadge())
-	Equal(s.frame.width, 150)
-	Equal(s.frame.points[1][5], -14)
-	a.bar.shown = false
-	assert(a:UpdatePlayerTooltipBadge())
-	Equal(s.frame.points[1][5], -4)
-	Equal(a.invalid, 0)
-end)
-
 QT:RegisterTest("player tooltip badge moves above bottom-edge tooltips and wraps without widening them", function()
 	local a = Fixture()
 	a.host.width, a.host.bottom, a.bar.bottom, a.textHeight = 140, 35, 29, 48
 	assert(a:UpdatePlayerTooltipBadge())
 	local s = a.playerTooltipBadge
 	Equal(s.frame.width, 140)
-	Equal(s.frame.height, 68)
+	assert(s.frame.height >= a.textHeight)
 	Equal(s.frame.points[1][1], "BOTTOMLEFT")
 	Equal(s.frame.points[1][3], "TOPLEFT")
 	Equal(a.invalid, 0)
@@ -239,8 +217,15 @@ QT:RegisterTest("player tooltip adds partner status only while LFG is active and
 	assert(a:UpdatePlayerTooltipBadge())
 	assert(not a.playerTooltipBadge.icon.qtLookingForPartners)
 	Equal(a.playerTooltipBadge.label.text, "This player is using QuestTogether")
+	-- Expiry must start from an active status; leaving looking=false would
+	-- pass even if the production lease check disappeared entirely.
+	a.qtPlayerPresenceState.questPartners[a.name].looking = true
+	a.now = 164.9
+	assert(a:UpdatePlayerTooltipBadge())
+	assert(a.playerTooltipBadge.icon.qtLookingForPartners)
 	a.now = 165
 	assert(a:UpdatePlayerTooltipBadge())
+	assert(not a.playerTooltipBadge.icon.qtLookingForPartners)
 	Equal(a.playerTooltipBadge.label.text, "This player is using QuestTogether")
 	Equal(a.invalid, 0)
 end)

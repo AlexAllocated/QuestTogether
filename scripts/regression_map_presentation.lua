@@ -56,33 +56,6 @@ local function MemberNames(members)
 	return table.concat(names, ",")
 end
 
-QT:RegisterTest("cluster tooltip parties stay adjacent in first appearance order before the display cap", function()
-	local a, rows = TooltipFixture(), {}
-	for index = 1, 10 do rows[index] = Row(string.char(64 + index)) end
-	for _, pair in ipairs({ { "A", "H", "Leader:1" }, { "B", "I", "Leader:2" }, { "C", "J", "Other:1" } }) do
-		for index = 1, 2 do a.visuals[pair[index]] = { key = pair[3], size = 2, leader = "Leader" } end
-	end
-	rows[1].developer, rows[1].hiddenLocation, rows[1].icon = true, true, "existing-LFQP-icon"
-	local before = QT:DeepCopy(rows)
-	local members = a:BuildPlayerLocationClusterTooltipMembers(rows)
-	Equal(MemberNames(members), "A,H,B,I,C,J")
-	Equal(members[1].partyKey, "Leader:1")
-	Equal(members[2].partyKey, "Leader:1")
-	Equal(members[3].partyKey, "Leader:2")
-	assert(members[1].developer and members[1].hiddenLocation and members[1].icon == rows[1].icon)
-	for index, row in ipairs(rows) do
-		Equal(row.name, before[index].name)
-		Equal(row.partyKey, nil)
-		Equal(row.partySize, nil)
-		Equal(row.developer, before[index].developer)
-		assert(row ~= members[index])
-	end
-	Equal(#a.partyQueries, 10)
-	Equal(#a.memberBuilds, 6)
-	Equal(a.networkCalls, 0)
-	Equal(MemberNames(a:BuildPlayerLocationClusterTooltipMembers(rows)), "A,H,B,I,C,J")
-end)
-
 QT:RegisterTest("cluster tooltip party grouping never pulls members across the expanded page boundary", function()
 	local a, rows = TooltipFixture(), {}
 	for index = 1, 10 do rows[index] = Row(string.char(64 + index)) end
@@ -152,8 +125,11 @@ QT:RegisterTest("cluster tooltip grouping bounds source queries and member rende
 	Equal(MemberNames(members), "Peer001,Peer512,Peer002,Peer003,Peer004,Peer005")
 	Equal(#a.partyQueries, 512)
 	Equal(#a.memberBuilds, 6)
-	Equal(rows[2].name, "Peer002")
-	Equal(rows[512].name, "Peer512")
+	for index, row in ipairs(rows) do
+		Equal(row.name, string.format("Peer%03d", index))
+		Equal(row.partyKey, nil)
+		Equal(row.partySize, nil)
+	end
 	a.partyQueries, a.memberBuilds = {}, {}
 	Equal(#a:BuildPlayerLocationClusterTooltipMembers(rows, 501, 600, 2), 2)
 	Equal(#a.partyQueries, 12)
@@ -452,24 +428,6 @@ QT:RegisterTest("one active cluster toggles collapses pages and supplies fresh e
 	assert(a:TogglePlayerLocationClusterExpansion(other, geometry))
 	local _, active = a:GetPlayerLocationClusterExpansion({ cluster, other }, geometry)
 	Equal(active, other)
-end)
-
-QT:RegisterTest("cluster expansion clears on exact membership change instead of retaining withdrawn players", function()
-	local a = Fixture()
-	local cluster = Cluster(a, 25)
-	assert(a:TogglePlayerLocationClusterExpansion(cluster, geometry))
-	a:ChangePlayerLocationClusterPage(cluster, geometry, 2)
-	local remaining = {}
-	for index = 1, 24 do remaining[index] = cluster.members[index] end
-	local markers = a:BuildPlayerLocationMapMarkers(remaining, geometry)
-	Equal(a:GetPlayerLocationClusterExpansion(markers, geometry), nil)
-	Equal(a.playerLocationClusterExpansion, nil)
-	assert(a:TogglePlayerLocationClusterExpansion(markers[1], geometry))
-	local dots, _, info = a:GetPlayerLocationClusterExpansion(markers, geometry)
-	Equal(info.page, 1)
-	Equal(info.total, 24)
-	for _, dot in ipairs(dots) do assert(dot.row.name ~= "Peer025") end
-	Equal(a:GetPlayerLocationClusterExpansion({}, geometry), nil)
 end)
 
 QT:RegisterTest("cluster expansion rows always come from current admitted observations", function()

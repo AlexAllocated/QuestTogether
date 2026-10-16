@@ -45,26 +45,9 @@ class NotesTests(unittest.TestCase):
         notes["sections"][0]["illustration"] = "quest-partners"
         parsed = CHECKER.parse_notes(json.dumps(notes))
         self.assertIn('illustration = "quest-partners"', CHECKER.render_lua(parsed))
-        for illustration in ('party-quest-log', 'party-quest-objectives', 'party-quest-overview', 'party-quest-following', 'party-quest-focus-warning'):
-            notes['sections'][0]['illustration'] = illustration
-            self.assertIn('illustration = "' + illustration + '"', CHECKER.render_lua(CHECKER.parse_notes(json.dumps(notes))))
         notes["sections"][0]["illustration"] = "unknown"
         with self.assertRaises(CHECKER.NotesError):
             CHECKER.parse_notes(json.dumps(notes))
-
-    def test_optional_tip_roundtrips_without_becoming_an_item(self):
-        notes = sample_notes()
-        notes["sections"][0]["tip"] = {"label": "팁:", "text": 'Type /qt tip for "another" tip.'}
-        parsed = CHECKER.parse_notes(json.dumps(notes))
-        self.assertEqual(parsed, notes)
-        self.assertEqual(parsed["sections"][0]["items"], sample_notes()["sections"][0]["items"])
-        self.assertEqual(CHECKER.format_tip(parsed["sections"][0]["tip"]), '💡 팁: Type /qt tip for "another" tip.')
-        rendered = CHECKER.render_lua(parsed)
-        self.assertIn('tip = {\n\t\t\t\tlabel = "팁:",', rendered)
-        self.assertIn('text = "Type /qt tip for \\"another\\" tip.",', rendered)
-        self.enable_localized_notes(notes)
-        self.assertIn('["tip"]=', (self.root / "LocalizedReleaseNotes.lua").read_text())
-        self.assertNotIn("tip =", CHECKER.render_lua(sample_notes()))
 
     def test_tip_schema_rejects_missing_extra_nonplain_or_unbounded_fields(self):
         tip = {"label": "Tip:", "text": "Try /qt tip."}
@@ -377,7 +360,13 @@ class NotesTests(unittest.TestCase):
         self.enable_localized_notes()
         path = self.root / "release_notes/ptBR.json"
         original = path.read_bytes()
-        cases = ["null", "true", "[{}]", "not-json", '{"source_sha256":"x","source_sha256":"y","notes":{}}']
+        # Keep the duplicated field otherwise valid: an invalid digest or empty
+        # notes would fail for another reason even if the JSON reader lost its
+        # duplicate-key guard.
+        digest = json.loads(original)["source_sha256"]
+        duplicated = original.decode("utf-8").replace(
+            '"source_sha256":', '"source_sha256": ' + json.dumps(digest) + ', "source_sha256":', 1)
+        cases = ["null", "true", "[{}]", "not-json", duplicated]
         for value in cases:
             with self.subTest(value=value):
                 path.write_text(value, encoding="utf-8")

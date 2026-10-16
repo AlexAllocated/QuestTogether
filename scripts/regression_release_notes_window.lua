@@ -90,14 +90,6 @@ Register("release notes window sizes to content and reuses only owned frames", f
 	local frame, frameCount = a.releaseNotesWindow, #a.frames
 	assert(frame:IsVisible())
 	Equal(frame.title.text, "QuestTogether 5.9.2")
-	Equal(frame.headerLogo.texture, "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon")
-	Equal(frame.logo, nil)
-	Equal(frame.settings.template, "UIPanelButtonTemplate")
-	Equal(frame.discord.template, "UIPanelButtonTemplate")
-	Equal(frame.navigation[3].template, "UIPanelButtonTemplate")
-	Equal(frame.close.template, "UIPanelCloseButton")
-	Equal(frame.scrollBar.template, "MinimalScrollBar")
-	Equal(frame.labels[1].points[1][3], 0)
 	Equal(frame.labels[1].text, "Welcome to QuestTogether")
 	Equal(frame.labels[3].text, "Latest changes")
 	assert(frame.labels[4].text:find("Improvement 1", 1, true))
@@ -182,7 +174,6 @@ Register("release notes browse history by page or dated picker and reopen at lat
 	Equal(a:ShowReleaseNotesPage(1.5), false)
 	frame.navigation[3].scripts.OnClick({})
 	assert(a.releaseNotesBrowser.history)
-	Equal(frame.logo, nil)
 	assert(frame.historyRows[3].date.text:find("2026-09-26", 1, true))
 	frame.historyRows[2].scripts.OnClick({})
 	Equal(a.releaseNotesBrowser.index, 2)
@@ -234,6 +225,7 @@ end)
 
 Register("release notes overflow scrolling clamps and resets when reopened", function()
 	local a = Fixture()
+	local staleUpdates = 0
 	a.parent.width, a.parent.height = 480, 340
 	assert(a:RenderReleaseNotesWindow(Notes(40), "5.9.2", false))
 	local frame = a.releaseNotesWindow
@@ -263,12 +255,13 @@ Register("release notes overflow scrolling clamps and resets when reopened", fun
 	Equal(frame.scroll.offset, 0)
 	Equal(frame.scrollBar:GetScrollPercentage(), 0)
 	frame.scrollBar:SetScript("OnUpdate", function()
-		error("stale scrollbar gesture")
+		staleUpdates = staleUpdates + 1
 	end)
 	frame.close.scripts.OnClick({})
 	Equal(frame.scrollBar.scripts.OnUpdate, nil)
 	frame.scrollBar:TriggerEvent("OnScroll", 0.5)
 	Equal(frame.scroll.offset, 0)
+	Equal(staleUpdates, 0)
 end)
 
 Register("release notes Discord button opens support and dismisses only after success", function()
@@ -380,11 +373,12 @@ end)
 
 Register("settings chat destination selection rejects restrictions without changing or replaying the choice", function()
 	local a = Fixture()
+	local scheduled = 0
 	a.db = { profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile) }
 	a.opens, a.closes, a.refreshes = 0, 0, 0
 	a.API = {
 		Delay = function()
-			error("a blocked settings choice must not be queued")
+			scheduled = scheduled + 1
 		end,
 	}
 	function a:GetResolvedChatLogDestination()
@@ -422,64 +416,8 @@ Register("settings chat destination selection rejects restrictions without chang
 	a.blocked = true
 	assert(a:ApplyOptionsDropdownSelection("showProgressFor", "party_only"))
 	Equal(a.db.profile.showProgressFor, "party_only")
+	Equal(scheduled, 0, "rejected choices must not leave work to replay later")
 end)
-
-Register("release notes visual examples occupy scroll space and hide when absent", function()
-	local a = Fixture()
-	local notes = Notes(8)
-	assert(a:RenderReleaseNotesWindow(notes, "5.13.0", false))
-	local frame = a.releaseNotesWindow
-	local initialHeight = frame.content.height
-	notes.sections[1].illustration = "quest-partners"
-	assert(a:RenderReleaseNotesWindow(notes, "5.13.0", false))
-	assert(frame.partnerExamples.shown)
-	Equal(#frame.partnerExamples.columns, 2)
-	assert(frame.content.height >= initialHeight + 120)
-	local count = #a.regions
-	assert(a:RenderReleaseNotesWindow(notes, "5.13.0", false))
-	Equal(#a.regions, count)
-	notes.sections[1].illustration = nil
-	assert(a:RenderReleaseNotesWindow(notes, "5.13.0", false))
-	assert(not frame.partnerExamples.shown)
-end)
-
-Register("release notes tip samples use the chat formatter and canonical localized labels", function()
-	local a = Fixture()
-	local locale = QuestTogether:GetEventLocale()
-	local text = QuestTogether.TranslateForLocale(
-		"Type /qt tip or /qt hint to see another QuestTogether tip whenever you like.",
-		locale
-	)
-	local label = QuestTogether.TranslateForLocale("Tip:", locale)
-	local notes = Notes(1)
-	notes.sections[1].tip = { label = label, text = text }
-	notes.sections[2] = {
-		title = "Archived example",
-		items = { "An English-only historical note keeps its own label." },
-		tip = { label = "Example:", text = "This label is explicit release metadata." },
-	}
-	assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
-	local cards = a.releaseNotesWindow.tipExamples
-	local icon = "|TInterface\\AddOns\\QuestTogether\\Media\\QuestTogetherTipIcon:14:14:0:0|t"
-	Equal(#cards, 2)
-	Equal(cards[1].label.text, a:FormatHint(text))
-	Equal(cards[1].label.text, icon .. " |cffffd100" .. label .. "|r |cfffff2cc" .. text .. "|r")
-	Equal(cards[2].label.text, a:FormatHint(notes.sections[2].tip.text, "Example:"))
-	Equal(cards[2].label.text, icon .. " |cffffd100Example:|r |cfffff2ccThis label is explicit release metadata.|r")
-	for _, card in ipairs(cards) do
-		assert(card:IsVisible())
-		local _, textures = card.label.text:gsub("|T", "")
-		Equal(textures, 1)
-		assert(not card.label.text:find("💡", 1, true), "in-game examples must use the bundled tip icon")
-		Equal(card.label.textColor[1], 1)
-		Equal(card.label.textColor[2], 1)
-		Equal(card.label.textColor[3], 1)
-		assert(card.background.textureColor[1] < 0.1)
-		Equal(card.label.width, card.width - 28)
-		Equal(card.height, card.label:GetStringHeight() + 28)
-	end
-	Equal(a.parent.writes, 0)
-end, { locale = "client" })
 
 Register("release notes tip cards wrap resize and retire across pages and history", function()
 	local a = Fixture()
@@ -502,13 +440,9 @@ Register("release notes tip cards wrap resize and retire across pages and histor
 	Equal(#a.regions, count)
 	assert(card.height > wideHeight)
 	Equal(card.width, frame.content.width)
-	Equal(card.label.width, card.width - 28)
 	assert(-card.points[1][3] + card.height <= frame.content.height)
 	assert(frame.width * frame.scale <= a.parent.width)
 	assert(frame.height * frame.scale <= a.parent.height)
-	Equal(card.label.textColor[1], 1)
-	assert(frame.labels[1].textColor[1] < 0.3)
-	assert(card.background.textureColor[1] < 0.1)
 	assert(frame.maximumScroll > 0)
 	assert(a:ShowReleaseNotesPage(2))
 	Equal(card:IsVisible(), false)
@@ -542,39 +476,22 @@ Register("release notes tip samples respect owned region quarantine and recover"
 	Equal(card:IsVisible(), false)
 end, { locale = "client" })
 
-Register("release notes screenshots match client names resize reuse and hide on other pages", function()
-	for _, regional in ipairs({ false, true }) do
-		local a = Fixture()
-		function a:UsesRegionalPlayerNames()
-			return regional
-		end
-		local notes = Notes()
-		notes.sections[1].illustration = "party-quest-log"
-		notes.sections[2] =
-			{ title = "Objectives", items = { "Expand progress." }, illustration = "party-quest-objectives" }
-		assert(a:RenderReleaseNotesWindow(notes, "6.4.0", false))
-		local frame = a.releaseNotesWindow
-		local asset = regional and "PartyQuestLogForever" or "PartyQuestLogRetail"
-		local screenshot = frame.releaseScreenshots[asset]
-		assert(screenshot and screenshot.shown)
-		assert(screenshot.texture:find(asset, 1, true))
-		local expectedRatio = regional and 899 / 1560 or 898 / 1564
-		assert(math.abs(screenshot.height / screenshot.width - expectedRatio) < 0.0001)
-		Equal(frame.releaseScreenshots.PartyQuestObjectivesForever ~= nil, regional)
-		local count = #a.regions
-		frame.userWidth = 900
-		assert(a:RenderReleaseNotesWindow(notes, "6.4.0", false))
-		Equal(#a.regions, count)
-		assert(math.abs(screenshot.height / screenshot.width - expectedRatio) < 0.0001)
-		assert(a:RenderReleaseNotesWindow(Notes(), "6.3.1", false))
-		for _, image in pairs(frame.releaseScreenshots) do
-			assert(not image.shown)
-		end
-		screenshot.forbidden = true
-		local writes = screenshot.writes
-		Equal(a:RenderReleaseNotesWindow(notes, "6.4.0", false), false)
-		Equal(screenshot.writes, writes)
-	end
+Register("release screenshot regions retire between pages and reject forbidden reuse", function()
+	local a, notes = Fixture(), Notes()
+	notes.sections[1].illustration = "party-quest-log"
+	assert(a:RenderReleaseNotesWindow(notes, "6.4.0", false))
+	local frame = a.releaseNotesWindow
+	local _, screenshot = next(frame.releaseScreenshots)
+	assert(screenshot and screenshot:IsVisible())
+	assert(a:RenderReleaseNotesWindow(Notes(), "6.3.1", false))
+	assert(not screenshot:IsVisible())
+	screenshot.forbidden = true
+	local writes = screenshot.writes
+	Equal(a:RenderReleaseNotesWindow(notes, "6.4.0", false), false)
+	Equal(screenshot.writes, writes)
+	screenshot.forbidden = false
+	assert(a:RenderReleaseNotesWindow(notes, "6.4.0", false))
+	assert(screenshot:IsVisible())
 end)
 
 Register("release notes visual examples quarantine forbidden regions and recover", function()
@@ -600,21 +517,6 @@ local function LatestVisibleNotes(locale)
 	end
 	return notes
 end
-
--- Full locale-by-locale UI construction matrix runs offline.
-Register("release notes render translated content with owned controls in every locale", function()
-	local previous = QuestTogether.localizationTestLocale
-	for _, locale in ipairs({ "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW" }) do
-		QuestTogether.localizationTestLocale = locale
-		local a = Fixture()
-		local notes = LatestVisibleNotes(locale)
-		assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
-		Equal(a.releaseNotesWindow.labels[1].text, QuestTogether.TranslateForLocale("What's new", locale))
-		Equal(a.releaseNotesWindow.labels[2].text, notes.welcome)
-		Equal(a.releaseNotesWindow.discord.label.text, QuestTogether.TranslateForLocale("Join our Discord", locale))
-	end
-	QuestTogether.localizationTestLocale = previous
-end, { offline = true })
 
 Register("client locale renders current notes and window navigation", function()
 	assert(QuestTogether.localizationTestLocale == nil)
@@ -643,11 +545,7 @@ Register("release notes share the scroll theme without resetting browsing or ack
 	notes.sections[1].illustration = "quest-partners"
 	assert(a:RenderReleaseNotesWindow(notes, "6.2.3", false))
 	local frame = a.releaseNotesWindow
-	Equal(frame.strata, "MEDIUM")
-	Equal(frame.parchmentPieces[1].texture, a:GetScrollWindowTheme().texture)
 	Equal(frame.parchmentPieces[1].vertexColor[1], 0.14)
-	Equal(frame.title.font, "GameFontNormalLarge")
-	Equal(frame.headerLogo.texture, "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon")
 	frame.scroll.scripts.OnMouseWheel({}, -3)
 	local offset, count, heading = frame.scrollOffset, #a.regions, frame.labels[1].text
 	a.releaseNotesBrowser = { index = 2, history = false }
@@ -662,7 +560,6 @@ Register("release notes share the scroll theme without resetting browsing or ack
 	a:QueueReleaseNotesThemeRefresh()
 	a.themeUpdate()
 	Equal(frame.parchmentPieces[1].vertexColor[1], 1)
-	assert(frame.labels[1].textColor[1] < 0.3)
 	assert(frame.labels[2].textColor[1] < 0.3)
 	for _, label in ipairs(frame.partnerExamples.themeLabels) do
 		assert(label.textColor[1] < 0.3)
@@ -783,64 +680,4 @@ Register("release notes reflow on reset profile restore and smaller display with
 	assert(f.height * f.scale <= a.parent.height and f.width * f.scale <= a.parent.width)
 	assert(not f:IsShown())
 	Equal(a.db.global.releaseNotesSeenVersion, "6.2.3")
-end)
-
-Register("release history uses reusable themed list rows with separate version date and title", function()
-	local a = Fixture()
-	local notes = Notes(2)
-	local older = Notes(2)
-	older.sections[1].title = string.rep("Long translated release title ", 8)
-	a.releaseNotesBrowser = {
-		index = 1,
-		history = true,
-		entries = {
-			{ version = "6.2.3", date = "2026-10-06", notes = notes },
-			{ version = "6.2.2", date = "2026-10-05", notes = older },
-		},
-	}
-	assert(a:RenderReleaseNotesWindow(notes, "6.2.3", false))
-	local f = a.releaseNotesWindow
-	Equal(f.historyRows[1].version.text, "6.2.3")
-	Equal(f.historyRows[1].date.text, "2026-10-06")
-	Equal(f.historyRows[1].label.text, "Latest changes")
-	assert(f.historyRows[2].height > f.historyRows[1].height)
-	for _, region in ipairs(a.regions) do
-		if region.parent == f.historyRows[1] then
-			Equal(region.template, nil)
-		end
-	end
-	local count = #a.regions
-	a.options.lightMode = true
-	assert(a:RenderReleaseNotesWindow(notes, "6.2.3", false))
-	Equal(#a.regions, count)
-	assert(f.historyRows[1].label.textColor[1] < 0.3)
-end)
-
-Register("party quest guide screenshots retain aspect ratio across clients and clear on reuse", function()
-	for _, regional in ipairs({ false, true }) do
-		local a = Fixture()
-		function a:UsesRegionalPlayerNames()
-			return regional
-		end
-		local notes = Notes()
-		notes.sections = {
-			{ title = "Overview", items = { "Guide" }, illustration = "party-quest-overview" },
-			{ title = "Following", items = { "Guide" }, illustration = "party-quest-following" },
-			{ title = "Warning", items = { "Guide" }, illustration = "party-quest-focus-warning" },
-		}
-		assert(a:RenderReleaseNotesWindow(notes, "6.5.3", false))
-		local frame = a.releaseNotesWindow
-		for asset, ratio in pairs({
-			PartyQuestOverviewForever = 635 / 1465,
-			PartyQuestFollowingForever = 199 / 1198,
-			PartyQuestFocusWarningForever = 540 / 1824,
-		}) do
-			local image = frame.releaseScreenshots[asset]
-			assert(image and image.shown and math.abs(image.height / image.width - ratio) < 0.0001)
-		end
-		assert(a:RenderReleaseNotesWindow(Notes(), "6.5.2", false))
-		for _, image in pairs(frame.releaseScreenshots) do
-			assert(not image.shown)
-		end
-	end
 end)

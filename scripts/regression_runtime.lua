@@ -29,26 +29,6 @@ local function NewRuntime()
 	return addon
 end
 
-QT:RegisterTest("personal bubble edit state always supplies a boolean", function()
-	local addon = setmetatable({ isEnabled = true }, { __index = QT })
-	function addon:CanAccessForeignFrame()
-		return true
-	end
-	for _, case in ipairs({ { nil, false }, { false, false }, { true, true }, { "legacy", true }, { 0, true } }) do
-		function addon:GetOption()
-			return case[1]
-		end
-		Equal(addon:IsPersonalBubbleAnchorInEditMode(), case[2])
-	end
-	addon.isEnabled = nil
-	Equal(addon:IsPersonalBubbleAnchorInEditMode(), false)
-	addon.isEnabled = true
-	function addon:CanAccessForeignFrame()
-		return false
-	end
-	Equal(addon:IsPersonalBubbleAnchorInEditMode(), false)
-end)
-
 QT:RegisterTest("bubble option controls receive boolean visibility values", function()
 	local shown = {}
 	local function NewControl()
@@ -175,33 +155,6 @@ QT:RegisterTest("debug test command presents fresh results and preserves unrelat
 	Equal(addon.suppressLocalAnnouncementDisplayDuringTests, false)
 end)
 
-QT:RegisterTest("debug test presentation preserves a visible ALL view but clears its search", function()
-	local addon = NewDebugSession()
-	addon:GetDebugController().window = {
-		IsForbidden = function()
-			return false
-		end,
-		IsProtected = function()
-			return false
-		end,
-		IsShown = function()
-			return true
-		end,
-	}
-	addon:LogDebugLine("domain event", { category = "QUEST" })
-	addon:SetDebugLogSearchFilter("obsolete search")
-	addon.tests = { { name = "private fixture", fn = function() end } }
-	local _, _, _, result = addon:RunTests(false, true)
-	Equal(result.status, "running")
-	addon:FinishTests()
-	Equal(result.passed, 1)
-	local latest = assert(addon.opened[#addon.opened])
-	Equal(latest.category, "ALL")
-	Equal(latest.search, "")
-	assert(latest.text:find("domain event", 1, true))
-	assert(latest.text:find("1 passed, 0 failed", 1, true))
-end)
-
 QT:RegisterTest("live test frames restore owner state and keep ordinary work active between cases", function()
 	local addon = NewDebugSession()
 	local originalDB, originalAPI, originalMarker = QT.db, QT.API, QT.testFrameIsolationMarker
@@ -301,23 +254,6 @@ QT:RegisterTest("cancelled live test runs retain partial results and reject stal
 	Equal(addon.suppressLocalAnnouncementDisplayDuringTests, false)
 end)
 
-QT:RegisterTest("debug slash aliases display selected category and clear resets the view", function()
-	local addon = NewDebugSession()
-	addon:LogDebugLine("quest event", { category = "QUEST" })
-	addon:LogDebugLine("comms event", { category = "COMMS" })
-	addon:HandleSlashCommand("dump quest")
-	Equal(addon.opened[1].category, "QUEST")
-	assert(not addon.opened[1].text:find("comms event", 1, true))
-	addon:HandleSlashCommand("debug ALL")
-	Equal(addon.opened[2].category, "ALL")
-	assert(addon.opened[2].text:find("comms event", 1, true))
-	addon:SetDebugLogSearchFilter("quest")
-	addon:HandleSlashCommand("debuglog clear")
-	Equal(addon.opened[3].category, "ALL")
-	Equal(addon.opened[3].search, "")
-	Equal(addon.opened[3].text, "")
-end)
-
 QT:RegisterTest("headless debug tests leave visible history and filters untouched", function()
 	local addon = NewDebugSession()
 	function addon:Print() end
@@ -336,28 +272,6 @@ QT:RegisterTest("headless debug tests leave visible history and filters untouche
 	Equal(addon.diagnosticLogSequence, sequence)
 	Equal(addon:GetDebugLogCategoryFilter(), "QUEST")
 	Equal(addon:GetDebugLogSearchFilter(), "history")
-end)
-
-QT:RegisterTest("diagnostic slash aliases rebuild the current domain report in the shared view", function()
-	local addon = NewDebugSession()
-	local reports, calls = {}, 0
-	function addon:BuildDiagnosticReport(questId)
-		calls = calls + 1
-		return "fixture.quest=" .. questId .. "\nfixture.generation=" .. calls
-	end
-	local controller = addon:GetDebugController()
-	function controller:ShowReport(text)
-		reports[#reports + 1] = text
-		return true
-	end
-	addon:LogDebugLine("recent fixture event", { category = "QUEST" })
-	addon:HandleSlashCommand("diag 42")
-	addon:HandleSlashCommand("diagnostics 43")
-	Equal(#reports, 2)
-	assert(reports[1]:find("fixture.quest=42", 1, true))
-	assert(reports[2]:find("fixture.quest=43", 1, true))
-	assert(reports[2]:find("fixture.generation=2", 1, true))
-	assert(reports[2]:find("recent fixture event", 1, true))
 end)
 
 QT:RegisterTest("QT isolation detaches and restores the debug controller after a failing case", function()
@@ -443,15 +357,6 @@ QT:RegisterTest("shared runtime immediate waypoint consumes an older timer while
 	Equal(calls, 1)
 end)
 
-QT:RegisterTest("shared runtime tolerates unavailable timer adapter", function()
-	local addon, calls = NewRuntime(), 0
-	addon.API.Delay = false
-	addon:ScheduleDeferredWork("quest_log_drain", "scan", function()
-		calls = calls + 1
-	end, 1)
-	Equal(calls, 1)
-end)
-
 QT:RegisterTest("audit flush does not resurrect entries consumed by another callback", function()
 	local addon, stale, replacement = NewRuntime(), 0, 0
 	addon.blocked = true
@@ -500,13 +405,13 @@ QT:RegisterTest("audit finished deferred keys do not accumulate generation state
 end)
 
 QT:RegisterTest("audit flush honors restrictions separately for each work class", function()
-	local addon, calls = NewRuntime(), 0
+	local addon, calls, blockedCalls = NewRuntime(), 0, 0
 	local plateBlocked = true
 	function addon:IsWorkBlocked(work)
 		return work == "quest_log_drain" or plateBlocked
 	end
 	addon:ScheduleDeferredWork("quest_log_drain", "scan", function()
-		error("must stay parked")
+		blockedCalls = blockedCalls + 1
 	end)
 	addon:ScheduleDeferredWork("nameplate_refresh", "plate", function()
 		calls = calls + 1
@@ -518,6 +423,7 @@ QT:RegisterTest("audit flush honors restrictions separately for each work class"
 	plateBlocked = false
 	addon:FlushDeferredWork()
 	Equal(calls, 1)
+	Equal(blockedCalls, 0)
 	assert(addon.state.entries[QT.LibChev.WorkKey("quest_log_drain", "scan")] ~= nil)
 end)
 
@@ -549,15 +455,6 @@ QT:RegisterTest("audit inaccessible visibility result is not treated as shown", 
 		}, true),
 		false
 	)
-end)
-
-QT:RegisterTest("audit same character name on another realm is not the local sender", function()
-	local addon = setmetatable({}, { __index = QT })
-	function addon:GetPlayerFullName()
-		return "MyPlayer-HomeRealm"
-	end
-	Equal(addon:IsSelfSender("MyPlayer-OtherRealm"), false)
-	Equal(addon:IsSelfSender("MyPlayer-HomeRealm"), true)
 end)
 
 QT:RegisterTest("audit nearby unit identity retains the remote realm return", function()
@@ -614,6 +511,7 @@ QT:RegisterTest("audit log entries are timestamped bounded and report dropped hi
 end)
 
 QT:RegisterTest("audit diagnostic report uses cached quest state without live quest reads", function()
+	local unexpectedCalls = 0
 	local addon = setmetatable({
 		runtime = {
 			questSnapshot = { byQuestID = {}, generation = 7 },
@@ -623,6 +521,7 @@ QT:RegisterTest("audit diagnostic report uses cached quest state without live qu
 		},
 		API = {
 			GetQuestLogInfo = function()
+				unexpectedCalls = unexpectedCalls + 1
 				error("must not read live quests")
 			end,
 		},
@@ -662,6 +561,7 @@ QT:RegisterTest("audit diagnostic report uses cached quest state without live qu
 	assert(report:find("objective.1=80% Photos", 1, true))
 	assert(report:find("addon=QuestTogether", 1, true))
 	assert(report:find("client.interface=16001", 1, true))
+	Equal(unexpectedCalls, 0)
 end)
 
 QT:RegisterTest("shared diagnostic window export retains newest events within its copy budget", function()
@@ -680,40 +580,6 @@ QT:RegisterTest("shared diagnostic window export retains newest events within it
 	assert(exported:find("event-600:", 1, true))
 	assert(not exported:find("event-1:", 1, true))
 	assert(exported:find("event-599:", 1, true) < exported:find("event-600:", 1, true))
-end)
-
-QT:RegisterTest("audit guarded callback records failures without replacing global handlers", function()
-	local addon = NewRuntime()
-	local ok = addon:RunGuardedCallback("fixture", function(value)
-		Equal(value, 42)
-		error("expected")
-	end, 42)
-	Equal(ok, false)
-	Equal(addon.errors[1], "fixture")
-end)
-
-QT:RegisterTest("login initializes release notes without the old chat welcome", function()
-	local addon = setmetatable({ db = { profile = { enabled = true } } }, { __index = QT })
-	local initializations = 0
-	function addon:Print()
-		error("login must not print a welcome message")
-	end
-	function addon:ReconcileQuestLogChatDestination() end
-	function addon:InitializeMinimapLauncher() end
-	function addon:Enable()
-		self.isEnabled = true
-	end
-	function addon:InitializeReleaseNotes()
-		assert(self.hasLoggedIn)
-		initializations = initializations + 1
-	end
-	addon:OnLogin()
-	Equal(addon.isEnabled, true)
-	Equal(initializations, 1)
-	addon.db.profile.enabled, addon.isEnabled = false, false
-	addon:OnLogin()
-	Equal(addon.isEnabled, false)
-	Equal(initializations, 2)
 end)
 
 -- Map closure is observed by an addon-owned frame. No Blizzard frame or

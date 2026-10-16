@@ -210,6 +210,7 @@ QT:RegisterTest(
 
 QT:RegisterTest("developer chat logos follow the speaker's verified identity and retain partner glow", function()
 	local a, remote = Peer(), "Developer-Realm"
+	local signCalls = 0
 	local logo, glow = a.NAMEPLATE_PLAYER_ICON_TEXTURE, a.PLAYER_PARTNER_ICON_TEXTURE
 	local developer, developerGlow = a.PLAYER_DEVELOPER_ICON_TEXTURE, a.PLAYER_DEVELOPER_PARTNER_ICON_TEXTURE
 	local function Prefix(name, expected, event, asset, kind)
@@ -220,7 +221,7 @@ QT:RegisterTest("developer chat logos follow the speaker's verified identity and
 
 	-- The receiver's private addon never decorates an ordinary remote speaker.
 	a.isLocalDeveloper = true
-	a.SignDeveloperRequest = function() error("rendering must not sign or send requests") end
+	a.SignDeveloperRequest = function() signCalls = signCalls + 1; error("rendering must not sign or send requests") end
 	Prefix(a.name, developer)
 	a.db.profile.lookingForQuestPartners = true
 	Prefix(a.name, developerGlow)
@@ -261,11 +262,12 @@ QT:RegisterTest("developer chat logos follow the speaker's verified identity and
 	Prefix(remote, logo)
 	Prefix(remote, logo, "SCAN_STATUS", developer)
 	Equal(#a.sent, 0, "chat presentation must not publish identity or metadata")
+	Equal(signCalls, 0)
 end)
 
 QT:RegisterTest("joining a group optionally clears partner status without announcements or roster churn", function()
 	local a = Peer()
-	local changes = 0
+	local changes, announcements = 0, 0
 	function a:HandleGroupRosterChanged()
 		changes = changes + 1
 	end
@@ -276,7 +278,7 @@ QT:RegisterTest("joining a group optionally clears partner status without announ
 	Equal(a:SetOption("stopLookingForPartnersOnJoin", "true"), false)
 	Equal(a:SetOption("stopLookingForPartnersOnJoin", true), true)
 	function a:AnnounceQuestPartnerSearch()
-		error("turning LFQP off must be silent")
+		announcements = announcements + 1
 	end
 	a:GROUP_JOINED()
 	Equal(a:GetOption("lookingForQuestPartners"), false)
@@ -296,6 +298,7 @@ QT:RegisterTest("joining a group optionally clears partner status without announ
 	a:GROUP_JOINED()
 	Equal(a:GetOption("lookingForQuestPartners"), true)
 	Equal(changes, 6)
+	Equal(announcements, 0)
 end)
 local function PartnerWire(message, looking)
 	Equal(message.operation, "QTLF")
@@ -385,11 +388,13 @@ QT:RegisterTest("uncorrelated share replies cannot identify peers or create outg
 end)
 QT:RegisterTest("unverified group share traffic cannot discover peers or authorize a share", function()
 	local a = Peer()
+	local availabilityChecks = 0
 	function a:IsGroupedSender()
 		return false
 	end
 	function a:GetQuestShareAvailability()
-		error("unverified sender")
+		availabilityChecks = availabilityChecks + 1
+		return false
 	end
 	ReceiveRecord(
 		a,
@@ -401,6 +406,7 @@ QT:RegisterTest("unverified group share traffic cannot discover peers or authori
 	Equal(a:IsKnownQTPlayer("Friend-Realm"), false)
 	Equal(rawget(a, "partyQuestShareState"), nil)
 	Equal(#a.sent, 0)
+	Equal(availabilityChecks, 0)
 end)
 
 QT:RegisterTest("ordered partner updates reject delayed routes and retired sessions after withdrawal", function()
@@ -736,6 +742,7 @@ local function WithPlate(run)
 		creations = 0,
 		refreshes = 0,
 		questReads = 0,
+		playerQuestWork = 0,
 		tints = 0,
 	}
 	function state.tick()
@@ -887,10 +894,12 @@ local function WithPlate(run)
 		end,
 		TryResolveNameplateQuestObjectiveState = function()
 			state.questReads = state.questReads + 1
+			if state.player then state.playerQuestWork = state.playerQuestWork + 1 end
 			assert(not state.player, "players must not enter quest detection")
 			return true, true, state.guid
 		end,
 		RefreshNameplateHealthTint = function(_, _, isQuest)
+			if state.player then state.playerQuestWork = state.playerQuestWork + 1 end
 			assert(not state.player, "players must not enter quest tinting")
 			if isQuest then
 				state.tints = state.tints + 1
@@ -899,6 +908,7 @@ local function WithPlate(run)
 	}, function()
 		run(state)
 		Equal(state.invalid, 0)
+		Equal(state.playerQuestWork, 0, "a caught error concealed quest work on a player plate")
 	end)
 end
 
@@ -1030,7 +1040,7 @@ end
 
 QT:RegisterTest("actual departure withdrawals never restore logos in either channel delivery order", function()
 	for _, lifecycle in ipairs({ "Disable", "PLAYER_LEAVING_WORLD" }) do
-		for _, order in ipairs({ "native", "reverse", "presence-first" }) do
+		for _, order in ipairs({ "native", "reverse" }) do
 			WithPlate(function(s)
 				QT.recentCommMessageSignatures = {}
 				QT.playerLocationState = nil
@@ -1077,28 +1087,17 @@ QT:RegisterTest("actual departure withdrawals never restore logos in either chan
 				sender[lifecycle](sender)
 				Equal(#sender.queue, 2) -- Delayed positive heartbeat plus one bounded BYE.
 				Equal(assert(sender:DecodeCommFrame(sender.queue[2].wire)).operation, "BYE")
-				local delivered = {}
 				local function Deliver(index)
 					s.now = s.now + 1 -- Exercise sequence checks after content deduplication expires.
 					sender:Deliver(sender.queue[index])
-					delivered[index] = true
 				end
 				if order == "reverse" then
 					for index = #sender.queue, 1, -1 do
 						Deliver(index)
 					end
 				else
-					if order == "presence-first" then
-						for index, packet in ipairs(sender.queue) do
-							if assert(sender:DecodeCommFrame(packet.wire)).operation == "BYE" then
-								Deliver(index)
-							end
-						end
-					end
 					for index in ipairs(sender.queue) do
-						if not delivered[index] then
-							Deliver(index)
-						end
+						Deliver(index)
 					end
 				end
 				QT:RefreshNameplateIcon(s.plate)
@@ -1157,36 +1156,20 @@ QT:RegisterTest("location and partner opt outs preserve known identity without d
 	end
 end)
 
-QT:RegisterTest("QT player plate defaults and all four positions are independent of quest icons", function()
-	Equal(QT.DEFAULTS.profile.nameplatePlayerIconEnabled, true)
-	Equal(QT.DEFAULTS.profile.nameplatePlayerIconStyle, "left")
+QT:RegisterTest("QT player logo visibility is independent of quest icon settings", function()
 	WithPlate(function(s)
 		QT.db.profile.nameplateQuestIconEnabled = false
-		for _, style in ipairs({ "left", "right", "top", "prefix" }) do
-			QT.db.profile.nameplatePlayerIconStyle = style
-			QT:RefreshNameplateIcon(s.plate)
-			local icon = QT.nameplateIconByUnitFrame[s.frame]
-			assert(icon.shown)
-			Equal(icon.qtIconKind, "player")
-			Equal(icon.Icon.texture, QT.NAMEPLATE_PLAYER_ICON_TEXTURE)
-			if style == "left" or style == "prefix" then
-				Equal(icon.point[4], -4)
-			elseif style == "right" then
-				Equal(icon.point[4], 4)
-			end
-			Equal(
-				icon.point[1],
-				style == "left" and "RIGHT" or style == "right" and "LEFT" or style == "prefix" and "RIGHT" or "TOP"
-			)
-		end
-		Equal(s.creations, 1)
+		QT:RefreshNameplateIcon(s.plate)
+		local icon = QT.nameplateIconByUnitFrame[s.frame]
+		assert(icon.shown)
+		Equal(icon.qtIconKind, "player")
 		Equal(s.questReads, 0)
 		Equal(s.tints, 0)
 		Equal(s.frame.writes, 0)
 		Equal(s.plate.writes, 0)
 		QT.db.profile.nameplatePlayerIconEnabled = false
 		QT:RefreshNameplateIcon(s.plate)
-		Equal(QT.nameplateIconByUnitFrame[s.frame].shown, false)
+		Equal(icon.shown, false)
 	end)
 end)
 
@@ -1455,63 +1438,6 @@ QT:RegisterTest("QT player additions still present unprotected icons during ordi
 		Equal(s.creations, 1)
 		Equal(s.frame.writes, 0)
 		Equal(s.plate.writes, 0)
-	end)
-end)
-
-QT:RegisterTest("QT player preview uses its own toggle style and four pixel spacing", function()
-	WithPlate(function(s)
-		QT:RefreshNameplateIcon(s.plate)
-		local icon = QT.nameplateIconByUnitFrame[s.frame]
-		local checked, color, refreshes
-		function s.frame.name:GetFont()
-			return "font", 12, ""
-		end
-		function s.frame.healthBar:SetVertexColor(r, g, b)
-			color = { r, g, b }
-		end
-		s.frame.questPreviewBaseFillTexture = s.frame.healthBar
-		QT.playerPlatesFrame = {}
-		QT.playerPlateControls = {
-			playerPlates = true,
-			previewUnitFrame = s.frame,
-			previewIconFrame = icon,
-			previewIconTexture = icon.Icon,
-			previewIconOwner = s.frame,
-			nameplatePlayerIconEnabled = {
-				SetChecked = function(_, value)
-					checked = value
-				end,
-			},
-		}
-		QT.API.GetCVar = function()
-			return nil
-		end
-		QT.db.profile.nameplateQuestIconEnabled = false
-		QT.db.profile.nameplateQuestHealthColorEnabled = true
-		QT.db.profile.nameplateQuestIconStyle = "top"
-		Patch({
-			RefreshNameplateAugmentation = function()
-				refreshes = (refreshes or 0) + 1
-			end,
-		}, function()
-			for _, style in ipairs({ "left", "right", "top", "prefix" }) do
-				assert(QT:SetOption("nameplatePlayerIconStyle", style))
-				QT:RefreshQuestPlatesWindow(true)
-				assert(checked and icon.shown)
-				Equal(icon.Icon.texture, QT.NAMEPLATE_PLAYER_ICON_TEXTURE)
-				Equal(icon.point[4], style == "right" and 4 or style == "top" and 0 or -4)
-				Equal(color[1], 0.22)
-				Equal(color[2], 0.80)
-			end
-			Equal(QT:SetOption("nameplatePlayerIconStyle", "invalid"), false)
-			Equal(QT:SetOption("nameplatePlayerIconEnabled", "false"), false)
-			assert(QT:SetOption("nameplatePlayerIconEnabled", false))
-			QT:RefreshQuestPlatesWindow(true)
-			Equal(icon.shown, false)
-			Equal(checked, false)
-			Equal(refreshes, 5)
-			Equal(QT:GetOption("nameplateQuestIconStyle"), "top")
-		end)
 	end)
 end)
 

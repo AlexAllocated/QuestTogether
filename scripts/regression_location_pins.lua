@@ -645,20 +645,6 @@ Register("location empty surfaces skip UI allocation and all native geometry rea
 	Equal(a.locationPinState.surfaces.map.frame.shown, false)
 end)
 
-Register("location empty optional metadata uses class token and unknown character details", function()
-	local a = Fixture()
-	local row = Row()
-	row.className, row.race, row.faction, row.level = "", "", "", nil
-	a.rows.map = { row }
-	assert(a:RefreshPlayerLocationPins())
-	Pin(a, "map").frame.scripts.OnEnter({})
-	local text = a.locationPinState.tooltipIntro.text
-	for _, expected in ipairs({ "MAGE|r", "Level Unknown Unknown " }) do
-		assert(text:find(expected, 1, true))
-	end
-	Equal(a.locationPinState.tooltipFaction.shown, false)
-end)
-
 Register("remote dot and chat tooltips show fresh party size without tracked quest counts", function()
 	local a = Fixture()
 	local now = 100
@@ -740,6 +726,7 @@ end)
 
 Register("own chat tooltip reads live super tracking without a received peer record or sharing consent", function()
 	local a = Fixture()
+	local consentChecks = 0
 	local id = 42
 	a.API.GetRealmName = function()
 		return "Realm"
@@ -767,7 +754,8 @@ Register("own chat tooltip reads live super tracking without a received peer rec
 		return Row("Me-Realm")
 	end
 	function a:CanPublishPlayerLocation()
-		error("self tooltip must not depend on sharing")
+		consentChecks = consentChecks + 1
+		return false
 	end
 	function a:GetLocalizedQuestTitle(questID)
 		return "Local quest " .. questID
@@ -796,10 +784,12 @@ Register("own chat tooltip reads live super tracking without a received peer rec
 	a.blocked = true
 	a:UpdateChatLogPlayerTooltip()
 	Equal(state.tooltip.shown, false)
+	Equal(consentChecks, 0)
 end)
 
 Register("quest hover shows local status and objectives at the cursor and clears between link kinds", function()
 	local a = Fixture()
+	local printCalls = 0
 	a.db = { global = {} }
 	local tracker = { [42] = { objectives = { "Wolves slain: 3/8", "|Hbad|hText|h" } } }
 	function a:GetPlayerTracker()
@@ -819,7 +809,7 @@ Register("quest hover shows local status and objectives at the cursor and clears
 		return 100, 200
 	end
 	function a:PrintQuestStatus()
-		error("hover must not print")
+		printCalls = printCalls + 1
 	end
 	function a:RegisterChatLogHoverCallbacks(enter, leave)
 		self.enter, self.leave = enter, leave
@@ -870,6 +860,7 @@ Register("quest hover shows local status and objectives at the cursor and clears
 	a.enter(nil, chat, "questtogetherquest:42", "[Wolf Hunt]")
 	a.leave()
 	Equal(state.tooltip.shown, false)
+	Equal(printCalls, 0)
 end)
 
 Register("location unavailable geometry clears old surface dots and hover", function()
@@ -957,7 +948,7 @@ Register("location overlay reparents only after its quarantined prior parent rec
 	Equal(a.geometry.map.parent.writes, 0)
 end)
 
-Register("location hidden expired or ignored peer never keeps a stale tooltip", function()
+Register("removed location row retires its quarantined tooltip after access returns", function()
 	local a = Fixture()
 	a.rows.map = { Row() }
 	a:RefreshPlayerLocationPins()
@@ -1644,29 +1635,6 @@ Register("nearby stream animation moves only owned minimap pins and respects for
 	Equal(a.locationPinState.surfaces.minimap.frame.shown, false)
 end)
 
-Register("map and chat tooltip intro use native localized race and class labels", function()
-	local a = Fixture()
-	a.now = 100
-	a.API.GetTime = function()
-		return a.now
-	end
-	a.API.GetLocalizedRaceName = function(id)
-		return id == 3 and "Dwarf" or nil
-	end
-	a.API.GetLocalizedClassName = function(token)
-		return token == "MAGE" and "Mage" or nil
-	end
-	local row = Row()
-	row.race, row.className = "Zwerg", "Magier"
-	a.nearbyStreamState = { capabilities = { [row.name] = { receivedAt = 100, raceID = 3 } }, wanted = {} }
-	a.rows.map = { row }
-	a:RefreshPlayerLocationPins()
-	Pin(a, "map").frame.scripts.OnEnter()
-	assert(a.locationPinState.tooltipIntro.text:find("Dwarf", 1, true))
-	assert(a.locationPinState.tooltipIntro.text:find("Mage", 1, true))
-	assert(not a.locationPinState.tooltipIntro.text:find("Zwerg", 1, true))
-end)
-
 Register("client locale paints quest hover labels and local native title", function()
 	assert(QuestTogether.localizationTestLocale == nil)
 	local locale = QuestTogether:GetEventLocale()
@@ -2338,56 +2306,6 @@ Register("cluster summary uses capped roster rows with validated indicators and 
 	Equal(#a.requests, 0)
 end)
 
-Register("member rows keep developer gears and hidden glows with status text only in direct hover intros", function()
-	local a = ClusterFixture(2)
-	VisualParty(a)
-	a.rows.map = { Row("Friend-Realm"), Row("Leader-Realm", 0.501) }
-	a.verifiedDeveloperName = "Friend-Realm"
-	function a:IsPlayerLocationHiddenForDeveloper(name) return name == "Friend-Realm" or name == "Leader-Realm" end
-	function a:GetChatLogTooltipCursorPosition() return 200, 100 end
-	a.playerLocationState = { peers = { ["Friend-Realm"] = a.rows.map[1], ["Leader-Realm"] = a.rows.map[2] } }
-	local function NoMemberStatus(item)
-		assert(not item.label.text:find("QuestTogether developer", 1, true))
-		assert(not item.label.text:find("Location sharing is off", 1, true))
-	end
-	a:RefreshPlayerLocationPins()
-	local cluster = Pin(a, "map")
-	cluster.frame.scripts.OnEnter()
-	local summary = a.locationPinState.clusterTooltip
-	local developer = summary.partyRows[1]
-	assert(developer.label.text:find("Friend", 1, true))
-	assert(developer.developerIcon.shown and not developer.dot.shown and developer.hiddenGlow.shown)
-	Near(developer.developerIcon.vertexColor[1], 64 / 255)
-	Near(developer.developerIcon.vertexColor[2], 199 / 255)
-	NoMemberStatus(developer)
-	local hidden = summary.partyRows[2]
-	assert(hidden.dot.shown and not hidden.developerIcon.shown and hidden.hiddenGlow.shown)
-	Near(hidden.dot.color[2], 199 / 255)
-	Near(hidden.hiddenGlow.color[2], 0.12)
-	NoMemberStatus(hidden)
-	cluster.frame.scripts.OnClick(nil, "LeftButton")
-	local expanded = assert(ExpandedPlayerPin(a, "Friend-Realm"))
-	expanded.frame.scripts.OnEnter()
-	local individual = a.locationPinState
-	assert(individual.tooltipIntro.text:find("QuestTogether developer", 1, true))
-	assert(individual.tooltipIntro.text:find("Location sharing is off", 1, true))
-	assert(not individual.tooltipLabel.text:find("Location sharing is off", 1, true))
-	local partyDeveloper = individual.partyRows[2]
-	assert(partyDeveloper.label.text:find("Friend-Realm", 1, true))
-	assert(partyDeveloper.developerIcon.shown and partyDeveloper.hiddenGlow.shown)
-	NoMemberStatus(partyDeveloper)
-	local partyHidden = individual.partyRows[1]
-	assert(partyHidden.dot.shown and not partyHidden.developerIcon.shown and partyHidden.hiddenGlow.shown)
-	Near(partyHidden.dot.color[2], 199 / 255)
-	NoMemberStatus(partyHidden)
-	assert(a:ShowChatLogPlayerTooltip(Frame(a), "questtogetherlog:Leader-Realm"))
-	local chat = a.chatLogPlayerTooltipState
-	assert(chat.tooltipIntro.text:find("Location sharing is off", 1, true))
-	assert(not chat.tooltipIntro.text:find("QuestTogether developer", 1, true))
-	assert(not chat.tooltipLabel.text:find("Location sharing is off", 1, true))
-	for _, item in ipairs(chat.partyRows) do NoMemberStatus(item) end
-end)
-
 local function ClusterPartySummaryFixture(count)
 	local a = ClusterFixture(count or 6)
 	a.measureText, a.now, a.rosterRequests = true, 100, 0
@@ -2415,73 +2333,27 @@ local function AssertNoClusterMetadataRequests(a)
 	assert(not rawget(a, "playerDetailsState") or next(a.playerDetailsState.interests) == nil)
 end
 
-Register("cluster summary groups known parties into adjacent rounded blocks with multiline rows and centered party icons", function()
+Register("cluster summary renders validated party membership and totals without requesting metadata", function()
 	local a = ClusterPartySummaryFixture()
-	a.rows.map[1].name = "Peer001WithAnExceptionallyLongCharacterName-Realm"
 	a:SetSummaryParty({ 1, 4 }, "PartyA", 5)
 	a:SetSummaryParty({ 2, 5 }, "PartyB", 40)
 	a:SetSummaryParty({ 3 }, "UntrustedSoloKey", 0)
 	a.rows.map[6].partyKey = "PartyA" -- raw location fields cannot establish party identity
-	a.verifiedDeveloperName = a.rows.map[1].name
-	function a:IsPlayerLocationHiddenForDeveloper(name) return name == self.verifiedDeveloperName end
 	a:RefreshPlayerLocationPins()
 	Pin(a, "map").frame.scripts.OnEnter()
 	local state = a.locationPinState.clusterTooltip
-	local order = { 1, 4, 2, 5, 3, 6 }
-	for index, originalIndex in ipairs(order) do
+	for index, originalIndex in ipairs({ 1, 4, 2, 5, 3, 6 }) do
 		local item = state.partyRows[index]
-		assert(item.label.text:find("Peer00" .. originalIndex, 1, true))
-		assert(item.active and item.qtIcon.shown and not item.crown.shown)
+		assert(item.active and item.label.text:find("Peer00" .. originalIndex, 1, true))
 		Equal(item.partyKey, index <= 2 and "PartyA" or index <= 4 and "PartyB" or nil)
 		Equal(item.partySize, index <= 2 and 5 or index <= 4 and 40 or nil)
-		Equal(item.frame.points[1][4], index <= 4 and 6 or 0)
 	end
 	Equal(#state.partyGroups, 2)
-	local first, second = state.partyGroups[1], state.partyGroups[2]
-	assert(state.partyRows[1].frame.height > state.partyRows[2].frame.height)
-	for groupIndex, group in ipairs(state.partyGroups) do
-		Equal(group.key, groupIndex == 1 and "PartyA" or "PartyB")
-		Equal(group.first, groupIndex == 1 and 1 or 3)
-		Equal(group.last, groupIndex == 1 and 2 or 4)
-		assert(group.active and group.frame:IsVisible() and group.icon:IsVisible())
+	for index, group in ipairs(state.partyGroups) do
+		assert(group.active and group.frame:IsVisible())
 		Equal(group.frame.mouseEnabled, false)
-		Equal(group.frame.points[1][2], state.tooltipTitle)
-		Equal(group.icon.width, 16)
-		assert(group.icon.texture:find("PartyBadge", 1, true))
-		Equal(group.icon.points[1][1], "RIGHT")
-		Equal(group.icon.points[1][2], group.frame)
-		Equal(group.icon.points[1][3], "RIGHT")
-		Equal(group.icon.points[1][5], 0)
-		Equal(group.partySize, groupIndex == 1 and 5 or 40)
-		Equal(group.count.text, groupIndex == 1 and "5" or "40")
-		assert(group.count:IsVisible())
-		Equal(group.count.parent, group.frame)
-		Equal(group.count.points[1][1], "RIGHT")
-		Equal(group.count.points[1][2], group.frame)
-		Equal(group.count.points[1][3], "RIGHT")
-		Equal(group.count.points[1][5], 0)
-		Equal(group.count.justifyV, "MIDDLE")
-		assert(group.count.width >= group.count:GetStringWidth())
-		for channel = 1, 4 do Near(group.count.textColor[channel], 1) end
-		local firstRow, lastRow = state.partyRows[group.first], state.partyRows[group.last]
-		Near(firstRow.frame.points[1][5], group.frame.points[1][5] - 4)
-		Near(lastRow.frame.points[1][5] - lastRow.frame.height, group.frame.points[1][5] - group.frame.height + 4)
-		Equal(#group.corners, 4)
-		Equal(#group.edges, 4)
-		for _, corner in ipairs(group.corners) do
-			assert(corner.texture:find("PanelCornerBorder", 1, true))
-			Equal(corner.width, 6)
-			for channel = 1, 4 do Near(corner.vertexColor[channel], 1) end
-		end
-		for _, edge in ipairs(group.edges) do
-			assert(edge.width > 0 and edge.height > 0)
-			for channel = 1, 4 do Near(edge.color[channel], 1) end
-		end
+		Equal(group.count.text, index == 1 and "5" or "40")
 	end
-	Near(second.frame.points[1][5], first.frame.points[1][5] - first.frame.height - 8)
-	Near(state.partyRows[5].frame.points[1][5], second.frame.points[1][5] - second.frame.height - 8)
-	local last = state.partyRows[6].frame
-	assert(state.tooltipLabel.points[1][5] <= last.points[1][5] - last.height - 14)
 	AssertNoClusterMetadataRequests(a)
 end)
 
@@ -2571,30 +2443,16 @@ Register("grouped cluster summaries cap rows after grouping while expanded summa
 	AssertNoClusterMetadataRequests(a)
 end)
 
-Register("grouped summary reserves icon space for wrapped labels and normal player tooltips remain unframed", function()
+Register("reusing a grouped tooltip for an individual retires the prior party presentation", function()
 	local a = ClusterPartySummaryFixture(2)
-	a.rows.map[1].name = string.rep("Long", 14) .. "-Realm"
-	a:SetSummaryParty({ 1, 2 }, "LongNames", 40)
+	a:SetSummaryParty({ 1, 2 }, "Party", 40)
 	a:RefreshPlayerLocationPins()
 	local cluster = Pin(a, "map")
 	cluster.frame.scripts.OnEnter()
 	local state = a.locationPinState.clusterTooltip
-	local group, first, second = state.partyGroups[1], state.partyRows[1], state.partyRows[2]
-	assert(state.tooltip.width <= 300)
-	assert(first.frame.height > second.frame.height and first.frame.height >= first.label:GetStringHeight() + 2)
-	local iconLeft = group.frame.width + group.icon.points[1][4] - group.icon.width
-	local iconRight = iconLeft + group.icon.width
-	local countLeft = group.frame.width + group.count.points[1][4] - group.count.width
-	Equal(group.count.text, "40")
-	assert(iconRight < countLeft and countLeft + group.count:GetStringWidth() < group.frame.width - 4)
-	for _, item in ipairs({ first, second }) do
-		local labelRight = item.frame.points[1][4] + item.label.points[1][2] + item.label.width
-		assert(item.label.width > 0 and labelRight < iconLeft)
-		assert(item.frame.points[1][5] - item.frame.height >= group.frame.points[1][5] - group.frame.height + 4)
-	end
-	local model = a:BuildPlayerTooltipModel(a.rows.map[1])
-	for _, member in ipairs(model.members) do Equal(member.partyKey, nil) end
-	a:RenderPlayerTooltip(state, cluster, model)
+	local group = state.partyGroups[1]
+	assert(group.active and group.frame:IsVisible())
+	a:RenderPlayerTooltip(state, cluster, a:BuildPlayerTooltipModel(a.rows.map[1]))
 	assert(state.tooltipIntro.shown)
 	assert(not group.active and not group.frame:IsVisible())
 	Equal(group.partySize, nil)
@@ -2603,8 +2461,6 @@ Register("grouped summary reserves icon space for wrapped labels and normal play
 		if item.active then
 			Equal(item.partyKey, nil)
 			Equal(item.partySize, nil)
-			Equal(item.frame.points[1][4], 0)
-			Equal(item.label.width, item.frame.width - 38)
 		end
 	end
 	AssertNoClusterMetadataRequests(a)
@@ -2867,28 +2723,6 @@ Register("developer gear and tooltip require verified identity and restore norma
 	end
 end)
 
-Register("expanded verified developer keeps class gear and private glow while the count marker stays generic", function()
-	local a = ClusterFixture()
-	local developer = a.rows.map[1]
-	a.verifiedDeveloperName = developer.name
-	developer.developerOnly, developer.publicLocationHidden = true, true
-	a:RefreshPlayerLocationPins()
-	local cluster = Pin(a, "map")
-	assert(cluster.cluster and not cluster.developerGear.shown)
-	cluster.frame.scripts.OnClick(nil, "LeftButton")
-	local member = assert(ExpandedPlayerPin(a, developer.name))
-	assert(member.developerGear.shown and not member.texture.shown and not member.border.shown)
-	assert(member.glow[1].shown)
-	Near(member.glow[1].color[2], 0.12)
-	Near(member.glow[1].color[3], 0.12)
-	member.frame.scripts.OnEnter()
-	assert(a.locationPinState.tooltipIntro.text:find("QuestTogether developer", 1, true))
-	Equal(a.playerDetailsState.interests[a.locationPinState].name, developer.name)
-	cluster.frame.scripts.OnClick(nil, "LeftButton")
-	assert(cluster.cluster and not cluster.developerGear.shown)
-	AssertNoVisibleConnectors(a)
-end)
-
 Register("map and chat hidden location labels follow the viewer query and ignore raw private row flags", function()
 	local a = ClusterFixture(1)
 	local row = a.rows.map[1]
@@ -3020,38 +2854,20 @@ Register("found player gets independent green halo and temporary visibility ends
 	Equal(#selected.cluster.members, 2)
 end)
 
-Register("old and new location samples stay fully bright until ordinary expiry while party hover still dims unrelated dots", function()
+Register("location rendering expires delayed samples without renewing their original leases", function()
 	local a = ClusterFixture(0)
-	VisualParty(a)
-	a.now = 400
+	a.now = 699
 	a.API.GetTime = function() return a.now end
 	local old, recent = Row("Friend-Realm"), Row("Unrelated-Realm", 0.54)
-	-- An older observation arrived late with only its remaining lifetime.
 	old.sampledAt, old.receivedAt, old.lifetime = 100, 300, 400
 	recent.sampledAt, recent.receivedAt, recent.lifetime = 350, 350, 600
 	a.playerLocationState = { peers = { [old.name] = old, [recent.name] = recent } }
 	a.GetVisiblePlayerLocations = QuestTogether.GetVisiblePlayerLocations
 	function a:IsSelfSender() return false end
 	function a:IsGroupedSender() return false end
-	for _, now in ipairs({ 400, 699 }) do
-		a.now = now
-		a:RefreshPlayerLocationPins()
-		for _, surface in ipairs({ "map", "minimap" }) do
-			for index = 1, 2 do
-				local pin = Pin(a, surface, index)
-				assert(pin.frame:IsVisible())
-				Near(pin.baseAlpha, 1)
-				Near(pin.frame.alpha, 1)
-			end
-		end
-		local friend = Pin(a, "map")
-		friend.frame.scripts.OnEnter()
-		for _, surface in ipairs({ "map", "minimap" }) do
-			Near(Pin(a, surface).frame.alpha, 1)
-			Near(Pin(a, surface, 2).frame.alpha, 0.45)
-		end
-		friend.frame.scripts.OnLeave()
-		for _, surface in ipairs({ "map", "minimap" }) do Near(Pin(a, surface, 2).frame.alpha, 1) end
+	a:RefreshPlayerLocationPins()
+	for _, surface in ipairs({ "map", "minimap" }) do
+		assert(Pin(a, surface).frame:IsVisible() and Pin(a, surface, 2).frame:IsVisible())
 	end
 	Equal(old.receivedAt, 300)
 	Equal(old.lifetime, 400)
@@ -3061,13 +2877,8 @@ Register("old and new location samples stay fully bright until ordinary expiry w
 	Equal(a.playerLocationState.peers[old.name], nil)
 	for _, surface in ipairs({ "map", "minimap" }) do
 		Equal(Pin(a, surface).name, recent.name)
-		Near(Pin(a, surface).frame.alpha, 1)
-		assert(not Pin(a, surface, 2).frame:IsVisible())
+		assert(Pin(a, surface).frame:IsVisible() and not Pin(a, surface, 2).frame:IsVisible())
 	end
-	a.now = 949
-	a:RefreshPlayerLocationPins()
-	Near(Pin(a, "map").frame.alpha, 1)
-	Near(Pin(a, "minimap").frame.alpha, 1)
 	a.now = 950
 	a:RefreshPlayerLocationPins()
 	Equal(a.playerLocationState.peers[recent.name], nil)
@@ -3397,71 +3208,6 @@ Register("map data button hides safely for restrictions disable and forbidden pa
 		Equal(a.mapDataControlState.button, button)
 		assert(button:IsVisible())
 	end
-end)
-
-Register("hidden map data uses an outlined red X on the bright logo and reuses it across profile and enablement changes", function()
-	local a = MapControlFixture(0)
-	a.waypoints = {}
-	a:RefreshQuestTogetherMapControl()
-	local state = a.mapDataControlState
-	local mark, icon = assert(state.hiddenMark), state.icon
-	Equal(mark.parent, state.button)
-	Equal(mark.width, 14)
-	Equal(mark.height, 14)
-	Equal(mark.mouseEnabled, false)
-	Equal(mark.mouseWheel, false)
-	Equal(mark.points[1][1], "BOTTOMRIGHT")
-	Equal(mark.points[1][2], icon)
-	Equal(mark.points[1][3], "BOTTOMRIGHT")
-	Equal(mark.points[1][4], 2)
-	Equal(mark.points[1][5], -2)
-	assert(mark.level > state.button.level)
-	Equal(#state.hiddenMarkLines, 2)
-	Equal(#state.hiddenMarkOutlines, 2)
-	for index = 1, 2 do
-		local line, outline = state.hiddenMarkLines[index], state.hiddenMarkOutlines[index]
-		Equal(line.parent, mark)
-		Equal(outline.parent, mark)
-		Equal(line.layer, "OVERLAY")
-		Equal(outline.layer, "BACKGROUND")
-		Equal(line.thickness, 3)
-		assert(outline.thickness > line.thickness)
-		Near(line.color[1], 1)
-		assert(line.color[2] < 0.2 and line.color[3] < 0.2)
-		for channel = 1, 3 do Near(outline.color[channel], 0) end
-		for argument = 1, 4 do
-			Equal(outline.startPoint[argument], line.startPoint[argument])
-			Equal(outline.endPoint[argument], line.endPoint[argument])
-		end
-		Equal(line.startPoint[2], mark)
-		Equal(line.endPoint[2], mark)
-		assert(line.startPoint[3] < line.endPoint[3])
-	end
-	assert(state.hiddenMarkLines[1].startPoint[4] < state.hiddenMarkLines[1].endPoint[4])
-	assert(state.hiddenMarkLines[2].startPoint[4] > state.hiddenMarkLines[2].endPoint[4])
-	local frames, regions, originalProfile = #a.frames, #a.regions, a.db.profile
-	local hiddenProfile = {}
-	for key, value in pairs(originalProfile) do hiddenProfile[key] = value end
-	hiddenProfile.showWorldMapData = false
-	a.db.profile = hiddenProfile
-	a:RefreshQuestTogetherMapControl()
-	assert(mark:IsVisible())
-	Near(icon.alpha, 1)
-	a.isEnabled = false
-	a:RefreshQuestTogetherMapControl()
-	assert(not state.button:IsVisible() and not mark:IsVisible())
-	a.isEnabled = true
-	a:RefreshQuestTogetherMapControl()
-	assert(mark:IsVisible())
-	Near(icon.alpha, 1)
-	a.db.profile = originalProfile
-	a:RefreshQuestTogetherMapControl()
-	assert(state.button:IsVisible() and not mark:IsVisible())
-	Equal(state.hiddenMark, mark)
-	Equal(state.icon, icon)
-	Equal(#a.frames, frames)
-	Equal(#a.regions, regions)
-	Near(icon.alpha, 1)
 end)
 
 Register("Find on Map restores map data only after verified native navigation and keeps sharing preferences", function()

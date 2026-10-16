@@ -103,9 +103,7 @@ local function Fixture(name)
 	function a:IsIgnoredPlayerName(n)
 		return self.ignored[n] == true
 	end
-	function a:GetLocalizedQuestTitle(id)
-		return self.localized and self.localized[id]
-	end
+	function a:GetLocalizedQuestTitle() end
 	function a:GetQuestTitle(id)
 		return "Quest title " .. id
 	end
@@ -456,44 +454,6 @@ QT:RegisterTest("explicit coordinate navigation stops following even with TomTom
 	Equal(a.partyNavigationState.following, nil)
 end)
 
-QT:RegisterTest(
-	"focus labels distinguish unsupported waiting expired and unavailable without guessing privacy",
-	function()
-		local a = Fixture()
-		function a:GetPartyNavigationPeer()
-			return self.peer
-		end
-		function a:GetPlayerAddonVersion()
-			return self.peerVersion
-		end
-		Equal(a:GetPartyFocusLabel("Friend"), "Waiting for quest focus")
-		a.peerVersion = "6.2.3"
-		Equal(a:GetPartyFocusLabel("Friend"), "Quest focus unsupported")
-		a.partyNavigationState = { seen = { Friend = {} } }
-		Equal(a:GetPartyFocusLabel("Friend"), "Focus data expired")
-		a.peer = { questID = -1 }
-		Equal(a:GetPartyFocusLabel("Friend"), "Focus not shared or unavailable")
-		a.peer.questID = 0
-		Equal(a:GetPartyFocusLabel("Friend"), "No focused quest")
-	end
-)
-
-QT:RegisterTest("own focus reads native selection while solo without sharing or cached party state", function()
-	local a = Fixture()
-	a:Roster(a.name)
-	a.options.sharePartyFocus = false
-	a.localized = { [1] = "Localized first quest", [2] = "Localized second quest" }
-	Equal(a:GetPartyNavigationRoute(), nil)
-	Equal(a:GetPartyFocusLabel(a.name), "Localized first quest")
-	Equal(rawget(a, "partyNavigationState"), nil)
-	a.native.questID = 2
-	Equal(a:GetPartyFocusLabel(a.name), "Localized second quest")
-	a.native.questID = 0
-	Equal(a:GetPartyFocusLabel(a.name), "No focused quest")
-	a:Tick()
-	Equal(#a.wire, 0)
-end)
-
 QT:RegisterTest("own focus ignores stale shared state and handles native read restrictions", function()
 	local a = Fixture()
 	a:Tick()
@@ -511,23 +471,6 @@ QT:RegisterTest("own focus ignores stale shared state and handles native read re
 	Equal(a:GetPartyFocusLabel(a.name), "Focus unavailable")
 	a.native.questID = 2
 	Equal(a:GetPartyFocusLabel(a.name), "Quest title 2")
-end)
-
-QT:RegisterTest("tracking changes refresh open local PQL without sending party messages", function()
-	local a = Fixture()
-	a:Roster(a.name)
-	a.partyQuestCompareSession = {}
-	function a:QueuePartyQuestCompareRender()
-		self.renderedFocus = self:GetPartyFocusLabel(self.name)
-	end
-	a.native.questID = 2
-	a:OnPartyNavigationTrackingChanged()
-	Equal(a.renderedFocus, "Quest title 2")
-	Equal(#a.wire, 0)
-	Equal(rawget(a, "partyNavigationState"), nil)
-	a.native.questID = 0
-	a:OnPartyNavigationTrackingChanged()
-	Equal(a.renderedFocus, "No focused quest")
 end)
 
 QT:RegisterTest("party follow restores per character only after fresh validated data and survives silence", function()

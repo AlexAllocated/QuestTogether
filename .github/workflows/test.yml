@@ -17,24 +17,39 @@ jobs:
           path: addon
           fetch-depth: 0
       - uses: actions/checkout@v4
+        if: matrix.lua == '5.1'
         with:
           repository: AlexAllocated/libchev
           ref: 24b06469b4246f8d413fabaa8313de7facadbac0
           path: library
       - run: sudo apt-get update && sudo apt-get install -y lua${{ matrix.lua }} openssl
+      # Python-only checks do not vary with Lua. Keep generated-Lua release-note,
+      # bindings and crypto checks on both interpreters below.
       - run: python3 scripts/check_release_notes.py --check --release-history
+        if: matrix.lua == '5.1'
       - run: python3 scripts/localization.py
+        if: matrix.lua == '5.1'
       - run: python3 scripts/test_localization.py
+        if: matrix.lua == '5.1'
       - run: python3 scripts/changelogs.py
+        if: matrix.lua == '5.1'
       - run: python3 scripts/test_changelogs.py
+        if: matrix.lua == '5.1'
       - run: python3 scripts/test_release_history.py
+        if: matrix.lua == '5.1'
       - run: python3 scripts/test_release_notes.py
       - run: python3 scripts/test_generate_release_notes.py
+        if: matrix.lua == '5.1'
       - run: python3 scripts/test_discord_changelog.py
+        if: matrix.lua == '5.1'
       - run: python3 scripts/test_package.py
+        if: matrix.lua == '5.1'
       - run: python3 scripts/check_architecture.py
+        if: matrix.lua == '5.1'
       - run: python3 scripts/check_live_test_numeric.py
+        if: matrix.lua == '5.1'
       - run: python3 scripts/test_live_test_numeric.py
+        if: matrix.lua == '5.1'
       - run: lua${{ matrix.lua }} scripts/test.lua
       - run: python3 scripts/test_developer_crypto.py lua${{ matrix.lua }}
       - run: lua${{ matrix.lua }} scripts/settings_smoke.lua
@@ -44,7 +59,7 @@ jobs:
       - run: lua${{ matrix.lua }} scripts/test.lua . live-reverse
       - run: |
           for locale in enGB deDE frFR esES esMX ptBR ruRU itIT koKR zhCN zhTW; do
-            QT_TEST_LOCALE="$locale" lua${{ matrix.lua }} scripts/test.lua
+            QT_TEST_LOCALE="$locale" lua${{ matrix.lua }} scripts/test.lua . locale
           done
       - run: |
           for client in retail forever era tbc mists titan; do
@@ -55,12 +70,15 @@ jobs:
             lua${{ matrix.lua }} scripts/location_client_profiles.lua . "$client"
           done
       - run: python3 ../library/scripts/vendor.py . --check
+        if: matrix.lua == '5.1'
       - run: |
           while IFS= read -r -d '' file; do
             luac${{ matrix.lua }} -p "$file" || exit "$?"
           done < <(find . -name '*.lua' -print0)
       - run: bash -n scripts/bump_version.sh && git diff --check
+        if: matrix.lua == '5.1'
       - run: python3 scripts/package.py --ref HEAD --output dist/QuestTogether.zip
+        if: matrix.lua == '5.1'
       - uses: actions/upload-artifact@v4
         if: matrix.lua == '5.1'
         with:

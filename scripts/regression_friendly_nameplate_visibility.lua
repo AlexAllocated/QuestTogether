@@ -40,9 +40,11 @@ local function Fixture()
 			return unpack(self.children or {})
 		end
 		function frame:GetFrameStrata()
+			Read(self)
 			return "LOW"
 		end
 		function frame:GetFrameLevel()
+			Read(self)
 			return 1
 		end
 		local function Mutate(self)
@@ -67,7 +69,10 @@ local function Fixture()
 		function frame:SetPoint(...)
 			Mutate(self)
 			self.point = { ... }
-			assert(not self.point[2]:IsForbidden(), "forbidden anchor")
+			if self.point[2]:IsForbidden() then
+				state.invalid = state.invalid + 1
+				error("forbidden anchor")
+			end
 		end
 		for _, method in ipairs({
 			"SetFrameStrata",
@@ -157,6 +162,10 @@ local function Fixture()
 		return state.blocked and kind == "encounter" or false
 	end
 	QT.CreateNameplateQuestIconFrame = function(_, parent)
+		if state.blocked or (parent and parent:IsForbidden()) then
+			state.invalid = state.invalid + 1
+			error("unsafe friendly-plate creation")
+		end
 		state.creations = state.creations + 1
 		return Frame(parent, true)
 	end

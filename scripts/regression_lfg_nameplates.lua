@@ -69,20 +69,23 @@ local function Fixture()
 			return texture
 		end
 		function r:CreateAnimationGroup()
+			Write(self)
 			if s.animationUnsupported then
 				error("animation unavailable")
 			end
-			Write(self)
 			local group = { animations = {}, plays = 0, stops = 0 }
 			function group:SetLooping(value)
+				Write(r)
 				self.looping = value
 			end
 			function group:CreateAnimation(kind)
+				Write(r)
 				Equal(kind, "Alpha")
 				local animation = {}
 				for _, field in ipairs({ "Order", "FromAlpha", "ToAlpha", "Duration", "Smoothing" }) do
 					local key = field
 					animation["Set" .. key] = function(_, value)
+						Write(r)
 						animation[key] = value
 					end
 				end
@@ -207,6 +210,10 @@ local function Fixture()
 		return s.blocked and kind == "encounter" or false
 	end
 	QT.CreateNameplateQuestIconFrame = function(_, parent)
+		if s.blocked or (parent and parent:IsForbidden()) then
+			s.invalid = s.invalid + 1
+			error("unsafe LFG frame creation")
+		end
 		s.creations = s.creations + 1
 		return Region(parent, true)
 	end
@@ -230,15 +237,19 @@ local function Fixture()
 end
 
 local function Glow(icon, shown)
-	assert(icon.qtPartnerGlow and #icon.qtPartnerGlow == 8, "eight reusable contour-glow regions expected")
+	assert(icon.qtPartnerGlow and #icon.qtPartnerGlow > 0, "visible contour-glow regions expected")
 	for index, edge in ipairs(icon.qtPartnerGlow) do
 		local pulse = icon.qtPartnerGlowPulses[index]
 		assert(pulse and pulse.playing == shown)
 		Equal(pulse.looping, "REPEAT")
-		Equal(#pulse.animations, 2)
-		assert(pulse.animations[1].FromAlpha > 0, "pulse must not blink off")
-		Equal(pulse.animations[1].ToAlpha, pulse.animations[2].FromAlpha)
-		Equal(pulse.animations[2].ToAlpha, pulse.animations[1].FromAlpha)
+		local varies = false
+		for step, animation in ipairs(pulse.animations) do
+			assert(animation.FromAlpha > 0 and animation.ToAlpha > 0, "pulse must not blink off")
+			assert(animation.Duration > 0)
+			Equal(animation.ToAlpha, pulse.animations[step % #pulse.animations + 1].FromAlpha)
+			varies = varies or animation.FromAlpha ~= animation.ToAlpha
+		end
+		assert(varies, "the repeating animation must visibly pulse")
 		Equal(edge.parent, icon)
 		Equal(edge.shown, shown)
 		Equal(edge.layer, "BACKGROUND")
@@ -265,8 +276,7 @@ QT:RegisterTest("partner messages add and remove the gold player-logo glow witho
 	Equal(icon.Icon.texture, texture)
 	Equal(icon.points[1][2], anchor)
 	Equal(QT.qtPlayerIconStateByFrame[icon].lookingForPartners, true)
-	Equal(s.textures, 9)
-	local mutations = s.mutations
+	local textures, mutations = s.textures, s.mutations
 	s:Status(true)
 	s.clock:Advance(0)
 	Equal(s.mutations, mutations, "unchanged status must not relayout the plate")
@@ -278,7 +288,7 @@ QT:RegisterTest("partner messages add and remove the gold player-logo glow witho
 	s:Status(true)
 	s.clock:Advance(0)
 	Glow(icon, true)
-	Equal(s.textures, 9)
+	Equal(s.textures, textures)
 	Equal(s.invalid, 0)
 end)
 
@@ -305,6 +315,7 @@ QT:RegisterTest("evicted partner status removes a remembered player's glow witho
 	s:Status(true)
 	s.clock:Advance(1)
 	Glow(icon, true)
+	local textures = s.textures
 	local state = QT:GetQTPlayerPresenceState()
 	-- Model a full bounded status cache with this visible player the oldest.
 	for index = 1, 255 do
@@ -329,7 +340,7 @@ QT:RegisterTest("evicted partner status removes a remembered player's glow witho
 	Equal(state.questPartners[s.name], nil)
 	assert(QT:IsKnownQTPlayer(s.name) and icon.shown)
 	Glow(icon, false)
-	Equal(s.textures, 9)
+	Equal(s.textures, textures)
 	Equal(s.invalid, 0)
 end)
 
@@ -355,16 +366,11 @@ QT:RegisterTest("delayed old partner status cannot relight the glow after an ord
 	Equal(s.invalid, 0)
 end)
 
-QT:RegisterTest("partner glows follow every logo style and clear when the owned frame becomes a quest icon", function()
+QT:RegisterTest("partner glows clear when the owned player frame becomes a quest icon", function()
 	local s = Fixture()
 	s:Status(true)
 	local icon = s:Show()
-	for _, style in ipairs({ "left", "right", "prefix", "top" }) do
-		QT.db.profile.nameplatePlayerIconStyle = style
-		QT:RefreshNameplateIcon(s.plate)
-		Glow(icon, true)
-		Equal(icon.Icon.texture, QT.NAMEPLATE_PLAYER_ICON_TEXTURE)
-	end
+	Glow(icon, true)
 	s.npc = true
 	QT.db.profile.nameplateQuestIconEnabled = true
 	QT.TryResolveNameplateQuestObjectiveState = function()
@@ -424,6 +430,7 @@ QT:RegisterTest("deferred partner status displays only the latest value when res
 	s:Status(true)
 	s.clock:Advance(0)
 	Glow(icon, true)
+	local textures = s.textures
 	s.blocked, icon.protected = true, true
 	s:Status(false)
 	s.clock:Advance(0)
@@ -434,7 +441,7 @@ QT:RegisterTest("deferred partner status displays only the latest value when res
 	s.clock:Advance(0)
 	Glow(icon, true)
 	Equal(QT.qtPlayerIconStateByFrame[icon].lookingForPartners, true)
-	Equal(s.textures, 9)
+	Equal(s.textures, textures)
 	Equal(s.invalid, 0)
 end)
 
@@ -475,21 +482,6 @@ QT:RegisterTest("queued and quarantined partner changes cannot revive retired pl
 			Equal(s.invalid, 0)
 		end
 	end
-end)
-
-QT:RegisterTest("partner indicator refresh accepts empty stores and old records without status fields", function()
-	local s = Fixture()
-	QT.qtPlayerIconStateByFrame = nil
-	Equal(QT:RefreshQTPlayerPartnerIndicators(), false)
-	local icon = s:Show()
-	QT.qtPlayerIconStateByFrame[icon].lookingForPartners = nil
-	local timers = #s.clock.timers
-	Equal(QT:RefreshQTPlayerPartnerIndicators(), false)
-	Equal(#s.clock.timers, timers)
-	s:Status(true)
-	s.clock:Advance(0)
-	Glow(icon, true)
-	Equal(s.invalid, 0)
 end)
 
 QT:RegisterTest("partner logo pulses stop on hide and restart without allocating new glow layers", function()

@@ -13,6 +13,7 @@ local function WithPlate(fn)
 		guid = "Creature-0-0-0-0-12345-0000000000", combat = true,
 		present = true, shown = true, fillReady = true, tooltipReady = true,
 		reads = 0, callbacks = {}, now = 0, sequence = 0, creations = 0, presentationMutations = 0, unsafeMutationAttempts = 0,
+		unsafeReadAttempts = 0,
 	}
 	local function Region(parent, shown)
 		local region = { parent = parent, shown = shown == true }
@@ -114,6 +115,9 @@ local function WithPlate(fn)
 		end,
 		CreateNameplateQuestIconFrame = function(_, parent)
 			Equal(parent, frame)
+			if parent:IsProtected() and state.combat then
+				state.unsafeMutationAttempts = state.unsafeMutationAttempts + 1
+			end
 			assert(not (parent:IsProtected() and state.combat), "protected parent used for first-time creation")
 			state.creations = state.creations + 1
 			state.icon = Region(parent)
@@ -151,10 +155,12 @@ local function WithPlate(fn)
 		IsRuntimeRestrictionTypeActive = function(_, kind) return state.restriction == kind end,
 		IsNameplateUnitTapDenied = function() return state.denied == true end,
 		GetQuestieQuestObjectiveTooltipLines = function()
+			if state.combat then state.unsafeReadAttempts = state.unsafeReadAttempts + 1 end
 			assert(not state.combat, "combat discovery must not invoke Questie")
 			return nil
 		end,
 		GetHiddenQuestObjectiveTooltipLines = function()
+			if state.combat then state.unsafeReadAttempts = state.unsafeReadAttempts + 1 end
 			assert(not state.combat, "combat discovery must not mutate a hidden tooltip")
 			return nil
 		end,
@@ -171,6 +177,14 @@ local function WithPlate(fn)
 	for key in pairs(replacements) do QT[key] = originals[key] end
 	assert(ok, err)
 	Equal(state.unsafeMutationAttempts, 0, "unsafe visual mutation attempted")
+	Equal(state.unsafeReadAttempts, 0, "a caught error concealed an unsafe tooltip read")
+end
+local function InaccessibleValue(state)
+	local function Reject()
+		state.unsafeReadAttempts = state.unsafeReadAttempts + 1
+		error("inaccessible tooltip value read")
+	end
+	return setmetatable({}, { __index = Reject, __tostring = Reject })
 end
 local function Decorated(state)
 	Equal(state.icon:IsVisible(), true, "quest icon missing or under a hidden parent")
@@ -379,9 +393,7 @@ end)
 
 QT:RegisterTest("partial tooltip data cannot record a mob type as completed", function()
 	WithPlate(function(state)
-		state.inaccessible = setmetatable({}, {
-			__index = function() error("inaccessible objective traversed") end,
-		})
+		state.inaccessible = InaccessibleValue(state)
 		state.tooltipData = { lines = {
 			{ type = "QuestTitle", leftText = "Wolf Hunt" },
 			{ type = "QuestObjective", leftText = "Wolf pelts: 8/8" },
@@ -424,13 +436,19 @@ QT:RegisterTest("completed creature evidence does not transfer to pets or surviv
 end)
 
 QT:RegisterTest("first seen quest mob gains both decorations during open world combat", function()
-	WithPlate(function(state)
-		QT:OnNameplateAdded("nameplate1")
-		state.drain()
-		Decorated(state)
-		Equal(state.combat, true)
-		Equal(state.reads, 1)
-	end)
+	for _, iconEnabled in ipairs({ true, false }) do
+		QT:ResetNameplateStateStore()
+		WithPlate(function(state)
+			QT.db.profile.nameplateQuestIconEnabled = iconEnabled
+			QT:OnNameplateAdded("nameplate1")
+			state.drain()
+			Equal(state.icon:IsVisible(), iconEnabled)
+			Equal(state.fill:IsVisible(), true, "quest tint must work independently of the icon setting")
+			Equal(state.highlight:IsVisible(), true)
+			Equal(state.combat, true)
+			Equal(state.reads, 1)
+		end)
+	end
 end)
 
 QT:RegisterTest("plate returning from behind the camera retries quest discovery", function()
@@ -871,28 +889,6 @@ QT:RegisterTest("first-time decoration creates no children under protected comba
 	end)
 end)
 
-QT:RegisterTest("unowned quest progress cannot extend a preceding completed known quest block", function()
-	QT.nameplateQuestTextCache["Known Quest"] = true
-	local lines = QT:ExtractQuestObjectiveTooltipLinesFromTooltipData({ lines = {
-		{ type = "QuestTitle", leftText = "Known Quest" },
-		{ type = "QuestObjective", leftText = "Wolf pelts: 8/8" },
-		{ type = "QuestTitle", leftText = "Unowned Other Quest" },
-		{ type = "QuestObjective", leftText = "Wolf teeth: 0/4" },
-	} })
-	Equal(QT:EvaluateTooltipQuestObjectiveLines(lines), false)
-end)
-
-QT:RegisterTest("party progress remains relevant within a completed local quest block", function()
-	QT.nameplateQuestTextCache["Known Quest"] = true
-	local lines = QT:ExtractQuestObjectiveTooltipLinesFromTooltipData({ lines = {
-		{ type = "QuestTitle", leftText = "Known Quest" },
-		{ type = "QuestObjective", leftText = "Wolf pelts: 8/8" },
-		{ type = "QuestPlayer", leftText = "Friend-Realm" },
-		{ type = "QuestObjective", leftText = "Wolf pelts: 7/8" },
-	} })
-	Equal(QT:EvaluateTooltipQuestObjectiveLines(lines), true)
-end)
-
 QT:RegisterTest("delayed quest refresh discards positives repopulated before new tooltip data arrives", function()
 	WithPlate(function(state)
 		QT:OnNameplateAdded("nameplate1")
@@ -1010,21 +1006,6 @@ QT:RegisterTest("real fallback adapters retain known quest objectives and roster
 	end)
 end)
 
-QT:RegisterTest("generic structured filtering preserves boundaries and recognized party labels", function()
-	QT.nameplateQuestTextCache["Known Quest"] = true
-	QT.partyMembers = { ["Friend-Realm"] = { displayName = "Friend" } }
-	local raw = { lines = {
-		{ type = "None", leftText = "Known Quest" },
-		{ type = "None", leftText = "Wolf pelts: 8/8" },
-		{ type = "None", leftText = "Unowned Other Quest" },
-		{ type = "None", leftText = "Wolf teeth: 0/4" },
-	} }
-	Equal(QT:EvaluateTooltipQuestObjectiveLines(QT:ExtractQuestObjectiveTooltipLinesFromTooltipData(raw)), false)
-	raw.lines[3].leftText = "|cff00ff00Friend-Realm|r"
-	raw.lines[4].leftText = "Wolf pelts: 7/8"
-	Equal(QT:EvaluateTooltipQuestObjectiveLines(QT:ExtractQuestObjectiveTooltipLinesFromTooltipData(raw)), true)
-end)
-
 local function WithSharedObjectiveSource(source, fn)
 	WithFallbackSources(function(state)
 		QT:GetPlayerTracker()[123] = {
@@ -1081,7 +1062,7 @@ for _, provider in ipairs({ "generic structured", "hiddenLines", "questieLines" 
 				Equal(QT:GetNameplateStateStore().completedByNpcID[12345], nil,
 					"the unowned block cannot establish completion for other spawns")
 			end
-			state.inaccessibleValue = setmetatable({}, { __tostring = function() error("inaccessible title stringified") end })
+			state.inaccessibleValue = InaccessibleValue(state)
 			SetLines({ "Known Quest", "Defeat enemies: 8/8", state.inaccessibleValue, "Defeat enemies: 0/4" })
 			QT:HandleNameplateEvent("UNIT_QUEST_LOG_CHANGED", "player")
 			state.drain()
@@ -1220,7 +1201,7 @@ end)
 
 QT:RegisterTest("readable fallback spacers permit completion but inaccessible Questie rows do not", function()
 	WithFallbackSources(function(state)
-		state.inaccessibleValue = setmetatable({}, { __tostring = function() error("secret string conversion") end })
+		state.inaccessibleValue = InaccessibleValue(state)
 		for _, source in ipairs({ "hiddenLines", "questieLines" }) do
 			state[source] = { "Known Quest", "Wolf pelts: 8/8", state.inaccessibleValue }
 			Equal(QT:TryEvaluateQuestObjectiveViaTooltip("nameplate1", state.frame, state.guid), false)
@@ -1282,7 +1263,7 @@ end)
 QT:RegisterTest("unavailable generic structured text cannot join quests or prove completion", function()
 	WithFallbackSources(function(state)
 		state.tooltipReady = true
-		state.inaccessibleValue = setmetatable({}, { __tostring = function() error("inaccessible generic text") end })
+		state.inaccessibleValue = InaccessibleValue(state)
 		local unreadableRows = {
 			{ type = "None", leftText = state.inaccessibleValue },
 			{ type = "None", args = state.inaccessibleValue },
@@ -1368,7 +1349,7 @@ for _, provider in ipairs({ "unit", "hyperlink" }) do
 			QT:GetPlayerTracker()[123] = { title = "Known Quest", objectives = { "Defeat enemies: 1/8" } }
 			QT:RebuildNameplateQuestTextCache()
 			Equal(QT.nameplateQuestTextCache["Defeat enemies"], true)
-			state.inaccessibleValue = setmetatable({}, { __tostring = function() error("inaccessible title stringified") end })
+			state.inaccessibleValue = InaccessibleValue(state)
 			local titleType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
 			local objectiveType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
 			local title = { type = titleType, leftText = state.inaccessibleValue }
@@ -1410,7 +1391,7 @@ QT:RegisterTest("unreadable typed title completion stays unresolved while later 
 		QT:GetPlayerTracker()[123] = { title = "Known Quest", objectives = { "Defeat enemies: 1/8" } }
 		QT:RebuildNameplateQuestTextCache()
 		state.combat, state.tooltipReady = true, true
-		state.inaccessibleValue = setmetatable({}, { __tostring = function() error("inaccessible title stringified") end })
+		state.inaccessibleValue = InaccessibleValue(state)
 		state.tooltipData = { lines = {
 			{ type = "QuestTitle", leftText = state.inaccessibleValue },
 			{ type = "QuestObjective", leftText = "Defeat enemies: 4/4" },
@@ -1437,7 +1418,7 @@ QT:RegisterTest("titleless providers remain positive beside an independent unrea
 	WithFallbackSources(function(state)
 		QT:GetPlayerTracker()[123] = { title = "Known Quest", objectives = { "Defeat enemies: 1/8" } }
 		QT:RebuildNameplateQuestTextCache()
-		state.inaccessibleValue = setmetatable({}, { __tostring = function() error("inaccessible title stringified") end })
+		state.inaccessibleValue = InaccessibleValue(state)
 		state.tooltipReady = true
 		for _, source in ipairs({ "structured", "questieLines", "hiddenLines" }) do
 			QT:ClearNameplateQuestDetectionCache()
@@ -1494,7 +1475,10 @@ QT:RegisterTest("deferred disabled cleanup cannot hide current quest visuals aft
 	WithPlate(function(state)
 		local staleIcon = {
 			IsForbidden = function() return true end,
-			Hide = function() error("forbidden old icon must never be touched") end,
+			Hide = function()
+				state.unsafeMutationAttempts = state.unsafeMutationAttempts + 1
+				error("forbidden old icon must never be touched")
+			end,
 		}
 		local staleUnitFrame = {}
 		QT.nameplateIconByUnitFrame[staleUnitFrame] = staleIcon
@@ -1520,6 +1504,7 @@ QT:RegisterTest("reused icons and tints leave old cleanup while quarantined hand
 		local staleIcon = {
 			IsForbidden = function() return forbidden end,
 			Hide = function()
+				if forbidden then state.unsafeMutationAttempts = state.unsafeMutationAttempts + 1 end
 				assert(not forbidden, "quarantined icon must not be hidden")
 				oldHides = oldHides + 1
 			end,

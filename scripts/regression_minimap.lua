@@ -1,5 +1,20 @@
 -- Private fixtures only: this module also runs inside a live /qt test session.
 local QuestTogether = _G.QuestTogether
+local activeFrames
+local function Register(name, callback)
+	QuestTogether:RegisterTest(name, function()
+		activeFrames = {}
+		local ok, err = pcall(callback)
+		local frames = activeFrames
+		activeFrames = nil
+		for _, frame in ipairs(frames) do
+			assert((frame.unsafeCalls or 0) == 0, "a swallowed error hid an unsafe minimap UI call")
+		end
+		if not ok then
+			error(err, 0)
+		end
+	end)
+end
 local function Equal(actual, expected)
 	assert(actual == expected, "expected " .. tostring(expected) .. ", got " .. tostring(actual))
 end
@@ -9,6 +24,7 @@ end
 
 local function Frame(parent)
 	local frame = { parent = parent, shown = true, scripts = {}, events = {}, textures = {}, points = {}, layouts = 0 }
+	activeFrames[#activeFrames + 1] = frame
 	function frame:IsForbidden()
 		return self.forbidden == true or (self.parent and self.parent:IsForbidden()) or false
 	end
@@ -313,7 +329,7 @@ local function Fixture()
 	return addon
 end
 
-QuestTogether:RegisterTest("quick menu uses the native menu API without requiring a visible minimap icon", function()
+Register("quick menu uses the native menu API without requiring a visible minimap icon", function()
 	for _, missing in ipairs({ true, false }) do
 		local a = Fixture()
 		if missing then
@@ -331,19 +347,15 @@ QuestTogether:RegisterTest("quick menu uses the native menu API without requirin
 		assert(menu.owner:IsVisible())
 		Equal(#a.frames, count)
 		if not missing then assert(not a.minimapButton:IsVisible()) end
-		CheckMenu(menu)
-		for _, label in ipairs({ "Party Quest Log", "Recent Companions", "Open Quest Log", "Settings", "Patch Notes" }) do
-			Entry(menu, label).callback()
-		end
-		Equal(a.compares, 1)
-		Equal(a.companions, 1)
-		Equal(a.journals, 1)
+		-- The launcher's menu test covers the shared menu contents and actions.
+		-- Here the contract is that the independent entry point is usable even
+		-- when the minimap button has never existed or is explicitly hidden.
+		Entry(menu, "Settings").callback()
 		Equal(a.settings, 1)
-		Equal(a.notes, 1)
 	end
 end)
 
-QuestTogether:RegisterTest("quick menu retires its tooltip and guards restricted or forbidden entry", function()
+Register("quick menu retires its tooltip and guards restricted or forbidden entry", function()
 	local a = Fixture()
 	a:InitializeMinimapLauncher()
 	a:ShowMinimapTooltip(a.minimapButton)
@@ -361,7 +373,6 @@ QuestTogether:RegisterTest("quick menu retires its tooltip and guards restricted
 	a.tooltipParent.forbidden = true
 	assert(not a:OpenQuickMenu())
 	Equal(#a.menus, 1)
-	Equal(a.tooltipParent.unsafeCalls, nil)
 	a.tooltipParent.forbidden = false
 	a.isEnabled = false
 	assert(a:OpenQuickMenu())
@@ -372,7 +383,7 @@ QuestTogether:RegisterTest("quick menu retires its tooltip and guards restricted
 	Equal(a.settings, 1)
 end)
 
-QuestTogether:RegisterTest(
+Register(
 	"minimap creates one owned launcher with the scroll texture and exact menu actions",
 	function()
 		local a = Fixture()
@@ -414,7 +425,7 @@ QuestTogether:RegisterTest(
 	end
 )
 
-QuestTogether:RegisterTest("minimap stale menu actions recheck restrictions and disabled compare", function()
+Register("minimap stale menu actions recheck restrictions and disabled compare", function()
 	local a = Fixture()
 	a:InitializeMinimapLauncher()
 	a:ShowMinimapMenu(a.minimapButton)
@@ -465,7 +476,7 @@ QuestTogether:RegisterTest("minimap stale menu actions recheck restrictions and 
 	Equal(a.journals, 2)
 end)
 
-QuestTogether:RegisterTest("minimap partner shortcut toggles the current saved value and rechecks restrictions", function()
+Register("minimap partner shortcut toggles the current saved value and rechecks restrictions", function()
 	local a = Fixture()
 	a:InitializeMinimapLauncher()
 	a:ShowMinimapMenu(a.minimapButton)
@@ -490,7 +501,7 @@ QuestTogether:RegisterTest("minimap partner shortcut toggles the current saved v
 	assert(a.messages[#a.messages]:find("paused", 1, true))
 end)
 
-QuestTogether:RegisterTest("minimap shift clicks toggle partners while normal and dragged clicks keep their behavior", function()
+Register("minimap shift clicks toggle partners while normal and dragged clicks keep their behavior", function()
 	local a = Fixture()
 	a:InitializeMinimapLauncher()
 	local click = a.minimapButton.scripts.OnClick
@@ -522,7 +533,7 @@ QuestTogether:RegisterTest("minimap shift clicks toggle partners while normal an
 	Equal(a.compares, 1)
 end)
 
-QuestTogether:RegisterTest("minimap left click closes an open quest log or preview before reopening", function()
+Register("minimap left click closes an open quest log or preview before reopening", function()
 	local a = Fixture()
 	a:InitializeMinimapLauncher()
 	local window = Frame()
@@ -566,7 +577,7 @@ QuestTogether:RegisterTest("minimap left click closes an open quest log or previ
 	assert(window:IsShown())
 end)
 
-QuestTogether:RegisterTest("minimap tooltip refreshes status without reading quest counts or recreating frames", function()
+Register("minimap tooltip refreshes status without reading quest counts or recreating frames", function()
 	local a = Fixture()
 	function a:GetAddonVersion() return "5.16.7" end
 	local reads = 0
@@ -599,7 +610,7 @@ QuestTogether:RegisterTest("minimap tooltip refreshes status without reading que
 	Equal(tooltip.shown, false)
 end)
 
-QuestTogether:RegisterTest("settings help preserves control hooks reuses one tooltip and hides on close or restriction", function()
+Register("settings help preserves control hooks reuses one tooltip and hides on close or restriction", function()
 	local a = Fixture()
 	function a:GetSettingsTooltipParent() return self.tooltipParent end
 	function a:CreateSettingsTooltipFrame(parent) return self:CreateMinimapUIFrame("Frame", nil, parent) end
@@ -631,11 +642,10 @@ QuestTogether:RegisterTest("settings help preserves control hooks reuses one too
 	owner.forbidden = true
 	owner.scripts.OnEnter()
 	Equal(tooltip.shown, false)
-	Equal(owner.unsafeCalls, nil)
 	Equal(#a.frames, 1)
 end)
 
-QuestTogether:RegisterTest(
+Register(
 	"minimap hide shortcut saves visibility and explains how to restore it in settings",
 	function()
 		local a = Fixture()
@@ -668,7 +678,7 @@ QuestTogether:RegisterTest(
 	end
 )
 
-QuestTogether:RegisterTest("minimap initial hidden or restricted state recovers without runtime enable", function()
+Register("minimap initial hidden or restricted state recovers without runtime enable", function()
 	local a = Fixture()
 	a.hasLoggedIn = false
 	a:InitializeMinimapLauncher()
@@ -698,7 +708,7 @@ QuestTogether:RegisterTest("minimap initial hidden or restricted state recovers 
 	Equal(#a.frames, 2)
 end)
 
-QuestTogether:RegisterTest("minimap invalid anchor geometry stays hidden and recovers on layout events", function()
+Register("minimap invalid anchor geometry stays hidden and recovers on layout events", function()
 	local a = Fixture()
 	a.anchor.width = 0
 	a:InitializeMinimapLauncher()
@@ -711,9 +721,6 @@ QuestTogether:RegisterTest("minimap invalid anchor geometry stays hidden and rec
 	a.anchor.forbidden = true
 	Equal(a:PositionMinimapButton(0), false)
 	Equal(button.layouts, layouts)
-	-- A caught getter error must still fail this test after production returns.
-	Equal(a.anchor.unsafeCalls, nil)
-	Equal(button.unsafeCalls, nil)
 	a.anchor.forbidden, a.anchor.height = false, "unavailable"
 	Equal(a:RefreshMinimapButton(), false)
 	Equal(button.shown, false)
@@ -722,7 +729,7 @@ QuestTogether:RegisterTest("minimap invalid anchor geometry stays hidden and rec
 	assert(button.shown)
 end)
 
-QuestTogether:RegisterTest("minimap offsets follow round and square edges and reject unreadable dimensions", function()
+Register("minimap offsets follow round and square edges and reject unreadable dimensions", function()
 	local a = Fixture()
 	local x, y = a:GetMinimapButtonOffset(0, 140, 140, "ROUND")
 	Near(x, 78)
@@ -742,7 +749,7 @@ QuestTogether:RegisterTest("minimap offsets follow round and square edges and re
 	Equal(a:GetMinimapButtonOffset(0, 140, 140), nil)
 end)
 
-QuestTogether:RegisterTest(
+Register(
 	"minimap drag uses effective scale saves each quadrant and suppresses release clicks",
 	function()
 		local a = Fixture()
@@ -767,7 +774,7 @@ QuestTogether:RegisterTest(
 	end
 )
 
-QuestTogether:RegisterTest("minimap interrupted drags cannot save a stale angle or touch restricted layout", function()
+Register("minimap interrupted drags cannot save a stale angle or touch restricted layout", function()
 	for _, interruption in ipairs({ "restricted", "profile", "hidden", "scale", "cursor", "forbidden", "width" }) do
 		local a = Fixture()
 		a:InitializeMinimapLauncher()
@@ -803,12 +810,10 @@ QuestTogether:RegisterTest("minimap interrupted drags cannot save a stale angle 
 			a:RefreshMinimapButton()
 		end
 		Equal(button.scripts.OnUpdate, nil)
-		Equal(a.anchor.unsafeCalls, nil)
-		Equal(button.unsafeCalls, nil)
 	end
 end)
 
-QuestTogether:RegisterTest(
+Register(
 	"minimap profile refresh applies visibility and position without recreating frames",
 	function()
 		local a = Fixture()
@@ -832,7 +837,7 @@ QuestTogether:RegisterTest(
 	end
 )
 
-QuestTogether:RegisterTest("minimap tooltip is addon owned reused and hidden for drags and clicks", function()
+Register("minimap tooltip is addon owned reused and hidden for drags and clicks", function()
 	local a = Fixture()
 	a:InitializeMinimapLauncher()
 	local button = a.minimapButton
@@ -856,23 +861,7 @@ QuestTogether:RegisterTest("minimap tooltip is addon owned reused and hidden for
 	Equal(a:GetOption("minimapButtonPosition"), 225)
 end)
 
-QuestTogether:RegisterTest("home settings refresh minimap visibility after profile switches", function()
-	local checkbox = {
-		SetChecked = function(self, value)
-			self.checked = value
-		end,
-	}
-	QuestTogether.optionsFrame = {}
-	QuestTogether.homeControls = { showMinimapButton = checkbox }
-	QuestTogether.db.profile.showMinimapButton = true
-	QuestTogether:RefreshHomeWindow()
-	Equal(checkbox.checked, true)
-	QuestTogether.db.profile = { showMinimapButton = false }
-	QuestTogether:RefreshHomeWindow()
-	Equal(checkbox.checked, false)
-end)
-
-QuestTogether:RegisterTest("minimap forbidden parents recover through the independent launcher frame", function()
+Register("minimap forbidden parents recover through the independent launcher frame", function()
 	local a = Fixture()
 	a.anchor.forbidden = true
 	a:InitializeMinimapLauncher()
@@ -896,12 +885,9 @@ QuestTogether:RegisterTest("minimap forbidden parents recover through the indepe
 	Equal(a.minimapButton.shown, false)
 	Equal(a.minimapButton.scripts.OnUpdate, nil)
 	Equal(a:GetOption("minimapButtonPosition"), 225)
-	Equal(a.anchor.unsafeCalls, nil)
-	Equal(a.minimapButton.unsafeCalls, nil)
-	Equal(tooltip.unsafeCalls, nil)
 end)
 
-QuestTogether:RegisterTest("minimap drag release rechecks restrictions before the next animation tick", function()
+Register("minimap drag release rechecks restrictions before the next animation tick", function()
 	local a = Fixture()
 	a:InitializeMinimapLauncher()
 	a:StartMinimapButtonDrag(a.minimapButton)
@@ -913,7 +899,7 @@ QuestTogether:RegisterTest("minimap drag release rechecks restrictions before th
 	Equal(rawget(a, "minimapDragState"), nil)
 end)
 
-QuestTogether:RegisterTest(
+Register(
 	"minimap tooltip uses independent tooltip draw order instead of the minimap hierarchy",
 	function()
 		local a = Fixture()
@@ -935,7 +921,7 @@ QuestTogether:RegisterTest(
 	end
 )
 
-QuestTogether:RegisterTest(
+Register(
 	"independent minimap tooltip hides when its anchor or runtime becomes unavailable",
 	function()
 		for _, boundary in ipairs({ "hidden", "forbidden", "unreadable", "restricted", "option" }) do
@@ -961,21 +947,17 @@ QuestTogether:RegisterTest(
 			tooltip.scripts.OnUpdate(tooltip, 0.2)
 			Equal(tooltip.shown, false)
 			Equal(tooltip.scripts.OnUpdate, nil)
-			Equal(a.anchor.unsafeCalls, nil)
-			Equal(a.minimapButton.unsafeCalls, nil)
-			Equal(tooltip.unsafeCalls, nil)
 		end
 	end
 )
 
-QuestTogether:RegisterTest("minimap tooltip checks its independent parent and quarantined owned frame", function()
+Register("minimap tooltip checks its independent parent and quarantined owned frame", function()
 	local a = Fixture()
 	a:InitializeMinimapLauncher()
 	a.tooltipParent.forbidden = true
 	a.minimapButton.scripts.OnEnter()
 	Equal(rawget(a, "minimapTooltip"), nil)
 	Equal(#a.frames, 2)
-	Equal(a.tooltipParent.unsafeCalls, nil)
 	a.tooltipParent.forbidden = false
 	a.tooltipParent.shown = false
 	a.minimapButton.scripts.OnEnter()
@@ -990,7 +972,6 @@ QuestTogether:RegisterTest("minimap tooltip checks its independent parent and qu
 		a:HideMinimapTooltip()
 		a:ShowMinimapTooltip(a.minimapButton)
 		Equal(tooltip.mutations, mutations)
-		Equal(tooltip.unsafeCalls, nil)
 		tooltip[boundary] = false
 		-- A hide requested during quarantine must finish after access returns,
 		-- even while the launcher remains hovered and otherwise eligible.
@@ -1005,7 +986,7 @@ QuestTogether:RegisterTest("minimap tooltip checks its independent parent and qu
 	end
 end)
 
-QuestTogether:RegisterTest("minimap partner glow follows status visibility and restrictions with a reused pulse", function()
+Register("minimap partner glow follows status visibility and restrictions with a reused pulse", function()
 	local a = Fixture()
 	a:InitializeMinimapLauncher()
 	local button = a.minimapButton
@@ -1047,7 +1028,6 @@ QuestTogether:RegisterTest("minimap partner glow follows status visibility and r
 	assert(pulse:IsPlaying())
 	a.anchor.forbidden = true
 	Equal(a:RefreshMinimapPartnerGlow(), false)
-	Equal(button.unsafeCalls, nil)
 	a.anchor.forbidden = false
 	a.blocked = true
 	a:SetOption("lookingForQuestPartners", false)

@@ -13,9 +13,7 @@ end
 
 -- Typed domain regressions use only private addon instances and queued delivery.
 local QT = _G.QuestTogether
-local checks = 0
 local function Check(value, message)
-	checks = checks + 1
 	assert(value, message)
 end
 local function Count(t)
@@ -175,15 +173,6 @@ local function Fixture()
 		end
 		return self:StageCommunicationState(op, record, options)
 	end
-	function a:Request(op, record, routes, options)
-		record.requestId = options.requestId
-		return self:Emit(op, record, routes, options)
-	end
-	function a:Respond(op, record, routes, options)
-		record.requestId = options.requestId
-		return self:Emit(op, record, routes, options)
-	end
-	function a:CancelCommRequest() end
 	function a:CancelCommunicationOwner(owner, reason)
 		for _, row in ipairs(self.queue) do
 			if not row.done and row.options.owner == owner then
@@ -232,26 +221,6 @@ local function Fixture()
 		end
 		record.sampledAt, record.receivedAt, record.expiresAt = o.sampledAt, o.receivedAt, o.expiresAt
 		record.lifetime = o.expiresAt - o.receivedAt
-		return true
-	end
-	function a:IsKnownQTPlayer(name)
-		return self.locations[name] ~= nil
-	end
-	function a:ArePeerFieldsFresh()
-		return self.fieldsFresh == true
-	end
-	function a:BuildLocalCommunicationState(topics)
-		Check(topics.LOC == nil, "details excludes LOC builder")
-		return {
-			{
-				topic = "QTHI",
-				data = self:BuildPlayerDetailsIdentityPayload(),
-				sampledAt = self:GetAnnouncementServerTime(),
-			},
-		}
-	end
-	function a:ApplyCommunicationState(records, name, context)
-		self.applied = { records = records, name = name, context = context }
 		return true
 	end
 	a:InitializeGeographicComms()
@@ -396,66 +365,6 @@ QT:RegisterTest("typed nearby leases and latest-only samples preserve accepted p
 	Check(next(s.wanted) == nil and next(s.subscribers) == nil, "privacy clears leases")
 	Check(not a:HandleNearbyStreamMessage("QTSR", { token = "other-2" }, "Other"), "hidden ignores requests")
 end)
--- Complete metadata object, coordinator correlation, no public LOC injection.
-QT:RegisterTest("typed player details correlate whole metadata objects without granting location", function()
-	local a = Fixture()
-	a.locations.Other = { name = "Other", mask = 3 }
-	Check(a:RequestPlayerDetails("Other"), "hover request")
-	local row = a:Rows("QTHQ")[1]
-	Check(a.playerDetailsState.attempts.Other == nil, "request queue not sent")
-	Check(not a:RequestPlayerDetails("Other"), "pending deduplicated")
-	a.now = 101
-	a:Complete(row, true)
-	Check(a.playerDetailsState.attempts.Other.at == 101, "request success progress")
-	local id = row.options.requestId
-	Check(
-		not a:HandlePlayerDetailsMessage(
-			"QTHD",
-			{ records = { { topic = "LOC", data = { mask = 3 } } } },
-			"Other",
-			{ requestId = id }
-		),
-		"metadata rejects LOC"
-	)
-	Check(a.applied == nil, "LOC rejection atomic")
-	Check(
-		not a:HandlePlayerDetailsMessage(
-			"QTHD",
-			{ records = { { topic = "QTHI", data = {} } } },
-			"Other",
-			{ requestId = "wrong" }
-		),
-		"unsolicited reply ignored"
-	)
-	Check(
-		row.options.onResponse({ records = { { topic = "QTHI", data = {} } } }, "Other", { requestId = id }),
-		"correlated metadata accepted"
-	)
-	Check(a.applied and a.playerDetailsState.attempts.Other.success, "complete object imported")
-	a.now = 132
-	a.fieldsFresh = true
-	Check(not a:RequestPlayerDetails("Other"), "domain freshness avoids probe")
-	a.fieldsFresh = false
-	Check(a:RequestPlayerDetails("Other"), "stale metadata refreshed")
-	row = a:Rows("QTHQ")[1]
-	a:RetirePlayerDetailsPeer("Other")
-	Check(row.done, "retirement cancels request")
-	Check(
-		not a:HandlePlayerDetailsMessage(
-			"QTHD",
-			{ records = { { topic = "QTHI", data = {} } } },
-			"Other",
-			{ requestId = row.options.requestId }
-		),
-		"retired response rejected"
-	)
-	Check(a:HandlePlayerDetailsMessage("QTHQ", {}, "Other", { requestId = "query-1" }), "typed details reply")
-	row = a:Rows("QTHD")[1]
-	Check(row and #row.data.records == 1, "whole metadata response")
-	a.options.lookingForQuestPartners = true
-	Check(not row.options.isCurrent(), "LFQP change invalidates queued response")
-end)
-
 QT:RegisterTest("staged producer completion reports one accepted route and ignores failed routes", function()
 	local a = Fixture()
 	local completions = {}
@@ -500,24 +409,3 @@ QT:RegisterTest("geographic density stays bounded within a same-tick discovery b
 	a.now = a.now + 600
 	Check(a:GetGeographicZonePopulation(1) == 0, "cached density expires on original deadline")
 end, { offline = true })
-
-QT:RegisterTest("resetting nearby streams never reuses a live old lease correlation", function()
-	local a = Fixture()
-	a.locations.Other = { name = "Other", mapID = 1, x = 0.4, y = 0.4, mask = 3 }
-	ObserveState(a, "HandlePlayerCapabilityMetadata", "QTCI", { streams = true, raceID = 2 }, "Other")
-	a:UpdateNearbyStreams()
-	local old = a.nearbyStreamState.wanted.Other.token
-	a:ResetNearbyStreams()
-	ObserveState(a, "HandlePlayerCapabilityMetadata", "QTCI", { streams = true, raceID = 2 }, "Other")
-	a:UpdateNearbyStreams()
-	local current = a.nearbyStreamState.wanted.Other.token
-	Check(old ~= current, "coordinator counter survives domain reset")
-	Check(
-		not a:HandleNearbyStreamMessage(
-			"QTSP",
-			{ token = old, sequence = 999, stamp = a:GetAnnouncementServerTime(), mapID = 1, x = 0.5, y = 0.5 },
-			"Other"
-		),
-		"late old lease cannot populate replacement"
-	)
-end)

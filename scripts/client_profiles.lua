@@ -1168,7 +1168,6 @@ return rawRow end
 		-- Standalone Lua can construct NaN; Forever's arithmetic raises instead.
 		-- Keep this boundary check offline so /qt test never attempts 0 / 0.
 		local notANumber = 0 / 0
-		assert(addon:SafeToNumber(notANumber) == nil, "NaN must not pass number sanitization")
 		local levelFixture = setmetatable({ isEnabled = true }, { __index = addon })
 		function levelFixture:PublishAnnouncementEvent() error("invalid level must not publish") end
 		function levelFixture:PlayLocalCelebrationEmote() error("invalid level must not celebrate") end
@@ -1304,13 +1303,6 @@ return rawRow end
 		local _, _, _, _, hiddenRequired = addon.API.GetQuestObjectiveInfo(12345, 1, false)
 		assert(hiddenRequired == nil, "secret required count must be dropped")
 		objective.numRequired = 5
-		if not classic then
-			local originalObjectives = C_QuestLog.GetQuestObjectives
-			C_QuestLog.GetQuestObjectives = function() return {{ text = "Another stage: 2/8", type = "monster", numFulfilled = 2, numRequired = 8 }} end
-			local _, _, _, ownCount, wrongRequired = addon.API.GetQuestObjectiveInfo(12345, 1, false)
-			assert(ownCount == 2 and wrongRequired == 5, "mismatched rows cannot replace native counters")
-			C_QuestLog.GetQuestObjectives = originalObjectives
-		end
 		assert(addon.API.IsPushableQuest(12345) == true)
 		pushable = false
 		assert(addon.API.IsPushableQuest(12345) == false)

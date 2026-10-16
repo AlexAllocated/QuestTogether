@@ -223,15 +223,29 @@ QT:RegisterTest("experimental phases reject malformed payloads and bound visibil
 	local record = b.sent[#b.sent].record
 	Eq(#record.players, 8)
 	Eq(a:HandlePlayerPhaseMessage(record, "B"), true)
-	for _, payload in ipairs({
-		"",
-		"2,Q,1,1,-,Player-1-ABC,",
-		"1,Q,1,0,-,Player-1-ABC,",
-		"1,Q,1,1,invalid,Player-1-ABC,",
-		"1,Q,1,1,-,Player-1-ABC,/",
-		string.rep("x", 251),
+	-- Exercise typed v2 validation with a still-pending request. Rejecting old
+	-- string layouts after a response already completed cannot prove these guards.
+	for _, change in ipairs({
+		{ "requestId", string.rep("x", 81) },
+		{ "requestId", "invalid/id" },
+		{ "kind", "invalid" },
+		{ "mapID", 0 },
+		{ "mapID", 1.5 },
+		{ "mapID", 1000001 },
+		{ "guid", "Creature-0-1-0-100-123-ABC" },
+		{ "routingKey", "invalid" },
+		{ "players", { { guid = "invalid" } } },
+		{ "players", { { guid = "Player-1-ABC" }, { guid = "Player-1-ABC" } } },
 	}) do
-		Eq(a:HandlePlayerPhaseMessage(payload, "B"), false)
+		local receiver, sender = Pair()
+		Deliver(receiver, sender)
+		local valid = sender.sent[#sender.sent].record
+		local malformed = receiver:DeepCopy(valid)
+		malformed[change[1]] = change[2]
+		Eq(receiver:HandlePlayerPhaseMessage(malformed, "B"), false)
+		Eq(receiver:GetPlayerPhaseStatus("B"), nil)
+		Eq(receiver:HandlePlayerPhaseMessage(valid, "B"), true)
+		Eq(receiver:GetPlayerPhaseStatus("B"), "different")
 	end
 end)
 QT:RegisterTest("experimental phases expire departed ignored peers and throttle old clients", function()

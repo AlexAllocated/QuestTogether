@@ -63,7 +63,7 @@ function addon:HandleKeybinding(action)
     assert(self == addon, 'XML must dispatch on its own addon')
     calls[#calls + 1] = action
 end
-local env = {QuestTogether = addon, L = function(text) return text end}
+local env = {QuestTogether = addon, L = function(text) return 'localized:' .. text end}
 local function Compile(source, name)
     if setfenv then
         local body = assert(loadstring(source, name))
@@ -86,7 +86,7 @@ end
         name = row.get("name")
         action, label = EXPECTED[name]
         program.extend([
-            "assert(env.BINDING_NAME_" + name + " == " + lua_string(label) + ", 'wrong display label: " + name + "')",
+            "assert(env.BINDING_NAME_" + name + " == " + lua_string("localized:" + label) + ", 'unlocalized or wrong display label: " + name + "')",
             "do local body = Compile(" + lua_string(row.text or "") + ", '@Bindings.xml:" + name + "')",
             "calls = {}",
         ])

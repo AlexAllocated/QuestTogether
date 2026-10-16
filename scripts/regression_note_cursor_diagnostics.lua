@@ -1,7 +1,7 @@
 -- All frames and API methods below are private fixtures, safe for /qt test.
 local QT = _G.QuestTogether
 local function Fixture()
-	local addon = setmetatable({ isEnabled = true, reports = {}, frames = {}, focusCalls = 0 }, { __index = QT })
+	local addon = setmetatable({ isEnabled = true, reports = {}, frames = {}, focusCalls = 0, privateTextReads = 0 }, { __index = QT })
 	function addon:IsWorkBlocked() return self.blocked == true end
 	function addon:GetAddonVersion() return "fixture" end
 	function addon:GetDiagnosticEnvironment() return { version = "test", build = "1", interface = "1", locale = "enUS" } end
@@ -26,7 +26,10 @@ local function Fixture()
 		function region:GetEffectiveAlpha() return self:GetAlpha() end
 		function region:GetNumPoints() return #self.points end
 		function region:GetDrawLayer() return "ARTWORK", 0 end
-		function region:GetText() error("cursor capture must not read private text") end
+		function region:GetText()
+			addon.privateTextReads = addon.privateTextReads + 1
+			error("cursor capture must not read private text")
+		end
 		return region
 	end
 	local window = Region(nil, "Frame")
@@ -88,6 +91,7 @@ QT:RegisterTest("note cursor capture observes native caret privately and reports
 	assert(report:find("cursorW=0.000", 1, true))
 	assert(report:find("cursorX=nil", 1, true), "unobserved geometry must not masquerade as zero")
 	assert(not report:find("PRIVATE_", 1, true))
+	assert(a.privateTextReads == 0, "a caught read error still accessed private note text")
 	stale(probe.driver, 10)
 	assert(#a.reports == 1 and a.focusCalls == 1)
 end)
@@ -179,11 +183,13 @@ end)
 
 QT:RegisterTest("note cursor diagnostics slash aliases stay local and bypass remote diagnostic requests", function()
 	local a = Fixture()
+	local remoteRequests, exports = 0, 0
 	function a:CapturePlayerNoteCursorDiagnostics() self.captures = (self.captures or 0) + 1; return true end
-	function a:RequestRemoteDiagnostics() error("cursor capture is local only") end
-	function a:GetDebugController() error("cursor command must bypass generic diagnostic export") end
+	function a:RequestRemoteDiagnostics() remoteRequests = remoteRequests + 1 end
+	function a:GetDebugController() exports = exports + 1 end
 	a.isLocalDeveloper = true
 	assert(a:HandleSlashCommand("diagnostics cursor"))
 	assert(a:HandleSlashCommand(" DIAG CURSOR "))
 	assert(a.captures == 2)
+	assert(remoteRequests == 0 and exports == 0)
 end)

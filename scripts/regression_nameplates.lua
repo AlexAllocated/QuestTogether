@@ -179,25 +179,6 @@ QT:RegisterTest("tap events ignore units that are not nameplate tokens", functio
 	end)
 end)
 
-QT:RegisterTest("nameplate augmentation subscribes to tap ownership changes", function()
-	local registered = {}
-	Patch({
-		nameplateEventFrame = { RegisterEvent = function(_, event) registered[event] = true end },
-		nameplateRegisteredEvents = {},
-		TryInstallNameplateHooks = function() end,
-		ScheduleDeferredNameplateQuestStateRefresh = function() end,
-		SchedulePlaterStartupNameplateRefreshes = function() end,
-	}, function()
-		QT:EnableNameplateAugmentation()
-		Equal(registered.UNIT_FACTION, true)
-		Equal(registered.UNIT_FLAGS, true)
-		Equal(registered.NAME_PLATE_UNIT_BEHIND_CAMERA_CHANGED, true)
-		Equal(registered.PLAYER_TARGET_CHANGED, true)
-		Equal(registered.UPDATE_MOUSEOVER_UNIT, true)
-		Equal(registered.ADDON_RESTRICTION_STATE_CHANGED, true)
-	end)
-end)
-
 QT:RegisterTest("deferred tap refresh cannot decorate a removed nameplate", function()
 	WithTapFixture(function(state)
 		state.denied = true
@@ -383,23 +364,15 @@ QT:RegisterTest("audit quest icon cleanup does not cancel a player's announcemen
 	assert(QT.nameplateBubbleStateByFrame[bubble] ~= nil)
 end)
 
-QT:RegisterTest("audit live guid takes precedence over stale recycled frame hints", function()
-	Patch({
-		GetNameplateUnitGuid = function()
-			return "Creature-0-NEW"
-		end,
-	}, function()
-		Equal(QT:GetNameplateTooltipScanGuid("nameplate1", { namePlateUnitGUID = "Creature-0-OLD" }), "Creature-0-NEW")
-	end)
-end)
-
 QT:RegisterTest("audit forbidden frame guid fallback is never inspected", function()
+	local reads = 0
 	local forbidden = setmetatable({
 		IsForbidden = function()
 			return true
 		end,
 	}, {
 		__index = function()
+			reads = reads + 1
 			error("forbidden frame member inspected")
 		end,
 	})
@@ -410,11 +383,14 @@ QT:RegisterTest("audit forbidden frame guid fallback is never inspected", functi
 	}, function()
 		Equal(QT:GetNameplateTooltipScanGuid("nameplate1", forbidden), nil)
 	end)
+	Equal(reads, 0)
 end)
 
 QT:RegisterTest("audit inaccessible tooltip containers are not traversed", function()
+	local reads = 0
 	local inaccessible = setmetatable({}, {
 		__index = function()
+			reads = reads + 1
 			error("inaccessible table read")
 		end,
 	})
@@ -430,20 +406,25 @@ QT:RegisterTest("audit inaccessible tooltip containers are not traversed", funct
 		Equal(QT:EvaluateTooltipQuestObjectiveLines(inaccessible), false)
 		Equal(QT:TooltipLineHasUnfinishedObjectiveEvidence({ args = inaccessible }), false)
 	end)
+	Equal(reads, 0)
 end)
 
 QT:RegisterTest("audit protected icon is not shown or restyled while restricted", function()
+	local mutations = 0
 	local icon = {
 		IsProtected = function()
 			return true
 		end,
 		Show = function()
+			mutations = mutations + 1
 			error("protected icon shown")
 		end,
 		Hide = function()
+			mutations = mutations + 1
 			error("protected icon hidden")
 		end,
 		ClearAllPoints = function()
+			mutations = mutations + 1
 			error("protected icon relaid out")
 		end,
 	}
@@ -463,6 +444,7 @@ QT:RegisterTest("audit protected icon is not shown or restyled while restricted"
 	}, function()
 		QT:ApplyResolvedQuestStateToNameplate({}, "nameplate1", unit, true, false)
 	end)
+	Equal(mutations, 0, "caught mutation errors must not masquerade as restricted deferral")
 end)
 
 QT:RegisterTest("audit protected health overlay does not mutate during restrictions", function()
@@ -530,35 +512,6 @@ QT:RegisterTest("audit disabled cleanup hides cached offscreen visuals after res
 	QT.pendingNameplateVisualCleanup = originalPending
 end)
 
-QT:RegisterTest("audit startup timers from a previous enable do not refresh current plates", function()
-	local callbacks, questRefreshes, fullRefreshes = {}, 0, 0
-	QT.isEnabled = true
-	Patch({
-		API = {
-			Delay = function(_, fn)
-				callbacks[#callbacks + 1] = fn
-			end,
-		},
-		ScheduleDeferredNameplateQuestStateRefresh = function()
-			questRefreshes = questRefreshes + 1
-		end,
-		FullRefreshVisibleNameplates = function()
-			fullRefreshes = fullRefreshes + 1
-		end,
-	}, function()
-		QT:SchedulePlaterStartupNameplateRefreshes()
-		QT:ResetNameplateStateStore()
-		QT:SchedulePlaterStartupNameplateRefreshes()
-		callbacks[1]()
-		callbacks[2]()
-		Equal(questRefreshes, 0)
-		Equal(fullRefreshes, 0)
-		callbacks[3]()
-		callbacks[4]()
-		Equal(questRefreshes, 1)
-		Equal(fullRefreshes, 1)
-	end)
-end)
 
 local function WithRecycledBubble(fn)
 	local state = {

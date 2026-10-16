@@ -231,19 +231,27 @@ function QT:CreateTestNetwork(options)
 		end
 		self:Record("attempts", packet, peer)
 		peer.attempts[#peer.attempts + 1] = packet
-		local result = 0
+		local result, ambiguousDelivery = 0, false
 		if not peer.connected or (route == "CHANNEL" and not packet.channel) then
 			result = false
 		end
-		if self.sendRule then
-			result = self.sendRule(packet, #peer.attempts, peer)
+		if result == 0 and self.sendRule then
+			-- A ChannelThrottle result does not say whether the server submitted
+			-- the packet. Tests must be able to exercise both outcomes independently
+			-- of the native return code, just as acceptance can still suffer loss.
+			result, ambiguousDelivery = self.sendRule(packet, #peer.attempts, peer)
 		end
 		packet.result = result
-		if result ~= 0 and result ~= true then
+		local accepted = result == 0 or result == true
+		if not accepted and not (result == 8 and ambiguousDelivery == true) then
 			return result
 		end
-		self:Record("accepted", packet, peer)
-		self.metrics.acceptedBytes = self.metrics.acceptedBytes + #wire
+		if accepted then
+			self:Record("accepted", packet, peer)
+			self.metrics.acceptedBytes = self.metrics.acceptedBytes + #wire
+		else
+			self:Record("ambiguous", packet, peer)
+		end
 		peer.sent[#peer.sent + 1] = packet
 		for _, receiver in ipairs(self.peers) do
 			if self:IsRecipient(packet, receiver) then

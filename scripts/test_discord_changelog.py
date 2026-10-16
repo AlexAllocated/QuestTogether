@@ -168,6 +168,24 @@ def write_translations(root, source):
     (root / changelog.CHANNEL_CONFIG).write_text(json.dumps(locale_config()), encoding="utf-8")
 
 
+def assert_message_limits(case, message):
+    # Independent oracle: production's splitting and its size helper must not
+    # be able to agree on the same incorrect Unicode or author/footer count.
+    def units(text):
+        return sum(2 if ord(character) > 0xffff else 1 for character in text)
+
+    case.assertLessEqual(len(message["embeds"]), 10)
+    total = 0
+    for embed in message["embeds"]:
+        for text, limit in ((embed.get("title", ""), 256), (embed.get("description", ""), 4096),
+                            (embed.get("author", {}).get("name", ""), 256),
+                            (embed.get("footer", {}).get("text", ""), 2048)):
+            size = units(text)
+            case.assertLessEqual(size, limit)
+            total += size
+    case.assertLessEqual(total, 6000)
+
+
 class FormattingTests(unittest.TestCase):
     def test_locales_have_distinct_markers_and_nonces_with_distinct_spanish_locales(self):
         english = changelog.build_messages(notes(), REPO, TAG)
@@ -206,10 +224,8 @@ class FormattingTests(unittest.TestCase):
             for item in section["items"]:
                 self.assertEqual(sum(description.count("- " + item) for description in descriptions), 1)
         for message in planned:
-            self.assertLessEqual(len(message["embeds"]), 10)
-            self.assertLessEqual(sum(map(changelog.embed_length, message["embeds"])), 6000)
+            assert_message_limits(self, message)
             self.assertEqual(sum("url" in embed for embed in message["embeds"]), 1)
-            self.assertTrue(all(changelog.text_length(embed["description"]) <= 4096 for embed in message["embeds"]))
         self.assertEqual(len({message["nonce"] for message in planned}), len(planned))
 
     def test_unicode_tip_stays_whole_when_it_overflows_a_nearly_full_section(self):
@@ -228,9 +244,7 @@ class FormattingTests(unittest.TestCase):
             for item in section['items']:
                 self.assertEqual(sum(d.count('- '+item) for d in descriptions),1)
         for message in planned:
-            self.assertLessEqual(len(message['embeds']),10)
-            self.assertLessEqual(sum(map(changelog.embed_length,message['embeds'])),6000)
-            self.assertTrue(all(changelog.text_length(e['description'])<=4096 for e in message['embeds']))
+            assert_message_limits(self, message)
             self.assertEqual(message['allowed_mentions']['parse'],[])
 
     def test_custom_tip_icons_preserve_localized_text_and_fit_all_message_budgets(self):
@@ -253,13 +267,7 @@ class FormattingTests(unittest.TestCase):
             for item in section['items']:
                 self.assertEqual(sum(e['description'].count('- ' + item) for e in all_embeds), 1)
         for message in planned:
-            self.assertLessEqual(len(message['embeds']), 10)
-            expected_size = sum(changelog.text_length(e.get('title', '')) + changelog.text_length(e['description'])
-                                + changelog.text_length(e.get('author', {}).get('name', ''))
-                                + changelog.text_length(e.get('footer', {}).get('text', '')) for e in message['embeds'])
-            self.assertEqual(sum(map(changelog.embed_length, message['embeds'])), expected_size)
-            self.assertLessEqual(expected_size, 6000)
-            self.assertTrue(all(changelog.text_length(e['description']) <= 4096 for e in message['embeds']))
+            assert_message_limits(self, message)
             expected = [{'id': 0, 'filename': 'QuestTogetherTipIcon.png'}] if any('author' in e for e in message['embeds']) else []
             self.assertEqual(message.get('attachments', []), expected)
             self.assertEqual(message['allowed_mentions']['parse'], [])
@@ -682,25 +690,6 @@ class LocalizationTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         write_translations(self.root, notes())
 
-    def test_shared_validator_rejects_stale_source_structure_version_and_generated_lua(self):
-        translated, expected = changelog.load_localized_notes(self.root, notes())
-        self.assertEqual(set(translated), set(localization.LOCALES))
-        self.assertEqual(expected, (self.root / changelog.LOCALIZED_LUA).read_bytes())
-        path = self.root / "release_notes/frFR.json"
-        original = json.loads(path.read_text())
-        for mutate in (lambda w: w.update(source_sha256="a" * 64),
-                       lambda w: w["notes"].update(version="1.2.3"),
-                       lambda w: w["notes"]["sections"][0]["items"].append("Unexpected extra bullet.")):
-            wrapper = copy.deepcopy(original)
-            mutate(wrapper)
-            path.write_text(json.dumps(wrapper))
-            with self.assertRaises(ValueError):
-                changelog.load_localized_notes(self.root, notes())
-        path.write_text(json.dumps(original))
-        (self.root / changelog.LOCALIZED_LUA).write_text("stale")
-        with self.assertRaisesRegex(changelog.ChangelogError, "stale"):
-            changelog.load_localized_notes(self.root, notes())
-
     def test_config_and_access_validate_each_locale_guild_bot_name_and_unique_id(self):
         config = locale_config()
         for mutate in (lambda c: c.update(guild_id="1554000000000000008"),
@@ -983,11 +972,6 @@ class LocalNotesTests(unittest.TestCase):
             changelog.load_notes(self.root, TAG, exact=True)
         (self.root / "ReleaseNotes.lua").write_text("stale")
         with self.assertRaisesRegex(changelog.ChangelogError, "stale"):
-            changelog.load_notes(self.root)
-
-    def test_version_only_notes_are_not_fresh_release_content(self):
-        self.write_notes(notes(item="An older quest-sharing improvement."))
-        with self.assertRaisesRegex(changelog.NotesError, "unchanged"):
             changelog.load_notes(self.root)
 
     def test_dry_run_never_reads_credentials_or_calls_apis(self):

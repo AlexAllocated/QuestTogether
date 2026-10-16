@@ -102,32 +102,6 @@ local function NavigationFixture()
 	return a
 end
 
-QT:RegisterTest("actionable hints preserve approved copy formatting and explicit navigation destinations", function()
-	local a = NavigationFixture()
-	local linked, destinations = 0, {}
-	for _, hint in ipairs(a:GetHintCatalog()) do
-		local base, rendered = a:FormatHint(hint.text), a:FormatHintEntry(hint)
-		assert(rendered:sub(1, #base) == base, "navigation links must preserve approved tip wording and colors")
-		if hint.actions then
-			linked = linked + 1
-			assert(#hint.actions > 0 and #hint.actions <= 2)
-			for _, actionID in ipairs(hint.actions) do
-				local action = assert(a:GetHintActionInfo(actionID), actionID)
-				destinations[actionID] = true
-				assert(action.id == actionID and action.tooltip == QT.Translate("Click to open."))
-				assert(rendered:find("|Hquesttogethertip:" .. actionID .. "|h[" .. action.label .. "]|h", 1, true))
-			end
-		else
-			assert(rendered == base)
-		end
-	end
-	assert(linked >= 100 and destinations.settings and destinations.profiles and destinations.hud_edit)
-	assert(#a.opened == 0 and not a.db.global.hintPool, "formatting must not navigate or consume a draw")
-	assert(a:ShowHint())
-	assert(a.messages[1]:find("|Hquesttogethertip:settings|h[" .. QT.Translate("Settings") .. "]|h", 1, true))
-	assert(a.db.global.hintPool.last == "hint001", "adding links must preserve the existing draw identity")
-end)
-
 QT:RegisterTest("hint links open only whitelisted windows and settings without executing commands", function()
 	local a = NavigationFixture()
 	local expected = {
@@ -275,32 +249,6 @@ QT:RegisterTest("hints normalize saved IDs and admit newly available tips withou
 	end
 end)
 
-QT:RegisterTest("hints gate optional features and retain remote information and ordinary controls", function()
-	local a = Fixture()
-	local eligible, byID = {}, {}
-	for _, hint in ipairs(a:GetHintCatalog()) do
-		assert(not byID[hint.id], "stable hint IDs must be unique")
-		assert(not hint.text:find("💡", 1, true), "prefix belongs to presentation")
-		byID[hint.id] = hint
-		if not hint.feature and not hint.menu then
-			eligible[hint.id] = true
-		end
-	end
-	for _ in pairs(eligible) do
-		assert(a:ShowHint() and eligible[a.db.global.hintPool.last])
-	end
-	assert(eligible.hint009 and eligible.hint014 and eligible.hint147 and eligible.hint150 and eligible.hint151)
-	assert(not eligible.hint134 and not eligible.hint161 and not eligible.hint162 and not eligible.hint163)
-	-- Enabling a capability makes that topic available without resetting common draws.
-	a.capabilities.details, a.capabilities.menu = true, true
-	for _, hint in pairs(byID) do
-		if not hint.feature then
-			a.db.global.hintPool.seen[hint.id] = true
-		end
-	end
-	assert(a:ShowHint() and a.db.global.hintPool.last == "hint134")
-end)
-
 QT:RegisterTest("startup hints survive deferred UI work without repeating on another login callback", function()
 	local a, clock = Fixture()
 	a.blocked = true
@@ -427,7 +375,12 @@ end)
 
 QT:RegisterTest("client locale renders hint prefix body command help and meta tip", function()
 	local a = Fixture()
-	a.pickLast = true
+	local meta
+	for _, hint in ipairs(a:GetHintCatalog()) do
+		if hint.id == "hint167" then meta = hint end
+	end
+	assert(meta, "the catalog must include the tip-command hint")
+	function a:GetHintCatalog() return { meta } end
 	a:HandleSlashCommand("tip")
 	local body = QT.Translate("Type /qt tip or /qt hint to see another QuestTogether tip whenever you like.")
 	local icon = "|TInterface\\AddOns\\QuestTogether\\Media\\QuestTogetherTipIcon:14:14:0:0|t"

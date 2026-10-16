@@ -301,6 +301,7 @@ QT:RegisterTest("ignored named bubble requests reject before reading a foreign h
 end)
 
 QT:RegisterTest("ignore cleanup discards only ignored remote playback without looking up hosts", function()
+	local unexpectedCalls = 0
 	WithBubbles(function(state)
 		local ignored = state:Add("Ignored-Realm")
 		local allowed = state:Add("Allowed-Realm")
@@ -314,6 +315,7 @@ QT:RegisterTest("ignore cleanup discards only ignored remote playback without lo
 		state.ignored["Ignored-Realm"] = true
 		Patch({
 			GetAnnouncementBubbleHostFrameForUnit = function()
+				unexpectedCalls = unexpectedCalls + 1
 				error("cleanup must use owned identity only")
 			end,
 		}, function()
@@ -327,6 +329,7 @@ QT:RegisterTest("ignore cleanup discards only ignored remote playback without lo
 		Equal(QT.nameplateBubbleStateByFrame[personal].text, "Personal")
 		Equal(QT:ClearIgnoredAnnouncementBubbles(), 0, "duplicate updates are idempotent")
 	end)
+	Equal(unexpectedCalls, 0)
 end)
 
 QT:RegisterTest("ignore-list runtime event clears existing ignored bubbles", function()

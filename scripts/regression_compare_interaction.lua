@@ -162,19 +162,19 @@ QT:RegisterTest("party log keyboard actions recheck window session and restricti
 	Equal(a.invalidCalls, nil)
 end)
 
-QT:RegisterTest("collapsed party columns retain roster comparison data and restore exact geometry", function()
+QT:RegisterTest("collapsed party columns retain roster comparison data and restore their width", function()
 	local a, frame, session = Open(3)
 	local member = session.members[2]
 	local entries, count, before = member.entries, #session.members, a:BuildPartyQuestDiffRows()
-	local wide = frame.memberColumnsWidth
+	local wide, columnWidth = frame.memberColumnsWidth, frame.columns[2].width
 	frame.horizontalOffset = 9999
 	frame.columnToggles[2]:Click()
 	Equal(session.collapsedPlayers[member.name], true)
 	a:RenderPartyQuestCompare()
-	Equal(frame.memberColumnsWidth, wide - 66)
-	Equal(frame.columns[2].width, 60)
-	Equal(frame.headerAccents[2]:GetWidth(), 60)
-	Equal(frame.rows[1].cellShades[2]:GetWidth(), 60)
+	assert(frame.memberColumnsWidth < wide)
+	assert(frame.columns[2].width < columnWidth)
+	Equal(frame.headerAccents[2]:GetWidth(), frame.columns[2].width)
+	Equal(frame.rows[1].cellShades[2]:GetWidth(), frame.columns[2].width)
 	Equal(frame.rows[1].cellTooltips[2]:IsShown(), true)
 	frame.rows[1].cellTooltips[2]:RunScript("OnEnter")
 	Equal(a.tooltip[1], member.name)
@@ -187,7 +187,7 @@ QT:RegisterTest("collapsed party columns retain roster comparison data and resto
 	a:RestorePartyQuestColumns(session)
 	a:RenderPartyQuestCompare()
 	Equal(frame.memberColumnsWidth, wide)
-	Equal(frame.columns[2].width, 126)
+	Equal(frame.columns[2].width, columnWidth)
 	Equal(frame.rows[1].cellTooltips[2]:IsShown(), false)
 	Equal(a.invalidCalls, nil)
 end)

@@ -89,11 +89,13 @@ QT:RegisterTest("runtime owner cancellation retires timers while cleanup has its
 	a:FlushDeferredWork("restriction ended while disabled")
 	assert(calls == 1)
 	a.isEnabled = true
+	local retiredCalls = 0
 	a:ScheduleRuntimeWork("example", "reset", function()
-		error("retired runtime executed")
+		retiredCalls = retiredCalls + 1
 	end, { mode = "nextFrame" })
 	a:ResetRuntimeWorkStateStore()
 	clock:Advance(0)
+	assert(retiredCalls == 0, "reset work must not execute, even behind the scheduler's error boundary")
 end)
 
 QT:RegisterTest("owned UI teardown survives disable and never hides a reused region", function()
@@ -157,60 +159,6 @@ QT:RegisterTest("managed windows distinguish inherited hiding explicit dismissal
 	frame.request = nil
 	a:HideOwnedUI(frame)
 	assert(declined == 1, "retiring a request must not acknowledge a different request")
-end)
-
-QT:RegisterTest("map overlay pools share surface reparenting and cancel stale marker cleanup", function()
-	local a, _, root = Fixture()
-	local state = { surfaces = {} }
-	local geometry = { parent = root }
-	local surface = a:AcquireMapOverlaySurface(state, "map", geometry, 50)
-	local creations = 0
-	local function Create(host)
-		creations = creations + 1
-		return { frame = a:CreateLocationPinFrame("Button", nil, host.frame) }
-	end
-	local pin = a:AcquireMapOverlayPin(surface, 1, Create)
-	assert(a:AcquireMapOverlayPin(surface, 1, Create) == pin and creations == 1)
-	root.protected = true
-	a:ReleaseMapOverlayPins(surface, 0)
-	assert(a:GetOwnedUICleanupState().pending[pin.frame])
-	root.protected = false
-	a:CallOwnedUI(pin.frame, "Show")
-	a:FlushOwnedUICleanup()
-	assert(pin.frame:IsShown())
-	local newRoot = QT:CreateTestUIRegion(a)
-	local same = a:AcquireMapOverlaySurface(state, "map", { parent = newRoot }, 55)
-	assert(
-		same == surface
-			and surface.frame:GetParent() == newRoot
-			and surface.frame:GetFrameLevel() == newRoot:GetFrameLevel() + 55
-	)
-end)
-
-QT:RegisterTest("player tooltip presenter renders a prepared model without querying domain data", function()
-	local a, _, root = Fixture()
-	for _, method in ipairs({
-		"GetPlayerDetailsTooltipRow",
-		"GetPlayerPartyVisualInfo",
-		"GetPlayerPhaseStatus",
-		"RequestPlayerDetails",
-		"RequestPartyVisualRoster",
-		"GetPlayerTooltipIdentity",
-	}) do
-		a[method] = function()
-			error("presenter queried domain data")
-		end
-	end
-	local state = {}
-	local anchor = { frame = QT:CreateTestUIRegion(a, root), name = "Friend-Realm" }
-	a:RenderPlayerTooltip(
-		state,
-		anchor,
-		{ title = "A player", text = "A prepared body", introText = "Level 80", color = { 1, 0.5, 0 }, members = {} }
-	)
-	assert(state.tooltip:IsShown() and state.tooltipTitle.text == "A player" and state.hovered == anchor)
-	a:HidePlayerTooltipPresentation(state)
-	assert(not state.tooltip:IsShown() and not state.hovered)
 end)
 
 QT:RegisterTest(
@@ -421,20 +369,23 @@ QT:RegisterTest("nameplate startup work obeys restrictions and is retired with i
 	assert(full == 1)
 	a:SchedulePlaterStartupNameplateRefreshes()
 	a:ResetNameplateStateStore()
+	-- A new enable lifetime may queue the same startup keys before old timers
+	-- fire. Only the replacement lifetime should refresh at those deadlines.
+	a:SchedulePlaterStartupNameplateRefreshes()
 	clock:Advance(6)
-	assert(quest == 1 and full == 1 and not next(a:GetDeferredWorkStateStore().entries))
+	assert(quest == 2 and full == 2 and not next(a:GetDeferredWorkStateStore().entries))
 end)
 
 QT:RegisterTest("UI work survives disabled runtime resets and stops polling after completion or cancellation", function()
 	local a, clock = Fixture()
-	local featureCalls, uiCalls = 0, 0
+	local featureCalls, uiCalls, cancelledCalls = 0, 0, 0
 	a.blocked = true
 	a:ScheduleRuntimeWork("foreign_frame_mutation", "feature", function() featureCalls = featureCalls + 1 end)
 	a:ScheduleRuntimeWork("foreign_frame_mutation", "window", function() uiCalls = uiCalls + 1 end,
 		{ lifetime = "ui", delay = 0 })
 	local owner = a:NewRuntimeWorkOwner()
 	a:ScheduleRuntimeWork("foreign_frame_mutation", "retired-window", function()
-		error("cancelled UI owner executed")
+		cancelledCalls = cancelledCalls + 1
 	end, { lifetime = "ui", mode = "nextFrame", owner = owner })
 	a:CancelRuntimeWorkOwner(owner)
 	local driver = a.runtimeUIWorkFrame
@@ -454,11 +405,12 @@ QT:RegisterTest("UI work survives disabled runtime resets and stops polling afte
 	local lastOwner = a:NewRuntimeWorkOwner()
 	a.blocked = true
 	a:ScheduleRuntimeWork("foreign_frame_mutation", "last-window", function()
-		error("last cancelled UI owner executed")
+		cancelledCalls = cancelledCalls + 1
 	end, { lifetime = "ui", owner = lastOwner })
 	assert(driver.scripts.OnUpdate)
 	a:CancelRuntimeWorkOwner(lastOwner)
 	assert(not driver.scripts.OnUpdate and not next(a:GetRuntimeUIWorkState().entries))
+	assert(cancelledCalls == 0, "cancelled UI callbacks must never execute")
 end)
 
 QT:RegisterTest("visible support windows update themes and fit the display while the addon is disabled", function()

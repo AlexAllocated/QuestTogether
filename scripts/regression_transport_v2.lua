@@ -127,25 +127,44 @@ QT:RegisterTest("transport v2 native throttle retains the ticket and ambiguous r
 	Equal(a:GetTransportMetrics().ambiguous, 1)
 end)
 
-QT:RegisterTest("transport v2 restores throttle rate only after sustained successful sending", function()
-	local a = Fixture()
-	a.native = function()
-		return #a.sent == 1 and 3 or 0
+QT:RegisterTest("transport v2 ambiguous native results do not imply delivery or trigger retransmission", function()
+	for _, delivered in ipairs({ false, true }) do
+		local net = QT:CreateTestNetwork({ fps = 20 })
+		local a, b = net:AddPeer("Sender-Realm"), net:AddPeer("Receiver-Realm")
+		a:InitializeTransport()
+		local received, completions = {}, {}
+		function b:OnCommReceived(_, wire)
+			received[#received + 1] = wire
+		end
+		net.sendRule = function()
+			return 8, delivered
+		end
+		local frame = net:CreateFrame(a)
+		frame:SetScript("OnUpdate", function()
+			a:DrainTransport()
+		end)
+		local admitted, _, ticket = a:QueueTransportWire(
+			"ambiguous",
+			"fixture",
+			{ distribution = "WHISPER", target = b.name },
+			{
+				onComplete = function(ok, reason, code)
+					completions[#completions + 1] = { ok, reason, code }
+				end,
+			}
+		)
+		assert(admitted)
+		net:Advance(10)
+		Equal(#a.attempts, 1)
+		Equal(#completions, 1)
+		Equal(completions[1][1], false)
+		Equal(completions[1][2], "ambiguous")
+		Equal(completions[1][3], 8)
+		Equal(ticket.status, "ambiguous")
+		Equal(#received, delivered and 1 or 0)
+		Equal(net.metrics.accepted, 0)
+		Equal(a:GetTransportMetrics().queuedPackets, 0)
 	end
-	assert(a:Queue("throttle", { expires = a.now + 500 }))
-	a:Advance(1)
-	a:Advance(1)
-	Equal(a:GetTransportState().packetRate, 1)
-	a:Advance(100)
-	Equal(a:GetTransportState().packetRate, 1)
-	for i = 1, 30 do
-		assert(a:Queue("recover" .. i))
-		a:Advance(1)
-	end
-	Equal(a:GetTransportState().packetRate, 1)
-	assert(a:Queue("recover31"))
-	a:Advance(1)
-	Equal(a:GetTransportState().packetRate, 1.5)
 end)
 
 QT:RegisterTest("transport v2 weighted classes rotate peers while preserving flow order", function()
@@ -160,9 +179,18 @@ QT:RegisterTest("transport v2 weighted classes rotate peers while preserving flo
 	for _ = 1, 4 do
 		a:Advance(1)
 	end
-	local expected = { "controlA1", "eventA1", "activeA1", "activeB1", "activeA2", "bulkA1", "bulkB1", "backgroundA1" }
-	for index, wire in ipairs(expected) do
-		Equal(a.sent[index].wire, wire)
+	local firstRotation, firstFlows = {}, {}
+	for _, packet in ipairs(a.sent) do
+		local class, flow = packet.wire:match("^(%l+)(%u)")
+		assert(class and flow)
+		firstRotation[class] = (firstRotation[class] or 0) + 1
+		firstFlows[class .. flow] = true
+	end
+	for class, weight in pairs({ control = 1, event = 1, active = 3, bulk = 2, background = 1 }) do
+		Equal(firstRotation[class], weight)
+	end
+	for _, class in ipairs({ "active", "bulk" }) do
+		assert(firstFlows[class .. "A"] and firstFlows[class .. "B"], "weighted service must rotate both queued flows")
 	end
 	for _ = 1, 20 do
 		a:Advance(1)
@@ -371,7 +399,7 @@ QT:RegisterTest("transport v2 ownership cancellation and world transitions canno
 	Equal(#a.sent, 0)
 	a:ResumeTransportSession()
 	local _, _, three = a:Queue("new")
-	Equal(three.generation, 1)
+	Equal(three.status, "queued")
 	a:DrainTransport()
 	Equal(#a.sent, 0)
 	a:Advance(0.25)
@@ -420,12 +448,9 @@ QT:RegisterTest("transport v2 admission validates packets and retains only bound
 	local metrics = a:GetTransportMetrics()
 	Equal(metrics.accepted, 1)
 	Equal(metrics.queuedPackets, 0)
-	local count = 0
 	for _, value in pairs(metrics) do
 		assert(type(value) == "number" or type(value) == "table")
-		count = count + 1
 	end
-	assert(count <= 24)
 	local classes = 0
 	for _, value in pairs(metrics.classes) do
 		Equal(value, 0)

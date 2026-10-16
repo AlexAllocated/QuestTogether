@@ -39,13 +39,11 @@ local function Fixture(name, realCrypto)
 		return string.char(tonumber(x, 16))
 	end)
 	function a:SignDeveloperRequest(message)
-		self.signedText = message
 		return realCrypto and QT.Ed25519.Sign(seed, message) or string.rep("x", 64)
 	end
 	a.Ed25519 = realCrypto and QT.Ed25519
 		or {
-			NewVerification = function(_, message)
-				a.verificationText = message
+			NewVerification = function()
 				return coroutine.create(function()
 					coroutine.yield()
 					return true
@@ -71,19 +69,6 @@ local function Subscription(dev, target)
 		)
 	)
 end
-
-QT:RegisterTest("developer feed signatures retain ping domain and share unique request identities", function()
-	local dev = Fixture("Dev-Realm")
-	local ping = assert(dev:PrepareDeveloperPingRequest({}, "Friend-Realm", false))
-	assert(dev.signedText:match("^QTDEV2\n"))
-	local subscription = Subscription(dev)
-	assert(dev.signedText:match("^QTDEVFEED2\n"))
-	assert(subscription.requestId ~= ping.requestId and #subscription.requestId <= 64)
-	assert(subscription.requesterName == "" and subscription.targetName == nil)
-	assert(subscription.signature == string.rep("78", 64))
-	dev.isLocalDeveloper = false
-	assert(dev:PrepareDeveloperAnnouncementSubscription({ active = true, subscriptionSession = "session-1" }) == nil)
-end)
 
 QT:RegisterTest("developer feed auth validates bounded signed fields before admission", function()
 	local dev, peer = Fixture("Dev-Realm"), Fixture()

@@ -14,7 +14,7 @@ from localization import LOCALES, dumps
 import test_changelogs
 
 
-class HistoryTests(test_changelogs.ChangelogTests):
+class HistoryTests(test_changelogs.ChangelogFixture, unittest.TestCase):
     def test_silent_archives_are_excluded_from_browsable_history(self):
         entry = {loc: {'version': '0.9.0', 'welcome': '', 'sections': []} for loc in ['enUS', *LOCALES]}
         self.dates['0.9.0'] = '2026-10-04'
@@ -48,8 +48,8 @@ class HistoryTests(test_changelogs.ChangelogTests):
         self.write_dates()
         return entry
 
-    # Parent checks intentionally allow pre-localization archives. History-enabled
-    # builds now require backfills; retain the old contract in test_changelogs.
+    # Changelog-only builds allow pre-localization archives. History-enabled
+    # builds require backfills; the independent changelog suite keeps the old contract.
     def test_history_preserves_languages_available_at_each_release(self):
         entry = self.entry('0.9.0')
         del entry['frFR']

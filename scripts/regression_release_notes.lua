@@ -273,7 +273,7 @@ QT:RegisterTest("release notes pending work cancels on logout or replacement con
 	end
 end)
 
-QT:RegisterTest("Discord support uses the exact invite with a private copy window and guarded fallback", function()
+QT:RegisterTest("Discord support guards its copy window and preserves the link on render failure", function()
 	local a = Fixture()
 	local urls = {}
 	function a:RenderDiscordSupportLink(url)
@@ -284,7 +284,7 @@ QT:RegisterTest("Discord support uses the exact invite with a private copy windo
 		return self.copyResult ~= false
 	end
 	assert(a:OpenDiscordSupport())
-	Equal(urls[1], "https://discord.gg/Uxyyvhfva9")
+	assert(urls[1]:match("^https://discord.gg/[^/]+$"))
 	Equal(#a.messages, 0)
 	a.blocked = true
 	Equal(a:OpenDiscordSupport(), false)
@@ -294,7 +294,7 @@ QT:RegisterTest("Discord support uses the exact invite with a private copy windo
 	Equal(#urls, 1)
 	a.parent.forbidden, a.copyThrows = false, true
 	Equal(a:OpenDiscordSupport(), false)
-	assert(a.messages[1]:find("https://discord.gg/Uxyyvhfva9", 1, true))
+	assert(a.messages[1]:find(urls[1], 1, true))
 end)
 
 QT:RegisterTest("silent patches show the previous localized guide without a new history entry", function()

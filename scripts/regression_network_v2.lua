@@ -73,6 +73,14 @@ QT:RegisterTest("network fixture reorders duplicates and respects channel readin
 	net:Join(a, "TestChannel")
 	net:Join(b, "TestChannel")
 	Equal(a.API.GetChannelName("TestChannel"), nil)
+	local ruleCalls = 0
+	net.sendRule = function()
+		ruleCalls = ruleCalls + 1
+		return 0
+	end
+	Equal(a.API.SendAddonMessage(a.commPrefix, "unjoined", "CHANNEL", 7), false)
+	Equal(ruleCalls, 0, "a successful fault policy cannot manufacture a ready channel")
+	Equal(#net.pending, 0)
 	net:Advance(0.1)
 	assert(a.joined.TestChannel and b.joined.TestChannel and a.joined.TestChannel ~= b.joined.TestChannel)
 	net.deliveryRule = function(packet)
@@ -90,6 +98,11 @@ QT:RegisterTest("network fixture reorders duplicates and respects channel readin
 	net:Leave(b, "TestChannel")
 	net:Advance(0.2)
 	Equal(#received, 3)
+	a.connected = false
+	local before = ruleCalls
+	Equal(a.API.SendAddonMessage(a.commPrefix, "disconnected", "WHISPER", b.name), false)
+	Equal(ruleCalls, before, "a successful fault policy cannot send from a disconnected peer")
+	Equal(#net.pending, 0)
 end)
 
 QT:RegisterTest("network fixture clocks randomness and state are private to each network", function()

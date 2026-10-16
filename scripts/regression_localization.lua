@@ -8,7 +8,7 @@ QT:RegisterTest("localization falls back and preserves separate Spanish locales 
 	assert(translate("Settings", "esMX") == QT.localizations.esMX["Settings"])
 	assert(translate("Settings", "enGB") == "Settings")
 	for _, locale in ipairs({ "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW" }) do
-		assert(translate("Settings", locale) ~= "Settings")
+		assert(translate("Settings", locale) == QT.localizations[locale]["Settings"])
 		assert(type(translate("Settings", locale)) == "string")
 	end
 end)
@@ -29,23 +29,6 @@ QT:RegisterTest("localization keeps quest status and sharing model values langua
 	end
 	QT.localizationTestLocale = previous
 end)
-QT:RegisterTest("localized patch notes preserve released version and section structure", function()
-	for _, locale in ipairs({ "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW" }) do
-		local notes = QT.releaseNotesByLocale[locale]
-		assert(notes.version == QT.releaseNotes.version)
-		if #QT.releaseNotes.sections == 0 then
-			assert(notes.welcome == "" and QT.releaseNotes.welcome == "")
-		else
-			assert(notes.welcome ~= QT.releaseNotes.welcome)
-		end
-		assert(#notes.sections == #QT.releaseNotes.sections)
-		for i, section in ipairs(notes.sections) do
-			assert(#section.items == #QT.releaseNotes.sections[i].items)
-			assert(section.illustration == QT.releaseNotes.sections[i].illustration)
-		end
-	end
-end)
-
 QT:RegisterTest("Latin American Spanish keeps its native locale in events and patch notes", function()
 	local a = setmetatable({
 		localizationTestLocale = "esMX",

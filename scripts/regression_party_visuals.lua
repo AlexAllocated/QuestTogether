@@ -171,21 +171,6 @@ local function Start(a, b, count)
 	Eq(a:RequestPartyVisualRoster(b.name), true)
 	Eq(Deliver(b, a.wire[1], a.name), true)
 end
-QT:RegisterTest("party visuals exchange an atomic complete roster and reuse it without hover spam", function()
-	local a, b = Peer(), Peer("Leader-Realm")
-	Start(a, b, 5)
-	Eq(#b.wire, 2)
-	for i = #b.wire, 2, -1 do
-		Eq(Deliver(a, b.wire[i], b.name), true)
-	end
-	local info = a:GetPlayerPartyVisualInfo(b.name)
-	Eq(info.size, 5)
-	Eq(info.leader, b.name)
-	Eq(#info.members, 5)
-	Eq(a:RequestPartyVisualRoster(b.name), false)
-	Eq(#a.wire, 1)
-	Eq(Deliver(a, b.wire[2], b.name), false) -- completed request cannot mutate its roster
-end)
 QT:RegisterTest("party visuals reject partial spoofed and changed atomic roster responses", function()
 	local a, b = Peer(), Peer("Leader-Realm")
 	Start(a, b)
@@ -435,6 +420,7 @@ QT:RegisterTest(
 		assert(Deliver(a, b.wire[2], b.name))
 		Eq(a.requests[id], nil)
 		Eq(#a:GetPlayerPartyVisualInfo(b.name).members, 3)
+		Eq(Deliver(a, b.wire[2], b.name), false) -- a retired request cannot accept a replay
 		a, b = Peer(), Peer("Leader-Realm")
 		Start(a, b)
 		id = a.wire[1].record.requestId

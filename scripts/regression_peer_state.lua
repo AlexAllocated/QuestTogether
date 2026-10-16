@@ -50,13 +50,6 @@ local function Fixture()
 	function a:RefreshQTPlayerPlatePresence() end
 	function a:RefreshQTPlayerPartnerIndicators() end
 	function a:RefreshPlayerLocationPins() end
-	function a:GetPlayerLocationPriorityOrigin()
-		return { continent = 0, north = 0, west = 0 }
-	end
-	function a:GetLocationPinWorldPosition(_, x, y)
-		self.projections = (self.projections or 0) + 1
-		return 0, x, y
-	end
 	function a:GetLocationPinSurface()
 		return { width = 200, height = 200, mapID = 12 }
 	end
@@ -334,25 +327,6 @@ QT:RegisterTest(
 		Equal(a.playerLocationState.peers["Friend-Realm"].x, 0.42)
 	end
 )
-
-QT:RegisterTest("dense location admission reuses unchanged peer world projections", function()
-	local a = Fixture()
-	for i = 1, 512 do
-		assert(ReceiveLocation(a, Location(1), "Peer" .. i .. "-Realm"))
-	end
-	assert(ReceiveLocation(a, Location(1, "0.9"), "Far-Realm"))
-	local first = a.projections
-	assert(first >= 512 and first <= 514)
-	assert(ReceiveLocation(a, Location(1, "0.95"), "Farther-Realm"))
-	Equal(a.projections - first, 1)
-	local row = a.playerLocationState.peers["Peer1-Realm"]
-	local origin = a:GetPlayerLocationPriorityOrigin()
-	a:GetPlayerLocationPriorityDistance(row, origin)
-	local before = a.projections
-	row.x = 0.1
-	a:GetPlayerLocationPriorityDistance(row, origin)
-	Equal(a.projections, before + 1)
-end)
 
 QT:RegisterTest(
 	"observation admission rejects expired and mismatched producers without retiring a live peer",

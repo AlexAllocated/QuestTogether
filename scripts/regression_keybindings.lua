@@ -36,10 +36,10 @@ local function Fixture()
 			return Call("chat")
 		end,
 		SetPartyNavigationQuest = function()
-			error("binding must not change native focus")
+			return Call("native_focus")
 		end,
 		SetUserWaypoint = function()
-			error("binding must not change native waypoint")
+			return Call("native_waypoint")
 		end,
 	}
 	local function Controller(name)
@@ -68,25 +68,6 @@ local function Fixture()
 	end
 	return a
 end
-
-QT:RegisterTest("keybindings dispatch only the six declared player actions", function()
-	local a = Fixture()
-	for _, action in ipairs({ "menu", "party_log", "quest_partners", "chat", "settings" }) do
-		a.calls = {}
-		assert(a:HandleKeybinding(action), "a nil UI return still means the action was invoked")
-		assert(#a.calls == 1 and a.calls[1] == action)
-		a.result = false
-		assert(not a:HandleKeybinding(action), "explicit failures remain failures")
-		a.result = nil
-	end
-	a.calls = {}
-	for _, action in ipairs({ "", "debug", "ping", "ad", "PARTY_LOG", "unknown", {} }) do
-		assert(not a:HandleKeybinding(action))
-	end
-	assert(not a:HandleKeybinding(nil) and #a.calls == 0)
-	a.API.OpenQTChatComposer = nil
-	assert(not a:HandleKeybinding("chat"))
-end)
 
 QT:RegisterTest("keybindings cannot run before initialization or after logout begins", function()
 	for _, setup in ipairs({

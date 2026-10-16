@@ -240,7 +240,13 @@ QT:RegisterTest("recent companions window has empty state scrolling shared actio
 	local name = frame.rows[1].identity
 	frame.rows[1]:Click()
 	assert(a.menuName == name and a.menuOwner == frame.rows[1])
-	local remove = a.menu.entries[#a.menu.entries].run
+	local function RemoveAction()
+		for _, entry in ipairs(a.menu.entries) do
+			if entry.text == QT.Translate("Remove from recent companions") then return entry.run end
+		end
+		error("missing remove-companion action")
+	end
+	local remove = RemoveAction()
 	a.parent:Hide()
 	remove()
 	assert(#a:GetRecentCompanions() == 12)
@@ -252,7 +258,7 @@ QT:RegisterTest("recent companions window has empty state scrolling shared actio
 	remove()
 	assert(#a:GetRecentCompanions() == 12, "a dismissed menu altered a later window session")
 	frame.rows[1]:Click()
-	a.menu.entries[#a.menu.entries].run()
+	RemoveAction()()
 	assert(#a:GetRecentCompanions() == 11)
 	a.blocked = true
 	assert(not a:OpenRecentCompanions())

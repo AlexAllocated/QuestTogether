@@ -314,9 +314,6 @@ end
 local function Event(a, text)
 	return { eventType = "QUEST_PROGRESS", senderName = a.name, text = text or "progress", questID = 123 }
 end
-local function ReceiveState(a, b, records)
-	return DeliverState(a, b, StateFrames(a, records))
-end
 
 -- Real typed ingress and runtime progression with private frame-rounded native
 -- delivery. Tests can lose deliveries without changing native acceptance.
@@ -898,47 +895,6 @@ QT:RegisterTest("crowded zones back off without unrelated worldwide peers slowin
 	assert(route.nextLocation - a.now >= 90)
 end)
 
-QT:RegisterTest("regional location cadence matches sparse and crowded population anchors", function()
-	for _, edge in ipairs({ 0, 5 }) do
-		for _, row in ipairs({
-			{ 0, 1 },
-			{ 9, 1 },
-			{ 10, 5 },
-			{ 19, 5 },
-			{ 20, 5 },
-			{ 99, 14 },
-			{ 100, 15 },
-			{ 499, 44 },
-			{ 500, 45 },
-			{ 1000, 70 },
-			{ 1400, 90 },
-			{ 2000, 90 },
-		}) do
-			local a = Fixture()
-			a.API.Random = function(low, high)
-				return edge == 0 and low or high
-			end
-			function a:Emit(_, _, _, options)
-				options.onComplete(true, "accepted")
-				return true
-			end
-			a:UpdateGeographicSubscriptions()
-			Stage(a, true)
-			local s = a.geographicCommsState
-			s.nextGlobal = 999
-			for i = 1, row[1] do
-				s.peers[tostring(i)] = { zone = 12, at = a.now, expires = a.now + 600 }
-			end
-			s.peers.stale = { zone = 12, at = a.now - 600, expires = a.now }
-			s.peers.future = { zone = 12, at = a.now + 1, expires = a.now + 600 }
-			s.peers.remote = { zone = 45, at = a.now, expires = a.now + 600 }
-			local route = MakeStateDue(a, true)
-			a:UpdateGeographicComms()
-			Equal(route.nextLocation - a.now, row[2] + (row[1] < 10 and 0 or edge))
-		end
-	end
-end)
-
 QT:RegisterTest(
 	"one-second zone updates resample movement without repeating full metadata or growing queues",
 	function()
@@ -1158,38 +1114,17 @@ QT:RegisterTest("targeted comparisons whisper complete snapshots privately in Re
 	end
 end)
 
-QT:RegisterTest("old protocol comparison and spoofed native senders cannot reach typed consumers", function()
-	local peers, advance, network = CommunicationNetwork(2, 1)
-	local a, b = peers[1], peers[2]
-	network:Inject(b, "QuestTogether", "QCMP|old,request", "WHISPER", a.name)
-	network:Inject(b, b.commPrefix, "QCMP|old,request", "WHISPER", a.name)
-	local frames = assert(
-		a:BuildCommFrames(
-			"ANN",
-			{ eventType = "QUEST_PROGRESS", senderName = "Imposter-Realm", text = "bad" },
-			{ session = "probe", messageId = "1", stamp = a:GetAnnouncementServerTime() }
-		)
-	)
-	for _, wire in ipairs(frames) do
-		network:Inject(b, b.commPrefix, wire, "WHISPER", a.name)
-	end
-	advance(2)
-	Equal(#b.sent, 0)
-	Equal(#b.output, 0)
-	Equal(next(b.pendingQuestCompareRequests or {}), nil)
-end)
-
 QT:RegisterTest("queued private comparison is cancelled when its target becomes ignored", function()
 	local peers, advance = CommunicationNetwork(2, 2)
 	local a, b = peers[1], peers[2]
-	local timedOut = 0
+	local timedOut, entries, completed = 0, 0, 0
 	a.transportState.blockedUntil = a.now + 2
 	assert(a:RequestQuestCompare(b.name, {
 		onEntry = function()
-			error("ignored entry")
+			entries = entries + 1
 		end,
 		onDone = function()
-			error("ignored completion")
+			completed = completed + 1
 		end,
 		onTimeout = function()
 			timedOut = timedOut + 1
@@ -1200,44 +1135,8 @@ QT:RegisterTest("queued private comparison is cancelled when its target becomes 
 	Equal(#a.sent, 0)
 	Equal(#b.sent, 0)
 	Equal(timedOut, 1)
-end)
-
-QT:RegisterTest("geographic presence stages current version stats and party visuals in one heartbeat", function()
-	local a = Fixture("Alice-Realm")
-	local size, count, version, visuals = 3, 7, "6.1.2", 0
-	function a:GetAddonVersion()
-		return version
-	end
-	function a:GetMonitoredQuestCount()
-		return count
-	end
-	function a:GetLocalPartySize()
-		return size
-	end
-	function a:BroadcastPartyVisualMetadata()
-		visuals = visuals + 1
-	end
-	a:UpdateQTPlayerPresence()
-	local record = a.geographicCommsState.latest.QTVR.data
-	Equal(record.version, "6.1.2")
-	Equal(record.count, 7)
-	Equal(record.partySize, 3)
-	Equal(visuals, 1)
-	Equal(#a.sent, 0)
-	for _ = 1, 10 do
-		a:UpdateQTPlayerPresence()
-	end
-	Equal(visuals, 1)
-	a.now, size, count = 120, 0, 0
-	a:UpdateQTPlayerPresence()
-	record = a.geographicCommsState.latest.QTVR.data
-	Equal(record.count, 0)
-	Equal(record.partySize, 0)
-	Equal(visuals, 2)
-	a.now, version = 140, "unavailable"
-	a:UpdateQTPlayerPresence()
-	Equal(visuals, 3)
-	Equal(a.geographicCommsState.latest.QTPR.data.active, true)
+	Equal(entries, 0)
+	Equal(completed, 0)
 end)
 
 QT:RegisterTest("snapshot consolidation removes only redundant positive presence", function()
@@ -1253,34 +1152,6 @@ QT:RegisterTest("snapshot consolidation removes only redundant positive presence
 	assert(a:Publish("QTPR", { active = true }))
 	Equal(Topic(a:BuildCommunicationStateRecords(), "QTVR"), nil)
 	Equal(Topic(a:BuildCommunicationStateRecords(), "QTPR").data.active, true)
-end)
-
-QT:RegisterTest("communication ticks sample public location only when publication is due", function()
-	local a = Fixture("Alice-Realm")
-	a:UpdateGeographicSubscriptions()
-	function a:UpdateQTPlayerPresence() end
-	local original, reads, shared = a.ReadLocalPlayerLocation, 0, nil
-	function a:ReadLocalPlayerLocation()
-		reads = reads + 1
-		return original(self)
-	end
-	function a:UpdateNearbyStreams(sample)
-		shared = sample
-	end
-	local s = a.geographicCommsState
-	local route = MakeStateDue(a, true)
-	route.nextLocation, route.nextMetadata, s.nextGlobal = 120, 120, 200
-	a:UpdatePlayerCommunications()
-	Equal(reads, 0)
-	Equal(shared, nil)
-	a.now = 120
-	a:UpdatePlayerCommunications()
-	Equal(reads, 1)
-	assert(shared and shared.x == a.position.x)
-	a.now = 120.2
-	a:UpdatePlayerCommunications()
-	Equal(reads, 1)
-	Equal(shared, nil)
 end)
 
 QT:RegisterTest("cold zone discovery advances one shared snapshot without a global solicitation", function()

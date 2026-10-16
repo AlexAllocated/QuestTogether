@@ -433,35 +433,10 @@ QT:RegisterTest("version discovery honors transport sender channel ignore and en
 		Equal(a:GetAvailableAddonUpdate(), nil)
 		Equal(#a.messages, 0)
 	end
-	for _, payload in ipairs({
-		"",
-		"2,6.0.0",
-		"1,6.0.0,spoof",
-		"1,6.0.0|junk",
-		"1,6.0.0\n",
-		"1," .. string.rep("1", 100),
-	}) do
-		local a = Peer()
-		a:OnCommReceived(a.commPrefix, "QTVR|" .. payload, "PARTY", "Friend-Realm")
-		Equal(a:GetAvailableAddonUpdate(), nil)
-		Equal(a:IsKnownQTPlayer("Friend-Realm"), false)
-	end
-end)
-
-QT:RegisterTest("version broadcasts work through real routing on Retail and Forever names", function()
-	for _, regional in ipairs({ false, true }) do
-		local sender = Peer("5.13.0", nil, regional and "Torres Sky" or "Torres-Realm")
-		local receiver = Peer("5.12.0", nil, regional and "Mira Dawn" or "Mira-Realm")
-		sender.regional, receiver.regional, sender.other = regional, regional, receiver
-		sender.db.profile.sharePlayerLocation = false
-		assert(sender:BroadcastAddonVersion())
-		Equal(sender.sent[1].operation, "QTVR")
-		Equal(sender.sent[1].record.version, "5.13.0")
-		Equal(receiver:GetAvailableAddonUpdate(), "5.13.0")
-		Equal(#receiver.messages, 1)
-		assert(receiver:IsKnownQTPlayer(sender.name))
-		Equal(#receiver.sent, 0)
-	end
+	local a = Peer()
+	a:OnCommReceived(a.commPrefix, "QTVR|1,6.0.0", "PARTY", "Friend-Realm")
+	Equal(a:GetAvailableAddonUpdate(), nil)
+	Equal(a:IsKnownQTPlayer("Friend-Realm"), false)
 end)
 
 QT:RegisterTest("version announcements are paced across success failure and comms resets", function()
@@ -547,8 +522,9 @@ QT:RegisterTest("a reloaded observer learns versions from heartbeats without pin
 		-- typed version observation without requests from either observer.
 		sender.now = 120
 		sender:UpdateQTPlayerPresence()
-		receiver.qtPlayerPresenceState = nil
-		receiver.recentCommMessageSignatures = {}
+		receiver = Peer("5.13.0", receiver.db.global, receiver.name)
+		receiver.regional, receiver.now = regional, sender.now
+		sender.other = receiver
 		Equal(receiver:GetPlayerAddonVersion(sender.name), nil)
 		sender.now, receiver.now = 140, 140
 		sender:UpdateQTPlayerPresence()

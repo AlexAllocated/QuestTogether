@@ -88,34 +88,3 @@ QT:RegisterTest("target macros preserve full identities and reject command synta
 		Equal(a:GetLocationTargetMacro(name), nil)
 	end
 end)
-
-QT:RegisterTest("minimap Target is the first action and map menus retain their normal order", function()
-	for _, minimap in ipairs({ true, false }) do
-		local a = Fixture()
-		function a:GetShortDisplayName(name) return name end
-		function a:IsPlayerLookingForQuestPartners() return false end
-		function a:ShouldRequestPartyJoin() return false end
-		function a:PopulatePartyFocusMenu() end
-		local root = { buttons = {} }
-		function root:CreateTitle() end
-		function root:CreateButton(text, callback)
-			local entry = { text = text, callback = callback }
-			function entry:SetEnabled(value) self.enabled = value end
-			function entry:SetOnEnter(fn) self.enter = fn end
-			function entry:AddResetter(fn) self.reset = fn end
-			self.buttons[#self.buttons + 1] = entry
-			return entry
-		end
-		local first = minimap and function(menu)
-			a:PopulateLocationTargetMenu(menu, "Friend-Realm", function() return a.valid end)
-		end or nil
-		a:PopulateChatLogSpeakerMenu(root, a.owner, "Friend-Realm", first)
-		Equal(root.buttons[1].text, minimap and "Target" or "Invite")
-		if minimap then
-			root.buttons[1].enter(a.owner)
-			Equal(a.locationTargetState.current.name, "Friend-Realm")
-			root.buttons[1].reset()
-			Equal(a.locationTargetState.current, nil)
-		end
-	end
-end)

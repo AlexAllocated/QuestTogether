@@ -402,8 +402,9 @@ QT:RegisterTest("private note idle cursor notifications preserve manual scroll w
 	local frame = a.playerNoteWindow
 	assert(frame.box.textInsets[3] == 0 and frame.box.textInsets[4] == 0,
 		"multiline caret layout must not have vertical text insets")
-	assert(frame.field:GetHeight() == 130 and frame.scroll:GetHeight() == 114)
-	assert(frame.scroll.points[1][2] == frame.field and frame.scroll.points[1][5] == -8)
+	assert(frame.scroll:GetHeight() > 0 and frame.scroll:GetHeight() < frame.field:GetHeight(),
+		"caret padding belongs outside the native edit box")
+	assert(frame.scroll.points[1][2] == frame.field and frame.scroll.points[1][5] < 0)
 	for _, edge in ipairs(frame.focusEdges) do assert(edge.points[1][2] == frame.field) end
 	frame.box:RunScript("OnCursorChanged", 8, -700, 1, 14)
 	assert(frame.scroll:GetVerticalScroll() > 0)

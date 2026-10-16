@@ -16,12 +16,38 @@ from check_release_notes import main as notes_main
 from discord_changelog import build_messages, DEFAULT_REPOSITORY, load_notes
 
 
-class ChangelogTests(unittest.TestCase):
-    def test_silent_release_has_no_markdown_heading_or_discord_payload(self):
-        notes = {'version': '1.0.1', 'welcome': '', 'sections': []}
-        self.assertNotIn('1.0.1', c.render('enUS', [{'enUS': notes}]))
-        self.assertEqual(build_messages(notes, DEFAULT_REPOSITORY, 'v1.0.1'), [])
+class ChangelogFixture:
+    """Shared temporary sources, without implicitly rerunning another test class."""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        (self.root / 'changelogs').mkdir()
+        (self.root / 'release_notes').mkdir()
+        (self.root / 'scripts').mkdir()
+        shutil.copyfile(Path(c.__file__), self.root / 'scripts/changelogs.py')
+        self.notes = {'version': '1.0.0', 'welcome': 'Find questing partners.',
+                      'sections': [{'title': 'Partners', 'items': ['Find friends nearby.', 'Share quest progress.']}]}
+        (self.root / c.HISTORY).write_text(dumps({'schema': 1, 'releases': []}))
+        (self.root / 'QuestTogether.toc').write_text('## Version: 1.0.0\nCore.lua\nReleaseNotes.lua\nLocalizedReleaseNotes.lua\n')
+        self.write_source(self.notes)
 
+    def write_source(self, notes):
+        (self.root / 'release_notes.json').write_text(dumps(notes))
+        for locale in LOCALES:
+            translated = copy.deepcopy(notes)
+            translated['welcome'] = locale + ': ' + notes['welcome']
+            (self.root / 'release_notes' / (locale + '.json')).write_text(dumps({'source_sha256': digest(notes), 'notes': translated}))
+
+    def generate(self):
+        self.assertEqual(notes_main(['--root', str(self.root), '--write']), 0)
+
+    def git(self, *args):
+        return subprocess.check_output(['git', '-c', 'user.name=Offline test', '-c', 'user.email=test@example.invalid',
+                                       '-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=/dev/null', *args], cwd=self.root, stderr=subprocess.DEVNULL)
+
+
+class ChangelogTests(ChangelogFixture, unittest.TestCase):
     def test_tip_uses_same_plain_sample_in_markdown_github_and_discord(self):
         from check_release_notes import format_tip
         from generate_release_notes import markdown as github_markdown
@@ -84,48 +110,6 @@ class ChangelogTests(unittest.TestCase):
             self.assertIn('/v6.4.0/Media/ReleaseNotes/' + asset + '.png', markdown)
         self.assertIn('**Retail**', markdown)
         self.assertIn('**Forever**', markdown)
-
-    def test_party_focus_guide_attaches_all_three_original_screenshots(self):
-        from discord_changelog import message_files
-        names = ('party-quest-overview', 'party-quest-following', 'party-quest-focus-warning')
-        assets = ('PartyQuestOverviewForever', 'PartyQuestFollowingForever', 'PartyQuestFocusWarningForever')
-        notes = {'version': '6.5.3', 'welcome': 'An illustrated guide.', 'sections': [
-            {'title': name, 'items': ['Read the guide.'], 'illustration': name} for name in names]}
-        markdown = c.render('enUS', [{'enUS': notes}])
-        messages = build_messages(notes, DEFAULT_REPOSITORY, 'v6.5.3')
-        files = [file for message in messages for file in message_files(Path(__file__).resolve().parent.parent, message)]
-        self.assertEqual([name for name, data in files], [name + '.png' for name in assets])
-        for name, data in files:
-            self.assertIn('/v6.5.3/Media/ReleaseNotes/' + name, markdown)
-            self.assertTrue(data.startswith(b'\x89PNG\r\n\x1a\n'))
-
-    def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
-        (self.root / 'changelogs').mkdir()
-        (self.root / 'release_notes').mkdir()
-        (self.root / 'scripts').mkdir()
-        shutil.copyfile(Path(c.__file__), self.root / 'scripts/changelogs.py')
-        self.notes = {'version': '1.0.0', 'welcome': 'Find questing partners.',
-                      'sections': [{'title': 'Partners', 'items': ['Find friends nearby.', 'Share quest progress.']}]}
-        (self.root / c.HISTORY).write_text(dumps({'schema': 1, 'releases': []}))
-        (self.root / 'QuestTogether.toc').write_text('## Version: 1.0.0\nCore.lua\nReleaseNotes.lua\nLocalizedReleaseNotes.lua\n')
-        self.write_source(self.notes)
-
-    def write_source(self, notes):
-        (self.root / 'release_notes.json').write_text(dumps(notes))
-        for locale in LOCALES:
-            translated = copy.deepcopy(notes)
-            translated['welcome'] = locale + ': ' + notes['welcome']
-            (self.root / 'release_notes' / (locale + '.json')).write_text(dumps({'source_sha256': digest(notes), 'notes': translated}))
-
-    def generate(self):
-        self.assertEqual(notes_main(['--root', str(self.root), '--write']), 0)
-
-    def git(self, *args):
-        return subprocess.check_output(['git', '-c', 'user.name=Offline test', '-c', 'user.email=test@example.invalid',
-                                       '-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=/dev/null', *args], cwd=self.root, stderr=subprocess.DEVNULL)
 
     def test_all_files_match_same_text_as_discord(self):
         self.generate()

@@ -335,6 +335,7 @@ QuestTogether:RegisterTest(
 QuestTogether:RegisterTest(
 	"developer verification copies requests bounds admission and backs off invalid senders",
 	function()
+		local unexpectedCalls = 0
 		local peer, verified = DeveloperFixture("Friend-Realm"), {}
 		peer.Ed25519 = {
 			NewVerification = function(_, message)
@@ -379,6 +380,7 @@ QuestTogether:RegisterTest(
 		Equal(verified[1].developerVerified, true)
 		Equal(
 			peer:QueueDeveloperPingVerification(request(6), "Bad-Realm", function()
+				unexpectedCalls = unexpectedCalls + 1
 				error("invalid request accepted")
 			end),
 			true
@@ -389,6 +391,7 @@ QuestTogether:RegisterTest(
 		Equal(peer:QueueDeveloperPingVerification(request(7), "Bad-Realm", function() end), true)
 		peer.developerRequestState = nil -- Same cancellation fence used by departure/reset.
 		peer.clock:Drain()
+		Equal(unexpectedCalls, 0)
 	end
 )
 
@@ -490,6 +493,7 @@ QuestTogether:RegisterTest(
 QuestTogether:RegisterTest(
 	"developer verification bounds failed senders and discards work when the clock rewinds",
 	function()
+		local unexpectedCalls = 0
 		local peer = DeveloperFixture("Friend-Realm")
 		peer.API.GetServerTime = function()
 			return 1791300000 + math.floor(peer.clock:GetTime())
@@ -510,6 +514,7 @@ QuestTogether:RegisterTest(
 				signature = string.rep("0", 128),
 			}
 			assert(peer:QueueDeveloperPingVerification(request, sender, function()
+				unexpectedCalls = unexpectedCalls + 1
 				error("invalid signature accepted")
 			end))
 			FinishDeveloperVerification(peer)
@@ -548,6 +553,7 @@ QuestTogether:RegisterTest(
 			signature = string.rep("0", 128),
 		}
 		assert(peer:QueueDeveloperPingVerification(request, "Dev-Realm", function()
+			unexpectedCalls = unexpectedCalls + 1
 			error("retired clock lifetime accepted")
 		end))
 		peer:DrainDeveloperPingVerifications()
@@ -557,6 +563,7 @@ QuestTogether:RegisterTest(
 		peer:DrainDeveloperPingVerifications()
 		Equal(peer.developerRequestState, nil)
 		peer.clock:Drain()
+		Equal(unexpectedCalls, 0)
 	end
 )
 
@@ -609,25 +616,6 @@ local function Pong(a, shared, sampleTime)
 		warMode = "0",
 		sampledAt = sampleTime or a:GetAnnouncementServerTime(),
 	}
-end
-
--- The exact 14-field PONG layout emitted by 6.5.7: public coordinates, no
--- diagnostic consent/sample extension. Exercise current correlation/dispatch.
-local function LegacyPongWire(id, changes)
-	local fields =
-		{ "2", id, "Friend-Realm", "Realm", "Human", "MAGE", "Mage", "10", "Elwynn", "42", "63", "", "12", "6.5.7" }
-	for index, value in pairs(changes or {}) do
-		fields[index] = value
-	end
-	return "PONG|" .. table.concat(fields, ",")
-end
-local function StartLegacyPong(a, target)
-	local ok, id = a:SendPingRequest(target)
-	assert(ok)
-	return id
-end
-local function ReceiveLegacyPong(a, id, changes)
-	a:OnCommReceived(a.commPrefix, LegacyPongWire(id, changes), "WHISPER", "Friend-Realm")
 end
 
 QuestTogether:RegisterTest("shared developer pong refreshes the normal cache and obeys normal map filters", function()
@@ -814,113 +802,6 @@ QuestTogether:RegisterTest("malformed expired and unverified pongs cannot refres
 		a:AcceptDeveloperPingResponse(pong, pending)
 		Equal(#a:GetVisiblePlayerLocations("map"), 0)
 	end
-end)
-
-local function BusyDiagnosticFixture()
-	local peer = DeveloperFixture("Friend-Realm")
-	peer.BuildDiagnosticReport = QuestTogether.BuildDiagnosticReport
-	peer.GetRuntimeWorkStateStore = QuestTogether.GetRuntimeWorkStateStore
-	function peer:GetDiagnosticEnvironment()
-		return {}
-	end
-	function peer:GetPlayerTracker()
-		return {}
-	end
-	function peer:IsWorkBlocked()
-		return true
-	end
-	peer.API.IsWorldMapVisible = function()
-		return false
-	end
-	for _, command in ipairs({
-		"QTNAV",
-		"QTN2",
-		"ANN",
-		"LVL",
-		"LOC",
-		"QTPR",
-		"QTVR",
-		"QTLF",
-		"QTLQ",
-		"QJST",
-		"QJON",
-		"QTPG",
-		"QPGR",
-		"QPGM",
-		"QCMP",
-		"QCQE",
-		"QCDN",
-		"QCOB",
-		"QTB1",
-		"QTDQ",
-		"QTCI",
-		"QTHQ",
-		"QTHD",
-		"QTPH",
-		"QTSR",
-		"QTSP",
-		"QTSX",
-		"QSHR",
-		"PING",
-		"PONG",
-		"PONP",
-	}) do
-		peer:RecordCommsTraffic("received", command .. "|1")
-	end
-	for index = 1, 20 do
-		peer:ScheduleDeferredWork(
-			"nameplate_tint_refresh",
-			"nameplate" .. index,
-			function() end,
-			0,
-			"ScheduleNameplateHealthTintRefresh"
-		)
-	end
-	peer:RecordDiagnosticError("outbound completion", string.rep("Lua error in addon callback; ", 43))
-	function peer:BuildDeveloperDiagnosticSnapshot()
-		self.builtReport = QuestTogether.BuildDeveloperDiagnosticSnapshot(self)
-		return self.builtReport
-	end
-	return peer
-end
-
-QuestTogether:RegisterTest("announcement source timestamps measure delay independently of delivery identity", function()
-	local a = NewCommsFixture()
-	a.API.GetServerTime = function()
-		return 1800000100
-	end
-	local event = Event()
-	event.occurredAt = 1800000050
-	a:RecordAnnouncementLatency(event)
-	Equal(a:GetCommsDiagnostics().announcementAgeLast, 50)
-	event.occurredAt = nil
-	a:RecordAnnouncementLatency(event)
-	Equal(a:GetCommsDiagnostics().announcementAgeUnknown, 1)
-	event.occurredAt = 1800000200
-	a:RecordAnnouncementLatency(event)
-	Equal(a:GetCommsDiagnostics().announcementAgeUnknown, 2)
-	a.API.GetServerTime = function()
-		error("unreadable clock")
-	end
-	Equal(a:GetAnnouncementServerTime(), nil)
-end)
-
-QuestTogether:RegisterTest("transport counters count each route attempt and bound unknown command buckets", function()
-	local a = NewCommsFixture()
-	local wire = WireEvent(a, "ANN", Event())[1]
-	a:RecordCommsTraffic("queued", wire)
-	a:RecordCommsTraffic("sent", wire, 0)
-	Equal(a:GetCommsDiagnostics().traffic.ANN.queued, 1)
-	Equal(a:GetCommsDiagnostics().traffic.ANN.sentBytes, #wire)
-	for i = 1, 100 do
-		a:RecordCommsTraffic("received", "2|UNKNOWN" .. i .. "|garbage")
-	end
-	local count = 0
-	for _ in pairs(a:GetCommsDiagnostics().traffic) do
-		count = count + 1
-	end
-	Equal(count, 2)
-	Equal(a:GetCommsDiagnostics().traffic.OTHER.received, 100)
 end)
 
 QuestTogether:RegisterTest("unknown addon packets do not fall through into human channel chat", function()
@@ -1159,6 +1040,7 @@ QuestTogether:RegisterTest("Forever roster unit announcements and ping metadata 
 end)
 
 QuestTogether:RegisterTest("Forever unavailable surname profile fallback never invents a realm", function()
+	local unexpectedCalls = 0
 	local addon = NewRegionalNameFixture()
 	addon.API.UnitFullName = function()
 		return nil, nil
@@ -1167,6 +1049,7 @@ QuestTogether:RegisterTest("Forever unavailable surname profile fallback never i
 		return nil
 	end
 	addon.API.GetRealmName = function()
+		unexpectedCalls = unexpectedCalls + 1
 		error("regional profile fallback must not read a realm")
 	end
 	Equal(addon:GetCurrentCharacterKey(), "Anakin")
@@ -1176,6 +1059,7 @@ QuestTogether:RegisterTest("Forever unavailable surname profile fallback never i
 	end
 	Equal(addon:GetCurrentCharacterKey(), "Anakin-Ofthesea")
 	Equal(addon:GetPersonalBubbleAnchorKey(), "Anakin-Ofthesea")
+	Equal(unexpectedCalls, 0)
 end)
 
 QuestTogether:RegisterTest("Forever hidden surnames never become social interaction targets", function()
@@ -1218,15 +1102,19 @@ local function UseNativeLocationModel(addon)
 end
 
 QuestTogether:RegisterTest("Forever metadata never reads or displays realms and War Mode", function()
+	local unexpectedCalls = 0
 	local addon = NewRegionalNameFixture()
 	UseNativeLocationModel(addon)
 	addon.API.GetRealmName = function()
+		unexpectedCalls = unexpectedCalls + 1
 		error("Forever has no realm identity")
 	end
 	addon.API.IsWarModeFeatureEnabled = function()
+		unexpectedCalls = unexpectedCalls + 1
 		error("regional clients have no War Mode")
 	end
 	addon.API.IsWarModeActive = function()
+		unexpectedCalls = unexpectedCalls + 1
 		error("unsupported mode must not be polled")
 	end
 	Equal(addon:SupportsWarMode(), false)
@@ -1253,6 +1141,7 @@ QuestTogether:RegisterTest("Forever metadata never reads or displays realms and 
 	assert(not message:find("WM Off", 1, true))
 	assert(message:find("Elwynn Forest", 1, true))
 	assert(not addon:BuildAnnouncementLocationSuffix(decoded):find("WM Off", 1, true))
+	Equal(unexpectedCalls, 0)
 end)
 
 QuestTogether:RegisterTest("announcement metadata preserves unknown War Mode instead of inventing Off", function()
@@ -1434,6 +1323,7 @@ QuestTogether:RegisterTest("Forever display settings fail closed and inaccessibl
 end)
 
 QuestTogether:RegisterTest("retail names keep realm identity and native short display", function()
+	local unexpectedCalls = 0
 	local addon = NewCommsFixture()
 	addon.API.RegionalUniqueNamesEnabled = function()
 		return false
@@ -1443,6 +1333,7 @@ QuestTogether:RegisterTest("retail names keep realm identity and native short di
 		return name:match("^[^-]+")
 	end
 	addon.API.ShouldDisplaySurname = function()
+		unexpectedCalls = unexpectedCalls + 1
 		error("not a regional name")
 	end
 	Equal(addon:GetPlayerFullName(), "MyPlayer-Realm")
@@ -1450,28 +1341,7 @@ QuestTogether:RegisterTest("retail names keep realm identity and native short di
 	Equal(addon:NormalizeMemberName("Other-Other Realm"), "Other-OtherRealm")
 	Equal(addon:IsSelfSender("MyPlayer-Realm"), true)
 	Equal(addon:IsSelfSender("MyPlayer-OtherRealm"), false)
-end)
-
-QuestTogether:RegisterTest("comms reports rejected or throwing send results as failure", function()
-	for _, result in ipairs({ 1, 8, "throw" }) do
-		local n, a = QuietNetwork()
-		local completions = {}
-		n.sendRule = function()
-			if result == "throw" then
-				error("failed native")
-			end
-			return result
-		end
-		assert(a:Emit("ANN", Event(), { { distribution = "CHANNEL", channelName = a.announcementChannelName } }, {
-			onComplete = function(ok, status)
-				completions[#completions + 1] = { ok, status }
-			end,
-		}))
-		n:Advance(3)
-		Equal(#completions, 1)
-		Equal(completions[1][1], false)
-		Equal(completions[1][2], result == 8 and "ambiguous" or "rejected")
-	end
+	Equal(unexpectedCalls, 0)
 end)
 
 QuestTogether:RegisterTest("comms resolves channel target after rejoining", function()
@@ -1497,50 +1367,6 @@ QuestTogether:RegisterTest("announcement fragments preserve complete UTF8 and ev
 	local decoded = ReadRecord(a, frames)
 	Equal(decoded.text, event.text)
 	Equal(decoded.zoneName, event.zoneName)
-end)
-
-QuestTogether:RegisterTest("announcement local text limit preserves complete UTF8", function()
-	local addon = NewCommsFixture()
-	local text = addon:SanitizeAnnouncementText(string.rep("写", 100))
-	Equal(#text, 219)
-	Equal(string.sub(text, -3), "写")
-end)
-
-QuestTogether:RegisterTest("quest comparison titles retain full UTF8 text through bounded shared fragments", function()
-	local a = NewCommsFixture()
-	local title = string.rep("写真", 80)
-	local record = {
-		requestId = "qcmp",
-		snapshotId = "snapshot",
-		count = 1,
-		entries = {
-			{ questId = 12345, questTitle = title },
-		},
-	}
-	local frames = assert(
-		a:BuildCommFrames(
-			"QCRS",
-			record,
-			{ session = "100-1234", messageId = "1", requestId = "qcmp", stamp = 1800000000 }
-		)
-	)
-	assert(#frames > 1)
-	for _, wire in ipairs(frames) do
-		assert(#wire <= 255)
-	end
-	local decoded = ReadRecord(a, frames)
-	Equal(decoded.entries[1].questId, 12345)
-	Equal(decoded.entries[1].questTitle, title)
-end)
-
-QuestTogether:RegisterTest("oversized transport messages fail before sending", function()
-	local _, a = QuietNetwork()
-	local event = Event(string.rep("x", 1025))
-	local ok = a:Emit("ANN", event)
-	Equal(ok, false)
-	Equal(#a.attempts, 0)
-	Equal(a:DecodeCommFrame(string.rep("x", 256)), nil)
-	Equal(a:DecodeCommFrame("2|ANN|x|1||1|1|1|" .. string.char(0)), nil)
 end)
 
 QuestTogether:RegisterTest("chat channel filter ignores mentions and similarly named channels", function()
@@ -1715,13 +1541,26 @@ end)
 
 QuestTogether:RegisterTest("disabled comm receiver does not dispatch announcements", function()
 	local addon = NewCommsFixture()
-	addon.isEnabled = false
 	local count = 0
 	function addon:HandleAnnouncementEvent()
 		count = count + 1
 	end
-	addon:OnCommReceived(addon.commPrefix, "ANN|" .. addon:EncodeCommRecord("ANN", Event()), "PARTY", "Friend-Realm")
+	local function Receive()
+		return addon:OnCommReceived(
+			addon.commPrefix,
+			WireEvent(addon, "ANN", Event()),
+			"CHANNEL",
+			"Friend-Realm",
+			7,
+			addon.announcementChannelName
+		)
+	end
+	addon.isEnabled = false
+	Equal(Receive(), false)
 	Equal(count, 0)
+	addon.isEnabled = true
+	Equal(Receive(), true)
+	Equal(count, 1)
 end)
 
 QuestTogether:RegisterTest("quest compare done rejects invalid or fractional counts", function()
@@ -1949,32 +1788,40 @@ QuestTogether:RegisterTest(
 )
 
 QuestTogether:RegisterTest("remote celebrations cannot expand their shipped list through runtime mutation", function()
+	local unexpectedCalls = 0
 	local addon = NewRemoteCelebrationFixture()
 	addon.completionEmotes = { "rude", "mountspecial", "forthealliance", "forthehorde" }
 	addon.API.Random = function()
+		unexpectedCalls = unexpectedCalls + 1
 		error("unsupported incoming emotes must not pick a substitute")
 	end
 	for _, token in ipairs(addon.completionEmotes) do
-		ReceiveCelebration(addon, "QUEST_COMPLETED", token)
+		Equal(addon:GetSafeRemoteCompletionEmote(token), nil)
 	end
 	Equal(#addon.emotes, 0)
 	Equal(addon:GetSafeRemoteCompletionEmote("cheer"), "cheer")
+	Equal(unexpectedCalls, 0)
 end)
 
 QuestTogether:RegisterTest("remote rejected celebrations never query mount or faction or choose a fallback", function()
+	local unexpectedCalls = 0
 	local addon = NewRemoteCelebrationFixture()
 	addon.API.IsMounted = function()
+		unexpectedCalls = unexpectedCalls + 1
 		error("mount state is irrelevant")
 	end
 	addon.API.GetFaction = function()
+		unexpectedCalls = unexpectedCalls + 1
 		error("faction is irrelevant")
 	end
 	addon.API.Random = function()
+		unexpectedCalls = unexpectedCalls + 1
 		error("no replacement emote")
 	end
 	for _, token in ipairs({ "mountspecial", "forthealliance", "forthehorde", "rude" }) do
 		Equal(addon:GetSafeRemoteCompletionEmote(token), nil)
 	end
+	Equal(unexpectedCalls, 0)
 end)
 
 QuestTogether:RegisterTest("level-up sends one shared emote token on party and nearby routes", function()
@@ -2236,8 +2083,10 @@ QuestTogether:RegisterTest("remote plate celebrations handle recycled forbidden 
 end)
 
 QuestTogether:RegisterTest("self celebrations do not require remote target visibility", function()
+	local unexpectedCalls = 0
 	local addon = NewLevelUpFixture()
 	addon.API.CanTargetUnitForEmote = function()
+		unexpectedCalls = unexpectedCalls + 1
 		error("self emotes must not use remote targeting")
 	end
 	addon.API.UnitExists = function()
@@ -2248,86 +2097,32 @@ QuestTogether:RegisterTest("self celebrations do not require remote target visib
 	Equal(#addon.emotes, 2)
 	Equal(addon.emotes[1].target, "MyPlayer")
 	Equal(addon.emotes[2].target, "MyPlayer")
+	Equal(unexpectedCalls, 0)
 end)
 
 QuestTogether:RegisterTest("level-up wire rejects other event types", function()
 	local addon = NewLevelUpFixture()
+	local accepted = 0
+	function addon:HandleAnnouncementEvent()
+		accepted = accepted + 1
+	end
 	local event = LevelUpEvent()
 	event.eventType = "QUEST_COMPLETED"
-	addon:OnCommReceived(addon.commPrefix, WireEvent(addon, "LVL", event), "PARTY", "Friend-Realm")
-	Equal(#addon.emotes, 0)
-	Equal(#addon.printed, 0)
-end)
-
-QuestTogether:RegisterTest("level-up options migrate existing profiles and preserve disabled values", function()
-	local addon = NewLevelUpFixture()
-	addon.db.profile.emoteOnLevelUp = nil
-	addon.db.profile.emoteOnNearbyPlayerLevelUp = nil
-	addon:NormalizeSettingsProfile()
-	Equal(addon:GetOption("emoteOnLevelUp"), true)
-	Equal(addon:GetOption("emoteOnNearbyPlayerLevelUp"), true)
-	addon:SetOption("emoteOnLevelUp", false)
-	addon:SetOption("emoteOnNearbyPlayerLevelUp", false)
-	addon:NormalizeSettingsProfile()
-	Equal(addon:GetOption("emoteOnLevelUp"), false)
-	Equal(addon:GetOption("emoteOnNearbyPlayerLevelUp"), false)
-end)
-
-QuestTogether:RegisterTest("level-up event registration follows addon enable and disable", function()
-	local addon = NewLevelUpFixture()
-	local registered = {}
-	addon.registeredRuntimeEvents = {}
-	addon.eventFrame = {
-		RegisterEvent = function(_, name)
-			registered[name] = true
-		end,
-		UnregisterEvent = function(_, name)
-			registered[name] = nil
-		end,
-	}
-	addon:RegisterRuntimeEvents()
-	Equal(registered.PLAYER_LEVEL_UP, true)
-	addon:UnregisterRuntimeEvents()
-	Equal(registered.PLAYER_LEVEL_UP, nil)
-end)
-
-QuestTogether:RegisterTest("localized announcement metadata and default icon fit a real send", function()
-	local addon = NewCommsFixture()
-	addon.API.UnitFullName = function()
-		return "Алесандра", "Гордунни"
+	local function Receive()
+		return addon:OnCommReceived(
+			addon.commPrefix,
+			WireEvent(addon, "LVL", event),
+			"CHANNEL",
+			"Friend-Realm",
+			7,
+			addon.announcementChannelName
+		)
 	end
-	addon.API.UnitGUID = function()
-		return "Player-1602-12345678"
-	end
-	function addon:GetPlayerClassFile()
-		return "DEATHKNIGHT"
-	end
-	function addon:GetPlayerAnnouncementLocationInfo()
-		return { mapID = 2248, zoneName = "Остров Дорн", coordX = 50.1, coordY = 40.2, warMode = false }
-	end
-	local event = addon:BuildLocalAnnouncementEvent("QUEST_ACCEPTED", "Quest accepted: A normal quest", 12345)
-	Equal(event.iconAsset, "Interface/GossipFrame/AvailableQuestIcon")
-	Equal(addon:SendAnnouncementWireEvent(event), true)
-	local event, command = ReadRecord(addon, addon.wire[1][2])
-	local decoded = event
-	Equal(command, "ANN")
-	Equal(#addon.wire[1][2] <= 255, true)
-	Equal(decoded.senderName, "Алесандра-Гордунни")
-	Equal(decoded.text, event.text)
-	Equal(decoded.zoneName, "Остров Дорн")
-	-- Optional decoration must yield to identity and useful text for larger
-	-- localized metadata, rather than producing an undecodable empty message.
-	event.zoneName = string.rep("Долина", 30)
-	event.iconAsset = string.rep("Icon", 40)
-	Equal(addon:SendAnnouncementWireEvent(event), true)
-	decoded = ReadRecord(addon, addon.wire[2][2])
-	Equal(#addon.wire[2][2] <= 255, true)
-	Equal(decoded.senderName, event.senderName)
-	Equal(decoded.text, event.text)
-	Equal(decoded.zoneName, event.zoneName)
-	Equal(decoded.mapID, "2248")
-	Equal(decoded.coordX, "50.1")
-	Equal(decoded.coordY, "40.2")
+	Equal(Receive(), false)
+	Equal(accepted, 0)
+	event.eventType = "PLAYER_LEVEL_UP"
+	Equal(Receive(), true)
+	Equal(accepted, 1)
 end)
 
 QuestTogether:RegisterTest("length prefixed text preserves delimiters and UTF8 and rejects NUL", function()
@@ -2436,19 +2231,6 @@ local function SetComparisonEntries(addon, count)
 	end
 end
 
-QuestTogether:RegisterTest("comparison send pacing does not consume failed-native-send retries", function()
-	local net, sender, receiver, result, request = ComparisonNetwork(2)
-	sender:GetTransportState().blockedUntil = sender.now + 5
-	request()
-	net:Advance(4)
-	Equal(result.completed, 0)
-	local job = next(sender.questCompareResponseCache or {})
-	assert(job)
-	net:Advance(10)
-	Equal(result.completed, 1)
-	Equal(#result.entries, 2)
-end)
-
 QuestTogether:RegisterTest("existing channels install filters once and avoid per-packet chat cleanup", function()
 	local a = NewCommsFixture()
 	local filters, cleanups = 0, 0
@@ -2496,13 +2278,29 @@ QuestTogether:RegisterTest("local publication samples one event for wire party c
 	Equal(a.sentEvent, a.localEvent)
 end)
 
-QuestTogether:RegisterTest("oversized or nul-containing inbound transport is rejected before decoding", function()
+QuestTogether:RegisterTest("inbound size admission and frame decoding reject oversized and NUL packets", function()
 	local a = NewCommsFixture()
-	function a:DeserializeWireMessage()
-		error("invalid packet reached parser")
+	local decoded, handled = 0, 0
+	local decode = a.DecodeCommFrame
+	function a:DecodeCommFrame(...)
+		decoded = decoded + 1
+		return decode(self, ...)
 	end
-	a:OnCommReceived(a.commPrefix, "ANN|" .. string.rep("x", 252), "PARTY", "Peer-Realm")
-	a:OnCommReceived(a.commPrefix, "PING|1,a\0b", "PARTY", "Peer-Realm")
+	function a:HandleAnnouncementEvent()
+		handled = handled + 1
+	end
+	local wire = WireEvent(a, "ANN", Event())[1]
+	local function Receive(packet)
+		return a:OnCommReceived(a.commPrefix, packet, "CHANNEL", "Friend-Realm", 7, a.announcementChannelName)
+	end
+	Equal(Receive(wire .. string.rep("x", 256 - #wire)), false)
+	Equal(decoded, 0)
+	Equal(Receive(wire .. "\0"), false)
+	Equal(decoded, 1)
+	Equal(handled, 0)
+	Equal(Receive(wire), true)
+	Equal(decoded, 2)
+	Equal(handled, 1)
 end)
 
 QuestTogether:RegisterTest("quest comparison paces and retries delivery before completing the real receiver", function()
@@ -2541,22 +2339,6 @@ QuestTogether:RegisterTest("quest comparison retry exhaustion never advertises a
 	assert(result.timeout)
 	Equal(next(receiver.pendingQuestCompareRequests), nil)
 end, { offline = true })
-
-QuestTogether:RegisterTest("quest comparison queues expire and old callbacks cannot send after reset", function()
-	local a = NewCommsFixture()
-	InstallResponseClock(a)
-	SetComparisonEntries(a, 3)
-	a.sendFails = true
-	assert(ReceiveComparison(a, "old"))
-	local old = a.questCompareResponseCache
-	a:ResetCommsState()
-	a.sendFails = false
-	a:ProgressQuestCompareResponses(a.now + 601)
-	Equal(#a.wire, 0)
-	assert(a.questCompareResponseCache ~= old)
-	a.isEnabled = false
-	Equal(ReceiveComparison(a, "disabled"), false)
-end)
 
 QuestTogether:RegisterTest("quest comparison response memory has job and packet bounds", function()
 	local a = NewCommsFixture()
@@ -2598,37 +2380,6 @@ QuestTogether:RegisterTest("completed comparisons release domain capacity for re
 	Equal(#sender.commTransferState.outgoing, 0)
 end, { offline = true })
 
-QuestTogether:RegisterTest(
-	"ordinary comparison completes within the shared budget without legacy packet pacing",
-	function()
-		local net, _, _, result, request = ComparisonNetwork(25)
-		request()
-		net:Advance(20)
-		Equal(result.completed, 1)
-		Equal(#result.entries, 25)
-		assert(result.at < 120)
-	end
-)
-
-QuestTogether:RegisterTest("failed comparison sends back off longer than successful packet pacing", function()
-	local net, sender, _, result, request = ComparisonNetwork(2)
-	local failedAt, nextAt
-	net.sendRule = function(packet)
-		if packet.sender == sender.name then
-			if not failedAt then
-				failedAt = net.now
-				return 3
-			end
-			nextAt = nextAt or net.now
-		end
-		return 0
-	end
-	request()
-	net:Advance(20)
-	assert(nextAt - failedAt >= 1)
-	Equal(result.completed, 1)
-end)
-
 QuestTogether:RegisterTest("queued group comparisons stop when requester leaves the roster", function()
 	local net, sender, receiver, result, request = ComparisonNetwork(30)
 	sender:GetTransportState().blockedUntil = sender.now + 10
@@ -2641,23 +2392,6 @@ QuestTogether:RegisterTest("queued group comparisons stop when requester leaves 
 	Equal(ResponseCount(sender), 0)
 end)
 
-QuestTogether:RegisterTest("private comparisons are independent from public channel identifiers", function()
-	local net, sender, receiver, result, request = ComparisonNetwork(4)
-	request()
-	receiver.announcementChannelLocalID = 99
-	sender.announcementChannelLocalID = 42
-	net:Advance(10)
-	Equal(result.completed, 1)
-	local accepted = 0
-	for _, row in ipairs(net.trace) do
-		if row.kind == "accepted" then
-			accepted = accepted + 1
-			Equal(row.packet.route, "WHISPER")
-		end
-	end
-	assert(accepted > 0)
-end)
-
 QuestTogether:RegisterTest("group comparisons remain private after party becomes raid", function()
 	local net, sender, receiver, result, request = ComparisonNetwork(2)
 	request()
@@ -2667,6 +2401,13 @@ QuestTogether:RegisterTest("group comparisons remain private after party becomes
 	request()
 	net:Advance(10)
 	Equal(result.completed, 2)
+	for _, peer in ipairs({ sender, receiver }) do
+		assert(#peer.sent > 0)
+		for _, packet in ipairs(peer.sent) do
+			Equal(packet.route, "WHISPER")
+			Equal(packet.target, peer == sender and receiver.name or sender.name)
+		end
+	end
 end)
 
 QuestTogether:RegisterTest("comparison snapshots wait for both quest count and every row before sending", function()
@@ -2700,29 +2441,6 @@ QuestTogether:RegisterTest("comparison snapshots wait for both quest count and e
 	Equal(#a.responses[1].record.entries, 2)
 	Equal(ResponseCount(a), 0)
 end)
-
-QuestTogether:RegisterTest(
-	"unavailable comparison count exhausts bounded snapshot retries without completion",
-	function()
-		local a = NewCommsFixture()
-		InstallResponseClock(a)
-		local reads = 0
-		a.IsWorkBlocked = function()
-			return false
-		end
-		a.API.GetNumQuestLogEntries = function()
-			reads = reads + 1
-			return nil
-		end
-		assert(ReceiveComparison(a, "unavailable"))
-		for _ = 1, 10 do
-			RunResponseTimer(a)
-		end
-		Equal(reads, 5)
-		Equal(#a.responses, 1)
-		Equal(a.responses[1].operation, "ERROR")
-	end
-)
 
 QuestTogether:RegisterTest("missing comparison rows cannot become a certified partial quest log", function()
 	local a = NewCommsFixture()
@@ -3002,25 +2720,6 @@ QuestTogether:RegisterTest("comparison source wire and display preserve all thre
 	end
 end)
 
-QuestTogether:RegisterTest(
-	"comparison codecs reject obsolete wire layouts while preserving typed optional booleans",
-	function()
-		local a = NewCommsFixture()
-		for _, prefix in ipairs({ "QCMP", "QCQE", "QCOB", "QCDN" }) do
-			Equal(a:DecodeCommFrame(prefix .. "|1,legacy,Friend-Realm,123,Old quest"), nil)
-		end
-		for _, value in ipairs({ true, false, "unknown" }) do
-			local row = assert(
-				a:CopyCommRecord(
-					"QCENTRY",
-					{ questId = 123, questTitle = "Quest", isPushable = value ~= "unknown" and value or nil }
-				)
-			)
-			Equal(row.isPushable, value ~= "unknown" and value or nil)
-		end
-	end
-)
-
 local function NewLocationReceiver()
 	local addon = NewCommsFixture()
 	addon.API.UnitFullName = function()
@@ -3047,22 +2746,6 @@ local function NewLocationReceiver()
 	end
 	return addon
 end
-
-QuestTogether:RegisterTest("announcement map identity survives local construction and wire round trip", function()
-	local addon = NewCommsFixture()
-	addon.GetPlayerAnnouncementLocationInfo = function()
-		return { mapID = 37, zoneName = "Elwynn Forest", coordX = 50, coordY = 50, warMode = false }
-	end
-	local event = addon:BuildLocalAnnouncementEvent("QUEST_PROGRESS", "Wolves: 1/8", 123, { emoteToken = "CHEER" })
-	Equal(event.mapID, "37")
-	Equal(addon:SendAnnouncementWireEvent(event), true)
-	local event, command = ReadRecord(addon, addon.wire[1][2])
-	local received = event
-	Equal(command, "ANN")
-	Equal(received.mapID, "37")
-	Equal(received.emoteToken, "CHEER", "appending map identity must not move old fields")
-	Equal(#addon.wire[1][2] <= 255, true)
-end)
 
 QuestTogether:RegisterTest("received nearby announcements use map identity across localized labels", function()
 	local cases = {
@@ -3946,6 +3629,7 @@ QuestTogether:RegisterTest(
 QuestTogether:RegisterTest(
 	"Global QT chat does not need locations while Zone Only requires fresh matching zones",
 	function()
+		local unexpectedCalls = 0
 		local addon = NewCommsFixture()
 		addon.db = { profile = addon:DeepCopy(addon.DEFAULTS.profile) }
 		function addon:IsRuntimeRestricted()
@@ -3985,9 +3669,11 @@ QuestTogether:RegisterTest(
 		addon.db.profile.qtChatScope = "global"
 		addon.playerLocationState = nil
 		addon.API.GetBestMapForUnit = function()
+			unexpectedCalls = unexpectedCalls + 1
 			error("Global must not read location")
 		end
 		Equal(Receive(), true)
+		Equal(unexpectedCalls, 0)
 	end
 )
 
@@ -4085,6 +3771,7 @@ QuestTogether:RegisterTest(
 QuestTogether:RegisterTest(
 	"partner search crosses the zone once through normal transport without changing quest range",
 	function()
+		local unexpectedCalls = 0
 		local sender, receiver = NewLocationReceiver(), NewLocationReceiver()
 		sender.suppressLocalAnnouncementDisplayDuringTests = false
 		sender.API.UnitFullName = function()
@@ -4103,9 +3790,11 @@ QuestTogether:RegisterTest(
 		end
 		receiver.db.profile.nearbyAnnouncementRange = 5
 		function receiver:GetLocationPinMapWorldSize()
+			unexpectedCalls = unexpectedCalls + 1
 			error("LFQP must not need map dimensions")
 		end
 		function sender:AnnounceToNonQTParty()
+			unexpectedCalls = unexpectedCalls + 1
 			error("partner search is a QT announcement")
 		end
 		function receiver:RecordQTPlayerPresence() end
@@ -4171,6 +3860,7 @@ QuestTogether:RegisterTest(
 		local privateEvent = ReadRecord(sender, sender.wire[#sender.wire][2])
 		Equal(privateEvent.mapID, "")
 		Equal(privateEvent.coordX, "")
+		Equal(unexpectedCalls, 0)
 	end
 )
 

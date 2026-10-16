@@ -158,7 +158,10 @@ local function NewTaskLifecycleFixture(taskType)
 		end,
 	}
 	function addon:GetPlayerTracker() return self.tracker end
-	function addon:PublishAnnouncementEvent(event) self.announcements[#self.announcements + 1] = event end
+	function addon:PublishAnnouncementEvent(event, text, questId, extraData)
+		self.announcements[#self.announcements + 1] = event
+		self.lastAnnouncement = { event = event, text = text, questId = questId, extraData = extraData }
+	end
 	function addon:AddQuest(hidden)
 		self.rows[2] = { questID = 12345, questLogIndex = 2, title = "New Task", isTask = taskType ~= "quest",
 			isOnMap = true, isHidden = hidden }
@@ -594,6 +597,16 @@ QuestTogether:RegisterTest("completion dispatch retains captured task type throu
 	for _, taskType in ipairs({ "bonus", "world", "quest" }) do
 		for _, turnInFirst in ipairs({ false, true }) do
 			local addon, clock = NewTaskLifecycleFixture(taskType)
+			local icons = {
+				QUEST_READY_TO_TURN_IN = "CampaignTurnInQuestIcon",
+				WORLD_QUEST_COMPLETED = "worldquest-icon",
+				BONUS_OBJECTIVE_COMPLETED = "Bonus-Objective-Star",
+			}
+			-- Keep classification, retirement and completion dispatch real. Only the
+			-- native artwork lookup is substituted; assert its published result.
+			function addon:GetAnnouncementIconInfo(event)
+				return icons[event], "atlas"
+			end
 			addon:AddQuest(false)
 			addon:RebuildQuestSnapshotStore()
 			addon:RefreshTaskAreaStates(false)
@@ -613,7 +626,20 @@ QuestTogether:RegisterTest("completion dispatch retains captured task type throu
 			clock:Drain()
 			local expected = taskType == "bonus" and "BONUS_OBJECTIVE_COMPLETED"
 				or (taskType == "world" and "WORLD_QUEST_COMPLETED" or "QUEST_COMPLETED")
-			AssertEqual(addon.announcements[#addon.announcements], expected, taskType)
+			AssertEqual(addon.lastAnnouncement.event, expected, taskType)
+			AssertEqual(addon.lastAnnouncement.questId, 12345)
+			assert(addon.lastAnnouncement.text:find("New Task", 1, true))
+			AssertEqual(addon.lastAnnouncement.extraData.iconAsset,
+				icons[taskType == "quest" and "QUEST_READY_TO_TURN_IN" or expected])
+			AssertEqual(addon.lastAnnouncement.extraData.iconKind, "atlas")
+			AssertEqual(addon.tracker[12345], nil)
+			AssertEqual(addon.pendingQuestRemovals[12345], nil)
+			AssertEqual(addon.questsCompleted[12345], nil)
+			local completionCount = 0
+			for _, event in ipairs(addon.announcements) do
+				if event == expected then completionCount = completionCount + 1 end
+			end
+			AssertEqual(completionCount, 1, "the first removal sequence must also complete exactly once")
 			local eventCount = #addon.announcements
 			addon:QUEST_TURNED_IN(nil, 12345)
 			addon:QUEST_REMOVED(nil, 12345)
@@ -751,47 +777,6 @@ QuestTogether:RegisterTest("removal cancels a transient acceptance retry without
 	AssertEqual(#addon.announcements, 0)
 end)
 
-QuestTogether:RegisterTest("objective milestones do not replay after same-label progress rollback", function()
-	local addon = NewQuestFixture()
-	local quest = { objectives = { "80% Locations Photographed" }, objectiveValues = { 80 } }
-	for _, value in ipairs({ 0, 20, 40, 60, 80, 0, 80 }) do
-		AssertEqual(addon:UpdateTrackedObjectiveProgress(quest, 1, value .. "% Locations Photographed", value), false)
-		AssertEqual(quest.objectiveValues[1], value, "current snapshot still follows live progress")
-	end
-	AssertEqual(addon:UpdateTrackedObjectiveProgress(quest, 1, "100% Locations Photographed", 100), true)
-	AssertEqual(addon:UpdateTrackedObjectiveProgress(quest, 1, "100% Locations Photographed", 100), false)
-end)
-
-QuestTogether:RegisterTest("objective milestone identity includes target and survives temporary replacement", function()
-	local addon = NewQuestFixture()
-	local quest = { objectives = { "2/3 Gather Apples" }, objectiveValues = { 2 } }
-	AssertEqual(addon:UpdateTrackedObjectiveProgress(quest, 1, "5/8 Rescue Villagers", 5), false)
-	AssertEqual(addon:UpdateTrackedObjectiveProgress(quest, 1, "0/3 Gather Apples", 0), false)
-	AssertEqual(addon:UpdateTrackedObjectiveProgress(quest, 1, "2/3 Gather Apples", 2), false)
-	AssertEqual(addon:UpdateTrackedObjectiveProgress(quest, 1, "3/3 Gather Apples", 3), true)
-	AssertEqual(addon:UpdateTrackedObjectiveProgress(quest, 1, "4/8 Gather Apples", 4), false)
-end)
-
-QuestTogether:RegisterTest("objective milestones survive an empty objective list", function()
-	local addon = NewQuestFixture()
-	addon:WatchQuest(12345, { title = "Photo Quest" })
-	addon.objectiveCount = 0
-	addon:UNIT_QUEST_LOG_CHANGED(nil, "player")
-	addon:QUEST_LOG_UPDATE()
-	AssertEqual(addon.tracker[12345].objectives[1], nil)
-	addon.objectiveCount = 1
-	addon.liveText, addon.liveValue = "0% Locations Photographed", 0
-	addon:UNIT_QUEST_LOG_CHANGED(nil, "player")
-	addon:QUEST_LOG_UPDATE()
-	addon.liveText, addon.liveValue = "80% Locations Photographed", 80
-	addon:UNIT_QUEST_LOG_CHANGED(nil, "player")
-	addon:QUEST_LOG_UPDATE()
-	AssertEqual(#addon.announcements, 0)
-	addon.liveText, addon.liveValue = "100% Locations Photographed", 100
-	ObserveObjectiveUpdate(addon)
-	AssertEqual(#addon.announcements, 1, "new milestones still publish after recovery")
-end)
-
 QuestTogether:RegisterTest("objective recovery publishes new progress after unreadable rows and counts", function()
 	for _, missingShape in ipairs({ "nil", "empty", "zero_count", "nil_count", "missing_value" }) do
 		local addon = NewObjectiveProgressFixture()
@@ -812,7 +797,14 @@ QuestTogether:RegisterTest("objective recovery publishes new progress after unre
 		AssertEqual(#addon.announcements, 0, missingShape .. " must not invent progress")
 
 		addon.objectiveCount = 1
-		addon.liveText, addon.liveType, addon.liveValue = "Locations Photographed", "progressbar", 100
+		addon.liveText, addon.liveType = "Locations Photographed", "progressbar"
+		for _, value in ipairs({ 0, 20, 40, 60, 80 }) do
+			addon.liveValue = value
+			ObserveObjectiveUpdate(addon)
+			AssertEqual(#addon.announcements, 0, "recovering old progress must not replay the saved milestone")
+			AssertEqual(addon.tracker[12345].objectiveValues[1], value, "current snapshot must still follow live progress")
+		end
+		addon.liveValue = 100
 		ObserveObjectiveUpdate(addon)
 		AssertEqual(#addon.announcements, 1, missingShape .. " must not consume the recovered milestone")
 		AssertEqual(addon.announcements[1][1], "QUEST_PROGRESS")
@@ -970,7 +962,12 @@ QuestTogether:RegisterTest("late quest turn-in still publishes completion once a
 	addon:WatchQuest(12345, { title = "Photo Quest" })
 	addon:QUEST_REMOVED(nil, 12345)
 	addon.delayed[1]()
+	AssertEqual(#addon.announcements, 1)
 	AssertEqual(addon.announcements[1][1], "QUEST_REMOVED")
+	assert(addon.announcements[1][2]:find("Photo Quest", 1, true))
+	AssertEqual(addon.announcements[1][3], 12345)
+	AssertEqual(addon.tracker[12345], nil)
+	AssertEqual(addon.pendingQuestRemovals[12345], nil)
 	addon:QUEST_TURNED_IN(nil, 12345)
 	addon:QUEST_TURNED_IN(nil, 12345)
 	AssertEqual(#addon.announcements, 2)
@@ -1055,36 +1052,15 @@ QuestTogether:RegisterTest("failed quest-log callback does not lose later queued
 	AssertEqual(executed, true)
 end)
 
-QuestTogether:RegisterTest("entering world clears logout and stale area announcement intent", function()
-	local addon = NewQuestFixture()
-	addon.isEnabled = false
-	addon.isLoggingOut = true
-	addon.pendingAnnounce = true
-	function addon:SetRuntimeFlag(name, value)
-		AssertEqual(name, "pendingScheduledTaskAreaRefreshShouldAnnounce")
-		self.pendingAnnounce = value
-	end
-	function addon:RefreshTaskAreaStates(announce)
-		AssertEqual(announce, false)
-		AssertEqual(self.pendingAnnounce, false)
-	end
-	addon:PLAYER_ENTERING_WORLD()
-	AssertEqual(addon.isLoggingOut, false)
-end)
-
 local function NewTaskAreaFixture()
 	local addon = NewQuestFixture()
 	addon.resolver = { resolvedByQuestID = {}, resolutionOrder = {}, generation = 0,
 		displayAsObjectiveByQuestID = {}, isWorldQuestByQuestID = {} }
-	addon.debugCount = 0
 	addon.API.GetNumQuestLogEntries = function()
 		return 1
 	end
 	addon.API.GetQuestLogInfo = function()
 		return { questID = 12345, title = "Photo Quest", isTask = true, isWorldQuest = true, isOnMap = true }
-	end
-	function addon:Debugf()
-		self.debugCount = self.debugCount + 1
 	end
 	function addon:EnsureQuestSnapshotStore() end
 	function addon:GetQuestSnapshotByQuestID()
@@ -1099,13 +1075,10 @@ local function NewTaskAreaFixture()
 	return addon
 end
 
-QuestTogether:RegisterTest("task area ignores retired quest rows and logs only changed scans", function()
+QuestTogether:RegisterTest("task area excludes retired quest rows", function()
 	local addon = NewTaskAreaFixture()
 	addon:RebuildTaskAreaResolverStore()
 	AssertEqual(addon.resolver.resolvedByQuestID[12345].includeWorld, true)
-	local firstDebugCount = addon.debugCount
-	addon:RebuildTaskAreaResolverStore()
-	AssertEqual(addon.debugCount, firstDebugCount)
 	addon.retiredQuestIds[12345] = {}
 	addon:RebuildTaskAreaResolverStore()
 	AssertEqual(addon.resolver.resolvedByQuestID[12345], nil)

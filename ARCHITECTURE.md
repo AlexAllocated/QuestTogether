@@ -415,6 +415,34 @@ requirements. `scripts/check_architecture.py` protects key ownership boundaries;
 behavioral tests cover cancellation, incomplete observations, replay, recovery
 and the protocol upgrade boundary. Do not replace those with only source-pattern tests.
 
+Keep a test when the failure it catches justifies its fixture and maintenance
+cost; uniqueness alone is not enough. Prefer the real producer/receiver or
+UI-event fixture over another test of mocked method delegation. Do not add
+standalone cases for every constant, cosmetic choice, fictional preview detail,
+getter or forwarded argument. Shared validators need representative valid and
+invalid behavior at their owner, not a fresh exhaustive matrix in every caller.
+Keep layered coverage only where the integration adds a meaningful failure mode;
+retain authorization, data-loss, source-order, lifecycle and restricted-access
+boundaries even when their outcomes look similar. A table-driven case is useful
+only if each input actually changes the exercised path. Test names must be unique; the offline harness checks
+the complete registered suite before selecting any subset.
+
+Negative cases need valid positive controls. Begin malformed protocol cases with
+valid current-generation records, establish active state before testing expiry,
+and reorder at least two distinct items. Count forbidden calls outside protected
+callbacks: an error-only stub can be swallowed by production `pcall`. Use the
+controlled clock for timers rather than running delay callbacks inline. Expected
+wire sizes, contents and outcomes must not simply reuse the implementation being
+tested to compute their answers.
+
+`lua scripts/test.lua . locale` runs every case tagged `locale = "client"` in
+the selected `QT_TEST_LOCALE`. CI uses that subset for each additional locale;
+the full default and reverse runs already cover the fixtures that force English.
+Python-only validators run once in CI. Generated release-note Lua, bindings and
+crypto checks still run under both interpreters because they execute Lua code.
+Avoid fixed test/catalog counts and exact UI geometry assertions unless those
+numbers are the product contract and the fixture actually models that behavior.
+
 `scripts/package.py` derives installed Lua from the TOC and includes only the
 explicit runtime asset/document rules. It checks pinned dependency hashes and
 verifies every archived payload. Release builds use an immutable `--ref`;

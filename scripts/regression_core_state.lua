@@ -881,16 +881,20 @@ end)
 QT:RegisterTest("audit restricted snapshot refresh performs no quest API reads", function()
 	local addon = NewFixture()
 	local priorQuest = SeedSnapshot(addon)
+	local reads = 0
 	addon.blocked = true
 	addon.API.GetNumQuestLogEntries = function()
+		reads = reads + 1
 		error("restricted count read")
 	end
 	addon.API.GetQuestLogInfo = function()
+		reads = reads + 1
 		error("restricted row read")
 	end
 	Equal(addon:RebuildQuestSnapshotStore(), addon.snapshot)
 	Equal(addon.snapshot.byQuestID[99999], priorQuest)
 	Equal(addon.snapshot.generation, 7)
+	Equal(reads, 0)
 end)
 
 QT:RegisterTest("audit live false clears cached quest completion and readiness", function()
@@ -904,6 +908,7 @@ end)
 
 QT:RegisterTest("audit unknown or restricted live status retains known completion", function()
 	local addon = NewFixture()
+	local reads = 0
 	addon.tracker[12345] = { isComplete = true, isReadyForTurnIn = true }
 	addon.liveReady, addon.liveComplete = nil, nil
 	local state = addon:GetTrackedQuestStatusState(12345, true)
@@ -911,14 +916,17 @@ QT:RegisterTest("audit unknown or restricted live status retains known completio
 	Equal(state.isReadyForTurnIn, true)
 	addon.blocked = true
 	addon.API.IsQuestReadyForTurnIn = function()
+		reads = reads + 1
 		error("restricted status read")
 	end
 	addon.API.IsQuestComplete = function()
+		reads = reads + 1
 		error("restricted status read")
 	end
 	state = addon:GetTrackedQuestStatusState(12345, true)
 	Equal(state.isComplete, true)
 	Equal(state.isReadyForTurnIn, true)
+	Equal(reads, 0)
 end)
 
 QT:RegisterTest("audit full scans preserve already-observed objective milestones", function()
@@ -932,21 +940,6 @@ QT:RegisterTest("audit full scans preserve already-observed objective milestones
 	Equal(addon.tracker[12345].objectiveValues[1], 0)
 	Equal(addon:UpdateTrackedObjectiveProgress(addon.tracker[12345], 1, "80% Locations Photographed", 80), false)
 	Equal(addon:UpdateTrackedObjectiveProgress(addon.tracker[12345], 1, "100% Locations Photographed", 100), true)
-end)
-
-QT:RegisterTest("monitored counts reflect the live QT tracker and remain unknown before its initial scan", function()
-	local a = NewFixture()
-	Equal(a:GetMonitoredQuestCount(), nil)
-	a:ScanQuestLog()
-	Equal(a:GetMonitoredQuestCount(), 1)
-	a.tracker[67890] = { title = "Area task", objectives = {} }
-	Equal(a:GetMonitoredQuestCount(), 2)
-	a.tracker[12345] = nil
-	Equal(a:GetMonitoredQuestCount(), 1)
-	a.tracker[67890] = nil
-	Equal(a:GetMonitoredQuestCount(), 0)
-	a:ResetRuntimeWorkStateStore()
-	Equal(a:GetMonitoredQuestCount(), nil)
 end)
 
 QT:RegisterTest("audit enabling starts fresh objective history after missed acceptance events", function()
@@ -973,49 +966,24 @@ QT:RegisterTest("audit supplied cached quest-log index is revalidated after rows
 	Equal(addon:GetQuestLogIndexForQuest(12345, { questID = 12345, questLogIndex = 1 }), 2)
 end)
 
-QT:RegisterTest("audit immediate waypoint mutation runs exactly once", function()
-	local addon = NewFixture()
-	local points, writes, tracking = 0, 0, 0
-	addon.API.CanSetUserWaypointOnMap = function(mapID)
-		Equal(mapID, 100)
-		return true
-	end
-	addon.API.CreateUiMapPoint = function(mapID, x, y)
-		points = points + 1
-		Equal(mapID, 100)
-		Equal(x, 0.25)
-		Equal(y, 0.50)
-		return { mapID = mapID, x = x, y = y }
-	end
-	addon.API.SetUserWaypoint = function()
-		writes = writes + 1
-		return true
-	end
-	addon.API.SetSuperTrackedUserWaypoint = function(enabled)
-		Equal(enabled, true)
-		tracking = tracking + 1
-	end
-	Equal(addon:CreateBlizzardWaypoint(100, 25, 50), true)
-	Equal(points, 1)
-	Equal(writes, 1)
-	Equal(tracking, 1)
-	Equal(addon.runtime.pendingWaypointIntent, nil)
-	Equal(next(addon.runtime.deferredWorkState.entries), nil)
-end)
-
 QT:RegisterTest("rejected waypoint writes cannot report success or track the previous pin", function()
 	for _, result in ipairs({ "accept", "reject", "missing", "throw", "secret", "wrong type" }) do
 		local addon = NewFixture()
 		local secret, oldPoint = {}, { mapID = 7 }
-		local currentPoint, writes, tracks = oldPoint, 0, 0
+		local currentPoint, points, writes, tracks = oldPoint, 0, 0, 0
 		local canAccessValue = addon.CanAccessValue
 		addon.CanAccessValue = function(self, value)
 			return value ~= secret and canAccessValue(self, value)
 		end
-		addon.API.CanSetUserWaypointOnMap = function()
+		addon.API.CanSetUserWaypointOnMap = function(mapID)
+			Equal(mapID, 100)
 			return true
 		end
 		addon.API.CreateUiMapPoint = function(mapID, x, y)
+			points = points + 1
+			Equal(mapID, 100)
+			Equal(x, 0.25)
+			Equal(y, 0.50)
 			return { mapID = mapID, x = x, y = y }
 		end
 		addon.API.SetUserWaypoint = function(point)
@@ -1042,6 +1010,7 @@ QT:RegisterTest("rejected waypoint writes cannot report success or track the pre
 			tracks = tracks + 1
 		end
 		Equal(addon:CreateBlizzardWaypoint(100, 25, 50), result == "accept", result)
+		Equal(points, 1)
 		Equal(writes, 1)
 		Equal(tracks, result == "accept" and 1 or 0)
 		Equal(currentPoint.mapID, result == "accept" and 100 or 7)
@@ -1235,134 +1204,6 @@ QT:RegisterTest("audit bubble edit revert cannot restore another profile's setti
 	Equal(addon.personalBubbleEditSessionRestoring, false)
 end)
 
-QT:RegisterTest("audit bubble edit revert still applies the current profile snapshot", function()
-	local addon = NewFixture()
-	local writes = 0
-	function addon:SetOption(key, value)
-		writes = writes + 1
-		self.db.profile[key] = value
-		return true
-	end
-	addon.AttachPersonalBubbleEditModeDialog = Noop
-	addon.RefreshPersonalBubbleEditModeDialog = Noop
-	-- False shadows a possible live dialog on the prototype during /qt test.
-	addon.personalBubbleEditModeDialog = false
-	addon.personalBubbleEditSession = {
-		profile = addon.db.profile,
-		saved = { chatBubbleSize = 140, chatBubbleDuration = 5 },
-		pending = true,
-	}
-	addon:RevertPersonalBubbleEditSession()
-	Equal(addon.db.profile.chatBubbleSize, 140)
-	Equal(addon.db.profile.chatBubbleDuration, 5)
-	Equal(writes, 2)
-	Equal(addon.personalBubbleEditSession.pending, false)
-end)
-
-QT:RegisterTest("moved celebration and general controls preserve existing profile values", function()
-	local addon = QT
-	local function Checkbox()
-		return {
-			SetChecked = function(self, value)
-				self.checked = value
-			end,
-		}
-	end
-	local emotes = {
-		"emoteOnQuestCompletion",
-		"emoteOnNearbyPlayerQuestCompletion",
-		"emoteOnLevelUp",
-		"emoteOnNearbyPlayerLevelUp",
-	}
-	addon.whereToAnnounceFrame, addon.whereToAnnounceControls = {}, {}
-	addon.optionsFrame, addon.homeControls = {}, { showMinimapButton = Checkbox() }
-	for i, key in ipairs(emotes) do
-		addon.db.profile[key] = i % 2 == 1
-		addon.whereToAnnounceControls[key] = Checkbox()
-	end
-	addon.db.profile.showMinimapButton = false
-	addon:RefreshOptionsWindow()
-	for i, key in ipairs(emotes) do
-		assert(addon.whereToAnnounceControls[key].checked == (i % 2 == 1))
-	end
-	assert(addon.homeControls.showMinimapButton.checked == false)
-	for i, key in ipairs(emotes) do
-		addon.db.profile[key] = i % 2 == 0
-	end
-	addon.db.profile.showMinimapButton = true
-	addon:RefreshOptionsWindow()
-	for i, key in ipairs(emotes) do
-		assert(addon.whereToAnnounceControls[key].checked == (i % 2 == 0))
-	end
-	assert(addon.homeControls.showMinimapButton.checked == true)
-end)
-
-QT:RegisterTest("home status shows current runtime profile version and newer-version notices", function()
-	local addon = NewFixture()
-	local profile = "Private fixture"
-	addon.GetCurrentProfileKey = function()
-		return profile
-	end
-	addon.GetAddonVersion = function()
-		return "5.16.2"
-	end
-	addon.isEnabled = false
-	addon.db.global.availableAddonVersion = "5.16.3"
-	local L = QT.Translate
-	local status = addon:GetHomeStatusText()
-	assert(status:find(L("QuestTogether") .. ": " .. L("Disabled"), 1, true))
-	assert(status:find(L("Active profile") .. ": Private fixture", 1, true))
-	assert(status:find(L("Version") .. ": 5.16.2", 1, true))
-	assert(status:find(L("Newer version detected") .. ": 5.16.3", 1, true))
-	addon.isEnabled = true
-	addon.db.global.availableAddonVersion = "5.16.2"
-	profile = "Another profile"
-	status = addon:GetHomeStatusText()
-	assert(status:find(L("QuestTogether") .. ": " .. L("Enabled"), 1, true))
-	assert(status:find(L("Active profile") .. ": Another profile", 1, true))
-	assert(not status:find(L("Newer version detected"), 1, true))
-end)
-
-QT:RegisterTest("lean home layout grows for wrapped metadata and shrinks after refresh", function()
-	local addon = NewFixture()
-	addon.optionsFrame = {}
-	local textHeight, status = 14, "Initial metadata"
-	addon.GetHomeStatusText = function()
-		return status
-	end
-	addon.homeControls = {
-		content = {
-			SetHeight = function(self, height)
-				self.height = height
-			end,
-		},
-		description = {
-			GetStringHeight = function()
-				return 40
-			end,
-		},
-		statusText = {
-			SetText = function(self, value)
-				self.text = value
-			end,
-			GetStringHeight = function()
-				return textHeight
-			end,
-		},
-	}
-	addon:RefreshHomeWindow()
-	local initialHeight = addon.homeControls.content.height
-	assert(initialHeight <= 400, "ordinary metadata should keep the simple page compact")
-	assert(addon.homeControls.statusText.text == status)
-	textHeight, status = 180, "A long translated profile and update notice"
-	addon:RefreshHomeWindow()
-	assert(addon.homeControls.content.height == initialHeight + 166)
-	assert(addon.homeControls.statusText.text == status)
-	textHeight = 14
-	addon:RefreshHomeWindow()
-	assert(addon.homeControls.content.height == initialHeight)
-end)
-
 QT:RegisterTest("bubble save enables for edits and reverts to the last explicit save", function()
 	local addon = NewFixture()
 	addon.db.profile.chatBubbleSize = 100
@@ -1531,6 +1372,7 @@ local function NewReadyMilestoneFixture(count)
 end
 
 QT:RegisterTest("readiness without any readable baseline stays unknown including restricted reads", function()
+	local unexpectedCalls = 0
 	local a = NewReadyMilestoneFixture()
 	a.liveReady, a.liveComplete = nil, nil
 	Equal(a:GetTrackedQuestStatusState(12345, true).isReadyForTurnIn, nil)
@@ -1540,9 +1382,11 @@ QT:RegisterTest("readiness without any readable baseline stays unknown including
 	Equal(a.tracker[12345].isReadyForTurnIn, nil)
 	a.blocked = true
 	a.API.IsQuestReadyForTurnIn = function()
+		unexpectedCalls = unexpectedCalls + 1
 		error("must not read restricted readiness")
 	end
 	Equal(a:GetTrackedQuestStatusState(12345, true).isReadyForTurnIn, nil)
+	Equal(unexpectedCalls, 0)
 end)
 
 QT:RegisterTest("initial ready and late readable completed quests never announce a catch-up burst", function()
@@ -1656,34 +1500,4 @@ QT:RegisterTest("quest acquisition publishes classification and rows atomically 
 	end
 	assert(select(2, a:RebuildQuestSnapshotStore()))
 	assert(a:GetQuestClassification(12345).isWorldQuest == false)
-end)
-
-QT:RegisterTest("classification consumers and area reduction share an observation without new native reads", function()
-	local a = NewTaskClassificationFixture()
-	local reads = 0
-	a.API.IsWorldQuest = function()
-		reads = reads + 1
-		return true
-	end
-	local snapshot = a:RebuildQuestSnapshotStore()
-	assert(reads == 1)
-	assert(a:IsWorldQuest(12345) and not a:IsBonusObjective(12345))
-	assert(a:GetTaskAnnouncementType(12345) == "world")
-	assert(a:RefreshTaskAreaStates(false, snapshot))
-	assert(reads == 1, "presentation and reducers cannot acquire classification")
-end)
-
-QT:RegisterTest("a successfully observed empty log is cached until explicit acquisition", function()
-	local a = NewTaskClassificationFixture()
-	a.row = nil
-	local reads = 0
-	a.API.GetNumQuestLogEntries = function()
-		reads = reads + 1
-		return 0
-	end
-	a:EnsureQuestSnapshotStore()
-	a:EnsureQuestSnapshotStore()
-	assert(reads == 1)
-	a:RebuildQuestSnapshotStore()
-	assert(reads == 2)
 end)

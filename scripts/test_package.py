@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Release payload integrity without live services or changing the checkout."""
 import io
+import hashlib
+import json
+import os
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 import package
 import check_architecture
@@ -30,10 +35,49 @@ class PackagingTests(unittest.TestCase):
             self.assertFalse(any(p.startswith(".local/") or p.endswith("image.png") for p in manifest["files"]))
 
     def test_ref_is_independent_of_working_tree(self):
-        # Real immutable history: local refactors must not leak into a tag build.
-        version, files = package.payloads(ROOT, "HEAD")
-        self.assertEqual(version, package.version_from_toc(files["QuestTogether.toc"].decode()))
-        self.assertIsNotNone(__import__("json").loads(files[package.MANIFEST])["sourceCommit"])
+        # A clean checkout cannot expose accidentally reading working-tree files
+        # in a ref build. Give the commit, index, and worktree distinct content.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            published = {name: b"fixture document\n" for name in package.DOCUMENTS}
+            published.update({
+                "QuestTogether.toc": b"## Version: 1.0.0\nCore.lua\nLibs/libchev/libchev.lua\n",
+                "Core.lua": b"-- published code\n",
+                "Libs/libchev/libchev.lua": b"-- pinned dependency\n",
+                "Media/Published.tga": b"published asset",
+            })
+            published["Libs/libchev/manifest.json"] = json.dumps({
+                "schema": 1, "revision": "a" * 40,
+                "files": {"libchev.lua": hashlib.sha256(published["Libs/libchev/libchev.lua"]).hexdigest()},
+            }).encode()
+            for name, data in published.items():
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(data)
+            environment = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+            environment.update({"GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull})
+            with patch.dict(os.environ, environment, clear=True):
+                def git(*args):
+                    return subprocess.check_output([
+                        "git", "-c", "user.name=Offline package test", "-c", "user.email=test@example.invalid",
+                        "-c", "commit.gpgsign=false", "-c", "core.hooksPath=" + os.devnull, *args,
+                    ], cwd=root, stderr=subprocess.DEVNULL).decode().strip()
+                git("init", "-q")
+                git("add", ".")
+                git("commit", "-qm", "Published fixture")
+                commit = git("rev-parse", "HEAD")
+                (root / "Core.lua").write_text("-- staged code\n")
+                git("add", "Core.lua")
+                (root / "Core.lua").write_text("-- unstaged code\n")
+                (root / "QuestTogether.toc").write_text("## Version: 9.0.0\nUntracked.lua\n")
+                (root / "Media/Published.tga").unlink()
+                (root / "Media/Untracked.tga").write_bytes(b"untracked asset")
+                version, files = package.payloads(root, "HEAD")
+            self.assertEqual(version, "1.0.0")
+            self.assertEqual({name: data for name, data in files.items() if name != package.MANIFEST}, published)
+            manifest = json.loads(files[package.MANIFEST])
+            self.assertEqual(manifest["sourceCommit"], commit)
+            self.assertEqual(manifest["files"], {name: hashlib.sha256(data).hexdigest() for name, data in published.items()})
 
     def test_rejects_damaged_and_incomplete_payloads(self):
         with tempfile.TemporaryDirectory() as directory:

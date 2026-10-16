@@ -210,7 +210,6 @@ QT:RegisterTest("nearby streams restrict unknown senders routes payloads and exp
 	assert(not a:HandleNearbyStreamMessage("QTSP", Packet(peer.token, 99, stamp - 10), b.name))
 	assert(a:HandleNearbyStreamMessage("QTSP", Packet(peer.token, 99, stamp), b.name))
 	assert(not a:HandleNearbyStreamMessage("QTSP", Packet(peer.token, 99, stamp), b.name))
-	a:OnCommReceived(a.commPrefix, "ANN|anything", "WHISPER", b.name)
 	a.now = a.now + 13
 	assert(not a:HandleNearbyStreamMessage("QTSP", Packet(peer.token, 100, stamp), b.name))
 end)
@@ -302,18 +301,7 @@ QT:RegisterTest("nearby streams use common throttle backoff and yield to control
 	assert(found, "control work shares and drains the same queue")
 	assert(a.nearbyStreamState.wanted[b.name].sample)
 end)
-QT:RegisterTest("nearby capabilities share one typed state envelope without legacy companions", function()
-	local a = Fixture()
-	a:Publish("QTPR", { active = true })
-	a:Publish("QTPG", { size = 0 })
-	a:Publish("QTCI", { streams = true, raceID = 0 })
-	local records = a:BuildCommunicationStateRecords()
-	Equal(#records, 3)
-	Equal(records[1].topic, "QTPR")
-	Equal(records[2].topic, "QTPG")
-	Equal(records[3].topic, "QTCI")
-	Equal(#a:BuildCommunicationStateRecords(true), 0)
-end)
+
 QT:RegisterTest("nearby streams never probe older clients without advertised support", function()
 	local a, b = Pair()
 	a.nearbyStreamState.capabilities = {}
@@ -359,17 +347,16 @@ QT:RegisterTest("nearby stream reset never reuses correlations from the geograph
 	local a, b = Pair()
 	Tick(a, b, 3)
 	local oldToken = a.nearbyStreamState.wanted[b.name].token
-	a.nearbyStreamState = nil
+	a:ResetNearbyStreams()
 	Discover(a, b)
 	Tick(a, nil, 1)
-	assert(a.nearbyStreamState.wanted[b.name].token ~= oldToken)
-	assert(
-		not a:HandleNearbyStreamMessage(
-			"QTSP",
-			{ token = oldToken, sequence = 99, stamp = 0, mapID = 1, x = 0.5, y = 0.5 },
-			b.name
-		)
-	)
+	local current = a.nearbyStreamState.wanted[b.name].token
+	assert(current ~= oldToken)
+	local sample =
+		{ token = oldToken, sequence = 99, stamp = a:GetAnnouncementServerTime(), mapID = 1, x = 0.5, y = 0.5 }
+	assert(not a:HandleNearbyStreamMessage("QTSP", sample, b.name))
+	sample.token = current
+	assert(a:HandleNearbyStreamMessage("QTSP", sample, b.name))
 end)
 QT:RegisterTest("nearby capability freshness follows the original sample timestamp", function()
 	local a, b = Pair()
@@ -437,23 +424,6 @@ QT:RegisterTest("player identity localizes race and class without guessing legac
 	end
 end)
 
-QT:RegisterTest("nearby stream publishing includes race ID while viewing or sharing is disabled", function()
-	local a = Fixture()
-	a.API.GetPlayerRaceID = function()
-		return 3
-	end
-	a.db.profile.showPlayerLocations = false
-	a:UpdateNearbyStreams()
-	Equal(a.geographicCommsState.latest.QTCI.data.streams, false)
-	Equal(a.geographicCommsState.latest.QTCI.data.raceID, 3)
-	Equal(#a.sent, 0)
-	a.db.profile.showPlayerLocations = true
-	a.now = a.now + 20
-	a:UpdateNearbyStreams()
-	Equal(a.geographicCommsState.latest.QTCI.data.streams, true)
-	Equal(a.geographicCommsState.latest.QTCI.data.raceID, 3)
-end)
-
 QT:RegisterTest("unreachable whisper recipients do not permanently stall other nearby peers", function()
 	local a, b = Pair()
 	local c = Fixture("Aaron Missing")
@@ -485,12 +455,6 @@ QT:RegisterTest("stream commands require whisper transport and full native playe
 			client.IsAnnouncementChannelEvent = function()
 				return true
 			end
-			client.ShouldSuppressDuplicateCommMessage = function()
-				return false
-			end
-			client.IsGeographicChannelEvent = function()
-				return false
-			end
 		end
 		local network = { [a.name] = a, [b.name] = b }
 		a.network, b.network = network, network
@@ -498,7 +462,14 @@ QT:RegisterTest("stream commands require whisper transport and full native playe
 		a.nearbyStreamState, b.nearbyStreamState = nil, nil
 		Discover(a, b)
 		Discover(b, a)
-		a:OnCommReceived(a.commPrefix, "QTSR|1,channel-token", "CHANNEL", b.name)
+		local frames = assert(b:BuildCommFrames("QTSR", { token = "channel-token" }, {
+			session = b:GetCommunicationSession(),
+			messageId = "900",
+			stamp = b:GetAnnouncementServerTime(),
+		}))
+		for _, wire in ipairs(frames) do
+			Equal(a:OnCommReceived(a.commPrefix, wire, "CHANNEL", b.name), false)
+		end
 		Equal(Count(a.nearbyStreamState.subscribers), 0)
 		Tick(a, b, 8)
 		assert(a.nearbyStreamState.wanted[b.name].sample)

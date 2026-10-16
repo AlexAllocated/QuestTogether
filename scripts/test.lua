@@ -170,9 +170,35 @@ QuestTogether.isInitialized = true
 -- True NaN fixtures belong only to host Lua: Forever rejects their construction
 -- as division by zero. These checks remain mandatory in every offline run.
 assert(loadfile(addonRoot .. "/scripts/offline_numeric_tests.lua"))()(QuestTogether)
+local mode = arg[2] or "normal"
+assert(
+	({ normal = true, reverse = true, live = true, ["live-reverse"] = true, locale = true })[mode],
+	"unknown test mode: " .. mode
+)
 local selectedTestLocale = os.getenv("QT_TEST_LOCALE") or "enUS"
 local expectedTestLocale = selectedTestLocale == "enGB" and "enUS" or selectedTestLocale
 assert(QuestTogether.locale == expectedTestLocale, "client locale must survive addon initialization")
+local names, presentationCases = {}, 0
+for _, case in ipairs(QuestTogether.tests) do
+	assert(not names[case.name], "duplicate test name: " .. case.name)
+	names[case.name] = true
+	if case.locale == "client" then
+		presentationCases = presentationCases + 1
+	end
+end
+assert(presentationCases > 0, "client-locale presentation coverage must be registered")
+if mode == "locale" then
+	-- Domain fixtures deliberately run in English. Repeating those for every
+	-- locale proves nothing new; select only cases that exercise client text.
+	local getOptions = QuestTogether.GetDebugTestOptions
+	function QuestTogether:GetDebugTestOptions(present)
+		local options = getOptions(self, present)
+		options.include = function(case)
+			return case.locale == "client"
+		end
+		return options
+	end
+end
 if clientChecks then
 	clientChecks(QuestTogether)
 	os.exit(0)
@@ -241,7 +267,7 @@ end
 -- The live modes also model independent frame callbacks and real addon work
 -- between cases. Engine replacements remain confined to this offline harness.
 local success, passed, failed, result
-if arg[2] == "live" or arg[2] == "live-reverse" then
+if mode == "live" or mode == "live-reverse" then
 	local callbacks, frames, maxCaseSeconds = {}, 0, 0
 	local api = {}
 	for key, value in pairs(QuestTogether.API) do
@@ -261,7 +287,7 @@ if arg[2] == "live" or arg[2] == "live-reverse" then
 	controller.ShowLog = function()
 		return true
 	end
-	success, passed, failed, result = QuestTogether:RunTests(arg[2] == "live-reverse", true)
+	success, passed, failed, result = QuestTogether:RunTests(mode == "live-reverse", true)
 	assert(success and result.status == "running" and result.completed == 0, "test start must yield before any cases")
 	local selected = 0
 	for _, case in ipairs(registry) do
@@ -305,20 +331,19 @@ if arg[2] == "live" or arg[2] == "live-reverse" then
 	print(controller:GetText("TEST", ""))
 	print(string.format("liveFrames=%d offlineOnly=%d maxFrameCPU=%.4fs", frames, result.skipped, maxCaseSeconds))
 else
-	success, passed, failed, result = QuestTogether:RunTests(arg[2] == "reverse", false)
+	success, passed, failed, result = QuestTogether:RunTests(mode == "reverse", false)
 end
 assert(result, "Shared debug controller did not return a test result")
+if mode == "locale" then
+	assert(
+		result.total == presentationCases and result.completed == presentationCases,
+		"locale mode must execute every client-locale case"
+	)
+end
 CheckLiveStructuredStores()
 assert(#engineBoundaryCalls == 0, "live-test isolation failure: " .. table.concat(engineBoundaryCalls, ", "))
 -- The shared headless runner already prints failures and the summary through
 -- QT's console adapter; avoid duplicating its presentation here.
 print("registered=" .. tostring(result.total))
-local presentationCases = 0
-for _, case in ipairs(QuestTogether.tests) do
-	if case.locale == "client" then
-		presentationCases = presentationCases + 1
-	end
-end
-assert(presentationCases >= 6, "client-locale presentation coverage must be registered")
 print("presentationLocale=" .. QuestTogether.locale .. " cases=" .. presentationCases)
 os.exit(success and 0 or 1)

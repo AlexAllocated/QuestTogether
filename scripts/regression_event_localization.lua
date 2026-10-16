@@ -223,8 +223,11 @@ QT:RegisterTest("local title waiting is bounded and does not delay same-language
 	a:HandleAnnouncementEvent(Event("QUEST_PROGRESS", "1:koKR:c:1:1:2", "Native objective: 1/2"), false)
 	assert(#a.chat == 2 and #clock.timers == 0)
 	a.blocked = true
-	a:HandleAnnouncementEvent(KoreanQuest(), false)
-	assert(#a.chat == 3, "restricted native reads must not hold up local chat")
+	local reads, loads, event = a.reads, a.loads, KoreanQuest()
+	local original = event.text
+	a:HandleAnnouncementEvent(event, false)
+	assert(#a.chat == 3 and a.chat[3] == "Quest Completed: 결속", "restricted reads must not hold up localized chat")
+	assert(a.reads == reads and a.loads == loads and event.text == original)
 	a, clock = PresentationFixture()
 	for id = 1, 10 do a:GetLocalizedQuestTitle(id) end
 	a:HandleAnnouncementEvent(KoreanQuest(), false)
@@ -407,40 +410,6 @@ QT:RegisterTest("progress preserves sender prose across locales and never borrow
 	end
 	assert(a.reads == 0 and a.loads == 0)
 end)
-
-QT:RegisterTest("all translated locales render event labels titles and progress", function()
-	local a = Fixture()
-	a.snapshots[12345] = { title = "Local title" }
-	local previous = QT.localizationTestLocale
-	for _, locale in ipairs({ "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW" }) do
-		QT.localizationTestLocale = locale
-		local event = Event("QUEST_ACCEPTED", "1:enUS:q:::", "Quest Accepted: Original title")
-		assert(a:LocalizeAnnouncementEvent(event) == QT.TranslateForLocale("Quest Accepted: ", locale) .. "Local title")
-		assert(a:LocalizeAnnouncementEvent(Event(nil, "1:enUS:c:2:3:8")) == "Wolves slain: 3/8")
-	end
-	QT.localizationTestLocale = previous
-end)
-
-QT:RegisterTest(
-	"missing native quest data keeps source titles with localized labels until a local title loads",
-	function()
-		local a = Fixture()
-		local original = QT.TranslateForLocale("Quest Completed: ", "deDE") .. "Eine Quest"
-		assert(
-			a:LocalizeAnnouncementEvent(Event("QUEST_COMPLETED", "1:deDE:q:::", original))
-				== "Quest Completed: Eine Quest"
-		)
-		assert(a:LocalizeAnnouncementEvent(Event()) == "Wolves slain: 3/8")
-		assert(a.reads == 1 and a.loads == 1)
-		a.titles[12345] = "Local quest"
-		a.now = a.now + 5
-		assert(
-			a:LocalizeAnnouncementEvent(Event("QUEST_COMPLETED", "1:deDE:q:::", original))
-				== "Quest Completed: Local quest"
-		)
-		assert(a:LocalizeAnnouncementEvent(Event()) == "Wolves slain: 3/8")
-	end
-)
 
 QT:RegisterTest("unavailable quest titles preserve wire text across quest event kinds and restricted reads", function()
 	for _, condition in ipairs({ "missing", "blocked", "failed", "placeholder" }) do
@@ -674,27 +643,6 @@ QT:RegisterTest("quest title request pacing survives eviction and cached titles 
 	assert(a:GetLocalizedQuestTitle(999) == nil and a.reads == reads and a.loads == 11)
 end)
 
-QT:RegisterTest("wire completion titles survive unavailable receiver data and clickable chat formatting", function()
-	local a = Fixture()
-	function a:BuildChatLogQuestLabel(id, title)
-		assert(id == 78146)
-		return "[" .. title .. "]"
-	end
-	for _, locale in ipairs({ "enUS", "deDE" }) do
-		a.localizationTestLocale = locale
-		local event = Event("QUEST_COMPLETED", "1:enUS:q:::", "Quest Completed: Sender's quest name")
-		event.questId = "78146"
-		local decoded = assert(RoundTrip(a, event))
-		local text = a:LocalizeAnnouncementEvent(decoded)
-		local prefix = QT.TranslateForLocale("Quest Completed: ", locale)
-		assert(text == prefix .. "Sender's quest name")
-		assert(
-			a:DecorateAnnouncementMessageWithQuestLink(text, decoded.eventType, decoded.questId)
-				== prefix .. "[Sender's quest name]"
-		)
-	end
-end)
-
 QT:RegisterTest("quest labels localize across all wire locales even without optional facts or native titles", function()
 	for _, locale in ipairs({ "enUS", "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW" }) do
 		for _, kind in ipairs({
@@ -736,20 +684,6 @@ QT:RegisterTest("missing facts never guess objective counters or strip unknown s
 	)
 	a.snapshots[12345] = { title = "Local title" }
 	assert(a:LocalizeAnnouncementEvent(Event("QUEST_PROGRESS", "", "Wölfe besiegt: 5/7")) == "Wölfe besiegt: 5/7")
-end)
-
-QT:RegisterTest("restricted receiver localizes known event labels without reading native quest data", function()
-	local a = Fixture()
-	a.blocked = true
-	local event = Event(
-		"QUEST_ACCEPTED",
-		"1:deDE:q:::",
-		QT.TranslateForLocale("Quest Accepted: ", "deDE") .. "Detonation aus der Ferne"
-	)
-	local originalText = event.text
-	assert(a:LocalizeAnnouncementEvent(event) == "Quest Accepted: Detonation aus der Ferne")
-	assert(a.reads == 0 and a.loads == 0)
-	assert(event.text == originalText, "localization must not mutate source text")
 end)
 
 QT:RegisterTest("scan facts preserve source text and translate bounded counts without a quest ID", function()

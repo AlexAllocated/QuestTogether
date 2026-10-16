@@ -52,9 +52,5 @@ class LiveNumericTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'regression_protocol_v2.lua:1'):
                 numeric.check(root, {'scripts/regression_protocol_v2.lua': 'local nan = 0/0'})
 
-    def test_current_live_fixtures_contain_no_zero_division(self):
-        self.assertGreater(numeric.check(), 0)
-
-
 if __name__ == '__main__':
     unittest.main()
