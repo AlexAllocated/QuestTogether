@@ -1,15 +1,15 @@
 {
-  "source_sha256": "600132da9a2cd6a0aecf8371bc79a22cd2e4c3a9853e0340ab88041431d048c8",
+  "source_sha256": "8989ea7dcdea1bf3b0f36592f6cdca4018655e9e95a5509af8609b6b71d7c9e9",
   "notes": {
-    "version": "7.3.1",
-    "welcome": "Informações de grupo e controles do mapa mais claros.",
+    "version": "7.3.2",
+    "welcome": "Informações de grupo mais consistentes e navegação mais inteligente pelo mapa.",
     "sections": [
       {
         "title": "Jogadores nos mapas",
         "items": [
-          "Nas dicas dos marcadores agrupados, jogadores que pertencem ao mesmo grupo conhecido aparecem dentro de uma borda branca arredondada, com um ícone de grupo. Jogadores cujos companheiros estão fora desse conjunto de marcadores também exibem o indicador de grupo.",
-          "O botão QT no mapa-múndi permanece totalmente visível e exibe um X vermelho quando os marcadores do QT estão ocultos.",
-          "Passar o cursor sobre o botão QT não escurece mais o mapa enquanto os marcadores do QT estão ocultos."
+          "As dicas de jogadores, as dicas dos marcadores agrupados e o destaque de membros do grupo agora usam as mesmas informações de grupo disponíveis, reduzindo carregamentos repetidos e inconsistências no agrupamento.",
+          "As dicas dos marcadores agrupados mostram o número total de membros do grupo ao lado do ícone branco de grupo.",
+          "Clicar em um conjunto de marcadores na visão geral do mundo agora abre o mapa mais detalhado que contém todos os jogadores desse conjunto e, se necessário, mostra os marcadores individualmente."
         ]
       }
     ]

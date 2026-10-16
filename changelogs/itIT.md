@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.2
+
+Informazioni sul gruppo più coerenti e navigazione sulla mappa più intelligente.
+
+### Giocatori sulle mappe
+
+- Le descrizioni dei giocatori e dei segnalini raggruppati, insieme all’evidenziazione dei membri del gruppo, ora utilizzano le stesse informazioni sul gruppo già disponibili, riducendo i caricamenti ripetuti e le incongruenze nel raggruppamento.
+- Le descrizioni dei segnalini raggruppati mostrano il numero totale di membri del gruppo accanto all’icona bianca del gruppo.
+- Facendo clic su un insieme di segnalini nella vista completa del mondo, ora si apre la mappa più dettagliata che contiene tutti quei giocatori; se necessario, i segnalini vengono poi mostrati singolarmente.
+
 ## 7.3.1
 
 Informazioni sul gruppo e controlli della mappa più chiari.

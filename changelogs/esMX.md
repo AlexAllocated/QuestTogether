@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.2
+
+Información de grupo más coherente y navegación por el mapa más inteligente.
+
+### Jugadores en los mapas
+
+- Las descripciones emergentes de jugadores y de agrupaciones de puntos, así como el resaltado de grupos, ahora utilizan la misma información de grupo disponible, lo que reduce las cargas repetidas y las inconsistencias al agrupar jugadores.
+- Las descripciones emergentes de las agrupaciones de puntos muestran el número total de miembros del grupo junto al ícono blanco de grupo.
+- Al hacer clic en una agrupación de puntos desde la vista completa del mundo, ahora se abre el mapa más detallado que contiene a todos sus jugadores y, si es necesario, se despliegan los puntos individuales.
+
 ## 7.3.1
 
 Información de grupo y controles del mapa más claros.

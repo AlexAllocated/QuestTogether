@@ -1,15 +1,15 @@
 {
-  "source_sha256": "600132da9a2cd6a0aecf8371bc79a22cd2e4c3a9853e0340ab88041431d048c8",
+  "source_sha256": "8989ea7dcdea1bf3b0f36592f6cdca4018655e9e95a5509af8609b6b71d7c9e9",
   "notes": {
-    "version": "7.3.1",
-    "welcome": "Informazioni sul gruppo e controlli della mappa più chiari.",
+    "version": "7.3.2",
+    "welcome": "Informazioni sul gruppo più coerenti e navigazione sulla mappa più intelligente.",
     "sections": [
       {
         "title": "Giocatori sulle mappe",
         "items": [
-          "Nei suggerimenti degli indicatori raggruppati, i giocatori che risultano appartenere allo stesso gruppo sono racchiusi in un bordo bianco arrotondato, con un’icona di gruppo. L’indicatore di gruppo compare anche per un giocatore i cui compagni si trovano fuori da quell’insieme di indicatori.",
-          "Il pulsante QT sulla mappa del mondo resta completamente visibile e mostra una X rossa quando gli indicatori QT sono nascosti.",
-          "Passare il puntatore sul pulsante QT non oscura più la mappa quando gli indicatori QT sono nascosti."
+          "Le descrizioni dei giocatori e dei segnalini raggruppati, insieme all’evidenziazione dei membri del gruppo, ora utilizzano le stesse informazioni sul gruppo già disponibili, riducendo i caricamenti ripetuti e le incongruenze nel raggruppamento.",
+          "Le descrizioni dei segnalini raggruppati mostrano il numero totale di membri del gruppo accanto all’icona bianca del gruppo.",
+          "Facendo clic su un insieme di segnalini nella vista completa del mondo, ora si apre la mappa più dettagliata che contiene tutti quei giocatori; se necessario, i segnalini vengono poi mostrati singolarmente."
         ]
       }
     ]

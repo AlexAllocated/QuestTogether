@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.2
+
+Informações de grupo mais consistentes e navegação mais inteligente pelo mapa.
+
+### Jogadores nos mapas
+
+- As dicas de jogadores, as dicas dos marcadores agrupados e o destaque de membros do grupo agora usam as mesmas informações de grupo disponíveis, reduzindo carregamentos repetidos e inconsistências no agrupamento.
+- As dicas dos marcadores agrupados mostram o número total de membros do grupo ao lado do ícone branco de grupo.
+- Clicar em um conjunto de marcadores na visão geral do mundo agora abre o mapa mais detalhado que contém todos os jogadores desse conjunto e, se necessário, mostra os marcadores individualmente.
+
 ## 7.3.1
 
 Informações de grupo e controles do mapa mais claros.

@@ -1,15 +1,15 @@
 {
-  "source_sha256": "600132da9a2cd6a0aecf8371bc79a22cd2e4c3a9853e0340ab88041431d048c8",
+  "source_sha256": "8989ea7dcdea1bf3b0f36592f6cdca4018655e9e95a5509af8609b6b71d7c9e9",
   "notes": {
-    "version": "7.3.1",
-    "welcome": "Des informations de groupe et des commandes de carte plus claires.",
+    "version": "7.3.2",
+    "welcome": "Des informations de groupe plus cohérentes et une navigation plus intelligente sur les cartes.",
     "sections": [
       {
         "title": "Joueurs sur les cartes",
         "items": [
-          "Dans les infobulles des marqueurs regroupés, les joueurs appartenant au même groupe connu sont réunis dans un cadre blanc arrondi, avec une icône de groupe. Un joueur dont les coéquipiers se trouvent hors du regroupement conserve cet indicateur.",
-          "Le bouton QT de la carte du monde reste entièrement visible et affiche une croix rouge lorsque les marqueurs QT sont masqués.",
-          "Survoler le bouton QT n’assombrit plus la carte lorsque les marqueurs QT sont masqués."
+          "Les infobulles des joueurs, celles des marqueurs regroupés et la mise en évidence des membres d’un groupe utilisent désormais les mêmes informations de groupe déjà disponibles, ce qui réduit les chargements répétés et les incohérences de regroupement.",
+          "Les infobulles des marqueurs regroupés affichent le nombre total de membres du groupe à côté de l’icône de groupe blanche.",
+          "Depuis la vue d’ensemble du monde, cliquer sur un regroupement de marqueurs ouvre désormais la carte la plus détaillée contenant tous ses joueurs, puis déploie les marqueurs individuels si nécessaire."
         ]
       }
     ]

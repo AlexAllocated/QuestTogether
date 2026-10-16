@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.2
+
+Einheitlichere Gruppeninformationen und intelligentere Kartennavigation.
+
+### Spieler auf Karten
+
+- Spieler-Tooltips, Tooltips zusammengefasster Kartenpunkte und die Hervorhebung von Gruppenmitgliedern nutzen jetzt dieselben bekannten Gruppeninformationen. Das reduziert wiederholte Ladevorgänge und uneinheitliche Gruppierungen.
+- Tooltips zusammengefasster Kartenpunkte zeigen neben dem weißen Gruppensymbol die Gesamtzahl der Gruppenmitglieder an.
+- Ein Klick auf zusammengefasste Punkte in der Weltübersicht öffnet jetzt die detaillierteste Karte, die alle zugehörigen Spieler enthält. Anschließend werden die Punkte bei Bedarf einzeln aufgefächert.
+
 ## 7.3.1
 
 Übersichtlichere Gruppeninformationen und Kartensteuerung.

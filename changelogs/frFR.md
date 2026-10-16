@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.2
+
+Des informations de groupe plus cohérentes et une navigation plus intelligente sur les cartes.
+
+### Joueurs sur les cartes
+
+- Les infobulles des joueurs, celles des marqueurs regroupés et la mise en évidence des membres d’un groupe utilisent désormais les mêmes informations de groupe déjà disponibles, ce qui réduit les chargements répétés et les incohérences de regroupement.
+- Les infobulles des marqueurs regroupés affichent le nombre total de membres du groupe à côté de l’icône de groupe blanche.
+- Depuis la vue d’ensemble du monde, cliquer sur un regroupement de marqueurs ouvre désormais la carte la plus détaillée contenant tous ses joueurs, puis déploie les marqueurs individuels si nécessaire.
+
 ## 7.3.1
 
 Des informations de groupe et des commandes de carte plus claires.

@@ -1,13 +1,13 @@
 {
-  "version": "7.3.1",
-  "welcome": "Clearer party information and map controls.",
+  "version": "7.3.2",
+  "welcome": "More consistent party information and smarter map navigation.",
   "sections": [
     {
       "title": "Player Maps",
       "items": [
-        "Cluster tooltips group players from the same known party inside a rounded white border, with a party icon. A player whose teammates are outside the cluster still shows the party indicator.",
-        "The world-map QT button stays fully visible and shows a red X when QT markers are hidden.",
-        "Hovering the QT button no longer dims the map while QT markers are hidden."
+        "Player tooltips, cluster tooltips, and party highlighting now share known party information, reducing repeated loading and inconsistent grouping.",
+        "Cluster tooltips show the total party size beside the white party icon.",
+        "Clicking a cluster from the full-world map now opens the most detailed map containing all its players, then expands the cluster if needed."
       ]
     }
   ]

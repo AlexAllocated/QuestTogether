@@ -1,15 +1,15 @@
 {
-  "source_sha256": "600132da9a2cd6a0aecf8371bc79a22cd2e4c3a9853e0340ab88041431d048c8",
+  "source_sha256": "8989ea7dcdea1bf3b0f36592f6cdca4018655e9e95a5509af8609b6b71d7c9e9",
   "notes": {
-    "version": "7.3.1",
-    "welcome": "Übersichtlichere Gruppeninformationen und Kartensteuerung.",
+    "version": "7.3.2",
+    "welcome": "Einheitlichere Gruppeninformationen und intelligentere Kartennavigation.",
     "sections": [
       {
         "title": "Spieler auf Karten",
         "items": [
-          "In Tooltips zusammengefasster Punkte werden Spieler, die bekanntermaßen derselben Gruppe angehören, mit einem abgerundeten weißen Rahmen und einem Gruppensymbol gekennzeichnet. Das Gruppensymbol bleibt auch bei Spielern sichtbar, deren Gruppenmitglieder außerhalb der Zusammenfassung liegen.",
-          "Die QT-Schaltfläche auf der Weltkarte bleibt vollständig sichtbar und zeigt ein rotes X, wenn QT-Markierungen ausgeblendet sind.",
-          "Beim Überfahren der QT-Schaltfläche wird die Karte nicht mehr abgedunkelt, solange QT-Markierungen ausgeblendet sind."
+          "Spieler-Tooltips, Tooltips zusammengefasster Kartenpunkte und die Hervorhebung von Gruppenmitgliedern nutzen jetzt dieselben bekannten Gruppeninformationen. Das reduziert wiederholte Ladevorgänge und uneinheitliche Gruppierungen.",
+          "Tooltips zusammengefasster Kartenpunkte zeigen neben dem weißen Gruppensymbol die Gesamtzahl der Gruppenmitglieder an.",
+          "Ein Klick auf zusammengefasste Punkte in der Weltübersicht öffnet jetzt die detaillierteste Karte, die alle zugehörigen Spieler enthält. Anschließend werden die Punkte bei Bedarf einzeln aufgefächert."
         ]
       }
     ]

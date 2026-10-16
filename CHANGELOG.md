@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 7.3.2
+
+More consistent party information and smarter map navigation.
+
+### Player Maps
+
+- Player tooltips, cluster tooltips, and party highlighting now share known party information, reducing repeated loading and inconsistent grouping.
+- Cluster tooltips show the total party size beside the white party icon.
+- Clicking a cluster from the full-world map now opens the most detailed map containing all its players, then expands the cluster if needed.
+
 ## 7.3.1
 
 Clearer party information and map controls.
