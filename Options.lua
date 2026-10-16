@@ -658,6 +658,7 @@ local CHECKBOX_OPTION_KEYS = {
 	"sharePlayerLocation",
 	"shareDeveloperDiagnostics",
 	"showPlayerLocations",
+	"clusterPlayerLocations",
 	"onlyShowQuestPartners",
 	"mapPartyOnly",
 	"mapAlwaysShowParty",
@@ -2025,6 +2026,10 @@ function QuestTogether:InitializePlayerLocationsWindow(parentCategory)
 				dropdown.entries[#dropdown.entries + 1] = info
 			end
 		end)
+	self.playerLocationsControls.clusterPlayerLocations = CreateCheckbox(content, "clusterPlayerLocations",
+		L("Cluster nearby players on the world map"),
+		L("Group overlapping world-map dots. Click a cluster to expand individual players. Minimap dots are unchanged."),
+		16, -248)
 	self.playerLocationsFrame = frame
 	frame:SetScript("OnShow", function() QuestTogether:RefreshPlayerLocationsWindow() end)
 	self.playerLocationsCategory = RegisterSubcategory(parentCategory, frame, frame.name)

@@ -103,19 +103,21 @@ local function TooltipTextWidth(addon, label)
 	return width and width >= 0 and math.min(272, math.ceil(width)) or 272
 end
 
-local function LayoutPartyTooltipRows(addon, state, width)
+local function LayoutPartyTooltipRows(addon, state, width, hasIntro, bodyGap)
 	local height = 0
+	local anchor = hasIntro and state.tooltipIntro or state.tooltipTitle
+	local topGap = hasIntro and 8 or bodyGap
 	for _, item in ipairs(state.partyRows or {}) do
 		if item.active then
 			Call(addon, item.label, "SetWidth", width - 38)
 			local lineHeight = math.max(14, (Positive(addon, Call(addon, item.label, "GetStringHeight")) or 12) + 2)
 			Call(addon, item.frame, "SetSize", width, lineHeight)
 			Call(addon, item.frame, "ClearAllPoints")
-			Call(addon, item.frame, "SetPoint", "TOPLEFT", state.tooltipIntro, "BOTTOMLEFT", 0, -8 - height)
+			Call(addon, item.frame, "SetPoint", "TOPLEFT", anchor, "BOTTOMLEFT", 0, -topGap - height)
 			height = height + lineHeight
 		end
 	end
-	return height > 0 and height + 8 or 0
+	return height > 0 and height + (hasIntro and 8 or 0) or 0
 end
 
 local function PartyTooltipMembers(addon, info, row)
@@ -142,6 +144,36 @@ local function PartyTooltipMembers(addon, info, row)
 		end
 	end
 	return members, known
+end
+
+-- Both party rosters and cluster summaries use the same presentation-only
+-- member model. Party membership and leadership are supplied by the caller;
+-- authentication and private location status come from their owned queries.
+function QuestTogether:BuildPlayerTooltipMember(member, options)
+	options = options or {}
+	local name = self:SafeTrimString(member.name, "")
+	if name == "" or self:IsIgnoredPlayerName(name) then return nil end
+	local r, g, b = Color(self, member.classFile)
+	local leader = options.leader == true
+	local developer = self:IsVerifiedDeveloper(name) == true
+	local hiddenLocation = self:IsPlayerLocationHiddenForDeveloper(name) == true
+	local looking = self:IsPlayerLookingForQuestPartners(name)
+		or (member.developerOnly and member.lookingForQuestPartners == true)
+	local displayName = options.shortName and self:GetShortDisplayName(name) or name
+	local label = self:GetClassColorCode(member.classFile) .. Text(self, displayName) .. "|r"
+	if leader then label = label .. " — " .. L("Leader") end
+	if developer then label = label .. "\n|cffffd200" .. L("QuestTogether developer") .. "|r" end
+	if hiddenLocation then label = label .. "\n|cffff8080" .. L("Location sharing is off") .. "|r" end
+	return {
+		name = name,
+		leader = leader,
+		color = { r, g, b },
+		usesQT = options.usesQT == true or self:IsSelfSender(name) or self:IsKnownQTPlayer(name),
+		icon = looking and PARTY_MEDIA .. "QuestTogetherPartnerIcon" or self.NAMEPLATE_PLAYER_ICON_TEXTURE,
+		label = label,
+		developer = developer,
+		hiddenLocation = hiddenLocation,
+	}
 end
 
 function QuestTogether:BuildPlayerTooltipModel(row)
@@ -193,6 +225,9 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 					.. "|r"
 			end
 		end
+		if addon:IsPlayerLocationHiddenForDeveloper(row.name) then
+			text = text .. "\n\n|cffff8080" .. L("Location sharing is off") .. "|r"
+		end
 		local now = addon.API and addon.API.GetTime and Number(addon, addon.API.GetTime())
 		local receivedAt = Number(addon, row.sampledAt or row.receivedAt)
 		if now and receivedAt and now >= receivedAt + 30 then
@@ -213,6 +248,9 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 			.. (lastUpdate and (lastUpdate .. "\n") or "")
 			.. (version and ("v" .. Text(addon, version)) or L("Unknown"))
 			.. "|r"
+		if addon:IsVerifiedDeveloper(row.name) then
+			introText = introText .. "\n|cffffd200" .. L("QuestTogether developer") .. "|r"
+		end
 		introText = introText .. "\n\n" .. partyText
 		if party and party.key and party.size <= 5 and not party.members and knownPartyMembers < party.size then
 			introText = introText .. "\n|cff909090" .. L("Loading party members…") .. "|r"
@@ -220,20 +258,8 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 	end
 	local members = {}
 	for _, member in ipairs(partyMembers) do
-		local mr, mg, mb = Color(addon, member.classFile)
-		local leader = member.name == party.leader
-		members[#members + 1] = {
-			name = member.name,
-			leader = leader,
-			color = { mr, mg, mb },
-			usesQT = addon:IsSelfSender(member.name) or addon:IsKnownQTPlayer(member.name),
-			icon = addon:IsPlayerLookingForQuestPartners(member.name)
-					and "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon"
-				or addon.NAMEPLATE_PLAYER_ICON_TEXTURE,
-			label = addon:GetClassColorCode(member.classFile) .. member.name .. "|r" .. (leader and (" — " .. L(
-				"Leader"
-			)) or ""),
-		}
+		local model = addon:BuildPlayerTooltipMember(member, { leader = member.name == party.leader })
+		if model then members[#members + 1] = model end
 	end
 	return {
 		title = classColor .. Text(addon, row.name) .. "|r",
@@ -271,6 +297,17 @@ local function PartyTooltipRows(addon, state, members)
 				"CLAMPTOBLACKADDITIVE"
 			)
 			Call(addon, item.dot, "AddMaskTexture", mask)
+			-- Keep the gear separate from the masked class dot so its teeth retain
+			-- their shape. All indicators are reused and reset for each occupant.
+			item.developerIcon = PartyTexture(addon, item.frame, "DeveloperGear", 14, 14, "CENTER", item.dot, "CENTER", 0, 0)
+			item.hiddenGlow = Call(addon, item.frame, "CreateTexture", nil, "BACKGROUND")
+			Call(addon, item.hiddenGlow, "SetColorTexture", 1, 0.12, 0.12, 0.6)
+			Call(addon, item.hiddenGlow, "SetSize", 18, 18)
+			Call(addon, item.hiddenGlow, "SetPoint", "CENTER", item.dot, "CENTER", 0, 0)
+			local glowMask = Call(addon, item.frame, "CreateMaskTexture")
+			Call(addon, glowMask, "SetAllPoints", item.hiddenGlow)
+			Call(addon, glowMask, "SetTexture", "Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+			Call(addon, item.hiddenGlow, "AddMaskTexture", glowMask)
 			item.crown = PartyTexture(addon, item.frame, "PartyLeader", 12, 9, "BOTTOM", item.dot, "TOP", 0, -2)
 			item.label = Call(addon, item.frame, "CreateFontString", nil, "OVERLAY", "GameFontHighlightSmall")
 			Call(addon, item.label, "SetPoint", "TOPLEFT", 38, -1)
@@ -282,6 +319,10 @@ local function PartyTooltipRows(addon, state, members)
 		Call(addon, item.qtIcon, "SetTexture", member.icon)
 		Call(addon, item.qtIcon, member.usesQT and "Show" or "Hide")
 		Call(addon, item.dot, "SetColorTexture", r, g, b, 1)
+		Call(addon, item.dot, member.developer and "Hide" or "Show")
+		Call(addon, item.developerIcon, "SetVertexColor", r, g, b, 1)
+		Call(addon, item.developerIcon, member.developer and "Show" or "Hide")
+		Call(addon, item.hiddenGlow, member.hiddenLocation and "Show" or "Hide")
 		local leader = member.leader
 		Call(addon, item.label, "SetText", member.label)
 		width = math.max(width, TooltipTextWidth(addon, item.label) + 38)
@@ -389,10 +430,12 @@ function QuestTogether:RenderPlayerTooltip(state, anchor, model)
 	else
 		Call(addon, state.tooltipIntro, "Hide")
 	end
-	local partyHeight = LayoutPartyTooltipRows(addon, state, contentWidth)
+	local partyHeight = LayoutPartyTooltipRows(addon, state, contentWidth, introText ~= nil, bodyGap)
 	Call(addon, state.tooltipLabel, "ClearAllPoints")
 	if introText then
 		Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", state.tooltipIntro, "BOTTOMLEFT", 0, -partyHeight - 14)
+	elseif partyHeight > 0 then
+		Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -bodyGap - partyHeight - 14)
 	else
 		Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -18)
 	end
@@ -407,7 +450,7 @@ function QuestTogether:RenderPlayerTooltip(state, anchor, model)
 		tooltip,
 		"SetSize",
 		contentWidth + 28,
-		titleHeight + height + 28 + bodyGap + introHeight + partyHeight + (introText and 14 or 0)
+		titleHeight + height + 28 + bodyGap + introHeight + partyHeight + ((introText or partyHeight > 0) and 14 or 0)
 	)
 	Call(addon, tooltip, "ClearAllPoints")
 	if pin.chatLink then
@@ -430,12 +473,13 @@ end
 function QuestTogether:PresentPlayerTooltip(state, anchor, row)
 	-- IsShown stays true below a hidden UIParent (Alt+Z). No hover interest may
 	-- outlive its visible anchor, including a recycled pin or a different link.
-	local name = row.name
+	local name, generation = row.name, anchor.presentationGeneration
 	local function Current()
-		return state.hovered == anchor and anchor.name == name
+		return state.hovered == anchor and anchor.name == name and anchor.presentationGeneration == generation
 			and not self:IsRuntimeRestricted()
 			and Method(self, anchor.frame, "IsVisible") == true
 			and Method(self, self:GetPlayerTooltipPresentationParent(), "IsVisible") == true
+			and (not anchor.isCurrent or anchor.isCurrent())
 	end
 	if Method(self, anchor.frame, "IsVisible") ~= true
 		or Method(self, self:GetPlayerTooltipPresentationParent(), "IsVisible") ~= true then

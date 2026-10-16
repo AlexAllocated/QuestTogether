@@ -121,6 +121,7 @@ local function WithPlate(fn)
 		end,
 		API = {
 			GetTime = function() return state.now end,
+			IsInRaid = function() return false end,
 			GetNamePlateForUnit = function(token)
 				Equal(token, "nameplate1")
 				return state.present and plate or nil

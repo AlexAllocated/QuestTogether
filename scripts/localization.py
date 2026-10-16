@@ -14,7 +14,7 @@ FORMAT = re.compile(r'%(?:[-+ #0]*\d*(?:\.\d+)?[cdiouxXeEfgGqs%])')
 QT_COMMANDS = ('options', 'enable', 'disable', 'set', 'get', 'compare', 'resetlayout',
                'lfg', 'notes', 'changelog', 'patchnotes', 'scan', 'help', 'debug',
                'devlogall', 'test', 'dump', 'diagnostics', 'preview', 'bubbletest',
-               'discord', 'ad', 'debuglog', 'ping', 'tip', 'hint')
+               'discord', 'ad', 'debuglog', 'ping', 'tip', 'hint', 'companions')
 COMMAND = re.compile(r'/qtd?(?![A-Za-z0-9_])(?: (?:'
                      + '|'.join(QT_COMMANDS) + r')(?![A-Za-z0-9_]))?')
 

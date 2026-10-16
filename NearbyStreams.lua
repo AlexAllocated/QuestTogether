@@ -41,6 +41,7 @@ local function Position(entry, now, smooth)
 	local fraction = smooth and math.min(1, (now - sample.at) / sample.duration) or 1
 	return {
 		mapID = sample.mapID,
+		sampledAt = sample.at,
 		x = sample.fromX + (sample.x - sample.fromX) * fraction,
 		y = sample.fromY + (sample.y - sample.fromY) * fraction,
 	}
@@ -168,6 +169,7 @@ function QT:GetNearbyStreamPosition(row, smooth)
 		copy[key] = value
 	end
 	copy.mapID, copy.x, copy.y = position.mapID, position.x, position.y
+	copy.sampledAt = position.sampledAt
 	return copy
 end
 

@@ -85,6 +85,104 @@ local function Frames(peer, operation, record)
 	}))
 end
 
+local function FinishVerification(peer)
+	local steps = 0
+	while peer.developerRequestState and #peer.developerRequestState.jobs > 0 do
+		steps = steps + 1
+		assert(steps < 10000, "identity authentication did not finish")
+		peer:DrainDeveloperPingVerifications()
+		peer.now = peer.now + 0.01
+	end
+end
+
+QT:RegisterTest(
+	"developer identity is local-key or signed-session evidence and retires at lifecycle boundaries",
+	function()
+		for _, boundary in ipairs({ "expiry", "departure", "session", "ignore", "disable", "logout", "reset" }) do
+			local net = QT:CreateTestNetwork({ fps = 10 })
+			local dev = Peer(net, "Developer-Realm", nil, true)
+			local peer = Peer(net, "Peer-Realm")
+			peer.db.profile.shareDeveloperDiagnostics = false
+			assert(dev:IsVerifiedDeveloper(dev.name))
+			peer.isLocalDeveloper = true
+			assert(not peer:IsVerifiedDeveloper(peer.name), "a flag without the private signer cannot identify self")
+			peer.isLocalDeveloper = false
+			assert(not peer:IsVerifiedDeveloper(dev.name))
+			local record = assert(dev:PrepareDeveloperAnnouncementSubscription({
+				active = true,
+				subscriptionSession = dev:GetCommunicationSession(),
+			}))
+			local context = { session = record.subscriptionSession, sequence = dev:NextCommunicationSequence() }
+			assert(peer:HandleDeveloperAnnouncementSubscription(record, dev.name, context))
+			assert(not peer:IsVerifiedDeveloper(dev.name), "pending verification is not identity evidence")
+			FinishVerification(peer)
+			assert(peer:IsVerifiedDeveloper(dev.name), boundary)
+			assert(#peer:GetDeveloperAnnouncementRoutes() == 0)
+			local lease = peer.developerAnnouncementState.subscribers[dev.name]
+			if boundary == "expiry" then
+				peer.now = lease.expires
+			elseif boundary == "departure" then
+				assert(peer:RecordPeerDeparture(dev.name, peer.now, context.session, context.sequence + 1))
+			elseif boundary == "session" then
+				assert(peer:RecordPeerEpoch(dev.name, "next-session", record.issuedAt + 1))
+			elseif boundary == "ignore" then
+				peer.ignored[dev.name] = true
+			elseif boundary == "disable" then
+				peer.isEnabled = false
+			elseif boundary == "logout" then
+				peer.isLoggingOut = true
+			else
+				peer:ResetDeveloperAnnouncements()
+			end
+			assert(not peer:IsVerifiedDeveloper(dev.name), boundary .. " must retire the badge immediately")
+			if boundary == "session" then
+				assert(
+					not peer:RecordPeerEpoch(dev.name, context.session, record.issuedAt + 2),
+					"retired session cannot return"
+				)
+			end
+		end
+	end
+)
+
+QT:RegisterTest("developer identity requires an authentic signature bound to sender request and session", function()
+	local seed = ("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60"):gsub("..", function(x)
+		return string.char(tonumber(x, 16))
+	end)
+	for _, altered in ipairs({ "none", "signature", "sender", "request", "session" }) do
+		local net = QT:CreateTestNetwork({ fps = 10 })
+		local dev = Peer(net, "Developer-Realm", nil, true)
+		local peer = Peer(net, "Peer-Realm")
+		peer.db.profile.shareDeveloperDiagnostics = false
+		peer.Ed25519 = QT.Ed25519
+		peer.developerPublicKeyHex = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"
+		function dev:SignDeveloperRequest(text)
+			return QT.Ed25519.Sign(seed, text)
+		end
+		local record = assert(dev:PrepareDeveloperAnnouncementSubscription({
+			active = true,
+			subscriptionSession = dev:GetCommunicationSession(),
+		}))
+		local sender = dev.name
+		if altered == "signature" then
+			record.signature = string.rep("0", 128)
+		elseif altered == "sender" then
+			sender = "Forged-Realm"
+		elseif altered == "request" then
+			record.requestId = record.requestId .. "1"
+		elseif altered == "session" then
+			record.subscriptionSession = "forged-session"
+		end
+		assert(peer:HandleDeveloperAnnouncementSubscription(record, sender, {
+			session = record.subscriptionSession,
+			sequence = dev:NextCommunicationSequence(),
+		}))
+		FinishVerification(peer)
+		Equal(peer:IsVerifiedDeveloper(sender), altered == "none", altered)
+		Equal(#peer:GetDeveloperAnnouncementRoutes(), 0)
+	end
+end, { offline = true })
+
 QT:RegisterTest(
 	"developer announcement network discovers late peers without devlogall or unsigned responders",
 	function()
@@ -219,7 +317,7 @@ QT:RegisterTest("developer announcement control messages only accept the main gl
 end)
 
 QT:RegisterTest(
-	"developer announcement privacy applies before initial authorization and strips hidden coordinates",
+	"developer identity verification preserves diagnostic opt-out and strips hidden announcement coordinates",
 	function()
 		local net = QT:CreateTestNetwork({ fps = 10, seed = 41 })
 		local developer = Peer(net, "Developer-Realm", { mapID = 85 }, true)
@@ -232,7 +330,12 @@ QT:RegisterTest(
 		end
 		net:Advance(20)
 		Equal(#optedOut:GetDeveloperAnnouncementRoutes(), 0)
-		Equal(rawget(optedOut, "developerRequestState"), nil, "initial opt-out must avoid signature work")
+		assert(
+			optedOut:IsVerifiedDeveloper(developer.name),
+			"signed public identity is independent of diagnostics consent"
+		)
+		local beforeOptedOut = #optedOut.sent
+		assert(Announce(optedOut, "Opted-out progress"))
 		assert(HasRoute(hidden, developer.name))
 		assert(hidden:SendAnnouncementWireEvent({
 			eventType = "QUEST_PROGRESS",
@@ -247,6 +350,8 @@ QT:RegisterTest(
 			occurredAt = hidden.API.GetServerTime(),
 		}))
 		net:Advance(10)
+		Equal(#Sent(optedOut, "ANN", "WHISPER", developer.name, beforeOptedOut), 0)
+		assert(#Sent(optedOut, "ANN", "CHANNEL", nil, beforeOptedOut) > 0)
 		Equal(#developer.announcements, 1)
 		for _, field in ipairs({ "mapID", "zoneName", "coordX", "coordY" }) do
 			Equal(developer.announcements[1][field], "", "mirroring must not bypass location privacy for " .. field)
@@ -389,13 +494,14 @@ QT:RegisterTest("developer announcement leases renew and expire without authenti
 	end
 	net:Advance(245)
 	Equal(#sender:GetDeveloperAnnouncementRoutes(), 0, "lost renewal must expire the mirror destination")
+	assert(not sender:IsVerifiedDeveloper(developer.name), "unrelated traffic cannot renew signed identity")
 	local before = #sender.sent
 	assert(Announce(sender, "After lease expiry"))
 	net:Advance(10)
 	Equal(#Sent(sender, "ANN", "WHISPER", developer.name, before), 0)
 	assert(#Sent(sender, "ANN", "CHANNEL", nil, before) > 0)
 
-	for _, boundary in ipairs({ "reset", "disable", "departure" }) do
+	for _, boundary in ipairs({ "reset", "disable", "departure", "consent" }) do
 		local fresh = QT:CreateTestNetwork({ fps = 5, seed = 17 })
 		local dev = Peer(fresh, "Developer-Realm", { mapID = 85 }, true)
 		local peer = Peer(fresh, "Pending-Realm", { mapID = 12 })
@@ -429,11 +535,14 @@ QT:RegisterTest("developer announcement leases renew and expire without authenti
 		else
 			if boundary == "disable" then
 				peer.isEnabled = false
+			elseif boundary == "consent" then
+				peer.db.profile.shareDeveloperDiagnostics = false
 			end
 			peer:ResetDeveloperAnnouncementSubscriptions()
 		end
 		job.callback(staleRequest)
 		Equal(#peer:GetDeveloperAnnouncementRoutes(), 0, boundary .. " must fence captured verification callbacks")
+		assert(not peer:IsVerifiedDeveloper(dev.name), boundary .. " must not restore stale identity")
 	end
 end, { offline = true })
 

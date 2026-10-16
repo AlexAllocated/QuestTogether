@@ -105,7 +105,9 @@ QT:RegisterTest("developer feed auth validates bounded signed fields before admi
 	assert(not peer:QueueDeveloperAnnouncementVerification(nil, dev.name, function() end))
 	assert(rawget(peer, "developerRequestState") == nil)
 	peer.consent = false
-	assert(not peer:QueueDeveloperAnnouncementVerification(original, dev.name, function() end))
+	assert(peer:QueueDeveloperAnnouncementVerification(original, dev.name, function() end))
+	local ping = assert(dev:PrepareDeveloperPingRequest({}, nil, false))
+	assert(not peer:QueueDeveloperPingVerification(ping, dev.name, function() end))
 end)
 
 QT:RegisterTest("developer feed authentication shares ping queue replay and sender admission bounds", function()
@@ -139,6 +141,7 @@ QT:RegisterTest("developer feed pending authentication respects consent ignores 
 		end))
 		if boundary == "consent" then
 			peer.consent = false
+			peer:CancelDeveloperDiagnosticReplies()
 		elseif boundary == "ignore" then
 			peer.ignored = dev.name
 		elseif boundary == "disable" then
@@ -150,7 +153,7 @@ QT:RegisterTest("developer feed pending authentication respects consent ignores 
 		else
 			peer.now = peer.now - 1
 		end
-		peer:DrainDeveloperPingVerifications()
+		Finish(peer)
 		assert(not called, boundary)
 	end
 end)

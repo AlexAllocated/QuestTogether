@@ -86,6 +86,16 @@ function QT:RecordPeerEpoch(name, session, stamp)
 	return true
 end
 
+-- Read-only identity evidence query. A signed observation belongs only to the
+-- current peer session and cannot survive a departure later than that proof.
+function QT:IsPeerSessionObservationCurrent(name, session, sampledAt)
+	local row = Record(self, name, false)
+	return row ~= nil
+		and row.epoch ~= nil
+		and row.epoch.session == session
+		and (not row.departed or sampledAt > row.departed.sampledAt)
+end
+
 function QT:CanAcceptPeerUpdate(name, field, sampledAt, session, sequence)
 	local row, now = Record(self, name, false)
 	if

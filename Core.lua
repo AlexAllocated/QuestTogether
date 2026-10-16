@@ -392,6 +392,8 @@ QuestTogether.DEFAULTS = {
 		sharePlayerLocation = true,
 		shareDeveloperDiagnostics = true,
 		showPlayerLocations = true,
+		showWorldMapData = true,
+		clusterPlayerLocations = true,
 		onlyShowQuestPartners = false,
 		emoteOnNearbyPlayerLevelUp = true,
 		nameplateQuestIconEnabled = true,
@@ -414,6 +416,7 @@ QuestTogether.DEFAULTS = {
 		questTrackers = {},
 		personalBubbleAnchors = {},
 		playerNotes = {},
+		recentCompanions = {},
 		debugLogCategoryFilter = "ALL",
 		debugLogSearchFilter = "",
 		debugLogPrefixFilter = "",
@@ -2223,6 +2226,23 @@ QuestTogether.API = QuestTogether.API
 			end
 			local selectedOK, selectedID = pcall(QuestMapFrame_GetDetailQuestID)
 			return selectedOK and QuestTogether:SafeToNumber(selectedID) == id
+		end,
+		OpenPlayerLocationMap = function(mapID)
+			local id = QuestTogether:SafeToNumber(mapID)
+			if not id or id <= 0 or id > 2147483647 or id ~= math.floor(id)
+				or QuestTogether:IsWorkBlocked("foreign_frame_mutation")
+				or type(OpenWorldMap) ~= "function"
+				or not QuestTogether:CanAccessForeignFrame(WorldMapFrame) then
+				return false
+			end
+			-- The native opener owns map selection and panel visibility. A silent
+			-- decline (for example WorldMapDisabled) is not a successful navigation.
+			local ok = pcall(OpenWorldMap, id)
+			if not ok or not QuestTogether:CanAccessForeignFrame(WorldMapFrame, true) then return false end
+			local getter = QuestTogether:GetAccessibleFrameMember(WorldMapFrame, "GetMapID")
+			if type(getter) ~= "function" then return false end
+			local readOK, currentID = pcall(getter, WorldMapFrame)
+			return readOK and QuestTogether:SafeToNumber(currentID) == id
 		end,
 		CanOpenQuestJournalWindow = function()
 			return type(OpenQuestLog) == "function"
@@ -5230,6 +5250,11 @@ function QuestTogether:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, s
 		rootDescription:CreateButton(L("Compare Quests"), function()
 			self:CompareQuestsWithChatLogSpeaker(fullName)
 		end)
+		if self:CanFindPlayerOnMap(fullName) then
+			rootDescription:CreateButton(L("Find on Map"), function()
+				self:FindPlayerOnMap(fullName)
+			end)
+		end
 		self:PopulatePlayerNotesMenu(rootDescription, fullName)
 	end
 
@@ -5722,6 +5747,7 @@ function QuestTogether:QueueQuestLogTask(taskFn)
 end
 
 function QuestTogether:ResetQuestEventState()
+	self:ResetObjectiveAnnouncements()
 	self.onQuestLogUpdate = {}
 	self.questsCompleted = {}
 	self.pendingQuestRemovals = {}
@@ -5841,6 +5867,9 @@ function QuestTogether:Disable()
 	if not self.isEnabled then
 		return true
 	end
+	self:RecordRecentCompanions(true)
+	self:ResetRecentCompanionObservation()
+	self:DismissRecentCompanions()
 	if self.WithdrawPartyNavigation then
 		self:WithdrawPartyNavigation()
 	end
@@ -5965,6 +5994,7 @@ function QuestTogether:PrintHelp()
 	self:Print(L("/qt set <option> <value> - Set a boolean option (e.g. emoteOnQuestCompletion off)"))
 	self:Print(L("/qt get <option> - Read an option value"))
 	self:Print(L("/qt compare - Open Party Quest Log"))
+	self:Print(L("/qt companions - Open your private recent companions list"))
 	self:Print(L("/qt tip | hint - Show another QuestTogether tip"))
 	self:Print("/qt resetlayout - " .. L("Reset window layout"))
 	self:Print(L("/qt lfg [on|off|toggle|status] - Set or check Looking for Questing Partners (no argument toggles)"))
@@ -6098,6 +6128,9 @@ function QuestTogether:HandleSlashCommand(input)
 
 	if command == "resetlayout" then
 		return self:ResetWindowLayouts()
+	end
+	if command == "companions" then
+		return self:OpenRecentCompanions()
 	end
 	if command == "tip" or command == "hint" then
 		if not self:ShowHint() then self:Print(L("Tips are unavailable right now.")) end
@@ -6520,6 +6553,7 @@ function QuestTogether:PLAYER_ENTERING_WORLD()
 	if not self.isEnabled then
 		return
 	end
+	self:RefreshPartyRoster()
 	if self.ResumeCommsWorldSession then
 		self:ResumeCommsWorldSession()
 	end
@@ -6534,6 +6568,9 @@ end
 
 function QuestTogether:PLAYER_LEAVING_WORLD()
 	self:ResetPlayerPhases()
+	self:ResetObjectiveAnnouncements()
+	self:RecordRecentCompanions(true)
+	self:ResetRecentCompanionObservation()
 	if self.isEnabled then
 		if self.EndCommsWorldSession then
 			self:EndCommsWorldSession()
@@ -6552,6 +6589,8 @@ function QuestTogether:PLAYER_LEAVING_WORLD()
 end
 
 function QuestTogether:PLAYER_LOGOUT()
+	self:RecordRecentCompanions(true)
+	self:ResetRecentCompanionObservation()
 	if self.SavePlayerLocationCache then
 		self:SavePlayerLocationCache()
 	end

@@ -45,6 +45,7 @@ WindowTheme.lua
 WindowLayout.lua
 QuestDialogs.lua
 PlayerNotes.lua
+RecentCompanions.lua
 QuestDetails.lua
 ReleaseNotes.lua
 LocalizedReleaseNotes.lua
@@ -61,6 +62,7 @@ PartyState.lua
 PeerState.lua
 PeerLifecycle.lua
 Comms.lua
+ObjectiveAnnouncements.lua
 CommsProtocol.lua
 Transport.lua
 CommsTransfer.lua
@@ -88,12 +90,14 @@ QuestComparePreview.lua
 Minimap.lua
 Keybindings.lua
 PlayerLocations.lua
+MapLocationPresentation.lua
 PlayerPlates.lua
 QuestPartnerQuest.lua
 PlayerTooltips.lua
 LocationTargeting.lua
 MapOverlayPool.lua
 PlayerTooltipPresenter.lua
+MapOverlayControls.lua
 LocationPins.lua
 PartyWaypointPins.lua
 NearbyStreams.lua
@@ -106,6 +110,9 @@ Diagnostics.lua
 Tests.lua
 scripts/ui_fixture.lua
 scripts/regression_player_notes.lua
+scripts/regression_recent_companions.lua
+scripts/regression_objective_announcements.lua
+scripts/regression_map_presentation.lua
 scripts/regression_note_cursor_diagnostics.lua
 scripts/regression_quest_details.lua
 scripts/network_fixture.lua

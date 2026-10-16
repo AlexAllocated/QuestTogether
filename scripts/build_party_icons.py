@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the party badge, leader crown, and hover ring textures; requires rsvg-convert and magick."""
+"""Render the party badge, leader crown, hover ring, and developer gear textures; requires rsvg-convert and magick."""
 
 from pathlib import Path
 import struct
@@ -39,5 +39,5 @@ def render(name):
 
 
 if __name__ == "__main__":
-    for name in ("PartyBadge", "PartyLeader", "PartyHighlight"):
+    for name in ("PartyBadge", "PartyLeader", "PartyHighlight", "DeveloperGear"):
         render(name)

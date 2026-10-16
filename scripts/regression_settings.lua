@@ -10,6 +10,8 @@ local function Fixture()
 		"RefreshManagedWindowLayouts",
 		"OnPlayerLocationOptionsChanged",
 		"RefreshPlayerLocationPins",
+		"RefreshPartyWaypointPins",
+		"RefreshQuestTogetherMapControl",
 		"RefreshMinimapButton",
 		"RefreshMinimapPartnerGlow",
 		"RefreshPartyRoster",
@@ -93,6 +95,54 @@ QT:RegisterTest("startup tip preference migrates on while preserving an explicit
 	assert(a:GetOption("showStartupTips") == false and not next(a.effects))
 	a.db.profile = QT:DeepCopy(QT.DEFAULTS.profile)
 	assert(a:GetOption("showStartupTips") == true, "another profile owns its own preference")
+end)
+
+QT:RegisterTest("map clustering defaults on and toggles presentation without publication effects", function()
+	local a = Fixture()
+	a.db.profile.clusterPlayerLocations = nil
+	a:NormalizeSettingsProfile()
+	assert(a:GetOption("clusterPlayerLocations") == true)
+	a.playerLocationClusterExpansion = { key = "old", page = 2 }
+	assert(a:SetOption("clusterPlayerLocations", false))
+	assert(a:GetOption("clusterPlayerLocations") == false and not a.playerLocationClusterExpansion)
+	assert(a.effects.RefreshPlayerLocationPins == 1)
+	assert(not a.effects.OnPlayerLocationOptionsChanged and not a.effects.BroadcastQuestPartnerStatus)
+	assert(not a.effects.QueuePartyNavigationUpdate)
+	a:NormalizeSettingsProfile()
+	assert(a:GetOption("clusterPlayerLocations") == false, "saved opt-out must survive normalization")
+	assert(not a:SetOption("clusterPlayerLocations", "false"))
+	assert(a:SetOption("clusterPlayerLocations", true))
+	assert(a.effects.RefreshPlayerLocationPins == 2 and not a.effects.OnPlayerLocationOptionsChanged)
+end)
+
+QT:RegisterTest("world map overlay visibility is saved per profile without changing sharing", function()
+	local a = Fixture()
+	a.db.profile.showWorldMapData = nil
+	a:NormalizeSettingsProfile()
+	assert(a:GetOption("showWorldMapData") == true)
+	assert(a:SetOption("showWorldMapData", false))
+	a:NormalizeSettingsProfile()
+	assert(a:GetOption("showWorldMapData") == false)
+	assert(a.effects.RefreshPlayerLocationPins == 1 and a.effects.RefreshPartyWaypointPins == 1)
+	assert(a.effects.RefreshQuestTogetherMapControl == 1)
+	assert(not a.effects.OnPlayerLocationOptionsChanged and not a.effects.BroadcastQuestPartnerStatus)
+	assert(not a.effects.QueuePartyNavigationUpdate)
+	assert(not a:SetOption("showWorldMapData", "false"))
+	a.db.profile = QT:DeepCopy(QT.DEFAULTS.profile)
+	assert(a:GetOption("showWorldMapData") == true)
+end)
+
+QT:RegisterTest("profile replacement retires expanded map clusters independently of the new preference", function()
+	local a = Fixture()
+	a.hasLoggedIn, a.isEnabled = false, true
+	a.playerLocationClusterExpansion = { key = "old", page = 2 }
+	a.db.profile.clusterPlayerLocations = true
+	assert(a:ApplyActiveProfileState("switch"))
+	assert(not a.playerLocationClusterExpansion)
+	a.playerLocationClusterExpansion = { key = "another", page = 1 }
+	a.db.profile.clusterPlayerLocations = false
+	assert(a:ApplyActiveProfileState("copy"))
+	assert(not a.playerLocationClusterExpansion and a:GetOption("clusterPlayerLocations") == false)
 end)
 
 QT:RegisterTest(

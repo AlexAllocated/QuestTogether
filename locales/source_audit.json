@@ -302,6 +302,7 @@
       "Button",
       "CENTER",
       "CLAMPTOBLACKADDITIVE",
+      "Frame",
       "Hide",
       "OVERLAY",
       "ROUND",
@@ -316,6 +317,16 @@
       "Button",
       "TOOLTIP",
       "[combat] hide"
+    ],
+    "MapOverlayControls.lua": [
+      "ARTWORK",
+      "BACKGROUND",
+      "Button",
+      "CENTER",
+      "Frame",
+      "Hide",
+      "Show",
+      "TOPRIGHT"
     ],
     "MapOverlayPool.lua": [
       "Frame",
@@ -517,6 +528,7 @@
       "BORDER",
       "BOTTOM",
       "BOTTOMLEFT",
+      "CENTER",
       "CLAMPTOBLACKADDITIVE",
       "Frame",
       "Hide",
@@ -737,6 +749,17 @@
     ],
     "QuestPartnerQuest.lua": [
       "QTLQ"
+    ],
+    "RecentCompanions.lua": [
+      "BOTTOMLEFT",
+      "BOTTOMRIGHT",
+      "Button",
+      "Frame",
+      "HIGHLIGHT",
+      "LEFT",
+      "OVERLAY",
+      "TOPLEFT",
+      "TOPRIGHT"
     ],
     "ReleaseNotesWindow.lua": [
       "ADD",

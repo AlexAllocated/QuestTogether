@@ -95,8 +95,12 @@ function QT:PrepareDeveloperAnnouncementSubscription(request, target)
 	return PrepareRequest(self, request, target, "announcements")
 end
 
-local function VerificationEnabled(addon)
-	return addon.isEnabled and not addon.isLoggingOut and addon:GetOption("shareDeveloperDiagnostics") == true
+local function VerificationEnabled(addon, purpose)
+	-- Public signed identity can be authenticated by every client. Diagnostic
+	-- requests still require consent before entering the same bounded verifier.
+	return addon.isEnabled
+		and not addon.isLoggingOut
+		and (purpose == "announcements" or addon:GetOption("shareDeveloperDiagnostics") == true)
 end
 
 local function ProfileMilliseconds(addon)
@@ -142,7 +146,7 @@ function QT:DrainDeveloperPingVerifications()
 	if not state then
 		return
 	end
-	if not VerificationEnabled(self) then
+	if not VerificationEnabled(self, "announcements") then
 		self.developerRequestState = nil
 		return
 	end
@@ -157,6 +161,7 @@ function QT:DrainDeveloperPingVerifications()
 	end
 	state.lastAt = now
 	local expired = not serverNow
+		or not VerificationEnabled(self, job.request.developerPurpose)
 		or job.request.cancelled
 		or now < job.startedAt
 		or serverNow - job.request.issuedAt > 300
@@ -206,7 +211,10 @@ function QT:DrainDeveloperPingVerifications()
 			job.request.developerVerified = true
 			-- State identity fences disable, profile changes, opt-out, and leaving
 			-- the world. No diagnostic reads occur before this boundary.
-			if rawget(self, "developerRequestState") == state and VerificationEnabled(self) then
+			if
+				rawget(self, "developerRequestState") == state
+				and VerificationEnabled(self, job.request.developerPurpose)
+			then
 				local ok = pcall(job.callback, job.request)
 				if not ok then
 					self:Debug("Developer request callback failed", "comms")
@@ -233,7 +241,7 @@ function QT:DrainDeveloperPingVerifications()
 end
 
 local function QueueVerification(self, request, sender, callback, purpose)
-	if type(request) ~= "table" or not VerificationEnabled(self) or type(callback) ~= "function" then
+	if type(request) ~= "table" or not VerificationEnabled(self, purpose) or type(callback) ~= "function" then
 		return false
 	end
 	local now, senderName = self:GetAnnouncementServerTime(), Name(self, sender)
@@ -468,6 +476,26 @@ function QT:AcceptDeveloperPingResponse(response, pending, observation)
 		end
 	end
 	self:RefreshPlayerLocationPins()
+end
+
+function QT:IsPlayerLocationHiddenForDeveloper(name)
+	if not self.isEnabled or self.isLoggingOut or rawget(self, "isLocalDeveloper") ~= true then
+		return false
+	end
+	name = Name(self, name)
+	if not name or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then
+		return false
+	end
+	local data = rawget(self, "developerPlayerData")
+	local row = data and data[name]
+	local now = self:SafeToNumber(self.API.GetTime())
+	return row ~= nil
+		and row.developerOnly == true
+		and row.publicLocationHidden == true
+		and now ~= nil
+		and now >= row.receivedAt
+		and now - row.receivedAt < 120
+		and self:CanAcceptPeerUpdate(name, nil, row.receivedAt)
 end
 
 function QT:AppendDeveloperLocationRows(rows)

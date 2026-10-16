@@ -343,6 +343,13 @@ local function WithIsolatedState(testFn)
 			"playerDetailsState",
 			"playerNoteWindow",
 			"playerNoteDrafts",
+			"recentCompanionsWindow",
+			"recentCompanionOmissions",
+			"recentCompanionObservation",
+			"objectiveAnnouncementState",
+			"playerMapSelection",
+			"playerLocationClusterExpansion",
+			"playerLocationClusterNavigation",
 			"partyQuestCompletionState",
 			"directCommPeers",
 			"geographicCommsState",
@@ -5979,7 +5986,12 @@ QuestTogether:RegisterTest("chat log speaker menu includes player actions", func
 			end
 			return QuestTogether.db.profile[key]
 		end, function()
-			QuestTogether:PopulateChatLogSpeakerMenu(fakeRoot, "ChatFrame1", "MyPlayer-Realm")
+			WithPatchedMethod(QuestTogether, "CanFindPlayerOnMap", function(_, name)
+				AssertEquals(name, "MyPlayer-Realm")
+				return true
+			end, function()
+				QuestTogether:PopulateChatLogSpeakerMenu(fakeRoot, "ChatFrame1", "MyPlayer-Realm")
+			end)
 		end)
 	end)
 
@@ -5989,8 +6001,14 @@ QuestTogether:RegisterTest("chat log speaker menu includes player actions", func
 	AssertEquals(buttons[3].text, "Add Friend")
 	AssertEquals(buttons[4].text, "Ignore")
 	AssertEquals(buttons[5].text, "Compare Quests")
-	AssertEquals(buttons[6].text, "Add private note")
-	AssertEquals(#buttons, 6)
+	AssertEquals(buttons[6].text, "Find on Map")
+	AssertEquals(buttons[7].text, "Add private note")
+	AssertEquals(#buttons, 7)
+	local foundName
+	WithPatchedMethod(QuestTogether, "FindPlayerOnMap", function(_, name) foundName = name end, function()
+		buttons[6].callback()
+	end)
+	AssertEquals(foundName, "MyPlayer-Realm")
 	AssertEquals(dividers, 0)
 end)
 

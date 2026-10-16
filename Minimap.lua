@@ -148,6 +148,10 @@ function QuestTogether:PopulateMinimapMenu(rootDescription)
 		end
 	end)
 	compare:SetEnabled(self.isEnabled == true)
+	local companions = rootDescription:CreateButton(L("Recent Companions"), function()
+		if self.isEnabled and not self:IsRuntimeRestricted() then self:OpenRecentCompanions() end
+	end)
+	companions:SetEnabled(self.isEnabled == true)
 	local journal = rootDescription:CreateButton(L("Open Quest Log"), function()
 		self:OpenQuestJournalFromMinimap()
 	end)

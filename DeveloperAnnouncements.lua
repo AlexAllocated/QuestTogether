@@ -35,6 +35,28 @@ function QT:IsDeveloperAnnouncementReceiver()
 		and type(rawget(self, "SignDeveloperRequest")) == "function"
 end
 
+function QT:IsVerifiedDeveloper(name)
+	if not self.isEnabled or self.isLoggingOut then
+		return false
+	end
+	name = self:NormalizeMemberName(name)
+	if not name or self:IsIgnoredPlayerName(name) then
+		return false
+	end
+	if self:IsSelfSender(name) then
+		return self:IsDeveloperAnnouncementReceiver() == true
+	end
+	local state = rawget(self, "developerAnnouncementState")
+	local lease = state and state.subscribers[name]
+	local now = Now(self)
+	return lease ~= nil
+		and Current(self, state)
+		and lease.verifiedAt ~= nil
+		and now >= lease.verifiedAt
+		and now < lease.expires
+		and self:IsPeerSessionObservationCurrent(name, lease.session, lease.sampledAt)
+end
+
 function QT:InitializeDeveloperAnnouncements()
 	local s = rawget(self, "developerAnnouncementState")
 	if s then
@@ -215,7 +237,7 @@ function QT:HandleDeveloperAnnouncementHello(_, _, context)
 end
 
 function QT:HandleDeveloperAnnouncementSubscription(record, sender, context)
-	if not Sharing(self) or record.subscriptionSession ~= context.session then
+	if record.subscriptionSession ~= context.session then
 		return false
 	end
 	local s = self:InitializeDeveloperAnnouncements()
@@ -226,7 +248,7 @@ function QT:HandleDeveloperAnnouncementSubscription(record, sender, context)
 	end
 	local generation = s.generation
 	return self:QueueDeveloperAnnouncementVerification(record, sender, function(verified)
-		if verified.cancelled or not Current(self, s) or generation ~= s.generation or not Sharing(self) then
+		if verified.cancelled or not Current(self, s) or generation ~= s.generation then
 			return
 		end
 		local server, now = self:GetAnnouncementServerTime(), Now(self)
@@ -275,6 +297,8 @@ function QT:HandleDeveloperAnnouncementSubscription(record, sender, context)
 			requestId = verified.requestId,
 			session = verified.subscriptionSession,
 			envelopeSequence = context.sequence,
+			sampledAt = sampledAt,
+			verifiedAt = now,
 			expires = now + math.min(LEASE_SECONDS, remaining),
 			retireAt = now + 330,
 		}
@@ -329,7 +353,7 @@ function QT:UpdateDeveloperAnnouncements(now)
 		end
 	end
 	for sender, lease in pairs(s.subscribers) do
-		if lease.active and (now >= lease.expires or not Sharing(self) or self:IsIgnoredPlayerName(sender)) then
+		if lease.active and (now >= lease.expires or self:IsIgnoredPlayerName(sender)) then
 			self:RemoveDeveloperAnnouncementSubscriber(sender)
 		end
 		if now >= lease.retireAt then

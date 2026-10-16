@@ -26,6 +26,10 @@ def check(root=ROOT, source_overrides=None):
          {"RuntimeCoordinator.lua"}, "periodic publication belongs to RuntimeCoordinator")
     only(r"function (?:QuestTogether|QT):(?:Publish|Emit|Request|Respond|SubmitCommunication)\(",
          {"CommunicationCoordinator.lua"}, "typed submissions belong to CommunicationCoordinator")
+    only(r"\b(?:global|db\.global)\.recentCompanions\b", {"RecentCompanions.lua"},
+         "private companion history belongs to RecentCompanions")
+    only(r"function (?:QuestTogether|QT):(?:PublishPreparedAnnouncement|ResetObjectiveAnnouncements)\(",
+         {"ObjectiveAnnouncements.lua"}, "objective burst aggregation belongs to ObjectiveAnnouncements")
     only(r"function (?:QuestTogether|QT):(?:BuildCommFrames|DecodeCommFrame|EncodeCommRecord|DecodeCommRecord)\(",
          {"CommsProtocol.lua"}, "wire schemas and framing belong to CommsProtocol")
     only(r"\b(?:BulkTransfer|PingPages|EncodePingResponsePayload|SerializeWireMessage|DeserializeWireMessage|SendWireMessageToAnnouncementRoutes|RememberDirectCommPeer|ScheduleGeographicPingReply)\b",
@@ -49,7 +53,12 @@ def check(root=ROOT, source_overrides=None):
              ("CommunicationCoordinator.lua", "PingCommunication.lua"),
              ("scripts/network_fixture.lua", "scripts/regression_network_v2.lua"),
              ("PartyFocusController.lua", "PartyNavigation.lua"), ("MapOverlayPool.lua", "LocationPins.lua"),
-             ("PlayerTooltipPresenter.lua", "LocationPins.lua"), ("Tests.lua", "scripts/ui_fixture.lua")]
+             ("PlayerTooltipPresenter.lua", "MapOverlayControls.lua"),
+             ("MapOverlayControls.lua", "LocationPins.lua"), ("Tests.lua", "scripts/ui_fixture.lua")]
+    order.extend([("PlayerNotes.lua", "RecentCompanions.lua"),
+                  ("PlayerLocations.lua", "MapLocationPresentation.lua"),
+                  ("MapLocationPresentation.lua", "LocationPins.lua"),
+                  ("ObjectiveAnnouncements.lua", "EventHandlers.lua")])
     for before, after in order:
         if before not in toc or after not in toc or toc.index(before) >= toc.index(after):
             errors.append(f"load {before} before {after}")

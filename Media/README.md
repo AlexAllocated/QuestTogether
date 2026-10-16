@@ -8,6 +8,7 @@ Release ZIPs must include all addon-owned runtime textures:
 - `Media/ChatBubbleIcon.tga` — transparent speech bubble used by QT chat logs and overhead bubbles.
 - `Media/MinimapPartnerRing.tga` — animated gold halo around the minimap button while LFQP.
 - `Media/PanelCornerFill.tga` and `Media/PanelCornerBorder.tga` — 64×64 white corner artwork for scalable, class-tinted rounded panels. Build from the matching SVGs with `python3 scripts/build_panel_corners.py`.
+- `Media/DeveloperGear.tga` — white, class-tinted gear for signature-verified developer map and minimap dots. Regenerate with `python3 scripts/build_party_icons.py`.
 - `Media/PartyWaypoint.tga` — 32×32 class-tinted map pin with a dark outline. Regenerate with `rsvg-convert -o /tmp/qt-party-pin.png Media/PartyWaypoint.svg` then `magick /tmp/qt-party-pin.png -define tga:bits-per-sample=8 -compress none Media/PartyWaypoint.tga`.
 - `Media/QuestCompareScroll.tga` — 1024×512 parchment scroll frame for Party Quest Log; regenerate from its SVG with `python3 scripts/build_compare_scroll.py`.
 

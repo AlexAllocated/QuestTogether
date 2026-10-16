@@ -33,6 +33,7 @@ local function Color(a, name)
 	return a:GetClassColorCode(a:GetGroupedSenderClassFile(name)) or "|cffffffff"
 end
 local function Tooltip(a, s, pin)
+	if not a:IsQuestTogetherMapDataShown(pin.surface) then Hide(a, s.tooltip); return end
 	local lines = {}
 	for _, name in ipairs(pin.names) do
 		local p = a:GetPartyNavigationPeer(name)
@@ -73,7 +74,7 @@ local function Tooltip(a, s, pin)
 	Call(a, s.tooltip, "Show")
 end
 local function CreatePin(a, s, surface)
-	local pin = { frame = New(a, "Button", surface.frame), names = {} }
+	local pin = { frame = New(a, "Button", surface.frame), names = {}, surface = surface.name }
 	Call(a, pin.frame, "SetSize", 22, 26)
 	pin.texture = Call(a, pin.frame, "CreateTexture", nil, "ARTWORK")
 	Call(a, pin.texture, "SetAllPoints")
@@ -91,7 +92,7 @@ local function CreatePin(a, s, surface)
 		end
 	end)
 	Call(a, pin.frame, "SetScript", "OnClick", function()
-		if not Guard(a, pin.frame) then
+		if not Guard(a, pin.frame) or not a:IsQuestTogetherMapDataShown(pin.surface) then
 			return
 		end
 		local names = {}
@@ -99,7 +100,7 @@ local function CreatePin(a, s, surface)
 			names[i] = name
 		end
 		a:CreatePartyQuestFilterMenu(pin.frame, function(_, root)
-			if a:IsRuntimeRestricted() then
+			if a:IsRuntimeRestricted() or not a:IsQuestTogetherMapDataShown(pin.surface) then
 				return
 			end
 			for _, name in ipairs(names) do
@@ -107,7 +108,7 @@ local function CreatePin(a, s, surface)
 				if p and p.mapID > 0 then
 					root:CreateTitle(Color(a, name) .. name .. "|r")
 					root:CreateButton(L("Navigate here"), function()
-						a:NavigateToPartyWaypoint(name)
+						if a:IsQuestTogetherMapDataShown(pin.surface) then a:NavigateToPartyWaypoint(name) end
 					end)
 				end
 			end
@@ -117,6 +118,7 @@ local function CreatePin(a, s, surface)
 end
 local function Surface(a, s, name, rows)
 	local surface = s.surfaces[name]
+	if not a:IsQuestTogetherMapDataShown(name) then HideSurface(a, s, surface); return end
 	local g = #rows > 0 and a:GetLocationPinSurface(name)
 	if not g then
 		HideSurface(a, s, surface)
@@ -124,6 +126,11 @@ local function Surface(a, s, name, rows)
 	end
 	surface = a:AcquireMapOverlaySurface(s, name, g, 55, function(old) HideSurface(a, s, old) end)
 	if not surface then return end
+	local highlightLevel = name == "map" and a:GetQuestTogetherMapHighlightLevel(g)
+	if highlightLevel then
+		local level = a:SafeToNumber(Call(a, surface.frame, "GetFrameLevel"))
+		if level then Call(a, surface.frame, "SetFrameLevel", math.max(level, highlightLevel)) end
+	end
 	local placed = {}
 	for _, row in ipairs(rows) do
 		local x, y = a:ProjectPlayerLocationPin(name, row, g, 26)

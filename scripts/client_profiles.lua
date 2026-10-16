@@ -1117,6 +1117,54 @@ return rawRow end
 			assert(addon.API.CanOpenQuestJournalWindow() == false)
 			assert(addon.API.OpenQuestJournalWindow() == false)
 		end
+		-- Find-player navigation uses one guarded native map opener. These
+		-- foreign globals are replaced only in this offline client harness.
+		do
+			local originalBlocked = addon.IsWorkBlocked
+			local restricted, shown, mapID, calls, decline = false, false, nil, 0, false
+			addon.IsWorkBlocked = function(_, workClass)
+				assert(workClass == "foreign_frame_mutation")
+				return restricted
+			end
+			local map = setmetatable({
+				IsForbidden = function() return false end,
+				IsShown = function() return shown end,
+				GetMapID = function() return mapID end,
+			}, { __newindex = function() error("map navigation cannot write addon state to foreign frames") end })
+			WorldMapFrame = map
+			OpenWorldMap = function(id)
+				calls = calls + 1
+				if not decline then shown, mapID = true, id end
+			end
+			assert(addon.API.OpenPlayerLocationMap(85) == true and mapID == 85)
+			assert(addon.API.OpenPlayerLocationMap(86) == true and shown and mapID == 86)
+			for _, invalid in ipairs({ 0, -1, 1.5, 2147483648, math.huge, secret, inaccessible }) do
+				assert(addon.API.OpenPlayerLocationMap(invalid) == false)
+			end
+			restricted = true
+			assert(addon.API.OpenPlayerLocationMap(85) == false)
+			restricted = false
+			local forbidden = setmetatable({ IsForbidden = function() return true end }, {
+				__index = function() error("forbidden map cannot be inspected") end,
+			})
+			for _, frame in ipairs({ forbidden, secret, inaccessible }) do
+				WorldMapFrame = frame
+				assert(addon.API.OpenPlayerLocationMap(85) == false)
+			end
+			assert(calls == 2, "invalid and restricted map requests must never reach native code")
+			WorldMapFrame, decline = map, true
+			assert(addon.API.OpenPlayerLocationMap(85) == false, "wrong selected map must fail")
+			shown = false
+			assert(addon.API.OpenPlayerLocationMap(86) == false, "native decline cannot report success")
+			OpenWorldMap = function() WorldMapFrame = forbidden end
+			assert(addon.API.OpenPlayerLocationMap(85) == false, "post-open map must be revalidated")
+			WorldMapFrame = map
+			OpenWorldMap = function() error("unavailable") end
+			assert(addon.API.OpenPlayerLocationMap(85) == false)
+			OpenWorldMap, WorldMapFrame = nil, nil
+			assert(addon.API.OpenPlayerLocationMap(85) == false)
+			addon.IsWorkBlocked = originalBlocked
+		end
 		-- Standalone Lua can construct NaN; Forever's arithmetic raises instead.
 		-- Keep this boundary check offline so /qt test never attempts 0 / 0.
 		local notANumber = 0 / 0

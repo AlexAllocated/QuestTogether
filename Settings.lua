@@ -460,6 +460,16 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 		return false
 	end
 	-- Revocation must happen before any restart or asynchronous effect.
+	if all then
+		Invoke(self, "ClearPlayerMapSelection")
+		Invoke(self, "ResetObjectiveAnnouncements")
+	end
+	if Has("clusterPlayerLocations", "showWorldMapData") then
+		Invoke(self, "ClearPlayerLocationClusterExpansion")
+	end
+	if Has("showWorldMapData") then
+		Invoke(self, "ClearPlayerMapSelection")
+	end
 	if all or (changed.shareDeveloperDiagnostics and self:GetOption("shareDeveloperDiagnostics") ~= true) then
 		self.developerRequestState = nil
 		Invoke(self, "CancelDeveloperDiagnosticReplies")
@@ -499,6 +509,16 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 	end
 	if Has("sharePlayerLocation", "showPlayerLocations", "onlyShowQuestPartners") then
 		Invoke(self, "OnPlayerLocationOptionsChanged", context.key)
+	end
+	if not all and changed.clusterPlayerLocations then
+		-- Clustering changes presentation only. Do not restart location sharing
+		-- or its discovery/subscription work for a local display preference.
+		Invoke(self, "RefreshPlayerLocationPins")
+	end
+	if Has("showWorldMapData") then
+		Invoke(self, "RefreshPlayerLocationPins")
+		Invoke(self, "RefreshPartyWaypointPins")
+		Invoke(self, "RefreshQuestTogetherMapControl")
 	end
 	if Has("showMinimapButton", "minimapButtonPosition") then
 		Invoke(self, "RefreshMinimapButton")

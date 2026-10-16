@@ -187,6 +187,9 @@ function QuestTogether:UpdateTrackedObjectiveProgress(questData, objectiveIndex,
 		oldIdentity = lastObservation.identity
 	end
 	local identity = self:GetObjectiveProgressIdentity(objectiveText)
+	if oldIdentity ~= identity and self.CancelObjectiveAnnouncements then
+		self:CancelObjectiveAnnouncements(questId, objectiveIndex)
+	end
 	local progressValue = ResolveObjectiveProgressValue(objectiveText, currentValue)
 	local highWaterByIdentity = questData.objectiveProgressHighWater[objectiveIndex] or {}
 	questData.objectiveProgressHighWater[objectiveIndex] = highWaterByIdentity
@@ -442,6 +445,7 @@ function QuestTogether:ClearTrackedQuestState(questId)
 	if not questId then
 		return
 	end
+	if self.CancelObjectiveAnnouncements then self:CancelObjectiveAnnouncements(questId) end
 
 	local tracker = self:GetPlayerTracker()
 	tracker[questId] = nil
@@ -646,6 +650,7 @@ function QuestTogether:QUEST_TURNED_IN(_, questId)
 	if not questId then
 		return
 	end
+	if self.FlushObjectiveAnnouncements then self:FlushObjectiveAnnouncements(questId) end
 
 	self.retiredQuestIds = self.retiredQuestIds or {}
 	local retiredData = self.retiredQuestIds[questId] or {}
@@ -764,6 +769,7 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 							end
 							self:PublishAnnouncementEvent(eventType, objectiveText, questId, {
 								eventFacts = self:BuildAnnouncementFacts(eventType, objectiveIndex, objectiveType, finished, currentValue, requiredValue),
+								objectiveFinished = finished == true,
 							})
 						end
 					end

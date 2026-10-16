@@ -68,6 +68,7 @@ QT:RegisterTest("ping v2 real signature returns complete private snapshot only t
 	Eq(pong.coordX, "40.0")
 	Eq(pong.coordY, "60.0")
 	assert(dev.developerPlayerData[peer.name].publicLocationHidden)
+	assert(dev:IsPlayerLocationHiddenForDeveloper(peer.name))
 	Eq(dev.playerLocationState.peers[peer.name].mask, 0)
 	for _, packet in ipairs(peer.sent) do
 		Eq(packet.route, "WHISPER")
@@ -92,10 +93,45 @@ QT:RegisterTest(
 		net:Advance(40)
 		Eq(dev.playerLocationState.peers[peer.name].x, 0.7)
 		Eq(dev.developerPlayerData[peer.name], nil)
+		assert(not dev:IsPlayerLocationHiddenForDeveloper(peer.name))
 		Eq(dev.playerLocationState.peers[peer.name].manualSnapshot, true)
 	end,
 	{ offline = true }
 )
+
+QT:RegisterTest("hidden location presentation only uses fresh accepted private developer observations", function()
+	local net, dev, peer = Setup()
+	peer.db.profile.sharePlayerLocation = false
+	assert(dev:SendPingRequest(peer.name))
+	net:Advance(30)
+	assert(dev:IsPlayerLocationHiddenForDeveloper(peer.name))
+	local row = assert(dev.developerPlayerData[peer.name])
+	dev.isLocalDeveloper = false
+	assert(not dev:IsPlayerLocationHiddenForDeveloper(peer.name))
+	dev.isLocalDeveloper = true
+	dev.ignored[peer.name] = true
+	assert(not dev:IsPlayerLocationHiddenForDeveloper(peer.name))
+	dev.ignored[peer.name] = nil
+	dev.isEnabled = false
+	assert(not dev:IsPlayerLocationHiddenForDeveloper(peer.name))
+	dev.isEnabled = true
+	dev.isLoggingOut = true
+	assert(not dev:IsPlayerLocationHiddenForDeveloper(peer.name))
+	dev.isLoggingOut = nil
+	row.publicLocationHidden = false
+	assert(not dev:IsPlayerLocationHiddenForDeveloper(peer.name))
+	row.publicLocationHidden = true
+	local now = dev.now
+	dev.now = row.receivedAt - 1
+	assert(not dev:IsPlayerLocationHiddenForDeveloper(peer.name))
+	dev.now = row.receivedAt + 120
+	assert(not dev:IsPlayerLocationHiddenForDeveloper(peer.name))
+	dev.now = now
+	assert(dev:RecordPeerDeparture(peer.name, now, peer:GetCommunicationSession(), 100000))
+	assert(not dev:IsPlayerLocationHiddenForDeveloper(peer.name), "a retained private row cannot outlive departure")
+	dev:RetireDeveloperLocationPeer(peer.name)
+	assert(not dev:IsPlayerLocationHiddenForDeveloper(peer.name))
+end, { offline = true })
 -- Full signed, repeated, and multi-minute diagnostic exchanges run offline.
 QT:RegisterTest("ping v2 auth binds sender target purpose timestamp and protocol generation", function()
 	local _, dev, peer = Setup(true)

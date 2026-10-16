@@ -62,6 +62,7 @@ function QT:InitializeRuntimeCoordinator()
 		end
 		elapsed = 0
 		self:UpdatePartyNavigation()
+		self:RefreshQuestTogetherMapControl()
 		self:RefreshPartyWaypointPins()
 		self:UpdatePlayerCommunications()
 		self:PrunePlayerLocations()
@@ -74,6 +75,7 @@ function QT:InitializeRuntimeCoordinator()
 end
 
 function QT:ResetRuntimeCoordinator()
+	self:HideQuestTogetherMapControl()
 	self:ResetPartyNavigation()
 	self:HideChatLogPlayerTooltip()
 	self:HidePlayerTooltipBadge()

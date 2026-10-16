@@ -157,6 +157,9 @@ local function AddUnitToRoster(addon, unitToken, membersByName, orderedNames)
 end
 
 function QuestTogether:RefreshPartyRoster()
+	-- Stamp the departing roster before replacing it, so leaving a long party
+	-- records when we last grouped rather than only when that party formed.
+	self:RecordRecentCompanions(true)
 	local membersByName = {}
 	local orderedNames = {}
 
@@ -178,6 +181,7 @@ function QuestTogether:RefreshPartyRoster()
 	self.partyRosterFingerprint = table.concat(orderedNames, "|")
 	local visuals = rawget(self, "partyVisualState")
 	if visuals then visuals.localAt, visuals.localInfo = nil, nil end
+	self:RecordRecentCompanions()
 end
 
 function QuestTogether:GetPartyRosterFingerprint()

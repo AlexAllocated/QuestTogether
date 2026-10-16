@@ -30,6 +30,8 @@ private `.local` notes are historical context, not the source of truth.
 | PartyNavigation / QuestComparePreview | Live/preview adapters, persistence and ownership of native focus | Copies of the following state machine or repair of another controller's fields |
 | Hints | Local tip catalog, capability eligibility, account-wide no-repeat pool, startup display and whitelisted navigation links | Network announcements or implicit setting changes |
 | PlayerNotes | Private full-name annotations and their owned editor | Peer state, profile copies, diagnostics or network payloads |
+| RecentCompanions | Bounded private history from actual group membership and its owned list | Nearby discovery, online status, profile copies or network payloads |
+| ObjectiveAnnouncements | Bounded local objective burst aggregation before publication | Remote-event rewriting, native quest reads or a separate timer |
 | PlayerDetails | Active hover interests, metadata refresh and roster fetch coordination | Tooltip drawing or an independent timer |
 | Keybindings | Fixed player actions delegated to existing feature operations | Key assignment, binding overrides, native input state |
 | OwnedUI | Guarded owned-region access and a durable cleanup queue | Permission to modify Blizzard-owned frames |
@@ -38,10 +40,68 @@ private `.local` notes are historical context, not the source of truth.
 | QuestDialogs | Focus/share-related presentation and callbacks | Window geometry rules |
 | PlayerTooltipPresenter | Shared player tooltip content and measurement | Map projection or marker allocation |
 | MapOverlayPool | Surface attachment, marker reuse and retirement | Player/waypoint content, route or visibility policy |
+| MapLocationPresentation | Projected world-map clustering/expansion, source-age opacity and temporary player selection | Accepted observations, consent, location sampling or native map mutation |
+| MapOverlayControls | Saved world-map overlay visibility, owned toggle and hover highlight | Sharing, subscriptions, minimap visibility or accepted observations |
 | LocationPins / PartyWaypointPins | Domain-specific pin placement, visuals and actions | A second tooltip renderer or marker pool lifecycle |
 
 ## Data and time contracts
 
+- Recent companions are recorded only from the sanitized current group roster,
+  including non-QT members. The private `db.global.recentCompanions` store is
+  scoped by client, region, naming model and realm; it retains at most 100 entries
+  for 90 days. Leaving a group stamps the previous roster before replacement.
+  Departure stamps require the exact roster observed in this enabled world
+  lifetime; re-entry reads the native roster again, never renewing a stale one.
+  Profiles do not copy the history, and neither network nor diagnostic payloads
+  include it. Removing an entry suppresses re-recording until that member leaves
+  the current group. The list does not imply that someone is currently online.
+- Local objective increments have one fixed half-second deadline per quest
+  lifetime and objective identity. The newest captured event replaces the older
+  pending one before all outputs (wire, local chat, bubbles and non-QT party chat).
+  Finished objectives and quest milestones flush in order; removal, stage changes,
+  profile changes, world departure and disable retire obsolete work. The shared
+  owner-bound scheduler handles the deadline; unknown objective facts publish
+  immediately rather than guessing how to combine them. Sender wording stays intact.
+- World-map clusters are formed after projection within 24 UI pixels, with stable
+  player membership. Clustering is enabled by default and can be disabled in Player
+  Locations without affecting sharing or discovery. Hovering a cluster shows up to six
+  cached player rows through the shared tooltip renderer, including individual status
+  icons but no inferred party grouping or leaders. Clicking opens the deepest native
+  child map containing every member, without changing canvas magnification. At the
+  deepest shared map, clicking expands up to 12 player
+  dots with the existing player tooltip and actions. Large clusters page with the
+  mouse wheel over the count marker.
+  A navigation click automatically expands an identical cluster on the destination
+  map. Its two-second intent is consumed once and is cancelled by membership,
+  map, profile or enabled-lifetime changes; split clusters remain individual dots.
+  While expanded, a noninteractive owned layer shades the visible map and ordinary
+  markers by 22%. The cluster center, member dots and connectors render above it.
+  Party-hover dimming and source-age opacity remain independent; the minimap is unchanged.
+  Expansion owns only a cluster identity, page and geometry signature; positions are
+  display offsets connected to accepted coordinates, never new location observations.
+  Hiding/changing the map, geometry or membership, disabling clustering, profile changes
+  and Find on Map retire expansion. Minimap pins remain individual.
+  The world-map QT button toggles all QT player and waypoint overlays together.
+  Its per-profile preference defaults on and does not affect the minimap, sharing,
+  filters or discovery. Hovering the button shades the native map beneath all QT
+  overlays; leaving restores normal layering, including any expanded cluster.
+  Location opacity uses the coordinates' source sample time and approaches a readable
+  45% floor at expiry; hovering multiplies this opacity rather than replacing it.
+  Nearby streams use their own source time for their displayed interpolated position.
+  Find on Map uses the guarded native opener and a 20-second green selection at the
+  player's actual location, outside its cluster. Explicit selection may temporarily
+  reveal an otherwise filtered non-LFQP player and restores world-map overlay
+  visibility, but never changes saved player filters or sharing preferences,
+  revives expired coordinates or reveals a hidden diagnostic location. Own-party
+  markers remain native. Closing/changing the map, profile replacement, restriction,
+  withdrawal, ignore and departure retire selection through normal presentation refresh.
+- Developer map identity comes only from the existing signature-verified announcement
+  lease, checked against the peer session, departure and expiry. Authenticating that
+  public identity is independent of diagnostic consent; private requests and mirrored
+  announcements remain consent-gated. Verified developers use a class-tinted gear with
+  normal player interactions. Only the local developer can query fresh diagnostic
+  location privacy for the shared tooltip; received presentation flags cannot grant
+  a badge or reveal diagnostic-only status to ordinary clients.
 - Private player notes live in `db.global.playerNotes`, separated by client
   project, region and naming model, then canonical full player identity. They
   survive profile/character changes. Neither diagnostic exports nor any

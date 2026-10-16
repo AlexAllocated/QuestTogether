@@ -220,6 +220,7 @@ QT:RegisterTest("client locale renders minimap menus tooltip and settings status
 	for i, key in ipairs({
 		"Looking for Questing Partners",
 		"Party Quest Log",
+		"Recent Companions",
 		"Open Quest Log",
 		"Settings",
 		"Patch Notes",

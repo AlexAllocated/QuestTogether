@@ -157,11 +157,14 @@ QT:RegisterTest("nearby streams exchange correlated position whispers and preser
 	b.position.x = 0.52
 	Tick(a, b, 3)
 	local baseline = a.playerLocationState.peers[b.name]
+	local baselineSampledAt = baseline.sampledAt
 	local row = a:GetNearbyStreamPosition(baseline, false)
 	Equal(row.x, 0.52)
 	Equal(row.classFile, "MAGE")
 	Equal(baseline.x, 0.5)
 	Equal(baseline.sequence, 7)
+	Equal(row.sampledAt, stream.sample.at)
+	Equal(baseline.sampledAt, baselineSampledAt)
 	for _, packet in ipairs(a.sent) do
 		Equal(packet.route, "WHISPER")
 		Equal(packet.target, b.name)

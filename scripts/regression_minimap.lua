@@ -197,6 +197,24 @@ local function Menu()
 	return menu
 end
 
+local function Entry(menu, label)
+	for _, entry in ipairs(menu.entries) do
+		if entry.label == label then return entry end
+	end
+	error("missing minimap action: " .. label)
+end
+
+local function CheckMenu(menu)
+	local labels = {
+		"Looking for Questing Partners", false, "Party Quest Log", "Recent Companions", "Open Quest Log",
+		false, "Settings", "Patch Notes", "Move QuestTogether Logs to Separate Window", "Hide Minimap Icon",
+	}
+	Equal(#menu.entries, #labels)
+	for index, label in ipairs(labels) do
+		if label then Equal(menu.entries[index].label, label) else assert(menu.entries[index].divider) end
+	end
+end
+
 local function Fixture()
 	local addon = setmetatable({
 		hasLoggedIn = true,
@@ -275,6 +293,9 @@ local function Fixture()
 	function addon:OpenPartyQuestCompare()
 		self.compares = self.compares + 1
 	end
+	function addon:OpenRecentCompanions()
+		self.companions = (self.companions or 0) + 1
+	end
 	function addon:OpenReleaseNotes()
 		self.notes = (self.notes or 0) + 1
 	end
@@ -310,17 +331,12 @@ QuestTogether:RegisterTest("quick menu uses the native menu API without requirin
 		assert(menu.owner:IsVisible())
 		Equal(#a.frames, count)
 		if not missing then assert(not a.minimapButton:IsVisible()) end
-		Equal(#menu.entries, 9)
-		Equal(menu.entries[1].label, "Looking for Questing Partners")
-		Equal(menu.entries[3].label, "Party Quest Log")
-		Equal(menu.entries[4].label, "Open Quest Log")
-		Equal(menu.entries[6].label, "Settings")
-		Equal(menu.entries[7].label, "Patch Notes")
-		Equal(menu.entries[8].label, "Move QuestTogether Logs to Separate Window")
-		Equal(menu.entries[9].label, "Hide Minimap Icon")
-		assert(menu.entries[2].divider and menu.entries[5].divider)
-		for _, index in ipairs({ 3, 4, 6, 7 }) do menu.entries[index].callback() end
+		CheckMenu(menu)
+		for _, label in ipairs({ "Party Quest Log", "Recent Companions", "Open Quest Log", "Settings", "Patch Notes" }) do
+			Entry(menu, label).callback()
+		end
 		Equal(a.compares, 1)
+		Equal(a.companions, 1)
 		Equal(a.journals, 1)
 		Equal(a.settings, 1)
 		Equal(a.notes, 1)
@@ -350,8 +366,9 @@ QuestTogether:RegisterTest("quick menu retires its tooltip and guards restricted
 	a.isEnabled = false
 	assert(a:OpenQuickMenu())
 	Equal(#a.menus, 2)
-	Equal(a.menus[2].entries[3].enabled, false)
-	a.menus[2].entries[6].callback()
+	Equal(Entry(a.menus[2], "Party Quest Log").enabled, false)
+	Equal(Entry(a.menus[2], "Recent Companions").enabled, false)
+	Entry(a.menus[2], "Settings").callback()
 	Equal(a.settings, 1)
 end)
 
@@ -374,23 +391,16 @@ QuestTogether:RegisterTest(
 		end
 		Equal(#a.menus, 1)
 		Equal(a.compares, 1)
-		local entries = a.menus[1].entries
-		Equal(#entries, 9)
-		Equal(entries[1].label, "Looking for Questing Partners")
-		Equal(entries[1].isSelected(), false)
-		assert(entries[2].divider)
-		Equal(entries[3].label, "Party Quest Log")
-		Equal(entries[4].label, "Open Quest Log")
-		assert(entries[5].divider)
-		Equal(entries[6].label, "Settings")
-		Equal(entries[7].label, "Patch Notes")
-		Equal(entries[8].label, "Move QuestTogether Logs to Separate Window")
-		Equal(entries[9].label, "Hide Minimap Icon")
-		for _, index in ipairs({ 3, 4, 6, 7, 8 }) do
-			entries[index].callback()
+		local actions = a.menus[1]
+		CheckMenu(actions)
+		Equal(Entry(actions, "Looking for Questing Partners").isSelected(), false)
+		for _, label in ipairs({ "Party Quest Log", "Recent Companions", "Open Quest Log", "Settings", "Patch Notes",
+			"Move QuestTogether Logs to Separate Window" }) do
+			Entry(actions, label).callback()
 		end
 		Equal(a.settings, 1)
 		Equal(a.compares, 2)
+		Equal(a.companions, 1)
 		Equal(a.journals, 1)
 		Equal(a.notes, 1)
 		Equal(a.chatDrafts, nil)
@@ -398,8 +408,7 @@ QuestTogether:RegisterTest(
 		assert(a.separateOpened)
 		local menu = Menu()
 		a:PopulateMinimapMenu(menu)
-		Equal(menu.entries[8].label, "Move QuestTogether Logs to Main Window")
-		menu.entries[8].callback()
+		Entry(menu, "Move QuestTogether Logs to Main Window").callback()
 		Equal(a:GetOption("chatLogDestination"), "main")
 		Equal(a.separateOpened, false)
 	end
@@ -411,13 +420,14 @@ QuestTogether:RegisterTest("minimap stale menu actions recheck restrictions and 
 	a:ShowMinimapMenu(a.minimapButton)
 	local menu = a.menus[1]
 	a.blocked = true
-	for _, index in ipairs({ 1, 3, 4, 6, 7 }) do
-		menu.entries[index].callback()
+	for _, label in ipairs({ "Looking for Questing Partners", "Party Quest Log", "Recent Companions", "Open Quest Log",
+		"Settings", "Patch Notes" }) do
+		Entry(menu, label).callback()
 	end
 	Equal(a.chatDrafts, nil)
-	menu.entries[8].callback()
+	Entry(menu, "Move QuestTogether Logs to Separate Window").callback()
 	local messages = #a.messages
-	menu.entries[9].callback()
+	Entry(menu, "Hide Minimap Icon").callback()
 	Equal(#a.messages, messages)
 	Equal(a:GetOption("showMinimapButton"), true)
 	assert(a.minimapButton.shown)
@@ -425,27 +435,31 @@ QuestTogether:RegisterTest("minimap stale menu actions recheck restrictions and 
 	Equal(a.separateOpened, nil)
 	Equal(a.settings + a.compares + a.journals, 0)
 	Equal(a.notes, nil)
+	Equal(a.companions, nil)
 	Equal(a:ShowMinimapMenu(a.minimapButton), false)
 	Equal(#a.menus, 1)
 	a.blocked, a.isEnabled = false, false
-	menu.entries[3].callback()
+	Entry(menu, "Party Quest Log").callback()
+	Entry(menu, "Recent Companions").callback()
 	Equal(a.compares, 0)
+	Equal(a.companions, nil)
 	local disabled = Menu()
 	a:PopulateMinimapMenu(disabled)
-	Equal(disabled.entries[3].enabled, false)
-	assert(disabled.entries[7].enabled and disabled.entries[4].enabled)
-	disabled.entries[6].callback()
-	disabled.entries[7].callback()
+	Equal(Entry(disabled, "Party Quest Log").enabled, false)
+	Equal(Entry(disabled, "Recent Companions").enabled, false)
+	assert(Entry(disabled, "Patch Notes").enabled and Entry(disabled, "Open Quest Log").enabled)
+	Entry(disabled, "Settings").callback()
+	Entry(disabled, "Patch Notes").callback()
 	Equal(a.notes, 1)
-	disabled.entries[4].callback()
+	Entry(disabled, "Open Quest Log").callback()
 	Equal(a.settings, 1)
 	Equal(a.journals, 1)
 	a.journalAvailable = false
-	menu.entries[4].callback()
+	Entry(menu, "Open Quest Log").callback()
 	Equal(a.journals, 1)
 	local unavailable = Menu()
 	a:PopulateMinimapMenu(unavailable)
-	Equal(unavailable.entries[4].enabled, false)
+	Equal(Entry(unavailable, "Open Quest Log").enabled, false)
 	a.journalAvailable, a.journalSucceeds = true, false
 	Equal(a:OpenQuestJournalFromMinimap(), false)
 	Equal(a.journals, 2)
@@ -455,7 +469,7 @@ QuestTogether:RegisterTest("minimap partner shortcut toggles the current saved v
 	local a = Fixture()
 	a:InitializeMinimapLauncher()
 	a:ShowMinimapMenu(a.minimapButton)
-	local entry = a.menus[1].entries[1]
+	local entry = Entry(a.menus[1], "Looking for Questing Partners")
 	Equal(entry.isSelected(), false)
 	entry.callback()
 	Equal(a:GetOption("lookingForQuestPartners"), true)
@@ -632,7 +646,7 @@ QuestTogether:RegisterTest(
 		a:InitializeMinimapLauncher()
 		a:ShowMinimapMenu(a.minimapButton)
 		a:ShowMinimapTooltip(a.minimapButton)
-		a.menus[1].entries[9].callback()
+		Entry(a.menus[1], "Hide Minimap Icon").callback()
 		Equal(a:GetOption("showMinimapButton"), false)
 		Equal(a.minimapButton.shown, false)
 		Equal(a.minimapTooltip.shown, false)
@@ -648,7 +662,7 @@ QuestTogether:RegisterTest(
 		function a:SetOption()
 			return false
 		end
-		a.menus[1].entries[9].callback()
+		Entry(a.menus[1], "Hide Minimap Icon").callback()
 		Equal(#a.messages, 1)
 		Equal(refreshed, 1)
 	end

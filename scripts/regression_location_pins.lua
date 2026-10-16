@@ -96,11 +96,39 @@ local function Frame(addon, parent, kind)
 		self:Check(self.parent == nil)
 		self.scripts[event] = callback
 	end
-	function frame:CreateTexture()
+	function frame:CreateTexture(_, layer)
 		self:Check()
 		local region = Frame(addon, self, "Texture")
+		region.layer = layer
 		addon.regions[#addon.regions + 1] = region
 		return region
+	end
+	function frame:CreateLine(_, layer)
+		self:Check()
+		local region = Frame(addon, self, "Line")
+		region.layer = layer
+		addon.regions[#addon.regions + 1] = region
+		return region
+	end
+	function frame:SetStartPoint(...)
+		self:Check()
+		self.startPoint = { ... }
+	end
+	function frame:SetEndPoint(...)
+		self:Check()
+		self.endPoint = { ... }
+	end
+	function frame:SetThickness(value)
+		self:Check()
+		self.thickness = value
+	end
+	function frame:EnableMouseWheel(value)
+		self:Check()
+		self.mouseWheel = value
+	end
+	function frame:EnableMouse(value)
+		self:Check()
+		self.mouseEnabled = value
 	end
 	function frame:CreateMaskTexture()
 		return self:CreateTexture()
@@ -148,7 +176,6 @@ local function Frame(addon, parent, kind)
 		self.alpha = value
 	end
 	for _, method in ipairs({
-		"EnableMouse",
 		"SetClipsChildren",
 		"RegisterForClicks",
 		"SetBlendMode",
@@ -281,6 +308,18 @@ local function Fixture()
 	function a:IsIgnoredPlayerName(name)
 		return name == self.ignored
 	end
+	function a:IsVerifiedDeveloper(name)
+		return self.verifiedDeveloperName ~= nil and name == self.verifiedDeveloperName
+	end
+	function a:IsPlayerLocationHiddenForDeveloper()
+		return false
+	end
+	function a:GetPlayerLocationClusterNavigationAction()
+		return "expand"
+	end
+	function a:TryNavigatePlayerLocationCluster()
+		return false
+	end
 	function a:GetClassColorCode(class)
 		return class == "MAGE" and "|cff40c7eb" or "|cffffffff"
 	end
@@ -399,6 +438,12 @@ Register("location dots reuse a bounded pool and copy no state to native parents
 		a.rows[surface] = {}
 		for index = 1, 200 do
 			a.rows[surface][index] = Row("Peer" .. index .. "-Realm")
+			if surface == "map" then
+				-- Sparse points exercise the full pin pool; crowded points now
+				-- correctly share a cluster marker on the world map.
+				a.rows[surface][index].x = 0.02 + (index - 1) % 25 * 0.04
+				a.rows[surface][index].y = 0.04 + math.floor((index - 1) / 25) * 0.07
+			end
 		end
 	end
 	assert(a:RefreshPlayerLocationPins())
@@ -461,13 +506,15 @@ Register("location renderer bounds candidates independently from its visible pin
 			a.rows[surface][index] = Row(string.format("Peer%03d-Realm", index), 0.5, 0.5, index <= 128 and 3 or 1)
 		end
 		assert(a:RefreshPlayerLocationPins())
-		Equal(projections, 128)
-		Equal(#a.locationPinState.surfaces[surface].pins, 128)
-		Equal(Pin(a, surface, 128).name, "Peer256-Realm")
+		Equal(projections, surface == "map" and 328 or 128)
+		Equal(#a.locationPinState.surfaces[surface].pins, surface == "map" and 1 or 128)
+		if surface == "map" then
+			Equal(#Pin(a, surface).cluster.members, 200)
+		else Equal(Pin(a, surface, 128).name, "Peer256-Realm") end
 		local frames = #a.frames
 		projections = 0
 		assert(a:RefreshPlayerLocationPins())
-		Equal(projections, 128)
+		Equal(projections, surface == "map" and 328 or 128)
 		Equal(#a.frames, frames)
 
 		-- Oversized input cannot extend native projection work beyond the model
@@ -484,8 +531,8 @@ Register("location renderer bounds candidates independently from its visible pin
 		assert(a:RefreshPlayerLocationPins())
 		Equal(projections, 512)
 		Equal(Pin(a, surface).name, "Peer512-Realm")
-		Equal(Pin(a, surface, 2).frame.shown, false)
-		Equal(#a.locationPinState.surfaces[surface].pins, 128)
+		if surface == "minimap" then Equal(Pin(a, surface, 2).frame.shown, false) end
+		Equal(#a.locationPinState.surfaces[surface].pins, surface == "map" and 1 or 128)
 		Equal(#a.frames, frames)
 	end
 end, { offline = true })
@@ -1169,14 +1216,20 @@ Register("crowded maps prioritize closest players independently of names and map
 		a.rows[surface] = rows
 		assert(a:RefreshPlayerLocationPins())
 		Equal(Pin(a, surface).name, "ZClosest-Realm")
-		Equal(#a.locationPinState.surfaces[surface].pins, 128)
-		Equal(Pin(a, surface, 128).name, "A127-Realm")
+		Equal(#a.locationPinState.surfaces[surface].pins, surface == "map" and 2 or 128)
+		if surface == "map" then Equal(#Pin(a, surface, 2).cluster.members, 128)
+		else Equal(Pin(a, surface, 128).name, "A127-Realm") end
 		-- Moving the player, without new peer messages, changes priority.
 		a.playerWest = 450
 		a.geometry.minimap.west = 450
 		assert(a:RefreshPlayerLocationPins())
-		Equal(Pin(a, surface).name, "A001-Realm")
-		Equal(Pin(a, surface, 128).name, "A128-Realm")
+		if surface == "map" then
+			Equal(Pin(a, surface).cluster.members[1].name, "A001-Realm")
+			Equal(Pin(a, surface).cluster.members[128].name, "A128-Realm")
+		else
+			Equal(Pin(a, surface).name, "A001-Realm")
+			Equal(Pin(a, surface, 128).name, "A128-Realm")
+		end
 		Equal(rows[129].name, "ZClosest-Realm", "source ordering must not be mutated")
 	end
 end, { offline = true })
@@ -1646,8 +1699,8 @@ Register("player tooltip width fits content expands for party names and shrinks 
 	Equal(#a.regions, allocated)
 end)
 
-local function WaypointFixture()
-	local a = Fixture()
+local function WaypointFixture(addon)
+	local a = addon or Fixture()
 	a.waypoints = {
 		{ name = "First-Realm", mapID = 1, x = 0.5, y = 0.5, classFile = "MAGE" },
 		{ name = "Second-Realm", mapID = 1, x = 0.5, y = 0.5, classFile = "WARRIOR" },
@@ -1815,4 +1868,1352 @@ Register("hover interests follow visible owners across Alt Z recycled pins chat 
 	Equal(state.hovered, nil)
 	a:UpdateChatLogPlayerTooltip()
 	Equal(chatState.hovered, nil)
+end)
+
+local function ClusterFixture(count)
+	local a = Fixture()
+	a.requests, a.phaseRequests = {}, {}
+	a.clusterOptions = { showPlayerLocations = true, clusterPlayerLocations = true }
+	function a:GetOption(key)
+		if self.clusterOptions[key] ~= nil then return self.clusterOptions[key] end
+		return QuestTogether.GetOption(self, key)
+	end
+	function a:RequestPlayerDetails(name)
+		self.requests[#self.requests + 1] = name
+	end
+	function a:RequestPlayerPhaseComparison(name)
+		self.phaseRequests[#self.phaseRequests + 1] = name
+	end
+	a.rows.map = {}
+	for index = 1, count or 2 do a.rows.map[index] = Row(string.format("Peer%03d-Realm", index)) end
+	return a
+end
+
+local function VisibleMapPins(a)
+	local result = {}
+	for _, pin in ipairs(a.locationPinState.surfaces.map.pins) do
+		if pin.frame:IsVisible() then result[#result + 1] = pin end
+	end
+	return result
+end
+
+local function ExpandedPlayerPin(a, name)
+	for _, pin in ipairs(VisibleMapPins(a)) do
+		if pin.expansion and (not name or pin.name == name) then return pin end
+	end
+end
+
+local function AssertNoVisibleConnectors(a)
+	for _, pin in ipairs(a.locationPinState.surfaces.map.pins) do
+		assert(not pin.connector or not pin.connector:IsVisible(), "a collapsed expansion left a visible connector")
+	end
+end
+
+Register("cluster summary hover requests no details and expansion preserves normal player dots and hover", function()
+	local a = ClusterFixture()
+	VisualParty(a)
+	local friend, leader = Row("Friend-Realm"), Row("Leader-Realm", 0.501)
+	friend.classFile = "WARRIOR"
+	a.rows.map = { friend, leader, Row("Unrelated-Realm", 0.7) }
+	a.rows.minimap = { Row("Friend-Realm"), Row("Leader-Realm", 0.501) }
+	function a:IsPlayerLookingForQuestPartners(name) return name == leader.name end
+	function a:GetPlayerPhaseStatus(name) return name == friend.name and "different" or "same" end
+	assert(a:RefreshPlayerLocationPins())
+	local cluster, state = Pin(a, "map"), a.locationPinState
+	Equal(#VisibleMapPins(a), 2)
+	Equal(#state.surfaces.minimap.pins, 2)
+	Equal(cluster.name, nil)
+	Equal(cluster.count.text, "2")
+	cluster.frame.scripts.OnEnter()
+	Equal(state.clusterTooltip.hovered, cluster)
+	assert(state.clusterTooltip.tooltipTitle.text:find("2 players", 1, true))
+	assert(state.clusterTooltip.partyRows[1].label.text:find("Friend", 1, true))
+	assert(state.clusterTooltip.tooltipLabel.text:find("Click to expand players.", 1, true))
+	Equal(#a.requests, 0)
+	Equal(#a.phaseRequests, 0)
+	Equal(a.rosterRequests, nil)
+	assert(not rawget(a, "playerDetailsState") or next(a.playerDetailsState.interests) == nil)
+	cluster.frame.scripts.OnClick(nil, "LeftButton")
+	Equal(#a.menus, 0)
+	Equal(#VisibleMapPins(a), 4)
+	assert(state.clusterTooltip.tooltipLabel.text:find("Click to collapse", 1, true))
+	local member = assert(ExpandedPlayerPin(a, friend.name))
+	local expandedLeader = assert(ExpandedPlayerPin(a, leader.name))
+	assert(member.phaseIcon.shown and member.partyBadge.shown)
+	assert(expandedLeader.glow[1].shown and expandedLeader.partyBadge.shown)
+	Equal(member.texture.color[1], 1)
+	assert(not member.count.shown)
+	local line, host = member.connector, state.surfaces.map.frame
+	Equal(line.kind, "Line")
+	Equal(line.parent, state.surfaces.map.clusterShade)
+	Equal(line.layer, "OVERLAY")
+	Equal(line.thickness, 1)
+	Equal(line.startPoint[1], "TOPLEFT")
+	Equal(line.startPoint[2], host)
+	Near(line.startPoint[3], 500)
+	Near(line.startPoint[4], -300)
+	Equal(line.endPoint[2], host)
+	Near(line.endPoint[3], member.frame.points[1][4])
+	Near(line.endPoint[4], member.frame.points[1][5])
+	assert(line.endPoint[3] ~= line.startPoint[3] or line.endPoint[4] ~= line.startPoint[4])
+	Near(friend.x, 0.5)
+	Near(friend.y, 0.5)
+	Near(leader.x, 0.501)
+	member.frame.scripts.OnEnter()
+	Equal(state.clusterTooltip.hovered, nil)
+	Equal(state.hovered, member)
+	Equal(a.requests[1], friend.name)
+	Equal(a.phaseRequests[1], friend.name)
+	Equal(a.playerDetailsState.interests[state].name, friend.name)
+	assert(a.playerDetailsState.interests[state].isCurrent())
+	assert(state.tooltipTitle.text:find("Friend", 1, true))
+	assert(state.tooltipIntro.text:find("Level 60 Human", 1, true))
+	assert(member.partyOutline.shown and expandedLeader.partyCrown.shown)
+	member.frame.scripts.OnClick(nil, "LeftButton")
+	Equal(a.menus[1].name, friend.name)
+	Equal(a.menus[1].firstAction, nil)
+	member.frame.scripts.OnClick(nil, "RightButton")
+	Equal(a.menus[2].name, friend.name)
+	local mini = Pin(a, "minimap")
+	assert(not mini.cluster and not mini.expansion and not mini.connector)
+	mini.frame.scripts.OnEnter()
+	Equal(a.targetHover.name, friend.name)
+	assert(a.targetHover.isCurrent())
+end)
+
+Register("cluster summary uses capped individual roster rows with validated indicators and no party identity or requests", function()
+	local a = ClusterFixture(8)
+	local original = a.rows.map
+	original[1].developer, original[1].developerOnly, original[1].publicLocationHidden = true, true, true
+	original[4].classFile = "WARRIOR"
+	a.verifiedDeveloperName, a.hiddenForName, a.lookingForName = original[2].name, original[2].name, original[3].name
+	a.partyReads, a.rosterRequests = 0, 0
+	function a:IsKnownQTPlayer() return false end
+	function a:IsPlayerLookingForQuestPartners(name) return name == self.lookingForName end
+	function a:IsPlayerLocationHiddenForDeveloper(name) return name == self.hiddenForName end
+	function a:GetPlayerPartyVisualInfo()
+		self.partyReads = self.partyReads + 1
+		return { key = "UnrelatedParty", leader = original[1].name, size = 8, members = original }
+	end
+	function a:RequestPartyVisualRoster() self.rosterRequests = self.rosterRequests + 1 end
+	a:RefreshPlayerLocationPins()
+	local partyReads = a.partyReads
+	Pin(a, "map").frame.scripts.OnEnter()
+	local summary = a.locationPinState.clusterTooltip
+	assert(summary.tooltipTitle.text:find("8 players", 1, true))
+	assert(summary.tooltipLabel.text:find("…and 2 more", 1, true))
+	Equal(#summary.partyRows, 6)
+	Equal(summary.tooltipIntro.shown, false)
+	Equal(a.partyReads, partyReads)
+	Equal(a.rosterRequests, 0)
+	Equal(#a.requests, 0)
+	Equal(#a.phaseRequests, 0)
+	assert(not rawget(a, "playerDetailsState") or next(a.playerDetailsState.interests) == nil)
+	for index, item in ipairs(summary.partyRows) do
+		assert(item.active and item.frame:IsVisible() and item.qtIcon.shown)
+		assert(not item.crown.shown)
+		assert(not item.label.text:find(" — Leader", 1, true))
+		assert(not item.label.text:find("Party of", 1, true))
+		assert(item.label.text:find("Peer00" .. index, 1, true))
+		Equal(item.frame.points[1][2], summary.tooltipTitle)
+		Equal(item.frame.points[1][3], "BOTTOMLEFT")
+		if index > 1 then
+			local previous = summary.partyRows[index - 1]
+			assert(item.frame.points[1][5] <= previous.frame.points[1][5] - previous.frame.height)
+		end
+	end
+	local ordinary, developer, looking = summary.partyRows[1], summary.partyRows[2], summary.partyRows[3]
+	assert(ordinary.dot.shown and not ordinary.developerIcon.shown and not ordinary.hiddenGlow.shown)
+	Near(ordinary.dot.color[1], 64 / 255)
+	Near(ordinary.dot.color[2], 199 / 255)
+	assert(not ordinary.label.text:find("QuestTogether developer", 1, true))
+	assert(not ordinary.label.text:find("Location sharing is off", 1, true))
+	Equal(ordinary.qtIcon.texture, a.NAMEPLATE_PLAYER_ICON_TEXTURE)
+	assert(developer.developerIcon.shown and not developer.dot.shown and developer.hiddenGlow.shown)
+	Equal(developer.hiddenGlow.color[1], 1)
+	Near(developer.hiddenGlow.color[2], 0.12)
+	Near(developer.hiddenGlow.color[3], 0.12)
+	Near(developer.hiddenGlow.color[4], 0.6)
+	assert(developer.developerIcon.texture:find("DeveloperGear", 1, true))
+	Near(developer.developerIcon.vertexColor[1], 64 / 255)
+	Near(developer.developerIcon.vertexColor[2], 199 / 255)
+	assert(developer.label.text:find("QuestTogether developer", 1, true))
+	assert(developer.label.text:find("Location sharing is off", 1, true))
+	assert(looking.qtIcon.texture:find("QuestTogetherPartnerIcon", 1, true))
+	local last = summary.partyRows[6]
+	Equal(summary.tooltipLabel.points[1][2], summary.tooltipTitle)
+	assert(summary.tooltipLabel.points[1][5] <= last.frame.points[1][5] - last.frame.height - 14)
+	local allocated = #a.regions
+	a.verifiedDeveloperName, a.hiddenForName, a.lookingForName = nil, nil, nil
+	original[3].developer, original[3].developerOnly, original[3].publicLocationHidden = true, true, true
+	a.rows.map = { original[3], original[4] }
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnEnter()
+	Equal(a.locationPinState.clusterTooltip, summary)
+	Equal(#a.regions, allocated)
+	for index, item in ipairs(summary.partyRows) do
+		if index <= 2 then
+			assert(item.active and item.dot.shown and not item.developerIcon.shown and not item.hiddenGlow.shown)
+			assert(not item.crown.shown)
+			Equal(item.qtIcon.texture, a.NAMEPLATE_PLAYER_ICON_TEXTURE)
+			assert(not item.label.text:find("QuestTogether developer", 1, true))
+			assert(not item.label.text:find("Location sharing is off", 1, true))
+		else
+			assert(not item.active and not item.frame:IsVisible())
+		end
+	end
+	Equal(summary.partyRows[2].dot.color[1], 1)
+	assert(not summary.tooltipLabel.text:find("more", 1, true))
+	Equal(a.rosterRequests, 0)
+	Equal(#a.requests, 0)
+end)
+
+Register("crowded private and public map rows expand the same admitted cluster and retain selected player", function()
+	local a = ClusterFixture(520)
+	for index, row in ipairs(a.rows.map) do
+		row.x = index < 256 and 0.55 or 0.5
+		row.developerOnly = index > 500 or nil
+	end
+	local found = Row("Found-Realm", 0.5)
+	function a:GetFindPlayerMapLocation() return found end
+	a.playerMapSelection = { name = found.name, mapID = 1, expires = 120 }
+	a:RefreshPlayerLocationPins()
+	assert(Pin(a, "map").selected)
+	local cluster = Pin(a, "map", 2)
+	assert(cluster.cluster)
+	local key = cluster.cluster.key
+	cluster.frame.scripts.OnClick(nil, "LeftButton")
+	Equal(a.playerLocationClusterExpansion.key, key)
+	local member, selected = assert(ExpandedPlayerPin(a)), nil
+	for _, pin in ipairs(VisibleMapPins(a)) do
+		if pin.name == found.name then selected = pin end
+	end
+	assert(selected and selected.selected and selected.selectionGlow[1].shown)
+	assert(not selected.expansion)
+	assert(selected.frame.level < a.locationPinState.surfaces.map.clusterShade.level)
+	assert(member.frame.level > a.locationPinState.surfaces.map.clusterShade.level)
+	Near(selected.frame.points[1][4], 500)
+	Near(selected.frame.points[1][5], -300)
+	member.frame.scripts.OnEnter()
+	assert(a.playerDetailsState.interests[a.locationPinState].isCurrent())
+	member.frame.scripts.OnClick(nil, "RightButton")
+	Equal(a.menus[1].name, member.name)
+end, { offline = true })
+
+Register("large map clusters page actual dots and collapse retires hover interests and connector lines", function()
+	local a = ClusterFixture(45)
+	a:RefreshPlayerLocationPins()
+	local cluster, state = Pin(a, "map"), a.locationPinState
+	cluster.frame.scripts.OnClick(nil, "LeftButton")
+	assert(cluster.frame.mouseWheel)
+	local first = assert(ExpandedPlayerPin(a, "Peer001-Realm"))
+	first.frame.scripts.OnEnter()
+	local stale = assert(a.playerDetailsState.interests[state])
+	assert(stale.isCurrent())
+	local seen = {}
+	local pages = cluster.cluster.expansionInfo.pages
+	assert(pages > 1)
+	for page = 1, pages do
+		Equal(cluster.cluster.expansionInfo.page, page)
+		local onPage = 0
+		for _, pin in ipairs(VisibleMapPins(a)) do
+			if pin.expansion then
+				assert(not seen[pin.name], "player repeated across expansion pages")
+				seen[pin.name] = true
+				onPage = onPage + 1
+				assert(pin.connector:IsVisible())
+			end
+		end
+		assert(onPage > 0 and onPage <= 12)
+		if page < pages then cluster.frame.scripts.OnMouseWheel(nil, -1) end
+	end
+	for index = 1, 45 do assert(seen[string.format("Peer%03d-Realm", index)]) end
+	assert(not stale.isCurrent())
+	Equal(a.playerDetailsState.interests[state], nil)
+	cluster.frame.scripts.OnEnter()
+	assert(state.clusterTooltip.tooltipLabel.text:find("Scroll to browse players", 1, true))
+	cluster.frame.scripts.OnMouseWheel(nil, -1)
+	Equal(cluster.cluster.expansionInfo.page, pages)
+	cluster.frame.scripts.OnMouseWheel(nil, 1)
+	Equal(cluster.cluster.expansionInfo.page, pages - 1)
+	cluster.frame.scripts.OnClick(nil, "LeftButton")
+	Equal(a.playerLocationClusterExpansion, nil)
+	Equal(#VisibleMapPins(a), 1)
+	assert(not cluster.frame.mouseWheel)
+	AssertNoVisibleConnectors(a)
+	cluster.frame.scripts.OnClick(nil, "LeftButton")
+	Equal(cluster.cluster.expansionInfo.page, 1)
+	assert(not stale.isCurrent(), "reopening cannot renew an earlier hover callback")
+end)
+
+Register("expanded hover currentness rejects changed membership geometry and replaced expansion before redraw", function()
+	for _, change in ipairs({ "membership", "geometry", "replaced" }) do
+		local a = ClusterFixture(3)
+		a:RefreshPlayerLocationPins()
+		local cluster = Pin(a, "map")
+		cluster.frame.scripts.OnClick(nil, "LeftButton")
+		local member = assert(ExpandedPlayerPin(a, "Peer001-Realm"))
+		member.frame.scripts.OnEnter()
+		local state = a.locationPinState
+		local stale = assert(a.playerDetailsState.interests[state])
+		assert(stale.isCurrent())
+		if change == "membership" then
+			table.remove(a.rows.map, 3)
+		elseif change == "geometry" then
+			a.geometry.map.canvasLeft = -1
+		else
+			a:ClearPlayerLocationClusterExpansion()
+			assert(a:TogglePlayerLocationClusterExpansion(cluster.cluster, a.geometry.map))
+		end
+		assert(not stale.isCurrent(), change .. " retained an old hover")
+		a:UpdatePlayerDetailsInterests()
+		Equal(a.playerDetailsState.interests[state], nil)
+		Equal(#a.requests, 1)
+		member.frame.scripts.OnClick(nil, "RightButton")
+		Equal(#a.menus, 0)
+		a:RefreshPlayerLocationPins()
+		assert(not stale.isCurrent())
+		if change ~= "replaced" then AssertNoVisibleConnectors(a) end
+	end
+end)
+
+Register("hidden map and restrictions stop expanded actions before refresh and clear expansion safely", function()
+	for _, change in ipairs({ "hidden", "restricted", "disabled" }) do
+		local a = ClusterFixture()
+		a:RefreshPlayerLocationPins()
+		local cluster = Pin(a, "map")
+		cluster.frame.scripts.OnClick(nil, "LeftButton")
+		local member = assert(ExpandedPlayerPin(a))
+		member.frame.scripts.OnEnter()
+		local interest = assert(a.playerDetailsState.interests[a.locationPinState])
+		if change == "hidden" then a.mapParent:Hide()
+		elseif change == "restricted" then a.blocked = true
+		else a.isEnabled = false end
+		assert(not interest.isCurrent())
+		member.frame.scripts.OnClick(nil, "RightButton")
+		cluster.frame.scripts.OnClick(nil, "LeftButton")
+		Equal(#a.menus, 0)
+		a:UpdatePlayerDetailsInterests()
+		Equal(#a.requests, 1)
+		Equal(a.playerDetailsState.interests[a.locationPinState], nil)
+		a:RefreshPlayerLocationPins()
+		Equal(a.playerLocationClusterExpansion, nil)
+		AssertNoVisibleConnectors(a)
+		a.blocked, a.isEnabled = false, true
+		a.mapParent:Show()
+		a:RefreshPlayerLocationPins()
+		Equal(#VisibleMapPins(a), 1)
+		AssertNoVisibleConnectors(a)
+	end
+end)
+
+Register("privacy withdrawal immediately invalidates expanded player without retaining accepted coordinates", function()
+	local a = ClusterFixture()
+	local withdrawn, remaining = a.rows.map[1], a.rows.map[2]
+	a.playerLocationState = { peers = { [withdrawn.name] = withdrawn, [remaining.name] = remaining } }
+	a.GetVisiblePlayerLocations = QuestTogether.GetVisiblePlayerLocations
+	function a:ShouldShowPlayerLocation(name) return not self:IsIgnoredPlayerName(name) end
+	function a:AppendDeveloperLocationRows() end
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnClick(nil, "LeftButton")
+	local member = assert(ExpandedPlayerPin(a, withdrawn.name))
+	member.frame.scripts.OnEnter()
+	local interest = assert(a.playerDetailsState.interests[a.locationPinState])
+	-- The accepted cache now contains the withdrawal, which carries no position.
+	a.playerLocationState.peers[withdrawn.name] = { name = withdrawn.name, mask = 0, receivedAt = 100 }
+	assert(not interest.isCurrent())
+	Equal(a.playerLocationClusterExpansion, nil)
+	member.frame.scripts.OnClick(nil, "RightButton")
+	Equal(#a.menus, 0)
+	a:RefreshPlayerLocationPins()
+	Equal(#VisibleMapPins(a), 1)
+	Equal(Pin(a, "map").name, remaining.name)
+	Equal(a.playerDetailsState.interests[a.locationPinState], nil)
+	AssertNoVisibleConnectors(a)
+	Equal(a.playerLocationState.peers[withdrawn.name].x, nil)
+	Near(withdrawn.x, 0.5)
+	Near(remaining.x, 0.5)
+end)
+
+Register("disabling clustering restores actual world map dots and leaves minimap targeting unchanged", function()
+	local a = ClusterFixture()
+	a.rows.map[2].x = 0.501
+	a.rows.minimap = { a.rows.map[1], a.rows.map[2] }
+	a:RefreshPlayerLocationPins()
+	local mini = Pin(a, "minimap")
+	local miniPoint = mini.frame.points[1]
+	Pin(a, "map").frame.scripts.OnClick(nil, "LeftButton")
+	local member = assert(ExpandedPlayerPin(a))
+	member.frame.scripts.OnEnter()
+	local interest = assert(a.playerDetailsState.interests[a.locationPinState])
+	a.clusterOptions.clusterPlayerLocations = false
+	assert(not interest.isCurrent())
+	a:RefreshPlayerLocationPins()
+	Equal(a.playerLocationClusterExpansion, nil)
+	Equal(#VisibleMapPins(a), 2)
+	for index, pin in ipairs(VisibleMapPins(a)) do
+		assert(pin.name and not pin.cluster and not pin.expansion and not pin.count.shown)
+		Near(pin.frame.points[1][4], index == 1 and 500 or 501)
+	end
+	AssertNoVisibleConnectors(a)
+	Equal(Pin(a, "minimap"), mini)
+	Near(mini.frame.points[1][4], miniPoint[4])
+	Near(mini.frame.points[1][5], miniPoint[5])
+	mini.frame.scripts.OnEnter()
+	Equal(a.targetHover.name, "Peer001-Realm")
+	assert(a.targetHover.isCurrent())
+	mini.frame.scripts.OnClick(nil, "LeftButton")
+	Equal(#a.menus, 0)
+	mini.frame.scripts.OnClick(nil, "RightButton")
+	Equal(a.menus[1].name, "Peer001-Realm")
+	assert(a.menus[1].firstAction)
+	a.clusterOptions.clusterPlayerLocations = true
+	a:RefreshPlayerLocationPins()
+	Equal(#VisibleMapPins(a), 1)
+	Equal(Pin(a, "map").count.text, "2")
+	Equal(a.playerLocationClusterExpansion, nil)
+end)
+
+Register("developer gear and tooltip require verified identity and restore normal dots after revocation or reuse", function()
+	local a = ClusterFixture(1)
+	local row = a.rows.map[1]
+	row.developer, row.verifiedDeveloper = true, true
+	a.rows.minimap = { row }
+	function a:IsPlayerLookingForQuestPartners() return true end
+	a:RefreshPlayerLocationPins()
+	local map, mini = Pin(a, "map"), Pin(a, "minimap")
+	for _, pin in ipairs({ map, mini }) do
+		assert(not pin.developerGear.shown and pin.texture.shown and pin.border.shown)
+		assert(pin.glow[1].shown)
+	end
+	map.frame.scripts.OnEnter()
+	assert(not a.locationPinState.tooltipIntro.text:find("QuestTogether developer", 1, true))
+	a.verifiedDeveloperName = row.name
+	a:RefreshPlayerLocationPins()
+	for _, pin in ipairs({ map, mini }) do
+		assert(pin.developerGear.shown and not pin.texture.shown and not pin.border.shown)
+		Equal(pin.frame.width, 18)
+		assert(pin.developerGear.texture:find("DeveloperGear", 1, true))
+		Near(pin.developerGear.vertexColor[1], 64 / 255)
+		Near(pin.developerGear.vertexColor[2], 199 / 255)
+		Near(pin.developerGear.vertexColor[3], 235 / 255)
+		assert(pin.glow[1].shown)
+		Near(pin.glow[1].color[2], 0.8)
+	end
+	assert(a.locationPinState.tooltipIntro.text:find("QuestTogether developer", 1, true))
+	map.frame.scripts.OnClick(nil, "RightButton")
+	Equal(a.menus[1].name, row.name)
+	mini.frame.scripts.OnEnter()
+	Equal(a.targetHover.name, row.name)
+	assert(a.targetHover.isCurrent())
+	a.verifiedDeveloperName = nil
+	a:RefreshPlayerLocationPins()
+	for _, pin in ipairs({ map, mini }) do
+		assert(not pin.developerGear.shown and pin.texture.shown and pin.border.shown)
+		assert(pin.glow[1].shown)
+	end
+	assert(not a.locationPinState.tooltipIntro.text:find("QuestTogether developer", 1, true))
+	a.verifiedDeveloperName = row.name
+	a:RefreshPlayerLocationPins()
+	local replacement = Row("Replacement-Realm")
+	replacement.developer = true
+	a.rows.map, a.rows.minimap = { replacement }, { replacement }
+	a:RefreshPlayerLocationPins()
+	for _, pin in ipairs({ map, mini }) do
+		Equal(pin.name, replacement.name)
+		assert(not pin.developerGear.shown and pin.texture.shown and pin.border.shown)
+	end
+end)
+
+Register("expanded verified developer keeps class gear and private glow while the count marker stays generic", function()
+	local a = ClusterFixture()
+	local developer = a.rows.map[1]
+	a.verifiedDeveloperName = developer.name
+	developer.developerOnly, developer.publicLocationHidden = true, true
+	a:RefreshPlayerLocationPins()
+	local cluster = Pin(a, "map")
+	assert(cluster.cluster and not cluster.developerGear.shown)
+	cluster.frame.scripts.OnClick(nil, "LeftButton")
+	local member = assert(ExpandedPlayerPin(a, developer.name))
+	assert(member.developerGear.shown and not member.texture.shown and not member.border.shown)
+	assert(member.glow[1].shown)
+	Near(member.glow[1].color[2], 0.12)
+	Near(member.glow[1].color[3], 0.12)
+	member.frame.scripts.OnEnter()
+	assert(a.locationPinState.tooltipIntro.text:find("QuestTogether developer", 1, true))
+	Equal(a.playerDetailsState.interests[a.locationPinState].name, developer.name)
+	cluster.frame.scripts.OnClick(nil, "LeftButton")
+	assert(cluster.cluster and not cluster.developerGear.shown)
+	AssertNoVisibleConnectors(a)
+end)
+
+Register("map and chat hidden location labels follow the viewer query and ignore raw private row flags", function()
+	local a = ClusterFixture(1)
+	local row = a.rows.map[1]
+	row.developerOnly, row.publicLocationHidden, row.locationShared = true, true, false
+	a.playerLocationState = { peers = { [row.name] = row } }
+	function a:GetChatLogTooltipCursorPosition() return 200, 100 end
+	local showHidden = false
+	function a:IsPlayerLocationHiddenForDeveloper(name)
+		return showHidden and name == row.name
+	end
+	a:RefreshPlayerLocationPins()
+	local pin, chat = Pin(a, "map"), Frame(a, a.tooltipParent)
+	pin.frame.scripts.OnEnter()
+	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:" .. row.name))
+	local function HasLabel(state)
+		local text = (state.tooltipIntro.text or "") .. "\n" .. (state.tooltipLabel.text or "")
+		return text:find("Location sharing is off", 1, true) ~= nil
+	end
+	assert(not HasLabel(a.locationPinState) and not HasLabel(a.chatLogPlayerTooltipState))
+	assert(pin.glow[1].shown)
+	Near(pin.glow[1].color[2], 0.12)
+	Near(pin.glow[1].color[3], 0.12)
+	showHidden = true
+	a:RefreshPlayerLocationPins()
+	a:UpdateChatLogPlayerTooltip()
+	assert(HasLabel(a.locationPinState) and HasLabel(a.chatLogPlayerTooltipState))
+	assert(pin.glow[1].shown and not pin.developerGear.shown)
+	showHidden = false
+	a:RefreshPlayerLocationPins()
+	a:UpdateChatLogPlayerTooltip()
+	assert(not HasLabel(a.locationPinState) and not HasLabel(a.chatLogPlayerTooltipState))
+	assert(pin.glow[1].shown)
+	Near(pin.glow[1].color[2], 0.12)
+end)
+
+local function FindMenuFixture()
+	local a = ClusterFixture(1)
+	local row = a.rows.map[1]
+	a.playerLocationState = { peers = { [row.name] = row } }
+	function a:IsSelfSender(name) return name == self.selfName end
+	function a:IsGroupedSender(name) return name == self.grouped end
+	function a:IsPlayerLookingForQuestPartners() return false end
+	function a:ShouldRequestPartyJoin() return false end
+	function a:PopulatePlayerNotesMenu() end
+	function a:PopulatePartyFocusMenu() end
+	function a:Print(message) self.lastMessage = message end
+	function a:RefreshPlayerLocationPins() self.refreshes = (self.refreshes or 0) + 1 end
+	a.API.OpenPlayerLocationMap = function(mapID)
+		a.openedMaps = (a.openedMaps or 0) + 1
+		a.openedMapID = mapID
+		return true
+	end
+	return a, row
+end
+
+local function FindMenuAction(a, name)
+	local buttons = {}
+	local root = {
+		CreateTitle = function() end,
+		CreateButton = function(_, label, callback) buttons[label] = callback end,
+	}
+	assert(a:PopulateChatLogSpeakerMenu(root, a.tooltipParent, name))
+	return buttons["Find on Map"]
+end
+
+Register("Find on Map menu requires a fresh eligible public location even when private diagnostic coordinates exist", function()
+	for _, scenario in ipairs({ "public", "privateOnly", "withdrawn", "minimapOnly", "expired", "ignored", "grouped", "self", "disabled", "partyOnly", "restricted" }) do
+		local a, row = FindMenuFixture()
+		local diagnostic = Row(row.name)
+		diagnostic.developerOnly, diagnostic.publicLocationHidden = true, true
+		a.isLocalDeveloper = true
+		a.developerPlayerData = { [row.name] = diagnostic }
+		if scenario == "privateOnly" then
+			a.playerLocationState.peers[row.name] = nil
+			a.rows.map = { diagnostic }
+		elseif scenario == "withdrawn" then row.mask = 0
+		elseif scenario == "minimapOnly" then row.mask = 2
+		elseif scenario == "expired" then row.receivedAt = -30
+		elseif scenario == "ignored" then a.ignored = row.name
+		elseif scenario == "grouped" then a.grouped = row.name
+		elseif scenario == "self" then a.selfName = row.name
+		elseif scenario == "disabled" then a.clusterOptions.showPlayerLocations = false
+		elseif scenario == "partyOnly" then a.clusterOptions.mapPartyOnly = true
+		elseif scenario == "restricted" then a.blocked = true end
+		Equal(FindMenuAction(a, row.name) ~= nil, scenario == "public")
+		Equal(a.openedMaps, nil)
+	end
+end)
+
+Register("Find on Map menu callback revalidates public consent and freshness before opening the map", function()
+	local a, row = FindMenuFixture()
+	local action = assert(FindMenuAction(a, row.name))
+	action()
+	Equal(a.openedMaps, 1)
+	Equal(a.openedMapID, row.mapID)
+	Equal(a.playerMapSelection.name, row.name)
+	a:ClearPlayerMapSelection()
+	row.mask = 0
+	action()
+	Equal(a.openedMaps, 1)
+	Equal(a.playerMapSelection, nil)
+	assert(a.lastMessage)
+	row.mask, row.receivedAt = 3, -30
+	action()
+	Equal(a.openedMaps, 1)
+	Equal(a.playerMapSelection, nil)
+end)
+
+Register("found player gets independent green halo and temporary visibility ends when map closes", function()
+	local a = Fixture()
+	local found = Row("Found-Realm")
+	function a:GetFindPlayerMapLocation() return found end
+	a.playerMapSelection = { name = found.name, mapID = 1, expires = 120 }
+	-- Normal filtered rows intentionally omit the selected non-LFQP player.
+	a.rows.map = { Row("A-Realm"), Row("B-Realm", 0.501) }
+	a:RefreshPlayerLocationPins()
+	local selected, cluster = Pin(a, "map"), Pin(a, "map", 2)
+	Equal(selected.name, "Found-Realm")
+	assert(selected.selected and selected.selectionGlow[1].shown)
+	assert(selected.frame.level > cluster.frame.level)
+	Equal(#cluster.cluster.members, 2)
+	local geometry = a.geometry.map
+	a.geometry.map = nil
+	a:RefreshPlayerLocationPins()
+	Equal(a.playerMapSelection, nil)
+	a.geometry.map = geometry
+	a:RefreshPlayerLocationPins()
+	assert(not selected.selected and not selected.selectionGlow[1].shown)
+	Equal(#selected.cluster.members, 2)
+end)
+
+Register("location freshness opacity composes with party hover dimming instead of being overwritten", function()
+	local a = Fixture()
+	VisualParty(a)
+	a.API.GetTime = function() return 400 end
+	a.rows.map = { Row("Friend-Realm"), Row("Unrelated-Realm", 0.7) }
+	for _, row in ipairs(a.rows.map) do row.sampledAt, row.lifetime = 100, 600 end
+	a:RefreshPlayerLocationPins()
+	local friend, other = Pin(a, "map"), Pin(a, "map", 2)
+	local base = a:GetPlayerLocationOpacity(a.rows.map[2])
+	assert(base < 1)
+	Near(other.frame.alpha, base)
+	friend.frame.scripts.OnEnter()
+	Near(other.frame.alpha, base * 0.45)
+	friend.frame.scripts.OnLeave()
+	Near(other.frame.alpha, base)
+end)
+
+local function ClusterDimmingFixture()
+	local a = ClusterFixture(0)
+	VisualParty(a)
+	a.API.GetTime = function() return 400 end
+	a.rows.map = {
+		Row("Friend-Realm"), Row("Leader-Realm", 0.501), Row("InnerOther-Realm", 0.502),
+		Row("DistantA-Realm", 0.7), Row("DistantB-Realm", 0.701), Row("Solo-Realm", 0.9),
+	}
+	a.rows.minimap = { Row("Third-Realm"), Row("MiniOther-Realm", 0.501) }
+	local selected = Row("Found-Realm", 0.8)
+	function a:GetFindPlayerMapLocation() return selected end
+	a.playerMapSelection = { name = selected.name, mapID = 1, expires = 420 }
+	for _, rows in ipairs({ a.rows.map, a.rows.minimap, { selected } }) do
+		for _, row in ipairs(rows) do row.sampledAt, row.lifetime = 100, 600 end
+	end
+	return a
+end
+
+local function MapClusterContaining(a, name)
+	for _, pin in ipairs(VisibleMapPins(a)) do
+		for _, row in ipairs(pin.cluster and pin.cluster.members or {}) do
+			if row.name == name then return pin end
+		end
+	end
+end
+
+local function MapPlayerNamed(a, name)
+	for _, pin in ipairs(VisibleMapPins(a)) do
+		if pin.name == name then return pin end
+	end
+end
+
+Register("expanded cluster shades the owned map below its active dots without intercepting input or changing source opacity", function()
+	local a = ClusterDimmingFixture()
+	a:RefreshPlayerLocationPins()
+	local base = a:GetPlayerLocationOpacity(a.rows.map[1])
+	assert(base < 1)
+	MapClusterContaining(a, "Friend-Realm").frame.scripts.OnClick(nil, "LeftButton")
+	local active = assert(MapClusterContaining(a, "Friend-Realm"))
+	local other = assert(MapClusterContaining(a, "DistantA-Realm"))
+	local friend = assert(ExpandedPlayerPin(a, "Friend-Realm"))
+	local leader = assert(ExpandedPlayerPin(a, "Leader-Realm"))
+	local innerOther = assert(ExpandedPlayerPin(a, "InnerOther-Realm"))
+	local solo, selected = assert(MapPlayerNamed(a, "Solo-Realm")), assert(MapPlayerNamed(a, "Found-Realm"))
+	local surface = a.locationPinState.surfaces.map
+	local shade, texture = assert(surface.clusterShade), assert(surface.clusterShadeTexture)
+	Equal(shade.parent, surface.frame)
+	Equal(shade.allPoints, surface.frame)
+	Equal(shade.mouseEnabled, false)
+	Equal(shade.mouseWheel, false)
+	Equal(shade.scripts.OnClick, nil)
+	Equal(texture.parent, shade)
+	Equal(texture.allPoints, shade)
+	Equal(texture.layer, "BACKGROUND")
+	Equal(texture.color[1], 0)
+	Equal(texture.color[2], 0)
+	Equal(texture.color[3], 0)
+	Near(texture.color[4], 0.22)
+	assert(shade:IsVisible())
+	Equal(shade.level, surface.frame.level + 2)
+	Equal(active.frame.level, shade.level + 1)
+	Near(active.frame.alpha, base)
+	for _, pin in ipairs({ friend, leader, innerOther }) do
+		Equal(pin.frame.level, shade.level + 2)
+		Near(pin.frame.alpha, base)
+		Near(pin.connector.alpha, pin.frame.alpha)
+		Equal(pin.connector.parent, shade)
+		Equal(pin.connector.layer, "OVERLAY")
+		assert(pin.connector:IsVisible())
+	end
+	for _, pin in ipairs({ other, solo, selected }) do
+		assert(pin.frame.level < shade.level)
+		Near(pin.frame.alpha, base)
+	end
+	assert(selected.selected and selected.selectionGlow[1].shown)
+	Equal(a.locationPinState.surfaces.minimap.clusterShade, nil)
+	local miniParty, miniOther = Pin(a, "minimap"), Pin(a, "minimap", 2)
+	Near(miniParty.frame.alpha, base)
+	Near(miniOther.frame.alpha, base)
+	friend.frame.scripts.OnEnter()
+	Near(active.frame.alpha, base)
+	Near(friend.frame.alpha, base)
+	Near(leader.frame.alpha, base)
+	Near(innerOther.frame.alpha, base * 0.45)
+	Near(innerOther.connector.alpha, innerOther.frame.alpha)
+	Near(other.frame.alpha, base)
+	Near(solo.frame.alpha, base * 0.45)
+	Near(selected.frame.alpha, base)
+	assert(shade:IsVisible())
+	Near(miniParty.frame.alpha, base)
+	Near(miniOther.frame.alpha, base * 0.45)
+	friend.frame.scripts.OnLeave()
+	Near(innerOther.frame.alpha, base)
+	Near(innerOther.connector.alpha, base)
+	for _, pin in ipairs({ other, solo, selected }) do Near(pin.frame.alpha, base) end
+	assert(shade:IsVisible())
+	Near(miniParty.frame.alpha, base)
+	Near(miniOther.frame.alpha, base)
+	active.frame.scripts.OnClick(nil, "LeftButton")
+	Equal(a.playerLocationClusterExpansion, nil)
+	Equal(shade.shown, false)
+	for _, pin in ipairs(VisibleMapPins(a)) do Near(pin.frame.alpha, base) end
+	local restoredSelected = assert(MapPlayerNamed(a, "Found-Realm"))
+	assert(restoredSelected.frame.level > MapClusterContaining(a, "Friend-Realm").frame.level)
+	AssertNoVisibleConnectors(a)
+	local frameCount, regionCount = #a.frames, #a.regions
+	MapClusterContaining(a, "Friend-Realm").frame.scripts.OnClick(nil, "LeftButton")
+	Equal(surface.clusterShade, shade)
+	Equal(surface.clusterShadeTexture, texture)
+	assert(shade:IsVisible())
+	Equal(#a.frames, frameCount)
+	Equal(#a.regions, regionCount)
+end)
+
+Register("map shade clears on close restrictions disabled clustering and addon disable and reuses its owned frame", function()
+	for _, change in ipairs({ "hidden", "restricted", "clusteringOff", "disabled" }) do
+		local a = ClusterDimmingFixture()
+		a:RefreshPlayerLocationPins()
+		MapClusterContaining(a, "Friend-Realm").frame.scripts.OnClick(nil, "LeftButton")
+		local other = assert(MapClusterContaining(a, "DistantA-Realm"))
+		local surface = a.locationPinState.surfaces.map
+		local shade = assert(surface.clusterShade)
+		assert(shade:IsVisible() and other.frame.level < shade.level)
+		Near(other.frame.alpha, other.baseAlpha)
+		if change == "hidden" then a.mapParent:Hide()
+		elseif change == "restricted" then a.blocked = true
+		elseif change == "clusteringOff" then a.clusterOptions.clusterPlayerLocations = false
+		else a.isEnabled = false end
+		a:RefreshPlayerLocationPins()
+		Equal(a.playerLocationClusterExpansion, nil)
+		Equal(a.locationPinState.surfaces.map.expandedClusterKey, nil)
+		Equal(shade.shown, false)
+		AssertNoVisibleConnectors(a)
+		a.blocked, a.isEnabled = false, true
+		a.clusterOptions.clusterPlayerLocations = true
+		a.mapParent:Show()
+		a:RefreshPlayerLocationPins()
+		for _, pin in ipairs(VisibleMapPins(a)) do
+			assert(not pin.expansion)
+			Near(pin.frame.alpha, pin.baseAlpha)
+		end
+		for _, pin in ipairs(a.locationPinState.surfaces.minimap.pins) do
+			if pin.frame:IsVisible() then Near(pin.frame.alpha, pin.baseAlpha) end
+		end
+		AssertNoVisibleConnectors(a)
+		Equal(surface.clusterShade, shade)
+		Equal(shade.shown, false)
+		MapClusterContaining(a, "Friend-Realm").frame.scripts.OnClick(nil, "LeftButton")
+		Equal(surface.clusterShade, shade)
+		assert(shade:IsVisible())
+		Equal(a.locationPinState.surfaces.minimap.clusterShade, nil)
+	end
+end)
+
+Register("expanded map shade rises above native pin levels and restores the ordinary owned level on collapse", function()
+	local a = ClusterFixture()
+	a.geometry.map.pinFrameLevel = 2300
+	a.rows.minimap = { Row("Mini-Realm") }
+	a:RefreshPlayerLocationPins()
+	local surface = a.locationPinState.surfaces.map
+	local ordinaryLevel = surface.frame.level
+	local minimapLevel = a.locationPinState.surfaces.minimap.frame.level
+	local parentWrites = a.mapParent.writes
+	assert(ordinaryLevel < 2300)
+	Pin(a, "map").frame.scripts.OnClick(nil, "LeftButton")
+	local shade = assert(surface.clusterShade)
+	assert(surface.frame.level > 2300 and shade.level > 2300)
+	assert(Pin(a, "map").frame.level > shade.level)
+	assert(ExpandedPlayerPin(a).frame.level > shade.level)
+	Equal(a.locationPinState.surfaces.minimap.frame.level, minimapLevel)
+	Equal(a.mapParent.writes, parentWrites)
+	Pin(a, "map").frame.scripts.OnClick(nil, "LeftButton")
+	Equal(surface.frame.level, ordinaryLevel)
+	Equal(shade.shown, false)
+	Equal(a.mapParent.writes, parentWrites)
+	AssertNoVisibleConnectors(a)
+end)
+
+local function MapControlFixture(count)
+	local a = WaypointFixture(ClusterFixture(count))
+	a.db = { profile = {}, global = {} }
+	for key, value in pairs(QuestTogether.DEFAULTS.profile) do a.db.profile[key] = value end
+	a.db.profile.showWorldMapData = true
+	a.db.profile.sharePlayerLocation = false
+	a.db.profile.onlyShowQuestPartners = true
+	a.sharingChanges = 0
+	function a:OnPlayerLocationOptionsChanged() self.sharingChanges = self.sharingChanges + 1 end
+	function a:OnNearbyLocationOptionsChanged() self.sharingChanges = self.sharingChanges + 1 end
+	function a:BroadcastPlayerLocation() self.sharingChanges = self.sharingChanges + 1 end
+	function a:BroadcastQuestPartnerStatus() self.sharingChanges = self.sharingChanges + 1 end
+	function a:Print(message) self.lastMessage = message end
+	return a
+end
+
+Register("owned map data button remains available without peers and follows the viewport across close and resize", function()
+	local a = MapControlFixture(0)
+	a.waypoints = {}
+	a:RefreshPlayerLocationPins()
+	a:RefreshQuestTogetherMapControl()
+	local state = assert(a.mapDataControlState)
+	local button = assert(state.button)
+	assert(button:IsVisible())
+	Equal(button.parent, a.mapParent)
+	Equal(button.width, 26)
+	Equal(button.height, 26)
+	Equal(state.icon.width, 24)
+	Near(state.icon.alpha, 1)
+	Equal(button.points[1][1], "TOPRIGHT")
+	Equal(button.points[1][2], a.mapParent)
+	Equal(button.points[1][3], "TOPRIGHT")
+	Equal(button.points[1][4], -8)
+	Equal(button.points[1][5], -8)
+	assert(a:IsQuestTogetherMapDataShown("map") and a:IsQuestTogetherMapDataShown("minimap"))
+	button.scripts.OnClick(button, "LeftButton")
+	Equal(a.db.profile.showWorldMapData, false)
+	assert(button:IsVisible())
+	Near(state.icon.alpha, 0.35)
+	assert(not a:IsQuestTogetherMapDataShown("map") and a:IsQuestTogetherMapDataShown("minimap"))
+	Equal(a.db.profile.sharePlayerLocation, false)
+	Equal(a.db.profile.onlyShowQuestPartners, true)
+	Equal(a.sharingChanges, 0)
+	local frames = #a.frames
+	a.geometry.map.width, a.geometry.map.height = 800, 450
+	a:RefreshQuestTogetherMapControl()
+	Equal(a.mapDataControlState.button, button)
+	Equal(button.points[1][2], a.mapParent)
+	Equal(#a.frames, frames)
+	a.mapParent:Hide()
+	a:RefreshQuestTogetherMapControl()
+	assert(not button:IsVisible())
+	a.mapParent:Show()
+	a:RefreshQuestTogetherMapControl()
+	assert(button:IsVisible())
+	Near(state.icon.alpha, 0.35)
+	Equal(#a.frames, frames)
+	button.scripts.OnClick(button, "LeftButton")
+	Equal(a.db.profile.showWorldMapData, true)
+	Near(state.icon.alpha, 1)
+	Equal(a.sharingChanges, 0)
+	Equal(a.mapParent.writes, 2)
+end)
+
+Register("map data toggle clears map players expansion selection and waypoint hover while minimap data and preferences remain", function()
+	local a = MapControlFixture(2)
+	a.rows.minimap = { Row("Mini-Realm") }
+	local selected = Row("Found-Realm", 0.8)
+	function a:GetFindPlayerMapLocation() return selected end
+	a.playerMapSelection = { name = selected.name, mapID = 1, expires = 120 }
+	a:RefreshPlayerLocationPins()
+	a:RefreshPartyWaypointPins()
+	a:RefreshQuestTogetherMapControl()
+	MapClusterContaining(a, "Peer001-Realm").frame.scripts.OnClick(nil, "LeftButton")
+	local member = assert(ExpandedPlayerPin(a, "Peer001-Realm"))
+	member.frame.scripts.OnEnter()
+	local playerState, waypointState = a.locationPinState, a.partyWaypointPinState
+	local interest = assert(a.playerDetailsState.interests[playerState])
+	waypointState.surfaces.map.pins[1].frame.scripts.OnEnter()
+	assert(waypointState.hovered and waypointState.tooltip:IsVisible())
+	local mini = Pin(a, "minimap")
+	local miniWaypoint = waypointState.surfaces.minimap.pins[1]
+	local control = a.mapDataControlState
+	control.button.scripts.OnClick(control.button, "LeftButton")
+	Equal(a.db.profile.showWorldMapData, false)
+	Equal(a.playerLocationClusterExpansion, nil)
+	Equal(a.playerMapSelection, nil)
+	Equal(playerState.hovered, nil)
+	Equal(a.playerDetailsState.interests[playerState], nil)
+	assert(not interest.isCurrent())
+	Equal(#VisibleMapPins(a), 0)
+	Equal(playerState.surfaces.map.clusterShade.shown, false)
+	Equal(waypointState.hovered, nil)
+	assert(not waypointState.tooltip:IsVisible())
+	assert(not waypointState.surfaces.map.frame:IsVisible())
+	assert(mini.frame:IsVisible() and miniWaypoint.frame:IsVisible())
+	assert(control.button:IsVisible())
+	Near(control.icon.alpha, 0.35)
+	Equal(a.db.profile.sharePlayerLocation, false)
+	Equal(a.db.profile.onlyShowQuestPartners, true)
+	Equal(a:GetOption("showPlayerLocations"), true)
+	Equal(a:GetOption("clusterPlayerLocations"), true)
+	Equal(a.sharingChanges, 0)
+	a:UpdatePlayerDetailsInterests()
+	Equal(#a.requests, 1)
+	mini.frame.scripts.OnEnter()
+	Equal(a.targetHover.name, "Mini-Realm")
+	assert(a.targetHover.isCurrent())
+	control.button.scripts.OnClick(control.button, "LeftButton")
+	assert(a:IsQuestTogetherMapDataShown("map"))
+	assert(MapClusterContaining(a, "Peer001-Realm"))
+	assert(waypointState.surfaces.map.frame:IsVisible())
+	Equal(a.playerLocationClusterExpansion, nil)
+	Equal(a.playerMapSelection, nil)
+	Equal(Pin(a, "minimap"), mini)
+	Equal(a.sharingChanges, 0)
+end)
+
+Register("map data button hides safely for restrictions disable and forbidden parents and rejects stale clicks", function()
+	for _, change in ipairs({ "restricted", "disabled", "hidden", "forbidden" }) do
+		local a = MapControlFixture(0)
+		a.waypoints = {}
+		a:RefreshQuestTogetherMapControl()
+		local button = a.mapDataControlState.button
+		if change == "restricted" then a.blocked = true
+		elseif change == "disabled" then a.isEnabled = false
+		elseif change == "hidden" then a.mapParent:Hide()
+		else a.mapParent.forbidden = true end
+		a:RefreshQuestTogetherMapControl()
+		button.scripts.OnClick(button, "LeftButton")
+		Equal(a.db.profile.showWorldMapData, true)
+		if change ~= "forbidden" then assert(not button:IsVisible()) end
+		a.blocked, a.isEnabled, a.mapParent.forbidden = false, true, false
+		a.mapParent:Show()
+		a:RefreshQuestTogetherMapControl()
+		Equal(a.mapDataControlState.button, button)
+		assert(button:IsVisible())
+	end
+end)
+
+Register("Find on Map restores map data only after verified native navigation and keeps sharing preferences", function()
+	local a = MapControlFixture(1)
+	local row = a.rows.map[1]
+	a.playerLocationState = { peers = { [row.name] = row } }
+	function a:IsGroupedSender() return false end
+	function a:IsSelfSender() return false end
+	a.API.OpenPlayerLocationMap = function(mapID)
+		Equal(mapID, row.mapID)
+		return a.allowMapOpen == true
+	end
+	assert(a:SetOption("showWorldMapData", false))
+	Equal(a:FindPlayerOnMap(row.name), false)
+	Equal(a.db.profile.showWorldMapData, false)
+	a.allowMapOpen = true
+	assert(a:FindPlayerOnMap(row.name))
+	Equal(a.db.profile.showWorldMapData, true)
+	Equal(a.playerMapSelection.name, row.name)
+	Equal(a.db.profile.sharePlayerLocation, false)
+	Equal(a.db.profile.onlyShowQuestPartners, true)
+	Equal(a.sharingChanges, 0)
+	assert(a:SetOption("showWorldMapData", false))
+	row.mask = 0
+	Equal(a:FindPlayerOnMap(row.name), false)
+	Equal(a.db.profile.showWorldMapData, false)
+end)
+
+Register("cluster clicks open more detailed maps before fanout while expanded paging and collapse stay direct", function()
+	local a = ClusterFixture(20)
+	a.navigationAction, a.navigationClicks = "navigate", 0
+	function a:GetPlayerLocationClusterNavigationAction() return self.navigationAction end
+	function a:TryNavigatePlayerLocationCluster(cluster, geometry)
+		self.navigationClicks = self.navigationClicks + 1
+		Equal(geometry, self.geometry.map)
+		Equal(#cluster.members, 20)
+		return self.navigationAction ~= "expand"
+	end
+	a:RefreshPlayerLocationPins()
+	local cluster = Pin(a, "map")
+	cluster.frame.scripts.OnEnter()
+	assert(a.locationPinState.clusterTooltip.tooltipLabel.text:find("Click to open a more detailed map.", 1, true))
+	cluster.frame.scripts.OnClick(nil, "LeftButton")
+	Equal(a.navigationClicks, 1)
+	Equal(a.playerLocationClusterExpansion, nil)
+	Equal(ExpandedPlayerPin(a), nil)
+	Equal(a.locationPinState.surfaces.map.clusterShade, nil)
+	Equal(#a.requests, 0)
+	a.navigationAction = "expand"
+	cluster.frame.scripts.OnEnter()
+	assert(a.locationPinState.clusterTooltip.tooltipLabel.text:find("Click to expand players.", 1, true))
+	cluster.frame.scripts.OnClick(nil, "LeftButton")
+	Equal(a.navigationClicks, 2)
+	assert(ExpandedPlayerPin(a))
+	assert(a.locationPinState.surfaces.map.clusterShade:IsVisible())
+	a.navigationAction = "navigate"
+	cluster.frame.scripts.OnMouseWheel(nil, -1)
+	Equal(cluster.cluster.expansionInfo.page, 2)
+	Equal(a.navigationClicks, 2)
+	cluster.frame.scripts.OnClick(nil, "LeftButton")
+	Equal(a.playerLocationClusterExpansion, nil)
+	Equal(a.navigationClicks, 2)
+	AssertNoVisibleConnectors(a)
+	cluster.frame.scripts.OnClick(nil, "LeftButton")
+	Equal(a.navigationClicks, 3)
+	Equal(a.playerLocationClusterExpansion, nil)
+end)
+
+Register("unavailable cluster navigation consumes the click without showing a premature expansion", function()
+	local a = ClusterFixture()
+	function a:GetPlayerLocationClusterNavigationAction() return "unavailable" end
+	function a:TryNavigatePlayerLocationCluster()
+		self.navigationClicks = (self.navigationClicks or 0) + 1
+		return true
+	end
+	a:RefreshPlayerLocationPins()
+	local cluster = Pin(a, "map")
+	cluster.frame.scripts.OnEnter()
+	assert(not a.locationPinState.clusterTooltip.tooltipLabel.text:find("Click to expand", 1, true))
+	local frames = #a.frames
+	cluster.frame.scripts.OnClick(nil, "LeftButton")
+	Equal(a.navigationClicks, 1)
+	Equal(a.playerLocationClusterExpansion, nil)
+	Equal(#VisibleMapPins(a), 1)
+	Equal(#a.frames, frames)
+	Equal(a.locationPinState.surfaces.map.clusterShade, nil)
+end)
+
+Register("stale hidden disabled and restricted cluster clicks cannot invoke the map navigation adapter", function()
+	for _, change in ipairs({ "membership", "hidden", "dataOff", "disabled", "restricted" }) do
+		local a = ClusterFixture()
+		function a:TryNavigatePlayerLocationCluster()
+			self.navigationClicks = (self.navigationClicks or 0) + 1
+			return true
+		end
+		a:RefreshPlayerLocationPins()
+		local click = Pin(a, "map").frame.scripts.OnClick
+		if change == "membership" then a.rows.map = { Row("Replacement-Realm") }
+		elseif change == "hidden" then a.mapParent:Hide()
+		elseif change == "dataOff" then a.clusterOptions.showWorldMapData = false
+		elseif change == "disabled" then a.isEnabled = false
+		else a.blocked = true end
+		click(nil, "LeftButton")
+		Equal(a.navigationClicks, nil)
+		Equal(a.playerLocationClusterExpansion, nil)
+	end
+end)
+
+Register("map logo hover shades the viewport with no peers or hidden data and reuses noninteractive owned UI", function()
+	for _, mode in ipairs({ "empty", "hiddenData" }) do
+		local a = MapControlFixture(mode == "empty" and 0 or 2)
+		if mode == "empty" then a.waypoints = {} end
+		if mode == "hiddenData" then assert(a:SetOption("showWorldMapData", false)) end
+		a.geometry.map.pinFrameLevel = 2300
+		a:RefreshPlayerLocationPins()
+		a:RefreshPartyWaypointPins()
+		a:RefreshQuestTogetherMapControl()
+		local state = a.mapDataControlState
+		Equal(a:GetQuestTogetherMapHighlightLevel(a.geometry.map), nil)
+		state.button.scripts.OnEnter()
+		local shade = assert(state.shade)
+		assert(shade:IsVisible() and state.tip.tooltip:IsVisible())
+		Equal(shade.allPoints, a.mapParent)
+		Equal(shade.mouseEnabled, false)
+		Equal(shade.mouseWheel, false)
+		assert(shade.level > 2300 and state.button.level > shade.level)
+		assert(a:GetQuestTogetherMapHighlightLevel(a.geometry.map) > shade.level)
+		local texture
+		for _, region in ipairs(a.regions) do
+			if region.parent == shade and region.kind == "Texture" then texture = region end
+		end
+		assert(texture and texture.layer == "BACKGROUND")
+		Equal(texture.color[1], 0)
+		Equal(texture.color[2], 0)
+		Equal(texture.color[3], 0)
+		assert(texture.color[4] > 0 and texture.color[4] < 1)
+		assert(not a.locationPinState or not next(a.locationPinState.surfaces))
+		assert(not a.partyWaypointPinState or not a.partyWaypointPinState.surfaces.map)
+		Equal(#a.requests, 0)
+		Equal(a.sharingChanges, 0)
+		local frames, regions = #a.frames, #a.regions
+		state.button.scripts.OnLeave()
+		Equal(a:GetQuestTogetherMapHighlightLevel(a.geometry.map), nil)
+		Equal(shade.shown, false)
+		assert(not state.tip.tooltip:IsVisible())
+		state.button.scripts.OnEnter()
+		Equal(state.shade, shade)
+		assert(shade:IsVisible())
+		Equal(#a.frames, frames)
+		Equal(#a.regions, regions)
+		state.button.scripts.OnHide()
+		Equal(shade.shown, false)
+		Equal(a:GetQuestTogetherMapHighlightLevel(a.geometry.map), nil)
+		Equal(a.mapParent.writes, 0)
+	end
+end)
+
+Register("map logo hover highlights every QT map marker and connector above one shade then restores cluster and party emphasis", function()
+	local a = MapControlFixture(0)
+	VisualParty(a)
+	a.API.GetTime = function() return 400 end
+	a.geometry.map.pinFrameLevel = 2300
+	a.rows.map = {
+		Row("Friend-Realm"), Row("Leader-Realm", 0.501), Row("InnerOther-Realm", 0.502),
+		Row("DistantA-Realm", 0.7), Row("DistantB-Realm", 0.701), Row("Solo-Realm", 0.9),
+	}
+	a.rows.minimap = { Row("Third-Realm"), Row("MiniOther-Realm", 0.501) }
+	local selected = Row("Found-Realm", 0.8)
+	function a:GetFindPlayerMapLocation() return selected end
+	a.playerMapSelection = { name = selected.name, mapID = 1, expires = 420 }
+	for _, rows in ipairs({ a.rows.map, a.rows.minimap, { selected } }) do
+		for _, row in ipairs(rows) do row.sampledAt, row.lifetime = 100, 600 end
+	end
+	a:RefreshPlayerLocationPins()
+	a:RefreshPartyWaypointPins()
+	a:RefreshQuestTogetherMapControl()
+	MapClusterContaining(a, "Friend-Realm").frame.scripts.OnClick(nil, "LeftButton")
+	local surface, waypoints = a.locationPinState.surfaces.map, a.partyWaypointPinState.surfaces.map
+	local ordinaryPlayerLevel, ordinaryWaypointLevel = surface.frame.level, waypoints.frame.level
+	local miniSurface = a.locationPinState.surfaces.minimap
+	local miniWaypointSurface = a.partyWaypointPinState.surfaces.minimap
+	local miniLevel, miniWaypointLevel = miniSurface.frame.level, miniWaypointSurface.frame.level
+	local friend = assert(ExpandedPlayerPin(a, "Friend-Realm"))
+	friend.frame.scripts.OnEnter()
+	local solo, inner = assert(MapPlayerNamed(a, "Solo-Realm")), assert(ExpandedPlayerPin(a, "InnerOther-Realm"))
+	local base = solo.baseAlpha
+	assert(base < 1)
+	Near(solo.frame.alpha, base * 0.45)
+	Near(inner.frame.alpha, base * 0.45)
+	local control = a.mapDataControlState
+	control.button.scripts.OnEnter()
+	local shade = assert(control.shade)
+	assert(shade:IsVisible() and control.button.level > shade.level)
+	assert(surface.frame.level > shade.level and waypoints.frame.level > shade.level)
+	assert(surface.clusterShade:IsVisible())
+	Near(surface.clusterShadeTexture.alpha, 0)
+	for _, pin in ipairs(VisibleMapPins(a)) do
+		assert(pin.frame.level > shade.level)
+		Near(pin.frame.alpha, pin.baseAlpha)
+		if pin.connector then
+			assert(pin.connector:IsVisible() and pin.connector.parent.level > shade.level)
+			Near(pin.connector.alpha, pin.baseAlpha)
+		end
+	end
+	Equal(miniSurface.frame.level, miniLevel)
+	Equal(miniWaypointSurface.frame.level, miniWaypointLevel)
+	Near(miniSurface.pins[2].frame.alpha, miniSurface.pins[2].baseAlpha * 0.45)
+	Equal(#a.requests, 1)
+	Equal(a.sharingChanges, 0)
+	control.button.scripts.OnLeave()
+	Equal(shade.shown, false)
+	Equal(surface.frame.level, ordinaryPlayerLevel)
+	Equal(waypoints.frame.level, ordinaryWaypointLevel)
+	assert(surface.clusterShade:IsVisible())
+	Near(surface.clusterShadeTexture.alpha, 1)
+	assert(solo.frame.level < surface.clusterShade.level and friend.frame.level > surface.clusterShade.level)
+	Near(solo.frame.alpha, base * 0.45)
+	Near(inner.frame.alpha, base * 0.45)
+	Near(inner.connector.alpha, inner.frame.alpha)
+	Equal(a.playerMapSelection.name, selected.name)
+	assert(a.playerLocationClusterExpansion)
+	friend.frame.scripts.OnLeave()
+	Near(solo.frame.alpha, base)
+	Equal(a.mapParent.writes, 0)
+end)
+
+Register("map logo hover retires on lost currentness and stale callbacks cannot restore shading or toggle data", function()
+	for _, change in ipairs({ "hidden", "restricted", "disabled", "forbidden", "newParent" }) do
+		local a = MapControlFixture(2)
+		a:RefreshQuestTogetherMapControl()
+		local control = a.mapDataControlState
+		control.button.scripts.OnEnter()
+		local shade = assert(control.shade)
+		assert(shade:IsVisible())
+		if change == "hidden" then a.mapParent:Hide()
+		elseif change == "restricted" then a.blocked = true
+		elseif change == "disabled" then a.isEnabled = false
+		elseif change == "forbidden" then a.mapParent.forbidden = true
+		else a.geometry.map.parent = Frame(a) end
+		Equal(a:GetQuestTogetherMapHighlightLevel(a.geometry.map), nil)
+		control.button.scripts.OnEnter()
+		control.button.scripts.OnClick(control.button, "LeftButton")
+		Equal(a.db.profile.showWorldMapData, true)
+		a:RefreshQuestTogetherMapControl()
+		Equal(control.hovered, nil)
+		assert(not control.tip.tooltip:IsVisible())
+		if change ~= "forbidden" then Equal(shade.shown, false) end
+		a.blocked, a.isEnabled, a.mapParent.forbidden = false, true, false
+		a.mapParent:Show()
+		a:RefreshQuestTogetherMapControl()
+		Equal(a:GetQuestTogetherMapHighlightLevel(a.geometry.map), nil)
+		Equal(shade.shown, false)
+		assert(control.button:IsVisible())
+		control.button.scripts.OnEnter()
+		Equal(control.shade, shade)
+		assert(shade:IsVisible())
+		Equal(shade.allPoints, a.geometry.map.parent)
+	end
+end)
+
+local function NavigatingClusterFixture(count)
+	local a = MapControlFixture(count)
+	a.now, a.navigationCalls = 100, 0
+	a.runtimeCoordinatorState, a.commsWorldGeneration = {}, 1
+	a.API.GetTime = function() return a.now end
+	function a:GetLocationPinMapPosition(row, target)
+		local position = target == 2 and self.targetPositions and self.targetPositions[row.name]
+		return position and position.x or row.x, position and position.y or row.y
+	end
+	function a:GetPlayerLocationClusterNavigationAction(_, geometry)
+		return geometry.mapID == 1 and "navigate" or "expand", 2
+	end
+	function a:TryNavigatePlayerLocationCluster(cluster, geometry)
+		self.navigationCalls = self.navigationCalls + 1
+		if geometry.mapID ~= 1 then return false end
+		local intent = assert(self:BeginPlayerLocationClusterNavigation(cluster, geometry, 2))
+		self.lastNavigationIntent = intent
+		intent.navigating = false
+		if self.navigationFails then
+			self:CancelPlayerLocationClusterNavigation(intent)
+			return true
+		end
+		self.geometry.map.mapID = 2
+		self.holdTargetRender = self.deferTargetRender == true
+		return true
+	end
+	function a:RefreshPlayerLocationPins()
+		-- Native navigation and display refresh are separate owned seams. Hold
+		-- the latter to exercise invalidation before the target can consume it.
+		if self.holdTargetRender then return false end
+		return QuestTogether.RefreshPlayerLocationPins(self)
+	end
+	return a
+end
+
+Register("a surviving cluster automatically expands once after native map navigation and still pages and collapses normally", function()
+	local a = NavigatingClusterFixture(20)
+	a.rows.minimap = { Row("Mini-Realm") }
+	a:RefreshPlayerLocationPins()
+	local sourceKey = Pin(a, "map").cluster.key
+	local mini = Pin(a, "minimap")
+	Pin(a, "map").frame.scripts.OnClick(nil, "LeftButton")
+	Equal(a.navigationCalls, 1)
+	Equal(a.geometry.map.mapID, 2)
+	local expansion = assert(a.playerLocationClusterExpansion)
+	Equal(expansion.key, sourceKey)
+	Equal(expansion.geometry.mapID, 2)
+	local center = assert(MapClusterContaining(a, "Peer001-Realm"))
+	Equal(center.cluster.expansionInfo.page, 1)
+	Equal(center.cluster.expansionInfo.total, 20)
+	assert(ExpandedPlayerPin(a, "Peer001-Realm"))
+	assert(a.locationPinState.surfaces.map.clusterShade:IsVisible())
+	Equal(Pin(a, "minimap"), mini)
+	assert(mini.frame:IsVisible())
+	Equal(#a.requests, 0)
+	for _, row in ipairs(a.rows.map) do Equal(row.mapID, 1); Near(row.x, 0.5); Near(row.y, 0.5) end
+	a:RefreshPlayerLocationPins()
+	Equal(a.playerLocationClusterExpansion, expansion)
+	center.frame.scripts.OnMouseWheel(nil, -1)
+	Equal(center.cluster.expansionInfo.page, 2)
+	Equal(a.navigationCalls, 1)
+	center.frame.scripts.OnClick(nil, "LeftButton")
+	Equal(a.playerLocationClusterExpansion, nil)
+	Equal(a.navigationCalls, 1)
+	a:RefreshPlayerLocationPins()
+	Equal(a.playerLocationClusterExpansion, nil)
+	Equal(ExpandedPlayerPin(a), nil)
+	AssertNoVisibleConnectors(a)
+end)
+
+Register("map navigation never expands a split or replaced cluster and cannot replay after its members return", function()
+	for _, change in ipairs({ "split", "replaced" }) do
+		local a = NavigatingClusterFixture(2)
+		a.deferTargetRender = true
+		a:RefreshPlayerLocationPins()
+		Pin(a, "map").frame.scripts.OnClick(nil, "LeftButton")
+		local original = a.rows.map
+		if change == "split" then
+			a.targetPositions = { [original[1].name] = { x = 0.25, y = 0.5 }, [original[2].name] = { x = 0.75, y = 0.5 } }
+		else
+			a.rows.map = { Row("ReplacementA-Realm"), Row("ReplacementB-Realm") }
+		end
+		a.holdTargetRender = false
+		a:RefreshPlayerLocationPins()
+		Equal(a.playerLocationClusterExpansion, nil)
+		Equal(ExpandedPlayerPin(a), nil)
+		Equal(#VisibleMapPins(a), change == "split" and 2 or 1)
+		a.rows.map, a.targetPositions = original, nil
+		a:RefreshPlayerLocationPins()
+		Equal(a.playerLocationClusterExpansion, nil)
+		Equal(ExpandedPlayerPin(a), nil)
+		Equal(#VisibleMapPins(a), 1)
+		Equal(a.navigationCalls, 1)
+		AssertNoVisibleConnectors(a)
+	end
+end)
+
+Register("pending map cluster expansion is canceled by view preference lifecycle profile and expiry changes", function()
+	for _, change in ipairs({ "hidden", "dataOff", "clusteringOff", "disabled", "restricted", "profile", "otherMap", "sourceMap", "expired" }) do
+		local a = NavigatingClusterFixture(2)
+		a.deferTargetRender = true
+		a:RefreshPlayerLocationPins()
+		Pin(a, "map").frame.scripts.OnClick(nil, "LeftButton")
+		assert(a.lastNavigationIntent)
+		a.holdTargetRender = false
+		if change == "hidden" then a.mapParent:Hide()
+		elseif change == "dataOff" then assert(a:SetOption("showWorldMapData", false))
+		elseif change == "clusteringOff" then a.clusterOptions.clusterPlayerLocations = false
+		elseif change == "disabled" then a.isEnabled = false
+		elseif change == "restricted" then a.blocked = true
+		elseif change == "profile" then
+			local profile = {}
+			for key, value in pairs(a.db.profile) do profile[key] = value end
+			a.db.profile = profile
+		elseif change == "otherMap" then a.geometry.map.mapID = 3
+		elseif change == "sourceMap" then a.geometry.map.mapID = 1
+		else a.now = 103 end
+		a:RefreshPlayerLocationPins()
+		Equal(a.playerLocationClusterExpansion, nil)
+		a.blocked, a.isEnabled = false, true
+		a.mapParent:Show()
+		a.db.profile.showWorldMapData, a.clusterOptions.clusterPlayerLocations = true, true
+		a.geometry.map.mapID = 2
+		a:RefreshPlayerLocationPins()
+		Equal(a.playerLocationClusterExpansion, nil)
+		Equal(ExpandedPlayerPin(a), nil)
+		Equal(#VisibleMapPins(a), 1)
+		AssertNoVisibleConnectors(a)
+	end
+end)
+
+Register("failed native cluster navigation leaves no automatic expansion for a later map visit", function()
+	local a = NavigatingClusterFixture(2)
+	a.navigationFails = true
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnClick(nil, "LeftButton")
+	Equal(a.geometry.map.mapID, 1)
+	Equal(a.playerLocationClusterExpansion, nil)
+	Equal(ExpandedPlayerPin(a), nil)
+	a.geometry.map.mapID = 2
+	a:RefreshPlayerLocationPins()
+	Equal(a.playerLocationClusterExpansion, nil)
+	Equal(ExpandedPlayerPin(a), nil)
+	Equal(#VisibleMapPins(a), 1)
+	AssertNoVisibleConnectors(a)
 end)
