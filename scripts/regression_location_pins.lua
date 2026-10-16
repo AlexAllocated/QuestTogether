@@ -1491,6 +1491,113 @@ Register("party tooltip reserves aligned QT icon slots and updates recognition o
 	Equal(chatRows[2].qtIcon.texture, a.NAMEPLATE_PLAYER_ICON_TEXTURE)
 end)
 
+Register("restored map evidence immediately identifies both roster members and active hovers follow new evidence and expiry", function()
+	local a = Fixture()
+	VisualParty(a)
+	a.now, a.requests = 100, {}
+	a.API.GetTime = function() return a.now end
+	a.API.GetRealmName = function() return "Realm" end
+	a.activeCharacterKey = "Viewer-Realm"
+	function a:GetPlayerFullName() return "Viewer-Realm" end
+	function a:GetAnnouncementServerTime() return 1700000100 end
+	function a:IsGroupedSender() return false end
+	function a:GetChatLogTooltipCursorPosition() return 200, 100 end
+	function a:RequestPlayerDetails(name) self.requests[#self.requests + 1] = name end
+	function a:RequestPlayerPhaseComparison() end
+	function a:RefreshQTPlayerPlatePresence() end
+	function a:RefreshQTPlayerPartnerIndicators() end
+	a.GetVisiblePlayerLocations = QuestTogether.GetVisiblePlayerLocations
+	a.db = { profile = a:DeepCopy(a.DEFAULTS.profile), global = { playerLocationCache = {
+		version = 2, owner = a.activeCharacterKey, savedAt = 1700000100, rows = {
+			{ name = "Friend-Realm", data = Row("Friend-Realm"), sampledAt = 1700000095, expiresAt = 1700000160 },
+			{ name = "Leader-Realm", data = Row("Leader-Realm", 0.55), sampledAt = 1700000095, expiresAt = 1700000130 },
+		},
+	} } }
+	a:RestorePlayerLocationCache()
+	local original = a:GetFreshPlayerLocation("Friend-Realm")
+	assert(original and original.cached and not a:IsKnownQTPlayer("Friend-Realm") and not a:IsKnownQTPlayer("Leader-Realm"))
+	a:RefreshPlayerLocationPins()
+	Equal(Pin(a, "map").name, "Friend-Realm")
+	Equal(Pin(a, "map", 2).name, "Leader-Realm")
+	local function Icons(state, leader)
+		assert(state.partyRows[2].qtIcon.shown, "the visible restored Friend dot already proves QT use")
+		Equal(state.partyRows[1].qtIcon.shown, leader)
+		assert(not state.partyRows[3].qtIcon.shown, "third-hand membership alone cannot establish QT use")
+	end
+	Pin(a, "map").frame.scripts.OnEnter()
+	Icons(a.locationPinState, true)
+	Pin(a, "map").frame.scripts.OnLeave()
+	Pin(a, "map", 2).frame.scripts.OnEnter()
+	Icons(a.locationPinState, true)
+	Pin(a, "map", 2).frame.scripts.OnLeave()
+	Pin(a, "map").frame.scripts.OnEnter()
+	assert(a:ShowChatLogPlayerTooltip(Frame(a), "questtogetherlog:Leader-Realm"))
+	Icons(a.chatLogPlayerTooltipState, true)
+	local requests = #a.requests
+	assert(not a:IsKnownQTPlayer("Friend-Realm") and not a:IsKnownQTPlayer("Leader-Realm"))
+	Equal(rawget(a, "qtPlayerPresenceState"), nil)
+	a.now = 130
+	a:RefreshPlayerLocationPins()
+	a:UpdateChatLogPlayerTooltip()
+	Icons(a.locationPinState, false)
+	Icons(a.chatLogPlayerTooltipState, false)
+	local observation = a:CreatePeerObservation("Leader-Realm", "LOC", { source = "snapshot", lifetime = 120 })
+	assert(a:HandlePlayerLocationMessage(Row("Leader-Realm", 0.55), "Leader-Realm", observation))
+	a:RefreshPlayerLocationPins()
+	a:UpdateChatLogPlayerTooltip()
+	Icons(a.locationPinState, true)
+	Icons(a.chatLogPlayerTooltipState, true)
+	assert(a:IsKnownQTPlayer("Leader-Realm"))
+	Equal(#a.requests, requests, "refreshing evidence must not create new hover interests or requests")
+	Equal(original.sampledAt, 95)
+	Equal(original.receivedAt, 100)
+	Equal(original.lifetime, 60)
+end)
+
+Register("display evidence rejects withdrawn expired ignored and departed cached peers without renewing recognition", function()
+	local a = Fixture()
+	a.now = 100
+	a.API.GetTime = function() return a.now end
+	a.API.GetRealmName = function() return "Realm" end
+	function a:GetPlayerFullName() return "Viewer-Realm" end
+	function a:RefreshQTPlayerPlatePresence() end
+	function a:RefreshQTPlayerPartnerIndicators() end
+	local name, row = "Friend-Realm", Row("Friend-Realm")
+	row.cached, row.lifetime = true, 20
+	a.playerLocationState = { peers = { [name] = row } }
+	assert(a:BuildPlayerTooltipMember(row).usesQT)
+	assert(a:HasQTPlayerDisplayEvidence(name))
+	assert(not a:IsKnownQTPlayer(name))
+	for _, change in ipairs({ "withdrawn", "expired", "future", "ignored", "disabled", "loggingOut" }) do
+		row.mask, a.now, a.ignored, a.isEnabled, a.isLoggingOut = 3, 100, nil, true, false
+		if change == "withdrawn" then row.mask = 0
+		elseif change == "expired" then a.now = 120
+		elseif change == "future" then a.now = 99
+		elseif change == "ignored" then a.ignored = name
+		elseif change == "disabled" then a.isEnabled = false
+		else a.isLoggingOut = true end
+		local member = a:BuildPlayerTooltipMember(row)
+		assert(not member or not member.usesQT, change)
+		assert(not a:HasQTPlayerDisplayEvidence(name), change)
+	end
+	row.mask, a.now, a.ignored, a.isEnabled, a.isLoggingOut = 3, 101, nil, true, false
+	assert(a:RecordPeerDeparture(name, 101))
+	-- Even an old cached copy still referenced by a view cannot cross a newer departure.
+	a.playerLocationState.peers[name] = row
+	assert(not a:BuildPlayerTooltipMember(row).usesQT)
+	assert(not a:HasQTPlayerDisplayEvidence(name))
+	assert(not a:IsKnownQTPlayer(name))
+	a.IsPlayerLocationHiddenForDeveloper = QuestTogether.IsPlayerLocationHiddenForDeveloper
+	a.now, a.isLocalDeveloper = 102, true
+	a.developerPlayerData = { [name] = { developerOnly = true, publicLocationHidden = true, receivedAt = 102 } }
+	assert(a:BuildPlayerTooltipMember(row).usesQT, "authorized fresh private map evidence also identifies its sender")
+	assert(not a:IsKnownQTPlayer(name))
+	a.isLocalDeveloper = false
+	assert(not a:BuildPlayerTooltipMember(row).usesQT, "private evidence must not escape the authorized viewer")
+	a.isLocalDeveloper, a.now = true, 222
+	assert(not a:BuildPlayerTooltipMember(row).usesQT, "expired private evidence cannot retain the logo")
+end)
+
 Register("nearby stream animation moves only owned minimap pins and respects foreign frame guards", function()
 	local a = Fixture()
 	a.now = 100
@@ -1879,7 +1986,11 @@ local function ClusterFixture(count)
 		self.phaseRequests[#self.phaseRequests + 1] = name
 	end
 	a.rows.map = {}
-	for index = 1, count or 2 do a.rows.map[index] = Row(string.format("Peer%03d-Realm", index)) end
+	a.playerLocationState = { peers = {} }
+	for index = 1, count or 2 do
+		local row = Row(string.format("Peer%03d-Realm", index))
+		a.rows.map[index], a.playerLocationState.peers[row.name] = row, row
+	end
 	return a
 end
 
@@ -2197,7 +2308,7 @@ Register("cluster summary uses capped roster rows with validated indicators and 
 	Near(developer.developerIcon.vertexColor[1], 64 / 255)
 	Near(developer.developerIcon.vertexColor[2], 199 / 255)
 	assert(not developer.label.text:find("QuestTogether developer", 1, true))
-	assert(developer.label.text:find("Location sharing is off", 1, true))
+	assert(not developer.label.text:find("Location sharing is off", 1, true))
 	assert(looking.qtIcon.texture:find("QuestTogetherPartnerIcon", 1, true))
 	local last = summary.partyRows[6]
 	Equal(summary.tooltipLabel.points[1][2], summary.tooltipTitle)
@@ -2227,30 +2338,54 @@ Register("cluster summary uses capped roster rows with validated indicators and 
 	Equal(#a.requests, 0)
 end)
 
-Register("cluster developer gear omits its text label while individual and party tooltips retain it", function()
+Register("member rows keep developer gears and hidden glows with status text only in direct hover intros", function()
 	local a = ClusterFixture(2)
 	VisualParty(a)
 	a.rows.map = { Row("Friend-Realm"), Row("Leader-Realm", 0.501) }
 	a.verifiedDeveloperName = "Friend-Realm"
+	function a:IsPlayerLocationHiddenForDeveloper(name) return name == "Friend-Realm" or name == "Leader-Realm" end
+	function a:GetChatLogTooltipCursorPosition() return 200, 100 end
+	a.playerLocationState = { peers = { ["Friend-Realm"] = a.rows.map[1], ["Leader-Realm"] = a.rows.map[2] } }
+	local function NoMemberStatus(item)
+		assert(not item.label.text:find("QuestTogether developer", 1, true))
+		assert(not item.label.text:find("Location sharing is off", 1, true))
+	end
 	a:RefreshPlayerLocationPins()
 	local cluster = Pin(a, "map")
 	cluster.frame.scripts.OnEnter()
 	local summary = a.locationPinState.clusterTooltip
 	local developer = summary.partyRows[1]
 	assert(developer.label.text:find("Friend", 1, true))
-	assert(developer.developerIcon.shown and not developer.dot.shown)
+	assert(developer.developerIcon.shown and not developer.dot.shown and developer.hiddenGlow.shown)
 	Near(developer.developerIcon.vertexColor[1], 64 / 255)
 	Near(developer.developerIcon.vertexColor[2], 199 / 255)
-	assert(not developer.label.text:find("QuestTogether developer", 1, true))
+	NoMemberStatus(developer)
+	local hidden = summary.partyRows[2]
+	assert(hidden.dot.shown and not hidden.developerIcon.shown and hidden.hiddenGlow.shown)
+	Near(hidden.dot.color[2], 199 / 255)
+	Near(hidden.hiddenGlow.color[2], 0.12)
+	NoMemberStatus(hidden)
 	cluster.frame.scripts.OnClick(nil, "LeftButton")
 	local expanded = assert(ExpandedPlayerPin(a, "Friend-Realm"))
 	expanded.frame.scripts.OnEnter()
 	local individual = a.locationPinState
 	assert(individual.tooltipIntro.text:find("QuestTogether developer", 1, true))
+	assert(individual.tooltipIntro.text:find("Location sharing is off", 1, true))
+	assert(not individual.tooltipLabel.text:find("Location sharing is off", 1, true))
 	local partyDeveloper = individual.partyRows[2]
 	assert(partyDeveloper.label.text:find("Friend-Realm", 1, true))
-	assert(partyDeveloper.label.text:find("QuestTogether developer", 1, true))
-	assert(partyDeveloper.developerIcon.shown)
+	assert(partyDeveloper.developerIcon.shown and partyDeveloper.hiddenGlow.shown)
+	NoMemberStatus(partyDeveloper)
+	local partyHidden = individual.partyRows[1]
+	assert(partyHidden.dot.shown and not partyHidden.developerIcon.shown and partyHidden.hiddenGlow.shown)
+	Near(partyHidden.dot.color[2], 199 / 255)
+	NoMemberStatus(partyHidden)
+	assert(a:ShowChatLogPlayerTooltip(Frame(a), "questtogetherlog:Leader-Realm"))
+	local chat = a.chatLogPlayerTooltipState
+	assert(chat.tooltipIntro.text:find("Location sharing is off", 1, true))
+	assert(not chat.tooltipIntro.text:find("QuestTogether developer", 1, true))
+	assert(not chat.tooltipLabel.text:find("Location sharing is off", 1, true))
+	for _, item in ipairs(chat.partyRows) do NoMemberStatus(item) end
 end)
 
 local function ClusterPartySummaryFixture(count)
@@ -2282,6 +2417,7 @@ end
 
 Register("cluster summary groups known parties into adjacent rounded blocks with multiline rows and centered party icons", function()
 	local a = ClusterPartySummaryFixture()
+	a.rows.map[1].name = "Peer001WithAnExceptionallyLongCharacterName-Realm"
 	a:SetSummaryParty({ 1, 4 }, "PartyA", 5)
 	a:SetSummaryParty({ 2, 5 }, "PartyB", 40)
 	a:SetSummaryParty({ 3 }, "UntrustedSoloKey", 0)
@@ -2768,8 +2904,8 @@ Register("map and chat hidden location labels follow the viewer query and ignore
 	pin.frame.scripts.OnEnter()
 	assert(a:ShowChatLogPlayerTooltip(chat, "questtogetherlog:" .. row.name))
 	local function HasLabel(state)
-		local text = (state.tooltipIntro.text or "") .. "\n" .. (state.tooltipLabel.text or "")
-		return text:find("Location sharing is off", 1, true) ~= nil
+		assert(not (state.tooltipLabel.text or ""):find("Location sharing is off", 1, true))
+		return (state.tooltipIntro.text or ""):find("Location sharing is off", 1, true) ~= nil
 	end
 	assert(not HasLabel(a.locationPinState) and not HasLabel(a.chatLogPlayerTooltipState))
 	assert(pin.glow[1].shown)

@@ -63,7 +63,7 @@ function QT:ReadPlayerTooltipUnit()
 	if guid == "" or not name or self:IsIgnoredPlayerName(name) then
 		return nil
 	end
-	if not self:IsSelfSender(name) and not self:IsKnownQTPlayer(name) then
+	if not self:HasQTPlayerDisplayEvidence(name) then
 		return nil
 	end
 	local looking = self:IsPlayerLookingForQuestPartners(name) == true

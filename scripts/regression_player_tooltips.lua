@@ -177,6 +177,25 @@ local function Fixture()
 	return a
 end
 
+QT:RegisterTest("native player tooltip uses the same fresh cached display evidence without creating presence", function()
+	local a = Fixture()
+	a.known = false
+	local location = { mask = 3, sampledAt = 95, receivedAt = 100, lifetime = 20, cached = true }
+	a.playerLocationState = { peers = { [a.name] = location } }
+	assert(a:UpdatePlayerTooltipBadge())
+	assert(a.playerTooltipBadge.frame.shown)
+	assert(a:HasQTPlayerDisplayEvidence(a.name))
+	assert(not a:IsKnownQTPlayer(a.name))
+	Equal(rawget(a, "qtPlayerPresenceState"), nil)
+	a.now = 120
+	assert(not a:UpdatePlayerTooltipBadge())
+	assert(not a.playerTooltipBadge.frame.shown and not a:HasQTPlayerDisplayEvidence(a.name))
+	Equal(location.sampledAt, 95)
+	Equal(location.receivedAt, 100)
+	Equal(location.lifetime, 20)
+	Equal(a.invalid, 0)
+end)
+
 QT:RegisterTest("player tooltip badge matches native width and scale and clears the visible health bar", function()
 	local a = Fixture()
 	a.qtPlayerPresenceState = { peers = {}, questPartners = { [a.name] = { receivedAt = 100, looking = true } } }

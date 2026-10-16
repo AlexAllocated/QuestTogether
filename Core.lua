@@ -301,6 +301,10 @@ QuestTogether.CHAT_BUBBLE_DURATION_STEP = 0.5
 QuestTogether.ANNOUNCEMENT_NEARBY_RADIUS = 5
 QuestTogether.NEARBY_RANGE_MIN = 5
 QuestTogether.NEARBY_RANGE_MAX = 100
+QuestTogether.PLAYER_PARTNER_ICON_TEXTURE = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon"
+QuestTogether.PLAYER_DEVELOPER_ICON_TEXTURE = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherDeveloperIcon"
+QuestTogether.PLAYER_DEVELOPER_PARTNER_ICON_TEXTURE =
+	"Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherDeveloperPartnerIcon"
 
 -- Runtime state flags.
 QuestTogether.isInitialized = QuestTogether.isInitialized or false
@@ -3933,8 +3937,9 @@ function QuestTogether:PrintChatLogRaw(message)
 	end
 end
 
-function QuestTogether:GetDefaultAnnouncementIconChatTag(size)
-	return self:GetIconChatTagFromAsset(self.NAMEPLATE_PLAYER_ICON_TEXTURE, "texture", size)
+function QuestTogether:GetDefaultAnnouncementIconChatTag(size, targetName)
+	local asset, kind = self:ResolvePlayerAnnouncementIcon(self.NAMEPLATE_PLAYER_ICON_TEXTURE, "texture", targetName)
+	return self:GetIconChatTagFromAsset(asset, kind, size)
 end
 
 function QuestTogether:GetIconChatTagFromAsset(iconAsset, iconKind, size)
@@ -4278,7 +4283,7 @@ end
 
 function QuestTogether:ResolveAnnouncementDisplayIcon(eventType, iconAsset, iconKind)
 	if eventType == "LOOKING_FOR_QUEST_PARTNERS" then
-		return "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon", "texture"
+		return self.PLAYER_PARTNER_ICON_TEXTURE, "texture"
 	end
 	if type(iconAsset) == "string" and iconAsset ~= "" then
 		-- Earlier clients explicitly sent the generic exclamation mark. Treat
@@ -4291,23 +4296,29 @@ function QuestTogether:ResolveAnnouncementDisplayIcon(eventType, iconAsset, icon
 	return self:GetAnnouncementIconInfo(eventType, nil)
 end
 
+function QuestTogether:ResolvePlayerAnnouncementIcon(asset, kind, targetName)
+	-- Only QT logos carry identity/status decoration. Quest-specific and chat
+	-- icons keep their meaning, and received artwork never proves developer identity.
+	if kind == "atlas" or type(asset) ~= "string" then return asset, kind end
+	local path = asset:lower():gsub("/", "\\"):gsub("%.tga$", "")
+	local looking = path == self.PLAYER_PARTNER_ICON_TEXTURE:lower()
+		or path == self.PLAYER_DEVELOPER_PARTNER_ICON_TEXTURE:lower()
+	if not looking and path ~= self.NAMEPLATE_PLAYER_ICON_TEXTURE:lower()
+		and path ~= self.PLAYER_DEVELOPER_ICON_TEXTURE:lower() then return asset, kind end
+	looking = looking or (targetName and self:IsPlayerLookingForQuestPartners(targetName))
+	if targetName and self:IsVerifiedDeveloper(targetName) then
+		return looking and self.PLAYER_DEVELOPER_PARTNER_ICON_TEXTURE or self.PLAYER_DEVELOPER_ICON_TEXTURE, "texture"
+	end
+	return looking and self.PLAYER_PARTNER_ICON_TEXTURE or self.NAMEPLATE_PLAYER_ICON_TEXTURE, "texture"
+end
+
 function QuestTogether:GetAnnouncementIconChatTag(eventType, size, iconAsset, iconKind, targetName)
 	local asset, kind = self:ResolveAnnouncementDisplayIcon(eventType, iconAsset, iconKind)
-	-- Decorate only the generic QT prefix; quest-specific and chat icons keep
-	-- their meaning. Resolve current LFQP status locally, without changing wire data.
-	if
-		targetName
-		and kind ~= "atlas"
-		and type(asset) == "string"
-		and asset:lower():gsub("/", "\\") == self.NAMEPLATE_PLAYER_ICON_TEXTURE:lower()
-		and self:IsPlayerLookingForQuestPartners(targetName)
-	then
-		asset = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon"
-	end
+	asset, kind = self:ResolvePlayerAnnouncementIcon(asset, kind, targetName)
 	if type(asset) == "string" and asset ~= "" then
 		return self:GetIconChatTagFromAsset(asset, kind, size)
 	end
-	return self:GetDefaultAnnouncementIconChatTag(size)
+	return self:GetDefaultAnnouncementIconChatTag(size, targetName)
 end
 
 function QuestTogether:GetPlayerAnnouncementLocationInfo()

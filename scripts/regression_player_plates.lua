@@ -208,6 +208,61 @@ QT:RegisterTest(
 	end
 )
 
+QT:RegisterTest("developer chat logos follow the speaker's verified identity and retain partner glow", function()
+	local a, remote = Peer(), "Developer-Realm"
+	local logo, glow = a.NAMEPLATE_PLAYER_ICON_TEXTURE, a.PLAYER_PARTNER_ICON_TEXTURE
+	local developer, developerGlow = a.PLAYER_DEVELOPER_ICON_TEXTURE, a.PLAYER_DEVELOPER_PARTNER_ICON_TEXTURE
+	local function Prefix(name, expected, event, asset, kind)
+		local message = a:BuildConsoleAnnouncementMessage(name, "hello", "MAGE", event or "SCAN_STATUS", asset, kind)
+		local tag = a:GetIconChatTagFromAsset(expected, kind or "texture", 14)
+		Equal(message:sub(1, #tag), tag)
+	end
+
+	-- The receiver's private addon never decorates an ordinary remote speaker.
+	a.isLocalDeveloper = true
+	a.SignDeveloperRequest = function() error("rendering must not sign or send requests") end
+	Prefix(a.name, developer)
+	a.db.profile.lookingForQuestPartners = true
+	Prefix(a.name, developerGlow)
+	Prefix(remote, logo)
+	Prefix(remote, logo, "SCAN_STATUS", developer)
+	Prefix(remote, glow, "LOOKING_FOR_QUEST_PARTNERS", developerGlow)
+	Equal(a:GetDefaultAnnouncementIconChatTag(14), a:GetIconChatTagFromAsset(logo, "texture", 14),
+		"unattributed system prefixes are not the developer")
+	a.isLocalDeveloper, a.SignDeveloperRequest, a.db.profile.lookingForQuestPartners = false, nil, false
+	Prefix(a.name, logo)
+
+	-- Seed only the accepted identity owner's lease; exercise the real read-only
+	-- query, including its peer-session, consent-independent, and expiry checks.
+	assert(ObserveState(a, "HandleQuestPartnerStatusMessage", "QTLF", PartnerPayload(a, false), remote))
+	assert(a:RecordPeerEpoch(remote, "10-1234", 1700000100))
+	a.communicationState = {}
+	a.developerAnnouncementState = { communication = a.communicationState, subscribers = {
+		[remote] = { verifiedAt = a.now, expires = a.now + 60, sampledAt = a.now, session = "10-1234" },
+	} }
+	a.db.profile.shareDeveloperDiagnostics = false
+	assert(a:IsVerifiedDeveloper(remote))
+	Prefix(remote, developer)
+	Prefix(remote, developer, "SCAN_STATUS", logo:upper():gsub("\\", "/") .. ".TGA")
+	Prefix(remote, developer, "SCAN_STATUS", a.NAMEPLATE_QUEST_ICON_TEXTURE, "texture")
+	assert(ObserveState(a, "HandleQuestPartnerStatusMessage", "QTLF", PartnerPayload(a, true), remote))
+	Prefix(remote, developerGlow)
+	Prefix(remote, developerGlow, "LOOKING_FOR_QUEST_PARTNERS")
+	Prefix(remote, "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon", "QT_CHAT")
+	Prefix(remote, "UI-QuestIcon-TurnIn-Normal", "QUEST_COMPLETED", "UI-QuestIcon-TurnIn-Normal", "atlas")
+	Prefix(remote, "Interface/GossipFrame/AvailableQuestIcon", "QUEST_ACCEPTED",
+		"Interface/GossipFrame/AvailableQuestIcon", "texture")
+	a.ignored = remote
+	Prefix(remote, logo)
+	a.ignored, a.now = nil, 160
+	Prefix(remote, glow)
+	Prefix(remote, glow, "SCAN_STATUS", developer:gsub("\\", "/") .. ".tga")
+	a.now = 170
+	Prefix(remote, logo)
+	Prefix(remote, logo, "SCAN_STATUS", developer)
+	Equal(#a.sent, 0, "chat presentation must not publish identity or metadata")
+end)
+
 QT:RegisterTest("joining a group optionally clears partner status without announcements or roster churn", function()
 	local a = Peer()
 	local changes = 0

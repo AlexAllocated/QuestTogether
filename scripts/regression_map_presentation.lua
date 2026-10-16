@@ -36,7 +36,7 @@ local function TooltipFixture()
 		return self.visuals[name]
 	end
 	function a:BuildPlayerTooltipMember(row, options)
-		assert(options.shortName == true and options.usesQT == true and options.leader == nil)
+		assert(options.shortName == true and options.usesQT == nil and options.leader == nil)
 		self.memberBuilds[#self.memberBuilds + 1] = row.name
 		if row.name == self.skipMember then return nil end
 		return { name = row.name, label = row.name, icon = row.icon, developer = row.developer,

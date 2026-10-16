@@ -21,11 +21,12 @@ SVG_NS = "http://www.w3.org/2000/svg"
 SIZE = 128
 
 
-def tip_icon(scrolls):
-    """Pair the original rear scroll with a large gold tip bulb."""
-    def element(parent, name, **attributes):
-        return ET.SubElement(parent, f"{{{SVG_NS}}}{name}", attributes)
+def element(parent, name, **attributes):
+    return ET.SubElement(parent, f"{{{SVG_NS}}}{name}", attributes)
 
+
+def rear_scroll_icon(scrolls):
+    """Keep the same rear scroll and framing across the feature badges."""
     icon = ET.Element(f"{{{SVG_NS}}}svg", {
         "width": str(SIZE), "height": str(SIZE), "viewBox": "0 0 128 128",
     })
@@ -35,6 +36,12 @@ def tip_icon(scrolls):
         if shape.get("id") not in ("rear-scroll", "rear-roll"):
             rear_scroll.remove(shape)
     emblem.append(rear_scroll)
+    return icon
+
+
+def tip_icon(scrolls):
+    """Pair the original rear scroll with a large gold tip bulb."""
+    icon = rear_scroll_icon(scrolls)
     badge = element(icon, "g")
 
     def path(shape, fill, stroke="#222B30", width="7", **attributes):
@@ -50,13 +57,54 @@ def tip_icon(scrolls):
     return icon
 
 
+def developer_icon(scrolls, glow=False):
+    """Use the map marker's gear with the original front scroll's gold."""
+    icon = rear_scroll_icon(scrolls)
+    badge = element(icon, "g", transform="translate(30 29) scale(1.5)")
+    gear = ET.parse(ROOT / "Media" / "DeveloperGear.svg").getroot()
+    for shape in gear:
+        shape = copy.deepcopy(shape)
+        shape.set("fill", "#D9A62A")
+        shape.set("stroke", "#222B30")
+        shape.set("stroke-width", "4")
+        badge.append(shape)
+    if glow:
+        icon.set("viewBox", "-12 -12 152 152")
+        # Match the strong contour of the existing LFQP scroll logo. Scale
+        # widths per source group so the gold survives a 14px chat rendering.
+        contour = copy.deepcopy(icon)
+        contour.tag = f"{{{SVG_NS}}}g"
+        contour.attrib.clear()
+        for group in contour:
+            width = "132" if group.get("transform", "").startswith("translate(-") else "18"
+            for shape in group.iter():
+                shape.attrib.pop("id", None)
+                shape.set("stroke", "#FFE438")
+                shape.set("stroke-width", width)
+                if shape.get("fill") != "none":
+                    shape.set("fill", "#FFE438")
+        defs = element(icon, "defs")
+        blur = element(defs, "filter", id="developer-partner-glow", x="-30%", y="-30%",
+                       width="160%", height="160%", **{"color-interpolation-filters": "sRGB"})
+        element(blur, "feGaussianBlur", stdDeviation="2.5")
+        halo = copy.deepcopy(contour)
+        halo.set("filter", "url(#developer-partner-glow)")
+        icon.insert(0, contour)
+        icon.insert(0, halo)
+    return icon
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     variant = parser.add_mutually_exclusive_group()
     variant.add_argument("--glow", action="store_true", help="Render the LFQP announcement variant")
     variant.add_argument("--tip", action="store_true", help="Render the scroll and gold tip bulb (TGA, PNG and SVG)")
+    variant.add_argument("--developer", action="store_true", help="Render the scroll and gold developer gear (TGA, PNG and SVG)")
+    variant.add_argument("--developer-glow", action="store_true", help="Render the LFQP developer gear (TGA, PNG and SVG)")
     args = parser.parse_args()
     name = "QuestTogetherTipIcon.tga" if args.tip else "QuestTogetherPartnerIcon.tga" if args.glow else OUTPUT.name
+    if args.developer or args.developer_glow:
+        name = "QuestTogetherDeveloperPartnerIcon.tga" if args.developer_glow else "QuestTogetherDeveloperIcon.tga"
     output = ROOT / "Media" / name
     source = ET.parse(ROOT / "logo.svg")
     scrolls = source.find(f".//{{{SVG_NS}}}g[@id='quest-scrolls']")
@@ -95,6 +143,8 @@ def main():
     icon.append(emblem)
     if args.tip:
         icon = tip_icon(scrolls)
+    elif args.developer or args.developer_glow:
+        icon = developer_icon(scrolls, args.developer_glow)
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="questtogether-icon-") as temp:
         svg = Path(temp) / "icon.svg"
@@ -119,7 +169,7 @@ def main():
         ):
             raise SystemExit("Expected an uncompressed 128x128 32-bit TGA with 8-bit alpha")
         output.write_bytes(data)
-        if args.tip:
+        if args.tip or args.developer or args.developer_glow:
             ET.ElementTree(icon).write(output.with_suffix(".svg"), encoding="utf-8", xml_declaration=True)
             subprocess.run([
                 "magick", str(tga), "-strip", "-define", "png:exclude-chunks=date,time",

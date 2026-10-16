@@ -25,6 +25,17 @@ function QT:IsKnownQTPlayer(name)
 	return self.isEnabled == true and now ~= nil and seen ~= nil and now >= seen and not self:IsIgnoredPlayerName(name)
 end
 
+-- Display recognition can use a still-valid restored location before a live
+-- reply arrives. Reading it never creates presence or renews the source lease.
+function QT:HasQTPlayerDisplayEvidence(name)
+	name = self:NormalizeMemberName(name)
+	if not self.isEnabled or self.isLoggingOut or not name or self:IsIgnoredPlayerName(name) then return false end
+	if self:IsSelfSender(name) or self:IsKnownQTPlayer(name) then return true end
+	local row = self:GetFreshPlayerLocation(name)
+	if row and self:CanAcceptPeerUpdate(name, nil, row.sampledAt or row.receivedAt, row.session, row.sequence) then return true end
+	return self:IsPlayerLocationHiddenForDeveloper(name) == true
+end
+
 function QT:RecordQTPlayerPresence(name, active, observation)
 	if not self.isEnabled then
 		return false

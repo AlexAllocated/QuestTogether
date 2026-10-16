@@ -40,7 +40,7 @@ function QT:BuildPlayerLocationClusterTooltipMembers(rows, first, last, limit)
 	local members = {}
 	for _, group in ipairs(groups) do
 		for _, row in ipairs(group.rows) do
-			local member = self:BuildPlayerTooltipMember(row, { shortName = true, usesQT = true, showDeveloperLabel = false })
+			local member = self:BuildPlayerTooltipMember(row, { shortName = true })
 			if member then
 				member.partyKey = group.key
 				member.partySize = group.size

@@ -234,15 +234,11 @@ function QuestTogether:BuildPlayerTooltipMember(member, options)
 	local displayName = options.shortName and self:GetShortDisplayName(name) or name
 	local label = self:GetClassColorCode(member.classFile) .. Text(self, displayName) .. "|r"
 	if leader then label = label .. " — " .. L("Leader") end
-	if developer and options.showDeveloperLabel ~= false then
-		label = label .. "\n|cffffd200" .. L("QuestTogether developer") .. "|r"
-	end
-	if hiddenLocation then label = label .. "\n|cffff8080" .. L("Location sharing is off") .. "|r" end
 	return {
 		name = name,
 		leader = leader,
 		color = { r, g, b },
-		usesQT = options.usesQT == true or self:IsSelfSender(name) or self:IsKnownQTPlayer(name),
+		usesQT = self:HasQTPlayerDisplayEvidence(name),
 		icon = looking and PARTY_MEDIA .. "QuestTogetherPartnerIcon" or self.NAMEPLATE_PLAYER_ICON_TEXTURE,
 		label = label,
 		developer = developer,
@@ -299,9 +295,6 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 					.. "|r"
 			end
 		end
-		if addon:IsPlayerLocationHiddenForDeveloper(row.name) then
-			text = text .. "\n\n|cffff8080" .. L("Location sharing is off") .. "|r"
-		end
 		local now = addon.API and addon.API.GetTime and Number(addon, addon.API.GetTime())
 		local receivedAt = Number(addon, row.sampledAt or row.receivedAt)
 		if now and receivedAt and now >= receivedAt + 30 then
@@ -324,6 +317,9 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 			.. "|r"
 		if addon:IsVerifiedDeveloper(row.name) then
 			introText = introText .. "\n|cffffd200" .. L("QuestTogether developer") .. "|r"
+		end
+		if addon:IsPlayerLocationHiddenForDeveloper(row.name) then
+			introText = introText .. "\n|cffff8080" .. L("Location sharing is off") .. "|r"
 		end
 		introText = introText .. "\n\n" .. partyText
 		if party and party.key and party.size <= 5 and not party.members and knownPartyMembers < party.size then
