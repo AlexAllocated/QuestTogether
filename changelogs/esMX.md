@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.1
+
+Información de grupo y controles del mapa más claros.
+
+### Jugadores en los mapas
+
+- Las descripciones de los marcadores agrupados reúnen a los jugadores que pertenecen al mismo grupo conocido dentro de un borde blanco redondeado, con un ícono de grupo. Los jugadores cuyos compañeros quedan fuera de ese conjunto de marcadores también muestran el indicador de grupo.
+- El botón QT del mapa del mundo permanece completamente visible y muestra una X roja cuando los marcadores de QT están ocultos.
+- Pasar el cursor sobre el botón QT ya no atenúa el mapa mientras los marcadores de QT están ocultos.
+
 ## 7.3.0
 
 Encuentra jugadores en mapas concurridos, vuelve a contactar con compañeros recientes y sigue el progreso de las misiones con menos anuncios repetidos.

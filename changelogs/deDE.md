@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.1
+
+Übersichtlichere Gruppeninformationen und Kartensteuerung.
+
+### Spieler auf Karten
+
+- In Tooltips zusammengefasster Punkte werden Spieler, die bekanntermaßen derselben Gruppe angehören, mit einem abgerundeten weißen Rahmen und einem Gruppensymbol gekennzeichnet. Das Gruppensymbol bleibt auch bei Spielern sichtbar, deren Gruppenmitglieder außerhalb der Zusammenfassung liegen.
+- Die QT-Schaltfläche auf der Weltkarte bleibt vollständig sichtbar und zeigt ein rotes X, wenn QT-Markierungen ausgeblendet sind.
+- Beim Überfahren der QT-Schaltfläche wird die Karte nicht mehr abgedunkelt, solange QT-Markierungen ausgeblendet sind.
+
 ## 7.3.0
 
 Finde Spieler auf vollen Karten, nimm wieder Kontakt zu kürzlichen Gefährten auf und verfolge Questfortschritte mit weniger wiederholten Ankündigungen.

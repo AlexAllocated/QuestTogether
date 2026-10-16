@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.1
+
+Des informations de groupe et des commandes de carte plus claires.
+
+### Joueurs sur les cartes
+
+- Dans les infobulles des marqueurs regroupés, les joueurs appartenant au même groupe connu sont réunis dans un cadre blanc arrondi, avec une icône de groupe. Un joueur dont les coéquipiers se trouvent hors du regroupement conserve cet indicateur.
+- Le bouton QT de la carte du monde reste entièrement visible et affiche une croix rouge lorsque les marqueurs QT sont masqués.
+- Survoler le bouton QT n’assombrit plus la carte lorsque les marqueurs QT sont masqués.
+
 ## 7.3.0
 
 Trouvez des joueurs sur les cartes très fréquentées, retrouvez vos compagnons récents et suivez la progression des quêtes avec moins d’annonces répétées.

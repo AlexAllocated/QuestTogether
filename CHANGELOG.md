@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 7.3.1
+
+Clearer party information and map controls.
+
+### Player Maps
+
+- Cluster tooltips group players from the same known party inside a rounded white border, with a party icon. A player whose teammates are outside the cluster still shows the party indicator.
+- The world-map QT button stays fully visible and shows a red X when QT markers are hidden.
+- Hovering the QT button no longer dims the map while QT markers are hidden.
+
 ## 7.3.0
 
 Find players on busy maps, reconnect with recent companions, and follow quest progress with fewer repeated announcements.

@@ -3,6 +3,327 @@
   "releases": [
     {
       "enUS": {
+        "version": "7.3.0",
+        "welcome": "Find players on busy maps, reconnect with recent companions, and follow quest progress with fewer repeated announcements.",
+        "sections": [
+          {
+            "title": "Player Maps",
+            "items": [
+              "World-map dots cluster when they overlap. Clustering is on by default and can be disabled in Player Locations.",
+              "Click a cluster to open the most detailed map containing all its players. Any remaining cluster expands into individual dots for normal hovers and menus; scroll over the cluster to browse larger groups.",
+              "The QT button at the top right of the world map toggles QT player and shared-waypoint markers. Hover it to dim the map behind them. Minimap markers and location sharing stay unchanged.",
+              "Find on Map opens a player's recent shared location and highlights their dot."
+            ]
+          },
+          {
+            "title": "Recent Companions",
+            "items": [
+              "Use /qt companions or the minimap menu to open a private history of people you grouped with, with player menus for whispers, invitations, and private notes.",
+              "History is shared across your characters on the same client and realm. It stores up to 100 companions for 90 days; remove entries or clear the list whenever you like."
+            ]
+          },
+          {
+            "title": "Quest Updates and Player Details",
+            "items": [
+              "Rapid updates to the same objective combine into one announcement showing the latest progress. Completed objectives still announce promptly.",
+              "Signature-verified QuestTogether developers have class-colored gear markers and a developer label in tooltips. Cluster hover lists show the same class colors, QT icons, and questing-partner status as party rosters."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "7.3.0",
+        "welcome": "Finde Spieler auf vollen Karten, nimm wieder Kontakt zu kürzlichen Gefährten auf und verfolge Questfortschritte mit weniger wiederholten Ankündigungen.",
+        "sections": [
+          {
+            "title": "Spieler auf Karten",
+            "items": [
+              "Überlappende Spielerpunkte auf der Weltkarte werden zusammengefasst. Diese Gruppierung ist standardmäßig aktiviert und lässt sich unter Spielerstandorte abschalten.",
+              "Klicke auf eine Gruppe von Punkten, um die detaillierteste Karte zu öffnen, die alle zugehörigen Spieler enthält. Bleiben dort Punkte zusammengefasst, werden sie automatisch auseinandergezogen, sodass du wie gewohnt Details und Menüs aufrufen kannst. Scrolle über die Gruppe, um bei größeren Gruppen weitere Spieler anzuzeigen.",
+              "Die QT-Schaltfläche oben rechts auf der Weltkarte blendet QT-Spielermarkierungen und geteilte Wegpunkte ein oder aus. Beim Darüberfahren wird die Karte dahinter abgedunkelt. Minikartenmarkierungen und Standortfreigabe bleiben unverändert.",
+              "Mit Auf Karte finden öffnest du den zuletzt geteilten Standort eines Spielers und hebst seinen Punkt hervor."
+            ]
+          },
+          {
+            "title": "Kürzliche Gefährten",
+            "items": [
+              "Öffne mit /qt companions oder über das Minikartenmenü deinen privaten Verlauf von Spielern, mit denen du in einer Gruppe warst. Ihre Spielermenüs bieten Flüstern, Einladen und private Notizen.",
+              "Der Verlauf gilt für deine Charaktere im selben Client und auf demselben Realm. Er speichert bis zu 100 Gefährten für 90 Tage. Du kannst Einträge entfernen oder die Liste jederzeit leeren."
+            ]
+          },
+          {
+            "title": "Questfortschritt und Spielerdetails",
+            "items": [
+              "Schnelle Aktualisierungen desselben Questziels werden zu einer Ankündigung mit dem neuesten Fortschritt zusammengefasst. Abgeschlossene Ziele werden weiterhin zeitnah angekündigt.",
+              "QuestTogether-Entwickler mit bestätigter Signatur erhalten ein Zahnrad in ihrer Klassenfarbe und eine Entwicklerkennzeichnung im Tooltip. Beim Überfahren zusammengefasster Punkte siehst du dieselben Klassenfarben, QT-Symbole und Questpartnersuche-Markierungen wie in Gruppenübersichten."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "7.3.0",
+        "welcome": "Trouvez des joueurs sur les cartes très fréquentées, retrouvez vos compagnons récents et suivez la progression des quêtes avec moins d’annonces répétées.",
+        "sections": [
+          {
+            "title": "Joueurs sur les cartes",
+            "items": [
+              "Les points de joueurs qui se chevauchent sur la carte du monde sont regroupés. Ce regroupement est activé par défaut et peut être désactivé dans Positions des joueurs.",
+              "Cliquez sur un groupe de points pour ouvrir la carte la plus détaillée contenant tous ses joueurs. Tout regroupement restant se déploie en points individuels avec leurs infobulles et menus habituels ; faites défiler sur le groupe pour parcourir les groupes plus nombreux.",
+              "Le bouton QT en haut à droite de la carte du monde affiche ou masque les marqueurs de joueurs et les points de passage partagés de QT. Survolez-le pour assombrir la carte derrière eux. Les marqueurs de la minicarte et le partage de position restent inchangés.",
+              "Trouver sur la carte ouvre la position récemment partagée d’un joueur et met son point en évidence."
+            ]
+          },
+          {
+            "title": "Compagnons récents",
+            "items": [
+              "Utilisez /qt companions ou le menu de la minicarte pour ouvrir l’historique privé des joueurs avec qui vous avez fait groupe. Leurs menus permettent de chuchoter, d’inviter et de gérer des notes privées.",
+              "Cet historique est commun à vos personnages sur le même client et le même royaume. Il conserve jusqu’à 100 compagnons pendant 90 jours ; vous pouvez supprimer des entrées ou vider la liste à tout moment."
+            ]
+          },
+          {
+            "title": "Progression des quêtes et détails des joueurs",
+            "items": [
+              "Les mises à jour rapprochées d’un même objectif sont regroupées en une seule annonce indiquant la progression la plus récente. Les objectifs terminés sont toujours annoncés rapidement.",
+              "Les développeurs de QuestTogether dont la signature est vérifiée ont un marqueur en forme d’engrenage à la couleur de leur classe et une mention de développeur dans les infobulles. Le survol des groupes de points affiche les mêmes couleurs de classe, icônes QT et statuts de recherche de compagnons de quête que les listes de groupe."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "7.3.0",
+        "welcome": "Encuentra jugadores en mapas concurridos, vuelve a contactar con compañeros recientes y sigue el progreso de las misiones con menos anuncios repetidos.",
+        "sections": [
+          {
+            "title": "Jugadores en los mapas",
+            "items": [
+              "Los puntos de jugadores que se superponen en el mapa del mundo se agrupan. Esta opción está activada por defecto y se puede desactivar en Ubicaciones de jugadores.",
+              "Haz clic en un grupo de puntos para abrir el mapa más detallado que contenga a todos sus jugadores. Si los puntos siguen agrupados, se separan automáticamente para acceder a sus descripciones y menús habituales; usa la rueda sobre el grupo para recorrer grupos más grandes.",
+              "El botón QT de la esquina superior derecha del mapa del mundo muestra u oculta los marcadores de jugadores y los puntos de ruta compartidos de QT. Pasa el cursor por encima para oscurecer el mapa del fondo. Los marcadores del minimapa y la ubicación compartida no cambian.",
+              "Buscar en el mapa abre la ubicación compartida recientemente por un jugador y resalta su punto."
+            ]
+          },
+          {
+            "title": "Compañeros recientes",
+            "items": [
+              "Usa /qt companions o el menú del minimapa para abrir un historial privado de las personas con las que has formado grupo. Sus menús permiten susurrar, invitar y gestionar notas privadas.",
+              "El historial se comparte entre tus personajes del mismo cliente y reino. Guarda hasta 100 compañeros durante 90 días; puedes eliminar entradas o vaciar la lista cuando quieras."
+            ]
+          },
+          {
+            "title": "Progreso de misiones y detalles de jugadores",
+            "items": [
+              "Las actualizaciones rápidas de un mismo objetivo se combinan en un anuncio con el progreso más reciente. Los objetivos completados se siguen anunciando sin demora.",
+              "Los desarrolladores de QuestTogether con firma verificada tienen un marcador de engranaje del color de su clase y una etiqueta de desarrollador en las descripciones. Al pasar el cursor sobre un grupo de puntos, su lista muestra los mismos colores de clase, iconos QT y estados de búsqueda de compañeros de misiones que las listas de grupo."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "7.3.0",
+        "welcome": "Encuentra jugadores en mapas concurridos, vuelve a contactar con compañeros recientes y sigue el progreso de las misiones con menos anuncios repetidos.",
+        "sections": [
+          {
+            "title": "Jugadores en los mapas",
+            "items": [
+              "Los puntos de jugadores que se superponen en el mapa del mundo se agrupan. Esta opción está activada de forma predeterminada y se puede desactivar en Ubicaciones de jugadores.",
+              "Haz clic en un grupo de puntos para abrir el mapa más detallado que contenga a todos sus jugadores. Si los puntos siguen agrupados, se separan automáticamente para acceder a sus descripciones y menús habituales; usa la rueda sobre el grupo para recorrer grupos más grandes.",
+              "El botón QT de la esquina superior derecha del mapa del mundo muestra u oculta los marcadores de jugadores y los puntos de ruta compartidos de QT. Pasa el cursor por encima para oscurecer el mapa del fondo. Los marcadores del minimapa y la ubicación compartida no cambian.",
+              "Buscar en el mapa abre la ubicación compartida recientemente por un jugador y resalta su punto."
+            ]
+          },
+          {
+            "title": "Compañeros recientes",
+            "items": [
+              "Usa /qt companions o el menú del minimapa para abrir un historial privado de las personas con las que has formado grupo. Sus menús permiten susurrar, invitar y gestionar notas privadas.",
+              "El historial se comparte entre tus personajes del mismo cliente y reino. Guarda hasta 100 compañeros durante 90 días; puedes eliminar entradas o vaciar la lista cuando quieras."
+            ]
+          },
+          {
+            "title": "Progreso de misiones y detalles de jugadores",
+            "items": [
+              "Las actualizaciones rápidas de un mismo objetivo se combinan en un anuncio con el progreso más reciente. Los objetivos completados se siguen anunciando sin demora.",
+              "Los desarrolladores de QuestTogether con firma verificada tienen un marcador de engranaje del color de su clase y una etiqueta de desarrollador en las descripciones. Al pasar el cursor sobre un grupo de puntos, su lista muestra los mismos colores de clase, iconos QT y estados de búsqueda de compañeros de misiones que las listas de grupo."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "7.3.0",
+        "welcome": "Encontre jogadores em mapas movimentados, retome o contato com companheiros recentes e acompanhe o progresso das missões com menos anúncios repetidos.",
+        "sections": [
+          {
+            "title": "Jogadores nos mapas",
+            "items": [
+              "Os pontos de jogadores que se sobrepõem no mapa-múndi são agrupados. O agrupamento vem ativado e pode ser desativado em Localizações dos Jogadores.",
+              "Clique em um grupo de pontos para abrir o mapa mais detalhado que contenha todos os seus jogadores. Se os pontos continuarem agrupados, eles se separam automaticamente para você usar as dicas e menus habituais; role sobre o grupo para percorrer grupos maiores.",
+              "O botão QT no canto superior direito do mapa-múndi mostra ou oculta os marcadores de jogadores e pontos de rota compartilhados do QT. Passe o cursor sobre ele para escurecer o mapa ao fundo. Os marcadores do minimapa e o compartilhamento de localização permanecem inalterados.",
+              "Encontrar no mapa abre a localização compartilhada recentemente por um jogador e destaca seu ponto."
+            ]
+          },
+          {
+            "title": "Companheiros recentes",
+            "items": [
+              "Use /qt companions ou o menu do minimapa para abrir um histórico privado de pessoas com quem você formou grupo. Os menus dos jogadores permitem sussurrar, convidar e gerenciar notas privadas.",
+              "O histórico é compartilhado entre seus personagens no mesmo cliente e reino. Ele guarda até 100 companheiros por 90 dias; você pode remover entradas ou limpar a lista quando quiser."
+            ]
+          },
+          {
+            "title": "Progresso das missões e detalhes dos jogadores",
+            "items": [
+              "Atualizações rápidas do mesmo objetivo são combinadas em um anúncio com o progresso mais recente. Objetivos concluídos continuam sendo anunciados prontamente.",
+              "Desenvolvedores do QuestTogether com assinatura verificada recebem marcadores de engrenagem na cor da classe e uma identificação de desenvolvedor nas dicas. As listas exibidas ao passar o cursor sobre grupos de pontos mostram as mesmas cores de classe, ícones QT e estados de busca por parceiros de missão que as listas de grupo."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "7.3.0",
+        "welcome": "Находите игроков на оживлённых картах, возвращайтесь к недавним спутникам и следите за заданиями без лишних повторяющихся объявлений.",
+        "sections": [
+          {
+            "title": "Игроки на карте",
+            "items": [
+              "Перекрывающиеся точки игроков на карте мира объединяются в группы. Группировка включена по умолчанию; её можно отключить в настройках местоположения игроков.",
+              "Нажмите на группу точек, чтобы открыть самую подробную карту, на которой находятся все её игроки. Если точки остаются сгруппированными, они автоматически раздвинутся: у каждой будут обычные подсказка и меню. Прокручивайте колёсико над группой, чтобы просматривать больше игроков.",
+              "Кнопка QT в правом верхнем углу карты мира показывает или скрывает метки игроков и общие путевые точки QT. Наведите на неё курсор, чтобы затемнить карту позади меток. Метки на миникарте и передача местоположения останутся без изменений.",
+              "Команда «Найти на карте» открывает недавно переданное местоположение игрока и выделяет его точку."
+            ]
+          },
+          {
+            "title": "Недавние спутники",
+            "items": [
+              "Откройте личную историю игроков, с которыми вы были в группе, через /qt companions или меню миникарты. В меню игрока доступны шёпот, приглашение и личные заметки.",
+              "История общая для ваших персонажей в одном клиенте и на одном игровом мире. Она хранит до 100 спутников в течение 90 дней; записи можно удалять, а список — очищать в любой момент."
+            ]
+          },
+          {
+            "title": "Прогресс заданий и сведения об игроках",
+            "items": [
+              "Быстрые обновления одной и той же цели объединяются в одно объявление с последним прогрессом. Завершение целей по-прежнему объявляется без задержки.",
+              "Разработчики QuestTogether с проверенной подписью отмечены шестерёнкой цвета класса и подписью разработчика в подсказках. При наведении на группу точек список показывает те же цвета классов, значки QT и статусы поиска спутников для заданий, что и состав группы."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "7.3.0",
+        "welcome": "Trova giocatori sulle mappe affollate, ritrova i compagni recenti e segui i progressi delle missioni con meno annunci ripetuti.",
+        "sections": [
+          {
+            "title": "Giocatori sulle mappe",
+            "items": [
+              "I punti dei giocatori che si sovrappongono sulla mappa del mondo vengono raggruppati. Il raggruppamento è attivo per impostazione predefinita e può essere disattivato in Posizioni dei giocatori.",
+              "Clicca su un gruppo di punti per aprire la mappa più dettagliata che contenga tutti i suoi giocatori. Se i punti restano raggruppati, vengono separati automaticamente per utilizzare le normali descrizioni e i menu; scorri sopra il gruppo per sfogliare quelli più numerosi.",
+              "Il pulsante QT in alto a destra sulla mappa del mondo mostra o nasconde gli indicatori dei giocatori e dei punti di passaggio condivisi di QT. Passaci sopra per scurire la mappa sullo sfondo. Gli indicatori della minimappa e la condivisione della posizione rimangono invariati.",
+              "Trova sulla mappa apre la posizione condivisa di recente da un giocatore e ne evidenzia il punto."
+            ]
+          },
+          {
+            "title": "Compagni recenti",
+            "items": [
+              "Usa /qt companions o il menu della minimappa per aprire la cronologia privata delle persone con cui hai fatto gruppo. I menu dei giocatori permettono di sussurrare, invitare e gestire note private.",
+              "La cronologia è condivisa tra i tuoi personaggi sullo stesso client e reame. Conserva fino a 100 compagni per 90 giorni; puoi rimuovere voci o svuotare la lista quando vuoi."
+            ]
+          },
+          {
+            "title": "Progressi delle missioni e dettagli dei giocatori",
+            "items": [
+              "Gli aggiornamenti rapidi dello stesso obiettivo vengono riuniti in un annuncio con i progressi più recenti. Gli obiettivi completati continuano a essere annunciati tempestivamente.",
+              "Gli sviluppatori di QuestTogether con firma verificata hanno un indicatore a ingranaggio del colore della classe e una dicitura da sviluppatore nelle descrizioni. Gli elenchi mostrati passando sopra i gruppi di punti usano gli stessi colori di classe, icone QT e stati di ricerca di compagni di missione delle liste di gruppo."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "7.3.0",
+        "welcome": "붐비는 지도에서 플레이어를 찾고, 최근 동료와 다시 만나고, 반복 알림을 줄여 퀘스트 진행 상황을 더 편하게 확인하세요.",
+        "sections": [
+          {
+            "title": "지도에서 플레이어 찾기",
+            "items": [
+              "세계 지도에서 겹치는 플레이어 점을 하나로 묶어 표시합니다. 기본으로 켜져 있으며 플레이어 위치 설정에서 끌 수 있습니다.",
+              "묶인 표시를 클릭하면 해당 플레이어가 모두 포함된 가장 자세한 지도가 열립니다. 그곳에서도 점들이 묶여 있으면 자동으로 펼쳐지므로, 평소처럼 마우스를 올려 정보를 보거나 메뉴를 열 수 있습니다. 플레이어가 많으면 묶인 표시 위에서 스크롤해 나머지를 확인하세요.",
+              "세계 지도 오른쪽 위의 QT 버튼으로 QT 플레이어 표시와 공유 경유지 표시를 켜거나 끌 수 있습니다. 버튼에 마우스를 올리면 표시 뒤의 지도가 어두워집니다. 미니맵 표시와 위치 공유는 변경되지 않습니다.",
+              "지도에서 찾기를 사용하면 플레이어가 최근에 공유한 위치를 열고 해당 점을 강조합니다."
+            ]
+          },
+          {
+            "title": "최근 동료",
+            "items": [
+              "/qt companions 또는 미니맵 메뉴에서 함께 파티를 맺었던 플레이어의 비공개 기록을 열 수 있습니다. 각 플레이어 메뉴에서 귓속말, 초대, 비공개 메모 기능을 사용하세요.",
+              "기록은 같은 클라이언트와 서버의 내 캐릭터끼리 공유됩니다. 최대 100명의 동료를 90일 동안 보관하며, 언제든 항목을 삭제하거나 목록을 비울 수 있습니다."
+            ]
+          },
+          {
+            "title": "퀘스트 진행 알림과 플레이어 정보",
+            "items": [
+              "같은 목표의 빠른 진행 업데이트를 최신 진행 상황을 보여주는 하나의 알림으로 합칩니다. 목표 완료는 계속 신속하게 알립니다.",
+              "서명이 확인된 QuestTogether 개발자는 직업 색상의 톱니바퀴 표시와 툴팁의 개발자 문구로 구별됩니다. 묶인 표시에 마우스를 올리면 파티원 목록과 동일한 직업 색상, QT 아이콘, 퀘스트 동료 찾기 상태가 표시됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "7.3.0",
+        "welcome": "在拥挤的地图上寻找玩家，联系最近的队友，并通过更少的重复通告了解任务进度。",
+        "sections": [
+          {
+            "title": "地图上的玩家",
+            "items": [
+              "世界地图上重叠的玩家圆点会合并显示。此功能默认开启，可在玩家位置设置中关闭。",
+              "点击聚合标记，可直接打开包含其中所有玩家的最详细地图。如果圆点仍然聚合，会自动展开为独立圆点，可照常悬停查看详情或打开菜单；玩家较多时，可在聚合标记上滚动鼠标浏览。",
+              "世界地图右上角的QT按钮可显示或隐藏QT玩家标记和共享路径点。悬停按钮可调暗标记后方的地图。小地图标记和位置共享保持不变。",
+              "在地图上查找会打开玩家最近共享的位置并突出显示其圆点。"
+            ]
+          },
+          {
+            "title": "近期队友",
+            "items": [
+              "使用 /qt companions 或小地图菜单，可打开与你组过队的玩家的私密记录。玩家菜单提供密语、邀请和私人备注功能。",
+              "记录在同一客户端、同一服务器的角色之间共享，最多保存100名队友，保留90天。你可随时删除条目或清空列表。"
+            ]
+          },
+          {
+            "title": "任务进度与玩家详情",
+            "items": [
+              "同一目标的快速进度更新会合并为一条显示最新进度的通告。目标完成时仍会及时通告。",
+              "通过签名验证的QuestTogether开发者会显示职业颜色的齿轮标记，并在提示框中注明开发者身份。悬停聚合标记时，列表会显示与队伍名单相同的职业颜色、QT图标和寻找任务伙伴状态。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "7.3.0",
+        "welcome": "在擁擠的地圖上尋找玩家、聯絡最近的隊友，並透過更少的重複通告掌握任務進度。",
+        "sections": [
+          {
+            "title": "地圖上的玩家",
+            "items": [
+              "世界地圖上重疊的玩家圓點會合併顯示。此功能預設開啟，可在玩家位置設定中關閉。",
+              "點擊聚合標記，可直接開啟包含其中所有玩家的最詳細地圖。如果圓點仍然聚合，會自動展開為獨立圓點，可照常懸停查看詳情或開啟選單；玩家較多時，可在聚合標記上滾動滑鼠瀏覽。",
+              "世界地圖右上角的QT按鈕可顯示或隱藏QT玩家標記與分享的路徑點。懸停按鈕可調暗標記後方的地圖。小地圖標記和位置分享維持不變。",
+              "在地圖上尋找會開啟玩家最近分享的位置並突顯其圓點。"
+            ]
+          },
+          {
+            "title": "近期隊友",
+            "items": [
+              "使用 /qt companions 或小地圖選單，可開啟曾與你組隊的玩家的私人紀錄。玩家選單提供密語、邀請與私人備註功能。",
+              "紀錄在同一用戶端、同一伺服器的角色之間共用，最多儲存100名隊友，保留90天。你可隨時刪除項目或清空清單。"
+            ]
+          },
+          {
+            "title": "任務進度與玩家詳情",
+            "items": [
+              "同一目標的快速進度更新會合併為一則顯示最新進度的通告。目標完成時仍會即時通告。",
+              "通過簽章驗證的QuestTogether開發者會顯示職業顏色的齒輪標記，並在提示框中註明開發者身分。懸停聚合標記時，清單會顯示與隊伍名單相同的職業顏色、QT圖示和尋找任務夥伴狀態。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "7.2.1",
         "welcome": "Fixes for private notes and collapsed Party Quest Log columns.",
         "sections": [

@@ -1,30 +1,15 @@
 {
-  "source_sha256": "0ab747b978f5df0513fb54ad07663ae553bae2f2809a896c29a72723ec6b9f8b",
+  "source_sha256": "600132da9a2cd6a0aecf8371bc79a22cd2e4c3a9853e0340ab88041431d048c8",
   "notes": {
-    "version": "7.3.0",
-    "welcome": "Trova giocatori sulle mappe affollate, ritrova i compagni recenti e segui i progressi delle missioni con meno annunci ripetuti.",
+    "version": "7.3.1",
+    "welcome": "Informazioni sul gruppo e controlli della mappa più chiari.",
     "sections": [
       {
         "title": "Giocatori sulle mappe",
         "items": [
-          "I punti dei giocatori che si sovrappongono sulla mappa del mondo vengono raggruppati. Il raggruppamento è attivo per impostazione predefinita e può essere disattivato in Posizioni dei giocatori.",
-          "Clicca su un gruppo di punti per aprire la mappa più dettagliata che contenga tutti i suoi giocatori. Se i punti restano raggruppati, vengono separati automaticamente per utilizzare le normali descrizioni e i menu; scorri sopra il gruppo per sfogliare quelli più numerosi.",
-          "Il pulsante QT in alto a destra sulla mappa del mondo mostra o nasconde gli indicatori dei giocatori e dei punti di passaggio condivisi di QT. Passaci sopra per scurire la mappa sullo sfondo. Gli indicatori della minimappa e la condivisione della posizione rimangono invariati.",
-          "Trova sulla mappa apre la posizione condivisa di recente da un giocatore e ne evidenzia il punto."
-        ]
-      },
-      {
-        "title": "Compagni recenti",
-        "items": [
-          "Usa /qt companions o il menu della minimappa per aprire la cronologia privata delle persone con cui hai fatto gruppo. I menu dei giocatori permettono di sussurrare, invitare e gestire note private.",
-          "La cronologia è condivisa tra i tuoi personaggi sullo stesso client e reame. Conserva fino a 100 compagni per 90 giorni; puoi rimuovere voci o svuotare la lista quando vuoi."
-        ]
-      },
-      {
-        "title": "Progressi delle missioni e dettagli dei giocatori",
-        "items": [
-          "Gli aggiornamenti rapidi dello stesso obiettivo vengono riuniti in un annuncio con i progressi più recenti. Gli obiettivi completati continuano a essere annunciati tempestivamente.",
-          "Gli sviluppatori di QuestTogether con firma verificata hanno un indicatore a ingranaggio del colore della classe e una dicitura da sviluppatore nelle descrizioni. Gli elenchi mostrati passando sopra i gruppi di punti usano gli stessi colori di classe, icone QT e stati di ricerca di compagni di missione delle liste di gruppo."
+          "Nei suggerimenti degli indicatori raggruppati, i giocatori che risultano appartenere allo stesso gruppo sono racchiusi in un bordo bianco arrotondato, con un’icona di gruppo. L’indicatore di gruppo compare anche per un giocatore i cui compagni si trovano fuori da quell’insieme di indicatori.",
+          "Il pulsante QT sulla mappa del mondo resta completamente visibile e mostra una X rossa quando gli indicatori QT sono nascosti.",
+          "Passare il puntatore sul pulsante QT non oscura più la mappa quando gli indicatori QT sono nascosti."
         ]
       }
     ]

@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.1
+
+Informazioni sul gruppo e controlli della mappa più chiari.
+
+### Giocatori sulle mappe
+
+- Nei suggerimenti degli indicatori raggruppati, i giocatori che risultano appartenere allo stesso gruppo sono racchiusi in un bordo bianco arrotondato, con un’icona di gruppo. L’indicatore di gruppo compare anche per un giocatore i cui compagni si trovano fuori da quell’insieme di indicatori.
+- Il pulsante QT sulla mappa del mondo resta completamente visibile e mostra una X rossa quando gli indicatori QT sono nascosti.
+- Passare il puntatore sul pulsante QT non oscura più la mappa quando gli indicatori QT sono nascosti.
+
 ## 7.3.0
 
 Trova giocatori sulle mappe affollate, ritrova i compagni recenti e segui i progressi delle missioni con meno annunci ripetuti.
