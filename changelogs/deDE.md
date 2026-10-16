@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.3
+
+Übersichtlichere Tooltips zusammengefasster Kartenpunkte.
+
+### Spieler auf Karten
+
+- In Tooltips zusammengefasster Kartenpunkte kennzeichnet das Zahnrad in Klassenfarbe den QuestTogether-Entwickler, ohne zusätzlichen Text. In Tooltips einzelner Spieler bleibt der Entwicklerhinweis erhalten.
+
 ## 7.3.2
 
 Einheitlichere Gruppeninformationen und intelligentere Kartennavigation.

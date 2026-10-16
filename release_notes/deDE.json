@@ -1,15 +1,13 @@
 {
-  "source_sha256": "8989ea7dcdea1bf3b0f36592f6cdca4018655e9e95a5509af8609b6b71d7c9e9",
+  "source_sha256": "c172fcb9bbcb4ea0cd154cc0260c6ab8dce42bea4e6ed496219de8412d879f15",
   "notes": {
-    "version": "7.3.2",
-    "welcome": "Einheitlichere Gruppeninformationen und intelligentere Kartennavigation.",
+    "version": "7.3.3",
+    "welcome": "Übersichtlichere Tooltips zusammengefasster Kartenpunkte.",
     "sections": [
       {
         "title": "Spieler auf Karten",
         "items": [
-          "Spieler-Tooltips, Tooltips zusammengefasster Kartenpunkte und die Hervorhebung von Gruppenmitgliedern nutzen jetzt dieselben bekannten Gruppeninformationen. Das reduziert wiederholte Ladevorgänge und uneinheitliche Gruppierungen.",
-          "Tooltips zusammengefasster Kartenpunkte zeigen neben dem weißen Gruppensymbol die Gesamtzahl der Gruppenmitglieder an.",
-          "Ein Klick auf zusammengefasste Punkte in der Weltübersicht öffnet jetzt die detaillierteste Karte, die alle zugehörigen Spieler enthält. Anschließend werden die Punkte bei Bedarf einzeln aufgefächert."
+          "In Tooltips zusammengefasster Kartenpunkte kennzeichnet das Zahnrad in Klassenfarbe den QuestTogether-Entwickler, ohne zusätzlichen Text. In Tooltips einzelner Spieler bleibt der Entwicklerhinweis erhalten."
         ]
       }
     ]

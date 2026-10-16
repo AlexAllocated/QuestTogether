@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.3
+
+Des infobulles de marqueurs regroupés plus épurées.
+
+### Joueurs sur les cartes
+
+- Les infobulles des marqueurs regroupés identifient le développeur de QuestTogether par l’engrenage à la couleur de sa classe, sans libellé supplémentaire. Le libellé du développeur reste affiché dans les infobulles individuelles des joueurs.
+
 ## 7.3.2
 
 Des informations de groupe plus cohérentes et une navigation plus intelligente sur les cartes.

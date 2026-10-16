@@ -3,6 +3,162 @@
   "releases": [
     {
       "enUS": {
+        "version": "7.3.2",
+        "welcome": "More consistent party information and smarter map navigation.",
+        "sections": [
+          {
+            "title": "Player Maps",
+            "items": [
+              "Player tooltips, cluster tooltips, and party highlighting now share known party information, reducing repeated loading and inconsistent grouping.",
+              "Cluster tooltips show the total party size beside the white party icon.",
+              "Clicking a cluster from the full-world map now opens the most detailed map containing all its players, then expands the cluster if needed."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "7.3.2",
+        "welcome": "Einheitlichere Gruppeninformationen und intelligentere Kartennavigation.",
+        "sections": [
+          {
+            "title": "Spieler auf Karten",
+            "items": [
+              "Spieler-Tooltips, Tooltips zusammengefasster Kartenpunkte und die Hervorhebung von Gruppenmitgliedern nutzen jetzt dieselben bekannten Gruppeninformationen. Das reduziert wiederholte Ladevorgänge und uneinheitliche Gruppierungen.",
+              "Tooltips zusammengefasster Kartenpunkte zeigen neben dem weißen Gruppensymbol die Gesamtzahl der Gruppenmitglieder an.",
+              "Ein Klick auf zusammengefasste Punkte in der Weltübersicht öffnet jetzt die detaillierteste Karte, die alle zugehörigen Spieler enthält. Anschließend werden die Punkte bei Bedarf einzeln aufgefächert."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "7.3.2",
+        "welcome": "Des informations de groupe plus cohérentes et une navigation plus intelligente sur les cartes.",
+        "sections": [
+          {
+            "title": "Joueurs sur les cartes",
+            "items": [
+              "Les infobulles des joueurs, celles des marqueurs regroupés et la mise en évidence des membres d’un groupe utilisent désormais les mêmes informations de groupe déjà disponibles, ce qui réduit les chargements répétés et les incohérences de regroupement.",
+              "Les infobulles des marqueurs regroupés affichent le nombre total de membres du groupe à côté de l’icône de groupe blanche.",
+              "Depuis la vue d’ensemble du monde, cliquer sur un regroupement de marqueurs ouvre désormais la carte la plus détaillée contenant tous ses joueurs, puis déploie les marqueurs individuels si nécessaire."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "7.3.2",
+        "welcome": "Información de grupo más coherente y navegación por el mapa más inteligente.",
+        "sections": [
+          {
+            "title": "Jugadores en los mapas",
+            "items": [
+              "Las descripciones emergentes de jugadores y de agrupaciones de puntos, así como el resaltado de grupos, ahora utilizan la misma información de grupo disponible, lo que reduce las cargas repetidas y las incoherencias al agrupar jugadores.",
+              "Las descripciones emergentes de las agrupaciones de puntos muestran el número total de miembros del grupo junto al icono blanco de grupo.",
+              "Al hacer clic en una agrupación de puntos desde la vista completa del mundo, ahora se abre el mapa más detallado que contiene a todos sus jugadores y, si es necesario, se despliegan los puntos individuales."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "7.3.2",
+        "welcome": "Información de grupo más coherente y navegación por el mapa más inteligente.",
+        "sections": [
+          {
+            "title": "Jugadores en los mapas",
+            "items": [
+              "Las descripciones emergentes de jugadores y de agrupaciones de puntos, así como el resaltado de grupos, ahora utilizan la misma información de grupo disponible, lo que reduce las cargas repetidas y las inconsistencias al agrupar jugadores.",
+              "Las descripciones emergentes de las agrupaciones de puntos muestran el número total de miembros del grupo junto al ícono blanco de grupo.",
+              "Al hacer clic en una agrupación de puntos desde la vista completa del mundo, ahora se abre el mapa más detallado que contiene a todos sus jugadores y, si es necesario, se despliegan los puntos individuales."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "7.3.2",
+        "welcome": "Informações de grupo mais consistentes e navegação mais inteligente pelo mapa.",
+        "sections": [
+          {
+            "title": "Jogadores nos mapas",
+            "items": [
+              "As dicas de jogadores, as dicas dos marcadores agrupados e o destaque de membros do grupo agora usam as mesmas informações de grupo disponíveis, reduzindo carregamentos repetidos e inconsistências no agrupamento.",
+              "As dicas dos marcadores agrupados mostram o número total de membros do grupo ao lado do ícone branco de grupo.",
+              "Clicar em um conjunto de marcadores na visão geral do mundo agora abre o mapa mais detalhado que contém todos os jogadores desse conjunto e, se necessário, mostra os marcadores individualmente."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "7.3.2",
+        "welcome": "Более согласованные сведения о группе и более удобная навигация по карте.",
+        "sections": [
+          {
+            "title": "Игроки на картах",
+            "items": [
+              "Подсказки игроков, подсказки скоплений меток и подсветка группы теперь используют общие известные сведения о составе группы. Это уменьшает повторные загрузки и несогласованность при объединении игроков в группы.",
+              "В подсказках скоплений меток рядом с белым значком группы отображается общее число её участников.",
+              "Нажатие на скопление меток на обзорной карте мира теперь открывает самую подробную карту, содержащую всех этих игроков, а затем при необходимости разворачивает скопление в отдельные метки."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "7.3.2",
+        "welcome": "Informazioni sul gruppo più coerenti e navigazione sulla mappa più intelligente.",
+        "sections": [
+          {
+            "title": "Giocatori sulle mappe",
+            "items": [
+              "Le descrizioni dei giocatori e dei segnalini raggruppati, insieme all’evidenziazione dei membri del gruppo, ora utilizzano le stesse informazioni sul gruppo già disponibili, riducendo i caricamenti ripetuti e le incongruenze nel raggruppamento.",
+              "Le descrizioni dei segnalini raggruppati mostrano il numero totale di membri del gruppo accanto all’icona bianca del gruppo.",
+              "Facendo clic su un insieme di segnalini nella vista completa del mondo, ora si apre la mappa più dettagliata che contiene tutti quei giocatori; se necessario, i segnalini vengono poi mostrati singolarmente."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "7.3.2",
+        "welcome": "파티 정보가 더 일관되게 표시되고 지도 탐색이 더 편리해졌습니다.",
+        "sections": [
+          {
+            "title": "지도의 플레이어",
+            "items": [
+              "플레이어 툴팁, 묶인 표시의 툴팁, 파티 강조 표시가 이제 이미 확인된 파티 정보를 함께 사용합니다. 이로써 반복 로딩과 일관되지 않은 파티 묶음 표시가 줄어듭니다.",
+              "묶인 표시의 툴팁에서 흰색 파티 아이콘 옆에 전체 파티원 수를 표시합니다.",
+              "세계 전체 지도에서 묶인 표시를 클릭하면 이제 해당 플레이어를 모두 포함하는 가장 상세한 지도가 열리고, 필요한 경우 묶음이 개별 표시로 펼쳐집니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "7.3.2",
+        "welcome": "队伍信息显示更一致，地图导航更智能。",
+        "sections": [
+          {
+            "title": "地图上的玩家",
+            "items": [
+              "玩家提示、聚合标记提示和队伍高亮显示现在共用已知的队伍信息，减少重复加载和分组显示不一致的情况。",
+              "聚合标记提示现在会在白色队伍图标旁显示队伍总人数。",
+              "在世界总览地图上点击聚合标记，现在会打开能容纳其中所有玩家的最详细地图，然后在需要时展开各个玩家的标记。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "7.3.2",
+        "welcome": "隊伍資訊顯示更一致，地圖導覽更智慧。",
+        "sections": [
+          {
+            "title": "地圖上的玩家",
+            "items": [
+              "玩家提示、合併標記提示和隊伍醒目顯示現在共用已知的隊伍資訊，減少重複載入和分組顯示不一致的情況。",
+              "合併標記提示現在會在白色隊伍圖示旁顯示隊伍總人數。",
+              "在世界總覽地圖上點擊合併標記，現在會開啟能涵蓋其中所有玩家的最詳細地圖，然後視需要展開各個玩家的標記。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "7.3.1",
         "welcome": "Clearer party information and map controls.",
         "sections": [

@@ -4,6 +4,14 @@
 
 [Other languages](changelogs/README.md)
 
+## 7.3.3
+
+Cleaner cluster tooltips.
+
+### Player Maps
+
+- Cluster tooltips identify the QuestTogether developer with the class-colored gear, without an extra text label. The developer label remains in individual player tooltips.
+
 ## 7.3.2
 
 More consistent party information and smarter map navigation.

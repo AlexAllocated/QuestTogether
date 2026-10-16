@@ -1,15 +1,13 @@
 {
-  "source_sha256": "8989ea7dcdea1bf3b0f36592f6cdca4018655e9e95a5509af8609b6b71d7c9e9",
+  "source_sha256": "c172fcb9bbcb4ea0cd154cc0260c6ab8dce42bea4e6ed496219de8412d879f15",
   "notes": {
-    "version": "7.3.2",
-    "welcome": "Información de grupo más coherente y navegación por el mapa más inteligente.",
+    "version": "7.3.3",
+    "welcome": "Descripciones emergentes de agrupaciones de puntos más claras.",
     "sections": [
       {
         "title": "Jugadores en los mapas",
         "items": [
-          "Las descripciones emergentes de jugadores y de agrupaciones de puntos, así como el resaltado de grupos, ahora utilizan la misma información de grupo disponible, lo que reduce las cargas repetidas y las incoherencias al agrupar jugadores.",
-          "Las descripciones emergentes de las agrupaciones de puntos muestran el número total de miembros del grupo junto al icono blanco de grupo.",
-          "Al hacer clic en una agrupación de puntos desde la vista completa del mundo, ahora se abre el mapa más detallado que contiene a todos sus jugadores y, si es necesario, se despliegan los puntos individuales."
+          "Las descripciones emergentes de las agrupaciones de puntos identifican al desarrollador de QuestTogether mediante el engranaje del color de su clase, sin una etiqueta de texto adicional. La etiqueta de desarrollador se mantiene en las descripciones emergentes de jugadores individuales."
         ]
       }
     ]

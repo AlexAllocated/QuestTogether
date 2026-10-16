@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.3
+
+Dicas dos marcadores agrupados mais claras.
+
+### Jogadores nos mapas
+
+- As dicas dos marcadores agrupados identificam o desenvolvedor do QuestTogether pela engrenagem na cor da classe, sem um texto adicional. A identificação por texto continua nas dicas individuais de jogadores.
+
 ## 7.3.2
 
 Informações de grupo mais consistentes e navegação mais inteligente pelo mapa.

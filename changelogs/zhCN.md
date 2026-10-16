@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.3
+
+聚合标记提示更简洁。
+
+### 地图上的玩家
+
+- 聚合标记提示使用职业颜色的齿轮图标标识 QuestTogether 开发者，不再额外显示文字标签。单个玩家的提示中仍保留开发者标签。
+
 ## 7.3.2
 
 队伍信息显示更一致，地图导航更智能。

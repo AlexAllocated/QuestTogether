@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.3
+
+Descrizioni dei segnalini raggruppati più essenziali.
+
+### Giocatori sulle mappe
+
+- Le descrizioni dei segnalini raggruppati identificano lo sviluppatore di QuestTogether tramite l’ingranaggio nel colore della classe, senza un’etichetta di testo aggiuntiva. L’etichetta dello sviluppatore rimane nelle descrizioni dei singoli giocatori.
+
 ## 7.3.2
 
 Informazioni sul gruppo più coerenti e navigazione sulla mappa più intelligente.

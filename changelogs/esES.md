@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.3
+
+Descripciones emergentes de agrupaciones de puntos más claras.
+
+### Jugadores en los mapas
+
+- Las descripciones emergentes de las agrupaciones de puntos identifican al desarrollador de QuestTogether mediante el engranaje del color de su clase, sin una etiqueta de texto adicional. La etiqueta de desarrollador se mantiene en las descripciones emergentes de jugadores individuales.
+
 ## 7.3.2
 
 Información de grupo más coherente y navegación por el mapa más inteligente.

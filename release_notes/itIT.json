@@ -1,15 +1,13 @@
 {
-  "source_sha256": "8989ea7dcdea1bf3b0f36592f6cdca4018655e9e95a5509af8609b6b71d7c9e9",
+  "source_sha256": "c172fcb9bbcb4ea0cd154cc0260c6ab8dce42bea4e6ed496219de8412d879f15",
   "notes": {
-    "version": "7.3.2",
-    "welcome": "Informazioni sul gruppo più coerenti e navigazione sulla mappa più intelligente.",
+    "version": "7.3.3",
+    "welcome": "Descrizioni dei segnalini raggruppati più essenziali.",
     "sections": [
       {
         "title": "Giocatori sulle mappe",
         "items": [
-          "Le descrizioni dei giocatori e dei segnalini raggruppati, insieme all’evidenziazione dei membri del gruppo, ora utilizzano le stesse informazioni sul gruppo già disponibili, riducendo i caricamenti ripetuti e le incongruenze nel raggruppamento.",
-          "Le descrizioni dei segnalini raggruppati mostrano il numero totale di membri del gruppo accanto all’icona bianca del gruppo.",
-          "Facendo clic su un insieme di segnalini nella vista completa del mondo, ora si apre la mappa più dettagliata che contiene tutti quei giocatori; se necessario, i segnalini vengono poi mostrati singolarmente."
+          "Le descrizioni dei segnalini raggruppati identificano lo sviluppatore di QuestTogether tramite l’ingranaggio nel colore della classe, senza un’etichetta di testo aggiuntiva. L’etichetta dello sviluppatore rimane nelle descrizioni dei singoli giocatori."
         ]
       }
     ]

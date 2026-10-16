@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.3
+
+合併標記提示更簡潔。
+
+### 地圖上的玩家
+
+- 合併標記提示使用職業顏色的齒輪圖示標示 QuestTogether 開發者，不再額外顯示文字標籤。個別玩家的提示中仍保留開發者標籤。
+
 ## 7.3.2
 
 隊伍資訊顯示更一致，地圖導覽更智慧。
