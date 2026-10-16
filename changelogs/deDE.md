@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.5
+
+Übersichtlichere Kartenmarkierungen, einfachere Spielernavigation und aktuellere Gruppeninformationen.
+
+### Karten und Spielerinformationen
+
+- Bewege den Mauszeiger über die QT-Kartenschaltfläche, um eine bebilderte Legende der Kartensymbole und Zustände zu sehen.
+- Klicke mit der linken Maustaste auf einen Spielerpunkt auf der Weltkarte, um ihn hervorzuheben und die detaillierteste verfügbare Karte für diesen Ort zu öffnen. Auf der letzten Kartenebene öffnet ein Linksklick das Spielermenü; ein Rechtsklick öffnet es immer.
+- Auch „Auf der Karte finden“ öffnet die detaillierteste verfügbare Karte. Die grüne Hervorhebung bleibt bei Kartenwechseln erhalten und endet nach einer Minute, beim Schließen der Karte oder bei der Auswahl eines anderen Spielers.
+- Beim Überfahren eines Spielers, einer Markierungsgruppe oder eines gemeinsamen Wegpunkts werden die Karte und andere Markierungen abgedunkelt, während die hervorgehobenen Markierungen hell bleiben. Die QT-Kartenschaltfläche dunkelt die Karte beim Überfahren nicht mehr ab.
+- Die Leuchteffekte für Spieler sind jetzt einheitlich. Gruppen-Tooltips und Markierungsgruppen nutzen aktuellere Informationen zur Gruppenzugehörigkeit und erholen sich besser von verzögerten Anfragen.
+- Die Entwicklerdiagnose wurde verbessert; Einstellungen zur Diagnosefreigabe und der Schutz der öffentlichen Standortdaten bleiben erhalten.
+
 ## 7.3.4
 
 Übersichtlichere Spieler-Tooltips und einheitlichere QuestTogether-Kennzeichnungen.

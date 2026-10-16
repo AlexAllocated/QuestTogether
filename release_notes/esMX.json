@@ -1,15 +1,18 @@
 {
-  "source_sha256": "833888ebe422b43cecf107427e71ca715c19edeeb89154934f89a7d689e43dea",
+  "source_sha256": "dde724acee0af5e0e2074c15dd0b50a658b1ff8a64a0ed16ea8d35a89acd3432",
   "notes": {
-    "version": "7.3.4",
-    "welcome": "Descripciones emergentes de jugadores más claras e indicadores de QuestTogether más coherentes.",
+    "version": "7.3.5",
+    "welcome": "Marcadores más claros, navegación más sencilla e información de grupo más reciente.",
     "sections": [
       {
-        "title": "Descripciones emergentes de jugadores y chat",
+        "title": "Mapas e información de jugadores",
         "items": [
-          "Las listas de grupo ahora muestran los íconos de QT en cuanto hay datos de ubicación válidos del jugador, incluso después de recargar la interfaz.",
-          "Las listas de miembros de grupos y de agrupaciones de puntos mantienen compactos los indicadores de estado. Las explicaciones sobre el desarrollador y la ubicación oculta solo aparecen al pasar el cursor directamente sobre ese jugador; los indicadores de ubicación oculta siguen siendo visibles únicamente para el desarrollador.",
-          "Los anuncios del desarrollador verificado ahora usan un ícono de pergamino y engranaje, con un resplandor dorado mientras busca compañeros de misiones."
+          "Pasa el cursor sobre el botón QT del mapa para ver una leyenda visual de sus íconos y estados.",
+          "Haz clic izquierdo en un punto de jugador del mapa del mundo para resaltarlo y abrir el mapa más detallado disponible para esa ubicación. En el último nivel, el clic izquierdo abre el menú del jugador; el clic derecho siempre lo abre.",
+          "Buscar en el mapa también abre el mapa más detallado disponible. El resaltado verde se mantiene al cambiar de mapa y desaparece después de un minuto, al cerrar el mapa o al seleccionar a otro jugador.",
+          "Al pasar el cursor sobre un jugador, un grupo de marcadores o un punto de ruta compartido, el mapa y los demás marcadores se atenúan mientras los destacados conservan su brillo. Pasar el cursor sobre el botón QT ya no atenúa el mapa.",
+          "Los brillos de los jugadores usan ahora un efecto uniforme. Las descripciones de grupo y los marcadores agrupados comparten información más reciente sobre los miembros y se recuperan mejor de solicitudes demoradas.",
+          "Se mejoraron los diagnósticos del desarrollador respetando las preferencias para compartir diagnósticos y la privacidad de las ubicaciones públicas."
         ]
       }
     ]

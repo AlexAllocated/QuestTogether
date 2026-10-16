@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.5
+
+Marcadores más claros, navegación más sencilla e información de grupo más reciente.
+
+### Mapas e información de jugadores
+
+- Pasa el cursor sobre el botón QT del mapa para ver una leyenda visual de sus íconos y estados.
+- Haz clic izquierdo en un punto de jugador del mapa del mundo para resaltarlo y abrir el mapa más detallado disponible para esa ubicación. En el último nivel, el clic izquierdo abre el menú del jugador; el clic derecho siempre lo abre.
+- Buscar en el mapa también abre el mapa más detallado disponible. El resaltado verde se mantiene al cambiar de mapa y desaparece después de un minuto, al cerrar el mapa o al seleccionar a otro jugador.
+- Al pasar el cursor sobre un jugador, un grupo de marcadores o un punto de ruta compartido, el mapa y los demás marcadores se atenúan mientras los destacados conservan su brillo. Pasar el cursor sobre el botón QT ya no atenúa el mapa.
+- Los brillos de los jugadores usan ahora un efecto uniforme. Las descripciones de grupo y los marcadores agrupados comparten información más reciente sobre los miembros y se recuperan mejor de solicitudes demoradas.
+- Se mejoraron los diagnósticos del desarrollador respetando las preferencias para compartir diagnósticos y la privacidad de las ubicaciones públicas.
+
 ## 7.3.4
 
 Descripciones emergentes de jugadores más claras e indicadores de QuestTogether más coherentes.

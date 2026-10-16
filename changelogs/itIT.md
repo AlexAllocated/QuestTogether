@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.5
+
+Indicatori più chiari, navigazione più semplice e informazioni di gruppo più aggiornate.
+
+### Mappe e informazioni sui giocatori
+
+- Passa il cursore sul pulsante QT della mappa per visualizzare una legenda illustrata delle icone e degli stati.
+- Fai clic sinistro su un punto giocatore sulla mappa del mondo per evidenziarlo e aprire la mappa più dettagliata disponibile per quella posizione. All’ultimo livello, il clic sinistro apre il menu del giocatore; il clic destro lo apre sempre.
+- Anche la ricerca sulla mappa apre la mappa più dettagliata disponibile. L’evidenziazione verde segue i cambi di mappa e scompare dopo un minuto, alla chiusura della mappa o quando selezioni un altro giocatore.
+- Passando il cursore su un giocatore, un raggruppamento o un punto di percorso condiviso, la mappa e gli altri indicatori si attenuano mentre quelli interessati restano luminosi. Il pulsante QT non attenua più la mappa al passaggio del cursore.
+- Gli aloni dei giocatori ora usano un effetto uniforme. I tooltip di gruppo e i raggruppamenti condividono informazioni più aggiornate sui membri e gestiscono meglio le richieste in ritardo.
+- Migliorata la diagnostica dello sviluppatore, rispettando le preferenze di condivisione dei dati diagnostici e la riservatezza delle posizioni pubbliche.
+
 ## 7.3.4
 
 Descrizioni dei giocatori più chiare e indicatori di QuestTogether più coerenti.

@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.5
+
+Des marqueurs plus clairs, une navigation plus simple et des informations de groupe plus récentes.
+
+### Cartes et informations sur les joueurs
+
+- Survolez le bouton QT de la carte pour afficher une légende illustrée des icônes et des états.
+- Cliquez avec le bouton gauche sur un point de joueur sur la carte du monde pour le mettre en évidence et ouvrir la carte la plus détaillée disponible pour sa position. Au dernier niveau, le clic gauche ouvre le menu du joueur ; le clic droit l’ouvre toujours.
+- La recherche d’un joueur sur la carte ouvre également la carte la plus détaillée disponible. La surbrillance verte persiste lors des changements de carte et disparaît après une minute, à la fermeture de la carte ou à la sélection d’un autre joueur.
+- Survoler un joueur, un regroupement ou un point de passage partagé assombrit la carte et les autres marqueurs tout en gardant les marqueurs concernés lumineux. Survoler le bouton QT n’assombrit plus la carte.
+- Les halos des joueurs utilisent désormais un effet uniforme. Les infobulles de groupe et les regroupements partagent des informations d’appartenance plus récentes et gèrent mieux les requêtes retardées.
+- Les diagnostics du développeur ont été améliorés tout en respectant les préférences de partage des diagnostics et la confidentialité des positions publiques.
+
 ## 7.3.4
 
 Des infobulles de joueurs plus claires et des indicateurs QuestTogether plus cohérents.

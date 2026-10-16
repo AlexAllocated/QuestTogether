@@ -1,15 +1,18 @@
 {
-  "source_sha256": "833888ebe422b43cecf107427e71ca715c19edeeb89154934f89a7d689e43dea",
+  "source_sha256": "dde724acee0af5e0e2074c15dd0b50a658b1ff8a64a0ed16ea8d35a89acd3432",
   "notes": {
-    "version": "7.3.4",
-    "welcome": "Übersichtlichere Spieler-Tooltips und einheitlichere QuestTogether-Kennzeichnungen.",
+    "version": "7.3.5",
+    "welcome": "Übersichtlichere Kartenmarkierungen, einfachere Spielernavigation und aktuellere Gruppeninformationen.",
     "sections": [
       {
-        "title": "Spieler-Tooltips und Chat",
+        "title": "Karten und Spielerinformationen",
         "items": [
-          "Gruppenlisten zeigen QT-Symbole jetzt an, sobald gültige Standortdaten des Spielers vorliegen – auch nach dem Neuladen der Benutzeroberfläche.",
-          "In den Mitgliederlisten von Gruppen und zusammengefassten Kartenpunkten bleiben Statusanzeigen kompakt. Erläuterungen zum Entwicklerstatus und zum verborgenen Standort erscheinen nur beim direkten Zeigen auf den jeweiligen Spieler; Hinweise auf verborgene Standorte bleiben ausschließlich für den Entwickler sichtbar.",
-          "Ankündigungen des verifizierten Entwicklers verwenden jetzt ein Symbol aus Schriftrolle und Zahnrad, das bei aktiver Suche nach Questpartnern golden leuchtet."
+          "Bewege den Mauszeiger über die QT-Kartenschaltfläche, um eine bebilderte Legende der Kartensymbole und Zustände zu sehen.",
+          "Klicke mit der linken Maustaste auf einen Spielerpunkt auf der Weltkarte, um ihn hervorzuheben und die detaillierteste verfügbare Karte für diesen Ort zu öffnen. Auf der letzten Kartenebene öffnet ein Linksklick das Spielermenü; ein Rechtsklick öffnet es immer.",
+          "Auch „Auf der Karte finden“ öffnet die detaillierteste verfügbare Karte. Die grüne Hervorhebung bleibt bei Kartenwechseln erhalten und endet nach einer Minute, beim Schließen der Karte oder bei der Auswahl eines anderen Spielers.",
+          "Beim Überfahren eines Spielers, einer Markierungsgruppe oder eines gemeinsamen Wegpunkts werden die Karte und andere Markierungen abgedunkelt, während die hervorgehobenen Markierungen hell bleiben. Die QT-Kartenschaltfläche dunkelt die Karte beim Überfahren nicht mehr ab.",
+          "Die Leuchteffekte für Spieler sind jetzt einheitlich. Gruppen-Tooltips und Markierungsgruppen nutzen aktuellere Informationen zur Gruppenzugehörigkeit und erholen sich besser von verzögerten Anfragen.",
+          "Die Entwicklerdiagnose wurde verbessert; Einstellungen zur Diagnosefreigabe und der Schutz der öffentlichen Standortdaten bleiben erhalten."
         ]
       }
     ]

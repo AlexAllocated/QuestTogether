@@ -1,15 +1,18 @@
 {
-  "source_sha256": "833888ebe422b43cecf107427e71ca715c19edeeb89154934f89a7d689e43dea",
+  "source_sha256": "dde724acee0af5e0e2074c15dd0b50a658b1ff8a64a0ed16ea8d35a89acd3432",
   "notes": {
-    "version": "7.3.4",
-    "welcome": "Descrizioni dei giocatori più chiare e indicatori di QuestTogether più coerenti.",
+    "version": "7.3.5",
+    "welcome": "Indicatori più chiari, navigazione più semplice e informazioni di gruppo più aggiornate.",
     "sections": [
       {
-        "title": "Descrizioni dei giocatori e chat",
+        "title": "Mappe e informazioni sui giocatori",
         "items": [
-          "Gli elenchi del gruppo ora mostrano le icone QT non appena sono disponibili dati validi sulla posizione del giocatore, anche dopo aver ricaricato l’interfaccia.",
-          "Gli elenchi dei membri del gruppo e dei segnalini raggruppati mantengono compatti gli indicatori di stato. Le spiegazioni sullo sviluppatore e sulla posizione nascosta appaiono solo passando il puntatore direttamente sul giocatore interessato; gli indicatori di posizione nascosta restano visibili solo allo sviluppatore.",
-          "Gli annunci dello sviluppatore verificato ora usano un’icona con pergamena e ingranaggio, circondata da un bagliore dorato quando cerca compagni di missione."
+          "Passa il cursore sul pulsante QT della mappa per visualizzare una legenda illustrata delle icone e degli stati.",
+          "Fai clic sinistro su un punto giocatore sulla mappa del mondo per evidenziarlo e aprire la mappa più dettagliata disponibile per quella posizione. All’ultimo livello, il clic sinistro apre il menu del giocatore; il clic destro lo apre sempre.",
+          "Anche la ricerca sulla mappa apre la mappa più dettagliata disponibile. L’evidenziazione verde segue i cambi di mappa e scompare dopo un minuto, alla chiusura della mappa o quando selezioni un altro giocatore.",
+          "Passando il cursore su un giocatore, un raggruppamento o un punto di percorso condiviso, la mappa e gli altri indicatori si attenuano mentre quelli interessati restano luminosi. Il pulsante QT non attenua più la mappa al passaggio del cursore.",
+          "Gli aloni dei giocatori ora usano un effetto uniforme. I tooltip di gruppo e i raggruppamenti condividono informazioni più aggiornate sui membri e gestiscono meglio le richieste in ritardo.",
+          "Migliorata la diagnostica dello sviluppatore, rispettando le preferenze di condivisione dei dati diagnostici e la riservatezza delle posizioni pubbliche."
         ]
       }
     ]
