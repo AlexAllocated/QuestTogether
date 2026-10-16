@@ -2,6 +2,27 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.0
+
+Encontre jogadores em mapas movimentados, retome o contato com companheiros recentes e acompanhe o progresso das missões com menos anúncios repetidos.
+
+### Jogadores nos mapas
+
+- Os pontos de jogadores que se sobrepõem no mapa-múndi são agrupados. O agrupamento vem ativado e pode ser desativado em Localizações dos Jogadores.
+- Clique em um grupo de pontos para abrir o mapa mais detalhado que contenha todos os seus jogadores. Se os pontos continuarem agrupados, eles se separam automaticamente para você usar as dicas e menus habituais; role sobre o grupo para percorrer grupos maiores.
+- O botão QT no canto superior direito do mapa-múndi mostra ou oculta os marcadores de jogadores e pontos de rota compartilhados do QT. Passe o cursor sobre ele para escurecer o mapa ao fundo. Os marcadores do minimapa e o compartilhamento de localização permanecem inalterados.
+- Encontrar no mapa abre a localização compartilhada recentemente por um jogador e destaca seu ponto.
+
+### Companheiros recentes
+
+- Use /qt companions ou o menu do minimapa para abrir um histórico privado de pessoas com quem você formou grupo. Os menus dos jogadores permitem sussurrar, convidar e gerenciar notas privadas.
+- O histórico é compartilhado entre seus personagens no mesmo cliente e reino. Ele guarda até 100 companheiros por 90 dias; você pode remover entradas ou limpar a lista quando quiser.
+
+### Progresso das missões e detalhes dos jogadores
+
+- Atualizações rápidas do mesmo objetivo são combinadas em um anúncio com o progresso mais recente. Objetivos concluídos continuam sendo anunciados prontamente.
+- Desenvolvedores do QuestTogether com assinatura verificada recebem marcadores de engrenagem na cor da classe e uma identificação de desenvolvedor nas dicas. As listas exibidas ao passar o cursor sobre grupos de pontos mostram as mesmas cores de classe, ícones QT e estados de busca por parceiros de missão que as listas de grupo.
+
 ## 7.2.1
 
 Correções para notas privadas e colunas recolhidas do registro de missões do grupo.

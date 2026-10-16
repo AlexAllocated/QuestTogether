@@ -1,15 +1,30 @@
 {
-  "source_sha256": "55141b950781aea40c59902f18f362ce6a1fa905d2942a240db0743fdf52e080",
+  "source_sha256": "0ab747b978f5df0513fb54ad07663ae553bae2f2809a896c29a72723ec6b9f8b",
   "notes": {
-    "version": "7.2.1",
-    "welcome": "Corrections pour les notes privées et les colonnes repliées du journal de quêtes du groupe.",
+    "version": "7.3.0",
+    "welcome": "Trouvez des joueurs sur les cartes très fréquentées, retrouvez vos compagnons récents et suivez la progression des quêtes avec moins d’annonces répétées.",
     "sections": [
       {
-        "title": "Corrections et améliorations",
+        "title": "Joueurs sur les cartes",
         "items": [
-          "Correction de l’absence du curseur de texte dans les notes privées sur les joueurs. La bordure indiquant le champ actif est désormais plus discrète.",
-          "Amélioration du défilement lors de la modification de longues notes sur les joueurs.",
-          "Les colonnes repliées du journal de quêtes du groupe utilisent désormais des icônes fiables pour les quêtes prêtes à être rendues et les quêtes terminées, au lieu de caractères qui pouvaient apparaître sous forme de carrés vides."
+          "Les points de joueurs qui se chevauchent sur la carte du monde sont regroupés. Ce regroupement est activé par défaut et peut être désactivé dans Positions des joueurs.",
+          "Cliquez sur un groupe de points pour ouvrir la carte la plus détaillée contenant tous ses joueurs. Tout regroupement restant se déploie en points individuels avec leurs infobulles et menus habituels ; faites défiler sur le groupe pour parcourir les groupes plus nombreux.",
+          "Le bouton QT en haut à droite de la carte du monde affiche ou masque les marqueurs de joueurs et les points de passage partagés de QT. Survolez-le pour assombrir la carte derrière eux. Les marqueurs de la minicarte et le partage de position restent inchangés.",
+          "Trouver sur la carte ouvre la position récemment partagée d’un joueur et met son point en évidence."
+        ]
+      },
+      {
+        "title": "Compagnons récents",
+        "items": [
+          "Utilisez /qt companions ou le menu de la minicarte pour ouvrir l’historique privé des joueurs avec qui vous avez fait groupe. Leurs menus permettent de chuchoter, d’inviter et de gérer des notes privées.",
+          "Cet historique est commun à vos personnages sur le même client et le même royaume. Il conserve jusqu’à 100 compagnons pendant 90 jours ; vous pouvez supprimer des entrées ou vider la liste à tout moment."
+        ]
+      },
+      {
+        "title": "Progression des quêtes et détails des joueurs",
+        "items": [
+          "Les mises à jour rapprochées d’un même objectif sont regroupées en une seule annonce indiquant la progression la plus récente. Les objectifs terminés sont toujours annoncés rapidement.",
+          "Les développeurs de QuestTogether dont la signature est vérifiée ont un marqueur en forme d’engrenage à la couleur de leur classe et une mention de développeur dans les infobulles. Le survol des groupes de points affiche les mêmes couleurs de classe, icônes QT et statuts de recherche de compagnons de quête que les listes de groupe."
         ]
       }
     ]

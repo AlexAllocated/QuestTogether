@@ -1,15 +1,30 @@
 {
-  "source_sha256": "55141b950781aea40c59902f18f362ce6a1fa905d2942a240db0743fdf52e080",
+  "source_sha256": "0ab747b978f5df0513fb54ad07663ae553bae2f2809a896c29a72723ec6b9f8b",
   "notes": {
-    "version": "7.2.1",
-    "welcome": "Correções para notas privadas e colunas recolhidas do registro de missões do grupo.",
+    "version": "7.3.0",
+    "welcome": "Encontre jogadores em mapas movimentados, retome o contato com companheiros recentes e acompanhe o progresso das missões com menos anúncios repetidos.",
     "sections": [
       {
-        "title": "Correções e melhorias",
+        "title": "Jogadores nos mapas",
         "items": [
-          "Corrigido o cursor de texto ausente nas notas privadas sobre jogadores. A borda que indica o campo ativo também ficou mais discreta.",
-          "Melhorada a rolagem ao editar notas mais longas sobre jogadores.",
-          "As colunas recolhidas do registro de missões do grupo agora usam ícones que são exibidos corretamente para missões prontas para entregar e missões concluídas, em vez de caracteres que podiam aparecer como quadrados vazios."
+          "Os pontos de jogadores que se sobrepõem no mapa-múndi são agrupados. O agrupamento vem ativado e pode ser desativado em Localizações dos Jogadores.",
+          "Clique em um grupo de pontos para abrir o mapa mais detalhado que contenha todos os seus jogadores. Se os pontos continuarem agrupados, eles se separam automaticamente para você usar as dicas e menus habituais; role sobre o grupo para percorrer grupos maiores.",
+          "O botão QT no canto superior direito do mapa-múndi mostra ou oculta os marcadores de jogadores e pontos de rota compartilhados do QT. Passe o cursor sobre ele para escurecer o mapa ao fundo. Os marcadores do minimapa e o compartilhamento de localização permanecem inalterados.",
+          "Encontrar no mapa abre a localização compartilhada recentemente por um jogador e destaca seu ponto."
+        ]
+      },
+      {
+        "title": "Companheiros recentes",
+        "items": [
+          "Use /qt companions ou o menu do minimapa para abrir um histórico privado de pessoas com quem você formou grupo. Os menus dos jogadores permitem sussurrar, convidar e gerenciar notas privadas.",
+          "O histórico é compartilhado entre seus personagens no mesmo cliente e reino. Ele guarda até 100 companheiros por 90 dias; você pode remover entradas ou limpar a lista quando quiser."
+        ]
+      },
+      {
+        "title": "Progresso das missões e detalhes dos jogadores",
+        "items": [
+          "Atualizações rápidas do mesmo objetivo são combinadas em um anúncio com o progresso mais recente. Objetivos concluídos continuam sendo anunciados prontamente.",
+          "Desenvolvedores do QuestTogether com assinatura verificada recebem marcadores de engrenagem na cor da classe e uma identificação de desenvolvedor nas dicas. As listas exibidas ao passar o cursor sobre grupos de pontos mostram as mesmas cores de classe, ícones QT e estados de busca por parceiros de missão que as listas de grupo."
         ]
       }
     ]

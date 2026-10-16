@@ -2,6 +2,27 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.0
+
+Finde Spieler auf vollen Karten, nimm wieder Kontakt zu kürzlichen Gefährten auf und verfolge Questfortschritte mit weniger wiederholten Ankündigungen.
+
+### Spieler auf Karten
+
+- Überlappende Spielerpunkte auf der Weltkarte werden zusammengefasst. Diese Gruppierung ist standardmäßig aktiviert und lässt sich unter Spielerstandorte abschalten.
+- Klicke auf eine Gruppe von Punkten, um die detaillierteste Karte zu öffnen, die alle zugehörigen Spieler enthält. Bleiben dort Punkte zusammengefasst, werden sie automatisch auseinandergezogen, sodass du wie gewohnt Details und Menüs aufrufen kannst. Scrolle über die Gruppe, um bei größeren Gruppen weitere Spieler anzuzeigen.
+- Die QT-Schaltfläche oben rechts auf der Weltkarte blendet QT-Spielermarkierungen und geteilte Wegpunkte ein oder aus. Beim Darüberfahren wird die Karte dahinter abgedunkelt. Minikartenmarkierungen und Standortfreigabe bleiben unverändert.
+- Mit Auf Karte finden öffnest du den zuletzt geteilten Standort eines Spielers und hebst seinen Punkt hervor.
+
+### Kürzliche Gefährten
+
+- Öffne mit /qt companions oder über das Minikartenmenü deinen privaten Verlauf von Spielern, mit denen du in einer Gruppe warst. Ihre Spielermenüs bieten Flüstern, Einladen und private Notizen.
+- Der Verlauf gilt für deine Charaktere im selben Client und auf demselben Realm. Er speichert bis zu 100 Gefährten für 90 Tage. Du kannst Einträge entfernen oder die Liste jederzeit leeren.
+
+### Questfortschritt und Spielerdetails
+
+- Schnelle Aktualisierungen desselben Questziels werden zu einer Ankündigung mit dem neuesten Fortschritt zusammengefasst. Abgeschlossene Ziele werden weiterhin zeitnah angekündigt.
+- QuestTogether-Entwickler mit bestätigter Signatur erhalten ein Zahnrad in ihrer Klassenfarbe und eine Entwicklerkennzeichnung im Tooltip. Beim Überfahren zusammengefasster Punkte siehst du dieselben Klassenfarben, QT-Symbole und Questpartnersuche-Markierungen wie in Gruppenübersichten.
+
 ## 7.2.1
 
 Korrekturen für private Notizen und eingeklappte Spalten im Gruppenquestlog.

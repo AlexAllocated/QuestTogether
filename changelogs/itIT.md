@@ -2,6 +2,27 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.3.0
+
+Trova giocatori sulle mappe affollate, ritrova i compagni recenti e segui i progressi delle missioni con meno annunci ripetuti.
+
+### Giocatori sulle mappe
+
+- I punti dei giocatori che si sovrappongono sulla mappa del mondo vengono raggruppati. Il raggruppamento è attivo per impostazione predefinita e può essere disattivato in Posizioni dei giocatori.
+- Clicca su un gruppo di punti per aprire la mappa più dettagliata che contenga tutti i suoi giocatori. Se i punti restano raggruppati, vengono separati automaticamente per utilizzare le normali descrizioni e i menu; scorri sopra il gruppo per sfogliare quelli più numerosi.
+- Il pulsante QT in alto a destra sulla mappa del mondo mostra o nasconde gli indicatori dei giocatori e dei punti di passaggio condivisi di QT. Passaci sopra per scurire la mappa sullo sfondo. Gli indicatori della minimappa e la condivisione della posizione rimangono invariati.
+- Trova sulla mappa apre la posizione condivisa di recente da un giocatore e ne evidenzia il punto.
+
+### Compagni recenti
+
+- Usa /qt companions o il menu della minimappa per aprire la cronologia privata delle persone con cui hai fatto gruppo. I menu dei giocatori permettono di sussurrare, invitare e gestire note private.
+- La cronologia è condivisa tra i tuoi personaggi sullo stesso client e reame. Conserva fino a 100 compagni per 90 giorni; puoi rimuovere voci o svuotare la lista quando vuoi.
+
+### Progressi delle missioni e dettagli dei giocatori
+
+- Gli aggiornamenti rapidi dello stesso obiettivo vengono riuniti in un annuncio con i progressi più recenti. Gli obiettivi completati continuano a essere annunciati tempestivamente.
+- Gli sviluppatori di QuestTogether con firma verificata hanno un indicatore a ingranaggio del colore della classe e una dicitura da sviluppatore nelle descrizioni. Gli elenchi mostrati passando sopra i gruppi di punti usano gli stessi colori di classe, icone QT e stati di ricerca di compagni di missione delle liste di gruppo.
+
 ## 7.2.1
 
 Correzioni per le note private e le colonne compresse del registro missioni del gruppo.

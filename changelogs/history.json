@@ -3,6 +3,162 @@
   "releases": [
     {
       "enUS": {
+        "version": "7.2.1",
+        "welcome": "Fixes for private notes and collapsed Party Quest Log columns.",
+        "sections": [
+          {
+            "title": "Fixes and Polish",
+            "items": [
+              "Fixed the missing text cursor in private player notes and made the focus border more subtle.",
+              "Improved scrolling while editing longer player notes.",
+              "Collapsed Party Quest Log columns now use reliable icons for ready and completed quests instead of characters that could appear as empty boxes."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "7.2.1",
+        "welcome": "Korrekturen für private Notizen und eingeklappte Spalten im Gruppenquestlog.",
+        "sections": [
+          {
+            "title": "Fehlerbehebungen und Feinschliff",
+            "items": [
+              "Der fehlende Textcursor in privaten Spielernotizen wurde behoben. Der Rahmen, der den Eingabefokus anzeigt, ist jetzt dezenter.",
+              "Das Scrollen beim Bearbeiten längerer Spielernotizen wurde verbessert.",
+              "Eingeklappte Spalten im Gruppenquestlog verwenden jetzt zuverlässig angezeigte Symbole für abgabebereite und abgeschlossene Quests statt Zeichen, die als leere Kästchen erscheinen konnten."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "7.2.1",
+        "welcome": "Corrections pour les notes privées et les colonnes repliées du journal de quêtes du groupe.",
+        "sections": [
+          {
+            "title": "Corrections et améliorations",
+            "items": [
+              "Correction de l’absence du curseur de texte dans les notes privées sur les joueurs. La bordure indiquant le champ actif est désormais plus discrète.",
+              "Amélioration du défilement lors de la modification de longues notes sur les joueurs.",
+              "Les colonnes repliées du journal de quêtes du groupe utilisent désormais des icônes fiables pour les quêtes prêtes à être rendues et les quêtes terminées, au lieu de caractères qui pouvaient apparaître sous forme de carrés vides."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "7.2.1",
+        "welcome": "Correcciones para las notas privadas y las columnas contraídas del registro de misiones del grupo.",
+        "sections": [
+          {
+            "title": "Correcciones y mejoras",
+            "items": [
+              "Se ha corregido la ausencia del cursor de texto en las notas privadas sobre jugadores y se ha hecho más discreto el borde que indica que el campo está activo.",
+              "Se ha mejorado el desplazamiento al editar notas largas sobre jugadores.",
+              "Las columnas contraídas del registro de misiones del grupo ahora usan iconos que se muestran correctamente para las misiones listas para entregar y las completadas, en lugar de caracteres que podían aparecer como cuadros vacíos."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "7.2.1",
+        "welcome": "Correcciones para las notas privadas y las columnas contraídas del registro de misiones del grupo.",
+        "sections": [
+          {
+            "title": "Correcciones y mejoras",
+            "items": [
+              "Se corrigió la ausencia del cursor de texto en las notas privadas sobre jugadores y se hizo más discreto el borde que indica que el campo está activo.",
+              "Se mejoró el desplazamiento al editar notas largas sobre jugadores.",
+              "Las columnas contraídas del registro de misiones del grupo ahora usan íconos que se muestran correctamente para las misiones listas para entregar y las completadas, en lugar de caracteres que podían aparecer como cuadros vacíos."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "7.2.1",
+        "welcome": "Correções para notas privadas e colunas recolhidas do registro de missões do grupo.",
+        "sections": [
+          {
+            "title": "Correções e melhorias",
+            "items": [
+              "Corrigido o cursor de texto ausente nas notas privadas sobre jogadores. A borda que indica o campo ativo também ficou mais discreta.",
+              "Melhorada a rolagem ao editar notas mais longas sobre jogadores.",
+              "As colunas recolhidas do registro de missões do grupo agora usam ícones que são exibidos corretamente para missões prontas para entregar e missões concluídas, em vez de caracteres que podiam aparecer como quadrados vazios."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "7.2.1",
+        "welcome": "Исправления для личных заметок и свёрнутых столбцов журнала заданий группы.",
+        "sections": [
+          {
+            "title": "Исправления и улучшения",
+            "items": [
+              "Исправлено отсутствие текстового курсора в личных заметках об игроках. Рамка активного поля ввода стала менее яркой.",
+              "Улучшена прокрутка при редактировании длинных заметок об игроках.",
+              "В свёрнутых столбцах журнала заданий группы для готовых к сдаче и выполненных заданий теперь используются надёжно отображаемые значки вместо символов, которые могли выглядеть как пустые квадраты."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "7.2.1",
+        "welcome": "Correzioni per le note private e le colonne compresse del registro missioni del gruppo.",
+        "sections": [
+          {
+            "title": "Correzioni e miglioramenti",
+            "items": [
+              "Corretto il cursore di testo mancante nelle note private sui giocatori. Il bordo che indica il campo attivo è ora più discreto.",
+              "Migliorato lo scorrimento durante la modifica di note lunghe sui giocatori.",
+              "Le colonne compresse del registro missioni del gruppo ora usano icone visualizzate correttamente per le missioni pronte da consegnare e quelle completate, al posto di caratteri che potevano apparire come quadrati vuoti."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "7.2.1",
+        "welcome": "비공개 메모와 파티 퀘스트 목록의 접힌 열을 수정했습니다.",
+        "sections": [
+          {
+            "title": "수정 및 개선",
+            "items": [
+              "플레이어별 비공개 메모에서 텍스트 커서가 보이지 않던 문제를 수정하고, 입력칸의 포커스 테두리를 더 은은하게 조정했습니다.",
+              "긴 플레이어 메모를 편집할 때의 스크롤 동작을 개선했습니다.",
+              "파티 퀘스트 목록의 접힌 열에서 완료 보고가 가능한 퀘스트와 이미 완료한 퀘스트를 표시할 때, 빈 사각형으로 보일 수 있던 문자 대신 안정적으로 표시되는 아이콘을 사용합니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "7.2.1",
+        "welcome": "修复私人备注和队伍任务日志折叠列的问题。",
+        "sections": [
+          {
+            "title": "修复与改进",
+            "items": [
+              "修复了私人玩家备注中不显示文本光标的问题，并让输入框获得焦点时的边框更加柔和。",
+              "改进了编辑较长玩家备注时的滚动体验。",
+              "队伍任务日志的折叠列现在使用能正常显示的图标来区分可交付和已完成的任务，不再使用可能显示为空方框的字符。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "7.2.1",
+        "welcome": "修正私人備註與隊伍任務日誌摺疊欄的問題。",
+        "sections": [
+          {
+            "title": "修正與改進",
+            "items": [
+              "修正了私人玩家備註中未顯示文字游標的問題，並讓輸入框取得焦點時的邊框更加柔和。",
+              "改善了編輯較長玩家備註時的捲動體驗。",
+              "隊伍任務日誌的摺疊欄現在使用能正常顯示的圖示來區分可回報與已完成的任務，不再使用可能顯示為空白方框的字元。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "7.2.0",
         "welcome": "Private player notes and a more useful Party Quest Log.",
         "sections": [

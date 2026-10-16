@@ -1,15 +1,30 @@
 {
-  "source_sha256": "55141b950781aea40c59902f18f362ce6a1fa905d2942a240db0743fdf52e080",
+  "source_sha256": "0ab747b978f5df0513fb54ad07663ae553bae2f2809a896c29a72723ec6b9f8b",
   "notes": {
-    "version": "7.2.1",
-    "welcome": "Korrekturen für private Notizen und eingeklappte Spalten im Gruppenquestlog.",
+    "version": "7.3.0",
+    "welcome": "Finde Spieler auf vollen Karten, nimm wieder Kontakt zu kürzlichen Gefährten auf und verfolge Questfortschritte mit weniger wiederholten Ankündigungen.",
     "sections": [
       {
-        "title": "Fehlerbehebungen und Feinschliff",
+        "title": "Spieler auf Karten",
         "items": [
-          "Der fehlende Textcursor in privaten Spielernotizen wurde behoben. Der Rahmen, der den Eingabefokus anzeigt, ist jetzt dezenter.",
-          "Das Scrollen beim Bearbeiten längerer Spielernotizen wurde verbessert.",
-          "Eingeklappte Spalten im Gruppenquestlog verwenden jetzt zuverlässig angezeigte Symbole für abgabebereite und abgeschlossene Quests statt Zeichen, die als leere Kästchen erscheinen konnten."
+          "Überlappende Spielerpunkte auf der Weltkarte werden zusammengefasst. Diese Gruppierung ist standardmäßig aktiviert und lässt sich unter Spielerstandorte abschalten.",
+          "Klicke auf eine Gruppe von Punkten, um die detaillierteste Karte zu öffnen, die alle zugehörigen Spieler enthält. Bleiben dort Punkte zusammengefasst, werden sie automatisch auseinandergezogen, sodass du wie gewohnt Details und Menüs aufrufen kannst. Scrolle über die Gruppe, um bei größeren Gruppen weitere Spieler anzuzeigen.",
+          "Die QT-Schaltfläche oben rechts auf der Weltkarte blendet QT-Spielermarkierungen und geteilte Wegpunkte ein oder aus. Beim Darüberfahren wird die Karte dahinter abgedunkelt. Minikartenmarkierungen und Standortfreigabe bleiben unverändert.",
+          "Mit Auf Karte finden öffnest du den zuletzt geteilten Standort eines Spielers und hebst seinen Punkt hervor."
+        ]
+      },
+      {
+        "title": "Kürzliche Gefährten",
+        "items": [
+          "Öffne mit /qt companions oder über das Minikartenmenü deinen privaten Verlauf von Spielern, mit denen du in einer Gruppe warst. Ihre Spielermenüs bieten Flüstern, Einladen und private Notizen.",
+          "Der Verlauf gilt für deine Charaktere im selben Client und auf demselben Realm. Er speichert bis zu 100 Gefährten für 90 Tage. Du kannst Einträge entfernen oder die Liste jederzeit leeren."
+        ]
+      },
+      {
+        "title": "Questfortschritt und Spielerdetails",
+        "items": [
+          "Schnelle Aktualisierungen desselben Questziels werden zu einer Ankündigung mit dem neuesten Fortschritt zusammengefasst. Abgeschlossene Ziele werden weiterhin zeitnah angekündigt.",
+          "QuestTogether-Entwickler mit bestätigter Signatur erhalten ein Zahnrad in ihrer Klassenfarbe und eine Entwicklerkennzeichnung im Tooltip. Beim Überfahren zusammengefasster Punkte siehst du dieselben Klassenfarben, QT-Symbole und Questpartnersuche-Markierungen wie in Gruppenübersichten."
         ]
       }
     ]
