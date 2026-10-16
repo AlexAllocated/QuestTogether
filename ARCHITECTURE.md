@@ -130,6 +130,10 @@ private `.local` notes are historical context, not the source of truth.
   replaced, ignored or departed hover targets retire the interest. Full rosters
   cover parties of up to five; raids retain the existing size-only summary.
   Transfer-aware request deadlines are authoritative for fragmented rosters.
+  Interrupted hover metadata can retry after a short cancellation cooldown.
+  Partial metadata with no accepted progress or correlated responder liveness
+  for 90 seconds is retired before requesting a fresh snapshot; healthy
+  transfers retain the original request and its absolute deadline.
 - Player hovers, cluster grouping and party highlighting resolve membership
   through `GetPlayerPartyVisualInfo`. Direct observations retain their sender
   and sampling lifetime; a bounded membership index lets every confirmed
@@ -137,7 +141,9 @@ private `.local` notes are historical context, not the source of truth.
   distinct from a complete roster and do not suppress a needed roster fetch.
   Newer conflicting membership, departures, ignores and expiry retire the
   corresponding evidence; reading a roster never renews its source or creates
-  QT presence for its members.
+  QT presence for its members. A newer validated roster also disproves older
+  overlapping membership reported by another party. Reload persistence uses
+  the same resolved evidence, including solo and grouped-with-unknown-size facts.
 
 - A native API wrapper validates foreign values before copying primitive data
   into addon-owned state. Unknown is distinct from explicit `false`, empty and
@@ -157,6 +163,9 @@ private `.local` notes are historical context, not the source of truth.
   public location state. Every location-bearing observation preserves its source
   sample time. Missing coordinates are unknown, not a withdrawal. Pongs carry an
   explicit sharing flag; coordinates alone do not establish consent.
+  Overlapping party facts retain raw source timestamps through projections and
+  reload caching. Within one sender/session, source revisions resolve equal
+  timestamps; receipt fractions and unrelated senders' counters cannot.
 - Schedule work with a deliberate mode: `immediate`, `nextFrame`, `bounded` or
   `debounce`. A next-frame request cannot run inline or be made due by a flush.
   Bounded refreshes retain their original deadline under repeated events.

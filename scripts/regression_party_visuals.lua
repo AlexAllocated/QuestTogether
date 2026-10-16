@@ -742,3 +742,135 @@ QT:RegisterTest("shared party accepted size and join counterfacts retire proofs 
 		Eq(info.members, nil)
 	end
 end)
+
+QT:RegisterTest("shared party newer canonical rosters retire overlapping older membership without direct member reports", function()
+	for _, retire in ipairs({ "none", "departure", "expiry" }) do
+		local a, old, member, oldKey = SharedRoster()
+		a.known[member], a.now = true, 101
+		local current = Peer("NewLeader-Realm")
+		current.now = 101
+		Group(current, 3)
+		current.partyMembers["Member3-Realm"] = nil
+		current.partyMembers["NewMember-Realm"] = { classFile = "MAGE" }
+		assert(current:BroadcastPartyVisualMetadata())
+		assert(Deliver(a, current.wire[1], current.name))
+		assert(a:RequestPartyVisualRoster(current.name))
+		assert(Deliver(current, a.wire[#a.wire], a.name))
+		assert(Deliver(a, current.wire[#current.wire], current.name))
+		Eq(a:GetPartyVisualState().peers[member], nil)
+		if retire == "none" then Eq(a:GetPlayerPartyVisualInfo(member).sourceName, current.name) end
+		-- The counterfact must retire the old proof at receipt, even when the
+		-- first query of that old party occurs after the new source disappears.
+		if retire == "departure" then
+			a:ForgetPartyVisualPeer(current.name)
+			a.known[current.name] = nil
+		elseif retire == "expiry" then
+			a:GetPartyVisualState().peers[old.name].lifetime = 600
+			a.now = 281
+		end
+		local previous = a:GetPlayerPartyVisualInfo(old.name)
+		Eq(previous.key, nil)
+		Eq(previous.members, nil)
+		assert(a:GetPartyVisualState().rosters[oldKey])
+	end
+end)
+
+QT:RegisterTest("delayed older canonical roster cannot override a newer shared membership", function()
+	local a, old = Peer(), Peer("OldLeader-Realm")
+	Start(a, old, 3) -- keep the older complete response in flight
+	a.now = 101
+	local current = Peer("NewLeader-Realm")
+	current.now = 101
+	Group(current, 3)
+	current.partyMembers["Member3-Realm"] = nil
+	current.partyMembers["NewMember-Realm"] = { classFile = "MAGE" }
+	assert(current:BroadcastPartyVisualMetadata())
+	assert(Deliver(a, current.wire[1], current.name))
+	assert(a:RequestPartyVisualRoster(current.name))
+	assert(Deliver(current, a.wire[#a.wire], a.name))
+	assert(Deliver(a, current.wire[#current.wire], current.name))
+	a.now = 102
+	assert(Deliver(a, old.wire[2], old.name))
+	a.known["Member2-Realm"] = true
+	Eq(a:GetPlayerPartyVisualInfo("Member2-Realm").sourceName, current.name)
+	Eq(a:GetPlayerPartyVisualInfo(old.name).members, nil)
+	assert(a:GetPlayerPartyVisualInfo(current.name).members)
+	Eq(Deliver(a, old.wire[2], old.name), false)
+end)
+
+QT:RegisterTest("party join conflicts use source order across same-second delivery and reload", function()
+	for _, order in ipairs({ { "QTPG", "QJST" }, { "QJST", "QTPG" } }) do
+		local a, name, stamp = Peer(), "Friend-Realm", 1800000100
+		function a:GetAnnouncementServerTime() return stamp end
+		local records = {
+			QTPG = { topic = "QTPG", sampledAt = stamp, revision = 11,
+				data = { size = 3, leader = name, leaderClass = "MAGE", revision = "12" } },
+			QJST = { topic = "QJST", sampledAt = stamp, revision = 10, data = { grouped = "0", invite = false } },
+		}
+		for index, topic in ipairs(order) do
+			a.now = 100 + index / 10
+			assert(a:ApplyCommunicationState({ records[topic] }, name,
+				{ session = "1800000000-1", sequence = index + 20, stamp = stamp }))
+		end
+		local current = a:GetPlayerPartyVisualInfo(name)
+		Eq(current.size, 3)
+		assert(current.key)
+		local saved = a:SavePlayerPartyCacheEntry(name, a.now, stamp)
+		Eq(saved.sourceSampledAt, stamp)
+		Eq(saved.observationSequence, 11)
+		local restored = Peer()
+		restored.now = 10
+		restored.playerLocationState = { peers = { [name] = { cached = true, mask = 3, receivedAt = 10, lifetime = 180 } } }
+		assert(restored:RestorePlayerPartyCacheEntry(name, saved, 10, stamp))
+		local restoredInfo = restored:GetPlayerPartyVisualInfo(name)
+		Eq(restoredInfo.sourceSampledAt, stamp)
+		Eq(restoredInfo.observationName, name)
+		Eq(restoredInfo.observationSession, "1800000000-1")
+		Eq(restoredInfo.observationSequence, 11)
+		function restored:GetAnnouncementServerTime() return stamp end
+		restored.now = 10.9
+		assert(restored:ApplyCommunicationState({ records.QJST }, name,
+			{ session = "1800000000-1", sequence = 30, stamp = stamp }))
+		Eq(restored:GetPlayerPartyVisualInfo(name).key, current.key)
+		restored.now = 11
+		records.QJST.revision = 12
+		assert(restored:ApplyCommunicationState({ records.QJST }, name,
+			{ session = "1800000000-1", sequence = 31, stamp = stamp }))
+		Eq(restored:GetPlayerPartyVisualInfo(name).size, 0)
+		Eq(restored:GetPartyVisualState().peers[name].membershipInvalidatedBy.observationSequence, 12)
+	end
+end)
+
+QT:RegisterTest("party reload uses the live solo or unknown-size grouped evidence and its original lease", function()
+	for _, grouped in ipairs({ "0", "1" }) do
+		local a, name = Peer(), "Friend-Realm"
+		local first = grouped == "0" and { size = 3, leader = name, leaderClass = "MAGE", revision = "1" }
+			or { size = 0 }
+		assert(ObserveState(a, "HandlePartyVisualMetadata", "QTPG", first, name))
+		a.now = 101
+		assert(ObserveState(a, "HandlePartyJoinMetadata", "QJST", { grouped = grouped, invite = false }, name))
+		local live = a:GetPlayerPartyVisualInfo(name)
+		local saved = a:SavePlayerPartyCacheEntry(name, 110, 1000000110)
+		Eq(saved.size, live.size)
+		Eq(saved.grouped, live.grouped)
+		Eq(saved.leader, nil)
+		Eq(saved.sampledAt, 1000000101)
+		Eq(saved.expiresAt, 1000000226)
+		local restored = Peer()
+		restored.now = 20
+		restored.playerLocationState = { peers = { [name] = { cached = true, mask = 3, receivedAt = 20, lifetime = 300 } } }
+		assert(restored:RestorePlayerPartyCacheEntry(name, saved, 20, 1000000111))
+		local after = restored:GetPlayerPartyVisualInfo(name)
+		Eq(after.size, live.size)
+		Eq(after.grouped, live.grouped)
+		Eq(after.sampledAt, 10)
+		Eq(after.lifetime, 115)
+		Eq(restored.known[name], nil)
+		Eq(restored:RequestPartyVisualRoster(name), false)
+		local again = restored:SavePlayerPartyCacheEntry(name, 30, 1000000121)
+		Eq(again.sampledAt, saved.sampledAt)
+		Eq(again.expiresAt, saved.expiresAt)
+		restored.now = 135
+		Eq(restored:GetPlayerPartyVisualInfo(name), nil)
+	end
+end)

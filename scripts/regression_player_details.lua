@@ -746,3 +746,191 @@ QT:RegisterTest(
 		Eq(a.playerDetailsState.pending[b.name], renewed, "more owners must not duplicate the request")
 	end
 )
+
+local function PartialHoverResponse(blockAfterFirst)
+	local a, b = Pair()
+	Group(b, 3)
+	assert(a:ApplyCommunicationState(b:BuildPlayerDetailsRecords(), b.name, {
+		session = b:GetCommunicationSession(), sequence = b:NextCommunicationSequence(), stamp = b:GetAnnouncementServerTime(),
+	}))
+	a.now, b.now = 131, 131
+	local owner, completions, callbacks = {}, {}, {}
+	function a:Request(operation, record, routes, options)
+		if operation == "QTHQ" then
+			local id, complete = options.requestId, options.onComplete
+			callbacks[id] = complete
+			options.onComplete = function(...)
+				completions[id] = (completions[id] or 0) + 1
+				return complete(...)
+			end
+		end
+		return QT.Request(self, operation, record, routes, options)
+	end
+	if blockAfterFirst then
+		local send, sent = b.API.SendAddonMessage, 0
+		b.API.SendAddonMessage = function(prefix, wire, route, target)
+			local frame = assert(b:DecodeCommFrame(wire))
+			if frame.operation == "QTHD" then
+				if sent > 0 and not b.releaseDetails then return 3 end
+				sent = sent + 1
+			end
+			return send(prefix, wire, route, target)
+		end
+	end
+	assert(a:SetPlayerDetailsInterest(owner, b.name, function() return true end))
+	local pending = assert(a.playerDetailsState.pending[b.name])
+	local request = assert(a.communicationState.requests[pending.id])
+	Drain(a)
+	Deliver(a, b)
+	Drain(b)
+	local first, frames = nil, b.out
+	b.out = {}
+	for _, packet in ipairs(frames) do
+		local frame = assert(b:DecodeCommFrame(packet.wire))
+		if frame.operation == "QTHD" and not first then first = packet end
+	end
+	assert(first and a:ReceiveCommunication(first.prefix, first.wire, first.route, b.name))
+	Eq(a:GetCommunicationRequestDeadline(pending.id), pending.at + 600)
+	return a, b, owner, pending, request, first, frames, completions, callbacks
+end
+
+QT:RegisterTest("active hover replaces an abandoned partial metadata reply and retires its buffers and callbacks", function()
+	local a, b, _, pending, request, _, frames, completions, callbacks = PartialHoverResponse()
+	Eq(#b.commTransferState.outgoing, 1)
+	Group(b, 0)
+	b:UpdateCommunicationRuntime()
+	Eq(#b.commTransferState.outgoing, 0, "changed party retires the real retained response")
+	local progress = assert(a:GetCommunicationRequestProgress(pending.id))
+	local originalAt = progress.lastProgressAt
+	progress.lastProgressAt = 999999
+	Eq(a:GetCommunicationRequestProgress(pending.id).lastProgressAt, originalAt, "query returns owned copies")
+	a.now, b.now = originalAt + 89, originalAt + 89
+	a:UpdateCommunicationRuntime()
+	a:UpdatePlayerDetailsInterests()
+	Eq(a.playerDetailsState.pending[b.name], pending, "ordinary repair and status probes retain the request")
+	a.now, b.now = originalAt + 90, originalAt + 90
+	a:UpdateCommunicationRuntime()
+	a:UpdatePlayerDetailsInterests()
+	local renewed = assert(a.playerDetailsState.pending[b.name])
+	assert(renewed ~= pending and renewed.id ~= pending.id)
+	Eq(a:GetCommunicationRequestProgress(pending.id), nil)
+	Eq(a:GetCommTransferMetrics().incoming, 0)
+	Eq(a:GetCommTransferMetrics().bytes, 0, "cancelled response payload is freed immediately")
+	local attempt = a.playerDetailsState.attempts[b.name]
+	callbacks[pending.id](false)
+	Eq(a.playerDetailsState.attempts[b.name], attempt, "retired send callback cannot change replacement retry state")
+	assert(not request.onResponse({ records = b:BuildPlayerDetailsRecords() }, b.name, { requestId = pending.id }))
+	for _, packet in ipairs(frames) do a:ReceiveCommunication(packet.prefix, packet.wire, packet.route, b.name) end
+	Eq(a:GetPlayerPartyVisualInfo(b.name).size, 3, "retired fragments cannot install a response")
+	Exchange(a, b)
+	Eq(a:GetPlayerPartyVisualInfo(b.name).size, 0)
+	Eq(a.playerDetailsState.pending[b.name], nil)
+	Eq(completions[pending.id], 1)
+	Eq(completions[renewed.id], 1, "each actual request completes its native submission once")
+end)
+
+QT:RegisterTest("cancelled hover metadata reenters after short pacing and the responder serves a new request identity", function()
+	local a, b, owner, pending, request, _, frames = PartialHoverResponse()
+	assert(a:GetCommTransferMetrics().incoming > 0)
+	a:ClearPlayerDetailsInterest(owner)
+	Eq(a:GetCommTransferMetrics().incoming, 0)
+	Eq(a:GetCommTransferMetrics().bytes, 0)
+	local at = a.now
+	assert(a:SetPlayerDetailsInterest(owner, b.name, function() return true end))
+	Eq(a.playerDetailsState.pending[b.name], nil)
+	a.now, b.now = at + 1.9, at + 1.9
+	a:UpdatePlayerDetailsInterests()
+	Eq(a.playerDetailsState.pending[b.name], nil)
+	Group(b, 0)
+	a.now, b.now = at + 2, at + 2
+	a:UpdatePlayerDetailsInterests()
+	local renewed = assert(a.playerDetailsState.pending[b.name])
+	assert(renewed.id ~= pending.id)
+	assert(not request.onResponse({ records = b:BuildPlayerDetailsRecords() }, b.name, { requestId = pending.id }))
+	for _, packet in ipairs(frames) do a:ReceiveCommunication(packet.prefix, packet.wire, packet.route, b.name) end
+	Exchange(a, b)
+	Eq(a:GetPlayerPartyVisualInfo(b.name).size, 0, "completed old reply must not impose another thirty second cooldown")
+	Eq(a.playerDetailsState.pending[b.name], nil)
+	local previous = b.playerDetailsState.replies[a.name]
+	assert(previous and not previous.pending)
+	-- Even a new identity cannot exceed the shared five-second reply cadence.
+	Eq(b:HandlePlayerDetailsMessage("QTHQ", {}, "Other-Realm", { requestId = "other-hover" }), false)
+	b.now = previous.at + 5
+	Eq(b:HandlePlayerDetailsMessage("QTHQ", {}, a.name, { requestId = renewed.id }), false)
+	Eq(b:HandlePlayerDetailsMessage("QTHQ", {}, a.name, { requestId = "fresh-hover" }), true)
+	b.now = previous.at + 10
+	Eq(b:HandlePlayerDetailsMessage("QTHQ", {}, a.name, { requestId = "pending-duplicate" }), false,
+		"pending response still excludes competing replacement work")
+end)
+
+QT:RegisterTest("active hover preserves a queued live metadata transfer and only accepted correlated progress renews it", function()
+	local a, b, _, pending, _, first = PartialHoverResponse(true)
+	local progress = assert(a:GetCommunicationRequestProgress(pending.id))
+	local firstAt, deadline = progress.lastProgressAt, progress.expires
+	local frame = assert(b:DecodeCommFrame(first.wire))
+	a.now, b.now = firstAt + 65, firstAt + 65
+	assert(not a:ReceiveCommunication(first.prefix, first.wire, first.route, b.name))
+	Eq(a:GetCommunicationRequestProgress(pending.id).lastProgressAt, firstAt, "duplicate data is not progress")
+	a:UpdateCommunicationRuntime()
+	a:UpdatePlayerDetailsInterests()
+	Deliver(a, b)
+	Drain(b)
+	local status
+	for _, packet in ipairs(b.out) do
+		local control, body = b:DecodeCommFrame(packet.wire)
+		if control.operation == "FXSTAT" and b:DecodeCommRecord(control.operation, body).status == "sending" then
+			status = packet
+		end
+	end
+	assert(status, "a genuinely queued response reports that it is still sending")
+	assert(not a:ReceiveCommunication(status.prefix, status.wire, status.route, "Wrong-Realm"))
+	Eq(a:GetCommunicationRequestProgress(pending.id).lastProgressAt, firstAt)
+	Deliver(b, a)
+	local statusAt = a:GetCommunicationRequestProgress(pending.id).lastProgressAt
+	Eq(statusAt, a.now)
+	local forged = assert(b:BuildCommFrames("FXSTAT", {
+		session = frame.session, messageId = "wrong-object", status = "sending",
+	}, { session = b:GetCommunicationSession(), messageId = tostring(b:NextCommunicationSequence()), stamp = b:GetAnnouncementServerTime() }))
+	local unsolicited = assert(b:BuildCommFrames("FXSTAT", {
+		session = frame.session, messageId = frame.messageId, status = "sending",
+	}, { session = b:GetCommunicationSession(), messageId = tostring(b:NextCommunicationSequence()), stamp = b:GetAnnouncementServerTime() }))
+	local fractionalEnd = assert(b:BuildCommFrames("FXEND", {
+		session = frame.session, messageId = frame.messageId, status = "0.1",
+	}, { session = b:GetCommunicationSession(), messageId = tostring(b:NextCommunicationSequence()), stamp = b:GetAnnouncementServerTime() }))
+	a.now, b.now = firstAt + 100, firstAt + 100
+	assert(not a:ReceiveCommunication(b.commPrefix, forged[1], "WHISPER", b.name))
+	assert(not a:ReceiveCommunication(b.commPrefix, fractionalEnd[1], "WHISPER", b.name),
+		"fractional completion rounds cannot manufacture unbounded liveness")
+	assert(not a:ReceiveCommunication(b.commPrefix, unsolicited[1], "WHISPER", b.name),
+		"one status reply consumes its probe; a new packet identity cannot replay the same liveness")
+	a:ReceiveCommunication(status.prefix, status.wire, status.route, b.name)
+	Eq(a:GetCommunicationRequestProgress(pending.id).lastProgressAt, statusAt, "duplicate or mismatched status cannot renew progress")
+	a:UpdatePlayerDetailsInterests()
+	Eq(a.playerDetailsState.pending[b.name], pending, "status liveness preserves a healthy queued response")
+	Eq(a:GetCommunicationRequestDeadline(pending.id), deadline, "liveness never extends the absolute deadline")
+	b.releaseDetails = true
+	Drain(b)
+	Deliver(b, a)
+	Eq(a.playerDetailsState.pending[b.name], nil)
+	Eq(a:GetPlayerPartyVisualInfo(b.name).size, 3)
+	Eq(a:GetCommTransferMetrics().incoming, 0)
+end)
+
+QT:RegisterTest("explicit metadata cancellation frees incoming payload and queued probes after correlation retirement", function()
+	local a, b, _, pending = PartialHoverResponse()
+	a.now = a.now + 31
+	a:UpdateCommTransfers()
+	local incoming = assert(next(a.commTransferState.incoming))
+	local item = a.commTransferState.incoming[incoming]
+	local queued = false
+	for _, row in ipairs(a:GetTransportState().queue) do if row.owner == item then queued = true end end
+	assert(queued, "an incoming assembly owns its queued probe")
+	a.communicationState.requests[pending.id] = nil
+	a:CancelCommRequest(pending.id, "cancelled")
+	Eq(a:GetCommTransferMetrics().incoming, 0)
+	Eq(a:GetCommTransferMetrics().bytes, 0)
+	assert(item.retired)
+	for _, row in ipairs(a:GetTransportState().queue) do assert(row.owner ~= item) end
+	a:CancelCommRequest(pending.id, "cancelled")
+	Eq(a:GetCommTransferMetrics().bytes, 0, "repeated cancellation cannot release bytes twice")
+end)

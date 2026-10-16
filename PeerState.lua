@@ -5,6 +5,46 @@ local TTL, LIMIT = 600, 1024
 local function Now(a)
 	return a:SafeToNumber(a.API.GetTime())
 end
+local FRESHNESS_FIELDS = {
+	"at", "sampledAt", "receivedAt", "expiresAt", "lifetime", "cached", "manualSnapshot",
+	"observationSource", "observationName", "observationSession", "observationSequence", "sourceSampledAt",
+}
+
+-- Views over accepted records must keep the sample's provenance. In particular,
+-- comparing fractional receipt times cannot order two whole-second wire samples.
+function QT:CopyPeerRecordFreshness(source, target)
+	for _, field in ipairs(FRESHNESS_FIELDS) do
+		target[field] = source[field]
+	end
+	return target
+end
+
+function QT:ComparePeerRecordSamples(left, right)
+	if not left then return right and -1 or 0 end
+	if not right then return 1 end
+	local leftStamp, rightStamp = left.sourceSampledAt, right.sourceSampledAt
+	if leftStamp and rightStamp then
+		if leftStamp ~= rightStamp then return leftStamp > rightStamp and 1 or -1 end
+		-- Sequence numbers are comparable only within one sender's session. An
+		-- unsequenced diagnostic sample or another sender cannot break this tie.
+		if left.observationName and left.observationName == right.observationName
+			and left.observationSession and left.observationSession == right.observationSession
+			and left.observationSequence and right.observationSequence then
+			local difference = left.observationSequence - right.observationSequence
+			return difference > 0 and 1 or difference < 0 and -1 or 0
+		end
+		return 0
+	end
+	local difference = (left.sampledAt or left.at or 0) - (right.sampledAt or right.at or 0)
+	return difference > 0 and 1 or difference < 0 and -1 or 0
+end
+function QT:ComparePeerObservationToRecord(observation, record)
+	return self:ComparePeerRecordSamples({
+		sampledAt = observation.sampledAt, sourceSampledAt = observation.sourceSampledAt,
+		observationName = observation.name, observationSession = observation.session,
+		observationSequence = observation.sequence,
+	}, record)
+end
 local function State(a)
 	local state = rawget(a, "peerSnapshotState")
 	if not state then
@@ -96,7 +136,7 @@ function QT:IsPeerSessionObservationCurrent(name, session, sampledAt)
 		and (not row.departed or sampledAt > row.departed.sampledAt)
 end
 
-function QT:CanAcceptPeerUpdate(name, field, sampledAt, session, sequence)
+function QT:CanAcceptPeerUpdate(name, field, sampledAt, session, sequence, sourceSampledAt)
 	local row, now = Record(self, name, false)
 	if
 		not now
@@ -123,6 +163,15 @@ function QT:CanAcceptPeerUpdate(name, field, sampledAt, session, sequence)
 	end
 	local previous = field and row.fields[field]
 	if previous then
+		if sourceSampledAt and previous.sourceSampledAt then
+			if sourceSampledAt < previous.sourceSampledAt then return false end
+			if sourceSampledAt == previous.sourceSampledAt
+				and not (session and session == previous.session and sequence and previous.sequence and not previous.manual) then
+				-- Unsequenced diagnostic samples cannot be ordered within a source
+				-- second. Keep the accepted fact until a strictly newer sample arrives.
+				return false
+			end
+		end
 		-- Envelope ages are whole seconds while receipt clocks are fractional.
 		-- For two ordered public samples, a newer sequence resolves that rounding
 		-- ambiguity. A manual refresh has no sequence and keeps strict ordering.
@@ -148,8 +197,8 @@ function QT:CanAcceptPeerUpdate(name, field, sampledAt, session, sequence)
 	return true
 end
 
-function QT:RecordPeerUpdate(name, field, sampledAt, session, sequence, establishesPresence)
-	if not self:CanAcceptPeerUpdate(name, field, sampledAt, session, sequence) then
+function QT:RecordPeerUpdate(name, field, sampledAt, session, sequence, establishesPresence, sourceSampledAt)
+	if not self:CanAcceptPeerUpdate(name, field, sampledAt, session, sequence, sourceSampledAt) then
 		return false
 	end
 	local row, now = Record(self, name, true)
@@ -159,6 +208,7 @@ function QT:RecordPeerUpdate(name, field, sampledAt, session, sequence, establis
 		session = session or (previous and previous.session),
 		sequence = sequence or (previous and previous.sequence),
 		manual = session == nil,
+		sourceSampledAt = sourceSampledAt,
 	}
 	row.at, row.latestSampledAt = now, math.max(row.latestSampledAt or sampledAt, sampledAt)
 	if session and sequence then
@@ -205,6 +255,7 @@ function QT:CreatePeerObservation(name, field, options)
 		session = options.session,
 		sequence = options.sequence,
 		stamp = options.stamp,
+		sourceSampledAt = self:SafeToNumber(options.sourceSampledAt),
 		manual = options.source == "diagnostic",
 	}
 end
@@ -253,7 +304,8 @@ function QT:CanAcceptPeerObservation(observation)
 				observation.field,
 				observation.sampledAt,
 				observation.session,
-				observation.sequence
+				observation.sequence,
+				observation.sourceSampledAt
 			)
 		or false
 end
@@ -273,7 +325,8 @@ function QT:CommitPeerObservation(observation, record, establishesPresence)
 			observation.sampledAt,
 			observation.session,
 			observation.sequence,
-			establishesPresence == true
+			establishesPresence == true,
+			observation.sourceSampledAt
 		)
 	then
 		return false
@@ -285,6 +338,8 @@ function QT:CommitPeerObservation(observation, record, establishesPresence)
 		record.sampledAt, record.receivedAt = observation.sampledAt, observation.receivedAt
 		record.lifetime, record.expiresAt = observation.expiresAt - observation.receivedAt, observation.expiresAt
 		record.observationSource, record.manualSnapshot = observation.source, observation.manual
+		record.observationName, record.observationSession = observation.name, observation.session
+		record.observationSequence, record.sourceSampledAt = observation.sequence, observation.sourceSampledAt
 	end
 	return true
 end

@@ -97,8 +97,9 @@ local function Timing(a, prefix, elapsed)
 	metrics[prefix .. "Max"] = math.max(metrics[prefix .. "Max"] or 0, elapsed)
 end
 local function FirstResponse(a, request)
+	request.lastProgressAt = Now(a)
 	if not request.firstResponseAt then
-		request.firstResponseAt = Now(a)
+		request.firstResponseAt = request.lastProgressAt
 		Timing(a, "firstResponse", request.firstResponseAt - request.startedAt)
 	end
 	request.responseProgress = true
@@ -578,6 +579,7 @@ function QT:Respond(operation, record, routes, options)
 	return self:SubmitCommunication(operation, data, routes, options)
 end
 function QT:CancelCommRequest(id, reason)
+	self:CancelIncomingCommResponses(id, reason or "cancelled")
 	local s = rawget(self, "communicationState")
 	if not s then
 		return
@@ -653,6 +655,22 @@ function QT:GetCommunicationRequestDeadline(id)
 	local request = state and state.requests[id]
 	return request and Current(self, state) and request.expires or nil
 end
+-- Domains may replace a stalled snapshot without reading transfer buffers or
+-- treating native acceptance, duplicate fragments, or our own probes as progress.
+function QT:GetCommunicationRequestProgress(id)
+	local state = rawget(self, "communicationState")
+	local request = state and state.requests[id]
+	if not request or not Current(self, state) then return nil end
+	return { startedAt = request.startedAt, firstResponseAt = request.firstResponseAt,
+		lastProgressAt = request.lastProgressAt, expires = request.expires }
+end
+function QT:RecordCommunicationResponseProgress(frame, sender)
+	local state = rawget(self, "communicationState")
+	local request = state and frame.requestId and state.requests[frame.requestId]
+	if not request or not self:IsCommResponseExpected(frame, sender) then return false end
+	FirstResponse(self, request)
+	return true
+end
 local function Seen(s, key, now, remember)
 	local old = s.seen[key]
 	if old and now >= old and now - old < 600 then
@@ -682,6 +700,7 @@ function QT:ApplyCommunicationState(records, sender, context)
 				local observation = self:CreatePeerObservation(sender, row.topic, {
 					source = "snapshot",
 					age = math.max(0, age),
+					sourceSampledAt = stamp,
 					lifetime = 600,
 					session = context.session,
 					sequence = row.revision or context.sequence,

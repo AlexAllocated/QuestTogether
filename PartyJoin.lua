@@ -190,7 +190,7 @@ function QT:HandlePartyJoinMetadata(data, sender, observation)
 	end
 	state.peers[sender] = record
 	if record.grouped == "0" then
-		self:InvalidatePartyVisualMembership(sender, 0, record.sampledAt)
+		self:InvalidatePartyVisualMembership(sender, 0, record.sampledAt, record)
 	end
 	return true
 end

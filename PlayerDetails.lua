@@ -1,7 +1,7 @@
 -- On-demand public metadata. Correlation, fragmentation and delivery are owned
 -- by the communications coordinator; this domain owns interest and cooldowns.
 local QT = _G.QuestTogether
-local TTL, COOLDOWN, LIMIT = 15, 30, 128
+local TTL, COOLDOWN, LIMIT, HOVER_STALL = 15, 30, 128, 90
 local TOPICS = { QTVR = true, QTPG = true, QJST = true, QTLF = true, QTLQ = true, QTCI = true, QTHI = true }
 local FIELDS = { "QTVR", "QTPG", "QJST", "QTLF", "QTLQ", "QTCI", "QTHI" }
 local function Now(a)
@@ -12,6 +12,11 @@ local function Fresh(now, at, age)
 end
 local function PendingFresh(a, pending)
 	local now = Now(a)
+	local progress = pending.hover and a:GetCommunicationRequestProgress(pending.id)
+	-- Leave two ordinary status-probe intervals plus a delivery allowance. A
+	-- responding/advancing transfer keeps its original identity and 600s cap;
+	-- an abandoned partial hover snapshot must not block fresh metadata that long.
+	if progress and progress.lastProgressAt and now - progress.lastProgressAt >= HOVER_STALL then return false end
 	local deadline = a:GetCommunicationRequestDeadline(pending.id) or (pending.at + TTL)
 	return now >= pending.at and now < deadline
 end
@@ -93,6 +98,8 @@ function QT:ClearPlayerDetailsInterest(owner)
 	local pending = s.pending[interest.name]
 	if pending and pending.hover then
 		s.pending[interest.name] = nil
+		s.attempts[interest.name] = { at = Now(self), retryAfter = 2 }
+		Bound(s.attempts)
 		CancelPending(self, pending, "cancelled")
 	end
 	self:CancelPartyVisualRosterInterest(interest.name)
@@ -241,7 +248,11 @@ function QT:HandlePlayerDetailsMessage(command, payload, sender, context)
 	local s, now = State(self), Now(self)
 	if command == "QTHQ" then
 		local previous = s.replies[name]
-		if Fresh(now, s.lastReply, 5) or previous and Fresh(now, previous.at, previous.pending and TTL or COOLDOWN) then
+		-- A new hover may replace a completed reply that its previous owner left
+		-- before receiving it. Keep the shared cadence and pending/duplicate fences,
+		-- rather than making the new request wait for the old owner's cooldown.
+		if Fresh(now, s.lastReply, 5)
+			or previous and (previous.id == id or previous.pending and Fresh(now, previous.at, TTL)) then
 			return false
 		end
 		local records, completed = self:BuildPlayerDetailsRecords()

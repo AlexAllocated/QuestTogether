@@ -161,6 +161,9 @@ local function SendControl(a, state, operation, frame, sender, parts, status, ow
 	local expires = owner and owner.expires or (Now(a) + 30)
 	return a:Emit(operation, record, { { distribution = "WHISPER", target = sender } }, {
 		priority = "control",
+		-- A throttled response in the same priority class must not hold its
+		-- status/repair traffic behind that response's destination queue head.
+		flow = "transfer-control:" .. sender,
 		owner = owner or state,
 		expires = expires,
 		key = operation .. ":" .. sender .. ":" .. frame.session .. ":" .. frame.messageId .. ":" .. (status or ""),
@@ -557,11 +560,13 @@ function QT:HandleCommTransferControl(operation, record, sender)
 			not round
 			or round < 0
 			or round > MAX_REPAIR
+			or round ~= math.floor(round)
 			or (incoming.lastEndRound and round <= incoming.lastEndRound)
 		then
 			return false
 		end
 		incoming.endSeen, incoming.lastEndRound = true, round
+		self:RecordCommunicationResponseProgress(incoming.frame, sender)
 		return RequestMissing(self, state, incoming)
 	elseif operation == "FXSTAT" then
 		if record.status == "request" then
@@ -583,11 +588,19 @@ function QT:HandleCommTransferControl(operation, record, sender)
 		if not incoming or not incoming.reliable or not Expected(self, incoming.frame, sender) then
 			return false
 		end
+		if not incoming.statusProbePending then return false end
 		if record.status == "complete" then
+			incoming.statusProbePending = nil
 			incoming.endSeen = true
+			self:RecordCommunicationResponseProgress(incoming.frame, sender)
 			return RequestMissing(self, state, incoming)
 		end
-		return record.status == "sending"
+		if record.status == "sending" then
+			incoming.statusProbePending = nil
+			self:RecordCommunicationResponseProgress(incoming.frame, sender)
+			return true
+		end
+		return false
 	elseif operation == "FXMISS" then
 		if not job or not job.initialComplete or not Current(self, state, job) then
 			return false
@@ -746,7 +759,7 @@ function QT:UpdateCommTransfers()
 			RetireIn(state, key)
 		elseif item.reliable and now - item.lastActivity >= PROBE_INTERVAL and item.probes < MAX_PROBES then
 			item.probes, item.lastActivity = item.probes + 1, now
-			SendControl(self, state, "FXSTAT", item.frame, item.sender, nil, "request", item)
+			item.statusProbePending = SendControl(self, state, "FXSTAT", item.frame, item.sender, nil, "request", item) == true
 		end
 	end
 	for index = #state.completedOrder, 1, -1 do
@@ -777,6 +790,16 @@ function QT:CancelCommTransferOwner(owner, reason)
 	self:CancelCommTransfers(function(job)
 		return job.owner == owner
 	end, reason)
+end
+function QT:CancelIncomingCommResponses(requestId, reason)
+	local state = rawget(self, "commTransferState")
+	if not state then return end
+	for key, item in pairs(state.incoming) do
+		if item.frame.requestId == requestId and self:GetCommOperation(item.frame.operation).semantic == "response" then
+			RetireIn(state, key)
+			self:CancelTransportOwner(item, reason or "cancelled")
+		end
+	end
 end
 -- Duplicate request envelopes may have lost their original response. Reuse the
 -- already bounded immutable object; never rebuild or repeat a domain action.

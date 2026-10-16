@@ -427,7 +427,8 @@ function QT:AcceptDeveloperPingResponse(response, pending, observation)
 				self:CreatePeerObservation(
 					name,
 					"QTPG",
-					{ source = "diagnostic", age = age, lifetime = self:GetGeographicSnapshotLifetime() }
+					{ source = "diagnostic", age = age, lifetime = self:GetGeographicSnapshotLifetime(),
+						sourceSampledAt = observation.sourceSampledAt }
 				)
 			)
 		end

@@ -423,3 +423,129 @@ QT:RegisterTest("peer metadata rejects missing scalar or misbound observations",
 	local correct = a:CreatePeerObservation(name, "QTVR", { source = "snapshot" })
 	assert(a:HandleAddonVersionMessage({ version = "7.0.0" }, name, correct))
 end)
+
+QT:RegisterTest("party facts across topics use source order despite same-second delayed delivery", function()
+	for _, newerFirst in ipairs({ true, false }) do
+		local a, name = Fixture(), "Friend-Realm"
+		function a:ObserveAddonVersion() end
+		local stamp = a:GetAnnouncementServerTime()
+		local grouped = { size = 3, leader = name, leaderClass = "MAGE", revision = "123" }
+		local old = { topic = "QTPG", data = grouped, revision = 10, sampledAt = stamp }
+		local newer = { topic = "QTVR", data = { version = "7.0.0", partySize = 0 }, revision = 11, sampledAt = stamp }
+		for index, record in ipairs(newerFirst and { newer, old } or { old, newer }) do
+			a.now = 100 + index * 0.3
+			assert(a:ApplyCommunicationState({ record }, name,
+				{ session = "1800000100-1", sequence = record.revision, stamp = stamp }))
+		end
+		local info = assert(a:GetPlayerPartyVisualInfo(name))
+		Equal(info.size, 0)
+		Equal(info.key, nil)
+	end
+	-- A late size-only update must not invalidate the already newer identity.
+	local a, name = Fixture(), "Friend-Realm"
+	function a:ObserveAddonVersion() end
+	local stamp = a:GetAnnouncementServerTime()
+	a.now = 100.1
+	assert(a:ApplyCommunicationState({ { topic = "QTPG", sampledAt = stamp, revision = 12,
+		data = { size = 3, leader = name, leaderClass = "MAGE", revision = "123" } } }, name,
+		{ session = "1800000100-1", sequence = 13, stamp = stamp }))
+	a.now = 100.9
+	assert(a:ApplyCommunicationState({ { topic = "QTVR", sampledAt = stamp, revision = 10,
+		data = { version = "7.0.0", partySize = 0 } } }, name,
+		{ session = "1800000100-1", sequence = 11, stamp = stamp }))
+	local info = assert(a:GetPlayerPartyVisualInfo(name))
+	Equal(info.size, 3)
+	Equal(info.key, name .. ":123")
+end)
+
+QT:RegisterTest("same-second diagnostic party refresh is not replaced by late public size alone", function()
+	local a, name = Fixture(), "Friend-Realm"
+	function a:ObserveAddonVersion() end
+	local stamp = a:GetAnnouncementServerTime()
+	a.now = 100.1
+	local response = Pong(a, true, 0, false)
+	response.party = { size = 0 }
+	a:AcceptDeveloperPingResponse(response, { developerRequest = true })
+	Equal(a:GetPlayerPartyVisualInfo(name).size, 0)
+	a.now = 100.9
+	assert(a:ApplyCommunicationState({ { topic = "QTVR", sampledAt = stamp, revision = 10,
+		data = { version = "7.0.0", partySize = 3 } } }, name,
+		{ session = "1800000100-1", sequence = 11, stamp = stamp }))
+	Equal(a:GetPlayerPartyVisualInfo(name).size, 0)
+end)
+
+QT:RegisterTest("same-topic diagnostic party samples wait for unambiguous source order", function()
+	local a, name = Fixture(), "Friend-Realm"
+	local response = Pong(a, true, 0, false)
+	local stamp = response.sampledAt
+	response.party = { size = 0 }
+	a.now = 100.1
+	a:AcceptDeveloperPingResponse(response, { developerRequest = true })
+	Equal(a:GetPlayerPartyVisualInfo(name).size, 0)
+	local grouped = { size = 3, leader = name, leaderClass = "MAGE", revision = "123" }
+	local context = { session = "1800000100-1", sequence = 11, stamp = stamp }
+	a.now = 100.9
+	Equal(a:CanAcceptPeerObservation(a:CreatePeerObservation(name, "QTPG", {
+		source = "snapshot", session = context.session, sequence = 10, sourceSampledAt = stamp,
+	})), false)
+	Equal(a:ApplyCommunicationState({ { topic = "QTPG", sampledAt = stamp, revision = 10, data = grouped } },
+		name, context), false)
+	Equal(a:GetPlayerPartyVisualInfo(name).size, 0)
+	a.now = 101.1
+	context.stamp, context.sequence = stamp + 1, 13
+	assert(a:ApplyCommunicationState({ { topic = "QTPG", sampledAt = stamp + 1, revision = 12, data = grouped } },
+		name, context))
+	Equal(a:GetPlayerPartyVisualInfo(name).size, 3)
+	-- The same ambiguity also applies if a delayed diagnostic arrives second.
+	response.sampledAt, a.now = stamp + 1, 101.9
+	a:AcceptDeveloperPingResponse(response, { developerRequest = true })
+	Equal(a:GetPlayerPartyVisualInfo(name).size, 3)
+end)
+
+QT:RegisterTest("restored party records retain same-topic source ordering without establishing presence", function()
+	local a, name = Fixture(), "Friend-Realm"
+	local stamp, session = a:GetAnnouncementServerTime(), "1800000100-1"
+	a.now = 100.1
+	assert(a:ApplyCommunicationState({ { topic = "QTPG", sampledAt = stamp, revision = 11, data = { size = 0 } } },
+		name, { session = session, sequence = 12, stamp = stamp }))
+	local cached = assert(a:SavePlayerPartyCacheEntry(name, a.now, stamp))
+	local b = Fixture()
+	b.now = 10
+	function b:GetAnnouncementServerTime() return stamp + 1 end
+	b.playerLocationState = { peers = { [name] = { mask = 3, cached = true, receivedAt = b.now, lifetime = 120 } } }
+	assert(b:RestorePlayerPartyCacheEntry(name, cached, b.now, stamp + 1))
+	Equal(b:IsKnownQTPlayer(name), false)
+	Equal(b:GetPlayerPartyVisualInfo(name).size, 0)
+	b.now = 10.9
+	local grouped = { size = 3, leader = name, leaderClass = "MAGE", revision = "123" }
+	Equal(b:ApplyCommunicationState({ { topic = "QTPG", sampledAt = stamp, revision = 10, data = grouped } },
+		name, { session = session, sequence = 11, stamp = stamp }), false)
+	Equal(b:GetPlayerPartyVisualInfo(name).size, 0)
+	Equal(b:IsKnownQTPlayer(name), false)
+	assert(b:ApplyCommunicationState({ { topic = "QTPG", sampledAt = stamp, revision = 13, data = grouped } },
+		name, { session = session, sequence = 14, stamp = stamp }))
+	Equal(b:GetPlayerPartyVisualInfo(name).size, 3)
+	Equal(b:IsKnownQTPlayer(name), true)
+end)
+
+QT:RegisterTest("peer source ordering never compares counters from unrelated senders or sessions", function()
+	local a = Fixture()
+	local observation = a:CreatePeerObservation("Friend-Realm", "QTPG", {
+		source = "snapshot", age = 5, sourceSampledAt = 1800000095,
+		session = "1800000000-1", sequence = 20,
+	})
+	local record = {}
+	assert(a:CommitPeerObservation(observation, record, true))
+	local projection = a:CopyPeerRecordFreshness(record, { size = 3 })
+	Equal(projection.expiresAt, record.expiresAt)
+	Equal(projection.sampledAt, record.sampledAt)
+	local other = a:DeepCopy(projection)
+	other.sampledAt, other.observationSequence = record.sampledAt + 0.5, 30
+	Equal(a:ComparePeerRecordSamples(other, projection), 1)
+	other.observationName = "Other-Realm"
+	Equal(a:ComparePeerRecordSamples(other, projection), 0)
+	other.observationName, other.observationSession = record.observationName, "1800000000-2"
+	Equal(a:ComparePeerRecordSamples(other, projection), 0)
+	other.sourceSampledAt = record.sourceSampledAt - 1
+	Equal(a:ComparePeerRecordSamples(other, projection), -1)
+end)

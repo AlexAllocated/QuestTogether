@@ -225,7 +225,8 @@ function QT:CreatePingResponseObservation(response, pending)
 	local observation = self:CreatePeerObservation(
 		name,
 		"LOC",
-		{ source = response.developer and "diagnostic" or "pong", age = math.max(0, age), lifetime = 600 }
+		{ source = response.developer and "diagnostic" or "pong", age = math.max(0, age), lifetime = 600,
+			sourceSampledAt = stamp }
 	)
 	if observation then
 		observation.manual = true
