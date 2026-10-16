@@ -103,19 +103,82 @@ local function TooltipTextWidth(addon, label)
 	return width and width >= 0 and math.min(272, math.ceil(width)) or 272
 end
 
+local GROUP_INSET, GROUP_ICON_SPACE, GROUP_PADDING, GROUP_GAP = 6, 24, 4, 8
+local GROUP_CORNER_UV = { { 0, 0.5, 0, 0.5 }, { 0.5, 1, 0, 0.5 }, { 0, 0.5, 0.5, 1 }, { 0.5, 1, 0.5, 1 } }
+
+local function LayoutPartyTooltipGroup(addon, state, index, anchor, top, width, height, key, first, last)
+	state.partyGroups = state.partyGroups or {}
+	local group = state.partyGroups[index]
+	if not group then
+		group = { frame = New(addon, "Frame", state.tooltip), corners = {}, edges = {} }
+		state.partyGroups[index] = group
+		Call(addon, group.frame, "EnableMouse", false)
+		for corner, point in ipairs({ "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }) do
+			local texture = Call(addon, group.frame, "CreateTexture", nil, "BORDER")
+			group.corners[corner] = texture
+			Call(addon, texture, "SetTexture", PARTY_MEDIA .. "PanelCornerBorder")
+			Call(addon, texture, "SetTexCoord", unpack(GROUP_CORNER_UV[corner]))
+			Call(addon, texture, "SetVertexColor", 1, 1, 1, 1)
+			Call(addon, texture, "SetSize", 6, 6)
+			Call(addon, texture, "SetPoint", point, group.frame, point, 0, 0)
+		end
+		for edge = 1, 4 do
+			local texture = Call(addon, group.frame, "CreateTexture", nil, "BORDER")
+			group.edges[edge] = texture
+			Call(addon, texture, "SetColorTexture", 1, 1, 1, 1)
+		end
+		Call(addon, group.edges[1], "SetPoint", "TOPLEFT", group.frame, "TOPLEFT", 6, 0)
+		Call(addon, group.edges[2], "SetPoint", "BOTTOMLEFT", group.frame, "BOTTOMLEFT", 6, 0)
+		Call(addon, group.edges[3], "SetPoint", "TOPLEFT", group.frame, "TOPLEFT", 0, -6)
+		Call(addon, group.edges[4], "SetPoint", "TOPRIGHT", group.frame, "TOPRIGHT", 0, -6)
+		group.icon = PartyTexture(addon, group.frame, "PartyBadge", 16, 16, "RIGHT", group.frame, "RIGHT", -6, 0)
+		Call(addon, group.icon, "SetVertexColor", 1, 1, 1, 1)
+		Call(addon, group.icon, "Show")
+	end
+	group.active, group.key, group.first, group.last = true, key, first, last
+	Call(addon, group.frame, "ClearAllPoints")
+	Call(addon, group.frame, "SetPoint", "TOPLEFT", anchor, "BOTTOMLEFT", 0, -top)
+	Call(addon, group.frame, "SetSize", width, height)
+	for edge, texture in ipairs(group.edges) do
+		Call(addon, texture, "SetSize", edge <= 2 and width - 12 or 1, edge <= 2 and 1 or height - 12)
+	end
+	Call(addon, group.frame, "Show")
+end
+
 local function LayoutPartyTooltipRows(addon, state, width, hasIntro, bodyGap)
-	local height = 0
+	local height, groups, index = 0, 0, 1
 	local anchor = hasIntro and state.tooltipIntro or state.tooltipTitle
 	local topGap = hasIntro and 8 or bodyGap
-	for _, item in ipairs(state.partyRows or {}) do
-		if item.active then
-			Call(addon, item.label, "SetWidth", width - 38)
-			local lineHeight = math.max(14, (Positive(addon, Call(addon, item.label, "GetStringHeight")) or 12) + 2)
-			Call(addon, item.frame, "SetSize", width, lineHeight)
+	local rows = state.partyRows or {}
+	while rows[index] and rows[index].active do
+		local first, last, key = index, index, rows[index].partyKey
+		if key then
+			while rows[last + 1] and rows[last + 1].active and rows[last + 1].partyKey == key do last = last + 1 end
+			if height > 0 then height = height + GROUP_GAP end
+		end
+		local groupTop = height
+		if key then height = height + GROUP_PADDING end
+		for row = first, last do
+			local item = rows[row]
+			local inset = key and GROUP_INSET or 0
+			Call(addon, item.label, "SetWidth", width - 38 - inset * 2 - (key and GROUP_ICON_SPACE or 0))
+			local lineHeight = math.max(key and 16 or 14, (Positive(addon, Call(addon, item.label, "GetStringHeight")) or 12) + 2)
+			Call(addon, item.frame, "SetSize", width - inset * 2, lineHeight)
 			Call(addon, item.frame, "ClearAllPoints")
-			Call(addon, item.frame, "SetPoint", "TOPLEFT", anchor, "BOTTOMLEFT", 0, -topGap - height)
+			Call(addon, item.frame, "SetPoint", "TOPLEFT", anchor, "BOTTOMLEFT", inset, -topGap - height)
 			height = height + lineHeight
 		end
+		if key then
+			height, groups = height + GROUP_PADDING, groups + 1
+			LayoutPartyTooltipGroup(addon, state, groups, anchor, topGap + groupTop, width, height - groupTop, key, first, last)
+			if rows[last + 1] and rows[last + 1].active and not rows[last + 1].partyKey then height = height + GROUP_GAP end
+		end
+		index = last + 1
+	end
+	for unused = groups + 1, #(state.partyGroups or {}) do
+		local group = state.partyGroups[unused]
+		group.active, group.key, group.first, group.last = false, nil, nil, nil
+		Call(addon, group.frame, "Hide")
 	end
 	return height > 0 and height + (hasIntro and 8 or 0) or 0
 end
@@ -325,13 +388,15 @@ local function PartyTooltipRows(addon, state, members)
 		Call(addon, item.hiddenGlow, member.hiddenLocation and "Show" or "Hide")
 		local leader = member.leader
 		Call(addon, item.label, "SetText", member.label)
-		width = math.max(width, TooltipTextWidth(addon, item.label) + 38)
+		item.partyKey = member.partyKey
+		width = math.max(width, TooltipTextWidth(addon, item.label) + 38 + (member.partyKey and GROUP_INSET * 2 + GROUP_ICON_SPACE or 0))
 		item.active = true
 		Call(addon, item.crown, leader and "Show" or "Hide")
 		Call(addon, item.frame, "Show")
 	end
 	for i = #members + 1, #state.partyRows do
 		state.partyRows[i].active = false
+		state.partyRows[i].partyKey = nil
 		Call(addon, state.partyRows[i].frame, "Hide")
 	end
 	return width

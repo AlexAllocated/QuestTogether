@@ -37,13 +37,13 @@ end
 
 function QT:GetQuestTogetherMapHighlightLevel(geometry)
 	local state = rawget(self, "mapDataControlState")
-	if not state or not state.hovered or not geometry or state.parent ~= geometry.parent
+	if not self:IsQuestTogetherMapDataShown("map") or not state or not state.hovered or not geometry or state.parent ~= geometry.parent
 		or not Current(self, state) then return nil end
 	return state.highlightLevel
 end
 
 local function RefreshShade(a, state, geometry, level)
-	if not state.hovered then a:HideOwnedUI(state.shade); return end
+	if not state.hovered or not a:IsQuestTogetherMapDataShown("map") then a:HideOwnedUI(state.shade); return end
 	if not state.shade then
 		state.shade = a:CreateOwnedUIFrame(a.CreateLocationPinFrame, "Frame", state.button)
 		Call(a, state.shade, "EnableMouse", false)
@@ -56,6 +56,28 @@ local function RefreshShade(a, state, geometry, level)
 	Call(a, state.shade, "SetAllPoints", geometry.parent)
 	Call(a, state.shade, "SetFrameLevel", level)
 	Call(a, state.shade, "Show")
+end
+
+local function CreateHiddenMark(a, state)
+	local marker = a:CreateOwnedUIFrame(a.CreateLocationPinFrame, "Frame", state.button)
+	state.hiddenMark, state.hiddenMarkLines, state.hiddenMarkOutlines = marker, {}, {}
+	Call(a, marker, "EnableMouse", false)
+	Call(a, marker, "EnableMouseWheel", false)
+	Call(a, marker, "SetSize", 14, 14)
+	Call(a, marker, "SetPoint", "BOTTOMRIGHT", state.icon, "BOTTOMRIGHT", 2, -2)
+	-- An outlined red X stays readable over the logo and any map background.
+	for index = 1, 2 do
+		for layer = 1, 2 do
+			local line = Call(a, marker, "CreateLine", nil, layer == 1 and "BACKGROUND" or "OVERLAY")
+			local parts = layer == 1 and state.hiddenMarkOutlines or state.hiddenMarkLines
+			parts[index] = line
+			Call(a, line, "SetColorTexture", layer == 1 and 0 or 1, layer == 1 and 0 or 0.12, layer == 1 and 0 or 0.12, 1)
+			Call(a, line, "SetThickness", layer == 1 and 5 or 3)
+			Call(a, line, "SetStartPoint", "BOTTOMLEFT", marker, 2, index == 1 and 2 or 12)
+			Call(a, line, "SetEndPoint", "BOTTOMLEFT", marker, 12, index == 1 and 12 or 2)
+		end
+	end
+	Call(a, marker, "Hide")
 end
 
 
@@ -96,6 +118,7 @@ local function Refresh(a)
 		Call(a, icon, "SetTexture", a.NAMEPLATE_PLAYER_ICON_TEXTURE)
 		Call(a, icon, "SetSize", 24, 24)
 		Call(a, icon, "SetPoint", "CENTER")
+		CreateHiddenMark(a, state)
 		Call(a, button, "SetScript", "OnClick", function(_, mouseButton)
 			if mouseButton == "LeftButton" and Current(a, state) then a:ToggleQuestTogetherMapData() end
 		end)
@@ -127,7 +150,9 @@ local function Refresh(a)
 	local shadeLevel = math.max(level + 60, nativeLevel + 1)
 	state.highlightLevel = shadeLevel + 1
 	Call(a, state.button, "SetFrameLevel", shadeLevel + 16)
-	Call(a, state.icon, "SetAlpha", a:IsQuestTogetherMapDataShown("map") and 1 or 0.35)
+	Call(a, state.icon, "SetAlpha", 1)
+	Call(a, state.hiddenMark, "SetFrameLevel", shadeLevel + 17)
+	Call(a, state.hiddenMark, a:IsQuestTogetherMapDataShown("map") and "Hide" or "Show")
 	Call(a, state.button, "Show")
 	RefreshShade(a, state, geometry, shadeLevel)
 	if state.hovered then Tooltip(a, state) end

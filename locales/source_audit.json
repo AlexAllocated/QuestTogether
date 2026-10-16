@@ -321,10 +321,13 @@
     "MapOverlayControls.lua": [
       "ARTWORK",
       "BACKGROUND",
+      "BOTTOMLEFT",
+      "BOTTOMRIGHT",
       "Button",
       "CENTER",
       "Frame",
       "Hide",
+      "OVERLAY",
       "Show",
       "TOPRIGHT"
     ],
@@ -528,6 +531,7 @@
       "BORDER",
       "BOTTOM",
       "BOTTOMLEFT",
+      "BOTTOMRIGHT",
       "CENTER",
       "CLAMPTOBLACKADDITIVE",
       "Frame",

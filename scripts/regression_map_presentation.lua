@@ -28,6 +28,147 @@ local function Row(name, x, y)
 end
 local geometry = { mapID = 1, width = 1000, height = 600 }
 
+local function TooltipFixture()
+	local a = Fixture()
+	a.visuals, a.partyQueries, a.memberBuilds, a.networkCalls = {}, {}, {}, 0
+	function a:GetPlayerPartyVisualInfo(name)
+		self.partyQueries[#self.partyQueries + 1] = name
+		return self.visuals[name]
+	end
+	function a:BuildPlayerTooltipMember(row, options)
+		assert(options.shortName == true and options.usesQT == true and options.leader == nil)
+		self.memberBuilds[#self.memberBuilds + 1] = row.name
+		if row.name == self.skipMember then return nil end
+		return { name = row.name, label = row.name, icon = row.icon, developer = row.developer,
+			hiddenLocation = row.hiddenLocation, color = { 0.1, 0.2, 0.3 } }
+	end
+	local function NoNetwork(self)
+		self.networkCalls = self.networkCalls + 1
+		error("cluster tooltip grouping must not request or publish data")
+	end
+	a.RequestPartyVisualRoster, a.RequestPlayerDetails, a.Request, a.Publish = NoNetwork, NoNetwork, NoNetwork, NoNetwork
+	return a
+end
+
+local function MemberNames(members)
+	local names = {}
+	for _, member in ipairs(members) do names[#names + 1] = member.name end
+	return table.concat(names, ",")
+end
+
+QT:RegisterTest("cluster tooltip parties stay adjacent in first appearance order before the display cap", function()
+	local a, rows = TooltipFixture(), {}
+	for index = 1, 10 do rows[index] = Row(string.char(64 + index)) end
+	for _, pair in ipairs({ { "A", "H", "Leader:1" }, { "B", "I", "Leader:2" }, { "C", "J", "Other:1" } }) do
+		for index = 1, 2 do a.visuals[pair[index]] = { key = pair[3], size = 2, leader = "Leader" } end
+	end
+	rows[1].developer, rows[1].hiddenLocation, rows[1].icon = true, true, "existing-LFQP-icon"
+	local before = QT:DeepCopy(rows)
+	local members = a:BuildPlayerLocationClusterTooltipMembers(rows)
+	Equal(MemberNames(members), "A,H,B,I,C,J")
+	Equal(members[1].partyKey, "Leader:1")
+	Equal(members[2].partyKey, "Leader:1")
+	Equal(members[3].partyKey, "Leader:2")
+	assert(members[1].developer and members[1].hiddenLocation and members[1].icon == rows[1].icon)
+	for index, row in ipairs(rows) do
+		Equal(row.name, before[index].name)
+		Equal(row.partyKey, nil)
+		Equal(row.developer, before[index].developer)
+		assert(row ~= members[index])
+	end
+	Equal(#a.partyQueries, 10)
+	Equal(#a.memberBuilds, 6)
+	Equal(a.networkCalls, 0)
+	Equal(MemberNames(a:BuildPlayerLocationClusterTooltipMembers(rows)), "A,H,B,I,C,J")
+end)
+
+QT:RegisterTest("cluster tooltip party grouping never pulls members across the expanded page boundary", function()
+	local a, rows = TooltipFixture(), {}
+	for index = 1, 10 do rows[index] = Row(string.char(64 + index)) end
+	a.visuals.A, a.visuals.H = { key = "First:1", size = 2 }, { key = "First:1", size = 2 }
+	a.visuals.C, a.visuals.J = { key = "Second:1", size = 2 }, { key = "Second:1", size = 2 }
+	local members = a:BuildPlayerLocationClusterTooltipMembers(rows, 3, 8)
+	Equal(MemberNames(members), "C,D,E,F,G,H")
+	Equal(members[1].partyKey, "Second:1") -- one visible member still has known party identity
+	Equal(members[6].partyKey, "First:1")
+	Equal(members[2].partyKey, nil)
+	Equal(table.concat(a.partyQueries, ","), "C,D,E,F,G,H")
+	Equal(MemberNames(a:BuildPlayerLocationClusterTooltipMembers(rows, 3, 10)), "C,J,D,E,F,G")
+	a.ignored, a.skipMember = "C", "D"
+	Equal(MemberNames(a:BuildPlayerLocationClusterTooltipMembers(rows, 3, 8)), "E,F,G,H")
+	Equal(a.networkCalls, 0)
+end)
+
+QT:RegisterTest("cluster tooltip party keys require an explicit valid grouped size and exact revision identity", function()
+	local a, rows = TooltipFixture(), { Row("A"), Row("B"), Row("C"), Row("D") }
+	a.visuals.A, a.visuals.C = { key = "Leader:1", size = 2 }, { key = "Leader:1", size = 2 }
+	a.visuals.B, a.visuals.D = { key = "Leader:2", size = 40 }, { key = "Leader:2", size = 40 }
+	Equal(MemberNames(a:BuildPlayerLocationClusterTooltipMembers(rows)), "A,C,B,D")
+	for _, info in ipairs({ { leader = "Leader", size = 2 }, { key = "", size = 2 },
+		{ key = "Leader:1" }, { key = "Leader:1", grouped = true }, { key = "Leader:1", size = 0 },
+		{ key = "Leader:1", size = 1 }, { key = "Leader:1", size = 41 }, { key = "Leader:1", size = 2.5 },
+		{ key = "Leader:1", size = math.huge } }) do
+		a.visuals.A, a.visuals.B = info, info
+		local members = a:BuildPlayerLocationClusterTooltipMembers({ rows[1], rows[2] })
+		Equal(MemberNames(members), "A,B")
+		Equal(members[1].partyKey, nil)
+		Equal(members[2].partyKey, nil)
+	end
+end)
+
+QT:RegisterTest("cluster tooltip grouping bounds source queries and member rendering without mutating input", function()
+	local a, rows = TooltipFixture(), {}
+	for index = 1, 600 do rows[index] = Row(string.format("Peer%03d", index)) end
+	a.visuals.Peer001, a.visuals.Peer512, a.visuals.Peer513 =
+		{ key = "Party:1", size = 3 }, { key = "Party:1", size = 3 }, { key = "Party:1", size = 3 }
+	local members = a:BuildPlayerLocationClusterTooltipMembers(rows, -10, 1000, 1000)
+	Equal(MemberNames(members), "Peer001,Peer512,Peer002,Peer003,Peer004,Peer005")
+	Equal(#a.partyQueries, 512)
+	Equal(#a.memberBuilds, 6)
+	Equal(rows[2].name, "Peer002")
+	Equal(rows[512].name, "Peer512")
+	a.partyQueries, a.memberBuilds = {}, {}
+	Equal(#a:BuildPlayerLocationClusterTooltipMembers(rows, 501, 600, 2), 2)
+	Equal(#a.partyQueries, 12)
+	Equal(#a.memberBuilds, 2)
+	a.partyQueries = {}
+	Equal(#a:BuildPlayerLocationClusterTooltipMembers(rows, 513, 600), 0)
+	Equal(#a:BuildPlayerLocationClusterTooltipMembers(rows, 4, 3), 0)
+	Equal(#a:BuildPlayerLocationClusterTooltipMembers(rows, 1, 6, 0), 0)
+	Equal(#a.partyQueries, 0)
+	Equal(a.networkCalls, 0)
+end)
+
+QT:RegisterTest("cluster tooltip grouping respects shared party query expiry partial revisions and ignores without requests", function()
+	local a, rows = TooltipFixture(), { Row("A"), Row("B"), Row("C") }
+	a.GetPlayerPartyVisualInfo = QT.GetPlayerPartyVisualInfo
+	a.known = { A = true, B = true, C = true }
+	function a:IsKnownQTPlayer(name) return self.known[name] == true end
+	function a:GetPlayerTooltipStats() return nil end
+	function a:GetPlayerPartySize() return nil end
+	local peers = a:GetPartyVisualState().peers
+	local function Record(revision)
+		return { key = "Leader:" .. revision, leader = "Leader", revision = revision,
+			size = 2, at = a.now, sampledAt = a.now, lifetime = 1 }
+	end
+	peers.A, peers.C = Record("1"), Record("1") -- current metadata; no full roster was fetched
+	Equal(MemberNames(a:BuildPlayerLocationClusterTooltipMembers(rows)), "A,C,B")
+	a.now = 101
+	local members = a:BuildPlayerLocationClusterTooltipMembers(rows)
+	Equal(MemberNames(members), "A,B,C")
+	for _, member in ipairs(members) do Equal(member.partyKey, nil) end
+	peers.A, peers.C = Record("2"), Record("1")
+	members = a:BuildPlayerLocationClusterTooltipMembers(rows)
+	Equal(MemberNames(members), "A,B,C")
+	Equal(members[1].partyKey, "Leader:2")
+	Equal(members[3].partyKey, "Leader:1")
+	a.ignored, a.known.A = "C", nil
+	members = a:BuildPlayerLocationClusterTooltipMembers(rows)
+	Equal(MemberNames(members), "A,B")
+	Equal(members[1].partyKey, nil)
+	Equal(a.networkCalls, 0)
+end)
+
 QT:RegisterTest("map clusters use projected density deterministic membership and truthful centroids", function()
 	local a = Fixture()
 	local first, second, third = Row("A", 0.5), Row("B", 0.52), Row("C", 0.8)

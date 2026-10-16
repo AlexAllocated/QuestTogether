@@ -10,6 +10,47 @@ local function Now(a)
 	return a:SafeToNumber(a.API.GetTime()) or 0
 end
 
+-- Page boundaries precede grouping, so an expanded summary describes only its
+-- visible fanout page. Collapsed summaries can pull later groupmates forward.
+-- The shared party query owns freshness/revisions; no roster request is needed.
+function QT:BuildPlayerLocationClusterTooltipMembers(rows, first, last, limit)
+	if type(rows) ~= "table" then return {} end
+	first = math.max(1, math.floor(self:SafeToNumber(first) or 1))
+	last = math.min(MAX_ROWS, #rows, math.floor(self:SafeToNumber(last) or #rows))
+	limit = math.max(0, math.min(6, math.floor(self:SafeToNumber(limit) or 6)))
+	if first > last or limit == 0 then return {} end
+	local groups, byParty = {}, {}
+	for index = first, last do
+		local row = rows[index]
+		local name = type(row) == "table" and self:SafeTrimString(row.name, "") or ""
+		if name ~= "" and not self:IsIgnoredPlayerName(name) then
+			local info = self:GetPlayerPartyVisualInfo(name)
+			local size = type(info) == "table" and self:SafeToNumber(info.size)
+			local key = size and size >= 2 and size <= 40 and size == math.floor(size)
+				and type(info.key) == "string" and info.key ~= "" and info.key or nil
+			local group = key and byParty[key]
+			if not group then
+				group = { rows = {}, key = key }
+				groups[#groups + 1] = group
+				if key then byParty[key] = group end
+			end
+			group.rows[#group.rows + 1] = row
+		end
+	end
+	local members = {}
+	for _, group in ipairs(groups) do
+		for _, row in ipairs(group.rows) do
+			local member = self:BuildPlayerTooltipMember(row, { shortName = true, usesQT = true })
+			if member then
+				member.partyKey = group.key
+				members[#members + 1] = member
+				if #members == limit then return members end
+			end
+		end
+	end
+	return members
+end
+
 function QT:GetFindPlayerMapLocation(name)
 	name = self:NormalizeMemberName(name)
 	if not self.isEnabled or self.isLoggingOut then

@@ -753,13 +753,10 @@ local function ClusterTooltip(addon, state, pin)
 	PartyHighlights(addon, state)
 	local _, expanded, info = addon:GetPlayerLocationClusterExpansion(markers, geometry)
 	local active = expanded and expanded.key == cluster.key
-	local lines, members = {}, {}
+	local lines = {}
 	local first = active and info.first or 1
-	local last = math.min(active and info.last or #cluster.members, first + 5)
-	for index = first, last do
-		local member = addon:BuildPlayerTooltipMember(cluster.members[index], { shortName = true, usesQT = true })
-		if member then members[#members + 1] = member end
-	end
+	local last = active and info.last or #cluster.members
+	local members = addon:BuildPlayerLocationClusterTooltipMembers(cluster.members, first, last, 6)
 	if #cluster.members > #members then
 		lines[#lines + 1] = string.format(L("…and %d more"), #cluster.members - #members)
 	end
