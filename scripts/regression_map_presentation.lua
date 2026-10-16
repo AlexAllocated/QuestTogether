@@ -83,18 +83,6 @@ QT:RegisterTest("selected map player retains exact coordinates outside the conta
 	Equal(markers[2].key, "A\nC")
 end)
 
-QT:RegisterTest("map opacity uses coordinate source time with readable floor and no arrival rejuvenation", function()
-	local a, row = Fixture(), Row("A")
-	Near(a:GetPlayerLocationOpacity(row, 130), 1)
-	local old = a:GetPlayerLocationOpacity(row, 400)
-	assert(old < 1 and old > 0.45)
-	Near(a:GetPlayerLocationOpacity(row, 700), 0.45)
-	-- Delayed arrival carries a reduced remaining lifetime, not a fresh sample.
-	row.receivedAt, row.lifetime = 300, 400
-	Near(a:GetPlayerLocationOpacity(row, 400), old)
-	Near(a:GetPlayerLocationOpacity(row, 1000), 0.45)
-end)
-
 QT:RegisterTest("find player opens current shared map without changing saved filters or navigation", function()
 	local a = Fixture()
 	a.rows.Friend = Row("Friend")

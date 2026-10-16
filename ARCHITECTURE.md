@@ -40,7 +40,7 @@ private `.local` notes are historical context, not the source of truth.
 | QuestDialogs | Focus/share-related presentation and callbacks | Window geometry rules |
 | PlayerTooltipPresenter | Shared player tooltip content and measurement | Map projection or marker allocation |
 | MapOverlayPool | Surface attachment, marker reuse and retirement | Player/waypoint content, route or visibility policy |
-| MapLocationPresentation | Projected world-map clustering/expansion, source-age opacity and temporary player selection | Accepted observations, consent, location sampling or native map mutation |
+| MapLocationPresentation | Projected world-map clustering/expansion and temporary player selection | Accepted observations, consent, location sampling or native map mutation |
 | MapOverlayControls | Saved world-map overlay visibility, owned toggle and hover highlight | Sharing, subscriptions, minimap visibility or accepted observations |
 | LocationPins / PartyWaypointPins | Domain-specific pin placement, visuals and actions | A second tooltip renderer or marker pool lifecycle |
 
@@ -66,8 +66,9 @@ private `.local` notes are historical context, not the source of truth.
   player membership. Clustering is enabled by default and can be disabled in Player
   Locations without affecting sharing or discovery. Hovering a cluster shows up to six
   cached player rows through the shared tooltip renderer, including individual status
-  icons but no inferred party grouping or leaders. Clicking opens the deepest native
-  child map containing every member, without changing canvas magnification. At the
+  icons but no inferred party grouping or leaders. Clicking opens the smallest
+  native map that geographically contains every member, including overlapping
+  city/zone maps, without changing canvas magnification. At the
   deepest shared map, clicking expands up to 12 player
   dots with the existing player tooltip and actions. Large clusters page with the
   mouse wheel over the count marker.
@@ -76,7 +77,7 @@ private `.local` notes are historical context, not the source of truth.
   map, profile or enabled-lifetime changes; split clusters remain individual dots.
   While expanded, a noninteractive owned layer shades the visible map and ordinary
   markers by 22%. The cluster center, member dots and connectors render above it.
-  Party-hover dimming and source-age opacity remain independent; the minimap is unchanged.
+  Party-hover dimming remains independent; the minimap is unchanged.
   Expansion owns only a cluster identity, page and geometry signature; positions are
   display offsets connected to accepted coordinates, never new location observations.
   Hiding/changing the map, geometry or membership, disabling clustering, profile changes
@@ -85,9 +86,8 @@ private `.local` notes are historical context, not the source of truth.
   Its per-profile preference defaults on and does not affect the minimap, sharing,
   filters or discovery. Hovering the button shades the native map beneath all QT
   overlays; leaving restores normal layering, including any expanded cluster.
-  Location opacity uses the coordinates' source sample time and approaches a readable
-  45% floor at expiry; hovering multiplies this opacity rather than replacing it.
-  Nearby streams use their own source time for their displayed interpolated position.
+  Location age never changes marker brightness. Normal source-freshness expiry
+  still removes old observations; dimming reflects interaction state only.
   Find on Map uses the guarded native opener and a 20-second green selection at the
   player's actual location, outside its cluster. Explicit selection may temporarily
   reveal an otherwise filtered non-LFQP player and restores world-map overlay

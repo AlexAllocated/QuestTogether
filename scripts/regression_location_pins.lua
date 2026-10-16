@@ -2478,21 +2478,59 @@ Register("found player gets independent green halo and temporary visibility ends
 	Equal(#selected.cluster.members, 2)
 end)
 
-Register("location freshness opacity composes with party hover dimming instead of being overwritten", function()
-	local a = Fixture()
+Register("old and new location samples stay fully bright until ordinary expiry while party hover still dims unrelated dots", function()
+	local a = ClusterFixture(0)
 	VisualParty(a)
-	a.API.GetTime = function() return 400 end
-	a.rows.map = { Row("Friend-Realm"), Row("Unrelated-Realm", 0.7) }
-	for _, row in ipairs(a.rows.map) do row.sampledAt, row.lifetime = 100, 600 end
+	a.now = 400
+	a.API.GetTime = function() return a.now end
+	local old, recent = Row("Friend-Realm"), Row("Unrelated-Realm", 0.54)
+	-- An older observation arrived late with only its remaining lifetime.
+	old.sampledAt, old.receivedAt, old.lifetime = 100, 300, 400
+	recent.sampledAt, recent.receivedAt, recent.lifetime = 350, 350, 600
+	a.playerLocationState = { peers = { [old.name] = old, [recent.name] = recent } }
+	a.GetVisiblePlayerLocations = QuestTogether.GetVisiblePlayerLocations
+	function a:IsSelfSender() return false end
+	function a:IsGroupedSender() return false end
+	for _, now in ipairs({ 400, 699 }) do
+		a.now = now
+		a:RefreshPlayerLocationPins()
+		for _, surface in ipairs({ "map", "minimap" }) do
+			for index = 1, 2 do
+				local pin = Pin(a, surface, index)
+				assert(pin.frame:IsVisible())
+				Near(pin.baseAlpha, 1)
+				Near(pin.frame.alpha, 1)
+			end
+		end
+		local friend = Pin(a, "map")
+		friend.frame.scripts.OnEnter()
+		for _, surface in ipairs({ "map", "minimap" }) do
+			Near(Pin(a, surface).frame.alpha, 1)
+			Near(Pin(a, surface, 2).frame.alpha, 0.45)
+		end
+		friend.frame.scripts.OnLeave()
+		for _, surface in ipairs({ "map", "minimap" }) do Near(Pin(a, surface, 2).frame.alpha, 1) end
+	end
+	Equal(old.receivedAt, 300)
+	Equal(old.lifetime, 400)
+	a.now = 700
+	Equal(a:GetFreshPlayerLocation(old.name, "map"), nil)
 	a:RefreshPlayerLocationPins()
-	local friend, other = Pin(a, "map"), Pin(a, "map", 2)
-	local base = a:GetPlayerLocationOpacity(a.rows.map[2])
-	assert(base < 1)
-	Near(other.frame.alpha, base)
-	friend.frame.scripts.OnEnter()
-	Near(other.frame.alpha, base * 0.45)
-	friend.frame.scripts.OnLeave()
-	Near(other.frame.alpha, base)
+	Equal(a.playerLocationState.peers[old.name], nil)
+	for _, surface in ipairs({ "map", "minimap" }) do
+		Equal(Pin(a, surface).name, recent.name)
+		Near(Pin(a, surface).frame.alpha, 1)
+		assert(not Pin(a, surface, 2).frame:IsVisible())
+	end
+	a.now = 949
+	a:RefreshPlayerLocationPins()
+	Near(Pin(a, "map").frame.alpha, 1)
+	Near(Pin(a, "minimap").frame.alpha, 1)
+	a.now = 950
+	a:RefreshPlayerLocationPins()
+	Equal(a.playerLocationState.peers[recent.name], nil)
+	assert(not a.locationPinState.surfaces.map.frame:IsVisible())
+	assert(not a.locationPinState.surfaces.minimap.frame:IsVisible())
 end)
 
 local function ClusterDimmingFixture()
@@ -2527,11 +2565,10 @@ local function MapPlayerNamed(a, name)
 	end
 end
 
-Register("expanded cluster shades the owned map below its active dots without intercepting input or changing source opacity", function()
+Register("expanded cluster shades the owned map below fully bright active dots without intercepting input", function()
 	local a = ClusterDimmingFixture()
 	a:RefreshPlayerLocationPins()
-	local base = a:GetPlayerLocationOpacity(a.rows.map[1])
-	assert(base < 1)
+	local base = 1
 	MapClusterContaining(a, "Friend-Realm").frame.scripts.OnClick(nil, "LeftButton")
 	local active = assert(MapClusterContaining(a, "Friend-Realm"))
 	local other = assert(MapClusterContaining(a, "DistantA-Realm"))
@@ -2997,7 +3034,7 @@ Register("map logo hover highlights every QT map marker and connector above one 
 	friend.frame.scripts.OnEnter()
 	local solo, inner = assert(MapPlayerNamed(a, "Solo-Realm")), assert(ExpandedPlayerPin(a, "InnerOther-Realm"))
 	local base = solo.baseAlpha
-	assert(base < 1)
+	Near(base, 1)
 	Near(solo.frame.alpha, base * 0.45)
 	Near(inner.frame.alpha, base * 0.45)
 	local control = a.mapDataControlState

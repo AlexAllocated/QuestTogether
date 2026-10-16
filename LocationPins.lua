@@ -242,7 +242,7 @@ local function DescendantLocationPath(addon, info, mapID, parents)
 		parents[child] = parent
 		path[#path + 1] = child
 		if parent == mapID then return path end
-		if parent == 0 then return {} end
+		if parent == 0 then return path end
 		seen[child] = true
 		if parents[parent] ~= nil then
 			info = { mapID = parent, parentMapID = parents[parent] }
@@ -268,35 +268,93 @@ local function ClusterPositionsOnMap(addon, members, mapID)
 end
 
 local function DeepestClusterMap(addon, members, mapID, positions, getter)
-	local target, seen, parents = mapID, { [mapID] = true }, {}
-	for _ = 1, 16 do
-		local common
-		for _, position in ipairs(positions) do
-			local ok, info = pcall(getter, target, position.x, position.y)
-			if not ok or not addon:CanAccessValue(info) then return nil end
-			local path = {}
-			if info ~= nil then path = DescendantLocationPath(addon, info, target, parents) end
-			if not path then return nil end
-			if not common then common = path else
-				local present, shared = {}, {}
-				for _, child in ipairs(path) do present[child] = true end
-				for _, child in ipairs(common) do if present[child] then shared[#shared + 1] = child end end
-				common = shared
+	local parents, footprints, candidates, queued = {}, {}, { mapID }, { [mapID] = true }
+	local sourceInfo = API(addon, C_Map, "GetMapInfo", mapID)
+	if not addon:CanAccessTable(sourceInfo) or ID(addon, sourceInfo.mapID) ~= mapID then return nil end
+	local sourcePath = DescendantLocationPath(addon, sourceInfo, nil, parents)
+	if not sourcePath then return nil end
+	local sourceAncestors = {}
+	for _, ancestor in ipairs(sourcePath) do sourceAncestors[ancestor] = true end
+	local function Add(info)
+		local path = DescendantLocationPath(addon, info, nil, parents)
+		if not path then return false end
+		for index = #path, 1, -1 do
+			local candidate = path[index]
+			if not sourceAncestors[candidate] and not queued[candidate] then
+				if #candidates >= 32 then return false end
+				queued[candidate], candidates[#candidates + 1] = true, candidate
 			end
-			if #common == 0 then return target end
 		end
-		local child = common and common[1]
-		if not child or seen[child] then return nil end
-		positions = ClusterPositionsOnMap(addon, members, child)
-		if not positions then return nil end
-		seen[child], target = true, child
+		return true
 	end
-	return nil
+	local function Descends(child, ancestor)
+		for _ = 1, 16 do
+			child = parents[child]
+			if child == ancestor then return true end
+			if not child or child == 0 then return false end
+		end
+		return false
+	end
+	local function Footprint(candidate)
+		if footprints[candidate] == nil then
+			local width, height = addon:GetLocationPinMapWorldSize(candidate)
+			local continent = addon:GetLocationPinWorldPosition(candidate, 0.5, 0.5)
+			local area = width and height and Positive(addon, width * height)
+			footprints[candidate] = area and continent and { area = area, continent = continent } or false
+		end
+		return footprints[candidate]
+	end
+	local function Smaller(candidate, previous)
+		local a, b = Footprint(candidate), Footprint(previous)
+		if a and b then return a.continent == b.continent and a.area < b.area end
+		-- World/cosmic maps may have no meaningful geographic size. Only a
+		-- verified hierarchy descent is safe when footprints cannot be compared.
+		return Descends(candidate, previous)
+	end
+	-- A member's own map can identify city art that native hit testing on the
+	-- continent prefers to represent with its surrounding zone instead.
+	for _, row in ipairs(members) do
+		local source = ID(addon, row.mapID)
+		if source and not sourceAncestors[source] and not queued[source] then
+			local info = API(addon, C_Map, "GetMapInfo", source)
+			if not addon:CanAccessTable(info) or ID(addon, info.mapID) ~= source or not Add(info) then return nil end
+		end
+	end
+	local best, index, reads = mapID, 1, 0
+	while index <= #candidates do
+		local candidate = candidates[index]
+		local projected = candidate == mapID and positions
+		if candidate ~= mapID and Smaller(candidate, mapID) then
+			projected = ClusterPositionsOnMap(addon, members, candidate)
+			local footprint = Footprint(candidate)
+			if projected and footprint then
+				for _, row in ipairs(members) do
+					if addon:GetCachedPlayerLocationWorldPosition(row) ~= footprint.continent then projected = nil; break end
+				end
+			end
+			if projected and Smaller(candidate, best) then best = candidate end
+		end
+		if projected then
+			local queried = {}
+			for _, position in ipairs(projected) do
+				queried[position.x] = queried[position.x] or {}
+				if not queried[position.x][position.y] then
+					reads = reads + 1
+					if reads > MAX_LOCATION_ROWS * 16 then return nil end
+					queried[position.x][position.y] = true
+					local ok, info = pcall(getter, candidate, position.x, position.y)
+					if not ok or not addon:CanAccessValue(info) or (info ~= nil and not Add(info)) then return nil end
+				end
+			end
+		end
+		index = index + 1
+	end
+	return best
 end
 
--- Resolve the deepest native descendant containing every actual member, rather
--- than the count marker's inset position or a centroid across a zone boundary.
--- Native reads and ancestry walks are bounded; no cursor or foreign state changes.
+-- Resolve the smallest native map containing every member, including overlapping
+-- sibling zone/city maps. Candidates come only from native hits/member maps and
+-- their ancestors; a smaller verified footprint prevents sideways/upward loops.
 function QuestTogether:GetPlayerLocationClusterNavigationAction(cluster, geometry)
 	if not self.isEnabled or self:IsWorkBlocked("foreign_frame_mutation")
 		or type(cluster) ~= "table" or type(cluster.members) ~= "table" or #cluster.members < 2
@@ -993,10 +1051,7 @@ local function RefreshSurface(addon, state, name, rows)
 		local levelOffset = marker.expanded and 4 or marker.expansionInfo and 3
 			or (pin.selected and not surface.expandedClusterKey and 5) or 1
 		if level then Call(addon, pin.frame, "SetFrameLevel", level + levelOffset) end
-		pin.baseAlpha = row and addon:GetPlayerLocationOpacity(row) or 0.45
-		if cluster then
-			for _, member in ipairs(cluster) do pin.baseAlpha = math.max(pin.baseAlpha, addon:GetPlayerLocationOpacity(member)) end
-		end
+		pin.baseAlpha = 1
 		Call(addon, pin.frame, "SetAlpha", pin.baseAlpha)
 		Call(addon, pin.phaseIcon, row and addon:GetPlayerPhaseStatus(row.name) == "different" and "Show" or "Hide")
 		local r, g, b = 0.16, 0.13, 0.06

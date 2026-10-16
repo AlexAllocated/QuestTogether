@@ -10,17 +10,6 @@ local function Now(a)
 	return a:SafeToNumber(a.API.GetTime()) or 0
 end
 
-function QT:GetPlayerLocationOpacity(row, now)
-	now = self:SafeToNumber(now) or Now(self)
-	local sampled = self:SafeToNumber(row.sampledAt or row.receivedAt)
-	local received = self:SafeToNumber(row.receivedAt)
-	local lifetime = self:SafeToNumber(row.lifetime) or 120
-	if not sampled or not received or now < sampled then return 1 end
-	local age = now - sampled
-	local span = math.max(1, received + lifetime - sampled - 30)
-	return 1 - 0.55 * math.max(0, math.min(1, (age - 30) / span))
-end
-
 function QT:GetFindPlayerMapLocation(name)
 	name = self:NormalizeMemberName(name)
 	if not self.isEnabled or self.isLoggingOut then

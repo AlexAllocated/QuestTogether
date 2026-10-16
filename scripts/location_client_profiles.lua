@@ -224,23 +224,36 @@ local cluster = { key = "A\nB", x = 12, y = 12, members = {
 	{ name = "A", mapID = 1, x = 0.4, y = 0.6 }, { name = "B", mapID = 1, x = 0.6, y = 0.6 },
 } }
 local magnificationReads = 0
-local positionInfo, ancestorInfo, nativeActions = nil, {}, {}
+local positionInfo, ancestorInfo, nativeActions = nil, { [1] = { mapID = 1, parentMapID = 0 } }, {}
 local positionResolver, invalidProjection
 local positionReads, ancestryReads = 0, 0
 local ordinaryMapProjection = C_Map.GetMapPosFromWorldPos
+local ordinaryWorldProjection, ordinaryWorldSize = C_Map.GetWorldPosFromMapPos, C_Map.GetMapWorldSize
 local navigationMapBounds = { [2] = { left = 0.2, width = 0.6 }, [3] = { left = 0.3, width = 0.4 } }
+local function NavigationBounds(mapID)
+	if navigationMapBounds[mapID] then return navigationMapBounds[mapID] end
+	local width = 0.2 + 0.8 / 2^(mapID - 1)
+	return { left = (1 - width) / 2, width = width }
+end
+C_Map.GetWorldPosFromMapPos = function(mapID, position)
+	conversions = conversions + 1
+	if worldUnavailable then return nil end
+	local bounds = NavigationBounds(mapID)
+	return 0, Vector(1000 - position.y * 1000, 2000 - (bounds.left + position.x * bounds.width) * 2000)
+end
+C_Map.GetMapWorldSize = function(mapID) return NavigationBounds(mapID).width * 2000, 1000 end
 C_Map.GetMapPosFromWorldPos = function(continent, position, target)
 	assert(continent == 0 and type(position.GetXY) == "function")
 	local x, y = (2000 - position.y) / 2000, (1000 - position.x) / 1000
-	local bounds = navigationMapBounds[target]
-	if bounds then x = (x - bounds.left) / bounds.width end
+	local bounds = NavigationBounds(target)
+	x = (x - bounds.left) / bounds.width
 	if invalidProjection == target then x = 2 end
 	return target, Vector(x, y)
 end
 local function PositionInfo(mapID, px, py)
 	positionReads = positionReads + 1
-	local bounds = navigationMapBounds[mapID]
-	local originalX = bounds and px * bounds.width + bounds.left or px
+	local bounds = NavigationBounds(mapID)
+	local originalX = px * bounds.width + bounds.left
 	assert(math.abs(originalX - 0.4) < 0.00001 or math.abs(originalX - 0.6) < 0.00001,
 		"look up real members, not the centroid or marker inset")
 	Near(py, 0.6)
@@ -279,7 +292,7 @@ displayedMapID = 1
 positionInfo = { mapID = 3, parentMapID = 2 }
 ancestorInfo[2] = { mapID = 2, parentMapID = 1 }
 assert(addon:GetPlayerLocationClusterNavigationAction(cluster, g) == "navigate", "strict descendants may skip an intermediate map")
-for _, info in ipairs({ { mapID = 1 }, { mapID = 2, parentMapID = 0 } }) do
+for _, info in ipairs({ { mapID = 1, parentMapID = 0 } }) do
 	positionInfo = info
 	assert(addon:GetPlayerLocationClusterNavigationAction(cluster, g) == "expand", "same or ancestor map must never navigate backward")
 end
@@ -298,6 +311,7 @@ assert(#nativeActions == 2 and nativeActions[2][2] == 4 and displayedMapID == 4,
 	"open only the final map, never each intermediate map")
 displayedMapID = 1
 
+navigationMapBounds[3], navigationMapBounds[4] = { left = 0.3, width = 0.2 }, { left = 0.5, width = 0.2 }
 positionResolver = function(mapID, px)
 	if mapID == 1 then return { mapID = 2, parentMapID = 1 } end
 	if mapID == 2 then return { mapID = px < 0.5 and 3 or 4, parentMapID = 2 } end
@@ -324,7 +338,8 @@ crowded.members[512].x = 0.6
 local ancestryStart = ancestryReads
 action, target = addon:GetPlayerLocationClusterNavigationAction(crowded, g)
 assert(action == "navigate" and target == 2)
-assert(ancestryReads - ancestryStart == 1, "shared native ancestry must be read once, not once per member")
+assert(ancestryReads - ancestryStart == 2, "source and shared native ancestry must each be read once, not once per member")
+navigationMapBounds[2], navigationMapBounds[3] = { left = 0.2, width = 0.3 }, { left = 0.5, width = 0.3 }
 positionResolver = function(mapID, px)
 	if mapID == 1 then return { mapID = px < 0.5 and 2 or 3, parentMapID = 1 } end
 end
@@ -342,6 +357,7 @@ end
 assert(addon:GetPlayerLocationClusterNavigationAction(cluster, g) == "expand",
 	"a member outside every child prevents moving the cluster into a child")
 
+navigationMapBounds[2], navigationMapBounds[3], navigationMapBounds[4] = nil, nil, nil
 positionResolver = function(mapID) return { mapID = mapID + 1, parentMapID = mapID } end
 local readLimitStart = positionReads
 assert(addon:GetPlayerLocationClusterNavigationAction(cluster, g) == "unavailable")
@@ -349,10 +365,10 @@ assert(positionReads - readLimitStart <= 32, "unbounded native hierarchies must 
 positionResolver = nil
 positionInfo = { mapID = 2, parentMapID = 1 }
 invalidProjection = 2
-assert(addon:GetPlayerLocationClusterNavigationAction(cluster, g) == "unavailable",
+assert(addon:GetPlayerLocationClusterNavigationAction(cluster, g) == "expand",
 	"a child must actually contain every projected member")
 invalidProjection, sameFloorGroup = nil, true
-assert(addon:GetPlayerLocationClusterNavigationAction(cluster, g) == "unavailable",
+assert(addon:GetPlayerLocationClusterNavigationAction(cluster, g) == "expand",
 	"world coordinates cannot invent a member's location on another floor")
 sameFloorGroup = false
 
@@ -436,8 +452,97 @@ for _, mode in ipairs({ "consume", "decline", "throw", "unchanged", "wrong-map",
 	displayedMapID, restricted = 1, false
 end
 WorldMapFrame.SetMapID = mapSetter
+
+-- Forever's Tirisfal Glades (18) and Undercity (998) are sibling zone maps
+-- under Eastern Kingdoms (13). Art hierarchy cannot decide which contains all
+-- players: the surrounding zone covers the city, while the city is smaller.
+navigationMapBounds[13] = { left = 0, width = 1 }
+navigationMapBounds[18] = { left = 0.3, width = 0.4 }
+navigationMapBounds[998] = { left = 0.5, width = 0.15 }
+ancestorInfo[13] = { mapID = 13, parentMapID = 1, mapType = 2 }
+ancestorInfo[18] = { mapID = 18, parentMapID = 13, mapType = 3 }
+ancestorInfo[998] = { mapID = 998, parentMapID = 13, mapType = 3 }
+local function GeographicRow(name, mapID, wx)
+	local bounds = NavigationBounds(mapID)
+	return { name = name, mapID = mapID, x = (wx - bounds.left) / bounds.width, y = 0.6 }
+end
+local mixedCity = { key = "A\nB\nC", members = {
+	GeographicRow("A", 18, 0.4), GeographicRow("B", 998, 0.6), GeographicRow("C", 998, 0.6),
+} }
+C_Map.GetMapInfoAtPosition = function(mapID, px)
+	local bounds = NavigationBounds(mapID)
+	local wx = bounds.left + px * bounds.width
+	if mapID == 1 then return ancestorInfo[13] end
+	if mapID == 13 or mapID == 18 then return wx < 0.5 and ancestorInfo[18] or ancestorInfo[998] end
+	return ancestorInfo[998]
+end
+for _, source in ipairs({ 1, 13 }) do
+	displayedMapID = source
+	action, target = addon:GetPlayerLocationClusterNavigationAction(mixedCity, addon:GetLocationPinSurface("map"))
+	assert(action == "navigate" and target == 18, "Tirisfal must contain the surrounding-zone player and both city players")
+end
+local allCity = { key = "A\nB", members = { GeographicRow("A", 998, 0.6), GeographicRow("B", 998, 0.6) } }
+for _, source in ipairs({ 1, 13, 18 }) do
+	displayedMapID = source
+	action, target = addon:GetPlayerLocationClusterNavigationAction(allCity, addon:GetLocationPinSurface("map"))
+	assert(action == "navigate" and target == 998, "all city players should open Undercity, including from sibling Tirisfal")
+end
+displayedMapID = 18
+assert(addon:GetPlayerLocationClusterNavigationAction(mixedCity, addon:GetLocationPinSurface("map")) == "expand",
+	"a mixed zone/city cluster already in Tirisfal must not jump sideways or upward")
+displayedMapID = 998
+assert(addon:GetPlayerLocationClusterNavigationAction(allCity, addon:GetLocationPinSurface("map")) == "expand")
+
+displayedMapID = 18
+local cityFromZone = { key = "A\nB", members = { GeographicRow("A", 18, 0.6), GeographicRow("B", 18, 0.6) } }
+local cityBounds = navigationMapBounds[998]
+for _, bounds in ipairs({ { left = 0.3, width = 0.4 }, { left = 0.25, width = 0.5 } }) do
+	navigationMapBounds[998] = bounds
+	assert(addon:GetPlayerLocationClusterNavigationAction(cityFromZone, addon:GetLocationPinSurface("map")) == "expand",
+		"equal or larger sibling maps must not cause sideways or upward navigation")
+end
+navigationMapBounds[998] = cityBounds
+local zoneBounds = navigationMapBounds[18]
+navigationMapBounds[18], navigationMapBounds[998] = { left = 0.25, width = 0.5 }, { left = 0.5, width = 0.125 }
+local onCityBorder = { members = { GeographicRow("A", 18, 0.5), GeographicRow("B", 18, 0.625) } }
+action, target = addon:GetPlayerLocationClusterNavigationAction(onCityBorder, addon:GetLocationPinSurface("map"))
+assert(action == "navigate" and target == 998, "inclusive normalized map borders still contain all members")
+onCityBorder.members[2] = GeographicRow("B", 18, 0.62501)
+assert(addon:GetPlayerLocationClusterNavigationAction(onCityBorder, addon:GetLocationPinSurface("map")) == "expand",
+	"a member even slightly beyond the city border prevents choosing the city")
+navigationMapBounds[18], navigationMapBounds[998] = zoneBounds, cityBounds
+sameFloorGroup = true
+assert(addon:GetPlayerLocationClusterNavigationAction(cityFromZone, addon:GetLocationPinSurface("map")) == "expand",
+	"overlapping map art cannot invent a member's floor")
+sameFloorGroup = false
+local geographicWorldProjection, geographicWorldSize = C_Map.GetWorldPosFromMapPos, C_Map.GetMapWorldSize
+C_Map.GetWorldPosFromMapPos = function(mapID, position)
+	local continent, point = geographicWorldProjection(mapID, position)
+	return mapID == 998 and 1 or continent, point
+end
+assert(addon:GetPlayerLocationClusterNavigationAction(cityFromZone, addon:GetLocationPinSurface("map")) == "expand",
+	"smaller art in a different world instance is not a valid containing map")
+C_Map.GetWorldPosFromMapPos = geographicWorldProjection
+worldUnavailable = true
+assert(addon:GetPlayerLocationClusterNavigationAction(cityFromZone, addon:GetLocationPinSurface("map")) == "expand",
+	"unavailable world geometry cannot authorize a sibling-map jump")
+worldUnavailable = false
+C_Map.GetMapWorldSize = nil
+action, target = addon:GetPlayerLocationClusterNavigationAction(cityFromZone, addon:GetLocationPinSurface("map"))
+assert(action == "navigate" and target == 998, "half-map world projection supplies the native size API fallback")
+C_Map.GetMapWorldSize = geographicWorldSize
+displayedMapID = 1
+C_Map.GetWorldPosFromMapPos = function(mapID, position)
+	if mapID == 1 then return nil end
+	return geographicWorldProjection(mapID, position)
+end
+action, target = addon:GetPlayerLocationClusterNavigationAction(allCity, addon:GetLocationPinSurface("map"))
+assert(action == "navigate" and target == 998, "world maps without geographic size retain verified hierarchy descent")
+C_Map.GetWorldPosFromMapPos = geographicWorldProjection
+displayedMapID = 1
 assert(forbiddenReads == 0 and inaccessibleReads == 0 and magnificationReads == 0)
 C_Map.GetMapPosFromWorldPos = ordinaryMapProjection
+C_Map.GetWorldPosFromMapPos, C_Map.GetMapWorldSize = ordinaryWorldProjection, ordinaryWorldSize
 local x, y = addon:ProjectPlayerLocationPin("map", { mapID = 1, x = 0.5, y = 0.6 }, g)
 Near(x, 400)
 Near(y, 300)
