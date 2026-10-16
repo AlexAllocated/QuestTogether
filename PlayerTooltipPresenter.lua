@@ -95,19 +95,21 @@ function QuestTogether:GetChatLogQuestTooltipRow(questID, fallbackTitle)
 	return { questID = questID, name = title, questText = table.concat(lines, "\n") }
 end
 
-local function TooltipTextWidth(addon, label)
+local function TooltipTextWidth(addon, label, maxWidth)
 	-- Measure addon-owned font strings unconstrained, then apply the final
 	-- wrapping width after all title, body and party content has been measured.
 	Call(addon, label, "SetWidth", 0)
 	local width = Number(addon, Call(addon, label, "GetStringWidth"))
-	return width and width >= 0 and math.min(272, math.ceil(width)) or 272
+	maxWidth = maxWidth or 272
+	return width and width >= 0 and math.min(maxWidth, math.ceil(width)) or maxWidth
 end
 
 local GROUP_INSET, GROUP_ICON_SPACE, GROUP_PADDING, GROUP_GAP = 6, 44, 4, 8
 local GROUP_COUNT_WIDTH, GROUP_COUNT_GAP = 20, 3
 local GROUP_CORNER_UV = { { 0, 0.5, 0, 0.5 }, { 0.5, 1, 0, 0.5 }, { 0, 0.5, 0.5, 1 }, { 0.5, 1, 0.5, 1 } }
 
-local function LayoutPartyTooltipGroup(addon, state, index, anchor, top, width, height, key, size, first, last)
+function QuestTogether:LayoutPlayerTooltipPartyGroup(state, index, anchor, top, width, height, key, size, first, last)
+	local addon = self
 	state.partyGroups = state.partyGroups or {}
 	local group = state.partyGroups[index]
 	if not group then
@@ -180,7 +182,7 @@ local function LayoutPartyTooltipRows(addon, state, width, hasIntro, bodyGap)
 		end
 		if key then
 			height, groups = height + GROUP_PADDING, groups + 1
-			LayoutPartyTooltipGroup(addon, state, groups, anchor, topGap + groupTop, width, height - groupTop, key, rows[first].partySize, first, last)
+			addon:LayoutPlayerTooltipPartyGroup(state, groups, anchor, topGap + groupTop, width, height - groupTop, key, rows[first].partySize, first, last)
 			if rows[last + 1] and rows[last + 1].active and not rows[last + 1].partyKey then height = height + GROUP_GAP end
 		end
 		index = last + 1
@@ -370,14 +372,7 @@ local function PartyTooltipRows(addon, state, members)
 			-- Keep the gear separate from the masked class dot so its teeth retain
 			-- their shape. All indicators are reused and reset for each occupant.
 			item.developerIcon = PartyTexture(addon, item.frame, "DeveloperGear", 14, 14, "CENTER", item.dot, "CENTER", 0, 0)
-			item.hiddenGlow = Call(addon, item.frame, "CreateTexture", nil, "BACKGROUND")
-			Call(addon, item.hiddenGlow, "SetColorTexture", 1, 0.12, 0.12, 0.6)
-			Call(addon, item.hiddenGlow, "SetSize", 18, 18)
-			Call(addon, item.hiddenGlow, "SetPoint", "CENTER", item.dot, "CENTER", 0, 0)
-			local glowMask = Call(addon, item.frame, "CreateMaskTexture")
-			Call(addon, glowMask, "SetAllPoints", item.hiddenGlow)
-			Call(addon, glowMask, "SetTexture", "Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-			Call(addon, item.hiddenGlow, "AddMaskTexture", glowMask)
+			item.hiddenGlow = addon:CreatePlayerMarkerGlow(item.frame, item.dot)
 			item.crown = PartyTexture(addon, item.frame, "PartyLeader", 12, 9, "BOTTOM", item.dot, "TOP", 0, -2)
 			item.label = Call(addon, item.frame, "CreateFontString", nil, "OVERLAY", "GameFontHighlightSmall")
 			Call(addon, item.label, "SetPoint", "TOPLEFT", 38, -1)
@@ -392,7 +387,7 @@ local function PartyTooltipRows(addon, state, members)
 		Call(addon, item.dot, member.developer and "Hide" or "Show")
 		Call(addon, item.developerIcon, "SetVertexColor", r, g, b, 1)
 		Call(addon, item.developerIcon, member.developer and "Show" or "Hide")
-		Call(addon, item.hiddenGlow, member.hiddenLocation and "Show" or "Hide")
+		addon:SetPlayerMarkerGlow(item.hiddenGlow, member.hiddenLocation and "hidden" or nil, member.developer and 20 or 16)
 		local leader = member.leader
 		Call(addon, item.label, "SetText", member.label)
 		item.partyKey = member.partyKey
@@ -409,6 +404,42 @@ local function PartyTooltipRows(addon, state, members)
 		Call(addon, state.partyRows[i].frame, "Hide")
 	end
 	return width
+end
+
+-- Legend rows share the tooltip's lifecycle and layout. The caller draws its
+-- owned samples; this presenter only owns spacing, wrapping and row reuse.
+local function LayoutTooltipLegend(addon, state, model, width, anchor, top)
+	if not model.legend and not state.legendRows then return 0 end
+	local entries, height = model.legend or {}, 0
+	state.legendRows = state.legendRows or {}
+	for index, entry in ipairs(entries) do
+		local item = state.legendRows[index]
+		if not item then
+			item = { frame = New(addon, "Frame", state.tooltip) }
+			state.legendRows[index] = item
+			Call(addon, item.frame, "EnableMouse", false)
+			item.sampleFrame = New(addon, "Frame", item.frame)
+			Call(addon, item.sampleFrame, "EnableMouse", false)
+			Call(addon, item.sampleFrame, "SetSize", 58, 26)
+			Call(addon, item.sampleFrame, "SetPoint", "LEFT", item.frame, "LEFT", 0, 0)
+			item.label = Call(addon, item.frame, "CreateFontString", nil, "OVERLAY", "GameFontHighlightSmall")
+			Call(addon, item.label, "SetPoint", "LEFT", item.frame, "LEFT", 68, 0)
+			Call(addon, item.label, "SetJustifyH", "LEFT")
+			Call(addon, item.label, "SetWordWrap", true)
+		end
+		Call(addon, item.label, "SetWidth", width - 68)
+		Call(addon, item.label, "SetText", entry.label)
+		local rowHeight = math.max(28, (Positive(addon, Call(addon, item.label, "GetStringHeight")) or 12) + 8)
+		height = height + (entry.gapBefore or 0)
+		Call(addon, item.frame, "ClearAllPoints")
+		Call(addon, item.frame, "SetPoint", "TOPLEFT", anchor, "BOTTOMLEFT", 0, -top - height)
+		Call(addon, item.frame, "SetSize", width, rowHeight)
+		model.drawLegendSample(addon, item, entry)
+		Call(addon, item.frame, "Show")
+		height = height + rowHeight
+	end
+	for index = #entries + 1, #state.legendRows do Call(addon, state.legendRows[index].frame, "Hide") end
+	return height
 end
 
 function QuestTogether:RenderPlayerTooltip(state, anchor, model)
@@ -468,13 +499,14 @@ function QuestTogether:RenderPlayerTooltip(state, anchor, model)
 	local text, introText = model.text, model.introText
 	Call(addon, state.tooltipIntro, "SetText", introText or "")
 	Call(addon, state.tooltipLabel, "SetText", text)
+	local maxWidth = math.max(160, math.min(360, Number(addon, model.maxWidth) or 272))
 	local contentWidth = math.min(
-		272,
+		maxWidth,
 		math.max(
-			160,
-			TooltipTextWidth(addon, state.tooltipTitle) + (factionTexture and 44 or 0),
-			TooltipTextWidth(addon, state.tooltipIntro),
-			TooltipTextWidth(addon, state.tooltipLabel),
+			model.legend and maxWidth or 160,
+			TooltipTextWidth(addon, state.tooltipTitle, maxWidth) + (factionTexture and 44 or 0),
+			TooltipTextWidth(addon, state.tooltipIntro, maxWidth),
+			TooltipTextWidth(addon, state.tooltipLabel, maxWidth),
 			PartyTooltipRows(addon, state, model.members)
 		)
 	)
@@ -505,6 +537,9 @@ function QuestTogether:RenderPlayerTooltip(state, anchor, model)
 		Call(addon, state.tooltipIntro, "Hide")
 	end
 	local partyHeight = LayoutPartyTooltipRows(addon, state, contentWidth, introText ~= nil, bodyGap)
+	local legendHeight = LayoutTooltipLegend(addon, state, model, contentWidth,
+		introText and state.tooltipIntro or state.tooltipTitle, (introText and 8 or bodyGap) + partyHeight)
+	if legendHeight > 0 then partyHeight = partyHeight + legendHeight + (introText and 8 or 0) end
 	Call(addon, state.tooltipLabel, "ClearAllPoints")
 	if introText then
 		Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", state.tooltipIntro, "BOTTOMLEFT", 0, -partyHeight - 14)

@@ -2003,7 +2003,7 @@ function QuestTogether:InitializePlayerLocationsWindow(parentCategory)
 	description:SetPoint("TOPLEFT", 16, -48)
 	description:SetWidth(640)
 	description:SetJustifyH("LEFT")
-	description:SetText(L("Find other QuestTogether players with class-colored dots. Gold glows mark players looking for questing partners. Hover for player details, or click for the player menu. Ignored players are hidden."))
+	description:SetText(L("Class-colored dots show QT players; gold glows mark those looking for questing partners. Hover for details. On the world map, left-click to open the most detailed map, or the player menu if already there. Right-click opens the menu directly. Ignored players are hidden."))
 	self.playerLocationsControls = {}
 	for index, option in ipairs({
 		{ key = "sharePlayerLocation", label = L("Share my location on the map and minimap"),

@@ -306,6 +306,8 @@ positionResolver = function(mapID)
 end
 action, target = addon:GetPlayerLocationClusterNavigationAction(cluster, g)
 assert(action == "navigate" and target == 4, "one click must skip directly through all shared child levels")
+assert(addon:GetPlayerLocationMapNavigationTarget({ cluster.members[1] }, 1) == 4,
+	"a single Find on Map location must descend through every available child level")
 assert(addon:TryNavigatePlayerLocationCluster(cluster, g))
 assert(#nativeActions == 2 and nativeActions[2][2] == 4 and displayedMapID == 4,
 	"open only the final map, never each intermediate map")
@@ -383,6 +385,8 @@ positionInfo = nil
 for _, getter in ipairs({ secret, inaccessible, function() error("native navigation unavailable") end }) do
 	C_Map.GetMapInfoAtPosition = getter
 	assert(addon:GetPlayerLocationClusterNavigationAction(cluster, g) == "unavailable")
+	assert(addon:GetPlayerLocationMapNavigationTarget({ cluster.members[1] }, 1) == nil,
+		"unavailable native hit testing must allow Find on Map to fall back to its source map")
 end
 C_Map.GetMapInfoAtPosition = nil
 assert(addon:GetPlayerLocationClusterNavigationAction(cluster, g) == "unavailable")
@@ -495,6 +499,12 @@ assert(addon:GetPlayerLocationClusterNavigationAction(allCity, addon:GetLocation
 
 displayedMapID = 18
 local cityFromZone = { key = "A\nB", members = { GeographicRow("A", 18, 0.6), GeographicRow("B", 18, 0.6) } }
+assert(addon:GetPlayerLocationMapNavigationTarget({ cityFromZone.members[1] }, 18) == 998,
+	"a single location reported on Tirisfal must resolve to smaller Undercity art when it contains that location")
+assert(addon:GetPlayerLocationMapNavigationTarget({ allCity.members[1] }, 998) == 998,
+	"a single location already on its finest city map must keep that map")
+assert(addon:GetPlayerLocationMapNavigationTarget({ mixedCity.members[1] }, 18) == 18,
+	"a single location outside city bounds must keep the surrounding zone")
 local cityBounds = navigationMapBounds[998]
 for _, bounds in ipairs({ { left = 0.3, width = 0.4 }, { left = 0.25, width = 0.5 } }) do
 	navigationMapBounds[998] = bounds

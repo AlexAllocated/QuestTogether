@@ -465,7 +465,7 @@ function QT:GetHintCatalog()
 		},
 		{
 			id = "hint051",
-			text = L("Click a QT player name or world-map dot to whisper, invite, add a friend, or compare quests."),
+			text = L("Click a QT player name or right-click a world-map dot to whisper, invite, add a friend, or compare quests. Left-click a world-map dot to open its most detailed map, or the player menu if already there."),
 			menu = true,
 		},
 		{

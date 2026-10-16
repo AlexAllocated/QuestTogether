@@ -1,5 +1,6 @@
 local QT = _G.QuestTogether
 local L = QT.Translate
+local PRIVATE_LOCATION_LIFETIME, MAX_PRIVATE_LOCATIONS = 120, 512
 
 local function Hex(s)
 	return (s:gsub(".", function(c)
@@ -384,6 +385,75 @@ function QT:AddDeveloperPingMetadata(response, request)
 	return true
 end
 
+local function PrivateLocations(addon, now)
+	local data = rawget(addon, "developerPlayerData")
+	if not data then data = {}; addon.developerPlayerData = data end
+	local count = 0
+	for name, row in pairs(data) do
+		if now < row.receivedAt or now - row.receivedAt >= PRIVATE_LOCATION_LIFETIME then
+			data[name] = nil
+		else
+			count = count + 1
+		end
+	end
+	return data, count
+end
+
+local function StorePrivateLocation(data, name, location, sampledAt)
+	location.name, location.receivedAt = name, sampledAt
+	location.lifetime, location.mask = PRIVATE_LOCATION_LIFETIME, 3
+	location.developerOnly, location.publicLocationHidden = true, true
+	data[name] = location
+end
+
+-- A signed subscription authorizes delivery, while the publisher's envelope
+-- still owns location ordering. Private coordinates never enter the public
+-- cache: its matching observation is only a coordinate-free withdrawal.
+function QT:HandleDeveloperLocationSnapshot(record, sender, context)
+	if not self.isEnabled or self.isLoggingOut or type(record) ~= "table" or type(context) ~= "table"
+		or context.distribution ~= "WHISPER" or type(record.locationShared) ~= "boolean"
+		or not self:IsDeveloperLocationSubscriptionCurrent(record.subscriptionSession, record.subscriptionId) then
+		return false
+	end
+	local name = Name(self, sender)
+	local session, sequence = context.session, self:SafeToNumber(context.sequence)
+	local now, server = self:SafeToNumber(self.API.GetTime()), self:GetAnnouncementServerTime()
+	local stamp = self:SafeToNumber(context.stamp)
+	if not name or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name)
+		or type(session) ~= "string" or #session > 64 or not session:match("^[%w%-]+$")
+		or not sequence or sequence < 1 or sequence > 1e12 or sequence ~= math.floor(sequence)
+		or not now or not server or not stamp or stamp <= 0 then return false end
+	local age = server - stamp
+	if age < -1 or age >= PRIVATE_LOCATION_LIFETIME then return false end
+	local location = self:ValidatePlayerLocationRecord(record.location)
+	if not location or (location.mask ~= 0 and location.mask ~= 3) then return false end
+	local sharedPosition = record.locationShared and location.mask == 3
+	-- Receipt must be recent for every feed packet, but accepted public points
+	-- retain the normal geographic lease independently of this optional feed.
+	local lifetime = sharedPosition and self:GetGeographicSnapshotLifetime() or PRIVATE_LOCATION_LIFETIME
+	local observation = self:CreatePeerObservation(name, "LOC", {
+		source = "developer-feed", age = math.max(0, age), lifetime = lifetime,
+		session = session, sequence = sequence, stamp = stamp, sourceSampledAt = stamp,
+	})
+	if not self:CanAcceptPeerObservation(observation) then return false end
+	location.session, location.sequence, location.retired = session, sequence, {}
+	local public = sharedPosition and location
+		or { mask = 0, session = session, sequence = sequence, retired = {} }
+	if not self:StorePlayerLocationRecord(name, public, now, observation.sampledAt,
+		observation.expiresAt - now, observation) then return false end
+	self:RecordPeerPresenceFromSnapshot(name, observation.sampledAt, session, sequence)
+	local data, count = PrivateLocations(self, now)
+	local previous = data[name]
+	-- Clear only after admission, so an older unavailable/public snapshot cannot
+	-- erase a newer private point or allow a reordered private point to return.
+	data[name] = nil
+	if not record.locationShared and location.mask == 3 and (previous or count < MAX_PRIVATE_LOCATIONS) then
+		StorePrivateLocation(data, name, location, observation.sampledAt)
+	end
+	self:RefreshPlayerLocationPins()
+	return true
+end
+
 function QT:AcceptDeveloperPingResponse(response, pending, observation)
 	if rawget(self, "isLocalDeveloper") ~= true or not pending.developerRequest or not response.developer then
 		return
@@ -400,19 +470,7 @@ function QT:AcceptDeveloperPingResponse(response, pending, observation)
 		observation = self:CreatePingResponseObservation(response, pending)
 	end
 	local age = observation and now - observation.sampledAt
-	local data = rawget(self, "developerPlayerData")
-	if not data then
-		data = {}
-		self.developerPlayerData = data
-	end
-	local count = 0
-	for key, row in pairs(data) do
-		if now < row.receivedAt or now - row.receivedAt >= 120 then
-			data[key] = nil
-		else
-			count = count + 1
-		end
-	end
+	local data, count = PrivateLocations(self, now)
 	if age and age >= -30 and age < self:GetGeographicSnapshotLifetime() then
 		age = math.max(0, age)
 		if not self:CanAcceptPeerUpdate(name, nil, now - age) then
@@ -436,7 +494,8 @@ function QT:AcceptDeveloperPingResponse(response, pending, observation)
 		local previous = data[name]
 		local fresh = not previous or now - age >= previous.receivedAt
 		local accepted = fresh and self:RefreshPlayerLocationFromPing(name, response, observation)
-		if accepted and response.locationShared == false and age < 120 and (count < 512 or previous) then
+		if accepted and response.locationShared == false and age < PRIVATE_LOCATION_LIFETIME
+			and (count < MAX_PRIVATE_LOCATIONS or previous) then
 			local map, x, y, level =
 				self:SafeToNumber(response.mapID),
 				self:SafeToNumber(response.coordX),
@@ -454,8 +513,7 @@ function QT:AcceptDeveloperPingResponse(response, pending, observation)
 				and y >= 0
 				and y <= 100
 			then
-				data[name] = {
-					name = name,
+				StorePrivateLocation(data, name, {
 					mapID = map,
 					x = x / 100,
 					y = y / 100,
@@ -465,14 +523,9 @@ function QT:AcceptDeveloperPingResponse(response, pending, observation)
 					level = level,
 					faction = response.faction,
 					warMode = self:NormalizeAnnouncementWarModeValue(response.warMode),
-					receivedAt = now - math.max(0, age),
-					lifetime = 120,
-					mask = 3,
-					developerOnly = true,
-					publicLocationHidden = true,
 					lookingForQuestPartners = response.lookingForQuestPartners,
 					addonVersion = response.addonVersion,
-				}
+				}, now - age)
 			end
 		end
 	end
@@ -495,7 +548,7 @@ function QT:IsPlayerLocationHiddenForDeveloper(name)
 		and row.publicLocationHidden == true
 		and now ~= nil
 		and now >= row.receivedAt
-		and now - row.receivedAt < 120
+		and now - row.receivedAt < PRIVATE_LOCATION_LIFETIME
 		and self:CanAcceptPeerUpdate(name, nil, row.receivedAt)
 end
 
@@ -509,7 +562,7 @@ function QT:AppendDeveloperLocationRows(rows)
 		indices[row.name] = index
 	end
 	for name, row in pairs(data or {}) do
-		if now < row.receivedAt or now - row.receivedAt >= 120 or self:IsIgnoredPlayerName(name) then
+		if now < row.receivedAt or now - row.receivedAt >= PRIVATE_LOCATION_LIFETIME or self:IsIgnoredPlayerName(name) then
 			data[name] = nil
 		elseif self:ShouldShowPlayerLocation(name) then
 			-- A newer live public sample wins over an older diagnostic snapshot.

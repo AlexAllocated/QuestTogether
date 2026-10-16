@@ -117,6 +117,147 @@ QT:RegisterTest("protocol v2 rejects malformed bounded schema payloads without r
 	}) do
 		Equal(a:DecodeCommFrame(wire), nil)
 	end
+	local private = {
+		subscriptionSession = "developer-session", subscriptionId = "offer-1", locationShared = false,
+		location = { mask = 3, mapID = 12, x = 0.4, y = 0.5 },
+	}
+	local payload = assert(a:EncodeCommRecord("DLOC", private))
+	Equal(assert(a:DecodeCommRecord("DLOC", payload)).locationShared, false)
+	local function Cell(value)
+		return #value .. ":" .. value
+	end
+	local forgedTopics = Cell(Cell("DLOC") .. Cell("100") .. Cell("1") .. Cell(payload))
+	for _, parent in ipairs({ { "STATE", 1 }, { "BYE", 2 }, { "QTHD", 2 } }) do
+		Equal(a:EncodeCommRecord(parent[1], {
+			requestId = "details", records = { { topic = "DLOC", data = private, sampledAt = 100 } },
+		}), nil, "private coordinates cannot be embedded in " .. parent[1])
+		Equal(a:DecodeCommRecord(parent[1], parent[2] .. "=" .. Cell(forgedTopics)), nil,
+			"forged private topic cannot enter through " .. parent[1])
+	end
+end)
+
+QT:RegisterTest("protocol private locations enforce exclusive authorization and bounded delivery", function()
+	local net, sender, developer, partner = Fixture()
+	sender.db.profile.shareDeveloperDiagnostics = true
+	sender.db.profile.sharePlayerLocation = false
+	local state = sender:InitializeDeveloperAnnouncements()
+	local lease = {
+		sender = developer.name, session = developer:GetCommunicationSession(), requestId = "offer-1",
+		active = true, expires = 240, retireAt = 330, sampledAt = sender.now,
+	}
+	state.subscribers[developer.name] = lease
+	assert(sender:RecordPeerEpoch(developer.name, lease.session, sender.API.GetServerTime()))
+	local record = {
+		subscriptionSession = lease.session, subscriptionId = lease.requestId, locationShared = false,
+		location = { mask = 3, mapID = 12, x = 0.4, y = 0.5 },
+	}
+	local route = { distribution = "WHISPER", target = developer.name, developerAnnouncement = lease }
+	Equal(sender:Publish("DLOC", record), false, "private state must not enter global publication staging")
+	for _, wrong in ipairs({
+		{ distribution = "CHANNEL", developerAnnouncement = lease },
+		{ distribution = "PARTY", developerAnnouncement = lease },
+		{ distribution = "WHISPER", target = developer.name },
+		{ distribution = "WHISPER", target = developer.name, developerAnnouncement = {} },
+	}) do
+		Equal(sender:Publish("DLOC", record, { wrong }), false)
+	end
+	record.subscriptionId = "different-offer"
+	Equal(sender:Publish("DLOC", record, { route }), false, "payload must name its actual recipient lease")
+	record.subscriptionId = lease.requestId
+	local outcomes = {}
+	local function Completed(_, reason)
+		outcomes[#outcomes + 1] = reason
+	end
+	assert(sender:Publish("DLOC", record, { route }, { onComplete = Completed }))
+	sender.db.profile.shareDeveloperDiagnostics = false
+	net:Advance(1)
+	Equal(#sender.sent, 0, "queued private coordinates must stop when diagnostics are disabled")
+	Equal(#outcomes, 1)
+	Equal(outcomes[1], "cancelled")
+	sender.db.profile.shareDeveloperDiagnostics = true
+	Equal(sender:Publish("DLOC", record, { route }), false, "restoring consent must not revive an old lease")
+	lease = {
+		sender = developer.name, session = developer:GetCommunicationSession(), requestId = "offer-2",
+		active = true, expires = 240, retireAt = 330, sampledAt = sender.now,
+	}
+	state.subscribers[developer.name] = lease
+	route.developerAnnouncement = lease
+	record.subscriptionId = lease.requestId
+	assert(sender:Publish("DLOC", record, { route }, { onComplete = Completed }))
+	net:Advance(2)
+	local sent = 0
+	for _, packet in ipairs(sender.sent) do
+		local frame = sender:DecodeCommFrame(packet.wire)
+		if frame.operation == "DLOC" then
+			Equal(packet.route, "WHISPER")
+			Equal(packet.target, developer.name)
+			sent = sent + 1
+		end
+	end
+	assert(sent > 0, "public location opt-out must not block separately authorized diagnostic coordinates")
+	Equal(outcomes[2], "accepted")
+	Equal(#outcomes, 2)
+	Equal(state.pendingCopies, 0)
+
+	local receiver = developer:InitializeDeveloperAnnouncements()
+	local large = {
+		subscriptionSession = developer:GetCommunicationSession(), subscriptionId = "offer-pool",
+		locationShared = false,
+		location = { mask = 3, mapID = 12, x = 0.4, y = 0.5,
+			className = string.rep("c", 90), race = string.rep("r", 90) },
+	}
+	local function Frames(peer, operation)
+		local body = operation == "DLOC" and large
+			or { eventType = "QUEST_PROGRESS", senderName = peer.name, text = string.rep("x", 900) }
+		local frames = assert(peer:BuildCommFrames(operation, body, {
+			session = peer:GetCommunicationSession(), messageId = tostring(peer:NextCommunicationSequence()),
+			stamp = peer.API.GetServerTime(),
+		}))
+		assert(#frames > 1, "capacity checks need actual partial objects")
+		return frames
+	end
+	local function Partial(peer, operation, distribution)
+		return developer:ReceiveCommunication(developer.commPrefix, Frames(peer, operation)[1],
+			distribution or "WHISPER", peer.name)
+	end
+	Equal(Partial(sender, "DLOC"), false)
+	Equal(developer:GetCommTransferMetrics().incoming, 0, "ordinary clients cannot retain diagnostic fragments")
+	developer.isLocalDeveloper = true
+	function developer:SignDeveloperRequest() return string.rep("s", 64) end
+	Equal(Partial(sender, "DLOC"), false)
+	Equal(developer:GetCommTransferMetrics().incoming, 0, "a private signer alone is not an active subscription")
+	receiver.locationSubscriptions[large.subscriptionId] = { startedAt = developer.now, expires = developer.now + 240 }
+	for _, distribution in ipairs({ "CHANNEL", "PARTY" }) do
+		Equal(Partial(sender, "DLOC", distribution), false)
+	end
+	Equal(developer:GetCommTransferMetrics().incoming, 0, "wrong-route private data must stop before assembly")
+
+	-- Location samples and event copies share one small assembly allowance,
+	-- separate from normal party responses and the global ingress allowance.
+	for index = 1, 8 do
+		if index % 4 == 1 then net:Advance(0.5) end
+		Partial(index % 2 == 0 and sender or partner, index <= 2 and "ANN" or "DLOC")
+	end
+	Equal(developer:GetCommTransferMetrics().incoming, 8)
+	local extra = net:AddPeer("Extra-Realm", { group = "party" })
+	Equal(Partial(extra, "DLOC"), false)
+	Equal(developer:GetCommTransferMetrics().incoming, 8, "DLOC must share the existing developer-feed cap")
+	assert(developer:GetCommTransferMetrics().capacity >= 1)
+	net:Advance(1)
+	local dropped = developer:GetDeveloperAnnouncementMetrics().ingressDropped or 0
+	for _ = 1, 24 do Partial(extra, "DLOC") end
+	assert(developer:GetDeveloperAnnouncementMetrics().ingressDropped >= dropped + 16)
+	local partyEvents = 0
+	function developer:HandleAnnouncementEvent() partyEvents = partyEvents + 1 end
+	-- An actual group packet retains its normal allowance in this same frame.
+	local party = assert(extra:BuildCommFrames("ANN", {
+		eventType = "QUEST_PROGRESS", senderName = extra.name, text = "Party progress",
+	}, { session = extra:GetCommunicationSession(), messageId = tostring(extra:NextCommunicationSequence()),
+		stamp = extra.API.GetServerTime() }))
+	for _, wire in ipairs(party) do
+		developer:ReceiveCommunication(developer.commPrefix, wire, "PARTY", extra.name)
+	end
+	Equal(partyEvents, 1, "diagnostic overload cannot consume normal party event capacity")
 end)
 
 QT:RegisterTest("protocol v2 normalizes duplicate audiences before conserving completion callbacks", function()

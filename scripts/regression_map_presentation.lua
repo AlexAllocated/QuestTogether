@@ -16,6 +16,7 @@ local function Fixture()
 	function a:GetOption(key) return self.options[key] end
 	function a:Print(message) self.message = message end
 	function a:RefreshPlayerLocationPins() self.refreshes = (self.refreshes or 0) + 1 end
+	function a:GetPlayerLocationMapNavigationTarget(_, mapID) return self.navigationTarget or mapID end
 	function a:ProjectPlayerLocationPin(_, row, geometry)
 		self.projections = (self.projections or 0) + 1
 		if row.mapID == geometry.mapID then return row.x * geometry.width, row.y * geometry.height end
@@ -227,18 +228,61 @@ QT:RegisterTest("selected map player retains exact coordinates outside the conta
 	Equal(markers[2].key, "A\nC")
 end)
 
-QT:RegisterTest("find player opens current shared map without changing saved filters or navigation", function()
+QT:RegisterTest("find player opens the most detailed containing map and selection survives map navigation for one minute", function()
 	local a = Fixture()
 	a.rows.Friend = Row("Friend")
+	a.navigationTarget = 3
 	a.options.onlyShowQuestPartners = true
 	assert(a:FindPlayerOnMap("Friend"))
-	Equal(a.opened, 1)
+	Equal(a.opened, 3)
 	Equal(a.refreshes, 1)
 	assert(a.options.onlyShowQuestPartners)
-	Equal(a:GetSelectedPlayerMapLocation(1), a.rows.Friend)
-	a.now = 120
+	local selection = a.playerMapSelection
+	-- Projection decides whether the current view contains the selected peer;
+	-- an unrelated map temporarily omits the marker without ending the search.
+	function a:ProjectPlayerLocationPin(_, row, view)
+		if view.mapID ~= 4 then return row.x * view.width, row.y * view.height end
+	end
+	for _, mapID in ipairs({ 3, 2, 1, 4, 1, 3 }) do
+		a.now = a.now + 1
+		local markers = a:GetPlayerLocationMapMarkers({}, { mapID = mapID, width = 1000, height = 600 }, 128)
+		Equal(#markers, mapID == 4 and 0 or 1)
+		if markers[1] then
+			assert(markers[1].selected)
+			Equal(markers[1].row, a.rows.Friend)
+			Near(markers[1].x, 500)
+		end
+		Equal(a.playerMapSelection, selection)
+		Equal(selection.expires, 160)
+	end
+	a.now = 159.999
+	Equal(a:GetSelectedPlayerMapLocation(3), a.rows.Friend)
+	a.now = 160
 	Equal(a:GetSelectedPlayerMapLocation(1), nil)
 	Equal(a.playerMapSelection, nil)
+	-- Missing detailed-map support still opens the accepted source map.
+	a = Fixture()
+	a.rows.Friend = Row("Friend")
+	function a:GetPlayerLocationMapNavigationTarget() return nil end
+	function a:RefreshPlayerLocationPins()
+		self.renderedMarkers = self:GetPlayerLocationMapMarkers({}, geometry, 128)
+	end
+	assert(a:FindPlayerOnMap("Friend"))
+	Equal(a.opened, a.rows.Friend.mapID)
+	Equal(a.renderedMarkers[1].row.name, "Friend")
+	-- A later search replaces the target and starts its own one-minute lease.
+	a.rows.Other, a.now = Row("Other", 0.65), 125
+	assert(a:FindPlayerOnMap("Other"))
+	Equal(a.playerMapSelection.name, "Other")
+	Equal(a.playerMapSelection.expires, 185)
+	Equal(#a.renderedMarkers, 1)
+	Equal(a.renderedMarkers[1].row.name, "Other")
+	Near(a.renderedMarkers[1].x, 650)
+	-- A failed replacement must also remove the old highlight from the view.
+	a.now = 130
+	assert(not a:FindPlayerOnMap("Absent"))
+	Equal(a.playerMapSelection, nil)
+	Equal(#a.renderedMarkers, 0)
 end)
 
 QT:RegisterTest("find player refuses stale hidden ignored party self disabled and restricted locations", function()
@@ -270,7 +314,7 @@ QT:RegisterTest("find player refuses stale hidden ignored party self disabled an
 	Equal(a.playerMapSelection, nil)
 end)
 
-QT:RegisterTest("temporary map selection retires on map change consent withdrawal party join and restrictions", function()
+QT:RegisterTest("temporary map selection retires on source location change consent withdrawal party join and restrictions", function()
 	local changes = {
 		function(a) a.rows.Friend.mask = 0 end,
 		function(a) a.rows.Friend = nil end,
@@ -289,10 +333,6 @@ QT:RegisterTest("temporary map selection retires on map change consent withdrawa
 		Equal(a:GetSelectedPlayerMapLocation(1), nil)
 		Equal(a.playerMapSelection, nil)
 	end
-	local a = Fixture()
-	a.rows.Friend = Row("Friend")
-	assert(a:FindPlayerOnMap("Friend"))
-	Equal(a:GetSelectedPlayerMapLocation(2), nil)
 end)
 
 QT:RegisterTest("find rechecks location eligibility after native map opening callbacks", function()

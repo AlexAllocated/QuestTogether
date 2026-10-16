@@ -21,7 +21,7 @@ private `.local` notes are historical context, not the source of truth.
 | CommsTransfer | Shared fragmentation, atomic assembly, bounded repair, retained response replay and aggregate payload budget | Domain snapshot installation or diagnostic consent |
 | GeographicComms / NearbyStreams | Current/viewed interests, subscriptions, discovery policy and owned state/movement producers | Another native queue or rewriting received feature caches |
 | QuestCompareCommunication / PingCommunication | Domain request premises and response construction | Wire encoding, fragment pumps or independent timers |
-| DeveloperAnnouncements | Signed developer subscriptions, diagnostic consent, mirror audiences and bounded feed work | Normal announcement filters, private location access or a separate transport |
+| DeveloperAnnouncements | Signed developer subscriptions, diagnostic consent, mirror audiences and paced private location publication | Normal announcement filters, private location storage or a separate transport |
 | QuestCompare | Atomic party log assembly, local snapshots and negotiated revision reuse | Native UI mutation or independent transport pumps |
 | QuestCompletion | Bounded character-history queries for visible comparisons, evidence age and completed/absent classification | Account-wide completion or full history broadcasts |
 | QuestSharingResults | Exact native share-result matching and recent per-player explanations | Guessing which quest a native result belongs to |
@@ -40,9 +40,9 @@ private `.local` notes are historical context, not the source of truth.
 | QuestDetails | Bounded copies of native quest-tooltip text and an owned reader session | Native tooltip mutation, quest selection, or peer requests |
 | QuestDialogs | Focus/share-related presentation and callbacks | Window geometry rules |
 | PlayerTooltipPresenter | Shared player tooltip content and measurement | Map projection or marker allocation |
-| MapOverlayPool | Surface attachment, marker reuse and retirement | Player/waypoint content, route or visibility policy |
+| MapOverlayPool | Surface attachment, marker reuse, retirement and shared focus shading | Player/waypoint content, route or visibility policy |
 | MapLocationPresentation | Projected world-map clustering/expansion and temporary player selection | Accepted observations, consent, location sampling or native map mutation |
-| MapOverlayControls | Saved world-map overlay visibility, owned toggle and hover highlight | Sharing, subscriptions, minimap visibility or accepted observations |
+| MapOverlayControls | Saved world-map overlay visibility, owned toggle and legend | Sharing, subscriptions, minimap visibility or accepted observations |
 | LocationPins / PartyWaypointPins | Domain-specific pin placement, visuals and actions | A second tooltip renderer or marker pool lifecycle |
 
 ## Data and time contracts
@@ -67,7 +67,7 @@ private `.local` notes are historical context, not the source of truth.
   player membership. Clustering is enabled by default and can be disabled in Player
   Locations without affecting sharing or discovery. Hovering a cluster shows up to six
   cached player rows through the shared tooltip renderer, including individual status
-  icons but no inferred party grouping or leaders. Clicking opens the smallest
+  icons and party groups from the shared party query. Clicking opens the smallest
   native map that geographically contains every member, including overlapping
   city/zone maps, without changing canvas magnification. At the
   deepest shared map, clicking expands up to 12 player
@@ -76,26 +76,34 @@ private `.local` notes are historical context, not the source of truth.
   A navigation click automatically expands an identical cluster on the destination
   map. Its two-second intent is consumed once and is cancelled by membership,
   map, profile or enabled-lifetime changes; split clusters remain individual dots.
-  While expanded, a noninteractive owned layer shades the visible map and ordinary
-  markers by 22%. The cluster center, member dots and connectors render above it.
-  Party-hover dimming remains independent; the minimap is unchanged.
+  Hovering a world-map player, cluster or shared waypoint shades the map while
+  keeping the marker hosts and their children above the shade. The shared overlay
+  owner fades unrelated markers separately; focused markers retain full opacity.
+  Player focus includes visible party
+  members. Hover shading never stacks with the expanded-cluster shade; leaving a
+  marker restores the existing expansion emphasis, if any. Minimap hovers do not
+  shade the world map.
   Expansion owns only a cluster identity, page and geometry signature; positions are
   display offsets connected to accepted coordinates, never new location observations.
   Hiding/changing the map, geometry or membership, disabling clustering, profile changes
   and Find on Map retire expansion. Minimap pins remain individual.
   The world-map QT button toggles all QT player and waypoint overlays together.
   Its per-profile preference defaults on and does not affect the minimap, sharing,
-  filters or discovery. Hovering the button shades the native map beneath all QT
-  overlays; leaving restores normal layering, including any expanded cluster.
+  filters or discovery. Hovering the button shows the map legend without changing
+  map shading or marker emphasis.
   Location age never changes marker brightness. Normal source-freshness expiry
   still removes old observations; dimming reflects interaction state only.
-  Find on Map uses the guarded native opener and a 20-second green selection at the
-  player's actual location, outside its cluster. Explicit selection may temporarily
-  reveal an otherwise filtered non-LFQP player and restores world-map overlay
-  visibility, but never changes saved player filters or sharing preferences,
-  revives expired coordinates or reveals a hidden diagnostic location. Own-party
-  markers remain native. Closing/changing the map, profile replacement, restriction,
-  withdrawal, ignore and departure retire selection through normal presentation refresh.
+  Find on Map and left-clicking a world-map dot share one 60-second green selection
+  at the player's actual location, outside its cluster. A new selection replaces
+  the previous one; right-click menus leave it unchanged. Left-click opens the
+  deepest containing map, or the player menu when already there. Selection survives
+  viewed-map changes but closing the map retires it. Find may temporarily reveal an
+  otherwise filtered non-LFQP player and restore overlay visibility, but never changes
+  saved player filters or sharing preferences, revives expired coordinates or reveals
+  a hidden diagnostic location. Clicking a visible dot preserves its visibility rules,
+  including developer-only diagnostic rows, through the existing visible-row query.
+  Own-party markers remain native. Profile replacement, restriction, withdrawal,
+  ignore and departure retire selection through normal presentation refresh.
 - Developer map identity comes only from the existing signature-verified announcement
   lease, checked against the peer session, departure and expiry. Authenticating that
   public identity is independent of diagnostic consent; private requests and mirrored
@@ -232,14 +240,24 @@ seconds after its signed issue time, never 240 seconds after delayed receipt.
 Only clients allowing developer diagnostics add whisper audiences to ANN/LVL.
 They reuse the original sanitized payload and envelope, including public location
 sharing restrictions. Public/group and private copies deduplicate as one event.
+The same verified subscription receives separate `DLOC` snapshots, initially
+after a short jitter and then every 30–45 seconds, including while stationary.
+These private state records can only use a live consent-bound whisper route;
+they cannot be embedded in public state or ordinary announcements. The developer
+retains issued offers for their lease so renewal does not reject in-flight data.
+DeveloperDiagnostics applies normal peer session, sequence and source-time fences.
+Publicly shared coordinates refresh ordinary location state; hidden coordinates
+remain only in its separate 512-player private store and expire after 120 seconds
+from sampling. Unavailable or newly public samples clear the prior private dot.
+No manual ping or `devlogall` display setting is needed for this feed.
 Consent, ignore, profile replacement, departure and session shutdown fence queued
 copies and delayed authentication. Signature verification rechecks peer departure
 ordering before installing a lease. This does not provide historical replay or
 messages from clients on unreachable channels or older unsupported versions.
 
 Mirrors use the existing background class and budgets, at most four outstanding
-copies and four subscribed developer recipients per client. Receiver processing
-allows 32 mirrored datagrams/second, burst 16 and at most eight per frame before
+copies and four subscribed developer recipients per client, shared by announcement
+mirrors and location snapshots. Receiver processing allows 32 developer datagrams/second, burst 16 and at most eight per frame before
 the ordinary ingress limits. At most eight incoming mirror assemblies (4 KiB
 each) leave capacity for normal traffic. These are QT processing policies, not
 claims about server limits or guaranteed delivery. Extra copies can expire or

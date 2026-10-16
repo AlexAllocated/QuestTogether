@@ -104,7 +104,7 @@ With location sharing enabled, turning partner status on also announces your sea
 
 ### Invite or request to join
 
-1. Click a QT player’s name in the log or their world-map dot to open the player menu.
+1. Click a QT player’s name in the log or right-click their world-map dot to open the player menu.
 2. Choose **Whisper** to talk, **Invite** to invite an available player, or **Request to Join** when the player is already grouped.
 3. For join requests, an eligible recipient chooses **Send Invitation** or **Decline**. You still accept WoW’s normal invitation.
 
@@ -123,10 +123,13 @@ Under **Groups & Sharing**, **Automatically invite friends who request to join**
 Class-colored dots represent other QT players on the world map and minimap. A gold glow marks someone looking for questing partners.
 
 - Hover a dot to inspect available class, race, level, faction, partner status, party information, and QT version. Retail can also show War Mode. Keep the tooltip open while player details and the full small-party roster refresh. Larger groups show their size and leader.
-- Hover a grouped player to highlight their party’s visible dots. Party badges identify grouped players; a crown identifies the leader.
-- Click a **world-map dot** to open the player menu. On the **minimap**, left-click a dot to target that player or right-click it to open their menu.
+- Hover a grouped player to highlight their party's visible dots. Party badges identify grouped players; a crown identifies the leader.
+- Hover a world-map player, cluster, or shared waypoint to dim the surrounding map and keep the focused markers bright.
+- On the **world map**, left-click a player dot to highlight it in green and open the most detailed map containing that player. If you are already at that map level, left-click opens their menu. The highlight lasts one minute, until the map closes, or until you select another player. Right-click opens the menu without changing the highlight. On the **minimap**, left-click a dot to target that player or right-click it to open their menu.
 
 These details also appear when hovering linked player names in QT chat. Your party members appear using **Blizzard’s party markers**.
+
+Use the **QT icon in the top-right corner of the map** to show or hide QT markers. A red X means they are hidden. Hover the icon to read the map legend; this does not dim the map.
 
 [![World-map player dots and party tooltip](https://media.forgecdn.net/attachments/2055/234/player-map-party-roster-png.png)](https://media.forgecdn.net/attachments/2055/234/player-map-party-roster-png.png)
 

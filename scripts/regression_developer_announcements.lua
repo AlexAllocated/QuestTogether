@@ -210,10 +210,12 @@ QT:RegisterTest(
 		local signed = developer.signatures
 		local oldSent = #developer.sent
 		local late = Peer(net, "Late-Realm", { mapID = 23 })
+		late.db.profile.sharePlayerLocation = false
 		net:StartPeer(late)
 		Equal(#late:GetDeveloperAnnouncementRoutes(), 0)
 		net:Advance(20)
 		assert(HasRoute(late, developer.name), "late global join must learn the already-running developer feed")
+		assert(developer:IsPlayerLocationHiddenForDeveloper(late.name), "late hidden peers must appear without a manual ping")
 		assert(#Sent(late, "HELLO", "CHANNEL") > 0)
 		assert(#Sent(developer, "DEVANN", "CHANNEL", nil, oldSent) > 0, "HELLO must prompt a global reoffer")
 		Equal(developer.signatures, signed, "HELLO reoffers must reuse the cached signed subscription")
@@ -317,7 +319,7 @@ QT:RegisterTest("developer announcement control messages only accept the main gl
 end)
 
 QT:RegisterTest(
-	"developer identity verification preserves diagnostic opt-out and strips hidden announcement coordinates",
+	"developer feed renews private locations without pings and preserves public and diagnostic consent",
 	function()
 		local net = QT:CreateTestNetwork({ fps = 10, seed = 41 })
 		local developer = Peer(net, "Developer-Realm", { mapID = 85 }, true)
@@ -328,12 +330,25 @@ QT:RegisterTest(
 		for _, peer in ipairs({ developer, optedOut, hidden }) do
 			net:StartPeer(peer)
 		end
-		net:Advance(20)
+		net:Advance(30)
 		Equal(#optedOut:GetDeveloperAnnouncementRoutes(), 0)
 		assert(
 			optedOut:IsVerifiedDeveloper(developer.name),
 			"signed public identity is independent of diagnostics consent"
 		)
+		assert(developer:IsPlayerLocationHiddenForDeveloper(hidden.name), "verified subscription must deliver a private location without ping")
+		Equal(developer.developerPlayerData[hidden.name].x, hidden.position.x)
+		for _, observer in ipairs({ developer, optedOut }) do
+			local public = observer:GetPlayerLocationState().peers[hidden.name]
+			assert(not public or public.mask == 0, "private coordinates must never become public location state")
+			assert(not public or public.x == nil)
+		end
+		Equal(rawget(optedOut, "developerPlayerData"), nil)
+		Equal(#Sent(optedOut, "DLOC"), 0)
+		Equal(#Sent(developer, "PING"), 0)
+		Equal(#Sent(hidden, "PONG"), 0)
+		assert(#Sent(hidden, "DLOC", "WHISPER", developer.name) > 0)
+		Equal(#Sent(hidden, "DLOC", "CHANNEL"), 0)
 		local beforeOptedOut = #optedOut.sent
 		assert(Announce(optedOut, "Opted-out progress"))
 		assert(HasRoute(hidden, developer.name))
@@ -356,12 +371,30 @@ QT:RegisterTest(
 		for _, field in ipairs({ "mapID", "zoneName", "coordX", "coordY" }) do
 			Equal(developer.announcements[1][field], "", "mirroring must not bypass location privacy for " .. field)
 		end
+		local original = developer.developerPlayerData[hidden.name]
+		hidden.position.x = 0.72
+		net:Advance(55)
+		Equal(developer.developerPlayerData[hidden.name].x, 0.72)
+		assert(developer.developerPlayerData[hidden.name].receivedAt > original.receivedAt)
+		-- Stationary updates must renew well before their two-minute lifetime,
+		-- including across signed developer subscription renewal.
+		net:Advance(130)
+		assert(developer:IsPlayerLocationHiddenForDeveloper(hidden.name))
+		assert(developer.developerPlayerData[hidden.name].receivedAt > original.receivedAt + 120)
+		hidden.db.profile.sharePlayerLocation = true
+		net:Advance(15)
+		Equal(developer.developerPlayerData[hidden.name], nil)
+		assert(developer:GetFreshPlayerLocation(hidden.name, "map"))
+		hidden.db.profile.sharePlayerLocation = false
+		net:Advance(15)
+		assert(developer:IsPlayerLocationHiddenForDeveloper(hidden.name))
 		hidden.ignored[developer.name] = true
 		Equal(#hidden:GetDeveloperAnnouncementRoutes(), 0)
 		local before = #hidden.sent
 		assert(Announce(hidden, "Ignored developer"))
 		net:Advance(10)
 		Equal(#Sent(hidden, "ANN", "WHISPER", developer.name, before), 0)
+		Equal(#Sent(hidden, "DLOC", "WHISPER", developer.name, before), 0)
 		assert(#Sent(hidden, "ANN", "CHANNEL", nil, before) > 0)
 	end,
 	{ offline = true }
@@ -436,12 +469,17 @@ QT:RegisterTest("developer announcement opt-out cancels queued mirrors while nor
 	local developer = Peer(net, "Developer-Realm", { mapID = 85 }, true)
 	local sender = Peer(net, "Sender-Realm", { mapID = 12 })
 	local neighbor = Peer(net, "Neighbor-Realm", { mapID = 12 })
+	sender.db.profile.sharePlayerLocation = false
 	for _, peer in ipairs({ developer, sender, neighbor }) do
 		net:StartPeer(peer)
 	end
 	net:Advance(20)
 	assert(HasRoute(sender, developer.name))
 	local before = #sender.sent
+	local lease = sender.developerAnnouncementState.subscribers[developer.name]
+	lease.nextLocationAt = sender.now
+	sender:UpdateDeveloperLocationPublications(sender.now)
+	assert(lease.locationPending, "exercise consent withdrawal with a queued private location")
 	assert(Announce(sender, "Queued before opt-out"))
 	sender.db.profile.shareDeveloperDiagnostics = false
 	sender:ResetDeveloperAnnouncementSubscriptions()
@@ -453,8 +491,11 @@ QT:RegisterTest("developer announcement opt-out cancels queued mirrors while nor
 		"revocation must retire already-queued mirror traffic before native send"
 	)
 	assert(#Sent(sender, "ANN", "CHANNEL", nil, before) > 0)
+	Equal(#Sent(sender, "DLOC", "WHISPER", developer.name, before), 0)
 	Equal(#neighbor.announcements, 1, "diagnostic opt-out must preserve normal quest publication")
 	Equal(#developer.announcements, 0)
+	net:Advance(125)
+	assert(not developer:IsPlayerLocationHiddenForDeveloper(sender.name), "opt-out must let old private data expire")
 	assert(Announce(sender, "Published after opt-out"))
 	net:Advance(10)
 	Equal(#neighbor.announcements, 2)
@@ -605,3 +646,80 @@ QT:RegisterTest("developer announcement authentication progresses beside a priva
 	net:Advance(1)
 	Equal(#sender:GetDeveloperAnnouncementRoutes(), 0, "current departure must promptly revoke its lease")
 end, { offline = true })
+
+QT:RegisterTest("private location feed orders snapshots across privacy changes departures and developer renewal", function()
+	local net = QT:CreateTestNetwork({ fps = 5 })
+	local dev = Peer(net, "Developer-Realm", nil, true)
+	local peer = Peer(net, "Hidden-Realm")
+	local state = dev:InitializeDeveloperAnnouncements()
+	local offer = assert(dev:PrepareDeveloperAnnouncementSubscription({ active = true, subscriptionSession = state.communication.session }))
+	state.locationSubscriptions[offer.requestId] = { startedAt = dev.now, expires = dev.now + 240 }
+	local location = { mask = 3, mapID = 12, x = 0.4, y = 0.6, classFile = "MAGE" }
+	local record = { subscriptionSession = offer.subscriptionSession, subscriptionId = offer.requestId,
+		locationShared = false, location = location }
+	local context = { distribution = "WHISPER", session = peer:GetCommunicationSession(), sequence = 1,
+		stamp = peer.API.GetServerTime() }
+	local function Accept()
+		return dev:HandleDeveloperLocationSnapshot(record, peer.name, context)
+	end
+	assert(Accept())
+	local first = dev.developerPlayerData[peer.name]
+	Equal(first.x, 0.4)
+	Equal(dev:GetPlayerLocationState().peers[peer.name].mask, 0)
+	assert(dev:IsKnownQTPlayer(peer.name), "private snapshots should refresh genuine addon identity")
+	net:Advance(2)
+	location.x, context.sequence, context.stamp = 0.7, 3, peer.API.GetServerTime()
+	assert(Accept())
+	local current = dev.developerPlayerData[peer.name]
+	context.sequence = 2
+	assert(not Accept())
+	Equal(dev.developerPlayerData[peer.name], current)
+	context.sequence, context.stamp = 4, peer.API.GetServerTime() - 2
+	assert(not Accept(), "new envelope identity cannot make an older sample fresh")
+	context.stamp, record.locationShared = peer.API.GetServerTime(), true
+	assert(Accept())
+	Equal(dev.developerPlayerData[peer.name], nil)
+	Equal(dev:GetFreshPlayerLocation(peer.name, "map").x, 0.7)
+	Equal(dev:GetFreshPlayerLocation(peer.name, "map").lifetime, dev:GetGeographicSnapshotLifetime(),
+		"the optional developer feed must not shorten ordinary public location lifetime")
+	record.locationShared, context.sequence = false, 3
+	assert(not Accept(), "old hidden data cannot resurrect a red dot after public sharing resumes")
+	context.sequence = 5
+	assert(Accept())
+	record.location, context.sequence = { mask = 0 }, 6
+	assert(Accept())
+	Equal(dev.developerPlayerData[peer.name], nil)
+	Equal(dev:GetFreshPlayerLocation(peer.name, "map"), nil)
+	record.location, context.sequence = location, 7
+	assert(Accept())
+	assert(dev:RecordPeerDeparture(peer.name, dev.now, context.session, 8))
+	assert(not Accept())
+	Equal(dev.developerPlayerData[peer.name], nil)
+	net:Advance(2)
+	local oldSession = context.session
+	context.session, context.sequence, context.stamp = "new-session", 1, peer.API.GetServerTime()
+	assert(Accept())
+	context.session, context.sequence = oldSession, 99
+	assert(not Accept(), "a retired sender session must not return with a higher sequence")
+	context.session, context.sequence = "new-session", 2
+	-- A renewal does not invalidate a still-live preceding signed offer.
+	local renewal = assert(dev:PrepareDeveloperAnnouncementSubscription({ active = true, subscriptionSession = state.communication.session }))
+	state.locationSubscriptions[renewal.requestId] = { startedAt = dev.now, expires = dev.now + 240 }
+	assert(Accept())
+	record.subscriptionId = "unissued-subscription"
+	context.sequence = 3
+	assert(not Accept())
+	record.subscriptionId = offer.requestId
+	context.stamp = peer.API.GetServerTime() - 120
+	assert(not Accept(), "queue delays must not renew an expired source sample")
+	context.stamp = peer.API.GetServerTime()
+	location.x = 2
+	assert(not Accept())
+	location.x = 0.7
+	net:Advance(121)
+	assert(not dev:IsPlayerLocationHiddenForDeveloper(peer.name))
+	context.stamp = peer.API.GetServerTime()
+	assert(Accept())
+	dev:ResetDeveloperAnnouncements()
+	assert(not Accept(), "late callbacks from a retired developer lifetime cannot install a dot")
+end)

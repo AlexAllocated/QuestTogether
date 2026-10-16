@@ -4,10 +4,12 @@ local function Guard(a, frame) return a:CanMutateOwnedUI(frame) end
 local function Call(a, frame, method, ...) return a:CallOwnedUI(frame, method, ...) end
 local function New(a, kind, parent) return a:CreateOwnedUIFrame(a.CreateLocationPinFrame, kind, parent) end
 local function Hide(a, frame) a:HideOwnedUI(frame) end
+local UpdateFocus
 local function HideSurface(a, s, surface)
 	if not surface then
 		return
 	end
+	a:SetMapOverlayFocus(surface, nil, nil)
 	for _, pin in ipairs(surface.pins) do
 		pin.names = {}
 		if s.hovered == pin then
@@ -32,8 +34,42 @@ end
 local function Color(a, name)
 	return a:GetClassColorCode(a:GetGroupedSenderClassFile(name)) or "|cffffffff"
 end
+
+local function Current(a, s, pin)
+	if not a.isEnabled or a:IsRuntimeRestricted() or not a:IsQuestTogetherMapDataShown(pin.surface)
+		or not Guard(a, pin.frame) or Call(a, pin.frame, "IsVisible") ~= true then return false end
+	local surface = s.surfaces[pin.surface]
+	local geometry = a:GetLocationPinSurface(pin.surface)
+	if not surface or not geometry or geometry.parent ~= pin.parent or geometry.mapID ~= pin.mapID then return false end
+	if s.hovered == pin and (s.hoverGeneration ~= pin.presentationGeneration
+		or (pin.surface == "map" and s.hoverMapGeneration ~= surface.geometryGeneration)) then return false end
+	local peer = pin.name and a:GetPartyNavigationPeer(pin.name)
+	local source = pin.source
+	return peer ~= nil and source ~= nil and peer.mapID == source.mapID and peer.x == source.x and peer.y == source.y
+end
+
+UpdateFocus = function(a, s)
+	local surface, pin = s.surfaces.map, s.hovered
+	if not surface then return end
+	if not pin or pin.surface ~= "map" then a:SetMapOverlayFocus(surface, nil, nil); return end
+	local geometry = a:GetLocationPinSurface("map")
+	local focus
+	if geometry and pin and pin.surface == "map" and Current(a, s, pin) then
+		local names, generation = {}, pin.presentationGeneration
+		for _, name in ipairs(pin.names) do names[name] = true end
+		focus = { kind = "hover", key = "waypoint:" .. pin.signature .. ":" .. tostring(generation), pins = {},
+			isCurrent = function()
+				return s.hovered == pin and pin.presentationGeneration == generation and Current(a, s, pin)
+			end }
+		for _, candidate in ipairs(surface.pins) do
+			if names[candidate.name] then focus.pins[candidate.frame] = true end
+		end
+	end
+	a:SetMapOverlayFocus(surface, geometry, focus)
+end
+
 local function Tooltip(a, s, pin)
-	if not a:IsQuestTogetherMapDataShown(pin.surface) then Hide(a, s.tooltip); return end
+	if not Current(a, s, pin) then Hide(a, s.tooltip); return false end
 	local lines = {}
 	for _, name in ipairs(pin.names) do
 		local p = a:GetPartyNavigationPeer(name)
@@ -72,6 +108,7 @@ local function Tooltip(a, s, pin)
 	Call(a, s.tooltip, "ClearAllPoints")
 	Call(a, s.tooltip, "SetPoint", "BOTTOMLEFT", pin.frame, "TOPRIGHT", 6, 4)
 	Call(a, s.tooltip, "Show")
+	return true
 end
 local function CreatePin(a, s, surface)
 	local pin = { frame = New(a, "Button", surface.frame), names = {}, surface = surface.name }
@@ -80,15 +117,19 @@ local function CreatePin(a, s, surface)
 	Call(a, pin.texture, "SetAllPoints")
 	Call(a, pin.texture, "SetTexture", "Interface\\AddOns\\QuestTogether\\Media\\PartyWaypoint")
 	Call(a, pin.frame, "SetScript", "OnEnter", function()
-		if Guard(a, pin.frame) then
+		if Current(a, s, pin) then
 			s.hovered = pin
-			pcall(Tooltip, a, s, pin)
+			s.hoverGeneration, s.hoverMapGeneration = pin.presentationGeneration, surface.geometryGeneration
+			local ok, shown = pcall(Tooltip, a, s, pin)
+			if not ok or not shown then s.hovered = nil; Hide(a, s.tooltip) end
+			UpdateFocus(a, s)
 		end
 	end)
 	Call(a, pin.frame, "SetScript", "OnLeave", function()
 		if s.hovered == pin then
 			s.hovered = nil
 			Hide(a, s.tooltip)
+			UpdateFocus(a, s)
 		end
 	end)
 	Call(a, pin.frame, "SetScript", "OnClick", function()
@@ -126,16 +167,11 @@ local function Surface(a, s, name, rows)
 	end
 	surface = a:AcquireMapOverlaySurface(s, name, g, 55, function(old) HideSurface(a, s, old) end)
 	if not surface then return end
-	local highlightLevel = name == "map" and a:GetQuestTogetherMapHighlightLevel(g)
-	if highlightLevel then
-		local level = a:SafeToNumber(Call(a, surface.frame, "GetFrameLevel"))
-		if level then Call(a, surface.frame, "SetFrameLevel", math.max(level, highlightLevel)) end
-	end
 	local placed = {}
 	for _, row in ipairs(rows) do
 		local x, y = a:ProjectPlayerLocationPin(name, row, g, 26)
 		if x and y then
-			placed[#placed + 1] = { name = row.name, x = x, y = y }
+			placed[#placed + 1] = { name = row.name, x = x, y = y, source = { mapID = row.mapID, x = row.x, y = row.y } }
 		end
 	end
 	for index, row in ipairs(placed) do
@@ -146,6 +182,13 @@ local function Surface(a, s, name, rows)
 				pin.names[#pin.names + 1] = other.name
 			end
 		end
+		local signature = row.name .. ":" .. row.source.mapID .. ":" .. row.source.x .. ":" .. row.source.y
+			.. ":" .. table.concat(pin.names, "\n")
+		if pin.signature ~= signature then pin.presentationGeneration = (pin.presentationGeneration or 0) + 1 end
+		pin.name, pin.source, pin.signature = row.name, row.source, signature
+		pin.parent, pin.mapID = g.parent, g.mapID
+		pin.mapLevelOffset = 1
+		if surface.baseLevel then Call(a, pin.frame, "SetFrameLevel", surface.baseLevel + 1) end
 		local color = Color(a, row.name)
 		local r, green, b = color:match("^|c%x%x(%x%x)(%x%x)(%x%x)$")
 		Call(
@@ -163,6 +206,7 @@ local function Surface(a, s, name, rows)
 	end
 	a:ReleaseMapOverlayPins(surface, #placed, function(pin)
 		pin.names = {}
+		pin.name, pin.source = nil, nil
 		if s.hovered == pin then s.hovered = nil; Hide(a, s.tooltip) end
 	end)
 	Call(a, surface.frame, #placed > 0 and "Show" or "Hide")
@@ -187,11 +231,9 @@ function QT:RefreshPartyWaypointPins()
 			HideSurface(self, s, s.surfaces[name])
 		end
 	end
-	if
-		s.hovered
-		and (not Guard(self, s.hovered.frame) or #s.hovered.names == 0 or not pcall(Tooltip, self, s, s.hovered))
-	then
-		s.hovered = nil
-		Hide(self, s.tooltip)
+	if s.hovered then
+		local ok, shown = pcall(Tooltip, self, s, s.hovered)
+		if not ok or not shown then s.hovered = nil; Hide(self, s.tooltip) end
 	end
+	UpdateFocus(self, s)
 end

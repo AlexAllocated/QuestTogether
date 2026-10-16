@@ -75,7 +75,7 @@ FINDING QUESTING PARTNERS
 048. Looking for Questing Partners is saved in your profile, so it can remain on when you next load that character.
 049. Enable Stop looking for partners when joining a group to clear your recruiting status when you join or form a group.
 050. Still recruiting after joining a group? You can turn Looking for Questing Partners back on.
-051. Click a QT player name or world-map dot to whisper, invite, add a friend, or compare quests.
+051. Click a QT player name or right-click a world-map dot to whisper, invite, add a friend, or compare quests. Left-click a world-map dot to open its most detailed map, or the player menu if already there.
 052. A grouped player's menu can offer Request to Join, letting you ask for an invitation without first writing a whisper.
 053. If the player you contact cannot invite, QT can pass your join request to their party leader when the leader also supports QT join requests.
 054. Automatically invite friends who request to join applies to your character friends list, not every Battle.net friend.

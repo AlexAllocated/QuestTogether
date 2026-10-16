@@ -76,6 +76,7 @@
       "ANN",
       "BYE",
       "DEVANN",
+      "DLOC",
       "DREPORT",
       "ERROR",
       "FXACK",
@@ -134,6 +135,7 @@
       "CHANNEL",
       "Count",
       "DEVANN",
+      "DLOC",
       "DREPORT",
       "ERROR",
       "HELLO",
@@ -238,15 +240,18 @@
     "DeveloperAnnouncements.lua": [
       "CHANNEL",
       "DEVANN",
+      "DLOC",
       "HELLO",
       "WHISPER"
     ],
     "DeveloperDiagnostics.lua": [
       "Developer request callback failed",
+      "LOC",
       "Last",
       "Max",
       "QTPG",
-      "Total"
+      "Total",
+      "WHISPER"
     ],
     "EventHandlers.lua": [
       "QUEST",
@@ -302,7 +307,6 @@
       "Button",
       "CENTER",
       "CLAMPTOBLACKADDITIVE",
-      "Frame",
       "Hide",
       "OVERLAY",
       "ROUND",
@@ -332,8 +336,10 @@
       "TOPRIGHT"
     ],
     "MapOverlayPool.lua": [
+      "BACKGROUND",
       "Frame",
-      "Hide"
+      "Hide",
+      "Show"
     ],
     "Minimap.lua": [
       "ADD",

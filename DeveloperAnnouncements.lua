@@ -1,7 +1,8 @@
 -- Optional developer feed. Normal announcements retain their routes and
--- identity; this feature only supplies additional, consent-bound audiences.
+-- identity; signed, consent-bound audiences also receive private snapshots.
 local QT = _G.QuestTogether
 local LEASE_SECONDS, RENEW_SECONDS, REOFFER_SECONDS = 240, 90, 10
+local LOCATION_INTERVAL_MIN, LOCATION_INTERVAL_MAX = 30, 45
 local MAX_SUBSCRIBERS, MAX_COPIES = 4, 4
 local PACKETS_PER_SECOND, PACKET_BURST, PACKETS_PER_FRAME = 32, 16, 8
 
@@ -69,6 +70,7 @@ function QT:InitializeDeveloperAnnouncements()
 		nextTick = now,
 		helloAt = now + Jitter(self, 2, 8),
 		subscribers = {},
+		locationSubscriptions = {},
 		generation = 0,
 		pendingCopies = 0,
 		metrics = {},
@@ -99,6 +101,19 @@ function QT:GetDeveloperAnnouncementMetrics()
 		end
 	end
 	return result
+end
+
+-- Retain issued offers through their lease, so an in-flight private sample
+-- remains correlated when the developer renews or reoffers the subscription.
+function QT:IsDeveloperLocationSubscriptionCurrent(session, id)
+	local s = rawget(self, "developerAnnouncementState")
+	if not s or not Current(self, s) or not self:IsDeveloperAnnouncementReceiver() then return false end
+	if session ~= nil and session ~= s.communication.session then return false end
+	local now = Now(self)
+	for key, offer in pairs(s.locationSubscriptions) do
+		if now >= offer.startedAt and now < offer.expires and (id == nil or key == id) then return true end
+	end
+	return false
 end
 
 function QT:RemoveDeveloperAnnouncementSubscriber(sender, departure)
@@ -161,6 +176,7 @@ function QT:IsDeveloperAnnouncementRouteCurrent(route)
 		and lease.active
 		and Now(self) < lease.expires
 		and not self:IsIgnoredPlayerName(route.target)
+		and self:IsPeerSessionObservationCurrent(route.target, lease.session, lease.sampledAt)
 end
 
 function QT:GetDeveloperAnnouncementRoutes()
@@ -301,11 +317,74 @@ function QT:HandleDeveloperAnnouncementSubscription(record, sender, context)
 			verifiedAt = now,
 			expires = now + math.min(LEASE_SECONDS, remaining),
 			retireAt = now + 330,
+			nextLocationAt = now + Jitter(self, 1, 5),
+			locationShared = self:CanPublishPlayerLocation(),
 		}
 		self:RecordPeerEpoch(sender, context.session, verified.issuedAt)
 		self:RecordPeerUpdate(sender, "DEVANN", sampledAt, context.session, context.sequence, false)
 		Count(s, "subscriptionsVerified")
 	end)
+end
+
+-- The same signed, consent-bound audience also receives current location
+-- snapshots. Keep these separate from announcements: hidden coordinates must
+-- never enter public events, public staging, or their fan-out routes.
+function QT:UpdateDeveloperLocationPublications(now)
+	local s = rawget(self, "developerAnnouncementState")
+	if not s or not Current(self, s) or not Sharing(self) then return end
+	local shared, due = self:CanPublishPlayerLocation(), false
+	for _, lease in pairs(s.subscribers) do
+		if lease.locationShared ~= shared then lease.nextLocationAt = now end
+		if lease.active and not lease.locationPending and now >= (lease.nextLocationAt or now) then due = true end
+	end
+	if not due or s.pendingCopies >= MAX_COPIES then return end
+	local location, stamp
+	for _, route in ipairs(self:GetDeveloperAnnouncementRoutes()) do
+		local lease = route.developerAnnouncement
+		if not lease.locationPending and now >= (lease.nextLocationAt or now) then
+			if not stamp then
+				stamp = self:GetAnnouncementServerTime()
+				if not stamp then return end
+				location = self:ReadLocalPlayerLocation()
+				if location then
+					-- The normal diagnostic precision is ample for map dots and
+					-- avoids wasting bandwidth on insignificant float digits.
+					location.x = math.floor(location.x * 10000 + 0.5) / 10000
+					location.y = math.floor(location.y * 10000 + 0.5) / 10000
+					location.mask = 3
+				else
+					location = { mask = 0 }
+				end
+			end
+			local pending = {}
+			lease.locationPending, lease.locationShared = pending, shared
+			local ok = self:Publish("DLOC", {
+				subscriptionSession = lease.session,
+				subscriptionId = lease.requestId,
+				locationShared = shared,
+				location = location,
+			}, { route }, {
+				key = "developer-location",
+				sampledAt = stamp,
+				expires = now + 20,
+				isCurrent = function()
+					return Current(self, s) and lease.locationPending == pending
+						and self:IsDeveloperAnnouncementRouteCurrent(route)
+						and self:CanPublishPlayerLocation() == shared
+				end,
+				onComplete = function(accepted, reason)
+					if Current(self, s) and lease.locationPending == pending then
+						lease.locationPending = nil
+						lease.nextLocationAt = Now(self) + ((accepted or reason == "ambiguous")
+							and Jitter(self, LOCATION_INTERVAL_MIN, LOCATION_INTERVAL_MAX) or 5)
+					end
+				end,
+			})
+			if not ok and lease.locationPending == pending then
+				lease.locationPending, lease.nextLocationAt = nil, now + 5
+			end
+		end
+	end
 end
 
 -- This is a QT processing limit, not a claimed server limit. Dropping extra
@@ -360,6 +439,10 @@ function QT:UpdateDeveloperAnnouncements(now)
 			s.subscribers[sender] = nil
 		end
 	end
+	for id, offer in pairs(s.locationSubscriptions) do
+		if now < offer.startedAt or now >= offer.expires then s.locationSubscriptions[id] = nil end
+	end
+	self:UpdateDeveloperLocationPublications(now)
 	if not self:GetAnnouncementChannelLocalID(self.announcementChannelName) then
 		return
 	end
@@ -425,6 +508,11 @@ function QT:UpdateDeveloperAnnouncements(now)
 	})
 	if ok then
 		s.offerContext = envelope
+		local server = self:GetAnnouncementServerTime()
+		local remaining = server and s.subscription.issuedAt + LEASE_SECONDS - server or 0
+		if remaining > 0 and not s.locationSubscriptions[s.subscription.requestId] then
+			s.locationSubscriptions[s.subscription.requestId] = { startedAt = now, expires = now + math.min(LEASE_SECONDS, remaining) }
+		end
 		Count(s, renew and "subscriptionsSent" or "subscriptionsReoffered")
 	else
 		s.offerPending, s.reofferAt = false, now + REOFFER_SECONDS

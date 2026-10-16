@@ -3,10 +3,6 @@
 local QT = _G.QuestTogether
 local L = QT.Translate
 local function Call(a, frame, method, ...) return a:CallOwnedUI(frame, method, ...) end
-local function RefreshMarkers(a)
-	a:RefreshPlayerLocationPins()
-	a:RefreshPartyWaypointPins()
-end
 
 function QT:IsQuestTogetherMapDataShown(surface)
 	return surface ~= "map" or self:GetOption("showWorldMapData") ~= false
@@ -20,12 +16,9 @@ end
 function QT:HideQuestTogetherMapControl()
 	local state = rawget(self, "mapDataControlState")
 	if not state then return end
-	local hovered = state.hovered
 	state.hovered = nil
-	self:HideOwnedUI(state.shade)
 	self:HidePlayerTooltipPresentation(state.tip)
 	self:HideOwnedUI(state.button)
-	if hovered then RefreshMarkers(self) end
 end
 
 local function Current(a, state)
@@ -33,29 +26,6 @@ local function Current(a, state)
 		or not a:CanMutateOwnedUI(state.button) or Call(a, state.button, "IsVisible") ~= true then return false end
 	local geometry = a:GetLocationPinSurface("map")
 	return geometry ~= nil and geometry.parent == state.parent
-end
-
-function QT:GetQuestTogetherMapHighlightLevel(geometry)
-	local state = rawget(self, "mapDataControlState")
-	if not self:IsQuestTogetherMapDataShown("map") or not state or not state.hovered or not geometry or state.parent ~= geometry.parent
-		or not Current(self, state) then return nil end
-	return state.highlightLevel
-end
-
-local function RefreshShade(a, state, geometry, level)
-	if not state.hovered or not a:IsQuestTogetherMapDataShown("map") then a:HideOwnedUI(state.shade); return end
-	if not state.shade then
-		state.shade = a:CreateOwnedUIFrame(a.CreateLocationPinFrame, "Frame", state.button)
-		Call(a, state.shade, "EnableMouse", false)
-		Call(a, state.shade, "EnableMouseWheel", false)
-		local texture = Call(a, state.shade, "CreateTexture", nil, "BACKGROUND")
-		Call(a, texture, "SetAllPoints")
-		Call(a, texture, "SetColorTexture", 0, 0, 0, 0.35)
-	end
-	Call(a, state.shade, "ClearAllPoints")
-	Call(a, state.shade, "SetAllPoints", geometry.parent)
-	Call(a, state.shade, "SetFrameLevel", level)
-	Call(a, state.shade, "Show")
 end
 
 local function CreateHiddenMark(a, state)
@@ -81,13 +51,92 @@ local function CreateHiddenMark(a, state)
 end
 
 
+local function MapLegend()
+	return {
+		{ kind = "player", label = L("QT players (class color)") },
+		{ kind = "partners", label = L("Looking for Questing Partners") },
+		{ kind = "selected", label = L("Selected player") },
+		{ kind = "phase", label = L("Likely different layer (experimental)") },
+		{ kind = "cluster", label = L("Nearby players grouped on the map") },
+		{ kind = "party", label = L("In a party"), gapBefore = 8 },
+		{ kind = "partyHover", label = L("Party members and leader (on hover)") },
+		{ kind = "waypoint", label = L("Shared party waypoint") },
+		{ kind = "partySize", label = L("Party size in tooltips") },
+		{ kind = "dimmed", label = L("Other markers dim during focus"), gapBefore = 8 },
+		{ kind = "hidden", label = L("QT world-map markers hidden") },
+	}
+end
+
+-- These are the live marker primitives, with illustrative state only. No peer
+-- observations, developer identity, subscriptions or hover interest are changed.
+local function DrawLegendSample(a, item, entry)
+	if item.sampleKind == entry.kind then return end
+	for _, frame in ipairs(item.sampleObjects or {}) do a:HideOwnedUI(frame) end
+	item.sampleObjects = {}
+	local function Remember(region)
+		item.sampleObjects[#item.sampleObjects + 1] = region
+		return region
+	end
+	local function Symbol(style, x)
+		style = style or {}
+		if not style.r then style.r, style.g, style.b = 0.25, 0.78, 0.92 end
+		local frame = Remember(a:CreateOwnedUIFrame(a.CreateLocationPinFrame, "Frame", item.sampleFrame))
+		Call(a, frame, "EnableMouse", false)
+		Call(a, frame, "SetPoint", "CENTER", item.sampleFrame, "CENTER", x or 0, 0)
+		local symbol = a:CreatePlayerLocationSymbol(frame)
+		a:ApplyPlayerLocationSymbol(symbol, style)
+		Call(a, frame, "Show")
+		return symbol
+	end
+	local function Texture(name, x, size)
+		local texture = Remember(Call(a, item.sampleFrame, "CreateTexture", nil, "ARTWORK"))
+		Call(a, texture, "SetTexture", "Interface\\AddOns\\QuestTogether\\Media\\" .. name)
+		Call(a, texture, "SetPoint", "CENTER", item.sampleFrame, "CENTER", x or 0, 0)
+		Call(a, texture, "SetSize", size or 20, size or 20)
+		return texture
+	end
+	local kind = entry.kind
+	if kind == "player" or kind == "partners" then
+		Symbol({ looking = kind == "partners" }, -14)
+		Texture(kind == "partners" and "QuestTogetherPartnerIcon" or "QuestTogetherIcon", 14)
+	elseif kind == "cluster" then
+		Symbol({ clusterCount = 3, r = 0.16, g = 0.13, b = 0.06 })
+	elseif kind == "party" then
+		Call(a, Symbol().partyBadge, "Show")
+	elseif kind == "partyHover" then
+		local member = Symbol(nil, -14)
+		local leader = Symbol({ r = 1, g = 1, b = 1 }, 14)
+		Call(a, member.partyOutline, "Show")
+		Call(a, leader.partyOutline, "Show")
+		Call(a, leader.partyCrown, "Show")
+	elseif kind == "waypoint" then
+		local texture = Texture("PartyWaypoint")
+		Call(a, texture, "SetSize", 22, 26)
+		Call(a, texture, "SetVertexColor", 0.25, 0.78, 0.92, 1)
+	elseif kind == "partySize" then
+		local group = { tooltip = item.sampleFrame }
+		a:LayoutPlayerTooltipPartyGroup(group, 1, item.sampleFrame, -26, 58, 26, "legend", 3, 1, 3)
+		Remember(group.partyGroups[1].frame)
+	elseif kind == "dimmed" then
+		Symbol(nil, -14)
+		Call(a, Symbol(nil, 14).frame, "SetAlpha", 0.45)
+	elseif kind == "hidden" then
+		local sample = { button = item.sampleFrame, icon = Texture("QuestTogetherIcon", 0, 24) }
+		CreateHiddenMark(a, sample)
+		Call(a, Remember(sample.hiddenMark), "Show")
+	else
+		Symbol({ selected = kind == "selected", phase = kind == "phase" })
+	end
+	item.sampleKind = entry.kind
+end
+
 local function Tooltip(a, state)
 	if not Current(a, state) then a:HidePlayerTooltipPresentation(state.tip); return end
 	a:RenderPlayerTooltip(state.tip, state.anchor, {
-		title = L("QuestTogether map data"),
-		text = a:IsQuestTogetherMapDataShown("map")
-			and L("Click to hide QuestTogether markers on the world map. Minimap markers and location sharing stay unchanged.")
-			or L("Click to show QuestTogether markers on the world map. Minimap markers and location sharing stay unchanged."),
+		title = L("Map legend"),
+		introText = a:IsQuestTogetherMapDataShown("map") and L("Click to hide map markers.") or L("Click to show map markers."),
+		text = "|cff909090" .. L("Minimap markers and location sharing stay unchanged.") .. "|r",
+		legend = MapLegend(), drawLegendSample = DrawLegendSample, maxWidth = 304,
 		color = { 1, 0.82, 0 }, members = {},
 	})
 end
@@ -126,15 +175,11 @@ local function Refresh(a)
 			if Current(a, state) then
 				state.hovered = true
 				a:RefreshQuestTogetherMapControl()
-				RefreshMarkers(a)
 			end
 		end)
 		local function Leave()
-			local hovered = state.hovered
 			state.hovered = nil
-			a:HideOwnedUI(state.shade)
 			a:HidePlayerTooltipPresentation(state.tip)
-			if hovered then RefreshMarkers(a) end
 		end
 		Call(a, button, "SetScript", "OnLeave", Leave)
 		Call(a, button, "SetScript", "OnHide", Leave)
@@ -147,14 +192,12 @@ local function Refresh(a)
 		state.parent = geometry.parent
 	end
 	local nativeLevel = a:SafeToNumber(geometry.pinFrameLevel) or 0
-	local shadeLevel = math.max(level + 60, nativeLevel + 1)
-	state.highlightLevel = shadeLevel + 1
-	Call(a, state.button, "SetFrameLevel", shadeLevel + 16)
+	local controlLevel = math.max(level + 60, nativeLevel + 1) + 16
+	Call(a, state.button, "SetFrameLevel", controlLevel)
 	Call(a, state.icon, "SetAlpha", 1)
-	Call(a, state.hiddenMark, "SetFrameLevel", shadeLevel + 17)
+	Call(a, state.hiddenMark, "SetFrameLevel", controlLevel + 1)
 	Call(a, state.hiddenMark, a:IsQuestTogetherMapDataShown("map") and "Hide" or "Show")
 	Call(a, state.button, "Show")
-	RefreshShade(a, state, geometry, shadeLevel)
 	if state.hovered then Tooltip(a, state) end
 	return true
 end

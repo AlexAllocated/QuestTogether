@@ -112,6 +112,9 @@ function QT:GetCommunicationRoutes(operation, routes)
 		return routes
 	end
 	local spec = self:GetCommOperation(operation)
+	if spec.privateOnly then
+		return {}
+	end
 	if spec.groupOnly then
 		local distribution = self:GetGroupAnnouncementDistribution()
 		return distribution and { { distribution = distribution, requiresGroup = true } } or {}
@@ -179,7 +182,7 @@ function QT:NormalizeCommunicationRoutes(operation, routes)
 		local route = { distribution = distribution, requiresGroup = original.requiresGroup == true }
 		if
 			original.developerAnnouncement
-			and (operation == "ANN" or operation == "LVL")
+			and (operation == "ANN" or operation == "LVL" or operation == "DLOC")
 			and distribution == "WHISPER"
 		then
 			route.developerAnnouncement = original.developerAnnouncement
@@ -206,6 +209,12 @@ function QT:NormalizeCommunicationRoutes(operation, routes)
 			return nil
 		end
 		local key = RouteKey(route)
+		if
+			self:GetCommOperation(operation).privateOnly
+			and (distribution ~= "WHISPER" or not self:IsDeveloperAnnouncementRouteCurrent(route))
+		then
+			return nil
+		end
 		if
 			self:GetCommOperation(operation).globalOnly
 			and (distribution ~= "CHANNEL" or route.channelName ~= self.announcementChannelName)
@@ -342,6 +351,14 @@ function QT:SubmitCommunication(operation, record, routes, options)
 	if not audience or #audience == 0 then
 		return false, "route"
 	end
+	if spec.privateOnly then
+		for _, route in ipairs(audience) do
+			local lease = route.developerAnnouncement
+			if data.subscriptionSession ~= lease.session or data.subscriptionId ~= lease.requestId then
+				return false, "correlation"
+			end
+		end
+	end
 	local sequence = options.retryContext and options.retryContext.sequence or self:NextCommunicationSequence()
 	local context = options.retryContext
 		or {
@@ -455,7 +472,7 @@ function QT:Publish(operation, record, routes, options)
 	if not spec or spec.semantic ~= "state" then
 		return false, "invalid"
 	end
-	if not routes and operation ~= "STATE" and operation ~= "BYE" then
+	if not routes and not spec.privateOnly and operation ~= "STATE" and operation ~= "BYE" then
 		if not self.isEnabled or self.isLoggingOut then
 			return false, "cancelled"
 		end
@@ -779,6 +796,9 @@ local function DispatchOperation(self, frame, data, sender, context)
 	if operation == "DEVANN" then
 		return self:HandleDeveloperAnnouncementSubscription(data, sender, context)
 	end
+	if operation == "DLOC" then
+		return self:HandleDeveloperLocationSnapshot(data, sender, context)
+	end
 	if operation == "QTN2" then
 		return self:HandlePartyNavigationMessage(data, sender, context)
 	end
@@ -848,6 +868,14 @@ function QT:DispatchCommRecord(frame, data, sender, context)
 	context.sequence = tonumber(frame.messageId)
 	context.stamp = frame.stamp
 	context.messageId = frame.messageId
+	if
+		spec.privateOnly
+		and (context.distribution ~= "WHISPER" or not self:IsDeveloperLocationSubscriptionCurrent(
+			data.subscriptionSession, data.subscriptionId
+		))
+	then
+		return false
+	end
 	if not context.sequence or context.sequence < 1 or context.sequence > 1e12 or context.sequence % 1 ~= 0 then
 		return false
 	end
@@ -905,11 +933,11 @@ local function AdmitIncoming(a, wire, distribution, sender)
 	if not Current(a, s) then
 		return false
 	end
-	-- Extra announcement copies get a smaller allowance before consuming the
+	-- Extra developer copies get a smaller allowance before consuming the
 	-- shared ingress budget, preserving room for normal zone and party work.
 	if
 		distribution == "WHISPER"
-		and (wire:sub(1, 6) == "2|ANN|" or wire:sub(1, 6) == "2|LVL|")
+		and (wire:sub(1, 6) == "2|ANN|" or wire:sub(1, 6) == "2|LVL|" or wire:sub(1, 7) == "2|DLOC|")
 		and not a:AdmitDeveloperAnnouncementPacket()
 	then
 		return false
@@ -960,6 +988,9 @@ local function Receive(self, prefix, wire, distribution, sender, localID, channe
 	end
 	local spec = self:GetCommOperation(frame.operation)
 	local context = { distribution = distribution, localID = localID, channelName = channelName }
+	if spec.privateOnly and (distribution ~= "WHISPER" or not self:IsDeveloperLocationSubscriptionCurrent()) then
+		return false
+	end
 	if GROUP[distribution] then
 		if not self:IsGroupedSender(sender) then
 			return false
@@ -993,7 +1024,7 @@ local function Receive(self, prefix, wire, distribution, sender, localID, channe
 		return false
 	end
 	context.backgroundAnnouncement = distribution == "WHISPER"
-		and (frame.operation == "ANN" or frame.operation == "LVL")
+		and (frame.operation == "ANN" or frame.operation == "LVL" or frame.operation == "DLOC")
 	if spec.semantic == "response" then
 		if not self:IsCommResponseExpected(frame, sender) then
 			return false

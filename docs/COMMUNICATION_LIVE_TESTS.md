@@ -126,6 +126,11 @@ distinguished. Do not publish private keys or diagnostic report contents.
   normal public snapshot using its original sample time and normal ordering rules.
   With public sharing off, any permitted diagnostic coordinates remain private
   and short-lived; they do not enter the public location cache or get rebroadcast.
+- [ ] With diagnostics enabled and public location sharing disabled, sign in
+  before and after the developer. Without `/qt ping` or `devlogall`, confirm the
+  developer sees the private dot, movement refreshes it, and stationary players
+  remain visible beyond two minutes. An ordinary observer must not see the dot.
+  Turning public sharing back on must remove the hidden-location styling.
 - [ ] Turn diagnostic sharing off while verification, a delayed reply, or report
   delivery is pending. No further diagnostic data from that work should be sent.
   Ordinary public behavior continues according to its separate settings.

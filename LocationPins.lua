@@ -1,7 +1,8 @@
 local L = _G.QuestTogether.Translate
 local QuestTogether = _G.QuestTogether
 local MAX_PINS, MAX_LOCATION_ROWS, DOT_SIZE = 128, 512, 12
-local PARTNER_DOT_SIZE = 16
+local GLOW_DOT_SIZE = 16
+local MARKER_GLOW_SCALE = 1.15
 
 local function HasLocationGlow(addon, name, row)
 	return addon:IsPlayerLookingForQuestPartners(name)
@@ -10,7 +11,7 @@ end
 
 local function PinSize(addon, name, row)
 	if addon:IsVerifiedDeveloper(name) then return 18 end
-	return HasLocationGlow(addon, name, row) and PARTNER_DOT_SIZE or DOT_SIZE
+	return HasLocationGlow(addon, name, row) and GLOW_DOT_SIZE or DOT_SIZE
 end
 
 local function Native(addon, fn, ...)
@@ -269,7 +270,7 @@ local function ClusterPositionsOnMap(addon, members, mapID)
 	return positions, x / #members, y / #members
 end
 
-local function DeepestClusterMap(addon, members, mapID, positions, getter)
+local function DeepestLocationMap(addon, members, mapID, positions, getter)
 	local parents, mapTypes, footprints, candidates, queued = {}, {}, {}, { mapID }, { [mapID] = true }
 	local sourceInfo = API(addon, C_Map, "GetMapInfo", mapID)
 	if not addon:CanAccessTable(sourceInfo) or ID(addon, sourceInfo.mapID) ~= mapID then return nil end
@@ -363,6 +364,26 @@ end
 -- Resolve the smallest native map containing every member, including overlapping
 -- sibling zone/city maps. Candidates come only from native hits/member maps and
 -- their ancestors; a smaller verified footprint prevents sideways/upward loops.
+-- This read-only query also supports an individual Find before the map opens.
+function QuestTogether:GetPlayerLocationMapNavigationTarget(members, mapID)
+	mapID = ID(self, mapID)
+	if not self.isEnabled or self:IsRuntimeRestricted() or not mapID or mapID > 1000000
+		or type(members) ~= "table" or #members < 1 or #members > MAX_LOCATION_ROWS then return nil end
+	local positions, x, y = ClusterPositionsOnMap(self, members, mapID)
+	if not positions or not self:CanAccessTable(C_Map) then return nil end
+	local getter = C_Map.GetMapInfoAtPosition
+	if not self:CanAccessValue(getter) or type(getter) ~= "function" then return nil end
+	return DeepestLocationMap(self, members, mapID, positions, getter), x, y
+end
+
+local function SameMapGeometry(current, previous)
+	if not current or not previous or current.mapID ~= previous.mapID or current.parent ~= previous.parent then return false end
+	for _, key in ipairs({ "width", "height", "canvasLeft", "canvasTop", "canvasWidth", "canvasHeight" }) do
+		if current[key] ~= previous[key] then return false end
+	end
+	return true
+end
+
 function QuestTogether:GetPlayerLocationClusterNavigationAction(cluster, geometry)
 	if not self.isEnabled or self:IsWorkBlocked("foreign_frame_mutation")
 		or type(cluster) ~= "table" or type(cluster.members) ~= "table" or #cluster.members < 2
@@ -370,18 +391,10 @@ function QuestTogether:GetPlayerLocationClusterNavigationAction(cluster, geometr
 	local map = WorldMapFrame
 	if not self:CanAccessForeignFrame(map, true) or Method(self, map, "IsVisible") ~= true then return "unavailable" end
 	local current = self:GetLocationPinSurface("map")
-	if not current or current.mapID ~= geometry.mapID or current.parent ~= geometry.parent then return "unavailable" end
-	for _, key in ipairs({ "width", "height", "canvasLeft", "canvasTop", "canvasWidth", "canvasHeight" }) do
-		if current[key] ~= geometry[key] then return "unavailable" end
-	end
+	if not SameMapGeometry(current, geometry) then return "unavailable" end
 	local mapID = ID(self, current.mapID)
 	if not mapID or mapID > 1000000 then return "unavailable" end
-	local positions, x, y = ClusterPositionsOnMap(self, cluster.members, mapID)
-	if not positions then return "unavailable" end
-	if not self:CanAccessTable(C_Map) then return "unavailable" end
-	local getter = C_Map.GetMapInfoAtPosition
-	if not self:CanAccessValue(getter) or type(getter) ~= "function" then return "unavailable" end
-	local target = DeepestClusterMap(self, cluster.members, mapID, positions, getter)
+	local target, x, y = self:GetPlayerLocationMapNavigationTarget(cluster.members, mapID)
 	if not target then return "unavailable" end
 	if target ~= mapID then
 		local setter = self:GetAccessibleFrameMember(map, "SetMapID")
@@ -602,31 +615,107 @@ local function PartyTexture(addon, frame, name, width, height, point, relative, 
 	return texture
 end
 
-local function PartyHighlights(addon, state)
+local FreshRow, CurrentCluster
+
+local function UpdateMapFocus(addon, state)
+	local surface = state.surfaces and state.surfaces.map
+	if not surface then return end
+	local hovered = state.hovered
+	local clusterHovered = state.clusterTooltip and state.clusterTooltip.hovered
+	if not (hovered and hovered.surface == "map") and not clusterHovered and not surface.expandedClusterKey then
+		addon:SetMapOverlayFocus(surface, nil, nil)
+		return
+	end
+	local geometry = addon:GetLocationPinSurface("map")
+	if not geometry or not addon.isEnabled or addon:IsRuntimeRestricted()
+		or not addon:IsQuestTogetherMapDataShown("map") then
+		addon:SetMapOverlayFocus(surface, nil, nil)
+		return
+	end
+	local focus, player, partyKey, clusterKey
+	if hovered and hovered.surface == "map" and state.mapHoverGeneration == surface.geometryGeneration and FreshRow(addon, hovered) then
+		player = hovered.name
+		local info = addon:GetPlayerPartyVisualInfo(player)
+		partyKey = info and info.key
+		local generation = hovered.presentationGeneration
+		focus = { kind = "hover", key = "player:" .. player .. ":" .. tostring(generation), pins = {},
+			isCurrent = function()
+				return state.hovered == hovered and hovered.name == player
+					and state.mapHoverGeneration == surface.geometryGeneration
+					and hovered.presentationGeneration == generation and FreshRow(addon, hovered) ~= nil
+			end }
+	elseif clusterHovered and state.clusterHoverGeneration == surface.geometryGeneration and CurrentCluster(addon, clusterHovered) then
+		clusterKey = clusterHovered.cluster.key
+		focus = { kind = "hover", key = "cluster:" .. clusterKey, pins = {},
+			isCurrent = function()
+				return state.clusterTooltip and state.clusterTooltip.hovered == clusterHovered
+					and state.clusterHoverGeneration == surface.geometryGeneration
+					and clusterHovered.cluster and clusterHovered.cluster.key == clusterKey
+					and CurrentCluster(addon, clusterHovered) ~= nil
+			end }
+	elseif surface.expandedClusterKey then
+		clusterKey = surface.expandedClusterKey
+		focus = { kind = "expanded", key = clusterKey, pins = {},
+			isCurrent = function()
+				local current = addon:GetLocationPinSurface("map")
+				if not current or surface.expandedClusterKey ~= clusterKey then return false end
+				local markers = addon:GetPlayerLocationMapMarkers(addon:GetVisiblePlayerLocations("map"), current, MAX_PINS)
+				local _, expanded = addon:GetPlayerLocationClusterExpansion(markers, current)
+				return expanded ~= nil and expanded.key == clusterKey
+			end }
+	end
+	if focus then
+		local function Matches(name)
+			if name == player then return true end
+			local info = partyKey and name and addon:GetPlayerPartyVisualInfo(name)
+			return info and info.key == partyKey or false
+		end
+		for _, pin in ipairs(surface.pins) do
+			local focused
+			if clusterKey then
+				focused = (pin.cluster and pin.cluster.key == clusterKey)
+					or (pin.expansion and surface.expandedClusterKey == clusterKey)
+			else
+				focused = pin.name and Matches(pin.name)
+				if pin.cluster and partyKey then
+					for _, member in ipairs(pin.cluster.members) do
+						if Matches(member.name) then focused = true; break end
+					end
+				end
+			end
+			if focused then focus.pins[pin.frame] = true end
+		end
+	end
+	addon:SetMapOverlayFocus(surface, geometry, focus)
+end
+
+local function HoverHighlights(addon, state)
 	if not state.surfaces or addon:IsRuntimeRestricted() then return end
-	local hovered = state.hovered and addon:GetPlayerPartyVisualInfo(state.hovered.name)
+	local hoveredName = state.hovered and state.hovered.name
+	local hovered = hoveredName and addon:GetPlayerPartyVisualInfo(hoveredName)
 	local key = hovered and hovered.key
 	for _, surface in pairs(state.surfaces) do
 		for _, pin in ipairs(surface.pins) do
 			if (pin.name or pin.cluster) and Guard(addon, pin.frame) then
 				local info = pin.name and addon:GetPlayerPartyVisualInfo(pin.name)
 				local same = key and info and info.key == key
-				local dim = pin.name and key and not same and not pin.selected and not surface.highlightingQT
+				local focused = pin.name == hoveredName or same
+				local dim = surface.name == "minimap" and pin.name and hoveredName and not focused
 				local alpha = (pin.baseAlpha or 1) * (dim and 0.45 or 1)
-				Call(addon, pin.frame, "SetAlpha", alpha)
-				if pin.connector then Call(addon, pin.connector, "SetAlpha", alpha) end
+				if surface.name == "minimap" then Call(addon, pin.frame, "SetAlpha", alpha) end
 				Call(addon, pin.partyBadge, info and info.size and info.size > 1 and "Show" or "Hide")
 				Call(addon, pin.partyOutline, same and "Show" or "Hide")
 				Call(addon, pin.partyCrown, same and pin.name == hovered.leader and "Show" or "Hide")
 			end
 		end
 	end
+	UpdateMapFocus(addon, state)
 end
 
 local function HideTooltip(addon, state)
 	if state.clusterTooltip then addon:HidePlayerTooltipPresentation(state.clusterTooltip) end
 	addon:HidePlayerTooltipPresentation(state)
-	PartyHighlights(addon, state)
+	HoverHighlights(addon, state)
 end
 
 local function HideSurface(addon, state, surface)
@@ -634,8 +723,7 @@ local function HideSurface(addon, state, surface)
 		return
 	end
 	surface.expandedClusterKey = nil
-	surface.highlightingQT = nil
-	if surface.clusterShade then Hide(addon, state, surface.clusterShade) end
+	addon:SetMapOverlayFocus(surface, nil, nil)
 	for _, pin in ipairs(surface.pins) do
 		pin.name, pin.cluster, pin.selected, pin.expansion = nil, nil, nil, nil
 		pin.presentationGeneration = (pin.presentationGeneration or 0) + 1
@@ -665,7 +753,7 @@ function QuestTogether:HidePlayerLocationPins()
 	RetryCleanup(self, state)
 end
 
-local function FreshRow(addon, pin)
+FreshRow = function(addon, pin)
 	if not addon.isEnabled or addon:IsRuntimeRestricted() or not pin.name or not Guard(addon, pin.frame)
 		or not addon:IsQuestTogetherMapDataShown(pin.surface)
 		or Method(addon, pin.frame, "IsVisible") ~= true then
@@ -686,7 +774,7 @@ local function FreshRow(addon, pin)
 		return nil
 	end
 	if pin.surface == "map" and pin.selected then
-		local selected = addon:GetSelectedPlayerMapLocation(geometry.mapID)
+		local selected = addon:GetSelectedPlayerMapLocation()
 		if selected and selected.name == pin.name then return selected end
 	end
 	for index = 1, math.min(MAX_LOCATION_ROWS, #rows) do
@@ -699,6 +787,52 @@ local function FreshRow(addon, pin)
 			return row
 		end
 	end
+end
+
+local function ActivatePlayerMapPin(addon, pin, row)
+	if pin.surface ~= "map" or addon:IsWorkBlocked("foreign_frame_mutation") then return false end
+	local geometry = addon:GetLocationPinSurface("map")
+	if not geometry or geometry.parent ~= pin.parent or geometry.mapID ~= pin.mapID then return false end
+	local view = {}
+	for key, value in pairs(geometry) do view[key] = value end
+	local observed = { name = row.name, mapID = row.mapID, x = row.x, y = row.y }
+	local target = addon:GetPlayerLocationMapNavigationTarget({ observed }, view.mapID)
+	-- Native map queries can run callbacks. Never act on a recycled pin, moved
+	-- observation, changed view, or permission withdrawn during the lookup.
+	local current = FreshRow(addon, pin)
+	if not current or current.name ~= observed.name or current.mapID ~= observed.mapID
+		or current.x ~= observed.x or current.y ~= observed.y
+		or not SameMapGeometry(addon:GetLocationPinSurface("map"), view)
+		or addon:IsWorkBlocked("foreign_frame_mutation") then return false end
+	-- Find can reveal a public player excluded by the normal display filter.
+	-- Re-clicking that selected marker must retain the Find visibility policy.
+	local selection = rawget(addon, "playerMapSelection")
+	local visibleOnly = not (pin.selected and selection and selection.name == observed.name and not selection.visibleOnly)
+	if not addon:SelectPlayerMapLocation(observed, visibleOnly) then return false end
+	local opened = false
+	if target and target ~= view.mapID then
+		addon:ClearPlayerLocationClusterExpansion()
+		opened = Native(addon, addon.API.OpenPlayerLocationMap, target) == true
+	end
+	addon:RefreshPlayerLocationPins()
+	if target == view.mapID then
+		-- Selection moves the player outside any cluster and can recycle the
+		-- clicked frame. Anchor the menu to the freshly rendered selected pin.
+		local state = rawget(addon, "locationPinState")
+		local surface = state and state.surfaces and state.surfaces.map
+		if not surface or not SameMapGeometry(addon:GetLocationPinSurface("map"), view)
+			or addon:IsWorkBlocked("foreign_frame_mutation") then return false end
+		for _, selected in ipairs(surface.pins) do
+			if selected.selected and selected.name == observed.name then
+				local fresh = FreshRow(addon, selected)
+				if fresh and fresh.mapID == observed.mapID and fresh.x == observed.x and fresh.y == observed.y then
+					return addon:OpenLocationPinPlayerMenu(selected.frame, fresh.name, selected)
+				end
+				return false
+			end
+		end
+	end
+	return opened
 end
 
 function QuestTogether:OpenLocationPinPlayerMenu(frame, name, pin)
@@ -727,12 +861,16 @@ local function Color(addon, classFile)
 end
 
 local function Tooltip(addon, state, pin, row)
+	if pin.surface == "map" and state.mapHoverGeneration ~= state.surfaces.map.geometryGeneration then
+		HideTooltip(addon, state)
+		return false
+	end
 	if state.clusterTooltip then addon:HidePlayerTooltipPresentation(state.clusterTooltip) end
-	state.onHoverChanged = function() PartyHighlights(addon, state) end
+	state.onHoverChanged = function() HoverHighlights(addon, state) end
 	return addon:PresentPlayerTooltip(state, pin, row)
 end
 
-local function CurrentCluster(addon, pin)
+CurrentCluster = function(addon, pin)
 	if not addon.isEnabled or addon:IsRuntimeRestricted() or not Guard(addon, pin.frame)
 		or not addon:IsQuestTogetherMapDataShown("map")
 		or Method(addon, pin.frame, "IsVisible") ~= true or not pin.cluster then return nil end
@@ -746,12 +884,13 @@ end
 
 local function ClusterTooltip(addon, state, pin)
 	local cluster, geometry, markers = CurrentCluster(addon, pin)
-	if not cluster or Method(addon, addon:GetPlayerTooltipPresentationParent(), "IsVisible") ~= true then
+	if not cluster or state.clusterHoverGeneration ~= state.surfaces.map.geometryGeneration
+		or Method(addon, addon:GetPlayerTooltipPresentationParent(), "IsVisible") ~= true then
 		HideTooltip(addon, state)
 		return false
 	end
 	addon:HidePlayerTooltipPresentation(state)
-	PartyHighlights(addon, state)
+	HoverHighlights(addon, state)
 	local _, expanded, info = addon:GetPlayerLocationClusterExpansion(markers, geometry)
 	local active = expanded and expanded.key == cluster.key
 	local lines = {}
@@ -773,6 +912,7 @@ local function ClusterTooltip(addon, state, pin)
 		title = string.format(L("%d players"), #cluster.members),
 		text = table.concat(lines, "\n"), color = { 1, 0.82, 0 }, members = members,
 	})
+	UpdateMapFocus(addon, state)
 	return true
 end
 
@@ -805,12 +945,48 @@ local function OpenCluster(addon, state, pin, pageDelta)
 	return true
 end
 
-local function CreatePin(addon, state, surface)
-	local pin = { frame = New(addon, "Button", surface.frame), surface = surface.name }
+local MARKER_GLOW_COLORS = {
+	partners = { 1, 0.8, 0.15 },
+	hidden = { 1, 0.12, 0.12 },
+	selected = { 0.2, 1, 0.25 },
+}
+
+-- One halo for all player-marker states, including tooltip dots. Only its
+-- color changes; the four layers share their geometry, opacity and blend mode.
+function QuestTogether:CreatePlayerMarkerGlow(frame, anchor)
+	local glow = {}
+	for index = 1, 4 do
+		local texture = Call(self, frame, "CreateTexture", nil, "BACKGROUND")
+		Call(self, texture, "SetPoint", "CENTER", anchor or frame, "CENTER", 0, 0)
+		Call(self, texture, "SetBlendMode", "ADD")
+		local mask = Call(self, frame, "CreateMaskTexture")
+		Call(self, mask, "SetAllPoints", texture)
+		Call(self, mask, "SetTexture", "Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+		Call(self, texture, "AddMaskTexture", mask)
+		Call(self, texture, "Hide")
+		glow[index] = texture
+	end
+	return glow
+end
+
+function QuestTogether:SetPlayerMarkerGlow(glow, kind, diameter)
+	if glow.kind == kind and glow.diameter == diameter then return end
+	local color = MARKER_GLOW_COLORS[kind]
+	for index, texture in ipairs(glow) do
+		local size = (diameter - (index - 1) * 2) * MARKER_GLOW_SCALE
+		Call(self, texture, "SetSize", size, size)
+		if color then Call(self, texture, "SetColorTexture", color[1], color[2], color[3], 0.06 + index * 0.07) end
+		Call(self, texture, color and "Show" or "Hide")
+	end
+	glow.kind, glow.diameter = kind, diameter
+end
+
+-- Shared artwork for live pins and inert legend samples. Callers own the
+-- frame, interaction, identity and party emphasis; this only creates regions.
+function QuestTogether:CreatePlayerLocationSymbol(frame)
+	local addon, pin = self, { frame = frame }
 	Call(addon, pin.frame, "Hide")
 	Call(addon, pin.frame, "SetSize", DOT_SIZE, DOT_SIZE)
-	Call(addon, pin.frame, "RegisterForClicks", "LeftButtonUp", "RightButtonUp")
-	pin.isCurrent = function() return FreshRow(addon, pin) ~= nil end
 	for _, layer in ipairs({ "BACKGROUND", "ARTWORK" }) do
 		local texture = Call(addon, pin.frame, "CreateTexture", nil, layer)
 		Call(addon, texture, "SetPoint", "CENTER")
@@ -839,36 +1015,7 @@ local function CreatePin(addon, state, surface)
 			pin.border = texture
 		end
 	end
-	-- Nested translucent circles soften outward into a halo. Reuse these owned
-	-- regions for every occupant of the pin; no animation or extra timer needed.
-	pin.glow = {}
-	for index = 1, 4 do
-		local texture = Call(addon, pin.frame, "CreateTexture", nil, "BACKGROUND")
-		Call(addon, texture, "SetPoint", "CENTER")
-		Call(addon, texture, "SetSize", PARTNER_DOT_SIZE - (index - 1) * 2, PARTNER_DOT_SIZE - (index - 1) * 2)
-		Call(addon, texture, "SetColorTexture", 1, 0.8, 0.15, 0.06 + index * 0.07)
-		Call(addon, texture, "SetBlendMode", "ADD")
-		local mask = Call(addon, pin.frame, "CreateMaskTexture")
-		Call(addon, mask, "SetAllPoints", texture)
-		Call(addon, mask, "SetTexture", "Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-		Call(addon, texture, "AddMaskTexture", mask)
-		Call(addon, texture, "Hide")
-		pin.glow[index] = texture
-	end
-	pin.selectionGlow = {}
-	for index = 1, 4 do
-		local texture = Call(addon, pin.frame, "CreateTexture", nil, "BACKGROUND")
-		Call(addon, texture, "SetPoint", "CENTER")
-		Call(addon, texture, "SetSize", 30 - index * 2, 30 - index * 2)
-		Call(addon, texture, "SetColorTexture", 0.2, 1, 0.25, 0.1 + index * 0.06)
-		Call(addon, texture, "SetBlendMode", "ADD")
-		local mask = Call(addon, pin.frame, "CreateMaskTexture")
-		Call(addon, mask, "SetAllPoints", texture)
-		Call(addon, mask, "SetTexture", "Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-		Call(addon, texture, "AddMaskTexture", mask)
-		Call(addon, texture, "Hide")
-		pin.selectionGlow[index] = texture
-	end
+	pin.glow = addon:CreatePlayerMarkerGlow(pin.frame)
 	pin.developerGear = Call(addon, pin.frame, "CreateTexture", nil, "ARTWORK")
 	Call(addon, pin.developerGear, "SetTexture", PARTY_MEDIA .. "DeveloperGear")
 	Call(addon, pin.developerGear, "SetPoint", "CENTER")
@@ -886,6 +1033,43 @@ local function CreatePin(addon, state, surface)
 	pin.partyOutline = PartyTexture(addon, pin.frame, "PartyHighlight", 16, 16, "CENTER", pin.texture, "CENTER", 0, 0)
 	pin.partyBadge = PartyTexture(addon, pin.frame, "PartyBadge", 10, 10, "CENTER", pin.texture, "BOTTOMRIGHT", 0, 0)
 	pin.partyCrown = PartyTexture(addon, pin.frame, "PartyLeader", 12, 9, "BOTTOM", pin.texture, "TOP", 0, -1)
+	return pin
+end
+
+function QuestTogether:ApplyPlayerLocationSymbol(pin, style)
+	local addon = self
+	local r, g, b = style.r or 1, style.g or 1, style.b or 1
+	local cluster = style.clusterCount ~= nil and style.clusterCount > 0
+	local private, developer, looking = style.private, style.developer, style.looking
+	-- An active find highlight temporarily replaces red/gold rather than
+	-- stacking halos; ending selection restores the underlying status color.
+	local glowKind = style.selected and "selected" or private and "hidden" or looking and "partners" or nil
+	local size = style.size or (cluster and 24 or developer and 18 or glowKind and GLOW_DOT_SIZE or DOT_SIZE)
+	Call(addon, pin.phaseIcon, style.phase and "Show" or "Hide")
+	Call(addon, pin.texture, "SetColorTexture", r, g, b, 1)
+	Call(addon, pin.developerGear, "SetVertexColor", r, g, b, 1)
+	Call(addon, pin.developerGear, developer and "Show" or "Hide")
+	Call(addon, pin.texture, developer and "Hide" or "Show")
+	Call(addon, pin.border, developer and "Hide" or "Show")
+	if pin.size ~= size or pin.private ~= private or pin.looking ~= looking
+		or pin.symbolDeveloper ~= developer or pin.symbolCluster ~= cluster or pin.symbolGlowKind ~= glowKind then
+		Call(addon, pin.border, "SetColorTexture", cluster and 0.8 or 0, cluster and 0.65 or 0, cluster and 0.25 or 0, glowKind and 0 or 1)
+		Call(addon, pin.frame, "SetSize", size, size)
+		Call(addon, pin.border, "SetSize", cluster and size or DOT_SIZE, cluster and size or DOT_SIZE)
+		Call(addon, pin.texture, "SetSize", cluster and size - 3 or DOT_SIZE - 3, cluster and size - 3 or DOT_SIZE - 3)
+		pin.size, pin.private, pin.looking = size, private, looking
+		pin.symbolDeveloper, pin.symbolCluster, pin.symbolGlowKind = developer, cluster, glowKind
+	end
+	Call(addon, pin.count, "SetText", cluster and tostring(style.clusterCount) or "")
+	Call(addon, pin.count, cluster and "Show" or "Hide")
+	addon:SetPlayerMarkerGlow(pin.glow, glowKind, developer and 24 or GLOW_DOT_SIZE)
+end
+
+local function CreatePin(addon, state, surface)
+	local pin = addon:CreatePlayerLocationSymbol(New(addon, "Button", surface.frame))
+	pin.surface = surface.name
+	Call(addon, pin.frame, "RegisterForClicks", "LeftButtonUp", "RightButtonUp")
+	pin.isCurrent = function() return FreshRow(addon, pin) ~= nil end
 	Call(addon, pin.frame, "SetScript", "OnClick", function(_, button)
 		if button ~= "LeftButton" and button ~= "RightButton" then
 			return
@@ -893,17 +1077,23 @@ local function CreatePin(addon, state, surface)
 		if pin.cluster then OpenCluster(addon, state, pin); return end
 		local ok, row = pcall(FreshRow, addon, pin)
 		HideTooltip(addon, state)
-		if ok and row and (pin.surface ~= "minimap" or button == "RightButton") then
-			pcall(addon.OpenLocationPinPlayerMenu, addon, pin.frame, row.name, pin)
+		if ok and row then
+			if pin.surface == "map" and button == "LeftButton" then
+				pcall(ActivatePlayerMapPin, addon, pin, row)
+			elseif button == "RightButton" then
+				pcall(addon.OpenLocationPinPlayerMenu, addon, pin.frame, row.name, pin)
+			end
 		end
 	end)
 	Call(addon, pin.frame, "SetScript", "OnEnter", function()
 		if pin.cluster then
+			state.clusterHoverGeneration = surface.geometryGeneration
 			if not pcall(ClusterTooltip, addon, state, pin) then HideTooltip(addon, state) end
 			return
 		end
 		local ok, row = pcall(FreshRow, addon, pin)
 		if ok and row then
+			if pin.surface == "map" then state.mapHoverGeneration = surface.geometryGeneration end
 			addon:RequestPlayerPhaseComparison(row.name)
 			if not pcall(Tooltip, addon, state, pin, row) then
 				HideTooltip(addon, state)
@@ -936,30 +1126,6 @@ local function CreatePin(addon, state, surface)
 	return pin
 end
 
-local function UpdateClusterShade(addon, state, surface, level)
-	if not surface.expandedClusterKey or not level then
-		if surface.clusterShade then Hide(addon, state, surface.clusterShade) end
-		return
-	end
-	if not surface.clusterShade then
-		local shade = New(addon, "Frame", surface.frame)
-		surface.clusterShade = shade
-		Call(addon, shade, "Hide")
-		Call(addon, shade, "SetAllPoints", surface.frame)
-		Call(addon, shade, "EnableMouse", false)
-		Call(addon, shade, "EnableMouseWheel", false)
-		local texture = Call(addon, shade, "CreateTexture", nil, "BACKGROUND")
-		surface.clusterShadeTexture = texture
-		Call(addon, texture, "SetAllPoints", shade)
-		Call(addon, texture, "SetColorTexture", 0, 0, 0, 0.22)
-	end
-	-- Shade the visible map and ordinary markers without intercepting input.
-	-- The active cluster and its member buttons sit above this owned layer.
-	Call(addon, surface.clusterShadeTexture, "SetAlpha", surface.highlightingQT and 0 or 1)
-	Call(addon, surface.clusterShade, "SetFrameLevel", level + 2)
-	Call(addon, surface.clusterShade, "Show")
-end
-
 local function RefreshSurface(addon, state, name, rows)
 	local surface = state.surfaces[name]
 	if not addon:IsQuestTogetherMapDataShown(name) then
@@ -973,7 +1139,9 @@ local function RefreshSurface(addon, state, name, rows)
 	end
 	local geometry = addon:GetLocationPinSurface(name)
 	if not geometry then
-		if name == "map" then addon:ClearPlayerMapSelection() end
+		-- Map-level changes can briefly lack canvas geometry while the map
+		-- remains open. Hide the stale pins without losing the selected player.
+		if name == "map" and Native(addon, addon.API.IsWorldMapVisible) ~= true then addon:ClearPlayerMapSelection() end
 		HideSurface(addon, state, surface)
 		return false
 	end
@@ -1016,20 +1184,11 @@ local function RefreshSurface(addon, state, name, rows)
 		end
 	end
 	local level = Number(addon, Call(addon, surface.frame, "GetFrameLevel"))
-	local nativePinLevel = Number(addon, geometry.pinFrameLevel)
-	local highlightLevel = name == "map" and addon:GetQuestTogetherMapHighlightLevel(geometry)
-	surface.highlightingQT = highlightLevel ~= nil and highlightLevel ~= false
-	if level and highlightLevel then
-		level = math.max(level, highlightLevel)
-		Call(addon, surface.frame, "SetFrameLevel", level)
+	if surface.expandedClusterKey then
+		-- Connectors share the single map-focus layer. Its owner handles hover
+		-- precedence and falls back to the expanded cluster on pointer leave.
+		surface.clusterShade = addon:AcquireMapOverlayShade(geometry)
 	end
-	if level and surface.expandedClusterKey and nativePinLevel then
-		-- Blizzard pin groups can sit thousands of levels above the canvas.
-		-- Raise only our owned overlay; the ordinary pool level returns on collapse.
-		level = math.max(level, nativePinLevel + 1)
-		Call(addon, surface.frame, "SetFrameLevel", level)
-	end
-	UpdateClusterShade(addon, state, surface, level)
 	local count = math.min(MAX_PINS, #markers)
 	for index = 1, count do
 		local marker = markers[index]
@@ -1048,39 +1207,28 @@ local function RefreshSurface(addon, state, name, rows)
 		pin.cluster, pin.selected = cluster and marker or nil, marker.selected == true
 		local levelOffset = marker.expanded and 4 or marker.expansionInfo and 3
 			or (pin.selected and not surface.expandedClusterKey and 5) or 1
+		pin.mapLevelOffset = levelOffset
 		if level then Call(addon, pin.frame, "SetFrameLevel", level + levelOffset) end
 		pin.baseAlpha = 1
 		Call(addon, pin.frame, "SetAlpha", pin.baseAlpha)
-		Call(addon, pin.phaseIcon, row and addon:GetPlayerPhaseStatus(row.name) == "different" and "Show" or "Hide")
 		local r, g, b = 0.16, 0.13, 0.06
 		if row then r, g, b = Color(addon, row.classFile) end
-		Call(addon, pin.texture, "SetColorTexture", r, g, b, 1)
-		local private = row and row.developerOnly and row.publicLocationHidden
-		local developer = row and addon:IsVerifiedDeveloper(row.name) == true
-		Call(addon, pin.developerGear, "SetVertexColor", r, g, b, 1)
-		Call(addon, pin.developerGear, developer and "Show" or "Hide")
-		Call(addon, pin.texture, developer and "Hide" or "Show")
-		Call(addon, pin.border, developer and "Hide" or "Show")
-		local looking = row and HasLocationGlow(addon, row.name, row) == true
-		local size = cluster and 24 or PinSize(addon, row.name, row)
-		if pin.size ~= size or pin.private ~= private or pin.looking ~= looking then
-			Call(addon, pin.border, "SetColorTexture", cluster and 0.8 or 0, cluster and 0.65 or 0, cluster and 0.25 or 0, looking and 0 or 1)
-			for glowIndex, glow in ipairs(pin.glow) do
-				local glowSize = (developer and 24 or PARTNER_DOT_SIZE) - (glowIndex - 1) * 2
-				Call(addon, glow, "SetSize", glowSize, glowSize)
-				Call(addon, glow, "SetColorTexture", 1, private and 0.12 or 0.8, private and 0.12 or 0.15, 0.06 + glowIndex * 0.07)
-				Call(addon, glow, looking and "Show" or "Hide")
-			end
-			Call(addon, pin.frame, "SetSize", size, size)
-			Call(addon, pin.border, "SetSize", cluster and size or DOT_SIZE, cluster and size or DOT_SIZE)
-			Call(addon, pin.texture, "SetSize", cluster and size - 3 or DOT_SIZE - 3, cluster and size - 3 or DOT_SIZE - 3)
-			pin.size, pin.private, pin.looking = size, private, looking
-		end
+		addon:ApplyPlayerLocationSymbol(pin, {
+			r = r, g = g, b = b,
+			size = cluster and 24 or PinSize(addon, row.name, row),
+			clusterCount = cluster and #cluster or nil,
+			looking = row and HasLocationGlow(addon, row.name, row) == true,
+			private = row and row.developerOnly and row.publicLocationHidden,
+			developer = row and addon:IsVerifiedDeveloper(row.name) == true,
+			selected = pin.selected,
+			phase = row and addon:GetPlayerPhaseStatus(row.name) == "different",
+		})
 		Call(addon, pin.frame, "EnableMouseWheel", cluster ~= nil and marker.expansionInfo ~= nil and marker.expansionInfo.pages > 1)
 		if marker.expanded then
 			if not pin.connector then
 				-- Connections remain legible above the shade and below member dots.
 				pin.connector = Call(addon, surface.clusterShade, "CreateLine", nil, "OVERLAY")
+				pin.focusDecorations = { pin.connector }
 				Call(addon, pin.connector, "SetThickness", 1)
 				Call(addon, pin.connector, "SetColorTexture", 0.8, 0.7, 0.45, 0.65)
 			end
@@ -1088,9 +1236,6 @@ local function RefreshSurface(addon, state, name, rows)
 			Call(addon, pin.connector, "SetEndPoint", "TOPLEFT", surface.frame, marker.x, -marker.y)
 			Call(addon, pin.connector, "Show")
 		elseif pin.connector then Hide(addon, state, pin.connector) end
-		Call(addon, pin.count, "SetText", cluster and tostring(#cluster) or "")
-		Call(addon, pin.count, cluster and "Show" or "Hide")
-		for _, glow in ipairs(pin.selectionGlow) do Call(addon, glow, pin.selected and "Show" or "Hide") end
 		if cluster then
 			Call(addon, pin.partyBadge, "Hide")
 			Call(addon, pin.partyOutline, "Hide")
@@ -1153,7 +1298,7 @@ function QuestTogether:RefreshPlayerLocationPins()
 	if state.clusterTooltip and state.clusterTooltip.hovered then
 		if not pcall(ClusterTooltip, self, state, state.clusterTooltip.hovered) then HideTooltip(self, state) end
 	end
-	PartyHighlights(self, state)
+	HoverHighlights(self, state)
 	return visible
 end
 

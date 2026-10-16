@@ -82,6 +82,14 @@ Add("LOC", "state", "active", {
 	F("level", N),
 	F("warMode", B),
 })
+-- Private diagnostic coordinates have a dedicated route and cannot be folded
+-- into ordinary presence, detail or departure snapshots.
+Add("DLOC", "state", "background", {
+	F("subscriptionSession", S, 64, true),
+	F("subscriptionId", S, 64, true),
+	F("locationShared", B, nil, true),
+	F("location", "LOC", nil, true),
+}, { privateOnly = true, maxBytes = 1024, lifetime = 30 })
 Add("QTCI", "state", "active", { F("streams", B), F("raceID", N), F("direct", B) })
 Add(
 	"QTHI",
@@ -315,6 +323,7 @@ local function ValueEncode(a, field, value, depth)
 					or type(row.topic) ~= "string"
 					or not catalog[row.topic]
 					or catalog[row.topic].semantic ~= "state"
+					or catalog[row.topic].privateOnly
 					or row.topic == "STATE"
 					or row.topic == "BYE"
 					or topics[row.topic]
@@ -405,6 +414,7 @@ local function ValueDecode(a, field, text, depth)
 					not topic
 					or not catalog[topic]
 					or catalog[topic].semantic ~= "state"
+					or catalog[topic].privateOnly
 					or topic == "STATE"
 					or topic == "BYE"
 					or topics[topic]

@@ -2,7 +2,7 @@
 -- by PlayerLocations; this module never requests or renews a location.
 local QT = _G.QuestTogether
 local L = QT.Translate
-local MAX_ROWS, CLUSTER_RADIUS, SELECTION_LIFETIME, NAVIGATION_LIFETIME = 512, 24, 20, 2
+local MAX_ROWS, CLUSTER_RADIUS, SELECTION_LIFETIME, NAVIGATION_LIFETIME = 512, 24, 60, 2
 local EXPANSION_PAGE_SIZE, EXPANSION_INSET, EXPANSION_SPACING = 12, 10, 22
 local GEOMETRY_FIELDS = { "mapID", "width", "height", "canvasLeft", "canvasTop", "canvasWidth", "canvasHeight", "parent" }
 
@@ -83,38 +83,69 @@ function QT:ClearPlayerMapSelection()
 	self.playerMapSelection = nil
 end
 
+local function SelectionLocation(addon, name, visibleOnly)
+	if visibleOnly then
+		-- A clicked marker may be a private developer observation. Keep using
+		-- the visible-row query so its original permissions and filters apply.
+		for _, row in ipairs(addon:GetVisiblePlayerLocations("map")) do
+			if row.name == name then return row end
+		end
+		return nil
+	end
+	return addon:GetFindPlayerMapLocation(name)
+end
+
+function QT:SelectPlayerMapLocation(row, visibleOnly)
+	local name, mapID, x, y = row.name, row.mapID, row.x, row.y
+	local current = SelectionLocation(self, name, visibleOnly)
+	if not current or current.mapID ~= mapID or current.x ~= x or current.y ~= y then return false end
+	self.playerMapSelection = {
+		name = name, mapID = mapID, expires = Now(self) + SELECTION_LIFETIME,
+		visibleOnly = visibleOnly == true,
+	}
+	return true
+end
+
 function QT:FindPlayerOnMap(name)
+	local hadSelection = rawget(self, "playerMapSelection") ~= nil
+	self:ClearPlayerMapSelection()
 	self:ClearPlayerLocationClusterExpansion()
-	local row, reason = self:GetFindPlayerMapLocation(name)
-	if not row then self:Print(reason); return false end
-	if not self.API.OpenPlayerLocationMap(row.mapID) then
-		self:Print(L("This player's map cannot be opened right now."))
+	local function Failed(message)
+		if message then self:Print(message) end
+		if hadSelection then self:RefreshPlayerLocationPins() end
 		return false
+	end
+	local row, reason = self:GetFindPlayerMapLocation(name)
+	if not row then return Failed(reason) end
+	local targetMapID = self:GetPlayerLocationMapNavigationTarget({ row }, row.mapID) or row.mapID
+	if not self.API.OpenPlayerLocationMap(targetMapID) then
+		return Failed(L("This player's map cannot be opened right now."))
 	end
 	local current = self:GetFindPlayerMapLocation(row.name)
 	if not current or current.mapID ~= row.mapID then
-		self:Print(L("No recent shared world-map location is available for this player."))
-		return false
+		return Failed(L("No recent shared world-map location is available for this player."))
 	end
 	-- An explicit Find action should reveal its result, while preserving all
 	-- sharing and player-filter preferences controlled by other settings.
 	if not self:IsQuestTogetherMapDataShown("map") then
-		if not self:SetOption("showWorldMapData", true) then return false end
+		if not self:SetOption("showWorldMapData", true) then return Failed() end
 	end
-	self.playerMapSelection = { name = row.name, mapID = row.mapID, expires = Now(self) + SELECTION_LIFETIME }
+	if not self:SelectPlayerMapLocation(current) then return Failed() end
 	self:RefreshPlayerLocationPins()
 	return true
 end
 
-function QT:GetSelectedPlayerMapLocation(mapID)
+function QT:GetSelectedPlayerMapLocation()
 	local selection = rawget(self, "playerMapSelection")
 	if not selection then return nil end
-	local row = self:GetFindPlayerMapLocation(selection.name)
-	if Now(self) >= selection.expires or not row or row.mapID ~= selection.mapID
-		or (mapID and selection.mapID ~= mapID) then
+	local row = SelectionLocation(self, selection.name, selection.visibleOnly)
+	if Now(self) >= selection.expires or not row or row.mapID ~= selection.mapID then
 		self:ClearPlayerMapSelection()
 		return nil
 	end
+	-- Selection belongs to the accepted observation, not the viewed map level.
+	-- Each surface projects its true location and may omit it without retiring
+	-- the selection when the user navigates away and then back.
 	return row
 end
 
@@ -325,7 +356,7 @@ end
 -- including distance priority, private diagnostic rows and explicit Find.
 function QT:GetPlayerLocationMapMarkers(rows, geometry, maximumPins)
 	if #rows > maximumPins then rows = self:PrioritizePlayerLocationRows(rows, self:GetPlayerLocationPriorityOrigin()) end
-	local selected = self:GetSelectedPlayerMapLocation(geometry.mapID)
+	local selected = self:GetSelectedPlayerMapLocation()
 	if selected then
 		local copy = { selected }
 		for _, row in ipairs(rows) do
