@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.4.0
+## 7.4.1
 
 使用全新的任务追踪器，随时查看小队任务进度。
 
@@ -14,7 +14,7 @@
 
 **Forever**
 
-![任务追踪器 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
+![任务追踪器 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTracker.png)
 
 ### 选择追踪内容
 
@@ -24,7 +24,7 @@
 
 **Forever**
 
-![选择追踪内容 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
+![选择追踪内容 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### 调整界面布局
 
@@ -32,6 +32,37 @@
 - 默认开启吸附到暴雪目标追踪器，将QT放紧贴其外侧边缘。拖走QT会关闭吸附并启用角落缩放。重新开启吸附可重置位置；宽度和最大高度滑块在两种模式下均可使用。
 - 追踪器会根据内容自动调整高度，达到设定的最大高度后启用滚动。默认最大高度现为 600；已有的保存尺寸保持不变。
 - 玩家区域会填满可用宽度，必要时可滚动查看。支持明亮和深色主题。职业颜色填充的不透明度恒定为 25%，不受窗口背景滑块影响，透明背景上的文字仍保持清晰。
+
+**Forever**
+
+![调整界面布局 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerEditMode.png)
+
+## 7.4.0
+
+使用全新的任务追踪器，随时查看小队任务进度。
+
+### 任务追踪器
+
+- 在按职业着色的紧凑窗口中查看小队的目标计数和进度条。队员需要使用 QuestTogether 才能分享进度。
+- 收到小队通报时即更新进度，不受聊天和气泡显示设置影响。没有目标计数的任务会显示状态，例如可以交付。
+
+**Forever**
+
+![任务追踪器 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
+
+### 选择追踪内容
+
+- 可选择隐藏、聚焦任务、悬停任务或聚焦和悬停。默认的聚焦和悬停模式会暂时显示鼠标在暴雪目标追踪器中指向的任务，随后返回聚焦任务。
+- 没有符合条件的任务时，窗口保持隐藏。在 HUD 编辑模式或设置 → 小队与分享 → 任务追踪器中更改显示模式。
+
+**Forever**
+
+![选择追踪内容 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
+
+### 调整界面布局
+
+- 打开 HUD 编辑模式并选中任务追踪器，即可移动窗口、调整大小和背景不透明度。保存、还原更改和恢复默认值均包含显示模式与布局。
+- 玩家区域会填满可用宽度，必要时可滚动查看。支持明亮和深色主题，即使不透明度为零，文字也保持清晰，玩家背景仍隐约可见。
 
 **Forever**
 

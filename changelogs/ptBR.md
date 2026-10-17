@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.4.0
+## 7.4.1
 
 Acompanhe o progresso das missões do seu grupo com o novo rastreador de missões.
 
@@ -14,7 +14,7 @@ Acompanhe o progresso das missões do seu grupo com o novo rastreador de missõe
 
 **Forever**
 
-![Rastreador de missões — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
+![Rastreador de missões — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTracker.png)
 
 ### Escolha o que acompanhar
 
@@ -24,7 +24,7 @@ Acompanhe o progresso das missões do seu grupo com o novo rastreador de missõe
 
 **Forever**
 
-![Escolha o que acompanhar — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
+![Escolha o que acompanhar — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### Ajuste à sua interface
 
@@ -32,6 +32,37 @@ Acompanhe o progresso das missões do seu grupo com o novo rastreador de missõe
 - O encaixe no rastreador de objetivos da Blizzard vem ativado e posiciona o QT junto à borda externa, sem espaço adicional. Arrastar o QT para longe desativa o encaixe e permite redimensionar pelo canto. Reative o encaixe para redefinir a posição; os controles de largura e altura máxima funcionam nos dois modos.
 - O rastreador ajusta sua altura ao conteúdo até a altura máxima configurada e depois permite rolagem. A altura máxima padrão agora é 600; os tamanhos já salvos são preservados.
 - As seções dos jogadores preenchem a largura disponível e permitem rolagem quando necessário. Há suporte aos temas claro e escuro. O preenchimento da cor da classe mantém uma opacidade constante de 25%, independente do controle do fundo da janela, com texto legível em fundos transparentes.
+
+**Forever**
+
+![Ajuste à sua interface — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerEditMode.png)
+
+## 7.4.0
+
+Acompanhe o progresso das missões do seu grupo com o novo rastreador de missões.
+
+### Rastreador de missões
+
+- Veja os contadores e as barras de progresso dos objetivos do grupo em uma janela compacta com cores de classe. Os membros do grupo precisam do QuestTogether para compartilhar o progresso.
+- O progresso é atualizado quando os anúncios do grupo chegam, independentemente das configurações de exibição do bate-papo e dos balões. Missões sem contadores mostram seu estado, como prontas para entregar.
+
+**Forever**
+
+![Rastreador de missões — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
+
+### Escolha o que acompanhar
+
+- Escolha Oculto, Missão em foco, Missão sob o cursor ou Foco e cursor. O padrão, Foco e cursor, exibe as missões sob o mouse no rastreador de objetivos da Blizzard e depois retorna à missão em foco.
+- Sem uma missão correspondente, a janela fica oculta. Altere o modo no modo de edição do HUD ou em Configurações → Grupos e compartilhamento → Rastreador de missões.
+
+**Forever**
+
+![Escolha o que acompanhar — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
+
+### Ajuste à sua interface
+
+- Abra o modo de edição do HUD e selecione Rastreador de missões para mover ou redimensionar a janela e ajustar a opacidade do fundo. Salvar, Reverter e Restaurar padrão incluem o modo de exibição e o layout.
+- As seções dos jogadores preenchem a largura disponível e permitem rolagem quando necessário. Há suporte aos temas claro e escuro, com texto legível e fundos discretos dos jogadores mesmo com opacidade zero.
 
 **Forever**
 

@@ -3,6 +3,338 @@
   "releases": [
     {
       "enUS": {
+        "version": "7.4.0",
+        "welcome": "Keep your party's quest progress in view with the new Quest Tracker.",
+        "sections": [
+          {
+            "title": "Quest Tracker",
+            "illustration": "quest-tracker",
+            "items": [
+              "See your party's objective counts and progress bars in a compact, class-colored window. Party members need QuestTogether to share their progress.",
+              "Progress updates as party announcements arrive, independently of chat and bubble display settings. Quests without objective counters show their status, such as ready to turn in."
+            ]
+          },
+          {
+            "title": "Choose what to track",
+            "illustration": "quest-tracker-display",
+            "items": [
+              "Choose Hidden, Focused Quest, Hovered Quest, or Focus and Hover. The default, Focus and Hover, previews quests under the mouse in Blizzard's objective tracker, then returns to your focused quest.",
+              "With no eligible quest, the window stays hidden. Change the display mode in HUD Edit Mode or Settings → Groups & Sharing → Quest Tracker."
+            ]
+          },
+          {
+            "title": "Make it fit your UI",
+            "illustration": "quest-tracker-edit-mode",
+            "items": [
+              "Open HUD Edit Mode and select Quest Tracker to move or resize it and adjust background opacity. Save, Revert, and Reset to Default include its display mode and layout.",
+              "Player sections fill the available width and scroll when needed. Light and dark themes are supported, with readable text and faint player backgrounds even at zero opacity."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "7.4.0",
+        "welcome": "Behalte den Questfortschritt deiner Gruppe mit dem neuen Questtracker im Blick.",
+        "sections": [
+          {
+            "title": "Questtracker",
+            "illustration": "quest-tracker",
+            "items": [
+              "Sieh die Zielzähler und Fortschrittsbalken deiner Gruppe in einem kompakten Fenster mit Klassenfarben. Gruppenmitglieder benötigen QuestTogether, um ihren Fortschritt zu teilen.",
+              "Der Fortschritt wird beim Eintreffen von Gruppenmeldungen aktualisiert, unabhängig von den Anzeigeeinstellungen für Chat und Sprechblasen. Quests ohne Zielzähler zeigen ihren Status, etwa bereit zur Abgabe."
+            ]
+          },
+          {
+            "title": "Wähle, was du verfolgen möchtest",
+            "illustration": "quest-tracker-display",
+            "items": [
+              "Wähle Ausgeblendet, Fokussierte Quest, Quest unter dem Mauszeiger oder Fokus und Mauszeiger. Die Standardeinstellung Fokus und Mauszeiger zeigt vorübergehend Quests unter dem Mauszeiger in Blizzards Zielverfolgung und kehrt danach zur fokussierten Quest zurück.",
+              "Ohne passende Quest bleibt das Fenster ausgeblendet. Ändere den Anzeigemodus im HUD-Bearbeitungsmodus oder unter Einstellungen → Gruppen & Teilen → Questtracker."
+            ]
+          },
+          {
+            "title": "Passe das Fenster deiner Oberfläche an",
+            "illustration": "quest-tracker-edit-mode",
+            "items": [
+              "Öffne den HUD-Bearbeitungsmodus und wähle Questtracker, um das Fenster zu verschieben, seine Größe zu ändern und die Hintergrunddeckkraft einzustellen. Speichern, Zurücksetzen und Standard wiederherstellen berücksichtigen Anzeigemodus und Layout.",
+              "Die Spielerbereiche nutzen die verfügbare Breite und lassen sich bei Bedarf scrollen. Helles und dunkles Design werden unterstützt; auch bei null Deckkraft bleiben Text lesbar und Spielerhintergründe schwach sichtbar."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "7.4.0",
+        "welcome": "Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi de quête.",
+        "sections": [
+          {
+            "title": "Suivi de quête",
+            "illustration": "quest-tracker",
+            "items": [
+              "Consultez les compteurs et les barres de progression des objectifs de votre groupe dans une fenêtre compacte aux couleurs des classes. Les membres du groupe doivent utiliser QuestTogether pour partager leur progression.",
+              "La progression est actualisée à la réception des annonces du groupe, indépendamment des réglages du chat et des bulles. Les quêtes sans compteur affichent leur état, par exemple prêtes à être rendues."
+            ]
+          },
+          {
+            "title": "Choisir les quêtes à suivre",
+            "illustration": "quest-tracker-display",
+            "items": [
+              "Choisissez Masqué, Quête ciblée, Quête survolée ou Ciblage et survol. Ce dernier mode, activé par défaut, affiche les quêtes survolées dans le suivi des objectifs de Blizzard, puis revient à votre quête ciblée.",
+              "Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres → Groupes et partage → Suivi de quête."
+            ]
+          },
+          {
+            "title": "Adapter la fenêtre à votre interface",
+            "illustration": "quest-tracker-edit-mode",
+            "items": [
+              "Ouvrez le mode Édition du HUD et sélectionnez Suivi de quête pour déplacer ou redimensionner la fenêtre et régler son opacité. Enregistrer, Annuler les modifications et Rétablir les valeurs par défaut incluent le mode d’affichage et la disposition.",
+              "Les sections des joueurs occupent la largeur disponible et défilent si nécessaire. Les thèmes clair et sombre sont pris en charge, avec un texte lisible et des fonds de joueurs légèrement visibles même à opacité nulle."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "7.4.0",
+        "welcome": "Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimiento de misiones.",
+        "sections": [
+          {
+            "title": "Seguimiento de misiones",
+            "illustration": "quest-tracker",
+            "items": [
+              "Ve los contadores y las barras de progreso de los objetivos de tu grupo en una ventana compacta con colores de clase. Los miembros del grupo necesitan QuestTogether para compartir su progreso.",
+              "El progreso se actualiza al recibir anuncios del grupo, independientemente de los ajustes del chat y las burbujas. Las misiones sin contadores muestran su estado, como listas para entregar."
+            ]
+          },
+          {
+            "title": "Elige qué seguir",
+            "illustration": "quest-tracker-display",
+            "items": [
+              "Elige Oculto, Misión enfocada, Misión bajo el cursor o Enfoque y cursor. La opción predeterminada, Enfoque y cursor, muestra las misiones bajo el ratón en el seguimiento de objetivos de Blizzard y después vuelve a tu misión enfocada.",
+              "Si no hay ninguna misión que mostrar, la ventana permanece oculta. Cambia el modo en el modo de edición del HUD o en Ajustes → Grupos y compartir → Seguimiento de misiones."
+            ]
+          },
+          {
+            "title": "Adáptalo a tu interfaz",
+            "illustration": "quest-tracker-edit-mode",
+            "items": [
+              "Abre el modo de edición del HUD y selecciona Seguimiento de misiones para mover o redimensionar la ventana y ajustar la opacidad del fondo. Guardar, Revertir y Restablecer valores predeterminados incluyen el modo de visualización y la disposición.",
+              "Las secciones de los jugadores ocupan el ancho disponible y permiten desplazarse cuando es necesario. Se admiten los temas claro y oscuro, con texto legible y fondos de jugadores tenues incluso con opacidad cero."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "7.4.0",
+        "welcome": "Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimiento de misiones.",
+        "sections": [
+          {
+            "title": "Seguimiento de misiones",
+            "illustration": "quest-tracker",
+            "items": [
+              "Ve los contadores y las barras de progreso de los objetivos de tu grupo en una ventana compacta con colores de clase. Los miembros del grupo necesitan QuestTogether para compartir su progreso.",
+              "El progreso se actualiza al recibir anuncios del grupo, independientemente de los ajustes del chat y las burbujas. Las misiones sin contadores muestran su estado, como listas para entregar."
+            ]
+          },
+          {
+            "title": "Elige qué seguir",
+            "illustration": "quest-tracker-display",
+            "items": [
+              "Elige Oculto, Misión enfocada, Misión bajo el cursor o Enfoque y cursor. La opción predeterminada, Enfoque y cursor, muestra las misiones bajo el mouse en el seguimiento de objetivos de Blizzard y después vuelve a tu misión enfocada.",
+              "Si no hay ninguna misión que mostrar, la ventana permanece oculta. Cambia el modo en el modo de edición del HUD o en Configuración → Grupos y compartir → Seguimiento de misiones."
+            ]
+          },
+          {
+            "title": "Adáptalo a tu interfaz",
+            "illustration": "quest-tracker-edit-mode",
+            "items": [
+              "Abre el modo de edición del HUD y selecciona Seguimiento de misiones para mover o cambiar el tamaño de la ventana y ajustar la opacidad del fondo. Guardar, Revertir y Restablecer valores predeterminados incluyen el modo de visualización y la distribución.",
+              "Las secciones de los jugadores ocupan el ancho disponible y permiten desplazarse cuando es necesario. Se admiten los temas claro y oscuro, con texto legible y fondos de jugadores tenues incluso con opacidad cero."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "7.4.0",
+        "welcome": "Acompanhe o progresso das missões do seu grupo com o novo rastreador de missões.",
+        "sections": [
+          {
+            "title": "Rastreador de missões",
+            "illustration": "quest-tracker",
+            "items": [
+              "Veja os contadores e as barras de progresso dos objetivos do grupo em uma janela compacta com cores de classe. Os membros do grupo precisam do QuestTogether para compartilhar o progresso.",
+              "O progresso é atualizado quando os anúncios do grupo chegam, independentemente das configurações de exibição do bate-papo e dos balões. Missões sem contadores mostram seu estado, como prontas para entregar."
+            ]
+          },
+          {
+            "title": "Escolha o que acompanhar",
+            "illustration": "quest-tracker-display",
+            "items": [
+              "Escolha Oculto, Missão em foco, Missão sob o cursor ou Foco e cursor. O padrão, Foco e cursor, exibe as missões sob o mouse no rastreador de objetivos da Blizzard e depois retorna à missão em foco.",
+              "Sem uma missão correspondente, a janela fica oculta. Altere o modo no modo de edição do HUD ou em Configurações → Grupos e compartilhamento → Rastreador de missões."
+            ]
+          },
+          {
+            "title": "Ajuste à sua interface",
+            "illustration": "quest-tracker-edit-mode",
+            "items": [
+              "Abra o modo de edição do HUD e selecione Rastreador de missões para mover ou redimensionar a janela e ajustar a opacidade do fundo. Salvar, Reverter e Restaurar padrão incluem o modo de exibição e o layout.",
+              "As seções dos jogadores preenchem a largura disponível e permitem rolagem quando necessário. Há suporte aos temas claro e escuro, com texto legível e fundos discretos dos jogadores mesmo com opacidade zero."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "7.4.0",
+        "welcome": "Следите за прогрессом заданий группы с новым окном отслеживания заданий.",
+        "sections": [
+          {
+            "title": "Отслеживание заданий",
+            "illustration": "quest-tracker",
+            "items": [
+              "Счётчики целей и полосы прогресса группы отображаются в компактном окне с цветами классов. Для передачи прогресса участникам группы нужен QuestTogether.",
+              "Прогресс обновляется при получении объявлений группы независимо от настроек отображения чата и облачков. Задания без счётчиков показывают свой статус, например готовность к сдаче."
+            ]
+          },
+          {
+            "title": "Выберите, что отслеживать",
+            "illustration": "quest-tracker-display",
+            "items": [
+              "Доступны режимы «Скрыто», «Выбранное задание», «Задание под курсором» и «Выбор и наведение». Последний включён по умолчанию: он показывает задание под курсором в списке целей Blizzard, а затем возвращается к выбранному заданию.",
+              "Если подходящего задания нет, окно скрыто. Изменить режим можно в режиме редактирования HUD или в Настройки → Группы и обмен → Отслеживание заданий."
+            ]
+          },
+          {
+            "title": "Настройте окно под свой интерфейс",
+            "illustration": "quest-tracker-edit-mode",
+            "items": [
+              "Откройте режим редактирования HUD и выберите «Отслеживание заданий», чтобы переместить окно, изменить его размер и непрозрачность фона. Сохранение, отмена изменений и сброс включают режим отображения и расположение.",
+              "Секции игроков занимают доступную ширину и прокручиваются при необходимости. Поддерживаются светлая и тёмная темы; даже при нулевой непрозрачности текст остаётся читаемым, а фоны игроков — слабо видимыми."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "7.4.0",
+        "welcome": "Tieni sotto controllo i progressi delle missioni del gruppo con il nuovo tracciamento missioni.",
+        "sections": [
+          {
+            "title": "Tracciamento missioni",
+            "illustration": "quest-tracker",
+            "items": [
+              "Visualizza i contatori e le barre di avanzamento degli obiettivi del gruppo in una finestra compatta con i colori delle classi. I membri del gruppo devono usare QuestTogether per condividere i progressi.",
+              "I progressi si aggiornano alla ricezione degli annunci del gruppo, indipendentemente dalle impostazioni di chat e fumetti. Le missioni senza contatori mostrano il proprio stato, ad esempio pronte per la consegna."
+            ]
+          },
+          {
+            "title": "Scegli cosa seguire",
+            "illustration": "quest-tracker-display",
+            "items": [
+              "Scegli Nascosto, Missione selezionata, Missione sotto il cursore o Selezione e cursore. La modalità predefinita, Selezione e cursore, mostra le missioni sotto il mouse nel tracciamento obiettivi di Blizzard, poi torna alla missione selezionata.",
+              "Senza una missione corrispondente, la finestra resta nascosta. Cambia modalità nella modalità Modifica HUD o in Impostazioni → Gruppi e condivisione → Tracciamento missioni."
+            ]
+          },
+          {
+            "title": "Adattalo alla tua interfaccia",
+            "illustration": "quest-tracker-edit-mode",
+            "items": [
+              "Apri la modalità Modifica HUD e seleziona Tracciamento missioni per spostare o ridimensionare la finestra e regolare l’opacità dello sfondo. Salva, Annulla modifiche e Ripristina predefiniti includono la modalità di visualizzazione e la disposizione.",
+              "Le sezioni dei giocatori occupano la larghezza disponibile e scorrono quando necessario. Sono supportati i temi chiaro e scuro, con testo leggibile e sfondi dei giocatori appena visibili anche a opacità zero."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "7.4.0",
+        "welcome": "새로운 퀘스트 추적기로 파티의 퀘스트 진행 상황을 확인하세요.",
+        "sections": [
+          {
+            "title": "퀘스트 추적기",
+            "illustration": "quest-tracker",
+            "items": [
+              "직업 색상이 적용된 작은 창에서 파티의 목표 수치와 진행 막대를 확인할 수 있습니다. 파티원이 진행 상황을 공유하려면 QuestTogether가 필요합니다.",
+              "채팅 및 말풍선 표시 설정과 관계없이 파티 알림을 받으면 진행 상황이 갱신됩니다. 목표 수치가 없는 퀘스트는 완료 보고 준비 등의 상태를 표시합니다."
+            ]
+          },
+          {
+            "title": "추적할 퀘스트 선택",
+            "illustration": "quest-tracker-display",
+            "items": [
+              "숨김, 집중 퀘스트, 마우스를 올린 퀘스트, 집중 및 마우스 오버 중 선택하세요. 기본값인 집중 및 마우스 오버는 블리자드 목표 추적기에서 마우스를 올린 퀘스트를 잠시 표시한 후 집중 퀘스트로 돌아갑니다.",
+              "표시할 퀘스트가 없으면 창이 숨겨집니다. HUD 편집 모드 또는 설정 → 그룹 및 공유 → 퀘스트 추적기에서 표시 모드를 변경하세요."
+            ]
+          },
+          {
+            "title": "내 인터페이스에 맞추기",
+            "illustration": "quest-tracker-edit-mode",
+            "items": [
+              "HUD 편집 모드에서 퀘스트 추적기를 선택해 위치와 크기, 배경 불투명도를 조절하세요. 저장, 변경 되돌리기, 기본값으로 초기화에는 표시 모드와 배치도 포함됩니다.",
+              "플레이어 영역은 사용 가능한 너비를 채우며 필요할 때 스크롤됩니다. 밝은 테마와 어두운 테마를 지원하며, 불투명도가 0이어도 읽기 쉬운 글자와 희미한 플레이어 배경이 유지됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "7.4.0",
+        "welcome": "使用全新的任务追踪器，随时查看小队任务进度。",
+        "sections": [
+          {
+            "title": "任务追踪器",
+            "illustration": "quest-tracker",
+            "items": [
+              "在按职业着色的紧凑窗口中查看小队的目标计数和进度条。队员需要使用 QuestTogether 才能分享进度。",
+              "收到小队通报时即更新进度，不受聊天和气泡显示设置影响。没有目标计数的任务会显示状态，例如可以交付。"
+            ]
+          },
+          {
+            "title": "选择追踪内容",
+            "illustration": "quest-tracker-display",
+            "items": [
+              "可选择隐藏、聚焦任务、悬停任务或聚焦和悬停。默认的聚焦和悬停模式会暂时显示鼠标在暴雪目标追踪器中指向的任务，随后返回聚焦任务。",
+              "没有符合条件的任务时，窗口保持隐藏。在 HUD 编辑模式或设置 → 小队与分享 → 任务追踪器中更改显示模式。"
+            ]
+          },
+          {
+            "title": "调整界面布局",
+            "illustration": "quest-tracker-edit-mode",
+            "items": [
+              "打开 HUD 编辑模式并选中任务追踪器，即可移动窗口、调整大小和背景不透明度。保存、还原更改和恢复默认值均包含显示模式与布局。",
+              "玩家区域会填满可用宽度，必要时可滚动查看。支持明亮和深色主题，即使不透明度为零，文字也保持清晰，玩家背景仍隐约可见。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "7.4.0",
+        "welcome": "使用全新的任務追蹤器，隨時查看隊伍任務進度。",
+        "sections": [
+          {
+            "title": "任務追蹤器",
+            "illustration": "quest-tracker",
+            "items": [
+              "在依職業著色的精簡視窗中查看隊伍的目標計數和進度條。隊員需要使用 QuestTogether 才能分享進度。",
+              "收到隊伍通報時即更新進度，不受聊天和泡泡顯示設定影響。沒有目標計數的任務會顯示狀態，例如可以交付。"
+            ]
+          },
+          {
+            "title": "選擇追蹤內容",
+            "illustration": "quest-tracker-display",
+            "items": [
+              "可選擇隱藏、聚焦任務、懸停任務或聚焦與懸停。預設的聚焦與懸停模式會暫時顯示滑鼠在暴雪目標追蹤器中指向的任務，隨後返回聚焦任務。",
+              "沒有符合條件的任務時，視窗保持隱藏。在 HUD 編輯模式或設定 → 隊伍與分享 → 任務追蹤器中變更顯示模式。"
+            ]
+          },
+          {
+            "title": "調整介面配置",
+            "illustration": "quest-tracker-edit-mode",
+            "items": [
+              "開啟 HUD 編輯模式並選取任務追蹤器，即可移動視窗、調整大小和背景不透明度。儲存、還原變更和恢復預設值均包含顯示模式與配置。",
+              "玩家區域會填滿可用寬度，必要時可捲動查看。支援明亮和深色主題，即使不透明度為零，文字也保持清晰，玩家背景仍隱約可見。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "7.3.5",
         "welcome": "Clearer map markers, easier player navigation, and fresher party information.",
         "sections": [

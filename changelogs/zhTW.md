@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.4.0
+## 7.4.1
 
 使用全新的任務追蹤器，隨時查看隊伍任務進度。
 
@@ -14,7 +14,7 @@
 
 **Forever**
 
-![任務追蹤器 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
+![任務追蹤器 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTracker.png)
 
 ### 選擇追蹤內容
 
@@ -24,7 +24,7 @@
 
 **Forever**
 
-![選擇追蹤內容 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
+![選擇追蹤內容 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### 調整介面配置
 
@@ -32,6 +32,37 @@
 - 預設開啟貼齊暴雪目標追蹤器，將QT放緊貼其外側邊緣。拖走QT會關閉貼齊並啟用角落縮放。重新開啟貼齊可重設位置；寬度和最大高度滑桿在兩種模式下皆可使用。
 - 追蹤器會依內容自動調整高度，達到設定的最大高度後啟用捲動。預設最大高度現為 600；已儲存的尺寸保持不變。
 - 玩家區域會填滿可用寬度，必要時可捲動查看。支援明亮和深色主題。職業顏色填充的不透明度固定為 25%，不受視窗背景滑桿影響，透明背景上的文字仍保持清晰。
+
+**Forever**
+
+![調整介面配置 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerEditMode.png)
+
+## 7.4.0
+
+使用全新的任務追蹤器，隨時查看隊伍任務進度。
+
+### 任務追蹤器
+
+- 在依職業著色的精簡視窗中查看隊伍的目標計數和進度條。隊員需要使用 QuestTogether 才能分享進度。
+- 收到隊伍通報時即更新進度，不受聊天和泡泡顯示設定影響。沒有目標計數的任務會顯示狀態，例如可以交付。
+
+**Forever**
+
+![任務追蹤器 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
+
+### 選擇追蹤內容
+
+- 可選擇隱藏、聚焦任務、懸停任務或聚焦與懸停。預設的聚焦與懸停模式會暫時顯示滑鼠在暴雪目標追蹤器中指向的任務，隨後返回聚焦任務。
+- 沒有符合條件的任務時，視窗保持隱藏。在 HUD 編輯模式或設定 → 隊伍與分享 → 任務追蹤器中變更顯示模式。
+
+**Forever**
+
+![選擇追蹤內容 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
+
+### 調整介面配置
+
+- 開啟 HUD 編輯模式並選取任務追蹤器，即可移動視窗、調整大小和背景不透明度。儲存、還原變更和恢復預設值均包含顯示模式與配置。
+- 玩家區域會填滿可用寬度，必要時可捲動查看。支援明亮和深色主題，即使不透明度為零，文字也保持清晰，玩家背景仍隱約可見。
 
 **Forever**
 

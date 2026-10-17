@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.4.0
+## 7.4.1
 
 Tieni sotto controllo i progressi delle missioni del gruppo con il nuovo tracciamento missioni.
 
@@ -14,7 +14,7 @@ Tieni sotto controllo i progressi delle missioni del gruppo con il nuovo traccia
 
 **Forever**
 
-![Tracciamento missioni — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
+![Tracciamento missioni — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTracker.png)
 
 ### Scegli cosa seguire
 
@@ -24,7 +24,7 @@ Tieni sotto controllo i progressi delle missioni del gruppo con il nuovo traccia
 
 **Forever**
 
-![Scegli cosa seguire — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
+![Scegli cosa seguire — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### Adattalo alla tua interfaccia
 
@@ -32,6 +32,37 @@ Tieni sotto controllo i progressi delle missioni del gruppo con il nuovo traccia
 - L’aggancio al tracciatore obiettivi di Blizzard è attivo per impostazione predefinita e posiziona QT a filo del suo bordo esterno. Trascinare QT altrove disattiva l’aggancio e permette di ridimensionarlo dall’angolo. Riattiva l’aggancio per ripristinare la posizione; i cursori di larghezza e altezza massima funzionano in entrambe le modalità.
 - Il tracciamento adatta l’altezza al contenuto fino all’altezza massima configurata, poi consente lo scorrimento. L’altezza massima predefinita è ora 600; le dimensioni già salvate vengono mantenute.
 - Le sezioni dei giocatori occupano la larghezza disponibile e scorrono quando necessario. Sono supportati i temi chiaro e scuro. Il riempimento del colore di classe mantiene un’opacità costante del 25%, indipendente dal cursore dello sfondo della finestra, con testo leggibile su sfondi trasparenti.
+
+**Forever**
+
+![Adattalo alla tua interfaccia — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerEditMode.png)
+
+## 7.4.0
+
+Tieni sotto controllo i progressi delle missioni del gruppo con il nuovo tracciamento missioni.
+
+### Tracciamento missioni
+
+- Visualizza i contatori e le barre di avanzamento degli obiettivi del gruppo in una finestra compatta con i colori delle classi. I membri del gruppo devono usare QuestTogether per condividere i progressi.
+- I progressi si aggiornano alla ricezione degli annunci del gruppo, indipendentemente dalle impostazioni di chat e fumetti. Le missioni senza contatori mostrano il proprio stato, ad esempio pronte per la consegna.
+
+**Forever**
+
+![Tracciamento missioni — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
+
+### Scegli cosa seguire
+
+- Scegli Nascosto, Missione selezionata, Missione sotto il cursore o Selezione e cursore. La modalità predefinita, Selezione e cursore, mostra le missioni sotto il mouse nel tracciamento obiettivi di Blizzard, poi torna alla missione selezionata.
+- Senza una missione corrispondente, la finestra resta nascosta. Cambia modalità nella modalità Modifica HUD o in Impostazioni → Gruppi e condivisione → Tracciamento missioni.
+
+**Forever**
+
+![Scegli cosa seguire — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
+
+### Adattalo alla tua interfaccia
+
+- Apri la modalità Modifica HUD e seleziona Tracciamento missioni per spostare o ridimensionare la finestra e regolare l’opacità dello sfondo. Salva, Annulla modifiche e Ripristina predefiniti includono la modalità di visualizzazione e la disposizione.
+- Le sezioni dei giocatori occupano la larghezza disponibile e scorrono quando necessario. Sono supportati i temi chiaro e scuro, con testo leggibile e sfondi dei giocatori appena visibili anche a opacità zero.
 
 **Forever**
 
