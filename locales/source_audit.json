@@ -778,6 +778,7 @@
       "ARTWORK",
       "BACKGROUND",
       "BORDER",
+      "BOTTOMLEFT",
       "BOTTOMRIGHT",
       "Button",
       "Completed",

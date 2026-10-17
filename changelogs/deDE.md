@@ -29,7 +29,9 @@ Behalte den Questfortschritt deiner Gruppe mit dem neuen Questtracker im Blick.
 ### Passe das Fenster deiner Oberfläche an
 
 - Öffne den HUD-Bearbeitungsmodus und wähle Questtracker, um das Fenster zu verschieben, seine Größe zu ändern und die Hintergrunddeckkraft einzustellen. Speichern, Zurücksetzen und Standard wiederherstellen berücksichtigen Anzeigemodus und Layout.
-- Die Spielerbereiche nutzen die verfügbare Breite und lassen sich bei Bedarf scrollen. Helles und dunkles Design werden unterstützt. Die klassenfarbene Füllung bleibt unabhängig vom Regler für den Fensterhintergrund konstant bei 50% Deckkraft; der Text bleibt auf transparentem Hintergrund lesbar.
+- Standardmäßig sitzt der Quest-Tracker neben Blizzards Zielverfolgung, links oder rechts davon je nach deren Bildschirmhälfte. Verschieben im Bearbeitungsmodus speichert eine eigene Position; „Auf Standard zurücksetzen“ stellt die automatische Platzierung wieder her.
+- Der Tracker passt sich der Höhe seines Inhalts bis zur eingestellten maximalen Höhe an; danach wird gescrollt. Die Standardhöhe beträgt jetzt maximal 600; bereits gespeicherte Größen bleiben erhalten.
+- Die Spielerbereiche nutzen die verfügbare Breite und lassen sich bei Bedarf scrollen. Helles und dunkles Design werden unterstützt. Die klassenfarbene Füllung bleibt unabhängig vom Regler für den Fensterhintergrund konstant bei 25% Deckkraft; der Text bleibt auf transparentem Hintergrund lesbar.
 
 **Forever**
 

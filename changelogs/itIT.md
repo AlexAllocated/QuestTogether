@@ -29,7 +29,9 @@ Tieni sotto controllo i progressi delle missioni del gruppo con il nuovo traccia
 ### Adattalo alla tua interfaccia
 
 - Apri la modalità Modifica HUD e seleziona Tracciamento missioni per spostare o ridimensionare la finestra e regolare l’opacità dello sfondo. Salva, Annulla modifiche e Ripristina predefiniti includono la modalità di visualizzazione e la disposizione.
-- Le sezioni dei giocatori occupano la larghezza disponibile e scorrono quando necessario. Sono supportati i temi chiaro e scuro. Il riempimento del colore di classe mantiene un’opacità costante del 50%, indipendente dal cursore dello sfondo della finestra, con testo leggibile su sfondi trasparenti.
+- Per impostazione predefinita, il tracciamento QT si posiziona accanto a quello di Blizzard, a sinistra o a destra in base alla metà dello schermo occupata. Spostare QT in modalità Modifica salva una posizione personalizzata; ripristinare i valori predefiniti riattiva il posizionamento automatico.
+- Il tracciamento adatta l’altezza al contenuto fino all’altezza massima configurata, poi consente lo scorrimento. L’altezza massima predefinita è ora 600; le dimensioni già salvate vengono mantenute.
+- Le sezioni dei giocatori occupano la larghezza disponibile e scorrono quando necessario. Sono supportati i temi chiaro e scuro. Il riempimento del colore di classe mantiene un’opacità costante del 25%, indipendente dal cursore dello sfondo della finestra, con testo leggibile su sfondi trasparenti.
 
 **Forever**
 

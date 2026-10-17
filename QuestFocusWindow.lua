@@ -229,6 +229,45 @@ function QT:UpdateQuestFocusWindow()
 	if state.dirty or state.restrictedPresentation then
 		self:RenderQuestFocusWindow(state)
 	end
+	self:ApplyQuestTrackerDefaultAnchor(rawget(self, "questFocusWindow"))
+end
+
+function QT:GetQuestTrackerAnchorFrame()
+	return ObjectiveTrackerFrame
+end
+
+function QT:ApplyQuestTrackerDefaultAnchor(frame)
+	if not frame or frame.dragging or frame.resizing or self:IsWorkBlocked("foreign_frame_mutation")
+		or not self:CanMutateOwnedUI(frame) then return end
+	local layouts = self.db.profile.windowLayouts
+	local saved = type(layouts) == "table" and layouts.questFocus
+	-- Existing saved positions remain custom. New size-only saves retain docking.
+	if type(saved) == "table" and saved.autoAnchor ~= true then return end
+	local tracker, root = self:GetQuestTrackerAnchorFrame(), self:GetOwnedUIParent()
+	if not self:CanAccessForeignFrame(tracker) or not self:CanAccessForeignFrame(root) then return end
+	local function Read(region, method)
+		local getter = self:GetAccessibleFrameMember(region, method)
+		if type(getter) ~= "function" then return end
+		local ok, value = pcall(getter, region)
+		if not ok or not self:CanAccessValue(value) then return end
+		local n = self:SafeToNumber(value)
+		if n and n == n and math.abs(n) ~= math.huge then return n end
+	end
+	local left, top, width, ts = Read(tracker, "GetLeft"), Read(tracker, "GetTop"), Read(tracker, "GetWidth"), Read(tracker, "GetEffectiveScale")
+	local rl, rb, rw, rs = Read(root, "GetLeft"), Read(root, "GetBottom"), Read(root, "GetWidth"), Read(root, "GetEffectiveScale")
+	local fs = Read(frame, "GetEffectiveScale")
+	if not left or not top or not width or not ts or not rl or not rb or not rw or not rs or not fs
+		or width <= 0 or rw <= 0 or ts <= 0 or rs <= 0 or fs <= 0 then return end
+	local ratio = ts / rs
+	local onRight = (left + width / 2) * ratio - rl >= rw / 2
+	local point = onRight and "TOPRIGHT" or "TOPLEFT"
+	local x = ((onRight and left or left + width) * ratio - rl + (onRight and -8 or 8)) * rs / fs
+	local y = (top * ratio - rb) * rs / fs
+	local p, relative, relativePoint, oldX, oldY = frame:GetPoint(1)
+	if p ~= point or relative ~= root or relativePoint ~= "BOTTOMLEFT" or oldX ~= x or oldY ~= y then
+		frame:ClearAllPoints()
+		frame:SetPoint(point, root, "BOTTOMLEFT", x, y)
+	end
 end
 
 function QT:GetQuestFocusStatusSentence(status, member)
@@ -289,22 +328,28 @@ end
 function QT:CreateQuestFocusWindow()
 	local frame = self:CreateOwnedUIFrame(self.CreateOwnedWindowFrame, "Frame", self:GetOwnedUIParent())
 	frame:Hide()
-	frame:SetSize(340, 300)
+	frame:SetSize(340, 600)
 	frame:SetFrameStrata("LOW")
 	frame:SetClampedToScreen(true)
 	frame:SetMovable(true)
 	frame:SetResizable(true)
 	frame:SetResizeBounds(240, 120, 720, 800)
-	frame.background = self:CreateRoundedWindowBackground(frame)
-	frame.heading = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	-- The managed frame keeps the configured maximum and stable top anchor.
+	-- Only its visible content panel shrinks; content changes never save a new
+	-- maximum or move the title. Edit Mode exposes the full placement bounds.
+	frame.panel = self:CreateOwnedUIFrame(self.CreateOwnedWindowFrame, "Frame", frame)
+	frame.panel:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+	frame.panel:EnableMouse(false)
+	frame.background = self:CreateRoundedWindowBackground(frame.panel)
+	frame.heading = frame.panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	frame.heading:SetPoint("TOPLEFT", 12, -12)
 	frame.heading:SetJustifyH("LEFT")
 	frame.heading:SetJustifyV("TOP")
 	frame.heading:SetMaxLines(2)
 	frame.heading:SetHeight(36)
 	frame.heading:SetWordWrap(true)
-	frame.viewport = self:CreateOwnedUIFrame(self.CreateOwnedWindowFrame, "ScrollFrame", frame)
-	frame.viewport:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -12, 12)
+	frame.viewport = self:CreateOwnedUIFrame(self.CreateOwnedWindowFrame, "ScrollFrame", frame.panel)
+	frame.viewport:SetPoint("BOTTOMRIGHT", frame.panel, "BOTTOMRIGHT", -12, 12)
 	frame.body = self:CreateOwnedUIFrame(self.CreateOwnedWindowFrame, "Frame", frame.viewport)
 	frame.body:SetSize(300, 1)
 	frame.viewport:SetScrollChild(frame.body)
@@ -317,9 +362,9 @@ function QT:CreateQuestFocusWindow()
 		frame.viewport:SetVerticalScroll(frame.offset)
 		self:UpdateOwnedScrollBar(frame.bar, frame.offset, frame.maximum or 0, frame.viewport:GetHeight(), 30)
 	end
-	frame.bar = self:CreateOwnedScrollBar(self.CreateOwnedWindowFrame, frame, false, Scroll)
-	frame.bar:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -6, -40)
-	frame.bar:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -6, 12)
+	frame.bar = self:CreateOwnedScrollBar(self.CreateOwnedWindowFrame, frame.panel, false, Scroll)
+	frame.bar:SetPoint("TOPRIGHT", frame.panel, "TOPRIGHT", -6, -40)
+	frame.bar:SetPoint("BOTTOMRIGHT", frame.panel, "BOTTOMRIGHT", -6, 12)
 	frame.bar:SetWidth(12)
 	frame.viewport:SetScript("OnSizeChanged", function()
 		self:QueueQuestFocusRefresh()
@@ -341,6 +386,7 @@ function QT:CreateQuestFocusWindow()
 		if self.questFocusEditing and not self:IsWorkBlocked("foreign_frame_mutation") then
 			self:SelectQuestFocusWindow()
 			self:StartWindowDrag(frame)
+			if frame.dragging then frame.customPositionProfile = self.db.profile end
 		end
 	end)
 	frame:SetScript("OnDragStop", function()
@@ -369,6 +415,11 @@ function QT:CreateQuestFocusWindow()
 	end)
 	frame.LayoutManagedWindow = function()
 		self:QueueQuestFocusRefresh()
+	end
+	frame.PrepareSavedWindowLayout = function(_, layout, previous)
+		layout.autoAnchor = frame.customPositionProfile ~= self.db.profile
+			and (type(previous) ~= "table" or previous.autoAnchor == true)
+		frame.customPositionProfile = nil
 	end
 	self:RegisterManagedWindow(frame, "questFocus", 240, 120, { x = 0.78, y = 0.6 })
 	frame:EnableKeyboard(false)
@@ -445,7 +496,7 @@ function QT:RenderQuestFocusWindow(state, restricted)
 	local function Usable(region)
 		return self.LibChev.CanMutateOwnedRegion(region)
 	end
-	for _, region in ipairs({ frame, frame.body, frame.viewport, frame.heading, frame.grip }) do
+	for _, region in ipairs({ frame, frame.panel, frame.body, frame.viewport, frame.heading, frame.grip }) do
 		if not Usable(region) then
 			return
 		end
@@ -479,9 +530,9 @@ function QT:RenderQuestFocusWindow(state, restricted)
 	frame.heading:SetShadowColor(0, 0, 0, brightText and 1 or 0)
 	frame.heading:SetShadowOffset(1, -1)
 	local top = math.max(18, math.min(36, frame.heading:GetStringHeight())) + 22
-	frame.viewport:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, -top)
+	frame.viewport:SetPoint("TOPLEFT", frame.panel, "TOPLEFT", 12, -top)
 	if not restricted then
-		frame.bar:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -6, -top)
+		frame.bar:SetPoint("TOPRIGHT", frame.panel, "TOPRIGHT", -6, -top)
 	end
 	local rows = self:BuildQuestFocusRows(state)
 	-- Keep native frame construction outside restricted updates. Existing rows
@@ -524,7 +575,7 @@ function QT:RenderQuestFocusWindow(state, restricted)
 			style.LayoutDetailsPanel(row, width, true, member, last, false, theme.dark, true, opacity, true)
 			local r, g, b = self:GetWindowClassColor(data.classFile)
 			-- Class fill stays readable independently of the main background slider.
-			style.ColorPanel(row.background, r, g, b, 0.50)
+			style.ColorPanel(row.background, r, g, b, 0.25)
 			style.ShowPanel(row.hover, false)
 			row.accent:Hide()
 			style.LayoutProgressBar(row, data, theme.dark, inset, padding + textHeight + 3, width - inset - 10)
@@ -549,7 +600,11 @@ function QT:RenderQuestFocusWindow(state, restricted)
 	if gutter > 0 then
 		y = LayoutRows(width - gutter)
 	end
-	frame.viewport:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -12 - gutter, 12)
+	local editing = state.editing and not restricted
+	local height = editing and frame:GetHeight() or math.min(frame:GetHeight(), top + 12 + math.max(1, y))
+	frame.panel:SetSize(frame:GetWidth(), height)
+	extent = math.max(1, height - top - 12)
+	frame.viewport:SetPoint("BOTTOMRIGHT", frame.panel, "BOTTOMRIGHT", -12 - gutter, 12)
 	for i = #rows + 1, #frame.rows do
 		frame.rows[i]:Hide()
 	end
@@ -558,9 +613,8 @@ function QT:RenderQuestFocusWindow(state, restricted)
 	frame.offset = math.min(frame.offset, frame.maximum)
 	frame.viewport:SetVerticalScroll(frame.offset)
 	if not restricted then
-		self:UpdateOwnedScrollBar(frame.bar, frame.offset, frame.maximum, math.max(1, frame:GetHeight() - top - 12), 30)
+		self:UpdateOwnedScrollBar(frame.bar, frame.offset, frame.maximum, extent, 30)
 	end
-	local editing = state.editing and not restricted
 	if not editing then
 		self:StopWindowInteraction(frame)
 	end

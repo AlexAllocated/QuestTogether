@@ -98,6 +98,9 @@ local function Fixture()
 	function a:GetQuestFocusEditManager()
 		return self.manager
 	end
+	function a:GetQuestTrackerAnchorFrame()
+		return self.nativeTracker
+	end
 	function a:BindQuestFocusEditCallbacks(manager)
 		self.bound = manager
 	end
@@ -158,7 +161,7 @@ QT:RegisterTest(
 		Equal(state.members[2].objectiveDetails[42].objectives[1].current, 1)
 		local track = frame.rows[4].progressTrack
 		Equal(frame.rows[4].progressFill:GetWidth(), track:GetWidth() / 8)
-		Equal(frame.rows[3].background.textureColor[4], 0.5)
+		Equal(frame.rows[3].background.textureColor[4], 0.25)
 		for _, row in ipairs(frame.rows) do
 			for _, edge in ipairs(row.panelEdges) do
 				Equal(edge:IsShown(), false)
@@ -262,14 +265,14 @@ QT:RegisterTest("focus HUD edit layout restores per profile and opacity affects 
 		a:Drain()
 		Equal(frame.background[1].textureColor[4], 0)
 		local tintAlpha = frame.rows[1].background.textureColor[4]
-		Equal(tintAlpha, 0.5)
+		Equal(tintAlpha, 0.25)
 		local paperAlpha = frame.rows[1].paper.textureColor[4]
 		Equal(paperAlpha, 0)
-		assert(math.abs(tintAlpha + paperAlpha * (1 - tintAlpha) - 0.5) < 0.00001)
+		assert(math.abs(tintAlpha + paperAlpha * (1 - tintAlpha) - 0.25) < 0.00001)
 		Equal(frame.rows[1].title.textColor[1], 1)
 		Equal(frame.rows[2].title.textColor[1], 0.93)
 		Equal(frame.heading.textColor[1], 1)
-		for _, sample in ipairs({ { 25, 0.5 }, { 50, 0.5 }, { 75, 0.5 }, { 100, 0.5 } }) do
+		for _, sample in ipairs({ { 25, 0.25 }, { 50, 0.25 }, { 75, 0.25 }, { 100, 0.25 } }) do
 			a:SetOption("questFocusOpacity", sample[1])
 			a:Drain()
 			Equal(frame.background[1].textureColor[4], sample[1] / 100)
@@ -382,6 +385,109 @@ QT:RegisterTest("focus HUD construction and resize callbacks never reenter nativ
 	Equal(frame.maximum, 0)
 	Equal(frame.body:GetWidth(), 600 - 24)
 	Equal(frame.rows[1]:GetWidth(), frame.body:GetWidth())
+end)
+
+QT:RegisterTest("tracker default docking follows native side and scale without overriding custom positions", function()
+	local a = Fixture()
+	a.nativeTracker = a:CreateTestUIRegion(a, a.root)
+	local tracker = a.nativeTracker
+	tracker:SetSize(240, 500)
+	tracker.left, tracker.top = 900, 800
+	local writes = tracker.writes
+	a:UpdateQuestFocusWindow()
+	a:Drain()
+	local frame = a.questFocusWindow
+	local function Anchor(point, x, y)
+		local p, relative, rp, px, py = frame:GetPoint(1)
+		Equal(p, point)
+		Equal(relative, a.root)
+		Equal(rp, "BOTTOMLEFT")
+		Equal(px, x)
+		Equal(py, y)
+	end
+	Anchor("TOPRIGHT", 892, 800)
+	tracker.left = 100
+	a:UpdateQuestFocusWindow()
+	Anchor("TOPLEFT", 348, 800)
+	frame:SetWidth(420)
+	a:SaveWindowLayout(frame)
+	Equal(a.db.profile.windowLayouts.questFocus.autoAnchor, true)
+	tracker.left, tracker.scale = 500, 1.5
+	a:UpdateQuestFocusWindow()
+	a:Drain()
+	Anchor("TOPRIGHT", 742, 1200)
+	Equal(tracker.writes, writes, "docking must never mutate Blizzard's tracker")
+	tracker.forbidden = true
+	a:UpdateQuestFocusWindow()
+	Anchor("TOPRIGHT", 742, 1200)
+	tracker.forbidden = false
+	a.restricted = true
+	tracker.left = 100
+	a:UpdateQuestFocusWindow()
+	Anchor("TOPRIGHT", 742, 1200)
+	a.restricted = false
+	frame.customPositionProfile = a.db.profile
+	a:SaveWindowLayout(frame)
+	Equal(a.db.profile.windowLayouts.questFocus.autoAnchor, false)
+	a:UpdateQuestFocusWindow()
+	Anchor("TOPRIGHT", 742, 1200)
+	a.db.profile.windowLayouts.questFocus = { width = 420, height = 600, x = 0.4, y = 0.5 }
+	a:UpdateQuestFocusWindow()
+	Anchor("TOPRIGHT", 742, 1200) -- Pre-existing saved positions remain custom.
+	a.db.profile.windowLayouts.questFocus = nil
+	a:UpdateQuestFocusWindow()
+	Anchor("TOPLEFT", 518, 1200)
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("tracker content shrinks below its saved maximum and Edit Mode retains full placement bounds", function()
+	local a = Fixture()
+	a:UpdateQuestFocusWindow()
+	a:Drain()
+	local frame = a.questFocusWindow
+	Equal(frame:GetHeight(), 600)
+	assert(frame.panel:GetHeight() < 600)
+	Equal(frame.maximum, 0)
+	local initialHeight = frame.panel:GetHeight()
+	local reply = a.sent[1].receiver
+	local objectives = {}
+	for i = 1, 20 do
+		objectives[i] = { objectiveIndex = i, text = "A long objective that needs room to wrap across the tracker width", current = i, required = 25 }
+	end
+	reply.onEntry({ questId = 42, objectives = objectives })
+	reply.onDone()
+	a:Drain()
+	Equal(frame.panel:GetHeight(), 600)
+	assert(frame.maximum > 0)
+	frame.offset = frame.maximum
+	a.manager = a:CreateTestUIRegion(a)
+	a.manager:Show()
+	a:UpdateQuestFocusWindow()
+	a:Drain()
+	a:SelectQuestFocusWindow()
+	frame.editControls.HeightSlider.change(420)
+	a:Drain()
+	Equal(frame.panel:GetHeight(), 420)
+	Equal(a.db.profile.windowLayouts.questFocus.height, 420)
+	Equal(frame.editControls.HeightSlider.settingData.settingName, "Maximum height")
+	a.ignored = "Friend"
+	a:UpdateQuestFocusWindow()
+	a:Drain()
+	Equal(frame.panel:GetHeight(), 420, "Edit Mode shows the full maximum even with little content")
+	a.manager:Hide()
+	a:UpdateQuestFocusWindow()
+	a:Drain()
+	assert(frame.panel:GetHeight() <= initialHeight)
+	Equal(frame:GetHeight(), 420)
+	Equal(a.db.profile.windowLayouts.questFocus.height, 420)
+	Equal(frame.offset, 0)
+	Equal(frame.maximum, 0)
+	Equal(frame.panel.points[1][2], frame)
+	Equal(frame.panel.points[1][3], "TOPLEFT")
+	a:ApplyWindowLayout(frame, true)
+	a:Drain()
+	assert(frame.panel:GetHeight() < 420)
+	Equal(frame:GetHeight(), 420)
 end)
 
 QT:RegisterTest(

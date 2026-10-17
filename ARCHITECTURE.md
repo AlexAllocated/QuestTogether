@@ -70,11 +70,19 @@ private `.local` notes are historical context, not the source of truth.
   bounded read-only mouse/ancestor inspection. Hover never changes native focus;
   leaving falls back to focus or hides when neither exists. Local quest-log
   events refresh its own objectives without remote
-  polling. Geometry is profile-owned under `windowLayouts.questFocus`; opacity
+  polling. Geometry is profile-owned under `windowLayouts.questFocus`. Its height is a
+  maximum (600 by default): the managed placement frame retains that size while
+  a top-anchored content panel shrinks to its rows outside Edit Mode. Overflow
+  scrolls at the maximum; automatic shrink never writes saved geometry. Default
+  placement samples Blizzard tracker geometry read-only and anchors QT to its
+  inward-facing top corner. A saved `autoAnchor` marker survives size-only saves;
+  moving QT opts out, and existing saved positions remain custom. Reset restores
+  docking. No anchors or state are written onto Blizzard frames. Opacity
   affects the backgrounds, with faint player sections retained at zero and text
   staying opaque with contrast suited to transparency. Player sections retain their
-  class-colored fill at a constant 50% opacity, independently of the background slider. The optional solo-visibility rule uses
-  actual group membership, defaults off, and never hides the Edit Mode preview. HUD Edit Mode
+  class-colored fill at a constant 25% opacity, independently of the background
+  slider. The optional solo-visibility rule uses actual group membership, defaults
+  off, and never hides the Edit Mode preview. HUD Edit Mode
   shows an owned placement preview; selecting it opens the same themed settings
   shell as the personal bubble, with display mode/width/height/opacity controls and
   Save/Revert/Reset actions. Changes apply automatically. Save/revert

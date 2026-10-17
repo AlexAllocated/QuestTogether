@@ -232,6 +232,10 @@ function QT:CreateTestUIRegion(owner, parent, kind)
 		self:Check()
 		self.points[#self.points + 1] = { ... }
 	end
+	function frame:GetPoint(index)
+		self:CheckRead()
+		return unpack(self.points[index or 1] or {})
+	end
 	function frame:ClearAllPoints()
 		self:Check()
 		self.points = {}

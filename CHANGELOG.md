@@ -31,7 +31,9 @@ Keep your party's quest progress in view with the new Quest Tracker.
 ### Make it fit your UI
 
 - Open HUD Edit Mode and select Quest Tracker to move or resize it and adjust background opacity. Save, Revert, and Reset to Default include its display mode and layout.
-- Player sections fill the available width and scroll when needed. Light and dark themes are supported. Class-colored sections retain a constant 50% fill opacity, independent of the window background slider, with readable text on transparent backgrounds.
+- By default, Quest Tracker sits beside Blizzard’s objective tracker, on its left or right depending on which half of the screen Blizzard’s tracker occupies. Moving QT in Edit Mode saves a custom position; Reset to Default restores automatic placement.
+- The tracker shrinks to fit its content up to your configured maximum height, then scrolls. The default maximum height is now 600; existing saved sizes are preserved.
+- Player sections fill the available width and scroll when needed. Light and dark themes are supported. Class-colored sections retain a constant 25% fill opacity, independent of the window background slider, with readable text on transparent backgrounds.
 
 **Forever**
 

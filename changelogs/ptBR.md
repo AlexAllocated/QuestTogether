@@ -29,7 +29,9 @@ Acompanhe o progresso das missões do seu grupo com o novo rastreador de missõe
 ### Ajuste à sua interface
 
 - Abra o modo de edição do HUD e selecione Rastreador de missões para mover ou redimensionar a janela e ajustar a opacidade do fundo. Salvar, Reverter e Restaurar padrão incluem o modo de exibição e o layout.
-- As seções dos jogadores preenchem a largura disponível e permitem rolagem quando necessário. Há suporte aos temas claro e escuro. O preenchimento da cor da classe mantém uma opacidade constante de 50%, independente do controle do fundo da janela, com texto legível em fundos transparentes.
+- Por padrão, o rastreador do QT fica ao lado do rastreador de objetivos da Blizzard, à esquerda ou à direita conforme a metade da tela que ele ocupa. Mover o QT no modo de edição salva uma posição personalizada; restaurar o padrão retoma o posicionamento automático.
+- O rastreador ajusta sua altura ao conteúdo até a altura máxima configurada e depois permite rolagem. A altura máxima padrão agora é 600; os tamanhos já salvos são preservados.
+- As seções dos jogadores preenchem a largura disponível e permitem rolagem quando necessário. Há suporte aos temas claro e escuro. O preenchimento da cor da classe mantém uma opacidade constante de 25%, independente do controle do fundo da janela, com texto legível em fundos transparentes.
 
 **Forever**
 

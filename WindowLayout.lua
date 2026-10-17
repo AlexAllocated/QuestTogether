@@ -77,7 +77,13 @@ function QT:SaveWindowLayout(frame)
 	if info.key and self.db and self.db.profile then
 		self.db.profile.windowLayouts = type(self.db.profile.windowLayouts) == "table" and self.db.profile.windowLayouts
 			or {}
-		self.db.profile.windowLayouts[info.key] = { width = w, height = h, x = cx, y = cy }
+		local layout = { width = w, height = h, x = cx, y = cy }
+		-- Owned views may attach placement metadata without replacing the
+		-- shared geometry validation or save path.
+		if type(frame.PrepareSavedWindowLayout) == "function" then
+			frame:PrepareSavedWindowLayout(layout, self.db.profile.windowLayouts[info.key])
+		end
+		self.db.profile.windowLayouts[info.key] = layout
 	end
 	info.x, info.y = cx, cy
 end

@@ -29,7 +29,9 @@ Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimie
 ### Adáptalo a tu interfaz
 
 - Abre el modo de edición del HUD y selecciona Seguimiento de misiones para mover o cambiar el tamaño de la ventana y ajustar la opacidad del fondo. Guardar, Revertir y Restablecer valores predeterminados incluyen el modo de visualización y la distribución.
-- Las secciones de los jugadores ocupan el ancho disponible y permiten desplazarse cuando es necesario. Se admiten los temas claro y oscuro. El relleno del color de clase mantiene una opacidad constante del 50%, independiente del control del fondo de la ventana, con texto legible sobre fondos transparentes.
+- Por defecto, el seguimiento de QT se coloca junto al de Blizzard, a su izquierda o derecha según la mitad de la pantalla que ocupe. Mover QT en el modo de edición guarda una posición personalizada; restablecer los valores predeterminados recupera la colocación automática.
+- El seguimiento ajusta su altura al contenido hasta la altura máxima configurada; después permite desplazarse. La altura máxima predeterminada ahora es 600 y se conservan los tamaños guardados.
+- Las secciones de los jugadores ocupan el ancho disponible y permiten desplazarse cuando es necesario. Se admiten los temas claro y oscuro. El relleno del color de clase mantiene una opacidad constante del 25%, independiente del control del fondo de la ventana, con texto legible sobre fondos transparentes.
 
 **Forever**
 

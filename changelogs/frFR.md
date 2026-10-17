@@ -29,7 +29,9 @@ Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi
 ### Adapter la fenêtre à votre interface
 
 - Ouvrez le mode Édition du HUD et sélectionnez Suivi de quête pour déplacer ou redimensionner la fenêtre et régler son opacité. Enregistrer, Annuler les modifications et Rétablir les valeurs par défaut incluent le mode d’affichage et la disposition.
-- Les sections des joueurs occupent la largeur disponible et défilent si nécessaire. Les thèmes clair et sombre sont pris en charge. Le fond aux couleurs de classe conserve une opacité constante de 50 %, indépendante du curseur du fond de la fenêtre, avec un texte lisible sur fond transparent.
+- Par défaut, le suivi QT se place à côté du suivi d’objectifs de Blizzard, à gauche ou à droite selon la moitié de l’écran occupée par celui-ci. Le déplacer en mode Édition enregistre une position personnalisée ; la réinitialisation restaure le placement automatique.
+- Le suivi adapte sa hauteur au contenu jusqu’à la hauteur maximale configurée, puis défile. La hauteur maximale par défaut est désormais de 600 ; les tailles enregistrées sont conservées.
+- Les sections des joueurs occupent la largeur disponible et défilent si nécessaire. Les thèmes clair et sombre sont pris en charge. Le fond aux couleurs de classe conserve une opacité constante de 25 %, indépendante du curseur du fond de la fenêtre, avec un texte lisible sur fond transparent.
 
 **Forever**
 

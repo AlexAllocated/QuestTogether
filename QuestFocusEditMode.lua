@@ -171,8 +171,12 @@ function QT:SelectQuestFocusWindow()
 	self:RefreshQuestFocusEditControls(frame, true)
 end
 
-local defaults = { width = 340, height = 300, x = 0.78, y = 0.6 }
+local defaults = { width = 340, height = 600, x = 0.78, y = 0.6 }
 local function SameLayout(a, b)
+	local function Automatic(layout)
+		return type(layout) ~= "table" or layout.autoAnchor == true
+	end
+	if Automatic(a) ~= Automatic(b) then return false end
 	for key, fallback in pairs(defaults) do
 		if
 			math.abs(
@@ -270,7 +274,7 @@ function QT:RefreshQuestFocusEditControls(frame, editing)
 		frame:SetWidth(value)
 		self:SaveWindowLayout(frame)
 	end)
-	Configure("HeightSlider", L("Height"), 120, 800, 10, frame:GetHeight(), function(value)
+	Configure("HeightSlider", L("Maximum height"), 120, 800, 10, frame:GetHeight(), function(value)
 		frame:SetHeight(value)
 		self:SaveWindowLayout(frame)
 	end)
