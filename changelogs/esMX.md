@@ -19,7 +19,7 @@ Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimie
 ### Elige qué seguir
 
 - Elige Oculto, Misión enfocada, Misión bajo el cursor o Enfoque y cursor. La opción predeterminada, Enfoque y cursor, muestra las misiones bajo el mouse en el seguimiento de objetivos de Blizzard y después vuelve a tu misión enfocada.
-- Si no hay ninguna misión que mostrar, la ventana permanece oculta. Cambia el modo en el modo de edición del HUD o en Configuración → Grupos y compartir → Seguimiento de misiones.
+- Si no hay ninguna misión que mostrar, la ventana permanece oculta. Cambia el modo en el modo de edición del HUD o en Configuración > Grupos y compartir > Seguimiento de misiones.
 - Activa Ocultar cuando no estés en un grupo en el modo de edición del HUD para ocultar el seguimiento cuando juegues en solitario. Está desactivado por defecto y la vista previa de colocación sigue disponible en el modo de edición.
 
 **Forever**

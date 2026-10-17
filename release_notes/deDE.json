@@ -1,5 +1,5 @@
 {
-  "source_sha256": "1c546f9da92e06946c4658970aa4375e793ac74c1790c2ab82c104039795611e",
+  "source_sha256": "698972c954587bb962c9b633d90d344a735e717e182daa65527c743f3d9dec3a",
   "notes": {
     "version": "7.4.1",
     "welcome": "Behalte den Questfortschritt deiner Gruppe mit dem neuen Questtracker im Blick.",
@@ -18,7 +18,7 @@
         "illustration": "quest-tracker-display",
         "items": [
           "Wähle Ausgeblendet, Fokussierte Quest, Quest unter dem Mauszeiger oder Fokus und Mauszeiger. Die Standardeinstellung Fokus und Mauszeiger zeigt vorübergehend Quests unter dem Mauszeiger in Blizzards Zielverfolgung und kehrt danach zur fokussierten Quest zurück.",
-          "Ohne passende Quest bleibt das Fenster ausgeblendet. Ändere den Anzeigemodus im HUD-Bearbeitungsmodus oder unter Einstellungen → Gruppen & Teilen → Questtracker.",
+          "Ohne passende Quest bleibt das Fenster ausgeblendet. Ändere den Anzeigemodus im HUD-Bearbeitungsmodus oder unter Einstellungen > Gruppen & Teilen > Questtracker.",
           "Aktiviere im HUD-Bearbeitungsmodus „Außerhalb einer Gruppe ausblenden“, um den Tracker beim Solospiel auszublenden. Diese Option ist standardmäßig aus; die Platzierungsvorschau bleibt im Bearbeitungsmodus verfügbar."
         ]
       },

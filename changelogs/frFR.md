@@ -19,7 +19,7 @@ Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi
 ### Choisir les quêtes à suivre
 
 - Choisissez Masqué, Quête ciblée, Quête survolée ou Ciblage et survol. Ce dernier mode, activé par défaut, affiche les quêtes survolées dans le suivi des objectifs de Blizzard, puis revient à votre quête ciblée.
-- Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres → Groupes et partage → Suivi de quête.
+- Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres > Groupes et partage > Suivi de quête.
 - Activez Masquer hors groupe dans le mode Édition du HUD pour masquer le suivi en solo. Cette option est désactivée par défaut et l’aperçu de placement reste disponible en mode Édition.
 
 **Forever**

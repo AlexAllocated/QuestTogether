@@ -19,7 +19,7 @@ Acompanhe o progresso das missões do seu grupo com o novo rastreador de missõe
 ### Escolha o que acompanhar
 
 - Escolha Oculto, Missão em foco, Missão sob o cursor ou Foco e cursor. O padrão, Foco e cursor, exibe as missões sob o mouse no rastreador de objetivos da Blizzard e depois retorna à missão em foco.
-- Sem uma missão correspondente, a janela fica oculta. Altere o modo no modo de edição do HUD ou em Configurações → Grupos e compartilhamento → Rastreador de missões.
+- Sem uma missão correspondente, a janela fica oculta. Altere o modo no modo de edição do HUD ou em Configurações > Grupos e compartilhamento > Rastreador de missões.
 - Ative Ocultar fora de um grupo no modo de edição do HUD para ocultar o rastreador ao jogar solo. A opção vem desativada, e a prévia de posicionamento continua disponível no modo de edição.
 
 **Forever**

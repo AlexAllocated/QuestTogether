@@ -1,5 +1,5 @@
 {
-  "source_sha256": "1c546f9da92e06946c4658970aa4375e793ac74c1790c2ab82c104039795611e",
+  "source_sha256": "698972c954587bb962c9b633d90d344a735e717e182daa65527c743f3d9dec3a",
   "notes": {
     "version": "7.4.1",
     "welcome": "Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimiento de misiones.",
@@ -18,7 +18,7 @@
         "illustration": "quest-tracker-display",
         "items": [
           "Elige Oculto, Misión enfocada, Misión bajo el cursor o Enfoque y cursor. La opción predeterminada, Enfoque y cursor, muestra las misiones bajo el ratón en el seguimiento de objetivos de Blizzard y después vuelve a tu misión enfocada.",
-          "Si no hay ninguna misión que mostrar, la ventana permanece oculta. Cambia el modo en el modo de edición del HUD o en Ajustes → Grupos y compartir → Seguimiento de misiones.",
+          "Si no hay ninguna misión que mostrar, la ventana permanece oculta. Cambia el modo en el modo de edición del HUD o en Ajustes > Grupos y compartir > Seguimiento de misiones.",
           "Activa Ocultar cuando no estés en un grupo en el modo de edición del HUD para ocultar el seguimiento cuando juegues en solitario. Está desactivado por defecto y la vista previa de colocación sigue disponible en el modo de edición."
         ]
       },

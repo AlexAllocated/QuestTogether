@@ -1,5 +1,5 @@
 {
-  "source_sha256": "1c546f9da92e06946c4658970aa4375e793ac74c1790c2ab82c104039795611e",
+  "source_sha256": "698972c954587bb962c9b633d90d344a735e717e182daa65527c743f3d9dec3a",
   "notes": {
     "version": "7.4.1",
     "welcome": "Tieni sotto controllo i progressi delle missioni del gruppo con il nuovo tracciamento missioni.",
@@ -18,7 +18,7 @@
         "illustration": "quest-tracker-display",
         "items": [
           "Scegli Nascosto, Missione selezionata, Missione sotto il cursore o Selezione e cursore. La modalità predefinita, Selezione e cursore, mostra le missioni sotto il mouse nel tracciamento obiettivi di Blizzard, poi torna alla missione selezionata.",
-          "Senza una missione corrispondente, la finestra resta nascosta. Cambia modalità nella modalità Modifica HUD o in Impostazioni → Gruppi e condivisione → Tracciamento missioni.",
+          "Senza una missione corrispondente, la finestra resta nascosta. Cambia modalità nella modalità Modifica HUD o in Impostazioni > Gruppi e condivisione > Tracciamento missioni.",
           "Attiva Nascondi quando non sei in gruppo nella modalità Modifica HUD per nascondere il tracciamento quando giochi da solo. L’opzione è disattivata per impostazione predefinita e l’anteprima di posizionamento resta disponibile in modalità Modifica."
         ]
       },

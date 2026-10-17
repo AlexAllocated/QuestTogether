@@ -19,7 +19,7 @@ QuestTogether.releaseNotes = {
 			title = "Choose what to track",
 			items = {
 				"Choose Hidden, Focused Quest, Hovered Quest, or Focus and Hover. The default, Focus and Hover, previews quests under the mouse in Blizzard's objective tracker, then returns to your focused quest.",
-				"With no eligible quest, the window stays hidden. Change the display mode in HUD Edit Mode or Settings → Groups & Sharing → Quest Tracker.",
+				"With no eligible quest, the window stays hidden. Change the display mode in HUD Edit Mode or Settings > Groups & Sharing > Quest Tracker.",
 				"Enable Hide when not in a party in HUD Edit Mode to hide the tracker while solo. This option is off by default, and the placement preview remains available in Edit Mode.",
 			},
 			illustration = "quest-tracker-display",
