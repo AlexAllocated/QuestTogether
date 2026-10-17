@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "7.4.1",
+	version = "7.4.2",
 	welcome = "Keep your party's quest progress in view with the new Quest Tracker.",
 	sections = {
 		{

@@ -2,6 +2,41 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.4.2
+
+Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimiento de misiones.
+
+### Seguimiento de misiones
+
+- Ve los contadores y las barras de progreso de los objetivos de tu grupo en una ventana compacta con colores de clase. Los miembros del grupo necesitan QuestTogether para compartir su progreso.
+- El progreso se actualiza al recibir anuncios del grupo, independientemente de los ajustes del chat y las burbujas. Las misiones sin contadores muestran su estado, como listas para entregar.
+- Corregido un error por el que objetivos de un solo paso sin completar mostraban un progreso de 1/1 en Forever, incluido «Use Walk on Air». La corrección se aplica al seguimiento de misiones y al registro de misiones del grupo.
+
+**Forever**
+
+![Seguimiento de misiones — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTracker.png)
+
+### Elige qué seguir
+
+- Elige Oculto, Misión enfocada, Misión bajo el cursor o Enfoque y cursor. La opción predeterminada, Enfoque y cursor, muestra las misiones bajo el ratón en el seguimiento de objetivos de Blizzard y después vuelve a tu misión enfocada.
+- Si no hay ninguna misión que mostrar, la ventana permanece oculta. Cambia el modo en el modo de edición del HUD o en Ajustes > Grupos y compartir > Seguimiento de misiones.
+- Activa Ocultar cuando no estés en un grupo en el modo de edición del HUD para ocultar el seguimiento cuando juegues en solitario. Está desactivado por defecto y la vista previa de colocación sigue disponible en el modo de edición.
+
+**Forever**
+
+![Elige qué seguir — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTrackerDisplay.png)
+
+### Adáptalo a tu interfaz
+
+- Abre el modo de edición del HUD y selecciona Seguimiento de misiones para mover o redimensionar la ventana y ajustar la opacidad del fondo. Guardar, Revertir y Restablecer valores predeterminados incluyen el modo de visualización y la disposición.
+- El ajuste al seguimiento de objetivos de Blizzard está activado por defecto y coloca QT junto a su borde exterior, sin separación. Arrastrar QT desactiva el ajuste y permite cambiar el tamaño desde la esquina. Vuelve a activarlo para restablecer la posición; los controles de anchura y altura máxima funcionan en ambos modos.
+- El seguimiento ajusta su altura al contenido hasta la altura máxima configurada; después permite desplazarse. La altura máxima predeterminada ahora es 600 y se conservan los tamaños guardados.
+- Las secciones de los jugadores ocupan el ancho disponible y permiten desplazarse cuando es necesario. Se admiten los temas claro y oscuro. El relleno del color de clase mantiene una opacidad constante del 25%, independiente del control del fondo de la ventana, con texto legible sobre fondos transparentes.
+
+**Forever**
+
+![Adáptalo a tu interfaz — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTrackerEditMode.png)
+
 ## 7.4.1
 
 Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimiento de misiones.
@@ -19,7 +54,7 @@ Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimie
 ### Elige qué seguir
 
 - Elige Oculto, Misión enfocada, Misión bajo el cursor o Enfoque y cursor. La opción predeterminada, Enfoque y cursor, muestra las misiones bajo el ratón en el seguimiento de objetivos de Blizzard y después vuelve a tu misión enfocada.
-- Si no hay ninguna misión que mostrar, la ventana permanece oculta. Cambia el modo en el modo de edición del HUD o en Ajustes > Grupos y compartir > Seguimiento de misiones.
+- Si no hay ninguna misión que mostrar, la ventana permanece oculta. Cambia el modo en el modo de edición del HUD o en Ajustes → Grupos y compartir → Seguimiento de misiones.
 - Activa Ocultar cuando no estés en un grupo en el modo de edición del HUD para ocultar el seguimiento cuando juegues en solitario. Está desactivado por defecto y la vista previa de colocación sigue disponible en el modo de edición.
 
 **Forever**

@@ -2,6 +2,41 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 7.4.2
+
+Behalte den Questfortschritt deiner Gruppe mit dem neuen Questtracker im Blick.
+
+### Questtracker
+
+- Sieh die Zielzähler und Fortschrittsbalken deiner Gruppe in einem kompakten Fenster mit Klassenfarben. Gruppenmitglieder benötigen QuestTogether, um ihren Fortschritt zu teilen.
+- Der Fortschritt wird beim Eintreffen von Gruppenmeldungen aktualisiert, unabhängig von den Anzeigeeinstellungen für Chat und Sprechblasen. Quests ohne Zielzähler zeigen ihren Status, etwa bereit zur Abgabe.
+- Ein Fehler wurde behoben, durch den unerledigte einstufige Ziele in Forever fälschlich einen Fortschritt von 1/1 anzeigten, darunter „Use Walk on Air“. Die Korrektur gilt für den Quest-Tracker und das Gruppenquestlog.
+
+**Forever**
+
+![Questtracker — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTracker.png)
+
+### Wähle, was du verfolgen möchtest
+
+- Wähle Ausgeblendet, Fokussierte Quest, Quest unter dem Mauszeiger oder Fokus und Mauszeiger. Die Standardeinstellung Fokus und Mauszeiger zeigt vorübergehend Quests unter dem Mauszeiger in Blizzards Zielverfolgung und kehrt danach zur fokussierten Quest zurück.
+- Ohne passende Quest bleibt das Fenster ausgeblendet. Ändere den Anzeigemodus im HUD-Bearbeitungsmodus oder unter Einstellungen > Gruppen & Teilen > Questtracker.
+- Aktiviere im HUD-Bearbeitungsmodus „Außerhalb einer Gruppe ausblenden“, um den Tracker beim Solospiel auszublenden. Diese Option ist standardmäßig aus; die Platzierungsvorschau bleibt im Bearbeitungsmodus verfügbar.
+
+**Forever**
+
+![Wähle, was du verfolgen möchtest — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTrackerDisplay.png)
+
+### Passe das Fenster deiner Oberfläche an
+
+- Öffne den HUD-Bearbeitungsmodus und wähle Questtracker, um das Fenster zu verschieben, seine Größe zu ändern und die Hintergrunddeckkraft einzustellen. Speichern, Zurücksetzen und Standard wiederherstellen berücksichtigen Anzeigemodus und Layout.
+- Das Ausrichten an Blizzards Zielverfolgung ist standardmäßig aktiviert und platziert QT direkt an dessen Außenkante. Wenn du QT wegziehst, wird die Ausrichtung deaktiviert und die Größenänderung an der Ecke aktiviert. Aktiviere die Ausrichtung erneut, um die Position zurückzusetzen. Die Regler für Breite und maximale Höhe funktionieren in beiden Modi.
+- Der Tracker passt sich der Höhe seines Inhalts bis zur eingestellten maximalen Höhe an; danach wird gescrollt. Die Standardhöhe beträgt jetzt maximal 600; bereits gespeicherte Größen bleiben erhalten.
+- Die Spielerbereiche nutzen die verfügbare Breite und lassen sich bei Bedarf scrollen. Helles und dunkles Design werden unterstützt. Die klassenfarbene Füllung bleibt unabhängig vom Regler für den Fensterhintergrund konstant bei 25% Deckkraft; der Text bleibt auf transparentem Hintergrund lesbar.
+
+**Forever**
+
+![Passe das Fenster deiner Oberfläche an — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTrackerEditMode.png)
+
 ## 7.4.1
 
 Behalte den Questfortschritt deiner Gruppe mit dem neuen Questtracker im Blick.
@@ -19,7 +54,7 @@ Behalte den Questfortschritt deiner Gruppe mit dem neuen Questtracker im Blick.
 ### Wähle, was du verfolgen möchtest
 
 - Wähle Ausgeblendet, Fokussierte Quest, Quest unter dem Mauszeiger oder Fokus und Mauszeiger. Die Standardeinstellung Fokus und Mauszeiger zeigt vorübergehend Quests unter dem Mauszeiger in Blizzards Zielverfolgung und kehrt danach zur fokussierten Quest zurück.
-- Ohne passende Quest bleibt das Fenster ausgeblendet. Ändere den Anzeigemodus im HUD-Bearbeitungsmodus oder unter Einstellungen > Gruppen & Teilen > Questtracker.
+- Ohne passende Quest bleibt das Fenster ausgeblendet. Ändere den Anzeigemodus im HUD-Bearbeitungsmodus oder unter Einstellungen → Gruppen & Teilen → Questtracker.
 - Aktiviere im HUD-Bearbeitungsmodus „Außerhalb einer Gruppe ausblenden“, um den Tracker beim Solospiel auszublenden. Diese Option ist standardmäßig aus; die Platzierungsvorschau bleibt im Bearbeitungsmodus verfügbar.
 
 **Forever**
