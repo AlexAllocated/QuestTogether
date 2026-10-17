@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.3.5
+## 7.4.0
 
 Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimiento de misiones.
 
@@ -13,7 +13,7 @@ Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimie
 
 **Forever**
 
-![Seguimiento de misiones — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTracker.png)
+![Seguimiento de misiones — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
 
 ### Elige qué seguir
 
@@ -22,7 +22,7 @@ Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimie
 
 **Forever**
 
-![Elige qué seguir — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerDisplay.png)
+![Elige qué seguir — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### Adáptalo a tu interfaz
 
@@ -31,7 +31,20 @@ Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimie
 
 **Forever**
 
-![Adáptalo a tu interfaz — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerEditMode.png)
+![Adáptalo a tu interfaz — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerEditMode.png)
+
+## 7.3.5
+
+Marcadores más claros, navegación más sencilla e información de grupo más reciente.
+
+### Mapas e información de jugadores
+
+- Pasa el cursor sobre el botón QT del mapa para ver una leyenda visual de sus iconos y estados.
+- Haz clic izquierdo en un punto de jugador del mapamundi para resaltarlo y abrir el mapa más detallado disponible para esa ubicación. En el último nivel, el clic izquierdo abre el menú del jugador; el clic derecho siempre lo abre.
+- Buscar en el mapa también abre el mapa más detallado disponible. El resaltado verde se mantiene al cambiar de mapa y desaparece al cabo de un minuto, al cerrar el mapa o al seleccionar a otro jugador.
+- Al pasar el cursor sobre un jugador, un grupo de marcadores o un punto de ruta compartido, el mapa y los demás marcadores se atenúan mientras los destacados conservan su brillo. Pasar el cursor sobre el botón QT ya no atenúa el mapa.
+- Los brillos de los jugadores usan ahora un efecto uniforme. Las descripciones de grupo y los marcadores agrupados comparten información más reciente sobre los miembros y se recuperan mejor de solicitudes retrasadas.
+- Se han mejorado los diagnósticos del desarrollador respetando las preferencias de compartir diagnósticos y la privacidad de las ubicaciones públicas.
 
 ## 7.3.4
 

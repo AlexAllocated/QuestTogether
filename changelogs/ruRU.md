@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.3.5
+## 7.4.0
 
 Следите за прогрессом заданий группы с новым окном отслеживания заданий.
 
@@ -13,7 +13,7 @@
 
 **Forever**
 
-![Отслеживание заданий — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTracker.png)
+![Отслеживание заданий — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
 
 ### Выберите, что отслеживать
 
@@ -22,7 +22,7 @@
 
 **Forever**
 
-![Выберите, что отслеживать — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerDisplay.png)
+![Выберите, что отслеживать — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### Настройте окно под свой интерфейс
 
@@ -31,7 +31,20 @@
 
 **Forever**
 
-![Настройте окно под свой интерфейс — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerEditMode.png)
+![Настройте окно под свой интерфейс — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerEditMode.png)
+
+## 7.3.5
+
+Более понятные метки, удобная навигация и актуальные сведения о группе.
+
+### Карты и сведения об игроках
+
+- Наведите курсор на кнопку QT на карте, чтобы увидеть наглядную легенду значков и состояний.
+- Щёлкните левой кнопкой по точке игрока на карте мира, чтобы выделить её и открыть самую подробную доступную карту этой местности. На последнем уровне левый щелчок открывает меню игрока; правый щелчок открывает его всегда.
+- Поиск игрока на карте также открывает самую подробную доступную карту. Зелёное выделение сохраняется при смене карт и исчезает через минуту, при закрытии карты или выборе другого игрока.
+- При наведении на игрока, скопление меток или общую путевую точку карта и остальные метки приглушаются, а выделенные остаются яркими. Наведение на кнопку QT больше не затемняет карту.
+- Свечение игроков теперь использует единый эффект. Подсказки групп и скопления меток используют более актуальные сведения о составе группы и лучше восстанавливаются после задержек запросов.
+- Улучшена диагностика разработчика с сохранением настроек передачи диагностических данных и конфиденциальности публичных координат.
 
 ## 7.3.4
 

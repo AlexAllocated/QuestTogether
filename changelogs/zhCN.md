@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.3.5
+## 7.4.0
 
 使用全新的任务追踪器，随时查看小队任务进度。
 
@@ -13,7 +13,7 @@
 
 **Forever**
 
-![任务追踪器 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTracker.png)
+![任务追踪器 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
 
 ### 选择追踪内容
 
@@ -22,7 +22,7 @@
 
 **Forever**
 
-![选择追踪内容 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerDisplay.png)
+![选择追踪内容 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### 调整界面布局
 
@@ -31,7 +31,20 @@
 
 **Forever**
 
-![调整界面布局 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerEditMode.png)
+![调整界面布局 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerEditMode.png)
+
+## 7.3.5
+
+更清晰的地图标记、更便捷的玩家导航，以及更新及时的队伍信息。
+
+### 地图与玩家信息
+
+- 将鼠标移到地图上的 QT 按钮，即可查看说明地图图标与状态的图示图例。
+- 左键点击世界地图上的玩家圆点，可将其高亮并打开该位置最详细的可用地图。在最详细的地图层级，左键点击会打开玩家菜单；右键点击始终打开菜单。
+- “在地图上查找”也会打开最详细的可用地图。绿色高亮在切换地图时保留，并在一分钟后、关闭地图时或选择另一名玩家时消失。
+- 将鼠标移到玩家、聚合标记或共享路点上时，地图和无关标记会变暗，焦点标记保持明亮。悬停 QT 按钮不再使地图变暗。
+- 玩家光晕现在使用统一效果。队伍提示和聚合标记共享更新及时的队伍成员信息，并能更好地从请求延迟中恢复。
+- 改进了开发者诊断，同时继续遵守诊断共享设置并保护公开位置隐私。
 
 ## 7.3.4
 

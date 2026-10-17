@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 7.3.5
+## 7.4.0
 
 Keep your party's quest progress in view with the new Quest Tracker.
 
@@ -15,7 +15,7 @@ Keep your party's quest progress in view with the new Quest Tracker.
 
 **Forever**
 
-![Quest Tracker — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTracker.png)
+![Quest Tracker — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
 
 ### Choose what to track
 
@@ -24,7 +24,7 @@ Keep your party's quest progress in view with the new Quest Tracker.
 
 **Forever**
 
-![Choose what to track — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerDisplay.png)
+![Choose what to track — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### Make it fit your UI
 
@@ -33,7 +33,20 @@ Keep your party's quest progress in view with the new Quest Tracker.
 
 **Forever**
 
-![Make it fit your UI — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerEditMode.png)
+![Make it fit your UI — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerEditMode.png)
+
+## 7.3.5
+
+Clearer map markers, easier player navigation, and fresher party information.
+
+### Maps and player information
+
+- Hover the QT map button for a visual legend of map icons and states.
+- Left-click a world-map player dot to highlight it and open the most detailed map available for that location. At the final map level, left-click opens the player menu; right-click always opens it.
+- Find on Map also opens the most detailed available map. Its green highlight follows map changes and clears after one minute, when the map closes, or when another player is selected.
+- Hovering a player, cluster, or shared waypoint dims the map and unrelated markers while keeping the focused markers bright. The QT map button no longer dims the map on hover.
+- Player glows now use one consistent effect, and party tooltips and clusters share fresher membership information with better recovery from delayed requests.
+- Improved developer diagnostics while preserving diagnostic-sharing preferences and public location privacy.
 
 ## 7.3.4
 

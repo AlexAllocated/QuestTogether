@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.3.5
+## 7.4.0
 
 使用全新的任務追蹤器，隨時查看隊伍任務進度。
 
@@ -13,7 +13,7 @@
 
 **Forever**
 
-![任務追蹤器 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTracker.png)
+![任務追蹤器 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
 
 ### 選擇追蹤內容
 
@@ -22,7 +22,7 @@
 
 **Forever**
 
-![選擇追蹤內容 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerDisplay.png)
+![選擇追蹤內容 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### 調整介面配置
 
@@ -31,7 +31,20 @@
 
 **Forever**
 
-![調整介面配置 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerEditMode.png)
+![調整介面配置 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerEditMode.png)
+
+## 7.3.5
+
+更清楚的地圖標記、更便利的玩家導覽，以及更新即時的隊伍資訊。
+
+### 地圖與玩家資訊
+
+- 將滑鼠移到地圖上的 QT 按鈕，即可查看說明地圖圖示與狀態的圖解圖例。
+- 左鍵點擊世界地圖上的玩家圓點，可將其醒目標示並開啟該位置最詳細的可用地圖。在最詳細的地圖層級，左鍵點擊會開啟玩家選單；右鍵點擊一律開啟選單。
+- 「在地圖上尋找」也會開啟最詳細的可用地圖。綠色醒目標示會在切換地圖時保留，並在一分鐘後、關閉地圖時或選擇另一名玩家時消失。
+- 將滑鼠移到玩家、群集標記或共用路點上時，地圖和無關標記會變暗，焦點標記則保持明亮。滑鼠停留在 QT 按鈕上不再使地圖變暗。
+- 玩家光暈現在使用統一效果。隊伍提示和群集標記會共用更新即時的隊伍成員資訊，並能更妥善地從請求延遲中恢復。
+- 改善了開發者診斷，同時繼續遵守診斷分享設定並保護公開位置隱私。
 
 ## 7.3.4
 

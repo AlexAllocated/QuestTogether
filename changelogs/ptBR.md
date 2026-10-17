@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.3.5
+## 7.4.0
 
 Acompanhe o progresso das missões do seu grupo com o novo rastreador de missões.
 
@@ -13,7 +13,7 @@ Acompanhe o progresso das missões do seu grupo com o novo rastreador de missõe
 
 **Forever**
 
-![Rastreador de missões — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTracker.png)
+![Rastreador de missões — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
 
 ### Escolha o que acompanhar
 
@@ -22,7 +22,7 @@ Acompanhe o progresso das missões do seu grupo com o novo rastreador de missõe
 
 **Forever**
 
-![Escolha o que acompanhar — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerDisplay.png)
+![Escolha o que acompanhar — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### Ajuste à sua interface
 
@@ -31,7 +31,20 @@ Acompanhe o progresso das missões do seu grupo com o novo rastreador de missõe
 
 **Forever**
 
-![Ajuste à sua interface — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerEditMode.png)
+![Ajuste à sua interface — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerEditMode.png)
+
+## 7.3.5
+
+Marcadores mais claros, navegação mais fácil e informações de grupo mais recentes.
+
+### Mapas e informações de jogadores
+
+- Passe o cursor sobre o botão QT do mapa para ver uma legenda visual dos ícones e estados.
+- Clique com o botão esquerdo em um ponto de jogador no mapa-múndi para destacá-lo e abrir o mapa mais detalhado disponível para aquele local. No último nível, o clique esquerdo abre o menu do jogador; o clique direito sempre o abre.
+- Encontrar no mapa também abre o mapa mais detalhado disponível. O destaque verde acompanha as mudanças de mapa e desaparece após um minuto, ao fechar o mapa ou ao selecionar outro jogador.
+- Passar o cursor sobre um jogador, um agrupamento ou um ponto de rota compartilhado escurece o mapa e os outros marcadores, mantendo os marcadores em foco com brilho total. Passar o cursor sobre o botão QT não escurece mais o mapa.
+- Os brilhos dos jogadores agora usam um efeito uniforme. As dicas de grupo e os agrupamentos compartilham informações mais recentes sobre os membros e se recuperam melhor de solicitações atrasadas.
+- Os diagnósticos do desenvolvedor foram aprimorados, respeitando as preferências de compartilhamento de diagnósticos e a privacidade das localizações públicas.
 
 ## 7.3.4
 
