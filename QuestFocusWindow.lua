@@ -261,7 +261,8 @@ function QT:ApplyQuestTrackerDefaultAnchor(frame)
 	local ratio = ts / rs
 	local onRight = (left + width / 2) * ratio - rl >= rw / 2
 	local point = onRight and "TOPRIGHT" or "TOPLEFT"
-	local x = ((onRight and left or left + width) * ratio - rl + (onRight and -8 or 8)) * rs / fs
+	-- Keep the visual gap at five screen pixels, regardless of UI scale.
+	local x = ((onRight and left or left + width) * ts - rl * rs + (onRight and -5 or 5)) / fs
 	local y = (top * ratio - rb) * rs / fs
 	local p, relative, relativePoint, oldX, oldY = frame:GetPoint(1)
 	if p ~= point or relative ~= root or relativePoint ~= "BOTTOMLEFT" or oldX ~= x or oldY ~= y then
