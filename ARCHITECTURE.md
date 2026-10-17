@@ -72,7 +72,9 @@ private `.local` notes are historical context, not the source of truth.
   events refresh its own objectives without remote
   polling. Geometry is profile-owned under `windowLayouts.questFocus`; opacity
   affects the backgrounds, with faint player sections retained at zero and text
-  staying opaque with contrast suited to transparency. HUD Edit Mode
+  staying opaque with contrast suited to transparency. Player sections retain their
+  class-colored fill at a constant 50% opacity, independently of the background slider. The optional solo-visibility rule uses
+  actual group membership, defaults off, and never hides the Edit Mode preview. HUD Edit Mode
   shows an owned placement preview; selecting it opens the same themed settings
   shell as the personal bubble, with display mode/width/height/opacity controls and
   Save/Revert/Reset actions. Changes apply automatically. Save/revert

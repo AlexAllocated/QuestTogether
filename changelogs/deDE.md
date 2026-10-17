@@ -10,6 +10,7 @@ Behalte den Questfortschritt deiner Gruppe mit dem neuen Questtracker im Blick.
 
 - Sieh die Zielzähler und Fortschrittsbalken deiner Gruppe in einem kompakten Fenster mit Klassenfarben. Gruppenmitglieder benötigen QuestTogether, um ihren Fortschritt zu teilen.
 - Der Fortschritt wird beim Eintreffen von Gruppenmeldungen aktualisiert, unabhängig von den Anzeigeeinstellungen für Chat und Sprechblasen. Quests ohne Zielzähler zeigen ihren Status, etwa bereit zur Abgabe.
+- Ein Fehler wurde behoben, durch den unerledigte einstufige Ziele in Forever fälschlich einen Fortschritt von 1/1 anzeigten, darunter „Use Walk on Air“. Die Korrektur gilt für den Quest-Tracker und das Gruppenquestlog.
 
 **Forever**
 
@@ -19,6 +20,7 @@ Behalte den Questfortschritt deiner Gruppe mit dem neuen Questtracker im Blick.
 
 - Wähle Ausgeblendet, Fokussierte Quest, Quest unter dem Mauszeiger oder Fokus und Mauszeiger. Die Standardeinstellung Fokus und Mauszeiger zeigt vorübergehend Quests unter dem Mauszeiger in Blizzards Zielverfolgung und kehrt danach zur fokussierten Quest zurück.
 - Ohne passende Quest bleibt das Fenster ausgeblendet. Ändere den Anzeigemodus im HUD-Bearbeitungsmodus oder unter Einstellungen → Gruppen & Teilen → Questtracker.
+- Aktiviere im HUD-Bearbeitungsmodus „Außerhalb einer Gruppe ausblenden“, um den Tracker beim Solospiel auszublenden. Diese Option ist standardmäßig aus; die Platzierungsvorschau bleibt im Bearbeitungsmodus verfügbar.
 
 **Forever**
 
@@ -27,7 +29,7 @@ Behalte den Questfortschritt deiner Gruppe mit dem neuen Questtracker im Blick.
 ### Passe das Fenster deiner Oberfläche an
 
 - Öffne den HUD-Bearbeitungsmodus und wähle Questtracker, um das Fenster zu verschieben, seine Größe zu ändern und die Hintergrunddeckkraft einzustellen. Speichern, Zurücksetzen und Standard wiederherstellen berücksichtigen Anzeigemodus und Layout.
-- Die Spielerbereiche nutzen die verfügbare Breite und lassen sich bei Bedarf scrollen. Helles und dunkles Design werden unterstützt; auch bei null Deckkraft bleiben Text lesbar und Spielerhintergründe schwach sichtbar.
+- Die Spielerbereiche nutzen die verfügbare Breite und lassen sich bei Bedarf scrollen. Helles und dunkles Design werden unterstützt. Die klassenfarbene Füllung bleibt unabhängig vom Regler für den Fensterhintergrund konstant bei 50% Deckkraft; der Text bleibt auf transparentem Hintergrund lesbar.
 
 **Forever**
 

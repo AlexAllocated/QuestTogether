@@ -13,6 +13,7 @@ local function Fixture()
 		runtimeStateStore = {},
 	}, { __index = QT })
 	a.API = {
+		IsInGroup = function() return #a.partyMemberOrder > 1 end,
 		GetTime = function()
 			return a.now
 		end,
@@ -157,7 +158,7 @@ QT:RegisterTest(
 		Equal(state.members[2].objectiveDetails[42].objectives[1].current, 1)
 		local track = frame.rows[4].progressTrack
 		Equal(frame.rows[4].progressFill:GetWidth(), track:GetWidth() / 8)
-		Equal(frame.rows[3].background.textureColor[4], 0.20 * 0.75)
+		Equal(frame.rows[3].background.textureColor[4], 0.5)
 		for _, row in ipairs(frame.rows) do
 			for _, edge in ipairs(row.panelEdges) do
 				Equal(edge:IsShown(), false)
@@ -260,11 +261,20 @@ QT:RegisterTest("focus HUD edit layout restores per profile and opacity affects 
 		a:SetOption("questFocusOpacity", 0)
 		a:Drain()
 		Equal(frame.background[1].textureColor[4], 0)
-		Equal(frame.rows[1].background.textureColor[4], 0.1)
-		assert(frame.rows[1].paper.textureColor[4] > 0)
+		local tintAlpha = frame.rows[1].background.textureColor[4]
+		Equal(tintAlpha, 0.5)
+		local paperAlpha = frame.rows[1].paper.textureColor[4]
+		Equal(paperAlpha, 0)
+		assert(math.abs(tintAlpha + paperAlpha * (1 - tintAlpha) - 0.5) < 0.00001)
 		Equal(frame.rows[1].title.textColor[1], 1)
 		Equal(frame.rows[2].title.textColor[1], 0.93)
 		Equal(frame.heading.textColor[1], 1)
+		for _, sample in ipairs({ { 25, 0.5 }, { 50, 0.5 }, { 75, 0.5 }, { 100, 0.5 } }) do
+			a:SetOption("questFocusOpacity", sample[1])
+			a:Drain()
+			Equal(frame.background[1].textureColor[4], sample[1] / 100)
+			Equal(frame.rows[1].background.textureColor[4], sample[2])
+		end
 	end
 	a.manager:Hide()
 	a:UpdateQuestFocusWindow()
@@ -546,4 +556,41 @@ QT:RegisterTest("quest tracker display modes choose focus hover and hidden witho
 	a.db.profile = { questTrackerMode = "both", questFocusOpacity = 75 }
 	oldChoice(); a:Drain()
 	Equal(a:GetQuestTrackerMode(), "both", "old menus cannot change another profile")
+end)
+
+QT:RegisterTest("quest tracker solo option follows actual grouping and keeps Edit Mode reachable", function()
+	local a = Fixture()
+	a.partyMemberOrder = { "Me" }
+	a:UpdateQuestFocusWindow(); a:Drain()
+	assert(a.questFocusWindow:IsShown(), "solo display is enabled by default")
+	a:SetOption("questTrackerHideSolo", true); a:Drain()
+	Equal(a.questFocusState, nil)
+	Equal(a.questFocusWindow:IsShown(), false)
+	a.partyMemberOrder = { "Me", "Friend" }
+	a:UpdateQuestFocusWindow(); a:Drain()
+	assert(a.questFocusWindow:IsShown())
+	local stale = a.sent[#a.sent].receiver
+	a.restricted = true
+	a.partyMemberOrder = { "Me" }
+	a:UpdateQuestFocusWindow(); a:Drain()
+	stale.onEntry({ questId = 42, objectives = {} }); stale.onDone(); a:Drain()
+	Equal(a.questFocusState, nil)
+	a.restricted = false
+	a.manager = a:CreateTestUIRegion(a)
+	a:UpdateQuestFocusWindow(); a:Drain()
+	assert(a.questFocusWindow:IsShown())
+	a:SelectQuestFocusWindow()
+	local panel = a.questFocusWindow.editControls
+	local checkbox = panel.HideSoloCheckbox.Checkbox
+	Equal(checkbox:GetChecked(), true)
+	checkbox:SetChecked(false); checkbox.scripts.OnClick(checkbox); a:Drain()
+	Equal(a:GetOption("questTrackerHideSolo"), false)
+	panel.RevertButton.scripts.OnClick(); a:Drain()
+	Equal(a:GetOption("questTrackerHideSolo"), true)
+	panel.ResetButton.scripts.OnClick(); a:Drain()
+	Equal(a:GetOption("questTrackerHideSolo"), false)
+	panel.SaveButton.scripts.OnClick(); a:Drain()
+	checkbox:SetChecked(true); checkbox.scripts.OnClick(checkbox); a:Drain()
+	panel.RevertButton.scripts.OnClick(); a:Drain()
+	Equal(a:GetOption("questTrackerHideSolo"), false)
 end)

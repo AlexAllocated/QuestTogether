@@ -41,7 +41,7 @@ function QT:CaptureQuestFocusEditLayout()
 	end
 	local layouts = type(profile.windowLayouts) == "table" and profile.windowLayouts or {}
 	self.questFocusEditBaseline =
-		{ profile = profile, layout = self:DeepCopy(layouts.questFocus), opacity = self:GetQuestFocusOpacity(), mode = self:GetQuestTrackerMode() }
+		{ profile = profile, layout = self:DeepCopy(layouts.questFocus), opacity = self:GetQuestFocusOpacity(), mode = self:GetQuestTrackerMode(), hideSolo = self:GetOption("questTrackerHideSolo") == true }
 end
 function QT:RevertQuestFocusEditLayout()
 	local baseline = self.questFocusEditBaseline
@@ -50,7 +50,7 @@ function QT:RevertQuestFocusEditLayout()
 	end
 	self.db.profile.windowLayouts = self.db.profile.windowLayouts or {}
 	self.db.profile.windowLayouts.questFocus = self:DeepCopy(baseline.layout)
-	self:SetOptions({ questFocusOpacity = baseline.opacity, questTrackerMode = baseline.mode })
+	self:SetOptions({ questFocusOpacity = baseline.opacity, questTrackerMode = baseline.mode, questTrackerHideSolo = baseline.hideSolo })
 	local frame = rawget(self, "questFocusWindow")
 	if frame then
 		local info = self.managedWindows[frame]
@@ -193,7 +193,7 @@ function QT:ResetQuestFocusEditLayout()
 	local frame = rawget(self, "questFocusWindow")
 	self.db.profile.windowLayouts = self.db.profile.windowLayouts or {}
 	self.db.profile.windowLayouts.questFocus = nil
-	self:SetOptions({ questFocusOpacity = 75, questTrackerMode = "both" })
+	self:SetOptions({ questFocusOpacity = 75, questTrackerMode = "both", questTrackerHideSolo = false })
 	if frame and self.managedWindows[frame] then
 		self.managedWindows[frame].resetRequested = true
 		self:ApplyWindowLayout(frame, true)
@@ -210,7 +210,7 @@ function QT:RefreshQuestFocusEditControls(frame, editing)
 	end
 	local panel = frame.editControls
 	if not panel then
-		panel = self:CreateHUDEditDialog(L("Quest Tracker"), { { key = "ModeDropdown", kind = "dropdown" }, "WidthSlider", "HeightSlider", "OpacitySlider" }, {
+		panel = self:CreateHUDEditDialog(L("Quest Tracker"), { { key = "ModeDropdown", kind = "dropdown" }, { key = "HideSoloCheckbox", kind = "checkbox" }, "WidthSlider", "HeightSlider", "OpacitySlider" }, {
 			close = function()
 				self:DeselectQuestFocusWindow()
 			end,
@@ -284,14 +284,20 @@ function QT:RefreshQuestFocusEditControls(frame, editing)
 				or self:IsWorkBlocked("foreign_frame_mutation") then return end
 			self:SetOption("questTrackerMode", value)
 		end)
+	local hideSolo = self:GetOption("questTrackerHideSolo") == true
+	self:ConfigureHUDEditCheckbox(panel.HideSoloCheckbox, L("Hide when not in a party"), hideSolo, function(value)
+		if self.db.profile ~= profile or not self.questFocusEditing or not frame.editSelected
+			or self:IsWorkBlocked("foreign_frame_mutation") then return end
+		self:SetOption("questTrackerHideSolo", value)
+	end)
 	local baseline = self.questFocusEditBaseline
 	local layout = self.db.profile.windowLayouts and self.db.profile.windowLayouts.questFocus
 	local pending = baseline
-			and (not SameLayout(layout, baseline.layout) or self:GetQuestFocusOpacity() ~= baseline.opacity or self:GetQuestTrackerMode() ~= baseline.mode)
+			and (not SameLayout(layout, baseline.layout) or self:GetQuestFocusOpacity() ~= baseline.opacity or self:GetQuestTrackerMode() ~= baseline.mode or hideSolo ~= baseline.hideSolo)
 		or false
 	panel.SaveButton:SetEnabled(pending)
 	panel.RevertButton:SetEnabled(pending)
-	panel.ResetButton:SetEnabled(not SameLayout(layout, nil) or self:GetQuestFocusOpacity() ~= 75 or self:GetQuestTrackerMode() ~= "both")
+	panel.ResetButton:SetEnabled(not SameLayout(layout, nil) or self:GetQuestFocusOpacity() ~= 75 or self:GetQuestTrackerMode() ~= "both" or hideSolo)
 	panel.SaveStatus:SetText(
 		pending and L("Changes applied automatically. Save Changes sets the point Revert returns to.")
 			or L("QuestTogether settings saved. Blizzard's Save button is not needed.")

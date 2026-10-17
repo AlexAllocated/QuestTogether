@@ -10,6 +10,7 @@ Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimie
 
 - Ve los contadores y las barras de progreso de los objetivos de tu grupo en una ventana compacta con colores de clase. Los miembros del grupo necesitan QuestTogether para compartir su progreso.
 - El progreso se actualiza al recibir anuncios del grupo, independientemente de los ajustes del chat y las burbujas. Las misiones sin contadores muestran su estado, como listas para entregar.
+- Corregido un error por el que objetivos de un solo paso sin completar mostraban un progreso de 1/1 en Forever, incluido «Use Walk on Air». La corrección se aplica al seguimiento de misiones y al registro de misiones del grupo.
 
 **Forever**
 
@@ -19,6 +20,7 @@ Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimie
 
 - Elige Oculto, Misión enfocada, Misión bajo el cursor o Enfoque y cursor. La opción predeterminada, Enfoque y cursor, muestra las misiones bajo el mouse en el seguimiento de objetivos de Blizzard y después vuelve a tu misión enfocada.
 - Si no hay ninguna misión que mostrar, la ventana permanece oculta. Cambia el modo en el modo de edición del HUD o en Configuración → Grupos y compartir → Seguimiento de misiones.
+- Activa Ocultar cuando no estés en un grupo en el modo de edición del HUD para ocultar el seguimiento cuando juegues en solitario. Está desactivado por defecto y la vista previa de colocación sigue disponible en el modo de edición.
 
 **Forever**
 
@@ -27,7 +29,7 @@ Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimie
 ### Adáptalo a tu interfaz
 
 - Abre el modo de edición del HUD y selecciona Seguimiento de misiones para mover o cambiar el tamaño de la ventana y ajustar la opacidad del fondo. Guardar, Revertir y Restablecer valores predeterminados incluyen el modo de visualización y la distribución.
-- Las secciones de los jugadores ocupan el ancho disponible y permiten desplazarse cuando es necesario. Se admiten los temas claro y oscuro, con texto legible y fondos de jugadores tenues incluso con opacidad cero.
+- Las secciones de los jugadores ocupan el ancho disponible y permiten desplazarse cuando es necesario. Se admiten los temas claro y oscuro. El relleno del color de clase mantiene una opacidad constante del 50%, independiente del control del fondo de la ventana, con texto legible sobre fondos transparentes.
 
 **Forever**
 

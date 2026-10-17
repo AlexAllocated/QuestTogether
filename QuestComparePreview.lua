@@ -159,6 +159,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		BuildPartyQuestDiffRows = self.BuildPartyQuestDiffRows,
 		BuildPartyQuestCompareDisplayRows = self.BuildPartyQuestCompareDisplayRows,
 		AppendPartyQuestObjectiveRows = self.AppendPartyQuestObjectiveRows,
+		NormalizeQuestObjectiveCounters = self.NormalizeQuestObjectiveCounters,
 		GetWindowClassColor = self.GetWindowClassColor,
 		HasPendingPartyQuestProgress = self.HasPendingPartyQuestProgress,
 		GetPartyQuestReadiness = self.GetPartyQuestReadiness,

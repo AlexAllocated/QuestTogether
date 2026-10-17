@@ -377,6 +377,7 @@ QuestTogether.DEFAULTS = {
 		lightMode = false,
 		windowScale = 100,
 		questTrackerMode = "both",
+		questTrackerHideSolo = false,
 		questFocusOpacity = 75,
 		reduceMotion = false,
 		compareAutoRefresh = false,
@@ -5693,6 +5694,16 @@ function QuestTogether:GetQuestLogIndexForQuest(questId, questInfo)
 	return questLogIndex
 end
 
+function QuestTogether:NormalizeQuestObjectiveCounters(kind, finished, current, required)
+	-- Forever can report 1/1 for an unfinished one-step objective (for
+	-- example, Use Walk on Air). Its explicit completion flag is authoritative.
+	-- Percentage objectives have a separate source and must not use this rule.
+	if kind ~= "progressbar" and finished == false and current == 1 and required == 1 then
+		current = 0
+	end
+	return current, required
+end
+
 function QuestTogether:GetNormalizedQuestObjectiveInfo(questId, objectiveIndex, displayComplete)
 	local objectiveText, objectiveType, finished, currentValue, requiredValue = nil, nil, nil, nil, nil
 	if self.API and self.API.GetQuestObjectiveInfo then
@@ -5727,6 +5738,8 @@ function QuestTogether:GetNormalizedQuestObjectiveInfo(questId, objectiveIndex, 
 		end
 	end
 
+	currentValue, requiredValue =
+		self:NormalizeQuestObjectiveCounters(objectiveType, finished, currentValue, requiredValue)
 	return objectiveText, objectiveType, finished, currentValue, requiredValue
 end
 

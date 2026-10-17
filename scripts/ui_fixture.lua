@@ -437,6 +437,7 @@ function QT:CreateTestUIRegion(owner, parent, kind)
 		SetVertexColor = "vertexColor",
 		SetColorTexture = "textureColor",
 		SetTexCoord = "texCoords",
+		SetHitRectInsets = "hitRectInsets",
 	}) do
 		frame[method] = function(self, ...)
 			self:Check()

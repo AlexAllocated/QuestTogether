@@ -165,12 +165,12 @@ function QT:TogglePartyQuestObjectives(questId)
 	self:QueuePartyQuestCompareRender()
 end
 
-local function Progress(row)
-	if row.kind == "progressbar" and row.current then
-		return tostring(row.current) .. "%"
+local function Progress(row, current, required)
+	if row.kind == "progressbar" and current then
+		return tostring(current) .. "%"
 	end
-	if row.current and row.required and row.required > 0 then
-		return row.current .. "/" .. row.required
+	if current and required and required > 0 then
+		return current .. "/" .. required
 	end
 	return row.finished == true and L("Complete") or row.finished == false and L("In progress") or L("Unknown")
 end
@@ -255,20 +255,25 @@ function QT:AppendPartyQuestObjectiveRows(rows, member, questId)
 		for _, objective in ipairs(detail.objectives) do
 			-- Each player's wording stays attached to their own data. Index
 			-- equality does not prove identical objectives across clients.
+			-- Apply the same counter correction to snapshots from older peers,
+			-- without modifying their cached observations.
+			local current, required = self:NormalizeQuestObjectiveCounters(
+				objective.kind, objective.finished, objective.current, objective.required
+			)
 			rows[#rows + 1] = {
 				questId = questId,
 				kind = "objective",
 				classFile = member.classFile,
 				title = objective.text,
 				cells = {},
-				hint = Progress(objective),
+				hint = Progress(objective, current, required),
 				complete = objective.finished == true,
 				fraction = objective.finished == true and 1
 					or (
-						objective.current
-							and objective.required
-							and objective.required > 0
-							and math.max(0, math.min(1, objective.current / objective.required))
+						current
+							and required
+							and required > 0
+							and math.max(0, math.min(1, current / required))
 						or nil
 					),
 			}

@@ -10,6 +10,7 @@ Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi
 
 - Consultez les compteurs et les barres de progression des objectifs de votre groupe dans une fenêtre compacte aux couleurs des classes. Les membres du groupe doivent utiliser QuestTogether pour partager leur progression.
 - La progression est actualisée à la réception des annonces du groupe, indépendamment des réglages du chat et des bulles. Les quêtes sans compteur affichent leur état, par exemple prêtes à être rendues.
+- Correction des objectifs à une seule étape qui affichaient à tort une progression de 1/1 dans Forever, notamment « Use Walk on Air ». La correction s’applique au suivi de quêtes et au journal de quêtes du groupe.
 
 **Forever**
 
@@ -19,6 +20,7 @@ Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi
 
 - Choisissez Masqué, Quête ciblée, Quête survolée ou Ciblage et survol. Ce dernier mode, activé par défaut, affiche les quêtes survolées dans le suivi des objectifs de Blizzard, puis revient à votre quête ciblée.
 - Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres → Groupes et partage → Suivi de quête.
+- Activez Masquer hors groupe dans le mode Édition du HUD pour masquer le suivi en solo. Cette option est désactivée par défaut et l’aperçu de placement reste disponible en mode Édition.
 
 **Forever**
 
@@ -27,7 +29,7 @@ Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi
 ### Adapter la fenêtre à votre interface
 
 - Ouvrez le mode Édition du HUD et sélectionnez Suivi de quête pour déplacer ou redimensionner la fenêtre et régler son opacité. Enregistrer, Annuler les modifications et Rétablir les valeurs par défaut incluent le mode d’affichage et la disposition.
-- Les sections des joueurs occupent la largeur disponible et défilent si nécessaire. Les thèmes clair et sombre sont pris en charge, avec un texte lisible et des fonds de joueurs légèrement visibles même à opacité nulle.
+- Les sections des joueurs occupent la largeur disponible et défilent si nécessaire. Les thèmes clair et sombre sont pris en charge. Le fond aux couleurs de classe conserve une opacité constante de 50 %, indépendante du curseur du fond de la fenêtre, avec un texte lisible sur fond transparent.
 
 **Forever**
 

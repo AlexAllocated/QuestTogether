@@ -2318,6 +2318,37 @@ local function ObjectiveFixture(name)
 	return a
 end
 
+QuestTogether:RegisterTest("unfinished one-step objectives cannot show a full party progress bar", function()
+	local a = ObjectiveFixture()
+	local native = { text = "Use Walk on Air", kind = "object", finished = false, current = 1, required = 1 }
+	a.objectiveRows[2] = { native }
+	local objectives = a:ReadQuestCompareObjectives(2)
+	Equal(objectives[1].current, 0)
+	Equal(objectives[1].finished, false)
+	Equal(native.current, 1) -- Never modify the native source or received snapshot.
+	local member = { state = "ready", supportsObjectives = true, name = "Other Player", entries = { [2] = {} },
+		objectiveDetails = { [2] = { questId = 2, state = "ready", objectives = { native } } } }
+	local rows = {}
+	a:AppendPartyQuestObjectiveRows(rows, member, 2)
+	Equal(rows[2].hint, "0/1")
+	Equal(rows[2].fraction, 0)
+	Equal(rows[2].complete, false)
+	Equal(native.current, 1)
+	native.finished = true
+	Equal(a:ReadQuestCompareObjectives(2)[1].current, 1)
+	rows = {}
+	a:AppendPartyQuestObjectiveRows(rows, member, 2)
+	Equal(rows[2].hint, "1/1")
+	Equal(rows[2].fraction, 1)
+	Equal(rows[2].complete, true)
+	-- Missing completion evidence, real counters, and percentages are not
+	-- evidence of this specific contradictory one-step result.
+	Equal(a:NormalizeQuestObjectiveCounters("object", nil, 1, 1), 1)
+	Equal(a:NormalizeQuestObjectiveCounters("item", false, 3, 8), 3)
+	Equal(a:NormalizeQuestObjectiveCounters("monster", false, 8, 8), 8)
+	Equal(a:NormalizeQuestObjectiveCounters("progressbar", false, 1, 1), 1)
+end)
+
 local function BeginObjectiveExchange()
 	local a, b = ObjectiveFixture("Barbara Myers"), ObjectiveFixture("Sam Othername")
 	a:Roster(a.name, b.name)

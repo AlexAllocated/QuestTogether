@@ -1,5 +1,5 @@
 {
-  "source_sha256": "4ff5b2faff7c6fbd85534ddd403694f83fa8332c85e8bcbe2ee93f2346697e9a",
+  "source_sha256": "1e81081c06bd0e3dd4499a96af11fbaaa65126f72646650ba44d3f2db501b0b9",
   "notes": {
     "version": "7.4.0",
     "welcome": "Acompanhe o progresso das missões do seu grupo com o novo rastreador de missões.",
@@ -9,7 +9,8 @@
         "illustration": "quest-tracker",
         "items": [
           "Veja os contadores e as barras de progresso dos objetivos do grupo em uma janela compacta com cores de classe. Os membros do grupo precisam do QuestTogether para compartilhar o progresso.",
-          "O progresso é atualizado quando os anúncios do grupo chegam, independentemente das configurações de exibição do bate-papo e dos balões. Missões sem contadores mostram seu estado, como prontas para entregar."
+          "O progresso é atualizado quando os anúncios do grupo chegam, independentemente das configurações de exibição do bate-papo e dos balões. Missões sem contadores mostram seu estado, como prontas para entregar.",
+          "Corrigido um erro que mostrava progresso de 1/1 em objetivos de uma única etapa ainda não concluídos no Forever, incluindo “Use Walk on Air”. A correção se aplica ao rastreador de missões e ao registro de missões do grupo."
         ]
       },
       {
@@ -17,7 +18,8 @@
         "illustration": "quest-tracker-display",
         "items": [
           "Escolha Oculto, Missão em foco, Missão sob o cursor ou Foco e cursor. O padrão, Foco e cursor, exibe as missões sob o mouse no rastreador de objetivos da Blizzard e depois retorna à missão em foco.",
-          "Sem uma missão correspondente, a janela fica oculta. Altere o modo no modo de edição do HUD ou em Configurações → Grupos e compartilhamento → Rastreador de missões."
+          "Sem uma missão correspondente, a janela fica oculta. Altere o modo no modo de edição do HUD ou em Configurações → Grupos e compartilhamento → Rastreador de missões.",
+          "Ative Ocultar fora de um grupo no modo de edição do HUD para ocultar o rastreador ao jogar solo. A opção vem desativada, e a prévia de posicionamento continua disponível no modo de edição."
         ]
       },
       {
@@ -25,7 +27,7 @@
         "illustration": "quest-tracker-edit-mode",
         "items": [
           "Abra o modo de edição do HUD e selecione Rastreador de missões para mover ou redimensionar a janela e ajustar a opacidade do fundo. Salvar, Reverter e Restaurar padrão incluem o modo de exibição e o layout.",
-          "As seções dos jogadores preenchem a largura disponível e permitem rolagem quando necessário. Há suporte aos temas claro e escuro, com texto legível e fundos discretos dos jogadores mesmo com opacidade zero."
+          "As seções dos jogadores preenchem a largura disponível e permitem rolagem quando necessário. Há suporte aos temas claro e escuro. O preenchimento da cor da classe mantém uma opacidade constante de 50%, independente do controle do fundo da janela, com texto legível em fundos transparentes."
         ]
       }
     ]

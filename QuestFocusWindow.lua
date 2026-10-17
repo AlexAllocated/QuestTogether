@@ -116,6 +116,14 @@ function QT:GetHoveredTrackerQuestID()
 	end
 end
 
+function QT:IsQuestTrackerHiddenWhileSolo()
+	if self:GetOption("questTrackerHideSolo") ~= true then return false end
+	local getter = self.API and self.API.IsInGroup
+	local ok, grouped = false, nil
+	if type(getter) == "function" then ok, grouped = pcall(getter) end
+	return not (ok and self:CanAccessValue(grouped) and grouped == true)
+end
+
 function QT:UpdateQuestFocusWindow()
 	if not self.isEnabled or self.isLoggingOut then
 		self:ResetQuestFocusWindow()
@@ -123,7 +131,7 @@ function QT:UpdateQuestFocusWindow()
 	end
 	if self:IsWorkBlocked("foreign_frame_mutation") or self:IsWorkBlocked("quest_snapshot_refresh") then
 		local state = rawget(self, "questFocusState")
-		if self:GetQuestTrackerMode() == "hidden"
+		if self:GetQuestTrackerMode() == "hidden" or self:IsQuestTrackerHiddenWhileSolo()
 			or (state and (state.profile ~= self.db.profile or state.mode ~= self:GetQuestTrackerMode())) then
 			self:ResetQuestFocusWindow()
 			return
@@ -148,7 +156,7 @@ function QT:UpdateQuestFocusWindow()
 	self:UpdateQuestFocusEditMode()
 	local editing = self.questFocusEditing == true
 	local mode = self:GetQuestTrackerMode()
-	if mode == "hidden" and not editing then
+	if (mode == "hidden" or self:IsQuestTrackerHiddenWhileSolo()) and not editing then
 		self:ResetQuestFocusWindow()
 		return
 	end
@@ -191,6 +199,7 @@ function QT:UpdateQuestFocusWindow()
 				local detail = self:AcquirePartyQuestProgress(name, id, member, Updated, true, function()
 					return rawget(self, "questFocusState") == state
 						and self:GetQuestTrackerMode() == state.mode and state.mode ~= "hidden"
+						and not self:IsQuestTrackerHiddenWhileSolo()
 				end)
 				if detail then
 					Updated(detail)
@@ -482,7 +491,6 @@ function QT:RenderQuestFocusWindow(state, restricted)
 		return
 	end
 	local style = Style
-	local sectionOpacity = math.max(0.1, opacity)
 	local function LayoutRows(width)
 		frame.body:SetWidth(width)
 		local y = 0
@@ -513,9 +521,10 @@ function QT:RenderQuestFocusWindow(state, restricted)
 			local textHeight = math.max(14, row.title:GetStringHeight())
 			local height = padding + textHeight + (data.fraction and 8 or 4) + (last and 8 or 0)
 			row:SetHeight(height)
-			style.LayoutDetailsPanel(row, width, true, member, last, false, theme.dark, true, sectionOpacity, true)
+			style.LayoutDetailsPanel(row, width, true, member, last, false, theme.dark, true, opacity, true)
 			local r, g, b = self:GetWindowClassColor(data.classFile)
-			style.ColorPanel(row.background, r, g, b, math.max(0.1, 0.20 * opacity))
+			-- Class fill stays readable independently of the main background slider.
+			style.ColorPanel(row.background, r, g, b, 0.50)
 			style.ShowPanel(row.hover, false)
 			row.accent:Hide()
 			style.LayoutProgressBar(row, data, theme.dark, inset, padding + textHeight + 3, width - inset - 10)

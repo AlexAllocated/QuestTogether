@@ -11,6 +11,7 @@ QuestTogether.releaseNotes = {
 			items = {
 				"See your party's objective counts and progress bars in a compact, class-colored window. Party members need QuestTogether to share their progress.",
 				"Progress updates as party announcements arrive, independently of chat and bubble display settings. Quests without objective counters show their status, such as ready to turn in.",
+				"Fixed unfinished one-step objectives incorrectly showing 1/1 progress in Forever, including Use Walk on Air. The correction applies to the Quest Tracker and Party Quest Log.",
 			},
 			illustration = "quest-tracker",
 		},
@@ -19,6 +20,7 @@ QuestTogether.releaseNotes = {
 			items = {
 				"Choose Hidden, Focused Quest, Hovered Quest, or Focus and Hover. The default, Focus and Hover, previews quests under the mouse in Blizzard's objective tracker, then returns to your focused quest.",
 				"With no eligible quest, the window stays hidden. Change the display mode in HUD Edit Mode or Settings → Groups & Sharing → Quest Tracker.",
+				"Enable Hide when not in a party in HUD Edit Mode to hide the tracker while solo. This option is off by default, and the placement preview remains available in Edit Mode.",
 			},
 			illustration = "quest-tracker-display",
 		},
@@ -26,7 +28,7 @@ QuestTogether.releaseNotes = {
 			title = "Make it fit your UI",
 			items = {
 				"Open HUD Edit Mode and select Quest Tracker to move or resize it and adjust background opacity. Save, Revert, and Reset to Default include its display mode and layout.",
-				"Player sections fill the available width and scroll when needed. Light and dark themes are supported, with readable text and faint player backgrounds even at zero opacity.",
+				"Player sections fill the available width and scroll when needed. Light and dark themes are supported. Class-colored sections retain a constant 50% fill opacity, independent of the window background slider, with readable text on transparent backgrounds.",
 			},
 			illustration = "quest-tracker-edit-mode",
 		},

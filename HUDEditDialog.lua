@@ -61,6 +61,13 @@ function QuestTogether:ConfigureHUDEditDropdown(setting, label, options, getValu
 	setting:Show()
 end
 
+function QuestTogether:ConfigureHUDEditCheckbox(setting, label, checked, onChanged)
+	setting.Label:SetText(label)
+	setting.Checkbox:SetChecked(checked)
+	setting.Checkbox:SetScript("OnClick", function(button) onChanged(button:GetChecked() == true) end)
+	setting:Show()
+end
+
 function QuestTogether:ConfigureHUDEditSlider(settingFrame, settingData, onValueChanged)
 	if not settingFrame then
 		return
@@ -127,6 +134,17 @@ function QuestTogether:LayoutHUDEditDialog(dialog)
 			slider.RightText:SetPoint("RIGHT", setting, "RIGHT", 0, 0)
 			slider.RightText:SetWidth(64)
 			slider.RightText:SetJustifyH("RIGHT")
+		elseif label and setting.Checkbox then
+			setting.Checkbox:ClearAllPoints()
+			setting.Checkbox:SetPoint("LEFT", setting, "LEFT", 0, 0)
+			setting.Checkbox:SetSize(24, 24)
+			label:ClearAllPoints()
+			label:SetPoint("LEFT", setting.Checkbox, "RIGHT", 8, 0)
+			label:SetWidth(dialog.contentWidth - 32)
+			label:SetJustifyH("LEFT")
+			label:SetWordWrap(true)
+			setting:SetHeight(math.max(32, label:GetStringHeight()))
+			setting.Checkbox:SetHitRectInsets(0, -(dialog.contentWidth - 24), 0, 0)
 		elseif label and setting.Dropdown then
 			label:ClearAllPoints()
 			label:SetPoint("LEFT", setting, "LEFT", 0, 0)
@@ -193,13 +211,18 @@ function QuestTogether:CreateHUDEditDialog(title, sliderKeys, callbacks)
 	local previous
 	for _, spec in ipairs(sliderKeys) do
 		local dropdown = type(spec) == "table" and spec.kind == "dropdown"
+		local checkbox = type(spec) == "table" and spec.kind == "checkbox"
 		local key = type(spec) == "table" and spec.key or spec
-		local setting = addon:CreateOwnedWindowFrame("Frame", nil, dialog, not dropdown and "EditModeSettingSliderTemplate" or nil)
+		local setting = addon:CreateOwnedWindowFrame("Frame", nil, dialog, not (dropdown or checkbox) and "EditModeSettingSliderTemplate" or nil)
 		if dropdown then
 			-- Native dropdown artwork without the native Edit Mode callbacks,
 			-- which write into Blizzard's selected-system settings.
 			setting.Label = setting:CreateFontString(nil, "ARTWORK", "GameFontHighlightMedium")
 			setting.Dropdown = addon:CreateOwnedWindowFrame("DropdownButton", nil, setting, "WowStyle1DropdownTemplate")
+		end
+		if checkbox then
+			setting.Label = setting:CreateFontString(nil, "ARTWORK", "GameFontHighlightMedium")
+			setting.Checkbox = addon:CreateOwnedWindowFrame("CheckButton", nil, setting, "MinimalCheckboxTemplate")
 		end
 		if previous then
 			setting:SetPoint("TOPLEFT", previous, "BOTTOMLEFT", 0, -24)

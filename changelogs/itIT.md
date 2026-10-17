@@ -10,6 +10,7 @@ Tieni sotto controllo i progressi delle missioni del gruppo con il nuovo traccia
 
 - Visualizza i contatori e le barre di avanzamento degli obiettivi del gruppo in una finestra compatta con i colori delle classi. I membri del gruppo devono usare QuestTogether per condividere i progressi.
 - I progressi si aggiornano alla ricezione degli annunci del gruppo, indipendentemente dalle impostazioni di chat e fumetti. Le missioni senza contatori mostrano il proprio stato, ad esempio pronte per la consegna.
+- Corretto un errore per cui gli obiettivi non completati con un solo passaggio mostravano erroneamente un progresso di 1/1 in Forever, incluso “Use Walk on Air”. La correzione riguarda il tracciamento missioni e il registro missioni del gruppo.
 
 **Forever**
 
@@ -19,6 +20,7 @@ Tieni sotto controllo i progressi delle missioni del gruppo con il nuovo traccia
 
 - Scegli Nascosto, Missione selezionata, Missione sotto il cursore o Selezione e cursore. La modalità predefinita, Selezione e cursore, mostra le missioni sotto il mouse nel tracciamento obiettivi di Blizzard, poi torna alla missione selezionata.
 - Senza una missione corrispondente, la finestra resta nascosta. Cambia modalità nella modalità Modifica HUD o in Impostazioni → Gruppi e condivisione → Tracciamento missioni.
+- Attiva Nascondi quando non sei in gruppo nella modalità Modifica HUD per nascondere il tracciamento quando giochi da solo. L’opzione è disattivata per impostazione predefinita e l’anteprima di posizionamento resta disponibile in modalità Modifica.
 
 **Forever**
 
@@ -27,7 +29,7 @@ Tieni sotto controllo i progressi delle missioni del gruppo con il nuovo traccia
 ### Adattalo alla tua interfaccia
 
 - Apri la modalità Modifica HUD e seleziona Tracciamento missioni per spostare o ridimensionare la finestra e regolare l’opacità dello sfondo. Salva, Annulla modifiche e Ripristina predefiniti includono la modalità di visualizzazione e la disposizione.
-- Le sezioni dei giocatori occupano la larghezza disponibile e scorrono quando necessario. Sono supportati i temi chiaro e scuro, con testo leggibile e sfondi dei giocatori appena visibili anche a opacità zero.
+- Le sezioni dei giocatori occupano la larghezza disponibile e scorrono quando necessario. Sono supportati i temi chiaro e scuro. Il riempimento del colore di classe mantiene un’opacità costante del 50%, indipendente dal cursore dello sfondo della finestra, con testo leggibile su sfondi trasparenti.
 
 **Forever**
 
