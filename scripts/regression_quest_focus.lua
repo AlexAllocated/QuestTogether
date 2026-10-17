@@ -387,7 +387,7 @@ QT:RegisterTest("focus HUD construction and resize callbacks never reenter nativ
 	Equal(frame.rows[1]:GetWidth(), frame.body:GetWidth())
 end)
 
-QT:RegisterTest("tracker default docking follows native side and scale without overriding custom positions", function()
+QT:RegisterTest("tracker snapping follows native geometry and controls manual movement without disabling size sliders", function()
 	local a = Fixture()
 	a.nativeTracker = a:CreateTestUIRegion(a, a.root)
 	local tracker = a.nativeTracker
@@ -405,43 +405,92 @@ QT:RegisterTest("tracker default docking follows native side and scale without o
 		Equal(px, x)
 		Equal(py, y)
 	end
-	Anchor("TOPRIGHT", 895, 800)
-	tracker.left = 100
+	Anchor("TOPRIGHT", 900, 800)
+	local border = a:CreateTestUIRegion(a, tracker)
+	tracker.NineSlice = border
+	border.left, border.top = 870, 800
+	border:SetSize(275, 500)
+	local borderWrites = border.writes
+	a:UpdateQuestFocusWindow()
+	Anchor("TOPRIGHT", 870, 800)
+	Equal(border.writes, borderWrites, "outer bounds are read-only")
+	border.left, tracker.left = 70, 100
 	a:UpdateQuestFocusWindow()
 	Anchor("TOPLEFT", 345, 800)
+	tracker.scale = 1.5
+	a:UpdateQuestFocusWindow()
+	Anchor("TOPLEFT", 517.5, 1200)
+	tracker.NineSlice, tracker.scale = nil, 1
+	tracker.left = 100
+	a:UpdateQuestFocusWindow()
+	Anchor("TOPLEFT", 340, 800)
 	frame:SetWidth(420)
 	a:SaveWindowLayout(frame)
-	Equal(a.db.profile.windowLayouts.questFocus.autoAnchor, true)
+	Equal(a.db.profile.windowLayouts.questFocus.width, 420)
 	tracker.left, tracker.scale = 500, 1.5
 	a:UpdateQuestFocusWindow()
 	a:Drain()
-	Anchor("TOPRIGHT", 745, 1200)
+	Anchor("TOPRIGHT", 750, 1200)
 	Equal(tracker.writes, writes, "docking must never mutate Blizzard's tracker")
 	a.root:SetScale(0.64)
 	a:UpdateQuestFocusWindow()
-	Anchor("TOPRIGHT", 750 - 5 / 0.64, 1200)
+	Anchor("TOPRIGHT", 750, 1200)
 	a.root:SetScale(1)
 	a:UpdateQuestFocusWindow()
 	tracker.forbidden = true
 	a:UpdateQuestFocusWindow()
-	Anchor("TOPRIGHT", 745, 1200)
+	Anchor("TOPRIGHT", 750, 1200)
 	tracker.forbidden = false
 	a.restricted = true
 	tracker.left = 100
 	a:UpdateQuestFocusWindow()
-	Anchor("TOPRIGHT", 745, 1200)
+	Anchor("TOPRIGHT", 750, 1200)
 	a.restricted = false
-	frame.customPositionProfile = a.db.profile
+	a:SetOption("questTrackerSnapToBlizzard", false)
+	a:UpdateQuestFocusWindow()
+	Anchor("TOPRIGHT", 750, 1200)
+	a.manager = a:CreateTestUIRegion(a)
+	a:UpdateQuestFocusWindow(); a:Drain()
+	a:SelectQuestFocusWindow()
+	local panel = frame.editControls
+	local checkbox = panel.SnapCheckbox.Checkbox
+	Equal(checkbox:GetChecked(), false)
+	assert(frame.grip:IsShown())
+	function a:GetWindowDragCursor() return 600, 500 end
+	frame.scripts.OnDragStart()
+	Equal(frame.dragging, true)
+	frame.scripts.OnDragStop()
+	frame.grip.scripts.OnMouseDown(frame.grip, "LeftButton")
+	Equal(frame.resizing, true)
+	frame.grip.scripts.OnMouseUp()
+	frame:ClearAllPoints()
+	frame:SetPoint("CENTER", a.root, "BOTTOMLEFT", 300, 400)
 	a:SaveWindowLayout(frame)
-	Equal(a.db.profile.windowLayouts.questFocus.autoAnchor, false)
-	a:UpdateQuestFocusWindow()
-	Anchor("TOPRIGHT", 745, 1200)
-	a.db.profile.windowLayouts.questFocus = { width = 420, height = 600, x = 0.4, y = 0.5 }
-	a:UpdateQuestFocusWindow()
-	Anchor("TOPRIGHT", 745, 1200) -- Pre-existing saved positions remain custom.
-	a.db.profile.windowLayouts.questFocus = nil
-	a:UpdateQuestFocusWindow()
-	Anchor("TOPLEFT", 515, 1200)
+	checkbox:SetChecked(true); checkbox.scripts.OnClick(checkbox); a:Drain()
+	Anchor("TOPLEFT", 510, 1200)
+	Equal(frame.grip:IsShown(), false)
+	frame.grip.scripts.OnMouseDown(frame.grip, "LeftButton")
+	Equal(frame.resizing, nil, "stale resize callbacks cannot resize a snapped tracker")
+	panel.WidthSlider.change(480); panel.HeightSlider.change(700); a:Drain()
+	Equal(frame:GetWidth(), 480)
+	Equal(frame:GetHeight(), 700)
+	Anchor("TOPLEFT", 510, 1200)
+	frame.scripts.OnDragStart(); a:Drain()
+	Equal(frame.dragging, true)
+	Equal(a:IsQuestTrackerSnapped(), false, "dragging away disables snap")
+	assert(frame.grip:IsShown())
+	frame.scripts.OnDragStop()
+	panel.RevertButton.scripts.OnClick(); a:Drain()
+	Equal(a:IsQuestTrackerSnapped(), false)
+	assert(frame.grip:IsShown())
+	panel.ResetButton.scripts.OnClick(); a:Drain()
+	Equal(a:IsQuestTrackerSnapped(), true)
+	Equal(frame.grip:IsShown(), false)
+	Anchor("TOPLEFT", 510, 1200)
+	panel.SaveButton.scripts.OnClick(); a:Drain()
+	checkbox:SetChecked(false); checkbox.scripts.OnClick(checkbox); a:Drain()
+	panel.RevertButton.scripts.OnClick(); a:Drain()
+	Equal(a:IsQuestTrackerSnapped(), true)
 	Equal(a.invalidCalls, nil)
 end)
 
@@ -474,7 +523,7 @@ QT:RegisterTest("tracker content shrinks below its saved maximum and Edit Mode r
 	a:Drain()
 	Equal(frame.panel:GetHeight(), 420)
 	Equal(a.db.profile.windowLayouts.questFocus.height, 420)
-	Equal(frame.editControls.HeightSlider.settingData.settingName, "Maximum height")
+	Equal(frame.editControls.HeightSlider.settingData.settingName, "Max height")
 	a.ignored = "Friend"
 	a:UpdateQuestFocusWindow()
 	a:Drain()

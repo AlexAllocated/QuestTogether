@@ -74,10 +74,13 @@ private `.local` notes are historical context, not the source of truth.
   maximum (600 by default): the managed placement frame retains that size while
   a top-anchored content panel shrinks to its rows outside Edit Mode. Overflow
   scrolls at the maximum; automatic shrink never writes saved geometry. Default
-  placement samples Blizzard tracker geometry read-only and anchors QT to its
-  inward-facing top corner. A saved `autoAnchor` marker survives size-only saves;
-  moving QT opts out, and existing saved positions remain custom. Reset restores
-  docking. No anchors or state are written onto Blizzard frames. Opacity
+  placement samples Blizzard tracker and outer NineSlice geometry read-only and anchors QT to its
+  inward-facing top corner without an additional gap. The profile option
+  `questTrackerSnapToBlizzard` defaults on. While enabled, corner resizing is
+  disabled; size sliders remain available. Dragging away disables snapping and
+  restores corner resizing. Enabling snap replaces
+  the manual position; disabling it allows dragging from the current location.
+  Save/Revert include this option, and Reset restores docking. No anchors or state are written onto Blizzard frames. Opacity
   affects the backgrounds, with faint player sections retained at zero and text
   staying opaque with contrast suited to transparency. Player sections retain their
   class-colored fill at a constant 25% opacity, independently of the background

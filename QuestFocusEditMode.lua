@@ -23,6 +23,9 @@ function QT:GetQuestTrackerModeLabel()
 		if option.value == mode then return option.text end
 	end
 end
+function QT:IsQuestTrackerSnapped()
+	return self:GetOption("questTrackerSnapToBlizzard") ~= false
+end
 function QT:GetQuestFocusOpacity()
 	local n = self:SafeToNumber(self:GetOption("questFocusOpacity")) or 75
 	return math.max(0, math.min(100, n))
@@ -41,7 +44,7 @@ function QT:CaptureQuestFocusEditLayout()
 	end
 	local layouts = type(profile.windowLayouts) == "table" and profile.windowLayouts or {}
 	self.questFocusEditBaseline =
-		{ profile = profile, layout = self:DeepCopy(layouts.questFocus), opacity = self:GetQuestFocusOpacity(), mode = self:GetQuestTrackerMode(), hideSolo = self:GetOption("questTrackerHideSolo") == true }
+		{ profile = profile, layout = self:DeepCopy(layouts.questFocus), opacity = self:GetQuestFocusOpacity(), mode = self:GetQuestTrackerMode(), hideSolo = self:GetOption("questTrackerHideSolo") == true, snap = self:IsQuestTrackerSnapped() }
 end
 function QT:RevertQuestFocusEditLayout()
 	local baseline = self.questFocusEditBaseline
@@ -50,7 +53,7 @@ function QT:RevertQuestFocusEditLayout()
 	end
 	self.db.profile.windowLayouts = self.db.profile.windowLayouts or {}
 	self.db.profile.windowLayouts.questFocus = self:DeepCopy(baseline.layout)
-	self:SetOptions({ questFocusOpacity = baseline.opacity, questTrackerMode = baseline.mode, questTrackerHideSolo = baseline.hideSolo })
+	self:SetOptions({ questFocusOpacity = baseline.opacity, questTrackerMode = baseline.mode, questTrackerHideSolo = baseline.hideSolo, questTrackerSnapToBlizzard = baseline.snap })
 	local frame = rawget(self, "questFocusWindow")
 	if frame then
 		local info = self.managedWindows[frame]
@@ -173,10 +176,6 @@ end
 
 local defaults = { width = 340, height = 600, x = 0.78, y = 0.6 }
 local function SameLayout(a, b)
-	local function Automatic(layout)
-		return type(layout) ~= "table" or layout.autoAnchor == true
-	end
-	if Automatic(a) ~= Automatic(b) then return false end
 	for key, fallback in pairs(defaults) do
 		if
 			math.abs(
@@ -197,7 +196,7 @@ function QT:ResetQuestFocusEditLayout()
 	local frame = rawget(self, "questFocusWindow")
 	self.db.profile.windowLayouts = self.db.profile.windowLayouts or {}
 	self.db.profile.windowLayouts.questFocus = nil
-	self:SetOptions({ questFocusOpacity = 75, questTrackerMode = "both", questTrackerHideSolo = false })
+	self:SetOptions({ questFocusOpacity = 75, questTrackerMode = "both", questTrackerHideSolo = false, questTrackerSnapToBlizzard = true })
 	if frame and self.managedWindows[frame] then
 		self.managedWindows[frame].resetRequested = true
 		self:ApplyWindowLayout(frame, true)
@@ -214,7 +213,7 @@ function QT:RefreshQuestFocusEditControls(frame, editing)
 	end
 	local panel = frame.editControls
 	if not panel then
-		panel = self:CreateHUDEditDialog(L("Quest Tracker"), { { key = "ModeDropdown", kind = "dropdown" }, { key = "HideSoloCheckbox", kind = "checkbox" }, "WidthSlider", "HeightSlider", "OpacitySlider" }, {
+		panel = self:CreateHUDEditDialog(L("Quest Tracker"), { { key = "ModeDropdown", kind = "dropdown" }, { key = "HideSoloCheckbox", kind = "checkbox" }, { key = "SnapCheckbox", kind = "checkbox" }, "WidthSlider", "HeightSlider", "OpacitySlider" }, {
 			close = function()
 				self:DeselectQuestFocusWindow()
 			end,
@@ -274,7 +273,7 @@ function QT:RefreshQuestFocusEditControls(frame, editing)
 		frame:SetWidth(value)
 		self:SaveWindowLayout(frame)
 	end)
-	Configure("HeightSlider", L("Maximum height"), 120, 800, 10, frame:GetHeight(), function(value)
+	Configure("HeightSlider", L("Max height"), 120, 800, 10, frame:GetHeight(), function(value)
 		frame:SetHeight(value)
 		self:SaveWindowLayout(frame)
 	end)
@@ -294,14 +293,25 @@ function QT:RefreshQuestFocusEditControls(frame, editing)
 			or self:IsWorkBlocked("foreign_frame_mutation") then return end
 		self:SetOption("questTrackerHideSolo", value)
 	end)
+	local snap = self:IsQuestTrackerSnapped()
+	self:ConfigureHUDEditCheckbox(panel.SnapCheckbox, L("Snap to Blizzard's Objective Tracker"), snap, function(value)
+		if self.db.profile ~= profile or not self.questFocusEditing or not frame.editSelected
+			or self:IsWorkBlocked("foreign_frame_mutation") or not self:CanMutateOwnedUI(frame) then return end
+		self:StopWindowInteraction(frame)
+		self:SetOption("questTrackerSnapToBlizzard", value)
+		-- Enabling replaces the old position with the native tracker anchor.
+		-- Disabling leaves QT where it is, ready for manual placement.
+		self:ApplyQuestTrackerDefaultAnchor(frame)
+		self:SaveWindowLayout(frame)
+	end)
 	local baseline = self.questFocusEditBaseline
 	local layout = self.db.profile.windowLayouts and self.db.profile.windowLayouts.questFocus
 	local pending = baseline
-			and (not SameLayout(layout, baseline.layout) or self:GetQuestFocusOpacity() ~= baseline.opacity or self:GetQuestTrackerMode() ~= baseline.mode or hideSolo ~= baseline.hideSolo)
+			and (not SameLayout(layout, baseline.layout) or self:GetQuestFocusOpacity() ~= baseline.opacity or self:GetQuestTrackerMode() ~= baseline.mode or hideSolo ~= baseline.hideSolo or snap ~= baseline.snap)
 		or false
 	panel.SaveButton:SetEnabled(pending)
 	panel.RevertButton:SetEnabled(pending)
-	panel.ResetButton:SetEnabled(not SameLayout(layout, nil) or self:GetQuestFocusOpacity() ~= 75 or self:GetQuestTrackerMode() ~= "both" or hideSolo)
+	panel.ResetButton:SetEnabled(not SameLayout(layout, nil) or self:GetQuestFocusOpacity() ~= 75 or self:GetQuestTrackerMode() ~= "both" or hideSolo or not snap)
 	panel.SaveStatus:SetText(
 		pending and L("Changes applied automatically. Save Changes sets the point Revert returns to.")
 			or L("QuestTogether settings saved. Blizzard's Save button is not needed.")

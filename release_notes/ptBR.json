@@ -1,5 +1,5 @@
 {
-  "source_sha256": "cc532adc0041977e6680012bc56d59344acb1d624032b175ce3b7b4cacea1487",
+  "source_sha256": "1c546f9da92e06946c4658970aa4375e793ac74c1790c2ab82c104039795611e",
   "notes": {
     "version": "7.4.0",
     "welcome": "Acompanhe o progresso das missões do seu grupo com o novo rastreador de missões.",
@@ -27,7 +27,7 @@
         "illustration": "quest-tracker-edit-mode",
         "items": [
           "Abra o modo de edição do HUD e selecione Rastreador de missões para mover ou redimensionar a janela e ajustar a opacidade do fundo. Salvar, Reverter e Restaurar padrão incluem o modo de exibição e o layout.",
-          "Por padrão, o rastreador do QT fica ao lado do rastreador de objetivos da Blizzard, à esquerda ou à direita conforme a metade da tela que ele ocupa. Mover o QT no modo de edição salva uma posição personalizada; restaurar o padrão retoma o posicionamento automático.",
+          "O encaixe no rastreador de objetivos da Blizzard vem ativado e posiciona o QT junto à borda externa, sem espaço adicional. Arrastar o QT para longe desativa o encaixe e permite redimensionar pelo canto. Reative o encaixe para redefinir a posição; os controles de largura e altura máxima funcionam nos dois modos.",
           "O rastreador ajusta sua altura ao conteúdo até a altura máxima configurada e depois permite rolagem. A altura máxima padrão agora é 600; os tamanhos já salvos são preservados.",
           "As seções dos jogadores preenchem a largura disponível e permitem rolagem quando necessário. Há suporte aos temas claro e escuro. O preenchimento da cor da classe mantém uma opacidade constante de 25%, independente do controle do fundo da janela, com texto legível em fundos transparentes."
         ]

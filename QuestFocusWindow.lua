@@ -239,10 +239,7 @@ end
 function QT:ApplyQuestTrackerDefaultAnchor(frame)
 	if not frame or frame.dragging or frame.resizing or self:IsWorkBlocked("foreign_frame_mutation")
 		or not self:CanMutateOwnedUI(frame) then return end
-	local layouts = self.db.profile.windowLayouts
-	local saved = type(layouts) == "table" and layouts.questFocus
-	-- Existing saved positions remain custom. New size-only saves retain docking.
-	if type(saved) == "table" and saved.autoAnchor ~= true then return end
+	if not self:IsQuestTrackerSnapped() then return end
 	local tracker, root = self:GetQuestTrackerAnchorFrame(), self:GetOwnedUIParent()
 	if not self:CanAccessForeignFrame(tracker) or not self:CanAccessForeignFrame(root) then return end
 	local function Read(region, method)
@@ -258,12 +255,24 @@ function QT:ApplyQuestTrackerDefaultAnchor(frame)
 	local fs = Read(frame, "GetEffectiveScale")
 	if not left or not top or not width or not ts or not rl or not rb or not rw or not rs or not fs
 		or width <= 0 or rw <= 0 or ts <= 0 or rs <= 0 or fs <= 0 then return end
-	local ratio = ts / rs
-	local onRight = (left + width / 2) * ratio - rl >= rw / 2
+	local edgeLeft, edgeRight, edgeTop = left * ts, (left + width) * ts, top * ts
+	-- Blizzard's content/background extends beyond the main frame (including
+	-- the objective icons on its left). Use its actual outer geometry rather
+	-- than assuming the main frame or a fixed inset describes the visible UI.
+	local border = self:GetAccessibleFrameMember(tracker, "NineSlice")
+	if self:CanAccessForeignFrame(border) then
+		local bl, bt, bw, bs = Read(border, "GetLeft"), Read(border, "GetTop"), Read(border, "GetWidth"), Read(border, "GetEffectiveScale")
+		if bl and bt and bw and bs and bw > 0 and bs > 0 then
+			edgeLeft = math.min(edgeLeft, bl * bs)
+			edgeRight = math.max(edgeRight, (bl + bw) * bs)
+			edgeTop = math.max(edgeTop, bt * bs)
+		end
+	end
+	local onRight = (edgeLeft + edgeRight) / 2 / rs - rl >= rw / 2
 	local point = onRight and "TOPRIGHT" or "TOPLEFT"
-	-- Keep the visual gap at five screen pixels, regardless of UI scale.
-	local x = ((onRight and left or left + width) * ts - rl * rs + (onRight and -5 or 5)) / fs
-	local y = (top * ratio - rb) * rs / fs
+	-- Sit flush against the visible outer edge, regardless of UI scale.
+	local x = ((onRight and edgeLeft or edgeRight) - rl * rs) / fs
+	local y = (edgeTop - rb * rs) / fs
 	local p, relative, relativePoint, oldX, oldY = frame:GetPoint(1)
 	if p ~= point or relative ~= root or relativePoint ~= "BOTTOMLEFT" or oldX ~= x or oldY ~= y then
 		frame:ClearAllPoints()
@@ -387,7 +396,9 @@ function QT:CreateQuestFocusWindow()
 		if self.questFocusEditing and not self:IsWorkBlocked("foreign_frame_mutation") then
 			self:SelectQuestFocusWindow()
 			self:StartWindowDrag(frame)
-			if frame.dragging then frame.customPositionProfile = self.db.profile end
+			if frame.dragging then
+				self:SetOption("questTrackerSnapToBlizzard", false)
+			end
 		end
 	end)
 	frame:SetScript("OnDragStop", function()
@@ -399,7 +410,7 @@ function QT:CreateQuestFocusWindow()
 	frame.grip:SetPoint("BOTTOMRIGHT", -2, 2)
 	frame.grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
 	frame.grip:SetScript("OnMouseDown", function(_, button)
-		if button == "LeftButton" and self.questFocusEditing and not self:IsWorkBlocked("foreign_frame_mutation") then
+		if button == "LeftButton" and self.questFocusEditing and not self:IsQuestTrackerSnapped() and not self:IsWorkBlocked("foreign_frame_mutation") then
 			self:SelectQuestFocusWindow()
 			frame.resizing = true
 			frame:StartSizing("BOTTOMRIGHT")
@@ -416,11 +427,6 @@ function QT:CreateQuestFocusWindow()
 	end)
 	frame.LayoutManagedWindow = function()
 		self:QueueQuestFocusRefresh()
-	end
-	frame.PrepareSavedWindowLayout = function(_, layout, previous)
-		layout.autoAnchor = frame.customPositionProfile ~= self.db.profile
-			and (type(previous) ~= "table" or previous.autoAnchor == true)
-		frame.customPositionProfile = nil
 	end
 	self:RegisterManagedWindow(frame, "questFocus", 240, 120, { x = 0.78, y = 0.6 })
 	frame:EnableKeyboard(false)
@@ -616,12 +622,12 @@ function QT:RenderQuestFocusWindow(state, restricted)
 	if not restricted then
 		self:UpdateOwnedScrollBar(frame.bar, frame.offset, frame.maximum, extent, 30)
 	end
-	if not editing then
+	if not editing or self:IsQuestTrackerSnapped() then
 		self:StopWindowInteraction(frame)
 	end
 	self:RefreshQuestFocusSelection(frame, editing)
 	frame:EnableMouse(editing)
-	frame.grip[editing and "Show" or "Hide"](frame.grip)
+	frame.grip[editing and not self:IsQuestTrackerSnapped() and "Show" or "Hide"](frame.grip)
 	if not restricted then
 		frame:Show()
 		self:RefreshQuestFocusEditControls(frame, editing)

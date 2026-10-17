@@ -504,7 +504,7 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 	if Has("lightMode", "reduceMotion") then
 		Invoke(self, "RefreshWindowThemes")
 	end
-	if Has("questTrackerMode", "questFocusOpacity", "questTrackerHideSolo") then
+	if Has("questTrackerMode", "questFocusOpacity", "questTrackerHideSolo", "questTrackerSnapToBlizzard") then
 		Invoke(self, "QueueQuestFocusRefresh", true)
 	end
 	if Has("windowScale") then

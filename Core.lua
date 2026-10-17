@@ -378,6 +378,7 @@ QuestTogether.DEFAULTS = {
 		windowScale = 100,
 		questTrackerMode = "both",
 		questTrackerHideSolo = false,
+		questTrackerSnapToBlizzard = true,
 		questFocusOpacity = 75,
 		reduceMotion = false,
 		compareAutoRefresh = false,
