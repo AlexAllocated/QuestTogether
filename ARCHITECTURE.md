@@ -22,6 +22,9 @@ private `.local` notes are historical context, not the source of truth.
 | GeographicComms / NearbyStreams | Current/viewed interests, subscriptions, discovery policy and owned state/movement producers | Another native queue or rewriting received feature caches |
 | QuestCompareCommunication / PingCommunication | Domain request premises and response construction | Wire encoding, fragment pumps or independent timers |
 | DeveloperAnnouncements | Signed developer subscriptions, diagnostic consent, mirror audiences and paced private location publication | Normal announcement filters, private location storage or a separate transport |
+| PartyQuestProgress | Interest-owned remote objective snapshots, ordered announcement deltas, per-peer detail requests and shared PQL/HUD notifications | Display filtering, independent polling, or assuming objective indices match across players |
+| QuestProgressStyle | Shared rounded detail sections and objective progress bars for PQL and HUD | Quest state, requests, or window lifecycle |
+| QuestFocusWindow / QuestFocusEditMode | Quest Tracker HUD, native focus observation, local detail reads, owned Edit Mode controls and revert baseline | Blizzard tracker rows, shared native layout registries or a separate objective cache |
 | QuestCompare | Atomic party log assembly, local snapshots and negotiated revision reuse | Native UI mutation or independent transport pumps |
 | QuestCompletion | Bounded character-history queries for visible comparisons, evidence age and completed/absent classification | Account-wide completion or full history broadcasts |
 | QuestSharingResults | Exact native share-result matching and recent per-player explanations | Guessing which quest a native result belongs to |
@@ -36,6 +39,7 @@ private `.local` notes are historical context, not the source of truth.
 | PartyVisuals | Shared party identity, validated rosters, partial membership evidence and freshness-aware member lookup | Tooltip-specific membership inference or manufacturing peer presence |
 | Keybindings | Fixed player actions delegated to existing feature operations | Key assignment, binding overrides, native input state |
 | OwnedUI | Guarded owned-region access and a durable cleanup queue | Permission to modify Blizzard-owned frames |
+| HUDEditDialog | Shared owned Edit Mode selection artwork and settings shell, native slider wiring, layout and theme | Feature selection, values or revert policy |
 | WindowController / WindowLayout / WindowTheme | Window visibility and dismissal, geometry, chrome respectively | Quest-specific dialogs or protocol sessions |
 | QuestDetails | Bounded copies of native quest-tooltip text and an owned reader session | Native tooltip mutation, quest selection, or peer requests |
 | QuestDialogs | Focus/share-related presentation and callbacks | Window geometry rules |
@@ -46,6 +50,40 @@ private `.local` notes are historical context, not the source of truth.
 | LocationPins / PartyWaypointPins | Domain-specific pin placement, visuals and actions | A second tooltip renderer or marker pool lifecycle |
 
 ## Data and time contracts
+
+- PQL expansions and the focus HUD acquire the same remote quest-detail record.
+  Interests release on collapse, focus/roster/profile change, ignore and disable.
+  The RuntimeCoordinator advances at most one objective request per peer; repair
+  snapshots have a 30-second cadence, with a five-second minimum between requests
+  after stage changes. Incoming announcements update subscribed rows before chat
+  filters or delayed title rendering. Ordering is per sender/objective with quest
+  lifecycle barriers. Events observed during a snapshot transfer are replayed over
+  its baseline so a delayed reply cannot roll progress backward. Changed objective
+  wording retires unverified sibling rows until a detail snapshot repairs them;
+  indices are never matched across different players or languages.
+  Shared detail rows fall back to certified quest status when there are no
+  objective counters; an empty list never establishes readiness or completion.
+- The Quest Tracker has one profile-owned display mode: hidden, focused quest,
+  hovered quest, or focus and hover (default). The combined mode follows local
+  native quest focus (including party-follow changes), temporarily previewing a
+  hovered Blizzard tracker quest through
+  bounded read-only mouse/ancestor inspection. Hover never changes native focus;
+  leaving falls back to focus or hides when neither exists. Local quest-log
+  events refresh its own objectives without remote
+  polling. Geometry is profile-owned under `windowLayouts.questFocus`; opacity
+  affects the backgrounds, with faint player sections retained at zero and text
+  staying opaque with contrast suited to transparency. HUD Edit Mode
+  shows an owned placement preview; selecting it opens the same themed settings
+  shell as the personal bubble, with display mode/width/height/opacity controls and
+  Save/Revert/Reset actions. Changes apply automatically. Save/revert
+  baselines remain QT-owned, and temporary native Edit Mode hides preserve them.
+  No rows, pools or settings are injected into Blizzard's objective tracker.
+  Already-received progress uses the unblocked `quest_focus_presentation` work
+  class: the renderer checks every owned region, uses the cached title and
+  updates text/layout even during combat. Native reads, window creation,
+  scrollbar controls and Edit Mode wait for their normal safe boundary. Local
+  announcements enter that same progress reducer before local chat/bubbles;
+  a later quest-log read repairs the rest of the local snapshot.
 
 - Recent companions are recorded only from the sanitized current group roster,
   including non-QT members. The private `db.global.recentCompanions` store is

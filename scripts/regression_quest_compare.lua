@@ -2979,12 +2979,14 @@ QuestTogether:RegisterTest(
 		a:Advance(0)
 		Equal(#a.wire, sent)
 		assert(session.expandedQuestIds[1] and session.expandedQuestIds[2])
-		Equal(member.objectiveRequestQuestId, 1)
+		assert(member.objectiveDetails[1].requestId)
+		Equal(member.objectiveDetails[2].requestId, nil)
 		for _, wire in ipairs(b.wire) do
 			a:OnCommReceived(a.commPrefix, wire, "WHISPER", b.name)
 		end
 		Equal(member.objectiveDetails[1].state, "ready")
-		Equal(member.objectiveRequestQuestId, 2)
+		a:UpdatePartyQuestProgress() -- the shared runtime tick advances queued details
+		assert(member.objectiveDetails[2].requestId)
 		Equal(#a.wire, sent + 1)
 		Equal(a.wire[#a.wire].record.objectiveQuestId, 2)
 		-- Closing a completed section must not cancel another quest's active request.
@@ -3022,7 +3024,8 @@ QuestTogether:RegisterTest(
 				a:TogglePartyQuestObjectives(1)
 			end
 			Equal(a.pendingQuestCompareRequests[first], nil)
-			Equal(member.objectiveRequestQuestId, 2)
+			a:UpdatePartyQuestProgress() -- the shared runtime tick advances queued details
+		assert(member.objectiveDetails[2].requestId)
 			for _, wire in ipairs(b.wire) do
 				a:OnCommReceived(a.commPrefix, wire, "WHISPER", b.name)
 			end
@@ -4289,5 +4292,81 @@ QuestTogether:RegisterTest("queued share acknowledgements survive retiring accep
 		b:DrainTransport()
 		Equal(a.partyQuestShareState.outgoing[requestId].status, accepted and "sent" or "declined")
 		Equal(b.pushes, accepted and 1 or 0)
+	end
+end)
+
+QuestTogether:RegisterTest("focus and PQL share progress before display and a late baseline cannot roll it back", function()
+	local a, b = BeginObjectiveExchange()
+	local member = a.partyQuestCompareSession.byName[b.name]
+	local owner, updates, sent = {}, 0, #a.wire
+	local shared = a:AcquirePartyQuestProgress(b.name, 1, owner, function() updates = updates + 1 end, true)
+	Equal(shared, member.objectiveDetails[1])
+	Equal(#a.wire, sent)
+	local event = { questId = "1", eventType = "QUEST_PROGRESS", text = "Bandanas collected: 7/8", occurredAt = 120,
+		eventFacts = a:BuildAnnouncementFacts("QUEST_PROGRESS", 1, "item", false, 7, 8) }
+	a:ObservePartyQuestProgress(event, b.name, {session="one", sequence=10})
+	Equal(updates, 1)
+	Equal(member.objectiveDetails[1].objectives[1].current, 7)
+	for _, wire in ipairs(b.wire) do a:OnCommReceived(a.commPrefix, wire, "WHISPER", b.name) end
+	Equal(shared.objectives[1].current, 7)
+	Equal(#shared.objectives, 2)
+	a:TogglePartyQuestObjectives(1)
+	Equal(a.partyQuestProgress[shared.key], shared) -- HUD still owns this interest.
+	event.text, event.occurredAt = "Bandanas collected: 8/8", 121
+	event.eventFacts = a:BuildAnnouncementFacts("QUEST_PROGRESS", 1, "item", true, 8, 8)
+	a:ObservePartyQuestProgress(event, b.name, {session="one", sequence=11})
+	Equal(shared.objectives[1].current, 8)
+	a:ReleasePartyQuestProgress(owner)
+	Equal(next(a.partyQuestProgress), nil)
+end)
+
+QuestTogether:RegisterTest("objective ordering is per row and retired stages cannot revive after a lifecycle event", function()
+	local a, b = BeginObjectiveExchange()
+	for _, wire in ipairs(b.wire) do a:OnCommReceived(a.commPrefix, wire, "WHISPER", b.name) end
+	local r = a.partyQuestCompareSession.byName[b.name].objectiveDetails[1]
+	local function Event(index, value, stamp, seq, text, kind)
+		a:ObservePartyQuestProgress({questId="1", eventType=kind or "QUEST_PROGRESS", occurredAt=stamp,
+			text=text or ("Bandanas collected: " .. value .. "/8"),
+			eventFacts=a:BuildAnnouncementFacts("QUEST_PROGRESS", index, "item", false, value, 8)},
+			b.name, {session="one", sequence=seq})
+	end
+	Event(1, 7, 120, 10)
+	Event(1, 4, 119, 9)
+	Event(1, 0, 118, 7, "", "QUEST_REMOVED")
+	Equal(r.objectives[1].current, 7)
+	Event(2, 1, 119, 8, "Speak to the watch")
+	Equal(r.objectives[2].current, 1) -- Older packet, different row, still useful.
+	Event(1, 0, 120, 11, "", "QUEST_READY_TO_TURN_IN")
+	local rows = {}
+	a:AppendPartyQuestObjectiveRows(rows, a.partyQuestCompareSession.byName[b.name], 1)
+	Equal(#rows, 1) -- Show authoritative readiness instead of stale partial counts.
+	Equal(rows[1].hint, "Ready")
+	Event(1, 0, 121, 12, "", "QUEST_COMPLETED")
+	Equal(r.notice, "Completed")
+	Event(1, 5, 120, 10)
+	Equal(r.objectives, nil)
+	Event(1, 0, 122, 13, "", "QUEST_ACCEPTED")
+	Equal(r.notice, nil)
+	Equal(r.state, "loading")
+	Event(1, 1, 123, 14, "New stage: 1/8")
+	Equal(#r.objectives, 1)
+	Equal(r.objectives[1].text, "New stage: 1/8")
+end)
+
+QuestTogether:RegisterTest("shared objective requests retire stale consumers without cancelling a still-active view", function()
+	for _, change in ipairs({"focus", "ignore", "depart", "disable"}) do
+		local a, b = BeginObjectiveExchange()
+		local owner, active, calls = {}, true, 0
+		local record = a:AcquirePartyQuestProgress(b.name, 1, owner, function() calls = calls + 1 end, true, function() return active end)
+		local request = a.pendingQuestCompareRequests[record.requestId]
+		a:CancelPartyQuestCompare()
+		assert(a.pendingQuestCompareRequests[record.requestId])
+		if change == "focus" then active = false elseif change == "ignore" then a.ignored=b.name
+		elseif change == "depart" then a:Roster(a.name) else a.isEnabled=false end
+		a:UpdatePartyQuestProgress()
+		request.receiver.onEntry(Quest(1, "Late quest", true))
+		request.receiver.onDone()
+		Equal(calls, 0)
+		Equal(next(a.partyQuestProgress), nil)
 	end
 end)

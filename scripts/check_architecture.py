@@ -44,7 +44,8 @@ def check(root=ROOT, source_overrides=None):
     toc = [line.strip() for line in (root / "QuestTogether.toc").read_text().splitlines()
            if line.strip() and not line.startswith("#")]
     if len(toc) != len(set(toc)): errors.append("duplicate TOC module")
-    order = [("Core.lua", "Settings.lua"), ("OwnedUI.lua", "WindowController.lua"),
+    order = [("Core.lua", "Settings.lua"), ("QuestProgressStyle.lua", "QuestCompareWindow.lua"),
+             ("QuestProgressStyle.lua", "QuestFocusWindow.lua"), ("OwnedUI.lua", "WindowController.lua"),
              ("WindowController.lua", "WindowTheme.lua"), ("HotPathState.lua", "QuestObservations.lua"),
              ("QuestObservations.lua", "TaskArea.lua"), ("PeerState.lua", "PeerLifecycle.lua"),
              ("CommsProtocol.lua", "Transport.lua"), ("Transport.lua", "CommsTransfer.lua"),

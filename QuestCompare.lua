@@ -118,12 +118,8 @@ function QuestTogether:CancelIgnoredPlayerQuestCompare()
 			if member.requestId and self.pendingQuestCompareRequests then
 				self.pendingQuestCompareRequests[member.requestId] = nil
 			end
-			for _, detail in pairs(member.objectiveDetails or {}) do
-				if detail.requestId then
-					self.pendingQuestCompareRequests[detail.requestId] = nil
-				end
-			end
-			member.objectiveDetails, member.objectiveRequestQuestId = {}, nil
+			self:ReleasePartyQuestProgress(member)
+			member.objectiveDetails = {}
 			self:SetPartyQuestMemberSnapshot(member, nil)
 			member.state, member.supportsShareRequests = "unavailable", nil
 		end
@@ -318,12 +314,8 @@ function QuestTogether:RefreshPartyQuestCompareMember(name, conditional)
 	if member.requestId and self.pendingQuestCompareRequests then
 		self.pendingQuestCompareRequests[member.requestId] = nil
 	end
-	for _, detail in pairs(member.objectiveDetails or {}) do
-		if detail.requestId and self.pendingQuestCompareRequests then
-			self.pendingQuestCompareRequests[detail.requestId] = nil
-		end
-	end
-	member.objectiveDetails, member.objectiveRequestQuestId, member.objectiveRequestId = {}, nil, nil
+	self:ReleasePartyQuestProgress(member)
+	member.objectiveDetails = {}
 	local entries, token = {}, {}
 	member.state, member.refreshToken = "loading", token
 	local function Current()
@@ -409,7 +401,7 @@ function QuestTogether:UpdatePartyQuestCompareFreshness()
 		and not self:IsWorkBlocked("quest_snapshot_refresh")
 	then
 		for _, member in ipairs(session.members) do
-			if member.state == "loading" or member.objectiveRequestQuestId or member.historyRequestId then
+			if member.state == "loading" or self:HasPendingPartyQuestProgress(member) or member.historyRequestId then
 				return
 			end
 		end
@@ -452,6 +444,7 @@ function QuestTogether:RefreshLocalPartyQuestCompare(delaySeconds)
 end
 
 function QuestTogether:OnPartyQuestLogChanged()
+	self:QueueQuestFocusRefresh(true)
 	self:RefreshLocalPartyQuestCompare(0.2)
 end
 

@@ -94,6 +94,7 @@ function QuestTogether:StartWindowDrag(frame)
 end
 
 function QuestTogether:RefreshWindowThemes()
+	self:QueueQuestFocusRefresh()
 	self:QueueScrollDialogThemeRefresh()
 	self:QueueReleaseNotesThemeRefresh()
 	self:QueuePartyQuestCompareRender()
@@ -233,4 +234,43 @@ function QuestTogether:FitScrollDialog(frame)
 	end
 	frame:SetScale(math.min(self:GetWindowScale(), sizes[1] * 0.94 / frame:GetWidth(), sizes[2] * 0.94 / frame:GetHeight()))
 	return true
+end
+
+-- Rounded fill made from non-overlapping pieces: low opacity stays uniform at
+-- the corners and seams. The existing QT panel asset supplies only the curve.
+function QuestTogether:CreateRoundedWindowBackground(frame)
+	local pieces = {}
+	for i = 1, 7 do pieces[i] = frame:CreateTexture(nil, "BACKGROUND") end
+	local corners = { "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }
+	local uv = { {0,.5,0,.5}, {.5,1,0,.5}, {0,.5,.5,1}, {.5,1,.5,1} }
+	for i, point in ipairs(corners) do
+		pieces[i + 3]:SetTexture("Interface\\AddOns\\QuestTogether\\Media\\PanelCornerFill")
+		pieces[i + 3]:SetTexCoord(unpack(uv[i]))
+		pieces[i + 3]:SetSize(8, 8)
+		pieces[i + 3]:SetPoint(point, frame, point)
+	end
+	pieces[1]:SetPoint("TOPLEFT", frame, "TOPLEFT", 8, 0)
+	pieces[1]:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -8, 0)
+	pieces[2]:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -8)
+	pieces[2]:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 8)
+	pieces[2]:SetWidth(8)
+	pieces[3]:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, -8)
+	pieces[3]:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 8)
+	pieces[3]:SetWidth(8)
+	return pieces
+end
+function QuestTogether:ColorRoundedWindowBackground(pieces, color, alpha)
+	for i, texture in ipairs(pieces) do
+		if i <= 3 then texture:SetColorTexture(color[1], color[2], color[3], alpha)
+		else texture:SetVertexColor(color[1], color[2], color[3], alpha) end
+	end
+end
+
+-- Class accents/text use the same contrast in every themed QT window.
+function QuestTogether:GetWindowClassColor(classFile, lightBrightness)
+	local code = self:GetClassColorCode(classFile)
+	local brightness = self:GetOption("lightMode") ~= true and 1 or lightBrightness or 0.48
+	return tonumber(code:sub(5, 6), 16) / 255 * brightness,
+		tonumber(code:sub(7, 8), 16) / 255 * brightness,
+		tonumber(code:sub(9, 10), 16) / 255 * brightness
 end

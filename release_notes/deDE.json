@@ -1,18 +1,31 @@
 {
-  "source_sha256": "dde724acee0af5e0e2074c15dd0b50a658b1ff8a64a0ed16ea8d35a89acd3432",
+  "source_sha256": "4ff5b2faff7c6fbd85534ddd403694f83fa8332c85e8bcbe2ee93f2346697e9a",
   "notes": {
     "version": "7.3.5",
-    "welcome": "Übersichtlichere Kartenmarkierungen, einfachere Spielernavigation und aktuellere Gruppeninformationen.",
+    "welcome": "Behalte den Questfortschritt deiner Gruppe mit dem neuen Questtracker im Blick.",
     "sections": [
       {
-        "title": "Karten und Spielerinformationen",
+        "title": "Questtracker",
+        "illustration": "quest-tracker",
         "items": [
-          "Bewege den Mauszeiger über die QT-Kartenschaltfläche, um eine bebilderte Legende der Kartensymbole und Zustände zu sehen.",
-          "Klicke mit der linken Maustaste auf einen Spielerpunkt auf der Weltkarte, um ihn hervorzuheben und die detaillierteste verfügbare Karte für diesen Ort zu öffnen. Auf der letzten Kartenebene öffnet ein Linksklick das Spielermenü; ein Rechtsklick öffnet es immer.",
-          "Auch „Auf der Karte finden“ öffnet die detaillierteste verfügbare Karte. Die grüne Hervorhebung bleibt bei Kartenwechseln erhalten und endet nach einer Minute, beim Schließen der Karte oder bei der Auswahl eines anderen Spielers.",
-          "Beim Überfahren eines Spielers, einer Markierungsgruppe oder eines gemeinsamen Wegpunkts werden die Karte und andere Markierungen abgedunkelt, während die hervorgehobenen Markierungen hell bleiben. Die QT-Kartenschaltfläche dunkelt die Karte beim Überfahren nicht mehr ab.",
-          "Die Leuchteffekte für Spieler sind jetzt einheitlich. Gruppen-Tooltips und Markierungsgruppen nutzen aktuellere Informationen zur Gruppenzugehörigkeit und erholen sich besser von verzögerten Anfragen.",
-          "Die Entwicklerdiagnose wurde verbessert; Einstellungen zur Diagnosefreigabe und der Schutz der öffentlichen Standortdaten bleiben erhalten."
+          "Sieh die Zielzähler und Fortschrittsbalken deiner Gruppe in einem kompakten Fenster mit Klassenfarben. Gruppenmitglieder benötigen QuestTogether, um ihren Fortschritt zu teilen.",
+          "Der Fortschritt wird beim Eintreffen von Gruppenmeldungen aktualisiert, unabhängig von den Anzeigeeinstellungen für Chat und Sprechblasen. Quests ohne Zielzähler zeigen ihren Status, etwa bereit zur Abgabe."
+        ]
+      },
+      {
+        "title": "Wähle, was du verfolgen möchtest",
+        "illustration": "quest-tracker-display",
+        "items": [
+          "Wähle Ausgeblendet, Fokussierte Quest, Quest unter dem Mauszeiger oder Fokus und Mauszeiger. Die Standardeinstellung Fokus und Mauszeiger zeigt vorübergehend Quests unter dem Mauszeiger in Blizzards Zielverfolgung und kehrt danach zur fokussierten Quest zurück.",
+          "Ohne passende Quest bleibt das Fenster ausgeblendet. Ändere den Anzeigemodus im HUD-Bearbeitungsmodus oder unter Einstellungen → Gruppen & Teilen → Questtracker."
+        ]
+      },
+      {
+        "title": "Passe das Fenster deiner Oberfläche an",
+        "illustration": "quest-tracker-edit-mode",
+        "items": [
+          "Öffne den HUD-Bearbeitungsmodus und wähle Questtracker, um das Fenster zu verschieben, seine Größe zu ändern und die Hintergrunddeckkraft einzustellen. Speichern, Zurücksetzen und Standard wiederherstellen berücksichtigen Anzeigemodus und Layout.",
+          "Die Spielerbereiche nutzen die verfügbare Breite und lassen sich bei Bedarf scrollen. Helles und dunkles Design werden unterstützt; auch bei null Deckkraft bleiben Text lesbar und Spielerhintergründe schwach sichtbar."
         ]
       }
     ]

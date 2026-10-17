@@ -115,7 +115,7 @@ function QT:ApplyWindowLayout(frame, restore)
 	if info.resetRequested or (profileChanged and not saved) then
 		frame.userWidth, frame.userHeight = nil, nil
 		frame:SetSize(math.max(info.width, frame.minimumWidth or 1), info.height)
-		info.x, info.y, info.resetRequested = 0.5, 0.5, nil
+		info.x, info.y, info.resetRequested = info.defaultX or 0.5, info.defaultY or 0.5, nil
 	end
 	if restore and saved then
 		local w = math.max(info.minWidth or 1, math.min(1800, Number(saved.width, info.width)))
@@ -155,7 +155,7 @@ function QT:ApplyWindowLayout(frame, restore)
 	info.applying = nil
 	return true
 end
-function QT:RegisterManagedWindow(frame, key, minWidth, minHeight)
+function QT:RegisterManagedWindow(frame, key, minWidth, minHeight, defaultPosition)
 	if self:IsWorkBlocked("foreign_frame_mutation") or not self.LibChev.CanMutateOwnedRegion(frame) then
 		return
 	end
@@ -165,6 +165,8 @@ function QT:RegisterManagedWindow(frame, key, minWidth, minHeight)
 	end
 	self.managedWindows[frame] = {
 		key = key,
+		defaultX = defaultPosition and defaultPosition.x,
+		defaultY = defaultPosition and defaultPosition.y,
 		minWidth = minWidth,
 		minHeight = minHeight,
 		width = math.max(

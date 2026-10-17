@@ -42,6 +42,7 @@ Hints.lua
 OwnedUI.lua
 WindowController.lua
 WindowTheme.lua
+HUDEditDialog.lua
 WindowLayout.lua
 QuestDialogs.lua
 PlayerNotes.lua
@@ -79,13 +80,17 @@ AddonUpdates.lua
 QuestCompare.lua
 QuestCompareFilters.lua
 QuestCompareObjectives.lua
+PartyQuestProgress.lua
 QuestCompareInteraction.lua
+QuestProgressStyle.lua
 QuestCompareWindow.lua
 PartyChatReminder.lua
 PartyJoin.lua
 PartyVisuals.lua
 PartyFocusController.lua
 PartyNavigation.lua
+QuestFocusWindow.lua
+QuestFocusEditMode.lua
 QuestComparePreview.lua
 Minimap.lua
 Keybindings.lua
@@ -134,6 +139,7 @@ scripts/regression_nameplate_discovery.lua
 scripts/regression_comms.lua
 scripts/regression_addon_updates.lua
 scripts/regression_quest_compare.lua
+scripts/regression_quest_focus.lua
 scripts/regression_quest_completion.lua
 scripts/regression_compare_interaction.lua
 scripts/regression_minimap.lua

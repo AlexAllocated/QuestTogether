@@ -492,6 +492,19 @@ Register("release screenshot regions retire between pages and reject forbidden r
 	screenshot.forbidden = false
 	assert(a:RenderReleaseNotesWindow(notes, "6.4.0", false))
 	assert(screenshot:IsVisible())
+	for _, image in ipairs({
+		{ "quest-tracker", "QuestTracker", 817, 897, 1024, 1024 },
+		{ "quest-tracker-edit-mode", "QuestTrackerEditMode", 1024, 854, 1024, 1024 },
+		{ "quest-tracker-display", "QuestTrackerDisplay", 476, 180, 512, 256 },
+	}) do
+		notes.sections[1].illustration = image[1]
+		assert(a:RenderReleaseNotesWindow(notes, "7.4.0", false))
+		local texture = frame.releaseScreenshots[image[2]]
+		assert(texture:IsVisible())
+		Equal(texture.texCoords[2], image[3] / image[5])
+		Equal(texture.texCoords[4], image[4] / image[6])
+		assert(math.abs(texture:GetHeight() / texture:GetWidth() - image[4] / image[3]) < 0.001)
+	end
 end)
 
 Register("release notes visual examples quarantine forbidden regions and recover", function()

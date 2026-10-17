@@ -1268,6 +1268,7 @@ function QuestTogether:PublishAnnouncementEvent(eventType, text, questId, extraD
 end
 
 function QuestTogether:DispatchAnnouncementEvent(eventData)
+	self:ObserveLocalQuestFocusProgress(eventData)
 	self:SendAnnouncementWireEvent(eventData)
 	self:AnnounceToNonQTParty(eventData)
 	if self.suppressLocalAnnouncementDisplayDuringTests then

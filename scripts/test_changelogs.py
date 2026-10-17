@@ -100,12 +100,15 @@ class ChangelogTests(ChangelogFixture, unittest.TestCase):
     def test_client_screenshots_are_tag_pinned_on_web_and_attached_in_discord(self):
         notes = {'version': '6.4.0', 'welcome': 'Explore party quests.', 'sections': [
             {'title': 'Party Quest Log', 'items': ['Compare your party.'], 'illustration': 'party-quest-log'},
-            {'title': 'Objectives', 'items': ['Expand progress.'], 'illustration': 'party-quest-objectives'}]}
+            {'title': 'Objectives', 'items': ['Expand progress.'], 'illustration': 'party-quest-objectives'},
+            {'title': 'Tracker', 'items': ['Track progress.'], 'illustration': 'quest-tracker'},
+            {'title': 'Tracker layout', 'items': ['Adjust layout.'], 'illustration': 'quest-tracker-edit-mode'},
+            {'title': 'Tracker modes', 'items': ['Choose a mode.'], 'illustration': 'quest-tracker-display'}]}
         markdown = c.render('enUS', [{'enUS': notes}])
         messages = build_messages(notes, DEFAULT_REPOSITORY, 'v6.4.0')
         images = [embed['image']['url'] for message in messages for embed in message['embeds'] if 'image' in embed]
-        self.assertEqual(len(images), 3)
-        for asset, url in zip(('PartyQuestLogRetail', 'PartyQuestLogForever', 'PartyQuestObjectivesForever'), images):
+        self.assertEqual(len(images), 6)
+        for asset, url in zip(('PartyQuestLogRetail', 'PartyQuestLogForever', 'PartyQuestObjectivesForever', 'QuestTracker', 'QuestTrackerEditMode', 'QuestTrackerDisplay'), images):
             self.assertEqual(url, 'attachment://' + asset + '.png')
             self.assertIn('/v6.4.0/Media/ReleaseNotes/' + asset + '.png', markdown)
         self.assertIn('**Retail**', markdown)

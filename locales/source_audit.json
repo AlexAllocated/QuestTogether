@@ -289,6 +289,18 @@
       "QTVR",
       "STATE"
     ],
+    "HUDEditDialog.lua": [
+      "ARTWORK",
+      "BOTTOMLEFT",
+      "BOTTOMRIGHT",
+      "Button",
+      "DIALOG",
+      "Frame",
+      "LEFT",
+      "RIGHT",
+      "TOPLEFT",
+      "TOPRIGHT"
+    ],
     "Hints.lua": [
       " |cffffd100|Hquesttogethertip:"
     ],
@@ -366,10 +378,8 @@
       "BOTTOM",
       "BOTTOMLEFT",
       "BOTTOMRIGHT",
-      "Button",
       "CENTER",
       "Creature",
-      "DIALOG",
       "Failed to create or resolve bubble frame",
       "Failed to show bubble on host for unit=%s",
       "Frame",
@@ -452,6 +462,13 @@
     ],
     "PartyNavigation.lua": [
       "PARTY"
+    ],
+    "PartyQuestProgress.lua": [
+      "Completed",
+      "Missing",
+      "Not in log",
+      "Ready",
+      "WHISPER"
     ],
     "PartyVisuals.lua": [
       "QPGM",
@@ -606,10 +623,14 @@
       "Absent",
       "Completed",
       "Have",
+      "In progress",
+      "Loading",
       "Missing",
+      "No objective details available.",
+      "Not in log",
       "Ready",
       "Unknown",
-      "WHISPER"
+      "Update QuestTogether for objective details."
     ],
     "QuestComparePreview.lua": [
       "A Debt to the Innkeeper",
@@ -696,7 +717,6 @@
       "HIGHLIGHT",
       "HOME",
       "Have",
-      "Hide",
       "LEFT",
       "MEDIUM",
       "MENU",
@@ -709,7 +729,6 @@
       "RIGHT",
       "Ready",
       "SPACE",
-      "Show",
       "TOP",
       "TOPLEFT",
       "TOPRIGHT",
@@ -750,6 +769,35 @@
       "TOPRIGHT",
       "party focus missing quest"
     ],
+    "QuestFocusEditMode.lua": [
+      "CENTER",
+      "TOPLEFT",
+      "TOPRIGHT"
+    ],
+    "QuestFocusWindow.lua": [
+      "ARTWORK",
+      "BACKGROUND",
+      "BORDER",
+      "BOTTOMRIGHT",
+      "Button",
+      "Completed",
+      "Frame",
+      "Hide",
+      "In progress",
+      "LEFT",
+      "LOW",
+      "Loading",
+      "Missing",
+      "Not in log",
+      "OVERLAY",
+      "Ready",
+      "Show",
+      "TOP",
+      "TOPLEFT",
+      "TOPRIGHT",
+      "Unknown",
+      "quest focus progress"
+    ],
     "QuestObservations.lua": [
       " samples: ",
       "#%d title=%s header=%s questID=%s task=%s onMap=%s poi=%s",
@@ -760,6 +808,15 @@
     ],
     "QuestPartnerQuest.lua": [
       "QTLQ"
+    ],
+    "QuestProgressStyle.lua": [
+      "ARTWORK",
+      "BACKGROUND",
+      "BORDER",
+      "BOTTOMLEFT",
+      "Hide",
+      "Show",
+      "TOPLEFT"
     ],
     "RecentCompanions.lua": [
       "BOTTOMLEFT",
@@ -858,6 +915,7 @@
       "RIGHT",
       "TOP",
       "TOPLEFT",
+      "TOPRIGHT",
       "party compare preview theme",
       "scroll dialog themes"
     ]

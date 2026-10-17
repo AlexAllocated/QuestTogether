@@ -349,6 +349,13 @@ function QuestTogether:InitializeDatabase(savedDatabase)
 end
 
 local validators = {
+	questTrackerMode = function(a, v)
+		return a:IsQuestTrackerMode(v) and v or nil
+	end,
+	questFocusOpacity = function(a, v)
+		local n = a:SafeToNumber(v)
+		if n and n >= 0 and n <= 100 then return n end
+	end,
 	showProgressFor = function(a, v)
 		return a:IsShowProgressFor(v) and v or nil
 	end,
@@ -429,6 +436,9 @@ end
 
 function QuestTogether:NormalizeSettingsProfile()
 	local profile = self.db.profile
+	-- Retire the unreleased tracker checkbox in favor of one display policy.
+	if profile.showQuestFocusWindow == false then profile.questTrackerMode = "hidden" end
+	profile.showQuestFocusWindow = nil
 	self:MigratePlayerLocationOptions(profile)
 	for key, default in pairs(self.DEFAULTS.profile) do
 		local value = self:ValidateSetting(key, profile[key])
@@ -493,6 +503,9 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 	end
 	if Has("lightMode", "reduceMotion") then
 		Invoke(self, "RefreshWindowThemes")
+	end
+	if Has("questTrackerMode", "questFocusOpacity") then
+		Invoke(self, "QueueQuestFocusRefresh", true)
 	end
 	if Has("windowScale") then
 		Invoke(self, "RefreshManagedWindowLayouts")

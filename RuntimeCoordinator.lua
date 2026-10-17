@@ -6,6 +6,8 @@ local UPDATE_INTERVAL = 0.2
 function QT:UpdatePlayerCommunications()
 	self:UpdatePlayerDetailsInterests()
 	self:UpdatePartyQuestCompareFreshness()
+	self:UpdateQuestFocusWindow()
+	self:UpdatePartyQuestProgress()
 	if self.UpdatePartyQuestCompletion then self:UpdatePartyQuestCompletion() end
 	self:UpdatePlayerPhaseObservations()
 	if self.UpdateQTPlayerPresence then
@@ -77,6 +79,9 @@ end
 function QT:ResetRuntimeCoordinator()
 	self:HideQuestTogetherMapControl()
 	self:ResetPartyNavigation()
+	self:ResetQuestFocusWindow()
+	self.questFocusEditing, self.questFocusEditBaseline = nil, nil
+	self:ResetPartyQuestProgress()
 	self:HideChatLogPlayerTooltip()
 	self:HidePlayerTooltipBadge()
 	self.runtimeCoordinatorState = nil

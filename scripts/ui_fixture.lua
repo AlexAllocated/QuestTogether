@@ -457,6 +457,8 @@ function QT:CreateTestUIRegion(owner, parent, kind)
 	-- Known presentation-only methods; behavioral calls above are never no-ops.
 	for _, method in ipairs({
 		"SetAlpha",
+		"SetShadowColor",
+		"SetShadowOffset",
 		"SetMovable",
 		"SetResizable",
 		"RegisterForDrag",
@@ -504,7 +506,20 @@ function QT:ApplyTestUITemplate(frame, template)
 	local function Child(kind)
 		return self:CreateTestUIRegion(frame.owner, frame, kind)
 	end
-	if template == "UIPanelButtonTemplate" then
+	if template == "WowStyle1DropdownTemplate" then
+		function frame:SetupMenu(builder)
+			self.entries = {}
+			local root = {}
+			function root:CreateRadio(text, selected, choose)
+				frame.entries[#frame.entries + 1] = { text = text, selected = selected, choose = choose }
+			end
+			builder(self, root)
+		end
+	elseif template == "EditModeSystemSelectionTemplate" then
+		function frame:SetSystem(system) self.system = system end
+		function frame:ShowHighlighted() self.isSelected = false; self:Show() end
+		function frame:ShowSelected() self.isSelected = true; self:Show() end
+	elseif template == "UIPanelButtonTemplate" then
 		local text = Child("FontString")
 		function frame:GetFontString()
 			return text

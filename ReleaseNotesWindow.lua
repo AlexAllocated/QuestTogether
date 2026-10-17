@@ -659,6 +659,7 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 						offset, examplesShown = offset + 120, true
 					end
 					local asset, imageWidth, imageHeight
+					local textureWidth, textureHeight = 2048, 1024
 					if section.illustration == "party-quest-log" then
 						asset = regional and "PartyQuestLogForever" or "PartyQuestLogRetail"
 						imageWidth, imageHeight = regional and 1560 or 1564, regional and 899 or 898
@@ -670,6 +671,16 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 						asset, imageWidth, imageHeight = "PartyQuestFollowingForever", 1198, 199
 					elseif section.illustration == "party-quest-focus-warning" then
 						asset, imageWidth, imageHeight = "PartyQuestFocusWarningForever", 1824, 540
+					end
+					if section.illustration == "quest-tracker" then
+						asset, imageWidth, imageHeight = "QuestTracker", 817, 897
+						textureWidth, textureHeight = 1024, 1024
+					elseif section.illustration == "quest-tracker-edit-mode" then
+						asset, imageWidth, imageHeight = "QuestTrackerEditMode", 1024, 854
+						textureWidth, textureHeight = 1024, 1024
+					elseif section.illustration == "quest-tracker-display" then
+						asset, imageWidth, imageHeight = "QuestTrackerDisplay", 476, 180
+						textureWidth, textureHeight = 512, 256
 					end
 					if asset then
 						frame.releaseScreenshots = frame.releaseScreenshots or {}
@@ -683,7 +694,7 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 								"SetTexture",
 								"Interface\\AddOns\\QuestTogether\\Media\\ReleaseNotes\\" .. asset
 							)
-							Call(addon, screenshot, "SetTexCoord", 0, imageWidth / 2048, 0, imageHeight / 1024)
+							Call(addon, screenshot, "SetTexCoord", 0, imageWidth / textureWidth, 0, imageHeight / textureHeight)
 						end
 						local imageDisplayHeight = contentWidth * imageHeight / imageWidth
 						Call(addon, screenshot, "ClearAllPoints")

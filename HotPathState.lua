@@ -31,7 +31,6 @@ local function BindRuntimeReferenceAliases(self, state)
 	self.nameplateHealthTintRefreshPendingByUnitToken = state.nameplate.healthTintRefreshPendingByUnitToken
 	self.nameplateTooltipResolveRetryCountByUnitToken = state.nameplate.tooltipResolveRetryCountByUnitToken
 
-	self.personalBubbleSliderHandlesByFrame = state.personalBubble.sliderHandlesByFrame
 	self.personalBubbleDialogPositionByFrame = state.personalBubble.dialogPositionByFrame
 
 	self.deferredWorkState = state.runtime.deferredWorkState
@@ -148,9 +147,6 @@ function QuestTogether:EnsureRuntimeStateStore()
 
 	if type(state.personalBubble) ~= "table" then
 		state.personalBubble = {}
-	end
-	if type(state.personalBubble.sliderHandlesByFrame) ~= "table" then
-		state.personalBubble.sliderHandlesByFrame = EnsureWeakKeyTable(self.personalBubbleSliderHandlesByFrame)
 	end
 	if type(state.personalBubble.dialogPositionByFrame) ~= "table" then
 		state.personalBubble.dialogPositionByFrame = EnsureWeakKeyTable(self.personalBubbleDialogPositionByFrame)

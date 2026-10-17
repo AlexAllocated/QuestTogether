@@ -127,6 +127,8 @@ function QT:BuildAnnouncementFacts(eventType, index, objectiveType, finished, cu
 end
 
 function QT:NotifyLocalizedQuestTitleChanged(questID)
+	local focus = rawget(self, "questFocusState")
+	if focus and focus.id == questID then self:QueueQuestFocusRefresh() end
 	-- Cache reads and load events publish the same notification. Each view owns
 	-- its deferred render and rechecks its current session before touching UI.
 	if self.OnPartyQuestTitleChanged then self:OnPartyQuestTitleChanged(questID) end

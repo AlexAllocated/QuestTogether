@@ -2354,7 +2354,10 @@ QT:RegisterTest("requester world transitions settle real PQL member and objectiv
 			Equal(member.state, "timeout")
 		else
 			Equal(detail.state, "unknown")
-			Equal(member.objectiveRequestQuestId, nil)
+			local current = member.objectiveDetails[1]
+			assert(current and current ~= detail, "resume reacquires detail instead of retaining a retired record")
+			Equal(current.state, "ready")
+			Equal(a:HasPendingPartyQuestProgress(member), false)
 		end
 	end
 end)

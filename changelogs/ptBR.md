@@ -4,16 +4,34 @@
 
 ## 7.3.5
 
-Marcadores mais claros, navegação mais fácil e informações de grupo mais recentes.
+Acompanhe o progresso das missões do seu grupo com o novo rastreador de missões.
 
-### Mapas e informações de jogadores
+### Rastreador de missões
 
-- Passe o cursor sobre o botão QT do mapa para ver uma legenda visual dos ícones e estados.
-- Clique com o botão esquerdo em um ponto de jogador no mapa-múndi para destacá-lo e abrir o mapa mais detalhado disponível para aquele local. No último nível, o clique esquerdo abre o menu do jogador; o clique direito sempre o abre.
-- Encontrar no mapa também abre o mapa mais detalhado disponível. O destaque verde acompanha as mudanças de mapa e desaparece após um minuto, ao fechar o mapa ou ao selecionar outro jogador.
-- Passar o cursor sobre um jogador, um agrupamento ou um ponto de rota compartilhado escurece o mapa e os outros marcadores, mantendo os marcadores em foco com brilho total. Passar o cursor sobre o botão QT não escurece mais o mapa.
-- Os brilhos dos jogadores agora usam um efeito uniforme. As dicas de grupo e os agrupamentos compartilham informações mais recentes sobre os membros e se recuperam melhor de solicitações atrasadas.
-- Os diagnósticos do desenvolvedor foram aprimorados, respeitando as preferências de compartilhamento de diagnósticos e a privacidade das localizações públicas.
+- Veja os contadores e as barras de progresso dos objetivos do grupo em uma janela compacta com cores de classe. Os membros do grupo precisam do QuestTogether para compartilhar o progresso.
+- O progresso é atualizado quando os anúncios do grupo chegam, independentemente das configurações de exibição do bate-papo e dos balões. Missões sem contadores mostram seu estado, como prontas para entregar.
+
+**Forever**
+
+![Rastreador de missões — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTracker.png)
+
+### Escolha o que acompanhar
+
+- Escolha Oculto, Missão em foco, Missão sob o cursor ou Foco e cursor. O padrão, Foco e cursor, exibe as missões sob o mouse no rastreador de objetivos da Blizzard e depois retorna à missão em foco.
+- Sem uma missão correspondente, a janela fica oculta. Altere o modo no modo de edição do HUD ou em Configurações → Grupos e compartilhamento → Rastreador de missões.
+
+**Forever**
+
+![Escolha o que acompanhar — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerDisplay.png)
+
+### Ajuste à sua interface
+
+- Abra o modo de edição do HUD e selecione Rastreador de missões para mover ou redimensionar a janela e ajustar a opacidade do fundo. Salvar, Reverter e Restaurar padrão incluem o modo de exibição e o layout.
+- As seções dos jogadores preenchem a largura disponível e permitem rolagem quando necessário. Há suporte aos temas claro e escuro, com texto legível e fundos discretos dos jogadores mesmo com opacidade zero.
+
+**Forever**
+
+![Ajuste à sua interface — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerEditMode.png)
 
 ## 7.3.4
 

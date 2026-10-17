@@ -1,16 +1,29 @@
 {
   "version": "7.3.5",
-  "welcome": "Clearer map markers, easier player navigation, and fresher party information.",
+  "welcome": "Keep your party's quest progress in view with the new Quest Tracker.",
   "sections": [
     {
-      "title": "Maps and player information",
+      "title": "Quest Tracker",
+      "illustration": "quest-tracker",
       "items": [
-        "Hover the QT map button for a visual legend of map icons and states.",
-        "Left-click a world-map player dot to highlight it and open the most detailed map available for that location. At the final map level, left-click opens the player menu; right-click always opens it.",
-        "Find on Map also opens the most detailed available map. Its green highlight follows map changes and clears after one minute, when the map closes, or when another player is selected.",
-        "Hovering a player, cluster, or shared waypoint dims the map and unrelated markers while keeping the focused markers bright. The QT map button no longer dims the map on hover.",
-        "Player glows now use one consistent effect, and party tooltips and clusters share fresher membership information with better recovery from delayed requests.",
-        "Improved developer diagnostics while preserving diagnostic-sharing preferences and public location privacy."
+        "See your party's objective counts and progress bars in a compact, class-colored window. Party members need QuestTogether to share their progress.",
+        "Progress updates as party announcements arrive, independently of chat and bubble display settings. Quests without objective counters show their status, such as ready to turn in."
+      ]
+    },
+    {
+      "title": "Choose what to track",
+      "illustration": "quest-tracker-display",
+      "items": [
+        "Choose Hidden, Focused Quest, Hovered Quest, or Focus and Hover. The default, Focus and Hover, previews quests under the mouse in Blizzard's objective tracker, then returns to your focused quest.",
+        "With no eligible quest, the window stays hidden. Change the display mode in HUD Edit Mode or Settings → Groups & Sharing → Quest Tracker."
+      ]
+    },
+    {
+      "title": "Make it fit your UI",
+      "illustration": "quest-tracker-edit-mode",
+      "items": [
+        "Open HUD Edit Mode and select Quest Tracker to move or resize it and adjust background opacity. Save, Revert, and Reset to Default include its display mode and layout.",
+        "Player sections fill the available width and scroll when needed. Light and dark themes are supported, with readable text and faint player backgrounds even at zero opacity."
       ]
     }
   ]

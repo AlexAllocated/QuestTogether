@@ -815,6 +815,7 @@ local function DispatchOperation(self, frame, data, sender, context)
 		end
 		self:RecordAnnouncementLatency(event)
 		self:RecordQTPlayerPresence(sender, true)
+		self:ObservePartyQuestProgress(event, sender, context)
 		self:HandleAnnouncementEvent(event, false)
 		return true
 	end
@@ -1173,11 +1174,17 @@ function QT:FlushCommunicationDeparture()
 	return self:Emit("BYE", { reason = "departure" }, routes, { direct = true, priority = "control" })
 end
 function QT:EndCommsWorldSession()
+	self:ResetQuestFocusWindow()
+	self:CancelPartyQuestObjectiveRequests(rawget(self, "partyQuestCompareSession"))
+	self:ResetPartyQuestProgress()
 	self:ResetLocalizedQuestTitles()
 	return self:EndCommunicationSession()
 end
 function QT:ResumeCommsWorldSession()
-	return self:ResumeCommunicationSession()
+	local result = self:ResumeCommunicationSession()
+	local session = rawget(self, "partyQuestCompareSession")
+	for _, member in ipairs(session and session.members or {}) do self:LoadPartyQuestObjectives(member) end
+	return result
 end
 function QT:FlushGeographicDeparture()
 	return self:FlushCommunicationDeparture()

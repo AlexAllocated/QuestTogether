@@ -467,7 +467,7 @@ def message_files(root, payload):
     """Read only the canonical, locally checked-in PNGs referenced by this part."""
     from changelogs import illustration_images
     allowed = {asset + ".png": "Media/ReleaseNotes/" + asset + ".png"
-               for name in ("party-quest-log", "party-quest-objectives", "party-quest-overview", "party-quest-following", "party-quest-focus-warning")
+               for name in ("party-quest-log", "party-quest-objectives", "party-quest-overview", "party-quest-following", "party-quest-focus-warning", "quest-tracker", "quest-tracker-edit-mode", "quest-tracker-display")
                for _, asset in illustration_images(name)}
     allowed[Path(TIP_ICON_PATH).name] = TIP_ICON_PATH
     files = []

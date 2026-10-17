@@ -4,16 +4,34 @@
 
 ## 7.3.5
 
-Marcadores más claros, navegación más sencilla e información de grupo más reciente.
+Mantén a la vista el progreso de las misiones de tu grupo con el nuevo seguimiento de misiones.
 
-### Mapas e información de jugadores
+### Seguimiento de misiones
 
-- Pasa el cursor sobre el botón QT del mapa para ver una leyenda visual de sus iconos y estados.
-- Haz clic izquierdo en un punto de jugador del mapamundi para resaltarlo y abrir el mapa más detallado disponible para esa ubicación. En el último nivel, el clic izquierdo abre el menú del jugador; el clic derecho siempre lo abre.
-- Buscar en el mapa también abre el mapa más detallado disponible. El resaltado verde se mantiene al cambiar de mapa y desaparece al cabo de un minuto, al cerrar el mapa o al seleccionar a otro jugador.
-- Al pasar el cursor sobre un jugador, un grupo de marcadores o un punto de ruta compartido, el mapa y los demás marcadores se atenúan mientras los destacados conservan su brillo. Pasar el cursor sobre el botón QT ya no atenúa el mapa.
-- Los brillos de los jugadores usan ahora un efecto uniforme. Las descripciones de grupo y los marcadores agrupados comparten información más reciente sobre los miembros y se recuperan mejor de solicitudes retrasadas.
-- Se han mejorado los diagnósticos del desarrollador respetando las preferencias de compartir diagnósticos y la privacidad de las ubicaciones públicas.
+- Ve los contadores y las barras de progreso de los objetivos de tu grupo en una ventana compacta con colores de clase. Los miembros del grupo necesitan QuestTogether para compartir su progreso.
+- El progreso se actualiza al recibir anuncios del grupo, independientemente de los ajustes del chat y las burbujas. Las misiones sin contadores muestran su estado, como listas para entregar.
+
+**Forever**
+
+![Seguimiento de misiones — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTracker.png)
+
+### Elige qué seguir
+
+- Elige Oculto, Misión enfocada, Misión bajo el cursor o Enfoque y cursor. La opción predeterminada, Enfoque y cursor, muestra las misiones bajo el ratón en el seguimiento de objetivos de Blizzard y después vuelve a tu misión enfocada.
+- Si no hay ninguna misión que mostrar, la ventana permanece oculta. Cambia el modo en el modo de edición del HUD o en Ajustes → Grupos y compartir → Seguimiento de misiones.
+
+**Forever**
+
+![Elige qué seguir — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerDisplay.png)
+
+### Adáptalo a tu interfaz
+
+- Abre el modo de edición del HUD y selecciona Seguimiento de misiones para mover o redimensionar la ventana y ajustar la opacidad del fondo. Guardar, Revertir y Restablecer valores predeterminados incluyen el modo de visualización y la disposición.
+- Las secciones de los jugadores ocupan el ancho disponible y permiten desplazarse cuando es necesario. Se admiten los temas claro y oscuro, con texto legible y fondos de jugadores tenues incluso con opacidad cero.
+
+**Forever**
+
+![Adáptalo a tu interfaz — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerEditMode.png)
 
 ## 7.3.4
 

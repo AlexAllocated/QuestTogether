@@ -88,6 +88,12 @@ def illustration_images(illustration):
         return [('Forever', 'PartyQuestFollowingForever')]
     if illustration == 'party-quest-focus-warning':
         return [('Forever', 'PartyQuestFocusWarningForever')]
+    if illustration == 'quest-tracker':
+        return [('Forever', 'QuestTracker')]
+    if illustration == 'quest-tracker-edit-mode':
+        return [('Forever', 'QuestTrackerEditMode')]
+    if illustration == 'quest-tracker-display':
+        return [('Forever', 'QuestTrackerDisplay')]
     return []
 
 

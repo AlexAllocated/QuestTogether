@@ -4,16 +4,34 @@
 
 ## 7.3.5
 
-Des marqueurs plus clairs, une navigation plus simple et des informations de groupe plus récentes.
+Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi de quête.
 
-### Cartes et informations sur les joueurs
+### Suivi de quête
 
-- Survolez le bouton QT de la carte pour afficher une légende illustrée des icônes et des états.
-- Cliquez avec le bouton gauche sur un point de joueur sur la carte du monde pour le mettre en évidence et ouvrir la carte la plus détaillée disponible pour sa position. Au dernier niveau, le clic gauche ouvre le menu du joueur ; le clic droit l’ouvre toujours.
-- La recherche d’un joueur sur la carte ouvre également la carte la plus détaillée disponible. La surbrillance verte persiste lors des changements de carte et disparaît après une minute, à la fermeture de la carte ou à la sélection d’un autre joueur.
-- Survoler un joueur, un regroupement ou un point de passage partagé assombrit la carte et les autres marqueurs tout en gardant les marqueurs concernés lumineux. Survoler le bouton QT n’assombrit plus la carte.
-- Les halos des joueurs utilisent désormais un effet uniforme. Les infobulles de groupe et les regroupements partagent des informations d’appartenance plus récentes et gèrent mieux les requêtes retardées.
-- Les diagnostics du développeur ont été améliorés tout en respectant les préférences de partage des diagnostics et la confidentialité des positions publiques.
+- Consultez les compteurs et les barres de progression des objectifs de votre groupe dans une fenêtre compacte aux couleurs des classes. Les membres du groupe doivent utiliser QuestTogether pour partager leur progression.
+- La progression est actualisée à la réception des annonces du groupe, indépendamment des réglages du chat et des bulles. Les quêtes sans compteur affichent leur état, par exemple prêtes à être rendues.
+
+**Forever**
+
+![Suivi de quête — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTracker.png)
+
+### Choisir les quêtes à suivre
+
+- Choisissez Masqué, Quête ciblée, Quête survolée ou Ciblage et survol. Ce dernier mode, activé par défaut, affiche les quêtes survolées dans le suivi des objectifs de Blizzard, puis revient à votre quête ciblée.
+- Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres → Groupes et partage → Suivi de quête.
+
+**Forever**
+
+![Choisir les quêtes à suivre — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerDisplay.png)
+
+### Adapter la fenêtre à votre interface
+
+- Ouvrez le mode Édition du HUD et sélectionnez Suivi de quête pour déplacer ou redimensionner la fenêtre et régler son opacité. Enregistrer, Annuler les modifications et Rétablir les valeurs par défaut incluent le mode d’affichage et la disposition.
+- Les sections des joueurs occupent la largeur disponible et défilent si nécessaire. Les thèmes clair et sombre sont pris en charge, avec un texte lisible et des fonds de joueurs légèrement visibles même à opacité nulle.
+
+**Forever**
+
+![Adapter la fenêtre à votre interface — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.3.5/Media/ReleaseNotes/QuestTrackerEditMode.png)
 
 ## 7.3.4
 

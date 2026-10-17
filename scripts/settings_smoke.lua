@@ -564,3 +564,25 @@ QuestTogether.optionsFrame.scripts.OnUpdate(QuestTogether.optionsFrame, 1)
 assert(home.statusText.text:find("QuestTogether: " .. (QuestTogether.isEnabled and "Enabled" or "Disabled"), 1, true))
 QuestTogether.isEnabled = wasEnabled
 print("Home runtime status and native Theme dropdown/profile effects passed")
+
+local tracker = QuestTogether.questTrackerModeDropdown
+assert(tracker)
+assert(QuestTogether:GetQuestTrackerMode() == "both")
+QuestTogether:RefreshGroupsWindow()
+assert(tracker.Dropdown.text == "Focus and Hover")
+assert(#tracker.Dropdown.menu == 4)
+tracker.Dropdown.menu[1].func()
+assert(QuestTogether:GetQuestTrackerMode() == "hidden")
+QuestTogether:RefreshGroupsWindow()
+assert(tracker.Dropdown.text == "Hidden")
+assert(QuestTogether:ValidateSetting("questTrackerMode", "invalid") == nil)
+QuestTogether.db.profile.showQuestFocusWindow = false
+QuestTogether.db.profile.questTrackerMode = "both"
+QuestTogether:NormalizeSettingsProfile()
+assert(QuestTogether:GetQuestTrackerMode() == "hidden")
+assert(QuestTogether.db.profile.showQuestFocusWindow == nil)
+QuestTogether:SetOption("questTrackerMode", "hover")
+QuestTogether:NormalizeSettingsProfile()
+assert(QuestTogether:GetQuestTrackerMode() == "hover")
+QuestTogether:SetOption("questTrackerMode", "both")
+print("Quest Tracker display choices, invalid values and checkbox migration passed")

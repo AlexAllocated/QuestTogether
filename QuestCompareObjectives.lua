@@ -93,15 +93,10 @@ end
 
 function QT:CancelPartyQuestObjectiveRequests(session, questId)
 	for _, member in ipairs(session and session.members or {}) do
-		for id, detail in pairs(member.objectiveDetails or {}) do
+		self:ReleasePartyQuestProgress(member, questId)
+		for id in pairs(member.objectiveDetails or {}) do
 			if not questId or id == questId then
-				if detail.requestId and self.pendingQuestCompareRequests then
-					self:ClearPendingQuestCompare(detail.requestId, self.pendingQuestCompareRequests[detail.requestId])
-				end
 				member.objectiveDetails[id] = nil
-				if member.objectiveRequestQuestId == id then
-					member.objectiveRequestQuestId = nil
-				end
 			end
 		end
 	end
@@ -113,7 +108,6 @@ function QT:LoadPartyQuestObjectives(member)
 		not session
 		or member.state ~= "ready"
 		or member.isLocal
-		or member.objectiveRequestQuestId
 		or not member.supportsObjectives
 		or self:IsIgnoredPlayerName(member.name)
 	then
@@ -127,57 +121,28 @@ function QT:LoadPartyQuestObjectives(member)
 		end
 	end
 	table.sort(ids)
-	local id = ids[1]
-	if not id then
-		return
-	end
-	local detail = { questId = id, state = "loading" }
-	member.objectiveDetails[id], member.objectiveRequestQuestId = detail, id
-	local entry
-	local function Current()
-		return self.isEnabled
-			and self.partyQuestCompareSession == session
-			and session.byName[member.name] == member
-			and session.expandedQuestIds[id]
-			and member.objectiveDetails[id] == detail
-			and not self:IsIgnoredPlayerName(member.name)
-			and (session.mode == "target" or self:IsGroupedSender(member.name))
-	end
-	local function Continue()
-		member.objectiveRequestQuestId = nil
-		self:LoadPartyQuestObjectives(member)
-		self:QueuePartyQuestCompareRender()
-	end
-	-- One outstanding objective request per peer prevents an older responder's
-	-- per-requester queue from replacing another expanded quest's reply.
-	local routes = { { distribution = "WHISPER", target = member.name, requiresGroup = session.mode == "party" } }
-	local sent, requestId = self:RequestQuestCompare(member.name, {
-		objectiveQuestId = id,
-		routes = routes,
-		onEntry = function(data)
-			if Current() then
-				entry = data
-			end
-		end,
-		onDone = function()
+	for _, id in ipairs(ids) do
+		local function Current()
+			return self.partyQuestCompareSession == session
+				and session.byName[member.name] == member
+				and session.expandedQuestIds[id] == true
+		end
+		local function Updated(detail)
 			if not Current() then
 				return
 			end
-			detail.state, detail.objectives = "ready", entry and entry.objectives
-			self:UpdatePartyQuestMemberEntry(member, id, entry)
-			Continue()
-		end,
-		onTimeout = function()
-			if Current() then
-				detail.state = "unknown"
-				Continue()
+			member.objectiveDetails[id] = detail
+			if detail.hasEntry then
+				self:UpdatePartyQuestMemberEntry(member, id, detail.entry)
 			end
-		end,
-	})
-	detail.requestId = requestId
-	if not sent then
-		detail.state = "unknown"
-		Continue()
+			self:QueuePartyQuestCompareRender()
+		end
+		local detail =
+			self:AcquirePartyQuestProgress(member.name, id, member, Updated, session.mode == "party", Current)
+		if detail then
+			member.objectiveDetails[id] = detail
+			Updated(detail)
+		end
 	end
 end
 
@@ -250,6 +215,67 @@ function QT:GetPartyQuestReadiness(quest)
 	return text, unknown > 0 and "Unknown" or missing > 0 and "Missing" or absent > 0 and "Absent" or "Have"
 end
 
+function QT:AppendPartyQuestObjectiveRows(rows, member, questId)
+	local detail, entry = member.objectiveDetails and member.objectiveDetails[questId], member.entries[questId]
+	local notice
+	if detail and detail.notice and detail.notice ~= "Not in log" then
+		notice = detail.notice
+	elseif member.state ~= "ready" and not (detail and detail.state == "ready") then
+		notice = member.state == "loading" and "Loading" or "Unknown"
+	elseif detail and detail.state == "unknown" then
+		notice = "Unknown"
+	elseif not entry and not (detail and detail.objectives) then
+		local absence = self:GetPartyQuestAbsenceState(member, questId)
+		notice = absence == "Absent" and "Not in log" or absence
+	elseif not member.isLocal and not member.supportsObjectives then
+		notice = "Update QuestTogether for objective details."
+	elseif not detail or detail.questId ~= questId or detail.state == "loading" then
+		notice = "Loading"
+	elseif detail.state ~= "ready" then
+		notice = "Unknown"
+	elseif not detail.objectives or #detail.objectives == 0 then
+		-- Delivery/talk quests can be ready without any objective counters.
+		-- Status comes from the quest snapshot, never from an empty detail list.
+		notice = entry and (entry.isComplete and "Ready" or "In progress") or "No objective details available."
+	end
+	rows[#rows + 1] = {
+		questId = questId,
+		kind = "member",
+		classFile = member.classFile,
+		title = member.isLocal and L("You") or member.name,
+		cells = {},
+		hint = notice == "No objective details available." and L("No objective details available.")
+			or notice == "Update QuestTogether for objective details." and L(
+				"Update QuestTogether for objective details."
+			)
+			or notice and L(notice),
+		status = notice,
+	}
+	if not notice or (detail and detail.notice == "Ready" and not detail.pendingMilestone and detail.objectives) then
+		for _, objective in ipairs(detail.objectives) do
+			-- Each player's wording stays attached to their own data. Index
+			-- equality does not prove identical objectives across clients.
+			rows[#rows + 1] = {
+				questId = questId,
+				kind = "objective",
+				classFile = member.classFile,
+				title = objective.text,
+				cells = {},
+				hint = Progress(objective),
+				complete = objective.finished == true,
+				fraction = objective.finished == true and 1
+					or (
+						objective.current
+							and objective.required
+							and objective.required > 0
+							and math.max(0, math.min(1, objective.current / objective.required))
+						or nil
+					),
+			}
+		end
+	end
+end
+
 function QT:BuildPartyQuestCompareDisplayRows(quests)
 	local session, rows = self.partyQuestCompareSession, {}
 	for _, quest in ipairs(quests) do
@@ -257,53 +283,7 @@ function QT:BuildPartyQuestCompareDisplayRows(quests)
 		rows[#rows + 1] = quest
 		if session.expandedQuestIds and session.expandedQuestIds[quest.questId] then
 			for _, member in ipairs(session.members) do
-				local detail, entry =
-					member.objectiveDetails and member.objectiveDetails[quest.questId], member.entries[quest.questId]
-				local notice
-				if member.state ~= "ready" then
-					notice = member.state == "loading" and L("Loading") or L("Unknown")
-				elseif not entry then
-					notice = L("Missing")
-				elseif not member.isLocal and not member.supportsObjectives then
-					notice = L("Update QuestTogether for objective details.")
-				elseif not detail or detail.questId ~= quest.questId or detail.state == "loading" then
-					notice = L("Loading")
-				elseif detail.state ~= "ready" then
-					notice = L("Unknown")
-				elseif not detail.objectives or #detail.objectives == 0 then
-					notice = L("No objective details available.")
-				end
-				rows[#rows + 1] = {
-					questId = quest.questId,
-					kind = "member",
-					classFile = member.classFile,
-					title = member.isLocal and L("You") or member.name,
-					cells = {},
-					hint = notice,
-				}
-				if not notice then
-					for _, objective in ipairs(detail.objectives) do
-						-- Each player's wording stays attached to their own data. Index
-						-- equality does not prove identical objectives across clients.
-						rows[#rows + 1] = {
-							questId = quest.questId,
-							kind = "objective",
-							classFile = member.classFile,
-							title = objective.text,
-							cells = {},
-							hint = Progress(objective),
-							complete = objective.finished == true,
-							fraction = objective.finished == true and 1
-								or (
-									objective.current
-										and objective.required
-										and objective.required > 0
-										and math.max(0, math.min(1, objective.current / objective.required))
-									or nil
-								),
-						}
-					end
-				end
+				self:AppendPartyQuestObjectiveRows(rows, member, quest.questId)
 			end
 		end
 	end

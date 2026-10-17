@@ -438,7 +438,7 @@ local function CreateDropdown(parent, titleText, tooltipText, x, y, width, initi
 	return control
 end
 
-local function CreateSettingsSlider(parent, titleText, tooltipText, x, y, minimum, maximum, step)
+local function CreateSettingsSlider(parent, titleText, tooltipText, x, y, minimum, maximum, step, plainNumber)
 	local control = CreateFrame("Frame", nil, parent, "MinimalSliderWithSteppersTemplate")
 	control:SetSize(360, 20)
 	control:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
@@ -448,7 +448,7 @@ local function CreateSettingsSlider(parent, titleText, tooltipText, x, y, minimu
 	control.title = title
 	control:Init(minimum, minimum, maximum, (maximum - minimum) / step, {
 		[MinimalSliderWithSteppersMixin.Label.Right] = function(value)
-			return string.format("%d%%", math.floor(value + 0.5))
+			return string.format(plainNumber and "%d" or "%d%%", math.floor(value + 0.5))
 		end,
 	})
 	if control.Slider.SetNarrationLabelRegion then control.Slider:SetNarrationLabelRegion(title) end
@@ -470,6 +470,12 @@ local function ConfigureSettingsSlider(control, getValue, onValueChanged)
 		if not self.qtRefreshing then onValueChanged(value) end
 	end, control)
 	control:RefreshValue()
+end
+
+function QuestTogether:CreateQuestFocusSlider(parent, title, x, y, minimum, maximum, step, getValue, setValue, percent)
+	local slider = CreateSettingsSlider(parent, title, title, x, y, minimum, maximum, step, not percent)
+	ConfigureSettingsSlider(slider, getValue, setValue)
+	return slider
 end
 
 local scrollPanelSequence = 0
@@ -1058,6 +1064,8 @@ function QuestTogether:RefreshGroupsWindow()
 	end
 
 	RefreshCheckboxOptions(self.groupsControls)
+	if self.questFocusOpacitySlider then self.questFocusOpacitySlider:RefreshValue() end
+	if self.questTrackerModeDropdown then RefreshDropdownControl(self.questTrackerModeDropdown, self:GetQuestTrackerModeLabel()) end
 end
 
 -- This callback seam configures only QT-owned controls; live tests pass private
@@ -1922,7 +1930,7 @@ function QuestTogether:InitializeGroupsWindow(parentCategory)
 	if self.groupsFrame then return end
 	local frame = CreateFrame("Frame", "QuestTogetherGroupsPanel")
 	frame.name, frame.parent = L("Groups & Sharing"), "QuestTogether"
-	local _, content = CreateScrollablePanelContent(frame, 680)
+	local _, content = CreateScrollablePanelContent(frame, 860)
 	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", 16, -16)
 	title:SetText(L("Groups & Sharing"))
@@ -1940,6 +1948,7 @@ function QuestTogether:InitializeGroupsWindow(parentCategory)
 	Header(L("Join Requests"), -272)
 	Header(L("Quest Sharing"), -372)
 	Header(L("Party Navigation"), -462)
+	Header(L("Quest Tracker"), -650)
 	self.groupsControls = {
 		sharePartyFocus = CreateCheckbox(content, "sharePartyFocus", L("Share my focused quest"),
 			L("Let your party see your active quest and choose to follow your quest focus. Works independently of public location sharing."), 16, -490),
@@ -1958,6 +1967,23 @@ function QuestTogether:InitializeGroupsWindow(parentCategory)
 		autoAcceptPartyShareRequests = CreateCheckbox(content, "autoAcceptPartyShareRequests", L("Always allow party share requests"),
 			L("Automatically share eligible quests when a party member requests them. Otherwise, ask first."), 16, -400),
 	}
+	self.questTrackerModeDropdown = CreateDropdown(content, L("Display"),
+		L("Choose whether the Quest Tracker shows your focused quest, the quest you hover, or both. In Focus and Hover, hovering temporarily overrides focus."),
+		16, -678, 240, function(dropdown)
+			for _, option in ipairs(self:GetQuestTrackerModeOptions()) do
+				local value = option.value
+				dropdown.entries[#dropdown.entries + 1] = {
+					text = option.text,
+					checked = function() return self:GetQuestTrackerMode() == value end,
+					func = function() self:ApplyOptionsDropdownSelection("questTrackerMode", value) end,
+				}
+			end
+		end)
+	self.questFocusOpacitySlider = self:CreateQuestFocusSlider(content, L("Background opacity"), 16, -766, 0, 100, 5,
+		function() return self:GetQuestFocusOpacity() end, function(value) self:SetOption("questFocusOpacity", value) end, true)
+	local edit = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+	edit:SetPoint("TOPLEFT", 16, -808); edit:SetSize(260, 24); edit:SetText(L("Open HUD Edit Mode"))
+	edit:SetScript("OnClick", function() self:OpenHudEditMode() end)
 	self.groupsFrame = frame
 	frame:SetScript("OnShow", function() QuestTogether:RefreshGroupsWindow() end)
 	self.groupsCategory = RegisterSubcategory(parentCategory, frame, frame.name)

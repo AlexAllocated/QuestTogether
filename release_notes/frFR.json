@@ -1,18 +1,31 @@
 {
-  "source_sha256": "dde724acee0af5e0e2074c15dd0b50a658b1ff8a64a0ed16ea8d35a89acd3432",
+  "source_sha256": "4ff5b2faff7c6fbd85534ddd403694f83fa8332c85e8bcbe2ee93f2346697e9a",
   "notes": {
     "version": "7.3.5",
-    "welcome": "Des marqueurs plus clairs, une navigation plus simple et des informations de groupe plus récentes.",
+    "welcome": "Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi de quête.",
     "sections": [
       {
-        "title": "Cartes et informations sur les joueurs",
+        "title": "Suivi de quête",
+        "illustration": "quest-tracker",
         "items": [
-          "Survolez le bouton QT de la carte pour afficher une légende illustrée des icônes et des états.",
-          "Cliquez avec le bouton gauche sur un point de joueur sur la carte du monde pour le mettre en évidence et ouvrir la carte la plus détaillée disponible pour sa position. Au dernier niveau, le clic gauche ouvre le menu du joueur ; le clic droit l’ouvre toujours.",
-          "La recherche d’un joueur sur la carte ouvre également la carte la plus détaillée disponible. La surbrillance verte persiste lors des changements de carte et disparaît après une minute, à la fermeture de la carte ou à la sélection d’un autre joueur.",
-          "Survoler un joueur, un regroupement ou un point de passage partagé assombrit la carte et les autres marqueurs tout en gardant les marqueurs concernés lumineux. Survoler le bouton QT n’assombrit plus la carte.",
-          "Les halos des joueurs utilisent désormais un effet uniforme. Les infobulles de groupe et les regroupements partagent des informations d’appartenance plus récentes et gèrent mieux les requêtes retardées.",
-          "Les diagnostics du développeur ont été améliorés tout en respectant les préférences de partage des diagnostics et la confidentialité des positions publiques."
+          "Consultez les compteurs et les barres de progression des objectifs de votre groupe dans une fenêtre compacte aux couleurs des classes. Les membres du groupe doivent utiliser QuestTogether pour partager leur progression.",
+          "La progression est actualisée à la réception des annonces du groupe, indépendamment des réglages du chat et des bulles. Les quêtes sans compteur affichent leur état, par exemple prêtes à être rendues."
+        ]
+      },
+      {
+        "title": "Choisir les quêtes à suivre",
+        "illustration": "quest-tracker-display",
+        "items": [
+          "Choisissez Masqué, Quête ciblée, Quête survolée ou Ciblage et survol. Ce dernier mode, activé par défaut, affiche les quêtes survolées dans le suivi des objectifs de Blizzard, puis revient à votre quête ciblée.",
+          "Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres → Groupes et partage → Suivi de quête."
+        ]
+      },
+      {
+        "title": "Adapter la fenêtre à votre interface",
+        "illustration": "quest-tracker-edit-mode",
+        "items": [
+          "Ouvrez le mode Édition du HUD et sélectionnez Suivi de quête pour déplacer ou redimensionner la fenêtre et régler son opacité. Enregistrer, Annuler les modifications et Rétablir les valeurs par défaut incluent le mode d’affichage et la disposition.",
+          "Les sections des joueurs occupent la largeur disponible et défilent si nécessaire. Les thèmes clair et sombre sont pris en charge, avec un texte lisible et des fonds de joueurs légèrement visibles même à opacité nulle."
         ]
       }
     ]

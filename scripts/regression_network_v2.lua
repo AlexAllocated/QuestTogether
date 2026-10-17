@@ -523,3 +523,34 @@ QT:RegisterTest("network v2 accepts a late correlated pong without reviving its 
 	Equal(#received, 1, "late acceptance still requires an owned request identity")
 	Equal(#a:GetVisiblePlayerLocations("map"), 0)
 end, { offline = true })
+
+QT:RegisterTest("native announcement receipt updates subscribed quest progress before chat and bubble presentation", function()
+	local net = QT:CreateTestNetwork({fps=20})
+	local a=net:AddPeer("Alice-Realm",{group="questers"})
+	local b=net:AddPeer("Bob-Realm",{group="questers"})
+	net:StartPeer(a); net:StartPeer(b)
+	local updates, presented = 0, 0
+	function a:QueuePartyQuestCompareRender() updates=updates+1 end
+	local member={name=b.name,state="ready",entries={[42]={questId=42,questTitle="Bandanas"}},supportsObjectives=true}
+	a.partyQuestCompareSession={mode="party",members={member},byName={[b.name]=member},expandedQuestIds={[42]=true}}
+	a:LoadPartyQuestObjectives(member)
+	local record=member.objectiveDetails[42]
+	function a:HandleAnnouncementEvent(event)
+		-- This is where chat option checks, title waits and bubbles start.
+		Equal(record.objectives[1].current,7)
+		presented=presented+1
+	end
+	local data={eventType="QUEST_PROGRESS",senderName=b.name,classFile="MAGE",questId="42",
+		text="Bandanas: 7/8",occurredAt=100,eventFacts=b:BuildAnnouncementFacts("QUEST_PROGRESS",1,"item",false,7,8)}
+	assert(b:Emit("ANN",data,{{distribution="PARTY",requiresGroup=true}}))
+	net:Advance(5)
+	Equal(presented,1)
+	assert(updates>=1)
+	Equal(record.objectives[1].current,7)
+	a:EndCommsWorldSession()
+	Equal(member.objectiveDetails[42],nil)
+	Equal(a.partyQuestProgress,nil)
+	a:ResumeCommsWorldSession()
+	assert(member.objectiveDetails[42] and member.objectiveDetails[42] ~= record)
+	assert(a:HasPendingPartyQuestProgress(member))
+end)
