@@ -51,6 +51,7 @@ INSTRUCTIONS = " ".join([
     "Put new player-facing features first, then fixes; consolidate related changes without repetition.",
     "Explain meaningful defaults, settings and constraints when supported by the evidence.",
     "Include only changes since the baseline; the prior notes are for exclusion, not new features.",
+    "The in-game viewer appends patches to their minor release's page. Never repeat that minor release's feature guide or tip in patch notes.",
     "Do not imply unverified live-client behavior, guaranteed taint safety or recipient delivery.",
     "Do not mention code, tests, maintainer tooling, private URLs or internal implementation details.",
     "Do not invent features or improvements. Do not include version numbers in prose.",

@@ -11,6 +11,13 @@ prerelease versions, needs updated content even when it does not open the notes
 window automatically. Automatic opening is a runtime policy for major/minor
 upgrades, not an exemption from writing patch notes.
 
+The in-game viewer groups a minor release and its patches on one page, with
+the minor release first. Patch notes must describe only that patch's changes:
+do not repeat the minor release's feature guide, tips, or illustrations.
+When correcting older notes, compare the published tags to identify the actual
+patch changes, update every locale in `changelogs/history.json`, then regenerate
+the in-game history and repository changelogs with `check_release_notes.py --write`.
+
 ## Prepare the notes
 
 Use **Actions → Prepare Release Notes → Run workflow** on `main`. It compares

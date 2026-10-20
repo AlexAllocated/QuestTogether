@@ -235,21 +235,21 @@ QT:RegisterTest("release history selects archived locale and browsing never chan
 		{ version = "5.9.2", date = "2026-09-27", locales = { enUS = Notes("5.9.2") } },
 	}
 	assert(a:OpenReleaseNotes())
-	assert(a:ShowReleaseNotesPage(2))
+	assert(a:ShowReleaseNotesPage(1))
 	Equal(a.presentations[#a.presentations].notes, german)
 	Equal(a.db.global.releaseNotesSeenVersion, "7.0.0")
-	assert(a:ShowReleaseNotesPage(3))
-	Equal(a.releaseNotesBrowser.entries[3].englishOnly, true)
+	assert(a:ShowReleaseNotesPage(2))
+	Equal(a.releaseNotesBrowser.entries[2].englishOnly, true)
 	Equal(a.db.global.releaseNotesSeenVersion, "7.0.0")
 	a.renderResult = false
 	Equal(a:ShowReleaseNotesPage(1), false)
-	Equal(a.releaseNotesBrowser.index, 3)
+	Equal(a.releaseNotesBrowser.index, 2)
 	a.renderResult = true
 	assert(a:OpenReleaseNotes())
 	Equal(a.releaseNotesBrowser.index, 1)
 	a.localizationTestLocale = "enGB"
 	assert(a:OpenReleaseNotes())
-	Equal(a.releaseNotesBrowser.entries[2].notes, english)
+	Equal(a.releaseNotesBrowser.entries[1].notes, english)
 end)
 
 QT:RegisterTest("release notes pending work cancels on logout or replacement content", function()
@@ -313,9 +313,38 @@ QT:RegisterTest("silent patches show the previous localized guide without a new 
 	Equal(version, "6.5.3")
 	Equal(a:ShouldShowReleaseNotes(version), false)
 	assert(a:OpenReleaseNotes())
-	Equal(#a.releaseNotesBrowser.entries, 2)
+	Equal(#a.releaseNotesBrowser.entries, 1)
+	Equal(#a.releaseNotesBrowser.entries[1].releases, 2)
 	Equal(a.releaseNotesBrowser.entries[1].version, "6.5.3")
 	Equal(a.db.global.releaseNotesSeenVersion, "6.5.3")
 	a.releaseNotesHistory = {}
 	Equal(a:GetCurrentReleaseNotes(), nil)
+end)
+
+QT:RegisterTest("minor upgrades show the base release and ordered patches on one page", function()
+	local a = Fixture("7.4.10", { releaseNotesSeenVersion = "7.3.8" })
+	a.hasLoggedIn, a.releaseNotesHistory = true, {}
+	-- Deliberately unordered; do not confuse patch 10 with patch 1 or mix majors.
+	for _, version in ipairs({ "7.4.2", "7.3.8", "6.4.1", "7.4.0", "7.4.1", "7.4.2" }) do
+		a.releaseNotesHistory[#a.releaseNotesHistory + 1] = {
+			version = version, locales = { enUS = Notes(version) },
+		}
+	end
+	assert(a:ShouldShowReleaseNotes(a.version))
+	assert(a:OpenReleaseNotes(true))
+	local pages = a.releaseNotesBrowser.entries
+	Equal(#pages, 3)
+	Equal(pages[1].displayVersion, "7.4.0 - 7.4.10")
+	Equal(a.presentations[1].notes.version, "7.4.0")
+	Equal(#pages[1].releases, 4)
+	for i, version in ipairs({ "7.4.0", "7.4.1", "7.4.2", "7.4.10" }) do
+		Equal(pages[1].releases[i].version, version)
+	end
+	Equal(pages[2].version, "7.3.8")
+	Equal(pages[3].version, "6.4.1")
+	Equal(a.releaseNotes.version, "7.4.10")
+	Equal(a.db.global.releaseNotesSeenVersion, "7.4.10")
+	Equal(a:ShouldShowReleaseNotes("7.4.11"), false)
+	assert(a:ShowReleaseNotesPage(2))
+	Equal(a.db.global.releaseNotesSeenVersion, "7.4.10")
 end)

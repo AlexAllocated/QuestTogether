@@ -4,83 +4,38 @@
 
 ## 7.4.3
 
-Klarere Namen und Einstellungen für Quests in der Gruppe.
+Lies jedes Funktionsupdate und seine Patches zusammen.
 
-### Quests in der Gruppe
+### Patchnotes
 
-- Der Questtracker heißt jetzt Gruppen-Zielverfolgung (POT). Anzeigeeinstellungen und Fensterposition bleiben erhalten.
-- Öffne das Gruppenquestlog mit /qt pql. /qt compare funktioniert weiterhin als Alias; Hilfe und Tipps verwenden nun /qt pql.
-- Außerhalb einer Gruppe ausblenden ist im HUD-Bearbeitungsmodus und unter Einstellungen > Gruppen & Teilen > Gruppen-Zielverfolgung verfügbar. Beide Kontrollkästchen steuern dieselbe Einstellung. Bei neuen Profilen und beim Wiederherstellen der Standardwerte ist sie aktiviert; gespeicherte Einstellungen bleiben erhalten.
+- Das Hinweisfenster fasst jetzt jedes kleinere Funktionsupdate und seine Patches auf einer Seite zusammen. Zuerst steht das Funktionsupdate, danach folgen die Patches der Reihe nach mit Version und Datum. Die Verlaufsschaltflächen wechseln zwischen diesen Seiten.
+- Ältere Patchnotes wurden bereinigt: Sie beschreiben ihre eigenen Änderungen, ohne frühere Anleitungen, Tipps oder Bildschirmfotos zu wiederholen. Reine Patchupdates öffnen das Fenster weiterhin nicht automatisch; /qt notes ist jederzeit verfügbar.
 
 ## 7.4.2
 
-Behalte den Questfortschritt deiner Gruppe mit der neuen Gruppen-Zielverfolgung im Blick.
+Textkorrektur für die Patchnotes.
 
-### Gruppen-Zielverfolgung
+### Textkorrektur für die Patchnotes
 
-- Sieh die Zielzähler und Fortschrittsbalken deiner Gruppe in einem kompakten Fenster mit Klassenfarben. Gruppenmitglieder benötigen QuestTogether, um ihren Fortschritt zu teilen.
-- Der Fortschritt wird beim Eintreffen von Gruppenmeldungen aktualisiert, unabhängig von den Anzeigeeinstellungen für Chat und Sprechblasen. Quests ohne Zielzähler zeigen ihren Status, etwa bereit zur Abgabe.
-- Ein Fehler wurde behoben, durch den unerledigte einstufige Ziele in Forever fälschlich einen Fortschritt von 1/1 anzeigten, darunter „Use Walk on Air“. Die Korrektur gilt für die Gruppen-Zielverfolgung und das Gruppenquestlog.
-
-**Forever**
-
-![Gruppen-Zielverfolgung — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTracker.png)
-
-### Wähle, was du verfolgen möchtest
-
-- Wähle Ausgeblendet, Fokussierte Quest, Quest unter dem Mauszeiger oder Fokus und Mauszeiger. Die Standardeinstellung Fokus und Mauszeiger zeigt vorübergehend Quests unter dem Mauszeiger in Blizzards Zielverfolgung und kehrt danach zur fokussierten Quest zurück.
-- Ohne passende Quest bleibt das Fenster ausgeblendet. Ändere den Anzeigemodus im HUD-Bearbeitungsmodus oder unter Einstellungen > Gruppen & Teilen > Gruppen-Zielverfolgung.
-- Aktiviere im HUD-Bearbeitungsmodus „Außerhalb einer Gruppe ausblenden“, um den Tracker beim Solospiel auszublenden. Diese Option ist standardmäßig aus; die Platzierungsvorschau bleibt im Bearbeitungsmodus verfügbar.
-
-**Forever**
-
-![Wähle, was du verfolgen möchtest — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTrackerDisplay.png)
-
-### Passe das Fenster deiner Oberfläche an
-
-- Öffne den HUD-Bearbeitungsmodus und wähle Gruppen-Zielverfolgung, um das Fenster zu verschieben, seine Größe zu ändern und die Hintergrunddeckkraft einzustellen. Speichern, Zurücksetzen und Standard wiederherstellen berücksichtigen Anzeigemodus und Layout.
-- Das Ausrichten an Blizzards Zielverfolgung ist standardmäßig aktiviert und platziert QT direkt an dessen Außenkante. Wenn du QT wegziehst, wird die Ausrichtung deaktiviert und die Größenänderung an der Ecke aktiviert. Aktiviere die Ausrichtung erneut, um die Position zurückzusetzen. Die Regler für Breite und maximale Höhe funktionieren in beiden Modi.
-- Der Tracker passt sich der Höhe seines Inhalts bis zur eingestellten maximalen Höhe an; danach wird gescrollt. Die Standardhöhe beträgt jetzt maximal 600; bereits gespeicherte Größen bleiben erhalten.
-- Die Spielerbereiche nutzen die verfügbare Breite und lassen sich bei Bedarf scrollen. Helles und dunkles Design werden unterstützt. Die klassenfarbene Füllung bleibt unabhängig vom Regler für den Fensterhintergrund konstant bei 25% Deckkraft; der Text bleibt auf transparentem Hintergrund lesbar.
-
-**Forever**
-
-![Passe das Fenster deiner Oberfläche an — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTrackerEditMode.png)
+- Nicht unterstützte Trennzeichen in den Patchnotes wurden durch einfachen Text ersetzt, damit keine leeren Kästchen mehr erscheinen.
 
 ## 7.4.1
 
-Behalte den Questfortschritt deiner Gruppe mit der neuen Gruppen-Zielverfolgung im Blick.
+Korrekturen und Layoutoptionen für die Gruppen-Zielverfolgung.
 
 ### Gruppen-Zielverfolgung
 
-- Sieh die Zielzähler und Fortschrittsbalken deiner Gruppe in einem kompakten Fenster mit Klassenfarben. Gruppenmitglieder benötigen QuestTogether, um ihren Fortschritt zu teilen.
-- Der Fortschritt wird beim Eintreffen von Gruppenmeldungen aktualisiert, unabhängig von den Anzeigeeinstellungen für Chat und Sprechblasen. Quests ohne Zielzähler zeigen ihren Status, etwa bereit zur Abgabe.
 - Ein Fehler wurde behoben, durch den unerledigte einstufige Ziele in Forever fälschlich einen Fortschritt von 1/1 anzeigten, darunter „Use Walk on Air“. Die Korrektur gilt für die Gruppen-Zielverfolgung und das Gruppenquestlog.
-
-**Forever**
-
-![Gruppen-Zielverfolgung — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTracker.png)
 
 ### Wähle, was du verfolgen möchtest
 
-- Wähle Ausgeblendet, Fokussierte Quest, Quest unter dem Mauszeiger oder Fokus und Mauszeiger. Die Standardeinstellung Fokus und Mauszeiger zeigt vorübergehend Quests unter dem Mauszeiger in Blizzards Zielverfolgung und kehrt danach zur fokussierten Quest zurück.
-- Ohne passende Quest bleibt das Fenster ausgeblendet. Ändere den Anzeigemodus im HUD-Bearbeitungsmodus oder unter Einstellungen → Gruppen & Teilen → Gruppen-Zielverfolgung.
 - Aktiviere im HUD-Bearbeitungsmodus „Außerhalb einer Gruppe ausblenden“, um den Tracker beim Solospiel auszublenden. Diese Option ist standardmäßig aus; die Platzierungsvorschau bleibt im Bearbeitungsmodus verfügbar.
-
-**Forever**
-
-![Wähle, was du verfolgen möchtest — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### Passe das Fenster deiner Oberfläche an
 
-- Öffne den HUD-Bearbeitungsmodus und wähle Gruppen-Zielverfolgung, um das Fenster zu verschieben, seine Größe zu ändern und die Hintergrunddeckkraft einzustellen. Speichern, Zurücksetzen und Standard wiederherstellen berücksichtigen Anzeigemodus und Layout.
 - Das Ausrichten an Blizzards Zielverfolgung ist standardmäßig aktiviert und platziert QT direkt an dessen Außenkante. Wenn du QT wegziehst, wird die Ausrichtung deaktiviert und die Größenänderung an der Ecke aktiviert. Aktiviere die Ausrichtung erneut, um die Position zurückzusetzen. Die Regler für Breite und maximale Höhe funktionieren in beiden Modi.
 - Der Tracker passt sich der Höhe seines Inhalts bis zur eingestellten maximalen Höhe an; danach wird gescrollt. Die Standardhöhe beträgt jetzt maximal 600; bereits gespeicherte Größen bleiben erhalten.
-- Die Spielerbereiche nutzen die verfügbare Breite und lassen sich bei Bedarf scrollen. Helles und dunkles Design werden unterstützt. Die klassenfarbene Füllung bleibt unabhängig vom Regler für den Fensterhintergrund konstant bei 25% Deckkraft; der Text bleibt auf transparentem Hintergrund lesbar.
-
-**Forever**
-
-![Passe das Fenster deiner Oberfläche an — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerEditMode.png)
+- Die klassenfarbenen Spielerbereiche behalten jetzt unabhängig vom Regler für den Fensterhintergrund eine konstante Deckkraft von 25%.
 
 ## 7.4.0
 
@@ -98,7 +53,7 @@ Behalte den Questfortschritt deiner Gruppe mit der neuen Gruppen-Zielverfolgung 
 ### Wähle, was du verfolgen möchtest
 
 - Wähle Ausgeblendet, Fokussierte Quest, Quest unter dem Mauszeiger oder Fokus und Mauszeiger. Die Standardeinstellung Fokus und Mauszeiger zeigt vorübergehend Quests unter dem Mauszeiger in Blizzards Zielverfolgung und kehrt danach zur fokussierten Quest zurück.
-- Ohne passende Quest bleibt das Fenster ausgeblendet. Ändere den Anzeigemodus im HUD-Bearbeitungsmodus oder unter Einstellungen → Gruppen & Teilen → Gruppen-Zielverfolgung.
+- Ohne passende Quest bleibt das Fenster ausgeblendet. Ändere den Anzeigemodus im HUD-Bearbeitungsmodus oder unter Einstellungen > Gruppen & Teilen > Gruppen-Zielverfolgung.
 
 **Forever**
 
@@ -230,24 +185,20 @@ Zuverlässigere Questtexte in der Sprache deines Clients.
 
 ## 7.1.2
 
-Entdecke mit hilfreichen Tipps mehr von QuestTogether.
+Einstellungen für Starttipps und eine einfachere Einstellungsseite.
 
 ### QuestTogether-Tipps
 
-- QT zeigt jetzt bei der Anmeldung oder beim Neuladen der Benutzeroberfläche einen Tipp aus einem gemischten Vorrat an. Erst wenn alle Tipps gezeigt wurden, wiederholen sie sich.
 - Du kannst automatische Tipps unter Allgemein auf der Hauptseite der QuestTogether-Einstellungen deaktivieren. /qt tip und /qt hint bleiben verfügbar.
-
-> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.2/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tipp: Gib „/qt tip“ oder „/qt hint“ ein, um jederzeit einen weiteren QuestTogether-Tipp zu sehen.
+- Die Hauptseite der Einstellungen wurde vereinfacht; die Auswahl zwischen hellem und dunklem Design erfolgt jetzt über ein Dropdown-Menü.
 
 ## 7.1.1
 
-Entdecke mit hilfreichen Tipps mehr von QuestTogether.
+Deutlichere Tippsymbole und Farben.
 
 ### QuestTogether-Tipps
 
-- QT zeigt jetzt bei der Anmeldung oder beim Neuladen der Benutzeroberfläche einen Tipp aus einem gemischten Vorrat an. Erst wenn alle Tipps gezeigt wurden, wiederholen sie sich.
-
-> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tipp: Gib „/qt tip“ oder „/qt hint“ ein, um jederzeit einen weiteren QuestTogether-Tipp zu sehen.
+- Tipps verwenden jetzt ein QT-Glühbirnensymbol statt eines nicht unterstützten Emojis, mit goldener Beschriftung und cremefarbenem Text.
 
 ## 7.1.0
 
@@ -405,11 +356,11 @@ Eine Korrektur für fehlende Questsymbole im Gruppenquestlog.
 
 ## 6.5.3
 
-Das Gruppen-Questlog im Detail: Vergleiche Quests, plane das nächste Ziel und folge dem Questfokus eines Mitspielers. Dieser Patch erweitert die Anleitung um drei Screenshots; das Spielverhalten bleibt unverändert. Die Bilder zeigen Forever-Vorschaudaten mit simulierten Mitspielern.
+Drei bebilderte Abschnitte zur Anleitung des Gruppenquestlogs hinzugefügt. Das Spielverhalten bleibt unverändert; die Bilder zeigen simulierte Gruppenmitglieder in Forever.
 
 ### Deine Gruppe auf einen Blick
 
-- Ein Linksklick auf das QT-Minimap-Symbol öffnet oder schließt das Gruppen-Questlog. Deine Spalte bleibt vorn, Klassenfarben unterscheiden Mitspieler und eine Krone kennzeichnet den Anführer. Jede Quest zeigt Besitz, fehlende Teilnehmer und die Anzahl der abgabebereiten Spieler. Teilen und Teilen anfordern erscheinen, wenn unterstützt; Nicht teilbar und Teilbarkeit unbekannt erklären fehlende Aktionen. Es gelten weiterhin Blizzards Regeln und die Voraussetzungen des Empfängers.
+- Der Anleitung wurde ein Übersichtsbild des Gruppenquestlogs hinzugefügt.
 
 **Forever**
 
@@ -417,7 +368,7 @@ Das Gruppen-Questlog im Detail: Vergleiche Quests, plane das nächste Ziel und f
 
 ### Eigene Quest wählen oder Mitspielern folgen
 
-- Die kleinen Questschaltflächen zeigen den Fokus jedes Spielers. Klicke in deiner Spalte, um Blizzards Navigationsquest zu wechseln, oder auf die aktive Quest eines Mitspielers, um ihm zu folgen. Beim Folgen bleibt nur dessen aktive Schaltfläche farbig; aktive Quests anderer Mitspieler bleiben zum Wechseln anklickbar. Neue Fokusdaten werden übernommen, wenn du die Quest hast; Folgen übersteht Neuladen. Fehlt dir die nächste Quest, endet das Folgen und QT bietet das Öffnen des Gruppen-Questlogs an.
+- Ein Bildschirmfoto der Steuerelemente zum Folgen von Quests wurde hinzugefügt.
 
 **Forever**
 
@@ -425,39 +376,19 @@ Das Gruppen-Questlog im Detail: Vergleiche Quests, plane das nächste Ziel und f
 
 ### Fokus bewusst wechseln
 
-- Die Anzeige Folgen: nennt dein Ziel, daneben steht Folgen beenden. Eine eigene Quest oder ein anderer Mitspieler erfordert eine Bestätigung. Auch das Wechseln oder Aufheben des Fokus in Blizzards Questverfolgung fragt nach: QT stellt den bisherigen Fokus während der Entscheidung wieder her. Abbrechen behält das Folgen bei; Fokus ändern übernimmt die Wahl. Hebt der verfolgte Spieler seinen Fokus auf, bleibt deine Quest erhalten. Gruppenaustritt oder Schlachtzugumwandlung beendet das Folgen.
+- Ein Bildschirmfoto der Bestätigung beim Wechsel des Questfokus wurde hinzugefügt.
 
 **Forever**
 
 ![Fokus bewusst wechseln — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFocusWarningForever.png)
 
-### Fortschritt aufklappen und Quests finden
-
-- Klicke eine Questzeile an, um Ziele, Zähler und Fortschrittsbalken jedes Mitglieds aufzuklappen. Mehrere Quests können gleichzeitig offen bleiben. Suche und Filter grenzen nach Besitz, Fortschritt und Aktionen ein. Das Buchsymbol öffnet eine eigene Quest in Blizzards Questlog. Fremder Fortschritt ist eine Momentaufnahme: Prüfe das Alter unter dem Namen und nutze Aktualisieren.
-
-### Folgen ohne echte Gruppe testen
-
-- /qt preview compare kombiniert dein echtes Questlog mit vier simulierten Mitspielern und zusätzlichen fehlenden Quests. Die Fokusschaltflächen ändern deine echte Navigation; Teilen bleibt simuliert. Wähle im Namensmenü eines Mitspielers die nächste Vorschauquest, um Folgen und fehlende Quests zu testen. Blizzards Questverfolgung löst ebenfalls die Bestätigung aus. Beim Schließen wird ein bestehendes Folgen in der echten Gruppe fortgesetzt. /qt preview unfollow zeigt nur den Warndialog.
-
 ## 6.5.2
 
-Klarere Questfokus-Schaltflächen, sichere Wechsel beim Folgen und passende Symbole zur Blizzard-Questverfolgung.
-
-### Klarer Questfokus
-
-- Beim Folgen bleibt nur die aktive Quest des verfolgten Spielers farbig. Ohne Folgen bleiben deine Schaltflächen und die aktiven Quests deiner Mitspieler farbig. Alle anderen sind grau, ohne Transparenz. Aktive Quests von Mitspielern bleiben anklickbar, um das Folgen zu starten oder das Ziel zu wechseln.
-
-### Fokuswechsel bestätigen
-
-- Die Wahl einer eigenen Quest oder eines anderen Mitspielers fragt vor dem Ende des bisherigen Folgens nach. Auch Fokuswechsel oder das Aufheben des Fokus über Blizzards Questverfolgung fragen jetzt nach: QT stellt den bisherigen Fokus während der Entscheidung wieder her. Abbrechen behält das Folgen bei; Fokus ändern übernimmt die Auswahl. Vorschau: /qt preview unfollow.
-
-### Passende Questsymbole
-
-- Der Queststatus nutzt jetzt dieselbe Abschlussabfrage wie Blizzards Questverfolgung. Dadurch zeigen Lieferquests ein Fragezeichen statt eines Fortschrittssymbols. Der korrigierte Bereit-Status wird auch mit dem Gruppen-Questlog geteilt.
+Korrektur der Vorschau zum Folgen von Quests.
 
 ### Mit eigenen Quests testen
 
-- Die Vergleichsvorschau nutzt dein echtes Questlog mit vier simulierten Mitspielern und zusätzlichen fehlenden Quests. Fokuswechsel ändern deine echte Blizzard-Navigation; Teilen bleibt simuliert. Über das Namensmenü eines Mitspielers wechselst du dessen Fokus weiter. Statt einer leeren Aktionsspalte zeigen nicht teilbare Quests nun zentriert Nicht teilbar oder Teilbarkeit unbekannt. Beim Schließen der Vorschau wird ein bestehendes Folgen in der echten Gruppe fortgesetzt.
+- Beim Schließen der Vorschau des Gruppenquestlogs wird das bestehende Folgen in deiner echten Gruppe jetzt fortgesetzt.
 
 ## 6.5.1
 

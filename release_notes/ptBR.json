@@ -1,15 +1,14 @@
 {
-  "source_sha256": "066eb5434e07adbcc2e72438e7c9e00afb7696cd50047720199ef23ab8d8cca5",
+  "source_sha256": "cf004af512809b676af879bb70f6223c608d7adf93891a57065e949c68888464",
   "notes": {
     "version": "7.4.3",
-    "welcome": "Nomes e controles mais claros para missões em grupo.",
+    "welcome": "Leia cada atualização e seus patches na mesma página.",
     "sections": [
       {
-        "title": "Missões em grupo",
+        "title": "Notas da atualização",
         "items": [
-          "O rastreador de missões agora se chama Rastreador de objetivos do grupo (POT). As configurações de exibição e a posição da janela são preservadas.",
-          "Use /qt pql para abrir o registro de missões do grupo. /qt compare continua funcionando como um alias; a ajuda e as dicas agora usam /qt pql.",
-          "Ocultar fora de um grupo está disponível no modo de edição do HUD e em Configurações > Grupos e compartilhamento > Rastreador de objetivos do grupo. As duas caixas controlam a mesma opção. Ela vem ativada em novos perfis e ao restaurar os padrões; as escolhas salvas são preservadas."
+          "A janela agora agrupa cada versão secundária e seus patches em uma página, começando pela versão secundária e acrescentando os patches em ordem, com títulos indicando versão e data. A navegação do histórico alterna entre essas páginas agrupadas.",
+          "As notas antigas agora mostram as mudanças de cada patch sem repetir guias, dicas ou capturas anteriores. Atualizações apenas de patch continuam sem abrir a janela automaticamente; use /qt notes quando quiser."
         ]
       }
     ]

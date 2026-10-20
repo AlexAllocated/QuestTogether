@@ -1,15 +1,14 @@
 {
-  "source_sha256": "066eb5434e07adbcc2e72438e7c9e00afb7696cd50047720199ef23ab8d8cca5",
+  "source_sha256": "cf004af512809b676af879bb70f6223c608d7adf93891a57065e949c68888464",
   "notes": {
     "version": "7.4.3",
-    "welcome": "Nomi e controlli più chiari per le missioni di gruppo.",
+    "welcome": "Leggi ogni aggiornamento e le sue patch nella stessa pagina.",
     "sections": [
       {
-        "title": "Missioni di gruppo",
+        "title": "Note di aggiornamento",
         "items": [
-          "Tracciamento missioni ora si chiama Tracciamento obiettivi del gruppo (POT). Le impostazioni di visualizzazione e la posizione della finestra vengono mantenute.",
-          "Usa /qt pql per aprire il registro missioni del gruppo. /qt compare continua a funzionare come alias; la guida e i suggerimenti ora usano /qt pql.",
-          "Nascondi quando non sei in gruppo è disponibile nella modalità Modifica HUD e in Impostazioni > Gruppi e condivisione > Tracciamento obiettivi del gruppo. Entrambe le caselle controllano la stessa impostazione. È attiva nei nuovi profili e dopo il ripristino dei valori predefiniti; le scelte salvate vengono mantenute."
+          "La finestra ora raggruppa ogni versione minore e le sue patch in una pagina: prima la versione minore, poi le patch in ordine, con intestazioni che indicano versione e data. La navigazione della cronologia passa tra queste pagine raggruppate.",
+          "Le note delle vecchie patch ora descrivono le proprie modifiche senza ripetere guide, consigli o schermate precedenti. Gli aggiornamenti contenenti solo patch continuano a non aprire automaticamente la finestra; usa /qt notes quando vuoi."
         ]
       }
     ]

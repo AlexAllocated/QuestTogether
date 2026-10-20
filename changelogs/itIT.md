@@ -4,83 +4,38 @@
 
 ## 7.4.3
 
-Nomi e controlli più chiari per le missioni di gruppo.
+Leggi ogni aggiornamento e le sue patch nella stessa pagina.
 
-### Missioni di gruppo
+### Note di aggiornamento
 
-- Tracciamento missioni ora si chiama Tracciamento obiettivi del gruppo (POT). Le impostazioni di visualizzazione e la posizione della finestra vengono mantenute.
-- Usa /qt pql per aprire il registro missioni del gruppo. /qt compare continua a funzionare come alias; la guida e i suggerimenti ora usano /qt pql.
-- Nascondi quando non sei in gruppo è disponibile nella modalità Modifica HUD e in Impostazioni > Gruppi e condivisione > Tracciamento obiettivi del gruppo. Entrambe le caselle controllano la stessa impostazione. È attiva nei nuovi profili e dopo il ripristino dei valori predefiniti; le scelte salvate vengono mantenute.
+- La finestra ora raggruppa ogni versione minore e le sue patch in una pagina: prima la versione minore, poi le patch in ordine, con intestazioni che indicano versione e data. La navigazione della cronologia passa tra queste pagine raggruppate.
+- Le note delle vecchie patch ora descrivono le proprie modifiche senza ripetere guide, consigli o schermate precedenti. Gli aggiornamenti contenenti solo patch continuano a non aprire automaticamente la finestra; usa /qt notes quando vuoi.
 
 ## 7.4.2
 
-Tieni sotto controllo i progressi delle missioni del gruppo con il nuovo tracciamento obiettivi del gruppo.
+Correzione del testo delle note di aggiornamento.
 
-### Tracciamento obiettivi del gruppo
+### Correzione del testo delle note di aggiornamento
 
-- Visualizza i contatori e le barre di avanzamento degli obiettivi del gruppo in una finestra compatta con i colori delle classi. I membri del gruppo devono usare QuestTogether per condividere i progressi.
-- I progressi si aggiornano alla ricezione degli annunci del gruppo, indipendentemente dalle impostazioni di chat e fumetti. Le missioni senza contatori mostrano il proprio stato, ad esempio pronte per la consegna.
-- Corretto un errore per cui gli obiettivi non completati con un solo passaggio mostravano erroneamente un progresso di 1/1 in Forever, incluso “Use Walk on Air”. La correzione riguarda il tracciamento obiettivi del gruppo e il registro missioni del gruppo.
-
-**Forever**
-
-![Tracciamento obiettivi del gruppo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTracker.png)
-
-### Scegli cosa seguire
-
-- Scegli Nascosto, Missione selezionata, Missione sotto il cursore o Selezione e cursore. La modalità predefinita, Selezione e cursore, mostra le missioni sotto il mouse nel tracciamento obiettivi di Blizzard, poi torna alla missione selezionata.
-- Senza una missione corrispondente, la finestra resta nascosta. Cambia modalità nella modalità Modifica HUD o in Impostazioni > Gruppi e condivisione > Tracciamento obiettivi del gruppo.
-- Attiva Nascondi quando non sei in gruppo nella modalità Modifica HUD per nascondere il tracciamento quando giochi da solo. L’opzione è disattivata per impostazione predefinita e l’anteprima di posizionamento resta disponibile in modalità Modifica.
-
-**Forever**
-
-![Scegli cosa seguire — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTrackerDisplay.png)
-
-### Adattalo alla tua interfaccia
-
-- Apri la modalità Modifica HUD e seleziona Tracciamento obiettivi del gruppo per spostare o ridimensionare la finestra e regolare l’opacità dello sfondo. Salva, Annulla modifiche e Ripristina predefiniti includono la modalità di visualizzazione e la disposizione.
-- L’aggancio al tracciatore obiettivi di Blizzard è attivo per impostazione predefinita e posiziona QT a filo del suo bordo esterno. Trascinare QT altrove disattiva l’aggancio e permette di ridimensionarlo dall’angolo. Riattiva l’aggancio per ripristinare la posizione; i cursori di larghezza e altezza massima funzionano in entrambe le modalità.
-- Il tracciamento adatta l’altezza al contenuto fino all’altezza massima configurata, poi consente lo scorrimento. L’altezza massima predefinita è ora 600; le dimensioni già salvate vengono mantenute.
-- Le sezioni dei giocatori occupano la larghezza disponibile e scorrono quando necessario. Sono supportati i temi chiaro e scuro. Il riempimento del colore di classe mantiene un’opacità costante del 25%, indipendente dal cursore dello sfondo della finestra, con testo leggibile su sfondi trasparenti.
-
-**Forever**
-
-![Adattalo alla tua interfaccia — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTrackerEditMode.png)
+- I separatori non supportati nelle note sono stati sostituiti con testo semplice per evitare che appaiano come quadrati vuoti.
 
 ## 7.4.1
 
-Tieni sotto controllo i progressi delle missioni del gruppo con il nuovo tracciamento obiettivi del gruppo.
+Correzioni e opzioni di disposizione del tracciamento obiettivi del gruppo.
 
 ### Tracciamento obiettivi del gruppo
 
-- Visualizza i contatori e le barre di avanzamento degli obiettivi del gruppo in una finestra compatta con i colori delle classi. I membri del gruppo devono usare QuestTogether per condividere i progressi.
-- I progressi si aggiornano alla ricezione degli annunci del gruppo, indipendentemente dalle impostazioni di chat e fumetti. Le missioni senza contatori mostrano il proprio stato, ad esempio pronte per la consegna.
 - Corretto un errore per cui gli obiettivi non completati con un solo passaggio mostravano erroneamente un progresso di 1/1 in Forever, incluso “Use Walk on Air”. La correzione riguarda il tracciamento obiettivi del gruppo e il registro missioni del gruppo.
-
-**Forever**
-
-![Tracciamento obiettivi del gruppo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTracker.png)
 
 ### Scegli cosa seguire
 
-- Scegli Nascosto, Missione selezionata, Missione sotto il cursore o Selezione e cursore. La modalità predefinita, Selezione e cursore, mostra le missioni sotto il mouse nel tracciamento obiettivi di Blizzard, poi torna alla missione selezionata.
-- Senza una missione corrispondente, la finestra resta nascosta. Cambia modalità nella modalità Modifica HUD o in Impostazioni → Gruppi e condivisione → Tracciamento obiettivi del gruppo.
 - Attiva Nascondi quando non sei in gruppo nella modalità Modifica HUD per nascondere il tracciamento quando giochi da solo. L’opzione è disattivata per impostazione predefinita e l’anteprima di posizionamento resta disponibile in modalità Modifica.
-
-**Forever**
-
-![Scegli cosa seguire — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### Adattalo alla tua interfaccia
 
-- Apri la modalità Modifica HUD e seleziona Tracciamento obiettivi del gruppo per spostare o ridimensionare la finestra e regolare l’opacità dello sfondo. Salva, Annulla modifiche e Ripristina predefiniti includono la modalità di visualizzazione e la disposizione.
 - L’aggancio al tracciatore obiettivi di Blizzard è attivo per impostazione predefinita e posiziona QT a filo del suo bordo esterno. Trascinare QT altrove disattiva l’aggancio e permette di ridimensionarlo dall’angolo. Riattiva l’aggancio per ripristinare la posizione; i cursori di larghezza e altezza massima funzionano in entrambe le modalità.
 - Il tracciamento adatta l’altezza al contenuto fino all’altezza massima configurata, poi consente lo scorrimento. L’altezza massima predefinita è ora 600; le dimensioni già salvate vengono mantenute.
-- Le sezioni dei giocatori occupano la larghezza disponibile e scorrono quando necessario. Sono supportati i temi chiaro e scuro. Il riempimento del colore di classe mantiene un’opacità costante del 25%, indipendente dal cursore dello sfondo della finestra, con testo leggibile su sfondi trasparenti.
-
-**Forever**
-
-![Adattalo alla tua interfaccia — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerEditMode.png)
+- Le sezioni dei giocatori nei colori di classe mantengono ora un’opacità di riempimento costante del 25%, indipendente dal cursore dello sfondo della finestra.
 
 ## 7.4.0
 
@@ -98,7 +53,7 @@ Tieni sotto controllo i progressi delle missioni del gruppo con il nuovo traccia
 ### Scegli cosa seguire
 
 - Scegli Nascosto, Missione selezionata, Missione sotto il cursore o Selezione e cursore. La modalità predefinita, Selezione e cursore, mostra le missioni sotto il mouse nel tracciamento obiettivi di Blizzard, poi torna alla missione selezionata.
-- Senza una missione corrispondente, la finestra resta nascosta. Cambia modalità nella modalità Modifica HUD o in Impostazioni → Gruppi e condivisione → Tracciamento obiettivi del gruppo.
+- Senza una missione corrispondente, la finestra resta nascosta. Cambia modalità nella modalità Modifica HUD o in Impostazioni > Gruppi e condivisione > Tracciamento obiettivi del gruppo.
 
 **Forever**
 
@@ -230,24 +185,20 @@ Testi delle missioni più affidabili nella lingua del tuo client.
 
 ## 7.1.2
 
-Scopri altre funzionalità di QuestTogether con consigli utili.
+Controllo dei consigli all’avvio e impostazioni semplificate.
 
 ### Consigli di QuestTogether
 
-- QT ora mostra un consiglio all’accesso o al ricaricamento dell’interfaccia, pescando da un elenco mescolato senza ripetizioni finché non sono stati mostrati tutti.
 - Puoi disattivare i consigli automatici in Generale nella pagina principale delle impostazioni di QuestTogether. /qt tip e /qt hint restano disponibili.
-
-> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.2/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Consiglio: Digita «/qt tip» o «/qt hint» per vedere un altro consiglio di QuestTogether quando vuoi.
+- La pagina principale delle impostazioni è stata semplificata e la scelta del tema chiaro o scuro ora usa un menu a discesa.
 
 ## 7.1.1
 
-Scopri altre funzionalità di QuestTogether con consigli utili.
+Icone e colori più chiari per i consigli.
 
 ### Consigli di QuestTogether
 
-- QT ora mostra un consiglio all’accesso o al ricaricamento dell’interfaccia, pescando da un elenco mescolato senza ripetizioni finché non sono stati mostrati tutti.
-
-> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Consiglio: Digita «/qt tip» o «/qt hint» per vedere un altro consiglio di QuestTogether quando vuoi.
+- I consigli ora usano un’icona QT con una lampadina al posto di un’emoji non supportata, con etichetta dorata e testo color crema.
 
 ## 7.1.0
 
@@ -405,11 +356,11 @@ Una correzione per le icone delle missioni mancanti nel registro missioni del gr
 
 ## 6.5.3
 
-Scopri il registro delle missioni del gruppo: confronta le missioni, coordina il prossimo obiettivo e segui la missione attiva di un compagno. Questa patch amplia la guida con tre immagini; il funzionamento resta invariato. Le immagini mostrano l’anteprima di Forever con compagni simulati.
+Aggiunte tre sezioni illustrate alla guida del registro missioni del gruppo. Il funzionamento in gioco non cambia; le schermate usano compagni simulati su Forever.
 
 ### Il gruppo a colpo d’occhio
 
-- Un clic sinistro sull’icona QT della minimappa apre o chiude il registro. La tua colonna resta per prima, i colori di classe distinguono i compagni e una corona indica il capogruppo. Ogni missione mostra chi la possiede, a chi manca e quanti possono consegnarla. Condividi e Richiedi condivisione appaiono quando supportati; Non condivisibile e Condivisione sconosciuta spiegano le azioni assenti. Restano validi le regole Blizzard e i requisiti del destinatario.
+- Aggiunta alla guida una schermata panoramica del registro missioni del gruppo.
 
 **Forever**
 
@@ -417,7 +368,7 @@ Scopri il registro delle missioni del gruppo: confronta le missioni, coordina il
 
 ### Scegli una missione o segui un compagno
 
-- I piccoli pulsanti mostrano la missione attiva di ogni giocatore. Clicca nella tua colonna per cambiare la missione di navigazione Blizzard o sulla missione attiva di un compagno per seguirlo. Durante il seguito solo il suo pulsante attivo resta colorato; quelli attivi degli altri restano cliccabili per cambiare bersaglio. Il seguito applica le nuove missioni che possiedi e sopravvive ai ricaricamenti. Se la prossima missione manca, QT interrompe il seguito e propone di aprire il registro del gruppo.
+- Aggiunta una schermata dei controlli per seguire una missione.
 
 **Forever**
 
@@ -425,39 +376,19 @@ Scopri il registro delle missioni del gruppo: confronta le missioni, coordina il
 
 ### Conferma il cambio di obiettivo
 
-- L’indicatore del seguito identifica il compagno, con il pulsante per interrompere accanto. Scegliere una tua missione o un altro compagno richiede conferma. Anche cambiare o rimuovere la missione attiva dal tracciatore Blizzard: QT ripristina quella seguita mentre decidi. Annulla mantiene il seguito; Cambia obiettivo applica la scelta. Se il compagno rimuove il suo obiettivo, la tua missione resta invariata. Uscire dal gruppo o convertirlo in incursione interrompe il seguito.
+- Aggiunta una schermata della conferma di cambio della missione in primo piano.
 
 **Forever**
 
 ![Conferma il cambio di obiettivo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFocusWarningForever.png)
 
-### Espandi i progressi e trova le missioni
-
-- Clicca una riga per espandere obiettivi, contatori e barre di ogni membro. Più missioni possono restare aperte. Ricerca e Filtri limitano la lista per possesso, avanzamento e azioni. Il libro apre una tua missione nel registro Blizzard. I progressi remoti sono un’istantanea: controllane l’età sotto il nome e usa Aggiorna.
-
-### Prova senza un vero gruppo
-
-- /qt preview compare combina il tuo vero registro con quattro compagni simulati e missioni aggiuntive mancanti. I pulsanti cambiano la navigazione reale; condividere resta simulato. Il menu del nome di un compagno permette di passare alla sua prossima missione per provare il seguito e le missioni mancanti. Il tracciatore Blizzard attiva anche la conferma. Chiudendo l’anteprima riprende il seguito nel gruppo reale. /qt preview unfollow mostra solo il dialogo di avvertimento.
-
 ## 6.5.2
 
-Pulsanti delle missioni più chiari, conferme durante il seguito e icone coerenti con il tracciatore Blizzard.
-
-### Comandi più chiari
-
-- Quando segui un giocatore, solo il pulsante della sua missione attiva resta colorato. Senza seguito, i tuoi pulsanti e le missioni attive dei compagni restano colorati. Gli altri pulsanti sono grigi, senza trasparenza. Le missioni attive dei compagni restano cliccabili per iniziare a seguirli o cambiare giocatore.
-
-### Conferma prima di cambiare
-
-- Scegliere una propria missione o un altro compagno richiede conferma prima di interrompere il seguito. Anche cambiare o rimuovere la missione attiva dal tracciatore Blizzard richiede conferma: QT ripristina la missione seguita mentre decidi. Annulla mantiene il seguito; Cambia obiettivo applica la scelta. Anteprima: /qt preview unfollow.
-
-### Icone coerenti
-
-- Lo stato delle missioni usa ora la stessa verifica di completamento del tracciatore Blizzard, correggendo le missioni di consegna che mostravano un’icona di avanzamento invece di un punto interrogativo. Lo stato Pronto corretto viene incluso anche nei dati condivisi del registro del gruppo.
+Correzione dell’anteprima del seguito delle missioni.
 
 ### Prova con le tue missioni
 
-- L’anteprima usa il tuo vero registro con quattro compagni simulati e missioni aggiuntive mancanti. I comandi cambiano la tua navigazione Blizzard reale; la condivisione resta simulata. Usa il menu del nome di un compagno per cambiare la sua missione attiva. La colonna delle azioni mostra ora Non condivisibile o Condivisione sconosciuta, centrato, invece di rimanere vuota. Chiudendo l’anteprima riprende il seguito esistente nel gruppo reale.
+- Chiudere l’anteprima del registro missioni del gruppo ora riprende il seguito già attivo nel tuo gruppo reale.
 
 ## 6.5.1
 

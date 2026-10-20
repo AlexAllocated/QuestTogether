@@ -4,14 +4,13 @@ local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
 	version = "7.4.3",
-	welcome = "Clearer names and controls for party questing.",
+	welcome = "Read each feature update and its patches together.",
 	sections = {
 		{
-			title = "Party questing",
+			title = "Grouped update history",
 			items = {
-				"Quest Tracker is now Party Objective Tracker (POT). Existing display settings and window placement are preserved.",
-				"Use /qt pql to open Party Quest Log. /qt compare still works as an alias; help and tips now use /qt pql.",
-				"Hide when not in a party is available in both HUD Edit Mode and Settings > Groups & Sharing > Party Objective Tracker. Both checkboxes control the same setting. It defaults on for new profiles and Reset to Default; existing saved choices are preserved.",
+				"The notes window now groups each minor release and its patches on one page, starting with the minor release and appending patches in order under dated version headings. History navigation moves between these grouped pages.",
+				"Cleaned up older patch notes to show their own changes without repeating the earlier feature guides, tips, or screenshots. Patch-only updates still do not open the window automatically; use /qt notes anytime.",
 			},
 		},
 	},

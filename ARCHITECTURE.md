@@ -267,6 +267,14 @@ the viewer calls the same hint formatter inside a separate chat-style card.
 Web notes render that example as an illustrated blockquote; Discord uses the same
 icon beside the localized tip label in a separate embed.
 
+The in-game release-note catalog groups releases by major/minor series. Each
+page starts with the earliest available release in that series and appends its
+patches in version order, retaining each release's date, translation fallback,
+tips and illustrations. History navigation selects series rather than individual
+patches. Successfully opening the combined page acknowledges the latest notes
+version; automatic presentation remains gated on a new major/minor series.
+Canonical notes, web changelogs and Discord posts remain individual releases.
+
 ## Communication generation 2
 
 The only gameplay prefix is `QuestTogether2`. Existing global and regional chat

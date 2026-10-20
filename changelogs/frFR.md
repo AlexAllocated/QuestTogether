@@ -4,83 +4,38 @@
 
 ## 7.4.3
 
-Des noms et réglages plus clairs pour les quêtes en groupe.
+Lisez chaque mise à jour et ses correctifs sur une même page.
 
-### Quêtes en groupe
+### Notes de mise à jour
 
-- Le suivi de quête devient le suivi des objectifs du groupe (POT). Les réglages d’affichage et la position de la fenêtre sont conservés.
-- Utilisez /qt pql pour ouvrir le journal de quêtes du groupe. /qt compare reste un alias ; l’aide et les conseils utilisent désormais /qt pql.
-- Le masquage hors groupe est disponible dans le mode Édition du HUD et dans Paramètres > Groupes et partage > Suivi des objectifs du groupe. Les deux cases contrôlent le même réglage. Il est activé pour les nouveaux profils et lors du rétablissement des valeurs par défaut ; les choix enregistrés sont conservés.
+- La fenêtre regroupe désormais chaque version mineure et ses correctifs sur une page. La version mineure apparaît en premier, suivie des correctifs dans l’ordre, avec leur version et leur date. La navigation dans l’historique passe d’un groupe à l’autre.
+- Les anciennes notes de correctifs décrivent maintenant leurs propres changements sans répéter les guides, astuces ou captures précédents. Les correctifs seuls n’ouvrent toujours pas la fenêtre automatiquement ; utilisez /qt notes à tout moment.
 
 ## 7.4.2
 
-Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi des objectifs du groupe.
+Correction du texte des notes de mise à jour.
 
-### Suivi des objectifs du groupe
+### Correction du texte des notes de mise à jour
 
-- Consultez les compteurs et les barres de progression des objectifs de votre groupe dans une fenêtre compacte aux couleurs des classes. Les membres du groupe doivent utiliser QuestTogether pour partager leur progression.
-- La progression est actualisée à la réception des annonces du groupe, indépendamment des réglages du chat et des bulles. Les quêtes sans compteur affichent leur état, par exemple prêtes à être rendues.
-- Correction des objectifs à une seule étape qui affichaient à tort une progression de 1/1 dans Forever, notamment « Use Walk on Air ». La correction s’applique au suivi des objectifs du groupe et au journal de quêtes du groupe.
-
-**Forever**
-
-![Suivi des objectifs du groupe — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTracker.png)
-
-### Choisir les quêtes à suivre
-
-- Choisissez Masqué, Quête ciblée, Quête survolée ou Ciblage et survol. Ce dernier mode, activé par défaut, affiche les quêtes survolées dans le suivi des objectifs de Blizzard, puis revient à votre quête ciblée.
-- Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres > Groupes et partage > Suivi des objectifs du groupe.
-- Activez Masquer hors groupe dans le mode Édition du HUD pour masquer le suivi en solo. Cette option est désactivée par défaut et l’aperçu de placement reste disponible en mode Édition.
-
-**Forever**
-
-![Choisir les quêtes à suivre — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTrackerDisplay.png)
-
-### Adapter la fenêtre à votre interface
-
-- Ouvrez le mode Édition du HUD et sélectionnez Suivi des objectifs du groupe pour déplacer ou redimensionner la fenêtre et régler son opacité. Enregistrer, Annuler les modifications et Rétablir les valeurs par défaut incluent le mode d’affichage et la disposition.
-- L’alignement sur le suivi des objectifs de Blizzard est activé par défaut et place QT contre son bord extérieur. Éloigner QT en le faisant glisser désactive l’alignement et permet le redimensionnement par le coin. Réactivez l’alignement pour réinitialiser sa position ; les curseurs de largeur et de hauteur maximale restent disponibles dans les deux modes.
-- Le suivi adapte sa hauteur au contenu jusqu’à la hauteur maximale configurée, puis défile. La hauteur maximale par défaut est désormais de 600 ; les tailles enregistrées sont conservées.
-- Les sections des joueurs occupent la largeur disponible et défilent si nécessaire. Les thèmes clair et sombre sont pris en charge. Le fond aux couleurs de classe conserve une opacité constante de 25 %, indépendante du curseur du fond de la fenêtre, avec un texte lisible sur fond transparent.
-
-**Forever**
-
-![Adapter la fenêtre à votre interface — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTrackerEditMode.png)
+- Les séparateurs non pris en charge dans les notes ont été remplacés par du texte simple pour éviter les carrés vides.
 
 ## 7.4.1
 
-Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi des objectifs du groupe.
+Corrections et options de disposition du suivi des objectifs du groupe.
 
 ### Suivi des objectifs du groupe
 
-- Consultez les compteurs et les barres de progression des objectifs de votre groupe dans une fenêtre compacte aux couleurs des classes. Les membres du groupe doivent utiliser QuestTogether pour partager leur progression.
-- La progression est actualisée à la réception des annonces du groupe, indépendamment des réglages du chat et des bulles. Les quêtes sans compteur affichent leur état, par exemple prêtes à être rendues.
 - Correction des objectifs à une seule étape qui affichaient à tort une progression de 1/1 dans Forever, notamment « Use Walk on Air ». La correction s’applique au suivi des objectifs du groupe et au journal de quêtes du groupe.
-
-**Forever**
-
-![Suivi des objectifs du groupe — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTracker.png)
 
 ### Choisir les quêtes à suivre
 
-- Choisissez Masqué, Quête ciblée, Quête survolée ou Ciblage et survol. Ce dernier mode, activé par défaut, affiche les quêtes survolées dans le suivi des objectifs de Blizzard, puis revient à votre quête ciblée.
-- Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres → Groupes et partage → Suivi des objectifs du groupe.
 - Activez Masquer hors groupe dans le mode Édition du HUD pour masquer le suivi en solo. Cette option est désactivée par défaut et l’aperçu de placement reste disponible en mode Édition.
-
-**Forever**
-
-![Choisir les quêtes à suivre — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### Adapter la fenêtre à votre interface
 
-- Ouvrez le mode Édition du HUD et sélectionnez Suivi des objectifs du groupe pour déplacer ou redimensionner la fenêtre et régler son opacité. Enregistrer, Annuler les modifications et Rétablir les valeurs par défaut incluent le mode d’affichage et la disposition.
 - L’alignement sur le suivi des objectifs de Blizzard est activé par défaut et place QT contre son bord extérieur. Éloigner QT en le faisant glisser désactive l’alignement et permet le redimensionnement par le coin. Réactivez l’alignement pour réinitialiser sa position ; les curseurs de largeur et de hauteur maximale restent disponibles dans les deux modes.
 - Le suivi adapte sa hauteur au contenu jusqu’à la hauteur maximale configurée, puis défile. La hauteur maximale par défaut est désormais de 600 ; les tailles enregistrées sont conservées.
-- Les sections des joueurs occupent la largeur disponible et défilent si nécessaire. Les thèmes clair et sombre sont pris en charge. Le fond aux couleurs de classe conserve une opacité constante de 25 %, indépendante du curseur du fond de la fenêtre, avec un texte lisible sur fond transparent.
-
-**Forever**
-
-![Adapter la fenêtre à votre interface — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerEditMode.png)
+- Les sections des joueurs aux couleurs des classes conservent désormais une opacité de remplissage constante de 25%, indépendamment du curseur du fond de la fenêtre.
 
 ## 7.4.0
 
@@ -98,7 +53,7 @@ Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi
 ### Choisir les quêtes à suivre
 
 - Choisissez Masqué, Quête ciblée, Quête survolée ou Ciblage et survol. Ce dernier mode, activé par défaut, affiche les quêtes survolées dans le suivi des objectifs de Blizzard, puis revient à votre quête ciblée.
-- Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres → Groupes et partage → Suivi des objectifs du groupe.
+- Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres > Groupes et partage > Suivi des objectifs du groupe.
 
 **Forever**
 
@@ -230,24 +185,20 @@ Des textes de quête plus fiables dans la langue de votre client.
 
 ## 7.1.2
 
-Découvrez davantage de fonctionnalités de QuestTogether grâce à des astuces utiles.
+Réglage des astuces au démarrage et paramètres simplifiés.
 
 ### Astuces QuestTogether
 
-- QT affiche désormais une astuce à la connexion ou au rechargement de l’interface, tirée d’une liste mélangée sans répétition tant que toutes les astuces n’ont pas été affichées.
 - Vous pouvez désactiver les astuces automatiques dans Général sur la page principale des paramètres de QuestTogether. /qt tip et /qt hint restent disponibles.
-
-> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.2/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Astuce : Saisissez « /qt tip » ou « /qt hint » pour voir une autre astuce QuestTogether quand vous le souhaitez.
+- La page principale des paramètres a été simplifiée et le choix du thème clair ou sombre utilise désormais une liste déroulante.
 
 ## 7.1.1
 
-Découvrez davantage de fonctionnalités de QuestTogether grâce à des astuces utiles.
+Des icônes et des couleurs plus lisibles pour les astuces.
 
 ### Astuces QuestTogether
 
-- QT affiche désormais une astuce à la connexion ou au rechargement de l’interface, tirée d’une liste mélangée sans répétition tant que toutes les astuces n’ont pas été affichées.
-
-> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Astuce : Saisissez « /qt tip » ou « /qt hint » pour voir une autre astuce QuestTogether quand vous le souhaitez.
+- Les astuces utilisent désormais une icône QT avec une ampoule à la place d’un emoji non pris en charge, avec un libellé doré et un texte crème.
 
 ## 7.1.0
 
@@ -405,11 +356,11 @@ Correction des icônes de quête manquantes dans le journal de quêtes du groupe
 
 ## 6.5.3
 
-Découvrez le journal de quêtes du groupe : comparez les quêtes, préparez le prochain objectif et suivez la cible d’un coéquipier. Ce patch enrichit le guide avec trois captures, sans changer le fonctionnement du jeu. Les images montrent un aperçu Forever avec des coéquipiers simulés.
+Ajout de trois sections illustrées au guide du journal de quêtes du groupe. Le fonctionnement en jeu reste inchangé ; les captures utilisent des équipiers simulés sur Forever.
 
 ### Votre groupe en un coup d’œil
 
-- Un clic gauche sur l’icône QT de la minicarte ouvre ou ferme le journal. Votre colonne reste en premier, les couleurs de classe distinguent les joueurs et une couronne indique le chef. Chaque quête affiche qui la possède, qui ne l’a pas et combien de joueurs peuvent la rendre. Partager et Demander le partage apparaissent quand ils sont disponibles ; Non partageable et Partage possible inconnu expliquent leur absence. Les règles Blizzard et les prérequis du destinataire restent applicables.
+- Ajout au guide d’une capture présentant le journal de quêtes du groupe.
 
 **Forever**
 
@@ -417,7 +368,7 @@ Découvrez le journal de quêtes du groupe : comparez les quêtes, préparez le 
 
 ### Choisissez une quête ou suivez un coéquipier
 
-- Les petits boutons indiquent la quête ciblée de chaque joueur. Cliquez dans votre colonne pour changer votre quête de navigation Blizzard, ou sur la quête active d’un coéquipier pour le suivre. Pendant le suivi, seul son bouton actif reste coloré ; les quêtes actives des autres restent cliquables pour changer de cible. Le suivi applique les nouvelles cibles si vous possédez les quêtes et persiste après rechargement. Si la prochaine quête vous manque, QT arrête le suivi et propose d’ouvrir le journal du groupe.
+- Ajout d’une capture des commandes de suivi de quête.
 
 **Forever**
 
@@ -425,39 +376,19 @@ Découvrez le journal de quêtes du groupe : comparez les quêtes, préparez le 
 
 ### Changez de cible en connaissance de cause
 
-- L’indicateur de suivi nomme votre cible, avec Arrêter le suivi à côté. Choisir votre propre quête ou un autre coéquipier demande confirmation. Changer ou effacer la cible dans le suivi Blizzard aussi : QT rétablit la cible suivie pendant votre décision. Annuler conserve le suivi ; Changer de cible applique le choix. Si le joueur suivi efface sa cible, votre quête reste inchangée. Quitter le groupe ou le convertir en raid met fin au suivi.
+- Ajout d’une capture de la confirmation du changement de quête ciblée.
 
 **Forever**
 
 ![Changez de cible en connaissance de cause — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFocusWarningForever.png)
 
-### Déployez les objectifs et trouvez une quête
-
-- Cliquez sur une ligne pour déployer les objectifs, compteurs et barres de progression de chaque membre. Plusieurs quêtes peuvent rester ouvertes. Recherche et Filtres limitent la liste selon la possession, la progression et les actions disponibles. Le livre ouvre une quête que vous possédez dans le journal Blizzard. La progression distante est un instantané : vérifiez son âge sous le nom et utilisez Actualiser.
-
-### Testez le suivi sans vrai groupe
-
-- /qt preview compare combine votre vrai journal avec quatre coéquipiers simulés et des quêtes supplémentaires manquantes. Les boutons changent votre navigation réelle ; le partage reste simulé. Le menu du nom d’un coéquipier permet de passer à sa prochaine quête pour tester le suivi et les quêtes manquantes. Le suivi Blizzard déclenche aussi la confirmation. Fermer l’aperçu reprend le suivi existant dans votre vrai groupe. /qt preview unfollow affiche uniquement le dialogue d’avertissement.
-
 ## 6.5.2
 
-Des boutons de quête plus clairs, des changements confirmés pendant le suivi et des icônes conformes au suivi Blizzard.
-
-### Des commandes plus claires
-
-- Pendant le suivi, seul le bouton de la quête active du joueur suivi reste coloré. Sans suivi, vos boutons et les quêtes actives de vos coéquipiers restent colorés. Les autres boutons sont gris, sans transparence. Les quêtes actives des coéquipiers restent cliquables pour commencer le suivi ou changer de joueur.
-
-### Confirmer le changement
-
-- Choisir votre propre quête ou un autre coéquipier demande confirmation avant d’arrêter le suivi actuel. Changer ou effacer la cible dans le suivi Blizzard demande aussi confirmation : QT rétablit la cible suivie pendant votre décision. Annuler conserve le suivi ; Changer de cible applique votre choix. Aperçu : /qt preview unfollow.
-
-### Des icônes cohérentes
-
-- L’état des quêtes utilise désormais la même vérification d’achèvement que le suivi Blizzard. Les quêtes de livraison affichent ainsi un point d’interrogation au lieu d’une icône de progression. L’état Prêt corrigé est également inclus dans les données partagées du journal du groupe.
+Correction de l’aperçu du suivi de quête.
 
 ### Testez avec vos quêtes
 
-- L’aperçu utilise votre vrai journal avec quatre coéquipiers simulés et des quêtes supplémentaires manquantes. Le ciblage change votre navigation Blizzard réelle ; le partage reste simulé. Le menu du nom d’un coéquipier permet de changer sa quête active. La colonne d’action affiche désormais Non partageable ou Partage possible inconnu, centré, au lieu de rester vide. Fermer l’aperçu reprend le suivi existant dans votre vrai groupe.
+- Fermer l’aperçu du journal de quêtes du groupe reprend désormais le suivi existant dans votre véritable groupe.
 
 ## 6.5.1
 

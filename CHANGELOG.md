@@ -6,83 +6,38 @@
 
 ## 7.4.3
 
-Clearer names and controls for party questing.
+Read each feature update and its patches together.
 
-### Party questing
+### Grouped update history
 
-- Quest Tracker is now Party Objective Tracker (POT). Existing display settings and window placement are preserved.
-- Use /qt pql to open Party Quest Log. /qt compare still works as an alias; help and tips now use /qt pql.
-- Hide when not in a party is available in both HUD Edit Mode and Settings > Groups & Sharing > Party Objective Tracker. Both checkboxes control the same setting. It defaults on for new profiles and Reset to Default; existing saved choices are preserved.
+- The notes window now groups each minor release and its patches on one page, starting with the minor release and appending patches in order under dated version headings. History navigation moves between these grouped pages.
+- Cleaned up older patch notes to show their own changes without repeating the earlier feature guides, tips, or screenshots. Patch-only updates still do not open the window automatically; use /qt notes anytime.
 
 ## 7.4.2
 
-Keep your party's quest progress in view with the new Party Objective Tracker.
+Patch-note text fix.
 
-### Party Objective Tracker
+### Patch-note text fix
 
-- See your party's objective counts and progress bars in a compact, class-colored window. Party members need QuestTogether to share their progress.
-- Progress updates as party announcements arrive, independently of chat and bubble display settings. Quests without objective counters show their status, such as ready to turn in.
-- Fixed unfinished one-step objectives incorrectly showing 1/1 progress in Forever, including Use Walk on Air. The correction applies to the Party Objective Tracker and Party Quest Log.
-
-**Forever**
-
-![Party Objective Tracker — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTracker.png)
-
-### Choose what to track
-
-- Choose Hidden, Focused Quest, Hovered Quest, or Focus and Hover. The default, Focus and Hover, previews quests under the mouse in Blizzard's objective tracker, then returns to your focused quest.
-- With no eligible quest, the window stays hidden. Change the display mode in HUD Edit Mode or Settings > Groups & Sharing > Party Objective Tracker.
-- Enable Hide when not in a party in HUD Edit Mode to hide the tracker while solo. This option is off by default, and the placement preview remains available in Edit Mode.
-
-**Forever**
-
-![Choose what to track — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTrackerDisplay.png)
-
-### Make it fit your UI
-
-- Open HUD Edit Mode and select Party Objective Tracker to move or resize it and adjust background opacity. Save, Revert, and Reset to Default include its display mode and layout.
-- Snap to Blizzard's Objective Tracker is enabled by default, placing QT flush against its outer edge. Dragging QT away disables snapping and enables corner resizing. Turn snapping back on to reset its position; the width and maximum-height sliders work in either mode.
-- The tracker shrinks to fit its content up to your configured maximum height, then scrolls. The default maximum height is now 600; existing saved sizes are preserved.
-- Player sections fill the available width and scroll when needed. Light and dark themes are supported. Class-colored sections retain a constant 25% fill opacity, independent of the window background slider, with readable text on transparent backgrounds.
-
-**Forever**
-
-![Make it fit your UI — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTrackerEditMode.png)
+- Replaced unsupported separator characters in patch notes with plain text so they no longer appear as empty boxes.
 
 ## 7.4.1
 
-Keep your party's quest progress in view with the new Party Objective Tracker.
+Party Objective Tracker fixes and layout options.
 
 ### Party Objective Tracker
 
-- See your party's objective counts and progress bars in a compact, class-colored window. Party members need QuestTogether to share their progress.
-- Progress updates as party announcements arrive, independently of chat and bubble display settings. Quests without objective counters show their status, such as ready to turn in.
 - Fixed unfinished one-step objectives incorrectly showing 1/1 progress in Forever, including Use Walk on Air. The correction applies to the Party Objective Tracker and Party Quest Log.
-
-**Forever**
-
-![Party Objective Tracker — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTracker.png)
 
 ### Choose what to track
 
-- Choose Hidden, Focused Quest, Hovered Quest, or Focus and Hover. The default, Focus and Hover, previews quests under the mouse in Blizzard's objective tracker, then returns to your focused quest.
-- With no eligible quest, the window stays hidden. Change the display mode in HUD Edit Mode or Settings → Groups & Sharing → Party Objective Tracker.
 - Enable Hide when not in a party in HUD Edit Mode to hide the tracker while solo. This option is off by default, and the placement preview remains available in Edit Mode.
-
-**Forever**
-
-![Choose what to track — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### Make it fit your UI
 
-- Open HUD Edit Mode and select Party Objective Tracker to move or resize it and adjust background opacity. Save, Revert, and Reset to Default include its display mode and layout.
 - Snap to Blizzard's Objective Tracker is enabled by default, placing QT flush against its outer edge. Dragging QT away disables snapping and enables corner resizing. Turn snapping back on to reset its position; the width and maximum-height sliders work in either mode.
 - The tracker shrinks to fit its content up to your configured maximum height, then scrolls. The default maximum height is now 600; existing saved sizes are preserved.
-- Player sections fill the available width and scroll when needed. Light and dark themes are supported. Class-colored sections retain a constant 25% fill opacity, independent of the window background slider, with readable text on transparent backgrounds.
-
-**Forever**
-
-![Make it fit your UI — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTrackerEditMode.png)
+- Class-colored player sections now retain a constant 25% fill opacity, independent of the window background slider.
 
 ## 7.4.0
 
@@ -100,7 +55,7 @@ Keep your party's quest progress in view with the new Party Objective Tracker.
 ### Choose what to track
 
 - Choose Hidden, Focused Quest, Hovered Quest, or Focus and Hover. The default, Focus and Hover, previews quests under the mouse in Blizzard's objective tracker, then returns to your focused quest.
-- With no eligible quest, the window stays hidden. Change the display mode in HUD Edit Mode or Settings → Groups & Sharing → Party Objective Tracker.
+- With no eligible quest, the window stays hidden. Change the display mode in HUD Edit Mode or Settings > Groups & Sharing > Party Objective Tracker.
 
 **Forever**
 
@@ -232,24 +187,20 @@ More reliable quest text in your client’s language.
 
 ## 7.1.2
 
-Discover more of QuestTogether with helpful tips.
+Startup tip controls and simpler settings.
 
 ### QuestTogether Tips
 
-- QT now shows a tip when you log in or reload, drawing from a shuffled pool without repeats until it runs out.
 - You can disable automatic tips under General on the main QuestTogether settings page. /qt tip and /qt hint remain available.
-
-> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.2/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tip: Type /qt tip or /qt hint to see another QuestTogether tip whenever you like.
+- Simplified the main settings page and changed the light/dark theme control to a dropdown.
 
 ## 7.1.1
 
-Discover more of QuestTogether with helpful tips.
+Clearer tip icons and colors.
 
 ### QuestTogether Tips
 
-- QT now shows a tip when you log in or reload, drawing from a shuffled pool without repeats until it runs out.
-
-> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.1.1/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tip: Type /qt tip or /qt hint to see another QuestTogether tip whenever you like.
+- Tips now use a QT lightbulb icon instead of an unsupported emoji, with a gold label and cream-colored text.
 
 ## 7.1.0
 
@@ -407,11 +358,11 @@ A fix for missing quest icons in Party Quest Log.
 
 ## 6.5.3
 
-A closer look at Party Quest Log: compare quests, coordinate your next objective, and follow a teammate’s quest focus. This patch expands the guide and adds three screenshots; gameplay is unchanged. The screenshots show Forever preview data with simulated teammates.
+Added three illustrated Party Quest Log guide sections. Gameplay is unchanged; screenshots use simulated Forever teammates.
 
 ### Your party at a glance
 
-- Left-click the QT minimap button to open or close Party Quest Log. Your column stays first, class colors distinguish teammates, and a crown marks the leader. Each quest shows who has it, who is missing it, and how many players are ready to turn it in. Share and Request Share appear where supported; Not shareable and Shareability unknown explain unavailable actions. Sharing still depends on Blizzard’s rules and the recipient’s eligibility.
+- Added a Party Quest Log overview screenshot to the guide.
 
 **Forever**
 
@@ -419,7 +370,7 @@ A closer look at Party Quest Log: compare quests, coordinate your next objective
 
 ### Choose your quest or follow a teammate
 
-- The small quest buttons show each player’s focus. Click one in your column to change your Blizzard super-tracked quest, or click a teammate’s active quest to follow them. While following, only their active button stays colored; other teammates’ active buttons remain clickable to switch targets. Following matches new focus updates for quests you own and survives reloads. If you lack their next quest, QT stops following and offers to open Party Quest Log.
+- Added a screenshot of the quest-following controls.
 
 **Forever**
 
@@ -427,39 +378,19 @@ A closer look at Party Quest Log: compare quests, coordinate your next objective
 
 ### Change focus with confidence
 
-- The Following indicator identifies your target, with Stop following beside it. Choosing your own quest or another teammate asks before ending the current follow. Changing or clearing quest focus in Blizzard’s tracker also asks: QT restores the followed focus while you decide. Cancel keeps following; Change focus applies your choice. Clearing the followed player’s focus leaves your current quest alone. Leaving the party or converting to a raid ends following.
+- Added a screenshot of the focus-change confirmation.
 
 **Forever**
 
 ![Change focus with confidence — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFocusWarningForever.png)
 
-### Expand progress and find the right quest
-
-- Click a quest row to expand each member’s objective details, counts, and progress bars. Several quests can stay expanded at once. Search and Filters narrow the list by ownership, progress, and available actions. The small book button opens a quest you own in Blizzard’s Quest Log. Remote quest progress is a snapshot: check its age beneath the player’s name and use Refresh for an update.
-
-### Try following without a real party
-
-- Run /qt preview compare to combine your real quest log with four simulated teammates and a few extra missing quests. Its focus buttons change your real navigation; sharing stays simulated. Use a teammate’s name menu and Preview next focused quest to test automatic following and missing-quest handling. Changing focus in Blizzard’s tracker tests the confirmation too. Closing the preview resumes an existing real-party follow. Use /qt preview unfollow to preview only the warning dialog.
-
 ## 6.5.2
 
-Clearer quest focus buttons, safer changes while following, and icons that match the native quest tracker.
-
-### Clear focus controls
-
-- While following, only the followed player’s active quest button stays colored. Without a follow, your buttons and teammates’ active quests stay colored. All other buttons are gray, with no fading. Teammates’ active quests remain clickable to start or switch following.
-
-### Confirm before changing focus
-
-- Choosing your own quest or switching teammates asks before ending the current follow. Changing or clearing quest focus through Blizzard’s tracker now asks too: QT restores the followed focus while you decide. Cancel keeps following; Change focus applies your choice. Preview the dialog with /qt preview unfollow.
-
-### Matching quest icons
-
-- Quest readiness now uses the same completion query as Blizzard’s tracker, fixing delivery quests that showed an in-progress icon instead of a question mark. The corrected Ready status is also included in shared Party Quest Log snapshots.
+Quest-following preview fix.
 
 ### Test with your own quests
 
-- The compare preview now uses your real quest log with four simulated teammates and extra missing quests. Focus controls change your real Blizzard navigation; sharing stays simulated. Use a teammate’s name menu to advance their focused quest. Quests that cannot be shared now show a centered Not shareable or Shareability unknown label instead of a blank action column. Closing the preview resumes any existing real-party follow.
+- Closing the Party Quest Log preview now resumes your existing real-party follow.
 
 ## 6.5.1
 

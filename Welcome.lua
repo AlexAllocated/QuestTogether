@@ -30,7 +30,7 @@ function Addon:GetReleaseNotesSeries(version)
 	if not major or not minor or not patch then
 		return nil
 	end
-	return major, minor
+	return major, minor, patch, suffix
 end
 
 function Addon:ShouldShowReleaseNotes(version)
@@ -102,7 +102,40 @@ function Addon:GetReleaseNotesCatalog(notes, version)
 			seen[entry.version] = true
 		end
 	end
-	return entries
+	-- Navigate by major/minor series. Within a page, read the original feature
+	-- release first, followed by each patch in version order.
+	table.sort(entries, function(a, b)
+		local am, an, ap, as = self:GetReleaseNotesSeries(a.version)
+		local bm, bn, bp, bs = self:GetReleaseNotesSeries(b.version)
+		if am ~= bm then return am > bm end
+		if an ~= bn then return an > bn end
+		if ap ~= bp then return ap > bp end
+		local function Stage(suffix)
+			if suffix == "" then return 3, 0 end
+			return suffix:find("beta", 1, true) and 2 or 1, tonumber(suffix:match("%d+$")) or 0
+		end
+		local ar, av = Stage(as)
+		local br, bv = Stage(bs)
+		return ar > br or (ar == br and av > bv)
+	end)
+	local pages, bySeries = {}, {}
+	for _, entry in ipairs(entries) do
+		local major, minor = self:GetReleaseNotesSeries(entry.version)
+		local key = major .. "." .. minor
+		local page = bySeries[key]
+		if not page then
+			page = { version = entry.version, releases = {} }
+			bySeries[key], pages[#pages + 1] = page, page
+		end
+		table.insert(page.releases, 1, entry)
+	end
+	for _, page in ipairs(pages) do
+		local first = page.releases[1]
+		page.notes, page.date, page.englishOnly = first.notes, first.date, first.englishOnly
+		page.displayVersion = first.version == page.version and page.version
+			or first.version .. " - " .. page.version
+	end
+	return pages
 end
 
 function Addon:ShowReleaseNotesPage(index, history)
@@ -151,7 +184,8 @@ function Addon:OpenReleaseNotes(automatic)
 	self.releaseNotesBrowser = { entries = self:GetReleaseNotesCatalog(notes, version), index = 1, history = false }
 	-- Contain a partial installation or a failed UI build without breaking login.
 	-- The renderer guards native access itself; pcall is not a taint barrier.
-	local ok, shown = pcall(self.RenderReleaseNotesWindow, self, notes, version, seenMajor == nil)
+	local entry = self.releaseNotesBrowser.entries[1]
+	local ok, shown = pcall(self.RenderReleaseNotesWindow, self, entry.notes, entry.version, seenMajor == nil)
 	if not ok or shown ~= true then
 		self.releaseNotesBrowser = previousBrowser
 		if not automatic then

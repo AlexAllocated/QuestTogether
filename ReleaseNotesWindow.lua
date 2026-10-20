@@ -539,7 +539,7 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 	end
 	Call(addon, frame, "SetScale", scale)
 	Call(addon, frame.title, "SetWidth", width - 134)
-	Call(addon, frame.title, "SetText", "QuestTogether " .. addon:SafeTrimString(version, ""))
+	Call(addon, frame.title, "SetText", "QuestTogether " .. addon:SafeTrimString(entry and entry.displayVersion or version, ""))
 	local function Add(text, font, gap)
 		text = addon:SafeTrimString(text, "")
 		if text == "" then
@@ -610,7 +610,7 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 				frame.historyRows[index] = row
 			end
 			Call(addon, row.version, "SetWidth", contentWidth - 152)
-			Call(addon, row.version, "SetText", item.version)
+			Call(addon, row.version, "SetText", item.displayVersion or item.version)
 			Call(addon, row.date, "SetText", item.date or L("Date unavailable"))
 			Call(addon, row.label, "SetWidth", contentWidth - 28)
 			Call(addon, row.label, "SetText", addon:SafeTrimString(item.notes.sections[1].title, ""))
@@ -623,87 +623,97 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 		end
 	else
 		Add(isFirstUse and L("Welcome to QuestTogether") or L("What's new"), "GameFontNormalLarge", 14)
-		if entry and entry.date then
-			Add(string.format(L("Release date (UTC): %s"), entry.date), "GameFontHighlightSmall", 12)
-		end
-		if entry and entry.englishOnly then
-			Add(L("These notes are available in English only."), "GameFontHighlightSmall", 12)
-		end
-		Add(notes.welcome, "GameFontHighlight", 18)
-		local examplesShown = false
+		local releases = entry and entry.releases or { { notes = notes, date = entry and entry.date, englishOnly = entry and entry.englishOnly } }
+		local examplesShown, imageUses = false, {}
 		local regional = addon:UsesRegionalPlayerNames()
-		if addon:CanAccessTable(notes.sections) then
-			for _, section in ipairs(notes.sections) do
-				if addon:CanAccessTable(section) then
-					Add(section.title, "GameFontNormal", 8)
-					if addon:CanAccessTable(section.items) then
-						for _, item in ipairs(section.items) do
-							local text = addon:SafeTrimString(item, "")
-							if text ~= "" then
-								Add("• " .. text, "GameFontHighlight", 9)
+		for releaseIndex, release in ipairs(releases) do
+			local notes = release.notes
+			if #releases > 1 then
+				if releaseIndex > 1 then offset = offset + 18 end
+				Add("QuestTogether " .. release.version, "GameFontNormalLarge", 12)
+			end
+			if release.date then
+				Add(string.format(L("Release date (UTC): %s"), release.date), "GameFontHighlightSmall", 12)
+			end
+			if release.englishOnly then
+				Add(L("These notes are available in English only."), "GameFontHighlightSmall", 12)
+			end
+			Add(notes.welcome, "GameFontHighlight", 18)
+			if addon:CanAccessTable(notes.sections) then
+				for _, section in ipairs(notes.sections) do
+					if addon:CanAccessTable(section) then
+						Add(section.title, "GameFontNormal", 8)
+						if addon:CanAccessTable(section.items) then
+							for _, item in ipairs(section.items) do
+								local text = addon:SafeTrimString(item, "")
+								if text ~= "" then
+									Add("• " .. text, "GameFontHighlight", 9)
+								end
 							end
 						end
-					end
-					AddTip(section.tip)
-					if section.illustration == "quest-partners" and not examplesShown then
-						local gallery = frame.partnerExamples
-						Call(addon, gallery, "ClearAllPoints")
-						Call(addon, gallery, "SetPoint", "TOPLEFT", 0, -offset)
-						Call(addon, gallery, "SetSize", contentWidth, 112)
-						for index, column in ipairs(gallery.columns) do
-							Call(addon, column, "ClearAllPoints")
-							Call(addon, column, "SetPoint", "TOPLEFT", (index - 1) * contentWidth / 2, 0)
-							Call(addon, column, "SetSize", contentWidth / 2, 112)
+						AddTip(section.tip)
+						if section.illustration == "quest-partners" and not examplesShown then
+							local gallery = frame.partnerExamples
+							Call(addon, gallery, "ClearAllPoints")
+							Call(addon, gallery, "SetPoint", "TOPLEFT", 0, -offset)
+							Call(addon, gallery, "SetSize", contentWidth, 112)
+							for index, column in ipairs(gallery.columns) do
+								Call(addon, column, "ClearAllPoints")
+								Call(addon, column, "SetPoint", "TOPLEFT", (index - 1) * contentWidth / 2, 0)
+								Call(addon, column, "SetSize", contentWidth / 2, 112)
+							end
+							Call(addon, gallery, "Show")
+							offset, examplesShown = offset + 120, true
 						end
-						Call(addon, gallery, "Show")
-						offset, examplesShown = offset + 120, true
-					end
-					local asset, imageWidth, imageHeight
-					local textureWidth, textureHeight = 2048, 1024
-					if section.illustration == "party-quest-log" then
-						asset = regional and "PartyQuestLogForever" or "PartyQuestLogRetail"
-						imageWidth, imageHeight = regional and 1560 or 1564, regional and 899 or 898
-					elseif section.illustration == "party-quest-objectives" and regional then
-						asset, imageWidth, imageHeight = "PartyQuestObjectivesForever", 1564, 893
-					elseif section.illustration == "party-quest-overview" then
-						asset, imageWidth, imageHeight = "PartyQuestOverviewForever", 1465, 635
-					elseif section.illustration == "party-quest-following" then
-						asset, imageWidth, imageHeight = "PartyQuestFollowingForever", 1198, 199
-					elseif section.illustration == "party-quest-focus-warning" then
-						asset, imageWidth, imageHeight = "PartyQuestFocusWarningForever", 1824, 540
-					end
-					if section.illustration == "quest-tracker" then
-						asset, imageWidth, imageHeight = "QuestTracker", 817, 897
-						textureWidth, textureHeight = 1024, 1024
-					elseif section.illustration == "quest-tracker-edit-mode" then
-						asset, imageWidth, imageHeight = "QuestTrackerEditMode", 1024, 854
-						textureWidth, textureHeight = 1024, 1024
-					elseif section.illustration == "quest-tracker-display" then
-						asset, imageWidth, imageHeight = "QuestTrackerDisplay", 476, 180
-						textureWidth, textureHeight = 512, 256
-					end
-					if asset then
-						frame.releaseScreenshots = frame.releaseScreenshots or {}
-						local screenshot = frame.releaseScreenshots[asset]
-						if not screenshot then
-							screenshot = Call(addon, frame.content, "CreateTexture", nil, "ARTWORK")
-							frame.releaseScreenshots[asset] = screenshot
-							Call(
-								addon,
-								screenshot,
-								"SetTexture",
-								"Interface\\AddOns\\QuestTogether\\Media\\ReleaseNotes\\" .. asset
-							)
-							Call(addon, screenshot, "SetTexCoord", 0, imageWidth / textureWidth, 0, imageHeight / textureHeight)
+						local asset, imageWidth, imageHeight
+						local textureWidth, textureHeight = 2048, 1024
+						if section.illustration == "party-quest-log" then
+							asset = regional and "PartyQuestLogForever" or "PartyQuestLogRetail"
+							imageWidth, imageHeight = regional and 1560 or 1564, regional and 899 or 898
+						elseif section.illustration == "party-quest-objectives" and regional then
+							asset, imageWidth, imageHeight = "PartyQuestObjectivesForever", 1564, 893
+						elseif section.illustration == "party-quest-overview" then
+							asset, imageWidth, imageHeight = "PartyQuestOverviewForever", 1465, 635
+						elseif section.illustration == "party-quest-following" then
+							asset, imageWidth, imageHeight = "PartyQuestFollowingForever", 1198, 199
+						elseif section.illustration == "party-quest-focus-warning" then
+							asset, imageWidth, imageHeight = "PartyQuestFocusWarningForever", 1824, 540
 						end
-						local imageDisplayHeight = contentWidth * imageHeight / imageWidth
-						Call(addon, screenshot, "ClearAllPoints")
-						Call(addon, screenshot, "SetPoint", "TOPLEFT", 0, -offset)
-						Call(addon, screenshot, "SetSize", contentWidth, imageDisplayHeight)
-						Call(addon, screenshot, "Show")
-						offset = offset + imageDisplayHeight + 12
+						if section.illustration == "quest-tracker" then
+							asset, imageWidth, imageHeight = "QuestTracker", 817, 897
+							textureWidth, textureHeight = 1024, 1024
+						elseif section.illustration == "quest-tracker-edit-mode" then
+							asset, imageWidth, imageHeight = "QuestTrackerEditMode", 1024, 854
+							textureWidth, textureHeight = 1024, 1024
+						elseif section.illustration == "quest-tracker-display" then
+							asset, imageWidth, imageHeight = "QuestTrackerDisplay", 476, 180
+							textureWidth, textureHeight = 512, 256
+						end
+						if asset then
+							frame.releaseScreenshots = frame.releaseScreenshots or {}
+							imageUses[asset] = (imageUses[asset] or 0) + 1
+							local imageKey = imageUses[asset] == 1 and asset or asset .. ":" .. imageUses[asset]
+							local screenshot = frame.releaseScreenshots[imageKey]
+							if not screenshot then
+								screenshot = Call(addon, frame.content, "CreateTexture", nil, "ARTWORK")
+								frame.releaseScreenshots[imageKey] = screenshot
+								Call(
+									addon,
+									screenshot,
+									"SetTexture",
+									"Interface\\AddOns\\QuestTogether\\Media\\ReleaseNotes\\" .. asset
+								)
+								Call(addon, screenshot, "SetTexCoord", 0, imageWidth / textureWidth, 0, imageHeight / textureHeight)
+							end
+							local imageDisplayHeight = contentWidth * imageHeight / imageWidth
+							Call(addon, screenshot, "ClearAllPoints")
+							Call(addon, screenshot, "SetPoint", "TOPLEFT", 0, -offset)
+							Call(addon, screenshot, "SetSize", contentWidth, imageDisplayHeight)
+							Call(addon, screenshot, "Show")
+							offset = offset + imageDisplayHeight + 12
+						end
+						offset = offset + 10
 					end
-					offset = offset + 10
 				end
 			end
 		end

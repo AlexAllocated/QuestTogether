@@ -127,7 +127,7 @@ Register("release notes browse history by page or dated picker and reopen at lat
 	a.releaseNotes = Notes(2)
 	a.releaseNotesDates = { ["5.9.2"] = "2026-09-27" }
 	local older, oldest = Notes(40), Notes(1)
-	older.version, oldest.version = "5.9.1", "5.9.0"
+	older.version, oldest.version = "5.8.1", "5.7.0"
 	older.sections[1].illustration = "quest-partners"
 	a.releaseNotesHistory = {
 		{ version = older.version, date = "2026-09-27", locales = { enUS = older } },
@@ -159,7 +159,7 @@ Register("release notes browse history by page or dated picker and reopen at lat
 	Equal(frame.navigation[5].enabled, false)
 	Equal(a.releaseNotesBrowser.index, 1)
 	frame.navigation[2].scripts.OnClick({})
-	Equal(frame.title.text, "QuestTogether 5.9.1")
+	Equal(frame.title.text, "QuestTogether 5.8.1")
 	Equal(frame.navigation[5].enabled, true)
 	assert(frame.maximumScroll > 0 and frame.partnerExamples.shown)
 	frame.scroll.scripts.OnMouseWheel({}, -10)
@@ -693,4 +693,44 @@ Register("release notes reflow on reset profile restore and smaller display with
 	assert(f.height * f.scale <= a.parent.height and f.width * f.scale <= a.parent.width)
 	assert(not f:IsShown())
 	Equal(a.db.global.releaseNotesSeenVersion, "6.2.3")
+end)
+
+Register("minor release pages append patch text tips and repeated illustrations without losing earlier content", function()
+	local a = Fixture()
+	a.hasLoggedIn, a.db = true, { global = { releaseNotesSeenVersion = "5.8.0" } }
+	a.GetAddonVersion = function() return "5.9.2" end
+	local base, patch = Notes(1), Notes(1)
+	base.version, patch.version = "5.9.0", "5.9.2"
+	base.welcome, patch.welcome = "Base feature guide", "Patch corrections"
+	base.sections[1].illustration, patch.sections[1].illustration = "quest-tracker", "quest-tracker"
+	base.sections[1].tip = { label = "Tip:", text = "Base tip" }
+	patch.sections[1].tip = { label = "Tip:", text = "Patch tip" }
+	a.releaseNotes = patch
+	a.releaseNotesHistory = {
+		{ version = base.version, date = "2026-09-26", locales = { enUS = base } },
+	}
+	assert(a:OpenReleaseNotes(true))
+	local frame = a.releaseNotesWindow
+	Equal(frame.title.text, "QuestTogether 5.9.0 - 5.9.2")
+	local text = {}
+	for _, label in ipairs(frame.labels) do
+		if label.shown then text[#text + 1] = label.text end
+	end
+	text = table.concat(text, "\n")
+	local first, second = text:find("Base feature guide", 1, true), text:find("Patch corrections", 1, true)
+	assert(first and second and first < second)
+	assert(text:find("QuestTogether 5.9.0", 1, true) and text:find("QuestTogether 5.9.2", 1, true))
+	assert(frame.tipExamples[1].shown and frame.tipExamples[2].shown)
+	local image, repeated = frame.releaseScreenshots.QuestTracker, frame.releaseScreenshots["QuestTracker:2"]
+	assert(image and repeated and image ~= repeated and image.shown and repeated.shown)
+	assert(frame.maximumScroll > 0)
+	local regions = #a.regions
+	assert(a:ShowReleaseNotesPage(1))
+	Equal(#a.regions, regions)
+	assert(a:ShowReleaseNotesPage(1, true))
+	assert(not image.shown and not repeated.shown and not frame.tipExamples[2].shown)
+	Equal(frame.historyRows[1].version.text, "5.9.0 - 5.9.2")
+	assert(a:ShowReleaseNotesPage(1))
+	assert(image.shown and repeated.shown)
+	Equal(a.db.global.releaseNotesSeenVersion, "5.9.2")
 end)
