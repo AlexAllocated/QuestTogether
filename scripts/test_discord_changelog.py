@@ -297,6 +297,16 @@ class FormattingTests(unittest.TestCase):
 
 
 class AttachmentTests(unittest.TestCase):
+    def test_current_release_images_can_be_loaded_for_every_locale(self):
+        root = Path(__file__).resolve().parents[1]
+        source, _ = changelog.load_notes(root)
+        translated, _ = changelog.load_localized_notes(root, source)
+        for locale, data in {"enUS": source, **translated}.items():
+            for payload in changelog.build_messages(data, REPO, "v" + data["version"], locale):
+                files = changelog.message_files(root, payload)
+                self.assertEqual([name for name, _ in files],
+                                 [item["filename"] for item in payload.get("attachments", [])])
+
     def test_custom_tip_and_screenshot_uploads_are_deduplicated_and_verified(self):
         data = notes('7.1.1')
         data['sections'][0]['illustration'] = 'party-quest-objectives'
