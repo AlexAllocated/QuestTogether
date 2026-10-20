@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.4.3
+## 7.4.4
 
 Lisez chaque mise à jour et ses correctifs sur une même page.
 
@@ -10,6 +10,16 @@ Lisez chaque mise à jour et ses correctifs sur une même page.
 
 - La fenêtre regroupe désormais chaque version mineure et ses correctifs sur une page. La version mineure apparaît en premier, suivie des correctifs dans l’ordre, avec leur version et leur date. La navigation dans l’historique passe d’un groupe à l’autre.
 - Les anciennes notes de correctifs décrivent maintenant leurs propres changements sans répéter les guides, astuces ou captures précédents. Les correctifs seuls n’ouvrent toujours pas la fenêtre automatiquement ; utilisez /qt notes à tout moment.
+
+## 7.4.3
+
+Des noms et réglages plus clairs pour les quêtes en groupe.
+
+### Quêtes en groupe
+
+- Le suivi de quête devient le suivi des objectifs du groupe (POT). Les réglages d’affichage et la position de la fenêtre sont conservés.
+- Utilisez /qt pql pour ouvrir le journal de quêtes du groupe. /qt compare reste un alias ; l’aide et les conseils utilisent désormais /qt pql.
+- Le masquage hors groupe est disponible dans le mode Édition du HUD et dans Paramètres > Groupes et partage > Suivi des objectifs du groupe. Les deux cases contrôlent le même réglage. Il est activé pour les nouveaux profils et lors du rétablissement des valeurs par défaut ; les choix enregistrés sont conservés.
 
 ## 7.4.2
 

@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.4.3
+## 7.4.4
 
 Leggi ogni aggiornamento e le sue patch nella stessa pagina.
 
@@ -10,6 +10,16 @@ Leggi ogni aggiornamento e le sue patch nella stessa pagina.
 
 - La finestra ora raggruppa ogni versione minore e le sue patch in una pagina: prima la versione minore, poi le patch in ordine, con intestazioni che indicano versione e data. La navigazione della cronologia passa tra queste pagine raggruppate.
 - Le note delle vecchie patch ora descrivono le proprie modifiche senza ripetere guide, consigli o schermate precedenti. Gli aggiornamenti contenenti solo patch continuano a non aprire automaticamente la finestra; usa /qt notes quando vuoi.
+
+## 7.4.3
+
+Nomi e controlli più chiari per le missioni di gruppo.
+
+### Missioni di gruppo
+
+- Tracciamento missioni ora si chiama Tracciamento obiettivi del gruppo (POT). Le impostazioni di visualizzazione e la posizione della finestra vengono mantenute.
+- Usa /qt pql per aprire il registro missioni del gruppo. /qt compare continua a funzionare come alias; la guida e i suggerimenti ora usano /qt pql.
+- Nascondi quando non sei in gruppo è disponibile nella modalità Modifica HUD e in Impostazioni > Gruppi e condivisione > Tracciamento obiettivi del gruppo. Entrambe le caselle controllano la stessa impostazione. È attiva nei nuovi profili e dopo il ripristino dei valori predefiniti; le scelte salvate vengono mantenute.
 
 ## 7.4.2
 

@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.4.3
+## 7.4.4
 
 Lee cada actualización y sus parches en una misma página.
 
@@ -10,6 +10,16 @@ Lee cada actualización y sus parches en una misma página.
 
 - La ventana ahora agrupa cada versión menor y sus parches en una página, con la versión menor primero y los parches en orden bajo encabezados con versión y fecha. La navegación del historial pasa entre estas páginas agrupadas.
 - Se depuraron las notas antiguas para mostrar los cambios de cada parche sin repetir guías, consejos ni capturas anteriores. Las actualizaciones de parche siguen sin abrir la ventana automáticamente; usa /qt notes cuando quieras.
+
+## 7.4.3
+
+Nombres y controles más claros para las misiones en grupo.
+
+### Misiones en grupo
+
+- Seguimiento de misiones ahora se llama Seguimiento de objetivos del grupo (POT). Se conservan los ajustes de visualización y la posición de la ventana.
+- Usa /qt pql para abrir el registro de misiones del grupo. /qt compare sigue funcionando como alias; la ayuda y los consejos ahora usan /qt pql.
+- Ocultar cuando no estés en un grupo está disponible en el modo de edición del HUD y en Configuración > Grupos y compartir > Seguimiento de objetivos del grupo. Ambas casillas controlan el mismo ajuste. Se activa en perfiles nuevos y al restablecer los valores predeterminados; se conservan las preferencias guardadas.
 
 ## 7.4.2
 

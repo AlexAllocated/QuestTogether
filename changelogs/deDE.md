@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.4.3
+## 7.4.4
 
 Lies jedes Funktionsupdate und seine Patches zusammen.
 
@@ -10,6 +10,16 @@ Lies jedes Funktionsupdate und seine Patches zusammen.
 
 - Das Hinweisfenster fasst jetzt jedes kleinere Funktionsupdate und seine Patches auf einer Seite zusammen. Zuerst steht das Funktionsupdate, danach folgen die Patches der Reihe nach mit Version und Datum. Die Verlaufsschaltflächen wechseln zwischen diesen Seiten.
 - Ältere Patchnotes wurden bereinigt: Sie beschreiben ihre eigenen Änderungen, ohne frühere Anleitungen, Tipps oder Bildschirmfotos zu wiederholen. Reine Patchupdates öffnen das Fenster weiterhin nicht automatisch; /qt notes ist jederzeit verfügbar.
+
+## 7.4.3
+
+Klarere Namen und Einstellungen für Quests in der Gruppe.
+
+### Quests in der Gruppe
+
+- Der Questtracker heißt jetzt Gruppen-Zielverfolgung (POT). Anzeigeeinstellungen und Fensterposition bleiben erhalten.
+- Öffne das Gruppenquestlog mit /qt pql. /qt compare funktioniert weiterhin als Alias; Hilfe und Tipps verwenden nun /qt pql.
+- Außerhalb einer Gruppe ausblenden ist im HUD-Bearbeitungsmodus und unter Einstellungen > Gruppen & Teilen > Gruppen-Zielverfolgung verfügbar. Beide Kontrollkästchen steuern dieselbe Einstellung. Bei neuen Profilen und beim Wiederherstellen der Standardwerte ist sie aktiviert; gespeicherte Einstellungen bleiben erhalten.
 
 ## 7.4.2
 
