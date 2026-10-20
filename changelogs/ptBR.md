@@ -14,22 +14,22 @@ Nomes e controles mais claros para missões em grupo.
 
 ## 7.4.2
 
-Acompanhe o progresso das missões do seu grupo com o novo rastreador de missões.
+Acompanhe o progresso das missões do seu grupo com o novo rastreador de objetivos do grupo.
 
-### Rastreador de missões
+### Rastreador de objetivos do grupo
 
 - Veja os contadores e as barras de progresso dos objetivos do grupo em uma janela compacta com cores de classe. Os membros do grupo precisam do QuestTogether para compartilhar o progresso.
 - O progresso é atualizado quando os anúncios do grupo chegam, independentemente das configurações de exibição do bate-papo e dos balões. Missões sem contadores mostram seu estado, como prontas para entregar.
-- Corrigido um erro que mostrava progresso de 1/1 em objetivos de uma única etapa ainda não concluídos no Forever, incluindo “Use Walk on Air”. A correção se aplica ao rastreador de missões e ao registro de missões do grupo.
+- Corrigido um erro que mostrava progresso de 1/1 em objetivos de uma única etapa ainda não concluídos no Forever, incluindo “Use Walk on Air”. A correção se aplica ao rastreador de objetivos do grupo e ao registro de missões do grupo.
 
 **Forever**
 
-![Rastreador de missões — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTracker.png)
+![Rastreador de objetivos do grupo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTracker.png)
 
 ### Escolha o que acompanhar
 
 - Escolha Oculto, Missão em foco, Missão sob o cursor ou Foco e cursor. O padrão, Foco e cursor, exibe as missões sob o mouse no rastreador de objetivos da Blizzard e depois retorna à missão em foco.
-- Sem uma missão correspondente, a janela fica oculta. Altere o modo no modo de edição do HUD ou em Configurações > Grupos e compartilhamento > Rastreador de missões.
+- Sem uma missão correspondente, a janela fica oculta. Altere o modo no modo de edição do HUD ou em Configurações > Grupos e compartilhamento > Rastreador de objetivos do grupo.
 - Ative Ocultar fora de um grupo no modo de edição do HUD para ocultar o rastreador ao jogar solo. A opção vem desativada, e a prévia de posicionamento continua disponível no modo de edição.
 
 **Forever**
@@ -38,7 +38,7 @@ Acompanhe o progresso das missões do seu grupo com o novo rastreador de missõe
 
 ### Ajuste à sua interface
 
-- Abra o modo de edição do HUD e selecione Rastreador de missões para mover ou redimensionar a janela e ajustar a opacidade do fundo. Salvar, Reverter e Restaurar padrão incluem o modo de exibição e o layout.
+- Abra o modo de edição do HUD e selecione Rastreador de objetivos do grupo para mover ou redimensionar a janela e ajustar a opacidade do fundo. Salvar, Reverter e Restaurar padrão incluem o modo de exibição e o layout.
 - O encaixe no rastreador de objetivos da Blizzard vem ativado e posiciona o QT junto à borda externa, sem espaço adicional. Arrastar o QT para longe desativa o encaixe e permite redimensionar pelo canto. Reative o encaixe para redefinir a posição; os controles de largura e altura máxima funcionam nos dois modos.
 - O rastreador ajusta sua altura ao conteúdo até a altura máxima configurada e depois permite rolagem. A altura máxima padrão agora é 600; os tamanhos já salvos são preservados.
 - As seções dos jogadores preenchem a largura disponível e permitem rolagem quando necessário. Há suporte aos temas claro e escuro. O preenchimento da cor da classe mantém uma opacidade constante de 25%, independente do controle do fundo da janela, com texto legível em fundos transparentes.
@@ -49,22 +49,22 @@ Acompanhe o progresso das missões do seu grupo com o novo rastreador de missõe
 
 ## 7.4.1
 
-Acompanhe o progresso das missões do seu grupo com o novo rastreador de missões.
+Acompanhe o progresso das missões do seu grupo com o novo rastreador de objetivos do grupo.
 
-### Rastreador de missões
+### Rastreador de objetivos do grupo
 
 - Veja os contadores e as barras de progresso dos objetivos do grupo em uma janela compacta com cores de classe. Os membros do grupo precisam do QuestTogether para compartilhar o progresso.
 - O progresso é atualizado quando os anúncios do grupo chegam, independentemente das configurações de exibição do bate-papo e dos balões. Missões sem contadores mostram seu estado, como prontas para entregar.
-- Corrigido um erro que mostrava progresso de 1/1 em objetivos de uma única etapa ainda não concluídos no Forever, incluindo “Use Walk on Air”. A correção se aplica ao rastreador de missões e ao registro de missões do grupo.
+- Corrigido um erro que mostrava progresso de 1/1 em objetivos de uma única etapa ainda não concluídos no Forever, incluindo “Use Walk on Air”. A correção se aplica ao rastreador de objetivos do grupo e ao registro de missões do grupo.
 
 **Forever**
 
-![Rastreador de missões — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTracker.png)
+![Rastreador de objetivos do grupo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTracker.png)
 
 ### Escolha o que acompanhar
 
 - Escolha Oculto, Missão em foco, Missão sob o cursor ou Foco e cursor. O padrão, Foco e cursor, exibe as missões sob o mouse no rastreador de objetivos da Blizzard e depois retorna à missão em foco.
-- Sem uma missão correspondente, a janela fica oculta. Altere o modo no modo de edição do HUD ou em Configurações → Grupos e compartilhamento → Rastreador de missões.
+- Sem uma missão correspondente, a janela fica oculta. Altere o modo no modo de edição do HUD ou em Configurações → Grupos e compartilhamento → Rastreador de objetivos do grupo.
 - Ative Ocultar fora de um grupo no modo de edição do HUD para ocultar o rastreador ao jogar solo. A opção vem desativada, e a prévia de posicionamento continua disponível no modo de edição.
 
 **Forever**
@@ -73,7 +73,7 @@ Acompanhe o progresso das missões do seu grupo com o novo rastreador de missõe
 
 ### Ajuste à sua interface
 
-- Abra o modo de edição do HUD e selecione Rastreador de missões para mover ou redimensionar a janela e ajustar a opacidade do fundo. Salvar, Reverter e Restaurar padrão incluem o modo de exibição e o layout.
+- Abra o modo de edição do HUD e selecione Rastreador de objetivos do grupo para mover ou redimensionar a janela e ajustar a opacidade do fundo. Salvar, Reverter e Restaurar padrão incluem o modo de exibição e o layout.
 - O encaixe no rastreador de objetivos da Blizzard vem ativado e posiciona o QT junto à borda externa, sem espaço adicional. Arrastar o QT para longe desativa o encaixe e permite redimensionar pelo canto. Reative o encaixe para redefinir a posição; os controles de largura e altura máxima funcionam nos dois modos.
 - O rastreador ajusta sua altura ao conteúdo até a altura máxima configurada e depois permite rolagem. A altura máxima padrão agora é 600; os tamanhos já salvos são preservados.
 - As seções dos jogadores preenchem a largura disponível e permitem rolagem quando necessário. Há suporte aos temas claro e escuro. O preenchimento da cor da classe mantém uma opacidade constante de 25%, independente do controle do fundo da janela, com texto legível em fundos transparentes.
@@ -84,21 +84,21 @@ Acompanhe o progresso das missões do seu grupo com o novo rastreador de missõe
 
 ## 7.4.0
 
-Acompanhe o progresso das missões do seu grupo com o novo rastreador de missões.
+Acompanhe o progresso das missões do seu grupo com o novo rastreador de objetivos do grupo.
 
-### Rastreador de missões
+### Rastreador de objetivos do grupo
 
 - Veja os contadores e as barras de progresso dos objetivos do grupo em uma janela compacta com cores de classe. Os membros do grupo precisam do QuestTogether para compartilhar o progresso.
 - O progresso é atualizado quando os anúncios do grupo chegam, independentemente das configurações de exibição do bate-papo e dos balões. Missões sem contadores mostram seu estado, como prontas para entregar.
 
 **Forever**
 
-![Rastreador de missões — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
+![Rastreador de objetivos do grupo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
 
 ### Escolha o que acompanhar
 
 - Escolha Oculto, Missão em foco, Missão sob o cursor ou Foco e cursor. O padrão, Foco e cursor, exibe as missões sob o mouse no rastreador de objetivos da Blizzard e depois retorna à missão em foco.
-- Sem uma missão correspondente, a janela fica oculta. Altere o modo no modo de edição do HUD ou em Configurações → Grupos e compartilhamento → Rastreador de missões.
+- Sem uma missão correspondente, a janela fica oculta. Altere o modo no modo de edição do HUD ou em Configurações → Grupos e compartilhamento → Rastreador de objetivos do grupo.
 
 **Forever**
 
@@ -106,7 +106,7 @@ Acompanhe o progresso das missões do seu grupo com o novo rastreador de missõe
 
 ### Ajuste à sua interface
 
-- Abra o modo de edição do HUD e selecione Rastreador de missões para mover ou redimensionar a janela e ajustar a opacidade do fundo. Salvar, Reverter e Restaurar padrão incluem o modo de exibição e o layout.
+- Abra o modo de edição do HUD e selecione Rastreador de objetivos do grupo para mover ou redimensionar a janela e ajustar a opacidade do fundo. Salvar, Reverter e Restaurar padrão incluem o modo de exibição e o layout.
 - As seções dos jogadores preenchem a largura disponível e permitem rolagem quando necessário. Há suporte aos temas claro e escuro, com texto legível e fundos discretos dos jogadores mesmo com opacidade zero.
 
 **Forever**

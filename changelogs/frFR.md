@@ -14,22 +14,22 @@ Des noms et réglages plus clairs pour les quêtes en groupe.
 
 ## 7.4.2
 
-Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi de quête.
+Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi des objectifs du groupe.
 
-### Suivi de quête
+### Suivi des objectifs du groupe
 
 - Consultez les compteurs et les barres de progression des objectifs de votre groupe dans une fenêtre compacte aux couleurs des classes. Les membres du groupe doivent utiliser QuestTogether pour partager leur progression.
 - La progression est actualisée à la réception des annonces du groupe, indépendamment des réglages du chat et des bulles. Les quêtes sans compteur affichent leur état, par exemple prêtes à être rendues.
-- Correction des objectifs à une seule étape qui affichaient à tort une progression de 1/1 dans Forever, notamment « Use Walk on Air ». La correction s’applique au suivi de quêtes et au journal de quêtes du groupe.
+- Correction des objectifs à une seule étape qui affichaient à tort une progression de 1/1 dans Forever, notamment « Use Walk on Air ». La correction s’applique au suivi des objectifs du groupe et au journal de quêtes du groupe.
 
 **Forever**
 
-![Suivi de quête — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTracker.png)
+![Suivi des objectifs du groupe — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.2/Media/ReleaseNotes/QuestTracker.png)
 
 ### Choisir les quêtes à suivre
 
 - Choisissez Masqué, Quête ciblée, Quête survolée ou Ciblage et survol. Ce dernier mode, activé par défaut, affiche les quêtes survolées dans le suivi des objectifs de Blizzard, puis revient à votre quête ciblée.
-- Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres > Groupes et partage > Suivi de quête.
+- Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres > Groupes et partage > Suivi des objectifs du groupe.
 - Activez Masquer hors groupe dans le mode Édition du HUD pour masquer le suivi en solo. Cette option est désactivée par défaut et l’aperçu de placement reste disponible en mode Édition.
 
 **Forever**
@@ -38,7 +38,7 @@ Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi
 
 ### Adapter la fenêtre à votre interface
 
-- Ouvrez le mode Édition du HUD et sélectionnez Suivi de quête pour déplacer ou redimensionner la fenêtre et régler son opacité. Enregistrer, Annuler les modifications et Rétablir les valeurs par défaut incluent le mode d’affichage et la disposition.
+- Ouvrez le mode Édition du HUD et sélectionnez Suivi des objectifs du groupe pour déplacer ou redimensionner la fenêtre et régler son opacité. Enregistrer, Annuler les modifications et Rétablir les valeurs par défaut incluent le mode d’affichage et la disposition.
 - L’alignement sur le suivi des objectifs de Blizzard est activé par défaut et place QT contre son bord extérieur. Éloigner QT en le faisant glisser désactive l’alignement et permet le redimensionnement par le coin. Réactivez l’alignement pour réinitialiser sa position ; les curseurs de largeur et de hauteur maximale restent disponibles dans les deux modes.
 - Le suivi adapte sa hauteur au contenu jusqu’à la hauteur maximale configurée, puis défile. La hauteur maximale par défaut est désormais de 600 ; les tailles enregistrées sont conservées.
 - Les sections des joueurs occupent la largeur disponible et défilent si nécessaire. Les thèmes clair et sombre sont pris en charge. Le fond aux couleurs de classe conserve une opacité constante de 25 %, indépendante du curseur du fond de la fenêtre, avec un texte lisible sur fond transparent.
@@ -49,22 +49,22 @@ Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi
 
 ## 7.4.1
 
-Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi de quête.
+Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi des objectifs du groupe.
 
-### Suivi de quête
+### Suivi des objectifs du groupe
 
 - Consultez les compteurs et les barres de progression des objectifs de votre groupe dans une fenêtre compacte aux couleurs des classes. Les membres du groupe doivent utiliser QuestTogether pour partager leur progression.
 - La progression est actualisée à la réception des annonces du groupe, indépendamment des réglages du chat et des bulles. Les quêtes sans compteur affichent leur état, par exemple prêtes à être rendues.
-- Correction des objectifs à une seule étape qui affichaient à tort une progression de 1/1 dans Forever, notamment « Use Walk on Air ». La correction s’applique au suivi de quêtes et au journal de quêtes du groupe.
+- Correction des objectifs à une seule étape qui affichaient à tort une progression de 1/1 dans Forever, notamment « Use Walk on Air ». La correction s’applique au suivi des objectifs du groupe et au journal de quêtes du groupe.
 
 **Forever**
 
-![Suivi de quête — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTracker.png)
+![Suivi des objectifs du groupe — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.1/Media/ReleaseNotes/QuestTracker.png)
 
 ### Choisir les quêtes à suivre
 
 - Choisissez Masqué, Quête ciblée, Quête survolée ou Ciblage et survol. Ce dernier mode, activé par défaut, affiche les quêtes survolées dans le suivi des objectifs de Blizzard, puis revient à votre quête ciblée.
-- Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres → Groupes et partage → Suivi de quête.
+- Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres → Groupes et partage → Suivi des objectifs du groupe.
 - Activez Masquer hors groupe dans le mode Édition du HUD pour masquer le suivi en solo. Cette option est désactivée par défaut et l’aperçu de placement reste disponible en mode Édition.
 
 **Forever**
@@ -73,7 +73,7 @@ Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi
 
 ### Adapter la fenêtre à votre interface
 
-- Ouvrez le mode Édition du HUD et sélectionnez Suivi de quête pour déplacer ou redimensionner la fenêtre et régler son opacité. Enregistrer, Annuler les modifications et Rétablir les valeurs par défaut incluent le mode d’affichage et la disposition.
+- Ouvrez le mode Édition du HUD et sélectionnez Suivi des objectifs du groupe pour déplacer ou redimensionner la fenêtre et régler son opacité. Enregistrer, Annuler les modifications et Rétablir les valeurs par défaut incluent le mode d’affichage et la disposition.
 - L’alignement sur le suivi des objectifs de Blizzard est activé par défaut et place QT contre son bord extérieur. Éloigner QT en le faisant glisser désactive l’alignement et permet le redimensionnement par le coin. Réactivez l’alignement pour réinitialiser sa position ; les curseurs de largeur et de hauteur maximale restent disponibles dans les deux modes.
 - Le suivi adapte sa hauteur au contenu jusqu’à la hauteur maximale configurée, puis défile. La hauteur maximale par défaut est désormais de 600 ; les tailles enregistrées sont conservées.
 - Les sections des joueurs occupent la largeur disponible et défilent si nécessaire. Les thèmes clair et sombre sont pris en charge. Le fond aux couleurs de classe conserve une opacité constante de 25 %, indépendante du curseur du fond de la fenêtre, avec un texte lisible sur fond transparent.
@@ -84,21 +84,21 @@ Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi
 
 ## 7.4.0
 
-Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi de quête.
+Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi des objectifs du groupe.
 
-### Suivi de quête
+### Suivi des objectifs du groupe
 
 - Consultez les compteurs et les barres de progression des objectifs de votre groupe dans une fenêtre compacte aux couleurs des classes. Les membres du groupe doivent utiliser QuestTogether pour partager leur progression.
 - La progression est actualisée à la réception des annonces du groupe, indépendamment des réglages du chat et des bulles. Les quêtes sans compteur affichent leur état, par exemple prêtes à être rendues.
 
 **Forever**
 
-![Suivi de quête — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
+![Suivi des objectifs du groupe — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
 
 ### Choisir les quêtes à suivre
 
 - Choisissez Masqué, Quête ciblée, Quête survolée ou Ciblage et survol. Ce dernier mode, activé par défaut, affiche les quêtes survolées dans le suivi des objectifs de Blizzard, puis revient à votre quête ciblée.
-- Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres → Groupes et partage → Suivi de quête.
+- Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres → Groupes et partage → Suivi des objectifs du groupe.
 
 **Forever**
 
@@ -106,7 +106,7 @@ Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi
 
 ### Adapter la fenêtre à votre interface
 
-- Ouvrez le mode Édition du HUD et sélectionnez Suivi de quête pour déplacer ou redimensionner la fenêtre et régler son opacité. Enregistrer, Annuler les modifications et Rétablir les valeurs par défaut incluent le mode d’affichage et la disposition.
+- Ouvrez le mode Édition du HUD et sélectionnez Suivi des objectifs du groupe pour déplacer ou redimensionner la fenêtre et régler son opacité. Enregistrer, Annuler les modifications et Rétablir les valeurs par défaut incluent le mode d’affichage et la disposition.
 - Les sections des joueurs occupent la largeur disponible et défilent si nécessaire. Les thèmes clair et sombre sont pris en charge, avec un texte lisible et des fonds de joueurs légèrement visibles même à opacité nulle.
 
 **Forever**
