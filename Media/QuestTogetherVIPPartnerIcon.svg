@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="-12 -12 152 152"><g filter="url(#vip-partner-glow)"><g transform="translate(-83.4286 -57.8286) scale(.2285714)" stroke="#FFE438" stroke-width="132" fill="#FFE438"><g stroke="#FFE438" stroke-width="132" stroke-linejoin="round" stroke-linecap="round" fill="#FFE438">
+    <path fill="#FFE438" d="M455 286 H702 C733 286 752 307 752 343 V573 H766 C789 573 806 593 806 621 C806 649 787 670 758 670 H452 C430 670 416 653 416 630 C416 606 431 590 454 590 H479 V382 H437 C415 382 400 366 400 344 C400 312 425 286 455 286 Z" stroke="#FFE438" stroke-width="132" />
+    <path fill="none" d="M440 290 C464 303 480 329 479 359 V382" stroke="#FFE438" stroke-width="132" />
+    </g>
+  </g><g transform="translate(30 29) scale(1.5)" stroke="#FFE438" stroke-width="18" fill="#FFE438"><path fill="#FFE438" stroke="#FFE438" stroke-width="18" stroke-linejoin="round" d="M32 3 L40.7 22.5 L62 25 L46.3 39.6 L50.5 60.5 L32 49.8 L13.5 60.5 L17.7 39.6 L2 25 L23.3 22.5 Z" />
+</g></g><g><g transform="translate(-83.4286 -57.8286) scale(.2285714)" stroke="#FFE438" stroke-width="132" fill="#FFE438"><g stroke="#FFE438" stroke-width="132" stroke-linejoin="round" stroke-linecap="round" fill="#FFE438">
+    <path fill="#FFE438" d="M455 286 H702 C733 286 752 307 752 343 V573 H766 C789 573 806 593 806 621 C806 649 787 670 758 670 H452 C430 670 416 653 416 630 C416 606 431 590 454 590 H479 V382 H437 C415 382 400 366 400 344 C400 312 425 286 455 286 Z" stroke="#FFE438" stroke-width="132" />
+    <path fill="none" d="M440 290 C464 303 480 329 479 359 V382" stroke="#FFE438" stroke-width="132" />
+    </g>
+  </g><g transform="translate(30 29) scale(1.5)" stroke="#FFE438" stroke-width="18" fill="#FFE438"><path fill="#FFE438" stroke="#FFE438" stroke-width="18" stroke-linejoin="round" d="M32 3 L40.7 22.5 L62 25 L46.3 39.6 L50.5 60.5 L32 49.8 L13.5 60.5 L17.7 39.6 L2 25 L23.3 22.5 Z" />
+</g></g><g transform="translate(-83.4286 -57.8286) scale(.2285714)"><g id="quest-scrolls" stroke="#222B30" stroke-width="32" stroke-linejoin="round" stroke-linecap="round">
+    <path id="rear-scroll" fill="#F5F2E9" d="M455 286 H702 C733 286 752 307 752 343 V573 H766 C789 573 806 593 806 621 C806 649 787 670 758 670 H452 C430 670 416 653 416 630 C416 606 431 590 454 590 H479 V382 H437 C415 382 400 366 400 344 C400 312 425 286 455 286 Z" />
+    <path id="rear-roll" fill="none" d="M440 290 C464 303 480 329 479 359 V382" />
+    </g>
+  </g><g transform="translate(30 29) scale(1.5)"><path fill="#D9A62A" stroke="#222B30" stroke-width="4" stroke-linejoin="round" d="M32 3 L40.7 22.5 L62 25 L46.3 39.6 L50.5 60.5 L32 49.8 L13.5 60.5 L17.7 39.6 L2 25 L23.3 22.5 Z" />
+</g><defs><filter id="vip-partner-glow" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="2.5" /></filter></defs></svg>

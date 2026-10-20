@@ -207,6 +207,7 @@ QT:RegisterTest("client locale renders minimap menus tooltip and settings status
 		"Open Quest Log",
 		"Settings",
 		"Patch Notes",
+		"How to become a VIP",
 		"Move QuestTogether Logs to Separate Window",
 		"Hide Minimap Icon",
 	}) do

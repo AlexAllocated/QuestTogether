@@ -1,14 +1,32 @@
 {
-  "source_sha256": "cf004af512809b676af879bb70f6223c608d7adf93891a57065e949c68888464",
+  "source_sha256": "dbf73da01e3206a9f024bfe85b874aaa6a96e82b7060c0cfb67e4d33db3ca895",
   "notes": {
-    "version": "7.4.4",
-    "welcome": "Lies jedes Funktionsupdate und seine Patches zusammen.",
+    "version": "8.0.0",
+    "welcome": "QuestTogether VIP ist da.",
     "sections": [
       {
-        "title": "Patchnotes",
+        "title": "VIP-Optik",
         "items": [
-          "Das Hinweisfenster fasst jetzt jedes kleinere Funktionsupdate und seine Patches auf einer Seite zusammen. Zuerst steht das Funktionsupdate, danach folgen die Patches der Reihe nach mit Version und Datum. Die Verlaufsschaltflächen wechseln zwischen diesen Seiten.",
-          "Ältere Patchnotes wurden bereinigt: Sie beschreiben ihre eigenen Änderungen, ohne frühere Anleitungen, Tipps oder Bildschirmfotos zu wiederholen. Reine Patchupdates öffnen das Fenster weiterhin nicht automatisch; /qt notes ist jederzeit verfügbar."
+          "VIP-Spieler erhalten einen Kartenstern in Klassenfarbe, ein QT-Chatpräfix und einen Minikartenknopf mit goldenem Stern sowie die Kennzeichnung QuestTogether VIP im persönlichen Spielertooltip. Diese Belohnungen sind rein kosmetisch und gewähren keinen Entwicklerzugriff."
+        ],
+        "illustration": "vip-cosmetics"
+      },
+      {
+        "title": "VIP werden",
+        "items": [
+          "Teile den QuestTogether-Downloadlink mit Freunden, deiner Gilde, auf einem passenden Discord-Server oder in sozialen Medien. Mache einen Screenshot deiner gesendeten Nachricht oder deines Beitrags, auf dem der QT-Link und der Ort der Veröffentlichung erkennbar sind. Sende ihn per Discord-Direktnachricht an @chevcast zur Prüfung. Tritt vorher dem QT-Discord bei oder sende @chevcast eine Freundschaftsanfrage. Im VIP-Fenster findest du den Link zum Kopieren und die Aktivierungsschritte nach der Bestätigung."
+        ]
+      },
+      {
+        "title": "Belohnung aktivieren",
+        "items": [
+          "Öffne das VIP-Fenster über das Minimap-Menü, die Einstellungen oder /qt vip. Warte, bis @chevcast bestätigt, dass deinem Discord-Konto VIP gewährt wurde. Der Discord-Befehl /qt claim funktioniert erst nach dieser Vergabe.\n\nKopiere dann deinen Anforderungscode mit Strg+C und sende ihn an @chevcast oder nutze /qt claim im QT-Discord. Füge den erhaltenen privaten Aktivierungscode im VIP-Fenster ein und wähle VIP aktivieren. Wiederhole dies auf Retail oder Forever, um die Belohnung auch dort zu nutzen."
+        ]
+      },
+      {
+        "title": "Dauerhaft und optional",
+        "items": [
+          "Deine Belohnung ist mit deinem Discord-Konto verknüpft und gilt für alle Charaktere einer Installation. Beanspruche sie separat auf Retail und Forever. Schalte Meine VIP-Darstellung anzeigen aus, um die Belohnung ohne sichtbare Effekte zu behalten. Normale, VIP- und Entwickler-Minimapbuttons haben nun goldene Ränder entlang ihrer Symbolform. Die Entwicklerdarstellung hat Vorrang vor VIP."
         ]
       }
     ]

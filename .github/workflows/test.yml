@@ -52,6 +52,10 @@ jobs:
         if: matrix.lua == '5.1'
       - run: lua${{ matrix.lua }} scripts/test.lua
       - run: python3 scripts/test_developer_crypto.py lua${{ matrix.lua }}
+      - run: |
+          python3 -m venv /tmp/qt-vip-tests
+          /tmp/qt-vip-tests/bin/pip install -r services/vip/requirements.txt
+          QT_TEST_LUA=lua${{ matrix.lua }} /tmp/qt-vip-tests/bin/python -m unittest discover -s services/vip -p 'test_*.py'
       - run: lua${{ matrix.lua }} scripts/settings_smoke.lua
       - run: python3 scripts/bindings_smoke.py lua${{ matrix.lua }}
       - run: lua${{ matrix.lua }} scripts/test.lua . reverse

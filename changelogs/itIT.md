@@ -2,14 +2,31 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.4.4
+## 8.0.0
 
-Leggi ogni aggiornamento e le sue patch nella stessa pagina.
+Arriva QuestTogether VIP.
 
-### Note di aggiornamento
+### Aspetto VIP
 
-- La finestra ora raggruppa ogni versione minore e le sue patch in una pagina: prima la versione minore, poi le patch in ordine, con intestazioni che indicano versione e data. La navigazione della cronologia passa tra queste pagine raggruppate.
-- Le note delle vecchie patch ora descrivono le proprie modifiche senza ripetere guide, consigli o schermate precedenti. Gli aggiornamenti contenenti solo patch continuano a non aprire automaticamente la finestra; usa /qt notes quando vuoi.
+- I giocatori VIP hanno una stella del colore della classe sulla mappa, un prefisso QT e un pulsante della minimappa con stella dorata, e la dicitura QuestTogether VIP nel tooltip individuale. Sono ricompense estetiche e non concedono accesso da sviluppatore.
+
+**Forever**
+
+![Aspetto VIP — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.0.0/Media/ReleaseNotes/VIPCosmetics.png)
+
+### Diventa VIP
+
+- Condividi il link per scaricare QuestTogether con amici, la tua gilda, un Discord pertinente o sui social. Fai uno screenshot del messaggio inviato o del post pubblicato, mostrando il link QT e dove lo hai condiviso. Invialo in un messaggio privato su Discord a @chevcast per la verifica. Entra prima nel Discord QT o invia una richiesta di amicizia a @chevcast. La finestra VIP contiene il link da copiare e i passaggi di attivazione dopo l’approvazione.
+
+### Attiva la ricompensa
+
+- Apri la finestra VIP dal menu della minimappa, dalle impostazioni o con /qt vip. Attendi che @chevcast confermi che VIP è stato assegnato al tuo account Discord. Il comando Discord /qt claim funziona solo dopo questa assegnazione.
+
+Poi copia il codice di richiesta con Ctrl+C e invialo a @chevcast, oppure usa /qt claim nel Discord QT. Incolla il codice di attivazione privato ricevuto nella finestra VIP e scegli Attiva VIP. Ripeti su Retail o Forever per usare la stessa ricompensa anche lì.
+
+### Permanente e facoltativo
+
+- La ricompensa è legata al tuo account Discord e condivisa tra i personaggi di ogni installazione. Riscattala separatamente su Retail e Forever. Disattiva Mostra i miei elementi VIP per conservarla senza mostrarli. I pulsanti della minimappa normale, VIP e sviluppatore hanno bordi dorati che seguono la forma dell’icona. L’aspetto sviluppatore ha la precedenza su VIP.
 
 ## 7.4.3
 

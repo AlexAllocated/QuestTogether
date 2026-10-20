@@ -115,7 +115,8 @@
       "QTSR",
       "QTSX",
       "QTVR",
-      "STATE"
+      "STATE",
+      "VIP"
     ],
     "CommsTransfer.lua": [
       "Count",
@@ -159,6 +160,7 @@
       "QTSR",
       "QTSX",
       "STATE",
+      "VIP",
       "WHISPER",
       "communication completion",
       "communication currentness",
@@ -360,6 +362,8 @@
       "Button",
       "CENTER",
       "Frame",
+      "Glow",
+      "Highlight",
       "LEFT",
       "MEDIUM",
       "OVERLAY",
@@ -891,6 +895,23 @@
       "outbound completion",
       "outbound queue full",
       "wire message"
+    ],
+    "VIPIdentity.lua": [
+      "CHANNEL",
+      "VIP"
+    ],
+    "VIPWindow.lua": [
+      "ARTWORK",
+      "BACKGROUND",
+      "BOTTOMLEFT",
+      "BOTTOMRIGHT",
+      "Button",
+      "Frame",
+      "LEFT",
+      "OVERLAY",
+      "RIGHT",
+      "TOPLEFT",
+      "TOPRIGHT"
     ],
     "Welcome.lua": [
       "Frame"

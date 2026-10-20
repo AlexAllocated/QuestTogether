@@ -303,6 +303,8 @@ QuestTogether.NEARBY_RANGE_MIN = 5
 QuestTogether.NEARBY_RANGE_MAX = 100
 QuestTogether.PLAYER_PARTNER_ICON_TEXTURE = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon"
 QuestTogether.PLAYER_DEVELOPER_ICON_TEXTURE = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherDeveloperIcon"
+QuestTogether.PLAYER_VIP_ICON_TEXTURE = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherVIPIcon"
+QuestTogether.PLAYER_VIP_PARTNER_ICON_TEXTURE = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherVIPPartnerIcon"
 QuestTogether.PLAYER_DEVELOPER_PARTNER_ICON_TEXTURE =
 	"Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherDeveloperPartnerIcon"
 
@@ -4307,11 +4309,16 @@ function QuestTogether:ResolvePlayerAnnouncementIcon(asset, kind, targetName)
 	local path = asset:lower():gsub("/", "\\"):gsub("%.tga$", "")
 	local looking = path == self.PLAYER_PARTNER_ICON_TEXTURE:lower()
 		or path == self.PLAYER_DEVELOPER_PARTNER_ICON_TEXTURE:lower()
+		or path == self.PLAYER_VIP_PARTNER_ICON_TEXTURE:lower()
 	if not looking and path ~= self.NAMEPLATE_PLAYER_ICON_TEXTURE:lower()
-		and path ~= self.PLAYER_DEVELOPER_ICON_TEXTURE:lower() then return asset, kind end
+		and path ~= self.PLAYER_DEVELOPER_ICON_TEXTURE:lower()
+		and path ~= self.PLAYER_VIP_ICON_TEXTURE:lower() then return asset, kind end
 	looking = looking or (targetName and self:IsPlayerLookingForQuestPartners(targetName))
 	if targetName and self:IsVerifiedDeveloper(targetName) then
 		return looking and self.PLAYER_DEVELOPER_PARTNER_ICON_TEXTURE or self.PLAYER_DEVELOPER_ICON_TEXTURE, "texture"
+	end
+	if targetName and self:IsVerifiedVIP(targetName) then
+		return looking and self.PLAYER_VIP_PARTNER_ICON_TEXTURE or self.PLAYER_VIP_ICON_TEXTURE, "texture"
 	end
 	return looking and self.PLAYER_PARTNER_ICON_TEXTURE or self.NAMEPLATE_PLAYER_ICON_TEXTURE, "texture"
 end
@@ -5890,6 +5897,7 @@ end
 
 function QuestTogether:Disable()
 	self.db.profile.enabled = false
+	self.pendingQuestScanAnnouncement = nil
 
 	if not self.isEnabled then
 		return true
@@ -6022,6 +6030,7 @@ function QuestTogether:PrintHelp()
 	self:Print(L("/qt get <option> - Read an option value"))
 	self:Print(L("/qt pql - Open Party Quest Log"))
 	self:Print(L("/qt companions - Open your private recent companions list"))
+	self:Print(L("/qt vip - Learn about VIP rewards and activate your cosmetics"))
 	self:Print(L("/qt tip | hint - Show another QuestTogether tip"))
 	self:Print("/qt resetlayout - " .. L("Reset window layout"))
 	self:Print(L("/qt lfg [on|off|toggle|status] - Set or check Looking for Questing Partners (no argument toggles)"))
@@ -6159,6 +6168,7 @@ function QuestTogether:HandleSlashCommand(input)
 	if command == "companions" then
 		return self:OpenRecentCompanions()
 	end
+	if command == "vip" then return self:OpenVIPWindow() end
 	if command == "tip" or command == "hint" then
 		if not self:ShowHint() then self:Print(L("Tips are unavailable right now.")) end
 		return
@@ -6343,6 +6353,29 @@ function QuestTogether:ReconcileQuestTracking(snapshot)
 	end
 end
 
+function QuestTogether:PrintQuestScanAnnouncement(monitoredCount)
+	if self:IsLocalVIPVerificationPending() and not self:IsVerifiedDeveloper(self:GetPlayerFullName()) then
+		-- Only the local presentation waits. Keep at most the latest scan count;
+		-- quest tracking and the wire announcement retain their normal timing.
+		self.pendingQuestScanAnnouncement = { count = monitoredCount, lifetime = self:GetDeferredWorkStateStore() }
+		return
+	end
+	self.pendingQuestScanAnnouncement = nil
+	self:PrintConsoleAnnouncement(self:GetMonitoredQuestCountText(monitoredCount))
+end
+
+function QuestTogether:FlushPendingQuestScanAnnouncement()
+	local pending = self.pendingQuestScanAnnouncement
+	if not pending then return end
+	if not self.isEnabled or self.isLoggingOut or pending.lifetime ~= self:GetDeferredWorkStateStore() then
+		self.pendingQuestScanAnnouncement = nil
+		return
+	end
+	if self:IsLocalVIPVerificationPending() then return end
+	self.pendingQuestScanAnnouncement = nil
+	self:PrintConsoleAnnouncement(self:GetMonitoredQuestCountText(pending.count))
+end
+
 function QuestTogether:ScanQuestLog(shouldAnnounceTaskAreas)
 	if not self.db or not self.db.global then
 		return
@@ -6420,7 +6453,7 @@ function QuestTogether:ScanQuestLog(shouldAnnounceTaskAreas)
 	self:SetRuntimeFlag("questTrackerReady", true)
 	local monitoredCount = self:GetMonitoredQuestCount()
 	local scanMessage = self:GetMonitoredQuestCountText(monitoredCount)
-	self:PrintConsoleAnnouncement(scanMessage)
+	self:PrintQuestScanAnnouncement(monitoredCount)
 	if self.BuildLocalAnnouncementEvent and self.SendAnnouncementWireEvent then
 		local eventData = self:BuildLocalAnnouncementEvent("SCAN_STATUS", scanMessage, nil, {
 			eventFacts = self:BuildAnnouncementFacts("SCAN_STATUS", nil, nil, nil, monitoredCount),

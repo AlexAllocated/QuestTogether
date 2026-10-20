@@ -277,6 +277,24 @@ Canonical notes, web changelogs and Discord posts remain individual releases.
 
 ## Communication generation 2
 
+VIP cosmetics use a separate pinned issuer key in `VIPPublicKey.lua`.
+`VIPIdentity.lua` owns account-wide activation storage, incremental certificate
+and sender/session-bound proof verification, bounded identity caches, publication
+and withdrawal. `VIPWindow.lua` owns the contact/activation UI. Neither module
+grants developer authority or changes diagnostic/location consent.
+`RuntimeCoordinator` advances VIP work through the communication coordinator;
+public `VIP` events use the existing global channel, catalog, transport and
+fragment assembly. Presentation queries `IsVerifiedVIP`, with developer artwork
+taking precedence. Private activation seeds live in the separate
+`QuestTogetherVIP` SavedVariables root and are excluded from profile exports and
+diagnostic snapshots.
+
+`services/vip` is a separate Discord worker, not an addon runtime dependency.
+It stores permanent Discord-ID grants and per-installation credentials in a
+private SQLite ledger. Only the configured numeric owner may grant or issue for
+another user; all command replies are ephemeral. The dedicated issuer key and
+ledger must be preserved when moving hosts. See `services/vip/README.md`.
+
 The only gameplay prefix is `QuestTogether2`. Existing global and regional chat
 channel names remain unchanged. Generation 1 traffic is ignored, with no legacy
 decoder, companion packet or fallback transmission. Optional feature capabilities

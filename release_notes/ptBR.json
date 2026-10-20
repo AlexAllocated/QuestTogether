@@ -1,14 +1,32 @@
 {
-  "source_sha256": "cf004af512809b676af879bb70f6223c608d7adf93891a57065e949c68888464",
+  "source_sha256": "dbf73da01e3206a9f024bfe85b874aaa6a96e82b7060c0cfb67e4d33db3ca895",
   "notes": {
-    "version": "7.4.4",
-    "welcome": "Leia cada atualização e seus patches na mesma página.",
+    "version": "8.0.0",
+    "welcome": "Apresentamos o QuestTogether VIP.",
     "sections": [
       {
-        "title": "Notas da atualização",
+        "title": "Visual VIP",
         "items": [
-          "A janela agora agrupa cada versão secundária e seus patches em uma página, começando pela versão secundária e acrescentando os patches em ordem, com títulos indicando versão e data. A navegação do histórico alterna entre essas páginas agrupadas.",
-          "As notas antigas agora mostram as mudanças de cada patch sem repetir guias, dicas ou capturas anteriores. Atualizações apenas de patch continuam sem abrir a janela automaticamente; use /qt notes quando quiser."
+          "Jogadores VIP têm uma estrela da cor da classe no mapa, um prefixo QT e um botão do minimapa com estrela dourada, além do título QuestTogether VIP na dica individual do jogador. As recompensas são cosméticas e não concedem acesso de desenvolvedor."
+        ],
+        "illustration": "vip-cosmetics"
+      },
+      {
+        "title": "Como se tornar VIP",
+        "items": [
+          "Compartilhe o link de download do QuestTogether com amigos, sua guilda, em um Discord apropriado ou nas redes sociais. Tire uma captura da mensagem enviada ou publicação, mostrando o link do QT e onde você o compartilhou. Envie-a por mensagem direta no Discord para @chevcast analisar. Entre primeiro no Discord do QT ou envie uma solicitação de amizade a @chevcast. A janela VIP inclui o link para copiar e as etapas de ativação após a aprovação."
+        ]
+      },
+      {
+        "title": "Ative sua recompensa",
+        "items": [
+          "Abra a janela VIP pelo menu do minimapa, pelas configurações ou com /qt vip. Espere @chevcast confirmar que VIP foi concedido à sua conta do Discord. O comando /qt claim no Discord só funciona após essa concessão.\n\nDepois copie seu código de solicitação com Ctrl+C e envie-o a @chevcast, ou use /qt claim no Discord do QT. Cole o código privado de ativação recebido na janela VIP e escolha Ativar VIP. Repita no Retail ou no Forever para usar a mesma recompensa lá."
+        ]
+      },
+      {
+        "title": "Permanente e opcional",
+        "items": [
+          "A recompensa está vinculada à sua conta do Discord e é compartilhada entre personagens de cada instalação. Resgate-a separadamente no Retail e no Forever. Desative Mostrar meus cosméticos VIP para mantê-la sem exibi-los. Os botões de minimapa normal, VIP e de desenvolvedor têm bordas douradas que seguem seu formato. A aparência de desenvolvedor tem prioridade sobre VIP."
         ]
       }
     ]

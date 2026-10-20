@@ -2,14 +2,31 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.4.4
+## 8.0.0
 
-Lee cada actualización y sus parches en una misma página.
+Presentamos QuestTogether VIP.
 
-### Notas de actualización
+### Aspecto VIP
 
-- La ventana ahora agrupa cada versión menor y sus parches en una página, con la versión menor primero y los parches en orden bajo encabezados con versión y fecha. La navegación del historial pasa entre estas páginas agrupadas.
-- Se depuraron las notas antiguas para mostrar los cambios de cada parche sin repetir guías, consejos ni capturas anteriores. Las actualizaciones de parche siguen sin abrir la ventana automáticamente; usa /qt notes cuando quieras.
+- Los jugadores VIP tienen una estrella del color de su clase en el mapa, un prefijo QT y un botón del minimapa con una estrella dorada, y la etiqueta QuestTogether VIP en su descripción individual. Son recompensas cosméticas y no otorgan acceso de desarrollador.
+
+**Forever**
+
+![Aspecto VIP — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.0.0/Media/ReleaseNotes/VIPCosmetics.png)
+
+### Cómo ser VIP
+
+- Comparte el enlace de descarga de QuestTogether con amigos, tu hermandad, un Discord apropiado o en redes sociales. Haz una captura del mensaje enviado o la publicación que muestre el enlace de QT y dónde lo compartiste. Envíala por mensaje directo de Discord a @chevcast para su revisión. Únete primero al Discord de QT o envía una solicitud de amistad a @chevcast. La ventana VIP incluye el enlace para copiar y los pasos de activación tras la aprobación.
+
+### Activa tu recompensa
+
+- Abre la ventana VIP desde el menú del minimapa, los ajustes o /qt vip. Espera a que @chevcast confirme que se ha concedido VIP a tu cuenta de Discord. El comando /qt claim de Discord solo funciona después de esa concesión.
+
+Después copia tu código de solicitud con Ctrl+C y envíalo a @chevcast, o usa /qt claim en el Discord de QT. Pega el código privado de activación recibido en la ventana VIP y elige Activar VIP. Repite en Retail o Forever para usar allí la misma recompensa.
+
+### Permanente y opcional
+
+- La recompensa está vinculada a tu cuenta de Discord y se comparte entre los personajes de cada instalación. Reclámala por separado en Retail y Forever. Desactiva Mostrar mis cosméticos VIP para conservarla sin mostrarlos. Los botones de minimapa normal, VIP y de desarrollador tienen bordes dorados que siguen su forma. La apariencia de desarrollador tiene prioridad sobre VIP.
 
 ## 7.4.3
 

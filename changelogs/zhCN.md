@@ -2,14 +2,31 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.4.4
+## 8.0.0
 
-在同一页阅读功能更新及其后续补丁。
+QuestTogether VIP 正式登场。
 
-### 更新说明
+### VIP 外观
 
-- 说明窗口现在将每个次版本及其后续补丁合并为一页，先显示次版本说明，再按顺序追加带有版本和日期标题的补丁说明。历史导航会在这些合并后的页面之间切换。
-- 整理了旧补丁说明，只保留各补丁自身的变更，不再重复之前的功能指南、提示或截图。仅更新补丁仍不会自动打开窗口；随时可用 /qt notes 查看。
+- VIP 玩家拥有职业颜色的星形地图标记、带金色星星的 QT 聊天前缀和小地图按钮，以及个人玩家提示中的 QuestTogether VIP 标签。这些奖励仅改变外观，不会授予开发者权限。
+
+**Forever**
+
+![VIP 外观 — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.0.0/Media/ReleaseNotes/VIPCosmetics.png)
+
+### 如何成为 VIP
+
+- 将 QuestTogether 下载链接分享给朋友、公会、相关 Discord 社区或发布到社交媒体。截取已发送的消息或已发布帖子的画面，显示 QT 链接和分享的位置。将截图通过 Discord 私信发送给 @chevcast 审核。请先加入 QT Discord 服务器或向 @chevcast 发送好友请求，以便私信送达。VIP 窗口提供可复制的链接和获批后的激活步骤。
+
+### 激活奖励
+
+- 从小地图菜单、设置或通过 /qt vip 打开 VIP 窗口。请等待 @chevcast 确认已向您的 Discord 账号授予 VIP。Discord 中的 /qt claim 命令只有在授予 VIP 后才能使用。
+
+随后用 Ctrl+C 复制领取码，发送给 @chevcast，或在 QT Discord 服务器中使用 /qt claim。将收到的私人激活码粘贴到 VIP 窗口中并选择激活 VIP。若要在 Retail 或 Forever 中使用同一奖励，请重复此步骤。
+
+### 永久且可选
+
+- 奖励绑定 Discord 账号，并由每次安装中的所有角色共享。请在 Retail 和 Forever 中分别领取。关闭 VIP 外观显示仍可保留奖励。普通、VIP 和开发者小地图按钮现在使用沿图标轮廓的金色边框。开发者外观优先于 VIP。
 
 ## 7.4.3
 

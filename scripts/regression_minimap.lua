@@ -223,7 +223,7 @@ end
 local function CheckMenu(menu)
 	local labels = {
 		"Looking for Questing Partners", false, "Party Quest Log", "Recent Companions", "Open Quest Log",
-		false, "Settings", "Patch Notes", "Move QuestTogether Logs to Separate Window", "Hide Minimap Icon",
+		false, "Settings", "Patch Notes", "How to become a VIP", "Move QuestTogether Logs to Separate Window", "Hide Minimap Icon",
 	}
 	Equal(#menu.entries, #labels)
 	for index, label in ipairs(labels) do
@@ -245,6 +245,15 @@ local function Fixture()
 	}, { __index = QuestTogether })
 	function addon:AnnounceQuestPartnerSearch() end
 	function addon:IsMinimapShiftKeyDown() return self.shift == true end
+	function addon:GetPlayerFullName() return "Launcher-Realm" end
+	function addon:IsVerifiedVIP(name)
+		assert(name == "Launcher-Realm")
+		return self.isEnabled and self.vipActive == true and self:IsVIPDisplayEnabled()
+	end
+	function addon:IsVerifiedDeveloper(name)
+		assert(name == "Launcher-Realm")
+		return self.isEnabled and self.developerActive == true
+	end
 	local anchor = Frame()
 	anchor.width, anchor.height, anchor.cx, anchor.cy, anchor.scale = 140, 140, 100, 200, 2
 	addon.anchor, addon.cursorX, addon.cursorY = anchor, 200, 556
@@ -392,7 +401,7 @@ Register(
 		Equal(#a.frames, 2)
 		local button = a.minimapButton
 		assert(button.shown and button.parent == a.anchor)
-		Equal(button.textures[1].texture, "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon")
+		Equal(button.textures[1].texture, "Interface\\AddOns\\QuestTogether\\Media\\MinimapButton")
 		Equal(a.anchor.layouts, 0)
 		Equal(next(a.anchor.scripts), nil)
 		Equal(button.clicks[1], "LeftButtonUp")
@@ -404,6 +413,12 @@ Register(
 		Equal(a.compares, 1)
 		local actions = a.menus[1]
 		CheckMenu(actions)
+		a.vipState = { credential = {} }
+		a.vipStore = { visible = false }
+		local activated = Menu()
+		a:PopulateMinimapMenu(activated)
+		assert(Entry(activated, "VIP Settings"), "activated users keep the settings label with cosmetics hidden")
+		a.vipState = nil
 		Equal(Entry(actions, "Looking for Questing Partners").isSelected(), false)
 		for _, label in ipairs({ "Party Quest Log", "Recent Companions", "Open Quest Log", "Settings", "Patch Notes",
 			"Move QuestTogether Logs to Separate Window" }) do
@@ -1003,7 +1018,7 @@ Register("minimap partner glow follows status visibility and restrictions with a
 	Equal(pulse.animations[2].FromAlpha, 1)
 	Equal(pulse.animations[2].ToAlpha, 0.3)
 	Equal(button.qtRingGlow.points[1][2], button)
-	Equal(button.qtLogoTexture.width, 24)
+	Equal(button.qtLogoTexture.width, 32)
 	local textures, plays = #button.textures, pulse.plays
 	a:RefreshMinimapButton()
 	Equal(#button.textures, textures)
@@ -1033,4 +1048,43 @@ Register("minimap partner glow follows status visibility and restrictions with a
 	a:SetOption("lookingForQuestPartners", false)
 	assert(not pulse:IsPlaying())
 	Equal(#button.textures, textures)
+end)
+
+Register("minimap VIP logo follows activation cosmetics and restriction recovery", function()
+	local a = Fixture()
+	a:InitializeMinimapLauncher()
+	local icon = a.minimapButton.qtLogoTexture
+	local normal = icon.texture
+	a.vipActive = true
+	a:RefreshMinimapIdentityIcon()
+	local vip = "Interface\\AddOns\\QuestTogether\\Media\\MinimapVIPButton"
+	Equal(icon.texture, vip)
+	Equal(a.minimapButton.highlight, vip .. "Highlight")
+	a:SetOption("lookingForQuestPartners", true)
+	Equal(a.minimapButton.qtRingGlow.texture, vip .. "Glow")
+	a:SetVIPDisplayEnabled(false)
+	Equal(icon.texture, normal)
+	Equal(a.minimapButton.highlight, normal .. "Highlight")
+	Equal(a.minimapButton.qtRingGlow.texture, normal .. "Glow")
+	a:SetVIPDisplayEnabled(true)
+	Equal(icon.texture, vip)
+	a.developerActive = true
+	a:RefreshMinimapIdentityIcon()
+	local developer = "Interface\\AddOns\\QuestTogether\\Media\\MinimapDeveloperButton"
+	Equal(icon.texture, developer)
+	Equal(a.minimapButton.highlight, developer .. "Highlight")
+	Equal(a.minimapButton.qtRingGlow.texture, developer .. "Glow")
+	a.developerActive = false
+	a:RefreshMinimapIdentityIcon()
+	Equal(icon.texture, vip)
+	a.blocked = true
+	a:SetVIPDisplayEnabled(false)
+	Equal(icon.texture, vip)
+	a.blocked = false
+	a.minimapLauncherFrame.scripts.OnEvent(nil, "PLAYER_REGEN_ENABLED")
+	Equal(icon.texture, normal)
+	a:SetVIPDisplayEnabled(true)
+	a.isEnabled = false
+	a:RefreshMinimapButton()
+	Equal(icon.texture, normal)
 end)

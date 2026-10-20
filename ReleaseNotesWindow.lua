@@ -676,6 +676,7 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 							asset, imageWidth, imageHeight = "PartyQuestOverviewForever", 1465, 635
 						elseif section.illustration == "party-quest-following" then
 							asset, imageWidth, imageHeight = "PartyQuestFollowingForever", 1198, 199
+							textureWidth, textureHeight = 2048, 256
 						elseif section.illustration == "party-quest-focus-warning" then
 							asset, imageWidth, imageHeight = "PartyQuestFocusWarningForever", 1824, 540
 						end
@@ -688,6 +689,9 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 						elseif section.illustration == "quest-tracker-display" then
 							asset, imageWidth, imageHeight = "QuestTrackerDisplay", 476, 180
 							textureWidth, textureHeight = 512, 256
+						elseif section.illustration == "vip-cosmetics" then
+							asset, imageWidth, imageHeight = "VIPCosmetics", 800, 420
+							textureWidth, textureHeight = 1024, 512
 						end
 						if asset then
 							frame.releaseScreenshots = frame.releaseScreenshots or {}

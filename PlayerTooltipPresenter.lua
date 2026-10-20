@@ -230,6 +230,7 @@ function QuestTogether:BuildPlayerTooltipMember(member, options)
 	local r, g, b = Color(self, member.classFile)
 	local leader = options.leader == true
 	local developer = self:IsVerifiedDeveloper(name) == true
+	local vip = not developer and self:IsVerifiedVIP(name) == true
 	local hiddenLocation = self:IsPlayerLocationHiddenForDeveloper(name) == true
 	local looking = self:IsPlayerLookingForQuestPartners(name)
 		or (member.developerOnly and member.lookingForQuestPartners == true)
@@ -244,6 +245,7 @@ function QuestTogether:BuildPlayerTooltipMember(member, options)
 		icon = looking and PARTY_MEDIA .. "QuestTogetherPartnerIcon" or self.NAMEPLATE_PLAYER_ICON_TEXTURE,
 		label = label,
 		developer = developer,
+		vip = vip,
 		hiddenLocation = hiddenLocation,
 	}
 end
@@ -319,6 +321,8 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 			.. "|r"
 		if addon:IsVerifiedDeveloper(row.name) then
 			introText = introText .. "\n|cffffd200" .. L("QuestTogether developer") .. "|r"
+		elseif addon:IsVerifiedVIP(row.name) then
+			introText = introText .. "\n|cffffd200" .. L("QuestTogether VIP") .. "|r"
 		end
 		if addon:IsPlayerLocationHiddenForDeveloper(row.name) then
 			introText = introText .. "\n|cffff8080" .. L("Location sharing is off") .. "|r"
@@ -384,10 +388,12 @@ local function PartyTooltipRows(addon, state, members)
 		Call(addon, item.qtIcon, "SetTexture", member.icon)
 		Call(addon, item.qtIcon, member.usesQT and "Show" or "Hide")
 		Call(addon, item.dot, "SetColorTexture", r, g, b, 1)
-		Call(addon, item.dot, member.developer and "Hide" or "Show")
+		local special = member.developer or member.vip
+		Call(addon, item.dot, special and "Hide" or "Show")
+		Call(addon, item.developerIcon, "SetTexture", PARTY_MEDIA .. (member.developer and "DeveloperGear" or "VIPStar"))
 		Call(addon, item.developerIcon, "SetVertexColor", r, g, b, 1)
-		Call(addon, item.developerIcon, member.developer and "Show" or "Hide")
-		addon:SetPlayerMarkerGlow(item.hiddenGlow, member.hiddenLocation and "hidden" or nil, member.developer and 20 or 16)
+		Call(addon, item.developerIcon, special and "Show" or "Hide")
+		addon:SetPlayerMarkerGlow(item.hiddenGlow, member.hiddenLocation and "hidden" or nil, special and 20 or 16)
 		local leader = member.leader
 		Call(addon, item.label, "SetText", member.label)
 		item.partyKey = member.partyKey

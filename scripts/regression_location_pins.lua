@@ -2903,7 +2903,7 @@ Register("disabling clustering restores actual world map dots and leaves minimap
 	Equal(a.playerLocationClusterExpansion, nil)
 end)
 
-Register("developer gear and tooltip require verified identity and restore normal dots after revocation or reuse", function()
+Register("developer and VIP artwork requires verified identity and restores normal dots after revocation or reuse", function()
 	local a = ClusterFixture(1)
 	local row = a.rows.map[1]
 	row.developer, row.verifiedDeveloper = true, true
@@ -2917,8 +2917,19 @@ Register("developer gear and tooltip require verified identity and restore norma
 	end
 	map.frame.scripts.OnEnter()
 	assert(not a.locationPinState.tooltipIntro.text:find("QuestTogether developer", 1, true))
+	function a:IsVerifiedVIP(name) return name == self.verifiedVIPName end
+	a.verifiedVIPName = row.name
+	a:RefreshPlayerLocationPins()
+	for _, pin in ipairs({ map, mini }) do
+		assert(pin.developerGear.shown and not pin.texture.shown and not pin.border.shown)
+		assert(pin.developerGear.texture:find("VIPStar", 1, true))
+		assert(pin.glow[1].shown)
+	end
+	assert(a.locationPinState.tooltipIntro.text:find("QuestTogether VIP", 1, true))
 	a.verifiedDeveloperName = row.name
 	a:RefreshPlayerLocationPins()
+	assert(map.developerGear.texture:find("DeveloperGear", 1, true), "developer takes precedence over VIP")
+	a.verifiedVIPName = nil
 	for _, pin in ipairs({ map, mini }) do
 		assert(pin.developerGear.shown and not pin.texture.shown and not pin.border.shown)
 		Equal(pin.frame.width, 18)

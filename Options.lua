@@ -974,7 +974,7 @@ function QuestTogether:RefreshHomeWindow()
 		controls.statusText:SetText(self:GetHomeStatusText())
 		-- Text can wrap for long profile names, translations, or an update notice.
 		-- The remaining vertical stack contains three settings and three buttons.
-		controls.content:SetHeight(controls.description:GetStringHeight() + controls.statusText:GetStringHeight() + 340)
+		controls.content:SetHeight(controls.description:GetStringHeight() + controls.statusText:GetStringHeight() + 374)
 	end
 end
 
@@ -2199,6 +2199,9 @@ function QuestTogether:InitializeOptionsWindow()
 	local discord = CreateHomeActionButton(L("Discord — Feedback & Support"),
 		L("Open the Discord invite link to share feedback or ask for help."), patchNotes, 8,
 		function() QuestTogether:OpenDiscordSupport() end)
+	local vip = CreateHomeActionButton(L("How to become a VIP"),
+		L("Learn about VIP rewards, contact @chevcast, and activate your cosmetics."), discord, 8,
+		function() QuestTogether:OpenVIPWindow() end)
 
 	self.homeControls = {
 		generalHeader = generalHeader,
@@ -2211,6 +2214,7 @@ function QuestTogether:InitializeOptionsWindow()
 		comparePartyQuests = comparePartyQuests,
 		patchNotes = patchNotes,
 		discord = discord,
+		vip = vip,
 	}
 
 	frame:SetScript("OnShow", function()

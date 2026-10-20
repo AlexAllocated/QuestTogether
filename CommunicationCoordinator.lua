@@ -793,6 +793,9 @@ local function DispatchOperation(self, frame, data, sender, context)
 	if operation == "HELLO" then
 		return self:HandleDeveloperAnnouncementHello(data, sender, context)
 	end
+	if operation == "VIP" then
+		return self:HandleVIPIdentity(data, sender, context)
+	end
 	if operation == "DEVANN" then
 		return self:HandleDeveloperAnnouncementSubscription(data, sender, context)
 	end
@@ -1064,6 +1067,8 @@ function QT:UpdateCommunicationRuntime()
 		return
 	end
 	self:UpdateDeveloperAnnouncements(now)
+	self:UpdateVIPIdentity()
+	self:FlushPendingQuestScanAnnouncement()
 	local requests = {}
 	for id, request in pairs(s.requests) do
 		requests[#requests + 1] = { id, request }
@@ -1122,6 +1127,7 @@ function QT:UpdateCommunicationRuntime()
 	end
 end
 function QT:EndCommunicationSession()
+	self:ResetVIPIdentity()
 	self:ResetDeveloperAnnouncements()
 	local s = rawget(self, "communicationState")
 	local requests = s and s.requests or {}

@@ -1,6 +1,8 @@
 local L = _G.QuestTogether.Translate
 local QuestTogether = _G.QuestTogether
-local ICON = "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherIcon"
+local ICON = "Interface\\AddOns\\QuestTogether\\Media\\MinimapButton"
+local VIP_ICON = "Interface\\AddOns\\QuestTogether\\Media\\MinimapVIPButton"
+local DEVELOPER_ICON = "Interface\\AddOns\\QuestTogether\\Media\\MinimapDeveloperButton"
 local DEFAULT_ANGLE = 225
 
 -- All state and scripts belong to our own frames. Minimap is only a guarded
@@ -166,6 +168,9 @@ function QuestTogether:PopulateMinimapMenu(rootDescription)
 		if not self:IsRuntimeRestricted() then
 			self:OpenReleaseNotes()
 		end
+	end)
+	rootDescription:CreateButton(self:IsVIPActivated() and L("VIP Settings") or L("How to become a VIP"), function()
+		if not self:IsRuntimeRestricted() then self:OpenVIPWindow() end
 	end)
 	self:PopulateChatLogDestinationMenu(rootDescription)
 	rootDescription:CreateButton(L("Hide Minimap Icon"), function()
@@ -387,6 +392,25 @@ function QuestTogether:StartMinimapButtonDrag(button)
 	self:UpdateMinimapButtonDrag()
 end
 
+function QuestTogether:GetMinimapIdentityTexture()
+	local name = self:GetPlayerFullName()
+	if self:IsVerifiedDeveloper(name) then return DEVELOPER_ICON end
+	return self:IsVerifiedVIP(name) and VIP_ICON or ICON
+end
+
+function QuestTogether:RefreshMinimapIdentityIcon()
+	local button = rawget(self, "minimapButton")
+	if self:IsRuntimeRestricted() or not self.LibChev.CanMutateOwnedRegion(button)
+		or not self.LibChev.CanMutateOwnedRegion(button.qtLogoTexture) then return false end
+	local texture = self:GetMinimapIdentityTexture()
+	button.qtLogoTexture:SetTexture(texture)
+	button:SetHighlightTexture(texture .. "Highlight")
+	if self.LibChev.CanMutateOwnedRegion(button.qtRingGlow) then
+		button.qtRingGlow:SetTexture(texture .. "Glow")
+	end
+	return true
+end
+
 function QuestTogether:RefreshMinimapPartnerGlow(hidden)
 	local button = rawget(self, "minimapButton")
 	if not button or not self.LibChev.CanMutateOwnedRegion(button) then return false end
@@ -401,8 +425,8 @@ function QuestTogether:RefreshMinimapPartnerGlow(hidden)
 	if not glow then
 		glow = button:CreateTexture(nil, "OVERLAY", nil, 1)
 		button.qtRingGlow = glow
-		glow:SetTexture("Interface\\AddOns\\QuestTogether\\Media\\MinimapPartnerRing")
-		glow:SetSize(44, 44)
+		glow:SetTexture(self:GetMinimapIdentityTexture() .. "Glow")
+		glow:SetSize(32, 32)
 		glow:SetPoint("CENTER", button, "CENTER", 0, 0)
 		glow:SetBlendMode("ADD")
 		button.qtRingPulse = self:CreateQTPlayerGlowPulse(glow, 0.3, 0.7)
@@ -428,17 +452,13 @@ function QuestTogether:CreateMinimapButton(anchor)
 	button:SetFrameLevel(8)
 	button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 	button:RegisterForDrag("LeftButton")
-	button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+	button:SetHighlightTexture(ICON .. "Highlight")
 	local icon = button:CreateTexture(nil, "ARTWORK")
-	icon:SetSize(24, 24)
+	-- The metallic rim follows the artwork; no circular overlay covers the logo.
+	icon:SetSize(32, 32)
 	icon:SetPoint("CENTER", 0, 0)
 	icon:SetTexture(ICON)
 	button.qtLogoTexture = icon
-	local border = button:CreateTexture(nil, "OVERLAY")
-	button.qtBorderTexture = border
-	border:SetSize(54, 54)
-	border:SetPoint("TOPLEFT", 0, 0)
-	border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
 	button:SetScript("OnMouseDown", function()
 		self.minimapSuppressClick = nil
 	end)
@@ -509,6 +529,7 @@ function QuestTogether:RefreshMinimapButton()
 		return false
 	end
 	button:Show()
+	self:RefreshMinimapIdentityIcon()
 	self:RefreshMinimapPartnerGlow()
 	return true
 end

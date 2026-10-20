@@ -10,7 +10,7 @@ local function HasLocationGlow(addon, name, row)
 end
 
 local function PinSize(addon, name, row)
-	if addon:IsVerifiedDeveloper(name) then return 18 end
+	if addon:IsVerifiedDeveloper(name) or addon:IsVerifiedVIP(name) then return 18 end
 	return HasLocationGlow(addon, name, row) and GLOW_DOT_SIZE or DOT_SIZE
 end
 
@@ -1041,16 +1041,18 @@ function QuestTogether:ApplyPlayerLocationSymbol(pin, style)
 	local r, g, b = style.r or 1, style.g or 1, style.b or 1
 	local cluster = style.clusterCount ~= nil and style.clusterCount > 0
 	local private, developer, looking = style.private, style.developer, style.looking
+	local special = not cluster and (developer or style.vip)
 	-- An active find highlight temporarily replaces red/gold rather than
 	-- stacking halos; ending selection restores the underlying status color.
 	local glowKind = style.selected and "selected" or private and "hidden" or looking and "partners" or nil
-	local size = style.size or (cluster and 24 or developer and 18 or glowKind and GLOW_DOT_SIZE or DOT_SIZE)
+	local size = style.size or (cluster and 24 or special and 18 or glowKind and GLOW_DOT_SIZE or DOT_SIZE)
 	Call(addon, pin.phaseIcon, style.phase and "Show" or "Hide")
 	Call(addon, pin.texture, "SetColorTexture", r, g, b, 1)
 	Call(addon, pin.developerGear, "SetVertexColor", r, g, b, 1)
-	Call(addon, pin.developerGear, developer and "Show" or "Hide")
-	Call(addon, pin.texture, developer and "Hide" or "Show")
-	Call(addon, pin.border, developer and "Hide" or "Show")
+	Call(addon, pin.developerGear, "SetTexture", PARTY_MEDIA .. (developer and "DeveloperGear" or "VIPStar"))
+	Call(addon, pin.developerGear, special and "Show" or "Hide")
+	Call(addon, pin.texture, special and "Hide" or "Show")
+	Call(addon, pin.border, special and "Hide" or "Show")
 	if pin.size ~= size or pin.private ~= private or pin.looking ~= looking
 		or pin.symbolDeveloper ~= developer or pin.symbolCluster ~= cluster or pin.symbolGlowKind ~= glowKind then
 		Call(addon, pin.border, "SetColorTexture", cluster and 0.8 or 0, cluster and 0.65 or 0, cluster and 0.25 or 0, glowKind and 0 or 1)
@@ -1062,7 +1064,7 @@ function QuestTogether:ApplyPlayerLocationSymbol(pin, style)
 	end
 	Call(addon, pin.count, "SetText", cluster and tostring(style.clusterCount) or "")
 	Call(addon, pin.count, cluster and "Show" or "Hide")
-	addon:SetPlayerMarkerGlow(pin.glow, glowKind, developer and 24 or GLOW_DOT_SIZE)
+	addon:SetPlayerMarkerGlow(pin.glow, glowKind, special and 24 or GLOW_DOT_SIZE)
 end
 
 local function CreatePin(addon, state, surface)
@@ -1220,6 +1222,7 @@ local function RefreshSurface(addon, state, name, rows)
 			looking = row and HasLocationGlow(addon, row.name, row) == true,
 			private = row and row.developerOnly and row.publicLocationHidden,
 			developer = row and addon:IsVerifiedDeveloper(row.name) == true,
+			vip = row and addon:IsVerifiedVIP(row.name) == true,
 			selected = pin.selected,
 			phase = row and addon:GetPlayerPhaseStatus(row.name) == "different",
 		})

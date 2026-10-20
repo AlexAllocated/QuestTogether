@@ -49,6 +49,10 @@ Add(
 )
 Add("LVL", "event", "event", catalog.ANN.fields)
 Add("HELLO", "event", "background", { F("version", S, 40) }, { globalOnly = true, maxBytes = 128 })
+Add("VIP", "event", "background", {
+	F("certificate", S, 233, true), F("signature", S, 128, true),
+	F("session", S, 64, true), F("issuedAt", N, nil, true), F("active", B, nil, true),
+}, { globalOnly = true, authenticatedEvent = true, maxBytes = 512, lifetime = 30 })
 Add("DEVANN", "event", "control", {
 	F("requestId", S, 64, true),
 	F("issuedAt", N, nil, true),

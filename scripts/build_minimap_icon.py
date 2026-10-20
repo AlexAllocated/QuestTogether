@@ -57,11 +57,11 @@ def tip_icon(scrolls):
     return icon
 
 
-def developer_icon(scrolls, glow=False):
-    """Use the map marker's gear with the original front scroll's gold."""
+def scroll_badge_icon(scrolls, marker, glow=False):
+    """Use a player marker with the original front scroll's gold."""
     icon = rear_scroll_icon(scrolls)
     badge = element(icon, "g", transform="translate(30 29) scale(1.5)")
-    gear = ET.parse(ROOT / "Media" / "DeveloperGear.svg").getroot()
+    gear = ET.parse(ROOT / "Media" / (marker + ".svg")).getroot()
     for shape in gear:
         shape = copy.deepcopy(shape)
         shape.set("fill", "#D9A62A")
@@ -84,11 +84,12 @@ def developer_icon(scrolls, glow=False):
                 if shape.get("fill") != "none":
                     shape.set("fill", "#FFE438")
         defs = element(icon, "defs")
-        blur = element(defs, "filter", id="developer-partner-glow", x="-30%", y="-30%",
+        glow_id = "developer-partner-glow" if marker == "DeveloperGear" else "vip-partner-glow"
+        blur = element(defs, "filter", id=glow_id, x="-30%", y="-30%",
                        width="160%", height="160%", **{"color-interpolation-filters": "sRGB"})
         element(blur, "feGaussianBlur", stdDeviation="2.5")
         halo = copy.deepcopy(contour)
-        halo.set("filter", "url(#developer-partner-glow)")
+        halo.set("filter", f"url(#{glow_id})")
         icon.insert(0, contour)
         icon.insert(0, halo)
     return icon
@@ -101,10 +102,14 @@ def main():
     variant.add_argument("--tip", action="store_true", help="Render the scroll and gold tip bulb (TGA, PNG and SVG)")
     variant.add_argument("--developer", action="store_true", help="Render the scroll and gold developer gear (TGA, PNG and SVG)")
     variant.add_argument("--developer-glow", action="store_true", help="Render the LFQP developer gear (TGA, PNG and SVG)")
+    variant.add_argument("--vip", action="store_true", help="Render the scroll and gold vip star (TGA, PNG and SVG)")
+    variant.add_argument("--vip-glow", action="store_true", help="Render the LFQP vip star (TGA, PNG and SVG)")
     args = parser.parse_args()
     name = "QuestTogetherTipIcon.tga" if args.tip else "QuestTogetherPartnerIcon.tga" if args.glow else OUTPUT.name
     if args.developer or args.developer_glow:
         name = "QuestTogetherDeveloperPartnerIcon.tga" if args.developer_glow else "QuestTogetherDeveloperIcon.tga"
+    if args.vip or args.vip_glow:
+        name = "QuestTogetherVIPPartnerIcon.tga" if args.vip_glow else "QuestTogetherVIPIcon.tga"
     output = ROOT / "Media" / name
     source = ET.parse(ROOT / "logo.svg")
     scrolls = source.find(f".//{{{SVG_NS}}}g[@id='quest-scrolls']")
@@ -144,7 +149,9 @@ def main():
     if args.tip:
         icon = tip_icon(scrolls)
     elif args.developer or args.developer_glow:
-        icon = developer_icon(scrolls, args.developer_glow)
+        icon = scroll_badge_icon(scrolls, "DeveloperGear", args.developer_glow)
+    elif args.vip or args.vip_glow:
+        icon = scroll_badge_icon(scrolls, "VIPStar", args.vip_glow)
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="questtogether-icon-") as temp:
         svg = Path(temp) / "icon.svg"
@@ -169,7 +176,7 @@ def main():
         ):
             raise SystemExit("Expected an uncompressed 128x128 32-bit TGA with 8-bit alpha")
         output.write_bytes(data)
-        if args.tip or args.developer or args.developer_glow:
+        if args.tip or args.developer or args.developer_glow or args.vip or args.vip_glow:
             ET.ElementTree(icon).write(output.with_suffix(".svg"), encoding="utf-8", xml_declaration=True)
             subprocess.run([
                 "magick", str(tga), "-strip", "-define", "png:exclude-chunks=date,time",

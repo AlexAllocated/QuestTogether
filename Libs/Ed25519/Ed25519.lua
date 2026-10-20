@@ -269,18 +269,18 @@ local function unpackneg(s,checkpoint)
 	if parity(r[1])==floor(s:byte(32)/128) then r[1]=Z(zero,r[1]) end
 	r[4]=M(r[1],r[2]); return r
 end
-local function secret(seed)
-	local d=bytearray(E.Hash(seed)); d[1]=d[1]-d[1]%8; d[32]=d[32]%64+64; return d
+local function secret(seed,checkpoint)
+	local d=bytearray(E.Hash(seed,checkpoint)); d[1]=d[1]-d[1]%8; d[32]=d[32]%64+64; return d
 end
-function E.PublicKey(seed)
+function E.PublicKey(seed,checkpoint)
 	assert(type(seed)=="string" and #seed==32)
-	return pack(base(secret(seed)))
+	return pack(base(secret(seed,checkpoint),checkpoint),checkpoint)
 end
-function E.Sign(seed,message)
+function E.Sign(seed,message,checkpoint)
 	assert(type(seed)=="string" and #seed==32 and type(message)=="string")
-	local d=secret(seed); local public=pack(base(d))
-	local r=reduce(E.Hash(bytes(d):sub(33,64)..message)); local R=pack(base(r))
-	local h=reduce(E.Hash(R..public..message)); local x={}
+	local d=secret(seed,checkpoint); local public=pack(base(d,checkpoint),checkpoint)
+	local r=reduce(E.Hash(bytes(d):sub(33,64)..message,checkpoint)); local R=pack(base(r,checkpoint),checkpoint)
+	local h=reduce(E.Hash(R..public..message,checkpoint)); local x={}
 	for i=1,64 do x[i]=i<=32 and r[i] or 0 end
 	for i=1,32 do for j=1,32 do x[i+j-1]=x[i+j-1]+h[i]*d[j] end end
 	return R..bytes(modL(x),32)
@@ -299,7 +299,7 @@ function E.Verify(public,message,signature,checkpoint)
 	return pack(p,checkpoint)==signature:sub(1,32)
 end
 
--- Only verification is incremental. Each checkpoint is a bounded arithmetic
+-- Cryptographic work can be incremental. Each checkpoint is a bounded arithmetic
 -- step; callers own the frame/work budget and cancellation. No debug hooks or
 -- mutable shared crypto context, and no yield through pcall on Lua 5.1.
 function E.NewVerification(public,message,signature)

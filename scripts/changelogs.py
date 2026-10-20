@@ -78,6 +78,8 @@ def render(locale, entries):
 
 
 def illustration_images(illustration):
+    if illustration == 'vip-cosmetics':
+        return [('Forever', 'VIPCosmetics')]
     if illustration == 'party-quest-log':
         return [('Retail', 'PartyQuestLogRetail'), ('Forever', 'PartyQuestLogForever')]
     if illustration == 'party-quest-objectives':

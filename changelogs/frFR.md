@@ -2,14 +2,31 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 7.4.4
+## 8.0.0
 
-Lisez chaque mise à jour et ses correctifs sur une même page.
+Découvrez QuestTogether VIP.
 
-### Notes de mise à jour
+### Apparence VIP
 
-- La fenêtre regroupe désormais chaque version mineure et ses correctifs sur une page. La version mineure apparaît en premier, suivie des correctifs dans l’ordre, avec leur version et leur date. La navigation dans l’historique passe d’un groupe à l’autre.
-- Les anciennes notes de correctifs décrivent maintenant leurs propres changements sans répéter les guides, astuces ou captures précédents. Les correctifs seuls n’ouvrent toujours pas la fenêtre automatiquement ; utilisez /qt notes à tout moment.
+- Les joueurs VIP ont une étoile de leur couleur de classe sur la carte, un préfixe QT et un bouton de minicarte avec une étoile dorée, ainsi que la mention QuestTogether VIP dans leur infobulle individuelle. Ces récompenses sont cosmétiques et ne donnent aucun accès développeur.
+
+**Forever**
+
+![Apparence VIP — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.0.0/Media/ReleaseNotes/VIPCosmetics.png)
+
+### Devenir VIP
+
+- Partagez le lien de téléchargement de QuestTogether avec vos amis, votre guilde, sur un Discord pertinent ou sur les réseaux sociaux. Faites une capture de votre message envoyé ou de votre publication montrant le lien QT et où vous l’avez partagé. Envoyez-la en message privé Discord à @chevcast pour examen. Rejoignez d’abord le Discord QT ou envoyez une demande d’ami à @chevcast. La fenêtre VIP fournit le lien à copier et les étapes d’activation après approbation.
+
+### Activer la récompense
+
+- Ouvrez la fenêtre VIP depuis le menu de minicarte, les paramètres ou /qt vip. Attendez que @chevcast confirme que VIP a été accordé à votre compte Discord. La commande Discord /qt claim ne fonctionne qu’après cette attribution.
+
+Copiez ensuite votre code de demande avec Ctrl+C et envoyez-le à @chevcast, ou utilisez /qt claim sur le Discord QT. Collez le code d’activation privé reçu dans la fenêtre VIP et choisissez Activer VIP. Répétez sur Retail ou Forever pour y utiliser la même récompense.
+
+### Permanent et facultatif
+
+- La récompense est liée à votre compte Discord et partagée entre les personnages de chaque installation. Réclamez-la séparément sur Retail et Forever. Désactivez l’affichage VIP pour garder la récompense sans l’afficher. Les boutons de minicarte standard, VIP et développeur ont des bordures dorées suivant leur forme. L’apparence développeur est prioritaire sur VIP.
 
 ## 7.4.3
 

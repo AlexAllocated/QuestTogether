@@ -208,7 +208,7 @@ QT:RegisterTest(
 	end
 )
 
-QT:RegisterTest("developer chat logos follow the speaker's verified identity and retain partner glow", function()
+QT:RegisterTest("developer and VIP chat logos follow the speaker's verified identity and retain partner glow", function()
 	local a, remote = Peer(), "Developer-Realm"
 	local signCalls = 0
 	local logo, glow = a.NAMEPLATE_PLAYER_ICON_TEXTURE, a.PLAYER_PARTNER_ICON_TEXTURE
@@ -258,6 +258,21 @@ QT:RegisterTest("developer chat logos follow the speaker's verified identity and
 	a.ignored, a.now = nil, 160
 	Prefix(remote, glow)
 	Prefix(remote, glow, "SCAN_STATUS", developer:gsub("\\", "/") .. ".tga")
+	local vip, vipGlow = a.PLAYER_VIP_ICON_TEXTURE, a.PLAYER_VIP_PARTNER_ICON_TEXTURE
+	Prefix(remote, glow, "SCAN_STATUS", vip) -- Received artwork is not evidence.
+	a.vipState = { communication = a.communicationState, peers = {
+		[remote] = { active = true, received = a.now, expires = a.now + 60,
+			session = "10-1234", sampledAt = a.now },
+	} }
+	Prefix(remote, vipGlow)
+	Prefix(remote, "UI-QuestIcon-TurnIn-Normal", "QUEST_COMPLETED", "UI-QuestIcon-TurnIn-Normal", "atlas")
+	assert(ObserveState(a, "HandleQuestPartnerStatusMessage", "QTLF", PartnerPayload(a, false), remote))
+	Prefix(remote, vip)
+	a.developerAnnouncementState.subscribers[remote].expires = a.now + 60
+	Prefix(remote, developer, "SCAN_STATUS", vip)
+	a.developerAnnouncementState.subscribers[remote].expires = a.now
+	a.vipState.peers[remote].active = false
+	Prefix(remote, logo, "SCAN_STATUS", vip)
 	a.now = 170
 	Prefix(remote, logo)
 	Prefix(remote, logo, "SCAN_STATUS", developer)
