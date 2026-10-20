@@ -1293,9 +1293,12 @@ QuestTogether:RegisterTest("compare preview reuses its window and cancels closed
 	function a:OpenPartyQuestCompare()
 		return "live"
 	end
-	Equal(a:HandleSlashCommand("compare"), "live")
-	Equal(frame.shown, false)
-	Equal(preview.partyQuestCompareSession, nil)
+	for _, command in ipairs({ "pql", "  PQL  ", "compare" }) do
+		assert(a:OpenPartyQuestComparePreview())
+		Equal(a:HandleSlashCommand(command), "live")
+		Equal(frame.shown, false)
+		Equal(preview.partyQuestCompareSession, nil)
+	end
 end)
 
 QuestTogether:RegisterTest("compare preview refuses restricted creation without creating UI or work", function()

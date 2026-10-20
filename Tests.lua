@@ -654,7 +654,7 @@ QuestTogether:RegisterTest("normal help lists user commands without developer co
 	for _, command in ipairs({
 		"options",
 		"enable | disable",
-		"compare -",
+		"pql -",
 		"notes | changelog | patchnotes",
 		"set",
 		"get",

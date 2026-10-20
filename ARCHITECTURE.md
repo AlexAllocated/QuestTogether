@@ -24,7 +24,7 @@ private `.local` notes are historical context, not the source of truth.
 | DeveloperAnnouncements | Signed developer subscriptions, diagnostic consent, mirror audiences and paced private location publication | Normal announcement filters, private location storage or a separate transport |
 | PartyQuestProgress | Interest-owned remote objective snapshots, ordered announcement deltas, per-peer detail requests and shared PQL/HUD notifications | Display filtering, independent polling, or assuming objective indices match across players |
 | QuestProgressStyle | Shared rounded detail sections and objective progress bars for PQL and HUD | Quest state, requests, or window lifecycle |
-| QuestFocusWindow / QuestFocusEditMode | Quest Tracker HUD, native focus observation, local detail reads, owned Edit Mode controls and revert baseline | Blizzard tracker rows, shared native layout registries or a separate objective cache |
+| QuestFocusWindow / QuestFocusEditMode | Party Objective Tracker HUD, native focus observation, local detail reads, owned Edit Mode controls and revert baseline | Blizzard tracker rows, shared native layout registries or a separate objective cache |
 | QuestCompare | Atomic party log assembly, local snapshots and negotiated revision reuse | Native UI mutation or independent transport pumps |
 | QuestCompletion | Bounded character-history queries for visible comparisons, evidence age and completed/absent classification | Account-wide completion or full history broadcasts |
 | QuestSharingResults | Exact native share-result matching and recent per-player explanations | Guessing which quest a native result belongs to |
@@ -63,7 +63,7 @@ private `.local` notes are historical context, not the source of truth.
   indices are never matched across different players or languages.
   Shared detail rows fall back to certified quest status when there are no
   objective counters; an empty list never establishes readiness or completion.
-- The Quest Tracker has one profile-owned display mode: hidden, focused quest,
+- The Party Objective Tracker has one profile-owned display mode: hidden, focused quest,
   hovered quest, or focus and hover (default). The combined mode follows local
   native quest focus (including party-follow changes), temporarily previewing a
   hovered Blizzard tracker quest through
@@ -85,7 +85,8 @@ private `.local` notes are historical context, not the source of truth.
   staying opaque with contrast suited to transparency. Player sections retain their
   class-colored fill at a constant 25% opacity, independently of the background
   slider. The optional solo-visibility rule uses actual group membership, defaults
-  off, and never hides the Edit Mode preview. HUD Edit Mode
+  on, and never hides the Edit Mode preview. Its checkbox in Groups & Sharing
+  and its Edit Mode checkbox read and write the same profile option. HUD Edit Mode
   shows an owned placement preview; selecting it opens the same themed settings
   shell as the personal bubble, with display mode/width/height/opacity controls and
   Save/Revert/Reset actions. Changes apply automatically. Save/revert

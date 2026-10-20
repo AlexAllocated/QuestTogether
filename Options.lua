@@ -623,6 +623,7 @@ local function CreateNameplateIconStyleDropdown(parent, x, y, playerPlates)
 end
 
 local CHECKBOX_OPTION_KEYS = {
+	"questTrackerHideSolo",
 	"announceQuestPartners",
 	"stopLookingForPartnersOnJoin",
 	"announceAccepted",
@@ -1930,7 +1931,7 @@ function QuestTogether:InitializeGroupsWindow(parentCategory)
 	if self.groupsFrame then return end
 	local frame = CreateFrame("Frame", "QuestTogetherGroupsPanel")
 	frame.name, frame.parent = L("Groups & Sharing"), "QuestTogether"
-	local _, content = CreateScrollablePanelContent(frame, 860)
+	local _, content = CreateScrollablePanelContent(frame, 910)
 	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", 16, -16)
 	title:SetText(L("Groups & Sharing"))
@@ -1948,8 +1949,10 @@ function QuestTogether:InitializeGroupsWindow(parentCategory)
 	Header(L("Join Requests"), -272)
 	Header(L("Quest Sharing"), -372)
 	Header(L("Party Navigation"), -462)
-	Header(L("Quest Tracker"), -650)
+	Header(L("Party Objective Tracker"), -650)
 	self.groupsControls = {
+		questTrackerHideSolo = CreateCheckbox(content, "questTrackerHideSolo", L("Hide when not in a party"),
+			L("Hide the Party Objective Tracker while solo. Its placement preview remains visible in HUD Edit Mode."), 16, -746),
 		sharePartyFocus = CreateCheckbox(content, "sharePartyFocus", L("Share my focused quest"),
 			L("Let your party see your active quest and choose to follow your quest focus. Works independently of public location sharing."), 16, -490),
 		sharePartyWaypoint = CreateCheckbox(content, "sharePartyWaypoint", L("Share my waypoint"),
@@ -1968,7 +1971,7 @@ function QuestTogether:InitializeGroupsWindow(parentCategory)
 			L("Automatically share eligible quests when a party member requests them. Otherwise, ask first."), 16, -400),
 	}
 	self.questTrackerModeDropdown = CreateDropdown(content, L("Display"),
-		L("Choose whether the Quest Tracker shows your focused quest, the quest you hover, or both. In Focus and Hover, hovering temporarily overrides focus."),
+		L("Choose whether the Party Objective Tracker shows your focused quest, the quest you hover, or both. In Focus and Hover, hovering temporarily overrides focus."),
 		16, -678, 240, function(dropdown)
 			for _, option in ipairs(self:GetQuestTrackerModeOptions()) do
 				local value = option.value
@@ -1979,10 +1982,10 @@ function QuestTogether:InitializeGroupsWindow(parentCategory)
 				}
 			end
 		end)
-	self.questFocusOpacitySlider = self:CreateQuestFocusSlider(content, L("Background opacity"), 16, -766, 0, 100, 5,
+	self.questFocusOpacitySlider = self:CreateQuestFocusSlider(content, L("Background opacity"), 16, -812, 0, 100, 5,
 		function() return self:GetQuestFocusOpacity() end, function(value) self:SetOption("questFocusOpacity", value) end, true)
 	local edit = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
-	edit:SetPoint("TOPLEFT", 16, -808); edit:SetSize(260, 24); edit:SetText(L("Open HUD Edit Mode"))
+	edit:SetPoint("TOPLEFT", 16, -854); edit:SetSize(260, 24); edit:SetText(L("Open HUD Edit Mode"))
 	edit:SetScript("OnClick", function() self:OpenHudEditMode() end)
 	self.groupsFrame = frame
 	frame:SetScript("OnShow", function() QuestTogether:RefreshGroupsWindow() end)

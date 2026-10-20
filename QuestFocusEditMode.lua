@@ -134,7 +134,7 @@ function QT:RefreshQuestFocusSelection(frame, editing)
 	end
 	local selection = frame.Selection
 	if editing then
-		selection = selection or self:EnsureHUDEditSelection(frame, L("Quest Tracker"))
+		selection = selection or self:EnsureHUDEditSelection(frame, L("Party Objective Tracker"))
 	end
 	if selection and self:CanMutateOwnedUI(selection) then
 		if editing then
@@ -196,7 +196,7 @@ function QT:ResetQuestFocusEditLayout()
 	local frame = rawget(self, "questFocusWindow")
 	self.db.profile.windowLayouts = self.db.profile.windowLayouts or {}
 	self.db.profile.windowLayouts.questFocus = nil
-	self:SetOptions({ questFocusOpacity = 75, questTrackerMode = "both", questTrackerHideSolo = false, questTrackerSnapToBlizzard = true })
+	self:SetOptions({ questFocusOpacity = 75, questTrackerMode = "both", questTrackerHideSolo = true, questTrackerSnapToBlizzard = true })
 	if frame and self.managedWindows[frame] then
 		self.managedWindows[frame].resetRequested = true
 		self:ApplyWindowLayout(frame, true)
@@ -213,7 +213,7 @@ function QT:RefreshQuestFocusEditControls(frame, editing)
 	end
 	local panel = frame.editControls
 	if not panel then
-		panel = self:CreateHUDEditDialog(L("Quest Tracker"), { { key = "ModeDropdown", kind = "dropdown" }, { key = "HideSoloCheckbox", kind = "checkbox" }, { key = "SnapCheckbox", kind = "checkbox" }, "WidthSlider", "HeightSlider", "OpacitySlider" }, {
+		panel = self:CreateHUDEditDialog(L("Party Objective Tracker"), { { key = "ModeDropdown", kind = "dropdown" }, { key = "HideSoloCheckbox", kind = "checkbox" }, { key = "SnapCheckbox", kind = "checkbox" }, "WidthSlider", "HeightSlider", "OpacitySlider" }, {
 			close = function()
 				self:DeselectQuestFocusWindow()
 			end,
@@ -311,7 +311,7 @@ function QT:RefreshQuestFocusEditControls(frame, editing)
 		or false
 	panel.SaveButton:SetEnabled(pending)
 	panel.RevertButton:SetEnabled(pending)
-	panel.ResetButton:SetEnabled(not SameLayout(layout, nil) or self:GetQuestFocusOpacity() ~= 75 or self:GetQuestTrackerMode() ~= "both" or hideSolo or not snap)
+	panel.ResetButton:SetEnabled(not SameLayout(layout, nil) or self:GetQuestFocusOpacity() ~= 75 or self:GetQuestTrackerMode() ~= "both" or not hideSolo or not snap)
 	panel.SaveStatus:SetText(
 		pending and L("Changes applied automatically. Save Changes sets the point Revert returns to.")
 			or L("QuestTogether settings saved. Blizzard's Save button is not needed.")

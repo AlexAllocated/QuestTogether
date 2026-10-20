@@ -377,7 +377,7 @@ QuestTogether.DEFAULTS = {
 		lightMode = false,
 		windowScale = 100,
 		questTrackerMode = "both",
-		questTrackerHideSolo = false,
+		questTrackerHideSolo = true,
 		questTrackerSnapToBlizzard = true,
 		questFocusOpacity = 75,
 		reduceMotion = false,
@@ -6020,7 +6020,7 @@ function QuestTogether:PrintHelp()
 	self:Print(L("/qt enable | disable - Enable or disable runtime behavior"))
 	self:Print(L("/qt set <option> <value> - Set a boolean option (e.g. emoteOnQuestCompletion off)"))
 	self:Print(L("/qt get <option> - Read an option value"))
-	self:Print(L("/qt compare - Open Party Quest Log"))
+	self:Print(L("/qt pql - Open Party Quest Log"))
 	self:Print(L("/qt companions - Open your private recent companions list"))
 	self:Print(L("/qt tip | hint - Show another QuestTogether tip"))
 	self:Print("/qt resetlayout - " .. L("Reset window layout"))
@@ -6144,7 +6144,7 @@ function QuestTogether:HandleSlashCommand(input)
 	local compareCommand = string.lower(self:SafeTrimString(input, ""))
 	if compareCommand == "partychatpreview" then
 		return self:HandlePreviewCommand("partychat")
-	elseif compareCommand == "compare" then
+	elseif compareCommand == "pql" or compareCommand == "compare" then
 		self:ClosePartyQuestComparePreview()
 		return self:OpenPartyQuestCompare()
 	elseif compareCommand:match("^compare%s+debug$") then

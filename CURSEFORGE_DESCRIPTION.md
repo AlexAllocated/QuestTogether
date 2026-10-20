@@ -19,7 +19,7 @@ Settings names in this guide use the English labels; the addon follows your game
 
 ### Open a comparison
 
-Left-click the minimap icon or type **`/qt compare`**. Read quests down the rows and players across the class-colored columns. The combined list includes quests you do not have.
+Left-click the minimap icon or type **`/qt pql`**. Read quests down the rows and players across the class-colored columns. The combined list includes quests you do not have.
 
 Click **Refresh** to request current party information. The text beneath each player’s name shows the age or availability of their information; your own column follows your local quest log.
 
@@ -383,7 +383,7 @@ They start enabled. Disable the nearby reactions to keep only your own celebrati
 ## Commands
 
 - `/qt` or `/qt options` — Open settings.
-- `/qt compare` — Open Party Quest Log.
+- `/qt pql` — Open Party Quest Log (`/qt compare` also works).
 - `/qt lfg` — Toggle Looking for Questing Partners. Add `on`, `off`, `toggle`, or `status` to set or check it explicitly.
 - `/qt <message>` — Talk in QuestTogether chat; recognized commands still run normally.
 - `/qt tip` or `/qt hint` — Show another tip.

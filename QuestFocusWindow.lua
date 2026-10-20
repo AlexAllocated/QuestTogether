@@ -332,7 +332,7 @@ function QT:GetQuestFocusTitle(state)
 			return entry.questTitle
 		end
 	end
-	return L("Quest Tracker")
+	return L("Party Objective Tracker")
 end
 
 function QT:CreateQuestFocusWindow()
@@ -529,7 +529,7 @@ function QT:RenderQuestFocusWindow(state, restricted)
 	if not restricted then
 		state.title = self:GetQuestFocusTitle(state)
 	end
-	frame.heading:SetText(state.title or L("Quest Tracker"))
+	frame.heading:SetText(state.title or L("Party Objective Tracker"))
 	-- Transparent HUD text sits over the world, even with the light theme.
 	local opacity = self:GetQuestFocusOpacity() / 100
 	local brightText = theme.dark or opacity < 0.65

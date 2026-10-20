@@ -11,7 +11,7 @@ LOOKUP = re.compile(r'\bL\(\s*('+LITERAL+r')\s*\)')
 FORMAT = re.compile(r'%(?:[-+ #0]*\d*(?:\.\d+)?[cdiouxXeEfgGqs%])')
 # Only actual slash-command words belong to the command. Prose such as
 # "Type /qt to open settings" must not freeze the English word "to".
-QT_COMMANDS = ('options', 'enable', 'disable', 'set', 'get', 'compare', 'resetlayout',
+QT_COMMANDS = ('options', 'enable', 'disable', 'set', 'get', 'pql', 'compare', 'resetlayout',
                'lfg', 'notes', 'changelog', 'patchnotes', 'scan', 'help', 'debug',
                'devlogall', 'test', 'dump', 'diagnostics', 'preview', 'bubbletest',
                'discord', 'ad', 'debuglog', 'ping', 'tip', 'hint', 'companions')

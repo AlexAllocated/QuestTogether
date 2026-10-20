@@ -226,7 +226,7 @@ function QT:GetHintCatalog()
 		{
 			id = "hint014",
 			actions = { "party_log" },
-			text = L("Type /qt compare to see your party's quests side by side."),
+			text = L("Type /qt pql to see your party's quests side by side."),
 		},
 		{
 			id = "hint015",
