@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "7.4.2",
+	version = "7.4.3",
 	welcome = "Clearer names and controls for party questing.",
 	sections = {
 		{
