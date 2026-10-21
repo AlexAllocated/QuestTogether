@@ -61,12 +61,12 @@ The book button beside a quest you own opens it in WoW’s quest log. Round focu
 
 ### Use the keyboard
 
-Click **Keyboard** to enable keyboard navigation.
+Opening Party Quest Log or clicking a quest gives the list keyboard focus. Press **Tab** to move between the list and Search.
 
 - Use **Up/Down** to move between quests; **Home/End** and **Page Up/Page Down** move through longer lists.
 - Press **Right** to expand objectives, **Left** to collapse them, or **Enter** to toggle them.
 - Press **Space** or the **Menu** key to open the selected quest’s actions.
-- Press **Escape** or click outside the window to return to normal controls.
+- Press **Escape** to close the window, or click outside it to return to normal controls.
 
 [![Collapsed player columns and keyboard selection](https://media.forgecdn.net/attachments/2055/227/party-quest-log-compact-keyboard-png.png)](https://media.forgecdn.net/attachments/2055/227/party-quest-log-compact-keyboard-png.png)
 
@@ -313,7 +313,7 @@ Under **General → Theme**, choose **Dark** or **Light** parchment. Dark is the
 - Enable **Reduce motion** for immediate scrolling and objective expansion instead of animated transitions. It starts off.
 - Use **Reset window layout** or **`/qt resetlayout`** to restore saved window placement.
 
-QT saves window layouts and fits them after display-size or UI-scale changes. **Escape** closes QT windows unless a focused control handles it first, such as leaving Party Quest Log’s keyboard-navigation mode.
+QT saves window layouts and fits them after display-size or UI-scale changes. **Escape** closes QT windows unless a focused control handles it first, such as returning from Search to the Party Quest Log list.
 
 [![QT accessibility settings](https://media.forgecdn.net/attachments/2055/209/accessibility-settings-png.png)](https://media.forgecdn.net/attachments/2055/209/accessibility-settings-png.png)
 

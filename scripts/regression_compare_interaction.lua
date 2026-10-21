@@ -14,6 +14,7 @@ local function Open(count)
 	function addon:HideSettingsTooltip() self.tooltip = nil end
 	addon:OpenPartyQuestCompare()
 	addon:RenderPartyQuestCompare()
+	addon.partyQuestCompareWindow.keyboardInput:RunScript("OnUpdate", 0.016)
 	return addon, addon.partyQuestCompareWindow, addon.partyQuestCompareSession
 end
 local function Key(frame, key)
@@ -24,12 +25,9 @@ local function Key(frame, key)
 	return propagated
 end
 
-QT:RegisterTest("party log keyboard navigation owns only explicitly focused navigation keys", function()
+QT:RegisterTest("party log opens with list focus and only captures navigation keys", function()
 	local a, frame, session = Open()
-	Equal(Key(frame, "DOWN"), true)
-	Equal(Key(frame, "SPACE"), true)
-	Equal(session.keyboardQuestId, nil)
-	frame.keyboardButton:Click()
+	Equal(frame.keyboardButton, nil)
 	Equal(frame.keyboardSession, session)
 	Equal(session.keyboardQuestId, 1)
 	Equal(Key(frame, "DOWN"), false)
@@ -53,7 +51,6 @@ end)
 
 QT:RegisterTest("party log keyboard capture retires when restrictions begin before key release", function()
 	local a, frame = Open()
-	frame.keyboardButton:Click()
 	frame.keyboardInput:RunScript("OnKeyDown", "DOWN")
 	Equal(frame.keyboardInput.propagate, false)
 	a.blocked = true
@@ -63,7 +60,7 @@ QT:RegisterTest("party log keyboard capture retires when restrictions begin befo
 	Equal(frame.propagate, true)
 	Equal(a.invalidCalls, nil)
 	a.blocked = false
-	frame.keyboardButton:Click()
+	frame.rows[1]:RunScript("OnMouseUp", "LeftButton")
 	Equal(frame.keyboardInput.propagate, true)
 	frame.keyboardInput:RunScript("OnKeyDown", "UP")
 	a.blocked = true
@@ -74,37 +71,37 @@ end)
 
 QT:RegisterTest("party log keyboard focus releases for edit focus menus outside clicks and hide", function()
 	local a, frame, session = Open()
-	frame.keyboardButton:Click()
 	frame.search:SetFocus()
 	Equal(frame.keyboardSession, nil)
 	Equal(Key(frame, "DOWN"), true)
-	frame.keyboardButton:Click()
+	frame.search:RunScript("OnEnterPressed")
 	Equal(frame.search:HasFocus(), false)
 	Equal(frame.keyboardSession, session)
 	a.keyboardBlocked = true
 	Equal(Key(frame, "DOWN"), true)
 	Equal(frame.keyboardSession, nil)
 	a.keyboardBlocked = false
-	frame.keyboardButton:Click()
+	frame.rows[1]:RunScript("OnMouseUp", "LeftButton")
 	a.mouseOverWindow = true
 	frame:RunScript("OnEvent", "GLOBAL_MOUSE_DOWN")
 	Equal(frame.keyboardSession, session)
 	a.mouseOverWindow = false
 	frame:RunScript("OnEvent", "GLOBAL_MOUSE_DOWN")
 	Equal(frame.keyboardSession, nil)
-	frame.keyboardButton:Click()
+	a:RenderPartyQuestCompare()
+	frame.keyboardInput:RunScript("OnUpdate", 0.016)
+	Equal(frame.keyboardSession, nil) -- incoming data must not reclaim focus
+	frame.rows[1]:RunScript("OnMouseUp", "LeftButton")
+	Equal(frame.keyboardSession, session)
 	frame:Hide()
 	Equal(frame.keyboardSession, nil)
 	Equal(a.invalidCalls, nil)
 end)
 
-QT:RegisterTest("party log keyboard Escape releases before dismissing and retired callbacks cannot navigate", function()
+QT:RegisterTest("party log Escape dismisses focused list and retired callbacks cannot navigate", function()
 	local a, frame, session = Open()
-	frame.keyboardButton:Click()
 	Equal(Key(frame, "ESCAPE"), false)
 	Equal(frame.keyboardSession, nil)
-	Equal(frame:IsShown(), true)
-	Equal(Key(frame, "ESCAPE"), false)
 	Equal(frame:IsShown(), false)
 	Equal(a.partyQuestCompareSession, nil)
 	Key(frame, "DOWN")
@@ -114,7 +111,6 @@ end)
 
 QT:RegisterTest("party log keyboard expansion and paging use current animated root geometry", function()
 	local a, frame, session = Open()
-	frame.keyboardButton:Click()
 	Key(frame, "RIGHT")
 	Equal(session.expandedQuestIds[1], true)
 	a:RenderPartyQuestCompare()
@@ -135,19 +131,20 @@ end)
 QT:RegisterTest("party log keyboard actions recheck window session and restriction ownership", function()
 	local a, frame, session = Open()
 	local actions = {}
-	function a:CreatePartyQuestFilterMenu(_, generate)
+	function a:CreatePartyQuestFilterMenu(anchor, generate)
+		Equal(anchor.data.questId, session.keyboardQuestId)
 		generate(nil, {
 			CreateTitle = function() end,
 			CreateButton = function(_, label, callback) actions[#actions + 1] = callback end,
 		})
 		return true
 	end
-	frame.keyboardButton:Click()
 	Equal(Key(frame, "SPACE"), false)
 	Equal(frame.keyboardSession, nil)
 	Equal(frame.keyboardInput:IsShown(), false)
 	assert(#actions > 0)
-	frame.keyboardButton:Click()
+	frame.search:SetFocus()
+	frame.search:RunScript("OnTabPressed")
 	Equal(Key(frame, "MENU"), false)
 	Equal(frame.keyboardSession, nil)
 	a.blocked = true
@@ -159,6 +156,47 @@ QT:RegisterTest("party log keyboard actions recheck window session and restricti
 	frame:Hide()
 	actions[1]()
 	Equal(session.expandedQuestIds[1], nil)
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("party log opening focus cannot survive outside clicks or a replaced session", function()
+	local a, frame, session = Open()
+	Equal(Key(frame, "TAB"), false)
+	Equal(frame.search:HasFocus(), true)
+	Equal(frame.keyboardSession, nil)
+	frame.search:RunScript("OnTabPressed")
+	Equal(frame.keyboardSession, session)
+	frame.search:SetFocus()
+	frame.rows[2]:RunScript("OnMouseUp", "LeftButton")
+	Equal(frame.search:HasFocus(), false)
+	Equal(session.keyboardQuestId, 2)
+	Equal(frame.keyboardSession, session)
+	a:RequestPartyQuestKeyboardFocus(frame)
+	a.mouseOverWindow = false
+	frame:RunScript("OnEvent", "GLOBAL_MOUSE_DOWN")
+	frame.keyboardInput:RunScript("OnUpdate", 0.016)
+	Equal(frame.keyboardSession, nil)
+	Equal(frame.keyboardFocusPending, nil)
+	a:RequestPartyQuestKeyboardFocus(frame)
+	a.partyQuestCompareSession = {}
+	frame.keyboardInput:RunScript("OnUpdate", 0.016)
+	Equal(frame.keyboardSession, nil)
+	Equal(frame.keyboardInput:IsShown(), false)
+	a.partyQuestCompareSession = session
+	a:RequestPartyQuestKeyboardFocus(frame)
+	frame.search:SetFocus()
+	frame.keyboardInput:RunScript("OnUpdate", 0.016)
+	Equal(frame.keyboardSession, nil)
+	Equal(frame.search:HasFocus(), true)
+	frame.search:ClearFocus()
+	a.QueuePartyQuestCompareRender = QT.QueuePartyQuestCompareRender
+	a:OpenPartyQuestCompare()
+	frame.keyboardInput:RunScript("OnUpdate", 0.016)
+	Equal(frame.keyboardSession, nil) -- wait for the new session's first render
+	a:RenderPartyQuestCompare()
+	frame.keyboardInput:RunScript("OnUpdate", 0.016)
+	Equal(frame.keyboardSession, a.partyQuestCompareSession)
+	assert(frame.keyboardSession ~= session)
 	Equal(a.invalidCalls, nil)
 end)
 
@@ -281,7 +319,6 @@ QT:RegisterTest("compact columns retain small-screen bounds and keyboard selecti
 	assert(frame:GetWidth() * frame:GetScale() <= 720 * 0.94 + 0.01)
 	assert(frame:GetHeight() * frame:GetScale() <= 540 * 0.94 + 0.01)
 	Equal(frame.columns[2].left, frame.columns[1].left + frame.columns[1].width + 4)
-	frame.keyboardButton:Click()
 	Key(frame, "END")
 	Equal(session.keyboardQuestId, 24)
 	a:SetPartyQuestCompareFilter("search", "Quest 01")
@@ -291,8 +328,9 @@ QT:RegisterTest("compact columns retain small-screen bounds and keyboard selecti
 	a:OpenPartyQuestCompare()
 	a:RenderPartyQuestCompare()
 	assert(a.partyQuestCompareSession ~= session)
-	Equal(frame.keyboardSession, nil)
-	Equal(frame.keyboardInput:IsShown(), false)
+	frame.keyboardInput:RunScript("OnUpdate", 0.016)
+	Equal(frame.keyboardSession, a.partyQuestCompareSession)
+	Equal(frame.keyboardInput:IsShown(), true)
 	Equal(a.invalidCalls, nil)
 end)
 

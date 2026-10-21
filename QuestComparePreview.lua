@@ -206,6 +206,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		"GetPartyQuestKeyboardTarget",
 		"CapturePartyQuestScrollAnchor",
 		"SetPartyQuestKeyboardNavigation",
+		"RequestPartyQuestKeyboardFocus",
 		"ConfigurePartyQuestKeyboardNavigation",
 		"ShowPartyQuestKeyboardMenu",
 		"GetPartyQuestAbsenceState",

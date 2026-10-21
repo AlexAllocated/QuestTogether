@@ -701,7 +701,8 @@ function QuestTogether:SetPartyQuestKeyboardNavigation(frame, active)
 		or not self.API.IsPartyQuestKeyboardInputBlocked or self.API.IsPartyQuestKeyboardInputBlocked(frame)) then
 		return false
 	end
-	local wasActive = frame.keyboardSession ~= nil
+	local wasActive = frame.keyboardSession ~= nil or frame.keyboardFocusPending ~= nil
+	frame.keyboardFocusPending = nil
 	frame.keyboardSession = active and session or nil
 	if wasActive and not active and frame.keyboardInput then self:HideOwnedUI(frame.keyboardInput) end
 	if not self:IsWorkBlocked("foreign_frame_mutation") and QuestTogether.LibChev.CanMutateOwnedRegion(frame) then
@@ -709,9 +710,6 @@ function QuestTogether:SetPartyQuestKeyboardNavigation(frame, active)
 			self:CancelOwnedUICleanup(frame.keyboardInput)
 			frame.keyboardInput:SetPropagateKeyboardInput(true)
 			frame.keyboardInput:Show()
-		end
-		if frame.keyboardButton then
-			frame.keyboardButton:SetText(active and L("Keyboard: on") or L("Keyboard"))
 		end
 		if session and frame.displaySession == session then
 			if active then
@@ -734,7 +732,14 @@ function QuestTogether:ShowPartyQuestKeyboardMenu(frame, selected)
 			and QuestTogether.LibChev.CanMutateOwnedRegion(frame) and frame:IsVisible()
 			and not self:IsWorkBlocked("foreign_frame_mutation")
 	end
-	return self:CreatePartyQuestFilterMenu(frame.keyboardButton, function(_, root)
+	local anchor = frame.rowsViewport
+	for _, row in ipairs(frame.rows) do
+		if row.session == session and row.data and not row.data.kind and row.data.questId == questID and row:IsVisible() then
+			anchor = row
+			break
+		end
+	end
+	return self:CreatePartyQuestFilterMenu(anchor, function(_, root)
 		if not Current() then return end
 		root:CreateTitle(selected.data.title)
 		root:CreateButton(L("Expand or collapse quest"), function()
@@ -759,6 +764,16 @@ function QuestTogether:ShowPartyQuestKeyboardMenu(frame, selected)
 	end)
 end
 
+function QuestTogether:RequestPartyQuestKeyboardFocus(frame)
+	if not self.partyQuestCompareSession or self:IsWorkBlocked("foreign_frame_mutation")
+		or not QuestTogether.LibChev.CanMutateOwnedRegion(frame) or not frame:IsVisible() then return end
+	self:SetPartyQuestKeyboardNavigation(frame, false)
+	frame.keyboardFocusPending = self.partyQuestCompareSession
+	self:CancelOwnedUICleanup(frame.keyboardInput)
+	frame.keyboardInput:SetPropagateKeyboardInput(true)
+	frame.keyboardInput:Show()
+end
+
 function QuestTogether:ConfigurePartyQuestKeyboardNavigation(frame)
 	-- Only this child captures navigation keys. Hiding an ordinary owned frame
 	-- retires input during combat without changing a restricted input attribute.
@@ -769,25 +784,14 @@ function QuestTogether:ConfigurePartyQuestKeyboardNavigation(frame)
 	input:EnableKeyboard(true)
 	input:SetPropagateKeyboardInput(true)
 	input:Hide()
-	frame.keyboardButton = Button(self, frame.content, QUEST_WIDTH - 145, 0, 137, L("Keyboard"), function()
-		if not self:IsWorkBlocked("foreign_frame_mutation") and QuestTogether.LibChev.CanMutateOwnedRegion(frame.search) then
-			frame.search:ClearFocus()
-		end
-		self:SetPartyQuestKeyboardNavigation(frame, not frame.keyboardSession)
-	end)
-	frame.keyboardButton:SetHeight(20)
-	frame.keyboardButton:SetScript("OnEnter", function()
-		self:ShowSettingsTooltip(frame.keyboardButton, L("Keyboard navigation"), L("Click to navigate quests with the arrow keys. Home/End and Page Up/Page Down move through the list. Left/Right or Enter collapse or expand a quest. Space or the Menu key opens quest actions. Escape or a click outside this window returns to normal controls."))
-	end)
-	local function Leave() self:HideSettingsTooltip(frame.keyboardButton) end
-	frame.keyboardButton:SetScript("OnLeave", Leave)
-	frame.keyboardButton:SetScript("OnHide", Leave)
-	frame.questHeader:SetWidth(QUEST_WIDTH - 150)
+	-- Defer opening focus until the first render and the slash-command/menu
+	-- click that opened us have finished. Outside clicks and hide cancel it.
+	frame:HookScript("OnShow", function() self:RequestPartyQuestKeyboardFocus(frame) end)
 	frame.search:HookScript("OnEditFocusGained", function() self:SetPartyQuestKeyboardNavigation(frame, false) end)
 	frame:RegisterEvent("GLOBAL_MOUSE_DOWN")
 	frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 	frame:SetScript("OnEvent", function(_, event)
-		if frame.keyboardSession and (event == "PLAYER_REGEN_DISABLED"
+		if (frame.keyboardSession or frame.keyboardFocusPending) and (event == "PLAYER_REGEN_DISABLED"
 			or (event == "GLOBAL_MOUSE_DOWN"
 				and (not self.API.IsMouseOverPartyQuestWindow or not self.API.IsMouseOverPartyQuestWindow(frame)))) then
 			self:SetPartyQuestKeyboardNavigation(frame, false)
@@ -820,8 +824,12 @@ function QuestTogether:ConfigurePartyQuestKeyboardNavigation(frame)
 			return
 		end
 		if key == "ESCAPE" then
-			self:SetPartyQuestKeyboardNavigation(frame, false)
 			input:SetPropagateKeyboardInput(false)
+			self:DismissManagedWindow(frame, "escape")
+			return
+		elseif key == "TAB" then
+			input:SetPropagateKeyboardInput(false)
+			frame.search:SetFocus()
 			return
 		end
 		local moves = key == "UP" or key == "DOWN" or key == "HOME" or key == "END"
@@ -862,7 +870,17 @@ function QuestTogether:ConfigurePartyQuestKeyboardNavigation(frame)
 		end
 	end)
 	input:SetScript("OnUpdate", function()
-		if frame.keyboardSession and self:IsWorkBlocked("foreign_frame_mutation") then
+		if self:IsWorkBlocked("foreign_frame_mutation") then
+			self:SetPartyQuestKeyboardNavigation(frame, false)
+		elseif frame.keyboardFocusPending then
+			local expected = frame.keyboardFocusPending
+			if self.partyQuestCompareSession ~= expected or not frame:IsVisible() then
+				self:SetPartyQuestKeyboardNavigation(frame, false)
+			elseif frame.displaySession == expected then
+				self:SetPartyQuestKeyboardNavigation(frame, false)
+				self:SetPartyQuestKeyboardNavigation(frame, true)
+			end
+		elseif frame.keyboardSession and self.API.IsPartyQuestKeyboardInputBlocked(frame) then
 			self:SetPartyQuestKeyboardNavigation(frame, false)
 		end
 	end)
@@ -934,12 +952,14 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			self:SetPartyQuestCompareFilter("search", edit:GetText())
 		end
 	end)
-	frame.search:HookScript("OnEscapePressed", function(edit)
+	local function FocusList(edit)
+		if self:IsWorkBlocked("foreign_frame_mutation") or not QuestTogether.LibChev.CanMutateOwnedRegion(edit) then return end
 		edit:ClearFocus()
-	end)
-	frame.search:HookScript("OnEnterPressed", function(edit)
-		edit:ClearFocus()
-	end)
+		self:SetPartyQuestKeyboardNavigation(frame, true)
+	end
+	frame.search:HookScript("OnEscapePressed", FocusList)
+	frame.search:HookScript("OnEnterPressed", FocusList)
+	frame.search:HookScript("OnTabPressed", FocusList)
 	frame.filter = Button(self, frame, width - 386, -74, 124, L("Filters"), function(button)
 		self:SetPartyQuestKeyboardNavigation(frame, false)
 		self:ShowPartyQuestCompareFilters(button)
@@ -1039,7 +1059,11 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 					and not row.data.kind
 					and row.session == self.partyQuestCompareSession
 				then
+					if self:IsWorkBlocked("foreign_frame_mutation") or not QuestTogether.LibChev.CanMutateOwnedRegion(frame)
+						or not row:IsVisible() then return end
+					frame.search:ClearFocus()
 					self.partyQuestCompareSession.keyboardQuestId = row.data.questId
+					self:SetPartyQuestKeyboardNavigation(frame, true)
 					frame.animateExpansion = { session = self.partyQuestCompareSession, questId = row.data.questId }
 					self:TogglePartyQuestObjectives(row.data.questId)
 				end
@@ -1341,7 +1365,7 @@ function QuestTogether:RenderPartyQuestCompare()
 	frame.rowsViewport:SetWidth(width)
 	frame.rowsContent:SetWidth(width)
 	if frame.displaySession ~= session then
-		self:SetPartyQuestKeyboardNavigation(frame, false)
+		if frame.keyboardSession then self:SetPartyQuestKeyboardNavigation(frame, false) end
 		StopCompareScroll(frame)
 		StopExpansion(frame)
 	end

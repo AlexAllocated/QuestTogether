@@ -178,7 +178,7 @@ private `.local` notes are historical context, not the source of truth.
   source sampling time limits history freshness to 60 seconds.
 - Collapsing columns changes only session presentation. All members still
   participate in readiness, missing-quest and sharing calculations. Keyboard
-  navigation is explicitly activated and uses a temporary owned input child;
+  navigation follows opening/list-click focus and uses a temporary owned input child;
   edit focus, menus, outside clicks, restrictions and hiding retire that child.
 - Native quest-sharing messages have recipient identities but no quest IDs.
   Their recent localized explanations are labeled as the player's latest share
