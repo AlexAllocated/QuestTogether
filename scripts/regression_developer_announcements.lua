@@ -682,6 +682,12 @@ QT:RegisterTest("private location feed orders snapshots across privacy changes d
 	Equal(dev:GetFreshPlayerLocation(peer.name, "map").x, 0.7)
 	Equal(dev:GetFreshPlayerLocation(peer.name, "map").lifetime, dev:GetGeographicSnapshotLifetime(),
 		"the optional developer feed must not shorten ordinary public location lifetime")
+	local public = dev:GetFreshPlayerLocation(peer.name, "map")
+	record.location, context.sequence = { mask = 0 }, 5
+	Accept()
+	Equal(dev:GetFreshPlayerLocation(peer.name, "map"), public,
+		"temporarily unavailable diagnostic coordinates must not withdraw or refresh a valid public dot")
+	record.location = location
 	record.locationShared, context.sequence = false, 3
 	assert(not Accept(), "old hidden data cannot resurrect a red dot after public sharing resumes")
 	context.sequence = 5

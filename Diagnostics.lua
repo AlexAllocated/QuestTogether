@@ -125,6 +125,7 @@ function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 		{ "transfer", self:GetCommTransferMetrics() },
 		{ "authentication", self:GetDeveloperCommunicationMetrics() },
 		{ "developerAnnouncements", self:GetDeveloperAnnouncementMetrics() },
+		{ "vip", self:GetVIPCommunicationMetrics() },
 	}) do
 		for key, value in pairs(group[2] or {}) do
 			if type(value) == "number" or type(value) == "string" then

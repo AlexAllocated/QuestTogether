@@ -32,7 +32,7 @@ dofile(root.."/VIPIdentity.lua")
 local function Peer(name)
     local a=setmetatable({name=name,now=100,isEnabled=true,vipStore={claim=claim},
         vipIssuerPublicKeyHex=issuerPublic,sent={}}, {__index=QT})
-    a.API={GetTime=function()return a.now end}
+    a.API={GetTime=function()return a.now end,Random=function(low)return low end}
     function a:SafeToNumber(v)return tonumber(v)end
     function a:NormalizeMemberName(n)return n end
     function a:IsIgnoredPlayerName(n)return self.ignored==n end
@@ -87,6 +87,16 @@ assert(receiver:IsVerifiedVIP(source.name))
 assert(receiver.peerSnapshotState.peers[source.name].epoch.stamp==proof.issuedAt,
     "unsigned envelope timestamp must not establish epoch ordering")
 assert(not Receive(receiver,proof),"duplicates rejected")
+-- A cached certificate saves issuer verification, never the signed proof.
+local acceptedPeer=receiver.vipState.peers[source.name]
+local forged={}
+for k,v in pairs(proof)do forged[k]=v end
+receiver.now=receiver.now+11
+forged.issuedAt=forged.issuedAt+11
+assert(Receive(receiver,forged))
+Pump(receiver,function()return #receiver.vipState.jobs==0 end)
+assert(receiver.vipState.peers[source.name]==acceptedPeer,"cached certificate cannot authenticate changed proof text")
+assert(receiver:GetVIPCommunicationMetrics().invalid==1)
 for _,altered in ipairs({"sender","session","active","certificate","signature"})do
     local a=Peer("Observer-Realm")
     local data={}

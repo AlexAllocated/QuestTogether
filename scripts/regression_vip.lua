@@ -28,6 +28,79 @@ local function Install(a)
 	local claim = a:GetVIPClaimCode()
 	assert(a:ImportVIPActivation("QTVIPKEY1." .. claim:sub(10) .. "." .. string.rep("5", 64) .. "." .. CERT))
 end
+QT:RegisterTest("VIP renewals from different players can arrive together without starving a star", function()
+	local net = QT:CreateTestNetwork({ fps = 10 })
+	local observer = Peer(net, "Observer-Realm")
+	net:StartPeer(observer)
+	for round = 1, 4 do
+		for _, name in ipairs({ "First-Realm", "Second-Realm" }) do
+			local data = { certificate = CERT, signature = string.rep("6", 128), session = "session",
+				issuedAt = observer:GetAnnouncementServerTime(), active = true }
+			assert(observer:HandleVIPIdentity(data, name, { session = "session" }),
+				"independent proofs received in the same frame must fit the bounded verification queue")
+			assert(not observer:HandleVIPIdentity(data, name, { session = "session" }), "duplicates must not consume another job")
+		end
+		net:Advance(2)
+		assert(observer:IsVerifiedVIP("First-Realm") and observer:IsVerifiedVIP("Second-Realm"))
+		net:Advance(118)
+	end
+end, { offline = true })
+QT:RegisterTest("VIP stars and locations survive a lost renewal with concurrent peers and reordered fragments", function()
+	local net = QT:CreateTestNetwork({ fps = 5 })
+	local observer, publishers = Peer(net, "Observer-Realm"), {}
+	net:StartPeer(observer)
+	for index = 1, 3 do
+		local a = Peer(net, "VIP" .. index .. "-Realm")
+		publishers[index] = a
+		net:StartPeer(a)
+	end
+	net:Advance(20)
+	for _, a in ipairs(publishers) do Install(a) end
+	net:Advance(20)
+	for _, a in ipairs(publishers) do assert(observer:IsVerifiedVIP(a.name)) end
+	local lost = {}
+	net.deliveryRule = function(packet, receiver)
+		local frame = observer:DecodeCommFrame(packet.wire)
+		if receiver == observer and frame.operation == "VIP" then
+			if frame.part == 2 and not lost[packet.sender] then
+				lost[packet.sender] = true
+				return { drop = true }
+			end
+			return { copies = 2, delay = frame.part == 1 and 0.5 or 0.05 }
+		end
+	end
+	for _ = 1, 200 do
+		net:Advance(2)
+		for _, a in ipairs(publishers) do
+			assert(observer:IsVerifiedVIP(a.name), "one lost renewal must not interrupt a verified star")
+			assert(observer:GetFreshPlayerLocation(a.name), "VIP traffic must not starve location renewal")
+		end
+	end
+	for _, a in ipairs(publishers) do assert(lost[a.name]) end
+	assert(observer:GetVIPCommunicationMetrics().pending <= 8)
+end, { offline = true })
+QT:RegisterTest("local world transitions retain verified VIP proofs without renewing them or retaining pending work", function()
+	local net = QT:CreateTestNetwork()
+	local a = Peer(net, "Observer-Realm")
+	local data = { certificate = CERT, signature = string.rep("6", 128), session = "peer-session",
+		issuedAt = a:GetAnnouncementServerTime(), active = true }
+	assert(a:HandleVIPIdentity(data, "Verified-Realm", { session = data.session }))
+	for _ = 1, 10 do a:UpdateVIPIdentity() end
+	assert(a:IsVerifiedVIP("Verified-Realm"))
+	assert(a:HandleVIPIdentity(data, "Pending-Realm", { session = data.session }))
+	local expires = a.vipState.peers["Verified-Realm"].expires
+	a:EndCommsWorldSession(true)
+	assert(not a:IsVerifiedVIP("Verified-Realm"), "departed local runtime must remain inactive")
+	a.now = a.now + 5
+	a:ResumeCommsWorldSession()
+	assert(a:IsVerifiedVIP("Verified-Realm"), "zoning locally must not discard another player's valid proof")
+	assert(#a.vipState.jobs == 0 and not a:IsVerifiedVIP("Pending-Realm"))
+	assert(a.vipState.peers["Verified-Realm"].expires == expires, "zoning cannot renew a proof")
+	a.now = expires
+	assert(not a:IsVerifiedVIP("Verified-Realm"))
+	a:EndCommsWorldSession()
+	assert(a.vipState == nil, "disable/full reset must still clear identity state")
+end)
 QT:RegisterTest("reload scan announcement waits for VIP verification without replaying retired scans", function()
 	for _, scenario in ipairs({ "valid", "invalid", "hidden", "ordinary", "logout", "lifetime" }) do
 		local net = QT:CreateTestNetwork({ fps = 10 })

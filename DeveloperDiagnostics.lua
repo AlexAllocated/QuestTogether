@@ -428,6 +428,9 @@ function QT:HandleDeveloperLocationSnapshot(record, sender, context)
 	local location = self:ValidatePlayerLocationRecord(record.location)
 	if not location or (location.mask ~= 0 and location.mask ~= 3) then return false end
 	local sharedPosition = record.locationShared and location.mask == 3
+	-- Unavailable coordinates do not withdraw public sharing or refresh the old
+	-- sample. Explicit locationShared=false still clears public coordinates below.
+	if record.locationShared and location.mask == 0 then return false end
 	-- Receipt must be recent for every feed packet, but accepted public points
 	-- retain the normal geographic lease independently of this optional feed.
 	local lifetime = sharedPosition and self:GetGeographicSnapshotLifetime() or PRIVATE_LOCATION_LIFETIME

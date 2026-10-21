@@ -86,13 +86,20 @@ separate. Existing glows and class colors remain meaningful; developer artwork
 takes precedence when both apply.
 
 VIP proofs use the ordinary protocol catalog, scheduler and bounded transfer
-service. Publication is every 120 seconds; remote proof lifetime is 300 seconds.
+service. Publication is jittered between 90 and 120 seconds; remote proof lifetime
+is 300 seconds. Different senders may enter verification together, up to eight
+pending jobs, with one job per sender and a per-sender admission cooldown. Each
+frame advances a fixed arithmetic budget. Renewals reuse an identical previously
+verified certificate, but always verify the new signed identity proof.
 Fresh installs/late joiners may wait for the next publication. Disabled cosmetics
 publish a signed withdrawal; rapid changes coalesce outside the receiver's
 verification cooldown. Queue failures retry after five seconds, while ambiguous
 native submissions wait for the ordinary next publication. Verification and signing advance incrementally from
-RuntimeCoordinator; peer caches and pending work are bounded and retired on
-session changes, ignores, departure and disable.
+RuntimeCoordinator. Local loading screens preserve completed remote proofs with
+their original expiry; pending work is cancelled. Peer session changes, ignores,
+departures and addon disable still invalidate the relevant identity. Diagnostic
+reports include bounded `comms.vip` counters and authentication timing, without
+certificates or private activation material.
 
 Certificates alone are public and insufficient to impersonate a VIP. Someone
 deliberately sharing their private activation/SavedVariables can share the

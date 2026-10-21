@@ -19,6 +19,9 @@ local function Parse(certificate)
 		message = "QTVIP1\n" .. id .. "\n" .. public, text = certificate }
 end
 local function Now(a) return a.API.GetTime() end
+local function Count(s, key)
+	s.metrics[key] = (s.metrics[key] or 0) + 1
+end
 local function Current(a, s)
 	return rawget(a, "vipState") == s and a.isEnabled and not a.isLoggingOut
 		and rawget(a, "communicationState") == s.communication and not s.communication.departing
@@ -40,10 +43,17 @@ local function State(a)
 	local s = rawget(a, "vipState")
 	if not s then
 		s = { communication = a:InitializeCommunications(), jobs = {}, peers = {}, order = {},
-			cooldowns = {}, cooldownOrder = {}, nextPublish = Now(a) + 3, nextInbound = 0 }
+			cooldowns = {}, cooldownOrder = {}, nextPublish = Now(a) + 3, metrics = {} }
 		a.vipState = s
 	end
 	return s
+end
+function QT:GetVIPCommunicationMetrics()
+	local s, result = rawget(self, "vipState"), { pending = 0 }
+	if not s then return result end
+	for key, value in pairs(s.metrics) do result[key] = value end
+	result.pending = #s.jobs
+	return result
 end
 local function Changed(a)
 	if a.InvalidatePlayerLocationPresentation then a:InvalidatePlayerLocationPresentation() end
@@ -105,10 +115,17 @@ function QT:RetireVIPPeer(name)
 	s.peers[name] = nil
 	for _, job in ipairs(s.jobs) do if job.sender == name then job.cancelled = true end end
 end
-function QT:ResetVIPIdentity()
+function QT:ResetVIPIdentity(preserveVerifiedPeers)
 	local s = rawget(self, "vipState")
 	if s then self:CancelCommunicationOwner(s, "cancelled") end
 	self.vipState = nil
+	-- Our loading screen says nothing about other players' authenticated proofs.
+	-- Keep only completed observations, with their original session and expiry;
+	-- all queued signing/verification belongs to the retired runtime.
+	if preserveVerifiedPeers and s then
+		local nextState = State(self)
+		nextState.peers, nextState.order, nextState.metrics = s.peers, s.order, s.metrics
+	end
 	if self.RefreshMinimapIdentityIcon then self:RefreshMinimapIdentityIcon() end
 end
 local function CheckCredential(a, seed, certificate)
@@ -144,11 +161,18 @@ function QT:HandleVIPIdentity(data, sender, context)
 		or data.session ~= context.session or type(data.active) ~= "boolean"
 		or not self:CanAcceptPeerEpoch(sender, context.session, data.issuedAt) then return false end
 	local s = State(self)
-	if not Current(self, s) or #s.jobs >= MAX_JOBS or now < s.nextInbound
-		or (s.cooldowns[sender] and now < s.cooldowns[sender]) then return false end
+	if not Current(self, s) then return false end
 	local old = s.peers[sender]
-	if old and old.session == data.session and old.issuedAt >= data.issuedAt then return false end
-	s.nextInbound = now + 0.1
+	if old and old.session == data.session and old.issuedAt >= data.issuedAt then
+		Count(s, "duplicates"); return false
+	end
+	-- Different players can legitimately arrive in the same frame. Bound the
+	-- queue and each sender instead of dropping every other sender for 100 ms.
+	for _, pending in ipairs(s.jobs) do
+		if not pending.cancelled and pending.sender == sender then Count(s, "pendingDropped"); return false end
+	end
+	if s.cooldowns[sender] and now < s.cooldowns[sender] then Count(s, "rateLimited"); return false end
+	if #s.jobs >= MAX_JOBS then Count(s, "capacity"); return false end
 	s.cooldowns[sender] = now + 10
 	s.cooldownOrder[#s.cooldownOrder + 1] = { sender, now + 10 }
 	if #s.cooldownOrder > MAX_PEERS then
@@ -160,12 +184,16 @@ function QT:HandleVIPIdentity(data, sender, context)
 	local signature, session, issued, active = Unhex(data.signature, 64), data.session, data.issuedAt, data.active
 	local job = { sender = sender, session = session, issuedAt = issued, active = active,
 		stamp = issued, received = now, sampledAt = now - math.max(0, stamp - issued),
-		expires = now + TTL - math.max(0, stamp - issued) }
+		expires = now + TTL - math.max(0, stamp - issued), certificate = cert.text, issuer = issuer }
 	job.verifier = coroutine.create(function()
-		if not self.Ed25519.Verify(issuer, cert.message, cert.signature, coroutine.yield) then return false end
+		-- Only an identical, previously verified certificate can skip issuer
+		-- verification. Every renewal still verifies its new identity proof.
+		if not (old and old.certificate == cert.text and old.issuer == issuer)
+			and not self.Ed25519.Verify(issuer, cert.message, cert.signature, coroutine.yield) then return false end
 		return self.Ed25519.Verify(cert.public, Proof(cert.text, sender, session, issued, active), signature, coroutine.yield)
 	end)
 	s.jobs[#s.jobs + 1] = job
+	Count(s, "queued")
 	return true
 end
 local function Step(job, budget)
@@ -212,6 +240,9 @@ function QT:UpdateVIPIdentity()
 				if (not old or old.session ~= job.session or old.issuedAt < job.issuedAt)
 					and self:RecordPeerEpoch(job.sender, job.session, job.stamp) then
 					s.peers[job.sender] = job
+					Count(s, "verified")
+					s.metrics.authenticationLast = now - job.received
+					s.metrics.authenticationMax = math.max(s.metrics.authenticationMax or 0, now - job.received)
 					job.verifier = nil
 					s.order[#s.order + 1] = job
 					if #s.order > MAX_PEERS then
@@ -220,7 +251,9 @@ function QT:UpdateVIPIdentity()
 					end
 					Changed(self)
 				end
-			end
+			elseif not valid then Count(s, "invalid") end
+		else
+			Count(s, now >= job.expires and "expired" or "cancelled")
 		end
 	end
 	if s.credential and not s.localJob and now >= s.nextPublish then
@@ -258,6 +291,7 @@ function QT:UpdateVIPIdentity()
 						and (store.visible ~= false) == proof.active
 				end,
 				onComplete = function(accepted, result)
+					if Current(self, s) then Count(s, accepted and "published" or ("publish_" .. tostring(result))) end
 					if not accepted and result ~= "ambiguous" and Current(self, s)
 						and s.lastIssuedAt == proof.issuedAt and (store.visible ~= false) == proof.active then
 						-- Admission can precede the asynchronous channel join.
@@ -266,7 +300,8 @@ function QT:UpdateVIPIdentity()
 					end
 				end,
 			})
-			s.nextPublish = now + (ok and 120 or 5)
+			-- Jitter renewals so clients do not repeatedly collide at receivers.
+			s.nextPublish = now + (ok and self.API.Random(90, 120) or 5)
 			if ok then s.proof, s.lastSubmitted = nil, now end
 		end
 	end

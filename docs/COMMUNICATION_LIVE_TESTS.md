@@ -98,6 +98,18 @@ client or scenario as passed.
 
 ## Congestion and recovery
 
+- [ ] With a verified VIP visible as a star, take the observing client through a
+  loading screen and return before the proof expires. The star should remain
+  available without waiting for a fresh VIP broadcast. Repeat with a real VIP
+  departure, cosmetic withdrawal and expired proof; those must still remove it.
+- [ ] Observe multiple VIPs through several renewal cycles, including alongside
+  ordinary location and quest updates. Capture `comms.vip` queue/capacity and
+  authentication counters if a star becomes a normal dot. Do not extend proof
+  expiry or treat unrelated public traffic as authentication.
+- [ ] On a developer observer, confirm a transient unavailable diagnostic
+  position does not remove an otherwise valid public dot. Location opt-out must
+  still withdraw public coordinates, and unavailable samples cannot renew them.
+
 - [ ] Exercise a busy area and concurrent ordinary addon traffic. Confirm queued
   work progresses without flooding retries, Lua errors, or sustained UI stalls.
   If native throttling occurs, capture it and verify paced recovery after the
@@ -108,6 +120,9 @@ client or scenario as passed.
   pieces recover without repeating the underlying action or rebuilding a
   different snapshot. Record a live case as unexercised if no such condition
   occurred; do not claim the offline simulation proves live recovery.
+- [ ] If a native submission is reported as ambiguous during a fragmented
+  message, the unsent remainder should still progress without replaying that
+  fragment. Completion must remain ambiguous even if the receiver assembles it.
 - [ ] After quieting the workload, verify expired/superseded work is cleared and
   new control actions are not stuck behind obsolete bulk transfers. There is no
   hard delivery deadline for every participant in a crowded global channel.

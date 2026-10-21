@@ -6633,7 +6633,7 @@ function QuestTogether:PLAYER_LEAVING_WORLD()
 	self:ResetRecentCompanionObservation()
 	if self.isEnabled then
 		if self.EndCommsWorldSession then
-			self:EndCommsWorldSession()
+			self:EndCommsWorldSession(true)
 		end
 		if self.BroadcastQTPlayerPresence then
 			self:BroadcastQTPlayerPresence(true)

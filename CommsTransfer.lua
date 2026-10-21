@@ -691,10 +691,14 @@ function QT:UpdateCommTransfers()
 							return
 						end
 						job.inFlight = nil
-						if not sent then
+						if not sent and result ~= "ambiguous" then
 							RetireOut(self, state, job, result)
 							return
 						end
+						-- The server may have submitted this fragment. Do not replay it,
+						-- but still send the remaining fragments so that a delivered
+						-- ambiguous packet does not guarantee an incomplete object.
+						if result == "ambiguous" then job.ambiguous = true end
 						job.lastProgressAt = Now(self)
 						if not job.firstProgressAt then
 							job.firstProgressAt = job.lastProgressAt
@@ -720,7 +724,7 @@ function QT:UpdateCommTransfers()
 							if job.nextPart > #job.frames then
 								job.initialComplete, job.completedAt = true, Now(self)
 								Timing(state, "outboundCompletion", job.completedAt - job.createdAt)
-								Complete(self, job, true, "accepted")
+								Complete(self, job, not job.ambiguous, job.ambiguous and "ambiguous" or "accepted")
 								if job.reliable then
 									SendControl(self, state, "FXEND", job.frame, job.route.target, nil, "0", job)
 								else

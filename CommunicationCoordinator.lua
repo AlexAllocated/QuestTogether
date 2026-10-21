@@ -1126,8 +1126,8 @@ function QT:UpdateCommunicationRuntime()
 		self:DrainTransport()
 	end
 end
-function QT:EndCommunicationSession()
-	self:ResetVIPIdentity()
+function QT:EndCommunicationSession(preserveVerifiedPeers)
+	self:ResetVIPIdentity(preserveVerifiedPeers)
 	self:ResetDeveloperAnnouncements()
 	local s = rawget(self, "communicationState")
 	local requests = s and s.requests or {}
@@ -1179,12 +1179,12 @@ function QT:FlushCommunicationDeparture()
 	end
 	return self:Emit("BYE", { reason = "departure" }, routes, { direct = true, priority = "control" })
 end
-function QT:EndCommsWorldSession()
+function QT:EndCommsWorldSession(preserveVerifiedPeers)
 	self:ResetQuestFocusWindow()
 	self:CancelPartyQuestObjectiveRequests(rawget(self, "partyQuestCompareSession"))
 	self:ResetPartyQuestProgress()
 	self:ResetLocalizedQuestTitles()
-	return self:EndCommunicationSession()
+	return self:EndCommunicationSession(preserveVerifiedPeers)
 end
 function QT:ResumeCommsWorldSession()
 	local result = self:ResumeCommunicationSession()

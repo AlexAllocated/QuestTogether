@@ -73,6 +73,37 @@ local function CountControls(peer, op)
 	return count
 end
 
+QT:RegisterTest("transfer v2 finishes unsent fragments after an ambiguous submission without replaying it", function()
+	for _, delivered in ipairs({ false, true }) do
+		local net, a, b = Fixture({ fps = 10 })
+		local frames = Frames(a, "STATE", { records = {
+			{ topic = "QTLQ", data = { title = string.rep("q", 700) }, sampledAt = a.API.GetServerTime(), revision = 1 },
+		} })
+		assert(#frames > 2)
+		local attempts, completed, outcome = {}, 0, nil
+		net.sendRule = function(packet)
+			local frame = a:DecodeCommFrame(packet.wire)
+			attempts[frame.part] = (attempts[frame.part] or 0) + 1
+			if frame.part == 1 then return 8, delivered end
+			return 0
+		end
+		assert(a:QueueCommTransfer(frames, "state", { distribution = "WHISPER", target = b.name }, {
+			expires = net.now + 30, onComplete = function(sent, reason)
+				completed, outcome = completed + 1, reason
+				assert(not sent, "ambiguous native acceptance must stay ambiguous")
+			end,
+		}))
+		net:Advance(10)
+		for index = 1, #frames do Equal(attempts[index], 1, "every fragment must be attempted exactly once") end
+		Equal(completed, 1)
+		Equal(outcome, "ambiguous")
+		Equal(#b.dispatched, delivered and 1 or 0)
+		net:Advance(31)
+		Equal(a:GetCommTransferMetrics().bytes + b:GetCommTransferMetrics().bytes, 0)
+		Equal(completed, 1)
+	end
+end)
+
 QT:RegisterTest(
 	"transfer v2 publishes once after complete reordered duplicates and releases acknowledged payload",
 	function()
