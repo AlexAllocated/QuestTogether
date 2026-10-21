@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.1
+
+Navegação pelo teclado sem um botão extra.
+
+### Registro de missões do grupo
+
+- Abrir o registro de missões do grupo ou clicar em uma missão coloca o foco na lista automaticamente. O botão Teclado foi removido. Use as setas para navegar e Enter para expandir ou recolher os objetivos.
+- Tab alterna entre a lista e a busca. Escape fecha a janela quando a lista está em foco; clicar fora libera o foco do teclado. Atualizações das missões não retomam o foco.
+
 ## 8.0.0
 
 Apresentamos o QuestTogether VIP.

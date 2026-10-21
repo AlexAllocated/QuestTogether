@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.1
+
+无需额外按钮，即可使用键盘导航。
+
+### 队伍任务日志
+
+- 打开队伍任务日志或点击任务时，列表会自动获得焦点。已移除键盘按钮。使用方向键浏览，按 Enter 展开或收起目标。
+- Tab 可在列表和搜索之间切换。列表获得焦点时，按 Escape 关闭窗口；点击窗口外会释放键盘焦点。任务更新不会重新抢占焦点。
+
 ## 8.0.0
 
 QuestTogether VIP 正式登场。

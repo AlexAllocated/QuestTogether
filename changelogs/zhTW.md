@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.1
+
+不需額外按鈕，即可使用鍵盤導覽。
+
+### 隊伍任務日誌
+
+- 開啟隊伍任務日誌或點選任務時，清單會自動取得焦點。已移除鍵盤按鈕。使用方向鍵瀏覽，按 Enter 展開或收合目標。
+- Tab 可在清單與搜尋之間切換。清單取得焦點時，按 Escape 關閉視窗；點選視窗外會釋放鍵盤焦點。任務更新不會重新搶走焦點。
+
 ## 8.0.0
 
 QuestTogether VIP 登場。

@@ -1,32 +1,14 @@
 {
-  "source_sha256": "dbf73da01e3206a9f024bfe85b874aaa6a96e82b7060c0cfb67e4d33db3ca895",
+  "source_sha256": "bd18e6f4392a098e832d76fb388d8ffbd5c5c8a34e2a49d1b1d0aadc05fd579a",
   "notes": {
-    "version": "8.0.0",
-    "welcome": "QuestTogether VIP ist da.",
+    "version": "8.0.1",
+    "welcome": "Tastatursteuerung ohne zusätzliche Schaltfläche.",
     "sections": [
       {
-        "title": "VIP-Optik",
+        "title": "Gruppenquestlog",
         "items": [
-          "VIP-Spieler erhalten einen Kartenstern in Klassenfarbe, ein QT-Chatpräfix und einen Minikartenknopf mit goldenem Stern sowie die Kennzeichnung QuestTogether VIP im persönlichen Spielertooltip. Diese Belohnungen sind rein kosmetisch und gewähren keinen Entwicklerzugriff."
-        ],
-        "illustration": "vip-cosmetics"
-      },
-      {
-        "title": "VIP werden",
-        "items": [
-          "Teile den QuestTogether-Downloadlink mit Freunden, deiner Gilde, auf einem passenden Discord-Server oder in sozialen Medien. Mache einen Screenshot deiner gesendeten Nachricht oder deines Beitrags, auf dem der QT-Link und der Ort der Veröffentlichung erkennbar sind. Sende ihn per Discord-Direktnachricht an @chevcast zur Prüfung. Tritt vorher dem QT-Discord bei oder sende @chevcast eine Freundschaftsanfrage. Im VIP-Fenster findest du den Link zum Kopieren und die Aktivierungsschritte nach der Bestätigung."
-        ]
-      },
-      {
-        "title": "Belohnung aktivieren",
-        "items": [
-          "Öffne das VIP-Fenster über das Minimap-Menü, die Einstellungen oder /qt vip. Warte, bis @chevcast bestätigt, dass deinem Discord-Konto VIP gewährt wurde. Der Discord-Befehl /qt claim funktioniert erst nach dieser Vergabe.\n\nKopiere dann deinen Anforderungscode mit Strg+C und sende ihn an @chevcast oder nutze /qt claim im QT-Discord. Füge den erhaltenen privaten Aktivierungscode im VIP-Fenster ein und wähle VIP aktivieren. Wiederhole dies auf Retail oder Forever, um die Belohnung auch dort zu nutzen."
-        ]
-      },
-      {
-        "title": "Dauerhaft und optional",
-        "items": [
-          "Deine Belohnung ist mit deinem Discord-Konto verknüpft und gilt für alle Charaktere einer Installation. Beanspruche sie separat auf Retail und Forever. Schalte Meine VIP-Darstellung anzeigen aus, um die Belohnung ohne sichtbare Effekte zu behalten. Normale, VIP- und Entwickler-Minimapbuttons haben nun goldene Ränder entlang ihrer Symbolform. Die Entwicklerdarstellung hat Vorrang vor VIP."
+          "Beim Öffnen des Gruppenquestlogs oder Anklicken einer Quest erhält die Liste automatisch den Fokus. Die Schaltfläche für die Tastatursteuerung wurde entfernt. Navigiere mit den Pfeiltasten und klappe Ziele mit der Eingabetaste ein oder aus.",
+          "Tab wechselt zwischen Liste und Suche. Escape schließt das Fenster, wenn die Liste den Fokus hat; ein Klick außerhalb gibt den Tastaturfokus frei. Questaktualisierungen holen den Fokus nicht zurück."
         ]
       }
     ]

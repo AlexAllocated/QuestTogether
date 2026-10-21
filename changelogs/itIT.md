@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.1
+
+Navigazione da tastiera senza un pulsante aggiuntivo.
+
+### Registro missioni del gruppo
+
+- Aprire il registro missioni del gruppo o cliccare su una missione assegna automaticamente il focus alla lista. Il pulsante Tastiera è stato rimosso. Usa le frecce per navigare e Invio per espandere o comprimere gli obiettivi.
+- Tab passa dalla lista alla ricerca. Esc chiude la finestra quando la lista ha il focus; cliccare fuori rilascia il focus della tastiera. Gli aggiornamenti delle missioni non riprendono il focus.
+
 ## 8.0.0
 
 Arriva QuestTogether VIP.

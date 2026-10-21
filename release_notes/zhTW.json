@@ -1,32 +1,14 @@
 {
-  "source_sha256": "dbf73da01e3206a9f024bfe85b874aaa6a96e82b7060c0cfb67e4d33db3ca895",
+  "source_sha256": "bd18e6f4392a098e832d76fb388d8ffbd5c5c8a34e2a49d1b1d0aadc05fd579a",
   "notes": {
-    "version": "8.0.0",
-    "welcome": "QuestTogether VIP 登場。",
+    "version": "8.0.1",
+    "welcome": "不需額外按鈕，即可使用鍵盤導覽。",
     "sections": [
       {
-        "title": "VIP 外觀",
+        "title": "隊伍任務日誌",
         "items": [
-          "VIP 玩家擁有職業顏色的星形地圖標記、帶金色星星的 QT 聊天前綴與小地圖按鈕，以及個別玩家提示中的 QuestTogether VIP 標籤。這些獎勵僅改變外觀，不會授予開發者權限。"
-        ],
-        "illustration": "vip-cosmetics"
-      },
-      {
-        "title": "如何成為 VIP",
-        "items": [
-          "將 QuestTogether 下載連結分享給朋友、公會、相關 Discord 社群或發布至社群媒體。擷取已傳送訊息或已發布貼文的畫面，顯示 QT 連結和分享的位置。將截圖透過 Discord 私訊傳給 @chevcast 審核。請先加入 QT Discord 伺服器或向 @chevcast 傳送好友邀請，讓私訊能送達。VIP 視窗提供可複製的連結與獲准後的啟用步驟。"
-        ]
-      },
-      {
-        "title": "啟用獎勵",
-        "items": [
-          "從小地圖選單、設定或透過 /qt vip 開啟 VIP 視窗。請等待 @chevcast 確認已向您的 Discord 帳號授予 VIP。Discord 中的 /qt claim 指令只有在授予 VIP 後才能使用。\n\n接著用 Ctrl+C 複製領取碼，傳給 @chevcast，或在 QT Discord 伺服器中使用 /qt claim。將收到的私人啟用碼貼到 VIP 視窗中並選擇啟用 VIP。若要在 Retail 或 Forever 中使用同一獎勵，請重複此步驟。"
-        ]
-      },
-      {
-        "title": "永久且可選",
-        "items": [
-          "獎勵綁定 Discord 帳號，並由每次安裝中的所有角色共用。請在 Retail 和 Forever 中分別領取。關閉 VIP 外觀顯示仍可保留獎勵。一般、VIP 與開發者小地圖按鈕現在使用沿圖示輪廓的金色邊框。開發者外觀優先於 VIP。"
+          "開啟隊伍任務日誌或點選任務時，清單會自動取得焦點。已移除鍵盤按鈕。使用方向鍵瀏覽，按 Enter 展開或收合目標。",
+          "Tab 可在清單與搜尋之間切換。清單取得焦點時，按 Escape 關閉視窗；點選視窗外會釋放鍵盤焦點。任務更新不會重新搶走焦點。"
         ]
       }
     ]

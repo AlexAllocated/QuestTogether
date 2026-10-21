@@ -1,32 +1,14 @@
 {
-  "source_sha256": "dbf73da01e3206a9f024bfe85b874aaa6a96e82b7060c0cfb67e4d33db3ca895",
+  "source_sha256": "bd18e6f4392a098e832d76fb388d8ffbd5c5c8a34e2a49d1b1d0aadc05fd579a",
   "notes": {
-    "version": "8.0.0",
-    "welcome": "QuestTogether VIP를 소개합니다.",
+    "version": "8.0.1",
+    "welcome": "별도 버튼 없이 키보드로 탐색하세요.",
     "sections": [
       {
-        "title": "VIP 외형",
+        "title": "파티 퀘스트 목록",
         "items": [
-          "VIP 플레이어는 지도에 직업 색상의 별, 황금 별이 있는 QT 채팅 접두 아이콘과 미니맵 버튼, 개별 플레이어 툴팁의 QuestTogether VIP 표시를 받습니다. 외형 보상이며 개발자 권한은 부여하지 않습니다."
-        ],
-        "illustration": "vip-cosmetics"
-      },
-      {
-        "title": "VIP가 되는 방법",
-        "items": [
-          "QuestTogether 다운로드 링크를 친구, 길드, 관련 Discord 또는 소셜 미디어에 공유하세요. QT 링크와 공유한 곳이 보이도록 보낸 메시지나 게시한 글의 스크린샷을 찍으세요. 검토를 위해 Discord DM으로 @chevcast에게 보내세요. 먼저 QT Discord 서버에 가입하거나 @chevcast에게 친구 요청을 보내 DM을 허용하세요. VIP 창에는 복사할 링크와 승인 후 활성화 절차가 있습니다."
-        ]
-      },
-      {
-        "title": "보상 활성화",
-        "items": [
-          "미니맵 메뉴, 설정 또는 /qt vip로 VIP 창을 여세요. @chevcast가 Discord 계정에 VIP를 부여했다고 확인해 줄 때까지 기다리세요. Discord의 /qt claim 명령은 VIP가 부여된 후에만 작동합니다.\n\n그런 다음 Ctrl+C로 신청 코드를 복사하여 @chevcast에게 보내거나 QT Discord 서버에서 /qt claim을 사용하세요. 받은 비공개 활성화 코드를 VIP 창에 붙여넣고 VIP 활성화를 선택하세요. Retail 또는 Forever에서도 같은 보상을 사용하려면 이 과정을 반복하세요."
-        ]
-      },
-      {
-        "title": "영구 보상과 표시 선택",
-        "items": [
-          "보상은 Discord 계정에 연결되며 각 설치의 캐릭터들이 공유합니다. Retail과 Forever에서 각각 받으세요. VIP 외형 표시를 꺼도 보상은 유지됩니다. 일반, VIP, 개발자 미니맵 버튼에는 아이콘 모양을 따르는 금색 테두리가 적용됩니다. 개발자 외형이 VIP보다 우선합니다."
+          "파티 퀘스트 목록을 열거나 퀘스트를 클릭하면 목록에 자동으로 초점이 맞춰집니다. 키보드 버튼은 제거되었습니다. 방향키로 이동하고 Enter로 목표를 펼치거나 접으세요.",
+          "Tab으로 목록과 검색 사이를 전환합니다. 목록에 초점이 있을 때 Escape를 누르면 창이 닫히며, 창 밖을 클릭하면 키보드 초점이 해제됩니다. 퀘스트가 갱신되어도 초점을 다시 가져오지 않습니다."
         ]
       }
     ]

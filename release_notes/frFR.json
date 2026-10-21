@@ -1,32 +1,14 @@
 {
-  "source_sha256": "dbf73da01e3206a9f024bfe85b874aaa6a96e82b7060c0cfb67e4d33db3ca895",
+  "source_sha256": "bd18e6f4392a098e832d76fb388d8ffbd5c5c8a34e2a49d1b1d0aadc05fd579a",
   "notes": {
-    "version": "8.0.0",
-    "welcome": "Découvrez QuestTogether VIP.",
+    "version": "8.0.1",
+    "welcome": "Navigation au clavier sans bouton supplémentaire.",
     "sections": [
       {
-        "title": "Apparence VIP",
+        "title": "Journal de quêtes du groupe",
         "items": [
-          "Les joueurs VIP ont une étoile de leur couleur de classe sur la carte, un préfixe QT et un bouton de minicarte avec une étoile dorée, ainsi que la mention QuestTogether VIP dans leur infobulle individuelle. Ces récompenses sont cosmétiques et ne donnent aucun accès développeur."
-        ],
-        "illustration": "vip-cosmetics"
-      },
-      {
-        "title": "Devenir VIP",
-        "items": [
-          "Partagez le lien de téléchargement de QuestTogether avec vos amis, votre guilde, sur un Discord pertinent ou sur les réseaux sociaux. Faites une capture de votre message envoyé ou de votre publication montrant le lien QT et où vous l’avez partagé. Envoyez-la en message privé Discord à @chevcast pour examen. Rejoignez d’abord le Discord QT ou envoyez une demande d’ami à @chevcast. La fenêtre VIP fournit le lien à copier et les étapes d’activation après approbation."
-        ]
-      },
-      {
-        "title": "Activer la récompense",
-        "items": [
-          "Ouvrez la fenêtre VIP depuis le menu de minicarte, les paramètres ou /qt vip. Attendez que @chevcast confirme que VIP a été accordé à votre compte Discord. La commande Discord /qt claim ne fonctionne qu’après cette attribution.\n\nCopiez ensuite votre code de demande avec Ctrl+C et envoyez-le à @chevcast, ou utilisez /qt claim sur le Discord QT. Collez le code d’activation privé reçu dans la fenêtre VIP et choisissez Activer VIP. Répétez sur Retail ou Forever pour y utiliser la même récompense."
-        ]
-      },
-      {
-        "title": "Permanent et facultatif",
-        "items": [
-          "La récompense est liée à votre compte Discord et partagée entre les personnages de chaque installation. Réclamez-la séparément sur Retail et Forever. Désactivez l’affichage VIP pour garder la récompense sans l’afficher. Les boutons de minicarte standard, VIP et développeur ont des bordures dorées suivant leur forme. L’apparence développeur est prioritaire sur VIP."
+          "Ouvrir le journal de quêtes du groupe ou cliquer sur une quête donne automatiquement le focus à la liste. Le bouton Clavier a été supprimé. Utilisez les flèches pour naviguer et Entrée pour développer ou réduire les objectifs.",
+          "Tab passe de la liste à la recherche. Échap ferme la fenêtre lorsque la liste a le focus ; cliquer à l’extérieur libère le clavier. Les mises à jour des quêtes ne reprennent pas le focus."
         ]
       }
     ]

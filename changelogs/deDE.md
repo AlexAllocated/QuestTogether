@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.1
+
+Tastatursteuerung ohne zusätzliche Schaltfläche.
+
+### Gruppenquestlog
+
+- Beim Öffnen des Gruppenquestlogs oder Anklicken einer Quest erhält die Liste automatisch den Fokus. Die Schaltfläche für die Tastatursteuerung wurde entfernt. Navigiere mit den Pfeiltasten und klappe Ziele mit der Eingabetaste ein oder aus.
+- Tab wechselt zwischen Liste und Suche. Escape schließt das Fenster, wenn die Liste den Fokus hat; ein Klick außerhalb gibt den Tastaturfokus frei. Questaktualisierungen holen den Fokus nicht zurück.
+
 ## 8.0.0
 
 QuestTogether VIP ist da.

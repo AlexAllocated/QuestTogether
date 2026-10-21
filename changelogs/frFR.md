@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.1
+
+Navigation au clavier sans bouton supplémentaire.
+
+### Journal de quêtes du groupe
+
+- Ouvrir le journal de quêtes du groupe ou cliquer sur une quête donne automatiquement le focus à la liste. Le bouton Clavier a été supprimé. Utilisez les flèches pour naviguer et Entrée pour développer ou réduire les objectifs.
+- Tab passe de la liste à la recherche. Échap ferme la fenêtre lorsque la liste a le focus ; cliquer à l’extérieur libère le clavier. Les mises à jour des quêtes ne reprennent pas le focus.
+
 ## 8.0.0
 
 Découvrez QuestTogether VIP.

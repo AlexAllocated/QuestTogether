@@ -1,32 +1,14 @@
 {
-  "source_sha256": "dbf73da01e3206a9f024bfe85b874aaa6a96e82b7060c0cfb67e4d33db3ca895",
+  "source_sha256": "bd18e6f4392a098e832d76fb388d8ffbd5c5c8a34e2a49d1b1d0aadc05fd579a",
   "notes": {
-    "version": "8.0.0",
-    "welcome": "Presentamos QuestTogether VIP.",
+    "version": "8.0.1",
+    "welcome": "Navegación con teclado sin un botón adicional.",
     "sections": [
       {
-        "title": "Aspecto VIP",
+        "title": "Registro de misiones del grupo",
         "items": [
-          "Los jugadores VIP tienen una estrella del color de su clase en el mapa, un prefijo QT y un botón del minimapa con una estrella dorada, y la etiqueta QuestTogether VIP en su descripción individual. Son recompensas cosméticas y no otorgan acceso de desarrollador."
-        ],
-        "illustration": "vip-cosmetics"
-      },
-      {
-        "title": "Cómo ser VIP",
-        "items": [
-          "Comparte el enlace de descarga de QuestTogether con amigos, tu hermandad, un Discord apropiado o en redes sociales. Haz una captura del mensaje enviado o la publicación que muestre el enlace de QT y dónde lo compartiste. Envíala por mensaje directo de Discord a @chevcast para su revisión. Únete primero al Discord de QT o envía una solicitud de amistad a @chevcast. La ventana VIP incluye el enlace para copiar y los pasos de activación tras la aprobación."
-        ]
-      },
-      {
-        "title": "Activa tu recompensa",
-        "items": [
-          "Abre la ventana VIP desde el menú del minimapa, los ajustes o /qt vip. Espera a que @chevcast confirme que se ha concedido VIP a tu cuenta de Discord. El comando /qt claim de Discord solo funciona después de esa concesión.\n\nDespués copia tu código de solicitud con Ctrl+C y envíalo a @chevcast, o usa /qt claim en el Discord de QT. Pega el código privado de activación recibido en la ventana VIP y elige Activar VIP. Repite en Retail o Forever para usar allí la misma recompensa."
-        ]
-      },
-      {
-        "title": "Permanente y opcional",
-        "items": [
-          "La recompensa está vinculada a tu cuenta de Discord y se comparte entre los personajes de cada instalación. Reclámala por separado en Retail y Forever. Desactiva Mostrar mis cosméticos VIP para conservarla sin mostrarlos. Los botones de minimapa normal, VIP y de desarrollador tienen bordes dorados que siguen su forma. La apariencia de desarrollador tiene prioridad sobre VIP."
+          "Abrir el registro de misiones del grupo o hacer clic en una misión da el foco a la lista automáticamente. Se ha eliminado el botón Teclado. Usa las flechas para navegar y Intro para expandir o contraer los objetivos.",
+          "Tab alterna entre la lista y Buscar. Escape cierra la ventana desde la lista; hacer clic fuera libera el foco del teclado. Las actualizaciones de misiones no recuperan el foco."
         ]
       }
     ]

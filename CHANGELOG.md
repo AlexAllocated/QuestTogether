@@ -4,6 +4,15 @@
 
 [Other languages](changelogs/README.md)
 
+## 8.0.1
+
+Keyboard navigation without an extra button.
+
+### Party Quest Log
+
+- Opening Party Quest Log or clicking a quest now focuses the list automatically. The Keyboard button has been removed. Use arrow keys to navigate and Enter to expand or collapse objectives.
+- Tab switches between the list and Search. Escape closes the window from the list; clicking outside releases keyboard focus. Quest updates do not steal focus back.
+
 ## 8.0.0
 
 Introducing QuestTogether VIP.
