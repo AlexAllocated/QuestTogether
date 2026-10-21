@@ -1,14 +1,15 @@
 {
-  "source_sha256": "bd18e6f4392a098e832d76fb388d8ffbd5c5c8a34e2a49d1b1d0aadc05fd579a",
+  "source_sha256": "52c2d22b8aefd50dab144661709c803330f4f0919223b6430e5adfac60bee97c",
   "notes": {
-    "version": "8.0.1",
-    "welcome": "Navigation au clavier sans bouton supplémentaire.",
+    "version": "8.0.2",
+    "welcome": "Des marqueurs de carte et une identification VIP plus fiables.",
     "sections": [
       {
-        "title": "Journal de quêtes du groupe",
+        "title": "Améliorations de la fiabilité",
         "items": [
-          "Ouvrir le journal de quêtes du groupe ou cliquer sur une quête donne automatiquement le focus à la liste. Le bouton Clavier a été supprimé. Utilisez les flèches pour naviguer et Entrée pour développer ou réduire les objectifs.",
-          "Tab passe de la liste à la recherche. Échap ferme la fenêtre lorsque la liste a le focus ; cliquer à l’extérieur libère le clavier. Les mises à jour des quêtes ne reprennent pas le focus."
+          "Les étoiles VIP sont désormais conservées pendant vos écrans de chargement, et les mises à jour VIP simultanées ne se bloquent plus mutuellement.",
+          "Correction d’un cas où les marqueurs de carte pouvaient disparaître lorsqu’une mise à jour de position ne contenait temporairement aucune coordonnée.",
+          "Fiabilité améliorée des mises à jour partagées lorsque le canal limite les envois."
         ]
       }
     ]

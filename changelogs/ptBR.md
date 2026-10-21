@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.2
+
+Marcadores de mapa e identificação VIP mais confiáveis.
+
+### Melhorias de confiabilidade
+
+- As estrelas VIP agora são preservadas durante suas telas de carregamento, e atualizações VIP simultâneas não bloqueiam mais umas às outras.
+- Corrigido um caso em que os marcadores do mapa podiam desaparecer quando uma atualização de localização ficava temporariamente sem coordenadas.
+- Melhorada a confiabilidade das atualizações compartilhadas quando o canal limita os envios.
+
 ## 8.0.1
 
 Navegação pelo teclado sem um botão extra.

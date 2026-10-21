@@ -1,14 +1,15 @@
 {
-  "source_sha256": "bd18e6f4392a098e832d76fb388d8ffbd5c5c8a34e2a49d1b1d0aadc05fd579a",
+  "source_sha256": "52c2d22b8aefd50dab144661709c803330f4f0919223b6430e5adfac60bee97c",
   "notes": {
-    "version": "8.0.1",
-    "welcome": "Navigazione da tastiera senza un pulsante aggiuntivo.",
+    "version": "8.0.2",
+    "welcome": "Indicatori sulla mappa e identificazione VIP più affidabili.",
     "sections": [
       {
-        "title": "Registro missioni del gruppo",
+        "title": "Miglioramenti all’affidabilità",
         "items": [
-          "Aprire il registro missioni del gruppo o cliccare su una missione assegna automaticamente il focus alla lista. Il pulsante Tastiera è stato rimosso. Usa le frecce per navigare e Invio per espandere o comprimere gli obiettivi.",
-          "Tab passa dalla lista alla ricerca. Esc chiude la finestra quando la lista ha il focus; cliccare fuori rilascia il focus della tastiera. Gli aggiornamenti delle missioni non riprendono il focus."
+          "Le stelle VIP vengono ora mantenute durante le tue schermate di caricamento e gli aggiornamenti VIP simultanei non si bloccano più a vicenda.",
+          "Risolto un caso in cui gli indicatori sulla mappa potevano scomparire quando un aggiornamento della posizione era temporaneamente privo di coordinate.",
+          "Migliorata l’affidabilità degli aggiornamenti condivisi quando il canale limita gli invii."
         ]
       }
     ]

@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.2
+
+Zuverlässigere Kartenmarkierungen und VIP-Erkennung.
+
+### Zuverlässigkeitsverbesserungen
+
+- VIP-Sterne bleiben jetzt über eure Ladebildschirme hinweg erhalten. Gleichzeitige VIP-Aktualisierungen blockieren sich nicht mehr gegenseitig.
+- Ein Fehler wurde behoben, durch den Kartenmarkierungen verschwinden konnten, wenn eine Standortaktualisierung vorübergehend keine Koordinaten enthielt.
+- Die Zuverlässigkeit geteilter Aktualisierungen bei Kanaldrosselung wurde verbessert.
+
 ## 8.0.1
 
 Tastatursteuerung ohne zusätzliche Schaltfläche.

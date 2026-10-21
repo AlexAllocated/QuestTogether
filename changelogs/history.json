@@ -3,6 +3,151 @@
   "releases": [
     {
       "enUS": {
+        "version": "8.0.1",
+        "welcome": "Keyboard navigation without an extra button.",
+        "sections": [
+          {
+            "title": "Party Quest Log",
+            "items": [
+              "Opening Party Quest Log or clicking a quest now focuses the list automatically. The Keyboard button has been removed. Use arrow keys to navigate and Enter to expand or collapse objectives.",
+              "Tab switches between the list and Search. Escape closes the window from the list; clicking outside releases keyboard focus. Quest updates do not steal focus back."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "8.0.1",
+        "welcome": "Tastatursteuerung ohne zusätzliche Schaltfläche.",
+        "sections": [
+          {
+            "title": "Gruppenquestlog",
+            "items": [
+              "Beim Öffnen des Gruppenquestlogs oder Anklicken einer Quest erhält die Liste automatisch den Fokus. Die Schaltfläche für die Tastatursteuerung wurde entfernt. Navigiere mit den Pfeiltasten und klappe Ziele mit der Eingabetaste ein oder aus.",
+              "Tab wechselt zwischen Liste und Suche. Escape schließt das Fenster, wenn die Liste den Fokus hat; ein Klick außerhalb gibt den Tastaturfokus frei. Questaktualisierungen holen den Fokus nicht zurück."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "8.0.1",
+        "welcome": "Navigation au clavier sans bouton supplémentaire.",
+        "sections": [
+          {
+            "title": "Journal de quêtes du groupe",
+            "items": [
+              "Ouvrir le journal de quêtes du groupe ou cliquer sur une quête donne automatiquement le focus à la liste. Le bouton Clavier a été supprimé. Utilisez les flèches pour naviguer et Entrée pour développer ou réduire les objectifs.",
+              "Tab passe de la liste à la recherche. Échap ferme la fenêtre lorsque la liste a le focus ; cliquer à l’extérieur libère le clavier. Les mises à jour des quêtes ne reprennent pas le focus."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "8.0.1",
+        "welcome": "Navegación con teclado sin un botón adicional.",
+        "sections": [
+          {
+            "title": "Registro de misiones del grupo",
+            "items": [
+              "Abrir el registro de misiones del grupo o hacer clic en una misión da el foco a la lista automáticamente. Se ha eliminado el botón Teclado. Usa las flechas para navegar y Intro para expandir o contraer los objetivos.",
+              "Tab alterna entre la lista y Buscar. Escape cierra la ventana desde la lista; hacer clic fuera libera el foco del teclado. Las actualizaciones de misiones no recuperan el foco."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "8.0.1",
+        "welcome": "Navegación con teclado sin un botón adicional.",
+        "sections": [
+          {
+            "title": "Registro de misiones del grupo",
+            "items": [
+              "Abrir el registro de misiones del grupo o hacer clic en una misión enfoca la lista automáticamente. Se eliminó el botón Teclado. Usa las flechas para navegar y Enter para expandir o contraer los objetivos.",
+              "Tab alterna entre la lista y Buscar. Escape cierra la ventana desde la lista; hacer clic fuera libera el foco del teclado. Las actualizaciones de misiones no recuperan el foco."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "8.0.1",
+        "welcome": "Navegação pelo teclado sem um botão extra.",
+        "sections": [
+          {
+            "title": "Registro de missões do grupo",
+            "items": [
+              "Abrir o registro de missões do grupo ou clicar em uma missão coloca o foco na lista automaticamente. O botão Teclado foi removido. Use as setas para navegar e Enter para expandir ou recolher os objetivos.",
+              "Tab alterna entre a lista e a busca. Escape fecha a janela quando a lista está em foco; clicar fora libera o foco do teclado. Atualizações das missões não retomam o foco."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "8.0.1",
+        "welcome": "Навигация с клавиатуры без лишней кнопки.",
+        "sections": [
+          {
+            "title": "Журнал заданий группы",
+            "items": [
+              "При открытии журнала заданий группы или щелчке по заданию список автоматически получает фокус. Кнопка клавиатурного режима удалена. Перемещайтесь стрелками и раскрывайте или сворачивайте цели клавишей Enter.",
+              "Tab переключает фокус между списком и поиском. Escape закрывает окно, когда фокус на списке; щелчок вне окна освобождает клавиатуру. Обновления заданий не возвращают фокус."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "8.0.1",
+        "welcome": "Navigazione da tastiera senza un pulsante aggiuntivo.",
+        "sections": [
+          {
+            "title": "Registro missioni del gruppo",
+            "items": [
+              "Aprire il registro missioni del gruppo o cliccare su una missione assegna automaticamente il focus alla lista. Il pulsante Tastiera è stato rimosso. Usa le frecce per navigare e Invio per espandere o comprimere gli obiettivi.",
+              "Tab passa dalla lista alla ricerca. Esc chiude la finestra quando la lista ha il focus; cliccare fuori rilascia il focus della tastiera. Gli aggiornamenti delle missioni non riprendono il focus."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "8.0.1",
+        "welcome": "별도 버튼 없이 키보드로 탐색하세요.",
+        "sections": [
+          {
+            "title": "파티 퀘스트 목록",
+            "items": [
+              "파티 퀘스트 목록을 열거나 퀘스트를 클릭하면 목록에 자동으로 초점이 맞춰집니다. 키보드 버튼은 제거되었습니다. 방향키로 이동하고 Enter로 목표를 펼치거나 접으세요.",
+              "Tab으로 목록과 검색 사이를 전환합니다. 목록에 초점이 있을 때 Escape를 누르면 창이 닫히며, 창 밖을 클릭하면 키보드 초점이 해제됩니다. 퀘스트가 갱신되어도 초점을 다시 가져오지 않습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "8.0.1",
+        "welcome": "无需额外按钮，即可使用键盘导航。",
+        "sections": [
+          {
+            "title": "队伍任务日志",
+            "items": [
+              "打开队伍任务日志或点击任务时，列表会自动获得焦点。已移除键盘按钮。使用方向键浏览，按 Enter 展开或收起目标。",
+              "Tab 可在列表和搜索之间切换。列表获得焦点时，按 Escape 关闭窗口；点击窗口外会释放键盘焦点。任务更新不会重新抢占焦点。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "8.0.1",
+        "welcome": "不需額外按鈕，即可使用鍵盤導覽。",
+        "sections": [
+          {
+            "title": "隊伍任務日誌",
+            "items": [
+              "開啟隊伍任務日誌或點選任務時，清單會自動取得焦點。已移除鍵盤按鈕。使用方向鍵瀏覽，按 Enter 展開或收合目標。",
+              "Tab 可在清單與搜尋之間切換。清單取得焦點時，按 Escape 關閉視窗；點選視窗外會釋放鍵盤焦點。任務更新不會重新搶走焦點。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "8.0.0",
         "welcome": "Introducing QuestTogether VIP.",
         "sections": [

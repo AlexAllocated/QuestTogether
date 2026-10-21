@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 8.0.2
+
+More reliable map markers and VIP identification.
+
+### Reliability fixes
+
+- VIP stars now remain visible through your loading screens, and simultaneous VIP updates no longer block each other.
+- Fixed a case where map markers could disappear when a location update temporarily had no coordinates.
+- Improved reliability of shared updates during channel throttling.
+
 ## 8.0.1
 
 Keyboard navigation without an extra button.

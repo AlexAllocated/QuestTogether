@@ -1,12 +1,13 @@
 {
-  "version": "8.0.1",
-  "welcome": "Keyboard navigation without an extra button.",
+  "version": "8.0.2",
+  "welcome": "More reliable map markers and VIP identification.",
   "sections": [
     {
-      "title": "Party Quest Log",
+      "title": "Reliability fixes",
       "items": [
-        "Opening Party Quest Log or clicking a quest now focuses the list automatically. The Keyboard button has been removed. Use arrow keys to navigate and Enter to expand or collapse objectives.",
-        "Tab switches between the list and Search. Escape closes the window from the list; clicking outside releases keyboard focus. Quest updates do not steal focus back."
+        "VIP stars now remain visible through your loading screens, and simultaneous VIP updates no longer block each other.",
+        "Fixed a case where map markers could disappear when a location update temporarily had no coordinates.",
+        "Improved reliability of shared updates during channel throttling."
       ]
     }
   ]

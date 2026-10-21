@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.2
+
+Des marqueurs de carte et une identification VIP plus fiables.
+
+### Améliorations de la fiabilité
+
+- Les étoiles VIP sont désormais conservées pendant vos écrans de chargement, et les mises à jour VIP simultanées ne se bloquent plus mutuellement.
+- Correction d’un cas où les marqueurs de carte pouvaient disparaître lorsqu’une mise à jour de position ne contenait temporairement aucune coordonnée.
+- Fiabilité améliorée des mises à jour partagées lorsque le canal limite les envois.
+
 ## 8.0.1
 
 Navigation au clavier sans bouton supplémentaire.
