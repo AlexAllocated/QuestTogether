@@ -74,13 +74,20 @@ remain useful across locales; shared debug window controls and headings are tran
 
 1. Add `L()` calls and update the reviewed `locales/source_audit.json` exemptions only
    for native identifiers, canonical values, diagnostics, or sample proper names.
-2. Set `OPENAI_API_KEY` in the environment and run
-   `python3 scripts/translate_locales.py --write` to draft missing translations.
-   Existing translated entries are preserved; remove an entry to request a new draft.
+2. Author missing entries in `locales/<locale>.json` directly in the active
+   Codex session, preserving reviewed translations. Use the setting or screen
+   context and established WoW terminology; review each language for natural
+   wording. This default workflow requires no model API credentials.
 3. Review wording and button lengths. Run `python3 scripts/localization.py --write`
    to generate Lua and localized addon-list descriptions, then rerun without `--write`.
 4. Run `python3 scripts/test_localization.py` and the addon suite. The offline runner
    supports `QT_TEST_LOCALE=deDE lua scripts/test.lua`; repeat for all supported locales.
+
+The separate `python3 scripts/translate_locales.py --write` utility remains an
+optional, explicitly selected UI-string API client. It uses `OPENAI_API_KEY` and
+incurs API charges; it is not required for UI updates or release preparation.
+Its `--notes` mode is retired. Do not run this paid utility as part of the default
+Codex authoring workflow.
 
 Formatting placeholders and command syntax must survive translation. The validator
 checks source-key completeness, placeholder order, boundary whitespace, and generated
@@ -112,16 +119,69 @@ callbacks; these refreshes never request new remote snapshots or replay chat.
 ## Patch notes and Discord
 
 The canonical English source remains `release_notes.json`. Each
-`release_notes/<locale>.json` contains translated notes and `source_sha256`, a digest
+`release_notes/<locale>.json` contains localized notes and `source_sha256`, a digest
 of the English content excluding its version. `LocalizedReleaseNotes.lua` is generated
-from these files and used in the in-game notes window. The note sections, item counts,
-illustration identifiers, version and source digest must match before release.
+from these files and used in the in-game notes window. Section topics, illustration
+identifiers, version and source digest must match before release. Languages may
+split or combine bullets naturally; equal item counts are not a quality check.
 
-After drafting English notes, run `python3 scripts/translate_locales.py --notes --write`,
-review every language, then `python3 scripts/check_release_notes.py --check`. The
-Prepare release notes workflow performs these steps before opening its review PR.
-Version bumps reuse validated translations and update all versions without API calls.
-Any English wording change invalidates every old patch-note translation.
+For automated local authoring and review of release facts, English and all ten
+other languages, run:
+
+```sh
+python3 scripts/author_release_notes.py --include-working-tree --output-dir .local/release-notes-draft
+```
+
+Omit `--include-working-tree` for a clean, committed checkout. The command uses
+`codex exec` with saved ChatGPT login authentication and defaults to `gpt-6.1-sol`.
+It rejects API-key authentication without falling back to a paid model API.
+Subscription usage limits apply, and the local machine must stay running and
+connected. Use `--baseline-ref` for an explicit release baseline, `--model` to
+select another model, or repeat the same command with `--resume` to continue an
+interrupted run. Code evidence, facts and localized terminology are sent to Codex
+for authoring and review; deterministic export and validation are offline.
+
+Manual authoring in an active Codex subscription session remains supported.
+Prefer GPT-6.1 Sol for that work. Export the evidence with
+`python3 scripts/prepare_release_notes.py context --include-working-tree --output .local/release-notes-draft/context.json`;
+omit `--include-working-tree` when local edits do not belong in the evidence.
+
+Establish the approved factual scope from the implementation first. Write a
+neutral `facts.json` brief with prerequisites, defaults, limits and other approved
+details, then compose English and every destination language independently from
+those facts. Locale writers should receive facts, source evidence and relevant
+localized UI labels, not finished English prose to translate line by line. Remove
+previous notes and changelog prose from their writing context. Each language
+needs its own editing pass for fluency, localized labels and factual parity;
+these reviews are not native-speaker signoff.
+
+The automated command saves `context.json`, the raw brief and notes as
+`facts.json`, `enUS.json` and one `<locale>.json` per supported locale under
+`.local/release-notes-draft/`, along with authoring and review results. For manual
+authoring, save the same complete draft set. Each brief and notes file uses the
+raw notes schema (`version`, `welcome`, `sections`), with matching topics, tips and
+illustrations. Drafting leaves canonical files untouched. After successful
+authoring and review, finalize the complete set with:
+
+```sh
+python3 scripts/prepare_release_notes.py finalize --draft-dir .local/release-notes-draft --context .local/release-notes-draft/context.json
+python3 scripts/check_release_notes.py --write
+python3 scripts/check_release_notes.py --check --release-history
+```
+
+Finalization validates the brief, all languages and implementation context before
+replacing canonical JSON and computing source digests. Rendering generates the
+Lua and Markdown. Neither step contacts a model service. The optional Prepare
+release notes workflow exports an evidence artifact only; automated writing runs
+locally with the saved ChatGPT login. Do not copy login credentials into CI.
+Version bumps and publishing reuse the reviewed canonical files
+without model calls. Any English wording change invalidates every old patch-note
+source digest, so review all languages and finalize the complete set again.
+
+Historical corrections use exact per-release tag ranges and approved English
+scope, including committed editorial corrections and legacy notes from before
+structured JSON. Preserve dates, illustrations and corrected localization records.
+See `RELEASING.md` for backups, retained corrections and publication boundaries.
 
 The Discord release workflow posts English plus the ten translations from the exact
 published tag. `discord_channels.json` pins each channel's ID and translated name;

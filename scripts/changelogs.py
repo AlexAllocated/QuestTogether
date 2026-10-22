@@ -6,10 +6,12 @@ from pathlib import Path
 import sys
 
 sys.dont_write_bytecode = True
-from check_release_notes import NotesError, git, markdown_tip, parse_notes, unique_object, version_key
-from localization import LOCALES, digest, dumps, read, release_note_outputs, validate_release_tip
+from check_release_notes import NotesError, git, markdown_tip, parse_notes, toc_version, unique_object, version_key
+from localization import LOCALES, digest, dumps, read, release_note_outputs, validate_release_locale
 
 HISTORY = 'changelogs/history.json'
+LEGACY = 'changelogs/legacy_notes.json'
+REVISIONS = 'changelogs/localized_revisions.json'
 TITLES = {'enUS': 'Changelog', 'deDE': 'Änderungsprotokoll', 'frFR': 'Journal des modifications',
           'esES': 'Registro de cambios', 'esMX': 'Registro de cambios', 'ptBR': 'Registro de alterações',
           'ruRU': 'Журнал изменений', 'itIT': 'Registro delle modifiche', 'koKR': '변경 내역',
@@ -21,14 +23,63 @@ def validate_entry(entry):
         raise NotesError('invalid changelog history languages')
     source = parse_notes(dumps(entry['enUS']))
     for locale, notes in entry.items():
-        parse_notes(dumps(notes))
-        if notes['version'] != source['version'] or len(notes['sections']) != len(source['sections']):
-            raise NotesError('changelog history version/section mismatch: ' + locale)
-        for a, b in zip(source['sections'], notes['sections']):
-            if len(a['items']) != len(b['items']) or a.get('illustration') != b.get('illustration'):
-                raise NotesError('changelog history item/illustration mismatch: ' + locale)
-            validate_release_tip(a, b, 'changelog history ' + locale)
+        validate_release_locale(source, notes, 'changelog history ' + locale)
     return source['version']
+
+
+def approved_english(root, version):
+    """Use committed editorial history when it corrects an immutable tag's prose.
+
+    Implementation evidence still comes from the release tag. Only already
+    committed English corrections are authoritative; a dirty history entry or
+    a draft for the current release must not authorize itself.
+    """
+    version_key(version)
+    ref = 'refs/tags/v' + version
+    if toc_version(git(root, 'show', ref + ':QuestTogether.toc').stdout) != version:
+        raise NotesError('changelog tag version mismatch')
+    approved = {}
+    for path in (HISTORY, LEGACY):
+        result = git(root, 'show', 'HEAD:' + path, allow_failure=True)
+        if result.returncode:
+            continue  # Repositories predating a structured archive.
+        history = json.loads(result.stdout, object_pairs_hook=unique_object)
+        if path == HISTORY:
+            if not isinstance(history, dict) or set(history) != {'schema', 'releases'} or history['schema'] != 1:
+                raise NotesError('invalid committed changelog history schema')
+            history = history['releases']
+        if not isinstance(history, list):
+            raise NotesError('invalid committed changelog history schema')
+        for entry in history:
+            archived_version = validate_entry(entry)
+            if archived_version in approved:
+                raise NotesError('duplicate committed changelog version: ' + archived_version)
+            approved[archived_version] = entry['enUS']
+    if version in approved:
+        return approved[version]
+    published = parse_notes(git(root, 'show', ref + ':release_notes.json').stdout)
+    if published['version'] != version:
+        raise NotesError('changelog tag version mismatch')
+    return published
+
+
+def localized_revisions(root):
+    path = Path(root) / REVISIONS
+    if not path.exists():
+        return {}
+    data = read(path)
+    if not isinstance(data, dict) or set(data) != {'schema', 'releases'} or data['schema'] != 1 or not isinstance(data['releases'], list):
+        raise NotesError('invalid localized revision schema')
+    revised = {}
+    for entry in data['releases']:
+        version = validate_entry(entry)
+        if version in revised or set(entry) != {'enUS', *LOCALES}:
+            raise NotesError('duplicate or incomplete localized revision: ' + version)
+        source = approved_english(root, version)
+        if entry['enUS'] != source:
+            raise NotesError('localized revision changes published English notes or their committed editorial correction: ' + version)
+        revised[version] = entry
+    return revised
 
 
 def tagged_entry(root, version):
@@ -50,7 +101,9 @@ def tagged_entry(root, version):
             raise NotesError('stale archived translation: ' + version + ' ' + locale)
         entry[locale] = wrapper['notes']
     validate_entry(entry)
-    return entry
+    # Editorial corrections must survive the next bump, which otherwise reads
+    # the original translations back out of the immutable published tag.
+    return localized_revisions(root).get(version, entry)
 
 
 def render(locale, entries):
@@ -101,6 +154,7 @@ def illustration_images(illustration):
 
 def outputs(root, notes, localized_outputs=None, previous_version=None):
     root = Path(root)
+    revisions = localized_revisions(root)
     history = read(root / HISTORY)
     if not isinstance(history, dict) or set(history) != {'schema', 'releases'} or history['schema'] != 1 or not isinstance(history['releases'], list):
         raise NotesError('invalid changelog history schema')
@@ -112,6 +166,8 @@ def outputs(root, notes, localized_outputs=None, previous_version=None):
         if version_key(version) > version_key(notes['version']):
             raise NotesError('changelog history is newer than current release')
         archived[version] = entry
+        if version in revisions and entry != revisions[version]:
+            raise NotesError('archived localization differs from its editorial revision: ' + version)
     if previous_version and previous_version != notes['version']:
         published = tagged_entry(root, previous_version)
         if previous_version in archived and archived[previous_version] != published:
@@ -136,6 +192,8 @@ def outputs(root, notes, localized_outputs=None, previous_version=None):
             version = validate_entry(entry)
             if version in entries or version_key(version) >= version_key(notes['version']):
                 raise NotesError('duplicate or newer legacy release: ' + version)
+            if version in revisions and entry != revisions[version]:
+                raise NotesError('legacy localization differs from its editorial revision: ' + version)
             entries[version] = entry
     entries[notes['version']] = current
     ordered = [entries[v] for v in sorted(entries, key=version_key, reverse=True)]

@@ -212,9 +212,9 @@ def require_full_history(root):
         raise NotesError("release-note history checks require a full checkout; fetch full history and tags")
 
 
-def previous_release(root, current_version):
+def previous_release(root, current_version, target_ref="HEAD"):
     require_full_history(root)
-    tags = git(root, "tag", "--merged", "HEAD", "--list", "v*").stdout.splitlines()
+    tags = git(root, "tag", "--merged", target_ref, "--list", "v*").stdout.splitlines()
     candidates = []
     for tag in tags:
         try:
@@ -257,6 +257,11 @@ def check_reused_translations(root, commit):
     if not check_manifest(manifest):
         return
     from localization import LOCALES
+    revised = {}
+    if (Path(root) / "changelogs/localized_revisions.json").exists():
+        from changelogs import localized_revisions
+        baseline = parse_notes(git(root, "show", commit + ":" + NOTES_FILE).stdout)
+        revised = localized_revisions(root).get(baseline['version'], {})
     for locale in LOCALES:
         relative = "release_notes/" + locale + ".json"
         published = json.loads(git(root, "show", commit + ":" + relative).stdout, object_pairs_hook=unique_object)
@@ -265,6 +270,8 @@ def check_reused_translations(root, commit):
             if not isinstance(wrapper, dict) or set(wrapper) != {"source_sha256", "notes"}:
                 raise NotesError("invalid reused translation: " + locale)
             parse_notes(json.dumps(wrapper["notes"], ensure_ascii=False), relative)
+        if locale in revised:
+            published["notes"] = revised[locale]
         if (current["source_sha256"] != published["source_sha256"]
                 or note_content(current["notes"]) != note_content(published["notes"])):
             raise NotesError("reused translation differs from published notes: " + locale)

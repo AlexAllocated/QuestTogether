@@ -6,13 +6,12 @@
 
 ## 8.0.2
 
-More reliable map markers and VIP identification.
+This update improves localized release notes and restores a missing release history entry.
 
-### Reliability fixes
+### Release notes and history
 
-- VIP stars now remain visible through your loading screens, and simultaneous VIP updates no longer block each other.
-- Fixed a case where map markers could disappear when a location update temporarily had no coordinates.
-- Improved reliability of shared updates during channel throttling.
+- Current and historical release notes have been rewritten in all ten supported non-English languages for clearer, more natural wording while preserving their original meaning.
+- The missing 7.4.4 entry has been restored to the browsable release history and changelogs.
 
 ## 8.0.1
 
@@ -48,6 +47,15 @@ Then copy your claim code with Ctrl+C and send it to @chevcast, or use /qt claim
 ### Permanent and optional
 
 - Your reward is linked to your Discord account and shared across characters in each installation. Claim it separately on Retail and Forever. Turn off Show my VIP cosmetics to keep the reward without displaying it. Normal, VIP, and developer minimap buttons now have gold borders that follow the icon shape. Developer appearance takes priority over VIP.
+
+## 7.4.4
+
+Read each feature update and its patches together.
+
+### Grouped update history
+
+- The notes window now groups each minor release and its patches on one page, starting with the minor release and appending patches in order under dated version headings. History navigation moves between these grouped pages.
+- Cleaned up older patch notes to show their own changes without repeating the earlier feature guides, tips, or screenshots. Patch-only updates still do not open the window automatically; use /qt notes anytime.
 
 ## 7.4.3
 

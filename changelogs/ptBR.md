@@ -4,111 +4,118 @@
 
 ## 8.0.2
 
-Marcadores de mapa e identificação VIP mais confiáveis.
+As notas de atualização estão mais claras e naturais, e o histórico de lançamentos voltou a incluir uma entrada que estava faltando.
 
-### Melhorias de confiabilidade
+### Notas de atualização e histórico
 
-- As estrelas VIP agora são preservadas durante suas telas de carregamento, e atualizações VIP simultâneas não bloqueiam mais umas às outras.
-- Corrigido um caso em que os marcadores do mapa podiam desaparecer quando uma atualização de localização ficava temporariamente sem coordenadas.
-- Melhorada a confiabilidade das atualizações compartilhadas quando o canal limita os envios.
+- Revisamos as notas de atualização atuais e antigas nos dez idiomas disponíveis além do inglês para deixar os textos mais claros e naturais.
+- Restauramos a entrada 7.4.4, que estava faltando no histórico de lançamentos disponível para consulta e nos registros de alterações.
 
 ## 8.0.1
 
-Navegação pelo teclado sem um botão extra.
+Navegue pelo teclado sem um botão extra.
 
 ### Registro de missões do grupo
 
-- Abrir o registro de missões do grupo ou clicar em uma missão coloca o foco na lista automaticamente. O botão Teclado foi removido. Use as setas para navegar e Enter para expandir ou recolher os objetivos.
-- Tab alterna entre a lista e a busca. Escape fecha a janela quando a lista está em foco; clicar fora libera o foco do teclado. Atualizações das missões não retomam o foco.
+- Abrir o registro ou clicar numa missão dá foco à lista automaticamente. O botão Teclado foi removido; setas navegam e Enter expande ou recolhe objetivos.
+- Tab alterna entre lista e busca. Escape fecha a janela a partir da lista; clicar fora libera o teclado. Atualizações de missões não recuperam o foco sozinhas.
 
 ## 8.0.0
 
-Apresentamos o QuestTogether VIP.
+Conheça o QuestTogether VIP.
 
-### Visual VIP
+### Visuais VIP
 
-- Jogadores VIP têm uma estrela da cor da classe no mapa, um prefixo QT e um botão do minimapa com estrela dourada, além do título QuestTogether VIP na dica individual do jogador. As recompensas são cosméticas e não concedem acesso de desenvolvedor.
+- Jogadores VIP têm uma estrela na cor da classe no mapa, estrela dourada QT no prefixo do chat e no botão do minimapa, além de identificação QuestTogether VIP no tooltip individual. São recompensas visuais, sem acesso de desenvolvedor.
 
 **Forever**
 
-![Visual VIP — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.0.0/Media/ReleaseNotes/VIPCosmetics.png)
+![Visuais VIP — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.0.0/Media/ReleaseNotes/VIPCosmetics.png)
 
 ### Como se tornar VIP
 
-- Compartilhe o link de download do QuestTogether com amigos, sua guilda, em um Discord apropriado ou nas redes sociais. Tire uma captura da mensagem enviada ou publicação, mostrando o link do QT e onde você o compartilhou. Envie-a por mensagem direta no Discord para @chevcast analisar. Entre primeiro no Discord do QT ou envie uma solicitação de amizade a @chevcast. A janela VIP inclui o link para copiar e as etapas de ativação após a aprovação.
+- Compartilhe o link de download do QT com amigos, sua guilda, um Discord relacionado ou nas redes sociais. Tire uma captura da mensagem enviada ou publicação, mostrando o link QT e onde você divulgou. Envie por mensagem privada a @chevcast para análise. Antes, entre no Discord QT ou envie uma solicitação de amizade para a mensagem chegar. A janela VIP tem o link para copiar e as instruções após a aprovação.
 
-### Ative sua recompensa
+### Ative a recompensa
 
-- Abra a janela VIP pelo menu do minimapa, pelas configurações ou com /qt vip. Espere @chevcast confirmar que VIP foi concedido à sua conta do Discord. O comando /qt claim no Discord só funciona após essa concessão.
-
-Depois copie seu código de solicitação com Ctrl+C e envie-o a @chevcast, ou use /qt claim no Discord do QT. Cole o código privado de ativação recebido na janela VIP e escolha Ativar VIP. Repita no Retail ou no Forever para usar a mesma recompensa lá.
+- Abra a janela pelo minimapa, Configurações ou /qt vip. Aguarde @chevcast confirmar que concedeu VIP à sua conta do Discord. O comando /qt claim no Discord só funciona depois dessa concessão.
+- Então copie seu código de solicitação com Ctrl+C e envie a @chevcast, ou use /qt claim no servidor QT. Cole o código privado de ativação recebido na janela VIP e escolha Ativar VIP. Repita no Retail ou Forever para usar a mesma recompensa lá.
 
 ### Permanente e opcional
 
-- A recompensa está vinculada à sua conta do Discord e é compartilhada entre personagens de cada instalação. Resgate-a separadamente no Retail e no Forever. Desative Mostrar meus cosméticos VIP para mantê-la sem exibi-los. Os botões de minimapa normal, VIP e de desenvolvedor têm bordas douradas que seguem seu formato. A aparência de desenvolvedor tem prioridade sobre VIP.
+- A recompensa está ligada ao Discord e vale para os personagens de cada instalação. Resgate separadamente no Retail e no Forever. Desativar «Mostrar meus cosméticos VIP» oculta os visuais sem perder a recompensa. Botões normais, VIP e de desenvolvedor usam bordas douradas que seguem o ícone; a aparência de desenvolvedor tem prioridade sobre VIP.
+
+## 7.4.4
+
+Leia cada atualização de recursos junto das correções seguintes.
+
+### Histórico agrupado
+
+- Cada versão secundária e seus patches ficam na mesma página, começando pela versão inicial e seguindo as correções em ordem, com data e versão nos títulos. A navegação percorre essas páginas agrupadas.
+- Notas antigas de patches mantêm apenas suas mudanças, sem repetir guias, dicas e capturas. Atualizações só de correção continuam sem abrir a janela automaticamente; use /qt notes a qualquer momento.
 
 ## 7.4.3
 
 Nomes e controles mais claros para missões em grupo.
 
-### Missões em grupo
+### Ferramentas do grupo
 
-- O rastreador de missões agora se chama Rastreador de objetivos do grupo (POT). As configurações de exibição e a posição da janela são preservadas.
-- Use /qt pql para abrir o registro de missões do grupo. /qt compare continua funcionando como um alias; a ajuda e as dicas agora usam /qt pql.
-- Ocultar fora de um grupo está disponível no modo de edição do HUD e em Configurações > Grupos e compartilhamento > Rastreador de objetivos do grupo. As duas caixas controlam a mesma opção. Ela vem ativada em novos perfis e ao restaurar os padrões; as escolhas salvas são preservadas.
+- Quest Tracker passa a Party Objective Tracker (POT), chamado Rastreador de objetivos do grupo na interface. Modo de exibição e posição existentes são preservados.
+- Use /qt pql para abrir o Registro de missões do grupo. /qt compare permanece como alias; ajuda e dicas usam /qt pql.
+- Ocultar fora de um grupo aparece no modo de edição do HUD e em Configurações > Grupos e compartilhamento > Rastreador de objetivos do grupo. As duas caixas controlam a mesma opção, ligada em perfis novos e ao restaurar o padrão. Escolhas salvas continuam valendo.
 
 ## 7.4.2
 
-Correção do texto das notas da atualização.
+Correção de caracteres nas notas.
 
-### Correção do texto das notas da atualização
+### Texto legível
 
-- Separadores não compatíveis nas notas foram substituídos por texto simples para evitar que apareçam como quadrados vazios.
+- Separadores incompatíveis foram substituídos por texto simples para não aparecerem como quadrados vazios.
 
 ## 7.4.1
 
-Correções e opções de layout do rastreador de objetivos do grupo.
+Correções de progresso e opções de posição para o Rastreador de objetivos do grupo.
 
-### Rastreador de objetivos do grupo
+### Contagem correta
 
-- Corrigido um erro que mostrava progresso de 1/1 em objetivos de uma única etapa ainda não concluídos no Forever, incluindo “Use Walk on Air”. A correção se aplica ao rastreador de objetivos do grupo e ao registro de missões do grupo.
+- Objetivos de uma etapa ainda pendentes deixam de aparecer como 1/1 no Forever, incluindo Use Walk on Air. A correção vale para o rastreador e o Registro de missões do grupo.
 
-### Escolha o que acompanhar
+### Ocultar quando estiver sozinho
 
-- Ative Ocultar fora de um grupo no modo de edição do HUD para ocultar o rastreador ao jogar solo. A opção vem desativada, e a prévia de posicionamento continua disponível no modo de edição.
+- modo de edição do HUD oferece Ocultar fora de um grupo, desligado por padrão. A prévia de posicionamento continua disponível no modo de edição.
 
-### Ajuste à sua interface
+### Encaixe e tamanho
 
-- O encaixe no rastreador de objetivos da Blizzard vem ativado e posiciona o QT junto à borda externa, sem espaço adicional. Arrastar o QT para longe desativa o encaixe e permite redimensionar pelo canto. Reative o encaixe para redefinir a posição; os controles de largura e altura máxima funcionam nos dois modos.
-- O rastreador ajusta sua altura ao conteúdo até a altura máxima configurada e depois permite rolagem. A altura máxima padrão agora é 600; os tamanhos já salvos são preservados.
-- As seções dos jogadores com cores de classe agora mantêm uma opacidade de preenchimento constante de 25%, independente do controle de fundo da janela.
+- Encaixar no rastreador de objetivos da Blizzard vem ativado e coloca QT junto à borda externa, sem espaço extra. Arrastar solta o encaixe e libera redimensionamento pelos cantos. Reativar redefine a posição; controles de largura e altura máxima funcionam nos dois modos.
+- A janela encolhe para o conteúdo até a altura máxima e então permite rolagem. O máximo padrão passa a 600, preservando tamanhos já salvos.
+- O preenchimento na cor da classe mantém 25% de opacidade, independente do fundo da janela.
 
 ## 7.4.0
 
-Acompanhe o progresso das missões do seu grupo com o novo rastreador de objetivos do grupo.
+Mantenha o progresso do grupo à vista com o novo Rastreador de objetivos do grupo.
 
-### Rastreador de objetivos do grupo
+### Objetivos de todos
 
-- Veja os contadores e as barras de progresso dos objetivos do grupo em uma janela compacta com cores de classe. Os membros do grupo precisam do QuestTogether para compartilhar o progresso.
-- O progresso é atualizado quando os anúncios do grupo chegam, independentemente das configurações de exibição do bate-papo e dos balões. Missões sem contadores mostram seu estado, como prontas para entregar.
-
-**Forever**
-
-![Rastreador de objetivos do grupo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
-
-### Escolha o que acompanhar
-
-- Escolha Oculto, Missão em foco, Missão sob o cursor ou Foco e cursor. O padrão, Foco e cursor, exibe as missões sob o mouse no rastreador de objetivos da Blizzard e depois retorna à missão em foco.
-- Sem uma missão correspondente, a janela fica oculta. Altere o modo no modo de edição do HUD ou em Configurações > Grupos e compartilhamento > Rastreador de objetivos do grupo.
+- Uma janela compacta na cor das classes mostra contagens e barras de progresso. Integrantes precisam do QT para compartilhar seus dados.
+- O progresso atualiza conforme chegam anúncios do grupo, independente da exibição de chat e bolhas. Missões sem contadores mostram o estado, como prontas para entregar.
 
 **Forever**
 
-![Escolha o que acompanhar — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
+![Objetivos de todos — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
+
+### Escolha a missão
+
+- Selecione Oculto, Missão em foco, Missão sob o cursor ou Foco e cursor. O último é o padrão: exibe temporariamente a missão apontada no rastreador Blizzard e depois retorna à selecionada.
+- Sem uma missão válida, a janela fica oculta. Mude o modo em modo de edição do HUD ou Configurações > Grupos e compartilhamento > Rastreador de objetivos do grupo.
+
+**Forever**
+
+![Escolha a missão — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### Ajuste à sua interface
 
-- Abra o modo de edição do HUD e selecione Rastreador de objetivos do grupo para mover ou redimensionar a janela e ajustar a opacidade do fundo. Salvar, Reverter e Restaurar padrão incluem o modo de exibição e o layout.
-- As seções dos jogadores preenchem a largura disponível e permitem rolagem quando necessário. Há suporte aos temas claro e escuro, com texto legível e fundos discretos dos jogadores mesmo com opacidade zero.
+- Selecione o painel em modo de edição do HUD para mover, redimensionar e ajustar opacidade. Salvar, Reverter e Restaurar padrão incluem modo e layout.
+- As seções usam a largura disponível e permitem rolagem quando necessário. Temas claro e escuro mantêm texto legível e fundos leves por jogador mesmo com opacidade zero.
 
 **Forever**
 
@@ -116,432 +123,399 @@ Acompanhe o progresso das missões do seu grupo com o novo rastreador de objetiv
 
 ## 7.3.5
 
-Marcadores mais claros, navegação mais fácil e informações de grupo mais recentes.
+Marcadores mais claros, navegação mais fácil e dados de grupo atualizados.
 
-### Mapas e informações de jogadores
+### Mapas e jogadores
 
-- Passe o cursor sobre o botão QT do mapa para ver uma legenda visual dos ícones e estados.
-- Clique com o botão esquerdo em um ponto de jogador no mapa-múndi para destacá-lo e abrir o mapa mais detalhado disponível para aquele local. No último nível, o clique esquerdo abre o menu do jogador; o clique direito sempre o abre.
-- Encontrar no mapa também abre o mapa mais detalhado disponível. O destaque verde acompanha as mudanças de mapa e desaparece após um minuto, ao fechar o mapa ou ao selecionar outro jogador.
-- Passar o cursor sobre um jogador, um agrupamento ou um ponto de rota compartilhado escurece o mapa e os outros marcadores, mantendo os marcadores em foco com brilho total. Passar o cursor sobre o botão QT não escurece mais o mapa.
-- Os brilhos dos jogadores agora usam um efeito uniforme. As dicas de grupo e os agrupamentos compartilham informações mais recentes sobre os membros e se recuperam melhor de solicitações atrasadas.
-- Os diagnósticos do desenvolvedor foram aprimorados, respeitando as preferências de compartilhamento de diagnósticos e a privacidade das localizações públicas.
+- O botão QT mostra uma legenda visual ao passar o cursor. Clique esquerdo num ponto mundial o destaca e abre o mapa mais detalhado disponível; no último nível abre o menu. O direito sempre abre o menu.
+- Encontrar no mapa também usa o nível mais detalhado. O brilho verde acompanha mudanças de mapa e termina após um minuto, ao fechar ou ao selecionar outra pessoa.
+- Apontar um jogador, agrupamento ou destino compartilhado escurece o mapa e os demais marcadores, mantendo os relevantes claros. O botão QT deixa de escurecer o mapa.
+- Brilhos usam um efeito consistente. Tooltips e agrupamentos compartilham integrantes mais recentes e recuperam melhor pedidos atrasados. Diagnósticos melhoram sem alterar preferências nem a privacidade da localização pública.
 
 ## 7.3.4
 
-Dicas de jogadores mais claras e indicadores do QuestTogether mais consistentes.
+Tooltips mais claros e indicadores QT mais consistentes.
 
-### Dicas de jogadores e bate-papo
+### Jogadores e chat
 
-- As listas de grupo agora mostram os ícones do QT assim que há dados válidos de localização do jogador, inclusive após recarregar a interface.
-- As listas de membros de grupos e de marcadores agrupados mantêm os indicadores de status compactos. As explicações sobre o desenvolvedor e a localização oculta só aparecem ao passar o cursor diretamente sobre o jogador; os indicadores de localização oculta continuam visíveis apenas para o desenvolvedor.
-- Os anúncios do desenvolvedor verificado agora usam um ícone de pergaminho e engrenagem, com um brilho dourado enquanto ele procura parceiros de missão.
+- Listas do grupo mostram o logo QT assim que há localização válida, inclusive após recarregar.
+- Listas de grupos e agrupamentos mantêm estados compactos. Explicações de desenvolvedor e localização oculta só aparecem ao apontar diretamente o jogador; indicadores de localização oculta continuam exclusivos do desenvolvedor.
+- Anúncios do desenvolvedor verificado usam pergaminho e engrenagem, com brilho dourado enquanto procura parceiros.
 
 ## 7.3.3
 
-Dicas dos marcadores agrupados mais claras.
+Tooltips de agrupamentos mais limpos.
 
-### Jogadores nos mapas
+### Identificação do desenvolvedor
 
-- As dicas dos marcadores agrupados identificam o desenvolvedor do QuestTogether pela engrenagem na cor da classe, sem um texto adicional. A identificação por texto continua nas dicas individuais de jogadores.
+- O agrupamento identifica o desenvolvedor pela engrenagem da classe, sem texto extra. A explicação permanece no tooltip individual.
 
 ## 7.3.2
 
-Informações de grupo mais consistentes e navegação mais inteligente pelo mapa.
+Dados de grupo mais consistentes e navegação mais precisa.
 
-### Jogadores nos mapas
+### Grupos no mapa
 
-- As dicas de jogadores, as dicas dos marcadores agrupados e o destaque de membros do grupo agora usam as mesmas informações de grupo disponíveis, reduzindo carregamentos repetidos e inconsistências no agrupamento.
-- As dicas dos marcadores agrupados mostram o número total de membros do grupo ao lado do ícone branco de grupo.
-- Clicar em um conjunto de marcadores na visão geral do mundo agora abre o mapa mais detalhado que contém todos os jogadores desse conjunto e, se necessário, mostra os marcadores individualmente.
+- Tooltips individuais, agrupamentos e destaques compartilham informações conhecidas do grupo, reduzindo carregamentos repetidos e divergências. O ícone branco também mostra o tamanho total do grupo.
+- Clicar num agrupamento na visão completa do mundo abre o mapa mais detalhado que contém todos e expande o agrupamento se necessário.
 
 ## 7.3.1
 
-Informações de grupo e controles do mapa mais claros.
+Informações de grupo e controles de mapa mais claros.
 
-### Jogadores nos mapas
+### Mapas de jogadores
 
-- Nas dicas dos marcadores agrupados, jogadores que pertencem ao mesmo grupo conhecido aparecem dentro de uma borda branca arredondada, com um ícone de grupo. Jogadores cujos companheiros estão fora desse conjunto de marcadores também exibem o indicador de grupo.
-- O botão QT no mapa-múndi permanece totalmente visível e exibe um X vermelho quando os marcadores do QT estão ocultos.
-- Passar o cursor sobre o botão QT não escurece mais o mapa enquanto os marcadores do QT estão ocultos.
+- Tooltips de agrupamentos reúnem membros do mesmo grupo conhecido numa borda branca arredondada com ícone de grupo. Quem tem colegas fora do agrupamento ainda mostra o indicador.
+- O botão QT permanece visível com um X vermelho quando os marcadores estão ocultos. Nesse estado, passar o cursor não escurece o mapa.
 
 ## 7.3.0
 
-Encontre jogadores em mapas movimentados, retome o contato com companheiros recentes e acompanhe o progresso das missões com menos anúncios repetidos.
+Encontre jogadores em mapas cheios, reencontre colegas recentes e acompanhe progresso com menos anúncios repetidos.
 
-### Jogadores nos mapas
+### Jogadores no mapa
 
-- Os pontos de jogadores que se sobrepõem no mapa-múndi são agrupados. O agrupamento vem ativado e pode ser desativado em Localizações dos Jogadores.
-- Clique em um grupo de pontos para abrir o mapa mais detalhado que contenha todos os seus jogadores. Se os pontos continuarem agrupados, eles se separam automaticamente para você usar as dicas e menus habituais; role sobre o grupo para percorrer grupos maiores.
-- O botão QT no canto superior direito do mapa-múndi mostra ou oculta os marcadores de jogadores e pontos de rota compartilhados do QT. Passe o cursor sobre ele para escurecer o mapa ao fundo. Os marcadores do minimapa e o compartilhamento de localização permanecem inalterados.
-- Encontrar no mapa abre a localização compartilhada recentemente por um jogador e destaca seu ponto.
+- Pontos sobrepostos no mapa mundial se agrupam por padrão; desative em Localização de jogadores se preferir. Clicar abre o mapa mais detalhado que contém todos. Se ainda houver agrupamento, ele se expande em pontos individuais com tooltips e menus; use a roda para percorrer agrupamentos grandes.
+- O botão QT no canto superior direito alterna jogadores e destinos compartilhados. Passar o cursor escurece o mapa atrás deles. O minimapa e o compartilhamento de localização não mudam. Encontrar no mapa abre a posição recente compartilhada e destaca o jogador.
 
 ### Companheiros recentes
 
-- Use /qt companions ou o menu do minimapa para abrir um histórico privado de pessoas com quem você formou grupo. Os menus dos jogadores permitem sussurrar, convidar e gerenciar notas privadas.
-- O histórico é compartilhado entre seus personagens no mesmo cliente e reino. Ele guarda até 100 companheiros por 90 dias; você pode remover entradas ou limpar a lista quando quiser.
+- Abra /qt companions ou use o minimapa para um histórico privado de pessoas com quem formou grupo, com menus para sussurros, convites e notas. Ele vale para personagens do mesmo cliente e reino, guarda até 100 colegas por 90 dias e permite remover entradas ou limpar tudo.
 
-### Progresso das missões e detalhes dos jogadores
+### Progresso e identificação
 
-- Atualizações rápidas do mesmo objetivo são combinadas em um anúncio com o progresso mais recente. Objetivos concluídos continuam sendo anunciados prontamente.
-- Desenvolvedores do QuestTogether com assinatura verificada recebem marcadores de engrenagem na cor da classe e uma identificação de desenvolvedor nas dicas. As listas exibidas ao passar o cursor sobre grupos de pontos mostram as mesmas cores de classe, ícones QT e estados de busca por parceiros de missão que as listas de grupo.
+- Atualizações rápidas de um objetivo viram um anúncio com o progresso mais recente; conclusões continuam sendo anunciadas prontamente.
+- Desenvolvedores QT verificados por assinatura têm engrenagens na cor da classe e identificação no tooltip. Listas de agrupamentos mostram cores, logos QT e procura de parceiros como as listas de grupo.
 
 ## 7.2.1
 
-Correções para notas privadas e colunas recolhidas do registro de missões do grupo.
+Correções nas notas privadas e colunas recolhidas.
 
-### Correções e melhorias
+### Edição e ícones
 
-- Corrigido o cursor de texto ausente nas notas privadas sobre jogadores. A borda que indica o campo ativo também ficou mais discreta.
-- Melhorada a rolagem ao editar notas mais longas sobre jogadores.
-- As colunas recolhidas do registro de missões do grupo agora usam ícones que são exibidos corretamente para missões prontas para entregar e missões concluídas, em vez de caracteres que podiam aparecer como quadrados vazios.
+- O cursor de texto das notas volta a aparecer, com borda de foco mais discreta e melhor rolagem em textos longos.
+- Colunas recolhidas usam ícones confiáveis para missões prontas e concluídas, substituindo caracteres que podiam aparecer como quadrados vazios.
 
 ## 7.2.0
 
-Notas privadas sobre jogadores e um registro de missões do grupo mais útil.
+Notas privadas de jogadores e um Registro de missões do grupo mais útil.
 
-### Notas privadas sobre jogadores
+### Anotações só suas
 
-- Adicione, edite ou exclua uma nota privada pelo menu do QuestTogether de um jogador. As notas aparecem quando você passa o cursor sobre esse jogador.
-- As notas são compartilhadas entre seus personagens e ficam no seu computador. Elas nunca são enviadas a outros jogadores nem incluídas nos diagnósticos.
+- Adicione, edite ou apague uma nota pelo menu QT do jogador e leia-a ao passar o cursor sobre ele. As notas valem para seus personagens e ficam no computador: nunca são enviadas a jogadores nem incluídas em diagnósticos.
 
-### Melhorias no registro de missões do grupo
+### Registro aprimorado
 
-- Recolha as colunas dos jogadores individualmente para ganhar espaço e expanda-as novamente quando precisar dos detalhes.
-- Use o botão Teclado para navegar pelas missões com as setas, expandir objetivos com Enter e abrir ações da missão com Espaço. Escape retorna aos controles normais.
-- As missões concluídas agora são diferenciadas das missões ausentes quando o addon atualizado do outro jogador consegue confirmar o histórico de missões dele. Se o histórico for desconhecido, elas continuam indicadas como fora do registro de missões.
-- Explicações mais claras sobre o compartilhamento de missões ajudam a entender por que uma solicitação não pôde prosseguir. As dicas dos jogadores também mostram resultados recentes de compartilhamento informados pelo WoW.
+- Recolha colunas individuais para ganhar espaço e abra quando precisar. O botão Teclado permite navegar com setas, expandir objetivos com Enter e abrir ações com Espaço; Escape retorna aos controles normais.
+- Missões concluídas são diferenciadas das ausentes quando o colega atualizado confirma seu histórico. Sem confirmação, ficam indicadas como fora do diário.
+- Explicações de compartilhamento esclarecem pedidos que não puderam prosseguir. Tooltips também mostram resultados recentes informados pelo WoW.
 
-### Dicas e informações de jogadores
+### Dicas e informações ao apontar
 
-- Muitas dicas do chat agora incluem atalhos clicáveis para a janela ou configuração correspondente.
-- Ao passar o cursor sobre um jogador distante, agora são solicitados dados atualizados e a lista completa de integrantes do grupo dele, de até cinco jogadores. Novas tentativas são feitas enquanto você mantiver o cursor sobre ele.
+- Muitas dicas têm atalhos clicáveis para a janela ou configuração correspondente. Manter o cursor num jogador distante solicita metadados novos e a lista completa do grupo pequeno, com novas tentativas enquanto você consulta.
 
-> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Dica: Digite /qt tip ou /qt hint para ver uma dica e use os atalhos clicáveis dela para explorar o QuestTogether.
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Dica: Use /qt tip ou /qt hint para ver uma dica e seus atalhos clicáveis para explorar o QuestTogether.
 
 ## 7.1.3
 
-Textos de missões mais confiáveis no idioma do seu cliente.
+Textos de missão no seu idioma ficam mais confiáveis.
 
-### Correções nos textos de missões
+### Nomes e detalhes
 
-- Os anúncios de missões, o Registro de missões do grupo e os avisos de acompanhamento de missões agora usam os nomes de missões disponíveis localmente de forma mais confiável.
-- As atualizações de missões mantêm a ordem enquanto os nomes são carregados. Detalhes da missão também se recupera corretamente quando o texto da dica de interface chega com atraso.
-- Melhoramos o tratamento dos nomes de missões recebidos de outros jogadores.
+- Anúncios, registro do grupo e avisos de acompanhamento aproveitam melhor títulos locais. Atualizações mantêm a ordem enquanto os nomes carregam.
+- Detalhes da missão se recupera quando o texto do tooltip demora, e títulos recebidos de outros jogadores são tratados melhor.
 
 ## 7.1.2
 
-Controle de dicas ao iniciar e configurações mais simples.
+Controle as dicas iniciais e use configurações mais simples.
 
-### Dicas do QuestTogether
+### Dicas e aparência
 
-- Você pode desativar as dicas automáticas em Geral, na página principal de configurações do QuestTogether. /qt tip e /qt hint continuam disponíveis.
-- A página principal de configurações foi simplificada e a seleção do tema claro ou escuro agora usa um menu suspenso.
+- Desative dicas automáticas em Geral na página principal. /qt tip e /qt hint continuam disponíveis.
+- A página foi simplificada e a escolha entre tema claro e escuro passa a ser um menu suspenso.
 
 ## 7.1.1
 
-Ícones e cores mais claros para as dicas.
+Ícone e cores das dicas mais legíveis.
 
-### Dicas do QuestTogether
+### Dicas QT
 
-- As dicas agora usam um ícone de QT com uma lâmpada no lugar de um emoji não compatível, com rótulo dourado e texto em cor creme.
+- O emoji incompatível dá lugar a um ícone QT com lâmpada, com rótulo dourado e texto creme.
 
 ## 7.1.0
 
-Descubra mais do QuestTogether com dicas úteis.
+Descubra mais recursos do QuestTogether com dicas úteis.
 
-### Dicas do QuestTogether
+### Dicas do QT
 
-- O QT agora mostra uma dica ao entrar no jogo ou recarregar a interface, escolhida de uma lista embaralhada sem repetições até ela se esgotar.
+- Ao entrar ou recarregar, aparece uma dica de uma lista embaralhada, sem repetição até todas serem exibidas.
 
-> 💡 Dica: Digite /qt tip ou /qt hint para ver outra dica do QuestTogether quando quiser.
+> 💡 Dica: Digite /qt tip ou /qt hint quando quiser ver outra dica do QuestTogether.
 
 ## 7.0.2
 
-Algumas melhorias nas informações de missões e nos diagnósticos opcionais.
+Melhorias nas informações de missão e no diagnóstico opcional.
 
-### Melhorias
+### Ajustes
 
-- Adicionada uma janela de Detalhes da missão para ler os textos de missão disponíveis.
-- Melhorados os diagnósticos opcionais para o desenvolvedor e a confiabilidade da comunicação. Sua configuração de compartilhamento de dados de diagnóstico é respeitada.
+- Detalhes da missão abre uma janela com o texto disponível.
+- A comunicação e os diagnósticos opcionais do desenvolvedor ficam mais confiáveis, respeitando sua opção de compartilhamento.
 
 ## 7.0.1
 
-Os controles do QuestTogether agora combinam melhor com a interface atual da Blizzard.
+Os controles QT ficam mais próximos da interface atual da Blizzard.
 
-### Controles no estilo da Blizzard
+### Controles no estilo do jogo
 
-- Os controles deslizantes das configurações agora têm botões de seta para ajustes finos e mostram o valor ao lado da barra.
-- Caixas de seleção, amostras de cor, barras de rolagem e botões padrão agora seguem a aparência atual da Blizzard.
-- Os campos de busca do Registro de Missões do Grupo e da janela de depuração agora incluem um ícone de busca e um botão para limpar o texto.
+- Controles deslizantes têm setas para ajustes finos e valor ao lado. Caixas de seleção, amostras de cor, barras de rolagem e botões seguem o visual atual da Blizzard.
+- Buscas do registro e da depuração incluem lupa e botão de limpar.
 
-### Melhorias na rolagem
+### Rolagem aprimorada
 
-- A rolagem foi atualizada nas configurações, no Registro de Missões do Grupo, nas notas de atualização e na janela de depuração, incluindo o redimensionamento e o alinhamento das linhas de missões.
-- A rolagem pelas setas e o arraste das barras nativas são interrompidos corretamente ao fechar uma janela.
+- Ajustes de rolagem abrangem configurações, registro, notas e depuração, inclusive tamanho e alinhamento de missões. Setas e arrastes das barras nativas param corretamente ao fechar a janela.
 
 ## 7.0.0
 
-O sistema de comunicação do QuestTogether foi reformulado em preparação para o lançamento do WoW Forever. Esta grande mudança de protocolo exige que todos atualizem juntos.
+A comunicação do QT foi reconstruída para o lançamento do WoW Forever. O novo protocolo exige que os parceiros atualizem juntos.
 
-### Importante: versões antigas não podem se comunicar
+### Versões antigas não conseguem se comunicar
 
-- Esta versão introduz um novo protocolo de comunicação. O QuestTogether 7.x não pode trocar localizações de jogadores, progresso de missões, dados do registro de missões do grupo ou outras mensagens do addon com as versões 6.x e anteriores. Peça aos seus parceiros de missões que também atualizem.
+- QuestTogether 7.x não troca localização, progresso, dados do registro do grupo ou outras mensagens com 6.x e anteriores. Peça aos parceiros para atualizar também.
 
-### Preparação para o WoW Forever
+### Preparação para o Forever
 
-- Estamos fazendo estas mudanças maiores, que rompem a compatibilidade, agora, antes do lançamento do WoW Forever, para dar uma base mais sólida ao sistema de comunicação do QuestTogether.
-- Após o lançamento do WoW Forever, teremos mais cuidado para preservar a compatibilidade entre versões novas e antigas do addon e evitar exigências de atualização que atrapalhem os jogadores. Se outra quebra de compatibilidade do protocolo se tornar necessária, avisaremos com clareza.
+- Estamos fazendo essas mudanças incompatíveis antes do lançamento para fortalecer a base de comunicação. Depois, teremos mais cuidado com a compatibilidade entre versões e evitaremos exigências de atualização que atrapalhem o uso. Se outra ruptura de protocolo for necessária, ela será comunicada claramente.
 
-### Encontre jogadores onde você está procurando
+### Prioridade ao que você está vendo
 
-- As atualizações de jogadores priorizam sua área atual e uma área que você mantém aberta no mapa, enquanto as posições mais distantes são atualizadas em segundo plano.
-- O movimento próximo usa atualizações curtas e direcionadas. As solicitações de busca são compartilhadas e distribuídas ao longo do tempo para reduzir o tráfego em áreas movimentadas.
+- Sua zona atual e a zona mantida aberta no mapa recebem prioridade; locais distantes atualizam em segundo plano. Movimento próximo usa mensagens breves, e pedidos de descoberta são compartilhados e espaçados em áreas cheias.
 
-### Troca de dados mais confiável
+### Compartilhamento mais confiável
 
-- Atualizações de missões, transferências do registro de missões do grupo, detalhes de jogadores e diagnósticos compartilham um envio controlado para que respostas grandes deixem espaço para outras atividades.
-- Respostas grandes podem recuperar partes ausentes sem reiniciar toda a transferência. Atualizações de posição atrasadas mantêm sua idade original e não podem substituir posições mais recentes nem retiradas de localização.
-- Alterações no compartilhamento de localização cancelam coordenadas públicas na fila de envio. Ao desconectar ou durante uma tela de carregamento, o QuestTogether tenta enviar uma última mensagem de saída; se ela não chegar, os dados continuam expirando automaticamente.
+- Missões, registro do grupo, detalhes e diagnósticos dividem o envio regulado, deixando espaço para outras atividades durante respostas grandes. Partes perdidas podem ser recuperadas sem reiniciar tudo.
+- Locais atrasados mantêm a idade original e não substituem posições novas ou retiradas. Desativar o compartilhamento de localização cancela as coordenadas públicas que ainda aguardam envio. Ao sair ou passar por uma tela de carregamento, QT tenta avisar a saída; a expiração continua sendo a alternativa.
 
 ## 6.5.11
 
-Novos atalhos de teclado facilitam o acesso às ferramentas do QuestTogether e o gerenciamento de parceiros de missão.
+Novas teclas facilitam abrir ferramentas e procurar parceiros.
 
 ### Atalhos de teclado
 
-- O QuestTogether agora aparece corretamente em Configurações > Teclas de atalho, substituindo a entrada incorreta HEADER_QUESTTOGETHER.
-- Atribua teclas para abrir o menu do QuestTogether, mostrar ou ocultar o Registro de Missões do Grupo, ativar ou desativar a busca por parceiros de missão, parar de seguir o foco de missão, abrir o bate-papo do QuestTogether ou abrir suas configurações.
-- Seu atalho atual para o Registro de Missões do Grupo é preservado. As novas ações começam sem teclas atribuídas, e o atalho do menu funciona mesmo quando o ícone do minimapa está oculto.
+- QuestTogether aparece corretamente nas teclas das configurações, substituindo HEADER_QUESTTOGETHER. Atribua abrir menu, alternar registro ou procura de parceiros, parar de seguir, abrir chat QT ou configurações.
+- Seu atalho existente do registro é preservado. Novas ações começam sem tecla, e o menu pode ser aberto mesmo com o ícone do minimapa oculto.
 
 ## 6.5.10
 
-Atualizações mais fluidas no Registro de missões do grupo, solicitações e atualizações do mapa mais confiáveis, além de correções para perfis e balões de progresso.
+Atualizações mais suaves no registro e correções de pedidos, mapas, perfis e bolhas.
 
-### Registro de missões do grupo
+### Registro do grupo
 
-- Com a atualização automática ativada, listas de missões que não mudaram geram menos tráfego do addon. Clicar em Atualizar ainda solicita uma atualização completa.
-- As listas de missões se recuperam corretamente após mudanças nos objetivos ou ao ignorar e deixar de ignorar um jogador, sem manter progresso desatualizado nem ficar presas no carregamento.
+- A atualização automática usa menos tráfego para listas sem mudanças; Atualizar manualmente ainda pede dados completos. Listas se recuperam após mudanças de objetivos ou ignorar e deixar de ignorar alguém, sem progresso antigo ou carregamento preso.
 
-### Janelas e perfis
+### Perfis e janelas
 
-- Trocar, copiar ou redefinir um perfil restaura os layouts de janela salvos nele ou os padrões. Ao mudar o tamanho da tela, as janelas continuam visíveis sem descartar o tamanho e a posição que você escolheu.
-- Fechar uma confirmação de entrada no grupo ou de compartilhamento de missão agora exibe corretamente a próxima solicitação pendente.
-- Abrir as configurações durante o Modo de Edição da Blizzard não impede mais que Reverter restaure o layout original do seu balão pessoal de progresso.
-- As janelas de suporte abertas continuam se adaptando a mudanças de tema e tela mesmo com o QuestTogether desativado.
+- Trocar, copiar ou redefinir perfil restaura seus layouts ou os padrões. Mudanças de tela mantêm janelas visíveis sem descartar tamanho e posição preferidos.
+- Fechar uma confirmação de entrada ou missão mostra o próximo pedido. Abrir configurações no modo de edição não impede Reverter de recuperar a bolha original. Janelas de suporte abertas acompanham tema e tela mesmo com QT desativado.
 
-### Rastreamento e comunicação
+### Pedidos e rastreamento
 
-- Solicitações de entrada no grupo e de compartilhamento de missões que expiraram ou deixaram de ser necessárias são canceladas antes do envio.
-- As conclusões de objetivos bônus e missões mundiais mantêm o tipo correto de anúncio, mesmo quando a missão desaparece do registro antes da chegada do evento de conclusão.
-- As atualizações manuais de localização agora usam respostas públicas de versões anteriores do QuestTogether para atualizar os pontos normais do mapa, preservando posições mais recentes e as opções de compartilhamento de localização.
+- Pedidos vencidos ou desnecessários são cancelados antes do envio. Objetivos de bônus e missões mundiais mantêm o tipo correto de anúncio mesmo saindo do diário antes do evento de conclusão.
+- Atualizações manuais de localização aproveitam respostas públicas de versões antigas para os pontos normais, preservando posições mais novas e escolhas de compartilhamento.
 
 ## 6.5.9
 
-Atualizações de grupo mais confiáveis, mapas de jogadores mais claros e correções ao ocultar a interface com Alt+Z.
+Atualizações de grupo mais confiáveis, mapas mais limpos e correções ao ocultar a interface com Alt+Z.
 
-### Registro de missões do grupo e janelas
+### Registro e janelas
 
-- Ocultar e restaurar a interface com Alt+Z agora preserva as confirmações pendentes de foco de missão e os fundos com a cor da classe atrás dos nomes dos jogadores.
-- As solicitações do Registro de missões do grupo se recuperam com mais confiabilidade após recarregar a interface, passar por telas de carregamento ou perder páginas de mensagens, evitando que jogadores fiquem presos em Carregando.
-- Os layouts das janelas e os balões pessoais de progresso se ajustam melhor a telas menores. Redefinir os layouts preserva as escolhas pendentes nas caixas de diálogo.
+- Ocultar e restaurar a interface preserva confirmações de foco pendentes e fundos de classe nos nomes. Pedidos do registro se recuperam melhor de recargas, telas de carregamento e páginas perdidas.
+- Janelas e bolhas pessoais se ajustam melhor a telas pequenas. Redefinir layouts mantém decisões pendentes dos diálogos.
 
-### Mapas e atualizações de grupo
+### Dados atuais no mapa
 
-- Atualizações de localização, grupo e foco de missão rejeitam mensagens desatualizadas para que respostas atrasadas não façam reaparecer jogadores que saíram nem substituam dados mais recentes.
-- O QT envia um aviso de saída ao deixar o mundo para que outros jogadores possam remover seu ponto mais cedo quando o aviso chegar. A expiração normal continua cuidando dos avisos que não chegarem, e a opção de entrar no grupo volta a ficar disponível após telas de carregamento.
-- Os membros do grupo agora usam os marcadores da própria Blizzard no mapa e no minimapa, sem pontos QT duplicados. Jogadores exibidos nos mapas oferece Todos os jogadores do QuestTogether, Jogadores buscando parceiros de missões ou Nenhum; compartilhar sua própria localização continua separado.
+- Localização, grupo e foco rejeitam mensagens antigas para não restaurar jogadores que saíram nem substituir dados novos. Ao sair do mundo, QT tenta enviar uma despedida para retirar o ponto antes; a expiração normal cobre avisos perdidos. A disponibilidade para entrar no grupo se recupera após carregar.
+- Seu grupo usa marcadores nativos da Blizzard sem pontos QT duplicados. O filtro oferece Todos, Procurando parceiros ou Nenhum, independente de compartilhar sua posição.
 
-### Rastreamento e comunicação
+### Rastreamento e envios
 
-- O rastreamento de missões se recupera quando o registro de missões está incompleto ao entrar no jogo, e sequências intensas de eventos de missão não ficam mais adiando as atualizações pendentes.
-- As mensagens enviadas compartilham uma fila com intervalos de envio, e a verificação de solicitações do desenvolvedor é feita em pequenas etapas para reduzir travamentos momentâneos. Desativar o compartilhamento de diagnósticos cancela o trabalho de diagnóstico que está na fila.
-- Respostas de diagnóstico grandes têm mais tempo para terminar. Quando um relatório não cabe, solicitantes de versões anteriores recebem uma resposta explícita sobre o limite de tamanho, em vez de apenas esperar até o tempo limite sem explicação.
+- O acompanhamento se recupera quando o diário chega incompleto no início, e eventos frequentes não adiam continuamente atualizações pendentes.
+- Mensagens compartilham uma fila espaçada; a verificação de pedidos do desenvolvedor ocorre em pequenos passos. Desligar diagnósticos cancela tarefas na fila.
+- Respostas grandes têm mais tempo para terminar. Solicitantes antigos recebem um erro explícito de tamanho se o relatório não couber, em vez de aguardar sem resposta.
 
 ## 6.5.8
 
-Menus nativos do WoW, controles de mapa mais claros e diagnósticos para o desenvolvedor.
+Menus nativos do WoW, controles de mapa mais simples e diagnóstico para o desenvolvedor.
 
-### Configurações e mapas de jogadores
+### Configurações e mapas
 
-- Os nove menus suspensos das configurações agora usam controles nativos do WoW com seleção dourada, menus pretos e botões anterior/próximo.
-- Jogadores exibidos nos mapas substitui as caixas separadas de visibilidade e exceção para o grupo. Escolha todos os jogadores QT, jogadores buscando parceiros de missões com ou sem seu grupo, apenas seu grupo ou Nenhum. As preferências existentes são mantidas; compartilhar sua própria localização continua separado.
-- A nova categoria Desenvolvedor reúne Abrir janela de depuração, Verificar novamente o registro de missões e a opção de compartilhar diagnósticos.
+- Os nove menus suspensos usam controles nativos, seleção dourada, fundo preto e botões anterior/próximo.
+- Jogadores mostrados nos mapas substitui opções separadas de visibilidade e exceção do grupo. Escolha todos os QT, parceiros com ou sem seu grupo, apenas grupo ou nenhum. Preferências são preservadas e compartilhar sua localização continua separado.
+- A categoria Desenvolvedor reúne Abrir depuração, Reler diário e a opção de compartilhar diagnóstico.
 
-### Respostas de diagnóstico
+### Respostas privadas de diagnóstico
 
-- Compartilhar dados de diagnóstico com o desenvolvedor está ativado por padrão. Isso permite solicitações autenticadas do desenvolvedor para diagnósticos QT, configurações do addon e dados de personagem, grupo e localização no jogo, mesmo quando o compartilhamento público de localização está desativado. Desative em Desenvolvedor para parar de compartilhar esses dados.
-- As respostas usam sussurros privados do addon, divididos em páginas enviadas em intervalos para preservar os campos de respostas maiores. Diagnósticos remotos exigem que ambos os jogadores usem 6.5.8 ou posterior; clientes publicados da versão 6.5.7 não podem responder a essas solicitações.
+- Compartilhar dados de diagnóstico com o desenvolvedor vem ativado. Permite pedidos autenticados de diagnóstico QT, configurações e dados de personagem, grupo e localização no jogo, mesmo com localização pública desligada. Desative em Desenvolvedor para parar de compartilhar.
+- Respostas usam sussurros privados de addon em páginas espaçadas, preservando os campos de relatórios grandes. Os dois precisam de 6.5.8 ou posterior; clientes publicados 6.5.7 não respondem a esses pedidos.
 
 ## 6.5.7
 
-Seleção de alvos no minimapa e ícones de grupo mais claros.
+Seleção pelo minimapa e ícones do grupo mais claros.
 
-### Pontos de jogadores e ícones de grupo
+### Pontos e ícones
 
-- Fora de combate, clique com o botão esquerdo no ponto de um jogador no minimapa para selecioná-lo como alvo, quando o jogo permitir. O botão direito continua abrindo o menu, com Selecionar alvo em primeiro lugar. Os menus dos pontos no mapa-múndi mantêm o comportamento atual.
-- Os ícones de busca de parceiros agora têm um contorno dourado muito mais forte. As listas de grupo nas dicas também mostram o logo QT brilhante para membros que estão procurando parceiros de missão.
-- Os símbolos de foco no Registro de Missões do Grupo agora são desenhados em sua própria camada de primeiro plano, para que os fundos dos botões não possam cobri-los.
+- Fora de combate, clique esquerdo num ponto seleciona o jogador quando o jogo permite. O direito abre o menu com Selecionar primeiro; os menus do mapa mundial não mudam.
+- Ícones de procura de parceiros têm contorno dourado mais forte. Listas do grupo mostram o logo brilhante de quem procura parceiros. Símbolos de missão do registro usam uma camada à frente do fundo dos botões.
 
 ## 6.5.6
 
-Veja nas mensagens quem está procurando parceiros de missão.
+Veja quem procura parceiros também nos registros.
 
-### Procurando parceiros de missão
+### Indicadores de parceiros
 
-- O ícone de busca de parceiros tem um contorno dourado mais claro e um brilho mais forte, ficando mais visível em tamanhos pequenos nas mensagens.
-- O ícone QT no início das mensagens agora brilha quando o jogador está procurando parceiros de missão. Os ícones específicos de missões e os balões de conversa mantêm a aparência habitual.
+- O ícone LFQP recebe contorno dourado mais forte e brilho mais visível em tamanhos pequenos. O prefixo QT nas linhas do jogador brilha enquanto ele procura parceiros; ícones específicos de missão e fala não mudam.
 
 ## 6.5.5
 
-Correção dos ícones de missão ausentes no Registro de Missões do Grupo.
+Correção de ícones ausentes no registro do grupo.
 
-### Ícones do Registro de Missões do Grupo
+### Ícones de missão
 
-- Corrigido um problema que às vezes fazia os botões de foco de missão aparecerem como círculos vazios após rolar ou atualizar a lista. Os botões reutilizados agora redefinem seus gráficos corretamente e usam um ícone alternativo se o gráfico solicitado não puder ser aplicado.
+- Botões reutilizados restauram sua imagem ao rolar ou atualizar, evitando círculos vazios. Se a arte pedida não puder ser aplicada, usam um ícone alternativo.
 
 ## 6.5.3
 
-Adicionadas três seções ilustradas ao guia do registro de missões do grupo. O funcionamento em jogo não mudou; as capturas usam companheiros simulados no Forever.
+O guia recebe três imagens do registro com colegas simulados do Forever. O funcionamento no jogo não muda.
 
-### Seu grupo em um só lugar
+### Seu grupo de relance
 
-- Adicionada ao guia uma captura geral do registro de missões do grupo.
-
-**Forever**
-
-![Seu grupo em um só lugar — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestOverviewForever.png)
-
-### Escolha sua missão ou siga um colega
-
-- Adicionada uma captura dos controles de acompanhamento de missões.
+- Foi adicionada uma visão geral do Registro de missões do grupo.
 
 **Forever**
 
-![Escolha sua missão ou siga um colega — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFollowingForever.png)
+![Seu grupo de relance — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestOverviewForever.png)
 
-### Confirme antes de mudar o foco
+### Escolha ou siga uma missão
 
-- Adicionada uma captura da confirmação de mudança de missão em foco.
+- Uma captura mostra os controles de acompanhamento.
 
 **Forever**
 
-![Confirme antes de mudar o foco — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFocusWarningForever.png)
+![Escolha ou siga uma missão — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFollowingForever.png)
+
+### Confirme a mudança
+
+- A confirmação de alteração do foco também ganha uma captura.
+
+**Forever**
+
+![Confirme a mudança — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFocusWarningForever.png)
 
 ## 6.5.2
 
-Correção da prévia de acompanhamento de missões.
+Correção da prévia de acompanhamento.
 
-### Teste com suas missões
+### Retorno ao grupo real
 
-- Fechar a prévia do registro de missões do grupo agora retoma o acompanhamento existente no seu grupo real.
+- Fechar a prévia do registro retoma o acompanhamento que já existia no seu grupo real.
 
 ## 6.5.1
 
-Botões de missão mais claros, confirmação ao mudar o foco seguido e ícones iguais aos do rastreador da Blizzard.
+Botões mais claros, confirmação ao mudar de acompanhamento e ícones coerentes com o rastreador nativo.
 
-### Controles mais claros
+### Cores dos botões
 
-- Ao seguir alguém, apenas o botão da missão ativa desse jogador mantém a cor. Sem seguir, seus botões e as missões ativas dos colegas mantêm a cor. Os demais ficam cinza, sem transparência. As missões ativas dos colegas continuam clicáveis para começar a segui-los ou trocar de jogador.
+- Enquanto segue alguém, apenas a missão ativa dessa pessoa fica colorida. Sem acompanhamento, seus botões e as missões ativas dos colegas têm cor; os demais ficam cinza, sem desvanecimento. Os botões ativos dos colegas continuam clicáveis para iniciar ou trocar o acompanhamento.
 
 ### Confirme antes de mudar
 
-- Escolher sua própria missão ou outro colega pede confirmação antes de encerrar o seguimento atual. Mudar ou limpar o foco pelo rastreador da Blizzard também pede confirmação: o QT restaura o foco seguido enquanto você decide. Cancelar mantém o seguimento; Mudar foco aplica sua escolha. Prévia: /qt preview unfollow.
+- Escolher sua missão ou outro colega pede confirmação para encerrar o acompanhamento atual. Alterar ou limpar o foco no rastreador Blizzard também pede: QT restaura o foco seguido enquanto você decide. Cancelar mantém; Alterar foco aplica sua escolha. Veja /qt preview unfollow.
 
-### Ícones consistentes
+### Ícones como os do jogo
 
-- O estado das missões agora usa a mesma consulta de conclusão do rastreador da Blizzard, corrigindo missões de entrega que exibiam um ícone de progresso em vez de uma interrogação. O estado Pronto corrigido também é incluído nos dados compartilhados do Registro de Missões do Grupo.
+- A verificação de conclusão coincide com a Blizzard, corrigindo missões de entrega que exibiam progresso em vez de interrogação. O estado Pronto corrigido também entra nos dados compartilhados do registro.
 
-### Teste com suas missões
+### Prévia com suas missões
 
-- A prévia usa seu registro real com quatro colegas simulados e missões extras que você não tem. Os controles mudam sua navegação real da Blizzard; o compartilhamento continua simulado. Use o menu do nome de um colega para avançar a missão ativa dele. A coluna de ações agora mostra Não compartilhável ou Compartilhamento desconhecido, centralizado, em vez de ficar vazia.
+- A comparação de prévia usa seu diário real com quatro colegas simulados e missões extras ausentes. Controles de foco alteram sua navegação real; compartilhar continua simulado. O menu do colega avança sua missão escolhida. Missões que não podem ser compartilhadas mostram uma indicação centralizada de Não compartilhável ou Possibilidade desconhecida, em vez de ação vazia.
 
 ## 6.5.0
 
-Controle o foco de missão no Registro de Missões do Grupo e continue seguindo após recarregar.
+Escolha missões pelo Registro de missões do grupo e continue seguindo parceiros após recarregar.
 
-### Botões de foco de missão
+### Botões de foco
 
-- Botões de missão no estilo da Blizzard agora aparecem na coluna de cada jogador, substituindo os títulos nos cabeçalhos. Clique na sua coluna para mudar sua missão de navegação. Os botões selecionados mostram o foco dos colegas; clique neles para segui-los.
+- Botões de missão no estilo Blizzard substituem títulos nos cabeçalhos. Na sua coluna, mudam a missão de navegação; nos colegas, os botões ativos indicam sua escolha e permitem segui-los.
 
-### Seguimento persistente
+### Acompanhamento persistente
 
-- Sua escolha é salva por personagem entre recarregamentos e mantida durante falhas temporárias de dados. Novas atualizações do grupo ajustam seu foco se você tiver a missão. Escolher sua própria navegação, a saída do colega, o fim do grupo ou sua conversão em raide encerra o seguimento.
+- A escolha fica salva por personagem após recargas e aguarda lacunas temporárias de dados. Atualizações do grupo mantêm a missão correspondente se você a possui. Navegar por conta própria, a saída do colega, dissolver o grupo ou transformá-lo em raide encerra o acompanhamento.
 
-### Quando você não tem a missão
+### Missão ausente
 
-- Se o jogador seguido selecionar uma missão que você não tem, você para de segui-lo sem alterar sua navegação. Uma janela com o tema do QT explica e abre o Registro de Missões do Grupo para solicitar a missão e seguir novamente. Teste a janela com /qt preview focus ou os botões e mudanças simuladas com /qt preview compare.
+- Se o colega escolhe uma missão que você não tem, o acompanhamento para sem alterar a navegação. Um diálogo explica e abre o registro para pedir a missão e seguir novamente. /qt preview focus mostra o aviso; /qt preview compare permite testar botões e mudanças simuladas.
 
 ## 6.4.3
 
-Correções do foco de missão e das dicas de grupo, além de configurações de mapa mais simples.
+Correções no foco de missão e nos tooltips do grupo, com exibição de mapa simplificada.
 
-### Seu foco de missão
+### Sua missão selecionada
 
-- Seu cabeçalho no Registro de Missões do Grupo agora lê diretamente sua missão em foco, mesmo quando você está sozinho ou com o compartilhamento de foco desativado. Alterar a missão selecionada para navegação atualiza o cabeçalho sem precisar clicar em Atualizar.
+- O cabeçalho do registro consulta sua seleção diretamente, mesmo sozinho ou com o compartilhamento desligado. Mudar a missão de navegação atualiza o cabeçalho sem precisar de Atualizar.
 
-### Membros do grupo nas dicas
+### Integrantes no tooltip
 
-- Em grupos de até cinco jogadores, as dicas mostram imediatamente o jogador sob o cursor junto com o líder enquanto a lista completa é carregada. A mensagem de carregamento aparece apenas quando ainda faltam outros membros. Grupos maiores continuam mostrando apenas o líder.
+- Grupos pequenos mostram imediatamente o jogador apontado e o líder enquanto a lista carrega. O aviso de carregamento aparece só se faltarem outros membros; acima de cinco, continua apenas o líder.
 
-### Configurações de mapa mais simples
+### Uma opção para os mapas
 
-- Uma única caixa para mostrar outros jogadores no mapa e no minimapa agora controla ambas as exibições. Compartilhar sua própria localização continua independente. Se uma das exibições estava ativada, ambas ficam ativadas; se as duas estavam desativadas, a exibição permanece desativada.
+- Mostrar outros jogadores no mapa e minimapa controla as duas exibições, independente de compartilhar sua posição. Na atualização, permanece ligado se qualquer mapa estava ligado e desligado se ambos estavam desligados.
 
 ## 6.4.2
 
-Obrigado por usar o QuestTogether! Esta atualização adiciona mais controle sobre os instantâneos de progresso de missões, a exibição da localização dos jogadores e a acessibilidade das janelas. As configurações estão mais fáceis de ajustar, e o Discord continua sendo o melhor lugar para feedback e suporte.
+Mais controle sobre dados de missões, pontos no mapa e acessibilidade das janelas. O Discord continua sendo o lugar para comentários e suporte.
 
-### Atualizações do Registro de Missões do Grupo
+### Atualizações do registro
 
-- Os cabeçalhos dos jogadores agora mostram o quão recente é cada instantâneo de missão. Abra o menu do cabeçalho de um jogador para atualizar apenas esse jogador sem atualizar todos.
-- Os filtros agora incluem uma configuração opcional de atualização automática. Quando ativada, o Registro de Missões do Grupo é atualizado aproximadamente a cada 30 segundos enquanto a janela real estiver aberta.
-- A atualização mantém sua busca, missões expandidas, posição horizontal e posição visível da missão quando possível enquanto novos dados de instantâneo chegam.
-- Os rótulos de foco de missão agora explicam dados aguardando, expirados ou sem suporte, ou indicam "Não compartilhado ou indisponível" quando QT não consegue distinguir esses casos. O menu também avisa se seguir criaria um ciclo.
+- Cabeçalhos mostram a idade dos dados e permitem atualizar só um jogador. O menu Filtros oferece atualização automática opcional, aproximadamente a cada 30 segundos com a janela real aberta.
+- Atualizar preserva busca, missões abertas e posição horizontal e da missão visível quando possível. Rótulos de foco indicam espera, expiração ou incompatibilidade; sem poder distinguir, mostram «não compartilhado ou indisponível». O menu alerta se seguir criaria um ciclo.
 
-### Acessibilidade e layout da janela
+### Acessibilidade e disposição
 
-- As configurações agora incluem opções de Acessibilidade para escala da janela de 80% a 150% e movimento reduzido para rolagem instantânea e expansão de objetivos.
-- A escala da janela aumenta textos e controles juntos, mas pode ser limitada quando necessário para manter a janela inteira na tela.
-- O Registro de Missões do Grupo e a janela de boas-vindas agora salvam o tamanho e a posição relativa à tela por perfil, e as janelas do QuestTogether são reajustadas após mudanças no tamanho da tela ou na escala da IU.
-- Use Redefinir layout da janela em Acessibilidade, ou /qt resetlayout, para limpar os layouts de janela salvos do QuestTogether e recentralizá-los.
+- Acessibilidade oferece escala de 80% a 150% para texto e controles juntos e movimento reduzido, tornando rolagem e expansão instantâneas. A escala pode ser limitada para manter a janela na tela.
+- Registro e boas-vindas guardam tamanho e posição relativa por perfil. Janelas se ajustam após mudanças de tela ou escala da interface. Redefinir disposição ou /qt resetlayout limpa os layouts QT salvos e centraliza as janelas.
 
-### Controles de localização de jogadores
+### Controles de localização
 
-- A exibição no mapa-múndi e no minimapa agora pode ser alternada separadamente do compartilhamento de localização, para que você possa ocultar marcadores locais sem alterar o que compartilha.
-- O filtro de localização de jogadores agora oferece todos os jogadores do QuestTogether, parceiros de missão ou apenas o grupo.
-- Sempre mostrar meu grupo fica ativado por padrão, então os membros do grupo ainda aparecem ao usar o filtro de parceiros de missão se as permissões de localização deles permitirem.
+- Você pode mostrar ou ocultar os pontos do mapa e do minimapa separadamente, sem alterar o compartilhamento da sua localização. O filtro oferece todos os usuários QT, parceiros ou apenas grupo.
+- Sempre mostrar meu grupo vem ligado: integrantes aparecem mesmo com filtro de parceiros, se suas permissões de localização permitirem.
 
-### Correções e polimento
+### Outros ajustes
 
-- A detecção experimental de camada mantém as mesmas configurações e IU, com tratamento de solicitações mais suave quando evidências locais mudam ou candidatos próximos estão em recarga.
-- As caixas de diálogo do QuestTogether agora lidam com Escape por meio de suas ações normais de fechamento, e o Registro de Missões do Grupo pode receber uma tecla no menu nativo de Teclas de Atalho sem tecla padrão definida.
-- Passe o cursor sobre as linhas de missões e objetivos para ler o texto completo. Os controles deslizantes de escala da janela e alcance próximo agora têm trilhos mais claros com contornos escuros para melhorar a visibilidade.
+- A detecção experimental mantém interface e opções, com melhor gestão dos pedidos quando as evidências mudam ou ainda é preciso aguardar para consultar jogadores próximos. Escape usa o fechamento normal dos diálogos. O registro pode receber uma tecla nas opções nativas, sem tecla inicial.
+- Passe o cursor nas linhas de missão e objetivo para ler o texto completo. Controles de escala e alcance próximo ficam mais brilhantes, com contornos escuros.
 
 ## 6.4.1
 
 Detecção experimental de camadas para jogadores QT próximos.
 
-### Detecção experimental de camadas
+### Estimativa de camadas
 
-- Ativada por padrão em Configurações > QuestTogether > Experimental. Desative Detectar camadas diferentes para interromper as comparações e ocultar os indicadores de fase estimada.
-- No mundo aberto do Forever, clientes QT compatíveis próximos comparam PNJs observados e jogadores visíveis. Um ícone de fase indica uma camada provavelmente diferente; passe o cursor para ver detalhes. É necessário compartilhar a localização.
-- As estimativas podem estar erradas. A ausência de jogadores por si só é inconclusiva; ver um ao outro ou um jogador em comum tem prioridade sobre a estimativa por PNJs. Os dados antigos são apagados automaticamente. Clientes QT antigos não podem participar.
+- Detectar camadas diferentes vem ligado em Configurações > QuestTogether > Experimental. Desligar interrompe comparações e oculta os indicadores inferidos.
+- No mundo aberto do Forever, clientes compatíveis próximos com localização compartilhada comparam PNJs observados e jogadores visíveis. Um ícone de fase indica provável diferença de camada; passe o cursor para detalhes.
+- A estimativa pode errar. Não ver alguém, por si só, não conclui nada; enxergar um ao outro ou um jogador em comum prevalece sobre a estimativa por PNJs. Evidências antigas expiram, e clientes anteriores não participam.
 
-### Capturas nas notas de versão
+### Capturas das notas
 
-- As capturas das notas de versão agora são enviadas diretamente ao Discord para permanecerem visíveis nas publicações do registro de alterações.
+- Imagens das notas passam a ser anexadas diretamente ao Discord para continuar visíveis nos anúncios.
 
 ## 6.4.0
 
-Janelas do QT mais bem-acabadas e acesso mais rápido às missões do grupo.
+Janelas QT mais cuidadas e acesso rápido às missões do grupo.
 
 ### Registro de missões do grupo
 
-- Conheça melhor o Registro de Missões do Grupo introduzido na versão 6.3: compare até cinco jogadores em colunas com cores de classe, veja quem tem cada missão, quem precisa dela e quando o grupo pode entregá-la. Combine busca e filtros de posse, progresso e ação. Compartilhar e solicitar compartilhamento estão disponíveis quando compatíveis.
-- O cabeçalho de cada jogador mostra sua missão em foco. Clique no nome de um colega para seguir voluntariamente o foco dele; se você não tiver a missão, sua navegação permanece inalterada. Atualizar busca uma nova captura do progresso remoto. As imagens mostram dados fictícios da prévia.
-- As missões que você possui agora têm um pequeno botão de livro que abre seus detalhes no diário de missões da Blizzard. Clicar na linha continua expandindo os objetivos.
-- Uma coroa identifica o líder do grupo e acompanha as mudanças de liderança. Sua própria coluna continua sendo a primeira.
+- O registro introduzido na 6.3 compara até cinco jogadores em colunas de classe: quem possui a missão, quem não tem e se todos estão prontos para entregar. Combine busca e filtros de posse, progresso e ação; Compartilhar e Pedir compartilhamento aparecem quando disponíveis.
+- Cada cabeçalho mostra a missão selecionada. Clique no nome para optar por seguir um colega; se não tiver a missão, sua navegação permanece intacta. Atualizar pede dados remotos recentes. As capturas usam dados fictícios de demonstração.
+- Um livro nas missões que você possui abre os detalhes no Registro de Missões da Blizzard. Clicar na linha continua expandindo objetivos. A coroa acompanha mudanças de líder e sua coluna fica primeiro.
 
 **Retail**
 
@@ -551,681 +525,650 @@ Janelas do QT mais bem-acabadas e acesso mais rápido às missões do grupo.
 
 ![Registro de missões do grupo — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
 
-### Expanda os objetivos de todos
+### Expanda os objetivos
 
-- Clique em uma missão para ver contadores de objetivos, barras de progresso e etapas concluídas de cada integrante. Várias missões podem permanecer expandidas. Esta versão compacta as seções e usa o mesmo fundo com cor de classe nos nomes e objetivos. Uma missão típica de cinco jogadores com dois objetivos cada cabe no tamanho padrão; missões maiores ainda podem exigir rolagem.
+- Veja contagens, barras e etapas concluídas de todos, mantendo várias missões abertas. Os painéis ficam mais compactos, com cabeçalho e corpo na cor da classe. Uma missão típica com cinco jogadores e dois objetivos por pessoa cabe no tamanho padrão; missões longas ainda podem exigir rolagem.
 
 **Forever**
 
-![Expanda os objetivos de todos — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+![Expanda os objetivos — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
 
 ### Janelas e minimapa
 
-- Clique com o botão esquerdo no ícone do minimapa para abrir ou fechar o registro de missões do grupo; o botão direito abre o menu. Configurações voltou ao menu, e a dica explica os atalhos.
-- Os lembretes do chat de grupo, pedidos de compartilhamento e entrada, configurações dos balões e diálogo do link do Discord agora usam a moldura de pergaminho e os temas claro/escuro do QT, com mais margens e espaço para os valores dos controles deslizantes.
-- Ao arrastar janelas, a distância até o cursor é preservada, inclusive na prévia do comparador. Menus e dicas agora usam de forma consistente o nome Diário de missões para a janela da Blizzard.
+- Clique esquerdo no minimapa abre ou fecha o registro; direito abre o menu. Configurações volta ao menu, com atalhos explicados no tooltip.
+- Lembretes de chat, pedidos de missão e grupo, opções de bolha e convite do Discord usam a moldura QT e temas claro e escuro, com mais espaço e valores de controles bem acomodados.
+- Arrastar mantém o deslocamento do cursor, inclusive na prévia. Menus e tooltips usam de forma consistente Registro de Missões para a janela da Blizzard.
 
 ### Comandos de prévia
 
-- Use /qt preview para listar as prévias de janelas e anúncios. Os comandos antigos continuam funcionando; as ações simuladas não convidam jogadores, compartilham missões nem enviam mensagens.
-- A prévia do comparador agora mostra um grupo completo de cinco jogadores, incluindo um Caçador e um Ladino, com objetivos variados, missões ativas e uma coroa para o líder.
+- /qt preview lista prévias de janelas e anúncios. Comandos antigos continuam disponíveis; ações simuladas não convidam, compartilham missões ou enviam mensagens.
+- A comparação de prévia mostra cinco jogadores, incluindo Caçador e Ladino, com objetivos variados, missões selecionadas e coroa de líder.
 
 ## 6.3.1
 
-Espaçamento mais confortável no registro de missões do grupo.
+Os objetivos ganham mais espaço no Registro de missões do grupo.
 
-### Espaçamento dos painéis de objetivos
+### Espaçamento dos painéis
 
-- Os painéis de objetivos expandidos agora têm mais espaço interno na parte inferior para que as barras de progresso não encostem na borda. A rolagem e as animações de expansão consideram esse espaço adicional.
-- Mensagens como “Nenhum detalhe de objetivo disponível” ficam centralizadas verticalmente ao lado do nome do jogador, em vez de muito próximas da borda superior.
+- Painéis expandidos recebem margem inferior para as barras não encostarem na borda. Rolagem e animação incluem esse espaço.
+- Avisos como «Sem detalhes de objetivos» ficam centralizados verticalmente junto ao nome, em vez de colados no topo.
 
 ## 6.3.0
 
-Um novo Registro de Missões do Grupo, destinos compartilhados e acompanhamento opcional de missões facilitam jogar juntos.
+O novo Registro de missões do grupo reúne objetivos de todos, destinos compartilhados e acompanhamento opcional da missão escolhida por um parceiro.
 
-### Registro de Missões do Grupo
+### Registro de missões do grupo
 
-- O comparador agora se chama Registro de Missões do Grupo. Expanda várias missões de uma vez para ver os objetivos e o progresso de cada integrante, com um resumo das missões prontas para entrega.
-- Busque missões e combine filtros de posse, progresso e compartilhamento. Atualizar renova os dados dos outros jogadores; clientes antigos ainda comparam listas, mas não fornecem detalhes dos objetivos.
-- Redimensione a janela de pergaminho e role suavemente. Colunas nas cores das classes, cabeçalhos de jogador clicáveis com espaçamento interno e painéis de objetivos arredondados melhoram a leitura.
+- Comparar missões do grupo passa a ser Registro de missões do grupo. Expanda várias missões de uma vez para ver objetivos, progresso e um resumo de prontidão do grupo.
+- Combine busca e filtros de posse, progresso e compartilhamento. Atualizar renova os dados remotos; clientes antigos ainda comparam listas, mas não fornecem objetivos detalhados.
+- A janela de pergaminho tem tamanho ajustável e rolagem suave, colunas por classe, cabeçalhos clicáveis com espaço e painéis arredondados.
 
-### Missão ativa e pontos de rota compartilhados
+### Missão escolhida e destinos
 
-- A missão ativa aparece abaixo do nome de cada integrante. Escolha acompanhar a missão pelo cabeçalho ou menu QT para ativar missões que você possui. Missões ausentes ou desmarcadas preservam sua navegação; navegar manualmente, sair do grupo ou recarregar a interface encerra o acompanhamento.
-- Pontos de rota da Blizzard dos outros integrantes aparecem nas cores das classes no mapa-múndi e, quando próximos, no minimapa. Marcadores sobrepostos mostram todos os donos; Navegar até aqui usa TomTom ou a navegação nativa. Receber um ponto nunca muda seu destino nem garante estar na mesma fase.
-- Compartilhar minha missão ativa, Compartilhar meu ponto de rota e Mostrar pontos do grupo vêm ativados em Grupos e Compartilhamento, independentemente da localização pública e da busca de parceiros. Acompanhar exige uma escolha explícita. Esses recursos requerem colegas atualizados em grupos de até cinco, incluindo masmorras, mas não raides.
+- A missão ativa aparece abaixo de cada nome. Siga a missão pelo cabeçalho ou menu QT para acompanhar aquelas que você também possui. Missões ausentes ou removidas preservam sua navegação. Navegar manualmente, sair do grupo ou recarregar encerra o acompanhamento.
+- Pontos da Blizzard dos colegas aparecem na cor da classe no mapa e no minimapa próximo. Sobreposições listam todos os donos; Navegar aqui usa TomTom ou navegação nativa. Receber um ponto não muda seu destino nem garante a mesma fase.
+- Compartilhar minha missão selecionada, Compartilhar meu ponto e Mostrar pontos do grupo vêm ligados em Grupos e compartilhamento, independentemente da localização pública e busca de parceiros. Seguir é opcional. É preciso QT atualizado em grupos de até cinco, incluindo masmorras; raides ficam fora.
 
 ### Janelas e menus
 
-- As notas de atualização também usam pergaminho escuro, com modo claro opcional. Mova ou redimensione a janela, navegue por um histórico mais limpo e use as setas para trocar de versão ou ir às extremidades. Discord e Configurações ficam no rodapé.
-- As dicas dos jogadores se ajustam melhor ao conteúdo. O menu do minimapa separa as ferramentas de missões das notas, da posição do registro e da visibilidade do ícone. Configurações e Enviar mensagem no chat QT foram removidos desse menu; as configurações continuam disponíveis em /qt options.
+- As notas usam pergaminho escuro com modo Claro opcional. Arraste e redimensione, percorra um histórico mais limpo e use setas entre versões ou até as extremidades. Discord e Configurações ficam no rodapé.
+- Tooltips se ajustam melhor ao conteúdo. O minimapa separa ferramentas de missão das notas, destino do registro e ícone. Configurações e Enviar mensagem QT saem desse menu; /qt options continua abrindo as opções.
 
 ## 6.2.3
 
-Menos anúncios repetidos de missões prontas para entregar.
+Menos anúncios repetidos de missão pronta para entregar.
 
-### Correções no estado das missões
+### Conclusão sem repetições
 
-- Missões já prontas para entregar ou concluídas quando o acompanhamento começa são registradas sem anúncios. Dados de entrega ausentes e atualizações posteriores não repetem mais anúncios de missões prontas para entregar já registrados.
-- Novas conclusões continuam sendo anunciadas, e aceitar uma missão novamente reinicia seu histórico de notificações. O jogador que envia os anúncios precisa desta atualização; versões antigas ainda podem enviar rajadas de anúncios.
+- Missões já prontas ou concluídas quando o acompanhamento começa são registradas em silêncio. Dados ausentes e atualizações posteriores não repetem um aviso já observado.
+- Conclusões novas continuam sendo anunciadas, e aceitar a missão novamente reinicia o histórico de avisos. Quem envia precisa atualizar; versões antigas ainda podem produzir rajadas.
 
 ## 6.2.2
 
-Progresso de missões legível em todos os idiomas.
+Progresso legível, sem perder a descrição do objetivo.
 
-### Manter os detalhes dos objetivos
+### Detalhes preservados
 
-- O progresso de missões, missões mundiais e objetivos bônus agora mantém o texto e os contadores originais do remetente no bate-papo e nos balões, em vez de substituí-los por texto genérico como “Objetivo 1: 5/5”.
-- Os anúncios de missões aceitas e concluídas continuam usando rótulos traduzidos e os títulos de missão disponíveis localmente.
+- Missões comuns, mundiais e objetivos de bônus mantêm texto e números do remetente no chat e nas bolhas, em vez de descrições genéricas como «Objetivo 1: 5/5».
+- Anúncios de aceitação e conclusão continuam com rótulos localizados e títulos locais disponíveis.
 
 ## 6.2.1
 
-Mais clareza e controle sobre os anúncios no bate-papo do grupo.
+Fica mais claro quando o QT envia anúncios ao chat do grupo.
 
-### Saiba quando o QT publica no bate-papo do grupo
+### Escolha antes dos envios
 
-- A opção em Onde Anunciar agora explica claramente que o QT também publica no bate-papo do grupo quando um membro não é reconhecido como usuário do QT. Ela continua ativada por padrão.
-- Uma nova janela com o logotipo do QT aparece após uma breve espera para detecção. Escolha Manter ativado ou Desativar anúncios antes dos envios começarem. Não me lembrar novamente salva sua confirmação para o perfil atual.
-- O lembrete traduzido mostra os membros afetados e pode reaparecer quando novos membros não identificados entrarem. Ele desaparece se forem reconhecidos como usuários do QT. Os eventos retidos durante a espera não são reenviados.
+- Onde anunciar explica que o QT também escreve quando alguém não foi reconhecido como usuário do addon. A opção continua ligada por padrão.
+- Após uma breve espera pela descoberta, um diálogo com logo QT oferece Manter ativado ou Desativar anúncios antes dos envios. Não lembrar novamente salva a confirmação no perfil.
+- O lembrete localizado informa os integrantes afetados e pode voltar com novos membros desconhecidos. Some quando eles são reconhecidos como usuários QT. Eventos retidos durante a espera não são reenviados depois.
 
 ## 6.2.0
 
-Pontos próximos mais suaves, detalhes de jogadores mais rápidos e comunicação mais confiável.
+Movimento próximo mais suave, detalhes mais rápidos e comunicação mais confiável.
 
-### Movimento mais suave no minimapa
+### Movimento no minimapa
 
-- Jogadores próximos podem trocar posições por sussurros do addon com frequência limitada. O movimento suave prioriza até quatro dos jogadores elegíveis mais próximos e respeita preferências de compartilhamento, filtros, ignorados e limites de tráfego.
-- Ambos os jogadores precisam desta atualização para os fluxos de posição e respostas diretas ao passar o cursor. Versões anteriores mantêm suas transmissões normais; atrasos e restrições do servidor ainda podem afetar a entrega.
+- Posições podem ser trocadas por sussurros de addon espaçados, favorecendo até quatro usuários elegíveis mais próximos. Permissões, filtros, ignorados e limites de tráfego são respeitados.
+- Os dois precisam desta versão para os fluxos próximos e respostas diretas ao cursor. Clientes antigos mantêm os envios normais; atrasos do servidor e restrições ainda podem afetar a entrega.
 
-### Descoberta e detalhes de grupo mais rápidos
+### Descoberta e detalhes do grupo
 
-- Passar o cursor sobre um nome ou ponto pode solicitar detalhes recentes diretamente. As solicitações têm frequência limitada, e listas de membros sem alterações não expiram mais após dois minutos.
-- Posições recentes, status de busca de parceiros e detalhes conhecidos do grupo sobrevivem a /reload por até três minutos desde a coleta original. Entrar em uma zona também solicita uma atualização de descoberta escalonada.
-- As dicas usam o status conhecido de solo ou em grupo enquanto aguardam o tamanho exato do grupo. Um pequeno logotipo identifica usuários do QT na lista de membros, mantendo os nomes alinhados.
+- Passar o cursor por nomes ou pontos pode solicitar dados novos diretamente, com frequência limitada. Listas de grupo sem mudanças deixam de expirar após dois minutos.
+- Locais recentes, procura de parceiros e detalhes conhecidos de grupo sobrevivem a /reload por até três minutos desde a coleta original. Entrar numa zona solicita uma renovação de descoberta espaçada.
+- Enquanto falta o tamanho exato, o tooltip usa o estado conhecido de sozinho ou em grupo. Um logo pequeno identifica usuários QT nas linhas do grupo, mantendo os nomes alinhados.
 
-### Tradução e apresentação mais claras
+### Textos e apresentação
 
-- Nomes de raça, detalhes de ping, dados de missão e mais textos da interface usam traduções locais quando disponíveis. Se a tradução da missão não estiver disponível, o texto legível do remetente é mantido; o progresso não usa descrições de objetivos locais sem relação.
-- Anúncios genéricos agora usam o logotipo do QT. Buscar parceiros de missões é a primeira opção do menu do minimapa.
+- Raças, pings, dados de missão e mais textos usam versões locais disponíveis. Sem tradução, vale o texto legível enviado; progresso não aproveita descrições de objetivos sem relação.
+- Anúncios genéricos usam o logo QT, e Procurando parceiros aparece primeiro no menu do minimapa.
 
-### Comunicação e confiabilidade
+### Comunicação e correções
 
-- Comparações, listas de grupo, pedidos para entrar ou compartilhar e respostas de ping preferem sussurros diretos com jogadores compatíveis. Mensagens periódicas consolidadas e menos atualizações de posições inalteradas reduzem o tráfego público redundante.
-- Corrigidas verificações repetidas de missões, tentativas excessivas nas placas de nome, janelas que não fechavam durante restrições e /qt set aceitando opções que não são de ativar/desativar. Desativar o compartilhamento de localização não descarta mais outras solicitações na fila.
+- Comparações, listas de grupo, pedidos de entrada e missões e respostas a ping preferem sussurros diretos entre clientes compatíveis. Avisos consolidados e menos posições repetidas reduzem o tráfego público.
+- Foram corrigidos exames repetidos de missões, excesso de tentativas de placas, diálogos que não fechavam sob restrições e /qt set aceitando ajustes que não são liga/desliga. Desativar a localização não descarta pedidos pendentes sem relação.
 
 ## 6.1.2
 
-Pontos de jogadores próximos mais responsivos e anúncios traduzidos mais claros.
+Pontos próximos respondem mais rápido, e anúncios ficam mais claros no seu idioma.
 
-### Pontos de jogadores no minimapa
+### Pontos do minimapa
 
-- Corrigidos pontos de jogadores do QT ausentes quando o minimapa não fornece um ID de mapa. O QT agora usa seu mapa atual quando necessário.
+- Quando o minimapa não fornece um ID, QT usa seu mapa atual para evitar pontos ausentes.
 
-### Atualizações de localização locais mais rápidas
+### Posições renovadas mais vezes
 
-- As atualizações de localização agora miram uma vez por segundo com menos de 10 usuários conhecidos do QT na sua zona, 5–10 segundos com 10–19, e 15–20 segundos com 100. Os intervalos aumentam gradualmente entre esses níveis; os tempos com 500 ou mais permanecem inalterados.
-- Atualizações rápidas enviam localizações compactas e recém-amostradas, enquanto outros detalhes dos jogadores mantêm seu pulso mais lento. Os limites de tráfego existentes ainda se aplicam, então congestionamento pode atrasar a entrega. Outros jogadores precisam desta atualização para enviar posições mais rapidamente.
+- A meta é uma atualização por segundo com menos de 10 usuários conhecidos na zona; a cada 5–10 segundos com 10–19 e a cada 15–20 com 100. Os intervalos crescem aos poucos entre esses níveis; a partir de 500 permanecem iguais.
+- O envio rápido leva apenas posições compactas recém-coletadas. Os demais dados mantêm os avisos mais lentos. Limites de tráfego podem atrasar a entrega, e quem envia precisa desta atualização.
 
-### Anúncios traduzidos mais claros
+### Localização dos anúncios
 
-- Rótulos de eventos de missão, como Missão aceita, agora usam seu idioma mesmo quando um título de missão local ou metadados de tradução opcionais não estão disponíveis.
-- Quando o WoW não consegue fornecer um título de missão local, o QT mantém o título legível do remetente. Mensagens de progresso ainda mantêm o texto original quando não podem ser reconstruídas com segurança.
+- Rótulos como Missão aceita usam seu idioma mesmo sem título local ou metadados opcionais. Sem nome fornecido pelo WoW, fica o título legível do remetente. Progresso que não pode ser reconstruído com segurança preserva o texto original.
 
 ## 6.1.1
 
-Menus de contexto mais limpos para jogadores e missões.
+Menus de jogadores e missões mais enxutos.
 
-### Limpeza do menu de contexto
+### Menus de contexto
 
-- Os menus de nome de jogador e de nome de missão não incluem mais o atalho da janela de registros. Mova os registros do QuestTogether entre a janela principal de bate-papo e uma janela separada usando o menu do minimapa ou as configurações.
+- O atalho para mover o registro sai dos menus de nomes. Use o minimapa ou as configurações para alternar entre o chat principal e uma janela separada.
 
 ## 6.1.0
 
-Encontre grupos no mapa, veja quem está fazendo missões junto e peça para entrar por meio de qualquer membro do grupo. As dicas de jogadores agora colocam os detalhes do grupo em destaque.
+Veja quem joga junto no mapa e peça uma vaga por qualquer integrante do grupo.
 
-### Veja quem está fazendo missões junto
+### Grupos visíveis
 
-- Jogadores agrupados agora têm um pequeno emblema de duas pessoas nos pontos do mapa e do minimapa. Passe o mouse sobre um membro do grupo para dar aos companheiros dele um contorno branco, escurecer pontos não relacionados e mostrar uma coroa no líder. Os brilhos dourados de Procurando Parceiros para Missões continuam visíveis.
-- As dicas de jogadores listam os membros do grupo com pontos e nomes nas cores das classes, com o líder coroado primeiro. Grupos de até cinco listam todos os membros; grupos maiores mostram apenas o líder. Esses detalhes também aparecem ao passar o mouse sobre nomes de jogadores no registro do QuestTogether.
-- Seu próprio grupo usa a lista do jogo. Detalhes de grupos remotos são carregados de pares atualizados do QuestTogether quando necessário, com resultados em cache e solicitações dosadas para manter o tráfego do canal baixo. Clientes mais antigos mantêm seus pontos normais e informações básicas de tamanho do grupo; os detalhes completos de grupos remotos exigem um par atualizado.
+- Pontos de jogadores em grupo recebem um pequeno símbolo de duas pessoas nos dois mapas. Ao passar o cursor, companheiros ganham contorno branco, o líder recebe coroa e os outros pontos escurecem. Brilhos dourados de parceiros permanecem visíveis.
+- Tooltips de pontos e nomes do registro listam integrantes com pontos e nomes na cor da classe, começando pelo líder. Até cinco, todos aparecem; grupos maiores mostram apenas o líder.
+- Seu grupo usa a lista do jogo. Detalhes remotos vêm de clientes atualizados, com dados guardados e pedidos espaçados. Versões antigas mantêm pontos e tamanho básico, mas a lista completa exige atualização.
 
-### Solicitações para entrar podem chegar ao líder do grupo
+### O pedido pode chegar ao líder
 
-- Você pode pedir para entrar por meio de um membro do grupo que não pode convidar você. Se o líder dele estiver usando o QuestTogether e puder convidar, a solicitação será redirecionada ao líder usando as configurações normais de confirmação e aprovação automática.
-- Se não houver confirmação de que o líder usa o QuestTogether, o membro poderá anunciar “[QT] PlayerName está pedindo para entrar no grupo.” no bate-papo do grupo quando os anúncios no bate-papo do grupo estiverem ativados. Alguém com permissão para convidar terá que convidar você manualmente.
-- O solicitante e o membro que encaminha precisam desta atualização para solicitações redirecionadas. As verificações existentes de grupo cheio, restrições, ignorados, expiração e frequência de solicitações ainda se aplicam.
+- Você pode pedir entrada por alguém sem permissão para convidar. Se o líder usa QT e pode convidar, o pedido segue para ele com as confirmações e aprovações automáticas habituais.
+- Sem confirmação de que o líder usa QT, o integrante pode avisar no chat do grupo, se esses anúncios estiverem ativados. Alguém com permissão precisa então convidar manualmente.
+- Solicitante e intermediário precisam desta versão. Continuam as verificações de grupo cheio, restrições, ignorados, validade e frequência dos pedidos.
 
-### Dicas de jogadores mais limpas
+### Tooltips reorganizados
 
-- As informações do grupo agora ficam logo abaixo da linha de nível, raça e classe, com linhas de membros compactas e espaço entre as seções. Os emblemas da Aliança e da Horda têm o dobro do tamanho.
-- A versão do addon aparece por último no formato mais curto vX.Y.Z. Quando a idade de uma localização é mostrada, Última atualização fica diretamente acima da versão.
-- As contagens de missões rastreadas foram removidas das dicas de jogadores e do botão do minimapa. O título da missão ativa para jogadores procurando parceiros para missões ainda é mostrado.
+- O grupo fica logo abaixo de nível, raça e classe, com linhas compactas e espaço entre seções. Símbolos de Aliança e Horda dobram de tamanho.
+- A versão encerra o tooltip como vX.Y.Z; a idade da localização aparece logo acima, quando aplicável. Contagens de missões saem dos tooltips de jogadores e minimapa, mas a missão ativa de quem procura parceiros continua.
 
 ## 6.0.2
 
-Navegue pelas atualizações anteriores do QuestTogether no seu idioma, com melhor recuperação de nomes de missões para anúncios de conclusão.
+Navegue pelas atualizações anteriores no seu idioma e veja uma recuperação melhor dos títulos de missões concluídas.
 
-### Ver notas de atualização anteriores
+### Consulte o histórico
 
-- A janela de boas-vindas agora tem botões Mais antigas e Mais recentes, um atalho para a Mais recente e um seletor de Histórico mostrando versões e datas de lançamento. Ao abrir as notas de atualização, elas começam na versão mais recente.
-- O histórico inclui todas as versões publicadas anteriormente, incluindo os primeiros betas. Todas as notas históricas são traduzidas para todos os idiomas de WoW compatíveis e incluídas nos changelogs correspondentes do repositório.
-- Os botões de navegação ficam desativados quando não há para onde ir. Navegar por notas mais antigas não altera qual atualização você reconheceu; pop-ups automáticos ainda aparecem apenas para atualizações principais e secundárias. Abra a janela a qualquer momento com /qt notes.
+- A janela oferece Anteriores, Próximas, Mais recente e Histórico com versões e datas. Ao abrir, começa na última versão. Todo lançamento anterior, inclusive betas, está disponível nos idiomas do WoW e nos respectivos arquivos do repositório.
+- Botões sem destino ficam desativados. Ler notas antigas não muda qual atualização você reconheceu; abertura automática continua apenas para versões principais e secundárias. Use /qt notes quando quiser.
 
-### Títulos de conclusão de missões
+### Títulos de missões concluídas
 
-- Quando uma missão sai do seu registro antes que o QuestTogether tenha um título utilizável, os anúncios de conclusão agora tentam consultar o título da missão disponível no jogo antes de recorrer a um ID de missão. Um título recuperado é preservado independentemente da ordem dos eventos de entrega e remoção.
-- Os anúncios ainda usam o texto do remetente quando o seu cliente não consegue resolver um título local. Se nenhum dos clientes tiver um nome disponível, o ID da missão continua sendo a alternativa. A recuperação aprimorada do lado do remetente se aplica quando o remetente atualiza.
+- Se uma missão sai do diário antes de ter um título utilizável, QT tenta consultá-lo no jogo antes de recorrer ao ID. Um nome recuperado é preservado independentemente da ordem dos eventos de entrega e remoção.
+- Sem título local, vale o texto do remetente; se nenhum cliente tiver nome, fica o ID. A recuperação aprimorada depende da atualização de quem envia o anúncio.
 
 ## 6.0.1
 
-As celebrações agora permanecem com jogadores que você realmente consegue ver por perto.
+Comemorações de outros jogadores ficam limitadas a quem você realmente vê por perto.
 
-### Correções de celebrações próximas
+### Reações próximas
 
-- Reações a outro jogador concluindo uma missão ou subindo de nível agora exigem uma unidade de jogador correspondente e visível. Coordenadas do mapa ou apenas um nome não acionam mais um emote, inclusive quando devlogall está ativado.
-- Emotes recebidos devem corresponder à própria lista de celebrações do QuestTogether. Emotes não listados, incluindo mountspecial e gritos de facção, são ignorados sem escolher um substituto.
-- Suas próprias celebrações de conclusão de missão e de subida de nível mantêm o comportamento e as configurações existentes.
+- Reagir a uma missão concluída ou subida de nível exige uma unidade visível correspondente ao jogador. Coordenadas ou nome sozinhos não acionam gestos, nem com devlogall ativo.
+- Gestos recebidos precisam estar na lista de comemorações QT. mountspecial, gritos de facção e outros não listados são ignorados sem substituição. Suas comemorações próprias mantêm comportamento e configurações.
 
 ## 6.0.0
 
-QuestTogether 6.0 se prepara para o lançamento do Forever com um sistema de comunicação projetado para reduzir o tráfego em segundo plano conforme a comunidade cresce.
+O QuestTogether 6.0 prepara a comunicação para o lançamento do Forever, reduzindo o tráfego de fundo conforme a comunidade cresce.
 
-### Atividade local, descoberta mundial
+### Atividade local, descoberta global
 
-- Anúncios de missões e atualizações frequentes de jogadores agora usam canais de zona. Anúncios do grupo ainda chegam ao seu grupo além dos limites de zona.
-- Os pontos de jogadores continuam disponíveis pelo mundo, com atualizações em segundo plano mais lentas. Abrir outra zona no mapa-múndi assina temporariamente suas atualizações.
-- O chat de texto do QT permanece no canal global do QuestTogether. Sua configuração de chat Global ou Apenas Zona ainda controla quais mensagens você vê.
+- Anúncios de missões e atualizações frequentes usam canais de zona. Avisos ao grupo continuam atravessando zonas. Pontos permanecem disponíveis no mundo todo com renovações mais lentas; abrir outra zona no mapa ativa temporariamente suas atualizações.
+- O chat digitado continua no canal global QuestTogether. Global e Apenas zona ainda definem quais mensagens você vê.
 
 ### Menos tráfego em segundo plano
 
-- Presença, versão, contagens de missões, status de parceiro e localização são agrupados em atualizações compactas. Zonas lotadas são atualizadas com menos frequência para reduzir o tráfego.
-- Anúncios são espaçados e têm prioridade sobre atualizações em segundo plano. Respostas de ping são distribuídas para evitar uma enxurrada de respostas. O WoW ainda pode atrasar a entrega pelo canal; esta atualização não garante mensagens instantâneas.
-- As dicas de interface de jogadores mostram a idade de localizações mais antigas. O diagnóstico agora informa contagens de mensagens, limitação e atrasos de anúncio relatados pelo remetente.
+- Presença, versão, número de missões, procura de parceiros e localização são reunidos em mensagens compactas. Zonas cheias atualizam menos frequentemente.
+- Anúncios têm prioridade e envios espaçados; respostas a ping são distribuídas para evitar rajadas. O WoW ainda pode atrasar a entrega, portanto mensagens instantâneas não são garantidas.
+- Tooltips mostram a idade de locais antigos. Diagnósticos incluem contagem de mensagens, limitação de envio e atrasos informados pelos remetentes.
 
-### Uma grande atualização durante a beta
+### Mudança de base durante a beta
 
-- Estamos fazendo esta mudança maior de comunicação agora em antecipação ao lançamento do Forever. A beta é o melhor momento para tomar essas decisões fundamentais, antes que mais jogadores dependam do comportamento antigo.
-- A versão 6.0 sai do QuestTogetherAnnounce1 e não envia nem recebe mais nesse canal legado. Ela usa QuestTogether para chat global e descoberta, além de canais de zona para atividade local.
-- O QuestTogether mantém seus canais depois dos seus outros canais de chat, com o canal principal de chat antes dos canais de zona. Suas preferências de compartilhamento de localização, lista de ignorados e anúncios são preservadas.
+- A beta permite preparar essa estrutura para o lançamento do Forever antes que mais jogadores dependam do funcionamento antigo.
+- A versão 6.0 sai de QuestTogetherAnnounce1 e não envia nem recebe por ele. QuestTogether atende chat e descoberta globais; canais de zona atendem a atividade local.
+- Os canais QT ficam depois dos demais, com o principal antes dos regionais. Preferências de localização, ignorados e anúncios são mantidas.
 
-### Compatibilidade com versões antigas
+### Atualizem em conjunto
 
-- Por favor, atualizem juntos. Versões antigas não conseguem ler as novas atualizações agrupadas de jogadores nem ouvir os novos canais de zona, então jogadores com versões diferentes podem perder pontos no mapa, status de parceiro e anúncios de missões próximas.
-- Jogadores usando apenas o canal legado não podem mais ser descobertos por esse canal na 6.0. Algumas trocas com versões 5.x mais novas ainda podem funcionar pelo canal global compartilhado ou por um grupo, mas isso é compatibilidade parcial, não a experiência completa.
-- O /qt ping manual ainda usa o canal global. Ele pode ouvir clientes antigos compatíveis lá, mas é uma ferramenta de descoberta de melhor esforço, não uma contagem completa de todos que usam o QuestTogether.
+- Versões antigas não leem as atualizações agrupadas nem escutam os novos canais de zona. Misturá-las pode fazer pontos, procura de parceiros e anúncios próximos deixarem de aparecer.
+- Jogadores que usam apenas o canal antigo não são descobertos por ele. Algumas trocas com versões 5.x recentes podem funcionar no global compartilhado ou no grupo, mas a compatibilidade é parcial.
+- /qt ping continua global e pode ouvir clientes antigos compatíveis nesse canal. É uma tentativa de descoberta, não uma contagem completa de usuários QT.
 
 ## 5.17.2
 
-O chat do QT fica mais fácil de distinguir dos anúncios de missões.
+Fica mais fácil separar conversas e anúncios de missão.
 
-### Texto branco no chat do QT
+### Chat QT em branco
 
-- Mensagens de jogadores no chat do QT agora usam texto branco no registro de bate-papo e nos balões sobre a cabeça.
-- Os nomes dos jogadores mantêm as cores de suas classes, e os anúncios de missões mantêm o texto amarelo.
+- Mensagens de jogadores usam texto branco nos registros e bolhas. Nomes mantêm a cor da classe, e anúncios de missões continuam amarelos.
 
 ## 5.17.1
 
-Veja mais sobre seus companheiros de missões e confira o status da missão diretamente nas dicas de chat.
+Consulte mais informações dos parceiros e veja o estado de uma missão diretamente no tooltip do chat.
 
-### Dicas de jogadores mais úteis
+### Informações dos jogadores
 
-- As dicas de nome do jogador e de pontos no mapa agora mostram quantas missões o QuestTogether está monitorando, além de Solo ou Grupo de N. Sua própria dica usa seu estado local atual.
-- A dica do minimapa agora conta as missões monitoradas pelo QuestTogether, correspondendo ao anúncio de inicialização em vez de contar apenas as missões acompanhadas no rastreador do WoW.
-- Contagens de missões remotas e tamanhos de grupo exigem um par atualizado. Elas são atualizadas aproximadamente a cada 80 segundos por meio das mensagens de pulsação existentes, sem mensagens extras; relatórios ausentes ou desatualizados aparecem como desconhecidos. Versões mais antigas continuam recebendo anúncios de versão compatíveis.
+- Tooltips de nomes e pontos mostram quantas missões o QT acompanha e se o jogador está sozinho ou em Grupo de N. Seu tooltip usa o estado local atual. O minimapa conta as missões acompanhadas pelo QT, como no anúncio inicial, em vez de apenas as rastreadas pelo WoW.
+- Contagens e tamanhos de grupos remotos exigem um usuário atualizado. Eles se renovam aproximadamente a cada 80 segundos nos avisos existentes, sem mensagens extras. Dados ausentes ou vencidos aparecem como desconhecidos. Versões antigas continuam recebendo anúncios de versão compatíveis.
 
-### Status da missão ao passar o mouse
+### Estado da missão no tooltip
 
-- Passe o mouse sobre o nome de uma missão nos registros do QT para ver seu status da missão, se ela pode ser compartilhada, o ID da missão e o progresso dos objetivos rastreados localmente em uma dica ao lado do cursor.
-- O item de menu Status foi removido. Clicar no nome de uma missão ainda abre Compartilhar, Abrir no Diário de Missões, Comparar Missões do Grupo e a ação de destino da janela de registro.
-- Os novos rótulos das dicas estão traduzidos para todos os idiomas compatíveis. Os detalhes da missão refletem seu próprio progresso, não a etapa da missão do remetente.
+- Passe o cursor pelo nome no registro QT para ver seu estado, possibilidade de compartilhar, ID e objetivos locais ao lado do cursor. Os rótulos estão localizados, e os detalhes são do seu progresso, não da etapa do remetente.
+- Estado saiu do menu. Clicar ainda oferece Compartilhar, Abrir no diário, Comparar missões do grupo e escolher a janela de registro.
 
 ## 5.17.0
 
-Diga olá no bate-papo do QT, encontre parceiros de missões pela sua zona e descubra detalhes de jogadores e configurações mais claros.
+Converse pelo chat QT, anuncie sua procura por parceiros na zona e consulte detalhes e configurações com mais clareza.
 
-### Converse com outros jogadores do QuestTogether
+### Converse com outros usuários
 
-- Digite /qt <text>, ou escolha Enviar mensagem de bate-papo do QT no menu do minimapa. As conversas aparecem nos registros do QT e em balões acima de jogadores próximos com um ícone de balão de fala; os comandos de barra existentes continuam funcionando.
-- Escolha bate-papo Global (o padrão), Somente Zona, ou oculte totalmente o bate-papo do QT. Somente Zona exige uma localização compartilhada recente do remetente; Global não.
-- O novo canal QuestTogether funciona junto com QuestTogetherAnnounce1 durante a transição. O QT coloca ambos depois dos seus outros canais quando compatível, com QuestTogether primeiro; o bate-papo digitado usa apenas o novo canal.
+- Digite /qt <text> ou escolha Enviar mensagem de chat QT no minimapa. A conversa aparece nos registros e nas bolhas próximas com um ícone de fala; os comandos existentes continuam funcionando.
+- Global é o padrão. Também é possível escolher Apenas zona ou ocultar o chat QT. Apenas zona exige uma localização recente compartilhada pelo remetente; Global não.
+- Na transição, QuestTogether funciona junto de QuestTogetherAnnounce1. Quando permitido, ficam depois dos outros canais, com QuestTogether primeiro. O chat digitado usa somente o novo canal.
 
-### Encontre parceiros de missões
+### Divulgue que procura parceiros
 
-- Ativar Procurando parceiros de missões anuncia sua busca por toda a sua zona com um ícone QT com brilho dourado e um sorriso. A entrega por toda a zona exige compartilhamento de localização e respeita as preferências de anúncio; desativar permanece silencioso.
-- Controle essas mensagens em O que anunciar. Uma recarga de 30 segundos limita anúncios repetidos, enquanto seu status e brilho ainda são atualizados imediatamente. Você também pode escolher parar de procurar automaticamente ao entrar em um grupo; isso começa desativado.
-- Shift-clique no botão do minimapa para alternar sua busca por parceiros. Um anel dourado mais brilhante e pulsante destaca sua busca ativa sem cortar o logotipo.
+- Ativar a procura anuncia sua disponibilidade na zona com um ícone QT dourado e um sorriso. O envio exige localização compartilhada e respeita as preferências de anúncio; desligar fica silencioso.
+- Controle os avisos em O que anunciar. Há 30 segundos entre anúncios repetidos, sem atrasar mudanças de estado ou brilho. Parar de procurar ao entrar em grupo é uma opção inicialmente desligada.
+- Shift-clique no botão do minimapa alterna a procura. Um anel dourado pulsante mais forte destaca o estado sem cortar o logo.
 
-### Escolha seu alcance e veja mais detalhes dos jogadores
+### Alcance e informações dos jogadores
 
-- O Alcance Próximo agora vai de 5% até Zona Inteira, com padrão de 25%. Ele dimensiona a distância pela sua zona atual; membros do grupo e jogadores diretamente visíveis mantêm o comportamento existente.
-- Passe o mouse sobre nomes nos registros do QT para ver a mesma dica aprimorada dos pontos no mapa: nome colorido pela classe, nível, raça, classe, emblema da facção, status de parceiro, missão rastreada quando disponível e versão do QT. As dicas de nome agora aparecem ao lado do cursor.
-- A dica do seu próprio nome agora mostra sua missão super-rastreada atual enquanto procura parceiros. Clientes atualizados anunciam versões aproximadamente a cada 40 segundos usando as mensagens de pulsação existentes; clientes mais antigos mantêm a programação anterior.
+- Alcance próximo vai de 5% a Zona inteira, com 25% por padrão. A distância acompanha o tamanho da zona atual; integrantes do grupo e jogadores diretamente visíveis mantêm suas regras.
+- Nomes no registro mostram o mesmo tooltip dos pontos, junto ao cursor: nome na cor da classe, nível, raça, classe, facção, procura por parceiros, missão acompanhada disponível e versão QT.
+- Seu próprio tooltip mostra a missão selecionada para navegação enquanto procura parceiros. Clientes atualizados informam a versão aproximadamente a cada 40 segundos nos avisos periódicos existentes; os antigos mantêm a frequência anterior.
 
-### Controles e anúncios mais claros
+### Controles e anúncios
 
-- A dica do minimapa agora mostra sua versão do QT, status de parceiro, escopo do bate-papo, contagem de missões observadas, alcance próximo e status de compartilhamento de localização.
-- Os controles das configurações agora têm explicações traduzidas ao passar o mouse, incluindo menus suspensos, controles deslizantes, ações de perfil e controles de cor.
-- Quando seu cliente não consegue resolver um título de missão localizado, os anúncios preservam o texto original do remetente tanto nos registros quanto nos balões, em vez de mostrar um número genérico de missão. A renderização localizada é retomada em anúncios posteriores assim que o título estiver disponível.
+- O tooltip do minimapa resume versão, procura, alcance do chat, quantidade de missões acompanhadas, alcance próximo e compartilhamento de localização. Menus, controles deslizantes, ações de perfil e cores ganham explicações localizadas ao passar o cursor.
+- Se faltar um título local, registros e bolhas preservam o texto do remetente em vez de um número genérico de missão. Anúncios posteriores voltam ao idioma local quando o título fica disponível.
 
 ## 5.16.7
 
-Leia as mesmas notas de lançamento do QuestTogether dentro do jogo, no Discord e no seu idioma preferido nos arquivos de changelog.
+Leia as mesmas novidades no jogo, no Discord e nos arquivos do seu idioma.
 
-### Changelogs consistentes e multilíngues
+### Histórico multilíngue consistente
 
-- O changelog em inglês agora compartilha os mesmos resumos de lançamento e tópicos da janela de boas-vindas e dos anúncios no Discord.
-- Os arquivos de changelog estão disponíveis para todos os idiomas compatíveis, com o histórico de lançamentos traduzido existente e uma cópia preservada das notas antigas em inglês escritas manualmente.
-- As verificações de lançamento mantêm os arquivos de changelog sincronizados com as notas e traduções canônicas.
+- O arquivo inglês compartilha resumos e tópicos com as boas-vindas e o Discord. Todos os idiomas compatíveis têm arquivos com o histórico já traduzido, e as notas inglesas antigas escritas à mão ficam preservadas.
+- Verificações de publicação mantêm os arquivos sincronizados com as notas canônicas e os textos localizados.
 
 ## 5.16.6
 
-Veja rapidamente quando você está procurando parceiros para fazer missões.
+Veja de relance se está procurando parceiros.
 
-### Um lembrete brilhante no minimapa
+### Lembrete no minimapa
 
-- Seu botão do QuestTogether no minimapa agora pulsa com o mesmo brilho dourado do logotipo das placas de nome dos jogadores enquanto Procurando Parceiros para Missões está ativado.
-- O brilho acompanha seu status de parceiro e para quando o QT é desativado ou quando o botão do minimapa está oculto. Seu botão e logotipo mantêm o tamanho atual.
+- O botão QT pulsa com o mesmo brilho dourado das placas enquanto a procura está ativa. O brilho acompanha seu estado e para ao desativar QT ou ocultar o botão. Botão e logo mantêm o tamanho.
 
 ## 5.16.5
 
-Um prefixo mais curto mantém os anúncios do grupo compactos.
+Um prefixo menor deixa os anúncios mais compactos.
 
-### Anúncios compactos para o grupo
+### Chat do grupo
 
-- O progresso da missão enviado aos membros do grupo sem QuestTogether agora começa com [QT] em vez de [QuestTogether].
-- Os anúncios ainda respeitam o limite de mensagens do chat e preservam caracteres completos em todos os idiomas.
+- O progresso enviado a integrantes sem QuestTogether passa a usar [QT] em vez de [QuestTogether]. O limite do chat é respeitado sem cortar caracteres de nenhum idioma.
 
 ## 5.16.4
 
-Mantenha suas configurações de bolha ao sair do Modo de Edição e encontre companheiros de missão próximos em mapas lotados.
+A bolha preserva os ajustes ao sair do modo de edição, e mapas cheios dão preferência a jogadores próximos.
 
-### Configurações de bolha continuam salvas
+### Ajustes da bolha preservados
 
-- Fechar o Modo de Edição do HUD agora preserva o tamanho da fonte, a duração de exibição e a posição da sua bolha do QT em vez de revertê-los.
-- O painel de bolha do QT agora tem seu próprio botão Salvar Alterações e mensagem de estado salvo. As configurações se aplicam automaticamente; Salvar Alterações define o ponto ao qual Reverter Alterações retorna.
-- Depois de salvar e fazer mais ajustes, Reverter Alterações restaura suas últimas configurações salvas do QT.
+- Fechar modo de edição do HUD mantém tamanho de fonte, duração e posição da bolha QT. O painel tem Salvar alterações e uma indicação de estado salvo. Mudanças são aplicadas automaticamente; Salvar define o ponto restaurado por Reverter alterações, inclusive após novos ajustes.
 
-### Jogadores próximos têm prioridade
+### Quem está perto tem prioridade
 
-- Quando mais de 128 pontos elegíveis disputam espaço no mapa ou minimapa, os jogadores mais próximos têm prioridade com base na distância do seu personagem.
-- Quando o cache de 512 localizações fica cheio, jogadores mais próximos são mantidos antes de chegadas mais distantes. Mover e aplicar zoom no mapa não alteram a prioridade de proximidade.
-- Essas mudanças mantêm os limites existentes de pontos e de cache sem enviar mensagens de comunicação adicionais.
+- Quando mais de 128 pontos disputam a exibição, os dois mapas priorizam a distância ao personagem. Ao atingir 512 locais guardados, os próximos são preservados antes de novas entradas distantes. Arrastar ou ampliar o mapa não muda essa prioridade.
+- Os limites continuam iguais, sem mensagens de comunicação adicionais.
 
 ## 5.16.3
 
-Encontre as configurações de que você precisa com mais facilidade e veja suas preferências do QuestTogether de relance.
+As configurações ficam organizadas por atividade, com um resumo mais fácil de consultar.
 
-### Configurações organizadas em torno de como você joga
+### Encontre a opção certa
 
-- Grupos e Compartilhamento substitui Diversos, reunindo disponibilidade de parceiros, solicitações de entrada e aprovações de compartilhamento de missões.
-- Emotes de comemoração agora ficam em Onde Anunciar. A visibilidade no minimapa fica em Geral na página principal, com ferramentas de depuração e nova varredura do registro de missões juntas em Solução de Problemas.
-- Comparar Missões do Grupo e Encontrar Parceiros de Missões agora são as primeiras Ações Rápidas. Suas preferências existentes são preservadas.
+- Grupos e compartilhamento substitui Diversos e reúne disponibilidade para parceiros, pedidos de entrada e aprovação de missões. Comemorações passam para Onde anunciar.
+- A visibilidade do minimapa fica em Geral na página inicial; depuração e nova leitura do diário ficam em Solução de problemas. Comparar missões e Encontrar parceiros lideram as ações rápidas. Preferências existentes são mantidas.
 
-### Um Status Rápido mais útil
+### Estado rápido mais completo
 
-- Veja seu status de parceiro, compartilhamento de localização e preferências de exibição, aprovações de solicitações, saída de anúncios e configurações de placas de identificação de missões e jogadores nas seções vinculadas.
-- Verifique seu perfil ativo, a versão instalada e qualquer versão mais recente detectada. Quando o QT estiver desativado, o resumo identifica claramente as configurações como preferências salvas.
-- Clique no cabeçalho de uma seção para abrir suas configurações. O resumo se expande para caber no texto e permanece atualizado enquanto a página estiver aberta.
+- Seções com links mostram busca de parceiros, compartilhamento e exibição de localização, aprovações, saídas dos anúncios e placas. O resumo inclui perfil ativo, versão instalada e versão mais nova detectada. Com QT desligado, informa que são preferências salvas.
+- Clique no título de uma seção para abrir suas opções. O resumo cresce conforme o texto e permanece atualizado enquanto a página estiver aberta.
 
 ## 5.16.2
 
-Reconheça jogadores do QuestTogether pelos tooltips deles e encontre parceiros de missões com mais facilidade.
+Tooltips ajudam a reconhecer usuários QT, e o brilho fica mais fácil de perceber.
 
-### Tooltips de jogadores do QuestTogether
+### Identificação no tooltip
 
-- Passe o mouse sobre o personagem, a barra de nome ou o quadro de unidade de um jogador QT para ver “Este jogador está usando QuestTogether.” Jogadores procurando parceiros para fazer missões também mostram esse status e um logotipo QT brilhante.
-- A seção QT acompanha a largura e a escala do tooltip, fica afastada da barra de vida e se move para cima do tooltip quando o espaço abaixo é limitado.
+- Passe o cursor sobre um personagem QT, sua placa ou seu quadro de unidade para ver que ele usa QuestTogether. Quem procura parceiros também mostra esse estado e um logo brilhante.
+- A seção QT acompanha largura e escala do tooltip, fica fora da barra de vida e vai para cima quando falta espaço embaixo.
 
-### Um brilho de parceiro mais visível
+### Brilho ampliado
 
-- O brilho dourado da barra de nome agora se estende duas vezes mais ao redor do logotipo, mantendo o logotipo em si do mesmo tamanho.
-- Ícones e brilhos refletem usuários reais do QT e o status atual deles de procura por parceiros.
+- O brilho dourado nas placas alcança o dobro da distância ao redor do logo, sem mudar seu tamanho. Ícones e brilhos correspondem a usuários QT reais e ao estado atual de procura de parceiros.
 
 ## 5.16.1
 
-Encontre parceiros de missões com mais facilidade e veja em qual missão eles estão focando.
+Identifique parceiros com mais facilidade e veja qual missão escolheram para acompanhar.
 
-### Um brilho de parceiro mais forte
+### Brilho dourado reforçado
 
-- Jogadores procurando parceiros para fazer missões agora têm um brilho dourado mais forte ao redor do logotipo do QT na placa de identificação, com uma pulsação suave. O logotipo em si permanece estável.
+- O logo QT na placa de quem procura parceiros ganha um brilho dourado mais forte, com pulsação suave. O logo permanece estável.
 
-### Veja a missão atual deles
+### Veja a missão selecionada
 
-- Passe o mouse sobre o ponto no mapa ou minimapa de um jogador procurando parceiros para fazer missões para ver a missão super-rastreada dele — a única missão selecionada para navegação. Ambos os jogadores precisam desta atualização.
-- As informações da missão são atualizadas a cada cerca de 20 segundos. Elas só são compartilhadas enquanto Procurando Parceiros para Missões e o compartilhamento de localização estiverem ativados.
-- Os nomes das missões usam o idioma do seu cliente quando disponível, com o título ou ID da missão do remetente como alternativa. Versões mais antigas do QT mantêm seus pontos e indicadores de parceiros existentes.
+- Passe o cursor pelo ponto no mapa ou minimapa de alguém que procura parceiros para ver a missão escolhida para navegação. Os dois jogadores precisam desta atualização.
+- Os dados se renovam aproximadamente a cada 20 segundos e só são enviados com a busca de parceiros e o compartilhamento de localização ativados.
+- O título usa seu idioma quando disponível; caso contrário, vale o título enviado ou o ID. Clientes antigos mantêm seus pontos e indicadores de parceiros.
 
 ## 5.16.0
 
-O QuestTogether agora oferece suporte a todos os idiomas do WoW e pode exibir as atualizações de missões de outros jogadores no idioma do seu cliente.
+Todos os idiomas do WoW passam a ter suporte no QT, e atualizações de missões de outros jogadores podem aparecer no idioma do seu cliente.
 
-### Jogue em mais idiomas
+### Mais idiomas
 
-- Menus, configurações e notas de atualização agora oferecem suporte a todas as localidades de idioma do WoW: inglês, alemão, francês, espanhol europeu, espanhol latino-americano, português do Brasil, russo, italiano, coreano, chinês simplificado e chinês tradicional.
-- O espanhol latino-americano agora tem seu próprio texto em vez de compartilhar o espanhol europeu.
+- Menus, configurações e notas atendem inglês, alemão, francês, espanhol europeu e latino-americano, português brasileiro, russo, italiano, coreano e chinês simplificado e tradicional. O espanhol latino-americano tem textos próprios.
 
-### Progresso de missão localizado
+### Progresso no seu idioma
 
-- Eventos de missão compatíveis de jogadores QT atualizados podem aparecer no idioma do seu cliente nos registros e balões de bate-papo do QT, usando títulos de missões locais quando disponíveis e os números reais de progresso do remetente.
-- Quando uma descrição traduzida do objetivo não puder ser escolhida com segurança, o QT usa um número de objetivo localizado com contagens, porcentagens, conclusão ou status de progresso.
-- Versões antigas do QT e o bate-papo público do grupo mantêm o texto do remetente. Quando o WoW não puder fornecer um título de missão local, o QT mantém o título de origem ou mostra o ID da missão. Eventos no mesmo idioma mantêm o texto nativo detalhado.
+- Eventos compatíveis enviados por QT atualizado podem aparecer em português nos registros e bolhas, com títulos locais disponíveis e os números reais do remetente.
+- Se não for seguro escolher a descrição traduzida de um objetivo, o QT mostra seu número localizado com quantidades, porcentagem ou estado de conclusão e progresso.
+- Versões antigas e o chat público do grupo preservam a redação de quem enviou. Sem título local fornecido pelo WoW, fica o título de origem ou o ID da missão. Eventos no mesmo idioma mantêm o texto detalhado.
 
-### Ajustes nos títulos de missões
+### Títulos mais consistentes
 
-- A comparação de missões agora dá preferência ao título local da missão quando disponível.
-- Títulos de missões localizados com pontuação não ASCII permanecem clicáveis com mais confiabilidade.
+- A comparação prefere o título local quando disponível, e links de nomes com pontuação fora de ASCII ficam mais confiáveis.
 
 ## 5.15.0
 
-Peça para entrar em um grupo de missões diretamente pelo menu de um jogador do QuestTogether.
+Peça para entrar em um grupo de missões pelo menu de um jogador QuestTogether.
 
-### Entre em um grupo de missões
+### Solicite uma vaga
 
-- Jogadores do QT que já estão em grupo agora mostram Pedir para entrar em vez de Convidar quando há informações recentes do grupo. Ambos precisam desta atualização; quem envia o pedido deve estar sem grupo.
-- O destinatário pode enviar um convite normal do WoW ou recusar. Ele precisa ter permissão para convidar e espaço em um grupo normal. Você ainda aceita o convite normal para entrar.
+- Se houver informações recentes de que a pessoa está em grupo, Pedir para entrar substitui Convidar. Você precisa estar sem grupo, e ambos devem ter esta atualização.
+- O destinatário pode recusar ou enviar um convite normal do WoW, desde que tenha permissão e espaço em um grupo comum. Você ainda precisa aceitar esse convite.
 
-### Convites automáticos opcionais
+### Aprovação automática opcional
 
-- Duas novas opções aprovam automaticamente pedidos de amigos do seu personagem ou de outros jogadores enquanto você procura parceiros de missão. Ambas vêm desativadas e aparecem no pedido e nas configurações Diversos. Amigos de conta Battle.net não estão incluídos.
-- Os pedidos expiram e respeitam a lista de ignorados, mudanças no grupo e restrições do jogo. O QT nunca sai do seu grupo atual nem aceita convites por você.
+- Duas opções aprovam pedidos de amigos de personagem ou de outros jogadores enquanto você procura parceiros. Ambas vêm desligadas e aparecem no pedido e em Diversos. Amigos de conta Battle.net não estão incluídos.
+- Pedidos expiram e respeitam ignorados, mudanças de grupo e restrições. QT nunca abandona seu grupo nem aceita convites por você.
 
 ## 5.14.1
 
-Os anúncios de grupo agora mostram o nome completo do QuestTogether.
+Os anúncios no grupo passam a mostrar o nome completo.
 
-### Bate-papo do grupo
+### Chat do grupo
 
-- O prefixo dos anúncios no bate-papo do grupo mudou de [QT] para [QuestTogether], facilitando que outros jogadores encontrem o addon.
+- O prefixo [QT] foi ampliado para [QuestTogether], facilitando encontrar o addon pelo nome.
 
 ## 5.14.0
 
-O QuestTogether agora fala mais cinco idiomas e ajuda você a manter informados os integrantes do grupo que não usam QT.
+Cinco novos idiomas chegam ao QT, junto com uma forma de avisar integrantes do grupo que não usam o addon.
 
 ### Jogue no seu idioma
 
-- A interface agora está disponível em alemão, francês, espanhol, português do Brasil e russo. O QuestTogether acompanha o idioma do jogo e usa o inglês quando necessário.
-- Configurações, menus, dicas, comparações de missões e notas de atualização estão traduzidos. Os nomes de missões e textos de progresso recebidos de outros jogadores permanecem no idioma original.
-- Encontre os anúncios de atualização traduzidos nos cinco canais de registro de alterações por idioma do nosso Discord.
+- A interface passa a oferecer alemão, francês, espanhol, português brasileiro e russo. O QT acompanha o idioma do jogo e usa inglês como alternativa.
+- Configurações, menus, tooltips, comparações e notas são localizados; nomes de missões e textos de progresso recebidos de outros jogadores permanecem no idioma original.
+- Há cinco canais de alterações por idioma no Discord para acompanhar os anúncios.
 
-### Mantenha todo o grupo informado
+### Avisos para quem não usa QT
 
-- Uma nova opção de canais de anúncios envia seus anúncios de eventos habilitados para o bate-papo do grupo quando algum integrante ainda não foi reconhecido como usuário do QT. Ela vem ativada e pode ser desativada nas configurações.
-- Também funciona em grupos de instância formados automaticamente. Não se aplica ao jogo solo nem a raides, e os anúncios de outros jogadores nunca são retransmitidos.
+- Uma opção em Onde anunciar envia seus eventos ativados ao chat do grupo quando algum integrante ainda não foi reconhecido como usuário QT. Ela vem ligada e pode ser desligada nas configurações.
+- Também funciona em grupos de instância formados automaticamente. Não se aplica sozinho nem em raides e nunca retransmite anúncios de outros jogadores.
 
 ## 5.13.1
 
-Esta atualização de manutenção melhora a recuperação das placas de missões, limpa balões e logotipos de jogadores obsoletos e mantém as configurações e a janela de depuração se comportando de forma consistente.
+As placas se recuperam melhor após restrições, bolhas e logos antigos são limpos, e configurações e janela de depuração ficam mais consistentes.
 
-### Placas de missões e indicadores de jogadores
+### Placas e presença
 
-- Ícones de missões e tons de vida se recuperam corretamente depois que visualizações restritas são fechadas. Varreduras de missões adiadas mantêm seu tempo de estabilização, e dados de tooltip temporariamente ausentes mantêm seu limite de novas tentativas.
-- Balões de anúncio são limpos quando a placa de um jogador desaparece ou é reutilizada durante o combate. Quadros protegidos ou proibidos aguardam uma limpeza segura.
-- Localizações no mapa e presença de jogadores se recuperam após desativar o QuestTogether, mudar de zona e ativá-lo novamente. Jogadores que saíram não recuperam mais um logotipo QT por causa de retiradas tardias de localização ou status de parceiro.
+- Ícones de missão e cores de vida voltam ao fechar visualizações restritas. Varreduras adiadas mantêm o tempo de estabilização, e dados de tooltip temporariamente ausentes preservam suas tentativas restantes.
+- Bolhas são retiradas quando uma placa desaparece ou é reutilizada em combate. Janelas protegidas ou proibidas aguardam uma limpeza segura.
+- Locais e presença se recuperam ao desativar QT, mudar de zona e reativar. Avisos atrasados de retirada de localização ou de busca de parceiros não fazem o logo de quem saiu reaparecer.
 
-### Correções de configurações e janela
+### Configurações e janelas
 
-- A caixa Procurando parceiros para fazer missões permanece sincronizada quando o status muda por comandos, menus ou configurações de perfil.
-- A janela de depuração termina com segurança gestos de arrastar e redimensionar interrompidos quando as restrições são suspensas, mesmo depois de ter sido ocultada.
+- A opção de procurar parceiros acompanha mudanças feitas por comandos, menus ou perfis.
+- Ao terminar uma restrição, a janela de depuração conclui com segurança arrastes e redimensionamentos interrompidos, mesmo se tiver sido ocultada.
 
-### Melhorias de confiabilidade
+### Verificações mais rigorosas
 
-- Testes reforçados detectam acesso a quadros proibidos mesmo quando um erro é capturado internamente.
-- As verificações de lançamento agora recusam publicar enquanto mudanças de implementação permanecem sem commit, ajudando a garantir que as correções realmente cheguem ao download.
+- Os testes detectam acesso a janelas proibidas mesmo quando o erro é capturado internamente.
+- A publicação é recusada enquanto houver alterações de implementação sem commit, para evitar que uma correção fique fora do pacote distribuído.
 
 ## 5.13.0
 
-Encontre parceiros para fazer missões de relance com pontos no mapa e logotipos de jogadores destacados, configurações de localização mais simples e lembretes quando outro jogador tiver uma versão estável mais recente do QuestTogether.
+Encontre parceiros pelos pontos e logos destacados, ajuste a localização com menos opções e saiba quando outro jogador estiver usando uma versão estável mais nova.
 
-### Encontre parceiros para fazer missões
+### Destaque para parceiros
 
-- Jogadores procurando parceiros para fazer missões têm um brilho dourado suave ao redor dos pontos do mapa e do minimapa coloridos pela classe.
-- O logotipo do QuestTogether na placa de identificação deles recebe um brilho dourado suave. Os destaques desaparecem quando o status é desativado ou expira.
-- As configurações de Localizações de Jogadores incluem Mostrar apenas jogadores procurando parceiros para fazer missões. Ela começa desativada e filtra ambos os mapas quando ativada.
-- A janela Novidades do jogo mostra logotipos e pontos de mapa normais e brilhantes lado a lado. Brilho dourado significa procurando parceiros para fazer missões.
+- Quem procura parceiros ganha um brilho dourado suave ao redor do ponto da classe nos dois mapas e do logo QT na placa. O brilho some quando o estado é desligado ou expira.
+- Localização de jogadores oferece «Mostrar apenas jogadores procurando parceiros». Ela vem desligada e, quando ativada, filtra os dois mapas.
+- A janela de novidades mostra pontos e logos normais ao lado das versões brilhantes. O dourado identifica quem procura parceiros.
 
-### Configurações de localização mais simples
+### Configuração simplificada
 
-- Compartilhar minha localização e Mostrar outros jogadores se aplicam ao mapa-múndi e ao minimapa.
-- Ambas as opções começam ativadas para novos perfis. Opções de não compartilhar localização existentes são preservadas ao atualizar.
+- Compartilhar minha localização e Mostrar outros jogadores passam a valer para mapa e minimapa. Ambas vêm ligadas em perfis novos; escolhas anteriores de não compartilhar são preservadas na atualização.
 
 ### Lembretes de nova versão
 
-- O QuestTogether percebe quando outro jogador informa uma versão estável mais recente do addon e imprime um lembrete de atualização na janela de chat do QuestTogether escolhida por você.
-- O lembrete é salvo entre personagens e aparece uma vez a cada recarregamento até você instalar a versão detectada ou uma mais recente. Versões alfa e beta não acionam lembretes.
-- Anúncios de versão são pequenos e pouco frequentes. O QuestTogether também reconhece informações de versão em respostas de ping existentes.
+- Se outro jogador informar uma versão estável mais recente, o QT avisa na janela escolhida para seus registros. O lembrete é compartilhado entre personagens e aparece uma vez por recarga até instalar a versão detectada ou uma superior. Alfa e beta não geram avisos.
+- Os anúncios de versão são pequenos e pouco frequentes. Informações já presentes nas respostas a ping também são aproveitadas.
 
 ## 5.12.0
 
-Encontre pessoas para fazer missões usando o novo status Procurando parceiros para fazer missões. Esta atualização também melhora a visibilidade dos tooltips do minimapa e separa o comportamento do Modo de Guerra e dos reinos do Retail do Forever.
+O novo estado Procurando parceiros de missão ajuda a encontrar companhia. Pontos e tooltip do minimapa também melhoram, com tratamento próprio para reinos e Modo de Guerra no Retail e no Forever.
 
-### Procurando parceiros para fazer missões
+### Mostre que procura parceiros
 
-- Informe a outros usuários do QuestTogether que você quer companhia. Seu status aparece no menu do seu jogador e nos tooltips dos pontos do mapa; ele não ativa compartilhamento de localização nem envia convites.
-- Alterne o status pelo menu do minimapa, Configurações > Diversos ou /qt lfg. Use /qt lfg on, off ou status para definir ou verificar. Ele começa desativado e é salvo por perfil.
-- O status de parceiro expira quando as atualizações param. Jogadores ignorados são excluídos, e desativar o QuestTogether pausa seu anúncio.
+- Seu estado aparece no menu do jogador e nos tooltips dos pontos, sem ativar localização ou enviar convites. Alterne pelo minimapa, Configurações > Diversos ou /qt lfg. Use /qt lfg on, off ou status para definir ou consultar. Ele vem desligado e é salvo por perfil.
+- O aviso expira sem atualizações, exclui ignorados e fica pausado quando QuestTogether é desativado.
 
 ### Retail e Forever
 
-- O Forever não mostra mais o Modo de Guerra nos tooltips dos pontos de jogadores, nos detalhes de localização de missões nem na saída de ping. Pings do Forever também omitem rótulos de reino, preservando os nomes completos dos jogadores.
-- Atualizações de missões próximas no Forever não exigem mais informações de Modo de Guerra do Retail. Os pontos no mapa permanecem visíveis entre fases para que você encontre pessoas com quem formar grupo.
-- O Retail usa o estado ativo do Modo de Guerra quando disponível. Modo de Guerra desconhecido ou incompatível não é mais informado como Desativado.
+- Forever não mostra mais Modo de Guerra nos pontos, locais de missões ou respostas a ping. Os pings também omitem reinos, preservando nomes completos. Atualizações próximas deixam de depender do Modo de Guerra do Retail; pontos continuam visíveis entre fases para facilitar a formação de grupo.
+- No Retail, vale o estado ativo do Modo de Guerra quando disponível. Um estado desconhecido ou incompatível deixa de ser apresentado como desligado.
 
-### Pontos de jogadores mais estáveis
+### Pontos mais estáveis
 
-- Coordenadas brevemente ausentes não removem mais seu ponto imediatamente. As últimas posições informadas permanecem por até dois minutos, e informes mais antigos mostram a idade no tooltip. Opções de não compartilhar ainda são retiradas imediatamente quando a comunicação está disponível.
-- Transmissões de movimento são limitadas a uma vez a cada dez segundos, reduzindo o tráfego de localização. Batimentos estacionários continuam a cada vinte segundos para manter clientes mais antigos compatíveis.
-- O cache de localização agora mantém até 512 jogadores. Cada mapa ainda desenha no máximo 128 pontos visíveis, e jogadores fora do mapa exibido não consomem mais esse limite de desenho.
+- Uma ausência breve de coordenadas mantém a última posição por até dois minutos; o tooltip informa há quanto tempo ela foi recebida. Desativar o compartilhamento ainda retira a posição imediatamente quando a comunicação permite.
+- Movimento é enviado no máximo a cada dez segundos. Parado, o aviso continua a cada vinte segundos para manter a compatibilidade com versões antigas.
+- A memória guarda até 512 jogadores, e cada mapa desenha até 128 pontos visíveis. Jogadores fora do mapa exibido não ocupam esse limite de desenho.
 
-### Logotipos de jogadores confiáveis
+### Logos nas placas
 
-- Corrige logotipos ausentes nas placas de identificação de jogadores aliados nos clientes Forever e Retail atuais lendo a configuração atual de visibilidade de jogadores aliados.
-- Logotipos posicionados à esquerda se movem para fora para abrir espaço para bônus visíveis e depois retornam à posição normal quando os bônus desaparecem.
-- Todas as mensagens compatíveis do QuestTogether agora identificam seu remetente. Um cache limitado lembra jogadores durante a sessão atual da IU, então batimentos perdidos não removem mais seus logotipos. Saídas explícitas e jogadores ignorados ainda são removidos; nenhuma mensagem extra é enviada.
+- O QT consulta a opção atual de placas amistosas para corrigir logos ausentes nos clientes atuais Retail e Forever. Logos à esquerda se afastam dos benefícios visíveis e retornam quando eles somem.
+- Mensagens QT compatíveis identificam o remetente. Uma memória limitada por sessão da interface mantém o logo mesmo quando faltam avisos periódicos, sem mensagens extras. Saídas explícitas e ignorados continuam sendo removidos.
 
-### Polimento do minimapa
+### Tooltip do minimapa
 
-- O tooltip do minimapa do QuestTogether agora usa uma camada de tooltip independente para poder aparecer sobre a IU da barra de ações. Ele se oculta quando o botão fica indisponível ou as restrições começam.
+- Uma camada independente permite que o tooltip QT apareça por cima das barras de ação. Ele some ao começar uma restrição ou quando o botão fica indisponível.
 
 ## 5.11.0
 
-O QuestTogether agora adiciona localizações de jogadores, logotipos nas placas de jogadores, comparações de missões direcionadas e feedback e suporte mais fáceis pelo Discord. As configurações permitem escolher o que você compartilha e o que vê enquanto o progresso de missões permanece coordenado com outros usuários do QuestTogether.
+Esta versão traz localização de jogadores, logos nas placas, comparações individuais e acesso ao suporte pelo Discord. Nas configurações, você escolhe o que compartilha e o que quer ver ao acompanhar missões com outros usuários QT.
 
-### Encontre jogadores do QuestTogether por perto
+### Encontre outros usuários QT
 
-- Mostre o logotipo de pergaminho ao lado de jogadores aliados do QuestTogether quando as placas de identificação aliadas do WoW estiverem ativadas. Placas de Jogadores ficam ativadas por padrão, com a posição Esquerda espaçada; escolha Esquerda, Direita, Acima ou Prefixo sem mudar as cores da barra de vida.
-- Pontos de jogadores coloridos pela classe podem aparecer no mapa-múndi e no minimapa para jogadores que compartilham sua localização. Passe o mouse sobre um ponto para ver nome, facção, raça, classe e nível; clique nele para abrir o menu de jogador do QuestTogether.
-- Localizações de Jogadores tem controles separados de compartilhamento e visualização para o mapa-múndi e o minimapa, e todos os quatro começam ativados. A presença dos logotipos nas placas de jogadores pode continuar mesmo quando ambos os controles de compartilhamento de localização estão desativados.
-- As localizações são atualizadas periodicamente e desaparecem quando expiram. Ambos os jogadores precisam do addon atualizado; um ponto não garante que vocês compartilhem a mesma fase ou camada.
+- Com as placas amistosas do WoW ativadas, jogadores QT mostram o pergaminho. Placas de Nome dos Jogadores vem ativado, à esquerda com espaçamento. Também é possível escolher direita, acima ou prefixo sem alterar as cores das barras de vida.
+- Pontos com a cor da classe aparecem no mapa e minimapa para quem compartilha localização. Passe o cursor para ver nome, facção, raça, classe e nível; clique para abrir o menu do jogador.
+- Localização de jogadores separa compartilhar e visualizar em cada mapa, com as quatro opções ativadas por padrão. A presença usada pelos logos pode continuar mesmo com as duas opções de compartilhar localização desligadas.
+- As posições são renovadas periodicamente e desaparecem ao expirar. Os dois jogadores precisam do addon atualizado; um ponto não garante a mesma fase ou camada.
 
-### Compare um jogador ou o grupo inteiro
+### Compare uma pessoa ou todo o grupo
 
-- A ação Comparar Missões do menu de jogador agora compara apenas você e o jogador selecionado, incluindo pares do QuestTogether alcançáveis fora do grupo. A comparação do grupo inteiro continua disponível pelo menu do minimapa, menus de nomes de missões e /qt compare.
-- Compartilhamento de missões e pedidos de compartilhamento continuam sendo apenas para o grupo. Comparações direcionadas explicam quando um grupo é necessário para compartilhar e quando o jogador selecionado precisa do QuestTogether para responder.
-- Se um pedido de compartilhamento já estiver aguardando outro jogador, a comparação agora mostra por quem está esperando depois que você troca de alvo.
+- Comparar missões no menu de um jogador passa a comparar apenas você e ele, inclusive fora do grupo se o QT dele puder responder. A comparação completa continua no minimapa, nos menus de missão e em /qt compare.
+- Compartilhar e pedir missões continuam restritos ao grupo. A comparação individual explica quando é preciso formar grupo para compartilhar ou quando o outro jogador precisa instalar QT para responder.
+- Ao trocar o jogador selecionado, pedidos de compartilhamento pendentes mostram de quem se aguarda resposta.
 
-### Feedback e suporte
+### Fale pelo Discord
 
-- A janela de boas-vindas e a página principal de configurações agora incluem Discord — Feedback e Suporte. Ela abre um convite copiável quando disponível, ou imprime o convite no chat se a janela de link não puder abrir.
+- As boas-vindas e a página principal de configurações incluem Discord: comentários e suporte. A opção abre um convite copiável ou mostra o convite no chat se a janela estiver indisponível.
 
-### Correções e polimento
+### Correções
 
-- Jogadores ignorados agora são filtrados de forma mais completa. Novos registros, balões, pontos, comparações e trabalhos de compartilhamento são suprimidos, enquanto balões e localizações existentes são limpos quando a lista de ignorados muda.
-- Corrigidas placas de missões falsas causadas por limites de tooltip indisponíveis que correspondiam ao texto de objetivo de outra missão.
-- Desativar o compartilhamento do mapa ou minimapa agora tenta novamente a atualização após falhas temporárias de comunicação. Desativar ambas as opções de compartilhamento também remove detalhes de localização de outras atualizações do addon.
-- Logotipos de jogadores são limpos corretamente quando a presença de um jogador expira pouco antes de ele sair. Sussurrar a partir de pontos do mapa abre sua janela de chat, e mudar o destino do registro em Configurações fica indisponível durante restrições.
+- Ignorados deixam de gerar registros, bolhas, pontos, comparações e pedidos de compartilhamento. Bolhas e posições existentes também são limpas quando a lista muda.
+- Foram corrigidas placas falsas causadas por limites ilegíveis de tooltip que permitiam confundir o texto de outra missão.
+- Desligar o compartilhamento no mapa ou minimapa tenta avisar novamente após falhas temporárias de comunicação. Desligar ambos também retira a localização dos outros dados enviados pelo addon.
+- Logos são retirados quando a presença expira pouco antes da saída. Sussurrar por um ponto abre o chat; alterar o destino do registro nas configurações fica indisponível durante restrições.
 
 ## 5.10.0
 
-O QuestTogether compartilha o progresso de missões com seu grupo e jogadores próximos. Use o botão do minimapa para configurações, comparações de missões do grupo, seu diário de missões e estas notas mais recentes.
+O QuestTogether compartilha o progresso das missões com seu grupo e jogadores próximos. O botão do minimapa dá acesso às configurações, comparações, diário e notas da versão.
 
-### Compare e compartilhe missões do grupo
+### Compare missões com o grupo
 
-- Abra Comparar Missões do Grupo pelo minimapa ou pelos menus de missões e jogadores, ou digite /qt compare. Veja quem tem cada missão e até onde todos progrediram.
-- Todas as missões do grupo aparecem por padrão. Marque Ocultar missões que eu não tenho para focar nas missões do seu próprio diário.
-- Peça missões compartilháveis aos membros do grupo usando o addon atualizado. Pedidos solicitam permissão por padrão; compartilhamento automático é uma configuração opcional.
-- Comparações se recuperam após restrições de mapa ou combate. Atualizações substituem respostas mais antigas, e recargas e falhas de pedidos explicam quando você pode tentar novamente.
+- Abra Comparar missões do grupo pelo minimapa, pelos menus de missões e jogadores ou com /qt compare. Confira quem tem cada missão e o progresso de todos. Todas aparecem por padrão; «Ocultar missões que não tenho» restringe a lista ao seu diário.
+- Peça missões compartilháveis a integrantes com o addon atualizado. Por padrão, o envio depende da permissão de quem recebe o pedido; o compartilhamento automático é opcional.
+- Comparações se recuperam após restrições do mapa ou de combate. Atualizar substitui respostas antigas, e avisos de espera e falha explicam quando tentar novamente.
 
-### Atalhos e menus de missões
+### Atalhos nos menus
 
-- Arraste o botão em forma de pergaminho do minimapa para reposicioná-lo. O menu dele abre configurações, comparações, o diário de missões, notas de atualização e o controle de destino da janela de registro. Oculte-o pelo menu e restaure-o nas configurações de Diversos.
-- Menus de nomes de missões oferecem Status, Compartilhar, Abrir no Diário de Missões e Comparar Missões do Grupo. Ações de compartilhamento e diário verificam novamente a missão atual e as restrições ao serem clicadas.
-- Links de status de missões mantêm seus títulos intactos depois que uma missão sai do seu registro. A caixa de compartilhamento automático agora segue configurações salvas e mudanças de perfil.
+- Arraste o pergaminho do minimapa para reposicioná-lo. O menu abre configurações, comparações, diário, notas e a escolha da janela de registro. O botão pode ser ocultado ali e restaurado em Diversos.
+- O menu da missão oferece Estado, Compartilhar, Abrir no diário e Comparar missões do grupo. Compartilhar e abrir o diário conferem novamente a missão e as restrições no momento do clique.
+- Links de estado mantêm o título depois que uma missão sai do diário. A opção de compartilhamento automático acompanha as preferências salvas e as trocas de perfil.
 
-### Ajuda e notas mais recentes
+### Ajuda e novidades
 
-- Leia as boas-vindas e as notas de atualização mais recentes em uma janela própria em vez de mensagens repetidas no chat. Escolha Notas de Atualização no menu do minimapa ou na página principal de Configurações, ou use /qt notes, /qt changelog ou /qt patchnotes.
-- A janela de notas abre automaticamente para atualizações maiores e menores. Atualizações de correção ainda incluem notas novas sem abrir a janela automaticamente.
-- Use /qt help para comandos normais e /qt help debug para prévias, diagnósticos e comandos de desenvolvedor.
+- As boas-vindas e notas ficam em uma janela própria, sem mensagens repetidas no chat. Abra pelo minimapa, pela página principal de configurações ou por /qt notes, /qt changelog ou /qt patchnotes.
+- A janela abre automaticamente em versões principais e secundárias. Correções também têm notas novas, mas não abrem a janela por conta própria.
+- /qt help lista os comandos comuns; /qt help debug mostra prévias, diagnósticos e comandos de desenvolvimento.
 
 ## 5.9.2
 
-Clique com o botão esquerdo ou direito no nome de uma missão no registro do QuestTogether para abrir seu menu, com Status primeiro e Compartilhar em segundo. Compartilhar usa a entrada atual do registro de missões sem alterar a missão selecionada pela Blizzard, e fica indisponível quando você está solo, quando há restrição ou quando a missão não pode ser compartilhada. Após um separador, a opção final move os registros do QuestTogether entre a janela principal e janelas separadas, correspondendo ao menu de nome do jogador do QT.
+Clique com o botão esquerdo ou direito no nome de uma missão no registro QT para abrir o menu. Estado vem primeiro, Compartilhar depois; a opção final, separada das demais, alterna os registros entre a janela principal e uma janela própria, como no menu de jogadores.
 
-### Alterações nesta versão
+### Mudanças nesta versão
 
-- Torna os nomes de missões em mensagens de status clicáveis, incluindo títulos de fallback dos registros de outros jogadores. Preserva links de missões existentes ao formatar comparações de missões concluídas, para que os detalhes de status não se tornem parte de um segundo link quebrado.
-- Validação: 521 testes passam em ordem normal e reversa no Lua 5.1 e 5.2. Todos os seis perfis de API de cliente, verificações de sintaxe Lua e shell, verificação exata da libchev e verificações de diff passam. O comportamento de menus no cliente ao vivo, a entrega de compartilhamento de missões e a validação de taint no nível do motor permanecem separados.
+- Compartilhar usa a entrada atual do diário sem alterar a missão selecionada pela Blizzard. A ação fica indisponível sem grupo, sob restrições ou quando a missão não pode ser compartilhada.
+- Os nomes das missões nos avisos de estado também são clicáveis, inclusive títulos obtidos do registro de outro jogador. Comparações concluídas preservam os links existentes para que o texto do estado não forme um segundo link quebrado.
+- Passaram 521 testes nas duas ordens em Lua 5.1 e 5.2, seis perfis de API, sintaxe Lua e shell, revisão exata da libchev e diferenças. Menus no cliente, entrega de missões compartilhadas e taint do motor continuam exigindo verificação separada.
 
 ## 5.9.1
 
-Corrige o rastreamento de missões, a visibilidade de placas de missões, anúncios de áreas de tarefa, confiabilidade da comunicação e ações do usuário identificadas na auditoria abrangente.
+A auditoria geral resultou em correções no acompanhamento de missões, nas placas, nos anúncios de áreas de tarefas, na comunicação e nas ações do usuário.
 
-### Alterações nesta versão
+### Mudanças nesta versão
 
-- Impede que blocos de missões de dicas não relacionadas tomem emprestado texto de objetivo compartilhado. Preserva progresso válido do grupo e recupera placas após alterações de mapa, instância, lista do grupo e missões.
-- Mantém missões recém-aceitas e varreduras iniciais pendentes até que dados legíveis cheguem. Preserva marcos de objetivos, classificação de tarefas e estado de localização desconhecida sem saídas falsas ou entradas duplicadas.
-- Melhora anúncios localizados e comparações de missões, incluindo limites de payload, ritmo, novas tentativas, cancelamento e relatório de possibilidade de compartilhamento.
-- Respeita falhas nativas de ponto de referência sem rastrear um marcador antigo. Recusa cliques restritos enquanto desativado, em vez de perder trabalho enfileirado.
-- Faz com que testes de balão sejam pré-visualizações locais e aceita nomes completos do Forever ou nomes entre aspas, preservando a identidade exata do jogador.
-- Corrige ativação/desativação e tratamento de perfis, abertura do Modo de Edição do HUD, emotes de comemoração aprovados e diagnósticos.
-- Fortalece o isolamento de testes seguro para cliente ao vivo e a cobertura de regressão, corrige suposições de teste incorretas e faz o CI propagar falhas de sintaxe Lua.
-- Validação: 516 testes passam em ordem normal e reversa no Lua 5.1 e 5.2. Todos os seis perfis de API de cliente, verificações de sintaxe, verificação exata da libchev e verificações de diff passam. A renderização no cliente ao vivo, a entrega entre dois clientes e a validação de taint no nível do motor permanecem separadas.
+- Blocos de missões sem relação no tooltip deixam de aproveitar texto de objetivos compartilhados. O progresso válido do grupo é preservado, e placas se recuperam após mudanças de mapa, instância, integrantes ou missões.
+- Missões recém-aceitas e varreduras iniciais aguardam dados legíveis. Marcos de objetivos, classificação de tarefas e locais desconhecidos são mantidos sem saídas falsas ou entradas duplicadas.
+- Anúncios localizados e comparações melhoram no limite das mensagens, ritmo de envio, novas tentativas, cancelamento e indicação de compartilhamento disponível.
+- Se um ponto de destino nativo falha, o QT não continua seguindo um marcador antigo. Cliques restritos com o addon desativado são recusados sem perder tarefas pendentes. Testes de bolha viram prévias locais e aceitam nomes completos do Forever ou entre aspas, mantendo a identidade exata.
+- Foram corrigidos ativação e desativação, perfis, abertura de modo de edição do HUD, gestos de comemoração permitidos e diagnósticos. O isolamento dos testes no jogo e a cobertura de regressões melhoraram, premissas erradas foram corrigidas e o CI passou a propagar falhas de sintaxe Lua.
+- Passaram 516 testes nas duas ordens em Lua 5.1 e 5.2, seis perfis de API, sintaxe, verificação exata da libchev e diferenças. Aparência no cliente, entrega entre dois clientes e taint do motor continuam como validações separadas.
 
 ## 5.9.0
 
-Comemora seus aumentos de nível e os de jogadores do QuestTogether próximos com emotes sincronizados. Adiciona alternâncias separadas de emote de aumento de nível, ativadas por padrão, ao lado das configurações de emote de conclusão de missão em Diversos. Reações próximas respeitam o escopo de jogadores e as regras de proximidade existentes.
+Subidas de nível suas e de jogadores QT próximos ganham comemorações com gestos sincronizados. As opções independentes ficam em Diversos, junto às comemorações de missão, e vêm ativadas. As reações respeitam o alcance de jogadores e a proximidade já configurados.
 
-### Alterações nesta versão
+### Mudanças nesta versão
 
-- Lembra a conclusão confirmada de objetivos de missão por tipo de criatura, bem como por aparecimento individual. Mobs que aparecem durante o combate permanecem sem marcação quando os dados de dica estão indisponíveis, mesmo que um aparecimento anterior tenha sido armazenado em cache como necessário. Objetivos novos e inacabados podem restaurar o destaque; alterações no estado da missão limpam a memória de conclusão. Dados de dica parciais ou inacessíveis nunca são tratados como prova de que todos terminaram.
-- Limpa ícones de missão das placas de identificação e a coloração da vida imediatamente quando o tag de um mob é negado, inclusive durante o combate. Escuta alterações de posse e verifica novamente os tags em atualizações de vida e ameaça.
-- Detecta mobs de missão encontrados recentemente durante combate comum em mundo aberto usando dados legíveis da dica da unidade. Atualiza placas quando elas retornam de trás da câmera, tornam-se seu alvo ou recebem o cursor do mouse. Tenta novamente quadros atrasados, GUIDs e linhas de missão em dicas com um orçamento limitado por unidade, cancela trabalho obsoleto quando unidades são removidas e restaura coloração e ícone juntos. Preserva proteções de mapa, instância, dados inacessíveis e quadros protegidos; a descoberta em combate não invoca o Questie nem a interface oculta de dicas.
-- Validação: 374 testes offline passam em ordem normal e reversa no Lua 5.1 e 5.2. Seis perfis de API de cliente, verificações de sintaxe Lua, verificação exata de biblioteca e verificações de diff passam. Regressões do cache de conclusão reproduziram o bug antes da correção. A jogabilidade ao vivo e a validação de taint no nível do motor permanecem separadas.
+- Objetivos concluídos são lembrados por criatura individual e por tipo. Um inimigo que apareça em combate não recebe marca baseada num registro antigo de objetivo pendente se o tooltip estiver indisponível. Dados novos de objetivos ainda incompletos podem restaurar o destaque; mudanças no estado das missões limpam essa memória. Dados parciais ou inacessíveis nunca são prova de que todos terminaram.
+- Quando um inimigo deixa de conceder crédito, o ícone de missão e a cor da barra somem imediatamente, inclusive em combate. O QT acompanha mudanças de propriedade e confere novamente nas atualizações de vida e ameaça.
+- Em combate comum no mundo aberto, criaturas de missão novas são detectadas por tooltips legíveis. As placas atualizam ao voltar ao campo da câmera, selecionar a unidade ou passar o cursor. Há um limite por unidade para novas tentativas de obter janela, GUID ou linhas atrasadas; a remoção cancela o trabalho antigo. Cor e ícone voltam juntos. Permanecem as proteções de mapa, instância, dados inacessíveis e janelas protegidas, sem chamar Questie ou tooltips ocultos nessa descoberta.
+- Passaram 374 testes nas duas ordens em Lua 5.1 e 5.2, seis perfis de API, sintaxe, revisão exata da biblioteca e diferenças. As regressões da memória de conclusão reproduziam o erro antes da correção. Jogabilidade real e taint do motor ainda exigem verificação separada.
 
 ## 5.8.6
 
-Protege nomes de personagens, nomes de classes, títulos de missões e cores de classe personalizadas contra valores de API inacessíveis ou malformados. Valida dados opcionais de integração com TomTom e Questie antes de usá-los e para de ler linhas de dicas do Questie ao encontrar dados inacessíveis. Normaliza a visibilidade de balões e o estado do modo de edição para booleanos antes de passá-los aos controles da interface.
+Valores inacessíveis ou malformados deixam de comprometer nomes de personagens e classes, títulos de missões e cores de classe personalizadas. Dados opcionais do TomTom e do Questie são validados antes do uso; a leitura do tooltip do Questie para ao encontrar informações inacessíveis.
 
-### Alterações nesta versão
+### Mudanças nesta versão
 
-- Consolida o manipulador de evento de tela de carregamento, remove argumentos privados não usados e um ramo não usado de enumeração de restrição, e esclarece o tratamento de callbacks e valores retornados. Mantém intactos os fallbacks de clientes modernos/legados e a revisão exata da biblioteca privada.
-- Validação: 336 testes passam em ordem normal e reversa no Lua 5.1 e 5.2, com verificações de adaptadores expandidas em seis perfis de cliente. Novas regressões falham contra a implementação anterior. Análise Lua, verificação exata de biblioteca e verificações de diff passam. Revisados os diagnósticos restantes de Ketho WoW API/LuaLS, incluindo uma passagem separada sem mocks de cliente offline; achados retidos têm motivos específicos de compatibilidade, proteção, callback, biblioteca ou fixture. A validação de jogabilidade ao vivo no Retail e no Forever permanece separada.
+- Os estados de visibilidade das bolhas e de modo de edição são normalizados para booleanos antes de chegar aos controles. O tratamento da tela de carregamento foi unificado; argumentos privados e uma ramificação de restrições sem uso foram retirados, e o tratamento de callbacks e retornos ficou mais claro. Alternativas para clientes modernos e antigos e a revisão exata da biblioteca privada foram preservadas.
+- Passaram 336 testes nas duas ordens em Lua 5.1 e 5.2, além das verificações ampliadas de adaptadores nos seis perfis de cliente. As novas regressões reproduzem os erros no código anterior. Sintaxe, biblioteca e diferenças também passaram. Os avisos restantes de Ketho WoW API/LuaLS foram revisados, inclusive sem clientes simulados; cada aviso mantido tem motivo específico de compatibilidade, proteção, callback, biblioteca ou dados de teste. A validação no Retail e no Forever continua separada dos testes fora do jogo.
 
 ## 5.8.5
 
-Corrige a descoberta de tarefas/missões mundiais no mapa em clientes modernos lendo questID de C_TaskQuest.GetQuestsOnMap, mantendo a API legada e o campo questId para clientes mais antigos. Prefere C_ChatInfo.PerformEmote para que emotes de conclusão funcionem quando globais obsoletos estiverem desativados; lida com segurança com APIs de emote ausentes ou com falha.
+A descoberta de tarefas e missões mundiais no mapa foi corrigida nos clientes atuais: o QT lê questID de C_TaskQuest.GetQuestsOnMap e mantém a API antiga com questId nos clientes anteriores. As comemorações priorizam C_ChatInfo.PerformEmote, inclusive quando as funções globais obsoletas estão desativadas.
 
-### Alterações nesta versão
+### Mudanças nesta versão
 
-- Remove um cálculo não usado de assinatura da lista do grupo e variáveis locais não usadas. Estende verificações offline de cliente para cobrir APIs modernas e legadas de tarefas/emotes, precedência de API, dados de missão inacessíveis e APIs ausentes/com falha. Validação: 334 testes passam em ordem normal e reversa no Lua 5.1 e 5.2, além das verificações de API expandidas em seis perfis de cliente, análise Lua e verificação exata de biblioteca. A validação de jogabilidade no Retail e no Forever permanece separada das verificações offline.
+- APIs de gestos ausentes ou com erro são tratadas com segurança. Também foram removidos um cálculo sem uso da composição do grupo e variáveis locais desnecessárias.
+- Os testes cobrem APIs modernas e antigas de tarefas e gestos, precedência, dados inacessíveis e funções ausentes ou com falha. Passaram 334 casos nas duas ordens em Lua 5.1 e 5.2, verificações ampliadas de seis perfis de cliente, sintaxe e revisão exata da biblioteca. O funcionamento em partidas no Retail e no Forever ainda é uma validação separada.
 
 ## 5.8.4
 
-Manutenção do repositório: mantém notas de desenvolvimento local fora do código-fonte rastreado e dos pacotes de lançamento. O comportamento de jogabilidade não mudou.
+Organização do repositório, sem mudanças na experiência de jogo.
 
-### Alterações nesta versão
+### Mudanças nesta versão
 
-- Manutenção do repositório: mantém notas de desenvolvimento local fora do código-fonte rastreado e dos pacotes de lançamento. O comportamento de jogabilidade não mudou.
+- As anotações locais de desenvolvimento ficam fora dos arquivos versionados e dos pacotes distribuídos.
 
 ## 5.8.3
 
-Anuncia a versão instalada, clientes compatíveis e comando de configurações uma vez por login ou recarregamento da interface. Inclui links de feedback específicos do addon no CurseForge e GitHub; clicar em um link abre uma janela de cópia em estilo nativo. O comportamento de mensagens e a IU de cópia segura são compartilhados por meio da libchev privada 1.2.0. Se o registro de links ou a janela de cópia estiver indisponível, mostra a URL completa no chat. Um ajudante de boas-vindas indisponível não pode interromper a inicialização normal do addon.
+Ao entrar no jogo ou recarregar a interface, o QT informa uma vez a versão instalada, os clientes compatíveis e o comando das configurações. Os links próprios do CurseForge e do GitHub abrem uma janela com visual nativo para copiar o endereço.
 
-### Alterações nesta versão
+### Mudanças nesta versão
 
-- Validação: 334 testes passam nas duas ordens no Lua 5.1 e 5.2, com verificações de API de cliente, análise Lua e verificação exata do fornecedor da biblioteca. Simulações de fumaça do NoPoizen exercitam ambos os links de feedback em todos os sete perfis de cliente/conjunto de regras. A renderização ao vivo permanece uma verificação separada.
+- A libchev 1.2.0 compartilha o comportamento da mensagem e a janela segura de cópia. Se o registro dos links ou a janela estiver indisponível, o chat exibe a URL completa. Uma falha na mensagem de boas-vindas não interrompe a inicialização normal.
+- Passaram 334 testes nas duas ordens em Lua 5.1 e 5.2, as verificações de API, sintaxe e revisão exata da biblioteca. Simulações básicas do NoPoizen cobrem os dois links nos sete perfis de cliente ou regras. A aparência dentro do jogo precisa de verificação separada.
 
 ## 5.8.2
 
-Isola buscas de GUID da fixture de teste de jogadores próximos. Corrige duas falhas falsas em /qt test quando uma unidade real ocupa o token de placa de identificação usado pelas verificações de dica e ícone em cache. O comportamento das placas de identificação em jogo não mudou.
+Dois falsos erros de /qt test eram causados por uma unidade real ocupando o identificador de placa usado nos testes de tooltip e ícone em cache. As consultas de GUID dos testes agora ficam isoladas dos jogadores próximos; as placas durante o jogo não mudam.
 
-### Alterações nesta versão
+### Mudanças nesta versão
 
-- O ambiente offline agora inclui essa colisão de token e reproduz ambas as falhas sem a correção da fixture. Todos os 333 testes passam nas duas ordens no Lua 5.1 e 5.2 após a correção; seis perfis de API de cliente também passam. A confirmação em jogo permanece separada.
+- A simulação fora do jogo inclui essa colisão e reproduz os dois erros sem o ajuste. Com a correção, passam os 333 testes nas duas ordens em Lua 5.1 e 5.2, além dos seis perfis de API. A confirmação no cliente continua sendo uma etapa separada.
 
 ## 5.8.1
 
-Mostra o marcador de missão da Blizzard ao lado de QuestTogether na lista de AddOns em vez do ponto de interrogação padrão.
+Fica mais fácil reconhecer o QuestTogether na lista de addons.
 
-### Alterações nesta versão
+### Mudanças nesta versão
 
-- Mostra o marcador de missão da Blizzard ao lado de QuestTogether na lista de AddOns em vez do ponto de interrogação padrão.
+- O marcador de missão da Blizzard aparece ao lado do QuestTogether no lugar do ponto de interrogação padrão.
 
 ## 5.8.0
 
-Compatibiliza clientes Classic atuais com payloads corretos de aceitação de missão, fallbacks protegidos de API de objetivos, possibilidade de compartilhamento desconhecida informada com honestidade, metadados de variante e verificações de regressão de API em seis clientes. Preserva o comportamento do Retail/Forever e utilitários de depuração compartilhados.
+Esta versão atende aos clientes Classic atuais com dados corretos ao aceitar missões, alternativas seguras para consultar objetivos e metadados de cada variante. Quando não é possível determinar se uma missão pode ser compartilhada, o estado fica desconhecido. Retail, Forever e as ferramentas compartilhadas de depuração mantêm o comportamento anterior.
 
-### Alterações nesta versão
+### Mudanças nesta versão
 
-- Validação: 333 testes passam nas duas ordens no Lua 5.1 e 5.2, com seis perfis de cliente, análise Lua e verificações exatas de fornecedor de biblioteca privada. Verificações de fumaça de cliente NoPoizen e verificação de pacote também passam. A validação ao vivo dos novos adaptadores continua pendente.
-- Veja CLIENT_COMPATIBILITY.md para evidências de origem, escopo e limites de validação.
+- Foram verificados seis perfis de cliente. Passaram 333 testes nas duas ordens em Lua 5.1 e 5.2, análise de sintaxe e conferência exata da biblioteca privada, além dos testes básicos de cliente do NoPoizen e da verificação do pacote. Os novos adaptadores ainda aguardam testes no jogo.
+- As fontes, o alcance e os limites da validação estão em CLIENT_COMPATIBILITY.md.
 
 ## 5.7.7
 
-Mantém consoles de depuração sobrepostos e seus controles em um único grupo nativo de empilhamento por meio da libchev privada 1.1.3. Menus de categoria permanecem com seu console proprietário.
+A libchev 1.1.3 mantém consoles sobrepostos e seus controles no mesmo grupo de janelas nativo. O menu de categorias acompanha o console ao qual pertence.
 
-### Alterações nesta versão
+### Mudanças nesta versão
 
-- Por padrão, coloca ícones de objetivo de missão à esquerda da placa de identificação. Posições de ícones já salvas permanecem inalteradas.
-- Respeita a configuração “My Last Name” do Forever ao exibir o nome do seu personagem. Mantém visíveis os sobrenomes de outros jogadores, correspondendo ao escopo da configuração nativa. Usa nomes completos de forma consistente para comunicações, membros do grupo, correspondência de placas de identificação e ações sociais, preservando as chaves existentes de perfil e de posição de balões pessoais.
-- Corrige anúncios duplicados de missões locais causados por receber sua própria mensagem de canal em um formato diferente de nome completo. A cobertura de regressão exercita o anúncio local seguido por seus ecos de canal e grupo, incluindo outro personagem com o mesmo primeiro nome.
-- Validação: 331 testes passam nas duas ordens no Lua 5.1/5.2. A confirmação ao vivo do novo padrão de ícone e da interação entre múltiplas janelas permanece separada.
+- O padrão para novos ícones de objetivos é à esquerda da placa de nome. Posições já salvas são preservadas.
+- No Forever, seu nome segue a opção «My Last Name», sem esconder os sobrenomes dos outros jogadores. Nomes completos são usados de modo consistente na comunicação, no grupo, na identificação de placas e nas ações sociais; as chaves dos perfis e da posição da bolha pessoal não mudam.
+- Anúncios locais deixam de se repetir quando a cópia recebida pelo canal usa outra forma do nome completo. Os testes cobrem o anúncio original, os retornos pelo canal e pelo grupo e outro personagem com o mesmo primeiro nome.
+- Passaram 331 testes nas duas ordens em Lua 5.1/5.2. A posição inicial dos ícones e o uso de várias janelas ainda precisam de confirmação no cliente.
 
 ## 5.7.6
 
-Usa o mesmo console de depuração privado libchev 1.1.2 nos três addons, incluindo filtros de categoria/busca, controles de cópia, resultados de teste, relatórios de diagnóstico, registros de data/hora quando disponíveis e um único resumo final de teste. Corrige a arte esticada dos quadros nativos com limites de textura explícitos.
+A libchev 1.1.2 unifica o console privado dos três addons: filtros de categoria e busca, cópia, resultados de testes, diagnósticos, horários quando disponíveis e um único resumo final. Limites explícitos das texturas corrigem o desenho esticado da janela nativa.
 
-### Alterações nesta versão
+### Mudanças nesta versão
 
-- QuestTogether fornece seus próprios diagnósticos de missões e testes isolados, enquanto a biblioteca compartilhada controla o console e o comportamento genérico de depuração. Execute /qt test, /qt debug ou /qt diagnostics.
-- Validação: 324 testes passam nas duas ordens no Lua 5.1/5.2. O usuário confirmou a aparência corrigida do quadro dentro do jogo. Outras validações de restrições ao vivo e de jogabilidade permanecem separadas.
+- Use /qt test, /qt debug ou /qt diagnostics. O QuestTogether fornece seus diagnósticos de missões e testes isolados; a biblioteca cuida da janela e das ferramentas gerais de depuração.
+- Os 324 testes passaram nas duas ordens com Lua 5.1/5.2. O usuário confirmou a correção visual dentro do jogo. As demais verificações de restrições e comportamento durante o jogo continuam separadas.
 
 ## 5.7.6-beta.3
 
-QuestTogether 5.7.6-beta.3 atualiza o console de depuração compartilhado incorporado para libchev 1.1.1.
+A atualização para libchev 1.1.1 restaura no console compartilhado o visual das janelas nativas do WoW.
 
-### Alterações nesta versão
+### Mudanças nesta versão
 
-- Restaura a aparência de janela nativa no estilo do WoW no console compartilhado dos addons.
-- Remove a linha duplicada de resumo de teste, mantendo o resumo final no histórico limitado.
-- Mantém o comportamento comum de busca, categoria, cópia, rolagem, teste e diagnóstico, além das proteções de restrição existentes.
-- O usuário relatou que todos os 324 testes do QT passaram no Forever 1.60.1 build 70009 na beta.2. Os sete arquivos de teste carregados ao vivo do QT também foram auditados quanto a aritmética inválida; nenhum fixture de geração de NaN ou divisão por zero foi encontrado. Esse resultado anterior de teste ao vivo não valida esta nova alteração de aparência.
-- Depois de /reload, abra /qtd, execute /qt test e verifique a aparência da janela e o resumo único. A renderização ao vivo e o comportamento de restrição/taint desta revisão ainda precisam de verificação no cliente.
-- Validação: todos os 324 casos passam em ordem normal/inversa no Lua 5.1.5 e 5.2.4 reais, cada execução CLI emite um resumo, e o ZIP instalável extraído com 26 arquivos passa nas duas versões. Todos os 23 arquivos Lua são analisados; todas as 22 entradas TOC e o manifesto do fornecedor são verificados. As verificações de formatação e diff passam. Pin da biblioteca: 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. Nenhum CI do GitHub do QT está configurado; o CI da biblioteca upstream passou.
+- O resultado dos testes deixa de aparecer duas vezes. O resumo final continua no histórico limitado, e busca, categorias, cópia, rolagem, testes, diagnósticos e proteções contra restrições seguem como antes.
+- O relato de 324 testes aprovados no Forever 1.60.1, build 70009, era da beta.2 e não confirma esta alteração visual. Os sete arquivos de testes carregados pelo QT no jogo também foram auditados: não há casos que produzam NaN nem divisão por zero.
+- Após /reload, abra /qtd e execute /qt test para conferir o visual e a exibição de um único resumo. A renderização e o comportamento de restrições e taint desta revisão ainda precisam ser verificados no cliente.
+- Os 324 casos passaram em ordem normal e inversa nos intérpretes Lua 5.1.5 e 5.2.4. Cada execução pela linha de comando emite um resumo, e o ZIP extraído com 26 arquivos passou em ambos. Foram verificados os 23 arquivos Lua, as 22 entradas do TOC, o manifesto de dependências, a formatação e as diferenças. Revisão da biblioteca: 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. O QT ainda não tem CI configurado no GitHub; o CI da biblioteca de origem passou.
 
 ## 5.7.6-beta.2
 
-QuestTogether 5.7.6-beta.2 substitui sua janela de depuração separada pelo console compartilhado libchev v1.1 usado entre os addons. A biblioteca incorporada está incluída; nenhuma instalação separada é necessária.
+O console da libchev v1.1 assume o lugar da janela de depuração separada do QT. É o mesmo console compartilhado pelos addons, e a biblioteca já vem incluída no pacote.
 
-### Alterações nesta versão
+### Mudanças nesta versão
 
-- Filtragem compartilhada por categoria, busca aproximada/com aspas, copiar/selecionar, limpar, recarregar, testes, diagnósticos e comportamento de acompanhar a rolagem.
-- /qt test abre os resultados atuais; execuções repetidas substituem o histórico TEST antigo e limpam filtros de busca obsoletos.
-- /qt diagnostics [questID] e /qt diag [questID] recriam o relatório atual em cache no mesmo console, mantendo eventos recentes dentro do orçamento de exportação compartilhado.
-- Proteções compartilhadas de restrição e de quadro proprietário substituem os callbacks antigos do console do QT e a implementação de menu suspenso.
-- Estado de missões, anúncios, placas de identificação, comunicações e isolamento de testes específicos do QT continuam sob responsabilidade do QuestTogether.
-- Esta é uma versão beta. A renderização ao vivo no Retail/Forever e o comportamento de taint ainda precisam de verificação. Depois de /reload, execute /qt test e /qt diagnostics, então teste categoria/busca, copiar, limpar, redimensionar, rolagem, execuções repetidas de teste e alternância entre relatórios e logs. Inclua transições de combate/restrição e seu conjunto usual de addons.
-- Validação: 324/324 testes passam nas duas ordens no Lua 5.1.5 e 5.2.4. Todos os 23 arquivos Lua são analisados, todas as 22 entradas TOC são validadas e o manifesto da biblioteca fixada é verificado. O ZIP instalável foi extraído e passou em todos os 324 casos usando o harness offline separado. Pin da biblioteca: 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6.
+- O console reúne filtros de categoria, busca aproximada ou por frase entre aspas, seleção, cópia, limpeza, recarregamento, testes e diagnósticos, além do acompanhamento de novas linhas na rolagem.
+- Ao executar /qt test novamente, os resultados atuais substituem o histórico TEST antigo e limpam filtros que poderiam escondê-los. /qt diagnostics [questID] e /qt diag [questID] refazem o relatório com os dados em cache na mesma janela, preservando eventos recentes dentro do limite de exportação.
+- As verificações compartilhadas de restrições e de janelas pertencentes ao addon substituem os antigos controles do console e do menu suspenso. Missões, anúncios, placas, comunicação e isolamento dos testes específicos continuam no QuestTogether.
+- Por ser uma beta, a aparência e os bloqueios por taint ainda precisam ser conferidos no Retail e no Forever. Após /reload, rode /qt test e /qt diagnostics; confira categorias e busca, cópia, limpeza, tamanho, rolagem, testes repetidos e alternância entre relatórios e registro. Inclua combate e outras restrições com seus addons habituais.
+- Passaram 324/324 casos nas duas ordens em Lua 5.1.5 e 5.2.4, a análise dos 23 arquivos Lua, as 22 entradas do TOC e o manifesto da biblioteca. O ZIP instalável extraído também passou nos 324 casos no ambiente de testes independente, fora do jogo. Revisão fixada: 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6.
 
 ## 5.7.6-beta.1
 
-QuestTogether 5.7.6-beta.1 incorpora libchev v1.0.0 para compartilhar logs, diagnósticos, proteções de callback, mecânicas de trabalho adiado e execução de testes com os outros addons Together. A biblioteca está incluída; nenhuma instalação separada de addon é necessária.
+A libchev v1.0.0 passa a vir dentro do QuestTogether. Ela reúne as ferramentas de registro, diagnóstico, proteção de chamadas, tarefas adiadas e testes dos addons Together, sem exigir instalação separada.
 
-### Alterações nesta versão
+### Mudanças nesta versão
 
-- Relatórios de diagnóstico incluem informações comuns de cliente/addon/biblioteca e mantêm os eventos mais recentes quando a janela de cópia fica cheia.
-- O comportamento de missões, grupo, placas de identificação e restrições continua sob responsabilidade do QuestTogether, com armazenamentos de execução isolados por addon.
-- Links de coordenadas permanecem utilizáveis enquanto o QT está desativado quando as restrições permitem; trabalhos em segundo plano na fila permanecem pausados e temporizadores obsoletos são descartados.
-- /qt test agora inclui 315 casos: os 300 existentes, dez verificações da biblioteca compartilhada e cinco regressões de integração.
-- Validação: todos os 315 testes passam nas duas ordens no Lua 5.1.5 e 5.2.4; a sintaxe Lua, a ordem de carregamento do TOC e o manifesto de revisão/hash incorporado passam. Fonte libchev incorporada: 09ac76eb6fe8e9589b809188652950c3cd9e444c.
-- Esta é uma versão beta. A renderização da UI ao vivo no Retail/Forever e o comportamento de taint após esta extração ainda precisam de verificação. Depois de recarregar, execute /qt test e /qt diagnostics, então teste missões, bolhas de progresso, placas de identificação e links de coordenadas em combate, mudança de zona, desativação/reativação e recarregamento com seus addons usuais. A confirmação anterior de 300 testes no Retail se aplicava à v5.7.5.
+- Os relatórios trazem dados do cliente, do addon e da biblioteca. Quando a janela de cópia atinge o limite, os eventos mais recentes têm prioridade.
+- Missões, grupo, placas de nome e tratamento das restrições continuam sob responsabilidade do QuestTogether. Os dados de execução de cada addon permanecem isolados.
+- Enquanto o QT está desativado, as tarefas em segundo plano ficam pausadas e temporizadores antigos são descartados. Os links de coordenadas continuam disponíveis quando as restrições do jogo permitem.
+- O comando /qt test reúne 315 casos: os 300 anteriores, dez verificações da biblioteca compartilhada e cinco de integração. Todos passaram nas duas ordens em Lua 5.1.5 e 5.2.4, assim como as verificações de sintaxe, ordem do TOC e manifesto de revisão e hashes. Revisão da libchev: 09ac76eb6fe8e9589b809188652950c3cd9e444c.
+- Esta é uma versão beta. A aparência e possíveis bloqueios por taint após a mudança ainda precisam ser conferidos nos clientes Retail e Forever. Após recarregar, execute /qt test e /qt diagnostics e teste missões, bolhas de progresso, placas e links de coordenadas em combate, ao mudar de zona, ao desativar e reativar o QT e ao recarregar com seus addons habituais. A confirmação anterior de 300 testes no Retail era da v5.7.5.

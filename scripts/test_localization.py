@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-import tempfile,unittest,json
+import tempfile,unittest,json,io,os
 from pathlib import Path
+from unittest import mock
 import sys
 sys.dont_write_bytecode = True
 import localization as L
-from translate_locales import translate
+import translate_locales as T
 class LocalizationTests(unittest.TestCase):
     def test_format_and_boundary_contracts(self):
         for target in ['Anzahl %s', ' Anzahl %d', 'Anzahl %d ', 'Anzahl']:
@@ -48,32 +49,45 @@ class LocalizationTests(unittest.TestCase):
     def test_markup_scanning_preserves_escaped_pipe_literals(self):
         self.assertEqual(L.visible_markup_text('||cffffffff'), '||cffffffff')
         self.assertEqual(L.visible_markup_text('|Hquest:1|h|cffffffffQuest title|r|h'), 'Quest title')
-    def test_notes_generation_preserves_structure_and_is_incremental(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root=Path(directory);notes={'version':'1.0.0','welcome':'Welcome','sections':[{'title':'New','items':['First','Second'],'illustration':'quest-partners'}]}
-            (root/'release_notes.json').write_text(json.dumps(notes));calls=[]
-            def request(strings,locale,key,model):calls.append(strings);return ['Trad '+s for s in strings]
-            self.assertTrue(translate(root,'frFR',True,request=request))
-            result=L.read(root/'release_notes/frFR.json');self.assertEqual(result['source_sha256'],L.digest(notes))
-            self.assertEqual(result['notes']['sections'][0]['illustration'],'quest-partners')
-            self.assertFalse(translate(root,'frFR',True,request=request));self.assertEqual(len(calls),1)
-    def test_notes_translation_flattens_tip_label_and_body_in_section_order(self):
+
+    def test_retired_note_translation_never_reads_credentials_or_changes_files(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)
-            notes={'version':'1.0.0','welcome':'Welcome','sections':[
-                {'title':'New tips','items':['First'], 'tip':{'label':'Tip:','text':'Use /qt tip; scale to 150%.'}},
-                {'title':'Next section','items':['Second']}]}
-            (root/'release_notes.json').write_text(json.dumps(notes))
-            def request(strings,locale,key,model):
-                self.assertEqual(strings,['Welcome','New tips','First','Tip:','Use /qt tip; scale to 150%.','Next section','Second'])
-                return ['Bienvenue','Conseils','Premier','Conseil :','Utilisez /qt tip ; agrandissez à 150 %.','Suite','Deuxième']
-            self.assertTrue(translate(root,'frFR',True,request=request))
-            result=L.read(root/'release_notes/frFR.json')['notes']
-            self.assertEqual(result['sections'][0]['tip'],{'label':'Conseil :','text':'Utilisez /qt tip ; agrandissez à 150 %.'})
-            self.assertNotIn('tip',result['sections'][1])
-            previous=(root/'release_notes/frFR.json').read_bytes()
-            notes['welcome']='Updated welcome';(root/'release_notes.json').write_text(json.dumps(notes))
-            with self.assertRaises(ValueError):
-                translate(root,'frFR',True,request=lambda strings,*args:[s.replace('/qt tip','/qt conseil') for s in strings])
-            self.assertEqual((root/'release_notes/frFR.json').read_bytes(),previous)
+            (root/'release_notes').mkdir()
+            (root/'release_notes.json').write_text('English sentinel')
+            (root/'release_notes/deDE.json').write_text('German sentinel')
+            before={p:p.read_bytes() for p in root.rglob('*') if p.is_file()}
+            environment_get=os.environ.get
+            def reject_credentials(name,*args):
+                if name in {'OPENAI_API_KEY','CHANGELOG_OPENAI_MODEL'}:
+                    raise AssertionError('retired note command must not read credentials or settings')
+                return environment_get(name,*args)
+            with mock.patch.object(T.urllib.request,'urlopen',side_effect=AssertionError('notes must not use network')) as network, \
+                    mock.patch.dict(os.environ,{'OPENAI_API_KEY':'offline-secret','CHANGELOG_OPENAI_MODEL':'paid-model'}), \
+                    mock.patch.object(os.environ,'get',side_effect=reject_credentials):
+                with self.assertRaisesRegex(T.NotesError,'active Codex subscription session'):
+                    T.translate(root,'deDE',notes=True,key='offline-secret')
+                with self.assertRaisesRegex(T.NotesError,'active Codex subscription session'):
+                    T.request_translation(['Release note'],'deDE','offline-secret','paid-model',formatted=False)
+                for selection in ([],['--locale','deDE']):
+                    with self.subTest(selection=selection), mock.patch('sys.stderr',new_callable=io.StringIO) as error:
+                        self.assertEqual(T.main(['--root',str(root),'--write','--notes',*selection]),1)
+                        self.assertIn('prepare_release_notes.py finalize',error.getvalue())
+                        self.assertNotIn('offline-secret',error.getvalue())
+                network.assert_not_called()
+            self.assertEqual(before,{p:p.read_bytes() for p in root.rglob('*') if p.is_file()})
+
+    def test_optional_ui_translation_keeps_existing_labels_and_uses_ui_model(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            (root/'locales').mkdir()
+            path=root/'locales/deDE.json'
+            path.write_text(L.dumps({'Existing label':'Vorhandener Text'}))
+            request=mock.Mock(return_value=['Neuer Text'])
+            with mock.patch.object(T,'source_strings',return_value=['Existing label','New label']), \
+                    mock.patch('sys.stdout',new_callable=io.StringIO):
+                T.translate(root,'deDE',key='offline-key',request=request)
+            request.assert_called_once_with(['New label'],'deDE','offline-key',T.UI_MODEL)
+            self.assertEqual(L.read(path),{'Existing label':'Vorhandener Text','New label':'Neuer Text'})
+            self.assertFalse((root/'release_notes').exists())
 if __name__=='__main__':unittest.main()

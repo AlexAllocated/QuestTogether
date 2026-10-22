@@ -14,7 +14,7 @@ FORMAT = re.compile(r'%(?:[-+ #0]*\d*(?:\.\d+)?[cdiouxXeEfgGqs%])')
 QT_COMMANDS = ('options', 'enable', 'disable', 'set', 'get', 'pql', 'compare', 'resetlayout',
                'lfg', 'notes', 'changelog', 'patchnotes', 'scan', 'help', 'debug',
                'devlogall', 'test', 'dump', 'diagnostics', 'preview', 'bubbletest',
-               'discord', 'ad', 'debuglog', 'ping', 'tip', 'hint', 'companions', 'vip')
+               'discord', 'ad', 'debuglog', 'ping', 'tip', 'hint', 'companions', 'vip', 'claim')
 COMMAND = re.compile(r'/qtd?(?![A-Za-z0-9_])(?: (?:'
                      + '|'.join(QT_COMMANDS) + r')(?![A-Za-z0-9_]))?')
 
@@ -137,6 +137,24 @@ def validate_release_tip(source_section,target_section,label):
             except ValueError as error:
                 raise ValueError(label+' tip '+key+': '+str(error)) from error
 
+def validate_release_locale(source, target, label):
+    """Keep topics and assets aligned, without imposing English sentence structure."""
+    from check_release_notes import parse_notes
+    parse_notes(dumps(target))
+    if target['version'] != source['version'] or len(target['sections']) != len(source['sections']):
+        raise ValueError(label+' version/section mismatch')
+    for a,b in zip(source['sections'],target['sections']):
+        if a.get('illustration') != b.get('illustration'):
+            raise ValueError(label+' illustration mismatch')
+        validate_release_tip(a,b,label)
+    # Commands and links may move between sentences/bullets, but cannot disappear
+    # or be translated. This is a mechanical check, not a semantic fluency test.
+    def tokens(notes):
+        text = '\n'.join([notes['welcome']] + [s['title']+'\n'+'\n'.join(s['items']) for s in notes['sections']])
+        return set(command_tokens(text)), set(re.findall(r'https?://[^\s]+',text))
+    if tokens(source) != tokens(target):
+        raise ValueError(label+' commands/links mismatch')
+
 def release_note_outputs(root,notes,previous_version=None):
     from check_release_notes import parse_notes
     root=Path(root); outputs={}; tables={}; expected=digest(notes)
@@ -145,10 +163,7 @@ def release_note_outputs(root,notes,previous_version=None):
         if not isinstance(wrapper,dict) or set(wrapper)!={'source_sha256','notes'} or wrapper['source_sha256']!=expected:raise ValueError(locale+' release translation is stale')
         translated=parse_notes(json.dumps(wrapper['notes'],ensure_ascii=False))
         if translated['version']!=(previous_version or notes['version']):raise ValueError(locale+' translated version mismatch')
-        if len(translated['sections'])!=len(notes['sections']):raise ValueError(locale+' translated section count mismatch')
-        for a,b in zip(notes['sections'],translated['sections']):
-            if len(a['items'])!=len(b['items']) or a.get('illustration')!=b.get('illustration'):raise ValueError(locale+' translated section structure mismatch')
-            validate_release_tip(a,b,locale+' translated')
+        validate_release_locale({**notes,'version':translated['version']},translated,locale+' localized notes')
         translated['version']=notes['version'];tables[locale]=translated
         outputs[path]=dumps({'source_sha256':expected,'notes':translated})
     outputs[root/'LocalizedReleaseNotes.lua']='-- Generated localized release notes.\nlocal _, namespace = ...\nnamespace.releaseNotesByLocale = '+lua(tables)+'\n'

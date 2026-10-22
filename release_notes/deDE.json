@@ -1,15 +1,14 @@
 {
-  "source_sha256": "52c2d22b8aefd50dab144661709c803330f4f0919223b6430e5adfac60bee97c",
+  "source_sha256": "4255fc59ddb2a7a524640ad44eab97c13bec1a8fa9127931afb7787e31c62431",
   "notes": {
     "version": "8.0.2",
-    "welcome": "Zuverlässigere Kartenmarkierungen und VIP-Erkennung.",
+    "welcome": "Die Versionshinweise wurden sprachlich überarbeitet. Außerdem haben wir einen fehlenden Eintrag im Versionsverlauf ergänzt.",
     "sections": [
       {
-        "title": "Zuverlässigkeitsverbesserungen",
+        "title": "Versionshinweise und Versionsverlauf",
         "items": [
-          "VIP-Sterne bleiben jetzt über eure Ladebildschirme hinweg erhalten. Gleichzeitige VIP-Aktualisierungen blockieren sich nicht mehr gegenseitig.",
-          "Ein Fehler wurde behoben, durch den Kartenmarkierungen verschwinden konnten, wenn eine Standortaktualisierung vorübergehend keine Koordinaten enthielt.",
-          "Die Zuverlässigkeit geteilter Aktualisierungen bei Kanaldrosselung wurde verbessert."
+          "Die aktuellen und älteren Versionshinweise wurden in allen zehn unterstützten Sprachen außer Englisch sprachlich überarbeitet, damit sie sich natürlicher lesen und leichter verständlich sind.",
+          "Der bisher fehlende Eintrag zu 7.4.4 ist wieder im Versionsverlauf und in den Änderungsprotokollen enthalten."
         ]
       }
     ]

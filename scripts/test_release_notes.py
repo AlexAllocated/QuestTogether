@@ -312,7 +312,6 @@ class NotesTests(unittest.TestCase):
             lambda data: data.update(source_sha256="0" * 64),
             lambda data: data["notes"].update(version="1.2.2"),
             lambda data: data["notes"]["sections"].append({"title": "Extra section", "items": ["Extra item."]}),
-            lambda data: data["notes"]["sections"][0]["items"].append("Extra translated item."),
             lambda data: data["notes"]["sections"][0].pop("illustration"),
             lambda data: data.update(unexpected=True),
             lambda data: data["notes"].update(welcome="TODO"),

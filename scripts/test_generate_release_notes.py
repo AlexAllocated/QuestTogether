@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline generator contracts: temporary Git repositories and fake HTTP only."""
+"""Offline evidence, draft validation, and retired API-entrypoint contracts."""
 
 import copy
 import io
@@ -9,7 +9,7 @@ from pathlib import Path
 import sys
 import unittest
 from unittest import mock
-import urllib.error
+import urllib.request
 
 sys.dont_write_bytecode = True
 import generate_release_notes as GENERATOR
@@ -21,18 +21,6 @@ def draft(item="Find nearby players with class-colored location dots."):
             "sections": [{"title": "Player locations", "items": [item]}]}
 
 
-def response(value=None, **changes):
-    value = draft() if value is None else value
-    result = {"status": "completed", "output": [{"type": "message", "role": "assistant",
-              "status": "completed", "content": [{"type": "output_text", "text": json.dumps(value)}]}]}
-    result.update(changes)
-    return result
-
-
-def opener_for(value):
-    return lambda *_args, **_kwargs: io.BytesIO(json.dumps(value).encode("utf-8"))
-
-
 class GeneratorTests(unittest.TestCase):
     # Reuse the existing isolated Git setup, without inheriting its test cases.
     run_process = FIXTURES.NotesTests.run_process
@@ -41,7 +29,7 @@ class GeneratorTests(unittest.TestCase):
 
     def setUp(self):
         FIXTURES.NotesTests.setUp(self)
-        self.network = mock.patch.object(GENERATOR.urllib.request, "urlopen",
+        self.network = mock.patch.object(urllib.request, "urlopen",
                                          side_effect=AssertionError("offline tests must never use the network"))
         self.network.start()
         self.addCleanup(self.network.stop)
@@ -142,90 +130,28 @@ class GeneratorTests(unittest.TestCase):
         with self.assertRaisesRegex(GENERATOR.NotesError, "full checkout"):
             GENERATOR.collect_evidence(shallow)
 
-    def test_request_is_structured_private_and_preserves_default_or_explicit_model(self):
-        for model in (GENERATOR.MODEL, "explicit-model"):
-            with self.subTest(model=model):
-                seen = []
-                def opener(request, timeout):
-                    seen.append((request, timeout))
-                    return opener_for(response())()
-                actual = GENERATOR.request_notes("untrusted source evidence", "offline-fake-key", model, opener)
-                self.assertEqual(actual, draft())
-                request, timeout = seen[0]
-                self.assertEqual(request.full_url, "https://api.openai.com/v1/responses")
-                self.assertEqual(request.method, "POST")
-                self.assertEqual(request.get_header("Authorization"), "Bearer offline-fake-key")
-                payload = json.loads(request.data)
-                self.assertEqual(payload["model"], model)
-                self.assertFalse(payload["store"])
-                self.assertEqual(payload["input"][1], {"role": "user", "content": "untrusted source evidence"})
-                self.assertIn("untrusted evidence", payload["input"][0]["content"])
-                self.assertEqual(payload["text"]["format"]["schema"], GENERATOR.SCHEMA)
-                self.assertTrue(payload["text"]["format"]["strict"])
-                self.assertEqual(payload["text"]["format"]["type"], "json_schema")
-
-    def test_missing_credentials_never_call_opener(self):
-        opener = mock.Mock(side_effect=AssertionError("missing key must not open HTTP"))
-        with self.assertRaisesRegex(GENERATOR.NotesError, "OPENAI_API_KEY"):
-            GENERATOR.request_notes("evidence", None, opener=opener)
-        opener.assert_not_called()
-
-    def test_generated_optional_tip_normalizes_null_only_at_provider_boundary(self):
-        source=draft()
-        source['sections'][0]['tip']=None
-        self.assertEqual(GENERATOR.request_notes('evidence','fake',opener=opener_for(response(source))),draft())
-        source['sections'][0]['tip']={'label':'Tip:','text':'Use /qt tip or /qt hint.'}
-        actual=GENERATOR.request_notes('evidence','fake',opener=opener_for(response(source)))
-        self.assertEqual(actual,source)
-        self.commit_feature()
-        notes=GENERATOR.generate(self.root,generator=lambda *args:copy.deepcopy(actual))
-        self.assertIn('> 💡 Tip: Use /qt tip or /qt hint.',GENERATOR.markdown(notes))
-
-    def test_status_refusal_and_malformed_envelopes_never_overwrite_notes(self):
-        self.commit_feature()
-        before = self.saved_notes()
-        refusal = {"type": "refusal", "refusal": "No notes"}
-        mixed = response()
-        mixed["output"][0]["content"].append(refusal)
-        bad_draft = response()
-        bad_draft["output"][0]["content"][0]["text"] = "{not-json"
-        duplicate = response()
-        duplicate["output"][0]["content"][0]["text"] = '{"welcome":"first","welcome":"second","sections":[]}'
-        cases = [None, [], 1, response(status="incomplete"), response(status="failed"),
-                 response(output=None), response(output={}), response(output=[None]),
-                 response(output=[{"type": "message", "content": None}]),
-                 response(output=[{"type": "message", "content": [None]}]),
-                 response(output=[{"type": "message", "status": "incomplete", "content": []}]),
-                 response(output=[{"type": "message", "content": [refusal]}]),
-                 response(output=[{"type": "message", "content": [{"type": "output_text", "text": 7}]}]),
-                 response(output=[]), mixed, bad_draft, duplicate, response({"extra": True}),
-                 response({"welcome": "Useful welcome", "sections": []})]
-        for result in cases:
-            with self.subTest(result=result):
-                def generate(evidence, key, model):
-                    return GENERATOR.request_notes(evidence, key, model, opener_for(result))
-                with self.assertRaises(GENERATOR.NotesError):
-                    GENERATOR.generate(self.root, write=True, api_key="offline-fake-key", generator=generate)
-                self.assertEqual(self.saved_notes(), before)
-
-    def test_http_timeout_transport_and_invalid_json_do_not_echo_secrets(self):
-        self.commit_feature()
-        before = self.saved_notes()
-        cases = [urllib.error.HTTPError("https://example.invalid", 401, "offline-secret", {}, io.BytesIO(b"offline-secret")),
-                 urllib.error.URLError("offline-secret"), TimeoutError("offline-secret"),
-                 ConnectionResetError("offline-secret")]
-        for error in cases:
-            with self.subTest(error=type(error)):
-                def generate(evidence, key, model):
-                    return GENERATOR.request_notes(evidence, key, model, opener=mock.Mock(side_effect=error))
-                with self.assertRaises(GENERATOR.NotesError) as raised:
-                    GENERATOR.generate(self.root, write=True, api_key="offline-secret", generator=generate)
-                self.assertNotIn("offline-secret", str(raised.exception))
-                self.assertEqual(self.saved_notes(), before)
+    def test_historical_evidence_can_begin_before_structured_notes_without_relaxing_draft_checks(self):
+        self.git('rm', 'release_notes.json')
+        self.git('commit', '-qm', 'Fixture before structured release notes')
+        self.git('tag', '-f', 'v1.2.3')
+        (self.root / 'release_notes.json').write_text(json.dumps(FIXTURES.sample_notes('1.3.0')))
+        (self.root / 'QuestTogether.toc').write_text('## Version: 1.3.0\nCore.lua\nReleaseNotes.lua\n')
+        (self.root / 'Core.lua').write_text('-- First release with structured notes.\n')
+        self.git('add', '.')
+        self.git('commit', '-qm', 'Add actual new feature')
+        self.git('tag', 'v1.3.0')
         with self.assertRaises(GENERATOR.NotesError):
-            GENERATOR.generate(self.root, write=True, generator=lambda *args: GENERATOR.request_notes(
-                "source", "offline-secret", opener=lambda *a, **kw: io.BytesIO(b"not-json")))
-        self.assertEqual(self.saved_notes(), before)
+            GENERATOR.collect_evidence(self.root, 'v1.2.3', target_ref='v1.3.0')
+        version, previous, evidence = GENERATOR.collect_evidence(
+            self.root, 'v1.2.3', target_ref='v1.3.0', allow_legacy_baseline=True)
+        self.assertEqual(version, '1.3.0')
+        self.assertIsNone(previous)
+        self.assertIn('Structured release notes were not recorded', evidence)
+        self.assertIn('+-- First release with structured notes.', evidence)
+        self.assertIn('Add actual new feature', evidence)
+        with self.assertRaisesRegex(GENERATOR.NotesError, 'historical target'):
+            GENERATOR.collect_evidence(self.root, 'v1.2.3', allow_legacy_baseline=True)
+
 
     def test_old_notes_and_old_bullets_mixed_with_new_ones_are_rejected_without_overwrite(self):
         self.commit_feature()
@@ -250,6 +176,8 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(notes, {"version": "1.2.3", **generated})
         self.assertEqual((self.root / "release_notes.json").read_text(), json.dumps(notes, ensure_ascii=False, indent=2) + "\n")
         self.assertEqual((self.root / "ReleaseNotes.lua").read_text(), GENERATOR.render_lua(notes))
+        from generate_localized_notes import load_context
+        self.assertIn('Add location dots', load_context(self.root, notes))
         self.assertEqual(GENERATOR.toc_version((self.root / "QuestTogether.toc").read_text()), "1.2.3")
         self.assertEqual(self.git("rev-parse", "HEAD"), head)
         rendered = GENERATOR.markdown(notes)
@@ -259,23 +187,54 @@ class GeneratorTests(unittest.TestCase):
             for item in section["items"]:
                 self.assertIn("- " + item + "\n", rendered)
 
-    def test_cli_writes_all_three_views_and_preserves_markdown_on_failure(self):
+
+    def test_retired_request_rejects_keys_and_openers_without_network(self):
+        opener = mock.Mock(side_effect=AssertionError("retired requests must never open HTTP"))
+        for key in (None, "offline-secret"):
+            with self.subTest(key_present=bool(key)):
+                with self.assertRaisesRegex(GENERATOR.NotesError, "active Codex subscription session") as raised:
+                    GENERATOR.request_notes("evidence", key, "chosen-model", opener=opener)
+                self.assertIn("prepare_release_notes.py context", str(raised.exception))
+                self.assertIn("prepare_release_notes.py finalize", str(raised.exception))
+                self.assertNotIn("offline-secret", str(raised.exception))
+        opener.assert_not_called()
+
+    def test_retired_generation_stops_before_evidence_and_preserves_files(self):
+        before = self.saved_notes()
+        with mock.patch.object(GENERATOR, "collect_evidence", side_effect=AssertionError("must fail before collecting evidence")):
+            with self.assertRaisesRegex(GENERATOR.NotesError, "Paid release-note API generation is retired"):
+                GENERATOR.generate(self.root, write=True, api_key="offline-secret")
+        self.assertEqual(self.saved_notes(), before)
+        self.assertFalse((self.root / "release_notes/context.json").exists())
+
+    def test_injected_offline_draft_keeps_optional_tip_in_markdown(self):
         self.commit_feature()
+        source = draft()
+        source["sections"][0]["tip"] = {"label": "Tip:", "text": "Use /qt tip or /qt hint."}
+        notes = GENERATOR.generate(self.root, generator=lambda *args: copy.deepcopy(source))
+        self.assertIn("> 💡 Tip: Use /qt tip or /qt hint.", GENERATOR.markdown(notes))
+
+    def test_retired_cli_ignores_credentials_and_preserves_all_outputs(self):
         markdown = self.directory / "notes.md"
-        args = ["--root", str(self.root), "--write", "--markdown-out", str(markdown), "--model", "chosen-model"]
-        with mock.patch.object(GENERATOR, "request_notes", return_value=draft()) as request, \
-                mock.patch.dict(os.environ, {"OPENAI_API_KEY": "offline-fake-key"}), \
-                mock.patch("sys.stdout", new_callable=io.StringIO):
-            self.assertEqual(GENERATOR.main(args), 0)
-            self.assertEqual(request.call_args.args[1:], ("offline-fake-key", "chosen-model"))
-        notes = json.loads((self.root / "release_notes.json").read_text())
-        self.assertEqual(markdown.read_text(), GENERATOR.markdown(notes))
+        markdown.write_text("Existing reviewed notes")
         before, prior_markdown = self.saved_notes(), markdown.read_bytes()
-        with mock.patch.object(GENERATOR, "request_notes", side_effect=GENERATOR.NotesError("refused")), \
-                mock.patch("sys.stderr", new_callable=io.StringIO):
-            self.assertEqual(GENERATOR.main(args + ["--include-working-tree"]), 1)
+        args = ["--root", str(self.root), "--write", "--include-working-tree",
+                "--markdown-out", str(markdown), "--model", "chosen-model"]
+        environment_get = os.environ.get
+        def reject_credentials(name, *args):
+            if name in {"OPENAI_API_KEY", "CHANGELOG_OPENAI_MODEL"}:
+                raise AssertionError("retired CLI must not read model credentials or settings")
+            return environment_get(name, *args)
+        with mock.patch.dict(os.environ, {"OPENAI_API_KEY": "offline-secret", "CHANGELOG_OPENAI_MODEL": "paid-model"}), \
+                mock.patch.object(os.environ, "get", side_effect=reject_credentials), \
+                mock.patch.object(GENERATOR, "generate", side_effect=AssertionError("retired CLI must not start generation")), \
+                mock.patch("sys.stderr", new_callable=io.StringIO) as error:
+            self.assertEqual(GENERATOR.main(args), 1)
+        self.assertIn("active Codex subscription session", error.getvalue())
+        self.assertNotIn("offline-secret", error.getvalue())
         self.assertEqual(self.saved_notes(), before)
         self.assertEqual(markdown.read_bytes(), prior_markdown)
+        self.assertFalse((self.root / "release_notes/context.json").exists())
 
 
 if __name__ == "__main__":

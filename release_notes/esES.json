@@ -1,15 +1,14 @@
 {
-  "source_sha256": "52c2d22b8aefd50dab144661709c803330f4f0919223b6430e5adfac60bee97c",
+  "source_sha256": "4255fc59ddb2a7a524640ad44eab97c13bec1a8fa9127931afb7787e31c62431",
   "notes": {
     "version": "8.0.2",
-    "welcome": "Marcadores del mapa e identificación VIP más fiables.",
+    "welcome": "Hemos revisado las notas de actualización para que sean más claras y naturales, y recuperado una entrada que faltaba en el historial de versiones.",
     "sections": [
       {
-        "title": "Mejoras de fiabilidad",
+        "title": "Notas de actualización e historial de versiones",
         "items": [
-          "Las estrellas VIP ahora se conservan durante tus pantallas de carga, y las actualizaciones VIP simultáneas ya no se bloquean entre sí.",
-          "Se ha corregido un caso en el que los marcadores del mapa podían desaparecer si una actualización de ubicación no tenía coordenadas temporalmente.",
-          "Se ha mejorado la fiabilidad de las actualizaciones compartidas cuando el canal limita los envíos."
+          "Las notas de actualización, tanto actuales como antiguas, se han revisado en los diez idiomas disponibles además del inglés para que resulten más claras y naturales.",
+          "Hemos recuperado la entrada de la versión 7.4.4, que faltaba en el historial de versiones y en los registros de cambios. Ya puedes volver a consultarla."
         ]
       }
     ]

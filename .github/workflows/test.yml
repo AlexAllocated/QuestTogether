@@ -40,6 +40,18 @@ jobs:
       - run: python3 scripts/test_release_notes.py
       - run: python3 scripts/test_generate_release_notes.py
         if: matrix.lua == '5.1'
+      - run: python3 scripts/test_generate_localized_notes.py
+        if: matrix.lua == '5.1'
+      - run: python3 scripts/test_release_note_facts.py
+        if: matrix.lua == '5.1'
+      - run: python3 scripts/test_prepare_release_notes.py
+        if: matrix.lua == '5.1'
+      - run: python3 scripts/test_author_release_notes.py
+        if: matrix.lua == '5.1'
+      - run: python3 scripts/test_codex_note_author.py
+        if: matrix.lua == '5.1'
+      - run: python3 scripts/test_note_data_evidence.py
+        if: matrix.lua == '5.1'
       - run: python3 scripts/test_discord_changelog.py
         if: matrix.lua == '5.1'
       - run: python3 scripts/test_package.py

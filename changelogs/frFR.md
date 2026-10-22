@@ -4,111 +4,119 @@
 
 ## 8.0.2
 
-Des marqueurs de carte et une identification VIP plus fiables.
+Les notes de mise à jour de QuestTogether sont plus claires, et l’historique des versions retrouve une entrée manquante.
 
-### Améliorations de la fiabilité
+### Notes de mise à jour et historique des versions
 
-- Les étoiles VIP sont désormais conservées pendant vos écrans de chargement, et les mises à jour VIP simultanées ne se bloquent plus mutuellement.
-- Correction d’un cas où les marqueurs de carte pouvaient disparaître lorsqu’une mise à jour de position ne contenait temporairement aucune coordonnée.
-- Fiabilité améliorée des mises à jour partagées lorsque le canal limite les envois.
+- Les notes de mise à jour actuelles et anciennes ont été réécrites dans les dix langues prises en charge autres que l’anglais, pour une lecture plus fluide et plus claire.
+- L’entrée manquante de la version 7.4.4 a été rétablie dans l’historique des versions consultable et dans les journaux des modifications.
 
 ## 8.0.1
 
-Navigation au clavier sans bouton supplémentaire.
+Naviguez au clavier sans passer par un bouton supplémentaire.
 
 ### Journal de quêtes du groupe
 
-- Ouvrir le journal de quêtes du groupe ou cliquer sur une quête donne automatiquement le focus à la liste. Le bouton Clavier a été supprimé. Utilisez les flèches pour naviguer et Entrée pour développer ou réduire les objectifs.
-- Tab passe de la liste à la recherche. Échap ferme la fenêtre lorsque la liste a le focus ; cliquer à l’extérieur libère le clavier. Les mises à jour des quêtes ne reprennent pas le focus.
+- À l’ouverture du journal de quêtes du groupe, ou après un clic sur une quête, la liste reçoit automatiquement le focus clavier. Le bouton Clavier a été retiré. Déplacez-vous avec les flèches et appuyez sur Entrée pour afficher ou replier les objectifs.
+- Tabulation permet de passer de la liste à la recherche et inversement. Depuis la liste, Échap ferme la fenêtre ; un clic à l’extérieur libère le clavier. Les mises à jour des quêtes ne reprennent pas le focus.
 
 ## 8.0.0
 
-Découvrez QuestTogether VIP.
+QuestTogether accueille les récompenses VIP.
 
-### Apparence VIP
+### Une apparence VIP
 
-- Les joueurs VIP ont une étoile de leur couleur de classe sur la carte, un préfixe QT et un bouton de minicarte avec une étoile dorée, ainsi que la mention QuestTogether VIP dans leur infobulle individuelle. Ces récompenses sont cosmétiques et ne donnent aucun accès développeur.
+- Les joueurs VIP apparaissent sur la carte sous la forme d’une étoile aux couleurs de leur classe. Une étoile dorée orne leur préfixe QT dans la discussion et leur bouton de minicarte, et leur infobulle individuelle porte la mention QuestTogether VIP. Ces récompenses sont purement visuelles : elles ne donnent aucun accès aux fonctions du développeur.
 
 **Forever**
 
-![Apparence VIP — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.0.0/Media/ReleaseNotes/VIPCosmetics.png)
+![Une apparence VIP — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.0.0/Media/ReleaseNotes/VIPCosmetics.png)
 
-### Devenir VIP
+### Comment devenir VIP
 
-- Partagez le lien de téléchargement de QuestTogether avec vos amis, votre guilde, sur un Discord pertinent ou sur les réseaux sociaux. Faites une capture de votre message envoyé ou de votre publication montrant le lien QT et où vous l’avez partagé. Envoyez-la en message privé Discord à @chevcast pour examen. Rejoignez d’abord le Discord QT ou envoyez une demande d’ami à @chevcast. La fenêtre VIP fournit le lien à copier et les étapes d’activation après approbation.
+- Partagez le lien de téléchargement de QuestTogether avec vos amis, votre guilde, sur un serveur Discord approprié ou sur les réseaux sociaux. Faites une capture de votre message envoyé ou de votre publication : le lien QT et l’endroit où vous l’avez partagé doivent être visibles. Envoyez cette capture en message privé sur Discord à @chevcast pour validation. Rejoignez d’abord le serveur Discord de QT ou envoyez une demande d’ami à @chevcast pour pouvoir lui écrire. La fenêtre VIP contient le lien à copier et les étapes d’activation à suivre après son accord.
 
-### Activer la récompense
+### Activer votre récompense
 
-- Ouvrez la fenêtre VIP depuis le menu de minicarte, les paramètres ou /qt vip. Attendez que @chevcast confirme que VIP a été accordé à votre compte Discord. La commande Discord /qt claim ne fonctionne qu’après cette attribution.
+- Ouvrez la fenêtre VIP depuis le menu de la minicarte, les paramètres ou /qt vip. Attendez que @chevcast confirme l’attribution du statut VIP à votre compte Discord : la commande Discord /qt claim ne fonctionne qu’une fois cette attribution effectuée.
 
-Copiez ensuite votre code de demande avec Ctrl+C et envoyez-le à @chevcast, ou utilisez /qt claim sur le Discord QT. Collez le code d’activation privé reçu dans la fenêtre VIP et choisissez Activer VIP. Répétez sur Retail ou Forever pour y utiliser la même récompense.
+Copiez ensuite votre code de demande avec Ctrl+C et envoyez-le à @chevcast, ou utilisez /qt claim sur le serveur Discord de QT. Collez le code d’activation privé reçu dans la fenêtre VIP, puis choisissez Activer VIP. Vous pouvez refaire la procédure sur Retail ou Forever pour y utiliser la même récompense.
 
-### Permanent et facultatif
+### Une récompense permanente, un affichage facultatif
 
-- La récompense est liée à votre compte Discord et partagée entre les personnages de chaque installation. Réclamez-la séparément sur Retail et Forever. Désactivez l’affichage VIP pour garder la récompense sans l’afficher. Les boutons de minicarte standard, VIP et développeur ont des bordures dorées suivant leur forme. L’apparence développeur est prioritaire sur VIP.
+- La récompense est liée à votre compte Discord et s’applique à tous les personnages d’une même installation. Récupérez-la séparément sur Retail et Forever. Vous pouvez désactiver Afficher mes éléments visuels VIP pour garder la récompense sans la montrer. Les boutons de minicarte standard, VIP et développeur ont désormais une bordure dorée qui épouse la forme de leur icône. L’apparence développeur reste prioritaire sur l’apparence VIP.
+
+## 7.4.4
+
+Retrouvez une mise à jour et tous ses correctifs sur la même page.
+
+### Historique regroupé
+
+- La fenêtre des notes rassemble désormais chaque version mineure et ses correctifs sur une seule page. La version mineure apparaît en premier, suivie des correctifs dans l’ordre, chacun sous un titre indiquant sa version et sa date. La navigation dans l’historique passe d’une page regroupée à l’autre.
+- Les anciennes notes de correctifs ont été allégées pour ne décrire que leurs propres changements, sans répéter les guides, astuces ou captures de la version précédente. Une mise à jour contenant seulement des correctifs n’ouvre toujours pas la fenêtre automatiquement ; vous pouvez la consulter à tout moment avec /qt notes.
 
 ## 7.4.3
 
-Des noms et réglages plus clairs pour les quêtes en groupe.
+Des noms et des réglages plus clairs pour les quêtes en groupe.
 
 ### Quêtes en groupe
 
-- Le suivi de quête devient le suivi des objectifs du groupe (POT). Les réglages d’affichage et la position de la fenêtre sont conservés.
-- Utilisez /qt pql pour ouvrir le journal de quêtes du groupe. /qt compare reste un alias ; l’aide et les conseils utilisent désormais /qt pql.
-- Le masquage hors groupe est disponible dans le mode Édition du HUD et dans Paramètres > Groupes et partage > Suivi des objectifs du groupe. Les deux cases contrôlent le même réglage. Il est activé pour les nouveaux profils et lors du rétablissement des valeurs par défaut ; les choix enregistrés sont conservés.
+- Suivi de quête prend le nom de Suivi des objectifs du groupe (Party Objective Tracker, ou POT). Vos réglages d’affichage et la position de la fenêtre sont conservés.
+- La commande /qt pql ouvre le journal de quêtes du groupe. /qt compare reste utilisable comme alias ; l’aide et les astuces indiquent désormais /qt pql.
+- Masquer hors groupe est accessible à la fois en mode Édition de l’ATH et dans Paramètres > Groupes et partage > Suivi des objectifs du groupe. Les deux cases règlent la même option. Elle est activée pour les nouveaux profils et lors d’une réinitialisation aux valeurs par défaut ; vos choix déjà enregistrés sont conservés.
 
 ## 7.4.2
 
-Correction du texte des notes de mise à jour.
+Correction de l’affichage des notes de version.
 
-### Correction du texte des notes de mise à jour
+### Texte des notes de version
 
-- Les séparateurs non pris en charge dans les notes ont été remplacés par du texte simple pour éviter les carrés vides.
+- Les séparateurs que la police ne pouvait pas afficher ont été remplacés par du texte simple. Ils n’apparaissent donc plus sous forme de cases vides.
 
 ## 7.4.1
 
-Corrections et options de disposition du suivi des objectifs du groupe.
+Corrections et réglages de disposition du suivi des objectifs du groupe.
 
 ### Suivi des objectifs du groupe
 
-- Correction des objectifs à une seule étape qui affichaient à tort une progression de 1/1 dans Forever, notamment « Use Walk on Air ». La correction s’applique au suivi des objectifs du groupe et au journal de quêtes du groupe.
+- Sur Forever, certains objectifs à une seule étape, comme Use Walk on Air, affichaient 1/1 avant même d’être accomplis. Ce problème est corrigé dans le suivi des objectifs du groupe et le journal de quêtes du groupe.
 
-### Choisir les quêtes à suivre
+### Choisir quand afficher le suivi
 
-- Activez Masquer hors groupe dans le mode Édition du HUD pour masquer le suivi en solo. Cette option est désactivée par défaut et l’aperçu de placement reste disponible en mode Édition.
+- L’option Masquer hors groupe, dans le mode Édition de l’ATH, permet de cacher le suivi quand vous jouez en solo. Elle est désactivée par défaut ; l’aperçu de placement reste accessible en mode Édition.
 
 ### Adapter la fenêtre à votre interface
 
-- L’alignement sur le suivi des objectifs de Blizzard est activé par défaut et place QT contre son bord extérieur. Éloigner QT en le faisant glisser désactive l’alignement et permet le redimensionnement par le coin. Réactivez l’alignement pour réinitialiser sa position ; les curseurs de largeur et de hauteur maximale restent disponibles dans les deux modes.
-- Le suivi adapte sa hauteur au contenu jusqu’à la hauteur maximale configurée, puis défile. La hauteur maximale par défaut est désormais de 600 ; les tailles enregistrées sont conservées.
-- Les sections des joueurs aux couleurs des classes conservent désormais une opacité de remplissage constante de 25%, indépendamment du curseur du fond de la fenêtre.
+- L’option Aligner sur le suivi des objectifs de Blizzard est activée par défaut : la fenêtre QT se place contre son bord extérieur. Si vous la déplacez, l’alignement se désactive et le redimensionnement par les coins devient disponible. Réactiver cette option réinitialise sa position. Les curseurs de largeur et de hauteur maximale restent utilisables dans les deux modes.
+- La fenêtre adapte sa hauteur au contenu, jusqu’à la limite que vous avez réglée ; au-delà, le contenu défile. La hauteur maximale par défaut passe à 600. Les dimensions déjà enregistrées sont conservées.
+- Le fond aux couleurs des classes garde une opacité constante de 25 % dans chaque section de joueur, quel que soit le réglage du fond de la fenêtre.
 
 ## 7.4.0
 
-Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi des objectifs du groupe.
+Gardez la progression de votre groupe à portée de vue avec le suivi des objectifs du groupe.
 
 ### Suivi des objectifs du groupe
 
-- Consultez les compteurs et les barres de progression des objectifs de votre groupe dans une fenêtre compacte aux couleurs des classes. Les membres du groupe doivent utiliser QuestTogether pour partager leur progression.
-- La progression est actualisée à la réception des annonces du groupe, indépendamment des réglages du chat et des bulles. Les quêtes sans compteur affichent leur état, par exemple prêtes à être rendues.
+- Une petite fenêtre aux couleurs des classes présente les compteurs d’objectifs et les barres de progression de votre groupe. Les autres membres doivent utiliser QuestTogether pour transmettre leur progression.
+- Les valeurs s’actualisent dès réception des annonces du groupe, même si vous avez désactivé leur affichage dans la discussion ou les bulles. Lorsqu’une quête n’a pas de compteur d’objectifs, la fenêtre indique son état, par exemple si elle est prête à être rendue.
 
 **Forever**
 
 ![Suivi des objectifs du groupe — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
 
-### Choisir les quêtes à suivre
+### Choisir la quête affichée
 
-- Choisissez Masqué, Quête ciblée, Quête survolée ou Ciblage et survol. Ce dernier mode, activé par défaut, affiche les quêtes survolées dans le suivi des objectifs de Blizzard, puis revient à votre quête ciblée.
-- Sans quête correspondante, la fenêtre reste masquée. Modifiez le mode dans le mode Édition du HUD ou dans Paramètres > Groupes et partage > Suivi des objectifs du groupe.
+- Quatre modes sont proposés : Masqué, Quête ciblée, Quête survolée et Ciblage et survol. Ce dernier est sélectionné par défaut : le suivi affiche temporairement la quête survolée dans le suivi des objectifs de Blizzard, puis revient à votre quête ciblée.
+- Si aucune quête ne correspond au mode choisi, la fenêtre reste masquée. Vous pouvez changer de mode dans le mode Édition de l’ATH ou dans les paramètres, sous Groupes et partage > Suivi des objectifs du groupe.
 
 **Forever**
 
-![Choisir les quêtes à suivre — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
+![Choisir la quête affichée — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
 
 ### Adapter la fenêtre à votre interface
 
-- Ouvrez le mode Édition du HUD et sélectionnez Suivi des objectifs du groupe pour déplacer ou redimensionner la fenêtre et régler son opacité. Enregistrer, Annuler les modifications et Rétablir les valeurs par défaut incluent le mode d’affichage et la disposition.
-- Les sections des joueurs occupent la largeur disponible et défilent si nécessaire. Les thèmes clair et sombre sont pris en charge, avec un texte lisible et des fonds de joueurs légèrement visibles même à opacité nulle.
+- Dans le mode Édition de l’ATH, sélectionnez le suivi des objectifs du groupe pour le déplacer, le redimensionner ou régler l’opacité de son fond. Les boutons Enregistrer les modifications, Annuler les modifications et Rétablir les valeurs par défaut prennent en compte à la fois sa disposition et son mode d’affichage.
+- Les sections des joueurs occupent toute la largeur disponible et leur contenu défile si nécessaire. Les thèmes clair et sombre sont pris en charge ; même avec une opacité nulle, le texte reste lisible et un fond discret distingue les joueurs.
 
 **Forever**
 
@@ -116,432 +124,432 @@ Gardez la progression des quêtes de votre groupe en vue grâce au nouveau suivi
 
 ## 7.3.5
 
-Des marqueurs plus clairs, une navigation plus simple et des informations de groupe plus récentes.
+Des repères plus lisibles, une navigation plus directe et des informations de groupe plus fraîches.
 
-### Cartes et informations sur les joueurs
+### Carte et informations des joueurs
 
-- Survolez le bouton QT de la carte pour afficher une légende illustrée des icônes et des états.
-- Cliquez avec le bouton gauche sur un point de joueur sur la carte du monde pour le mettre en évidence et ouvrir la carte la plus détaillée disponible pour sa position. Au dernier niveau, le clic gauche ouvre le menu du joueur ; le clic droit l’ouvre toujours.
-- La recherche d’un joueur sur la carte ouvre également la carte la plus détaillée disponible. La surbrillance verte persiste lors des changements de carte et disparaît après une minute, à la fermeture de la carte ou à la sélection d’un autre joueur.
-- Survoler un joueur, un regroupement ou un point de passage partagé assombrit la carte et les autres marqueurs tout en gardant les marqueurs concernés lumineux. Survoler le bouton QT n’assombrit plus la carte.
-- Les halos des joueurs utilisent désormais un effet uniforme. Les infobulles de groupe et les regroupements partagent des informations d’appartenance plus récentes et gèrent mieux les requêtes retardées.
-- Les diagnostics du développeur ont été améliorés tout en respectant les préférences de partage des diagnostics et la confidentialité des positions publiques.
+- Survolez le bouton QT de la carte pour consulter une légende illustrée des icônes et de leurs états.
+- Sur la carte du monde, un clic gauche sur le point d’un joueur le met en évidence et ouvre la carte la plus détaillée disponible pour sa position. Une fois ce dernier niveau atteint, le clic gauche ouvre son menu. Le clic droit ouvre toujours ce menu.
+- Rechercher sur la carte ouvre également la carte la plus précise disponible. La lueur verte reste sur le joueur lorsque vous changez de carte ; elle disparaît au bout d’une minute, à la fermeture de la carte ou dès que vous sélectionnez un autre joueur.
+- Survoler un joueur, un regroupement ou un repère partagé assombrit la carte et les marqueurs sans rapport avec la sélection, tout en gardant les marqueurs concernés bien visibles. Le survol du bouton QT n’assombrit plus la carte.
+- Les différentes lueurs des joueurs utilisent désormais le même effet visuel. Les infobulles et les regroupements exploitent des informations de groupe plus récentes et récupèrent mieux les réponses retardées.
+- Les diagnostics destinés au développeur ont été améliorés. Vos préférences de partage des diagnostics et la confidentialité de votre position publique restent respectées.
 
 ## 7.3.4
 
-Des infobulles de joueurs plus claires et des indicateurs QuestTogether plus cohérents.
+Des infobulles plus claires et des indicateurs QuestTogether plus cohérents.
 
-### Infobulles de joueurs et discussion
+### Infobulles des joueurs et discussion
 
-- Les listes de groupe affichent désormais les icônes QT dès que des données de position valides sont disponibles pour les joueurs, y compris après un rechargement de l’interface.
-- Les indicateurs d’état restent compacts dans les listes de membres des groupes et des marqueurs regroupés. Les explications concernant le développeur et la position masquée ne s’affichent qu’au survol direct du joueur concerné ; les indicateurs de position masquée restent visibles uniquement par le développeur.
-- Les annonces du développeur vérifié utilisent désormais une icône de parchemin et d’engrenage, entourée d’une lueur dorée lorsqu’il recherche des partenaires de quêtes.
+- Les listes de membres du groupe affichent l’icône QT dès que des données de position valides permettent de reconnaître un utilisateur de l’addon, y compris après un rechargement de l’interface.
+- Les listes de membres, dans les groupes comme dans les regroupements sur la carte, conservent des indicateurs compacts. Pour lire les explications du statut de développeur ou d’une position masquée, il faut survoler directement le joueur concerné. Les indicateurs de position masquée restent réservés au développeur.
+- Les annonces du développeur authentifié portent une icône associant un parchemin à une roue dentée. Elle s’entoure d’une lueur dorée lorsqu’il recherche des partenaires de quête.
 
 ## 7.3.3
 
-Des infobulles de marqueurs regroupés plus épurées.
+Des infobulles de regroupement plus sobres.
 
-### Joueurs sur les cartes
+### Joueurs sur la carte
 
-- Les infobulles des marqueurs regroupés identifient le développeur de QuestTogether par l’engrenage à la couleur de sa classe, sans libellé supplémentaire. Le libellé du développeur reste affiché dans les infobulles individuelles des joueurs.
+- Dans un regroupement de joueurs, le développeur de QuestTogether est représenté par une roue dentée de la couleur de sa classe, sans mention supplémentaire. Le texte qui explique ce statut reste dans son infobulle individuelle.
 
 ## 7.3.2
 
-Des informations de groupe plus cohérentes et une navigation plus intelligente sur les cartes.
+Les informations de groupe sont plus cohérentes et la navigation sur les cartes plus précise.
 
-### Joueurs sur les cartes
+### Cartes des joueurs
 
-- Les infobulles des joueurs, celles des marqueurs regroupés et la mise en évidence des membres d’un groupe utilisent désormais les mêmes informations de groupe déjà disponibles, ce qui réduit les chargements répétés et les incohérences de regroupement.
-- Les infobulles des marqueurs regroupés affichent le nombre total de membres du groupe à côté de l’icône de groupe blanche.
-- Depuis la vue d’ensemble du monde, cliquer sur un regroupement de marqueurs ouvre désormais la carte la plus détaillée contenant tous ses joueurs, puis déploie les marqueurs individuels si nécessaire.
+- Infobulles individuelles, regroupements et mise en évidence des compagnons partagent désormais les mêmes informations connues sur les groupes. Cela réduit les chargements répétés et les compositions contradictoires.
+- Les infobulles de regroupement affichent l’effectif total du groupe à côté de son icône blanche.
+- Depuis la carte du monde entier, un clic ouvre maintenant la carte la plus détaillée contenant tous les joueurs du regroupement, puis le déplie si nécessaire.
 
 ## 7.3.1
 
-Des informations de groupe et des commandes de carte plus claires.
+Les regroupements expliquent mieux les groupes, et le bouton de carte reste facile à retrouver.
 
-### Joueurs sur les cartes
+### Cartes des joueurs
 
-- Dans les infobulles des marqueurs regroupés, les joueurs appartenant au même groupe connu sont réunis dans un cadre blanc arrondi, avec une icône de groupe. Un joueur dont les coéquipiers se trouvent hors du regroupement conserve cet indicateur.
-- Le bouton QT de la carte du monde reste entièrement visible et affiche une croix rouge lorsque les marqueurs QT sont masqués.
-- Survoler le bouton QT n’assombrit plus la carte lorsque les marqueurs QT sont masqués.
+- Dans l’infobulle d’un regroupement, les joueurs du même groupe connu sont entourés d’un cadre blanc arrondi avec une icône de groupe. Un joueur dont les compagnons sont ailleurs garde cet indicateur.
+- Lorsque les marqueurs QT sont masqués, le bouton de la carte reste pleinement visible avec une croix rouge.
+- Son survol n’assombrit plus la carte lorsque les marqueurs sont masqués.
 
 ## 7.3.0
 
-Trouvez des joueurs sur les cartes très fréquentées, retrouvez vos compagnons récents et suivez la progression des quêtes avec moins d’annonces répétées.
+Retrouvez les joueurs sur les cartes chargées, renouez avec d’anciens compagnons et suivez la progression avec moins d’annonces répétées.
 
-### Joueurs sur les cartes
+### Cartes des joueurs
 
-- Les points de joueurs qui se chevauchent sur la carte du monde sont regroupés. Ce regroupement est activé par défaut et peut être désactivé dans Positions des joueurs.
-- Cliquez sur un groupe de points pour ouvrir la carte la plus détaillée contenant tous ses joueurs. Tout regroupement restant se déploie en points individuels avec leurs infobulles et menus habituels ; faites défiler sur le groupe pour parcourir les groupes plus nombreux.
-- Le bouton QT en haut à droite de la carte du monde affiche ou masque les marqueurs de joueurs et les points de passage partagés de QT. Survolez-le pour assombrir la carte derrière eux. Les marqueurs de la minicarte et le partage de position restent inchangés.
-- Trouver sur la carte ouvre la position récemment partagée d’un joueur et met son point en évidence.
+- Les points qui se superposent sur la carte du monde se regroupent. Cette fonction est activée par défaut et peut être coupée dans les réglages de position.
+- Cliquez sur un regroupement pour ouvrir la carte la plus détaillée contenant tous ses joueurs. S’il reste groupé, il se déplie en points individuels avec infobulles et menus ; la molette permet de parcourir les ensembles plus importants.
+- Le bouton QT en haut à droite affiche ou masque les joueurs et points de passage partagés. Son survol assombrit la carte derrière eux. Ni la minicarte ni le partage de position ne changent.
+- L’action pour trouver un joueur sur la carte ouvre sa position partagée récente et met son point en évidence.
 
 ### Compagnons récents
 
-- Utilisez /qt companions ou le menu de la minicarte pour ouvrir l’historique privé des joueurs avec qui vous avez fait groupe. Leurs menus permettent de chuchoter, d’inviter et de gérer des notes privées.
-- Cet historique est commun à vos personnages sur le même client et le même royaume. Il conserve jusqu’à 100 compagnons pendant 90 jours ; vous pouvez supprimer des entrées ou vider la liste à tout moment.
+- Ouvrez /qt companions ou le menu de minicarte pour consulter l’historique privé de vos anciens groupes. Les menus des joueurs permettent de chuchoter, inviter ou prendre une note.
+- L’historique est commun à vos personnages sur le même client et royaume. Il garde jusqu’à 100 compagnons pendant 90 jours ; vous pouvez retirer des entrées ou tout effacer.
 
-### Progression des quêtes et détails des joueurs
+### Progression et détails des joueurs
 
-- Les mises à jour rapprochées d’un même objectif sont regroupées en une seule annonce indiquant la progression la plus récente. Les objectifs terminés sont toujours annoncés rapidement.
-- Les développeurs de QuestTogether dont la signature est vérifiée ont un marqueur en forme d’engrenage à la couleur de leur classe et une mention de développeur dans les infobulles. Le survol des groupes de points affiche les mêmes couleurs de classe, icônes QT et statuts de recherche de compagnons de quête que les listes de groupe.
+- Les mises à jour rapides d’un même objectif sont regroupées en une annonce avec le dernier progrès. La fin d’un objectif est toujours annoncée rapidement.
+- Les développeurs QuestTogether authentifiés par signature ont un marqueur en forme d’engrenage, coloré par classe, et une mention dans les infobulles. Les listes des regroupements utilisent les mêmes couleurs de classe, logos QT et statuts de recherche que les listes de groupe.
 
 ## 7.2.1
 
-Corrections pour les notes privées et les colonnes repliées du journal de quêtes du groupe.
+Corrections des notes privées et des colonnes repliées du journal de groupe.
 
-### Corrections et améliorations
+### Corrections et présentation
 
-- Correction de l’absence du curseur de texte dans les notes privées sur les joueurs. La bordure indiquant le champ actif est désormais plus discrète.
-- Amélioration du défilement lors de la modification de longues notes sur les joueurs.
-- Les colonnes repliées du journal de quêtes du groupe utilisent désormais des icônes fiables pour les quêtes prêtes à être rendues et les quêtes terminées, au lieu de caractères qui pouvaient apparaître sous forme de carrés vides.
+- Le curseur de saisie réapparaît dans les notes privées et le cadre signalant le champ actif est plus discret.
+- Le défilement pendant l’édition des notes longues est amélioré.
+- Les colonnes repliées utilisent des icônes fiables pour les quêtes prêtes ou terminées, au lieu de caractères qui pouvaient apparaître comme des carrés vides.
 
 ## 7.2.0
 
-Des notes privées sur les joueurs et un journal de quêtes du groupe plus pratique.
+Gardez des notes privées sur les joueurs et profitez d’un journal de groupe plus pratique.
 
 ### Notes privées sur les joueurs
 
-- Ajoutez, modifiez ou supprimez une note privée depuis le menu QuestTogether d’un joueur. Elle apparaît lorsque vous survolez ce joueur.
-- Les notes sont communes à vos personnages et restent sur votre ordinateur. Elles ne sont jamais envoyées aux autres joueurs ni incluses dans les diagnostics.
+- Depuis le menu QT d’un joueur, ajoutez, modifiez ou supprimez une note. Elle apparaît lorsque vous survolez ce joueur.
+- Les notes sont communes à vos personnages et restent sur votre ordinateur. Elles ne sont jamais envoyées à d’autres joueurs ni incluses dans les diagnostics.
 
-### Améliorations du journal de quêtes du groupe
+### Améliorations du journal de groupe
 
-- Réduisez les colonnes des joueurs individuellement pour gagner de la place, puis développez-les lorsque vous avez besoin des détails.
-- Utilisez le bouton Clavier pour parcourir les quêtes avec les flèches, développer les objectifs avec Entrée et ouvrir les actions de quête avec Espace. Échap rétablit les commandes habituelles.
-- Les quêtes terminées sont désormais distinguées des quêtes manquantes lorsque l’addon à jour de l’autre joueur peut confirmer son historique de quêtes. Si cet historique est inconnu, la quête reste indiquée comme absente du journal.
-- Des explications plus claires sur le partage de quêtes vous aident à comprendre pourquoi une demande n’a pas pu aboutir. Les infobulles des joueurs affichent aussi les résultats de partage récents signalés par WoW.
+- Repliez les colonnes individuelles pour gagner de la place, puis rouvrez-les quand les détails vous sont utiles.
+- Le bouton Clavier active la navigation dans les quêtes avec les flèches. Entrée déplie les objectifs, Espace ouvre les actions de quête et Échap rend les commandes habituelles.
+- Les quêtes terminées se distinguent des quêtes absentes si l’addon à jour de l’autre joueur peut confirmer son historique. Sinon, elles restent indiquées comme absentes du journal.
+- Les explications de partage précisent pourquoi une demande n’a pas abouti. Les infobulles de joueurs montrent aussi les résultats récents de partage signalés par WoW.
 
-### Astuces et infobulles des joueurs
+### Astuces et infobulles
 
-- De nombreuses astuces du chat proposent désormais des raccourcis cliquables vers la fenêtre ou le réglage correspondant.
-- Survoler un joueur éloigné demande désormais ses informations à jour et la liste complète des membres de son groupe de cinq joueurs maximum. Les demandes sont réessayées tant que vous maintenez le survol.
+- De nombreuses astuces dans le chat proposent des raccourcis cliquables vers la fenêtre ou le réglage concerné.
+- Survoler un joueur éloigné demande des informations fraîches et la liste complète de son petit groupe, avec de nouvelles tentatives tant que le survol continue.
 
-> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Astuce : Saisissez /qt tip ou /qt hint pour afficher une astuce, puis utilisez ses raccourcis cliquables pour découvrir QuestTogether.
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Astuce : Tapez /qt tip ou /qt hint, puis utilisez les raccourcis cliquables de l’astuce pour découvrir QuestTogether.
 
 ## 7.1.3
 
-Des textes de quête plus fiables dans la langue de votre client.
+Les textes de quête disponibles dans votre langue sont récupérés plus sûrement.
 
-### Corrections des textes de quête
+### Textes des quêtes
 
-- Les annonces de quête, le Journal de quêtes du groupe et les notifications de suivi des quêtes utilisent désormais plus fiablement les noms de quêtes disponibles localement.
-- Les mises à jour de quête restent dans l’ordre pendant le chargement des noms. La fenêtre Détails de la quête affiche aussi correctement le texte des infobulles lorsqu’il arrive en retard.
-- Amélioration du traitement des noms de quêtes reçus d’autres joueurs.
+- Annonces, journal de groupe et messages de suivi retrouvent mieux les titres locaux disponibles.
+- Les mises à jour restent dans l’ordre pendant le chargement des titres. La fenêtre de détails récupère aussi correctement le texte d’infobulle arrivé tardivement.
+- La gestion des noms de quêtes reçus d’autres joueurs est améliorée.
 
 ## 7.1.2
 
-Réglage des astuces au démarrage et paramètres simplifiés.
+Choisissez si vous souhaitez une astuce au démarrage et retrouvez des réglages simplifiés.
 
 ### Astuces QuestTogether
 
-- Vous pouvez désactiver les astuces automatiques dans Général sur la page principale des paramètres de QuestTogether. /qt tip et /qt hint restent disponibles.
-- La page principale des paramètres a été simplifiée et le choix du thème clair ou sombre utilise désormais une liste déroulante.
+- Les options générales de la page principale permettent de désactiver les astuces automatiques. /qt tip et /qt hint restent disponibles.
+- La page principale des réglages est allégée et le choix du thème clair ou sombre utilise désormais une liste déroulante.
 
 ## 7.1.1
 
-Des icônes et des couleurs plus lisibles pour les astuces.
+Les astuces ont une icône et des couleurs plus lisibles.
 
 ### Astuces QuestTogether
 
-- Les astuces utilisent désormais une icône QT avec une ampoule à la place d’un emoji non pris en charge, avec un libellé doré et un texte crème.
+- Une icône QT avec une ampoule remplace l’emoji non pris en charge. Le libellé est doré et le texte de l’astuce couleur crème.
 
 ## 7.1.0
 
-Découvrez davantage de fonctionnalités de QuestTogether grâce à des astuces utiles.
+Découvrez les fonctions de QuestTogether grâce à des astuces.
 
 ### Astuces QuestTogether
 
-- QT affiche désormais une astuce à la connexion ou au rechargement de l’interface, tirée d’une liste mélangée sans répétition tant que toutes les astuces n’ont pas été affichées.
+- QT affiche une astuce à la connexion ou au rechargement de l’interface. Elles sont tirées d’une liste mélangée, sans répétition avant d’en avoir fait le tour.
 
-> 💡 Astuce : Saisissez « /qt tip » ou « /qt hint » pour voir une autre astuce QuestTogether quand vous le souhaitez.
+> 💡 Astuce : Tapez /qt tip ou /qt hint pour afficher une autre astuce QuestTogether quand vous le souhaitez.
 
 ## 7.0.2
 
-Quelques améliorations aux informations de quête et aux diagnostics facultatifs.
+Quelques améliorations pour consulter les quêtes et utiliser les diagnostics facultatifs.
 
 ### Améliorations
 
-- Ajout d’une fenêtre Détails de la quête pour lire les textes de quête disponibles.
-- Amélioration des diagnostics facultatifs destinés au développeur et de la fiabilité des communications. Votre réglage de partage des données de diagnostic est respecté.
+- Une fenêtre de détails permet de lire les textes de quête disponibles.
+- Les diagnostics facultatifs du développeur et la fiabilité des échanges sont améliorés. Votre choix de partage diagnostique reste respecté.
 
 ## 7.0.1
 
-Les commandes de QuestTogether se rapprochent désormais de celles de l’interface actuelle de Blizzard.
+Les contrôles QuestTogether se rapprochent de l’interface actuelle de Blizzard.
 
-### Des commandes au style Blizzard
+### Contrôles de style Blizzard
 
-- Les curseurs des paramètres disposent désormais de boutons fléchés pour les réglages fins et affichent leur valeur à côté de la barre.
-- Les cases à cocher, les échantillons de couleur, les barres de défilement et les boutons standard reprennent désormais l’apparence actuelle de Blizzard.
-- Les champs de recherche du journal de quêtes du groupe et de la fenêtre de débogage disposent désormais d’une icône de recherche et d’un bouton pour effacer le texte.
+- Les curseurs des réglages ont des flèches pour les ajustements fins et affichent leur valeur à côté de la piste.
+- Cases à cocher, couleurs, barres de défilement et boutons standard adoptent l’apparence actuelle de Blizzard.
+- Les recherches du journal de groupe et du débogage disposent d’une loupe et d’un bouton d’effacement.
 
-### Améliorations du défilement
+### Défilement
 
-- Le défilement a été revu dans les paramètres, le journal de quêtes du groupe, les notes de mise à jour et la fenêtre de débogage, y compris lors du redimensionnement et pour l’alignement des lignes de quêtes.
-- Le défilement avec les flèches et le déplacement de la barre de défilement native s’arrêtent correctement à la fermeture d’une fenêtre.
+- Le défilement est amélioré dans les réglages, le journal de groupe, les notes et la fenêtre de débogage, y compris lors du redimensionnement et pour l’alignement des lignes de quêtes.
+- Les flèches et le déplacement des barres de défilement natives s’arrêtent correctement à la fermeture d’une fenêtre.
 
 ## 7.0.0
 
-Le système de communication de QuestTogether a été reconstruit en préparation de la sortie de WoW Forever. Ce changement majeur de protocole nécessite que tout le monde mette l’addon à jour ensemble.
+Les communications de QuestTogether ont été reconstruites en préparation de la sortie de WoW Forever. Ce changement majeur de protocole exige que tous les joueurs mettent leur addon à jour ensemble.
 
-### Important : les anciennes versions ne peuvent pas communiquer
+### Important : incompatibilité avec les anciennes versions
 
-- Cette version introduit un nouveau protocole de communication. QuestTogether 7.x ne peut pas échanger les positions des joueurs, la progression des quêtes, les données du journal de quêtes du groupe ni les autres messages de l’addon avec les versions 6.x et antérieures. Demandez aussi à vos partenaires de quête de le mettre à jour.
+- QuestTogether 7.x utilise un nouveau protocole et ne peut pas échanger positions, progression de quêtes, journal de groupe ou autres messages d’addon avec les versions 6.x et antérieures. Pensez à faire mettre à jour vos compagnons.
 
 ### Préparer la sortie de WoW Forever
 
-- Nous effectuons ces changements importants qui rompent la compatibilité dès maintenant, avant la sortie de WoW Forever, pour donner des bases plus solides au système de communication de QuestTogether.
-- Après le lancement de WoW Forever, nous veillerons davantage à préserver la rétrocompatibilité entre les versions de l’addon et à éviter les mises à jour obligatoires qui perturbent le jeu. Si une nouvelle rupture de protocole devient nécessaire, nous l’annoncerons clairement.
+- Nous effectuons ces changements importants, qui rompent la compatibilité, avant la sortie de WoW Forever pour donner aux communications de QT des bases plus solides.
+- Après le lancement de Forever, nous veillerons davantage à préserver la compatibilité entre versions et à éviter les mises à jour obligatoires perturbant le jeu. Si une autre rupture de protocole devenait nécessaire, elle serait clairement annoncée.
 
-### Trouvez des joueurs là où vous cherchez
+### Trouver les joueurs là où vous regardez
 
-- Les mises à jour des joueurs donnent la priorité à votre zone actuelle et à une zone que vous laissez ouverte sur la carte. Les positions plus éloignées sont actualisées en arrière-plan.
-- Les déplacements à proximité utilisent des mises à jour courtes et ciblées. Les demandes de recherche sont mutualisées et échelonnées pour réduire le trafic dans les zones fréquentées.
+- Les mises à jour privilégient votre zone actuelle et celle que vous gardez ouverte sur la carte. Les positions plus lointaines sont actualisées en arrière-plan.
+- Les mouvements proches utilisent de petits messages ciblés. Les demandes de découverte sont regroupées et échelonnées pour limiter le trafic dans les lieux fréquentés.
 
 ### Des échanges plus fiables
 
-- Les mises à jour de quêtes, les transferts du journal de quêtes du groupe, les détails des joueurs et les diagnostics partagent un envoi régulé pour que les réponses volumineuses laissent de la place aux autres activités.
-- Les réponses volumineuses peuvent récupérer les parties manquantes sans recommencer tout le transfert. Les positions reçues en retard conservent leur ancienneté et ne peuvent pas remplacer des positions plus récentes ou leur retrait.
-- Les changements de partage de position annulent les coordonnées publiques en attente d’envoi. À la déconnexion ou lors d’un écran de chargement, QuestTogether tente d’envoyer un dernier message de départ ; sinon, les données finissent toujours par expirer.
+- Progression, journal de groupe, détails des joueurs et diagnostics partagent une livraison à cadence contrôlée : les grosses réponses laissent de la place aux autres échanges.
+- Les réponses volumineuses peuvent récupérer les morceaux manquants sans recommencer entièrement. Les positions retardées gardent leur âge d’origine et ne remplacent ni une position plus récente ni un retrait.
+- Changer le partage de position annule les coordonnées publiques déjà en attente. À la déconnexion ou au chargement d’une zone, QT tente un dernier message de départ ; l’expiration reste le recours si celui-ci n’arrive pas.
 
 ## 6.5.11
 
-De nouveaux raccourcis clavier facilitent l’accès aux outils de QuestTogether et la gestion des partenaires de quête.
+De nouveaux raccourcis clavier donnent accès aux outils QT et à la recherche de compagnons.
 
 ### Raccourcis clavier
 
-- QuestTogether s’affiche désormais correctement dans Paramètres > Raccourcis, à la place de l’entrée incorrecte HEADER_QUESTTOGETHER.
-- Assignez des touches pour ouvrir le menu QuestTogether, afficher ou masquer le journal de quêtes du groupe, activer ou désactiver la recherche de partenaires de quête, arrêter le suivi de quête, ouvrir la discussion QuestTogether ou accéder aux paramètres de QuestTogether.
-- Votre raccourci actuel pour le journal de quêtes du groupe est conservé. Les nouvelles actions n’ont aucune touche assignée par défaut, et le raccourci du menu fonctionne même lorsque l’icône de la minicarte est masquée.
+- QuestTogether apparaît correctement dans les raccourcis du jeu, à la place de l’entrée incorrecte HEADER_QUESTTOGETHER.
+- Vous pouvez attribuer des touches au menu QT, au journal de groupe, à la recherche de compagnons, à l’arrêt du suivi de quête, au chat QT et aux réglages.
+- Votre touche existante du journal de groupe est conservée. Les nouvelles actions n’ont aucune touche par défaut ; celle du menu fonctionne même si le bouton de minicarte est masqué.
 
 ## 6.5.10
 
-Des mises à jour plus fluides du journal de quêtes du groupe, des demandes et des actualisations de carte plus fiables, et des corrections pour les profils et les bulles de progression.
+Des actualisations plus fluides du journal de groupe, des demandes et cartes plus fiables, et des corrections pour les profils et les bulles.
 
 ### Journal de quêtes du groupe
 
-- Lorsque l’actualisation automatique est activée, les listes de quêtes inchangées génèrent moins de trafic d’addon. Cliquer manuellement sur « Actualiser » demande toujours une mise à jour complète.
-- Les listes de quêtes se rétablissent correctement après un changement d’objectif ou après avoir ignoré puis cessé d’ignorer un joueur, au lieu de conserver une progression obsolète ou de rester bloquées en chargement.
+- Avec l’actualisation automatique, une liste inchangée consomme moins de trafic. Le bouton Actualiser demande toujours une mise à jour complète.
+- Les listes se rétablissent après un changement d’objectif ou l’ajout puis le retrait d’un joueur ignoré, sans conserver une progression ancienne ni rester bloquées en attente.
 
 ### Fenêtres et profils
 
-- Changer, copier ou réinitialiser un profil rétablit ses dispositions de fenêtres enregistrées ou les dispositions par défaut. Les changements de taille d’affichage gardent les fenêtres à l’écran sans effacer vos préférences de taille et de position.
-- Fermer une confirmation de demande pour rejoindre un groupe ou partager une quête affiche désormais correctement la demande suivante en attente.
-- Ouvrir les paramètres dans le mode Édition de Blizzard n’empêche plus l’annulation des modifications de rétablir la disposition initiale de votre bulle de progression personnelle.
-- Les fenêtres d’assistance ouvertes continuent de s’adapter aux changements de thème et d’affichage lorsque QuestTogether est désactivé.
+- Changer, copier ou réinitialiser un profil applique ses dispositions enregistrées ou les valeurs par défaut. Un changement d’écran garde les fenêtres visibles sans oublier vos tailles et positions préférées.
+- Fermer une confirmation de demande d’entrée ou de partage fait correctement apparaître la demande suivante.
+- Ouvrir les réglages pendant le mode Édition Blizzard n’empêche plus le rétablissement de la disposition initiale de votre bulle.
+- Les fenêtres d’aide ouvertes continuent à s’adapter au thème et à l’écran même si QuestTogether est désactivé.
 
-### Suivi et communication
+### Suivi et communications
 
-- Les demandes pour rejoindre un groupe ou partager une quête qui ont expiré ou ne sont plus nécessaires sont annulées avant leur envoi.
-- Les objectifs bonus et les expéditions terminés conservent le bon type d’annonce, même si la quête disparaît du journal avant l’arrivée de l’événement de fin.
-- Les actualisations manuelles de position utilisent désormais les réponses publiques des anciennes versions de QuestTogether pour mettre à jour les points habituels sur la carte, tout en conservant les positions plus récentes et les choix de partage de position.
+- Les demandes d’entrée ou de partage expirées ou devenues inutiles sont annulées avant envoi.
+- Les fins d’objectifs bonus et d’expéditions gardent le bon type d’annonce même si la quête disparaît du journal avant l’événement de complétion.
+- Une actualisation manuelle des positions exploite les réponses publiques d’anciens QT pour les points ordinaires, sans remplacer une position plus récente ni ignorer les choix de partage.
 
 ## 6.5.9
 
-Des mises à jour de groupe plus fiables, des cartes de joueurs plus claires et des corrections lors du masquage de l’interface avec Alt+Z.
+Les mises à jour du groupe sont plus fiables, les cartes plus propres et le masquage de l’interface avec Alt+Z conserve mieux l’état des fenêtres.
 
-### Journal de quêtes du groupe et fenêtres
+### Journal de groupe et fenêtres
 
-- Masquer puis réafficher l’interface avec Alt+Z conserve désormais les confirmations de changement de quête prioritaire en attente et les arrière-plans aux couleurs des classes derrière les noms des joueurs.
-- Les demandes du journal de quêtes du groupe reprennent plus fiablement après un rechargement, un écran de chargement ou la perte de pages de messages, au lieu de laisser les joueurs bloqués sur « Chargement ».
-- Les dispositions des fenêtres et les bulles de progression personnelles s’adaptent mieux aux petits écrans. Réinitialiser les dispositions conserve les choix en attente dans les boîtes de dialogue.
+- Masquer puis rétablir l’interface avec Alt+Z conserve les confirmations de changement de quête en attente et les fonds aux couleurs de classe derrière les noms.
+- Les demandes du journal se remettent mieux des rechargements, écrans de chargement et pages de message perdues, au lieu de laisser un joueur bloqué en attente.
+- Dispositions et bulles personnelles s’adaptent mieux aux petits écrans. Réinitialiser la disposition conserve les choix en attente dans les dialogues.
 
-### Cartes et mises à jour de groupe
+### Cartes et informations du groupe
 
-- Les mises à jour de position, de groupe et de quête prioritaire rejettent les messages obsolètes : les réponses retardées ne peuvent plus faire réapparaître des joueurs partis ni remplacer des données plus récentes.
-- QT envoie un avis lorsque vous quittez le monde, afin que les autres joueurs puissent retirer votre point plus tôt si cet avis arrive. L’expiration normale prend toujours le relais si l’avis se perd, et la disponibilité pour rejoindre un groupe est rétablie après les écrans de chargement.
-- Les membres de votre groupe utilisent désormais les marqueurs de Blizzard sur la carte et la minicarte, sans points QT en double. Joueurs affichés sur les cartes propose Tous les joueurs QuestTogether, Joueurs cherchant des partenaires de quête ou Aucun ; le partage de votre propre position reste indépendant.
+- Les messages de position, groupe et quête active trop anciens sont refusés : une réponse retardée ne peut plus faire réapparaître un joueur parti ni écraser des données récentes.
+- QT annonce son départ en quittant le monde. Si le message arrive, les autres peuvent retirer votre point plus tôt ; sinon, l’expiration habituelle s’applique. La disponibilité pour rejoindre un groupe se rétablit après les écrans de chargement.
+- Votre groupe utilise les marqueurs natifs de Blizzard sans doublons QT. Le filtre de carte propose tous les joueurs QuestTogether, ceux qui cherchent des compagnons ou personne ; le partage de votre propre position reste séparé.
 
-### Suivi et communication
+### Suivi et communications
 
-- Le suivi des quêtes se rétablit lorsque le journal est incomplet à la connexion, et un grand nombre d’événements de quête ne repousse plus indéfiniment les actualisations en attente.
-- Les messages sortants partagent une file d’envoi cadencée, et la vérification des demandes du développeur se fait par petites étapes pour réduire les blocages d’image. Désactiver le partage des diagnostics annule les tâches de diagnostic en attente.
-- Les réponses de diagnostic volumineuses disposent de plus de temps pour se terminer. Les anciens clients demandeurs reçoivent une réponse explicite de dépassement de taille lorsqu’un rapport ne tient pas, au lieu d’attendre sans réponse jusqu’à l’expiration du délai.
+- Le suivi des quêtes reprend même si le journal est incomplet à la connexion. Une succession d’événements ne repousse plus sans cesse une actualisation en attente.
+- Les messages sortants partagent une file à cadence contrôlée. La vérification des demandes du développeur avance par petites étapes pour réduire les blocages d’image. Désactiver le partage diagnostique annule les tâches diagnostiques en attente.
+- Les gros rapports ont plus de temps pour arriver. Les anciens demandeurs reçoivent une réponse explicite de dépassement de taille lorsqu’un rapport ne tient pas, au lieu d’attendre sans explication.
 
 ## 6.5.8
 
-Menus déroulants natifs de WoW, options de carte plus claires et diagnostics développeur.
+Des listes déroulantes natives, des réglages de carte plus clairs et une option de diagnostic pour le développeur.
 
-### Paramètres et cartes des joueurs
+### Réglages et cartes des joueurs
 
-- Les neuf menus déroulants des paramètres utilisent désormais les contrôles natifs de WoW : sélection dorée, menus noirs et boutons précédent/suivant.
-- Joueurs affichés sur les cartes remplace les cases séparées de visibilité et d’exception pour le groupe. Choisissez tous les joueurs QT, ceux qui cherchent des partenaires de quête avec ou sans votre groupe, votre groupe uniquement ou Aucun. Les préférences existantes sont conservées ; le partage de votre position reste séparé.
-- La nouvelle catégorie Développeur regroupe l’ouverture de la fenêtre de débogage, la relecture du journal des quêtes et le partage des données de diagnostic.
+- Les neuf listes déroulantes utilisent les contrôles WoW : sélection dorée, menus noirs et boutons précédent/suivant.
+- Le choix des joueurs affichés remplace les cases de visibilité et d’exception du groupe. Choisissez tous les joueurs QT, ceux qui cherchent des compagnons avec ou sans votre groupe, votre groupe seul, ou personne. Vos préférences sont conservées ; le partage de votre position reste distinct.
+- Le nouveau volet Développeur rassemble l’ouverture du débogage, la relecture du journal de quêtes et le partage de diagnostics.
 
 ### Réponses de diagnostic
 
-- Le partage des données de diagnostic avec le développeur est activé par défaut. Il autorise les demandes authentifiées du développeur concernant les diagnostics QT, les paramètres de l’addon et les données de personnage, de groupe et de position en jeu, même si le partage public de position est désactivé. Désactivez cette option sous Développeur pour arrêter ce partage.
-- Les réponses utilisent des messages privés d’addon, répartis en pages espacées pour conserver tous les champs des réponses volumineuses. Les diagnostics à distance exigent la version 6.5.8 ou ultérieure chez les deux joueurs ; les clients 6.5.7 publiés ne peuvent pas répondre à ces demandes.
+- Le partage de diagnostics avec le développeur est activé par défaut. Il autorise des demandes authentifiées portant sur les diagnostics QT, les réglages de l’addon et les informations en jeu du personnage, du groupe et de position, même lorsque le partage public de votre position est désactivé. Désactivez cette option dans Développeur pour arrêter ce partage.
+- Les réponses passent par des chuchotements privés d’addon, découpés en pages et espacés pour préserver tous les champs des gros rapports. Les deux joueurs doivent utiliser 6.5.8 ou une version ultérieure ; les clients publiés en 6.5.7 ne savent pas répondre à ces demandes.
 
 ## 6.5.7
 
-Ciblage sur la minicarte et icônes de groupe plus visibles.
+Ciblez un joueur depuis la minicarte et distinguez mieux les icônes du groupe.
 
-### Points des joueurs et icônes de groupe
+### Points et icônes de groupe
 
-- Hors combat, cliquez avec le bouton gauche sur le point d’un joueur sur la minicarte pour le cibler, si le jeu le permet. Le clic droit ouvre toujours le menu, avec Cibler en première position. Les menus des points sur la carte du monde restent inchangés.
-- Les icônes de recherche de partenaires ont désormais un contour doré bien plus marqué. Les listes de groupe dans les infobulles affichent aussi le logo QT lumineux pour les membres qui cherchent actuellement des partenaires de quête.
-- Les symboles de suivi du journal de quêtes du groupe sont désormais affichés sur leur propre couche de premier plan, afin que les arrière-plans des boutons ne puissent pas les masquer.
+- Hors combat, un clic gauche sur un point de minicarte cible le joueur lorsque le jeu le permet. Le clic droit ouvre toujours le menu, dont la première action est le ciblage. Les menus de la carte du monde ne changent pas.
+- Les icônes de recherche de compagnons ont un contour doré nettement renforcé. Les listes de groupe dans les infobulles montrent aussi le logo lumineux des membres qui cherchent actuellement des compagnons.
+- Les symboles de quête active du journal de groupe sont dessinés sur leur propre couche au premier plan pour ne plus être recouverts par le fond des boutons.
 
 ## 6.5.6
 
-Repérez dans vos messages les joueurs qui cherchent des partenaires de quête.
+Repérez dans le journal les joueurs qui cherchent des compagnons.
 
-### Recherche de partenaires de quête
+### Recherche de compagnons
 
-- L’icône de recherche de partenaires a un contour doré plus lumineux et une lueur renforcée pour rester bien visible en petit format dans les messages.
-- L’icône QT au début des messages brille désormais lorsque le joueur cherche des partenaires de quête. Les icônes propres aux quêtes et les bulles de discussion conservent leur apparence habituelle.
+- L’icône de recherche reçoit un contour doré plus vif et une lueur plus forte, plus lisibles en petit dans le journal.
+- Le logo QT en début de message brille désormais lorsque son auteur cherche des compagnons. Les icônes propres aux quêtes et les bulles de dialogue gardent leur aspect.
 
 ## 6.5.5
 
-Correction des icônes de quête manquantes dans le journal de quêtes du groupe.
+Correction d’icônes de quête absentes du journal de groupe.
 
-### Icônes du journal de quêtes du groupe
+### Icônes des quêtes
 
-- Correction des boutons de suivi de quête qui apparaissaient parfois sous forme de cercles vides après un défilement ou une actualisation de la liste. Les boutons réutilisés réinitialisent désormais correctement leurs graphismes et utilisent une icône de remplacement si le graphisme demandé ne peut pas être appliqué.
+- Après un défilement ou une actualisation, certains boutons de quête pouvaient devenir des cercles vides. Les boutons réutilisés réinitialisent maintenant leur image et utilisent une icône de secours si l’image demandée ne peut pas être appliquée.
 
 ## 6.5.3
 
-Ajout de trois sections illustrées au guide du journal de quêtes du groupe. Le fonctionnement en jeu reste inchangé ; les captures utilisent des équipiers simulés sur Forever.
+Trois rubriques illustrées complètent le guide du journal de groupe. Le fonctionnement ne change pas ; les captures montrent des compagnons simulés sur Forever.
 
-### Votre groupe en un coup d’œil
+### Le groupe en un coup d’œil
 
-- Ajout au guide d’une capture présentant le journal de quêtes du groupe.
-
-**Forever**
-
-![Votre groupe en un coup d’œil — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestOverviewForever.png)
-
-### Choisissez une quête ou suivez un coéquipier
-
-- Ajout d’une capture des commandes de suivi de quête.
+- Une capture d’ensemble du journal de groupe a été ajoutée au guide.
 
 **Forever**
 
-![Choisissez une quête ou suivez un coéquipier — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFollowingForever.png)
+![Le groupe en un coup d’œil — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestOverviewForever.png)
 
-### Changez de cible en connaissance de cause
+### Choisir une quête ou suivre un compagnon
 
-- Ajout d’une capture de la confirmation du changement de quête ciblée.
+- Une capture présente les commandes de suivi des quêtes.
 
 **Forever**
 
-![Changez de cible en connaissance de cause — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFocusWarningForever.png)
+![Choisir une quête ou suivre un compagnon — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFollowingForever.png)
+
+### Confirmer un changement de quête
+
+- Une capture illustre la confirmation avant de changer de quête active.
+
+**Forever**
+
+![Confirmer un changement de quête — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFocusWarningForever.png)
 
 ## 6.5.2
 
-Correction de l’aperçu du suivi de quête.
+Correction du suivi après un aperçu.
 
-### Testez avec vos quêtes
+### Essayer avec vos quêtes
 
-- Fermer l’aperçu du journal de quêtes du groupe reprend désormais le suivi existant dans votre véritable groupe.
+- Fermer l’aperçu du journal de groupe reprend désormais le suivi déjà actif dans votre vrai groupe.
 
 ## 6.5.1
 
-Des boutons de quête plus clairs, des changements confirmés pendant le suivi et des icônes conformes au suivi Blizzard.
+Des boutons de quête plus lisibles, une confirmation avant de quitter un suivi et des icônes cohérentes avec le suivi natif de WoW.
 
-### Des commandes plus claires
+### Lire les choix de quête
 
-- Pendant le suivi, seul le bouton de la quête active du joueur suivi reste coloré. Sans suivi, vos boutons et les quêtes actives de vos coéquipiers restent colorés. Les autres boutons sont gris, sans transparence. Les quêtes actives des coéquipiers restent cliquables pour commencer le suivi ou changer de joueur.
+- Pendant un suivi, seul le bouton de la quête active du compagnon suivi reste coloré. Sinon, vos boutons et les quêtes actives des autres sont colorés. Les autres boutons sont gris, sans atténuation. Les quêtes actives des compagnons restent cliquables pour démarrer ou changer le suivi.
 
-### Confirmer le changement
+### Confirmer un changement
 
-- Choisir votre propre quête ou un autre coéquipier demande confirmation avant d’arrêter le suivi actuel. Changer ou effacer la cible dans le suivi Blizzard demande aussi confirmation : QT rétablit la cible suivie pendant votre décision. Annuler conserve le suivi ; Changer de cible applique votre choix. Aperçu : /qt preview unfollow.
+- Choisir votre quête ou un autre compagnon demande confirmation avant d’arrêter le suivi actuel. Changer ou effacer la quête dans le suivi Blizzard fait de même : QT rétablit la quête suivie pendant votre décision. Annuler poursuit le suivi ; changer applique votre choix. /qt preview unfollow permet de voir le dialogue.
 
-### Des icônes cohérentes
+### Des icônes assorties à WoW
 
-- L’état des quêtes utilise désormais la même vérification d’achèvement que le suivi Blizzard. Les quêtes de livraison affichent ainsi un point d’interrogation au lieu d’une icône de progression. L’état Prêt corrigé est également inclus dans les données partagées du journal du groupe.
+- L’état de remise utilise la même vérification que le suivi Blizzard. Les quêtes de livraison qui avaient une icône de progression affichent ainsi correctement un point d’interrogation. L’état prêt corrigé est aussi transmis dans les relevés du journal de groupe.
 
-### Testez avec vos quêtes
+### Essayer avec vos quêtes
 
-- L’aperçu utilise votre vrai journal avec quatre coéquipiers simulés et des quêtes supplémentaires manquantes. Le ciblage change votre navigation Blizzard réelle ; le partage reste simulé. Le menu du nom d’un coéquipier permet de changer sa quête active. La colonne d’action affiche désormais Non partageable ou Partage possible inconnu, centré, au lieu de rester vide.
+- L’aperçu de comparaison utilise votre vrai journal, quatre compagnons simulés et des quêtes supplémentaires absentes de votre journal. Les boutons changent réellement la navigation Blizzard ; le partage reste simulé. Le menu d’un compagnon fait avancer sa quête active. Les quêtes non partageables affichent une mention centrée de non-partage ou d’état inconnu au lieu d’une colonne d’action vide.
 
 ## 6.5.0
 
-Choisissez votre quête ciblée directement dans le journal du groupe et continuez à suivre après un rechargement.
+Choisissez la quête active depuis le journal de groupe et conservez le suivi d’un compagnon après un rechargement.
 
-### Boutons de ciblage des quêtes
+### Boutons de quête active
 
-- Des boutons de quête de style Blizzard apparaissent dans la colonne de chaque joueur, à la place des titres de quête dans les en-têtes. Cliquez dans votre colonne pour changer votre quête de navigation. Les boutons sélectionnés indiquent la quête ciblée par vos coéquipiers ; cliquez dessus pour les suivre.
+- Des boutons de style Blizzard apparaissent dans chaque colonne, à la place des titres de quêtes actives dans les en-têtes. Cliquez dans votre colonne pour changer votre quête suivie en priorité. Les boutons sélectionnés indiquent le choix des compagnons ; cliquez dessus pour les suivre.
 
-### Un suivi durable
+### Un suivi qui dure
 
-- Votre choix est enregistré par personnage après un rechargement et conservé pendant les interruptions temporaires de données. Les nouvelles données du groupe ajustent votre cible si vous avez la quête. Choisir votre propre navigation, le départ du coéquipier, la dissolution du groupe ou sa conversion en raid arrête le suivi.
+- Le compagnon suivi est enregistré par personnage et conservé après rechargement ou pendant une interruption temporaire des données. Les nouvelles informations du groupe ajustent votre quête si vous la possédez. Choisir votre propre navigation arrête le suivi, tout comme le départ du compagnon, la dissolution du groupe ou sa conversion en raid.
 
-### Si vous n’avez pas la quête
+### Si vous ne possédez pas la quête
 
-- Si le joueur suivi cible une quête que vous n’avez pas, le suivi s’arrête sans modifier votre navigation. Une fenêtre au thème QT explique la situation et ouvre le journal du groupe pour demander la quête, puis suivre à nouveau. Essayez /qt preview focus pour la fenêtre ou /qt preview compare pour les boutons et les changements de cible simulés.
+- Si le compagnon choisit une quête absente de votre journal, le suivi s’arrête sans changer votre navigation. Un dialogue au thème QT explique la situation et ouvre le journal de groupe pour demander la quête puis reprendre le suivi. /qt preview focus montre ce dialogue ; /qt preview compare permet d’essayer les boutons et des changements simulés.
 
 ## 6.4.3
 
-Corrections du suivi de quête et des infobulles de groupe, avec des réglages de carte simplifiés.
+Corrections de la quête active et des infobulles de groupe, avec un réglage de carte simplifié.
 
-### Votre quête suivie
+### Votre quête active
 
-- Votre en-tête dans le journal des quêtes de groupe lit désormais directement votre quête suivie, même en solo ou lorsque le partage du suivi est désactivé. Changer la quête choisie pour la navigation met à jour l’en-tête sans actualisation manuelle.
+- Votre en-tête du journal de groupe lit directement votre quête active, même en solo ou lorsque son partage est désactivé. Changer la quête suivie en priorité l’actualise sans devoir cliquer sur Actualiser.
 
-### Membres du groupe dans les infobulles
+### Composition du groupe dans les infobulles
 
-- Pour les groupes de cinq joueurs maximum, l’infobulle affiche immédiatement le joueur survolé avec le chef pendant le chargement de la liste complète. Le message de chargement apparaît uniquement si d’autres membres manquent encore. Les groupes plus grands affichent toujours seulement le chef.
+- Dans un petit groupe, le joueur survolé apparaît immédiatement avec le chef pendant le chargement du reste. Le message d’attente ne s’affiche que si d’autres membres manquent encore. Au-delà de cinq membres, seul le chef reste listé.
 
-### Réglages de carte simplifiés
+### Réglage des cartes simplifié
 
-- Une seule case permettant d’afficher les autres joueurs sur la carte et la minicarte contrôle désormais les deux affichages. Le partage de votre position reste indépendant. Si l’un des affichages était activé, les deux restent activés ; si les deux étaient désactivés, l’affichage reste désactivé.
+- Une seule case contrôle désormais l’affichage des autres joueurs sur la carte et la minicarte. Le partage de votre position reste indépendant. Après mise à jour, l’affichage reste actif si au moins l’une des cartes l’était, et inactif si les deux étaient désactivées.
 
 ## 6.4.2
 
-Merci d’utiliser QuestTogether ! Cette mise à jour ajoute davantage de contrôle sur les instantanés de progression des quêtes, l’affichage de la position des joueurs et l’accessibilité des fenêtres. Les paramètres sont plus faciles à ajuster, et Discord reste le meilleur endroit pour les retours et l’assistance.
-
-### Mises à jour du journal des quêtes de groupe
-
-- Les en-têtes des joueurs indiquent désormais la fraîcheur de chaque instantané de quête. Ouvrez le menu d’en-tête d’un joueur pour actualiser uniquement ce joueur sans actualiser tout le monde.
-- Les filtres incluent désormais un paramètre optionnel d’actualisation automatique. Lorsqu’il est activé, le journal des quêtes de groupe s’actualise environ toutes les 30 secondes tant que la vraie fenêtre est ouverte.
-- L’actualisation conserve autant que possible votre recherche, les quêtes développées, la position horizontale et la position de quête visible pendant l’arrivée des nouvelles données d’instantané.
-- Les libellés de suivi de quête expliquent désormais les données en attente, expirées ou non prises en charge, ou indiquent « Non partagé ou indisponible » lorsque QT ne peut pas distinguer ces cas. Le menu avertit aussi des boucles de suivi.
-
-### Accessibilité et disposition des fenêtres
-
-- Les paramètres incluent désormais des options d’accessibilité pour une échelle de fenêtre de 80 % à 150 % et une réduction des mouvements pour le défilement instantané et l’ouverture instantanée des objectifs.
-- L’échelle de fenêtre agrandit le texte et les commandes ensemble, mais peut être limitée si nécessaire pour garder toute la fenêtre à l’écran.
-- Le journal des quêtes de groupe et la fenêtre de bienvenue enregistrent désormais leur taille et leur position relative à l’écran par profil, et les fenêtres QuestTogether sont réajustées après les changements de taille d’affichage ou d’échelle de l’interface.
-- Utilisez Réinitialiser la disposition des fenêtres dans Accessibilité, ou /qt resetlayout, pour effacer les dispositions de fenêtres QuestTogether enregistrées et les recentrer.
-
-### Commandes de position des joueurs
-
-- L’affichage sur la carte du monde et la minicarte peut désormais être activé ou désactivé séparément du partage de position, afin que vous puissiez masquer les repères locaux sans modifier ce que vous partagez.
-- Le filtre de position des joueurs propose désormais tous les joueurs QuestTogether, les partenaires de quête ou uniquement le groupe.
-- Toujours afficher mon groupe est activé par défaut, afin que les membres du groupe apparaissent quand même avec le filtre des partenaires de quête si leurs autorisations de position le permettent.
-
-### Corrections et finitions
-
-- La détection expérimentale de couche conserve les mêmes paramètres et la même interface, avec une gestion des requêtes plus fluide lorsque les indices locaux changent ou que les candidats proches sont en recharge.
-- Les boîtes de dialogue QuestTogether gèrent désormais Échap via leurs actions de fermeture normales, et une touche peut être assignée au journal des quêtes de groupe dans le menu natif Raccourcis clavier, sans touche définie par défaut.
-- Survolez les lignes de quêtes et d’objectifs pour lire leur texte complet. Les curseurs d’échelle de fenêtre et de portée à proximité ont désormais des pistes plus claires avec des contours sombres pour une meilleure visibilité.
-
-## 6.4.1
-
-Détection expérimentale des couches pour les joueurs QT proches.
-
-### Détection expérimentale des couches
-
-- Activée par défaut dans Paramètres > QuestTogether > Expérimental. Désactivez Détecter les couches différentes pour arrêter les comparaisons et masquer les indicateurs de phase estimée.
-- Dans le monde ouvert de Forever, les clients QT compatibles proches comparent les PNJ observés et les joueurs visibles. Une icône de phase indique une couche probablement différente ; survolez-la pour plus de détails. Le partage de position est requis.
-- Les estimations peuvent être erronées. L'absence de joueurs seule ne permet pas de conclure. Se voir mutuellement ou voir un joueur commun prime sur l'estimation par PNJ. Les indices périmés sont automatiquement effacés. Les anciens clients QT ne peuvent pas participer.
-
-### Captures des notes de version
-
-- Les captures des notes de version sont désormais téléversées directement sur Discord pour rester visibles dans les publications du journal des modifications.
-
-## 6.4.0
-
-Des fenêtres QT plus soignées et un accès plus rapide aux quêtes du groupe.
+Réglez plus finement les relevés de progression, les joueurs affichés sur les cartes et l’accessibilité des fenêtres. Pour vos retours ou de l’aide, retrouvez-nous sur Discord.
 
 ### Journal de quêtes du groupe
 
-- Découvrez le journal de quêtes du groupe introduit en 6.3 : comparez jusqu’à cinq joueurs dans des colonnes aux couleurs de classe, repérez les quêtes possédées ou manquantes et voyez quand le groupe peut les rendre. Combinez recherche et filtres de possession, progression et action. Partage et demandes de partage sont proposés lorsque cela est possible.
-- Chaque en-tête affiche la quête suivie du joueur. Cliquez sur le nom d’un coéquipier pour suivre volontairement sa quête active ; si vous ne la possédez pas, votre navigation reste inchangée. Actualiser récupère un nouvel état de la progression distante. Les captures montrent des données fictives de prévisualisation.
-- Les quêtes que vous possédez ont désormais un petit bouton en forme de livre qui ouvre leurs détails dans le journal des quêtes de Blizzard. Cliquer sur la ligne développe toujours les objectifs.
-- Une couronne indique le chef du groupe et suit les changements de chef. Votre propre colonne reste en premier.
+- Les en-têtes indiquent l’ancienneté des données de chaque joueur. Leur menu permet de n’actualiser que ce joueur.
+- Une option des filtres active l’actualisation automatique, environ toutes les 30 secondes tant que la véritable fenêtre est ouverte.
+- Les nouvelles données conservent si possible votre recherche, les quêtes dépliées, le défilement horizontal et la quête visible.
+- Les mentions de quête active distinguent attente, expiration et données non prises en charge. Si QT ne peut pas différencier absence de partage et indisponibilité, il l’indique. Le menu avertit aussi d’une boucle de suivi possible.
+
+### Accessibilité et disposition
+
+- Les options d’accessibilité proposent une échelle de fenêtre de 80 % à 150 % et une réduction des animations pour un défilement et une ouverture des objectifs instantanés.
+- L’échelle agrandit textes et contrôles ensemble, mais peut être limitée pour garder la fenêtre entière à l’écran.
+- Le journal du groupe et l’accueil enregistrent leur taille et leur position relative à l’écran par profil. Les fenêtres QT sont réajustées après un changement d’écran ou d’échelle d’interface.
+- Réinitialisez les dispositions dans Accessibilité ou avec /qt resetlayout pour effacer les positions sauvegardées et recentrer les fenêtres.
+
+### Affichage des positions
+
+- Carte et minicarte peuvent être affichées ou masquées séparément du partage : cacher vos points locaux ne change pas ce que vous envoyez.
+- Le filtre propose tous les joueurs QT, ceux qui cherchent des compagnons ou votre groupe uniquement.
+- L’affichage permanent de votre groupe est activé par défaut. Ses membres restent donc visibles avec le filtre de recherche de compagnons, si leurs autorisations de position le permettent.
+
+### Autres améliorations
+
+- La détection expérimentale de couche conserve ses options et son interface, mais gère mieux les demandes lorsque les indices locaux changent ou que des candidats proches doivent attendre.
+- Échap ferme les dialogues QT par leur action normale. Le journal de quêtes du groupe peut recevoir une touche dans les raccourcis du jeu ; aucune n’est attribuée par défaut.
+- Survolez les lignes de quêtes et d’objectifs pour lire le texte entier. Les curseurs d’échelle et de proximité ont une piste plus claire bordée de sombre.
+
+## 6.4.1
+
+Une détection expérimentale peut signaler qu’un joueur QT proche se trouve probablement sur une autre couche de monde.
+
+### Détection expérimentale des couches
+
+- Elle est activée par défaut dans les réglages expérimentaux de QuestTogether. Désactiver la détection des couches différentes arrête les comparaisons et masque les indicateurs de phase déduits.
+- Dans le monde ouvert de Forever, les clients QT compatibles proches comparent leurs observations de PNJ et de joueurs visibles. Une icône de déphasage signale une différence probable ; survolez-la pour les détails. Le partage de position doit être actif.
+- L’estimation peut se tromper. L’absence d’un joueur ne suffit pas à conclure ; se voir mutuellement ou voir un même joueur prend le dessus sur l’estimation fondée sur les PNJ. Les preuves anciennes s’effacent automatiquement. Les vieux clients QT ne participent pas.
+
+### Captures des notes
+
+- Les captures intégrées aux notes sont maintenant envoyées directement à Discord pour rester visibles dans les publications de changements.
+
+## 6.4.0
+
+Les fenêtres QT sont plus soignées et le journal de quêtes du groupe s’ouvre plus rapidement.
+
+### Journal de quêtes du groupe
+
+- Découvrez le journal introduit en 6.3 : jusqu’à cinq joueurs dans des colonnes aux couleurs de classe, les quêtes possédées ou manquantes et la disponibilité du groupe pour les rendre. Combinez recherche et filtres de possession, progression et action ; partage et demande de partage sont proposés lorsque possible.
+- L’en-tête de chaque joueur montre sa quête active. Cliquez sur le nom d’un compagnon pour choisir de suivre sa quête ; si vous ne la possédez pas, votre navigation reste intacte. Actualiser demande un nouveau relevé du progrès distant. Les captures utilisent des données fictives.
+- Un petit bouton en forme de livre ouvre les quêtes que vous possédez dans le journal Blizzard. Cliquer sur la ligne continue de déplier les objectifs.
+- Une couronne suit le chef lors des changements de direction du groupe. Votre colonne reste la première.
 
 **Retail**
 
@@ -551,681 +559,689 @@ Des fenêtres QT plus soignées et un accès plus rapide aux quêtes du groupe.
 
 ![Journal de quêtes du groupe — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
 
-### Développer les objectifs de chacun
+### Déplier les objectifs de chacun
 
-- Cliquez sur une quête pour afficher les compteurs, barres de progression et étapes terminées de chaque membre. Plusieurs quêtes peuvent rester développées. Cette version compacte ces sections et harmonise les fonds aux couleurs de classe des noms et des objectifs. Une quête typique de cinq joueurs avec deux objectifs chacun tient dans la fenêtre par défaut ; les quêtes plus longues peuvent nécessiter un défilement.
+- Cliquez sur une quête pour afficher quantités, barres de progression et étapes terminées de chaque membre ; plusieurs quêtes peuvent rester ouvertes. Les panneaux sont plus compacts, avec en-têtes et corps assortis aux couleurs de classe. Une quête typique de cinq joueurs avec deux objectifs chacun tient dans la fenêtre par défaut ; les quêtes longues peuvent encore nécessiter du défilement.
 
 **Forever**
 
-![Développer les objectifs de chacun — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+![Déplier les objectifs de chacun — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
 
 ### Fenêtres et minicarte
 
-- Un clic gauche sur l’icône de la minicarte ouvre ou ferme le journal de quêtes du groupe ; un clic droit ouvre le menu. Les paramètres sont de retour dans le menu et l’infobulle explique les raccourcis.
-- Les rappels de discussion de groupe, demandes de partage et d’invitation, réglages des bulles et boîte de lien Discord utilisent maintenant le cadre en parchemin et les thèmes clair/sombre de QT, avec plus de marges et de place pour les valeurs des curseurs.
-- Le déplacement des fenêtres conserve le décalage du curseur, y compris dans l’aperçu du comparateur. Les menus et infobulles emploient désormais systématiquement le nom Journal des quêtes pour la fenêtre de Blizzard.
+- Clic gauche sur le bouton de minicarte : ouvrir ou fermer le journal de groupe. Clic droit : ouvrir le menu. Les réglages y sont de retour et l’infobulle explique les raccourcis.
+- Rappels de chat de groupe, demandes de partage ou d’entrée, réglages de bulles et invitation Discord utilisent le cadre parchemin et les thèmes clair et sombre de QT, avec plus d’espace et de place pour les valeurs des curseurs.
+- Déplacer une fenêtre conserve l’écart initial du curseur, y compris dans l’aperçu de comparaison. Menus et infobulles désignent désormais systématiquement la fenêtre Blizzard comme le journal de quêtes.
 
 ### Commandes d’aperçu
 
-- /qt preview affiche la liste des aperçus de fenêtres et d’annonces. Les anciennes commandes fonctionnent toujours ; les actions simulées n’invitent aucun joueur, ne partagent aucune quête et n’envoient aucun message.
-- L’aperçu du comparateur présente maintenant un groupe complet de cinq joueurs, dont un chasseur et un voleur, avec des objectifs variés, des quêtes actives et une couronne de chef.
+- /qt preview liste les aperçus de fenêtres et d’annonces. Les anciennes commandes fonctionnent encore ; les actions simulées n’invitent personne, ne partagent pas de quête et n’envoient pas de message.
+- L’aperçu de comparaison montre cinq membres, dont un chasseur et un voleur, avec des objectifs variés, des quêtes actives et une couronne de chef.
 
 ## 6.3.1
 
-Un espacement plus agréable dans le journal de quêtes du groupe.
+Les objectifs du journal de quêtes du groupe sont mieux espacés.
 
-### Espacement des panneaux d’objectifs
+### Espace autour des objectifs
 
-- Les panneaux d’objectifs développés ont désormais plus d’espace en bas pour éviter que les barres de progression touchent la bordure. Le défilement et les animations tiennent compte de cet espace.
-- Les messages tels que « Aucun détail d’objectif disponible » sont centrés verticalement à côté du nom du joueur au lieu d’être collés à la bordure supérieure.
+- Une marge supplémentaire en bas des panneaux dépliés évite que les barres de progression touchent le cadre. Le défilement et les animations d’ouverture tiennent compte de cet espace.
+- Les messages indiquant par exemple l’absence de détails d’objectif sont centrés verticalement à côté du nom, au lieu d’être collés au bord supérieur.
 
 ## 6.3.0
 
-Un nouveau journal de quêtes du groupe, des destinations partagées et le suivi facultatif d'une quête facilitent les aventures ensemble.
+Un journal de quêtes de groupe, des destinations partagées et le suivi facultatif d’un compagnon facilitent les quêtes à plusieurs.
 
 ### Journal de quêtes du groupe
 
-- Le comparateur devient le journal de quêtes du groupe. Développez plusieurs quêtes à la fois pour voir les objectifs et la progression de chacun, avec un bilan des quêtes prêtes à être rendues dans le groupe.
-- Recherchez des quêtes et combinez les filtres de possession, de progression et de partage. Actualiser met à jour les données des autres joueurs ; les anciens clients peuvent toujours comparer les listes, mais pas fournir les détails des objectifs.
-- Redimensionnez la fenêtre en parchemin et faites défiler son contenu en douceur. Les colonnes aux couleurs des classes, les en-têtes cliquables et espacés et les panneaux d'objectifs arrondis améliorent la lisibilité.
+- La comparaison devient le journal de quêtes du groupe. Dépliez plusieurs quêtes à la fois pour consulter objectifs et progression de chaque membre, avec un résumé indiquant si le groupe est prêt.
+- Recherchez une quête et combinez les filtres de possession, progression et partage. Actualiser demande de nouveaux relevés aux autres joueurs. Les anciens clients peuvent comparer les listes, mais ne fournissent pas les objectifs détaillés.
+- La fenêtre de parchemin se redimensionne et défile de façon fluide. Colonnes aux couleurs de classe, en-têtes de joueur cliquables et espacés, et panneaux d’objectifs arrondis facilitent la lecture.
 
-### Quête active et points de passage partagés
+### Quête active et points de passage du groupe
 
-- La quête active de chaque membre apparaît sous son nom. Choisissez de suivre sa quête depuis son en-tête ou son menu QT pour activer les quêtes que vous possédez. Une quête absente ou désélectionnée conserve votre navigation ; naviguer manuellement, quitter le groupe ou recharger l'interface arrête le suivi.
-- Les points de passage Blizzard des autres membres apparaissent aux couleurs des classes sur la carte du monde et, à proximité, sur la minicarte. Les marqueurs superposés indiquent tous les propriétaires ; Naviguer ici utilise TomTom ou la navigation native. Recevoir un point ne vous redirige jamais et ne garantit pas une phase commune.
-- Partager ma quête active, Partager mon point de passage et Afficher les points du groupe sont activés par défaut dans Groupes et partage, indépendamment de la position publique et de la recherche de partenaires. Le suivi exige un choix explicite. Ces fonctions nécessitent des clients à jour dans un groupe de cinq au maximum, donjons compris, hors raids.
+- La quête active de chaque membre figure sous son nom. Choisissez de suivre sa quête depuis son en-tête ou son menu QT : seules les quêtes que vous possédez sont suivies. Une quête absente ou retirée laisse votre navigation intacte. Une navigation manuelle, quitter le groupe ou recharger l’interface met fin au suivi.
+- Les points de passage Blizzard des membres apparaissent sur la carte et la minicarte à proximité, aux couleurs de classe. Les points superposés listent tous leurs propriétaires. L’action pour y naviguer utilise TomTom ou la navigation native. Recevoir un point ne change jamais votre destination et ne garantit pas une phase commune.
+- Dans Groupes et partage, le partage de la quête active, celui du point de passage et l’affichage des points du groupe sont activés par défaut, indépendamment des positions publiques et de la recherche de compagnons. Le suivi reste volontaire. Ces fonctions demandent des clients à jour dans un groupe de cinq au maximum, y compris en donjon ; les raids sont exclus.
 
 ### Fenêtres et menus
 
-- Les notes de mise à jour adoptent aussi le parchemin sombre, avec un mode clair facultatif. Déplacez ou redimensionnez la fenêtre, parcourez un historique plus lisible et utilisez les flèches pour changer de version ou atteindre une extrémité. Discord et Paramètres sont dans le pied de page.
-- Les infobulles des joueurs s'ajustent mieux au contenu. Le menu de la minicarte sépare les outils de quête des notes, de l'emplacement du journal et de la visibilité de l'icône. Paramètres et Envoyer un message QT en sont retirés ; les paramètres restent accessibles avec /qt options.
+- Les notes adoptent le thème parchemin sombre, avec un mode clair facultatif. Déplacez ou redimensionnez la fenêtre, parcourez des lignes d’historique plus lisibles et utilisez les flèches pour avancer, reculer ou atteindre une extrémité. Discord et les réglages figurent en bas.
+- Les infobulles de joueurs épousent mieux leur contenu. Le menu de minicarte sépare les outils de quête des notes, de l’emplacement du journal et de la visibilité du bouton. Les réglages et l’envoi de chat QT quittent ce menu ; les réglages restent accessibles par /qt options.
 
 ## 6.2.3
 
-Moins d’annonces répétées de quêtes prêtes à être rendues.
+Les annonces indiquant qu’une quête est prête à être rendue se répètent moins souvent.
 
-### Corrections du suivi des quêtes prêtes à être rendues
+### Annonce de quête prête
 
-- Les quêtes déjà prêtes à être rendues ou terminées au début du suivi sont enregistrées sans annonce. Les données manquantes et les actualisations ultérieures ne répètent plus les annonces de quêtes prêtes à être rendues déjà prises en compte.
-- Les nouvelles quêtes terminées sont toujours annoncées, et accepter à nouveau une quête réinitialise son historique de notifications. Le joueur qui envoie les annonces doit installer cette mise à jour ; les anciennes versions peuvent encore envoyer des rafales d’annonces.
+- Une quête déjà prête ou terminée au début du suivi est enregistrée sans annonce. Des données de disponibilité manquantes ou des actualisations ultérieures ne rejouent plus une annonce déjà observée.
+- Les nouvelles fins de quête sont toujours annoncées. Accepter de nouveau une quête remet son historique d’annonces à zéro. Le joueur qui envoie doit installer cette correction ; les anciennes versions peuvent encore produire des séries d’annonces.
 
 ## 6.2.2
 
-Une progression de quête lisible dans toutes les langues.
+Les messages de progression gardent leurs détails, quelle que soit la langue.
 
-### Conserver les détails des objectifs
+### Conserver le texte des objectifs
 
-- La progression des quêtes, expéditions et objectifs bonus conserve désormais le texte et les compteurs d’origine de l’expéditeur dans le chat et les bulles, au lieu de les remplacer par un texte générique comme « Objectif 1 : 5/5 ».
-- Les annonces de quêtes acceptées et terminées utilisent toujours des libellés traduits et les titres de quête disponibles localement.
+- Dans le chat et les bulles, la progression des quêtes, expéditions et objectifs bonus conserve les mots et les valeurs de l’expéditeur, au lieu d’un texte générique comme « Objectif 1 : 5/5 ».
+- Les annonces d’acceptation et de fin de quête continuent d’utiliser des libellés traduits et les titres locaux disponibles.
 
 ## 6.2.1
 
-Un contrôle plus clair des annonces dans le canal de groupe.
+Le fonctionnement des annonces dans le chat de groupe est plus clair.
 
-### Savoir quand QT écrit dans le canal de groupe
+### Savoir quand QT écrit au groupe
 
-- Le réglage sous Où annoncer indique désormais clairement que QT écrit aussi dans le canal de groupe si un membre n’est pas reconnu comme utilisateur de QT. Il reste activé par défaut.
-- Une nouvelle fenêtre avec le logo QT apparaît après un court délai de détection. Choisissez Laisser activé ou Désactiver les annonces avant le début de la transmission. Ne plus me le rappeler enregistre votre confirmation pour le profil actuel.
-- Le rappel traduit nomme les membres concernés et peut revenir lorsque de nouveaux membres non identifiés rejoignent le groupe. Il disparaît s’ils sont reconnus comme utilisateurs de QT. Les événements retenus pendant l’attente ne sont pas renvoyés.
+- Le réglage des destinations indique explicitement que QT écrit aussi dans le chat lorsqu’un membre n’est pas reconnu comme utilisateur QT. Il reste activé par défaut.
+- Après un court délai de découverte, un dialogue portant le logo QT vous laisse conserver l’option ou couper les annonces avant leur envoi. Le choix de ne plus rappeler enregistre votre confirmation pour le profil actuel.
+- Le rappel localisé nomme les membres concernés et peut revenir si de nouveaux joueurs non identifiés rejoignent le groupe. Il disparaît lorsqu’ils sont reconnus comme utilisateurs QT. Les événements retenus pendant l’attente ne sont pas rejoués.
 
 ## 6.2.0
 
-Des points proches plus fluides, des détails de joueur plus rapides et une communication plus fiable.
+Les points proches se déplacent plus régulièrement, les détails des joueurs arrivent plus vite et les échanges sont plus fiables.
 
-### Des déplacements plus fluides sur la minicarte
+### Déplacement plus fluide sur la minicarte
 
-- Les joueurs proches peuvent échanger leurs positions par des chuchotements d’addon cadencés. Les déplacements fluides privilégient jusqu’à quatre joueurs admissibles parmi les plus proches et respectent le partage, les filtres, les joueurs ignorés et les limites de trafic.
-- Les deux joueurs doivent installer cette mise à jour pour les flux de position et les réponses directes au survol. Les anciennes versions conservent leurs diffusions habituelles ; les délais et restrictions du serveur peuvent toujours affecter la réception.
+- Les joueurs proches peuvent échanger leurs positions par chuchotements d’addon espacés. Jusqu’à quatre correspondants éligibles les plus proches sont privilégiés, dans le respect du partage, des filtres, des ignorés et des limites de trafic.
+- Les deux joueurs doivent être à jour pour ces flux et les réponses directes au survol. Les anciennes versions conservent les diffusions ordinaires ; retards serveur et restrictions peuvent toujours gêner la réception.
 
-### Découverte et détails de groupe plus rapides
+### Découverte et composition des groupes
 
-- Survoler un nom ou un point peut demander directement des détails récents. La fréquence des demandes est limitée et les listes de membres inchangées n’expirent plus après deux minutes.
-- Les positions récentes, le statut de recherche de partenaires et les détails de groupe connus survivent à /reload pendant trois minutes au maximum depuis leur relevé initial. Entrer dans une zone demande aussi une actualisation de découverte échelonnée.
-- Les infobulles utilisent le statut solo ou en groupe connu en attendant la taille exacte du groupe. Un petit logo identifie désormais les utilisateurs de QT dans la liste des membres, tout en gardant les noms alignés.
+- Survoler un nom ou un point peut demander directement des détails frais. La fréquence des demandes est limitée et une liste de groupe inchangée n’expire plus après deux minutes.
+- Les positions récentes, le statut de recherche et les groupes connus survivent à /reload jusqu’à trois minutes après leur relevé d’origine. Entrer dans une zone demande aussi une actualisation de découverte échelonnée.
+- En attendant la taille exacte, les infobulles utilisent le statut solo ou groupé connu. Un petit logo indique les membres utilisant QT, sans désaligner les noms.
 
-### Traduction et présentation améliorées
+### Localisation et présentation
 
-- Les noms de race, détails de ping, données de quête et davantage de textes d’interface utilisent les traductions locales disponibles. Sinon, le texte lisible de l’expéditeur est conservé ; la progression n’emprunte pas de descriptions d’objectifs locaux sans rapport.
-- Les annonces génériques utilisent désormais le logo QT. La recherche de partenaires de quête est la première option du menu de la minicarte.
+- Noms de races, détails des pings, données de quêtes et davantage de textes utilisent la langue locale lorsqu’elle est disponible. À défaut, les textes reçus restent lisibles ; les annonces de progression n’empruntent pas la description d’un autre objectif local.
+- Les annonces génériques utilisent le logo QT. La recherche de compagnons devient le premier choix du menu de minicarte.
 
-### Communication et fiabilité
+### Échanges et fiabilité
 
-- Les comparaisons, listes de groupe, demandes pour rejoindre ou partager et réponses au ping privilégient les chuchotements directs avec les joueurs compatibles. Le regroupement des messages périodiques et la réduction des mises à jour de positions inchangées allègent le trafic public.
-- Correction des analyses de quêtes répétées, des vérifications excessives des barres de nom, des fenêtres impossibles à fermer pendant les restrictions et de /qt set acceptant des réglages autres que marche/arrêt. Désactiver le partage de position ne supprime plus les autres demandes en attente.
+- Comparaisons, listes de groupe, demandes d’entrée et de partage, et réponses aux pings privilégient les chuchotements directs entre clients compatibles. Les signaux regroupés et la réduction des positions inchangées allègent les diffusions publiques.
+- Corrections des lectures répétées de quêtes, des tentatives excessives sur les barres de nom, des dialogues impossibles à fermer sous restriction et de /qt set qui acceptait des réglages autres que des interrupteurs. Couper le partage de position ne supprime plus les demandes sans rapport dans la file.
 
 ## 6.1.2
 
-Points des joueurs à proximité plus réactifs et annonces traduites plus claires.
+Les points des joueurs proches sont plus réactifs et les annonces localisées plus claires.
 
-### Points des joueurs sur la minicarte
+### Points de la minicarte
 
-- Correction des points de joueurs QT manquants lorsque la minicarte ne fournit pas d’ID de carte. QT utilise désormais votre carte actuelle si nécessaire.
+- Si la minicarte ne fournit pas d’identifiant de carte, QT utilise votre carte actuelle. Cela corrige des points de joueurs absents.
 
-### Mises à jour de position locales plus rapides
+### Positions locales plus fréquentes
 
-- Les mises à jour de position ciblent désormais une fois par seconde avec moins de 10 utilisateurs QT connus dans votre zone, 5 à 10 secondes avec 10 à 19, et 15 à 20 secondes à 100. Les intervalles s’allongent progressivement entre ces paliers ; les timings à 500 ou plus restent inchangés.
-- Les mises à jour rapides envoient des positions compactes et fraîchement échantillonnées, tandis que les autres détails des joueurs conservent leur battement plus lent. Les limites de trafic existantes s’appliquent toujours, la congestion peut donc retarder la livraison. Les autres joueurs doivent disposer de cette mise à jour pour envoyer des positions plus rapides.
+- Avec moins de 10 utilisateurs QT connus dans la zone, les positions visent un envoi par seconde. Pour 10 à 19, l’intervalle est de 5 à 10 secondes ; à 100, de 15 à 20 secondes. Il augmente progressivement entre ces niveaux. À partir de 500, les délais ne changent pas.
+- Ces envois rapides contiennent des positions compactes fraîchement relevées ; les autres renseignements gardent leur cadence plus lente. Les limites de trafic s’appliquent toujours et l’encombrement peut retarder la réception. Les autres joueurs doivent être à jour pour envoyer plus souvent.
 
-### Annonces traduites plus claires
+### Annonces localisées plus claires
 
-- Les libellés d’événements de quête, comme Quête acceptée, utilisent désormais votre langue même lorsqu’un titre de quête local ou des métadonnées de traduction facultatives sont indisponibles.
-- Lorsque WoW ne peut pas fournir de titre de quête local, QT conserve le titre lisible de l’expéditeur. Les messages de progression conservent toujours leur texte d’origine lorsqu’ils ne peuvent pas être reconstruits en toute sécurité.
+- Les libellés d’événement, comme l’acceptation d’une quête, utilisent votre langue même sans titre local ou métadonnées facultatives de traduction.
+- Si WoW ne donne pas de titre local, QT conserve celui, lisible, de l’expéditeur. Un message de progression garde son texte d’origine lorsqu’il ne peut pas être reconstitué de façon sûre.
 
 ## 6.1.1
 
-Menus contextuels plus clairs pour les joueurs et les quêtes.
+Les menus de joueurs et de quêtes sont allégés.
 
-### Nettoyage des menus contextuels
+### Menus contextuels
 
-- Les menus de noms de joueurs et de quêtes n’incluent plus le raccourci vers la fenêtre de journal. Déplacez les journaux de QuestTogether entre la fenêtre de discussion principale et une fenêtre séparée via le menu de la minicarte ou les paramètres.
+- Le raccourci de changement de fenêtre du journal a été retiré de ces menus. Pour déplacer les messages QT entre le chat principal et une fenêtre séparée, utilisez le menu de la minicarte ou les réglages.
 
 ## 6.1.0
 
-Trouvez des groupes sur la carte, voyez qui fait des quêtes ensemble et demandez à rejoindre le groupe via n’importe quel membre. Les infobulles des personnages-joueurs mettent désormais les détails du groupe en évidence.
+Repérez les groupes sur la carte, découvrez qui joue ensemble et demandez à rejoindre un groupe depuis n’importe lequel de ses membres.
 
-### Voir qui fait des quêtes ensemble
+### Voir les compagnons d’un joueur
 
-- Les joueurs groupés ont désormais un petit badge à deux personnes sur leurs points de carte et de minicarte. Survolez un membre du groupe pour afficher un contour blanc autour de ses compagnons, estomper les points sans rapport et afficher une couronne sur le chef. Les lueurs dorées de Recherche de partenaires de quête restent visibles.
-- Les infobulles des personnages-joueurs listent les membres du groupe avec des points et des noms aux couleurs de classe, le chef couronné en premier. Les groupes jusqu’à cinq membres les affichent tous ; les groupes plus grands n’affichent que le chef. Ces détails apparaissent aussi quand vous survolez les noms de joueurs dans le journal QuestTogether.
-- Votre propre groupe utilise la liste de membres du jeu. Les détails des groupes distants sont chargés depuis les pairs QuestTogether mis à jour lorsque nécessaire, avec des résultats en cache et des requêtes espacées pour limiter le trafic du canal. Les anciens clients conservent leurs points normaux et les informations de base sur la taille du groupe ; les détails complets des groupes distants nécessitent un pair à jour.
+- Les points des joueurs groupés portent un petit symbole de deux personnes. Survolez un membre pour entourer ses compagnons de blanc, atténuer les autres points et couronner le chef. Les lueurs dorées de recherche de compagnons restent visibles.
+- Les infobulles listent les membres avec points et noms aux couleurs de classe, le chef couronné en tête. Jusqu’à cinq membres, tout le monde est listé ; pour les groupes plus grands, seul le chef apparaît. Ces détails sont aussi accessibles depuis les noms du journal QT.
+- Votre groupe utilise la liste du jeu. Les détails d’un autre groupe sont demandés au besoin à des clients QT à jour, avec cache et demandes espacées pour limiter le trafic. Les anciens clients gardent leurs points et la taille de groupe de base ; les détails complets nécessitent un correspondant à jour.
 
-### Les demandes pour rejoindre peuvent parvenir au chef de groupe
+### Faire parvenir une demande au chef
 
-- Vous pouvez demander à rejoindre via un membre du groupe qui ne peut pas vous inviter. Si son chef utilise QuestTogether et peut inviter, la demande est redirigée vers le chef avec les réglages habituels de confirmation et d’approbation automatique.
-- Si le chef n’est pas connu comme utilisateur de QuestTogether, le membre peut annoncer « [QT] PlayerName demande à rejoindre le groupe. » dans la discussion de groupe lorsque les annonces en discussion de groupe sont activées. Quelqu’un ayant la permission d’inviter doit alors vous inviter manuellement.
-- Le demandeur et le membre qui transfère la demande doivent disposer de cette mise à jour pour les demandes redirigées. Les vérifications existantes de groupe complet, de restriction, d’ignore, d’expiration et de fréquence des demandes s’appliquent toujours.
+- Vous pouvez demander à rejoindre le groupe via un membre qui n’a pas le droit d’inviter. Si son chef utilise QT et peut inviter, la demande lui est transmise avec les règles habituelles de confirmation ou d’approbation automatique.
+- Si le chef n’est pas connu comme utilisateur QT et que les annonces de groupe sont activées, le membre peut signaler dans le chat « [QT] PlayerName demande à rejoindre le groupe. ». Une personne autorisée doit ensuite envoyer l’invitation manuellement.
+- Le demandeur et le membre intermédiaire doivent avoir cette mise à jour. Les contrôles de groupe complet, restrictions, ignorés, expiration et fréquence des demandes restent appliqués.
 
-### Infobulles de joueurs plus claires
+### Infobulles plus lisibles
 
-- Les informations de groupe se trouvent désormais juste sous la ligne de niveau, de race et de classe, avec des lignes de membres compactes et de l’espace entre les sections. Les insignes de l’Alliance et de la Horde sont deux fois plus grands.
-- La version de l’addon apparaît en dernier au format abrégé vX.Y.Z. Quand l’ancienneté d’un emplacement est affichée, Dernière mise à jour se trouve directement au-dessus de la version.
-- Les nombres de quêtes suivies ont été retirés des infobulles des joueurs et du bouton de la minicarte. Le titre de la quête active des joueurs qui recherchent des partenaires de quête est toujours affiché.
+- Le groupe apparaît juste sous niveau, race et classe, avec des lignes compactes et des sections espacées. Les emblèmes Alliance et Horde sont deux fois plus grands.
+- La version de l’addon est affichée en dernier sous la forme courte vX.Y.Z. L’âge d’une position, lorsqu’il est affiché, se trouve juste au-dessus.
+- Le nombre de quêtes suivies a été retiré des infobulles de joueurs et du bouton de minicarte. La quête active d’un joueur qui cherche des compagnons reste visible.
 
 ## 6.0.2
 
-Parcourez les anciennes mises à jour de QuestTogether dans votre langue, avec une meilleure récupération des noms de quêtes pour les annonces d’achèvement.
+Consultez les anciens changements de QuestTogether dans votre langue. Les annonces de fin de quête retrouvent aussi plus facilement leur titre.
 
-### Parcourir les anciennes notes de mise à jour
+### Parcourir les anciennes notes
 
-- La fenêtre d’accueil comporte maintenant des boutons Anciennes et Récentes, un raccourci Dernière et un sélecteur d’historique affichant les versions et dates de publication. L’ouverture des notes de mise à jour commence à la dernière version.
-- L’historique comprend toutes les versions publiées précédemment, y compris les premières bêtas. Toutes les notes historiques sont traduites dans chaque langue de WoW prise en charge et incluses dans les journaux des modifications des dépôts correspondants.
-- Les boutons de navigation se désactivent lorsqu’il n’y a nulle part où aller. Parcourir d’anciennes notes ne change pas la mise à niveau que vous avez confirmée ; les fenêtres automatiques n’apparaissent toujours que pour les mises à niveau majeures et mineures. Ouvrez la fenêtre à tout moment avec /qt notes.
+- La fenêtre propose des boutons vers les versions plus anciennes et plus récentes, un raccourci vers la dernière, et un historique avec versions et dates. Elle s’ouvre toujours sur la dernière publication.
+- Toutes les publications précédentes sont incluses, même les premières bêtas, dans chaque langue de WoW prise en charge. Elles figurent aussi dans les journaux de changements du dépôt.
+- Les boutons se désactivent lorsqu’aucune version ne suit dans leur direction. Parcourir l’historique ne change pas la mise à jour déjà reconnue ; seules les mises à jour majeures et mineures ouvrent automatiquement la fenêtre. Vous pouvez l’ouvrir avec /qt notes.
 
 ### Titres des quêtes terminées
 
-- Lorsqu’une quête quitte votre journal avant que QuestTogether ne dispose d’un titre utilisable, les annonces d’achèvement essaient désormais la recherche de titre de quête disponible en jeu avant de se rabattre sur un ID de quête. Un titre récupéré est conservé quel que soit l’ordre des événements de rendu et de suppression.
-- Les annonces utilisent toujours le texte de l’expéditeur lorsque votre client ne peut pas résoudre un titre local. Si aucun des deux clients n’a de nom disponible, l’ID de quête reste la solution de repli. La récupération améliorée côté expéditeur s’applique lorsque l’expéditeur effectue la mise à jour.
+- Si une quête quitte votre journal avant que QT dispose de son titre, l’annonce de fin essaie les fonctions de recherche de titre du jeu avant de se rabattre sur l’identifiant. Le titre retrouvé est conservé quel que soit l’ordre des événements de remise et de retrait.
+- Si votre client ne trouve pas de titre local, le texte de l’expéditeur est conservé. Si aucun des deux clients n’a de titre, l’identifiant reste le dernier recours. L’amélioration de récupération côté expéditeur exige sa mise à jour.
 
 ## 6.0.1
 
-Les célébrations restent désormais associées aux joueurs que vous pouvez réellement voir à proximité.
+Les célébrations des autres joueurs concernent désormais ceux que vous voyez réellement près de vous.
 
-### Correctifs des célébrations à proximité
+### Réactions aux joueurs proches
 
-- Les réactions à un autre joueur qui termine une quête ou gagne un niveau nécessitent désormais une unité de joueur correspondante et visible. Les coordonnées de la carte ou un nom seul ne déclenchent plus d’emote, y compris lorsque devlogall est activé.
-- Les emotes entrantes doivent correspondre à la propre liste de célébrations de QuestTogether. Les emotes non répertoriées, y compris mountspecial et les acclamations de faction, sont ignorées sans choisir de substitut.
-- Vos propres célébrations de fin de quête et de gain de niveau conservent leur comportement et leurs paramètres existants.
+- Pour réagir à une fin de quête ou un passage de niveau, QT exige une unité de joueur visible et correspondant à l’expéditeur. Un nom ou des coordonnées seuls ne déclenchent plus d’emote, même avec devlogall.
+- Les emotes reçues doivent appartenir à la liste de célébrations de QT. Celles qui n’y figurent pas, dont mountspecial et les cris de faction, sont ignorées sans remplacement.
+- Vos propres célébrations de fin de quête et de niveau gardent leurs réglages et leur comportement.
 
 ## 6.0.0
 
-QuestTogether 6.0 prépare le lancement de Forever avec un système de communication conçu pour réduire le trafic en arrière-plan à mesure que la communauté grandit.
+QuestTogether prépare le lancement de Forever avec des communications conçues pour limiter le trafic de fond à mesure que la communauté grandit.
 
-### Activité locale, découverte mondiale
+### Activité locale et découverte mondiale
 
-- Les annonces de quêtes et les mises à jour fréquentes des joueurs utilisent désormais les canaux de zone. Les annonces de groupe atteignent toujours votre groupe au-delà des limites de zone.
-- Les points des joueurs restent disponibles dans le monde entier, avec des mises à jour en arrière-plan plus lentes. Ouvrir une autre zone sur la carte du monde vous abonne temporairement à ses mises à jour.
-- La discussion texte de QT reste sur le canal global QuestTogether. Votre réglage de discussion Globale ou Zone uniquement contrôle toujours les messages que vous voyez.
+- Les annonces de quêtes et les mises à jour fréquentes des joueurs passent par des canaux de zone. Les annonces destinées au groupe lui parviennent toujours au-delà des frontières de zone.
+- Les points restent disponibles dans le monde entier, avec des actualisations de fond moins fréquentes. Ouvrir une autre zone sur la carte vous abonne temporairement à ses mises à jour.
+- Les conversations QT restent sur le canal global QuestTogether. Votre choix de chat global ou limité à la zone continue de filtrer les messages affichés.
 
-### Moins de trafic en arrière-plan
+### Moins de trafic de fond
 
-- La présence, la version, le nombre de quêtes, le statut de partenaire et la position sont regroupés dans des mises à jour compactes. Les zones très fréquentées sont mises à jour moins souvent afin de réduire le trafic.
-- Les annonces sont régulées et prioritaires par rapport aux mises à jour en arrière-plan. Les réponses aux pings sont réparties afin d’éviter une rafale de réponses. WoW peut toujours retarder la distribution des messages de canal ; cette mise à jour ne garantit pas des messages instantanés.
-- Les infobulles des joueurs indiquent l’âge des positions plus anciennes. Les diagnostics signalent désormais le nombre de messages, la limitation et les délais d’annonce indiqués par l’expéditeur.
+- Présence, version, nombre de quêtes, recherche de compagnons et position sont regroupés dans des mises à jour compactes. Leur fréquence diminue dans les zones très peuplées.
+- Les annonces sont espacées et prioritaires sur les mises à jour de fond. Les réponses aux pings sont réparties pour éviter un afflux simultané. WoW peut encore retarder les messages : leur réception instantanée n’est pas garantie.
+- Les infobulles indiquent l’âge des positions anciennes. Les diagnostics montrent les nombres de messages, les limitations d’envoi et les délais d’annonces mesurés par l’expéditeur.
 
-### Une mise à jour majeure pendant la bêta
+### Un changement majeur pendant la bêta
 
-- Nous effectuons maintenant ce changement de communication plus important en prévision du lancement de Forever. La bêta est le meilleur moment pour prendre ces décisions fondamentales, avant que davantage de joueurs ne dépendent de l’ancien comportement.
-- La version 6.0 quitte QuestTogetherAnnounce1 et n’envoie ni ne reçoit plus sur cet ancien canal. Elle utilise QuestTogether pour la discussion et la découverte globales, ainsi que des canaux de zone pour l’activité locale.
-- QuestTogether conserve ses canaux après vos autres canaux de discussion, avec le canal de discussion principal avant ses canaux de zone. Vos préférences de partage de position, de liste d’ignorés et d’annonces sont conservées.
+- Cette réorganisation prépare le lancement de Forever. La bêta permet de prendre ces décisions de fond avant que davantage de joueurs ne dépendent de l’ancien fonctionnement.
+- QuestTogether quitte QuestTogetherAnnounce1 et n’y envoie ni n’y reçoit plus de messages. QuestTogether sert au chat et à la découverte globale ; les canaux de zone transportent l’activité locale.
+- Les canaux QT restent après vos autres canaux, avec le principal avant ceux des zones. Vos choix de partage de position, d’ignorés et d’annonces sont conservés.
 
 ### Compatibilité avec les anciennes versions
 
-- Veuillez mettre à jour ensemble. Les anciennes versions ne peuvent pas lire les nouvelles mises à jour groupées des joueurs ni écouter les nouveaux canaux de zone ; les joueurs utilisant des versions différentes peuvent donc manquer des points sur la carte, le statut de partenaire et les annonces de quêtes à proximité.
-- Les joueurs utilisant uniquement l’ancien canal ne sont plus détectables via ce canal en 6.0. Certains échanges avec les versions 5.x plus récentes peuvent encore fonctionner via le canal global partagé ou un groupe, mais il s’agit d’une compatibilité partielle, pas de l’expérience complète.
-- La commande manuelle /qt ping utilise toujours le canal global. Elle peut y entendre les anciens clients compatibles, mais c’est un outil de découverte au mieux, pas un décompte complet de toutes les personnes utilisant QuestTogether.
+- Mettez l’addon à jour ensemble. Les anciens clients ne lisent pas les nouvelles données regroupées ni les canaux de zone : entre versions différentes, points, recherche de compagnons et annonces proches peuvent manquer.
+- Les joueurs présents uniquement sur l’ancien canal ne sont plus découverts par celui-ci. Certains échanges avec les versions 5.x récentes restent possibles sur le canal global commun ou en groupe, mais cette compatibilité est partielle.
+- /qt ping utilise toujours le canal global et peut y entendre d’anciens clients compatibles. Il aide à découvrir des joueurs, sans constituer un décompte exhaustif des utilisateurs QT.
 
 ## 5.17.2
 
-Le chat QT est plus facile à distinguer des annonces de quêtes.
+Les conversations QT se distinguent plus facilement des annonces de quêtes.
 
 ### Texte blanc pour le chat QT
 
-- Les messages des joueurs dans le chat QT utilisent désormais du texte blanc dans la fenêtre de discussion et les bulles au-dessus des personnages.
-- Les noms des joueurs conservent la couleur de leur classe, et les annonces de quêtes conservent leur texte jaune.
+- Les messages des joueurs dans le chat QT sont désormais blancs dans le journal et les bulles au-dessus des personnages.
+- Les noms gardent la couleur de leur classe et les annonces de quêtes restent jaunes.
 
 ## 5.17.1
 
-Découvrez-en plus sur vos compagnons de quête et consultez l’état des quêtes directement depuis les infobulles de discussion.
+Les infobulles donnent davantage d’informations sur vos compagnons et permettent de vérifier une quête directement dans le chat.
 
-### Infobulles de joueur plus utiles
+### Mieux connaître les joueurs
 
-- Les infobulles des noms de joueur et des points sur la carte indiquent désormais combien de quêtes QuestTogether surveille, ainsi que Solo ou Groupe de N. Votre propre infobulle utilise votre état local actuel.
-- L’infobulle de la minicarte compte désormais les quêtes surveillées par QuestTogether, comme l’annonce au démarrage, au lieu de ne compter que les quêtes suivies dans le suivi de WoW.
-- Le nombre de quêtes distantes et la taille des groupes nécessitent un pair mis à jour. Ils sont actualisés environ toutes les 80 secondes via les messages de pulsation existants, sans messages supplémentaires ; les rapports manquants ou obsolètes s’affichent comme inconnus. Les anciennes versions continuent de recevoir les annonces de version compatibles.
+- Les infobulles des noms et points de carte indiquent le nombre de quêtes surveillées par QT ainsi que le statut solo ou la taille du groupe. Votre propre infobulle utilise vos données locales actuelles.
+- L’infobulle de minicarte compte désormais les quêtes surveillées par QuestTogether, comme l’annonce au démarrage, plutôt que les seules quêtes épinglées dans le suivi de WoW.
+- Pour les autres joueurs, ces nombres nécessitent un client à jour. Ils sont actualisés environ toutes les 80 secondes dans les messages périodiques existants, sans trafic supplémentaire. Une donnée absente ou ancienne est indiquée comme inconnue. Les anciennes versions reçoivent toujours des annonces de version compatibles.
 
-### État de la quête au survol
+### État d’une quête au survol
 
-- Survolez un nom de quête dans les journaux QT pour voir votre état de quête, si elle peut être partagée, l’ID de quête et la progression des objectifs suivis localement dans une infobulle à côté du curseur.
-- L’élément de menu État a été supprimé. Cliquer sur un nom de quête ouvre toujours Partager, Ouvrir dans le journal des quêtes, Comparer les quêtes du groupe et l’action de destination de la fenêtre de journal.
-- Les nouveaux libellés d’infobulle sont traduits dans toutes les langues prises en charge. Les détails de quête reflètent votre propre progression, pas l’étape de quête de l’expéditeur.
+- Survolez un nom de quête dans le journal QT : près du curseur, l’infobulle présente votre état, la possibilité de partage, l’identifiant et votre progression d’objectifs suivie localement.
+- L’entrée État a été retirée du menu. Le clic propose toujours le partage, l’ouverture dans le journal, la comparaison du groupe et le choix de fenêtre du journal QT.
+- Les nouvelles mentions sont localisées dans toutes les langues prises en charge. Elles décrivent votre propre progression, pas l’étape atteinte par l’expéditeur.
 
 ## 5.17.0
 
-Dites bonjour dans la discussion QT, trouvez des partenaires de quête dans toute votre zone et découvrez des informations et paramètres de joueur plus clairs.
+Discutez dans le chat QT, trouvez des compagnons dans votre zone et consultez des informations de joueur plus complètes.
 
-### Discutez avec d’autres joueurs de QuestTogether
+### Discuter avec les joueurs QuestTogether
 
-- Tapez /qt <text>, ou choisissez Envoyer un message de discussion QT dans le menu de la minicarte. Les conversations apparaissent dans les journaux QT et dans les bulles au-dessus des joueurs à proximité avec une icône de bulle de dialogue ; les commandes obliques existantes fonctionnent toujours.
-- Choisissez la discussion globale (par défaut), Zone uniquement, ou masquez entièrement la discussion QT. Zone uniquement nécessite une position partagée récente de l’expéditeur ; la discussion globale n’en a pas besoin.
-- Le nouveau canal QuestTogether fonctionne en parallèle de QuestTogetherAnnounce1 pendant la transition. QT place les deux après vos autres canaux lorsque c’est pris en charge, avec QuestTogether en premier ; la discussion saisie utilise uniquement le nouveau canal.
+- Tapez /qt <text> ou choisissez l’envoi d’un message QT dans le menu de la minicarte. Les conversations apparaissent dans le journal QT et les bulles des joueurs proches, avec une icône de dialogue. Les commandes existantes restent utilisables.
+- Le chat global est sélectionné au départ. Vous pouvez limiter les messages à votre zone ou masquer le chat QT. Le filtre de zone exige une position récente partagée par l’expéditeur ; le chat global n’en a pas besoin.
+- Pendant la transition, le nouveau canal QuestTogether fonctionne avec QuestTogetherAnnounce1. Quand le client le permet, QT place ces deux canaux après vos autres canaux, QuestTogether en premier. Les conversations saisies utilisent uniquement le nouveau canal.
 
-### Trouvez des partenaires de quête
+### Trouver des compagnons de quête
 
-- Activer Recherche de partenaires de quête annonce votre recherche dans toute votre zone avec une icône QT dorée lumineuse et un smiley. La diffusion à l’échelle de la zone nécessite le partage de position et respecte les préférences d’annonce ; la désactiver reste silencieux.
-- Contrôlez ces messages dans Quoi annoncer. Un temps de recharge de 30 secondes limite les annonces répétées tandis que votre statut et la lueur se mettent quand même à jour immédiatement. Vous pouvez aussi choisir d’arrêter automatiquement la recherche en rejoignant un groupe ; cette option est désactivée au départ.
-- Maj-clic sur le bouton de la minicarte pour activer ou désactiver votre recherche de partenaires. Un anneau doré plus vif et pulsant met en évidence votre recherche active sans rogner le logo.
+- Activer la recherche annonce votre disponibilité dans la zone avec un logo QT doré et un sourire. Cette diffusion exige le partage de position et respecte les préférences d’annonces. Désactiver la recherche reste silencieux.
+- Les réglages des événements à annoncer contrôlent ces messages. Une pause de 30 secondes limite les annonces répétées, sans retarder votre statut ni sa lueur. Une option permet d’arrêter la recherche en rejoignant un groupe ; elle est désactivée au départ.
+- Maj-clic sur le bouton de minicarte active ou désactive la recherche. Un anneau doré plus lumineux et pulsant signale qu’elle est active, sans couper le logo.
 
-### Choisissez votre portée et voyez plus d’informations sur les joueurs
+### Portée et informations des joueurs
 
-- La portée de proximité va désormais de 5 % à Toute la zone, avec une valeur par défaut de 25 %. Elle ajuste la distance sur l’ensemble de votre zone actuelle ; les membres du groupe et les joueurs directement visibles conservent leur comportement existant.
-- Survolez les noms dans les journaux QT pour afficher la même infobulle améliorée que sur les points de la carte : nom coloré selon la classe, niveau, race, classe, emblème de faction, statut de partenaire, quête suivie si disponible et version de QT. Les infobulles de nom apparaissent désormais à côté de votre curseur.
-- L’infobulle de votre propre nom affiche désormais votre quête suivie prioritairement actuelle lorsque vous recherchez des partenaires. Les clients mis à jour annoncent leurs versions environ toutes les 40 secondes via les messages de battement existants ; les anciens clients conservent leur fréquence précédente.
+- La portée de proximité va de 5 % à toute la zone et commence à 25 %. Elle adapte la distance à la zone actuelle ; les membres du groupe et les joueurs directement visibles gardent leur fonctionnement habituel.
+- Survoler un nom dans le journal QT affiche la même infobulle enrichie qu’un point de carte : nom coloré par classe, niveau, race, classe, emblème de faction, recherche de compagnons, quête suivie si connue et version QT. Les infobulles de noms apparaissent près du curseur.
+- Votre propre infobulle indique la quête suivie en priorité lorsque vous cherchez des compagnons. Les clients à jour annoncent leur version environ toutes les 40 secondes dans les signaux existants ; les anciens gardent leur cadence.
 
-### Contrôles et annonces plus clairs
+### Commandes et annonces plus claires
 
-- L’infobulle de la minicarte affiche désormais votre version de QT, votre statut de partenaire, la portée de la discussion, le nombre de quêtes surveillées, la portée de proximité et l’état du partage de position.
-- Les contrôles des paramètres disposent désormais d’explications traduites au survol, y compris pour les menus déroulants, les curseurs, les actions de profil et les contrôles de couleur.
-- Lorsque votre client ne parvient pas à résoudre un titre de quête localisé, les annonces conservent le texte d’origine de l’expéditeur dans les journaux comme dans les bulles au lieu d’afficher un numéro de quête générique. L’affichage localisé reprend pour les annonces suivantes une fois le titre disponible.
+- L’infobulle du bouton de minicarte indique version QT, statut de recherche, portée du chat, nombre de quêtes suivies, portée de proximité et partage de position.
+- Les contrôles des réglages disposent d’explications traduites au survol, y compris les listes déroulantes, curseurs, actions de profil et couleurs.
+- Si votre client ne retrouve pas le titre local d’une quête, journal et bulles conservent le texte de l’expéditeur plutôt qu’un numéro générique. Les annonces suivantes sont de nouveau localisées dès que le titre est disponible.
 
 ## 5.16.7
 
-Lisez les mêmes notes de version de QuestTogether en jeu, sur Discord et dans votre langue préférée dans les fichiers du journal des modifications.
+Retrouvez les mêmes notes de QuestTogether en jeu, sur Discord et dans les fichiers de changements de votre langue.
 
-### Journaux des modifications cohérents et multilingues
+### Des notes multilingues cohérentes
 
-- Le journal des modifications anglais reprend désormais les mêmes résumés de version et listes à puces que la fenêtre d’accueil et les annonces Discord.
-- Des fichiers de journal des modifications sont disponibles pour toutes les langues prises en charge, avec l’historique des versions traduit existant et une copie conservée des anciennes notes anglaises rédigées à la main.
-- Les vérifications de version maintiennent les fichiers du journal des modifications synchronisés avec les notes et traductions de référence.
+- Le journal des changements anglais utilise les mêmes résumés et points que l’accueil en jeu et les annonces Discord.
+- Des fichiers sont disponibles pour toutes les langues prises en charge, avec l’historique déjà traduit. Les anciennes notes anglaises rédigées à la main sont conservées séparément.
+- Les contrôles de publication vérifient que ces fichiers restent synchronisés avec les notes de référence et leurs versions localisées.
 
 ## 5.16.6
 
-Voyez d’un coup d’œil quand vous cherchez des partenaires de quête.
+Votre bouton de minicarte vous rappelle quand vous cherchez des compagnons de quête.
 
-### Un rappel lumineux sur la minicarte
+### Un rappel lumineux
 
-- Le bouton QuestTogether de votre minicarte clignote désormais avec la même lueur dorée du logo que les barres d’info des personnages-joueurs tant que Recherche de partenaires de quête est activée.
-- La lueur suit votre statut de partenaire et s’arrête quand QT est désactivé ou quand le bouton de la minicarte est masqué. Votre bouton et le logo conservent leur taille actuelle.
+- Lorsque la recherche est active, le bouton QT pulse avec la même lueur dorée que les logos des joueurs.
+- La lueur suit votre statut et s’arrête si QT est désactivé ou si le bouton est masqué. Ni le bouton ni le logo ne changent de taille.
 
 ## 5.16.5
 
-Un préfixe plus court rend les annonces de groupe plus compactes.
+Les annonces de groupe deviennent plus compactes grâce à un préfixe court.
 
-### Annonces de groupe compactes
+### Annonces plus courtes
 
-- La progression des quêtes publiée aux membres du groupe sans QuestTogether commence désormais par [QT] au lieu de [QuestTogether].
-- Les annonces respectent toujours la limite des messages de discussion et préservent les caractères complets dans toutes les langues.
+- La progression envoyée aux membres du groupe sans QuestTogether commence désormais par [QT] plutôt que [QuestTogether].
+- Les annonces respectent toujours la limite des messages du chat sans couper les caractères, quelle que soit la langue.
 
 ## 5.16.4
 
-Conservez vos réglages de bulle en quittant le mode Édition et trouvez des compagnons de quête à proximité sur les cartes bondées.
+Vos réglages de bulles restent en place à la fermeture du mode Édition, et les cartes encombrées privilégient les joueurs proches.
 
-### Les réglages de bulle restent enregistrés
+### Conserver les réglages des bulles
 
-- La fermeture du mode Édition de l’ATH conserve désormais la taille de police, la durée d’affichage et la position de votre bulle QT au lieu de les réinitialiser.
-- Le panneau de bulle QT dispose désormais de son propre bouton Enregistrer les modifications et d’un message d’état enregistré. Les réglages s’appliquent automatiquement ; Enregistrer les modifications définit le point auquel Rétablir les modifications revient.
-- Après avoir enregistré puis effectué d’autres ajustements, Rétablir les modifications restaure vos derniers réglages QT enregistrés.
+- Quitter le mode Édition du HUD n’annule plus la taille du texte, la durée d’affichage ou la position de votre bulle QT.
+- Le panneau de la bulle dispose de son bouton d’enregistrement et d’un message de confirmation. Les modifications s’appliquent automatiquement ; enregistrer définit le point auquel revient l’action de rétablissement.
+- Si vous faites d’autres essais après l’enregistrement, rétablir les modifications retrouve vos derniers réglages QT enregistrés.
 
-### Les joueurs à proximité sont prioritaires
+### Priorité aux joueurs proches
 
-- Lorsque plus de 128 points éligibles se disputent l’espace sur la carte ou la minicarte, les joueurs les plus proches sont prioritaires en fonction de leur distance par rapport à votre personnage.
-- Lorsque le cache de 512 emplacements se remplit, les joueurs les plus proches sont conservés avant les arrivants plus éloignés. Le déplacement et le zoom de la carte ne modifient pas la priorité de proximité.
-- Ces changements conservent les limites existantes de points et de cache sans envoyer de messages de communication supplémentaires.
+- Lorsque plus de 128 points peuvent apparaître sur une carte ou la minicarte, les joueurs les plus proches de votre personnage sont prioritaires.
+- Quand le cache de 512 positions est plein, les joueurs proches sont conservés avant les nouvelles positions plus éloignées. Déplacer ou zoomer la carte ne change pas cette priorité.
+- Ces améliorations conservent les limites de points et de cache sans envoyer de messages supplémentaires.
 
 ## 5.16.3
 
-Trouvez plus facilement les paramètres dont vous avez besoin et consultez vos préférences QuestTogether d’un coup d’œil.
+Les réglages sont réorganisés pour trouver plus vite une option et consulter vos préférences d’un coup d’œil.
 
-### Paramètres organisés autour de votre façon de jouer
+### Des réglages regroupés par usage
 
-- Groupes et partage remplace Divers, en regroupant la disponibilité des partenaires, les demandes de participation et les approbations de partage de quêtes.
-- Les emotes de célébration se trouvent désormais dans Où annoncer. La visibilité de la minicarte se trouve dans Général sur la page principale, avec les outils de débogage et la nouvelle analyse du journal des quêtes dans Dépannage.
-- Comparer les quêtes du groupe et Trouver des partenaires de quête sont désormais les premières actions rapides. Vos préférences existantes sont conservées.
+- Groupes et partage remplace les réglages divers et réunit la recherche de compagnons, les demandes pour rejoindre un groupe et les autorisations de partage de quêtes.
+- Les emotes de célébration se trouvent avec les destinations des annonces. La visibilité du bouton de minicarte rejoint les options générales de l’accueil ; outils de débogage et nouvelle lecture du journal sont regroupés dans le dépannage.
+- La comparaison des quêtes du groupe et la recherche de compagnons arrivent en tête des actions rapides. Vos préférences existantes sont conservées.
 
-### Un état rapide plus utile
+### Un récapitulatif plus utile
 
-- Consultez l’état de vos partenaires, le partage de position et les préférences d’affichage, les approbations de demandes, la sortie des annonces, ainsi que les paramètres des barres d’info des quêtes et des joueurs dans les sections liées.
-- Vérifiez votre profil actif, la version installée et toute version plus récente détectée. Lorsque QT est désactivé, le résumé indique clairement que les paramètres sont des préférences enregistrées.
-- Cliquez sur l’en-tête d’une section pour ouvrir ses paramètres. Le résumé s’agrandit pour s’adapter à son texte et reste à jour tant que la page est ouverte.
+- Les sections du récapitulatif montrent recherche de compagnons, partage et affichage des positions, autorisations des demandes, destinations des annonces et réglages des indicateurs de quêtes et de joueurs.
+- Vous y retrouvez aussi le profil actif, la version installée et une éventuelle version plus récente détectée. Si QT est désactivé, il précise qu’il s’agit des préférences enregistrées.
+- Cliquez sur un titre pour ouvrir les réglages correspondants. Le récapitulatif adapte sa hauteur au texte et se met à jour tant que la page reste ouverte.
 
 ## 5.16.2
 
-Reconnaissez les joueurs de QuestTogether grâce à leurs infobulles et repérez plus facilement des partenaires de quête.
+Les infobulles permettent désormais de reconnaître les utilisateurs de QuestTogether et de repérer ceux qui cherchent des compagnons.
 
-### Infobulles des joueurs QuestTogether
+### Informations QT dans les infobulles
 
-- Survolez le personnage, la barre d’identification ou le cadre d’unité d’un joueur QT pour voir « Ce joueur utilise QuestTogether. » Les joueurs qui cherchent des partenaires de quête affichent également ce statut et un logo QT lumineux.
-- La section QT correspond à la largeur et à l’échelle de l’infobulle, reste à l’écart de sa barre de vie et se déplace au-dessus de l’infobulle quand l’espace en dessous est limité.
+- Survolez le personnage, la barre de nom ou le cadre d’un joueur QT : l’infobulle indique qu’il utilise QuestTogether. S’il cherche des compagnons, ce statut et un logo QT lumineux apparaissent également.
+- La partie QT suit la largeur et l’échelle de l’infobulle, évite sa barre de vie et passe au-dessus lorsque la place manque en dessous.
 
-### Une lueur de partenaire plus visible
+### Une lueur de recherche plus étendue
 
-- La lueur dorée de la barre d’identification s’étend désormais deux fois plus loin autour du logo, tout en conservant la même taille pour le logo lui-même.
-- Les icônes et les lueurs reflètent les vrais utilisateurs de QT et leur statut actuel de recherche de partenaire.
+- La lueur dorée autour du logo de la barre de nom s’étend deux fois plus loin, sans agrandir le logo.
+- Icônes et lueurs correspondent aux véritables utilisateurs QT et à leur statut actuel de recherche de compagnons.
 
 ## 5.16.1
 
-Trouvez plus facilement des partenaires de quête et voyez sur quelle quête ils se concentrent.
+Repérez plus facilement les compagnons disponibles et découvrez la quête sur laquelle ils se concentrent.
 
-### Une lueur de partenaire plus lumineuse
+### Une lueur plus visible
 
-- Les joueurs qui cherchent des partenaires de quête ont désormais une lueur dorée plus lumineuse autour du logo QT sur leur barre d’info, avec une légère pulsation. Le logo lui-même reste stable.
+- Le logo QT des joueurs qui cherchent des compagnons reçoit une lueur dorée plus vive, avec une pulsation douce. Le logo lui-même reste stable.
 
 ### Voir leur quête actuelle
 
-- Survolez le point sur la carte ou la minicarte d’un joueur qui cherche des partenaires de quête pour voir sa quête super-suivie — la quête unique sélectionnée pour la navigation. Les deux joueurs doivent disposer de cette mise à jour.
-- Les informations de quête s’actualisent environ toutes les 20 secondes. Elles ne sont partagées que lorsque la recherche de partenaires de quête et le partage de position sont activés.
-- Les noms des quêtes utilisent la langue de votre client lorsqu’elle est disponible, avec le titre ou l’ID de quête de l’expéditeur comme solution de repli. Les anciennes versions de QT conservent leurs points et indicateurs de partenaire existants.
+- Survolez leur point sur la carte ou la minicarte pour voir leur quête suivie en priorité, celle choisie pour la navigation. Les deux joueurs doivent disposer de cette mise à jour.
+- Ces informations sont actualisées environ toutes les 20 secondes et partagées uniquement lorsque la recherche de compagnons et le partage de position sont activés.
+- Le titre utilise votre langue si possible, puis celui de l’expéditeur ou l’identifiant de quête. Les anciennes versions de QT conservent leurs points et indicateurs de recherche de compagnons habituels.
 
 ## 5.16.0
 
-QuestTogether prend désormais en charge toutes les langues de WoW et peut afficher les mises à jour de quête des autres joueurs dans la langue de votre client.
+QuestTogether prend en charge toutes les langues de WoW et peut présenter les nouvelles de quête d’autres joueurs dans la langue de votre client.
 
-### Jouez dans plus de langues
+### Toutes les langues de WoW
 
-- Les menus, paramètres et notes de mise à jour prennent désormais en charge toutes les langues locales de WoW : anglais, allemand, français, espagnol européen, espagnol latino-américain, portugais brésilien, russe, italien, coréen, chinois simplifié et chinois traditionnel.
-- L’espagnol latino-américain dispose désormais de ses propres textes au lieu de partager ceux de l’espagnol européen.
+- Menus, réglages et notes prennent en charge l’anglais, l’allemand, le français, l’espagnol européen et latino-américain, le portugais du Brésil, le russe, l’italien, le coréen, le chinois simplifié et le chinois traditionnel.
+- L’espagnol latino-américain dispose de ses propres textes au lieu de reprendre ceux d’Espagne.
 
-### Progression de quête localisée
+### Progression localisée
 
-- Les événements de quête pris en charge provenant de joueurs QT à jour peuvent apparaître dans la langue de votre client dans les journaux de discussion et bulles QT, en utilisant les titres de quête locaux lorsqu’ils sont disponibles et les nombres de progression réels de l’expéditeur.
-- Lorsqu’une description d’objectif traduite ne peut pas être choisie de manière fiable, QT utilise à la place un numéro d’objectif localisé avec le nombre, le pourcentage, l’état d’achèvement ou l’état de progression.
-- Les anciennes versions de QT et la discussion de groupe publique conservent la formulation de l’expéditeur. Lorsque WoW ne peut pas fournir de titre de quête local, QT conserve le titre source ou affiche l’ID de quête. Les événements dans la même langue conservent leur formulation native détaillée.
+- Les événements pris en charge et envoyés par un QT à jour peuvent être affichés dans votre langue dans le journal QT et les bulles. Ils utilisent le titre local lorsqu’il est disponible et les véritables valeurs de progression de l’expéditeur.
+- Lorsqu’une description traduite d’objectif ne peut pas être choisie avec certitude, QT affiche un numéro d’objectif localisé avec les quantités, le pourcentage ou l’état de progression ou de complétion.
+- Les anciennes versions de QT et le chat de groupe public conservent le texte de l’expéditeur. Si WoW ne fournit pas de titre local, QT garde le titre reçu ou l’identifiant de quête. Les événements dans la même langue conservent leur formulation détaillée.
 
-### Amélioration des titres de quête
+### Titres des quêtes
 
-- La comparaison de quêtes privilégie désormais votre titre de quête local lorsqu’il est disponible.
-- Les titres de quête localisés contenant une ponctuation non ASCII restent cliquables de manière plus fiable.
+- La comparaison privilégie désormais le titre local quand il est disponible.
+- Les titres localisés contenant une ponctuation non ASCII restent plus souvent correctement cliquables.
 
 ## 5.15.0
 
 Demandez à rejoindre un groupe de quête directement depuis le menu d’un joueur QuestTogether.
 
-### Rejoindre un groupe de quête
+### Demander à rejoindre un groupe
 
-- Les joueurs QT déjà en groupe affichent désormais Demander à rejoindre au lieu d’Inviter lorsque des informations récentes sont disponibles. Les deux joueurs doivent disposer de cette mise à jour ; le demandeur doit être seul.
-- Le destinataire peut envoyer une invitation WoW normale ou refuser. Il doit avoir le droit d’inviter et une place dans un groupe normal. Vous devez toujours accepter l’invitation normale pour rejoindre.
+- Lorsqu’un joueur QT est déjà groupé et que ces informations sont récentes, son menu propose de demander à le rejoindre plutôt que de l’inviter. Les deux joueurs doivent disposer de cette mise à jour et le demandeur doit être seul.
+- Le destinataire peut refuser ou envoyer une invitation normale de WoW. Il doit avoir le droit d’inviter et une place libre dans un groupe ordinaire. Vous acceptez ensuite l’invitation habituelle.
 
 ### Invitations automatiques facultatives
 
-- Deux nouvelles options approuvent automatiquement les demandes des amis de votre personnage, ou des autres joueurs pendant votre recherche de partenaires de quête. Désactivées par défaut, elles figurent dans la fenêtre de demande et les paramètres Divers. Les amis de compte Battle.net ne sont pas inclus.
-- Les demandes expirent et respectent les joueurs ignorés, les changements de groupe et les restrictions du jeu. QT ne quitte jamais votre groupe actuel et n’accepte pas d’invitations à votre place.
+- Deux options permettent d’approuver automatiquement les demandes des amis de personnage, ou celles des autres joueurs pendant que vous cherchez des compagnons. Elles sont désactivées au départ et figurent dans la demande et les réglages divers. Les amis de compte Battle.net ne sont pas concernés.
+- Les demandes expirent et respectent les ignorés, les changements de groupe et les restrictions du jeu. QT ne quitte jamais votre groupe et n’accepte pas d’invitation à votre place.
 
 ## 5.14.1
 
-Les annonces de groupe affichent désormais le nom complet de QuestTogether.
+Les annonces de groupe affichent le nom complet de QuestTogether.
 
-### Canal de groupe
+### Chat de groupe
 
-- Le préfixe des annonces dans le canal de groupe passe de [QT] à [QuestTogether] pour permettre aux autres joueurs de trouver plus facilement l’addon.
+- Le préfixe [QT] devient [QuestTogether] afin que les autres joueurs puissent retrouver plus facilement l’addon.
 
 ## 5.14.0
 
-QuestTogether parle désormais cinq langues supplémentaires et vous aide à tenir informés les membres du groupe qui n’utilisent pas QT.
+QuestTogether ajoute cinq langues et aide à tenir informés les membres du groupe qui n’utilisent pas QT.
 
-### Jouez dans votre langue
+### Jouer dans votre langue
 
-- L’interface est désormais disponible en allemand, français, espagnol, portugais brésilien et russe. QuestTogether utilise la langue du jeu, avec l’anglais comme langue de secours.
-- Les paramètres, menus, infobulles, comparaisons de quêtes et notes de mise à jour sont traduits. Les noms de quêtes et les textes de progression reçus des autres joueurs restent dans leur langue d’origine.
-- Retrouvez les annonces de mise à jour traduites dans les cinq salons dédiés aux différentes langues sur notre Discord.
+- L’interface est disponible en allemand, français, espagnol, portugais du Brésil et russe. QT suit la langue du jeu et utilise l’anglais en secours.
+- Réglages, menus, infobulles, comparaisons et notes sont localisés. Les titres de quêtes et les textes de progression reçus d’autres joueurs restent dans leur langue d’origine.
+- Les annonces de version sont aussi disponibles dans les cinq salons de notes de mise à jour de notre Discord, un par langue.
 
-### Informez tout votre groupe
+### Informer tout le groupe
 
-- Une nouvelle option dans les canaux d’annonce envoie vos annonces d’événements activées dans le canal de groupe lorsqu’un membre n’a pas été reconnu comme utilisateur de QT. Elle est activée par défaut et peut être désactivée dans les paramètres.
-- Cela fonctionne aussi dans les groupes d’instance constitués automatiquement. Le jeu en solo et les raids sont exclus, et les annonces des autres joueurs ne sont jamais retransmises.
+- Une nouvelle option de destination des annonces envoie vos événements activés dans le chat de groupe lorsqu’au moins un membre n’a pas été reconnu comme utilisateur QT. Elle est activée par défaut et peut être désactivée dans les réglages.
+- Cela fonctionne également dans les groupes d’instance formés par l’outil de recherche. Le jeu en solo et les raids sont exclus ; QT ne relaie jamais les annonces d’autres joueurs.
 
 ## 5.13.1
 
-Cette mise à jour de maintenance améliore la récupération des plaques de quête, supprime les bulles et logos de joueurs obsolètes, et garantit un comportement cohérent des paramètres et de la fenêtre de débogage.
+Ce correctif améliore le rétablissement des indicateurs de quête, nettoie les anciennes bulles et les logos, et rend les réglages et la fenêtre de débogage plus cohérents.
 
-### Plaques de quête et indicateurs de joueurs
+### Indicateurs de quêtes et de joueurs
 
-- Les icônes de quête et les teintes des barres de vie se rétablissent correctement après la fermeture des vues restreintes. Les analyses de quêtes différées conservent leur temps de stabilisation, et les données d’infobulle temporairement manquantes gardent leur nombre de nouvelles tentatives.
-- Les bulles d’annonce sont nettoyées quand la plaque d’un joueur disparaît ou est réutilisée pendant le combat. Les cadres protégés ou interdits attendent un nettoyage sûr.
-- Les positions sur la carte et la présence des joueurs se rétablissent après avoir désactivé QuestTogether, changé de zone, puis l’avoir réactivé. Les joueurs partis ne récupèrent plus un logo QT à cause de retraits tardifs de position ou de statut de partenaire.
+- Icônes de quête et teintes de vie reviennent correctement après la fermeture des vues soumises à restriction. Les lectures de quêtes retardées conservent leur délai de stabilisation ; l’absence temporaire de données d’infobulle n’épuise pas leurs tentatives.
+- Une bulle est retirée si sa barre de nom disparaît ou est réutilisée en combat. Pour une fenêtre protégée ou interdite, le nettoyage attend un moment sûr.
+- Positions et présence se rétablissent après désactivation de QT, changement de zone et réactivation. Les retraits tardifs de position ou de statut ne redonnent plus de logo à un joueur parti.
 
-### Correctifs des paramètres et des fenêtres
+### Réglages et fenêtres
 
-- La case Recherche de partenaires de quête reste synchronisée quand le statut change via les commandes, les menus ou les paramètres de profil.
-- La fenêtre de débogage termine en toute sécurité les déplacements et redimensionnements interrompus quand les restrictions sont levées, même après avoir été masquée.
+- La case de recherche de compagnons reste synchronisée avec les changements effectués par commande, menu ou profil.
+- La fenêtre de débogage termine sans risque les déplacements et redimensionnements interrompus lorsque les restrictions cessent, même si elle a été masquée entre-temps.
 
-### Améliorations de fiabilité
+### Fiabilité
 
-- Des tests renforcés détectent l’accès aux cadres interdits même lorsqu’une erreur est interceptée en interne.
-- Les contrôles de publication refusent désormais de publier tant que des changements d’implémentation ne sont pas validés, afin de garantir que les correctifs atteignent bien le téléchargement.
+- Les tests détectent l’accès aux fenêtres interdites même lorsqu’une erreur est interceptée en interne.
+- La publication refuse désormais des modifications du code qui ne sont pas enregistrées dans un commit Git, afin que les corrections annoncées soient bien dans le téléchargement.
 
 ## 5.13.0
 
-Trouvez des partenaires de quête d’un coup d’œil grâce aux points de carte et logos de joueurs mis en évidence, à des paramètres de position simplifiés et à des rappels quand un autre joueur possède une version stable plus récente de QuestTogether.
+Repérez les joueurs qui cherchent des compagnons grâce à une lueur dorée, réglez plus simplement le partage de position et recevez un rappel lorsqu’une version stable plus récente est détectée.
 
-### Repérer les partenaires de quête
+### Reconnaître les joueurs disponibles
 
-- Les joueurs recherchant des partenaires de quête ont une douce lueur dorée autour de leurs points de carte et de minicarte aux couleurs de leur classe.
-- Leur logo QuestTogether sur la barre d’info reçoit une douce lueur dorée. Les surbrillances disparaissent quand le statut est désactivé ou expire.
-- Les paramètres Positions des joueurs incluent Afficher uniquement les joueurs recherchant des partenaires de quête. Cette option commence désactivée et filtre les deux cartes lorsqu’elle est activée.
-- La fenêtre Nouveautés en jeu affiche côte à côte les logos et points de carte normaux et lumineux. La lueur dorée signifie rechercher des partenaires de quête.
+- Les points de carte et de minicarte gardent leur couleur de classe et sont entourés d’une douce lueur dorée lorsque le joueur cherche des compagnons. Son logo QT sur la barre de nom reçoit la même lueur.
+- Ces effets disparaissent à l’arrêt ou à l’expiration du statut. Dans les réglages de position, un filtre facultatif permet de ne montrer que les joueurs qui cherchent des compagnons ; il est désactivé au départ et s’applique aux deux cartes.
+- La fenêtre des nouveautés montre côte à côte logos et points ordinaires ou lumineux. La lueur dorée signifie que le joueur cherche des compagnons de quête.
 
-### Paramètres de position simplifiés
+### Réglages de position simplifiés
 
-- Partager ma position et Afficher les autres joueurs s’appliquent chacun à la carte du monde et à la minicarte.
-- Les deux options sont activées par défaut pour les nouveaux profils. Les désactivations existantes du partage de position sont conservées lors de la mise à niveau.
+- Partager ma position et afficher les autres joueurs s’appliquent chacun à la carte et à la minicarte.
+- Ces deux options sont activées sur les nouveaux profils. Les refus de partage déjà enregistrés sont conservés lors de la mise à jour.
 
 ### Rappels de nouvelle version
 
-- QuestTogether détecte quand un autre joueur signale une version stable plus récente de l’addon et affiche un rappel de mise à jour dans la fenêtre de discussion QuestTogether de votre choix.
-- Le rappel est conservé entre les personnages et apparaît une fois à chaque rechargement jusqu’à ce que vous installiez la version détectée ou une version plus récente. Les versions alpha et bêta ne déclenchent pas de rappels.
-- Les annonces de version sont légères et peu fréquentes. QuestTogether reconnaît aussi les informations de version dans les réponses de ping existantes.
+- Si un joueur annonce une version stable plus récente, QT affiche un rappel dans la fenêtre de chat que vous avez choisie.
+- Le rappel est conservé entre personnages et apparaît une fois par rechargement jusqu’à l’installation de cette version ou d’une plus récente. Les versions alpha et bêta ne déclenchent pas de rappel.
+- Les annonces de version sont légères et espacées. QT reconnaît aussi les versions déjà présentes dans les réponses aux pings.
 
 ## 5.12.0
 
-Trouvez des personnes avec qui faire des quêtes grâce au nouveau statut Recherche de partenaires de quête. Cette mise à jour améliore aussi la visibilité des infobulles de la minicarte et sépare le comportement du Mode Guerre et des royaumes de Retail de celui de Forever.
+Un nouveau statut permet de signaler que vous cherchez des compagnons de quête. Cette mise à jour améliore aussi les infobulles de la minicarte et distingue mieux les particularités de Retail et Forever.
 
-### Recherche de partenaires de quête
+### Chercher des compagnons de quête
 
-- Faites savoir aux autres utilisateurs de QuestTogether que vous voulez de la compagnie. Votre statut apparaît dans votre menu de joueur et dans les infobulles des points de carte ; il n’active pas le partage de position et n’envoie pas d’invitations.
-- Activez ou désactivez le statut depuis le menu de la minicarte, Paramètres > Divers, ou /qt lfg. Utilisez /qt lfg on, off ou status pour le définir ou le vérifier. Il commence désactivé et est enregistré par profil.
-- Le statut de partenaire expire lorsque les mises à jour s’arrêtent. Les joueurs ignorés sont exclus, et désactiver QuestTogether met votre annonce en pause.
+- Votre statut apparaît dans le menu de joueur et les infobulles des points de carte. Il n’active pas le partage de position et n’envoie aucune invitation.
+- Activez-le depuis le menu de la minicarte, les réglages divers ou /qt lfg. Utilisez /qt lfg on pour l’activer ; les arguments off et status servent à le désactiver ou à le consulter. Il est désactivé par défaut et enregistré par profil.
+- Le statut expire si les mises à jour cessent. Les joueurs ignorés sont exclus, et désactiver QuestTogether suspend votre annonce.
 
 ### Retail et Forever
 
-- Forever n’affiche plus le Mode Guerre dans les infobulles des points de joueurs, les détails de position de quête ou la sortie de ping. Les pings de Forever omettent aussi les libellés de royaume tout en conservant les noms complets des joueurs.
-- Les mises à jour de quêtes à proximité sur Forever ne nécessitent plus les informations de Mode Guerre de Retail. Les points de carte restent visibles entre les phases afin que vous puissiez trouver des personnes avec qui grouper.
-- Retail utilise l’état actif du Mode Guerre lorsqu’il est disponible. Un Mode Guerre inconnu ou non pris en charge n’est plus indiqué comme Désactivé.
+- Forever n’affiche plus le mode Guerre dans les infobulles de joueurs, les détails de position des quêtes ni les réponses aux pings. Ces dernières n’indiquent plus de royaume, tout en conservant les noms complets.
+- Les mises à jour de quêtes proches sur Forever ne dépendent plus du mode Guerre de Retail. Les points restent visibles entre phases pour faciliter la recherche de compagnons.
+- Retail utilise le mode Guerre réellement actif lorsqu’il est connu. Un état inconnu ou non pris en charge n’est plus présenté comme désactivé.
 
-### Points de joueurs plus stables
+### Des points de joueur plus stables
 
-- Des coordonnées brièvement manquantes ne retirent plus immédiatement votre point. Les dernières positions signalées restent jusqu’à deux minutes, et les signalements plus anciens affichent leur âge dans l’infobulle. Les désactivations du partage se retirent toujours immédiatement lorsque la communication est disponible.
-- Les diffusions de déplacement sont limitées à une fois toutes les dix secondes, ce qui réduit le trafic de position. Les signaux de présence immobiles restent envoyés toutes les vingt secondes pour maintenir la compatibilité avec les anciens clients.
-- Le cache de position conserve désormais jusqu’à 512 joueurs. Chaque carte affiche toujours au maximum 128 points visibles, et les joueurs hors de la carte affichée ne consomment plus cette limite d’affichage.
+- Une brève absence de coordonnées n’efface plus immédiatement votre point. La dernière position reste jusqu’à deux minutes ; l’infobulle indique l’âge des rapports plus anciens. Le retrait du partage reste immédiat lorsque les communications le permettent.
+- Les envois de mouvement sont limités à un toutes les dix secondes. À l’arrêt, le signal périodique reste à vingt secondes pour conserver la compatibilité avec les anciens clients.
+- Le cache peut garder 512 joueurs. Chaque carte affiche au maximum 128 points visibles ; les joueurs hors de la carte consultée ne consomment plus cette limite.
 
-### Logos de joueurs fiables
+### Des logos de joueur plus fiables
 
-- Corrige les logos manquants sur les barres d’info des joueurs amicaux dans les clients Forever et Retail actuels en lisant le paramètre actuel de visibilité des joueurs amicaux.
-- Les logos placés à gauche se déplacent vers l’extérieur pour laisser de la place aux améliorations visibles, puis reviennent à leur position habituelle lorsque celles-ci disparaissent.
-- Tous les messages QuestTogether pris en charge identifient désormais leur expéditeur. Un cache limité mémorise les joueurs pour la session d’interface actuelle, afin que les signaux de présence manqués ne retirent plus leurs logos. Les départs explicites et les joueurs ignorés sont toujours effacés ; aucun message supplémentaire n’est envoyé.
+- La lecture du réglage actuel des barres de nom amicales corrige des logos absents sur les clients Forever et Retail récents.
+- Un logo placé à gauche se décale pour laisser la place aux améliorations visibles, puis revient quand elles disparaissent.
+- Tous les messages QT pris en charge identifient désormais leur expéditeur. Un cache limité retient les joueurs pendant la session de l’interface : un signal périodique manqué ne retire plus leur logo. Les départs explicites et les joueurs ignorés restent supprimés, sans messages supplémentaires.
 
-### Finitions de la minicarte
+### Infobulle de la minicarte
 
-- L’infobulle de la minicarte QuestTogether utilise désormais une couche d’infobulle indépendante afin de pouvoir apparaître au-dessus de l’interface des barres d’actions. Elle se masque lorsque le bouton devient indisponible ou que les restrictions commencent.
+- L’infobulle du bouton QT utilise sa propre couche d’affichage et peut passer devant les barres d’action. Elle disparaît si le bouton devient indisponible ou si des restrictions commencent.
 
 ## 5.11.0
 
-QuestTogether ajoute désormais les positions des joueurs, les logos sur les barres des joueurs, les comparaisons de quêtes ciblées et un accès plus simple aux retours et à l’assistance via Discord. Les paramètres vous permettent de choisir ce que vous partagez et ce que vous voyez pendant que la progression des quêtes reste coordonnée avec les autres utilisateurs de QuestTogether.
+Repérez les joueurs QuestTogether, comparez vos quêtes avec une personne précise et trouvez plus facilement de l’aide sur Discord. Les réglages vous laissent choisir les informations partagées et affichées.
 
-### Trouver des joueurs QuestTogether à proximité
+### Repérer les joueurs QuestTogether
 
-- Affiche le logo de parchemin à côté des joueurs QuestTogether amicaux lorsque les barres d’info amicales de WoW sont activées. Les barres des joueurs sont activées par défaut, avec une position Gauche avec marge ; choisissez Gauche, Droite, Haut ou Préfixe sans modifier les couleurs des barres de vie.
-- Des points de joueurs aux couleurs de classe peuvent apparaître sur la carte du monde et la minicarte pour les joueurs qui partagent leur position. Survolez un point pour voir le nom, la faction, la race, la classe et le niveau ; cliquez dessus pour ouvrir le menu de joueur QuestTogether.
-- Positions des joueurs possède des interrupteurs distincts pour le partage et l’affichage sur la carte du monde et la minicarte, et les quatre sont activés par défaut. La présence des logos sur les barres des joueurs peut continuer même lorsque les deux interrupteurs de partage de position sont désactivés.
-- Les positions se rafraîchissent périodiquement et disparaissent lorsqu’elles expirent. Les deux joueurs doivent utiliser l’addon mis à jour ; un point ne garantit pas que vous partagez la même phase ou couche.
+- Lorsque les barres de nom amicales de WoW sont visibles, un logo en forme de parchemin peut accompagner les joueurs QT. Cette fonction est activée par défaut, à gauche avec un espacement. Vous pouvez choisir gauche, droite, haut ou préfixe, sans modifier la couleur des barres de vie.
+- Les joueurs qui partagent leur position peuvent apparaître sous forme de points colorés selon leur classe sur la carte et la minicarte. Survolez un point pour voir nom, faction, race, classe et niveau ; cliquez pour ouvrir le menu du joueur.
+- Les positions disposent de quatre réglages distincts : partage et affichage pour la carte, puis pour la minicarte. Tous sont activés au départ. La présence nécessaire aux logos de joueurs peut continuer à être annoncée même si les deux partages de position sont désactivés.
+- Les positions sont actualisées périodiquement et disparaissent à expiration. Les deux joueurs doivent avoir l’addon à jour ; un point ne garantit pas une phase ou une couche de monde commune.
 
-### Comparer un joueur ou tout le groupe
+### Comparer avec un joueur ou tout le groupe
 
-- L’action Comparer les quêtes du menu de joueur compare désormais seulement vous et le joueur sélectionné, y compris les pairs QuestTogether joignables qui ne sont pas dans le groupe. La comparaison de tout le groupe reste disponible depuis le menu de la minicarte, les menus de noms de quête et /qt compare.
-- Le partage de quêtes et les demandes de partage restent réservés au groupe. Les comparaisons ciblées indiquent quand un groupe est nécessaire pour le partage et quand le joueur sélectionné doit utiliser QuestTogether pour répondre.
-- Si une demande de partage est déjà en attente auprès d’un autre joueur, la comparaison indique désormais de qui elle attend une réponse après votre changement de cible.
+- L’action de comparaison du menu d’un joueur ne concerne que vous et cette personne, y compris un utilisateur QT joignable hors de votre groupe. La comparaison du groupe entier reste accessible depuis la minicarte, les menus de quêtes et /qt compare.
+- Le partage de quêtes et les demandes de partage restent réservés au groupe. Une comparaison ciblée précise quand il faut être groupé et quand le joueur doit disposer de QT pour répondre.
+- Si une demande de partage attend déjà la réponse de quelqu’un, son nom reste indiqué après un changement de cible.
 
-### Retours et assistance
+### Aide et retours
 
-- La fenêtre d’accueil et la page principale des paramètres incluent désormais Discord — Retours et assistance. Cela ouvre une invitation copiable lorsqu’elle est disponible, ou affiche l’invitation dans la discussion si la fenêtre de lien ne peut pas s’ouvrir.
+- L’accueil et la page principale des réglages proposent un accès à Discord pour l’aide et les retours. Il ouvre une invitation à copier ou affiche celle-ci dans le chat si la fenêtre ne peut pas s’ouvrir.
 
-### Correctifs et finitions
+### Corrections
 
-- Les joueurs ignorés sont désormais filtrés plus complètement. Les nouveaux journaux, bulles, points, comparaisons et opérations de partage sont bloqués, tandis que les bulles et positions existantes sont effacées lorsque la liste des ignorés change.
-- Correction de fausses plaques de quête causées par des limites d’infobulle indisponibles correspondant au texte d’objectif d’une autre quête.
-- Désactiver le partage sur la carte ou la minicarte relance désormais la mise à jour après des échecs temporaires de communication. Désactiver les deux options de partage retire aussi les détails de position des autres mises à jour de l’addon.
-- Les logos de joueurs s’effacent correctement lorsque la présence d’un joueur expire juste avant son départ. Chuchoter depuis les points de carte ouvre votre fenêtre de discussion, et changer la destination du journal depuis les Paramètres est indisponible pendant les restrictions.
+- Les joueurs ignorés sont mieux filtrés : nouveaux messages, bulles, points, comparaisons et tâches de partage sont bloqués. Les bulles et positions déjà présentes sont retirées lors d’une modification de la liste d’ignorés.
+- Des limites d’infobulle inaccessibles pouvaient associer à tort le texte d’un objectif d’une autre quête et afficher un indicateur de quête. Ce cas est corrigé.
+- La désactivation du partage sur la carte ou la minicarte est réessayée après un échec temporaire de communication. Désactiver les deux retire aussi les détails de position des autres mises à jour de l’addon.
+- Le logo disparaît correctement lorsqu’une présence expire juste avant le départ du joueur. Chuchoter depuis un point de carte ouvre votre fenêtre de chat ; le changement de destination du journal depuis les réglages est indisponible sous restriction.
 
 ## 5.10.0
 
-QuestTogether partage la progression des quêtes avec votre groupe et les joueurs à proximité. Utilisez le bouton de la minicarte pour les paramètres, les comparaisons de quêtes de groupe, votre journal des quêtes et ces dernières notes.
+QuestTogether partage la progression des quêtes avec votre groupe et les joueurs proches. Le bouton de la minicarte donne accès aux réglages, à la comparaison du groupe, à votre journal de quêtes et aux notes de mise à jour.
 
 ### Comparer et partager les quêtes du groupe
 
-- Ouvrez Comparer les quêtes du groupe depuis la minicarte ou les menus de quêtes et de joueurs, ou tapez /qt compare. Voyez qui possède chaque quête et la progression de chacun.
-- Toutes les quêtes du groupe apparaissent par défaut. Cochez Masquer les quêtes que je n’ai pas pour vous concentrer sur les quêtes de votre propre journal.
-- Demandez les quêtes partageables aux membres du groupe qui utilisent l’addon mis à jour. Les demandes sollicitent l’autorisation par défaut ; le partage automatique est un paramètre optionnel.
-- Les comparaisons se rétablissent après les restrictions de carte ou de combat. Les actualisations remplacent les anciennes réponses, et les temps de recharge et échecs des demandes indiquent quand vous pouvez réessayer.
+- Ouvrez la comparaison depuis la minicarte, le menu d’une quête ou d’un joueur, ou avec /qt compare. Vous voyez qui possède chaque quête et la progression de chacun.
+- Toutes les quêtes du groupe apparaissent par défaut. L’option de masquage des quêtes absentes de votre journal permet de limiter la liste aux vôtres.
+- Vous pouvez demander aux membres du groupe de partager une quête s’ils utilisent l’addon à jour. Leur autorisation est demandée par défaut ; le partage automatique est facultatif.
+- Les comparaisons reprennent après les restrictions de carte ou de combat. Une actualisation remplace les anciennes réponses ; les délais entre demandes et les échecs indiquent quand réessayer.
 
-### Raccourcis et menus de quête
+### Raccourcis et menus des quêtes
 
-- Faites glisser le bouton de minicarte en forme de parchemin pour le repositionner. Son menu ouvre les paramètres, les comparaisons, le journal des quêtes, les notes de mise à jour et le contrôle de destination de la fenêtre du journal. Masquez-le depuis le menu et restaurez-le dans les paramètres Divers.
-- Les menus de noms de quête proposent Statut, Partager, Ouvrir dans le journal des quêtes et Comparer les quêtes du groupe. Les actions de partage et de journal revérifient la quête actuelle et les restrictions au moment du clic.
-- Les liens de statut de quête conservent leurs titres intacts après qu’une quête quitte votre journal. La case de partage automatique suit désormais les paramètres enregistrés et les changements de profil.
+- Faites glisser le bouton en forme de parchemin pour le déplacer sur la minicarte. Son menu ouvre les réglages, la comparaison, le journal de quêtes, les notes et le choix de fenêtre du journal QT. Vous pouvez le masquer depuis ce menu et le rétablir dans les réglages divers.
+- Le menu d’un nom de quête propose son état, son partage, son ouverture dans le journal et la comparaison du groupe. Le partage et l’ouverture vérifient à nouveau la quête actuelle et les restrictions au moment du clic.
+- Les liens d’état conservent leur titre après le retrait d’une quête de votre journal. La case de partage automatique suit désormais les préférences sauvegardées et les changements de profil.
 
-### Aide et dernières notes
+### Aide et notes de mise à jour
 
-- Lisez l’accueil et les dernières notes de mise à jour dans leur propre fenêtre au lieu de messages de discussion répétés. Choisissez Notes de mise à jour depuis le menu de la minicarte ou la page principale des Paramètres, ou utilisez /qt notes, /qt changelog ou /qt patchnotes.
-- La fenêtre des notes s’ouvre automatiquement pour les mises à niveau majeures et mineures. Les mises à jour de correctif incluent toujours de nouvelles notes sans ouvrir automatiquement la fenêtre.
-- Utilisez /qt help pour les commandes normales et /qt help debug pour les aperçus, diagnostics et commandes développeur.
+- L’accueil et les dernières notes ont leur propre fenêtre, au lieu de messages répétés dans le chat. Ouvrez-la par les notes de mise à jour du menu de la minicarte ou de la page principale des réglages, ou avec /qt notes, /qt changelog ou /qt patchnotes.
+- Cette fenêtre s’ouvre automatiquement lors des mises à jour majeures et mineures. Les correctifs ont eux aussi des notes, mais ne déclenchent pas l’ouverture automatique.
+- /qt help présente les commandes courantes ; /qt help debug couvre les aperçus, les diagnostics et les commandes du développeur.
 
 ## 5.9.2
 
-Faites un clic gauche ou droit sur le nom d’une quête dans le journal QuestTogether pour ouvrir son menu, avec État en premier et Partager en second. Partager utilise l’entrée actuelle du journal des quêtes sans modifier la quête sélectionnée par Blizzard, et n’est pas disponible si vous êtes en solo, si elle est restreinte ou si la quête ne peut pas être partagée. Après un séparateur, la dernière option déplace les journaux QuestTogether entre la fenêtre principale et la fenêtre séparée, comme le menu des noms de joueurs de QT.
+Un clic gauche ou droit sur un nom de quête dans le journal QT ouvre maintenant son menu. Vous y trouverez d’abord l’état de la quête, puis le partage.
 
-### Changements de cette version
+### Menus et liens des quêtes
 
-- Rendre les noms de quêtes cliquables dans les messages d’état, y compris les titres de secours issus des journaux d’autres joueurs. Préserver les liens de quête existants lors de la mise en forme des comparaisons de quêtes terminées afin que les détails d’état ne fassent pas partie d’un second lien cassé.
-- Validation : 521 tests réussissent dans l’ordre normal et inverse sous Lua 5.1 et 5.2. Les six profils d’API client, les vérifications de syntaxe Lua et shell, la vérification exacte de libchev et les contrôles de diff réussissent. Le comportement des menus sur client réel, la distribution du partage de quêtes et la validation du taint au niveau du moteur restent séparés.
+- Le partage utilise l’entrée actuelle du journal sans changer la quête sélectionnée dans l’interface Blizzard. Il est indisponible en solo, sous restriction ou si la quête ne peut pas être partagée. Après un séparateur, la dernière option déplace le journal QT entre la fenêtre principale et une fenêtre séparée, comme dans le menu des joueurs.
+- Les noms de quêtes sont cliquables dans les messages d’état, y compris les titres de remplacement provenant du journal d’un autre joueur. Lors d’une comparaison de quêtes terminées, les liens existants sont conservés : les détails d’état ne créent plus un second lien cassé.
+- Les 521 tests passent dans les deux ordres sur Lua 5.1 et 5.2. Les six profils API, les syntaxes Lua et shell, libchev et les différences de fichiers sont vérifiés. Les menus en jeu, la réception des partages et le taint du moteur restent à valider séparément.
 
 ## 5.9.1
 
-Corrige le suivi des quêtes, la visibilité des barres d’info de quêtes, les annonces de zones d’objectifs, la fiabilité de la communication et les actions utilisateur identifiées lors de l’audit complet.
+Une revue complète a permis de corriger le suivi des quêtes, les barres de nom, les annonces de zones d’objectif, les communications et plusieurs actions de l’interface.
 
-### Changements de cette version
+### Corrections issues de la revue
 
-- Empêcher les blocs de quêtes d’infobulles sans rapport d’emprunter le texte d’objectif partagé. Préserver la progression de groupe valide et récupérer les barres d’info après les changements de carte, d’instance, de composition de groupe et de quêtes.
-- Garder les quêtes nouvellement acceptées et les analyses initiales en attente jusqu’à l’arrivée de données lisibles. Préserver les jalons d’objectifs, la classification des tâches et l’état d’emplacement inconnu sans sorties erronées ni entrées en double.
-- Améliorer les annonces localisées et les comparaisons de quêtes, notamment les limites de charge utile, le rythme, les nouvelles tentatives, l’annulation et le signalement de la possibilité de partage.
-- Respecter les échecs de points de passage natifs sans suivre un ancien repère. Refuser les clics restreints pendant la désactivation au lieu de perdre le travail en file d’attente.
-- Faire des tests de bulles des aperçus locaux et accepter les noms Forever complets ou les noms entre guillemets, tout en préservant l’identité exacte du joueur.
-- Corriger l’activation/désactivation et la gestion des profils, l’ouverture du mode Édition de l’ATH, les emotes de célébration approuvées et les diagnostics.
-- Renforcer l’isolation des tests sûrs pour le client réel et la couverture de régression, corriger les hypothèses de test erronées et faire propager les échecs de syntaxe Lua par la CI.
-- Validation : 516 tests réussissent dans l’ordre normal et inverse sous Lua 5.1 et 5.2. Les six profils d’API client, les vérifications de syntaxe, la vérification exacte de libchev et les contrôles de diff réussissent. Le rendu sur client réel, la distribution entre deux clients et la validation du taint au niveau du moteur restent séparés.
+- Les blocs de quêtes sans rapport dans une infobulle ne récupèrent plus le texte d’un objectif commun. La progression valide du groupe est conservée, et les barres retrouvent leur état après un changement de carte, d’instance, de groupe ou de quête.
+- Une quête fraîchement acceptée ou une première lecture reste en attente jusqu’à réception de données lisibles. Les étapes de progression, le type de tâche et une position encore inconnue sont préservés, sans fausse sortie de zone ni entrée en double.
+- Les annonces localisées et les comparaisons de quêtes gèrent mieux les limites de message, la cadence, les nouvelles tentatives, l’annulation et l’indication de partage possible.
+- Si WoW refuse un point de passage, QT ne suit pas une ancienne épingle. Les clics soumis à restriction sont refusés lorsque QT est désactivé, sans perdre les tâches en attente.
+- Les essais de bulles restent des aperçus locaux. Ils acceptent les noms complets de Forever ou les noms entre guillemets, en conservant l’identité exacte du joueur.
+- Corrections de l’activation, de la désactivation et des profils, de l’ouverture du mode Édition du HUD, des emotes de célébration autorisées et des diagnostics.
+- Les tests sont mieux isolés du client en cours de jeu, les cas de régression sont renforcés et les hypothèses erronées corrigées. La CI signale désormais correctement les erreurs de syntaxe Lua.
+- Les 516 tests passent dans les deux ordres sous Lua 5.1 et 5.2. Les six profils API, la syntaxe, la révision exacte de libchev et les différences de fichiers sont vérifiés. Rendu réel, livraison entre deux clients et taint du moteur restent à valider séparément.
 
 ## 5.9.0
 
-Célébrez vos propres montées de niveau et celles des joueurs QuestTogether proches avec des emotes synchronisées. Ajoutez des options d’emotes de montée de niveau séparées, activées par défaut, à côté des réglages d’emote de fin de quête dans Divers. Les réactions à proximité respectent les règles existantes de portée des joueurs et de proximité.
+Fêtez vos passages de niveau et ceux des joueurs QuestTogether proches avec des emotes synchronisées. Deux options distinctes, activées par défaut, rejoignent les emotes de fin de quête dans les réglages divers. Les réactions aux joueurs proches respectent vos choix de joueurs et les règles de distance habituelles.
 
-### Changements de cette version
+### Progression et barres de nom
 
-- Mémoriser la fin confirmée des objectifs de quête par type de créature ainsi que par apparition individuelle. Les monstres qui apparaissent pendant le combat restent non marqués lorsque les données d’infobulle sont indisponibles, même si une ancienne apparition avait été mise en cache comme nécessaire. Les nouveaux objectifs inachevés peuvent rétablir la mise en évidence ; les changements d’état de quête effacent la mémoire d’achèvement. Les données d’infobulle partielles ou inaccessibles ne sont jamais considérées comme la preuve que tout le monde a terminé.
-- Effacer immédiatement les icônes de quête et la teinte de santé des barres d’info lorsque le tag d’un monstre est refusé, y compris en combat. Écouter les changements de propriétaire et revérifier les tags lors des mises à jour de santé et de menace.
-- Détecter les nouveaux monstres de quête rencontrés pendant le combat ordinaire en extérieur à l’aide de données lisibles de l’infobulle d’unité. Actualiser les barres d’info lorsqu’elles reviennent de derrière la caméra, deviennent votre cible ou sont survolées par la souris. Réessayer les cadres, GUID et lignes de quête d’infobulle retardés avec un budget borné par unité, annuler le travail obsolète lorsque les unités sont supprimées, et restaurer la teinte et l’icône ensemble. Préserver les protections de carte, d’instance, de données inaccessibles et de cadres protégés ; la découverte en combat n’invoque pas Questie ni l’interface d’infobulle cachée.
-- Validation : 374 tests hors ligne réussissent dans l’ordre normal et inverse sous Lua 5.1 et 5.2. Les six profils d’API client, les vérifications de syntaxe Lua, la vérification exacte de la bibliothèque et les contrôles de diff réussissent. Les régressions du cache d’achèvement ont reproduit le bug avant la correction. Le jeu en direct et la validation du taint au niveau du moteur restent séparés.
+- La fin confirmée d’un objectif est mémorisée pour le type de créature, et plus seulement pour un exemplaire. En combat, un nouvel ennemi reste sans marque si son infobulle est inaccessible, même si un ancien exemplaire était encore nécessaire. Un objectif non terminé fraîchement lu peut rétablir le marquage ; un changement d’état des quêtes efface cette mémoire. Des données partielles ou inaccessibles ne prouvent jamais que tout le monde a fini.
+- Si un ennemi est réservé à d’autres joueurs, l’icône de quête et la teinte de sa barre de vie disparaissent immédiatement, même en combat. QT surveille les changements de propriétaire et revérifie cette situation lors des mises à jour de vie et de menace.
+- En combat dans le monde ouvert, QT peut reconnaître de nouveaux ennemis de quête à partir des données lisibles de leur infobulle. Les barres sont actualisées lorsqu’elles reviennent à l’écran, deviennent votre cible ou sont survolées. Les données retardées font l’objet de nouvelles tentatives limitées par unité ; les tâches devenues inutiles sont annulées au retrait de l’unité. Icône et couleur sont rétablies ensemble.
+- Les protections liées à la carte, aux instances, aux données inaccessibles et aux fenêtres protégées sont conservées. Cette détection en combat ne fait appel ni à Questie ni à une infobulle cachée.
+- Les 374 tests hors ligne passent dans les deux ordres sur Lua 5.1 et 5.2. Les six profils d’API client, la syntaxe Lua, la bibliothèque et les différences de fichiers sont vérifiés ; les tests de mémoire de complétion reproduisaient le problème avant correction. Le jeu réel et le taint au niveau du moteur restent à valider séparément.
 
 ## 5.8.6
 
-Renforcer les noms de personnages, noms de classes, titres de quêtes et couleurs de classe personnalisées contre les valeurs d’API inaccessibles ou mal formées. Valider les données d’intégration optionnelles de TomTom et Questie avant de les utiliser, et arrêter de lire les lignes d’infobulle Questie aux données inaccessibles. Normaliser la visibilité des bulles et l’état du mode édition en booléens avant de les transmettre aux contrôles d’interface.
+QuestTogether vérifie mieux les données reçues des API avant de les afficher : noms de personnages et de classes, titres de quêtes et couleurs de classe personnalisées résistent aux valeurs illisibles ou mal formées.
 
-### Changements de cette version
+### Vérification des données
 
-- Consolider le gestionnaire d’événements de l’écran de chargement, supprimer les arguments privés inutilisés et une branche d’énumération de restriction inutilisée, et clarifier la gestion des callbacks et des valeurs de retour. Conserver les solutions de repli des clients modernes/anciens et la révision exacte de la bibliothèque privée intacte.
-- Validation : 336 tests réussissent dans l’ordre normal et inverse sous Lua 5.1 et 5.2, avec des vérifications d’adaptateurs étendues sur six profils client. Les nouvelles régressions échouent avec l’implémentation précédente. L’analyse Lua, la vérification exacte de la bibliothèque et les contrôles de diff réussissent. Les diagnostics restants de l’API WoW Ketho/LuaLS ont été examinés, y compris une passe séparée sans mocks de client hors ligne ; les constats conservés ont des raisons spécifiques de compatibilité, de garde, de callback, de bibliothèque ou de fixture. La validation du gameplay Retail et Forever en direct reste séparée.
+- Les données des intégrations facultatives TomTom et Questie sont contrôlées avant utilisation. La lecture des lignes d’une infobulle Questie s’arrête dès qu’une donnée devient inaccessible. La visibilité des bulles et l’état du mode Édition sont convertis en vrais booléens avant d’être transmis aux contrôles de l’interface.
+- Le traitement des événements d’écran de chargement est regroupé. Des arguments privés inutilisés et une branche inutilisée des types de restriction ont été retirés ; la gestion des rappels et des valeurs de retour est clarifiée. Les solutions de repli pour les clients récents et anciens, ainsi que la révision exacte de la bibliothèque interne, restent inchangées.
+- Les 336 tests passent dans les ordres normal et inverse sur Lua 5.1 et 5.2, avec des contrôles d’adaptateurs étendus à six profils client. Les nouveaux tests reproduisent les erreurs de l’ancienne implémentation. Syntaxe Lua, bibliothèque et différences de fichiers sont vérifiées.
+- Les diagnostics restants de Ketho WoW API/LuaLS ont été examinés, y compris sans simulations de client hors ligne. Chaque diagnostic conservé a une raison précise liée à la compatibilité, aux protections, aux rappels, à la bibliothèque ou aux données de test. Le fonctionnement réel sur Retail et Forever reste à vérifier séparément.
 
 ## 5.8.5
 
-Corriger la découverte des tâches/expéditions sur la carte des clients modernes en lisant questID depuis C_TaskQuest.GetQuestsOnMap, tout en conservant l’ancienne API et le champ questId pour les clients plus anciens. Privilégier C_ChatInfo.PerformEmote afin que les emotes de fin fonctionnent lorsque les variables globales obsolètes sont désactivées ; gérer en toute sécurité les API d’emote manquantes ou défaillantes.
+La détection des quêtes de zone et des expéditions sur la carte utilise désormais le champ questID de C_TaskQuest.GetQuestsOnMap sur les clients récents. Les anciens clients conservent leur API et le champ questId.
 
-### Changements de cette version
+### Compatibilité et corrections
 
-- Supprimer un calcul d’empreinte de composition de groupe inutilisé et des variables locales inutilisées. Étendre les vérifications hors ligne des clients pour couvrir les API modernes et anciennes de tâches/emotes, la priorité des API, les données de quêtes inaccessibles et les API manquantes/défaillantes. Validation : 334 tests réussissent dans l’ordre normal et inverse sous Lua 5.1 et 5.2, plus les vérifications d’API étendues sur six profils client, l’analyse Lua et la vérification exacte de la bibliothèque. La validation du gameplay dans Retail et Forever reste séparée des vérifications hors ligne.
+- Les emotes de fin de quête passent en priorité par C_ChatInfo.PerformEmote : elles peuvent ainsi fonctionner quand les anciennes fonctions globales sont désactivées. Une API d’emote absente ou défaillante est gérée sans erreur.
+- Suppression d’un calcul inutilisé d’empreinte du groupe et de variables locales inutiles. Les tests couvrent les API récentes et anciennes de quêtes de zone et d’emotes, leur ordre de priorité, les données de quête inaccessibles et les API absentes ou en échec.
+- Les 334 tests passent dans les ordres normal et inverse sur Lua 5.1 et 5.2. Les contrôles étendus sur six profils client, la syntaxe Lua et la révision exacte de la bibliothèque sont validés. Le fonctionnement en jeu sur Retail et Forever reste à vérifier séparément.
 
 ## 5.8.4
 
-Entretien du dépôt : garder les notes de développement locales hors du code source suivi et des paquets de version. Le comportement en jeu est inchangé.
+Cette mise à jour concerne uniquement l’entretien du dépôt.
 
-### Changements de cette version
+### Organisation des fichiers
 
-- Entretien du dépôt : garder les notes de développement locales hors du code source suivi et des paquets de version. Le comportement en jeu est inchangé.
+- Les notes de développement locales restent en dehors des sources suivies et des paquets distribués. Le fonctionnement en jeu ne change pas.
 
 ## 5.8.3
 
-Annoncer la version installée, les clients pris en charge et la commande des réglages une fois par connexion ou rechargement de l’interface. Inclure des liens de retour CurseForge et GitHub propres à l’addon ; cliquer sur un lien ouvre une fenêtre de copie de style natif. Partager le comportement des messages et l’interface de copie sûre via libchev 1.2.0 privée. Si l’enregistrement des liens ou la fenêtre de copie est indisponible, afficher l’URL complète dans la discussion. Un assistant de bienvenue indisponible ne peut pas interrompre le démarrage normal de l’addon.
+À chaque connexion ou rechargement de l’interface, un message unique indique la version installée, les clients compatibles et la commande des réglages.
 
-### Changements de cette version
+### Accueil et liens utiles
 
-- Validation : 334 tests réussissent dans les deux ordres sous Lua 5.1 et 5.2, avec les vérifications d’API client, l’analyse Lua et la vérification exacte du fournisseur de bibliothèque. Les simulations rapides NoPoizen exercent les deux liens de retour sur les sept profils client/règles. Le rendu en direct reste une vérification séparée.
+- Les liens propres à l’addon vers CurseForge et GitHub ouvrent une fenêtre de copie au style WoW. S’il est impossible d’enregistrer le lien ou d’ouvrir cette fenêtre, l’adresse complète est affichée dans le chat.
+- libchev 1.2.0 fournit le message d’accueil et la fenêtre de copie protégée communs aux addons. Même si cette fonction d’accueil est indisponible, le démarrage normal de QT continue.
+- Les 334 tests passent dans les deux ordres sur Lua 5.1 et 5.2, avec les vérifications d’API client, de syntaxe Lua et de révision exacte de la bibliothèque. Les simulations NoPoizen exercent les deux liens sur les sept profils de client et de règles. Le rendu réel reste à vérifier séparément.
 
 ## 5.8.2
 
-Isoler les recherches de GUID des fixtures de test des joueurs à proximité. Corriger deux faux échecs dans /qt test lorsqu’une unité réelle occupe le jeton de barre d’info utilisé par les vérifications d’infobulle et d’icône en cache. Le comportement des barres d’info en jeu est inchangé.
+Deux faux échecs de /qt test sont corrigés. Un joueur proche pouvait occuper l’identifiant de barre de nom utilisé par les tests des infobulles et des icônes en cache ; la recherche des GUID de test est maintenant isolée. Les barres de nom en jeu ne changent pas.
 
-### Changements de cette version
+### Fiabilité des tests
 
-- L’environnement hors ligne inclut désormais cette collision de jeton et reproduit les deux échecs sans la correction de fixture. Les 333 tests réussissent dans les deux ordres sous Lua 5.1 et 5.2 après la correction ; six profils d’API client réussissent également. La confirmation en jeu reste séparée.
+- L’environnement hors ligne reproduit cette collision et les deux échecs avant correction. Après correction, les 333 tests passent dans les deux ordres sous Lua 5.1 et 5.2, ainsi que les six profils d’API client. La confirmation en jeu reste une étape distincte.
 
 ## 5.8.1
 
-Afficher le marqueur de quête de Blizzard à côté de QuestTogether dans la liste des AddOns au lieu du point d’interrogation par défaut.
+QuestTogether est plus facile à reconnaître dans la liste des addons.
 
-### Changements de cette version
+### Icône de l’addon
 
-- Afficher le marqueur de quête de Blizzard à côté de QuestTogether dans la liste des AddOns au lieu du point d’interrogation par défaut.
+- Le point d’interrogation par défaut laisse place au marqueur de quête de Blizzard à côté du nom QuestTogether.
 
 ## 5.8.0
 
-Prendre en charge les clients Classic actuels avec des charges utiles d’acceptation de quête correctes, des solutions de repli d’API d’objectifs protégées, une possibilité de partage inconnue signalée honnêtement, des métadonnées d’ambiance et des vérifications de régression d’API sur six clients. Préserver le comportement Retail/Forever et les utilitaires de débogage partagés.
+QuestTogether prend en charge les clients Classic actuels : événements d’acceptation de quête adaptés, recours aux API d’objectifs disponibles avec vérifications, métadonnées propres à chaque édition et six profils de client testés. Lorsqu’on ne sait pas si une quête peut être partagée, ce doute reste affiché comme tel.
 
-### Changements de cette version
+### Compatibilité des clients
 
-- Validation : 333 tests réussissent dans les deux ordres sous Lua 5.1 et 5.2, avec six profils client, l’analyse Lua et les vérifications exactes du fournisseur de bibliothèque privée. Les vérifications rapides de client NoPoizen et la vérification des paquets réussissent également. La validation en direct des nouveaux adaptateurs reste en attente.
-- Consultez CLIENT_COMPATIBILITY.md pour les preuves sources, la portée et les limites de validation.
+- Le comportement sur Retail et Forever ainsi que les outils communs de débogage sont conservés.
+- Les 333 tests réussissent dans les deux ordres sur Lua 5.1 et 5.2. Les vérifications couvrent six profils de client, la syntaxe Lua et les révisions exactes de la bibliothèque interne. Les vérifications de base des clients NoPoizen et des paquets passent également. Les nouveaux adaptateurs restent à valider en jeu.
+- CLIENT_COMPATIBILITY.md détaille les sources examinées, le périmètre couvert et les limites de la validation.
 
 ## 5.7.7
 
-Garder les consoles de débogage superposées et leurs contrôles dans un seul groupe d’empilement natif grâce à libchev 1.1.3 privée. Les menus de catégories restent avec leur console propriétaire.
+Avec libchev 1.1.3, les consoles de débogage superposées et leurs commandes restent dans le même groupe d’affichage natif. Chaque menu de catégories reste attaché à sa console.
 
-### Changements de cette version
+### Noms et affichage
 
-- Placer par défaut les icônes d’objectifs de quête à gauche de la barre d’info. Les positions d’icônes enregistrées existantes restent inchangées.
-- Respecter le réglage “My Last Name” de Forever lors de l’affichage du nom de votre personnage. Garder les noms de famille des autres joueurs visibles, conformément à la portée du réglage natif. Utiliser systématiquement les noms complets pour les communications, l’appartenance au groupe, la correspondance des barres d’info et les actions sociales, tout en préservant les clés existantes de profil et de position de bulle personnelle.
-- Corriger les annonces de quêtes locales en double causées par la réception de votre propre message de canal sous un format de nom complet différent. La couverture de régression teste l’annonce locale suivie de ses échos de canal et de groupe, y compris un autre personnage ayant le même prénom.
-- Validation : 331 tests réussissent dans les deux ordres sous Lua 5.1/5.2. La confirmation en direct du nouveau réglage par défaut des icônes et de l’interaction entre plusieurs fenêtres reste séparée.
+- Les icônes d’objectifs apparaissent désormais à gauche des barres de nom par défaut. Les positions déjà enregistrées sont conservées.
+- Sur Forever, l’affichage de votre nom respecte le réglage « My Last Name ». Le nom de famille des autres joueurs reste visible, conformément au réglage natif. Les communications, l’appartenance au groupe, la correspondance avec les barres de nom et les actions sociales utilisent toujours le nom complet ; les identifiants de profils et de positions de bulle personnelle ne changent pas.
+- Une annonce locale ne se répète plus lorsque votre message revient du canal avec une autre présentation du nom complet. Les tests couvrent l’annonce puis ses échos de canal et de groupe, y compris en présence d’un autre personnage ayant le même prénom.
+- Les 331 tests passent dans les deux ordres sous Lua 5.1 et 5.2. Le placement initial des icônes et l’interaction entre plusieurs fenêtres restent à confirmer en jeu.
 
 ## 5.7.6
 
-Utilise la même console de débogage privée libchev 1.1.2 pour les trois addons, avec filtres de catégorie/recherche, contrôles de copie, résultats de tests, rapports de diagnostic, horodatages lorsqu’ils sont disponibles, et un seul résumé final des tests. Corrige les éléments graphiques de cadre natifs étirés avec des limites de texture explicites.
+Les trois addons utilisent désormais la même console interne libchev 1.1.2. L’illustration étirée du cadre natif est corrigée grâce à des limites de texture explicites.
 
-### Changements de cette version
+### La console commune
 
-- QuestTogether fournit ses propres diagnostics de quêtes et tests isolés, tandis que la bibliothèque partagée gère la console et le comportement de débogage générique. Exécutez /qt test, /qt debug ou /qt diagnostics.
-- Validation : 324 tests réussissent dans les deux ordres sous Lua 5.1/5.2. L’utilisateur a confirmé en jeu l’apparence corrigée des cadres. La validation des autres restrictions en conditions réelles et du gameplay reste distincte.
+- Vous y retrouvez les filtres de catégorie et de recherche, la copie, les résultats de tests et les diagnostics, avec des horodatages lorsqu’ils sont disponibles et un seul résumé final des tests.
+- La bibliothèque gère la console et ses fonctions générales ; QuestTogether fournit ses diagnostics de quêtes et ses tests isolés. Pour y accéder, utilisez /qt test, /qt debug ou /qt diagnostics.
+- Les 324 tests passent dans les deux ordres sous Lua 5.1 et 5.2. L’apparence corrigée a été confirmée en jeu par l’utilisateur ; les autres vérifications de restrictions et de fonctionnement en jeu restent distinctes.
 
 ## 5.7.6-beta.3
 
-QuestTogether 5.7.6-beta.3 met à jour la console de débogage partagée intégrée vers libchev 1.1.1.
+La console de débogage intégrée passe à libchev 1.1.1 et retrouve l’apparence habituelle des fenêtres de WoW.
 
-### Changements de cette version
+### Dans cette bêta
 
-- Restaure l’apparence de fenêtre native de style WoW dans la console partagée des addons.
-- Supprime la ligne de résumé de tests en double tout en conservant le résumé final dans l’historique limité.
-- Conserve la recherche, les catégories, la copie, le défilement, les tests, les diagnostics et les protections contre les restrictions déjà en place.
-- L’utilisateur a signalé que les 324 tests de QT réussissaient dans Forever 1.60.1 build 70009 sur beta.2. Les sept fichiers de test de QT chargés en jeu ont aussi été audités pour détecter toute arithmétique invalide ; aucun cas générant NaN ni division par zéro n’a été trouvé. Ce résultat de test en conditions réelles antérieur ne valide pas ce nouveau changement d’apparence.
-- Après /reload, ouvrez /qtd, exécutez /qt test, puis vérifiez l’apparence de la fenêtre et le résumé unique. Le rendu en conditions réelles et le comportement des restrictions/taint de cette révision doivent encore être vérifiés côté client.
-- Validation : les 324 cas réussissent en ordre normal/inverse sur de vrais Lua 5.1.5 et 5.2.4, chaque exécution CLI émet un seul résumé, et le ZIP installable extrait de 26 fichiers réussit sur les deux versions. Les 23 fichiers Lua s’analysent correctement ; les 22 entrées TOC et le manifeste vendeur sont vérifiés. Les vérifications de formatage et de diff réussissent. Version épinglée de la bibliothèque : 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. Aucune CI GitHub de QT n’est configurée ; la CI de la bibliothèque amont a réussi.
+- Le style natif est rétabli dans la console commune aux addons. Le résumé des tests n’apparaît plus deux fois ; sa version finale reste dans l’historique de taille limitée.
+- Recherche, catégories, copie, défilement, tests, diagnostics et protections liées aux restrictions fonctionnent comme auparavant.
+- Un utilisateur a confirmé les 324 tests de QT sur Forever 1.60.1, build 70009, avec beta.2. Les sept fichiers de tests chargés en jeu ont aussi été examinés : aucun test ne génère de NaN ni de division par zéro. Ces résultats antérieurs ne valident pas la nouvelle apparence.
+- Après /reload, ouvrez /qtd et lancez /qt test pour vérifier le style de la fenêtre et l’unique résumé. Le rendu, les restrictions et le taint de cette révision nécessitent encore une vérification en jeu.
+- Les 324 tests passent dans les ordres normal et inverse avec les interpréteurs Lua 5.1.5 et 5.2.4 ; chaque exécution en ligne de commande affiche un résumé. Le ZIP installable de 26 fichiers, une fois extrait, passe aussi sur les deux versions. Les 23 fichiers Lua, les 22 entrées TOC, le manifeste des dépendances, le formatage et les différences de fichiers sont vérifiés.
+- Révision de la bibliothèque : 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. QT n’a pas encore de CI GitHub ; celle de la bibliothèque a réussi.
 
 ## 5.7.6-beta.2
 
-QuestTogether 5.7.6-beta.2 remplace sa fenêtre de débogage séparée par la console partagée libchev v1.1 utilisée par les addons. La bibliothèque intégrée est incluse ; aucune installation séparée n’est requise.
+La console commune de libchev v1.1 remplace la fenêtre de débogage propre à QuestTogether. Elle est fournie avec l’addon et utilisée par les autres addons Together : rien à installer en plus.
 
-### Changements de cette version
+### Dans cette bêta
 
-- Filtrage partagé par catégorie, recherche approximative/entre guillemets, copie/sélection, effacement, rechargement, tests, diagnostics et comportement de suivi du défilement.
-- /qt test ouvre les résultats actuels ; les exécutions répétées remplacent l’ancien historique TEST et effacent les filtres de recherche obsolètes.
-- /qt diagnostics [questID] et /qt diag [questID] régénèrent le rapport actuel en cache dans la même console, en conservant les événements récents dans la limite du budget d’export partagé.
-- Les protections partagées de restriction et de cadres possédés remplacent les anciens rappels de console et l’implémentation de menu déroulant de QT.
-- L’état des quêtes, les annonces, les barres de nom, les communications et l’isolation des tests propre à QT restent gérés par QuestTogether.
-- Il s’agit d’une version bêta. Le rendu en conditions réelles Retail/Forever et le comportement de taint doivent encore être vérifiés. Après /reload, exécutez /qt test et /qt diagnostics, puis testez les catégories/recherche, la copie, l’effacement, le redimensionnement, le défilement, les exécutions répétées de tests et le passage entre rapports et journaux. Incluez les transitions de combat/restrictions et votre ensemble habituel d’addons.
-- Validation : 324/324 tests réussissent dans les deux ordres sous Lua 5.1.5 et 5.2.4. Les 23 fichiers Lua s’analysent correctement, les 22 entrées TOC sont validées et le manifeste de la bibliothèque épinglée est vérifié. Le ZIP installable a été extrait et a réussi les 324 cas avec le banc de test hors ligne séparé. Version épinglée de la bibliothèque : 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6.
+- La console réunit filtres par catégorie, recherche approximative ou entre guillemets, sélection et copie, effacement, rechargement, tests et diagnostics. Le suivi du défilement est lui aussi commun aux addons.
+- /qt test affiche les résultats actuels. Relancer les tests remplace l’ancien historique TEST et retire les filtres de recherche qui pourraient masquer les nouveaux résultats.
+- /qt diagnostics [questID] et /qt diag [questID] reconstruisent le rapport en cache dans cette même console. Les événements récents sont conservés dans la limite commune prévue pour l’export.
+- Les protections partagées pour les restrictions et les fenêtres de l’addon remplacent les anciens gestionnaires de la console et des menus déroulants de QT. Quêtes, annonces, barres de nom, communications et isolation des tests de QT restent sous la responsabilité de QuestTogether.
+- Le rendu et le taint restent à vérifier en jeu sur Retail et Forever. Après /reload, lancez /qt test et /qt diagnostics. Essayez catégories, recherche, copie, effacement, redimensionnement, défilement, relances des tests et passage des rapports aux journaux, avec vos addons habituels et lors des transitions de combat ou de restrictions.
+- Validation : 324/324 tests réussissent dans les deux ordres avec Lua 5.1.5 et 5.2.4. Les 23 fichiers Lua, les 22 entrées TOC et le manifeste de la bibliothèque sont vérifiés. Le ZIP installable a également passé les 324 tests après extraction, dans le banc de test hors ligne séparé. Révision de la bibliothèque : 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6.
 
 ## 5.7.6-beta.1
 
-QuestTogether 5.7.6-beta.1 intègre libchev v1.0.0 pour partager la journalisation, les diagnostics, les protections de rappels, les mécanismes de tâches différées et l’exécution des tests avec les autres addons Together. La bibliothèque est incluse ; aucune installation d’addon séparée n’est nécessaire.
+QuestTogether intègre désormais libchev v1.0.0, déjà incluse dans l’addon. Elle fournit aux addons Together une base commune pour les journaux, les diagnostics, les appels protégés, les tâches différées et les tests. Aucune installation supplémentaire n’est nécessaire.
 
-### Changements de cette version
+### Dans cette bêta
 
-- Les rapports de diagnostic incluent des informations communes sur le client, l’addon et la bibliothèque, et conservent les événements les plus récents lorsque la fenêtre de copie se remplit.
-- Le comportement des quêtes, du groupe, des barres de nom et des restrictions reste géré par QuestTogether, avec des espaces de stockage d’exécution isolés par addon.
-- Les liens de coordonnées restent utilisables lorsque QT est désactivé si les restrictions les autorisent ; les tâches d’arrière-plan en file d’attente restent en pause et les minuteries obsolètes sont supprimées.
-- /qt test inclut désormais 315 cas : les 300 existants, dix vérifications de bibliothèque partagée et cinq régressions d’intégration.
-- Validation : les 315 tests réussissent dans les deux ordres sous Lua 5.1.5 et 5.2.4 ; la syntaxe Lua, l’ordre de chargement TOC et le manifeste de révision/hash intégré réussissent. Source libchev intégrée : 09ac76eb6fe8e9589b809188652950c3cd9e444c.
-- Il s’agit d’une version bêta. Le rendu de l’interface Retail/Forever en conditions réelles et le comportement de taint après cette extraction doivent encore être vérifiés. Après rechargement, exécutez /qt test et /qt diagnostics, puis testez les quêtes, les bulles de progression, les barres de nom et les liens de coordonnées pendant le combat, les changements de zone, la désactivation/réactivation et le rechargement, avec vos addons habituels. La confirmation antérieure des 300 tests sur Retail s’appliquait à v5.7.5.
+- Les rapports de diagnostic regroupent les informations sur le client, l’addon et la bibliothèque. Si la fenêtre de copie atteint sa limite, elle conserve les événements les plus récents.
+- QuestTogether garde la gestion des quêtes, du groupe, des barres de nom et des restrictions. Les données en mémoire de chaque addon restent séparées.
+- Lorsque QT est désactivé, les liens de coordonnées restent utilisables si les restrictions de WoW l’autorisent. Les tâches en attente restent suspendues et les anciens minuteurs sont abandonnés.
+- /qt test comprend 315 cas : les 300 précédents, dix vérifications de la bibliothèque commune et cinq tests de non-régression pour son intégration.
+- Les 315 tests réussissent dans les deux ordres d’exécution avec Lua 5.1.5 et 5.2.4. La syntaxe Lua, l’ordre de chargement du TOC et le manifeste des révisions et empreintes sont également vérifiés. Révision libchev intégrée : 09ac76eb6fe8e9589b809188652950c3cd9e444c.
+- Le rendu en jeu et les éventuels problèmes de taint sur Retail et Forever restent à vérifier après cette réorganisation. Après un rechargement, lancez /qt test et /qt diagnostics, puis essayez les quêtes, les bulles de progression, les barres de nom et les liens de coordonnées avec vos addons habituels, en combat, lors des changements de zone, après désactivation/réactivation et après rechargement. La validation des 300 tests sur Retail concernait v5.7.5.

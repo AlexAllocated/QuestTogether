@@ -4,1228 +4,1247 @@
 
 ## 8.0.2
 
-Zuverlässigere Kartenmarkierungen und VIP-Erkennung.
+Die Versionshinweise wurden sprachlich überarbeitet. Außerdem haben wir einen fehlenden Eintrag im Versionsverlauf ergänzt.
 
-### Zuverlässigkeitsverbesserungen
+### Versionshinweise und Versionsverlauf
 
-- VIP-Sterne bleiben jetzt über eure Ladebildschirme hinweg erhalten. Gleichzeitige VIP-Aktualisierungen blockieren sich nicht mehr gegenseitig.
-- Ein Fehler wurde behoben, durch den Kartenmarkierungen verschwinden konnten, wenn eine Standortaktualisierung vorübergehend keine Koordinaten enthielt.
-- Die Zuverlässigkeit geteilter Aktualisierungen bei Kanaldrosselung wurde verbessert.
+- Die aktuellen und älteren Versionshinweise wurden in allen zehn unterstützten Sprachen außer Englisch sprachlich überarbeitet, damit sie sich natürlicher lesen und leichter verständlich sind.
+- Der bisher fehlende Eintrag zu 7.4.4 ist wieder im Versionsverlauf und in den Änderungsprotokollen enthalten.
 
 ## 8.0.1
 
-Tastatursteuerung ohne zusätzliche Schaltfläche.
+Das Gruppenquestlog lässt sich direkt per Tastatur bedienen, ohne vorher einen zusätzlichen Knopf anzuklicken.
 
-### Gruppenquestlog
+### Tastaturbedienung im Gruppenquestlog
 
-- Beim Öffnen des Gruppenquestlogs oder Anklicken einer Quest erhält die Liste automatisch den Fokus. Die Schaltfläche für die Tastatursteuerung wurde entfernt. Navigiere mit den Pfeiltasten und klappe Ziele mit der Eingabetaste ein oder aus.
-- Tab wechselt zwischen Liste und Suche. Escape schließt das Fenster, wenn die Liste den Fokus hat; ein Klick außerhalb gibt den Tastaturfokus frei. Questaktualisierungen holen den Fokus nicht zurück.
+- Beim Öffnen des Gruppenquestlogs oder beim Anklicken einer Quest erhält die Liste automatisch den Tastaturfokus. Der bisherige Tastaturknopf entfällt. Mit den Pfeiltasten wählst du eine Quest, mit Enter klappst du ihre Ziele auf oder zu.
+- Tab wechselt zwischen Liste und Suche. Aus der Liste schließt Escape das Fenster. Ein Klick außerhalb gibt den Tastaturfokus frei; eingehende Questaktualisierungen holen ihn nicht zurück.
 
 ## 8.0.0
 
-QuestTogether VIP ist da.
+QuestTogether führt VIP ein: eine dauerhafte kosmetische Auszeichnung für Unterstützer.
 
-### VIP-Optik
+### Das VIP-Aussehen
 
-- VIP-Spieler erhalten einen Kartenstern in Klassenfarbe, ein QT-Chatpräfix und einen Minikartenknopf mit goldenem Stern sowie die Kennzeichnung QuestTogether VIP im persönlichen Spielertooltip. Diese Belohnungen sind rein kosmetisch und gewähren keinen Entwicklerzugriff.
+- VIP-Spieler erscheinen auf der Karte als Stern in Klassenfarbe. Im QT-Chat und am Minimapknopf tragen sie ein QT-Logo mit goldenem Stern; ihr individueller Spielertooltip zeigt „QuestTogether VIP“. Die Auszeichnung ist rein kosmetisch und verleiht keinen Entwicklerzugriff.
 
 **Forever**
 
-![VIP-Optik — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.0.0/Media/ReleaseNotes/VIPCosmetics.png)
+![Das VIP-Aussehen — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.0.0/Media/ReleaseNotes/VIPCosmetics.png)
 
-### VIP werden
+### So wirst du VIP
 
-- Teile den QuestTogether-Downloadlink mit Freunden, deiner Gilde, auf einem passenden Discord-Server oder in sozialen Medien. Mache einen Screenshot deiner gesendeten Nachricht oder deines Beitrags, auf dem der QT-Link und der Ort der Veröffentlichung erkennbar sind. Sende ihn per Discord-Direktnachricht an @chevcast zur Prüfung. Tritt vorher dem QT-Discord bei oder sende @chevcast eine Freundschaftsanfrage. Im VIP-Fenster findest du den Link zum Kopieren und die Aktivierungsschritte nach der Bestätigung.
+- Teile den Downloadlink von QuestTogether mit Freunden, deiner Gilde, in einem passenden Discord oder in sozialen Medien. Mache einen Screenshot deiner abgesendeten Nachricht oder deines veröffentlichten Beitrags, auf dem der QT-Link und der Ort der Veröffentlichung erkennbar sind. Schicke das Bild zur Prüfung per Discord-Direktnachricht an @chevcast. Tritt vorher dem QT-Discord bei oder sende @chevcast eine Freundschaftsanfrage, damit deine Nachricht ankommt. Im VIP-Fenster findest du den kopierbaren Link und die Schritte zur Aktivierung nach der Freigabe.
 
-### Belohnung aktivieren
+### Die Auszeichnung aktivieren
 
-- Öffne das VIP-Fenster über das Minimap-Menü, die Einstellungen oder /qt vip. Warte, bis @chevcast bestätigt, dass deinem Discord-Konto VIP gewährt wurde. Der Discord-Befehl /qt claim funktioniert erst nach dieser Vergabe.
+- Öffne das VIP-Fenster über das Minimapmenü, die Einstellungen oder /qt vip. Warte zuerst auf die Bestätigung von @chevcast, dass deinem Discord-Konto VIP gewährt wurde. Der Discord-Befehl /qt claim funktioniert erst danach.
 
-Kopiere dann deinen Anforderungscode mit Strg+C und sende ihn an @chevcast oder nutze /qt claim im QT-Discord. Füge den erhaltenen privaten Aktivierungscode im VIP-Fenster ein und wähle VIP aktivieren. Wiederhole dies auf Retail oder Forever, um die Belohnung auch dort zu nutzen.
+Kopiere anschließend deinen Anforderungscode mit Strg+C und sende ihn an @chevcast oder verwende /qt claim auf dem QT-Discord. Den privat erhaltenen Aktivierungscode fügst du ins VIP-Fenster ein und wählst „VIP aktivieren“. Wiederhole die Aktivierung auf Retail beziehungsweise Forever, wenn du die Auszeichnung auch dort nutzen möchtest.
 
-### Dauerhaft und optional
+### Dauerhaft und freiwillig sichtbar
 
-- Deine Belohnung ist mit deinem Discord-Konto verknüpft und gilt für alle Charaktere einer Installation. Beanspruche sie separat auf Retail und Forever. Schalte Meine VIP-Darstellung anzeigen aus, um die Belohnung ohne sichtbare Effekte zu behalten. Normale, VIP- und Entwickler-Minimapbuttons haben nun goldene Ränder entlang ihrer Symbolform. Die Entwicklerdarstellung hat Vorrang vor VIP.
+- Die Auszeichnung ist an dein Discord-Konto gebunden und gilt für alle Charaktere der jeweiligen Installation. Für Retail und Forever forderst du sie separat an. Mit „Meine VIP-Kosmetik anzeigen“ kannst du die Darstellung abschalten, ohne VIP zu verlieren. Normale, VIP- und Entwickler-Minimapknöpfe haben jetzt goldene Ränder entlang ihrer Symbolform. Das Entwickleraussehen hat Vorrang vor VIP.
+
+## 7.4.4
+
+Neue Funktionen und die dazugehörigen Korrekturen stehen in den Versionshinweisen jetzt gemeinsam auf einer Seite.
+
+### Zusammengehörige Updates gemeinsam lesen
+
+- Das Hinweisfenster beginnt jede Seite mit einer Nebenversion und hängt deren Patches in Reihenfolge darunter an, jeweils mit Versionsnummer und Datum. Die Verlaufsauswahl wechselt zwischen diesen zusammengefassten Seiten.
+- Ältere Patchhinweise wurden von wiederholten Funktionsanleitungen, Tipps und Bildern bereinigt und beschreiben nur ihre eigenen Änderungen. Reine Patchupdates öffnen das Fenster weiterhin nicht automatisch. Mit /qt notes kannst du es jederzeit aufrufen.
 
 ## 7.4.3
 
-Klarere Namen und Einstellungen für Quests in der Gruppe.
+Die Gruppenwerkzeuge haben passendere Namen und leichter erreichbare Einstellungen.
 
-### Quests in der Gruppe
+### Quests gemeinsam verfolgen
 
-- Der Questtracker heißt jetzt Gruppen-Zielverfolgung (POT). Anzeigeeinstellungen und Fensterposition bleiben erhalten.
-- Öffne das Gruppenquestlog mit /qt pql. /qt compare funktioniert weiterhin als Alias; Hilfe und Tipps verwenden nun /qt pql.
-- Außerhalb einer Gruppe ausblenden ist im HUD-Bearbeitungsmodus und unter Einstellungen > Gruppen & Teilen > Gruppen-Zielverfolgung verfügbar. Beide Kontrollkästchen steuern dieselbe Einstellung. Bei neuen Profilen und beim Wiederherstellen der Standardwerte ist sie aktiviert; gespeicherte Einstellungen bleiben erhalten.
+- Aus der Questverfolgung wird die Gruppen-Zielverfolgung (Party Objective Tracker, POT). Deine bisherigen Anzeigeeinstellungen und die Fensterposition bleiben erhalten.
+- /qt pql öffnet das Gruppenquestlog. /qt compare funktioniert weiterhin als Alias; Hilfe und Tipps verwenden jetzt /qt pql.
+- „Außerhalb einer Gruppe ausblenden“ findest du sowohl im HUD-Bearbeitungsmodus als auch unter Einstellungen > Gruppen & Teilen > Gruppen-Zielverfolgung. Beide Schalter ändern denselben Wert. Neue Profile und „Standardwerte wiederherstellen“ schalten die Option ein; vorhandene gespeicherte Entscheidungen bleiben erhalten.
 
 ## 7.4.2
 
-Textkorrektur für die Patchnotes.
+Die Versionshinweise verwenden zuverlässig darstellbare Trennzeichen.
 
-### Textkorrektur für die Patchnotes
+### Textdarstellung in Versionshinweisen
 
-- Nicht unterstützte Trennzeichen in den Patchnotes wurden durch einfachen Text ersetzt, damit keine leeren Kästchen mehr erscheinen.
+- Nicht unterstützte Trennzeichen wurden durch einfachen Text ersetzt, damit keine leeren Kästchen mehr erscheinen.
 
 ## 7.4.1
 
-Korrekturen und Layoutoptionen für die Gruppen-Zielverfolgung.
+Die Gruppen-Zielverfolgung erhält neue Anordnungsoptionen und zeigt unvollständige Einzelschritte korrekt an.
 
-### Gruppen-Zielverfolgung
+### Zielfortschritt korrigiert
 
-- Ein Fehler wurde behoben, durch den unerledigte einstufige Ziele in Forever fälschlich einen Fortschritt von 1/1 anzeigten, darunter „Use Walk on Air“. Die Korrektur gilt für die Gruppen-Zielverfolgung und das Gruppenquestlog.
+- Unfertige einstufige Ziele in Forever erscheinen nicht mehr fälschlich als 1/1, darunter „Use Walk on Air“. Die Korrektur gilt für Gruppen-Zielverfolgung und Gruppenquestlog.
 
-### Wähle, was du verfolgen möchtest
+### Allein ausblenden
 
-- Aktiviere im HUD-Bearbeitungsmodus „Außerhalb einer Gruppe ausblenden“, um den Tracker beim Solospiel auszublenden. Diese Option ist standardmäßig aus; die Platzierungsvorschau bleibt im Bearbeitungsmodus verfügbar.
+- Im HUD-Bearbeitungsmodus kannst du „Außerhalb einer Gruppe ausblenden“ einschalten. Die Option ist zunächst aus. Die Platzierungsvorschau bleibt im Bearbeitungsmodus auch ohne Gruppe verfügbar.
 
-### Passe das Fenster deiner Oberfläche an
+### Größe und Verankerung
 
-- Das Ausrichten an Blizzards Zielverfolgung ist standardmäßig aktiviert und platziert QT direkt an dessen Außenkante. Wenn du QT wegziehst, wird die Ausrichtung deaktiviert und die Größenänderung an der Ecke aktiviert. Aktiviere die Ausrichtung erneut, um die Position zurückzusetzen. Die Regler für Breite und maximale Höhe funktionieren in beiden Modi.
-- Der Tracker passt sich der Höhe seines Inhalts bis zur eingestellten maximalen Höhe an; danach wird gescrollt. Die Standardhöhe beträgt jetzt maximal 600; bereits gespeicherte Größen bleiben erhalten.
-- Die klassenfarbenen Spielerbereiche behalten jetzt unabhängig vom Regler für den Fensterhintergrund eine konstante Deckkraft von 25%.
+- Die Verankerung an Blizzards Zielverfolgung ist standardmäßig aktiv. QT liegt bündig an deren äußerem Rand. Ziehst du das Fenster weg, wird die Verankerung ausgeschaltet und die Größenänderung an den Ecken freigegeben. Erneutes Einschalten setzt die Position zurück. Breite und maximale Höhe lassen sich in beiden Modi per Regler ändern.
+- Das Fenster schrumpft auf die benötigte Inhaltshöhe, bis zur eingestellten maximalen Höhe; darüber wird gescrollt. Der neue Standard für die maximale Höhe ist 600. Bereits gespeicherte Größen bleiben erhalten.
+- Die klassenfarbigen Spielerbereiche haben konstant 25 % Deckkraft, unabhängig vom Regler für den Fensterhintergrund.
 
 ## 7.4.0
 
-Behalte den Questfortschritt deiner Gruppe mit der neuen Gruppen-Zielverfolgung im Blick.
+Die neue Gruppen-Zielverfolgung hält den Questfortschritt deiner Gruppe direkt auf dem Bildschirm sichtbar.
 
 ### Gruppen-Zielverfolgung
 
-- Sieh die Zielzähler und Fortschrittsbalken deiner Gruppe in einem kompakten Fenster mit Klassenfarben. Gruppenmitglieder benötigen QuestTogether, um ihren Fortschritt zu teilen.
-- Der Fortschritt wird beim Eintreffen von Gruppenmeldungen aktualisiert, unabhängig von den Anzeigeeinstellungen für Chat und Sprechblasen. Quests ohne Zielzähler zeigen ihren Status, etwa bereit zur Abgabe.
+- Ein kompaktes Fenster mit Klassenfarben zeigt Zielzähler und Fortschrittsbalken deiner Gruppe. Andere Mitglieder benötigen QuestTogether, um ihren Fortschritt zu teilen.
+- Eingehende Gruppenmeldungen aktualisieren die Anzeige sofort, unabhängig von der Anzeige im Chat oder in Blasen. Hat eine Quest keine Zielzähler, erscheint stattdessen ihr Status, etwa die Bereitschaft zur Abgabe.
 
 **Forever**
 
 ![Gruppen-Zielverfolgung — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTracker.png)
 
-### Wähle, was du verfolgen möchtest
+### Welche Quest angezeigt wird
 
-- Wähle Ausgeblendet, Fokussierte Quest, Quest unter dem Mauszeiger oder Fokus und Mauszeiger. Die Standardeinstellung Fokus und Mauszeiger zeigt vorübergehend Quests unter dem Mauszeiger in Blizzards Zielverfolgung und kehrt danach zur fokussierten Quest zurück.
-- Ohne passende Quest bleibt das Fenster ausgeblendet. Ändere den Anzeigemodus im HUD-Bearbeitungsmodus oder unter Einstellungen > Gruppen & Teilen > Gruppen-Zielverfolgung.
-
-**Forever**
-
-![Wähle, was du verfolgen möchtest — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
-
-### Passe das Fenster deiner Oberfläche an
-
-- Öffne den HUD-Bearbeitungsmodus und wähle Gruppen-Zielverfolgung, um das Fenster zu verschieben, seine Größe zu ändern und die Hintergrunddeckkraft einzustellen. Speichern, Zurücksetzen und Standard wiederherstellen berücksichtigen Anzeigemodus und Layout.
-- Die Spielerbereiche nutzen die verfügbare Breite und lassen sich bei Bedarf scrollen. Helles und dunkles Design werden unterstützt; auch bei null Deckkraft bleiben Text lesbar und Spielerhintergründe schwach sichtbar.
+- Du kannst „Ausgeblendet“, „Fokussierte Quest“, „Quest unter dem Mauszeiger“ oder „Fokus und Mauszeiger“ wählen. Letzteres ist voreingestellt: Das Fenster zeigt die Quest unter dem Mauszeiger in Blizzards Zielverfolgung und kehrt danach zur Fokusquest zurück.
+- Ohne passende Quest bleibt das Fenster verborgen. Den Anzeigemodus änderst du im HUD-Bearbeitungsmodus oder unter Einstellungen > Gruppen & Teilen > Gruppen-Zielverfolgung.
 
 **Forever**
 
-![Passe das Fenster deiner Oberfläche an — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerEditMode.png)
+![Welche Quest angezeigt wird — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerDisplay.png)
+
+### An deine Oberfläche anpassen
+
+- Wähle die Gruppen-Zielverfolgung im HUD-Bearbeitungsmodus aus, um sie zu verschieben, ihre Größe zu ändern oder die Hintergrunddeckkraft einzustellen. „Änderungen speichern“, „Änderungen verwerfen“ und „Standardwerte wiederherstellen“ berücksichtigen Anzeigemodus und Anordnung.
+- Die Spielerbereiche nutzen die verfügbare Breite und lassen sich bei Bedarf scrollen. Helles und dunkles Design werden unterstützt. Auch bei null Hintergrunddeckkraft bleiben der Text lesbar und die Spielerbereiche leicht hinterlegt.
+
+**Forever**
+
+![An deine Oberfläche anpassen — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.4.0/Media/ReleaseNotes/QuestTrackerEditMode.png)
 
 ## 7.3.5
 
-Übersichtlichere Kartenmarkierungen, einfachere Spielernavigation und aktuellere Gruppeninformationen.
+Kartenmarkierungen sind klarer lesbar, Spieler leichter zu finden und Gruppenangaben besser auf dem aktuellen Stand.
 
-### Karten und Spielerinformationen
+### Karten und Spielerdaten
 
-- Bewege den Mauszeiger über die QT-Kartenschaltfläche, um eine bebilderte Legende der Kartensymbole und Zustände zu sehen.
-- Klicke mit der linken Maustaste auf einen Spielerpunkt auf der Weltkarte, um ihn hervorzuheben und die detaillierteste verfügbare Karte für diesen Ort zu öffnen. Auf der letzten Kartenebene öffnet ein Linksklick das Spielermenü; ein Rechtsklick öffnet es immer.
-- Auch „Auf der Karte finden“ öffnet die detaillierteste verfügbare Karte. Die grüne Hervorhebung bleibt bei Kartenwechseln erhalten und endet nach einer Minute, beim Schließen der Karte oder bei der Auswahl eines anderen Spielers.
-- Beim Überfahren eines Spielers, einer Markierungsgruppe oder eines gemeinsamen Wegpunkts werden die Karte und andere Markierungen abgedunkelt, während die hervorgehobenen Markierungen hell bleiben. Die QT-Kartenschaltfläche dunkelt die Karte beim Überfahren nicht mehr ab.
-- Die Leuchteffekte für Spieler sind jetzt einheitlich. Gruppen-Tooltips und Markierungsgruppen nutzen aktuellere Informationen zur Gruppenzugehörigkeit und erholen sich besser von verzögerten Anfragen.
-- Die Entwicklerdiagnose wurde verbessert; Einstellungen zur Diagnosefreigabe und der Schutz der öffentlichen Standortdaten bleiben erhalten.
+- Der Tooltip des QT-Kartenknopfs enthält eine bebilderte Legende der Symbole und Zustände.
+- Ein Linksklick auf einen Weltkartenpunkt hebt den Spieler hervor und öffnet die detaillierteste verfügbare Karte seines Standorts. Auf der letzten Kartenebene öffnet Linksklick das Spielermenü; Rechtsklick öffnet es immer.
+- Auch „Auf Karte finden“ führt zur detailliertesten verfügbaren Karte. Der grüne Schimmer bleibt beim Kartenwechsel erhalten und endet nach einer Minute, beim Schließen der Karte oder bei der Auswahl eines anderen Spielers.
+- Beim Überfahren eines Spielers, einer Punktgruppe oder eines geteilten Wegpunkts werden Karte und unbeteiligte Markierungen abgedunkelt. Die hervorgehobenen Markierungen bleiben hell. Der QT-Knopf dunkelt die Karte beim Überfahren nicht mehr ab.
+- Alle Spielerschimmer verwenden denselben Effekt. Spielertooltips und Punktgruppen nutzen aktuellere Mitgliedschaftsdaten und erholen sich besser von verspäteten Anfragen.
+- Die Entwicklerdiagnosen wurden verbessert. Diagnosefreigaben und der Schutz nicht öffentlich geteilter Standorte bleiben gewahrt.
 
 ## 7.3.4
 
-Übersichtlichere Spieler-Tooltips und einheitlichere QuestTogether-Kennzeichnungen.
+Spielertooltips zeigen QT-Nutzung schneller an und halten Statushinweise in Mitgliederlisten kompakt.
 
-### Spieler-Tooltips und Chat
+### Spielertooltips und Chat
 
-- Gruppenlisten zeigen QT-Symbole jetzt an, sobald gültige Standortdaten des Spielers vorliegen – auch nach dem Neuladen der Benutzeroberfläche.
-- In den Mitgliederlisten von Gruppen und zusammengefassten Kartenpunkten bleiben Statusanzeigen kompakt. Erläuterungen zum Entwicklerstatus und zum verborgenen Standort erscheinen nur beim direkten Zeigen auf den jeweiligen Spieler; Hinweise auf verborgene Standorte bleiben ausschließlich für den Entwickler sichtbar.
-- Ankündigungen des verifizierten Entwicklers verwenden jetzt ein Symbol aus Schriftrolle und Zahnrad, das bei aktiver Suche nach Questpartnern golden leuchtet.
+- Sobald gültige Standortdaten eines Spielers vorliegen, erscheint sein QT-Symbol in Gruppenlisten – auch nach dem Neuladen.
+- Gruppen- und Punktgruppenlisten verwenden kompakte Statussymbole. Erläuterungen zum Entwicklerstatus oder zu einem verborgenen Standort stehen nur beim direkten Überfahren des jeweiligen Spielers. Hinweise auf verborgene Standorte sind weiterhin ausschließlich für den Entwickler sichtbar.
+- Meldungen eines bestätigten Entwicklers erhalten ein Schriftrollen-Zahnrad-Symbol. Bei aktiver Partnersuche leuchtet es golden.
 
 ## 7.3.3
 
-Übersichtlichere Tooltips zusammengefasster Kartenpunkte.
+Die Listen in Punktgruppen-Tooltips kommen mit weniger Zusatztext aus.
 
-### Spieler auf Karten
+### Entwicklersymbol im Tooltip
 
-- In Tooltips zusammengefasster Kartenpunkte kennzeichnet das Zahnrad in Klassenfarbe den QuestTogether-Entwickler, ohne zusätzlichen Text. In Tooltips einzelner Spieler bleibt der Entwicklerhinweis erhalten.
+- In Punktgruppen kennzeichnet nur das klassenfarbige Zahnrad den QuestTogether-Entwickler. Der erläuternde Text bleibt im individuellen Spielertooltip erhalten.
 
 ## 7.3.2
 
-Einheitlichere Gruppeninformationen und intelligentere Kartennavigation.
+Gruppendaten werden auf der Karte einheitlicher verwendet. Auch aus der Weltansicht führen Punktgruppen zur passenden Detailkarte.
 
-### Spieler auf Karten
+### Einheitliche Gruppenangaben und Kartennavigation
 
-- Spieler-Tooltips, Tooltips zusammengefasster Kartenpunkte und die Hervorhebung von Gruppenmitgliedern nutzen jetzt dieselben bekannten Gruppeninformationen. Das reduziert wiederholte Ladevorgänge und uneinheitliche Gruppierungen.
-- Tooltips zusammengefasster Kartenpunkte zeigen neben dem weißen Gruppensymbol die Gesamtzahl der Gruppenmitglieder an.
-- Ein Klick auf zusammengefasste Punkte in der Weltübersicht öffnet jetzt die detaillierteste Karte, die alle zugehörigen Spieler enthält. Anschließend werden die Punkte bei Bedarf einzeln aufgefächert.
+- Spielertooltips, Punktgruppen-Tooltips und Gruppenhervorhebung verwenden dieselben bekannten Gruppenangaben. Das vermeidet wiederholtes Laden und widersprüchliche Zuordnungen.
+- Neben dem weißen Gruppensymbol steht die Gesamtgröße der Gruppe.
+- Auch auf der vollständigen Weltkarte öffnet ein Klick auf eine Punktgruppe nun die detaillierteste Karte mit allen enthaltenen Spielern. Falls nötig, klappt die Gruppe dort anschließend auf.
 
 ## 7.3.1
 
-Übersichtlichere Gruppeninformationen und Kartensteuerung.
+Gruppenzugehörigkeit und ausgeblendete Kartenmarkierungen sind leichter zu erkennen.
 
-### Spieler auf Karten
+### Gruppen und Kartenschalter
 
-- In Tooltips zusammengefasster Punkte werden Spieler, die bekanntermaßen derselben Gruppe angehören, mit einem abgerundeten weißen Rahmen und einem Gruppensymbol gekennzeichnet. Das Gruppensymbol bleibt auch bei Spielern sichtbar, deren Gruppenmitglieder außerhalb der Zusammenfassung liegen.
-- Die QT-Schaltfläche auf der Weltkarte bleibt vollständig sichtbar und zeigt ein rotes X, wenn QT-Markierungen ausgeblendet sind.
-- Beim Überfahren der QT-Schaltfläche wird die Karte nicht mehr abgedunkelt, solange QT-Markierungen ausgeblendet sind.
+- In Tooltips von Punktgruppen stehen Mitglieder derselben bekannten Gruppe gemeinsam in einem weißen Rahmen mit abgerundeten Ecken und Gruppensymbol. Ein einzelner Spieler behält den Gruppenhinweis auch dann, wenn seine Gefährten außerhalb der Punktgruppe sind.
+- Der QT-Knopf auf der Weltkarte bleibt beim Ausblenden der Markierungen gut sichtbar und trägt ein rotes X.
+- Sind QT-Markierungen ausgeblendet, dunkelt das Überfahren des Knopfs die Karte nicht mehr ab.
 
 ## 7.3.0
 
-Finde Spieler auf vollen Karten, nimm wieder Kontakt zu kürzlichen Gefährten auf und verfolge Questfortschritte mit weniger wiederholten Ankündigungen.
+Volle Karten bleiben übersichtlich, frühere Questgefährten sind leichter wiederzufinden und schnelle Fortschrittsschritte ergeben weniger einzelne Meldungen.
 
-### Spieler auf Karten
+### Spieler auf der Karte finden
 
-- Überlappende Spielerpunkte auf der Weltkarte werden zusammengefasst. Diese Gruppierung ist standardmäßig aktiviert und lässt sich unter Spielerstandorte abschalten.
-- Klicke auf eine Gruppe von Punkten, um die detaillierteste Karte zu öffnen, die alle zugehörigen Spieler enthält. Bleiben dort Punkte zusammengefasst, werden sie automatisch auseinandergezogen, sodass du wie gewohnt Details und Menüs aufrufen kannst. Scrolle über die Gruppe, um bei größeren Gruppen weitere Spieler anzuzeigen.
-- Die QT-Schaltfläche oben rechts auf der Weltkarte blendet QT-Spielermarkierungen und geteilte Wegpunkte ein oder aus. Beim Darüberfahren wird die Karte dahinter abgedunkelt. Minikartenmarkierungen und Standortfreigabe bleiben unverändert.
-- Mit Auf Karte finden öffnest du den zuletzt geteilten Standort eines Spielers und hebst seinen Punkt hervor.
+- Überlappende Weltkartenpunkte werden zu Gruppen zusammengefasst. Das ist standardmäßig eingeschaltet und lässt sich unter „Spielerstandorte“ deaktivieren.
+- Ein Klick auf eine Punktgruppe öffnet die detaillierteste Karte, auf der alle enthaltenen Spieler liegen. Bleibt dort eine Gruppe übrig, klappt sie in einzelne Punkte mit den üblichen Tooltips und Menüs auf. Bei größeren Gruppen blätterst du mit dem Mausrad darüber.
+- Der QT-Knopf oben rechts auf der Weltkarte schaltet QT-Spielermarkierungen und geteilte Wegpunkte um. Beim Überfahren wird die Karte dahinter abgedunkelt. Minimap-Markierungen und Standortfreigabe bleiben davon unberührt.
+- „Auf Karte finden“ öffnet den zuletzt freigegebenen aktuellen Standort eines Spielers und hebt seinen Punkt hervor.
 
-### Kürzliche Gefährten
+### Frühere Gefährten wiederfinden
 
-- Öffne mit /qt companions oder über das Minikartenmenü deinen privaten Verlauf von Spielern, mit denen du in einer Gruppe warst. Ihre Spielermenüs bieten Flüstern, Einladen und private Notizen.
-- Der Verlauf gilt für deine Charaktere im selben Client und auf demselben Realm. Er speichert bis zu 100 Gefährten für 90 Tage. Du kannst Einträge entfernen oder die Liste jederzeit leeren.
+- /qt companions oder das Minimapmenü öffnet eine private Liste früherer Gruppenmitglieder. Ihre Spielermenüs bieten Flüstern, Einladen und private Notizen.
+- Die Liste gilt gemeinsam für deine Charaktere auf demselben Client und Realm. Sie speichert höchstens 100 Gefährten für 90 Tage. Einzelne Einträge oder die gesamte Liste kannst du jederzeit löschen.
 
-### Questfortschritt und Spielerdetails
+### Fortschritt und Spielerstatus
 
-- Schnelle Aktualisierungen desselben Questziels werden zu einer Ankündigung mit dem neuesten Fortschritt zusammengefasst. Abgeschlossene Ziele werden weiterhin zeitnah angekündigt.
-- QuestTogether-Entwickler mit bestätigter Signatur erhalten ein Zahnrad in ihrer Klassenfarbe und eine Entwicklerkennzeichnung im Tooltip. Beim Überfahren zusammengefasster Punkte siehst du dieselben Klassenfarben, QT-Symbole und Questpartnersuche-Markierungen wie in Gruppenübersichten.
+- Rasche Änderungen desselben Ziels werden zu einer Meldung mit dem neuesten Stand zusammengefasst. Abgeschlossene Ziele werden weiterhin zügig gemeldet.
+- Durch Signatur bestätigte QT-Entwickler erhalten ein Zahnrad in Klassenfarbe und einen Entwicklerhinweis im Tooltip. Die Listen über Punktgruppen verwenden dieselben Klassenfarben, QT-Symbole und Suchstatusanzeigen wie Gruppenlisten.
 
 ## 7.2.1
 
-Korrekturen für private Notizen und eingeklappte Spalten im Gruppenquestlog.
+Private Notizen lassen sich angenehmer bearbeiten, und eingeklappte Questspalten zeigen verlässliche Symbole.
 
-### Fehlerbehebungen und Feinschliff
+### Korrekturen an Notizen und Questspalten
 
-- Der fehlende Textcursor in privaten Spielernotizen wurde behoben. Der Rahmen, der den Eingabefokus anzeigt, ist jetzt dezenter.
-- Das Scrollen beim Bearbeiten längerer Spielernotizen wurde verbessert.
-- Eingeklappte Spalten im Gruppenquestlog verwenden jetzt zuverlässig angezeigte Symbole für abgabebereite und abgeschlossene Quests statt Zeichen, die als leere Kästchen erscheinen konnten.
+- Der fehlende Textcursor im Notizeditor ist behoben. Der Fokusrahmen ist dezenter.
+- Beim Bearbeiten längerer Notizen wurde das Scrollverhalten verbessert.
+- Eingeklappte Spalten im Gruppenquestlog verwenden für abgabebereite und abgeschlossene Quests Symbole statt Schriftzeichen, die als leere Kästchen erscheinen konnten.
 
 ## 7.2.0
 
-Private Spielernotizen und ein nützlicheres Gruppenquestlog.
+Private Spielernotizen, übersichtlichere Questspalten und hilfreiche Direktlinks ergänzen QuestTogether.
 
-### Private Spielernotizen
+### Private Notizen zu Spielern
 
-- Füge über das QuestTogether-Menü eines Spielers eine private Notiz hinzu, bearbeite oder lösche sie. Die Notiz erscheint, wenn du mit der Maus über den Spieler fährst.
-- Notizen sind für alle deine Charaktere verfügbar und bleiben auf deinem Computer. Sie werden niemals an andere Spieler gesendet oder in Diagnosedaten aufgenommen.
+- Im QT-Menü eines Spielers kannst du eine persönliche Notiz anlegen, bearbeiten oder löschen. Sie erscheint, wenn du den Spieler überfährst.
+- Die Notizen gelten für deine Charaktere gemeinsam und bleiben auf deinem Computer. Sie werden weder anderen Spielern gesendet noch in Diagnosen aufgenommen.
 
-### Verbesserungen am Gruppenquestlog
+### Mehr Übersicht im Gruppenquestlog
 
-- Klappe einzelne Spielerspalten ein, um Platz zu schaffen, und wieder aus, wenn du die Details brauchst.
-- Mit der Schaltfläche „Tastatur“ kannst du per Pfeiltasten durch Quests navigieren, mit der Eingabetaste Ziele ausklappen und mit der Leertaste Questaktionen öffnen. Escape kehrt zur normalen Steuerung zurück.
-- Abgeschlossene Quests werden jetzt von fehlenden Quests unterschieden, wenn das aktualisierte Addon des anderen Spielers dessen Questverlauf bestätigen kann. Ist der Verlauf unbekannt, bleibt die Kennzeichnung „Nicht im Questlog“.
-- Verständlichere Erklärungen beim Teilen von Quests zeigen, warum eine Anfrage nicht fortgesetzt werden konnte. Spielertooltips zeigen außerdem kürzlich von WoW gemeldete Ergebnisse des Teilens.
+- Klappe einzelne Spielerspalten ein, um Platz zu schaffen. Bei Bedarf kannst du sie jederzeit wieder ausklappen.
+- Mit dem Knopf „Tastatur“ aktivierst du die Bedienung per Pfeiltasten. Enter klappt Ziele auf, die Leertaste öffnet Questaktionen. Escape kehrt zur normalen Steuerung zurück.
+- Kann das aktualisierte Addon eines Mitspielers dessen Questhistorie bestätigen, unterscheidet QT abgeschlossene von fehlenden Quests. Bei unbekannter Historie bleibt die Angabe „Nicht im Questlog“.
+- Verständlichere Erklärungen zeigen, warum eine Teilanfrage nicht möglich war. Spielertooltips enthalten außerdem die jüngsten vom Spiel gemeldeten Ergebnisse des Teilens.
 
 ### Tipps und Spielertooltips
 
-- Viele Tipps im Chat enthalten jetzt anklickbare Verknüpfungen zum passenden Fenster oder zur passenden Einstellung.
-- Wenn du mit der Maus über einen weit entfernten Spieler fährst, werden jetzt aktuelle Spielerdaten und die vollständige Mitgliederliste seiner Gruppe mit bis zu fünf Spielern angefordert. Solange du darüber verweilst, wird die Anfrage bei Bedarf wiederholt.
+- Viele Chat-Tipps enthalten anklickbare Verknüpfungen zum passenden Fenster oder zur Einstellung.
+- Beim Überfahren eines entfernten Spielers fordert QT aktuelle Angaben und die vollständige Liste seiner kleinen Gruppe an. Solange du dort verweilst, werden nötige Anfragen wiederholt.
 
-> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tipp: Gib /qt tip oder /qt hint ein, um einen Tipp anzuzeigen, und erkunde QuestTogether über dessen anklickbare Verknüpfungen.
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v7.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tipp: Mit /qt tip oder /qt hint erhältst du einen Tipp. Seine anklickbaren Verknüpfungen führen dich direkt zu den passenden QT-Funktionen.
 
 ## 7.1.3
 
-Zuverlässigere Questtexte in der Sprache deines Clients.
+QT findet Questtexte in deiner Client-Sprache zuverlässiger, auch wenn die Daten etwas später eintreffen.
 
-### Korrekturen an Questtexten
+### Questtexte zuverlässiger laden
 
-- Questmeldungen, Gruppenquestlog und Hinweise zum Folgen von Quests greifen jetzt zuverlässiger auf lokal verfügbare Questnamen zurück.
-- Questmeldungen bleiben in der richtigen Reihenfolge, während Namen geladen werden. Questdetails zeigt jetzt auch verspätet eintreffende Tooltip-Texte korrekt an.
-- Die Verarbeitung von Questnamen, die von anderen Spielern empfangen werden, wurde verbessert.
+- Questmeldungen, Gruppenquestlog und Hinweise zur Questfolge übernehmen lokal verfügbare Questnamen zuverlässiger.
+- Während Namen laden, bleibt die Reihenfolge der Questmeldungen erhalten. Auch das Questdetailfenster erholt sich korrekt, wenn Tooltiptexte verspätet eintreffen.
+- Die Verarbeitung von Questnamen anderer Spieler wurde verbessert.
 
 ## 7.1.2
 
-Einstellungen für Starttipps und eine einfachere Einstellungsseite.
+Du kannst Starttipps abschalten. Die Hauptseite der Einstellungen ist übersichtlicher geworden.
 
-### QuestTogether-Tipps
+### Tipps und Einstellungen
 
-- Du kannst automatische Tipps unter Allgemein auf der Hauptseite der QuestTogether-Einstellungen deaktivieren. /qt tip und /qt hint bleiben verfügbar.
-- Die Hauptseite der Einstellungen wurde vereinfacht; die Auswahl zwischen hellem und dunklem Design erfolgt jetzt über ein Dropdown-Menü.
+- Automatische Tipps lassen sich unter „Allgemein“ auf der QT-Hauptseite ausschalten. /qt tip und /qt hint funktionieren weiterhin.
+- Die Hauptseite wurde vereinfacht; zwischen hellem und dunklem Design wählst du jetzt in einem Dropdown.
 
 ## 7.1.1
 
-Deutlichere Tippsymbole und Farben.
+Tipps haben ein besser lesbares Symbol und neue Textfarben.
 
-### QuestTogether-Tipps
+### Symbol und Farben für Tipps
 
-- Tipps verwenden jetzt ein QT-Glühbirnensymbol statt eines nicht unterstützten Emojis, mit goldener Beschriftung und cremefarbenem Text.
+- Ein QT-Glühbirnensymbol ersetzt das nicht unterstützte Emoji. Die Beschriftung ist golden, der Tipptext cremefarben.
 
 ## 7.1.0
 
-Entdecke mit hilfreichen Tipps mehr von QuestTogether.
+Mit kurzen Tipps lernst du weitere Möglichkeiten von QuestTogether kennen.
 
-### QuestTogether-Tipps
+### Tipps von QuestTogether
 
-- QT zeigt jetzt bei der Anmeldung oder beim Neuladen der Benutzeroberfläche einen Tipp aus einem gemischten Vorrat an. Erst wenn alle Tipps gezeigt wurden, wiederholen sie sich.
+- Beim Einloggen oder Neuladen zeigt QT einen Tipp aus einem gemischten Vorrat. Erst wenn alle einmal erschienen sind, beginnt die Auswahl von vorn.
 
-> 💡 Tipp: Gib „/qt tip“ oder „/qt hint“ ein, um jederzeit einen weiteren QuestTogether-Tipp zu sehen.
+> 💡 Tipp: Mit /qt tip oder /qt hint kannst du dir jederzeit einen weiteren QuestTogether-Tipp anzeigen lassen.
 
 ## 7.0.2
 
-Einige Verbesserungen an Questinformationen und optionalen Diagnosedaten.
+Questtexte sind leichter zugänglich; die optionalen Entwicklerdiagnosen arbeiten zuverlässiger.
 
 ### Verbesserungen
 
-- Ein Fenster mit Questdetails zum Lesen verfügbarer Questtexte wurde hinzugefügt.
-- Die optionale Entwicklerdiagnose und die Zuverlässigkeit der Kommunikation wurden verbessert. Deine Einstellung zum Teilen von Diagnosedaten wird berücksichtigt.
+- Ein neues Questdetailfenster zeigt verfügbare Questtexte an.
+- Die optionalen Entwicklerdiagnosen und die Kommunikation wurden verbessert. Deine Einstellung zur Diagnosefreigabe wird berücksichtigt.
 
 ## 7.0.1
 
-Die Bedienelemente von QuestTogether passen jetzt besser zu Blizzards aktueller Benutzeroberfläche.
+Die Bedienelemente von QuestTogether passen sich enger an Blizzards aktuelle Oberfläche an.
 
 ### Bedienelemente im Blizzard-Stil
 
-- Die Schieberegler in den Einstellungen haben jetzt Pfeiltasten zur Feinabstimmung und zeigen ihren Wert neben der Leiste an.
-- Kontrollkästchen, Farbfelder, Bildlaufleisten und Standardschaltflächen entsprechen jetzt Blizzards aktuellem Erscheinungsbild.
-- Die Suchfelder im Gruppenquestlog und im Debugfenster haben jetzt ein Suchsymbol und eine Schaltfläche zum Leeren.
+- Schieberegler haben Pfeilknöpfe für kleine Anpassungen und zeigen ihren Wert neben der Leiste.
+- Kontrollkästchen, Farbfelder, Scrollleisten und Standardknöpfe verwenden Blizzards aktuelles Erscheinungsbild.
+- Die Suche im Gruppenquestlog und Debugfenster bietet ein Suchsymbol und einen Knopf zum Leeren.
 
-### Verbesserungen beim Scrollen
+### Scrollen und Größenänderungen
 
-- Das Scrollen in den Einstellungen, im Gruppenquestlog, in den Patchnotes und im Debugfenster wurde überarbeitet, einschließlich Größenänderungen und der Ausrichtung der Questzeilen.
-- Beim Schließen eines Fensters werden das Scrollen mit den nativen Bildlaufpfeilen und das Ziehen der Bildlaufleiste zuverlässig beendet.
+- Das Scrollverhalten in Einstellungen, Gruppenquestlog, Versionshinweisen und Debugfenster wurde überarbeitet, einschließlich Größenänderungen und Ausrichtung der Questzeilen.
+- Beim Schließen eines Fensters enden auch laufende Pfeil- und Ziehaktionen an der nativen Scrollleiste sauber.
 
 ## 7.0.0
 
-Das Kommunikationssystem von QuestTogether wurde in Vorbereitung auf die Veröffentlichung von WoW Forever neu aufgebaut. Diese grundlegende Protokolländerung erfordert, dass alle gemeinsam aktualisieren.
+Für den Start von WoW Forever haben wir die Kommunikation von QuestTogether neu aufgebaut. Diese Hauptversion wechselt das Protokoll; bitte aktualisiert gemeinsam.
 
-### Wichtig: Ältere Versionen können nicht kommunizieren
+### Wichtig: keine Kommunikation mit älteren Versionen
 
-- Diese Version führt ein neues Kommunikationsprotokoll ein. QuestTogether 7.x kann keine Spielerpositionen, Questfortschritte, Daten des Gruppenquestlogs oder andere Addon-Nachrichten mit 6.x und früheren Versionen austauschen. Bitte deine Questpartner, ebenfalls zu aktualisieren.
+- QuestTogether 7.x kann mit 6.x und älteren Versionen weder Standorte und Questfortschritt noch Gruppenquestlog-Daten oder andere Addon-Nachrichten austauschen. Bitte deine Questpartner deshalb ebenfalls um ein Update.
 
-### Vorbereitung auf WoW Forever
+### Vorbereitung auf den Forever-Start
 
-- Wir nehmen diese größeren, inkompatiblen Änderungen jetzt vor der Veröffentlichung von WoW Forever vor, um das Kommunikationssystem von QuestTogether auf eine solidere Grundlage zu stellen.
-- Nach dem Start von WoW Forever werden wir stärker darauf achten, die Abwärtskompatibilität zwischen Addon-Versionen zu erhalten und störende Aktualisierungspflichten zu vermeiden. Sollte ein weiterer Protokollbruch notwendig werden, werden wir klar darauf hinweisen.
+- Wir nehmen diese größeren, nicht abwärtskompatiblen Änderungen bewusst vor dem Start von WoW Forever vor, um die Kommunikation auf eine verlässlichere Grundlage zu stellen.
+- Nach dem Start werden wir stärker auf Abwärtskompatibilität zwischen Addon-Versionen achten und störende gemeinsame Updatepflichten vermeiden. Sollte ein weiterer Protokollbruch nötig werden, kündigen wir ihn klar an.
 
-### Spieler dort finden, wo du suchst
+### Aktuelle Daten dort, wo du hinsiehst
 
-- Spieleraktualisierungen haben in deinem aktuellen Gebiet und in einem Gebiet, das du auf der Karte geöffnet lässt, Vorrang. Weiter entfernte Positionen werden im Hintergrund aktualisiert.
-- Bewegungen in der Nähe werden mit kurzen, gezielten Aktualisierungen übertragen. Suchanfragen werden gemeinsam genutzt und zeitlich verteilt, um den Datenverkehr in belebten Gebieten zu verringern.
+- Dein aktuelles Gebiet und ein länger auf der Karte geöffnetes Gebiet werden bevorzugt aktualisiert. Weiter entfernte Standorte erneuert QT langsamer im Hintergrund.
+- Nahe Bewegung verwendet kurze, gezielte Meldungen. Suchanfragen werden zusammengefasst und zeitlich verteilt, damit volle Gebiete weniger Nachrichten auslösen.
 
-### Zuverlässigerer Datenaustausch
+### Zuverlässiger Daten austauschen
 
-- Questaktualisierungen, Übertragungen des Gruppenquestlogs, Spielerdetails und Diagnosedaten werden gemeinsam dosiert versendet, damit große Antworten Platz für andere Aktivitäten lassen.
-- Bei großen Antworten können fehlende Teile nachgeliefert werden, ohne die gesamte Übertragung neu zu starten. Verspätete Positionsdaten behalten ihr ursprüngliches Alter und können neuere Positionen oder Rücknahmen nicht überschreiben.
-- Änderungen an der Standortfreigabe verwerfen öffentliche Koordinaten in der Warteschlange. Beim Ausloggen oder einem Ladebildschirm versucht QuestTogether, eine letzte Abmeldung zu senden. Falls das nicht gelingt, laufen die Daten weiterhin automatisch ab.
+- Questmeldungen, Gruppenquestlog-Übertragungen, Spielerdetails und Diagnosen nutzen einen gemeinsamen getakteten Versand. Große Antworten lassen so Platz für andere Aktivitäten.
+- Fehlende Teile großer Antworten können nachgefordert werden, ohne alles neu zu übertragen. Verspätete Standorte behalten ihr ursprüngliches Alter und überschreiben weder neuere Positionen noch zurückgezogene Freigaben.
+- Änderungen der Standortfreigabe entfernen wartende öffentliche Koordinaten. Beim Ausloggen oder vor einem Ladebildschirm versucht QT eine letzte Abmeldung; trifft sie nicht ein, bleibt die Ablaufzeit die Absicherung.
 
 ## 6.5.11
 
-Neue Tastenbelegungen erleichtern das Öffnen der QuestTogether-Funktionen und die Verwaltung deiner Suche nach Questpartnern.
+Neue Tastenbelegungen öffnen QT-Werkzeuge und schalten die Questpartnersuche direkt um.
 
-### Tastenbelegungen
+### QT-Aktionen einer Taste zuweisen
 
-- QuestTogether wird jetzt unter Einstellungen > Tastenbelegung korrekt angezeigt und ersetzt den fehlerhaften Eintrag HEADER_QUESTTOGETHER.
-- Du kannst Tasten zuweisen, um das QuestTogether-Menü zu öffnen, das Gruppenquestlog ein- oder auszublenden, die Suche nach Questpartnern ein- oder auszuschalten, dem Questfokus nicht mehr zu folgen, den QuestTogether-Chat zu öffnen oder die QuestTogether-Einstellungen aufzurufen.
-- Deine bisherige Tastenbelegung für das Gruppenquestlog bleibt erhalten. Die neuen Aktionen haben zunächst keine zugewiesenen Tasten. Die Taste für das Menü funktioniert auch bei ausgeblendetem Minikartensymbol.
+- Unter Einstellungen > Tastenbelegung erscheint QuestTogether jetzt mit korrekter Überschrift statt HEADER_QUESTTOGETHER.
+- Du kannst Tasten für das QT-Menü, das Gruppenquestlog, die Partnersuche, das Beenden der Questfolge, den QT-Chat und die QT-Einstellungen vergeben.
+- Deine bisherige Belegung für das Gruppenquestlog bleibt erhalten. Neue Aktionen sind zunächst unbelegt. Die Menütaste funktioniert auch bei ausgeblendetem Minimaplogo.
 
 ## 6.5.10
 
-Flüssigere Aktualisierungen im Gruppenquestlog, zuverlässigere Anfragen und Kartenaktualisierungen sowie Korrekturen für Profile und Fortschrittsblasen.
+Queststände bleiben besser aktuell. Profilwechsel, Dialoge und Fortschrittsblasen berücksichtigen gespeicherte Einstellungen zuverlässiger.
 
-### Gruppenquestlog
+### Aktualisierungen im Gruppenquestlog
 
-- Bei aktivierter automatischer Aktualisierung verursachen unveränderte Questlisten weniger Addon-Datenverkehr. Ein manueller Klick auf „Aktualisieren“ fordert weiterhin eine vollständige Aktualisierung an.
-- Questlisten werden nach Änderungen an Questzielen oder nachdem ein Spieler ignoriert und wieder von der Ignorierliste entfernt wurde korrekt aktualisiert, statt veralteten Fortschritt anzuzeigen oder beim Laden hängen zu bleiben.
+- Bei automatischer Aktualisierung verursachen unveränderte Questlisten weniger Addon-Verkehr. Ein manuelles „Aktualisieren“ fordert weiterhin den vollständigen Stand an.
+- Nach Zieländerungen sowie dem Ignorieren und erneuten Zulassen eines Spielers erholen sich Questlisten korrekt, statt alten Fortschritt zu behalten oder dauerhaft zu laden.
 
 ### Fenster und Profile
 
-- Beim Wechseln, Kopieren oder Zurücksetzen eines Profils werden dessen gespeicherte Fensterlayouts oder die Standardlayouts wiederhergestellt. Bei Änderungen der Bildschirmgröße bleiben Fenster weiterhin im sichtbaren Bereich, ohne deine bevorzugte Größe und Position zu verwerfen.
-- Wenn du eine Bestätigung für einen Gruppenbeitritt oder eine Questfreigabe schließt, wird jetzt die nächste wartende Anfrage korrekt angezeigt.
-- Das Öffnen der Einstellungen während Blizzards Bearbeitungsmodus verhindert nicht mehr, dass „Zurücksetzen“ das ursprüngliche Layout deiner persönlichen Fortschrittsblase wiederherstellt.
-- Geöffnete Hilfsfenster passen sich auch bei deaktiviertem QuestTogether weiterhin an Änderungen des Designs und der Anzeige an.
+- Beim Wechseln, Kopieren oder Zurücksetzen eines Profils werden dessen Fensteranordnung oder die Standardwerte wiederhergestellt. Änderungen der Bildschirmgröße halten Fenster weiter sichtbar, ohne deine bevorzugte Größe und Position zu verwerfen.
+- Nach dem Schließen einer Beitritts- oder Teilbestätigung wird die nächste wartende Anfrage angezeigt.
+- Öffnest du während Blizzards Bearbeitungsmodus die Einstellungen, kann „Zurücksetzen“ anschließend trotzdem die ursprüngliche Anordnung deiner Fortschrittsblase wiederherstellen.
+- Offene Hilfsfenster passen sich auch bei deaktiviertem QT weiter an Design- und Anzeigeänderungen an.
 
-### Questverfolgung und Kommunikation
+### Quests und Kommunikation
 
-- Abgelaufene oder nicht mehr benötigte Anfragen für Gruppenbeitritte und Questfreigaben werden vor dem Versand abgebrochen.
-- Abschlüsse von Bonuszielen und Weltquests behalten den richtigen Ankündigungstyp, auch wenn die Quest aus dem Questlog verschwindet, bevor das Abschlussereignis eintrifft.
-- Manuelle Standortaktualisierungen nutzen jetzt öffentliche Antworten älterer QuestTogether-Versionen, um normale Kartenpunkte zu aktualisieren. Neuere Positionen und die Einstellungen zur Standortfreigabe bleiben dabei erhalten.
+- Abgelaufene oder nicht mehr benötigte Beitritts- und Teilanfragen werden vor dem Versand verworfen.
+- Abschlüsse von Bonuszielen und Weltquests behalten ihren richtigen Meldungstyp, auch wenn die Quest schon vor dem Abschlussereignis aus dem Log verschwindet.
+- Bei einer manuellen Standortaktualisierung können öffentliche Antworten älterer QT-Versionen nun normale Kartenpunkte erneuern. Neuere Koordinaten und die Standortfreigaben bleiben dabei maßgeblich.
 
 ## 6.5.9
 
-Zuverlässigere Gruppenaktualisierungen, übersichtlichere Spielerkarten und Korrekturen beim Ausblenden der Benutzeroberfläche mit Alt+Z.
+Gruppendaten erholen sich besser nach Unterbrechungen. Kartenpunkte und Fenster bleiben auch beim Ausblenden der Oberfläche stimmig.
 
 ### Gruppenquestlog und Fenster
 
-- Beim Ausblenden und Wiederherstellen der Benutzeroberfläche mit Alt+Z bleiben ausstehende Bestätigungen zum Wechsel des Questfokus und die Hintergründe in Klassenfarben hinter Spielernamen erhalten.
-- Anfragen des Gruppenquestlogs werden nach Neuladen, Ladebildschirmen oder fehlenden Nachrichtenseiten zuverlässiger fortgesetzt, statt Spieler dauerhaft mit „Laden“ anzuzeigen.
-- Fensterlayouts und persönliche Fortschrittsblasen passen sich kleineren Bildschirmen zuverlässiger an. Beim Zurücksetzen der Layouts bleiben ausstehende Dialogentscheidungen erhalten.
+- Das Aus- und Einblenden der Oberfläche mit Alt+Z erhält offene Fokusbestätigungen und die klassenfarbigen Hintergründe der Spielernamen.
+- Anfragen des Gruppenquestlogs erholen sich zuverlässiger nach Neuladen, Ladebildschirmen oder fehlenden Nachrichtenteilen. Spieler bleiben dadurch seltener auf „Lädt“ stehen.
+- Fenster und persönliche Fortschrittsblasen passen sich kleineren Bildschirmen besser an. Das Zurücksetzen der Fensteranordnung verwirft keine offenen Dialogentscheidungen.
 
-### Karten und Gruppenaktualisierungen
+### Karten und Gruppenzustand
 
-- Aktualisierungen von Standort, Gruppe und Questfokus weisen veraltete Nachrichten zurück, damit verspätete Antworten abgemeldete Spieler nicht wieder anzeigen oder neuere Daten überschreiben.
-- QT sendet beim Verlassen der Spielwelt eine Abmeldung, damit andere Spieler deinen Punkt früher entfernen können, wenn die Nachricht ankommt. Bei verlorenen Nachrichten greift weiterhin der normale Ablauf der Gültigkeit; die Verfügbarkeit für Gruppenbeitritte wird nach Ladebildschirmen wiederhergestellt.
-- Gruppenmitglieder verwenden jetzt Blizzards eigene Markierungen auf Karte und Minikarte, ohne zusätzliche QT-Punkte. Auf Karten angezeigte Spieler bietet Alle QuestTogether-Spieler, Spieler auf Questpartnersuche oder Keine; die Freigabe deines eigenen Standorts bleibt getrennt.
+- Veraltete Standort-, Gruppen- und Fokusmeldungen werden abgewiesen. Verspätete Antworten können dadurch weder ausgeschiedene Spieler zurückbringen noch neuere Daten überschreiben.
+- Beim Verlassen der Spielwelt versucht QT eine Abmeldung zu senden. Erreicht sie andere Spieler, können diese deinen Punkt früher entfernen; andernfalls greift weiter die normale Ablaufzeit. Auch die Verfügbarkeit für Gruppenbeitritte erholt sich nach Ladebildschirmen.
+- Mitglieder deiner eigenen Gruppe verwenden Blizzards Karten- und Minimap-Markierungen, ohne doppelte QT-Punkte. Der Kartenfilter bietet alle QT-Spieler, Spieler auf Partnersuche oder niemand. Deine Standortfreigabe bleibt unabhängig davon.
 
-### Questverfolgung und Kommunikation
+### Questerfassung und Nachrichten
 
-- Die Questverfolgung erholt sich von einem beim Anmelden unvollständigen Questlog. Viele aufeinanderfolgende Questereignisse verschieben ausstehende Aktualisierungen nicht mehr immer weiter.
-- Ausgehende Nachrichten nutzen eine gemeinsame Warteschlange mit geregeltem Versandtempo. Die Prüfung von Entwickleranfragen erfolgt in kleinen Schritten, um kurze Bildstillstände zu verringern. Das Deaktivieren der Diagnosefreigabe bricht vorgemerkte Diagnoseaufgaben ab.
-- Große Diagnoseantworten haben mehr Zeit, vollständig anzukommen. Ältere anfragende Clients erhalten eine ausdrückliche Meldung zur Größenbegrenzung, wenn ein Bericht nicht hineinpasst, statt ohne Rückmeldung in eine Zeitüberschreitung zu laufen.
+- QT erholt sich von einem beim Login unvollständigen Questlog. Viele Questereignisse schieben eine bereits anstehende Aktualisierung nicht mehr immer weiter auf.
+- Ausgehende Nachrichten teilen sich eine getaktete Warteschlange. Entwickleranfragen werden in kleinen Schritten geprüft, um Bildruckler zu reduzieren. Das Abschalten der Diagnosefreigabe bricht wartende Diagnosearbeit ab.
+- Große Diagnoseantworten haben mehr Zeit zum Abschluss. Passt ein Bericht für einen älteren Anfragenden nicht in die erlaubte Größe, erhält dieser ausdrücklich eine Größenbegrenzungsantwort statt eines stillen Zeitablaufs.
 
 ## 6.5.8
 
-Native WoW-Auswahlmenüs, klarere Kartenoptionen und Entwicklerdiagnosen.
+Native WoW-Dropdowns vereinheitlichen die Einstellungen. Kartenfilter werden einfacher, Entwicklerdiagnosen erhalten einen eigenen Bereich.
 
-### Einstellungen und Spielerkarten
+### Einstellungen und Kartenfilter
 
-- Alle neun Auswahlmenüs in den Einstellungen verwenden jetzt native WoW-Steuerelemente mit goldener Auswahl, schwarzen Menüs und Zurück-/Weiter-Schaltflächen.
-- Auf Karten angezeigte Spieler ersetzt die getrennten Kontrollkästchen für Sichtbarkeit und Gruppenausnahme. Wähle alle QT-Spieler, Spieler auf Questpartnersuche mit oder ohne deine Gruppe, nur deine Gruppe oder Keine. Vorhandene Einstellungen bleiben erhalten; die Freigabe deines eigenen Standorts bleibt getrennt.
-- Die neue Einstellungskategorie Entwickler enthält Debugfenster öffnen, Questlog neu einlesen und die Freigabe von Diagnosedaten.
+- Alle neun Dropdowns in den Einstellungen verwenden native WoW-Bedienelemente mit goldener Auswahl, schwarzen Menüs und Vor-/Zurück-Knöpfen.
+- „Auf Karten angezeigte Spieler“ ersetzt die getrennten Schalter für Sichtbarkeit und Gruppenausnahme. Zur Wahl stehen alle QT-Spieler, Spieler auf Partnersuche mit oder ohne eigene Gruppe, nur die Gruppe oder niemand. Bisherige Vorgaben werden übernommen. Die Freigabe deines eigenen Standorts bleibt separat.
+- Die neue Kategorie „Entwickler“ enthält das Debugfenster, das erneute Einlesen des Questlogs und die Diagnosefreigabe.
 
-### Diagnoseantworten
+### Private Antworten auf Diagnoseanfragen
 
-- Diagnosedaten mit dem Entwickler teilen ist standardmäßig aktiviert. Die Option erlaubt authentifizierte Entwickleranfragen nach QT-Diagnosen, Addon-Einstellungen sowie Charakter-, Gruppen- und Standortdaten im Spiel, auch bei deaktivierter öffentlicher Standortfreigabe. Deaktiviere sie unter Entwickler, um diese Daten nicht mehr zu teilen.
-- Diagnoseantworten verwenden private Addon-Flüsternachrichten und werden zeitversetzt in Seiten aufgeteilt, damit größere Antworten ihre Felder behalten. Ferndiagnosen erfordern bei beiden Spielern Version 6.5.8 oder neuer; veröffentlichte 6.5.7-Clients können diese Anfragen nicht beantworten.
+- „Diagnosedaten mit dem Entwickler teilen“ ist standardmäßig eingeschaltet. Nach einer authentifizierten Entwickleranfrage dürfen QT-Diagnosen, Addon-Einstellungen sowie Charakter-, Gruppen- und Standortdaten aus dem Spiel übertragen werden – auch bei ausgeschalteter öffentlicher Standortfreigabe. Unter „Entwickler“ kannst du diese Freigabe abschalten.
+- Die Antworten laufen über private Addon-Flüsternachrichten. Größere Antworten werden in zeitlich verteilte Seiten aufgeteilt, damit ihre Felder erhalten bleiben. Beide Seiten benötigen mindestens 6.5.8; veröffentlichte 6.5.7-Clients können diese Anfragen nicht beantworten.
 
 ## 6.5.7
 
-Spieler über die Minikarte anvisieren und deutlichere Gruppensymbole.
+Minimap-Punkte lassen sich zum Anwählen verwenden. Gruppen- und Fokussymbole sind klarer erkennbar.
 
-### Spielerpunkte und Gruppensymbole
+### Spieler anwählen und Status erkennen
 
-- Außerhalb des Kampfes kannst du einen Spielerpunkt auf der Minikarte mit Linksklick anvisieren, sofern das Spiel diesen Spieler als Ziel erfassen kann. Rechtsklick öffnet weiterhin das Menü, jetzt mit Anvisieren an erster Stelle. Die Menüs der Weltkartenpunkte bleiben unverändert.
-- Symbole für die Questpartnersuche haben jetzt eine deutlich kräftigere goldene Kontur. Gruppenlisten in Tooltips zeigen außerdem das leuchtende QT-Logo für Mitglieder, die gerade Questpartner suchen.
-- Die Questfokussymbole im Gruppenquestlog werden jetzt auf einer eigenen Vordergrundebene dargestellt, damit die Schaltflächenhintergründe sie nicht verdecken können.
+- Außerhalb des Kampfes kannst du einen Spieler per Linksklick auf seinen Minimap-Punkt anwählen, sofern das Spiel ihn als Ziel zulässt. Rechtsklick öffnet weiterhin das Menü; „Anvisieren“ steht darin zuerst. Weltkartenmenüs verhalten sich unverändert.
+- Partnersuchsymbole haben einen deutlich kräftigeren Goldrand. Auch in Gruppenlisten innerhalb von Tooltips erscheint bei aktiver Suche das leuchtende QT-Logo.
+- Die Questsymbole der Fokusknöpfe im Gruppenquestlog liegen auf einer eigenen Vordergrundebene, damit der Knopfhintergrund sie nicht verdeckt.
 
 ## 6.5.6
 
-Erkenne im Chatlog, wer Questpartner sucht.
+Im QT-Protokoll erkennst du leichter, wer gerade Questpartner sucht.
 
-### Questpartner gesucht
+### Partnersuche im Protokoll hervorheben
 
-- Das Symbol für die Questpartnersuche hat eine hellere goldene Kontur und leuchtet stärker, damit es auch in kleiner Darstellung im Chatlog leichter zu erkennen ist.
-- Das QT-Symbol am Anfang von Chatlog-Zeilen leuchtet jetzt, wenn der Spieler Questpartner sucht. Questspezifische Symbole und Sprechblasensymbole behalten ihr gewohntes Aussehen.
+- Das Partnersuchsymbol hat einen helleren goldenen Umriss und einen kräftigeren Schimmer, damit es auch klein gut erkennbar bleibt.
+- Beginnt eine Meldung mit dem QT-Logo, leuchtet dieses bei aktiver Partnersuche des Spielers. Questspezifische Symbole und Sprechblasensymbole behalten ihr bisheriges Aussehen.
 
 ## 6.5.5
 
-Eine Korrektur für fehlende Questsymbole im Gruppenquestlog.
+Die Fokusknöpfe im Gruppenquestlog zeigen ihre Questsymbole nach dem Scrollen wieder zuverlässig.
 
-### Symbole im Gruppenquestlog
+### Leere Symbolkreise behoben
 
-- Ein Fehler wurde behoben, durch den Schaltflächen für den Questfokus nach dem Scrollen oder Aktualisieren der Liste manchmal als leere Kreise erschienen. Wiederverwendete Schaltflächen setzen ihre Grafiken nun korrekt zurück und verwenden ein Ersatzsymbol, falls die gewünschte Grafik nicht angewendet werden kann.
+- Wiederverwendete Fokusknöpfe setzen ihre Grafik beim Scrollen oder Aktualisieren der Liste korrekt zurück. So bleiben keine leeren Kreise zurück. Kann die angeforderte Grafik nicht dargestellt werden, verwendet QT ein Ersatzsymbol.
 
 ## 6.5.3
 
-Drei bebilderte Abschnitte zur Anleitung des Gruppenquestlogs hinzugefügt. Das Spielverhalten bleibt unverändert; die Bilder zeigen simulierte Gruppenmitglieder in Forever.
+Drei bebilderte Abschnitte ergänzen die Anleitung zum Gruppenquestlog. Am Spielverhalten ändert sich nichts; die Bilder zeigen simulierte Forever-Mitspieler.
 
-### Deine Gruppe auf einen Blick
+### Die Gruppe auf einen Blick
 
-- Der Anleitung wurde ein Übersichtsbild des Gruppenquestlogs hinzugefügt.
-
-**Forever**
-
-![Deine Gruppe auf einen Blick — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestOverviewForever.png)
-
-### Eigene Quest wählen oder Mitspielern folgen
-
-- Ein Bildschirmfoto der Steuerelemente zum Folgen von Quests wurde hinzugefügt.
+- Die Anleitung enthält jetzt eine Übersichtsaufnahme des Gruppenquestlogs.
 
 **Forever**
 
-![Eigene Quest wählen oder Mitspielern folgen — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFollowingForever.png)
+![Die Gruppe auf einen Blick — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestOverviewForever.png)
 
-### Fokus bewusst wechseln
+### Eine Quest wählen oder einem Mitspieler folgen
 
-- Ein Bildschirmfoto der Bestätigung beim Wechsel des Questfokus wurde hinzugefügt.
+- Ein neues Bild zeigt die Bedienelemente für die Questfolge.
 
 **Forever**
 
-![Fokus bewusst wechseln — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFocusWarningForever.png)
-
-## 6.5.2
-
-Korrektur der Vorschau zum Folgen von Quests.
-
-### Mit eigenen Quests testen
-
-- Beim Schließen der Vorschau des Gruppenquestlogs wird das bestehende Folgen in deiner echten Gruppe jetzt fortgesetzt.
-
-## 6.5.1
-
-Klarere Questfokus-Schaltflächen, sichere Wechsel beim Folgen und passende Symbole zur Blizzard-Questverfolgung.
-
-### Klarer Questfokus
-
-- Beim Folgen bleibt nur die aktive Quest des verfolgten Spielers farbig. Ohne Folgen bleiben deine Schaltflächen und die aktiven Quests deiner Mitspieler farbig. Alle anderen sind grau, ohne Transparenz. Aktive Quests von Mitspielern bleiben anklickbar, um das Folgen zu starten oder das Ziel zu wechseln.
+![Eine Quest wählen oder einem Mitspieler folgen — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFollowingForever.png)
 
 ### Fokuswechsel bestätigen
 
-- Die Wahl einer eigenen Quest oder eines anderen Mitspielers fragt vor dem Ende des bisherigen Folgens nach. Auch Fokuswechsel oder das Aufheben des Fokus über Blizzards Questverfolgung fragen jetzt nach: QT stellt den bisherigen Fokus während der Entscheidung wieder her. Abbrechen behält das Folgen bei; Fokus ändern übernimmt die Auswahl. Vorschau: /qt preview unfollow.
+- Ein weiteres Bild zeigt die Rückfrage beim Ändern des Fokus.
 
-### Passende Questsymbole
+**Forever**
 
-- Der Queststatus nutzt jetzt dieselbe Abschlussabfrage wie Blizzards Questverfolgung. Dadurch zeigen Lieferquests ein Fragezeichen statt eines Fortschrittssymbols. Der korrigierte Bereit-Status wird auch mit dem Gruppen-Questlog geteilt.
+![Fokuswechsel bestätigen — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.5.3/Media/ReleaseNotes/PartyQuestFocusWarningForever.png)
 
-### Mit eigenen Quests testen
+## 6.5.2
 
-- Die Vergleichsvorschau nutzt dein echtes Questlog mit vier simulierten Mitspielern und zusätzlichen fehlenden Quests. Fokuswechsel ändern deine echte Blizzard-Navigation; Teilen bleibt simuliert. Über das Namensmenü eines Mitspielers wechselst du dessen Fokus weiter. Statt einer leeren Aktionsspalte zeigen nicht teilbare Quests nun zentriert Nicht teilbar oder Teilbarkeit unbekannt.
+Das Folgen deiner echten Gruppe setzt nach der Vorschau wieder ein.
+
+### Korrektur an der Vergleichsvorschau
+
+- Wenn du die Vorschau des Gruppenquestlogs schließt, wird dein bereits bestehendes Folgen eines echten Gruppenmitglieds fortgesetzt.
+
+## 6.5.1
+
+Die Fokusknöpfe sind eindeutiger, ein Wechsel beim Folgen wird bestätigt und die Questsymbole passen zu Blizzards Zielverfolgung.
+
+### Farbige und graue Fokusknöpfe
+
+- Beim Folgen bleibt nur die aktive Quest des verfolgten Spielers farbig. Ohne Folgen sind deine eigenen Knöpfe und die aktiven Quests der Mitspieler farbig. Alle übrigen Knöpfe sind grau, ohne Verblassen. Aktive Quests der Mitspieler bleiben anklickbar, um das Folgen zu beginnen oder zu wechseln.
+
+### Fokuswechsel bestätigen
+
+- Wählst du eine eigene Quest oder einen anderen Mitspieler, fragt QT vor dem Ende des bisherigen Folgens nach. Das gilt auch beim Ändern oder Löschen des Fokus in Blizzards Zielverfolgung: Bis zur Entscheidung stellt QT den verfolgten Fokus wieder her. Abbrechen setzt das Folgen fort, „Fokus ändern“ übernimmt deine Wahl. /qt preview unfollow zeigt den Dialog.
+
+### Passende Symbole für abgabebereite Quests
+
+- QT nutzt für die Abgabebereitschaft nun dieselbe Abschlussabfrage wie Blizzards Zielverfolgung. Lieferquests zeigen dadurch korrekt ein Fragezeichen statt eines Fortschrittssymbols. Der korrigierte Status wird auch im Gruppenquestlog geteilt.
+
+### Vorschau mit deinen eigenen Quests
+
+- Die Vergleichsvorschau verwendet dein echtes Questlog mit vier simulierten Mitspielern und zusätzlich fehlenden Quests. Fokusaktionen verändern dabei deine echte Blizzard-Navigation; das Teilen bleibt simuliert. Im Namensmenü eines Mitspielers kannst du dessen Fokus weiterschalten. Bei nicht teilbaren Quests steht mittig „Nicht teilbar“ oder „Teilbarkeit unbekannt“, statt eine leere Aktionsspalte zu zeigen.
 
 ## 6.5.0
 
-Steuere den Questfokus direkt im Gruppen-Questlog und folge deiner Gruppe auch nach dem Neuladen weiter.
+Du steuerst den Questfokus jetzt direkt im Gruppenquestlog. Das Folgen eines Mitspielers bleibt auch nach dem Neuladen erhalten.
 
-### Schaltflächen für den Questfokus
+### Questfokus über die Spalten wählen
 
-- Questschaltflächen im Blizzard-Stil erscheinen jetzt in der Questspalte jedes Spielers und ersetzen die Questtitel in den Kopfzeilen. Klicke in deiner Spalte, um deine Navigationsquest zu ändern. Ausgewählte Schaltflächen zeigen den Fokus deiner Mitspieler; klicke darauf, um ihnen zu folgen.
+- Questknöpfe im Blizzard-Stil ersetzen die Fokustitel in den Spielerüberschriften. In deiner Spalte wählst du damit deine hervorgehobene Quest. Die ausgewählten Knöpfe der Mitspieler zeigen deren Fokus; ein Klick darauf beginnt das Folgen.
 
-### Dauerhaft folgen
+### Folgen über Unterbrechungen hinweg
 
-- Deine Auswahl wird pro Charakter über das Neuladen hinaus gespeichert und bleibt bei vorübergehenden Datenlücken erhalten. Neue Gruppendaten passen deinen Fokus an, wenn du die Quest besitzt. Eine eigene Navigationsauswahl, das Verlassen des Mitspielers, die Auflösung der Gruppe oder die Umwandlung in einen Schlachtzug beendet das Folgen.
+- Deine Auswahl wird pro Charakter gespeichert und übersteht das Neuladen sowie vorübergehende Datenlücken. Frische Gruppenmeldungen gleichen deinen Fokus an, sofern du die Quest besitzt. Eigene Navigation, das Ausscheiden des verfolgten Mitglieds, die Auflösung der Gruppe oder die Umwandlung in einen Schlachtzug beenden das Folgen.
 
-### Wenn dir die Quest fehlt
+### Wenn dir die nächste Quest fehlt
 
-- Wählt der Spieler, dem du folgst, eine Quest, die du nicht hast, endet das Folgen, ohne deine Navigation zu ändern. Ein Dialog im QT-Design erklärt dies und öffnet das Gruppen-Questlog, damit du die Quest anfordern und erneut folgen kannst. Teste den Dialog mit /qt preview focus oder die Schaltflächen und simulierte Fokuswechsel mit /qt preview compare.
+- Wechselt der verfolgte Spieler zu einer Quest, die du nicht besitzt, endet das Folgen, ohne deine Navigation zu ändern. Ein Dialog erklärt den Grund und öffnet das Gruppenquestlog, damit du die Quest anfragen und danach erneut folgen kannst. Mit /qt preview focus siehst du den Dialog; /qt preview compare lässt dich Knöpfe und simulierte Fokuswechsel ausprobieren.
 
 ## 6.4.3
 
-Korrekturen am Quest-Fokus und an Gruppen-Tooltips sowie einfachere Karteneinstellungen.
+Dein Questfokus wird zuverlässiger angezeigt. Gruppenlisten reagieren schneller, und die Kartenanzeige hat eine einfachere Einstellung.
 
-### Dein Quest-Fokus
+### Dein eigener Questfokus
 
-- Deine Überschrift im Gruppen-Questlog liest die aktuell fokussierte Quest jetzt direkt aus, auch wenn du allein bist oder die Freigabe des Quest-Fokus deaktiviert ist. Änderungen an deiner Navigationsquest aktualisieren die Überschrift ohne manuelles Aktualisieren.
+- Die Überschrift im Gruppenquestlog liest deine hervorgehobene Quest direkt aus dem Spiel, auch allein oder bei ausgeschalteter Fokusfreigabe. Ein Fokuswechsel erscheint ohne manuelle Aktualisierung.
 
-### Gruppenlisten in Tooltips
+### Gruppenmitglieder im Tooltip
 
-- Bei Gruppen mit bis zu fünf Spielern zeigt der Tooltip sofort den Spieler unter dem Mauszeiger neben dem Anführer, während die vollständige Liste geladen wird. Der Ladehinweis erscheint nur, solange weitere Mitglieder fehlen. Bei größeren Gruppen wird weiterhin nur der Anführer angezeigt.
+- Während die vollständige Liste einer kleinen Gruppe lädt, stehen der überfahrene Spieler und der Leiter bereits darin. Der Ladehinweis erscheint nur, solange weitere Mitglieder fehlen. Gruppen über fünf Spielern zeigen weiterhin nur den Leiter.
 
-### Einfachere Karteneinstellungen
+### Ein Schalter für beide Karten
 
-- Ein einziges Kontrollkästchen zum Anzeigen anderer Spieler auf Karte und Minimap steuert jetzt beide Ansichten. Die Freigabe deines eigenen Standorts bleibt unabhängig davon. War zuvor mindestens eine Ansicht aktiviert, bleiben beide sichtbar; waren beide deaktiviert, bleibt die Anzeige aus.
+- „Andere Spieler auf Karte und Minimap anzeigen“ steuert jetzt beide Ansichten gemeinsam. Deine eigene Standortfreigabe bleibt davon unabhängig. War bisher mindestens eine Kartenanzeige eingeschaltet, bleibt die Anzeige aktiv; waren beide aus, bleibt sie aus.
 
 ## 6.4.2
 
-Danke, dass du QuestTogether verwendest! Dieses Update bietet mehr Kontrolle über Quest-Fortschritts-Schnappschüsse, Spielerstandort-Anzeigen und die Zugänglichkeit von Fenstern. Einstellungen lassen sich leichter anpassen, und Discord ist weiterhin der beste Ort für Feedback und Support.
+Du kannst Queststände gezielter aktualisieren, Kartenanzeigen getrennt steuern und QT-Fenster besser an deine Darstellung anpassen. Für Rückmeldungen und Hilfe erreichst du uns weiterhin auf Discord.
 
-### Aktualisierungen am Gruppen-Questlog
+### Queststände gezielt erneuern
 
-- Spielerüberschriften zeigen jetzt an, wie aktuell jeder Quest-Schnappschuss ist. Öffne das Menü einer Spielerüberschrift, um nur diesen Spieler zu aktualisieren, ohne alle anderen zu aktualisieren.
-- Filter enthalten jetzt eine optionale Einstellung zur automatischen Aktualisierung. Wenn sie aktiviert ist, wird das Gruppen-Questlog etwa alle 30 Sekunden aktualisiert, während das eigentliche Fenster geöffnet ist.
-- Beim Aktualisieren bleiben deine Suche, aufgeklappte Quests, horizontale Position und sichtbare Questposition nach Möglichkeit erhalten, während neue Schnappschussdaten eintreffen.
-- Die Quest-Fokus-Anzeige erklärt jetzt wartende, abgelaufene und nicht unterstützte Daten. Wenn QT die Ursache nicht unterscheiden kann, zeigt sie „Nicht geteilt oder nicht verfügbar“. Das Menü warnt außerdem vor Schleifen beim Folgen.
+- Die Spielerüberschriften zeigen, wie aktuell die jeweilige Questliste ist. Im Menü eines Spielers kannst du nur dessen Daten neu anfordern.
+- Unter „Filter“ lässt sich eine automatische Aktualisierung einschalten. Solange das echte Gruppenquestlog geöffnet ist, fordert sie etwa alle 30 Sekunden einen neuen Stand an.
+- Suche, aufgeklappte Quests, horizontale Position und möglichst auch die sichtbare Questposition bleiben beim Eintreffen neuer Daten erhalten.
+- Fokusangaben unterscheiden nun wartende, abgelaufene und nicht unterstützte Daten. Kann QT fehlende Freigabe und fehlende Verfügbarkeit nicht auseinanderhalten, wird das ausdrücklich so benannt. Das Menü warnt außerdem vor einer Schleife beim Folgen.
 
-### Zugänglichkeit und Fensterlayout
+### Fenstergröße und Barrierefreiheit
 
-- Einstellungen enthalten jetzt Zugänglichkeitsoptionen für eine Fensterskalierung von 80 % bis 150 % sowie reduzierte Bewegung für sofortiges Scrollen und sofortiges Aufklappen von Zielen.
-- Die Fensterskalierung vergrößert Text und Bedienelemente gemeinsam, kann aber bei Bedarf begrenzt werden, damit das gesamte Fenster auf dem Bildschirm bleibt.
-- Das Gruppen-Questlog und das Willkommensfenster speichern jetzt ihre Größe und bildschirmrelative Position pro Profil, und QuestTogether-Fenster werden nach Änderungen der Anzeigegröße oder UI-Skalierung neu angepasst.
-- Verwende Fensterlayout zurücksetzen in Zugänglichkeit oder /qt resetlayout, um gespeicherte QuestTogether-Fensterlayouts zu löschen und sie wieder zu zentrieren.
+- Die neuen Barrierefreiheitsoptionen bieten eine Fensterskalierung von 80 % bis 150 % und reduzierte Bewegung. Letztere ersetzt weiches Scrollen und Aufklappen durch sofortige Änderungen.
+- Die Skalierung vergrößert Text und Bedienelemente gemeinsam. Falls nötig, begrenzt QT sie so, dass das gesamte Fenster auf den Bildschirm passt.
+- Gruppenquestlog und Willkommensfenster speichern Größe und relative Bildschirmposition je Profil. Nach Änderungen an Auflösung oder UI-Skalierung werden QT-Fenster wieder eingepasst.
+- Mit „Fensteranordnung zurücksetzen“ unter Barrierefreiheit oder /qt resetlayout löschst du gespeicherte QT-Fensterpositionen und zentrierst die Fenster erneut.
 
-### Spielerstandort-Steuerung
+### Standortanzeigen auswählen
 
-- Die Anzeige auf Weltkarte und Minimap kann jetzt getrennt von der Standortfreigabe umgeschaltet werden, sodass du lokale Markierungen ausblenden kannst, ohne zu ändern, was du teilst.
-- Der Spielerstandortfilter bietet jetzt alle QuestTogether-Spieler, Questpartner oder nur die Gruppe an.
-- Meine Gruppe immer anzeigen ist standardmäßig aktiviert, sodass Gruppenmitglieder weiterhin angezeigt werden, wenn der Questpartner-Filter verwendet wird, sofern ihre Standortberechtigungen dies zulassen.
+- Weltkarten- und Minimap-Anzeige lassen sich unabhängig voneinander und von der Standortfreigabe schalten. Das Ausblenden deiner Anzeige ändert also nicht, was du selbst freigibst.
+- Der Spielerfilter bietet alle QT-Spieler, Questpartner oder nur die eigene Gruppe.
+- „Meine Gruppe immer anzeigen“ ist standardmäßig aktiv. Dadurch bleibt sie auch beim Questpartnerfilter sichtbar, soweit die Standortfreigaben der Mitglieder das zulassen.
 
-### Korrekturen und Feinschliff
+### Weitere Verbesserungen
 
-- Die experimentelle Layer-Erkennung behält dieselben Einstellungen und dieselbe UI bei, mit flüssigerer Anfrageverarbeitung, wenn sich lokale Hinweise ändern oder nahe Kandidaten eine Abklingzeit haben.
-- QuestTogether-Dialoge behandeln Escape jetzt über ihre normalen Schließen-Aktionen, und dem Gruppen-Questlog kann im nativen Menü für Tastaturbelegungen eine Taste zugewiesen werden, wobei standardmäßig keine Taste festgelegt ist.
-- Bewege den Mauszeiger über Quest- und Zielzeilen, um den vollständigen Text zu lesen. Die Schieberegler für Fensterskalierung und Umkreis haben jetzt hellere Leisten mit dunklen Umrandungen für bessere Sichtbarkeit.
+- Die experimentelle Ebenenerkennung behält ihre Einstellungen und Oberfläche. Ändern sich lokale Beobachtungen oder warten nahe Kandidaten noch auf eine neue Anfrage, läuft die Anfrageverwaltung gleichmäßiger.
+- QT-Dialoge schließen mit Escape über ihren normalen Schließvorgang. Dem Gruppenquestlog kannst du in WoWs Tastenbelegung eine Taste zuweisen; voreingestellt ist keine.
+- Überfahre Quest- und Zielzeilen, um ihren vollständigen Text zu lesen. Die Regler für Fensterskalierung und Umkreis haben hellere Leisten mit dunklem Umriss.
 
 ## 6.4.1
 
-Experimentelle Layer-Erkennung für QT-Spieler in der Nähe.
+QT kann versuchsweise erkennen, ob nahe Spieler wahrscheinlich auf einer anderen Ebene spielen.
 
-### Experimentelle Layer-Erkennung
+### Experimentelle Ebenenerkennung
 
-- Standardmäßig unter Einstellungen > QuestTogether > Experimentell aktiviert. Deaktiviere Andere Layer erkennen, um Vergleiche zu stoppen und vermutete Phasenanzeigen auszublenden.
-- In Forevers offener Welt vergleichen kompatible QT-Clients in der Nähe beobachtete NPCs und sichtbare Spieler. Ein Phasensymbol weist auf einen vermutlich anderen Layer hin. Details erscheinen beim Darüberfahren. Standortfreigabe ist erforderlich.
-- Schätzungen können falsch sein. Fehlende Spieler allein sind nicht aussagekräftig. Gegenseitige Sichtbarkeit oder ein gemeinsam sichtbarer Spieler haben Vorrang vor der NPC-Schätzung. Veraltete Hinweise werden automatisch verworfen. Ältere QT-Clients können nicht teilnehmen.
+- Die Erkennung ist unter Einstellungen > QuestTogether > Experimentell standardmäßig eingeschaltet. Schaltest du „Unterschiedliche Ebenen erkennen“ aus, beendet QT die Vergleiche und blendet abgeleitete Phasensymbole aus.
+- In Forevers offener Welt vergleichen nahe kompatible QT-Clients ihre NPC-Beobachtungen und sichtbaren Spieler. Ein Phasensymbol weist auf eine wahrscheinlich andere Ebene hin; der Tooltip erklärt Näheres. Dafür muss die Standortfreigabe aktiv sein.
+- Die Einschätzung kann falsch sein. Ein nicht sichtbarer Spieler allein genügt nicht als Nachweis. Sehen sich beide Spieler oder sehen sie denselben weiteren Spieler, hat das Vorrang vor dem NPC-Vergleich. Veraltete Beobachtungen verfallen automatisch. Ältere QT-Clients nehmen nicht teil.
 
-### Bilder in Versionshinweisen
+### Abbildungen auf Discord
 
-- Bilder aus Versionshinweisen werden jetzt direkt auf Discord hochgeladen, damit sie in den Änderungsprotokollen sichtbar bleiben.
+- Bilder aus den Versionshinweisen werden direkt zu Discord hochgeladen, damit sie in den Changelog-Beiträgen sichtbar bleiben.
 
 ## 6.4.0
 
-Überarbeitete QT-Fenster und schnellerer Zugriff auf Gruppenquests.
+Das Gruppenquestlog ist schneller erreichbar, zeigt kompaktere Zielbereiche und fügt sich mit den übrigen QT-Fenstern in ein einheitliches Design ein.
 
-### Gruppenquestlog
+### Die Gruppe im Questlog überblicken
 
-- Das mit 6.3 eingeführte Gruppenquestlog im Überblick: Vergleiche bis zu fünf Spieler in klassenfarbenen Spalten und erkenne, wer welche Quest hat, wem sie fehlt und wann die Gruppe abgabebereit ist. Kombiniere Suche und Filter für Besitz, Fortschritt und Aktionen. Teilen und Teilanfragen stehen zur Verfügung, wenn unterstützt.
-- Unter jedem Spielernamen steht die aktuell fokussierte Quest. Klicke auf den Namen eines Mitspielers, um seinem Questfokus freiwillig zu folgen. Fehlt dir dessen Quest, bleibt deine Navigation unverändert. Aktualisieren lädt einen neuen Fortschrittsstand der anderen Spieler. Die Bilder zeigen fiktive Vorschaudaten.
-- Quests in deinem Questlog haben jetzt eine kleine Buchschaltfläche, die ihre Details in Blizzards Questlog öffnet. Ein Klick auf die Zeile klappt weiterhin die Ziele auf.
-- Eine Krone kennzeichnet den Gruppenanführer und wechselt bei einem Führungswechsel mit. Deine eigene Spalte bleibt an erster Stelle.
+- Das mit 6.3 eingeführte Gruppenquestlog vergleicht bis zu fünf Spieler in klassenfarbigen Spalten. Du siehst, wer eine Quest besitzt, wem sie fehlt und ob alle abgabebereit sind. Suche und kombiniere Besitz-, Fortschritts- und Aktionsfilter. Wo möglich, stehen Teilen und Teilanfrage bereit.
+- Die Spielerüberschrift zeigt die Fokusquest. Über den Namen eines Mitspielers kannst du seinem Fokus folgen; das ist freiwillig und lässt deine Navigation unangetastet, wenn dir die Quest fehlt. „Aktualisieren“ lädt einen neuen Stand der anderen Spieler. Die Abbildungen verwenden erfundene Vorschaudaten.
+- Bei eigenen Quests öffnet ein kleiner Buchknopf die Details in Blizzards Questlog. Ein Klick auf die Zeile klappt weiterhin die Ziele auf.
+- Eine Krone kennzeichnet den Gruppenleiter und folgt einem Leiterwechsel. Deine eigene Spalte steht immer zuerst.
 
 **Retail**
 
-![Gruppenquestlog — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogRetail.png)
+![Die Gruppe im Questlog überblicken — Retail](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogRetail.png)
 
 **Forever**
 
-![Gruppenquestlog — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
+![Die Gruppe im Questlog überblicken — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestLogForever.png)
 
-### Ziele aller Gruppenmitglieder aufklappen
+### Alle Ziele einer Quest aufklappen
 
-- Klicke auf eine Quest, um Zielzähler, Fortschrittsbalken und erledigte Schritte jedes Mitglieds anzuzeigen. Mehrere Quests können gleichzeitig geöffnet bleiben. Diese Version macht die Abschnitte kompakter und gleicht die Klassenfarben von Überschriften und Inhalt an. Eine typische Fünfergruppenquest mit je zwei Zielen passt in die Standardfenstergröße; längere Quests können weiterhin Scrollen erfordern.
+- Ein Klick auf die Quest zeigt die Zähler, Fortschrittsbalken und abgeschlossenen Schritte aller Mitglieder. Mehrere Quests können offen bleiben. Die Bereiche sind jetzt kompakter; Überschrift und Inhalt verwenden passende Klassenfarben. Eine typische Fünfergruppe mit je zwei Zielen passt bei Standardgröße ins Fenster. Längere Quests können weiterhin Scrollen erfordern.
 
 **Forever**
 
-![Ziele aller Gruppenmitglieder aufklappen — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
+![Alle Ziele einer Quest aufklappen — Forever](https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v6.4.0/Media/ReleaseNotes/PartyQuestObjectivesForever.png)
 
-### Fenster und Minikarte
+### Fenster und Minimapbedienung
 
-- Ein Linksklick auf das Minikartensymbol öffnet oder schließt das Gruppenquestlog; ein Rechtsklick öffnet das Menü. Einstellungen ist wieder im Menü, und der Tooltip erklärt die Kurzbefehle.
-- Erinnerungen an Gruppenchat-Meldungen, Teil- und Beitrittsanfragen, Sprechblaseneinstellungen und der Discord-Linkdialog verwenden jetzt QTs Schriftrollenrahmen und helle/dunkle Designs, mit mehr Innenabstand und Platz für Schiebereglerwerte.
-- Beim Verschieben von Fenstern bleibt der Abstand zum Mauszeiger erhalten, auch in der Vergleichsvorschau. Menüs und Tooltips bezeichnen Blizzards Fenster jetzt durchgehend als Questlog.
+- Ein Linksklick auf das Minimaplogo öffnet oder schließt das Gruppenquestlog, ein Rechtsklick das Menü. Die Einstellungen sind wieder im Menü enthalten; der Tooltip erklärt die Tastenkombinationen.
+- Gruppenchat-Hinweise, Teil- und Beitrittsanfragen, Blaseneinstellungen und der Discord-Linkdialog nutzen nun QTs Schriftrollenrahmen und helles oder dunkles Design. Mehr Innenabstand schafft auch Platz für Reglerwerte.
+- Beim Verschieben bleibt der Abstand zum Mauszeiger erhalten, auch in der Vergleichsvorschau. Menüs und Tooltips nennen Blizzards Fenster jetzt einheitlich Questlog.
 
-### Vorschaubefehle
+### Vorschauen ausprobieren
 
-- /qt preview listet die Fenster- und Ankündigungsvorschauen auf. Die bisherigen Vorschaubefehle funktionieren weiterhin; simulierte Aktionen laden keine Spieler ein, teilen keine Quests und senden keine Nachrichten.
-- Die Vergleichsvorschau zeigt jetzt eine vollständige Fünfergruppe mit Jäger und Schurke, unterschiedlichen Zielen, aktiven Quests und einer Anführerkrone.
+- /qt preview listet die Fenster- und Meldungsvorschauen auf. Die bisherigen Vorschau-Befehle funktionieren weiter. Simulierte Aktionen laden niemanden ein, teilen keine Quests und versenden keine Nachrichten.
+- Die Vergleichsvorschau enthält jetzt eine volle Fünfergruppe mit Jäger und Schurke, verschiedenen Zielen, Fokusquests und Leiterkrone.
 
 ## 6.3.1
 
-Angenehmere Abstände im Gruppenquestlog.
+Die Zielbereiche im Gruppenquestlog haben mehr Luft zum Rand.
 
-### Abstände in den Zielfeldern
+### Besserer Abstand in aufgeklappten Quests
 
-- Ausgeklappte Zielfelder haben jetzt unten mehr Innenabstand, damit Fortschrittsbalken den Rand nicht berühren. Scrollen und Ausklappanimationen berücksichtigen den zusätzlichen Platz.
-- Meldungen wie „Keine Zieldetails verfügbar“ werden neben dem Spielernamen vertikal zentriert, statt zu dicht am oberen Rand zu stehen.
+- Unter den Fortschrittsbalken bleibt jetzt zusätzlicher Platz, damit sie nicht am Rahmen anliegen. Scrollen und Aufklappanimation berücksichtigen den Abstand.
+- Hinweise wie „Keine Zieldetails verfügbar“ stehen neben dem Spielernamen vertikal mittig statt dicht am oberen Rand.
 
 ## 6.3.0
 
-Ein neues Gruppenquestlog, geteilte Ziele und optionales Folgen aktiver Quests erleichtern das gemeinsame Questen.
+Mit dem Gruppenquestlog, geteilten Wegpunkten und optionaler Questfolge behält deine Gruppe ihre gemeinsamen Ziele besser im Blick.
 
-### Gruppenquestlog
+### Das Gruppenquestlog
 
-- Der Gruppenquestvergleich heißt jetzt Gruppenquestlog. Klappt mehrere Quests gleichzeitig auf, um Ziele und Fortschritt jedes Mitglieds sowie eine Übersicht der Abgabebereitschaft der Gruppe zu sehen.
-- Sucht Quests und kombiniert Filter für Questbesitz, Fortschritt und Teilen. Aktualisieren lädt neue Daten anderer Spieler; ältere Clients können weiterhin Questlisten vergleichen, aber keine Zieldetails liefern.
-- Passt die Größe des Pergamentfensters an und scrollt flüssig. Klassenfarbene Spalten, anklickbare Spielerüberschriften mit Innenabstand und abgerundete Zielbereiche machen den Fortschritt leichter lesbar.
+- Aus dem Gruppenquestvergleich wird das Gruppenquestlog. Du kannst mehrere Quests gleichzeitig aufklappen und die Ziele sowie den Fortschritt jedes Mitglieds sehen. Eine Zusammenfassung zeigt, wie weit die Gruppe insgesamt ist.
+- Suche nach Quests und kombiniere Filter für Questbesitz, Fortschritt und Teilen. „Aktualisieren“ fordert neue Daten der anderen Spieler an. Ältere Clients können weiterhin Questlisten vergleichen, liefern aber keine Zieldetails.
+- Das Pergamentfenster lässt sich skalieren und weich scrollen. Klassenfarbige Spalten, großzügigere anklickbare Spielerüberschriften und abgerundete Zielbereiche erleichtern das Lesen.
 
-### Questfokus und geteilte Wegpunkte
+### Questfokus und gemeinsame Wegpunkte
 
-- Unter jedem Namen steht die aktive Quest. Wählt im Spielerkopf oder QT-Menü „Questfokus folgen“, um eigenen Quests zu folgen. Fehlende oder aufgehobene Quests lassen eure Navigation unverändert; manuelle Navigation, Verlassen der Gruppe oder Neuladen beendet das Folgen.
-- Blizzard-Wegpunkte anderer Mitglieder erscheinen als klassenfarbene Markierungen auf Weltkarte und naher Minikarte. Überlappende Markierungen nennen alle Besitzer; „Hierhin navigieren“ nutzt TomTom oder die integrierte Navigation. Empfangene Markierungen ändern nie euer Ziel und bedeuten keine gemeinsame Phase.
-- „Meine aktive Quest teilen“, „Meinen Wegpunkt teilen“ und „Gruppenwegpunkte anzeigen“ sind unter „Gruppen & Teilen“ standardmäßig an, unabhängig von öffentlicher Standortfreigabe und Partnersuche. Folgen wird ausdrücklich aktiviert. Die Funktionen benötigen aktualisierte Mitspieler in Gruppen bis fünf, auch in Dungeons; Schlachtzüge sind ausgeschlossen.
+- Unter jedem Namen steht die aktive Quest. Über die Spielerüberschrift oder das QT-Menü kannst du dem Questfokus dieses Mitglieds folgen, sofern du die jeweilige Quest besitzt. Fehlende oder gelöschte Quests verändern deine Navigation nicht. Eigene Navigation, Verlassen der Gruppe oder Neuladen beenden das Folgen.
+- Blizzard-Wegpunkte anderer Mitglieder erscheinen in ihrer Klassenfarbe auf der Weltkarte und in der Nähe auf der Minimap. Überlappende Punkte nennen alle Besitzer. „Hierhin navigieren“ verwendet TomTom oder die Spielnavigation. Ein empfangener Punkt ändert dein Ziel nicht automatisch und bestätigt keine gemeinsame Phase.
+- Unter „Gruppen & Teilen“ sind das Teilen der eigenen Fokusquest und des eigenen Wegpunkts sowie das Anzeigen von Gruppenwegpunkten zunächst eingeschaltet. Sie sind unabhängig von öffentlicher Standortfreigabe und Partnersuche. Das Folgen muss ausdrücklich aktiviert werden. Die Funktionen benötigen aktualisierte Clients und Gruppen mit höchstens fünf Spielern, auch in Dungeons; Schlachtzüge sind ausgeschlossen.
 
 ### Fenster und Menüs
 
-- Patchnotes verwenden jetzt ebenfalls das dunkle Pergamentdesign mit optionalem hellem Modus. Verschiebt oder skaliert das Fenster, durchsucht übersichtlichere Verlaufseinträge und wechselt mit Pfeilen zwischen Versionen oder zum Anfang und Ende. Discord und Einstellungen stehen im Fußbereich.
-- Spieler-Tooltips passen sich ihrem Inhalt besser an. Das Minikartenmenü trennt Questwerkzeuge von Patchnotes, Logfenster-Auswahl und Symbolanzeige. Einstellungen und „QT-Chatnachricht senden“ wurden daraus entfernt; Einstellungen bleiben über /qt options erreichbar.
+- Versionshinweise nutzen jetzt ebenfalls das dunkle Pergamentdesign; ein helles Design ist wählbar. Du kannst das Fenster verschieben und vergrößern, den übersichtlicheren Verlauf verwenden und per Pfeil zwischen Versionen oder an dessen Anfang und Ende springen. Discord und Einstellungen findest du in der Fußzeile.
+- Spielertooltips passen sich ihrem Inhalt enger an. Das Minimapmenü trennt Questwerkzeuge von Versionshinweisen, Protokollplatzierung und Iconsichtbarkeit. Einstellungen und das Senden einer QT-Chatnachricht entfallen dort; die Einstellungen erreichst du weiter über /qt options.
 
 ## 6.2.3
 
-Weniger wiederholte Meldungen über abgabebereite Quests.
+QT meldet die Abgabebereitschaft einer Quest nicht mehr wiederholt, wenn sich nur die Datenlage aktualisiert.
 
-### Korrekturen bei abgabebereiten Quests
+### Abgabebereitschaft ohne Wiederholungen
 
-- Quests, die beim Start der Verfolgung bereits abgabebereit oder abgeschlossen sind, werden still erfasst. Fehlende Bereitschaftsdaten und spätere Aktualisierungen lösen bereits erfasste Meldungen zur Abgabebereitschaft nicht erneut aus.
-- Neue Abschlüsse werden weiterhin gemeldet. Wird eine Quest erneut angenommen, wird ihr Benachrichtigungsverlauf zurückgesetzt. Der sendende Spieler benötigt dieses Update; ältere Versionen können weiterhin Meldungen in Schüben senden.
+- Ist eine Quest beim Beginn der Erfassung schon abgabebereit oder abgeschlossen, wird sie still vermerkt. Fehlende Statusangaben und spätere Aktualisierungen lösen keine bereits beobachtete Bereitschaftsmeldung erneut aus.
+- Neue Abschlüsse werden weiter gemeldet. Nimmst du dieselbe Quest erneut an, beginnt ihre Meldungshistorie von vorn. Die Korrektur muss beim Absender installiert sein; ältere Versionen können weiterhin mehrere Meldungen auslösen.
 
 ## 6.2.2
 
-Lesbarer Questfortschritt in jeder Sprache.
+Fortschrittsmeldungen behalten ihre verständliche Zielbeschreibung, auch wenn die Gruppe unterschiedliche Sprachen verwendet.
 
-### Details zu den Zielen beibehalten
+### Zieltext und Zähler bleiben erhalten
 
-- Fortschrittsmeldungen für Quests, Weltquests und Bonusziele behalten im Chat und in Sprechblasen jetzt den ursprünglichen Text und die Zähler des Absenders bei, statt sie durch allgemeine Angaben wie „Ziel 1: 5/5“ zu ersetzen.
-- Meldungen über angenommene und abgeschlossene Quests verwenden weiterhin übersetzte Bezeichnungen und lokal verfügbare Questtitel.
+- Fortschritt von Quests, Weltquests und Bonuszielen verwendet im Chat und in Blasen wieder den ursprünglichen Text samt Zähler des Absenders. Allgemeine Ersatztexte wie „Ziel 1: 5/5“ entfallen.
+- Beim Annehmen und Abschließen von Quests bleiben die Ereignisbezeichnungen übersetzt; verfügbare lokale Questtitel werden weiterhin verwendet.
 
 ## 6.2.1
 
-Mehr Klarheit bei Ankündigungen im Gruppenchat.
+Du erkennst leichter, wann QT zusätzlich in den normalen Gruppenchat schreibt, und kannst vorher darüber entscheiden.
 
-### Wissen, wann QT im Gruppenchat schreibt
+### Gruppenchatmeldungen bewusst einschalten
 
-- Die Einstellung unter Wo ankündigen erklärt jetzt deutlich, dass QT auch im Gruppenchat schreibt, wenn ein Mitglied nicht als QT-Nutzer erkannt wird. Sie bleibt standardmäßig aktiviert.
-- Nach einer kurzen Erkennungsphase erscheint ein neuer Dialog mit dem QT-Logo. Wähle Aktiviert lassen oder Ankündigungen ausschalten, bevor die Weiterleitung beginnt. Nicht erneut erinnern speichert deine Bestätigung für das aktuelle Profil.
-- Die übersetzte Erinnerung nennt die betroffenen Mitglieder und kann erneut erscheinen, wenn neue, noch nicht erkannte Mitglieder beitreten. Werden sie als QT-Nutzer erkannt, verschwindet sie. Während der Wartezeit zurückgehaltene Ereignisse werden nicht nachträglich gesendet.
+- Die Einstellung unter „Wo ankündigen“ erklärt nun ausdrücklich: QT schreibt auch in den Gruppenchat, wenn ein Mitglied nicht als QT-Nutzer erkannt wird. Die Option bleibt standardmäßig eingeschaltet.
+- Nach einer kurzen Erkennungsphase erscheint ein Dialog mit QT-Logo. Bevor die Weiterleitung beginnt, kannst du sie eingeschaltet lassen oder ausschalten. „Nicht erneut erinnern“ speichert deine Bestätigung im aktuellen Profil.
+- Der übersetzte Hinweis nennt die betroffenen Mitglieder und kann bei neuen, noch nicht erkannten Mitgliedern wieder erscheinen. Sobald sie als QT-Nutzer erkannt werden, verschwindet er. Während des Wartens zurückgehaltene Ereignisse werden nicht nachträglich gesendet.
 
 ## 6.2.0
 
-Flüssigere Punkte in der Nähe, schnellere Spielerdetails und zuverlässigere Kommunikation.
+Nahe Kartenpunkte bewegen sich flüssiger, Spielerdetails laden schneller und die Kommunikation arbeitet zuverlässiger.
 
-### Flüssigere Bewegung auf der Minikarte
+### Flüssigere Bewegung auf der Minimap
 
-- Spieler in der Nähe können Positionen über begrenzte Addon-Flüsternachrichten austauschen. Flüssige Bewegungen bevorzugen bis zu vier der nächsten geeigneten Spieler und beachten Freigaben, Filter, ignorierte Spieler und Übertragungslimits.
-- Beide Spieler benötigen dieses Update für Positionsstreams und direkte Antworten beim Darüberfahren. Ältere Versionen senden weiterhin reguläre Meldungen; Serververzögerungen und Einschränkungen können die Zustellung weiterhin beeinflussen.
+- Nahe Spieler können ihre Positionen nun über zeitlich begrenzte Addon-Flüsternachrichten austauschen. Bis zu vier der nächsten geeigneten Spieler werden bevorzugt. Freigaben, Filter, Ignorierliste und Verkehrsgrenzen gelten auch für diesen Austausch.
+- Für diese Standortübertragung und direkte Antworten auf Hover-Anfragen brauchen beide Seiten das Update. Ältere Versionen senden weiterhin ihre normalen Meldungen. Verzögerungen und Einschränkungen des Servers können die Zustellung nach wie vor beeinflussen.
 
-### Schnellere Erkennung und Gruppendetails
+### Spieler und Gruppen schneller kennenlernen
 
-- Beim Darüberfahren über einen Spielernamen oder Punkt können aktuelle Details direkt angefordert werden. Anfragen sind begrenzt, und unveränderte Gruppenlisten laufen nicht mehr nach zwei Minuten ab.
-- Aktuelle Positionen, Partnersuchstatus und bekannte Gruppendetails bleiben nach /reload bis zu drei Minuten ab ihrer ursprünglichen Erfassung erhalten. Beim Betreten eines Gebiets wird außerdem eine zeitlich verteilte Erkennungsaktualisierung angefordert.
-- Tooltips zeigen einen bekannten Solo- oder Gruppenstatus an, während die genaue Gruppengröße noch fehlt. Ein kleines Logo kennzeichnet QT-Nutzer in der Mitgliederliste; die Namen bleiben bündig.
+- Beim Überfahren eines Namens oder Punkts kann QT aktuelle Angaben direkt anfordern. Die Anfragehäufigkeit ist begrenzt. Unveränderte Gruppenlisten verfallen nicht mehr schon nach zwei Minuten.
+- Aktuelle Standorte, Suchstatus und bekannte Gruppenangaben bleiben über /reload hinweg erhalten, höchstens jedoch drei Minuten ab ihrer ursprünglichen Erfassung. Beim Gebietswechsel fragt QT außerdem zeitlich verteilte Aktualisierungen an.
+- Während die genaue Gruppengröße noch fehlt, nutzt der Tooltip den bekannten Allein- oder Gruppenstatus. Ein kleines Logo kennzeichnet QT-Nutzer in der Mitgliederliste; die Namen bleiben bündig.
 
-### Klarere Übersetzungen und Darstellung
+### Verständliche Texte und Symbole
 
-- Volksnamen, Ping-Details, Questdaten und weitere Oberflächentexte nutzen verfügbare lokale Übersetzungen. Fehlt eine Questübersetzung, bleibt der lesbare Text des Absenders erhalten; Fortschrittstexte übernehmen keine unpassenden lokalen Zielbeschreibungen.
-- Allgemeine Ankündigungen verwenden jetzt das QT-Logo. Die Suche nach Questpartnern steht im Minikartenmenü an erster Stelle.
+- Volksnamen, Ping-Angaben, Questdaten und weitere Oberflächentexte verwenden verfügbare lokale Übersetzungen. Fehlen Questübersetzungen, bleibt der lesbare Absendertext erhalten. Fortschrittsmeldungen übernehmen keine unpassenden lokalen Zielbeschreibungen.
+- Allgemeine Meldungen tragen jetzt das QT-Logo. Die Questpartnersuche steht im Minimapmenü an erster Stelle.
 
-### Kommunikation und Zuverlässigkeit
+### Zuverlässiger und mit weniger Wiederholungen
 
-- Vergleiche, Gruppenlisten, Beitritts- und Teilanfragen sowie Ping-Antworten bevorzugen direkte Flüsternachrichten mit kompatiblen Spielern. Zusammengefasste Statusmeldungen und weniger unveränderte Positionsupdates reduzieren unnötigen öffentlichen Datenverkehr.
-- Wiederholte Questprüfungen, übermäßige Namensplakettenprüfungen, während Einschränkungen nicht schließbare Fenster und nicht umschaltbare Einstellungen bei /qt set wurden korrigiert. Das Abschalten der Positionsfreigabe verwirft keine anderen wartenden Anfragen mehr.
+- Questvergleiche, Gruppenlisten, Beitritts- und Teilanfragen sowie Ping-Antworten bevorzugen bei kompatiblen Clients direkte Flüsternachrichten. Zusammengefasste Statusmeldungen und weniger Wiederholungen unveränderter Standorte entlasten die öffentlichen Kanäle.
+- Behoben wurden wiederholte Questdurchläufe, übermäßig viele erneute Versuche an Namensplaketten und Dialoge, die sich bei Spielbeschränkungen nicht schließen ließen. /qt set akzeptiert nur noch Ein-Aus-Einstellungen. Das Abschalten der Standortfreigabe verwirft keine anderen wartenden Anfragen mehr.
 
 ## 6.1.2
 
-Reaktionsschnellere Punkte für Spieler in der Nähe und klarere übersetzte Meldungen.
+Nahe Spielerpunkte werden schneller aktualisiert. Questmeldungen verwenden auch bei fehlenden Questdaten die Ereignisbezeichnung in deiner Sprache.
 
-### Minikarten-Spielerpunkte
+### Fehlende Minimap-Punkte
 
-- Fehlende QT-Spielerpunkte behoben, wenn die Minikarte keine Karten-ID bereitstellt. QT verwendet bei Bedarf jetzt deine aktuelle Karte.
+- Liefert die Minimap keine Karten-ID, greift QT auf deine aktuelle Karte zurück. Dadurch erscheinen Spielerpunkte, die in diesem Fall bisher fehlten.
 
-### Schnellere lokale Standortaktualisierungen
+### Häufigere Standortmeldungen in kleinen Gruppen
 
-- Standortaktualisierungen erfolgen jetzt etwa einmal pro Sekunde bei weniger als 10 bekannten QT-Nutzern in deiner Zone, alle 5–10 Sekunden bei 10–19 und alle 15–20 Sekunden bei 100. Die Intervalle werden zwischen diesen Stufen schrittweise länger; Timings bei 500 oder mehr bleiben unverändert.
-- Schnelle Aktualisierungen senden kompakte, frisch erfasste Standorte, während andere Spielerdetails ihren langsameren Heartbeat beibehalten. Bestehende Traffic-Limits gelten weiterhin, daher kann Überlastung die Zustellung verzögern. Andere Spieler benötigen dieses Update, um schnellere Positionen zu senden.
+- Bei weniger als 10 bekannten QT-Nutzern im Gebiet liegt das Zielintervall nun bei einer Sekunde, bei 10–19 bei 5–10 Sekunden und bei 100 bei 15–20 Sekunden. Dazwischen steigen die Abstände schrittweise an. Ab 500 Nutzern bleibt der Rhythmus unverändert.
+- Die schnellen Meldungen enthalten kompakte, frisch erfasste Koordinaten. Andere Spielerdetails werden weiterhin seltener übertragen. Die bisherigen Verkehrsgrenzen gelten weiter, sodass volle Kanäle die Zustellung verzögern können. Für häufigere Standortmeldungen müssen die jeweiligen Absender aktualisieren.
 
-### Klarere übersetzte Meldungen
+### Meldungen in deiner Sprache
 
-- Questsereignis-Bezeichnungen wie Quest angenommen verwenden jetzt deine Sprache, selbst wenn ein lokaler Questtitel oder optionale Übersetzungsmetadaten nicht verfügbar sind.
-- Wenn WoW keinen lokalen Questtitel bereitstellen kann, behält QT den lesbaren Titel des Absenders bei. Fortschrittsmeldungen behalten weiterhin ihren ursprünglichen Text bei, wenn sie nicht sicher rekonstruiert werden können.
+- Bezeichnungen wie „Quest angenommen“ verwenden deine Sprache auch dann, wenn ein lokaler Questtitel oder zusätzliche Übersetzungsangaben fehlen.
+- Findet WoW keinen lokalen Questnamen, bleibt der lesbare Titel des Absenders erhalten. Fortschrittstexte werden ebenfalls unverändert übernommen, wenn sie sich nicht verlässlich neu zusammensetzen lassen.
 
 ## 6.1.1
 
-Übersichtlichere Kontextmenüs für Spieler und Quests.
+Die Menüs für Spieler- und Questnamen enthalten weniger Umwege.
 
-### Bereinigung der Kontextmenüs
+### Aufgeräumte Kontextmenüs
 
-- Menüs für Spielernamen und Questnamen enthalten nicht mehr die Verknüpfung zum Logfenster. Verschiebe QuestTogether-Logs über das Minikartenmenü oder die Einstellungen zwischen dem Haupt-Chatfenster und einem separaten Fenster.
+- Die Auswahl des Protokollfensters entfällt in den Menüs für Spieler- und Questnamen. Ob QT im Hauptchat oder in einem eigenen Fenster protokolliert, stellst du weiterhin im Minimapmenü oder in den Einstellungen ein.
 
 ## 6.1.0
 
-Findet Gruppen auf der Karte, seht, wer gemeinsam questet, und bittet über ein beliebiges Gruppenmitglied um Beitritt. Spieler-Tooltips stellen Gruppendetails jetzt in den Mittelpunkt.
+Auf der Karte erkennst du jetzt, wer zusammen questet. Spielertooltips zeigen die Gruppe, und Beitrittsanfragen können über ein beliebiges Mitglied an den Leiter gelangen.
 
-### Seht, wer gemeinsam questet
+### Gruppen auf der Karte erkennen
 
-- Gruppierte Spieler haben jetzt ein kleines Abzeichen mit zwei Personen auf ihren Karten- und Minikartenpunkten. Fahrt mit der Maus über ein Gruppenmitglied, um seine Begleiter weiß zu umranden, nicht zugehörige Punkte abzudunkeln und auf dem Anführer eine Krone anzuzeigen. Goldene Leuchteffekte für „Suche nach Questpartnern“ bleiben sichtbar.
-- Spieler-Tooltips listen Gruppenmitglieder mit klassenfarbenen Punkten und Namen auf, wobei der gekrönte Anführer zuerst angezeigt wird. Bei Gruppen mit bis zu fünf Spielern werden alle Mitglieder aufgelistet; größere Gruppen zeigen nur den Anführer. Diese Details erscheinen auch, wenn ihr im QuestTogether-Protokoll mit der Maus über Spielernamen fahrt.
-- Eure eigene Gruppe nutzt die Gruppenübersicht des Spiels. Details zu entfernten Gruppen werden bei Bedarf von aktualisierten QuestTogether-Peers geladen, mit zwischengespeicherten Ergebnissen und dosierten Anfragen, um den Kanalverkehr gering zu halten. Ältere Clients behalten ihre normalen Punkte und grundlegenden Informationen zur Gruppengröße; vollständige Details zu entfernten Gruppen erfordern einen aktualisierten Peer.
+- Gruppierte Spieler tragen ein kleines Zweipersonensymbol an ihren Weltkarten- und Minimap-Punkten. Beim Überfahren eines Mitglieds erhalten seine Gefährten einen weißen Umriss, andere Punkte werden abgedunkelt und der Leiter bekommt eine Krone. Der goldene Schimmer der Partnersuche bleibt sichtbar.
+- Im Tooltip stehen die Gruppenmitglieder mit klassenfarbigen Punkten und Namen; der Leiter erscheint mit Krone zuerst. Bis fünf Mitglieder werden alle aufgeführt, bei größeren Gruppen nur der Leiter. Diese Angaben erscheinen auch über Spielernamen im QT-Protokoll.
+- Für deine eigene Gruppe nutzt QT die Spielerliste des Spiels. Angaben zu anderen Gruppen werden bei Bedarf von aktualisierten QT-Clients angefordert und zwischengespeichert; die Anfragen sind begrenzt. Ältere Clients behalten ihre normalen Punkte und die einfache Gruppengröße. Für vollständige Angaben muss die Gegenstelle aktualisiert sein.
 
-### Beitrittsanfragen können den Gruppenanführer erreichen
+### Beitrittsanfragen weiterleiten
 
-- Ihr könnt über ein Gruppenmitglied um Beitritt bitten, das euch nicht einladen kann. Wenn dessen Anführer QuestTogether nutzt und zum Einladen verfügbar ist, wird die Anfrage mit den üblichen Bestätigungs- und Auto-Annahme-Einstellungen an den Anführer weitergeleitet.
-- Wenn nicht bekannt ist, dass der Anführer QuestTogether nutzt, kann das Mitglied „[QT] PlayerName möchte der Gruppe beitreten.“ im Gruppenchat ankündigen, wenn Gruppenchat-Ankündigungen aktiviert sind. Jemand mit Einladungsberechtigung muss euch dann manuell einladen.
-- Der Anfragende und das weiterleitende Mitglied benötigen dieses Update für weitergeleitete Anfragen. Bestehende Prüfungen auf volle Gruppe, Einschränkungen, Ignorieren, Ablauf und Anfragenrate gelten weiterhin.
+- Du kannst den Beitritt auch über jemanden anfragen, der selbst nicht einladen darf. Nutzt dessen Gruppenleiter QT und kann er einladen, wird die Anfrage mit den üblichen Bestätigungs- und Freigabeeinstellungen an ihn weitergeleitet.
+- Ist beim Leiter keine QT-Nutzung bekannt, kann das Mitglied bei eingeschalteten Gruppenchatmeldungen stattdessen im Gruppenchat auf deine Anfrage hinweisen. Jemand mit Einladungsrecht muss dich dann von Hand einladen.
+- Für die Weiterleitung brauchen sowohl der Anfragende als auch das weiterleitende Mitglied diese Version. Die bisherigen Prüfungen auf volle Gruppen, Einschränkungen, ignorierte Spieler, abgelaufene Anfragen und Anfragehäufigkeit gelten weiterhin.
 
-### Übersichtlichere Spieler-Tooltips
+### Übersichtlichere Spielertooltips
 
-- Gruppeninformationen stehen jetzt direkt unter der Zeile mit Stufe, Volk und Klasse, mit kompakten Mitgliederzeilen und Abstand zwischen den Abschnitten. Allianz- und Horde-Abzeichen sind doppelt so groß.
-- Die Addon-Version erscheint zuletzt im kürzeren Format vX.Y.Z. Wenn das Alter eines Standorts angezeigt wird, steht „Letzte Aktualisierung“ direkt über der Version.
-- Anzahlen verfolgter Quests wurden aus Spieler- und Minikartenbutton-Tooltips entfernt. Der aktive Questtitel für Spieler, die nach Questpartnern suchen, wird weiterhin angezeigt.
+- Die Gruppe steht direkt unter Stufe, Volk und Klasse. Die Mitgliederzeilen sind kompakter, die Abschnitte haben mehr Abstand. Allianz- und Hordezeichen sind doppelt so groß.
+- Die Addon-Version steht am Ende in der Kurzform vX.Y.Z. Wird das Alter des Standorts angezeigt, steht die letzte Aktualisierung direkt darüber.
+- Die Zahl erfasster Quests entfällt in Spieler- und Minimapknopf-Tooltips. Die aktive Quest von Spielern auf Partnersuche bleibt sichtbar.
 
 ## 6.0.2
 
-Durchsuche frühere Updates von QuestTogether in deiner Sprache, mit besserer Wiederherstellung von Questnamen für Abschlussmeldungen.
+Du kannst ältere Versionshinweise jetzt direkt im Spiel und in deiner Sprache durchblättern. Außerdem findet QT Questnamen nach der Abgabe zuverlässiger wieder.
 
-### Frühere Patchnotes anzeigen
+### Frühere Versionen nachlesen
 
-- Das Willkommensfenster hat jetzt Schaltflächen für Älter und Neuer, eine Verknüpfung zu Neueste sowie eine Verlaufsauswahl, die Release-Versionen und Daten anzeigt. Beim Öffnen der Patchnotes wird mit dem neuesten Release begonnen.
-- Der Verlauf enthält jedes zuvor veröffentlichte Release, einschließlich der frühen Betas. Alle historischen Hinweise sind in jede unterstützte WoW-Sprachversion übersetzt und in den entsprechenden Repository-Changelogs enthalten.
-- Navigationsschaltflächen werden deaktiviert, wenn es nirgendwohin weitergeht. Das Durchsuchen älterer Hinweise ändert nicht, welches Upgrade du bestätigt hast; automatische Popups erscheinen weiterhin nur bei größeren und kleineren Upgrades. Öffne das Fenster jederzeit mit /qt notes.
+- Das Willkommensfenster bietet Knöpfe für ältere und neuere Hinweise, einen Sprung zur neuesten Version sowie eine Verlaufsauswahl mit Versionsnummern und Datum. Beim Öffnen beginnst du mit der neuesten Ausgabe.
+- Der Verlauf umfasst alle bisherigen Veröffentlichungen einschließlich der frühen Betas. Die Hinweise sind für alle unterstützten WoW-Sprachen enthalten und stehen auch in den jeweiligen Changelogs des Repositorys.
+- Am Ende des Verlaufs werden die entsprechenden Navigationsknöpfe deaktiviert. Das Lesen älterer Hinweise ändert nicht, welches Upgrade du bereits bestätigt hast. Automatisch öffnet sich das Fenster weiterhin nur bei Haupt- und Nebenversionen; mit /qt notes erreichst du es jederzeit.
 
-### Questabschluss-Titel
+### Questnamen nach der Abgabe
 
-- Wenn eine Quest aus deinem Questlog verschwindet, bevor QuestTogether einen verwendbaren Titel hat, versuchen Abschlussmeldungen jetzt zuerst die verfügbare Questtitel-Abfrage des Spiels, bevor auf eine Quest-ID zurückgegriffen wird. Ein wiederhergestellter Titel bleibt unabhängig von der Reihenfolge der Abgabe- und Entfernungsereignisse erhalten.
-- Ankündigungen verwenden weiterhin den Text des Absenders, wenn dein Client keinen lokalen Titel auflösen kann. Wenn keiner der beiden Clients einen Namen verfügbar hat, bleibt die Quest-ID die Ausweichlösung. Die verbesserte Wiederherstellung auf Absenderseite greift, wenn der Absender aktualisiert.
+- Verschwindet eine Quest aus deinem Log, bevor QT einen brauchbaren Namen erfasst hat, fragt die Abschlussmeldung nun zunächst die verfügbaren Questtitel-Funktionen des Spiels ab. Ein gefundener Name bleibt erhalten, unabhängig von der Reihenfolge der Abgabe- und Entfernen-Ereignisse.
+- Kann dein Client keinen lokalen Titel ermitteln, bleibt der Text des Absenders erhalten. Haben beide Seiten keinen Namen, dient weiterhin die Quest-ID als Ersatz. Die bessere Erfassung beim Absender setzt dessen Aktualisierung voraus.
 
 ## 6.0.1
 
-Feiern bleiben jetzt bei Spielern, die du in der Nähe tatsächlich sehen kannst.
+QT feiert den Fortschritt anderer Spieler nur noch mit, wenn du sie tatsächlich in deiner Nähe sehen kannst.
 
-### Korrekturen für Feiern in der Nähe
+### Feier-Emotes für sichtbare Spieler
 
-- Reaktionen darauf, dass ein anderer Spieler eine Quest abschließt oder eine Stufe aufsteigt, erfordern jetzt eine passende, sichtbare Spielereinheit. Kartenkoordinaten oder ein Name allein lösen kein Emote mehr aus, auch nicht, wenn devlogall aktiviert ist.
-- Eingehende Emotes müssen mit QuestTogethers eigener Feierliste übereinstimmen. Nicht aufgeführte Emotes, einschließlich mountspecial und Fraktionsjubel, werden ignoriert, ohne einen Ersatz auszuwählen.
-- Deine eigenen Feiern für Questabschluss und Stufenaufstieg behalten ihr bestehendes Verhalten und ihre Einstellungen bei.
+- Eine Reaktion auf den Questabschluss oder Stufenaufstieg eines anderen Spielers setzt jetzt eine passende sichtbare Spielereinheit voraus. Ein Name oder Kartenkoordinaten allein lösen kein Emote mehr aus, auch nicht mit devlogall.
+- Empfangene Emotes müssen in QTs eigener Liste für Feieraktionen stehen. Andere Emotes, darunter mountspecial und Fraktionsrufe, werden ohne Ersatz ignoriert.
+- Deine eigenen Feieraktionen bei Questabschluss und Stufenaufstieg funktionieren samt Einstellungen wie bisher.
 
 ## 6.0.0
 
-QuestTogether 6.0 bereitet sich mit einem Kommunikationssystem auf den Forever-Launch vor, das den Hintergrunddatenverkehr reduzieren soll, während die Community wächst.
+QuestTogether 6.0 bereitet die Kommunikation auf den Start von Forever und eine wachsende Spielergemeinschaft vor. Lokale Aktivitäten verursachen dadurch weniger Verkehr außerhalb ihres Gebiets.
 
-### Lokale Aktivität, weltweite Entdeckung
+### Aktuelles aus dem Gebiet, Spieler aus aller Welt
 
-- Questankündigungen und häufige Spieleraktualisierungen verwenden jetzt Zonenkanäle. Gruppenankündigungen erreichen eure Gruppe weiterhin über Zonengrenzen hinweg.
-- Spielerpunkte bleiben weltweit verfügbar, mit langsameren Hintergrundaktualisierungen. Wenn du eine andere Zone auf der Weltkarte öffnest, abonnierst du vorübergehend ihre Aktualisierungen.
-- Der QT-Textchat bleibt im globalen QuestTogether-Kanal. Deine Chateinstellung Global oder Nur Zone steuert weiterhin, welche Nachrichten du siehst.
+- Questmeldungen und häufige Spieleraktualisierungen laufen jetzt über Gebietskanäle. Gruppenmeldungen erreichen deine Gruppe weiterhin über Gebietsgrenzen hinweg.
+- Kartenpunkte bleiben weltweit verfügbar, werden außerhalb deines Gebiets aber seltener erneuert. Öffnest du ein anderes Gebiet auf der Weltkarte, empfängst du vorübergehend auch dessen Aktualisierungen.
+- Der geschriebene QT-Chat bleibt im globalen Kanal QuestTogether. Ob du globale oder nur gebietsbezogene Chatnachrichten siehst, bestimmst du weiterhin selbst.
 
-### Weniger Hintergrunddatenverkehr
+### Weniger Nachrichten im Hintergrund
 
-- Präsenz, Version, Questanzahl, Partnerstatus und Standort werden in kompakten Aktualisierungen gebündelt. Überfüllte Zonen werden seltener aktualisiert, um den Datenverkehr zu reduzieren.
-- Ankündigungen werden zeitlich gestaffelt und haben Vorrang vor Hintergrundaktualisierungen. Ping-Antworten werden verteilt, um einen Antwortschwall zu vermeiden. WoW kann die Kanalauslieferung weiterhin verzögern; dieses Update garantiert keine sofortigen Nachrichten.
-- Spieler-Tooltips zeigen das Alter älterer Standorte an. Die Diagnose meldet jetzt Nachrichtenanzahlen, Drosselung und vom Absender gemeldete Ankündigungsverzögerungen.
+- Anwesenheit, Version, Questzahl, Suchstatus und Standort werden in kompakten Meldungen gebündelt. In vollen Gebieten werden sie seltener gesendet.
+- Questmeldungen werden dosiert versendet und vor Hintergrundaktualisierungen eingeordnet. Ping-Antworten verteilen sich zeitlich, damit nicht alle gleichzeitig eintreffen. WoW kann die Zustellung trotzdem verzögern; sofortige Übertragung ist damit nicht garantiert.
+- Spielertooltips zeigen das Alter älterer Standorte. In Diagnosen findest du jetzt Nachrichtenzahlen, Drosselungen und vom Absender gemeldete Verzögerungen bei Ankündigungen.
 
-### Ein großes Update während der Beta
+### Die Umstellung erfolgt während der Beta
 
-- Wir nehmen diese größere Kommunikationsänderung jetzt in Erwartung des Forever-Launches vor. Die Beta ist der beste Zeitpunkt, um diese grundlegenden Entscheidungen zu treffen, bevor mehr Spieler vom alten Verhalten abhängig sind.
-- Version 6.0 verlässt QuestTogetherAnnounce1 und sendet oder empfängt nicht mehr auf diesem Legacy-Kanal. Sie verwendet QuestTogether für globalen Chat und Entdeckung sowie Zonenkanäle für lokale Aktivität.
-- QuestTogether behält seine Kanäle nach deinen anderen Chatkanälen bei, wobei der Hauptchatkanal vor seinen Zonenkanälen steht. Deine Einstellungen für Standortfreigabe, Ignorierliste und Ankündigungen bleiben erhalten.
+- Wir nehmen diese größere Änderung im Vorfeld des Forever-Starts vor. In der Beta lassen sich solche Grundlagen noch anpassen, bevor sich mehr Spieler auf das bisherige Verhalten verlassen.
+- Version 6.0 verlässt QuestTogetherAnnounce1 und sendet oder empfängt dort nicht mehr. Globale Gespräche und Spielersuche verwenden QuestTogether, lokale Aktivitäten die Gebietskanäle.
+- Die QT-Kanäle stehen hinter deinen übrigen Chatkanälen, mit dem Hauptkanal vor den Gebietskanälen. Standortfreigabe, Ignorierliste und Meldungseinstellungen bleiben erhalten.
 
-### Kompatibilität mit älteren Versionen
+### Bitte gemeinsam aktualisieren
 
-- Bitte aktualisiert gemeinsam. Ältere Versionen können die neuen gebündelten Spieleraktualisierungen nicht lesen und nicht auf die neuen Zonenkanäle hören, sodass Spielern mit gemischten Versionen Kartenpunkte, Partnerstatus und Questankündigungen in der Nähe entgehen können.
-- Spieler, die nur den Legacy-Kanal verwenden, sind in 6.0 über diesen Kanal nicht mehr auffindbar. Einige Austausche mit neueren 5.x-Versionen können weiterhin über den gemeinsamen globalen Kanal oder eine Gruppe funktionieren, aber das ist nur teilweise Kompatibilität, nicht das volle Erlebnis.
-- Manuelles /qt ping verwendet weiterhin den globalen Kanal. Es kann dort kompatible ältere Clients hören, ist aber ein Entdeckungswerkzeug nach bestem Bemühen und keine vollständige Zählung aller, die QuestTogether verwenden.
+- Ältere Versionen verstehen die gebündelten Spielerdaten nicht und hören nicht auf den neuen Gebietskanälen mit. Bei unterschiedlichen Versionen können deshalb Kartenpunkte, Suchstatus und nahe Questmeldungen fehlen.
+- Spieler, die nur den alten Kanal verwenden, werden darüber von 6.0 nicht mehr erkannt. Mit neueren 5.x-Versionen können einzelne Nachrichten über den gemeinsamen globalen Kanal oder die Gruppe noch funktionieren; das ist jedoch nur eine teilweise Kompatibilität.
+- Der manuelle Befehl /qt ping verwendet weiterhin den globalen Kanal und kann dort kompatible ältere Clients erreichen. Er hilft bei der Suche, liefert aber keine vollständige Zählung aller QT-Spieler.
 
 ## 5.17.2
 
-QT-Chat lässt sich leichter von Questankündigungen unterscheiden.
+Chatnachrichten und Questmeldungen lassen sich farblich leichter auseinanderhalten.
 
-### Weißer QT-Chattext
+### QT-Chat in Weiß
 
-- Nachrichten von Spielern im QT-Chat verwenden jetzt weißen Text im Chatfenster und in Sprechblasen über dem Kopf.
-- Spielernamen behalten ihre Klassenfarben, und Questankündigungen behalten ihren gelben Text.
+- Geschriebene QT-Chatnachrichten erscheinen im Protokoll und in den Blasen jetzt in Weiß.
+- Spielernamen behalten ihre Klassenfarbe, Questmeldungen ihren gelben Text.
 
 ## 5.17.1
 
-Erfahre mehr über deine Questgefährten und prüfe den Queststatus direkt über Chat-Tooltips.
+Spielertooltips geben mehr Auskunft über deine Questgefährten. Deinen eigenen Queststand kannst du direkt im Chat nachsehen.
 
-### Nützlichere Spieler-Tooltips
+### Mehr Angaben zu Spielern
 
-- Tooltips für Spielernamen und Kartenpunkte zeigen jetzt an, wie viele Quests QuestTogether überwacht, plus Solo oder Gruppe mit N. Dein eigener Tooltip verwendet deinen aktuellen lokalen Status.
-- Der Minikarten-Tooltip zählt jetzt die von QuestTogether überwachten Quests und entspricht damit der Startankündigung, statt nur die Quests zu zählen, die im WoW-Tracker verfolgt werden.
-- Entfernte Questzahlen und Gruppengrößen erfordern einen aktualisierten Peer. Sie werden etwa alle 80 Sekunden über bestehende Heartbeat-Nachrichten aktualisiert, ohne zusätzliche Nachrichten; fehlende oder veraltete Meldungen werden als unbekannt angezeigt. Ältere Versionen erhalten weiterhin kompatible Versionsankündigungen.
+- Bei Spielernamen und Kartenpunkten siehst du jetzt die Zahl der von QT erfassten Quests sowie „Allein“ oder die Gruppengröße. Dein eigener Tooltip verwendet die aktuellen lokalen Daten.
+- Auch der Minimaptooltip zählt nun die von QT erfassten Quests, passend zur Startmeldung. Bisher zählte er nur die Quests in WoWs Zielverfolgung.
+- Questzahl und Gruppengröße anderer Spieler benötigen einen aktualisierten Client. Sie werden etwa alle 80 Sekunden in den vorhandenen Statusmeldungen erneuert, ohne zusätzliche Nachrichten. Fehlende oder veraltete Angaben erscheinen als unbekannt. Ältere Versionen erhalten weiterhin kompatible Versionsmeldungen.
 
-### Queststatus beim Darüberfahren
+### Queststand beim Überfahren
 
-- Fahre in QT-Protokollen mit der Maus über einen Questnamen, um deinen Queststatus, die Teilbarkeit, die Quest-ID und den lokal verfolgten Zielfortschritt in einem Tooltip neben dem Mauszeiger zu sehen.
-- Der Menüpunkt Status wurde entfernt. Ein Klick auf einen Questnamen öffnet weiterhin Teilen, Im Questlog öffnen, Gruppenquests vergleichen und die Zielaktion des Protokollfensters.
-- Die neuen Tooltip-Beschriftungen sind in alle unterstützten Sprachen übersetzt. Questdetails spiegeln deinen eigenen Fortschritt wider, nicht den Questfortschritt des Absenders.
+- Über einem Questnamen im QT-Protokoll zeigt ein Tooltip neben dem Mauszeiger deinen Status, die Teilbarkeit, die Quest-ID und deinen lokal erfassten Zielfortschritt.
+- Der bisherige Menüpunkt „Status“ entfällt. Mit einem Klick auf den Questnamen erreichst du weiterhin Teilen, Öffnen im Questlog, Gruppenquestvergleich und die Auswahl des Protokollfensters.
+- Die neuen Beschriftungen sind in allen unterstützten Sprachen verfügbar. Der angezeigte Queststand ist deiner, nicht der des Absenders.
 
 ## 5.17.0
 
-Sag im QT-Chat Hallo, finde Questpartner in deiner ganzen Zone und entdecke übersichtlichere Spielerdetails und Einstellungen.
+Unterhalte dich im QT-Chat, finde Questpartner in deinem Gebiet und erfahre mehr über andere Spieler direkt im Tooltip.
 
-### Mit anderen QuestTogether-Spielern chatten
+### Mit anderen QT-Spielern chatten
 
-- Gib /qt <text> ein oder wähle im Minikartenmenü „QT-Chatnachricht senden“. Unterhaltungen erscheinen in den QT-Logs und in Sprechblasen über Spielern in der Nähe mit einem Sprechblasen-Symbol; bestehende Chatbefehle funktionieren weiterhin.
-- Wähle Globaler Chat (Standard), Nur Zone oder blende den QT-Chat vollständig aus. Nur Zone erfordert einen kürzlich geteilten Standort des Absenders; Global nicht.
-- Der neue QuestTogether-Kanal funktioniert während der Übergangsphase parallel zu QuestTogetherAnnounce1. QT platziert beide nach deinen anderen Kanälen, wenn unterstützt, mit QuestTogether zuerst; eingegebener Chat verwendet nur den neuen Kanal.
+- Mit /qt <text> schreibst du in den QT-Chat. Alternativ kannst du im Minimapmenü „QT-Chatnachricht senden“ wählen. Nachrichten erscheinen mit einem Sprechblasensymbol im QT-Protokoll und bei nahen Spielern über dem Kopf. Die bisherigen Befehle bleiben verfügbar.
+- Du kannst zwischen globalem Chat, nur deinem Gebiet und ausgeblendetem QT-Chat wählen. Standard ist global. Für die Gebietsauswahl braucht QT einen aktuellen freigegebenen Standort des Absenders; beim globalen Chat ist das nicht nötig.
+- Der neue Kanal QuestTogether läuft während der Umstellung neben QuestTogetherAnnounce1. Soweit der Client es unterstützt, stehen beide hinter deinen anderen Kanälen, mit QuestTogether zuerst. Geschriebene Chatnachrichten verwenden ausschließlich den neuen Kanal.
 
 ### Questpartner finden
 
-- Wenn du „Suche nach Questpartnern“ aktivierst, wird deine Suche in deiner ganzen Zone mit einem goldglänzenden QT-Symbol und einem Smiley angekündigt. Zonenweite Zustellung erfordert Standortfreigabe und berücksichtigt Ankündigungseinstellungen; beim Deaktivieren bleibt es still.
-- Steuere diese Nachrichten unter „Was angekündigt werden soll“. Eine Abklingzeit von 30 Sekunden begrenzt wiederholte Ankündigungen, während dein Status und Leuchten weiterhin sofort aktualisiert werden. Du kannst außerdem festlegen, dass die Suche beim Beitritt zu einer Gruppe automatisch beendet wird; dies ist zunächst deaktiviert.
-- Umschalt-Klick auf die Minikartenschaltfläche, um deine Partnersuche ein- oder auszuschalten. Ein hellerer, pulsierender Goldring hebt deine aktive Suche hervor, ohne das Logo abzuschneiden.
+- Wenn du die Questpartnersuche einschaltest, meldet QT deine Suche im gesamten Gebiet mit golden leuchtendem Logo und einem Smiley. Dafür muss die Standortfreigabe eingeschaltet sein; deine Meldungseinstellungen werden berücksichtigt. Beim Ausschalten wird keine Meldung versendet.
+- Unter „Was ankündigen“ legst du fest, ob diese Meldungen erscheinen. Zwischen wiederholten Suchmeldungen liegen mindestens 30 Sekunden; Status und Schimmer ändern sich trotzdem sofort. Auf Wunsch endet die Suche beim Gruppenbeitritt automatisch. Diese Option ist zunächst ausgeschaltet.
+- Mit Umschalt-Klick auf den Minimapknopf schaltest du die Suche um. Solange sie aktiv ist, hebt ein hellerer, pulsierender Goldring den Knopf hervor, ohne das Logo abzuschneiden.
 
-### Wähle deine Reichweite und sieh mehr Spielerdetails
+### Reichweite und Spielerdetails
 
-- Die Reichweite für Spieler in der Nähe reicht jetzt von 5 % bis Ganze Zone, mit 25 % als Standard. Sie skaliert die Entfernung über deine aktuelle Zone; Gruppenmitglieder und direkt sichtbare Spieler behalten ihr bestehendes Verhalten.
-- Fahre in den QT-Logs mit der Maus über Namen, um denselben verbesserten Tooltip wie bei Kartenpunkten zu sehen: einen klassenfarbenen Namen, Stufe, Volk, Klasse, Fraktionsemblem, Partnerstatus, verfolgte Quest, wenn verfügbar, und QT-Version. Namenstooltips erscheinen jetzt neben deinem Cursor.
-- Dein eigener Namenstooltip zeigt jetzt deine aktuell hervorgehobene Quest an, während du nach Partnern suchst. Aktualisierte Clients melden ihre Versionen etwa alle 40 Sekunden über bestehende Heartbeat-Nachrichten; ältere Clients behalten ihren bisherigen Zeitplan bei.
+- Die Einstellung für nahe Spieler reicht nun von 5 % bis zum gesamten Gebiet; voreingestellt sind 25 %. Sie bemisst die Entfernung anhand der Gebietsgröße. Für Gruppenmitglieder und direkt sichtbare Spieler gelten weiterhin die bisherigen Regeln.
+- Überfahre einen Namen im QT-Protokoll, um denselben erweiterten Tooltip wie bei Kartenpunkten zu sehen: klassenfarbiger Name, Stufe, Volk, Klasse, Fraktionswappen, Suchstatus, gegebenenfalls die verfolgte Quest und QT-Version. Der Tooltip steht jetzt neben dem Mauszeiger.
+- Bei aktiver Partnersuche zeigt dein eigener Namenstooltip deine aktuell hervorgehobene Quest. Aktualisierte Clients übermitteln ihre Version etwa alle 40 Sekunden in den vorhandenen Statusmeldungen; ältere Clients behalten ihren bisherigen Rhythmus.
 
-### Übersichtlichere Steuerung und Ankündigungen
+### Bessere Erläuterungen und Questnamen
 
-- Der Minikarten-Tooltip zeigt jetzt deine QT-Version, den Partnerstatus, Chatbereich, die Anzahl beobachteter Quests, die Reichweite für Spieler in der Nähe und den Status der Standortfreigabe an.
-- Einstellungselemente haben jetzt übersetzte Erklärungen beim Darüberfahren, einschließlich Dropdowns, Schiebereglern, Profilaktionen und Farbauswahl.
-- Wenn dein Client einen lokalisierten Questtitel nicht auflösen kann, behalten Ankündigungen den ursprünglichen Text des Absenders sowohl in Logs als auch in Sprechblasen bei, statt eine generische Questnummer anzuzeigen. Die lokalisierte Darstellung wird bei späteren Ankündigungen fortgesetzt, sobald der Titel verfügbar ist.
+- Der Minimaptooltip zeigt QT-Version, Suchstatus, Chatbereich, Zahl der verfolgten Quests, Umkreis und Standortfreigabe.
+- In den Einstellungen erklären übersetzte Tooltips auch Dropdowns, Schieberegler, Profilaktionen und Farbauswahl.
+- Findet dein Client keinen Questtitel in deiner Sprache, behalten Protokoll und Blasen den lesbaren Titel des Absenders bei. Sobald ein lokaler Titel verfügbar ist, verwenden spätere Meldungen wieder diesen.
 
 ## 5.16.7
 
-Lies dieselben QuestTogether-Versionshinweise im Spiel, auf Discord und in deiner bevorzugten Sprache in den Changelog-Dateien.
+Die Versionshinweise sind jetzt im Spiel, auf Discord und in den Changelog-Dateien aufeinander abgestimmt – auch in deiner Sprache.
 
-### Einheitliche, mehrsprachige Changelogs
+### Einheitliche Versionshinweise in allen Sprachen
 
-- Der englische Changelog enthält jetzt dieselben Zusammenfassungen und Stichpunkte zu Veröffentlichungen wie das Willkommensfenster und die Discord-Ankündigungen.
-- Changelog-Dateien sind für alle unterstützten Gebietsschemata verfügbar, mit bereits übersetztem Versionsverlauf und einer erhaltenen Kopie der älteren handgeschriebenen englischen Notizen.
-- Release-Prüfungen halten die Changelog-Dateien mit den kanonischen Hinweisen und Übersetzungen synchron.
+- Das englische Changelog verwendet dieselben Zusammenfassungen und Punkte wie das Willkommensfenster und die Discord-Beiträge.
+- Für jede unterstützte Sprache gibt es eine Changelog-Datei mit den bereits übersetzten früheren Versionen. Die älteren, von Hand geschriebenen englischen Hinweise bleiben separat erhalten.
+- Die Release-Prüfungen gleichen die Dateien mit den maßgeblichen Versionshinweisen und ihren Sprachfassungen ab.
 
 ## 5.16.6
 
-Sieh auf einen Blick, wann du nach Questpartnern suchst.
+Am Minimapknopf erkennst du sofort, ob deine Questpartnersuche eingeschaltet ist.
 
-### Eine leuchtende Minikarten-Erinnerung
+### Goldener Hinweis auf die Partnersuche
 
-- Dein QuestTogether-Minimap-Button pulsiert jetzt mit demselben goldenen Logo-Leuchten wie Spielernamensplaketten, während „Suche nach Questpartnern“ aktiviert ist.
-- Das Leuchten folgt deinem Partnerstatus und endet, wenn QT deaktiviert ist oder der Minimap-Button ausgeblendet wird. Dein Button und dein Logo behalten ihre bestehende Größe.
+- Während du nach Questpartnern suchst, pulsiert dein QT-Minimapknopf mit demselben goldenen Logoschimmer wie die Spieler-Namensplaketten.
+- Der Schimmer folgt deinem Suchstatus und endet, wenn QT deaktiviert oder der Knopf ausgeblendet wird. Knopf und Logo behalten ihre bisherige Größe.
 
 ## 5.16.5
 
-Ein kürzeres Präfix hält Gruppenankündigungen kompakt.
+Gruppenmeldungen nehmen mit einem kürzeren Präfix weniger Platz ein.
 
-### Kompakte Gruppenankündigungen
+### Kompakte Gruppenmeldungen
 
-- Questfortschritt, der an Gruppenmitglieder ohne QuestTogether gesendet wird, beginnt jetzt mit [QT] statt mit [QuestTogether].
-- Ankündigungen beachten weiterhin das Limit für Chatnachrichten und erhalten vollständige Zeichen in jeder Sprache.
+- Questfortschritt für Gruppenmitglieder ohne QuestTogether beginnt wieder mit [QT] statt [QuestTogether].
+- Die Nachrichten halten weiterhin die Chatlängengrenze ein und schneiden in keiner Sprache einzelne Zeichen ab.
 
 ## 5.16.4
 
-Behalte deine Sprechblasen-Einstellungen beim Verlassen des Bearbeitungsmodus und finde Questbegleiter in der Nähe auf überfüllten Karten.
+Deine Blaseneinstellungen bleiben nach dem Bearbeitungsmodus erhalten. Auf vollen Karten bekommen Spieler in deiner Nähe Vorrang.
 
-### Sprechblasen-Einstellungen bleiben gespeichert
+### Blaseneinstellungen behalten
 
-- Beim Schließen des HUD-Bearbeitungsmodus bleiben jetzt Schriftgröße, Anzeigedauer und Position deiner QT-Sprechblase erhalten, statt zurückgesetzt zu werden.
-- Das QT-Sprechblasenfenster hat jetzt eine eigene Schaltfläche Änderungen speichern und eine Meldung zum gespeicherten Zustand. Einstellungen werden automatisch übernommen; Änderungen speichern legt den Punkt fest, zu dem Änderungen zurücksetzen zurückkehrt.
-- Nach dem Speichern und weiteren Anpassungen stellt Änderungen zurücksetzen deine zuletzt gespeicherten QT-Einstellungen wieder her.
+- Beim Schließen des HUD-Bearbeitungsmodus bleiben Schriftgröße, Anzeigedauer und Position deiner QT-Blase erhalten, statt zurückgesetzt zu werden.
+- Das QT-Blasenfenster hat einen eigenen Knopf zum Speichern und einen Hinweis auf den Speicherstand. Änderungen werden sofort angewendet; „Änderungen speichern“ legt fest, wohin „Änderungen verwerfen“ zurückkehrt.
+- Wenn du nach dem Speichern weiter anpasst, stellt das Zurücksetzen die zuletzt gespeicherten QT-Einstellungen wieder her.
 
-### Spieler in der Nähe haben Vorrang
+### Nahe Spieler bevorzugen
 
-- Wenn mehr als 128 geeignete Punkte auf der Karte oder Minikarte um Platz konkurrieren, haben die nächsten Spieler basierend auf der Entfernung zu deinem Charakter Vorrang.
-- Wenn der Cache mit 512 Positionen voll ist, werden nähere Spieler vor weiter entfernten neu ankommenden Spielern behalten. Verschieben und Zoomen der Karte ändern die Nähe-Priorität nicht.
-- Diese Änderungen behalten die bestehenden Punkt- und Cache-Begrenzungen bei, ohne zusätzliche Kommunikationsnachrichten zu senden.
+- Kommen mehr als 128 passende Kartenpunkte infrage, zeigt die Weltkarte beziehungsweise Minimap bevorzugt die Spieler mit der geringsten Entfernung zu deinem Charakter.
+- Ist der Cache mit 512 Standorten voll, bleiben nahe Spieler vor weiter entfernten Neuankömmlingen gespeichert. Verschieben und Zoomen der Karte ändern diese Entfernungspriorität nicht.
+- Die bisherigen Obergrenzen bleiben bestehen. Für diese Auswahl werden keine zusätzlichen Nachrichten gesendet.
 
 ## 5.16.3
 
-Finde die benötigten Einstellungen leichter und sieh deine QuestTogether-Einstellungen auf einen Blick.
+Die Einstellungen sind übersichtlicher angeordnet. Eine verlinkte Statusübersicht zeigt dir die wichtigsten gespeicherten Vorgaben.
 
-### Einstellungen danach organisiert, wie du spielst
+### Einstellungen nach Aufgabe geordnet
 
-- Gruppen & Teilen ersetzt Verschiedenes und führt Partnerverfügbarkeit, Beitrittsanfragen und Genehmigungen zum Teilen von Quests zusammen.
-- Feier-Emotes befinden sich jetzt unter „Wo ankündigen“. Die Sichtbarkeit der Minikarte ist unter „Allgemein“ auf der Hauptseite zu finden, Debug-Werkzeuge und das erneute Einlesen des Questlogs zusammen unter „Fehlerbehebung“.
-- Quests der Gruppe vergleichen und Questpartner finden sind jetzt die ersten Schnellaktionen. Deine bestehenden Einstellungen bleiben erhalten.
+- „Gruppen & Teilen“ ersetzt „Verschiedenes“ und bündelt Partnersuche, Beitrittsanfragen und die Erlaubnis zum Teilen von Quests.
+- Feier-Emotes findest du unter „Wo ankündigen“. Die Sichtbarkeit des Minimapknopfs liegt auf der Hauptseite unter „Allgemein“; Debugwerkzeuge und erneute Questerfassung sind unter „Fehlerbehebung“ zusammengefasst.
+- Gruppenquestvergleich und Questpartnersuche stehen bei den Schnellaktionen an erster Stelle. Deine bisherigen Einstellungen bleiben erhalten.
 
-### Ein nützlicherer Schnellstatus
+### Statusübersicht mit direkten Links
 
-- Sieh deinen Partnerstatus, die Standortfreigabe und Anzeigeeinstellungen, Anfragegenehmigungen, Ankündigungsausgabe sowie Quest- und Spieler-Namensplaketten-Einstellungen in verknüpften Abschnitten.
-- Prüfe dein aktives Profil, die installierte Version und jede erkannte neuere Version. Wenn QT deaktiviert ist, kennzeichnet die Zusammenfassung die Einstellungen klar als gespeicherte Präferenzen.
-- Klicke auf eine Abschnittsüberschrift, um die zugehörigen Einstellungen zu öffnen. Die Zusammenfassung passt sich an ihren Text an und bleibt aktuell, solange die Seite geöffnet ist.
+- Die Übersicht zeigt Partnersuche, Standortfreigabe und -anzeige, Anfrageregeln, Meldungsausgabe sowie Einstellungen für Quest- und Spieler-Namensplaketten.
+- Du siehst das aktive Profil, die installierte Version und gegebenenfalls eine erkannte neuere Version. Bei deaktiviertem QT ist ausdrücklich erkennbar, dass die Übersicht gespeicherte Vorgaben zeigt.
+- Ein Klick auf eine Abschnittsüberschrift öffnet die zugehörigen Einstellungen. Die Übersicht wächst mit dem Text und hält sich bei geöffneter Seite aktuell.
 
 ## 5.16.2
 
-Erkenne QuestTogether-Spieler anhand ihrer Tooltips und finde Quest-Partner leichter.
+Spielertooltips zeigen jetzt, wer QuestTogether verwendet. Der goldene Schimmer macht Spieler auf Partnersuche deutlicher sichtbar.
 
-### QuestTogether-Spielertooltips
+### QT im Spielertooltip
 
-- Fahre mit der Maus über den Charakter, die Namensplakette oder den Einheitenrahmen eines QT-Spielers, um „Dieser Spieler verwendet QuestTogether.“ zu sehen. Spieler, die nach Quest-Partnern suchen, zeigen ebenfalls diesen Status und ein leuchtendes QT-Logo an.
-- Der QT-Abschnitt passt sich Breite und Skalierung des Tooltips an, hält Abstand zu seiner Gesundheitsleiste und wird über den Tooltip verschoben, wenn darunter wenig Platz ist.
+- Wenn du den Charakter, die Namensplakette oder den Einheitenrahmen eines QT-Spielers überfährst, zeigt der Tooltip einen Hinweis auf QuestTogether. Bei aktiver Partnersuche kommen der Suchstatus und ein leuchtendes QT-Logo hinzu.
+- Der QT-Bereich passt sich Breite und Skalierung des Tooltips an und hält Abstand zu dessen Gesundheitsleiste. Ist unten zu wenig Platz, erscheint er oberhalb des Tooltips.
 
-### Ein auffälligeres Partnerleuchten
+### Deutlichere Partnersuche
 
-- Das goldene Namensplaketten-Leuchten reicht jetzt doppelt so weit um das Logo, während das Logo selbst gleich groß bleibt.
-- Symbole und Leuchteffekte zeigen echte QT-Nutzer und ihren aktuellen Status bei der Partnersuche an.
+- Der goldene Schimmer an Namensplaketten reicht jetzt doppelt so weit um das Logo; das Logo selbst bleibt gleich groß.
+- Symbole und Schimmer zeigen tatsächliche QT-Nutzer und ihren aktuellen Suchstatus an.
 
 ## 5.16.1
 
-Finde leichter Questpartner und sieh, auf welche Quest sie sich konzentrieren.
+Spieler auf Questpartnersuche sind besser erkennbar. Auf der Karte kannst du außerdem sehen, welche Quest sie gerade verfolgen.
 
-### Helleres Leuchten für Partner
+### Leuchtende Spielerlogos
 
-- Spieler, die nach Questpartnern suchen, haben nun ein helleres goldenes Leuchten um ihr QT-Namensplakettenlogo, mit einem sanften pulsierenden Effekt. Das Logo selbst bleibt ruhig.
+- Das Namensplakettenlogo von Spielern auf Partnersuche erhält einen kräftigeren goldenen Schimmer, der sanft pulsiert. Das Logo selbst bleibt ruhig.
 
-### Ihre aktuelle Quest sehen
+### Die aktuell verfolgte Quest
 
-- Fahre mit der Maus über den Karten- oder Minikartenpunkt eines Spielers, der nach Questpartnern sucht, um seine superverfolgte Quest zu sehen – die einzelne Quest, die für die Navigation ausgewählt ist. Beide Spieler benötigen dieses Update.
-- Questinformationen werden etwa alle 20 Sekunden aktualisiert. Sie werden nur geteilt, wenn „Nach Questpartnern suchen“ und die Standortfreigabe aktiviert sind.
-- Questnamen verwenden deine Client-Sprache, wenn verfügbar, andernfalls den Titel oder die Quest-ID des Absenders als Fallback. Ältere QT-Versionen behalten ihre bestehenden Punkte und Partneranzeigen.
+- Überfahre den Weltkarten- oder Minimap-Punkt eines suchenden Spielers, um seine für die Navigation ausgewählte Quest zu sehen. Beide Spieler benötigen dieses Update.
+- Die Questangabe wird ungefähr alle 20 Sekunden erneuert und nur geteilt, solange sowohl Questpartnersuche als auch Standortfreigabe aktiv sind.
+- Wenn möglich, erscheint der Titel in deiner Sprache; andernfalls wird der Titel des Absenders oder die Quest-ID verwendet. Ältere QT-Versionen behalten ihre vorhandenen Punkte und Suchstatusanzeigen.
 
 ## 5.16.0
 
-QuestTogether unterstützt jetzt alle WoW-Sprachen und kann Questupdates anderer Spieler in der Sprache deines Clients anzeigen.
+QT unterstützt jetzt alle WoW-Sprachen. Unterstützte Questereignisse anderer Spieler können in deiner Spielsprache erscheinen.
 
-### In mehr Sprachen spielen
+### Alle WoW-Sprachvarianten
 
-- Menüs, Einstellungen und Patchnotes unterstützen jetzt alle WoW-Sprachversionen: Englisch, Deutsch, Französisch, europäisches Spanisch, lateinamerikanisches Spanisch, brasilianisches Portugiesisch, Russisch, Italienisch, Koreanisch, vereinfachtes Chinesisch und traditionelles Chinesisch.
-- Lateinamerikanisches Spanisch hat jetzt eigene Texte, statt europäisches Spanisch mitzubenutzen.
+- Menüs, Einstellungen und Versionshinweise gibt es auf Englisch, Deutsch, Französisch, europäischem und lateinamerikanischem Spanisch, brasilianischem Portugiesisch, Russisch, Italienisch, Koreanisch sowie in vereinfachtem und traditionellem Chinesisch.
+- Lateinamerikanisches Spanisch hat eigene Texte und verwendet nicht mehr die europäische Variante.
 
-### Lokalisierter Questfortschritt
+### Questfortschritt in deiner Sprache
 
-- Unterstützte Questereignisse von aktualisierten QT-Spielern können in QT-Chatprotokollen und -Sprechblasen in deiner Clientsprache erscheinen, mit lokalen Questtiteln, sofern verfügbar, und den tatsächlichen Fortschrittszahlen des Absenders.
-- Wenn eine übersetzte Zielbeschreibung nicht sicher ausgewählt werden kann, verwendet QT stattdessen eine lokalisierte Zielnummer mit Zählwerten, Prozentangaben, Abschluss- oder Fortschrittsstatus.
-- Ältere QT-Versionen und der öffentliche Gruppenchat behalten die Formulierung des Absenders bei. Wenn WoW keinen lokalen Questtitel liefern kann, behält QT den Quelltitel bei oder zeigt die Quest-ID an. Ereignisse in derselben Sprache behalten ihre detaillierte Originalformulierung.
+- Unterstützte Ereignisse aktualisierter QT-Clients können in Chatprotokollen und Blasen in deiner Sprache erscheinen. Wo verfügbar, werden lokale Questtitel verwendet; die Fortschrittszahlen stammen weiterhin vom Absender.
+- Lässt sich ein übersetzter Zieltext nicht sicher zuordnen, zeigt QT stattdessen eine lokalisierte Zielnummer mit Anzahl, Prozentwert, Abschluss- oder Fortschrittsstatus.
+- Bei älteren QT-Versionen und im öffentlichen Gruppenchat bleibt die Formulierung des Absenders erhalten. Liefert WoW keinen lokalen Questtitel, verwendet QT den ursprünglichen Titel oder die Quest-ID. Gleichsprachige Meldungen behalten ihren ausführlichen Wortlaut.
 
-### Feinschliff für Questtitel
+### Questtitel
 
-- Der Questvergleich bevorzugt jetzt deinen lokalen Questtitel, sofern verfügbar.
-- Lokalisierte Questtitel mit Nicht-ASCII-Satzzeichen bleiben zuverlässiger anklickbar.
+- Der Questvergleich bevorzugt verfügbare Titel in deiner Sprache. Lokalisierte Questlinks mit Satzzeichen außerhalb des ASCII-Zeichensatzes bleiben zuverlässiger anklickbar.
 
 ## 5.15.0
 
-Frage direkt über das Spielermenü von QuestTogether an, ob du einer Questgruppe beitreten kannst.
+Über das QT-Spielermenü kannst du anfragen, ob du einer Questgruppe beitreten darfst.
 
-### Einer Questgruppe beitreten
+### Einer Gruppe beitreten
 
-- Bei QT-Spielern in einer Gruppe erscheint jetzt Beitritt anfragen statt Einladen, wenn aktuelle Gruppeninformationen vorliegen. Beide Spieler benötigen dieses Update; der Anfragende darf keiner Gruppe angehören.
-- Der Empfänger kann eine normale WoW-Einladung senden oder ablehnen. Er muss einladen dürfen und Platz in einer normalen Gruppe haben. Zum Beitritt nimmst du weiterhin die normale Einladung an.
+- Liegt eine aktuelle Gruppeninformation vor, zeigt das Menü gruppierter QT-Spieler „Beitritt anfragen“ statt „Einladen“. Beide Spieler brauchen dieses Update; der anfragende Spieler muss allein sein.
+- Der Empfänger kann ablehnen oder eine gewöhnliche WoW-Einladung schicken, sofern er einladen darf und in einer normalen Gruppe noch Platz ist. Zum Beitritt nimmst du die WoW-Einladung wie üblich selbst an.
 
-### Optionale automatische Einladungen
+### Einladungen auf Wunsch automatisieren
 
-- Zwei neue Optionen genehmigen Anfragen von Freunden deines Charakters automatisch oder von anderen Spielern, während du nach Questpartnern suchst. Beide sind anfangs aus und stehen im Dialog sowie unter Verschiedenes. Battle.net-Accountfreunde sind nicht eingeschlossen.
-- Anfragen laufen ab und berücksichtigen ignorierte Spieler, Gruppenänderungen und Spieleinschränkungen. QT verlässt niemals deine aktuelle Gruppe und nimmt keine Einladungen für dich an.
+- Zwei neue Optionen erlauben automatische Einladungen: für Charakterfreunde oder für andere Spieler, solange du nach Questpartnern suchst. Beide sind standardmäßig aus und im Anfragedialog sowie unter „Verschiedenes“ verfügbar. Battle.net-Accountfreunde zählen nicht dazu.
+- Anfragen laufen ab und berücksichtigen Ignorierlisten, Gruppenwechsel und Spielbeschränkungen. QT verlässt deine Gruppe nicht und nimmt keine Einladungen für dich an.
 
 ## 5.14.1
 
-Gruppenankündigungen zeigen jetzt den vollständigen Namen QuestTogether.
+Gruppenmeldungen nennen das Addon jetzt ausgeschrieben.
 
 ### Gruppenchat
 
-- Das Präfix für Ankündigungen im Gruppenchat wurde von [QT] zu [QuestTogether] erweitert, damit andere Spieler das Addon leichter finden.
+- Vor Meldungen im Gruppenchat steht [QuestTogether] statt [QT]. So können andere Spieler das Addon leichter finden.
 
 ## 5.14.0
 
-QuestTogether spricht jetzt fünf weitere Sprachen und hilft dir, Gruppenmitglieder ohne QT auf dem Laufenden zu halten.
+QuestTogether ist in fünf weiteren Sprachen verfügbar. Außerdem kannst du Gruppenmitglieder ohne QT über den Gruppenchat auf dem Laufenden halten.
 
-### Spiele in deiner Sprache
+### Deine Spielsprache
 
-- Die Benutzeroberfläche ist jetzt auf Deutsch, Französisch, Spanisch, brasilianischem Portugiesisch und Russisch verfügbar. QuestTogether verwendet deine Spielsprache und greift bei Bedarf auf Englisch zurück.
-- Einstellungen, Menüs, Tooltips, Questvergleiche und Patchnotes sind übersetzt. Questnamen und Fortschrittstexte anderer Spieler bleiben in ihrer ursprünglichen Sprache.
-- Übersetzte Versionshinweise findest du in den fünf sprachspezifischen Änderungsprotokoll-Kanälen auf unserem Discord.
+- Die Oberfläche unterstützt jetzt Deutsch, Französisch, Spanisch, brasilianisches Portugiesisch und Russisch. QT richtet sich nach deiner Spielsprache; fehlt ein Text, wird Englisch verwendet.
+- Einstellungen, Menüs, Tooltips, Questvergleiche und Versionshinweise sind lokalisiert. Questnamen und Fortschrittstexte anderer Spieler bleiben in deren Originalsprache.
+- Auf unserem Discord gibt es die Versionsmeldungen auch in fünf eigenen Sprachkanälen.
 
-### Halte deine ganze Gruppe auf dem Laufenden
+### Auch Gruppenmitglieder ohne QT informieren
 
-- Eine neue Option unter „Ankündigungskanäle“ sendet deine aktivierten Ereignismeldungen in den Gruppenchat, wenn mindestens ein Gruppenmitglied noch nicht als QT-Nutzer erkannt wurde. Sie ist standardmäßig aktiviert und lässt sich in den Einstellungen ausschalten.
-- Das funktioniert auch in automatisch zusammengestellten Instanzgruppen. Alleinspiel und Schlachtzüge sind ausgeschlossen; Meldungen anderer Spieler werden niemals weitergeleitet.
+- Unter „Wo ankündigen“ kannst du deine eingeschalteten Ereignismeldungen zusätzlich im Gruppenchat ausgeben lassen, wenn mindestens ein Gruppenmitglied noch nicht als QT-Nutzer erkannt wurde. Die Option ist anfangs aktiv und lässt sich abschalten.
+- Das gilt auch für automatisch zusammengestellte Instanzgruppen, nicht aber für Schlachtzüge oder Solospiel. Meldungen anderer Spieler werden nicht weitergeleitet.
 
 ## 5.13.1
 
-Dieses Wartungsupdate verbessert die Wiederherstellung von Quest-Plaketten, entfernt veraltete Sprechblasen und Spielerlogos und sorgt dafür, dass Einstellungen und das Debug-Fenster konsistent funktionieren.
+Diese Wartung verbessert die Erholung von Questmarkierungen und entfernt veraltete Blasen und Spielerlogos. Einstellungen und Debugfenster reagieren ebenfalls zuverlässiger.
 
-### Quest-Plaketten und Spieleranzeigen
+### Questmarkierungen und Spieleranzeigen
 
-- Questsymbole und Lebensleisten-Einfärbungen werden korrekt wiederhergestellt, nachdem eingeschränkte Ansichten geschlossen wurden. Verzögerte Questscans behalten ihre Einschwingzeit bei, und vorübergehend fehlende Tooltip-Daten behalten ihr Wiederholungsbudget.
-- Ankündigungsblasen werden bereinigt, wenn eine Spielerplakette verschwindet oder im Kampf wiederverwendet wird. Geschützte oder verbotene Frames warten auf eine sichere Bereinigung.
-- Kartenpositionen und Spielerpräsenz werden wiederhergestellt, nachdem QuestTogether deaktiviert, die Zone gewechselt und es wieder aktiviert wurde. Fortgegangene Spieler erhalten kein QT-Logo mehr durch verspätete Zurückziehungen von Standort- oder Partnerstatusdaten.
+- Nach dem Schließen gesperrter Ansichten kehren Questsymbole und Gesundheitsleistenfarben korrekt zurück. Verzögerte Questerfassungen behalten ihre Wartezeit; bei kurzzeitig fehlenden Tooltipdaten bleiben die vorgesehenen Wiederholungsversuche erhalten.
+- Meldungsblasen werden entfernt, wenn eine Spieler-Namensplakette im Kampf verschwindet oder anderweitig verwendet wird. Bei geschützten oder unzugänglichen Frames wartet die Bereinigung, bis sie zulässig ist.
+- Standorte und Anwesenheitsdaten erholen sich nach Deaktivierung von QT, Gebietswechsel und erneuter Aktivierung. Späte Rücknahmen von Standort- oder Suchstatusmeldungen geben bereits abgemeldeten Spielern kein neues QT-Logo mehr.
 
-### Korrekturen an Einstellungen und Fenstern
+### Einstellungen und Fenster
 
-- Das Kontrollkästchen Suche nach Questpartnern bleibt synchronisiert, wenn sich der Status über Befehle, Menüs oder Profileinstellungen ändert.
-- Das Debug-Fenster beendet unterbrochene Zieh- und Größenänderungsvorgänge sicher, wenn Einschränkungen aufgehoben werden, selbst nachdem es ausgeblendet wurde.
+- Die Option zur Questpartnersuche bleibt mit Änderungen durch Befehle, Menüs und Profile synchron.
+- Das Debugfenster beendet unterbrochenes Ziehen und Größenändern korrekt, sobald Beschränkungen enden – auch wenn das Fenster inzwischen ausgeblendet wurde.
 
-### Verbesserungen der Zuverlässigkeit
+### Prüfungen und Veröffentlichung
 
-- Verstärkte Tests erkennen den Zugriff auf verbotene Frames auch dann, wenn ein Fehler intern abgefangen wird.
-- Veröffentlichungsprüfungen verweigern nun die Veröffentlichung, solange Implementierungsänderungen nicht committet sind, damit Korrekturen tatsächlich im Download ankommen.
+- Die Tests erkennen unzulässige Framezugriffe auch dann, wenn ein Fehler intern abgefangen wird.
+- Die Veröffentlichungsprüfung bricht ab, solange Implementierungsänderungen noch nicht eingecheckt sind. So landen die vorgesehenen Korrekturen auch im Download.
 
 ## 5.13.0
 
-Finde Questpartner auf einen Blick mit hervorgehobenen Kartenpunkten und Spielerlogos, einfacheren Standorteinstellungen und Erinnerungen, wenn ein anderer Spieler eine neuere stabile QuestTogether-Version hat.
+Ein goldener Schimmer kennzeichnet Spieler auf Partnersuche. Dazu kommen einfachere Standortoptionen und ein Hinweis, wenn andere Spieler bereits eine neuere stabile QT-Version nutzen.
 
-### Questpartner erkennen
+### Questpartner auf einen Blick
 
-- Spieler, die Questpartner suchen, haben einen sanften goldenen Schein um ihre klassenfarbenen Punkte auf Karte und Minikarte.
-- Ihr QuestTogether-Logo an der Namensplakette erhält einen sanften goldenen Schein. Hervorhebungen verschwinden, wenn der Status ausgeschaltet wird oder abläuft.
-- Die Einstellungen für Spielerstandorte enthalten Nur Spieler anzeigen, die Questpartner suchen. Die Option ist anfangs ausgeschaltet und filtert bei Aktivierung beide Karten.
-- Das Was ist neu-Fenster im Spiel zeigt normale und leuchtende Logos und Kartenpunkte nebeneinander. Goldener Schein bedeutet, dass Questpartner gesucht werden.
+- Wer nach Questpartnern sucht, erhält einen sanften goldenen Schimmer um seinen klassenfarbigen Punkt auf Weltkarte und Minimap sowie um sein QT-Namensplakettenlogo. Wird der Status beendet oder läuft er ab, verschwinden die Hervorhebungen.
+- Unter „Spielerstandorte“ kannst du beide Karten auf Spieler beschränken, die nach Questpartnern suchen. Dieser Filter ist standardmäßig aus.
+- Das Neuigkeitenfenster im Spiel stellt normale und leuchtende Logos und Kartenpunkte nebeneinander dar. Gold bedeutet: Dieser Spieler sucht Questpartner.
 
-### Einfachere Standorteinstellungen
+### Einfachere Standortfreigabe
 
-- Meinen Standort teilen und Andere Spieler anzeigen gelten jeweils sowohl für die Weltkarte als auch für die Minikarte.
-- Beide Optionen sind bei neuen Profilen anfangs aktiviert. Vorhandene Ablehnungen der Standortfreigabe bleiben beim Upgrade erhalten.
+- „Meinen Standort teilen“ und „Andere Spieler anzeigen“ gelten jeweils gemeinsam für Weltkarte und Minimap.
+- In neuen Profilen sind beide Optionen aktiv. Bereits abgeschaltete Standortfreigaben bleiben beim Update abgeschaltet.
 
-### Erinnerungen an neue Versionen
+### Hinweise auf neuere Versionen
 
-- QuestTogether erkennt, wenn ein anderer Spieler eine neuere stabile Addon-Version meldet, und gibt eine Update-Erinnerung in deinem gewählten QuestTogether-Chatfenster aus.
-- Die Erinnerung wird charakterübergreifend gespeichert und erscheint nach jedem Neuladen einmal, bis du die erkannte Version oder eine neuere installierst. Alpha- und Betaversionen lösen keine Erinnerungen aus.
-- Versionsankündigungen sind klein und selten. QuestTogether erkennt Versionsinformationen auch in vorhandenen Ping-Antworten.
+- Meldet ein anderer Spieler eine neuere stabile QT-Version, erscheint in deinem gewählten QT-Chatfenster ein Updatehinweis.
+- Die erkannte Version wird charakterübergreifend gespeichert. Der Hinweis erscheint einmal pro Neuladen, bis du diese oder eine neuere Version installierst. Alpha- und Betaversionen lösen ihn nicht aus.
+- Versionsmeldungen sind klein und werden selten gesendet. QT erkennt Versionsangaben auch in vorhandenen Pingantworten.
 
 ## 5.12.0
 
-Finde Leute zum Questen mit dem neuen Status Suche nach Questpartnern. Dieses Update verbessert außerdem die Sichtbarkeit von Minikarten-Tooltips und trennt das Verhalten von Kriegsmodus und Realm in Retail von Forever.
+Mit „Suche nach Questpartnern“ zeigst du anderen, dass du Gesellschaft suchst. Standortanzeigen und Minimap-Tooltips wurden ebenfalls überarbeitet; Forever und Retail behandeln Kriegsmodus und Realms jetzt getrennt.
 
-### Suche nach Questpartnern
+### Gesellschaft zum Questen suchen
 
-- Lass andere QuestTogether-Benutzer wissen, dass du Gesellschaft möchtest. Dein Status erscheint in deinem Spielermenü und in Tooltips von Kartenpunkten; er aktiviert weder die Standortfreigabe noch sendet er Einladungen.
-- Schalte den Status über das Minikartenmenü, Einstellungen > Verschiedenes oder /qt lfg um. Verwende /qt lfg on, off oder status, um ihn festzulegen oder zu prüfen. Er ist anfangs ausgeschaltet und wird pro Profil gespeichert.
-- Der Partnerstatus läuft ab, wenn keine Updates mehr kommen. Ignorierte Spieler werden ausgeschlossen, und das Deaktivieren von QuestTogether pausiert deine Anzeige.
+- Dein Suchstatus erscheint im Spielermenü und in den Tooltips deiner Kartenpunkte. Er schaltet weder Standortfreigaben ein noch verschickt er Einladungen.
+- Umschalten kannst du ihn im Minimapmenü, unter „Verschiedenes“ oder mit /qt lfg. Mit /qt lfg on, off oder status setzt oder prüfst du ihn gezielt. Er ist anfangs aus und wird pro Profil gespeichert.
+- Bleiben Aktualisierungen aus, verfällt der Status. Ignorierte Spieler werden ausgeschlossen; bei deaktiviertem QT wird deine Suchmeldung pausiert.
 
 ### Retail und Forever
 
-- Forever zeigt den Kriegsmodus nicht mehr in Tooltips von Spielerpunkten, Quest-Standortdetails oder Ping-Ausgaben an. Forever-Pings lassen außerdem Realm-Bezeichnungen aus, während vollständige Spielernamen erhalten bleiben.
-- Quest-Updates in der Nähe benötigen auf Forever keine Kriegsmodus-Informationen aus Retail mehr. Kartenpunkte bleiben phasenübergreifend sichtbar, damit du Leute zum Gruppieren findest.
-- Retail verwendet den aktiven Kriegsmodus-Status, wenn verfügbar. Unbekannter oder nicht unterstützter Kriegsmodus wird nicht mehr als Aus gemeldet.
+- In Forever entfallen Kriegsmodusangaben in Spielerpunkt-Tooltips, Queststandorten und Pingausgaben. Pings lassen dort auch Realmnamen weg, behalten aber vollständige Spielernamen bei.
+- Nahe Questmeldungen benötigen in Forever keine Retail-Kriegsmodusdaten mehr. Kartenpunkte bleiben auch über Phasengrenzen sichtbar, damit du Spieler zum Gruppieren finden kannst.
+- In Retail wird der aktive Kriegsmodus verwendet, sofern er bekannt ist. Unbekannter oder nicht unterstützter Kriegsmodus erscheint nicht mehr fälschlich als ausgeschaltet.
 
-### Stabilere Spielerpunkte
+### Stabilere Kartenpunkte
 
-- Kurzzeitig fehlende Koordinaten entfernen deinen Punkt nicht mehr sofort. Zuletzt gemeldete Positionen bleiben bis zu zwei Minuten erhalten, und ältere Meldungen zeigen ihr Alter im Tooltip an. Opt-outs für die Freigabe ziehen den Standort weiterhin sofort zurück, wenn Kommunikation verfügbar ist.
-- Bewegungsübertragungen sind auf einmal alle zehn Sekunden begrenzt, wodurch der Standortdatenverkehr reduziert wird. Herzschläge im Stand bleiben alle zwanzig Sekunden, damit ältere Clients kompatibel bleiben.
-- Der Standortcache behält nun bis zu 512 Spieler. Jede Karte zeichnet weiterhin höchstens 128 sichtbare Punkte, und Spieler außerhalb der angezeigten Karte verbrauchen dieses Zeichenlimit nicht mehr.
+- Kurzzeitig fehlende Koordinaten lassen deinen Punkt nicht sofort verschwinden. Die letzte gemeldete Position bleibt bis zu zwei Minuten erhalten; ältere Angaben zeigen ihr Alter im Tooltip. Widerrufene Standortfreigaben werden bei verfügbarer Kommunikation weiterhin sofort zurückgezogen.
+- Bewegungsmeldungen werden höchstens alle zehn Sekunden gesendet. Für unbewegte Spieler bleiben die Anwesenheitsmeldungen im Abstand von zwanzig Sekunden erhalten, damit ältere Clients kompatibel bleiben.
+- Der Standortcache fasst bis zu 512 Spieler. Pro Karte werden weiterhin höchstens 128 Punkte gezeichnet. Spieler außerhalb des angezeigten Kartenausschnitts verbrauchen dafür keinen Platz mehr.
 
-### Zuverlässige Spielerlogos
+### Zuverlässigere Spielerlogos
 
-- Fehlende Logos auf Namensplaketten befreundeter Spieler in aktuellen Forever- und Retail-Clients werden behoben, indem die aktuelle Sichtbarkeitseinstellung für befreundete Spieler ausgelesen wird.
-- Links positionierte Logos rücken nach außen, um Platz für sichtbare Stärkungszauber zu schaffen, und kehren dann an ihre übliche Position zurück, wenn die Stärkungszauber verschwinden.
-- Alle unterstützten QuestTogether-Nachrichten identifizieren nun ihren Absender. Ein begrenzter Cache merkt sich Spieler für die aktuelle UI-Sitzung, sodass verpasste Herzschläge ihre Logos nicht mehr entfernen. Ausdrückliche Abmeldungen und ignorierte Spieler werden weiterhin entfernt; es werden keine zusätzlichen Nachrichten gesendet.
+- QT liest die aktuelle Einstellung für freundliche Spieler-Namensplaketten und behebt dadurch fehlende Logos in aktuellen Forever- und Retail-Clients.
+- Links platzierte Logos rücken bei sichtbaren Buffs nach außen und kehren zurück, sobald die Buffs verschwinden.
+- Alle unterstützten QT-Nachrichten identifizieren ihren Absender. Ein begrenzter Cache merkt sich QT-Spieler bis zum Neuladen der Oberfläche; verpasste Anwesenheitsmeldungen allein entfernen ihr Logo daher nicht mehr. Ausdrückliche Abmeldungen und ignorierte Spieler werden weiterhin entfernt. Zusätzliche Nachrichten sind dafür nicht nötig.
 
-### Feinschliff an der Minikarte
+### Minimap-Tooltip
 
-- Der QuestTogether-Minikarten-Tooltip verwendet nun eine unabhängige Tooltip-Ebene, damit er über der Aktionsleisten-UI erscheinen kann. Er wird ausgeblendet, wenn die Schaltfläche nicht verfügbar ist oder Einschränkungen beginnen.
+- Der QT-Minimap-Tooltip verwendet eine eigene Darstellungsebene und kann dadurch über Aktionsleisten erscheinen. Er verschwindet, wenn der Knopf nicht mehr verfügbar ist oder Spielbeschränkungen einsetzen.
 
 ## 5.11.0
 
-QuestTogether fügt nun Spielerstandorte, Spielerplaketten-Logos, fokussierte Questvergleiche sowie einfacheres Discord-Feedback und Unterstützung hinzu. Über die Einstellungen wählst du, was du teilst und was du siehst, während der Questfortschritt mit anderen QuestTogether-Benutzern koordiniert bleibt.
+Finde QT-Spieler auf der Karte, erkenne sie an Namensplaketten und vergleiche gezielt ihre Quests. Du entscheidest selbst, welche Standortdaten du teilst und welche du sehen möchtest.
 
-### QuestTogether-Spieler in der Nähe finden
+### QuestTogether-Spieler finden
 
-- Zeige das Schriftrollenlogo neben befreundeten QuestTogether-Spielern, wenn WoWs Namensplaketten für befreundete Spieler aktiviert sind. Spielerplaketten sind standardmäßig aktiviert, mit einer gepolsterten Position Links; wähle Links, Rechts, Oben oder Präfix, ohne die Farben der Lebensleisten zu ändern.
-- Klassenfarbene Spielerpunkte können auf Weltkarte und Minikarte für Spieler erscheinen, die ihren Standort teilen. Fahre mit der Maus über einen Punkt, um Name, Fraktion, Volk, Klasse und Stufe zu sehen; klicke darauf, um das QuestTogether-Spielermenü zu öffnen.
-- Spielerstandorte hat separate Schalter zum Teilen und Anzeigen für Weltkarte und Minikarte, und alle vier sind anfangs aktiviert. Die Präsenz für Spielerplaketten-Logos kann weiterlaufen, selbst wenn beide Schalter zum Teilen des Standorts ausgeschaltet sind.
-- Standorte werden regelmäßig aktualisiert und verschwinden, wenn sie ablaufen. Beide Spieler benötigen das aktualisierte Addon; ein Punkt garantiert nicht, dass ihr euch in derselben Phase oder demselben Layer befindet.
+- Bei eingeschalteten freundlichen WoW-Namensplaketten kann neben QT-Spielern das Rollenlogo erscheinen. „Spieler-Namensplaketten“ ist standardmäßig aktiv; das Logo sitzt mit Abstand links. Du kannst auch rechts, oben oder vor dem Namen wählen, ohne die Gesundheitsleisten einzufärben.
+- Spieler, die ihren Standort teilen, erscheinen auf Weltkarte und Minimap als klassenfarbige Punkte. Darüberfahren zeigt Name, Fraktion, Volk, Klasse und Stufe; ein Klick öffnet das QT-Spielermenü.
+- Unter „Spielerstandorte“ sind Teilen und Anzeigen für Weltkarte und Minimap getrennt einstellbar. Alle vier Optionen sind anfangs aktiv. Die Anwesenheit für Namensplakettenlogos kann weiterhin gemeldet werden, auch wenn beide Standortfreigaben aus sind.
+- Standorte werden regelmäßig erneuert und nach Ablauf entfernt. Beide Spieler brauchen das aktualisierte Addon. Ein Kartenpunkt bestätigt nicht, dass ihr euch in derselben Phase oder auf demselben Layer befindet.
 
-### Einen Spieler oder die ganze Gruppe vergleichen
+### Einzelne Spieler oder die ganze Gruppe vergleichen
 
-- Die Aktion Quests vergleichen im Spielermenü vergleicht nun nur dich und den ausgewählten Spieler, einschließlich erreichbarer QuestTogether-Kontakte außerhalb der Gruppe. Der Vergleich der ganzen Gruppe bleibt über das Minikartenmenü, Questnamen-Menüs und /qt compare verfügbar.
-- Questteilen und Teilen-Anfragen bleiben auf die Gruppe beschränkt. Gezielte Vergleiche erklären, wann eine Gruppe zum Teilen benötigt wird und wann der ausgewählte Spieler QuestTogether benötigt, um zu antworten.
-- Wenn eine Anfrage zum Teilen bereits auf einen anderen Spieler wartet, zeigt der Vergleich nun an, auf wen gewartet wird, nachdem du das Ziel gewechselt hast.
+- „Quests vergleichen“ im Spielermenü vergleicht nun nur dich mit dem ausgewählten Spieler – auch mit erreichbaren QT-Spielern außerhalb deiner Gruppe. Den Gruppenvergleich findest du weiterhin im Minimapmenü, in Questnamen-Menüs und unter /qt compare.
+- Quests teilen und anfordern bleibt Gruppenmitgliedern vorbehalten. Der Einzelvergleich erklärt, wann dafür eine Gruppe nötig ist oder der ausgewählte Spieler QT benötigt, um antworten zu können.
+- Wartet bereits eine Teilanfrage auf einen anderen Spieler, zeigt der Vergleich auch nach einem Zielwechsel an, von wem die Antwort aussteht.
 
 ### Feedback und Unterstützung
 
-- Das Willkommensfenster und die Haupteinstellungsseite enthalten nun Discord — Feedback & Support. Es öffnet eine kopierbare Einladung, wenn verfügbar, oder gibt die Einladung im Chat aus, falls das Linkfenster nicht geöffnet werden kann.
+- Begrüßungsfenster und Einstellungsstartseite bieten einen Discord-Link für Feedback und Hilfe. Er öffnet eine kopierbare Einladung. Kann das Linkfenster nicht erscheinen, wird die Einladung im Chat ausgegeben.
 
-### Korrekturen und Feinschliff
+### Fehlerbehebungen
 
-- Ignorierte Spieler werden nun vollständiger gefiltert. Neue Logs, Sprechblasen, Punkte, Vergleiche und Teilen-Vorgänge werden unterdrückt, während vorhandene Sprechblasen und Standorte gelöscht werden, wenn sich die Ignorierliste ändert.
-- Falsche Quest-Plaketten wurden behoben, die dadurch entstanden, dass nicht verfügbare Tooltip-Grenzen mit dem Zieltext einer anderen Quest übereinstimmten.
-- Beim Ausschalten der Karten- oder Minikartenfreigabe wird das Update nach vorübergehenden Kommunikationsfehlern nun erneut versucht. Das Ausschalten beider Freigabeoptionen entfernt außerdem Standortdetails aus anderen Addon-Updates.
-- Spielerlogos werden korrekt entfernt, wenn die Präsenz eines Spielers kurz vor seinem Verlassen abläuft. Flüstern von Kartenpunkten öffnet dein Chatfenster, und das Ändern des Log-Ziels über die Einstellungen ist während Einschränkungen nicht verfügbar.
+- Ignorierte Spieler werden umfassender ausgefiltert: Neue Protokolleinträge, Blasen, Kartenpunkte, Vergleiche und Teilanfragen werden unterdrückt. Bei Änderungen an der Ignorierliste verschwinden bereits angezeigte Blasen und Standorte.
+- Fehlende Questblockgrenzen in Tooltips führen nicht mehr dazu, dass Zieltexte einer anderen Quest fälschlich eine Namensplakette markieren.
+- Nach vorübergehenden Kommunikationsfehlern wird das Abschalten einer Standortfreigabe erneut gemeldet. Sind beide Freigaben aus, enthalten auch andere Addonmeldungen keine Standortangaben mehr.
+- Spielerlogos werden korrekt entfernt, wenn eine Anwesenheitsmeldung kurz vor dem Weggang abläuft. „Flüstern“ an Kartenpunkten öffnet deinen Chat. Das Protokollziel lässt sich während Spielbeschränkungen nicht über die Einstellungen wechseln.
 
 ## 5.10.0
 
-QuestTogether teilt Questfortschritt mit deiner Gruppe und Spielern in der Nähe. Verwende die Minikarten-Schaltfläche für Einstellungen, Gruppenquestvergleiche, dein Questlog und diese neuesten Hinweise.
+Behalte den Questfortschritt deiner Gruppe und naher Spieler im Blick. Über den Minimapknopf erreichst du Einstellungen, Questvergleich, Questjournal und die neuesten Versionshinweise.
 
-### Gruppenquests vergleichen und teilen
+### Quests vergleichen und teilen
 
-- Öffne Gruppenquests vergleichen über die Minikarte oder Quest- und Spielermenüs, oder gib /qt compare ein. Sieh, wer welche Quest hat und wie weit alle fortgeschritten sind.
-- Standardmäßig erscheinen alle Gruppenquests. Aktiviere Quests ausblenden, die ich nicht habe, um dich auf Quests in deinem eigenen Questlog zu konzentrieren.
-- Fordere teilbare Quests von Gruppenmitgliedern an, die das aktualisierte Addon verwenden. Anfragen bitten standardmäßig um Erlaubnis; automatisches Teilen ist eine optionale Einstellung.
-- Vergleiche werden nach Karten- oder Kampfeinschränkungen wiederhergestellt. Aktualisierungen ersetzen ältere Antworten, und Abklingzeiten und Fehlschläge von Anfragen erklären, wann du es erneut versuchen kannst.
+- Öffne den Gruppenvergleich über die Minimap, ein Quest- oder Spielermenü oder mit /qt compare. Du siehst, wer welche Quest hat und wie weit die einzelnen Spieler sind.
+- Zunächst werden alle Quests der Gruppe angezeigt. Mit der Option zum Ausblenden von Quests, die du nicht hast, beschränkst du die Ansicht auf dein eigenes Journal.
+- Bei Gruppenmitgliedern mit dem aktualisierten Addon kannst du teilbare Quests anfordern. Standardmäßig wird um Erlaubnis gefragt; automatisches Teilen lässt sich auf Wunsch einschalten.
+- Vergleiche erholen sich nach Karten- oder Kampfbeschränkungen. Neuere Antworten ersetzen ältere. Hinweise zu Wartezeiten und Fehlern erklären, wann eine erneute Anfrage möglich ist.
 
-### Tastenkürzel und Questmenüs
+### Schnellzugriffe und Questmenüs
 
-- Ziehe die schriftrollenförmige Minikarten-Schaltfläche, um sie neu zu positionieren. Ihr Menü öffnet Einstellungen, Vergleiche, das Questlog, Patchnotes und die Steuerung für das Ziel des Logfensters. Blende sie über das Menü aus und stelle sie in den Einstellungen unter Verschiedenes wieder her.
-- Questnamen-Menüs bieten Status, Teilen, Im Questlog öffnen und Gruppenquests vergleichen. Teilen- und Questlog-Aktionen prüfen die aktuelle Quest und Einschränkungen erneut, wenn sie angeklickt werden.
-- Queststatus-Links behalten ihre Titel, nachdem eine Quest dein Questlog verlassen hat. Das Kontrollkästchen für automatisches Teilen folgt nun gespeicherten Einstellungen und Profiländerungen.
+- Den rollenförmigen Minimapknopf kannst du an eine andere Stelle ziehen. Sein Menü öffnet Einstellungen, Vergleiche, Questjournal und Versionshinweise und lässt dich das Zielfenster des Protokolls ändern. Du kannst den Knopf im Menü ausblenden und unter „Verschiedenes“ wieder einblenden.
+- Das Menü eines Questnamens bietet Status, Teilen, Öffnen im Questjournal und den Gruppenvergleich. Beim Teilen oder Öffnen werden die aktuelle Quest und mögliche Spielbeschränkungen erneut geprüft.
+- Questtitel in Statuslinks bleiben erhalten, wenn die Quest dein Log verlässt. Die Option zum automatischen Teilen folgt jetzt auch gespeicherten Einstellungen und Profilwechseln.
 
-### Hilfe und neueste Hinweise
+### Hilfe und Versionshinweise
 
-- Lies die Willkommens- und neuesten Patchnotes in einem eigenen Fenster statt in wiederholten Chatnachrichten. Wähle Patchnotes im Minikartenmenü oder auf der Haupteinstellungsseite, oder verwende /qt notes, /qt changelog oder /qt patchnotes.
-- Das Hinweise-Fenster öffnet sich automatisch bei Haupt- und Nebenversions-Upgrades. Patch-Updates enthalten weiterhin neue Hinweise, ohne das Fenster automatisch zu öffnen.
-- Verwende /qt help für normale Befehle und /qt help debug für Vorschauen, Diagnosen und Entwicklerbefehle.
+- Begrüßung und aktuelle Änderungen erscheinen in einem eigenen Fenster statt wiederholt im Chat. Du erreichst es über „Versionshinweise“ im Minimapmenü oder auf der Einstellungsstartseite sowie mit /qt notes, /qt changelog oder /qt patchnotes.
+- Bei größeren Versionssprüngen und neuen Funktionsversionen öffnet sich das Fenster automatisch. Kleine Patchupdates enthalten ebenfalls neue Hinweise, öffnen das Fenster aber nicht von selbst.
+- Mit /qt help siehst du die normalen Befehle; /qt help debug zeigt Vorschauen, Diagnosen und Entwicklerbefehle.
 
 ## 5.9.2
 
-Klicke mit der linken oder rechten Maustaste auf einen Questnamen im QuestTogether-Log, um sein Menü zu öffnen, mit Status an erster und Teilen an zweiter Stelle. Teilen verwendet den aktuellen Questlog-Eintrag, ohne Blizzards ausgewählte Quest zu ändern, und ist nicht verfügbar, wenn du solo bist, eingeschränkt bist oder die Quest nicht geteilt werden kann. Nach einem Trennstrich verschiebt die letzte Option QuestTogether-Logs zwischen dem Hauptfenster und separaten Fenstern, passend zum Spielernamen-Menü von QT.
+Questnamen im QT-Protokoll öffnen ihr Menü mit einem Links- oder Rechtsklick. Dort stehen zuerst „Status“ und dann „Teilen“.
 
-### Änderungen in dieser Version
+### Questmenüs im Protokoll
 
-- Questnamen in Statusmeldungen anklickbar machen, einschließlich Ersatztiteln aus den Logs anderer Spieler. Bestehende Questlinks beim Formatieren abgeschlossener Questvergleiche beibehalten, damit Statusdetails nicht Teil eines zweiten, defekten Links werden.
-- Validierung: 521 Tests bestehen in normaler und umgekehrter Reihenfolge unter Lua 5.1 und 5.2. Alle sechs Client-API-Profile, Lua- und Shell-Syntaxprüfungen, exakte libchev-Verifizierung und Diff-Prüfungen bestehen. Menüverhalten im Live-Client, Questteilen-Zustellung und Taint-Validierung auf Engine-Ebene bleiben separat.
+- „Teilen“ verwendet den aktuellen Questlogeintrag, ohne Blizzards ausgewählte Quest zu ändern. Allein, bei Spielbeschränkungen oder bei nicht teilbaren Quests ist die Aktion nicht verfügbar.
+- Nach einer Trennlinie lässt sich das QuestTogether-Protokoll zwischen Hauptchat und eigenem Fenster verschieben. Das entspricht der Funktion im Spielernamen-Menü von QT.
+- Auch Questnamen in Statusmeldungen sind anklickbar, einschließlich Ersatztiteln aus den Logs anderer Spieler. Beim Formatieren abgeschlossener Questvergleiche bleiben vorhandene Questlinks erhalten; Statusangaben landen nicht mehr in einem zweiten, defekten Link.
+- Alle 521 Tests bestehen in beiden Reihenfolgen unter Lua 5.1 und 5.2. Sechs Clientprofile, Lua- und Shell-Syntax, die exakte libchev-Revision und Diff-Prüfungen sind erfolgreich. Menüverhalten im Spiel, Zustellung geteilter Quests und Taint auf Engine-Ebene müssen zusätzlich geprüft werden.
 
 ## 5.9.1
 
-Behebt Questverfolgung, Sichtbarkeit von Quest-Namensplaketten, Ankündigungen in Aufgabenbereichen, Kommunikationszuverlässigkeit und Benutzeraktionen, die im umfassenden Audit identifiziert wurden.
+Eine umfassende Prüfung hat Fehler bei Questerfassung, Namensplaketten, Gebietsaufgaben, Kommunikation und Spieleraktionen behoben.
 
-### Änderungen in dieser Version
+### Korrekturen aus der Prüfung
 
-- Verhindern, dass nicht zugehörige Tooltip-Questblöcke gemeinsamen Zieltext übernehmen. Gültigen Gruppenfortschritt beibehalten und Namensplaketten nach Karten-, Instanz-, Gruppen- und Queständerungen wiederherstellen.
-- Neu angenommene Quests und erste Scans ausstehend halten, bis lesbare Daten eintreffen. Zielmeilensteine, Aufgabenklassifizierung und unbekannten Ortsstatus ohne falsche Ausstiege oder doppelte Einträge beibehalten.
-- Lokalisierte Ankündigungen und Questvergleiche verbessern, einschließlich Nutzdatenlimits, Taktung, Wiederholungen, Abbruch und Meldung der Teilbarkeit.
-- Native Wegpunktfehler respektieren, ohne einen alten Pin weiterzuverfolgen. Eingeschränkte Klicks bei deaktiviertem Zustand ablehnen, statt eingereihte Arbeit zu verlieren.
-- Sprechblasentests zu lokalen Vorschauen machen und vollständige Forever-Namen oder Namen in Anführungszeichen akzeptieren, während die exakte Spieleridentität erhalten bleibt.
-- Aktivieren/Deaktivieren und Profilbehandlung, Öffnen des HUD-Bearbeitungsmodus, genehmigte Feier-Emotes und Diagnosen korrigieren.
-- Live-sichere Testisolation und Regressionsabdeckung stärken, fehlerhafte Testannahmen korrigieren und CI Lua-Syntaxfehler weitergeben lassen.
-- Validierung: 516 Tests bestehen in normaler und umgekehrter Reihenfolge unter Lua 5.1 und 5.2. Alle sechs Client-API-Profile, Syntaxprüfungen, exakte libchev-Verifizierung und Diff-Prüfungen bestehen. Live-Client-Rendering, Zwei-Client-Zustellung und Taint-Validierung auf Engine-Ebene bleiben separat.
+- Getrennte Questblöcke in Tooltips übernehmen nicht mehr versehentlich denselben Zieltext. Gültiger Gruppenfortschritt bleibt erhalten; Namensplaketten erholen sich nach Karten-, Instanz-, Gruppen- und Queständerungen.
+- Neu angenommene Quests und die erste Erfassung warten auf lesbare Daten. Fortschrittsschritte, die Einordnung von Gebietsaufgaben und unbekannte Standorte bleiben erhalten, ohne falsche Gebietsabgänge oder doppelte Einträge auszulösen.
+- Lokalisierte Meldungen und Questvergleiche wurden überarbeitet, einschließlich Nachrichtengrößen, Sendetakt, Wiederholungen, Abbruch und Angaben zur Teilbarkeit.
+- Schlägt ein nativer Wegpunkt fehl, folgt QT keinem alten Marker mehr. Während QT deaktiviert ist, werden gesperrte Klickaktionen abgelehnt, ohne wartende Aufgaben zu verlieren.
+- Blasentests sind lokale Vorschauen. Sie akzeptieren vollständige Forever-Namen und Namen in Anführungszeichen, ohne die genaue Spieleridentität zu verändern.
+- Ein- und Ausschalten, Profilwechsel, das Öffnen des HUD-Bearbeitungsmodus, zulässige Feier-Emotes und Diagnosen wurden korrigiert.
+- Die im Spiel verwendbaren Tests sind besser isoliert. Fehlerhafte Testannahmen wurden berichtigt und die Regressionstests erweitert. Lua-Syntaxfehler führen nun auch in der CI zu einem Fehlschlag.
+- Alle 516 Tests bestehen in beiden Reihenfolgen unter Lua 5.1 und 5.2. Auch die sechs Clientprofile, Syntax, exakte libchev-Revision und Diff-Prüfungen sind erfolgreich. Darstellung im Spiel, Zustellung zwischen zwei Clients und Taint auf Engine-Ebene bleiben gesondert zu prüfen.
 
 ## 5.9.0
 
-Feiere deine eigenen Stufenaufstiege und die von QuestTogether-Spielern in der Nähe mit synchronisierten Emotes. Separate, standardmäßig aktivierte Stufenaufstieg-Emote-Schalter neben den Questabschluss-Emote-Einstellungen unter Sonstiges hinzufügen. Reaktionen in der Nähe berücksichtigen den bestehenden Spielerbereich und die Näherungsregeln.
+Feiere Stufenaufstiege gemeinsam mit QuestTogether-Spielern in deiner Nähe. Außerdem reagieren Questmarkierungen zuverlässiger auf Kämpfe und abgeschlossene Ziele.
 
-### Änderungen in dieser Version
+### Emotes und Questmarkierungen
 
-- Bestätigte Questziel-Abschlüsse nach Kreaturentyp sowie nach einzelnem Spawn merken. Mobs, die während des Kampfs erscheinen, bleiben unmarkiert, wenn Tooltip-Daten nicht verfügbar sind, selbst wenn ein älterer Spawn als benötigt zwischengespeichert wurde. Neue, nicht abgeschlossene Ziele können die Hervorhebung wiederherstellen; Queststatusänderungen löschen den Abschlussspeicher. Unvollständige oder unzugängliche Tooltip-Daten werden nie als Beweis behandelt, dass alle fertig sind.
-- Quest-Namensplaketten-Symbole und Lebensbalkenfärbung sofort löschen, wenn das Anrecht auf einen Mob verweigert wird, auch während des Kampfs. Auf Besitzwechsel achten und Anrechte bei Lebens- und Bedrohungsaktualisierungen erneut prüfen.
-- Neu entdeckte Questmobs während gewöhnlicher Open-World-Kämpfe anhand lesbarer Einheiten-Tooltip-Daten erkennen. Namensplaketten aktualisieren, wenn sie hinter der Kamera hervorkommen, zu deinem Ziel werden oder Mouseover erhalten. Verzögerte Frames, GUIDs und Tooltip-Questzeilen mit einem begrenzten Budget pro Einheit erneut versuchen, veraltete Arbeit abbrechen, wenn Einheiten entfernt werden, und Färbung und Symbol gemeinsam wiederherstellen. Schutzprüfungen für Karte, Instanz, unzugängliche Daten und geschützte Frames beibehalten; Kampferkennung ruft weder Questie noch versteckte Tooltip-UI auf.
-- Validierung: 374 Offline-Tests bestehen in normaler und umgekehrter Reihenfolge unter Lua 5.1 und 5.2. Sechs Client-API-Profile, Lua-Syntaxprüfungen, exakte Bibliotheksverifizierung und Diff-Prüfungen bestehen. Abschluss-Cache-Regressionen haben den Fehler vor der Behebung reproduziert. Live-Gameplay und Taint-Validierung auf Engine-Ebene bleiben separat.
+- Eigene Stufenaufstiege und die von QT-Spielern in der Nähe lösen abgestimmte Emotes aus. Unter „Verschiedenes“ stehen dafür eigene, standardmäßig eingeschaltete Optionen neben den Emotes zum Questabschluss. Die bisherigen Vorgaben zur Spielerauswahl und Entfernung gelten weiterhin.
+- Bestätigte Questzielabschlüsse werden sowohl für einzelne Kreaturen als auch für deren Kreaturentyp gemerkt. Taucht im Kampf eine neue Kreatur auf und sind ihre Tooltipdaten nicht verfügbar, bleibt sie unmarkiert – auch wenn ein früheres Exemplar noch als benötigt gespeichert war. Neue offene Ziele können die Markierung wiederherstellen; Änderungen am Queststatus löschen die Abschlussmerker. Unvollständige oder gesperrte Tooltipdaten bedeuten niemals automatisch, dass alle fertig sind.
+- Ist die Beutezuordnung einer Kreatur für dich gesperrt, verschwinden Questsymbol und Gesundheitsleistenfärbung sofort, auch im Kampf. QT reagiert auf Besitzerwechsel und prüft die Zuordnung erneut bei Gesundheits- und Bedrohungsänderungen.
+- Neue Questgegner lassen sich während gewöhnlicher Kämpfe in der offenen Welt anhand lesbarer Einheitentooltips erkennen. Namensplaketten werden beim Zurückkehren ins Kamerabild, beim Anvisieren und beim Überfahren mit der Maus erneuert. Verzögerte Frames, GUIDs und Questzeilen werden begrenzt erneut geprüft; beim Entfernen einer Einheit wird alte Arbeit verworfen. Symbol und Färbung kehren gemeinsam zurück.
+- Die bisherigen Schutzprüfungen für Karten, Instanzen, unzugängliche Daten und geschützte Frames bleiben erhalten. Die Erkennung im Kampf ruft weder Questie noch versteckte Tooltipfenster auf.
+- Alle 374 Offline-Tests bestehen in beiden Reihenfolgen unter Lua 5.1 und 5.2. Sechs Clientprofile, Lua-Syntax, die exakte Bibliotheksrevision und Diff-Prüfungen sind erfolgreich; die Abschlusscache-Tests reproduzierten zuvor den Fehler. Spielverhalten und Taint müssen zusätzlich im Client geprüft werden.
 
 ## 5.8.6
 
-Charakternamen, Klassennamen, Questtitel und benutzerdefinierte Klassenfarben gegen unzugängliche oder fehlerhafte API-Werte absichern. Optionale TomTom- und Questie-Integrationsdaten vor der Verwendung validieren und das Lesen von Questie-Tooltip-Zeilen bei unzugänglichen Daten stoppen. Sprechblasen-Sichtbarkeit und Bearbeitungsmodus-Status zu booleschen Werten normalisieren, bevor sie an UI-Steuerelemente übergeben werden.
+QT geht robuster mit unzugänglichen oder fehlerhaften Namen, Questtiteln, Klassenangaben und eigenen Klassenfarben um.
 
-### Änderungen in dieser Version
+### Abgesicherte Daten und Bereinigung
 
-- Den Ereignishandler für Ladebildschirme konsolidieren, ungenutzte private Argumente und einen ungenutzten Einschränkungs-Enum-Zweig entfernen und Callback- sowie Rückgabewertbehandlung klarstellen. Moderne/Legacy-Client-Fallbacks und die exakte private Bibliotheksrevision unverändert lassen.
-- Validierung: 336 Tests bestehen in normaler und umgekehrter Reihenfolge unter Lua 5.1 und 5.2, mit erweiterten Adapterprüfungen über sechs Client-Profile. Neue Regressionen schlagen gegen die vorherige Implementierung fehl. Lua-Parsing, exakte Bibliotheksverifizierung und Diff-Prüfungen bestehen. Die verbleibenden Ketho WoW API/LuaLS-Diagnosen wurden überprüft, einschließlich eines separaten Durchlaufs ohne Offline-Client-Mocks; beibehaltene Befunde haben spezifische Gründe bei Kompatibilität, Schutzprüfung, Callback, Bibliothek oder Fixture. Live-Validierung in Retail und Forever bleibt separat.
+- Optionale Daten aus TomTom und Questie werden vor der Verwendung geprüft. Beim Lesen von Questie-Tooltips bricht QT ab, sobald Daten nicht zugänglich sind. Blasensichtbarkeit und Bearbeitungsmodus werden vor der Übergabe an Bedienelemente auf eindeutige Wahrheitswerte normalisiert.
+- Der Handler für Ladebildschirme wurde zusammengeführt. Ungenutzte private Argumente und ein ungenutzter Zweig für Beschränkungswerte wurden entfernt; Rückrufe und Rückgabewerte sind klarer behandelt. Die Ausweichwege für moderne und ältere Clients sowie die festgelegte private Bibliotheksrevision bleiben bestehen.
+- Alle 336 Tests bestehen in beiden Reihenfolgen unter Lua 5.1 und 5.2, einschließlich erweiterter Anpassungsprüfungen für sechs Clientprofile. Neue Regressionstests schlagen mit der vorherigen Implementierung fehl. Lua-Syntax, Bibliotheksrevision und Diff-Prüfungen sind erfolgreich.
+- Die verbleibenden Ketho-WoW-API-/LuaLS-Hinweise wurden auch ohne simulierte Offline-Clients geprüft. Beibehaltene Hinweise sind jeweils durch Kompatibilität, Schutzprüfungen, Rückrufe, Bibliotheksverhalten oder Testdaten begründet. Die Spielprüfung in Retail und Forever bleibt davon getrennt.
 
 ## 5.8.5
 
-Kartenentdeckung für Aufgaben/Weltquests auf modernen Clients beheben, indem questID aus C_TaskQuest.GetQuestsOnMap gelesen wird, während die Legacy-API und das Feld questId für ältere Clients beibehalten werden. C_ChatInfo.PerformEmote bevorzugen, damit Abschluss-Emotes funktionieren, wenn veraltete Globals deaktiviert sind; fehlende oder fehlschlagende Emote-APIs sicher behandeln.
+Gebietsaufgaben und Weltquests werden auf modernen Clients wieder richtig auf der Karte erkannt. Auch Abschluss-Emotes kommen besser mit unterschiedlichen Spiel-APIs zurecht.
 
-### Änderungen in dieser Version
+### API-Kompatibilität und Prüfung
 
-- Eine ungenutzte Gruppenlisten-Fingerabdruckberechnung und ungenutzte lokale Variablen entfernen. Offline-Client-Prüfungen erweitern, um moderne und Legacy-Aufgaben-/Emote-APIs, API-Priorität, unzugängliche Questdaten und fehlende/fehlschlagende APIs abzudecken. Validierung: 334 Tests bestehen in normaler und umgekehrter Reihenfolge unter Lua 5.1 und 5.2, dazu die erweiterten API-Prüfungen auf sechs Client-Profilen, Lua-Parsing und exakte Bibliotheksverifizierung. Gameplay-Validierung in Retail und Forever bleibt von Offline-Prüfungen getrennt.
+- Auf modernen Clients liest QT questID aus C_TaskQuest.GetQuestsOnMap; für ältere Clients bleiben die frühere API und das Feld questId erhalten. Abschluss-Emotes verwenden bevorzugt C_ChatInfo.PerformEmote und funktionieren damit auch bei abgeschalteten veralteten globalen Funktionen. Fehlende oder fehlschlagende Emote-APIs werden abgefangen.
+- Eine ungenutzte Fingerprint-Berechnung für die Gruppenliste und ungenutzte lokale Variablen wurden entfernt. Die Offline-Prüfungen decken moderne und ältere Aufgaben-/Emote-APIs, deren Vorrang, unzugängliche Questdaten sowie fehlende oder fehlerhafte APIs ab.
+- Alle 334 Tests bestehen in normaler und umgekehrter Reihenfolge unter Lua 5.1 und 5.2. Die erweiterten API-Prüfungen für sechs Clientprofile, Lua-Syntax und die exakte Bibliotheksrevision sind ebenfalls geprüft. Das tatsächliche Spielverhalten in Retail und Forever muss gesondert bestätigt werden.
 
 ## 5.8.4
 
-Repository-Aufräumen: lokale Entwicklungsnotizen außerhalb der nachverfolgten Quellen und Release-Pakete halten. Das Gameplay-Verhalten ist unverändert.
+Diese Wartung betrifft nur die Ablage der Entwicklungsunterlagen.
 
-### Änderungen in dieser Version
+### Repository aufgeräumt
 
-- Repository-Aufräumen: lokale Entwicklungsnotizen außerhalb der nachverfolgten Quellen und Release-Pakete halten. Das Gameplay-Verhalten ist unverändert.
+- Lokale Entwicklungsnotizen gehören nicht mehr zum versionierten Quellcode oder zu den Veröffentlichungspaketen. Am Spielverhalten ändert sich nichts.
 
 ## 5.8.3
 
-Die installierte Version, unterstützte Clients und den Einstellungsbefehl einmal pro Login oder UI-Neuladen ankündigen. Addon-spezifische CurseForge- und GitHub-Feedbacklinks einschließen; ein Klick auf einen Link öffnet ein Kopierfenster im nativen Stil. Nachrichtenverhalten beim Teilen und sichere Kopier-UI über private libchev 1.2.0 gemeinsam nutzen. Wenn Linkregistrierung oder Kopierfenster nicht verfügbar sind, die vollständige URL im Chat anzeigen. Ein nicht verfügbarer Willkommenshelfer kann den normalen Addon-Start nicht unterbrechen.
+Beim Einloggen oder Neuladen der Oberfläche zeigt QT einmalig seine Version, die unterstützten Clients und den Befehl zum Öffnen der Einstellungen an.
 
-### Änderungen in dieser Version
+### Startmeldung und Feedbacklinks
 
-- Validierung: 334 Tests bestehen in beiden Reihenfolgen unter Lua 5.1 und 5.2, mit Client-API-Prüfungen, Lua-Parsing und exakter Bibliotheksanbieter-Verifizierung. NoPoizen-Smoke-Simulationen üben beide Feedbacklinks auf allen sieben Client-/Regelwerk-Profilen aus. Live-Rendering bleibt eine separate Prüfung.
+- Die Meldung enthält passende Links zu CurseForge und GitHub für Feedback. Ein Klick öffnet ein Kopierfenster im WoW-Stil. Falls die Linkregistrierung oder das Kopierfenster nicht verfügbar ist, steht die vollständige Adresse direkt im Chat.
+- Meldungsverhalten und abgesichertes Kopierfenster werden über die private Bibliothek libchev 1.2.0 bereitgestellt. Ein nicht verfügbarer Helfer für die Startmeldung unterbricht den normalen Addonstart nicht.
+- Alle 334 Tests bestehen in beiden Reihenfolgen unter Lua 5.1 und 5.2. Client-APIs, Lua-Syntax und die exakte Bibliotheksrevision wurden geprüft. NoPoizen-Smoke-Simulationen prüfen beide Feedbacklinks in sieben Client-/Regelprofilen. Die Darstellung muss zusätzlich im Spiel überprüft werden.
 
 ## 5.8.2
 
-GUID-Abfragen der Test-Fixture von Spielern in der Nähe isolieren. Zwei falsche Fehler in /qt test beheben, wenn eine echte Einheit das Namensplaketten-Token belegt, das von den Tooltip- und Zwischensymbol-Prüfungen verwendet wird. Das Gameplay-Verhalten von Namensplaketten ist unverändert.
+Zwei Fehlalarme in /qt test sind behoben. Die Namensplaketten im normalen Spielbetrieb verhalten sich unverändert.
 
-### Änderungen in dieser Version
+### Isolierte Testdaten
 
-- Die Offline-Umgebung enthält nun diese Token-Kollision und reproduziert beide Fehler ohne die Fixture-Behebung. Alle 333 Tests bestehen nach der Behebung in beiden Reihenfolgen unter Lua 5.1 und 5.2; sechs Client-API-Profile bestehen ebenfalls. Bestätigung im Spiel bleibt separat.
+- Die GUID-Abfragen der Testdaten sind von echten Spielern in der Nähe getrennt. Dadurch schlagen Tooltip- und Symbolcache-Prüfungen nicht mehr fälschlich fehl, wenn eine reale Einheit gerade denselben Namensplaketten-Token belegt.
+- Die Offline-Testumgebung bildet diesen Zusammenstoß nun nach und reproduziert beide Fehler ohne die Korrektur. Mit der Korrektur bestehen alle 333 Tests in beiden Reihenfolgen unter Lua 5.1 und 5.2 sowie die API-Prüfungen für sechs Clientprofile. Die Bestätigung im Spiel bleibt eine eigene Prüfung.
 
 ## 5.8.1
 
-Blizzards Questmarkierung neben QuestTogether in der AddOns-Liste statt des standardmäßigen Fragezeichens anzeigen.
+QuestTogether ist in der Addon-Liste leichter zu erkennen.
 
-### Änderungen in dieser Version
+### Symbol in der Addon-Liste
 
-- Blizzards Questmarkierung neben QuestTogether in der AddOns-Liste statt des standardmäßigen Fragezeichens anzeigen.
+- Neben QuestTogether erscheint jetzt Blizzards Questsymbol statt des allgemeinen Fragezeichens.
 
 ## 5.8.0
 
-Aktuelle Classic-Clients mit korrekten Nutzdaten zur Questannahme, abgesicherten Ziel-API-Fallbacks, ehrlicher Meldung unbekannter Teilbarkeit, Flavor-Metadaten und API-Regressionsprüfungen für sechs Clients unterstützen. Retail-/Forever-Verhalten und gemeinsame Debug-Hilfsfunktionen beibehalten.
+QuestTogether unterstützt die aktuellen Classic-Clients zuverlässiger. Das Verhalten in Retail und Forever sowie die gemeinsamen Debugfunktionen bleiben erhalten.
 
-### Änderungen in dieser Version
+### Classic-Kompatibilität
 
-- Validierung: 333 Tests bestehen in beiden Reihenfolgen unter Lua 5.1 und 5.2, mit sechs Client-Profilen, Lua-Parsing und exakten Vendor-Prüfungen privater Bibliotheken. NoPoizen-Client-Smoke-Prüfungen und Paketverifizierung bestehen ebenfalls. Live-Validierung der neuen Adapter steht noch aus.
-- Siehe CLIENT_COMPATIBILITY.md für Quellennachweise, Umfang und Validierungsgrenzen.
+- QT verarbeitet die Ereignisdaten beim Annehmen von Quests passend zum Client und nutzt abgesicherte Ausweichwege für Questziel-APIs. Ist unbekannt, ob sich eine Quest teilen lässt, wird diese Unsicherheit beibehalten. Hinzu kommen Metadaten für die jeweiligen Spielvarianten und API-Regressionstests für sechs Clients.
+- Alle 333 Tests bestehen in beiden Reihenfolgen unter Lua 5.1 und 5.2. Geprüft wurden außerdem sechs Clientprofile, Lua-Syntax, die exakte eingebettete Bibliotheksrevision sowie NoPoizen-Smoke-Tests und das Paket. Die neuen API-Anpassungen müssen noch im Spiel bestätigt werden.
+- CLIENT_COMPATIBILITY.md enthält die zugrunde liegenden Quellen, den Geltungsbereich und die Grenzen der bisherigen Prüfungen.
 
 ## 5.7.7
 
-Überlappende Debug-Konsolen und ihre Steuerelemente über private libchev 1.1.3 in einer nativen Stapelgruppe halten. Kategoriemenüs bleiben bei ihrer zugehörigen Konsole.
+Überlappende Debugfenster und ihre Bedienelemente bleiben mit libchev 1.1.3 in einer gemeinsamen WoW-Stapelgruppe. Kategoriemenüs gehören dadurch sichtbar zu ihrer Konsole.
 
-### Änderungen in dieser Version
+### Namensplaketten und Charakternamen
 
-- Questziel-Symbole standardmäßig links von der Namensplakette platzieren. Bestehende gespeicherte Symbolpositionen bleiben unverändert.
-- Forevers Einstellung „My Last Name“ beim Anzeigen des Namens deines Charakters berücksichtigen. Die Nachnamen anderer Spieler sichtbar lassen, passend zum Geltungsbereich der nativen Einstellung. Vollständige Namen konsequent für Kommunikation, Gruppenmitgliedschaft, Namensplaketten-Abgleich und soziale Aktionen verwenden, während bestehende Profil- und persönliche Sprechblasenpositions-Schlüssel erhalten bleiben.
-- Doppelte lokale Questankündigungen beheben, die entstehen, wenn deine eigene Kanalnachricht unter einem anderen Vollnamenformat empfangen wird. Die Regressionsabdeckung prüft die lokale Ankündigung gefolgt von ihren Kanal- und Gruppenechos, einschließlich eines anderen Charakters mit demselben Vornamen.
-- Validierung: 331 Tests bestehen in beiden Reihenfolgen unter Lua 5.1/5.2. Live-Bestätigung des neuen Symbolstandards und der Mehrfenster-Interaktion bleibt separat.
+- Neue Einstellungen platzieren Questzielsymbole links an der Namensplakette. Bereits gespeicherte Positionen werden nicht verändert.
+- Bei deinem eigenen Namen berücksichtigt QT in Forever die Einstellung „My Last Name“. Die Nachnamen anderer Spieler bleiben wie im Spiel selbst sichtbar. Für Kommunikation, Gruppenabgleich, Namensplaketten und Spieleraktionen werden weiterhin vollständige Namen verwendet; vorhandene Profil- und Positionsschlüssel deiner persönlichen Blase bleiben erhalten.
+- Eigene Questmeldungen erscheinen nicht mehr doppelt, wenn der Kanal deinen vollständigen Namen in einem anderen Format zurückliefert. Regressionstests decken die lokale Meldung samt Kanal- und Gruppenecho sowie einen anderen Charakter mit gleichem Vornamen ab.
+- Alle 331 Tests bestehen in beiden Reihenfolgen unter Lua 5.1/5.2. Die neue Standardposition der Symbole und das Zusammenspiel mehrerer Fenster müssen zusätzlich im Spiel bestätigt werden.
 
 ## 5.7.6
 
-Verwendet dieselbe private Debug-Konsole libchev 1.1.2 über alle drei Addons hinweg, einschließlich Kategorie-/Suchfiltern, Kopiersteuerungen, Testergebnissen, Diagnoseberichten, Zeitstempeln, sofern verfügbar, und einer einzigen abschließenden Testzusammenfassung. Behebt gestreckte native Frame-Grafiken mit expliziten Texturgrenzen.
+Alle drei Addons verwenden dieselbe private Debugkonsole aus libchev 1.1.2. Ihre WoW-Fenstergrafik wird jetzt ohne Verzerrung dargestellt.
 
-### Änderungen in dieser Version
+### Debugkonsole und Prüfung
 
-- QuestTogether stellt eigene Questdiagnosen und isolierte Tests bereit, während die gemeinsame Bibliothek die Konsole und das allgemeine Debug-Verhalten verwaltet. Führe /qt test, /qt debug oder /qt diagnostics aus.
-- Validierung: 324 Tests bestehen in beiden Reihenfolgen unter Lua 5.1/5.2. Der Benutzer hat das korrigierte Frame-Aussehen im Spiel bestätigt. Weitere Validierung von Live-Einschränkungen und Gameplay bleibt separat.
+- Die gemeinsame Konsole bietet Kategorie- und Suchfilter, Kopierfunktionen, Testergebnisse, Diagnoseberichte und, soweit verfügbar, Zeitstempel. Am Ende eines Testlaufs erscheint genau eine Zusammenfassung. Explizite Texturgrenzen beheben die gestreckte Rahmengrafik.
+- QuestTogether liefert weiterhin seine eigenen Questdiagnosen und isolierten Tests; die Bibliothek übernimmt Konsole und allgemeine Debugfunktionen. Die Befehle dafür sind /qt test, /qt debug und /qt diagnostics.
+- Alle 324 Tests bestehen in beiden Reihenfolgen unter Lua 5.1/5.2. Die korrigierte Fenstergestaltung wurde im Spiel bestätigt. Weitere Prüfungen von Spielbeschränkungen und tatsächlichem Spielverhalten stehen davon getrennt.
 
 ## 5.7.6-beta.3
 
-QuestTogether 5.7.6-beta.3 aktualisiert die eingebettete gemeinsame Debug-Konsole auf libchev 1.1.1.
+Die gemeinsame Debugkonsole verwendet jetzt libchev 1.1.1 und erhält wieder die vertraute WoW-Fenstergestaltung.
 
-### Änderungen in dieser Version
+### Darstellung und Testergebnisse
 
-- Stellt das native WoW-ähnliche Fensterdesign in der gemeinsamen Konsole der Addons wieder her.
-- Entfernt die doppelte Testzusammenfassungszeile, während die abschließende Zusammenfassung im begrenzten Verlauf erhalten bleibt.
-- Behält die gemeinsamen Such-, Kategorie-, Kopier-, Scroll-, Test- und Diagnosefunktionen sowie die bestehenden Einschränkungsprüfungen bei.
-- Der Benutzer hat gemeldet, dass alle 324 QT-Tests in Forever 1.60.1 Build 70009 auf beta.2 bestanden wurden. Die sieben live geladenen Testdateien von QT wurden außerdem auf ungültige Arithmetik geprüft; es wurden keine Fixtures zur NaN-Erzeugung oder Division durch null gefunden. Dieses frühere Live-Testergebnis validiert diese neue Änderung am Aussehen nicht.
-- Öffne nach /reload /qtd, führe /qt test aus und prüfe das Fensteraussehen sowie die einzelne Zusammenfassung. Live-Rendering und Einschränkungs-/Taint-Verhalten für diese Revision müssen noch im Client verifiziert werden.
-- Validierung: Alle 324 Fälle bestehen vorwärts/rückwärts unter echtem Lua 5.1.5 und 5.2.4, jeder CLI-Lauf gibt eine Zusammenfassung aus, und die extrahierte installierbare ZIP mit 26 Dateien besteht auf beiden Versionen. Alle 23 Lua-Dateien werden geparst; alle 22 TOC-Einträge und das Vendor-Manifest werden verifiziert. Formatierungs- und Diff-Prüfungen bestehen. Bibliotheks-Pin: 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. Es ist keine QT-GitHub-CI konfiguriert; die CI der Upstream-Bibliothek wurde bestanden.
+- Die Konsole sieht in allen beteiligten Addons wieder wie ein WoW-Fenster aus. Die doppelte Testzusammenfassung entfällt; die abschließende Zusammenfassung bleibt im begrenzten Verlauf erhalten.
+- Suche, Kategorien, Kopieren, Scrollen, Tests und Diagnosen funktionieren weiterhin gemeinsam. Die vorhandenen Prüfungen auf Spielbeschränkungen bleiben bestehen.
+- Für beta.2 wurden alle 324 QT-Tests in Forever 1.60.1, Build 70009, als bestanden gemeldet. Die sieben im Spiel geladenen Testdateien wurden außerdem auf ungültige Rechenoperationen untersucht: Es gab weder absichtliche NaN-Erzeugung noch Divisionen durch null. Dieses frühere Spielergebnis bestätigt jedoch nicht die neue Fenstergestaltung.
+- Bitte nach /reload die Konsole mit /qtd öffnen, /qt test ausführen und Fenstergestaltung sowie die einmalige Zusammenfassung prüfen. Darstellung und Beschränkungs-/Taint-Verhalten dieser Revision müssen weiterhin im Spiel bestätigt werden.
+- Alle 324 Tests bestehen vorwärts und rückwärts unter Lua 5.1.5 und 5.2.4; jeder Kommandozeilendurchlauf liefert genau eine Zusammenfassung. Das entpackte Installations-ZIP mit 26 Dateien besteht die Tests unter beiden Versionen. Die 23 Lua-Dateien, 22 TOC-Einträge, das Bibliotheksmanifest sowie Formatierungs- und Diff-Prüfungen sind ebenfalls geprüft.
+- Verwendete Bibliotheksrevision: 2feea04bab60ba1c1b91bd01ab8a58ce02e091a9. Für QT ist noch keine GitHub-CI eingerichtet; die CI der Bibliothek ist erfolgreich durchgelaufen.
 
 ## 5.7.6-beta.2
 
-QuestTogether 5.7.6-beta.2 ersetzt sein separates Debug-Fenster durch die gemeinsame libchev v1.1-Konsole, die über die Addons hinweg verwendet wird. Die eingebettete Bibliothek ist enthalten; keine separate Installation ist erforderlich.
+Das bisherige Debugfenster weicht der gemeinsamen Konsole aus libchev v1.1. Die Bibliothek wird mitgeliefert und braucht keine eigene Installation.
 
-### Änderungen in dieser Version
+### Die gemeinsame Debugkonsole
 
-- Gemeinsame Kategoriefilterung, unscharfe/angeführte Suche, Kopieren/Auswählen, Löschen, Neuladen, Tests, Diagnosen und Scroll-Follow-Verhalten.
-- /qt test öffnet die aktuellen Ergebnisse; wiederholte Läufe ersetzen den alten TEST-Verlauf und löschen veraltete Suchfilter.
-- /qt diagnostics [questID] und /qt diag [questID] erstellen den aktuellen zwischengespeicherten Bericht in derselben Konsole neu und behalten aktuelle Ereignisse innerhalb des gemeinsamen Exportbudgets bei.
-- Gemeinsame Einschränkungs- und Own-Frame-Schutzmechanismen ersetzen die alten Konsolen-Callbacks und die Dropdown-Implementierung von QT.
-- Queststatus, Ankündigungen, Namensplaketten, Kommunikation und QT-spezifische Testisolation bleiben im Besitz von QuestTogether.
-- Dies ist eine Betaversion. Live-Rendering und Taint-Verhalten in Retail/Forever müssen noch verifiziert werden. Führe nach /reload /qt test und /qt diagnostics aus und teste anschließend Kategorie/Suche, Kopieren, Löschen, Größenänderung, Scrollen, wiederholte Testläufe sowie das Wechseln zwischen Berichten und Logs. Schließe Kampf-/Einschränkungsübergänge und dein übliches Addon-Set ein.
-- Validierung: 324/324 Tests bestehen in beiden Reihenfolgen unter Lua 5.1.5 und 5.2.4. Alle 23 Lua-Dateien werden geparst, alle 22 TOC-Einträge validiert, und das angepinnte Bibliotheksmanifest wird verifiziert. Die installierbare ZIP wurde extrahiert und bestand alle 324 Fälle mit dem separaten Offline-Harness. Bibliotheks-Pin: 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6.
+- Die Konsole bietet für alle Addons dieselben Kategoriefilter, eine Suche mit unscharfen Treffern oder exakten Ausdrücken in Anführungszeichen sowie Auswählen, Kopieren, Leeren, Neuladen, Tests und Diagnosen. Auch das automatische Mitrollen des Protokolls ist vereinheitlicht.
+- Mit /qt test öffnest du die aktuellen Ergebnisse. Ein weiterer Durchlauf ersetzt die alten TEST-Einträge und entfernt überholte Suchfilter.
+- Mit /qt diagnostics [questID] oder /qt diag [questID] wird der aktuelle zwischengespeicherte Bericht in derselben Konsole neu aufgebaut. Innerhalb der gemeinsamen Exportgrenze bleiben die jüngsten Ereignisse erhalten.
+- Die Bibliothek übernimmt die bisherigen Konsolen-Rückrufe und Dropdowns von QT samt Prüfungen auf Spielbeschränkungen und addon-eigene Fenster. Questdaten, Ankündigungen, Namensplaketten, Kommunikation und die Isolation der QT-Tests bleiben bei QuestTogether.
+- Darstellung und Taint-Verhalten dieser Beta sind in Retail und Forever noch zu prüfen. Nach /reload bitte /qt test und /qt diagnostics ausführen und Filter, Suche, Kopieren, Leeren, Größenänderung, Scrollen, wiederholte Tests sowie den Wechsel zwischen Berichten und Protokollen ausprobieren – mit den üblichen Addons und auch bei Kampf- und Beschränkungswechseln.
+- Alle 324/324 Tests bestehen in beiden Reihenfolgen unter Lua 5.1.5 und 5.2.4. Die 23 Lua-Dateien, 22 TOC-Einträge und das Manifest der festgelegten Bibliotheksrevision wurden geprüft. Auch das entpackte Installations-ZIP besteht sämtliche 324 Tests in der separaten Offline-Testumgebung. Bibliotheksrevision: 1f2cd0eaabb692fd0befd51dbdadeb7e07beb3c6.
 
 ## 5.7.6-beta.1
 
-QuestTogether 5.7.6-beta.1 bettet libchev v1.0.0 ein, um Logging, Diagnosen, Callback-Schutzmechanismen, Mechaniken für aufgeschobene Arbeit und Testausführung mit den anderen Together-Addons zu teilen. Die Bibliothek ist enthalten; keine separate Addon-Installation ist nötig.
+Die Together-Addons nutzen künftig gemeinsame Hilfsfunktionen aus libchev v1.0.0. Die Bibliothek ist bereits enthalten; du musst nichts zusätzlich installieren.
 
-### Änderungen in dieser Version
+### Änderungen dieser Beta
 
-- Diagnoseberichte enthalten gemeinsame Client-/Addon-/Bibliotheksinformationen und behalten die neuesten Ereignisse bei, wenn das Kopierfenster voll wird.
-- Quest-, Gruppen-, Namensplaketten- und Einschränkungsverhalten bleibt im Besitz von QuestTogether, mit isolierten Laufzeitspeichern pro Addon.
-- Koordinatenlinks bleiben nutzbar, während QT deaktiviert ist, sofern Einschränkungen sie erlauben; eingereihte Hintergrundarbeit bleibt pausiert, und veraltete Timer werden verworfen.
-- /qt test enthält jetzt 315 Fälle: die bestehenden 300, zehn Prüfungen der gemeinsamen Bibliothek und fünf Integrationsregressionen.
-- Validierung: Alle 315 Tests bestehen in beiden Reihenfolgen unter Lua 5.1.5 und 5.2.4; Lua-Syntax, TOC-Ladereihenfolge und das eingebettete Revisions-/Hash-Manifest bestehen. Eingebettete libchev-Quelle: 09ac76eb6fe8e9589b809188652950c3cd9e444c.
-- Dies ist eine Betaversion. Live-Rendering der Benutzeroberfläche und Taint-Verhalten in Retail/Forever nach dieser Auslagerung müssen noch verifiziert werden. Führe nach dem Neuladen /qt test und /qt diagnostics aus und teste anschließend Quests, Fortschrittsblasen, Namensplaketten und Koordinatenlinks über Kampf, Gebietswechsel, Deaktivieren/Reaktivieren und Neuladen hinweg mit deinen üblichen Addons. Die frühere Retail-Bestätigung mit 300 Tests galt für v5.7.5.
+- Protokolle, Diagnosen, abgesicherte Rückrufe, aufgeschobene Aufgaben und die Testausführung werden über libchev gemeinsam bereitgestellt. QuestTogether verwaltet Quests, Gruppen, Namensplaketten und den Umgang mit gesperrten Spielaktionen weiterhin selbst. Die Laufzeitdaten der einzelnen Addons bleiben getrennt.
+- Diagnoseberichte enthalten Angaben zu Spielclient, Addon und Bibliothek. Wird das Kopierfenster voll, bleiben die neuesten Ereignisse erhalten.
+- Koordinatenlinks lassen sich auch bei deaktiviertem QT verwenden, soweit das Spiel es zulässt. Hintergrundaufgaben bleiben angehalten; veraltete Timer werden verworfen.
+- Mit /qt test stehen 315 Prüfungen bereit: die bisherigen 300, zehn Prüfungen der gemeinsamen Bibliothek und fünf zusätzliche Regressionstests für die Einbindung.
+- Alle 315 Tests bestehen in beiden Ausführungsreihenfolgen unter Lua 5.1.5 und 5.2.4. Auch Lua-Syntax, Ladereihenfolge in der TOC und das Manifest der eingebetteten Revision samt Prüfsummen wurden geprüft. Verwendeter libchev-Stand: 09ac76eb6fe8e9589b809188652950c3cd9e444c.
+- Diese Fassung ist eine Beta. Darstellung und Taint-Verhalten nach der Auslagerung müssen noch in Retail und Forever geprüft werden. Lade die Oberfläche neu, führe /qt test und /qt diagnostics aus und probiere Quests, Fortschrittsblasen, Namensplaketten und Koordinatenlinks mit deinen üblichen Addons aus – auch im Kampf, beim Gebietswechsel, nach Aus- und Einschalten von QT und nach dem Neuladen.
+- Die frühere Bestätigung der 300 Tests in Retail bezog sich auf v5.7.5; sie bestätigt nicht die Änderungen dieser Beta.

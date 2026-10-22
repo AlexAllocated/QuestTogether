@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """History packaging and release gates, entirely within temporary repositories."""
 import copy
+from contextlib import redirect_stderr
+import io
 import json
 import shutil
 from pathlib import Path
@@ -15,6 +17,89 @@ import test_changelogs
 
 
 class HistoryTests(test_changelogs.ChangelogFixture, unittest.TestCase):
+    def test_manual_major_bump_cannot_hide_a_missing_published_patch(self):
+        previous = self.entry('7.4.3')
+        (self.root / 'changelogs/history.json').write_text(dumps({'schema': 1, 'releases': [previous]}))
+        self.notes['version'] = '7.4.4'
+        self.notes['welcome'] = 'Read each feature update and its patches together.'
+        self.write_source(self.notes)
+        toc = self.root / 'QuestTogether.toc'
+        toc.write_text(toc.read_text().replace('1.0.0', '7.4.4'))
+        self.dates['7.4.4'] = '2026-10-05'
+        self.write_dates()
+        self.generate()
+        published = {'enUS': copy.deepcopy(self.notes)}
+        for locale in LOCALES:
+            published[locale] = json.loads((self.root / 'release_notes' / (locale + '.json')).read_text())['notes']
+        self.git('init', '-q'); self.git('add', '.'); self.git('commit', '-qm', 'Publish grouped patch notes')
+        self.git('tag', '-a', 'v7.4.4', '-m', 'Release 7.4.4')
+
+        # Reproduce the manual 8.0.0 jump: current notes change, but the archive
+        # still ends at 7.4.3. All Lua and Markdown are internally synchronized,
+        # exactly as the previous generation-only checks allowed.
+        self.notes['version'] = '8.0.0'
+        self.notes['welcome'] = 'A new feature release.'
+        self.write_source(self.notes)
+        toc.write_text(toc.read_text().replace('7.4.4', '8.0.0'))
+        self.dates['8.0.0'] = '2026-10-06'
+        self.write_dates()
+        with patch.object(h, 'require_complete_history'):
+            self.generate()
+        self.git('add', '.'); self.git('commit', '-qm', 'Manual major release without archiving the patch')
+        self.git('tag', 'v8.0.0')
+        before = {p: p.read_bytes() for p in self.root.rglob('*') if p.is_file() and '.git' not in p.parts}
+        for mode in (['--check'], ['--check', '--release-history'],
+                     ['--check', '--baseline-ref', 'v7.4.4'], ['--write']):
+            with self.subTest(mode=mode), redirect_stderr(io.StringIO()) as errors:
+                self.assertEqual(notes_main(['--root', str(self.root), *mode]), 1)
+                self.assertIn('published releases missing from changelog history: 7.4.4', errors.getvalue())
+        self.assertEqual({p: p.read_bytes() for p in before}, before)
+
+        (self.root / 'changelogs/history.json').write_text(dumps({'schema': 1, 'releases': [published, previous]}))
+        self.generate()
+        self.assertEqual(notes_main(['--root', str(self.root), '--check', '--release-history']), 0)
+        self.assertIn('Read each feature update and its patches together.', (self.root / h.LUA_FILE).read_text())
+
+    def test_completeness_covers_prereleases_and_accepts_legacy_archive_entries(self):
+        self.git('init', '-q')
+        toc = self.root / 'QuestTogether.toc'
+        notes_path = self.root / 'release_notes.json'
+
+        def tag(version, *, structured=True, notes_version=None):
+            toc.write_text('## Version: ' + version + '\nCore.lua\nReleaseNotes.lua\n')
+            if structured:
+                notes_path.write_text(dumps({**self.notes, 'version': notes_version or version}))
+            elif notes_path.exists():
+                notes_path.unlink()
+            self.git('add', '.'); self.git('commit', '-qm', 'Release ' + version)
+            self.git('tag', 'v' + version)
+
+        tag('0.8.0', structured=False)
+        tag('0.9.0-beta.1')
+        tag('0.9.0', notes_version='0.9.1')  # Not a matching structured release.
+        tag('1.1.0')  # Reachable but newer than the release being validated.
+        tag('1.0.0')  # The current release is never an archived requirement.
+        self.git('tag', 'vnot-a-release')
+        self.git('checkout', '-qb', 'unmerged-release')
+        tag('0.9.0-beta.2')
+        self.git('checkout', '-q', 'v1.0.0')
+        with self.assertRaisesRegex(ValueError, 'missing from changelog history: 0.9.0-beta.1'):
+            h.require_complete_history(self.root, '1.0.0', set())
+        legacy = self.entry('0.9.0-beta.1')
+        (self.root / h.LEGACY_FILE).write_text(dumps([legacy]))
+        self.write_source(self.notes)
+        toc.write_text('## Version: 1.0.0\nCore.lua\nReleaseNotes.lua\nLocalizedReleaseNotes.lua\nReleaseNotesHistory.lua\nWelcome.lua\n')
+        self.generate()
+        self.assertEqual(notes_main(['--root', str(self.root), '--check']), 0)
+
+    def test_completeness_rejects_shallow_history_even_when_archive_looks_complete(self):
+        self.git('init', '-q'); self.git('add', '.'); self.git('commit', '-qm', 'Initial release')
+        self.git('tag', 'v1.0.0')
+        clone = Path(self.temp.name) / 'shallow'
+        self.git('clone', '--quiet', '--depth', '1', self.root.as_uri(), str(clone))
+        with self.assertRaisesRegex(ValueError, 'require a full checkout'):
+            h.require_complete_history(clone, '1.0.0', set())
+
     def test_silent_archives_are_excluded_from_browsable_history(self):
         entry = {loc: {'version': '0.9.0', 'welcome': '', 'sections': []} for loc in ['enUS', *LOCALES]}
         self.dates['0.9.0'] = '2026-10-04'

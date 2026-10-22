@@ -20,63 +20,130 @@ the in-game history and repository changelogs with `check_release_notes.py --wri
 
 ## Prepare the notes
 
-Use **Actions → Prepare Release Notes → Run workflow** on `main`. It compares
-the current code with the published tag matching the TOC version, generates
-player-facing notes with the same OpenAI workflow used by Bumblebee, and opens
-a review PR containing the English notes, all ten translations, and both generated
-Lua files. It also uploads those files and English Markdown notes as an artifact.
-Review and merge that PR before the version bump. It does not tag, release, or
-announce anything.
-If repository policy blocks Actions from opening PRs, the generated artifact
-remains available; use its files through the normal review process.
-
-For local preparation, with `OPENAI_API_KEY` already in the environment:
+Run the automated authoring workflow locally with a saved ChatGPT login in the
+Codex CLI. It uses `codex exec` with `gpt-6.1-sol` by default and verifies that
+authentication is ChatGPT before starting; API-key authentication is rejected,
+with no paid model API fallback. Normal subscription usage limits apply. Keep
+the local machine running and connected while the authoring and review passes run.
 
 ```sh
-python3 scripts/generate_release_notes.py --write
-python3 scripts/translate_locales.py --notes --write
-python3 scripts/check_release_notes.py --write
-python3 scripts/check_release_notes.py --check
+python3 scripts/author_release_notes.py --include-working-tree --output-dir .local/release-notes-draft
 ```
 
-The default requires committed changes and a clean working tree. To deliberately
-include local addon edits, use `--include-working-tree`. Omit `--write` to preview
-generated notes without changing the addon. `--markdown-out <path>` writes the
-same text for a GitHub release body. Generation uses `gpt-5.5` by default, matching
-Bumblebee; `CHANGELOG_OPENAI_MODEL` or `--model` overrides it. Only release
-evidence from approved addon/documentation paths is sent; credentials are never
-written into generated content or the addon. An API failure, refusal, invalid
-content or repeated previous notes fails instead of replacing files with a
-placeholder. This uses the documented [Responses structured-output format](https://developers.openai.com/api/docs/guides/structured-outputs).
-Generating notes from local edits does not include those edits in a release:
-commit the implementation changes before running the release script.
-English generation deliberately leaves existing translations untouched. Translate
-again after the final English edit, then review every language before releasing.
-The preparation workflow performs these steps in order and refuses to push its
-branch if any translation or generated file fails validation. An English draft
-artifact may still be available after a translation failure; it is not release-ready.
+Omit `--include-working-tree` for a clean, committed checkout. The default
+baseline is the published tag matching the TOC version; use
+`--baseline-ref <last-release-tag>` when the intended change range needs an
+explicit baseline. `--model <model>` overrides the default model. To resume an
+interrupted run, repeat the same command and output directory with `--resume`.
+Use `--scope <text-file>` to constrain the release's player-facing topics when
+needed. Resume requires the same model, scope, evidence and UI terminology, and
+preserves manually edited drafts instead of overwriting them. Automated runs
+send complete eligible diffs and changed source files; oversized evidence stops
+with instructions to author in the active session rather than silently omitting code.
+For note-only releases, evidence records changed languages, release entries and
+file hashes without sending finished note prose to the writers. Supply the
+editorial purpose with `--scope`.
+Do not reuse a draft after changing its implementation evidence; export a new
+context and author a fresh draft.
 
-Authored notes remain supported:
+The command exports `context.json`, establishes a neutral `facts.json`, authors
+`enUS.json` and all ten locale drafts independently, and runs separate review
+passes. It saves authoring and review results under the output directory and
+validates the complete draft. It does not replace canonical notes, commit, tag,
+publish or post announcements. Eligible code evidence, facts and locale
+terminology are sent to Codex for these model passes. Only eligible addon
+sources and documentation enter the evidence; private files and credentials are
+excluded. Login credentials stay in the local Codex configuration and must not
+be copied into GitHub Actions. Including local edits in evidence does not include
+them in a release: commit implementation changes before running the release script.
 
-1. Review or edit the welcome/sections in
-   `release_notes.json` for the changes being released. Keep its version equal to
-   `QuestTogether.toc` while developing; the release script updates all versions
-   together. AI generation drafts the prose; reviewing its accuracy is still
-   part of releasing.
-2. Translate the final English notes, then generate and check the Lua data:
+Manual authoring in an active Codex subscription session remains supported.
+Prefer GPT-6.1 Sol for this work. Export its context into the same draft directory,
+again omitting `--include-working-tree` for a clean, committed checkout:
 
-   ```sh
-   python3 scripts/translate_locales.py --notes --write
-   python3 scripts/check_release_notes.py --write
-   python3 scripts/check_release_notes.py --check --release-history
-   python3 scripts/test_release_notes.py
-   python3 scripts/test_generate_release_notes.py
-   python3 scripts/test_discord_changelog.py
-   ```
+```sh
+python3 scripts/prepare_release_notes.py context --include-working-tree --output .local/release-notes-draft/context.json
+```
 
-3. Review the generated content and complete the usual Lua, client-profile,
-   library, and live-client validation appropriate to the change. Commit the
-   feature changes and authored notes through the normal review process.
+For either route, establish a shared factual brief from the evidence before
+writing publication prose. Check the facts against the code and
+approved release scope, including prerequisites, defaults, limits, privacy and
+who sees each change. Compose English and each destination language from these
+facts. Do not pass finished English prose to language writers as a translation
+template. Remove prior notes and changelog prose from their writing context;
+use localized UI labels as terminology. Give each language its own editing pass
+for natural phrasing and factual parity. Section topics stay aligned, but English
+grammar, sentence order and bullet counts do not dictate the destination text.
+
+Save the neutral factual brief as `facts.json` and the reviewed raw notes in a
+local draft directory, for example `.local/release-notes-draft/`, as `enUS.json`,
+`deDE.json`, `frFR.json`, `esES.json`,
+`esMX.json`, `ptBR.json`, `ruRU.json`, `itIT.json`, `koKR.json`, `zhCN.json` and
+`zhTW.json`. Every file is a complete notes object with `version`, `welcome` and
+`sections`, using the schema described below. Keep the version equal to
+`QuestTogether.toc`; the release script bumps all versions together. These draft
+files do not contain the canonical `source_sha256` wrapper. `facts.json` uses
+the same raw schema, with short factual fragments and aligned topics, tips and
+illustrations rather than finished publication prose.
+
+After the authoring and review passes succeed, finalize the complete set, then
+render and check the derived files:
+
+```sh
+python3 scripts/prepare_release_notes.py finalize --draft-dir .local/release-notes-draft --context .local/release-notes-draft/context.json
+python3 scripts/check_release_notes.py --write
+python3 scripts/check_release_notes.py --check --release-history
+python3 scripts/test_release_notes.py
+python3 scripts/test_discord_changelog.py
+```
+
+Context export, finalization and deterministic checks are offline; authoring and
+language review contact Codex. Finalization validates the factual brief and every
+language before replacing canonical notes and computes the source digests locally.
+It also rejects context whose commit or implementation evidence no longer matches
+the checkout. Invalid,
+incomplete or stale drafts leave the canonical notes untouched. The context file
+is maintainer data and is excluded from addon packages. After changing English
+wording, review every locale against
+the updated facts and finalize the complete set again; old source digests are
+not reusable. Automated checks validate structure, commands and consistency,
+not fluency or complete semantic equivalence. Complete the usual Lua,
+client-profile, library and live-client validation appropriate to the change,
+and commit implementation changes and reviewed notes through the normal process.
+
+**Actions → Prepare release notes → Run workflow** on `main` is an optional
+way to obtain the same context as a downloadable artifact. It exports evidence
+only, with read-only repository permissions and no model credentials. Use the
+local command above for automated authoring, or continue writing in an active
+Codex session after downloading the artifact. The workflow
+does not author notes, push a branch or open a PR. CI and release publishing
+validate or consume reviewed canonical notes without generating new prose.
+The old API-backed note-generation commands, including both forms of
+`translate_locales.py --notes`, are retired; use the subscription authoring path.
+
+## Correct published notes
+
+Keep a verified backup before editing historical notes. Use each release's own
+preceding tag and exact target tag for evidence, never later or uncommitted code.
+The approved English scope comes from that tag or an already committed editorial
+correction in `changelogs/history.json` or `changelogs/legacy_notes.json`. Releases
+before structured notes use the committed legacy scope and actual code/commit
+range. Preserve English wording, versions, release dates and illustrations when
+the task is to correct localizations. Silent releases stay empty in every language.
+Write each language directly in the active session from the historical facts,
+and review every affected version and locale before replacing canonical history.
+
+`changelogs/localized_revisions.json` preserves corrected published localizations
+so the next version bump cannot restore old wording from Git tags. Its English
+reference must exactly match the corresponding tag or its already committed
+editorial correction in either historical archive. Uncommitted English history
+edits do not authorize themselves. Keep the revision record and historical
+archives consistent when correcting existing published notes; a draft for a new
+release must not overwrite the previous release's correction. Explicit note reuse
+also retains corrected localizations instead of requiring old tag wording.
+Regenerate derived files with `python3 scripts/check_release_notes.py --write`
+and validate with `--check --release-history`. Updating local sources does not
+change tags, Discord posts or published downloads.
 
 The JSON must contain `version`, a `welcome` string, and nonempty `sections` of
 `title` and `items`. Unknown/duplicate fields, empty or placeholder text, invalid
@@ -118,17 +185,19 @@ The checker also requires the TOC to load `ReleaseNotes.lua` exactly once after
 When the TOC enables `LocalizedReleaseNotes.lua`, it must load exactly once after
 the English notes, and **all ten translations are mandatory for every release**.
 Each translated JSON contains exactly `source_sha256` and `notes`. Its `notes`
-has the same schema and version as the English source, with the same number of
-sections and items and matching optional illustrations and tip presence. Tip
+has the same schema and version as the English source, with the same section
+topics and order, matching optional illustrations and tip presence. Languages
+may split or combine bullets naturally; item counts need not match. Tip
 labels and bodies must be translated, preserving their commands and arguments.
 The same structure and command checks apply to archived release tips. The source digest is
 SHA-256 over UTF-8 English JSON without `version`, serialized with sorted keys,
 unescaped Unicode, and separators `(',', ':')`. Any English content change makes
 old translations stale. Missing/stale translations, mismatched structure, or stale
 generated localized Lua block release preparation. Version-only bumps preserve
-the reviewed translations and their digest without contacting the translation API.
-Structural validation cannot establish translation quality; human review is still
-required. UI catalog validation is a separate `python3 scripts/localization.py`
+the reviewed translations and their digest without model calls.
+Structural validation cannot establish translation quality. Separate language
+review checks fluency and factual parity; automated review is not native-speaker
+signoff. UI catalog validation is a separate `python3 scripts/localization.py`
 check and does not replace patch-note translation validation.
 
 ## Check and release
@@ -144,6 +213,7 @@ changes outside this explicit allowlist:
 - `QuestTogether.toc`
 - `CHANGELOG.md`, `changelogs/history.json`, and `changelogs/<locale>.md` for the ten supported non-English locales
 - `release_notes.json`
+- `release_notes/context.json` and `changelogs/localized_revisions.json` when present
 - `release_notes_reuse.json` when it exists or `--reuse-notes` is specified
 - `ReleaseNotes.lua`
 - `LocalizedReleaseNotes.lua`
@@ -240,13 +310,13 @@ verifies its identity, guild, channel and effective permissions before posting.
 GitHub Actions configuration:
 
 - `DISCORD_BOT_TOKEN` secret: the existing Bumblebee bot credential.
-- `OPENAI_API_KEY` secret: used only by release-note preparation, not posting.
 - `DISCORD_CHANGELOG_CHANNEL_ID` variable: `1553981217039187978`.
 
 Expected guild is `1553951084941156502`; expected bot is `890285739940671548`.
-Secrets are stored in GitHub Actions, not in the addon or workflow YAML. These
-were provisioned from Bumblebee's existing configuration; rotating that shared
-bot credential also requires updating QuestTogether's Actions secret.
+The bot secret is stored in GitHub Actions, not in the addon or workflow YAML.
+It was provisioned from Bumblebee's existing configuration; rotating that shared
+bot credential also requires updating QuestTogether's Actions secret. No model
+API secret is used by the current release-note workflows.
 
 Preview the current notes locally without network access:
 
@@ -277,16 +347,19 @@ Do not hand-edit `CHANGELOG.md` or `changelogs/<locale>.md`. They are generated
 by `python3 scripts/check_release_notes.py --write` from the exact welcome,
 section titles, items, and optional tips used by Discord. Update the canonical JSON and all
 translations first. The check mode, release preflight, CI, and Discord posting
-reject missing or stale Markdown. The release-note preparation workflow stages
-and uploads all generated changelogs with its notes.
+reject missing or stale Markdown. Commit these generated files alongside the
+reviewed canonical notes. The optional preparation workflow exports authoring
+context only.
 
 `changelogs/history.json` preserves the canonical notes from published tags.
 The version-bump step archives the previous version from its reachable Git tag,
 never from the edited draft, and then generates the new entry plus history.
 Version bumps commit the archive and all eleven Markdown files together.
 The original handwritten changelog is retained in `changelogs/legacy-enUS.md`.
-Localized history begins at each locale's first available tagged translation;
-we do not invent historical translations or repost older Discord announcements.
+Localized history includes the approved legacy entries as well as structured
+published notes. It does not invent a release or its factual scope. Rendering
+changelogs never reposts older Discord announcements; replacing those posts is a
+separate, explicitly authorized maintenance operation.
 No network or translation API is needed to regenerate existing changelogs.
 
 Include `CHANGELOG.md` and `changelogs/*.md` in release downloads when packaging
