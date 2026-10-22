@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 8.0.2
+## 8.0.3
 
 Les notes de mise à jour de QuestTogether sont plus claires, et l’historique des versions retrouve une entrée manquante.
 
@@ -10,6 +10,16 @@ Les notes de mise à jour de QuestTogether sont plus claires, et l’historique 
 
 - Les notes de mise à jour actuelles et anciennes ont été réécrites dans les dix langues prises en charge autres que l’anglais, pour une lecture plus fluide et plus claire.
 - L’entrée manquante de la version 7.4.4 a été rétablie dans l’historique des versions consultable et dans les journaux des modifications.
+
+## 8.0.2
+
+Des marqueurs de carte et une identification VIP plus fiables.
+
+### Corrections de fiabilité
+
+- Les étoiles VIP restent visibles après vos écrans de chargement. Plusieurs mises à jour VIP reçues simultanément ne se bloquent plus entre elles.
+- Corrigé un cas où un marqueur pouvait disparaître de la carte lorsqu’une mise à jour de position arrivait temporairement sans coordonnées.
+- Les échanges de données sont plus fiables lorsque le débit du canal de communication est limité.
 
 ## 8.0.1
 

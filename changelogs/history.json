@@ -3,6 +3,159 @@
   "releases": [
     {
       "enUS": {
+        "version": "8.0.2",
+        "welcome": "More reliable map markers and VIP identification.",
+        "sections": [
+          {
+            "title": "Reliability fixes",
+            "items": [
+              "VIP stars now remain visible through your loading screens, and simultaneous VIP updates no longer block each other.",
+              "Fixed a case where map markers could disappear when a location update temporarily had no coordinates.",
+              "Improved reliability of shared updates during channel throttling."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "8.0.2",
+        "welcome": "Kartenpunkte und VIP-Sterne bleiben bei Unterbrechungen zuverlässiger sichtbar.",
+        "sections": [
+          {
+            "title": "Zuverlässigere Spielermarkierungen",
+            "items": [
+              "Nach einem Ladebildschirm bleiben die zuvor erkannten VIP-Sterne erhalten. Gleichzeitige VIP-Aktualisierungen blockieren sich nicht mehr gegenseitig.",
+              "Eine Standortmeldung, die vorübergehend keine Koordinaten enthält, lässt einen Kartenpunkt nicht mehr versehentlich verschwinden.",
+              "Der Datenaustausch arbeitet zuverlässiger, wenn der Kanal den Nachrichtenversand drosselt."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "8.0.2",
+        "welcome": "Des marqueurs de carte et une identification VIP plus fiables.",
+        "sections": [
+          {
+            "title": "Corrections de fiabilité",
+            "items": [
+              "Les étoiles VIP restent visibles après vos écrans de chargement. Plusieurs mises à jour VIP reçues simultanément ne se bloquent plus entre elles.",
+              "Corrigé un cas où un marqueur pouvait disparaître de la carte lorsqu’une mise à jour de position arrivait temporairement sans coordonnées.",
+              "Les échanges de données sont plus fiables lorsque le débit du canal de communication est limité."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "8.0.2",
+        "welcome": "Marcadores y reconocimiento VIP más fiables.",
+        "sections": [
+          {
+            "title": "Correcciones",
+            "items": [
+              "Las estrellas VIP siguen visibles al terminar tus pantallas de carga y las actualizaciones VIP simultáneas ya no se bloquean entre sí.",
+              "Una actualización temporalmente sin coordenadas ya no hace desaparecer puntos. También mejora el intercambio de datos cuando el canal limita los envíos."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "8.0.2",
+        "welcome": "Los puntos y la identificación VIP se mantienen con más fiabilidad.",
+        "sections": [
+          {
+            "title": "Arreglos de comunicación",
+            "items": [
+              "Las estrellas VIP vuelven a mostrarse correctamente después de tus pantallas de carga y los avisos VIP simultáneos ya no se impiden unos a otros.",
+              "Se corrige la desaparición de marcadores por una ubicación momentáneamente sin coordenadas. Los datos compartidos también se entregan de forma más confiable cuando el canal limita tráfico."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "8.0.2",
+        "welcome": "Marcadores e identificação VIP mais confiáveis.",
+        "sections": [
+          {
+            "title": "Correções de estabilidade",
+            "items": [
+              "Estrelas VIP continuam visíveis após suas telas de carregamento, e atualizações VIP simultâneas deixam de bloquear umas às outras.",
+              "Foi corrigido o desaparecimento de marcadores quando uma atualização vinha temporariamente sem coordenadas. Atualizações compartilhadas também ficam mais confiáveis sob limitação de envio do canal."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "8.0.2",
+        "welcome": "Метки игроков и VIP-звёзды надёжнее сохраняются при временных перебоях.",
+        "sections": [
+          {
+            "title": "Исправления надёжности",
+            "items": [
+              "Переходы через экраны загрузки больше не сбрасывают VIP-звёзды, а одновременные обновления VIP не мешают друг другу.",
+              "Исправлен случай исчезновения метки, когда обновление местоположения временно приходило без координат.",
+              "Повышена надёжность обмена данными при ограничении отправки сообщений каналом."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "8.0.2",
+        "welcome": "Indicatori sulla mappa e riconoscimento VIP più affidabili.",
+        "sections": [
+          {
+            "title": "Correzioni di affidabilità",
+            "items": [
+              "Le stelle VIP restano visibili anche dopo le schermate di caricamento. Gli aggiornamenti VIP simultanei non si bloccano più a vicenda.",
+              "Risolto un caso in cui gli indicatori potevano sparire dalla mappa se un aggiornamento di posizione era temporaneamente privo di coordinate.",
+              "La condivisione degli aggiornamenti è più affidabile quando il canale limita la velocità di invio."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "8.0.2",
+        "welcome": "지도 표시와 VIP 인증을 더 안정적으로 유지합니다.",
+        "sections": [
+          {
+            "title": "안정성 수정",
+            "items": [
+              "로딩 화면을 거친 뒤에도 VIP 별이 유지되며, 여러 VIP 업데이트가 동시에 와도 서로를 막지 않습니다.",
+              "위치 업데이트에 잠시 좌표가 없을 때 지도 표시가 사라질 수 있던 경우를 수정했습니다.",
+              "채널 전송이 제한되는 동안 공유 업데이트의 안정성을 개선했습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "8.0.2",
+        "welcome": "地图标记与 VIP 识别更加可靠。",
+        "sections": [
+          {
+            "title": "可靠性修复",
+            "items": [
+              "经过加载画面后，VIP 星形标记仍能保留；同时到来的 VIP 更新也不再相互阻塞。",
+              "修复位置更新暂时没有坐标时，地图标记可能消失的一种情况。",
+              "改善频道限流期间共享更新的可靠性。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "8.0.2",
+        "welcome": "地圖標記與 VIP 辨識更加穩定。",
+        "sections": [
+          {
+            "title": "穩定性修正",
+            "items": [
+              "經過讀取畫面後，VIP 星形標記仍能保留；同時到達的 VIP 更新也不再互相阻擋。",
+              "修正位置更新暫時缺少座標時，地圖標記可能消失的情況。",
+              "改善頻道流量受限期間共享更新的可靠度。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "8.0.1",
         "welcome": "Keyboard navigation without an extra button.",
         "sections": [

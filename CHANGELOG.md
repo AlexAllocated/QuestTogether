@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 8.0.2
+## 8.0.3
 
 This update improves localized release notes and restores a missing release history entry.
 
@@ -12,6 +12,16 @@ This update improves localized release notes and restores a missing release hist
 
 - Current and historical release notes have been rewritten in all ten supported non-English languages for clearer, more natural wording while preserving their original meaning.
 - The missing 7.4.4 entry has been restored to the browsable release history and changelogs.
+
+## 8.0.2
+
+More reliable map markers and VIP identification.
+
+### Reliability fixes
+
+- VIP stars now remain visible through your loading screens, and simultaneous VIP updates no longer block each other.
+- Fixed a case where map markers could disappear when a location update temporarily had no coordinates.
+- Improved reliability of shared updates during channel throttling.
 
 ## 8.0.1
 

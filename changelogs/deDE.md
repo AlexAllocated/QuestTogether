@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 8.0.2
+## 8.0.3
 
 Die Versionshinweise wurden sprachlich überarbeitet. Außerdem haben wir einen fehlenden Eintrag im Versionsverlauf ergänzt.
 
@@ -10,6 +10,16 @@ Die Versionshinweise wurden sprachlich überarbeitet. Außerdem haben wir einen 
 
 - Die aktuellen und älteren Versionshinweise wurden in allen zehn unterstützten Sprachen außer Englisch sprachlich überarbeitet, damit sie sich natürlicher lesen und leichter verständlich sind.
 - Der bisher fehlende Eintrag zu 7.4.4 ist wieder im Versionsverlauf und in den Änderungsprotokollen enthalten.
+
+## 8.0.2
+
+Kartenpunkte und VIP-Sterne bleiben bei Unterbrechungen zuverlässiger sichtbar.
+
+### Zuverlässigere Spielermarkierungen
+
+- Nach einem Ladebildschirm bleiben die zuvor erkannten VIP-Sterne erhalten. Gleichzeitige VIP-Aktualisierungen blockieren sich nicht mehr gegenseitig.
+- Eine Standortmeldung, die vorübergehend keine Koordinaten enthält, lässt einen Kartenpunkt nicht mehr versehentlich verschwinden.
+- Der Datenaustausch arbeitet zuverlässiger, wenn der Kanal den Nachrichtenversand drosselt.
 
 ## 8.0.1
 

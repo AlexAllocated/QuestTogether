@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 8.0.2
+## 8.0.3
 
 As notas de atualização estão mais claras e naturais, e o histórico de lançamentos voltou a incluir uma entrada que estava faltando.
 
@@ -10,6 +10,15 @@ As notas de atualização estão mais claras e naturais, e o histórico de lanç
 
 - Revisamos as notas de atualização atuais e antigas nos dez idiomas disponíveis além do inglês para deixar os textos mais claros e naturais.
 - Restauramos a entrada 7.4.4, que estava faltando no histórico de lançamentos disponível para consulta e nos registros de alterações.
+
+## 8.0.2
+
+Marcadores e identificação VIP mais confiáveis.
+
+### Correções de estabilidade
+
+- Estrelas VIP continuam visíveis após suas telas de carregamento, e atualizações VIP simultâneas deixam de bloquear umas às outras.
+- Foi corrigido o desaparecimento de marcadores quando uma atualização vinha temporariamente sem coordenadas. Atualizações compartilhadas também ficam mais confiáveis sob limitação de envio do canal.
 
 ## 8.0.1
 

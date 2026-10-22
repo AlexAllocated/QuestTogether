@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "8.0.2",
+	version = "8.0.3",
 	welcome = "This update improves localized release notes and restores a missing release history entry.",
 	sections = {
 		{

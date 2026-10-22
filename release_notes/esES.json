@@ -1,7 +1,7 @@
 {
   "source_sha256": "4255fc59ddb2a7a524640ad44eab97c13bec1a8fa9127931afb7787e31c62431",
   "notes": {
-    "version": "8.0.2",
+    "version": "8.0.3",
     "welcome": "Hemos revisado las notas de actualización para que sean más claras y naturales, y recuperado una entrada que faltaba en el historial de versiones.",
     "sections": [
       {

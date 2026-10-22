@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 8.0.2
+## 8.0.3
 
 Las notas de actualización ahora se leen con más claridad y naturalidad. También recuperamos una entrada que faltaba en el historial de lanzamientos.
 
@@ -10,6 +10,15 @@ Las notas de actualización ahora se leen con más claridad y naturalidad. Tambi
 
 - Revisamos la redacción de las notas actuales y anteriores en los diez idiomas disponibles además del inglés para que sean más claras y naturales.
 - Recuperamos la entrada 7.4.4 que faltaba en el historial de lanzamientos y en los registros de cambios. Ya pueden consultarla.
+
+## 8.0.2
+
+Los puntos y la identificación VIP se mantienen con más fiabilidad.
+
+### Arreglos de comunicación
+
+- Las estrellas VIP vuelven a mostrarse correctamente después de tus pantallas de carga y los avisos VIP simultáneos ya no se impiden unos a otros.
+- Se corrige la desaparición de marcadores por una ubicación momentáneamente sin coordenadas. Los datos compartidos también se entregan de forma más confiable cuando el canal limita tráfico.
 
 ## 8.0.1
 

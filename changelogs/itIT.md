@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 8.0.2
+## 8.0.3
 
 Le note di aggiornamento sono più chiare e scorrevoli, e la cronologia delle versioni torna a includere una voce mancante.
 
@@ -10,6 +10,16 @@ Le note di aggiornamento sono più chiare e scorrevoli, e la cronologia delle ve
 
 - Abbiamo rivisto le note di aggiornamento attuali e passate in tutte le dieci lingue supportate oltre all'inglese, per renderle più naturali e facili da leggere.
 - La voce mancante della versione 7.4.4 è di nuovo consultabile nella cronologia delle versioni e nei registri delle modifiche.
+
+## 8.0.2
+
+Indicatori sulla mappa e riconoscimento VIP più affidabili.
+
+### Correzioni di affidabilità
+
+- Le stelle VIP restano visibili anche dopo le schermate di caricamento. Gli aggiornamenti VIP simultanei non si bloccano più a vicenda.
+- Risolto un caso in cui gli indicatori potevano sparire dalla mappa se un aggiornamento di posizione era temporaneamente privo di coordinate.
+- La condivisione degli aggiornamenti è più affidabile quando il canale limita la velocità di invio.
 
 ## 8.0.1
 
