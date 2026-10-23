@@ -50,6 +50,10 @@ function QT:InitializeRuntimeCoordinator()
 		if rawget(self, "runtimeCoordinatorState") ~= state or not self.isEnabled then
 			return
 		end
+		-- Map zoom/pan and map-level changes are visual transforms, not peer
+		-- updates. Follow the current canvas each frame without accelerating
+		-- data sampling, clustering, or communication producers below.
+		self:RefreshWorldMapOverlayGeometry()
 		local step = self:SafeToNumber(delta) or 0
 		if step < 0 or step > 1000 then
 			step = 0

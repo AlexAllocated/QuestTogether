@@ -139,6 +139,11 @@ private `.local` notes are historical context, not the source of truth.
   display offsets connected to accepted coordinates, never new location observations.
   Hiding/changing the map, geometry or membership, disabling clustering, profile changes
   and Find on Map retire expansion. Minimap pins remain individual.
+  The runtime coordinator follows world-map canvas geometry each frame. Same-map
+  zoom and pan only reposition admitted player and waypoint markers; peer queries,
+  clustering and communication retain their sampling cadence. Map-level changes
+  rebuild the map overlays immediately, and unavailable geometry hides old markers
+  until the new map is readable. Marker sizes and clipping remain in viewport pixels.
   The world-map QT button toggles all QT player and waypoint overlays together.
   Its per-profile preference defaults on and does not affect the minimap, sharing,
   filters or discovery. Hovering the button shows the map legend without changing

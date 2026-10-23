@@ -726,6 +726,8 @@ local function HideSurface(addon, state, surface)
 	addon:SetMapOverlayFocus(surface, nil, nil)
 	for _, pin in ipairs(surface.pins) do
 		pin.name, pin.cluster, pin.selected, pin.expansion = nil, nil, nil, nil
+		pin.mapAnchor = nil
+		if pin.connector then Hide(addon, state, pin.connector) end
 		pin.presentationGeneration = (pin.presentationGeneration or 0) + 1
 	end
 	if surface.name == "map" then addon:ClearPlayerLocationClusterExpansion() end
@@ -1128,6 +1130,30 @@ local function CreatePin(addon, state, surface)
 	return pin
 end
 
+local function InvalidateMapGeometry(addon, state, surface)
+	-- Fanout and hover describe the previous pixel geometry, not the map's
+	-- moving canvas. Retire them before moving the still-admitted markers.
+	if surface.expandedClusterKey then
+		addon:ClearPlayerLocationClusterExpansion()
+		surface.expandedClusterKey = nil
+		for _, pin in ipairs(surface.pins) do
+			if pin.expansion then
+				pin.name, pin.expansion, pin.selected, pin.mapAnchor = nil, nil, nil, nil
+				pin.presentationGeneration = (pin.presentationGeneration or 0) + 1
+				Hide(addon, state, pin.frame)
+			end
+			if pin.connector then Hide(addon, state, pin.connector) end
+			if pin.cluster then
+				pin.cluster.expansionInfo = nil
+				Call(addon, pin.frame, "EnableMouseWheel", false)
+			end
+		end
+	end
+	if state.hovered and state.hovered.surface == "map" then addon:HidePlayerTooltipPresentation(state) end
+	if state.clusterTooltip and state.clusterTooltip.hovered then addon:HidePlayerTooltipPresentation(state.clusterTooltip) end
+	if surface.mapFocus then addon:SetMapOverlayFocus(surface, nil, nil) end
+end
+
 local function RefreshSurface(addon, state, name, rows)
 	local surface = state.surfaces[name]
 	if not addon:IsQuestTogetherMapDataShown(name) then
@@ -1149,6 +1175,17 @@ local function RefreshSurface(addon, state, name, rows)
 	end
 	surface = addon:AcquireMapOverlaySurface(state, name, geometry, 50, function(old) HideSurface(addon, state, old) end)
 	if not surface then return false end
+	if name == "map" and not surface.refreshMapGeometry then
+		surface.canShowMapGeometry = function() return addon:GetOption("showPlayerLocations") == true end
+		surface.refreshMapGeometry = function() addon:RefreshPlayerLocationPins("map") end
+		surface.invalidateMapGeometry = function() InvalidateMapGeometry(addon, state, surface) end
+		surface.hideMapGeometry = function()
+			if not addon:IsQuestTogetherMapDataShown("map") or Native(addon, addon.API.IsWorldMapVisible) ~= true then
+				addon:ClearPlayerMapSelection()
+			end
+			HideSurface(addon, state, surface)
+		end
+	end
 	if name == "minimap" and #rows > MAX_PINS then
 		rows = addon:PrioritizePlayerLocationRows(rows, geometry)
 	end
@@ -1246,6 +1283,7 @@ local function RefreshSurface(addon, state, name, rows)
 		end
 		Call(addon, pin.frame, "ClearAllPoints")
 		Call(addon, pin.frame, "SetPoint", "CENTER", surface.frame, "TOPLEFT", marker.x, -marker.y)
+		addon:SetMapOverlayPinGeometry(pin, geometry, marker.x, marker.y, pin.size)
 		Call(addon, pin.frame, "Show")
 	end
 	addon:ReleaseMapOverlayPins(surface, count, function(pin)
@@ -1262,13 +1300,18 @@ local function RefreshSurface(addon, state, name, rows)
 	return true
 end
 
-function QuestTogether:RefreshPlayerLocationPins()
+function QuestTogether:RefreshPlayerLocationPins(onlySurface)
+	local mapOnly = onlySurface == "map"
 	if not self.isEnabled or self:IsRuntimeRestricted() then
-		self:HidePlayerLocationPins()
+		if mapOnly then
+			local state = rawget(self, "locationPinState")
+			if state then HideSurface(self, state, state.surfaces.map) end
+		else self:HidePlayerLocationPins() end
 		return false
 	end
-	local rows = {}
-	for _, surface in ipairs({ "map", "minimap" }) do
+	local rows = { map = {}, minimap = {} }
+	local surfaces = mapOnly and { "map" } or { "map", "minimap" }
+	for _, surface in ipairs(surfaces) do
 		local ok, result = pcall(self.GetVisiblePlayerLocations, self, surface)
 		rows[surface] = ok and self:CanAccessTable(result) and result or {}
 	end
@@ -1276,7 +1319,10 @@ function QuestTogether:RefreshPlayerLocationPins()
 	-- Most updates have no visible peers. Avoid creating UI or querying native
 	-- map geometry until the model has something this surface may display.
 	if #rows.map == 0 and #rows.minimap == 0 and not selected then
-		self:HidePlayerLocationPins()
+		if mapOnly then
+			local state = rawget(self, "locationPinState")
+			if state then HideSurface(self, state, state.surfaces.map) end
+		else self:HidePlayerLocationPins() end
 		return false
 	end
 	local ok, state = pcall(State, self)
@@ -1285,14 +1331,14 @@ function QuestTogether:RefreshPlayerLocationPins()
 	end
 	RetryCleanup(self, state)
 	local visible = false
-	for _, name in ipairs({ "map", "minimap" }) do
+	for _, name in ipairs(surfaces) do
 		local success, shown = pcall(RefreshSurface, self, state, name, rows[name])
 		if not success then
 			HideSurface(self, state, state.surfaces[name])
 		end
 		visible = visible or (success and shown == true)
 	end
-	if state.hovered then
+	if state.hovered and (not mapOnly or state.hovered.surface == "map") then
 		local valid, row = pcall(FreshRow, self, state.hovered)
 		if not valid or not row or not pcall(Tooltip, self, state, state.hovered, row) then
 			HideTooltip(self, state)

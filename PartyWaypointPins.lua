@@ -11,6 +11,7 @@ local function HideSurface(a, s, surface)
 	end
 	a:SetMapOverlayFocus(surface, nil, nil)
 	for _, pin in ipairs(surface.pins) do
+		pin.mapAnchor = nil
 		pin.names = {}
 		if s.hovered == pin then
 			s.hovered = nil
@@ -167,6 +168,15 @@ local function Surface(a, s, name, rows)
 	end
 	surface = a:AcquireMapOverlaySurface(s, name, g, 55, function(old) HideSurface(a, s, old) end)
 	if not surface then return end
+	if name == "map" and not surface.refreshMapGeometry then
+		surface.canShowMapGeometry = function() return a:GetOption("showPartyWaypoints") == true end
+		surface.refreshMapGeometry = function() a:RefreshPartyWaypointPins("map") end
+		surface.hideMapGeometry = function() HideSurface(a, s, surface) end
+		surface.invalidateMapGeometry = function()
+			if s.hovered and s.hovered.surface == "map" then s.hovered = nil; Hide(a, s.tooltip) end
+			if surface.mapFocus then a:SetMapOverlayFocus(surface, nil, nil) end
+		end
+	end
 	local placed = {}
 	for _, row in ipairs(rows) do
 		local x, y = a:ProjectPlayerLocationPin(name, row, g, 26)
@@ -202,6 +212,7 @@ local function Surface(a, s, name, rows)
 		)
 		Call(a, pin.frame, "ClearAllPoints")
 		Call(a, pin.frame, "SetPoint", "CENTER", surface.frame, "TOPLEFT", row.x, -row.y)
+		a:SetMapOverlayPinGeometry(pin, g, row.x, row.y, 26)
 		Call(a, pin.frame, "Show")
 	end
 	a:ReleaseMapOverlayPins(surface, #placed, function(pin)
@@ -211,9 +222,13 @@ local function Surface(a, s, name, rows)
 	end)
 	Call(a, surface.frame, #placed > 0 and "Show" or "Hide")
 end
-function QT:RefreshPartyWaypointPins()
+function QT:RefreshPartyWaypointPins(onlySurface)
+	local mapOnly = onlySurface == "map"
 	if not self.isEnabled or self:IsRuntimeRestricted() then
-		self:HidePartyWaypointPins()
+		if mapOnly then
+			local s = rawget(self, "partyWaypointPinState")
+			if s then HideSurface(self, s, s.surfaces.map) end
+		else self:HidePartyWaypointPins() end
 		return
 	end
 	local rows = self:GetPartyWaypointRows()
@@ -225,13 +240,13 @@ function QT:RefreshPartyWaypointPins()
 		s = { surfaces = {} }
 		self.partyWaypointPinState = s
 	end
-	for _, name in ipairs({ "map", "minimap" }) do
+	for _, name in ipairs(mapOnly and { "map" } or { "map", "minimap" }) do
 		local ok = pcall(Surface, self, s, name, rows)
 		if not ok and s.surfaces[name] then
 			HideSurface(self, s, s.surfaces[name])
 		end
 	end
-	if s.hovered then
+	if s.hovered and (not mapOnly or s.hovered.surface == "map") then
 		local ok, shown = pcall(Tooltip, self, s, s.hovered)
 		if not ok or not shown then s.hovered = nil; Hide(self, s.tooltip) end
 	end

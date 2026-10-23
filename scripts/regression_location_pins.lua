@@ -3971,3 +3971,164 @@ Register("failed native cluster navigation leaves no automatic expansion for a l
 	Equal(#VisibleMapPins(a), 1)
 	AssertNoVisibleConnectors(a)
 end)
+
+local function StartMapGeometryRuntime(a)
+	a.hasLoggedIn = true
+	function a:InitializeDeveloperAnnouncements() end
+	function a:CreateRuntimeCoordinatorFrame() return Frame(self) end
+	function a:UpdateCommunicationRuntime() end
+	function a:UpdatePartyNavigation() end
+	function a:RefreshQuestTogetherMapControl() end
+	function a:UpdatePlayerCommunications() self.producerTicks = (self.producerTicks or 0) + 1 end
+	function a:PrunePlayerLocations() end
+	function a:UpdatePlayerTooltipBadge() end
+	function a:UpdateChatLogPlayerTooltip() end
+	assert(a:InitializeRuntimeCoordinator())
+	local frame = a.runtimeCoordinatorFrame
+	return function(delta) frame.scripts.OnUpdate(frame, delta or 1 / 60) end
+end
+
+Register("world map animation follows each runtime frame without resampling peers or moving minimap pins", function()
+	local a = WaypointFixture()
+	local row = Row(nil, 0.46, 0.46)
+	a.rows.map, a.rows.minimap = { row }, { row }
+	a.waypoints = { { name = "First-Realm", mapID = 1, x = 0.6, y = 0.4 } }
+	a:RefreshPlayerLocationPins()
+	a:RefreshPartyWaypointPins()
+	local tick = StartMapGeometryRuntime(a)
+	local dot, mini = Pin(a, "map"), Pin(a, "minimap")
+	local waypoint = a.partyWaypointPinState.surfaces.map.pins[1]
+	local frames, regions, reads, miniWrites = #a.frames, #a.regions, a.reads.map, mini.frame.writes
+	local waypointReads = 0
+	function a:GetPartyWaypointRows() waypointReads = waypointReads + 1; return self.waypoints end
+	local function CheckPosition(pin, x, y)
+		local point = pin.frame.points[#pin.frame.points]
+		Near(point[4], x)
+		Near(point[5], -y)
+		assert(pin.frame:IsVisible())
+	end
+	for index = 1, 6 do
+		local scale = 1 + index / 10
+		local g = a.geometry.map
+		g.canvasLeft, g.canvasTop = -50 * index, -30 * index
+		g.canvasWidth, g.canvasHeight = 1000 * scale, 600 * scale
+		tick()
+		CheckPosition(dot, g.canvasLeft + row.x * g.canvasWidth, g.canvasTop + row.y * g.canvasHeight)
+		CheckPosition(waypoint, g.canvasLeft + 0.6 * g.canvasWidth, g.canvasTop + 0.4 * g.canvasHeight)
+	end
+	Equal(a.reads.map, reads)
+	Equal(waypointReads, 0)
+	Equal(a.producerTicks, nil)
+	Equal(mini.frame.writes, miniWrites)
+	Equal(#a.frames, frames)
+	Equal(#a.regions, regions)
+	local dotWrites, waypointWrites = dot.frame.writes, waypoint.frame.writes
+	tick()
+	Equal(dot.frame.writes, dotWrites)
+	Equal(waypoint.frame.writes, waypointWrites)
+	-- A slow frame still tracks the final canvas and runs the normal producers
+	-- once, without a catch-up loop or any interpolation lag.
+	a.geometry.map.canvasLeft = -280
+	tick(0.4)
+	Equal(a.producerTicks, 1)
+	CheckPosition(dot, -280 + row.x * 1600, -180 + row.y * 960)
+	local stale = a.runtimeCoordinatorFrame.scripts.OnUpdate
+	a:InitializeRuntimeCoordinator()
+	a.geometry.map.canvasLeft = -200
+	dotWrites = dot.frame.writes
+	stale(a.runtimeCoordinatorFrame, 1)
+	Equal(dot.frame.writes, dotWrites)
+end)
+
+Register("map level changes rebuild both overlays immediately and recover after unreadable transition geometry", function()
+	local a = WaypointFixture()
+	a.crossMapAvailable = true
+	local row = Row(nil, 0.8, 0.6, 2)
+	a.rows.map = { row }
+	a.waypoints = { { name = "First-Realm", mapID = 2, x = 0.6, y = 0.4 } }
+	a:RefreshPlayerLocationPins()
+	a:RefreshPartyWaypointPins()
+	local tick = StartMapGeometryRuntime(a)
+	local function Check(x, waypointX)
+		local dot = Pin(a, "map")
+		local waypoint = a.partyWaypointPinState.surfaces.map.pins[1]
+		assert(dot.frame:IsVisible() and waypoint.frame:IsVisible())
+		Near(dot.frame.points[#dot.frame.points][4], x)
+		Near(waypoint.frame.points[#waypoint.frame.points][4], waypointX)
+		Equal(dot.mapID, a.geometry.map.mapID)
+		Equal(waypoint.mapID, a.geometry.map.mapID)
+	end
+	Check(400, 300)
+	a.geometry.map.mapID = 2
+	tick()
+	Check(800, 600)
+	-- Right-clicking to the containing map must use its projection immediately.
+	a.geometry.map.mapID = 1
+	tick()
+	Check(400, 300)
+	local geometry = a.geometry.map
+	a.geometry.map, a.mapVisibleDuringTransition = nil, true
+	tick()
+	assert(not Pin(a, "map").frame:IsVisible())
+	assert(not a.partyWaypointPinState.surfaces.map.frame:IsVisible())
+	geometry.mapID = 2
+	a.geometry.map = geometry
+	tick()
+	Check(800, 600)
+	-- Closing and reopening, including a replaced native viewport, must not
+	-- revive the retired screen positions or need the 200ms producer tick.
+	a.mapParent:Hide()
+	a.mapVisibleDuringTransition = false
+	tick()
+	assert(not Pin(a, "map").frame:IsVisible())
+	a.mapParent = Frame(a)
+	geometry.parent, geometry.mapID = a.mapParent, 1
+	tick()
+	Check(400, 300)
+	Equal(a.producerTicks, nil)
+end)
+
+Register("map animation clips admitted markers and retires hover expansion and disabled overlays", function()
+	local a = ClusterFixture(3)
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnClick(nil, "LeftButton")
+	assert(ExpandedPlayerPin(a))
+	ExpandedPlayerPin(a).frame.scripts.OnEnter()
+	local tick = StartMapGeometryRuntime(a)
+	a.geometry.map.canvasLeft = 40
+	tick()
+	Equal(a.playerLocationClusterExpansion, nil)
+	Equal(a.locationPinState.hovered, nil)
+	Equal(ExpandedPlayerPin(a), nil)
+	AssertNoVisibleConnectors(a)
+	NoFocusShade(a)
+	-- Already admitted markers can leave and re-enter the viewport between
+	-- full model refreshes, without exposing partly clipped hit targets.
+	a.geometry.map.canvasLeft = -501
+	tick()
+	Equal(#VisibleMapPins(a), 0)
+	a.geometry.map.canvasLeft = 0
+	tick()
+	Equal(#VisibleMapPins(a), 1)
+	Equal(a.producerTicks, nil)
+	local surface = a.locationPinState.surfaces.map
+	a.blocked = true
+	tick()
+	assert(not surface.frame:IsVisible())
+	a.blocked = false
+	tick()
+	assert(surface.frame:IsVisible())
+	a.mapParent.forbidden = true
+	tick()
+	Equal(a.invalidCalls or 0, 0)
+	a.mapParent.forbidden = false
+	a.db = { profile = { showWorldMapData = false } }
+	tick()
+	assert(not surface.frame:IsVisible())
+	a.db.profile.showWorldMapData = true
+	tick()
+	assert(surface.frame:IsVisible())
+	a.isEnabled = false
+	a:RefreshWorldMapOverlayGeometry()
+	assert(not surface.frame:IsVisible())
+end)
