@@ -197,7 +197,7 @@ local function LayoutPartyTooltipRows(addon, state, width, hasIntro, bodyGap)
 	return height > 0 and height + (hasIntro and 8 or 0) or 0
 end
 
-local function PartyTooltipMembers(addon, info)
+local function PartyTooltipMembers(addon, info, hoveredRow)
 	local members, seen, known = {}, {}, 0
 	local function Add(member)
 		if not member.name or seen[member.name] then
@@ -213,9 +213,12 @@ local function PartyTooltipMembers(addon, info)
 		for _, member in ipairs(source) do
 			if member.name == info.leader then Add(member) end
 		end
-		if info.size and info.size <= 5 then
-			for _, member in ipairs(source) do Add(member) end
+		for _, member in ipairs(source) do
+			if (info.size and info.size <= 5) or member.name == hoveredRow.name then Add(member) end
 		end
+		-- A validated large-group summary can omit the hovered member from its
+		-- partial roster (for example after reload). Their own row is still known.
+		if info.size and info.size > 5 and info.key then Add(hoveredRow) end
 	end
 	return members, known
 end
@@ -268,7 +271,19 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 		or row.faction == "Horde" and "Interface\\TargetingFrame\\UI-PVP-Horde"
 	local text, introText, lastUpdate
 	local party = not row.questID and addon:GetPlayerPartyVisualInfo(row.name) or nil
-	local partyMembers, knownPartyMembers = PartyTooltipMembers(addon, party)
+	local partyMembers, knownPartyMembers = PartyTooltipMembers(addon, party, row)
+	local partySize = Number(addon, party and party.size)
+	local partyKey = partySize and partySize >= 2 and partySize <= 40 and partySize == math.floor(partySize)
+		and type(party.key) == "string" and party.key ~= "" and party.key or nil
+	local members = {}
+	for _, member in ipairs(partyMembers) do
+		local model = addon:BuildPlayerTooltipMember(member, { leader = member.name == party.leader })
+		if model then
+			-- Use the same party outline, badge and total count as cluster tooltips.
+			model.partyKey, model.partySize = partyKey, partyKey and partySize or nil
+			members[#members + 1] = model
+		end
+	end
 	if row.questID then
 		text = row.questText
 	else
@@ -304,11 +319,12 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 		if now and receivedAt and now >= receivedAt + 30 then
 			lastUpdate = L("\nLast update: "):gsub("^\n+", "") .. math.floor(now - receivedAt) .. L(" seconds ago")
 		end
-		local partySize = party and party.size
-		local partyText = partySize == 0 and L("Solo")
-			or partySize and string.format(L("Party of %d"), partySize)
-			or party and party.grouped and L("In a party")
-			or L("Party status unknown")
+		local partyText
+		if partySize ~= 0 and not (partyKey and #members > 0) then
+			partyText = partySize and string.format(L("Party of %d"), partySize)
+				or party and party.grouped and L("In a party")
+				or L("Party status unknown")
+		end
 		local version = addon:GetPlayerAddonVersion(row.name)
 		local note = addon:GetPlayerNoteTooltipText(row.name)
 		if note then text = text .. "\n\n" .. note end
@@ -327,15 +343,10 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 		if addon:IsPlayerLocationHiddenForDeveloper(row.name) then
 			introText = introText .. "\n|cffff8080" .. L("Location sharing is off") .. "|r"
 		end
-		introText = introText .. "\n\n" .. partyText
-		if party and party.key and party.size <= 5 and not party.members and knownPartyMembers < party.size then
-			introText = introText .. "\n|cff909090" .. L("Loading party members…") .. "|r"
+		if partyText then introText = introText .. "\n\n" .. partyText end
+		if partyKey and partySize <= 5 and not party.members and knownPartyMembers < partySize then
+			introText = introText .. (partyText and "\n" or "\n\n") .. "|cff909090" .. L("Loading party members…") .. "|r"
 		end
-	end
-	local members = {}
-	for _, member in ipairs(partyMembers) do
-		local model = addon:BuildPlayerTooltipMember(member, { leader = member.name == party.leader })
-		if model then members[#members + 1] = model end
 	end
 	return {
 		title = classColor .. Text(addon, row.name) .. "|r",
@@ -568,7 +579,9 @@ function QuestTogether:RenderPlayerTooltip(state, anchor, model)
 		titleHeight + height + 28 + bodyGap + introHeight + partyHeight + ((introText or partyHeight > 0) and 14 or 0)
 	)
 	Call(addon, tooltip, "ClearAllPoints")
-	if pin.chatLink then
+	if pin.cursorPosition then
+		Call(addon, tooltip, "SetPoint", "BOTTOMLEFT", parent, "BOTTOMLEFT", pin.cursorPosition.x + 12, pin.cursorPosition.y + 12)
+	elseif pin.chatLink then
 		local x, y = addon:GetChatLogTooltipCursorPosition(parent)
 		if not x or not y then
 			HideTooltip(addon, state)

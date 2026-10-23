@@ -125,6 +125,18 @@ private `.local` notes are historical context, not the source of truth.
   deepest shared map, clicking expands up to 12 player
   dots with the existing player tooltip and actions. Large clusters page with the
   mouse wheel over the count marker.
+  Individual player tooltips use the same white party outline, badge and total
+  count around known roster members; solo players have no party decoration.
+  Groups larger than five show the leader and the hovered player, once each,
+  within that outline while retaining the group's total count.
+  Summary-only and unknown party evidence remains labeled until a roster is known.
+  Moving player markers keep updating beneath a stationary pointer while their
+  tooltip remains open at its original position. A separate hover identity keeps
+  pooled pins from changing the tooltip's subject; cluster summaries retain the
+  acquired members and remove anyone no longer eligible for display. Moving the
+  pointer away, closing/changing the map or losing visibility ends the hover.
+  Secure minimap targeting still requires the actual marker under the pointer;
+  a retained tooltip never preserves an old click target or cluster click hint.
   A navigation click automatically expands an identical cluster on the destination
   map. Its two-second intent is consumed once and is cancelled by membership,
   map, profile or enabled-lifetime changes; split clusters remain individual dots.
@@ -144,6 +156,10 @@ private `.local` notes are historical context, not the source of truth.
   clustering and communication retain their sampling cadence. Map-level changes
   rebuild the map overlays immediately, and unavailable geometry hides old markers
   until the new map is readable. Marker sizes and clipping remain in viewport pixels.
+  Existing minimap player dots also follow the viewer's position and facing each
+  frame, including peers without stream leases and authorized private dots. This
+  pass rechecks visibility and freshness, reuses fixed world-coordinate conversions,
+  and leaves membership, tooltips and network sampling on their normal cadence.
   The world-map QT button toggles all QT player and waypoint overlays together.
   Its per-profile preference defaults on and does not affect the minimap, sharing,
   filters or discovery. Hovering the button shows the map legend without changing

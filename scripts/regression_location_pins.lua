@@ -321,6 +321,9 @@ local function Fixture()
 	function a:GetLocationPinTooltipParent()
 		return self.tooltipParent
 	end
+	function a:GetPlayerLocationHoverCursorPosition()
+		return nil
+	end
 	function a:CreateLocationPinFrame(kind, name, parent, template)
 		assert(not name and not template, "location UI must not use named/shared templates")
 		if self.blocked then
@@ -358,7 +361,8 @@ local function Fixture()
 		return true
 	end
 	function a:ShowLocationTargetButton(owner, name, isCurrent, onEnter, onLeave, onClick)
-		self.targetHover = { owner = owner, name = name, isCurrent = isCurrent, onClick = onClick }
+		self.targetHover = { owner = owner, name = name, isCurrent = isCurrent,
+			onEnter = onEnter, onLeave = onLeave, onClick = onClick }
 		return true
 	end
 	function a:HideLocationTargetButton()
@@ -812,7 +816,9 @@ Register("remote dot and chat tooltips show fresh party size without tracked que
 	assert(a.chatLogPlayerTooltipState.tooltipIntro.text:find("Party status unknown", 1, true))
 	a.partyJoinState = { peers = { [row.name] = { grouped = "0", at = now } } }
 	a:UpdateChatLogPlayerTooltip()
-	assert(a.chatLogPlayerTooltipState.tooltipIntro.text:find("Solo", 1, true))
+	Equal(a.chatLogPlayerTooltipState.tooltipIntro.text:find("Solo", 1, true), nil)
+	Equal(a.chatLogPlayerTooltipState.tooltipIntro.text:find("Party status unknown", 1, true), nil)
+	Equal(#a.chatLogPlayerTooltipState.partyRows, 0)
 	a.partyJoinState.peers[row.name].grouped = "1"
 	a:UpdateChatLogPlayerTooltip()
 	assert(a.chatLogPlayerTooltipState.tooltipIntro.text:find("In a party", 1, true))
@@ -901,7 +907,8 @@ Register("own chat tooltip reads live super tracking without a received peer rec
 	assert(state.tooltipIntro.text:find("Level 60 Human", 1, true))
 	assert(state.tooltipLabel.text:match("\n\n|cff909090v5%.16%.7|r$"))
 	Equal(state.tooltipLabel.text:find("Tracked quests:", 1, true), nil)
-	assert(state.tooltipIntro.text:find("Solo", 1, true))
+	Equal(state.tooltipIntro.text:find("Solo", 1, true), nil)
+	Equal(state.tooltipIntro.text:find("Party status unknown", 1, true), nil)
 	count, size = 7, 3
 	id = 43
 	a:UpdateChatLogPlayerTooltip()
@@ -1529,21 +1536,29 @@ Register("solo and party world map hovers shade unrelated markers while minimap 
 	Equal(a.mapParent.writes, 0)
 end)
 
-Register("party tooltip lists class colored members crowned leader first and only the leader above five", function()
+Register("party tooltip lists class colored members and keeps the leader and hovered player above five", function()
 	local a = Fixture()
 	local info = VisualParty(a)
 	a.rows.map = { Row("Friend-Realm") }
 	a:RefreshPlayerLocationPins()
 	Pin(a, "map").frame.scripts.OnEnter()
 	local s = a.locationPinState
-	assert(s.tooltipIntro.text:find("\n\nParty of 3", 1, true))
+	Equal(s.tooltipIntro.text:find("Party of 3", 1, true), nil)
+	local group = assert(s.partyGroups[1])
+	assert(group.active and group.frame:IsVisible() and group.icon:IsVisible())
+	Equal(group.key, info.key)
+	Equal(group.count.text, "3")
+	Equal(group.first, 1)
+	Equal(group.last, 3)
 	Equal(s.partyRows[1].frame.points[1][2], s.tooltipIntro)
 	Equal(s.tooltipLabel.points[1][2], s.tooltipIntro)
-	local rosterHeight = 8
 	for _, item in ipairs(s.partyRows) do
-		rosterHeight = rosterHeight + item.frame.height
+		Equal(item.partyKey, info.key)
+		Equal(item.partySize, 3)
+		assert(item.frame.points[1][5] < group.frame.points[1][5])
+		assert(item.frame.points[1][5] - item.frame.height > group.frame.points[1][5] - group.frame.height)
 	end
-	Equal(s.tooltipLabel.points[1][5], -rosterHeight - 14)
+	assert(s.tooltipLabel.points[1][5] < group.frame.points[1][5] - group.frame.height)
 	Equal(#s.partyRows, 3)
 	assert(s.partyRows[1].label.text:find("|cff40c7ebLeader-Realm|r", 1, true))
 	assert(s.partyRows[1].crown.shown and not s.partyRows[2].crown.shown)
@@ -1551,20 +1566,58 @@ Register("party tooltip lists class colored members crowned leader first and onl
 	Equal(s.partyRows[1].crown.texture, Pin(a, "map").partyCrown.texture)
 	local allocated = #a.regions
 	info.size = 6
+	for index = 4, 6 do info.members[index] = { name = "Member" .. index .. "-Realm", classFile = "MAGE" } end
 	a:RefreshPlayerLocationPins()
-	assert(s.partyRows[1].frame.shown and not s.partyRows[2].frame.shown and not s.partyRows[3].frame.shown)
+	assert(s.partyRows[1].frame.shown and s.partyRows[2].frame.shown and not s.partyRows[3].frame.shown)
+	assert(s.partyRows[1].crown.shown and not s.partyRows[2].crown.shown)
+	assert(s.partyRows[2].label.text:find("Friend-Realm", 1, true))
+	Equal(group.count.text, "6")
+	Equal(group.last, 2)
 	Equal(#a.regions, allocated)
-	info.size = 3
+	local leaderHover = a:BuildPlayerTooltipModel(Row("Leader-Realm"))
+	Equal(#leaderHover.members, 1)
+	Equal(leaderHover.members[1].name, "Leader-Realm")
+	-- Remote large groups normally have only summary/known-member evidence.
 	info.members = nil
+	info.knownMembers[#info.knownMembers + 1] = { name = "Third-Realm", classFile = "MAGE" }
+	a:RefreshPlayerLocationPins()
+	assert(s.partyRows[2].frame.shown and s.partyRows[2].label.text:find("Friend-Realm", 1, true))
+	assert(not s.partyRows[3].frame.shown)
+	Equal(group.last, 2)
+	local hoveredMember = info.knownMembers[2]
+	info.knownMembers[2], info.knownMembers[3] = info.knownMembers[3], nil
+	a:RefreshPlayerLocationPins()
+	assert(s.partyRows[2].frame.shown and s.partyRows[2].label.text:find("Friend-Realm", 1, true))
+	assert(not s.partyRows[3].frame.shown)
+	Equal(group.last, 2)
+	a.ignored = "Leader-Realm"
+	a:RefreshPlayerLocationPins()
+	assert(s.partyRows[1].label.text:find("Friend-Realm", 1, true))
+	assert(not s.partyRows[1].crown.shown and not s.partyRows[2].frame.shown)
+	Equal(group.count.text, "6")
+	a.ignored = nil
+	info.knownMembers[2] = hoveredMember
+	info.size = 3
 	a:RefreshPlayerLocationPins()
 	assert(s.tooltipIntro.text:find("Loading party members", 1, true))
 	assert(s.partyRows[1].frame.shown)
 	assert(s.partyRows[2].frame.shown and s.partyRows[2].label.text:find("Friend-Realm", 1, true))
 	assert(not s.partyRows[2].crown.shown and not s.partyRows[3].frame.shown)
+	Equal(group.count.text, "3")
+	Equal(group.last, 2)
 	Equal(info.members, nil) -- partial display must not become an authoritative roster
+	a.ignored = "Leader-Realm"
+	a:RefreshPlayerLocationPins()
+	assert(s.partyRows[1].label.text:find("Friend-Realm", 1, true))
+	assert(not s.partyRows[1].crown.shown and not s.partyRows[2].frame.shown)
+	Equal(group.count.text, "3") -- ignored members do not shrink the advertised party size
+	a.ignored = nil
 	a.visualMembers = {}
 	a:RefreshPlayerLocationPins()
 	assert(not s.partyRows[1].frame.shown and not s.partyRows[2].frame.shown)
+	assert(not group.active and not group.frame:IsVisible())
+	Equal(group.count.text, "")
+	assert(s.tooltipIntro.text:find("Party status unknown", 1, true))
 end)
 Register("player hover shade retires for recycled pins map changes and guarded lifecycle cleanup", function()
 	for _, change in ipairs({ "recycled", "map", "geometry", "hidden", "restricted", "forbidden", "protected", "disabled" }) do
@@ -1766,7 +1819,7 @@ Register("display evidence rejects withdrawn expired ignored and departed cached
 	assert(not a:BuildPlayerTooltipMember(row).usesQT, "expired private evidence cannot retain the logo")
 end)
 
-Register("nearby stream animation moves only owned minimap pins and respects foreign frame guards", function()
+Register("minimap geometry animates nearby streams on owned pins and respects foreign frame guards", function()
 	local a = Fixture()
 	a.now = 100
 	a.API.GetTime = function()
@@ -1796,18 +1849,18 @@ Register("nearby stream animation moves only owned minimap pins and respects for
 	local pin, mapPin = Pin(a, "minimap"), Pin(a, "map")
 	local frames, mapWrites, miniWrites = #a.frames, mapPin.frame.writes, pin.frame.writes
 	a.now = 100.5
-	a:RefreshNearbyStreamPins()
+	a:RefreshMinimapLocationGeometry()
 	Equal(#a.frames, frames)
 	Equal(mapPin.frame.writes, mapWrites)
 	assert(pin.frame.writes > miniWrites)
 	Near(pin.frame.points[#pin.frame.points][4], 120)
 	Near(pin.frame.points[#pin.frame.points][5], -100)
 	a.miniParent.forbidden = true
-	a:RefreshNearbyStreamPins()
+	a:RefreshMinimapLocationGeometry()
 	Equal(a.invalidCalls or 0, 0)
 	a.miniParent.forbidden = false
 	a.blocked = true
-	a:RefreshNearbyStreamPins()
+	a:RefreshMinimapLocationGeometry()
 	Equal(a.invalidCalls or 0, 0)
 	Equal(a.locationPinState.surfaces.minimap.frame.shown, false)
 end)
@@ -1933,8 +1986,12 @@ Register("player tooltip width fits content expands for party names and shrinks 
 	a:RefreshPlayerLocationPins()
 	pin.frame.scripts.OnEnter()
 	Equal(state.tooltip.width, 300)
-	Equal(state.partyRows[1].frame.width, 272)
-	Equal(state.partyRows[1].label.width, 234)
+	local group, member = state.partyGroups[1], state.partyRows[1]
+	Equal(group.frame.width, state.tooltipDivider.width)
+	assert(member.frame.width < group.frame.width, "party names must remain inset from the outline")
+	local labelRight = member.frame.points[1][4] + member.label.points[1][2] + member.label.width
+	local iconLeft = group.frame.width + group.icon.points[1][4] - group.icon.width
+	assert(member.label.width > 0 and labelRight < iconLeft, "wrapped names must leave room for the party badge")
 	local allocated = #a.regions
 	party = { size = 0 }
 	pin.frame.scripts.OnEnter()
@@ -1942,6 +1999,7 @@ Register("player tooltip width fits content expands for party names and shrinks 
 	Equal(state.tooltipDivider.width, compact - 28)
 	Equal(state.partyRows[1].active, false)
 	assert(not state.partyRows[1].frame.shown)
+	assert(not group.active and not group.frame:IsVisible())
 	Equal(#a.regions, allocated)
 end)
 
@@ -2187,6 +2245,208 @@ local function VisibleMapPins(a)
 	return result
 end
 
+local function InstallLocationHoverCursor(a)
+	function a:GetPlayerLocationHoverCursorPosition()
+		return self.hoverCursorX, self.hoverCursorY
+	end
+	function a:IsPlayerLocationPinUnderCursor(pin, x, y)
+		if not pin or not pin.frame:IsVisible() then return false end
+		local point = pin.frame.points[#pin.frame.points]
+		return point ~= nil and math.abs(x - point[4]) <= pin.frame.width / 2
+			and math.abs(y + point[5]) <= pin.frame.height / 2
+	end
+	function a:MoveHoverCursorToPin(pin)
+		local point = assert(pin.frame.points[#pin.frame.points])
+		self.hoverCursorX, self.hoverCursorY = point[4], -point[5]
+	end
+end
+
+Register("moving map and minimap dots retain the hovered player until cursor movement without retaining its click target", function()
+	for _, surface in ipairs({ "map", "minimap" }) do
+		local a = ClusterFixture(0)
+		InstallLocationHoverCursor(a)
+		a.clusterOptions.clusterPlayerLocations = false
+		local first, second = Row("First-Realm"), Row("Second-Realm", 0.54)
+		a.rows[surface] = { first, second }
+		a.playerLocationState.peers = { [first.name] = first, [second.name] = second }
+		a:RefreshPlayerLocationPins()
+		local physical, state = Pin(a, surface), a.locationPinState
+		a:MoveHoverCursorToPin(physical)
+		physical.frame.scripts.OnEnter()
+		assert(state.tooltip:IsVisible())
+		Equal(state.hovered.name, first.name)
+		local interest = assert(a.playerDetailsState.interests[state])
+		assert(interest.isCurrent())
+		-- Moving within the live hit target is still an ordinary hover.
+		a.hoverCursorX = a.hoverCursorX + 1
+		a:UpdatePlayerLocationHover()
+		assert(state.tooltip:IsVisible())
+		local anchor = state.tooltip.points[#state.tooltip.points]
+		local anchorX, anchorY = anchor[4], anchor[5]
+		local oldX = physical.frame.points[#physical.frame.points][4]
+		local target = a.targetHover
+		first.x = 0.56
+		a:RefreshPlayerLocationPins()
+		if surface == "minimap" then a:RefreshMinimapLocationGeometry() end
+		assert(physical.frame.points[#physical.frame.points][4] ~= oldX, "hover must not freeze the actual marker")
+		physical.frame.scripts.OnLeave()
+		a:UpdatePlayerLocationHover()
+		assert(state.tooltip:IsVisible(), "marker movement must not dismiss a stationary pointer's tooltip")
+		Equal(state.hovered.name, first.name)
+		if target then
+			assert(not target.isCurrent(), "a departed minimap marker must not retain its secure click target")
+			target.onLeave()
+			assert(state.tooltip:IsVisible(), "secure overlay leave must preserve the stationary pointer's tooltip")
+		end
+		-- A different player inherits the pool slot; the tooltip keeps its own
+		-- identity and receives fresh metadata for the originally hovered player.
+		a.rows[surface] = { second, first }
+		a.playerDetailsState.identities[first.name] = {
+			receivedAt = 100, level = 61, classFile = "MAGE", race = "Human", faction = "Alliance",
+		}
+		a:RefreshPlayerLocationPins()
+		a:UpdatePlayerLocationHover()
+		Equal(physical.name, second.name)
+		Equal(state.hovered.name, first.name)
+		assert(state.tooltipTitle.text:find("First", 1, true))
+		assert(state.tooltipIntro.text:find("Level 61 Human", 1, true), "retained hovers still refresh accepted metadata")
+		local point = state.tooltip.points[#state.tooltip.points]
+		Near(point[4], anchorX)
+		Near(point[5], anchorY)
+		assert(a.playerDetailsState.interests[state].isCurrent())
+		for _, name in ipairs(a.requests) do Equal(name, first.name) end
+		-- The replacement moves underneath the stationary pointer. Its native
+		-- enter must not steal the reading session, but motion within its hit
+		-- target must acquire it without requiring a leave-and-reenter gesture.
+		second.x = 0.501
+		a:RefreshPlayerLocationPins()
+		physical.frame.scripts.OnEnter()
+		Equal(state.hovered.name, first.name)
+		a.hoverCursorX = a.hoverCursorX + 1
+		a:UpdatePlayerLocationHover()
+		Equal(state.hovered.name, second.name)
+		assert(state.tooltipTitle.text:find("Second", 1, true))
+		Equal(a.playerDetailsState.interests[state].name, second.name)
+		if surface == "minimap" then
+			Equal(a.targetHover.name, second.name)
+			assert(a.targetHover.isCurrent())
+		end
+		-- Both hit rectangles now overlap. The new native enter identifies
+		-- which button is actually on top; a geometric hit on the old source
+		-- must not override that choice after the pointer moves.
+		first.x = second.x
+		a:RefreshPlayerLocationPins()
+		local crossing = Pin(a, surface, 2)
+		assert(a:IsPlayerLocationPinUnderCursor(physical, a.hoverCursorX, a.hoverCursorY))
+		crossing.frame.scripts.OnEnter()
+		Equal(state.hovered.name, second.name)
+		a.hoverCursorX = a.hoverCursorX + 1
+		a:UpdatePlayerLocationHover()
+		Equal(state.hovered.name, first.name)
+		Equal(a.playerDetailsState.interests[state].name, first.name)
+		-- Reassigning an already-hovered pooled frame does not produce another
+		-- native enter. Pointer motion must still acquire its current occupant.
+		a.rows[surface] = { first, second }
+		a:RefreshPlayerLocationPins()
+		Equal(crossing.name, second.name)
+		Equal(state.hovered.name, first.name)
+		a.hoverCursorX = a.hoverCursorX + 1
+		a:UpdatePlayerLocationHover()
+		Equal(state.hovered.name, second.name)
+		Equal(a.playerDetailsState.interests[state].name, second.name)
+		if surface == "minimap" then
+			Equal(a.targetHover.name, second.name)
+			assert(a.targetHover.isCurrent())
+		else
+			-- The acquired player can join a newly formed cluster; its current
+			-- marker must remain above the map shade while their tooltip is held.
+			a.clusterOptions.clusterPlayerLocations = true
+			first.x = second.x + 0.001
+			a:RefreshPlayerLocationPins()
+			local grouped = Pin(a, "map")
+			assert(grouped.cluster)
+			Equal(state.hovered.name, second.name)
+			FocusedAboveShade(a, { grouped })
+		end
+		assert(not interest.isCurrent(), "switching to the crossed marker must retire the old hover interest")
+		a.hoverCursorX = a.hoverCursorX + 100
+		a:UpdatePlayerLocationHover()
+		Equal(state.hovered, nil)
+		Equal(state.locationHover, nil)
+		assert(not state.tooltip:IsVisible())
+		Equal(a.playerDetailsState.interests[state], nil)
+		assert(not interest.isCurrent(), "retired hover callbacks cannot renew the original interest")
+	end
+end)
+
+Register("retained cluster hovers follow acquired members through movement and end on withdrawal or map lifecycle changes", function()
+	local a = ClusterFixture(3)
+	InstallLocationHoverCursor(a)
+	a:RefreshPlayerLocationPins()
+	local physical, state = Pin(a, "map"), a.locationPinState
+	a:MoveHoverCursorToPin(physical)
+	physical.frame.scripts.OnEnter()
+	local summary = assert(state.clusterTooltip)
+	assert(summary.tooltipTitle.text:find("3 players", 1, true))
+	local point = summary.tooltip.points[#summary.tooltip.points]
+	local x, y = point[4], point[5]
+	-- Movement dissolves the original cluster and reuses its physical button.
+	-- The readable summary remains about its acquired members, never new ones.
+	a.rows.map[1].x, a.rows.map[2].x, a.rows.map[3].x = 0.60, 0.70, 0.80
+	a:RefreshPlayerLocationPins()
+	physical.frame.scripts.OnLeave()
+	a:UpdatePlayerLocationHover()
+	assert(not physical.cluster and physical.name)
+	assert(summary.tooltip:IsVisible())
+	assert(summary.tooltipTitle.text:find("3 players", 1, true))
+	assert(not summary.tooltipLabel.text:find("Click to", 1, true), "a detached cluster summary must not advertise a stale click action")
+	point = summary.tooltip.points[#summary.tooltip.points]
+	Near(point[4], x)
+	Near(point[5], y)
+	Equal(#a.requests, 0)
+	Equal(#a.phaseRequests, 0)
+	-- Withdrawing one member removes their information from the retained view.
+	local withdrawn = table.remove(a.rows.map, 1)
+	a.playerLocationState.peers[withdrawn.name] = nil
+	a:RefreshPlayerLocationPins()
+	a:UpdatePlayerLocationHover()
+	assert(summary.tooltip:IsVisible())
+	assert(summary.tooltipTitle.text:find("2 players", 1, true))
+	for _, item in ipairs(summary.partyRows) do
+		if item.active then assert(not item.label.text:find("Peer001", 1, true)) end
+	end
+	a.rows.map = {}
+	a:RefreshPlayerLocationPins()
+	a:UpdatePlayerLocationHover()
+	Equal(summary.hovered, nil)
+	assert(not summary.tooltip:IsVisible())
+	-- An unchanged cursor cannot carry a retained hover into another map view,
+	-- a hidden interface, or a disabled addon lifetime.
+	for _, reason in ipairs({ "geometry", "hidden", "disabled" }) do
+		local b = ClusterFixture(2)
+		InstallLocationHoverCursor(b)
+		b:RefreshPlayerLocationPins()
+		local pin = Pin(b, "map")
+		b:MoveHoverCursorToPin(pin)
+		pin.frame.scripts.OnEnter()
+		local tooltip = b.locationPinState.clusterTooltip
+		if reason == "geometry" then
+			b.geometry.map.canvasLeft = 20
+			b:RefreshWorldMapOverlayGeometry()
+		elseif reason == "hidden" then
+			b.mapParent:Hide()
+			b:RefreshWorldMapOverlayGeometry()
+		else
+			b.isEnabled = false
+			b:RefreshPlayerLocationPins()
+		end
+		b:UpdatePlayerLocationHover()
+		Equal(tooltip.hovered, nil)
+		Equal(b.locationPinState.locationHover, nil)
+		assert(not tooltip.tooltip:IsVisible())
+	end
+end)
+
 local function ExpandedPlayerPin(a, name)
 	for _, pin in ipairs(VisibleMapPins(a)) do
 		if pin.expansion and (not name or pin.name == name) then return pin end
@@ -2253,7 +2513,7 @@ local function SharedPartyHoverFixture(size)
 	return a, sender, leader, record
 end
 
-local function AssertTooltipParty(state, names, loading)
+local function AssertTooltipParty(state, names, loading, size)
 	local shown = {}
 	for _, item in ipairs(state.partyRows or {}) do
 		if item.active and item.frame:IsVisible() then
@@ -2261,10 +2521,24 @@ local function AssertTooltipParty(state, names, loading)
 		end
 	end
 	Equal(#shown, #names)
+	local group = assert(state.partyGroups and state.partyGroups[1])
+	size = size or #names
+	assert(group.active and group.frame:IsVisible() and group.icon:IsVisible())
+	Equal(group.count.text, tostring(size))
+	Equal(group.first, 1)
+	Equal(group.last, #names)
+	for _, item in ipairs(shown) do
+		Equal(item.partyKey, group.key)
+		Equal(item.partySize, size)
+	end
+	for _, color in ipairs({ group.icon.vertexColor, group.count.textColor, group.edges[1].color }) do
+		for component = 1, 4 do Equal(color[component], 1) end
+	end
 	for index, name in ipairs(names) do assert(shown[index].label.text:find(name, 1, true)) end
 	assert(not shown[1] or shown[1].crown.shown)
 	for index = 2, #shown do assert(not shown[index].crown.shown) end
 	Equal(state.tooltipIntro.text:find("Loading party members", 1, true) ~= nil, loading)
+	Equal(state.tooltipIntro.text:find("Party of", 1, true), nil)
 end
 
 Register("accepted party roster from one member is reused by another hover chat cluster and map highlights", function()
@@ -2309,12 +2583,12 @@ Register("partial party membership is consistent across member and leader hovers
 		a:RefreshPlayerLocationPins()
 		local first, second = Pin(a, "map"), Pin(a, "map", 2)
 		first.frame.scripts.OnEnter()
-		AssertTooltipParty(a.locationPinState, { leader, sender }, size == 3)
+		AssertTooltipParty(a.locationPinState, { leader, sender }, size == 3, size)
 		Equal(a:GetPlayerPartyVisualInfo(sender).members, nil)
 		Equal(#a.rosterWire, 1)
 		first.frame.scripts.OnLeave()
 		second.frame.scripts.OnEnter()
-		AssertTooltipParty(a.locationPinState, { leader, sender }, size == 3)
+		AssertTooltipParty(a.locationPinState, { leader, sender }, size == 3, size)
 		Equal(a:GetPlayerPartyVisualInfo(leader).members, nil)
 		assert(first.partyOutline.shown and second.partyOutline.shown and second.partyCrown.shown)
 		second.frame.scripts.OnLeave()
@@ -2344,8 +2618,13 @@ Register("newer solo evidence removes inferred party membership from active hove
 	a.now = 101
 	a:AcceptPartyMetadata(leader, { size = 0 })
 	a:RefreshPlayerLocationPins()
-	assert(a.locationPinState.tooltipIntro.text:find("Solo", 1, true))
+	Equal(a.locationPinState.tooltipIntro.text:find("Solo", 1, true), nil)
+	Equal(a.locationPinState.tooltipIntro.text:find("Party status unknown", 1, true), nil)
 	for _, row in ipairs(a.locationPinState.partyRows) do assert(not row.active) end
+	for _, group in ipairs(a.locationPinState.partyGroups) do
+		assert(not group.active and not group.frame:IsVisible())
+		Equal(group.count.text, "")
+	end
 	for _, surface in pairs(a.locationPinState.surfaces) do
 		for _, pin in ipairs(surface.pins) do
 			assert(not pin.partyOutline.shown and not pin.partyCrown.shown)
@@ -2674,7 +2953,7 @@ Register("grouped cluster summaries cap rows after grouping while expanded summa
 	AssertNoClusterMetadataRequests(a)
 end)
 
-Register("reusing a grouped tooltip for an individual retires the prior party presentation", function()
+Register("shared tooltip party styling persists for grouped individuals and clears for solo players and quests", function()
 	local a = ClusterPartySummaryFixture(2)
 	a:SetSummaryParty({ 1, 2 }, "Party", 40)
 	a:RefreshPlayerLocationPins()
@@ -2683,13 +2962,28 @@ Register("reusing a grouped tooltip for an individual retires the prior party pr
 	local state = a.locationPinState.clusterTooltip
 	local group = state.partyGroups[1]
 	assert(group.active and group.frame:IsVisible())
-	a:RenderPlayerTooltip(state, cluster, a:BuildPlayerTooltipModel(a.rows.map[1]))
+	local grouped = a:BuildPlayerTooltipModel(a.rows.map[1])
+	a:RenderPlayerTooltip(state, cluster, grouped)
 	assert(state.tooltipIntro.shown)
-	assert(not group.active and not group.frame:IsVisible())
-	Equal(group.partySize, nil)
-	Equal(group.count.text, "")
-	for _, item in ipairs(state.partyRows) do
-		if item.active then
+	Equal(state.partyGroups[1], group)
+	assert(group.active and group.frame:IsVisible())
+	Equal(group.count.text, "40")
+	Equal(group.last, 1) -- hovering the leader does not duplicate their row
+	a.now = 101
+	a:GetPartyVisualState().peers[a.rows.map[1].name] = { size = 0, at = a.now, lifetime = 180 }
+	local solo = a:BuildPlayerTooltipModel(a.rows.map[1])
+	Equal(solo.introText:find("Solo", 1, true), nil)
+	Equal(solo.introText:find("Party status unknown", 1, true), nil)
+	local quest = a:BuildPlayerTooltipModel({ questID = 42, name = "Wolf Hunt", questText = "Your quest status: In Progress" })
+	for _, model in ipairs({ solo, quest }) do
+		a:RenderPlayerTooltip(state, cluster, grouped)
+		assert(group.active and group.frame:IsVisible())
+		a:RenderPlayerTooltip(state, cluster, model)
+		assert(not group.active and not group.frame:IsVisible())
+		Equal(group.partySize, nil)
+		Equal(group.count.text, "")
+		for _, item in ipairs(state.partyRows) do
+			assert(not item.active and not item.frame:IsVisible())
 			Equal(item.partyKey, nil)
 			Equal(item.partySize, nil)
 		end
@@ -3988,9 +4282,97 @@ local function StartMapGeometryRuntime(a)
 	return function(delta) frame.scripts.OnUpdate(frame, delta or 1 / 60) end
 end
 
+Register("stationary minimap peers follow viewer movement each frame without extra producers or tooltip work", function()
+	local a = Fixture()
+	a.now, a.isLocalDeveloper = 100, true
+	a.API.GetTime = function() return a.now end
+	a.db = { profile = { showPlayerLocations = true, sharePlayerLocation = true } }
+	local ordinary, streamed, private = Row("Ordinary-Realm", 0.47), Row("Streamed-Realm", 0.51), Row("Private-Realm", 0.53)
+	private.developerOnly, private.publicLocationHidden = true, true
+	a.playerLocationState = { peers = { [ordinary.name] = ordinary, [streamed.name] = streamed } }
+	a.developerPlayerData = { [private.name] = private }
+	a.IsPlayerLocationHiddenForDeveloper = QuestTogether.IsPlayerLocationHiddenForDeveloper
+	function a:ShouldShowPlayerLocation(name) return not self:IsIgnoredPlayerName(name) end
+	a.rows.map, a.rows.minimap = { ordinary }, { ordinary, streamed, private }
+	a.nearbyStreamState = { wanted = { [streamed.name] = { sample = {
+		mapID = 1, x = streamed.x, y = streamed.y, fromX = streamed.x, fromY = streamed.y,
+		at = 100, duration = 1,
+	} } } }
+	a:RefreshPlayerLocationPins()
+	function a:RefreshPartyWaypointPins() end
+	local tick = StartMapGeometryRuntime(a)
+	function a:UpdatePlayerTooltipBadge() self.badgeTicks = (self.badgeTicks or 0) + 1 end
+	function a:UpdateChatLogPlayerTooltip() self.tooltipTicks = (self.tooltipTicks or 0) + 1 end
+	local pins, map = { Pin(a, "minimap", 1), Pin(a, "minimap", 2), Pin(a, "minimap", 3) }, Pin(a, "map")
+	local frames, regions, mapReads, miniReads = #a.frames, #a.regions, a.reads.map, a.reads.minimap
+	local function CheckPositions()
+		for index, row in ipairs({ ordinary, streamed, private }) do
+			local pin, g = pins[index], a.geometry.minimap
+			local point = pin.frame.points[#pin.frame.points]
+			-- Fixture maps 1000 world yards to normalized coordinates; these peers
+			-- never move, so only the viewer's origin can change their screen offset.
+			Near(point[4], 100 + g.west - (1000 - row.x * 1000))
+			Near(point[5], -(100 + g.north - (1000 - row.y * 1000)))
+			assert(pin.frame:IsVisible(), row.name .. " must remain visible")
+		end
+	end
+	for frame = 1, 72 do
+		a.now = 100 + frame / 144
+		a.geometry.minimap.west, a.geometry.minimap.north = 500 + frame / 4, 500 + frame / 8
+		local producers, mapWrites = a.producerTicks, map.frame.writes
+		tick(1 / 144)
+		CheckPositions()
+		if a.producerTicks == producers then Equal(map.frame.writes, mapWrites) end
+	end
+	Equal(a.producerTicks, 2)
+	Equal(a.badgeTicks, 2)
+	Equal(a.tooltipTicks, 2)
+	Equal(a.reads.map, mapReads + 2)
+	Equal(a.reads.minimap, miniReads + 2)
+	Equal(#a.frames, frames)
+	Equal(#a.regions, regions)
+	local writes = { pins[1].frame.writes, pins[2].frame.writes, pins[3].frame.writes }
+	for _ = 1, 3 do a.now = a.now + 1 / 144; tick(1 / 144) end
+	for index, pin in ipairs(pins) do Equal(pin.frame.writes, writes[index]) end
+	-- The viewer still moves when no peer has a nearby stream lease at all.
+	a.nearbyStreamState = nil
+	a.geometry.minimap.west = 519
+	tick(1 / 144)
+	CheckPositions()
+	-- A rotating minimap must follow turning in the same frame as walking.
+	-- At a quarter-turn, north/south displacement becomes horizontal and the
+	-- east/west displacement becomes vertical; no interpolation is appropriate.
+	a.geometry.minimap.facing = math.pi / 2
+	tick(1 / 144)
+	for index, row in ipairs({ ordinary, streamed, private }) do
+		local point, g = pins[index].frame.points[#pins[index].frame.points], a.geometry.minimap
+		Near(point[4], 100 + (1000 - row.y * 1000) - g.north)
+		Near(point[5], -(100 + g.west - (1000 - row.x * 1000)))
+	end
+	a.geometry.minimap.facing = 0
+	tick(1 / 144)
+	CheckPositions()
+	-- Clipping is geometric, not a departure: re-entering must show the already
+	-- admitted marker again without waiting for another membership refresh.
+	a.geometry.minimap.west = 650
+	tick(1 / 144)
+	for _, pin in ipairs(pins) do assert(not pin.frame:IsVisible()) end
+	a.geometry.minimap.west = 518
+	tick(1 / 144)
+	CheckPositions()
+	-- Cached presentation data cannot keep expired, ignored, or no-longer-
+	-- authorized private positions visible until the next producer update.
+	ordinary.lifetime = 0.25
+	a.ignored, a.isLocalDeveloper = streamed.name, false
+	tick(1 / 144)
+	for _, pin in ipairs(pins) do assert(not pin.frame:IsVisible()) end
+	Equal(a.producerTicks, 2)
+end)
+
 Register("world map animation follows each runtime frame without resampling peers or moving minimap pins", function()
 	local a = WaypointFixture()
 	local row = Row(nil, 0.46, 0.46)
+	a.playerLocationState = { peers = { [row.name] = row } }
 	a.rows.map, a.rows.minimap = { row }, { row }
 	a.waypoints = { { name = "First-Realm", mapID = 1, x = 0.6, y = 0.4 } }
 	a:RefreshPlayerLocationPins()

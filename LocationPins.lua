@@ -527,7 +527,7 @@ end
 
 -- Returns pixel offsets from the visible surface's TOPLEFT. Map geometry is
 -- the current canvas rect, so zoom/pan require no hooks or map pin registry.
-function QuestTogether:ProjectPlayerLocationPin(surface, row, geometry, markerSize)
+function QuestTogether:ProjectPlayerLocationPin(surface, row, geometry, markerSize, cachedWorldPosition)
 	if
 		not self:CanAccessTable(row)
 		or not geometry
@@ -550,7 +550,12 @@ function QuestTogether:ProjectPlayerLocationPin(surface, row, geometry, markerSi
 		x = geometry.canvasLeft + nx * geometry.canvasWidth
 		y = geometry.canvasTop + ny * geometry.canvasHeight
 	else
-		local continent, north, west = self:GetLocationPinWorldPosition(row.mapID, row.x, row.y)
+		local continent, north, west
+		if cachedWorldPosition then
+			continent, north, west = self:GetCachedPlayerLocationWorldPosition(row)
+		else
+			continent, north, west = self:GetLocationPinWorldPosition(row.mapID, row.x, row.y)
+		end
 		if continent ~= geometry.continent or not north or not west then
 			return nil
 		end
@@ -632,7 +637,7 @@ local function UpdateMapFocus(addon, state)
 		addon:SetMapOverlayFocus(surface, nil, nil)
 		return
 	end
-	local focus, player, partyKey, clusterKey
+	local focus, player, partyKey, clusterKey, clusterNames
 	if hovered and hovered.surface == "map" and state.mapHoverGeneration == surface.geometryGeneration and FreshRow(addon, hovered) then
 		player = hovered.name
 		local info = addon:GetPlayerPartyVisualInfo(player)
@@ -646,6 +651,7 @@ local function UpdateMapFocus(addon, state)
 			end }
 	elseif clusterHovered and state.clusterHoverGeneration == surface.geometryGeneration and CurrentCluster(addon, clusterHovered) then
 		clusterKey = clusterHovered.cluster.key
+		clusterNames = clusterHovered.locationHover and clusterHovered.locationHover.members
 		focus = { kind = "hover", key = "cluster:" .. clusterKey, pins = {},
 			isCurrent = function()
 				return state.clusterTooltip and state.clusterTooltip.hovered == clusterHovered
@@ -675,9 +681,15 @@ local function UpdateMapFocus(addon, state)
 			if clusterKey then
 				focused = (pin.cluster and pin.cluster.key == clusterKey)
 					or (pin.expansion and surface.expandedClusterKey == clusterKey)
+				if clusterNames then
+					focused = focused or (pin.name and clusterNames[pin.name])
+					for _, member in ipairs(pin.cluster and pin.cluster.members or {}) do
+						if clusterNames[member.name] then focused = true; break end
+					end
+				end
 			else
 				focused = pin.name and Matches(pin.name)
-				if pin.cluster and partyKey then
+				if pin.cluster then
 					for _, member in ipairs(pin.cluster.members) do
 						if Matches(member.name) then focused = true; break end
 					end
@@ -713,9 +725,123 @@ local function HoverHighlights(addon, state)
 end
 
 local function HideTooltip(addon, state)
+	state.locationHover = nil
 	if state.clusterTooltip then addon:HidePlayerTooltipPresentation(state.clusterTooltip) end
 	addon:HidePlayerTooltipPresentation(state)
 	HoverHighlights(addon, state)
+end
+
+-- Keep the reading session independent of pooled, moving marker frames. Cursor
+-- access and hit testing stay behind owned seams for isolated live tests.
+function QuestTogether:GetPlayerLocationHoverCursorPosition()
+	local x, y = Native(self, GetCursorPosition)
+	x, y = Number(self, x), Number(self, y)
+	local parent = self:GetPlayerTooltipPresentationParent()
+	local scale = Positive(self, Method(self, parent, "GetEffectiveScale"))
+	if x and y and scale then return x / scale, y / scale end
+end
+
+function QuestTogether:IsPlayerLocationPinUnderCursor(pin, x, y)
+	if not Guard(self, pin.frame) or Method(self, pin.frame, "IsVisible") ~= true then return false end
+	local rect = Rect(self, pin.frame)
+	local scale = Positive(self, Method(self, self:GetPlayerTooltipPresentationParent(), "GetEffectiveScale"))
+	if not rect or not scale then return false end
+	local ratio = rect.scale / scale
+	return x >= rect.left * ratio and x <= (rect.left + rect.width) * ratio
+		and y >= (rect.top - rect.height) * ratio and y <= rect.top * ratio
+end
+
+local function HoverSourceCurrent(addon, hover, x, y)
+	local pin = hover.pin
+	local key = pin.cluster and pin.cluster.key or pin.name
+	return key == hover.key and pin.presentationGeneration == hover.generation
+		and addon:IsPlayerLocationPinUnderCursor(pin, x, y)
+end
+
+local function AcquireTooltipHover(addon, state, pin)
+	local x, y = addon:GetPlayerLocationHoverCursorPosition()
+	if not x or not y then return pin end
+	local previous = state.locationHover
+	if previous and previous.cursorX == x and previous.cursorY == y then
+		-- Another moving marker crossing the stationary pointer cannot replace
+		-- the subject the user is still reading.
+		previous.mousePin = pin
+		if previous.pin == pin and previous.key == (pin.cluster and pin.cluster.key or pin.name)
+			and previous.generation == pin.presentationGeneration then return previous.anchor end
+		return nil
+	end
+	HideTooltip(addon, state)
+	local surface = state.surfaces[pin.surface]
+	local anchor = {
+		frame = surface.frame, surface = pin.surface, parent = pin.parent, mapID = pin.mapID,
+		name = pin.name, selected = pin.selected, presentationGeneration = pin.presentationGeneration,
+		cursorPosition = { x = x, y = y },
+	}
+	local hover = { pin = pin, mousePin = pin, anchor = anchor, cursorX = x, cursorY = y,
+		key = pin.cluster and pin.cluster.key or pin.name, generation = pin.presentationGeneration }
+	anchor.locationHover = hover
+	if pin.cluster then
+		hover.members = {}
+		for _, member in ipairs(pin.cluster.members) do hover.members[member.name] = true end
+		anchor.cluster = { key = pin.cluster.key }
+	else
+		anchor.isCurrent = function() return state.locationHover == hover and FreshRow(addon, anchor) ~= nil end
+	end
+	state.locationHover = hover
+	return anchor
+end
+
+local function LeaveTooltipHover(addon, state, pin)
+	local hover = state.locationHover
+	if hover then
+		if hover.mousePin == pin then hover.mousePin = nil end
+		if hover.pin ~= pin then return end
+		local x, y = addon:GetPlayerLocationHoverCursorPosition()
+		if x and y and hover.cursorX == x and hover.cursorY == y then
+			hover.detached = true
+			return
+		end
+	end
+	if hover or state.hovered == pin or (state.clusterTooltip and state.clusterTooltip.hovered == pin) then
+		HideTooltip(addon, state)
+	end
+end
+
+function QuestTogether:UpdatePlayerLocationHover()
+	local state = rawget(self, "locationPinState")
+	local hover = state and state.locationHover
+	if not hover then return end
+	local ok = pcall(function()
+		if not self.isEnabled or self.isLoggingOut or self:IsRuntimeRestricted()
+			or Method(self, hover.anchor.frame, "IsVisible") ~= true then
+			HideTooltip(self, state)
+			return
+		end
+		local x, y = self:GetPlayerLocationHoverCursorPosition()
+		if not x or not y then HideTooltip(self, state); return end
+		local overSource = HoverSourceCurrent(self, hover, x, y)
+		if hover.cursorX ~= x or hover.cursorY ~= y then
+			local mousePin = hover.mousePin
+			local changed = mousePin and (mousePin ~= hover.pin
+				or (mousePin.cluster and mousePin.cluster.key or mousePin.name) ~= hover.key
+				or mousePin.presentationGeneration ~= hover.generation)
+			if changed and self:IsPlayerLocationPinUnderCursor(mousePin, x, y) then
+				HideTooltip(self, state)
+				-- The native enter event already identified the topmost marker,
+				-- but was deferred while the user read the previous subject. A
+				-- nudge or pool-slot reuse does not produce another native enter.
+				mousePin.enterTooltip()
+			elseif overSource then
+				hover.cursorX, hover.cursorY, hover.detached = x, y, false
+			else
+				HideTooltip(self, state)
+			end
+		elseif not overSource then
+			hover.detached = true
+			if hover.anchor.surface == "minimap" then self:HideLocationTargetButton() end
+		end
+	end)
+	if not ok then HideTooltip(self, state) end
 end
 
 local function HideSurface(addon, state, surface)
@@ -727,11 +853,13 @@ local function HideSurface(addon, state, surface)
 	for _, pin in ipairs(surface.pins) do
 		pin.name, pin.cluster, pin.selected, pin.expansion = nil, nil, nil, nil
 		pin.mapAnchor = nil
+		pin.minimapRow, pin.minimapX, pin.minimapY = nil, nil, nil
 		if pin.connector then Hide(addon, state, pin.connector) end
 		pin.presentationGeneration = (pin.presentationGeneration or 0) + 1
 	end
 	if surface.name == "map" then addon:ClearPlayerLocationClusterExpansion() end
 	Hide(addon, state, surface.frame)
+	if state.locationHover and state.locationHover.anchor.surface == surface.name then HideTooltip(addon, state) end
 	if surface.name == "map" and state.clusterTooltip and state.clusterTooltip.hovered then
 		addon:HidePlayerTooltipPresentation(state.clusterTooltip)
 	end
@@ -757,6 +885,7 @@ end
 
 FreshRow = function(addon, pin)
 	if not addon.isEnabled or addon:IsRuntimeRestricted() or not pin.name or not Guard(addon, pin.frame)
+		or addon:IsIgnoredPlayerName(pin.name)
 		or not addon:IsQuestTogetherMapDataShown(pin.surface)
 		or Method(addon, pin.frame, "IsVisible") ~= true then
 		return nil
@@ -766,6 +895,16 @@ FreshRow = function(addon, pin)
 		return nil
 	end
 	local rows = addon:GetVisiblePlayerLocations(pin.surface)
+	if pin.locationHover then
+		if pin.selected then
+			local selected = addon:GetSelectedPlayerMapLocation()
+			if selected and selected.name == pin.name then return selected end
+		end
+		for index = 1, math.min(MAX_LOCATION_ROWS, #rows) do
+			if rows[index].name == pin.name then return rows[index] end
+		end
+		return nil
+	end
 	if pin.expansion then
 		local markers = addon:GetPlayerLocationMapMarkers(rows, geometry, MAX_PINS)
 		local dots, _, info = addon:GetPlayerLocationClusterExpansion(markers, geometry)
@@ -878,7 +1017,19 @@ CurrentCluster = function(addon, pin)
 		or Method(addon, pin.frame, "IsVisible") ~= true or not pin.cluster then return nil end
 	local geometry = addon:GetLocationPinSurface("map")
 	if not geometry or geometry.mapID ~= pin.mapID or geometry.parent ~= pin.parent then return nil end
-	local markers = addon:GetPlayerLocationMapMarkers(addon:GetVisiblePlayerLocations("map"), geometry, MAX_PINS)
+	local rows = addon:GetVisiblePlayerLocations("map")
+	local markers = addon:GetPlayerLocationMapMarkers(rows, geometry, MAX_PINS)
+	if pin.locationHover then
+		local members = {}
+		for index = 1, math.min(MAX_LOCATION_ROWS, #rows) do
+			local row = rows[index]
+			if pin.locationHover.members[row.name] and not addon:IsIgnoredPlayerName(row.name) then
+				members[#members + 1] = row
+			end
+		end
+		if #members > 0 then return { key = pin.cluster.key, members = members }, geometry, markers end
+		return nil
+	end
 	for _, marker in ipairs(markers) do
 		if marker.members and marker.key == pin.cluster.key then return marker, geometry, markers end
 	end
@@ -895,6 +1046,12 @@ local function ClusterTooltip(addon, state, pin)
 	HoverHighlights(addon, state)
 	local _, expanded, info = addon:GetPlayerLocationClusterExpansion(markers, geometry)
 	local active = expanded and expanded.key == cluster.key
+	local actionable = true
+	if pin.locationHover then
+		local hover = pin.locationHover
+		local x, y = addon:GetPlayerLocationHoverCursorPosition()
+		actionable = not hover.detached and x and y and HoverSourceCurrent(addon, hover, x, y)
+	end
 	local lines = {}
 	local first = active and info.first or 1
 	local last = active and info.last or #cluster.members
@@ -902,11 +1059,11 @@ local function ClusterTooltip(addon, state, pin)
 	if #cluster.members > #members then
 		lines[#lines + 1] = string.format(L("…and %d more"), #cluster.members - #members)
 	end
-	local navigation = not active and addon:GetPlayerLocationClusterNavigationAction(cluster, geometry)
-	if active then lines[#lines + 1] = L("Click to collapse. Hover a player for details.")
+	local navigation = actionable and not active and addon:GetPlayerLocationClusterNavigationAction(cluster, geometry)
+	if actionable and active then lines[#lines + 1] = L("Click to collapse. Hover a player for details.")
 	elseif navigation == "expand" then lines[#lines + 1] = L("Click to expand players.")
 	elseif navigation == "navigate" then lines[#lines + 1] = L("Click to open a more detailed map.") end
-	if active and info.pages > 1 then
+	if actionable and active and info.pages > 1 then
 		lines[#lines + 1] = string.format(L("Scroll to browse players (%d/%d)."), info.page, info.pages)
 	end
 	state.clusterTooltip = state.clusterTooltip or {}
@@ -921,7 +1078,8 @@ end
 local function OpenCluster(addon, state, pin, pageDelta)
 	local cluster, geometry, markers = CurrentCluster(addon, pin)
 	if not cluster then return false end
-	local wasHovered = state.clusterTooltip and state.clusterTooltip.hovered == pin
+	local wasHovered = state.clusterTooltip and (state.clusterTooltip.hovered == pin
+		or (state.locationHover and state.locationHover.pin == pin))
 	if pageDelta then
 		if not addon:ChangePlayerLocationClusterPage(cluster, geometry, pageDelta) then return false end
 	else
@@ -939,7 +1097,7 @@ local function OpenCluster(addon, state, pin, pageDelta)
 		local surface = state.surfaces.map
 		for _, current in ipairs(surface and surface.pins or {}) do
 			if current.cluster and current.cluster.key == cluster.key then
-				ClusterTooltip(addon, state, current)
+				ClusterTooltip(addon, state, AcquireTooltipHover(addon, state, current) or current)
 				break
 			end
 		end
@@ -1089,38 +1247,54 @@ local function CreatePin(addon, state, surface)
 			end
 		end
 	end)
-	Call(addon, pin.frame, "SetScript", "OnEnter", function()
+	pin.enterTooltip = function()
 		if pin.cluster then
+			local anchor = AcquireTooltipHover(addon, state, pin)
+			if not anchor then return end
 			state.clusterHoverGeneration = surface.geometryGeneration
-			if not pcall(ClusterTooltip, addon, state, pin) then HideTooltip(addon, state) end
+			if not pcall(ClusterTooltip, addon, state, anchor) then HideTooltip(addon, state) end
 			return
 		end
 		local ok, row = pcall(FreshRow, addon, pin)
 		if ok and row then
+			local anchor = AcquireTooltipHover(addon, state, pin)
+			if not anchor then return end
 			if pin.surface == "map" then state.mapHoverGeneration = surface.geometryGeneration end
 			addon:RequestPlayerPhaseComparison(row.name)
-			if not pcall(Tooltip, addon, state, pin, row) then
+			if not pcall(Tooltip, addon, state, anchor, row) then
 				HideTooltip(addon, state)
 			end
 			if pin.surface == "minimap" then
 				local name = row.name
-				addon:ShowLocationTargetButton(pin.frame, name, function()
+				local function CurrentTarget()
+					local hover = anchor.locationHover
+					if hover then
+						local x, y = addon:GetPlayerLocationHoverCursorPosition()
+						if state.locationHover ~= hover or not x or not y
+							or not HoverSourceCurrent(addon, hover, x, y) then return false end
+					end
 					local current = FreshRow(addon, pin)
 					return current ~= nil and current.name == name
-				end, function()
+				end
+				addon:ShowLocationTargetButton(pin.frame, name, CurrentTarget, function()
+					if not CurrentTarget() then return end
+					if anchor.locationHover then anchor.locationHover.mousePin = pin end
 					local current = FreshRow(addon, pin)
-					if current and current.name == name then Tooltip(addon, state, pin, current) end
-				end, function() HideTooltip(addon, state) end, function(button)
+					if current then Tooltip(addon, state, anchor, current) end
+				end, function()
+					if not anchor.locationHover or state.locationHover == anchor.locationHover then
+						LeaveTooltipHover(addon, state, pin)
+					end
+				end, function(button)
 					HideTooltip(addon, state)
 					if button == "RightButton" then addon:OpenLocationPinPlayerMenu(pin.frame, name, pin) end
 				end)
 			end
 		end
-	end)
+	end
+	Call(addon, pin.frame, "SetScript", "OnEnter", pin.enterTooltip)
 	Call(addon, pin.frame, "SetScript", "OnLeave", function()
-		if state.hovered == pin or (state.clusterTooltip and state.clusterTooltip.hovered == pin) then
-			HideTooltip(addon, state)
-		end
+		LeaveTooltipHover(addon, state, pin)
 	end)
 	Call(addon, pin.frame, "SetScript", "OnMouseWheel", function(_, delta)
 		if pin.cluster and type(delta) == "number" and delta ~= 0 then
@@ -1149,6 +1323,7 @@ local function InvalidateMapGeometry(addon, state, surface)
 			end
 		end
 	end
+	if state.locationHover and state.locationHover.anchor.surface == "map" then HideTooltip(addon, state) end
 	if state.hovered and state.hovered.surface == "map" then addon:HidePlayerTooltipPresentation(state) end
 	if state.clusterTooltip and state.clusterTooltip.hovered then addon:HidePlayerTooltipPresentation(state.clusterTooltip) end
 	if surface.mapFocus then addon:SetMapOverlayFocus(surface, nil, nil) end
@@ -1283,11 +1458,15 @@ local function RefreshSurface(addon, state, name, rows)
 		end
 		Call(addon, pin.frame, "ClearAllPoints")
 		Call(addon, pin.frame, "SetPoint", "CENTER", surface.frame, "TOPLEFT", marker.x, -marker.y)
+		if name == "minimap" then
+			pin.minimapRow, pin.minimapX, pin.minimapY = row, marker.x, marker.y
+		end
 		addon:SetMapOverlayPinGeometry(pin, geometry, marker.x, marker.y, pin.size)
 		Call(addon, pin.frame, "Show")
 	end
 	addon:ReleaseMapOverlayPins(surface, count, function(pin)
 		pin.name, pin.cluster, pin.selected, pin.expansion = nil, nil, nil, nil
+		pin.minimapRow, pin.minimapX, pin.minimapY = nil, nil, nil
 		pin.presentationGeneration = (pin.presentationGeneration or 0) + 1
 		if pin.connector then Hide(addon, state, pin.connector) end
 		if state.hovered == pin or (state.clusterTooltip and state.clusterTooltip.hovered == pin) then HideTooltip(addon, state) end
@@ -1351,35 +1530,57 @@ function QuestTogether:RefreshPlayerLocationPins(onlySurface)
 	return visible
 end
 
--- Move only existing streamed minimap pins at animation cadence. No new frames,
--- world-map rebuilds, tooltip updates, or writes to Blizzard-owned UI here.
-function QuestTogether:RefreshNearbyStreamPins()
-	local streams, state = rawget(self, "nearbyStreamState"), rawget(self, "locationPinState")
+-- Reproject admitted minimap dots against this frame's camera, including peers
+-- without a stream lease. Membership, artwork and tooltips keep their own cadence.
+-- No new frames, peer requests, or writes to Blizzard-owned UI here.
+function QuestTogether:RefreshMinimapLocationGeometry()
+	local state = rawget(self, "locationPinState")
 	local surface = state and state.surfaces.minimap
-	if not streams or not next(streams.wanted) or not surface then return end
-	if not self.isEnabled or self:IsRuntimeRestricted() or self:GetOption("showPlayerLocations") ~= true then
+	if not surface then return end
+	if not self.isEnabled or self.isLoggingOut or self:IsRuntimeRestricted() or self:GetOption("showPlayerLocations") ~= true then
 		HideSurface(self, state, surface)
 		return
 	end
+	if not surface.pins[1] or not surface.pins[1].name then return end
 	local ok = pcall(function()
 		local geometry = self:GetLocationPinSurface("minimap")
 		if not geometry or geometry.parent ~= surface.parent then
 			HideSurface(self, state, surface)
 			return
 		end
-		local locations = rawget(self, "playerLocationState")
 		for _, pin in ipairs(surface.pins) do
-			if pin.name and streams.wanted[pin.name] then
-				local row = locations and locations.peers[pin.name]
-				if not row or row.mask < 2 or not self:ShouldShowPlayerLocation(pin.name) then
+			if pin.name then
+				if pin.mapID ~= geometry.mapID then
+					HideSurface(self, state, surface)
+					return
+				end
+				local row = pin.minimapRow
+				if row and row.developerOnly then
+					-- Keep the admitted private sample separate from public streams,
+					-- and recheck authorization before each presentation update.
+					if not self:IsPlayerLocationHiddenForDeveloper(pin.name) then row = nil end
+				else
+					row = self:GetFreshPlayerLocation(pin.name, "minimap")
+					if row then row = self:GetNearbyStreamPosition(row, true) end
+				end
+				if not row or not self:ShouldShowPlayerLocation(pin.name) or not Guard(self, pin.frame) then
+					pin.minimapX, pin.minimapY = nil, nil
 					Hide(self, state, pin.frame)
 				else
-					row = self:GetNearbyStreamPosition(row, true)
-					local x, y = self:ProjectPlayerLocationPin("minimap", row, geometry)
+					-- A fixed map coordinate has a fixed world position; reuse that
+					-- conversion while only the local camera moves.
+					local x, y = self:ProjectPlayerLocationPin("minimap", row, geometry, pin.size, true)
 					if x and y then
-						Call(self, pin.frame, "ClearAllPoints")
-						Call(self, pin.frame, "SetPoint", "CENTER", surface.frame, "TOPLEFT", x, -y)
-					else Hide(self, state, pin.frame) end
+						if x ~= pin.minimapX or y ~= pin.minimapY then
+							Call(self, pin.frame, "ClearAllPoints")
+							Call(self, pin.frame, "SetPoint", "CENTER", surface.frame, "TOPLEFT", x, -y)
+							Call(self, pin.frame, "Show")
+							pin.minimapX, pin.minimapY = x, y
+						end
+					else
+						pin.minimapX, pin.minimapY = nil, nil
+						Hide(self, state, pin.frame)
+					end
 				end
 			end
 		end

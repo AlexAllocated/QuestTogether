@@ -96,6 +96,28 @@ local function Frame(left, bottom, width, height, scale)
 	}
 end
 local viewport, canvas = Frame(100, 200, 800, 600, 1), Frame(-250, 50, 1000, 500, 2)
+-- Hover coordinates and hit testing must agree across UI/frame scaling. Keep
+-- engine-return fixtures offline; the in-game suite uses owned cursor seams.
+UIParent = Frame(0, 0, 1000, 800, 0.5)
+local cursorX, cursorY = 300, 420
+GetCursorPosition = function() return cursorX, cursorY end
+local hoverX, hoverY = addon:GetPlayerLocationHoverCursorPosition()
+Near(hoverX, 600)
+Near(hoverY, 840)
+local hoverPin = { frame = Frame(100, 200, 60, 40, 2) }
+function hoverPin.frame:IsProtected() return false end
+assert(addon:IsPlayerLocationPinUnderCursor(hoverPin, hoverX, hoverY))
+assert(not addon:IsPlayerLocationPinUnderCursor(hoverPin, 641, hoverY))
+hoverPin.frame.forbidden = true
+assert(not addon:IsPlayerLocationPinUnderCursor(hoverPin, hoverX, hoverY))
+hoverPin.frame.forbidden = false
+cursorX = secret
+assert(addon:GetPlayerLocationHoverCursorPosition() == nil)
+cursorX = 300
+restricted = true
+assert(addon:GetPlayerLocationHoverCursorPosition() == nil)
+assert(not addon:IsPlayerLocationPinUnderCursor(hoverPin, hoverX, hoverY))
+restricted = false
 local displayedMapID = 1
 WorldMapFrame = Frame(0, 0, 1000, 800, 1)
 function WorldMapFrame:GetMapID()

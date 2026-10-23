@@ -41,7 +41,7 @@ function QT:InitializeRuntimeCoordinator()
 	if not self.LibChev.CanMutateOwnedRegion(frame) then
 		return false
 	end
-	local elapsed, animationElapsed = 0, 0
+	local elapsed = 0
 	frame:SetScript("OnUpdate", function(_, delta)
 		if rawget(self, "runtimeCoordinatorState") ~= state or not self.isEnabled then
 			return
@@ -54,15 +54,14 @@ function QT:InitializeRuntimeCoordinator()
 		-- updates. Follow the current canvas each frame without accelerating
 		-- data sampling, clustering, or communication producers below.
 		self:RefreshWorldMapOverlayGeometry()
+		-- The minimap camera moves every frame even when every peer stands still.
+		self:RefreshMinimapLocationGeometry()
+		self:UpdatePlayerLocationHover()
 		local step = self:SafeToNumber(delta) or 0
 		if step < 0 or step > 1000 then
 			step = 0
 		end
-		elapsed, animationElapsed = elapsed + step, animationElapsed + step
-		if animationElapsed >= 1 / 30 then
-			animationElapsed = 0
-			self:RefreshNearbyStreamPins()
-		end
+		elapsed = elapsed + step
 		if elapsed < UPDATE_INTERVAL then
 			return
 		end
