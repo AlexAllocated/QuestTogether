@@ -1,14 +1,14 @@
 {
-  "source_sha256": "4255fc59ddb2a7a524640ad44eab97c13bec1a8fa9127931afb7787e31c62431",
+  "source_sha256": "6b962d9385373aeeb2ad1cd618e8dccb813b7abe8d38b50152e13b19d6093e4d",
   "notes": {
-    "version": "8.0.3",
-    "welcome": "Le note di aggiornamento sono più chiare e scorrevoli, e la cronologia delle versioni torna a includere una voce mancante.",
+    "version": "8.0.4",
+    "welcome": "Gli indicatori seguono più fluidamente i movimenti della mappa del mondo.",
     "sections": [
       {
-        "title": "Note di aggiornamento e cronologia",
+        "title": "Indicatori sulla mappa del mondo",
         "items": [
-          "Abbiamo rivisto le note di aggiornamento attuali e passate in tutte le dieci lingue supportate oltre all'inglese, per renderle più naturali e facili da leggere.",
-          "La voce mancante della versione 7.4.4 è di nuovo consultabile nella cronologia delle versioni e nei registri delle modifiche."
+          "I punti dei giocatori e i punti di passaggio condivisi del gruppo seguono la mappa con fluidità quando la trascini o usi la rotellina del mouse per cambiare lo zoom.",
+          "Gli indicatori si aggiornano subito quando cambi livello della mappa, anche tornando indietro con il clic destro. I punti della zona precedente non restano più visibili."
         ]
       }
     ]

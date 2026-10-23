@@ -1,14 +1,14 @@
 {
-  "source_sha256": "4255fc59ddb2a7a524640ad44eab97c13bec1a8fa9127931afb7787e31c62431",
+  "source_sha256": "6b962d9385373aeeb2ad1cd618e8dccb813b7abe8d38b50152e13b19d6093e4d",
   "notes": {
-    "version": "8.0.3",
-    "welcome": "Hemos revisado las notas de actualización para que sean más claras y naturales, y recuperado una entrada que faltaba en el historial de versiones.",
+    "version": "8.0.4",
+    "welcome": "Los marcadores de jugadores y del grupo siguen mejor los movimientos del mapa del mundo.",
     "sections": [
       {
-        "title": "Notas de actualización e historial de versiones",
+        "title": "Marcadores del mapa del mundo",
         "items": [
-          "Las notas de actualización, tanto actuales como antiguas, se han revisado en los diez idiomas disponibles además del inglés para que resulten más claras y naturales.",
-          "Hemos recuperado la entrada de la versión 7.4.4, que faltaba en el historial de versiones y en los registros de cambios. Ya puedes volver a consultarla."
+          "Los puntos de jugadores y los puntos de ruta compartidos del grupo se desplazan con fluidez al mover el mapa o usar la rueda del ratón para acercarlo o alejarlo.",
+          "Los marcadores se actualizan de inmediato al cambiar de nivel del mapa, también al volver atrás con un clic derecho. Los puntos de la zona anterior ya no se quedan en pantalla."
         ]
       }
     ]

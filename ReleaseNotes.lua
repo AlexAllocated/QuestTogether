@@ -3,14 +3,14 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "8.0.3",
-	welcome = "This update improves localized release notes and restores a missing release history entry.",
+	version = "8.0.4",
+	welcome = "Smoother player markers and shared waypoints on the world map.",
 	sections = {
 		{
-			title = "Release notes and history",
+			title = "World map",
 			items = {
-				"Current and historical release notes have been rewritten in all ten supported non-English languages for clearer, more natural wording while preserving their original meaning.",
-				"The missing 7.4.4 entry has been restored to the browsable release history and changelogs.",
+				"Player markers and shared party waypoints now follow the map smoothly as you zoom with the mouse wheel or drag to pan.",
+				"Changing map levels, including right-clicking back to a broader view, updates QT markers immediately. Markers from the previous map no longer linger during the transition.",
 			},
 		},
 	},

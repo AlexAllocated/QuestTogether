@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.4
+
+Gli indicatori seguono più fluidamente i movimenti della mappa del mondo.
+
+### Indicatori sulla mappa del mondo
+
+- I punti dei giocatori e i punti di passaggio condivisi del gruppo seguono la mappa con fluidità quando la trascini o usi la rotellina del mouse per cambiare lo zoom.
+- Gli indicatori si aggiornano subito quando cambi livello della mappa, anche tornando indietro con il clic destro. I punti della zona precedente non restano più visibili.
+
 ## 8.0.3
 
 Le note di aggiornamento sono più chiare e scorrevoli, e la cronologia delle versioni torna a includere una voce mancante.

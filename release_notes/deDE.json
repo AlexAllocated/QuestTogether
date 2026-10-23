@@ -1,14 +1,14 @@
 {
-  "source_sha256": "4255fc59ddb2a7a524640ad44eab97c13bec1a8fa9127931afb7787e31c62431",
+  "source_sha256": "6b962d9385373aeeb2ad1cd618e8dccb813b7abe8d38b50152e13b19d6093e4d",
   "notes": {
-    "version": "8.0.3",
-    "welcome": "Die Versionshinweise wurden sprachlich überarbeitet. Außerdem haben wir einen fehlenden Eintrag im Versionsverlauf ergänzt.",
+    "version": "8.0.4",
+    "welcome": "Markierungen auf der Weltkarte folgen Kartenbewegungen jetzt flüssiger.",
     "sections": [
       {
-        "title": "Versionshinweise und Versionsverlauf",
+        "title": "Markierungen auf der Weltkarte",
         "items": [
-          "Die aktuellen und älteren Versionshinweise wurden in allen zehn unterstützten Sprachen außer Englisch sprachlich überarbeitet, damit sie sich natürlicher lesen und leichter verständlich sind.",
-          "Der bisher fehlende Eintrag zu 7.4.4 ist wieder im Versionsverlauf und in den Änderungsprotokollen enthalten."
+          "Spielerpunkte und geteilte Gruppenwegpunkte bewegen sich beim Zoomen mit dem Mausrad und beim Verschieben flüssig mit der Karte.",
+          "Beim Wechsel der Kartenebene werden die Markierungen sofort aktualisiert, auch beim Zurückkehren per Rechtsklick. Punkte aus der vorherigen Zone bleiben nicht stehen."
         ]
       }
     ]

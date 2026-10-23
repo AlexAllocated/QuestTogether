@@ -4,6 +4,15 @@
 
 [Other languages](changelogs/README.md)
 
+## 8.0.4
+
+Smoother player markers and shared waypoints on the world map.
+
+### World map
+
+- Player markers and shared party waypoints now follow the map smoothly as you zoom with the mouse wheel or drag to pan.
+- Changing map levels, including right-clicking back to a broader view, updates QT markers immediately. Markers from the previous map no longer linger during the transition.
+
 ## 8.0.3
 
 This update improves localized release notes and restores a missing release history entry.

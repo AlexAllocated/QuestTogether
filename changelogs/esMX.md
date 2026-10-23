@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.4
+
+Los marcadores acompañan con mayor fluidez los movimientos del mapa del mundo.
+
+### Marcadores del mapa del mundo
+
+- Los puntos de jugadores y los puntos de ruta compartidos del grupo siguen el mapa con fluidez al arrastrarlo o usar la rueda del mouse para acercar o alejar la vista.
+- Los marcadores se actualizan de inmediato al cambiar de nivel del mapa, incluso al regresar con clic derecho. Los puntos de la zona anterior ya no permanecen en pantalla.
+
 ## 8.0.3
 
 Las notas de actualización ahora se leen con más claridad y naturalidad. También recuperamos una entrada que faltaba en el historial de lanzamientos.

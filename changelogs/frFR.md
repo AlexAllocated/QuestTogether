@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.4
+
+Les marqueurs suivent plus fluidement les mouvements de la carte du monde.
+
+### Marqueurs de la carte du monde
+
+- Les points des joueurs et les points de passage partagés du groupe suivent la carte avec fluidité lorsque vous zoomez à la molette ou déplacez la carte.
+- Les marqueurs sont actualisés immédiatement quand vous changez de niveau de carte, y compris en revenant en arrière par un clic droit. Les points de la zone précédente ne restent plus affichés.
+
 ## 8.0.3
 
 Les notes de mise à jour de QuestTogether sont plus claires, et l’historique des versions retrouve une entrée manquante.

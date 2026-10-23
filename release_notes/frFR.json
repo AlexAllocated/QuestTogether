@@ -1,14 +1,14 @@
 {
-  "source_sha256": "4255fc59ddb2a7a524640ad44eab97c13bec1a8fa9127931afb7787e31c62431",
+  "source_sha256": "6b962d9385373aeeb2ad1cd618e8dccb813b7abe8d38b50152e13b19d6093e4d",
   "notes": {
-    "version": "8.0.3",
-    "welcome": "Les notes de mise à jour de QuestTogether sont plus claires, et l’historique des versions retrouve une entrée manquante.",
+    "version": "8.0.4",
+    "welcome": "Les marqueurs suivent plus fluidement les mouvements de la carte du monde.",
     "sections": [
       {
-        "title": "Notes de mise à jour et historique des versions",
+        "title": "Marqueurs de la carte du monde",
         "items": [
-          "Les notes de mise à jour actuelles et anciennes ont été réécrites dans les dix langues prises en charge autres que l’anglais, pour une lecture plus fluide et plus claire.",
-          "L’entrée manquante de la version 7.4.4 a été rétablie dans l’historique des versions consultable et dans les journaux des modifications."
+          "Les points des joueurs et les points de passage partagés du groupe suivent la carte avec fluidité lorsque vous zoomez à la molette ou déplacez la carte.",
+          "Les marqueurs sont actualisés immédiatement quand vous changez de niveau de carte, y compris en revenant en arrière par un clic droit. Les points de la zone précédente ne restent plus affichés."
         ]
       }
     ]

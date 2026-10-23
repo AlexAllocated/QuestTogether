@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.4
+
+Markierungen auf der Weltkarte folgen Kartenbewegungen jetzt flüssiger.
+
+### Markierungen auf der Weltkarte
+
+- Spielerpunkte und geteilte Gruppenwegpunkte bewegen sich beim Zoomen mit dem Mausrad und beim Verschieben flüssig mit der Karte.
+- Beim Wechsel der Kartenebene werden die Markierungen sofort aktualisiert, auch beim Zurückkehren per Rechtsklick. Punkte aus der vorherigen Zone bleiben nicht stehen.
+
 ## 8.0.3
 
 Die Versionshinweise wurden sprachlich überarbeitet. Außerdem haben wir einen fehlenden Eintrag im Versionsverlauf ergänzt.
