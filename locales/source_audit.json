@@ -351,9 +351,11 @@
     ],
     "MapOverlayPool.lua": [
       "BACKGROUND",
+      "CENTER",
       "Frame",
       "Hide",
-      "Show"
+      "Show",
+      "TOPLEFT"
     ],
     "Minimap.lua": [
       "ADD",
