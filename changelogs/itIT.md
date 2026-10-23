@@ -2,6 +2,17 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.5
+
+Punti più fluidi sulla minimappa e descrizioni dei giocatori più facili da leggere.
+
+### Indicatori sulla mappa e descrizioni dei giocatori
+
+- I punti dei giocatori sulla minimappa seguono più fluidamente i tuoi spostamenti e i cambi di direzione. I punti dei giocatori fermi oscillano così meno avanti e indietro.
+- Sulla mappa del mondo e sulla minimappa, le descrizioni restano nella stessa posizione finché tieni fermo il cursore, anche quando gli indicatori si muovono. Le descrizioni dei punti raggruppati mantengono i giocatori mostrati all’inizio del passaggio del cursore. Sposta il cursore lontano per chiuderle.
+- Anche le descrizioni dei singoli giocatori mostrano ora i gruppi con lo stesso bordo bianco, la stessa icona di gruppo e lo stesso numero totale delle descrizioni dei punti raggruppati. Chi gioca da solo non ha né un riquadro di gruppo né un’etichetta aggiuntiva che lo indichi.
+- Nei gruppi con più di cinque giocatori, la descrizione individuale mostra prima il capogruppo e poi il giocatore sotto il cursore. Se è il capogruppo, compare una sola volta. Il numero totale resta visibile e il giocatore indicato può comparire anche quando l’elenco dei membri è ancora incompleto.
+
 ## 8.0.4
 
 Gli indicatori seguono più fluidamente i movimenti della mappa del mondo.

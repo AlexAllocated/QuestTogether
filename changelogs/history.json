@@ -3,6 +3,151 @@
   "releases": [
     {
       "enUS": {
+        "version": "8.0.4",
+        "welcome": "Smoother player markers and shared waypoints on the world map.",
+        "sections": [
+          {
+            "title": "World map",
+            "items": [
+              "Player markers and shared party waypoints now follow the map smoothly as you zoom with the mouse wheel or drag to pan.",
+              "Changing map levels, including right-clicking back to a broader view, updates QT markers immediately. Markers from the previous map no longer linger during the transition."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "8.0.4",
+        "welcome": "Markierungen auf der Weltkarte folgen Kartenbewegungen jetzt flüssiger.",
+        "sections": [
+          {
+            "title": "Markierungen auf der Weltkarte",
+            "items": [
+              "Spielerpunkte und geteilte Gruppenwegpunkte bewegen sich beim Zoomen mit dem Mausrad und beim Verschieben flüssig mit der Karte.",
+              "Beim Wechsel der Kartenebene werden die Markierungen sofort aktualisiert, auch beim Zurückkehren per Rechtsklick. Punkte aus der vorherigen Zone bleiben nicht stehen."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "8.0.4",
+        "welcome": "Les marqueurs suivent plus fluidement les mouvements de la carte du monde.",
+        "sections": [
+          {
+            "title": "Marqueurs de la carte du monde",
+            "items": [
+              "Les points des joueurs et les points de passage partagés du groupe suivent la carte avec fluidité lorsque vous zoomez à la molette ou déplacez la carte.",
+              "Les marqueurs sont actualisés immédiatement quand vous changez de niveau de carte, y compris en revenant en arrière par un clic droit. Les points de la zone précédente ne restent plus affichés."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "8.0.4",
+        "welcome": "Los marcadores de jugadores y del grupo siguen mejor los movimientos del mapa del mundo.",
+        "sections": [
+          {
+            "title": "Marcadores del mapa del mundo",
+            "items": [
+              "Los puntos de jugadores y los puntos de ruta compartidos del grupo se desplazan con fluidez al mover el mapa o usar la rueda del ratón para acercarlo o alejarlo.",
+              "Los marcadores se actualizan de inmediato al cambiar de nivel del mapa, también al volver atrás con un clic derecho. Los puntos de la zona anterior ya no se quedan en pantalla."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "8.0.4",
+        "welcome": "Los marcadores acompañan con mayor fluidez los movimientos del mapa del mundo.",
+        "sections": [
+          {
+            "title": "Marcadores del mapa del mundo",
+            "items": [
+              "Los puntos de jugadores y los puntos de ruta compartidos del grupo siguen el mapa con fluidez al arrastrarlo o usar la rueda del mouse para acercar o alejar la vista.",
+              "Los marcadores se actualizan de inmediato al cambiar de nivel del mapa, incluso al regresar con clic derecho. Los puntos de la zona anterior ya no permanecen en pantalla."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "8.0.4",
+        "welcome": "Os marcadores acompanham os movimentos do mapa-múndi com mais fluidez.",
+        "sections": [
+          {
+            "title": "Marcadores do mapa-múndi",
+            "items": [
+              "Os pontos dos jogadores e os pontos de referência compartilhados do grupo acompanham o mapa com fluidez ao arrastá-lo ou ajustar o zoom com a roda do mouse.",
+              "Os marcadores são atualizados imediatamente ao mudar de nível do mapa, inclusive ao voltar com o botão direito. Os pontos da área anterior não ficam mais na tela."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "8.0.4",
+        "welcome": "Метки на карте мира теперь плавнее следуют за её движением.",
+        "sections": [
+          {
+            "title": "Метки на карте мира",
+            "items": [
+              "Точки игроков и общие метки маршрута группы плавно перемещаются вместе с картой при её перетаскивании и изменении масштаба колёсиком мыши.",
+              "При переходе между уровнями карты метки обновляются сразу, в том числе при возврате правой кнопкой мыши. Точки из предыдущей зоны больше не остаются на карте."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "8.0.4",
+        "welcome": "Gli indicatori seguono più fluidamente i movimenti della mappa del mondo.",
+        "sections": [
+          {
+            "title": "Indicatori sulla mappa del mondo",
+            "items": [
+              "I punti dei giocatori e i punti di passaggio condivisi del gruppo seguono la mappa con fluidità quando la trascini o usi la rotellina del mouse per cambiare lo zoom.",
+              "Gli indicatori si aggiornano subito quando cambi livello della mappa, anche tornando indietro con il clic destro. I punti della zona precedente non restano più visibili."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "8.0.4",
+        "welcome": "세계 지도 표식이 지도 움직임을 더 부드럽게 따라갑니다.",
+        "sections": [
+          {
+            "title": "세계 지도 표식",
+            "items": [
+              "마우스 휠로 지도를 확대·축소하거나 드래그해 이동하면 플레이어 위치 점과 파티가 공유한 목적지 표식도 지도에 맞춰 부드럽게 움직입니다.",
+              "지도의 다른 단계로 전환하면 표식이 즉시 갱신됩니다. 마우스 오른쪽 버튼으로 이전 단계로 돌아갈 때도 적용되며, 이전 지역의 위치 점이 남지 않습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "8.0.4",
+        "welcome": "世界地图上的标记现在能更流畅地随地图移动。",
+        "sections": [
+          {
+            "title": "世界地图标记",
+            "items": [
+              "使用鼠标滚轮缩放或拖动地图时，玩家位置圆点和队伍共享的路径点标记会随地图流畅移动。",
+              "切换地图层级时，标记会立即刷新，右键返回上一级地图时也一样。上一个区域的圆点不会残留在地图上。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "8.0.4",
+        "welcome": "世界地圖上的標記現在能更流暢地跟隨地圖移動。",
+        "sections": [
+          {
+            "title": "世界地圖標記",
+            "items": [
+              "使用滑鼠滾輪縮放或拖曳地圖時，玩家位置圓點和隊伍分享的路徑點標記會隨地圖流暢移動。",
+              "切換地圖層級時，標記會立即更新，按右鍵返回上一層地圖時也一樣。上一個區域的圓點不會殘留在地圖上。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "8.0.3",
         "welcome": "This update improves localized release notes and restores a missing release history entry.",
         "sections": [

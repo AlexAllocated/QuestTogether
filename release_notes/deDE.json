@@ -1,14 +1,16 @@
 {
-  "source_sha256": "6b962d9385373aeeb2ad1cd618e8dccb813b7abe8d38b50152e13b19d6093e4d",
+  "source_sha256": "138274c716c1b693852e0c9bdc7548fd20cbfc7cfa910beaa89bf1ccbf22c8ba",
   "notes": {
-    "version": "8.0.4",
-    "welcome": "Markierungen auf der Weltkarte folgen Kartenbewegungen jetzt flüssiger.",
+    "version": "8.0.5",
+    "welcome": "Ruhigere Punkte auf der Minikarte und besser lesbare Spieler-Tooltips.",
     "sections": [
       {
-        "title": "Markierungen auf der Weltkarte",
+        "title": "Kartenmarkierungen und Spieler-Tooltips",
         "items": [
-          "Spielerpunkte und geteilte Gruppenwegpunkte bewegen sich beim Zoomen mit dem Mausrad und beim Verschieben flüssig mit der Karte.",
-          "Beim Wechsel der Kartenebene werden die Markierungen sofort aktualisiert, auch beim Zurückkehren per Rechtsklick. Punkte aus der vorherigen Zone bleiben nicht stehen."
+          "Die Spielerpunkte auf der Minikarte bewegen sich flüssiger mit, wenn du läufst oder dich drehst. Punkte von Spielern, die stillstehen, springen dadurch weniger hin und her.",
+          "Auf Weltkarte und Minikarte bleiben Tooltips an ihrer Position lesbar, solange du den Mauszeiger stillhältst, auch wenn sich die Spielerpunkte weiterbewegen. Zusammengefasste Punkte behalten dabei die anfangs angezeigten Spieler im Tooltip. Bewegst du den Mauszeiger weg, schließt er sich.",
+          "Auch Tooltips einzelner Spieler zeigen Gruppen jetzt mit weißem Rahmen, Gruppensymbol und Gesamtzahl an. Wer allein unterwegs ist, erhält weder einen Gruppenrahmen noch eine zusätzliche Solo-Kennzeichnung.",
+          "Bei Gruppen mit mehr als fünf Spielern zeigt der Tooltip eines Spielers den Gruppenleiter zuerst und danach den Spieler unter dem Mauszeiger. Ist dieser selbst der Leiter, erscheint er nur einmal. Die Gesamtzahl bleibt sichtbar; der betreffende Spieler kann auch bei noch unvollständiger Mitgliederliste angezeigt werden."
         ]
       }
     ]

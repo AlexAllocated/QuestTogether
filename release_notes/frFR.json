@@ -1,14 +1,16 @@
 {
-  "source_sha256": "6b962d9385373aeeb2ad1cd618e8dccb813b7abe8d38b50152e13b19d6093e4d",
+  "source_sha256": "138274c716c1b693852e0c9bdc7548fd20cbfc7cfa910beaa89bf1ccbf22c8ba",
   "notes": {
-    "version": "8.0.4",
-    "welcome": "Les marqueurs suivent plus fluidement les mouvements de la carte du monde.",
+    "version": "8.0.5",
+    "welcome": "Des points plus fluides sur la minicarte et des infobulles de joueurs plus faciles à lire.",
     "sections": [
       {
-        "title": "Marqueurs de la carte du monde",
+        "title": "Marqueurs de carte et infobulles de joueurs",
         "items": [
-          "Les points des joueurs et les points de passage partagés du groupe suivent la carte avec fluidité lorsque vous zoomez à la molette ou déplacez la carte.",
-          "Les marqueurs sont actualisés immédiatement quand vous changez de niveau de carte, y compris en revenant en arrière par un clic droit. Les points de la zone précédente ne restent plus affichés."
+          "Les points des joueurs sur la minicarte suivent plus fluidement vos déplacements et vos changements de direction. Ceux des joueurs immobiles font ainsi moins de petits allers-retours.",
+          "Sur la carte du monde et la minicarte, les infobulles restent en place tant que le pointeur reste immobile, même si les marqueurs se déplacent. Une infobulle de points regroupés conserve les joueurs affichés au début du survol. Éloignez le pointeur pour la fermer.",
+          "Les infobulles individuelles affichent désormais les groupes avec le même encadrement blanc, la même icône de groupe et le même effectif total que les infobulles de points regroupés. Les joueurs seuls n’ont ni encadrement de groupe ni mention solo supplémentaire.",
+          "Pour un groupe de plus de cinq joueurs, l’infobulle individuelle présente le chef en premier, puis le joueur survolé, sans doublon si celui-ci est le chef. L’effectif total reste affiché et le joueur survolé peut apparaître même si la liste des membres est encore incomplète."
         ]
       }
     ]

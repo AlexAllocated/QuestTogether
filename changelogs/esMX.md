@@ -2,6 +2,17 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.5
+
+Los puntos del minimapa se mueven con más fluidez y ahora es más fácil leer la información de otros jugadores.
+
+### Marcadores del mapa y descripciones de jugadores
+
+- Al caminar o girar, los puntos de jugadores en el minimapa se ajustan en cada fotograma. Esto reduce los saltos de un lado a otro cuando los demás jugadores están quietos.
+- Si dejas el cursor quieto sobre un marcador del mapa del mundo o del minimapa, su descripción permanece en el mismo lugar aunque el jugador se mueva. Los resúmenes de puntos agrupados mantienen a los jugadores que estabas consultando. La descripción se cierra al retirar el cursor, cerrar o cambiar el mapa, desactivar las ubicaciones o perder los datos válidos.
+- La información de grupo en las descripciones individuales usa el mismo borde blanco, icono y total de miembros que los resúmenes de puntos agrupados. Los jugadores sin grupo aparecen sin recuadro de grupo ni una etiqueta que indique que juegan solos.
+- Para grupos de más de cinco personas, la descripción individual presenta al líder y al jugador bajo el cursor, en ese orden y sin duplicarlos si son la misma persona. El total sigue contando a todo el grupo, aunque solo haya información de algunos miembros.
+
 ## 8.0.4
 
 Los marcadores acompañan con mayor fluidez los movimientos del mapa del mundo.

@@ -2,6 +2,17 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.5
+
+Ruhigere Punkte auf der Minikarte und besser lesbare Spieler-Tooltips.
+
+### Kartenmarkierungen und Spieler-Tooltips
+
+- Die Spielerpunkte auf der Minikarte bewegen sich flüssiger mit, wenn du läufst oder dich drehst. Punkte von Spielern, die stillstehen, springen dadurch weniger hin und her.
+- Auf Weltkarte und Minikarte bleiben Tooltips an ihrer Position lesbar, solange du den Mauszeiger stillhältst, auch wenn sich die Spielerpunkte weiterbewegen. Zusammengefasste Punkte behalten dabei die anfangs angezeigten Spieler im Tooltip. Bewegst du den Mauszeiger weg, schließt er sich.
+- Auch Tooltips einzelner Spieler zeigen Gruppen jetzt mit weißem Rahmen, Gruppensymbol und Gesamtzahl an. Wer allein unterwegs ist, erhält weder einen Gruppenrahmen noch eine zusätzliche Solo-Kennzeichnung.
+- Bei Gruppen mit mehr als fünf Spielern zeigt der Tooltip eines Spielers den Gruppenleiter zuerst und danach den Spieler unter dem Mauszeiger. Ist dieser selbst der Leiter, erscheint er nur einmal. Die Gesamtzahl bleibt sichtbar; der betreffende Spieler kann auch bei noch unvollständiger Mitgliederliste angezeigt werden.
+
 ## 8.0.4
 
 Markierungen auf der Weltkarte folgen Kartenbewegungen jetzt flüssiger.

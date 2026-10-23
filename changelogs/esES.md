@@ -2,6 +2,17 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.5
+
+Este parche suaviza el movimiento de los puntos del minimapa y facilita la lectura de las descripciones de jugadores.
+
+### Marcadores del mapa y descripciones de jugadores
+
+- Los puntos de jugadores del minimapa se actualizan con cada fotograma al caminar o girar, para reducir las sacudidas de los puntos de quienes están quietos.
+- En el mapa del mundo y el minimapa, la descripción permanece en su sitio mientras mantienes el cursor quieto, aunque el marcador se mueva. Los resúmenes de puntos agrupados conservan los jugadores que consultaste. Al apartar el cursor, cerrar o cambiar el mapa, desactivar las ubicaciones o dejar de disponer de datos válidos, la descripción se cierra.
+- Las descripciones individuales muestran el mismo contorno blanco, icono de grupo y número total de miembros que las de puntos agrupados. Los jugadores sin grupo ya no muestran un recuadro de grupo ni una etiqueta que lo indique.
+- En grupos de más de cinco miembros, la descripción individual muestra primero al líder y después al jugador señalado, sin repetirlo si es el líder. Se mantiene el número total del grupo, incluso cuando solo se conocen algunos de sus miembros.
+
 ## 8.0.4
 
 Los marcadores de jugadores y del grupo siguen mejor los movimientos del mapa del mundo.

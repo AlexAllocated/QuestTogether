@@ -4,6 +4,17 @@
 
 [Other languages](changelogs/README.md)
 
+## 8.0.5
+
+Smoother minimap markers and clearer player tooltips.
+
+### Maps and player tooltips
+
+- Player dots on the minimap move more smoothly as you walk or turn, reducing the wobble of stationary players.
+- Player and cluster tooltips stay open while your mouse is still, even when the markers move away. Move the mouse away to dismiss them.
+- Individual player tooltips now group party members inside the same white outline, with a party icon and total count, used in cluster tooltips. Solo players have no party decoration.
+- For groups larger than five, player tooltips show both the leader and the player you are hovering. Hovering the leader shows them only once.
+
 ## 8.0.4
 
 Smoother player markers and shared waypoints on the world map.

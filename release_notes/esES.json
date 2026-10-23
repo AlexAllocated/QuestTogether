@@ -1,14 +1,16 @@
 {
-  "source_sha256": "6b962d9385373aeeb2ad1cd618e8dccb813b7abe8d38b50152e13b19d6093e4d",
+  "source_sha256": "138274c716c1b693852e0c9bdc7548fd20cbfc7cfa910beaa89bf1ccbf22c8ba",
   "notes": {
-    "version": "8.0.4",
-    "welcome": "Los marcadores de jugadores y del grupo siguen mejor los movimientos del mapa del mundo.",
+    "version": "8.0.5",
+    "welcome": "Este parche suaviza el movimiento de los puntos del minimapa y facilita la lectura de las descripciones de jugadores.",
     "sections": [
       {
-        "title": "Marcadores del mapa del mundo",
+        "title": "Marcadores del mapa y descripciones de jugadores",
         "items": [
-          "Los puntos de jugadores y los puntos de ruta compartidos del grupo se desplazan con fluidez al mover el mapa o usar la rueda del ratón para acercarlo o alejarlo.",
-          "Los marcadores se actualizan de inmediato al cambiar de nivel del mapa, también al volver atrás con un clic derecho. Los puntos de la zona anterior ya no se quedan en pantalla."
+          "Los puntos de jugadores del minimapa se actualizan con cada fotograma al caminar o girar, para reducir las sacudidas de los puntos de quienes están quietos.",
+          "En el mapa del mundo y el minimapa, la descripción permanece en su sitio mientras mantienes el cursor quieto, aunque el marcador se mueva. Los resúmenes de puntos agrupados conservan los jugadores que consultaste. Al apartar el cursor, cerrar o cambiar el mapa, desactivar las ubicaciones o dejar de disponer de datos válidos, la descripción se cierra.",
+          "Las descripciones individuales muestran el mismo contorno blanco, icono de grupo y número total de miembros que las de puntos agrupados. Los jugadores sin grupo ya no muestran un recuadro de grupo ni una etiqueta que lo indique.",
+          "En grupos de más de cinco miembros, la descripción individual muestra primero al líder y después al jugador señalado, sin repetirlo si es el líder. Se mantiene el número total del grupo, incluso cuando solo se conocen algunos de sus miembros."
         ]
       }
     ]

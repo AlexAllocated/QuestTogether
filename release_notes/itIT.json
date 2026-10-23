@@ -1,14 +1,16 @@
 {
-  "source_sha256": "6b962d9385373aeeb2ad1cd618e8dccb813b7abe8d38b50152e13b19d6093e4d",
+  "source_sha256": "138274c716c1b693852e0c9bdc7548fd20cbfc7cfa910beaa89bf1ccbf22c8ba",
   "notes": {
-    "version": "8.0.4",
-    "welcome": "Gli indicatori seguono più fluidamente i movimenti della mappa del mondo.",
+    "version": "8.0.5",
+    "welcome": "Punti più fluidi sulla minimappa e descrizioni dei giocatori più facili da leggere.",
     "sections": [
       {
-        "title": "Indicatori sulla mappa del mondo",
+        "title": "Indicatori sulla mappa e descrizioni dei giocatori",
         "items": [
-          "I punti dei giocatori e i punti di passaggio condivisi del gruppo seguono la mappa con fluidità quando la trascini o usi la rotellina del mouse per cambiare lo zoom.",
-          "Gli indicatori si aggiornano subito quando cambi livello della mappa, anche tornando indietro con il clic destro. I punti della zona precedente non restano più visibili."
+          "I punti dei giocatori sulla minimappa seguono più fluidamente i tuoi spostamenti e i cambi di direzione. I punti dei giocatori fermi oscillano così meno avanti e indietro.",
+          "Sulla mappa del mondo e sulla minimappa, le descrizioni restano nella stessa posizione finché tieni fermo il cursore, anche quando gli indicatori si muovono. Le descrizioni dei punti raggruppati mantengono i giocatori mostrati all’inizio del passaggio del cursore. Sposta il cursore lontano per chiuderle.",
+          "Anche le descrizioni dei singoli giocatori mostrano ora i gruppi con lo stesso bordo bianco, la stessa icona di gruppo e lo stesso numero totale delle descrizioni dei punti raggruppati. Chi gioca da solo non ha né un riquadro di gruppo né un’etichetta aggiuntiva che lo indichi.",
+          "Nei gruppi con più di cinque giocatori, la descrizione individuale mostra prima il capogruppo e poi il giocatore sotto il cursore. Se è il capogruppo, compare una sola volta. Il numero totale resta visibile e il giocatore indicato può comparire anche quando l’elenco dei membri è ancora incompleto."
         ]
       }
     ]

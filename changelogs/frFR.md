@@ -2,6 +2,17 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.5
+
+Des points plus fluides sur la minicarte et des infobulles de joueurs plus faciles à lire.
+
+### Marqueurs de carte et infobulles de joueurs
+
+- Les points des joueurs sur la minicarte suivent plus fluidement vos déplacements et vos changements de direction. Ceux des joueurs immobiles font ainsi moins de petits allers-retours.
+- Sur la carte du monde et la minicarte, les infobulles restent en place tant que le pointeur reste immobile, même si les marqueurs se déplacent. Une infobulle de points regroupés conserve les joueurs affichés au début du survol. Éloignez le pointeur pour la fermer.
+- Les infobulles individuelles affichent désormais les groupes avec le même encadrement blanc, la même icône de groupe et le même effectif total que les infobulles de points regroupés. Les joueurs seuls n’ont ni encadrement de groupe ni mention solo supplémentaire.
+- Pour un groupe de plus de cinq joueurs, l’infobulle individuelle présente le chef en premier, puis le joueur survolé, sans doublon si celui-ci est le chef. L’effectif total reste affiché et le joueur survolé peut apparaître même si la liste des membres est encore incomplète.
+
 ## 8.0.4
 
 Les marqueurs suivent plus fluidement les mouvements de la carte du monde.

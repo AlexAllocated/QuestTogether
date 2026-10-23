@@ -2,6 +2,17 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.5
+
+Este patch deixa os pontos do minimapa mais suaves e facilita a leitura das dicas de jogadores.
+
+### Marcadores do mapa e dicas de jogadores
+
+- Os pontos de jogadores no minimapa acompanham seus passos e giros a cada quadro, reduzindo o vaivém dos pontos de quem está parado.
+- No mapa-múndi e no minimapa, a dica fica no lugar enquanto você mantém o cursor parado, mesmo que o marcador se mova. Os resumos de pontos agrupados mantêm os jogadores que você começou a consultar. A dica fecha ao afastar o cursor, fechar ou mudar o mapa, desativar as localizações ou deixar de ter dados válidos.
+- As dicas individuais usam o mesmo contorno branco, ícone de grupo e total de membros dos resumos de pontos agrupados. Quem está sem grupo aparece sem a caixa de grupo e sem a indicação de que está sozinho.
+- Em grupos com mais de cinco pessoas, a dica individual mostra primeiro o líder e depois o jogador sob o cursor, sem repetir o nome quando ele é o líder. O total continua incluindo todo o grupo, mesmo quando só há informações de parte dos membros.
+
 ## 8.0.4
 
 Os marcadores acompanham os movimentos do mapa-múndi com mais fluidez.
