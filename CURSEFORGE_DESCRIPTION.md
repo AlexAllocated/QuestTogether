@@ -1,5 +1,7 @@
 # QuestTogether
 
+> *I wish I didn't have to say this, but QuestTogether is NOT “vibecoded.” I’m a career developer with over 20 years of experience. I’ve been building this addon for eight years alongside a steadily growing community of users.*
+
 QuestTogether helps you quest with other players: compare quest logs, share eligible quests, follow party progress, and find people looking for company. Progress bubbles, an interactive chat log, map information, and party navigation work alongside WoW’s questing UI.
 
 ## Getting started
