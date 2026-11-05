@@ -6060,7 +6060,7 @@ end
 function QuestTogether:PrintPreviewHelp()
 	self:Print(
 		L(
-			"/qt preview share|join|partychat|bubble|discord|focus|unfollow - Preview a QT dialog without changing settings"
+			"/qt preview share|join|partychat|bubble|discord|unfollow - Preview a QT dialog without changing settings"
 		)
 	)
 	self:Print(L("/qt preview compare - Preview Party Quest Log with mock data (no sharing)"))
@@ -6097,7 +6097,6 @@ function QuestTogether:HandlePreviewCommand(input)
 		or kind == "partychat"
 		or kind == "bubble"
 		or kind == "discord"
-		or kind == "focus"
 		or kind == "unfollow"
 	then
 		return self:ShowDialogPreview(kind)

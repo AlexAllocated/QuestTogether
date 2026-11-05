@@ -190,12 +190,6 @@ function QT:GetPartyFocusController()
 		save = function(name)
 			a:SavePartyQuestFollow(name)
 		end,
-		clearMissing = function()
-			a:ClearPartyFocusMissingNotice()
-		end,
-		missing = function(name, id, title)
-			a:QueuePartyFocusMissingNotice(name, id, title)
-		end,
 		confirm = function(name, callback)
 			return a:ShowPartyFocusChangeDialog(name, callback)
 		end,
@@ -440,7 +434,6 @@ function QT:UpdatePartyNavigation()
 end
 function QT:ResetPartyNavigation()
 	self:StopPartyQuestFollow()
-	self:ClearPartyFocusMissingNotice()
 	local state = rawget(self, "partyNavigationState")
 	self.partyNavigationState = nil
 	if state then

@@ -1001,7 +1001,7 @@ function QT:GetHintCatalog()
 			id = "hint141",
 			actions = { "party_log" },
 			text = L(
-				"If the player you follow chooses a quest you do not have, following stops and your current navigation stays unchanged. Get the quest, then follow them again."
+				"Follow quest focus stays on when you do not have the other player's quest. QT resumes syncing when they focus a quest in your log."
 			),
 			feature = "focus",
 		},

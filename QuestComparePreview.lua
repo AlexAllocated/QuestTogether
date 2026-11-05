@@ -378,11 +378,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 			return n and n >= 0 and n <= 1000000000 and n == math.floor(n) and n
 		end,
 		save = function() end,
-		clearMissing = function() end,
 		publish = function() end,
-		missing = function(name, id, title)
-			owner:ShowPartyFocusMissingDialog({ name = name, questID = id, title = title }, true)
-		end,
 		confirm = function(name, callback)
 			return owner:ShowPartyFocusChangeDialog(name, callback, true, preview.liveQuestData)
 		end,

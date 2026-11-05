@@ -23,7 +23,7 @@ function Controller:Stop()
 	if not s or not s.following then
 		return false
 	end
-	s.following, s.expectedQuest, s.attempt, s.followStatus, s.checkExternal, s.resuming = nil, nil, nil, nil, nil, nil
+	s.following, s.expectedQuest, s.attempt, s.followStatus, s.checkExternal, s.resuming, s.waiting = nil, nil, nil, nil, nil, nil, nil
 	a.publish()
 	a.changed()
 	return true
@@ -73,9 +73,8 @@ function Controller:Follow(name)
 	end
 	local s = a.state()
 	s.following, s.attempt, s.expectedQuest = name, nil, a.currentQuest() or 0
-	s.checkExternal, s.resuming, s.followToken = nil, nil, {}
+	s.checkExternal, s.resuming, s.waiting, s.followToken = nil, nil, nil, {}
 	a.save(name)
-	a.clearMissing()
 	a.publish()
 	self:Apply()
 	a.changed()
@@ -101,6 +100,7 @@ function Controller:Apply()
 	end
 	local peer = a.peer(s.following)
 	if not peer or peer.questID < 0 then
+		s.waiting, s.attempt = true, nil
 		local status = peer and L("Focus not shared or unavailable") or L("Waiting for quest focus")
 		if s.followStatus ~= status then
 			s.followStatus = status
@@ -125,19 +125,21 @@ function Controller:Apply()
 	end
 	local before, status = s.followStatus
 	if peer.questID == 0 then
-		status, s.attempt = L("No focused quest"), nil
+		status, s.attempt, s.waiting = L("No focused quest"), nil, true
 	else
 		local owned = a.owns(peer.questID)
 		if owned == false then
-			local name = s.following
-			self:Stop()
-			a.missing(name, peer.questID, peer.title)
-			return
+			-- Follow the person, not a single compatible quest. Keep the native
+			-- destination until their focus becomes eligible, including when we
+			-- acquire this same quest without receiving another peer update.
+			status, s.attempt, s.waiting = L("Waiting for a shared quest"), nil, true
 		elseif owned ~= true then
+			s.waiting, s.attempt = true, nil
 			return
 		elseif a.currentQuest() == peer.questID then
-			s.attempt, s.expectedQuest = peer.questID, peer.questID
+			s.attempt, s.expectedQuest, s.waiting = peer.questID, peer.questID, nil
 		else
+			s.waiting = nil
 			if s.attempt ~= peer.questID then
 				s.attempt, s.expectedQuest, s.applying = peer.questID, peer.questID, true
 				local ok, applied = pcall(a.setQuest, peer.questID)
@@ -183,6 +185,15 @@ function Controller:ObserveNative()
 			s.checkExternal = nil
 			if s.following and native.questID ~= s.expectedQuest then
 				local previous = a.questID(s.expectedQuest)
+				local peer = a.peer(s.following)
+				local shared = peer and peer.questID > 0 and a.owns(peer.questID) == true
+				if s.waiting or not shared or not previous or (previous > 0 and a.owns(previous) ~= true) then
+					-- Native auto-selection on acceptance/turn-in can arrive before
+					-- Apply sees the updated quest log. No valid sync is being
+					-- overridden: retain follow intent and adopt this local baseline.
+					s.expectedQuest, s.attempt = native.questID, nil
+					return native
+				end
 				if previous and (native.questID > 0 or native.questCleared == true) then
 					if a.blocked() then
 						s.checkExternal = true

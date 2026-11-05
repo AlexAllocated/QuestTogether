@@ -778,8 +778,7 @@
       "LEFT",
       "OVERLAY",
       "TOPLEFT",
-      "TOPRIGHT",
-      "party focus missing quest"
+      "TOPRIGHT"
     ],
     "QuestFocusEditMode.lua": [
       "CENTER",

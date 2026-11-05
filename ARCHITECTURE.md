@@ -51,6 +51,16 @@ private `.local` notes are historical context, not the source of truth.
 
 ## Data and time contracts
 
+- Quest-focus following retains its per-character target when the followed
+  player selects a quest absent from the local log. It exposes a waiting status
+  without opening a modal or changing current navigation. The shared controller
+  rechecks ownership on its existing runtime cadence and on fresh peer focus,
+  then applies the current shared quest without another Follow action. Reload
+  recovery still requires fresh peer data; departure, ignore, raid conversion
+  and disable clear intent, and explicit navigation keeps its existing
+  confirmation policy. While waiting, native quest pickup/turn-in selection
+  changes establish a new local baseline without cancelling follow intent; the
+  same applies when the previous focus is no longer in the local quest log.
 - PQL expansions and the focus HUD acquire the same remote quest-detail record.
   Interests release on collapse, focus/roster/profile change, ignore and disable.
   The RuntimeCoordinator advances at most one objective request per peer; repair

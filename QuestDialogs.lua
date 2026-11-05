@@ -85,12 +85,6 @@ function QuestTogether:ShowDialogPreview(kind)
 	if kind == "unfollow" then
 		return self:ShowPartyFocusChangeDialog(L("Example Player"), function() end, true)
 	end
-	if kind == "focus" then
-		return self:ShowPartyFocusMissingDialog(
-			{ name = L("Example Player"), questID = 1, title = L("Example Quest") },
-			true
-		)
-	end
 	if kind == "partychat" then
 		return self:ShowPartyChatReminderPreview()
 	end
@@ -129,125 +123,6 @@ function QuestTogether:ShowDialogPreview(kind)
 	frame:LayoutRequest()
 	self:ApplyScrollDialogTheme(frame)
 	frame:Show()
-	return true
-end
-
-function QuestTogether:ClearPartyFocusMissingNotice()
-	self.partyFocusMissingNotice = nil
-	local frame = rawget(self, "partyFocusMissingDialog")
-	if frame and self.LibChev.CanMutateOwnedRegion(frame) then
-		frame:Hide()
-	end
-end
-
-function QuestTogether:QueuePartyFocusMissingNotice(name, questID, title)
-	local notice = { name = name, questID = questID, title = title }
-	self.partyFocusMissingNotice = notice
-	self:ScheduleDeferredWork("foreign_frame_mutation", "party_focus_missing", function()
-		if self.isEnabled and rawget(self, "partyFocusMissingNotice") == notice then
-			self:ShowPartyFocusMissingDialog(notice)
-		end
-	end, 0, "party focus missing quest")
-end
-
-local function RefreshPartyFocusMissingText(addon, frame, notice, preview)
-	local title = preview and notice.title
-		or addon:GetLocalizedQuestTitle(notice.questID)
-		or (notice.title and notice.title ~= "" and notice.title)
-		or addon:GetQuestTitle(notice.questID)
-	title = addon:NormalizeQuestDisplayTitleText(title)
-	if title == "" then title = L("Quest ") .. notice.questID end
-	frame.message:SetText(
-		string.format(
-			L(
-				"%s is tracking %s, which you don't have. Following has stopped. Your current navigation is unchanged.\n\nOpen Party Quest Log to request the quest, then follow this player again."
-			),
-			notice.name,
-			title
-		) .. (preview and ("\n\n" .. L("Preview - no settings will change.")) or "")
-	)
-	frame:LayoutManagedWindow()
-end
-
-function QuestTogether:OnPartyFocusTitleChanged(questID)
-	local notice, frame = rawget(self, "partyFocusMissingNotice"), rawget(self, "partyFocusMissingDialog")
-	if not self.isEnabled or self.isLoggingOut or not notice or notice.questID ~= questID or not frame then
-		return false
-	end
-	return self:ScheduleRuntimeWork("foreign_frame_mutation", "party_focus_title_changed", function()
-		if self.isEnabled and not self.isLoggingOut and rawget(self, "partyFocusMissingNotice") == notice
-			and rawget(self, "partyFocusMissingDialog") == frame and frame.notice == notice
-			and self:CanMutateOwnedUI(frame) and self:CanMutateOwnedUI(frame.message) and frame:IsShown() then
-			-- Update the current warning in place. A load completion is never a
-			-- request to show, raise, or recreate a dismissed or superseded dialog.
-			RefreshPartyFocusMissingText(self, frame, notice, false)
-		end
-	end, { mode = "nextFrame", reason = "party focus missing quest" })
-end
-
-function QuestTogether:ShowPartyFocusMissingDialog(notice, preview)
-	if self:IsWorkBlocked("foreign_frame_mutation") then
-		return false
-	end
-	local key = preview and "partyFocusMissingPreview" or "partyFocusMissingDialog"
-	local frame = rawget(self, key)
-	if not frame then
-		frame = self:CreateScrollDialog(650, 310, L("Quest following stopped"))
-		if not frame then
-			return false
-		end
-		self[key] = frame
-		frame.message = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-		frame.message:SetPoint("TOPLEFT", frame.contentInset, -frame.contentTop)
-		frame.message:SetWidth(frame.contentWidth)
-		frame.message:SetJustifyH("LEFT")
-		frame.message:SetWordWrap(true)
-		self:AddScrollDialogLabel(frame, frame.message)
-		self:ConfigureWindowController(frame, {
-			dismiss = function()
-				if not preview then
-					self.partyFocusMissingNotice = nil
-				end
-			end,
-		})
-		local function Close()
-			self:DismissManagedWindow(frame)
-		end
-		frame.escapeAction = Close
-		frame.close = self:CreateOwnedWindowFrame("Button", nil, frame, "UIPanelCloseButton")
-		frame.close:SetPoint("TOPRIGHT", -12, -8)
-		frame.close:SetScript("OnClick", Close)
-		frame.open = self:CreateOwnedWindowFrame("Button", nil, frame, "UIPanelButtonTemplate")
-		frame.open:SetSize(240, 26)
-		frame.open:SetPoint("BOTTOMRIGHT", -frame.contentInset, frame.contentBottom)
-		frame.open:SetText(L("Open Party Quest Log"))
-		frame.open:SetScript("OnClick", function()
-			if self:IsWorkBlocked("foreign_frame_mutation") then
-				return
-			end
-			if preview then
-				self:OpenPartyQuestComparePreview()
-			else
-				self:OpenPartyQuestCompare()
-			end
-			Close()
-		end)
-		frame.LayoutManagedWindow = function()
-			frame.message:SetHeight(frame.message:GetStringHeight())
-			frame:SetHeight(
-				math.max(280, frame.contentTop + frame.message:GetStringHeight() + frame.contentBottom + 54)
-			)
-			self:FitScrollDialog(frame)
-		end
-	end
-	if not self.LibChev.CanMutateOwnedRegion(frame) or not self.LibChev.CanMutateOwnedRegion(frame.message) then
-		return false
-	end
-	frame.notice = notice
-	RefreshPartyFocusMissingText(self, frame, notice, preview)
-	self:ApplyScrollDialogTheme(frame)
-	frame:Show()
-	frame:Raise()
 	return true
 end
 

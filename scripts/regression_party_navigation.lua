@@ -59,7 +59,7 @@ local function Fixture(name)
 		end,
 		SetPartyNavigationQuest = function(id)
 			a.writes[#a.writes + 1] = id
-			if a.reject then
+			if a.reject or (id ~= 0 and not a.owned[id]) then
 				return false
 			end
 			a.native.questID = id
@@ -253,19 +253,57 @@ QT:RegisterTest("party quest following asks before applying external quest navig
 	Equal(a.partyNavigationState.following, nil)
 	Equal(a.native.questID, 1)
 end)
-QT:RegisterTest("party focus stops for missing quests and defers restricted native changes", function()
+QT:RegisterTest("party focus waits for shared quests and defers restricted native changes", function()
 	local a, b = Pair()
+	a.owned[2] = nil
+	b.owned = { [2] = 2, [3] = 3, [4] = 4 }
 	b.native.questID = 2
 	b:QueuePartyNavigationUpdate()
 	b:Tick()
 	b:Deliver(a)
-	a.owned[2] = nil
 	assert(a:FollowPartyQuestFocus(b.name))
+	local token = a.partyNavigationState.followToken
 	Equal(#a.writes, 0)
-	Equal(a.partyNavigationState.following, nil)
-	Equal(a.notice.questID, 2)
+	Equal(a.native.questID, 1)
+	Equal(a.partyNavigationState.following, b.name)
+	Equal(a.partyNavigationState.followStatus, "Waiting for a shared quest")
+	Equal(a.notice, nil)
+	-- Several unshared focus changes keep the same follow intent quietly.
+	for _, id in ipairs({ 3, 4, 2 }) do
+		b.native.questID = id
+		b:QueuePartyNavigationUpdate()
+		b:Tick()
+		b:Deliver(a)
+		a:Tick()
+		Equal(a.partyNavigationState.followToken, token)
+		Equal(a.partyNavigationState.followStatus, "Waiting for a shared quest")
+		Equal(a.native.questID, 1)
+	end
+	Equal(#a.writes, 0)
+	Equal(a.noticeCount, nil)
+	-- Acquiring the friend's already-focused quest does not need a new packet.
+	local received = a:GetPartyNavigationPeer(b.name)
+	a.owned[2] = 2
 	a:Tick()
-	Equal(a.noticeCount, 1)
+	Equal(a:GetPartyNavigationPeer(b.name), received)
+	Equal(a.native.questID, 2)
+	Equal(a.partyNavigationState.following, b.name)
+	Equal(a.partyNavigationState.followStatus, nil)
+	Equal(#a.writes, 1)
+	for _ = 1, 5 do a:Tick() end
+	Equal(#a.writes, 1)
+	-- Waiting must also clear if the friend returns to our current native focus.
+	b.native.questID = 3
+	b:QueuePartyNavigationUpdate()
+	b:Tick()
+	b:Deliver(a)
+	Equal(a.partyNavigationState.followStatus, "Waiting for a shared quest")
+	b.native.questID = 2
+	b:QueuePartyNavigationUpdate()
+	b:Tick()
+	b:Deliver(a)
+	Equal(a.partyNavigationState.followStatus, nil)
+	Equal(#a.writes, 1)
 	a, b = Pair()
 	assert(a:FollowPartyQuestFocus(b.name))
 	a.blocked = true
@@ -506,7 +544,7 @@ QT:RegisterTest("party follow restores per character only after fresh validated 
 	Equal(restored.partyNavigationState.following, nil)
 	Equal(restored.db.global.partyQuestFollowByCharacter.Me, nil)
 end)
-QT:RegisterTest("missing focus stops persisted following once without changing navigation", function()
+QT:RegisterTest("unshared focus survives reload and resumes when the friend focuses a shared quest", function()
 	local a, b = Pair()
 	a.db, a.activeCharacterKey = { global = {} }, "Me"
 	assert(a:FollowPartyQuestFocus(b.name))
@@ -516,15 +554,44 @@ QT:RegisterTest("missing focus stops persisted following once without changing n
 	b:Tick()
 	b:Deliver(a)
 	Equal(a.native.questID, 1)
-	Equal(a.partyNavigationState.following, nil)
-	Equal(a.db.global.partyQuestFollowByCharacter.Me, nil)
-	Equal(a.notice.name, b.name)
-	Equal(a.notice.questID, 2)
+	Equal(a.partyNavigationState.following, b.name)
+	Equal(a.db.global.partyQuestFollowByCharacter.Me, b.name)
+	Equal(a.notice, nil)
+	local restored = Fixture()
+	restored.db, restored.activeCharacterKey = a.db, "Me"
+	restored.owned[2] = nil
+	restored:Tick(0)
+	restored:OnPartyNavigationTrackingChanged()
+	restored:Tick()
+	Equal(restored.partyNavigationState.following, b.name)
+	Equal(#restored.writes, 0)
 	b:Tick(35)
-	b:Deliver(a)
-	a:Tick()
-	Equal(a.noticeCount, 1)
+	restored.time = b.time
+	b:Deliver(restored)
+	restored:Tick()
+	Equal(restored.partyNavigationState.followStatus, "Waiting for a shared quest")
+	Equal(restored.native.questID, 1)
+	Equal(restored.db.global.partyQuestFollowByCharacter.Me, b.name)
+	Equal(restored.noticeCount, nil)
+	-- The friend catches up to another quest we already own. Apply only once
+	-- native navigation is allowed, without another follow action or packet.
+	restored.owned[3] = 3
+	restored.blocked = true
+	b.native.questID = 3
+	b:QueuePartyNavigationUpdate()
+	b:Tick()
+	b:Deliver(restored)
+	restored:Tick()
+	Equal(restored.native.questID, 1)
+	Equal(#restored.writes, 0)
+	restored.blocked = false
+	restored:Tick()
+	Equal(restored.native.questID, 3)
+	Equal(restored.partyNavigationState.followStatus, nil)
+	Equal(restored.partyNavigationState.following, b.name)
+	Equal(#restored.writes, 1)
 end)
+
 QT:RegisterTest("own PQL focus selection stops following and validates ownership and restrictions", function()
 	local a, b = Pair()
 	assert(a:FollowPartyQuestFocus(b.name))
@@ -557,34 +624,77 @@ QT:RegisterTest("unavailable focus preserves intent but ignore raid and disable 
 		elseif reason == "disable" then
 			a:ResetPartyNavigation()
 		else
-			a.native.questID = 2
-			a:OnPartyNavigationTrackingChanged()
-			a:Tick()
+			-- Explicit QT navigation still asks to stop following, even while
+			-- the friend's focus is unavailable.
+			assert(a:RequestPartyQuestFocus(a.name, 2))
+			Equal(a.partyNavigationState.following, b.name)
 			assert(a.confirmAction())
 		end
 		Equal(a.db.global.partyQuestFollowByCharacter.Me, nil)
 	end
 end)
 
-QT:RegisterTest("manual navigation during reload recovery asks before ending saved follow", function()
+QT:RegisterTest("waiting follow survives native quest acquisition turn-in and reload", function()
 	local a, b = Pair()
 	a.db, a.activeCharacterKey = { global = {} }, "Me"
+	a.owned[2] = nil
+	b.native.questID = 2
+	b:QueuePartyNavigationUpdate()
+	b:Tick()
+	b:Deliver(a)
 	assert(a:FollowPartyQuestFocus(b.name))
 	local restored = Fixture()
 	restored.db, restored.activeCharacterKey = a.db, "Me"
-	restored:Tick()
-	restored.native.questID = 2
+	restored.owned[2] = nil
+	restored:Tick(0)
+	-- Native quest selection can change automatically during pickup/turn-in.
+	-- While waiting for the friend, retain intent without restoring stale focus.
+	restored.owned[3], restored.native.questID = 3, 3
 	restored:OnPartyNavigationTrackingChanged()
+	restored:Tick()
+	Equal(restored.native.questID, 3)
+	Equal(restored.partyNavigationState.following, b.name)
+	restored.owned[3], restored.native.questID = nil, 0
+	restored.native.questCleared = true
+	restored:OnPartyNavigationTrackingChanged()
+	restored:Tick()
+	Equal(restored.native.questID, 0)
+	Equal(restored.partyNavigationState.following, b.name)
+	Equal(restored.dialogCount, nil)
+	Equal(#restored.writes, 0)
 	b:Tick(30)
-	restored.time = b.time -- Both peers observe the same wall time for the new envelope.
+	restored.time = b.time
+	b:Deliver(restored)
+	Equal(restored.partyNavigationState.followStatus, "Waiting for a shared quest")
+	-- The native pickup event arrives before another remote snapshot. It must
+	-- not cancel waiting at the exact moment this quest becomes shared.
+	restored.owned[2], restored.native.questID = 2, 2
+	restored.native.questCleared = false
+	restored:OnPartyNavigationTrackingChanged()
+	restored:Tick()
+	Equal(restored.native.questID, 2)
+	Equal(restored.partyNavigationState.followStatus, nil)
+	Equal(restored.partyNavigationState.following, b.name)
+	Equal(restored.db.global.partyQuestFollowByCharacter.Me, b.name)
+	Equal(restored.dialogCount, nil)
+	Equal(#restored.writes, 0)
+	-- Finishing the previously shared quest also returns to waiting quietly.
+	restored.owned[2], restored.native.questID = nil, 0
+	restored.native.questCleared = true
+	restored:OnPartyNavigationTrackingChanged()
+	restored:Tick()
+	Equal(restored.native.questID, 0)
+	Equal(restored.partyNavigationState.followStatus, "Waiting for a shared quest")
+	Equal(restored.partyNavigationState.following, b.name)
+	Equal(#restored.writes, 0)
+	b.native.questID = 1
+	b:QueuePartyNavigationUpdate()
+	b:Tick()
 	b:Deliver(restored)
 	Equal(restored.native.questID, 1)
+	Equal(restored.partyNavigationState.followStatus, nil)
 	Equal(restored.partyNavigationState.following, b.name)
-	assert(restored.confirmAction())
-	Equal(restored.native.questID, 2)
-	Equal(restored.partyNavigationState.following, nil)
-	Equal(restored.db.global.partyQuestFollowByCharacter.Me, nil)
-	Equal(#restored.writes, 2)
+	Equal(#restored.writes, 1)
 end)
 
 QT:RegisterTest("focus override waits for confirmation and rejects an obsolete follow token", function()

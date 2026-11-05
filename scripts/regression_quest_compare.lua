@@ -3350,7 +3350,6 @@ QuestTogether:RegisterTest("layout reset preserves measured dialogs and pending 
 	end
 	assert(a:ShowDialogPreview("share"))
 	assert(a:ShowDialogPreview("join"))
-	assert(a:ShowPartyFocusMissingDialog({ name = "Friend", questID = 1, title = "Long quest title" }, true))
 	assert(a:ShowPartyFocusChangeDialog("Friend", confirm, true))
 	assert(a:ShowDiscordLinkDialog("https://example.invalid/fixture"))
 	a:RenderPartyChatReminder({ preview = true, names = { "First Friend", "Second Friend" } })
@@ -3361,7 +3360,6 @@ QuestTogether:RegisterTest("layout reset preserves measured dialogs and pending 
 	local frames = {
 		share,
 		join,
-		a.partyFocusMissingPreview,
 		a.partyFocusChangePreview,
 		a.discordLinkDialog,
 		a.partyChatReminderPreviewFrame,
@@ -3666,100 +3664,6 @@ QuestTogether:RegisterTest("PQL focus buttons gray by active follow and switch o
 	own.scripts.OnClick()
 	Equal(p.previewFocus, 13)
 end)
-QuestTogether:RegisterTest("missing focus dialog preview is isolated and opens only mock PQL", function()
-	local a = PreviewFixture()
-	local live = { name = "Live", questID = 999 }
-	a.partyFocusMissingNotice = live
-	assert(a:HandleSlashCommand("preview focus"))
-	local frame = a.partyFocusMissingPreview
-	assert(frame:IsShown())
-	assert(frame.message.text:find("Following has stopped", 1, true))
-	assert(frame.message.points[1][2] >= 40)
-	a.blocked = true
-	frame.open.scripts.OnClick()
-	assert(not a.partyQuestComparePreview)
-	a.blocked = false
-	frame.open.scripts.OnClick()
-	assert(a.partyQuestComparePreview.partyQuestCompareWindow:IsShown())
-	assert(not frame:IsShown())
-	Equal(a.partyFocusMissingNotice, live)
-	Equal(#a.wire, 0)
-end)
-
-QuestTogether:RegisterTest(
-	"missing focus notices defer during restrictions and discard superseded callbacks",
-	function()
-		local a = Fixture()
-		AttachUI(a)
-		function a:GetLocalizedQuestTitle()
-			return "Local quest title"
-		end
-		function a:OpenPartyQuestCompare()
-			self.openedForMissing = true
-			return true
-		end
-		a.blocked = true
-		a:QueuePartyFocusMissingNotice("Friend-Realm", 1, "Remote title")
-		a:Advance(0.1)
-		assert(not rawget(a, "partyFocusMissingDialog"))
-		a:ClearPartyFocusMissingNotice()
-		a.blocked = false
-		a:FlushDeferredWork("test resume")
-		assert(not rawget(a, "partyFocusMissingDialog"))
-		a:QueuePartyFocusMissingNotice("Friend-Realm", 2, "Remote title")
-		a:Advance(0.1)
-		local frame = a.partyFocusMissingDialog
-		assert(frame:IsShown())
-		assert(frame.message.text:find("Local quest title", 1, true))
-		frame.open.scripts.OnClick()
-		assert(a.openedForMissing)
-		Equal(a.partyFocusMissingNotice, nil)
-		assert(not frame:IsShown())
-		Equal(#a.wire, 0)
-	end
-)
-
-QuestTogether:RegisterTest("late local titles refresh active missing-focus warnings without showing retired dialogs", function()
-	for _, change in ipairs({ "active", "closed", "hidden", "replaced", "disabled", "logout" }) do
-		local a = Fixture()
-		AttachUI(a)
-		local title
-		function a:GetQuestSnapshot() end
-		a.API.GetLocalizedQuestTitle = function() return title end
-		a.API.RequestLocalizedQuestTitle = function() return true end
-		a:QueuePartyFocusMissingNotice("Friend-Realm", 1, "결속")
-		local frame = a.partyFocusMissingDialog
-		assert(frame:IsShown() and frame.message.text:find("결속", 1, true))
-		local original = frame.message.text
-		function frame:Show() error("a title notification must not show a focus warning") end
-		function frame:Raise() error("a title notification must not raise a focus warning") end
-		a.blocked, title = true, "The Binding"
-		a:QUEST_DATA_LOAD_RESULT(nil, 1, true)
-		a:Advance(0.1)
-		Equal(frame.message.text, original, "restrictions must defer text and layout changes")
-		local stale
-		for _, work in pairs(a.workState.entries) do
-			if work.reason == "party focus missing quest" then stale = work.callback end
-		end
-		assert(stale, "blocked title notification must retain a guarded callback")
-		if change == "closed" then a:ClearPartyFocusMissingNotice()
-		elseif change == "hidden" then frame:Hide()
-		elseif change == "replaced" then a.partyFocusMissingNotice = { name = "Other-Realm", questID = 2 }
-		elseif change == "disabled" then a.isEnabled = false
-		elseif change == "logout" then a.isLoggingOut = true end
-		a.blocked = false
-		a:FlushDeferredWork("test resume")
-		stale()
-		if change == "active" then
-			assert(frame.message.text:find("The Binding", 1, true))
-			assert(not frame.message.text:find("결속", 1, true))
-		else
-			Equal(frame.message.text, original, change)
-		end
-		if change == "closed" or change == "hidden" then assert(not frame:IsShown()) end
-	end
-end)
-
 QuestTogether:RegisterTest("focus-change preview rejects stale confirmations and restrictions", function()
 	local a = PreviewFixture()
 	a:OpenPartyQuestComparePreview()
@@ -3892,9 +3796,15 @@ QuestTogether:RegisterTest("native compare preview follows mock changes and warn
 	assert(p:SelectPartyQuestFocus(name, 102))
 	p.partyQuestCompareSession.members[2].focusQuestId = 900000000
 	p:ApplyPartyQuestFocus()
-	Equal(p:GetPartyQuestFollowTarget(), nil)
+	Equal(p:GetPartyQuestFollowTarget(), name)
 	Equal(a.nativeFocus, 102)
-	assert(a.partyFocusMissingPreview:IsShown())
+	Equal(p.partyNavigationState.followStatus, "Waiting for a shared quest")
+	assert(not rawget(a, "partyFocusMissingPreview"))
+	p.partyQuestCompareSession.members[2].focusQuestId = 101
+	p:ApplyPartyQuestFocus()
+	Equal(p:GetPartyQuestFollowTarget(), name)
+	Equal(a.nativeFocus, 101)
+	Equal(p.partyNavigationState.followStatus, nil)
 	Equal(#a.wire, 0)
 end)
 

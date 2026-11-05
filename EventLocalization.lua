@@ -132,7 +132,6 @@ function QT:NotifyLocalizedQuestTitleChanged(questID)
 	-- Cache reads and load events publish the same notification. Each view owns
 	-- its deferred render and rechecks its current session before touching UI.
 	if self.OnPartyQuestTitleChanged then self:OnPartyQuestTitleChanged(questID) end
-	if self.OnPartyFocusTitleChanged then self:OnPartyFocusTitleChanged(questID) end
 end
 
 function QT:GetLocalizedQuestTitle(questID)
