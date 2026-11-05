@@ -1413,6 +1413,132 @@ QuestTogether:RegisterTest("explicit channel name overrides a stale local channe
 	Equal(addon:IsAnnouncementChannelEvent("CHANNEL", 7, ""), true)
 end)
 
+local function ChannelNoticeFixture()
+	local addon = NewCommsFixture()
+	addon.diagnosticErrorCount, addon.diagnosticLastError = 0, nil
+	addon.reported = {}
+	addon.API.ReportLuaError = function(detail)
+		addon.reported[#addon.reported + 1] = detail
+	end
+	addon.eventFrame = { events = {} }
+	function addon.eventFrame:SetScript(_, callback) self.onEvent = callback end
+	function addon.eventFrame:RegisterEvent(event) self.events[event] = true end
+	function addon.eventFrame:UnregisterEvent(event) self.events[event] = nil end
+	addon:RegisterBootstrapEvents()
+	addon:RegisterRuntimeEvents()
+	function addon:Notice(notice, display, base, id)
+		if self.eventFrame.events.CHAT_MSG_CHANNEL_NOTICE then
+			self.eventFrame.onEvent(self.eventFrame, "CHAT_MSG_CHANNEL_NOTICE", notice,
+				"Private player identity", "", display, nil, nil, nil, id or 7, base)
+		end
+	end
+	return addon
+end
+
+QuestTogether:RegisterTest("server channel refusal reaches error collectors once independently of chat windows and native success", function()
+	local addon, completed = ChannelNoticeFixture(), 0
+	Equal(addon.eventFrame.events.CHAT_MSG_CHANNEL_NOTICE, true)
+	addon:InitializeTransport()
+	local admitted, _, ticket = addon:QueueTransportWire("private payload", "PING",
+		{ distribution = "CHANNEL", target = 7 }, { onComplete = function() completed = completed + 1 end })
+	assert(admitted)
+	addon.now = addon.now + 1
+	addon:DrainTransport()
+	Equal(ticket.status, "accepted")
+	Equal(completed, 1)
+	-- Chat filters may run for several windows or no windows at all. Neither
+	-- situation may suppress or multiply the one registered event's reporting.
+	for _ = 1, 5 do
+		Equal(addon:AnnouncementChannelChatFilter(nil, "CHAT_MSG_CHANNEL_NOTICE", "NOT_ALLOWED_IN_CHANNEL",
+			"Private player identity", "", "7. QuestTogether", nil, nil, nil, 7, "QuestTogether"), true)
+	end
+	Equal(#addon.reported, 0)
+	addon.now = addon.now + 0.25
+	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "7. QuestTogether", "QuestTogether")
+	Equal(#addon.reported, 1)
+	Equal(addon.diagnosticErrorCount, 1)
+	local comms = addon:GetCommsDiagnostics()
+	Equal(comms.serverChannelRefusals, 1)
+	Equal(comms.serverChannelRefusalsGlobal, 1)
+	Equal(comms.sentRoutes, 1)
+	Equal(comms.failedRoutes, nil) -- No packet identifier exists to correct this counter.
+	Equal(comms.lastFailure, "route=CHANNEL scope=global notice=NOT_ALLOWED_IN_CHANNEL")
+	assert(addon.reported[1]:find("communication", 1, true) or addon.reported[1]:find("Communication", 1, true))
+	assert(not addon.reported[1]:find("Private player identity", 1, true))
+	assert(not addon.reported[1]:find("private payload", 1, true))
+	assert(not addon.reported[1]:find("PING", 1, true))
+	addon.now = addon.now + 10
+	addon:DrainTransport()
+	Equal(completed, 1)
+	Equal(ticket.status, "accepted")
+	Equal(#addon.wire, 1) -- A refusal notice must not schedule an automatic resend.
+end)
+
+QuestTogether:RegisterTest("server channel refusal counters stay complete while error reports are bounded and lifecycle safe", function()
+	local addon = ChannelNoticeFixture()
+	addon.API.ReportLuaError = function(detail)
+		addon.reported[#addon.reported + 1] = detail
+		error("broken error collector")
+	end
+	addon.geographicCommsState = { subscriptions = {} }
+	for index = 1, 100 do
+		addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
+		local name = "QTGeo" .. index
+		addon.geographicCommsState.subscriptions[name] = {}
+		addon:Notice("NOT_ALLOWED_IN_CHANNEL", name, name)
+	end
+	local comms = addon:GetCommsDiagnostics()
+	Equal(comms.serverChannelRefusals, 200)
+	Equal(comms.serverChannelRefusalsGlobal, 100)
+	Equal(comms.serverChannelRefusalsGeographic, 100)
+	Equal(#addon.reported, 2)
+	Equal(addon.diagnosticErrorCount, 2) -- Throwing collectors do not add dispatcher errors.
+	local buckets = 0
+	for _ in pairs(comms.channelRefusalReportedAt) do buckets = buckets + 1 end
+	Equal(buckets, 2)
+	addon.now = addon.now + 59.9
+	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
+	Equal(#addon.reported, 2)
+	addon.now = addon.now + 0.1
+	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
+	Equal(#addon.reported, 3)
+	addon.now = 1 -- A clock reset must not hide all subsequent failures.
+	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
+	Equal(#addon.reported, 4)
+	addon.isEnabled = false
+	addon:UnregisterRuntimeEvents()
+	Equal(addon.eventFrame.events.CHAT_MSG_CHANNEL_NOTICE, nil)
+	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
+	Equal(addon:CHAT_MSG_CHANNEL_NOTICE(nil, "NOT_ALLOWED_IN_CHANNEL", nil, nil, "QuestTogether"), false)
+	addon.isEnabled, addon.isLoggingOut = true, true
+	addon:RegisterRuntimeEvents()
+	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
+	Equal(comms.serverChannelRefusals, 203)
+	Equal(#addon.reported, 4)
+end)
+
+QuestTogether:RegisterTest("server channel refusals require accessible refusal token and exact current channel metadata", function()
+	local addon = ChannelNoticeFixture()
+	local secret = setmetatable({}, { __tostring = function() error("secret channel data") end })
+	function addon:CanAccessValue(value) return value ~= secret end
+	addon.announcementChannelLocalID = 7
+	addon.geographicCommsState = { subscriptions = { QTGeoCurrent = {} } }
+	addon:Notice(secret, "QuestTogether", "QuestTogether")
+	addon:Notice("YOU_JOINED", "QuestTogether", "QuestTogether")
+	addon:Notice("NOT_ALLOWED_IN_CHANNEL", secret, secret)
+	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "7. General", "General", 7)
+	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "7. QuestTogether", "General", 7)
+	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogetherOther", nil)
+	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QTGeoRetired", "QTGeoRetired")
+	addon:Notice("NOT_ALLOWED_IN_CHANNEL", nil, nil, 7)
+	Equal(#addon.reported, 0)
+	Equal(addon.diagnosticErrorCount, 0)
+	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "9. qUeStToGeThEr", nil)
+	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "10. qtgeocurrent", "QTGeoCurrent")
+	Equal(#addon.reported, 2)
+	Equal(addon:GetCommsDiagnostics().serverChannelRefusals, 2)
+end)
+
 QuestTogether:RegisterTest("party normalization rejects inaccessible names and realms", function()
 	local addon = NewCommsFixture()
 	function addon:CanAccessValue(value)

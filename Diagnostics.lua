@@ -81,6 +81,9 @@ function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 	for _, key in ipairs({
 		"sentRoutes",
 		"failedRoutes",
+		"serverChannelRefusals",
+		"serverChannelRefusalsGlobal",
+		"serverChannelRefusalsGeographic",
 		"invalidMessages",
 		"receivedMessages",
 		"duplicateMessages",

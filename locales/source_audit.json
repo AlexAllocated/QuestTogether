@@ -48,8 +48,10 @@
     ],
     "Comms.lua": [
       " event=",
+      " notice=NOT_ALLOWED_IN_CHANNEL",
       " quest=",
       "%s count=%d %s",
+      "). Communication may be incomplete even when the send API reports success. Run /qt diagnostics for details.",
       "ANN",
       "Bytes",
       "CHANNEL",
@@ -62,14 +64,17 @@
       "OTHER",
       "PARTY",
       "PublishAnnouncementEvent dropped eventType=%s due to empty payload",
+      "QuestTogether: The server refused an operation on a QuestTogether channel (",
       "RAID",
       "Rejected announcement event because payload was invalid",
       "Skipping channel join because addon is disabled",
       "Unable to join announcement channel ",
       "Unknown",
       "announcement age sender=%s event=%s reportedAgeSeconds=%s",
+      "communication channel refusal",
       "local=%s sender=%s event=%s quest=%s bubbles=%s hideOwn=%s text=%s",
       "option event=",
+      "route=CHANNEL scope=",
       "scope sender="
     ],
     "CommsProtocol.lua": [

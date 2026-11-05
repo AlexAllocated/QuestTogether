@@ -739,6 +739,7 @@ QuestTogether.completionEmotes = {
 QuestTogether.runtimeEvents = {
 	"CHAT_MSG_ADDON",
 	"CHAT_MSG_CHANNEL",
+	"CHAT_MSG_CHANNEL_NOTICE",
 	"CHAT_MSG_SYSTEM",
 	"CHANNEL_COUNT_UPDATE",
 	"CHANNEL_UI_UPDATE",

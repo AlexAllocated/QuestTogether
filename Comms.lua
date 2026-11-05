@@ -11,6 +11,7 @@ local QuestTogether = _G.QuestTogether
 
 local ANNOUNCEMENT_WIRE_VERSION = 2
 local ANNOUNCEMENT_MAX_TEXT_LENGTH = 220
+local CHANNEL_REFUSAL_REPORT_INTERVAL = 60
 local ANNOUNCEMENT_CHANNEL_FILTER_EVENTS = {
 	"CHAT_MSG_CHANNEL",
 	"CHAT_MSG_CHANNEL_NOTICE",
@@ -353,7 +354,7 @@ end
 function QuestTogether:RecordCommsDiagnostic(kind, detail)
 	local diagnostics = self:GetCommsDiagnostics()
 	diagnostics[kind] = (diagnostics[kind] or 0) + 1
-	if kind == "failedRoutes" or kind == "invalidMessages" then
+	if kind == "failedRoutes" or kind == "invalidMessages" or kind == "serverChannelRefusals" then
 		diagnostics.lastFailure = detail
 	end
 	-- Keep every display decision: these are needed to explain a user's bubble.
@@ -362,6 +363,49 @@ function QuestTogether:RecordCommsDiagnostic(kind, detail)
 	if kind == "acceptedAnnouncements" or kind == "suppressedAnnouncements" or count <= 5 or count % 100 == 0 then
 		self:Debugf("comms", "%s count=%d %s", kind, count, detail or "")
 	end
+end
+
+-- Server refusal notices can arrive after the native send API returned Success.
+-- Observe each event once here, independently of the per-chat-frame filters and
+-- whether any chat window displays the channel. Notices carry no addon prefix
+-- or packet ID, so report the channel scope without inventing a failed operation
+-- or changing a transport ticket that may already have completed.
+function QuestTogether:CHAT_MSG_CHANNEL_NOTICE(_, notice, _, _, channelName, _, _, _, _, channelBaseName)
+	if not self.isEnabled or self.isLoggingOut or not self:CanAccessValue(notice)
+		or notice ~= "NOT_ALLOWED_IN_CHANNEL" then
+		return false
+	end
+	-- Prefer explicit channel metadata; never fall back to a cached numeric ID
+	-- that might now identify an unrelated channel after channel reordering.
+	local name = self:SafeTrimString(channelBaseName, "")
+	if name == "" then name = self:SafeTrimString(channelName, "") end
+	local scope
+	if MatchesAnnouncementChannelName(self, name) then
+		scope = "global"
+	elseif self:IsGeographicChannelName(name) then
+		scope = "geographic"
+	else
+		return false
+	end
+	local detail = "route=CHANNEL scope=" .. scope .. " notice=NOT_ALLOWED_IN_CHANNEL"
+	self:RecordCommsDiagnostic("serverChannelRefusals", detail)
+	local diagnostics = self:GetCommsDiagnostics()
+	local counter = scope == "global" and "serverChannelRefusalsGlobal" or "serverChannelRefusalsGeographic"
+	diagnostics[counter] = (diagnostics[counter] or 0) + 1
+	-- Two fixed buckets keep memory and visible errors bounded while counters
+	-- preserve every refusal. Different zones cannot bypass the geographic limit.
+	diagnostics.channelRefusalReportedAt = diagnostics.channelRefusalReportedAt or {}
+	local now = self:SafeToNumber(self.API and self.API.GetTime and self.API.GetTime()) or 0
+	local previous = diagnostics.channelRefusalReportedAt[scope]
+	if previous and now >= previous and now - previous < CHANNEL_REFUSAL_REPORT_INTERVAL then return true end
+	diagnostics.channelRefusalReportedAt[scope] = now
+	local message = "QuestTogether: The server refused an operation on a QuestTogether channel (" .. detail
+		.. "). Communication may be incomplete even when the send API reports success. Run /qt diagnostics for details."
+	self:RecordDiagnosticError("communication channel refusal", message)
+	if self.API and type(self.API.ReportLuaError) == "function" then
+		pcall(self.API.ReportLuaError, message)
+	end
+	return true
 end
 
 function QuestTogether:AnnouncementChannelChatFilter(_, _, ...)

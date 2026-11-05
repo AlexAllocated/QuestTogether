@@ -551,7 +551,7 @@ QT:RegisterTest("audit diagnostic report uses cached quest state without live qu
 		return { [12] = { title = "Photo Quest", objectives = { "80% Photos" }, objectiveValues = { 80 } } }
 	end
 	function addon:GetCommsDiagnostics()
-		return {}
+		return { serverChannelRefusals = 3, serverChannelRefusalsGlobal = 1, serverChannelRefusalsGeographic = 2 }
 	end
 	function addon:GetDebugLogStore()
 		return {}
@@ -561,6 +561,9 @@ QT:RegisterTest("audit diagnostic report uses cached quest state without live qu
 	assert(report:find("objective.1=80% Photos", 1, true))
 	assert(report:find("addon=QuestTogether", 1, true))
 	assert(report:find("client.interface=16001", 1, true))
+	assert(report:find("comms.serverChannelRefusals=3", 1, true))
+	assert(report:find("comms.serverChannelRefusalsGlobal=1", 1, true))
+	assert(report:find("comms.serverChannelRefusalsGeographic=2", 1, true))
 	Equal(unexpectedCalls, 0)
 end)
 

@@ -414,6 +414,12 @@ installed bug catchers. Repeated failures are limited to one report per fixed
 route/result bucket per minute; every attempt remains counted. Normal throttle
 backoff and ambiguous results are not reported as definite send failures. A
 rejected request ends its loading state without waiting for a remote timeout.
+Server `NOT_ALLOWED_IN_CHANNEL` notices for QT's global or subscribed geographic
+channels are observed independently of chat-window filters and reported to the
+same error collectors, at most once per scope per minute. Separate counters
+retain every refusal. These notices contain no addon prefix or packet identity;
+they do not revise native acceptance counters or already-completed tickets, and
+they do not claim which individual message was refused.
 
 State samples replace older queued samples for the same topic/audience. Events
 retain immutable identities and finite duplicate suppression. Requests preserve
