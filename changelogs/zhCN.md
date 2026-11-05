@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.2.0
+
+即使暂时没有共同任务，也能保持跟随队友的任务追踪。
+
+### 等待共同任务，保持追踪跟随
+
+- 即使没有共同任务，也可以开始跟随队友的任务追踪。
+- 队友追踪的任务不在你的日志中时，跟随会保持开启。队伍任务日志显示等待共同任务，保留你当前的导航，也不再弹出缺少任务的提示窗口。
+- 当队友改为追踪你日志中已有的任务，或你接取了对方当前追踪的任务时，QT 会自动恢复同步，无需再次选择跟随。
+- 等待期间，接取或交付任务引起的 WoW 自动焦点切换不会取消跟随。与之前一样，跟随对象按角色保存，重载界面后会等待最新队伍信息再恢复同步。
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> 提示： 输入 /qt pql，在队伍任务日志中打开朋友的玩家菜单，选择跟随任务追踪。选择停止跟随即可结束。
+
 ## 8.1.2
 
 通信失败现在只在 QuestTogether 内部记录，不再触发外部错误提示。

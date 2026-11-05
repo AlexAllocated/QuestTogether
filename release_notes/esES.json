@@ -1,15 +1,21 @@
 {
-  "source_sha256": "7a819b914e7fdd8cf9a0b9097ed60f8749440a14e361b22c0ac11e686ab5d086",
+  "source_sha256": "9ba44b5fd585d9f04a02ce8cd7902c09f59f595a4ea070ae0d2639a0ea87e7ac",
   "notes": {
-    "version": "8.1.2",
-    "welcome": "Los fallos de comunicación ahora se registran únicamente dentro de QuestTogether.",
+    "version": "8.2.0",
+    "welcome": "El seguimiento de la misión activa se mantiene aunque todavía no tengas esa misión.",
     "sections": [
       {
-        "title": "Menos avisos de error",
+        "title": "El seguimiento espera a que haya una misión en común",
         "items": [
-          "Los rechazos del servidor en los canales y los fallos al enviar mensajes de addon ya no generan avisos en BugSack ni en el gestor global de errores de WoW.",
-          "Puedes consultarlos en el registro de depuración de QT y en /qt diagnostics. Se mantienen los contadores y el límite de entradas repetidas."
-        ]
+          "Puedes elegir «Seguir misión activa» en el menú de un miembro del grupo sin tener misiones en común. Ambos debéis usar QT y ese jugador debe compartir su misión activa.",
+          "Si su misión activa no está en tu registro, el seguimiento ya no se cancela. El Registro de misiones del grupo muestra «Esperando una misión en común», conserva tu navegación actual y ya no abre el aviso de misión ausente.",
+          "La sincronización se reanuda automáticamente cuando ese jugador selecciona una misión que tienes o cuando aceptas la misión que ya tiene activa. No hace falta volver a elegir «Seguir misión activa».",
+          "Mientras esperas, los cambios automáticos de misión activa al aceptar o entregar misiones no cancelan el seguimiento. Como antes, QT recuerda a quién sigues por personaje al recargar la interfaz y espera a recibir información actualizada del grupo."
+        ],
+        "tip": {
+          "label": "Consejo:",
+          "text": "Abre /qt pql, entra en el menú de un miembro del grupo y elige «Seguir misión activa». Para terminar, selecciona «Dejar de seguir»."
+        }
       }
     ]
   }

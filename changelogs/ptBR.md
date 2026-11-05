@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.2.0
+
+Continue acompanhando a missão em foco dos amigos, mesmo quando vocês ainda não têm uma missão em comum.
+
+### Acompanhamento que espera por uma missão em comum
+
+- Você pode começar a seguir a missão em foco de um integrante do grupo mesmo sem terem missões em comum.
+- Se a missão em foco dele não estiver no seu registro, o acompanhamento permanece ativo. O Registro de missões do grupo mostra Aguardando uma missão em comum, mantém sua navegação atual e não abre mais o aviso de missão ausente.
+- A sincronização volta automaticamente quando seu amigo escolhe uma missão que você tem ou quando você aceita a missão que ele já está acompanhando. Não é preciso seguir de novo.
+- Enquanto você aguarda, mudanças automáticas de foco do WoW ao aceitar ou entregar missões não encerram o acompanhamento. Como antes, o QT lembra por personagem quem você segue após recarregar a interface e aguarda informações atualizadas do grupo para retomar.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Dica: Abra /qt pql, abra o menu do seu amigo no Registro de missões do grupo e escolha Seguir missão em foco. Use Parar de seguir para encerrar o acompanhamento.
+
 ## 8.1.2
 
 As falhas de comunicação agora ficam registradas apenas no QuestTogether.

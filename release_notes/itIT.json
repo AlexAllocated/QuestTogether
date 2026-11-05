@@ -1,15 +1,21 @@
 {
-  "source_sha256": "7a819b914e7fdd8cf9a0b9097ed60f8749440a14e361b22c0ac11e686ab5d086",
+  "source_sha256": "9ba44b5fd585d9f04a02ce8cd7902c09f59f595a4ea070ae0d2639a0ea87e7ac",
   "notes": {
-    "version": "8.1.2",
-    "welcome": "Gli errori di comunicazione vengono ora registrati solo all’interno di QuestTogether.",
+    "version": "8.2.0",
+    "welcome": "Continui a seguire la missione attiva del tuo compagno anche quando non è ancora nel tuo registro.",
     "sections": [
       {
-        "title": "Meno avvisi di errore",
+        "title": "Continua a seguire in attesa di una missione in comune",
         "items": [
-          "I rifiuti del server sui canali e gli errori nell’invio dei messaggi degli addon non vengono più inoltrati a BugSack o al gestore globale degli errori di WoW.",
-          "Restano consultabili nel log di debug di QT e tramite /qt diagnostics. Sono mantenuti sia i contatori sia i limiti alle registrazioni ripetute."
-        ]
+          "Puoi usare «Segui la missione attiva» dal menu di un membro del gruppo anche senza missioni in comune. Dovete avere entrambi QT e il giocatore seguito deve condividere la propria missione attiva.",
+          "Se la missione attiva del tuo compagno non è nel tuo registro, ora continui a seguirlo. Il Registro missioni del gruppo mostra «In attesa di una missione in comune», la tua navigazione attuale resta invariata e non appare più la finestra di avviso per la missione mancante.",
+          "La sincronizzazione riprende automaticamente quando il giocatore sceglie una missione che hai anche tu oppure quando accetti la missione che ha già attiva. Non occorre selezionare di nuovo «Segui la missione attiva».",
+          "Durante l’attesa, i cambi automatici di missione attiva quando accetti o consegni una missione non ti fanno smettere di seguire il compagno. Come prima, QT ricorda chi segui per ogni personaggio dopo il ricaricamento dell’interfaccia e attende dati aggiornati del gruppo."
+        ],
+        "tip": {
+          "label": "Consiglio:",
+          "text": "Apri /qt pql, poi il menu di un membro del gruppo e scegli «Segui la missione attiva». Usa «Smetti di seguire» per terminare."
+        }
       }
     ]
   }

@@ -3,6 +3,151 @@
   "releases": [
     {
       "enUS": {
+        "version": "8.1.2",
+        "welcome": "Communication failures are now recorded quietly within QuestTogether.",
+        "sections": [
+          {
+            "title": "Quieter error reporting",
+            "items": [
+              "Server channel refusals and addon-message send failures no longer trigger BugSack or WoW’s global error handler.",
+              "These failures remain available in QT’s debug log and /qt diagnostics, with the existing counters and limits on repeated entries."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "8.1.2",
+        "welcome": "QuestTogether protokolliert Kommunikationsfehler jetzt nur noch intern.",
+        "sections": [
+          {
+            "title": "Weniger störende Fehlermeldungen",
+            "items": [
+              "Wenn der Server eine Kanalaktion ablehnt oder eine Addon-Nachricht nicht gesendet werden kann, löst QT dafür keine Meldung mehr in BugSack oder der globalen Fehleranzeige von WoW aus.",
+              "Im QT-Debugprotokoll und unter /qt diagnostics bleiben die Fehler nachvollziehbar. Die bisherigen Zähler und die Begrenzung wiederholter Einträge bleiben erhalten."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "8.1.2",
+        "welcome": "Les erreurs de communication sont désormais consignées dans QuestTogether sans alerte externe.",
+        "sections": [
+          {
+            "title": "Des erreurs moins envahissantes",
+            "items": [
+              "Les refus du serveur sur les canaux et les échecs d’envoi de messages d’addon ne sont plus transmis à BugSack ni au gestionnaire d’erreurs global de WoW.",
+              "Vous pouvez toujours les consulter dans le journal de débogage de QT et avec /qt diagnostics. Les compteurs et la limitation des entrées répétées sont conservés."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "8.1.2",
+        "welcome": "Los fallos de comunicación ahora se registran únicamente dentro de QuestTogether.",
+        "sections": [
+          {
+            "title": "Menos avisos de error",
+            "items": [
+              "Los rechazos del servidor en los canales y los fallos al enviar mensajes de addon ya no generan avisos en BugSack ni en el gestor global de errores de WoW.",
+              "Puedes consultarlos en el registro de depuración de QT y en /qt diagnostics. Se mantienen los contadores y el límite de entradas repetidas."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "8.1.2",
+        "welcome": "QuestTogether ahora registra los errores de comunicación sin generar alertas externas.",
+        "sections": [
+          {
+            "title": "Avisos menos molestos",
+            "items": [
+              "Cuando el servidor rechaza una operación en un canal o falla el envío de un mensaje de addon, QT ya no reporta ese error a BugSack ni al manejador global de errores de WoW.",
+              "Los detalles siguen disponibles en el registro de depuración de QT y en /qt diagnostics, con los mismos contadores y límites para entradas repetidas."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "8.1.2",
+        "welcome": "As falhas de comunicação agora ficam registradas apenas no QuestTogether.",
+        "sections": [
+          {
+            "title": "Menos alertas de erro",
+            "items": [
+              "Recusas do servidor nos canais e falhas no envio de mensagens de addon deixam de acionar o BugSack ou o tratamento global de erros do WoW.",
+              "Essas falhas continuam disponíveis no registro de depuração do QT e em /qt diagnostics. Os contadores e os limites para registros repetidos foram mantidos."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "8.1.2",
+        "welcome": "Ошибки связи теперь записываются только в самом QuestTogether, без внешних уведомлений.",
+        "sections": [
+          {
+            "title": "Меньше сообщений об ошибках",
+            "items": [
+              "Отказы сервера в каналах и сбои отправки сообщений аддона больше не передаются в BugSack и глобальный обработчик ошибок WoW.",
+              "Эти ошибки по-прежнему доступны в журнале отладки QT и отчёте /qt diagnostics. Счётчики и ограничение повторных записей сохранены."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "8.1.2",
+        "welcome": "Gli errori di comunicazione vengono ora registrati solo all’interno di QuestTogether.",
+        "sections": [
+          {
+            "title": "Meno avvisi di errore",
+            "items": [
+              "I rifiuti del server sui canali e gli errori nell’invio dei messaggi degli addon non vengono più inoltrati a BugSack o al gestore globale degli errori di WoW.",
+              "Restano consultabili nel log di debug di QT e tramite /qt diagnostics. Sono mantenuti sia i contatori sia i limiti alle registrazioni ripetute."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "8.1.2",
+        "welcome": "통신 실패를 외부 오류 알림 없이 QuestTogether 내부에 기록하도록 변경했습니다.",
+        "sections": [
+          {
+            "title": "오류 알림 줄이기",
+            "items": [
+              "서버의 채널 작업 거부와 애드온 메시지 전송 실패를 더 이상 BugSack이나 WoW의 전역 오류 처리기로 전달하지 않습니다.",
+              "해당 오류는 QT 디버그 로그와 /qt diagnostics 보고서에서 계속 확인할 수 있습니다. 오류 집계와 반복 기록 제한도 그대로 유지됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "8.1.2",
+        "welcome": "通信失败现在只在 QuestTogether 内部记录，不再触发外部错误提示。",
+        "sections": [
+          {
+            "title": "减少错误提示干扰",
+            "items": [
+              "服务器拒绝频道操作或插件消息发送失败时，QT 不再向 BugSack 或 WoW 的全局错误处理程序报告这些错误。",
+              "仍可在 QT 调试日志和 /qt diagnostics 报告中查看这些问题，原有的计数和重复记录频率限制保持不变。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "8.1.2",
+        "welcome": "通訊失敗現在只記錄在 QuestTogether 內，不再觸發外部錯誤提示。",
+        "sections": [
+          {
+            "title": "減少錯誤提示干擾",
+            "items": [
+              "伺服器拒絕頻道操作或插件訊息傳送失敗時，QT 不再將這些錯誤回報給 BugSack 或 WoW 的全域錯誤處理機制。",
+              "仍可透過 QT 除錯紀錄與 /qt diagnostics 報告查看這些問題；原有的計數及重複紀錄頻率限制均予保留。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "8.1.1",
         "welcome": "Channel communication failures are now easier to diagnose.",
         "sections": [

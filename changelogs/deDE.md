@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.2.0
+
+Du folgst dem Questfokus deines Gruppenmitglieds weiter, auch wenn dir die passende Quest noch fehlt.
+
+### Beim Folgen auf gemeinsame Quests warten
+
+- Mit „Questfokus folgen“ kannst du einem Gruppenmitglied auch ohne gemeinsame Quest folgen. Ihr benötigt beide QT, und das Gruppenmitglied muss seinen Questfokus teilen.
+- Fehlt dir die aktive Quest des Gruppenmitglieds, bleibt das Folgen nun bestehen. Das Gruppenquestlog zeigt „Warte auf eine gemeinsame Quest“, deine aktuelle Navigation bleibt erhalten und der bisherige Hinweisdialog entfällt.
+- Sobald das Gruppenmitglied eine Quest auswählt, die du ebenfalls hast, oder du seine bereits ausgewählte Quest annimmst, wird der Questfokus automatisch wieder synchronisiert. Du musst „Questfokus folgen“ nicht erneut auswählen.
+- Automatische Fokuswechsel beim Annehmen oder Abgeben von Quests beenden das Folgen während der Wartezeit nicht. Wie bisher merkt sich QT das gefolgte Gruppenmitglied pro Charakter über das Neuladen der Benutzeroberfläche hinweg und wartet danach auf aktuelle Gruppendaten.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tipp: Öffne /qt pql, dann das Spielermenü eines Gruppenmitglieds und wähle „Questfokus folgen“. Mit „Nicht mehr folgen“ beendest du das Folgen.
+
 ## 8.1.2
 
 QuestTogether protokolliert Kommunikationsfehler jetzt nur noch intern.

@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.2.0
+
+暫時沒有共同任務時，也能繼續跟隨隊友的任務追蹤。
+
+### 保留跟隨，等候共同任務
+
+- 即使沒有共同任務，也可以開始跟隨隊友的任務追蹤。
+- 對方追蹤的任務不在你的日誌中時，跟隨仍會保持開啟。隊伍任務日誌會顯示等待共同任務，保留你目前的導航，也不再跳出缺少任務的提示視窗。
+- 對方改為追蹤你日誌中已有的任務，或你接取了對方目前追蹤的任務時，就會自動恢復同步，不必再次選擇跟隨。
+- 等待期間，接取或交回任務造成的 WoW 自動焦點切換不會結束跟隨。與之前相同，跟隨對象會依角色儲存；重新載入介面後，會等待最新隊伍資訊再恢復同步。
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> 提示： 輸入 /qt pql，在隊伍任務日誌中開啟朋友的玩家選單，選擇跟隨任務追蹤。要結束時，選擇停止跟隨。
+
 ## 8.1.2
 
 通訊失敗現在只記錄在 QuestTogether 內，不再觸發外部錯誤提示。

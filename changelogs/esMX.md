@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.2.0
+
+Puedes seguir la misión activa de un compañero aunque todavía no la tengas en tu registro.
+
+### Seguimiento en espera de una misión en común
+
+- La opción «Seguir misión activa» del menú de un miembro del grupo funciona incluso si no tienen misiones en común. Ambos necesitan QT y el compañero debe compartir su misión activa.
+- Cuando no tienes la misión que tu compañero tiene activa, QT ahora mantiene el seguimiento. El Registro de misiones del grupo indica «Esperando una misión en común», deja intacta tu navegación actual y ya no muestra la ventana de aviso por la misión que te falta.
+- La misión activa se vuelve a sincronizar automáticamente cuando tu compañero elige una misión que tú también tienes, o cuando aceptas la misión que él ya tiene activa. No necesitas volver a iniciar el seguimiento.
+- Los cambios automáticos de misión activa al aceptar o entregar misiones ya no interrumpen el seguimiento mientras esperas. QT sigue recordando por personaje a quién sigues después de recargar la interfaz; para reanudar, espera información nueva del grupo.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Consejo: Abre /qt pql y luego el menú de un miembro del grupo. Elige «Seguir misión activa» para empezar y «Dejar de seguir» para terminar.
+
 ## 8.1.2
 
 QuestTogether ahora registra los errores de comunicación sin generar alertas externas.
