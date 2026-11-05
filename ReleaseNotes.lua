@@ -3,22 +3,24 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "8.2.1",
-	welcome = "Party quest data now refreshes in the background, with clearer focus and status indicators.",
+	version = "8.3.0",
+	welcome = "Party focus dots are now clickable, with clearer follow controls and fixes for quest windows and nameplate icons.",
 	sections = {
 		{
-			title = "Party quest data",
+			title = "Follow from the Objective Tracker",
 			items = {
-				"In parties of up to five, QT refreshes quest lists and objectives even while Party Quest Log is closed and Party Objective Tracker is hidden. Information fills in as it arrives; game communication delays can still affect updates.",
-				"Moving the pointer away from a quest no longer interrupts the party data request. Progress already received remains available when you return.",
+				"Party members' class-colored focus dots are larger and sit to the left of Blizzard's quest-focus button. Hover a dot to see who has that quest focused, or left-click it to follow them.",
+				"Dots appear side by side when several party members focus the same quest. A white outline marks the player you are following.",
+				"Clicking a dot asks for confirmation before following. Select Do not ask again to skip future dot-click confirmations in your current QT profile.",
+				"Selecting a different quest while following now keeps your choice visible while you decide whether to stop following. Confirm to keep your selection and stop following, or cancel to return to your friend's current quest focus.",
 			},
 		},
 		{
-			title = "Focus and status indicators",
+			title = "Quest windows and nameplates",
 			items = {
-				"Class-colored dots beside quest titles in Blizzard’s Objective Tracker show which quests your party members have focused, whether or not you are following anyone.",
-				"Each player’s Party Objective Tracker section now has status icons for active, ready-to-turn-in and completed quests, plus loading and unknown indicators. Fetching objective details does not erase known turn-in readiness.",
-				"Fixed Focus and Hover losing the focused quest when unrelated waypoint information could not be read.",
+				"Fixed Party Quest Log rows repeatedly jumping around when a scrollbar is visible.",
+				"Blizzard's quest-hover tooltips no longer cover the Party Objective Tracker.",
+				"Improved nameplate icon placement: Right clears Forever's level box, Top leaves more room above the name, and Prefix sits beside the visible text when names are centered or right-aligned.",
 			},
 		},
 	},

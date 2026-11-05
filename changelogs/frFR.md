@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.3.0
+
+Suivez plus facilement la quête d’un membre du groupe et profitez de fenêtres de quêtes et de plaques de nom mieux disposées.
+
+### Choisir et suivre une quête en groupe
+
+- Dans les groupes de cinq joueurs maximum, de plus grands points aux couleurs des classes apparaissent à gauche du bouton de quête active de Blizzard. Survolez-les pour savoir qui a choisi cette quête, puis faites un clic gauche pour demander à suivre sa sélection. Les points des joueurs ayant choisi la même quête sont affichés côte à côte ; un contour blanc distingue celui que vous suivez, tout en conservant sa couleur de classe.
+- Le clic sur un point demande une confirmation par défaut. « Ne plus demander » désactive les prochaines demandes dans votre profil QT actuel.
+- Si vous choisissez vous-même une autre quête pendant un suivi, elle reste sélectionnée durant la demande d’arrêt. Confirmer arrête le suivi et conserve votre choix. Annuler, fermer la fenêtre ou appuyer sur Échap reprend le suivi de la quête actuellement choisie par votre compagnon, si elle figure aussi dans votre journal.
+
+### Fenêtres de quêtes et plaques de nom
+
+- Le Journal de quêtes du groupe ne réorganise plus ses lignes à répétition lorsque vous faites défiler des quêtes terminées hors de l’écran. De nouvelles informations de quête peuvent toujours modifier l’ordre.
+- Le Suivi des objectifs du groupe s’affiche désormais au-dessus des infobulles de quêtes de Blizzard.
+- Les icônes de quête et de joueur QT sont mieux placées sur les plaques de nom : à droite, elles évitent l’encadré de niveau de Forever ; en haut, elles laissent davantage d’espace au nom. Placées avant un nom centré ou aligné à droite, elles se calent sur le texte visible.
+
 ## 8.2.1
 
 Les données de quêtes du groupe se mettent à jour en arrière-plan, avec de nouveaux repères pour le ciblage et l’état des quêtes.

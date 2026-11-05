@@ -1,22 +1,23 @@
 {
-  "source_sha256": "e43e4e37f128d87bb9b8d4893790181e13f83c39ce74bcd79c29c294be6c5462",
+  "source_sha256": "a4065d17605dbf0b6d49a7950e26d3dfdc93c1cdc7e605248b150da21e27fb7c",
   "notes": {
-    "version": "8.2.1",
-    "welcome": "Questdaten der Gruppe werden jetzt auch im Hintergrund aktualisiert. Neue Anzeigen machen Questfokus und Status leichter erkennbar.",
+    "version": "8.3.0",
+    "welcome": "Questfokus im Blick, leichteres Folgen und übersichtlichere Questfenster und Namensplaketten.",
     "sections": [
       {
-        "title": "Questdaten der Gruppe",
+        "title": "Questfokus in der Gruppe",
         "items": [
-          "In Gruppen mit bis zu fünf Spielern aktualisiert QT Questlisten und Ziele auch dann, wenn das Gruppenquestlog geschlossen und die Gruppen-Zielverfolgung ausgeblendet ist. Die Daten erscheinen nach und nach; Verzögerungen bei der Nachrichtenübertragung im Spiel bleiben möglich.",
-          "Ihr müsst den Mauszeiger nicht mehr auf einer Quest lassen, bis die Gruppendaten geladen sind. Die Abfrage läuft weiter, und bereits empfangener Fortschritt bleibt beim erneuten Anzeigen verfügbar."
+          "In Gruppen mit bis zu fünf Spielern zeigen größere Punkte in Klassenfarben links neben Blizzards Questfokus-Schaltfläche, wer welche Quest ausgewählt hat. Beim Darüberfahren erscheint der Name. Die Punkte mehrerer Spieler mit derselben Quest stehen nebeneinander; ein weißer Rand kennzeichnet den Spieler, dessen Questfokus du folgst, ohne seine Klassenfarbe zu verdecken.",
+          "Ein Linksklick auf einen Punkt fragt standardmäßig nach, bevor du dem Questfokus folgst. Mit „Nicht erneut fragen“ überspringst du künftige Nachfragen in deinem aktuellen QT-Profil.",
+          "Wählst du beim Folgen selbst eine andere Quest aus, bleibt sie während der Nachfrage zum Beenden ausgewählt. Bestätigen beendet das Folgen und behält deine Auswahl. Abbrechen, Schließen oder Escape stellt den neuesten Questfokus des anderen Spielers wieder her, sofern du die Quest ebenfalls hast."
         ]
       },
       {
-        "title": "Questfokus und Status",
+        "title": "Questfenster und Namensplaketten",
         "items": [
-          "Punkte in Klassenfarben neben den Questtiteln in Blizzards Zielverfolgung zeigen, welche Quests eure Gruppenmitglieder im Fokus haben. Das funktioniert unabhängig davon, ob ihr jemandem folgt.",
-          "In der Gruppen-Zielverfolgung zeigen Symbole bei jedem Spieler, ob eine Quest aktiv, zur Abgabe bereit oder bereits abgeschlossen ist. Für ausstehende und unbekannte Daten gibt es eigene Anzeigen. Ein bekannter Abgabestatus bleibt sichtbar, während Zieldetails nachgeladen werden.",
-          "Im Modus „Fokus und Mauszeiger“ verschwindet die fokussierte Quest nicht mehr, nur weil sich davon unabhängige Wegpunktdaten nicht auslesen lassen."
+          "Das Gruppenquestlog sortiert beim Scrollen nicht mehr ständig neu, wenn abgeschlossene Quests aus dem sichtbaren Bereich verschwinden. Neue Questdaten können die Reihenfolge weiterhin ändern.",
+          "Die Gruppen-Zielverfolgung liegt jetzt über Blizzards Quest-Tooltips.",
+          "Quest- und QT-Spielersymbole auf Namensplaketten sitzen besser: Rechts verdecken sie nicht mehr die Stufenanzeige von Forever, und oben haben sie etwas mehr Abstand zum Namen. Vorangestellte Symbole richten sich bei zentrierten oder rechtsbündigen Namen am sichtbaren Text aus."
         ]
       }
     ]

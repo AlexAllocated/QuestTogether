@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.3.0
+
+Questfokus im Blick, leichteres Folgen und übersichtlichere Questfenster und Namensplaketten.
+
+### Questfokus in der Gruppe
+
+- In Gruppen mit bis zu fünf Spielern zeigen größere Punkte in Klassenfarben links neben Blizzards Questfokus-Schaltfläche, wer welche Quest ausgewählt hat. Beim Darüberfahren erscheint der Name. Die Punkte mehrerer Spieler mit derselben Quest stehen nebeneinander; ein weißer Rand kennzeichnet den Spieler, dessen Questfokus du folgst, ohne seine Klassenfarbe zu verdecken.
+- Ein Linksklick auf einen Punkt fragt standardmäßig nach, bevor du dem Questfokus folgst. Mit „Nicht erneut fragen“ überspringst du künftige Nachfragen in deinem aktuellen QT-Profil.
+- Wählst du beim Folgen selbst eine andere Quest aus, bleibt sie während der Nachfrage zum Beenden ausgewählt. Bestätigen beendet das Folgen und behält deine Auswahl. Abbrechen, Schließen oder Escape stellt den neuesten Questfokus des anderen Spielers wieder her, sofern du die Quest ebenfalls hast.
+
+### Questfenster und Namensplaketten
+
+- Das Gruppenquestlog sortiert beim Scrollen nicht mehr ständig neu, wenn abgeschlossene Quests aus dem sichtbaren Bereich verschwinden. Neue Questdaten können die Reihenfolge weiterhin ändern.
+- Die Gruppen-Zielverfolgung liegt jetzt über Blizzards Quest-Tooltips.
+- Quest- und QT-Spielersymbole auf Namensplaketten sitzen besser: Rechts verdecken sie nicht mehr die Stufenanzeige von Forever, und oben haben sie etwas mehr Abstand zum Namen. Vorangestellte Symbole richten sich bei zentrierten oder rechtsbündigen Namen am sichtbaren Text aus.
+
 ## 8.2.1
 
 Questdaten der Gruppe werden jetzt auch im Hintergrund aktualisiert. Neue Anzeigen machen Questfokus und Status leichter erkennbar.

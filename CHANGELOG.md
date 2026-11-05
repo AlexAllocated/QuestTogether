@@ -4,6 +4,23 @@
 
 [Other languages](changelogs/README.md)
 
+## 8.3.0
+
+Party focus dots are now clickable, with clearer follow controls and fixes for quest windows and nameplate icons.
+
+### Follow from the Objective Tracker
+
+- Party members' class-colored focus dots are larger and sit to the left of Blizzard's quest-focus button. Hover a dot to see who has that quest focused, or left-click it to follow them.
+- Dots appear side by side when several party members focus the same quest. A white outline marks the player you are following.
+- Clicking a dot asks for confirmation before following. Select Do not ask again to skip future dot-click confirmations in your current QT profile.
+- Selecting a different quest while following now keeps your choice visible while you decide whether to stop following. Confirm to keep your selection and stop following, or cancel to return to your friend's current quest focus.
+
+### Quest windows and nameplates
+
+- Fixed Party Quest Log rows repeatedly jumping around when a scrollbar is visible.
+- Blizzard's quest-hover tooltips no longer cover the Party Objective Tracker.
+- Improved nameplate icon placement: Right clears Forever's level box, Top leaves more room above the name, and Prefix sits beside the visible text when names are centered or right-aligned.
+
 ## 8.2.1
 
 Party quest data now refreshes in the background, with clearer focus and status indicators.

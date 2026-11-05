@@ -2,6 +2,23 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.3.0
+
+Acompanhe a missão em foco dos seus companheiros com novos controles e confira os ajustes nas janelas de missões e nos ícones das placas de nome.
+
+### Controle da missão em foco
+
+- Em grupos de até cinco jogadores, os pontos com a cor da classe dos outros integrantes ficaram maiores e podem ser clicados, à esquerda do botão de foco de missão do rastreador da Blizzard. Passe o cursor para identificar o jogador e clique com o botão esquerdo para seguir a missão em foco dele.
+- Quando vários integrantes escolhem a mesma missão, seus pontos aparecem lado a lado. O integrante que você está seguindo recebe um contorno branco, mantendo a cor da classe.
+- Clicar em um ponto pede confirmação por padrão. Marque “Não perguntar novamente” para dispensar essas perguntas no perfil atual do QT.
+- Ao escolher outra missão enquanto segue alguém, sua escolha permanece ativa durante a confirmação para parar de seguir. Confirmar encerra o acompanhamento e mantém a missão escolhida; cancelar, fechar a janela ou pressionar Escape retoma a missão que o jogador seguido tem em foco, desde que ela esteja no seu registro.
+
+### Janelas de missões e placas de nome
+
+- O Registro de missões do grupo deixa de reorganizar as linhas repetidamente durante a rolagem. Novas informações de missão ainda podem alterar a ordem.
+- O Rastreador de objetivos do grupo agora aparece por cima da dica exibida ao passar o cursor sobre uma missão da Blizzard.
+- Nas placas de nome, os ícones à direita não se sobrepõem mais à caixa de nível no Forever, e os ícones superiores ganham espaço em relação ao nome. Os ícones antes do nome acompanham o texto visível, inclusive com alinhamento central ou à direita. Os ajustes valem tanto para ícones de missão quanto para ícones de jogador do QT.
+
 ## 8.2.1
 
 Os dados das missões do grupo passam a ser atualizados em segundo plano, com novos indicadores de foco e status.

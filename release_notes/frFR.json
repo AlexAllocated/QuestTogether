@@ -1,22 +1,23 @@
 {
-  "source_sha256": "e43e4e37f128d87bb9b8d4893790181e13f83c39ce74bcd79c29c294be6c5462",
+  "source_sha256": "a4065d17605dbf0b6d49a7950e26d3dfdc93c1cdc7e605248b150da21e27fb7c",
   "notes": {
-    "version": "8.2.1",
-    "welcome": "Les données de quêtes du groupe se mettent à jour en arrière-plan, avec de nouveaux repères pour le ciblage et l’état des quêtes.",
+    "version": "8.3.0",
+    "welcome": "Suivez plus facilement la quête d’un membre du groupe et profitez de fenêtres de quêtes et de plaques de nom mieux disposées.",
     "sections": [
       {
-        "title": "Données du groupe",
+        "title": "Choisir et suivre une quête en groupe",
         "items": [
-          "Dans les groupes de cinq joueurs au maximum, QT actualise les listes de quêtes et leurs objectifs même si le Journal de quêtes du groupe est fermé et le Suivi des objectifs du groupe masqué. Les informations apparaissent au fil de leur réception ; les échanges dans le jeu peuvent encore subir des retards.",
-          "Vous pouvez quitter le survol d’une quête sans interrompre la récupération des données du groupe. La progression déjà reçue reste disponible lorsque vous revenez dessus."
+          "Dans les groupes de cinq joueurs maximum, de plus grands points aux couleurs des classes apparaissent à gauche du bouton de quête active de Blizzard. Survolez-les pour savoir qui a choisi cette quête, puis faites un clic gauche pour demander à suivre sa sélection. Les points des joueurs ayant choisi la même quête sont affichés côte à côte ; un contour blanc distingue celui que vous suivez, tout en conservant sa couleur de classe.",
+          "Le clic sur un point demande une confirmation par défaut. « Ne plus demander » désactive les prochaines demandes dans votre profil QT actuel.",
+          "Si vous choisissez vous-même une autre quête pendant un suivi, elle reste sélectionnée durant la demande d’arrêt. Confirmer arrête le suivi et conserve votre choix. Annuler, fermer la fenêtre ou appuyer sur Échap reprend le suivi de la quête actuellement choisie par votre compagnon, si elle figure aussi dans votre journal."
         ]
       },
       {
-        "title": "Ciblage et état des quêtes",
+        "title": "Fenêtres de quêtes et plaques de nom",
         "items": [
-          "Des points aux couleurs des classes apparaissent près des titres dans le suivi des objectifs de Blizzard pour indiquer les quêtes ciblées par vos coéquipiers. Il n’est pas nécessaire de suivre leur ciblage.",
-          "Chaque joueur dispose désormais d’icônes dans le Suivi des objectifs du groupe : quête en cours, prête à rendre ou déjà terminée, ainsi que des indicateurs de chargement et d’état inconnu. Une quête connue comme prête à rendre conserve cette indication pendant le chargement des objectifs.",
-          "Correction du mode « Ciblage et survol » : une erreur de lecture des données de point de passage ne fait plus disparaître une quête pourtant ciblée."
+          "Le Journal de quêtes du groupe ne réorganise plus ses lignes à répétition lorsque vous faites défiler des quêtes terminées hors de l’écran. De nouvelles informations de quête peuvent toujours modifier l’ordre.",
+          "Le Suivi des objectifs du groupe s’affiche désormais au-dessus des infobulles de quêtes de Blizzard.",
+          "Les icônes de quête et de joueur QT sont mieux placées sur les plaques de nom : à droite, elles évitent l’encadré de niveau de Forever ; en haut, elles laissent davantage d’espace au nom. Placées avant un nom centré ou aligné à droite, elles se calent sur le texte visible."
         ]
       }
     ]

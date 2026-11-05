@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.3.0
+
+Ahora es más fácil seguir las misiones de tus compañeros, con listas más estables e iconos mejor ubicados.
+
+### Elegir y seguir misiones del grupo
+
+- En grupos de hasta cinco jugadores, verás puntos más grandes del color de cada clase a la izquierda del botón de misión activa de Blizzard. Coloca el cursor sobre un punto para saber quién eligió esa misión y haz clic izquierdo para solicitar seguir su selección. Si varios compañeros eligen la misma misión, sus puntos aparecen uno al lado del otro. Un borde blanco señala a quién sigues y conserva su color de clase.
+- Al hacer clic en un punto, se pide confirmación de forma predeterminada. Marca «No volver a preguntar» para omitir las próximas confirmaciones en tu perfil actual de QT.
+- Cuando eliges otra misión durante un seguimiento, tu selección permanece mientras decides si quieres dejar de seguir al compañero. Al confirmar, termina el seguimiento y conservas la misión elegida. Si cancelas, cierras la ventana o presionas Escape, vuelves a seguir la misión que tu compañero tiene seleccionada en ese momento, siempre que también esté en tu registro.
+
+### Ventanas de misiones y placas de nombre
+
+- El Registro de misiones del grupo ya no cambia el orden de las filas repetidamente al desplazar las misiones completadas fuera de la vista. Los datos nuevos de misiones todavía pueden modificar el orden.
+- El Seguimiento de objetivos del grupo ahora aparece por encima de las descripciones emergentes de misiones de Blizzard.
+- Se ajustó la ubicación de los iconos de misión y de jugador QT en las placas de nombre: a la derecha ya no invaden el recuadro de nivel de Forever y arriba dejan un poco más de espacio junto al nombre. Los iconos colocados antes de nombres centrados o alineados a la derecha se ajustan al texto visible.
+
 ## 8.2.1
 
 QT mantiene los datos de las misiones del grupo al día en segundo plano y agrega indicadores de enfoque y estado.

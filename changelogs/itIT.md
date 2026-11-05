@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.3.0
+
+Seguire le missioni dei compagni è più semplice, con finestre più stabili e icone posizionate meglio.
+
+### Selezionare e seguire le missioni del gruppo
+
+- Nei gruppi fino a cinque giocatori, punti più grandi con il colore della classe compaiono a sinistra del pulsante di selezione della missione di Blizzard. Passa il mouse per vedere chi ha selezionato quella missione e fai clic sinistro per chiedere di seguirne la selezione. Se più compagni scelgono la stessa missione, i punti appaiono affiancati. Un bordo bianco indica il giocatore che segui, mantenendo il colore della classe.
+- Il clic su un punto richiede una conferma per impostazione predefinita. «Non chiedere più» evita le conferme successive nel profilo QT attuale.
+- Se scegli un’altra missione mentre segui la selezione di un compagno, la tua scelta resta attiva durante la richiesta di conferma. Confermando smetti di seguirlo e mantieni la missione scelta. Annullando, chiudendo la finestra o premendo Esc riprendi a seguire la missione attualmente selezionata dal compagno, se è presente anche nel tuo registro.
+
+### Finestre delle missioni e barre dei nomi
+
+- Il Registro missioni del gruppo non riordina più ripetutamente le righe quando scorri e le missioni completate escono dalla vista. Nuovi dati sulle missioni possono ancora modificarne l’ordine.
+- Il Tracciamento obiettivi del gruppo ora appare sopra i tooltip delle missioni di Blizzard.
+- Le icone delle missioni e dei giocatori QT sulle barre dei nomi sono posizionate meglio: quelle a destra lasciano libero il riquadro del livello di Forever e quelle in alto hanno più spazio rispetto al nome. Le icone prima di nomi centrati o allineati a destra si affiancano al testo visibile.
+
 ## 8.2.1
 
 QT aggiorna in background le missioni del gruppo e rende più visibili la missione selezionata da ciascun compagno e il suo stato.
