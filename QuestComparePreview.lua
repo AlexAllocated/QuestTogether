@@ -380,8 +380,8 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		end,
 		save = function() end,
 		publish = function() end,
-		confirm = function(name, callback)
-			return owner:ShowPartyFocusChangeDialog(name, callback, true, preview.liveQuestData)
+		confirm = function(name, callback, cancel)
+			return owner:ShowPartyFocusChangeDialog(name, callback, true, preview.liveQuestData, cancel)
 		end,
 		changed = function()
 			-- Presentation-only compatibility fields; controller state is authoritative.

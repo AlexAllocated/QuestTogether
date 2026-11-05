@@ -154,8 +154,9 @@ QT:RegisterTest("quest history rejects unsolicited conflicting stale and retired
 	Equal(a:GetPartyQuestAbsenceState(friend, 1), "Absent")
 end)
 
-QT:RegisterTest("quest history limits native work malformed requests and removes scrolled-away interests", function()
-	local a, _, friend = Fixture()
+QT:RegisterTest("quest history cancels scrolled-away requests while retaining fresh evidence within the quest union", function()
+	local a, own, friend = Fixture()
+	for id = 2, 4 do own.entries[id] = Quest(id) end
 	Equal(a:ValidateQuestHistoryQuery({ { questId = 1 }, { questId = 1 } }), nil)
 	Equal(a:ValidateQuestHistoryQuery({ { questId = 1.5 } }), nil)
 	Equal(a:ValidateQuestHistoryQuery({}), nil)
@@ -175,15 +176,69 @@ QT:RegisterTest("quest history limits native work malformed requests and removes
 	Equal(friend.historyRequestId, replacement)
 	Equal(friend.questHistory[1], nil)
 	a:SetPartyQuestCompletionInterest({ 2 })
-	friend.questHistory[2] = { status = "completed", sampledAt = a.now }
+	local accepted = { status = "completed", sampledAt = a.now }
+	friend.questHistory[2] = accepted
+	a:SetPartyQuestCompletionInterest({ 3 })
+	Equal(friend.questHistory[2], accepted)
+	Equal(a:GetPartyQuestAbsenceState(friend, 2), "Completed")
+	-- Retention follows accepted data's lifetime, not the viewport. It must
+	-- still discard quests outside the active union, owned quests and expiry.
+	own.entries[2] = nil
+	friend.entries[3] = Quest(3)
+	friend.questHistory[3] = { status = "completed", sampledAt = a.now }
+	friend.questHistory[4] = { status = "completed", sampledAt = a.now - 60 }
+	friend.questHistory[999] = { status = "completed", sampledAt = a.now }
 	a:SetPartyQuestCompletionInterest({ 3 })
 	Equal(friend.questHistory[2], nil)
+	Equal(friend.questHistory[3], nil)
+	Equal(friend.questHistory[4], nil)
+	Equal(friend.questHistory[999], nil)
 	a.blocked = true
 	local reads, sends = a.historyReads, #a.wire
 	a:Advance(16)
 	a:UpdatePartyQuestCompletion()
 	Equal(a.historyReads, reads)
 	Equal(#a.wire, sends)
+end)
+
+QT:RegisterTest("completion history converges without bouncing sorted quests across a small viewport", function()
+	local a, own, friend = Fixture()
+	own.entries, a.entries = {}, {}
+	for id = 1, 6 do
+		friend.entries[id], a.history[id] = Quest(id), "completed"
+	end
+	function a:GetLocalizedQuestTitle(id) return "Quest " .. id end
+	local function Draw(capacity)
+		local visible, order = {}, {}
+		for i, row in ipairs(a:BuildPartyQuestDiffRows()) do
+			order[#order + 1] = row.questId
+			if i <= capacity then visible[#visible + 1] = row.questId end
+		end
+		-- ScrollCompare derives history request interests from visible rows.
+		a:SetPartyQuestCompletionInterest(visible)
+		return table.concat(visible, ","), table.concat(order, ",")
+	end
+	Equal(Draw(2), "1,2")
+	-- Newly learned completions may change the order once. Their new offscreen
+	-- position must not erase the evidence and send them back to the top.
+	for _, expected in ipairs({ "3,4", "5,6", "1,2" }) do
+		a:Advance(1)
+		a:UpdatePartyQuestCompletion()
+		Equal(Draw(2), expected)
+	end
+	Equal(a.historyReads, 6)
+	for id = 1, 6 do Equal(a:GetPartyQuestAbsenceState(own, id), "Completed") end
+	local reads, renders = a.historyReads, a.renders
+	for _, capacity in ipairs({ 2, 2, 6, 6, 2, 2 }) do
+		a:Advance(1)
+		a:UpdatePartyQuestCompletion()
+		local visible, order = Draw(capacity)
+		Equal(visible, capacity == 2 and "1,2" or "1,2,3,4,5,6")
+		Equal(order, "1,2,3,4,5,6")
+	end
+	Equal(a.historyReads, reads)
+	Equal(a.renders, renders)
+	Equal(#a.wire, 0)
 end)
 
 QT:RegisterTest("native share feedback remains per player and never certifies an individual quest request", function()

@@ -26,9 +26,39 @@ local function Fixture()
 			Read(self)
 			return self.shown
 		end
+		function frame:IsVisible()
+			Read(self)
+			return self.shown and (not self.parent or self.parent:IsVisible())
+		end
 		function frame:GetEffectiveScale()
 			Read(self)
+			if state.rejectAbsoluteGeometry then
+				state.invalid = state.invalid + 1
+				error("right anchor must not read scale")
+			end
 			return self.scale or 1
+		end
+		function frame:GetJustifyH()
+			Read(self)
+			return self.justifyH
+		end
+		function frame:GetWidth()
+			Read(self)
+			if self.widthError then error("text box width unavailable") end
+			return self.width
+		end
+		function frame:GetStringWidth()
+			Read(self)
+			if self.stringWidthError then error("text width unavailable") end
+			return self.stringWidth
+		end
+		local function ReadPosition(self)
+			Read(self)
+			state.invalid = state.invalid + 1
+			error("active Forever nameplate position is inaccessible")
+		end
+		for _, method in ipairs({ "GetLeft", "GetRight", "GetTop", "GetBottom", "GetPoint" }) do
+			frame[method] = ReadPosition
 		end
 		function frame:GetNumChildren()
 			Read(self)
@@ -92,6 +122,18 @@ local function Fixture()
 	unitFrame.unit, unitFrame.healthBar, unitFrame.name = "nameplate1", Frame(unitFrame), Frame(unitFrame)
 	plate.UnitFrame = unitFrame
 	state.plate, state.unitFrame = plate, unitFrame
+	function state:AddLevelBox()
+		state.rejectAbsoluteGeometry = true
+		unitFrame.HealthBarsContainer = Frame(unitFrame)
+		unitFrame.HealthBarsContainer.healthBar = unitFrame.healthBar
+		unitFrame.healthBar.parent = unitFrame.HealthBarsContainer
+		unitFrame.PlayerLevelDiffFrame = Frame(unitFrame)
+		local level = unitFrame.PlayerLevelDiffFrame
+		level.point = { "LEFT", unitFrame.HealthBarsContainer, "RIGHT", 5, 0 }
+		level.selectedBorder = Frame(level)
+		level.selectedBorder.shown = false
+		return level
+	end
 	function state:AddBuffs(count, scale)
 		unitFrame.AurasFrame = unitFrame.AurasFrame or Frame(unitFrame)
 		local auras = unitFrame.AurasFrame
@@ -122,7 +164,7 @@ local function Fixture()
 			state.clock:After(delay, callback)
 		end,
 		RegionalUniqueNamesEnabled = function()
-			return true
+			return state.regionalNames ~= false
 		end,
 		UnitFullName = function(unit)
 			if unit == "player" then
@@ -266,6 +308,149 @@ local function ShowLogo(state)
 	assert(icon and icon.shown)
 	return icon
 end
+
+QT:RegisterTest("prefix icons follow the visible name text and safely handle changing or unreadable widths", function()
+	for _, kind in ipairs({ "quest", "player" }) do
+		local state = Fixture()
+		QT.db.profile.nameplateQuestIconStyle, QT.db.profile.nameplatePlayerIconStyle = "prefix", "prefix"
+		local icon = QT:CreateNameplateQuestIconFrame(state.unitFrame)
+		icon.qtIconKind = kind
+		local name, gap = state.unitFrame.name, kind == "player" and 4 or 2
+		local inaccessible = {}
+		local canAccess = QT.CanAccessValue
+		QT.CanAccessValue = function(self, value) return value ~= inaccessible and canAccess(self, value) end
+		-- Reuse the same frame, as Blizzard does when the visible unit changes.
+		for _, case in ipairs({
+			{ justify = "CENTER", text = 80, box = 240, point = "CENTER", offset = -40 },
+			{ justify = "CENTER", text = 140, box = 240, point = "CENTER", offset = -70 },
+			{ justify = "LEFT", text = 80, box = 240, point = "LEFT", offset = 0 },
+			{ justify = "RIGHT", text = 80, box = 240, point = "RIGHT", offset = -80 },
+			{ justify = "CENTER", text = 400, box = 240, point = "CENTER", offset = -120 },
+			{ justify = "RIGHT", text = 400, box = 240, point = "RIGHT", offset = -240 },
+			{ justify = "CENTER", text = 80, box = 240, nameScale = 2, iconScale = 1, point = "CENTER", offset = -80 },
+			{ justify = "RIGHT", text = 80, box = 240, nameScale = 0.5, iconScale = 2, point = "RIGHT", offset = -20 },
+			{ justify = "unknown", text = 80, box = 240, point = "LEFT", offset = 0 },
+			{ justify = inaccessible, text = 80, box = 240, point = "LEFT", offset = 0 },
+			{ justify = "CENTER", text = inaccessible, box = 240, point = "LEFT", offset = 0 },
+			{ justify = "CENTER", text = 80, box = inaccessible, point = "CENTER", offset = -40 },
+			{ justify = "CENTER", box = 240, point = "LEFT", offset = 0 },
+			{ justify = "CENTER", text = 0, box = 240, point = "LEFT", offset = 0 },
+			{ justify = "CENTER", text = 80, box = 0, point = "CENTER", offset = -40 },
+			{ justify = "CENTER", text = 80, box = 240, nameScale = inaccessible, point = "LEFT", offset = 0 },
+			{ justify = "CENTER", text = 80, box = 240, iconScale = 0, point = "LEFT", offset = 0 },
+			{ justify = "CENTER", text = 80, box = 240, textError = true, point = "LEFT", offset = 0 },
+			{ justify = "CENTER", text = 80, box = 240, boxError = true, point = "CENTER", offset = -40 },
+		}) do
+			name.justifyH, name.stringWidth, name.width = case.justify, case.text, case.box
+			name.stringWidthError, name.widthError = case.textError, case.boxError
+			name.scale, icon.scale = case.nameScale, case.iconScale
+			QT:ApplyNameplateQuestIconStyle(icon, state.unitFrame)
+			Equal(icon.point[1], "RIGHT")
+			Equal(icon.point[2], name)
+			Equal(icon.point[3], case.point)
+			Equal(icon.point[4], case.offset - gap)
+			Equal(icon.point[5], 0)
+		end
+		name.forbidden = true
+		QT:ApplyNameplateQuestIconStyle(icon, state.unitFrame)
+		Equal(icon.point[2], state.unitFrame)
+		local mutations = state.mutations
+		state.blocked = true
+		QT:RefreshNameplateIcon(state.plate)
+		Equal(state.mutations, mutations)
+		Equal(state.invalid, 0)
+	end
+end)
+
+QT:RegisterTest("right plate icons follow the visible level box without reading screen geometry", function()
+	for _, kind in ipairs({ "quest", "player" }) do
+		local state = Fixture()
+		local level = state:AddLevelBox()
+		QT.db.profile.nameplateQuestIconStyle, QT.db.profile.nameplatePlayerIconStyle = "right", "right"
+		local icon = QT:CreateNameplateQuestIconFrame(state.unitFrame)
+		icon.qtIconKind = kind
+		local gap = kind == "player" and 4 or 1
+		QT:ApplyNameplateQuestIconStyle(icon, state.unitFrame)
+		Equal(icon.point[1], "LEFT")
+		Equal(icon.point[2], level)
+		Equal(icon.point[3], "RIGHT")
+		Equal(icon.point[4], gap)
+		Equal(icon.point[5], 0)
+		level.selectedBorder.shown = true
+		QT:ApplyNameplateQuestIconStyle(icon, state.unitFrame)
+		Equal(icon.point[2], level.selectedBorder)
+		Equal(icon.point[4], gap)
+		level.selectedBorder.forbidden = true
+		QT:ApplyNameplateQuestIconStyle(icon, state.unitFrame)
+		Equal(icon.point[2], level)
+		level.shown = false
+		QT:ApplyNameplateQuestIconStyle(icon, state.unitFrame)
+		Equal(icon.point[2], state.unitFrame.healthBar)
+		Equal(icon.point[4], gap)
+		level.shown = true
+		for _, style in ipairs({ "left", "top", "prefix" }) do
+			QT.db.profile.nameplateQuestIconStyle, QT.db.profile.nameplatePlayerIconStyle = style, style
+			QT:ApplyNameplateQuestIconStyle(icon, state.unitFrame)
+			Equal(icon.point[2], style == "left" and state.unitFrame.healthBar
+				or style == "prefix" and state.unitFrame.name or state.unitFrame.HealthBarsContainer)
+		end
+		-- Native mutation and all coordinate/anchor getters have tripwires,
+		-- matching the active Forever plate captured by the live probe.
+		Equal(state.invalid, 0)
+	end
+end)
+
+QT:RegisterTest("right level anchor respects client layout visibility and access restrictions", function()
+	for _, boundary in ipairs({
+		"missing", "legacy", "hidden", "parent_hidden", "visibility", "forbidden", "handle", "retail",
+	}) do
+		local state = Fixture()
+		local level = state:AddLevelBox()
+		QT.db.profile.nameplateQuestIconStyle = "right"
+		local icon = QT:CreateNameplateQuestIconFrame(state.unitFrame)
+		local inaccessible = {}
+		local canAccess = QT.CanAccessValue
+		QT.CanAccessValue = function(self, value) return value ~= inaccessible and canAccess(self, value) end
+		if boundary == "missing" then state.unitFrame.PlayerLevelDiffFrame = nil
+		elseif boundary == "legacy" then
+			state.unitFrame.LevelFrame, state.unitFrame.PlayerLevelDiffFrame = level, nil
+			state.regionalNames = false
+		elseif boundary == "hidden" then level.shown = false
+		elseif boundary == "parent_hidden" then level.parent, state.unitFrame.name.shown = state.unitFrame.name, false
+		elseif boundary == "visibility" then level.IsVisible = function() return inaccessible end
+		elseif boundary == "forbidden" then level.forbidden = true
+		elseif boundary == "handle" then state.unitFrame.PlayerLevelDiffFrame = inaccessible
+		else
+			state.regionalNames = false
+			level.point[1], level.point[3] = "RIGHT", "LEFT"
+		end
+		QT:ApplyNameplateQuestIconStyle(icon, state.unitFrame)
+		Equal(icon.point[2], state.unitFrame.healthBar)
+		Equal(icon.point[4], 1)
+		Equal(icon.point[5], 0)
+		Equal(state.invalid, 0)
+	end
+	local state = Fixture()
+	local level = state:AddLevelBox()
+	QT.db.profile.nameplatePlayerIconStyle = "right"
+	local mutations = state.mutations
+	state.blocked = true
+	QT:RefreshNameplateIcon(state.plate)
+	Equal(state.mutations, mutations)
+	state.blocked = false
+	local icon = ShowLogo(state)
+	Equal(icon.point[2], level)
+	Equal(icon.point[4], 4)
+	local isolated = setmetatable({ IsWorkBlocked = function() return true end }, { __index = QT })
+	isolated:ApplyNameplateQuestIconStyle(icon, state.unitFrame)
+	Equal(icon.point[2], state.unitFrame.healthBar)
+	Equal(icon.point[4], 4)
+	level.shown = false
+	QT:RefreshNameplateIcon(state.plate)
+	Equal(icon.point[2], state.unitFrame.healthBar)
+	Equal(icon.point[4], 4)
+	Equal(state.invalid, 0)
+end)
 
 QT:RegisterTest("player logo moves outside visible buffs after layout and returns when they disappear", function()
 	local state = Fixture()

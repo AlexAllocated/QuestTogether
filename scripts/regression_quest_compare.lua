@@ -3782,13 +3782,14 @@ QuestTogether:RegisterTest("native compare preview follows mock changes and warn
 	Equal(a.nativeFocus, 102)
 	Equal(p:GetPartyQuestFocusID(name), 102)
 	a:ExternalFocus(103)
-	Equal(a.nativeFocus, 102)
+	Equal(a.nativeFocus, 103)
 	Equal(p:GetPartyQuestFollowTarget(), name)
 	local dialog = a.partyFocusChangePreview
 	assert(dialog:IsShown())
 	assert(dialog.message.text:find("affect your navigation", 1, true))
 	dialog.cancel.scripts.OnClick()
 	Equal(p:GetPartyQuestFollowTarget(), name)
+	Equal(a.nativeFocus, 102)
 	a:ExternalFocus(103)
 	dialog.confirm.scripts.OnClick()
 	Equal(a.nativeFocus, 103)
@@ -3821,13 +3822,15 @@ QuestTogether:RegisterTest(
 		a:ExternalFocus(102)
 		local dialog = a.partyFocusChangePreview
 		local original = dialog.confirmAction
-		Equal(a.nativeFocus, 101)
+		Equal(a.nativeFocus, 102)
 		for _ = 1, 2 do
 			parent:Hide()
 			assert(dialog:IsShown() and not dialog:IsVisible())
 			Equal(dialog.confirmAction, original)
 			parent:Show()
 			assert(dialog:IsVisible())
+			preview:ApplyPartyQuestFocus()
+			Equal(a.nativeFocus, 102)
 		end
 		dialog.confirm.scripts.OnClick()
 		Equal(a.nativeFocus, 102)
@@ -3902,7 +3905,7 @@ QuestTogether:RegisterTest("native preview closes pending choices and never over
 	Equal(a:IsPartyQuestCompareNavigationPreviewActive(), false)
 	Equal(stale(), false)
 	Equal(p:SelectPartyQuestFocus("Me", 102), false)
-	Equal(a.nativeFocus, 101)
+	Equal(a.nativeFocus, 102)
 	Equal(#a.wire, 0)
 end)
 

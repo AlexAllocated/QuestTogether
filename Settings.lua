@@ -151,6 +151,7 @@ function QuestTogether:ApplyActiveProfileState(changeReason)
 	if not self.db or not self.db.profile then
 		return false
 	end
+	if self.CancelPartyQuestFocusFollowRequest then self:CancelPartyQuestFocusFollowRequest() end
 	self:NormalizeSettingsProfile()
 	return self:ApplySettingsTransaction({}, { replace = true, reason = changeReason })
 end

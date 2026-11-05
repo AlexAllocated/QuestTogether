@@ -61,6 +61,14 @@ function QuestTogether:SetPartyQuestCompletionInterest(questIDs)
 		end
 	end
 	session.historyInterests, session.historyInterestOrder = ids, order
+	-- Visibility owns request interest, not accepted evidence. Forgetting a
+	-- completed quest as it sorts offscreen makes it appear absent again and
+	-- sends it back to the top on the next history tick. Retain fresh results
+	-- only for the bounded union of quests in this comparison's snapshots.
+	local compared, now = {}, self.API.GetTime()
+	for _, member in ipairs(session.members) do
+		for id in pairs(member.entries) do compared[id] = true end
+	end
 	for _, member in ipairs(session.members) do
 		local pending = member.historyRequestId and self:GetPendingQuestCompare(member.historyRequestId)
 		if pending then
@@ -72,8 +80,9 @@ function QuestTogether:SetPartyQuestCompletionInterest(questIDs)
 				self:CancelPartyQuestCompletionRequest(member)
 			end
 		end
-		for id in pairs(member.questHistory or {}) do
-			if not ids[id] then
+		for id, evidence in pairs(member.questHistory or {}) do
+			if not compared[id] or member.entries[id]
+				or now < evidence.sampledAt or now >= evidence.sampledAt + HISTORY_LIFETIME then
 				member.questHistory[id] = nil
 			end
 		end

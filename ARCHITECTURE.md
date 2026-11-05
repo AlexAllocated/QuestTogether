@@ -26,7 +26,7 @@ private `.local` notes are historical context, not the source of truth.
 | PartyQuestProgress | Party-owned remote objective snapshots, ordered announcement deltas, per-peer detail requests and shared PQL/HUD subscriptions | Display filtering, independent polling, or assuming objective indices match across players |
 | QuestProgressStyle | Shared rounded detail sections and objective progress bars for PQL and HUD | Quest state, requests, or window lifecycle |
 | QuestFocusWindow / QuestFocusEditMode | Party Objective Tracker HUD, native focus observation, local detail reads, owned Edit Mode controls and revert baseline | Blizzard tracker rows, shared native layout registries or a separate objective cache |
-| PartyFocusIndicators | Class-colored party-focus pips beside native tracker titles; bounded read-only block lookup and owned overlay geometry | Native tracker scripts, text, pools or layout; another focus store or network request |
+| PartyFocusIndicators | Clickable class-colored party-focus dots and hover tips beside native quest buttons; bounded read-only block lookup and owned overlay geometry | Native tracker scripts, text, pools or layout; another focus store or network request |
 | QuestCompare | Atomic party log assembly, local snapshots and negotiated revision reuse | Native UI mutation or independent transport pumps |
 | QuestCompletion | Bounded character-history queries for visible comparisons, evidence age and completed/absent classification | Account-wide completion or full history broadcasts |
 | QuestSharingResults | Exact native share-result matching and recent per-player explanations | Guessing which quest a native result belongs to |
@@ -63,6 +63,10 @@ private `.local` notes are historical context, not the source of truth.
   confirmation policy. While waiting, native quest pickup/turn-in selection
   changes establish a new local baseline without cancelling follow intent; the
   same applies when the previous focus is no longer in the local quest log.
+  A manual native focus change remains selected while the stop-follow dialog is
+  pending. Follow application pauses until the choice is resolved: acceptance
+  keeps the selection and stops following; cancellation resumes the latest
+  eligible peer focus. Superseded choices cannot change a newer selection.
 - PQL and POT subscribe to party-owned quest data. Small parties bootstrap and
   conditionally refresh quest lists every 30 seconds without an open window.
   Background detail acquisition progressively warms every member's log; visible
@@ -134,11 +138,18 @@ private `.local` notes are historical context, not the source of truth.
   other members of the current small party, independent of following and POT
   visibility. `RuntimeCoordinator` samples those rows and refreshes geometry;
   the marker view reacquires visible native quest blocks through the read-only
-  `GetExistingBlock` lookup. Each member gets a class-colored pip in the existing
-  gutter between Blizzard's quest icon and title. The mouse-disabled frames are
-  parented to UIParent and positioned with sanitized coordinates; they never
-  alter native layout, pooling or gamepad navigation. Hidden, recycled, sliding
+  `GetExistingBlock` lookup. Each member gets a clickable class-colored dot to
+  the left of Blizzard's quest-focus button, with a tooltip identifying whose
+  focus it represents. Members sharing a quest form a spaced horizontal row;
+  a white outline identifies the followed member without changing class color.
+  The owned frames are parented to UIParent and positioned
+  with sanitized coordinates; they never alter native layout, pooling or
+  gamepad navigation. Clicks request a follow confirmation; the user can save a
+  per-profile preference to skip it. Delayed clicks and dialog choices recheck
+  identity, membership and lifetime. Hidden, recycled, sliding
   or unreadable native rows and retired focus observations hide their markers.
+  POT renders above native quest-hover tooltips outside Edit Mode; focus dots,
+  their tooltips and focus confirmation dialogs use higher owned frame levels.
 
 - Recent companions are recorded only from the sanitized current group roster,
   including non-QT members. The private `db.global.recentCompanions` store is
@@ -237,7 +248,11 @@ private `.local` notes are historical context, not the source of truth.
   take precedence, and `Completed` does not mean ready for turn-in. Optional
   history fields preserve compatibility with older v2 peers. Queries cover at
   most 32 IDs per request and 100 visible interests, with bounded native work;
-  source sampling time limits history freshness to 60 seconds.
+  source sampling time limits history freshness to 60 seconds. Viewport changes
+  limit pending requests but retain fresh accepted history for the comparison's
+  bounded quest union, so sorting a completed quest offscreen cannot make it
+  appear absent again. Ownership, expiry and snapshot invalidation still retire
+  that evidence.
 - Collapsing columns changes only session presentation. All members still
   participate in readiness, missing-quest and sharing calculations. Keyboard
   navigation follows opening/list-click focus and uses a temporary owned input child;

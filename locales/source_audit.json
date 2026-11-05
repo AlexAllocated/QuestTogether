@@ -1,5 +1,4 @@
 {
-  "policy": "Reviewed exemptions: native frame/API identifiers, stable canonical model labels translated at display, machine diagnostics, brand markup, and fictional player/quest names in the debug preview. All other user-facing prose uses L(). Update this ledger only after reviewing each new literal. Ads.lua contains intentionally English, manually invoked campaign copy; its command feedback is localized. Core.lua loading/unknown constant names refer to Blizzard-localized placeholder globals, not authored UI text.",
   "exemptions": {
     "AddonUpdates.lua": [
       "QTVR"
@@ -469,13 +468,19 @@
     ],
     "PartyFocusIndicators.lua": [
       "ARTWORK",
+      "BACKGROUND",
       "BOTTOMLEFT",
+      "Button",
       "CENTER",
       "CLAMPTOBLACKADDITIVE",
       "Frame",
       "Hide",
+      "LEFT",
       "OVERLAY",
-      "Show"
+      "Show",
+      "TOOLTIP",
+      "TOPLEFT",
+      "TOPRIGHT"
     ],
     "PartyJoin.lua": [
       "PARTY",
@@ -787,6 +792,8 @@
       "Button",
       "LEFT",
       "OVERLAY",
+      "RIGHT",
+      "TOOLTIP",
       "TOPLEFT",
       "TOPRIGHT"
     ],
@@ -816,6 +823,7 @@
       "OVERLAY",
       "Ready",
       "Show",
+      "TOOLTIP",
       "TOP",
       "TOPLEFT",
       "TOPRIGHT",
@@ -970,5 +978,6 @@
       "party compare preview theme",
       "scroll dialog themes"
     ]
-  }
+  },
+  "policy": "Reviewed exemptions: native frame/API identifiers, stable canonical model labels translated at display, machine diagnostics, brand markup, and fictional player/quest names in the debug preview. All other user-facing prose uses L(). Update this ledger only after reviewing each new literal. Ads.lua contains intentionally English, manually invoked campaign copy; its command feedback is localized. Core.lua loading/unknown constant names refer to Blizzard-localized placeholder globals, not authored UI text."
 }

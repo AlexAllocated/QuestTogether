@@ -390,6 +390,7 @@ QuestTogether.DEFAULTS = {
 		compareQuestAction = "all",
 		autoAcceptPartyShareRequests = false,
 		sharePartyFocus = true,
+		skipPartyFocusFollowConfirmation = false,
 		sharePartyWaypoint = true,
 		showPartyWaypoints = true,
 		autoInviteFriends = false,

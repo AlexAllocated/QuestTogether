@@ -72,6 +72,7 @@ function Controller:Follow(name)
 		return false
 	end
 	local s = a.state()
+	self.choice = nil
 	s.following, s.attempt, s.expectedQuest = name, nil, a.currentQuest() or 0
 	s.checkExternal, s.resuming, s.waiting, s.followToken = nil, nil, nil, {}
 	a.save(name)
@@ -98,6 +99,12 @@ function Controller:Apply()
 		self:Stop()
 		return
 	end
+	-- Native selection already changed before its tracking event reached us.
+	-- Keep that choice visible while the user decides whether to stop following.
+	if self.choice then
+		if s.checkExternal then self:ObserveNative() end
+		return
+	end
 	local peer = a.peer(s.following)
 	if not peer or peer.questID < 0 then
 		s.waiting, s.attempt = true, nil
@@ -119,7 +126,7 @@ function Controller:Apply()
 	end
 	if s.checkExternal then
 		self:ObserveNative()
-		if not s.following or s.checkExternal then
+		if not s.following or s.checkExternal or self.choice then
 			return
 		end
 	end
@@ -178,6 +185,22 @@ function Controller:ObserveNative()
 	end
 	local s = a.state()
 	if self:IsActive() then
+		local choice = self.choice
+		if choice and choice.nativeOverride and native.questID >= 0 then
+			if native.questID == choice.questID then
+				s.checkExternal = nil
+				return native
+			elseif native.questID == s.expectedQuest then
+				-- Selecting the followed quest again retires the old prompt.
+				self.choice, s.checkExternal, s.attempt = nil, nil, nil
+				return native
+			elseif native.questID > 0 or native.questCleared == true then
+				if a.blocked() then s.checkExternal = true; return nil end
+				s.checkExternal = nil
+				if not self:Request(a.ownName(), native.questID, true) then self:Stop() end
+				return native
+			end
+		end
 		if s.resuming and native.questID >= 0 then
 			s.expectedQuest, s.resuming = native.questID, nil
 		end
@@ -199,13 +222,8 @@ function Controller:ObserveNative()
 						s.checkExternal = true
 						return nil
 					end
-					s.applying = true
-					local restored, applied = pcall(a.setQuest, previous)
-					s.applying = nil
-					if restored and applied == true then
-						self:Request(a.ownName(), native.questID)
-						return self:ObserveNative()
-					end
+					if not self:Request(a.ownName(), native.questID, true) then self:Stop() end
+					return native
 				end
 				self:Stop()
 			end
@@ -221,6 +239,11 @@ function Controller:Select(name, questID)
 	if name == a.ownName() then
 		if questID ~= 0 and a.owns(questID) ~= true then
 			return false
+		end
+		if (a.currentQuest() or 0) == questID then
+			self:Stop()
+			self:OnTrackingChanged()
+			return true
 		end
 		local s = a.peek()
 		if s then
@@ -243,27 +266,51 @@ function Controller:Select(name, questID)
 	end
 	return self:Follow(name)
 end
-function Controller:Request(name, questID)
+function Controller:Request(name, questID, nativeOverride)
 	local a = self.adapter
 	if not self:IsActive() or a.blocked() then
 		return false
 	end
 	local following, token = self:GetTarget()
-	local choice = {}
+	local state = a.peek()
+	local choice = { questID = questID, nativeOverride = nativeOverride == true }
 	self.choice = choice
 	if following and following ~= name then
-		return a.confirm(following, function()
+		local function Retire()
+			if self.choice == choice then
+				self.choice, state.attempt = nil, nil
+			end
+		end
+		local function Current()
 			local current, currentToken = self:GetTarget()
-			if not self:IsActive() or current ~= following or currentToken ~= token or self.choice ~= choice then
+			if not self:IsActive() or a.loggingOut() or a.peek() ~= state
+				or current ~= following or currentToken ~= token or self.choice ~= choice then
 				return false
 			end
 			self:Reconcile()
-			if self:GetTarget() ~= following then
-				return false
-			end
-			return self:Select(name, questID)
-		end)
+			if self:GetTarget() ~= following then return false end
+			if state.checkExternal then self:ObserveNative() end
+			return self.choice == choice and not state.checkExternal
+		end
+		local function Cancel()
+			if not Current() then Retire(); return false end
+			self.choice = nil
+			state.attempt, state.checkExternal = nil, nil
+			self:Apply()
+			return true
+		end
+		local opened = a.confirm(following, function()
+			if not Current() then Retire(); return false end
+			local selected = self:Select(name, questID)
+			-- A quest may disappear or restrictions may begin while the dialog
+			-- is open. Its closing must not leave periodic following suspended.
+			if not selected then Cancel() end
+			return selected
+		end, Cancel)
+		if not opened and self.choice == choice then self.choice = nil end
+		return opened
 	end
+	self.choice = nil
 	return self:Select(name, questID)
 end
 

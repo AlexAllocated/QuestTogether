@@ -63,6 +63,9 @@ local function Fixture()
 		block.HeaderText = label
 		label.left, label.top = 900, top
 		label:SetSize(200, 16)
+		block.poiButton = Native(block, "Button")
+		block.poiButton.left = 865
+		block.poiButton:SetSize(28, 28)
 		self.module.blocks[id] = block
 		return block
 	end
@@ -120,13 +123,15 @@ end)
 QT:RegisterTest("native tracker focus dots preserve class colors and follow native geometry without modifying it", function()
 	local a = Fixture()
 	for _, peer in pairs(a.partyNavigationState.peers) do peer.questID = 41 end
+	a.partyNavigationState.following = "Mage Realm"
 	a:UpdatePartyQuestFocusIndicators()
 	local pins = Visible(a)
 	Equal(#pins, 4)
-	local ys = {}
+	local xs, rowY, previousLeft = {}, nil, nil
 	for _, pin in ipairs(pins) do
 		Equal(pin.frame:GetParent(), a.root)
-		Equal(pin.frame.mouseEnabled, false)
+		Equal(pin.frame.mouseEnabled, true)
+		Equal(pin.frame:GetWidth(), 12)
 		Equal(pin.questID, 41)
 		local color = pin.dot.textureColor or pin.dot.vertexColor
 		local r, g, b = a:GetWindowClassColor(a:GetGroupedSenderClassFile(pin.name), 1)
@@ -134,10 +139,29 @@ QT:RegisterTest("native tracker focus dots preserve class colors and follow nati
 		Equal(color[2], g)
 		Equal(color[3], b)
 		local point = pin.frame.points[1]
-		assert(point and not ys[point[5]], "members focusing the same quest need distinct marker positions")
-		ys[point[5]] = true
+		assert(point[4] + pin.frame:GetWidth() / 2 < a.first.poiButton:GetLeft(), "focus dot must sit left of the native quest button")
+		local halfWidth = pin.border:GetWidth() / 2
+		if previousLeft then assert(point[4] + halfWidth < previousLeft, "focus dots and follow outlines must not overlap") end
+		previousLeft = point[4] - halfWidth
+		assert(point and not xs[point[4]], "members focusing the same quest need distinct marker positions")
+		xs[point[4]] = true
+		if rowY then Equal(point[5], rowY) else rowY = point[5] end
 	end
 	local pin = pins[1]
+	Equal(pin.following, true)
+	Equal(pin.border.textureColor[1], 1)
+	pin.frame:GetScript("OnEnter")(pin.frame)
+	assert(pin.label:GetText():find("You are following this player.", 1, true))
+	-- The follow target can change without another party packet or geometry move.
+	a.partyNavigationState.following = "Rogue Realm"
+	a:RefreshPartyQuestFocusIndicatorGeometry()
+	Equal(pin.following, false)
+	Equal(pin.border.textureColor[1], 0.04)
+	Equal(pins[2].following, true)
+	assert(pin.label:GetText():find("Click to follow quest focus.", 1, true))
+	a.partyNavigationState.following = nil
+	a:RefreshPartyQuestFocusIndicatorGeometry()
+	for _, memberPin in ipairs(pins) do Equal(memberPin.following, false) end
 	local previousX, previousScale = pin.frame.points[1][4], pin.frame:GetScale()
 	a.first.HeaderText.left = 650
 	a.first.HeaderText.scale = 0.75
@@ -145,6 +169,52 @@ QT:RegisterTest("native tracker focus dots preserve class colors and follow nati
 	assert(pin.frame.points[1][4] ~= previousX, "marker must follow a moved native header")
 	assert(pin.frame:GetScale() ~= previousScale, "marker scale must follow the header")
 	Equal(#Visible(a), 4)
+	a:AssertNativeReadOnly()
+end)
+
+QT:RegisterTest("focus dot clicks and tooltips use current member identity and retire recycled callbacks", function()
+	local a = Fixture()
+	function a:RequestPartyQuestFocusFollow(name) self.requested = name end
+	a:UpdatePartyQuestFocusIndicators()
+	local pin = Visible(a)[1]
+	local enter, click = pin.frame:GetScript("OnEnter"), pin.frame:GetScript("OnClick")
+	enter(pin.frame)
+	assert(pin.tooltip:IsShown())
+	assert(pin.label:GetText():find("Mage Realm", 1, true))
+	assert(pin.label:GetText():find("has this quest focused", 1, true))
+	click(pin.frame, "RightButton")
+	Equal(a.requested, nil)
+	click(pin.frame, "LeftButton")
+	Equal(a.requested, "Mage Realm")
+	Equal(pin.tooltip:IsShown(), false)
+	a.requested = nil
+	-- A native block recycled before the next geometry tick cannot be clicked.
+	a.first.id = 99
+	click(pin.frame, "LeftButton")
+	Equal(a.requested, nil)
+	a.first.id = 41
+	-- A roster reorder reuses the frame, but saved scripts keep their identity.
+	a.partyMemberOrder[2], a.partyMemberOrder[3] = a.partyMemberOrder[3], a.partyMemberOrder[2]
+	a:UpdatePartyQuestFocusIndicators()
+	Equal(pin.name, "Rogue Realm")
+	click(pin.frame, "LeftButton")
+	enter(pin.frame)
+	Equal(a.requested, nil)
+	Equal(pin.tooltip:IsShown(), false)
+	pin.frame:GetScript("OnEnter")(pin.frame)
+	assert(pin.label:GetText():find("Rogue Realm", 1, true))
+	pin.frame:GetScript("OnClick")(pin.frame, "LeftButton")
+	Equal(a.requested, "Rogue Realm")
+	a.requested = nil
+	a.restricted = true
+	pin.frame:GetScript("OnClick")(pin.frame, "LeftButton")
+	Equal(a.requested, nil)
+	a.restricted = false
+	pin.frame:GetScript("OnEnter")(pin.frame)
+	a:ResetPartyQuestFocusIndicators()
+	Equal(pin.tooltip:IsShown(), false)
+	pin.frame:GetScript("OnClick")(pin.frame, "LeftButton")
+	Equal(a.requested, nil)
 	a:AssertNativeReadOnly()
 end)
 

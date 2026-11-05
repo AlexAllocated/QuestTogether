@@ -208,6 +208,17 @@ QT:RegisterTest(
 )
 QT:RegisterTest("focus HUD edit layout restores per profile and opacity affects only rounded background", function()
 	local a = Fixture()
+	a:UpdateQuestFocusWindow()
+	a:Drain()
+	local frame = a.questFocusWindow
+	Equal(frame.strata, "TOOLTIP", "the HUD must draw alongside native quest-hover tooltips")
+	Equal(frame:GetFrameLevel(), 100, "reserve higher tooltip levels for QT's interactive focus markers")
+	assert(frame.panel:GetFrameLevel() > frame:GetFrameLevel())
+	assert(frame.rows[1]:GetFrameLevel() > frame.panel:GetFrameLevel())
+	function frame:EnableMouse(enabled)
+		self:Check()
+		self.mouseEnabled = enabled
+	end
 	a.manager = a:CreateTestUIRegion(a)
 	function a.manager:SaveLayouts() end
 	function a.manager:IsEditModeActive()
@@ -215,13 +226,15 @@ QT:RegisterTest("focus HUD edit layout restores per profile and opacity affects 
 	end
 	a:UpdateQuestFocusWindow()
 	a:Drain()
-	local frame = a.questFocusWindow
+	Equal(frame.strata, "LOW", "Edit Mode controls must remain above the tracker")
+	Equal(frame.mouseEnabled, true)
 	assert(frame.Selection:IsShown())
 	Equal(frame.Selection.isSelected, false)
 	Equal(frame.Selection.system:GetSystemName(), "Party Objective Tracker")
 	Equal(frame.editControls, nil)
 	frame.scripts.OnMouseDown(frame, "LeftButton")
 	assert(frame.editControls:IsShown())
+	Equal(frame.editControls.strata, "DIALOG")
 	Equal(a.bubbleDeselected, true)
 	Equal(frame.Selection.isSelected, true)
 	Equal(frame.editControls.SaveButton.enabled, false)
@@ -256,6 +269,7 @@ QT:RegisterTest("focus HUD edit layout restores per profile and opacity affects 
 	frame.editControls.CloseButton.scripts.OnClick()
 	a:Drain()
 	Equal(frame.editControls:IsShown(), false)
+	Equal(frame.strata, "LOW", "dismissing settings does not exit Edit Mode")
 	Equal(frame.Selection.isSelected, false)
 	assert(frame.Selection:IsShown())
 	a:UpdateQuestFocusWindow()
@@ -291,6 +305,8 @@ QT:RegisterTest("focus HUD edit layout restores per profile and opacity affects 
 	a:UpdateQuestFocusWindow()
 	a:Drain()
 	Equal(frame.editControls:IsShown(), false)
+	Equal(frame.strata, "TOOLTIP")
+	Equal(frame.mouseEnabled, false, "raising the HUD must not capture normal tracker clicks")
 	Equal(a.questFocusEditBaseline, nil)
 	Equal(frame.Selection:IsShown(), false)
 	a.db.profile = { questTrackerMode = "both", questFocusOpacity = 90 }
@@ -298,6 +314,8 @@ QT:RegisterTest("focus HUD edit layout restores per profile and opacity affects 
 	a:Drain()
 	Equal(frame:GetWidth(), 340)
 	Equal(frame.background[1].textureColor[4], 0.9)
+	Equal(frame.strata, "TOOLTIP", "saved-layout restoration must preserve tooltip ordering")
+	Equal(frame:GetFrameLevel(), 100)
 end)
 QT:RegisterTest("focus HUD restriction disable and ignored roster changes cannot resurrect obsolete views", function()
 	local a = Fixture()

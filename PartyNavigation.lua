@@ -190,8 +190,8 @@ function QT:GetPartyFocusController()
 		save = function(name)
 			a:SavePartyQuestFollow(name)
 		end,
-		confirm = function(name, callback)
-			return a:ShowPartyFocusChangeDialog(name, callback)
+		confirm = function(name, callback, cancel)
+			return a:ShowPartyFocusChangeDialog(name, callback, nil, nil, cancel)
 		end,
 		changed = function()
 			Changed(a)

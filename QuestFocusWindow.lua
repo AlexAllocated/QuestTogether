@@ -339,7 +339,12 @@ function QT:CreateQuestFocusWindow()
 	local frame = self:CreateOwnedUIFrame(self.CreateOwnedWindowFrame, "Frame", self:GetOwnedUIParent())
 	frame:Hide()
 	frame:SetSize(340, 600)
-	frame:SetFrameStrata("LOW")
+	-- Blizzard's quest-hover tooltip sits on TOOLTIP. Keep our owned HUD and
+	-- its children above that default tooltip without touching the native UI.
+	-- Edit Mode returns to LOW below its DIALOG settings window (see render).
+	frame:SetFrameStrata("TOOLTIP")
+	frame:SetFrameLevel(100)
+	frame.presentationStrata = "TOOLTIP"
 	frame:SetClampedToScreen(true)
 	frame:SetMovable(true)
 	frame:SetResizable(true)
@@ -524,6 +529,13 @@ function QT:RenderQuestFocusWindow(state, restricted)
 	for _, region in ipairs(frame.background) do
 		if not Usable(region) then
 			return
+		end
+	end
+	if not restricted then
+		local strata = state.editing and "LOW" or "TOOLTIP"
+		if frame.presentationStrata ~= strata then
+			frame:SetFrameStrata(strata)
+			frame.presentationStrata = strata
 		end
 	end
 	state.dirty, state.restrictedPresentation = false, restricted == true

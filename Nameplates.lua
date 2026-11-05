@@ -3004,6 +3004,20 @@ local function GetIconBarAnchor(unitFrame)
 		or unitFrame
 end
 
+local function GetRightIconAnchor(addon, unitFrame, barAnchor)
+	if addon:IsWorkBlocked("nameplate_refresh") or not addon:UsesRegionalPlayerNames() then return barAnchor end
+	-- Forever's level box is on the right; Retail's is on the left. Follow the
+	-- known Forever frame directly: both coordinates and GetPoint can throw on
+	-- visible nameplates even though the frame remains accessible as an anchor.
+	local level = GetAccessibleChildFrame(unitFrame, "PlayerLevelDiffFrame")
+	if CallAccessibleFrameMethod(level, "IsVisible") ~= true then return barAnchor end
+	local border = GetAccessibleChildFrame(level, "selectedBorder")
+	if CallAccessibleFrameMethod(border, "IsVisible") == true then
+		return border
+	end
+	return level
+end
+
 local function GetPlayerBuffIconAnchor(unitFrame)
 	-- Current Retail/Forever buffs grow left from the classification marker.
 	-- Empty lists stay shown with a nonzero width, so check visible children,
@@ -3056,6 +3070,24 @@ local function GetNameplateNameTextAnchor(unitFrame)
 		or GetAccessibleChildFrame(unitFrame, "name")
 		or GetAccessibleChildFrame(healthBar, "unitName")
 		or GetAccessibleChildFrame(healthBar, "name")
+end
+
+local function GetNameplatePrefixAnchor(addon, nameText, iconFrame, gap)
+	if addon:IsWorkBlocked("nameplate_refresh") then return "LEFT", -gap end
+	local justify = CallAccessibleFrameMethod(nameText, "GetJustifyH")
+	if justify ~= "CENTER" and justify ~= "RIGHT" then return "LEFT", -gap end
+	-- The name's box can span the whole bar even when its letters are centered.
+	-- Measure the visible text without reading its contents or screen position.
+	local width = SafeUiNumber(CallAccessibleFrameMethod(nameText, "GetStringWidth"))
+	if not width or width <= 0 then return "LEFT", -gap end
+	local boxWidth = SafeUiNumber(CallAccessibleFrameMethod(nameText, "GetWidth"))
+	if boxWidth and boxWidth > 0 then width = math.min(width, boxWidth) end
+	local nameScale = SafeUiNumber(CallAccessibleFrameMethod(nameText, "GetEffectiveScale"))
+	local iconScale = SafeUiNumber(CallAccessibleFrameMethod(iconFrame, "GetEffectiveScale"))
+	if not nameScale or nameScale <= 0 or not iconScale or iconScale <= 0 then return "LEFT", -gap end
+	width = SafeUiNumber(width * nameScale / iconScale)
+	if not width or width <= 0 then return "LEFT", -gap end
+	return justify, -(justify == "CENTER" and width / 2 or width) - gap
 end
 
 ResolveNameplateUnitToken = function(namePlateFrameBase, unitFrame)
@@ -3283,24 +3315,26 @@ function QuestTogether:ApplyNameplateQuestIconStyle(iconFrame, unitFrame)
 		if IsFrameForbidden(barAnchor) then
 			barAnchor = unitFrame
 		end
-		iconFrame:SetPoint("LEFT", barAnchor, "RIGHT", gap, 0)
+		iconFrame:SetPoint("LEFT", GetRightIconAnchor(self, unitFrame, barAnchor), "RIGHT", gap, 0)
 	elseif style == "prefix" then
 		local nameText = GetNameplateNameTextAnchor(unitFrame)
 		if nameText then
 			-- Keep the prefix icon large enough to remain legible on live nameplates.
 			width = math.max(14, math.floor(width * 0.8 + 0.5))
 			height = math.max(14, math.floor(height * 0.8 + 0.5))
-			iconFrame:SetPoint("RIGHT", nameText, "LEFT", playerIcon and -4 or -2, 0)
+			local point, offset = GetNameplatePrefixAnchor(self, nameText, iconFrame, playerIcon and 4 or 2)
+			iconFrame:SetPoint("RIGHT", nameText, point, offset, 0)
 		elseif healthBarsContainer then
-			iconFrame:SetPoint("BOTTOM", healthBarsContainer, "TOP", 0, 11)
+			iconFrame:SetPoint("BOTTOM", healthBarsContainer, "TOP", 0, 16)
 		else
-			iconFrame:SetPoint("TOP", unitFrame, "TOP", 0, 7)
+			iconFrame:SetPoint("TOP", unitFrame, "TOP", 0, 12)
 		end
 	else
+		-- Leave clearance above Blizzard's name text, not just the health bar.
 		if healthBarsContainer then
-			iconFrame:SetPoint("BOTTOM", healthBarsContainer, "TOP", 0, 11)
+			iconFrame:SetPoint("BOTTOM", healthBarsContainer, "TOP", 0, 16)
 		else
-			iconFrame:SetPoint("TOP", unitFrame, "TOP", 0, 7)
+			iconFrame:SetPoint("TOP", unitFrame, "TOP", 0, 12)
 		end
 	end
 

@@ -242,6 +242,7 @@ QT:RegisterTest(
 		local choice = function() end
 		assert(a:ShowPartyFocusChangeDialog("Friend-Realm", choice, false))
 		local frame = a.partyFocusChangeDialog
+		assert(frame.strata == "TOOLTIP" and frame:GetFrameLevel() == 200)
 		assert(frame.scrollPieces[1].vertexColor[1] == 0.14)
 		a.db.profile = QT:DeepCopy(a.db.profile)
 		a.db.profile.lightMode = true
@@ -254,6 +255,207 @@ QT:RegisterTest(
 		assert((a.invalidCalls or 0) == 0)
 	end
 )
+
+QT:RegisterTest("focus dialogs cancel each retired choice once and never cancel acceptance", function()
+	for _, exit in ipairs({ "cancel", "close", "escape", "hide" }) do
+		local a, _, parent = Fixture()
+		local accepted, cancelled = 0, 0
+		assert(a:ShowPartyFocusChangeDialog("Friend-Realm", function() accepted = accepted + 1 end,
+			false, false, function() cancelled = cancelled + 1 end))
+		local frame = a.partyFocusChangeDialog
+		parent:Hide(); parent:Show()
+		assert(cancelled == 0, "inherited hiding only suspends a choice")
+		if exit == "escape" then frame.escapeAction()
+		elseif exit == "hide" then frame:Hide()
+		else frame[exit].scripts.OnClick() end
+		frame.escapeAction()
+		assert(cancelled == 1 and accepted == 0 and frame.cancelAction == nil)
+		assert(a:ShowPartyFocusChangeDialog("Friend-Realm", function() accepted = accepted + 1 end,
+			false, false, function() cancelled = cancelled + 1 end))
+		frame.confirm.scripts.OnClick()
+		assert(cancelled == 1 and accepted == 1)
+	end
+	local a = Fixture()
+	local oldCancelled, newCancelled = 0, 0
+	a:ShowPartyFocusChangeDialog("First-Realm", function() end, false, false, function()
+		oldCancelled = oldCancelled + 1
+	end)
+	a:ShowPartyFocusChangeDialog("Second-Realm", function() end, false, false, function()
+		newCancelled = newCancelled + 1
+	end)
+	assert(oldCancelled == 1 and newCancelled == 0)
+	a.partyFocusChangeDialog.escapeAction()
+	assert(oldCancelled == 1 and newCancelled == 1)
+	local successor = function() end
+	a:ShowPartyFocusChangeDialog("First-Realm", function() end, false, false, function()
+		a:ShowPartyFocusChangeDialog("Successor-Realm", successor)
+	end)
+	assert(a:ShowPartyFocusChangeDialog("Replaced-Realm", function() end) == false)
+	assert(a.partyFocusChangeDialog.confirmAction == successor, "retirement must not overwrite a reentrant successor")
+end)
+
+local function FocusFollowFixture()
+	local a, clock = Fixture()
+	a.db.profile = QT:DeepCopy(QT.DEFAULTS.profile)
+	a.activeProfileKey = "First"
+	a.API.GetTime = function() return clock.now end
+	a.nativeFocus = 123
+	a.API.GetActiveTrackedQuestID = function() return a.nativeFocus end
+	a.followCalls = 0
+	a.partyFocusController = { IsActive = function() return true end }
+	a.partyNavigationState = { peers = { ["Friend-Realm"] = { questID = 123, at = 0 } } }
+	function a:NormalizeMemberName(name) return name end
+	function a:IsSelfSender(name) return name == "Self-Realm" end
+	function a:IsGroupedSender(name) return name == "Friend-Realm" and not self.departed end
+	function a:IsIgnoredPlayerName() return self.ignored == true end
+	function a:GetPartyNavigationRoute() return self.isEnabled and not self.isLoggingOut and "PARTY" or nil end
+	function a:WouldPartyQuestFollowCycle() return self.cycle == true end
+	function a:GetPartyQuestFollowTarget()
+		local state = self.partyNavigationState
+		return state and state.following, state and state.followToken
+	end
+	function a:FollowPartyQuestFocus(name)
+		self.followCalls = self.followCalls + 1
+		if self.failFollow then return false end
+		self.partyNavigationState.following, self.partyNavigationState.followToken = name, {}
+		return true
+	end
+	function a:ApplySettingsTransaction() return true end
+	return a, clock
+end
+
+QT:RegisterTest("focus dot confirmation follows only current choices and remembers only successful consent", function()
+	local a = FocusFollowFixture()
+	assert(a.db.profile.skipPartyFocusFollowConfirmation == false)
+	assert(a:RequestPartyQuestFocusFollow("Friend-Realm"))
+	local frame = a.partyFocusFollowDialog
+	assert(frame.strata == "TOOLTIP" and frame:GetFrameLevel() == 200)
+	assert(frame:IsShown() and not frame.remember:GetChecked() and a.followCalls == 0)
+	frame.remember:SetChecked(true)
+	frame.cancel.scripts.OnClick()
+	assert(a.followCalls == 0 and not a.db.profile.skipPartyFocusFollowConfirmation)
+	assert(a:RequestPartyQuestFocusFollow("Friend-Realm"))
+	assert(not frame.remember:GetChecked(), "cancelled checkbox state must not carry forward")
+	frame.remember:SetChecked(true)
+	a.failFollow = true
+	frame.confirm.scripts.OnClick()
+	assert(a.followCalls == 1 and not a.db.profile.skipPartyFocusFollowConfirmation)
+	a.failFollow = nil
+	assert(a:RequestPartyQuestFocusFollow("Friend-Realm"))
+	frame.remember:SetChecked(true)
+	frame.confirm.scripts.OnClick()
+	assert(a.followCalls == 2 and a.db.profile.skipPartyFocusFollowConfirmation == true)
+	assert(not frame:IsShown() and a.partyFocusFollowRequest == nil)
+	assert(a:RequestPartyQuestFocusFollow("Friend-Realm"))
+	assert(a.followCalls == 3 and not frame:IsShown(), "remembered consent skips the prompt")
+	a.db.profile, a.activeProfileKey = QT:DeepCopy(QT.DEFAULTS.profile), "Second"
+	assert(a:RequestPartyQuestFocusFollow("Friend-Realm"))
+	assert(frame:IsShown() and a.followCalls == 3, "other profiles still require consent")
+	local profile, stale = a.db.profile, frame.confirmAction
+	a.db.profile, a.activeProfileKey = QT:DeepCopy(QT.DEFAULTS.profile), "Third"
+	assert(a:ApplyActiveProfileState("switch"))
+	assert(not frame:IsShown() and a.partyFocusFollowRequest == nil)
+	a.db.profile, a.activeProfileKey = profile, "Second"
+	assert(stale(true) == false and a.followCalls == 3, "returning to an old profile must not revive its prompt")
+end)
+
+QT:RegisterTest("focus dot delayed acceptance rejects retired lifetimes peers profiles and follow decisions", function()
+	local mutations = {
+		function(a) a.isEnabled = false end,
+		function(a) a.isLoggingOut = true end,
+		function(a) a.blocked = true end,
+		function(a) a.departed = true end,
+		function(a) a.ignored = true end,
+		function(a) a.cycle = true end,
+		function(a) a.partyNavigationState.peers["Friend-Realm"].questID = 0 end,
+		function(a) a.partyNavigationState.peers["Friend-Realm"].at = -91 end,
+		function(a) a.db.profile = QT:DeepCopy(a.db.profile) end,
+		function(a) a.activeProfileKey = "Other" end,
+		function(a) a:GetRuntimeWorkStateStore().deferredWorkState = {} end,
+		function(a) a.partyNavigationState = { peers = a.partyNavigationState.peers } end,
+		function(a) a.partyNavigationState.following, a.partyNavigationState.followToken = "Other-Realm", {} end,
+		-- Following and then stopping another player returns to no target, but
+		-- the retained token still records that newer user decision.
+		function(a) a.partyNavigationState.following, a.partyNavigationState.followToken = nil, {} end,
+		function(a) a.partyFocusController.choice = {} end,
+		function(a) a.nativeFocus = 456 end,
+		function(a) a.API.GetActiveTrackedQuestID = function() error("native focus unavailable") end end,
+	}
+	for _, mutate in ipairs(mutations) do
+		local a = FocusFollowFixture()
+		assert(a:RequestPartyQuestFocusFollow("Friend-Realm"))
+		local stale = a.partyFocusFollowDialog.confirmAction
+		mutate(a)
+		assert(stale(true) == false and a.followCalls == 0 and not a.db.profile.skipPartyFocusFollowConfirmation)
+	end
+	local a = FocusFollowFixture()
+	assert(a:RequestPartyQuestFocusFollow("Friend-Realm"))
+	local stale = a.partyFocusFollowDialog.confirmAction
+	assert(a:RequestPartyQuestFocusFollow("Friend-Realm"))
+	assert(stale(true) == false and a.followCalls == 0)
+	a.partyFocusFollowDialog.confirm.scripts.OnClick()
+	assert(a.followCalls == 1 and not a.db.profile.skipPartyFocusFollowConfirmation)
+end)
+
+QT:RegisterTest("older follow-start consent cannot replace a newer native or controller focus choice", function()
+	for _, scenario in ipairs({ "pending manual choice", "before tracking event", "not following", "followed player advances" }) do
+		local a = FocusFollowFixture()
+		a.nativeFocus = 1
+		a.partyNavigationState.peers = { Alice = { questID = 1, at = 0 }, Bob = { questID = 2, at = 0 } }
+		function a:IsGroupedSender(name) return self.partyNavigationState.peers[name] ~= nil end
+		local controller = a:CreatePartyFocusController({
+			state = function() return a.partyNavigationState end,
+			peek = function() return a.partyNavigationState end,
+			ownName = function() return "Self-Realm" end,
+			normalize = function(name) return name end,
+			peer = function(name) return a:GetPartyNavigationPeer(name) end,
+			member = function(name) return a:IsGroupedSender(name) end,
+			ignored = function() return false end,
+			raid = function() return false end,
+			groupInvalid = function() return false end,
+			loggingOut = function() return false end,
+			restricted = function() return false end,
+			blocked = function() return false end,
+			active = function() return true end,
+			currentQuest = function() return a.nativeFocus end,
+			native = function() return { questID = a.nativeFocus } end,
+			readable = function() return true end,
+			owns = function() return true end,
+			setQuest = function(id) a.nativeFocus = id; return true end,
+			questID = function(id) return id end,
+			save = function() end, publish = function() end, changed = function() end,
+			confirm = function(name, accept, cancel) return a:ShowPartyFocusChangeDialog(name, accept, nil, nil, cancel) end,
+		})
+		a.partyFocusController = controller
+		a.FollowPartyQuestFocus = QT.FollowPartyQuestFocus
+		a.WouldPartyQuestFollowCycle = QT.WouldPartyQuestFollowCycle
+		if scenario ~= "not following" then assert(controller:Follow("Alice")) end
+		assert(a:RequestPartyQuestFocusFollow("Bob"))
+		local older = a.partyFocusFollowDialog.confirmAction
+		if scenario == "followed player advances" then
+			a.partyNavigationState.peers.Alice.questID = 4
+			controller:Apply()
+			assert(a.nativeFocus == 4 and a.partyNavigationState.expectedQuest == 4)
+		else
+			a.nativeFocus = 3
+		end
+		if scenario == "pending manual choice" then
+			controller:OnTrackingChanged(); controller:ObserveNative()
+			assert(controller.choice and controller.choice.nativeOverride)
+		end
+		if scenario == "followed player advances" then
+			assert(older(true) == true, "automatic following must not revoke consent to follow another player")
+			assert(a.nativeFocus == 2 and controller:GetTarget() == "Bob")
+			assert(a.db.profile.skipPartyFocusFollowConfirmation)
+		else
+			local newer = controller.choice
+			assert(older(true) == false)
+			assert(a.nativeFocus == 3 and controller.choice == newer)
+			assert(controller:GetTarget() == (scenario ~= "not following" and "Alice" or nil))
+			assert(not a.db.profile.skipPartyFocusFollowConfirmation)
+		end
+	end
+end)
 
 QT:RegisterTest("owned UI retirement batches retries and contains a failed completion callback", function()
 	local a = Fixture()
