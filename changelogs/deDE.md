@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.6
+
+Die Gruppen-Zielverfolgung verwendet jetzt standardmäßig „Quest unter dem Mauszeiger“.
+
+### Gruppen-Zielverfolgung
+
+- Ist noch kein Anzeigemodus gespeichert, wird nur die Quest angezeigt, über der sich der Mauszeiger in Blizzards Zielverfolgung befindet. Die Einstellung zum Ausblenden beim Solospiel gilt weiterhin.
+- Auch beim Zurücksetzen auf die Standardwerte wird „Quest unter dem Mauszeiger“ gewählt.
+- Gespeicherte Anzeigemodi bleiben erhalten. Alle vier Modi stehen weiterhin zur Auswahl.
+
 ## 8.0.5
 
 Ruhigere Punkte auf der Minikarte und besser lesbare Spieler-Tooltips.

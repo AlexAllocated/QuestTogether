@@ -1,16 +1,15 @@
 {
-  "source_sha256": "138274c716c1b693852e0c9bdc7548fd20cbfc7cfa910beaa89bf1ccbf22c8ba",
+  "source_sha256": "a2675402c140448c6f1474f7c178477eb2e27b4541de5ead0bed36bc25cc1c1c",
   "notes": {
-    "version": "8.0.5",
-    "welcome": "Este patch deixa os pontos do minimapa mais suaves e facilita a leitura das dicas de jogadores.",
+    "version": "8.0.6",
+    "welcome": "O rastreador de objetivos do grupo agora usa “Missão sob o cursor” por padrão.",
     "sections": [
       {
-        "title": "Marcadores do mapa e dicas de jogadores",
+        "title": "Rastreador de objetivos do grupo",
         "items": [
-          "Os pontos de jogadores no minimapa acompanham seus passos e giros a cada quadro, reduzindo o vaivém dos pontos de quem está parado.",
-          "No mapa-múndi e no minimapa, a dica fica no lugar enquanto você mantém o cursor parado, mesmo que o marcador se mova. Os resumos de pontos agrupados mantêm os jogadores que você começou a consultar. A dica fecha ao afastar o cursor, fechar ou mudar o mapa, desativar as localizações ou deixar de ter dados válidos.",
-          "As dicas individuais usam o mesmo contorno branco, ícone de grupo e total de membros dos resumos de pontos agrupados. Quem está sem grupo aparece sem a caixa de grupo e sem a indicação de que está sozinho.",
-          "Em grupos com mais de cinco pessoas, a dica individual mostra primeiro o líder e depois o jogador sob o cursor, sem repetir o nome quando ele é o líder. O total continua incluindo todo o grupo, mesmo quando só há informações de parte dos membros."
+          "Se nenhum modo de exibição estiver salvo, aparece apenas a missão sob o cursor no rastreador de objetivos da Blizzard. A opção de ocultar ao jogar sozinho continua valendo.",
+          "Restaurar os padrões também seleciona “Missão sob o cursor”.",
+          "Seu modo de exibição salvo é mantido, e os quatro modos continuam disponíveis."
         ]
       }
     ]

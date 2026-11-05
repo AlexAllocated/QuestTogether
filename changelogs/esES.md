@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.6
+
+El seguimiento de objetivos del grupo usa ahora «Misión bajo el cursor» de forma predeterminada.
+
+### Seguimiento de objetivos del grupo
+
+- Si no hay un modo guardado, solo se muestra la misión sobre la que sitúas el cursor en el seguimiento de objetivos de Blizzard. Se sigue respetando el ajuste para ocultarlo al jugar en solitario.
+- Al restablecer los valores predeterminados también se selecciona «Misión bajo el cursor».
+- Se conserva el modo que tengas guardado y puedes seguir eligiendo entre los cuatro modos de visualización.
+
 ## 8.0.5
 
 Este parche suaviza el movimiento de los puntos del minimapa y facilita la lectura de las descripciones de jugadores.

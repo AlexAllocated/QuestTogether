@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.6
+
+O rastreador de objetivos do grupo agora usa “Missão sob o cursor” por padrão.
+
+### Rastreador de objetivos do grupo
+
+- Se nenhum modo de exibição estiver salvo, aparece apenas a missão sob o cursor no rastreador de objetivos da Blizzard. A opção de ocultar ao jogar sozinho continua valendo.
+- Restaurar os padrões também seleciona “Missão sob o cursor”.
+- Seu modo de exibição salvo é mantido, e os quatro modos continuam disponíveis.
+
 ## 8.0.5
 
 Este patch deixa os pontos do minimapa mais suaves e facilita a leitura das dicas de jogadores.

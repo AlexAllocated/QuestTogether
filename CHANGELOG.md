@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 8.0.6
+
+The Party Objective Tracker now defaults to Hovered Quest.
+
+### Party Objective Tracker
+
+- When no display choice is saved, Hovered Quest shows only the quest under your mouse in Blizzard’s objective tracker. Your hide-while-solo setting still applies.
+- Resetting the tracker to defaults also selects Hovered Quest.
+- Your saved display choice is preserved, and all four display modes remain available.
+
 ## 8.0.5
 
 Smoother minimap markers and clearer player tooltips.

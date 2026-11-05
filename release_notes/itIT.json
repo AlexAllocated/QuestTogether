@@ -1,16 +1,15 @@
 {
-  "source_sha256": "138274c716c1b693852e0c9bdc7548fd20cbfc7cfa910beaa89bf1ccbf22c8ba",
+  "source_sha256": "a2675402c140448c6f1474f7c178477eb2e27b4541de5ead0bed36bc25cc1c1c",
   "notes": {
-    "version": "8.0.5",
-    "welcome": "Punti più fluidi sulla minimappa e descrizioni dei giocatori più facili da leggere.",
+    "version": "8.0.6",
+    "welcome": "Il tracciamento obiettivi del gruppo usa ora «Missione sotto il cursore» come impostazione predefinita.",
     "sections": [
       {
-        "title": "Indicatori sulla mappa e descrizioni dei giocatori",
+        "title": "Tracciamento obiettivi del gruppo",
         "items": [
-          "I punti dei giocatori sulla minimappa seguono più fluidamente i tuoi spostamenti e i cambi di direzione. I punti dei giocatori fermi oscillano così meno avanti e indietro.",
-          "Sulla mappa del mondo e sulla minimappa, le descrizioni restano nella stessa posizione finché tieni fermo il cursore, anche quando gli indicatori si muovono. Le descrizioni dei punti raggruppati mantengono i giocatori mostrati all’inizio del passaggio del cursore. Sposta il cursore lontano per chiuderle.",
-          "Anche le descrizioni dei singoli giocatori mostrano ora i gruppi con lo stesso bordo bianco, la stessa icona di gruppo e lo stesso numero totale delle descrizioni dei punti raggruppati. Chi gioca da solo non ha né un riquadro di gruppo né un’etichetta aggiuntiva che lo indichi.",
-          "Nei gruppi con più di cinque giocatori, la descrizione individuale mostra prima il capogruppo e poi il giocatore sotto il cursore. Se è il capogruppo, compare una sola volta. Il numero totale resta visibile e il giocatore indicato può comparire anche quando l’elenco dei membri è ancora incompleto."
+          "Se non è stata salvata una modalità di visualizzazione, appare solo la missione sotto il cursore nel tracciamento obiettivi di Blizzard. Resta valida l’opzione per nascondere il riquadro quando giochi da solo.",
+          "Anche il ripristino delle impostazioni predefinite seleziona «Missione sotto il cursore».",
+          "La modalità salvata viene mantenuta e tutte e quattro le modalità restano disponibili."
         ]
       }
     ]

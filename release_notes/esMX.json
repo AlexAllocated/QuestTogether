@@ -1,16 +1,15 @@
 {
-  "source_sha256": "138274c716c1b693852e0c9bdc7548fd20cbfc7cfa910beaa89bf1ccbf22c8ba",
+  "source_sha256": "a2675402c140448c6f1474f7c178477eb2e27b4541de5ead0bed36bc25cc1c1c",
   "notes": {
-    "version": "8.0.5",
-    "welcome": "Los puntos del minimapa se mueven con más fluidez y ahora es más fácil leer la información de otros jugadores.",
+    "version": "8.0.6",
+    "welcome": "«Misión bajo el cursor» es ahora el modo predeterminado del seguimiento de objetivos del grupo.",
     "sections": [
       {
-        "title": "Marcadores del mapa y descripciones de jugadores",
+        "title": "Seguimiento de objetivos del grupo",
         "items": [
-          "Al caminar o girar, los puntos de jugadores en el minimapa se ajustan en cada fotograma. Esto reduce los saltos de un lado a otro cuando los demás jugadores están quietos.",
-          "Si dejas el cursor quieto sobre un marcador del mapa del mundo o del minimapa, su descripción permanece en el mismo lugar aunque el jugador se mueva. Los resúmenes de puntos agrupados mantienen a los jugadores que estabas consultando. La descripción se cierra al retirar el cursor, cerrar o cambiar el mapa, desactivar las ubicaciones o perder los datos válidos.",
-          "La información de grupo en las descripciones individuales usa el mismo borde blanco, icono y total de miembros que los resúmenes de puntos agrupados. Los jugadores sin grupo aparecen sin recuadro de grupo ni una etiqueta que indique que juegan solos.",
-          "Para grupos de más de cinco personas, la descripción individual presenta al líder y al jugador bajo el cursor, en ese orden y sin duplicarlos si son la misma persona. El total sigue contando a todo el grupo, aunque solo haya información de algunos miembros."
+          "Cuando no hay un modo de visualización guardado, solo aparece la misión bajo el cursor en el seguimiento de objetivos de Blizzard. La opción de ocultarlo al jugar en solitario sigue aplicándose.",
+          "Restaurar los valores predeterminados también activa «Misión bajo el cursor».",
+          "Tu modo guardado se conserva. Los cuatro modos de visualización siguen disponibles."
         ]
       }
     ]

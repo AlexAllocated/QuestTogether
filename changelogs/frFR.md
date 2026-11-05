@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.6
+
+Le suivi des objectifs du groupe utilise désormais « Quête survolée » par défaut.
+
+### Suivi des objectifs du groupe
+
+- Si aucun mode d’affichage n’est enregistré, seule la quête survolée dans le suivi des objectifs de Blizzard apparaît. Le réglage qui masque le suivi en solo reste pris en compte.
+- Le rétablissement des paramètres par défaut sélectionne également « Quête survolée ».
+- Votre mode d’affichage enregistré est conservé et les quatre modes restent disponibles.
+
 ## 8.0.5
 
 Des points plus fluides sur la minicarte et des infobulles de joueurs plus faciles à lire.

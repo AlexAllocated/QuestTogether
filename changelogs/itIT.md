@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.0.6
+
+Il tracciamento obiettivi del gruppo usa ora «Missione sotto il cursore» come impostazione predefinita.
+
+### Tracciamento obiettivi del gruppo
+
+- Se non è stata salvata una modalità di visualizzazione, appare solo la missione sotto il cursore nel tracciamento obiettivi di Blizzard. Resta valida l’opzione per nascondere il riquadro quando giochi da solo.
+- Anche il ripristino delle impostazioni predefinite seleziona «Missione sotto il cursore».
+- La modalità salvata viene mantenuta e tutte e quattro le modalità restano disponibili.
+
 ## 8.0.5
 
 Punti più fluidi sulla minimappa e descrizioni dei giocatori più facili da leggere.
