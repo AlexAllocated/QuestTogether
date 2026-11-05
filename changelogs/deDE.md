@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.2
+
+QuestTogether protokolliert Kommunikationsfehler jetzt nur noch intern.
+
+### Weniger störende Fehlermeldungen
+
+- Wenn der Server eine Kanalaktion ablehnt oder eine Addon-Nachricht nicht gesendet werden kann, löst QT dafür keine Meldung mehr in BugSack oder der globalen Fehleranzeige von WoW aus.
+- Im QT-Debugprotokoll und unter /qt diagnostics bleiben die Fehler nachvollziehbar. Die bisherigen Zähler und die Begrenzung wiederholter Einträge bleiben erhalten.
+
 ## 8.1.1
 
 Probleme bei der Kommunikation über Kanäle lassen sich jetzt besser nachvollziehen.

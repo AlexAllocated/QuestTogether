@@ -3,15 +3,14 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "8.1.1",
-	welcome = "Channel communication failures are now easier to diagnose.",
+	version = "8.1.2",
+	welcome = "Communication failures are now recorded quietly within QuestTogether.",
 	sections = {
 		{
-			title = "Communication errors",
+			title = "Quieter error reporting",
 			items = {
-				"Server refusals on QuestTogether channels now appear in the QT debug log and error-catching addons such as BugSack, even when the send initially reports success.",
-				"Repeated error reports are limited to avoid flooding. The report from /qt diagnostics keeps a count of all detected refusals.",
-				"This patch improves error reporting; it does not restore communication that the server is blocking.",
+				"Server channel refusals and addon-message send failures no longer trigger BugSack or WoW’s global error handler.",
+				"These failures remain available in QT’s debug log and /qt diagnostics, with the existing counters and limits on repeated entries.",
 			},
 		},
 	},

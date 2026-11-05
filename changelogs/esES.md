@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.2
+
+Los fallos de comunicación ahora se registran únicamente dentro de QuestTogether.
+
+### Menos avisos de error
+
+- Los rechazos del servidor en los canales y los fallos al enviar mensajes de addon ya no generan avisos en BugSack ni en el gestor global de errores de WoW.
+- Puedes consultarlos en el registro de depuración de QT y en /qt diagnostics. Se mantienen los contadores y el límite de entradas repetidas.
+
 ## 8.1.1
 
 Ahora resulta más fácil detectar los fallos de comunicación en los canales.

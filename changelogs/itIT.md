@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.2
+
+Gli errori di comunicazione vengono ora registrati solo all’interno di QuestTogether.
+
+### Meno avvisi di errore
+
+- I rifiuti del server sui canali e gli errori nell’invio dei messaggi degli addon non vengono più inoltrati a BugSack o al gestore globale degli errori di WoW.
+- Restano consultabili nel log di debug di QT e tramite /qt diagnostics. Sono mantenuti sia i contatori sia i limiti alle registrazioni ripetute.
+
 ## 8.1.1
 
 È ora più facile individuare i problemi di comunicazione sui canali.

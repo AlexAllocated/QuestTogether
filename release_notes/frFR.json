@@ -1,15 +1,14 @@
 {
-  "source_sha256": "34a29e40a7fb54a806bb39dc4cf6d1b82b2100671d16f21ce925a8183c7320b5",
+  "source_sha256": "7a819b914e7fdd8cf9a0b9097ed60f8749440a14e361b22c0ac11e686ab5d086",
   "notes": {
-    "version": "8.1.1",
-    "welcome": "Les échecs de communication sur les canaux sont désormais plus faciles à diagnostiquer.",
+    "version": "8.1.2",
+    "welcome": "Les erreurs de communication sont désormais consignées dans QuestTogether sans alerte externe.",
     "sections": [
       {
-        "title": "Signalement des erreurs",
+        "title": "Des erreurs moins envahissantes",
         "items": [
-          "Quand le serveur refuse une opération sur un canal QuestTogether, QT le signale dans son journal de débogage et aux addons de collecte d’erreurs comme BugSack, même si l’envoi avait d’abord été annoncé comme réussi.",
-          "Les signalements répétés sont limités pour éviter une accumulation de messages. Le rapport accessible avec /qt diagnostics comptabilise tous les refus détectés.",
-          "Ce correctif améliore le diagnostic, mais ne rétablit pas les communications bloquées par le serveur."
+          "Les refus du serveur sur les canaux et les échecs d’envoi de messages d’addon ne sont plus transmis à BugSack ni au gestionnaire d’erreurs global de WoW.",
+          "Vous pouvez toujours les consulter dans le journal de débogage de QT et avec /qt diagnostics. Les compteurs et la limitation des entrées répétées sont conservés."
         ]
       }
     ]

@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.2
+
+Les erreurs de communication sont désormais consignées dans QuestTogether sans alerte externe.
+
+### Des erreurs moins envahissantes
+
+- Les refus du serveur sur les canaux et les échecs d’envoi de messages d’addon ne sont plus transmis à BugSack ni au gestionnaire d’erreurs global de WoW.
+- Vous pouvez toujours les consulter dans le journal de débogage de QT et avec /qt diagnostics. Les compteurs et la limitation des entrées répétées sont conservés.
+
 ## 8.1.1
 
 Les échecs de communication sur les canaux sont désormais plus faciles à diagnostiquer.

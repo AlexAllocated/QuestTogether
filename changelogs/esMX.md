@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.2
+
+QuestTogether ahora registra los errores de comunicación sin generar alertas externas.
+
+### Avisos menos molestos
+
+- Cuando el servidor rechaza una operación en un canal o falla el envío de un mensaje de addon, QT ya no reporta ese error a BugSack ni al manejador global de errores de WoW.
+- Los detalles siguen disponibles en el registro de depuración de QT y en /qt diagnostics, con los mismos contadores y límites para entradas repetidas.
+
 ## 8.1.1
 
 Mejoramos el diagnóstico de los problemas de comunicación por canales.

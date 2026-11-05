@@ -3,6 +3,162 @@
   "releases": [
     {
       "enUS": {
+        "version": "8.1.1",
+        "welcome": "Channel communication failures are now easier to diagnose.",
+        "sections": [
+          {
+            "title": "Communication errors",
+            "items": [
+              "Server refusals on QuestTogether channels now appear in the QT debug log and error-catching addons such as BugSack, even when the send initially reports success.",
+              "Repeated error reports are limited to avoid flooding. The report from /qt diagnostics keeps a count of all detected refusals.",
+              "This patch improves error reporting; it does not restore communication that the server is blocking."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "8.1.1",
+        "welcome": "Probleme bei der Kommunikation über Kanäle lassen sich jetzt besser nachvollziehen.",
+        "sections": [
+          {
+            "title": "Fehlermeldungen zur Kommunikation",
+            "items": [
+              "Lehnt der Server eine Aktion in einem QuestTogether-Kanal ab, wird das nun im QT-Debugprotokoll und in Fehler-Addons wie BugSack erfasst. Das gilt auch dann, wenn der Sendeversuch zunächst als erfolgreich gemeldet wurde.",
+              "Wiederholte Fehlermeldungen werden begrenzt, damit sie das Protokoll nicht überfluten. Unter /qt diagnostics werden weiterhin alle erkannten Ablehnungen gezählt.",
+              "Der Patch verbessert die Fehlererfassung. Eine vom Server blockierte Kommunikation wird dadurch nicht wiederhergestellt."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "8.1.1",
+        "welcome": "Les échecs de communication sur les canaux sont désormais plus faciles à diagnostiquer.",
+        "sections": [
+          {
+            "title": "Signalement des erreurs",
+            "items": [
+              "Quand le serveur refuse une opération sur un canal QuestTogether, QT le signale dans son journal de débogage et aux addons de collecte d’erreurs comme BugSack, même si l’envoi avait d’abord été annoncé comme réussi.",
+              "Les signalements répétés sont limités pour éviter une accumulation de messages. Le rapport accessible avec /qt diagnostics comptabilise tous les refus détectés.",
+              "Ce correctif améliore le diagnostic, mais ne rétablit pas les communications bloquées par le serveur."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "8.1.1",
+        "welcome": "Ahora resulta más fácil detectar los fallos de comunicación en los canales.",
+        "sections": [
+          {
+            "title": "Avisos de errores",
+            "items": [
+              "Si el servidor rechaza una operación en un canal de QuestTogether, el rechazo queda registrado en el registro de depuración de QT y en addons de errores como BugSack, aunque el envío indicase inicialmente que había tenido éxito.",
+              "Se limita la repetición de avisos para evitar saturar el registro. El informe de /qt diagnostics mantiene el recuento de todos los rechazos detectados.",
+              "Este parche mejora la información sobre los fallos; no restablece las comunicaciones que el servidor esté bloqueando."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "8.1.1",
+        "welcome": "Mejoramos el diagnóstico de los problemas de comunicación por canales.",
+        "sections": [
+          {
+            "title": "Registro de errores",
+            "items": [
+              "Los rechazos del servidor en los canales de QuestTogether ahora aparecen en el registro de depuración de QT y en addons como BugSack. También se registran cuando el intento de envío había indicado que fue exitoso.",
+              "Para evitar una avalancha de avisos, los errores repetidos se reportan con menos frecuencia. /qt diagnostics conserva el conteo de todos los rechazos detectados.",
+              "Este cambio permite detectar mejor el problema, pero no restablece la comunicación bloqueada por el servidor."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "8.1.1",
+        "welcome": "Agora fica mais fácil identificar falhas na comunicação pelos canais.",
+        "sections": [
+          {
+            "title": "Registro de erros de comunicação",
+            "items": [
+              "Quando o servidor recusa uma operação em um canal do QuestTogether, a recusa passa a aparecer no registro de depuração do QT e em addons de erros como BugSack, mesmo que o envio tenha indicado sucesso inicialmente.",
+              "A repetição dos avisos é limitada para evitar excesso de mensagens. O relatório de /qt diagnostics mantém a contagem de todas as recusas detectadas.",
+              "Este patch melhora o registro das falhas, mas não restabelece comunicações que estejam bloqueadas pelo servidor."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "8.1.1",
+        "welcome": "Теперь проще разобраться в сбоях связи через каналы.",
+        "sections": [
+          {
+            "title": "Сообщения об ошибках связи",
+            "items": [
+              "Если сервер отклоняет операцию в канале QuestTogether, QT теперь записывает это в журнал отладки и передаёт ошибку аддонам вроде BugSack. Это работает и в тех случаях, когда отправка сначала была отмечена как успешная.",
+              "Частота повторных сообщений ограничена, чтобы не засорять журнал. При этом отчёт /qt diagnostics учитывает все обнаруженные отказы.",
+              "Исправление улучшает диагностику, но не восстанавливает связь, которую блокирует сервер."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "8.1.1",
+        "welcome": "È ora più facile individuare i problemi di comunicazione sui canali.",
+        "sections": [
+          {
+            "title": "Segnalazione degli errori",
+            "items": [
+              "Se il server rifiuta un’operazione su un canale QuestTogether, il rifiuto viene registrato nel log di debug di QT e segnalato agli addon come BugSack, anche quando l’invio era stato inizialmente indicato come riuscito.",
+              "Le segnalazioni ripetute vengono limitate per non intasare il registro. Il rapporto disponibile con /qt diagnostics continua a contare tutti i rifiuti rilevati.",
+              "La patch migliora la segnalazione dei problemi, ma non ripristina le comunicazioni bloccate dal server."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "8.1.1",
+        "welcome": "채널 통신이 실패한 원인을 더 쉽게 확인할 수 있도록 오류 기록을 개선했습니다.",
+        "sections": [
+          {
+            "title": "통신 오류 기록",
+            "items": [
+              "전송 시 성공으로 표시되었더라도 서버가 QuestTogether 채널의 작업을 거부하면 이제 QT 디버그 로그에 기록되고 BugSack 같은 오류 수집 애드온에도 전달됩니다.",
+              "같은 오류가 계속 표시되지 않도록 반복 보고 횟수를 제한했습니다. 감지한 거부 횟수는 모두 집계되며 /qt diagnostics 보고서에서 확인할 수 있습니다.",
+              "이번 패치는 오류를 확인하기 위한 개선이며, 서버에서 차단한 통신을 복구하지는 않습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "8.1.1",
+        "welcome": "改进了频道通信失败的错误记录，方便排查问题。",
+        "sections": [
+          {
+            "title": "通信错误报告",
+            "items": [
+              "即使发送时返回成功，只要服务器随后拒绝了 QuestTogether 频道中的操作，QT 调试日志和 BugSack 等错误收集插件现在也会记录这一情况。",
+              "为避免重复报错刷屏，错误提示的频率受到限制；所有检测到的拒绝仍会计入 /qt diagnostics 报告。",
+              "此补丁只改进错误报告，无法恢复被服务器阻止的通信。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "8.1.1",
+        "welcome": "改善頻道通訊失敗時的錯誤紀錄，讓問題更容易查明。",
+        "sections": [
+          {
+            "title": "通訊錯誤回報",
+            "items": [
+              "即使送出時顯示成功，只要伺服器拒絕了 QuestTogether 頻道中的操作，現在也會記錄到 QT 除錯紀錄，並傳送給 BugSack 等錯誤收集插件。",
+              "重複錯誤的回報頻率受到限制，避免大量訊息干擾；偵測到的拒絕次數仍會全部計入 /qt diagnostics 報告。",
+              "這次修正改善的是錯誤回報，無法恢復遭伺服器阻擋的通訊。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "8.1.0",
         "welcome": "Party communication fixes, plus an important notice about current WoW Forever messaging problems.",
         "sections": [

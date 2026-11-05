@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.2
+
+通訊失敗現在只記錄在 QuestTogether 內，不再觸發外部錯誤提示。
+
+### 減少錯誤提示干擾
+
+- 伺服器拒絕頻道操作或插件訊息傳送失敗時，QT 不再將這些錯誤回報給 BugSack 或 WoW 的全域錯誤處理機制。
+- 仍可透過 QT 除錯紀錄與 /qt diagnostics 報告查看這些問題；原有的計數及重複紀錄頻率限制均予保留。
+
 ## 8.1.1
 
 改善頻道通訊失敗時的錯誤紀錄，讓問題更容易查明。

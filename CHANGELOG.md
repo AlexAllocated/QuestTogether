@@ -4,6 +4,15 @@
 
 [Other languages](changelogs/README.md)
 
+## 8.1.2
+
+Communication failures are now recorded quietly within QuestTogether.
+
+### Quieter error reporting
+
+- Server channel refusals and addon-message send failures no longer trigger BugSack or WoW’s global error handler.
+- These failures remain available in QT’s debug log and /qt diagnostics, with the existing counters and limits on repeated entries.
+
 ## 8.1.1
 
 Channel communication failures are now easier to diagnose.

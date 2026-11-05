@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.2
+
+通信失败现在只在 QuestTogether 内部记录，不再触发外部错误提示。
+
+### 减少错误提示干扰
+
+- 服务器拒绝频道操作或插件消息发送失败时，QT 不再向 BugSack 或 WoW 的全局错误处理程序报告这些错误。
+- 仍可在 QT 调试日志和 /qt diagnostics 报告中查看这些问题，原有的计数和重复记录频率限制保持不变。
+
 ## 8.1.1
 
 改进了频道通信失败的错误记录，方便排查问题。

@@ -1,15 +1,14 @@
 {
-  "source_sha256": "34a29e40a7fb54a806bb39dc4cf6d1b82b2100671d16f21ce925a8183c7320b5",
+  "source_sha256": "7a819b914e7fdd8cf9a0b9097ed60f8749440a14e361b22c0ac11e686ab5d086",
   "notes": {
-    "version": "8.1.1",
-    "welcome": "È ora più facile individuare i problemi di comunicazione sui canali.",
+    "version": "8.1.2",
+    "welcome": "Gli errori di comunicazione vengono ora registrati solo all’interno di QuestTogether.",
     "sections": [
       {
-        "title": "Segnalazione degli errori",
+        "title": "Meno avvisi di errore",
         "items": [
-          "Se il server rifiuta un’operazione su un canale QuestTogether, il rifiuto viene registrato nel log di debug di QT e segnalato agli addon come BugSack, anche quando l’invio era stato inizialmente indicato come riuscito.",
-          "Le segnalazioni ripetute vengono limitate per non intasare il registro. Il rapporto disponibile con /qt diagnostics continua a contare tutti i rifiuti rilevati.",
-          "La patch migliora la segnalazione dei problemi, ma non ripristina le comunicazioni bloccate dal server."
+          "I rifiuti del server sui canali e gli errori nell’invio dei messaggi degli addon non vengono più inoltrati a BugSack o al gestore globale degli errori di WoW.",
+          "Restano consultabili nel log di debug di QT e tramite /qt diagnostics. Sono mantenuti sia i contatori sia i limiti alle registrazioni ripetute."
         ]
       }
     ]

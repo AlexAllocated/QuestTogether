@@ -1,15 +1,14 @@
 {
-  "source_sha256": "34a29e40a7fb54a806bb39dc4cf6d1b82b2100671d16f21ce925a8183c7320b5",
+  "source_sha256": "7a819b914e7fdd8cf9a0b9097ed60f8749440a14e361b22c0ac11e686ab5d086",
   "notes": {
-    "version": "8.1.1",
-    "welcome": "Probleme bei der Kommunikation über Kanäle lassen sich jetzt besser nachvollziehen.",
+    "version": "8.1.2",
+    "welcome": "QuestTogether protokolliert Kommunikationsfehler jetzt nur noch intern.",
     "sections": [
       {
-        "title": "Fehlermeldungen zur Kommunikation",
+        "title": "Weniger störende Fehlermeldungen",
         "items": [
-          "Lehnt der Server eine Aktion in einem QuestTogether-Kanal ab, wird das nun im QT-Debugprotokoll und in Fehler-Addons wie BugSack erfasst. Das gilt auch dann, wenn der Sendeversuch zunächst als erfolgreich gemeldet wurde.",
-          "Wiederholte Fehlermeldungen werden begrenzt, damit sie das Protokoll nicht überfluten. Unter /qt diagnostics werden weiterhin alle erkannten Ablehnungen gezählt.",
-          "Der Patch verbessert die Fehlererfassung. Eine vom Server blockierte Kommunikation wird dadurch nicht wiederhergestellt."
+          "Wenn der Server eine Kanalaktion ablehnt oder eine Addon-Nachricht nicht gesendet werden kann, löst QT dafür keine Meldung mehr in BugSack oder der globalen Fehleranzeige von WoW aus.",
+          "Im QT-Debugprotokoll und unter /qt diagnostics bleiben die Fehler nachvollziehbar. Die bisherigen Zähler und die Begrenzung wiederholter Einträge bleiben erhalten."
         ]
       }
     ]

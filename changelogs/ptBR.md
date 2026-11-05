@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.2
+
+As falhas de comunicação agora ficam registradas apenas no QuestTogether.
+
+### Menos alertas de erro
+
+- Recusas do servidor nos canais e falhas no envio de mensagens de addon deixam de acionar o BugSack ou o tratamento global de erros do WoW.
+- Essas falhas continuam disponíveis no registro de depuração do QT e em /qt diagnostics. Os contadores e os limites para registros repetidos foram mantidos.
+
 ## 8.1.1
 
 Agora fica mais fácil identificar falhas na comunicação pelos canais.

@@ -1,15 +1,14 @@
 {
-  "source_sha256": "34a29e40a7fb54a806bb39dc4cf6d1b82b2100671d16f21ce925a8183c7320b5",
+  "source_sha256": "7a819b914e7fdd8cf9a0b9097ed60f8749440a14e361b22c0ac11e686ab5d086",
   "notes": {
-    "version": "8.1.1",
-    "welcome": "Ahora resulta más fácil detectar los fallos de comunicación en los canales.",
+    "version": "8.1.2",
+    "welcome": "Los fallos de comunicación ahora se registran únicamente dentro de QuestTogether.",
     "sections": [
       {
-        "title": "Avisos de errores",
+        "title": "Menos avisos de error",
         "items": [
-          "Si el servidor rechaza una operación en un canal de QuestTogether, el rechazo queda registrado en el registro de depuración de QT y en addons de errores como BugSack, aunque el envío indicase inicialmente que había tenido éxito.",
-          "Se limita la repetición de avisos para evitar saturar el registro. El informe de /qt diagnostics mantiene el recuento de todos los rechazos detectados.",
-          "Este parche mejora la información sobre los fallos; no restablece las comunicaciones que el servidor esté bloqueando."
+          "Los rechazos del servidor en los canales y los fallos al enviar mensajes de addon ya no generan avisos en BugSack ni en el gestor global de errores de WoW.",
+          "Puedes consultarlos en el registro de depuración de QT y en /qt diagnostics. Se mantienen los contadores y el límite de entradas repetidas."
         ]
       }
     ]
