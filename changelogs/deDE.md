@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.1
+
+Probleme bei der Kommunikation über Kanäle lassen sich jetzt besser nachvollziehen.
+
+### Fehlermeldungen zur Kommunikation
+
+- Lehnt der Server eine Aktion in einem QuestTogether-Kanal ab, wird das nun im QT-Debugprotokoll und in Fehler-Addons wie BugSack erfasst. Das gilt auch dann, wenn der Sendeversuch zunächst als erfolgreich gemeldet wurde.
+- Wiederholte Fehlermeldungen werden begrenzt, damit sie das Protokoll nicht überfluten. Unter /qt diagnostics werden weiterhin alle erkannten Ablehnungen gezählt.
+- Der Patch verbessert die Fehlererfassung. Eine vom Server blockierte Kommunikation wird dadurch nicht wiederhergestellt.
+
 ## 8.1.0
 
 Dieses Update behebt Fehler beim Austausch von Gruppendaten. Bitte beachte zuerst den Hinweis zu den aktuellen Nachrichtenproblemen auf WoW Forever.

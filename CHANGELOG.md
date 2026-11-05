@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 8.1.1
+
+Channel communication failures are now easier to diagnose.
+
+### Communication errors
+
+- Server refusals on QuestTogether channels now appear in the QT debug log and error-catching addons such as BugSack, even when the send initially reports success.
+- Repeated error reports are limited to avoid flooding. The report from /qt diagnostics keeps a count of all detected refusals.
+- This patch improves error reporting; it does not restore communication that the server is blocking.
+
 ## 8.1.0
 
 Party communication fixes, plus an important notice about current WoW Forever messaging problems.

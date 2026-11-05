@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.1
+
+Ahora resulta más fácil detectar los fallos de comunicación en los canales.
+
+### Avisos de errores
+
+- Si el servidor rechaza una operación en un canal de QuestTogether, el rechazo queda registrado en el registro de depuración de QT y en addons de errores como BugSack, aunque el envío indicase inicialmente que había tenido éxito.
+- Se limita la repetición de avisos para evitar saturar el registro. El informe de /qt diagnostics mantiene el recuento de todos los rechazos detectados.
+- Este parche mejora la información sobre los fallos; no restablece las comunicaciones que el servidor esté bloqueando.
+
 ## 8.1.0
 
 Mejoras en la comunicación del grupo y un aviso sobre los problemas actuales de mensajería en WoW Forever.

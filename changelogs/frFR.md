@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.1
+
+Les échecs de communication sur les canaux sont désormais plus faciles à diagnostiquer.
+
+### Signalement des erreurs
+
+- Quand le serveur refuse une opération sur un canal QuestTogether, QT le signale dans son journal de débogage et aux addons de collecte d’erreurs comme BugSack, même si l’envoi avait d’abord été annoncé comme réussi.
+- Les signalements répétés sont limités pour éviter une accumulation de messages. Le rapport accessible avec /qt diagnostics comptabilise tous les refus détectés.
+- Ce correctif améliore le diagnostic, mais ne rétablit pas les communications bloquées par le serveur.
+
 ## 8.1.0
 
 Cette mise à jour corrige plusieurs problèmes de communication en groupe. Consultez d’abord l’avertissement sur les messages d’addon pendant le lancement de WoW Forever.

@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.1
+
+È ora più facile individuare i problemi di comunicazione sui canali.
+
+### Segnalazione degli errori
+
+- Se il server rifiuta un’operazione su un canale QuestTogether, il rifiuto viene registrato nel log di debug di QT e segnalato agli addon come BugSack, anche quando l’invio era stato inizialmente indicato come riuscito.
+- Le segnalazioni ripetute vengono limitate per non intasare il registro. Il rapporto disponibile con /qt diagnostics continua a contare tutti i rifiuti rilevati.
+- La patch migliora la segnalazione dei problemi, ma non ripristina le comunicazioni bloccate dal server.
+
 ## 8.1.0
 
 Questo aggiornamento corregge alcuni problemi nello scambio dei dati del gruppo. Leggi prima l’avviso sui messaggi degli addon durante il lancio di WoW Forever.

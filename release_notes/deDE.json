@@ -1,31 +1,15 @@
 {
-  "source_sha256": "220cfcbe47b00da061d27243eb2ea68f04b5497b8ac580e0679c60e285b37e39",
+  "source_sha256": "34a29e40a7fb54a806bb39dc4cf6d1b82b2100671d16f21ce925a8183c7320b5",
   "notes": {
-    "version": "8.1.0",
-    "welcome": "Dieses Update behebt Fehler beim Austausch von Gruppendaten. Bitte beachte zuerst den Hinweis zu den aktuellen Nachrichtenproblemen auf WoW Forever.",
+    "version": "8.1.1",
+    "welcome": "Probleme bei der Kommunikation über Kanäle lassen sich jetzt besser nachvollziehen.",
     "sections": [
       {
-        "title": "Aktuelle Nachrichtenprobleme auf WoW Forever",
+        "title": "Fehlermeldungen zur Kommunikation",
         "items": [
-          "Dem Entwickler ist bekannt, dass Addon-Nachrichten seit dem Start von Forever verspätet oder gar nicht ankommen. Dadurch können Spieler auf der Karte und Ankündigungen fehlen oder Gruppendaten beim Laden hängen bleiben.",
-          "Eine hohe Belastung der Blizzard-Server wird als möglicher Mitverursacher vermutet. Die Diagnosedaten belegen jedoch nicht, dass Überlastung hinter jedem Vorfall steckt.",
-          "Dieses Update behebt nachgewiesene Fehler in QuestTogether. Es kann die Zustellung über Blizzards Nachrichtendienst nicht garantieren."
-        ]
-      },
-      {
-        "title": "Questdaten in der Gruppe",
-        "items": [
-          "Gruppenquestlog und Gruppen-Zielverfolgung nutzen für Anfragen und Antworten zwischen Gruppenmitgliedern jetzt den jeweiligen Gruppen-, Schlachtzugs- oder Instanzkanal. Vergleiche mit Spielern außerhalb der Gruppe laufen weiterhin über Flüsternachrichten.",
-          "Damit beide Richtungen den Gruppenkanal nutzen, müssen alle beteiligten Spieler aktualisieren. Ältere Versionen bleiben kompatibel, können aber noch per Flüsternachricht antworten.",
-          "Wird das Senden einer Anfrage eindeutig abgelehnt, endet das Warten jetzt sofort, statt die Ladeanzeige bis zum langen Zeitlimit stehen zu lassen.",
-          "Wenn du den Mauszeiger von einer Quest weg oder auf eine andere bewegst, werden nicht mehr benötigte Antwortübertragungen freigegeben. Alte, zurückgehaltene Datenstände können so keine Antwortplätze mehr belegen und spätere Anfragen blockieren."
-        ]
-      },
-      {
-        "title": "Diagnose der Verbindung",
-        "items": [
-          "Eindeutige Fehler beim Senden über WoW werden jetzt an die Lua-Fehlerbehandlung gemeldet und damit auch für Fehlerfänger-Addons sichtbar. QT hält sie außerdem in seinen Diagnosedaten und im Debugprotokoll fest; identische Meldungen werden begrenzt. Normale Drosselung und uneindeutige Sendeergebnisse gelten dabei nicht als harte Fehler.",
-          "Falls Daten weiter beim Laden hängen bleiben, liefert /qt diagnostics dem Entwickler genauere Angaben zum verwendeten Kanal, zum Sendeergebnis und zu ausstehenden Anfragen."
+          "Lehnt der Server eine Aktion in einem QuestTogether-Kanal ab, wird das nun im QT-Debugprotokoll und in Fehler-Addons wie BugSack erfasst. Das gilt auch dann, wenn der Sendeversuch zunächst als erfolgreich gemeldet wurde.",
+          "Wiederholte Fehlermeldungen werden begrenzt, damit sie das Protokoll nicht überfluten. Unter /qt diagnostics werden weiterhin alle erkannten Ablehnungen gezählt.",
+          "Der Patch verbessert die Fehlererfassung. Eine vom Server blockierte Kommunikation wird dadurch nicht wiederhergestellt."
         ]
       }
     ]
