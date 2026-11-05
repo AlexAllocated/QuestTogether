@@ -22,9 +22,11 @@ private `.local` notes are historical context, not the source of truth.
 | GeographicComms / NearbyStreams | Current/viewed interests, subscriptions, discovery policy and owned state/movement producers | Another native queue or rewriting received feature caches |
 | QuestCompareCommunication / PingCommunication | Domain request premises and response construction | Wire encoding, fragment pumps or independent timers |
 | DeveloperAnnouncements | Signed developer subscriptions, diagnostic consent, mirror audiences and paced private location publication | Normal announcement filters, private location storage or a separate transport |
-| PartyQuestProgress | Interest-owned remote objective snapshots, ordered announcement deltas, per-peer detail requests and shared PQL/HUD notifications | Display filtering, independent polling, or assuming objective indices match across players |
+| PartyQuestSync | Small-party lifetime, atomic quest-list snapshots, exact revisions, lifecycle replay and paced background interests | Window visibility, native sends or independent timers |
+| PartyQuestProgress | Party-owned remote objective snapshots, ordered announcement deltas, per-peer detail requests and shared PQL/HUD subscriptions | Display filtering, independent polling, or assuming objective indices match across players |
 | QuestProgressStyle | Shared rounded detail sections and objective progress bars for PQL and HUD | Quest state, requests, or window lifecycle |
 | QuestFocusWindow / QuestFocusEditMode | Party Objective Tracker HUD, native focus observation, local detail reads, owned Edit Mode controls and revert baseline | Blizzard tracker rows, shared native layout registries or a separate objective cache |
+| PartyFocusIndicators | Class-colored party-focus pips beside native tracker titles; bounded read-only block lookup and owned overlay geometry | Native tracker scripts, text, pools or layout; another focus store or network request |
 | QuestCompare | Atomic party log assembly, local snapshots and negotiated revision reuse | Native UI mutation or independent transport pumps |
 | QuestCompletion | Bounded character-history queries for visible comparisons, evidence age and completed/absent classification | Account-wide completion or full history broadcasts |
 | QuestSharingResults | Exact native share-result matching and recent per-player explanations | Guessing which quest a native result belongs to |
@@ -61,18 +63,37 @@ private `.local` notes are historical context, not the source of truth.
   confirmation policy. While waiting, native quest pickup/turn-in selection
   changes establish a new local baseline without cancelling follow intent; the
   same applies when the previous focus is no longer in the local quest log.
-- PQL expansions and the focus HUD acquire the same remote quest-detail record.
-  Interests release on collapse, focus/roster/profile change, ignore and disable.
-  The RuntimeCoordinator advances at most one objective request per peer; repair
-  snapshots have a 30-second cadence, with a five-second minimum between requests
-  after stage changes. Incoming announcements update subscribed rows before chat
+- PQL and POT subscribe to party-owned quest data. Small parties bootstrap and
+  conditionally refresh quest lists every 30 seconds without an open window.
+  Background detail acquisition progressively warms every member's log; visible
+  quests take priority, then unsampled quests (shared quests first). Background
+  repair has a 120-second cadence; visible detail uses 30 seconds, with a five-second
+  minimum between attempts. RuntimeCoordinator is the only periodic owner.
+  Summary/history/detail requests serialize per peer and party detail starts are
+  paced to at most two per second. An optional generation-2 QCMP scheduling hint
+  puts background requests and replies in the background traffic class; older
+  peers safely ignore the appended field. No protocol-generation change is required.
+  Closing or changing views only detaches their callbacks. Pending requests and
+  accepted data survive; departure, ignore, profile/world changes and disable
+  retire the party lifetime. Up to four remote logs of 100 quests are warmed;
+  objective storage is capped at 128 records per peer. Detached extra records
+  expire after 120 idle seconds once any pending request has settled. Raids and
+  comparisons outside the small party retain on-demand fetching.
+  Refresh failures retain accepted data rather than reverting to Loading.
+  Incoming announcements update cached rows before chat
   filters or delayed title rendering. Ordering is per sender/objective with quest
   lifecycle barriers. Events observed during a snapshot transfer are replayed over
   its baseline so a delayed reply cannot roll progress backward. Changed objective
   wording retires unverified sibling rows until a detail snapshot repairs them;
   indices are never matched across different players or languages.
+  A changed complete summary fences obsolete detail replies, and announcements
+  received during summary assembly are replayed before installation is exposed.
   Shared detail rows fall back to certified quest status when there are no
   objective counters; an empty list never establishes readiness or completion.
+  Their separate `questStatus` also drives each POT member header's status
+  artwork. Known readiness survives pending objective-detail requests; pooled
+  objective rows never inherit member icons. Native atlas selection/fallback
+  is shared with PQL through `QuestProgressStyle`.
 - The Party Objective Tracker has one profile-owned display mode: hidden, focused quest,
   hovered quest (default), or focus and hover. The combined mode follows local
   native quest focus (including party-follow changes), temporarily previewing a
@@ -108,6 +129,16 @@ private `.local` notes are historical context, not the source of truth.
   scrollbar controls and Edit Mode wait for their normal safe boundary. Local
   announcements enter that same progress reducer before local chat/bubbles;
   a later quest-log read repairs the rest of the local snapshot.
+
+- Native tracker party-focus markers use `GetPartyQuestFocusID` for up to four
+  other members of the current small party, independent of following and POT
+  visibility. `RuntimeCoordinator` samples those rows and refreshes geometry;
+  the marker view reacquires visible native quest blocks through the read-only
+  `GetExistingBlock` lookup. Each member gets a class-colored pip in the existing
+  gutter between Blizzard's quest icon and title. The mouse-disabled frames are
+  parented to UIParent and positioned with sanitized coordinates; they never
+  alter native layout, pooling or gamepad navigation. Hidden, recycled, sliding
+  or unreadable native rows and retired focus observations hide their markers.
 
 - Recent companions are recorded only from the sanitized current group roster,
   including non-QT members. The private `db.global.recentCompanions` store is

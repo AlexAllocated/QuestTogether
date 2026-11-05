@@ -132,6 +132,7 @@ function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 		{ "transport", self:GetTransportMetrics() },
 		{ "communication", self:GetCommunicationMetrics() },
 		{ "questCompare", self:GetQuestCompareCommunicationDiagnostics() },
+		{ "partyQuestSync", self:GetPartyQuestSyncDiagnostics() },
 		{ "transfer", self:GetCommTransferMetrics() },
 		{ "authentication", self:GetDeveloperCommunicationMetrics() },
 		{ "developerAnnouncements", self:GetDeveloperAnnouncementMetrics() },

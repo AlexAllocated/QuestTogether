@@ -4,16 +4,18 @@
 
 ## 8.2.0
 
-Continue acompanhando a missão em foco dos amigos, mesmo quando vocês ainda não têm uma missão em comum.
+Os dados das missões do grupo passam a ser atualizados em segundo plano, com novos indicadores de foco e status.
 
-### Acompanhamento que espera por uma missão em comum
+### Dados do grupo
 
-- Você pode começar a seguir a missão em foco de um integrante do grupo mesmo sem terem missões em comum.
-- Se a missão em foco dele não estiver no seu registro, o acompanhamento permanece ativo. O Registro de missões do grupo mostra Aguardando uma missão em comum, mantém sua navegação atual e não abre mais o aviso de missão ausente.
-- A sincronização volta automaticamente quando seu amigo escolhe uma missão que você tem ou quando você aceita a missão que ele já está acompanhando. Não é preciso seguir de novo.
-- Enquanto você aguarda, mudanças automáticas de foco do WoW ao aceitar ou entregar missões não encerram o acompanhamento. Como antes, o QT lembra por personagem quem você segue após recarregar a interface e aguarda informações atualizadas do grupo para retomar.
+- Em grupos de até cinco jogadores, o QT atualiza listas e objetivos de missões mesmo com o Registro de missões do grupo fechado e o Rastreador de objetivos do grupo oculto. As informações aparecem conforme são recebidas; atrasos na comunicação do jogo ainda podem afetar as atualizações.
+- Tirar o cursor de uma missão não interrompe mais a busca pelos dados do grupo. O progresso já recebido continua disponível quando você volta a consultar a missão.
 
-> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Dica: Abra /qt pql, abra o menu do seu amigo no Registro de missões do grupo e escolha Seguir missão em foco. Use Parar de seguir para encerrar o acompanhamento.
+### Foco e status das missões
+
+- Pontos nas cores das classes, ao lado dos títulos no rastreador de objetivos da Blizzard, mostram quais missões seus companheiros têm em foco. Eles aparecem mesmo que você não esteja seguindo o foco de ninguém.
+- Cada jogador agora tem ícones de status no Rastreador de objetivos do grupo: missão em andamento, pronta para entregar ou já concluída, além de indicadores de carregamento e estado desconhecido. A indicação de pronta para entregar permanece enquanto os detalhes dos objetivos são carregados.
+- Corrigido um caso em que o modo “Foco e cursor” deixava de mostrar a missão em foco quando não era possível ler informações independentes de um ponto de rota.
 
 ## 8.1.2
 

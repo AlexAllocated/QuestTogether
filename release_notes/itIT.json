@@ -1,21 +1,23 @@
 {
-  "source_sha256": "9ba44b5fd585d9f04a02ce8cd7902c09f59f595a4ea070ae0d2639a0ea87e7ac",
+  "source_sha256": "e43e4e37f128d87bb9b8d4893790181e13f83c39ce74bcd79c29c294be6c5462",
   "notes": {
     "version": "8.2.0",
-    "welcome": "Continui a seguire la missione attiva del tuo compagno anche quando non è ancora nel tuo registro.",
+    "welcome": "QT aggiorna in background le missioni del gruppo e rende più visibili la missione selezionata da ciascun compagno e il suo stato.",
     "sections": [
       {
-        "title": "Continua a seguire in attesa di una missione in comune",
+        "title": "Dati delle missioni del gruppo",
         "items": [
-          "Puoi usare «Segui la missione attiva» dal menu di un membro del gruppo anche senza missioni in comune. Dovete avere entrambi QT e il giocatore seguito deve condividere la propria missione attiva.",
-          "Se la missione attiva del tuo compagno non è nel tuo registro, ora continui a seguirlo. Il Registro missioni del gruppo mostra «In attesa di una missione in comune», la tua navigazione attuale resta invariata e non appare più la finestra di avviso per la missione mancante.",
-          "La sincronizzazione riprende automaticamente quando il giocatore sceglie una missione che hai anche tu oppure quando accetti la missione che ha già attiva. Non occorre selezionare di nuovo «Segui la missione attiva».",
-          "Durante l’attesa, i cambi automatici di missione attiva quando accetti o consegni una missione non ti fanno smettere di seguire il compagno. Come prima, QT ricorda chi segui per ogni personaggio dopo il ricaricamento dell’interfaccia e attende dati aggiornati del gruppo."
-        ],
-        "tip": {
-          "label": "Consiglio:",
-          "text": "Apri /qt pql, poi il menu di un membro del gruppo e scegli «Segui la missione attiva». Usa «Smetti di seguire» per terminare."
-        }
+          "Nei gruppi fino a cinque giocatori, QT aggiorna elenchi e obiettivi delle missioni anche con il Registro missioni del gruppo chiuso e il Tracciamento obiettivi del gruppo nascosto. I dati compaiono man mano che arrivano; la comunicazione nel gioco può comunque subire ritardi.",
+          "Non serve più tenere il cursore sopra una missione per completare il recupero dei dati del gruppo. La richiesta prosegue e i progressi già ricevuti restano disponibili quando torni sulla missione."
+        ]
+      },
+      {
+        "title": "Selezione e stato delle missioni",
+        "items": [
+          "Accanto ai titoli nel tracciamento obiettivi di Blizzard, i punti nei colori delle classi indicano quali missioni hanno selezionato i compagni. Compaiono anche quando non stai seguendo la selezione di nessuno.",
+          "Nel Tracciamento obiettivi del gruppo, la sezione di ogni giocatore mostra icone per le missioni in corso, pronte da consegnare o già completate, oltre agli indicatori di caricamento e stato sconosciuto. Se una missione risulta già pronta, il caricamento dei dettagli degli obiettivi non ne nasconde più lo stato.",
+          "Corretto un caso in cui la modalità «Selezione e cursore» perdeva la missione selezionata perché non riusciva a leggere dati separati relativi a un punto di passaggio."
+        ]
       }
     ]
   }

@@ -335,7 +335,7 @@ function QT:GetHintCatalog()
 			id = "hint031",
 			actions = { "party_log" },
 			text = L(
-				"Enable Auto-refresh while open in Party Quest Log's Filters menu to request updated quest lists periodically."
+				"Party quest lists and objectives update in the background. Click Refresh in Party Quest Log to request an update now."
 			),
 			menu = true,
 		},

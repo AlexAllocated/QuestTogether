@@ -47,7 +47,7 @@ PARTY QUEST LOG
 028. Loading or Unknown in Party Quest Log does not mean a player is missing the quest; QT does not have their answer yet.
 029. Your own Party Quest Log column updates as you quest. Refresh requests updated quest lists from the other players.
 030. Click a player's heading in Party Quest Log and choose Refresh this player to update just their column.
-031. Enable Auto-refresh while open in Party Quest Log's Filters menu to request updated quest lists periodically.
+031. Party quest lists and objectives update in the background. Click Refresh in Party Quest Log to request an update now.
 032. Check the update time beneath a player's name in Party Quest Log before relying on their last reported progress.
 033. Choose Compare Quests from a player's QT name or map-dot menu to compare your quest lists before grouping up.
 034. Drag Party Quest Log's bottom-right corner to resize it. Widen the window to show more columns at once.

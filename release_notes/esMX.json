@@ -1,21 +1,23 @@
 {
-  "source_sha256": "9ba44b5fd585d9f04a02ce8cd7902c09f59f595a4ea070ae0d2639a0ea87e7ac",
+  "source_sha256": "e43e4e37f128d87bb9b8d4893790181e13f83c39ce74bcd79c29c294be6c5462",
   "notes": {
     "version": "8.2.0",
-    "welcome": "Puedes seguir la misión activa de un compañero aunque todavía no la tengas en tu registro.",
+    "welcome": "QT mantiene los datos de las misiones del grupo al día en segundo plano y agrega indicadores de enfoque y estado.",
     "sections": [
       {
-        "title": "Seguimiento en espera de una misión en común",
+        "title": "Información del grupo",
         "items": [
-          "La opción «Seguir misión activa» del menú de un miembro del grupo funciona incluso si no tienen misiones en común. Ambos necesitan QT y el compañero debe compartir su misión activa.",
-          "Cuando no tienes la misión que tu compañero tiene activa, QT ahora mantiene el seguimiento. El Registro de misiones del grupo indica «Esperando una misión en común», deja intacta tu navegación actual y ya no muestra la ventana de aviso por la misión que te falta.",
-          "La misión activa se vuelve a sincronizar automáticamente cuando tu compañero elige una misión que tú también tienes, o cuando aceptas la misión que él ya tiene activa. No necesitas volver a iniciar el seguimiento.",
-          "Los cambios automáticos de misión activa al aceptar o entregar misiones ya no interrumpen el seguimiento mientras esperas. QT sigue recordando por personaje a quién sigues después de recargar la interfaz; para reanudar, espera información nueva del grupo."
-        ],
-        "tip": {
-          "label": "Consejo:",
-          "text": "Abre /qt pql y luego el menú de un miembro del grupo. Elige «Seguir misión activa» para empezar y «Dejar de seguir» para terminar."
-        }
+          "En grupos de hasta cinco jugadores, las listas de misiones y sus objetivos se actualizan aunque cierres el Registro de misiones del grupo u ocultes el Seguimiento de objetivos del grupo. Los datos se muestran conforme se reciben; todavía puede haber demoras en la comunicación del juego.",
+          "Puedes quitar el cursor de una misión sin cancelar la consulta de datos del grupo. El progreso que ya llegó sigue disponible cuando vuelves a verla."
+        ]
+      },
+      {
+        "title": "Enfoque y estado",
+        "items": [
+          "Ahora verás puntos de colores de clase junto a los títulos del seguimiento de objetivos de Blizzard para identificar las misiones que tienen enfocadas tus compañeros. No necesitas estar siguiendo su enfoque.",
+          "La sección de cada jugador en el Seguimiento de objetivos del grupo muestra iconos de misión activa, lista para entregar o completada, además de señales de carga o estado desconocido. Una misión que ya está lista para entregar conserva su indicador mientras llegan los detalles de sus objetivos.",
+          "Se corrigió un caso en el que «Enfoque y cursor» dejaba de mostrar la misión enfocada porque no se podían consultar datos independientes de un punto de ruta."
+        ]
       }
     ]
   }

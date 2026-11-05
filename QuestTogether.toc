@@ -84,6 +84,7 @@ QuestCompare.lua
 QuestCompareFilters.lua
 QuestCompareObjectives.lua
 PartyQuestProgress.lua
+PartyQuestSync.lua
 QuestCompareInteraction.lua
 QuestProgressStyle.lua
 QuestCompareWindow.lua
@@ -92,6 +93,7 @@ PartyJoin.lua
 PartyVisuals.lua
 PartyFocusController.lua
 PartyNavigation.lua
+PartyFocusIndicators.lua
 QuestFocusWindow.lua
 QuestFocusEditMode.lua
 QuestComparePreview.lua
@@ -128,6 +130,7 @@ scripts/regression_vip.lua
 scripts/regression_developer_feed_auth.lua
 scripts/regression_developer_announcements.lua
 scripts/regression_network_v2.lua
+scripts/regression_party_sync.lua
 scripts/regression_protocol_v2.lua
 scripts/regression_transport_v2.lua
 scripts/regression_transfer_v2.lua
@@ -170,6 +173,7 @@ scripts/regression_player_details.lua
 scripts/regression_player_phases.lua
 
 scripts/regression_party_navigation.lua
+scripts/regression_party_focus_indicators.lua
 
 scripts/regression_window_layout.lua
 

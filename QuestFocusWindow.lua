@@ -440,6 +440,12 @@ local function CreateDetailRow(addon, parent)
 	row.title = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	row.title:SetJustifyH("LEFT")
 	row.title:SetWordWrap(true)
+	row.statusIcon = row:CreateTexture(nil, "OVERLAY")
+	row.statusIcon:SetSize(18, 18)
+	row.statusSymbol = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	row.statusSymbol:SetSize(18, 18)
+	row.statusSymbol:SetJustifyH("CENTER")
+	row.statusSymbol:SetJustifyV("MIDDLE")
 	row.paper = row:CreateTexture(nil, "BACKGROUND", nil, -1)
 	row.background = row:CreateTexture(nil, "BACKGROUND")
 	row.hover = row:CreateTexture(nil, "BORDER")
@@ -460,6 +466,8 @@ local function CanUseDetailRow(addon, row)
 	for _, region in ipairs({
 		row,
 		row.title,
+		row.statusIcon,
+		row.statusSymbol,
 		row.paper,
 		row.background,
 		row.hover,
@@ -568,15 +576,25 @@ function QT:RenderQuestFocusWindow(state, restricted)
 			row:SetPoint("TOPLEFT", frame.body, "TOPLEFT", 0, -y)
 			row:SetWidth(width)
 			local inset, padding = member and 10 or 16, member and 8 or 4
+			local questStatus = member and data.questStatus or nil
+			style.ApplyQuestStatusIcon(row, questStatus)
+			row.statusIcon:ClearAllPoints()
+			row.statusIcon:SetPoint("TOPLEFT", row, "TOPLEFT", inset, -padding)
+			row.statusSymbol:ClearAllPoints()
+			row.statusSymbol:SetPoint("TOPLEFT", row, "TOPLEFT", inset, -padding)
+			row.statusSymbol:SetTextColor(unpack(brightText and { 0.93, 0.92, 0.88 } or theme.body))
+			row.statusSymbol:SetShadowColor(0, 0, 0, brightText and 1 or 0)
+			row.statusSymbol:SetShadowOffset(1, -1)
+			local textInset = inset + (questStatus and 22 or 0)
 			row.title:ClearAllPoints()
-			row.title:SetPoint("TOPLEFT", row, "TOPLEFT", inset, -padding)
-			row.title:SetWidth(width - inset - 10)
+			row.title:SetPoint("TOPLEFT", row, "TOPLEFT", textInset, -padding)
+			row.title:SetWidth(width - textInset - 10)
 			local text = data.title or ""
 			if data.hint and (member or not text:gsub("%s+", ""):find(data.hint:gsub("%s+", ""), 1, true)) then
 				text = text .. "  " .. data.hint
 			end
 			row.title:SetText(text)
-			local textHeight = math.max(14, row.title:GetStringHeight())
+			local textHeight = math.max(questStatus and 18 or 14, row.title:GetStringHeight())
 			local height = padding + textHeight + (data.fraction and 8 or 4) + (last and 8 or 0)
 			row:SetHeight(height)
 			style.LayoutDetailsPanel(row, width, true, member, last, false, theme.dark, true, opacity, true)

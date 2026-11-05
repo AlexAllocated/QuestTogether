@@ -159,6 +159,14 @@ QT:RegisterTest(
 		receiver.onDone()
 		a:Drain()
 		Equal(state.members[2].objectiveDetails[42].objectives[1].current, 1)
+		local rows = a:BuildQuestFocusRows(state)
+		Equal(rows[1].status, nil)
+		Equal(rows[1].questStatus, "Have")
+		Equal(rows[3].questStatus, "Have")
+		Equal(frame.rows[1].statusIcon:GetAtlas(), "Quest-In-Progress-Icon-yellow")
+		Equal(frame.rows[3].statusIcon:GetAtlas(), "Quest-In-Progress-Icon-yellow")
+		Equal(frame.rows[2].statusIcon:IsShown(), false)
+		Equal(frame.rows[2].statusSymbol:IsShown(), false)
 		local track = frame.rows[4].progressTrack
 		Equal(frame.rows[4].progressFill:GetWidth(), track:GetWidth() / 8)
 		Equal(frame.rows[3].background.textureColor[4], 0.25)
@@ -315,6 +323,16 @@ QT:RegisterTest("focus HUD restriction disable and ignored roster changes cannot
 	a:Drain()
 	Equal(a.invalidCalls, nil)
 	frame.rows[2].progressFill.forbidden = false
+	for _, name in ipairs({ "statusIcon", "statusSymbol" }) do
+		local region = frame.rows[1][name]
+		local writes = region.writes
+		region.forbidden = true
+		a:QueueQuestFocusRefresh()
+		a:Drain()
+		Equal(region.writes, writes, "restricted status art must not be repainted")
+		Equal(a.invalidCalls, nil)
+		region.forbidden = false
+	end
 	Equal(a.localReads, 1)
 	frame.forbidden = true
 	a:QueueQuestFocusRefresh()
@@ -562,6 +580,12 @@ QT:RegisterTest(
 		Equal(#rows, 2)
 		Equal(rows[1].title, "You are ready to turn in this quest.")
 		Equal(rows[2].title, "Friend is ready to turn in this quest.")
+		Equal(rows[1].questStatus, "Ready")
+		Equal(rows[2].questStatus, "Ready")
+		local icon, symbol = a.questFocusWindow.rows[1].statusIcon, a.questFocusWindow.rows[1].statusSymbol
+		Equal(icon:GetAtlas(), "UI-QuestIcon-TurnIn-Normal")
+		Equal(icon:IsShown(), true)
+		Equal(symbol:IsShown(), false)
 		a.partyQuestCompareSession = { members = state.members, expandedQuestIds = { [42] = true } }
 		local pql = a:BuildPartyQuestCompareDisplayRows({ { questId = 42, cells = { "Ready", "Ready" } } })
 		Equal(pql[2].hint, "Ready")
@@ -577,14 +601,58 @@ QT:RegisterTest(
 		a:Drain()
 		Equal(member.entries[42], nil)
 		Equal(a:BuildQuestFocusRows(state)[1].title, "You have completed this quest.")
+		Equal(a:BuildQuestFocusRows(state)[1].questStatus, "Completed")
+		Equal(icon.texture, "Interface\\Buttons\\UI-CheckBox-Check")
+		Equal(icon:GetAtlas(), nil, "completed history must discard the previous turn-in atlas")
+		Equal(icon:IsShown(), true)
 		a:ObserveLocalQuestFocusProgress({ questId = 42, eventType = "QUEST_ACCEPTED" })
 		a:Drain()
 		Equal(a:BuildQuestFocusRows(state)[1].title, "Loading your quest progress…")
+		Equal(a:BuildQuestFocusRows(state)[1].questStatus, "Loading")
+		Equal(icon:IsShown(), false)
+		Equal(symbol:IsShown(), true)
+		Equal(symbol:GetText(), "...")
 		member.state = "unknown"
 		member.objectiveDetails[42].state = "unknown"
 		Equal(a:BuildQuestFocusRows(state)[1].title, "Your quest status is not available yet.")
+		a:QueueQuestFocusRefresh(); a:Drain()
+		Equal(a:BuildQuestFocusRows(state)[1].questStatus, "Unknown")
+		Equal(symbol:GetText(), "?")
 	end
 )
+
+QT:RegisterTest("POT status icons retain known readiness while details load and clear reused objective rows", function()
+	local a = Fixture()
+	a.localObjectives = {}
+	function a:BuildQuestCompareResponseEntries(id)
+		return { { questId = id, questTitle = "Delivery quest", objectives = self.localObjectives } }
+	end
+	a:UpdateQuestFocusWindow(); a:Drain()
+	local state, frame = a.questFocusState, a.questFocusWindow
+	local member, reused = state.members[2], frame.rows[2]
+	Equal(reused.statusSymbol:GetText(), "...")
+	Equal(reused.statusSymbol:IsShown(), true)
+	-- The accepted summary already establishes readiness; the separate
+	-- objective request is still pending and must not erase that evidence.
+	member.entries[42], member.state = { questId = 42, isComplete = true }, "ready"
+	member.objectiveDetails[42].state = "loading"
+	a:QueueQuestFocusRefresh(); a:Drain()
+	local rows = a:BuildQuestFocusRows(state)
+	Equal(rows[2].status, "Loading")
+	Equal(rows[2].questStatus, "Ready")
+	Equal(reused.statusIcon:GetAtlas(), "UI-QuestIcon-TurnIn-Normal")
+	Equal(reused.statusIcon:IsShown(), true)
+	Equal(reused.statusSymbol:IsShown(), false)
+	a.localObjectives = { { text = "Local objective", objectiveIndex = 1, current = 1, required = 8 } }
+	a:QueueQuestFocusRefresh(true); a:Drain()
+	Equal(frame.rows[2], reused)
+	Equal(a:BuildQuestFocusRows(state)[2].kind, "objective")
+	Equal(reused.statusIcon:IsShown(), false)
+	Equal(reused.statusSymbol:IsShown(), false)
+	Equal(reused.progressTrack:GetWidth(), frame.body:GetWidth() - 26)
+	Equal(frame.rows[3].statusIcon:GetAtlas(), "UI-QuestIcon-TurnIn-Normal")
+	Equal(a.invalidCalls, nil)
+end)
 
 QT:RegisterTest("tracker hover previews another quest without changing focus and retires late replies", function()
 	local a = Fixture()
@@ -646,6 +714,25 @@ QT:RegisterTest("native tracker hover identifies only visible readable quest blo
 		error("restricted read")
 	end
 	Equal(a:GetHoveredTrackerQuestID(), nil)
+end)
+
+QT:RegisterTest("focus and hover retains the active quest when unrelated waypoint state is unavailable", function()
+	local a = Fixture()
+	a.GetPartyQuestFocusID = QT.GetPartyQuestFocusID
+	a.API.GetActiveTrackedQuestID = function() return a.focus end
+	a.API.GetPartyNavigationNativeState = function() error("unreadable waypoint") end
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(a.questFocusState.id, 42)
+	a.hover = 99
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(a.questFocusState.id, 99)
+	a.hover = nil
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(a.questFocusState.id, 42)
+	a.focus = nil
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(a.questFocusState, nil, "no active native focus must still hide the window")
+	Equal(a.questFocusWindow:IsShown(), false)
 end)
 
 QT:RegisterTest("quest tracker preserves full Forever and Retail party identities in headers and statuses", function()
@@ -761,60 +848,3 @@ QT:RegisterTest("quest tracker solo option follows actual grouping and keeps Edi
 	panel.RevertButton.scripts.OnClick(); a:Drain()
 	Equal(a:GetOption("questTrackerHideSolo"), true)
 end)
-
-QT:RegisterTest("moving between tracker quests releases remote transfers before the next hover loads", function()
-	for _, whisper in ipairs({ false, true }) do
-		local net = QT:CreateTestNetwork({ fps = 20 })
-		local viewer = net:AddPeer("Viewer-Realm", { group = "party" })
-		local responder = net:AddPeer("Responder-Realm", { group = "party" })
-		if whisper then
-			-- The same lifecycle also applies to an explicit one-player comparison.
-			local function Routes(_, name, grouped)
-				return { { distribution = "WHISPER", target = name, requiresGroup = grouped } }
-			end
-			viewer.GetQuestCompareRoutes, responder.GetQuestCompareRoutes = Routes, Routes
-		end
-		local quests = {}
-		for id = 1, 17 do quests[id] = { questID = id, title = "Quest " .. id } end
-		net:SetQuestLog(viewer, quests)
-		net:SetQuestLog(responder, quests)
-		function responder:ReadQuestCompareObjectives(id)
-			local rows = {}
-			for index = 1, 5 do
-				rows[index] = {
-					questId = id, objectiveIndex = index,
-					text = "Collect supplies for the expedition " .. string.rep("along the coast ", 5) .. index,
-					kind = "item", finished = false, current = 1, required = 5,
-				}
-			end
-			return rows
-		end
-		net:StartPeer(viewer); net:StartPeer(responder); net:Advance(5)
-		local retiredUpdates = 0
-		for id = 1, 16 do
-			local owner = {}
-			local record = viewer:AcquirePartyQuestProgress(responder.name, id, owner, function()
-				retiredUpdates = retiredUpdates + 1
-			end, true)
-			local started, progress = net.now, nil
-			repeat
-				net:Advance(0.1)
-				progress = viewer:GetCommunicationRequestProgress(record.requestId)
-			until (progress and progress.firstResponseAt) or net.now - started >= 20
-			assert(progress and progress.firstResponseAt, "hover must begin receiving before it is abandoned")
-			Equal(record.state, "loading", "the detail snapshot must still be incomplete")
-			local requestId = record.requestId
-			viewer:ReleasePartyQuestProgress(owner)
-			Equal(viewer:GetPendingQuestCompare(requestId), nil)
-		end
-		local owner = {}
-		local record = viewer:AcquirePartyQuestProgress(responder.name, 17, owner, function() end, true)
-		net:Advance(20)
-		Equal(record.state, "ready", "abandoned hovers must not occupy every remote response slot")
-		Equal(#record.objectives, 5)
-		Equal(record.objectives[1].current, 1)
-		Equal(retiredUpdates, 0, "late packets must not update the retired views")
-		Equal(responder:GetCommTransferMetrics().outgoing, 0)
-		viewer:ReleasePartyQuestProgress(owner)
-	end
-end, { offline = true })

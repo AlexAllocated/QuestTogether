@@ -254,6 +254,9 @@ local livePhaseState = {
 local liveTargetState = { button = { Hide = RejectEngineCall("live target button") } }
 QuestTogether.playerPhaseState = livePhaseState
 QuestTogether.locationTargetState = liveTargetState
+local livePartySync = { members = { ["LivePeer-Realm"] = { entries = {}, objectiveDetails = {} } } }
+QuestTogether.partyQuestSyncState = livePartySync
+QuestTogether.partyQuestProgressNextRequest = 999999
 
 local function CheckLiveStructuredStores()
 	assert(QuestTogether.playerPhaseState == livePhaseState, "phase owner replaced by test fixture")
@@ -262,6 +265,8 @@ local function CheckLiveStructuredStores()
 		"live phase request changed by fixture"
 	)
 	assert(QuestTogether.locationTargetState == liveTargetState, "target owner replaced by test fixture")
+	assert(QuestTogether.partyQuestSyncState == livePartySync, "party sync owner replaced by test fixture")
+	assert(QuestTogether.partyQuestProgressNextRequest == 999999, "party pacing changed by test fixture")
 end
 
 -- Exercise the same controller and QT-owned isolation used by the live command.

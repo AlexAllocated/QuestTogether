@@ -538,6 +538,8 @@ function QT:CreateTestNetwork(options)
 			"RenderPartyQuestCompare",
 			"GetQuestFocusEditManager",
 			"GetHoveredTrackerQuestID",
+			"UpdatePartyQuestFocusIndicators",
+			"RefreshPartyQuestFocusIndicatorGeometry",
 		}) do
 			peer[method] = Noop
 		end

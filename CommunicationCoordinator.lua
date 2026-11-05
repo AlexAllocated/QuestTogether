@@ -852,7 +852,9 @@ local function DispatchOperation(self, frame, data, sender, context)
 		end
 		self:RecordAnnouncementLatency(event)
 		self:RecordQTPlayerPresence(sender, true)
-		self:ObservePartyQuestProgress(event, sender, context)
+		if self:ObservePartyQuestProgress(event, sender, context) then
+			self:ObservePartyQuestSyncEvent(event, sender, context)
+		end
 		self:HandleAnnouncementEvent(event, false)
 		return true
 	end
@@ -1216,6 +1218,7 @@ end
 function QT:EndCommsWorldSession(preserveVerifiedPeers)
 	self:ResetQuestFocusWindow()
 	self:CancelPartyQuestObjectiveRequests(rawget(self, "partyQuestCompareSession"))
+	self:ResetPartyQuestSync()
 	self:ResetPartyQuestProgress()
 	self:ResetLocalizedQuestTitles()
 	return self:EndCommunicationSession(preserveVerifiedPeers)
@@ -1223,7 +1226,8 @@ end
 function QT:ResumeCommsWorldSession()
 	local result = self:ResumeCommunicationSession()
 	local session = rawget(self, "partyQuestCompareSession")
-	for _, member in ipairs(session and session.members or {}) do self:LoadPartyQuestObjectives(member) end
+	self:UpdatePartyQuestSync()
+	if session then self:RefreshPartyQuestCompare(nil, nil, true) end
 	return result
 end
 function QT:FlushGeographicDeparture()

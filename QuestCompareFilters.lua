@@ -163,8 +163,10 @@ function QT:ShowPartyQuestCompareFilters(owner)
 			end
 		end
 		root:CreateDivider()
-		root:CreateCheckbox(L("Auto-refresh while open"), function() return self:GetOption("compareAutoRefresh") == true end,
-			function() self:SetOption("compareAutoRefresh", not self:GetOption("compareAutoRefresh")) end)
+		if not self:IsPartyQuestCompareBackgroundSynced(session) then
+			root:CreateCheckbox(L("Auto-refresh while open"), function() return self:GetOption("compareAutoRefresh") == true end,
+				function() self:SetOption("compareAutoRefresh", not self:GetOption("compareAutoRefresh")) end)
+		end
 
 		root:CreateButton(L("Reset filters"), function()
 			if self.partyQuestCompareSession == session then

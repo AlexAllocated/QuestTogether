@@ -199,6 +199,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		"ResetPartyQuestCompareFilters",
 		"GetPartyQuestCompareFilterLabel",
 		"ShowPartyQuestCompareFilters",
+		"IsPartyQuestCompareBackgroundSynced",
 		"FilterPartyQuestCompareRows",
 		"GetPartyQuestCompareColumns",
 		"SetPartyQuestColumnCollapsed",

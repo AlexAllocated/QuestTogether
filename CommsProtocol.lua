@@ -123,6 +123,8 @@ local requestFields = {
 	F("knownRevision", S, 64),
 	F("partyOnly", B),
 	F("historyQuestIds", "QCID[]", 32),
+	-- Optional scheduling hint; older generation-2 peers ignore unknown fields.
+	F("background", B),
 }
 Add("QCMP", "request", "control", requestFields, { responses = { QCRS = true }, lifetime = 180 })
 Add("QCID", "record", "bulk", { F("questId", N, nil, true) })

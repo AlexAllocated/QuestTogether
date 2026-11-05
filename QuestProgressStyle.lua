@@ -3,6 +3,47 @@ local CORNER_RADIUS = 6
 local CORNER_FILL = "Interface\\AddOns\\QuestTogether\\Media\\PanelCornerFill"
 local CORNER_BORDER = "Interface\\AddOns\\QuestTogether\\Media\\PanelCornerBorder"
 local CORNER_UV = { { 0, 0.5, 0, 0.5 }, { 0.5, 1, 0, 0.5 }, { 0, 0.5, 0.5, 1 }, { 0.5, 1, 0.5, 1 } }
+local STATUS_SYMBOLS = { Missing = "-", Absent = "?", Loading = "...", Unknown = "?" }
+
+local function SetAtlas(texture, atlas, fallback)
+	-- Recycled textures must discard the previous atlas crop before changing art.
+	texture:SetTexCoord(0, 1, 0, 1)
+	local applied = false
+	if texture.SetAtlas then
+		local ok, result = pcall(texture.SetAtlas, texture, atlas)
+		applied = ok and result ~= false
+		if applied and texture.GetAtlas then
+			local readOK, current = pcall(texture.GetAtlas, texture)
+			applied = readOK and current == atlas
+		end
+	end
+	if not applied then
+		texture:SetTexture(fallback)
+		texture:SetTexCoord(0, 1, 0, 1)
+	end
+end
+
+local function ApplyQuestStatusIcon(row, status)
+	local icon, symbol = row.statusIcon, row.statusSymbol
+	icon:Hide()
+	symbol:Hide()
+	if not status then return end
+	icon:SetVertexColor(1, 1, 1, 1)
+	icon:SetTexCoord(0, 1, 0, 1)
+	if status == "Have" then
+		SetAtlas(icon, "Quest-In-Progress-Icon-yellow", "Interface\\QuestFrame\\UI-Quest-BulletPoint")
+	elseif status == "Ready" then
+		SetAtlas(icon, "UI-QuestIcon-TurnIn-Normal", "Interface\\GossipFrame\\ActiveQuestIcon")
+	elseif status == "Completed" then
+		icon:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
+	else
+		-- The same plain symbols as compact PQL cells; no font-dependent glyphs.
+		symbol:SetText(STATUS_SYMBOLS[status] or "?")
+		symbol:Show()
+		return
+	end
+	icon:Show()
+end
 local function ShowPanel(region, shown)
 	region.panelShown = shown
 	region[shown and "Show" or "Hide"](region)
@@ -222,6 +263,8 @@ local function LayoutProgressBar(row, data, dark, x, y, width)
 end
 
 _G.QuestTogether.QuestProgressStyle = {
+	SetAtlas = SetAtlas,
+	ApplyQuestStatusIcon = ApplyQuestStatusIcon,
 	ShowPanel = ShowPanel,
 	LayoutPanel = LayoutPanel,
 	ColorPanel = ColorPanel,

@@ -5,6 +5,7 @@ local UPDATE_INTERVAL = 0.2
 -- sample with nearby streams; never retain it across frames or privacy changes.
 function QT:UpdatePlayerCommunications()
 	self:UpdatePlayerDetailsInterests()
+	self:UpdatePartyQuestSync()
 	self:UpdatePartyQuestCompareFreshness()
 	self:UpdateQuestFocusWindow()
 	self:UpdatePartyQuestProgress()
@@ -57,6 +58,7 @@ function QT:InitializeRuntimeCoordinator()
 		-- The minimap camera moves every frame even when every peer stands still.
 		self:RefreshMinimapLocationGeometry()
 		self:UpdatePlayerLocationHover()
+		self:RefreshPartyQuestFocusIndicatorGeometry()
 		local step = self:SafeToNumber(delta) or 0
 		if step < 0 or step > 1000 then
 			step = 0
@@ -67,6 +69,7 @@ function QT:InitializeRuntimeCoordinator()
 		end
 		elapsed = 0
 		self:UpdatePartyNavigation()
+		self:UpdatePartyQuestFocusIndicators()
 		self:RefreshQuestTogetherMapControl()
 		self:RefreshPartyWaypointPins()
 		self:UpdatePlayerCommunications()
@@ -82,7 +85,9 @@ end
 function QT:ResetRuntimeCoordinator()
 	self:HideQuestTogetherMapControl()
 	self:ResetPartyNavigation()
+	self:ResetPartyQuestFocusIndicators()
 	self:ResetQuestFocusWindow()
+	self:ResetPartyQuestSync()
 	self.questFocusEditing, self.questFocusEditBaseline = nil, nil
 	self:ResetPartyQuestProgress()
 	self:HideChatLogPlayerTooltip()

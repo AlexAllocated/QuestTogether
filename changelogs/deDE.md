@@ -4,16 +4,18 @@
 
 ## 8.2.0
 
-Du folgst dem Questfokus deines Gruppenmitglieds weiter, auch wenn dir die passende Quest noch fehlt.
+Questdaten der Gruppe werden jetzt auch im Hintergrund aktualisiert. Neue Anzeigen machen Questfokus und Status leichter erkennbar.
 
-### Beim Folgen auf gemeinsame Quests warten
+### Questdaten der Gruppe
 
-- Mit „Questfokus folgen“ kannst du einem Gruppenmitglied auch ohne gemeinsame Quest folgen. Ihr benötigt beide QT, und das Gruppenmitglied muss seinen Questfokus teilen.
-- Fehlt dir die aktive Quest des Gruppenmitglieds, bleibt das Folgen nun bestehen. Das Gruppenquestlog zeigt „Warte auf eine gemeinsame Quest“, deine aktuelle Navigation bleibt erhalten und der bisherige Hinweisdialog entfällt.
-- Sobald das Gruppenmitglied eine Quest auswählt, die du ebenfalls hast, oder du seine bereits ausgewählte Quest annimmst, wird der Questfokus automatisch wieder synchronisiert. Du musst „Questfokus folgen“ nicht erneut auswählen.
-- Automatische Fokuswechsel beim Annehmen oder Abgeben von Quests beenden das Folgen während der Wartezeit nicht. Wie bisher merkt sich QT das gefolgte Gruppenmitglied pro Charakter über das Neuladen der Benutzeroberfläche hinweg und wartet danach auf aktuelle Gruppendaten.
+- In Gruppen mit bis zu fünf Spielern aktualisiert QT Questlisten und Ziele auch dann, wenn das Gruppenquestlog geschlossen und die Gruppen-Zielverfolgung ausgeblendet ist. Die Daten erscheinen nach und nach; Verzögerungen bei der Nachrichtenübertragung im Spiel bleiben möglich.
+- Ihr müsst den Mauszeiger nicht mehr auf einer Quest lassen, bis die Gruppendaten geladen sind. Die Abfrage läuft weiter, und bereits empfangener Fortschritt bleibt beim erneuten Anzeigen verfügbar.
 
-> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tipp: Öffne /qt pql, dann das Spielermenü eines Gruppenmitglieds und wähle „Questfokus folgen“. Mit „Nicht mehr folgen“ beendest du das Folgen.
+### Questfokus und Status
+
+- Punkte in Klassenfarben neben den Questtiteln in Blizzards Zielverfolgung zeigen, welche Quests eure Gruppenmitglieder im Fokus haben. Das funktioniert unabhängig davon, ob ihr jemandem folgt.
+- In der Gruppen-Zielverfolgung zeigen Symbole bei jedem Spieler, ob eine Quest aktiv, zur Abgabe bereit oder bereits abgeschlossen ist. Für ausstehende und unbekannte Daten gibt es eigene Anzeigen. Ein bekannter Abgabestatus bleibt sichtbar, während Zieldetails nachgeladen werden.
+- Im Modus „Fokus und Mauszeiger“ verschwindet die fokussierte Quest nicht mehr, nur weil sich davon unabhängige Wegpunktdaten nicht auslesen lassen.
 
 ## 8.1.2
 

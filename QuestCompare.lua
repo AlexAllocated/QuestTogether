@@ -51,11 +51,11 @@ end
 
 function QuestTogether:UpdatePartyQuestMemberEntry(member, questId, entry)
 	local previous = member.entries[questId]
-	local sameSummary = previous
+	local sameSummary = (previous == nil and entry == nil) or (previous
 		and entry
 		and (previous.questTitle or "") == (entry.questTitle or "")
 		and (previous.isComplete == true) == (entry.isComplete == true)
-		and previous.isPushable == entry.isPushable
+		and previous.isPushable == entry.isPushable)
 	local entries = {}
 	for id, value in pairs(member.entries) do
 		entries[id] = value
@@ -72,13 +72,14 @@ function QuestTogether:CancelPartyQuestCompare()
 	self.partyQuestCompareSession = nil
 	for _, member in ipairs(session and session.members or {}) do
 		self:CancelPartyQuestCompletionRequest(member)
-		if member.requestId and self.pendingQuestCompareRequests then
+		if not member.syncOwned and member.requestId and self.pendingQuestCompareRequests then
 			self.pendingQuestCompareRequests[member.requestId] = nil
 		end
 	end
 end
 
 function QuestTogether:CancelIgnoredPlayerQuestCompare()
+	self:UpdatePartyQuestSync()
 	local state = self.partyQuestShareState
 	local removedIncoming = false
 	for key, request in pairs(state and state.incoming or {}) do
@@ -122,6 +123,15 @@ function QuestTogether:CancelIgnoredPlayerQuestCompare()
 			member.objectiveDetails = {}
 			self:SetPartyQuestMemberSnapshot(member, nil)
 			member.state, member.supportsShareRequests = "unavailable", nil
+		end
+	end
+	-- Unignoring creates a fresh membership lifetime. Reattach the view to that
+	-- new record rather than resurrecting its retired cached snapshot.
+	for _, member in ipairs(session.members) do
+		local current = self:GetPartyQuestSyncMember(member.name)
+		if current and current ~= member then
+			self:RefreshPartyQuestCompare(nil, nil, true)
+			return
 		end
 	end
 	self:QueuePartyQuestCompareRender()
@@ -177,7 +187,7 @@ function QuestTogether:OpenPartyQuestCompare(preferredName)
 	-- Opening the party view explicitly leaves a previous two-player session.
 	self:CancelPartyQuestCompare()
 	self:RefreshPartyRoster()
-	if not self:RefreshPartyQuestCompare(preferredName) then
+	if not self:RefreshPartyQuestCompare(preferredName, nil, true) then
 		return false
 	end
 	self.partyQuestCompareWindow:Show()
@@ -206,7 +216,7 @@ function QuestTogether:OpenPlayerQuestCompare(name)
 	end
 	self:CancelPartyQuestCompare()
 	self:RefreshPartyRoster()
-	if not self:RefreshPartyQuestCompare(nil, targetName) then
+	if not self:RefreshPartyQuestCompare(nil, targetName, true) then
 		return false
 	end
 	self.partyQuestCompareWindow:Show()
@@ -228,6 +238,7 @@ function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName, condi
 	if not self.isEnabled then
 		return false
 	end
+	self:UpdatePartyQuestSync()
 	local ownName = PlayerName(self)
 	if not ownName then
 		return false
@@ -243,6 +254,7 @@ function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName, condi
 		mode = targetName and "target" or "party",
 		targetName = targetName,
 		expandedQuestIds = previous and previous.expandedQuestIds or {},
+		objectiveOwner = {},
 		search = previous and previous.search or "",
 	}
 	self.partyQuestCompareSession = session
@@ -260,9 +272,10 @@ function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName, condi
 		end
 	end
 	for _, name in ipairs(names) do
-		local member = { name = name, entries = {}, state = "loading", isLocal = name == ownName }
+		local shared = self:GetPartyQuestSyncMember(name)
+		local member = shared or { name = name, entries = {}, state = "loading", isLocal = name == ownName }
 		local prior = previous and previous.byName[member.name]
-		if prior then
+		if prior and not shared then
 			self:SetPartyQuestMemberSnapshot(member, prior.entries, prior.revision, prior.sampledAt)
 		end
 		member.classFile = member.isLocal and self:GetPlayerClassFile() or self:GetGroupedSenderClassFile(name)
@@ -312,6 +325,12 @@ function QuestTogether:RefreshPartyQuestCompareMember(name, conditional)
 	if member.isLocal then
 		self:RefreshLocalPartyQuestCompare()
 		return true
+	end
+	if member.syncOwned then
+		local sent = self:RefreshPartyQuestSyncMember(name, not conditional)
+		self:LoadPartyQuestObjectives(member)
+		self:QueuePartyQuestCompareRender()
+		return sent
 	end
 	if member.requestId and self.pendingQuestCompareRequests then
 		self.pendingQuestCompareRequests[member.requestId] = nil
@@ -377,6 +396,29 @@ function QuestTogether:RefreshPartyQuestCompareMember(name, conditional)
 	return sent == true
 end
 
+function QuestTogether:IsPartyQuestCompareBackgroundSynced(session)
+	if not session then return false end
+	for _, member in ipairs(session.members) do
+		if not member.isLocal and (not member.syncOwned or self:GetPartyQuestSyncMember(member.name) ~= member) then return false end
+	end
+	return true
+end
+
+function QuestTogether:ReconcilePartyQuestCompareSources()
+	local session = rawget(self, "partyQuestCompareSession")
+	local communication = rawget(self, "communicationState")
+	if not session or not self.isEnabled or self.isLoggingOut or (communication and communication.departing) then return end
+	for _, member in ipairs(session.members) do
+		if not member.isLocal then
+			local current = self:GetPartyQuestSyncMember(member.name)
+			if (current and current ~= member) or (member.syncOwned and not current) then
+				self:RefreshPartyQuestCompare(nil, nil, true)
+				return
+			end
+		end
+	end
+end
+
 function QuestTogether:UpdatePartyQuestCompareFreshness()
 	local session, frame = rawget(self, "partyQuestCompareSession"), rawget(self, "partyQuestCompareWindow")
 	if
@@ -399,7 +441,7 @@ function QuestTogether:UpdatePartyQuestCompareFreshness()
 		end
 	end
 	if
-		self:GetOption("compareAutoRefresh")
+		not self:IsPartyQuestCompareBackgroundSynced(session) and self:GetOption("compareAutoRefresh")
 		and now - (session.refreshedAt or now) >= 30
 		and not self:IsWorkBlocked("quest_snapshot_refresh")
 	then
@@ -476,8 +518,9 @@ function QuestTogether:GetPartyQuestLeaderName()
 end
 
 function QuestTogether:OnPartyQuestRosterChanged()
+	self:UpdatePartyQuestSync()
 	if self.partyQuestCompareSession then
-		self:RefreshPartyQuestCompare()
+		self:RefreshPartyQuestCompare(nil, nil, true)
 	end
 	local state = self.partyQuestShareState
 	for key, request in pairs(state and state.incoming or {}) do

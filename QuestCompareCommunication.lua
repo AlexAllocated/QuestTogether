@@ -310,6 +310,7 @@ function QuestTogether:RequestQuestCompare(speakerName, receiver)
 		historyQuestIds = receiver and receiver.historyQuestIds,
 		requiresGroup = routes[1] and routes[1].requiresGroup,
 		classFile = self:GetGroupedSenderClassFile(target),
+		background = receiver and receiver.background == true,
 	}
 	if
 		receiver
@@ -362,7 +363,9 @@ function QuestTogether:RequestQuestCompare(speakerName, receiver)
 		knownRevision = pending.knownRevision,
 		partyOnly = pending.requiresGroup == true,
 		historyQuestIds = pending.historyQuestIds,
-	}, routes, { owner = pending, isCurrent = Active, onExpire = Expire })
+		background = pending.background or nil,
+	}, routes, { owner = pending, isCurrent = Active, onExpire = Expire,
+		priority = pending.background and "background" or nil })
 	if not ok then
 		self.pendingQuestCompareRequests[id] = nil
 		return false
@@ -465,6 +468,7 @@ function QuestTogether:ProgressQuestCompareResponses(now)
 					self:GetQuestCompareRoutes(job.targetName, job.requiresGroup),
 					{
 						owner = job,
+						priority = job.data.background and "background" or nil,
 						startedAt = job.startedAt,
 						expires = job.expiresAt,
 						isCurrent = function()

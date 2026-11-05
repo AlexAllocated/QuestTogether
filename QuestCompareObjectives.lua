@@ -1,8 +1,8 @@
 local QT = _G.QuestTogether
 local L = QT.Translate
 
--- Detail snapshots are requested only for the expanded quest. Keep them separate
--- from the ownership snapshot: a partial detail reply cannot certify a quest log.
+-- Views subscribe to the shared detail cache. A partial detail reply cannot
+-- certify the complete ownership snapshot.
 function QT:CleanQuestCompareObjectiveText(value)
 	local text = self:SafeTrimString(value, "")
 	text = text:gsub("|H.-|h(.-)|h", "%1"):gsub("|[TA].-|[ta]", "")
@@ -93,10 +93,10 @@ end
 
 function QT:CancelPartyQuestObjectiveRequests(session, questId)
 	for _, member in ipairs(session and session.members or {}) do
-		self:ReleasePartyQuestProgress(member, questId)
-		for id in pairs(member.objectiveDetails or {}) do
-			if not questId or id == questId then
-				member.objectiveDetails[id] = nil
+		self:ReleasePartyQuestProgress(member.syncOwned and session.objectiveOwner or member, questId)
+		if not member.syncOwned then
+			for id in pairs(member.objectiveDetails or {}) do
+				if not questId or id == questId then member.objectiveDetails[id] = nil end
 			end
 		end
 	end
@@ -116,7 +116,7 @@ function QT:LoadPartyQuestObjectives(member)
 	member.objectiveDetails = member.objectiveDetails or {}
 	local ids = {}
 	for id in pairs(session.expandedQuestIds or {}) do
-		if member.entries[id] and not member.objectiveDetails[id] then
+		if member.entries[id] then
 			ids[#ids + 1] = id
 		end
 	end
@@ -138,7 +138,8 @@ function QT:LoadPartyQuestObjectives(member)
 			self:QueuePartyQuestCompareRender()
 		end
 		local detail =
-			self:AcquirePartyQuestProgress(member.name, id, member, Updated, session.mode == "party", Current)
+			self:AcquirePartyQuestProgress(member.name, id, member.syncOwned and session.objectiveOwner or member,
+				Updated, session.mode == "party" or member.syncOwned, Current)
 		if detail then
 			member.objectiveDetails[id] = detail
 			Updated(detail)
@@ -250,6 +251,11 @@ function QT:AppendPartyQuestObjectiveRows(rows, member, questId)
 			)
 			or notice and L(notice),
 		status = notice,
+		-- Quest ownership/readiness is separate from detail-fetch status. Keep
+		-- known readiness visible while objective rows are still being fetched.
+		questStatus = (notice == "Ready" or notice == "Completed" or notice == "Missing") and notice
+			or (entry and (entry.isComplete and "Ready" or "Have"))
+			or self:GetPartyQuestAbsenceState(member, questId),
 	}
 	if not notice or (detail and detail.notice == "Ready" and not detail.pendingMilestone and detail.objectives) then
 		for _, objective in ipairs(detail.objectives) do

@@ -23,9 +23,9 @@ Settings names in this guide use the English labels; the addon follows your game
 
 Left-click the minimap icon or type **`/qt pql`**. Read quests down the rows and players across the class-colored columns. The combined list includes quests you do not have.
 
-Click **Refresh** to request current party information. The text beneath each player’s name shows the age or availability of their information; your own column follows your local quest log.
+In parties of up to five players, QT automatically keeps quest lists and objectives updated in the background, even when Party Quest Log is closed and the party objective tracker is hidden. Information fills in progressively as it arrives. Click **Refresh** to request an update now. The text beneath each player’s name shows the age or availability of their information; your own column follows your local quest log.
 
-To compare with one reachable QT player outside your party, open their menu from a map dot or linked name in QT chat and choose **Compare Quests**.
+For an optional private comparison with one reachable QT player outside your party, open their menu from a map dot or linked name in QT chat and choose **Compare Quests**.
 
 [![Party Quest Log overview](https://media.forgecdn.net/attachments/2055/231/party-quest-log-overview-png.png)](https://media.forgecdn.net/attachments/2055/231/party-quest-log-overview-png.png)
 
@@ -57,7 +57,7 @@ The book button beside a quest you own opens it in WoW’s quest log. Round focu
 ### Refresh and arrange columns
 
 - Open a player’s heading menu and choose **Refresh this player** to update that player alone.
-- Enable **Filters → Auto-refresh while open** for periodic requests while the window is open. It starts off.
+- For comparisons outside a small party, enable **Filters → Auto-refresh while open** for periodic requests while the window is open. It starts off; small-party comparisons update automatically in the background.
 - Choose **Collapse player column** from a heading menu, then **Expand player column** to restore it. **Restore all player columns** restores every column.
 - Move or resize the window as needed. Scroll vertically through quests and horizontally when the player columns exceed the available width.
 
@@ -161,6 +161,8 @@ A **likely different layer** indication is an estimate, not a confirmed phase ID
 Quest focus is the quest currently selected for navigation. This feature works in parties of up to five, including dungeon groups, and does not extend to raids.
 
 Leave **Groups & Sharing → Share my focused quest** enabled if you want party members to see and follow your selection. It starts enabled and works independently of public location sharing.
+
+Class-colored dots beside quest titles in Blizzard’s Objective Tracker show which quests your party members have focused. Each dot represents one member, and they appear whether or not you are following anyone.
 
 To follow a party member:
 

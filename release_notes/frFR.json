@@ -1,21 +1,23 @@
 {
-  "source_sha256": "9ba44b5fd585d9f04a02ce8cd7902c09f59f595a4ea070ae0d2639a0ea87e7ac",
+  "source_sha256": "e43e4e37f128d87bb9b8d4893790181e13f83c39ce74bcd79c29c294be6c5462",
   "notes": {
     "version": "8.2.0",
-    "welcome": "Le suivi de la quête active reste en place même si cette quête manque encore dans votre journal.",
+    "welcome": "Les données de quêtes du groupe se mettent à jour en arrière-plan, avec de nouveaux repères pour le ciblage et l’état des quêtes.",
     "sections": [
       {
-        "title": "Un suivi qui attend les quêtes communes",
+        "title": "Données du groupe",
         "items": [
-          "Vous pouvez choisir « Suivre la quête active » dans le menu d’un membre du groupe, même sans quête commune. Vous devez tous deux utiliser QT, et ce membre doit partager sa quête active.",
-          "Si sa quête active ne figure pas dans votre journal, le suivi est désormais conservé. Le Journal de quêtes du groupe affiche « En attente d’une quête commune », votre navigation actuelle reste inchangée et l’ancienne fenêtre d’avertissement ne s’ouvre plus.",
-          "La synchronisation reprend automatiquement dès que ce membre sélectionne une quête présente dans votre journal, ou dès que vous acceptez la quête qu’il suit déjà. Vous n’avez pas besoin de relancer le suivi.",
-          "Pendant cette attente, les changements automatiques de quête active lors de l’acceptation ou de la validation d’une quête n’interrompent plus le suivi. Comme auparavant, QT mémorise la personne suivie pour chaque personnage après un rechargement de l’interface, puis attend des données de groupe à jour."
-        ],
-        "tip": {
-          "label": "Astuce :",
-          "text": "Ouvrez /qt pql, puis le menu d’un membre du groupe et choisissez « Suivre la quête active ». Utilisez « Arrêter de suivre » pour mettre fin au suivi."
-        }
+          "Dans les groupes de cinq joueurs au maximum, QT actualise les listes de quêtes et leurs objectifs même si le Journal de quêtes du groupe est fermé et le Suivi des objectifs du groupe masqué. Les informations apparaissent au fil de leur réception ; les échanges dans le jeu peuvent encore subir des retards.",
+          "Vous pouvez quitter le survol d’une quête sans interrompre la récupération des données du groupe. La progression déjà reçue reste disponible lorsque vous revenez dessus."
+        ]
+      },
+      {
+        "title": "Ciblage et état des quêtes",
+        "items": [
+          "Des points aux couleurs des classes apparaissent près des titres dans le suivi des objectifs de Blizzard pour indiquer les quêtes ciblées par vos coéquipiers. Il n’est pas nécessaire de suivre leur ciblage.",
+          "Chaque joueur dispose désormais d’icônes dans le Suivi des objectifs du groupe : quête en cours, prête à rendre ou déjà terminée, ainsi que des indicateurs de chargement et d’état inconnu. Une quête connue comme prête à rendre conserve cette indication pendant le chargement des objectifs.",
+          "Correction du mode « Ciblage et survol » : une erreur de lecture des données de point de passage ne fait plus disparaître une quête pourtant ciblée."
+        ]
       }
     ]
   }

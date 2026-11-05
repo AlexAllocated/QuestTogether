@@ -29,8 +29,11 @@ QT:RegisterTest("party quest snapshots use group transport with repair and remai
 			end
 			return objectives
 		end
-		function other:HandleQuestCompareResponse() error("an unrelated group member installed a private response") end
-		local responseParts, routes, done, expired = {}, {}, 0, 0
+		local responseParts, routes, done, expired, requestId = {}, {}, 0, 0, nil
+		function other:HandleQuestCompareResponse(data, sender)
+			assert(data.requestId ~= requestId, "an unrelated group member installed a private response")
+			return QT.HandleQuestCompareResponse(self, data, sender)
+		end
 		local relevant = { QCMP = true, QCRS = true, FXEND = true, FXACK = true, FXMISS = true, FXSTAT = true }
 		net.sendRule = function(packet)
 			local frame = a:DecodeCommFrame(packet.wire)
@@ -45,21 +48,24 @@ QT:RegisterTest("party quest snapshots use group transport with repair and remai
 		end
 		net.deliveryRule = function(packet, receiver)
 			local frame = a:DecodeCommFrame(packet.wire)
-			if frame.operation == "QCRS" and receiver == a then
+			if frame.operation == "QCRS" and frame.requestId == requestId and receiver == a then
 				responseParts[frame.part] = (responseParts[frame.part] or 0) + 1
 				if frame.part == 2 and responseParts[2] == 1 then return { drop = true } end
 			end
 		end
-		assert(a:RequestQuestCompare(b.name, { objectiveQuestId = 42,
+		local accepted
+		accepted, requestId = a:RequestQuestCompare(b.name, { objectiveQuestId = 42,
 			onEntry = function(entry) Equal(#entry.objectives, 4); Equal(entry.objectives[4].current, 4) end,
-			onDone = function() done = done + 1 end, onTimeout = function() expired = expired + 1 end }))
+			onDone = function() done = done + 1 end, onTimeout = function() expired = expired + 1 end })
+		assert(accepted)
 		net:Advance(20)
 		Equal(done, 1, "snapshot must finish over " .. mode)
 		Equal(expired, 0)
 		Equal(responseParts[2], 2)
 		assert(#routes > 4)
 		for _, job in ipairs(b.commTransferState.outgoing) do
-			assert(job.operation ~= "QCRS", "acknowledged snapshot must release its repair copy")
+			assert(job.operation ~= "QCRS" or job.requestId ~= requestId,
+				"acknowledged snapshot must release its repair copy")
 		end
 	end
 end, { offline = true })
@@ -116,19 +122,25 @@ QT:RegisterTest("single packet group quest replies replay without rebuilding and
 	local net = QT:CreateTestNetwork({ fps = 20 })
 	local a = net:AddPeer("Alice-Realm", { group = "questers" })
 	local b = net:AddPeer("Bob-Realm", { group = "questers" })
-	local builds, done, dropped = 0, 0, false
-	function b:BuildRevisionedQuestCompareEntries() builds = builds + 1; return {} end
+	local builds, done, dropped, requestId = 0, 0, false, nil
+	function b:BuildRevisionedQuestCompareEntries(objectiveQuestId)
+		-- Count this request's read, not the independent background summaries.
+		if objectiveQuestId == 42 then builds = builds + 1 end
+		return {}
+	end
 	net:StartPeer(a); net:StartPeer(b)
 	net.deliveryRule = function(packet, receiver)
 		local frame = a:DecodeCommFrame(packet.wire)
-		if frame.operation == "QCRS" and receiver == a and not dropped then
+		if frame.operation == "QCRS" and frame.requestId == requestId and receiver == a and not dropped then
 			Equal(frame.total, 1)
 			dropped = true
 			return { drop = true }
 		end
 	end
-	assert(a:RequestQuestCompare(b.name, { onEntry = function() end,
-		onDone = function() done = done + 1 end, onTimeout = function() error("cached reply timed out") end }))
+	local accepted
+	accepted, requestId = a:RequestQuestCompare(b.name, { objectiveQuestId = 42, onEntry = function() end,
+		onDone = function() done = done + 1 end, onTimeout = function() error("cached reply timed out") end })
+	assert(accepted)
 	net:Advance(12)
 	assert(dropped)
 	Equal(done, 1)
@@ -615,11 +627,13 @@ QT:RegisterTest("network v2 completes party logs and a diagnostic report while m
 				.. " completion="
 				.. tostring(logsAt and logsAt - started)
 		)
-		Equal(#reports, 1)
+		Equal(#reports, 1, "diagnostic report must finish at " .. fps .. " FPS; snapshots=" .. snapshots
+			.. " pongs=" .. pongs .. " responderOutgoing=" .. responder:GetCommTransferMetrics().outgoing
+			.. " viewerIncoming=" .. viewer:GetCommTransferMetrics().incoming)
 		Equal(reports[1].text, report)
 		Equal(reports[1].sender, responder.name)
-		Equal(snapshots, 1)
-		Equal(pongs, 1)
+		Equal(snapshots, 1, "diagnostic snapshot must be sampled once")
+		Equal(pongs, 1, "diagnostic pong must complete")
 		for _, member in ipairs(viewer.partyQuestCompareSession.members) do
 			local count = 0
 			for _ in pairs(member.entries) do
@@ -692,13 +706,21 @@ QT:RegisterTest("native announcement receipt updates subscribed quest progress b
 	local net = QT:CreateTestNetwork({fps=20})
 	local a=net:AddPeer("Alice-Realm",{group="questers"})
 	local b=net:AddPeer("Bob-Realm",{group="questers"})
+	for _, peer in ipairs({ a, b }) do net:SetQuestLog(peer, { { questID = 42, title = "Bandanas" } }) end
+	local progress = 1
+	function b:ReadQuestCompareObjectives(id)
+		return { { questId = id, objectiveIndex = 1, text = "Bandanas: " .. progress .. "/8", kind = "item",
+			current = progress, required = 8, finished = false } }
+	end
 	net:StartPeer(a); net:StartPeer(b)
 	local updates, presented = 0, 0
 	function a:QueuePartyQuestCompareRender() updates=updates+1 end
-	local member={name=b.name,state="ready",entries={[42]={questId=42,questTitle="Bandanas"}},supportsObjectives=true}
-	a.partyQuestCompareSession={mode="party",members={member},byName={[b.name]=member},expandedQuestIds={[42]=true}}
-	a:LoadPartyQuestObjectives(member)
+	assert(a:RefreshPartyQuestCompare(nil, nil, true))
+	net:Advance(5)
+	a:TogglePartyQuestObjectives(42)
+	local member = a.partyQuestCompareSession.byName[b.name]
 	local record=member.objectiveDetails[42]
+	Equal(record.objectives[1].current, 1)
 	function a:HandleAnnouncementEvent(event)
 		-- This is where chat option checks, title waits and bubbles start.
 		Equal(record.objectives[1].current,7)
@@ -706,6 +728,7 @@ QT:RegisterTest("native announcement receipt updates subscribed quest progress b
 	end
 	local data={eventType="QUEST_PROGRESS",senderName=b.name,classFile="MAGE",questId="42",
 		text="Bandanas: 7/8",occurredAt=100,eventFacts=b:BuildAnnouncementFacts("QUEST_PROGRESS",1,"item",false,7,8)}
+	progress = 7
 	assert(b:Emit("ANN",data,{{distribution="PARTY",requiresGroup=true}}))
 	net:Advance(5)
 	Equal(presented,1)
@@ -715,6 +738,10 @@ QT:RegisterTest("native announcement receipt updates subscribed quest progress b
 	Equal(member.objectiveDetails[42],nil)
 	Equal(a.partyQuestProgress,nil)
 	a:ResumeCommsWorldSession()
-	assert(member.objectiveDetails[42] and member.objectiveDetails[42] ~= record)
-	assert(a:HasPendingPartyQuestProgress(member))
+	local current = a.partyQuestCompareSession.byName[b.name]
+	assert(current ~= member, "world resume must bind views to the new party lifetime")
+	net:Advance(10)
+	assert(current.objectiveDetails[42] and current.objectiveDetails[42] ~= record)
+	Equal(current.objectiveDetails[42].state, "ready")
+	Equal(current.objectiveDetails[42].objectives[1].current, 7)
 end)

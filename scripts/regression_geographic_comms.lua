@@ -1854,8 +1854,11 @@ local function EntryPackets(a, first)
 	return count
 end
 
-local function ObjectiveRevisionNetwork()
-	local peers, advance = RevisionNetwork(2, 1)
+local function ObjectiveRevisionNetwork(party)
+	-- Certificate/row reconciliation also applies to private comparisons. Keep
+	-- those focused tests outside a party so unrelated proactive sync cannot
+	-- replace their deliberately constructed view or add requests to its counts.
+	local peers, advance = (party and RevisionNetwork or CommunicationNetwork)(2, 1)
 	local a, b = peers[1], peers[2]
 	b.quest = { questId = "1", questTitle = "Collect supplies", isComplete = false, isPushable = true }
 	b.progress = 1
@@ -1880,7 +1883,8 @@ local function ObjectiveRevisionNetwork()
 	function a:QueuePartyQuestCompareRender() end
 	local member = { name = b.name, entries = {}, state = "loading" }
 	a.partyQuestCompareSession = {
-		mode = "party",
+		mode = party and "party" or "target",
+		targetName = not party and b.name or nil,
 		members = { member },
 		byName = { [b.name] = member },
 		expandedQuestIds = {},
@@ -1904,17 +1908,17 @@ end
 
 -- Full crowd-capacity and multi-minute publication/recovery simulations run offline.
 QT:RegisterTest(
-	"party comparison auto refresh reacquires an ignored then unignored snapshot before reusing revisions",
+	"party background refresh reacquires an ignored then unignored snapshot before reusing revisions",
 	function()
-		local a, b, _, advance = ObjectiveRevisionNetwork()
+		local a, b, _, advance = ObjectiveRevisionNetwork(true)
 		a.runtimeStateStore = {}
 		a.API.IsWorldMapVisible = function()
 			return false
 		end
 		a.partyMemberOrder = { a.name, b.name }
-		a.db.profile.compareAutoRefresh = true
-		-- Only presentation is private. Exercise the real visible-window freshness
-		-- clock, whole-session refresh, ignore event, transport and reply callbacks.
+		a.db.profile.compareAutoRefresh = false
+		-- Drive the party refresh directly beside the real protocol clock. The
+		-- full runtime and hidden-window behavior are covered by party sync tests.
 		a.partyQuestCompareWindow = a:CreateTestUIRegion(a)
 		a.partyQuestCompareWindow.headerStatuses = {}
 		assert(a:RefreshPartyQuestCompare())
@@ -1925,8 +1929,8 @@ QT:RegisterTest(
 		local function AutoRefresh()
 			advance(31)
 			local previous = a.partyQuestCompareSession
-			a:UpdatePartyQuestCompareFreshness()
-			assert(a.partyQuestCompareSession ~= previous, "the visible-window auto refresh must replace its session")
+			a:UpdatePartyQuestSync()
+			assert(a.partyQuestCompareSession == previous, "background refresh must preserve the view and shared records")
 			advance(5)
 		end
 		local revision = Member().revision
@@ -2348,16 +2352,24 @@ QT:RegisterTest("requester world transitions settle real PQL member and objectiv
 		Equal(kind == "log" and member.state or detail.state, "loading")
 		a:EndCommsWorldSession()
 		a:ResumeCommsWorldSession()
-		advance(3)
+		a:UpdatePartyQuestSync()
+		advance(5)
+		a:UpdatePartyQuestSync()
+		advance(5)
+		a:UpdatePartyQuestProgress()
+		advance(5)
 		Equal(next(a.pendingQuestCompareRequests), nil)
+		local currentMember = a.partyQuestCompareSession.byName[b.name]
+		assert(currentMember ~= member, "world resume must attach a new party-data lifetime")
+		Equal(currentMember.state, "ready")
 		if kind == "log" then
 			Equal(member.state, "timeout")
 		else
 			Equal(detail.state, "unknown")
-			local current = member.objectiveDetails[1]
+			local current = currentMember.objectiveDetails[1]
 			assert(current and current ~= detail, "resume reacquires detail instead of retaining a retired record")
 			Equal(current.state, "ready")
-			Equal(a:HasPendingPartyQuestProgress(member), false)
+			Equal(a:HasPendingPartyQuestProgress(currentMember), false)
 		end
 	end
 end)

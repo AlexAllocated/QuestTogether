@@ -467,6 +467,16 @@
       "owned UI parent unavailable",
       "owned UI region unavailable"
     ],
+    "PartyFocusIndicators.lua": [
+      "ARTWORK",
+      "BOTTOMLEFT",
+      "CENTER",
+      "CLAMPTOBLACKADDITIVE",
+      "Frame",
+      "Hide",
+      "OVERLAY",
+      "Show"
+    ],
     "PartyJoin.lua": [
       "PARTY",
       "QJON",
@@ -792,6 +802,7 @@
       "BOTTOMLEFT",
       "BOTTOMRIGHT",
       "Button",
+      "CENTER",
       "Completed",
       "Frame",
       "Hide",
@@ -799,6 +810,7 @@
       "LEFT",
       "LOW",
       "Loading",
+      "MIDDLE",
       "Missing",
       "Not in log",
       "OVERLAY",
@@ -826,7 +838,10 @@
       "BACKGROUND",
       "BORDER",
       "BOTTOMLEFT",
+      "Completed",
+      "Have",
       "Hide",
+      "Ready",
       "Show",
       "TOPLEFT"
     ],

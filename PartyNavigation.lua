@@ -459,8 +459,10 @@ function QT:GetPartyQuestFocusID(name)
 		if self:IsRuntimeRestricted() then
 			return nil
 		end
-		local ok, native = pcall(self.API.GetPartyNavigationNativeState)
-		return ok and self:CanAccessTable(native) and Number(self, native.questID, -1, 1000000000) or nil
+		-- Local presentation needs only the active quest. An unreadable user
+		-- waypoint must not hide it by invalidating the combined wire snapshot.
+		local ok, questID = pcall(self.API.GetActiveTrackedQuestID)
+		return ok and Number(self, questID, 1, 1000000000) or nil
 	end
 	local peer = self:GetPartyNavigationPeer(name)
 	return peer and peer.questID or nil

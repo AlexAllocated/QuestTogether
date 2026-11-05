@@ -4,16 +4,18 @@
 
 ## 8.2.0
 
-El seguimiento de la misión activa se mantiene aunque todavía no tengas esa misión.
+Los datos de las misiones del grupo se actualizan en segundo plano, con nuevas señales para reconocer el enfoque y el estado de cada misión.
 
-### El seguimiento espera a que haya una misión en común
+### Datos de las misiones del grupo
 
-- Puedes elegir «Seguir misión activa» en el menú de un miembro del grupo sin tener misiones en común. Ambos debéis usar QT y ese jugador debe compartir su misión activa.
-- Si su misión activa no está en tu registro, el seguimiento ya no se cancela. El Registro de misiones del grupo muestra «Esperando una misión en común», conserva tu navegación actual y ya no abre el aviso de misión ausente.
-- La sincronización se reanuda automáticamente cuando ese jugador selecciona una misión que tienes o cuando aceptas la misión que ya tiene activa. No hace falta volver a elegir «Seguir misión activa».
-- Mientras esperas, los cambios automáticos de misión activa al aceptar o entregar misiones no cancelan el seguimiento. Como antes, QT recuerda a quién sigues por personaje al recargar la interfaz y espera a recibir información actualizada del grupo.
+- En grupos de hasta cinco jugadores, QT actualiza las listas de misiones y sus objetivos aunque el Registro de misiones del grupo esté cerrado y el Seguimiento de objetivos del grupo esté oculto. La información aparece a medida que llega; las comunicaciones del juego aún pueden sufrir retrasos.
+- Ya no hace falta mantener el cursor sobre una misión para que termine de llegar la información del grupo. La solicitud continúa y el progreso recibido se conserva para cuando vuelvas.
 
-> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Consejo: Abre /qt pql, entra en el menú de un miembro del grupo y elige «Seguir misión activa». Para terminar, selecciona «Dejar de seguir».
+### Enfoque y estado de las misiones
+
+- Los puntos con los colores de clase junto a los títulos del seguimiento de objetivos de Blizzard indican qué misiones tienen enfocadas los miembros del grupo. Se muestran aunque no estés siguiendo el enfoque de nadie.
+- El Seguimiento de objetivos del grupo incluye iconos de estado en la sección de cada jugador: misión en curso, lista para entregar o completada, además de indicadores de carga y estado desconocido. Si ya se sabe que una misión está lista para entregar, esa indicación se mantiene mientras llegan los detalles de sus objetivos.
+- Corregido un fallo de «Enfoque y cursor» que podía ocultar la misión enfocada si no se podían leer los datos de un punto de ruta independiente.
 
 ## 8.1.2
 
