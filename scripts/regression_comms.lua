@@ -1435,7 +1435,7 @@ local function ChannelNoticeFixture()
 	return addon
 end
 
-QuestTogether:RegisterTest("server channel refusal reaches error collectors once independently of chat windows and native success", function()
+QuestTogether:RegisterTest("server channel refusal stays in QT diagnostics independently of chat windows and native success", function()
 	local addon, completed = ChannelNoticeFixture(), 0
 	Equal(addon.eventFrame.events.CHAT_MSG_CHANNEL_NOTICE, true)
 	addon:InitializeTransport()
@@ -1455,7 +1455,7 @@ QuestTogether:RegisterTest("server channel refusal reaches error collectors once
 	Equal(#addon.reported, 0)
 	addon.now = addon.now + 0.25
 	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "7. QuestTogether", "QuestTogether")
-	Equal(#addon.reported, 1)
+	Equal(#addon.reported, 0)
 	Equal(addon.diagnosticErrorCount, 1)
 	local comms = addon:GetCommsDiagnostics()
 	Equal(comms.serverChannelRefusals, 1)
@@ -1463,10 +1463,10 @@ QuestTogether:RegisterTest("server channel refusal reaches error collectors once
 	Equal(comms.sentRoutes, 1)
 	Equal(comms.failedRoutes, nil) -- No packet identifier exists to correct this counter.
 	Equal(comms.lastFailure, "route=CHANNEL scope=global notice=NOT_ALLOWED_IN_CHANNEL")
-	assert(addon.reported[1]:find("communication", 1, true) or addon.reported[1]:find("Communication", 1, true))
-	assert(not addon.reported[1]:find("Private player identity", 1, true))
-	assert(not addon.reported[1]:find("private payload", 1, true))
-	assert(not addon.reported[1]:find("PING", 1, true))
+	assert(addon.diagnosticLastError:find("communication", 1, true) or addon.diagnosticLastError:find("Communication", 1, true))
+	assert(not addon.diagnosticLastError:find("Private player identity", 1, true))
+	assert(not addon.diagnosticLastError:find("private payload", 1, true))
+	assert(not addon.diagnosticLastError:find("PING", 1, true))
 	addon.now = addon.now + 10
 	addon:DrainTransport()
 	Equal(completed, 1)
@@ -1478,7 +1478,7 @@ QuestTogether:RegisterTest("server channel refusal counters stay complete while 
 	local addon = ChannelNoticeFixture()
 	addon.API.ReportLuaError = function(detail)
 		addon.reported[#addon.reported + 1] = detail
-		error("broken error collector")
+		error("communication refusals must not invoke the global error collector")
 	end
 	addon.geographicCommsState = { subscriptions = {} }
 	for index = 1, 100 do
@@ -1491,20 +1491,23 @@ QuestTogether:RegisterTest("server channel refusal counters stay complete while 
 	Equal(comms.serverChannelRefusals, 200)
 	Equal(comms.serverChannelRefusalsGlobal, 100)
 	Equal(comms.serverChannelRefusalsGeographic, 100)
-	Equal(#addon.reported, 2)
-	Equal(addon.diagnosticErrorCount, 2) -- Throwing collectors do not add dispatcher errors.
+	Equal(#addon.reported, 0)
+	Equal(addon.diagnosticErrorCount, 2)
 	local buckets = 0
 	for _ in pairs(comms.channelRefusalReportedAt) do buckets = buckets + 1 end
 	Equal(buckets, 2)
 	addon.now = addon.now + 59.9
 	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
-	Equal(#addon.reported, 2)
+	Equal(#addon.reported, 0)
+	Equal(addon.diagnosticErrorCount, 2)
 	addon.now = addon.now + 0.1
 	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
-	Equal(#addon.reported, 3)
+	Equal(#addon.reported, 0)
+	Equal(addon.diagnosticErrorCount, 3)
 	addon.now = 1 -- A clock reset must not hide all subsequent failures.
 	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
-	Equal(#addon.reported, 4)
+	Equal(#addon.reported, 0)
+	Equal(addon.diagnosticErrorCount, 4)
 	addon.isEnabled = false
 	addon:UnregisterRuntimeEvents()
 	Equal(addon.eventFrame.events.CHAT_MSG_CHANNEL_NOTICE, nil)
@@ -1514,7 +1517,8 @@ QuestTogether:RegisterTest("server channel refusal counters stay complete while 
 	addon:RegisterRuntimeEvents()
 	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
 	Equal(comms.serverChannelRefusals, 203)
-	Equal(#addon.reported, 4)
+	Equal(#addon.reported, 0)
+	Equal(addon.diagnosticErrorCount, 4)
 end)
 
 QuestTogether:RegisterTest("server channel refusals require accessible refusal token and exact current channel metadata", function()
@@ -1535,7 +1539,8 @@ QuestTogether:RegisterTest("server channel refusals require accessible refusal t
 	Equal(addon.diagnosticErrorCount, 0)
 	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "9. qUeStToGeThEr", nil)
 	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "10. qtgeocurrent", "QTGeoCurrent")
-	Equal(#addon.reported, 2)
+	Equal(#addon.reported, 0)
+	Equal(addon.diagnosticErrorCount, 2)
 	Equal(addon:GetCommsDiagnostics().serverChannelRefusals, 2)
 end)
 

@@ -150,11 +150,6 @@ local function ReportNativeFailure(a, s, context, route, nativeKey, nativeLabel)
 		.. ", route=" .. distribution .. ", result=" .. nativeLabel
 		.. "). Communication may be incomplete. Run /qt diagnostics for details."
 	a:RecordDiagnosticError("communication send", detail)
-	-- Error handlers installed by BugSack and similar addons receive this too.
-	-- A handler must never abort draining or strand completion callbacks.
-	if a.API and type(a.API.ReportLuaError) == "function" then
-		pcall(a.API.ReportLuaError, detail)
-	end
 end
 local function NativeSend(a, s, wire, context, route)
 	local target = route.target

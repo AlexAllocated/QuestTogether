@@ -392,7 +392,7 @@ function QuestTogether:CHAT_MSG_CHANNEL_NOTICE(_, notice, _, _, channelName, _, 
 	local diagnostics = self:GetCommsDiagnostics()
 	local counter = scope == "global" and "serverChannelRefusalsGlobal" or "serverChannelRefusalsGeographic"
 	diagnostics[counter] = (diagnostics[counter] or 0) + 1
-	-- Two fixed buckets keep memory and visible errors bounded while counters
+	-- Two fixed buckets keep memory and logged errors bounded while counters
 	-- preserve every refusal. Different zones cannot bypass the geographic limit.
 	diagnostics.channelRefusalReportedAt = diagnostics.channelRefusalReportedAt or {}
 	local now = self:SafeToNumber(self.API and self.API.GetTime and self.API.GetTime()) or 0
@@ -402,9 +402,6 @@ function QuestTogether:CHAT_MSG_CHANNEL_NOTICE(_, notice, _, _, channelName, _, 
 	local message = "QuestTogether: The server refused an operation on a QuestTogether channel (" .. detail
 		.. "). Communication may be incomplete even when the send API reports success. Run /qt diagnostics for details."
 	self:RecordDiagnosticError("communication channel refusal", message)
-	if self.API and type(self.API.ReportLuaError) == "function" then
-		pcall(self.API.ReportLuaError, message)
-	end
 	return true
 end
 

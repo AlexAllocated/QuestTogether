@@ -174,11 +174,11 @@ QT:RegisterTest("transport v2 native outcome diagnostics retain rejection codes 
 	Equal(metrics.attempts, 23)
 end)
 
-QT:RegisterTest("transport v2 hard failures reach error collectors without breaking completion or flooding", function()
+QT:RegisterTest("transport v2 hard failures stay in QT diagnostics without global errors or broken completion", function()
 	local a, reported, completed = Fixture(), {}, {}
 	a.API.ReportLuaError = function(detail)
 		reported[#reported + 1] = detail
-		error("a broken third-party error collector must not strand the queue")
+		error("communication failures must not invoke the global error collector")
 	end
 	local function Send(operation, distribution, result)
 		a.native = function() return result end
@@ -193,16 +193,16 @@ QT:RegisterTest("transport v2 hard failures reach error collectors without break
 		return ticket
 	end
 	Equal(Send("QCMP", "PARTY", 7).status, "rejected")
-	Equal(#reported, 1)
+	Equal(#reported, 0)
 	Equal(#a.errors, 1)
-	assert(reported[1]:find("operation=QCMP, route=PARTY, result=7", 1, true))
-	assert(not reported[1]:find("private quest data", 1, true))
-	assert(not reported[1]:find("Private-Realm", 1, true))
+	assert(a.errors[1]:find("operation=QCMP, route=PARTY, result=7", 1, true))
+	assert(not a.errors[1]:find("private quest data", 1, true))
+	assert(not a.errors[1]:find("Private-Realm", 1, true))
 	Send("QCMP", "PARTY", 7)
 	Send("QCRS", "PARTY", 7)
-	Equal(#reported, 1, "the same route failure is reported once per minute")
+	Equal(#a.errors, 1, "the same route failure is logged once per minute")
 	Send("QCMP", "WHISPER", 7)
-	Equal(#reported, 2, "a distinct route failure is not hidden")
+	Equal(#a.errors, 2, "a distinct route failure is not hidden")
 	Equal(Send("QCRS", "PARTY", 0).status, "accepted")
 	Equal(#completed, 5)
 	Equal(completed[1].sent, false)
@@ -210,7 +210,8 @@ QT:RegisterTest("transport v2 hard failures reach error collectors without break
 	Equal(a:GetTransportMetrics().queuedPackets, 0)
 	a:Advance(60)
 	Send("QCMP", "PARTY", 7)
-	Equal(#reported, 3)
+	Equal(#reported, 0)
+	Equal(#a.errors, 3)
 	local metrics = a:GetTransportMetrics()
 	Equal(metrics["questWire.QCMP.PARTY.nativeResult7"], 3)
 	Equal(metrics["questWire.QCMP.WHISPER.nativeResult7"], 1)
