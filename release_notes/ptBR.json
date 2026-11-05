@@ -1,24 +1,15 @@
 {
-  "source_sha256": "a4065d17605dbf0b6d49a7950e26d3dfdc93c1cdc7e605248b150da21e27fb7c",
+  "source_sha256": "e66bddaca3e9bcd3a83dfc96233356b268b870138fc1e4fd531a667357d6aee2",
   "notes": {
-    "version": "8.3.0",
-    "welcome": "Acompanhe a missão em foco dos seus companheiros com novos controles e confira os ajustes nas janelas de missões e nos ícones das placas de nome.",
+    "version": "8.3.1",
+    "welcome": "Atualização mais confiável das missões do grupo, inclusive após compartilhar uma missão.",
     "sections": [
       {
-        "title": "Controle da missão em foco",
+        "title": "Atualização das missões do grupo",
         "items": [
-          "Em grupos de até cinco jogadores, os pontos com a cor da classe dos outros integrantes ficaram maiores e podem ser clicados, à esquerda do botão de foco de missão do rastreador da Blizzard. Passe o cursor para identificar o jogador e clique com o botão esquerdo para seguir a missão em foco dele.",
-          "Quando vários integrantes escolhem a mesma missão, seus pontos aparecem lado a lado. O integrante que você está seguindo recebe um contorno branco, mantendo a cor da classe.",
-          "Clicar em um ponto pede confirmação por padrão. Marque “Não perguntar novamente” para dispensar essas perguntas no perfil atual do QT.",
-          "Ao escolher outra missão enquanto segue alguém, sua escolha permanece ativa durante a confirmação para parar de seguir. Confirmar encerra o acompanhamento e mantém a missão escolhida; cancelar, fechar a janela ou pressionar Escape retoma a missão que o jogador seguido tem em foco, desde que ela esteja no seu registro."
-        ]
-      },
-      {
-        "title": "Janelas de missões e placas de nome",
-        "items": [
-          "O Registro de missões do grupo deixa de reorganizar as linhas repetidamente durante a rolagem. Novas informações de missão ainda podem alterar a ordem.",
-          "O Rastreador de objetivos do grupo agora aparece por cima da dica exibida ao passar o cursor sobre uma missão da Blizzard.",
-          "Nas placas de nome, os ícones à direita não se sobrepõem mais à caixa de nível no Forever, e os ícones superiores ganham espaço em relação ao nome. Os ícones antes do nome acompanham o texto visível, inclusive com alinhamento central ou à direita. Os ajustes valem tanto para ícones de missão quanto para ícones de jogador do QT."
+          "Atualizar agora solicita uma nova lista de missões sem ficar preso a uma solicitação antiga ou aguardar consultas em segundo plano.",
+          "Quando o jogo informa que um integrante aceitou a missão compartilhada ou já a possui, o addon solicita automaticamente uma nova lista de missões desse integrante.",
+          "Respostas atrasadas não fazem uma missão voltar a aparecer como Ausente após a chegada de uma lista mais recente. O progresso dos objetivos já recebido é mantido quando a missão não mudou."
         ]
       }
     ]

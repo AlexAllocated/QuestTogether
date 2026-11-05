@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 8.3.1
+
+More reliable party quest refreshes after sharing quests.
+
+### Party quest updates
+
+- Refresh now requests a fresh party quest list even if an older update is stalled. Your existing data stays visible while the new list loads.
+- QuestTogether also refreshes a party member's quest list when WoW confirms that they accepted a shared quest or already have it.
+- Late objective replies can no longer overwrite newer quest ownership or progress and make an accepted quest appear missing.
+
 ## 8.3.0
 
 Party focus dots are now clickable, with clearer follow controls and fixes for quest windows and nameplate icons.

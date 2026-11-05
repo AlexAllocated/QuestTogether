@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.3.1
+
+L’aggiornamento delle missioni del gruppo è ora più affidabile.
+
+### Aggiornamento delle missioni del gruppo
+
+- Aggiorna richiede un nuovo elenco delle missioni anche se una richiesta precedente è bloccata o sono ancora in caricamento altri dati delle missioni.
+- Quando il gioco segnala che un membro del gruppo ha accettato una missione condivisa o la possiede già, viene richiesto automaticamente un nuovo elenco delle sue missioni.
+- Le risposte in ritardo non sovrascrivono più le informazioni recenti su chi possiede le missioni e sui relativi obiettivi. I progressi degli obiettivi già ricevuti vengono conservati se il riepilogo delle missioni non è cambiato.
+
 ## 8.3.0
 
 Seguire le missioni dei compagni è più semplice, con finestre più stabili e icone posizionate meglio.

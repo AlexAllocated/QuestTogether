@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.3.1
+
+L’actualisation du journal de quêtes du groupe est plus fiable.
+
+### Actualisation des quêtes du groupe
+
+- Le bouton Actualiser demande une nouvelle liste de quêtes même si une ancienne demande est bloquée ou si d’autres données de quêtes sont encore en cours de chargement.
+- Quand le jeu signale qu’un membre du groupe a accepté une quête partagée ou qu’il l’a déjà, sa liste de quêtes est automatiquement redemandée.
+- Les réponses tardives ne remplacent plus les informations récentes sur les quêtes détenues et leurs objectifs. La progression des objectifs déjà reçue est conservée si le récapitulatif des quêtes n’a pas changé.
+
 ## 8.3.0
 
 Suivez plus facilement la quête d’un membre du groupe et profitez de fenêtres de quêtes et de plaques de nom mieux disposées.

@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.3.1
+
+Das Gruppenquestlog lässt sich jetzt zuverlässiger aktualisieren.
+
+### Aktualisierung des Gruppenquestlogs
+
+- „Aktualisieren“ fordert eine neue Questliste an, auch wenn eine ältere Anfrage festhängt oder noch weitere Questdaten geladen werden.
+- Wenn die Spielmeldung bestätigt, dass ein Gruppenmitglied eine geteilte Quest angenommen hat oder sie bereits besitzt, wird dessen Questliste automatisch neu angefordert.
+- Verspätete Antworten können neuere Angaben zu Quests und Zielen nicht mehr überschreiben. Bereits erfasster Zielfortschritt bleibt erhalten, wenn sich die Questübersicht nicht geändert hat.
+
 ## 8.3.0
 
 Questfokus im Blick, leichteres Folgen und übersichtlichere Questfenster und Namensplaketten.

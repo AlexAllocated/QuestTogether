@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.3.1
+
+Atualização mais confiável das missões do grupo, inclusive após compartilhar uma missão.
+
+### Atualização das missões do grupo
+
+- Atualizar agora solicita uma nova lista de missões sem ficar preso a uma solicitação antiga ou aguardar consultas em segundo plano.
+- Quando o jogo informa que um integrante aceitou a missão compartilhada ou já a possui, o addon solicita automaticamente uma nova lista de missões desse integrante.
+- Respostas atrasadas não fazem uma missão voltar a aparecer como Ausente após a chegada de uma lista mais recente. O progresso dos objetivos já recebido é mantido quando a missão não mudou.
+
 ## 8.3.0
 
 Acompanhe a missão em foco dos seus companheiros com novos controles e confira os ajustes nas janelas de missões e nos ícones das placas de nome.

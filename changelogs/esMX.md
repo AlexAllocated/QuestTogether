@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.3.1
+
+Ahora es más confiable actualizar el registro de misiones del grupo.
+
+### Actualización de misiones del grupo
+
+- Con Actualizar puedes solicitar una nueva lista de misiones aunque una solicitud anterior se haya quedado trabada o todavía se estén cargando otros datos de misiones.
+- Si el juego avisa que un integrante del grupo aceptó una misión compartida o que ya la tiene, se solicita automáticamente una nueva lista de sus misiones.
+- Las respuestas que llegan tarde ya no reemplazan los datos más recientes sobre las misiones que tiene cada integrante y el avance de sus objetivos. El avance recibido se mantiene si el resumen de misiones no cambió.
+
 ## 8.3.0
 
 Ahora es más fácil seguir las misiones de tus compañeros, con listas más estables e iconos mejor ubicados.

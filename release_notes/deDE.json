@@ -1,23 +1,15 @@
 {
-  "source_sha256": "a4065d17605dbf0b6d49a7950e26d3dfdc93c1cdc7e605248b150da21e27fb7c",
+  "source_sha256": "e66bddaca3e9bcd3a83dfc96233356b268b870138fc1e4fd531a667357d6aee2",
   "notes": {
-    "version": "8.3.0",
-    "welcome": "Questfokus im Blick, leichteres Folgen und übersichtlichere Questfenster und Namensplaketten.",
+    "version": "8.3.1",
+    "welcome": "Das Gruppenquestlog lässt sich jetzt zuverlässiger aktualisieren.",
     "sections": [
       {
-        "title": "Questfokus in der Gruppe",
+        "title": "Aktualisierung des Gruppenquestlogs",
         "items": [
-          "In Gruppen mit bis zu fünf Spielern zeigen größere Punkte in Klassenfarben links neben Blizzards Questfokus-Schaltfläche, wer welche Quest ausgewählt hat. Beim Darüberfahren erscheint der Name. Die Punkte mehrerer Spieler mit derselben Quest stehen nebeneinander; ein weißer Rand kennzeichnet den Spieler, dessen Questfokus du folgst, ohne seine Klassenfarbe zu verdecken.",
-          "Ein Linksklick auf einen Punkt fragt standardmäßig nach, bevor du dem Questfokus folgst. Mit „Nicht erneut fragen“ überspringst du künftige Nachfragen in deinem aktuellen QT-Profil.",
-          "Wählst du beim Folgen selbst eine andere Quest aus, bleibt sie während der Nachfrage zum Beenden ausgewählt. Bestätigen beendet das Folgen und behält deine Auswahl. Abbrechen, Schließen oder Escape stellt den neuesten Questfokus des anderen Spielers wieder her, sofern du die Quest ebenfalls hast."
-        ]
-      },
-      {
-        "title": "Questfenster und Namensplaketten",
-        "items": [
-          "Das Gruppenquestlog sortiert beim Scrollen nicht mehr ständig neu, wenn abgeschlossene Quests aus dem sichtbaren Bereich verschwinden. Neue Questdaten können die Reihenfolge weiterhin ändern.",
-          "Die Gruppen-Zielverfolgung liegt jetzt über Blizzards Quest-Tooltips.",
-          "Quest- und QT-Spielersymbole auf Namensplaketten sitzen besser: Rechts verdecken sie nicht mehr die Stufenanzeige von Forever, und oben haben sie etwas mehr Abstand zum Namen. Vorangestellte Symbole richten sich bei zentrierten oder rechtsbündigen Namen am sichtbaren Text aus."
+          "„Aktualisieren“ fordert eine neue Questliste an, auch wenn eine ältere Anfrage festhängt oder noch weitere Questdaten geladen werden.",
+          "Wenn die Spielmeldung bestätigt, dass ein Gruppenmitglied eine geteilte Quest angenommen hat oder sie bereits besitzt, wird dessen Questliste automatisch neu angefordert.",
+          "Verspätete Antworten können neuere Angaben zu Quests und Zielen nicht mehr überschreiben. Bereits erfasster Zielfortschritt bleibt erhalten, wenn sich die Questübersicht nicht geändert hat."
         ]
       }
     ]

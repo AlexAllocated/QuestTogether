@@ -3,24 +3,15 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "8.3.0",
-	welcome = "Party focus dots are now clickable, with clearer follow controls and fixes for quest windows and nameplate icons.",
+	version = "8.3.1",
+	welcome = "More reliable party quest refreshes after sharing quests.",
 	sections = {
 		{
-			title = "Follow from the Objective Tracker",
+			title = "Party quest updates",
 			items = {
-				"Party members' class-colored focus dots are larger and sit to the left of Blizzard's quest-focus button. Hover a dot to see who has that quest focused, or left-click it to follow them.",
-				"Dots appear side by side when several party members focus the same quest. A white outline marks the player you are following.",
-				"Clicking a dot asks for confirmation before following. Select Do not ask again to skip future dot-click confirmations in your current QT profile.",
-				"Selecting a different quest while following now keeps your choice visible while you decide whether to stop following. Confirm to keep your selection and stop following, or cancel to return to your friend's current quest focus.",
-			},
-		},
-		{
-			title = "Quest windows and nameplates",
-			items = {
-				"Fixed Party Quest Log rows repeatedly jumping around when a scrollbar is visible.",
-				"Blizzard's quest-hover tooltips no longer cover the Party Objective Tracker.",
-				"Improved nameplate icon placement: Right clears Forever's level box, Top leaves more room above the name, and Prefix sits beside the visible text when names are centered or right-aligned.",
+				"Refresh now requests a fresh party quest list even if an older update is stalled. Your existing data stays visible while the new list loads.",
+				"QuestTogether also refreshes a party member's quest list when WoW confirms that they accepted a shared quest or already have it.",
+				"Late objective replies can no longer overwrite newer quest ownership or progress and make an accepted quest appear missing.",
 			},
 		},
 	},

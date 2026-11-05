@@ -1,23 +1,15 @@
 {
-  "source_sha256": "a4065d17605dbf0b6d49a7950e26d3dfdc93c1cdc7e605248b150da21e27fb7c",
+  "source_sha256": "e66bddaca3e9bcd3a83dfc96233356b268b870138fc1e4fd531a667357d6aee2",
   "notes": {
-    "version": "8.3.0",
-    "welcome": "Seguir las misiones del grupo resulta más sencillo, con ventanas más estables e iconos mejor colocados.",
+    "version": "8.3.1",
+    "welcome": "La actualización del registro de misiones del grupo es ahora más fiable.",
     "sections": [
       {
-        "title": "Seleccionar y seguir misiones del grupo",
+        "title": "Actualización de las misiones del grupo",
         "items": [
-          "En grupos de hasta cinco jugadores, unos puntos más grandes con el color de clase aparecen a la izquierda del botón de misión activa de Blizzard. Pasa el cursor para ver quién ha seleccionado esa misión y haz clic izquierdo para solicitar seguir su selección. Si varios jugadores eligen la misma misión, sus puntos se muestran uno junto a otro. Un borde blanco identifica al jugador que sigues sin ocultar su color de clase.",
-          "Los clics en estos puntos piden confirmación por defecto. «No volver a preguntar» omite futuras confirmaciones en tu perfil actual de QT.",
-          "Si eliges otra misión mientras sigues a alguien, tu elección se mantiene durante la confirmación para dejar de seguirlo. Confirmar detiene el seguimiento y conserva tu misión. Cancelar, cerrar la ventana o pulsar Escape vuelve a seguir la misión que tu compañero tiene seleccionada en ese momento, siempre que también esté en tu registro."
-        ]
-      },
-      {
-        "title": "Ventanas de misiones y placas de nombre",
-        "items": [
-          "El Registro de misiones del grupo ya no reordena las filas una y otra vez al desplazar las misiones completadas fuera de la vista. La llegada de nuevos datos de misión aún puede cambiar el orden.",
-          "El Seguimiento de objetivos del grupo ahora se muestra por encima de las descripciones emergentes de misiones de Blizzard.",
-          "Los iconos de misión y de jugador QT se colocan mejor en las placas de nombre: los de la derecha dejan libre el recuadro de nivel de Forever y los superiores guardan algo más de distancia con el nombre. Los situados delante de nombres centrados o alineados a la derecha se ajustan al texto visible."
+          "Actualizar solicita una nueva lista de misiones aunque una petición anterior se haya quedado atascada o aún se estén cargando otros datos de misiones.",
+          "Cuando el juego indica que un miembro del grupo ha aceptado una misión compartida o que ya la tiene, se vuelve a solicitar su lista de misiones automáticamente.",
+          "Las respuestas tardías ya no sustituyen la información más reciente sobre quién tiene cada misión y el progreso de sus objetivos. El progreso recibido se conserva si el resumen de misiones no ha cambiado."
         ]
       }
     ]

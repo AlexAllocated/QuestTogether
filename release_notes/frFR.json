@@ -1,23 +1,15 @@
 {
-  "source_sha256": "a4065d17605dbf0b6d49a7950e26d3dfdc93c1cdc7e605248b150da21e27fb7c",
+  "source_sha256": "e66bddaca3e9bcd3a83dfc96233356b268b870138fc1e4fd531a667357d6aee2",
   "notes": {
-    "version": "8.3.0",
-    "welcome": "Suivez plus facilement la quête d’un membre du groupe et profitez de fenêtres de quêtes et de plaques de nom mieux disposées.",
+    "version": "8.3.1",
+    "welcome": "L’actualisation du journal de quêtes du groupe est plus fiable.",
     "sections": [
       {
-        "title": "Choisir et suivre une quête en groupe",
+        "title": "Actualisation des quêtes du groupe",
         "items": [
-          "Dans les groupes de cinq joueurs maximum, de plus grands points aux couleurs des classes apparaissent à gauche du bouton de quête active de Blizzard. Survolez-les pour savoir qui a choisi cette quête, puis faites un clic gauche pour demander à suivre sa sélection. Les points des joueurs ayant choisi la même quête sont affichés côte à côte ; un contour blanc distingue celui que vous suivez, tout en conservant sa couleur de classe.",
-          "Le clic sur un point demande une confirmation par défaut. « Ne plus demander » désactive les prochaines demandes dans votre profil QT actuel.",
-          "Si vous choisissez vous-même une autre quête pendant un suivi, elle reste sélectionnée durant la demande d’arrêt. Confirmer arrête le suivi et conserve votre choix. Annuler, fermer la fenêtre ou appuyer sur Échap reprend le suivi de la quête actuellement choisie par votre compagnon, si elle figure aussi dans votre journal."
-        ]
-      },
-      {
-        "title": "Fenêtres de quêtes et plaques de nom",
-        "items": [
-          "Le Journal de quêtes du groupe ne réorganise plus ses lignes à répétition lorsque vous faites défiler des quêtes terminées hors de l’écran. De nouvelles informations de quête peuvent toujours modifier l’ordre.",
-          "Le Suivi des objectifs du groupe s’affiche désormais au-dessus des infobulles de quêtes de Blizzard.",
-          "Les icônes de quête et de joueur QT sont mieux placées sur les plaques de nom : à droite, elles évitent l’encadré de niveau de Forever ; en haut, elles laissent davantage d’espace au nom. Placées avant un nom centré ou aligné à droite, elles se calent sur le texte visible."
+          "Le bouton Actualiser demande une nouvelle liste de quêtes même si une ancienne demande est bloquée ou si d’autres données de quêtes sont encore en cours de chargement.",
+          "Quand le jeu signale qu’un membre du groupe a accepté une quête partagée ou qu’il l’a déjà, sa liste de quêtes est automatiquement redemandée.",
+          "Les réponses tardives ne remplacent plus les informations récentes sur les quêtes détenues et leurs objectifs. La progression des objectifs déjà reçue est conservée si le récapitulatif des quêtes n’a pas changé."
         ]
       }
     ]
