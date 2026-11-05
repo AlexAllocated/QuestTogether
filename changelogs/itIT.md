@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.0
+
+Questo aggiornamento corregge alcuni problemi nello scambio dei dati del gruppo. Leggi prima l’avviso sui messaggi degli addon durante il lancio di WoW Forever.
+
+### Problemi attuali con i messaggi su WoW Forever
+
+- Lo sviluppatore è al corrente dei messaggi degli addon che, dal lancio di Forever, arrivano in ritardo o non arrivano affatto. Tra i sintomi ci sono giocatori mancanti sulla mappa, annunci assenti e dati del gruppo che restano in caricamento.
+- Si sospetta che il forte carico sui server Blizzard contribuisca al problema. I dati diagnostici, però, non confermano che il sovraccarico sia la causa di ogni episodio.
+- Questa versione corregge difetti accertati di QuestTogether, ma non può garantire la consegna dei messaggi tramite il servizio di Blizzard.
+
+### Sincronizzazione delle missioni del gruppo
+
+- Il Registro missioni del gruppo e il Tracciamento obiettivi del gruppo ora scambiano richieste e risposte tra membri attraverso il canale di gruppo, incursione o istanza appropriato. I confronti con giocatori esterni al gruppo continuano a usare i sussurri.
+- Per usare il canale del gruppo in entrambe le direzioni, tutti i partecipanti devono aggiornare l’addon. Le versioni precedenti restano compatibili, ma possono ancora rispondere tramite sussurro.
+- Quando l’invio di una richiesta viene rifiutato in modo definitivo, l’attesa termina subito: i dati non restano più in caricamento fino alla scadenza del lungo timeout.
+- Allontanare il puntatore da una missione o spostarlo su un’altra libera i trasferimenti di risposta incompleti che non servono più. I vecchi dati conservati non possono più occupare tutti gli spazi per le risposte e bloccare le richieste successive.
+
+### Diagnostica delle comunicazioni
+
+- Gli errori certi nell’invio tramite WoW vengono ora segnalati al gestore degli errori Lua, così che anche gli addon per la raccolta degli errori possano riceverli. QT li registra inoltre nei dati diagnostici e nel registro di debug, limitando le segnalazioni identiche ripetute. La normale limitazione del traffico e gli esiti di invio incerti non vengono segnalati come errori certi.
+- Se i dati restano bloccati in caricamento, /qt diagnostics offre allo sviluppatore più informazioni sul canale usato, sull’esito degli invii e sulle richieste in attesa.
+
 ## 8.0.6
 
 Il tracciamento obiettivi del gruppo usa ora «Missione sotto il cursore» come impostazione predefinita.

@@ -4,6 +4,26 @@
 
 [Other languages](changelogs/README.md)
 
+## 8.1.0
+
+Party communication fixes, plus an important notice about current WoW Forever messaging problems.
+
+### Important: WoW Forever messaging issues
+
+- We're aware that addon messages in WoW Forever are being delayed and sometimes failing to arrive. This can leave party data loading or make map markers and announcements unavailable.
+- We suspect heavy load on Blizzard's servers is contributing, but the cause has not been confirmed. This update fixes several QuestTogether communication problems; it cannot guarantee delivery when the game's messaging service is disrupted.
+
+### More reliable party quest data
+
+- Party Quest Log and Party Objective Tracker now exchange party quest data through the party, raid or instance channel. Update together so both sides use this route; older versions remain compatible but may still reply by whisper. Comparisons with players outside your group still use whispers.
+- Requests that WoW definitively rejects now stop waiting instead of leaving party data loading for minutes.
+- Moving away from or switching between hovered quests no longer leaves unfinished transfers occupying response slots and blocking later requests. Old response copies are also cleared when space is needed.
+
+### Clearer communication diagnostics
+
+- Definitive send failures now reach WoW's Lua error handler for bug-catching addons and are recorded in QT's diagnostics and debug log. Repeated identical errors are limited; normal throttling and uncertain send results are not treated as hard failures.
+- If party data remains stuck, /qt diagnostics now includes more detail about message routes, send outcomes and pending requests to help us investigate.
+
 ## 8.0.6
 
 The Party Objective Tracker now defaults to Hovered Quest.

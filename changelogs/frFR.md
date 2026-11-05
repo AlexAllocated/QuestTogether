@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.0
+
+Cette mise à jour corrige plusieurs problèmes de communication en groupe. Consultez d’abord l’avertissement sur les messages d’addon pendant le lancement de WoW Forever.
+
+### Messages retardés ou perdus sur WoW Forever
+
+- Le développeur a connaissance de messages d’addon qui arrivent en retard ou n’arrivent pas depuis le lancement de Forever. Cela peut se traduire par des joueurs absents de la carte, des annonces manquantes ou des données de groupe dont le chargement n’aboutit pas.
+- Une forte charge sur les serveurs de Blizzard pourrait y contribuer, mais les diagnostics ne permettent pas d’attribuer chaque incident à une surcharge.
+- Les corrections de cette version concernent des défauts identifiés dans QuestTogether. Elles ne peuvent pas garantir la livraison des messages par le service de Blizzard.
+
+### Échange des quêtes en groupe
+
+- Le Journal de quêtes du groupe et le Suivi des objectifs du groupe envoient désormais leurs demandes et réponses entre membres par le canal de groupe, de raid ou d’instance approprié. Les comparaisons avec un joueur extérieur au groupe passent toujours par chuchotement.
+- Tous les participants doivent installer la mise à jour pour utiliser ce canal dans les deux sens. Les anciennes versions restent compatibles, mais peuvent encore répondre par chuchotement.
+- Une demande dont l’envoi est définitivement refusé ne laisse plus l’affichage en cours de chargement jusqu’à l’expiration du long délai d’attente.
+- Quitter une quête avec le pointeur ou en survoler une autre libère les transferts de réponse devenus inutiles. Les anciens jeux de données conservés ne peuvent plus occuper toutes les places disponibles et bloquer les demandes suivantes.
+
+### Diagnostic des communications
+
+- Les échecs d’envoi certains renvoyés par WoW sont désormais signalés au gestionnaire d’erreurs Lua, ce qui permet aux addons de collecte d’erreurs de les recevoir. Ils sont aussi consignés dans les diagnostics de QT et son journal de débogage, avec une limite sur les signalements identiques. La limitation normale du débit et les résultats d’envoi incertains ne sont pas traités comme des erreurs certaines.
+- Si des données restent bloquées au chargement, /qt diagnostics donne au développeur davantage de précisions sur le canal, le résultat des envois et les demandes en attente.
+
 ## 8.0.6
 
 Le suivi des objectifs du groupe utilise désormais « Quête survolée » par défaut.

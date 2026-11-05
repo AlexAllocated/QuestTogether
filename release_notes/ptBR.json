@@ -1,15 +1,31 @@
 {
-  "source_sha256": "a2675402c140448c6f1474f7c178477eb2e27b4541de5ead0bed36bc25cc1c1c",
+  "source_sha256": "220cfcbe47b00da061d27243eb2ea68f04b5497b8ac580e0679c60e285b37e39",
   "notes": {
-    "version": "8.0.6",
-    "welcome": "O rastreador de objetivos do grupo agora usa “Missão sob o cursor” por padrão.",
+    "version": "8.1.0",
+    "welcome": "Melhorias na comunicação do grupo e um aviso sobre os problemas atuais de mensagens no WoW Forever.",
     "sections": [
       {
-        "title": "Rastreador de objetivos do grupo",
+        "title": "WoW Forever: mensagens atrasadas ou que não chegam",
         "items": [
-          "Se nenhum modo de exibição estiver salvo, aparece apenas a missão sob o cursor no rastreador de objetivos da Blizzard. A opção de ocultar ao jogar sozinho continua valendo.",
-          "Restaurar os padrões também seleciona “Missão sob o cursor”.",
-          "Seu modo de exibição salvo é mantido, e os quatro modos continuam disponíveis."
+          "Sabemos dos atrasos e das mensagens de addons que não chegam durante o lançamento do Forever. Entre os sintomas estão jogadores ausentes no mapa, anúncios que não aparecem e dados do grupo parados em “Carregando”.",
+          "Suspeitamos que a alta carga nos servidores da Blizzard contribua para isso, mas os diagnósticos não confirmam essa causa em todos os casos.",
+          "Esta versão corrige falhas comprovadas do QuestTogether. As correções não garantem a entrega de mensagens pelo serviço da Blizzard."
+        ]
+      },
+      {
+        "title": "Sincronização de missões do grupo",
+        "items": [
+          "As solicitações e respostas do Registro de missões do grupo e do Rastreador de objetivos do grupo passam a usar o canal de grupo, raide ou instância, conforme o grupo atual. Comparações com jogadores de fora do grupo continuam por sussurro.",
+          "Todos os participantes precisam atualizar o addon para que a comunicação use esses canais nos dois sentidos. As versões anteriores continuam compatíveis, mas podem responder por sussurro.",
+          "Quando o envio de uma solicitação é rejeitado de forma definitiva, o QT encerra a espera em vez de deixar os dados em “Carregando” até o fim do prazo.",
+          "Ao tirar o cursor de uma missão ou passar para outra, as transferências de resposta incompletas são liberadas. Dados antigos retidos deixam de ocupar todas as vagas de resposta e bloquear solicitações seguintes."
+        ]
+      },
+      {
+        "title": "Diagnóstico da comunicação",
+        "items": [
+          "Falhas definitivas no envio pelo jogo são encaminhadas ao gerenciador de erros Lua do WoW, para que addons de captura de erros possam registrá-las, e ficam no diagnóstico e no registro de depuração do QT. Avisos idênticos têm repetição limitada. A limitação normal de envios e os resultados de envio incertos não entram nesses relatos de erros definitivos.",
+          "Se os dados continuarem travados, /qt diagnostics oferece ao desenvolvedor mais informações sobre os canais, os resultados dos envios e as solicitações pendentes."
         ]
       }
     ]

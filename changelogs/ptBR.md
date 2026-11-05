@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.0
+
+Melhorias na comunicação do grupo e um aviso sobre os problemas atuais de mensagens no WoW Forever.
+
+### WoW Forever: mensagens atrasadas ou que não chegam
+
+- Sabemos dos atrasos e das mensagens de addons que não chegam durante o lançamento do Forever. Entre os sintomas estão jogadores ausentes no mapa, anúncios que não aparecem e dados do grupo parados em “Carregando”.
+- Suspeitamos que a alta carga nos servidores da Blizzard contribua para isso, mas os diagnósticos não confirmam essa causa em todos os casos.
+- Esta versão corrige falhas comprovadas do QuestTogether. As correções não garantem a entrega de mensagens pelo serviço da Blizzard.
+
+### Sincronização de missões do grupo
+
+- As solicitações e respostas do Registro de missões do grupo e do Rastreador de objetivos do grupo passam a usar o canal de grupo, raide ou instância, conforme o grupo atual. Comparações com jogadores de fora do grupo continuam por sussurro.
+- Todos os participantes precisam atualizar o addon para que a comunicação use esses canais nos dois sentidos. As versões anteriores continuam compatíveis, mas podem responder por sussurro.
+- Quando o envio de uma solicitação é rejeitado de forma definitiva, o QT encerra a espera em vez de deixar os dados em “Carregando” até o fim do prazo.
+- Ao tirar o cursor de uma missão ou passar para outra, as transferências de resposta incompletas são liberadas. Dados antigos retidos deixam de ocupar todas as vagas de resposta e bloquear solicitações seguintes.
+
+### Diagnóstico da comunicação
+
+- Falhas definitivas no envio pelo jogo são encaminhadas ao gerenciador de erros Lua do WoW, para que addons de captura de erros possam registrá-las, e ficam no diagnóstico e no registro de depuração do QT. Avisos idênticos têm repetição limitada. A limitação normal de envios e os resultados de envio incertos não entram nesses relatos de erros definitivos.
+- Se os dados continuarem travados, /qt diagnostics oferece ao desenvolvedor mais informações sobre os canais, os resultados dos envios e as solicitações pendentes.
+
 ## 8.0.6
 
 O rastreador de objetivos do grupo agora usa “Missão sob o cursor” por padrão.

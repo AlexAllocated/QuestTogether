@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.0
+
+Mejoras en la comunicación del grupo y un aviso sobre los problemas actuales de mensajería en WoW Forever.
+
+### Aviso: mensajes con retraso o que no llegan en WoW Forever
+
+- Sabemos que, durante el lanzamiento de Forever, algunos mensajes de los addons llegan tarde o no llegan. Esto puede hacer que falten jugadores en el mapa o anuncios, o que los datos del grupo sigan en «Cargando».
+- Sospechamos que la fuerte carga en los servidores de Blizzard contribuye al problema, pero los diagnósticos no permiten atribuirle todos los casos.
+- Esta versión corrige fallos comprobados de QuestTogether; no puede garantizar que los mensajes lleguen a través del servicio de Blizzard.
+
+### Sincronización de misiones del grupo
+
+- El Registro de misiones del grupo y el Seguimiento de objetivos del grupo ahora envían sus solicitudes y respuestas por el canal del grupo, de banda o de estancia, según corresponda. Las comparaciones con jugadores ajenos al grupo siguen usando susurros.
+- Para usar estos canales en ambos sentidos, todos los participantes deben actualizar el addon. Las versiones anteriores siguen siendo compatibles, aunque pueden responder por susurro.
+- Si el envío de una solicitud se rechaza de forma definitiva, QT deja de esperar la respuesta y evita mantener «Cargando» hasta que venza el plazo de espera.
+- Al retirar el cursor de una misión o pasarlo a otra, se liberan las transferencias de respuesta incompletas. Los datos antiguos retenidos ya no pueden ocupar todos los huecos de respuesta y bloquear solicitudes posteriores.
+
+### Diagnósticos de comunicación
+
+- Los fallos definitivos de envío del juego se notifican al gestor de errores Lua de WoW, para que puedan recogerlos los addons de errores, y se guardan en los diagnósticos y el registro de depuración de QT. Se limita la repetición de avisos idénticos; la limitación habitual de envíos y los resultados de envío inciertos no se notifican como errores definitivos.
+- Si los datos siguen atascados, /qt diagnostics ofrece al desarrollador más información sobre los canales, el resultado de los envíos y las solicitudes pendientes.
+
 ## 8.0.6
 
 El seguimiento de objetivos del grupo usa ahora «Misión bajo el cursor» de forma predeterminada.

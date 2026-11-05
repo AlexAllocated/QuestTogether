@@ -3,6 +3,162 @@
   "releases": [
     {
       "enUS": {
+        "version": "8.0.6",
+        "welcome": "The Party Objective Tracker now defaults to Hovered Quest.",
+        "sections": [
+          {
+            "title": "Party Objective Tracker",
+            "items": [
+              "When no display choice is saved, Hovered Quest shows only the quest under your mouse in Blizzard’s objective tracker. Your hide-while-solo setting still applies.",
+              "Resetting the tracker to defaults also selects Hovered Quest.",
+              "Your saved display choice is preserved, and all four display modes remain available."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "8.0.6",
+        "welcome": "Die Gruppen-Zielverfolgung verwendet jetzt standardmäßig „Quest unter dem Mauszeiger“.",
+        "sections": [
+          {
+            "title": "Gruppen-Zielverfolgung",
+            "items": [
+              "Ist noch kein Anzeigemodus gespeichert, wird nur die Quest angezeigt, über der sich der Mauszeiger in Blizzards Zielverfolgung befindet. Die Einstellung zum Ausblenden beim Solospiel gilt weiterhin.",
+              "Auch beim Zurücksetzen auf die Standardwerte wird „Quest unter dem Mauszeiger“ gewählt.",
+              "Gespeicherte Anzeigemodi bleiben erhalten. Alle vier Modi stehen weiterhin zur Auswahl."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "8.0.6",
+        "welcome": "Le suivi des objectifs du groupe utilise désormais « Quête survolée » par défaut.",
+        "sections": [
+          {
+            "title": "Suivi des objectifs du groupe",
+            "items": [
+              "Si aucun mode d’affichage n’est enregistré, seule la quête survolée dans le suivi des objectifs de Blizzard apparaît. Le réglage qui masque le suivi en solo reste pris en compte.",
+              "Le rétablissement des paramètres par défaut sélectionne également « Quête survolée ».",
+              "Votre mode d’affichage enregistré est conservé et les quatre modes restent disponibles."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "8.0.6",
+        "welcome": "El seguimiento de objetivos del grupo usa ahora «Misión bajo el cursor» de forma predeterminada.",
+        "sections": [
+          {
+            "title": "Seguimiento de objetivos del grupo",
+            "items": [
+              "Si no hay un modo guardado, solo se muestra la misión sobre la que sitúas el cursor en el seguimiento de objetivos de Blizzard. Se sigue respetando el ajuste para ocultarlo al jugar en solitario.",
+              "Al restablecer los valores predeterminados también se selecciona «Misión bajo el cursor».",
+              "Se conserva el modo que tengas guardado y puedes seguir eligiendo entre los cuatro modos de visualización."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "8.0.6",
+        "welcome": "«Misión bajo el cursor» es ahora el modo predeterminado del seguimiento de objetivos del grupo.",
+        "sections": [
+          {
+            "title": "Seguimiento de objetivos del grupo",
+            "items": [
+              "Cuando no hay un modo de visualización guardado, solo aparece la misión bajo el cursor en el seguimiento de objetivos de Blizzard. La opción de ocultarlo al jugar en solitario sigue aplicándose.",
+              "Restaurar los valores predeterminados también activa «Misión bajo el cursor».",
+              "Tu modo guardado se conserva. Los cuatro modos de visualización siguen disponibles."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "8.0.6",
+        "welcome": "O rastreador de objetivos do grupo agora usa “Missão sob o cursor” por padrão.",
+        "sections": [
+          {
+            "title": "Rastreador de objetivos do grupo",
+            "items": [
+              "Se nenhum modo de exibição estiver salvo, aparece apenas a missão sob o cursor no rastreador de objetivos da Blizzard. A opção de ocultar ao jogar sozinho continua valendo.",
+              "Restaurar os padrões também seleciona “Missão sob o cursor”.",
+              "Seu modo de exibição salvo é mantido, e os quatro modos continuam disponíveis."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "8.0.6",
+        "welcome": "Режим «Задание под курсором» теперь используется по умолчанию для отслеживания целей группы.",
+        "sections": [
+          {
+            "title": "Отслеживание целей группы",
+            "items": [
+              "Если режим отображения ещё не сохранён, показывается только задание под курсором в списке целей Blizzard. Настройка скрытия при игре в одиночку по-прежнему учитывается.",
+              "Сброс настроек окна также выбирает режим «Задание под курсором».",
+              "Сохранённый режим отображения не меняется. Все четыре режима по-прежнему доступны."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "8.0.6",
+        "welcome": "Il tracciamento obiettivi del gruppo usa ora «Missione sotto il cursore» come impostazione predefinita.",
+        "sections": [
+          {
+            "title": "Tracciamento obiettivi del gruppo",
+            "items": [
+              "Se non è stata salvata una modalità di visualizzazione, appare solo la missione sotto il cursore nel tracciamento obiettivi di Blizzard. Resta valida l’opzione per nascondere il riquadro quando giochi da solo.",
+              "Anche il ripristino delle impostazioni predefinite seleziona «Missione sotto il cursore».",
+              "La modalità salvata viene mantenuta e tutte e quattro le modalità restano disponibili."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "8.0.6",
+        "welcome": "파티 목표 추적기의 기본 표시 모드가 ‘마우스를 올린 퀘스트’로 바뀝니다.",
+        "sections": [
+          {
+            "title": "파티 목표 추적기",
+            "items": [
+              "저장된 표시 모드가 없으면 블리자드 목표 추적기에서 마우스를 올린 퀘스트만 표시합니다. 혼자 플레이할 때 숨기는 설정은 계속 적용됩니다.",
+              "추적기를 기본값으로 초기화해도 ‘마우스를 올린 퀘스트’가 선택됩니다.",
+              "이미 저장한 표시 모드는 유지되며, 네 가지 표시 모드를 모두 계속 선택할 수 있습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "8.0.6",
+        "welcome": "小队目标追踪器现在默认使用“悬停任务”模式。",
+        "sections": [
+          {
+            "title": "小队目标追踪器",
+            "items": [
+              "没有已保存的显示模式时，仅显示鼠标在暴雪目标追踪器中悬停的任务。单人游戏时隐藏的设置仍然生效。",
+              "将追踪器恢复为默认设置时，也会选择“悬停任务”。",
+              "已保存的显示模式保持不变，四种显示模式仍可自由选择。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "8.0.6",
+        "welcome": "隊伍目標追蹤器的預設模式改為「懸停任務」。",
+        "sections": [
+          {
+            "title": "隊伍目標追蹤器",
+            "items": [
+              "尚未儲存顯示模式時，只會顯示滑鼠在暴雪目標追蹤器中指向的任務。單人遊戲時隱藏的設定仍然有效。",
+              "將追蹤器恢復為預設設定時，也會選用「懸停任務」。",
+              "已儲存的顯示模式不會變更，四種顯示模式仍可選用。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "8.0.5",
         "welcome": "Smoother minimap markers and clearer player tooltips.",
         "sections": [

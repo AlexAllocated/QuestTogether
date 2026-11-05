@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.1.0
+
+Dieses Update behebt Fehler beim Austausch von Gruppendaten. Bitte beachte zuerst den Hinweis zu den aktuellen Nachrichtenproblemen auf WoW Forever.
+
+### Aktuelle Nachrichtenprobleme auf WoW Forever
+
+- Dem Entwickler ist bekannt, dass Addon-Nachrichten seit dem Start von Forever verspätet oder gar nicht ankommen. Dadurch können Spieler auf der Karte und Ankündigungen fehlen oder Gruppendaten beim Laden hängen bleiben.
+- Eine hohe Belastung der Blizzard-Server wird als möglicher Mitverursacher vermutet. Die Diagnosedaten belegen jedoch nicht, dass Überlastung hinter jedem Vorfall steckt.
+- Dieses Update behebt nachgewiesene Fehler in QuestTogether. Es kann die Zustellung über Blizzards Nachrichtendienst nicht garantieren.
+
+### Questdaten in der Gruppe
+
+- Gruppenquestlog und Gruppen-Zielverfolgung nutzen für Anfragen und Antworten zwischen Gruppenmitgliedern jetzt den jeweiligen Gruppen-, Schlachtzugs- oder Instanzkanal. Vergleiche mit Spielern außerhalb der Gruppe laufen weiterhin über Flüsternachrichten.
+- Damit beide Richtungen den Gruppenkanal nutzen, müssen alle beteiligten Spieler aktualisieren. Ältere Versionen bleiben kompatibel, können aber noch per Flüsternachricht antworten.
+- Wird das Senden einer Anfrage eindeutig abgelehnt, endet das Warten jetzt sofort, statt die Ladeanzeige bis zum langen Zeitlimit stehen zu lassen.
+- Wenn du den Mauszeiger von einer Quest weg oder auf eine andere bewegst, werden nicht mehr benötigte Antwortübertragungen freigegeben. Alte, zurückgehaltene Datenstände können so keine Antwortplätze mehr belegen und spätere Anfragen blockieren.
+
+### Diagnose der Verbindung
+
+- Eindeutige Fehler beim Senden über WoW werden jetzt an die Lua-Fehlerbehandlung gemeldet und damit auch für Fehlerfänger-Addons sichtbar. QT hält sie außerdem in seinen Diagnosedaten und im Debugprotokoll fest; identische Meldungen werden begrenzt. Normale Drosselung und uneindeutige Sendeergebnisse gelten dabei nicht als harte Fehler.
+- Falls Daten weiter beim Laden hängen bleiben, liefert /qt diagnostics dem Entwickler genauere Angaben zum verwendeten Kanal, zum Sendeergebnis und zu ausstehenden Anfragen.
+
 ## 8.0.6
 
 Die Gruppen-Zielverfolgung verwendet jetzt standardmäßig „Quest unter dem Mauszeiger“.
