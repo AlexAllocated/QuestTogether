@@ -154,7 +154,7 @@ function QT:RequestPartyQuestProgress(r)
 	local sent, id = self:RequestQuestCompare(r.name, {
 		objectiveQuestId = r.questId,
 		isCurrent = Valid,
-		routes = { { distribution = "WHISPER", target = r.name, requiresGroup = grouped } },
+		routes = self:GetQuestCompareRoutes(r.name, grouped),
 		onEntry = function(value)
 			if Valid() then
 				entry = value

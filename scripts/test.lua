@@ -213,6 +213,7 @@ local function RejectEngineCall(name)
 	end
 end
 SendChatMessage = RejectEngineCall("SendChatMessage")
+geterrorhandler = function() return RejectEngineCall("geterrorhandler") end
 GetServerTime = RejectEngineCall("GetServerTime")
 C_ChatInfo = C_ChatInfo or {}
 C_ChatInfo.SendChatMessage = RejectEngineCall("C_ChatInfo.SendChatMessage")

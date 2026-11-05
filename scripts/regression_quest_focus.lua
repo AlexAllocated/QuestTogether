@@ -761,3 +761,60 @@ QT:RegisterTest("quest tracker solo option follows actual grouping and keeps Edi
 	panel.RevertButton.scripts.OnClick(); a:Drain()
 	Equal(a:GetOption("questTrackerHideSolo"), true)
 end)
+
+QT:RegisterTest("moving between tracker quests releases remote transfers before the next hover loads", function()
+	for _, whisper in ipairs({ false, true }) do
+		local net = QT:CreateTestNetwork({ fps = 20 })
+		local viewer = net:AddPeer("Viewer-Realm", { group = "party" })
+		local responder = net:AddPeer("Responder-Realm", { group = "party" })
+		if whisper then
+			-- The same lifecycle also applies to an explicit one-player comparison.
+			local function Routes(_, name, grouped)
+				return { { distribution = "WHISPER", target = name, requiresGroup = grouped } }
+			end
+			viewer.GetQuestCompareRoutes, responder.GetQuestCompareRoutes = Routes, Routes
+		end
+		local quests = {}
+		for id = 1, 17 do quests[id] = { questID = id, title = "Quest " .. id } end
+		net:SetQuestLog(viewer, quests)
+		net:SetQuestLog(responder, quests)
+		function responder:ReadQuestCompareObjectives(id)
+			local rows = {}
+			for index = 1, 5 do
+				rows[index] = {
+					questId = id, objectiveIndex = index,
+					text = "Collect supplies for the expedition " .. string.rep("along the coast ", 5) .. index,
+					kind = "item", finished = false, current = 1, required = 5,
+				}
+			end
+			return rows
+		end
+		net:StartPeer(viewer); net:StartPeer(responder); net:Advance(5)
+		local retiredUpdates = 0
+		for id = 1, 16 do
+			local owner = {}
+			local record = viewer:AcquirePartyQuestProgress(responder.name, id, owner, function()
+				retiredUpdates = retiredUpdates + 1
+			end, true)
+			local started, progress = net.now, nil
+			repeat
+				net:Advance(0.1)
+				progress = viewer:GetCommunicationRequestProgress(record.requestId)
+			until (progress and progress.firstResponseAt) or net.now - started >= 20
+			assert(progress and progress.firstResponseAt, "hover must begin receiving before it is abandoned")
+			Equal(record.state, "loading", "the detail snapshot must still be incomplete")
+			local requestId = record.requestId
+			viewer:ReleasePartyQuestProgress(owner)
+			Equal(viewer:GetPendingQuestCompare(requestId), nil)
+		end
+		local owner = {}
+		local record = viewer:AcquirePartyQuestProgress(responder.name, 17, owner, function() end, true)
+		net:Advance(20)
+		Equal(record.state, "ready", "abandoned hovers must not occupy every remote response slot")
+		Equal(#record.objectives, 5)
+		Equal(record.objectives[1].current, 1)
+		Equal(retiredUpdates, 0, "late packets must not update the retired views")
+		Equal(responder:GetCommTransferMetrics().outgoing, 0)
+		viewer:ReleasePartyQuestProgress(owner)
+	end
+end, { offline = true })

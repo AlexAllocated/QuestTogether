@@ -5,6 +5,11 @@ local MAX_OUT, MAX_IN, RESERVED = 16, 64, 16
 local MAX_BYTES, MAX_OBJECT, MAX_PARTS = 524288, 131072, 1024
 local MAX_UNSOLICITED_PER_SENDER, MAX_TOMBSTONES = 4, 128
 local PROBE_INTERVAL, MAX_PROBES, MAX_REPAIR = 30, 2, 2
+local GROUP = { PARTY = true, RAID = true, INSTANCE_CHAT = true }
+local RECOVERY_GRACE = 5
+local function Recipient(route)
+	return route.target or route.recipient
+end
 local function Now(a)
 	return a:SafeToNumber(a.API.GetTime()) or 0
 end
@@ -126,6 +131,9 @@ local function Tombstone(state, key, item, accepted)
 		accepted = accepted,
 		reliable = item.reliable,
 		request = item.request,
+		cancelled = item.cancelled,
+		routeContext = item.routeContext,
+		roster = item.roster,
 	}
 	state.completed[key] = row
 	state.completedOrder[#state.completedOrder + 1] = { key = key, row = row }
@@ -153,13 +161,21 @@ local function Expected(a, frame, sender)
 	end
 	return true
 end
-local function SendControl(a, state, operation, frame, sender, parts, status, owner)
+local function SendControl(a, state, operation, frame, sender, parts, status, owner, delivery)
 	if rawget(a, "commTransferState") ~= state or not a.isEnabled or a.isLoggingOut or not a.Emit then
 		return false
 	end
 	local record = { session = frame.session, messageId = frame.messageId, parts = parts, status = status }
 	local expires = owner and owner.expires or (Now(a) + 30)
-	return a:Emit(operation, record, { { distribution = "WHISPER", target = sender } }, {
+	local source = delivery or owner
+	local original = source and (source.route or source.routeContext)
+	local roster = source and source.roster
+	local route = { distribution = "WHISPER", target = sender }
+	if frame.operation == "QCRS" and original and GROUP[original.distribution] then
+		if not roster or roster ~= a:GetPartyRosterFingerprint() or not a:IsGroupedSender(sender) then return false end
+		route = { distribution = original.distribution, recipient = sender, requiresGroup = true }
+	end
+	return a:Emit(operation, record, { route }, {
 		priority = "control",
 		-- A throttled response in the same priority class must not hold its
 		-- status/repair traffic behind that response's destination queue head.
@@ -172,6 +188,7 @@ local function SendControl(a, state, operation, frame, sender, parts, status, ow
 				and a.isEnabled
 				and not a.isLoggingOut
 				and Now(a) < expires
+				and (not GROUP[route.distribution] or roster == a:GetPartyRosterFingerprint())
 				and (
 					not owner
 					or (
@@ -265,7 +282,7 @@ local function FinishIncoming(a, state, key, item)
 			Timing(state, "assembly", Now(a) - item.createdAt)
 		end
 		if item.reliable then
-			SendControl(a, state, "FXACK", item.frame, item.sender)
+			SendControl(a, state, "FXACK", item.frame, item.sender, nil, nil, nil, item)
 		end
 	elseif not ok then
 		a:RecordDiagnosticError("transfer dispatch", result)
@@ -306,7 +323,8 @@ function QT:QueueCommTransfer(frames, context, route, options)
 	end
 	local reliable = options.reliable == true
 		or (options.reliable ~= false and spec.semantic == "response" and #frames > 1)
-	if reliable and (route.distribution ~= "WHISPER" or not route.target or not first.requestId) then
+	local targetedGroup = first.operation == "QCRS" and GROUP[route.distribution] and route.recipient
+	if reliable and ((route.distribution ~= "WHISPER" and not targetedGroup) or not Recipient(route) or not first.requestId) then
 		return false, "invalid"
 	end
 	local replaced
@@ -316,11 +334,37 @@ function QT:QueueCommTransfer(frames, context, route, options)
 			and job.key == options.key
 			and job.route.distribution == route.distribution
 			and job.route.target == route.target
+			and job.route.recipient == route.recipient
 			and job.route.channelName == route.channelName
 		then
 			replaced = job
 			break
 		end
+	end
+	-- A cancelled viewer or lost ACK can leave a fully sent snapshot retained
+	-- for repair. Such cache entries must not occupy all sending slots for ten
+	-- minutes. Reclaim only old, idle QCRS copies under admission pressure;
+	-- active sends/repairs and diagnostic transfers remain untouched.
+	while #state.outgoing - (replaced and 1 or 0) >= MAX_OUT
+		or state.bytes - (replaced and replaced.bytes or 0) + bytes > MAX_BYTES do
+		local oldest
+		for _, job in ipairs(state.outgoing) do
+			if job ~= replaced and job.operation == "QCRS" and job.reliable and job.initialComplete
+				and not job.inFlight and not job.repairParts and not job.repairRequest
+				and now - (job.lastRecoveryAt or job.completedAt) >= RECOVERY_GRACE
+				and (not oldest or job.completedAt < oldest.completedAt) then oldest = job end
+		end
+		if not oldest then break end
+		-- The old viewer may still be waiting for repair rather than having
+		-- cancelled. Tell it this snapshot is unavailable instead of silently
+		-- stranding its correlated request at the extended response deadline.
+		if self.Respond then
+			self:Respond("ERROR", { requestId = oldest.requestId, operation = "QCMP", code = "capacity" },
+				{ oldest.route }, { owner = state, expires = math.min(oldest.expires, now + 30),
+					isCurrent = oldest.isCurrent })
+		end
+		RetireOut(self, state, oldest, "recovery-evicted")
+		Count(state, "recoveryEvicted")
 	end
 	if
 		#state.outgoing - (replaced and 1 or 0) >= MAX_OUT
@@ -344,10 +388,12 @@ function QT:QueueCommTransfer(frames, context, route, options)
 		route = {
 			distribution = route.distribution,
 			target = route.target,
+			recipient = route.recipient,
 			channelName = route.channelName,
 			requiresChannelJoin = route.requiresChannelJoin,
 		},
 		owner = options.owner,
+		roster = GROUP[route.distribution] and self:GetPartyRosterFingerprint() or nil,
 		key = options.key,
 		createdAt = now,
 		expires = expires,
@@ -466,6 +512,7 @@ function QT:ReceiveCommFragment(frame, body, sender, routeContext)
 			repairs = 0,
 			probes = 0,
 			routeContext = routeContext,
+			roster = routeContext and GROUP[routeContext.distribution] and self:GetPartyRosterFingerprint() or nil,
 		}
 		if item.expires <= now then
 			return false
@@ -495,7 +542,7 @@ local function FindOut(state, record, sender)
 	for _, job in ipairs(state.outgoing) do
 		if
 			job.reliable
-			and job.route.target == sender
+			and Recipient(job.route) == sender
 			and job.frame.session == record.session
 			and job.frame.messageId == record.messageId
 		then
@@ -541,15 +588,25 @@ function QT:HandleCommTransferControl(operation, record, sender)
 	local now, key = Now(self), Key(sender, record)
 	local incoming, done, job = state.incoming[key], state.completed[key], FindOut(state, record, sender)
 	if operation == "FXACK" then
-		if not job or not job.initialComplete or not Current(self, state, job) then
+		if not job or not Current(self, state, job) then
 			return false
 		end
+		if record.status == "cancelled" and job.operation == "QCRS" then
+			RetireOut(self, state, job, "remote-cancelled")
+			Count(state, "remoteCancelled")
+			return true
+		end
+		if not job.initialComplete or (record.status and record.status ~= "") then return false end
 		RetireOut(self, state, job, "acknowledged")
 		Count(state, "acknowledged")
 		return true
 	elseif operation == "FXEND" then
+		if done and done.cancelled and done.reliable and now < done.expires then
+			SendControl(self, state, "FXACK", done.frame, sender, nil, "cancelled", nil, done)
+			return true
+		end
 		if done and done.accepted and done.reliable and now < done.expires then
-			SendControl(self, state, "FXACK", done.frame, sender)
+			SendControl(self, state, "FXACK", done.frame, sender, nil, nil, nil, done)
 			return true
 		end
 		if not incoming or not incoming.reliable or not Expected(self, incoming.frame, sender) then
@@ -573,6 +630,7 @@ function QT:HandleCommTransferControl(operation, record, sender)
 			if not job or not Current(self, state, job) then
 				return false
 			end
+			job.lastRecoveryAt = now
 			SendControl(
 				self,
 				state,
@@ -625,6 +683,7 @@ function QT:HandleCommTransferControl(operation, record, sender)
 		if not parts then
 			return false
 		end
+		job.lastRecoveryAt = now
 		local repair = job.repairRequest
 		if repair and round < repair.round then
 			return false
@@ -713,7 +772,7 @@ function QT:UpdateCommTransfers()
 									state,
 									"FXEND",
 									job.frame,
-									job.route.target,
+									Recipient(job.route),
 									nil,
 									tostring(job.repairRound),
 									job
@@ -726,7 +785,7 @@ function QT:UpdateCommTransfers()
 								Timing(state, "outboundCompletion", job.completedAt - job.createdAt)
 								Complete(self, job, not job.ambiguous, job.ambiguous and "ambiguous" or "accepted")
 								if job.reliable then
-									SendControl(self, state, "FXEND", job.frame, job.route.target, nil, "0", job)
+									SendControl(self, state, "FXEND", job.frame, Recipient(job.route), nil, "0", job)
 								else
 									RetireOut(self, state, job, "accepted")
 								end
@@ -747,7 +806,7 @@ function QT:UpdateCommTransfers()
 				and job.probes < MAX_PROBES
 			then
 				job.probes, job.lastProbe = job.probes + 1, now
-				SendControl(self, state, "FXEND", job.frame, job.route.target, nil, tostring(job.repairRound), job)
+				SendControl(self, state, "FXEND", job.frame, Recipient(job.route), nil, tostring(job.repairRound), job)
 			end
 		end
 	end
@@ -800,6 +859,13 @@ function QT:CancelIncomingCommResponses(requestId, reason)
 	if not state then return end
 	for key, item in pairs(state.incoming) do
 		if item.frame.requestId == requestId and self:GetCommOperation(item.frame.operation).semantic == "response" then
+			-- Successfully assembled responses have already left incoming before
+			-- domain completion. Any remaining partial object is being abandoned.
+			if item.reliable and item.frame.operation == "QCRS" then
+				item.cancelled = true
+				Tombstone(state, key, item, false)
+				SendControl(self, state, "FXACK", item.frame, item.sender, nil, "cancelled", nil, item)
+			end
 			RetireIn(state, key)
 			self:CancelTransportOwner(item, reason or "cancelled")
 		end
@@ -814,7 +880,7 @@ function QT:ReplayCommResponse(sender, requestId)
 	end
 	local found = false
 	for _, job in ipairs(state.outgoing) do
-		if job.reliable and job.route.target == sender and job.requestId == requestId and Current(self, state, job) then
+		if job.reliable and Recipient(job.route) == sender and job.requestId == requestId and Current(self, state, job) then
 			found = true
 			if job.initialComplete and not job.repairParts and (job.replays or 0) < 2 then
 				job.replays = (job.replays or 0) + 1

@@ -174,7 +174,8 @@ local function Fixture(name, entries)
 		self.wireRoutes[#self.wireRoutes + 1] = routes[1]
 		if self.packets then
 			self.packets[#self.packets + 1] =
-				{ message = message, distribution = routes[1].distribution, target = routes[1].target }
+				{ message = message, distribution = routes[1].distribution,
+					target = routes[1].target, recipient = routes[1].recipient }
 		end
 		if options.onComplete then
 			options.onComplete(true, "accepted")
@@ -1656,12 +1657,13 @@ QuestTogether:RegisterTest(
 )
 
 QuestTogether:RegisterTest(
-	"target compare roster refresh preserves private routes without expanding selected comparison",
+	"target compare changes route with membership without expanding the selected comparison",
 	function()
 		local a = TargetFixture(nil, { Quest(1, "Local", true) })
 		a:Roster(a.name, "Friend-Realm", "Third-Realm")
 		assert(a:OpenPlayerQuestCompare("Friend-Realm"))
-		Equal(a.packets[1].distribution, "WHISPER")
+		Equal(a.packets[1].distribution, "PARTY")
+		Equal(a.packets[1].recipient, "Friend-Realm")
 		Equal(#a.packets, 1)
 		Reply(a, "Friend-Realm", {}, true)
 		Equal(a:BuildPartyQuestDiffRows()[1].action, "share")
@@ -1681,7 +1683,8 @@ QuestTogether:RegisterTest(
 		a:Roster(a.name, "Friend-Realm", "Third-Realm")
 		a:OnPartyQuestRosterChanged()
 		Equal(#a.partyQuestCompareSession.members, 2)
-		Equal(a.packets[#a.packets].distribution, "WHISPER")
+		Equal(a.packets[#a.packets].distribution, "PARTY")
+		Equal(a.packets[#a.packets].recipient, "Friend-Realm")
 		Reply(a, "Friend-Realm", {}, true)
 		a:RenderPartyQuestCompare()
 		a.partyQuestCompareWindow.rows[1].action.scripts.OnClick()
@@ -1812,10 +1815,10 @@ QuestTogether:RegisterTest(
 		Equal(a:GetPartyQuestShareStatus(1), "Share attempted")
 		Equal(b.pushes, 1)
 		for _, packet in ipairs(a.packets) do
-			Equal(packet.distribution, "WHISPER")
+			Equal(packet.distribution, packet.message.operation == "QCMP" and "PARTY" or "WHISPER")
 		end
 		for _, packet in ipairs(b.packets) do
-			Equal(packet.distribution, "WHISPER")
+			Equal(packet.distribution, packet.message.operation == "QCRS" and "PARTY" or "WHISPER")
 		end
 		-- A share result from the previous recipient is not feedback for a newly selected player.
 		assert(a:OpenPlayerQuestCompare("Third-Realm"))
@@ -2358,6 +2361,8 @@ local function BeginObjectiveExchange()
 	b:Roster(a.name, b.name)
 	a:RefreshPartyQuestCompare()
 	a:Advance(0)
+	Equal(a.wireRoutes[1].distribution, "PARTY")
+	Equal(a.wireRoutes[1].recipient, b.name)
 	b:OnCommReceived(b.commPrefix, a.wire[1], "PARTY", a.name)
 	for _ = 1, 4 do
 		b:Advance(0.2)
@@ -2368,19 +2373,21 @@ local function BeginObjectiveExchange()
 	Equal(a.partyQuestCompareSession.byName[b.name].supportsObjectives, true)
 	a:TogglePartyQuestObjectives(1)
 	a:Advance(0)
-	Equal(a.wireRoutes[#a.wireRoutes].distribution, "WHISPER")
-	Equal(a.wireRoutes[#a.wireRoutes].target, b.name)
+	Equal(a.wireRoutes[#a.wireRoutes].distribution, "PARTY")
+	Equal(a.wireRoutes[#a.wireRoutes].recipient, b.name)
+	Equal(a.wireRoutes[#a.wireRoutes].target, nil)
 	Equal(a.wireRoutes[#a.wireRoutes].requiresGroup, true)
 
 	b.wire, b.wireRoutes = {}, {}
-	b:OnCommReceived(b.commPrefix, a.wire[#a.wire], "WHISPER", a.name)
+	b:OnCommReceived(b.commPrefix, a.wire[#a.wire], "PARTY", a.name)
 	for _ = 1, 6 do
 		b:Advance(0.2)
 	end
 	Equal(#b.wire, 1) -- one immutable quest/objective snapshot
 	for _, route in ipairs(b.wireRoutes) do
-		Equal(route.distribution, "WHISPER")
-		Equal(route.target, a.name)
+		Equal(route.distribution, "PARTY")
+		Equal(route.recipient, a.name)
+		Equal(route.target, nil)
 	end
 	return a, b
 end

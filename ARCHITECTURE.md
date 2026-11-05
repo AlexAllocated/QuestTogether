@@ -409,6 +409,11 @@ successful active traffic recovers 0.5/second, capped at four; idle time earns n
 rate recovery. `ChannelThrottle` is an ambiguous native outcome and is not
 resubmitted automatically. Native acceptance never claims remote delivery.
 Tickets settle exactly once, including replacement, cancellation and expiry.
+Hard native send failures reach QT diagnostics and WoW's error handler, including
+installed bug catchers. Repeated failures are limited to one report per fixed
+route/result bucket per minute; every attempt remains counted. Normal throttle
+backoff and ambiguous results are not reported as definite send failures. A
+rejected request ends its loading state without waiting for a remote timeout.
 
 State samples replace older queued samples for the same topic/audience. Events
 retain immutable identities and finite duplicate suppression. Requests preserve
@@ -417,6 +422,11 @@ A transiently busy receiver must not tombstone an unaccepted request. Immutable
 cached responses can replay after loss without rereading a changed domain
 snapshot. PQL installs complete snapshots atomically and reuses only an exact
 revision; objective detail is a separate request.
+Party log, objective-detail and completion-history exchanges use the current
+PARTY, RAID or INSTANCE_CHAT distribution for group members. The logical recipient
+is separate from the native route; request correlation and roster lifetimes fence
+group fan-out, response replay and repair. Comparisons outside the group retain
+whispers, and older peers' whisper replies remain compatible.
 
 Large transfers share one fragment format, validate correlation before allocating
 response buffers, and interleave across recipients. Completion/END starts missing
@@ -425,6 +435,12 @@ missing END permits a bounded status query. Queueing alone is not packet loss.
 The original request bounds transfer lifetime to at most 600 seconds. Retirement
 releases buffers on completion, cancellation or expiry. Oversize and capacity
 failures are explicit; requested fields are not stripped to fit.
+Abandoning a partial quest response sends a recipient-validated cancellation to
+release its sender's queued work. Cancelled-response tombstones repeat that signal
+when a later END arrives. Under capacity pressure, fully sent, idle QCRS recovery
+copies may be reclaimed after a five-second grace; active sends/repairs and
+diagnostic transfers are not evicted. Lost acknowledgements or abandoned hovers
+must not reserve every outgoing slot for the full response lifetime.
 
 Pongs have **no arrival-time cutoff**. They must match one of the eight most recent
 locally owned ping identities in the current session, match a target when one was
@@ -445,6 +461,9 @@ Diagnostics are bounded counters/gauges for queue age and charged bytes, native
 outcomes, replacement/expiry, request timing, authentication queue/work time and
 transfer progress. They distinguish native acceptance, authentication and remote
 response assembly. Reading diagnostics must not start network activity.
+Quest traffic retains fixed operation/route/native-result counters, and the
+comparison owner exposes bounded request and response-job counts and ages without
+player identities or quest content.
 
 The private multi-peer network harness runs actual coordinators with independent
 clocks/state, frame-rounded timers, asynchronous channel joins and delivery

@@ -16,7 +16,31 @@ local METRICS = {
 	cancelled = true,
 	superseded = true,
 	capacity = true,
+	nativeException = true,
+	nativeNoResult = true,
+	nativeUnknown = true,
+	nativeBooleanSuccess = true,
 }
+local NATIVE_RESULTS = {}
+local NATIVE_ROUTES = { PARTY = true, RAID = true, INSTANCE_CHAT = true, WHISPER = true, CHANNEL = true }
+local QUEST_OPERATIONS = { QCMP = true, QCRS = true, FXACK = true, FXEND = true, FXNACK = true }
+local FAILURE_REPORT_INTERVAL = 60
+for code = 0, 12 do
+	local key = "nativeResult" .. code
+	NATIVE_RESULTS[code], METRICS[key] = key, true
+end
+-- Fixed operation/route/result buckets distinguish party failures from an
+-- unrelated custom-channel failure without retaining names or message bodies.
+for operation in pairs(QUEST_OPERATIONS) do
+	for distribution in pairs(NATIVE_ROUTES) do
+		for _, outcome in ipairs({ "nativeException", "nativeNoResult", "nativeUnknown", "nativeBooleanSuccess" }) do
+			METRICS["questWire." .. operation .. "." .. distribution .. "." .. outcome] = true
+		end
+		for _, outcome in pairs(NATIVE_RESULTS) do
+			METRICS["questWire." .. operation .. "." .. distribution .. "." .. outcome] = true
+		end
+	end
+end
 
 local function Now(a)
 	return a:SafeToNumber(a.API and a.API.GetTime and a.API.GetTime()) or 0
@@ -114,6 +138,24 @@ local function Accepted(s, now)
 		s.activeSeconds = 0
 	end
 end
+local function ReportNativeFailure(a, s, context, route, nativeKey, nativeLabel)
+	local distribution = NATIVE_ROUTES[route.distribution] and route.distribution or "OTHER"
+	local key, now = distribution .. ":" .. nativeKey, Now(a)
+	s.failureReports = s.failureReports or {}
+	local previous = s.failureReports[key]
+	if previous and now >= previous and now - previous < FAILURE_REPORT_INTERVAL then return end
+	s.failureReports[key] = now
+	local operation = type(context) == "string" and a:GetCommOperation(context) and context or "message"
+	local detail = "QuestTogether: Addon message send failed (operation=" .. operation
+		.. ", route=" .. distribution .. ", result=" .. nativeLabel
+		.. "). Communication may be incomplete. Run /qt diagnostics for details."
+	a:RecordDiagnosticError("communication send", detail)
+	-- Error handlers installed by BugSack and similar addons receive this too.
+	-- A handler must never abort draining or strand completion callbacks.
+	if a.API and type(a.API.ReportLuaError) == "function" then
+		pcall(a.API.ReportLuaError, detail)
+	end
+end
 local function NativeSend(a, s, wire, context, route)
 	local target = route.target
 	if route.requiresChannelJoin then
@@ -131,6 +173,24 @@ local function NativeSend(a, s, wire, context, route)
 	Count(s, "attempts")
 	local ok, result = pcall(a.API.SendAddonMessage, a.commPrefix, wire, route.distribution, target)
 	local code = ok and a:SafeToNumber(result) or nil
+	local nativeKey, nativeLabel = "nativeUnknown", "unknown"
+	if not ok then
+		nativeKey, nativeLabel = "nativeException", "exception"
+	elseif a:CanAccessValue(result) then
+		if result == nil then
+			nativeKey, nativeLabel = "nativeNoResult", "no-result"
+		elseif result == true then
+			nativeKey, nativeLabel = "nativeBooleanSuccess", "true"
+		elseif code then
+			-- Fixed enum buckets only. New/invalid results cannot grow metric keys,
+			-- while the bounded debug log retains their safe numeric value.
+			nativeKey, nativeLabel = NATIVE_RESULTS[code] or "nativeUnknown", tostring(code)
+		end
+	end
+	Count(s, nativeKey)
+	if QUEST_OPERATIONS[context] and NATIVE_ROUTES[route.distribution] then
+		Count(s, "questWire." .. context .. "." .. route.distribution .. "." .. nativeKey)
+	end
 	if ok and a:CanAccessValue(result) and (result == 0 or result == true) then
 		Accepted(s, Now(a))
 		a:RecordCommsTraffic("sent", wire)
@@ -141,7 +201,10 @@ local function NativeSend(a, s, wire, context, route)
 		return true, "accepted", code
 	end
 	a:RecordCommsTraffic("failed", wire, code)
-	a:RecordCommsDiagnostic("failedRoutes", "route=" .. route.distribution .. " " .. (context or "wire message"))
+	a:RecordCommsDiagnostic(
+		"failedRoutes",
+		"route=" .. route.distribution .. " result=" .. nativeLabel .. " " .. (context or "wire message")
+	)
 	if code == 3 then
 		s.blockedUntil, s.packetRate, s.tokens = Now(a) + 1, 1, 0
 		s.activeSeconds, s.lastAcceptedAt = 0, nil
@@ -149,6 +212,7 @@ local function NativeSend(a, s, wire, context, route)
 		return false, "throttled", code
 	end
 	-- Code 8 may already have transmitted. Never resend an ambiguous packet.
+	if code ~= 8 then ReportNativeFailure(a, s, context, route, nativeKey, nativeLabel) end
 	return false, code == 8 and "ambiguous" or "rejected", code
 end
 

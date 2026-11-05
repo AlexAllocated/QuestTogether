@@ -15,6 +15,7 @@ local STATE_HANDLERS = {
 	QTHI = "HandlePlayerDetailsIdentity",
 }
 local policies = {}
+local ExpireRequest
 local function Now(a)
 	return a:SafeToNumber(a.API.GetTime()) or 0
 end
@@ -105,7 +106,21 @@ local function FirstResponse(a, request)
 	request.responseProgress = true
 end
 local function RouteKey(route)
-	return route.distribution .. ":" .. tostring(route.channelName or route.target or "")
+	return route.distribution .. ":" .. tostring(route.channelName or route.target or route.recipient or "")
+end
+-- Group transport has no native target. Keep the intended peer separately so
+-- correlation, cancellation and replay retain the intended peer.
+function QT:GetQuestCompareRoutes(target, requiresGroup)
+	target = Name(self, target)
+	if not target then return {} end
+	if self:IsGroupedSender(target) then
+		local distribution = self:GetGroupAnnouncementDistribution()
+		if GROUP[distribution] then
+			return { { distribution = distribution, recipient = target, requiresGroup = true } }
+		end
+	end
+	if requiresGroup then return {} end
+	return { { distribution = "WHISPER", target = target } }
 end
 function QT:GetCommunicationRoutes(operation, routes)
 	if routes then
@@ -142,6 +157,7 @@ function QT:IsCommunicationRouteCurrent(route, fingerprint)
 	elseif GROUP[route.distribution] then
 		return route.distribution == self:GetGroupAnnouncementDistribution()
 			and fingerprint == self:GetPartyRosterFingerprint()
+			and (not route.recipient or (self:IsGroupedSender(route.recipient) and not self:IsIgnoredPlayerName(route.recipient)))
 	elseif route.distribution == "CHANNEL" then
 		local geo = rawget(self, "geographicCommsState")
 		return route.channelName == self.announcementChannelName
@@ -205,7 +221,12 @@ function QT:NormalizeCommunicationRoutes(operation, routes)
 			end
 			route.channelName = channel
 			route.requiresChannelJoin = true
-		elseif not GROUP[distribution] then
+		elseif GROUP[distribution] then
+			if original.recipient ~= nil then
+				route.recipient = Name(self, original.recipient)
+				if not route.recipient then return nil end
+			end
+		else
 			return nil
 		end
 		local key = RouteKey(route)
@@ -249,7 +270,8 @@ local function Predicate(a, callback)
 end
 function QT:CacheCommResponse(context, wire, route, options)
 	local s = rawget(self, "communicationState")
-	if not s or not Current(self, s) or route.distribution ~= "WHISPER" or not context.requestId then
+	local recipient = route.target or (GROUP[route.distribution] and route.recipient)
+	if not s or not Current(self, s) or not recipient or not context.requestId then
 		return
 	end
 	s.replies = s.replies or {}
@@ -268,7 +290,7 @@ function QT:CacheCommResponse(context, wire, route, options)
 	if not Current(self, s) then
 		return
 	end
-	local key = route.target .. ":" .. context.requestId .. ":" .. context.operation
+	local key = recipient .. ":" .. context.requestId .. ":" .. context.operation
 	local old = s.replies[key]
 	if count - (old and 1 or 0) >= 128 or s.replyBytes - (old and #old.wire or 0) + #wire > 65536 then
 		return
@@ -307,7 +329,7 @@ function QT:ReplayCommResponses(sender, id)
 	for _, row in pairs(s.replies or {}) do
 		if
 			row.requestId == id
-			and row.route.target == sender
+			and (row.route.target or row.route.recipient) == sender
 			and row.replays < 2
 			and Now(self) < row.expires
 			and Predicate(self, row.isCurrent)
@@ -378,9 +400,12 @@ function QT:SubmitCommunication(operation, record, routes, options)
 	end
 	local fingerprint = self:GetPartyRosterFingerprint()
 	local remaining, finished, overall, lastFailure = #audience, false, true, nil
+	local outcomes = { accepted = false, ambiguous = false }
 	local admitted, last = false, "route"
 	local function Complete(ok, status, code, ticket)
 		remaining = remaining - 1
+		outcomes.accepted = outcomes.accepted or ok
+		outcomes.ambiguous = outcomes.ambiguous or status == "ambiguous"
 		overall = overall and ok
 		if not ok then
 			lastFailure = status
@@ -394,7 +419,8 @@ function QT:SubmitCommunication(operation, record, routes, options)
 				overall,
 				overall and "accepted" or lastFailure,
 				code,
-				ticket
+				ticket,
+				outcomes
 			)
 		end
 	end
@@ -516,6 +542,7 @@ function QT:Request(operation, record, routes, options)
 	options.requestId = id
 	local target = Name(self, data.targetName)
 		or (#audience == 1 and audience[1].distribution == "WHISPER" and audience[1].target)
+		or (#audience == 1 and audience[1].recipient)
 		or nil
 	local groupOnly = spec.groupOnly or data.partyOnly == true
 	for _, route in ipairs(audience) do
@@ -562,12 +589,19 @@ function QT:Request(operation, record, routes, options)
 			and (not request.groupOnly or request.roster == self:GetPartyRosterFingerprint())
 	end
 	local completion = options.onComplete
-	options.onComplete = function(sent, reason, code, ticket)
-		if s.requests[id] == request and sent then
+	options.onComplete = function(sent, reason, code, ticket, outcomes)
+		local accepted = sent or (outcomes and outcomes.accepted)
+		local ambiguous = reason == "ambiguous" or (outcomes and outcomes.ambiguous)
+		if s.requests[id] == request and accepted then
 			request.acceptedAt = Now(self)
 			Timing(self, "requestQueueWait", request.acceptedAt - request.startedAt)
+		elseif s.requests[id] == request and not accepted and not ambiguous then
+			-- A definitive local failure cannot produce a response. Do not leave
+			-- a viewer waiting for the full remote-response deadline.
+			self:CancelCommRequest(id, reason or "rejected")
+			ExpireRequest(self, request, reason or "rejected", code)
 		end
-		Invoke(self, "request completion", completion, sent, reason, code, ticket)
+		Invoke(self, "request completion", completion, sent, reason, code, ticket, outcomes)
 	end
 	request.retryOptions = Copy(options)
 	request.retryOptions.onComplete = nil
@@ -738,7 +772,7 @@ function QT:ApplyCommunicationState(records, sender, context)
 	end
 	return accepted
 end
-local function ExpireRequest(a, request, reason, detail)
+ExpireRequest = function(a, request, reason, detail)
 	if request.expiryNotified then
 		return
 	end

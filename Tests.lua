@@ -6771,7 +6771,7 @@ QuestTogether:RegisterTest("verified ping replies use only the requesting develo
 	end
 end)
 
-QuestTogether:RegisterTest("quest compare requests remain private for grouped peers", function()
+QuestTogether:RegisterTest("quest compare requests use the current party channel for grouped peers", function()
 	local net, a, b = AnnouncementPeers()
 	function b:HandleQuestCompareRequest()
 		return true
@@ -6780,8 +6780,8 @@ QuestTogether:RegisterTest("quest compare requests remain private for grouped pe
 	net:Advance(1)
 	local sent = AcceptedOperation(net, "QCMP")
 	AssertEquals(#sent, 1)
-	AssertEquals(sent[1].route, "WHISPER")
-	AssertEquals(sent[1].target, b.name)
+	AssertEquals(sent[1].route, "PARTY")
+	AssertEquals(sent[1].target, nil)
 end)
 
 QuestTogether:RegisterTest("quest compare does not depend on public channel membership", function()
@@ -6792,7 +6792,7 @@ QuestTogether:RegisterTest("quest compare does not depend on public channel memb
 	local channelJoins = 0
 	a.API.JoinPermanentChannel = function()
 		channelJoins = channelJoins + 1
-		error("private comparison must not join channels")
+		error("party comparison must not join public channels")
 	end
 	function b:HandleQuestCompareRequest()
 		return true
@@ -6801,12 +6801,12 @@ QuestTogether:RegisterTest("quest compare does not depend on public channel memb
 	net:Advance(1)
 	local sent = AcceptedOperation(net, "QCMP")
 	AssertEquals(#sent, 1)
-	AssertEquals(sent[1].route, "WHISPER")
-	AssertEquals(sent[1].target, b.name)
+	AssertEquals(sent[1].route, "PARTY")
+	AssertEquals(sent[1].target, nil)
 	AssertEquals(channelJoins, 0)
 end)
 
-QuestTogether:RegisterTest("quest compare returns one atomic private snapshot without public rows", function()
+QuestTogether:RegisterTest("quest compare returns one atomic party snapshot without public channel rows", function()
 	local net, a, b = AnnouncementPeers()
 	local entries, done, timeouts = {}, 0, 0
 	function b:BuildRevisionedQuestCompareEntries()
@@ -6834,8 +6834,8 @@ QuestTogether:RegisterTest("quest compare returns one atomic private snapshot wi
 	local sent = AcceptedOperation(net, "QCRS")
 	AssertTrue(#sent > 0)
 	for _, packet in ipairs(sent) do
-		AssertEquals(packet.route, "WHISPER")
-		AssertEquals(packet.target, a.name)
+		AssertEquals(packet.route, "PARTY")
+		AssertEquals(packet.target, nil)
 	end
 end)
 

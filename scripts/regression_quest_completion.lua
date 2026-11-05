@@ -51,14 +51,18 @@ QT:RegisterTest("quest history uses bounded requested character evidence without
 	local request = a.wire[#a.wire]
 	Equal(request.operation, "QCMP")
 	Equal(#request.record.historyQuestIds, 32)
-	Equal(b:OnCommReceived(nil, request, "WHISPER", a.name), true)
+	Equal(a.lastRoutes[1].distribution, "PARTY")
+	Equal(a.lastRoutes[1].recipient, friend.name)
+	Equal(b:OnCommReceived(nil, request, "PARTY", a.name), true)
 	Equal(b.historyReads, 8)
 	Equal(#b.wire, 0)
 	for _ = 1, 3 do b:Advance(1) end
 	Equal(b.historyReads, 32)
 	Equal(#b.wire, 1)
+	Equal(b.lastRoutes[1].distribution, "PARTY")
+	Equal(b.lastRoutes[1].recipient, a.name)
 	local snapshot = friend.entries
-	Equal(a:OnCommReceived(nil, b.wire[1], "WHISPER", friend.name), true)
+	Equal(a:OnCommReceived(nil, b.wire[1], "PARTY", friend.name), true)
 	Equal(friend.entries, snapshot)
 	Equal(a:GetPartyQuestAbsenceState(friend, 1), "Completed")
 	Equal(a:GetPartyQuestAbsenceState(friend, 2), "Missing")

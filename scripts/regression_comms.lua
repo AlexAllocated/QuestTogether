@@ -2153,7 +2153,9 @@ local function InstallResponseClock(addon)
 		}))
 		local copied = assert(self:CopyCommRecord(operation, record))
 		self.responses[#self.responses + 1] = { operation = operation, record = copied, options = options }
-		self.wire[#self.wire + 1] = { self.commPrefix, frames, routes[1].distribution, routes[1].target }
+		self.wire[#self.wire + 1] = {
+			self.commPrefix, frames, routes[1].distribution, routes[1].target, recipient = routes[1].recipient,
+		}
 		if options.onComplete and not self.holdAcceptance then
 			options.onComplete(true, "accepted")
 		end
@@ -2202,7 +2204,7 @@ local function ComparisonNetwork(count)
 	local function Request()
 		result.entries = {}
 		local ok, id = receiver:RequestQuestCompare(sender.name, {
-			routes = { { distribution = "WHISPER", target = sender.name, requiresGroup = true } },
+			routes = receiver:GetQuestCompareRoutes(sender.name, true),
 			onEntry = function(row)
 				result.entries[#result.entries + 1] = row
 			end,
@@ -2392,11 +2394,19 @@ QuestTogether:RegisterTest("queued group comparisons stop when requester leaves 
 	Equal(ResponseCount(sender), 0)
 end)
 
-QuestTogether:RegisterTest("group comparisons remain private after party becomes raid", function()
+QuestTogether:RegisterTest("group comparisons follow the party channel when the party becomes a raid", function()
 	local net, sender, receiver, result, request = ComparisonNetwork(2)
 	request()
 	net:Advance(10)
 	Equal(result.completed, 1)
+	for _, peer in ipairs({ sender, receiver }) do
+		assert(#peer.sent > 0)
+		for _, packet in ipairs(peer.sent) do
+			Equal(packet.route, "PARTY")
+			Equal(packet.target, nil)
+		end
+		peer.sent = {}
+	end
 	receiver.groupDistribution, sender.groupDistribution = "RAID", "RAID"
 	request()
 	net:Advance(10)
@@ -2404,8 +2414,8 @@ QuestTogether:RegisterTest("group comparisons remain private after party becomes
 	for _, peer in ipairs({ sender, receiver }) do
 		assert(#peer.sent > 0)
 		for _, packet in ipairs(peer.sent) do
-			Equal(packet.route, "WHISPER")
-			Equal(packet.target, peer == sender and receiver.name or sender.name)
+			Equal(packet.route, "RAID")
+			Equal(packet.target, nil)
 		end
 	end
 end)
@@ -2571,6 +2581,9 @@ end)
 
 local function NewSnapshotComparisonFixture()
 	local addon = NewCommsFixture()
+	addon.API.IsInParty = function()
+		return true
+	end
 	InstallResponseClock(addon)
 	local clock = addon:CreateTestClock(100)
 	addon.restrictions = {}

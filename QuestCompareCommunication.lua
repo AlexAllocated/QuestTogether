@@ -141,6 +141,40 @@ end
 function QuestTogether:GetPendingQuestCompare(id)
 	return self.pendingQuestCompareRequests and self.pendingQuestCompareRequests[id]
 end
+
+function QuestTogether:GetQuestCompareCommunicationDiagnostics()
+	local now = self:SafeToNumber(self.API and self.API.GetTime and self.API.GetTime()) or 0
+	local result = {
+		pendingRequests = 0,
+		pendingSnapshots = 0,
+		pendingObjectives = 0,
+		pendingHistory = 0,
+		oldestRequestAge = 0,
+		responseJobs = 0,
+		responseJobsPreparing = 0,
+		responseJobsSubmitted = 0,
+		oldestResponseJobAge = 0,
+	}
+	for _, pending in pairs(rawget(self, "pendingQuestCompareRequests") or {}) do
+		result.pendingRequests = result.pendingRequests + 1
+		local key = pending.historyQuestIds and "pendingHistory"
+			or pending.objectiveQuestId and "pendingObjectives" or "pendingSnapshots"
+		result[key] = result[key] + 1
+		local startedAt = self:SafeToNumber(pending.startedAt) or now
+		result.oldestRequestAge = math.max(result.oldestRequestAge, math.max(0, now - startedAt))
+		if result.pendingRequests >= 128 then break end
+	end
+	for _, job in pairs(rawget(self, "questCompareResponseCache") or {}) do
+		result.responseJobs = result.responseJobs + 1
+		local key = job.submitted and "responseJobsSubmitted" or "responseJobsPreparing"
+		result[key] = result[key] + 1
+		local startedAt = self:SafeToNumber(job.startedAt) or now
+		result.oldestResponseJobAge = math.max(result.oldestResponseJobAge, math.max(0, now - startedAt))
+		if result.responseJobs >= 16 then break end
+	end
+	return result
+end
+
 function QuestTogether:ClearPendingQuestCompare(id, pending)
 	if self.pendingQuestCompareRequests and self.pendingQuestCompareRequests[id] == pending then
 		self.pendingQuestCompareRequests[id] = nil
@@ -267,7 +301,7 @@ function QuestTogether:RequestQuestCompare(speakerName, receiver)
 		return true
 	end
 	local id = self:BuildChannelRequestId("qcmp")
-	local routes = receiver and receiver.routes or { { distribution = "WHISPER", target = target } }
+	local routes = receiver and receiver.routes or self:GetQuestCompareRoutes(target, false)
 	local pending = {
 		targetName = target,
 		receiver = receiver,
@@ -428,7 +462,7 @@ function QuestTogether:ProgressQuestCompareResponses(now)
 				local ok, status = self:Respond(
 					"QCRS",
 					response,
-					{ { distribution = "WHISPER", target = job.targetName, requiresGroup = job.requiresGroup } },
+					self:GetQuestCompareRoutes(job.targetName, job.requiresGroup),
 					{
 						owner = job,
 						startedAt = job.startedAt,
@@ -456,7 +490,7 @@ function QuestTogether:ProgressQuestCompareResponses(now)
 					self:Respond(
 						"ERROR",
 						{ requestId = job.data.requestId, operation = "QCMP", code = status },
-						{ { distribution = "WHISPER", target = job.targetName } },
+						self:GetQuestCompareRoutes(job.targetName, job.requiresGroup),
 						{ owner = job }
 					)
 					cache[key] = nil
@@ -469,7 +503,7 @@ function QuestTogether:ProgressQuestCompareResponses(now)
 					self:Respond(
 						"ERROR",
 						{ requestId = job.data.requestId, operation = "QCMP", code = job.result },
-						{ { distribution = "WHISPER", target = job.targetName } },
+						self:GetQuestCompareRoutes(job.targetName, job.requiresGroup),
 						{ owner = job }
 					)
 					cache[key] = nil

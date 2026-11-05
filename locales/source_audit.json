@@ -120,12 +120,15 @@
     ],
     "CommsTransfer.lua": [
       "Count",
+      "ERROR",
       "FXACK",
       "FXEND",
       "FXMISS",
       "FXSTAT",
       "Last",
       "Max",
+      "QCMP",
+      "QCRS",
       "WHISPER",
       "transfer completion",
       "transfer dispatch"
@@ -473,8 +476,7 @@
       "Completed",
       "Missing",
       "Not in log",
-      "Ready",
-      "WHISPER"
+      "Ready"
     ],
     "PartyVisuals.lua": [
       "QPGM",
@@ -608,7 +610,6 @@
       "ERROR",
       "QCMP",
       "QCRS",
-      "WHISPER",
       "Yes"
     ],
     "QuestCompareFilters.lua": [
@@ -749,8 +750,7 @@
       "Completed",
       "Loading",
       "Missing",
-      "Unknown",
-      "WHISPER"
+      "Unknown"
     ],
     "QuestDetails.lua": [
       "Button",
@@ -893,8 +893,15 @@
     ],
     "Transport.lua": [
       " bytes=",
+      " result=",
+      "). Communication may be incomplete. Run /qt diagnostics for details.",
+      ", result=",
+      ", route=",
       "BYE",
+      "OTHER",
+      "QuestTogether: Addon message send failed (operation=",
       "channel join failed ",
+      "communication send",
       "outbound completion",
       "outbound queue full",
       "wire message"

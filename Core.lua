@@ -933,8 +933,14 @@ QuestTogether.API = QuestTogether.API
 			return ok and result or nil
 		end,
 		SendAddonMessage = function(prefix, message, channel, target)
-			local ok, result = pcall(C_ChatInfo.SendAddonMessage, prefix, message, channel, target)
-			return ok and result or nil
+			-- Transport owns the error boundary and records native exceptions.
+			return C_ChatInfo.SendAddonMessage(prefix, message, channel, target)
+		end,
+		ReportLuaError = function(message)
+			if type(geterrorhandler) == "function" then
+				local handler = geterrorhandler()
+				if type(handler) == "function" then handler(message) end
+			end
 		end,
 		SendChannelChatMessage = function(message, channelID)
 			local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage

@@ -73,6 +73,78 @@ local function CountControls(peer, op)
 	return count
 end
 
+local function QuestResponse(net, a, b, id)
+	b.expected[a.name .. ":" .. id] = net.now + 600
+	local frames = Frames(a, "QCRS", { requestId = id, snapshotId = id, count = 1,
+		entries = { { questId = 42, questTitle = string.rep("quest", 150) } } }, id)
+	return a:QueueCommTransfer(frames, "quest response", { distribution = "WHISPER", target = b.name },
+		{ expires = net.now + 600 })
+end
+
+QT:RegisterTest("abandoned quest snapshots cancel active senders and recover a lost or early legacy cancellation", function()
+	for _, legacy in ipairs({ false, true }) do
+		local net, a, b = Fixture({ fps = 20 })
+		local lost, early = false, false
+		if legacy then
+			local handle = a.HandleCommTransferControl
+			function a:HandleCommTransferControl(operation, record, sender)
+				local job = self.commTransferState.outgoing[1]
+				if operation == "FXACK" and record.status == "cancelled" and job and not job.initialComplete then
+					early = true
+					return false -- Pre-change senders only accept ACK after initial sending.
+				end
+				return handle(self, operation, record, sender)
+			end
+		else
+			net.deliveryRule = function(packet)
+				local frame = a:DecodeCommFrame(packet.wire)
+				if frame.operation == "FXACK" and not lost then lost = true; return { drop = true } end
+			end
+		end
+		assert(QuestResponse(net, a, b, "cancelled-detail"))
+		net:Advance(0.6)
+		assert(next(b.commTransferState.incoming), "cancellation must interrupt a partial snapshot")
+		b:CancelIncomingCommResponses("cancelled-detail", "cancelled")
+		net:Advance(8)
+		Equal(#b.dispatched, 0)
+		Equal(a:GetCommTransferMetrics().outgoing, 0)
+		Equal(a:GetCommTransferMetrics().bytes, 0)
+		assert(legacy and early or not legacy and lost)
+		assert(CountControls(b, "FXACK") >= 2, "late END must repeat cancellation without installing the snapshot")
+	end
+end)
+
+QT:RegisterTest("retained quest repair copies yield capacity while active transfers stay protected", function()
+	local net, a, b = Fixture({ fps = 10 })
+	net.deliveryRule = function(packet)
+		local frame = a:DecodeCommFrame(packet.wire)
+		if frame.operation == "FXACK" then return { drop = true } end
+	end
+	for index = 1, 16 do
+		assert(QuestResponse(net, a, b, "retained" .. index))
+		net:Advance(3)
+	end
+	Equal(a:GetCommTransferMetrics().outgoing, 16)
+	assert(QuestResponse(net, a, b, "fresh-detail"), "lost ACKs must not block new detail for ten minutes")
+	net:Advance(3)
+	local snapshots, unavailable = 0, 0
+	for _, item in ipairs(b.dispatched) do
+		if item.frame.operation == "QCRS" then snapshots = snapshots + 1 end
+		if item.frame.operation == "ERROR" and item.record.code == "capacity" then unavailable = unavailable + 1 end
+	end
+	Equal(snapshots, 17)
+	Equal(unavailable, 1, "an interested evicted receiver must be told its old snapshot is unavailable")
+	Equal(a:GetCommTransferMetrics().recoveryEvicted, 1)
+
+	local busy, sender, receiver = Fixture({ fps = 10 })
+	for index = 1, 16 do assert(QuestResponse(busy, sender, receiver, "active" .. index)) end
+	local admitted, reason = QuestResponse(busy, sender, receiver, "overflow")
+	Equal(admitted, false)
+	Equal(reason, "capacity")
+	Equal(sender:GetCommTransferMetrics().recoveryEvicted, nil)
+	Equal(sender:GetCommTransferMetrics().outgoing, 16)
+end, { offline = true })
+
 QT:RegisterTest("transfer v2 finishes unsent fragments after an ambiguous submission without replaying it", function()
 	for _, delivered in ipairs({ false, true }) do
 		local net, a, b = Fixture({ fps = 10 })

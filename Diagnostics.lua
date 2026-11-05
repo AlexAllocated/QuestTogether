@@ -62,6 +62,12 @@ function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 	Add("pendingVisualCleanup", self.pendingNameplateVisualCleanup == true)
 	local pending = runtime.runtime.deferredWorkState.entries
 	Add("deferredWork", Count(pending))
+	-- Compare the cached binding with the client's current QT channel membership.
+	-- Do not enumerate unrelated chat channels or attempt a join from a report.
+	Add("comms.globalChannel.name", self.announcementChannelName)
+	Add("comms.globalChannel.cachedID", self.announcementChannelLocalID or "not joined")
+	local channelOK, channelID = pcall(self.GetAnnouncementChannelLocalID, self, self.announcementChannelName)
+	Add("comms.globalChannel.currentID", channelOK and (channelID or "not joined") or "unavailable")
 	local keys = {}
 	for key in pairs(pending) do
 		keys[#keys + 1] = key
@@ -122,6 +128,7 @@ function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 	for _, group in ipairs({
 		{ "transport", self:GetTransportMetrics() },
 		{ "communication", self:GetCommunicationMetrics() },
+		{ "questCompare", self:GetQuestCompareCommunicationDiagnostics() },
 		{ "transfer", self:GetCommTransferMetrics() },
 		{ "authentication", self:GetDeveloperCommunicationMetrics() },
 		{ "developerAnnouncements", self:GetDeveloperAnnouncementMetrics() },

@@ -4,6 +4,170 @@ local function Equal(actual, expected, detail)
 	assert(actual == expected, (detail or "values differ") .. ": " .. tostring(actual) .. " ~= " .. tostring(expected))
 end
 
+QT:RegisterTest("party quest snapshots use group transport with repair and remain compatible with private peers", function()
+	for _, mode in ipairs({ "PARTY", "RAID", "INSTANCE_CHAT", "legacy", "private" }) do
+		local net = QT:CreateTestNetwork({ fps = 20 })
+		local distribution = mode == "legacy" and "PARTY" or mode ~= "private" and mode or nil
+		local settings = distribution and { group = "questers", distribution = distribution } or {}
+		local a, b, other = net:AddPeer("Alice-Realm", settings), net:AddPeer("Bob-Realm", settings),
+			net:AddPeer("Other-Realm", settings)
+		for _, peer in ipairs({ a, b, other }) do
+			peer.API.IsInInstanceGroup = function() return distribution == "INSTANCE_CHAT" end
+			net:SetQuestLog(peer, { { questID = 42, title = "A party quest" } })
+			net:StartPeer(peer)
+		end
+		if mode == "legacy" then
+			function b:GetQuestCompareRoutes(target)
+				return { { distribution = "WHISPER", target = target, requiresGroup = true } }
+			end
+		end
+		function b:ReadQuestCompareObjectives(id)
+			local objectives = {}
+			for index = 1, 4 do
+				objectives[index] = { questId = id, objectiveIndex = index, text = string.rep("Objective ", 12) .. index,
+					kind = "item", current = index, required = 8, finished = false }
+			end
+			return objectives
+		end
+		function other:HandleQuestCompareResponse() error("an unrelated group member installed a private response") end
+		local responseParts, routes, done, expired = {}, {}, 0, 0
+		local relevant = { QCMP = true, QCRS = true, FXEND = true, FXACK = true, FXMISS = true, FXSTAT = true }
+		net.sendRule = function(packet)
+			local frame = a:DecodeCommFrame(packet.wire)
+			if relevant[frame.operation] then
+				routes[#routes + 1] = packet
+				if mode ~= "legacy" and mode ~= "private" then
+					Equal(packet.route, distribution)
+					Equal(packet.target, nil, "group sends must not pass a whisper target to the native API")
+				elseif mode == "private" then Equal(packet.route, "WHISPER") end
+			end
+			return 0
+		end
+		net.deliveryRule = function(packet, receiver)
+			local frame = a:DecodeCommFrame(packet.wire)
+			if frame.operation == "QCRS" and receiver == a then
+				responseParts[frame.part] = (responseParts[frame.part] or 0) + 1
+				if frame.part == 2 and responseParts[2] == 1 then return { drop = true } end
+			end
+		end
+		assert(a:RequestQuestCompare(b.name, { objectiveQuestId = 42,
+			onEntry = function(entry) Equal(#entry.objectives, 4); Equal(entry.objectives[4].current, 4) end,
+			onDone = function() done = done + 1 end, onTimeout = function() expired = expired + 1 end }))
+		net:Advance(20)
+		Equal(done, 1, "snapshot must finish over " .. mode)
+		Equal(expired, 0)
+		Equal(responseParts[2], 2)
+		assert(#routes > 4)
+		for _, job in ipairs(b.commTransferState.outgoing) do
+			assert(job.operation ~= "QCRS", "acknowledged snapshot must release its repair copy")
+		end
+	end
+end, { offline = true })
+
+QT:RegisterTest("five player quest views and objective updates finish when whisper and channel sends are rejected", function()
+	local net = QT:CreateTestNetwork({ fps = 10 })
+	local party, quests = {}, {}
+	for id = 1, 30 do quests[id] = { questID = id, title = "A shared quest " .. id .. string.rep(" with a useful title", 3) } end
+	for index = 1, 5 do
+		local peer = net:AddPeer("Party" .. index .. "-Realm", { group = "questers" })
+		net:SetQuestLog(peer, quests)
+		peer.db.profile.compareAutoRefresh = false
+		party[index] = peer
+	end
+	for _, peer in ipairs(party) do net:StartPeer(peer) end
+	local viewer, responder = party[1], party[2]
+	function responder:ReadQuestCompareObjectives(id)
+		return { { questId = id, objectiveIndex = 1, text = "Supplies: 1/8", kind = "item", current = 1, required = 8,
+			finished = false } }
+	end
+	local rejected = 0
+	net.sendRule = function(packet)
+		if packet.route == "WHISPER" or packet.route == "CHANNEL" then rejected = rejected + 1; return 7 end
+		return 0
+	end
+	assert(viewer:RefreshPartyQuestCompare())
+	local detail = viewer:AcquirePartyQuestProgress(responder.name, 1, {}, function() end, true)
+	local complete = false
+	for _ = 1, 90 do
+		net:Advance(1)
+		complete = detail.hasEntry == true
+		for _, member in ipairs(viewer.partyQuestCompareSession.members) do
+			if member.state ~= "ready" then complete = false end
+		end
+		if complete then break end
+	end
+	assert(complete, "party views must finish without a working whisper or public channel route")
+	assert(rejected > 0, "the scenario must include rejected unrelated traffic")
+	for _, member in ipairs(viewer.partyQuestCompareSession.members) do
+		local count = 0
+		for _ in pairs(member.entries) do count = count + 1 end
+		Equal(count, 30)
+	end
+	Equal(detail.objectives[1].current, 1)
+	assert(responder:Emit("ANN", { eventType = "QUEST_PROGRESS", senderName = responder.name, classFile = "MAGE",
+		questId = "1", text = "Supplies: 3/8", occurredAt = responder.API.GetServerTime(),
+		eventFacts = responder:BuildAnnouncementFacts("QUEST_PROGRESS", 1, "item", false, 3, 8) },
+		{ { distribution = "PARTY", requiresGroup = true } }))
+	net:Advance(5)
+	Equal(detail.objectives[1].current, 3)
+end, { offline = true })
+
+QT:RegisterTest("single packet group quest replies replay without rebuilding and rejected requests finish promptly", function()
+	local net = QT:CreateTestNetwork({ fps = 20 })
+	local a = net:AddPeer("Alice-Realm", { group = "questers" })
+	local b = net:AddPeer("Bob-Realm", { group = "questers" })
+	local builds, done, dropped = 0, 0, false
+	function b:BuildRevisionedQuestCompareEntries() builds = builds + 1; return {} end
+	net:StartPeer(a); net:StartPeer(b)
+	net.deliveryRule = function(packet, receiver)
+		local frame = a:DecodeCommFrame(packet.wire)
+		if frame.operation == "QCRS" and receiver == a and not dropped then
+			Equal(frame.total, 1)
+			dropped = true
+			return { drop = true }
+		end
+	end
+	assert(a:RequestQuestCompare(b.name, { onEntry = function() end,
+		onDone = function() done = done + 1 end, onTimeout = function() error("cached reply timed out") end }))
+	net:Advance(12)
+	assert(dropped)
+	Equal(done, 1)
+	Equal(builds, 1, "same request identity must reuse its single-packet group reply")
+	local expired = 0
+	net.sendRule = function(packet)
+		local frame = a:DecodeCommFrame(packet.wire)
+		return frame.operation == "QCMP" and 7 or 0
+	end
+	local accepted, id = a:RequestQuestCompare(b.name, { onEntry = function() end, onDone = function() end,
+		onTimeout = function() expired = expired + 1 end })
+	assert(accepted)
+	net:Advance(2)
+	Equal(expired, 1)
+	Equal(a:GetPendingQuestCompare(id), nil)
+	Equal(a.communicationState.requests[id], nil)
+	net:Advance(181)
+	Equal(expired, 1, "native failure and expiry must not notify the viewer twice")
+	function b:HandleQuestCompareRequest() return true end
+	for _, outcome in ipairs({ "ambiguous", "mixed" }) do
+		local notifications = 0
+		net.sendRule = function(packet)
+			local frame = a:DecodeCommFrame(packet.wire)
+			if frame.operation ~= "QCMP" then return 0 end
+			if outcome == "ambiguous" then return 8 end
+			return packet.route == "WHISPER" and 7 or 0
+		end
+		local routes = a:GetQuestCompareRoutes(b.name, true)
+		if outcome == "mixed" then routes[#routes + 1] = { distribution = "WHISPER", target = b.name } end
+		local sent, _, _, requestId = a:Request("QCMP", { targetName = b.name }, routes,
+			{ onExpire = function() notifications = notifications + 1 end })
+		assert(sent)
+		net:Advance(2)
+		assert(a.communicationState.requests[requestId], "a possibly delivered request must remain correlated")
+		Equal(notifications, 0)
+		a:CancelCommRequest(requestId)
+	end
+end, { offline = true })
+
 QT:RegisterTest("network fixture rounds timers to frames and defers nested callbacks", function()
 	local net = QT:CreateTestNetwork({ fps = 10 })
 	local peer = net:AddPeer("Timer-Realm")

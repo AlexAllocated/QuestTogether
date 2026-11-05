@@ -127,6 +127,113 @@ QT:RegisterTest("transport v2 native throttle retains the ticket and ambiguous r
 	Equal(a:GetTransportMetrics().ambiguous, 1)
 end)
 
+QT:RegisterTest("transport v2 native outcome diagnostics retain rejection codes with bounded buckets", function()
+	local a, failure = Fixture(), nil
+	function a:RecordCommsDiagnostic(kind, detail)
+		if kind == "failedRoutes" then
+			failure = detail
+		end
+	end
+	local function Send(value, throws)
+		a.native = function()
+			if throws then
+				error("private exception detail")
+			end
+			return value
+		end
+		a.now = a.now + 2
+		a:SendTransportNow("private payload", "PING", { distribution = "CHANNEL", target = 7 })
+	end
+	for code = 0, 12 do
+		Send(code)
+		Equal(a:GetTransportMetrics()["nativeResult" .. code], 1)
+		if code ~= 0 then
+			Equal(failure, "route=CHANNEL result=" .. code .. " PING")
+		end
+	end
+	Send(nil)
+	Equal(failure, "route=CHANNEL result=no-result PING")
+	Send(nil, true)
+	Equal(failure, "route=CHANNEL result=exception PING")
+	Send(true)
+	for _, value in ipairs({ -1, 13, 999, 3.5, false, "unexpected", {} }) do
+		Send(value)
+	end
+	local metrics, buckets = a:GetTransportMetrics(), 0
+	Equal(metrics.nativeNoResult, 1)
+	Equal(metrics.nativeException, 1)
+	Equal(metrics.nativeBooleanSuccess, 1)
+	Equal(metrics.nativeUnknown, 7)
+	Equal(failure, "route=CHANNEL result=unknown PING")
+	for key in pairs(metrics) do
+		if key:match("^native") then
+			buckets = buckets + 1
+		end
+	end
+	Equal(buckets, 17)
+	Equal(metrics.attempts, 23)
+end)
+
+QT:RegisterTest("transport v2 hard failures reach error collectors without breaking completion or flooding", function()
+	local a, reported, completed = Fixture(), {}, {}
+	a.API.ReportLuaError = function(detail)
+		reported[#reported + 1] = detail
+		error("a broken third-party error collector must not strand the queue")
+	end
+	local function Send(operation, distribution, result)
+		a.native = function() return result end
+		local ok, _, ticket = a:QueueTransportWire("private quest data", operation,
+			{ distribution = distribution, target = distribution == "WHISPER" and "Private-Realm" or nil }, {
+				onComplete = function(sent, reason)
+					completed[#completed + 1] = { sent = sent, reason = reason }
+				end,
+			})
+		assert(ok)
+		a:Advance(2)
+		return ticket
+	end
+	Equal(Send("QCMP", "PARTY", 7).status, "rejected")
+	Equal(#reported, 1)
+	Equal(#a.errors, 1)
+	assert(reported[1]:find("operation=QCMP, route=PARTY, result=7", 1, true))
+	assert(not reported[1]:find("private quest data", 1, true))
+	assert(not reported[1]:find("Private-Realm", 1, true))
+	Send("QCMP", "PARTY", 7)
+	Send("QCRS", "PARTY", 7)
+	Equal(#reported, 1, "the same route failure is reported once per minute")
+	Send("QCMP", "WHISPER", 7)
+	Equal(#reported, 2, "a distinct route failure is not hidden")
+	Equal(Send("QCRS", "PARTY", 0).status, "accepted")
+	Equal(#completed, 5)
+	Equal(completed[1].sent, false)
+	Equal(completed[5].sent, true)
+	Equal(a:GetTransportMetrics().queuedPackets, 0)
+	a:Advance(60)
+	Send("QCMP", "PARTY", 7)
+	Equal(#reported, 3)
+	local metrics = a:GetTransportMetrics()
+	Equal(metrics["questWire.QCMP.PARTY.nativeResult7"], 3)
+	Equal(metrics["questWire.QCMP.WHISPER.nativeResult7"], 1)
+	Equal(metrics["questWire.QCRS.PARTY.nativeResult7"], 1)
+	Equal(metrics["questWire.QCRS.PARTY.nativeResult0"], 1)
+end)
+
+QT:RegisterTest("transport v2 throttles and ambiguous sends are not reported as hard failures", function()
+	local a, reported = Fixture(), {}
+	a.API.ReportLuaError = function(detail) reported[#reported + 1] = detail end
+	a.native = function() return #a.sent == 1 and 3 or 8 end
+	local ok, _, ticket = a:QueueTransportWire("data", "QCMP", { distribution = "PARTY" })
+	assert(ok)
+	a:Advance(1)
+	Equal(ticket.status, "queued")
+	a:Advance(1)
+	Equal(ticket.status, "ambiguous")
+	Equal(#reported, 0)
+	Equal(#a.errors, 0)
+	Equal(a:GetTransportMetrics()["questWire.QCMP.PARTY.nativeResult3"], 1)
+	Equal(a:GetTransportMetrics()["questWire.QCMP.PARTY.nativeResult8"], 1)
+end)
+
 QT:RegisterTest("transport v2 ambiguous native results do not imply delivery or trigger retransmission", function()
 	for _, delivered in ipairs({ false, true }) do
 		local net = QT:CreateTestNetwork({ fps = 20 })

@@ -165,7 +165,7 @@ function QuestTogether:UpdatePartyQuestCompletion()
 				end
 				local ok, requestId = self:RequestQuestCompare(member.name, {
 					historyQuestIds = records,
-					routes = { { distribution = "WHISPER", target = member.name, requiresGroup = session.mode ~= "target" } },
+					routes = self:GetQuestCompareRoutes(member.name, session.mode ~= "target"),
 					isCurrent = Current,
 					onHistory = function(states)
 						if not Current() then

@@ -329,10 +329,11 @@ function QuestTogether:RefreshPartyQuestCompareMember(name, conditional)
 			and (session.mode == "target" or self:IsGroupedSender(member.name))
 	end
 	local sent, requestId
-	local routes = { { distribution = "WHISPER", target = member.name, requiresGroup = session.mode ~= "target" } }
+	local routes = self:GetQuestCompareRoutes(member.name, session.mode ~= "target")
 	if routes and not self:IsIgnoredPlayerName(member.name) then
 		sent, requestId = self:RequestQuestCompare(member.name, {
 			routes = routes,
+			isCurrent = Current,
 			knownRevision = conditional and member.revision or nil,
 			previousEntries = conditional and member.entries or nil,
 			onEntry = function(entry)
