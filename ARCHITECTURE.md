@@ -64,7 +64,7 @@ private `.local` notes are historical context, not the source of truth.
   Shared detail rows fall back to certified quest status when there are no
   objective counters; an empty list never establishes readiness or completion.
 - The Party Objective Tracker has one profile-owned display mode: hidden, focused quest,
-  hovered quest, or focus and hover (default). The combined mode follows local
+  hovered quest (default), or focus and hover. The combined mode follows local
   native quest focus (including party-follow changes), temporarily previewing a
   hovered Blizzard tracker quest through
   bounded read-only mouse/ancestor inspection. Hover never changes native focus;

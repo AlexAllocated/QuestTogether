@@ -706,7 +706,7 @@ QT:RegisterTest("quest tracker display modes choose focus hover and hidden witho
 	Equal(a:GetQuestTrackerMode(), "hidden")
 	assert(panel:IsShown())
 	panel.ResetButton.scripts.OnClick(); a:Drain()
-	Equal(a:GetQuestTrackerMode(), "both")
+	Equal(a:GetQuestTrackerMode(), "hover")
 	menu.entries[2].choose(); a:Drain()
 	panel.SaveButton.scripts.OnClick(); a:Drain()
 	menu.entries[3].choose(); a:Drain()

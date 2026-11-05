@@ -567,15 +567,26 @@ print("Home runtime status and native Theme dropdown/profile effects passed")
 
 local tracker = QuestTogether.questTrackerModeDropdown
 assert(tracker)
-assert(QuestTogether:GetQuestTrackerMode() == "both")
+assert(QuestTogether:GetQuestTrackerMode() == "hover")
 QuestTogether:RefreshGroupsWindow()
-assert(tracker.Dropdown.text == "Focus and Hover")
+assert(tracker.Dropdown.text == "Hovered Quest")
 assert(#tracker.Dropdown.menu == 4)
 tracker.Dropdown.menu[1].func()
 assert(QuestTogether:GetQuestTrackerMode() == "hidden")
 QuestTogether:RefreshGroupsWindow()
 assert(tracker.Dropdown.text == "Hidden")
 assert(QuestTogether:ValidateSetting("questTrackerMode", "invalid") == nil)
+for _, mode in ipairs({ "hidden", "focus", "hover", "both" }) do
+	QuestTogether.db.profile.questTrackerMode = mode
+	QuestTogether:NormalizeSettingsProfile()
+	assert(QuestTogether:GetQuestTrackerMode() == mode, "saved display choices must survive normalization")
+end
+for _, value in ipairs({ false, "invalid" }) do
+	QuestTogether.db.profile.questTrackerMode = value or nil
+	assert(QuestTogether:GetQuestTrackerMode() == "hover", "missing or invalid modes fall back to hover")
+	QuestTogether:NormalizeSettingsProfile()
+	assert(QuestTogether:GetQuestTrackerMode() == "hover")
+end
 QuestTogether.db.profile.showQuestFocusWindow = false
 QuestTogether.db.profile.questTrackerMode = "both"
 QuestTogether:NormalizeSettingsProfile()
