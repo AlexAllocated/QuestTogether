@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "8.2.0",
+	version = "8.2.1",
 	welcome = "Party quest data now refreshes in the background, with clearer focus and status indicators.",
 	sections = {
 		{

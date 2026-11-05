@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 8.2.0
+## 8.2.1
 
 QT aggiorna in background le missioni del gruppo e rende più visibili la missione selezionata da ciascun compagno e il suo stato.
 
@@ -16,6 +16,19 @@ QT aggiorna in background le missioni del gruppo e rende più visibili la missio
 - Accanto ai titoli nel tracciamento obiettivi di Blizzard, i punti nei colori delle classi indicano quali missioni hanno selezionato i compagni. Compaiono anche quando non stai seguendo la selezione di nessuno.
 - Nel Tracciamento obiettivi del gruppo, la sezione di ogni giocatore mostra icone per le missioni in corso, pronte da consegnare o già completate, oltre agli indicatori di caricamento e stato sconosciuto. Se una missione risulta già pronta, il caricamento dei dettagli degli obiettivi non ne nasconde più lo stato.
 - Corretto un caso in cui la modalità «Selezione e cursore» perdeva la missione selezionata perché non riusciva a leggere dati separati relativi a un punto di passaggio.
+
+## 8.2.0
+
+Continui a seguire la missione attiva del tuo compagno anche quando non è ancora nel tuo registro.
+
+### Continua a seguire in attesa di una missione in comune
+
+- Puoi usare «Segui la missione attiva» dal menu di un membro del gruppo anche senza missioni in comune. Dovete avere entrambi QT e il giocatore seguito deve condividere la propria missione attiva.
+- Se la missione attiva del tuo compagno non è nel tuo registro, ora continui a seguirlo. Il Registro missioni del gruppo mostra «In attesa di una missione in comune», la tua navigazione attuale resta invariata e non appare più la finestra di avviso per la missione mancante.
+- La sincronizzazione riprende automaticamente quando il giocatore sceglie una missione che hai anche tu oppure quando accetti la missione che ha già attiva. Non occorre selezionare di nuovo «Segui la missione attiva».
+- Durante l’attesa, i cambi automatici di missione attiva quando accetti o consegni una missione non ti fanno smettere di seguire il compagno. Come prima, QT ricorda chi segui per ogni personaggio dopo il ricaricamento dell’interfaccia e attende dati aggiornati del gruppo.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Consiglio: Apri /qt pql, poi il menu di un membro del gruppo e scegli «Segui la missione attiva». Usa «Smetti di seguire» per terminare.
 
 ## 8.1.2
 

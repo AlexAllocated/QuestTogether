@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 8.2.0
+## 8.2.1
 
 Questdaten der Gruppe werden jetzt auch im Hintergrund aktualisiert. Neue Anzeigen machen Questfokus und Status leichter erkennbar.
 
@@ -16,6 +16,19 @@ Questdaten der Gruppe werden jetzt auch im Hintergrund aktualisiert. Neue Anzeig
 - Punkte in Klassenfarben neben den Questtiteln in Blizzards Zielverfolgung zeigen, welche Quests eure Gruppenmitglieder im Fokus haben. Das funktioniert unabhängig davon, ob ihr jemandem folgt.
 - In der Gruppen-Zielverfolgung zeigen Symbole bei jedem Spieler, ob eine Quest aktiv, zur Abgabe bereit oder bereits abgeschlossen ist. Für ausstehende und unbekannte Daten gibt es eigene Anzeigen. Ein bekannter Abgabestatus bleibt sichtbar, während Zieldetails nachgeladen werden.
 - Im Modus „Fokus und Mauszeiger“ verschwindet die fokussierte Quest nicht mehr, nur weil sich davon unabhängige Wegpunktdaten nicht auslesen lassen.
+
+## 8.2.0
+
+Du folgst dem Questfokus deines Gruppenmitglieds weiter, auch wenn dir die passende Quest noch fehlt.
+
+### Beim Folgen auf gemeinsame Quests warten
+
+- Mit „Questfokus folgen“ kannst du einem Gruppenmitglied auch ohne gemeinsame Quest folgen. Ihr benötigt beide QT, und das Gruppenmitglied muss seinen Questfokus teilen.
+- Fehlt dir die aktive Quest des Gruppenmitglieds, bleibt das Folgen nun bestehen. Das Gruppenquestlog zeigt „Warte auf eine gemeinsame Quest“, deine aktuelle Navigation bleibt erhalten und der bisherige Hinweisdialog entfällt.
+- Sobald das Gruppenmitglied eine Quest auswählt, die du ebenfalls hast, oder du seine bereits ausgewählte Quest annimmst, wird der Questfokus automatisch wieder synchronisiert. Du musst „Questfokus folgen“ nicht erneut auswählen.
+- Automatische Fokuswechsel beim Annehmen oder Abgeben von Quests beenden das Folgen während der Wartezeit nicht. Wie bisher merkt sich QT das gefolgte Gruppenmitglied pro Charakter über das Neuladen der Benutzeroberfläche hinweg und wartet danach auf aktuelle Gruppendaten.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tipp: Öffne /qt pql, dann das Spielermenü eines Gruppenmitglieds und wähle „Questfokus folgen“. Mit „Nicht mehr folgen“ beendest du das Folgen.
 
 ## 8.1.2
 

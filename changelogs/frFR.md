@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 8.2.0
+## 8.2.1
 
 Les données de quêtes du groupe se mettent à jour en arrière-plan, avec de nouveaux repères pour le ciblage et l’état des quêtes.
 
@@ -16,6 +16,19 @@ Les données de quêtes du groupe se mettent à jour en arrière-plan, avec de n
 - Des points aux couleurs des classes apparaissent près des titres dans le suivi des objectifs de Blizzard pour indiquer les quêtes ciblées par vos coéquipiers. Il n’est pas nécessaire de suivre leur ciblage.
 - Chaque joueur dispose désormais d’icônes dans le Suivi des objectifs du groupe : quête en cours, prête à rendre ou déjà terminée, ainsi que des indicateurs de chargement et d’état inconnu. Une quête connue comme prête à rendre conserve cette indication pendant le chargement des objectifs.
 - Correction du mode « Ciblage et survol » : une erreur de lecture des données de point de passage ne fait plus disparaître une quête pourtant ciblée.
+
+## 8.2.0
+
+Le suivi de la quête active reste en place même si cette quête manque encore dans votre journal.
+
+### Un suivi qui attend les quêtes communes
+
+- Vous pouvez choisir « Suivre la quête active » dans le menu d’un membre du groupe, même sans quête commune. Vous devez tous deux utiliser QT, et ce membre doit partager sa quête active.
+- Si sa quête active ne figure pas dans votre journal, le suivi est désormais conservé. Le Journal de quêtes du groupe affiche « En attente d’une quête commune », votre navigation actuelle reste inchangée et l’ancienne fenêtre d’avertissement ne s’ouvre plus.
+- La synchronisation reprend automatiquement dès que ce membre sélectionne une quête présente dans votre journal, ou dès que vous acceptez la quête qu’il suit déjà. Vous n’avez pas besoin de relancer le suivi.
+- Pendant cette attente, les changements automatiques de quête active lors de l’acceptation ou de la validation d’une quête n’interrompent plus le suivi. Comme auparavant, QT mémorise la personne suivie pour chaque personnage après un rechargement de l’interface, puis attend des données de groupe à jour.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v8.2.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Astuce : Ouvrez /qt pql, puis le menu d’un membre du groupe et choisissez « Suivre la quête active ». Utilisez « Arrêter de suivre » pour mettre fin au suivi.
 
 ## 8.1.2
 

@@ -1,7 +1,7 @@
 {
   "source_sha256": "e43e4e37f128d87bb9b8d4893790181e13f83c39ce74bcd79c29c294be6c5462",
   "notes": {
-    "version": "8.2.0",
+    "version": "8.2.1",
     "welcome": "隊伍任務資訊改為在背景持續更新，並加入聚焦與狀態標記，讓隊友的進度更容易掌握。",
     "sections": [
       {

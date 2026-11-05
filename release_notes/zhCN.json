@@ -1,7 +1,7 @@
 {
   "source_sha256": "e43e4e37f128d87bb9b8d4893790181e13f83c39ce74bcd79c29c294be6c5462",
   "notes": {
-    "version": "8.2.0",
+    "version": "8.2.1",
     "welcome": "队伍任务数据现在会在后台更新，并新增聚焦任务和任务状态标记，方便快速查看。",
     "sections": [
       {
