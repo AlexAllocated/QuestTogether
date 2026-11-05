@@ -245,29 +245,55 @@ QT:RegisterTest("native share feedback remains per player and never certifies an
 	local a, _, friend = Fixture()
 	a.API.GetQuestShareResultFormats = function()
 		return { ERR_QUEST_PUSH_ACCEPTED_S = "%s has accepted your quest.",
+			ERR_QUEST_PUSH_ONQUEST_S = "%s is already on that quest.",
 			ERR_QUEST_PUSH_LOG_FULL_S = "%1$s's quest log is full.",
 			UNSUPPORTED = "%s shared %s.", PLAIN = "No recipient." }
 	end
+	local refreshes = 0
+	function a:RefreshPartyQuestSyncMember(name, force)
+		Equal(name, friend.name)
+		Equal(force, true)
+		refreshes = refreshes + 1
+	end
 	a.partyQuestShareState = { outgoing = { test = { target = friend.name, questId = 1, status = "sent", expires = 150 } } }
 	assert(a:HandleQuestShareSystemMessage("Friend's quest log is full."))
+	Equal(refreshes, 0)
 	Equal(a:GetLatestQuestShareResultText(friend.name), "Latest share result: Friend's quest log is full.")
 	Equal(a:GetPartyQuestShareStatus(1), "Share attempted")
 	Equal(a.questShareNativeResults[friend.name].questId, nil)
 	assert(a:HandleQuestShareSystemMessage("Friend-Realm has accepted your quest."))
+	Equal(refreshes, 1)
+	assert(a:HandleQuestShareSystemMessage("Friend is already on that quest."))
+	Equal(refreshes, 2)
+	Equal(next(friend.entries), nil, "native feedback alone cannot install quest ownership")
 	Equal(a:GetPartyQuestShareStatus(1), "Share attempted")
 	Equal(a:HandleQuestShareSystemMessage("Stranger has accepted your quest."), false)
 	Equal(a:HandleQuestShareSystemMessage("Friend shared Something."), false)
+	Equal(refreshes, 2)
 	a:Roster(a.name, friend.name, "Friend-OtherRealm")
 	Equal(a:HandleQuestShareSystemMessage("Friend has accepted your quest."), false)
+	Equal(refreshes, 2, "ambiguous character names cannot refresh a guessed player")
 	assert(a:HandleQuestShareSystemMessage("Friend-Realm has accepted your quest."))
 	a.ignored = friend.name
 	Equal(a:GetLatestQuestShareResultText(friend.name), nil)
 	Equal(a:HandleQuestShareSystemMessage("Friend has accepted your quest."), false)
 	Equal(a:HandleQuestShareSystemMessage("Friend-Realm has accepted your quest."), false)
+	Equal(refreshes, 3, "ignored players cannot start refresh work")
 	a.ignored = nil
 	assert(a:HandleQuestShareSystemMessage("Friend-Realm has accepted your quest."))
 	a:Advance(61)
 	Equal(a:GetLatestQuestShareResultText(friend.name), nil)
+	-- Forever supplies the full first name and surname in the native message.
+	-- Resolve that identity with the production normalizer, not a Retail guess.
+	a.API.RegionalUniqueNamesEnabled = function() return true end
+	a.NormalizeMemberName = QT.NormalizeMemberName
+	friend.name = "Friend Surname"
+	a:Roster(a.name, friend.name)
+	assert(a:HandleQuestShareSystemMessage("Friend Surname has accepted your quest."))
+	assert(a:HandleQuestShareSystemMessage("Friend Surname is already on that quest."))
+	Equal(refreshes, 6)
+	Equal(a:HandleQuestShareSystemMessage("Friend has accepted your quest."), false)
+	Equal(refreshes, 6, "a missing surname cannot identify a Forever player")
 end)
 
 QT:RegisterTest("share requests carry exact owner eligibility explanations while old responses remain usable", function()

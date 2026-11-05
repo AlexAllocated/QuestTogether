@@ -73,8 +73,13 @@ private `.local` notes are historical context, not the source of truth.
   quests take priority, then unsampled quests (shared quests first). Background
   repair has a 120-second cadence; visible detail uses 30 seconds, with a five-second
   minimum between attempts. RuntimeCoordinator is the only periodic owner.
-  Summary/history/detail requests serialize per peer and party detail starts are
-  paced to at most two per second. An optional generation-2 QCMP scheduling hint
+  Background summary/history/detail requests serialize per peer and party detail
+  starts are paced to at most two per second. Explicit Refresh replaces a pending
+  summary and can pass other pending reads, with repeated refreshes coalesced to
+  at most one full request per peer every five seconds. Native accepted/already-on-
+  quest share results use this same refresh path without inferring a quest ID.
+  Accepted data stays visible while the header shows Loading for that refresh.
+  An optional generation-2 QCMP scheduling hint
   puts background requests and replies in the background traffic class; older
   peers safely ignore the appended field. No protocol-generation change is required.
   Closing or changing views only detaches their callbacks. Pending requests and
@@ -90,7 +95,8 @@ private `.local` notes are historical context, not the source of truth.
   its baseline so a delayed reply cannot roll progress backward. Changed objective
   wording retires unverified sibling rows until a detail snapshot repairs them;
   indices are never matched across different players or languages.
-  A changed complete summary fences obsolete detail replies, and announcements
+  A complete summary fences overlapping detail replies while retaining accepted
+  objective progress when summary fields are unchanged, and announcements
   received during summary assembly are replayed before installation is exposed.
   Shared detail rows fall back to certified quest status when there are no
   objective counters; an empty list never establishes readiness or completion.

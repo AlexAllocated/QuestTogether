@@ -109,6 +109,12 @@ function QuestTogether:HandleQuestShareSystemMessage(message)
 		return false
 	end
 	results[foundName] = { text = text, code = foundCode, at = now }
+	if foundCode == "ERR_QUEST_PUSH_ACCEPTED_S" or foundCode == "ERR_QUEST_PUSH_ONQUEST_S" then
+		-- Blizzard confirms this player's log may be newer than our snapshot,
+		-- but does not identify the quest. Refresh the complete list through the
+		-- party owner's paced path; never infer ownership from share timing.
+		self:RefreshPartyQuestSyncMember(foundName, true)
+	end
 	if rawget(self, "partyQuestCompareSession") then
 		self:QueuePartyQuestCompareRender()
 	end

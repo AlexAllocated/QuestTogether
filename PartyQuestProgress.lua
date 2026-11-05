@@ -65,9 +65,9 @@ local function SameSummary(a, b)
 		and (a.isComplete == true) == (b.isComplete == true) and a.isPushable == b.isPushable)
 end
 
--- A newer complete log can invalidate an older detail request without an ANN
--- (for example when that event was dropped). Only a data change cancels this
--- work; closing a view never establishes such a barrier.
+-- A complete log supersedes overlapping detail requests without relying on
+-- an ANN (for example when acceptance was dropped). Unchanged summary fields
+-- retain accepted objective progress, but cannot certify an older pending reply.
 function QT:ReconcilePartyQuestProgress(member, entries)
 	for _, r in pairs(rawget(self, "partyQuestProgress") or {}) do
 		if r.partyOwner == member then
@@ -77,20 +77,24 @@ function QT:ReconcilePartyQuestProgress(member, entries)
 			local changed = (r.hasSummary or r.hasEntry) and not SameSummary(previous, entry)
 			local first = not r.hasSummary
 			local reset = changed or (first and (not entry or entry.isComplete == true))
-			if reset then
+			local pending = r.requestId or r.requesting
+			if reset or pending then
 				r.generation = (r.generation or 0) + 1
 				if r.requestId and self.pendingQuestCompareRequests then
-					self:ClearPendingQuestCompare(r.requestId, self.pendingQuestCompareRequests[r.requestId])
+					self:ClearPendingQuestCompare(r.requestId, self.pendingQuestCompareRequests[r.requestId], "superseded")
 				end
-				r.requestId, r.requesting, r.events, r.lastRequest, r.pendingMilestone = nil, nil, {}, nil, nil
+				r.requestId, r.requesting, r.events, r.lastRequest = nil, nil, {}, nil
+				r.nextRequest = entry and 0 or Now(self) + 120
+			end
+			if reset then
+				r.pendingMilestone = nil
 				r.entry, r.objectives, r.hasEntry = entry, nil, entry == nil
 				r.state = entry and "loading" or "ready"
 				r.notice = not entry and "Not in log" or entry.isComplete and "Ready" or nil
-				r.nextRequest = entry and 0 or Now(self) + 120
 			end
 			if first and entry and not r.entry then r.entry = entry end
 			r.summaryEntry, r.hasSummary = entry, true
-			if reset or first then Notify(self, r) end
+			if reset or first or pending then Notify(self, r) end
 			if not entry then
 				-- An event may have created background interest before the first
 				-- log snapshot. Confirmed absence retires that interest as well.

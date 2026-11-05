@@ -2,6 +2,7 @@
 -- subscribe to these records; opening or closing a view does not own the sync.
 local QT = _G.QuestTogether
 local REFRESH_SECONDS, MAX_QUESTS = 30, 100
+local FORCE_REFRESH_SECONDS = 5
 local lifecycle = {
 	QUEST_ACCEPTED = true,
 	QUEST_REMOVED = true,
@@ -39,12 +40,13 @@ local function Notify(a)
 	if a.QueuePartyQuestCompareRender then a:QueuePartyQuestCompareRender() end
 	if a.QueueQuestFocusRefresh then a:QueueQuestFocusRefresh() end
 end
-local function CancelRequest(a, member)
+local function CancelRequest(a, member, reason)
 	local id = member.requestId
 	member.requestId, member.requesting, member.refreshToken = nil, nil, nil
+	member.events, member.eventOverflow = {}, nil
 	if id then
 		local pending = a.pendingQuestCompareRequests and a.pendingQuestCompareRequests[id]
-		a:ClearPendingQuestCompare(id, pending)
+		a:ClearPendingQuestCompare(id, pending, reason)
 	end
 end
 local function Retire(a, state, member)
@@ -133,16 +135,28 @@ function QT:RefreshPartyQuestSyncMember(name, force)
 	local member = self:GetPartyQuestSyncMember(name)
 	if not member then return false end
 	local now, state = Now(self), self.partyQuestSyncState
-	if force then member.nextRequest, member.forceRefresh = 0, true end
+	if force then member.forceRefresh = true end
+	force = member.forceRefresh == true
+	if force then
+		-- A click explicitly asks for a new baseline. Coalesce repeated clicks
+		-- without moving the deadline, then replace only our summary request.
+		if now < (member.nextForcedRefresh or 0) then return false end
+		CancelRequest(self, member, "superseded")
+		member.nextRequest = 0
+	end
 	if member.requestId or member.requesting or now < (member.nextRequest or 0) then return false end
 	-- Summary, detail and history transfers share a peer's available bandwidth.
-	-- A forced UI refresh makes this due without retiring another useful fetch.
-	for _, pending in pairs(rawget(self, "pendingQuestCompareRequests") or {}) do
-		if pending.targetName == member.name then return false end
+	-- An explicit refresh bypasses that background serialization, leaving useful
+	-- detail/history work alive. The shared transport still owns traffic pacing.
+	if not force then
+		for _, pending in pairs(rawget(self, "pendingQuestCompareRequests") or {}) do
+			if pending.targetName == member.name then return false end
+		end
 	end
-	force, member.forceRefresh = member.forceRefresh == true, nil
+	member.forceRefresh = nil
+	if force then member.nextForcedRefresh = now + FORCE_REFRESH_SECONDS end
 	local token, entries, done, startSerial = {}, {}, false, member.serial
-	member.refreshToken, member.requesting, member.refreshStatus = token, true, "loading"
+	member.refreshToken, member.requesting, member.refreshStatus = token, true, force and "refreshing" or "loading"
 	member.lastRequest, member.nextRequest, member.lastError = now, now + REFRESH_SECONDS, nil
 	if not member.sampledAt then member.state = "loading" end
 	local function Valid()
@@ -152,7 +166,8 @@ function QT:RefreshPartyQuestSyncMember(name, force)
 		done = true
 		if not Valid() then return end
 		member.requestId, member.requesting, member.refreshToken = nil, nil, nil
-		member.refreshStatus, member.lastError, member.nextRequest = reason, reason, Now(self) + REFRESH_SECONDS
+		member.refreshStatus, member.lastError = reason, reason
+		member.nextRequest = member.forceRefresh and 0 or Now(self) + REFRESH_SECONDS
 		member.events, member.eventOverflow = {}, nil
 		if not member.sampledAt then member.state = reason == "timeout" and "timeout" or "unavailable" end
 		Notify(self)
@@ -176,7 +191,7 @@ function QT:RefreshPartyQuestSyncMember(name, force)
 				-- The bounded journal cannot reconcile this response safely. Keep
 				-- the accepted live observations and ask for a newer baseline.
 				member.events, member.eventOverflow = {}, nil
-				member.refreshStatus, member.nextRequest = "stale", Now(self) + 1
+				member.refreshStatus, member.nextRequest = "stale", member.forceRefresh and 0 or Now(self) + 1
 				Notify(self)
 				return
 			end
@@ -196,7 +211,9 @@ function QT:RefreshPartyQuestSyncMember(name, force)
 				end
 				ApplyEvent(self, member, observed.event)
 			end
-			member.events, member.nextRequest = {}, Now(self) + REFRESH_SECONDS
+			-- Refresh can arrive while this older snapshot is already in flight.
+			-- Completing it must not postpone the explicitly requested baseline.
+			member.events, member.nextRequest = {}, member.forceRefresh and 0 or Now(self) + REFRESH_SECONDS
 			if self.ReconcilePartyQuestProgress then self:ReconcilePartyQuestProgress(member, member.entries) end
 			SyncDetails(self, state, member)
 			local session = rawget(self, "partyQuestCompareSession")

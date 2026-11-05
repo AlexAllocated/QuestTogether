@@ -185,6 +185,155 @@ QT:RegisterTest("the first party summary invalidates an earlier detail snapshot 
 	assert(record.entry == nil or record.entry.isComplete, "old detail readiness must be invalidated")
 end, { offline = true })
 
+QT:RegisterTest("explicit party refresh replaces stale summaries without cancelling useful peer work", function()
+	for _, outcome in ipairs({ "delayed", "fragmented", "failed" }) do
+		local net, peers = Party(2, 1)
+		local viewer, remote = peers[1], peers[2]
+		Await(net, 40, function()
+			return Ready(viewer, remote.name, 1) and not next(viewer.pendingQuestCompareRequests or {})
+		end, "initial party data must finish before the refresh race")
+		local member = viewer:GetPartyQuestSyncMember(remote.name)
+		local requestID, sampled, partial, failed
+		local unrelated, summaries = {}, {}
+		remote.questLog[1].title = string.rep("An unusually descriptive quest title ", 5)
+		net.deliveryRule = function(packet, receiver)
+			local frame = viewer:DecodeCommFrame(packet.wire)
+			if receiver ~= viewer or frame.operation ~= "QCRS" then return end
+			if unrelated[frame.requestId] then return { delay = 30 } end
+			if frame.requestId == requestID then
+				sampled = true
+				if outcome == "fragmented" then
+					partial = frame.total > 1
+					if frame.part > 1 then return { drop = true } end
+				else
+					return { delay = 8 }
+				end
+			end
+		end
+		net.sendRule = function(packet, _, sender)
+			local frame = sender:DecodeCommFrame(packet.wire)
+			local pending = frame.requestId and viewer:GetPendingQuestCompare(frame.requestId)
+			if sender == viewer and frame.operation == "QCMP" and pending
+				and not pending.objectiveQuestId and not pending.historyQuestIds then
+				summaries[frame.requestId] = true
+			end
+			if outcome == "failed" and sender == viewer and frame.operation == "QCMP"
+				and frame.requestId == requestID then failed = true; return 7 end
+			return 0
+		end
+		local began = net.now
+		assert(viewer:RefreshPartyQuestSyncMember(remote.name, true))
+		requestID = assert(member.requestId)
+		local retired = assert(viewer:GetPendingQuestCompare(requestID))
+		if outcome ~= "failed" then
+			Await(net, 10, function() return sampled end, "remote must sample the old log before acceptance")
+		end
+		-- Native acceptance may arrive even when the ANN is lost. The accepted
+		-- message identifies the player, not the quest: only a new snapshot can
+		-- establish which quest was acquired.
+		net:SetQuestLog(remote, {
+			{ questID = 1, title = remote.questLog[1].title },
+			{ questID = 2, title = "Newly accepted quest" },
+		})
+		viewer.API.GetQuestShareResultFormats = function()
+			return { ERR_QUEST_PUSH_ACCEPTED_S = "%s has accepted your quest." }
+		end
+		assert(viewer:HandleQuestShareSystemMessage(remote.name .. " has accepted your quest."))
+		assert(member.forceRefresh and not member.entries[2], "a native message cannot invent ownership")
+		Equal(viewer:GetPartyQuestSnapshotLabel(member), "Loading", "queued explicit refresh must be visible")
+		if outcome == "fragmented" then
+			-- Force a simultaneous detail and history request. A user refresh may
+			-- pass this background serialization without retiring either consumer.
+			for _, kind in ipairs({ "detail", "history" }) do
+				local receiver = { routes = viewer:GetQuestCompareRoutes(remote.name, true),
+					onEntry = function() end, onDone = function() end,
+					onHistory = function() end, onTimeout = function() end }
+				if kind == "detail" then receiver.objectiveQuestId = 1
+				else receiver.historyQuestIds = { { questId = 3 } } end
+				local sent, id = viewer:RequestQuestCompare(remote.name, receiver)
+				assert(sent)
+				unrelated[id] = assert(viewer:GetPendingQuestCompare(id))
+			end
+		end
+		-- Repeated clicks within the coalescing interval cannot keep postponing
+		-- its deadline or flood the peer with new full-log requests.
+		for _ = 1, 3 do
+			assert(viewer:RefreshPartyQuestCompare())
+			net:Advance(0.5)
+		end
+		Equal(member.nextForcedRefresh, began + 5)
+		Await(net, 10, function() return member.entries[2] ~= nil end,
+			"forced refresh must repair " .. outcome .. " data without waiting for the old deadline")
+		assert(net.now - began < 12, "coalesced clicks must trigger a prompt fresh snapshot")
+		local summaryCount = 0
+		for _ in pairs(summaries) do summaryCount = summaryCount + 1 end
+		Equal(summaryCount, 2, "repeated clicks must coalesce into one replacement summary")
+		Equal(member.refreshStatus, "ready")
+		assert(viewer:GetPartyQuestSnapshotLabel(member) ~= "Loading", "completed refresh must show snapshot freshness")
+		Equal(viewer:GetPendingQuestCompare(requestID), nil)
+		if outcome == "fragmented" then
+			assert(partial, "the stalled response must actually contain multiple fragments")
+			for id, pending in pairs(unrelated) do
+				Equal(viewer:GetPendingQuestCompare(id), pending, "summary replacement must preserve unrelated consumers")
+			end
+		elseif outcome == "failed" then
+			assert(failed, "the failure branch must exercise real native rejection and onTimeout")
+		end
+		Equal(viewer.partyQuestCompareSession.byName[remote.name], member)
+		retired.receiver.onEntry({ questId = 999, questTitle = "Retired response" })
+		retired.receiver.onDone(true, true, "MAGE", "retired-revision", true)
+		net:Advance(10)
+		assert(member.entries[2] and not member.entries[999], "retired callbacks and delayed packets cannot restore the old log")
+	end
+end, { offline = true })
+
+QT:RegisterTest("fresh party summaries fence pending details while preserving accepted progress", function()
+	local net, peers = Party(2, 0)
+	local viewer, remote = peers[1], peers[2]
+	viewer:UpdatePartyQuestSync()
+	local member = viewer:GetPartyQuestSyncMember(remote.name)
+	member.nextRequest = net.now + 60
+	local requestID, sampled
+	net.deliveryRule = function(packet, receiver)
+		local frame = viewer:DecodeCommFrame(packet.wire)
+		if receiver == viewer and frame.operation == "QCRS" and frame.requestId == requestID then
+			sampled = true
+			return { delay = 8 }
+		end
+	end
+	local record = viewer:AcquirePartyQuestProgress(remote.name, 2, {}, function() end, true)
+	requestID = assert(record.requestId)
+	local retired = assert(viewer:GetPendingQuestCompare(requestID))
+	Await(net, 10, function() return sampled end, "old detail must sample absence before acceptance")
+	net:SetQuestLog(remote, { { questID = 2, title = "Newly accepted quest" } })
+	assert(viewer:RefreshPartyQuestSyncMember(remote.name, true))
+	Await(net, 5, function() return member.entries[2] ~= nil end, "new summary must bypass the pending detail")
+	assert(member.entries[2].isComplete ~= true, "first active baseline must fence old details too")
+	Equal(viewer:GetPendingQuestCompare(requestID), nil, "new baseline must retire an older detail request")
+	retired.receiver.onDone()
+	net:Advance(10)
+	assert(member.entries[2], "late empty detail must not remove freshly confirmed quest ownership")
+	Await(net, 10, function() return record.hasEntry and record.objectives ~= nil end, "new detail baseline must load")
+	-- An unchanged summary is also newer than any detail already in flight,
+	-- but fencing that response must preserve accepted live objective progress.
+	requestID, sampled = nil, nil
+	record.nextRequest, record.lastRequest = 0, nil
+	viewer:RequestPartyQuestProgress(record)
+	requestID = assert(record.requestId)
+	retired = assert(viewer:GetPendingQuestCompare(requestID))
+	Await(net, 10, function() return sampled end, "detail must be sampled before newer live progress")
+	Announce(remote, 8, nil, 2)
+	Await(net, 5, function() return record.objectives[1].current == 8 end, "live progress must precede the summary")
+	local sampledAt = member.sampledAt
+	assert(viewer:RefreshPartyQuestSyncMember(remote.name, true))
+	Await(net, 5, function() return member.sampledAt > sampledAt end, "unchanged summary must finish")
+	Equal(record.objectives[1].current, 8, "a summary barrier must preserve accepted progress")
+	retired.receiver.onDone()
+	retired.receiver.onTimeout()
+	net:Advance(10)
+	Equal(record.objectives[1].current, 8, "retired detail callbacks and packets cannot roll back live progress")
+end, { offline = true })
+
 QT:RegisterTest("confirmed party absence retires background interests created by unseen announcements", function()
 	local net, peers = Party(2, 1)
 	local viewer, remote = peers[1], peers[2]
@@ -289,6 +438,10 @@ QT:RegisterTest("party sync lifetime changes reject callbacks from retired summa
 			pending = member and member.requestId and viewer:GetPendingQuestCompare(member.requestId)
 			return pending ~= nil
 		end, "initial summary request must exist before lifetime changes")
+		assert(viewer:RefreshPartyQuestSyncMember(remote.name, true))
+		pending = assert(viewer:GetPendingQuestCompare(member.requestId))
+		assert(not viewer:RefreshPartyQuestSyncMember(remote.name, true))
+		assert(member.forceRefresh, "lifetime changes must retire coalesced forced intent too")
 		if change == "depart" then
 			net:SetGroup(remote, nil)
 			viewer:OnPartyQuestRosterChanged()

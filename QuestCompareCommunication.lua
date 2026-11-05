@@ -175,11 +175,11 @@ function QuestTogether:GetQuestCompareCommunicationDiagnostics()
 	return result
 end
 
-function QuestTogether:ClearPendingQuestCompare(id, pending)
+function QuestTogether:ClearPendingQuestCompare(id, pending, reason)
 	if self.pendingQuestCompareRequests and self.pendingQuestCompareRequests[id] == pending then
 		self.pendingQuestCompareRequests[id] = nil
 	end
-	self:CancelCommRequest(id, "completed")
+	self:CancelCommRequest(id, reason or "completed")
 end
 
 -- A response is one immutable object. No rows become visible until all fragments,

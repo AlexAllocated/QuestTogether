@@ -297,7 +297,7 @@ function QuestTogether:GetPartyQuestCompareTime()
 end
 
 function QuestTogether:GetPartyQuestSnapshotLabel(member)
-	if member.state == "loading" then
+	if member.state == "loading" or member.forceRefresh or member.refreshStatus == "refreshing" then
 		return self:IsWorkBlocked("quest_snapshot_refresh") and L("Waiting for restrictions") or L("Loading")
 	end
 	if member.state == "timeout" then
