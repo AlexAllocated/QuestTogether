@@ -1,15 +1,51 @@
 {
-  "source_sha256": "e66bddaca3e9bcd3a83dfc96233356b268b870138fc1e4fd531a667357d6aee2",
+  "source_sha256": "bf5db765ee3ec3c737438923f30ea68d148c4fb35268f61e6eedb43ba78b8f50",
   "notes": {
-    "version": "8.3.1",
-    "welcome": "Atualização mais confiável das missões do grupo, inclusive após compartilhar uma missão.",
+    "version": "8.4.0",
+    "welcome": "Escolha quando ver seu próprio balão, personalize os sons do QT e acompanhe melhor as missões do grupo com novas opções de posição e indicadores.",
     "sections": [
       {
-        "title": "Atualização das missões do grupo",
+        "title": "Seu balão de bate-papo",
         "items": [
-          "Atualizar agora solicita uma nova lista de missões sem ficar preso a uma solicitação antiga ou aguardar consultas em segundo plano.",
-          "Quando o jogo informa que um integrante aceitou a missão compartilhada ou já a possui, o addon solicita automaticamente uma nova lista de missões desse integrante.",
-          "Respostas atrasadas não fazem uma missão voltar a aparecer como Ausente após a chegada de uma lista mais recente. O progresso dos objetivos já recebido é mantido quando a missão não mudou."
+          "Em Onde Anunciar, Meu balão de bate-papo substitui a opção anterior de ocultar seus próprios balões. Escolha Sempre mostrar, Mostrar apenas ao jogar solo ou Sempre ocultar. Solo significa estar fora de grupos, raides e grupos de instância. A opção continua visível, mas fica desabilitada quando Mostrar Balões de Fala está desativado.",
+          "A preferência anterior de mostrar ou ocultar é preservada. No modo solo, seu balão atual some assim que você entra em um grupo; ao sair, novos balões próprios podem aparecer. Só a sua exibição muda: balões dos outros jogadores, registros de chat e anúncios enviados continuam iguais."
+        ]
+      },
+      {
+        "title": "Sons do QuestTogether",
+        "items": [
+          "O QT traz seis sons originais. Por padrão, apenas solicitações, caixas de confirmação e mudanças automáticas de missão em foco ao seguir outro jogador têm avisos discretos ativados.",
+          "Em Áudio, ajuste a ativação e o volume gerais e escolha quais eventos emitem avisos, com som e volume próprios e uma opção para ouvir uma amostra. Há opções para silenciar em combate, definir o intervalo mínimo entre sons e restaurar os padrões. Os avisos respeitam também o volume e o silenciamento dos efeitos sonoros do WoW.",
+          "Os avisos opcionais começam desativados: pontos de rota do grupo, missões do grupo prontas para entrega, entregas de missões do grupo, progresso de objetivos do grupo, mensagens recebidas no chat do QT e resultados do compartilhamento de missões."
+        ]
+      },
+      {
+        "title": "Rastreador junto às dicas de missão",
+        "items": [
+          "Com Encaixar no rastreador de objetivos da Blizzard ativado, o Rastreador de objetivos do grupo se encaixa na dica nativa da missão sob o cursor, quando a dica correspondente está visível. Essa posição é independente do encaixe da visualização da missão em foco.",
+          "Em Grupos e compartilhamento ou no modo de edição do rastreador, Posição junto à dica oferece Topo, Embaixo e Ao lado. Topo é o padrão. Se não houver espaço na tela, o QT usa outro lado; ao tirar o cursor da missão, o rastreador volta à posição habitual.",
+          "Ocultar a dica de missão da Blizzard vem desativado. Essa opção só oculta a dica correspondente à missão sob o cursor enquanto o rastreador do grupo está visível; as demais dicas continuam aparecendo."
+        ]
+      },
+      {
+        "title": "Indicadores de acompanhamento de missões",
+        "items": [
+          "Um anel verde-limão marca o integrante cuja missão em foco você está seguindo. Um distintivo de elos marca quem está seguindo sua seleção de missão, com uma explicação ao passar o cursor.",
+          "O Registro de missões do grupo e outras janelas agora cobrem os pontos, anéis e distintivos de missão que ficam atrás delas."
+        ]
+      },
+      {
+        "title": "Atalho opcional em barras Data Broker",
+        "items": [
+          "Barras compatíveis, como Bazooka, podem exibir um atalho do QT quando outro addon fornece LibDataBroker. O QT não inclui nem exige uma biblioteca nova. O atalho é independente da exibição do botão do minimapa.",
+          "Em Geral, escolha as ações dos cliques esquerdo e direito do Data Broker. Por padrão, eles abrem o Registro de missões do grupo e o menu do QT, respectivamente. Também é possível ativar ou desativar a busca por parceiros de missão, abrir Configurações ou escolher Nenhum."
+        ]
+      },
+      {
+        "title": "Intervalos entre tentativas de envio",
+        "items": [
+          "Quando o WoW recusa envios em um canal personalizado usado pelo QT, o addon aumenta gradualmente a espera antes de tentar novamente nesse canal, de cerca de 5 segundos até 120 segundos. Envios para o grupo, sussurros e canais sem problemas continuam disponíveis.",
+          "O QT evita acumular mensagens antigas para reenviá-las todas de uma vez e volta a tentar enviar mensagens atuais após o intervalo. Isso reduz recusas repetidas, mas não remove restrições do servidor nem garante a entrega."
         ]
       }
     ]

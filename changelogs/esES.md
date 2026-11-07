@@ -2,6 +2,42 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.4.0
+
+Personaliza tus burbujas y los sonidos de QT, coloca el seguimiento junto a las descripciones de misión y distingue mejor quién sigue a quién.
+
+### Tus propias burbujas
+
+- En Dónde anunciar, Mi burbuja de chat sustituye la opción anterior de ocultar tus burbujas: elige Mostrar siempre, Mostrar solo en solitario u Ocultar siempre. En solitario significa estar fuera de cualquier grupo, banda o grupo de estancia. La opción permanece visible, pero desactivada, si desactivas Mostrar burbujas de chat.
+- Se conserva tu preferencia anterior de mostrar u ocultar. El modo en solitario oculta tu burbuja al entrar en un grupo y permite nuevas burbujas al salir. Solo cambia tu pantalla: las burbujas ajenas, los registros de chat y los anuncios enviados siguen igual.
+
+### Sonidos propios de QT
+
+- QT incluye seis sonidos originales. Por defecto, solo están activados los avisos discretos de solicitudes y diálogos de confirmación, y los cambios automáticos de misión seleccionada al seguir a otro jugador.
+- En Audio puedes activar o desactivar los sonidos y ajustar el volumen general. Para cada evento puedes activar el aviso, elegir su sonido y volumen y escuchar una muestra. También hay silencio en combate, intervalo mínimo entre sonidos y restablecimiento de valores. Se respetan el volumen y el silencio de los efectos de sonido de WoW.
+- Puedes activar avisos para puntos de ruta del grupo, misiones del grupo listas para entregar, entregas de misiones del grupo, progreso de objetivos del grupo, mensajes entrantes del chat de QT y resultados al compartir misiones. Estos avisos vienen desactivados.
+
+### Seguimiento junto a las descripciones de misión
+
+- Con Ajustar al seguimiento de objetivos de Blizzard activado, el Seguimiento de objetivos del grupo se acopla a la descripción de Blizzard de la misión bajo el cursor, cuando esa descripción está visible. Esta colocación es independiente del ajuste de la vista de misión seleccionada.
+- En Grupos y compartir o en el modo de edición del seguimiento, Posición junto a la descripción permite elegir Arriba, Abajo o Al lado. Arriba es el valor predeterminado; si no hay espacio, se usa otro lado. Al retirar el cursor, el seguimiento recupera su posición habitual.
+- Ocultar la descripción de misión de Blizzard viene desactivado. Solo oculta la descripción correspondiente a la misión bajo el cursor mientras el seguimiento del grupo está visible; no oculta las demás descripciones.
+
+### Indicadores de seguimiento de misiones
+
+- Un aro verde lima señala al miembro del grupo cuya misión seleccionada estás siguiendo. Una insignia de eslabones señala a quien sigue tu selección de misión; pasa el cursor para ver la explicación.
+- El Registro de misiones del grupo y otras ventanas ahora cubren los puntos, aros e insignias de misión que quedan detrás.
+
+### Acceso opcional desde Data Broker
+
+- Las barras compatibles, como Bazooka, pueden mostrar un acceso a QT si otro addon proporciona LibDataBroker. QT no incluye ni exige una biblioteca nueva. Este acceso es independiente del botón del minimapa.
+- En General puedes asignar acciones distintas al clic izquierdo y derecho de Data Broker. Por defecto abren el Registro de misiones del grupo y el menú de QT, respectivamente. También puedes elegir activar o desactivar la búsqueda de compañeros para misiones, abrir Ajustes o seleccionar Ninguno.
+
+### Reintentos de comunicación
+
+- Si WoW rechaza los envíos en un canal personalizado usado por QT, el addon espacia los reintentos de ese canal: empieza con unos 5 segundos y aumenta progresivamente hasta 120. Los envíos al grupo, los susurros y los canales sin problemas siguen disponibles.
+- QT evita acumular y reenviar mensajes antiguos y vuelve a intentar enviar mensajes actuales tras la espera. Esto reduce los envíos rechazados repetidos, pero no elimina las restricciones del servidor ni garantiza la entrega.
+
 ## 8.3.1
 
 La actualización del registro de misiones del grupo es ahora más fiable.

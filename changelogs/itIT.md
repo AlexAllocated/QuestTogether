@@ -2,6 +2,41 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.4.0
+
+Scegli quando mostrare il tuo fumetto, personalizza i suoni di QT e riconosci più facilmente chi segue la missione selezionata nel gruppo.
+
+### Il tuo fumetto di chat
+
+- In «Dove annunciare», «Il mio fumetto di chat» sostituisce la precedente opzione per nasconderlo. Puoi scegliere «Mostra sempre», «Mostra solo in solitaria» o «Nascondi sempre». Se «Mostra fumetti chat» è disattivato, la scelta resta visibile ma non è utilizzabile; la scelta precedente di mostrare o nascondere il fumetto viene mantenuta.
+- Con «Mostra solo in solitaria», il fumetto già visibile scompare appena entri in un gruppo, anche di istanza, o in un’incursione. Dopo averlo lasciato, possono comparire nuovi fumetti. Cambia soltanto ciò che vedi tu: i fumetti altrui, i registri della chat e gli annunci inviati restano invariati.
+
+### Suoni personalizzati di QT
+
+- Puoi scegliere tra sei suoni originali di QT. Per impostazione predefinita, avvisi discreti accompagnano soltanto richieste, finestre di conferma e cambi automatici della missione attiva quando segui la selezione di un compagno. Gli altri avvisi sono disattivati.
+- In Audio puoi attivare i suoni di QT e regolare il volume generale. Ogni evento ha attivazione, scelta del suono, volume e anteprima propri. Sono disponibili anche il silenziamento in combattimento, l’intervallo minimo tra suoni e il ripristino delle impostazioni audio. Restano validi i controlli degli effetti sonori di WoW.
+- Puoi attivare avvisi per i punti di riferimento del gruppo, le missioni del gruppo pronte per la consegna o consegnate, i progressi degli obiettivi del gruppo, i messaggi QT ricevuti e gli esiti della condivisione delle missioni.
+
+### Tracciamento obiettivi accanto al tooltip
+
+- Con l’aggancio al tracciatore obiettivi di Blizzard attivo, il Tracciamento obiettivi del gruppo può affiancare il tooltip Blizzard visibile della missione sotto il cursore. In «Gruppi e condivisione» e nella modalità di modifica del tracciamento, «Posizione accanto al tooltip» offre «In alto» come scelta predefinita, «Sotto» e «Di lato». Questa posizione è separata da quella della vista della missione selezionata.
+- Se manca spazio, QT usa un altro lato; quando sposti il cursore fuori dalla missione, torna alla posizione abituale. «Nascondi il tooltip missione di Blizzard» è disattivato per impostazione predefinita e riguarda solo il tooltip corrispondente alla missione sotto il cursore, mentre il tracciamento del gruppo è visibile.
+
+### Indicatori di chi segue le missioni
+
+- Un anello verde lime identifica il compagno di cui segui la missione attiva. Un simbolo a maglia di catena indica chi segue la tua selezione; passa il cursore per una spiegazione.
+- Il Registro missioni del gruppo e le altre finestre coprono punti, anelli e simboli della missione attiva, che non restano più visibili attraverso le finestre.
+
+### QT nelle barre compatibili
+
+- Le barre di addon come Bazooka possono mostrare un pulsante QT quando un altro addon installato fornisce LibDataBroker. QT non include questa libreria e non la richiede. Il pulsante funziona indipendentemente dalla visibilità di quello sulla minimappa.
+- In «Generale» puoi scegliere le azioni Data Broker per clic sinistro e destro: inizialmente aprono il Registro missioni del gruppo e il menu QT. Puoi anche attivare o disattivare la ricerca di compagni di missione, aprire le Impostazioni o scegliere nessuna azione.
+
+### Meno tentativi di invio rifiutati
+
+- Se un canale personalizzato usato da QT rifiuta gli invii, l’addon aumenta l’attesa prima di riprovare su quel canale: da circa 5 secondi fino a 120 secondi. Chat di gruppo, sussurri e altri canali funzionanti possono continuare a inviare messaggi.
+- QT evita di accumulare vecchi messaggi e reinviarli tutti insieme; dopo l’attesa riprova con quelli attuali. Questo riduce i rifiuti ripetuti, ma non elimina le restrizioni del server e non garantisce la consegna.
+
 ## 8.3.1
 
 L’aggiornamento delle missioni del gruppo è ora più affidabile.

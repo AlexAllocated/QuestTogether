@@ -2,6 +2,41 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.4.0
+
+Wähle, wann deine eigene Chatblase erscheint, passe QT-Hinweistöne an und behalte den Questfokus deiner Gruppe leichter im Blick.
+
+### Deine eigene Chatblase
+
+- Unter „Wo ankündigen“ bietet „Meine Chatblase“ jetzt „Immer anzeigen“, „Nur solo anzeigen“ und „Immer ausblenden“. Ist „Chatblasen anzeigen“ ausgeschaltet, bleibt die Auswahl sichtbar, ist aber deaktiviert. Deine bisherige Einstellung wird übernommen.
+- „Nur solo anzeigen“ blendet deine laufende Blase sofort aus, sobald du einer Gruppe, einem Schlachtzug oder einer Instanzgruppe beitrittst. Nach dem Verlassen können neue Blasen erscheinen. Die Auswahl betrifft nur deine Anzeige; Blasen anderer Spieler, Chatprotokolle und gesendete Ankündigungen bleiben unverändert.
+
+### Eigene QT-Hinweistöne
+
+- Sechs eigens für QT erstellte Klänge stehen zur Auswahl. Standardmäßig sind dezente Töne für Anfragen und Bestätigungsdialoge sowie für automatische Questfokuswechsel beim Folgen eines Mitspielers aktiv. Alle anderen Ereignistöne sind zunächst ausgeschaltet.
+- Unter „Audio“ kannst du QT-Sounds insgesamt ein- oder ausschalten und ihre Gesamtlautstärke regeln. Für jedes Ereignis gibt es einen Schalter, Klangauswahl, Lautstärke und Hörprobe. Außerdem kannst du Töne im Kampf stummschalten, einen Mindestabstand festlegen oder die Audiostandards wiederherstellen. WoWs Einstellungen für Soundeffekte gelten weiterhin.
+- Zusätzliche Töne lassen sich für Gruppenwegpunkte, abgabebereite und abgegebene Gruppenquests, Fortschritte bei Gruppenzielen, eingehenden QT-Chat und Ergebnisse beim Teilen von Quests aktivieren.
+
+### Gruppen-Zielverfolgung am Tooltip
+
+- Ist das Einrasten an Blizzards Zielverfolgung aktiv, kann die Gruppen-Zielverfolgung beim Überfahren einer Quest an deren sichtbarem Blizzard-Tooltip andocken. Unter „Gruppen & Teilen“ und im Bearbeitungsmodus der Gruppen-Zielverfolgung bietet „Position am Tooltip“ die Auswahl „Oben“ (Standard), „Unten“ und „Seitlich“. Die normale Position der fokussierten Ansicht wird getrennt davon verwendet.
+- Fehlt Platz auf der gewählten Seite, nutzt QT eine andere Seite. Verlässt der Mauszeiger die Quest, kehrt die Anzeige an ihren üblichen Platz zurück. „Blizzards Quest-Tooltip ausblenden“ ist zunächst ausgeschaltet und betrifft nur den passenden Tooltip zur Quest unter dem Mauszeiger, während die Gruppen-Zielverfolgung sichtbar ist.
+
+### Erkennen, wer welchem Questfokus folgt
+
+- Ein limettengrüner Ring markiert den Mitspieler, dessen Questfokus du folgst. Ein Kettensymbol zeigt, wer deinem Questfokus folgt; beim Überfahren erhältst du eine Erklärung.
+- Fokuspunkte, Ringe und Symbole werden vom Gruppenquestlog und anderen Fenstern verdeckt, statt durch sie hindurch sichtbar zu bleiben.
+
+### QT in kompatiblen Symbolleisten
+
+- Symbolleisten-Addons wie Bazooka können einen QT-Starter anzeigen, wenn ein anderes installiertes Addon LibDataBroker bereitstellt. QT bringt diese Bibliothek nicht mit und benötigt sie nicht. Der Starter funktioniert unabhängig von der Sichtbarkeit der Minikartenschaltfläche.
+- Unter „Allgemein“ kannst du die Data-Broker-Aktionen für Links- und Rechtsklick wählen. Standardmäßig öffnen sie das Gruppenquestlog und das QT-Menü. Außerdem stehen das Umschalten der Suche nach Questpartnern, die Einstellungen oder keine Aktion zur Wahl.
+
+### Weniger abgewiesene Kanalnachrichten
+
+- Weist ein von QT verwendeter benutzerdefinierter Kanal Nachrichten ab, wartet QT vor neuen Versuchen auf diesem Kanal zunehmend länger: zunächst etwa 5 Sekunden, höchstens 120 Sekunden. Gruppenchat, Flüsternachrichten und andere funktionierende Kanäle können weiter genutzt werden.
+- QT vermeidet dabei, alte Nachrichten anzusammeln und später gesammelt zu senden, und versucht nach der Pause wieder aktuelle Nachrichten. Das verringert wiederholte Abweisungen, hebt aber keine Serverbeschränkungen auf und garantiert keine Zustellung.
+
 ## 8.3.1
 
 Das Gruppenquestlog lässt sich jetzt zuverlässiger aktualisieren.

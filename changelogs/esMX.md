@@ -2,6 +2,42 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.4.0
+
+Esta actualización agrega opciones para tus burbujas, sonidos de QT e indicadores para seguir misiones, además de nuevas formas de colocar y abrir las herramientas del grupo.
+
+### Cuándo mostrar tu burbuja
+
+- Busca Mi burbuja de chat en Dónde anunciar. El nuevo menú reemplaza la opción de ocultar tus propias burbujas y ofrece Mostrar siempre, Mostrar solo en solitario y Ocultar siempre. Jugar en solitario significa no estar en un grupo, una banda ni un grupo de instancia. Si Mostrar burbujas de chat está desactivado, el menú sigue visible, pero no se puede usar.
+- Tu elección anterior de mostrar u ocultar se conserva. Con Mostrar solo en solitario, la burbuja actual desaparece al unirte a un grupo; al salir, puedes volver a recibir burbujas propias. Esto solo afecta lo que ves: no cambia las burbujas de otros jugadores, los registros de chat ni los anuncios que envías.
+
+### Avisos sonoros de QT
+
+- Elige entre seis sonidos originales incluidos con QT. Los únicos avisos activados de forma predeterminada son los sonidos discretos de solicitudes, diálogos de confirmación y cambios automáticos de misión seleccionada al seguir a otro jugador.
+- Audio reúne el interruptor y el volumen generales, además de opciones para activar cada evento, elegir su sonido y volumen y escuchar una muestra. Puedes silenciar QT en combate, fijar un intervalo mínimo entre sonidos o restablecer los valores. Los avisos también respetan el volumen y el silencio de los efectos de sonido de WoW.
+- Los demás avisos son opcionales y empiezan desactivados: puntos de ruta del grupo, misiones del grupo listas para entregar, entregas de misiones del grupo, progreso de objetivos del grupo, mensajes recibidos en el chat de QT y resultados al compartir misiones.
+
+### Colocación junto a la descripción de misión
+
+- Cuando activas Ajustar al seguimiento de objetivos de Blizzard, el Seguimiento de objetivos del grupo se coloca junto a la descripción nativa de la misión bajo el cursor, si esa descripción está visible. Es una colocación aparte de la usada para la vista de misión seleccionada.
+- En Grupos y compartir y en el modo de edición del seguimiento, usa Posición junto a la descripción para elegir Arriba, Abajo o Al lado. La opción inicial es Arriba. Si falta espacio en la pantalla, QT usa otro lado; al quitar el cursor, vuelve a la posición habitual.
+- Ocultar la descripción de misión de Blizzard está desactivado de forma predeterminada. Al activarlo, solo se oculta la descripción de la misión señalada mientras el seguimiento del grupo está visible; las demás descripciones no cambian.
+
+### Quién sigue a quién
+
+- El aro verde lima identifica al compañero cuya misión seleccionada estás siguiendo. La insignia de eslabones identifica al compañero que sigue tu selección de misión, con una explicación al pasar el cursor.
+- El Registro de misiones del grupo y otras ventanas ahora cubren los puntos, aros e insignias de misión que quedan detrás.
+
+### Acceso en barras Data Broker
+
+- QT puede aparecer en barras compatibles, como Bazooka, cuando otro addon proporciona LibDataBroker. No incluye ni requiere una biblioteca nueva, y el acceso funciona independientemente de que se muestre el botón del minimapa.
+- Configura las acciones del clic izquierdo y derecho de Data Broker en General. Inicialmente abren el Registro de misiones del grupo y el menú de QT, respectivamente. También puedes activar o desactivar la búsqueda de compañeros para hacer misiones, abrir Configuración o elegir Ninguno.
+
+### Pausas entre reintentos de envío
+
+- Cuando WoW rechaza envíos en un canal personalizado usado por QT, el addon espera antes de volver a intentar enviar por ese canal. La espera aumenta desde unos 5 segundos hasta 120. Los mensajes de grupo, los susurros y los canales que funcionan siguen disponibles.
+- QT evita acumular mensajes viejos para reenviarlos todos juntos; después de la espera, vuelve a intentar enviar mensajes actuales. Esto reduce los intentos rechazados repetidos, pero no quita las restricciones del servidor ni garantiza que los mensajes lleguen.
+
 ## 8.3.1
 
 Ahora es más confiable actualizar el registro de misiones del grupo.

@@ -2,6 +2,41 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 8.4.0
+
+Choisissez quand afficher votre bulle personnelle, réglez les sons de QT et repérez plus facilement qui suit les quêtes du groupe.
+
+### Votre bulle de discussion
+
+- Dans « Où annoncer », « Ma bulle de discussion » remplace l’ancienne option de masquage. Choisissez « Toujours afficher », « Afficher uniquement en solo » ou « Toujours masquer ». Si « Afficher les bulles de discussion » est désactivé, ce choix reste visible mais grisé ; votre ancien choix d’affichage ou de masquage est conservé.
+- En mode solo, votre bulle disparaît dès que vous rejoignez un groupe, un raid ou un groupe d’instance. De nouvelles bulles peuvent apparaître une fois le groupe quitté. Ce choix ne modifie que votre affichage : les bulles des autres joueurs, les journaux de discussion et les annonces envoyées restent inchangés.
+
+### Des sons propres à QT
+
+- Six sons originaux sont disponibles. Par défaut, seules les demandes, les fenêtres de confirmation et les changements automatiques de quête dus au suivi d’un autre joueur émettent un signal discret. Les autres sons d’événement sont désactivés.
+- La rubrique Audio permet d’activer les sons de QT et de régler leur volume général. Chaque événement dispose de son propre interrupteur, d’un choix de son, d’un volume et d’un aperçu sonore. Vous pouvez aussi couper les sons en combat, espacer leur lecture et rétablir les réglages par défaut. Les réglages des effets sonores de WoW s’appliquent toujours.
+- Des sons facultatifs signalent les points de passage du groupe, ses quêtes prêtes à être rendues ou rendues, la progression de ses objectifs, les messages QT reçus et les résultats du partage de quêtes.
+
+### Le suivi des objectifs près des infobulles
+
+- Lorsque l’alignement sur le suivi des objectifs de Blizzard est activé, le Suivi des objectifs du groupe peut se placer contre l’infobulle Blizzard de la quête survolée, si celle-ci est visible. Dans « Groupes et partage » ou le mode de modification du suivi, « Position près de l’infobulle » propose « Haut » par défaut, « En dessous » ou « Sur le côté ». Ce placement est distinct de celui de la vue de la quête sélectionnée.
+- QT choisit un autre côté si la place manque et reprend le placement habituel à la fin du survol. L’option « Masquer l’infobulle de quête de Blizzard », désactivée par défaut, masque uniquement l’infobulle correspondant à la quête survolée lorsque le suivi du groupe est visible.
+
+### Des repères pour le suivi des quêtes
+
+- Un anneau vert citron désigne le membre du groupe dont vous suivez la sélection de quête. Un symbole de maillon indique ceux qui suivent la vôtre ; survolez-le pour en savoir plus.
+- Le Journal de quêtes du groupe et les autres fenêtres recouvrent les points, anneaux et symboles de sélection, qui ne restent plus visibles à travers ces fenêtres.
+
+### Un raccourci dans les barres compatibles
+
+- Une barre comme Bazooka peut afficher un raccourci QT si un autre addon installé fournit LibDataBroker. QT n’inclut pas cette bibliothèque et ne l’exige pas. Ce raccourci reste indépendant de l’affichage du bouton de la minicarte.
+- Dans « Général », choisissez les actions Data Broker des clics gauche et droit. Par défaut, ils ouvrent le Journal de quêtes du groupe et le menu QT. Vous pouvez aussi activer ou désactiver la recherche de partenaires de quête, ouvrir les Paramètres ou ne déclencher aucune action.
+
+### Des tentatives d’envoi mieux espacées
+
+- Quand un canal personnalisé utilisé par QT refuse les envois, l’addon attend de plus en plus longtemps avant de réessayer sur ce canal : environ 5 secondes au départ, jusqu’à 120 secondes. Les messages de groupe, les chuchotements et les autres canaux disponibles peuvent continuer à être envoyés.
+- QT évite d’accumuler d’anciens messages pour les renvoyer en bloc et essaie de nouveau les messages actuels après l’attente. Cela réduit les refus répétés, sans lever les restrictions du serveur ni garantir la réception.
+
 ## 8.3.1
 
 L’actualisation du journal de quêtes du groupe est plus fiable.

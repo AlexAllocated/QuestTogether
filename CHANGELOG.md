@@ -4,6 +4,41 @@
 
 [Other languages](changelogs/README.md)
 
+## 8.4.0
+
+Custom QuestTogether sounds, more flexible bubbles and tooltips, and clearer quest focus indicators.
+
+### Your own chat bubble
+
+- Where to Announce now has a My chat bubble dropdown: Show always, Show only when solo, or Hide always. Solo means outside a party or raid. The dropdown stays visible but disabled when Show Chat Bubbles is off.
+- Your existing show or hide preference is preserved. Show only when solo hides an active personal bubble when you join a group and allows new bubbles after you leave. Your chat logs, shared announcements, and other players' bubbles are unaffected.
+
+### QuestTogether sounds
+
+- Six original QT sounds add quiet cues for requests, confirmations, and automatic quest focus changes while following another player. Only those cues are enabled by default.
+- Open Audio in settings to choose sounds, preview them, and adjust the master volume and each event's volume. You can mute cues in combat, adjust the spacing between sounds, or turn them off. WoW's Sound Effects settings still apply.
+- Optional cues are available for party waypoints, quests ready to turn in, quest turn-ins, objective progress, incoming QT chat, and quest sharing results.
+
+### Party Objective Tracker and quest tooltips
+
+- When Snap to Blizzard Objective Tracker is enabled, POT can sit together with Blizzard's quest tooltip during a hover. Choose Top, Bottom, or Side under Groups & Sharing or in POT's Edit Mode options. Top is the default; POT uses another edge if there is not enough room.
+- POT returns to its normal position when the hover ends. Hide Blizzard quest tooltip is also available, off by default, if you prefer POT alone. It only hides the matching quest tooltip while POT is visible.
+
+### Quest focus indicators
+
+- A lime-green ring marks the party member whose quest focus you follow. A chain-link badge marks someone following your quest focus; hover their dot for details.
+- Focus dots, rings, and badges now stay behind Party Quest Log and other windows instead of showing through them.
+
+### Toolbar support
+
+- Compatible Data Broker toolbars such as Bazooka can now display a QuestTogether launcher, even when your minimap button is hidden. This integration is optional and adds no required library to QT.
+- Under General, choose the Data Broker left- and right-click actions. They open PQL and the QT menu by default; you can also choose Settings, toggle Looking for Questing Partners, or assign no action.
+
+### Communication retries
+
+- When a QT custom channel rejects communication, QT pauses before trying again. Repeated refusals lengthen the pause from about 5 seconds up to 120 seconds, without holding back party messages, whispers, or healthy channels.
+- This avoids repeatedly sending into a blocked channel or building up old messages to replay later. It does not bypass server restrictions or guarantee delivery.
+
 ## 8.3.1
 
 More reliable party quest refreshes after sharing quests.

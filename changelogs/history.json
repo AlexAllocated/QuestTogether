@@ -3,6 +3,162 @@
   "releases": [
     {
       "enUS": {
+        "version": "8.3.1",
+        "welcome": "More reliable party quest refreshes after sharing quests.",
+        "sections": [
+          {
+            "title": "Party quest updates",
+            "items": [
+              "Refresh now requests a fresh party quest list even if an older update is stalled. Your existing data stays visible while the new list loads.",
+              "QuestTogether also refreshes a party member's quest list when WoW confirms that they accepted a shared quest or already have it.",
+              "Late objective replies can no longer overwrite newer quest ownership or progress and make an accepted quest appear missing."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "8.3.1",
+        "welcome": "Das Gruppenquestlog lässt sich jetzt zuverlässiger aktualisieren.",
+        "sections": [
+          {
+            "title": "Aktualisierung des Gruppenquestlogs",
+            "items": [
+              "„Aktualisieren“ fordert eine neue Questliste an, auch wenn eine ältere Anfrage festhängt oder noch weitere Questdaten geladen werden.",
+              "Wenn die Spielmeldung bestätigt, dass ein Gruppenmitglied eine geteilte Quest angenommen hat oder sie bereits besitzt, wird dessen Questliste automatisch neu angefordert.",
+              "Verspätete Antworten können neuere Angaben zu Quests und Zielen nicht mehr überschreiben. Bereits erfasster Zielfortschritt bleibt erhalten, wenn sich die Questübersicht nicht geändert hat."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "8.3.1",
+        "welcome": "L’actualisation du journal de quêtes du groupe est plus fiable.",
+        "sections": [
+          {
+            "title": "Actualisation des quêtes du groupe",
+            "items": [
+              "Le bouton Actualiser demande une nouvelle liste de quêtes même si une ancienne demande est bloquée ou si d’autres données de quêtes sont encore en cours de chargement.",
+              "Quand le jeu signale qu’un membre du groupe a accepté une quête partagée ou qu’il l’a déjà, sa liste de quêtes est automatiquement redemandée.",
+              "Les réponses tardives ne remplacent plus les informations récentes sur les quêtes détenues et leurs objectifs. La progression des objectifs déjà reçue est conservée si le récapitulatif des quêtes n’a pas changé."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "8.3.1",
+        "welcome": "La actualización del registro de misiones del grupo es ahora más fiable.",
+        "sections": [
+          {
+            "title": "Actualización de las misiones del grupo",
+            "items": [
+              "Actualizar solicita una nueva lista de misiones aunque una petición anterior se haya quedado atascada o aún se estén cargando otros datos de misiones.",
+              "Cuando el juego indica que un miembro del grupo ha aceptado una misión compartida o que ya la tiene, se vuelve a solicitar su lista de misiones automáticamente.",
+              "Las respuestas tardías ya no sustituyen la información más reciente sobre quién tiene cada misión y el progreso de sus objetivos. El progreso recibido se conserva si el resumen de misiones no ha cambiado."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "8.3.1",
+        "welcome": "Ahora es más confiable actualizar el registro de misiones del grupo.",
+        "sections": [
+          {
+            "title": "Actualización de misiones del grupo",
+            "items": [
+              "Con Actualizar puedes solicitar una nueva lista de misiones aunque una solicitud anterior se haya quedado trabada o todavía se estén cargando otros datos de misiones.",
+              "Si el juego avisa que un integrante del grupo aceptó una misión compartida o que ya la tiene, se solicita automáticamente una nueva lista de sus misiones.",
+              "Las respuestas que llegan tarde ya no reemplazan los datos más recientes sobre las misiones que tiene cada integrante y el avance de sus objetivos. El avance recibido se mantiene si el resumen de misiones no cambió."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "8.3.1",
+        "welcome": "Atualização mais confiável das missões do grupo, inclusive após compartilhar uma missão.",
+        "sections": [
+          {
+            "title": "Atualização das missões do grupo",
+            "items": [
+              "Atualizar agora solicita uma nova lista de missões sem ficar preso a uma solicitação antiga ou aguardar consultas em segundo plano.",
+              "Quando o jogo informa que um integrante aceitou a missão compartilhada ou já a possui, o addon solicita automaticamente uma nova lista de missões desse integrante.",
+              "Respostas atrasadas não fazem uma missão voltar a aparecer como Ausente após a chegada de uma lista mais recente. O progresso dos objetivos já recebido é mantido quando a missão não mudou."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "8.3.1",
+        "welcome": "Список заданий группы обновляется надёжнее, в том числе после обмена заданиями.",
+        "sections": [
+          {
+            "title": "Обновление заданий группы",
+            "items": [
+              "Кнопка «Обновить» запрашивает новый список заданий, даже если старый запрос завис или в фоне ещё загружаются другие сведения.",
+              "Если игра сообщает, что участник принял предложенное задание или уже выполняет его, аддон автоматически запрашивает свежий список его заданий.",
+              "После получения нового списка запоздавшие ответы больше не возвращают заданию устаревшую отметку «Отсутствует». Уже полученный прогресс целей сохраняется, если сведения о задании не изменились."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "8.3.1",
+        "welcome": "L’aggiornamento delle missioni del gruppo è ora più affidabile.",
+        "sections": [
+          {
+            "title": "Aggiornamento delle missioni del gruppo",
+            "items": [
+              "Aggiorna richiede un nuovo elenco delle missioni anche se una richiesta precedente è bloccata o sono ancora in caricamento altri dati delle missioni.",
+              "Quando il gioco segnala che un membro del gruppo ha accettato una missione condivisa o la possiede già, viene richiesto automaticamente un nuovo elenco delle sue missioni.",
+              "Le risposte in ritardo non sovrascrivono più le informazioni recenti su chi possiede le missioni e sui relativi obiettivi. I progressi degli obiettivi già ricevuti vengono conservati se il riepilogo delle missioni non è cambiato."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "8.3.1",
+        "welcome": "퀘스트 공유 후를 포함해 파티 퀘스트 목록을 더 안정적으로 갱신합니다.",
+        "sections": [
+          {
+            "title": "파티 퀘스트 목록 갱신",
+            "items": [
+              "새로고침을 누르면 이전 요청이 멈춰 있거나 다른 정보를 백그라운드에서 불러오는 중이어도 새 퀘스트 목록을 요청합니다.",
+              "게임에서 파티원이 공유받은 퀘스트를 수락했거나 이미 보유 중이라고 알리면 해당 파티원의 퀘스트 목록을 자동으로 다시 요청합니다.",
+              "새 목록을 받은 뒤에는 늦게 도착한 응답 때문에 퀘스트가 다시 미보유로 표시되지 않습니다. 퀘스트 정보가 바뀌지 않았다면 이미 받은 목표 진행 상황도 유지합니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "8.3.1",
+        "welcome": "队伍任务列表刷新更加可靠，分享任务后的列表更新也得到改进。",
+        "sections": [
+          {
+            "title": "队伍任务刷新",
+            "items": [
+              "点击刷新后，会请求新的任务列表，不再被停滞的旧请求或后台信息查询挡住。",
+              "游戏提示队友已接受分享的任务或已在进行该任务时，插件会自动重新请求该队友的任务列表。",
+              "收到新列表后，迟到的回复不会再把已持有的任务错误地标为缺失。任务信息未变化时，已收到的目标进度也会保留。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "8.3.1",
+        "welcome": "隊伍任務清單的更新更加可靠，也改善了分享任務後的清單更新。",
+        "sections": [
+          {
+            "title": "隊伍任務更新",
+            "items": [
+              "按下重新整理後，會要求新的任務清單，不再卡在停滯的舊請求或等待背景資料查詢。",
+              "遊戲通知隊友已接受分享的任務，或已經在進行該任務時，插件會自動重新要求該隊友的任務清單。",
+              "收到新清單後，較晚抵達的回覆不會再將已持有的任務誤標為缺少。任務資訊沒有變動時，也會保留已收到的目標進度。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "8.3.0",
         "welcome": "Party focus dots are now clickable, with clearer follow controls and fixes for quest windows and nameplate icons.",
         "sections": [
