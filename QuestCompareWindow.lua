@@ -1725,6 +1725,7 @@ function QuestTogether:RenderPartyQuestSharePrompt()
 	frame:LayoutRequest()
 	self:ApplyScrollDialogTheme(frame)
 	frame:Show()
+	self:PlayPromptAttentionAudio(frame, request, frame.preview)
 end
 
 function QuestTogether:CreatePartyJoinPrompt(preview)
@@ -1801,6 +1802,7 @@ function QuestTogether:RenderPartyJoinPrompt()
 	frame:LayoutRequest()
 	self:ApplyScrollDialogTheme(frame)
 	frame:Show()
+	self:PlayPromptAttentionAudio(frame, request, frame.preview)
 end
 
 function QuestTogether:RenderPartyChatReminder(request)
@@ -1950,4 +1952,5 @@ function QuestTogether:RenderPartyChatReminder(request)
 		frame:LayoutManagedWindow()
 	end
 	frame:Show()
+	self:PlayPromptAttentionAudio(frame, request, request.preview)
 end

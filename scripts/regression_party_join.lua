@@ -28,6 +28,7 @@ local function Peer(name)
 		messages = {},
 		wire = {},
 		invites = {},
+		audioCues = {},
 		partyMembers = {},
 		recentCommMessageSignatures = {},
 		workState = { entries = {}, generations = {} },
@@ -35,6 +36,9 @@ local function Peer(name)
 		announcementChannelLocalID = 7,
 		channelRequestSequence = 0,
 	}, { __index = QT })
+	function a:PlayAudioCue(key, identity)
+		self.audioCues[#self.audioCues + 1] = { key = key, identity = identity }
+	end
 	a.API = {
 		GetTime = function()
 			return a.now
@@ -512,6 +516,9 @@ local function Frame()
 	function f:Hide()
 		self.shown = false
 	end
+	function f:IsVisible()
+		return self.shown
+	end
 	function f:CreateFontString()
 		local child = Frame()
 		self.children[#self.children + 1] = child
@@ -537,6 +544,8 @@ QT:RegisterTest("join consent popup callbacks invite decline and reset preferenc
 	Request(a)
 	local frame = a.partyJoinPrompt
 	assert(frame.shown and frame.message.text:find("Friend-Realm", 1, true))
+	Equal(#a.audioCues, 1)
+	Equal(a.audioCues[1].key, "attention")
 	Equal(frame.friends:GetChecked(), false)
 	Equal(frame.lfg:GetChecked(), false)
 	frame.friends:SetChecked(true)
@@ -546,6 +555,7 @@ QT:RegisterTest("join consent popup callbacks invite decline and reset preferenc
 	Equal(frame.shown, false)
 	a.now = 116
 	Request(a, "Other-Realm", "req-2")
+	Equal(#a.audioCues, 2)
 	Equal(frame.friends:GetChecked(), false)
 	frame.lfg:SetChecked(true)
 	frame.invite.scripts.OnClick()

@@ -30,6 +30,14 @@ class PackagingTests(unittest.TestCase):
             self.assertIn("Media/QuestTogetherTipIcon.png", manifest["files"])
             self.assertIn("Media/QuestTogetherDeveloperIcon.tga", manifest["files"])
             self.assertIn("Media/QuestTogetherDeveloperPartnerIcon.tga", manifest["files"])
+            audio = json.loads((ROOT / "Media/Audio/manifest.json").read_text())
+            self.assertIn("Media/Audio/NOTICE.txt", manifest["files"])
+            self.assertIn("Media/Audio/manifest.json", manifest["files"])
+            for cue in ("scroll", "spellbook", "selection", "chime", "progress", "completion"):
+                for gain in range(1, 101):
+                    self.assertIn(f"Media/Audio/{cue}/{gain:03}.ogg", manifest["files"])
+                for variant in audio["cues"][cue]["variants"]:
+                    self.assertEqual(manifest["files"]["Media/Audio/" + variant["file"]], variant["sha256"])
             self.assertNotIn("scripts/test.lua", manifest["files"])
             self.assertNotIn("scripts/offline_numeric_tests.lua", manifest["files"])
             self.assertFalse(any(p.startswith(".local/") or p.endswith("image.png") for p in manifest["files"]))

@@ -184,6 +184,11 @@ function QT:GetPartyFocusController()
 		setQuest = function(id)
 			return a.API.SetPartyNavigationQuest(id)
 		end,
+		onApplied = function(id)
+			-- The native adapter confirms the new focus before this callback.
+			-- Each actual transition gets its own identity, including A -> B -> A.
+			a:PlayAudioCue("focus", { questID = id })
+		end,
 		questID = function(id)
 			return Number(a, id, 0, 1000000000)
 		end,
@@ -348,7 +353,14 @@ function QT:HandlePartyNavigationMessage(data, sender, context)
 	if not self:CommitPeerObservation(observation, record, true) then
 		return false
 	end
+	local previous = s.seen[name]
 	s.peers[name], s.seen[name] = record, record
+	-- Focus changes and idle heartbeats reuse this snapshot. Only a new shared
+	-- waypoint calls for attention, never its redraw or an accepted keepalive.
+	if map > 0 and self:GetOption("showPartyWaypoints") == true
+		and (not previous or previous.mapID ~= map or previous.x ~= x or previous.y ~= y) then
+		self:PlayAudioCue("waypoint", record)
+	end
 	if data.hello == true and (not s.lastReply or now - s.lastReply >= 2) then
 		s.lastReply = now
 		self:QueuePartyNavigationUpdate()
@@ -469,6 +481,14 @@ function QT:GetPartyQuestFocusID(name)
 end
 function QT:GetPartyQuestFollowTarget()
 	return self:GetPartyFocusController():GetTarget()
+end
+function QT:IsPartyQuestFocusFollower(name)
+	-- Intent is already part of the ordered, expiring navigation snapshot.
+	-- Matching quest IDs alone says nothing about whether someone follows us.
+	if self:IsSelfSender(name) then return false end
+	local peer = self:GetPartyNavigationPeer(name)
+	local own = Name(self, self:GetPlayerFullName())
+	return own ~= nil and peer ~= nil and peer.following == own
 end
 function QT:RequestPartyQuestFocus(name, questID)
 	return self:GetPartyFocusController():Request(name, questID)

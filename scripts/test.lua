@@ -213,6 +213,15 @@ local function RejectEngineCall(name)
 	end
 end
 SendChatMessage = RejectEngineCall("SendChatMessage")
+PlaySoundFile = RejectEngineCall("PlaySoundFile")
+StopSound = RejectEngineCall("StopSound")
+-- Exercise the production adapters' test guards against tripwires, offline.
+-- In-game cases use private playback adapters and never touch native audio.
+local previousRunningTests = QuestTogether.isRunningTests
+QuestTogether.isRunningTests = true
+assert(QuestTogether.API.PlayAudioFile("Interface\\AddOns\\QuestTogether\\Media\\Audio\\chime\\001.ogg") == false)
+assert(QuestTogether.API.StopAudioFile(1) == false)
+QuestTogether.isRunningTests = previousRunningTests
 geterrorhandler = function() return RejectEngineCall("geterrorhandler") end
 GetServerTime = RejectEngineCall("GetServerTime")
 C_ChatInfo = C_ChatInfo or {}

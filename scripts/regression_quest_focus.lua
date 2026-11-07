@@ -71,7 +71,13 @@ local function Fixture()
 		return "|cffffffff"
 	end
 	function a:GetHoveredTrackerQuestID()
-		return self.hover
+		return self.hover, self.hoverBlock, self.hoverNative
+	end
+	function a:GetQuestFocusNativeTooltip()
+		return self.nativeTooltip
+	end
+	function a:GetQuestFocusHoverEventRegistry()
+		return self.hoverEvents
 	end
 	function a:GetPartyQuestFocusID()
 		return self.focus
@@ -806,21 +812,34 @@ QT:RegisterTest("quest tracker display modes choose focus hover and hidden witho
 	menu.entries[4].choose(); a:Drain()
 	Equal(a:GetQuestTrackerMode(), "both")
 	Equal(a.questFocusState.id, 42)
+	local placementMenu = panel.TooltipPlacementDropdown.Dropdown
+	Equal(#placementMenu.entries, 3)
+	Equal(placementMenu.entries[1].text, "Top")
+	assert(placementMenu.entries[1].selected())
+	placementMenu.entries[2].choose(); a:Drain()
+	Equal(a:GetQuestTrackerTooltipPlacement(), "bottom")
 	assert(panel:IsShown(), "switching displayed quest must not close the mode editor")
 	panel.RevertButton.scripts.OnClick(); a:Drain()
 	Equal(a:GetQuestTrackerMode(), "hidden")
+	Equal(a:GetQuestTrackerTooltipPlacement(), "top")
 	assert(panel:IsShown())
 	panel.ResetButton.scripts.OnClick(); a:Drain()
 	Equal(a:GetQuestTrackerMode(), "hover")
+	Equal(a:GetQuestTrackerTooltipPlacement(), "top")
 	menu.entries[2].choose(); a:Drain()
+	placementMenu.entries[3].choose(); a:Drain()
 	panel.SaveButton.scripts.OnClick(); a:Drain()
 	menu.entries[3].choose(); a:Drain()
+	placementMenu.entries[1].choose(); a:Drain()
 	panel.RevertButton.scripts.OnClick(); a:Drain()
 	Equal(a:GetQuestTrackerMode(), "focus")
+	Equal(a:GetQuestTrackerTooltipPlacement(), "side")
 	local oldChoice = menu.entries[1].choose
+	local oldPlacement = placementMenu.entries[2].choose
 	a.db.profile = { questTrackerMode = "both", questFocusOpacity = 75 }
-	oldChoice(); a:Drain()
+	oldChoice(); oldPlacement(); a:Drain()
 	Equal(a:GetQuestTrackerMode(), "both", "old menus cannot change another profile")
+	Equal(a:GetQuestTrackerTooltipPlacement(), "top", "stale placement menu cannot change another profile")
 end)
 
 QT:RegisterTest("quest tracker solo option follows actual grouping and keeps Edit Mode reachable", function()
@@ -855,14 +874,209 @@ QT:RegisterTest("quest tracker solo option follows actual grouping and keeps Edi
 	local panel = a.questFocusWindow.editControls
 	local checkbox = panel.HideSoloCheckbox.Checkbox
 	Equal(checkbox:GetChecked(), true)
+	local hideTooltip = panel.HideTooltipCheckbox.Checkbox
+	Equal(hideTooltip:GetChecked(), false)
+	hideTooltip:SetChecked(true); hideTooltip.scripts.OnClick(hideTooltip); a:Drain()
+	Equal(a:GetOption("questTrackerHideBlizzardTooltip"), true)
 	checkbox:SetChecked(false); checkbox.scripts.OnClick(checkbox); a:Drain()
 	Equal(a:GetOption("questTrackerHideSolo"), false)
 	panel.RevertButton.scripts.OnClick(); a:Drain()
 	Equal(a:GetOption("questTrackerHideSolo"), true)
+	Equal(a:GetOption("questTrackerHideBlizzardTooltip"), false)
 	panel.ResetButton.scripts.OnClick(); a:Drain()
 	Equal(a:GetOption("questTrackerHideSolo"), true)
 	panel.SaveButton.scripts.OnClick(); a:Drain()
 	checkbox:SetChecked(false); checkbox.scripts.OnClick(checkbox); a:Drain()
 	panel.RevertButton.scripts.OnClick(); a:Drain()
 	Equal(a:GetOption("questTrackerHideSolo"), true)
+end)
+
+local function TooltipFixture()
+	local a = Fixture()
+	a.root.top = 900
+	a.hover = 42
+	a.hoverBlock = a:CreateTestUIRegion(a, a.root)
+	a.hoverBlock.id = 42
+	a.hoverBlock.left, a.hoverBlock.top = 900, 650
+	a.hoverBlock:SetSize(240, 80)
+	a.hoverNative = true
+	a.nativeTracker = a:CreateTestUIRegion(a, a.root)
+	a.nativeTracker.left, a.nativeTracker.top = 900, 800
+	a.nativeTracker:SetSize(240, 500)
+	a.nativeTooltip = a:CreateTestUIRegion(a, a.root)
+	local tip = a.nativeTooltip
+	tip.left, tip.top = 550, 650
+	tip:SetSize(300, 180)
+	function tip:GetOwner() return self.tooltipOwner end
+	tip.tooltipOwner = a.hoverBlock
+	return a, tip
+end
+
+QT:RegisterTest("POT docks to matching native quest tooltips and restores its ordinary anchor without saving hover geometry", function()
+	local a, tip = TooltipFixture()
+	local writes = tip.writes
+	a:UpdateQuestFocusWindow(); a:Drain()
+	local frame = a.questFocusWindow
+	local function Anchor(point, x, y)
+		local p, relative, rp, px, py = frame:GetPoint(1)
+		Equal(p, point); Equal(relative, a.root); Equal(rp, "BOTTOMLEFT")
+		Equal(px, x); Equal(py, y)
+	end
+	Equal(a:GetQuestTrackerTooltipPlacement(), "top")
+	Anchor("TOPLEFT", 850 - frame.panel:GetWidth(), 650 + frame.panel:GetHeight())
+	assert(frame.panel:GetHeight() < 250 and frame:GetHeight() == 600,
+		"top placement must use compact visible content, not the configured maximum")
+	tip.top = 895
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Anchor("TOPLEFT", 850 - frame.panel:GetWidth(), 715)
+	a:SetOption("questTrackerTooltipPlacement", "bottom"); tip.top = 650; a:Drain()
+	Anchor("TOPLEFT", 850 - frame.panel:GetWidth(), 470)
+	tip.top = 190
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Anchor("TOPLEFT", 850 - frame.panel:GetWidth(), 190 + frame.panel:GetHeight())
+	-- Mixed scales must still align the actual right edges in screen space.
+	a.root:SetScale(0.8); tip.scale, tip.top = 1.25, 500
+	a:UpdateQuestFocusWindow(); a:Drain()
+	local _, _, _, mixedX, mixedY = frame:GetPoint(1)
+	local fs, ts = frame:GetEffectiveScale(), tip:GetEffectiveScale()
+	assert(math.abs((mixedX + frame.panel:GetWidth()) * fs - (tip.left + tip:GetWidth()) * ts) < 0.001)
+	assert(math.abs(mixedY * fs - (tip.top - tip:GetHeight()) * ts) < 0.001)
+	a.root:SetScale(1); tip.scale, tip.top = 1, 650
+	a:SetOption("questTrackerTooltipPlacement", "side"); a:Drain()
+	Anchor("TOPLEFT", 206, 650)
+	Equal(tip.writes, writes, "default docking only reads native UI")
+	Equal(a.db.profile.windowLayouts, nil, "hover docking must not persist a new placement")
+	tip.left, tip.top = 50, 190
+	a:UpdateQuestFocusWindow()
+	local _, _, _, x, y = frame:GetPoint(1)
+	Equal(x, 354, "left edge flips POT to the right")
+	assert(y >= frame.panel:GetHeight(), "visible content stays above the screen bottom")
+	Equal(frame:GetHeight(), 600, "maximum height survives transient docking")
+	tip.left, tip.top, tip.scale = 400, 500, 1.5
+	a:UpdateQuestFocusWindow()
+	Anchor("TOPLEFT", 256, 750)
+	tip:Hide()
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Anchor("TOPRIGHT", 900, 800)
+	Equal(frame.questTooltipDocked, nil)
+	-- The same quest can be both hovered and focused: it must undock even
+	-- though no model/revision change forces a render.
+	tip:Show(); tip.scale, tip.left, tip.top = 1, 550, 650
+	a:UpdateQuestFocusWindow(); a:Drain()
+	a.hover = nil
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Anchor("TOPRIGHT", 900, 800)
+	Equal(a.questFocusState.id, 42)
+	a.hover = 42
+	a:UpdateQuestFocusWindow(); a:Drain()
+	a:SetOption("questTrackerSnapToBlizzard", false); a:Drain()
+	Equal(frame.questTooltipDocked, nil, "manual placement is respected")
+	local before = { frame:GetPoint(1) }
+	tip.left = 200
+	a:UpdateQuestFocusWindow()
+	local after = { frame:GetPoint(1) }
+	for i = 1, 5 do Equal(after[i], before[i]) end
+end)
+
+QT:RegisterTest("POT native tooltip suppression cannot hide unrelated pooled protected or restricted UI", function()
+	local a, tip = TooltipFixture()
+	a:SetOption("questTrackerHideBlizzardTooltip", true)
+	-- A child button can share a quest ancestor while its tooltip is an item.
+	tip.tooltipOwner = a:CreateTestUIRegion(a, a.hoverBlock)
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(tip:IsShown(), true)
+	tip.tooltipOwner = a.hoverBlock
+	a.hoverNative = false -- bonus/world reward headers are not quest progress
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(tip:IsShown(), true)
+	a.hoverNative = true
+	a.hoverBlock.id = 99
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(tip:IsShown(), true, "recycled quest owner must not qualify")
+	a.hoverBlock.id = 42
+	tip.protected = true
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(tip:IsShown(), true)
+	assert(a.questFocusWindow.questTooltipDocked, "unsafe hiding falls back to show-both layout")
+	tip.protected, tip.forbidden = false, true
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(tip.shown, true)
+	tip.forbidden = false
+	a.restricted = true
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(tip:IsShown(), true)
+	a.restricted = false
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(tip:IsShown(), false)
+	Equal(a.questFocusWindow:IsShown(), true)
+	Equal(a.invalidCalls, nil)
+	-- Blizzard owns the next Show; disable/leave must never resurrect it.
+	local writes = tip.writes
+	a.isEnabled = false
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(tip.writes, writes)
+	Equal(a.questFocusWindow:IsShown(), false)
+end)
+
+QT:RegisterTest("POT tooltip placement uses vertical fallback or bounded scale without overlap", function()
+	local screen = { left = 0, right = 800, top = 700, bottom = 0 }
+	local tip = { left = 250, right = 650, top = 300, bottom = 100 }
+	local topX, topY, topScale = QT:PlaceQuestTrackerAtTooltip(screen, tip, 340, 220, 4)
+	Equal(topX + 340, tip.right)
+	Equal(topY - 220, tip.top)
+	Equal(topScale, 1)
+	-- Opposite vertical edge wins over a perfectly usable side when the
+	-- configured edge has no room, without shrinking a full-size alternative.
+	tip.left, tip.right, tip.top, tip.bottom = 500, 750, 650, 450
+	local belowX, belowY, belowScale = QT:PlaceQuestTrackerAtTooltip(screen, tip, 340, 220, 4, nil, "top")
+	Equal(belowX + 340, tip.right); Equal(belowY, tip.bottom); Equal(belowScale, 1)
+	tip.top, tip.bottom = 250, 50
+	local aboveX, aboveY, aboveScale = QT:PlaceQuestTrackerAtTooltip(screen, tip, 340, 220, 4, nil, "bottom")
+	Equal(aboveX + 340, tip.right); Equal(aboveY - 220, tip.top); Equal(aboveScale, 1)
+	tip.left, tip.right, tip.top, tip.bottom = 0, 180, 300, 100
+	local edgeX, edgeY = QT:PlaceQuestTrackerAtTooltip(screen, tip, 340, 220, 4)
+	Equal(edgeX, 0, "screen bounds take priority when right alignment cannot fit")
+	Equal(edgeY - 220, tip.top)
+	tip.left, tip.right, tip.top, tip.bottom = 250, 650, 300, 100
+	local x, y, factor = QT:PlaceQuestTrackerAtTooltip(screen, tip, 340, 220, 4, nil, "side")
+	Equal(factor, 1)
+	assert(x >= 0 and x + 340 <= screen.right)
+	assert(y - 220 >= tip.top + 4, "narrow screens put POT above the tooltip")
+	tip.left, tip.right, tip.top, tip.bottom = 350, 750, 650, 50
+	x, y, factor = QT:PlaceQuestTrackerAtTooltip(screen, tip, 500, 400, 4, nil, "side")
+	assert(factor >= 0.6 and factor < 1)
+	assert(x >= 0 and x + 500 * factor <= tip.left - 4)
+	assert(y <= screen.top and y - 400 * factor >= screen.bottom)
+	tip.left, tip.right, tip.top, tip.bottom = 0, 800, 700, 0
+	Equal(QT:PlaceQuestTrackerAtTooltip(screen, tip, 340, 200, 4, nil, "side"), nil, "no unreadably tiny fallback")
+	tip.left, tip.right, tip.top, tip.bottom = 10, 310, 500, 320
+	local source = { left = 320, right = 550, top = 550, bottom = 400 }
+	x, y, factor = QT:PlaceQuestTrackerAtTooltip(screen, tip, 340, 220, 4, source, "side")
+	Equal(factor, 1)
+	assert(y <= source.bottom - 4 or y - 220 >= source.top + 4, "never cover the hovered native row")
+	tip.left, tip.right = 850, 1200
+	x, y, factor = QT:PlaceQuestTrackerAtTooltip(screen, tip, 340, 220, 4, nil, "side")
+	assert(x >= screen.left and x + 340 * factor <= screen.right, "offscreen tooltips cannot drag POT offscreen")
+end)
+
+QT:RegisterTest("native quest hover events coalesce and revalidate after leave disable and edit mode", function()
+	local a, tip = TooltipFixture()
+	a.hoverEvents = a:CreateTestUIRegion(a)
+	a:UpdateQuestFocusWindow(); a:Drain()
+	local events, frame = a.hoverEvents, a.questFocusWindow
+	for _ = 1, 3 do events:TriggerEvent("OnQuestBlockHeader.OnEnter") end
+	Equal(#a.jobs, 1)
+	a.hover = nil
+	a:Drain()
+	Equal(frame.questTooltipDocked, nil)
+	a.hover = 42
+	events:TriggerEvent("OnQuestBlockHeader.OnEnter")
+	a.isEnabled = false
+	a:ResetQuestFocusWindow(); a:Drain()
+	Equal(frame:IsShown(), false)
+	a.isEnabled = true
+	a.manager = a:CreateTestUIRegion(a)
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(frame.questTooltipDocked, nil, "Edit Mode retains normal full placement bounds")
+	Equal(tip:IsShown(), true)
 end)

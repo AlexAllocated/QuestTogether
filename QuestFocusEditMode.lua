@@ -26,6 +26,26 @@ end
 function QT:IsQuestTrackerSnapped()
 	return self:GetOption("questTrackerSnapToBlizzard") ~= false
 end
+function QT:GetQuestTrackerTooltipPlacementOptions()
+	return {
+		{ value = "top", text = L("Top") },
+		{ value = "bottom", text = L("Bottom") },
+		{ value = "side", text = L("Side") },
+	}
+end
+function QT:IsQuestTrackerTooltipPlacement(value)
+	return value == "top" or value == "bottom" or value == "side"
+end
+function QT:GetQuestTrackerTooltipPlacement()
+	local value = self:GetOption("questTrackerTooltipPlacement")
+	return self:IsQuestTrackerTooltipPlacement(value) and value or "top"
+end
+function QT:GetQuestTrackerTooltipPlacementLabel()
+	local placement = self:GetQuestTrackerTooltipPlacement()
+	for _, option in ipairs(self:GetQuestTrackerTooltipPlacementOptions()) do
+		if option.value == placement then return option.text end
+	end
+end
 function QT:GetQuestFocusOpacity()
 	local n = self:SafeToNumber(self:GetOption("questFocusOpacity")) or 75
 	return math.max(0, math.min(100, n))
@@ -44,7 +64,7 @@ function QT:CaptureQuestFocusEditLayout()
 	end
 	local layouts = type(profile.windowLayouts) == "table" and profile.windowLayouts or {}
 	self.questFocusEditBaseline =
-		{ profile = profile, layout = self:DeepCopy(layouts.questFocus), opacity = self:GetQuestFocusOpacity(), mode = self:GetQuestTrackerMode(), hideSolo = self:GetOption("questTrackerHideSolo") == true, snap = self:IsQuestTrackerSnapped() }
+		{ profile = profile, layout = self:DeepCopy(layouts.questFocus), opacity = self:GetQuestFocusOpacity(), mode = self:GetQuestTrackerMode(), hideSolo = self:GetOption("questTrackerHideSolo") == true, snap = self:IsQuestTrackerSnapped(), hideTooltip = self:GetOption("questTrackerHideBlizzardTooltip") == true, tooltipPlacement = self:GetQuestTrackerTooltipPlacement() }
 end
 function QT:RevertQuestFocusEditLayout()
 	local baseline = self.questFocusEditBaseline
@@ -53,7 +73,7 @@ function QT:RevertQuestFocusEditLayout()
 	end
 	self.db.profile.windowLayouts = self.db.profile.windowLayouts or {}
 	self.db.profile.windowLayouts.questFocus = self:DeepCopy(baseline.layout)
-	self:SetOptions({ questFocusOpacity = baseline.opacity, questTrackerMode = baseline.mode, questTrackerHideSolo = baseline.hideSolo, questTrackerSnapToBlizzard = baseline.snap })
+	self:SetOptions({ questFocusOpacity = baseline.opacity, questTrackerMode = baseline.mode, questTrackerHideSolo = baseline.hideSolo, questTrackerSnapToBlizzard = baseline.snap, questTrackerHideBlizzardTooltip = baseline.hideTooltip, questTrackerTooltipPlacement = baseline.tooltipPlacement })
 	local frame = rawget(self, "questFocusWindow")
 	if frame then
 		local info = self.managedWindows[frame]
@@ -196,7 +216,7 @@ function QT:ResetQuestFocusEditLayout()
 	local frame = rawget(self, "questFocusWindow")
 	self.db.profile.windowLayouts = self.db.profile.windowLayouts or {}
 	self.db.profile.windowLayouts.questFocus = nil
-	self:SetOptions({ questFocusOpacity = 75, questTrackerMode = self.DEFAULTS.profile.questTrackerMode, questTrackerHideSolo = true, questTrackerSnapToBlizzard = true })
+	self:SetOptions({ questFocusOpacity = 75, questTrackerMode = self.DEFAULTS.profile.questTrackerMode, questTrackerHideSolo = true, questTrackerSnapToBlizzard = true, questTrackerHideBlizzardTooltip = false, questTrackerTooltipPlacement = "top" })
 	if frame and self.managedWindows[frame] then
 		self.managedWindows[frame].resetRequested = true
 		self:ApplyWindowLayout(frame, true)
@@ -213,7 +233,7 @@ function QT:RefreshQuestFocusEditControls(frame, editing)
 	end
 	local panel = frame.editControls
 	if not panel then
-		panel = self:CreateHUDEditDialog(L("Party Objective Tracker"), { { key = "ModeDropdown", kind = "dropdown" }, { key = "HideSoloCheckbox", kind = "checkbox" }, { key = "SnapCheckbox", kind = "checkbox" }, "WidthSlider", "HeightSlider", "OpacitySlider" }, {
+		panel = self:CreateHUDEditDialog(L("Party Objective Tracker"), { { key = "ModeDropdown", kind = "dropdown" }, { key = "HideSoloCheckbox", kind = "checkbox" }, { key = "SnapCheckbox", kind = "checkbox" }, { key = "TooltipPlacementDropdown", kind = "dropdown" }, { key = "HideTooltipCheckbox", kind = "checkbox" }, "WidthSlider", "HeightSlider", "OpacitySlider" }, {
 			close = function()
 				self:DeselectQuestFocusWindow()
 			end,
@@ -304,14 +324,27 @@ function QT:RefreshQuestFocusEditControls(frame, editing)
 		self:ApplyQuestTrackerDefaultAnchor(frame)
 		self:SaveWindowLayout(frame)
 	end)
+	local hideTooltip = self:GetOption("questTrackerHideBlizzardTooltip") == true
+	local tooltipPlacement = self:GetQuestTrackerTooltipPlacement()
+	self:ConfigureHUDEditDropdown(panel.TooltipPlacementDropdown, L("Tooltip placement"), self:GetQuestTrackerTooltipPlacementOptions(),
+		function() return self:GetQuestTrackerTooltipPlacement() end, function(value)
+			if self.db.profile ~= profile or not self.questFocusEditing or not frame.editSelected
+				or self:IsWorkBlocked("foreign_frame_mutation") then return end
+			self:SetOption("questTrackerTooltipPlacement", value)
+		end)
+	self:ConfigureHUDEditCheckbox(panel.HideTooltipCheckbox, L("Hide Blizzard quest tooltip"), hideTooltip, function(value)
+		if self.db.profile ~= profile or not self.questFocusEditing or not frame.editSelected
+			or self:IsWorkBlocked("foreign_frame_mutation") then return end
+		self:SetOption("questTrackerHideBlizzardTooltip", value)
+	end)
 	local baseline = self.questFocusEditBaseline
 	local layout = self.db.profile.windowLayouts and self.db.profile.windowLayouts.questFocus
 	local pending = baseline
-			and (not SameLayout(layout, baseline.layout) or self:GetQuestFocusOpacity() ~= baseline.opacity or self:GetQuestTrackerMode() ~= baseline.mode or hideSolo ~= baseline.hideSolo or snap ~= baseline.snap)
+			and (not SameLayout(layout, baseline.layout) or self:GetQuestFocusOpacity() ~= baseline.opacity or self:GetQuestTrackerMode() ~= baseline.mode or hideSolo ~= baseline.hideSolo or snap ~= baseline.snap or hideTooltip ~= baseline.hideTooltip or tooltipPlacement ~= baseline.tooltipPlacement)
 		or false
 	panel.SaveButton:SetEnabled(pending)
 	panel.RevertButton:SetEnabled(pending)
-	panel.ResetButton:SetEnabled(not SameLayout(layout, nil) or self:GetQuestFocusOpacity() ~= 75 or self:GetQuestTrackerMode() ~= self.DEFAULTS.profile.questTrackerMode or not hideSolo or not snap)
+	panel.ResetButton:SetEnabled(not SameLayout(layout, nil) or self:GetQuestFocusOpacity() ~= 75 or self:GetQuestTrackerMode() ~= self.DEFAULTS.profile.questTrackerMode or not hideSolo or not snap or hideTooltip or tooltipPlacement ~= "top")
 	panel.SaveStatus:SetText(
 		pending and L("Changes applied automatically. Save Changes sets the point Revert returns to.")
 			or L("QuestTogether settings saved. Blizzard's Save button is not needed.")

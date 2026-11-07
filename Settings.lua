@@ -87,6 +87,36 @@ function QuestTogether:MigratePlayerLocationOptions(profile)
 	end
 end
 
+function QuestTogether:IsOwnChatBubbleMode(value)
+	return self:CanAccessValue(value) and (value == "always" or value == "solo" or value == "hidden")
+end
+
+function QuestTogether:MigrateOwnChatBubbleMode(profile)
+	if type(profile) ~= "table" then return end
+	-- Migrate before defaults so a saved opt-out cannot become the new default.
+	if not self:IsOwnChatBubbleMode(profile.ownChatBubbleMode) then
+		profile.ownChatBubbleMode = self:CanAccessValue(profile.hideMyOwnChatBubbles)
+			and profile.hideMyOwnChatBubbles == true and "hidden" or "always"
+	end
+	profile.hideMyOwnChatBubbles = nil
+end
+
+function QuestTogether:GetOwnChatBubbleMode()
+	local mode = self:GetOption("ownChatBubbleMode")
+	return self:IsOwnChatBubbleMode(mode) and mode or "always"
+end
+
+function QuestTogether:ShouldShowOwnChatBubble()
+	if self:GetOption("showChatBubbles") ~= true then return false end
+	local mode = self:GetOwnChatBubbleMode()
+	if mode == "hidden" then return false end
+	if mode == "always" then return true end
+	local query = self.API and self.API.IsInAnyGroup
+	if not self:CanAccessValue(query) or type(query) ~= "function" then return false end
+	local ok, grouped = pcall(query)
+	return ok and self:CanAccessValue(grouped) and grouped == false
+end
+
 function QuestTogether:EnsureProfileStorage()
 	if not self.db then
 		return false
@@ -101,8 +131,10 @@ function QuestTogether:EnsureProfileStorage()
 	-- Inactive profiles can be selected or copied later in this session.
 	for _, profile in pairs(self.db.profiles) do
 		self:MigratePlayerLocationOptions(profile)
+		self:MigrateOwnChatBubbleMode(profile)
 	end
 	self:MigratePlayerLocationOptions(self.db.profile)
+	self:MigrateOwnChatBubbleMode(self.db.profile)
 
 	return true
 end
@@ -143,6 +175,7 @@ function QuestTogether:EnsureProfile(profileKey, sourceProfile)
 		self.db.profiles[normalizedKey] = self:DeepCopy(sourceProfile or self.DEFAULTS.profile)
 	end
 	self:MigratePlayerLocationOptions(self.db.profiles[normalizedKey])
+	self:MigrateOwnChatBubbleMode(self.db.profiles[normalizedKey])
 	self:ApplyDefaults(self.db.profiles[normalizedKey], self.DEFAULTS.profile)
 	return normalizedKey, self.db.profiles[normalizedKey]
 end
@@ -197,6 +230,7 @@ function QuestTogether:CreateProfile(profileKey, sourceProfileKey)
 
 	self.db.profiles[normalizedKey] = self:DeepCopy(sourceProfile or self.DEFAULTS.profile)
 	self:MigratePlayerLocationOptions(self.db.profiles[normalizedKey])
+	self:MigrateOwnChatBubbleMode(self.db.profiles[normalizedKey])
 	self:ApplyDefaults(self.db.profiles[normalizedKey], self.DEFAULTS.profile)
 	return true
 end
@@ -219,6 +253,7 @@ function QuestTogether:CopyProfileIntoActiveProfile(sourceProfileKey)
 
 	self.db.profiles[self.activeProfileKey] = self:DeepCopy(self.db.profiles[sourceKey])
 	self:MigratePlayerLocationOptions(self.db.profiles[self.activeProfileKey])
+	self:MigrateOwnChatBubbleMode(self.db.profiles[self.activeProfileKey])
 	self:ApplyDefaults(self.db.profiles[self.activeProfileKey], self.DEFAULTS.profile)
 	self.db.profile = self.db.profiles[self.activeProfileKey]
 	self:ApplyActiveProfileState("copy")
@@ -350,8 +385,14 @@ function QuestTogether:InitializeDatabase(savedDatabase)
 end
 
 local validators = {
+	ownChatBubbleMode = function(a, v) return a:IsOwnChatBubbleMode(v) and v or nil end,
+	brokerLeftClick = function(a, v) return a:IsDataBrokerAction(v) and v or nil end,
+	brokerRightClick = function(a, v) return a:IsDataBrokerAction(v) and v or nil end,
 	questTrackerMode = function(a, v)
 		return a:IsQuestTrackerMode(v) and v or nil
+	end,
+	questTrackerTooltipPlacement = function(a, v)
+		return a:IsQuestTrackerTooltipPlacement(v) and v or nil
 	end,
 	questFocusOpacity = function(a, v)
 		local n = a:SafeToNumber(v)
@@ -425,6 +466,7 @@ function QuestTogether:ValidateSetting(key, value)
 	if type(key) ~= "string" or self.DEFAULTS.profile[key] == nil or not self:CanAccessValue(value) then
 		return nil
 	end
+	if self:IsAudioSetting(key) then return self:ValidateAudioSetting(key, value) end
 	local validate = validators[key]
 	if validate then
 		return validate(self, value)
@@ -441,6 +483,7 @@ function QuestTogether:NormalizeSettingsProfile()
 	if profile.showQuestFocusWindow == false then profile.questTrackerMode = "hidden" end
 	profile.showQuestFocusWindow = nil
 	self:MigratePlayerLocationOptions(profile)
+	self:MigrateOwnChatBubbleMode(profile)
 	for key, default in pairs(self.DEFAULTS.profile) do
 		local value = self:ValidateSetting(key, profile[key])
 		profile[key] = value
@@ -505,7 +548,7 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 	if Has("lightMode", "reduceMotion") then
 		Invoke(self, "RefreshWindowThemes")
 	end
-	if Has("questTrackerMode", "questFocusOpacity", "questTrackerHideSolo", "questTrackerSnapToBlizzard") then
+	if Has("questTrackerMode", "questFocusOpacity", "questTrackerHideSolo", "questTrackerSnapToBlizzard", "questTrackerHideBlizzardTooltip", "questTrackerTooltipPlacement") then
 		Invoke(self, "QueueQuestFocusRefresh", true)
 	end
 	if Has("windowScale") then
@@ -517,6 +560,9 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 	if Has("lookingForQuestPartners") then
 		Invoke(self, "BroadcastQuestPartnerStatus", true)
 		Invoke(self, "RefreshMinimapPartnerGlow")
+	end
+	if Has("lookingForQuestPartners", "brokerLeftClick", "brokerRightClick") then
+		Invoke(self, "RefreshDataBroker")
 	end
 	if context.startedLooking then
 		Invoke(self, "AnnounceQuestPartnerSearch")
@@ -550,7 +596,7 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 			self:CloseQuestLogChatFrame()
 		end
 	end
-	if Has("showChatBubbles", "hideMyOwnChatBubbles", "chatBubbleSize", "chatBubbleDuration") then
+	if Has("showChatBubbles", "ownChatBubbleMode", "chatBubbleSize", "chatBubbleDuration") then
 		Invoke(self, "RefreshActiveAnnouncementBubbles")
 		Invoke(self, "RefreshPersonalBubbleAnchorVisualState")
 		Invoke(self, "RefreshPersonalBubbleEditModeDialog")
@@ -567,6 +613,11 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 	then
 		Invoke(self, "RefreshNameplateAugmentation")
 	end
+	local audioChanged = all
+	for key in pairs(changed) do
+		if self:IsAudioSetting(key) then audioChanged = true end
+	end
+	if audioChanged then Invoke(self, "ApplyAudioSettings", all) end
 	if all then
 		Invoke(self, "RefreshOptionsWindow")
 		Invoke(self, "RefreshProfilesWindow")

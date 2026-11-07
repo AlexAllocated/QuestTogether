@@ -1202,7 +1202,7 @@ function QuestTogether:GetNameplateCapabilityNoticeReport()
 	local wantsQuestPlates = self.GetOption and self:GetOption("nameplateQuestIconEnabled") == true or false
 	local wantsChatBubbles = self.GetOption and self:GetOption("showChatBubbles") == true or false
 	local wantsNearbyPlayerBubbles = wantsChatBubbles
-	local wantsPersonalBubble = wantsChatBubbles and not (self.GetOption and self:GetOption("hideMyOwnChatBubbles") == true)
+	local wantsPersonalBubble = self:ShouldShowOwnChatBubble()
 
 	local questPlatesBlocked = wantsQuestPlates and self:IsNameplateAugmentationBlockedInCurrentContext() or false
 	local nearbyPlayerBubblesBlocked = wantsNearbyPlayerBubbles
@@ -3697,11 +3697,24 @@ function QuestTogether:ClearIgnoredAnnouncementBubbles()
 	return discarded
 end
 
+function QuestTogether:RefreshOwnAnnouncementBubbleVisibility()
+	if self:ShouldShowOwnChatBubble() then return end
+	for bubble, state in pairs(self.nameplateBubbleStateByFrame or {}) do
+		if state.unitToken == "player" then
+			-- Retire playback as well as hiding it. Leaving the group can allow
+			-- future messages, but must never resurrect the discarded text.
+			self:StopAndHideAnnouncementBubblePlayback(bubble, "own_bubble_visibility")
+		end
+	end
+end
+
 function QuestTogether:RefreshActiveAnnouncementBubbles()
 	for unitFrame, bubble in pairs(self.nameplateBubbleByUnitFrame) do
 		local bubbleState = GetAnnouncementBubbleState(bubble)
 		local unitToken = bubbleState and bubbleState.unitToken or nil
-		if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(unitToken) then
+		if unitToken == "player" and not self:ShouldShowOwnChatBubble() then
+			self:StopAndHideAnnouncementBubblePlayback(bubble, "own_bubble_visibility")
+		elseif self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(unitToken) then
 			if bubbleState then
 				if bubbleState.text then
 					self:Debugf("bubble", "playback_discard unit=%s reason=restricted", SafeText(unitToken, ""))
@@ -3715,7 +3728,6 @@ function QuestTogether:RefreshActiveAnnouncementBubbles()
 				or not self:GetOption("showChatBubbles")
 				or not bubbleState
 				or not IsNonEmptyString(bubbleState.text)
-				or (unitToken == "player" and self:GetOption("hideMyOwnChatBubbles"))
 			if not shouldHide and bubbleState and bubbleState.senderName and self.ShouldShowAnnouncementsForRemoteSender then
 				shouldHide = not self:ShouldShowAnnouncementsForRemoteSender(bubbleState.senderName, true)
 			end
@@ -3750,6 +3762,9 @@ function QuestTogether:GetAnnouncementBubbleHostFrameForUnit(unitToken)
 end
 
 function QuestTogether:TryShowAnnouncementBubbleOnUnitNameplate(unitToken, text, eventType, iconAsset, iconKind)
+	if unitToken == "player" and not self:ShouldShowOwnChatBubble() then
+		return false, L("Unable to show a bubble on that nameplate.")
+	end
 	local hostFrame = self:GetAnnouncementBubbleHostFrameForUnit(unitToken)
 	if hostFrame then
 		if not self:ShowAnnouncementBubbleOnNameplate(hostFrame, text, eventType, iconAsset, iconKind) then
@@ -3777,8 +3792,8 @@ function QuestTogether:ShowAnnouncementBubbleOnNameplate(namePlateFrameBase, tex
 		self:Debug("show_suppressed reason=bubbles_disabled", "bubble")
 		return false
 	end
-	if isPersonalBubble and self:GetOption("hideMyOwnChatBubbles") then
-		self:Debug("show_suppressed unit=player reason=hide_own", "bubble")
+	if isPersonalBubble and not self:ShouldShowOwnChatBubble() then
+		self:Debug("show_suppressed unit=player reason=own_bubble_visibility", "bubble")
 		return false
 	end
 	if self:IsAnnouncementBubbleAugmentationBlockedInCurrentContext(policyUnitToken) then

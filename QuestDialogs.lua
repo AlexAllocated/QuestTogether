@@ -1,6 +1,16 @@
 local QuestTogether = _G.QuestTogether
 local L = QuestTogether.Translate
 
+-- Request/choice identities belong to QT. Rendering or resuming the same
+-- visible question must not repeatedly call for the player's attention.
+function QuestTogether:PlayPromptAttentionAudio(frame, identity, preview)
+	if preview or not identity or identity.audioAttentionNotified
+		or not self.isEnabled or self.isLoggingOut or self:IsWorkBlocked("foreign_frame_mutation")
+		or not self.LibChev.CanMutateOwnedRegion(frame) or not frame:IsVisible() then return end
+	identity.audioAttentionNotified = true
+	self:PlayAudioCue("attention", identity)
+end
+
 function QuestTogether:ShowDiscordLinkDialog(url)
 	if self:IsWorkBlocked("foreign_frame_mutation") then
 		return false
@@ -237,6 +247,7 @@ function QuestTogether:ShowPartyFocusChangeDialog(name, callback, preview, liveN
 	self:ApplyScrollDialogTheme(frame)
 	frame:Show()
 	frame:Raise()
+	self:PlayPromptAttentionAudio(frame, frame.focusChoice, preview)
 	return true
 end
 
@@ -250,6 +261,7 @@ function QuestTogether:ShowPartyFocusFollowDialog(name, callback, cancel)
 	self:ApplyScrollDialogTheme(frame)
 	frame:Show()
 	frame:Raise()
+	self:PlayPromptAttentionAudio(frame, frame.focusChoice)
 	return true
 end
 

@@ -232,7 +232,7 @@ local function SeedBubble(unitToken, playing)
 	}
 	QT.isEnabled = true
 	QT.db.profile.showChatBubbles = true
-	QT.db.profile.hideMyOwnChatBubbles = false
+	QT.db.profile.ownChatBubbleMode = "always"
 	if unitToken == "player" then
 		QT.announcementBubbleScreenHostFrame = host
 	end
@@ -241,7 +241,7 @@ end
 
 QT:RegisterTest("audit hide-own stops an active personal bubble during restrictions", function()
 	local bubble = SeedBubble("player", true)
-	QT.db.profile.hideMyOwnChatBubbles = true
+	QT.db.profile.ownChatBubbleMode = "hidden"
 	Patch({
 		IsRuntimeRestricted = function()
 			return true
@@ -768,4 +768,66 @@ QT:RegisterTest("disable stops mutable nearby playback during combat without pen
 		Equal(state.bubble:IsShown(), false)
 		Equal(QT.pendingNameplateVisualCleanup, false)
 	end)
+end)
+
+QT:RegisterTest("own bubble solo group transitions discard only current personal playback", function()
+	local grouped = false
+	local own, remote = {}, {}
+	local a = setmetatable({
+		isEnabled = true,
+		db = { profile = { showChatBubbles = true, ownChatBubbleMode = "solo" } },
+		API = { IsInAnyGroup = function() return grouped end },
+		nameplateBubbleStateByFrame = {
+			[own] = { unitToken = "player", text = "Old own progress" },
+			[remote] = { unitToken = "nameplate1", text = "Other player progress" },
+		},
+		stops = 0,
+	}, { __index = QT })
+	function a:StopAndHideAnnouncementBubblePlayback(bubble)
+		Equal(bubble, own, "group visibility must leave other players alone")
+		self.stops = self.stops + 1
+		self.nameplateBubbleStateByFrame[bubble] = nil
+		bubble.hidden = true
+	end
+	function a:QueuePartyNavigationUpdate() end
+	function a:RefreshPartyRoster() end
+	function a:ReconcilePartyQuestFollow() end
+	function a:QueuePartyQuestCompareRender() end
+	function a:ShowAnnouncementBubbleOnNameplate() error("group transitions cannot replay a bubble") end
+	a:HandleGroupRosterChanged("GROUP_ROSTER_UPDATE")
+	Equal(a.stops, 0)
+	grouped = true
+	a:HandleGroupRosterChanged("GROUP_JOINED")
+	Equal(a.stops, 1)
+	Equal(own.hidden, true)
+	Equal(a.nameplateBubbleStateByFrame[own], nil)
+	Equal(a.nameplateBubbleStateByFrame[remote].text, "Other player progress")
+	grouped = false
+	a:HandleGroupRosterChanged("GROUP_ROSTER_UPDATE")
+	Equal(a.stops, 1)
+	Equal(a:ShouldShowOwnChatBubble(), true, "leaving allows only future messages")
+	Equal(a.nameplateBubbleStateByFrame[own], nil)
+end)
+
+QT:RegisterTest("own bubble renderer and capability report share the current visibility policy", function()
+	local host, grouped = {}, true
+	local a = setmetatable({
+		isEnabled = true,
+		announcementBubbleScreenHostFrame = host,
+		db = { profile = { showChatBubbles = true, ownChatBubbleMode = "solo" } },
+		API = { IsInAnyGroup = function() return grouped end },
+	}, { __index = QT })
+	function a:Debug() end
+	function a:IsNameplateAugmentationBlockedInCurrentContext() return false end
+	function a:IsNearbyPlayerAnnouncementBubbleAugmentationBlockedInCurrentContext() return false end
+	function a:IsAnnouncementBubbleAugmentationBlockedInCurrentContext() return false end
+	Equal(a:ShowAnnouncementBubbleOnNameplate(host, "Grouped progress"), false)
+	local report = a:GetNameplateCapabilityNoticeReport()
+	Equal(#report.lines, 1, "solo-only own bubbles must not be advertised while grouped")
+	grouped = false
+	report = a:GetNameplateCapabilityNoticeReport()
+	Equal(#report.lines, 2)
+	a.db.profile.ownChatBubbleMode = "hidden"
+	Equal(a:ShowAnnouncementBubbleOnNameplate(host, "Hidden progress"), false)
+	Equal(#a:GetNameplateCapabilityNoticeReport().lines, 1)
 end)

@@ -34,6 +34,7 @@ Libs/libchev/SelfTests.lua
 Localization.lua
 Locales.lua
 Core.lua
+Audio.lua
 Settings.lua
 Libs/Ed25519/Ed25519.lua
 DeveloperPublicKey.lua
@@ -95,9 +96,11 @@ PartyFocusController.lua
 PartyNavigation.lua
 PartyFocusIndicators.lua
 QuestFocusWindow.lua
+QuestFocusTooltip.lua
 QuestFocusEditMode.lua
 QuestComparePreview.lua
 Minimap.lua
+DataBroker.lua
 Keybindings.lua
 PlayerLocations.lua
 MapLocationPresentation.lua
@@ -119,6 +122,8 @@ Options.lua
 Diagnostics.lua
 Tests.lua
 scripts/ui_fixture.lua
+scripts/regression_audio.lua
+scripts/regression_data_broker.lua
 scripts/regression_player_notes.lua
 scripts/regression_recent_companions.lua
 scripts/regression_objective_announcements.lua

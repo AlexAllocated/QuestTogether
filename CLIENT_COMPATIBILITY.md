@@ -19,6 +19,17 @@ The minimap launcher uses an addon-owned button and tooltip, with a transparent 
 
 The launcher's generic journal action uses the non-toggle `OpenQuestLog()` entry point present in both installed Retail and Forever UI exports (`Blizzard_WorldMap.lua`), then verifies that the map and quest log are visible. It does not select a quest or require a populated details frame. Live tests substitute addon-owned wrappers; native opener contracts are covered only by offline client profiles. Before release, check the icon/menu, drag persistence, profile visibility, minimap scaling, both journal states and restriction recovery in Retail and Forever, with blocked-action/taint reporting enabled.
 
+QT also provides an optional LibDataBroker launcher for compatible toolbars such
+as Bazooka. It uses an existing library supplied by another addon; QT bundles no
+broker library and has no added addon dependency. Settings > General > Data
+Broker configures left/right clicks (Party Quest Log/menu by default), including
+LFQP toggle, settings and no action. The broker works with the minimap icon
+hidden. Its status and normal/VIP/developer artwork follow QT's current state.
+Absent/late libraries, conflicts, callback failures and guarded interactions are
+covered by isolated tests; the installed real LDB registry implementation was
+also exercised offline. Live toolbar rendering and menu placement still require
+an in-game check with a broker display installed.
+
 Player Plates uses an independent enabled-by-default `nameplatePlayerIconEnabled` option and `nameplatePlayerIconStyle` (Left by default, plus Right, Top and Prefix). Friendly visible player units must match an authenticated QT sender recognized during this UI session, with a readable name/GUID. Native friendly-player visibility is read from `nameplateShowFriendlyPlayers` on current Retail and Forever, falling back to `nameplateShowFriends` only when the modern key is absent. Explicit modern Off overrides legacy On; unreadable values fail closed. Ignored players and self are excluded. The player logo reuses the addon-owned quest-icon pool with separate artwork/style state, adds four pixels of horizontal spacing beside bars/text, and never creates a health tint. Recycled creature/player plates switch artwork; removed plates and departed or evicted peers use owned cleanup handles, including when native lookup is already empty. Protected/forbidden layouts defer to the existing cleanup/recovery path. Instance and restriction policy remains the same as quest plates; no nameplate CVars are changed.
 
 Protocol generation 2 uses only the `QuestTogether2` gameplay prefix and typed records. All communicating peers must upgrade; earlier wire formats and capability fallbacks are not decoded or transmitted. See [ARCHITECTURE.md](ARCHITECTURE.md#communication-generation-2) for the catalog, scheduler, correlation and lifetime contracts, and [the live-client release gate](docs/COMMUNICATION_LIVE_TESTS.md) for required engine checks.

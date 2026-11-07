@@ -752,7 +752,7 @@ function QT:GetHintCatalog()
 			id = "hint100",
 			actions = { "where_to_announce" },
 			text = L(
-				"Hide My Own Chat Bubbles removes your personal bubbles while continuing to share your progress with other QT players."
+				"Set My chat bubble to Show only when solo to see your own progress outside a party or raid. Your announcements are still shared with other players."
 			),
 		},
 		{

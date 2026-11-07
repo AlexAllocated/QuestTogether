@@ -44,7 +44,11 @@ local function Fixture(name, entries)
 		renders = 0,
 		prompts = 0,
 		workState = { entries = {}, generations = {} },
+		audioCues = {},
 	}, { __index = QuestTogether })
+	function addon:PlayAudioCue(key, identity)
+		self.audioCues[#self.audioCues + 1] = { key = key, identity = identity }
+	end
 	addon.API = {
 		IsPartyQuestKeyboardInputBlocked = function(frame)
 			return addon.keyboardBlocked == true or frame.search:HasFocus()
@@ -2161,6 +2165,11 @@ QuestTogether:RegisterTest("closing share and join prompts preserves a synchrono
 					frame, state = a.partyJoinPrompt, a.partyJoinState
 				end
 				assert(frame.request == first and frame:IsShown())
+				Equal(#a.audioCues, 1)
+				Equal(a.audioCues[1].key, "attention")
+				Equal(a.audioCues[1].identity, first)
+				a:PlayPromptAttentionAudio(frame, first)
+				Equal(#a.audioCues, 1, "repainting the first prompt must not replay its cue")
 				if parentHidden then
 					parent:Hide()
 				end
@@ -2179,6 +2188,10 @@ QuestTogether:RegisterTest("closing share and join prompts preserves a synchrono
 					parent:Show()
 				end
 				assert(frame:IsVisible())
+				if not parentHidden then
+					Equal(#a.audioCues, 2)
+					Equal(a.audioCues[2].identity, second)
+				end
 				frame.close:Click()
 				assert(not frame:IsShown() and not next(state.incoming))
 			end

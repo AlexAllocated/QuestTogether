@@ -399,6 +399,7 @@ function QuestTogether:GetMinimapIdentityTexture()
 end
 
 function QuestTogether:RefreshMinimapIdentityIcon()
+	self:RefreshDataBroker()
 	local button = rawget(self, "minimapButton")
 	if self:IsRuntimeRestricted() or not self.LibChev.CanMutateOwnedRegion(button)
 		or not self.LibChev.CanMutateOwnedRegion(button.qtLogoTexture) then return false end
@@ -549,6 +550,7 @@ function QuestTogether:InitializeMinimapLauncher()
 		self.minimapLauncherFrame = events
 		events:SetScript("OnEvent", function()
 			self:RefreshMinimapButton()
+			self:RefreshDataBroker()
 		end)
 		-- The launcher stays available when runtime quest announcements are off.
 		-- These events also retry deferred visibility/position changes safely.

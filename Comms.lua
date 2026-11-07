@@ -387,6 +387,7 @@ function QuestTogether:CHAT_MSG_CHANNEL_NOTICE(_, notice, _, _, channelName, _, 
 	else
 		return false
 	end
+	self:RecordTransportChannelRefusal(name)
 	local detail = "route=CHANNEL scope=" .. scope .. " notice=NOT_ALLOWED_IN_CHANNEL"
 	self:RecordCommsDiagnostic("serverChannelRefusals", detail)
 	local diagnostics = self:GetCommsDiagnostics()
@@ -1157,7 +1158,7 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal, skipTitleWait
 
 	if not isLevelUp and self:GetOption("showChatBubbles") then
 		if isLocal then
-			if not self:GetOption("hideMyOwnChatBubbles") and self.ShowAnnouncementBubbleOnUnitNameplate then
+			if self:ShouldShowOwnChatBubble() and self.ShowAnnouncementBubbleOnUnitNameplate then
 				self:ShowAnnouncementBubbleOnUnitNameplate(
 					"player",
 					eventData.text,
@@ -1180,13 +1181,13 @@ function QuestTogether:HandleAnnouncementEvent(eventData, isLocal, skipTitleWait
 	self:RecordCommsDiagnostic(
 		"acceptedAnnouncements",
 		string.format(
-			"local=%s sender=%s event=%s quest=%s bubbles=%s hideOwn=%s text=%s",
+			"local=%s sender=%s event=%s quest=%s bubbles=%s ownBubbleMode=%s text=%s",
 			tostring(isLocal == true),
 			senderName,
 			eventData.eventType,
 			eventData.questId,
 			tostring(self:GetOption("showChatBubbles")),
-			tostring(self:GetOption("hideMyOwnChatBubbles")),
+			self:GetOwnChatBubbleMode(),
 			string.sub(originalText, 1, 220)
 		)
 	)
@@ -1399,12 +1400,15 @@ function QuestTogether:CHAT_MSG_CHANNEL(
 		return false
 	end
 	local icon = "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon"
+	if not self:IsSelfSender(name) and (self:GetOption("showChatLogs") or self:GetOption("showChatBubbles")) then
+		self:PlayAudioCue("chat")
+	end
 	if self:GetOption("showChatLogs") then
 		self:PrintConsoleAnnouncement(text, name, nil, "QT_CHAT", icon, "texture")
 	end
 	if self:GetOption("showChatBubbles") then
 		if self:IsSelfSender(name) then
-			if not self:GetOption("hideMyOwnChatBubbles") then
+			if self:ShouldShowOwnChatBubble() then
 				self:ShowAnnouncementBubbleOnUnitNameplate("player", text, "QT_CHAT", icon, "texture")
 			end
 		else

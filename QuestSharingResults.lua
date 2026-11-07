@@ -1,6 +1,7 @@
 local QuestTogether = _G.QuestTogether
 local L = QuestTogether.Translate
 local RESULT_LIFETIME = 60
+local AUDIO_DUPLICATE_WINDOW = 2
 
 local function EscapePattern(text)
 	return (text:gsub("([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1"))
@@ -108,7 +109,15 @@ function QuestTogether:HandleQuestShareSystemMessage(message)
 	if retained >= 40 and not results[foundName] then
 		return false
 	end
-	results[foundName] = { text = text, code = foundCode, at = now }
+	local previous = results[foundName]
+	local result = { text = text, code = foundCode, at = now }
+	results[foundName] = result
+	-- Native feedback identifies the recipient, not an individual quest. Cue
+	-- the accepted result once without echoing duplicate system-chat events.
+	if not previous or previous.code ~= foundCode or previous.text ~= text
+		or now >= previous.at + AUDIO_DUPLICATE_WINDOW then
+		self:PlayAudioCue("shareResult", result)
+	end
 	if foundCode == "ERR_QUEST_PUSH_ACCEPTED_S" or foundCode == "ERR_QUEST_PUSH_ONQUEST_S" then
 		-- Blizzard confirms this player's log may be newer than our snapshot,
 		-- but does not identify the quest. Refresh the complete list through the

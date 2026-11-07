@@ -142,3 +142,92 @@ QT:RegisterTest(
 		assert(a.developerRequestState == nil and a.effects.CancelDeveloperDiagnosticReplies == 1)
 	end
 )
+
+QT:RegisterTest("own bubble modes migrate active inactive and copied profiles before defaults", function()
+	local a = Fixture()
+	function a:GetCurrentCharacterKey() return "OwnBubble-Realm" end
+	function a:ApplyActiveProfileState()
+		self:NormalizeSettingsProfile()
+		return true
+	end
+	local detached = { hideMyOwnChatBubbles = true }
+	a:InitializeDatabase({
+		profile = detached,
+		profileKeys = { ["OwnBubble-Realm"] = "Active" },
+		profiles = {
+			Active = { hideMyOwnChatBubbles = true },
+			Visible = { hideMyOwnChatBubbles = false },
+			Missing = {},
+			Solo = { ownChatBubbleMode = "solo", hideMyOwnChatBubbles = true },
+			Always = { ownChatBubbleMode = "always", hideMyOwnChatBubbles = true },
+			Hidden = { ownChatBubbleMode = "hidden", hideMyOwnChatBubbles = false },
+			Invalid = { ownChatBubbleMode = "unsupported", hideMyOwnChatBubbles = true },
+		},
+	})
+	for key, expected in pairs({ Active = "hidden", Visible = "always", Missing = "always", Solo = "solo",
+		Always = "always", Hidden = "hidden", Invalid = "hidden" }) do
+		assert(a.db.profiles[key].ownChatBubbleMode == expected, key)
+		assert(a.db.profiles[key].hideMyOwnChatBubbles == nil, key .. " retained legacy key")
+	end
+	assert(detached.ownChatBubbleMode == "hidden" and detached.hideMyOwnChatBubbles == nil)
+	assert(a:GetOwnChatBubbleMode() == "hidden")
+	local _, imported = a:EnsureProfile("Imported", { hideMyOwnChatBubbles = true })
+	assert(imported.ownChatBubbleMode == "hidden" and imported.hideMyOwnChatBubbles == nil)
+	assert(a:CreateProfile("Copied", "Solo"))
+	assert(a.db.profiles.Copied.ownChatBubbleMode == "solo")
+	assert(a:SetActiveProfile("Visible") and a:GetOwnChatBubbleMode() == "always")
+	assert(a:CopyProfileIntoActiveProfile("Imported") and a:GetOwnChatBubbleMode() == "hidden")
+	assert(a:ResetActiveProfile() and a:GetOwnChatBubbleMode() == "always")
+end)
+
+QT:RegisterTest("own bubble settings validate modes and refresh presentation without publication", function()
+	local a = Fixture()
+	assert(QT.DEFAULTS.profile.ownChatBubbleMode == "always" and QT.DEFAULTS.profile.hideMyOwnChatBubbles == nil)
+	for _, value in ipairs({ "always", "solo", "hidden" }) do
+		assert(a:SetOption("ownChatBubbleMode", value))
+		assert(a:GetOwnChatBubbleMode() == value)
+	end
+	for _, value in ipairs({ true, false, "", "sometimes", 0, {} }) do
+		assert(not a:SetOption("ownChatBubbleMode", value))
+	end
+	assert(not a:SetOption("hideMyOwnChatBubbles", true))
+	assert(a.effects.RefreshActiveAnnouncementBubbles == 3)
+	assert(a.effects.RefreshPersonalBubbleAnchorVisualState == 3 and a.effects.RefreshPersonalBubbleEditModeDialog == 3)
+	assert(not a.effects.OnPlayerLocationOptionsChanged and not a.effects.BroadcastQuestPartnerStatus)
+	assert(not a.effects.QueuePartyNavigationUpdate)
+	a.db.profile.ownChatBubbleMode = "invalid"
+	assert(a:GetOwnChatBubbleMode() == "always")
+	a:NormalizeSettingsProfile()
+	assert(a.db.profile.ownChatBubbleMode == "always")
+end)
+
+QT:RegisterTest("own bubble solo policy reads current native membership and fails closed on unknown state", function()
+	local a = Fixture()
+	local grouped = false
+	a.API = { IsInAnyGroup = function() return grouped end }
+	for _, mode in ipairs({ "always", "solo", "hidden" }) do
+		a.db.profile.ownChatBubbleMode = mode
+		for _, membership in ipairs({ false, true }) do
+			grouped = membership
+			assert(a:ShouldShowOwnChatBubble() == (mode == "always" or (mode == "solo" and not membership)))
+		end
+		a.db.profile.showChatBubbles = false
+		assert(a:ShouldShowOwnChatBubble() == false)
+		a.db.profile.showChatBubbles = true
+	end
+	a.db.profile.ownChatBubbleMode = "solo"
+	for _, invalid in ipairs({ "false", 0, {} }) do
+		grouped = invalid
+		assert(a:ShouldShowOwnChatBubble() == false)
+	end
+	grouped = nil
+	assert(a:ShouldShowOwnChatBubble() == false)
+	local secret = {}
+	grouped = secret
+	function a:CanAccessValue(value) return value ~= secret end
+	assert(a:ShouldShowOwnChatBubble() == false)
+	a.API.IsInAnyGroup = function() error("native membership unavailable") end
+	assert(a:ShouldShowOwnChatBubble() == false)
+	a.API.IsInAnyGroup = nil
+	assert(a:ShouldShowOwnChatBubble() == false)
+end)

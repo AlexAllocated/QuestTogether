@@ -499,6 +499,8 @@ function QuestTogether:ResolvePendingQuestRemoval(questId)
 end
 
 function QuestTogether:HandleGroupRosterChanged(reason)
+	-- Read native membership immediately, before any roster/network refresh.
+	if self.RefreshOwnAnnouncementBubbleVisibility then self:RefreshOwnAnnouncementBubbleVisibility() end
 	local previousFingerprint = self.partyRosterFingerprint
 	if self.isEnabled then self:QueuePartyNavigationUpdate() end
 	if self.RefreshPartyRoster then

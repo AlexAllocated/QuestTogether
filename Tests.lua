@@ -414,6 +414,7 @@ local function WithIsolatedState(testFn)
 			"questShareNativeResults",
 			"partyQuestComparePreview",
 			"minimapButton",
+			"dataBrokerState",
 			"minimapTooltip",
 			"minimapTooltipSession",
 			"minimapLauncherFrame",
@@ -458,6 +459,7 @@ local function WithIsolatedState(testFn)
 			"diagnosticDroppedLogLines",
 			"diagnosticErrorCount",
 			"diagnosticLastError",
+			"audioState",
 		}) do
 			QuestTogether[key] = nil
 		end
@@ -4381,7 +4383,7 @@ QuestTogether:RegisterTest(
 		QuestTogether.isEnabled = true
 		QuestTogether.db.profile.nameplateQuestIconEnabled = true
 		QuestTogether.db.profile.showChatBubbles = true
-		QuestTogether.db.profile.hideMyOwnChatBubbles = false
+		QuestTogether.db.profile.ownChatBubbleMode = "always"
 		QuestTogether.API = CreateApiWithOverrides({
 			IsInInstance = function()
 				return true
@@ -4417,7 +4419,7 @@ QuestTogether:RegisterTest(
 		QuestTogether.isEnabled = true
 		QuestTogether.db.profile.nameplateQuestIconEnabled = true
 		QuestTogether.db.profile.showChatBubbles = true
-		QuestTogether.db.profile.hideMyOwnChatBubbles = false
+		QuestTogether.db.profile.ownChatBubbleMode = "always"
 		QuestTogether.API = CreateApiWithOverrides({
 			IsInInstance = function()
 				return true
@@ -4451,7 +4453,7 @@ QuestTogether:RegisterTest("nameplate capability report ignores features disable
 	QuestTogether.isEnabled = true
 	QuestTogether.db.profile.nameplateQuestIconEnabled = false
 	QuestTogether.db.profile.showChatBubbles = true
-	QuestTogether.db.profile.hideMyOwnChatBubbles = true
+	QuestTogether.db.profile.ownChatBubbleMode = "hidden"
 	QuestTogether.API = CreateApiWithOverrides({
 		IsInInstance = function()
 			return true
@@ -4477,7 +4479,7 @@ QuestTogether:RegisterTest(
 		QuestTogether.isEnabled = true
 		QuestTogether.db.profile.nameplateQuestIconEnabled = true
 		QuestTogether.db.profile.showChatBubbles = true
-		QuestTogether.db.profile.hideMyOwnChatBubbles = false
+		QuestTogether.db.profile.ownChatBubbleMode = "always"
 		QuestTogether.API = CreateApiWithOverrides({
 			IsInInstance = function()
 				return false
@@ -4519,7 +4521,7 @@ QuestTogether:RegisterTest(
 		QuestTogether.isEnabled = true
 		QuestTogether.db.profile.nameplateQuestIconEnabled = true
 		QuestTogether.db.profile.showChatBubbles = true
-		QuestTogether.db.profile.hideMyOwnChatBubbles = false
+		QuestTogether.db.profile.ownChatBubbleMode = "always"
 		QuestTogether.API = CreateApiWithOverrides({
 			IsInInstance = function()
 				return true
@@ -7605,7 +7607,7 @@ QuestTogether:RegisterTest("local announcement hides own bubble when configured"
 	local bubbleCalls = 0
 	QuestTogether.db.profile.showChatLogs = true
 	QuestTogether.db.profile.showChatBubbles = true
-	QuestTogether.db.profile.hideMyOwnChatBubbles = true
+	QuestTogether.db.profile.ownChatBubbleMode = "hidden"
 
 	QuestTogether.PrintChatLogRaw = function(_, message)
 		printed[#printed + 1] = message

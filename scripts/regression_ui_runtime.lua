@@ -2,6 +2,10 @@ local QT = _G.QuestTogether
 local function Fixture()
 	local a = setmetatable({ isEnabled = true, db = { profile = {} }, options = {}, runtimeStateStore = {} }, { __index = QT })
 	local clock = QT:CreateTestClock(0)
+	a.audioCues = {}
+	function a:PlayAudioCue(key, identity)
+		self.audioCues[#self.audioCues + 1] = { key = key, identity = identity }
+	end
 	a.API = {
 		Delay = function(delay, run)
 			clock:After(delay, run)
@@ -263,7 +267,10 @@ QT:RegisterTest("focus dialogs cancel each retired choice once and never cancel 
 		assert(a:ShowPartyFocusChangeDialog("Friend-Realm", function() accepted = accepted + 1 end,
 			false, false, function() cancelled = cancelled + 1 end))
 		local frame = a.partyFocusChangeDialog
+		assert(#a.audioCues == 1 and a.audioCues[1].key == "attention")
 		parent:Hide(); parent:Show()
+		a:PlayPromptAttentionAudio(frame, frame.focusChoice)
+		assert(#a.audioCues == 1, "resuming or repainting the same choice must stay quiet")
 		assert(cancelled == 0, "inherited hiding only suspends a choice")
 		if exit == "escape" then frame.escapeAction()
 		elseif exit == "hide" then frame:Hide()
@@ -272,10 +279,13 @@ QT:RegisterTest("focus dialogs cancel each retired choice once and never cancel 
 		assert(cancelled == 1 and accepted == 0 and frame.cancelAction == nil)
 		assert(a:ShowPartyFocusChangeDialog("Friend-Realm", function() accepted = accepted + 1 end,
 			false, false, function() cancelled = cancelled + 1 end))
+		assert(#a.audioCues == 2, "a new choice may call for attention again")
 		frame.confirm.scripts.OnClick()
 		assert(cancelled == 1 and accepted == 1)
 	end
 	local a = Fixture()
+	a:ShowPartyFocusChangeDialog("Preview-Realm", function() end, true)
+	assert(#a.audioCues == 0, "dialog previews are silent")
 	local oldCancelled, newCancelled = 0, 0
 	a:ShowPartyFocusChangeDialog("First-Realm", function() end, false, false, function()
 		oldCancelled = oldCancelled + 1

@@ -45,6 +45,12 @@
       "YELL",
       "You don't have to turn on every bell and whistle. QuestTogether lets you use player maps and party quest comparisons while keeping chat logs, bubbles, and celebrations quiet."
     ],
+    "Audio.lua": [
+      "Enabled",
+      "SFX",
+      "Sound",
+      "Volume"
+    ],
     "Comms.lua": [
       " event=",
       " notice=NOT_ALLOWED_IN_CHANNEL",
@@ -71,7 +77,7 @@
       "Unknown",
       "announcement age sender=%s event=%s reportedAgeSeconds=%s",
       "communication channel refusal",
-      "local=%s sender=%s event=%s quest=%s bubbles=%s hideOwn=%s text=%s",
+      "local=%s sender=%s event=%s quest=%s bubbles=%s ownBubbleMode=%s text=%s",
       "option event=",
       "route=CHANNEL scope=",
       "scope sender="
@@ -416,7 +422,7 @@
       "resolver_unresolved unit=%s reason=%s retry=%s",
       "show_suppressed reason=bubbles_disabled",
       "show_suppressed unit=%s reason=restricted",
-      "show_suppressed unit=player reason=hide_own",
+      "show_suppressed unit=player reason=own_bubble_visibility",
       "visual_cleanup deferred until restrictions end"
     ],
     "NearbyStreams.lua": [
@@ -438,6 +444,7 @@
       "Button",
       "CENTER",
       "Cinder Kitten",
+      "Dropdown",
       "Frame",
       "HIGH",
       "Husblebee",
@@ -455,6 +462,7 @@
       "TOP",
       "TOPLEFT",
       "TOPRIGHT",
+      "Value",
       "Wifebeast",
       "settings controls require explanatory tooltip text",
       "settings scrollbar refresh"
@@ -477,6 +485,7 @@
       "Hide",
       "LEFT",
       "OVERLAY",
+      "RIGHT",
       "Show",
       "TOOLTIP",
       "TOPLEFT",
@@ -802,6 +811,12 @@
       "TOPLEFT",
       "TOPRIGHT"
     ],
+    "QuestFocusTooltip.lua": [
+      "BOTTOMLEFT",
+      "Hide",
+      "TOPLEFT",
+      "quest tooltip hover"
+    ],
     "QuestFocusWindow.lua": [
       "ARTWORK",
       "BACKGROUND",
@@ -925,6 +940,7 @@
       ", result=",
       ", route=",
       "BYE",
+      "CHANNEL",
       "OTHER",
       "QuestTogether: Addon message send failed (operation=",
       "channel join failed ",

@@ -441,6 +441,32 @@ scope.DecrementButton.scripts.OnClick()
 assert(QuestTogether:GetOption("qtChatScope") == "zone_only")
 print("Native settings dropdowns, profile changes, and disabled controls passed")
 
+local ownBubble = QuestTogether.whereToAnnounceControls.ownChatBubbleModeDropdown
+assert(QuestTogether.whereToAnnounceControls.hideMyOwnChatBubbles == nil)
+assert(ownBubble.title.text == "My chat bubble")
+assert(ownBubble.Dropdown.text == "Show always")
+ownBubble.Dropdown.menu[2].func()
+assert(QuestTogether:GetOwnChatBubbleMode() == "solo")
+assert(ownBubble.Dropdown.text == "Show only when solo")
+QuestTogether:SetOption("showChatBubbles", false)
+QuestTogether:RefreshWhereToAnnounceWindow()
+assert(ownBubble:IsShown() and ownBubble.title:IsShown())
+assert(not ownBubble.Dropdown:IsEnabled() and not ownBubble.DecrementButton:IsEnabled()
+	and not ownBubble.IncrementButton:IsEnabled())
+assert(QuestTogether:GetOwnChatBubbleMode() == "solo")
+QuestTogether:SetOption("showChatBubbles", true)
+QuestTogether:RefreshWhereToAnnounceWindow()
+assert(ownBubble.Dropdown:IsEnabled() and ownBubble.Dropdown.menu[2].selected())
+assert(QuestTogether:SetActiveProfile("Dropdown test profile"))
+assert(ownBubble.Dropdown.text == "Show always")
+assert(QuestTogether:SetActiveProfile(firstProfile))
+assert(ownBubble.Dropdown.text == "Show only when solo")
+ownBubble.IncrementButton.scripts.OnClick()
+assert(QuestTogether:GetOwnChatBubbleMode() == "hidden" and ownBubble.Dropdown.text == "Hide always")
+ownBubble.Dropdown.menu[1].func()
+assert(QuestTogether:GetOwnChatBubbleMode() == "always")
+print("Personal bubble dropdown preserves profile choices and follows the bubble master switch")
+
 local checkboxCount, scrollbarCount, swatch = 0, 0
 for _, region in ipairs(regions) do
 	if region.kind == "CheckButton" then
@@ -565,6 +591,54 @@ assert(home.statusText.text:find("QuestTogether: " .. (QuestTogether.isEnabled a
 QuestTogether.isEnabled = wasEnabled
 print("Home runtime status and native Theme dropdown/profile effects passed")
 
+local brokerChoices = {
+	{ "pql", "Party Quest Log" }, { "menu", "Menu" },
+	{ "partners", "Looking for Questing Partners" }, { "settings", "Settings" }, { "none", "None" },
+}
+assert(home.dataBrokerHeader.text == "Data Broker")
+assert(home.dataBrokerHint.text:find("LibDataBroker", 1, true))
+assert(home.brokerLeftClickDropdown.Dropdown.text == "Party Quest Log")
+assert(home.brokerRightClickDropdown.Dropdown.text == "Menu")
+local brokerWrites, brokerSetOption = { brokerLeftClick = 0, brokerRightClick = 0 }, QuestTogether.SetOption
+QuestTogether.SetOption = function(self, key, value)
+	if brokerWrites[key] then brokerWrites[key] = brokerWrites[key] + 1 end
+	return brokerSetOption(self, key, value)
+end
+for _, key in ipairs({ "brokerLeftClick", "brokerRightClick" }) do
+	local control = assert(home[key .. "Dropdown"])
+	assert(control.template == "SettingsDropdownWithButtonsTemplate")
+	assert(control.Dropdown:IsEnabled(), "broker clicks can be configured without an installed broker display")
+	assert(control.Dropdown.menuAnchor[1] == "TOPRIGHT" and control.Dropdown.menuAnchor[3] == "BOTTOMRIGHT")
+	assert(control.Dropdown.scripts.OnEnter and control.IncrementButton.scripts.OnEnter
+		and control.DecrementButton.scripts.OnEnter)
+	assert(#control.Dropdown.menu == #brokerChoices)
+	for index, choice in ipairs(brokerChoices) do
+		local writes = brokerWrites[key]
+		assert(control.Dropdown.menu[index].text == choice[2])
+		control.Dropdown.menu[index].func()
+		assert(QuestTogether:GetOption(key) == choice[1] and control.Dropdown.text == choice[2])
+		assert(control.Dropdown.menu[index].selected() and brokerWrites[key] == writes + 1,
+			"a broker action selection must save once and refresh the native control")
+	end
+end
+local brokerProfile = QuestTogether.db.profile
+local leftWrites, rightWrites = brokerWrites.brokerLeftClick, brokerWrites.brokerRightClick
+QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
+QuestTogether.db.profile.brokerLeftClick = "settings"
+QuestTogether.db.profile.brokerRightClick = "partners"
+QuestTogether.optionsFrame.scripts.OnShow()
+assert(home.brokerLeftClickDropdown.Dropdown.text == "Settings"
+	and home.brokerRightClickDropdown.Dropdown.text == "Looking for Questing Partners")
+assert(home.brokerLeftClickDropdown.Dropdown.menu[4].selected()
+	and home.brokerRightClickDropdown.Dropdown.menu[3].selected())
+assert(brokerWrites.brokerLeftClick == leftWrites and brokerWrites.brokerRightClick == rightWrites,
+	"profile refresh must not persist broker click selections")
+QuestTogether.SetOption = brokerSetOption
+QuestTogether.db.profile = brokerProfile
+QuestTogether:RefreshHomeWindow()
+assert(home.brokerLeftClickDropdown.Dropdown.text == "None" and home.brokerRightClickDropdown.Dropdown.text == "None")
+print("Optional Data Broker native click settings and profile refresh passed")
+
 local tracker = QuestTogether.questTrackerModeDropdown
 assert(tracker)
 assert(QuestTogether:GetQuestTrackerMode() == "hover")
@@ -612,3 +686,114 @@ QuestTogether.db.profile.questTrackerHideSolo = false
 QuestTogether.groupsFrame.scripts.OnShow()
 assert(hideSolo:GetChecked() == false, "checkbox follows the active profile")
 print("Party Objective Tracker solo visibility uses the shared setting and refreshes across profiles")
+
+local hideTooltip = assert(QuestTogether.groupsControls.questTrackerHideBlizzardTooltip)
+QuestTogether:RefreshGroupsWindow()
+assert(hideTooltip:GetChecked() == false, "new profiles keep the Blizzard quest tooltip visible")
+hideTooltip:SetChecked(true)
+hideTooltip.scripts.OnClick(hideTooltip)
+assert(QuestTogether:GetOption("questTrackerHideBlizzardTooltip") == true)
+QuestTogether:SetOption("questTrackerHideBlizzardTooltip", false)
+QuestTogether:RefreshGroupsWindow()
+assert(hideTooltip:GetChecked() == false, "settings reflects the tooltip option changed in Edit Mode")
+QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
+QuestTogether.db.profile.questTrackerHideBlizzardTooltip = true
+QuestTogether.groupsFrame.scripts.OnShow()
+assert(hideTooltip:GetChecked() == true, "tooltip checkbox follows the active profile")
+QuestTogether:NormalizeSettingsProfile()
+assert(QuestTogether:GetOption("questTrackerHideBlizzardTooltip") == true, "saved tooltip choices survive normalization")
+print("Party Objective Tracker tooltip visibility uses the shared setting and refreshes across profiles")
+
+local placement = assert(QuestTogether.questTrackerTooltipPlacementDropdown)
+QuestTogether:RefreshGroupsWindow()
+assert(placement.Dropdown.text == "Top", "POT tooltip placement defaults to top")
+assert(#placement.Dropdown.menu == 3)
+for index, value in ipairs({ "top", "bottom", "side" }) do
+	placement.Dropdown.menu[index].func()
+	assert(QuestTogether:GetQuestTrackerTooltipPlacement() == value)
+	QuestTogether:NormalizeSettingsProfile()
+	assert(QuestTogether:GetQuestTrackerTooltipPlacement() == value, "saved placement survives normalization")
+end
+assert(QuestTogether:ValidateSetting("questTrackerTooltipPlacement", "invalid") == nil)
+for _, value in ipairs({ false, "invalid" }) do
+	QuestTogether.db.profile.questTrackerTooltipPlacement = value or nil
+	assert(QuestTogether:GetQuestTrackerTooltipPlacement() == "top")
+	QuestTogether:NormalizeSettingsProfile()
+	assert(QuestTogether:GetOption("questTrackerTooltipPlacement") == "top")
+end
+QuestTogether:SetOption("questTrackerTooltipPlacement", "bottom")
+QuestTogether:RefreshGroupsWindow()
+assert(placement.Dropdown.text == "Bottom", "settings reflects Edit Mode placement changes")
+QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
+QuestTogether.db.profile.questTrackerTooltipPlacement = "side"
+QuestTogether.groupsFrame.scripts.OnShow()
+assert(placement.Dropdown.text == "Side", "placement dropdown follows the active profile")
+print("Party Objective Tracker tooltip placement validates choices and refreshes across profiles")
+
+local audio = assert(QuestTogether.audioControls)
+assert(QuestTogether.audioCategory and #audio.rows == 8)
+local audioWasEnabled = QuestTogether.isEnabled
+QuestTogether.isEnabled = true
+local supportsAudioVolume, previewAudioCue = QuestTogether.SupportsAudioVolume, QuestTogether.PreviewAudioCue
+QuestTogether.SupportsAudioVolume = function() return true end
+local previewed
+QuestTogether.PreviewAudioCue = function(_, key) previewed = key end
+QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
+QuestTogether.audioFrame.scripts.OnShow()
+assert(audio.master:GetChecked() and not audio.muteCombat:GetChecked())
+assert(audio.volume.Slider.value == 50 and audio.volume.RightText.text == "50%")
+assert(audio.interval.Slider.value == 0.75 and audio.interval.RightText.text == "0.75 sec")
+for _, row in ipairs(audio.rows) do
+	assert(row.enabled:GetChecked() == (row.cue.key == "attention" or row.cue.key == "focus"))
+	assert(row.preview:IsEnabled() and row.volume.Slider:IsEnabled() and row.sound.Dropdown:IsEnabled(),
+		"disabled events remain configurable and can be previewed")
+	assert(#row.sound.Dropdown.menu == #QuestTogether:GetAudioSoundOptions())
+end
+local row = audio.rows[#audio.rows]
+row.enabled:SetChecked(false)
+row.enabled.scripts.OnClick(row.enabled)
+row.volume.Slider:SetValue(35)
+assert(QuestTogether:GetAudioVolume(row.cue.volumeKey) == 35)
+row.sound.Dropdown.menu[2].func()
+assert(QuestTogether:GetAudioSound(row.cue.key) == QuestTogether:GetAudioSoundOptions()[2].value)
+row.preview.scripts.OnClick()
+assert(previewed == row.cue.key)
+QuestTogether.isEnabled = false
+QuestTogether:RefreshOptionsWindow()
+assert(not row.preview:IsEnabled(), "disabling QuestTogether disables Audio previews")
+QuestTogether.isEnabled = true
+QuestTogether:RefreshOptionsWindow()
+assert(row.preview:IsEnabled(), "enabling QuestTogether restores Audio previews")
+audio.master:SetChecked(false)
+audio.master.scripts.OnClick(audio.master)
+assert(not row.preview:IsEnabled() and row.volume.Slider:IsEnabled())
+audio.master:SetChecked(true)
+audio.master.scripts.OnClick(audio.master)
+audio.interval.Forward.scripts.OnClick()
+assert(QuestTogether:GetOption("audioInterval") == 1 and audio.interval.RightText.text == "1.00 sec")
+audio.volume.Slider:SetValue(65)
+QuestTogether.SupportsAudioVolume = function() return false end
+QuestTogether:RefreshAudioWindow()
+assert(audio.unavailable:IsShown() and not audio.volume.Slider:IsEnabled()
+	and not audio.volume.Back:IsEnabled() and not audio.volume.Forward:IsEnabled())
+assert(not row.volume.Slider:IsEnabled() and not row.preview:IsEnabled(), "unavailable playback disables preview and volume controls")
+audio.volume.Slider:SetValue(25)
+assert(QuestTogether:GetAudioVolume("audioVolume") == 65, "unavailable volume controls cannot persist changes")
+QuestTogether.SupportsAudioVolume = function() return true end
+QuestTogether:RefreshAudioWindow()
+assert(audio.volume.Slider.value == 65 and not audio.unavailable:IsShown())
+QuestTogether:SetOption("windowScale", 120)
+audio.reset.scripts.OnClick()
+assert(QuestTogether:GetOption("windowScale") == 120, "audio reset leaves other settings alone")
+assert(audio.volume.Slider.value == 50 and audio.interval.Slider.value == 0.75)
+QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
+QuestTogether.db.profile.audioEnabled = false
+QuestTogether.db.profile.audioVolume = 80
+QuestTogether.db.profile[row.cue.volumeKey] = 45
+QuestTogether.audioFrame.scripts.OnShow()
+assert(not audio.master:GetChecked() and audio.volume.Slider.value == 80 and row.volume.Slider.value == 45)
+assert(not row.preview:IsEnabled(), "audio controls follow the active profile")
+assert(audio.content:GetHeight() > audio.scroll:GetHeight(), "all cue controls remain in scrollable settings content")
+QuestTogether.SupportsAudioVolume, QuestTogether.PreviewAudioCue = supportsAudioVolume, previewAudioCue
+QuestTogether.isEnabled = audioWasEnabled
+print("Audio settings use native controls, respect volume support and master previews, and preserve unrelated preferences")

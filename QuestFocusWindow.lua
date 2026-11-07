@@ -52,6 +52,7 @@ function QT:ResetQuestFocusWindow(keepEditSelection)
 	end
 	local frame = rawget(self, "questFocusWindow")
 	if frame then
+		self:ClearQuestTrackerTooltipAnchor(frame)
 		frame.offset = 0
 		self:HideOwnedUI(frame)
 	end
@@ -99,7 +100,8 @@ function QT:GetHoveredTrackerQuestID()
 			if module then
 				for _, allowed in pairs(modules) do
 					if module == allowed and self:CanAccessForeignFrame(module, true) then
-						return self:NormalizeQuestID(self:GetAccessibleFrameMember(frame, "id"))
+						return self:NormalizeQuestID(self:GetAccessibleFrameMember(frame, "id")), frame,
+							module == modules.quest or module == modules.campaign
 					end
 				end
 			end
@@ -154,6 +156,7 @@ function QT:UpdateQuestFocusWindow()
 		return
 	end
 	self:UpdateQuestFocusEditMode()
+	self:InstallQuestFocusHoverEvents()
 	local editing = self.questFocusEditing == true
 	local mode = self:GetQuestTrackerMode()
 	if (mode == "hidden" or self:IsQuestTrackerHiddenWhileSolo()) and not editing then
@@ -161,8 +164,9 @@ function QT:UpdateQuestFocusWindow()
 		return
 	end
 	local names, own = self:GetQuestFocusMembers()
-	local id
-	if mode == "hover" or mode == "both" then id = self:GetHoveredTrackerQuestID() end
+	local id, hoverBlock, hoverNative
+	if mode == "hover" or mode == "both" then id, hoverBlock, hoverNative = self:GetHoveredTrackerQuestID() end
+	local hoverID = id
 	if not id and (mode == "focus" or mode == "both") then
 		id = own and self:NormalizeQuestID(self:GetPartyQuestFocusID(own))
 	end
@@ -226,10 +230,11 @@ function QT:UpdateQuestFocusWindow()
 	if state.editing ~= editing then
 		state.editing, state.dirty = editing, true
 	end
+	state.hoverID, state.hoverBlock, state.hoverNative = hoverID, hoverBlock, hoverNative
 	if state.dirty or state.restrictedPresentation then
 		self:RenderQuestFocusWindow(state)
 	end
-	self:ApplyQuestTrackerDefaultAnchor(rawget(self, "questFocusWindow"))
+	self:UpdateQuestTrackerTooltipAnchor(rawget(self, "questFocusWindow"), state)
 end
 
 function QT:GetQuestTrackerAnchorFrame()

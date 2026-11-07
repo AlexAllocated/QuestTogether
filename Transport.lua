@@ -5,6 +5,8 @@ local CLASSES = { "control", "event", "active", "active", "active", "bulk", "bul
 local VALID_CLASSES = { control = true, event = true, active = true, bulk = true, background = true }
 local MAX_QUEUE, CONTROL_RESERVE = 96, 16
 local BYTE_RATE, BYTE_BURST, PACKET_RATE, PACKET_BURST = 800, 1600, 4, 4
+local CHANNEL_BACKOFF_MIN, CHANNEL_BACKOFF_MAX, CHANNEL_PROBATION = 5, 120, 5
+local MAX_CHANNEL_BACKOFFS, CHANNEL_BACKOFF_TTL = 32, 600
 local METRICS = {
 	attempts = true,
 	queued = true,
@@ -16,6 +18,11 @@ local METRICS = {
 	cancelled = true,
 	superseded = true,
 	capacity = true,
+	backoff = true,
+	channelBackoffs = true,
+	channelBackoffSkipped = true,
+	channelProbes = true,
+	channelRecoveries = true,
 	nativeException = true,
 	nativeNoResult = true,
 	nativeUnknown = true,
@@ -49,6 +56,73 @@ local function Count(s, key)
 	if METRICS[key] then
 		s.metrics[key] = (s.metrics[key] or 0) + 1
 	end
+end
+local function ChannelName(a, name)
+	if not a:CanAccessValue(name) or type(name) ~= "string" or #name > 140 then return nil end
+	name = name:gsub("^%d+%.%s*", ""):match("^%s*(.-)%s*$")
+	if name == "" or #name > 120 or name:find("[%c|]") then return nil end
+	return name:lower()
+end
+local function ChannelKey(a, route)
+	if route.distribution ~= "CHANNEL" then return nil end
+	-- Local channel IDs can be reassigned. Only an owned channel name can carry
+	-- a cooldown across reconnects and channel reordering.
+	return ChannelName(a, route.channelName or (route.requiresChannelJoin and a.announcementChannelName))
+end
+local function ChannelBackoff(s, key, now)
+	local entry = key and s.channelBackoffs and s.channelBackoffs[key]
+	if entry then
+		if now < entry.lastAt or now - entry.lastAt >= CHANNEL_BACKOFF_TTL then
+			s.channelBackoffs[key] = nil
+			return nil
+		end
+		if entry.recoverAt and now >= entry.recoverAt then
+			s.channelBackoffs[key] = nil
+			Count(s, "channelRecoveries")
+			return nil
+		end
+	end
+	return entry
+end
+local function ChannelBlocked(a, s, route, now)
+	local entry = ChannelBackoff(s, ChannelKey(a, route), now)
+	return entry ~= nil and now < entry.retryAt
+end
+local function RefuseChannel(a, s, key, now)
+	if not key or a:GetTransportState() ~= s or s.departing or not a.isEnabled or a.isLoggingOut then return false end
+	local entry = ChannelBackoff(s, key, now)
+	-- Several notices may describe the same refused operation. Only a fresh
+	-- probe can advance an existing failure streak, not late/duplicate notices.
+	if entry and not entry.probing then return false end
+	if not entry then
+		s.channelBackoffs = s.channelBackoffs or {}
+		local count, oldestKey, oldestAt = 0, nil, math.huge
+		for channel in pairs(s.channelBackoffs) do
+			local candidate = ChannelBackoff(s, channel, now)
+			if candidate then
+				count = count + 1
+				if candidate.lastAt < oldestAt then oldestKey, oldestAt = channel, candidate.lastAt end
+			end
+		end
+		if count >= MAX_CHANNEL_BACKOFFS then s.channelBackoffs[oldestKey] = nil end
+		entry = { delay = CHANNEL_BACKOFF_MIN / 2 }
+		s.channelBackoffs[key] = entry
+	end
+	entry.delay = math.min(CHANNEL_BACKOFF_MAX, entry.delay * 2)
+	local jitter = a.API.Random and a:SafeToNumber(a.API.Random(0, 100)) or 0
+	jitter = math.max(0, math.min(100, jitter or 0))
+	entry.lastAt = now
+	entry.retryAt = now + math.min(CHANNEL_BACKOFF_MAX, entry.delay * (1 + jitter / 1000))
+	entry.probing, entry.recoverAt = nil, nil
+	Count(s, "channelBackoffs")
+	return true
+end
+
+-- Called only after Comms identifies a refusal for one of QT's own channels.
+-- A notice cannot identify a packet or change an already-completed ticket.
+function QT:RecordTransportChannelRefusal(channelName)
+	local s = self:GetTransportState()
+	return s ~= nil and RefuseChannel(self, s, ChannelName(self, channelName), Now(self))
 end
 local function Flush(a, s)
 	if s.draining or s.flushing then
@@ -152,7 +226,7 @@ local function ReportNativeFailure(a, s, context, route, nativeKey, nativeLabel)
 	a:RecordDiagnosticError("communication send", detail)
 end
 local function NativeSend(a, s, wire, context, route)
-	local target = route.target
+	local target, generation = route.target, s.generation
 	if route.requiresChannelJoin then
 		local ok, value = pcall(function()
 			if a:EnsureAnnouncementChannelJoined(route.channelName) then
@@ -164,6 +238,18 @@ local function NativeSend(a, s, wire, context, route)
 			return false, "rejected"
 		end
 		target = value
+	end
+	if a:GetTransportState() ~= s or s.generation ~= generation then return false, "cancelled" end
+	local now, key = Now(a), ChannelKey(a, route)
+	if ChannelBlocked(a, s, route, now) then
+		Count(s, "channelBackoffSkipped")
+		return false, "backoff"
+	end
+	local probe = ChannelBackoff(s, key, now)
+	if probe then
+		probe.probing, probe.lastAt = true, now
+		probe.retryAt, probe.recoverAt = now + CHANNEL_PROBATION, nil
+		Count(s, "channelProbes")
 	end
 	Count(s, "attempts")
 	local ok, result = pcall(a.API.SendAddonMessage, a.commPrefix, wire, route.distribution, target)
@@ -185,6 +271,29 @@ local function NativeSend(a, s, wire, context, route)
 	Count(s, nativeKey)
 	if QUEST_OPERATIONS[context] and NATIVE_ROUTES[route.distribution] then
 		Count(s, "questWire." .. context .. "." .. route.distribution .. "." .. nativeKey)
+	end
+	-- The adapter can re-enter QT (a refusal notice, disable, or reset). Its
+	-- eventual return must not erase that refusal or revive an old lifetime.
+	if a:GetTransportState() == s and s.generation == generation
+		and not s.departing and a.isEnabled and not a.isLoggingOut then
+		if code == 7 then
+			RefuseChannel(a, s, key, Now(a))
+		elseif probe and s.channelBackoffs[key] == probe and probe.probing then
+			if ok and a:CanAccessValue(result) and (result == 0 or result == true) then
+				-- Native acceptance is not delivery. Wait briefly for a possible
+				-- asynchronous server refusal before resuming normal traffic.
+				probe.recoverAt = Now(a) + CHANNEL_PROBATION
+				probe.retryAt = probe.recoverAt
+			elseif code == 8 then
+				-- This probe may have transmitted, so a later server refusal must
+				-- still extend its streak. A quiet ambiguous probe cannot establish
+				-- recovery; only a new message may probe again after probation.
+				probe.retryAt = Now(a) + CHANNEL_PROBATION
+			else
+				-- Prefix throttles retain their existing retry rules.
+				probe.probing, probe.recoverAt, probe.retryAt = nil, nil, Now(a)
+			end
+		end
 	end
 	if ok and a:CanAccessValue(result) and (result == 0 or result == true) then
 		Accepted(s, Now(a))
@@ -321,6 +430,10 @@ function QT:SendTransportNow(wire, context, route, mode)
 			return false, "invalid"
 		end
 	end
+	if ChannelBlocked(self, s, route, now) then
+		Count(s, "channelBackoffSkipped")
+		return false, "backoff"
+	end
 	if s.departing then
 		if (s.blockedUntil and now < s.blockedUntil) or s.tokens < 1 or s.byteTokens < cost then
 			return false, "paced"
@@ -360,6 +473,10 @@ function QT:QueueTransportWire(wire, context, route, options)
 		or (options.isCurrent ~= nil and type(options.isCurrent) ~= "function")
 	then
 		return false, "invalid"
+	end
+	if ChannelBlocked(self, s, route, now) then
+		Count(s, "channelBackoffSkipped")
+		return false, "backoff"
 	end
 	local replaced = {}
 	local nonControl = s.inFlight and s.inFlight.priority ~= "control" and 1 or 0
@@ -415,7 +532,7 @@ function QT:QueueTransportWire(wire, context, route, options)
 	return true, "queued", row.ticket
 end
 
-local function Select(s, now)
+local function Select(a, s, now)
 	for offset = 1, #CLASSES do
 		local slot = ((s.sendClassCursor or 0) + offset - 1) % #CLASSES + 1
 		local class, flows, seen = CLASSES[slot], {}, {}
@@ -434,7 +551,7 @@ local function Select(s, now)
 		end
 		for offsetFlow = 1, #flows do
 			local row = flows[(start + offsetFlow - 1) % #flows + 1]
-			if not row.retryAt or now >= row.retryAt then
+			if (not row.retryAt or now >= row.retryAt) and not ChannelBlocked(a, s, row.route, now) then
 				return row, slot
 			end
 		end
@@ -452,7 +569,9 @@ function QT:DrainTransport()
 	end
 	for _, row in ipairs(snapshot) do
 		local reason = (now < row.createdAt or now >= row.expires) and "expired" or (not Current(row) and "cancelled")
+		if not reason and ChannelBlocked(self, s, row.route, now) then reason = "backoff" end
 		if reason and Remove(s, row) then
+			if reason == "backoff" then Count(s, "channelBackoffSkipped") end
 			Complete(s, row, false, reason)
 		end
 	end
@@ -461,7 +580,7 @@ function QT:DrainTransport()
 			break
 		end
 		now = Now(self)
-		local row, slot = Select(s, now)
+		local row, slot = Select(self, s, now)
 		if not row then
 			break
 		end
@@ -512,7 +631,7 @@ function QT:DrainTransport()
 	Flush(self, s)
 end
 
--- Fixed counters and five class gauges only: no lifetime per-peer/ticket map.
+-- Fixed counters and bounded aggregate gauges: no per-peer/ticket diagnostics.
 function QT:GetTransportMetrics()
 	local s, result = self:GetTransportState(), { queuedPackets = 0, queuedBytes = 0, oldestAge = 0, classes = {} }
 	for class in pairs(VALID_CLASSES) do
@@ -521,11 +640,20 @@ function QT:GetTransportMetrics()
 	if not s then
 		return result
 	end
+	result.packetRate, result.packetTokens, result.byteTokens = s.packetRate, s.tokens, s.byteTokens
+	local now = Now(self)
+	result.channelBackoffChannels, result.channelBackoffMaxRemaining = 0, 0
+	for key in pairs(s.channelBackoffs or {}) do
+		local entry = ChannelBackoff(s, key, now)
+		if entry then
+			result.channelBackoffChannels = result.channelBackoffChannels + 1
+			result.channelBackoffMaxRemaining = math.max(result.channelBackoffMaxRemaining, entry.retryAt - now)
+		end
+	end
+	-- Pruning a quiet probe can record recovery; return one coherent snapshot.
 	for key, value in pairs(s.metrics) do
 		result[key] = value
 	end
-	result.packetRate, result.packetTokens, result.byteTokens = s.packetRate, s.tokens, s.byteTokens
-	local now = Now(self)
 	for _, row in ipairs(s.queue) do
 		result.queuedPackets = result.queuedPackets + 1
 		result.queuedBytes = result.queuedBytes + Cost(self, row.wire)

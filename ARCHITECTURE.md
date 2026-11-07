@@ -10,6 +10,8 @@ private `.local` notes are historical context, not the source of truth.
 | Core / EventHandlers | Native adapters, initialization, event routing, quest lifecycle orchestration | Feature timers, profile effects, live classification caches |
 | Settings | Profile storage, migrations, value validation, atomic edits and effect dispatch | Widget construction, native navigation or frame mutation |
 | RuntimeCoordinator | The enabled addon's periodic lifetime and feature tick order | Individual feature caches or wire codecs |
+| Audio | Cue catalog, per-profile sound preferences, bounded suppression and QT-owned playback handles | Shared game sound settings, other addons' sounds or a delayed notification queue |
+| DataBroker | Optional toolbar launcher registration, copied display fields and click routing | A bundled library, display-owned frames or another minimap button |
 | HotPathRuntime | Explicit timing, work classes, owner cancellation and restriction gates | Quest or presentation policy |
 | QuestObservations | Quest-log acquisition, confirmed classifications, complete snapshot publication | Area entry/exit history or announcements |
 | TaskArea | Reducing observations into world/bonus area state and announcement diffs | Native quest-log/classification reads |
@@ -25,7 +27,7 @@ private `.local` notes are historical context, not the source of truth.
 | PartyQuestSync | Small-party lifetime, atomic quest-list snapshots, exact revisions, lifecycle replay and paced background interests | Window visibility, native sends or independent timers |
 | PartyQuestProgress | Party-owned remote objective snapshots, ordered announcement deltas, per-peer detail requests and shared PQL/HUD subscriptions | Display filtering, independent polling, or assuming objective indices match across players |
 | QuestProgressStyle | Shared rounded detail sections and objective progress bars for PQL and HUD | Quest state, requests, or window lifecycle |
-| QuestFocusWindow / QuestFocusEditMode | Party Objective Tracker HUD, native focus observation, local detail reads, owned Edit Mode controls and revert baseline | Blizzard tracker rows, shared native layout registries or a separate objective cache |
+| QuestFocusWindow / QuestFocusTooltip / QuestFocusEditMode | Party Objective Tracker HUD, native focus/tooltip observation, local detail reads, owned Edit Mode controls and revert baseline | Blizzard tracker rows, shared native layout registries or a separate objective cache |
 | PartyFocusIndicators | Clickable class-colored party-focus dots and hover tips beside native quest buttons; bounded read-only block lookup and owned overlay geometry | Native tracker scripts, text, pools or layout; another focus store or network request |
 | QuestCompare | Atomic party log assembly, local snapshots and negotiated revision reuse | Native UI mutation or independent transport pumps |
 | QuestCompletion | Bounded character-history queries for visible comparisons, evidence age and completed/absent classification | Account-wide completion or full history broadcasts |
@@ -139,6 +141,20 @@ private `.local` notes are historical context, not the source of truth.
   scrollbar controls and Edit Mode wait for their normal safe boundary. Local
   announcements enter that same progress reducer before local chat/bubbles;
   a later quest-log read repairs the rest of the local snapshot.
+  While snapped and hovering, POT attaches to the native tooltip owned by the
+  exact hovered quest block. The profile-owned `questTrackerTooltipPlacement`
+  offers Top (default), Bottom and Side in settings and Edit Mode. Top and Bottom
+  align the right edges, using the opposite vertical edge if the chosen edge has
+  insufficient room; Side retains the lateral layout. Screen bounds, visible content size, mixed scales
+  and the source row constrain placement; narrow screens can use vertical
+  placement or a bounded temporary scale reduction. Hover geometry is never
+  saved; leaving restores the ordinary anchor and Edit Mode keeps its placement
+  bounds. Native enter events only schedule a fresh, guarded read; the existing
+  runtime observer handles leaving. `questTrackerHideBlizzardTooltip` defaults
+  off and is shared by Groups & Sharing and Edit Mode. It may hide only the
+  matching unprotected quest/campaign progress tooltip while POT is shown and
+  restrictions permit. Failed suppression retains adjacency. Reward, item and
+  unrelated tooltips remain untouched; QT never forces a reused tooltip to show.
 
 - Native tracker party-focus markers use `GetPartyQuestFocusID` for up to four
   other members of the current small party, independent of following and POT
@@ -147,15 +163,21 @@ private `.local` notes are historical context, not the source of truth.
   `GetExistingBlock` lookup. Each member gets a clickable class-colored dot to
   the left of Blizzard's quest-focus button, with a tooltip identifying whose
   focus it represents. Members sharing a quest form a spaced horizontal row;
-  a white outline identifies the followed member without changing class color.
+  a lime-green outline identifies the followed member without changing class color.
+  A white chain-link badge identifies a member following the local player, using
+  the shared navigation query and its existing ordering, expiry and membership
+  rules. Matching quest IDs alone never establish a follow relationship. Badges
+  reserve their own horizontal space and share the dot's hover/click target.
   The owned frames are parented to UIParent and positioned
   with sanitized coordinates; they never alter native layout, pooling or
   gamepad navigation. Clicks request a follow confirmation; the user can save a
   per-profile preference to skip it. Delayed clicks and dialog choices recheck
   identity, membership and lifetime. Hidden, recycled, sliding
   or unreadable native rows and retired focus observations hide their markers.
-  POT renders above native quest-hover tooltips outside Edit Mode; focus dots,
-  their tooltips and focus confirmation dialogs use higher owned frame levels.
+  Focus dots, follow rings and badges track the native row's strata and frame
+  level so ordinary windows can cover them. Their separate hover tooltips and
+  focus confirmation dialogs remain on their appropriate overlay layers.
+  POT renders above native quest-hover tooltips outside Edit Mode.
 
 - Recent companions are recorded only from the sanitized current group roster,
   including non-QT members. The private `db.global.recentCompanions` store is
@@ -335,6 +357,14 @@ private `.local` notes are historical context, not the source of truth.
   related changes and dispatches each affected service once. Profile activation
   uses the same effects, including themes, scale, privacy and navigation; it
   revokes old diagnostic request ownership even when both profiles allow it.
+- Personal bubbles use the profile's `ownChatBubbleMode` (`always`, `solo`, or
+  `hidden`) beneath the master `showChatBubbles` switch. The old hide-own boolean
+  migrates before defaults are applied, including inactive and copied profiles.
+  One visibility query covers local announcements, QT chat, playback and
+  capability reporting. Solo mode reads native party/raid membership rather than
+  waiting for QT peer discovery; group changes retire a visible personal bubble
+  without replaying it on leaving. Other players' bubbles, chat logs, publication
+  and the Edit Mode placement preview keep their independent behavior.
 
 Tips are local chat-log output. `OnLogin` schedules one through the shared UI work
 lifetime after chat destinations are initialized; zoning and enabling do not draw
@@ -357,6 +387,37 @@ tips and illustrations. History navigation selects series rather than individual
 patches. Successfully opening the combined page acknowledges the latest notes
 version; automatic presentation remains gated on a new major/minor series.
 Canonical notes, web changelogs and Discord posts remain individual releases.
+
+## Audio
+
+`Audio.lua` owns the only native QT audio adapters. Feature modules submit cue
+keys at accepted transitions, never during repainting. Quiet defaults enable
+requests/confirmations and successfully applied automatic focus changes. Party
+waypoints, quest readiness/turn-ins/progress, QT chat and quest-share results are
+individually available but off by default. A preview bypasses the event's enable
+switch while respecting the addon lifetime, master switch, volumes and combat
+mute preference.
+
+Six original QT recordings provide a shared sound palette. Custom-file playback
+has no portable per-call gain, so the asset builder renders 1–100% linear gain
+variants. Runtime combines master and event percentages, selects the nearest
+positive variant, and makes no native call for zero. Playback uses WoW's SFX
+channel and remains subject to its mute/volume controls. QT never changes audio
+CVars; native button sounds and existing emote audio remain owned by WoW.
+
+Only one QT handle is retained. Per-cue cooldowns and the configurable minimum
+interval suppress bursts; attention prompts can interrupt a lower-priority cue.
+There is no notification backlog. Prompt identities suppress redraws, accepted
+waypoint geometry suppresses heartbeats, and objective cues require fresh party
+events. Older useful quest observations still update the domain cache silently.
+Disable, profile changes and world departure retire audio state and stop only
+QT's handle. RuntimeCoordinator handles ongoing mute/lifetime checks.
+
+Live tests detach audio state and use owned playback recorders. Production
+adapters also refuse native play/stop calls while tests run. Package verification
+includes every gain variant and its audio provenance notice/manifest. Offline
+checks establish dispatch and isolation; actual listening in supported clients
+is still required to assess audibility and sound quality.
 
 ## Communication generation 2
 
@@ -483,6 +544,22 @@ retain every refusal. These notices contain no addon prefix or packet identity;
 they do not revise native acceptance counters or already-completed tickets, and
 they do not claim which individual message was refused.
 
+`InvalidChannel` and those server refusal notices suspend sends to the affected
+named channel for 5, 10, 20, 40, 80, then at most 120 seconds, with up to 10%
+upward jitter below the cap. Names, rather than reassigned local IDs, identify
+cooldowns. Other channels, party routes and whispers remain eligible. Blocked
+submissions fail admission without spending send budget; already queued work
+settles once with `backoff` after honoring cancellation and expiry. Old events
+therefore cannot accumulate into a burst when the channel recovers.
+The next current message after the cooldown tests the channel. Native acceptance
+holds further sends for five seconds to allow an asynchronous refusal to arrive;
+a refusal doubles the delay, while a quiet interval restores normal sending
+without claiming delivery. Duplicate notices cannot extend a cooldown. Cooldowns
+survive temporary world transitions, with at most 32 records retained for ten
+minutes since their last probe or new failure. Diagnostics expose fixed counters
+for blocked work, probes and recovery, plus active-channel and remaining-delay
+gauges. Progress uses the existing runtime owner, without a separate retry timer.
+
 State samples replace older queued samples for the same topic/audience. Events
 retain immutable identities and finite duplicate suppression. Requests preserve
 identity across bounded retries; accepted actions cannot prompt or act twice.
@@ -541,6 +618,25 @@ ambiguous outcomes, low FPS, mixed workloads and lifecycle changes. Run the
 the major upgrade; offline results alone do not validate real delivery or coexistence.
 
 ## UI and client boundaries
+
+`DataBroker.lua` registers a `QuestTogether` launcher only when another addon has
+already supplied LibDataBroker through LibStub. Neither library is bundled or
+declared as a required/optional TOC dependency. Login and late addon loads retry
+discovery; the existing launcher recovery events retry after restrictions.
+Registration is idempotent, and QT never replaces another object's name. Library
+creation and proxy updates are isolated because they synchronously notify other
+addons. Only QT's created object receives primitive display fields and callbacks;
+the addon/profile/peer tables never become broker attributes.
+
+Left/right actions are profile settings: Party Quest Log, menu, LFQP toggle,
+settings or none, with log/menu defaults. They reuse existing feature commands
+and validate restrictions when clicked. The broker remains usable with the
+minimap hidden and retains menu/settings access while QT is disabled. Identity
+artwork, enabled state and LFQP text refresh from existing feature transitions.
+The display owns tooltip lifecycle; QT only adds lines through its public tooltip
+API after forbidden/protected/restriction checks. No fields, scripts, positioning
+or visibility changes are written to a display-owned frame. Live tests detach
+broker state and block the real registry adapter; fixtures own their registries.
 
 Never write QT state onto Blizzard frames, children, mixins or shared tables.
 Use owned regions, GUID records and weak side tables. Guard foreign reads for

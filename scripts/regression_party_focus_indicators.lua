@@ -58,7 +58,7 @@ local function Fixture()
 	function a:Block(id, top)
 		local block = Native(self.module)
 		block.id, block.parentModule, block.used = id, self.module, true
-		function block:GetFrameStrata() return "MEDIUM" end
+		function block:GetFrameStrata() return self.strata or "MEDIUM" end
 		local label = Native(block, "FontString")
 		block.HeaderText = label
 		label.left, label.top = 900, top
@@ -130,6 +130,8 @@ QT:RegisterTest("native tracker focus dots preserve class colors and follow nati
 	local xs, rowY, previousLeft = {}, nil, nil
 	for _, pin in ipairs(pins) do
 		Equal(pin.frame:GetParent(), a.root)
+		Equal(pin.frame.strata, a.first:GetFrameStrata())
+		Equal(pin.frame:GetFrameLevel(), a.first:GetFrameLevel() + 1)
 		Equal(pin.frame.mouseEnabled, true)
 		Equal(pin.frame:GetWidth(), 12)
 		Equal(pin.questID, 41)
@@ -149,8 +151,11 @@ QT:RegisterTest("native tracker focus dots preserve class colors and follow nati
 	end
 	local pin = pins[1]
 	Equal(pin.following, true)
-	Equal(pin.border.textureColor[1], 1)
+	Equal(pin.border.textureColor[1], 0.5)
+	Equal(pin.border.textureColor[2], 1)
+	Equal(pin.border.textureColor[3], 0)
 	pin.frame:GetScript("OnEnter")(pin.frame)
+	Equal(pin.tooltip.strata, "TOOLTIP")
 	assert(pin.label:GetText():find("You are following this player.", 1, true))
 	-- The follow target can change without another party packet or geometry move.
 	a.partyNavigationState.following = "Rogue Realm"
@@ -162,6 +167,16 @@ QT:RegisterTest("native tracker focus dots preserve class colors and follow nati
 	a.partyNavigationState.following = nil
 	a:RefreshPartyQuestFocusIndicatorGeometry()
 	for _, memberPin in ipairs(pins) do Equal(memberPin.following, false) end
+	-- A layer-only tracker change must update reused pins without promoting
+	-- their artwork or hit targets over PQL and other ordinary windows.
+	local previousLayerX = pin.frame.points[1][4]
+	a.first.strata, a.first.frameLevel = "LOW", 12
+	a:RefreshPartyQuestFocusIndicatorGeometry()
+	for _, memberPin in ipairs(pins) do
+		Equal(memberPin.frame.strata, "LOW")
+		Equal(memberPin.frame:GetFrameLevel(), 13)
+	end
+	Equal(pin.frame.points[1][4], previousLayerX)
 	local previousX, previousScale = pin.frame.points[1][4], pin.frame:GetScale()
 	a.first.HeaderText.left = 650
 	a.first.HeaderText.scale = 0.75
@@ -215,6 +230,53 @@ QT:RegisterTest("focus dot clicks and tooltips use current member identity and r
 	Equal(pin.tooltip:IsShown(), false)
 	pin.frame:GetScript("OnClick")(pin.frame, "LeftButton")
 	Equal(a.requested, nil)
+	a:AssertNativeReadOnly()
+end)
+
+QT:RegisterTest("focus follower badges use explicit intent and leave room for every dot and tooltip", function()
+	local a = Fixture()
+	for _, peer in pairs(a.partyNavigationState.peers) do peer.questID = 41 end
+	local peers = a.partyNavigationState.peers
+	peers["Mage Realm"].following = "You Realm"
+	peers["Rogue Realm"].following = "Mage Realm"
+	peers["Druid Realm"].following = "You Realm"
+	-- A brief conflicting snapshot can carry both directions before cycle
+	-- reconciliation. The two visual cues must remain independent.
+	a.partyNavigationState.following = "Mage Realm"
+	a:UpdatePartyQuestFocusIndicators()
+	local pins, previousLeft = Visible(a), nil
+	Equal(#pins, 4)
+	for _, pin in ipairs(pins) do
+		local follower = pin.name == "Mage Realm" or pin.name == "Druid Realm"
+		Equal(pin.follower, follower)
+		Equal(pin.badge:IsShown(), follower)
+		Equal(pin.frame.hitRectInsets[1], follower and -14 or 0)
+		local center, halfBorder = pin.geometry.x, pin.border:GetWidth() / 2
+		if previousLeft then assert(center + halfBorder < previousLeft, "badges must not cover another player's dot") end
+		previousLeft = center - (follower and 20 or halfBorder)
+	end
+	local pin, nextPin = pins[1], pins[2]
+	Equal(pin.following, true)
+	Equal(pin.border.textureColor[2], 1)
+	pin.frame:GetScript("OnEnter")(pin.frame)
+	assert(pin.label:GetText():find("Following your quest focus.", 1, true))
+	assert(pin.label:GetText():find("You are following this player.", 1, true))
+	local followerPin = pins[3]
+	followerPin.frame:GetScript("OnEnter")(followerPin.frame)
+	assert(followerPin.label:GetText():find("Following your quest focus.", 1, true))
+	assert(not followerPin.label:GetText():find("Click to follow quest focus.", 1, true), "do not suggest forming a follow loop")
+	local before = nextPin.geometry.x
+	peers[pin.name].following = ""
+	a:RefreshPartyQuestFocusIndicatorGeometry()
+	Equal(pin.follower, false)
+	Equal(pin.badge:IsShown(), false)
+	Equal(pin.frame.hitRectInsets[1], 0)
+	assert(nextPin.geometry.x > before, "ending follow releases the badge's horizontal space")
+	assert(not pin.label:GetText():find("Following your quest focus.", 1, true), "an open tooltip must drop retired follow intent")
+	Equal(pin.following, true)
+	a:ResetPartyQuestFocusIndicators()
+	Equal(pin.follower, nil)
+	Equal(pin.frame:IsShown(), false)
 	a:AssertNativeReadOnly()
 end)
 

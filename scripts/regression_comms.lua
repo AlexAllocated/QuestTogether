@@ -893,7 +893,7 @@ QuestTogether:RegisterTest("plain QT channel chat displays once without relaying
 	Equal(bubbles[1], addon.printed[2])
 	Equal(Receive("hello", "MyPlayer-Realm"), true)
 	Equal(#bubbles, 2)
-	options.hideMyOwnChatBubbles = true
+	options.ownChatBubbleMode = "hidden"
 	Receive("hello", "MyPlayer-Realm")
 	Equal(#bubbles, 2)
 	options.showChatLogs, options.showChatBubbles = false, false
@@ -1434,6 +1434,121 @@ local function ChannelNoticeFixture()
 	end
 	return addon
 end
+
+QuestTogether:RegisterTest(
+	"server refusal notices back off the matching channel even when native sends succeeded",
+	function()
+		local addon, completed = ChannelNoticeFixture(), 0
+		addon.API.Random = function()
+			return 0
+		end
+		addon.geographicCommsState = { subscriptions = { QTGeoCurrent = {} } }
+		addon:InitializeTransport()
+		local global = { distribution = "CHANNEL", target = 7, channelName = "QuestTogether" }
+		local geographic = { distribution = "CHANNEL", target = 8, channelName = "QTGeoCurrent" }
+		local admitted, _, ticket = addon:QueueTransportWire("state", "STATE", global, {
+			onComplete = function()
+				completed = completed + 1
+			end,
+		})
+		assert(admitted)
+		addon.now = 101
+		addon:DrainTransport()
+		Equal(ticket.status, "accepted")
+		addon:Notice("NOT_ALLOWED_IN_CHANNEL", "7. QuestTogether", "QuestTogether")
+		Equal(addon:GetTransportMetrics().channelBackoffMaxRemaining, 5)
+		local blocked, reason, blockedTicket = addon:QueueTransportWire("fresh state", "STATE", global)
+		Equal(blocked, false)
+		Equal(reason, "backoff")
+		Equal(blockedTicket, nil)
+		Equal(addon:SendTransportNow("geographic", "STATE", geographic), true)
+		Equal(addon:SendTransportNow("party", "QCMP", { distribution = "PARTY" }), true)
+		addon.now = 102
+		addon:Notice("NOT_ALLOWED_IN_CHANNEL", "19. qUeStToGeThEr", nil, 19)
+		Equal(addon:GetTransportMetrics().channelBackoffMaxRemaining, 4)
+		Equal(addon:GetCommsDiagnostics().serverChannelRefusals, 2)
+		Equal(addon.diagnosticErrorCount, 1)
+		addon.now = 106
+		Equal(addon:SendTransportNow("probe", "STATE", global), true)
+		addon.now = 107
+		-- Native success is not delivery. The async refusal must extend the same
+		-- failure streak even while the diagnostic message itself is rate-limited.
+		addon:Notice("NOT_ALLOWED_IN_CHANNEL", "19. QuestTogether", "QuestTogether", 19)
+		addon:Notice("NOT_ALLOWED_IN_CHANNEL", "19. QuestTogether", "QuestTogether", 19)
+		Equal(addon:GetTransportMetrics().channelBackoffMaxRemaining, 10)
+		Equal(addon:GetTransportMetrics().channelBackoffs, 2)
+		Equal(addon.diagnosticErrorCount, 1)
+		Equal(completed, 1)
+		Equal(ticket.status, "accepted")
+		addon.now = 117
+		Equal(addon:SendTransportNow("recovery", "STATE", global), true)
+		addon.now = 122
+		addon:DrainTransport()
+		Equal(addon:GetTransportMetrics().channelRecoveries, 1)
+		Equal(#addon.wire, 5) -- No refusal or elapsed timer creates a replay packet.
+		addon:Notice("NOT_ALLOWED_IN_CHANNEL", "8. QTGeoCurrent", "QTGeoCurrent", 8)
+		local geoAdmitted, geoReason = addon:QueueTransportWire("geo", "STATE", geographic)
+		Equal(geoAdmitted, false)
+		Equal(geoReason, "backoff")
+		assert(addon:QueueTransportWire("global remains healthy", "STATE", global))
+		Equal(addon:GetCommsDiagnostics().serverChannelRefusals, 5)
+		Equal(#addon.reported, 0)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"channel backoff releases fragmented publication capacity and later sends only current state",
+	function()
+		local addon, completions = ChannelNoticeFixture(), {}
+		addon.API.Random = function()
+			return 0
+		end
+		addon:InitializeCommunications()
+		local routes = { { distribution = "CHANNEL", channelName = "QuestTogether" } }
+		local function Publish(title)
+			return addon:Publish("QTLQ", { questID = 42, title = title }, routes, {
+				key = "current quest",
+				onComplete = function(sent, reason)
+					completions[#completions + 1] = { sent, reason }
+				end,
+			})
+		end
+		assert(Publish(string.rep("old", 200)))
+		Equal(addon:GetCommTransferMetrics().outgoing, 1)
+		addon:Notice("NOT_ALLOWED_IN_CHANNEL", "7. QuestTogether", "QuestTogether")
+		addon:UpdateCommTransfers()
+		Equal(addon:GetCommTransferMetrics().outgoing, 0)
+		Equal(addon:GetCommTransferMetrics().bytes, 0)
+		Equal(addon:GetTransportMetrics().queuedPackets, 0)
+		Equal(completions[1][1], false)
+		Equal(completions[1][2], "backoff")
+		Equal(#addon.wire, 0)
+		addon.now = 105
+		assert(addon:Publish("QTPR", { active = true }, routes))
+		addon:DrainTransport()
+		Equal(#addon.wire, 1)
+		addon.now = 110
+		local latest = string.rep("latest", 100)
+		assert(Publish(latest))
+		for _ = 1, 20 do
+			addon:UpdateCommTransfers()
+			addon:DrainTransport()
+			addon.now = addon.now + 0.5
+		end
+		Equal(completions[2][1], true)
+		Equal(completions[2][2], "accepted")
+		Equal(#completions, 2)
+		Equal(addon:GetCommTransferMetrics().outgoing, 0)
+		Equal(addon:GetCommTransferMetrics().bytes, 0)
+		local frames = {}
+		for index = 2, #addon.wire do
+			frames[#frames + 1] = addon.wire[index][2]
+		end
+		local record, operation = ReadRecord(addon, frames)
+		Equal(operation, "QTLQ")
+		Equal(record.title, latest)
+	end
+)
 
 QuestTogether:RegisterTest("server channel refusal stays in QT diagnostics independently of chat windows and native success", function()
 	local addon, completed = ChannelNoticeFixture(), 0
@@ -4137,4 +4252,57 @@ QuestTogether:RegisterTest("immutable snapshot identity and full UTF8 titles cro
 	Equal(decoded.snapshotId, response.snapshotId)
 	Equal(decoded.entries[1].questTitle, title)
 	Equal(a:EncodeCommRecord("QCRS", { requestId = "comparison", count = 0, entries = {} }), nil)
+end)
+
+QuestTogether:RegisterTest("own bubble policy applies equally to announcements and QT chat without affecting logs or publication", function()
+	local a = NewCommsFixture()
+	a.db = { profile = a:DeepCopy(a.DEFAULTS.profile), global = {} }
+	a.suppressLocalAnnouncementDisplayDuringTests = false
+	local grouped, personal, remote, sent, partySent = false, 0, 0, 0, 0
+	local plate = {}
+	a.API.IsInAnyGroup = function() return grouped end
+	function a:IsSelfSender(name) return name == "MyPlayer-Realm" end
+	function a:IsRuntimeRestrictionTypeActive() return false end
+	function a:ObserveLocalQuestFocusProgress() end
+	function a:SendAnnouncementWireEvent() sent = sent + 1; return true end
+	function a:AnnounceToNonQTParty() partySent = partySent + 1; return true end
+	function a:FindVisiblePlayerNameplateForSender() return plate end
+	function a:PlayAudioCue() end
+	function a:LocalizeAnnouncementEvent(data) return data.text end
+	function a:ShowAnnouncementBubbleOnUnitNameplate(unit)
+		Equal(unit, "player")
+		personal = personal + 1
+	end
+	function a:ShowAnnouncementBubbleOnNameplate(frame)
+		Equal(frame, plate)
+		remote = remote + 1
+	end
+	local function Chat(sender)
+		return a:CHAT_MSG_CHANNEL("CHAT_MSG_CHANNEL", "Hello!", sender, "", a.announcementChannelName)
+	end
+	local event = Event("New own progress")
+	event.senderName = "MyPlayer-Realm"
+	for index, case in ipairs({
+		{ "always", false, true, true },
+		{ "always", true, true, true },
+		{ "solo", false, true, true },
+		{ "solo", true, true, false },
+		{ "hidden", false, true, false },
+		{ "hidden", true, true, false },
+		{ "always", false, false, false },
+		{ "solo", false, true, true }, -- leaving a group permits a new event
+	}) do
+		a.db.profile.ownChatBubbleMode, grouped, a.db.profile.showChatBubbles = case[1], case[2], case[3]
+		local oldPersonal, oldRemote, oldLogs = personal, remote, #a.printed
+		Equal(a:DispatchAnnouncementEvent(event), true)
+		Equal(Chat("MyPlayer-Realm"), true)
+		Equal(personal - oldPersonal, case[4] and 2 or 0)
+		Equal(#a.printed - oldLogs, 2, "own mode must not hide chat logs")
+		Equal(sent, index)
+		Equal(partySent, index)
+		Equal(a:HandleAnnouncementEvent(Event("Other player's progress"), false, true), true)
+		Equal(Chat("Friend-Realm"), true)
+		Equal(remote - oldRemote, case[3] and 2 or 0)
+	end
+	Equal(#a.delayed, 0, "own visibility must not schedule network or replay work")
 end)

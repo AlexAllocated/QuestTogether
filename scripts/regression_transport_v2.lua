@@ -12,6 +12,9 @@ local function Fixture()
 		GetTime = function()
 			return a.now
 		end,
+		Random = function(low)
+			return low
+		end,
 		SendAddonMessage = function(prefix, wire, distribution, target)
 			a.sent[#a.sent + 1] =
 				{ prefix = prefix, wire = wire, distribution = distribution, target = target, at = a.now }
@@ -42,6 +45,251 @@ local function Fixture()
 	a:InitializeTransport()
 	return a
 end
+
+local function ChannelRoute(name, target)
+	return {
+		distribution = "CHANNEL",
+		channelName = name or "QuestTogether",
+		target = target or 7,
+		requiresChannelJoin = true,
+	}
+end
+
+QT:RegisterTest("transport channel backoff grows by name and recovers only after a quiet successful probe", function()
+	local a, route = Fixture(), ChannelRoute()
+	a.native = function()
+		return 7
+	end
+	a.now = a.now + 1
+	for index, delay in ipairs({ 5, 10, 20, 40, 80, 120, 120 }) do
+		local sent, reason, code = a:SendTransportNow("fresh state", "STATE", route)
+		Equal(sent, false)
+		Equal(reason, "rejected")
+		Equal(code, 7)
+		Equal(a:GetTransportMetrics().channelBackoffMaxRemaining, delay)
+		local state, calls = a:GetTransportState(), #a.sent
+		local bytes, packets = state.byteTokens, state.tokens
+		-- Channel list reordering and capitalization cannot bypass the cooldown.
+		a.channelID, route = 19, ChannelRoute("qUeStToGeThEr", 19)
+		local joined = 0
+		function a:EnsureAnnouncementChannelJoined()
+			joined = joined + 1
+			return true
+		end
+		local queued, why, ticket = a:QueueTransportWire("discarded", "STATE", route)
+		Equal(queued, false)
+		Equal(why, "backoff")
+		Equal(ticket, nil)
+		a:RecordTransportChannelRefusal("QuestTogether")
+		Equal(a:GetTransportMetrics().channelBackoffMaxRemaining, delay)
+		a.now = a.now + delay - 0.01
+		local immediate, blocked = a:SendTransportNow("discarded", "STATE", route)
+		Equal(immediate, false)
+		Equal(blocked, "backoff")
+		Equal(joined, 0)
+		Equal(#a.sent, calls)
+		Equal(state.byteTokens, bytes)
+		Equal(state.tokens, packets)
+		Equal(a:GetTransportMetrics().packetRate, 4)
+		a.now = a.now + 0.01
+		Equal(a:GetTransportMetrics().channelProbes or 0, index - 1)
+	end
+	a.native = nil
+	Equal(a:SendTransportNow("recovery", "STATE", route), true)
+	Equal(a.sent[#a.sent].target, 19)
+	local admitted, why = a:QueueTransportWire("too early", "STATE", route)
+	Equal(admitted, false)
+	Equal(why, "backoff")
+	a:Advance(5)
+	Equal(a:GetTransportMetrics().channelRecoveries, 1)
+	Equal(a:GetTransportMetrics().channelBackoffChannels, 0)
+	a.native = function()
+		return 7
+	end
+	Equal(a:SendTransportNow("new failure", "STATE", route), false)
+	Equal(a:GetTransportMetrics().channelBackoffMaxRemaining, 5)
+end)
+
+QT:RegisterTest("transport channel cooldown settles stale work once without spending healthy route budgets", function()
+	local a, route, calls, current = Fixture(), ChannelRoute(), {}, true
+	local function Queue(label, options)
+		options = options or {}
+		options.onComplete = function(sent, reason)
+			calls[label] = (calls[label] or 0) + 1
+			Equal(sent, false)
+			Equal(reason, label)
+		end
+		local accepted, _, ticket = a:QueueTransportWire(label, "STATE", route, options)
+		assert(accepted)
+		return ticket
+	end
+	local owner = {}
+	local blocked = Queue("backoff")
+	local expired = Queue("expired", { expires = a.now + 0.5 })
+	local stale = Queue("cancelled", {
+		isCurrent = function()
+			return current
+		end,
+	})
+	local cancelled = Queue("owner cancelled", { owner = owner })
+	a:RecordTransportChannelRefusal(route.channelName)
+	a:CancelTransportOwner(owner, "owner cancelled")
+	current = false
+	assert(a:QueueTransportWire("party", "QCMP", { distribution = "PARTY" }, { priority = "bulk" }))
+	assert(a:Queue("whisper", { priority = "event" }))
+	assert(a:QueueTransportWire("other channel", "STATE", ChannelRoute("QTGeoHealthy"), { priority = "active" }))
+	a:Advance(1)
+	a:DrainTransport()
+	Equal(blocked.status, "backoff")
+	Equal(expired.status, "expired")
+	Equal(stale.status, "cancelled")
+	Equal(cancelled.status, "owner cancelled")
+	Equal(#a.sent, 3)
+	Equal(a:GetTransportMetrics().attempts, 3)
+	Equal(a:GetTransportMetrics().packetTokens, 1)
+	Equal(a:GetTransportMetrics().queuedPackets, 0)
+	a:Advance(10)
+	for _, label in ipairs({ "backoff", "expired", "cancelled", "owner cancelled" }) do
+		Equal(calls[label], 1)
+	end
+	Equal(#a.sent, 3)
+	Equal(#a.errors, 0)
+	local b, settled = Fixture(), {}
+	b.native = function()
+		return 7
+	end
+	local tickets = {}
+	for _, label in ipairs({ "rejected", "backoff" }) do
+		local admitted, _, ticket = b:QueueTransportWire(label, "STATE", route, {
+			onComplete = function(sent, reason)
+				Equal(sent, false)
+				settled[#settled + 1] = reason
+			end,
+		})
+		assert(admitted)
+		tickets[#tickets + 1] = ticket
+	end
+	b:Advance(1)
+	b:DrainTransport()
+	b:Advance(10)
+	Equal(tickets[1].status, "rejected")
+	Equal(tickets[2].status, "backoff")
+	Equal(settled[1], "rejected")
+	Equal(settled[2], "backoff")
+	Equal(#settled, 2)
+	Equal(#b.sent, 1)
+	Equal(#b.errors, 1) -- The native refusal is reported once; no callback assertion failed.
+end)
+
+QT:RegisterTest(
+	"transport channel jitter stays bounded and cooldown history survives only its intended lifetime",
+	function()
+		local a, route = Fixture(), ChannelRoute()
+		a.API.Random = function(low, high)
+			Equal(low, 0)
+			Equal(high, 100)
+			return high
+		end
+		a.native = function()
+			return 7
+		end
+		a.now = a.now + 1
+		for _, delay in ipairs({ 5.5, 11, 22, 44, 88, 120, 120 }) do
+			Equal(a:SendTransportNow("state", "STATE", route), false)
+			assert(math.abs(a:GetTransportMetrics().channelBackoffMaxRemaining - delay) < 0.000001)
+			a.now = a.now + delay
+		end
+		local b = Fixture()
+		b:RecordTransportChannelRefusal("QuestTogether")
+		b:EndTransportSession()
+		b:ResumeTransportSession()
+		local admitted, reason = b:QueueTransportWire("state", "STATE", route)
+		Equal(admitted, false)
+		Equal(reason, "backoff")
+		b:ResetTransport()
+		b:InitializeTransport()
+		Equal(b:GetTransportMetrics().channelBackoffChannels, 0)
+		for index = 1, 40 do
+			b:RecordTransportChannelRefusal("QTGeo" .. index)
+			assert(b:GetTransportMetrics().channelBackoffChannels <= 32)
+		end
+		b:Advance(601)
+		Equal(b:GetTransportMetrics().channelBackoffChannels, 0)
+		b:RecordTransportChannelRefusal("QuestTogether")
+		b.now = 1
+		Equal(b:GetTransportMetrics().channelBackoffChannels, 0)
+		assert(b:QueueTransportWire("new clock", "STATE", route))
+	end
+)
+
+QT:RegisterTest("transport channel probes preserve throttle tickets and never replay ambiguous sends", function()
+	local a, route, completions = Fixture(), ChannelRoute(), 0
+	a:RecordTransportChannelRefusal(route.channelName)
+	a.now = a.now + 5
+	a.native = function()
+		return #a.sent == 1 and 3 or 8
+	end
+	local admitted, _, ticket = a:QueueTransportWire("one probe", "PING", route, {
+		onComplete = function()
+			completions = completions + 1
+		end,
+	})
+	assert(admitted)
+	a:DrainTransport()
+	Equal(ticket.status, "queued")
+	Equal(completions, 0)
+	Equal(a:GetTransportMetrics().throttled, 1)
+	Equal(a:GetTransportMetrics().packetRate, 1)
+	a:Advance(1)
+	Equal(ticket.status, "ambiguous")
+	Equal(completions, 1)
+	a:RecordTransportChannelRefusal(route.channelName)
+	Equal(a:GetTransportMetrics().channelBackoffMaxRemaining, 10)
+	local sent, reason = a:SendTransportNow("not a retry", "PING", route)
+	Equal(sent, false)
+	Equal(reason, "backoff")
+	a:Advance(200)
+	Equal(#a.sent, 2)
+	Equal(completions, 1)
+end)
+
+QT:RegisterTest("transport reentrant refusals and resets cannot turn a probe into a recovered old lifetime", function()
+	local a, route = Fixture(), ChannelRoute()
+	a:RecordTransportChannelRefusal(route.channelName)
+	a.now = a.now + 5
+	a.native = function()
+		a:RecordTransportChannelRefusal(route.channelName)
+		return 0
+	end
+	Equal(a:SendTransportNow("probe", "STATE", route), true)
+	Equal(a:GetTransportMetrics().channelBackoffMaxRemaining, 10)
+	a:Advance(5)
+	Equal(a:GetTransportMetrics().channelRecoveries or 0, 0)
+	local admitted, reason = a:QueueTransportWire("blocked", "STATE", route)
+	Equal(admitted, false)
+	Equal(reason, "backoff")
+	a.now = a.now + 5
+	a.native = function()
+		a:ResetTransport()
+		a:InitializeTransport()
+		return 7
+	end
+	a:SendTransportNow("old generation", "STATE", route)
+	Equal(a:GetTransportMetrics().channelBackoffChannels, 0)
+	assert(a:QueueTransportWire("new generation", "STATE", route))
+	local b = Fixture()
+	b:RecordTransportChannelRefusal(route.channelName)
+	b.now = b.now + 5
+	b.native = function()
+		b:EndTransportSession()
+		b:ResumeTransportSession()
+		return 0
+	end
+	Equal(b:SendTransportNow("suspended generation", "STATE", route), true)
+	b:Advance(5)
+	Equal(b:GetTransportMetrics().channelRecoveries or 0, 0)
+	Equal(b:GetTransportMetrics().channelBackoffChannels, 1)
+end)
 
 QT:RegisterTest("transport v2 shares empty byte and packet budgets across nearby and queued sends", function()
 	local a, result = Fixture(), {}

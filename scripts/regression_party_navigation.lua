@@ -13,6 +13,7 @@ local function Fixture(name)
 		owned = { [1] = 1, [2] = 2 },
 		wire = {},
 		writes = {},
+		audioCues = {},
 		ignored = {},
 		partyMembers = {},
 		partyMemberOrder = {},
@@ -20,6 +21,9 @@ local function Fixture(name)
 		geographicCommsState = {},
 		commPrefix = "QuestTogether",
 	}, { __index = QT })
+	function a:PlayAudioCue(key, identity)
+		self.audioCues[#self.audioCues + 1] = { key = key, identity = identity }
+	end
 	a.API = {
 		GetTime = function()
 			return a.time
@@ -176,6 +180,8 @@ local function Pair()
 end
 QT:RegisterTest("party navigation combines changes and routes only to the current small party", function()
 	local a, b = Pair()
+	Equal(#a.audioCues, 1)
+	Equal(a.audioCues[1].key, "waypoint")
 	Equal(#a.wire, 1)
 	Equal(a.wire[1].route, "PARTY")
 	Equal(a:GetPartyNavigationPeer(b.name).mapID, 37)
@@ -188,6 +194,14 @@ QT:RegisterTest("party navigation combines changes and routes only to the curren
 	b:Deliver(a)
 	Equal(a:GetPartyNavigationPeer(b.name).questID, 2)
 	Equal(a:GetPartyNavigationPeer(b.name).x, 0.7)
+	Equal(#a.audioCues, 2)
+	Equal(a.audioCues[2].identity, a:GetPartyNavigationPeer(b.name))
+	b:Deliver(a)
+	Equal(#a.audioCues, 2, "a replay cannot repeat the waypoint cue")
+	b:Tick(31)
+	a.time = b.time
+	b:Deliver(a)
+	Equal(#a.audioCues, 2, "idle navigation heartbeats must stay quiet")
 	Equal(#a.writes, 0)
 	a.instance = true
 	a:Tick()
@@ -228,8 +242,54 @@ QT:RegisterTest("party navigation rejects public nonmember malformed replayed an
 	a:Tick()
 	Equal(a:GetPartyNavigationPeer(b.name), nil)
 end)
+QT:RegisterTest("party focus follower query uses current shared intent even while waiting for a shared quest", function()
+	local a, b = Pair()
+	Equal(a:IsPartyQuestFocusFollower(b.name), false, "same focus is not a follow relationship")
+	assert(b:FollowPartyQuestFocus(a.name))
+	b:Tick()
+	b:Deliver(a)
+	Equal(a:IsPartyQuestFocusFollower(b.name), true)
+	Equal(a:IsPartyQuestFocusFollower(a.name), false)
+	-- Follow intent remains true when the leader advances to a quest the
+	-- follower has not accepted; their visible quest IDs now differ.
+	b.owned[2] = nil
+	a.native.questID = 2
+	a:QueuePartyNavigationUpdate()
+	a:Tick()
+	a:Deliver(b)
+	Equal(b.partyNavigationState.followStatus, "Waiting for a shared quest")
+	b:Tick(30)
+	a.time = b.time
+	b:Deliver(a)
+	Equal(a:GetPartyQuestFocusID(b.name), 1)
+	Equal(a:IsPartyQuestFocusFollower(b.name), true)
+	a.ignored[b.name] = true
+	Equal(a:IsPartyQuestFocusFollower(b.name), false)
+	a.ignored[b.name] = nil
+	a.partyMembers[b.name] = nil
+	Equal(a:IsPartyQuestFocusFollower(b.name), false)
+	a.partyMembers[b.name] = { classFile = "MAGE" }
+	b:StopPartyQuestFollow()
+	b:Tick()
+	a.time = b.time
+	b:Deliver(a)
+	Equal(a:IsPartyQuestFocusFollower(b.name), false, "stopping follow replaces the prior intent")
+	assert(b:FollowPartyQuestFocus(a.name))
+	b:Tick()
+	a.time = b.time
+	b:Deliver(a)
+	Equal(a:IsPartyQuestFocusFollower(b.name), true)
+	local peer = a:GetPartyNavigationPeer(b.name)
+	a.time = peer.at + 90
+	Equal(a:IsPartyQuestFocusFollower(b.name), false, "expired intent must not survive until periodic pruning")
+	a.time = peer.at
+	-- An older payload without a follow target is simply unknown/not following.
+	peer.following = nil
+	Equal(a:IsPartyQuestFocusFollower(b.name), false)
+end)
 QT:RegisterTest("party quest following asks before applying external quest navigation", function()
 	local a, b = Pair()
+	a.audioCues = {}
 	b.native.questID = 2
 	b:QueuePartyNavigationUpdate()
 	b:Tick()
@@ -237,12 +297,16 @@ QT:RegisterTest("party quest following asks before applying external quest navig
 	assert(a:FollowPartyQuestFocus(b.name))
 	Equal(a.native.questID, 2)
 	Equal(#a.writes, 1)
+	Equal(#a.audioCues, 1)
+	Equal(a.audioCues[1].key, "focus")
+	Equal(a.audioCues[1].identity.questID, 2)
 	a:Tick()
 	Equal(a.partyNavigationState.following, b.name)
 	for _ = 1, 5 do
 		a:Tick()
 	end
 	Equal(#a.writes, 1)
+	Equal(#a.audioCues, 1, "periodic follow reconciliation must not replay the transition")
 	a.native.questID = 1
 	a:OnPartyNavigationTrackingChanged()
 	a:Tick()
@@ -256,9 +320,11 @@ QT:RegisterTest("party quest following asks before applying external quest navig
 	Equal(a.partyNavigationState.following, nil)
 	Equal(a.native.questID, 1)
 	Equal(#a.writes, 1)
+	Equal(#a.audioCues, 1, "a manual focus selection is not an automatic follow sound")
 end)
 QT:RegisterTest("party focus waits for shared quests and defers restricted native changes", function()
 	local a, b = Pair()
+	a.audioCues = {}
 	a.owned[2] = nil
 	b.owned = { [2] = 2, [3] = 3, [4] = 4 }
 	b.native.questID = 2
@@ -285,6 +351,7 @@ QT:RegisterTest("party focus waits for shared quests and defers restricted nativ
 	end
 	Equal(#a.writes, 0)
 	Equal(a.noticeCount, nil)
+	Equal(#a.audioCues, 0, "unshared quests wait silently")
 	-- Acquiring the friend's already-focused quest does not need a new packet.
 	local received = a:GetPartyNavigationPeer(b.name)
 	a.owned[2] = 2
@@ -294,6 +361,7 @@ QT:RegisterTest("party focus waits for shared quests and defers restricted nativ
 	Equal(a.partyNavigationState.following, b.name)
 	Equal(a.partyNavigationState.followStatus, nil)
 	Equal(#a.writes, 1)
+	Equal(#a.audioCues, 1, "acquiring a shared quest sounds only once the native focus changes")
 	for _ = 1, 5 do a:Tick() end
 	Equal(#a.writes, 1)
 	-- Waiting must also clear if the friend returns to our current native focus.
@@ -309,6 +377,7 @@ QT:RegisterTest("party focus waits for shared quests and defers restricted nativ
 	Equal(a.partyNavigationState.followStatus, nil)
 	Equal(#a.writes, 1)
 	a, b = Pair()
+	a.audioCues = {}
 	assert(a:FollowPartyQuestFocus(b.name))
 	a.blocked = true
 	b.native.questID = 2
@@ -320,6 +389,7 @@ QT:RegisterTest("party focus waits for shared quests and defers restricted nativ
 	a.blocked, a.reject = false, true
 	a:Tick()
 	Equal(#a.writes, 1)
+	Equal(#a.audioCues, 0, "a rejected native focus change must stay quiet")
 	for _ = 1, 5 do
 		a:Tick()
 	end
@@ -360,12 +430,14 @@ QT:RegisterTest("party follow cycles and departures stop while expired snapshots
 end)
 QT:RegisterTest("party navigation options clear sharing without altering personal navigation", function()
 	local a, b = Pair()
+	Equal(#a.audioCues, 1)
 	b.options.sharePartyFocus, b.options.sharePartyWaypoint = false, false
 	b:QueuePartyNavigationUpdate()
 	b:Tick()
 	b:Deliver(a)
 	Equal(a:GetPartyNavigationPeer(b.name).questID, -1)
 	Equal(#a:GetPartyWaypointRows(), 0)
+	Equal(#a.audioCues, 1, "withdrawing a waypoint is silent")
 	Equal(b.native.questID, 1)
 	Equal(b.native.mapID, 37)
 	Equal(a:FollowPartyQuestFocus(b.name), false)
@@ -375,11 +447,18 @@ QT:RegisterTest("party navigation options clear sharing without altering persona
 	b:Deliver(a)
 	a.options.showPartyWaypoints = false
 	Equal(#a:GetPartyWaypointRows(), 0)
+	Equal(#a.audioCues, 2)
+	b.native.x = 0.75
+	b:QueuePartyNavigationUpdate()
+	b:Tick()
+	b:Deliver(a)
+	Equal(#a.audioCues, 2, "hidden party waypoints must not make a sound")
 	a.options.showPartyWaypoints = true
 	Equal(#a:GetPartyWaypointRows(), 1)
 	b:WithdrawPartyNavigation()
 	b:Deliver(a)
 	Equal(#a:GetPartyWaypointRows(), 0)
+	Equal(#a.audioCues, 2, "showing cached waypoints and withdrawal stay silent")
 end)
 QT:RegisterTest("party snapshot pacing sends latest state and bounds idle heartbeats", function()
 	local a = Fixture()

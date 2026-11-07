@@ -359,7 +359,7 @@ QuestTogether.DEFAULTS = {
 		announceBonusObjectiveProgress = true,
 		announceBonusObjectiveCompleted = true,
 		showChatBubbles = true,
-		hideMyOwnChatBubbles = false,
+		ownChatBubbleMode = "always",
 		announceToNonQTParty = true,
 		hidePartyChatReminder = false,
 		showChatLogs = true,
@@ -381,6 +381,8 @@ QuestTogether.DEFAULTS = {
 		questTrackerMode = "hover",
 		questTrackerHideSolo = true,
 		questTrackerSnapToBlizzard = true,
+		questTrackerHideBlizzardTooltip = false,
+		questTrackerTooltipPlacement = "top",
 		questFocusOpacity = 75,
 		reduceMotion = false,
 		compareAutoRefresh = false,
@@ -400,6 +402,8 @@ QuestTogether.DEFAULTS = {
 		showMinimapButton = true,
 		showStartupTips = true,
 		minimapButtonPosition = 225,
+		brokerLeftClick = "pql",
+		brokerRightClick = "menu",
 		sharePlayerLocation = true,
 		shareDeveloperDiagnostics = true,
 		showPlayerLocations = true,
@@ -973,6 +977,27 @@ QuestTogether.API = QuestTogether.API
 			end
 			local ok = pcall(send, message, distribution)
 			return ok
+		end,
+		IsInAnyGroup = function()
+			-- Keep unknown native state distinct from solo, and inspect both
+			-- group categories so instance groups do not depend on roster caches.
+			local function Read(query, ...)
+				if not CanAccessForeignValue(query) or type(query) ~= "function" then return nil end
+				local ok, value = pcall(query, ...)
+				if ok and CanAccessForeignValue(value) and type(value) == "boolean" then return value end
+			end
+			local grouped, raid = Read(IsInGroup), Read(IsInRaid)
+			-- Older clients may omit the category constant. Their generic native
+			-- membership query still decides solo; unreadable data stays unknown.
+			local category, instance = LE_PARTY_CATEGORY_INSTANCE, false
+			if not CanAccessForeignValue(category) then
+				instance = nil
+			elseif category ~= nil then
+				if type(category) == "number" then instance = Read(IsInGroup, category) else instance = nil end
+			end
+			if grouped == true or raid == true or instance == true then return true end
+			if grouped == false and raid == false and instance == false then return false end
+			return nil
 		end,
 		IsInInstanceGroup = function()
 			return IsInGroup(LE_PARTY_CATEGORY_INSTANCE)
@@ -5837,6 +5862,9 @@ function QuestTogether:Enable()
 	self:RegisterRuntimeEvents()
 	self.API.RegisterAddonPrefix(self.commPrefix)
 	self.isEnabled = true
+	self:InitializeQTAudio()
+	if self.RefreshAudioWindow then self:RefreshAudioWindow() end
+	self:RefreshDataBroker()
 	if self.ResumeCommsWorldSession then
 		self:ResumeCommsWorldSession()
 	end
@@ -5905,6 +5933,7 @@ end
 
 function QuestTogether:Disable()
 	self.db.profile.enabled = false
+	self:ResetQTAudio()
 	self.pendingQuestScanAnnouncement = nil
 
 	if not self.isEnabled then
@@ -5934,6 +5963,8 @@ function QuestTogether:Disable()
 		self:ResetRuntimeCoordinator()
 	end
 	self.isEnabled = false
+	if self.RefreshAudioWindow then self:RefreshAudioWindow() end
+	self:RefreshDataBroker()
 	if self.RefreshMinimapPartnerGlow then
 		self:RefreshMinimapPartnerGlow()
 	end
@@ -6585,6 +6616,7 @@ function QuestTogether:OnLogin()
 	if self.InitializeMinimapLauncher then
 		self:InitializeMinimapLauncher()
 	end
+	self:RefreshDataBroker()
 	self:NotifyAddonUpdate()
 	self:InitializeReleaseNotes()
 	self:ScheduleStartupHint()
@@ -6592,6 +6624,7 @@ end
 
 -- Bootstrap event handlers always registered.
 function QuestTogether:ADDON_LOADED(_, loadedAddonName)
+	if self.hasLoggedIn then self:RefreshDataBroker() end
 	if self.TryInstallNameplateHooks and self.isInitialized then
 		self:TryInstallNameplateHooks()
 	end
@@ -6620,6 +6653,7 @@ function QuestTogether:PLAYER_ENTERING_WORLD()
 	if not self.isEnabled then
 		return
 	end
+	if not rawget(self, "audioState") then self:InitializeQTAudio() end
 	self:RefreshPartyRoster()
 	if self.ResumeCommsWorldSession then
 		self:ResumeCommsWorldSession()
@@ -6634,6 +6668,7 @@ function QuestTogether:PLAYER_ENTERING_WORLD()
 end
 
 function QuestTogether:PLAYER_LEAVING_WORLD()
+	self:ResetQTAudio()
 	self:ResetPlayerPhases()
 	self:ResetObjectiveAnnouncements()
 	self:RecordRecentCompanions(true)
@@ -6656,6 +6691,7 @@ function QuestTogether:PLAYER_LEAVING_WORLD()
 end
 
 function QuestTogether:PLAYER_LOGOUT()
+	self:ResetQTAudio()
 	self:RecordRecentCompanions(true)
 	self:ResetRecentCompanionObservation()
 	if self.SavePlayerLocationCache then

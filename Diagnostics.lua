@@ -38,7 +38,7 @@ function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 	end
 	for _, option in ipairs({
 		"showChatBubbles",
-		"hideMyOwnChatBubbles",
+		"ownChatBubbleMode",
 		"showChatLogs",
 		"showProgressFor",
 		"announceProgress",

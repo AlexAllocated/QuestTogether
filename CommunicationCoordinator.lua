@@ -854,6 +854,7 @@ local function DispatchOperation(self, frame, data, sender, context)
 		self:RecordQTPlayerPresence(sender, true)
 		if self:ObservePartyQuestProgress(event, sender, context) then
 			self:ObservePartyQuestSyncEvent(event, sender, context)
+			self:ObservePartyAnnouncementAudio(event, sender)
 		end
 		self:HandleAnnouncementEvent(event, false)
 		return true

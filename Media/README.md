@@ -11,6 +11,7 @@ Release ZIPs must include all addon-owned runtime textures:
 - `Media/PanelCornerFill.tga` and `Media/PanelCornerBorder.tga` — 64×64 white corner artwork for scalable, class-tinted rounded panels. Build from the matching SVGs with `python3 scripts/build_panel_corners.py`.
 - `Media/DeveloperGear.tga` — white, class-tinted gear for signature-verified developer map and minimap dots. Regenerate with `python3 scripts/build_party_icons.py`.
 - `Media/VIPStar.tga` — class-tinted VIP marker, built with `python3 scripts/build_party_icons.py`.
+- `Media/FocusFollower.tga` — white chain-link badge beside a party focus dot when that player follows your quest focus. Regenerate from its SVG with `python3 scripts/build_party_icons.py`.
 - `Media/QuestTogetherVIPIcon.tga` — rear scroll and gold VIP star. Build with `python3 scripts/build_minimap_icon.py --vip`; `--vip-glow` builds the LFQP variant. Both produce PNG and SVG previews.
 - `Media/Minimap{,VIP,Developer}Button.tga` — launcher-specific scroll, star, and gear icons with a metallic contour instead of a circular overlay. `python3 scripts/build_minimap_buttons.py` also builds matching `Highlight` and `Glow` textures. Chat and map artwork stay separate.
 - `Media/PartyWaypoint.tga` — 32×32 class-tinted map pin with a dark outline. Regenerate with `rsvg-convert -o /tmp/qt-party-pin.png Media/PartyWaypoint.svg` then `magick /tmp/qt-party-pin.png -define tga:bits-per-sample=8 -compress none Media/PartyWaypoint.tga`.
@@ -22,6 +23,28 @@ them with `python3 scripts/build_minimap_icon.py`,
 `python3 scripts/build_minimap_ring.py`, respectively. The SVG sources and build
 scripts are development assets; screenshot files in this directory are not
 runtime textures.
+
+## Original audio
+
+`Media/Audio/` contains six original QuestTogether sound cues: Parchment,
+Arcane shimmer, Focus chime, Gentle bell, Soft pluck, and Quest flourish.
+Their editable synthesis source is `scripts/build_audio.py`. No game sounds or
+third-party recordings are sampled. `Media/Audio/NOTICE.txt` records the original
+QuestTogether provenance and copyright.
+
+Each cue has 100 mono 44.1 kHz Ogg Vorbis recordings, `001.ogg` through `100.ogg`.
+The number is a linear amplitude percentage, rendered from the same master
+before encoding. A zero volume plays nothing. These variants provide independent
+QT and event volume controls without changing the game's shared audio settings;
+the selected game audio channel still controls the final listening level.
+
+Regenerate with `python3 scripts/build_audio.py` (development requires ffmpeg
+with libvorbis), or validate existing recordings with `--verify-only`. The
+manifest records the original and decoded levels, durations, hashes and gain
+range. The builder limits concurrency to two single-thread jobs by default.
+Editable master previews and the quiet preview montage are written under
+`.local/audio-design/`, outside the release package. Ship every `.ogg` variant;
+include the manifest and provenance notice. The build script is a development tool.
 
 ## Release-note screenshots
 

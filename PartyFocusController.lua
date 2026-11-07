@@ -156,6 +156,7 @@ function Controller:Apply()
 				else
 					s.followStatus = nil
 					a.publish()
+					if a.onApplied then a.onApplied(peer.questID) end
 				end
 			end
 			status = s.followStatus

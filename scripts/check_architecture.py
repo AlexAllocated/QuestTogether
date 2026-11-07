@@ -17,6 +17,7 @@ def check(root=ROOT, source_overrides=None):
     only(r"\.API\.(?:IsWorldQuest|GetTaskQuestInfoByQuestID)\s*\(", {"QuestObservations.lua"},
          "native quest classification belongs to QuestObservations")
     only(r"\b[A-Za-z_]\w*\.API\.SendAddonMessage\b", {"Transport.lua"}, "native addon sends belong to Transport")
+    only(r"\b(?:PlaySoundFile|StopSound)\s*\(", {"Audio.lua"}, "native QT audio playback belongs to Audio")
     only(r"peerUpdateContext|WithPeerUpdateContext", set(), "peer observations must be explicit")
     only(r"function (?:QuestTogether|QT):(?:ConfigureWindowController|DismissManagedWindow)\(",
          {"WindowController.lua"}, "window lifecycle belongs to WindowController")
@@ -44,7 +45,7 @@ def check(root=ROOT, source_overrides=None):
     toc = [line.strip() for line in (root / "QuestTogether.toc").read_text().splitlines()
            if line.strip() and not line.startswith("#")]
     if len(toc) != len(set(toc)): errors.append("duplicate TOC module")
-    order = [("Core.lua", "Settings.lua"), ("QuestProgressStyle.lua", "QuestCompareWindow.lua"),
+    order = [("Core.lua", "Audio.lua"), ("Audio.lua", "Settings.lua"), ("Core.lua", "Settings.lua"), ("QuestProgressStyle.lua", "QuestCompareWindow.lua"),
              ("QuestProgressStyle.lua", "QuestFocusWindow.lua"), ("OwnedUI.lua", "WindowController.lua"),
              ("WindowController.lua", "WindowTheme.lua"), ("HotPathState.lua", "QuestObservations.lua"),
              ("QuestObservations.lua", "TaskArea.lua"), ("PeerState.lua", "PeerLifecycle.lua"),

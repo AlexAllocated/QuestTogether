@@ -136,7 +136,7 @@ ANNOUNCEMENTS AND QT CHAT
 
 PROGRESS BUBBLES, CELEBRATIONS, AND NAMEPLATES
 
-100. Hide My Own Chat Bubbles removes your personal bubbles while continuing to share your progress with other QT players.
+100. Set My chat bubble to Show only when solo to see your own progress outside a party or raid. Your announcements are still shared with other players.
 101. Quest-completion celebrations and level-up celebrations have separate settings in Where to Announce.
 102. You can turn off reactions to nearby players' celebrations without turning off your own celebration emotes.
 103. Quest Plates can mark quest targets on Blizzard nameplates with an icon, a colored health bar, or both.

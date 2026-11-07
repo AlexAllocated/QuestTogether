@@ -251,7 +251,7 @@ A reminder lets you keep this fallback enabled or turn it off. **Don't remind me
 ## Progress bubbles
 
 - Enable **Where to Announce → Show Chat Bubbles**. Nearby players’ updates appear above their available nameplates; your own updates use a personal on-screen anchor.
-- Enable **Hide My Own Chat Bubbles** if you only want other players’ bubbles. Your progress continues to be shared.
+- Set **My chat bubble** to **Show always**, **Show only when solo**, or **Hide always**. Solo means outside a party or raid. This affects your own display; your progress continues to be shared.
 
 To adjust your personal bubble:
 

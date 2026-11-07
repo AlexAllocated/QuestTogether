@@ -479,6 +479,55 @@ return pushable end or nil,
 			for _, key in ipairs(keys) do _G[key] = saved[key] end
 			addon.IsWorkBlocked = oldBlocked
 		end
+		-- Exercise the actual native own-bubble membership adapter here; live
+		-- policy tests replace only their private addon API table.
+		do
+			local oldGroup, oldRaid, oldCategory = IsInGroup, IsInRaid, LE_PARTY_CATEGORY_INSTANCE
+			local grouped, raid, instance = false, false, false
+			-- Preserve false instance results independently of ordinary groups.
+			local function NativeGroup(category)
+				if category == 2 then return instance end
+				return grouped
+			end
+			local function NativeRaid() return raid end
+			IsInGroup, IsInRaid, LE_PARTY_CATEGORY_INSTANCE = NativeGroup, NativeRaid, 2
+			for _, case in ipairs({
+				{ false, false, false, false },
+				{ true, false, false, true },
+				{ false, true, false, true },
+				{ false, false, true, true },
+				{ true, true, true, true },
+			}) do
+				grouped, raid, instance = case[1], case[2], case[3]
+				assert(addon.API.IsInAnyGroup() == case[4], "native own-bubble group category mismatch")
+			end
+			grouped, raid, instance = false, false, false
+			local before = inaccessibleReads
+			for _, value in ipairs({ secret, inaccessible, "false", 0 }) do
+				grouped = value; assert(addon.API.IsInAnyGroup() == nil); grouped = false
+				raid = value; assert(addon.API.IsInAnyGroup() == nil); raid = false
+				instance = value; assert(addon.API.IsInAnyGroup() == nil); instance = false
+			end
+			grouped = nil; assert(addon.API.IsInAnyGroup() == nil); grouped = false
+			raid = nil; assert(addon.API.IsInAnyGroup() == nil); raid = false
+			instance = nil; assert(addon.API.IsInAnyGroup() == nil); instance = false
+			for _, query in ipairs({ secret, inaccessible, function() error("native membership unavailable") end }) do
+				IsInGroup = query; assert(addon.API.IsInAnyGroup() == nil); IsInGroup = NativeGroup
+				IsInRaid = query; assert(addon.API.IsInAnyGroup() == nil); IsInRaid = NativeRaid
+			end
+			IsInGroup = nil; assert(addon.API.IsInAnyGroup() == nil); IsInGroup = NativeGroup
+			IsInRaid = nil; assert(addon.API.IsInAnyGroup() == nil); IsInRaid = NativeRaid
+			LE_PARTY_CATEGORY_INSTANCE = nil
+			assert(addon.API.IsInAnyGroup() == false, "an absent category must preserve known native solo state")
+			grouped = true; assert(addon.API.IsInAnyGroup() == true); grouped = false
+			raid = true; assert(addon.API.IsInAnyGroup() == true); raid = false
+			for _, value in ipairs({ secret, inaccessible, "2" }) do
+				LE_PARTY_CATEGORY_INSTANCE = value
+				assert(addon.API.IsInAnyGroup() == nil, "unreadable categories must not imply solo")
+			end
+			assert(inaccessibleReads == before, "native group data must never inspect inaccessible values")
+			IsInGroup, IsInRaid, LE_PARTY_CATEGORY_INSTANCE = oldGroup, oldRaid, oldCategory
+		end
 		-- Native party contracts are simulated offline only. Nil InviteUnit return
 		-- means invocation, not confirmed delivery; inaccessible data fails closed.
 		do
