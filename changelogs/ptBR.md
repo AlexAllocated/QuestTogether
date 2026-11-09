@@ -2,6 +2,24 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.1
+
+Esta atualização reduz erros de bate-papo em segundo plano e corrige dicas de missão e avisos de compartilhamento.
+
+### Comunicação em segundo plano
+
+- QuestTogether oculta avisos de jogador não encontrado quando consegue associá-los aos próprios sussurros em segundo plano. Os envios pendentes para esse jogador são cancelados e novas tentativas ficam pausadas por um breve período. As últimas informações de missão conhecidas são mantidas, e as falhas continuam registradas nos diagnósticos.
+- Avisos que também possam ter sido causados por um sussurro seu continuam visíveis.
+
+### Dicas de missão
+
+- “Ocultar a dica de missão da Blizzard” agora fica ativado por padrão em perfis novos e ao redefinir a posição e os ajustes do rastreador. Suas escolhas anteriores são preservadas.
+- A dica da Blizzard só é ocultada enquanto o rastreador de objetivos do grupo está visível e mostra a mesma missão sob o cursor. Isso não ocorre com o rastreador oculto, no modo de edição ou com outras dicas.
+
+### Compartilhamento de missões
+
+- Corrigido o recebimento, pelo QuestTogether, dos avisos da Blizzard sobre compartilhamento de missões.
+
 ## 9.0.0
 
 O QuestTogether passa a usar uma nova forma de comunicação. Para continuar trocando informações, todos os jogadores precisam atualizar o addon.

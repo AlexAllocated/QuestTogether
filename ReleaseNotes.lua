@@ -3,33 +3,27 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "9.0.0",
-	welcome = "QuestTogether has a new communication system. Everyone you use QT with needs to update for your addons to exchange information.",
+	version = "9.0.1",
+	welcome = "This patch reduces background chat errors and fixes quest tooltips and sharing feedback.",
 	sections = {
 		{
-			title = "Update together",
+			title = "Background communication",
 			items = {
-				"This version cannot communicate with older versions of QuestTogether. Your settings, profiles, VIP credentials and quest-focus following preferences are preserved.",
+				"QuestTogether hides “player not found” notices caused by its background whispers, cancels queued messages to that player and briefly pauses further attempts. Last-known quest information is kept, and failures remain in diagnostics.",
+				"Errors from your own whispers remain visible when their source is uncertain.",
 			},
 		},
 		{
-			title = "A new way to connect",
+			title = "Quest tooltips",
 			items = {
-				"QT uses channel member lists to discover players, then exchanges addon data through whispers and party channels. It no longer sends addon messages into custom chat channels.",
-				"Public updates can reach you through other QT players, with their source verified before use. Your current zone and the zone you are viewing take priority. Coverage builds gradually; some players may remain unreachable.",
+				"“Hide Blizzard quest tooltip” is now on by default for new profiles and after resetting the tracker layout. Existing choices are preserved.",
+				"Blizzard’s quest tooltip is hidden only while the Party Objective Tracker is visible and showing that same hovered quest. Hidden trackers, Edit Mode and unrelated tooltips are left alone.",
 			},
 		},
 		{
-			title = "Sharing and reliability",
+			title = "Quest sharing",
 			items = {
-				"Party quest logs, objectives, focus, waypoints and private replies still travel directly. Diagnostic data is shared only with the verified developer when you allow it. Your sharing settings still apply.",
-				"Background traffic is limited to leave room for party updates. Recovery and peer validation have been strengthened, but slow or unavailable delivery is still possible.",
-			},
-		},
-		{
-			title = "Party Objective Tracker",
-			items = {
-				"Character and bag windows, along with item tooltips, now appear in front of POT. It still docks to Blizzard's quest tooltip using your chosen placement.",
+				"Fixed how QuestTogether handles Blizzard’s quest-sharing feedback.",
 			},
 		},
 	},

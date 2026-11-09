@@ -2,6 +2,24 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.1
+
+Questo aggiornamento riduce gli errori di chat dovuti ai messaggi in background e corregge i tooltip e i riscontri sulla condivisione delle missioni.
+
+### Comunicazione in background
+
+- QuestTogether nasconde gli avvisi di giocatore non trovato che riesce ad associare ai propri sussurri in background. Gli invii in coda a quel giocatore vengono annullati e i nuovi tentativi sospesi per poco tempo. Le ultime informazioni note sulle missioni vengono conservate e gli errori restano nella diagnostica.
+- Se un avviso potrebbe dipendere da un sussurro inviato da te, rimane visibile.
+
+### Tooltip delle missioni
+
+- “Nascondi il tooltip missione di Blizzard” è ora attivo per impostazione predefinita nei nuovi profili e dopo il ripristino della disposizione del tracciamento. Le scelte già effettuate vengono mantenute.
+- Il tooltip di Blizzard viene nascosto solo quando il tracciamento obiettivi del gruppo è visibile e mostra la stessa missione sotto il cursore. Il tracciamento nascosto, la modalità Modifica e gli altri tooltip non attivano questa funzione.
+
+### Condivisione delle missioni
+
+- Corretta la ricezione in QuestTogether dei messaggi di Blizzard sulla condivisione delle missioni.
+
 ## 9.0.0
 
 QuestTogether adotta un nuovo sistema di comunicazione. Per scambiarsi informazioni, tutti i giocatori devono aggiornare l’addon.

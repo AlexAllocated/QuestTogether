@@ -4,6 +4,24 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.0.1
+
+This patch reduces background chat errors and fixes quest tooltips and sharing feedback.
+
+### Background communication
+
+- QuestTogether hides “player not found” notices caused by its background whispers, cancels queued messages to that player and briefly pauses further attempts. Last-known quest information is kept, and failures remain in diagnostics.
+- Errors from your own whispers remain visible when their source is uncertain.
+
+### Quest tooltips
+
+- “Hide Blizzard quest tooltip” is now on by default for new profiles and after resetting the tracker layout. Existing choices are preserved.
+- Blizzard’s quest tooltip is hidden only while the Party Objective Tracker is visible and showing that same hovered quest. Hidden trackers, Edit Mode and unrelated tooltips are left alone.
+
+### Quest sharing
+
+- Fixed how QuestTogether handles Blizzard’s quest-sharing feedback.
+
 ## 9.0.0
 
 QuestTogether has a new communication system. Everyone you use QT with needs to update for your addons to exchange information.

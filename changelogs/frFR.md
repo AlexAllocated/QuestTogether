@@ -2,6 +2,24 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.1
+
+Ce correctif réduit les erreurs de discussion en arrière-plan et corrige les infobulles de quête ainsi que les retours de partage.
+
+### Communication en arrière-plan
+
+- QuestTogether masque les messages « joueur introuvable » liés à ses chuchotements en arrière-plan. Les envois en attente vers ce joueur sont annulés et les nouvelles tentatives suspendues brièvement. Les dernières informations de quête connues sont conservées et les échecs restent consignés dans les diagnostics.
+- Si une erreur peut provenir de vos propres chuchotements, elle reste visible.
+
+### Infobulles de quête
+
+- « Masquer l’infobulle de quête de Blizzard » est désormais activé par défaut pour les nouveaux profils et après une réinitialisation de la disposition du suivi. Vos choix existants sont conservés.
+- L’infobulle de Blizzard est masquée uniquement lorsque le suivi des objectifs du groupe est visible et présente la même quête survolée. Un suivi masqué, le mode Édition et les autres infobulles ne déclenchent pas ce masquage.
+
+### Partage de quêtes
+
+- Correction de la réception des messages de Blizzard relatifs au partage de quêtes dans QuestTogether.
+
 ## 9.0.0
 
 QuestTogether change de système de communication. Pour continuer à échanger des données, tous les joueurs concernés doivent installer cette version.

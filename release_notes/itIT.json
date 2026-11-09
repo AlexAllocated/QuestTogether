@@ -1,35 +1,27 @@
 {
-  "source_sha256": "ea57eba7021ece8fbd0f11ba17e270f4a97957bd83bd4379975569f1db3cc9c7",
+  "source_sha256": "5d34a78c5e890ccc65cca8bd412c923a0a779ca5d1127edf814bb6a9381d92ec",
   "notes": {
-    "version": "9.0.0",
-    "welcome": "QuestTogether adotta un nuovo sistema di comunicazione. Per scambiarsi informazioni, tutti i giocatori devono aggiornare l’addon.",
+    "version": "9.0.1",
+    "welcome": "Questo aggiornamento riduce gli errori di chat dovuti ai messaggi in background e corregge i tooltip e i riscontri sulla condivisione delle missioni.",
     "sections": [
       {
-        "title": "È necessario aggiornare",
+        "title": "Comunicazione in background",
         "items": [
-          "Il nuovo protocollo sostituisce quello precedente: le vecchie versioni di QT non possono comunicare con questa.",
-          "Impostazioni, profili, attivazione VIP e preferenze per seguire la missione di un compagno restano salvati."
+          "QuestTogether nasconde gli avvisi di giocatore non trovato che riesce ad associare ai propri sussurri in background. Gli invii in coda a quel giocatore vengono annullati e i nuovi tentativi sospesi per poco tempo. Le ultime informazioni note sulle missioni vengono conservate e gli errori restano nella diagnostica.",
+          "Se un avviso potrebbe dipendere da un sussurro inviato da te, rimane visibile."
         ]
       },
       {
-        "title": "Come circolano gli aggiornamenti",
+        "title": "Tooltip delle missioni",
         "items": [
-          "I canali personalizzati vengono usati solo per individuare altri utenti di QT. I dati viaggiano tramite sussurri dell’addon e i canali nativi del gruppo.",
-          "I client QT possono inoltrare aggiornamenti pubblici di altri giocatori, dopo averne verificato la provenienza. La ricerca dà precedenza alla zona in cui ti trovi e a quella aperta sulla mappa.",
-          "La scoperta è progressiva: alcuni giocatori isolati possono rimanere irraggiungibili. Non è garantito che ogni aggiornamento raggiunga tutti gli utenti."
+          "“Nascondi il tooltip missione di Blizzard” è ora attivo per impostazione predefinita nei nuovi profili e dopo il ripristino della disposizione del tracciamento. Le scelte già effettuate vengono mantenute.",
+          "Il tooltip di Blizzard viene nascosto solo quando il tracciamento obiettivi del gruppo è visibile e mostra la stessa missione sotto il cursore. Il tracciamento nascosto, la modalità Modifica e gli altri tooltip non attivano questa funzione."
         ]
       },
       {
-        "title": "Condivisione e affidabilità",
+        "title": "Condivisione delle missioni",
         "items": [
-          "Registro missioni, dettagli degli obiettivi, missione selezionata e punti di riferimento del gruppo continuano a essere scambiati direttamente. Lo stesso vale per le risposte private e i dati diagnostici destinati allo sviluppatore. Restano valide le tue scelte di condivisione e la verifica dello sviluppatore.",
-          "I limiti di traffico e memoria lasciano spazio alla comunicazione del gruppo. I tentativi di recupero sono limitati; vengono inoltre controllati con maggiore rigore l’ammissione dei contatti, le zone richieste e la validità degli aggiornamenti."
-        ]
-      },
-      {
-        "title": "Tracciamento obiettivi del gruppo",
-        "items": [
-          "Le finestre del personaggio, le borse e i suggerimenti degli oggetti ora possono coprire il riquadro del gruppo. Rimane possibile agganciarlo al suggerimento della missione."
+          "Corretta la ricezione in QuestTogether dei messaggi di Blizzard sulla condivisione delle missioni."
         ]
       }
     ]

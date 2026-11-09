@@ -1,35 +1,27 @@
 {
-  "source_sha256": "ea57eba7021ece8fbd0f11ba17e270f4a97957bd83bd4379975569f1db3cc9c7",
+  "source_sha256": "5d34a78c5e890ccc65cca8bd412c923a0a779ca5d1127edf814bb6a9381d92ec",
   "notes": {
-    "version": "9.0.0",
-    "welcome": "QuestTogether change de système de communication. Pour continuer à échanger des données, tous les joueurs concernés doivent installer cette version.",
+    "version": "9.0.1",
+    "welcome": "Ce correctif réduit les erreurs de discussion en arrière-plan et corrige les infobulles de quête ainsi que les retours de partage.",
     "sections": [
       {
-        "title": "Une mise à jour nécessaire pour tous",
+        "title": "Communication en arrière-plan",
         "items": [
-          "Le protocole de troisième génération remplace entièrement le précédent. Les anciennes versions de QuestTogether ne peuvent plus échanger de données avec cette version.",
-          "Vos réglages, profils, accès VIP et préférences de suivi de quête sont conservés."
+          "QuestTogether masque les messages « joueur introuvable » liés à ses chuchotements en arrière-plan. Les envois en attente vers ce joueur sont annulés et les nouvelles tentatives suspendues brièvement. Les dernières informations de quête connues sont conservées et les échecs restent consignés dans les diagnostics.",
+          "Si une erreur peut provenir de vos propres chuchotements, elle reste visible."
         ]
       },
       {
-        "title": "Communication et découverte des joueurs",
+        "title": "Infobulles de quête",
         "items": [
-          "Les canaux de discussion personnalisés servent uniquement à repérer des joueurs. Les données de l’addon passent par des messages privés internes ou par le canal de groupe natif.",
-          "Les informations publiques autorisées par vos réglages peuvent être relayées par d’autres utilisateurs de QuestTogether, après vérification de leur provenance.",
-          "La recherche privilégie votre zone actuelle et celle que vous consultez sur la carte. Les joueurs sont découverts progressivement : un joueur isolé peut ne pas être repéré, et la réception des données de toutes les zones n’est pas garantie."
+          "« Masquer l’infobulle de quête de Blizzard » est désormais activé par défaut pour les nouveaux profils et après une réinitialisation de la disposition du suivi. Vos choix existants sont conservés.",
+          "L’infobulle de Blizzard est masquée uniquement lorsque le suivi des objectifs du groupe est visible et présente la même quête survolée. Un suivi masqué, le mode Édition et les autres infobulles ne déclenchent pas ce masquage."
         ]
       },
       {
-        "title": "Partage et fiabilité",
+        "title": "Partage de quêtes",
         "items": [
-          "Le journal de quêtes du groupe, les détails des objectifs, la quête active, les points de passage, les réponses privées et les diagnostics destinés au développeur restent des échanges directs. Vos choix de partage et les vérifications d’autorisation du développeur sont maintenus.",
-          "Le trafic de découverte est limité pour laisser de la capacité aux échanges du groupe. Les nouvelles tentatives, la récupération des messages incomplets et la mémoire utilisée restent bornées ; les connexions entre joueurs, les abonnements aux zones et la durée de validité des données sont davantage contrôlés."
-        ]
-      },
-      {
-        "title": "Suivi des objectifs du groupe",
-        "items": [
-          "Les fenêtres du personnage et des sacs, ainsi que les infobulles d’objets, passent désormais devant le suivi des objectifs du groupe. Son ancrage aux infobulles de quête reste disponible."
+          "Correction de la réception des messages de Blizzard relatifs au partage de quêtes dans QuestTogether."
         ]
       }
     ]

@@ -2,6 +2,24 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.1
+
+Dieses Update verringert Fehlermeldungen durch Hintergrundnachrichten und korrigiert Quest-Tooltips sowie Rückmeldungen beim Teilen von Quests.
+
+### Kommunikation im Hintergrund
+
+- QuestTogether blendet „Spieler nicht gefunden“-Meldungen aus, die seinen Hintergrundnachrichten zugeordnet werden können. Ausstehende Nachrichten an diesen Spieler werden verworfen und weitere Versuche kurz ausgesetzt. Zuletzt bekannte Questdaten bleiben erhalten; Fehler werden weiterhin in der Diagnose erfasst.
+- Kann eine Meldung auch von einer selbst gesendeten Flüsternachricht stammen, bleibt sie sichtbar.
+
+### Quest-Tooltips
+
+- „Blizzards Quest-Tooltip ausblenden“ ist für neue Profile und nach dem Zurücksetzen des Tracker-Layouts standardmäßig aktiviert. Bereits gewählte Einstellungen bleiben erhalten.
+- Blizzards Quest-Tooltip wird nur ausgeblendet, wenn die Gruppen-Zielverfolgung sichtbar ist und dieselbe Quest unter dem Mauszeiger anzeigt. Bei ausgeblendeter Zielverfolgung oder im Bearbeitungsmodus sowie für andere Tooltips greift dies nicht.
+
+### Quests teilen
+
+- Ein Fehler wurde behoben, durch den QuestTogether Blizzards Rückmeldungen zum Teilen von Quests nicht korrekt empfing.
+
 ## 9.0.0
 
 QuestTogether stellt seine Kommunikation um. Damit ihr weiterhin QT-Daten austauschen könnt, müssen alle Beteiligten das Addon aktualisieren.

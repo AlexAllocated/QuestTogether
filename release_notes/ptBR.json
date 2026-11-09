@@ -1,35 +1,27 @@
 {
-  "source_sha256": "ea57eba7021ece8fbd0f11ba17e270f4a97957bd83bd4379975569f1db3cc9c7",
+  "source_sha256": "5d34a78c5e890ccc65cca8bd412c923a0a779ca5d1127edf814bb6a9381d92ec",
   "notes": {
-    "version": "9.0.0",
-    "welcome": "O QuestTogether passa a usar uma nova forma de comunicação. Para continuar trocando informações, todos os jogadores precisam atualizar o addon.",
+    "version": "9.0.1",
+    "welcome": "Esta atualização reduz erros de bate-papo em segundo plano e corrige dicas de missão e avisos de compartilhamento.",
     "sections": [
       {
-        "title": "Atualização necessária",
+        "title": "Comunicação em segundo plano",
         "items": [
-          "Esta versão substitui o protocolo de comunicação anterior. Clientes antigos não conseguem trocar dados com os atualizados.",
-          "Suas configurações, perfis, ativação VIP e preferências para seguir a missão de outro jogador são mantidos."
+          "QuestTogether oculta avisos de jogador não encontrado quando consegue associá-los aos próprios sussurros em segundo plano. Os envios pendentes para esse jogador são cancelados e novas tentativas ficam pausadas por um breve período. As últimas informações de missão conhecidas são mantidas, e as falhas continuam registradas nos diagnósticos.",
+          "Avisos que também possam ter sido causados por um sussurro seu continuam visíveis."
         ]
       },
       {
-        "title": "Comunicação entre jogadores",
+        "title": "Dicas de missão",
         "items": [
-          "Os canais personalizados passam a servir apenas para encontrar outros usuários do QT. Os dados são enviados por mensagens de addon via sussurro ou pelos canais nativos do grupo.",
-          "Outros clientes do QT podem retransmitir atualizações públicas, com verificação da origem. A descoberta dá prioridade à sua área atual e à área que você está vendo no mapa.",
-          "A descoberta acontece aos poucos. Jogadores isolados podem não ser encontrados, e não há garantia de que uma atualização chegue a todos os usuários."
+          "“Ocultar a dica de missão da Blizzard” agora fica ativado por padrão em perfis novos e ao redefinir a posição e os ajustes do rastreador. Suas escolhas anteriores são preservadas.",
+          "A dica da Blizzard só é ocultada enquanto o rastreador de objetivos do grupo está visível e mostra a mesma missão sob o cursor. Isso não ocorre com o rastreador oculto, no modo de edição ou com outras dicas."
         ]
       },
       {
-        "title": "Compartilhamento e confiabilidade",
+        "title": "Compartilhamento de missões",
         "items": [
-          "Os registros de missões, detalhes dos objetivos, missão em foco, pontos de referência do grupo, respostas privadas e diagnósticos para o desenvolvedor continuam sendo enviados diretamente. As opções de compartilhamento e a autorização do desenvolvedor continuam valendo.",
-          "Limites de tráfego e memória preservam capacidade para o grupo. As tentativas de recuperação são limitadas, e a rede verifica com mais rigor as conexões entre jogadores, as áreas solicitadas e a validade das atualizações."
-        ]
-      },
-      {
-        "title": "Rastreador de objetivos do grupo",
-        "items": [
-          "As janelas de Personagem e Bolsas e as dicas de itens agora aparecem por cima do rastreador. A opção de posicioná-lo junto à dica de missão continua disponível."
+          "Corrigido o recebimento, pelo QuestTogether, dos avisos da Blizzard sobre compartilhamento de missões."
         ]
       }
     ]

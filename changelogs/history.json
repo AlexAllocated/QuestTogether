@@ -3,6 +3,372 @@
   "releases": [
     {
       "enUS": {
+        "version": "9.0.0",
+        "welcome": "QuestTogether has a new communication system. Everyone you use QT with needs to update for your addons to exchange information.",
+        "sections": [
+          {
+            "title": "Update together",
+            "items": [
+              "This version cannot communicate with older versions of QuestTogether. Your settings, profiles, VIP credentials and quest-focus following preferences are preserved."
+            ]
+          },
+          {
+            "title": "A new way to connect",
+            "items": [
+              "QT uses channel member lists to discover players, then exchanges addon data through whispers and party channels. It no longer sends addon messages into custom chat channels.",
+              "Public updates can reach you through other QT players, with their source verified before use. Your current zone and the zone you are viewing take priority. Coverage builds gradually; some players may remain unreachable."
+            ]
+          },
+          {
+            "title": "Sharing and reliability",
+            "items": [
+              "Party quest logs, objectives, focus, waypoints and private replies still travel directly. Diagnostic data is shared only with the verified developer when you allow it. Your sharing settings still apply.",
+              "Background traffic is limited to leave room for party updates. Recovery and peer validation have been strengthened, but slow or unavailable delivery is still possible."
+            ]
+          },
+          {
+            "title": "Party Objective Tracker",
+            "items": [
+              "Character and bag windows, along with item tooltips, now appear in front of POT. It still docks to Blizzard's quest tooltip using your chosen placement."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "9.0.0",
+        "welcome": "QuestTogether stellt seine Kommunikation um. Damit ihr weiterhin QT-Daten austauschen könnt, müssen alle Beteiligten das Addon aktualisieren.",
+        "sections": [
+          {
+            "title": "Gemeinsam aktualisieren",
+            "items": [
+              "Ältere QuestTogether-Versionen können mit dieser Version keine Daten austauschen. Eure Einstellungen, Profile, VIP-Freischaltungen und Einstellungen zum Folgen eines Questfokus bleiben erhalten."
+            ]
+          },
+          {
+            "title": "So findet QT andere Spieler",
+            "items": [
+              "Die Mitgliederlisten der Chatkanäle dienen QT nur noch dazu, andere Spieler zu finden. Addon-Daten werden über Flüsternachrichten und Gruppenkanäle übertragen, nicht mehr über benutzerdefinierte Chatkanäle.",
+              "Andere QT-Spieler können öffentliche Meldungen weiterleiten; ihre Herkunft wird vor der Verwendung geprüft. Vorrang haben euer aktuelles Gebiet und das auf der Karte betrachtete Gebiet. Das Netz baut sich nach und nach auf und erreicht möglicherweise nicht jeden Spieler."
+            ]
+          },
+          {
+            "title": "Freigaben und Übertragung",
+            "items": [
+              "Gruppenquestlogs, Questziele, Questfokus, Wegpunkte und private Antworten werden weiterhin direkt übertragen. Diagnosedaten erhält nur der verifizierte Entwickler, sofern ihr sie freigebt. Eure Freigabeeinstellungen gelten unverändert.",
+              "QT begrenzt den Datenverkehr im Hintergrund, damit Platz für Gruppenaktualisierungen bleibt. Verbindungsprüfung und Wiederherstellung wurden verbessert; Verzögerungen oder ausbleibende Übertragungen sind dennoch möglich."
+            ]
+          },
+          {
+            "title": "Gruppen-Zielverfolgung",
+            "items": [
+              "Charakterfenster, Taschen und Gegenstands-Tooltips verdecken nun die Gruppen-Zielverfolgung, statt von ihr überlagert zu werden. Das Andocken an Blizzards Quest-Tooltip bleibt erhalten."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "9.0.0",
+        "welcome": "QuestTogether change de système de communication. Pour continuer à échanger des données, tous les joueurs concernés doivent installer cette version.",
+        "sections": [
+          {
+            "title": "Une mise à jour nécessaire pour tous",
+            "items": [
+              "Le protocole de troisième génération remplace entièrement le précédent. Les anciennes versions de QuestTogether ne peuvent plus échanger de données avec cette version.",
+              "Vos réglages, profils, accès VIP et préférences de suivi de quête sont conservés."
+            ]
+          },
+          {
+            "title": "Communication et découverte des joueurs",
+            "items": [
+              "Les canaux de discussion personnalisés servent uniquement à repérer des joueurs. Les données de l’addon passent par des messages privés internes ou par le canal de groupe natif.",
+              "Les informations publiques autorisées par vos réglages peuvent être relayées par d’autres utilisateurs de QuestTogether, après vérification de leur provenance.",
+              "La recherche privilégie votre zone actuelle et celle que vous consultez sur la carte. Les joueurs sont découverts progressivement : un joueur isolé peut ne pas être repéré, et la réception des données de toutes les zones n’est pas garantie."
+            ]
+          },
+          {
+            "title": "Partage et fiabilité",
+            "items": [
+              "Le journal de quêtes du groupe, les détails des objectifs, la quête active, les points de passage, les réponses privées et les diagnostics destinés au développeur restent des échanges directs. Vos choix de partage et les vérifications d’autorisation du développeur sont maintenus.",
+              "Le trafic de découverte est limité pour laisser de la capacité aux échanges du groupe. Les nouvelles tentatives, la récupération des messages incomplets et la mémoire utilisée restent bornées ; les connexions entre joueurs, les abonnements aux zones et la durée de validité des données sont davantage contrôlés."
+            ]
+          },
+          {
+            "title": "Suivi des objectifs du groupe",
+            "items": [
+              "Les fenêtres du personnage et des sacs, ainsi que les infobulles d’objets, passent désormais devant le suivi des objectifs du groupe. Son ancrage aux infobulles de quête reste disponible."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "9.0.0",
+        "welcome": "Esta versión sustituye el sistema de comunicación de QuestTogether. Todos los jugadores con los que quieras intercambiar datos deberán actualizar el addon.",
+        "sections": [
+          {
+            "title": "Actualización necesaria para todos",
+            "items": [
+              "QuestTogether pasa al protocolo de tercera generación y deja de comunicarse con las versiones anteriores. Para compartir información, todos los participantes deben tener esta versión.",
+              "Se conservan tus ajustes, perfiles, activación VIP y preferencias para seguir la misión de otro jugador."
+            ]
+          },
+          {
+            "title": "Comunicación y búsqueda de jugadores",
+            "items": [
+              "Los canales de chat personalizados se utilizan únicamente para encontrar jugadores. Los datos se envían mediante susurros internos del addon o por el canal de grupo del juego.",
+              "Otros usuarios de QuestTogether pueden retransmitir la información pública que tus ajustes permitan compartir. El origen de esos datos se verifica antes de utilizarlos.",
+              "La búsqueda da prioridad a la zona en la que estás y a la que estás viendo en el mapa. La información aparece de forma progresiva: algunos jugadores aislados pueden quedar sin descubrir y no se garantiza la recepción desde todas las zonas."
+            ]
+          },
+          {
+            "title": "Privacidad y fiabilidad",
+            "items": [
+              "El registro de misiones del grupo, los detalles de objetivos, la misión activa, los puntos de ruta, las respuestas privadas y los diagnósticos para el desarrollador siguen enviándose de forma directa. Se respetan las opciones de compartir datos y la autorización del desarrollador.",
+              "Los límites de tráfico y memoria reservan capacidad para los datos del grupo. También se limitan los reintentos y la recuperación de mensajes incompletos, con comprobaciones más estrictas de las conexiones, las suscripciones a zonas y la vigencia de los datos."
+            ]
+          },
+          {
+            "title": "Seguimiento de objetivos del grupo",
+            "items": [
+              "Las ventanas del personaje y de las bolsas, así como las descripciones de objetos, ahora se muestran por encima del seguimiento de objetivos del grupo. Se mantiene el ajuste de su posición respecto a la descripción de la misión."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "9.0.0",
+        "welcome": "Renovamos la comunicación de QuestTogether. Para compartir datos con otros jugadores, tanto tú como ellos necesitan actualizar a esta versión.",
+        "sections": [
+          {
+            "title": "Todos deben actualizar",
+            "items": [
+              "El nuevo protocolo de tercera generación reemplaza al anterior; esta versión ya no intercambia datos con versiones anteriores de QuestTogether.",
+              "No tienes que configurar todo de nuevo: se mantienen tus ajustes, perfiles, activación VIP y preferencias para seguir la misión de un compañero."
+            ]
+          },
+          {
+            "title": "Cómo se encuentran y se comunican los jugadores",
+            "items": [
+              "Los canales de chat personalizados solo se usan para consultar qué jugadores están presentes. La información del addon viaja por susurros internos y por el canal de grupo del juego.",
+              "Los clientes de QuestTogether pueden actuar como intermediarios para las actualizaciones públicas que permites compartir. Cada dato debe tener su origen verificado antes de aceptarse.",
+              "Se busca primero en tu zona actual y en la zona que consultas en el mapa. Encontrar jugadores lleva tiempo y ocurre de manera progresiva. Un jugador aislado puede no ser descubierto; tampoco se garantiza recibir información de todas las zonas."
+            ]
+          },
+          {
+            "title": "Control del uso compartido y de la conexión",
+            "items": [
+              "Los datos del registro de misiones del grupo, los objetivos, la misión activa, los puntos de ruta, las respuestas privadas y los diagnósticos del desarrollador se mantienen en rutas directas. Tus opciones de compartir información y los requisitos de autorización del desarrollador siguen aplicándose.",
+              "La búsqueda de jugadores tiene límites de tráfico y memoria para reservar espacio a la comunicación del grupo. Los reintentos y la recuperación de mensajes incompletos también están limitados. Se reforzaron las comprobaciones de las conexiones, las suscripciones a zonas y la vigencia de las actualizaciones."
+            ]
+          },
+          {
+            "title": "Seguimiento de objetivos del grupo",
+            "items": [
+              "Al abrir el personaje o las bolsas, esas ventanas y las descripciones de objetos quedan por delante del seguimiento de objetivos del grupo. Se conserva su colocación automática respecto a la descripción de la misión."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "9.0.0",
+        "welcome": "O QuestTogether passa a usar uma nova forma de comunicação. Para continuar trocando informações, todos os jogadores precisam atualizar o addon.",
+        "sections": [
+          {
+            "title": "Atualização necessária",
+            "items": [
+              "Esta versão substitui o protocolo de comunicação anterior. Clientes antigos não conseguem trocar dados com os atualizados.",
+              "Suas configurações, perfis, ativação VIP e preferências para seguir a missão de outro jogador são mantidos."
+            ]
+          },
+          {
+            "title": "Comunicação entre jogadores",
+            "items": [
+              "Os canais personalizados passam a servir apenas para encontrar outros usuários do QT. Os dados são enviados por mensagens de addon via sussurro ou pelos canais nativos do grupo.",
+              "Outros clientes do QT podem retransmitir atualizações públicas, com verificação da origem. A descoberta dá prioridade à sua área atual e à área que você está vendo no mapa.",
+              "A descoberta acontece aos poucos. Jogadores isolados podem não ser encontrados, e não há garantia de que uma atualização chegue a todos os usuários."
+            ]
+          },
+          {
+            "title": "Compartilhamento e confiabilidade",
+            "items": [
+              "Os registros de missões, detalhes dos objetivos, missão em foco, pontos de referência do grupo, respostas privadas e diagnósticos para o desenvolvedor continuam sendo enviados diretamente. As opções de compartilhamento e a autorização do desenvolvedor continuam valendo.",
+              "Limites de tráfego e memória preservam capacidade para o grupo. As tentativas de recuperação são limitadas, e a rede verifica com mais rigor as conexões entre jogadores, as áreas solicitadas e a validade das atualizações."
+            ]
+          },
+          {
+            "title": "Rastreador de objetivos do grupo",
+            "items": [
+              "As janelas de Personagem e Bolsas e as dicas de itens agora aparecem por cima do rastreador. A opção de posicioná-lo junto à dica de missão continua disponível."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "9.0.0",
+        "welcome": "В QuestTogether изменён способ обмена данными. Чтобы продолжать получать сведения друг от друга, всем участникам нужно обновить аддон.",
+        "sections": [
+          {
+            "title": "Обновление требуется всем",
+            "items": [
+              "Новый протокол полностью заменяет прежний. Старая и новая версии QT не могут обмениваться данными.",
+              "Настройки, профили, активация VIP и настройки следования за выбранным заданием другого игрока сохраняются."
+            ]
+          },
+          {
+            "title": "Поиск игроков и обмен данными",
+            "items": [
+              "Пользовательские каналы теперь нужны только для поиска других пользователей QT. Сами данные передаются служебными сообщениями аддона через шёпот и штатные каналы группы.",
+              "Клиенты QT могут пересылать общедоступные обновления других игроков после проверки источника. В первую очередь обрабатываются текущая зона и зона, открытая на карте.",
+              "Поиск идёт постепенно. Игроки без доступных связей с другими клиентами могут остаться не обнаруженными; доставка обновлений всем пользователям не гарантируется."
+            ]
+          },
+          {
+            "title": "Настройки обмена и надёжность",
+            "items": [
+              "Журналы заданий, сведения о целях, выбранное задание и метки группы по-прежнему передаются напрямую. Это также относится к личным ответам и диагностике для разработчика. Существующие настройки обмена и проверка полномочий разработчика сохраняются.",
+              "Ограничения трафика и памяти оставляют ресурсы для обмена внутри группы. Число попыток восстановления ограничено; проверки подключения участников, запросов по зонам и срока действия обновлений стали строже."
+            ]
+          },
+          {
+            "title": "Отслеживание целей группы",
+            "items": [
+              "Окно больше не перекрывает окно персонажа, сумки и подсказки предметов. Привязка к подсказке задания сохранена."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "9.0.0",
+        "welcome": "QuestTogether adotta un nuovo sistema di comunicazione. Per scambiarsi informazioni, tutti i giocatori devono aggiornare l’addon.",
+        "sections": [
+          {
+            "title": "È necessario aggiornare",
+            "items": [
+              "Il nuovo protocollo sostituisce quello precedente: le vecchie versioni di QT non possono comunicare con questa.",
+              "Impostazioni, profili, attivazione VIP e preferenze per seguire la missione di un compagno restano salvati."
+            ]
+          },
+          {
+            "title": "Come circolano gli aggiornamenti",
+            "items": [
+              "I canali personalizzati vengono usati solo per individuare altri utenti di QT. I dati viaggiano tramite sussurri dell’addon e i canali nativi del gruppo.",
+              "I client QT possono inoltrare aggiornamenti pubblici di altri giocatori, dopo averne verificato la provenienza. La ricerca dà precedenza alla zona in cui ti trovi e a quella aperta sulla mappa.",
+              "La scoperta è progressiva: alcuni giocatori isolati possono rimanere irraggiungibili. Non è garantito che ogni aggiornamento raggiunga tutti gli utenti."
+            ]
+          },
+          {
+            "title": "Condivisione e affidabilità",
+            "items": [
+              "Registro missioni, dettagli degli obiettivi, missione selezionata e punti di riferimento del gruppo continuano a essere scambiati direttamente. Lo stesso vale per le risposte private e i dati diagnostici destinati allo sviluppatore. Restano valide le tue scelte di condivisione e la verifica dello sviluppatore.",
+              "I limiti di traffico e memoria lasciano spazio alla comunicazione del gruppo. I tentativi di recupero sono limitati; vengono inoltre controllati con maggiore rigore l’ammissione dei contatti, le zone richieste e la validità degli aggiornamenti."
+            ]
+          },
+          {
+            "title": "Tracciamento obiettivi del gruppo",
+            "items": [
+              "Le finestre del personaggio, le borse e i suggerimenti degli oggetti ora possono coprire il riquadro del gruppo. Rimane possibile agganciarlo al suggerimento della missione."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "9.0.0",
+        "welcome": "QuestTogether의 통신 방식이 3세대 프로토콜로 바뀝니다. 서로 정보를 주고받으려면 함께 사용하는 플레이어 모두 이번 버전으로 업데이트해야 합니다.",
+        "sections": [
+          {
+            "title": "함께 사용하는 플레이어도 업데이트해 주세요",
+            "items": [
+              "이전 통신 프로토콜은 더 이상 사용하지 않습니다. 저장된 설정과 프로필, VIP 인증 정보, 집중 퀘스트 따라가기 설정은 그대로 유지됩니다."
+            ]
+          },
+          {
+            "title": "플레이어 검색과 정보 전달",
+            "items": [
+              "사용자 채널은 참여자 목록을 확인하는 용도로만 사용합니다. 애드온 데이터는 귓속말과 게임의 파티 통신 경로로 전달합니다.",
+              "공개 업데이트는 발신자를 확인한 뒤 다른 QT 클라이언트를 거쳐 전달될 수 있습니다. 현재 지역과 지도에서 보고 있는 지역을 우선하며, 다른 플레이어는 점차 발견됩니다. 연결된 클라이언트가 없는 플레이어는 찾지 못할 수 있으며, 모든 지역의 모든 플레이어에게 전달되는 것은 아닙니다."
+            ]
+          },
+          {
+            "title": "공유 설정과 통신 안정성",
+            "items": [
+              "파티 퀘스트 목록, 목표 세부 정보, 집중 퀘스트, 경유지, 비공개 응답과 개발자 진단 정보는 중계망을 거치지 않고 직접 전달합니다. 기존 공유 설정과 개발자 인증 요건도 유지됩니다.",
+              "통신량과 메모리 사용량에 한도를 두고 파티 통신에 필요한 여유를 확보합니다. 재시도와 복구 횟수는 제한되며, 연결 상대 확인, 구독 처리와 만료·취소된 데이터의 정리를 강화했습니다."
+            ]
+          },
+          {
+            "title": "파티 목표 추적기 표시 순서",
+            "items": [
+              "파티 목표 추적기를 일반 HUD와 같은 계층에 표시하도록 조정했습니다. 이제 캐릭터 창, 가방 창과 아이템 툴팁이 추적기를 덮으며, 퀘스트 툴팁에 붙여 표시하는 기능은 그대로 사용할 수 있습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "9.0.0",
+        "welcome": "QuestTogether 已改用第三代通信协议。要继续互相接收 QT 信息，一起使用的玩家都需要更新到本版本。",
+        "sections": [
+          {
+            "title": "请一同更新",
+            "items": [
+              "旧版通信协议已停用。已保存的设置、配置文件、VIP 凭证及任务追踪跟随设置都会保留。"
+            ]
+          },
+          {
+            "title": "发现玩家与传递信息",
+            "items": [
+              "自定义聊天频道现在只用于获取成员名单；插件数据通过密语和游戏原生的队伍通信渠道发送。",
+              "可公开分享的更新在验证来源后，可以经由其他 QT 客户端转发。系统优先处理你所在的区域及当前查看的地图区域，逐步发现其他玩家。未接入这张网络的玩家可能仍无法被发现，因此不能保证覆盖所有区域或送达每位玩家。"
+            ]
+          },
+          {
+            "title": "分享设置与通信可靠性",
+            "items": [
+              "队伍任务日志、目标详情、任务追踪、路径点、私人回复和开发者诊断数据仍直接传送，不经过转发网络。现有的分享设置和开发者身份验证要求保持不变。",
+              "通信流量和内存占用均设有上限，并为队伍通信预留容量。重试与恢复次数受到限制，同时加强了连接对象验证、订阅管理，以及过期和已取消数据的清理。"
+            ]
+          },
+          {
+            "title": "小队目标追踪器的显示层级",
+            "items": [
+              "小队目标追踪器现使用普通 HUD 层级。角色窗口、背包窗口和物品提示框会正常显示在它上方，同时保留贴靠任务提示框的布局。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "9.0.0",
+        "welcome": "QuestTogether 改用第三代通訊協定。要繼續互相接收 QT 資訊，一起使用的玩家都必須更新至本版本。",
+        "sections": [
+          {
+            "title": "請一起更新",
+            "items": [
+              "舊版通訊協定已停用。已儲存的設定、設定檔、VIP 憑證與任務追蹤跟隨設定都會保留。"
+            ]
+          },
+          {
+            "title": "尋找玩家與傳遞資訊",
+            "items": [
+              "自訂聊天頻道現在只用來取得成員名單；插件資料改透過密語與遊戲原生的隊伍通訊管道傳送。",
+              "可公開分享的更新經過來源驗證後，可以透過其他 QT 用戶端轉送。系統會優先處理你所在的區域及目前查看的地圖區域，再逐步找到其他玩家。尚未連上這個網路的玩家可能無法被找到，因此無法保證涵蓋所有區域或送達每位玩家。"
+            ]
+          },
+          {
+            "title": "分享設定與通訊可靠性",
+            "items": [
+              "隊伍任務日誌、目標詳細資訊、任務追蹤、路徑點、私人回覆與開發者診斷資料仍直接傳送，不經過轉送網路。現有的分享設定與開發者身分驗證要求維持不變。",
+              "通訊流量與記憶體用量都有上限，並為隊伍通訊預留容量。重試與復原次數受到限制，也加強了連線對象驗證、訂閱管理，以及過期和已取消資料的清理。"
+            ]
+          },
+          {
+            "title": "隊伍目標追蹤器的顯示層級",
+            "items": [
+              "隊伍目標追蹤器現在使用一般 HUD 層級。角色視窗、背包視窗與物品提示框會正常顯示在它上方，同時保留貼齊任務提示框的配置方式。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "8.4.0",
         "welcome": "Custom QuestTogether sounds, more flexible bubbles and tooltips, and clearer quest focus indicators.",
         "sections": [

@@ -2,6 +2,24 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.1
+
+Este parche reduce los errores de chat en segundo plano y corrige las descripciones de misión y los avisos al compartir misiones.
+
+### Comunicación en segundo plano
+
+- QuestTogether oculta los avisos de jugador no encontrado que puede vincular a sus susurros en segundo plano. Cancela los envíos pendientes a ese jugador y pausa brevemente los siguientes intentos. Conserva la última información de misiones conocida y registra los fallos en los diagnósticos.
+- Si el aviso también podría deberse a un susurro enviado por ti, sigue mostrándose.
+
+### Descripciones de misión
+
+- «Ocultar la descripción de misión de Blizzard» se activa por defecto en los perfiles nuevos y al restablecer la posición y los ajustes del seguimiento. Se respetan las opciones que ya habías elegido.
+- La descripción de Blizzard solo se oculta cuando el seguimiento de objetivos del grupo está visible y muestra esa misma misión bajo el cursor. No se oculta si el seguimiento está oculto, durante el modo de edición ni cuando se trata de otra descripción emergente.
+
+### Compartir misiones
+
+- Corregida la recepción en QuestTogether de los avisos de Blizzard al compartir misiones.
+
 ## 9.0.0
 
 Esta versión sustituye el sistema de comunicación de QuestTogether. Todos los jugadores con los que quieras intercambiar datos deberán actualizar el addon.

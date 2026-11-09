@@ -1,35 +1,27 @@
 {
-  "source_sha256": "ea57eba7021ece8fbd0f11ba17e270f4a97957bd83bd4379975569f1db3cc9c7",
+  "source_sha256": "5d34a78c5e890ccc65cca8bd412c923a0a779ca5d1127edf814bb6a9381d92ec",
   "notes": {
-    "version": "9.0.0",
-    "welcome": "Renovamos la comunicación de QuestTogether. Para compartir datos con otros jugadores, tanto tú como ellos necesitan actualizar a esta versión.",
+    "version": "9.0.1",
+    "welcome": "Esta actualización reduce los errores de chat en segundo plano y corrige las descripciones de misión y los avisos al compartir misiones.",
     "sections": [
       {
-        "title": "Todos deben actualizar",
+        "title": "Comunicación en segundo plano",
         "items": [
-          "El nuevo protocolo de tercera generación reemplaza al anterior; esta versión ya no intercambia datos con versiones anteriores de QuestTogether.",
-          "No tienes que configurar todo de nuevo: se mantienen tus ajustes, perfiles, activación VIP y preferencias para seguir la misión de un compañero."
+          "Cuando QuestTogether identifica que un aviso de jugador no encontrado corresponde a sus susurros en segundo plano, lo oculta, cancela los envíos pendientes a ese jugador y espera un momento antes de volver a intentarlo. La última información de misiones conocida se conserva y los fallos quedan en los diagnósticos.",
+          "Los avisos que también podrían corresponder a un susurro tuyo siguen visibles."
         ]
       },
       {
-        "title": "Cómo se encuentran y se comunican los jugadores",
+        "title": "Descripciones de misión",
         "items": [
-          "Los canales de chat personalizados solo se usan para consultar qué jugadores están presentes. La información del addon viaja por susurros internos y por el canal de grupo del juego.",
-          "Los clientes de QuestTogether pueden actuar como intermediarios para las actualizaciones públicas que permites compartir. Cada dato debe tener su origen verificado antes de aceptarse.",
-          "Se busca primero en tu zona actual y en la zona que consultas en el mapa. Encontrar jugadores lleva tiempo y ocurre de manera progresiva. Un jugador aislado puede no ser descubierto; tampoco se garantiza recibir información de todas las zonas."
+          "La opción «Ocultar la descripción de misión de Blizzard» ahora viene activada en perfiles nuevos y al restablecer la posición y los ajustes del seguimiento. Las preferencias que ya elegiste se conservan.",
+          "Solo se oculta la descripción de Blizzard si el seguimiento de objetivos del grupo está visible y muestra la misma misión que está bajo el cursor. Si el seguimiento está oculto, estás en modo de edición o se muestra otra descripción emergente, no se aplica este cambio."
         ]
       },
       {
-        "title": "Control del uso compartido y de la conexión",
+        "title": "Compartir misiones",
         "items": [
-          "Los datos del registro de misiones del grupo, los objetivos, la misión activa, los puntos de ruta, las respuestas privadas y los diagnósticos del desarrollador se mantienen en rutas directas. Tus opciones de compartir información y los requisitos de autorización del desarrollador siguen aplicándose.",
-          "La búsqueda de jugadores tiene límites de tráfico y memoria para reservar espacio a la comunicación del grupo. Los reintentos y la recuperación de mensajes incompletos también están limitados. Se reforzaron las comprobaciones de las conexiones, las suscripciones a zonas y la vigencia de las actualizaciones."
-        ]
-      },
-      {
-        "title": "Seguimiento de objetivos del grupo",
-        "items": [
-          "Al abrir el personaje o las bolsas, esas ventanas y las descripciones de objetos quedan por delante del seguimiento de objetivos del grupo. Se conserva su colocación automática respecto a la descripción de la misión."
+          "Se corrigió la recepción de los avisos de Blizzard sobre misiones compartidas en QuestTogether."
         ]
       }
     ]
