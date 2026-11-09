@@ -171,3 +171,8 @@ party synchronization and coexistence with active addons on both clients.
 Offline success cannot replace these checks. The original plan gates publication
 on them; any explicit maintainer decision to release without them must be recorded
 as a release-risk decision, not a passing test result.
+
+On 2026-11-09 the maintainer explicitly authorized: "Publish 9.0.0 now; live
+network tests remain pending." This resolves the publication gate for 9.0.0
+without marking any live network scenario as tested or passed. POT layering is
+the separately confirmed live UI result above.

@@ -1,11 +1,10 @@
 # Major communication upgrade — release preparation
 
-Target: 9.0.0. Implementation review and the final offline validation matrix have passed;
-results are recorded in `PROTOCOL3_VALIDATION.md`. Live Retail and Forever
-network validation remains pending; this draft is not a published release. The
-original release plan requires that gate before publication. Any explicit
-maintainer decision to release without it must be recorded separately, without
-marking those tests passed.
+Target: 9.0.0. Implementation review and the final offline validation matrix have
+passed; results are recorded in `PROTOCOL3_VALIDATION.md`. On 2026-11-09 the
+maintainer explicitly authorized publication with live Retail and Forever
+network validation still pending. That decision does not mark the live checks
+passed. This document records release preparation, not proof of publication.
 
 ## Player-facing facts
 

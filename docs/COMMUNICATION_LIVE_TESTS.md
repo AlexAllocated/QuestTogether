@@ -173,6 +173,11 @@ is not live-client sign-off.
 
 ## Evidence recorded during implementation
 
+- 2026-11-09: the maintainer explicitly authorized publishing 9.0.0 with live
+  Retail/Forever network checks pending. This waives the pre-publication gate for
+  this release; it does not establish remote delivery, directory behavior,
+  three-client relaying, cross-backing-realm reachability, privacy cancellation,
+  party synchronization or coexistence. Those scenarios remain unchecked.
 - 2026-11-09, protocol-3 candidate: the maintainer confirmed that character/item
   UI covers POT correctly after the layering correction ("Covered correctly").
   This establishes the reported UI fix only. No protocol-3 multi-client Retail
