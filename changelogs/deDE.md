@@ -2,6 +2,28 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.0
+
+QuestTogether stellt seine Kommunikation um. Damit ihr weiterhin QT-Daten austauschen könnt, müssen alle Beteiligten das Addon aktualisieren.
+
+### Gemeinsam aktualisieren
+
+- Ältere QuestTogether-Versionen können mit dieser Version keine Daten austauschen. Eure Einstellungen, Profile, VIP-Freischaltungen und Einstellungen zum Folgen eines Questfokus bleiben erhalten.
+
+### So findet QT andere Spieler
+
+- Die Mitgliederlisten der Chatkanäle dienen QT nur noch dazu, andere Spieler zu finden. Addon-Daten werden über Flüsternachrichten und Gruppenkanäle übertragen, nicht mehr über benutzerdefinierte Chatkanäle.
+- Andere QT-Spieler können öffentliche Meldungen weiterleiten; ihre Herkunft wird vor der Verwendung geprüft. Vorrang haben euer aktuelles Gebiet und das auf der Karte betrachtete Gebiet. Das Netz baut sich nach und nach auf und erreicht möglicherweise nicht jeden Spieler.
+
+### Freigaben und Übertragung
+
+- Gruppenquestlogs, Questziele, Questfokus, Wegpunkte und private Antworten werden weiterhin direkt übertragen. Diagnosedaten erhält nur der verifizierte Entwickler, sofern ihr sie freigebt. Eure Freigabeeinstellungen gelten unverändert.
+- QT begrenzt den Datenverkehr im Hintergrund, damit Platz für Gruppenaktualisierungen bleibt. Verbindungsprüfung und Wiederherstellung wurden verbessert; Verzögerungen oder ausbleibende Übertragungen sind dennoch möglich.
+
+### Gruppen-Zielverfolgung
+
+- Charakterfenster, Taschen und Gegenstands-Tooltips verdecken nun die Gruppen-Zielverfolgung, statt von ihr überlagert zu werden. Das Andocken an Blizzards Quest-Tooltip bleibt erhalten.
+
 ## 8.4.0
 
 Wähle, wann deine eigene Chatblase erscheint, passe QT-Hinweistöne an und behalte den Questfokus deiner Gruppe leichter im Blick.

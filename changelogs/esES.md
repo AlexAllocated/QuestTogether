@@ -2,6 +2,30 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.0
+
+Esta versión sustituye el sistema de comunicación de QuestTogether. Todos los jugadores con los que quieras intercambiar datos deberán actualizar el addon.
+
+### Actualización necesaria para todos
+
+- QuestTogether pasa al protocolo de tercera generación y deja de comunicarse con las versiones anteriores. Para compartir información, todos los participantes deben tener esta versión.
+- Se conservan tus ajustes, perfiles, activación VIP y preferencias para seguir la misión de otro jugador.
+
+### Comunicación y búsqueda de jugadores
+
+- Los canales de chat personalizados se utilizan únicamente para encontrar jugadores. Los datos se envían mediante susurros internos del addon o por el canal de grupo del juego.
+- Otros usuarios de QuestTogether pueden retransmitir la información pública que tus ajustes permitan compartir. El origen de esos datos se verifica antes de utilizarlos.
+- La búsqueda da prioridad a la zona en la que estás y a la que estás viendo en el mapa. La información aparece de forma progresiva: algunos jugadores aislados pueden quedar sin descubrir y no se garantiza la recepción desde todas las zonas.
+
+### Privacidad y fiabilidad
+
+- El registro de misiones del grupo, los detalles de objetivos, la misión activa, los puntos de ruta, las respuestas privadas y los diagnósticos para el desarrollador siguen enviándose de forma directa. Se respetan las opciones de compartir datos y la autorización del desarrollador.
+- Los límites de tráfico y memoria reservan capacidad para los datos del grupo. También se limitan los reintentos y la recuperación de mensajes incompletos, con comprobaciones más estrictas de las conexiones, las suscripciones a zonas y la vigencia de los datos.
+
+### Seguimiento de objetivos del grupo
+
+- Las ventanas del personaje y de las bolsas, así como las descripciones de objetos, ahora se muestran por encima del seguimiento de objetivos del grupo. Se mantiene el ajuste de su posición respecto a la descripción de la misión.
+
 ## 8.4.0
 
 Personaliza tus burbujas y los sonidos de QT, coloca el seguimiento junto a las descripciones de misión y distingue mejor quién sigue a quién.

@@ -3,6 +3,550 @@
   "releases": [
     {
       "enUS": {
+        "version": "8.4.0",
+        "welcome": "Custom QuestTogether sounds, more flexible bubbles and tooltips, and clearer quest focus indicators.",
+        "sections": [
+          {
+            "title": "Your own chat bubble",
+            "items": [
+              "Where to Announce now has a My chat bubble dropdown: Show always, Show only when solo, or Hide always. Solo means outside a party or raid. The dropdown stays visible but disabled when Show Chat Bubbles is off.",
+              "Your existing show or hide preference is preserved. Show only when solo hides an active personal bubble when you join a group and allows new bubbles after you leave. Your chat logs, shared announcements, and other players' bubbles are unaffected."
+            ]
+          },
+          {
+            "title": "QuestTogether sounds",
+            "items": [
+              "Six original QT sounds add quiet cues for requests, confirmations, and automatic quest focus changes while following another player. Only those cues are enabled by default.",
+              "Open Audio in settings to choose sounds, preview them, and adjust the master volume and each event's volume. You can mute cues in combat, adjust the spacing between sounds, or turn them off. WoW's Sound Effects settings still apply.",
+              "Optional cues are available for party waypoints, quests ready to turn in, quest turn-ins, objective progress, incoming QT chat, and quest sharing results."
+            ]
+          },
+          {
+            "title": "Party Objective Tracker and quest tooltips",
+            "items": [
+              "When Snap to Blizzard Objective Tracker is enabled, POT can sit together with Blizzard's quest tooltip during a hover. Choose Top, Bottom, or Side under Groups & Sharing or in POT's Edit Mode options. Top is the default; POT uses another edge if there is not enough room.",
+              "POT returns to its normal position when the hover ends. Hide Blizzard quest tooltip is also available, off by default, if you prefer POT alone. It only hides the matching quest tooltip while POT is visible."
+            ]
+          },
+          {
+            "title": "Quest focus indicators",
+            "items": [
+              "A lime-green ring marks the party member whose quest focus you follow. A chain-link badge marks someone following your quest focus; hover their dot for details.",
+              "Focus dots, rings, and badges now stay behind Party Quest Log and other windows instead of showing through them."
+            ]
+          },
+          {
+            "title": "Toolbar support",
+            "items": [
+              "Compatible Data Broker toolbars such as Bazooka can now display a QuestTogether launcher, even when your minimap button is hidden. This integration is optional and adds no required library to QT.",
+              "Under General, choose the Data Broker left- and right-click actions. They open PQL and the QT menu by default; you can also choose Settings, toggle Looking for Questing Partners, or assign no action."
+            ]
+          },
+          {
+            "title": "Communication retries",
+            "items": [
+              "When a QT custom channel rejects communication, QT pauses before trying again. Repeated refusals lengthen the pause from about 5 seconds up to 120 seconds, without holding back party messages, whispers, or healthy channels.",
+              "This avoids repeatedly sending into a blocked channel or building up old messages to replay later. It does not bypass server restrictions or guarantee delivery."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "8.4.0",
+        "welcome": "Wähle, wann deine eigene Chatblase erscheint, passe QT-Hinweistöne an und behalte den Questfokus deiner Gruppe leichter im Blick.",
+        "sections": [
+          {
+            "title": "Deine eigene Chatblase",
+            "items": [
+              "Unter „Wo ankündigen“ bietet „Meine Chatblase“ jetzt „Immer anzeigen“, „Nur solo anzeigen“ und „Immer ausblenden“. Ist „Chatblasen anzeigen“ ausgeschaltet, bleibt die Auswahl sichtbar, ist aber deaktiviert. Deine bisherige Einstellung wird übernommen.",
+              "„Nur solo anzeigen“ blendet deine laufende Blase sofort aus, sobald du einer Gruppe, einem Schlachtzug oder einer Instanzgruppe beitrittst. Nach dem Verlassen können neue Blasen erscheinen. Die Auswahl betrifft nur deine Anzeige; Blasen anderer Spieler, Chatprotokolle und gesendete Ankündigungen bleiben unverändert."
+            ]
+          },
+          {
+            "title": "Eigene QT-Hinweistöne",
+            "items": [
+              "Sechs eigens für QT erstellte Klänge stehen zur Auswahl. Standardmäßig sind dezente Töne für Anfragen und Bestätigungsdialoge sowie für automatische Questfokuswechsel beim Folgen eines Mitspielers aktiv. Alle anderen Ereignistöne sind zunächst ausgeschaltet.",
+              "Unter „Audio“ kannst du QT-Sounds insgesamt ein- oder ausschalten und ihre Gesamtlautstärke regeln. Für jedes Ereignis gibt es einen Schalter, Klangauswahl, Lautstärke und Hörprobe. Außerdem kannst du Töne im Kampf stummschalten, einen Mindestabstand festlegen oder die Audiostandards wiederherstellen. WoWs Einstellungen für Soundeffekte gelten weiterhin.",
+              "Zusätzliche Töne lassen sich für Gruppenwegpunkte, abgabebereite und abgegebene Gruppenquests, Fortschritte bei Gruppenzielen, eingehenden QT-Chat und Ergebnisse beim Teilen von Quests aktivieren."
+            ]
+          },
+          {
+            "title": "Gruppen-Zielverfolgung am Tooltip",
+            "items": [
+              "Ist das Einrasten an Blizzards Zielverfolgung aktiv, kann die Gruppen-Zielverfolgung beim Überfahren einer Quest an deren sichtbarem Blizzard-Tooltip andocken. Unter „Gruppen & Teilen“ und im Bearbeitungsmodus der Gruppen-Zielverfolgung bietet „Position am Tooltip“ die Auswahl „Oben“ (Standard), „Unten“ und „Seitlich“. Die normale Position der fokussierten Ansicht wird getrennt davon verwendet.",
+              "Fehlt Platz auf der gewählten Seite, nutzt QT eine andere Seite. Verlässt der Mauszeiger die Quest, kehrt die Anzeige an ihren üblichen Platz zurück. „Blizzards Quest-Tooltip ausblenden“ ist zunächst ausgeschaltet und betrifft nur den passenden Tooltip zur Quest unter dem Mauszeiger, während die Gruppen-Zielverfolgung sichtbar ist."
+            ]
+          },
+          {
+            "title": "Erkennen, wer welchem Questfokus folgt",
+            "items": [
+              "Ein limettengrüner Ring markiert den Mitspieler, dessen Questfokus du folgst. Ein Kettensymbol zeigt, wer deinem Questfokus folgt; beim Überfahren erhältst du eine Erklärung.",
+              "Fokuspunkte, Ringe und Symbole werden vom Gruppenquestlog und anderen Fenstern verdeckt, statt durch sie hindurch sichtbar zu bleiben."
+            ]
+          },
+          {
+            "title": "QT in kompatiblen Symbolleisten",
+            "items": [
+              "Symbolleisten-Addons wie Bazooka können einen QT-Starter anzeigen, wenn ein anderes installiertes Addon LibDataBroker bereitstellt. QT bringt diese Bibliothek nicht mit und benötigt sie nicht. Der Starter funktioniert unabhängig von der Sichtbarkeit der Minikartenschaltfläche.",
+              "Unter „Allgemein“ kannst du die Data-Broker-Aktionen für Links- und Rechtsklick wählen. Standardmäßig öffnen sie das Gruppenquestlog und das QT-Menü. Außerdem stehen das Umschalten der Suche nach Questpartnern, die Einstellungen oder keine Aktion zur Wahl."
+            ]
+          },
+          {
+            "title": "Weniger abgewiesene Kanalnachrichten",
+            "items": [
+              "Weist ein von QT verwendeter benutzerdefinierter Kanal Nachrichten ab, wartet QT vor neuen Versuchen auf diesem Kanal zunehmend länger: zunächst etwa 5 Sekunden, höchstens 120 Sekunden. Gruppenchat, Flüsternachrichten und andere funktionierende Kanäle können weiter genutzt werden.",
+              "QT vermeidet dabei, alte Nachrichten anzusammeln und später gesammelt zu senden, und versucht nach der Pause wieder aktuelle Nachrichten. Das verringert wiederholte Abweisungen, hebt aber keine Serverbeschränkungen auf und garantiert keine Zustellung."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "8.4.0",
+        "welcome": "Choisissez quand afficher votre bulle personnelle, réglez les sons de QT et repérez plus facilement qui suit les quêtes du groupe.",
+        "sections": [
+          {
+            "title": "Votre bulle de discussion",
+            "items": [
+              "Dans « Où annoncer », « Ma bulle de discussion » remplace l’ancienne option de masquage. Choisissez « Toujours afficher », « Afficher uniquement en solo » ou « Toujours masquer ». Si « Afficher les bulles de discussion » est désactivé, ce choix reste visible mais grisé ; votre ancien choix d’affichage ou de masquage est conservé.",
+              "En mode solo, votre bulle disparaît dès que vous rejoignez un groupe, un raid ou un groupe d’instance. De nouvelles bulles peuvent apparaître une fois le groupe quitté. Ce choix ne modifie que votre affichage : les bulles des autres joueurs, les journaux de discussion et les annonces envoyées restent inchangés."
+            ]
+          },
+          {
+            "title": "Des sons propres à QT",
+            "items": [
+              "Six sons originaux sont disponibles. Par défaut, seules les demandes, les fenêtres de confirmation et les changements automatiques de quête dus au suivi d’un autre joueur émettent un signal discret. Les autres sons d’événement sont désactivés.",
+              "La rubrique Audio permet d’activer les sons de QT et de régler leur volume général. Chaque événement dispose de son propre interrupteur, d’un choix de son, d’un volume et d’un aperçu sonore. Vous pouvez aussi couper les sons en combat, espacer leur lecture et rétablir les réglages par défaut. Les réglages des effets sonores de WoW s’appliquent toujours.",
+              "Des sons facultatifs signalent les points de passage du groupe, ses quêtes prêtes à être rendues ou rendues, la progression de ses objectifs, les messages QT reçus et les résultats du partage de quêtes."
+            ]
+          },
+          {
+            "title": "Le suivi des objectifs près des infobulles",
+            "items": [
+              "Lorsque l’alignement sur le suivi des objectifs de Blizzard est activé, le Suivi des objectifs du groupe peut se placer contre l’infobulle Blizzard de la quête survolée, si celle-ci est visible. Dans « Groupes et partage » ou le mode de modification du suivi, « Position près de l’infobulle » propose « Haut » par défaut, « En dessous » ou « Sur le côté ». Ce placement est distinct de celui de la vue de la quête sélectionnée.",
+              "QT choisit un autre côté si la place manque et reprend le placement habituel à la fin du survol. L’option « Masquer l’infobulle de quête de Blizzard », désactivée par défaut, masque uniquement l’infobulle correspondant à la quête survolée lorsque le suivi du groupe est visible."
+            ]
+          },
+          {
+            "title": "Des repères pour le suivi des quêtes",
+            "items": [
+              "Un anneau vert citron désigne le membre du groupe dont vous suivez la sélection de quête. Un symbole de maillon indique ceux qui suivent la vôtre ; survolez-le pour en savoir plus.",
+              "Le Journal de quêtes du groupe et les autres fenêtres recouvrent les points, anneaux et symboles de sélection, qui ne restent plus visibles à travers ces fenêtres."
+            ]
+          },
+          {
+            "title": "Un raccourci dans les barres compatibles",
+            "items": [
+              "Une barre comme Bazooka peut afficher un raccourci QT si un autre addon installé fournit LibDataBroker. QT n’inclut pas cette bibliothèque et ne l’exige pas. Ce raccourci reste indépendant de l’affichage du bouton de la minicarte.",
+              "Dans « Général », choisissez les actions Data Broker des clics gauche et droit. Par défaut, ils ouvrent le Journal de quêtes du groupe et le menu QT. Vous pouvez aussi activer ou désactiver la recherche de partenaires de quête, ouvrir les Paramètres ou ne déclencher aucune action."
+            ]
+          },
+          {
+            "title": "Des tentatives d’envoi mieux espacées",
+            "items": [
+              "Quand un canal personnalisé utilisé par QT refuse les envois, l’addon attend de plus en plus longtemps avant de réessayer sur ce canal : environ 5 secondes au départ, jusqu’à 120 secondes. Les messages de groupe, les chuchotements et les autres canaux disponibles peuvent continuer à être envoyés.",
+              "QT évite d’accumuler d’anciens messages pour les renvoyer en bloc et essaie de nouveau les messages actuels après l’attente. Cela réduit les refus répétés, sans lever les restrictions du serveur ni garantir la réception."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "8.4.0",
+        "welcome": "Personaliza tus burbujas y los sonidos de QT, coloca el seguimiento junto a las descripciones de misión y distingue mejor quién sigue a quién.",
+        "sections": [
+          {
+            "title": "Tus propias burbujas",
+            "items": [
+              "En Dónde anunciar, Mi burbuja de chat sustituye la opción anterior de ocultar tus burbujas: elige Mostrar siempre, Mostrar solo en solitario u Ocultar siempre. En solitario significa estar fuera de cualquier grupo, banda o grupo de estancia. La opción permanece visible, pero desactivada, si desactivas Mostrar burbujas de chat.",
+              "Se conserva tu preferencia anterior de mostrar u ocultar. El modo en solitario oculta tu burbuja al entrar en un grupo y permite nuevas burbujas al salir. Solo cambia tu pantalla: las burbujas ajenas, los registros de chat y los anuncios enviados siguen igual."
+            ]
+          },
+          {
+            "title": "Sonidos propios de QT",
+            "items": [
+              "QT incluye seis sonidos originales. Por defecto, solo están activados los avisos discretos de solicitudes y diálogos de confirmación, y los cambios automáticos de misión seleccionada al seguir a otro jugador.",
+              "En Audio puedes activar o desactivar los sonidos y ajustar el volumen general. Para cada evento puedes activar el aviso, elegir su sonido y volumen y escuchar una muestra. También hay silencio en combate, intervalo mínimo entre sonidos y restablecimiento de valores. Se respetan el volumen y el silencio de los efectos de sonido de WoW.",
+              "Puedes activar avisos para puntos de ruta del grupo, misiones del grupo listas para entregar, entregas de misiones del grupo, progreso de objetivos del grupo, mensajes entrantes del chat de QT y resultados al compartir misiones. Estos avisos vienen desactivados."
+            ]
+          },
+          {
+            "title": "Seguimiento junto a las descripciones de misión",
+            "items": [
+              "Con Ajustar al seguimiento de objetivos de Blizzard activado, el Seguimiento de objetivos del grupo se acopla a la descripción de Blizzard de la misión bajo el cursor, cuando esa descripción está visible. Esta colocación es independiente del ajuste de la vista de misión seleccionada.",
+              "En Grupos y compartir o en el modo de edición del seguimiento, Posición junto a la descripción permite elegir Arriba, Abajo o Al lado. Arriba es el valor predeterminado; si no hay espacio, se usa otro lado. Al retirar el cursor, el seguimiento recupera su posición habitual.",
+              "Ocultar la descripción de misión de Blizzard viene desactivado. Solo oculta la descripción correspondiente a la misión bajo el cursor mientras el seguimiento del grupo está visible; no oculta las demás descripciones."
+            ]
+          },
+          {
+            "title": "Indicadores de seguimiento de misiones",
+            "items": [
+              "Un aro verde lima señala al miembro del grupo cuya misión seleccionada estás siguiendo. Una insignia de eslabones señala a quien sigue tu selección de misión; pasa el cursor para ver la explicación.",
+              "El Registro de misiones del grupo y otras ventanas ahora cubren los puntos, aros e insignias de misión que quedan detrás."
+            ]
+          },
+          {
+            "title": "Acceso opcional desde Data Broker",
+            "items": [
+              "Las barras compatibles, como Bazooka, pueden mostrar un acceso a QT si otro addon proporciona LibDataBroker. QT no incluye ni exige una biblioteca nueva. Este acceso es independiente del botón del minimapa.",
+              "En General puedes asignar acciones distintas al clic izquierdo y derecho de Data Broker. Por defecto abren el Registro de misiones del grupo y el menú de QT, respectivamente. También puedes elegir activar o desactivar la búsqueda de compañeros para misiones, abrir Ajustes o seleccionar Ninguno."
+            ]
+          },
+          {
+            "title": "Reintentos de comunicación",
+            "items": [
+              "Si WoW rechaza los envíos en un canal personalizado usado por QT, el addon espacia los reintentos de ese canal: empieza con unos 5 segundos y aumenta progresivamente hasta 120. Los envíos al grupo, los susurros y los canales sin problemas siguen disponibles.",
+              "QT evita acumular y reenviar mensajes antiguos y vuelve a intentar enviar mensajes actuales tras la espera. Esto reduce los envíos rechazados repetidos, pero no elimina las restricciones del servidor ni garantiza la entrega."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "8.4.0",
+        "welcome": "Esta actualización agrega opciones para tus burbujas, sonidos de QT e indicadores para seguir misiones, además de nuevas formas de colocar y abrir las herramientas del grupo.",
+        "sections": [
+          {
+            "title": "Cuándo mostrar tu burbuja",
+            "items": [
+              "Busca Mi burbuja de chat en Dónde anunciar. El nuevo menú reemplaza la opción de ocultar tus propias burbujas y ofrece Mostrar siempre, Mostrar solo en solitario y Ocultar siempre. Jugar en solitario significa no estar en un grupo, una banda ni un grupo de instancia. Si Mostrar burbujas de chat está desactivado, el menú sigue visible, pero no se puede usar.",
+              "Tu elección anterior de mostrar u ocultar se conserva. Con Mostrar solo en solitario, la burbuja actual desaparece al unirte a un grupo; al salir, puedes volver a recibir burbujas propias. Esto solo afecta lo que ves: no cambia las burbujas de otros jugadores, los registros de chat ni los anuncios que envías."
+            ]
+          },
+          {
+            "title": "Avisos sonoros de QT",
+            "items": [
+              "Elige entre seis sonidos originales incluidos con QT. Los únicos avisos activados de forma predeterminada son los sonidos discretos de solicitudes, diálogos de confirmación y cambios automáticos de misión seleccionada al seguir a otro jugador.",
+              "Audio reúne el interruptor y el volumen generales, además de opciones para activar cada evento, elegir su sonido y volumen y escuchar una muestra. Puedes silenciar QT en combate, fijar un intervalo mínimo entre sonidos o restablecer los valores. Los avisos también respetan el volumen y el silencio de los efectos de sonido de WoW.",
+              "Los demás avisos son opcionales y empiezan desactivados: puntos de ruta del grupo, misiones del grupo listas para entregar, entregas de misiones del grupo, progreso de objetivos del grupo, mensajes recibidos en el chat de QT y resultados al compartir misiones."
+            ]
+          },
+          {
+            "title": "Colocación junto a la descripción de misión",
+            "items": [
+              "Cuando activas Ajustar al seguimiento de objetivos de Blizzard, el Seguimiento de objetivos del grupo se coloca junto a la descripción nativa de la misión bajo el cursor, si esa descripción está visible. Es una colocación aparte de la usada para la vista de misión seleccionada.",
+              "En Grupos y compartir y en el modo de edición del seguimiento, usa Posición junto a la descripción para elegir Arriba, Abajo o Al lado. La opción inicial es Arriba. Si falta espacio en la pantalla, QT usa otro lado; al quitar el cursor, vuelve a la posición habitual.",
+              "Ocultar la descripción de misión de Blizzard está desactivado de forma predeterminada. Al activarlo, solo se oculta la descripción de la misión señalada mientras el seguimiento del grupo está visible; las demás descripciones no cambian."
+            ]
+          },
+          {
+            "title": "Quién sigue a quién",
+            "items": [
+              "El aro verde lima identifica al compañero cuya misión seleccionada estás siguiendo. La insignia de eslabones identifica al compañero que sigue tu selección de misión, con una explicación al pasar el cursor.",
+              "El Registro de misiones del grupo y otras ventanas ahora cubren los puntos, aros e insignias de misión que quedan detrás."
+            ]
+          },
+          {
+            "title": "Acceso en barras Data Broker",
+            "items": [
+              "QT puede aparecer en barras compatibles, como Bazooka, cuando otro addon proporciona LibDataBroker. No incluye ni requiere una biblioteca nueva, y el acceso funciona independientemente de que se muestre el botón del minimapa.",
+              "Configura las acciones del clic izquierdo y derecho de Data Broker en General. Inicialmente abren el Registro de misiones del grupo y el menú de QT, respectivamente. También puedes activar o desactivar la búsqueda de compañeros para hacer misiones, abrir Configuración o elegir Ninguno."
+            ]
+          },
+          {
+            "title": "Pausas entre reintentos de envío",
+            "items": [
+              "Cuando WoW rechaza envíos en un canal personalizado usado por QT, el addon espera antes de volver a intentar enviar por ese canal. La espera aumenta desde unos 5 segundos hasta 120. Los mensajes de grupo, los susurros y los canales que funcionan siguen disponibles.",
+              "QT evita acumular mensajes viejos para reenviarlos todos juntos; después de la espera, vuelve a intentar enviar mensajes actuales. Esto reduce los intentos rechazados repetidos, pero no quita las restricciones del servidor ni garantiza que los mensajes lleguen."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "8.4.0",
+        "welcome": "Escolha quando ver seu próprio balão, personalize os sons do QT e acompanhe melhor as missões do grupo com novas opções de posição e indicadores.",
+        "sections": [
+          {
+            "title": "Seu balão de bate-papo",
+            "items": [
+              "Em Onde Anunciar, Meu balão de bate-papo substitui a opção anterior de ocultar seus próprios balões. Escolha Sempre mostrar, Mostrar apenas ao jogar solo ou Sempre ocultar. Solo significa estar fora de grupos, raides e grupos de instância. A opção continua visível, mas fica desabilitada quando Mostrar Balões de Fala está desativado.",
+              "A preferência anterior de mostrar ou ocultar é preservada. No modo solo, seu balão atual some assim que você entra em um grupo; ao sair, novos balões próprios podem aparecer. Só a sua exibição muda: balões dos outros jogadores, registros de chat e anúncios enviados continuam iguais."
+            ]
+          },
+          {
+            "title": "Sons do QuestTogether",
+            "items": [
+              "O QT traz seis sons originais. Por padrão, apenas solicitações, caixas de confirmação e mudanças automáticas de missão em foco ao seguir outro jogador têm avisos discretos ativados.",
+              "Em Áudio, ajuste a ativação e o volume gerais e escolha quais eventos emitem avisos, com som e volume próprios e uma opção para ouvir uma amostra. Há opções para silenciar em combate, definir o intervalo mínimo entre sons e restaurar os padrões. Os avisos respeitam também o volume e o silenciamento dos efeitos sonoros do WoW.",
+              "Os avisos opcionais começam desativados: pontos de rota do grupo, missões do grupo prontas para entrega, entregas de missões do grupo, progresso de objetivos do grupo, mensagens recebidas no chat do QT e resultados do compartilhamento de missões."
+            ]
+          },
+          {
+            "title": "Rastreador junto às dicas de missão",
+            "items": [
+              "Com Encaixar no rastreador de objetivos da Blizzard ativado, o Rastreador de objetivos do grupo se encaixa na dica nativa da missão sob o cursor, quando a dica correspondente está visível. Essa posição é independente do encaixe da visualização da missão em foco.",
+              "Em Grupos e compartilhamento ou no modo de edição do rastreador, Posição junto à dica oferece Topo, Embaixo e Ao lado. Topo é o padrão. Se não houver espaço na tela, o QT usa outro lado; ao tirar o cursor da missão, o rastreador volta à posição habitual.",
+              "Ocultar a dica de missão da Blizzard vem desativado. Essa opção só oculta a dica correspondente à missão sob o cursor enquanto o rastreador do grupo está visível; as demais dicas continuam aparecendo."
+            ]
+          },
+          {
+            "title": "Indicadores de acompanhamento de missões",
+            "items": [
+              "Um anel verde-limão marca o integrante cuja missão em foco você está seguindo. Um distintivo de elos marca quem está seguindo sua seleção de missão, com uma explicação ao passar o cursor.",
+              "O Registro de missões do grupo e outras janelas agora cobrem os pontos, anéis e distintivos de missão que ficam atrás delas."
+            ]
+          },
+          {
+            "title": "Atalho opcional em barras Data Broker",
+            "items": [
+              "Barras compatíveis, como Bazooka, podem exibir um atalho do QT quando outro addon fornece LibDataBroker. O QT não inclui nem exige uma biblioteca nova. O atalho é independente da exibição do botão do minimapa.",
+              "Em Geral, escolha as ações dos cliques esquerdo e direito do Data Broker. Por padrão, eles abrem o Registro de missões do grupo e o menu do QT, respectivamente. Também é possível ativar ou desativar a busca por parceiros de missão, abrir Configurações ou escolher Nenhum."
+            ]
+          },
+          {
+            "title": "Intervalos entre tentativas de envio",
+            "items": [
+              "Quando o WoW recusa envios em um canal personalizado usado pelo QT, o addon aumenta gradualmente a espera antes de tentar novamente nesse canal, de cerca de 5 segundos até 120 segundos. Envios para o grupo, sussurros e canais sem problemas continuam disponíveis.",
+              "O QT evita acumular mensagens antigas para reenviá-las todas de uma vez e volta a tentar enviar mensagens atuais após o intervalo. Isso reduz recusas repetidas, mas não remove restrições do servidor nem garante a entrega."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "8.4.0",
+        "welcome": "Настройте свои облачка чата и звуки QT, выбирайте положение подсказок целей группы и следите за тем, кто синхронизирует выбор задания. Также добавлены кнопка для панелей Data Broker и более редкие повторы отправки при отказах канала.",
+        "sections": [
+          {
+            "title": "Свои облачка чата",
+            "items": [
+              "В разделе «Куда объявлять» настройка «Моё облачко чата» заменяет прежнее скрытие своих облачков: «Показывать всегда», «Только при игре в одиночку» или «Скрывать всегда». Игра в одиночку означает отсутствие группы, рейда и группы подземелья. Настройка видна, но недоступна, если выключено «Показывать облачка чата».",
+              "Прежний выбор показа или скрытия сохраняется. В режиме игры в одиночку текущее облачко исчезает сразу при вступлении в группу; после выхода снова могут появляться новые. Это меняет только ваше отображение: чужие облачка, журнал чата и отправляемые объявления не затрагиваются."
+            ]
+          },
+          {
+            "title": "Собственные звуки QT",
+            "items": [
+              "В комплекте шесть оригинальных звуков QT. По умолчанию негромкие сигналы включены для запросов и подтверждений, а также автоматической смены задания при следовании выбору другого игрока. Остальные события по умолчанию без звука.",
+              "В разделе «Звук» доступны общее включение и громкость, отдельные включение, звук, громкость и прослушивание для каждого события, отключение в бою, минимальный интервал и сброс настроек. Настройки звуковых эффектов WoW по-прежнему действуют.",
+              "По желанию включите сигналы путевых точек группы, готовности задания к сдаче, сдачи заданий, прогресса целей, входящего чата QT и результатов предложения задания."
+            ]
+          },
+          {
+            "title": "Подсказки целей группы",
+            "items": [
+              "При включённой привязке к отслеживанию целей Blizzard окно «Отслеживание целей группы» располагается у стандартной подсказки соответствующего задания, пока вы держите на нём курсор. В разделе «Группы и обмен заданиями» и режиме редактирования доступны «Сверху» (по умолчанию), «Снизу» и «Сбоку».",
+              "Если места не хватает, QT выбирает другую сторону. Когда курсор убран, возвращается обычное положение. Опция «Скрывать подсказку задания Blizzard» по умолчанию выключена и скрывает только подсказку соответствующего задания под курсором, пока видно окно целей группы."
+            ]
+          },
+          {
+            "title": "Кто следует выбору задания",
+            "items": [
+              "Ярко-зелёное кольцо отмечает участника группы, за чьим выбором задания вы следуете. Значок звеньев цепи отмечает того, кто следует вашему выбору; наведите курсор для пояснения.",
+              "Точки выбора задания, кольца и значки больше не просвечивают сквозь журнал заданий группы и другие окна."
+            ]
+          },
+          {
+            "title": "Кнопка на панелях Data Broker",
+            "items": [
+              "Совместимые панели, например Bazooka, могут показывать кнопку QT, если другой аддон предоставляет LibDataBroker. QT не включает эту библиотеку и не требует новой зависимости. Видимость кнопки мини-карты на это не влияет.",
+              "В разделе «Общие» настраиваются действия левой и правой кнопок Data Broker. По умолчанию они открывают журнал заданий группы и меню QT. Можно также выбрать переключение поиска напарников для заданий, «Настройки» или «Нет»."
+            ]
+          },
+          {
+            "title": "Повторы отправки сообщений",
+            "items": [
+              "Если канал QT отклоняет отправку, пауза перед новой попыткой постепенно увеличивается примерно с 5 до 120 секунд. Передача группе, личные сообщения и другие работающие каналы не затрагиваются. Старые сообщения не накапливаются для повторной отправки: после паузы QT пробует отправлять текущие данные.",
+              "Это уменьшает число повторных отказов, но не снимает ограничений сервера и не гарантирует доставку."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "8.4.0",
+        "welcome": "Scegli quando mostrare il tuo fumetto, personalizza i suoni di QT e riconosci più facilmente chi segue la missione selezionata nel gruppo.",
+        "sections": [
+          {
+            "title": "Il tuo fumetto di chat",
+            "items": [
+              "In «Dove annunciare», «Il mio fumetto di chat» sostituisce la precedente opzione per nasconderlo. Puoi scegliere «Mostra sempre», «Mostra solo in solitaria» o «Nascondi sempre». Se «Mostra fumetti chat» è disattivato, la scelta resta visibile ma non è utilizzabile; la scelta precedente di mostrare o nascondere il fumetto viene mantenuta.",
+              "Con «Mostra solo in solitaria», il fumetto già visibile scompare appena entri in un gruppo, anche di istanza, o in un’incursione. Dopo averlo lasciato, possono comparire nuovi fumetti. Cambia soltanto ciò che vedi tu: i fumetti altrui, i registri della chat e gli annunci inviati restano invariati."
+            ]
+          },
+          {
+            "title": "Suoni personalizzati di QT",
+            "items": [
+              "Puoi scegliere tra sei suoni originali di QT. Per impostazione predefinita, avvisi discreti accompagnano soltanto richieste, finestre di conferma e cambi automatici della missione attiva quando segui la selezione di un compagno. Gli altri avvisi sono disattivati.",
+              "In Audio puoi attivare i suoni di QT e regolare il volume generale. Ogni evento ha attivazione, scelta del suono, volume e anteprima propri. Sono disponibili anche il silenziamento in combattimento, l’intervallo minimo tra suoni e il ripristino delle impostazioni audio. Restano validi i controlli degli effetti sonori di WoW.",
+              "Puoi attivare avvisi per i punti di riferimento del gruppo, le missioni del gruppo pronte per la consegna o consegnate, i progressi degli obiettivi del gruppo, i messaggi QT ricevuti e gli esiti della condivisione delle missioni."
+            ]
+          },
+          {
+            "title": "Tracciamento obiettivi accanto al tooltip",
+            "items": [
+              "Con l’aggancio al tracciatore obiettivi di Blizzard attivo, il Tracciamento obiettivi del gruppo può affiancare il tooltip Blizzard visibile della missione sotto il cursore. In «Gruppi e condivisione» e nella modalità di modifica del tracciamento, «Posizione accanto al tooltip» offre «In alto» come scelta predefinita, «Sotto» e «Di lato». Questa posizione è separata da quella della vista della missione selezionata.",
+              "Se manca spazio, QT usa un altro lato; quando sposti il cursore fuori dalla missione, torna alla posizione abituale. «Nascondi il tooltip missione di Blizzard» è disattivato per impostazione predefinita e riguarda solo il tooltip corrispondente alla missione sotto il cursore, mentre il tracciamento del gruppo è visibile."
+            ]
+          },
+          {
+            "title": "Indicatori di chi segue le missioni",
+            "items": [
+              "Un anello verde lime identifica il compagno di cui segui la missione attiva. Un simbolo a maglia di catena indica chi segue la tua selezione; passa il cursore per una spiegazione.",
+              "Il Registro missioni del gruppo e le altre finestre coprono punti, anelli e simboli della missione attiva, che non restano più visibili attraverso le finestre."
+            ]
+          },
+          {
+            "title": "QT nelle barre compatibili",
+            "items": [
+              "Le barre di addon come Bazooka possono mostrare un pulsante QT quando un altro addon installato fornisce LibDataBroker. QT non include questa libreria e non la richiede. Il pulsante funziona indipendentemente dalla visibilità di quello sulla minimappa.",
+              "In «Generale» puoi scegliere le azioni Data Broker per clic sinistro e destro: inizialmente aprono il Registro missioni del gruppo e il menu QT. Puoi anche attivare o disattivare la ricerca di compagni di missione, aprire le Impostazioni o scegliere nessuna azione."
+            ]
+          },
+          {
+            "title": "Meno tentativi di invio rifiutati",
+            "items": [
+              "Se un canale personalizzato usato da QT rifiuta gli invii, l’addon aumenta l’attesa prima di riprovare su quel canale: da circa 5 secondi fino a 120 secondi. Chat di gruppo, sussurri e altri canali funzionanti possono continuare a inviare messaggi.",
+              "QT evita di accumulare vecchi messaggi e reinviarli tutti insieme; dopo l’attesa riprova con quelli attuali. Questo riduce i rifiuti ripetuti, ma non elimina le restrizioni del server e non garantisce la consegna."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "8.4.0",
+        "welcome": "내 말풍선과 QT 소리를 세밀하게 설정하고, 파티 목표 툴팁 위치와 퀘스트 선택 따라가기 표시를 확인하세요. Data Broker 실행 버튼과 채널 전송 거부 시 재시도 간격 조정도 추가되었습니다.",
+        "sections": [
+          {
+            "title": "내 말풍선 표시",
+            "items": [
+              "「알릴 위치」의 「내 말풍선」이 기존의 내 말풍선 숨기기 옵션을 대체합니다. 「항상 표시」, 「혼자일 때만 표시」, 「항상 숨김」 중에서 선택하세요. 혼자일 때는 파티·공격대·인스턴스 그룹에 속하지 않은 상태를 뜻합니다. 「말풍선 표시」를 끄면 이 설정은 보이지만 변경할 수 없습니다.",
+              "기존 표시·숨김 설정은 유지됩니다. 혼자일 때만 표시하면 그룹에 들어가는 즉시 현재 내 말풍선이 사라지고, 그룹을 나간 뒤에는 새 말풍선이 표시될 수 있습니다. 내 화면에만 적용되며 다른 플레이어의 말풍선, 채팅 기록, 전송되는 알림에는 영향을 주지 않습니다."
+            ]
+          },
+          {
+            "title": "QT 전용 소리",
+            "items": [
+              "QT에 자체 제작한 소리 여섯 가지가 포함됩니다. 요청·확인 대화상자와 다른 플레이어의 퀘스트 선택을 따라갈 때 발생하는 자동 선택 변경에는 기본으로 조용한 알림음이 켜져 있습니다. 나머지 이벤트 소리는 기본으로 꺼져 있습니다.",
+              "「오디오」에서 전체 사용 여부와 음량, 이벤트별 사용 여부·소리·음량·미리 듣기, 전투 중 음소거, 최소 재생 간격 및 초기화를 설정할 수 있습니다. WoW의 효과음 설정도 그대로 적용됩니다.",
+              "파티 경유지, 파티원의 퀘스트 목표 완료 및 퀘스트 반납, 파티 목표 진행, 받은 QT 채팅, 퀘스트 공유 결과에도 소리를 켤 수 있습니다."
+            ]
+          },
+          {
+            "title": "파티 목표 추적기 툴팁",
+            "items": [
+              "블리자드 목표 추적기에 맞추기를 켜고 퀘스트에 마우스를 올려 해당 기본 툴팁이 표시되면, 파티 목표 추적기가 그 툴팁에 붙습니다. 「그룹 및 공유」와 추적기 편집 모드에서 「상단」(기본값), 「아래」, 「옆」을 선택할 수 있습니다.",
+              "선택한 방향에 화면 공간이 부족하면 다른 방향을 사용하며, 마우스를 떼면 평소 위치로 돌아갑니다. 기본으로 꺼진 블리자드 퀘스트 툴팁 숨기기는 파티 목표 추적기가 보일 때 마우스를 올린 해당 퀘스트의 툴팁만 숨깁니다."
+            ]
+          },
+          {
+            "title": "퀘스트 선택 따라가기 표시",
+            "items": [
+              "연두색 고리는 내가 퀘스트 선택을 따라가는 파티원을, 사슬 배지는 내 선택을 따라가는 파티원을 표시합니다. 마우스를 올리면 설명이 나옵니다.",
+              "퀘스트 선택 점·고리·배지가 파티 퀘스트 목록이나 다른 창 위로 비쳐 보이지 않습니다."
+            ]
+          },
+          {
+            "title": "Data Broker 실행 버튼",
+            "items": [
+              "다른 애드온이 LibDataBroker를 제공하면 Bazooka 같은 호환 도구 모음에 QT 실행 버튼을 표시할 수 있습니다. QT는 해당 라이브러리를 포함하거나 새 필수 의존성으로 요구하지 않습니다. 미니맵 버튼 표시 여부와도 별개입니다.",
+              "「일반」에서 Data Broker 왼쪽·오른쪽 클릭 동작을 설정하세요. 기본값은 각각 파티 퀘스트 목록과 QT 메뉴입니다. 퀘스트 파트너 찾기 전환, 「설정」, 「없음」도 선택할 수 있습니다."
+            ]
+          },
+          {
+            "title": "통신 재시도 간격",
+            "items": [
+              "QT 채널에서 전송이 거부되면 해당 채널의 재시도 대기 시간이 약 5초부터 최대 120초까지 점차 늘어납니다. 파티·귓속말 및 정상 채널은 영향을 받지 않습니다. 지난 메시지를 쌓아 재전송하지 않고, 대기 후 현재 전송할 데이터로 다시 시도합니다.",
+              "반복되는 전송 거부를 줄이는 기능이며 서버 제한을 해제하거나 전달을 보장하지는 않습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "8.4.0",
+        "welcome": "本次更新可自定义个人聊天气泡和 QT 音效，并调整小队目标追踪器的提示框位置。新增任务关注跟随标记、Data Broker 工具栏入口，以及频道拒绝发送时的重试间隔控制。",
+        "sections": [
+          {
+            "title": "个人聊天气泡",
+            "items": [
+              "「通告位置」中的「我的聊天气泡」取代原来的隐藏个人气泡选项，可选「始终显示」「仅单人时显示」或「始终隐藏」。单人指未加入小队、团队或副本队伍。关闭「显示聊天气泡」后，该选项仍可见，但无法更改。",
+              "原有显示或隐藏偏好会保留。选择仅单人时显示后，加入队伍会立即隐藏当前个人气泡；离队后可再次显示新气泡。此设置仅影响本机显示，不影响其他玩家的气泡、聊天记录或发送的通告。"
+            ]
+          },
+          {
+            "title": "QT 专属音效",
+            "items": [
+              "内置六种原创 QT 音效。请求与确认对话框，以及跟随其他玩家时自动切换关注任务，默认启用轻柔提示音；其余事件默认静音。",
+              "「音效」提供总开关和总音量，以及各事件的开关、音效选择、音量和试听，还可设置战斗中静音、最短播放间隔及重置。WoW 原有的声音效果设置仍然生效。",
+              "还可为队伍路标、队友任务可交、队友交付任务、小队目标进度、收到 QT 聊天及任务共享结果开启提示音。"
+            ]
+          },
+          {
+            "title": "小队目标追踪器提示框",
+            "items": [
+              "启用吸附至暴雪目标追踪器后，鼠标悬停任务并出现对应的原生任务提示框时，小队目标追踪器会贴靠该提示框。在「队伍与共享」及追踪器编辑模式中，可选「顶部」（默认）、「下方」或「侧边」。",
+              "所选方向空间不足时，会改用其他方向；移开鼠标后恢复常规位置。「隐藏暴雪任务提示」默认关闭，开启后也只会在小队目标追踪器可见时隐藏当前悬停任务对应的提示框。"
+            ]
+          },
+          {
+            "title": "任务关注跟随标记",
+            "items": [
+              "亮绿色圆环标出你正在跟随其任务关注选择的队友；链环徽标标出正在跟随你选择的队友，悬停可查看说明。",
+              "关注圆点、圆环和徽标会被队伍任务日志及其他窗口遮挡，不再穿透窗口显示。"
+            ]
+          },
+          {
+            "title": "Data Broker 工具栏入口",
+            "items": [
+              "其他插件提供 LibDataBroker 时，Bazooka 等兼容工具栏可显示 QT 启动按钮。QT 不内置该库，也不新增必需依赖。此按钮与小地图按钮的显示设置相互独立。",
+              "「常规」中可设置 Data Broker 左右键操作，默认分别打开队伍任务日志和 QT 菜单。也可选择切换寻找任务伙伴状态、打开「设置」或「无」。"
+            ]
+          },
+          {
+            "title": "通信重试",
+            "items": [
+              "QT 频道拒绝发送时，该频道的重试等待时间会从约 5 秒逐渐延长至最多 120 秒。小队、密语及正常频道不受影响。旧消息不会积压后重发；等待结束后会尝试发送当前数据。",
+              "此调整可减少重复遭拒的发送尝试，但不会解除服务器限制，也不保证送达。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "8.4.0",
+        "welcome": "這次更新讓你自訂個人聊天泡泡與 QT 音效，並調整隊伍目標追蹤器的提示框位置。另有任務追蹤跟隨標記、Data Broker 工具列入口，以及頻道拒絕傳送時的重試間隔調整。",
+        "sections": [
+          {
+            "title": "個人聊天泡泡",
+            "items": [
+              "「公告位置」中的「我的聊天泡泡」取代原本隱藏個人泡泡的選項，可選「一律顯示」、「僅單人時顯示」或「一律隱藏」。單人表示未加入小隊、團隊或副本隊伍。關閉「顯示聊天泡泡」後，此選項仍會顯示，但無法變更。",
+              "原有顯示或隱藏偏好會保留。選擇僅單人時顯示後，加入隊伍會立即隱藏目前的個人泡泡；離隊後可再次顯示新泡泡。這只影響自己的畫面，不影響其他玩家的泡泡、聊天記錄或送出的公告。"
+            ]
+          },
+          {
+            "title": "QT 專屬音效",
+            "items": [
+              "內附六種原創 QT 音效。請求與確認對話框，以及跟隨其他玩家時自動切換追蹤任務，預設會播放輕柔提示音；其他事件預設不播放音效。",
+              "「音效」可設定總開關與總音量、各事件的開關、音效、音量及試聽，另有戰鬥中靜音、最短播放間隔與重設。WoW 原有的音效設定仍然適用。",
+              "也可為隊伍路標、隊友任務可回報、隊友繳交任務、隊伍目標進度、收到 QT 聊天及任務分享結果開啟提示音。"
+            ]
+          },
+          {
+            "title": "隊伍目標追蹤器提示框",
+            "items": [
+              "啟用貼齊暴雪目標追蹤器後，將滑鼠移到任務上並顯示對應的原生任務提示框時，隊伍目標追蹤器會貼齊該提示框。「隊伍與分享」及追蹤器編輯模式提供「頂端」（預設）、「下方」和「側邊」。",
+              "所選方向空間不足時，會改用其他方向；移開滑鼠後恢復平常的位置。「隱藏暴雪任務提示」預設關閉，啟用後也只會在隊伍目標追蹤器可見時隱藏目前滑鼠所指任務對應的提示框。"
+            ]
+          },
+          {
+            "title": "任務追蹤跟隨標記",
+            "items": [
+              "亮綠色圓環標示你正在跟隨其任務選擇的隊友；鏈環徽記標示正在跟隨你選擇的隊友，滑鼠移上去可查看說明。",
+              "任務選擇圓點、圓環與徽記會被隊伍任務日誌及其他視窗遮住，不會穿透視窗顯示。"
+            ]
+          },
+          {
+            "title": "Data Broker 工具列入口",
+            "items": [
+              "其他插件提供 LibDataBroker 時，Bazooka 等相容工具列便可顯示 QT 啟動按鈕。QT 不內附此函式庫，也不新增必要相依套件。此按鈕與小地圖按鈕的顯示設定互相獨立。",
+              "在「一般」中設定 Data Broker 左右鍵動作，預設分別開啟隊伍任務日誌與 QT 選單。也可選擇切換尋找任務夥伴狀態、開啟「設定」或「無」。"
+            ]
+          },
+          {
+            "title": "通訊重試",
+            "items": [
+              "QT 頻道拒絕傳送時，該頻道的重試等待時間會從約 5 秒逐漸延長至最多 120 秒。隊伍、密語及正常頻道不受影響。舊訊息不會累積後重送；等待結束後會嘗試傳送目前的資料。",
+              "這可減少重複遭拒的傳送嘗試，但不會解除伺服器限制，也不保證送達。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "8.3.1",
         "welcome": "More reliable party quest refreshes after sharing quests.",
         "sections": [

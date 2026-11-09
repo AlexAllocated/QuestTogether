@@ -4,6 +4,28 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.0.0
+
+QuestTogether has a new communication system. Everyone you use QT with needs to update for your addons to exchange information.
+
+### Update together
+
+- This version cannot communicate with older versions of QuestTogether. Your settings, profiles, VIP credentials and quest-focus following preferences are preserved.
+
+### A new way to connect
+
+- QT uses channel member lists to discover players, then exchanges addon data through whispers and party channels. It no longer sends addon messages into custom chat channels.
+- Public updates can reach you through other QT players, with their source verified before use. Your current zone and the zone you are viewing take priority. Coverage builds gradually; some players may remain unreachable.
+
+### Sharing and reliability
+
+- Party quest logs, objectives, focus, waypoints and private replies still travel directly. Diagnostic data is shared only with the verified developer when you allow it. Your sharing settings still apply.
+- Background traffic is limited to leave room for party updates. Recovery and peer validation have been strengthened, but slow or unavailable delivery is still possible.
+
+### Party Objective Tracker
+
+- Character and bag windows, along with item tooltips, now appear in front of POT. It still docks to Blizzard's quest tooltip using your chosen placement.
+
 ## 8.4.0
 
 Custom QuestTogether sounds, more flexible bubbles and tooltips, and clearer quest focus indicators.

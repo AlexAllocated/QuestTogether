@@ -2,6 +2,30 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.0
+
+O QuestTogether passa a usar uma nova forma de comunicação. Para continuar trocando informações, todos os jogadores precisam atualizar o addon.
+
+### Atualização necessária
+
+- Esta versão substitui o protocolo de comunicação anterior. Clientes antigos não conseguem trocar dados com os atualizados.
+- Suas configurações, perfis, ativação VIP e preferências para seguir a missão de outro jogador são mantidos.
+
+### Comunicação entre jogadores
+
+- Os canais personalizados passam a servir apenas para encontrar outros usuários do QT. Os dados são enviados por mensagens de addon via sussurro ou pelos canais nativos do grupo.
+- Outros clientes do QT podem retransmitir atualizações públicas, com verificação da origem. A descoberta dá prioridade à sua área atual e à área que você está vendo no mapa.
+- A descoberta acontece aos poucos. Jogadores isolados podem não ser encontrados, e não há garantia de que uma atualização chegue a todos os usuários.
+
+### Compartilhamento e confiabilidade
+
+- Os registros de missões, detalhes dos objetivos, missão em foco, pontos de referência do grupo, respostas privadas e diagnósticos para o desenvolvedor continuam sendo enviados diretamente. As opções de compartilhamento e a autorização do desenvolvedor continuam valendo.
+- Limites de tráfego e memória preservam capacidade para o grupo. As tentativas de recuperação são limitadas, e a rede verifica com mais rigor as conexões entre jogadores, as áreas solicitadas e a validade das atualizações.
+
+### Rastreador de objetivos do grupo
+
+- As janelas de Personagem e Bolsas e as dicas de itens agora aparecem por cima do rastreador. A opção de posicioná-lo junto à dica de missão continua disponível.
+
 ## 8.4.0
 
 Escolha quando ver seu próprio balão, personalize os sons do QT e acompanhe melhor as missões do grupo com novas opções de posição e indicadores.

@@ -2,6 +2,30 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.0
+
+QuestTogether change de système de communication. Pour continuer à échanger des données, tous les joueurs concernés doivent installer cette version.
+
+### Une mise à jour nécessaire pour tous
+
+- Le protocole de troisième génération remplace entièrement le précédent. Les anciennes versions de QuestTogether ne peuvent plus échanger de données avec cette version.
+- Vos réglages, profils, accès VIP et préférences de suivi de quête sont conservés.
+
+### Communication et découverte des joueurs
+
+- Les canaux de discussion personnalisés servent uniquement à repérer des joueurs. Les données de l’addon passent par des messages privés internes ou par le canal de groupe natif.
+- Les informations publiques autorisées par vos réglages peuvent être relayées par d’autres utilisateurs de QuestTogether, après vérification de leur provenance.
+- La recherche privilégie votre zone actuelle et celle que vous consultez sur la carte. Les joueurs sont découverts progressivement : un joueur isolé peut ne pas être repéré, et la réception des données de toutes les zones n’est pas garantie.
+
+### Partage et fiabilité
+
+- Le journal de quêtes du groupe, les détails des objectifs, la quête active, les points de passage, les réponses privées et les diagnostics destinés au développeur restent des échanges directs. Vos choix de partage et les vérifications d’autorisation du développeur sont maintenus.
+- Le trafic de découverte est limité pour laisser de la capacité aux échanges du groupe. Les nouvelles tentatives, la récupération des messages incomplets et la mémoire utilisée restent bornées ; les connexions entre joueurs, les abonnements aux zones et la durée de validité des données sont davantage contrôlés.
+
+### Suivi des objectifs du groupe
+
+- Les fenêtres du personnage et des sacs, ainsi que les infobulles d’objets, passent désormais devant le suivi des objectifs du groupe. Son ancrage aux infobulles de quête reste disponible.
+
 ## 8.4.0
 
 Choisissez quand afficher votre bulle personnelle, réglez les sons de QT et repérez plus facilement qui suit les quêtes du groupe.

@@ -2,6 +2,30 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.0
+
+Renovamos la comunicación de QuestTogether. Para compartir datos con otros jugadores, tanto tú como ellos necesitan actualizar a esta versión.
+
+### Todos deben actualizar
+
+- El nuevo protocolo de tercera generación reemplaza al anterior; esta versión ya no intercambia datos con versiones anteriores de QuestTogether.
+- No tienes que configurar todo de nuevo: se mantienen tus ajustes, perfiles, activación VIP y preferencias para seguir la misión de un compañero.
+
+### Cómo se encuentran y se comunican los jugadores
+
+- Los canales de chat personalizados solo se usan para consultar qué jugadores están presentes. La información del addon viaja por susurros internos y por el canal de grupo del juego.
+- Los clientes de QuestTogether pueden actuar como intermediarios para las actualizaciones públicas que permites compartir. Cada dato debe tener su origen verificado antes de aceptarse.
+- Se busca primero en tu zona actual y en la zona que consultas en el mapa. Encontrar jugadores lleva tiempo y ocurre de manera progresiva. Un jugador aislado puede no ser descubierto; tampoco se garantiza recibir información de todas las zonas.
+
+### Control del uso compartido y de la conexión
+
+- Los datos del registro de misiones del grupo, los objetivos, la misión activa, los puntos de ruta, las respuestas privadas y los diagnósticos del desarrollador se mantienen en rutas directas. Tus opciones de compartir información y los requisitos de autorización del desarrollador siguen aplicándose.
+- La búsqueda de jugadores tiene límites de tráfico y memoria para reservar espacio a la comunicación del grupo. Los reintentos y la recuperación de mensajes incompletos también están limitados. Se reforzaron las comprobaciones de las conexiones, las suscripciones a zonas y la vigencia de las actualizaciones.
+
+### Seguimiento de objetivos del grupo
+
+- Al abrir el personaje o las bolsas, esas ventanas y las descripciones de objetos quedan por delante del seguimiento de objetivos del grupo. Se conserva su colocación automática respecto a la descripción de la misión.
+
 ## 8.4.0
 
 Esta actualización agrega opciones para tus burbujas, sonidos de QT e indicadores para seguir misiones, además de nuevas formas de colocar y abrir las herramientas del grupo.
