@@ -873,16 +873,23 @@ QT:RegisterTest("quest tracker solo option follows actual grouping and keeps Edi
 	local checkbox = panel.HideSoloCheckbox.Checkbox
 	Equal(checkbox:GetChecked(), true)
 	local hideTooltip = panel.HideTooltipCheckbox.Checkbox
-	Equal(hideTooltip:GetChecked(), false)
-	hideTooltip:SetChecked(true); hideTooltip.scripts.OnClick(hideTooltip); a:Drain()
-	Equal(a:GetOption("questTrackerHideBlizzardTooltip"), true)
+	Equal(hideTooltip:GetChecked(), true)
+	hideTooltip:SetChecked(false); hideTooltip.scripts.OnClick(hideTooltip); a:Drain()
+	Equal(a:GetOption("questTrackerHideBlizzardTooltip"), false)
 	checkbox:SetChecked(false); checkbox.scripts.OnClick(checkbox); a:Drain()
 	Equal(a:GetOption("questTrackerHideSolo"), false)
 	panel.RevertButton.scripts.OnClick(); a:Drain()
 	Equal(a:GetOption("questTrackerHideSolo"), true)
-	Equal(a:GetOption("questTrackerHideBlizzardTooltip"), false)
+	Equal(a:GetOption("questTrackerHideBlizzardTooltip"), true)
 	panel.ResetButton.scripts.OnClick(); a:Drain()
 	Equal(a:GetOption("questTrackerHideSolo"), true)
+	Equal(a:GetOption("questTrackerHideBlizzardTooltip"), true)
+	Equal(panel.ResetButton.enabled, false, "default tooltip visibility must not leave Reset enabled")
+	hideTooltip:SetChecked(false); hideTooltip.scripts.OnClick(hideTooltip); a:Drain()
+	Equal(panel.ResetButton.enabled, true, "show-both is a resettable nondefault choice")
+	panel.ResetButton.scripts.OnClick(); a:Drain()
+	Equal(a:GetOption("questTrackerHideBlizzardTooltip"), true)
+	Equal(panel.ResetButton.enabled, false)
 	panel.SaveButton.scripts.OnClick(); a:Drain()
 	checkbox:SetChecked(false); checkbox.scripts.OnClick(checkbox); a:Drain()
 	panel.RevertButton.scripts.OnClick(); a:Drain()
@@ -891,6 +898,9 @@ end)
 
 local function TooltipFixture()
 	local a = Fixture()
+	-- Geometry cases explicitly opt into showing both tooltips; new profiles
+	-- hide the matching native tooltip instead.
+	a.db.profile.questTrackerHideBlizzardTooltip = false
 	a.root.top = 900
 	a.hover = 42
 	a.hoverBlock = a:CreateTestUIRegion(a, a.root)
@@ -943,7 +953,7 @@ QT:RegisterTest("POT docks to matching native quest tooltips and restores its or
 	a.root:SetScale(1); tip.scale, tip.top = 1, 650
 	a:SetOption("questTrackerTooltipPlacement", "side"); a:Drain()
 	Anchor("TOPLEFT", 206, 650)
-	Equal(tip.writes, writes, "default docking only reads native UI")
+	Equal(tip.writes, writes, "show-both docking only reads native UI")
 	Equal(a.db.profile.windowLayouts, nil, "hover docking must not persist a new placement")
 	tip.left, tip.top = 50, 190
 	a:UpdateQuestFocusWindow()
@@ -979,6 +989,23 @@ QT:RegisterTest("POT docks to matching native quest tooltips and restores its or
 end)
 
 QT:RegisterTest("POT native tooltip suppression cannot hide unrelated pooled protected or restricted UI", function()
+	-- The hide preference never replaces the rules deciding whether POT can
+	-- present this quest. Exercise the real update path for each exclusion.
+	for _, configure in ipairs({
+		function(a) a.db.profile.questTrackerMode = "hidden" end,
+		function(a) a.db.profile.questTrackerMode = "focus"; a.focus = nil end,
+		function(a) a.db.profile.questTrackerMode = "focus"; a.focus = 84 end,
+		function(a) a.db.profile.questTrackerMode = "hover"; a.hover = nil end,
+		function(a) a.focus, a.hover = nil, nil end,
+		function(a) a.db.profile.questTrackerHideSolo = true; a.partyMemberOrder = { "Me" } end,
+		function(a) a.manager = a:CreateTestUIRegion(a) end,
+	}) do
+		local gated, native = TooltipFixture()
+		gated.db.profile.questTrackerHideBlizzardTooltip = true
+		configure(gated)
+		gated:UpdateQuestFocusWindow(); gated:Drain()
+		Equal(native:IsShown(), true, "native tooltip must remain when POT is not presenting that hover")
+	end
 	local a, tip = TooltipFixture()
 	a:SetOption("questTrackerHideBlizzardTooltip", true)
 	-- A child button can share a quest ancestor while its tooltip is an item.
@@ -1010,6 +1037,21 @@ QT:RegisterTest("POT native tooltip suppression cannot hide unrelated pooled pro
 	Equal(tip:IsShown(), false)
 	Equal(a.questFocusWindow:IsShown(), true)
 	Equal(a.invalidCalls, nil)
+	tip:Show()
+	a.questFocusWindow.panel:Hide()
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(tip:IsVisible(), true, "a shown POT frame with invisible content must not suppress the native tooltip")
+	a.questFocusWindow.panel:Show()
+	local stale = a.questFocusState
+	a.db.profile = { questTrackerMode = "both", questTrackerHideBlizzardTooltip = true }
+	a:UpdateQuestTrackerTooltipAnchor(a.questFocusWindow, stale)
+	Equal(tip:IsShown(), true, "an obsolete profile must not hide a native tooltip before the next render")
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(tip:IsShown(), false, "the current visible POT still replaces its matching tooltip")
+	tip:Show()
+	a.db.profile.questTrackerMode = "hidden"
+	a:UpdateQuestTrackerTooltipAnchor(a.questFocusWindow, a.questFocusState)
+	Equal(tip:IsShown(), true, "changing display mode must take effect before any queued render")
 	-- Blizzard owns the next Show; disable/leave must never resurrect it.
 	local writes = tip.writes
 	a.isEnabled = false

@@ -339,6 +339,9 @@ local function WithIsolatedState(testFn)
 			"runtimeCoordinatorState",
 			"runtimeCoordinatorFrame",
 			"transportState",
+			"addonWhisperState",
+			"addonWhisperChatFilterRegistered",
+			"addonWhisperChatFilterFunc",
 			"communicationState",
 			"meshNetworkState",
 			"meshPublicationState",
@@ -1190,9 +1193,15 @@ QuestTogether:RegisterTest("isolated tests detach initialized structured stores 
 	QuestTogether.locationTargetState = target
 	QuestTogether.testFutureStructuredStore = futureStore
 	QuestTogether.transportState = { queue = queue }
+	local whisperState, whisperFilter = { targets = { live = true } }, function() end
+	QuestTogether.addonWhisperState = whisperState
+	QuestTogether.addonWhisperChatFilterFunc, QuestTogether.addonWhisperChatFilterRegistered = whisperFilter, true
 	local reachedEnd = false
 	local ok, failure = pcall(function()
 		WithIsolatedState(function()
+			AssertEquals(QuestTogether.addonWhisperState, nil)
+			AssertEquals(QuestTogether.addonWhisperChatFilterRegistered, nil)
+			AssertEquals(QuestTogether.addonWhisperChatFilterFunc, nil)
 			AssertEquals(QuestTogether.playerPhaseState, nil)
 			AssertEquals(QuestTogether.locationTargetState, nil)
 			AssertEquals(QuestTogether.testFutureStructuredStore, nil)
@@ -1213,6 +1222,9 @@ QuestTogether:RegisterTest("isolated tests detach initialized structured stores 
 	AssertEquals(QuestTogether.testFutureStructuredStore, futureStore)
 	AssertEquals(futureStore.entries[1], "live")
 	AssertEquals(QuestTogether.transportState.queue, queue)
+	AssertEquals(QuestTogether.addonWhisperState, whisperState)
+	AssertEquals(QuestTogether.addonWhisperChatFilterFunc, whisperFilter)
+	AssertTrue(QuestTogether.addonWhisperChatFilterRegistered)
 	WithIsolatedState(function()
 		AssertEquals(QuestTogether.testFutureStructuredStore, nil)
 		QuestTogether.testFutureStructuredStore = { entries = {} }

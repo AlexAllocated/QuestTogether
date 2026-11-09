@@ -51,7 +51,10 @@ function QT:InstallQuestFocusHoverEvents()
 end
 
 function QT:GetQuestFocusMatchingTooltip(state)
-	if not state or state.editing or not state.hoverBlock
+	if not self.isEnabled or self.isLoggingOut or not state or state ~= rawget(self, "questFocusState")
+		or not self.db or state.profile ~= self.db.profile or state.mode ~= self:GetQuestTrackerMode()
+		or state.mode == "hidden" or self:IsQuestTrackerHiddenWhileSolo()
+		or state.editing or not state.hoverBlock
 		or not state.hoverID or state.hoverID ~= state.id
 		or self:IsWorkBlocked("foreign_frame_mutation") then return end
 	local block, tooltip = state.hoverBlock, self:GetQuestFocusNativeTooltip()
@@ -119,7 +122,10 @@ end
 
 function QT:UpdateQuestTrackerTooltipAnchor(frame, state)
 	if not frame or self:IsWorkBlocked("foreign_frame_mutation") or not self:CanMutateOwnedUI(frame) then return end
-	local tooltip = frame:IsShown() and self:GetQuestFocusMatchingTooltip(state)
+	-- IsShown ignores hidden parents. Only suppress native information when
+	-- the matching POT content is actually visible, not merely configured on.
+	local tooltip = Read(self, frame, "IsVisible") == true and Read(self, frame.panel, "IsVisible") == true
+		and self:GetQuestFocusMatchingTooltip(state)
 	if tooltip and state.hoverNative and self:GetOption("questTrackerHideBlizzardTooltip") == true then
 		-- Hide runs native cleanup. Never change alpha, replace native scripts,
 		-- or force Show on a reused tooltip when POT goes away.

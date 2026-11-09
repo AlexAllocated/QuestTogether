@@ -173,6 +173,182 @@ local function Event(text)
 	}
 end
 
+local function WhisperFailureFixture(regional)
+	local a = NewCommsFixture()
+	a.filters, a.retired, a.shareMessages = {}, {}, {}
+	a.API.GetPlayerNotFoundMessageFormat = function()
+		return a.failureFormat or "No player named '%s' is currently playing."
+	end
+	a.API.SetOrdinaryWhisperObserver = function(callback)
+		a.ordinaryObserver = callback
+		return true
+	end
+	a.API.AddMessageEventFilter = function(event, callback)
+		a.filters[event] = callback
+		return true
+	end
+	a.API.RemoveMessageEventFilter = function(event, callback)
+		assert(a.filters[event] == callback)
+		a.filters[event] = nil
+		return true
+	end
+	function a:UsesRegionalPlayerNames()
+		return regional == true
+	end
+	function a:RetireMeshPeer(name)
+		self.retired[#self.retired + 1] = name
+	end
+	function a:HandleQuestShareSystemMessage(message)
+		self.shareMessages[#self.shareMessages + 1] = message
+	end
+	function a:Notice(name)
+		return "No player named '" .. name .. "' is currently playing."
+	end
+	function a:Filter(message)
+		return self.filters.CHAT_MSG_SYSTEM({}, "CHAT_MSG_SYSTEM", message)
+	end
+	function a:Attempt(name)
+		self.now = self.now + 1
+		assert(self:SendTransportNow("private-wire", "MHEL", { distribution = "WHISPER", target = name }))
+	end
+	a:InitializeTransport()
+	return a
+end
+
+QuestTogether:RegisterTest(
+	"offline addon whisper notices correlate actual attempts across every chat frame and cancel queued work",
+	function()
+		local a = WhisperFailureFixture(true)
+		local name, completions = "Chronic Exhaustion", 0
+		a:Attempt(name)
+		assert(a:QueueTransportWire("next-fragment", "MPUB", { distribution = "WHISPER", target = name }, {
+			onComplete = function(sent, reason)
+				assert(not sent and reason == "unavailable")
+				completions = completions + 1
+			end,
+		}))
+		local message = a:Notice(name)
+		assert(a:Filter(message))
+		a:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", message)
+		assert(a:Filter(message), "another chat frame must receive the same suppression decision")
+		Equal(completions, 1)
+		Equal(#a.retired, 1)
+		Equal(a.retired[1], name)
+		Equal(a:GetCommsDiagnostics().whisperUnavailable, 1)
+		Equal(a.shareMessages[1], message)
+		Equal(a:Filter(a:Notice("Other Person")), false)
+		Equal(a:Filter("You loot 18 Copper."), false)
+		local report = a:GetCommsDiagnostics()
+		assert(not tostring(report.lastFailure):find(name, 1, true), "routine diagnostics must omit identities")
+	end
+)
+
+QuestTogether:RegisterTest(
+	"ordinary whisper intent before or after QT attempts keeps player-not-found feedback visible",
+	function()
+		for _, before in ipairs({ true, false }) do
+			local a = WhisperFailureFixture()
+			if before then
+				a.ordinaryObserver("WHISPER", "Peer")
+			end
+			a:Attempt("Peer-Realm")
+			if not before then
+				a.ordinaryObserver("WHISPER", "Peer")
+			end
+			Equal(a:Filter(a:Notice("Peer")), false)
+			Equal(a:IsAddonWhisperTargetUnavailable("Peer-Realm"), false)
+			Equal(#a.retired, 0)
+		end
+		local a = WhisperFailureFixture()
+		a:Attempt("Peer-Elsewhere")
+		a.ordinaryObserver("WHISPER", "Peer-Realm")
+		assert(a:Filter(a:Notice("Peer-Elsewhere")), "realms must not be conflated")
+		local b = WhisperFailureFixture()
+		b:Attempt("Peer-Realm")
+		function b:CanAccessValue(value)
+			return value ~= "secret-target"
+		end
+		b.ordinaryObserver("WHISPER", "secret-target")
+		Equal(b:Filter(b:Notice("Peer")), false)
+		Equal(b:Filter("secret-target"), false)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"whisper notice matching respects localized templates exact identities expiry and lifecycle",
+	function()
+		local a = WhisperFailureFixture(true)
+		a.failureFormat = "[Hinweis] Kein Spieler namens '%1$s' online (100%%)."
+		a:Attempt("Chronic Exhaustion")
+		assert(a:Filter("[Hinweis] Kein Spieler namens 'Chronic Exhaustion' online (100%)."))
+		Equal(a:Filter("[Hinweis] Kein Spieler namens 'Chronic' online (100%)."), false)
+		a.failureFormat = "%s %s"
+		Equal(a:Filter("Chronic Exhaustion"), false)
+		a.failureFormat = nil
+		a.now = a.now + 31
+		Equal(a:Filter(a:Notice("Chronic Exhaustion")), false)
+		assert(a:IsAddonWhisperTargetUnavailable("Chronic Exhaustion"), "cooldown outlasts notice correlation")
+		a.now = a.now + 30
+		Equal(a:IsAddonWhisperTargetUnavailable("Chronic Exhaustion"), false)
+		a:Attempt("Chronic Exhaustion")
+		assert(a:Filter(a:Notice("Chronic Exhaustion")))
+		a:EndTransportSession()
+		assert(a:IsAddonWhisperTargetUnavailable("Chronic Exhaustion"), "departure cleanup must keep the send barrier")
+		Equal(a:Filter(a:Notice("Chronic Exhaustion")), false)
+		a:ResetTransport()
+		a:InitializeTransport()
+		Equal(a:Filter(a:Notice("Chronic Exhaustion")), false)
+		a:Attempt("Chronic Exhaustion")
+		local oldFilter = a.filters.CHAT_MSG_SYSTEM
+		a:ResetAddonWhisperFailures()
+		assert(not a.filters.CHAT_MSG_SYSTEM and not a.ordinaryObserver)
+		Equal(oldFilter({}, "CHAT_MSG_SYSTEM", a:Notice("Chronic Exhaustion")), false)
+		a = WhisperFailureFixture(true)
+		a:Attempt("Chronic Exhaustion")
+		function a:RetireMeshPeer(name)
+			self:ResetTransport()
+			self:InitializeTransport()
+			assert(self:QueueTransportWire("new-lifetime", "MHEL", { distribution = "WHISPER", target = name }))
+		end
+		assert(a:Filter(a:Notice("Chronic Exhaustion")))
+		Equal(a:GetTransportMetrics().queuedPackets, 1, "an old notice must not cancel a new lifetime")
+	end
+)
+
+QuestTogether:RegisterTest(
+	"whisper filtering fails open without observation and remains bounded during target floods",
+	function()
+		local a = WhisperFailureFixture()
+		a:ResetAddonWhisperFailures()
+		a.API.SetOrdinaryWhisperObserver = function()
+			return false
+		end
+		a:Attempt("Peer-Realm")
+		Equal(a:HandleAddonWhisperSystemMessage(a:Notice("Peer")), false)
+		a = WhisperFailureFixture()
+		assert(a:QueueTransportWire("not-sent", "MHEL", { distribution = "WHISPER", target = "Queued-Realm" }))
+		Equal(a:Filter(a:Notice("Queued")), false, "queue admission is not a native attempt")
+		for index = 1, 200 do
+			a:RecordAddonWhisperAttempt("Peer" .. index .. "-Realm")
+			a.ordinaryObserver("WHISPER", "Manual" .. index .. "-Realm")
+		end
+		local targets, ordinary = 0, 0
+		for _ in pairs(a.addonWhisperState.targets) do
+			targets = targets + 1
+		end
+		for _ in pairs(a.addonWhisperState.ordinary) do
+			ordinary = ordinary + 1
+		end
+		assert(targets <= 128 and ordinary <= 128)
+		Equal(a:Filter(a:Notice("Peer1")), false, "manual guard overflow must fail open")
+		a.now = a.now + 61
+		a:Attempt("Peer1-Realm")
+		assert(a:Filter(a:Notice("Peer1")))
+		a.now = a.now - 5
+		Equal(a:Filter(a:Notice("Peer1")), false)
+	end
+)
+
 local function DeveloperFixture(name)
 	local a = NewCommsFixture()
 	a.db = { profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile), global = {} }

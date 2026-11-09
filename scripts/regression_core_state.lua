@@ -665,6 +665,29 @@ local function AssertRuntimeEventsUnregistered(addon)
 	Equal(addon.events.PLAYER_LEAVING_WORLD, true)
 end
 
+QT:RegisterTest("system message events preserve their text for whisper and quest share handlers", function()
+	local addon, calls = NewEnabledOptionFixture(), {}
+	function addon:HandleAddonWhisperSystemMessage(message, ...)
+		calls[#calls + 1] = { "whisper", message, select(10, ...) }
+	end
+	function addon:HandleQuestShareSystemMessage(message)
+		calls[#calls + 1] = { "quest", message }
+	end
+	local message = "Friend-Realm has accepted your quest."
+	assert(addon:DeliverRegisteredEvent("CHAT_MSG_SYSTEM", message, "", "", "", "", "", 0, 0, "", 0, 42))
+	Equal(#calls, 2)
+	Equal(calls[1][1], "whisper")
+	Equal(calls[1][2], message)
+	Equal(calls[1][3], 42)
+	Equal(calls[2][1], "quest")
+	Equal(calls[2][2], message)
+	addon.isLoggingOut = true
+	assert(addon:DeliverRegisteredEvent("CHAT_MSG_SYSTEM", message))
+	addon.isLoggingOut, addon.isEnabled = false, false
+	assert(addon:DeliverRegisteredEvent("CHAT_MSG_SYSTEM", message))
+	Equal(#calls, 2)
+end)
+
 QT:RegisterTest("generic enabled option applies the actual disable and enable lifecycles", function()
 	local addon = NewEnabledOptionFixture()
 	local priorWorkState = addon:GetDeferredWorkStateStore()

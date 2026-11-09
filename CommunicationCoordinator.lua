@@ -1138,6 +1138,12 @@ local function Receive(self, prefix, wire, distribution, sender, localID, channe
 		local pending = self.communicationState.requests[frame.requestId]
 		context.targeted = pending and not pending.meshTraffic and pending.target == sender or false
 	end
+	-- A native-origin packet on an eligible route proves the address can talk
+	-- again. Clear only its send cooldown before fragment ACKs or handshake
+	-- replies; it does not validate the payload or renew domain observations.
+	if distribution == "WHISPER" then
+		self:ClearAddonWhisperFailure(sender)
+	end
 	self:GetCommunicationMetrics().received = self:GetCommunicationMetrics().received + 1
 	local accepted = self:ReceiveCommFragment(frame, body, sender, context)
 	if accepted and spec.semantic == "response" then

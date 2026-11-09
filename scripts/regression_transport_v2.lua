@@ -50,6 +50,135 @@ QT:RegisterTest("transport refuses channel delivery without spending budget or i
 	Equal(a:GetTransportMetrics().attempts or 0, 0)
 end)
 
+QT:RegisterTest("transport unavailable whispers conserve budget and record only native attempts", function()
+	local a, blocked, attempts, callbacks = Fixture(), true, {}, 0
+	local route = { distribution = "WHISPER", target = "Peer-Realm" }
+	function a:IsAddonWhisperTargetUnavailable(target)
+		return blocked and target == route.target
+	end
+	function a:RecordAddonWhisperAttempt(target)
+		attempts[#attempts + 1] = target
+	end
+	a.native = function(_, _, distribution, target)
+		if distribution == "WHISPER" then
+			Equal(attempts[#attempts], target)
+		end
+		return 0
+	end
+	a:Advance(1)
+	local s = a:GetTransportState()
+	local tokens, bytes = s.tokens, s.byteTokens
+	local queued, reason = a:Queue("blocked", {
+		onComplete = function()
+			callbacks = callbacks + 1
+		end,
+	})
+	Equal(queued, false)
+	Equal(reason, "unavailable")
+	local sent, directReason = a:SendTransportNow("blocked", "MHEL", route)
+	Equal(sent, false)
+	Equal(directReason, "unavailable")
+	Equal(callbacks, 0) -- Rejected admission creates no completion ticket.
+	Equal(#attempts, 0)
+	Equal(#a.sent, 0)
+	Equal(s.tokens, tokens)
+	Equal(s.byteTokens, bytes)
+	Equal(a:GetTransportMetrics().whisperUnavailable, 2)
+	assert(a:SendTransportNow("party", "QCMP", { distribution = "PARTY" }))
+	Equal(#attempts, 0)
+	blocked = false
+	assert(a:Queue("recovered"))
+	Equal(#attempts, 0) -- Queue admission is not a native whisper attempt.
+	a:DrainTransport()
+	Equal(#attempts, 1)
+	Equal(#a.sent, 2)
+	Equal(#a.errors, 0)
+end)
+
+QT:RegisterTest("transport unavailable notice cancels queued hops and reentrant cleanup once", function()
+	local a, blocked, completions, cleanup = Fixture(), false, {}, {}
+	function a:IsAddonWhisperTargetUnavailable(target)
+		return blocked and target == "Peer-Realm"
+	end
+	local function Finished(wire)
+		return function(sent, reason)
+			assert(not completions[wire], "completion repeated for " .. wire)
+			completions[wire] = { sent, reason }
+			if wire == "next-fragment" then
+				cleanup = {
+					a:QueueTransportWire(
+						"unavailable-control",
+						"FXSTAT",
+						{ distribution = "WHISPER", target = "Peer-Realm" }
+					),
+				}
+			end
+		end
+	end
+	assert(a:Queue("first-fragment", { onComplete = Finished("first-fragment") }))
+	assert(a:Queue("next-fragment", { onComplete = Finished("next-fragment") }))
+	assert(a:QueueTransportWire("party", "QCMP", { distribution = "PARTY" }))
+	assert(a:QueueTransportWire("other", "MHEL", { distribution = "WHISPER", target = "Other-Realm" }))
+	a.native = function(_, wire)
+		if wire == "first-fragment" then
+			-- Model asynchronous system feedback arriving during a native call.
+			-- The owner marks suppression before cancellation triggers callbacks.
+			blocked = true
+			a:CancelTransportWhere(function(row)
+				return row.route.distribution == "WHISPER" and row.route.target == "Peer-Realm"
+			end, "unavailable")
+		end
+		return 0
+	end
+	a:Advance(1)
+	a:DrainTransport()
+	Equal(completions["first-fragment"][1], true)
+	Equal(completions["next-fragment"][1], false)
+	Equal(completions["next-fragment"][2], "unavailable")
+	Equal(cleanup[1], false)
+	Equal(cleanup[2], "unavailable")
+	Equal(#a.sent, 3)
+	for _, row in ipairs(a.sent) do
+		assert(row.wire ~= "next-fragment" and row.wire ~= "unavailable-control")
+	end
+	Equal(a:GetTransportMetrics().queuedPackets, 0)
+	Equal(a:GetTransportMetrics().attempts, 3)
+	Equal(#a.errors, 0)
+end)
+
+QT:RegisterTest("transport currentness callbacks cannot send newly unavailable whispers", function()
+	local a, blocked, checks, completions, direct = Fixture(), false, 0, 0, {}
+	function a:IsAddonWhisperTargetUnavailable()
+		return blocked
+	end
+	assert(a:Queue("stale-hop", {
+		isCurrent = function()
+			checks = checks + 1
+			if checks == 2 then
+				blocked = true
+			end
+			return true
+		end,
+		onComplete = function(sent, reason)
+			completions = completions + 1
+			Equal(sent, false)
+			Equal(reason, "unavailable")
+			direct = { a:SendTransportNow("cleanup", "FXSTAT", { distribution = "WHISPER", target = "Peer-Realm" }) }
+		end,
+	}))
+	a:Advance(1)
+	a:DrainTransport()
+	Equal(completions, 1)
+	Equal(direct[1], false)
+	Equal(direct[2], "unavailable")
+	Equal(#a.sent, 0)
+	Equal(a:GetTransportState().tokens, 4)
+	Equal(a:GetTransportState().byteTokens, 800)
+	Equal(a:GetTransportMetrics().attempts or 0, 0)
+	Equal(a:GetTransportMetrics().queuedPackets, 0)
+	Equal(#a.errors, 0)
+end)
+
 QT:RegisterTest("mesh budget charges full packets while party traffic retains capacity", function()
 	local a, done = Fixture(), 0
 	for i = 1, 24 do

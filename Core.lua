@@ -381,7 +381,7 @@ QuestTogether.DEFAULTS = {
 		questTrackerMode = "hover",
 		questTrackerHideSolo = true,
 		questTrackerSnapToBlizzard = true,
-		questTrackerHideBlizzardTooltip = false,
+		questTrackerHideBlizzardTooltip = true,
 		questTrackerTooltipPlacement = "top",
 		questFocusOpacity = 75,
 		reduceMotion = false,
@@ -781,6 +781,122 @@ Why this exists:
 -- API wrapper layer:
 -- Guard Blizzard calls that can throw (invalid token, secure context, or transient data race)
 -- so runtime features fail soft instead of tainting shared execution paths.
+local ordinaryWhisperObserver = { hooks = {} }
+local function ObserveOrdinaryChatSend(_, distribution, language, target)
+	-- Never retain or forward the message text. Secure post-hooks cannot be
+	-- removed, so a disabled addon or cleared observer makes them inert.
+	local callback = ordinaryWhisperObserver.callback
+	if callback and QuestTogether.isEnabled and not QuestTogether.isLoggingOut then
+		pcall(callback, distribution, target)
+	end
+end
+
+local function ObserveOrdinaryEditBox(_, editBox)
+	if not ordinaryWhisperObserver.callback or not QuestTogether.isEnabled or QuestTogether.isLoggingOut then
+		return
+	end
+	local distribution, target
+	if QuestTogether:CanAccessForeignFrame(editBox) then
+		local ok, value = pcall(function()
+			return editBox:GetChatType()
+		end)
+		if ok then distribution = value end
+		ok, value = pcall(function()
+			return editBox:GetTellTarget()
+		end)
+		if ok then target = value end
+	end
+	-- Unreadable type/target is deliberately forwarded so the consumer can
+	-- fail open. No chat text or extra state on Blizzard's edit box is needed.
+	ObserveOrdinaryChatSend(nil, distribution, nil, target)
+end
+
+local function SetOrdinaryWhisperObserver(callback)
+	-- Private fixtures can inherit this adapter during /qt test. They must
+	-- neither install real hooks nor clear the live observer between slices.
+	if QuestTogether.isRunningTests then
+		return false
+	end
+	ordinaryWhisperObserver.callback = nil
+	if callback == nil then
+		return true
+	end
+	if type(callback) ~= "function" or type(hooksecurefunc) ~= "function" then
+		return false
+	end
+	local modern = CanAccessForeignTable(C_ChatInfo) and C_ChatInfo.SendChatMessage or nil
+	local legacy = SendChatMessage
+	if not CanAccessForeignValue(modern) or type(modern) ~= "function" then
+		modern = nil
+	end
+	if not CanAccessForeignValue(legacy) or type(legacy) ~= "function" then
+		legacy = nil
+	end
+	local found = false
+	local function Install(key, owner, native)
+		if not CanAccessForeignValue(native) or type(native) ~= "function" then
+			return true
+		end
+		found = true
+		if ordinaryWhisperObserver.hooks[key] == native then
+			return true
+		end
+		local ok
+		if owner then
+			ok = pcall(hooksecurefunc, owner, "SendChatMessage", ObserveOrdinaryChatSend)
+		else
+			ok = pcall(hooksecurefunc, "SendChatMessage", ObserveOrdinaryChatSend)
+		end
+		if ok then
+			ordinaryWhisperObserver.hooks[key] = owner and owner.SendChatMessage or SendChatMessage
+		end
+		return ok
+	end
+	if not Install("modern", C_ChatInfo, modern) then
+		return false
+	end
+	-- Older clients expose only the global. On current clients it can be a
+	-- separate forwarding wrapper; observing it also covers other replacements.
+	-- A duplicate observation is harmless: consumers extend a protection window.
+	local hookedModern = ordinaryWhisperObserver.hooks.modern
+	if legacy and legacy == hookedModern then
+		found = true
+	elseif not Install("legacy", nil, legacy) then
+		return false
+	end
+	if not found then
+		return false
+	end
+	local registry = EventRegistry
+	if CanAccessForeignTable(registry) and type(registry.RegisterCallback) == "function"
+		and ordinaryWhisperObserver.registry ~= registry then
+		-- This public event precedes the native send for typed chat. Post-hooks
+		-- also cover macros/other callers, whose server replies arrive later.
+		-- Do not wrap SendChatMessage merely to intercept synchronous errors.
+		local ok = pcall(registry.RegisterCallback, registry, "ChatFrame.OnEditBoxPreSendText",
+			ObserveOrdinaryEditBox, ordinaryWhisperObserver)
+		if ok then ordinaryWhisperObserver.registry = registry end
+	end
+	ordinaryWhisperObserver.callback = callback
+	return true
+end
+
+local function CallChatFilterAPI(method, legacy, eventName, filterFunc)
+	if QuestTogether.isRunningTests or type(eventName) ~= "string" or type(filterFunc) ~= "function" then
+		return false
+	end
+	local native = CanAccessForeignTable(ChatFrameUtil) and ChatFrameUtil[method] or nil
+	if not CanAccessForeignValue(native) or type(native) ~= "function" then
+		native = legacy
+	end
+	if not CanAccessForeignValue(native) or type(native) ~= "function" then
+		return false
+	end
+	-- Blizzard's current public API owns a SecureTypes registry and wraps its
+	-- callbacks securely. Call it intact rather than touching that registry.
+	return pcall(native, eventName, filterFunc)
+end
+
 QuestTogether.API = QuestTogether.API
 	or {
 		Delay = function(seconds, callback)
@@ -1008,14 +1124,18 @@ QuestTogether.API = QuestTogether.API
 			return nil
 		end,
 		AddMessageEventFilter = function(eventName, filterFunc)
-			if type(ChatFrame_AddMessageEventFilter) == "function" then
-				ChatFrame_AddMessageEventFilter(eventName, filterFunc)
-			end
+			return CallChatFilterAPI("AddMessageEventFilter", ChatFrame_AddMessageEventFilter, eventName, filterFunc)
 		end,
 		RemoveMessageEventFilter = function(eventName, filterFunc)
-			if type(ChatFrame_RemoveMessageEventFilter) == "function" then
-				ChatFrame_RemoveMessageEventFilter(eventName, filterFunc)
+			return CallChatFilterAPI("RemoveMessageEventFilter", ChatFrame_RemoveMessageEventFilter, eventName, filterFunc)
+		end,
+		SetOrdinaryWhisperObserver = SetOrdinaryWhisperObserver,
+		GetPlayerNotFoundMessageFormat = function()
+			local value = ERR_CHAT_PLAYER_NOT_FOUND_S
+			if CanAccessForeignValue(value) and type(value) == "string" and #value > 0 and #value <= 1024 then
+				return value
 			end
+			return nil
 		end,
 		OpenChatWindow = function(name, noDefaultChannels)
 			return FCF_OpenNewWindow(name, noDefaultChannels)

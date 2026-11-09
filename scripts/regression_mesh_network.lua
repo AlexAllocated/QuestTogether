@@ -858,3 +858,115 @@ QT:RegisterTest("mesh renewed scopes fairly rotate eligible branches with bounde
 		assert(Count(state.interestSelections) == 2, "only current local scopes may survive history expiry")
 	end
 end, { offline = true })
+
+QT:RegisterTest(
+	"mesh failed whispers retire routes without erasing observations and recover on direct contact",
+	function()
+		local net = QT:CreateTestNetwork({ fps = 20, latency = 0.03 })
+		local alice, bob = Peer(net, "Alice-Realm"), Peer(net, "Bob-Realm")
+		for _, peer in ipairs({ alice, bob }) do
+			peer.API.GetPlayerNotFoundMessageFormat = function()
+				return "No player named '%s' is currently playing."
+			end
+			peer.API.SetOrdinaryWhisperObserver = function(callback)
+				peer.ordinaryWhisperObserver = callback
+				return true
+			end
+			peer.API.AddMessageEventFilter = function(_, callback)
+				peer.systemFilter = callback
+				return true
+			end
+			peer.API.RemoveMessageEventFilter = function(_, callback)
+				if peer.systemFilter == callback then
+					peer.systemFilter = nil
+				end
+				return true
+			end
+			net:StartPeer(peer)
+		end
+		for _ = 1, 90 do
+			net:Advance(1)
+			if
+				alice:IsConfirmedMeshNeighbor(bob.name)
+				and bob:IsConfirmedMeshNeighbor(alice.name)
+				and alice:GetFreshPlayerLocation(bob.name)
+			then
+				break
+			end
+		end
+		assert(alice:IsConfirmedMeshNeighbor(bob.name) and alice:GetFreshPlayerLocation(bob.name))
+		local blockIncoming = true
+		net.deliveryRule = function(packet, receiver)
+			if blockIncoming and packet.sender == bob.name and receiver == alice then
+				return { drop = true }
+			end
+		end
+		local before = #alice.attempts
+		assert(alice:Request("QTHQ", {}, { { distribution = "WHISPER", target = bob.name } }))
+		for _ = 1, 100 do
+			net:Advance(0.05)
+			if #alice.attempts > before and alice.addonWhisperState.targets[bob.name:lower()] then
+				break
+			end
+		end
+		assert(alice.addonWhisperState.targets[bob.name:lower()], "the notice must correlate a real native send")
+		local location = alice:GetPlayerLocationState().peers[bob.name]
+		local completed = 0
+		assert(
+			alice:Emit(
+				"ANN",
+				{ senderName = alice.name, eventType = "QUEST_PROGRESS", text = string.rep("x", 900) },
+				{ { distribution = "WHISPER", target = bob.name } },
+				{
+					onComplete = function(sent, reason)
+						assert(not sent and reason == "unavailable")
+						completed = completed + 1
+					end,
+				}
+			)
+		)
+		local notice = "No player named 'Bob-Realm' is currently playing."
+		assert(alice.systemFilter({}, "CHAT_MSG_SYSTEM", notice))
+		alice:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", notice)
+		assert(alice.systemFilter({}, "CHAT_MSG_SYSTEM", notice), "all chat frames share the same decision")
+		assert(alice:IsAddonWhisperTargetUnavailable(bob.name) and not alice:IsConfirmedMeshNeighbor(bob.name))
+		assert(alice.meshNetworkState.candidates[bob.name].retryAt >= alice.now + 300)
+		assert(
+			alice:GetPlayerLocationState().peers[bob.name] == location,
+			"routing failure must not erase accepted domain data"
+		)
+		assert(completed == 1 and alice:GetCommTransferMetrics().outgoing == 0)
+		local attempts = #alice.attempts
+		assert(not alice:Request("QTHQ", {}, { { distribution = "WHISPER", target = bob.name } }))
+		net:Advance(2)
+		assert(#alice.attempts == attempts, "the failed recipient must not trigger a retry or cancellation send loop")
+		blockIncoming = false
+		assert(
+			bob:Request(
+				"MHEL",
+				{ version = "test", protocol = 3, capabilities = "mesh1" },
+				{ { distribution = "WHISPER", target = alice.name } },
+				{ meshTraffic = true }
+			)
+		)
+		for _ = 1, 100 do
+			net:Advance(0.05)
+			if not alice:IsAddonWhisperTargetUnavailable(bob.name) then
+				break
+			end
+		end
+		assert(
+			not alice:IsAddonWhisperTargetUnavailable(bob.name),
+			"eligible native contact must unblock its handshake reply"
+		)
+		for _ = 1, 60 do
+			net:Advance(1)
+			if alice:IsConfirmedMeshNeighbor(bob.name) then
+				break
+			end
+		end
+		assert(alice:IsConfirmedMeshNeighbor(bob.name), "a recovered address must still complete native confirmation")
+		assert(completed == 1)
+	end,
+	{ offline = true }
+)

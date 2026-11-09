@@ -689,19 +689,23 @@ print("Party Objective Tracker solo visibility uses the shared setting and refre
 
 local hideTooltip = assert(QuestTogether.groupsControls.questTrackerHideBlizzardTooltip)
 QuestTogether:RefreshGroupsWindow()
-assert(hideTooltip:GetChecked() == false, "new profiles keep the Blizzard quest tooltip visible")
-hideTooltip:SetChecked(true)
+assert(hideTooltip:GetChecked() == true, "new profiles hide the matching Blizzard quest tooltip while POT is visible")
+hideTooltip:SetChecked(false)
 hideTooltip.scripts.OnClick(hideTooltip)
-assert(QuestTogether:GetOption("questTrackerHideBlizzardTooltip") == true)
-QuestTogether:SetOption("questTrackerHideBlizzardTooltip", false)
+assert(QuestTogether:GetOption("questTrackerHideBlizzardTooltip") == false)
+QuestTogether:SetOption("questTrackerHideBlizzardTooltip", true)
 QuestTogether:RefreshGroupsWindow()
-assert(hideTooltip:GetChecked() == false, "settings reflects the tooltip option changed in Edit Mode")
+assert(hideTooltip:GetChecked() == true, "settings reflects the tooltip option changed in Edit Mode")
 QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
-QuestTogether.db.profile.questTrackerHideBlizzardTooltip = true
+QuestTogether.db.profile.questTrackerHideBlizzardTooltip = false
 QuestTogether.groupsFrame.scripts.OnShow()
-assert(hideTooltip:GetChecked() == true, "tooltip checkbox follows the active profile")
+assert(hideTooltip:GetChecked() == false, "tooltip checkbox follows the active profile")
+QuestTogether:ApplyDefaults(QuestTogether.db.profile, QuestTogether.DEFAULTS.profile)
 QuestTogether:NormalizeSettingsProfile()
-assert(QuestTogether:GetOption("questTrackerHideBlizzardTooltip") == true, "saved tooltip choices survive normalization")
+assert(QuestTogether:GetOption("questTrackerHideBlizzardTooltip") == false, "saved show-both choices survive defaults and normalization")
+QuestTogether.db.profile.questTrackerHideBlizzardTooltip = nil
+QuestTogether:NormalizeSettingsProfile()
+assert(QuestTogether:GetOption("questTrackerHideBlizzardTooltip") == true, "unset tooltip choices receive the new default")
 print("Party Objective Tracker tooltip visibility uses the shared setting and refreshes across profiles")
 
 local placement = assert(QuestTogether.questTrackerTooltipPlacementDropdown)

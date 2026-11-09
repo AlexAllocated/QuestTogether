@@ -48,6 +48,113 @@ return pushable end or nil,
 	end or nil
 	return function(addon)
 		do
+			-- These native adapter checks are offline-only: live tests must never
+			-- install real secure hooks or alter Blizzard's shared filter registry.
+			local saved = {}
+			local keys = { "ChatFrameUtil", "ChatFrame_AddMessageEventFilter", "ChatFrame_RemoveMessageEventFilter",
+				"C_ChatInfo", "SendChatMessage", "hooksecurefunc", "EventRegistry", "ERR_CHAT_PLAYER_NOT_FOUND_S" }
+			for _, key in ipairs(keys) do saved[key] = _G[key] end
+			local enabled, loggingOut, runningTests = addon.isEnabled, addon.isLoggingOut, addon.isRunningTests
+			local ok, err = pcall(function()
+				local adds, removes, legacyCalls = 0, 0, 0
+				local filter = function() end
+				ChatFrameUtil = {
+					AddMessageEventFilter = function(event, fn)
+						assert(event == "CHAT_MSG_SYSTEM" and fn == filter); adds = adds + 1
+					end,
+					RemoveMessageEventFilter = function(event, fn)
+						assert(event == "CHAT_MSG_SYSTEM" and fn == filter); removes = removes + 1
+					end,
+				}
+				ChatFrame_AddMessageEventFilter = function() legacyCalls = legacyCalls + 1 end
+				ChatFrame_RemoveMessageEventFilter = ChatFrame_AddMessageEventFilter
+				assert(addon.API.AddMessageEventFilter("CHAT_MSG_SYSTEM", filter))
+				assert(addon.API.RemoveMessageEventFilter("CHAT_MSG_SYSTEM", filter))
+				assert(adds == 1 and removes == 1 and legacyCalls == 0)
+				ChatFrameUtil.AddMessageEventFilter = function() error("registration unavailable") end
+				assert(not addon.API.AddMessageEventFilter("CHAT_MSG_SYSTEM", filter))
+				ChatFrameUtil = inaccessible
+				local before = inaccessibleReads
+				assert(addon.API.AddMessageEventFilter("CHAT_MSG_SYSTEM", filter))
+				assert(addon.API.RemoveMessageEventFilter("CHAT_MSG_SYSTEM", filter))
+				assert(legacyCalls == 2 and inaccessibleReads == before)
+				ChatFrame_AddMessageEventFilter, ChatFrame_RemoveMessageEventFilter = nil, nil
+				assert(not addon.API.AddMessageEventFilter("CHAT_MSG_SYSTEM", filter))
+				assert(not addon.API.RemoveMessageEventFilter("CHAT_MSG_SYSTEM", filter))
+				ERR_CHAT_PLAYER_NOT_FOUND_S = "Kein Spieler namens '%s' ist derzeit aktiv."
+				assert(addon.API.GetPlayerNotFoundMessageFormat() == ERR_CHAT_PLAYER_NOT_FOUND_S)
+				for _, value in ipairs({ secret, inaccessible, 7, "", string.rep("x", 1025) }) do
+					ERR_CHAT_PLAYER_NOT_FOUND_S = value
+					assert(addon.API.GetPlayerNotFoundMessageFormat() == nil)
+				end
+				local observations, hooks, registrations, preSend, preSendOwner = {}, 0, 0
+				local function Observer(...)
+					assert(select("#", ...) == 2, "the observer must not receive chat content")
+					observations[#observations + 1] = { ... }
+				end
+				addon.isEnabled, addon.isLoggingOut = true, false
+				C_ChatInfo, SendChatMessage, hooksecurefunc, EventRegistry = {}, nil, nil, nil
+				assert(not addon.API.SetOrdinaryWhisperObserver(Observer))
+				hooksecurefunc = function(owner, method, callback)
+					if type(owner) == "string" then owner, method, callback = _G, owner, method end
+					local native = owner[method]
+					hooks = hooks + 1
+					owner[method] = function(...)
+						local value = native(...)
+						callback(...)
+						return value
+					end
+				end
+				assert(not addon.API.SetOrdinaryWhisperObserver(Observer))
+				C_ChatInfo.SendChatMessage = function() return "native result" end
+				SendChatMessage = function(...) return C_ChatInfo.SendChatMessage(...) end
+				EventRegistry = { RegisterCallback = function(_, event, fn, owner)
+					assert(event == "ChatFrame.OnEditBoxPreSendText")
+					registrations, preSend, preSendOwner = registrations + 1, fn, owner
+				end }
+				assert(addon.API.SetOrdinaryWhisperObserver(Observer))
+				assert(addon.API.SetOrdinaryWhisperObserver(Observer) and hooks == 2 and registrations == 1)
+				local box = { GetChatType = function() return "WHISPER" end,
+					GetTellTarget = function() return "Chronic Exhaustion" end,
+					GetText = function() error("must not read private chat text") end }
+				preSend(preSendOwner, box)
+				assert(#observations == 1 and observations[1][1] == "WHISPER"
+					and observations[1][2] == "Chronic Exhaustion")
+				assert(C_ChatInfo.SendChatMessage("private text", "WHISPER", nil, "Peer-Realm") == "native result")
+				assert(#observations == 2 and observations[2][2] == "Peer-Realm")
+				assert(SendChatMessage("private text", "WHISPER", nil, "Peer-Realm") == "native result")
+				assert(#observations == 4, "legacy forwarding may produce two idempotent observations")
+				addon.isRunningTests = true
+				assert(not addon.API.SetOrdinaryWhisperObserver(nil))
+				assert(not addon.API.SetOrdinaryWhisperObserver(function() error("test observer") end))
+				assert(not addon.API.AddMessageEventFilter("CHAT_MSG_SYSTEM", filter))
+				assert(not addon.API.RemoveMessageEventFilter("CHAT_MSG_SYSTEM", filter))
+				addon.isRunningTests = false
+				C_ChatInfo.SendChatMessage("private text", "WHISPER", nil, "Peer-Realm")
+				assert(#observations == 5, "live tests must not retire or replace the live observer")
+				addon.isEnabled = false
+				preSend(preSendOwner, box); C_ChatInfo.SendChatMessage("private text", "WHISPER", nil, "Peer-Realm")
+				addon.isEnabled, addon.isLoggingOut = true, true
+				preSend(preSendOwner, box); C_ChatInfo.SendChatMessage("private text", "WHISPER", nil, "Peer-Realm")
+				addon.isLoggingOut = false
+				assert(addon.API.SetOrdinaryWhisperObserver(nil))
+				preSend(preSendOwner, box); C_ChatInfo.SendChatMessage("private text", "WHISPER", nil, "Peer-Realm")
+				assert(#observations == 5, "disabled, departing, and retired observers must stay inert")
+				assert(addon.API.SetOrdinaryWhisperObserver(function() error("bad observer") end))
+				assert(C_ChatInfo.SendChatMessage("private text", "WHISPER", nil, "Peer-Realm") == "native result")
+				-- A hook failure must not leave a partially installed active observer.
+				hooksecurefunc = function() error("hook unavailable") end
+				C_ChatInfo = { SendChatMessage = function() return "new native result" end }
+				assert(not addon.API.SetOrdinaryWhisperObserver(Observer))
+				SendChatMessage("private text", "WHISPER", nil, "Peer-Realm")
+				assert(#observations == 5)
+			end)
+			addon.API.SetOrdinaryWhisperObserver(nil)
+			for _, key in ipairs(keys) do _G[key] = saved[key] end
+			addon.isEnabled, addon.isLoggingOut, addon.isRunningTests = enabled, loggingOut, runningTests
+			assert(ok, err)
+		end
+		do
 			-- Capability discovery is offline-only: probe the real native adapter
 			-- without replacing any Blizzard namespace in the in-game test suite.
 			local keys = {

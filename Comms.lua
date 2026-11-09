@@ -340,7 +340,7 @@ end
 function QuestTogether:RecordCommsDiagnostic(kind, detail)
 	local diagnostics = self:GetCommsDiagnostics()
 	diagnostics[kind] = (diagnostics[kind] or 0) + 1
-	if kind == "failedRoutes" or kind == "invalidMessages" or kind == "serverChannelRefusals" then
+	if kind == "failedRoutes" or kind == "invalidMessages" or kind == "serverChannelRefusals" or kind == "whisperUnavailable" then
 		diagnostics.lastFailure = detail
 	end
 	-- Keep every display decision: these are needed to explain a user's bubble.
@@ -411,6 +411,208 @@ function QuestTogether:UnregisterAnnouncementChannelChatFilters()
 		self.API.RemoveMessageEventFilter(eventName, self.announcementChannelChatFilterFunc)
 	end
 	self.announcementChannelChatFiltersRegistered = nil
+end
+
+-- Offline-recipient notices identify a player, but not the originating send.
+-- Correlate only actual native QT whispers, and fail open for ordinary whispers
+-- to that player. Keep the decision across chat frames; filters are not a queue
+-- of one-use events, and can run before or after our event handler.
+local WHISPER_NOTICE_SECONDS, WHISPER_UNAVAILABLE_SECONDS = 30, 60
+local WHISPER_TARGET_LIMIT = 128
+local function WhisperNow(a)
+	return a:SafeToNumber(a.API.GetTime()) or 0
+end
+local function WhisperName(a, value)
+	if not a:CanAccessValue(value) or type(value) ~= "string" or #value > 120 or value:find("[%c|,:]") then
+		return nil
+	end
+	return a:NormalizeMemberName(value)
+end
+local function WhisperState(a, create, allowDeparture)
+	local transport = rawget(a, "transportState")
+	if not transport or (not allowDeparture and (transport.departing or not a.isEnabled or a.isLoggingOut)) then
+		return nil
+	end
+	local s = rawget(a, "addonWhisperState")
+	if s and s.transport ~= transport then
+		s = nil
+	end
+	if not s and create then
+		s = { transport = transport, targets = {}, ordinary = {} }
+		a.addonWhisperState = s
+	end
+	return s
+end
+local function PruneWhisperTargets(rows, now)
+	local count = 0
+	for key, row in pairs(rows) do
+		if now < row.at or now >= row.expires then
+			rows[key] = nil
+		else
+			count = count + 1
+		end
+	end
+	return count
+end
+local function PlayerNotFoundPattern(format)
+	local parts, index, captures = { "^" }, 1, 0
+	local function Literal(text)
+		return (text:gsub("([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1"))
+	end
+	while index <= #format do
+		local marker = format:find("%", index, true)
+		if not marker then
+			parts[#parts + 1] = Literal(format:sub(index))
+			break
+		end
+		parts[#parts + 1] = Literal(format:sub(index, marker - 1))
+		if format:sub(marker, marker + 1) == "%%" then
+			parts[#parts + 1], index = "%%", marker + 2
+		elseif format:sub(marker, marker + 1) == "%s" or format:sub(marker, marker + 3) == "%1$s" then
+			captures = captures + 1
+			parts[#parts + 1] = "(.+)"
+			index = marker + (format:sub(marker, marker + 1) == "%s" and 2 or 4)
+		else
+			return nil
+		end
+	end
+	parts[#parts + 1] = "$"
+	return captures == 1 and table.concat(parts) or nil
+end
+
+function QuestTogether:RecordOrdinaryWhisperAttempt(distribution, target)
+	local s = WhisperState(self, true)
+	if not s then
+		return
+	end
+	local now = WhisperNow(self)
+	if not self:CanAccessValue(distribution) or type(distribution) ~= "string" then
+		s.ordinaryUnknownUntil = now + WHISPER_UNAVAILABLE_SECONDS
+		return
+	end
+	if distribution ~= "WHISPER" then
+		return
+	end
+	local name = WhisperName(self, target)
+	local count = PruneWhisperTargets(s.ordinary, now)
+	local key = name and name:lower()
+	if not key or (not s.ordinary[key] and count >= WHISPER_TARGET_LIMIT) then
+		-- An unreadable target or an unusually large burst must never cause us
+		-- to conceal an ordinary whisper failure.
+		s.ordinaryUnknownUntil = now + WHISPER_UNAVAILABLE_SECONDS
+		return
+	end
+	s.ordinary[key] = { at = now, expires = now + WHISPER_UNAVAILABLE_SECONDS }
+end
+
+function QuestTogether:RegisterAddonWhisperChatFilter()
+	if
+		rawget(self, "addonWhisperChatFilterRegistered")
+		or not self.API.SetOrdinaryWhisperObserver
+		or not self.API.AddMessageEventFilter
+	then
+		return
+	end
+	local ok, observing = pcall(self.API.SetOrdinaryWhisperObserver, function(distribution, target)
+		self:RecordOrdinaryWhisperAttempt(distribution, target)
+	end)
+	if not ok or observing ~= true then
+		return
+	end
+	self.addonWhisperChatFilterFunc = rawget(self, "addonWhisperChatFilterFunc")
+		or function(_, event, message)
+			return event == "CHAT_MSG_SYSTEM" and self:HandleAddonWhisperSystemMessage(message) or false
+		end
+	local added, result = pcall(self.API.AddMessageEventFilter, "CHAT_MSG_SYSTEM", self.addonWhisperChatFilterFunc)
+	self.addonWhisperChatFilterRegistered = added and result == true or nil
+end
+
+function QuestTogether:RecordAddonWhisperAttempt(target)
+	local s, name = WhisperState(self, true), WhisperName(self, target)
+	if not s or not name then
+		return
+	end
+	self:RegisterAddonWhisperChatFilter()
+	local now, key = WhisperNow(self), name:lower()
+	local count = PruneWhisperTargets(s.targets, now)
+	if count >= WHISPER_TARGET_LIMIT and not s.targets[key] then
+		return
+	end
+	s.targets[key] = { name = name, at = now, expires = now + WHISPER_NOTICE_SECONDS }
+end
+
+function QuestTogether:IsAddonWhisperTargetUnavailable(target)
+	local s, name = WhisperState(self, false, true), WhisperName(self, target)
+	local row = s and name and s.targets[name:lower()]
+	local now = WhisperNow(self)
+	return row ~= nil and now >= row.at and row.unavailableUntil ~= nil and now < row.unavailableUntil
+end
+
+function QuestTogether:ClearAddonWhisperFailure(target)
+	local s, name = WhisperState(self), WhisperName(self, target)
+	if s and name then
+		s.targets[name:lower()] = nil
+	end
+end
+
+function QuestTogether:HandleAddonWhisperSystemMessage(message)
+	local s = WhisperState(self)
+	if
+		not s
+		or not rawget(self, "addonWhisperChatFilterRegistered")
+		or not self:CanAccessValue(message)
+		or type(message) ~= "string"
+		or #message > 1024
+	then
+		return false
+	end
+	local getter = self.API.GetPlayerNotFoundMessageFormat
+	if type(getter) ~= "function" then
+		return false
+	end
+	local ok, format = pcall(getter)
+	if not ok or not self:CanAccessValue(format) or type(format) ~= "string" or #format > 512 then
+		return false
+	end
+	local pattern = PlayerNotFoundPattern(format)
+	local name = pattern and WhisperName(self, message:match(pattern))
+	local key, now = name and name:lower(), WhisperNow(self)
+	local row = key and s.targets[key]
+	if not row or now < row.at or now >= row.at + WHISPER_NOTICE_SECONDS then
+		return false
+	end
+	PruneWhisperTargets(s.ordinary, now)
+	if (s.ordinaryUnknownUntil and now < s.ordinaryUnknownUntil) or s.ordinary[key] then
+		return false
+	end
+	if not row.unavailableUntil then
+		-- Install the barrier before cancelling transfers: their cleanup and
+		-- completion callbacks can themselves try to send more packets.
+		row.unavailableUntil = now + WHISPER_UNAVAILABLE_SECONDS
+		row.expires = row.unavailableUntil
+		self:RecordCommsDiagnostic("whisperUnavailable", "route=WHISPER notice=PLAYER_NOT_FOUND")
+		if self.RetireMeshPeer then
+			self:RetireMeshPeer(row.name)
+		end
+		if WhisperState(self) ~= s then return true end
+		self:CancelCommunicationWhere(function(work)
+			if WhisperState(self) ~= s then return false end
+			local route = work.route
+			local recipient = route and route.distribution == "WHISPER" and WhisperName(self, route.target)
+			return recipient ~= nil and recipient:lower() == key
+		end, "unavailable")
+	end
+	return true
+end
+
+function QuestTogether:ResetAddonWhisperFailures()
+	if rawget(self, "addonWhisperChatFilterRegistered") and self.API.RemoveMessageEventFilter then
+		pcall(self.API.RemoveMessageEventFilter, "CHAT_MSG_SYSTEM", self.addonWhisperChatFilterFunc)
+	end
+	if self.API.SetOrdinaryWhisperObserver then
+		pcall(self.API.SetOrdinaryWhisperObserver, nil)
+	end
+	self.addonWhisperChatFilterRegistered, self.addonWhisperState = nil, nil
 end
 
 function QuestTogether:HideAnnouncementChannelFromChatWindows(channelName)
@@ -627,6 +829,7 @@ function QuestTogether:ResetCommsState()
 	self:EndCommunicationSession()
 	self.communicationState = nil
 	self:ResetTransport()
+	self:ResetAddonWhisperFailures()
 	self:ClosePartyChatReminderPreview()
 	self:ResetPartyChatReminder()
 	if self.ResetGeographicComms then

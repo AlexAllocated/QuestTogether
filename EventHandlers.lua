@@ -10,9 +10,14 @@ Responsibilities in this file:
 
 local QuestTogether = _G.QuestTogether
 
-function QuestTogether:CHAT_MSG_SYSTEM(message)
-	if self.isEnabled and not self.isLoggingOut and self.HandleQuestShareSystemMessage then
-		self:HandleQuestShareSystemMessage(message)
+function QuestTogether:CHAT_MSG_SYSTEM(_, message, ...)
+	if self.isEnabled and not self.isLoggingOut then
+		if self.HandleAddonWhisperSystemMessage then
+			self:HandleAddonWhisperSystemMessage(message, ...)
+		end
+		if self.HandleQuestShareSystemMessage then
+			self:HandleQuestShareSystemMessage(message)
+		end
 	end
 end
 

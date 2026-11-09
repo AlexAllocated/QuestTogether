@@ -140,7 +140,7 @@ private `.local` notes are historical context, not the source of truth.
   scrollbar controls and Edit Mode wait for their normal safe boundary. Local
   announcements enter that same progress reducer before local chat/bubbles;
   a later quest-log read repairs the rest of the local snapshot.
-  While snapped and hovering, POT attaches to the native tooltip owned by the
+  When the native tooltip remains visible, snapped POT attaches to the tooltip owned by the
   exact hovered quest block. The profile-owned `questTrackerTooltipPlacement`
   offers Top (default), Bottom and Side in settings and Edit Mode. Top and Bottom
   align the right edges, using the opposite vertical edge if the chosen edge has
@@ -150,7 +150,8 @@ private `.local` notes are historical context, not the source of truth.
   saved; leaving restores the ordinary anchor and Edit Mode keeps its placement
   bounds. Native enter events only schedule a fresh, guarded read; the existing
   runtime observer handles leaving. `questTrackerHideBlizzardTooltip` defaults
-  off and is shared by Groups & Sharing and Edit Mode. It may hide only the
+  on and is shared by Groups & Sharing and Edit Mode. Existing explicit false
+  choices remain unchanged; Reset to Default restores hiding. It may hide only the
   matching unprotected quest/campaign progress tooltip while POT is shown and
   restrictions permit. Failed suppression retains adjacency. Reward, item and
   unrelated tooltips remain untouched; QT never forces a reused tooltip to show.
@@ -476,6 +477,16 @@ An eligible connection rotates at most once per 120 seconds.
 Admission reserves slots for reciprocal handshakes before acknowledging them;
 busy peers decline without offering unusable introductions. Reservations expire
 and do not establish a confirmed edge or accepted player data.
+
+Native whispers can be accepted locally and later produce a player-not-found
+system notice. A bounded, transport-lifetime ledger correlates the localized
+notice with actual QT whisper attempts for 30 seconds. Ordinary whisper intent
+keeps ambiguous notices visible. Correlated failures retire only routing state,
+cancel that target's queued whispers, and hold further sends for 60 seconds;
+discovery retains its existing candidate backoff. An eligible native-origin
+packet clears the send hold before replies, without renewing domain data.
+Chat filters suppress only correlated notices; failures remain counted in QT's
+diagnostics. Missing hooks, unreadable values, and uncertain matches fail open.
 
 Interests have 120-second leases renewed every 40 seconds with new immutable query
 identities. Each query forwards once, to at most 3 neighbors with an 8-hop limit;

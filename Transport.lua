@@ -21,6 +21,7 @@ local METRICS = {
 	nativeNoResult = true,
 	nativeUnknown = true,
 	nativeBooleanSuccess = true,
+	whisperUnavailable = true,
 }
 local NATIVE_RESULTS = {}
 local NATIVE_ROUTES = { PARTY = true, RAID = true, INSTANCE_CHAT = true, WHISPER = true }
@@ -119,6 +120,11 @@ local function Valid(a, wire, route)
 		and a.API
 		and type(a.API.SendAddonMessage) == "function"
 end
+local function WhisperUnavailable(a, route)
+	return route.distribution == "WHISPER"
+		and a.IsAddonWhisperTargetUnavailable
+		and a:IsAddonWhisperTargetUnavailable(route.target) == true
+end
 local function Take(s, now, cost, mesh)
 	Refill(s, now)
 	if s.departing or (s.blockedUntil and now < s.blockedUntil) or s.tokens < 1 or s.byteTokens < cost then
@@ -170,7 +176,16 @@ local function ReportNativeFailure(a, s, context, route, nativeKey, nativeLabel)
 end
 local function NativeSend(a, s, wire, context, route)
 	local target, generation = route.target, s.generation
+	-- A failed destination is suppressed before cancellation callbacks run.
+	-- Keep this final guard for direct sends and reentrant cleanup controls.
+	if WhisperUnavailable(a, route) then
+		Count(s, "whisperUnavailable")
+		return false, "unavailable"
+	end
 	Count(s, "attempts")
+	if route.distribution == "WHISPER" and a.RecordAddonWhisperAttempt then
+		a:RecordAddonWhisperAttempt(target)
+	end
 	local ok, result = pcall(a.API.SendAddonMessage, a.commPrefix, wire, route.distribution, target)
 	local code = ok and a:SafeToNumber(result) or nil
 	local nativeKey, nativeLabel = "nativeUnknown", "unknown"
@@ -237,6 +252,9 @@ function QT:InitializeTransport()
 			metrics = {},
 		}
 		self.transportState = state
+	end
+	if self.RegisterAddonWhisperChatFilter then
+		self:RegisterAddonWhisperChatFilter()
 	end
 	return state
 end
@@ -324,6 +342,10 @@ function QT:SendTransportNow(wire, context, route, mode)
 			return false, "invalid"
 		end
 	end
+	if WhisperUnavailable(self, route) then
+		Count(s, "whisperUnavailable")
+		return false, "unavailable"
+	end
 	if s.departing then
 		if (s.blockedUntil and now < s.blockedUntil) or s.tokens < 1 or s.byteTokens < cost then
 			return false, "paced"
@@ -371,6 +393,10 @@ function QT:QueueTransportWire(wire, context, route, options)
 		or (options.isCurrent ~= nil and type(options.isCurrent) ~= "function")
 	then
 		return false, "invalid"
+	end
+	if WhisperUnavailable(self, route) then
+		Count(s, "whisperUnavailable")
+		return false, "unavailable"
 	end
 	local replaced = {}
 	local nonControl = s.inFlight and s.inFlight.priority ~= "control" and 1 or 0
@@ -495,8 +521,8 @@ local function Select(a, s, now)
 		-- A mesh turn cannot block private traffic while its smaller budget
 		-- refills. Once eligible, every outer turn reserves shared byte credit;
 		-- continuously affordable small packets cannot starve a larger one.
-		return not candidate.meshTraffic or (candidate == mesh
-			and s.meshTokens >= 1 and s.meshByteTokens >= Cost(a, candidate.wire))
+		return not candidate.meshTraffic
+			or (candidate == mesh and s.meshTokens >= 1 and s.meshByteTokens >= Cost(a, candidate.wire))
 	end, true, SharedFlow)
 	return row, slot, row == mesh and meshSlot or nil
 end
@@ -511,8 +537,13 @@ function QT:DrainTransport()
 		snapshot[#snapshot + 1] = row
 	end
 	for _, row in ipairs(snapshot) do
-		local reason = (now < row.createdAt or now >= row.expires) and "expired" or (not Current(row) and "cancelled")
+		local reason = (now < row.createdAt or now >= row.expires) and "expired"
+			or (not Current(row) and "cancelled")
+			or (WhisperUnavailable(self, row.route) and "unavailable")
 		if reason and Remove(s, row) then
+			if reason == "unavailable" then
+				Count(s, "whisperUnavailable")
+			end
 			Complete(s, row, false, reason)
 		end
 	end
@@ -538,6 +569,13 @@ function QT:DrainTransport()
 		if now < row.createdAt or now >= row.expires then
 			if Remove(s, row) then
 				Complete(s, row, false, "expired")
+			end
+			break
+		end
+		if WhisperUnavailable(self, row.route) then
+			if Remove(s, row) then
+				Count(s, "whisperUnavailable")
+				Complete(s, row, false, "unavailable")
 			end
 			break
 		end
