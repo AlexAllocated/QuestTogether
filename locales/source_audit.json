@@ -74,9 +74,11 @@
       "Skipping channel join because addon is disabled",
       "Unable to join peer directory ",
       "Unknown",
+      "WHISPER",
       "announcement age sender=%s event=%s reportedAgeSeconds=%s",
       "local=%s sender=%s event=%s quest=%s bubbles=%s ownBubbleMode=%s text=%s",
       "option event=",
+      "route=WHISPER notice=PLAYER_NOT_FOUND",
       "scope sender="
     ],
     "CommsProtocol.lua": [
@@ -972,6 +974,7 @@
       "BYE",
       "OTHER",
       "QuestTogether: Addon message send failed (operation=",
+      "WHISPER",
       "communication send",
       "outbound completion",
       "outbound queue full",
