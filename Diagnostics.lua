@@ -131,6 +131,8 @@ function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 	for _, group in ipairs({
 		{ "transport", self:GetTransportMetrics() },
 		{ "communication", self:GetCommunicationMetrics() },
+		{ "meshNetwork", self:GetMeshNetworkMetrics() },
+		{ "meshPublications", self:GetMeshPublicationMetrics() },
 		{ "questCompare", self:GetQuestCompareCommunicationDiagnostics() },
 		{ "partyQuestSync", self:GetPartyQuestSyncDiagnostics() },
 		{ "transfer", self:GetCommTransferMetrics() },

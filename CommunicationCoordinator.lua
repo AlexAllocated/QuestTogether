@@ -106,20 +106,24 @@ local function FirstResponse(a, request)
 	request.responseProgress = true
 end
 local function RouteKey(route)
-	return route.distribution .. ":" .. tostring(route.channelName or route.target or route.recipient or "")
+	return route.distribution .. ":" .. tostring(route.scope or route.target or route.recipient or "")
 end
 -- Group transport has no native target. Keep the intended peer separately so
 -- correlation, cancellation and replay retain the intended peer.
 function QT:GetQuestCompareRoutes(target, requiresGroup)
 	target = Name(self, target)
-	if not target then return {} end
+	if not target then
+		return {}
+	end
 	if self:IsGroupedSender(target) then
 		local distribution = self:GetGroupAnnouncementDistribution()
 		if GROUP[distribution] then
 			return { { distribution = distribution, recipient = target, requiresGroup = true } }
 		end
 	end
-	if requiresGroup then return {} end
+	if requiresGroup then
+		return {}
+	end
 	return { { distribution = "WHISPER", target = target } }
 end
 function QT:GetCommunicationRoutes(operation, routes)
@@ -157,12 +161,13 @@ function QT:IsCommunicationRouteCurrent(route, fingerprint)
 	elseif GROUP[route.distribution] then
 		return route.distribution == self:GetGroupAnnouncementDistribution()
 			and fingerprint == self:GetPartyRosterFingerprint()
-			and (not route.recipient or (self:IsGroupedSender(route.recipient) and not self:IsIgnoredPlayerName(route.recipient)))
-	elseif route.distribution == "CHANNEL" then
+			and (
+				not route.recipient
+				or (self:IsGroupedSender(route.recipient) and not self:IsIgnoredPlayerName(route.recipient))
+			)
+	elseif route.distribution == "MESH" then
 		local geo = rawget(self, "geographicCommsState")
-		return route.channelName == self.announcementChannelName
-			or (geo and geo.subscriptions[route.channelName] ~= nil)
-			or false
+		return route.scope == "global" or (geo and route.scope == geo.currentZone) or false
 	end
 	return false
 end
@@ -195,7 +200,11 @@ function QT:NormalizeCommunicationRoutes(operation, routes)
 		if not self:CanAccessValue(distribution) or type(distribution) ~= "string" then
 			return nil
 		end
-		local route = { distribution = distribution, requiresGroup = original.requiresGroup == true }
+		local route = {
+			distribution = distribution,
+			requiresGroup = original.requiresGroup == true,
+			meshTraffic = original.meshTraffic == true,
+		}
 		if
 			original.developerAnnouncement
 			and (operation == "ANN" or operation == "LVL" or operation == "DLOC")
@@ -208,25 +217,26 @@ function QT:NormalizeCommunicationRoutes(operation, routes)
 			if not route.target then
 				return nil
 			end
-		elseif distribution == "CHANNEL" then
-			local channel = original.channelName or self.announcementChannelName
+		elseif distribution == "MESH" then
+			local scope = original.scope
 			if
-				not self:CanAccessValue(channel)
-				or type(channel) ~= "string"
-				or channel == ""
-				or #channel > 120
-				or channel:find("[%c|]")
+				not self:GetCommOperation(operation).publicRelay
+				or (scope ~= "global" and (type(scope) ~= "number" or scope <= 0 or scope % 1 ~= 0))
 			then
 				return nil
 			end
-			route.channelName = channel
-			route.requiresChannelJoin = true
+			route.scope = scope
 		elseif GROUP[distribution] then
 			if original.recipient ~= nil then
 				route.recipient = Name(self, original.recipient)
-				if not route.recipient then return nil end
+				if not route.recipient then
+					return nil
+				end
 			end
 		else
+			return nil
+		end
+		if self:GetCommOperation(operation).meshOnly and distribution ~= "WHISPER" then
 			return nil
 		end
 		local key = RouteKey(route)
@@ -236,10 +246,7 @@ function QT:NormalizeCommunicationRoutes(operation, routes)
 		then
 			return nil
 		end
-		if
-			self:GetCommOperation(operation).globalOnly
-			and (distribution ~= "CHANNEL" or route.channelName ~= self.announcementChannelName)
-		then
+		if self:GetCommOperation(operation).globalOnly and (distribution ~= "MESH" or route.scope ~= "global") then
 			return nil
 		end
 		if seen[key] then
@@ -428,6 +435,8 @@ function QT:SubmitCommunication(operation, record, routes, options)
 		local key = RouteKey(route)
 		local descriptor = Copy(options)
 		descriptor.operation = operation
+		descriptor.meshTraffic = spec.meshOnly == true or options.meshTraffic == true or route.meshTraffic == true
+		route.meshTraffic = descriptor.meshTraffic
 		descriptor.requestId = context.requestId
 		descriptor.owner = options.owner or s
 		descriptor.expires = options.expires or Now(self) + spec.lifetime
@@ -436,6 +445,13 @@ function QT:SubmitCommunication(operation, record, routes, options)
 		descriptor.key = options.key and (key .. ":" .. options.key) or nil
 		descriptor.publishesLocation = options.publishesLocation == true or SubmitsLocation(operation, data)
 		local policy = policies[operation]
+		descriptor.publicationCurrent = function()
+			return Current(self, s)
+				and self:IsCommunicationRouteCurrent(route, fingerprint)
+				and (not descriptor.publishesLocation or self:CanPublishPlayerLocation())
+				and Predicate(self, options.publicationCurrent)
+				and (not policy or not policy.canSend or policy.canSend(self, data, route, options))
+		end
 		descriptor.isCurrent = function()
 			if not Current(self, s) or not self:IsCommunicationRouteCurrent(route, fingerprint) then
 				return false
@@ -448,12 +464,22 @@ function QT:SubmitCommunication(operation, record, routes, options)
 			end
 			return not policy or not policy.canSend or policy.canSend(self, data, route, options)
 		end
-		local completed = false
+		local completed, started = false, false
+		descriptor.onStarted = function()
+			if started then
+				return
+			end
+			started = true
+			Invoke(self, "communication first progress", options.onStarted)
+		end
 		descriptor.onComplete = function(ok, status, code, ticket)
 			if completed then
 				return
 			end
 			completed = true
+			if #frames == 1 and route.distribution ~= "MESH" and (ok or status == "ambiguous") then
+				descriptor.onStarted()
+			end
 			if ok and options.cacheResponse and #frames == 1 then
 				self:CacheCommResponse(context, frames[1], route, descriptor)
 			end
@@ -473,6 +499,11 @@ function QT:SubmitCommunication(operation, record, routes, options)
 		elseif not Current(self, s) then
 			ok, status = false, "cancelled"
 			descriptor.onComplete(false, status)
+		elseif route.distribution == "MESH" then
+			ok, status, ticket = self:QueueMeshPublication(context, data, route.scope, descriptor)
+			if not ok then
+				descriptor.onComplete(false, status, nil, ticket)
+			end
 		elseif #frames == 1 then
 			ok, status, ticket = self:QueueTransportWire(frames[1], operation, route, descriptor)
 			if not ok then
@@ -576,9 +607,10 @@ function QT:Request(operation, record, routes, options)
 		roster = groupOnly and self:GetPartyRosterFingerprint() or nil,
 		generation = s.generation,
 		acceptLatePongs = options.acceptLatePongs == true,
+		meshTraffic = spec.meshOnly == true or options.meshTraffic == true,
 	}
 	s.requests[id] = request
-	if target then
+	if target and not request.meshTraffic then
 		s.inboundTargets[target] = (s.inboundTargets[target] or 0) + 1
 	end
 	local callerCurrent = options.isCurrent
@@ -638,12 +670,17 @@ function QT:CancelCommRequest(id, reason)
 	local request = s.requests[id]
 	s.requests[id] = nil
 	if request then
-		if request.target and s.inboundTargets then
+		if request.target and not request.meshTraffic and s.inboundTargets then
 			local count = (s.inboundTargets[request.target] or 1) - 1
 			s.inboundTargets[request.target] = count > 0 and count or nil
 		end
 		if reason == "complete" or reason == "completed" then
 			Timing(self, "requestCompletion", Now(self) - request.startedAt)
+		end
+		if self.CancelMeshPublicationsWhere then
+			self:CancelMeshPublicationsWhere(function(descriptor)
+				return descriptor.requestId == id or descriptor.owner == request
+			end, reason or "cancelled")
 		end
 		self:CancelTransportWhere(function(row)
 			return row.requestId == id or row.owner == request
@@ -654,6 +691,9 @@ function QT:CancelCommRequest(id, reason)
 	end
 end
 function QT:CancelCommunicationWhere(predicate, reason)
+	if self.CancelMeshPublicationsWhere then
+		self:CancelMeshPublicationsWhere(predicate, reason)
+	end
 	self:CancelCommTransfers(predicate, reason)
 	self:CancelTransportWhere(predicate, reason)
 	local s = rawget(self, "communicationState")
@@ -691,7 +731,10 @@ function QT:IsCommResponseExpected(frame, sender)
 	if latePong then
 		return true, Now(self) + 600
 	end
-	if frame.total and frame.total > 1 and not request.extended then
+	-- Mesh handshakes and owner proofs have deliberate short deadlines. One
+	-- partial reply must not borrow the ten-minute allowance for private logs
+	-- and diagnostics and pin a bootstrap/authentication slot until then.
+	if frame.total and frame.total > 1 and not request.extended and not request.meshTraffic then
 		request.extended = true
 		request.expires = request.startedAt + 600
 		local pending = self.pendingPingRequests and self.pendingPingRequests[frame.requestId]
@@ -711,14 +754,22 @@ end
 function QT:GetCommunicationRequestProgress(id)
 	local state = rawget(self, "communicationState")
 	local request = state and state.requests[id]
-	if not request or not Current(self, state) then return nil end
-	return { startedAt = request.startedAt, firstResponseAt = request.firstResponseAt,
-		lastProgressAt = request.lastProgressAt, expires = request.expires }
+	if not request or not Current(self, state) then
+		return nil
+	end
+	return {
+		startedAt = request.startedAt,
+		firstResponseAt = request.firstResponseAt,
+		lastProgressAt = request.lastProgressAt,
+		expires = request.expires,
+	}
 end
 function QT:RecordCommunicationResponseProgress(frame, sender)
 	local state = rawget(self, "communicationState")
 	local request = state and frame.requestId and state.requests[frame.requestId]
-	if not request or not self:IsCommResponseExpected(frame, sender) then return false end
+	if not request or not self:IsCommResponseExpected(frame, sender) then
+		return false
+	end
 	FirstResponse(self, request)
 	return true
 end
@@ -730,7 +781,7 @@ local function Seen(s, key, now, remember)
 	if remember == false then
 		return false
 	end
-	s.seenCursor = s.seenCursor % 4096 + 1
+	s.seenCursor = s.seenCursor % 2048 + 1
 	local retired = s.seenRing[s.seenCursor]
 	if retired then
 		s.seen[retired] = nil
@@ -821,13 +872,26 @@ local function DispatchOperation(self, frame, data, sender, context)
 			context
 		)
 	end
-	if operation == "QTDQ" then
-		return self:HandleGeographicDiscovery(data, sender, context)
+	local meshHandlers = {
+		MHEL = "HandleMeshHello",
+		MINT = "HandleMeshInterest",
+		MCAN = "HandleMeshInterestCancel",
+		MPUB = "HandleMeshPublication",
+		MAUTH = "HandleMeshAuthenticationRequest",
+	}
+	if meshHandlers[operation] then
+		return self[meshHandlers[operation]](self, data, sender, context)
+	end
+	if operation == "QTCHAT" then
+		return self:HandleQTMeshChat(data, sender, context)
 	end
 	if operation == "HELLO" then
 		return self:HandleDeveloperAnnouncementHello(data, sender, context)
 	end
 	if operation == "VIP" then
+		if context.meshSignedVerified then
+			return true
+		end
 		return self:HandleVIPIdentity(data, sender, context)
 	end
 	if operation == "DEVANN" then
@@ -860,7 +924,7 @@ local function DispatchOperation(self, frame, data, sender, context)
 		return true
 	end
 	if operation == "PING" then
-		return self:HandlePingRequest(data, context.distribution, context.localID, context.channelName)
+		return self:HandlePingRequest(data, context)
 	end
 	if operation == "PONG" then
 		return self:HandlePingResponse(data)
@@ -911,9 +975,10 @@ function QT:DispatchCommRecord(frame, data, sender, context)
 	context.messageId = frame.messageId
 	if
 		spec.privateOnly
-		and (context.distribution ~= "WHISPER" or not self:IsDeveloperLocationSubscriptionCurrent(
-			data.subscriptionSession, data.subscriptionId
-		))
+		and (
+			context.distribution ~= "WHISPER"
+			or not self:IsDeveloperLocationSubscriptionCurrent(data.subscriptionSession, data.subscriptionId)
+		)
 	then
 		return false
 	end
@@ -924,14 +989,14 @@ function QT:DispatchCommRecord(frame, data, sender, context)
 		return false
 	end
 	local response = self:IsCommResponseRecord(frame.operation, data)
-	if response and (context.distribution == "CHANNEL" or not self:IsCommResponseExpected(frame, sender)) then
+	if response and (context.distribution == "MESH" or not self:IsCommResponseExpected(frame, sender)) then
 		return false
 	end
 	local request = frame.requestId and s.requests[frame.requestId]
 	if frame.operation == "ERROR" and (not request or data.operation ~= request.operation) then
 		return false
 	end
-	local key = sender .. ":" .. frame.session .. ":" .. frame.messageId
+	local key = sender .. ":" .. frame.session .. ":" .. frame.messageId .. ":" .. frame.operation
 	local isRequest = spec.semantic == "request" and not response
 	-- Authenticated subscriptions own replay admission. A cached signed offer
 	-- must be usable again after consent/session reset or verifier congestion.
@@ -958,6 +1023,9 @@ function QT:DispatchCommRecord(frame, data, sender, context)
 		self:RecordDiagnosticError("communication dispatch", result)
 		return false
 	end
+	if result == true and context.distribution == "WHISPER" and self.RecordMeshPeerActivity then
+		self:RecordMeshPeerActivity(sender)
+	end
 	if result == true and isRequest and Current(self, s) then
 		Seen(s, key, Now(self))
 	end
@@ -966,6 +1034,20 @@ function QT:DispatchCommRecord(frame, data, sender, context)
 		Timing(self, "responseCompletion", Now(self) - request.startedAt)
 	end
 	return result == true
+end
+-- Only the publication verifier calls this entry after proving the native
+-- origin or exact immutable digest. Relay routing metadata never reaches domains.
+function QT:DispatchVerifiedMeshRecord(frame, data, origin, context)
+	local spec = self:GetCommOperation(frame.operation)
+	if not spec or not spec.publicRelay or spec.privateOnly or spec.groupOnly then
+		return false
+	end
+	if self:IsIgnoredPlayerName(origin) or self:IsSelfSender(origin) then
+		return false
+	end
+	local verified = Copy(context)
+	verified.distribution, verified.meshVerified = "MESH", true
+	return self:DispatchCommRecord(frame, data, origin, verified)
 end
 -- Bound decode/dispatch work independently of retained object limits. The
 -- runtime grants one frame's allowance; idle time never accumulates a burst.
@@ -978,7 +1060,7 @@ local function AdmitIncoming(a, wire, distribution, sender)
 	-- shared ingress budget, preserving room for normal zone and party work.
 	if
 		distribution == "WHISPER"
-		and (wire:sub(1, 6) == "2|ANN|" or wire:sub(1, 6) == "2|LVL|" or wire:sub(1, 7) == "2|DLOC|")
+		and (wire:sub(1, 6) == "3|ANN|" or wire:sub(1, 6) == "3|LVL|" or wire:sub(1, 7) == "3|DLOC|")
 		and not a:AdmitDeveloperAnnouncementPacket()
 	then
 		return false
@@ -1037,33 +1119,16 @@ local function Receive(self, prefix, wire, distribution, sender, localID, channe
 			return false
 		end
 		context.group = true
-	elseif distribution == "CHANNEL" then
-		if
-			not self:IsAnnouncementChannelEvent(distribution, localID, channelName)
-			and not self:IsGeographicChannelEvent(distribution, localID, channelName)
-		then
-			return false
-		end
-		if
-			spec.semantic == "response"
-			or spec.semantic == "transfer"
-			or spec.groupOnly
-			or spec.semantic == "stream"
-		then
-			return false
-		end
 	elseif distribution ~= "WHISPER" then
 		return false
 	end
 	if spec.groupOnly and not self:IsGroupedSender(sender) then
 		return false
 	end
-	if spec.regionalOnly and not self:IsGeographicChannelEvent(distribution, localID, channelName) then
+	if spec.globalOnly or (spec.meshOnly and distribution ~= "WHISPER") then
 		return false
 	end
-	if spec.globalOnly and not self:IsGlobalAnnouncementChannelEvent(distribution, localID, channelName) then
-		return false
-	end
+	context.meshTraffic = spec.meshOnly == true
 	context.backgroundAnnouncement = distribution == "WHISPER"
 		and (frame.operation == "ANN" or frame.operation == "LVL" or frame.operation == "DLOC")
 	if spec.semantic == "response" then
@@ -1071,7 +1136,7 @@ local function Receive(self, prefix, wire, distribution, sender, localID, channe
 			return false
 		end
 		local pending = self.communicationState.requests[frame.requestId]
-		context.targeted = pending and pending.target == sender or false
+		context.targeted = pending and not pending.meshTraffic and pending.target == sender or false
 	end
 	self:GetCommunicationMetrics().received = self:GetCommunicationMetrics().received + 1
 	local accepted = self:ReceiveCommFragment(frame, body, sender, context)
@@ -1103,6 +1168,8 @@ function QT:UpdateCommunicationRuntime()
 		self:EndCommunicationSession()
 		return
 	end
+	self:UpdateMeshNetwork(now)
+	self:UpdateMeshPublications(now)
 	self:UpdateDeveloperAnnouncements(now)
 	self:UpdateVIPIdentity()
 	self:FlushPendingQuestScanAnnouncement()
@@ -1164,6 +1231,7 @@ function QT:UpdateCommunicationRuntime()
 	end
 end
 function QT:EndCommunicationSession(preserveVerifiedPeers)
+	self.meshDepartureRoutes = self.GetMeshDepartureRoutes and self:GetMeshDepartureRoutes() or {}
 	self:ResetVIPIdentity(preserveVerifiedPeers)
 	self:ResetDeveloperAnnouncements()
 	local s = rawget(self, "communicationState")
@@ -1177,6 +1245,8 @@ function QT:EndCommunicationSession(preserveVerifiedPeers)
 		end
 		s.replies, s.replyBytes = {}, 0
 	end
+	self:ResetMeshPublications()
+	self:ResetMeshNetwork()
 	self.commsWorldGeneration = (rawget(self, "commsWorldGeneration") or 0) + 1
 	if self.ResetCommTransfers then
 		self:ResetCommTransfers("cancelled")
@@ -1194,6 +1264,7 @@ function QT:ResumeCommunicationSession()
 	s.departing = nil
 	s.startedAt = Now(self)
 	self:ResumeTransportSession()
+	self:InitializeMeshNetwork()
 	self:InitializeDeveloperAnnouncements()
 	if self.ResumeGeographicComms then
 		self:ResumeGeographicComms()
@@ -1203,16 +1274,11 @@ function QT:ResumeCommunicationSession()
 	self:BroadcastPartyJoinMetadata(true)
 end
 function QT:FlushCommunicationDeparture()
-	local routes = self:GetGeographicAnnouncementRoutes() or {}
-	local present = false
-	for _, route in ipairs(routes) do
-		if route.channelName == self.announcementChannelName then
-			present = true
-		end
-	end
-	if not present then
-		routes[#routes + 1] =
-			{ distribution = "CHANNEL", channelName = self.announcementChannelName, requiresChannelJoin = true }
+	local routes = self.meshDepartureRoutes or (self.GetMeshDepartureRoutes and self:GetMeshDepartureRoutes()) or {}
+	self.meshDepartureRoutes = nil
+	local group = self:GetGroupAnnouncementDistribution()
+	if group then
+		table.insert(routes, 1, { distribution = group })
 	end
 	return self:Emit("BYE", { reason = "departure" }, routes, { direct = true, priority = "control" })
 end
@@ -1228,7 +1294,9 @@ function QT:ResumeCommsWorldSession()
 	local result = self:ResumeCommunicationSession()
 	local session = rawget(self, "partyQuestCompareSession")
 	self:UpdatePartyQuestSync()
-	if session then self:RefreshPartyQuestCompare(nil, nil, true) end
+	if session then
+		self:RefreshPartyQuestCompare(nil, nil, true)
+	end
 	return result
 end
 function QT:FlushGeographicDeparture()

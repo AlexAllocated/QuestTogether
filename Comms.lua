@@ -2,7 +2,8 @@ local L = _G.QuestTogether.Translate
 --[[
 QuestTogether Announcement Communication Layer
 
-This file handles lightweight announcement events over a shared addon channel.
+This file handles lightweight announcement events over group routes and the
+public whisper mesh. Custom channels provide peer directories only.
 Local quest events are always published. Each receiving client applies its own
 display preferences when deciding whether to render bubbles or print chat logs.
 ]]
@@ -11,7 +12,6 @@ local QuestTogether = _G.QuestTogether
 
 local ANNOUNCEMENT_WIRE_VERSION = 2
 local ANNOUNCEMENT_MAX_TEXT_LENGTH = 220
-local CHANNEL_REFUSAL_REPORT_INTERVAL = 60
 local ANNOUNCEMENT_CHANNEL_FILTER_EVENTS = {
 	"CHAT_MSG_CHANNEL",
 	"CHAT_MSG_CHANNEL_NOTICE",
@@ -262,16 +262,6 @@ function QuestTogether:GetAnnouncementChannelLocalID(channelName)
 	return nil
 end
 
-function QuestTogether:GetAnnouncementChannelTarget(channelName)
-	channelName = channelName or self.announcementChannelName
-	local localID = self:GetAnnouncementChannelLocalID(channelName)
-	if type(localID) == "number" and localID > 0 then
-		return localID
-	end
-
-	return channelName
-end
-
 function QuestTogether:GetGroupAnnouncementDistribution()
 	if self.API and self.API.IsInInstanceGroup and self.API.IsInInstanceGroup() then
 		return "INSTANCE_CHAT"
@@ -295,11 +285,7 @@ function QuestTogether:GetAnnouncementWireRoutes()
 			requiresChannelJoin = false,
 		}
 	end
-	routes[#routes + 1] = {
-		distribution = "CHANNEL",
-		target = self:GetAnnouncementChannelTarget(),
-		requiresChannelJoin = true,
-	}
+	routes[#routes + 1] = { distribution = "MESH", scope = "global" }
 	return routes
 end
 
@@ -316,7 +302,7 @@ function QuestTogether:RecordCommsTraffic(kind, message, result)
 	diagnostics.trafficStartedAt = diagnostics.trafficStartedAt or now
 	diagnostics.trafficObservedAt = now
 	diagnostics.traffic = diagnostics.traffic or {}
-	local command = message:match("^2|([^|]+)|")
+	local command = message:match("^3|([^|]+)|")
 	command = self:GetCommOperation(command) and command or "OTHER"
 	local bucket = diagnostics.traffic[command] or {}
 	diagnostics.traffic[command] = bucket
@@ -365,44 +351,22 @@ function QuestTogether:RecordCommsDiagnostic(kind, detail)
 	end
 end
 
--- Server refusal notices can arrive after the native send API returned Success.
--- Observe each event once here, independently of the per-chat-frame filters and
--- whether any chat window displays the channel. Notices carry no addon prefix
--- or packet ID, so report the channel scope without inventing a failed operation
--- or changing a transport ticket that may already have completed.
+-- Channel membership is a discovery directory, never a data-delivery route.
+-- A refusal can delay a missing directory join; it says nothing about whisper
+-- delivery and must not discard an otherwise readable member list.
 function QuestTogether:CHAT_MSG_CHANNEL_NOTICE(_, notice, _, _, channelName, _, _, _, _, channelBaseName)
 	if not self.isEnabled or self.isLoggingOut or not self:CanAccessValue(notice)
 		or notice ~= "NOT_ALLOWED_IN_CHANNEL" then
 		return false
 	end
-	-- Prefer explicit channel metadata; never fall back to a cached numeric ID
-	-- that might now identify an unrelated channel after channel reordering.
 	local name = self:SafeTrimString(channelBaseName, "")
 	if name == "" then name = self:SafeTrimString(channelName, "") end
-	local scope
-	if MatchesAnnouncementChannelName(self, name) then
-		scope = "global"
-	elseif self:IsGeographicChannelName(name) then
-		scope = "geographic"
-	else
+	name = name:gsub("^%d+%.%s+", "")
+	if not MatchesAnnouncementChannelName(self, name) and not self:IsGeographicChannelName(name) then
 		return false
 	end
-	self:RecordTransportChannelRefusal(name)
-	local detail = "route=CHANNEL scope=" .. scope .. " notice=NOT_ALLOWED_IN_CHANNEL"
-	self:RecordCommsDiagnostic("serverChannelRefusals", detail)
-	local diagnostics = self:GetCommsDiagnostics()
-	local counter = scope == "global" and "serverChannelRefusalsGlobal" or "serverChannelRefusalsGeographic"
-	diagnostics[counter] = (diagnostics[counter] or 0) + 1
-	-- Two fixed buckets keep memory and logged errors bounded while counters
-	-- preserve every refusal. Different zones cannot bypass the geographic limit.
-	diagnostics.channelRefusalReportedAt = diagnostics.channelRefusalReportedAt or {}
-	local now = self:SafeToNumber(self.API and self.API.GetTime and self.API.GetTime()) or 0
-	local previous = diagnostics.channelRefusalReportedAt[scope]
-	if previous and now >= previous and now - previous < CHANNEL_REFUSAL_REPORT_INTERVAL then return true end
-	diagnostics.channelRefusalReportedAt[scope] = now
-	local message = "QuestTogether: The server refused an operation on a QuestTogether channel (" .. detail
-		.. "). Communication may be incomplete even when the send API reports success. Run /qt diagnostics for details."
-	self:RecordDiagnosticError("communication channel refusal", message)
+	self:RecordMeshDirectoryRefusal(name)
+	self:RecordCommsDiagnostic("meshDirectoryRefusals", "directory=" .. name .. " notice=NOT_ALLOWED_IN_CHANNEL")
 	return true
 end
 
@@ -515,7 +479,7 @@ function QuestTogether:EnsureAnnouncementChannelJoined(channelName)
 	local chatFrameId = (DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.GetID and DEFAULT_CHAT_FRAME:GetID()) or 1
 	self:Debugf(
 		"comms",
-		"Joining announcement channel name=%s chatFrameId=%s",
+		"Joining peer directory name=%s chatFrameId=%s",
 		SafeAddonString(self, channelName),
 		SafeAddonString(self, chatFrameId)
 	)
@@ -531,11 +495,11 @@ function QuestTogether:EnsureAnnouncementChannelJoined(channelName)
 			self.announcementChannelBindings = self.announcementChannelBindings or {}
 			self.announcementChannelBindings[channelName] = currentLocalID
 		end
-		self:Debugf("comms", "Joined announcement channel localID=%s", SafeAddonString(self, currentLocalID))
+		self:Debugf("comms", "Joined peer directory localID=%s", SafeAddonString(self, currentLocalID))
 		return true
 	end
 
-	self:Debug("Unable to join announcement channel " .. SafeAddonString(self, channelName), "comms")
+	self:Debug("Unable to join peer directory " .. SafeAddonString(self, channelName), "comms")
 	return false
 end
 
@@ -586,7 +550,7 @@ function QuestTogether:MoveAnnouncementChannelsToEnd()
 			j = j - 1
 		end
 	end
-	-- Keep the human chat channel before the machine-only zone subscriptions.
+	-- Keep the global discovery directory before the zone directories.
 	local firstQT, current
 	for _, channel in ipairs(channels) do
 		if channel.qt and not firstQT then
@@ -643,7 +607,7 @@ function QuestTogether:LeaveAnnouncementChannel()
 	if self.API and self.API.LeaveChannelByName then
 		self:Debugf(
 			"comms",
-			"Leaving announcement channel name=%s",
+			"Leaving peer directory name=%s",
 			SafeAddonString(self, self.announcementChannelName)
 		)
 		-- Channel leave can fail if Blizzard already removed it; no need to hard fail disable.
@@ -854,40 +818,6 @@ function QuestTogether:BuildAnnouncementEventForUnit(unitToken, eventType, text)
 		warMode = "",
 		emoteToken = "",
 	})
-end
-
-function QuestTogether:IsAnnouncementChannelEvent(channel, localID, name)
-	channel = SafePrimitiveString(self, channel, "")
-	name = SafePrimitiveString(self, name, "")
-	if GROUP_ANNOUNCEMENT_DISTRIBUTIONS[channel] then
-		return true
-	end
-
-	if channel ~= "CHANNEL" then
-		return false
-	end
-
-	if name ~= "" then
-		return MatchesAnnouncementChannelName(self, name) or self:IsGeographicChannelName(name)
-	end
-
-	local expectedLocalID = SafeChannelNumber(self, self.announcementChannelLocalID)
-	local incomingLocalID = SafeChannelNumber(self, localID)
-	return incomingLocalID ~= nil
-		and incomingLocalID > 0
-		and (expectedLocalID == incomingLocalID or self:IsGeographicChannelEvent(channel, incomingLocalID))
-end
-
-function QuestTogether:IsGlobalAnnouncementChannelEvent(distribution, localID, name)
-	if distribution ~= "CHANNEL" then
-		return false
-	end
-	name = SafePrimitiveString(self, name, "")
-	if name ~= "" then
-		return MatchesAnnouncementChannelName(self, name)
-	end
-	local expected = self:GetAnnouncementChannelLocalID(self.announcementChannelName)
-	return expected ~= nil and expected == SafeChannelNumber(self, localID)
 end
 
 function QuestTogether:SendAnnouncementEvent(eventType, text, questId, extraData)
@@ -1326,18 +1256,14 @@ function QuestTogether:SendQTChannelChat(message)
 	end
 	message = SafeTrimAddonString(self, message, "")
 	message = TruncateUtf8(message:gsub("[%c]", " "), 255)
-	if message == "" or not self.API.SendChannelChatMessage then
-		return false
-	end
-	if not self:EnsureAnnouncementChannelJoined(self.announcementChannelName) then
-		return false
-	end
-	local id = self:GetAnnouncementChannelLocalID()
-	if not id then
-		return false
-	end
-	local ok, sent = pcall(self.API.SendChannelChatMessage, message, id)
-	return ok and sent == true
+	if message == "" then return false end
+	local record = { text = message }
+	local sent = self:Emit("QTCHAT", record, { { distribution = "MESH", scope = "global" } }, {
+		owner = self,
+		expires = self.API.GetTime() + 30,
+	})
+	if sent then self:HandleQTMeshChat(record, self:GetPlayerFullName(), { localEcho = true }) end
+	return sent == true
 end
 
 function QuestTogether:ShouldShowQTChannelChatFromSender(name)
@@ -1357,32 +1283,14 @@ function QuestTogether:ShouldShowQTChannelChatFromSender(name)
 	return localMapID ~= nil and remoteMapID ~= nil and localMapID == remoteMapID
 end
 
--- Handle once per event, never from the per-chat-frame suppression filter.
--- Human channel chat is not addon protocol traffic or evidence of QT presence.
-function QuestTogether:CHAT_MSG_CHANNEL(
-	_,
-	message,
-	sender,
-	_,
-	channelName,
-	_,
-	_,
-	_,
-	_,
-	channelBaseName,
-	_,
-	_,
-	senderGUID
-)
+-- The coordinator supplies an admitted origin; text itself grants no presence,
+-- location, developer status or rendering permissions.
+function QuestTogether:HandleQTMeshChat(record, sender, context)
 	if not self.isEnabled or self:GetOption("showQTChat") == false or self:IsRuntimeRestrictionTypeActive("chat") then
 		return false
 	end
-	if
-		not MatchesAnnouncementChannelName(self, channelBaseName)
-		and not MatchesAnnouncementChannelName(self, channelName)
-	then
-		return false
-	end
+	if type(record) ~= "table" then return false end
+	local message = record.text
 	local name = SafeTrimAddonString(self, sender, "")
 	if name == "" then
 		return false
@@ -1412,7 +1320,7 @@ function QuestTogether:CHAT_MSG_CHANNEL(
 				self:ShowAnnouncementBubbleOnUnitNameplate("player", text, "QT_CHAT", icon, "texture")
 			end
 		else
-			local plate = self:FindVisiblePlayerNameplateForSender(SafePrimitiveString(self, senderGUID, ""), name)
+			local plate = self:FindVisiblePlayerNameplateForSender("", name)
 			if plate then
 				self:ShowAnnouncementBubbleOnNameplate(plate, text, "QT_CHAT", icon, "texture", name)
 			end

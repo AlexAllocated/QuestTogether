@@ -20,6 +20,7 @@ local function Setup(realCrypto)
 	end
 	if not realCrypto then
 		peer.Ed25519 = {
+			Hash = QT.Ed25519.Hash,
 			NewVerification = function()
 				return coroutine.create(function()
 					coroutine.yield()
@@ -45,24 +46,24 @@ local function Setup(realCrypto)
 		}
 	end
 	for _, p in ipairs({ dev, peer }) do
-		net:Join(p, p.announcementChannelName, true)
 		p:InitializeCommunications()
 		p:InitializeRuntimeCoordinator()
 		-- Only the communication progression is under test; regular publishers have
 		-- independent tests and are disabled here to expose diagnostic-only leakage.
 		function p:UpdatePlayerCommunications() end
 		function p:UpdateDeveloperAnnouncements() end
+		function p:UpdateMeshNetwork() end
 	end
 	return net, dev, peer
 end
 -- Full signed, repeated, and multi-minute diagnostic exchanges run offline.
-QT:RegisterTest("ping v2 real signature returns complete private snapshot only to its developer", function()
+QT:RegisterTest("ping protocol 3 real signature returns complete private snapshot only to its developer", function()
 	local net, dev, peer = Setup(true)
 	peer.db.profile.sharePlayerLocation = false
-	assert(dev:SendPingRequest())
+	assert(dev:SendPingRequest(peer.name))
 	net:Advance(90)
-	Eq(#dev.pongs, 2)
-	local pong = dev.pongs[2]
+	Eq(#dev.pongs, 1)
+	local pong = dev.pongs[1]
 	Eq(pong.senderName, peer.name)
 	Eq(pong.locationShared, false)
 	Eq(pong.coordX, "40.0")
@@ -80,7 +81,7 @@ QT:RegisterTest("ping v2 real signature returns complete private snapshot only t
 end, { offline = true })
 -- Full signed, repeated, and multi-minute diagnostic exchanges run offline.
 QT:RegisterTest(
-	"ping v2 authorized shared coordinates refresh normal stores and clear prior private positions",
+	"ping protocol 3 authorized shared coordinates refresh normal stores and clear prior private positions",
 	function()
 		local net, dev, peer = Setup()
 		peer.db.profile.sharePlayerLocation = false
@@ -133,7 +134,7 @@ QT:RegisterTest("hidden location presentation only uses fresh accepted private d
 	assert(not dev:IsPlayerLocationHiddenForDeveloper(peer.name))
 end, { offline = true })
 -- Full signed, repeated, and multi-minute diagnostic exchanges run offline.
-QT:RegisterTest("ping v2 auth binds sender target purpose timestamp and protocol generation", function()
+QT:RegisterTest("ping protocol 3 auth binds sender target purpose timestamp and protocol generation", function()
 	local _, dev, peer = Setup(true)
 	local request = assert(dev:PrepareDeveloperPingRequest({}, peer.name, true))
 	assert(dev.lastSignedText:find("QTDEV2", 1, true))
@@ -164,7 +165,7 @@ QT:RegisterTest("ping v2 auth binds sender target purpose timestamp and protocol
 end, { offline = true })
 -- Full signed, repeated, and multi-minute diagnostic exchanges run offline.
 QT:RegisterTest(
-	"ping v2 permission changes cancel authentication delayed replies and retained report traffic",
+	"ping protocol 3 permission changes cancel authentication delayed replies and retained report traffic",
 	function()
 		for _, phase in ipairs({ "authentication", "jitter", "report" }) do
 			local net, dev, peer = Setup()
@@ -189,7 +190,7 @@ QT:RegisterTest(
 	{ offline = true }
 )
 -- Full signed, repeated, and multi-minute diagnostic exchanges run offline.
-QT:RegisterTest("ping v2 initial response precedes report and neither duplicates nor reorder open it twice", function()
+QT:RegisterTest("ping protocol 3 initial response precedes report and neither duplicates nor reorder open it twice", function()
 	local net, dev, peer = Setup()
 	net.deliveryRule = function(packet)
 		local frame = peer:DecodeCommFrame(packet.wire)
@@ -221,7 +222,7 @@ QT:RegisterTest("ping v2 initial response precedes report and neither duplicates
 	Eq(#dev.pongs, 1)
 end, { offline = true })
 -- Full signed, repeated, and multi-minute diagnostic exchanges run offline.
-QT:RegisterTest("ping v2 no response time cutoff retains only bounded owned correlations", function()
+QT:RegisterTest("ping protocol 3 no response time cutoff retains only bounded owned correlations", function()
 	local net, dev, peer = Setup()
 	peer.db.profile.shareDeveloperDiagnostics = false
 	local ids = {}
@@ -261,7 +262,7 @@ QT:RegisterTest("ping v2 no response time cutoff retains only bounded owned corr
 	net:Advance(5)
 	Eq(#dev.pongs, 1, "after world transition")
 end, { offline = true })
-QT:RegisterTest("ping v2 retired protocol messages never import data or send fallback replies", function()
+QT:RegisterTest("ping protocol 3 retired protocol messages never import data or send fallback replies", function()
 	local net, dev, peer = Setup()
 	for _, prefix in ipairs({ "QuestTogether", "QuestTogether2" }) do
 		for _, wire in ipairs({
@@ -278,7 +279,7 @@ QT:RegisterTest("ping v2 retired protocol messages never import data or send fal
 end)
 
 -- Full signed, repeated, and multi-minute diagnostic exchanges run offline.
-QT:RegisterTest("ping v2 completed replies release producer capacity while retaining immutable recovery", function()
+QT:RegisterTest("ping protocol 3 completed replies release producer capacity while retaining immutable recovery", function()
 	local net, dev, peer = Setup()
 	peer.API.Random = function(low)
 		return low
@@ -315,7 +316,7 @@ end, { offline = true })
 
 -- Full signed, repeated, and multi-minute diagnostic exchanges run offline.
 QT:RegisterTest(
-	"ping v2 a completed diagnostic report frees its producer without weakening permission cancellation",
+	"ping protocol 3 a completed diagnostic report frees its producer without weakening permission cancellation",
 	function()
 		local net, dev, peer = Setup()
 		peer.API.Random = function(low)

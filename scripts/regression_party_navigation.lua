@@ -1087,6 +1087,12 @@ QT:RegisterTest("party navigation crosses the shared protocol atomically and ref
 			peer:UpdateCommunicationRuntime()
 		end)
 	end
+	local installed = 0
+	function b:HandlePartyNavigationMessage(data, sender, context)
+		local accepted = QT.HandlePartyNavigationMessage(self, data, sender, context)
+		if accepted then installed = installed + 1 end
+		return accepted
+	end
 	local lost, generation
 	net.deliveryRule = function(packet, receiver)
 		local frame = a:DecodeCommFrame(packet.wire)
@@ -1108,5 +1114,5 @@ QT:RegisterTest("party navigation crosses the shared protocol atomically and ref
 	Equal(info.title, title)
 	Equal(info.questID, 7)
 	Equal(info.x, 0.25)
-	Equal(b:GetCommTransferMetrics().received, 1, "duplicate fragments must not dispatch another snapshot")
+	Equal(installed, 1, "duplicate fragments must not dispatch another navigation snapshot")
 end, { offline = true })

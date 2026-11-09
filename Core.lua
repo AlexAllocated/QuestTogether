@@ -288,8 +288,8 @@ end
 local tostring = SafeText
 
 QuestTogether.addonName = addonName or "QuestTogether"
-QuestTogether.commPrefix = "QuestTogether2"
-QuestTogether.announcementChannelName = "QuestTogether"
+QuestTogether.commPrefix = "QuestTogether3"
+QuestTogether.announcementChannelName = "QuestTogether3"
 QuestTogether.retiredAnnouncementChannelName = "QuestTogetherAnnounce1"
 QuestTogether.questLogWindowName = "QuestTogether"
 QuestTogether.CHAT_BUBBLE_SIZE_MIN = 80
@@ -743,7 +743,6 @@ QuestTogether.completionEmotes = {
 -- The runtime event list that should only be registered while the addon is enabled.
 QuestTogether.runtimeEvents = {
 	"CHAT_MSG_ADDON",
-	"CHAT_MSG_CHANNEL",
 	"CHAT_MSG_CHANNEL_NOTICE",
 	"CHAT_MSG_SYSTEM",
 	"CHANNEL_COUNT_UPDATE",
@@ -812,6 +811,113 @@ QuestTogether.API = QuestTogether.API
 		end,
 		GetChannelName = function(name)
 			return GetChannelName(name)
+		end,
+		-- Directory APIs use display-list indices, never native channel IDs.
+		GetNumGuildMembers = function()
+			if type(GetNumGuildMembers) ~= "function" then
+				return 0
+			end
+			local ok, count = pcall(GetNumGuildMembers)
+			return ok and CanAccessForeignValue(count) and type(count) == "number" and count or 0
+		end,
+		GetGuildRosterInfo = function(index)
+			if type(GetGuildRosterInfo) ~= "function" then
+				return nil
+			end
+			local ok, name, _, _, _, _, _, _, _, online = pcall(GetGuildRosterInfo, index)
+			if not ok or not CanAccessForeignValue(name) or not CanAccessForeignValue(online) then
+				return nil
+			end
+			return type(name) == "string" and name or nil, online == true
+		end,
+		GetNumDisplayChannels = function()
+			if type(GetNumDisplayChannels) ~= "function" then
+				return 0
+			end
+			local ok, count = pcall(GetNumDisplayChannels)
+			return ok and CanAccessForeignValue(count) and type(count) == "number" and count or 0
+		end,
+		GetChannelDisplayInfo = function(index)
+			if type(GetChannelDisplayInfo) ~= "function" then
+				return nil
+			end
+			local ok, name, header, collapsed, channelID, count, active = pcall(GetChannelDisplayInfo, index)
+			if
+				not ok
+				or not CanAccessForeignValue(name)
+				or not CanAccessForeignValue(header)
+				or not CanAccessForeignValue(collapsed)
+				or not CanAccessForeignValue(channelID)
+				or not CanAccessForeignValue(count)
+				or not CanAccessForeignValue(active)
+			then
+				return nil
+			end
+			return name, header, collapsed, channelID, count, active
+		end,
+		GetChannelRosterInfo = function(index, member)
+			local getter = C_ChatInfo and C_ChatInfo.GetChannelRosterInfo or GetChannelRosterInfo
+			if type(getter) ~= "function" then
+				return nil
+			end
+			local ok, name = pcall(getter, index, member)
+			return ok and CanAccessForeignValue(name) and type(name) == "string" and name or nil
+		end,
+		GetSelectedDisplayChannel = function()
+			if type(GetSelectedDisplayChannel) ~= "function" then
+				return nil
+			end
+			local ok, index = pcall(GetSelectedDisplayChannel)
+			return ok and CanAccessForeignValue(index) and type(index) == "number" and index or nil
+		end,
+		SetSelectedDisplayChannel = function(index)
+			if type(SetSelectedDisplayChannel) ~= "function" or (InCombatLockdown and InCombatLockdown()) then
+				return false
+			end
+			return pcall(SetSelectedDisplayChannel, index)
+		end,
+		RequestChannelSelectionRestore = function(callback)
+			if type(callback) ~= "function" then
+				return false
+			end
+			local frame = QuestTogether.meshDirectoryRestoreEventFrame
+			if not frame then
+				frame = CreateFrame("Frame")
+				QuestTogether.meshDirectoryRestoreEventFrame = frame
+				frame:SetScript("OnEvent", function(owner, event)
+					if event ~= "PLAYER_LOGOUT" and InCombatLockdown and InCombatLockdown() then
+						return
+					end
+					owner:UnregisterAllEvents()
+					local restore = owner.restore
+					owner.restore = nil
+					if restore then
+						pcall(restore, event ~= "PLAYER_LOGOUT")
+					end
+				end)
+			end
+			frame.restore = callback
+			frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+			frame:RegisterEvent("PLAYER_LOGOUT")
+			return true
+		end,
+		CancelChannelSelectionRestore = function()
+			local frame = QuestTogether.meshDirectoryRestoreEventFrame
+			if frame then
+				frame.restore = nil
+				frame:UnregisterAllEvents()
+			end
+		end,
+		IsChannelWindowShown = function()
+			local frame = ChannelFrame
+			if frame == nil then
+				return false
+			end
+			if not QuestTogether:CanAccessForeignFrame(frame) then
+				return true
+			end
+			local ok, shown = pcall(frame.IsShown, frame)
+			return not ok or not CanAccessForeignValue(shown) or shown == true
 		end,
 		GetChatChannelList = function()
 			if type(GetChannelList) ~= "function" then
@@ -945,16 +1051,10 @@ QuestTogether.API = QuestTogether.API
 		ReportLuaError = function(message)
 			if type(geterrorhandler) == "function" then
 				local handler = geterrorhandler()
-				if type(handler) == "function" then handler(message) end
+				if type(handler) == "function" then
+					handler(message)
+				end
 			end
-		end,
-		SendChannelChatMessage = function(message, channelID)
-			local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
-			if type(send) ~= "function" then
-				return false
-			end
-			local ok, result = pcall(send, message, "CHANNEL", nil, channelID)
-			return ok and result ~= false
 		end,
 		SendLocalChatMessage = function(message, distribution)
 			if distribution ~= "SAY" and distribution ~= "YELL" then
@@ -982,9 +1082,13 @@ QuestTogether.API = QuestTogether.API
 			-- Keep unknown native state distinct from solo, and inspect both
 			-- group categories so instance groups do not depend on roster caches.
 			local function Read(query, ...)
-				if not CanAccessForeignValue(query) or type(query) ~= "function" then return nil end
+				if not CanAccessForeignValue(query) or type(query) ~= "function" then
+					return nil
+				end
 				local ok, value = pcall(query, ...)
-				if ok and CanAccessForeignValue(value) and type(value) == "boolean" then return value end
+				if ok and CanAccessForeignValue(value) and type(value) == "boolean" then
+					return value
+				end
 			end
 			local grouped, raid = Read(IsInGroup), Read(IsInRaid)
 			-- Older clients may omit the category constant. Their generic native
@@ -993,10 +1097,18 @@ QuestTogether.API = QuestTogether.API
 			if not CanAccessForeignValue(category) then
 				instance = nil
 			elseif category ~= nil then
-				if type(category) == "number" then instance = Read(IsInGroup, category) else instance = nil end
+				if type(category) == "number" then
+					instance = Read(IsInGroup, category)
+				else
+					instance = nil
+				end
 			end
-			if grouped == true or raid == true or instance == true then return true end
-			if grouped == false and raid == false and instance == false then return false end
+			if grouped == true or raid == true or instance == true then
+				return true
+			end
+			if grouped == false and raid == false and instance == false then
+				return false
+			end
 			return nil
 		end,
 		IsInInstanceGroup = function()
@@ -1382,24 +1494,46 @@ QuestTogether.API = QuestTogether.API
 		end,
 		GetCharacterQuestHistoryStatus = function(questID)
 			local id = QuestTogether:SafeToNumber(questID)
-			if not id or id < 1 or id > 1000000000 or id % 1 ~= 0
-				or QuestTogether:IsRuntimeRestricted() or not CanAccessForeignTable(C_QuestLog) then return "unknown" end
+			if
+				not id
+				or id < 1
+				or id > 1000000000
+				or id % 1 ~= 0
+				or QuestTogether:IsRuntimeRestricted()
+				or not CanAccessForeignTable(C_QuestLog)
+			then
+				return "unknown"
+			end
 			local function Read(method)
 				local fn = C_QuestLog[method]
-				if not CanAccessForeignValue(fn) or type(fn) ~= "function" then return nil end
+				if not CanAccessForeignValue(fn) or type(fn) ~= "function" then
+					return nil
+				end
 				local ok, value = pcall(fn, id)
-				if ok and CanAccessForeignValue(value) and type(value) == "boolean" then return value end
+				if ok and CanAccessForeignValue(value) and type(value) == "boolean" then
+					return value
+				end
 				return nil
 			end
 			-- Absence from the active log is not itself evidence of completion.
 			local active = Read("IsOnQuest")
-			if active == true then return "active" end
-			if active ~= false then return "unknown" end
+			if active == true then
+				return "active"
+			end
+			if active ~= false then
+				return "unknown"
+			end
 			local repeatable = Read("IsRepeatableQuest")
-			if repeatable == true then return "repeatable" end
-			if repeatable ~= false then return "unknown" end
+			if repeatable == true then
+				return "repeatable"
+			end
+			if repeatable ~= false then
+				return "unknown"
+			end
 			local completed = Read("IsQuestFlaggedCompleted")
-			if completed == true then return "completed" end
+			if completed == true then
+				return "completed"
+			end
 			return completed == false and "incomplete" or "unknown"
 		end,
 		IsQuestReadyForTurnIn = function(questID)
@@ -2079,10 +2213,26 @@ QuestTogether.API = QuestTogether.API
 		end,
 		GetQuestShareResultFormats = function()
 			local result = {}
-			if QuestTogether:IsRuntimeRestricted() then return result end
-			for _, suffix in ipairs({ "ACCEPTED", "ALREADY_DONE", "BUSY", "DEAD", "DECLINED",
-				"DIFFERENT_SERVER_DAILY", "INVALID", "LOG_FULL", "NOT_ALLOWED", "NOT_DAILY",
-				"NOT_IN_PARTY", "ONQUEST", "SUCCESS", "TIMER_EXPIRED", "TOO_FAR" }) do
+			if QuestTogether:IsRuntimeRestricted() then
+				return result
+			end
+			for _, suffix in ipairs({
+				"ACCEPTED",
+				"ALREADY_DONE",
+				"BUSY",
+				"DEAD",
+				"DECLINED",
+				"DIFFERENT_SERVER_DAILY",
+				"INVALID",
+				"LOG_FULL",
+				"NOT_ALLOWED",
+				"NOT_DAILY",
+				"NOT_IN_PARTY",
+				"ONQUEST",
+				"SUCCESS",
+				"TIMER_EXPIRED",
+				"TOO_FAR",
+			}) do
 				local key = "ERR_QUEST_PUSH_" .. suffix .. "_S"
 				local value = _G[key]
 				if CanAccessForeignValue(value) and type(value) == "string" and #value > 0 and #value <= 1024 then
@@ -2129,31 +2279,54 @@ QuestTogether.API = QuestTogether.API
 			return Minimap
 		end,
 		IsPartyQuestKeyboardInputBlocked = function(frame)
-			if not QuestTogether:CanMutateOwnedUI(frame) or QuestTogether:IsRuntimeRestricted() then return true end
-			if type(GetCurrentKeyBoardFocus) ~= "function" then return true end
+			if not QuestTogether:CanMutateOwnedUI(frame) or QuestTogether:IsRuntimeRestricted() then
+				return true
+			end
+			if type(GetCurrentKeyBoardFocus) ~= "function" then
+				return true
+			end
 			local ok, focus = pcall(GetCurrentKeyBoardFocus)
-			if not ok or not CanAccessForeignValue(focus) or focus ~= nil then return true end
+			if not ok or not CanAccessForeignValue(focus) or focus ~= nil then
+				return true
+			end
 			if Menu and type(Menu.GetManager) == "function" then
 				local managerOK, manager = pcall(Menu.GetManager)
-				if not managerOK or not CanAccessForeignTable(manager) then return true end
-				if type(manager.IsAnyMenuOpen) ~= "function" then return true end
+				if not managerOK or not CanAccessForeignTable(manager) then
+					return true
+				end
+				if type(manager.IsAnyMenuOpen) ~= "function" then
+					return true
+				end
 				local menuOK, opened = pcall(manager.IsAnyMenuOpen, manager)
-				if not menuOK or not CanAccessForeignValue(opened) or opened == true then return true end
+				if not menuOK or not CanAccessForeignValue(opened) or opened == true then
+					return true
+				end
 			end
 			return false
 		end,
 		IsMouseOverPartyQuestWindow = function(frame)
-			if not QuestTogether:CanMutateOwnedUI(frame) then return false end
+			if not QuestTogether:CanMutateOwnedUI(frame) then
+				return false
+			end
 			local fn = QuestTogether:GetAccessibleFrameMember(frame, "IsMouseOver")
-			if type(fn) ~= "function" then return false end
+			if type(fn) ~= "function" then
+				return false
+			end
 			local ok, over = pcall(fn, frame)
 			return ok and CanAccessForeignValue(over) and over == true
 		end,
 		OpenKeyBindings = function()
-			if QuestTogether:IsWorkBlocked("foreign_frame_mutation") or not Settings
-				or type(Settings.OpenToCategory) ~= "function" then return false end
+			if
+				QuestTogether:IsWorkBlocked("foreign_frame_mutation")
+				or not Settings
+				or type(Settings.OpenToCategory) ~= "function"
+			then
+				return false
+			end
 			local id = QuestTogether:SafeToNumber(Settings.KEYBINDINGS_CATEGORY_ID)
-			if not id then return false end
+			if not id then
+				return false
+			end
 			return pcall(Settings.OpenToCategory, id, "QuestTogether")
 		end,
 		GetPlayerNotesNamespace = function()
@@ -2161,24 +2334,36 @@ QuestTogether.API = QuestTogether.API
 			if type(GetCurrentRegion) == "function" then
 				local ok, value = pcall(GetCurrentRegion)
 				local number = ok and QuestTogether:SafeToNumber(value)
-				if number then region = tostring(number) end
+				if number then
+					region = tostring(number)
+				end
 			end
 			local project = QuestTogether:SafeToNumber(WOW_PROJECT_ID) or 0
-			return tostring(project) .. ":" .. region .. ":" .. (QuestTogether:UsesRegionalPlayerNames() and "regional" or "realm")
+			return tostring(project)
+				.. ":"
+				.. region
+				.. ":"
+				.. (QuestTogether:UsesRegionalPlayerNames() and "regional" or "realm")
 		end,
 		GetHintCapabilities = function()
 			-- Read capabilities, never the player's current quest, party or map.
 			local function Has(object, ...)
-				if not CanAccessForeignTable(object) then return false end
+				if not CanAccessForeignTable(object) then
+					return false
+				end
 				for index = 1, select("#", ...) do
 					local value = object[select(index, ...)]
-					if not CanAccessForeignValue(value) or type(value) ~= "function" then return false end
+					if not CanAccessForeignValue(value) or type(value) ~= "function" then
+						return false
+					end
 				end
 				return true
 			end
 			local focus = Has(C_SuperTrack, "IsSuperTrackingQuest", "GetSuperTrackedQuestID", "SetSuperTrackedQuestID")
-			local waypoint = Has(C_Map, "GetUserWaypoint", "SetUserWaypoint") and Has(UiMapPoint, "CreateFromCoordinates")
-			local nativeNavigation = waypoint and Has(C_Map, "CanSetUserWaypointOnMap")
+			local waypoint = Has(C_Map, "GetUserWaypoint", "SetUserWaypoint")
+				and Has(UiMapPoint, "CreateFromCoordinates")
+			local nativeNavigation = waypoint
+				and Has(C_Map, "CanSetUserWaypointOnMap")
 				and Has(C_SuperTrack, "SetSuperTrackedUserWaypoint")
 			local navigation = nativeNavigation or Has(TomTom, "AddWaypoint")
 			local editMode = QuestTogether.API.GetEditModeManagerFrame()
@@ -2188,16 +2373,21 @@ QuestTogether.API = QuestTogether.API
 				local ok, name = pcall(C_AddOns.GetAddOnInfo, "Blizzard_EditMode")
 				hud = ok and CanAccessForeignValue(name) and type(name) == "string" and name == "Blizzard_EditMode"
 			end
-			local retail = CanAccessForeignValue(WOW_PROJECT_ID) and CanAccessForeignValue(WOW_PROJECT_MAINLINE)
-				and WOW_PROJECT_MAINLINE ~= nil and WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
+			local retail = CanAccessForeignValue(WOW_PROJECT_ID)
+				and CanAccessForeignValue(WOW_PROJECT_MAINLINE)
+				and WOW_PROJECT_MAINLINE ~= nil
+				and WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
 				and not QuestTogether:UsesRegionalPlayerNames()
 			return {
 				menu = Has(MenuUtil, "CreateContextMenu"),
 				sharing = QuestTogether.API.CanShareQuests(),
 				details = QuestTogether.API.CanOpenQuestDetails(),
 				journal = QuestTogether.API.CanOpenQuestJournal(),
-				focus = focus, waypoint = waypoint, navigation = navigation,
-				navigationFocus = navigation and focus, hud = hud,
+				focus = focus,
+				waypoint = waypoint,
+				navigation = navigation,
+				navigationFocus = navigation and focus,
+				hud = hud,
 				nameplates = Has(C_NamePlate, "GetNamePlateForUnit"),
 				worldQuests = retail and Has(C_QuestLog, "IsWorldQuest"),
 				bonusObjectives = retail and Has(C_TaskQuest, "GetQuestInfoByQuestID"),
@@ -2272,18 +2462,27 @@ QuestTogether.API = QuestTogether.API
 		end,
 		OpenPlayerLocationMap = function(mapID)
 			local id = QuestTogether:SafeToNumber(mapID)
-			if not id or id <= 0 or id > 2147483647 or id ~= math.floor(id)
+			if
+				not id
+				or id <= 0
+				or id > 2147483647
+				or id ~= math.floor(id)
 				or QuestTogether:IsWorkBlocked("foreign_frame_mutation")
 				or type(OpenWorldMap) ~= "function"
-				or not QuestTogether:CanAccessForeignFrame(WorldMapFrame) then
+				or not QuestTogether:CanAccessForeignFrame(WorldMapFrame)
+			then
 				return false
 			end
 			-- The native opener owns map selection and panel visibility. A silent
 			-- decline (for example WorldMapDisabled) is not a successful navigation.
 			local ok = pcall(OpenWorldMap, id)
-			if not ok or not QuestTogether:CanAccessForeignFrame(WorldMapFrame, true) then return false end
+			if not ok or not QuestTogether:CanAccessForeignFrame(WorldMapFrame, true) then
+				return false
+			end
 			local getter = QuestTogether:GetAccessibleFrameMember(WorldMapFrame, "GetMapID")
-			if type(getter) ~= "function" then return false end
+			if type(getter) ~= "function" then
+				return false
+			end
 			local readOK, currentID = pcall(getter, WorldMapFrame)
 			return readOK and QuestTogether:SafeToNumber(currentID) == id
 		end,
@@ -2549,22 +2748,43 @@ QuestTogether.API = QuestTogether.API
 		end,
 		GetLocalizedQuestTitle = function(questID)
 			local id = QuestTogether:SafeToNumber(questID)
-			if not id or id <= 0 or id > 1000000000 or id ~= math.floor(id)
-				or QuestTogether:IsWorkBlocked("quest_snapshot_refresh") then
+			if
+				not id
+				or id <= 0
+				or id > 1000000000
+				or id ~= math.floor(id)
+				or QuestTogether:IsWorkBlocked("quest_snapshot_refresh")
+			then
 				return nil
 			end
 			local function Title(value)
-				if not CanAccessForeignValue(value) or type(value) ~= "string" or #value > 512
-					or value:find("[%z\001-\031\127]") then return nil end
+				if
+					not CanAccessForeignValue(value)
+					or type(value) ~= "string"
+					or #value > 512
+					or value:find("[%z\001-\031\127]")
+				then
+					return nil
+				end
 				-- Native tooltip headers can be colored. Never retain links, textures,
 				-- or other markup in a title that will be put into our own quest link.
 				local title = value:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
 				title = QuestTogether:SafeTrimString(title, "")
-				if title == "" or title:find("|", 1, true) or title:match("^%d+$")
-					or QuestTogether:IsPlaceholderQuestTitle(id, title) then return nil end
+				if
+					title == ""
+					or title:find("|", 1, true)
+					or title:match("^%d+$")
+					or QuestTogether:IsPlaceholderQuestTitle(id, title)
+				then
+					return nil
+				end
 				for _, key in ipairs({ "RETRIEVING_DATA", "LOADING", "UNKNOWN", "UNKNOWNOBJECT" }) do
 					local placeholder = _G[key]
-					if CanAccessForeignValue(placeholder) and type(placeholder) == "string" and title == placeholder then
+					if
+						CanAccessForeignValue(placeholder)
+						and type(placeholder) == "string"
+						and title == placeholder
+					then
 						return nil
 					end
 				end
@@ -2576,7 +2796,9 @@ QuestTogether.API = QuestTogether.API
 					if CanAccessForeignValue(getter) and type(getter) == "function" then
 						local got, value = pcall(getter, id)
 						local nativeTitle = got and Title(value)
-						if nativeTitle then return nativeTitle end
+						if nativeTitle then
+							return nativeTitle
+						end
 					end
 				end
 				-- Some clients cache a local hyperlink/tooltip before the quest-title
@@ -2586,46 +2808,82 @@ QuestTogether.API = QuestTogether.API
 					local got, link = pcall(GetQuestLink, id)
 					if got and CanAccessForeignValue(link) and type(link) == "string" and #link <= 1024 then
 						link = link:gsub("^|c%x%x%x%x%x%x%x%x", ""):gsub("|r$", "")
-						local nativeLink, nativeID, rawTitle = link:match("^|H(quest:(%d+):[%d:%-]+)|h%[([^|%[%]]+)%]|h$")
+						local nativeLink, nativeID, rawTitle =
+							link:match("^|H(quest:(%d+):[%d:%-]+)|h%[([^|%[%]]+)%]|h$")
 						local validFields = nativeLink ~= nil
 						if nativeLink then
 							for field in nativeLink:sub(#nativeID + 8):gmatch("[^:]+") do
-								if not field:match("^%-?%d+$") then validFields = false; break end
+								if not field:match("^%-?%d+$") then
+									validFields = false
+									break
+								end
 							end
 						end
 						if validFields and tonumber(nativeID) == id then
 							hyperlink = nativeLink
 							local nativeTitle = Title(rawTitle)
-							if nativeTitle then return nativeTitle end
+							if nativeTitle then
+								return nativeTitle
+							end
 						end
 					end
 				end
-				if not CanAccessForeignTable(C_TooltipInfo) then return nil end
+				if not CanAccessForeignTable(C_TooltipInfo) then
+					return nil
+				end
 				local getter = C_TooltipInfo.GetHyperlink
-				if not CanAccessForeignValue(getter) or type(getter) ~= "function"
-					or not CanAccessForeignTable(Enum) or not CanAccessForeignTable(Enum.TooltipDataType)
-					or not CanAccessForeignTable(Enum.TooltipDataLineType) then return nil end
+				if
+					not CanAccessForeignValue(getter)
+					or type(getter) ~= "function"
+					or not CanAccessForeignTable(Enum)
+					or not CanAccessForeignTable(Enum.TooltipDataType)
+					or not CanAccessForeignTable(Enum.TooltipDataLineType)
+				then
+					return nil
+				end
 				local questType = QuestTogether:SafeToNumber(Enum.TooltipDataType.Quest)
 				local titleType = QuestTogether:SafeToNumber(Enum.TooltipDataLineType.QuestTitle)
 				local genericType = QuestTogether:SafeToNumber(Enum.TooltipDataLineType.None)
-				if not questType or not titleType then return nil end
+				if not questType or not titleType then
+					return nil
+				end
 				local data = QuestTogether.API.GetTooltipDataForHyperlink(hyperlink)
-				if not CanAccessForeignTable(data) or not CanAccessForeignValue(data.type) or data.type ~= questType
-					or not CanAccessForeignValue(data.id) or (data.id ~= nil and QuestTogether:SafeToNumber(data.id) ~= id)
-					or not CanAccessForeignTable(data.lines) then return nil end
+				if
+					not CanAccessForeignTable(data)
+					or not CanAccessForeignValue(data.type)
+					or data.type ~= questType
+					or not CanAccessForeignValue(data.id)
+					or (data.id ~= nil and QuestTogether:SafeToNumber(data.id) ~= id)
+					or not CanAccessForeignTable(data.lines)
+				then
+					return nil
+				end
 				-- The first line is the header. Skipping a missing/loading header to
 				-- use a later line could cache objective prose as the quest's name.
 				local header = data.lines[1]
-				if not CanAccessForeignTable(header) or not CanAccessForeignValue(header.type)
-					or (header.type ~= titleType and (genericType == nil or header.type ~= genericType)) then return nil end
+				if
+					not CanAccessForeignTable(header)
+					or not CanAccessForeignValue(header.type)
+					or (header.type ~= titleType and (genericType == nil or header.type ~= genericType))
+				then
+					return nil
+				end
 				return Title(header.leftText)
 			end)
-			if ok then return title end
+			if ok then
+				return title
+			end
 		end,
 		RequestLocalizedQuestTitle = function(questID)
 			local id = QuestTogether:SafeToNumber(questID)
-			if not id or id <= 0 or id > 1000000000 or id ~= math.floor(id)
-				or QuestTogether:IsWorkBlocked("quest_snapshot_refresh") or not CanAccessForeignTable(C_QuestLog) then
+			if
+				not id
+				or id <= 0
+				or id > 1000000000
+				or id ~= math.floor(id)
+				or QuestTogether:IsWorkBlocked("quest_snapshot_refresh")
+				or not CanAccessForeignTable(C_QuestLog)
+			then
 				return false
 			end
 			local request = C_QuestLog.RequestLoadQuestByID
@@ -4338,14 +4596,21 @@ end
 function QuestTogether:ResolvePlayerAnnouncementIcon(asset, kind, targetName)
 	-- Only QT logos carry identity/status decoration. Quest-specific and chat
 	-- icons keep their meaning, and received artwork never proves developer identity.
-	if kind == "atlas" or type(asset) ~= "string" then return asset, kind end
+	if kind == "atlas" or type(asset) ~= "string" then
+		return asset, kind
+	end
 	local path = asset:lower():gsub("/", "\\"):gsub("%.tga$", "")
 	local looking = path == self.PLAYER_PARTNER_ICON_TEXTURE:lower()
 		or path == self.PLAYER_DEVELOPER_PARTNER_ICON_TEXTURE:lower()
 		or path == self.PLAYER_VIP_PARTNER_ICON_TEXTURE:lower()
-	if not looking and path ~= self.NAMEPLATE_PLAYER_ICON_TEXTURE:lower()
+	if
+		not looking
+		and path ~= self.NAMEPLATE_PLAYER_ICON_TEXTURE:lower()
 		and path ~= self.PLAYER_DEVELOPER_ICON_TEXTURE:lower()
-		and path ~= self.PLAYER_VIP_ICON_TEXTURE:lower() then return asset, kind end
+		and path ~= self.PLAYER_VIP_ICON_TEXTURE:lower()
+	then
+		return asset, kind
+	end
 	looking = looking or (targetName and self:IsPlayerLookingForQuestPartners(targetName))
 	if targetName and self:IsVerifiedDeveloper(targetName) then
 		return looking and self.PLAYER_DEVELOPER_PARTNER_ICON_TEXTURE or self.PLAYER_DEVELOPER_ICON_TEXTURE, "texture"
@@ -4704,18 +4969,22 @@ end
 -- UI text only: never rewrite received snapshots or their revision inputs.
 -- Keep quest names bounded and single-line; escaped output is idempotent.
 function QuestTogether:NormalizeQuestDisplayTitleText(value)
-	if not self:CanAccessValue(value) or type(value) ~= "string" or #value > 1024 then return "" end
+	if not self:CanAccessValue(value) or type(value) ~= "string" or #value > 1024 then
+		return ""
+	end
 	local text = value:gsub("||", "|")
 	local previous
 	repeat
 		previous = text
 		text = text:gsub("|H.-|h(.-)|h", "%1"):gsub("|T.-|t", ""):gsub("|A.-|a", "")
 		text = text:gsub("|K.-|k", ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
-		-- Removing malformed nested markup may expose another tag. Every
-		-- changed pass shortens the bounded input; normalize to a fixed point.
+	-- Removing malformed nested markup may expose another tag. Every
+	-- changed pass shortens the bounded input; normalize to a fixed point.
 	until text == previous
 	text = self:SafeTrimString(text:gsub("[%c]", " "), "")
-	if #text > 512 then return "" end
+	if #text > 512 then
+		return ""
+	end
 	return text:gsub("|", "||")
 end
 
@@ -5570,8 +5839,10 @@ function QuestTogether:TryInstallChatLogLinkHandler()
 	local tipType = "questtogethertip"
 	if not (LinkUtil.IsLinkHandlerRegistered and LinkUtil.IsLinkHandlerRegistered(tipType)) then
 		LinkUtil.RegisterLinkHandler(tipType, function(_, _, linkData)
-			if QuestTogether:CanAccessTable(linkData)
-				and not (QuestTogether.API.IsModifiedClick and QuestTogether.API.IsModifiedClick("CHATLINK")) then
+			if
+				QuestTogether:CanAccessTable(linkData)
+				and not (QuestTogether.API.IsModifiedClick and QuestTogether.API.IsModifiedClick("CHATLINK"))
+			then
 				QuestTogether:HandleHintActionLink(QuestTogether:SafeToString(linkData.options, ""))
 			end
 			return LinkProcessorResponse.Handled
@@ -5863,7 +6134,9 @@ function QuestTogether:Enable()
 	self.API.RegisterAddonPrefix(self.commPrefix)
 	self.isEnabled = true
 	self:InitializeQTAudio()
-	if self.RefreshAudioWindow then self:RefreshAudioWindow() end
+	if self.RefreshAudioWindow then
+		self:RefreshAudioWindow()
+	end
 	self:RefreshDataBroker()
 	if self.ResumeCommsWorldSession then
 		self:ResumeCommsWorldSession()
@@ -5890,8 +6163,8 @@ function QuestTogether:Enable()
 	if self.API.LeaveChannelByName then
 		pcall(self.API.LeaveChannelByName, self.retiredAnnouncementChannelName)
 	end
-	if self.EnsureAnnouncementChannelJoined then
-		self:EnsureAnnouncementChannelJoined()
+	if self.EnsureMeshDirectoryJoined then
+		self:EnsureMeshDirectoryJoined(self.announcementChannelName)
 		self:ScheduleAnnouncementChannelOrder()
 	end
 	if self.RefreshTaskAreaStates then
@@ -5963,7 +6236,9 @@ function QuestTogether:Disable()
 		self:ResetRuntimeCoordinator()
 	end
 	self.isEnabled = false
-	if self.RefreshAudioWindow then self:RefreshAudioWindow() end
+	if self.RefreshAudioWindow then
+		self:RefreshAudioWindow()
+	end
 	self:RefreshDataBroker()
 	if self.RefreshMinimapPartnerGlow then
 		self:RefreshMinimapPartnerGlow()
@@ -6091,9 +6366,7 @@ end
 
 function QuestTogether:PrintPreviewHelp()
 	self:Print(
-		L(
-			"/qt preview share|join|partychat|bubble|discord|unfollow - Preview a QT dialog without changing settings"
-		)
+		L("/qt preview share|join|partychat|bubble|discord|unfollow - Preview a QT dialog without changing settings")
 	)
 	self:Print(L("/qt preview compare - Preview Party Quest Log with mock data (no sharing)"))
 	self:Print(L("/qt preview notes - Preview the welcome and patch-notes window"))
@@ -6206,9 +6479,13 @@ function QuestTogether:HandleSlashCommand(input)
 	if command == "companions" then
 		return self:OpenRecentCompanions()
 	end
-	if command == "vip" then return self:OpenVIPWindow() end
+	if command == "vip" then
+		return self:OpenVIPWindow()
+	end
 	if command == "tip" or command == "hint" then
-		if not self:ShowHint() then self:Print(L("Tips are unavailable right now.")) end
+		if not self:ShowHint() then
+			self:Print(L("Tips are unavailable right now."))
+		end
 		return
 	end
 	if command == "preview" then
@@ -6248,7 +6525,9 @@ function QuestTogether:HandleSlashCommand(input)
 	-- Generic debug commands and their presentation belong to the shared controller.
 	if (command == "diagnostics" or command == "diag") and string.lower(self:SafeTrimString(rest, "")) == "cursor" then
 		local captured, reason = self:CapturePlayerNoteCursorDiagnostics()
-		if not captured and reason then self:Print(reason) end
+		if not captured and reason then
+			self:Print(reason)
+		end
 		return captured
 	end
 	if command == "debug" and rest ~= "" and rawget(self, "isLocalDeveloper") == true then
@@ -6358,7 +6637,7 @@ function QuestTogether:HandleSlashCommand(input)
 	end
 
 	if not self:SendQTChannelChat(input) then
-		self:Print(L("Unable to send QuestTogether chat. The addon must be enabled and its chat channel available."))
+		self:Print(L("Unable to send QuestTogether chat. Make sure the addon is enabled and try again."))
 	end
 end
 
@@ -6404,12 +6683,16 @@ end
 
 function QuestTogether:FlushPendingQuestScanAnnouncement()
 	local pending = self.pendingQuestScanAnnouncement
-	if not pending then return end
+	if not pending then
+		return
+	end
 	if not self.isEnabled or self.isLoggingOut or pending.lifetime ~= self:GetDeferredWorkStateStore() then
 		self.pendingQuestScanAnnouncement = nil
 		return
 	end
-	if self:IsLocalVIPVerificationPending() then return end
+	if self:IsLocalVIPVerificationPending() then
+		return
+	end
 	self.pendingQuestScanAnnouncement = nil
 	self:PrintConsoleAnnouncement(self:GetMonitoredQuestCountText(pending.count))
 end
@@ -6624,7 +6907,9 @@ end
 
 -- Bootstrap event handlers always registered.
 function QuestTogether:ADDON_LOADED(_, loadedAddonName)
-	if self.hasLoggedIn then self:RefreshDataBroker() end
+	if self.hasLoggedIn then
+		self:RefreshDataBroker()
+	end
 	if self.TryInstallNameplateHooks and self.isInitialized then
 		self:TryInstallNameplateHooks()
 	end
@@ -6653,7 +6938,9 @@ function QuestTogether:PLAYER_ENTERING_WORLD()
 	if not self.isEnabled then
 		return
 	end
-	if not rawget(self, "audioState") then self:InitializeQTAudio() end
+	if not rawget(self, "audioState") then
+		self:InitializeQTAudio()
+	end
 	self:RefreshPartyRoster()
 	if self.ResumeCommsWorldSession then
 		self:ResumeCommsWorldSession()
@@ -6661,8 +6948,8 @@ function QuestTogether:PLAYER_ENTERING_WORLD()
 	-- Refresh after loading screens without synthetic enter/leave announcements.
 	self:SetRuntimeFlag("pendingScheduledTaskAreaRefreshShouldAnnounce", false)
 	self:RefreshTaskAreaStates(false)
-	if self.EnsureAnnouncementChannelJoined and self.isEnabled then
-		self:EnsureAnnouncementChannelJoined()
+	if self.EnsureMeshDirectoryJoined and self.isEnabled then
+		self:EnsureMeshDirectoryJoined(self.announcementChannelName)
 		self:ScheduleAnnouncementChannelOrder()
 	end
 end

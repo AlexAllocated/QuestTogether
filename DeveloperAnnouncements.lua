@@ -26,7 +26,7 @@ local function Sharing(a)
 	return a:GetOption("shareDeveloperDiagnostics") == true
 end
 local function GlobalRoute(a)
-	return { { distribution = "CHANNEL", channelName = a.announcementChannelName } }
+	return { { distribution = "MESH", scope = "global" } }
 end
 
 function QT:IsDeveloperAnnouncementReceiver()
@@ -263,7 +263,7 @@ function QT:HandleDeveloperAnnouncementSubscription(record, sender, context)
 		return true
 	end
 	local generation = s.generation
-	return self:QueueDeveloperAnnouncementVerification(record, sender, function(verified)
+	local function ApplyVerified(verified)
 		if verified.cancelled or not Current(self, s) or generation ~= s.generation then
 			return
 		end
@@ -323,7 +323,9 @@ function QT:HandleDeveloperAnnouncementSubscription(record, sender, context)
 		self:RecordPeerEpoch(sender, context.session, verified.issuedAt)
 		self:RecordPeerUpdate(sender, "DEVANN", sampledAt, context.session, context.sequence, false)
 		Count(s, "subscriptionsVerified")
-	end)
+	end
+	if context.meshSignedVerified then ApplyVerified(context.meshSignedVerified); return true end
+	return self:QueueDeveloperAnnouncementVerification(record, sender, ApplyVerified)
 end
 
 -- The same signed, consent-bound audience also receives current location
@@ -443,9 +445,6 @@ function QT:UpdateDeveloperAnnouncements(now)
 		if now < offer.startedAt or now >= offer.expires then s.locationSubscriptions[id] = nil end
 	end
 	self:UpdateDeveloperLocationPublications(now)
-	if not self:GetAnnouncementChannelLocalID(self.announcementChannelName) then
-		return
-	end
 	if not s.helloSent and not s.helloPending and now >= s.helloAt then
 		s.helloPending, s.helloAt = true, now + 15
 		local ok = self:Emit("HELLO", { version = self:GetAddonVersion() }, GlobalRoute(self), {
@@ -490,13 +489,15 @@ function QT:UpdateDeveloperAnnouncements(now)
 		s.renewAt = now + RENEW_SECONDS
 	end
 	s.offerPending, s.reofferAt, s.lastOfferAt = true, nil, now
+	local function OfferCurrent()
+		return Current(self, s) and self:IsDeveloperAnnouncementReceiver()
+	end
 	local ok, _, envelope = self:Emit("DEVANN", s.subscription, GlobalRoute(self), {
 		owner = s,
 		expires = now + 30,
 		retryContext = s.offerContext,
-		isCurrent = function()
-			return Current(self, s) and self:IsDeveloperAnnouncementReceiver()
-		end,
+		isCurrent = OfferCurrent,
+		publicationCurrent = OfferCurrent,
 		onComplete = function(accepted, reason)
 			if Current(self, s) then
 				s.offerPending = false

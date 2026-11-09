@@ -1,5 +1,5 @@
 -- Explicit typed observation supplied at the private receive boundary.
--- Short per-field lifetimes exercise expiry boundaries; public v2 snapshots use 600 seconds.
+-- Short per-field lifetimes exercise expiry boundaries; public snapshots use 600 seconds.
 local function ObserveState(addon, method, field, record, sender)
 	local lifetimes = { QTLF = 65, QTLQ = 65, QTVR = 180, QTPG = 180, QJST = 125, QTHI = 180 }
 	local observation = addon:CreatePeerObservation(sender, field, {
@@ -34,7 +34,7 @@ local function BaseFixture(name)
 		reads = 0,
 		position = { x = 0.4, y = 0.6 },
 		mapID = 12,
-		announcementChannelName = "QuestTogether",
+		announcementChannelName = "QuestTogether3",
 		announcementChannelLocalID = 7,
 	}, { __index = QT })
 	function a:AnnounceQuestPartnerSearch() end
@@ -103,7 +103,7 @@ local function BaseFixture(name)
 		end
 		local other = a.peersByRoute and a.peersByRoute[route] or a.other
 		if other then
-			other:OnCommReceived(prefix, message, route, a.name, 7, "QuestTogether")
+			other:OnCommReceived(prefix, message, route, a.name, 7, "QuestTogether3")
 		end
 		return 0
 	end
@@ -154,7 +154,7 @@ end
 
 local function Fixture(name)
 	local a = BaseFixture(name)
-	a.joined, a.left, a.timers = { QuestTogether = 6 }, {}, {}
+	a.joined, a.left, a.timers = { QuestTogether3 = 6 }, {}, {}
 	a.EnsureAnnouncementChannelJoined = QT.EnsureAnnouncementChannelJoined
 	a.API.GetChannelName = function(channel)
 		return a.joined[channel]
@@ -173,7 +173,7 @@ local function Fixture(name)
 	end
 	a.API.JoinPermanentChannel = function(channel)
 		if not a.joinFails then
-			a.joined[channel] = channel == "QuestTogetherZ12" and 7 or 8
+			a.joined[channel] = channel == "QuestTogether3Z12" and 7 or 8
 		end
 	end
 	a.API.LeaveChannelByName = function(channel)
@@ -201,23 +201,30 @@ local function Fixture(name)
 		if a.sendFails then
 			return 3
 		end
-		a.sent[#a.sent + 1] = { wire = wire, route = route, target = target }
+		local frame = assert(a:DecodeCommFrame(wire))
+		local scope = a.fixtureScopes[frame.session .. ":" .. frame.messageId]
+		a.sent[#a.sent + 1] = { wire = wire, route = route, target = target, scope = scope }
 		if a.other then
 			a.other.now = a.now
-			local channel
-			for n, id in pairs(a.joined) do
-				if id == target then
-					channel = n
-				end
-			end
-			if route ~= "CHANNEL" or a.other.joined[channel] then
-				a.other:ReceiveCommunication(prefix, wire, route, a.name, a.other.joined[channel], channel)
-			end
+			a.other:ReceiveCommunication(prefix, wire, route, a.name)
 		end
 		return 0
 	end
 	function a:IsGroupedSender()
 		return self.inParty == true
+	end
+	-- Isolate geographic cadence from discovery topology. The public boundary is
+	-- captured as a logical scope, then carried by the real framed direct-whisper
+	-- queue. Mesh discovery, relay and origin proof use the shared network suite.
+	a.fixtureScopes = {}
+	function a:UpdateMeshNetwork() end
+	function a:UpdateMeshPublications() end
+	function a:QueueMeshPublication(context, data, scope, descriptor)
+		local frames = assert(self:BuildCommFrames(context.operation, data, context))
+		self.fixtureScopes[context.session .. ":" .. context.messageId] = scope
+		local route = { distribution = "WHISPER", target = self.other and self.other.name or "Sink-Realm" }
+		if #frames == 1 then return self:QueueTransportWire(frames[1], context.operation, route, descriptor) end
+		return self:QueueCommTransfer(frames, context, route, descriptor)
 	end
 	a:InitializeCommunications()
 	a:InitializeGeographicComms()
@@ -239,7 +246,7 @@ local function Stage(a, looking)
 end
 local function MakeStateDue(a, full)
 	local state = a.geographicCommsState
-	local key = state.currentChannel or "QuestTogetherZ" .. a.mapID
+	local key = state.currentChannel or "QuestTogether3Z" .. a.mapID
 	state.routes[key] = { nextLocation = a.now, nextMetadata = full and a.now or a.now + 1000 }
 	return state.routes[key]
 end
@@ -254,7 +261,7 @@ local function DeliverState(a, b, frames)
 	local accepted = false
 	for _, wire in ipairs(frames or StateFrames(a)) do
 		accepted =
-			b:ReceiveCommunication(b.commPrefix, wire, "CHANNEL", a.name, b.joined.QuestTogether, "QuestTogether")
+			b:ReceiveCommunication(b.commPrefix, wire, "WHISPER", a.name, b.joined.QuestTogether3, "QuestTogether3")
 	end
 	return accepted
 end
@@ -279,7 +286,7 @@ local function SentRecords(a, operation)
 			group.parts[frame.part] = body
 			if group.count == frame.total then
 				local data = assert(a:DecodeCommRecord(operation, table.concat(group.parts)))
-				out[#out + 1] = { data = data, route = row.route, target = row.target, frame = frame }
+				out[#out + 1] = { data = data, route = row.route, target = row.target, scope = row.scope, frame = frame }
 				groups[key] = nil
 			end
 		end
@@ -377,7 +384,7 @@ QT:RegisterTest("stationary geographic dots use heartbeats while movement and ne
 	assert(b.playerLocationState.peers[a.name])
 	local before = #SentRecords(a, "STATE")
 	a.position.x = 0.41
-	Tick(a, 2)
+	Tick(a, 6)
 	assert(#SentRecords(a, "STATE") > before)
 	Equal(b.playerLocationState.peers[a.name].x, 0.41)
 	before = #SentRecords(a, "STATE")
@@ -387,37 +394,11 @@ QT:RegisterTest("stationary geographic dots use heartbeats while movement and ne
 	Tick(a, 6)
 	local found = false
 	for _, packet in ipairs(a.sent) do
-		if packet.target == a.joined.QuestTogetherZ45 then
+		if packet.scope == 45 then
 			found = true
 		end
 	end
 	assert(found, "new subscriptions must not inherit stationary suppression")
-end)
-
-QT:RegisterTest("unavailable channels back off independently without stalling healthy group announcements", function()
-	local a = Fixture()
-	a.inParty = true
-	a.API.SendAddonMessage = function(_, wire, route)
-		a.sent[#a.sent + 1] = { wire = wire, route = route }
-		return route == "CHANNEL" and false or 0
-	end
-	assert(
-		a:Emit(
-			"ANN",
-			Event(a),
-			{ { distribution = "CHANNEL", channelName = "QuestTogether" }, { distribution = "PARTY" } }
-		)
-	)
-	a.now = 101
-	a:UpdateCommunicationRuntime()
-	Equal(#a.sent, 2)
-	Equal(#a:GetTransportState().queue, 0)
-	local party = false
-	for _, row in ipairs(a.sent) do
-		party = party or row.route == "PARTY"
-	end
-	assert(party)
-	assert(not a:GetTransportState().blockedUntil)
 end)
 
 QT:RegisterTest("repeated privacy clears retain normal global heartbeat rather than urgent broadcast storms", function()
@@ -458,30 +439,33 @@ QT:RegisterTest("partner and tracked quest withdrawals cover the geographic publ
 	Equal(a:BroadcastQuestPartnerStatus(), false)
 end)
 
-QT:RegisterTest("reload reconciles orphaned QT zone channels without touching unrelated subscriptions", function()
+QT:RegisterTest("reload leaves retired protocol directories and stale zones without touching other subscriptions", function()
 	local a = Fixture()
-	a.joined.QuestTogetherZ45 = 8
-	a.joined.QuestTogetherZ99 = 9
+	a.joined.QuestTogether3Z45 = 8
+	a.joined.QuestTogether3Z99 = 9
+	a.joined.QuestTogether, a.joined.QuestTogetherZ12 = 11, 12
 	a.API.GetChatChannelList = function()
 		return {
 			1,
 			"General",
 			false,
 			6,
-			"QuestTogether",
+			"QuestTogether3",
 			false,
 			7,
-			"QuestTogetherZ12",
+			"QuestTogether3Z12",
 			false,
 			8,
-			"QuestTogetherZ45",
+			"QuestTogether3Z45",
 			false,
 			9,
-			"QuestTogetherZ99",
+			"QuestTogether3Z99",
 			false,
 			10,
-			"QuestTogetherZFriends",
+			"QuestTogether3ZFriends",
 			false,
+			11, "QuestTogether", false,
+			12, "QuestTogetherZ12", false,
 		}
 	end
 	a.restricted = true
@@ -489,14 +473,14 @@ QT:RegisterTest("reload reconciles orphaned QT zone channels without touching un
 	Equal(#a.left, 0)
 	a.restricted = false
 	a:UpdateGeographicSubscriptions()
-	Equal(#a.left, 2)
-	assert(a.joined.QuestTogether and a.joined.QuestTogetherZ12)
+	Equal(#a.left, 4)
+	assert(a.joined.QuestTogether3 and a.joined.QuestTogether3Z12)
 	for _, name in ipairs(a.left) do
-		assert(name == "QuestTogetherZ45" or name == "QuestTogetherZ99")
+		assert(name == "QuestTogether3Z45" or name == "QuestTogether3Z99" or name == "QuestTogether" or name == "QuestTogetherZ12")
 	end
 	a.now = a.now + 2
 	a:UpdateGeographicSubscriptions()
-	Equal(#a.left, 2)
+	Equal(#a.left, 4)
 end)
 
 QT:RegisterTest("new full snapshots replace all old fragments without displacing newer event traffic", function()
@@ -520,6 +504,60 @@ QT:RegisterTest("new full snapshots replace all old fragments without displacing
 			Equal(status.data.looking, false)
 		end
 	end
+end)
+
+QT:RegisterTest("slow public baselines retain metadata while current locations replace independently", function()
+	local a, submitted = Fixture(), {}
+	a.API.Random = function(low) return low end
+	a:UpdateGeographicSubscriptions()
+	Stage(a, true)
+	a.geographicCommsState.nextGlobal = 999
+	local route = MakeStateDue(a, true)
+	function a:Emit(operation, record, routes, options)
+		Equal(operation, "STATE")
+		submitted[#submitted + 1] = { record = record, routes = routes, options = options, at = self.now }
+		return true -- Keep callbacks pending as a slow network would.
+	end
+	a:UpdateGeographicComms()
+	Equal(#submitted, 1)
+	local baseline = submitted[1]
+	Equal(baseline.options.expires - baseline.at, 120)
+	assert(Topic(baseline.record.records, "QTVR"))
+	a.now, a.position.x = 104, 0.5
+	a:UpdateGeographicComms()
+	Equal(#submitted, 1)
+	a.now = 105
+	a:UpdateGeographicComms()
+	Equal(#submitted, 2)
+	local older = submitted[2]
+	Equal(older.options.expires - older.at, 30)
+	assert(baseline.options.key ~= older.options.key)
+	Equal(#older.record.records, 1)
+	Equal(older.record.records[1].data.x, 0.5)
+	a.now, a.position.x = 110, 0.6
+	a:UpdateGeographicComms()
+	Equal(#submitted, 3)
+	local latest = submitted[3]
+	Equal(latest.options.key, older.options.key)
+	Equal(older.options.isCurrent(), false)
+	Equal(baseline.options.isCurrent(), true)
+	Equal(latest.record.records[1].data.x, 0.6)
+	assert(latest.record.records[1].sampledAt > baseline.record.records[#baseline.record.records].sampledAt)
+	latest.options.onComplete(true, "accepted")
+	local nextLocation = route.nextLocation
+	a.now = 111
+	baseline.options.onComplete(true, "accepted")
+	Equal(route.location.x, 0.6)
+	Equal(route.nextLocation, nextLocation)
+	local failing, attempts = Fixture(), 0
+	failing.API.Random = function(low) return low end
+	failing:UpdateGeographicSubscriptions()
+	Stage(failing, true)
+	failing.geographicCommsState.nextGlobal = 999
+	MakeStateDue(failing, true)
+	function failing:Emit() attempts = attempts + 1; return false end
+	for second = 0, 19 do failing.now = 100 + second; failing:UpdateGeographicComms() end
+	Equal(attempts, 4)
 end)
 
 QT:RegisterTest("large private comparison batches are paced and cancelled requests never reach native send", function()
@@ -554,27 +592,27 @@ QT:RegisterTest(
 		local a = Fixture()
 		a.mapID, a.viewedMap = 13, 45
 		a:UpdateGeographicSubscriptions()
-		Equal(a.geographicCommsState.currentChannel, "QuestTogetherZ12")
-		Equal(a.joined.QuestTogetherZ45, nil)
+		Equal(a.geographicCommsState.currentChannel, "QuestTogether3Z12")
+		Equal(a.joined.QuestTogether3Z45, nil)
 		Tick(a, 6)
-		assert(a.joined.QuestTogetherZ45)
+		assert(a.joined.QuestTogether3Z45)
 		a.viewedMap = 46
 		Tick(a, 2)
-		assert(a.joined.QuestTogetherZ45)
+		assert(a.joined.QuestTogether3Z45)
 		Tick(a, 6)
-		Equal(a.joined.QuestTogetherZ45, nil)
-		assert(a.joined.QuestTogetherZ46)
+		Equal(a.joined.QuestTogether3Z45, nil)
+		assert(a.joined.QuestTogether3Z46)
 		a.viewedMap = 99
 		Tick(a, 8)
-		Equal(a.joined.QuestTogetherZ46, nil)
+		Equal(a.joined.QuestTogether3Z46, nil)
 		Equal(a:GetGeographicZoneID(99), nil)
 		a.API.GetMapInfo = function(id)
 			return { mapType = 4, parentMapID = id }
 		end
 		Equal(a:GetGeographicZoneID(13), nil)
 		a:ResetGeographicComms()
-		Equal(a.joined.QuestTogetherZ12, nil)
-		Equal(a.joined.QuestTogether, 6)
+		Equal(a.joined.QuestTogether3Z12, nil)
+		Equal(a.joined.QuestTogether3, 6)
 	end
 )
 
@@ -582,13 +620,13 @@ QT:RegisterTest("geographic subscriptions defer restricted joins and survive exh
 	local a = Fixture()
 	a.restricted = true
 	a:UpdateGeographicSubscriptions()
-	Equal(a.joined.QuestTogetherZ12, nil)
+	Equal(a.joined.QuestTogether3Z12, nil)
 	a.restricted, a.joinFails = false, true
 	a:UpdateGeographicSubscriptions()
-	Equal(a:GetGeographicAnnouncementRoutes()[1].channelName, "QuestTogether")
+	Equal(a:GetGeographicAnnouncementRoutes()[1].scope, 12)
 	a.joinFails = false
 	Tick(a, 3)
-	Equal(a:GetGeographicAnnouncementRoutes()[1].channelName, "QuestTogetherZ12")
+	Equal(a:GetGeographicAnnouncementRoutes()[1].scope, 12)
 end)
 
 QT:RegisterTest("compact snapshots preserve worldwide dots partner status version and quest counts", function()
@@ -623,7 +661,7 @@ QT:RegisterTest(
 		local frames = StateFrames(a)
 		assert(DeliverState(a, b, frames))
 		for _, wire in ipairs(frames) do
-			Equal(b:ReceiveCommunication(b.commPrefix, wire .. "garbage", "CHANNEL", a.name, 6, "QuestTogether"), false)
+			Equal(b:ReceiveCommunication(b.commPrefix, wire .. "garbage", "WHISPER", a.name, 6, "QuestTogether3"), false)
 		end
 		Equal(
 			a:CopyCommRecord(
@@ -715,9 +753,9 @@ QT:RegisterTest("global snapshots are slower than zone updates and do not renew 
 	end
 	local global, regional = 0, 0
 	for _, row in ipairs(SentRecords(a, "STATE")) do
-		if row.target == 6 then
+		if row.scope == "global" then
 			global = global + 1
-		elseif row.target == 7 then
+		elseif row.scope == 12 then
 			regional = regional + 1
 		end
 	end
@@ -762,15 +800,15 @@ QT:RegisterTest("duplicate signature memory is bounded during a many sender burs
 		if i % 32 == 1 then
 			a:UpdateCommunicationRuntime()
 		end
-		a:ReceiveCommunication(a.commPrefix, frames[1], "CHANNEL", "Player" .. i .. "-Realm", 6, "QuestTogether")
+		a:ReceiveCommunication(a.commPrefix, frames[1], "WHISPER", "Player" .. i .. "-Realm", 6, "QuestTogether3")
 	end
 	local count = 0
 	for _ in pairs(a.communicationState.seen) do
 		count = count + 1
 	end
-	Equal(count, 4096)
+	Equal(count, 2048)
 	local before = a.qtPlayerPresenceState.peers["Player10000-Realm"]
-	Equal(a:ReceiveCommunication(a.commPrefix, frames[1], "CHANNEL", "Player10000-Realm", 6, "QuestTogether"), false)
+	Equal(a:ReceiveCommunication(a.commPrefix, frames[1], "WHISPER", "Player10000-Realm", 6, "QuestTogether3"), false)
 	Equal(a.qtPlayerPresenceState.peers["Player10000-Realm"], before)
 end, { offline = true })
 
@@ -786,7 +824,7 @@ QT:RegisterTest("zone events reach current zone and group but never the viewed r
 		if row.route == "PARTY" then
 			group = true
 		else
-			Equal(row.target, 7)
+			Equal(row.scope, 12)
 			zone = true
 		end
 	end
@@ -885,18 +923,19 @@ QT:RegisterTest("crowded zones back off without unrelated worldwide peers slowin
 	end
 	local route = MakeStateDue(a, true)
 	a:UpdateGeographicComms()
-	Equal(route.nextLocation - a.now, 1)
+	Equal(route.nextLocation - a.now, 5)
 	for _, peer in pairs(s.peers) do
 		peer.zone = 12
 	end
 	s.density = nil
+	a.now = a.now + 5
 	route.nextLocation, route.nextMetadata = a.now, a.now
 	a:UpdateGeographicComms()
 	assert(route.nextLocation - a.now >= 90)
 end)
 
 QT:RegisterTest(
-	"one-second zone updates resample movement without repeating full metadata or growing queues",
+	"public movement observes a five-second minimum while retaining the latest position",
 	function()
 		local a, b = Fixture("Alice-Realm"), Fixture("Bob-Realm")
 		a.other = b
@@ -916,13 +955,16 @@ QT:RegisterTest(
 			Tick(a, 1.2)
 			assert(#a:GetTransportState().queue <= 4)
 		end
+		Tick(a, 6)
 		assert(math.abs(b.playerLocationState.peers[a.name].x - a.position.x) < 0.00001)
 		local rows = SentRecords(a, "STATE")
-		assert(#rows > before + 5)
+		assert(#rows > before and #rows <= before + 4)
 		for i = before + 1, #rows do
-			Equal(rows[i].target, 7)
+			Equal(rows[i].scope, 12)
 			assert(Topic(rows[i].data.records, "LOC"))
-			Equal(Topic(rows[i].data.records, "QTVR"), nil)
+			if rows[i].frame.stamp - rows[1].frame.stamp < 20 then
+				Equal(Topic(rows[i].data.records, "QTVR"), nil)
+			end
 		end
 		a.sendFails = true
 		a.db.profile.sharePlayerLocation = false
@@ -960,10 +1002,10 @@ QT:RegisterTest("metadata heartbeat is independent of movement jitter and surviv
 	assert(math.abs(peer.x - a.position.x) < 0.006)
 	Equal(b:GetPlayerAddonVersion(a.name), "6.0.0")
 	Equal(b:IsPlayerLookingForQuestPartners(a.name), true)
-	local route = a.geographicCommsState.routes.QuestTogetherZ12
+	local route = a.geographicCommsState.routes.QuestTogether3Z12
 	route.nextLocation, route.nextMetadata = a.now + 40, a.now
 	local before = #SentRecords(a, "STATE")
-	Tick(a, 3)
+	Tick(a, 6)
 	local found = false
 	for i = before + 1, #SentRecords(a, "STATE") do
 		found = found or Topic(SentRecords(a, "STATE")[i].data.records, "QTVR") ~= nil
@@ -985,13 +1027,13 @@ QT:RegisterTest("manual developer ping stays global and does not change backgrou
 			if packet.route == "PARTY" then
 				party = true
 			else
-				Equal(packet.target, 6)
+				Equal(packet.scope, "global")
 				global = true
 			end
 		end
 	end
 	assert(global and not party)
-	Equal(a:GetGeographicAnnouncementRoutes()[2].channelName, "QuestTogetherZ12")
+	Equal(a:GetGeographicAnnouncementRoutes()[2].scope, 12)
 end)
 
 QT:RegisterTest("delayed group and zone event copies deduplicate without merging separate identical actions", function()
@@ -1012,9 +1054,9 @@ QT:RegisterTest("delayed group and zone event copies deduplicate without merging
 	end
 	b:OnCommReceived(b.commPrefix, first, "PARTY", a.name)
 	b.now = b.now + 20
-	b:OnCommReceived(b.commPrefix, first, "CHANNEL", a.name, 7, "QuestTogetherZ12")
+	b:OnCommReceived(b.commPrefix, first, "WHISPER", a.name, 7, "QuestTogether3Z12")
 	Equal(count, 1)
-	b:OnCommReceived(b.commPrefix, second, "CHANNEL", a.name, 7, "QuestTogetherZ12")
+	b:OnCommReceived(b.commPrefix, second, "WHISPER", a.name, 7, "QuestTogether3Z12")
 	Equal(count, 2)
 end)
 
@@ -1053,11 +1095,17 @@ QT:RegisterTest("five member hover responses privately complete through the shar
 	advance(12)
 	Equal(#viewer:GetPlayerPartyVisualInfo(leader.name).members, 5)
 	for _, packet in ipairs(leader.sent) do
-		Equal(packet.route, "WHISPER")
-		Equal(packet.target, viewer.name)
+		local frame = assert(leader:DecodeCommFrame(packet.wire))
+		if frame.operation == "QPGM" then
+			Equal(packet.route, "WHISPER")
+			Equal(packet.target, viewer.name)
+		end
 	end
 	for i = 3, 6 do
-		Equal(#peers[i].received, 0)
+		for _, packet in ipairs(peers[i].received) do
+			local frame = assert(peers[i]:DecodeCommFrame(packet.wire))
+			assert(frame.operation ~= "QPGM" and frame.operation ~= "QPGR", "roster requests and details must remain private")
+		end
 	end
 end)
 
@@ -1104,11 +1152,17 @@ QT:RegisterTest("targeted comparisons whisper complete snapshots privately in Re
 		advance(8)
 		Equal(done, 1)
 		assert(entries[1] and entries[2])
-		Equal(#observer.received, 0)
+		for _, packet in ipairs(observer.received) do
+			local frame = assert(observer:DecodeCommFrame(packet.wire))
+			assert(frame.operation ~= "QCMP" and frame.operation ~= "QCRS", "comparison data must remain private")
+		end
 		for _, sender in ipairs({ a, b }) do
 			for _, packet in ipairs(sender.sent) do
-				Equal(packet.route, "WHISPER")
-				Equal(packet.target, sender == a and b.name or a.name)
+				local frame = assert(sender:DecodeCommFrame(packet.wire))
+				if frame.operation == "QCMP" or frame.operation == "QCRS" then
+					Equal(packet.route, "WHISPER")
+					Equal(packet.target, sender == a and b.name or a.name)
+				end
 			end
 		end
 	end
@@ -1152,161 +1206,6 @@ QT:RegisterTest("snapshot consolidation removes only redundant positive presence
 	assert(a:Publish("QTPR", { active = true }))
 	Equal(Topic(a:BuildCommunicationStateRecords(), "QTVR"), nil)
 	Equal(Topic(a:BuildCommunicationStateRecords(), "QTPR").data.active, true)
-end)
-
-QT:RegisterTest("cold zone discovery advances one shared snapshot without a global solicitation", function()
-	local a, b = Fixture("New-Realm"), Fixture("Resident-Realm")
-	a.other, b.other = b, a
-	a.API.Random = function(low)
-		return low
-	end
-	b.API.Random = a.API.Random
-	a:UpdateGeographicSubscriptions()
-	b:UpdateGeographicSubscriptions()
-	Stage(a)
-	Stage(b)
-	a.geographicCommsState.nextGlobal, b.geographicCommsState.nextGlobal = 999, 999
-	local route = MakeStateDue(b, true)
-	route.nextLocation, route.nextMetadata = 999, 170
-	for _ = 1, 60 do
-		a.now = a.now + 0.2
-		a:UpdateGeographicComms()
-		b.now = a.now
-		b:UpdateGeographicComms()
-	end
-	assert(a.playerLocationState.peers[b.name])
-	Equal(b.geographicCommsState.nextGlobal, 999)
-	Equal(#SentRecords(a, "QTDQ"), 1)
-	for _, row in ipairs(a.sent) do
-		Equal(row.target, 7)
-	end
-	for _, row in ipairs(b.sent) do
-		Equal(row.target, 7)
-	end
-end)
-
-QT:RegisterTest("zone discovery rejects foreign routes and coalesces arrivals with a response cooldown", function()
-	local a = Fixture()
-	a.API.Random = function(low)
-		return low
-	end
-	a:UpdateGeographicSubscriptions()
-	local s = a.geographicCommsState
-	local route = MakeStateDue(a, true)
-	route.nextMetadata, s.nextGlobal = 190, 999
-	local function Query(name, distribution, channel, zone)
-		return a:HandleGeographicDiscovery(
-			{ zone = zone or 12 },
-			name,
-			{ distribution = distribution or "CHANNEL", channelName = channel or "QuestTogetherZ12", localID = 7 }
-		)
-	end
-	for _, context in ipairs({
-		{ "CHANNEL", "QuestTogether" },
-		{ "WHISPER", "QuestTogetherZ12" },
-		{ "PARTY", "QuestTogetherZ12" },
-		{ "CHANNEL", "QuestTogetherZ45" },
-	}) do
-		Equal(Query("Foreign-Realm", context[1], context[2]), false)
-		Equal(route.nextMetadata, 190)
-	end
-	Equal(Query("WrongZone-Realm", nil, nil, 45), false)
-	a.ignored["Ignored-Realm"] = true
-	Equal(Query("Ignored-Realm"), false)
-	a.now = 105
-	a:UpdateGeographicDiscovery()
-	assert(#a:GetTransportState().queue > 0)
-	assert(Query("New-Realm"))
-	Equal(route.nextMetadata, 107)
-	Equal(s.nextGlobal, 999)
-	Equal(#a:GetTransportState().queue, 0)
-	for i = 1, 100 do
-		a.now = 105 + i / 10
-		assert(Query("New" .. i .. "-Realm"))
-	end
-	Equal(route.nextMetadata, 107)
-	Equal(s.discovery[12].responseAt, 105)
-	a.now = 165
-	route.nextMetadata = 200
-	assert(Query("Later-Realm"))
-	Equal(route.nextMetadata, 167)
-	a.restricted = true
-	a.now = 230
-	route.nextMetadata = 290
-	Equal(Query("Restricted-Realm"), false)
-	a.restricted = false
-	a.db.profile.sharePlayerLocation = false
-	assert(Query("NoShare-Realm"))
-	Equal(route.nextMetadata, 290)
-end)
-
-QT:RegisterTest("crowded zone discovery samples responders once per minute and never delays a due heartbeat", function()
-	local a = Fixture()
-	a:UpdateGeographicSubscriptions()
-	local s = a.geographicCommsState
-	for i = 1, 1000 do
-		s.peers[tostring(i)] = { zone = 12, at = a.now, expires = a.now + 600 }
-	end
-	local route = MakeStateDue(a, true)
-	route.nextMetadata = 190
-	local function Query(name)
-		return a:HandleGeographicDiscovery(
-			{ zone = 12 },
-			name,
-			{ distribution = "CHANNEL", channelName = "QuestTogetherZ12" }
-		)
-	end
-	a.API.Random = function(_, high)
-		return high
-	end
-	assert(Query("New-Realm"))
-	Equal(route.nextMetadata, 190)
-	a.API.Random = function(low)
-		return low
-	end
-	assert(Query("Again-Realm"))
-	Equal(route.nextMetadata, 190)
-	a.now = 160
-	assert(Query("Later-Realm"))
-	Equal(route.nextMetadata, 162)
-	a.now = 220
-	route.nextMetadata = 220
-	assert(Query("Last-Realm"))
-	Equal(route.nextMetadata, 220)
-end)
-
-QT:RegisterTest("discovery waits for its channel and cancels queued queries after changing zones", function()
-	local a = Fixture()
-	a.API.Random = function(low)
-		return low
-	end
-	a.joinFails = true
-	a:UpdateGeographicSubscriptions()
-	a.now = 110
-	a:UpdateGeographicDiscovery()
-	Equal(#a:GetTransportState().queue, 0)
-	a.joinFails = false
-	a:UpdateGeographicSubscriptions()
-	a.db.profile.showPlayerLocations = false
-	a:UpdateGeographicDiscovery()
-	Equal(#a:GetTransportState().queue, 0)
-	a.now = 115
-	a.db.profile.showPlayerLocations = true
-	a:UpdateGeographicDiscovery()
-	Equal(#a:GetTransportState().queue, 1)
-	a.mapID = 45
-	a.now = 120
-	a:UpdateGeographicSubscriptions()
-	a.now = 125
-	a:UpdateGeographicSubscriptions()
-	a:UpdateCommunicationRuntime()
-	Equal(#SentRecords(a, "QTDQ"), 0)
-	a:UpdateGeographicDiscovery()
-	a.now = 126
-	a:UpdateCommunicationRuntime()
-	local requests = SentRecords(a, "QTDQ")
-	Equal(#requests, 1)
-	Equal(requests[1].data.zone, 45)
 end)
 
 local function CachedLocationFixture(name, now, wall, database)
@@ -2379,7 +2278,7 @@ QT:RegisterTest("departure cancels old work then spends only existing budget on 
 	local a, b = peers[1], peers[2]
 	network:Join(a, a.announcementChannelName, true)
 	network:Join(b, b.announcementChannelName, true)
-	advance(2)
+	advance(30)
 	assert(a:Emit("QTPR", { active = true }, { { distribution = "WHISPER", target = b.name } }))
 	advance(0.1)
 	local before = #a.sent

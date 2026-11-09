@@ -15,9 +15,9 @@ local function Peer(name)
 		partyRosterFingerprint = "",
 		sent = {},
 		timers = {},
-		joined = { QuestTogether = 6 },
+		joined = { QuestTogether3 = 6 },
 		recentCommMessageSignatures = {},
-		announcementChannelName = "QuestTogether",
+		announcementChannelName = "QuestTogether3",
 		announcementChannelLocalID = 6,
 		db = { profile = QT:DeepCopy(QT.DEFAULTS.profile), global = {} },
 	}, { __index = QT })
@@ -76,7 +76,7 @@ local function Peer(name)
 		return { mapType = id == 99 and 2 or 3, parentMapID = 99 }
 	end
 	a.API.JoinPermanentChannel = function(channel)
-		a.joined[channel] = channel == "QuestTogetherZ12" and 7 or 8
+		a.joined[channel] = channel == "QuestTogether3Z12" and 7 or 8
 	end
 	a.API.LeaveChannelByName = function(channel)
 		a.joined[channel] = nil
@@ -88,17 +88,27 @@ local function Peer(name)
 		a.sent[#a.sent + 1] = { wire = wire, route = route, target = target }
 		if a.other then
 			a.other.now = a.now
-			local channel
-			for key, id in pairs(a.joined) do
-				if id == target then
-					channel = key
-				end
-			end
-			if route ~= "CHANNEL" or a.other.joined[channel] then
-				a.other:OnCommReceived(prefix, wire, route, a.name, a.other.joined[channel], channel)
-			end
+			assert(route ~= "CHANNEL" and route ~= "MESH")
+			a.other:OnCommReceived(prefix, wire, route, a.name)
 		end
 		return 0
+	end
+	-- Domain lifetime coverage enters at the verified mesh boundary. The
+	-- network suite exercises directory/authentication/relay transport itself.
+	function a:QueueMeshPublication(context, data, scope, options)
+		if self.other then
+			self.other.now = self.now
+			local owned =
+				assert(self:DecodeCommRecord(context.operation, assert(self:EncodeCommRecord(context.operation, data))))
+			self.other:DispatchVerifiedMeshRecord(context, owned, self.name, { scope = scope })
+		end
+		if options.onComplete then
+			options.onComplete(true, "accepted")
+		end
+		return true
+	end
+	function a:GetMeshDepartureRoutes()
+		return self.other and { { distribution = "WHISPER", target = self.other.name } } or {}
 	end
 	function a:GetPlayerFullName()
 		return self.name
@@ -162,7 +172,7 @@ local function Receive(a, session, sequence, sampled, row)
 	end
 	local accepted = false
 	for _, wire in ipairs(frames) do
-		accepted = a:ReceiveCommunication(a.commPrefix, wire, "CHANNEL", "Friend-Realm", 6, "QuestTogether")
+		accepted = a:ReceiveCommunication(a.commPrefix, wire, "WHISPER", "Friend-Realm")
 	end
 	return accepted
 end
@@ -215,7 +225,7 @@ QT:RegisterTest("unstamped and same-second candidate epochs cannot retire a know
 		Equal(Receive(a, session, 2, 100, Row("QTCI", { streams = true, raceID = 1 })), false)
 	end
 	Equal(Epoch(a).session, "200000-2")
-	-- V2 requires a sample clock even for established epochs.
+	-- The protocol requires a sample clock even for established epochs.
 	Equal(Receive(a, "200000-2", 2, nil, Row("QTCI", { streams = true, raceID = 1 })), false)
 	a.now = 101
 	assert(Receive(a, "300000-3", 3, 101, Location(nil, nil, 0.7)))

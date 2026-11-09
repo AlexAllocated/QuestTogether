@@ -840,7 +840,7 @@
   "Unable to open patch notes right now.": "Unable to open patch notes right now.",
   "Unable to open that quest in your quest log.": "Unable to open that quest in your quest log.",
   "Unable to open your quest log on this client.": "Unable to open your quest log on this client.",
-  "Unable to send QuestTogether chat. The addon must be enabled and its chat channel available.": "Unable to send QuestTogether chat. The addon must be enabled and its chat channel available.",
+  "Unable to send QuestTogether chat. Make sure the addon is enabled and try again.": "Unable to send QuestTogether chat. Make sure the addon is enabled and try again.",
   "Unable to send join request.": "Unable to send join request.",
   "Unable to send ping request over any QuestTogether comm route.": "Unable to send ping request over any QuestTogether comm route.",
   "Unable to set that waypoint.": "Unable to set that waypoint.",

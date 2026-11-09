@@ -23,11 +23,13 @@ function QT:CreateTestNetwork(options)
 		seed = options.seed or 1,
 		latency = options.latency or 0.05,
 		joinDelay = options.joinDelay or 0.1,
+		directoryDelay = options.directoryDelay or 0.2,
 		peers = {},
 		byName = {},
 		pending = {},
 		trace = {},
-		metrics = { attempts = 0, accepted = 0, delivered = 0, dropped = 0, acceptedBytes = 0 },
+		metrics = { attempts = 0, accepted = 0, delivered = 0, dropped = 0, acceptedBytes = 0,
+			serverRefused = 0, directoryFetches = 0 },
 	}
 	function network:Random(low, high)
 		-- Park-Miller stays exactly representable under Lua 5.1/5.2 doubles.
@@ -101,11 +103,81 @@ function QT:CreateTestNetwork(options)
 		return frame
 	end
 	function network:Emit(peer, event, ...)
+		local delivered = 0
 		for _, frame in ipairs(peer.frames) do
 			if frame.events[event] and frame.scripts.OnEvent then
 				frame.scripts.OnEvent(frame, event, ...)
+				delivered = delivered + 1
 			end
 		end
+		return delivered
+	end
+	-- A channel's native send ID, its place in the display UI, its directory,
+	-- and its delivery audience are independent server/client observations.
+	function network:InvalidateDirectory(peer, channel)
+		peer.directoryLoads[channel], peer.loadedDirectories[channel] = nil, nil
+	end
+	function network:SetChannelDirectory(peer, channel, names)
+		-- nil uses the backing-realm roster; false models an unreadable roster.
+		-- An explicit list can overlap other realms or contain stale/unknown names.
+		peer.channelDirectories[channel] = Copy(names)
+		self:InvalidateDirectory(peer, channel)
+	end
+	function network:SetChannelSuspended(peer, channel, suspended)
+		peer.suspendedChannels[channel] = suspended == true or nil
+		self:InvalidateDirectory(peer, channel)
+	end
+	function network:SetWhisperReachable(from, to, reachable)
+		from.whisperReachability[type(to) == "table" and to.name or to] = reachable
+	end
+	function network:SetChannelRefusal(peer, channel, policy)
+		peer.channelRefusals[channel] = Copy(policy)
+	end
+	function network:DisplayChannels(peer)
+		local rows = {
+			{ name = "General", id = 1000, category = "CHANNEL_CATEGORY_WORLD" },
+			{ name = "Custom channels", header = true },
+		}
+		local names = {}
+		for channel in pairs(peer.joined) do
+			if not peer.suspendedChannels[channel] then names[#names + 1] = channel end
+		end
+		table.sort(names)
+		for _, channel in ipairs(names) do
+			rows[#rows + 1] = { name = channel, id = peer.joined[channel], category = "CHANNEL_CATEGORY_CUSTOM" }
+		end
+		return rows
+	end
+	function network:DirectoryNames(peer, channel)
+		local configured = peer.channelDirectories[channel]
+		if configured ~= nil then return Copy(configured) end
+		local names = {}
+		for _, member in ipairs(self.peers) do
+			if member.connected and member.backingRealm == peer.backingRealm
+				and member.joined[channel] and not member.suspendedChannels[channel] then
+				names[#names + 1] = member.name
+			end
+		end
+		table.sort(names)
+		return names
+	end
+	function network:SelectDisplayChannel(peer, index)
+		local row = self:DisplayChannels(peer)[index]
+		if not row or row.header or peer.selectedDisplayChannel == index then return end
+		peer.selectedDisplayChannel = index
+		if row.category ~= "CHANNEL_CATEGORY_CUSTOM" then return end
+		local token, channel, membership = {}, row.name, peer.channelSessions[row.name]
+		peer.directoryLoads[channel] = token
+		self.metrics.directoryFetches = self.metrics.directoryFetches + 1
+		self:After(peer, peer.directoryDelay or self.directoryDelay, function()
+			if peer.connected and peer.directoryLoads[channel] == token
+				and peer.channelSessions[channel] == membership and peer.joined[channel]
+				and not peer.suspendedChannels[channel] then
+				peer.directoryLoads[channel] = nil
+				local names = self:DirectoryNames(peer, channel)
+				peer.loadedDirectories[channel] = type(names) == "table" and names or nil
+			end
+		end)
 	end
 	function network:Join(peer, channel, immediate)
 		if peer.joined[channel] or peer.joining[channel] then
@@ -117,6 +189,7 @@ function QT:CreateTestNetwork(options)
 			if peer.connected and peer.joining[channel] == token then
 				peer.nextChannelID = peer.nextChannelID + 1
 				peer.joined[channel], peer.joining[channel] = peer.nextChannelID, nil
+				peer.channelSessions[channel] = token
 			end
 		end
 		if immediate then
@@ -127,6 +200,8 @@ function QT:CreateTestNetwork(options)
 	end
 	function network:Leave(peer, channel)
 		peer.joined[channel], peer.joining[channel] = nil, nil
+		peer.channelSessions[channel], peer.suspendedChannels[channel] = nil, nil
+		self:InvalidateDirectory(peer, channel)
 	end
 	function network:SetGroup(peer, group, distribution)
 		peer.group, peer.groupDistribution = group, distribution or "PARTY"
@@ -184,10 +259,12 @@ function QT:CreateTestNetwork(options)
 			return false
 		end
 		if packet.route == "WHISPER" then
-			return receiver.name == packet.target
+			local sender = self.byName[packet.sender]
+			return receiver.name == packet.target and (not sender or sender.whisperReachability[receiver.name] ~= false)
 		end
 		if packet.route == "CHANNEL" then
 			return packet.channel and receiver.joined[packet.channel] ~= nil
+				and not receiver.suspendedChannels[packet.channel] and receiver.backingRealm == packet.backingRealm
 		end
 		return packet.group ~= nil and receiver.group == packet.group and receiver.groupDistribution == packet.route
 	end
@@ -220,6 +297,7 @@ function QT:CreateTestNetwork(options)
 			route = route,
 			target = target,
 			group = peer.group,
+			backingRealm = peer.backingRealm,
 			at = self.now,
 		}
 		if route == "CHANNEL" then
@@ -234,6 +312,8 @@ function QT:CreateTestNetwork(options)
 		local result, ambiguousDelivery = 0, false
 		if not peer.connected or (route == "CHANNEL" and not packet.channel) then
 			result = false
+		elseif route == "CHANNEL" and peer.suspendedChannels[packet.channel] then
+			result = 7
 		end
 		if result == 0 and self.sendRule then
 			-- A ChannelThrottle result does not say whether the server submitted
@@ -253,6 +333,29 @@ function QT:CreateTestNetwork(options)
 			self:Record("ambiguous", packet, peer)
 		end
 		peer.sent[#peer.sent + 1] = packet
+		local refusal = route == "CHANNEL" and peer.channelRefusals[packet.channel]
+		if route == "CHANNEL" and self.channelRefusalRule then
+			refusal = self.channelRefusalRule(packet, peer)
+		end
+		if refusal then
+			local policy = type(refusal) == "table" and refusal or {}
+			self:After(peer, policy.delay or self.latency, function()
+				if not peer.connected then return end
+				if policy.suspend then self:SetChannelSuspended(peer, packet.channel, true) end
+				self:Record("serverRefused", packet, peer)
+				local notice = policy.notice or "NOT_ALLOWED_IN_CHANNEL"
+				local delivered = self:Emit(peer, "CHAT_MSG_CHANNEL_NOTICE", notice, nil, nil,
+					packet.channel, nil, nil, nil, packet.target, packet.channel)
+				-- StartPeer runs production runtime ownership without Core's native
+				-- event frame. Dispatch through its real handler when no test observer
+				-- has installed that event boundary explicitly.
+				if delivered == 0 and peer.CHAT_MSG_CHANNEL_NOTICE then
+					peer:CHAT_MSG_CHANNEL_NOTICE("CHAT_MSG_CHANNEL_NOTICE", notice, nil, nil,
+						packet.channel, nil, nil, nil, packet.target, packet.channel)
+				end
+			end)
+			return result
+		end
 		for _, receiver in ipairs(self.peers) do
 			if self:IsRecipient(packet, receiver) then
 				local policy = self.deliveryRule and self.deliveryRule(packet, receiver) or nil
@@ -349,6 +452,7 @@ function QT:CreateTestNetwork(options)
 		settings = settings or {}
 		assert(type(name) == "string" and not self.byName[name])
 		local peer = setmetatable({
+			Ed25519 = QT.Ed25519, -- Shared immutable crypto; every peer owns verification state.
 			name = name,
 			isEnabled = true,
 			hasLoggedIn = true,
@@ -364,6 +468,17 @@ function QT:CreateTestNetwork(options)
 			received = {},
 			joined = {},
 			joining = {},
+			channelSessions = {},
+			channelDirectories = {},
+			loadedDirectories = {},
+			directoryLoads = {},
+			suspendedChannels = {},
+			channelRefusals = {},
+			whisperReachability = {},
+			selectedDisplayChannel = 1,
+			backingRealm = settings.backingRealm or "Realm",
+			directoryDelay = settings.directoryDelay,
+			joinDelay = settings.joinDelay,
 			nextChannelID = #self.peers * 20,
 			ignored = {},
 			partyMembers = {},
@@ -376,8 +491,9 @@ function QT:CreateTestNetwork(options)
 			restricted = false,
 			regional = settings.regional == true,
 			commPrefix = QT.commPrefix,
-			announcementChannelName = "QuestTogether",
+			announcementChannelName = QT.announcementChannelName or "QuestTogether3",
 			LibChev = QT.LibChev,
+			Ed25519 = QT.Ed25519,
 			DEFAULTS = QT.DEFAULTS,
 			runtimeWorkDelayByClass = Copy(QT.runtimeWorkDelayByClass),
 			db = { profile = Copy(QT.DEFAULTS.profile), global = { questTrackers = {} } },
@@ -416,11 +532,14 @@ function QT:CreateTestNetwork(options)
 		peer.API.Random = function(low, high)
 			return self:Random(low, high)
 		end
+		peer.API.GetPlayerNotesNamespace = function()
+			return "network-test:" .. (settings.regional and "regional" or "realm")
+		end
 		peer.API.Delay = function(delay, callback)
 			return self:After(peer, delay, callback)
 		end
 		peer.API.GetRealmName = function()
-			return "Realm"
+			return peer.backingRealm
 		end
 		peer.API.RegionalUniqueNamesEnabled = function()
 			return peer.regional
@@ -469,8 +588,41 @@ function QT:CreateTestNetwork(options)
 			return peer.ignored[target] == true
 		end
 		peer.API.GetChannelName = function(channel)
-			return peer.joined[channel]
+			if type(channel) == "number" then
+				for name, id in pairs(peer.joined) do
+					if id == channel then return id, name, 0, peer.suspendedChannels[name] == true end
+				end
+			elseif peer.joined[channel] then
+				return peer.joined[channel], channel, 0, peer.suspendedChannels[channel] == true
+			end
 		end
+		peer.API.GetChatChannelList = function()
+			local list, names = {}, {}
+			for name in pairs(peer.joined) do names[#names + 1] = name end
+			table.sort(names)
+			for _, name in ipairs(names) do
+				list[#list + 1] = peer.joined[name]
+				list[#list + 1] = name
+				list[#list + 1] = peer.suspendedChannels[name] == true
+			end
+			return list
+		end
+		peer.API.GetNumDisplayChannels = function() return #self:DisplayChannels(peer) end
+		peer.API.GetChannelDisplayInfo = function(index)
+			local row = self:DisplayChannels(peer)[index]
+			if not row then return end
+			local roster = peer.loadedDirectories[row.name]
+			return row.name, row.header == true, false, row.id, roster and #roster or nil,
+				true, row.category, 1
+		end
+		peer.API.GetChannelRosterInfo = function(index, member)
+			local row = self:DisplayChannels(peer)[index]
+			local roster = row and peer.loadedDirectories[row.name]
+			return roster and roster[member] or nil
+		end
+		peer.API.SetSelectedDisplayChannel = function(index) return self:SelectDisplayChannel(peer, index) end
+		peer.API.GetSelectedDisplayChannel = function() return peer.selectedDisplayChannel end
+		peer.API.IsChannelWindowShown = function() return peer.channelWindowShown == true end
 		peer.API.JoinPermanentChannel = function(channel)
 			self:Join(peer, channel)
 		end

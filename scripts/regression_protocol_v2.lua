@@ -44,7 +44,7 @@ local function Send(net, receiver, sender, operation, record, overrides)
 	return frames
 end
 
-QT:RegisterTest("protocol v2 copies declared fields and roundtrips nested false empty and delimiter values", function()
+QT:RegisterTest("protocol v3 copies declared fields and roundtrips nested false empty and delimiter values", function()
 	local _, a = Fixture()
 	local source = {
 		requestId = "r1",
@@ -81,7 +81,7 @@ QT:RegisterTest("protocol v2 copies declared fields and roundtrips nested false 
 	Equal(state.records[1].data.active, false)
 end)
 
-QT:RegisterTest("protocol v2 rejects malformed bounded schema payloads without running domain code", function()
+QT:RegisterTest("protocol v3 rejects malformed bounded schema payloads without running domain code", function()
 	local _, a = Fixture()
 	local valid = assert(a:EncodeCommRecord("QTPR", { active = true }))
 	for _, wire in ipairs({ "", valid .. valid, valid:sub(1, -2), "1=999999:0", "1=1:x", valid .. "bad", "1=1:\0" }) do
@@ -110,9 +110,10 @@ QT:RegisterTest("protocol v2 rejects malformed bounded schema payloads without r
 	)
 	for _, wire in ipairs({
 		"1|QTPR|s|1||1|1|100|" .. valid,
-		"2|QTPR|s|1||0|1|100|" .. valid,
-		"2|QTPR|s|1||1|1025|100|" .. valid,
-		"2|UNKNOWN|s|1||1|1|100|" .. valid,
+		"2|QTPR|s|1||1|1|100|" .. valid,
+		"3|QTPR|s|1||0|1|100|" .. valid,
+		"3|QTPR|s|1||1|1025|100|" .. valid,
+		"3|UNKNOWN|s|1||1|1|100|" .. valid,
 		string.rep("x", 256),
 	}) do
 		Equal(a:DecodeCommFrame(wire), nil)
@@ -260,14 +261,14 @@ QT:RegisterTest("protocol private locations enforce exclusive authorization and 
 	Equal(partyEvents, 1, "diagnostic overload cannot consume normal party event capacity")
 end)
 
-QT:RegisterTest("protocol v2 normalizes duplicate audiences before conserving completion callbacks", function()
+QT:RegisterTest("protocol v3 normalizes duplicate audiences before conserving completion callbacks", function()
 	local net, a, b = Fixture()
 	net:Join(a, a.announcementChannelName, true)
 	net:Join(b, b.announcementChannelName, true)
 	local completions = {}
 	assert(a:Emit("QTPR", { active = true }, {
-		{ distribution = "CHANNEL" },
-		{ distribution = "CHANNEL", channelName = a.announcementChannelName },
+		{ distribution = "PARTY" },
+		{ distribution = "PARTY" },
 		{ distribution = "WHISPER", target = "Bob" },
 		{ distribution = "WHISPER", target = b.name },
 	}, {
@@ -276,7 +277,9 @@ QT:RegisterTest("protocol v2 normalizes duplicate audiences before conserving co
 		end,
 	}))
 	net:Advance(1)
-	Equal(#a.sent, 2)
+	local sent = 0
+	for _, packet in ipairs(a.sent) do if packet.wire:find("3|QTPR|", 1, true) == 1 then sent = sent + 1 end end
+	Equal(sent, 2)
 	Equal(#completions, 1)
 	Equal(completions[1][1], true)
 	Equal(a:Emit("QTPR", { active = true }, { { distribution = "WHISPER", target = {} } }), false)
@@ -284,7 +287,7 @@ QT:RegisterTest("protocol v2 normalizes duplicate audiences before conserving co
 end)
 
 QT:RegisterTest(
-	"protocol v2 mixed fanout failure reports the failure once even after another route succeeds",
+	"protocol v3 mixed fanout failure reports the failure once even after another route succeeds",
 	function()
 		local net, a, b, c = Fixture()
 		local completions = {}
@@ -307,11 +310,13 @@ QT:RegisterTest(
 		Equal(#completions, 1)
 		Equal(completions[1][1], false)
 		Equal(completions[1][2], "ambiguous")
-		Equal(#a.attempts, 2)
+		local attempts = 0
+		for _, packet in ipairs(a.attempts) do if packet.wire:find("3|QTPR|", 1, true) == 1 then attempts = attempts + 1 end end
+		Equal(attempts, 2)
 	end
 )
 
-QT:RegisterTest("protocol v2 binds native sender payload identity and request envelope before callbacks", function()
+QT:RegisterTest("protocol v3 binds native sender payload identity and request envelope before callbacks", function()
 	local net, a, b, c = Fixture()
 	local calls = 0
 	function b:HandlePartyVisualRosterRequest()
@@ -341,7 +346,7 @@ QT:RegisterTest("protocol v2 binds native sender payload identity and request en
 	Equal(a:Respond("PONG", { requestId = ping }, Route(b), { requestId = "different" }), false)
 end)
 
-QT:RegisterTest("protocol v2 same operation responses require the live expected peer and request", function()
+QT:RegisterTest("protocol v3 same operation responses require the live expected peer and request", function()
 	for _, operation in ipairs({ "QJON", "QSHR", "QTPH" }) do
 		local net, a, b, c = Fixture()
 		local calls = 0
@@ -365,7 +370,7 @@ QT:RegisterTest("protocol v2 same operation responses require the live expected 
 end)
 
 QT:RegisterTest(
-	"protocol v2 errors settle only their matching request and world retirement settles remaining consumers",
+	"protocol v3 errors settle only their matching request and world retirement settles remaining consumers",
 	function()
 		local net, a, b = Fixture()
 		local expired = {}
@@ -402,7 +407,7 @@ QT:RegisterTest(
 	end
 )
 
-QT:RegisterTest("protocol v2 group requests expire across a roster lifetime without blocking unrelated work", function()
+QT:RegisterTest("protocol v3 group requests expire across a roster lifetime without blocking unrelated work", function()
 	local net, a, b = Fixture()
 	local expired, calls = 0, 0
 	function b:HandleQuestCompareRequest()
@@ -432,7 +437,7 @@ QT:RegisterTest("protocol v2 group requests expire across a roster lifetime with
 end)
 
 -- Full loss, retry, and replay-capacity simulations run offline.
-QT:RegisterTest("protocol v2 original request retry recovers loss and stops on response progress", function()
+QT:RegisterTest("protocol v3 original request retry recovers loss and stops on response progress", function()
 	local net, a, b = Fixture()
 	local handled, calls, requests = 0, 0, {}
 	function b:HandlePartyVisualRosterRequest(record, sender)
@@ -467,7 +472,7 @@ end, { offline = true })
 
 -- Full loss, retry, and replay-capacity simulations run offline.
 QT:RegisterTest(
-	"protocol v2 lost single responses replay immutable outcomes without repeating domain actions",
+	"protocol v3 lost single responses replay immutable outcomes without repeating domain actions",
 	function()
 		local net, a, b = Fixture()
 		local handled, calls, responses = 0, 0, {}
@@ -509,7 +514,7 @@ QT:RegisterTest(
 	{ offline = true }
 )
 
-QT:RegisterTest("protocol v2 source topic revisions prevent a newer envelope from reviving older state", function()
+QT:RegisterTest("protocol v3 source topic revisions prevent a newer envelope from reviving older state", function()
 	local net, a, b = Fixture()
 	local function Location(revision, x)
 		Send(net, a, b, "STATE", {
@@ -533,7 +538,7 @@ QT:RegisterTest("protocol v2 source topic revisions prevent a newer envelope fro
 end)
 
 -- Full loss, retry, and replay-capacity simulations run offline.
-QT:RegisterTest("protocol v2 retries transient domain capacity without rebuilding accepted comparisons", function()
+QT:RegisterTest("protocol v3 retries transient domain capacity without rebuilding accepted comparisons", function()
 	local net = QT:CreateTestNetwork({ fps = 20 })
 	local peers, results = {}, {}
 	for index = 1, 21 do
@@ -582,7 +587,7 @@ QT:RegisterTest("protocol v2 retries transient domain capacity without rebuildin
 	end
 end, { offline = true })
 
-QT:RegisterTest("protocol v2 ingress caps frame decode work and reserves room for selected and party peers", function()
+QT:RegisterTest("protocol v3 ingress caps frame decode work and reserves room for selected and party peers", function()
 	local net, a, b, c = Fixture({ fps = 20 })
 	net:SetGroup(a, nil)
 	net:SetGroup(b, nil)
@@ -651,7 +656,7 @@ QT:RegisterTest("protocol v2 ingress caps frame decode work and reserves room fo
 	Equal(decoded, before + 65)
 end)
 
-QT:RegisterTest("protocol v2 identifiers survive Forever timestamps and long client uptime", function()
+QT:RegisterTest("protocol v3 identifiers survive Forever timestamps and long client uptime", function()
 	local _, a = Fixture({ now = 3000000 })
 	a.communicationState = nil
 	a.API.GetServerTime = function()

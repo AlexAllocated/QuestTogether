@@ -840,7 +840,7 @@
   "Unable to open patch notes right now.": "지금은 패치 노트를 열 수 없습니다.",
   "Unable to open that quest in your quest log.": "퀘스트 일지에서 해당 퀘스트를 열 수 없습니다.",
   "Unable to open your quest log on this client.": "이 클라이언트에서는 퀘스트 일지를 열 수 없습니다.",
-  "Unable to send QuestTogether chat. The addon must be enabled and its chat channel available.": "QuestTogether 대화를 보낼 수 없습니다. 애드온이 활성화되어 있고 대화 채널을 사용할 수 있어야 합니다.",
+  "Unable to send QuestTogether chat. Make sure the addon is enabled and try again.": "QuestTogether 메시지를 보낼 수 없습니다. 애드온이 활성화되어 있는지 확인한 후 다시 시도하세요.",
   "Unable to send join request.": "참여 요청을 보낼 수 없습니다.",
   "Unable to send ping request over any QuestTogether comm route.": "QuestTogether 통신 경로로 핑 요청을 보낼 수 없습니다.",
   "Unable to set that waypoint.": "해당 경유지를 설정할 수 없습니다.",

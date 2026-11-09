@@ -4,7 +4,10 @@ local QT = _G.QuestTogether
 local MAX_OUT, MAX_IN, RESERVED = 16, 64, 16
 local MAX_BYTES, MAX_OBJECT, MAX_PARTS = 524288, 131072, 1024
 local MAX_UNSOLICITED_PER_SENDER, MAX_TOMBSTONES = 4, 128
+local MAX_MESH_IN, MAX_UNCONFIRMED_MESH_REQUESTS = 16, 4
+local NEIGHBOR_ONLY = { MPUB = true, MINT = true, MCAN = true }
 local PROBE_INTERVAL, MAX_PROBES, MAX_REPAIR = 30, 2, 2
+local MESH_RETIRE_LIFETIME, MAX_MESH_RETIRE = 120, 128
 local GROUP = { PARTY = true, RAID = true, INSTANCE_CHAT = true }
 local RECOVERY_GRACE = 5
 local function Recipient(route)
@@ -24,6 +27,8 @@ local function State(a)
 			incoming = {},
 			completed = {},
 			completedOrder = {},
+			retiredMesh = {},
+			retiredMeshOrder = {},
 			bytes = 0,
 			nextJob = 0,
 			cursor = 0,
@@ -96,6 +101,7 @@ local function Current(a, state, job)
 	end
 	return true
 end
+local SendControl
 local function RetireOut(a, state, job, reason, deferCompletion)
 	if job.retired then
 		return
@@ -109,6 +115,24 @@ local function RetireOut(a, state, job, reason, deferCompletion)
 	end
 	state.bytes = state.bytes - job.bytes
 	a:CancelTransportOwner(job, reason or "cancelled")
+	if job.operation == "MPUB" and job.firstProgressAt and reason ~= "acknowledged" then
+		-- Replaced/cancelled objects can leave a remote partial occupying one of
+		-- its per-sender slots. Retire exactly that native hop, not its owner or
+		-- any newer publication. One notice is enough; existing bounded status
+		-- probes can recover a lost notice from this small tombstone cache.
+		state.retiredMesh, state.retiredMeshOrder = state.retiredMesh or {}, state.retiredMeshOrder or {}
+		local key = Key(Recipient(job.route), job.frame)
+		local retired = { frame = job.frame, route = job.route, expires = Now(a) + MESH_RETIRE_LIFETIME }
+		state.retiredMesh[key] = retired
+		state.retiredMeshOrder[#state.retiredMeshOrder + 1] = { key = key, row = retired }
+		if #state.retiredMeshOrder > MAX_MESH_RETIRE then
+			local first = table.remove(state.retiredMeshOrder, 1)
+			if state.retiredMesh[first.key] == first.row then
+				state.retiredMesh[first.key] = nil
+			end
+		end
+		SendControl(a, state, "FXSTAT", job.frame, Recipient(job.route), nil, "unavailable", nil, retired)
+	end
 	if not deferCompletion then
 		Complete(a, job, false, reason or "cancelled")
 	end
@@ -149,6 +173,12 @@ local function Expected(a, frame, sender)
 	if not spec or spec.semantic == "record" or spec.semantic == "transfer" then
 		return false
 	end
+	-- Publication routes and forwarded interests belong to confirmed graph
+	-- edges. Check before retaining any fragments, and again while assembling:
+	-- validating only the final record lets unknown senders occupy every slot.
+	if NEIGHBOR_ONLY[frame.operation] and not a:IsConfirmedMeshNeighbor(sender) then
+		return false
+	end
 	if spec.semantic == "response" then
 		if not frame.requestId or not a.IsCommResponseExpected then
 			return false
@@ -161,7 +191,7 @@ local function Expected(a, frame, sender)
 	end
 	return true
 end
-local function SendControl(a, state, operation, frame, sender, parts, status, owner, delivery)
+SendControl = function(a, state, operation, frame, sender, parts, status, owner, delivery)
 	if rawget(a, "commTransferState") ~= state or not a.isEnabled or a.isLoggingOut or not a.Emit then
 		return false
 	end
@@ -172,11 +202,15 @@ local function SendControl(a, state, operation, frame, sender, parts, status, ow
 	local roster = source and source.roster
 	local route = { distribution = "WHISPER", target = sender }
 	if frame.operation == "QCRS" and original and GROUP[original.distribution] then
-		if not roster or roster ~= a:GetPartyRosterFingerprint() or not a:IsGroupedSender(sender) then return false end
+		if not roster or roster ~= a:GetPartyRosterFingerprint() or not a:IsGroupedSender(sender) then
+			return false
+		end
 		route = { distribution = original.distribution, recipient = sender, requiresGroup = true }
 	end
 	return a:Emit(operation, record, { route }, {
 		priority = "control",
+		meshTraffic = (original and original.meshTraffic) == true
+			or (a:GetCommOperation(frame.operation) or {}).meshOnly == true,
 		-- A throttled response in the same priority class must not hold its
 		-- status/repair traffic behind that response's destination queue head.
 		flow = "transfer-control:" .. sender,
@@ -321,11 +355,34 @@ function QT:QueueCommTransfer(frames, context, route, options)
 	if expires <= now then
 		return false, "expired"
 	end
-	local reliable = options.reliable == true
+	local reliable = first.operation == "MPUB"
+		or options.reliable == true
 		or (options.reliable ~= false and spec.semantic == "response" and #frames > 1)
 	local targetedGroup = first.operation == "QCRS" and GROUP[route.distribution] and route.recipient
-	if reliable and ((route.distribution ~= "WHISPER" and not targetedGroup) or not Recipient(route) or not first.requestId) then
+	if
+		reliable
+		and (
+			(route.distribution ~= "WHISPER" and not targetedGroup)
+			or not Recipient(route)
+			or (not first.requestId and first.operation ~= "MPUB")
+		)
+	then
 		return false, "invalid"
+	end
+	if options.meshTraffic or route.meshTraffic then
+		local meshCount, states = 0, 0
+		for _, job in ipairs(state.outgoing) do
+			if job.route.meshTraffic and (not options.key or options.key ~= job.key) then
+				meshCount = meshCount + 1
+				if job.meshOperation == "STATE" or job.meshOperation == "LOC" then
+					states = states + 1
+				end
+			end
+		end
+		if meshCount >= 8 or ((options.meshOperation == "STATE" or options.meshOperation == "LOC") and states >= 6) then
+			Count(state, "capacity")
+			return false, "capacity"
+		end
 	end
 	local replaced
 	for _, job in ipairs(state.outgoing) do
@@ -345,23 +402,39 @@ function QT:QueueCommTransfer(frames, context, route, options)
 	-- for repair. Such cache entries must not occupy all sending slots for ten
 	-- minutes. Reclaim only old, idle QCRS copies under admission pressure;
 	-- active sends/repairs and diagnostic transfers remain untouched.
-	while #state.outgoing - (replaced and 1 or 0) >= MAX_OUT
-		or state.bytes - (replaced and replaced.bytes or 0) + bytes > MAX_BYTES do
+	while
+		#state.outgoing - (replaced and 1 or 0) >= MAX_OUT
+		or state.bytes - (replaced and replaced.bytes or 0) + bytes > MAX_BYTES
+	do
 		local oldest
 		for _, job in ipairs(state.outgoing) do
-			if job ~= replaced and job.operation == "QCRS" and job.reliable and job.initialComplete
-				and not job.inFlight and not job.repairParts and not job.repairRequest
+			if
+				job ~= replaced
+				and job.operation == "QCRS"
+				and job.reliable
+				and job.initialComplete
+				and not job.inFlight
+				and not job.repairParts
+				and not job.repairRequest
 				and now - (job.lastRecoveryAt or job.completedAt) >= RECOVERY_GRACE
-				and (not oldest or job.completedAt < oldest.completedAt) then oldest = job end
+				and (not oldest or job.completedAt < oldest.completedAt)
+			then
+				oldest = job
+			end
 		end
-		if not oldest then break end
+		if not oldest then
+			break
+		end
 		-- The old viewer may still be waiting for repair rather than having
 		-- cancelled. Tell it this snapshot is unavailable instead of silently
 		-- stranding its correlated request at the extended response deadline.
 		if self.Respond then
-			self:Respond("ERROR", { requestId = oldest.requestId, operation = "QCMP", code = "capacity" },
-				{ oldest.route }, { owner = state, expires = math.min(oldest.expires, now + 30),
-					isCurrent = oldest.isCurrent })
+			self:Respond(
+				"ERROR",
+				{ requestId = oldest.requestId, operation = "QCMP", code = "capacity" },
+				{ oldest.route },
+				{ owner = state, expires = math.min(oldest.expires, now + 30), isCurrent = oldest.isCurrent }
+			)
 		end
 		RetireOut(self, state, oldest, "recovery-evicted")
 		Count(state, "recoveryEvicted")
@@ -389,15 +462,16 @@ function QT:QueueCommTransfer(frames, context, route, options)
 			distribution = route.distribution,
 			target = route.target,
 			recipient = route.recipient,
-			channelName = route.channelName,
-			requiresChannelJoin = route.requiresChannelJoin,
+			meshTraffic = options.meshTraffic == true or route.meshTraffic == true,
 		},
 		owner = options.owner,
+		meshOperation = options.meshOperation,
 		roster = GROUP[route.distribution] and self:GetPartyRosterFingerprint() or nil,
 		key = options.key,
 		createdAt = now,
 		expires = expires,
 		isCurrent = options.isCurrent,
+		onStarted = options.onStarted,
 		onComplete = options.onComplete,
 		priority = options.priority or spec.priority,
 		flow = options.flow,
@@ -479,9 +553,19 @@ function QT:ReceiveCommFragment(frame, body, sender, routeContext)
 		return false
 	end
 	if not item then
-		local count, own, background = 0, 0, 0
+		local meshTraffic = spec.meshOnly == true or (routeContext and routeContext.meshTraffic == true)
+		local unconfirmedMeshRequest = meshTraffic
+			and spec.semantic == "request"
+			and not self:IsConfirmedMeshNeighbor(sender)
+		local count, own, background, mesh, unconfirmed = 0, 0, 0, 0, 0
 		for _, candidate in pairs(state.incoming) do
 			count = count + 1
+			if candidate.meshTraffic then
+				mesh = mesh + 1
+			end
+			if candidate.unconfirmedMeshRequest then
+				unconfirmed = unconfirmed + 1
+			end
 			if candidate.routeContext and candidate.routeContext.backgroundAnnouncement then
 				background = background + 1
 			end
@@ -492,13 +576,16 @@ function QT:ReceiveCommFragment(frame, body, sender, routeContext)
 		local reserved = routeContext and (routeContext.targeted == true or routeContext.group == true)
 		if
 			count >= (reserved and MAX_IN or MAX_IN - RESERVED)
+			or (meshTraffic and mesh >= MAX_MESH_IN)
+			or (unconfirmedMeshRequest and unconfirmed >= MAX_UNCONFIRMED_MESH_REQUESTS)
 			or (spec.semantic ~= "response" and own >= MAX_UNSOLICITED_PER_SENDER)
 			or (routeContext and routeContext.backgroundAnnouncement and background >= 8)
 		then
 			Count(state, "capacity")
 			return false
 		end
-		local lifetime = spec.semantic == "response" and 600 or math.min(30, spec.lifetime or 30)
+		local lifetime = spec.semantic == "response" and 600
+			or (frame.operation == "MPUB" and 120 or math.min(30, spec.lifetime or 30))
 		item = {
 			sender = sender,
 			frame = CopyFrame(frame),
@@ -508,9 +595,13 @@ function QT:ReceiveCommFragment(frame, body, sender, routeContext)
 			createdAt = now,
 			expires = math.min(now + lifetime, requestExpiry or now + lifetime),
 			lastActivity = now,
-			reliable = spec.semantic == "response" and frame.total > 1,
+			reliable = frame.operation == "MPUB" or (spec.semantic == "response" and frame.total > 1),
 			repairs = 0,
 			probes = 0,
+			meshTraffic = meshTraffic,
+			-- Bootstrap hellos and owner-confirmation requests must remain
+			-- reachable without an edge, but cannot consume all mesh capacity.
+			unconfirmedMeshRequest = unconfirmedMeshRequest,
 			routeContext = routeContext,
 			roster = routeContext and GROUP[routeContext.distribution] and self:GetPartyRosterFingerprint() or nil,
 		}
@@ -522,7 +613,10 @@ function QT:ReceiveCommFragment(frame, body, sender, routeContext)
 	local limit = math.min(
 		MAX_OBJECT,
 		spec.maxBytes,
-		spec.semantic == "state" and 8192 or spec.semantic == "event" and 4096 or MAX_OBJECT
+		frame.operation == "MPUB" and 8192
+			or spec.semantic == "state" and 8192
+			or spec.semantic == "event" and 4096
+			or MAX_OBJECT
 	)
 	if item.bytes + #body > limit or state.bytes + #body > MAX_BYTES then
 		RetireIn(state, key)
@@ -596,7 +690,12 @@ function QT:HandleCommTransferControl(operation, record, sender)
 			Count(state, "remoteCancelled")
 			return true
 		end
-		if not job.initialComplete or (record.status and record.status ~= "") then return false end
+		if not job.initialComplete or (record.status and record.status ~= "") then
+			return false
+		end
+		if job.operation == "MPUB" then
+			Complete(self, job, true, "acknowledged")
+		end
 		RetireOut(self, state, job, "acknowledged")
 		Count(state, "acknowledged")
 		return true
@@ -628,6 +727,10 @@ function QT:HandleCommTransferControl(operation, record, sender)
 	elseif operation == "FXSTAT" then
 		if record.status == "request" then
 			if not job or not Current(self, state, job) then
+				local retired = state.retiredMesh and state.retiredMesh[key]
+				if retired and now < retired.expires then
+					return SendControl(self, state, "FXSTAT", retired.frame, sender, nil, "unavailable", nil, retired)
+				end
 				return false
 			end
 			job.lastRecoveryAt = now
@@ -646,7 +749,17 @@ function QT:HandleCommTransferControl(operation, record, sender)
 		if not incoming or not incoming.reliable or not Expected(self, incoming.frame, sender) then
 			return false
 		end
-		if not incoming.statusProbePending then return false end
+		if record.status == "unavailable" and incoming.frame.operation == "MPUB" then
+			incoming.cancelled = true
+			Tombstone(state, key, incoming, false)
+			RetireIn(state, key)
+			self:CancelTransportOwner(incoming, "remote-cancelled")
+			Count(state, "abandonedMeshRetired")
+			return true
+		end
+		if not incoming.statusProbePending then
+			return false
+		end
 		if record.status == "complete" then
 			incoming.statusProbePending = nil
 			incoming.endSeen = true
@@ -731,6 +844,8 @@ function QT:UpdateCommTransfers()
 		local job = jobs[((state.cursor or 0) + offset - 1) % #jobs + 1]
 		if not Current(self, state, job) then
 			RetireOut(self, state, job, now >= job.expires and "expired" or "cancelled")
+		elseif job.operation == "MPUB" and job.initialComplete and now - job.completedAt >= 12 then
+			RetireOut(self, state, job, "hop-timeout")
 		elseif not job.inFlight then
 			local repair = job.repairParts
 			local part = repair and repair[job.repairIndex] or (not job.initialComplete and job.nextPart)
@@ -757,11 +872,24 @@ function QT:UpdateCommTransfers()
 						-- The server may have submitted this fragment. Do not replay it,
 						-- but still send the remaining fragments so that a delivered
 						-- ambiguous packet does not guarantee an incomplete object.
-						if result == "ambiguous" then job.ambiguous = true end
+						if result == "ambiguous" then
+							job.ambiguous = true
+						end
 						job.lastProgressAt = Now(self)
 						if not job.firstProgressAt then
 							job.firstProgressAt = job.lastProgressAt
 							Timing(state, "outboundFirstProgress", job.firstProgressAt - job.createdAt)
+							local callback = job.onStarted
+							job.onStarted = nil
+							if callback then
+								local ok, detail = pcall(callback)
+								if not ok then
+									self:RecordDiagnosticError("transfer start", detail)
+								end
+								if job.retired or rawget(self, "commTransferState") ~= state then
+									return
+								end
+							end
 						end
 						if repair then
 							job.repairIndex = job.repairIndex + 1
@@ -783,7 +911,9 @@ function QT:UpdateCommTransfers()
 							if job.nextPart > #job.frames then
 								job.initialComplete, job.completedAt = true, Now(self)
 								Timing(state, "outboundCompletion", job.completedAt - job.createdAt)
-								Complete(self, job, not job.ambiguous, job.ambiguous and "ambiguous" or "accepted")
+								if job.operation ~= "MPUB" then
+									Complete(self, job, not job.ambiguous, job.ambiguous and "ambiguous" or "accepted")
+								end
 								if job.reliable then
 									SendControl(self, state, "FXEND", job.frame, Recipient(job.route), nil, "0", job)
 								else
@@ -802,7 +932,7 @@ function QT:UpdateCommTransfers()
 			elseif
 				job.initialComplete
 				and job.reliable
-				and now - (job.lastProbe or job.completedAt) >= PROBE_INTERVAL
+				and now - (job.lastProbe or job.completedAt) >= (job.operation == "MPUB" and 4 or PROBE_INTERVAL)
 				and job.probes < MAX_PROBES
 			then
 				job.probes, job.lastProbe = job.probes + 1, now
@@ -822,7 +952,8 @@ function QT:UpdateCommTransfers()
 			RetireIn(state, key)
 		elseif item.reliable and now - item.lastActivity >= PROBE_INTERVAL and item.probes < MAX_PROBES then
 			item.probes, item.lastActivity = item.probes + 1, now
-			item.statusProbePending = SendControl(self, state, "FXSTAT", item.frame, item.sender, nil, "request", item) == true
+			item.statusProbePending = SendControl(self, state, "FXSTAT", item.frame, item.sender, nil, "request", item)
+				== true
 		end
 	end
 	for index = #state.completedOrder, 1, -1 do
@@ -830,6 +961,15 @@ function QT:UpdateCommTransfers()
 		if now >= entry.row.expires then
 			state.completed[entry.key] = nil
 			table.remove(state.completedOrder, index)
+		end
+	end
+	for index = #(state.retiredMeshOrder or {}), 1, -1 do
+		local entry = state.retiredMeshOrder[index]
+		if now >= entry.row.expires then
+			if state.retiredMesh[entry.key] == entry.row then
+				state.retiredMesh[entry.key] = nil
+			end
+			table.remove(state.retiredMeshOrder, index)
 		end
 	end
 end
@@ -856,7 +996,9 @@ function QT:CancelCommTransferOwner(owner, reason)
 end
 function QT:CancelIncomingCommResponses(requestId, reason)
 	local state = rawget(self, "commTransferState")
-	if not state then return end
+	if not state then
+		return
+	end
 	for key, item in pairs(state.incoming) do
 		if item.frame.requestId == requestId and self:GetCommOperation(item.frame.operation).semantic == "response" then
 			-- Successfully assembled responses have already left incoming before
@@ -880,7 +1022,12 @@ function QT:ReplayCommResponse(sender, requestId)
 	end
 	local found = false
 	for _, job in ipairs(state.outgoing) do
-		if job.reliable and Recipient(job.route) == sender and job.requestId == requestId and Current(self, state, job) then
+		if
+			job.reliable
+			and Recipient(job.route) == sender
+			and job.requestId == requestId
+			and Current(self, state, job)
+		then
 			found = true
 			if job.initialComplete and not job.repairParts and (job.replays or 0) < 2 then
 				job.replays = (job.replays or 0) + 1

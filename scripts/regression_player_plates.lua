@@ -1053,7 +1053,7 @@ local function LocationSender(name)
 	return sender
 end
 
-QT:RegisterTest("actual departure withdrawals never restore logos in either channel delivery order", function()
+QT:RegisterTest("actual departure withdrawals never restore logos in either native delivery order", function()
 	for _, lifecycle in ipairs({ "Disable", "PLAYER_LEAVING_WORLD" }) do
 		for _, order in ipairs({ "native", "reverse" }) do
 			WithPlate(function(s)
@@ -1091,13 +1091,7 @@ QT:RegisterTest("actual departure withdrawals never restore logos in either chan
 					messageId = tostring(sender:NextCommunicationSequence()),
 					stamp = 1700000100,
 				}))[1]
-				assert(
-					sender:SendTransportNow(
-						delayed,
-						"QTPR",
-						{ distribution = "CHANNEL", channelName = "QuestTogether" }
-					)
-				)
+				assert(sender:SendTransportNow(delayed, "QTPR", { distribution = "WHISPER", target = "Viewer-Realm" }))
 				-- This accepted positive heartbeat is still in flight as departure begins.
 				sender[lifecycle](sender)
 				Equal(#sender.queue, 2) -- Delayed positive heartbeat plus one bounded BYE.

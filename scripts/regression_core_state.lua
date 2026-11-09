@@ -783,7 +783,7 @@ QT:RegisterTest("initially disabled login and zoning retain bootstrap state with
 	Equal(calls.join, 1)
 	Equal(addon:DeliverRegisteredEvent("PLAYER_ENTERING_WORLD"), true)
 	Equal(calls.refresh, 2, "enabled world entry must retain the runtime refresh")
-	Equal(calls.join, 2)
+	Equal(calls.join, 1, "immediate reentry respects directory retry backoff")
 end)
 
 local function NewProfileDeletionFixture()

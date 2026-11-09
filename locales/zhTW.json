@@ -840,7 +840,7 @@
   "Unable to open patch notes right now.": "目前無法開啟更新說明。",
   "Unable to open that quest in your quest log.": "無法在你的任務日誌中開啟該任務。",
   "Unable to open your quest log on this client.": "此客戶端無法開啟你的任務日誌。",
-  "Unable to send QuestTogether chat. The addon must be enabled and its chat channel available.": "無法傳送 QuestTogether 聊天訊息。必須啟用插件且聊天頻道可用。",
+  "Unable to send QuestTogether chat. Make sure the addon is enabled and try again.": "無法傳送 QuestTogether 聊天訊息。請確認插件已啟用，然後再試一次。",
   "Unable to send join request.": "無法送出加入請求。",
   "Unable to send ping request over any QuestTogether comm route.": "無法透過任何 QuestTogether 通訊路徑送出 ping 請求。",
   "Unable to set that waypoint.": "無法設定該路徑點。",

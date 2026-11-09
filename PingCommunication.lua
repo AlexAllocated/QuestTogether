@@ -58,7 +58,7 @@ function QT:SendPingRequest(target, debugRequest)
 		end
 	end
 	local routes = data.targetName and { { distribution = "WHISPER", target = data.targetName } }
-		or { { distribution = "CHANNEL", channelName = self.announcementChannelName, requiresChannelJoin = true } }
+		or { { distribution = "MESH", scope = "global" } }
 	local ok = self:Request("PING", data, routes, {
 		owner = pending,
 		isCurrent = Current,
@@ -75,11 +75,11 @@ function QT:SendPingRequest(target, debugRequest)
 	end
 	return true, id
 end
-function QT:HandlePingRequest(data)
+function QT:HandlePingRequest(data, context)
 	if not data.developerRequest then
 		return false
 	end
-	if not data.developerVerified then
+	if not data.developerVerified and not (context and context.meshSignedVerified) then
 		return self:QueueDeveloperPingVerification(data, data.requesterName, function(verified)
 			self:HandlePingRequest(verified)
 		end)

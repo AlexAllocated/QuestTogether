@@ -623,30 +623,62 @@ return pushable end or nil,
 		C_ChatInfo, SendChatMessage = originalChat, originalLegacyChat
 		-- Native contracts stay offline; the live suite uses private adapters.
 		do
-			local oldChat, oldSend, oldList = C_ChatInfo, SendChatMessage, GetChannelList
-			local channelCalls = {}
-			local function sendChannel(text, route, language, target)
-				channelCalls[#channelCalls + 1] = { text, route, language, target }
-			end
-			C_ChatInfo = { SendChatMessage = sendChannel, SwapChatChannelsByChannelIndex = function(a, b)
+			local oldChat, oldList, oldRoster = C_ChatInfo, GetChannelList, GetChannelRosterInfo
+			C_ChatInfo = { SwapChatChannelsByChannelIndex = function(a, b)
 				assert(a == 2 and b == 4)
 			end }
-			assert(addon.API.SendChannelChatMessage("hello", 7))
-			assert(channelCalls[1][2] == "CHANNEL" and channelCalls[1][3] == nil and channelCalls[1][4] == 7)
 			assert(addon.API.SwapChatChannelIndices(2, 4))
 			GetChannelList = function() return 1, "General", false, 2, "QuestTogether", false end
 			local channels = addon.API.GetChatChannelList()
 			assert(#channels == 6 and channels[2] == "General" and channels[5] == "QuestTogether")
-			C_ChatInfo, SendChatMessage = {}, sendChannel
-			assert(addon.API.SendChannelChatMessage("legacy", 9))
-			assert(channelCalls[2][4] == 9)
+			-- A directory row supplies only a candidate name. Preserve native
+			-- regional surnames; authentication happens after the handshake.
+			local candidate = client == "forever" and "Friend Surname" or "Friend-Realm"
+			C_ChatInfo.GetChannelRosterInfo = function(index, member)
+				assert(index == 4 and member == 2)
+				return candidate
+			end
+			GetChannelRosterInfo = function() error("modern roster API should win") end
+			assert(addon.API.GetChannelRosterInfo(4, 2) == candidate)
+			GetChannelRosterInfo = C_ChatInfo.GetChannelRosterInfo
+			C_ChatInfo = {}
+			assert(addon.API.GetChannelRosterInfo(4, 2) == candidate)
+			for _, unavailable in ipairs({ secret, inaccessible }) do
+				GetChannelRosterInfo = function() return unavailable end
+				assert(addon.API.GetChannelRosterInfo(4, 2) == nil)
+			end
 			assert(not addon.API.SwapChatChannelIndices(2, 4))
-			SendChatMessage = function() error("blocked") end
-			assert(not addon.API.SendChannelChatMessage("blocked", 9))
-			SendChatMessage, GetChannelList = nil, nil
-			assert(not addon.API.SendChannelChatMessage("missing", 9))
+			GetChannelRosterInfo = function() error("unavailable roster") end
+			assert(addon.API.GetChannelRosterInfo(4, 2) == nil)
+			GetChannelList, GetChannelRosterInfo = nil, nil
 			assert(addon.API.GetChatChannelList() == nil)
-			C_ChatInfo, SendChatMessage, GetChannelList = oldChat, oldSend, oldList
+			assert(addon.API.GetChannelRosterInfo(4, 2) == nil)
+			C_ChatInfo, GetChannelList, GetChannelRosterInfo = oldChat, oldList, oldRoster
+
+			local calls, echoes = 0, 0
+			local fixture = setmetatable({ isEnabled = true, API = {
+				GetTime = function() return 10 end,
+				SendAddonMessage = function() error("directory channels must not carry payloads") end,
+			}, IsRuntimeRestrictionTypeActive = function() return false end,
+				GetPlayerFullName = function() return candidate end,
+				Emit = function(_, operation, record, routes)
+					assert(operation == "QTCHAT" and record.text == "hello")
+					assert(#routes == 1 and routes[1].distribution == "MESH" and routes[1].scope == "global")
+					calls = calls + 1
+					return true
+				end,
+				HandleQTMeshChat = function(_, record, sender, context)
+					assert(record.text == "hello" and sender == candidate and context.localEcho)
+					echoes = echoes + 1
+				end,
+			}, { __index = addon })
+			assert(fixture:SendQTChannelChat("hello") and calls == 1 and echoes == 1)
+			fixture:InitializeTransport()
+			local sent, reason = fixture:SendTransportNow("payload", {}, { distribution = "CHANNEL", channelID = 2 })
+			assert(not sent and reason == "invalid")
+			local queued
+			queued, reason = fixture:QueueTransportWire("payload", {}, { distribution = "CHANNEL", channelID = 2 })
+			assert(not queued and reason == "invalid")
 		end
 
 		-- Shared Mainline exports do not imply that Forever has War Mode.

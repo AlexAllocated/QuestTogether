@@ -81,9 +81,8 @@ private `.local` notes are historical context, not the source of truth.
   at most one full request per peer every five seconds. Native accepted/already-on-
   quest share results use this same refresh path without inferring a quest ID.
   Accepted data stays visible while the header shows Loading for that refresh.
-  An optional generation-2 QCMP scheduling hint
-  puts background requests and replies in the background traffic class; older
-  peers safely ignore the appended field. No protocol-generation change is required.
+  A QCMP scheduling hint puts background requests and replies in the background
+  traffic class; the coordinator applies it within protocol 3.
   Closing or changing views only detaches their callbacks. Pending requests and
   accepted data survive; departure, ignore, profile/world changes and disable
   retire the party lifetime. Up to four remote logs of 100 quests are warmed;
@@ -274,7 +273,7 @@ private `.local` notes are historical context, not the source of truth.
   history establishes `Completed` or `Missing`. Repeatable quests never become
   permanently satisfied from a past completion. Active `Have`/`Ready` entries
   take precedence, and `Completed` does not mean ready for turn-in. Optional
-  history fields preserve compatibility with older v2 peers. Queries cover at
+  history fields distinguish active-log snapshots from completion evidence. Queries cover at
   most 32 IDs per request and 100 visible interests, with bounded native work;
   source sampling time limits history freshness to 60 seconds. Viewport changes
   limit pending requests but retain fresh accepted history for the comparison's
@@ -419,7 +418,7 @@ includes every gain variant and its audio provenance notice/manifest. Offline
 checks establish dispatch and isolation; actual listening in supported clients
 is still required to assess audibility and sound quality.
 
-## Communication generation 2
+## Communication generation 3
 
 VIP cosmetics use a separate pinned issuer key in `VIPPublicKey.lua`.
 `VIPIdentity.lua` owns account-wide activation storage, incremental certificate
@@ -427,7 +426,7 @@ and sender/session-bound proof verification, bounded identity caches, publicatio
 and withdrawal. `VIPWindow.lua` owns the contact/activation UI. Neither module
 grants developer authority or changes diagnostic/location consent.
 `RuntimeCoordinator` advances VIP work through the communication coordinator;
-public `VIP` events use the existing global channel, catalog, transport and
+public `VIP` events use scoped mesh interests, the catalog, transport and
 fragment assembly. Presentation queries `IsVerifiedVIP`, with developer artwork
 taking precedence. Private activation seeds live in the separate
 `QuestTogetherVIP` SavedVariables root and are excluded from profile exports and
@@ -439,19 +438,67 @@ private SQLite ledger. Only the configured numeric owner may grant or issue for
 another user; all command replies are ephemeral. The dedicated issuer key and
 ledger must be preserved when moving hosts. See `services/vip/README.md`.
 
-The only gameplay prefix is `QuestTogether2`. Existing global and regional chat
-channel names remain unchanged. Generation 1 traffic is ignored, with no legacy
-decoder, companion packet or fallback transmission. Optional feature capabilities
-may extend generation 2, with conservative behavior when a peer lacks support.
-Peers on different protocol generations must upgrade together. Ed25519 developer requests bind the
-native sender, request identity, issue time, target and purpose to `QTDEV2`.
-Signatures authenticate requests; they do not encrypt replies.
+The only gameplay prefix is `QuestTogether3`, with generation 3 framing. Old
+prefixes and framing are rejected without responses. Both Retail and Forever use
+the same primary mesh design; communicating clients must upgrade together.
+Existing signed credentials keep their dedicated signature domains and formats.
+Signatures authenticate identities and requests; they do not encrypt replies.
+
+`MeshNetwork` owns candidate addresses, correlated native-whisper handshakes,
+neighbors, directory scans and scoped interest paths. These are routing records,
+not accepted player observations. `MeshPublications` owns canonical SHA-512 public
+bundles, retained owner copies, verification caches and quarantined relays.
+Only its verified entry into `CommunicationCoordinator` can apply a relayed
+record to the existing domain stores. A copied confirmation from another peer
+is never authority for the claimed origin.
+
+Generation-3 `QuestTogether3` and `QuestTogether3Z<zone>` channels are membership
+directories only. Display-list indices and native channel IDs remain distinct.
+Directory selection is guarded, restored and deferred while unsafe. Missing,
+suspended or incomplete directories are degraded discovery, not a reason to send
+channel payloads. `Transport` does not admit the CHANNEL distribution. Bootstrap
+also uses party/guild contacts and up to 64 public peers saved for 24 hours per
+character/client/region. Private diagnostics never supply saved seeds.
+If combat interrupts selection restoration, one bounded cleanup record retains
+channel names across graph resets. A native event retries it when safe, resolves
+current display indices, and yields to a user's intervening selection.
+
+A node keeps at most 512 candidates, 8 confirmed neighbors and 3 simultaneous
+handshakes. Introductions carry at most 8 addresses, without establishing presence,
+location, credentials or party membership. New probes run every 20–30 seconds after
+three staggered initial probes; unanswered candidates wait 5–30 minutes. Directory
+scans refresh every 5 minutes, processing 32 rows per paced tick and 1,500 per cycle.
+Cycles share the row allowance across active directories and rotate both the
+first directory and each directory's starting roster row. A large global roster
+cannot permanently exclude zone rosters or members beyond its first 1,500 rows.
+Geographically useful contacts coexist with randomly selected connecting contacts.
+An eligible connection rotates at most once per 120 seconds.
+Admission reserves slots for reciprocal handshakes before acknowledging them;
+busy peers decline without offering unusable introductions. Reservations expire
+and do not establish a confirmed edge or accepted player data.
+
+Interests have 120-second leases renewed every 40 seconds with new immutable query
+identities. Each query forwards once, to at most 3 neighbors with an 8-hop limit;
+duplicate arrivals may provide alternate paths. Public payloads follow subscribed
+reverse paths. The origin, session, publication identity, source timestamps,
+expiry, scope and payload remain unchanged across all hops. Ordinary unknown
+bundles stay quarantined until their author directly confirms the exact digest
+from its own retained public outbox, or they expire. Confirmations are batched;
+exact verified copies and direct owner payloads avoid redundant authentication.
+Existing pinned-key DEVANN, authorized broadcast PING and VIP proofs use their
+signed identity fields for ordering and expiry instead of unsigned outer fields.
+Private replies, hidden locations, developer mirrors, party snapshots, focus and
+waypoints never relay. There is no discovery or delivery guarantee across islands.
+Renewed interests rotate destinations independently per requester and scope, with
+at most 64 selection histories expiring after 120 seconds. An interest received
+while an owner publication is hashing or sending waits for that exact publication
+to become ready; cancellation and expiry still prevent replay.
 
 Developer announcement subscriptions use the separate `QTDEVFEED2` signature
 domain, binding sender, request identity, issue time, action, session and target.
 Local developer identity plus a private signer starts the subscription;
 `devlogall` remains only a presentation filter. All clients publish a compact
-global `HELLO` after channel readiness on startup/re-entry. A developer publishes
+public `HELLO` on startup/re-entry. A developer publishes
 `DEVANN` globally, renews every 90 seconds, and coalesces arrivals into reoffers
 no more often than ten seconds. Reoffers reuse the signed record and envelope;
 verified request identities suppress repeated crypto work. Authentication owns
@@ -475,7 +522,7 @@ No manual ping or `devlogall` display setting is needed for this feed.
 Consent, ignore, profile replacement, departure and session shutdown fence queued
 copies and delayed authentication. Signature verification rechecks peer departure
 ordering before installing a lease. This does not provide historical replay or
-messages from clients on unreachable channels or older unsupported versions.
+messages from clients in disconnected networks or older unsupported versions.
 
 Mirrors use the existing background class and budgets, at most four outstanding
 copies and four subscribed developer recipients per client, shared by announcement
@@ -496,10 +543,11 @@ authoritative; conflicting payload identities are rejected.
 request deadlines, transfer progression and transport drain advance each frame;
 feature sampling uses deliberate cadences. Geographic interest policy retains at
 most the current and viewed zone subscriptions, with four-second view dwell.
-Both zones trigger coalesced discovery; each responder can advance at most one
-publication per zone cooldown. Public whole-world baselines use 150–210-second
-jitter and a maximum 600-second source lifetime. Regional cadence varies with
-density and renews stationary locations. Nearby streams keep four leases, with
+Both zones advertise mesh interests and supply directory membership. Public
+state coalesces into windows of at least 5 seconds; events become eligible
+immediately and can expire under congestion. Slower global baselines preserve
+progressive background coverage and original per-field source freshness.
+Nearby streams keep four leases, with
 replaceable per-recipient samples that expire after two seconds. UI settings and
 presentation consumers do not drive network progression.
 
@@ -526,7 +574,10 @@ The shared scheduler uses QT policy limits, not claims about Blizzard limits:
 | Fragments per object / datagram | 1,024 / 255 bytes |
 
 Buckets start empty on world entry. Class rotation also rotates destinations and
-transfers and borrows unused capacity. `AddonMessageThrottle` pauses the prefix
+transfers and borrows unused capacity. A selected ready turn earns byte credit
+before smaller packets can spend it. Mesh traffic has its own class/destination
+rotation and appears as one stable flow to the shared scheduler. Waiting for the
+mesh sub-budget does not block private traffic. `AddonMessageThrottle` pauses the prefix
 for one second and reduces its packet rate to one/second. Thirty seconds of
 successful active traffic recovers 0.5/second, capped at four; idle time earns no
 rate recovery. `ChannelThrottle` is an ambiguous native outcome and is not
@@ -537,28 +588,20 @@ global error handler or installed bug catchers. Repeated failures are limited to
 route/result bucket per minute; every attempt remains counted. Normal throttle
 backoff and ambiguous results are not reported as definite send failures. A
 rejected request ends its loading state without waiting for a remote timeout.
-Server `NOT_ALLOWED_IN_CHANNEL` notices for QT's global or subscribed geographic
-channels are observed independently of chat-window filters and logged in QT
-diagnostics, at most once per scope per minute. Separate counters
-retain every refusal. These notices contain no addon prefix or packet identity;
-they do not revise native acceptance counters or already-completed tickets, and
-they do not claim which individual message was refused.
-
-`InvalidChannel` and those server refusal notices suspend sends to the affected
-named channel for 5, 10, 20, 40, 80, then at most 120 seconds, with up to 10%
-upward jitter below the cap. Names, rather than reassigned local IDs, identify
-cooldowns. Other channels, party routes and whispers remain eligible. Blocked
-submissions fail admission without spending send budget; already queued work
-settles once with `backoff` after honoring cancellation and expiry. Old events
-therefore cannot accumulate into a burst when the channel recovers.
-The next current message after the cooldown tests the channel. Native acceptance
-holds further sends for five seconds to allow an asynchronous refusal to arrive;
-a refusal doubles the delay, while a quiet interval restores normal sending
-without claiming delivery. Duplicate notices cannot extend a cooldown. Cooldowns
-survive temporary world transitions, with at most 32 records retained for ten
-minutes since their last probe or new failure. Diagnostics expose fixed counters
-for blocked work, probes and recovery, plus active-channel and remaining-delay
-gauges. Progress uses the existing runtime owner, without a separate retry timer.
+Directory refusal notices update bounded discovery diagnostics. They never
+produce channel-send retries or global error popups. Mesh traffic, including
+fragment control and origin confirmations, has a sub-budget of 1 packet/s and
+200 bytes/s within the shared budget (burst 2 packets/400 bytes). At most 24 queued
+mesh packets and 8 outgoing mesh transfers (at most 6 for replaceable state) leave capacity for actual party and
+private work. Public bundles are at most 8 KiB; retained mesh payloads reserve up
+to 128 KiB inside the existing 512 KiB aggregate transfer/cache ceiling. Routing
+history is bounded and expires. Diagnostics report counts, ages, hash time,
+authentication latency, queue bytes and outcomes without names or payload text.
+Mesh assembly requires a confirmed edge or a correlated response where applicable.
+Unknown peers may occupy at most four discovery/authentication request assemblies,
+leaving the other mesh slots available. Fragment arrival never extends a mesh
+request's original deadline. Publication retirement cancels its hop work, removes
+authentication/hash references and settles its completion exactly once.
 
 State samples replace older queued samples for the same topic/audience. Events
 retain immutable identities and finite duplicate suppression. Requests preserve
@@ -571,7 +614,7 @@ Party log, objective-detail and completion-history exchanges use the current
 PARTY, RAID or INSTANCE_CHAT distribution for group members. The logical recipient
 is separate from the native route; request correlation and roster lifetimes fence
 group fan-out, response replay and repair. Comparisons outside the group retain
-whispers, and older peers' whisper replies remain compatible.
+whispers within generation 3.
 
 Large transfers share one fragment format, validate correlation before allocating
 response buffers, and interleave across recipients. Completion/END starts missing

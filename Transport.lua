@@ -3,10 +3,9 @@
 local QT = _G.QuestTogether
 local CLASSES = { "control", "event", "active", "active", "active", "bulk", "bulk", "background" }
 local VALID_CLASSES = { control = true, event = true, active = true, bulk = true, background = true }
-local MAX_QUEUE, CONTROL_RESERVE = 96, 16
+local MAX_QUEUE, CONTROL_RESERVE, MAX_MESH_QUEUE = 96, 16, 24
 local BYTE_RATE, BYTE_BURST, PACKET_RATE, PACKET_BURST = 800, 1600, 4, 4
-local CHANNEL_BACKOFF_MIN, CHANNEL_BACKOFF_MAX, CHANNEL_PROBATION = 5, 120, 5
-local MAX_CHANNEL_BACKOFFS, CHANNEL_BACKOFF_TTL = 32, 600
+local MESH_BYTE_RATE, MESH_BYTE_BURST, MESH_PACKET_RATE, MESH_PACKET_BURST = 200, 400, 1, 2
 local METRICS = {
 	attempts = true,
 	queued = true,
@@ -18,26 +17,21 @@ local METRICS = {
 	cancelled = true,
 	superseded = true,
 	capacity = true,
-	backoff = true,
-	channelBackoffs = true,
-	channelBackoffSkipped = true,
-	channelProbes = true,
-	channelRecoveries = true,
 	nativeException = true,
 	nativeNoResult = true,
 	nativeUnknown = true,
 	nativeBooleanSuccess = true,
 }
 local NATIVE_RESULTS = {}
-local NATIVE_ROUTES = { PARTY = true, RAID = true, INSTANCE_CHAT = true, WHISPER = true, CHANNEL = true }
+local NATIVE_ROUTES = { PARTY = true, RAID = true, INSTANCE_CHAT = true, WHISPER = true }
 local QUEST_OPERATIONS = { QCMP = true, QCRS = true, FXACK = true, FXEND = true, FXNACK = true }
 local FAILURE_REPORT_INTERVAL = 60
 for code = 0, 12 do
 	local key = "nativeResult" .. code
 	NATIVE_RESULTS[code], METRICS[key] = key, true
 end
--- Fixed operation/route/result buckets distinguish party failures from an
--- unrelated custom-channel failure without retaining names or message bodies.
+-- Fixed operation/route/result buckets distinguish party failures from
+-- unrelated traffic without retaining names or message bodies.
 for operation in pairs(QUEST_OPERATIONS) do
 	for distribution in pairs(NATIVE_ROUTES) do
 		for _, outcome in ipairs({ "nativeException", "nativeNoResult", "nativeUnknown", "nativeBooleanSuccess" }) do
@@ -56,73 +50,6 @@ local function Count(s, key)
 	if METRICS[key] then
 		s.metrics[key] = (s.metrics[key] or 0) + 1
 	end
-end
-local function ChannelName(a, name)
-	if not a:CanAccessValue(name) or type(name) ~= "string" or #name > 140 then return nil end
-	name = name:gsub("^%d+%.%s*", ""):match("^%s*(.-)%s*$")
-	if name == "" or #name > 120 or name:find("[%c|]") then return nil end
-	return name:lower()
-end
-local function ChannelKey(a, route)
-	if route.distribution ~= "CHANNEL" then return nil end
-	-- Local channel IDs can be reassigned. Only an owned channel name can carry
-	-- a cooldown across reconnects and channel reordering.
-	return ChannelName(a, route.channelName or (route.requiresChannelJoin and a.announcementChannelName))
-end
-local function ChannelBackoff(s, key, now)
-	local entry = key and s.channelBackoffs and s.channelBackoffs[key]
-	if entry then
-		if now < entry.lastAt or now - entry.lastAt >= CHANNEL_BACKOFF_TTL then
-			s.channelBackoffs[key] = nil
-			return nil
-		end
-		if entry.recoverAt and now >= entry.recoverAt then
-			s.channelBackoffs[key] = nil
-			Count(s, "channelRecoveries")
-			return nil
-		end
-	end
-	return entry
-end
-local function ChannelBlocked(a, s, route, now)
-	local entry = ChannelBackoff(s, ChannelKey(a, route), now)
-	return entry ~= nil and now < entry.retryAt
-end
-local function RefuseChannel(a, s, key, now)
-	if not key or a:GetTransportState() ~= s or s.departing or not a.isEnabled or a.isLoggingOut then return false end
-	local entry = ChannelBackoff(s, key, now)
-	-- Several notices may describe the same refused operation. Only a fresh
-	-- probe can advance an existing failure streak, not late/duplicate notices.
-	if entry and not entry.probing then return false end
-	if not entry then
-		s.channelBackoffs = s.channelBackoffs or {}
-		local count, oldestKey, oldestAt = 0, nil, math.huge
-		for channel in pairs(s.channelBackoffs) do
-			local candidate = ChannelBackoff(s, channel, now)
-			if candidate then
-				count = count + 1
-				if candidate.lastAt < oldestAt then oldestKey, oldestAt = channel, candidate.lastAt end
-			end
-		end
-		if count >= MAX_CHANNEL_BACKOFFS then s.channelBackoffs[oldestKey] = nil end
-		entry = { delay = CHANNEL_BACKOFF_MIN / 2 }
-		s.channelBackoffs[key] = entry
-	end
-	entry.delay = math.min(CHANNEL_BACKOFF_MAX, entry.delay * 2)
-	local jitter = a.API.Random and a:SafeToNumber(a.API.Random(0, 100)) or 0
-	jitter = math.max(0, math.min(100, jitter or 0))
-	entry.lastAt = now
-	entry.retryAt = now + math.min(CHANNEL_BACKOFF_MAX, entry.delay * (1 + jitter / 1000))
-	entry.probing, entry.recoverAt = nil, nil
-	Count(s, "channelBackoffs")
-	return true
-end
-
--- Called only after Comms identifies a refusal for one of QT's own channels.
--- A notice cannot identify a packet or change an already-completed ticket.
-function QT:RecordTransportChannelRefusal(channelName)
-	local s = self:GetTransportState()
-	return s ~= nil and RefuseChannel(self, s, ChannelName(self, channelName), Now(self))
 end
 local function Flush(a, s)
 	if s.draining or s.flushing then
@@ -170,11 +97,13 @@ local function Current(row)
 end
 local function Refill(s, now)
 	if now < s.tokenAt then
-		s.tokens, s.byteTokens, s.activeSeconds, s.lastAcceptedAt = 0, 0, 0, nil
+		s.tokens, s.byteTokens, s.meshTokens, s.meshByteTokens, s.activeSeconds, s.lastAcceptedAt = 0, 0, 0, 0, 0, nil
 	end
 	local elapsed = math.max(0, now - s.tokenAt)
 	s.tokens = math.min(PACKET_BURST, s.tokens + elapsed * s.packetRate)
 	s.byteTokens = math.min(BYTE_BURST, s.byteTokens + elapsed * BYTE_RATE)
+	s.meshTokens = math.min(MESH_PACKET_BURST, (s.meshTokens or 0) + elapsed * MESH_PACKET_RATE)
+	s.meshByteTokens = math.min(MESH_BYTE_BURST, (s.meshByteTokens or 0) + elapsed * MESH_BYTE_RATE)
 	s.tokenAt = now
 end
 local function Cost(a, wire)
@@ -186,16 +115,24 @@ local function Valid(a, wire, route)
 		and #wire <= 255
 		and not wire:find("\0", 1, true)
 		and type(route) == "table"
-		and type(route.distribution) == "string"
+		and NATIVE_ROUTES[route.distribution] == true
 		and a.API
 		and type(a.API.SendAddonMessage) == "function"
 end
-local function Take(s, now, cost)
+local function Take(s, now, cost, mesh)
 	Refill(s, now)
 	if s.departing or (s.blockedUntil and now < s.blockedUntil) or s.tokens < 1 or s.byteTokens < cost then
 		return false
 	end
+	if mesh and (s.meshTokens < 1 or s.meshByteTokens < cost) then
+		return false
+	end
 	s.tokens, s.byteTokens = s.tokens - 1, s.byteTokens - cost
+	if mesh then
+		s.meshTokens, s.meshByteTokens = s.meshTokens - 1, s.meshByteTokens - cost
+		s.metrics.meshPackets = (s.metrics.meshPackets or 0) + 1
+		s.metrics.meshBytes = (s.metrics.meshBytes or 0) + cost
+	end
 	return true
 end
 local function Accepted(s, now)
@@ -217,40 +154,22 @@ local function ReportNativeFailure(a, s, context, route, nativeKey, nativeLabel)
 	local key, now = distribution .. ":" .. nativeKey, Now(a)
 	s.failureReports = s.failureReports or {}
 	local previous = s.failureReports[key]
-	if previous and now >= previous and now - previous < FAILURE_REPORT_INTERVAL then return end
+	if previous and now >= previous and now - previous < FAILURE_REPORT_INTERVAL then
+		return
+	end
 	s.failureReports[key] = now
 	local operation = type(context) == "string" and a:GetCommOperation(context) and context or "message"
-	local detail = "QuestTogether: Addon message send failed (operation=" .. operation
-		.. ", route=" .. distribution .. ", result=" .. nativeLabel
+	local detail = "QuestTogether: Addon message send failed (operation="
+		.. operation
+		.. ", route="
+		.. distribution
+		.. ", result="
+		.. nativeLabel
 		.. "). Communication may be incomplete. Run /qt diagnostics for details."
 	a:RecordDiagnosticError("communication send", detail)
 end
 local function NativeSend(a, s, wire, context, route)
 	local target, generation = route.target, s.generation
-	if route.requiresChannelJoin then
-		local ok, value = pcall(function()
-			if a:EnsureAnnouncementChannelJoined(route.channelName) then
-				return a:GetAnnouncementChannelTarget(route.channelName)
-			end
-		end)
-		if not ok or not value then
-			a:RecordCommsDiagnostic("failedRoutes", "channel join failed " .. (context or "wire message"))
-			return false, "rejected"
-		end
-		target = value
-	end
-	if a:GetTransportState() ~= s or s.generation ~= generation then return false, "cancelled" end
-	local now, key = Now(a), ChannelKey(a, route)
-	if ChannelBlocked(a, s, route, now) then
-		Count(s, "channelBackoffSkipped")
-		return false, "backoff"
-	end
-	local probe = ChannelBackoff(s, key, now)
-	if probe then
-		probe.probing, probe.lastAt = true, now
-		probe.retryAt, probe.recoverAt = now + CHANNEL_PROBATION, nil
-		Count(s, "channelProbes")
-	end
 	Count(s, "attempts")
 	local ok, result = pcall(a.API.SendAddonMessage, a.commPrefix, wire, route.distribution, target)
 	local code = ok and a:SafeToNumber(result) or nil
@@ -271,29 +190,6 @@ local function NativeSend(a, s, wire, context, route)
 	Count(s, nativeKey)
 	if QUEST_OPERATIONS[context] and NATIVE_ROUTES[route.distribution] then
 		Count(s, "questWire." .. context .. "." .. route.distribution .. "." .. nativeKey)
-	end
-	-- The adapter can re-enter QT (a refusal notice, disable, or reset). Its
-	-- eventual return must not erase that refusal or revive an old lifetime.
-	if a:GetTransportState() == s and s.generation == generation
-		and not s.departing and a.isEnabled and not a.isLoggingOut then
-		if code == 7 then
-			RefuseChannel(a, s, key, Now(a))
-		elseif probe and s.channelBackoffs[key] == probe and probe.probing then
-			if ok and a:CanAccessValue(result) and (result == 0 or result == true) then
-				-- Native acceptance is not delivery. Wait briefly for a possible
-				-- asynchronous server refusal before resuming normal traffic.
-				probe.recoverAt = Now(a) + CHANNEL_PROBATION
-				probe.retryAt = probe.recoverAt
-			elseif code == 8 then
-				-- This probe may have transmitted, so a later server refusal must
-				-- still extend its streak. A quiet ambiguous probe cannot establish
-				-- recovery; only a new message may probe again after probation.
-				probe.retryAt = Now(a) + CHANNEL_PROBATION
-			else
-				-- Prefix throttles retain their existing retry rules.
-				probe.probing, probe.recoverAt, probe.retryAt = nil, nil, Now(a)
-			end
-		end
 	end
 	if ok and a:CanAccessValue(result) and (result == 0 or result == true) then
 		Accepted(s, Now(a))
@@ -316,7 +212,9 @@ local function NativeSend(a, s, wire, context, route)
 		return false, "throttled", code
 	end
 	-- Code 8 may already have transmitted. Never resend an ambiguous packet.
-	if code ~= 8 then ReportNativeFailure(a, s, context, route, nativeKey, nativeLabel) end
+	if code ~= 8 then
+		ReportNativeFailure(a, s, context, route, nativeKey, nativeLabel)
+	end
 	return false, code == 8 and "ambiguous" or "rejected", code
 end
 
@@ -328,6 +226,8 @@ function QT:InitializeTransport()
 			completions = {},
 			tokens = 0,
 			byteTokens = 0,
+			meshTokens = 0,
+			meshByteTokens = 0,
 			tokenAt = Now(self),
 			packetRate = PACKET_RATE,
 			generation = 0,
@@ -393,8 +293,8 @@ end
 function QT:ResumeTransportSession()
 	local s = self:InitializeTransport()
 	if s.departing then
-		s.tokens, s.byteTokens, s.tokenAt = 0, 0, Now(self)
-		s.lastFlow, s.sendClassCursor = {}, nil
+		s.tokens, s.byteTokens, s.meshTokens, s.meshByteTokens, s.tokenAt = 0, 0, 0, 0, Now(self)
+		s.lastFlow, s.sendClassCursor, s.meshLastFlow, s.meshClassCursor = {}, nil, {}, nil
 	end
 	s.departing = nil
 	return s
@@ -404,12 +304,6 @@ function QT:ResetTransport()
 	self.transportState = nil
 end
 
--- Retained for internal callers during migration. There is no nearby exemption;
--- callers holding a reservation must not subsequently call SendTransportNow.
-function QT:TakeCommsSendToken(_, _, byteCost)
-	local s = self:GetTransportState()
-	return s ~= nil and Take(s, Now(self), byteCost or (255 + #(self.commPrefix or "") + 40))
-end
 function QT:SendTransportNow(wire, context, route, mode)
 	local s = self:GetTransportState()
 	if
@@ -430,16 +324,20 @@ function QT:SendTransportNow(wire, context, route, mode)
 			return false, "invalid"
 		end
 	end
-	if ChannelBlocked(self, s, route, now) then
-		Count(s, "channelBackoffSkipped")
-		return false, "backoff"
-	end
 	if s.departing then
 		if (s.blockedUntil and now < s.blockedUntil) or s.tokens < 1 or s.byteTokens < cost then
 			return false, "paced"
 		end
+		if route.meshTraffic and (s.meshTokens < 1 or s.meshByteTokens < cost) then
+			return false, "paced"
+		end
 		s.tokens, s.byteTokens = s.tokens - 1, s.byteTokens - cost
-	elseif not Take(s, now, cost) then
+		if route.meshTraffic then
+			s.meshTokens, s.meshByteTokens = s.meshTokens - 1, s.meshByteTokens - cost
+			s.metrics.meshPackets = (s.metrics.meshPackets or 0) + 1
+			s.metrics.meshBytes = (s.metrics.meshBytes or 0) + cost
+		end
+	elseif not Take(s, now, cost, route.meshTraffic) then
 		return false, "paced"
 	end
 	local sent, reason, code = NativeSend(self, s, wire, context, route)
@@ -474,10 +372,6 @@ function QT:QueueTransportWire(wire, context, route, options)
 	then
 		return false, "invalid"
 	end
-	if ChannelBlocked(self, s, route, now) then
-		Count(s, "channelBackoffSkipped")
-		return false, "backoff"
-	end
 	local replaced = {}
 	local nonControl = s.inFlight and s.inFlight.priority ~= "control" and 1 or 0
 	for _, row in ipairs(s.queue) do
@@ -491,6 +385,17 @@ function QT:QueueTransportWire(wire, context, route, options)
 				replaced[#replaced + 1] = row
 			end
 		end
+	end
+	local mesh = options.meshTraffic == true or route.meshTraffic == true
+	local meshCount = s.inFlight and s.inFlight.meshTraffic and 1 or 0
+	for _, row in ipairs(s.queue) do
+		if row.meshTraffic and (options.key == nil or row.key ~= options.key) then
+			meshCount = meshCount + 1
+		end
+	end
+	if mesh and meshCount >= MAX_MESH_QUEUE then
+		Count(s, "capacity")
+		return false, "capacity"
 	end
 	local occupied = #s.queue - #replaced + (s.inFlight and 1 or 0)
 	if occupied >= MAX_QUEUE or (priority ~= "control" and nonControl >= MAX_QUEUE - CONTROL_RESERVE) then
@@ -508,9 +413,9 @@ function QT:QueueTransportWire(wire, context, route, options)
 	row.route = {
 		distribution = route.distribution,
 		target = route.target,
-		channelName = route.channelName,
-		requiresChannelJoin = route.requiresChannelJoin,
+		meshTraffic = options.meshTraffic == true or route.meshTraffic == true,
 	}
+	row.meshTraffic = row.route.meshTraffic
 	row.priority, row.createdAt, row.expires = priority, now, expires
 	row.completed, row.cancelReason, row.retryAt = nil, nil, nil
 	row.flow = options.flow
@@ -532,30 +437,68 @@ function QT:QueueTransportWire(wire, context, route, options)
 	return true, "queued", row.ticket
 end
 
-local function Select(a, s, now)
+local function SharedFlow(row)
+	-- The outer scheduler sees one stable mesh flow. Its inner scheduler owns
+	-- destination fairness; rotating that destination must not erase the outer
+	-- scheduler's last turn and repeatedly jump ahead of replaced party state.
+	return row.meshTraffic and "mesh" or row.flow
+end
+local function SelectClass(a, s, now, cursor, lastFlow, eligible, reserveTurn, flowKey)
 	for offset = 1, #CLASSES do
-		local slot = ((s.sendClassCursor or 0) + offset - 1) % #CLASSES + 1
+		local slot = ((cursor or 0) + offset - 1) % #CLASSES + 1
 		local class, flows, seen = CLASSES[slot], {}, {}
 		for _, row in ipairs(s.queue) do
-			if row.priority == class and not seen[row.flow] then
-				seen[row.flow] = true -- A delayed head must not let its own tail overtake it.
+			local flow = flowKey and flowKey(row) or row.flow
+			if row.priority == class and eligible(row) and not seen[flow] then
+				seen[flow] = true
 				flows[#flows + 1] = row
 			end
 		end
 		local start = 0
 		for index, row in ipairs(flows) do
-			if row.flow == s.lastFlow[class] then
+			if (flowKey and flowKey(row) or row.flow) == lastFlow[class] then
 				start = index
 				break
 			end
 		end
 		for offsetFlow = 1, #flows do
 			local row = flows[(start + offsetFlow - 1) % #flows + 1]
-			if (not row.retryAt or now >= row.retryAt) and not ChannelBlocked(a, s, row.route, now) then
+			local cost = Cost(a, row.wire)
+			if
+				(not row.retryAt or now >= row.retryAt)
+				and (
+					reserveTurn
+					or (
+						s.byteTokens >= cost
+						and (not row.meshTraffic or (s.meshTokens >= 1 and s.meshByteTokens >= cost))
+					)
+				)
+			then
 				return row, slot
 			end
 		end
 	end
+end
+local function Select(a, s, now)
+	-- The public sub-budget has its own class rotation. Otherwise unrelated
+	-- party sends can repeatedly consume one class's turn while mesh tokens
+	-- refill, starving public background identity proofs indefinitely.
+	-- Reserve that turn before checking its cost. Cheap directory/control
+	-- packets must not continually spend the bytes a larger proof needs.
+	-- No row is retained: cancellation/expiry changes the next selection, and
+	-- private traffic can still use the shared budget while mesh credit grows.
+	s.meshLastFlow = s.meshLastFlow or {}
+	local mesh, meshSlot = SelectClass(a, s, now, s.meshClassCursor, s.meshLastFlow, function(row)
+		return row.meshTraffic
+	end, true)
+	local row, slot = SelectClass(a, s, now, s.sendClassCursor, s.lastFlow, function(candidate)
+		-- A mesh turn cannot block private traffic while its smaller budget
+		-- refills. Once eligible, every outer turn reserves shared byte credit;
+		-- continuously affordable small packets cannot starve a larger one.
+		return not candidate.meshTraffic or (candidate == mesh
+			and s.meshTokens >= 1 and s.meshByteTokens >= Cost(a, candidate.wire))
+	end, true, SharedFlow)
+	return row, slot, row == mesh and meshSlot or nil
 end
 function QT:DrainTransport()
 	local s, now = self:GetTransportState(), Now(self)
@@ -569,9 +512,7 @@ function QT:DrainTransport()
 	end
 	for _, row in ipairs(snapshot) do
 		local reason = (now < row.createdAt or now >= row.expires) and "expired" or (not Current(row) and "cancelled")
-		if not reason and ChannelBlocked(self, s, row.route, now) then reason = "backoff" end
 		if reason and Remove(s, row) then
-			if reason == "backoff" then Count(s, "channelBackoffSkipped") end
 			Complete(s, row, false, reason)
 		end
 	end
@@ -580,7 +521,8 @@ function QT:DrainTransport()
 			break
 		end
 		now = Now(self)
-		local row, slot = Select(self, s, now)
+		Refill(s, now)
+		local row, slot, meshSlot = Select(self, s, now)
 		if not row then
 			break
 		end
@@ -599,13 +541,16 @@ function QT:DrainTransport()
 			end
 			break
 		end
-		if not Take(s, now, Cost(self, row.wire)) then
+		if not Take(s, now, Cost(self, row.wire), row.meshTraffic) then
 			break
 		end
 		if not Remove(s, row) then
 			break
 		end
-		s.sendClassCursor, s.lastFlow[row.priority], s.inFlight = slot, row.flow, row
+		s.sendClassCursor, s.lastFlow[row.priority], s.inFlight = slot, SharedFlow(row), row
+		if meshSlot then
+			s.meshClassCursor, s.meshLastFlow[row.priority] = meshSlot, row.flow
+		end
 		local sent, reason, code = NativeSend(self, s, row.wire, row.context, row.route)
 		s.inFlight = nil
 		if reason == "throttled" then
@@ -642,15 +587,7 @@ function QT:GetTransportMetrics()
 	end
 	result.packetRate, result.packetTokens, result.byteTokens = s.packetRate, s.tokens, s.byteTokens
 	local now = Now(self)
-	result.channelBackoffChannels, result.channelBackoffMaxRemaining = 0, 0
-	for key in pairs(s.channelBackoffs or {}) do
-		local entry = ChannelBackoff(s, key, now)
-		if entry then
-			result.channelBackoffChannels = result.channelBackoffChannels + 1
-			result.channelBackoffMaxRemaining = math.max(result.channelBackoffMaxRemaining, entry.retryAt - now)
-		end
-	end
-	-- Pruning a quiet probe can record recovery; return one coherent snapshot.
+	result.meshPacketTokens, result.meshByteTokens = s.meshTokens, s.meshByteTokens
 	for key, value in pairs(s.metrics) do
 		result[key] = value
 	end

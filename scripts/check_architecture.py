@@ -35,9 +35,15 @@ def check(root=ROOT, source_overrides=None):
          {"CommsProtocol.lua"}, "wire schemas and framing belong to CommsProtocol")
     only(r"\b(?:BulkTransfer|PingPages|EncodePingResponsePayload|SerializeWireMessage|DeserializeWireMessage|SendWireMessageToAnnouncementRoutes|RememberDirectCommPeer|ScheduleGeographicPingReply)\b",
          set(), "retired communication paths must not return")
-    for name in ("CommsTransfer.lua", "Transport.lua", "CommunicationCoordinator.lua", "PingCommunication.lua", "QuestCompareCommunication.lua", "PartyQuestSync.lua", "PartyQuestProgress.lua", "DeveloperDiagnostics.lua", "DeveloperAnnouncements.lua", "VIPIdentity.lua"):
+    for name in ("CommsTransfer.lua", "Transport.lua", "CommunicationCoordinator.lua", "PingCommunication.lua", "QuestCompareCommunication.lua", "PartyQuestSync.lua", "PartyQuestProgress.lua", "DeveloperDiagnostics.lua", "DeveloperAnnouncements.lua", "VIPIdentity.lua", "MeshNetwork.lua", "MeshPublications.lua"):
         if re.search(r"\.API\.(?:Delay|NewTicker|NewTimer)\s*\(", sources.get(name, "")):
             errors.append(name + ": network progression belongs to RuntimeCoordinator")
+    only(r'\bdistribution\s*=\s*"CHANNEL"', set(), "channel membership is directory-only; never publish addon payloads")
+    only(r'QuestTogether2|HandleGeographicDiscovery|RecordTransportChannelRefusal', set(), "retired protocol and channel send recovery must not return")
+    only(r'\.API\.(?:GetChannelRosterInfo|GetChannelDisplayInfo|SetSelectedDisplayChannel)\s*\(', {"MeshNetwork.lua"},
+         "directory roster selection belongs to MeshNetwork")
+    only(r'function (?:QuestTogether|QT):DispatchVerifiedMeshRecord\(', {"CommunicationCoordinator.lua"},
+         "verified public observations enter through the coordinator")
     if re.search(r"API\.(?:GetQuestLogInfo|GetNumQuestLogEntries)", sources["TaskArea.lua"]):
         errors.append("TaskArea must reduce observations, not scan the log")
     if re.search(r"(?:owner|live)\.partyNavigationState\s*=", sources["QuestComparePreview.lua"]):
@@ -51,6 +57,7 @@ def check(root=ROOT, source_overrides=None):
              ("QuestObservations.lua", "TaskArea.lua"), ("PeerState.lua", "PeerLifecycle.lua"),
              ("CommsProtocol.lua", "Transport.lua"), ("Transport.lua", "CommsTransfer.lua"),
              ("CommsTransfer.lua", "CommunicationCoordinator.lua"),
+             ("CommunicationCoordinator.lua", "MeshNetwork.lua"), ("MeshNetwork.lua", "MeshPublications.lua"),
              ("CommunicationCoordinator.lua", "QuestCompareCommunication.lua"),
              ("CommunicationCoordinator.lua", "PingCommunication.lua"),
              ("scripts/network_fixture.lua", "scripts/regression_network_v2.lua"),

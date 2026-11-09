@@ -340,6 +340,9 @@ local function WithIsolatedState(testFn)
 			"runtimeCoordinatorFrame",
 			"transportState",
 			"communicationState",
+			"meshNetworkState",
+			"meshPublicationState",
+			"meshDepartureRoutes",
 			"commTransferState",
 			"bulkTransferState",
 			"pingPageQueue",
@@ -6629,12 +6632,14 @@ QuestTogether:RegisterTest("login adopts visible QuestTogether chat window as se
 	AssertEquals(refreshed, 1)
 end)
 
-QuestTogether:RegisterTest("announcement falls back to global when no regional channel is ready", function()
+QuestTogether:RegisterTest("announcement uses the global whisper mesh before regional interest is available", function()
 	local net, a, b = AnnouncementPeers()
 	net:SetGroup(a, nil)
 	net:SetGroup(b, nil)
 	net:Join(a, a.announcementChannelName, true)
 	net:Join(b, b.announcementChannelName, true)
+	net:Advance(30)
+	net.trace = {}
 	local received
 	function b:HandleAnnouncementEvent(event)
 		received = event
@@ -6642,20 +6647,22 @@ QuestTogether:RegisterTest("announcement falls back to global when no regional c
 	end
 	AssertTrue(a:SendAnnouncementEvent("QUEST_PROGRESS", "8/8 Lightblooming Bulb"))
 	net:Advance(3)
-	local sent = AcceptedOperation(net, "ANN")
+	local sent = AcceptedOperation(net, "MPUB")
 	AssertTrue(#sent > 0)
 	for _, packet in ipairs(sent) do
-		AssertEquals(packet.route, "CHANNEL")
-		AssertEquals(packet.channel, a.announcementChannelName)
+		AssertEquals(packet.route, "WHISPER")
+		AssertEquals(packet.target, b.name)
 	end
 	AssertEquals(received.senderName, a.name)
 	AssertEquals(received.text, "8/8 Lightblooming Bulb")
 end)
 
-QuestTogether:RegisterTest("announcement wire uses both party and channel routes when grouped", function()
+QuestTogether:RegisterTest("announcement wire uses party and whisper mesh routes without duplicate display", function()
 	local net, a, b = AnnouncementPeers()
 	net:Join(a, a.announcementChannelName, true)
 	net:Join(b, b.announcementChannelName, true)
+	net:Advance(30)
+	net.trace = {}
 	local received = 0
 	function b:HandleAnnouncementEvent()
 		received = received + 1
@@ -6668,11 +6675,11 @@ QuestTogether:RegisterTest("announcement wire uses both party and channel routes
 		routes[packet.route] = true
 	end
 	AssertTrue(routes.PARTY)
-	AssertTrue(routes.CHANNEL)
+	AssertTrue(#AcceptedOperation(net, "MPUB") > 0)
 	AssertEquals(received, 1)
 end)
 
-QuestTogether:RegisterTest("manual ping requires the private companion and uses only the global channel", function()
+QuestTogether:RegisterTest("manual ping requires the private companion and uses only the global mesh", function()
 	local addon = NewHelpFixture()
 	addon.isEnabled = true
 	addon.pendingPingRequests = {}
@@ -6711,8 +6718,8 @@ QuestTogether:RegisterTest("manual ping requires the private companion and uses 
 	addon.isLocalDeveloper = true
 	AssertTrue(addon:SendPingRequest())
 	AssertEquals(#routes, 1)
-	AssertEquals(routes[1].distribution, "CHANNEL")
-	AssertEquals(routes[1].channelName, addon.announcementChannelName)
+	AssertEquals(routes[1].distribution, "MESH")
+	AssertEquals(routes[1].scope, "global")
 end)
 
 QuestTogether:RegisterTest("global ping does not fall back to the party after a failed send", function()
@@ -6742,7 +6749,7 @@ QuestTogether:RegisterTest("global ping does not fall back to the party after a 
 		AssertEquals(operation, "PING")
 		attempts = attempts + 1
 		AssertEquals(#routes, 1)
-		AssertEquals(routes[1].distribution, "CHANNEL")
+		AssertEquals(routes[1].distribution, "MESH")
 		return false
 	end
 	AssertFalse(addon:SendPingRequest())
@@ -6794,10 +6801,8 @@ QuestTogether:RegisterTest("quest compare does not depend on public channel memb
 	a.API.GetChannelName = function()
 		return nil
 	end
-	local channelJoins = 0
 	a.API.JoinPermanentChannel = function()
-		channelJoins = channelJoins + 1
-		error("party comparison must not join public channels")
+		return false -- Directory discovery may fail independently of a party request.
 	end
 	function b:HandleQuestCompareRequest()
 		return true
@@ -6808,7 +6813,6 @@ QuestTogether:RegisterTest("quest compare does not depend on public channel memb
 	AssertEquals(#sent, 1)
 	AssertEquals(sent[1].route, "PARTY")
 	AssertEquals(sent[1].target, nil)
-	AssertEquals(channelJoins, 0)
 end)
 
 QuestTogether:RegisterTest("quest compare returns one atomic party snapshot without public channel rows", function()
@@ -6842,13 +6846,6 @@ QuestTogether:RegisterTest("quest compare returns one atomic party snapshot with
 		AssertEquals(packet.route, "PARTY")
 		AssertEquals(packet.target, nil)
 	end
-end)
-
-QuestTogether:RegisterTest("announcement comm filter accepts grouped distributions", function()
-	AssertTrue(QuestTogether:IsAnnouncementChannelEvent("PARTY"))
-	AssertTrue(QuestTogether:IsAnnouncementChannelEvent("RAID"))
-	AssertTrue(QuestTogether:IsAnnouncementChannelEvent("INSTANCE_CHAT"))
-	AssertFalse(QuestTogether:IsAnnouncementChannelEvent("SAY"))
 end)
 
 QuestTogether:RegisterTest("incoming announcements use the transport sender name", function()

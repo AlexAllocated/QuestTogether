@@ -72,6 +72,8 @@ CommsProtocol.lua
 Transport.lua
 CommsTransfer.lua
 CommunicationCoordinator.lua
+MeshNetwork.lua
+MeshPublications.lua
 QuestCompareCommunication.lua
 QuestCompletion.lua
 QuestSharingResults.lua
@@ -131,6 +133,8 @@ scripts/regression_map_presentation.lua
 scripts/regression_note_cursor_diagnostics.lua
 scripts/regression_quest_details.lua
 scripts/network_fixture.lua
+scripts/regression_mesh_network.lua
+scripts/regression_mesh_publications.lua
 scripts/regression_vip.lua
 scripts/regression_developer_feed_auth.lua
 scripts/regression_developer_announcements.lua

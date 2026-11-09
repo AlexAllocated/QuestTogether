@@ -1,8 +1,8 @@
-# Communication upgrade: live-client release gate
+# Protocol 3 mesh: live-client release gate
 
 This checklist tracks live validation for the major communication upgrade.
 Unchecked scenarios remain unverified. Offline Lua tests establish protocol and
-state-machine behavior; they do not establish Blizzard channel delivery, native
+state-machine behavior; they do not establish Blizzard directory availability and whisper delivery, native
 throttling, cross-addon behavior, or live UI performance.
 
 Keep the development TOC and notes version unchanged until the authorized release
@@ -13,7 +13,7 @@ client or scenario as passed.
 
 ## Setup and evidence
 
-- [ ] Install the same candidate on two clients, A and B. Keep a third client, C,
+- [ ] Install the same candidate on three clients, A, B and C. Keep a fourth client
   on the last published version to verify the intentional protocol break.
 - [ ] Use ordinary player profiles on A and B. Start with public location sharing
   enabled and the map filter set to all QuestTogether players. Check LFQP-only
@@ -30,27 +30,34 @@ client or scenario as passed.
   native chat, party invitations, quest sharing, map controls, and ordinary addon
   menus working. Do not replace native APIs or add test hooks on live clients.
 
-## Compatibility and discovery
+## Compatibility, discovery and relaying
 
-- [ ] A and B discover each other and exchange quest progress. C does not exchange
-  QuestTogether data with them in either direction. Old traffic causes no reply
-  loop or Lua error; ordinary WoW chat and party functions still work with C.
-- [ ] Put A and B in different zones. On A, hold B's zone open on the world map
-  for at least four seconds. Confirm A can discover B through that area's channel
-  and also continues receiving updates for A's own zone.
-- [ ] Pan rapidly between zones, view a continent, close the map, and reopen it.
-  Confirm the addon retains at most the current zone plus one settled viewed zone,
-  leaves obsolete zone subscriptions, and does not repeatedly issue discovery
-  queries for the same zone. The normal dwell and cooldowns are intentional.
-- [ ] View a third, unrelated zone and allow normal background traffic to run.
-  Confirm more distant public dots still refresh without a manual request.
-  The ordinary global publication interval is randomized between 150 and 210
-  seconds after an accepted send; congestion can delay it. Record actual times,
-  not a promised deadline.
-- [ ] Bring A and B within minimap range and move, stop, and change zones. Confirm
-  nearby updates remain smooth enough to use, cease when no longer relevant,
-  and fall back to ordinary snapshots when a short stream expires. No old
-  interpolated position should persist after a newer withdrawal.
+- [ ] Record actual remote receipts, not merely accepted send counts. Inspect
+  directory availability separately from payload delivery. Confirm no outgoing
+  addon packet uses CHANNEL, and old prefixes cause no reply or state change.
+- [ ] Put A and C in independent backing realms with overlapping membership
+  through B. Confirm A learns C's address through B, then receives C's immutable
+  public data via B after direct native-origin authentication. Record the actual
+  origin, hop and receipt evidence locally; redact names from shared reports.
+- [ ] Repeat in Retail and Forever. Directory visibility, cross-backing-realm
+  whisper addressing and actual addon receipt must each be verified.
+- [ ] Remove a bridge while an alternate path exists; confirm recovery. Repeat
+  without an alternate path and confirm honest isolation and bounded retries.
+- [ ] Open the channel UI while a roster scan is pending. Confirm QT preserves
+  the user's selection, does not continually select directories, and resumes
+  later. Test delayed roster loading and absent directory services.
+- [ ] Move A and B between zones and view another zone for four seconds. Confirm
+  current/viewed interests replace obsolete ones, old directory memberships leave,
+  and background discovery remains slower. Rapid map changes must not cause a
+  join or query storm.
+- [ ] Inspect the native send counters while other communication addons are
+  active. Record mesh bytes/packets, hash slices, authentication latency, queue
+  age, expiry and drops. Mesh and private traffic must share the transport cap.
+- [ ] Move nearby, stop, and change zones. Confirm prompt direct nearby updates
+  and finite stream leases. New discoveries must not refresh old coordinates.
+- [ ] Sign out the publication's origin before a new recipient can authenticate
+  an ordinary relayed record. Confirm it remains unavailable until verified or
+  expired. Previously verified exact records retain their original expiry.
 
 ## Party activity and large replies
 
@@ -166,6 +173,10 @@ is not live-client sign-off.
 
 ## Evidence recorded during implementation
 
+- 2026-11-09, protocol-3 candidate: the maintainer confirmed that character/item
+  UI covers POT correctly after the layering correction ("Covered correctly").
+  This establishes the reported UI fix only. No protocol-3 multi-client Retail
+  or Forever delivery result has been recorded; those release gates remain open.
 - 2026-10-11: the user reported Forever startup failing on a millisecond session
   timestamp passed to `%d`. After the fixed-point formatter change, the user
   confirmed another `/reload` succeeds. This verifies the reported startup path

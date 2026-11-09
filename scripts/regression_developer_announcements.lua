@@ -3,7 +3,9 @@
 local QT = _G.QuestTogether
 
 local function Equal(actual, expected, detail)
-	assert(actual == expected, (detail or "values differ") .. ": " .. tostring(actual) .. " ~= " .. tostring(expected))
+	if actual ~= expected then
+		error((detail or "values differ") .. ": " .. tostring(actual) .. " ~= " .. tostring(expected), 2)
+	end
 end
 
 local function Peer(net, name, settings, developer)
@@ -13,6 +15,7 @@ local function Peer(net, name, settings, developer)
 	peer.isLocalDeveloper = developer == true
 	peer.developerPublicKeyHex = string.rep("0", 64)
 	peer.Ed25519 = {
+		Hash = QT.Ed25519.Hash,
 		NewVerification = function()
 			return coroutine.create(function()
 				while peer.verificationPaused do
@@ -49,20 +52,37 @@ local function HasRoute(peer, target)
 end
 
 local function Sent(peer, operation, distribution, target, start)
-	local rows = {}
+	local rows, assemblies = {}, {}
 	for index = (start or 0) + 1, #peer.sent do
 		local packet = peer.sent[index]
-		local frame = peer:DecodeCommFrame(packet.wire)
-		if
-			frame
-			and frame.operation == operation
-			and (not distribution or packet.route == distribution)
-			and (not target or packet.target == target)
-		then
+		local frame, body = peer:DecodeCommFrame(packet.wire)
+		if frame and frame.operation == "MPUB" and distribution ~= "WHISPER" then
+			local key = frame.session .. ":" .. frame.messageId .. ":" .. tostring(packet.target)
+			local assembled = assemblies[key] or {}; assemblies[key] = assembled
+			assembled[frame.part] = body
+			local complete = true
+			for part = 1, frame.total do if not assembled[part] then complete = false end end
+			if complete then
+				local pub = peer:DecodeCommRecord("MPUB", table.concat(assembled))
+				if pub and pub.operation == operation then
+					rows[#rows + 1] = { packet = packet, publication = pub,
+						frame = { session = pub.session, messageId = pub.id } }
+				end
+				assemblies[key] = nil
+			end
+		elseif frame and frame.operation == operation and distribution ~= "MESH"
+			and (not distribution or packet.route == distribution) and (not target or packet.target == target) then
 			rows[#rows + 1] = { packet = packet, frame = frame }
 		end
 	end
 	return rows
+end
+local function WaitFor(net, predicate, label)
+	for _ = 1, 90 do
+		if predicate() then return end
+		net:Advance(1)
+	end
+	assert(predicate(), label or "mesh condition did not become ready")
 end
 
 local function Announce(peer, text)
@@ -94,6 +114,23 @@ local function FinishVerification(peer)
 		peer.now = peer.now + 0.01
 	end
 end
+
+QT:RegisterTest("retained developer advertisements retire when local developer authorization ends", function()
+	local net = QT:CreateTestNetwork({ fps = 10 })
+	local developer = Peer(net, "Developer-Realm", nil, true)
+	net:StartPeer(developer)
+	net:Advance(5)
+	local publications = assert(developer.meshPublicationState)
+	local advertisement
+	for _, entry in pairs(publications.entries) do
+		if entry.publication.operation == "DEVANN" then advertisement = entry end
+	end
+	assert(advertisement and advertisement.completed, "retain the authored offer for later discovery")
+	developer.isLocalDeveloper = false
+	developer:UpdateMeshPublications(developer.now)
+	assert(advertisement.cancelled and publications.entries[advertisement.key] == nil,
+		"completed offers must not bypass revoked developer authority during replay")
+end, { offline = true })
 
 QT:RegisterTest(
 	"developer identity is local-key or signed-session evidence and retires at lifecycle boundaries",
@@ -204,26 +241,30 @@ QT:RegisterTest(
 		assert(not developer:IsDeveloperAnnouncementReceiver())
 		developer.isEnabled = true
 		net:StartPeer(developer)
-		net:Advance(20)
+		WaitFor(net, function() return HasRoute(regular, developer.name) end)
 		assert(HasRoute(regular, developer.name), "signed global subscription should authorize a different-zone peer")
 		Equal(developer:GetOption("devLogAllAnnouncements"), false)
 		local signed = developer.signatures
-		local oldSent = #developer.sent
 		local late = Peer(net, "Late-Realm", { mapID = 23 })
 		late.db.profile.sharePlayerLocation = false
 		net:StartPeer(late)
 		Equal(#late:GetDeveloperAnnouncementRoutes(), 0)
-		net:Advance(20)
+		WaitFor(net, function() return HasRoute(late, developer.name) and developer:IsPlayerLocationHiddenForDeveloper(late.name) end)
 		assert(HasRoute(late, developer.name), "late global join must learn the already-running developer feed")
 		assert(developer:IsPlayerLocationHiddenForDeveloper(late.name), "late hidden peers must appear without a manual ping")
-		assert(#Sent(late, "HELLO", "CHANNEL") > 0)
-		assert(#Sent(developer, "DEVANN", "CHANNEL", nil, oldSent) > 0, "HELLO must prompt a global reoffer")
-		Equal(developer.signatures, signed, "HELLO reoffers must reuse the cached signed subscription")
-		Equal(#Sent(regular, "DEVANN"), 0)
-		Equal(#Sent(late, "DEVANN"), 0)
+		assert(#Sent(late, "MHEL", "WHISPER") > 0, "late discovery must use real native peer challenges")
+		assert((late:GetMeshPublicationMetrics().verified or 0) > 0,
+			"interest replay or a renewed offer must deliver the developer proof through the mesh")
+		assert(developer.signatures <= signed + 1, "late arrival should use cached proof until periodic renewal")
+		for _, ordinary in ipairs({ regular, late }) do
+			for _, row in ipairs(Sent(ordinary, "DEVANN")) do
+				assert(row.publication and row.publication.origin == developer.name,
+					"ordinary clients may relay the developer proof but cannot originate one")
+			end
+		end
 		for _, row in ipairs(Sent(developer, "DEVANN")) do
-			Equal(row.packet.route, "CHANNEL")
-			Equal(row.packet.channel, developer.announcementChannelName)
+			Equal(row.packet.route, "WHISPER")
+			Equal(row.publication.scope, "global")
 		end
 	end,
 	{ offline = true }
@@ -235,13 +276,24 @@ QT:RegisterTest("developer announcement network shares one identity across regio
 	local sender = Peer(net, "Sender-Realm", { mapID = 12 })
 	net:StartPeer(developer)
 	net:StartPeer(sender)
-	net:Advance(20)
-	assert(HasRoute(sender, developer.name))
+	WaitFor(net, function() return HasRoute(sender, developer.name) end)
+	local receivedMesh = false
+	function developer:DispatchVerifiedMeshRecord(frame, data, origin, context)
+		if frame.operation == "ANN" and data.text == "Shared progress" and origin == sender.name then
+			receivedMesh = true
+		end
+		return QT.DispatchVerifiedMeshRecord(self, frame, data, origin, context)
+	end
 	local before = #sender.sent
 	assert(Announce(sender, "Shared progress"))
 	Equal(#developer.announcements, 0, "queue admission cannot be reported as received data")
-	net:Advance(10)
-	local normal = Sent(sender, "ANN", "CHANNEL", nil, before)
+	-- Public assembly competes with initial discovery under its own smaller
+	-- budget. Require authenticated arrival within the publication lifetime,
+	-- rather than treating an unrelated early MPUB as proof of this delivery.
+	local deadline = net.now + sender:GetCommOperation("ANN").lifetime
+	while not receivedMesh and net.now < deadline do net:Advance(0.2) end
+	assert(receivedMesh, "the public announcement must be authenticated before its lifetime expires")
+	local normal = Sent(sender, "ANN", "MESH", nil, before)
 	local mirrored = Sent(sender, "ANN", "WHISPER", developer.name, before)
 	assert(#normal > 0 and #mirrored > 0, "both normal publication and the subscribed mirror must be sent")
 	Equal(normal[1].frame.session, mirrored[1].frame.session)
@@ -252,70 +304,41 @@ QT:RegisterTest("developer announcement network shares one identity across regio
 	for _, row in ipairs(net.trace) do
 		if row.kind == "delivered" and row.peer == developer.name and row.packet.sender == sender.name then
 			local frame = developer:DecodeCommFrame(row.packet.wire)
-			if frame and frame.operation == "ANN" then
-				deliveries[row.packet.route] = true
+			if frame and (frame.operation == "ANN" or frame.operation == "MPUB") then
+				deliveries[frame.operation == "MPUB" and "MESH" or row.packet.route] = true
 			end
 		end
 	end
 	assert(
-		deliveries.CHANNEL and deliveries.WHISPER,
+		deliveries.MESH and deliveries.WHISPER,
 		"duplicate suppression must run after both real network paths arrive"
 	)
 end, { offline = true })
 
-QT:RegisterTest("developer announcement control messages only accept the main global channel", function()
+QT:RegisterTest("developer announcement controls reject native broadcast routes and non-global mesh scopes", function()
 	local net = QT:CreateTestNetwork({ fps = 10 })
 	local developer = Peer(net, "Developer-Realm", { group = "party" }, true)
 	local receiver = Peer(net, "Receiver-Realm", { group = "party" }, true)
-	for _, peer in ipairs({ developer, receiver }) do
-		peer:InitializeCommunications()
-		peer:InitializeGeographicComms()
-		peer.geographicCommsState.subscriptions.QuestTogetherZ12 = true
-		net:Join(peer, peer.announcementChannelName, true)
-		net:Join(peer, "QuestTogetherZ12", true)
-	end
 	for _, operation in ipairs({ "HELLO", "DEVANN" }) do
-		local record = operation == "HELLO" and { version = "7.0.0" }
-			or assert(developer:PrepareDeveloperAnnouncementSubscription({
-				active = true,
-				subscriptionSession = developer:GetCommunicationSession(),
-			}))
-		for _, route in ipairs({
-			{ distribution = "WHISPER", target = receiver.name },
-			{ distribution = "PARTY" },
-			{ distribution = "CHANNEL", channelName = "QuestTogetherZ12" },
-		}) do
-			assert(
-				not developer:Emit(operation, record, { route }),
-				"outbound " .. operation .. " must reject " .. route.distribution
-			)
-			for _, wire in ipairs(Frames(developer, operation, record)) do
-				net:Inject(
-					receiver,
-					receiver.commPrefix,
-					wire,
-					route.distribution,
-					developer.name,
-					{ channel = route.channelName, group = "party" }
-				)
+		local record = operation == "HELLO" and { version = "9.0.0" }
+			or assert(developer:PrepareDeveloperAnnouncementSubscription({ active = true,
+				subscriptionSession = developer:GetCommunicationSession() }))
+		for _, route in ipairs({ { distribution = "WHISPER", target = receiver.name },
+			{ distribution = "PARTY" }, { distribution = "CHANNEL", channelName = "QuestTogether" },
+			{ distribution = "MESH", scope = 12 } }) do
+			assert(not developer:Emit(operation, record, { route }), "control must reject wrong audience")
+			if route.distribution ~= "MESH" then
+				for _, wire in ipairs(Frames(developer, operation, record)) do
+					net:Inject(receiver, receiver.commPrefix, wire, route.distribution, developer.name,
+						{ channel = route.channelName, group = "party" })
+				end
 			end
 		end
+		assert(developer:NormalizeCommunicationRoutes(operation, { { distribution = "MESH", scope = "global" } }))
 	end
 	net:Advance(0.2)
 	Equal(receiver:GetDeveloperAnnouncementMetrics().hellosReceived or 0, 0)
-	Equal(rawget(receiver, "developerRequestState"), nil, "wrong-route subscriptions must not enter authentication")
-	for _, wire in ipairs(Frames(developer, "HELLO", { version = "7.0.0" })) do
-		net:Inject(
-			receiver,
-			receiver.commPrefix,
-			wire,
-			"CHANNEL",
-			developer.name,
-			{ channel = receiver.announcementChannelName }
-		)
-	end
-	net:Advance(0.2)
-	Equal(receiver:GetDeveloperAnnouncementMetrics().hellosReceived, 1)
+	Equal(rawget(receiver, "developerRequestState"), nil, "native bypass must not enter authentication")
 end)
 
 QT:RegisterTest(
@@ -330,7 +353,10 @@ QT:RegisterTest(
 		for _, peer in ipairs({ developer, optedOut, hidden }) do
 			net:StartPeer(peer)
 		end
-		net:Advance(30)
+		WaitFor(net, function()
+			return optedOut:IsVerifiedDeveloper(developer.name) and HasRoute(hidden, developer.name)
+				and developer:IsPlayerLocationHiddenForDeveloper(hidden.name)
+		end)
 		Equal(#optedOut:GetDeveloperAnnouncementRoutes(), 0)
 		assert(
 			optedOut:IsVerifiedDeveloper(developer.name),
@@ -366,7 +392,7 @@ QT:RegisterTest(
 		}))
 		net:Advance(10)
 		Equal(#Sent(optedOut, "ANN", "WHISPER", developer.name, beforeOptedOut), 0)
-		assert(#Sent(optedOut, "ANN", "CHANNEL", nil, beforeOptedOut) > 0)
+		assert(#Sent(optedOut, "ANN", "MESH", nil, beforeOptedOut) > 0)
 		Equal(#developer.announcements, 1)
 		for _, field in ipairs({ "mapID", "zoneName", "coordX", "coordY" }) do
 			Equal(developer.announcements[1][field], "", "mirroring must not bypass location privacy for " .. field)
@@ -382,20 +408,24 @@ QT:RegisterTest(
 		assert(developer:IsPlayerLocationHiddenForDeveloper(hidden.name))
 		assert(developer.developerPlayerData[hidden.name].receivedAt > original.receivedAt + 120)
 		hidden.db.profile.sharePlayerLocation = true
-		net:Advance(15)
+		WaitFor(net, function()
+			return not developer.developerPlayerData[hidden.name] and developer:GetFreshPlayerLocation(hidden.name, "map") ~= nil
+		end)
 		Equal(developer.developerPlayerData[hidden.name], nil)
 		assert(developer:GetFreshPlayerLocation(hidden.name, "map"))
 		hidden.db.profile.sharePlayerLocation = false
-		net:Advance(15)
+		WaitFor(net, function() return developer:IsPlayerLocationHiddenForDeveloper(hidden.name) end)
 		assert(developer:IsPlayerLocationHiddenForDeveloper(hidden.name))
 		hidden.ignored[developer.name] = true
 		Equal(#hidden:GetDeveloperAnnouncementRoutes(), 0)
 		local before = #hidden.sent
+		local published = hidden:GetMeshPublicationMetrics().published or 0
 		assert(Announce(hidden, "Ignored developer"))
 		net:Advance(10)
 		Equal(#Sent(hidden, "ANN", "WHISPER", developer.name, before), 0)
 		Equal(#Sent(hidden, "DLOC", "WHISPER", developer.name, before), 0)
-		assert(#Sent(hidden, "ANN", "CHANNEL", nil, before) > 0)
+		assert((hidden:GetMeshPublicationMetrics().published or 0) > published,
+			"ignoring a developer must not disable ordinary public publication")
 	end,
 	{ offline = true }
 )
@@ -408,8 +438,7 @@ QT:RegisterTest("developer announcement copies stay bounded while every normal p
 	for _, peer in ipairs({ developer, sender, partner }) do
 		net:StartPeer(peer)
 	end
-	net:Advance(20)
-	assert(HasRoute(sender, developer.name))
+	WaitFor(net, function() return HasRoute(sender, developer.name) end)
 	for index = 1, 8 do
 		assert(Announce(sender, "Burst " .. index))
 	end
@@ -473,8 +502,7 @@ QT:RegisterTest("developer announcement opt-out cancels queued mirrors while nor
 	for _, peer in ipairs({ developer, sender, neighbor }) do
 		net:StartPeer(peer)
 	end
-	net:Advance(20)
-	assert(HasRoute(sender, developer.name))
+	WaitFor(net, function() return HasRoute(sender, developer.name) end)
 	local before = #sender.sent
 	local lease = sender.developerAnnouncementState.subscribers[developer.name]
 	lease.nextLocationAt = sender.now
@@ -490,7 +518,7 @@ QT:RegisterTest("developer announcement opt-out cancels queued mirrors while nor
 		0,
 		"revocation must retire already-queued mirror traffic before native send"
 	)
-	assert(#Sent(sender, "ANN", "CHANNEL", nil, before) > 0)
+	assert(#Sent(sender, "ANN", "MESH", nil, before) > 0)
 	Equal(#Sent(sender, "DLOC", "WHISPER", developer.name, before), 0)
 	Equal(#neighbor.announcements, 1, "diagnostic opt-out must preserve normal quest publication")
 	Equal(#developer.announcements, 0)
@@ -508,11 +536,12 @@ QT:RegisterTest("developer announcement leases renew and expire without authenti
 	local sender = Peer(net, "Sender-Realm", { mapID = 12 })
 	net:StartPeer(developer)
 	net:StartPeer(sender)
-	net:Advance(20)
-	assert(HasRoute(sender, developer.name))
+	WaitFor(net, function() return HasRoute(sender, developer.name) end)
 	local signed = developer.signatures
 	local staleDeparture = Frames(developer, "BYE", { reason = "logout" })
+	local oldLease = sender.developerAnnouncementState.subscribers[developer.name]
 	net:Advance(100)
+	WaitFor(net, function() return sender.developerAnnouncementState.subscribers[developer.name] ~= oldLease end)
 	assert(developer.signatures > signed, "an active developer feed must renew its signed lease")
 	assert(HasRoute(sender, developer.name))
 	for _, wire in ipairs(staleDeparture) do
@@ -520,16 +549,15 @@ QT:RegisterTest("developer announcement leases renew and expire without authenti
 			sender,
 			sender.commPrefix,
 			wire,
-			"CHANNEL",
-			developer.name,
-			{ channel = sender.announcementChannelName }
+			"WHISPER",
+			developer.name
 		)
 	end
 	net:Advance(1)
 	assert(HasRoute(sender, developer.name), "an older departure must not revoke a newer signed lease")
 	net.deliveryRule = function(packet)
 		local frame = developer:DecodeCommFrame(packet.wire)
-		if frame and frame.operation == "DEVANN" then
+		if frame and frame.operation == "MPUB" and packet.sender == developer.name then
 			return { drop = true }
 		end
 	end
@@ -537,10 +565,12 @@ QT:RegisterTest("developer announcement leases renew and expire without authenti
 	Equal(#sender:GetDeveloperAnnouncementRoutes(), 0, "lost renewal must expire the mirror destination")
 	assert(not sender:IsVerifiedDeveloper(developer.name), "unrelated traffic cannot renew signed identity")
 	local before = #sender.sent
+	local published = sender:GetMeshPublicationMetrics().published or 0
 	assert(Announce(sender, "After lease expiry"))
 	net:Advance(10)
 	Equal(#Sent(sender, "ANN", "WHISPER", developer.name, before), 0)
-	assert(#Sent(sender, "ANN", "CHANNEL", nil, before) > 0)
+	assert((sender:GetMeshPublicationMetrics().published or 0) > published,
+		"normal public publication remains available even with no current remote interest")
 
 	for _, boundary in ipairs({ "reset", "disable", "departure", "consent" }) do
 		local fresh = QT:CreateTestNetwork({ fps = 5, seed = 17 })
@@ -567,9 +597,8 @@ QT:RegisterTest("developer announcement leases renew and expire without authenti
 					peer,
 					peer.commPrefix,
 					wire,
-					"CHANNEL",
-					dev.name,
-					{ channel = peer.announcementChannelName }
+					"WHISPER",
+					dev.name
 				)
 			end
 			fresh:Advance(0.2)
@@ -638,9 +667,8 @@ QT:RegisterTest("developer announcement authentication progresses beside a priva
 			sender,
 			sender.commPrefix,
 			wire,
-			"CHANNEL",
-			developer.name,
-			{ channel = sender.announcementChannelName }
+			"WHISPER",
+			developer.name
 		)
 	end
 	net:Advance(1)

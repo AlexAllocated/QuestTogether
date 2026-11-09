@@ -840,7 +840,7 @@
   "Unable to open patch notes right now.": "No se pueden abrir las notas del parche ahora mismo.",
   "Unable to open that quest in your quest log.": "No se puede abrir esa misión en tu registro de misiones.",
   "Unable to open your quest log on this client.": "No se puede abrir tu registro de misiones en este cliente.",
-  "Unable to send QuestTogether chat. The addon must be enabled and its chat channel available.": "No se pudo enviar el mensaje de QuestTogether. El addon debe estar activado y su canal de chat disponible.",
+  "Unable to send QuestTogether chat. Make sure the addon is enabled and try again.": "No se ha podido enviar el mensaje de QuestTogether. Comprueba que el addon esté activado e inténtalo de nuevo.",
   "Unable to send join request.": "No se ha podido enviar la solicitud para unirse.",
   "Unable to send ping request over any QuestTogether comm route.": "No se puede enviar la solicitud de ping por ninguna ruta de comunicación de QuestTogether.",
   "Unable to set that waypoint.": "No se puede establecer ese punto de ruta.",

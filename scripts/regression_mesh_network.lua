@@ -1,0 +1,860 @@
+-- Mesh contracts run real coordinators on independent peers. Directory rows
+-- remain untrusted addresses; accepted native sends and delivery are separate.
+local QT = _G.QuestTogether
+local function Count(values)
+	local n = 0
+	for _ in pairs(values or {}) do
+		n = n + 1
+	end
+	return n
+end
+local function Peer(net, name, settings)
+	local peer = net:AddPeer(name, settings)
+	peer.announcementChannelName = "QuestTogether3"
+	peer.API.GetPlayerNotesNamespace = function()
+		return "test:US:realm"
+	end
+	return peer
+end
+local function NoChannels(net)
+	for _, packet in ipairs(net.trace) do
+		if packet.kind == "attempts" then
+			assert(packet.packet.route ~= "CHANNEL", "directory membership became channel traffic")
+		end
+	end
+end
+
+QT:RegisterTest("mesh bootstrap uses asynchronous directory rows and correlated native whispers", function()
+	local net = QT:CreateTestNetwork({ fps = 20, directoryDelay = 1, latency = 0.03 })
+	local alice, bob = Peer(net, "Alice-Realm"), Peer(net, "Bob-Realm")
+	net:StartPeer(alice)
+	net:StartPeer(bob)
+	net:Advance(35)
+	assert(
+		alice.meshNetworkState.neighbors[bob.name] and bob.meshNetworkState.neighbors[alice.name],
+		"directory candidates must complete reciprocal challenges"
+	)
+	assert(alice:GetMeshNetworkMetrics().directoryRows >= 2)
+	assert(
+		alice.selectedDisplayChannel == 1 and bob.selectedDisplayChannel == 1,
+		"background roster refresh must restore the player's channel selection"
+	)
+	assert(Count(alice.meshNetworkState.interests) > 0, "confirmed peers must propagate scoped interest")
+	assert(
+		alice.db.global.meshPeerSeeds["test:US:realm:Alice-Realm"][bob.name],
+		"confirmed addresses persist per character"
+	)
+	NoChannels(net)
+end, { offline = true })
+
+QT:RegisterTest("mesh saved seeds are bounded addresses isolated by character and client namespace", function()
+	local net = QT:CreateTestNetwork()
+	local peer = Peer(net, "Owner-Realm")
+	local wall = peer:GetAnnouncementServerTime()
+	local seeds, other = {}, { ["OtherCharacter-Realm"] = wall }
+	for index = 1, 100 do
+		seeds["Seed" .. index .. "-Realm"] = wall
+	end
+	seeds["Expired-Realm"], seeds["Future-Realm"], seeds["Bad:Identity"] = wall - 86401, wall + 1, wall
+	peer.db.global.meshPeerSeeds = {
+		["test:US:realm:Owner-Realm"] = seeds,
+		["test:US:realm:Other-Realm"] = other,
+		["test:EU:realm:Owner-Realm"] = { ["OtherRegion-Realm"] = wall },
+	}
+	local state = peer:InitializeMeshNetwork()
+	assert(Count(seeds) == 64 and Count(state.candidates) == 64)
+	assert(Count(state.neighbors) == 0, "a saved address must still pass the native challenge")
+	assert(
+		not state.candidates["Expired-Realm"]
+			and not state.candidates["OtherCharacter-Realm"]
+			and not state.candidates["OtherRegion-Realm"]
+	)
+	assert(
+		peer.db.global.meshPeerSeeds["test:US:realm:Other-Realm"] == other,
+		"local cleanup must preserve another character's independently scoped seeds"
+	)
+end, { offline = true })
+
+QT:RegisterTest("mesh directory refresh never mistakes a shifted display row for a QT directory", function()
+	local net = QT:CreateTestNetwork({ fps = 20, directoryDelay = 1 })
+	local peer = Peer(net, "Owner-Realm")
+	net:SetChannelDirectory(peer, "AAA", { "Unrelated-Realm" })
+	net:StartPeer(peer)
+	net:Advance(2.4)
+	assert(peer.meshNetworkState.directory and peer.meshNetworkState.directory.selectedName == "QuestTogether3")
+	-- A simultaneous unrelated channel join shifts the directory's display
+	-- index before the asynchronous names arrive.
+	net:Join(peer, "AAA", true)
+	net:Advance(10)
+	assert(
+		not peer.meshNetworkState.candidates["Unrelated-Realm"],
+		"a changed display index cannot authorize unrelated roster reads"
+	)
+	assert(not peer.meshNetworkState.directory, "the displaced scan must yield until a fresh selection")
+end, { offline = true })
+
+QT:RegisterTest("mesh directory waits for names after count and avoids selecting channel headers", function()
+	local net = QT:CreateTestNetwork({ fps = 20, directoryDelay = 5 })
+	local peer = Peer(net, "Owner-Realm")
+	net:SetChannelDirectory(peer, "QuestTogether3", { "Ready-Realm" })
+	local info, selectChannel = peer.API.GetChannelDisplayInfo, peer.API.SetSelectedDisplayChannel
+	local selected = {}
+	peer.API.GetChannelDisplayInfo = function(index)
+		local name, header, collapsed, id, count, active = info(index)
+		if name == "QuestTogether3" then
+			count = 1
+		else
+			header = true
+		end
+		return name, header, collapsed, id, count, active
+	end
+	peer.API.SetSelectedDisplayChannel = function(index)
+		local _, header = peer.API.GetChannelDisplayInfo(index)
+		assert(not header, "a native header is not a selectable roster refresh target")
+		selected[#selected + 1] = index
+		return selectChannel(index)
+	end
+	net:StartPeer(peer)
+	net:Advance(6)
+	assert(
+		not peer.meshNetworkState.candidates["Ready-Realm"],
+		"a count must not manufacture a peer before names arrive"
+	)
+	net:Advance(3)
+	assert(
+		peer.meshNetworkState.candidates["Ready-Realm"],
+		"the scan must retain the row while asynchronous names are pending"
+	)
+	assert(#selected > 0)
+end, { offline = true })
+
+QT:RegisterTest("mesh capacity pressure rotates admitted destinations instead of favoring table order", function()
+	local net = QT:CreateTestNetwork()
+	local peer = Peer(net, "Owner-Realm")
+	net:StartPeer(peer)
+	local s, wall = peer:InitializeMeshNetwork(), peer:GetAnnouncementServerTime()
+	for _, name in ipairs({ "Alice-Realm", "Bob-Realm" }) do
+		s.neighbors[name] = { name = name, expires = peer.now + 180 }
+		s.interests[name .. ":lease"] = {
+			id = "lease",
+			destination = name,
+			zone = 12,
+			upstream = name,
+			expiresAt = wall + 120,
+			downstreams = {},
+			alternates = {},
+		}
+	end
+	local admitted, first = nil, nil
+	function peer:SendMeshPublicationToPeer(_, target, _, options)
+		if admitted then
+			options.onComplete(false, "capacity")
+			return false, "capacity"
+		end
+		admitted = target
+		options.onComplete(true, "acknowledged")
+		return true
+	end
+	for index = 1, 2 do
+		admitted = nil
+		assert(peer:ForwardMeshPublication({
+			origin = peer.name,
+			session = "s",
+			id = tostring(index),
+			digest = "d",
+			scope = 12,
+			expiresAt = wall + 30,
+		}, {}))
+		if first then
+			assert(admitted ~= first, "the previously capacity-blocked destination must get the next opening")
+		else
+			first = admitted
+		end
+	end
+end, { offline = true })
+
+QT:RegisterTest("mesh scoped public data crosses an intermediate peer only after direct owner confirmation", function()
+	local net = QT:CreateTestNetwork({ fps = 20, latency = 0.02, seed = 29 })
+	local alice, bridge, carol =
+		Peer(net, "Alice-Realm", { mapID = 12 }),
+		Peer(net, "Bridge-Realm", { mapID = 99 }),
+		Peer(net, "Carol-Realm", { mapID = 12 })
+	local confirmations, delivered = 0, {}
+	net.deliveryRule = function(packet, receiver)
+		local frame = alice:DecodeCommFrame(packet.wire)
+		if
+			frame
+			and (frame.operation == "MHEL" or frame.operation == "MACK")
+			and (
+				(packet.sender == alice.name and receiver == carol)
+				or (packet.sender == carol.name and receiver == alice)
+			)
+		then
+			return { drop = true }
+		end
+		if frame and frame.operation == "MAUTH" and packet.sender == carol.name and receiver == alice then
+			confirmations = confirmations + 1
+		end
+	end
+	for _, peer in ipairs({ alice, bridge, carol }) do
+		function peer:HandleQTMeshChat(data, sender, context)
+			if data.text == "Scoped public announcement" then
+				delivered[self.name] = (delivered[self.name] or 0) + 1
+				assert(sender == alice.name and context.meshVerified, "relays must preserve verified origin")
+			end
+			return true
+		end
+		net:StartPeer(peer)
+	end
+	net:Advance(45)
+	assert(alice.meshNetworkState.neighbors[bridge.name] and carol.meshNetworkState.neighbors[bridge.name])
+	assert(not alice.meshNetworkState.neighbors[carol.name], "test topology must require an intermediate carrier")
+	local accepted = alice:Emit(
+		"QTCHAT",
+		{ text = "Scoped public announcement" },
+		{ { distribution = "MESH", scope = 12 } },
+		{ owner = alice, expires = alice.now + 60 }
+	)
+	assert(accepted)
+	net:Advance(55)
+	assert(delivered[carol.name] == 1, "a subscribed peer must receive the public record exactly once")
+	assert(not delivered[bridge.name], "a bridge must not install data for an unviewed scope")
+	assert(confirmations > 0, "a relayed record needs recipient-specific confirmation from its native owner")
+	NoChannels(net)
+end, { offline = true })
+
+QT:RegisterTest(
+	"mesh candidate hints cannot install neighbors and delayed challenges cannot revive a lifetime",
+	function()
+		local net = QT:CreateTestNetwork({ fps = 20 })
+		local alice, bob = Peer(net, "Alice-Realm"), Peer(net, "Bob-Realm")
+		net:StartPeer(alice)
+		net:StartPeer(bob)
+		local s = alice:InitializeMeshNetwork()
+		assert(
+			alice:HandleMeshHello(
+				{ requestId = "hint", version = "9", protocol = 3, capabilities = "mesh1" },
+				bob.name,
+				{ distribution = "WHISPER", session = "remote" }
+			)
+		)
+		assert(s.candidates[bob.name] and not s.neighbors[bob.name], "unsolicited hello must remain an address hint")
+		assert(
+			not alice:HandleMeshHello(
+				{ requestId = "legacy", protocol = 2, capabilities = "mesh1" },
+				"Legacy-Realm",
+				{ distribution = "WHISPER" }
+			)
+		)
+		assert(not s.candidates["Legacy-Realm"])
+		local callbacks
+		function alice:Request(_, _, _, options)
+			callbacks = options
+			return true, "queued", {}, "pending"
+		end
+		alice:RememberMeshCandidate(bob.name, "directory")
+		alice:UpdateMeshNetwork(alice.now + 2)
+		assert(callbacks, "candidate should start one bounded challenge")
+		alice.ignored[bob.name] = true
+		assert(
+			not callbacks.onResponse(
+				{ requestId = "pending", protocol = 3, capabilities = "mesh1", admitted = true, peers = {} },
+				bob.name,
+				{ distribution = "WHISPER", session = "remote" }
+			),
+			"an already-running native callback cannot confirm a newly ignored peer"
+		)
+		assert(not s.neighbors[bob.name])
+		alice.ignored[bob.name] = nil
+		alice:ResetMeshNetwork()
+		local replacement = alice:InitializeMeshNetwork()
+		assert(
+			not callbacks.onResponse(
+				{ requestId = "pending", protocol = 3, capabilities = "mesh1", admitted = true, peers = {} },
+				bob.name,
+				{ distribution = "WHISPER", session = "remote" }
+			)
+		)
+		assert(Count(replacement.neighbors) == 0, "old callbacks must not mutate the replacement graph")
+		alice.ignored[bob.name] = true
+		assert(not alice:RememberMeshCandidate(bob.name, "introduction"))
+		alice:EndCommunicationSession()
+		local joins = 0
+		function alice:EnsureAnnouncementChannelJoined()
+			joins = joins + 1
+			return true
+		end
+		assert(not alice:EnsureMeshDirectoryJoined("QuestTogether3"))
+		assert(joins == 0, "a delayed directory callback cannot join after the communication lifetime ended")
+	end,
+	{ offline = true }
+)
+
+QT:RegisterTest("mesh probes stagger three startup candidates then use the sustained discovery cadence", function()
+	local net = QT:CreateTestNetwork()
+	local peer = Peer(net, "Owner-Realm")
+	peer:InitializeCommunications()
+	peer:InitializeMeshNetwork()
+	peer.API.Random = function(minimum)
+		return minimum
+	end
+	for index = 1, 12 do
+		peer:RememberMeshCandidate("Candidate" .. index .. "-Realm", "directory")
+	end
+	local probes = {}
+	function peer:Request(operation, _, _, options)
+		assert(operation == "MHEL")
+		probes[#probes + 1] = self.now
+		options.onExpire()
+		return false, "offline"
+	end
+	local began = peer.now
+	for second = 1, 90 do
+		peer.now = began + second
+		peer:UpdateMeshNetwork(peer.now)
+	end
+	assert(#probes >= 6 and #probes <= 7, "continuous missing candidates must not sustain startup probe frequency")
+	assert(probes[2] - probes[1] == 4 and probes[3] - probes[2] == 4)
+	for index = 4, #probes do
+		local gap = probes[index] - probes[index - 1]
+		assert(gap >= 20 and gap <= 30, "sustained discovery is paced independently of sender rejection")
+	end
+	assert(peer:GetMeshNetworkMetrics().handshakes == 0)
+end, { offline = true })
+
+QT:RegisterTest("mesh directory cycles rotate oversized roster rows and share the budget across directories", function()
+	local net = QT:CreateTestNetwork({ fps = 5, directoryDelay = 0.5 })
+	local peer = Peer(net, "Owner-Realm")
+	local global, zone = {}, {}
+	for index = 1, 2000 do
+		global[index], zone[index] = "Global" .. index .. "-Realm", "Zone" .. index .. "-Realm"
+	end
+	net:SetChannelDirectory(peer, "QuestTogether3", global)
+	net:SetChannelDirectory(peer, "QuestTogether3Z12", zone)
+	local getRow = peer.API.GetChannelRosterInfo
+	local cycles, seen, frameReads, at = {}, {}, 0, nil
+	peer.API.GetChannelRosterInfo = function(display, index)
+		if at ~= net.now then
+			at, frameReads = net.now, 0
+		end
+		frameReads = frameReads + 1
+		assert(frameReads <= 32, "rotating samples retain the per-tick native read limit")
+		local name = peer.API.GetChannelDisplayInfo(display)
+		local number = peer:GetMeshNetworkMetrics().directoryScans
+		local cycle = cycles[number] or { total = 0, first = name }
+		cycles[number] = cycle
+		cycle.total, cycle[name] = cycle.total + 1, (cycle[name] or 0) + 1
+		seen[name] = seen[name] or {}
+		seen[name][index] = true
+		return getRow(display, index)
+	end
+	net:StartPeer(peer)
+	net:Advance(640)
+	assert(cycles[1] and cycles[2] and cycles[3])
+	for index = 1, 3 do
+		local cycle = cycles[index]
+		assert(cycle.total == 1500, "crowded directories must share and fill the bounded refresh budget")
+		assert(
+			(cycle.QuestTogether3 or 0) > 0 and (cycle.QuestTogether3Z12 or 0) > 0,
+			"a crowded first directory must not starve a later directory"
+		)
+	end
+	assert(cycles[1].first ~= cycles[2].first, "the first directory must rotate each refresh")
+	assert(
+		seen.QuestTogether3[1501] and seen.QuestTogether3Z12[1501],
+		"later refreshes must discover rows beyond the first cycle's truncation"
+	)
+	assert(Count(peer.meshNetworkState.directoryCursors) <= 8)
+	assert(peer:GetMeshNetworkMetrics().candidates <= 512)
+	NoChannels(net)
+end, { offline = true })
+
+QT:RegisterTest("mesh directory sampling is bounded and yields to the visible channel window", function()
+	local net = QT:CreateTestNetwork({ fps = 10 })
+	local alice = Peer(net, "Alice-Realm")
+	local names = {}
+	for i = 1, 1800 do
+		names[i] = "Candidate" .. i .. "-Realm"
+	end
+	net:SetChannelDirectory(alice, "QuestTogether3", names)
+	alice.API.GetNumGuildMembers = function()
+		return 50
+	end
+	alice.API.GetGuildRosterInfo = function(index)
+		return "Guild" .. index .. "-Realm", index % 2 == 0
+	end
+	alice.channelWindowShown = true
+	net:StartPeer(alice)
+	net:Advance(10)
+	assert((alice:GetMeshNetworkMetrics().directoryRows or 0) == 0 and alice.selectedDisplayChannel == 1)
+	alice.channelWindowShown = false
+	local previous = (alice:GetMeshNetworkMetrics().guildRows or 0)
+	for _ = 1, 200 do
+		net:Advance(0.1)
+		local metrics = alice:GetMeshNetworkMetrics()
+		local current = (metrics.directoryRows or 0) + (metrics.guildRows or 0)
+		assert(current - previous <= 32, "one tick must not scan an unbounded directory")
+		previous = current
+	end
+	local metrics = alice:GetMeshNetworkMetrics()
+	assert(metrics.directoryRows > 512 and metrics.directoryRows <= 1500, "one directory cycle has a hard row budget")
+	assert(metrics.guildRows == 50, "online guild rows can bootstrap without an unbounded roster refresh")
+	assert(metrics.candidates <= 512 and metrics.handshakes <= 3)
+	assert(alice.selectedDisplayChannel == 1)
+	NoChannels(net)
+end, { offline = true })
+
+QT:RegisterTest("mesh reverse paths reject unsolicited scopes and retire publication work on map changes", function()
+	local net = QT:CreateTestNetwork({ fps = 20, latency = 0.02 })
+	local alice, bob = Peer(net, "Alice-Realm"), Peer(net, "Bob-Realm")
+	net:StartPeer(alice)
+	net:StartPeer(bob)
+	net:Advance(35)
+	local s = alice.meshNetworkState
+	local lease = s.localInterests[12]
+	assert(lease and lease.downstreams[bob.name], "current-map interest must be routed")
+	local metadata = { leaseId = lease.id, destination = alice.name, zone = 12, hops = 8 }
+	assert(alice:CanAcceptMeshPublicationRoute(bob.name, metadata, 12))
+	assert(alice:ShouldConsumeMeshPublicationRoute(bob.name, metadata, 12))
+	assert(not alice:CanAcceptMeshPublicationRoute("Stranger-Realm", metadata, 12))
+	assert(not alice:CanAcceptMeshPublicationRoute(bob.name, metadata, 99))
+	metadata.hops = 9
+	assert(not alice:CanAcceptMeshPublicationRoute(bob.name, metadata, 12))
+	metadata.hops = 8
+	alice.mapID = 99
+	alice.geographicCommsState.currentZone = 99
+	alice.geographicCommsState.viewZone = nil
+	alice:UpdateMeshNetwork(alice.now + 1)
+	assert(
+		not alice:CanAcceptMeshPublicationRoute(bob.name, metadata, 12),
+		"retired map interest must reject delayed publications"
+	)
+	assert(lease.expiresAt == 0, "queued reverse-path work must lose its currentness fence")
+end, { offline = true })
+
+QT:RegisterTest("mesh unanswered candidates back off and public fanout completes once per immutable route", function()
+	local net = QT:CreateTestNetwork({ fps = 20 })
+	local alice = Peer(net, "Alice-Realm")
+	net:StartPeer(alice)
+	local s = alice:InitializeMeshNetwork()
+	alice:RememberMeshCandidate("Absent-Realm", "introduction")
+	local callbacks
+	function alice:Request(_, _, _, options)
+		callbacks = options
+		return true, "queued", {}, "pending"
+	end
+	alice:UpdateMeshNetwork(alice.now + 2)
+	assert(callbacks)
+	callbacks.onExpire()
+	assert(s.candidates["Absent-Realm"].retryAt >= alice.now + 300, "unanswered candidates require five-minute backoff")
+	local server = alice:GetAnnouncementServerTime()
+	s.neighbors["Viewer-Realm"] = { name = "Viewer-Realm", expires = alice.now + 120 }
+	s.interests["Viewer-Realm:lease"] = {
+		id = "lease",
+		destination = "Viewer-Realm",
+		zone = 12,
+		upstream = "Viewer-Realm",
+		expiresAt = server + 120,
+		downstreams = {},
+	}
+	local sends, completions, pending = 0, 0, nil
+	function alice:SendMeshPublicationToPeer(_, target, metadata, options)
+		assert(target == "Viewer-Realm" and metadata.hops == 8)
+		sends = sends + 1
+		pending = options.onComplete
+		return true
+	end
+	local publication = {
+		origin = alice.name,
+		session = "session",
+		id = "record",
+		digest = "digest",
+		scope = 12,
+		expiresAt = server + 30,
+	}
+	local options = {
+		onComplete = function(ok)
+			assert(ok)
+			completions = completions + 1
+		end,
+	}
+	assert(alice:ForwardMeshPublication(publication, options))
+	assert(alice:ForwardMeshPublication(publication, options))
+	assert(sends == 1 and completions == 0, "pending duplicates must wait for remote completion")
+	s.interests["Viewer-Realm:renewed"] = {
+		id = "renewed",
+		destination = "Viewer-Realm",
+		zone = 12,
+		upstream = "Viewer-Realm",
+		expiresAt = server + 160,
+		downstreams = {},
+	}
+	assert(alice:ForwardMeshPublication(publication, options))
+	assert(
+		sends == 1 and completions == 0,
+		"renewed query must share the existing pending immutable destination transfer"
+	)
+	pending(true, "acknowledged")
+	pending(false, "duplicate-callback")
+	assert(sends == 1 and completions == 3, "each submission completes once while duplicate pending content sends once")
+	assert(alice:GetMeshNetworkMetrics().pendingPublications == 0, "ACK must retire cross-query pending reservations")
+	assert(alice:ForwardMeshPublication(publication, options))
+	assert(sends == 2 and completions == 3, "first-hop ACK must not suppress end-to-end recovery on a renewed query")
+	pending(true, "acknowledged")
+	assert(alice:ForwardMeshPublication(publication, options))
+	assert(sends == 2 and completions == 5, "completed duplicates are suppressed only within the same query")
+end, { offline = true })
+
+QT:RegisterTest(
+	"mesh immutable interests retain alternate paths without repeated flooding or lifetime extension",
+	function()
+		local net = QT:CreateTestNetwork()
+		local peer = Peer(net, "Bridge-Realm")
+		net:StartPeer(peer)
+		local s, now = peer:InitializeMeshNetwork(), peer:GetAnnouncementServerTime()
+		for _, name in ipairs({ "Left-Realm", "Right-Realm", "Downstream-Realm" }) do
+			s.neighbors[name] = { name = name, expires = peer.now + 180 }
+		end
+		local sends = 0
+		function peer:Emit(operation)
+			if operation == "MINT" then
+				sends = sends + 1
+			end
+			return true
+		end
+		local record =
+			{ leaseId = "immutable", destination = "Viewer-Realm", zone = 12, expiresAt = now + 120, hops = 7 }
+		assert(peer:HandleMeshInterest(record, "Left-Realm", { distribution = "WHISPER" }))
+		local flooded = sends
+		assert(peer:HandleMeshInterest(record, "Right-Realm", { distribution = "WHISPER" }))
+		assert(sends == flooded, "a duplicate query can register a failover without flooding again")
+		local lease = s.interests["Viewer-Realm:immutable"]
+		assert(lease.alternates["Right-Realm"])
+		record.expiresAt = record.expiresAt + 1
+		assert(not peer:HandleMeshInterest(record, "Left-Realm", { distribution = "WHISPER" }))
+		assert(lease.expiresAt == now + 120, "a replay cannot extend an immutable query's lifetime")
+		local completed, destinations = 0, {}
+		function peer:SendMeshPublicationToPeer(_, target, _, options)
+			destinations[#destinations + 1] = target
+			options.onComplete(target == "Right-Realm", target == "Right-Realm" and "acknowledged" or "unacknowledged")
+			return true
+		end
+		assert(
+			peer:ForwardMeshPublication(
+				{ origin = peer.name, session = "s", id = "p", digest = "d", scope = 12, expiresAt = now + 30 },
+				{
+					onComplete = function(ok)
+						assert(ok)
+						completed = completed + 1
+					end,
+				}
+			)
+		)
+		assert(
+			destinations[1] == "Left-Realm" and destinations[2] == "Right-Realm" and completed == 1,
+			"an unacknowledged publication must try its bounded alternate and complete once"
+		)
+		peer:RetireMeshPeer("Left-Realm")
+		assert(lease.upstream == "Right-Realm" and s.interests["Viewer-Realm:immutable"] == lease)
+	end,
+	{ offline = true }
+)
+
+QT:RegisterTest("mesh missing remote completion retries an alternate native path", function()
+	local net = QT:CreateTestNetwork({ fps = 15, latency = 0.02, seed = 63 })
+	local viewer, left, right, owner =
+		Peer(net, "Viewer-Realm", { mapID = 12 }),
+		Peer(net, "Left-Realm", { mapID = 99 }),
+		Peer(net, "Right-Realm", { mapID = 99 }),
+		Peer(net, "Owner-Realm", { mapID = 12 })
+	local blocked, deliveries, confirmations = nil, 0, 0
+	local function Edge(a, b)
+		return (a == viewer.name or a == owner.name) ~= (b == viewer.name or b == owner.name)
+	end
+	net.deliveryRule = function(packet, receiver)
+		local frame = viewer:DecodeCommFrame(packet.wire)
+		if not frame then
+			return
+		end
+		if (frame.operation == "MHEL" or frame.operation == "MACK") and not Edge(packet.sender, receiver.name) then
+			return { drop = true }
+		end
+		if blocked and packet.sender == owner.name and receiver.name == blocked and frame.operation == "MPUB" then
+			return { drop = true }
+		end
+		if packet.sender == viewer.name and receiver == owner and frame.operation == "MAUTH" then
+			confirmations = confirmations + 1
+		end
+	end
+	function viewer:HandleQTMeshChat(data, sender)
+		if data.text == "Alternate path" then
+			assert(sender == owner.name)
+			deliveries = deliveries + 1
+		end
+		return true
+	end
+	for _, peer in ipairs({ viewer, left, right, owner }) do
+		net:StartPeer(peer)
+	end
+	net:Advance(70)
+	local latest
+	for _, lease in pairs(owner.meshNetworkState.interests) do
+		if
+			lease.destination == viewer.name
+			and lease.zone == 12
+			and (not latest or lease.expiresAt > latest.expiresAt)
+		then
+			latest = lease
+		end
+	end
+	assert(latest and Count(latest.alternates) > 0, "the diamond must discover a bounded alternate reverse path")
+	blocked = latest.upstream
+	assert(
+		owner:Emit(
+			"QTCHAT",
+			{ text = "Alternate path" },
+			{ { distribution = "MESH", scope = 12 } },
+			{ owner = owner, expires = owner.now + 90 }
+		)
+	)
+	net:Advance(85)
+	assert(
+		(owner:GetMeshNetworkMetrics().publicationFailovers or 0) > 0,
+		"accepted native sends without completion must fail over"
+	)
+	assert(
+		deliveries == 1 and confirmations > 0,
+		"alternate delivery must still authenticate the native owner exactly once: deliveries="
+			.. deliveries
+			.. " confirmations="
+			.. confirmations
+	)
+	NoChannels(net)
+end, { offline = true })
+
+QT:RegisterTest("mesh publication routes bind the query scope as well as its destination", function()
+	local net = QT:CreateTestNetwork()
+	local peer = Peer(net, "Owner-Realm")
+	net:StartPeer(peer)
+	peer:UpdateMeshNetwork(peer.now)
+	local state, sender = peer.meshNetworkState, "Relay-Realm"
+	local lease = assert(state.localInterests[0])
+	state.neighbors[sender] = { name = sender, expires = peer.now + 180 }
+	lease.downstreams[sender] = true
+	local metadata = { leaseId = lease.id, destination = peer.name, zone = 0, hops = 8 }
+	assert(peer:CanAcceptMeshPublicationRoute(sender, metadata, "global", "Origin-Realm"))
+	metadata.zone = 98765
+	assert(
+		not peer:CanAcceptMeshPublicationRoute(sender, metadata, 98765, "Origin-Realm"),
+		"a global query must not authorize an unrelated zone publication"
+	)
+	assert(
+		not peer:ShouldConsumeMeshPublicationRoute(sender, metadata, 98765, sender),
+		"a native owner shortcut must preserve the query scope"
+	)
+end, { offline = true })
+
+QT:RegisterTest("mesh full neighbors decline admission without creating unusable edges", function()
+	local net = QT:CreateTestNetwork({ fps = 20 })
+	local full, newcomer = Peer(net, "Full-Realm"), Peer(net, "New-Realm")
+	net:StartPeer(full)
+	net:StartPeer(newcomer)
+	local state = full:InitializeMeshNetwork()
+	for index = 1, 8 do
+		local name = "Existing" .. index .. "-Realm"
+		state.neighbors[name] = { name = name, expires = full.now + 180, at = full.now, connectedAt = full.now }
+	end
+	newcomer:RememberMeshCandidate(full.name, "directory")
+	net:Advance(35)
+	assert(not newcomer:IsConfirmedMeshNeighbor(full.name) and not full:IsConfirmedMeshNeighbor(newcomer.name))
+	assert((newcomer:GetMeshNetworkMetrics().handshakeBusy or 0) > 0)
+	assert(
+		newcomer.meshNetworkState.candidates[full.name].retryAt > newcomer.now,
+		"an explicit capacity refusal must enter bounded backoff"
+	)
+	assert(
+		not newcomer.meshNetworkState.candidates["Existing1-Realm"],
+		"a declined admission must not add introductions"
+	)
+end, { offline = true })
+
+QT:RegisterTest("mesh reserved reciprocal probes beat candidate backoff without exceeding neighbor slots", function()
+	local net = QT:CreateTestNetwork({ fps = 10 })
+	local owner, peers = Peer(net, "Owner-Realm"), {}
+	net:StartPeer(owner)
+	local state = owner:InitializeMeshNetwork()
+	state.metrics.handshakesStarted, state.nextHandshake = 3, owner.now + 30
+	owner.API.Random = function(minimum, maximum)
+		return maximum or minimum
+	end
+	owner.API.GetChannelRosterInfo = function() end
+	for index = 1, 5 do
+		local name = "Existing" .. index .. "-Realm"
+		state.neighbors[name] = { name = name, expires = owner.now + 180, at = owner.now, connectedAt = owner.now }
+	end
+	for index = 1, 3 do
+		local peer = Peer(net, "Reciprocal" .. index .. "-Realm")
+		peers[index] = peer
+		peer.API.GetChannelRosterInfo = function() end
+		net:StartPeer(peer)
+		peer:InitializeMeshNetwork()
+		peer:RememberMeshCandidate(owner.name, "party")
+		owner:RememberMeshCandidate(peer.name, "directory")
+		local candidate = state.candidates[peer.name]
+		candidate.triedAt, candidate.retryAt = owner.now - 1, owner.now + 300
+	end
+	local started = net.now
+	net:Advance(20)
+	assert(Count(state.reservations) == 3)
+	for _, peer in ipairs(peers) do
+		assert(not owner:IsConfirmedMeshNeighbor(peer.name), "reserved admission must not authenticate a native peer")
+	end
+	for _ = 1, 95 do
+		net:Advance(1)
+		local occupied = {}
+		for name in pairs(state.neighbors) do
+			occupied[name] = true
+		end
+		for name, reservation in pairs(state.reservations) do
+			if reservation.expires > owner.now then
+				occupied[name] = true
+			end
+		end
+		assert(Count(occupied) <= 8, "inbound and outbound reservations for one peer share one slot")
+		local complete = true
+		for _, peer in ipairs(peers) do
+			if not owner:IsConfirmedMeshNeighbor(peer.name) or not peer:IsConfirmedMeshNeighbor(owner.name) then
+				complete = false
+			end
+		end
+		if complete then
+			assert(net.now - started < 120)
+			return
+		end
+	end
+	error("paced reciprocal probes failed to complete before their admission reservations expired")
+end, { offline = true })
+
+QT:RegisterTest("mesh directory cleanup survives combat resets and yields to later user selection", function()
+	for _, boundary in ipairs({ "reset", "disable", "selection", "reorder", "logout" }) do
+		local net = QT:CreateTestNetwork({ fps = 20, directoryDelay = 1 })
+		local peer = Peer(net, "Owner-Realm")
+		local select, cleanup = peer.API.SetSelectedDisplayChannel, nil
+		peer.API.SetSelectedDisplayChannel = function(index)
+			if peer.restricted then
+				return false
+			end
+			select(index)
+			return peer.selectedDisplayChannel == index
+		end
+		peer.API.RequestChannelSelectionRestore = function(callback)
+			cleanup = callback
+			return true
+		end
+		net:StartPeer(peer)
+		local original = peer.API.GetChannelDisplayInfo(peer.selectedDisplayChannel)
+		net:Advance(2.4)
+		assert(peer.meshNetworkState.directory)
+		peer.restricted = true
+		net:Advance(0.3)
+		assert(cleanup and peer.meshDirectoryRestore)
+		peer:ResetMeshNetwork()
+		if boundary == "disable" then
+			peer.isEnabled = false
+		end
+		if boundary == "reorder" or boundary == "selection" then
+			local prior = peer.API.GetChannelDisplayInfo(peer.selectedDisplayChannel)
+			net:Join(peer, "AAA", true)
+			for index = 1, peer.API.GetNumDisplayChannels() do
+				local name = peer.API.GetChannelDisplayInfo(index)
+				if name == (boundary == "selection" and "AAA" or prior) then
+					select(index)
+					break
+				end
+			end
+		end
+		local chosen = peer.API.GetChannelDisplayInfo(peer.selectedDisplayChannel)
+		peer.restricted = false
+		cleanup(boundary ~= "logout")
+		local restored = peer.API.GetChannelDisplayInfo(peer.selectedDisplayChannel)
+		assert(restored == ((boundary == "selection" or boundary == "logout") and chosen or original), boundary)
+		assert(not peer.meshDirectoryRestore, "cleanup must release its ownership after " .. boundary)
+	end
+end, { offline = true })
+
+QT:RegisterTest("mesh renewed scopes fairly rotate eligible branches with bounded selection history", function()
+	for _, size in ipairs({ 3, 4 }) do
+		local net = QT:CreateTestNetwork()
+		local peer = Peer(net, "Viewer-Realm")
+		local state = peer:InitializeMeshNetwork()
+		state.nextDirectory, state.nextGuild = math.huge, math.huge
+		peer.geographicCommsState = { currentZone = 12, viewZone = 12 }
+		for index = 1, size do
+			local name = "Branch" .. index .. "-Realm"
+			state.neighbors[name] = { name = name, at = peer.now, connectedAt = peer.now, expires = peer.now + 10000 }
+		end
+		local seen = { [0] = {}, [12] = {} }
+		function peer:Emit(operation, record, routes)
+			if operation == "MINT" and seen[record.zone] then
+				assert(#routes <= 2, "rotation must not broaden the fanout")
+				for _, route in ipairs(routes) do
+					seen[record.zone][route.target] = true
+				end
+			end
+			return true
+		end
+		local start = net.now
+		for cycle = 0, 7 do
+			net.now = start + cycle * 41
+			peer.now = net.now
+			peer:UpdateMeshNetwork(peer.now)
+		end
+		for zone, names in pairs(seen) do
+			for name in pairs(state.neighbors) do
+				assert(names[name], "scope " .. zone .. " must not repeatedly miss branch " .. name)
+			end
+		end
+		-- A terminal query does not send anything onward, so it must not take
+		-- the turn that the next usable query needs for its branch rotation.
+		seen[999] = {}
+		for cycle = 1, 8 do
+			for _, hops in ipairs({ 1, 8 }) do
+				local data = {
+					leaseId = "terminal" .. cycle .. "-" .. hops,
+					destination = "Terminal-Realm",
+					zone = 999,
+					expiresAt = peer:GetAnnouncementServerTime() + 120,
+					hops = hops,
+				}
+				assert(peer:HandleMeshInterest(data, "Branch1-Realm", { distribution = "WHISPER" }))
+				assert(peer:HandleMeshInterestCancel(data, "Branch1-Realm", { distribution = "WHISPER" }))
+			end
+		end
+		for name in pairs(state.neighbors) do
+			if name ~= "Branch1-Realm" then
+				assert(seen[999][name], "terminal queries must not consume another branch's turn")
+			end
+		end
+		-- Retired remote queries must not leave unbounded destination/scope
+		-- selection state, even when a neighbor rapidly cycles its requests.
+		for index = 1, 100 do
+			local data = {
+				leaseId = "rotating" .. index,
+				destination = "Remote" .. index .. "-Realm",
+				zone = 20 + index,
+				expiresAt = peer:GetAnnouncementServerTime() + 120,
+				hops = 8,
+			}
+			assert(peer:HandleMeshInterest(data, "Branch1-Realm", { distribution = "WHISPER" }))
+			assert(peer:HandleMeshInterestCancel(data, "Branch1-Realm", { distribution = "WHISPER" }))
+			assert(Count(state.interestSelections) <= 64)
+			for _, history in pairs(state.interestSelections) do
+				assert(Count(history.peers) <= size)
+			end
+		end
+		net.now = net.now + 121
+		peer.now = net.now
+		peer:UpdateMeshNetwork(peer.now)
+		assert(Count(state.interestSelections) == 2, "only current local scopes may survive history expiry")
+	end
+end, { offline = true })

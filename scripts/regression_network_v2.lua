@@ -4,10 +4,10 @@ local function Equal(actual, expected, detail)
 	assert(actual == expected, (detail or "values differ") .. ": " .. tostring(actual) .. " ~= " .. tostring(expected))
 end
 
-QT:RegisterTest("party quest snapshots use group transport with repair and remain compatible with private peers", function()
-	for _, mode in ipairs({ "PARTY", "RAID", "INSTANCE_CHAT", "legacy", "private" }) do
+QT:RegisterTest("party quest snapshots repair over native group and targeted private routes", function()
+	for _, mode in ipairs({ "PARTY", "RAID", "INSTANCE_CHAT", "private" }) do
 		local net = QT:CreateTestNetwork({ fps = 20 })
-		local distribution = mode == "legacy" and "PARTY" or mode ~= "private" and mode or nil
+		local distribution = mode ~= "private" and mode or nil
 		local settings = distribution and { group = "questers", distribution = distribution } or {}
 		local a, b, other = net:AddPeer("Alice-Realm", settings), net:AddPeer("Bob-Realm", settings),
 			net:AddPeer("Other-Realm", settings)
@@ -15,11 +15,6 @@ QT:RegisterTest("party quest snapshots use group transport with repair and remai
 			peer.API.IsInInstanceGroup = function() return distribution == "INSTANCE_CHAT" end
 			net:SetQuestLog(peer, { { questID = 42, title = "A party quest" } })
 			net:StartPeer(peer)
-		end
-		if mode == "legacy" then
-			function b:GetQuestCompareRoutes(target)
-				return { { distribution = "WHISPER", target = target, requiresGroup = true } }
-			end
 		end
 		function b:ReadQuestCompareObjectives(id)
 			local objectives = {}
@@ -39,7 +34,7 @@ QT:RegisterTest("party quest snapshots use group transport with repair and remai
 			local frame = a:DecodeCommFrame(packet.wire)
 			if relevant[frame.operation] then
 				routes[#routes + 1] = packet
-				if mode ~= "legacy" and mode ~= "private" then
+				if mode ~= "private" then
 					Equal(packet.route, distribution)
 					Equal(packet.target, nil, "group sends must not pass a whisper target to the native API")
 				elseif mode == "private" then Equal(packet.route, "WHISPER") end
@@ -281,6 +276,129 @@ QT:RegisterTest("network fixture reorders duplicates and respects channel readin
 	Equal(#net.pending, 0)
 end)
 
+QT:RegisterTest("network fixture separates backing realm delivery from overlapping channel directories", function()
+	local net = QT:CreateTestNetwork({ directoryDelay = 0.1 })
+	local a = net:AddPeer("Alice-Realm", { backingRealm = "A" })
+	local b = net:AddPeer("Bob-Realm", { backingRealm = "A" })
+	local c = net:AddPeer("Carol-Realm", { backingRealm = "B" })
+	local received = {}
+	for _, peer in ipairs({ a, b, c }) do
+		net:Join(peer, "Directory", true)
+		peer.OnCommReceived = function(self, _, wire) received[self.name] = wire end
+	end
+	Equal(a.API.SendAddonMessage(a.commPrefix, "local", "CHANNEL", a.joined.Directory), 0)
+	net:Advance(0.1)
+	Equal(received[a.name], "local")
+	Equal(received[b.name], "local")
+	Equal(received[c.name], nil, "same channel name must not bridge independent backing realms")
+	net:SetChannelDirectory(a, "Directory", { b.name })
+	net:SetChannelDirectory(b, "Directory", { a.name, c.name })
+	for _, peer in ipairs({ a, b, c }) do
+		local index = 3 -- General, custom header, then the joined channel.
+		assert(index ~= peer.joined.Directory, "fixture must expose the native/display index distinction")
+		Equal(peer.API.GetChannelRosterInfo(index, 1), nil)
+		peer.API.SetSelectedDisplayChannel(index)
+	end
+	net:Advance(0.1)
+	Equal(a.API.GetChannelRosterInfo(3, 1), b.name)
+	Equal(a.API.GetChannelRosterInfo(3, 2), nil, "directory overrides may be incomplete")
+	Equal(b.API.GetChannelRosterInfo(3, 2), c.name, "a different directory can introduce an unseen peer")
+	Equal(c.API.GetChannelRosterInfo(3, 1), c.name, "default directory stays within its backing realm")
+	Equal(a.API.GetChannelRosterInfo(a.joined.Directory, 1), nil, "native send ID is not a roster index")
+	Equal(a.API.SendAddonMessage(a.commPrefix, "direct", "WHISPER", c.name), 0)
+	net:Advance(0.1)
+	Equal(received[c.name], "direct", "cross-realm direct whispers are independent of channel scope")
+end)
+
+QT:RegisterTest("network fixture directory fetches retire on suspension leave and replacement", function()
+	local net = QT:CreateTestNetwork({ fps = 10, directoryDelay = 0.2 })
+	local a = net:AddPeer("Alice-Realm")
+	net:Join(a, "Directory", true)
+	net:SetChannelDirectory(a, "Directory", { "Old-Realm" })
+	a.API.SetSelectedDisplayChannel(3)
+	Equal(select(5, a.API.GetChannelDisplayInfo(3)), nil, "selection does not synchronously manufacture a roster")
+	net:SetChannelSuspended(a, "Directory", true)
+	net:Advance(0.3)
+	Equal(a.API.GetNumDisplayChannels(), 2)
+	Equal(a.loadedDirectories.Directory, nil, "late load cannot restore a suspended directory")
+	Equal(select(4, a.API.GetChannelName("Directory")), true)
+	Equal(a.API.SendAddonMessage(a.commPrefix, "suspended", "CHANNEL", a.joined.Directory), 7)
+	net:SetChannelSuspended(a, "Directory", false)
+	a.API.SetSelectedDisplayChannel(1)
+	a.API.SetSelectedDisplayChannel(3)
+	net:Leave(a, "Directory")
+	net:Join(a, "Directory", true)
+	net:Advance(0.3)
+	Equal(a.loadedDirectories.Directory, nil, "a fetch belongs to one membership lifetime")
+	net:SetChannelDirectory(a, "Directory", false)
+	a.API.SetSelectedDisplayChannel(1)
+	a.API.SetSelectedDisplayChannel(3)
+	net:Advance(0.3)
+	Equal(select(5, a.API.GetChannelDisplayInfo(3)), nil, "unreadable differs from an empty roster")
+	net:SetChannelDirectory(a, "Directory", {})
+	a.API.SetSelectedDisplayChannel(1)
+	a.API.SetSelectedDisplayChannel(3)
+	net:Advance(0.3)
+	Equal(select(5, a.API.GetChannelDisplayInfo(3)), 0)
+	Equal(a.API.GetSelectedDisplayChannel(), 3)
+	a.channelWindowShown = true
+	Equal(a.API.IsChannelWindowShown(), true)
+end)
+
+QT:RegisterTest("network fixture whisper reachability is directional and checked again at receipt", function()
+	local net = QT:CreateTestNetwork({ latency = 0.2 })
+	local a, b = net:AddPeer("Alice-Realm"), net:AddPeer("Bob-Realm")
+	local received = {}
+	for _, peer in ipairs({ a, b }) do
+		peer.OnCommReceived = function(self, _, wire) received[self.name] = wire end
+	end
+	net:SetWhisperReachable(a, b, false)
+	Equal(a.API.SendAddonMessage(a.commPrefix, "blocked", "WHISPER", b.name), 0)
+	Equal(b.API.SendAddonMessage(b.commPrefix, "reply", "WHISPER", a.name), 0)
+	net:Advance(0.2)
+	Equal(received[a.name], "reply")
+	Equal(received[b.name], nil)
+	net:SetWhisperReachable(a, b, true)
+	a.API.SendAddonMessage(a.commPrefix, "in-flight", "WHISPER", b.name)
+	net:SetWhisperReachable(a, b, false)
+	net:Advance(0.2)
+	Equal(received[b.name], nil, "accepted traffic can lose its link before delivery")
+	Equal(net.metrics.dropped, 1)
+end)
+
+QT:RegisterTest("network fixture channel acceptance can be refused asynchronously without an echo", function()
+	local net = QT:CreateTestNetwork({ fps = 20, latency = 0.1 })
+	local a, b = net:AddPeer("Alice-Realm"), net:AddPeer("Bob-Realm")
+	for _, peer in ipairs({ a, b }) do
+		net:Join(peer, "Directory", true)
+		peer.OnCommReceived = function() error("refused channel packets must not be delivered") end
+	end
+	local notices = {}
+	local observer = net:CreateFrame(a)
+	observer:RegisterEvent("CHAT_MSG_CHANNEL_NOTICE")
+	observer:SetScript("OnEvent", function(_, event, notice, _, _, channel, _, _, _, id, base)
+		notices[#notices + 1] = { event, notice, channel, id, base }
+	end)
+	net:SetChannelRefusal(a, "Directory", { delay = 0.15, suspend = true })
+	Equal(a.API.SendAddonMessage(a.commPrefix, "refused", "CHANNEL", a.joined.Directory), 0)
+	Equal(#notices, 0)
+	Equal(net.metrics.accepted, 1)
+	net:Advance(0.1)
+	Equal(#notices, 0)
+	net:Advance(0.05)
+	Equal(#notices, 1)
+	Equal(notices[1][2], "NOT_ALLOWED_IN_CHANNEL")
+	Equal(notices[1][3], "Directory")
+	Equal(notices[1][4], a.joined.Directory)
+	Equal(notices[1][5], "Directory")
+	Equal(net.metrics.serverRefused, 1)
+	Equal(net.metrics.delivered, 0)
+	Equal(a.API.GetNumDisplayChannels(), 2)
+	Equal(a.API.SendAddonMessage(a.commPrefix, "now-invalid", "CHANNEL", a.joined.Directory), 7)
+	net:Advance(0.2)
+	Equal(#notices, 1, "native rejection does not manufacture another server acceptance/refusal")
+end)
+
 QT:RegisterTest("network fixture clocks randomness and state are private to each network", function()
 	local a, b = QT:CreateTestNetwork({ seed = 91 }), QT:CreateTestNetwork({ seed = 91 })
 	local peer = a:AddPeer("Clock-Realm", { clockOffset = -40, serverOffset = 7 })
@@ -369,7 +487,7 @@ QT:RegisterTest("network runtime progresses communications each frame while paci
 	Equal(networkTicks, 30)
 end)
 
-QT:RegisterTest("network v2 rejects legacy prefixes and legacy bodies without side effects", function()
+QT:RegisterTest("network v3 rejects legacy prefixes and legacy bodies without side effects", function()
 	local net = QT:CreateTestNetwork()
 	local a, b = net:AddPeer("Alice-Realm"), net:AddPeer("Bob-Realm")
 	net:StartPeer(a)
@@ -388,7 +506,7 @@ QT:RegisterTest("network v2 rejects legacy prefixes and legacy bodies without si
 end)
 
 -- Full multi-peer, multi-frame network simulations run offline.
-QT:RegisterTest("network v2 correlates and repairs a typed response through the complete runtime", function()
+QT:RegisterTest("network v3 correlates and repairs a typed response through the complete runtime", function()
 	for _, fps in ipairs({ 5, 60 }) do
 		local net = QT:CreateTestNetwork({ fps = fps, seed = 32, latency = 0.05 })
 		local a, b = net:AddPeer("Alice-Realm"), net:AddPeer("Bob-Realm")
@@ -443,7 +561,7 @@ QT:RegisterTest("network v2 correlates and repairs a typed response through the 
 	end
 end, { offline = true })
 
-QT:RegisterTest("network v2 retires throttled work at world departure and resumes with fresh traffic", function()
+QT:RegisterTest("network v3 retires throttled work at world departure and resumes with fresh traffic", function()
 	local net = QT:CreateTestNetwork({ fps = 20 })
 	local a, b = net:AddPeer("Alice-Realm"), net:AddPeer("Bob-Realm")
 	net:StartPeer(a)
@@ -479,13 +597,13 @@ QT:RegisterTest("network v2 retires throttled work at world departure and resume
 	assert(b:IsKnownQTPlayer(a.name))
 end)
 
-QT:RegisterTest("network v2 queued coordinates cannot cross a privacy change", function()
+QT:RegisterTest("network v3 queued coordinates cannot cross a privacy change", function()
 	local net = QT:CreateTestNetwork({ fps = 5 })
 	local a, b = net:AddPeer("Alice-Realm"), net:AddPeer("Bob-Realm")
 	net:StartPeer(a)
 	net:StartPeer(b)
 	local completed = {}
-	assert(a:Emit("STATE", {
+	local admitted, _, context = a:Emit("STATE", {
 		records = {
 			{ topic = "QTPR", data = { active = true }, sampledAt = a.API.GetServerTime() },
 			{
@@ -498,22 +616,21 @@ QT:RegisterTest("network v2 queued coordinates cannot cross a privacy change", f
 		onComplete = function(ok, reason)
 			completed[#completed + 1] = { ok, reason }
 		end,
-	}))
+	})
+	assert(admitted)
 	a.db.profile.sharePlayerLocation = false
 	net:Advance(20)
 	Equal(#completed, 1)
 	Equal(completed[1][1], false)
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 	for _, packet in ipairs(a.sent) do
-		Equal(
-			packet.route == "WHISPER" and packet.target == b.name,
-			false,
-			"private work must be cancelled before native send"
-		)
+		local frame = assert(a:DecodeCommFrame(packet.wire))
+		assert(frame.session ~= context.session or frame.messageId ~= context.messageId,
+			"the revoked coordinate publication reached native send")
 	end
 end)
 
-QT:RegisterTest("network v2 queued party focus cannot follow the sender into another group", function()
+QT:RegisterTest("network v3 queued party focus cannot follow the sender into another group", function()
 	local net = QT:CreateTestNetwork({ fps = 20 })
 	local a = net:AddPeer("Alice-Realm", { group = "old" })
 	local b = net:AddPeer("Bob-Realm", { group = "old" })
@@ -544,7 +661,7 @@ QT:RegisterTest("network v2 queued party focus cannot follow the sender into ano
 end)
 
 -- Full multi-peer, multi-frame network simulations run offline.
-QT:RegisterTest("network v2 completes party logs and a diagnostic report while movement remains active", function()
+QT:RegisterTest("network v3 completes party logs and a diagnostic report while movement remains active", function()
 	for _, fps in ipairs({ 5, 60 }) do
 		local net = QT:CreateTestNetwork({ fps = fps, seed = 71 })
 		local party = {}
@@ -571,7 +688,7 @@ QT:RegisterTest("network v2 completes party logs and a diagnostic report while m
 			return string.rep("s", 64)
 		end
 		responder.developerPublicKeyHex = string.rep("0", 64)
-		responder.Ed25519 = {
+		responder.Ed25519 = setmetatable({
 			NewVerification = function()
 				return coroutine.create(function()
 					for _ = 1, 17 do
@@ -580,7 +697,7 @@ QT:RegisterTest("network v2 completes party logs and a diagnostic report while m
 					return true
 				end)
 			end,
-		}
+		}, { __index = QT.Ed25519 }) -- Mesh hashing remains real in this mixed-load test.
 		local reports, snapshots, pongs = {}, 0, 0
 		local report = string.rep("Diagnostic fixture state.\n", 1200)
 		function responder:BuildDeveloperDiagnosticSnapshot()
@@ -642,9 +759,17 @@ QT:RegisterTest("network v2 completes party logs and a diagnostic report while m
 			Equal(count, 30)
 		end
 		local location = viewer:GetPlayerLocationState().peers[responder.name]
+		-- Both timestamps use the receiver's monotonic clock. A delayed old
+		-- publication must not pass simply because it was received recently.
+		local sourceAge = location and viewer.API.GetTime() - location.sampledAt
+		local receiptAge = location and viewer.API.GetTime() - location.receivedAt
 		assert(
-			location and viewer.API.GetTime() - location.receivedAt < 10,
-			"bulk traffic must not starve moving peers"
+			location and sourceAge >= 0 and sourceAge < 10,
+			"bulk traffic must not starve moving peers: fps=" .. fps .. " sourceAge="
+				.. tostring(sourceAge) .. " receiptAge=" .. tostring(receiptAge)
+				.. " elapsed=" .. tostring(net.now - started)
+				.. " responderQueue=" .. responder:GetTransportMetrics().queuedPackets
+				.. " responderPartyPending=" .. tostring(responder.geographicCommsState.routes.PARTY and responder.geographicCommsState.routes.PARTY.pending ~= nil)
 		)
 		for _, peer in ipairs(party) do
 			local bytes = 0
@@ -658,7 +783,7 @@ QT:RegisterTest("network v2 completes party logs and a diagnostic report while m
 end, { offline = true })
 
 -- Full multi-peer, multi-frame network simulations run offline.
-QT:RegisterTest("network v2 accepts a late correlated pong without reviving its old coordinates", function()
+QT:RegisterTest("network v3 accepts a late correlated pong without reviving its old coordinates", function()
 	local net = QT:CreateTestNetwork({ fps = 5 })
 	local a, b = net:AddPeer("Developer-Realm"), net:AddPeer("Friend-Realm")
 	a.isLocalDeveloper = true
@@ -745,3 +870,55 @@ QT:RegisterTest("native announcement receipt updates subscribed quest progress b
 	Equal(current.objectiveDetails[42].state, "ready")
 	Equal(current.objectiveDetails[42].objectives[1].current, 7)
 end)
+
+-- This is an offline load contract, not a promise of a globally complete peer
+-- graph. Every client still has independent discovery, consent and budgets.
+QT:RegisterTest("mesh two hundred simultaneous clients retain bounded progressive discovery", function()
+	local net = QT:CreateTestNetwork({ fps = 5, seed = 1537, latency = 0.08, joinDelay = 0.3, directoryDelay = 0.5 })
+	local peers, firstLocation = {}, {}
+	for index = 1, 200 do
+		peers[index] = net:AddPeer(string.format("Crowd%03d-Realm", index), {
+			backingRealm = "Backing" .. (index % 4), mapID = 12,
+			x = 0.05 + (index % 20) / 25, y = 0.05 + math.floor((index - 1) / 20) / 15,
+		})
+	end
+	for index, peer in ipairs(peers) do
+		local names = { peer.name }
+		-- Overlapping directory fragments connect hidden backing populations;
+		-- nobody is handed the complete directory or trusted peer records.
+		for _, offset in ipairs({ -3, -2, -1, 1, 2, 3, 17, 53 }) do
+			names[#names + 1] = peers[(index + offset - 1) % #peers + 1].name
+		end
+		net:SetChannelDirectory(peer, peer.announcementChannelName, names)
+		net:SetChannelDirectory(peer, "QuestTogether3Z12", names)
+		net:StartPeer(peer)
+	end
+	local maxQueue, maxRetained, connected = 0, 0, 0
+	for second = 1, 60 do
+		if second % 5 == 0 then
+			for index = 1, 5 do peers[index].position.x = 0.2 + second / 1000 + index / 100 end
+		end
+		net:Advance(1)
+		for _, peer in ipairs(peers) do
+			local transport, mesh, publications = peer:GetTransportMetrics(), peer:GetMeshNetworkMetrics(), peer:GetMeshPublicationMetrics()
+			assert(transport.queuedPackets <= 96 and (transport.highWater or 0) <= 96)
+			assert((transport.meshBytes or 0) <= second * 200 + 400)
+			assert((transport.meshPackets or 0) <= second + 2)
+			assert(mesh.neighbors <= 8 and mesh.candidates <= 512 and mesh.handshakes <= 3 and mesh.interests <= 32)
+			assert(publications.retainedBytes <= 131072, "publication memory must remain bounded under simultaneous discovery")
+			maxQueue = math.max(maxQueue, transport.highWater or 0)
+			maxRetained = math.max(maxRetained, publications.retainedBytes)
+			if not firstLocation[peer.name] and #peer:GetVisiblePlayerLocations("map") > 0 then firstLocation[peer.name] = second end
+		end
+	end
+	local latencies = {}
+	for _, peer in ipairs(peers) do
+		if peer:GetMeshNetworkMetrics().neighbors > 0 then connected = connected + 1 end
+		if firstLocation[peer.name] then latencies[#latencies + 1] = firstLocation[peer.name] end
+		for _, packet in ipairs(peer.sent) do assert(packet.route == "WHISPER", "public discovery cannot send channel data") end
+	end
+	table.sort(latencies)
+	Equal(connected, #peers, "every reachable client must make bootstrap progress in this lossless fixture")
+	assert(#latencies > 0, "public state must progress beside connection and interest traffic")
+
+end, { offline = true })

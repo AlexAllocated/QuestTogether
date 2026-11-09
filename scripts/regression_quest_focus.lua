@@ -217,8 +217,7 @@ QT:RegisterTest("focus HUD edit layout restores per profile and opacity affects 
 	a:UpdateQuestFocusWindow()
 	a:Drain()
 	local frame = a.questFocusWindow
-	Equal(frame.strata, "TOOLTIP", "the HUD must draw alongside native quest-hover tooltips")
-	Equal(frame:GetFrameLevel(), 100, "reserve higher tooltip levels for QT's interactive focus markers")
+	Equal(frame.strata, "LOW", "normal windows and item tooltips must cover the HUD")
 	assert(frame.panel:GetFrameLevel() > frame:GetFrameLevel())
 	assert(frame.rows[1]:GetFrameLevel() > frame.panel:GetFrameLevel())
 	function frame:EnableMouse(enabled)
@@ -311,8 +310,8 @@ QT:RegisterTest("focus HUD edit layout restores per profile and opacity affects 
 	a:UpdateQuestFocusWindow()
 	a:Drain()
 	Equal(frame.editControls:IsShown(), false)
-	Equal(frame.strata, "TOOLTIP")
-	Equal(frame.mouseEnabled, false, "raising the HUD must not capture normal tracker clicks")
+	Equal(frame.strata, "LOW", "leaving Edit Mode must not raise the HUD above other windows")
+	Equal(frame.mouseEnabled, false, "the HUD must not capture normal tracker clicks")
 	Equal(a.questFocusEditBaseline, nil)
 	Equal(frame.Selection:IsShown(), false)
 	a.db.profile = { questTrackerMode = "both", questFocusOpacity = 90 }
@@ -320,8 +319,7 @@ QT:RegisterTest("focus HUD edit layout restores per profile and opacity affects 
 	a:Drain()
 	Equal(frame:GetWidth(), 340)
 	Equal(frame.background[1].textureColor[4], 0.9)
-	Equal(frame.strata, "TOOLTIP", "saved-layout restoration must preserve tooltip ordering")
-	Equal(frame:GetFrameLevel(), 100)
+	Equal(frame.strata, "LOW", "saved-layout restoration must preserve ordinary HUD ordering")
 end)
 QT:RegisterTest("focus HUD restriction disable and ignored roster changes cannot resurrect obsolete views", function()
 	local a = Fixture()
@@ -923,6 +921,7 @@ QT:RegisterTest("POT docks to matching native quest tooltips and restores its or
 		Equal(px, x); Equal(py, y)
 	end
 	Equal(a:GetQuestTrackerTooltipPlacement(), "top")
+	Equal(frame.strata, "LOW", "quest-tooltip docking must not raise POT over other windows")
 	Anchor("TOPLEFT", 850 - frame.panel:GetWidth(), 650 + frame.panel:GetHeight())
 	assert(frame.panel:GetHeight() < 250 and frame:GetHeight() == 600,
 		"top placement must use compact visible content, not the configured maximum")
@@ -959,6 +958,7 @@ QT:RegisterTest("POT docks to matching native quest tooltips and restores its or
 	a:UpdateQuestFocusWindow(); a:Drain()
 	Anchor("TOPRIGHT", 900, 800)
 	Equal(frame.questTooltipDocked, nil)
+	Equal(frame.strata, "LOW", "undocking must retain ordinary HUD ordering")
 	-- The same quest can be both hovered and focused: it must undock even
 	-- though no model/revision change forces a render.
 	tip:Show(); tip.scale, tip.left, tip.top = 1, 550, 650

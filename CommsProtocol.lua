@@ -1,4 +1,4 @@
--- Protocol generation 2. Only schemas declared here cross the native boundary.
+-- Protocol generation 3. Only schemas declared here cross the native boundary.
 -- This is a bounded record codec, not an arbitrary Lua table serializer.
 local QT = _G.QuestTogether
 local MAX_OBJECT, MAX_FIELDS, MAX_PARTS = 131072, 64, 1024
@@ -47,12 +47,17 @@ Add(
 		F("eventId", S, 1024),
 	}, { F("occurredAt", N) })
 )
-Add("LVL", "event", "event", catalog.ANN.fields)
+catalog.ANN.lifetime = 60
+Add("LVL", "event", "event", catalog.ANN.fields, { lifetime = 60 })
+Add("QTCHAT", "event", "event", { F("text", S, 255, true) }, { publicRelay = true, lifetime = 30 })
 Add("HELLO", "event", "background", { F("version", S, 40) }, { globalOnly = true, maxBytes = 128 })
-Add("VIP", "event", "background", {
-	F("certificate", S, 233, true), F("signature", S, 128, true),
-	F("session", S, 64, true), F("issuedAt", N, nil, true), F("active", B, nil, true),
-}, { globalOnly = true, authenticatedEvent = true, maxBytes = 512, lifetime = 30 })
+Add("VIP", "event", "event", {
+	F("certificate", S, 233, true),
+	F("signature", S, 128, true),
+	F("session", S, 64, true),
+	F("issuedAt", N, nil, true),
+	F("active", B, nil, true),
+}, { globalOnly = true, authenticatedEvent = true, maxBytes = 512, lifetime = 120 })
 Add("DEVANN", "event", "control", {
 	F("requestId", S, 64, true),
 	F("issuedAt", N, nil, true),
@@ -113,7 +118,6 @@ Add("QTN2", "state", "control", {
 	F("title", S, 1024),
 }, { groupOnly = true })
 Add("STATE", "state", "active", { F("records", "topics", 16, true) }, { maxBytes = 8192 })
-Add("QTDQ", "event", "control", { F("zone", N, nil, true) }, { regionalOnly = true, maxBytes = 64 })
 Add("BYE", "state", "control", { F("reason", S, 24), F("records", "topics", 16) }, { maxBytes = 1024 })
 
 local requestFields = {
@@ -123,7 +127,7 @@ local requestFields = {
 	F("knownRevision", S, 64),
 	F("partyOnly", B),
 	F("historyQuestIds", "QCID[]", 32),
-	-- Optional scheduling hint; older generation-2 peers ignore unknown fields.
+	-- Scheduling hint for background quest synchronization within protocol 3.
 	F("background", B),
 }
 Add("QCMP", "request", "control", requestFields, { responses = { QCRS = true }, lifetime = 180 })
@@ -192,13 +196,13 @@ Add(
 	{ F("requestId", S, 80, true), F("targetName", S, 120), F("status", S, 24), F("leader", S, 120) },
 	{ responses = { QJON = true } }
 )
-Add(
-	"QSHR",
-	"request",
-	"control",
-	{ F("requestId", S, 80, true), F("targetName", S, 120), F("questID", N), F("status", S, 32), F("reasonCode", S, 24) },
-	{ groupOnly = true, responses = { QSHR = true } }
-)
+Add("QSHR", "request", "control", {
+	F("requestId", S, 80, true),
+	F("targetName", S, 120),
+	F("questID", N),
+	F("status", S, 32),
+	F("reasonCode", S, 24),
+}, { groupOnly = true, responses = { QSHR = true } })
 Add("QTSR", "stream", "control", { F("token", S, 80, true) }, { lifetime = 12 })
 Add(
 	"QTSP",
@@ -259,6 +263,97 @@ for _, op in ipairs({ "FXEND", "FXACK", "FXSTAT", "FXMISS" }) do
 		{ F("session", S, 64, true), F("messageId", S, 64, true), F("parts", S, 4096), F("status", S, 16) },
 		{ maxBytes = 8192 }
 	)
+end
+
+-- Discovery records carry addresses, never accepted player observations.
+Add("MPEER", "record", "background", { F("name", S, 120, true) })
+Add(
+	"MHEL",
+	"request",
+	"background",
+	{ F("requestId", S, 80, true), F("version", S, 40), F("protocol", N, nil, true), F("capabilities", S, 64, true) },
+	{ meshOnly = true, responses = { MACK = true }, lifetime = 30, maxBytes = 256 }
+)
+Add("MACK", "response", "background", {
+	F("requestId", S, 80, true),
+	F("admitted", B, nil, true),
+	F("version", S, 40),
+	F("protocol", N, nil, true),
+	F("capabilities", S, 64, true),
+	F("peers", "MPEER[]", 8),
+}, { meshOnly = true, lifetime = 30, maxBytes = 1536 })
+Add("MINT", "event", "background", {
+	F("leaseId", S, 80, true),
+	F("destination", S, 120, true),
+	F("zone", N, nil, true),
+	F("expiresAt", N, nil, true),
+	F("hops", N, nil, true),
+}, { meshOnly = true, lifetime = 30, maxBytes = 512 })
+Add("MCAN", "event", "background", {
+	F("leaseId", S, 80, true),
+	F("destination", S, 120, true),
+}, { meshOnly = true, lifetime = 15, maxBytes = 384 })
+Add("MPUB", "event", "active", {
+	F("origin", S, 120, true),
+	F("session", S, 64, true),
+	F("id", S, 64, true),
+	F("operation", S, 16, true),
+	F("scope", S, 16, true),
+	F("originRequestId", S, 80),
+	F("stamp", N, nil, true),
+	F("expiresAt", N, nil, true),
+	F("body", S, 7000, true),
+	F("digest", S, 128, true),
+	F("leaseId", S, 80),
+	F("destination", S, 120),
+	F("zone", N),
+	F("hops", N),
+}, { meshOnly = true, lifetime = 30, maxBytes = 8192 })
+Add("MPID", "record", "background", {
+	F("id", S, 64, true),
+	F("operation", S, 16, true),
+	F("scope", S, 16, true),
+})
+Add("MPHASH", "record", "background", {
+	F("id", S, 64, true),
+	F("operation", S, 16, true),
+	F("scope", S, 16, true),
+	F("digest", S, 128, true),
+})
+Add("MAUTH", "request", "background", {
+	F("requestId", S, 80, true),
+	F("targetName", S, 120),
+	F("session", S, 64, true),
+	F("items", "MPID[]", 8, true),
+}, { meshOnly = true, responses = { MAPRF = true }, lifetime = 15, maxBytes = 1536 })
+Add("MAPRF", "response", "background", {
+	F("requestId", S, 80, true),
+	F("session", S, 64, true),
+	F("items", "MPHASH[]", 8, true),
+}, { meshOnly = true, lifetime = 15, maxBytes = 3072 })
+
+-- Public relay is opt-in per operation and still subject to producer/audience
+-- consent. Nested STATE records receive a narrower allowlist at admission.
+for _, op in ipairs({
+	"ANN",
+	"LVL",
+	"HELLO",
+	"BYE",
+	"STATE",
+	"QTPR",
+	"QTVR",
+	"QJST",
+	"QTLF",
+	"QTLQ",
+	"LOC",
+	"QTPG",
+	"QTCI",
+	"QTHI",
+	"VIP",
+	"DEVANN",
+	"PING",
+}) do
+	catalog[op].publicRelay = true
 end
 
 local function Accessible(a, value)
@@ -580,7 +675,7 @@ end
 
 function QT:EncodeCommFrame(frame, body)
 	local header = table.concat({
-		"2",
+		"3",
 		frame.operation,
 		frame.session,
 		frame.messageId,
@@ -602,7 +697,7 @@ function QT:DecodeCommFrame(wire)
 	local version, op, session, id, request, part, total, stamp, body =
 		wire:match("^(%d+)|(%w+)|([^|]+)|([^|]+)|([^|]*)|(%d+)|(%d+)|(%d+)|(.*)$")
 	if
-		version ~= "2"
+		version ~= "3"
 		or not catalog[op]
 		or catalog[op].semantic == "record"
 		or #session > 64
@@ -650,6 +745,11 @@ function QT:BuildCommFrames(operation, record, context)
 	local capacity = 255 - #header
 	if capacity < 1 then
 		return nil, "oversize"
+	end
+	-- Public mesh delivery always uses acknowledged hop transfers, including
+	-- unusually short bundles. Native acceptance alone cannot confirm receipt.
+	if operation == "MPUB" and #payload <= capacity then
+		capacity = math.max(1, math.ceil(#payload / 2))
 	end
 	local total = math.max(1, math.ceil(#payload / capacity))
 	if total > MAX_PARTS then

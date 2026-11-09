@@ -2,6 +2,8 @@
 -- decide which tombstones/intents survive a departure; rendering owns no teardown.
 local QT = _G.QuestTogether
 local retirement = {
+	"RetireMeshPeer",
+	"RetireMeshPublicationPeer",
 	"RetireVIPPeer",
 	"RetirePartyNavigationPeer",
 	"RetirePlayerLocationPeer",

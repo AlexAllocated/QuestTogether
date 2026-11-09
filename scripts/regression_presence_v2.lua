@@ -1,5 +1,5 @@
 -- Explicit typed observation supplied at the private receive boundary.
--- Short per-field lifetimes exercise expiry boundaries; public v2 snapshots use 600 seconds.
+-- Short per-field lifetimes exercise expiry boundaries; public snapshots use 600 seconds.
 local function ObserveState(addon, method, field, record, sender)
 	local lifetimes = { QTLF = 65, QTLQ = 65, QTVR = 180, QTPG = 180, QJST = 125, QTHI = 180 }
 	local observation = addon:CreatePeerObservation(sender, field, {
@@ -34,8 +34,8 @@ local function Fixture()
 		currentMap = 1,
 		options = { showPlayerLocations = true, lookingForQuestPartners = false },
 		sharing = true,
-		announcementChannelName = "QuestTogether",
-		channels = { QuestTogether = 1 },
+		announcementChannelName = "QuestTogether3",
+		channels = { QuestTogether3 = 1 },
 		partyRosterFingerprint = "solo",
 		sample = { mapID = 1, x = 0.4, y = 0.5 },
 	}, { __index = QT })
@@ -190,11 +190,7 @@ local function Fixture()
 	function a:Rows(op, channel)
 		local rows = {}
 		for _, row in ipairs(self.queue) do
-			if
-				not row.done
-				and (not op or row.operation == op)
-				and (not channel or row.routes[1].channelName == channel)
-			then
+			if not row.done and (not op or row.operation == op) and (not channel or row.routes[1].scope == channel) then
 				rows[#rows + 1] = row
 			end
 		end
@@ -226,8 +222,9 @@ local function Fixture()
 	a:InitializeGeographicComms()
 	return a
 end
--- Zone interest, real dwell and query coalescing across separate subscriptions.
-QT:RegisterTest("typed geographic discovery follows two interests and coalesces each zone independently", function()
+-- Directory interests follow the viewed-map dwell and retire the previous pair.
+-- Handshakes and forwarded-query coalescing run in the shared mesh harness.
+QT:RegisterTest("typed geographic interests follow current and viewed zones without channel publication", function()
 	local a = Fixture()
 	a.viewedMap = 2
 	a:UpdateGeographicSubscriptions()
@@ -235,57 +232,29 @@ QT:RegisterTest("typed geographic discovery follows two interests and coalesces 
 	a.now = 102
 	a:UpdateGeographicSubscriptions()
 	Check(Count(a.geographicCommsState.subscriptions) == 1, "view dwell")
-	a:UpdateGeographicDiscovery()
-	local query = a:Rows("QTDQ")[1]
-	Check(query and query.data.zone == 1, "current query typed")
-	Check(a.geographicCommsState.discovery[1].acceptedAt == nil, "query queued not accepted")
 	a.now = 104
 	a:UpdateGeographicSubscriptions()
 	Check(Count(a.geographicCommsState.subscriptions) == 2, "two interests")
-	a.now = 106
-	a:UpdateGeographicDiscovery()
-	Check(#a:Rows("QTDQ") == 2, "view query included")
-	Check(
-		a:HandleGeographicDiscovery(
-			{ zone = 2 },
-			"Other",
-			{ distribution = "CHANNEL", channelName = "QuestTogetherZ2" }
-		),
-		"valid viewed query heard"
-	)
-	Check(#a:Rows("QTDQ") == 1, "coalesce matching zone only")
-	Check(a.geographicCommsState.discovery[2].responseAt == nil, "remote view does not answer")
-	Check(
-		not a:HandleGeographicDiscovery(
-			{ zone = 2 },
-			"Other",
-			{ distribution = "CHANNEL", channelName = "QuestTogetherZ1" }
-		),
-		"claimed zone route rejected"
-	)
-	a:Complete(query, true)
-	Check(a.geographicCommsState.discovery[1].acceptedAt == 106, "query accepted timestamp")
-	a.currentMap = 3
-	a.viewedMap = 4
-	a.now = 108
+	Check(#a.queue == 0, "directory membership must not publish channel messages")
+	a.currentMap, a.viewedMap, a.now = 3, 4, 108
 	a:UpdateGeographicSubscriptions()
 	Check(Count(a.geographicCommsState.subscriptions) <= 2, "zone changes bounded")
 	a.now = 112
 	a:UpdateGeographicSubscriptions()
 	Check(Count(a.geographicCommsState.subscriptions) == 2, "new viewed interest")
 	Check(
-		a.geographicCommsState.subscriptions.QuestTogetherZ3 and a.geographicCommsState.subscriptions.QuestTogetherZ4,
-		"old interest retired"
+		a.geographicCommsState.subscriptions.QuestTogether3Z3 and a.geographicCommsState.subscriptions.QuestTogether3Z4,
+		"old interests retired"
 	)
 end)
--- Publication progress is native-accepted, per route, with finite failure retry.
-QT:RegisterTest("typed geographic publication advances only after per-route native acceptance", function()
+-- Producers advance only on coordinator completion, with finite failure retry.
+QT:RegisterTest("typed geographic publication advances only after per-route completion", function()
 	local a = Fixture()
 	a:StageCommunicationState("QTPR", { active = true })
 	a:UpdateGeographicComms()
 	a.now = 102
 	a:UpdateGeographicComms()
-	local global = a:Rows("STATE", "QuestTogether")[1]
+	local global = a:Rows("STATE", "global")[1]
 	Check(global ~= nil, "global snapshot queued")
 	Check(not a.geographicCommsState.lastGlobal, "queued does not mark publication")
 	Check(global.data.records[1].sampledAt == 1700000100, "sample time preserved")
@@ -293,16 +262,16 @@ QT:RegisterTest("typed geographic publication advances only after per-route nati
 	Check(not a.geographicCommsState.lastGlobal, "failure no cadence advancement")
 	a.now = 102.5
 	a:UpdateGeographicComms()
-	Check(#a:Rows("STATE", "QuestTogether") == 0, "failure backoff")
-	a.now = 103
+	Check(#a:Rows("STATE", "global") == 0, "failure backoff")
+	a.now = 107
 	a:UpdateGeographicComms()
-	global = a:Rows("STATE", "QuestTogether")[1]
+	global = a:Rows("STATE", "global")[1]
 	Check(global ~= nil, "retry due")
-	a.now = 104
+	a.now = 108
 	a:Complete(global, true)
-	Check(a.geographicCommsState.lastGlobal == 104, "accepted marks progress")
-	Check(a.geographicCommsState.nextGlobal == 254, "global cadence 150 seconds from acceptance")
-	local localRow = a:Rows("STATE", "QuestTogetherZ1")[1]
+	Check(a.geographicCommsState.lastGlobal == 108, "accepted marks progress")
+	Check(a.geographicCommsState.nextGlobal == 258, "global cadence 150 seconds from acceptance")
+	local localRow = a:Rows("STATE", 1)[1]
 	Check(localRow ~= nil, "regional independent pending")
 	a.sharing = false
 	a:StageCommunicationState("LOC", { mask = 0 })
@@ -375,17 +344,17 @@ QT:RegisterTest("staged producer completion reports one accepted route and ignor
 	a:UpdateGeographicComms()
 	a.now = 102
 	a:UpdateGeographicComms()
-	local global = a:Rows("STATE", "QuestTogether")[1]
-	local regional = a:Rows("STATE", "QuestTogetherZ1")[1]
+	local global = a:Rows("STATE", "global")[1]
+	local regional = a:Rows("STATE", 1)[1]
 	Check(global and regional, "independent recipients")
 	a:Complete(global, false, "rejected")
 	Check(#completions == 0, "queue failure leaves state eligible for retry")
 	a:StageCommunicationState("QTPG", { size = 2, leader = "Self", revision = "1" }, { onComplete = Complete })
 	a:Complete(regional, true)
 	Check(#completions == 1 and completions[1].sent, "same semantic refresh accepts captured publication")
-	a.now = 103
+	a.now = 107
 	a:UpdateGeographicComms()
-	global = a:Rows("STATE", "QuestTogether")[1]
+	global = a:Rows("STATE", "global")[1]
 	a:Complete(global, true)
 	Check(#completions == 1, "second route cannot double complete")
 	a:StageCommunicationState("QTPG", { size = 2, leader = "Self", revision = "2" }, { onComplete = Complete })

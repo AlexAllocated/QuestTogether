@@ -5,6 +5,7 @@ local function Peer(net, name)
 	local a = net:AddPeer(name)
 	a.vipIssuerPublicKeyHex = string.rep("4", 64)
 	a.Ed25519 = {
+		Hash = QT.Ed25519.Hash,
 		Verify = function(_, _, signature, checkpoint)
 			for _ = 1, 30 do checkpoint() end
 			return signature ~= string.rep("\0", 64)
@@ -17,12 +18,39 @@ local function Peer(net, name)
 		if operation == "VIP" then self.vipAdmission = tostring(ok) .. ":" .. tostring(reason) end
 		return ok, reason, ticket
 	end
-	function a:HandleVIPIdentity(data, sender, context)
-		local accepted = QT.HandleVIPIdentity(self, data, sender, context)
+	function a:HandleVIPIdentity(data, sender, context, callback)
+		local accepted = QT.HandleVIPIdentity(self, data, sender, context, callback)
 		self.vipReceived = tostring(accepted) .. ":" .. tostring(data.session == context.session)
 		return accepted
 	end
 	return a
+end
+local function WaitFor(net, predicate)
+	for _ = 1, 120 do
+		if predicate() then return end
+		net:Advance(1)
+	end
+	assert(predicate(), "verified VIP delivery did not complete within its bounded lifetime")
+end
+local function VIPPackets(peer)
+	local objects, packets = {}, {}
+	for _, packet in ipairs(peer.sent) do
+		local frame, body = peer:DecodeCommFrame(packet.wire)
+		if frame and frame.operation == "MPUB" then
+			local key = frame.session .. ":" .. frame.messageId .. ":" .. tostring(packet.target)
+			local item = objects[key] or { parts = {}, packets = {} }; objects[key] = item
+			item.parts[frame.part], item.packets[frame.part] = body, packet
+			local complete = true; for part = 1, frame.total do if not item.parts[part] then complete = false end end
+			if complete then
+				local pub = peer:DecodeCommRecord("MPUB", table.concat(item.parts))
+				if pub and pub.operation == "VIP" then
+					for _, sent in ipairs(item.packets) do packets[#packets+1] = sent end
+				end
+				objects[key] = nil
+			end
+		end
+	end
+	return packets
 end
 local function Install(a)
 	local claim = a:GetVIPClaimCode()
@@ -56,12 +84,16 @@ QT:RegisterTest("VIP stars and locations survive a lost renewal with concurrent 
 	end
 	net:Advance(20)
 	for _, a in ipairs(publishers) do Install(a) end
-	net:Advance(20)
-	for _, a in ipairs(publishers) do assert(observer:IsVerifiedVIP(a.name)) end
+	WaitFor(net, function()
+		for _, a in ipairs(publishers) do
+			if not observer:IsVerifiedVIP(a.name) or not observer:GetFreshPlayerLocation(a.name) then return false end
+		end
+		return true
+	end)
 	local lost = {}
 	net.deliveryRule = function(packet, receiver)
 		local frame = observer:DecodeCommFrame(packet.wire)
-		if receiver == observer and frame.operation == "VIP" then
+		if receiver == observer and frame.operation == "MPUB" then
 			if frame.part == 2 and not lost[packet.sender] then
 				lost[packet.sender] = true
 				return { drop = true }
@@ -141,10 +173,10 @@ QT:RegisterTest("VIP proofs travel through paced fragmented global traffic and w
 	local vip, observer = Peer(net, "VIP-Realm"), Peer(net, "Observer-Realm")
 	net:StartPeer(vip)
 	net:StartPeer(observer)
-	net:Advance(15) -- The channel joins are asynchronous; both audiences must be listening.
+	net:Advance(35) -- Asynchronous directory discovery and reciprocal handshakes precede the proof.
 	Install(vip)
 	assert(not vip:IsVerifiedVIP(vip.name))
-	net:Advance(15)
+	WaitFor(net, function() return observer:IsVerifiedVIP(vip.name) end)
 	assert(vip:IsVerifiedVIP(vip.name))
 	assert(vip:IsVIPActivated())
 	assert(observer:IsVerifiedVIP(vip.name), "receiver must assemble and authenticate the public proof; admission="
@@ -152,24 +184,20 @@ QT:RegisterTest("VIP proofs travel through paced fragmented global traffic and w
 		.. "; jobs=" .. #observer.vipState.jobs .. "; known=" .. tostring(observer.vipState.peers[vip.name] ~= nil))
 	assert(not observer:IsVerifiedDeveloper(vip.name), "cosmetics never grant diagnostics authority")
 	assert(not vip:IsVerifiedVIP(observer.name))
-	local packets = 0
-	for _, packet in ipairs(vip.sent) do
-		local frame = vip:DecodeCommFrame(packet.wire)
-		if frame and frame.operation == "VIP" then
-			packets = packets + 1
-			assert(#packet.wire <= 255 and packet.route == "CHANNEL")
-			assert(not packet.wire:find(vip.vipStore.seed, 1, true))
-			assert(not packet.wire:find(vip.vipStore.claim, 1, true))
-		end
+local packets = VIPPackets(vip)
+	assert(#packets > 1, "exercise the actual fragmented mesh proof")
+	for _, packet in ipairs(packets) do
+		assert(#packet.wire <= 255 and packet.route == "WHISPER")
+		assert(not packet.wire:find(vip.vipStore.seed, 1, true))
+		assert(not packet.wire:find(vip.vipStore.claim, 1, true))
 	end
-	assert(packets > 1, "exercise the real fragmented path")
 	vip:SetVIPDisplayEnabled(false)
 	assert(vip:IsVIPActivated(), "hiding cosmetics must not remove activation")
 	assert(not vip:IsVerifiedVIP(vip.name))
-	net:Advance(15)
+	WaitFor(net, function() return not observer:IsVerifiedVIP(vip.name) end)
 	assert(not observer:IsVerifiedVIP(vip.name), "withdrawal must retire the remote star")
 	vip:SetVIPDisplayEnabled(true)
-	net:Advance(15)
+	WaitFor(net, function() return observer:IsVerifiedVIP(vip.name) end)
 	assert(observer:IsVerifiedVIP(vip.name))
 	local retired = vip.vipState
 	vip:EndCommunicationSession()

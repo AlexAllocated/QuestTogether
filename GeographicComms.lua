@@ -1,5 +1,5 @@
--- Geographic interest and publication cadence. Encoding, admission, framing and
--- native delivery belong to the shared communications coordinator/transport.
+-- Geographic interests, directory subscriptions and publication cadence. Public
+-- data uses the whisper mesh; directory channels never carry addon payloads.
 local QT = _G.QuestTogether
 local ORDER = { "QTPR", "QTVR", "QJST", "QTLF", "QTLQ", "LOC", "QTPG", "QTCI", "QTHI" }
 local TOPICS = {}
@@ -10,8 +10,8 @@ local SNAPSHOT_LIFETIME = 600
 local function Now(a)
 	return a:SafeToNumber(a.API.GetTime and a.API.GetTime()) or 0
 end
-local function Channel(name)
-	return { distribution = "CHANNEL", requiresChannelJoin = true, channelName = name }
+local function Mesh(scope)
+	return { distribution = "MESH", scope = scope }
 end
 local function Random(a, low, high)
 	local n = a:SafeToNumber(a.API.Random and a.API.Random(low, high)) or low
@@ -68,7 +68,6 @@ function QT:InitializeGeographicComms()
 		subscriptions = {},
 		latest = {},
 		routes = {},
-		discovery = {},
 		peers = {},
 		peerCount = 0,
 		startedAt = now,
@@ -116,26 +115,6 @@ function QT:IsGeographicChannelName(value)
 	return false
 end
 
-function QT:IsGeographicChannelEvent(channel, id, name)
-	if channel ~= "CHANNEL" then
-		return false
-	end
-	if self:CanAccessValue(name) and type(name) == "string" and name ~= "" then
-		return self:IsGeographicChannelName(name)
-	end
-	id = self:SafeToNumber(id)
-	if not id or id <= 0 then
-		return false
-	end
-	local state = rawget(self, "geographicCommsState")
-	for channelName in pairs(state and state.subscriptions or {}) do
-		if self:GetAnnouncementChannelLocalID(channelName) == id then
-			return true
-		end
-	end
-	return false
-end
-
 function QT:UpdateGeographicSubscriptions()
 	local s, now = rawget(self, "geographicCommsState"), Now(self)
 	if
@@ -164,25 +143,30 @@ function QT:UpdateGeographicSubscriptions()
 	-- Keep the last viewed zone briefly on close; at most two regional channels.
 	local desired = {}
 	if current then
-		desired["QuestTogetherZ" .. current] = true
+		desired["QuestTogether3Z" .. current] = true
 	end
 	if s.viewZone and s.viewZone ~= current then
-		desired["QuestTogetherZ" .. s.viewZone] = true
+		desired["QuestTogether3Z" .. s.viewZone] = true
 	end
-	-- Permanent channels can outlive the addon state on reload. Reconcile only
-	-- our exact numeric zone names; never leave unrelated player channels.
+	-- Permanent channels can outlive a reload. Leave protocol-2 subscriptions
+	-- and stale protocol-3 zone directories, never unrelated player channels.
 	if not s.reconciledChannels and self.API.GetChatChannelList then
 		local listed, channels = pcall(self.API.GetChatChannelList)
 		if listed and self:CanAccessTable(channels) and #channels <= 90 and #channels % 3 == 0 then
 			s.reconciledChannels = true
 			for index = 2, #channels, 3 do
 				local name = self:SafeToString(channels[index], "")
-				local zone = tonumber(name:lower():match("^questtogetherz([1-9]%d*)$"))
+				local lower = name:lower()
+				local legacy = lower == "questtogether" or lower:match("^questtogetherz[1-9]%d*$") ~= nil
+				local zone = tonumber(lower:match("^questtogether3z([1-9]%d*)$"))
 				if
-					zone
-					and zone <= 1000000
-					and not desired["QuestTogetherZ" .. zone]
-					and not s.subscriptions["QuestTogetherZ" .. zone]
+					(
+						legacy
+						or zone
+							and zone <= 1000000
+							and not desired["QuestTogether3Z" .. zone]
+							and not s.subscriptions["QuestTogether3Z" .. zone]
+					)
 					and self.API.LeaveChannelByName
 				then
 					local left, result = pcall(self.API.LeaveChannelByName, name)
@@ -207,144 +191,20 @@ function QT:UpdateGeographicSubscriptions()
 		end
 	end
 	for name in pairs(desired) do
-		if not s.subscriptions[name] then
-			local zone = tonumber(name:match("(%d+)$"))
-			local query = s.discovery[zone] or {}
-			s.discovery[zone] = query
-			query.dueAt =
-				math.max(now + Random(self, 2, 5), (query.heardAt or -60) + 60, (query.acceptedAt or -60) + 60)
-		end
 		s.subscriptions[name] = true
-		if not self:GetAnnouncementChannelLocalID(name) and self:EnsureAnnouncementChannelJoined(name) then
+		local joined = self:GetAnnouncementChannelLocalID(name) ~= nil
+		if self:EnsureMeshDirectoryJoined(name) and not joined then
 			self:ScheduleAnnouncementChannelOrder()
 		end
 	end
 	s.currentZone = current
-	local channel = current and ("QuestTogetherZ" .. current) or nil
+	local channel = current and ("QuestTogether3Z" .. current) or nil
 	if channel ~= s.currentChannel then
 		s.currentChannel = channel
 		if channel then
 			s.routes[channel] = nil
 		end
 	end
-end
-
--- Interest queries are shared by everyone subscribed to a zone. A viewed-zone
--- query never asks the global audience, and only residents of that zone answer.
-function QT:UpdateGeographicDiscovery()
-	local s, now = rawget(self, "geographicCommsState"), Now(self)
-	if not s or not Active(self) or self:GetOption("showPlayerLocations") ~= true then
-		return
-	end
-	for channel in pairs(s.subscriptions) do
-		local zone = tonumber(channel:match("(%d+)$"))
-		local query = s.discovery[zone]
-		if
-			query
-			and query.dueAt
-			and now >= query.dueAt
-			and not query.pending
-			and self:GetAnnouncementChannelLocalID(channel)
-		then
-			local pending = {}
-			query.pending = pending
-			local admitted = self:Emit("QTDQ", { zone = zone }, { Channel(channel) }, {
-				owner = query,
-				key = "discovery:" .. zone,
-				priority = "background",
-				expires = now + 5,
-				isCurrent = function()
-					return rawget(self, "geographicCommsState") == s
-						and Active(self)
-						and s.subscriptions[channel]
-						and query.pending == pending
-						and self:GetOption("showPlayerLocations") == true
-				end,
-				onComplete = function(sent)
-					if query.pending ~= pending then
-						return
-					end
-					query.pending = nil
-					if sent then
-						query.acceptedAt, query.dueAt = Now(self), nil
-					else
-						query.dueAt = math.max(Now(self) + 5, (query.heardAt or -60) + 60)
-					end
-				end,
-			})
-			if not admitted and query.pending == pending then
-				query.pending, query.dueAt = nil, now + 5
-			end
-		end
-	end
-	-- Visiting many zones must not grow historical query bookkeeping forever.
-	for zone, query in pairs(s.discovery) do
-		if
-			not s.subscriptions["QuestTogetherZ" .. zone]
-			and not query.pending
-			and now - math.max(query.heardAt or 0, query.acceptedAt or 0, query.dueAt or 0) > 60
-		then
-			s.discovery[zone] = nil
-		end
-	end
-end
-
-function QT:HandleGeographicDiscovery(record, sender, context)
-	local s, now = rawget(self, "geographicCommsState"), Now(self)
-	if not s or not Active(self) or type(record) ~= "table" or type(context) ~= "table" then
-		return false
-	end
-	local zone = self:SafeToNumber(record.zone)
-	if not zone or zone < 1 or zone > 1000000 or zone ~= math.floor(zone) then
-		return false
-	end
-	local channel = "QuestTogetherZ" .. zone
-	if not s.subscriptions[channel] or (context.distribution or context.channel) ~= "CHANNEL" then
-		return false
-	end
-	local actual = self:SafeToString(context.channelName, ""):gsub("^%d+%.%s+", ""):lower()
-	if actual ~= "" then
-		if actual ~= channel:lower() then
-			return false
-		end
-	elseif
-		not self:GetAnnouncementChannelLocalID(channel)
-		or self:SafeToNumber(context.localID or context.channelID) ~= self:GetAnnouncementChannelLocalID(channel)
-	then
-		return false
-	end
-	local name = self:NormalizeMemberName(sender)
-	if not name or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then
-		return false
-	end
-	local query = s.discovery[zone] or {}
-	s.discovery[zone] = query
-	query.heardAt, query.dueAt = now, nil
-	local pending = query.pending
-	query.pending = nil
-	if pending then
-		self:CancelCommunicationOwner(query, "cancelled")
-	end
-	if zone ~= s.currentZone or not self:CanPublishPlayerLocation() then
-		return true
-	end
-	if query.responseAt and now - query.responseAt < 60 then
-		return true
-	end
-	query.responseAt = now
-	local count = self:GetGeographicZonePopulation(zone)
-	-- Each resident answers at most once/minute. Density-aware selection reduces
-	-- a known crowded zone's expected response burst; ordinary updates fill gaps.
-	if count > 32 and Random(self, 1, count) > 32 then
-		return true
-	end
-	local route = s.routes[channel]
-	if not route then
-		route = { nextLocation = now + 1, nextMetadata = now + 20 }
-		s.routes[channel] = route
-	end
-	route.nextMetadata = math.min(route.nextMetadata, now + Random(self, 2, 20))
-	return true
 end
 
 function QT:GetGeographicAnnouncementRoutes()
@@ -356,11 +216,7 @@ function QT:GetGeographicAnnouncementRoutes()
 	if group then
 		routes[#routes + 1] = { distribution = group }
 	end
-	local channel = s.currentChannel
-	if not channel or not self:GetAnnouncementChannelLocalID(channel) then
-		channel = self.announcementChannelName
-	end
-	routes[#routes + 1] = Channel(channel)
+	routes[#routes + 1] = Mesh(s.currentZone or "global")
 	return routes
 end
 
@@ -503,9 +359,7 @@ function QT:GetGeographicZonePopulation(zone)
 end
 local function Intervals(a, count)
 	local interval
-	if count < 10 then
-		interval = 1
-	elseif count < 20 then
+	if count < 20 then
 		interval = 5
 	elseif count < 100 then
 		interval = 5 + math.floor((count - 20) / 8)
@@ -523,10 +377,9 @@ function QT:UpdateGeographicComms()
 		return
 	end
 	self:UpdateGeographicSubscriptions()
-	self:UpdateGeographicDiscovery()
-	local routes = { { route = Channel(self.announcementChannelName), global = true } }
-	if s.currentChannel and self:GetAnnouncementChannelLocalID(s.currentChannel) then
-		routes[#routes + 1] = { route = Channel(s.currentChannel) }
+	local routes = { { route = Mesh("global"), global = true } }
+	if s.currentZone then
+		routes[#routes + 1] = { route = Mesh(s.currentZone) }
 	end
 	local group = self:GetGroupAnnouncementDistribution()
 	if group then
@@ -535,7 +388,10 @@ function QT:UpdateGeographicComms()
 	local locationInterval, metadataInterval = Intervals(self, self:GetGeographicZonePopulation(s.currentZone))
 	local sampled, sampledLocation = false, nil
 	for _, item in ipairs(routes) do
-		local key = item.route.channelName or item.route.distribution
+		local public = item.route.distribution == "MESH"
+		local key = public and (item.global and "global" or "QuestTogether3Z" .. item.route.scope)
+			or item.route.distribution
+		local cadence = public and locationInterval or 1
 		local route = s.routes[key]
 		if not route then
 			local initial = item.global and s.nextGlobal or now + Random(self, 1, 10)
@@ -548,10 +404,14 @@ function QT:UpdateGeographicComms()
 		if route.roster ~= item.roster then
 			route.roster, route.nextMetadata = item.roster, now
 		end
-		local full = now >= route.nextMetadata
+		-- A slow full baseline must not freeze current movement behind it. Keep
+		-- one full publication and one replaceable location publication per route.
+		local full = now >= route.nextMetadata and not route.pending
+		local pendingSlot = not full and "locationPending" or "pending"
 		if
-			not route.pending
+			(not route[pendingSlot] or not full)
 			and now >= (route.retryAt or 0)
+			and (not public or not route.submittedAt or now >= route.submittedAt + 5)
 			and (full or not item.global and now >= route.nextLocation)
 		then
 			if not sampled then
@@ -566,8 +426,9 @@ function QT:UpdateGeographicComms()
 			if location then
 				location.session, location.sequence = nil, nil
 			end
-			if not full and Equal(location, route.location) then
-				route.nextLocation = now + locationInterval
+			local previousLocation = route.locationPending and route.locationSubmitted or route.location
+			if not full and Equal(location, previousLocation) then
+				route.nextLocation = now + cadence
 			elseif #records == 0 then
 				route.retryAt = now + 1
 			else
@@ -578,38 +439,41 @@ function QT:UpdateGeographicComms()
 						publishesLocation = true
 					end
 				end
-				route.pending = pending
+				route[pendingSlot] = pending
+				local submittedAt = now
+				route.submittedAt, route.nextLocation = now, now + cadence
+				if not full then route.locationSubmitted = location end
 				local admitted = self:Emit("STATE", { records = records }, { item.route }, {
 					owner = "geography:" .. key,
-					key = "geography:" .. key,
+					key = "geography:" .. key .. (not full and ":location" or ":full"),
 					priority = full and "background" or "active",
-					expires = now + (full and 15 or 2),
+					expires = now + (public and (full and 120 or 30) or (full and 15 or 2)),
 					publishesLocation = publishesLocation,
 					isCurrent = function()
 						return rawget(self, "geographicCommsState") == s
 							and not s.departing
 							and Active(self)
-							and route.pending == pending
+							and route[pendingSlot] == pending
 							and (not publishesLocation or self:CanPublishPlayerLocation())
-							and (item.global or item.route.distribution ~= "CHANNEL" or s.currentChannel == key)
+							and (not public or item.global or s.currentZone == item.route.scope)
 							and (not roster or roster == self.partyRosterFingerprint)
-							and (
-								item.route.distribution == "CHANNEL"
-								or self:GetGroupAnnouncementDistribution() == item.route.distribution
-							)
+							and (public or self:GetGroupAnnouncementDistribution() == item.route.distribution)
 					end,
 					onComplete = function(sent, reason, code, ticket)
-						if route.pending ~= pending then
+						if route[pendingSlot] ~= pending then
 							return
 						end
-						route.pending = nil
+						route[pendingSlot] = nil
 						if not sent then
 							route.retryAt = Now(self) + 1
 							return
 						end
 						local acceptedAt = Now(self)
-						route.location, route.acceptedAt, route.retryAt = location, acceptedAt, nil
-						route.nextLocation = acceptedAt + locationInterval
+						route.acceptedAt, route.retryAt = acceptedAt, nil
+						if not route.locationSampledAt or submittedAt >= route.locationSampledAt then
+							route.location, route.locationSampledAt = location, submittedAt
+							route.nextLocation = acceptedAt + cadence
+						end
 						if full then
 							route.nextMetadata = acceptedAt
 								+ (item.global and Random(self, 150, 210) or metadataInterval)
@@ -632,8 +496,8 @@ function QT:UpdateGeographicComms()
 						end
 					end,
 				})
-				if not admitted and route.pending == pending then
-					route.pending, route.retryAt = nil, now + 1
+				if not admitted and route[pendingSlot] == pending then
+					route[pendingSlot], route.retryAt = nil, now + 1
 				end
 			end
 		end
@@ -652,9 +516,6 @@ function QT:ResetGeographicComms()
 		for key in pairs(s.routes) do
 			self:CancelCommunicationOwner("geography:" .. key, "cancelled")
 		end
-		for _, query in pairs(s.discovery) do
-			self:CancelCommunicationOwner(query, "cancelled")
-		end
 		for _, entry in pairs(s.latest) do
 			FinishReceipt(entry.receipt, false, "cancelled")
 		end
@@ -670,21 +531,11 @@ function QT:ResumeGeographicComms()
 	for key in pairs(s.routes) do
 		self:CancelCommunicationOwner("geography:" .. key, "cancelled")
 	end
-	for _, query in pairs(s.discovery) do
-		self:CancelCommunicationOwner(query, "cancelled")
-	end
 	for _, entry in pairs(s.latest) do
 		FinishReceipt(entry.receipt, false, "cancelled")
 	end
 	s.departing, s.latest, s.routes, s.checkedAt = nil, {}, {}, nil
 	local now = Now(self)
-	for zone, query in pairs(s.discovery) do
-		query.pending = nil
-		if s.subscriptions["QuestTogetherZ" .. zone] then
-			query.dueAt =
-				math.max(now + Random(self, 2, 5), (query.heardAt or -60) + 60, (query.acceptedAt or -60) + 60)
-		end
-	end
 	s.nextGlobal = now
 end
 

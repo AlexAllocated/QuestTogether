@@ -840,7 +840,7 @@
   "Unable to open patch notes right now.": "Не удалось открыть заметки к обновлению прямо сейчас.",
   "Unable to open that quest in your quest log.": "Не удалось открыть это задание в вашем журнале заданий.",
   "Unable to open your quest log on this client.": "Не удалось открыть ваш журнал заданий в этом клиенте.",
-  "Unable to send QuestTogether chat. The addon must be enabled and its chat channel available.": "Не удалось отправить сообщение QuestTogether. Аддон должен быть включён, а его канал чата доступен.",
+  "Unable to send QuestTogether chat. Make sure the addon is enabled and try again.": "Не удалось отправить сообщение QuestTogether. Убедитесь, что аддон включён, и попробуйте ещё раз.",
   "Unable to send join request.": "Не удалось отправить запрос на вступление.",
   "Unable to send ping request over any QuestTogether comm route.": "Не удалось отправить запрос пинга ни по одному каналу связи QuestTogether.",
   "Unable to set that waypoint.": "Не удалось установить эту точку маршрута.",

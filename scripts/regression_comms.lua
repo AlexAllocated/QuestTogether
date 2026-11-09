@@ -815,7 +815,7 @@ QuestTogether:RegisterTest("unknown addon packets do not fall through into human
 	addon:OnCommReceived(
 		addon.commPrefix,
 		"FUTURE|Quest 844 — Objective 1: 5/7",
-		"CHANNEL",
+		"WHISPER",
 		"Friend-Realm",
 		7,
 		addon.announcementChannelName
@@ -824,7 +824,7 @@ QuestTogether:RegisterTest("unknown addon packets do not fall through into human
 	Equal(#addon.wire, 0)
 end)
 
-QuestTogether:RegisterTest("plain QT channel chat displays once without relaying or discovering peers", function()
+QuestTogether:RegisterTest("admitted QT chat displays once without establishing presence or republishing", function()
 	local addon = NewCommsFixture()
 	local options = { showChatLogs = true, showChatBubbles = true }
 	local bubbles, plate = {}, {}
@@ -844,7 +844,7 @@ QuestTogether:RegisterTest("plain QT channel chat displays once without relaying
 		return name == "MyPlayer-Realm"
 	end
 	function addon:FindVisiblePlayerNameplateForSender(guid, name)
-		Equal(guid, "Player-1-ABC")
+		Equal(guid, "")
 		Equal(name, "Friend-Realm")
 		return self.visible and plate or nil
 	end
@@ -866,22 +866,8 @@ QuestTogether:RegisterTest("plain QT channel chat displays once without relaying
 	function addon:RecordQTPlayerPresence()
 		error("plain chat cannot establish addon presence")
 	end
-	local function Receive(text, sender, channel, base)
-		return addon:CHAT_MSG_CHANNEL(
-			"CHAT_MSG_CHANNEL",
-			text,
-			sender or "Friend-Realm",
-			"",
-			channel or "7. " .. addon.announcementChannelName,
-			nil,
-			nil,
-			nil,
-			7,
-			base,
-			nil,
-			1,
-			"Player-1-ABC"
-		)
+	local function Receive(text, sender)
+		return addon:HandleQTMeshChat({ text = text }, sender or "Friend-Realm", { distribution = "MESH" })
 	end
 	-- Remote chat reaches the log even without proximity or group membership.
 	Equal(Receive("Hello!"), true)
@@ -905,9 +891,6 @@ QuestTogether:RegisterTest("plain QT channel chat displays once without relaying
 	options.showQTChat = false
 	Equal(Receive("muted"), false)
 	options.showQTChat = true
-	Equal(Receive("wrong", nil, "General"), false)
-	Equal(Receive("wrong", nil, addon.announcementChannelName .. "Other"), false)
-	Equal(Receive("base metadata", nil, "", addon.announcementChannelName), true)
 	Equal(Receive(" "), false)
 	Equal(Receive("hello", ""), false)
 	local inaccessible = setmetatable({}, {
@@ -920,7 +903,6 @@ QuestTogether:RegisterTest("plain QT channel chat displays once without relaying
 	end
 	Equal(Receive(inaccessible), false)
 	Equal(Receive("hello", inaccessible), false)
-	Equal(Receive("hello", nil, inaccessible, inaccessible), false)
 	options.showChatLogs = true
 	Receive(string.rep("é", 130))
 	Equal(#addon.printed[#addon.printed], 254)
@@ -993,13 +975,13 @@ QuestTogether:RegisterTest("Forever local announcements reject their own channel
 	Equal(#addon.printed, 1)
 	Equal(addon.printed[1].label, "Anakin")
 	local packet = addon.wire[1][2]
-	addon:OnCommReceived(addon.commPrefix, packet, "CHANNEL", "Anakin Ofthesea", 7, addon.announcementChannelName)
+	addon:OnCommReceived(addon.commPrefix, packet, "WHISPER", "Anakin Ofthesea", 7, addon.announcementChannelName)
 	addon:OnCommReceived(addon.commPrefix, packet, "PARTY", "Anakin-Ofthesea")
 	Equal(#addon.printed, 1)
 	Equal(addon:GetCommsDiagnostics().acceptedAnnouncements, 1)
 	-- A different character sharing the first name must still be accepted,
 	-- even if the payload claims our GUID. Only transport identity is trusted.
-	addon:OnCommReceived(addon.commPrefix, packet, "CHANNEL", "Anakin Othername", 7, addon.announcementChannelName)
+	addon:OnCommReceived(addon.commPrefix, packet, "WHISPER", "Anakin Othername", 7, addon.announcementChannelName)
 	Equal(#addon.printed, 1) -- conflicting claimed identity is rejected
 end)
 
@@ -1245,7 +1227,7 @@ QuestTogether:RegisterTest("Forever nearby announcements use map distance withou
 		receiver:OnCommReceived(
 			receiver.commPrefix,
 			sender.wire[#sender.wire][2],
-			"CHANNEL",
+			"WHISPER",
 			"Anakin Ofthesea",
 			7,
 			receiver.announcementChannelName
@@ -1258,7 +1240,7 @@ QuestTogether:RegisterTest("Forever nearby announcements use map distance withou
 	receiver:OnCommReceived(
 		receiver.commPrefix,
 		sender.wire[#sender.wire][2],
-		"CHANNEL",
+		"WHISPER",
 		"Anakin Ofthesea",
 		7,
 		receiver.announcementChannelName
@@ -1269,7 +1251,7 @@ QuestTogether:RegisterTest("Forever nearby announcements use map distance withou
 	receiver:OnCommReceived(
 		receiver.commPrefix,
 		sender.wire[#sender.wire][2],
-		"CHANNEL",
+		"WHISPER",
 		"Anakin Ofthesea",
 		7,
 		receiver.announcementChannelName
@@ -1344,17 +1326,6 @@ QuestTogether:RegisterTest("retail names keep realm identity and native short di
 	Equal(unexpectedCalls, 0)
 end)
 
-QuestTogether:RegisterTest("comms resolves channel target after rejoining", function()
-	local n, a = QuietNetwork()
-	assert(a:Emit("ANN", Event(), { { distribution = "CHANNEL", channelName = a.announcementChannelName } }))
-	n:Leave(a, a.announcementChannelName)
-	n:Join(a, a.announcementChannelName, true)
-	local id = a.joined[a.announcementChannelName]
-	n:Advance(3)
-	assert(#a.sent > 0)
-	Equal(a.sent[1].target, id)
-end)
-
 QuestTogether:RegisterTest("announcement fragments preserve complete UTF8 and every declared field", function()
 	local a = NewCommsFixture()
 	local event = Event(string.rep("任務,|%", 100))
@@ -1406,257 +1377,28 @@ QuestTogether:RegisterTest("chat channel filter ignores mentions and similarly n
 	)
 end)
 
-QuestTogether:RegisterTest("explicit channel name overrides a stale local channel ID", function()
+QuestTogether:RegisterTest("directory refusals retain membership and never claim payload failure", function()
 	local addon = NewCommsFixture()
-	addon.announcementChannelLocalID = 7
-	Equal(addon:IsAnnouncementChannelEvent("CHANNEL", 7, "General"), false)
-	Equal(addon:IsAnnouncementChannelEvent("CHANNEL", 7, ""), true)
-end)
-
-local function ChannelNoticeFixture()
-	local addon = NewCommsFixture()
-	addon.diagnosticErrorCount, addon.diagnosticLastError = 0, nil
-	addon.reported = {}
-	addon.API.ReportLuaError = function(detail)
-		addon.reported[#addon.reported + 1] = detail
+	local refused, errors = {}, 0
+	addon.geographicCommsState = { subscriptions = { QuestTogether3Z12 = true } }
+	function addon:RecordMeshDirectoryRefusal(name) refused[#refused + 1] = name end
+	function addon:RecordDiagnosticError() errors = errors + 1 end
+	local function Notice(token, name)
+		return addon:CHAT_MSG_CHANNEL_NOTICE(nil, token, nil, nil, name)
 	end
-	addon.eventFrame = { events = {} }
-	function addon.eventFrame:SetScript(_, callback) self.onEvent = callback end
-	function addon.eventFrame:RegisterEvent(event) self.events[event] = true end
-	function addon.eventFrame:UnregisterEvent(event) self.events[event] = nil end
-	addon:RegisterBootstrapEvents()
-	addon:RegisterRuntimeEvents()
-	function addon:Notice(notice, display, base, id)
-		if self.eventFrame.events.CHAT_MSG_CHANNEL_NOTICE then
-			self.eventFrame.onEvent(self.eventFrame, "CHAT_MSG_CHANNEL_NOTICE", notice,
-				"Private player identity", "", display, nil, nil, nil, id or 7, base)
-		end
-	end
-	return addon
-end
-
-QuestTogether:RegisterTest(
-	"server refusal notices back off the matching channel even when native sends succeeded",
-	function()
-		local addon, completed = ChannelNoticeFixture(), 0
-		addon.API.Random = function()
-			return 0
-		end
-		addon.geographicCommsState = { subscriptions = { QTGeoCurrent = {} } }
-		addon:InitializeTransport()
-		local global = { distribution = "CHANNEL", target = 7, channelName = "QuestTogether" }
-		local geographic = { distribution = "CHANNEL", target = 8, channelName = "QTGeoCurrent" }
-		local admitted, _, ticket = addon:QueueTransportWire("state", "STATE", global, {
-			onComplete = function()
-				completed = completed + 1
-			end,
-		})
-		assert(admitted)
-		addon.now = 101
-		addon:DrainTransport()
-		Equal(ticket.status, "accepted")
-		addon:Notice("NOT_ALLOWED_IN_CHANNEL", "7. QuestTogether", "QuestTogether")
-		Equal(addon:GetTransportMetrics().channelBackoffMaxRemaining, 5)
-		local blocked, reason, blockedTicket = addon:QueueTransportWire("fresh state", "STATE", global)
-		Equal(blocked, false)
-		Equal(reason, "backoff")
-		Equal(blockedTicket, nil)
-		Equal(addon:SendTransportNow("geographic", "STATE", geographic), true)
-		Equal(addon:SendTransportNow("party", "QCMP", { distribution = "PARTY" }), true)
-		addon.now = 102
-		addon:Notice("NOT_ALLOWED_IN_CHANNEL", "19. qUeStToGeThEr", nil, 19)
-		Equal(addon:GetTransportMetrics().channelBackoffMaxRemaining, 4)
-		Equal(addon:GetCommsDiagnostics().serverChannelRefusals, 2)
-		Equal(addon.diagnosticErrorCount, 1)
-		addon.now = 106
-		Equal(addon:SendTransportNow("probe", "STATE", global), true)
-		addon.now = 107
-		-- Native success is not delivery. The async refusal must extend the same
-		-- failure streak even while the diagnostic message itself is rate-limited.
-		addon:Notice("NOT_ALLOWED_IN_CHANNEL", "19. QuestTogether", "QuestTogether", 19)
-		addon:Notice("NOT_ALLOWED_IN_CHANNEL", "19. QuestTogether", "QuestTogether", 19)
-		Equal(addon:GetTransportMetrics().channelBackoffMaxRemaining, 10)
-		Equal(addon:GetTransportMetrics().channelBackoffs, 2)
-		Equal(addon.diagnosticErrorCount, 1)
-		Equal(completed, 1)
-		Equal(ticket.status, "accepted")
-		addon.now = 117
-		Equal(addon:SendTransportNow("recovery", "STATE", global), true)
-		addon.now = 122
-		addon:DrainTransport()
-		Equal(addon:GetTransportMetrics().channelRecoveries, 1)
-		Equal(#addon.wire, 5) -- No refusal or elapsed timer creates a replay packet.
-		addon:Notice("NOT_ALLOWED_IN_CHANNEL", "8. QTGeoCurrent", "QTGeoCurrent", 8)
-		local geoAdmitted, geoReason = addon:QueueTransportWire("geo", "STATE", geographic)
-		Equal(geoAdmitted, false)
-		Equal(geoReason, "backoff")
-		assert(addon:QueueTransportWire("global remains healthy", "STATE", global))
-		Equal(addon:GetCommsDiagnostics().serverChannelRefusals, 5)
-		Equal(#addon.reported, 0)
-	end
-)
-
-QuestTogether:RegisterTest(
-	"channel backoff releases fragmented publication capacity and later sends only current state",
-	function()
-		local addon, completions = ChannelNoticeFixture(), {}
-		addon.API.Random = function()
-			return 0
-		end
-		addon:InitializeCommunications()
-		local routes = { { distribution = "CHANNEL", channelName = "QuestTogether" } }
-		local function Publish(title)
-			return addon:Publish("QTLQ", { questID = 42, title = title }, routes, {
-				key = "current quest",
-				onComplete = function(sent, reason)
-					completions[#completions + 1] = { sent, reason }
-				end,
-			})
-		end
-		assert(Publish(string.rep("old", 200)))
-		Equal(addon:GetCommTransferMetrics().outgoing, 1)
-		addon:Notice("NOT_ALLOWED_IN_CHANNEL", "7. QuestTogether", "QuestTogether")
-		addon:UpdateCommTransfers()
-		Equal(addon:GetCommTransferMetrics().outgoing, 0)
-		Equal(addon:GetCommTransferMetrics().bytes, 0)
-		Equal(addon:GetTransportMetrics().queuedPackets, 0)
-		Equal(completions[1][1], false)
-		Equal(completions[1][2], "backoff")
-		Equal(#addon.wire, 0)
-		addon.now = 105
-		assert(addon:Publish("QTPR", { active = true }, routes))
-		addon:DrainTransport()
-		Equal(#addon.wire, 1)
-		addon.now = 110
-		local latest = string.rep("latest", 100)
-		assert(Publish(latest))
-		for _ = 1, 20 do
-			addon:UpdateCommTransfers()
-			addon:DrainTransport()
-			addon.now = addon.now + 0.5
-		end
-		Equal(completions[2][1], true)
-		Equal(completions[2][2], "accepted")
-		Equal(#completions, 2)
-		Equal(addon:GetCommTransferMetrics().outgoing, 0)
-		Equal(addon:GetCommTransferMetrics().bytes, 0)
-		local frames = {}
-		for index = 2, #addon.wire do
-			frames[#frames + 1] = addon.wire[index][2]
-		end
-		local record, operation = ReadRecord(addon, frames)
-		Equal(operation, "QTLQ")
-		Equal(record.title, latest)
-	end
-)
-
-QuestTogether:RegisterTest("server channel refusal stays in QT diagnostics independently of chat windows and native success", function()
-	local addon, completed = ChannelNoticeFixture(), 0
-	Equal(addon.eventFrame.events.CHAT_MSG_CHANNEL_NOTICE, true)
-	addon:InitializeTransport()
-	local admitted, _, ticket = addon:QueueTransportWire("private payload", "PING",
-		{ distribution = "CHANNEL", target = 7 }, { onComplete = function() completed = completed + 1 end })
-	assert(admitted)
-	addon.now = addon.now + 1
-	addon:DrainTransport()
-	Equal(ticket.status, "accepted")
-	Equal(completed, 1)
-	-- Chat filters may run for several windows or no windows at all. Neither
-	-- situation may suppress or multiply the one registered event's reporting.
-	for _ = 1, 5 do
-		Equal(addon:AnnouncementChannelChatFilter(nil, "CHAT_MSG_CHANNEL_NOTICE", "NOT_ALLOWED_IN_CHANNEL",
-			"Private player identity", "", "7. QuestTogether", nil, nil, nil, 7, "QuestTogether"), true)
-	end
-	Equal(#addon.reported, 0)
-	addon.now = addon.now + 0.25
-	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "7. QuestTogether", "QuestTogether")
-	Equal(#addon.reported, 0)
-	Equal(addon.diagnosticErrorCount, 1)
-	local comms = addon:GetCommsDiagnostics()
-	Equal(comms.serverChannelRefusals, 1)
-	Equal(comms.serverChannelRefusalsGlobal, 1)
-	Equal(comms.sentRoutes, 1)
-	Equal(comms.failedRoutes, nil) -- No packet identifier exists to correct this counter.
-	Equal(comms.lastFailure, "route=CHANNEL scope=global notice=NOT_ALLOWED_IN_CHANNEL")
-	assert(addon.diagnosticLastError:find("communication", 1, true) or addon.diagnosticLastError:find("Communication", 1, true))
-	assert(not addon.diagnosticLastError:find("Private player identity", 1, true))
-	assert(not addon.diagnosticLastError:find("private payload", 1, true))
-	assert(not addon.diagnosticLastError:find("PING", 1, true))
-	addon.now = addon.now + 10
-	addon:DrainTransport()
-	Equal(completed, 1)
-	Equal(ticket.status, "accepted")
-	Equal(#addon.wire, 1) -- A refusal notice must not schedule an automatic resend.
-end)
-
-QuestTogether:RegisterTest("server channel refusal counters stay complete while error reports are bounded and lifecycle safe", function()
-	local addon = ChannelNoticeFixture()
-	addon.API.ReportLuaError = function(detail)
-		addon.reported[#addon.reported + 1] = detail
-		error("communication refusals must not invoke the global error collector")
-	end
-	addon.geographicCommsState = { subscriptions = {} }
-	for index = 1, 100 do
-		addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
-		local name = "QTGeo" .. index
-		addon.geographicCommsState.subscriptions[name] = {}
-		addon:Notice("NOT_ALLOWED_IN_CHANNEL", name, name)
-	end
-	local comms = addon:GetCommsDiagnostics()
-	Equal(comms.serverChannelRefusals, 200)
-	Equal(comms.serverChannelRefusalsGlobal, 100)
-	Equal(comms.serverChannelRefusalsGeographic, 100)
-	Equal(#addon.reported, 0)
-	Equal(addon.diagnosticErrorCount, 2)
-	local buckets = 0
-	for _ in pairs(comms.channelRefusalReportedAt) do buckets = buckets + 1 end
-	Equal(buckets, 2)
-	addon.now = addon.now + 59.9
-	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
-	Equal(#addon.reported, 0)
-	Equal(addon.diagnosticErrorCount, 2)
-	addon.now = addon.now + 0.1
-	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
-	Equal(#addon.reported, 0)
-	Equal(addon.diagnosticErrorCount, 3)
-	addon.now = 1 -- A clock reset must not hide all subsequent failures.
-	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
-	Equal(#addon.reported, 0)
-	Equal(addon.diagnosticErrorCount, 4)
+	for _ = 1, 20 do Equal(Notice("NOT_ALLOWED_IN_CHANNEL", "7. QuestTogether3"), true) end
+	Equal(Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether3Z12"), true)
+	Equal(Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether"), false)
+	Equal(Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether3Other"), false)
+	Equal(Notice("YOU_JOINED", "QuestTogether3"), false)
 	addon.isEnabled = false
-	addon:UnregisterRuntimeEvents()
-	Equal(addon.eventFrame.events.CHAT_MSG_CHANNEL_NOTICE, nil)
-	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
-	Equal(addon:CHAT_MSG_CHANNEL_NOTICE(nil, "NOT_ALLOWED_IN_CHANNEL", nil, nil, "QuestTogether"), false)
-	addon.isEnabled, addon.isLoggingOut = true, true
-	addon:RegisterRuntimeEvents()
-	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether", nil)
-	Equal(comms.serverChannelRefusals, 203)
-	Equal(#addon.reported, 0)
-	Equal(addon.diagnosticErrorCount, 4)
-end)
-
-QuestTogether:RegisterTest("server channel refusals require accessible refusal token and exact current channel metadata", function()
-	local addon = ChannelNoticeFixture()
-	local secret = setmetatable({}, { __tostring = function() error("secret channel data") end })
-	function addon:CanAccessValue(value) return value ~= secret end
-	addon.announcementChannelLocalID = 7
-	addon.geographicCommsState = { subscriptions = { QTGeoCurrent = {} } }
-	addon:Notice(secret, "QuestTogether", "QuestTogether")
-	addon:Notice("YOU_JOINED", "QuestTogether", "QuestTogether")
-	addon:Notice("NOT_ALLOWED_IN_CHANNEL", secret, secret)
-	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "7. General", "General", 7)
-	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "7. QuestTogether", "General", 7)
-	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogetherOther", nil)
-	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "QTGeoRetired", "QTGeoRetired")
-	addon:Notice("NOT_ALLOWED_IN_CHANNEL", nil, nil, 7)
-	Equal(#addon.reported, 0)
-	Equal(addon.diagnosticErrorCount, 0)
-	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "9. qUeStToGeThEr", nil)
-	addon:Notice("NOT_ALLOWED_IN_CHANNEL", "10. qtgeocurrent", "QTGeoCurrent")
-	Equal(#addon.reported, 0)
-	Equal(addon.diagnosticErrorCount, 2)
-	Equal(addon:GetCommsDiagnostics().serverChannelRefusals, 2)
+	Equal(Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether3"), false)
+	Equal(#refused, 21)
+	Equal(refused[1], "QuestTogether3")
+	Equal(errors, 0)
+	Equal(addon:GetCommsDiagnostics().meshDirectoryRefusals, 21)
+	Equal(addon:GetCommsDiagnostics().lastFailure, nil)
+	Equal(addon:GetAnnouncementChannelLocalID(), 7)
 end)
 
 QuestTogether:RegisterTest("party normalization rejects inaccessible names and realms", function()
@@ -1778,10 +1520,10 @@ QuestTogether:RegisterTest("incoming claimed identity cannot impersonate another
 	end
 	local event = Event()
 	event.senderName = "Spoofed-Realm"
-	a:OnCommReceived(a.commPrefix, WireEvent(a, "ANN", event), "CHANNEL", "Friend-Realm", 7, a.announcementChannelName)
+	a:OnCommReceived(a.commPrefix, WireEvent(a, "ANN", event), "WHISPER", "Friend-Realm", 7, a.announcementChannelName)
 	Equal(seen, nil)
 	event.senderName = "Friend-Realm"
-	a:OnCommReceived(a.commPrefix, WireEvent(a, "ANN", event), "CHANNEL", "Friend-Realm", 7, a.announcementChannelName)
+	a:OnCommReceived(a.commPrefix, WireEvent(a, "ANN", event), "WHISPER", "Friend-Realm", 7, a.announcementChannelName)
 	Equal(seen, "Friend-Realm")
 end)
 
@@ -1795,7 +1537,7 @@ QuestTogether:RegisterTest("disabled comm receiver does not dispatch announcemen
 		return addon:OnCommReceived(
 			addon.commPrefix,
 			WireEvent(addon, "ANN", Event()),
-			"CHANNEL",
+			"WHISPER",
 			"Friend-Realm",
 			7,
 			addon.announcementChannelName
@@ -1924,7 +1666,7 @@ local function ReceiveCelebration(addon, eventType, token, sender)
 	local command = eventType == "PLAYER_LEVEL_UP" and "LVL" or "ANN"
 	local wire = WireEvent(addon, command, event)
 	Equal(#wire <= 255, true)
-	addon:OnCommReceived(addon.commPrefix, wire, "CHANNEL", sender or "Friend-Realm", 7, addon.announcementChannelName)
+	addon:OnCommReceived(addon.commPrefix, wire, "WHISPER", sender or "Friend-Realm", 7, addon.announcementChannelName)
 end
 
 QuestTogether:RegisterTest("received celebrations reject unsupported and malformed emote tokens", function()
@@ -2079,7 +1821,7 @@ QuestTogether:RegisterTest("level-up sends one shared emote token on party and n
 	Equal(addon:PLAYER_LEVEL_UP("PLAYER_LEVEL_UP", 20), true)
 	Equal(#addon.wire, 2)
 	Equal(addon.wire[1][3], "PARTY")
-	Equal(addon.wire[2][3], "CHANNEL")
+	Equal(addon.wire[2][3], "MESH")
 	Equal(addon.wire[1][2], addon.wire[2][2])
 	local event, command = ReadRecord(addon, addon.wire[1][2])
 	Equal(command, "LVL")
@@ -2189,7 +1931,7 @@ QuestTogether:RegisterTest(
 		addon.partyMembers["Friend-Realm"] = {}
 		local wire = WireEvent(addon, "LVL", event)
 		addon:OnCommReceived(addon.commPrefix, wire, "PARTY", "Friend-Realm")
-		addon:OnCommReceived(addon.commPrefix, wire, "CHANNEL", "Friend-Realm", 7, addon.announcementChannelName)
+		addon:OnCommReceived(addon.commPrefix, wire, "WHISPER", "Friend-Realm", 7, addon.announcementChannelName)
 		Equal(#addon.emotes, 1)
 		Equal(#addon.printed, 0)
 		addon:OnCommReceived(addon.commPrefix, wire, "PARTY", "MyPlayer-Realm")
@@ -2358,7 +2100,7 @@ QuestTogether:RegisterTest("level-up wire rejects other event types", function()
 		return addon:OnCommReceived(
 			addon.commPrefix,
 			WireEvent(addon, "LVL", event),
-			"CHANNEL",
+			"WHISPER",
 			"Friend-Realm",
 			7,
 			addon.announcementChannelName
@@ -2539,7 +2281,7 @@ QuestTogether:RegisterTest("inbound size admission and frame decoding reject ove
 	end
 	local wire = WireEvent(a, "ANN", Event())[1]
 	local function Receive(packet)
-		return a:OnCommReceived(a.commPrefix, packet, "CHANNEL", "Friend-Realm", 7, a.announcementChannelName)
+		return a:OnCommReceived(a.commPrefix, packet, "WHISPER", "Friend-Realm", 7, a.announcementChannelName)
 	end
 	Equal(Receive(wire .. string.rep("x", 256 - #wire)), false)
 	Equal(decoded, 0)
@@ -2648,8 +2390,11 @@ QuestTogether:RegisterTest("group comparisons follow the party channel when the 
 	for _, peer in ipairs({ sender, receiver }) do
 		assert(#peer.sent > 0)
 		for _, packet in ipairs(peer.sent) do
-			Equal(packet.route, "PARTY")
-			Equal(packet.target, nil)
+			local frame = assert(peer:DecodeCommFrame(packet.wire))
+			if frame.operation:match("^QC") or frame.operation == "FXEND" or frame.operation == "FXACK" then
+				Equal(packet.route, "PARTY")
+				Equal(packet.target, nil)
+			end
 		end
 		peer.sent = {}
 	end
@@ -2660,8 +2405,11 @@ QuestTogether:RegisterTest("group comparisons follow the party channel when the 
 	for _, peer in ipairs({ sender, receiver }) do
 		assert(#peer.sent > 0)
 		for _, packet in ipairs(peer.sent) do
-			Equal(packet.route, "RAID")
-			Equal(packet.target, nil)
+			local frame = assert(peer:DecodeCommFrame(packet.wire))
+			if frame.operation:match("^QC") or frame.operation == "FXEND" or frame.operation == "FXACK" then
+				Equal(packet.route, "RAID")
+				Equal(packet.target, nil)
+			end
 		end
 	end
 end)
@@ -3050,7 +2798,7 @@ QuestTogether:RegisterTest("received nearby announcements use map identity acros
 		receiver:OnCommReceived(
 			receiver.commPrefix,
 			sender.wire[1][2],
-			"CHANNEL",
+			"WHISPER",
 			"MyPlayer-Realm",
 			7,
 			receiver.announcementChannelName
@@ -3103,7 +2851,7 @@ QuestTogether:RegisterTest(
 		receiver:OnCommReceived(
 			receiver.commPrefix,
 			wire,
-			"CHANNEL",
+			"WHISPER",
 			"MyPlayer-Realm",
 			7,
 			receiver.announcementChannelName
@@ -3636,39 +3384,21 @@ QuestTogether:RegisterTest("local publication sends one party announcement indep
 	Equal(a:AnnounceToNonQTParty({ eventType = "PLAYER_LEVEL_UP", text = "Level 10" }), true)
 end)
 
-QuestTogether:RegisterTest("major channel transition sends only current and rejects retired channel traffic", function()
+QuestTogether:RegisterTest("protocol upgrade rejects all addon channels and retired wire generations", function()
 	local a = NewCommsFixture()
 	local wire = WireEvent(a, "ANN", Event())
 	local seen = 0
-	function a:HandleAnnouncementEvent()
-		seen = seen + 1
+	function a:HandleAnnouncementEvent() seen = seen + 1; return true end
+	for _, channel in ipairs({ "QuestTogether", "QuestTogetherAnnounce1", "QuestTogether3" }) do
+		Equal(a:OnCommReceived(a.commPrefix, wire, "CHANNEL", "Friend-Realm", 7, channel), false)
 	end
-	a:OnCommReceived(a.commPrefix, wire, "CHANNEL", "Friend-Realm", 7, "QuestTogetherAnnounce1")
+	for _, frame in ipairs(wire) do
+		Equal(a:OnCommReceived(a.commPrefix, frame:gsub("^3|", "2|"), "WHISPER", "Friend-Realm"), false)
+	end
 	Equal(seen, 0)
-	a:OnCommReceived(a.commPrefix, wire, "CHANNEL", "Friend-Realm", 7, a.announcementChannelName)
+	Equal(#a.wire, 0)
+	Equal(a:OnCommReceived(a.commPrefix, wire, "WHISPER", "Friend-Realm"), true)
 	Equal(seen, 1)
-	Equal(a:IsAnnouncementChannelEvent("CHANNEL", 7, "General"), false)
-end)
-
-QuestTogether:RegisterTest("current channel resolves fresh IDs after joins and fails without a route", function()
-	local n, a = QuietNetwork()
-	n:Leave(a, a.announcementChannelName)
-	a.API.JoinPermanentChannel = function() end
-	local outcome
-	assert(a:Emit("ANN", Event(), { { distribution = "CHANNEL", channelName = a.announcementChannelName } }, {
-		expires = a.now + 2,
-		onComplete = function(_, status)
-			outcome = status
-		end,
-	}))
-	n:Advance(3)
-	Equal(#a.sent, 0)
-	Equal(outcome, "rejected")
-	n:Join(a, a.announcementChannelName, true)
-	assert(a:Emit("ANN", Event(), { { distribution = "CHANNEL", channelName = a.announcementChannelName } }))
-	n:Advance(3)
-	assert(#a.sent > 0)
-	Equal(a.sent[1].target, a.joined[a.announcementChannelName])
 end)
 
 QuestTogether:RegisterTest(
@@ -3676,8 +3406,8 @@ QuestTogether:RegisterTest(
 	function()
 		local addon = NewCommsFixture()
 		addon:InitializeGeographicComms()
-		addon.geographicCommsState.subscriptions.QuestTogetherZ12 = true
-		local names = { "QuestTogetherZ12", "General", addon.announcementChannelName, "Trade", "MyFriends" }
+		addon.geographicCommsState.subscriptions.QuestTogether3Z12 = true
+		local names = { "QuestTogether3Z12", "General", addon.announcementChannelName, "Trade", "MyFriends" }
 		local swaps = 0
 		function addon:IsRuntimeRestricted()
 			return self.blocked == true
@@ -3709,13 +3439,13 @@ QuestTogether:RegisterTest(
 		addon:CHANNEL_UI_UPDATE()
 		Equal(#addon.delayed, 1)
 		addon.delayed[1]()
-		Equal(table.concat(names, ","), "General,Trade,MyFriends,QuestTogether,QuestTogetherZ12")
+		Equal(table.concat(names, ","), "General,Trade,MyFriends,QuestTogether3,QuestTogether3Z12")
 		Equal(addon.announcementChannelLocalID, 4)
 		Equal(#addon.delayed, 1) -- swap events do not create a feedback timer loop
 		local prior = swaps
 		Equal(addon:MoveAnnouncementChannelsToEnd(), true)
 		Equal(swaps, prior)
-		names = { "QuestTogetherZ12", addon.announcementChannelName }
+		names = { "QuestTogether3Z12", addon.announcementChannelName }
 		Equal(addon:MoveAnnouncementChannelsToEnd(), true)
 		Equal(names[1], addon.announcementChannelName)
 		-- Channels joining later go ahead of both QT channels.
@@ -3727,7 +3457,7 @@ QuestTogether:RegisterTest(
 		Equal(addon:MoveAnnouncementChannelsToEnd(), true)
 		Equal(names[1], "General")
 		Equal(names[2], addon.announcementChannelName)
-		Equal(names[3], "QuestTogetherZ12")
+		Equal(names[3], "QuestTogether3Z12")
 		addon:ScheduleAnnouncementChannelOrder()
 		addon.channelOrderWork = nil -- reset/disable invalidates queued work
 		prior = swaps
@@ -3736,39 +3466,38 @@ QuestTogether:RegisterTest(
 	end
 )
 
-QuestTogether:RegisterTest(
-	"QT slash chat sends once to fresh primary channel ID without local echo or retry",
-	function()
-		local addon = NewCommsFixture()
-		function addon:IsRuntimeRestrictionTypeActive()
-			return self.blocked == true
-		end
-		function addon:HideAnnouncementChannelFromChatWindows() end
-		local sends = {}
-		addon.API.SendChannelChatMessage = function(message, id)
-			sends[#sends + 1] = { message, id }
-			return not addon.failed
-		end
-		Equal(addon:SendQTChannelChat("Hi everyone!"), true)
-		Equal(#sends, 1)
-		Equal(sends[1][1], "Hi everyone!")
-		Equal(sends[1][2], 7)
-		addon.channelID = 12
-		Equal(addon:SendQTChannelChat("Hello again"), true)
-		Equal(sends[2][2], 12)
-		addon.failed = true
-		Equal(addon:SendQTChannelChat("attempt"), false)
-		Equal(#addon.delayed, 0)
-		Equal(#addon.printed, 0)
-		Equal(#addon.wire, 0)
-		addon.blocked = true
-		Equal(addon:SendQTChannelChat("restricted"), false)
-		addon.blocked = false
-		addon.isEnabled = false
-		Equal(addon:SendQTChannelChat("disabled"), false)
-		Equal(#sends, 3)
+QuestTogether:RegisterTest("QT slash chat emits one global mesh event and echoes only admitted text", function()
+	local addon, sends, echoes = NewCommsFixture(), {}, {}
+	function addon:IsRuntimeRestrictionTypeActive() return self.blocked == true end
+	function addon:Emit(operation, record, routes)
+		Equal(operation, "QTCHAT")
+		Equal(#routes, 1)
+		Equal(routes[1].distribution, "MESH")
+		Equal(routes[1].scope, "global")
+		sends[#sends + 1] = record.text
+		return not self.failed
 	end
-)
+	function addon:HandleQTMeshChat(record, sender)
+		Equal(sender, self:GetPlayerFullName())
+		echoes[#echoes + 1] = record.text
+		return true
+	end
+	Equal(addon:SendQTChannelChat("Hi everyone!"), true)
+	Equal(sends[1], "Hi everyone!")
+	Equal(echoes[1], "Hi everyone!")
+	addon.channelID = nil -- A readable channel is not necessary to send to known peers.
+	Equal(addon:SendQTChannelChat("Hello again"), true)
+	Equal(#echoes, 2)
+	addon.failed = true
+	Equal(addon:SendQTChannelChat("attempt"), false)
+	Equal(#echoes, 2)
+	Equal(#addon.delayed, 0)
+	addon.blocked = true
+	Equal(addon:SendQTChannelChat("restricted"), false)
+	addon.blocked, addon.isEnabled = false, false
+	Equal(addon:SendQTChannelChat("disabled"), false)
+	Equal(#sends, 3)
+end)
 
 QuestTogether:RegisterTest("channel ordering rejects inaccessible metadata and stops on failed swaps", function()
 	local addon = NewCommsFixture()
@@ -3805,7 +3534,7 @@ QuestTogether:RegisterTest("channel ordering rejects inaccessible metadata and s
 	addon.API.SwapChatChannelIndices = nil
 	Equal(addon:MoveAnnouncementChannelsToEnd(), false)
 	Equal(swaps, 1)
-	Equal(addon:AnnouncementChannelChatFilter(nil, nil, "hi", "Friend", "", "4. questtogether"), true)
+	Equal(addon:AnnouncementChannelChatFilter(nil, nil, "hi", "Friend", "", "4. questtogether3"), true)
 end)
 
 QuestTogether:RegisterTest("nearby range uses physical map proportions keeps minimum and covers entire zone", function()
@@ -3905,13 +3634,7 @@ QuestTogether:RegisterTest(
 		end
 		addon.db.profile.showChatBubbles = false
 		local function Receive()
-			return addon:CHAT_MSG_CHANNEL(
-				"CHAT_MSG_CHANNEL",
-				"hello",
-				"Friend-Realm",
-				"",
-				addon.announcementChannelName
-			)
+			return addon:HandleQTMeshChat({ text = "hello" }, "Friend-Realm", { distribution = "MESH" })
 		end
 		Equal(Receive(), true) -- Global, no known player or location
 		addon.db.profile.qtChatScope = "zone_only"
@@ -4074,7 +3797,7 @@ QuestTogether:RegisterTest(
 			iconTag:find("QuestTogetherPartnerIcon", 1, true),
 			"LFQP uses local glow artwork with a legacy-safe wire icon"
 		)
-		receiver:OnCommReceived(sender.commPrefix, wire, "CHANNEL", "Friend-Realm", 7, "QuestTogether")
+		receiver:OnCommReceived(sender.commPrefix, wire, "WHISPER", "Friend-Realm", 7, "QuestTogether")
 		receiver:OnCommReceived(sender.commPrefix, wire, "PARTY", "Friend-Realm")
 		assert(#receiver.printed == 1, "remote partner search should print once across routes")
 		Equal(receiver.printed[1], QuestTogether.Translate("Looking for questing partners") .. " :)")
@@ -4278,7 +4001,7 @@ QuestTogether:RegisterTest("own bubble policy applies equally to announcements a
 		remote = remote + 1
 	end
 	local function Chat(sender)
-		return a:CHAT_MSG_CHANNEL("CHAT_MSG_CHANNEL", "Hello!", sender, "", a.announcementChannelName)
+		return a:HandleQTMeshChat({ text = "Hello!" }, sender, { distribution = "MESH" })
 	end
 	local event = Event("New own progress")
 	event.senderName = "MyPlayer-Realm"

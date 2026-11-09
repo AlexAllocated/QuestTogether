@@ -18,7 +18,7 @@ local function Fixture(name)
 		reads = 0,
 		position = { x = 0.4, y = 0.6 },
 		mapID = 12,
-		announcementChannelName = "QuestTogether",
+		announcementChannelName = "QuestTogether3",
 		announcementChannelLocalID = 7,
 	}, { __index = QT })
 	function a:AnnounceQuestPartnerSearch() end
@@ -89,7 +89,7 @@ local function Fixture(name)
 			self:UpdateCommunicationRuntime()
 		end
 	end
-	a.API.SendAddonMessage = function(prefix, message, route, target)
+	local function DeliverPublication(prefix, message, route, target)
 		local frame, body = a:DecodeCommFrame(message)
 		a.sent[#a.sent + 1] = {
 			prefix = prefix,
@@ -116,11 +116,22 @@ local function Fixture(name)
 						{ session = frame.session, sequence = tonumber(frame.messageId), stamp = frame.stamp }
 					)
 				end
+			elseif route == "MESH" then
+				-- This cadence/privacy fixture starts at the verified-publication
+				-- boundary; mesh authentication and delivery run in network tests.
+				local data = frame and other:DecodeCommRecord(frame.operation, body)
+				if data then
+					other:DispatchVerifiedMeshRecord(frame, data, a.name, { scope = "global" })
+				end
 			else
-				other:ReceiveCommunication(prefix, message, route, a.name, 7, "QuestTogether")
+				other:ReceiveCommunication(prefix, message, route, a.name)
 			end
 		end
 		return 0
+	end
+	a.API.SendAddonMessage = function(prefix, message, route, target)
+		assert(route ~= "CHANNEL" and route ~= "MESH", "native sends cannot use a logical directory route")
+		return DeliverPublication(prefix, message, route, target)
 	end
 	function a:GetPlayerFullName()
 		return self.name
@@ -188,8 +199,7 @@ local function Fixture(name)
 		local accepted = true
 		for _, route in ipairs(routes or self:GetAnnouncementWireRoutes()) do
 			for _, wire in ipairs(frames) do
-				accepted = self.API.SendAddonMessage(self.commPrefix, wire, route.distribution, route.target) == 0
-					and accepted
+				accepted = DeliverPublication(self.commPrefix, wire, route.distribution, route.target) == 0 and accepted
 			end
 		end
 		if options.onComplete then
@@ -532,10 +542,10 @@ QT:RegisterTest("failed location sends never deliver a point to the receiver", f
 end)
 
 QT:RegisterTest("location opt-out retries partial and total withdrawal failures after route recovery", function()
-	for _, failures in ipairs({ { PARTY = true }, { CHANNEL = true }, { PARTY = true, CHANNEL = true } }) do
+	for _, failures in ipairs({ { PARTY = true }, { MESH = true }, { PARTY = true, MESH = true } }) do
 		local a, party, channel = Fixture(), Fixture("Party-Realm"), Fixture("Channel-Realm")
 		a.inParty = true
-		a.peersByRoute = { PARTY = party, CHANNEL = channel }
+		a.peersByRoute = { PARTY = party, MESH = channel }
 		assert(a:BroadcastPlayerLocation())
 		Equal(#party:GetVisiblePlayerLocations("map"), 1)
 		Equal(#channel:GetVisiblePlayerLocations("map"), 1)
@@ -543,7 +553,7 @@ QT:RegisterTest("location opt-out retries partial and total withdrawal failures 
 		a.db.profile.sharePlayerLocation = false
 		a:BroadcastPlayerLocation(true)
 		Equal(#party:GetVisiblePlayerLocations("map"), failures.PARTY and 1 or 0)
-		Equal(#channel:GetVisiblePlayerLocations("map"), failures.CHANNEL and 1 or 0)
+		Equal(#channel:GetVisiblePlayerLocations("map"), failures.MESH and 1 or 0)
 		local attempts = #a.sent
 		a.failedRoutes = nil
 		for i = 1, 24 do
@@ -593,14 +603,14 @@ end)
 
 QT:RegisterTest("single-surface location opt-out retries every route before the stationary heartbeat", function()
 	for _, surface in ipairs({ "map", "minimap" }) do
-		for _, failures in ipairs({ { PARTY = true }, { CHANNEL = true }, { PARTY = true, CHANNEL = true } }) do
+		for _, failures in ipairs({ { PARTY = true }, { MESH = true }, { PARTY = true, MESH = true } }) do
 			local a, party, channel = SurfacePermissionFixture(), Fixture("Party-Realm"), Fixture("Channel-Realm")
-			a.inParty, a.peersByRoute = true, { PARTY = party, CHANNEL = channel }
+			a.inParty, a.peersByRoute = true, { PARTY = party, MESH = channel }
 			assert(a:BroadcastPlayerLocation())
 			a.failedRoutes = failures
 			Equal(a:SetSurfaceShareMask(surface == "map" and 2 or 1), true)
 			Equal(#party:GetVisiblePlayerLocations(surface), failures.PARTY and 1 or 0)
-			Equal(#channel:GetVisiblePlayerLocations(surface), failures.CHANNEL and 1 or 0)
+			Equal(#channel:GetVisiblePlayerLocations(surface), failures.MESH and 1 or 0)
 			local attempts = #a.sent
 			a.failedRoutes = nil
 			for i = 1, 24 do
@@ -753,7 +763,7 @@ end)
 
 QT:RegisterTest("partial location privacy withdrawal retries failed routes during a position outage", function()
 	local a, party, channel = SurfacePermissionFixture(), Fixture("Party-Realm"), Fixture("Channel-Realm")
-	a.inParty, a.peersByRoute = true, { PARTY = party, CHANNEL = channel }
+	a.inParty, a.peersByRoute = true, { PARTY = party, MESH = channel }
 	assert(a:BroadcastPlayerLocation())
 	a.restricted, a.now, a.failedRoutes = true, 101, { PARTY = true }
 	assert(a:SetSurfaceShareMask(2))
@@ -778,19 +788,19 @@ QT:RegisterTest("location ordering session replacement and expiry prevent stale 
 	local a, b = Fixture(), Fixture("Friend-Realm")
 	assert(a:BroadcastPlayerLocation())
 	local old = a.sent[1].message
-	b:OnCommReceived(a.commPrefix, old, "CHANNEL", a.name, 7, "QuestTogether")
+	b:OnCommReceived(a.commPrefix, old, "WHISPER", a.name)
 	a.now = 101
 	assert(a:BroadcastPlayerLocation(true, true))
-	b:OnCommReceived(a.commPrefix, a.sent[2].message, "CHANNEL", a.name, 7, "QuestTogether")
+	b:OnCommReceived(a.commPrefix, a.sent[2].message, "WHISPER", a.name)
 	b.now = 102
-	b:OnCommReceived(a.commPrefix, old, "CHANNEL", a.name, 7, "QuestTogether")
+	b:OnCommReceived(a.commPrefix, old, "WHISPER", a.name)
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 	a:ResetPlayerLocations()
 	assert(a:BroadcastPlayerLocation(true))
-	b:OnCommReceived(a.commPrefix, a.sent[3].message, "CHANNEL", a.name, 7, "QuestTogether")
+	b:OnCommReceived(a.commPrefix, a.sent[3].message, "WHISPER", a.name)
 	Equal(#b:GetVisiblePlayerLocations("map"), 1)
 	b.now = 103
-	b:OnCommReceived(a.commPrefix, a.sent[2].message, "CHANNEL", a.name, 7, "QuestTogether")
+	b:OnCommReceived(a.commPrefix, a.sent[2].message, "WHISPER", a.name)
 	Equal(#b:GetVisiblePlayerLocations("map"), 1)
 	b.now = 700
 	Equal(#b:GetVisiblePlayerLocations("map"), 1)
@@ -807,13 +817,13 @@ QT:RegisterTest("location transport ignores unsupported routes and uses authorit
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 	b:OnCommReceived(a.commPrefix, wire, "CHANNEL", a.name, 8, "OtherChannel")
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
-	b:OnCommReceived(a.commPrefix, wire, "CHANNEL", a.name, 7, "QuestTogether")
+	b:OnCommReceived(a.commPrefix, wire, "WHISPER", a.name)
 	Equal(b:GetVisiblePlayerLocations("map")[1].name, "Anakin Othername")
 	b.ignored[a.name] = true
 	b:PrunePlayerLocations(true)
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 	b.now = 200
-	b:OnCommReceived(a.commPrefix, wire, "CHANNEL", a.name, 7, "QuestTogether")
+	b:OnCommReceived(a.commPrefix, wire, "WHISPER", a.name)
 	Equal(#b:GetVisiblePlayerLocations("map"), 0)
 end)
 
@@ -840,7 +850,7 @@ QT:RegisterTest("location records and malformed wire input are bounded", functio
 end, { offline = true })
 
 -- Full location-capacity and publication-retry matrices run offline.
-QT:RegisterTest("location channel retains fresh positions from two hundred fifty active peers", function()
+QT:RegisterTest("location domain retains fresh positions from two hundred fifty active peers", function()
 	local a = Fixture()
 	local function Send(sequence)
 		local frames = assert(a:BuildCommFrames("LOC", Location(), {
@@ -856,9 +866,7 @@ QT:RegisterTest("location channel retains fresh positions from two hundred fifty
 				a:AdvanceRuntime(a.now + 1 / 60)
 			end
 			for _, wire in ipairs(frames) do
-				assert(
-					a:ReceiveCommunication(a.commPrefix, wire, "CHANNEL", "Peer" .. i .. "-Realm", 7, "QuestTogether")
-				)
+				assert(a:ReceiveCommunication(a.commPrefix, wire, "WHISPER", "Peer" .. i .. "-Realm"))
 			end
 		end
 	end
