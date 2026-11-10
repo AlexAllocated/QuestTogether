@@ -2,6 +2,26 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.3
+
+Mejoras para encontrar jugadores, guardar la preferencia del recordatorio de grupo y navegar por el mapa.
+
+### Contactos y conexiones
+
+- QT también busca contactos entre amigos conectados, personajes de WoW compatibles de amigos de Battle.net, remitentes del chat y jugadores amistosos visibles. Un nombre no genera un marcador; tus ajustes se conservan.
+- Los contactos con intentos previos tienen más oportunidades de conectar aunque se sigan encontrando jugadores nuevos.
+- Las solicitudes para un destinatario ocupado pueden esperar en una cola limitada antes de intentarlo de nuevo. Recomendamos que ambos jugadores actualicen QT. Los límites habituales siguen vigentes y no se garantiza una conexión inmediata.
+- Los diagnósticos diferencian mejor los destinatarios ocupados, la falta de capacidad propia, los errores de envío, los jugadores no disponibles y las respuestas que no llegan a tiempo.
+
+### Recordatorio del chat de grupo
+
+- «Mantener activado» guarda «No volver a recordármelo» incluso si QT reconoce a un miembro durante el clic. Una vez guardado, el recordatorio no reaparece al entrar más miembros.
+- Actualizar la lista de miembros en el aviso abierto ya no desmarca la casilla. Los avisos nuevos, otros perfiles y las vistas previas no conservan elecciones pendientes de confirmar.
+
+### Navegación del mapa
+
+- Se ajustó la navegación del mapa y del registro de misiones para reducir los errores de acción bloqueada al abrir el mapa más tarde durante el combate.
+
 ## 9.0.2
 
 Esta actualización corrige las respuestas a las consultas generales de /qt ping y respeta tus preferencias para compartir diagnósticos.

@@ -1,13 +1,26 @@
 {
-  "version": "9.0.2",
-  "welcome": "This patch fixes replies to broadcast /qt ping requests while preserving your diagnostics choices.",
+  "version": "9.0.3",
+  "welcome": "This patch improves player discovery, fixes lost party-chat reminder choices, and improves map compatibility.",
   "sections": [
     {
-      "title": "Ping diagnostics",
+      "title": "Finding other players",
       "items": [
-        "Fixed missing replies to broadcast /qt ping requests from players who allow diagnostics sharing.",
-        "Players with diagnostics sharing off can still pass these verified requests along without replying themselves. Turning sharing off while a request is being checked cancels your reply, even if you turn it back on.",
-        "Players sending replies also need version 9.0.2. Updating QT only on the developer’s client is not enough."
+        "QT now uses online friends, compatible Battle.net characters, in-game chat and visible friendly players as additional ways to discover other QT users. Your sharing preferences still apply.",
+        "Busy clients can remember incoming connection requests and give them a turn when space becomes available. Previously tried contacts also get a fairer turn in crowded areas. Both players should update for the connection fix.",
+        "Connection diagnostics now distinguish a busy client from a failed send or an unanswered request."
+      ]
+    },
+    {
+      "title": "Party chat reminders",
+      "items": [
+        "Checking “Don’t remind me again” and choosing “Keep enabled” now saves your choice even if QT recognizes a party member at that moment. Inviting another member afterward will not reopen the reminder.",
+        "The checkbox also stays checked when QT refreshes the member list inside the same open dialog."
+      ]
+    },
+    {
+      "title": "Map navigation",
+      "items": [
+        "Adjusted QT’s map and quest-log navigation to reduce blocked-action errors when opening the map in combat afterward."
       ]
     }
   ]

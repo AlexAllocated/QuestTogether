@@ -4,6 +4,25 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.0.3
+
+This patch improves player discovery, fixes lost party-chat reminder choices, and improves map compatibility.
+
+### Finding other players
+
+- QT now uses online friends, compatible Battle.net characters, in-game chat and visible friendly players as additional ways to discover other QT users. Your sharing preferences still apply.
+- Busy clients can remember incoming connection requests and give them a turn when space becomes available. Previously tried contacts also get a fairer turn in crowded areas. Both players should update for the connection fix.
+- Connection diagnostics now distinguish a busy client from a failed send or an unanswered request.
+
+### Party chat reminders
+
+- Checking “Don’t remind me again” and choosing “Keep enabled” now saves your choice even if QT recognizes a party member at that moment. Inviting another member afterward will not reopen the reminder.
+- The checkbox also stays checked when QT refreshes the member list inside the same open dialog.
+
+### Map navigation
+
+- Adjusted QT’s map and quest-log navigation to reduce blocked-action errors when opening the map in combat afterward.
+
 ## 9.0.2
 
 This patch fixes replies to broadcast /qt ping requests while preserving your diagnostics choices.

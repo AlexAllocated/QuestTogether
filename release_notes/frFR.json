@@ -1,15 +1,29 @@
 {
-  "source_sha256": "1e317780265fa5e082c603f9ca790c7503bf5df9e1ef0ad65f50bdf4030a80c5",
+  "source_sha256": "bf337a19964b5e8bc4bb0205b592a29146fa28dc84335ba73c0da5567f2a219d",
   "notes": {
-    "version": "9.0.2",
-    "welcome": "Ce correctif rétablit les réponses aux requêtes générales /qt ping tout en respectant vos choix de partage des diagnostics.",
+    "version": "9.0.3",
+    "welcome": "Améliorations de la découverte des joueurs, du rappel des annonces de groupe et de la navigation sur la carte.",
     "sections": [
       {
-        "title": "Diagnostic par ping",
+        "title": "Découverte et connexions",
         "items": [
-          "Les joueurs qui autorisent le partage des diagnostics peuvent à nouveau répondre aux requêtes générales /qt ping.",
-          "Les joueurs qui désactivent ce partage peuvent toujours relayer ces requêtes vérifiées sans y répondre eux-mêmes. Si vous désactivez le partage pendant la vérification d’une requête, votre réponse est annulée, même si vous le réactivez ensuite.",
-          "Les joueurs qui répondent doivent eux aussi installer la version 9.0.2. Mettre à jour QT uniquement sur le client du développeur qui lance la commande ne suffit pas."
+          "QT cherche aussi des contacts parmi les amis en ligne, les personnages WoW compatibles des amis Battle.net, les expéditeurs du chat et les joueurs amicaux visibles. Un nom seul ne crée aucun repère ; vos réglages restent inchangés.",
+          "Les contacts déjà sollicités ont davantage de chances de se connecter malgré la découverte continue de nouveaux joueurs.",
+          "Les demandes à un destinataire occupé peuvent patienter avant une nouvelle tentative. Les deux joueurs devraient mettre QT à jour. Les limites habituelles restent applicables, sans connexion immédiate garantie.",
+          "Les diagnostics distinguent mieux les destinataires occupés, le manque de capacité locale, les échecs d’envoi, les joueurs indisponibles et les délais de réponse dépassés."
+        ]
+      },
+      {
+        "title": "Rappel des annonces de groupe",
+        "items": [
+          "« Laisser activé » enregistre « Ne plus me le rappeler » même si QT reconnaît un membre pendant le clic. L’arrivée d’autres membres ne réaffiche plus le rappel après cet enregistrement.",
+          "La case reste cochée lorsque la liste des membres est actualisée dans le rappel ouvert. Les nouveaux rappels, les autres profils et les aperçus ne reprennent pas une sélection non confirmée."
+        ]
+      },
+      {
+        "title": "Navigation sur la carte",
+        "items": [
+          "La navigation vers la carte et le journal de quêtes a été ajustée pour réduire les erreurs d’action bloquée en ouvrant ensuite la carte en combat."
         ]
       }
     ]

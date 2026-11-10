@@ -2,6 +2,26 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.3
+
+Améliorations de la découverte des joueurs, du rappel des annonces de groupe et de la navigation sur la carte.
+
+### Découverte et connexions
+
+- QT cherche aussi des contacts parmi les amis en ligne, les personnages WoW compatibles des amis Battle.net, les expéditeurs du chat et les joueurs amicaux visibles. Un nom seul ne crée aucun repère ; vos réglages restent inchangés.
+- Les contacts déjà sollicités ont davantage de chances de se connecter malgré la découverte continue de nouveaux joueurs.
+- Les demandes à un destinataire occupé peuvent patienter avant une nouvelle tentative. Les deux joueurs devraient mettre QT à jour. Les limites habituelles restent applicables, sans connexion immédiate garantie.
+- Les diagnostics distinguent mieux les destinataires occupés, le manque de capacité locale, les échecs d’envoi, les joueurs indisponibles et les délais de réponse dépassés.
+
+### Rappel des annonces de groupe
+
+- « Laisser activé » enregistre « Ne plus me le rappeler » même si QT reconnaît un membre pendant le clic. L’arrivée d’autres membres ne réaffiche plus le rappel après cet enregistrement.
+- La case reste cochée lorsque la liste des membres est actualisée dans le rappel ouvert. Les nouveaux rappels, les autres profils et les aperçus ne reprennent pas une sélection non confirmée.
+
+### Navigation sur la carte
+
+- La navigation vers la carte et le journal de quêtes a été ajustée pour réduire les erreurs d’action bloquée en ouvrant ensuite la carte en combat.
+
 ## 9.0.2
 
 Ce correctif rétablit les réponses aux requêtes générales /qt ping tout en respectant vos choix de partage des diagnostics.

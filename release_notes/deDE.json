@@ -1,15 +1,29 @@
 {
-  "source_sha256": "1e317780265fa5e082c603f9ca790c7503bf5df9e1ef0ad65f50bdf4030a80c5",
+  "source_sha256": "bf337a19964b5e8bc4bb0205b592a29146fa28dc84335ba73c0da5567f2a219d",
   "notes": {
-    "version": "9.0.2",
-    "welcome": "Dieses Update behebt ausbleibende Antworten auf Rundfragen mit /qt ping und berücksichtigt weiterhin deine Diagnoseeinstellungen.",
+    "version": "9.0.3",
+    "welcome": "Verbesserungen bei der Spielersuche, der Gruppenchat-Erinnerung und der Kartennavigation.",
     "sections": [
       {
-        "title": "Ping-Diagnose",
+        "title": "Spielersuche und Verbindungen",
         "items": [
-          "Spieler, die Diagnosedaten freigeben, können nun wieder auf Rundfragen mit /qt ping antworten.",
-          "Auch mit deaktivierter Diagnosefreigabe können Spieler diese geprüften Anfragen weiterleiten, ohne selbst zu antworten. Schaltest du die Freigabe während der Prüfung einer Anfrage aus, wird deine Antwort verworfen – auch wenn du die Freigabe danach wieder einschaltest.",
-          "Auch die antwortenden Spieler müssen auf Version 9.0.2 aktualisieren. Es genügt nicht, wenn nur der Entwickler, der den Befehl ausführt, das Update installiert."
+          "QT findet mögliche Kontakte jetzt auch über Freunde, die gerade online sind, kompatible WoW-Charaktere von Battle.net-Freunden, Absender im Spielchat und sichtbare freundliche Spieler. Ein bekannter Name allein erzeugt keine Kartenmarkierung; deine Freigabe- und Anzeigeeinstellungen bleiben bestehen.",
+          "Bereits kontaktierte Spieler kommen bei erneuten Verbindungsversuchen fairer zum Zug, auch wenn laufend neue Spieler entdeckt werden.",
+          "Bei ausgelasteten Empfängern können Verbindungsanfragen begrenzt warten und später erneut versucht werden. Beide Spieler sollten QT aktualisieren. Die bisherigen Limits gelten weiterhin; Verbindungen entstehen nicht unbedingt sofort.",
+          "Die Diagnose unterscheidet deutlicher zwischen ausgelasteten Empfängern, fehlender eigener Verbindungskapazität, Sendefehlern, nicht verfügbaren Spielern und Zeitüberschreitungen."
+        ]
+      },
+      {
+        "title": "Gruppenchat-Erinnerung",
+        "items": [
+          "„Aktiviert lassen“ speichert „Nicht erneut erinnern“ jetzt auch dann für dein Profil, wenn QT während des Klicks ein Gruppenmitglied erkennt. Der Hinweis erscheint danach auch beim Beitritt weiterer Gruppenmitglieder nicht erneut.",
+          "Beim Aktualisieren der Mitgliederliste im geöffneten Hinweis bleibt das Häkchen erhalten. Neue Hinweise, andere Profile und Vorschauen übernehmen keine unbestätigte Auswahl."
+        ]
+      },
+      {
+        "title": "Kartennavigation",
+        "items": [
+          "Die Karten- und Questlog-Navigation wurde angepasst, um Fehler durch blockierte Aktionen beim späteren Öffnen der Karte im Kampf zu verringern."
         ]
       }
     ]

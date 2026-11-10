@@ -2,6 +2,26 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.3
+
+Esta atualização melhora as conexões entre jogadores, salva a escolha do lembrete do grupo com mais segurança e ajusta a abertura do mapa.
+
+### Encontrar e conectar jogadores
+
+- O QT agora também usa a lista de amigos do personagem, personagens de WoW compatíveis de amigos do Battle.net, remetentes do chat e jogadores aliados visíveis para encontrar conexões. Só amigos online são considerados, e suas opções de localização continuam valendo.
+- As novas descobertas não deixam mais os contatos anteriores esperando indefinidamente por outra tentativa. A falta de espaço nas suas conexões também não atrasa a próxima tentativa como se o outro jogador estivesse inacessível.
+- Pedidos a jogadores com conexões lotadas podem aguardar e tentar novamente quando houver espaço ou uma troca de conexões. Ambos devem atualizar o addon; os limites continuam valendo e a conexão pode demorar.
+- Os diagnósticos diferenciam conexões lotadas, falta de espaço local, falhas de envio, jogadores indisponíveis e tempo esgotado.
+
+### Lembrete do chat do grupo
+
+- Marcar “Não me lembrar novamente” e clicar em “Manter ativado” agora salva a preferência mesmo que o QT reconheça um membro durante o clique, evitando que a entrada de outro membro reabra o lembrete.
+- A caixa “Não me lembrar novamente” permanece marcada quando a lista de membros é atualizada no mesmo lembrete aberto.
+
+### Abertura do mapa
+
+- Ajustamos a navegação no mapa e no registro de missões para reduzir erros de ação bloqueada que podem aparecer ao abrir o mapa em combate mais tarde.
+
 ## 9.0.2
 
 Esta atualização corrige as respostas às consultas gerais de /qt ping e mantém suas escolhas sobre o compartilhamento de diagnósticos.

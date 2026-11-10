@@ -1,15 +1,29 @@
 {
-  "source_sha256": "1e317780265fa5e082c603f9ca790c7503bf5df9e1ef0ad65f50bdf4030a80c5",
+  "source_sha256": "bf337a19964b5e8bc4bb0205b592a29146fa28dc84335ba73c0da5567f2a219d",
   "notes": {
-    "version": "9.0.2",
-    "welcome": "Este parche corrige las respuestas a las consultas generales de /qt ping y sigue respetando tus preferencias de diagnóstico.",
+    "version": "9.0.3",
+    "welcome": "Mejoras en la búsqueda de jugadores, el recordatorio del chat de grupo y la navegación por el mapa.",
     "sections": [
       {
-        "title": "Diagnóstico con ping",
+        "title": "Búsqueda de jugadores y conexiones",
         "items": [
-          "Se ha corregido un fallo que impedía responder a las consultas generales de /qt ping a los jugadores que permiten compartir diagnósticos.",
-          "Los jugadores que no comparten diagnósticos pueden seguir retransmitiendo estas consultas verificadas sin responder ellos mismos. Si desactivas el uso compartido mientras se comprueba una consulta, se cancela tu respuesta aunque lo vuelvas a activar después.",
-          "Los jugadores que responden también deben actualizar a la versión 9.0.2. No basta con que se actualice el desarrollador que ejecuta el comando."
+          "QT busca también contactos entre amigos conectados, personajes de WoW compatibles de amigos de Battle.net, remitentes del chat y jugadores amistosos visibles. Un nombre no crea un marcador; tus ajustes se conservan.",
+          "Los contactos con intentos de conexión previos reciben un turno más justo aunque sigan apareciendo jugadores nuevos.",
+          "Las solicitudes dirigidas a un destinatario ocupado pueden esperar en una cola limitada para volver a intentarlo. Ambos jugadores deberían actualizar QT. Se mantienen los límites habituales, sin garantizar una conexión inmediata.",
+          "Los diagnósticos distinguen mejor entre destinatarios ocupados, falta de capacidad propia, errores de envío, jugadores no disponibles y tiempos de espera agotados."
+        ]
+      },
+      {
+        "title": "Recordatorio del chat de grupo",
+        "items": [
+          "«Mantener activado» guarda «No volver a recordármelo» aunque QT reconozca a un miembro al pulsarlo. Una vez guardado, la llegada de otros miembros no reabre el recordatorio.",
+          "La casilla permanece marcada si se actualiza la lista de miembros en el aviso abierto. Los avisos nuevos, otros perfiles y las vistas previas no heredan una selección sin confirmar."
+        ]
+      },
+      {
+        "title": "Navegación por el mapa",
+        "items": [
+          "Se ha ajustado la navegación por el mapa y el registro de misiones para reducir los errores de acción bloqueada al abrir después el mapa en combate."
         ]
       }
     ]

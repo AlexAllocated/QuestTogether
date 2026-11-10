@@ -1,15 +1,29 @@
 {
-  "source_sha256": "1e317780265fa5e082c603f9ca790c7503bf5df9e1ef0ad65f50bdf4030a80c5",
+  "source_sha256": "bf337a19964b5e8bc4bb0205b592a29146fa28dc84335ba73c0da5567f2a219d",
   "notes": {
-    "version": "9.0.2",
-    "welcome": "Esta atualização corrige as respostas às consultas gerais de /qt ping e mantém suas escolhas sobre o compartilhamento de diagnósticos.",
+    "version": "9.0.3",
+    "welcome": "Esta atualização melhora as conexões entre jogadores, salva a escolha do lembrete do grupo com mais segurança e ajusta a abertura do mapa.",
     "sections": [
       {
-        "title": "Diagnóstico por ping",
+        "title": "Encontrar e conectar jogadores",
         "items": [
-          "Corrigido um problema que impedia jogadores com o compartilhamento de diagnósticos ativado de responder às consultas gerais de /qt ping.",
-          "Mesmo com o compartilhamento desativado, os jogadores podem encaminhar essas consultas verificadas sem responder. Se você desativar o compartilhamento durante a verificação de uma consulta, sua resposta será cancelada, mesmo que você o reative depois.",
-          "Os jogadores que respondem também precisam atualizar para a versão 9.0.2. Não basta atualizar o QT apenas no cliente do desenvolvedor que executa o comando."
+          "O QT agora também usa a lista de amigos do personagem, personagens de WoW compatíveis de amigos do Battle.net, remetentes do chat e jogadores aliados visíveis para encontrar conexões. Só amigos online são considerados, e suas opções de localização continuam valendo.",
+          "As novas descobertas não deixam mais os contatos anteriores esperando indefinidamente por outra tentativa. A falta de espaço nas suas conexões também não atrasa a próxima tentativa como se o outro jogador estivesse inacessível.",
+          "Pedidos a jogadores com conexões lotadas podem aguardar e tentar novamente quando houver espaço ou uma troca de conexões. Ambos devem atualizar o addon; os limites continuam valendo e a conexão pode demorar.",
+          "Os diagnósticos diferenciam conexões lotadas, falta de espaço local, falhas de envio, jogadores indisponíveis e tempo esgotado."
+        ]
+      },
+      {
+        "title": "Lembrete do chat do grupo",
+        "items": [
+          "Marcar “Não me lembrar novamente” e clicar em “Manter ativado” agora salva a preferência mesmo que o QT reconheça um membro durante o clique, evitando que a entrada de outro membro reabra o lembrete.",
+          "A caixa “Não me lembrar novamente” permanece marcada quando a lista de membros é atualizada no mesmo lembrete aberto."
+        ]
+      },
+      {
+        "title": "Abertura do mapa",
+        "items": [
+          "Ajustamos a navegação no mapa e no registro de missões para reduzir erros de ação bloqueada que podem aparecer ao abrir o mapa em combate mais tarde."
         ]
       }
     ]

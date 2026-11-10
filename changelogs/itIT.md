@@ -2,6 +2,26 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.3
+
+Miglioramenti alla ricerca dei giocatori, al promemoria della chat di gruppo e alla navigazione sulla mappa.
+
+### Ricerca dei giocatori e connessioni
+
+- QT cerca ora contatti anche tra i personaggi amici online, i personaggi WoW compatibili degli amici Battle.net, i mittenti della chat di gioco e i giocatori amichevoli visibili. Un nome rilevato non basta a creare un indicatore; le impostazioni di condivisione e visualizzazione restano invariate.
+- I contatti con tentativi precedenti hanno più possibilità di collegarsi nonostante la continua scoperta di nuovi giocatori.
+- Le richieste a un destinatario occupato possono attendere in una coda limitata prima di un nuovo tentativo. Entrambi i giocatori dovrebbero aggiornare QT. Restano validi i limiti abituali, senza garanzia di collegamento immediato.
+- La diagnostica distingue meglio tra destinatari occupati, capacità locale esaurita, errori di invio, giocatori non disponibili e tempi di attesa scaduti.
+
+### Promemoria della chat di gruppo
+
+- «Lascia attivo» salva ora «Non ricordarmelo più» nel profilo anche se QT riconosce un membro durante il clic. Dopo il salvataggio, l’arrivo di altri membri non fa ricomparire il promemoria.
+- La casella resta selezionata quando l’elenco dei membri viene aggiornato nel promemoria aperto. Nuovi avvisi, altri profili e anteprime non ereditano scelte non confermate.
+
+### Navigazione sulla mappa
+
+- La navigazione sulla mappa e nel registro missioni è stata adeguata per ridurre gli errori di azione bloccata quando la mappa viene aperta successivamente in combattimento.
+
 ## 9.0.2
 
 Questo aggiornamento corregge le risposte alle richieste generali di /qt ping, rispettando le tue scelte sulla condivisione dei dati diagnostici.

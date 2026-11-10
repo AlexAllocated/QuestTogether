@@ -2,6 +2,26 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.3
+
+Verbesserungen bei der Spielersuche, der Gruppenchat-Erinnerung und der Kartennavigation.
+
+### Spielersuche und Verbindungen
+
+- QT findet mögliche Kontakte jetzt auch über Freunde, die gerade online sind, kompatible WoW-Charaktere von Battle.net-Freunden, Absender im Spielchat und sichtbare freundliche Spieler. Ein bekannter Name allein erzeugt keine Kartenmarkierung; deine Freigabe- und Anzeigeeinstellungen bleiben bestehen.
+- Bereits kontaktierte Spieler kommen bei erneuten Verbindungsversuchen fairer zum Zug, auch wenn laufend neue Spieler entdeckt werden.
+- Bei ausgelasteten Empfängern können Verbindungsanfragen begrenzt warten und später erneut versucht werden. Beide Spieler sollten QT aktualisieren. Die bisherigen Limits gelten weiterhin; Verbindungen entstehen nicht unbedingt sofort.
+- Die Diagnose unterscheidet deutlicher zwischen ausgelasteten Empfängern, fehlender eigener Verbindungskapazität, Sendefehlern, nicht verfügbaren Spielern und Zeitüberschreitungen.
+
+### Gruppenchat-Erinnerung
+
+- „Aktiviert lassen“ speichert „Nicht erneut erinnern“ jetzt auch dann für dein Profil, wenn QT während des Klicks ein Gruppenmitglied erkennt. Der Hinweis erscheint danach auch beim Beitritt weiterer Gruppenmitglieder nicht erneut.
+- Beim Aktualisieren der Mitgliederliste im geöffneten Hinweis bleibt das Häkchen erhalten. Neue Hinweise, andere Profile und Vorschauen übernehmen keine unbestätigte Auswahl.
+
+### Kartennavigation
+
+- Die Karten- und Questlog-Navigation wurde angepasst, um Fehler durch blockierte Aktionen beim späteren Öffnen der Karte im Kampf zu verringern.
+
 ## 9.0.2
 
 Dieses Update behebt ausbleibende Antworten auf Rundfragen mit /qt ping und berücksichtigt weiterhin deine Diagnoseeinstellungen.

@@ -3,6 +3,162 @@
   "releases": [
     {
       "enUS": {
+        "version": "9.0.2",
+        "welcome": "This patch fixes replies to broadcast /qt ping requests while preserving your diagnostics choices.",
+        "sections": [
+          {
+            "title": "Ping diagnostics",
+            "items": [
+              "Fixed missing replies to broadcast /qt ping requests from players who allow diagnostics sharing.",
+              "Players with diagnostics sharing off can still pass these verified requests along without replying themselves. Turning sharing off while a request is being checked cancels your reply, even if you turn it back on.",
+              "Players sending replies also need version 9.0.2. Updating QT only on the developer’s client is not enough."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "9.0.2",
+        "welcome": "Dieses Update behebt ausbleibende Antworten auf Rundfragen mit /qt ping und berücksichtigt weiterhin deine Diagnoseeinstellungen.",
+        "sections": [
+          {
+            "title": "Ping-Diagnose",
+            "items": [
+              "Spieler, die Diagnosedaten freigeben, können nun wieder auf Rundfragen mit /qt ping antworten.",
+              "Auch mit deaktivierter Diagnosefreigabe können Spieler diese geprüften Anfragen weiterleiten, ohne selbst zu antworten. Schaltest du die Freigabe während der Prüfung einer Anfrage aus, wird deine Antwort verworfen – auch wenn du die Freigabe danach wieder einschaltest.",
+              "Auch die antwortenden Spieler müssen auf Version 9.0.2 aktualisieren. Es genügt nicht, wenn nur der Entwickler, der den Befehl ausführt, das Update installiert."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "9.0.2",
+        "welcome": "Ce correctif rétablit les réponses aux requêtes générales /qt ping tout en respectant vos choix de partage des diagnostics.",
+        "sections": [
+          {
+            "title": "Diagnostic par ping",
+            "items": [
+              "Les joueurs qui autorisent le partage des diagnostics peuvent à nouveau répondre aux requêtes générales /qt ping.",
+              "Les joueurs qui désactivent ce partage peuvent toujours relayer ces requêtes vérifiées sans y répondre eux-mêmes. Si vous désactivez le partage pendant la vérification d’une requête, votre réponse est annulée, même si vous le réactivez ensuite.",
+              "Les joueurs qui répondent doivent eux aussi installer la version 9.0.2. Mettre à jour QT uniquement sur le client du développeur qui lance la commande ne suffit pas."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "9.0.2",
+        "welcome": "Este parche corrige las respuestas a las consultas generales de /qt ping y sigue respetando tus preferencias de diagnóstico.",
+        "sections": [
+          {
+            "title": "Diagnóstico con ping",
+            "items": [
+              "Se ha corregido un fallo que impedía responder a las consultas generales de /qt ping a los jugadores que permiten compartir diagnósticos.",
+              "Los jugadores que no comparten diagnósticos pueden seguir retransmitiendo estas consultas verificadas sin responder ellos mismos. Si desactivas el uso compartido mientras se comprueba una consulta, se cancela tu respuesta aunque lo vuelvas a activar después.",
+              "Los jugadores que responden también deben actualizar a la versión 9.0.2. No basta con que se actualice el desarrollador que ejecuta el comando."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "9.0.2",
+        "welcome": "Esta actualización corrige las respuestas a las consultas generales de /qt ping y respeta tus preferencias para compartir diagnósticos.",
+        "sections": [
+          {
+            "title": "Diagnóstico con ping",
+            "items": [
+              "Los jugadores que permiten compartir diagnósticos ya pueden responder correctamente a las consultas generales de /qt ping.",
+              "Aunque tengan desactivado el uso compartido de diagnósticos, los jugadores pueden reenviar estas consultas verificadas sin responder ellos mismos. Si lo desactivas mientras se verifica una consulta, tu respuesta se cancela, incluso si vuelves a activarlo después.",
+              "Los jugadores que responden también necesitan actualizar a la versión 9.0.2. No es suficiente con que solo actualice el desarrollador que usa el comando."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "9.0.2",
+        "welcome": "Esta atualização corrige as respostas às consultas gerais de /qt ping e mantém suas escolhas sobre o compartilhamento de diagnósticos.",
+        "sections": [
+          {
+            "title": "Diagnóstico por ping",
+            "items": [
+              "Corrigido um problema que impedia jogadores com o compartilhamento de diagnósticos ativado de responder às consultas gerais de /qt ping.",
+              "Mesmo com o compartilhamento desativado, os jogadores podem encaminhar essas consultas verificadas sem responder. Se você desativar o compartilhamento durante a verificação de uma consulta, sua resposta será cancelada, mesmo que você o reative depois.",
+              "Os jogadores que respondem também precisam atualizar para a versão 9.0.2. Não basta atualizar o QT apenas no cliente do desenvolvedor que executa o comando."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "9.0.2",
+        "welcome": "Это обновление исправляет ответы на общие запросы /qt ping с учётом ваших настроек передачи диагностики.",
+        "sections": [
+          {
+            "title": "Диагностика с помощью ping",
+            "items": [
+              "Исправлена ошибка, из-за которой игроки, разрешившие передачу диагностики, не отвечали на общие запросы /qt ping.",
+              "Игроки с отключённой передачей диагностики могут пересылать эти проверенные запросы дальше, не отвечая на них сами. Если отключить передачу во время проверки запроса, ваш ответ будет отменён, даже если затем снова её включить.",
+              "Игрокам, отправляющим ответы, тоже нужна версия 9.0.2. Обновления только у разработчика, запускающего команду, недостаточно."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "9.0.2",
+        "welcome": "Questo aggiornamento corregge le risposte alle richieste generali di /qt ping, rispettando le tue scelte sulla condivisione dei dati diagnostici.",
+        "sections": [
+          {
+            "title": "Diagnostica con ping",
+            "items": [
+              "Risolto un problema che impediva ai giocatori che consentono la condivisione dei dati diagnostici di rispondere alle richieste generali di /qt ping.",
+              "I giocatori che non condividono i dati diagnostici possono comunque inoltrare queste richieste verificate senza rispondere. Se disattivi la condivisione durante la verifica di una richiesta, la tua risposta viene annullata anche se la riattivi in seguito.",
+              "Anche i giocatori che rispondono devono aggiornare alla versione 9.0.2. Non basta che si aggiorni soltanto lo sviluppatore che esegue il comando."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "9.0.2",
+        "welcome": "이번 패치에서는 진단 정보 공유 설정을 유지하면서 /qt ping 전체 요청에 대한 응답 문제를 수정했습니다.",
+        "sections": [
+          {
+            "title": "Ping 진단",
+            "items": [
+              "진단 정보 공유를 허용한 플레이어가 /qt ping 전체 요청에 응답하지 못하던 문제를 수정했습니다.",
+              "진단 정보 공유를 꺼 둔 플레이어도 직접 응답하지 않고 검증된 요청을 다른 플레이어에게 전달할 수 있습니다. 요청을 검증하는 도중 공유를 끄면 해당 응답은 취소되며, 공유를 다시 켜도 되살아나지 않습니다.",
+              "응답하는 플레이어도 9.0.2 버전으로 업데이트해야 합니다. 명령어를 실행하는 개발자만 업데이트해서는 해결되지 않습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "9.0.2",
+        "welcome": "本次更新修复了 /qt ping 广播请求的回复问题，并继续遵守你的诊断信息共享设置。",
+        "sections": [
+          {
+            "title": "Ping 诊断",
+            "items": [
+              "修复了允许共享诊断信息的玩家无法回复 /qt ping 广播请求的问题。",
+              "未开启诊断信息共享的玩家仍可转发经过验证的请求，但不会自行回复。如果在请求验证期间关闭共享，该次回复就会取消，之后重新开启共享也不会恢复。",
+              "回复请求的玩家也需要更新到 9.0.2。仅由运行命令的开发者更新插件，无法修复旧版本玩家的回复问题。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "9.0.2",
+        "welcome": "這次更新修正了 /qt ping 廣播請求的回覆問題，並繼續遵守你的診斷資訊分享設定。",
+        "sections": [
+          {
+            "title": "Ping 診斷",
+            "items": [
+              "修正允許分享診斷資訊的玩家無法回覆 /qt ping 廣播請求的問題。",
+              "未開啟診斷資訊分享的玩家仍可轉送經過驗證的請求，但不會自行回覆。如果在驗證請求期間關閉分享，該次回覆便會取消，之後重新開啟也不會恢復。",
+              "回覆請求的玩家也需要更新至 9.0.2。只有執行指令的開發者更新插件，並無法修正舊版玩家的回覆問題。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "9.0.1",
         "welcome": "This patch reduces background chat errors and fixes quest tooltips and sharing feedback.",
         "sections": [
