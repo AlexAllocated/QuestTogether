@@ -56,6 +56,174 @@ local function Setup(realCrypto)
 	end
 	return net, dev, peer
 end
+local function MeshSetup(relayConsent)
+	local net, dev, bridge = Setup(true)
+	local remote = net:AddPeer("Relayed-Realm", { mapID = 14 })
+	net:SetFPS(20)
+	bridge.db.profile.shareDeveloperDiagnostics = relayConsent
+	remote.developerPublicKeyHex = dev.developerPublicKeyHex
+	-- The real directory, challenges and scoped leases build a three-peer
+	-- chain. Direct origin whispers remain reachable for private PONG replies;
+	-- only their mesh-neighbor handshake is denied to require a relay.
+	net.deliveryRule = function(packet, receiver)
+		local frame = dev:DecodeCommFrame(packet.wire)
+		if
+			frame
+			and (frame.operation == "MHEL" or frame.operation == "MACK")
+			and (
+				(packet.sender == dev.name and receiver == remote)
+				or (packet.sender == remote.name and receiver == dev)
+			)
+		then
+			return { drop = true }
+		end
+	end
+	for _, peer in ipairs({ dev, bridge, remote }) do
+		peer.UpdateMeshNetwork = nil
+		-- Keep the existing private fixture's regular feature publishers quiet.
+		-- Every PING codec, verifier, dispatcher, reply producer and native send
+		-- still runs unchanged under the real runtime coordinator.
+		function peer:UpdatePlayerCommunications() end
+		function peer:UpdateDeveloperAnnouncements() end
+		net:StartPeer(peer)
+	end
+	net:Advance(75)
+	assert(dev:IsConfirmedMeshNeighbor(bridge.name) and bridge:IsConfirmedMeshNeighbor(dev.name))
+	assert(remote:IsConfirmedMeshNeighbor(bridge.name) and bridge:IsConfirmedMeshNeighbor(remote.name))
+	assert(not dev:IsConfirmedMeshNeighbor(remote.name), "the remote recipient must require a relay")
+	local interested = false
+	for _, lease in pairs(dev.meshNetworkState.interests) do
+		if lease.destination == remote.name and lease.zone == 0 then
+			interested = true
+		end
+	end
+	assert(interested, "the remote global interest must reach the developer before publication")
+	return net, dev, bridge, remote
+end
+
+local function MeshPingPublication(peer, requestId)
+	for _, entry in pairs(peer.meshPublicationState and peer.meshPublicationState.entries or {}) do
+		if entry.publication.operation == "PING" and entry.publication.originRequestId == requestId then
+			return entry
+		end
+	end
+end
+
+QT:RegisterTest("ping protocol 3 signed mesh broadcasts return private direct and relayed PONGs", function()
+	local net, dev, bridge, remote = MeshSetup(true)
+	local sent, id = dev:SendPingRequest()
+	assert(sent)
+	net:Advance(120)
+	local first, second = MeshPingPublication(bridge, id), MeshPingPublication(remote, id)
+	assert(
+		first and first.verified and first.signedVerified and first.nativeOwner,
+		"direct mesh reception must authenticate the real developer signature"
+	)
+	assert(
+		second and second.verified and second.signedVerified and not second.nativeOwner,
+		"the remote recipient must authenticate the developer through the intermediate peer"
+	)
+	local replies = {}
+	for _, pong in ipairs(dev.pongs) do
+		assert(not replies[pong.senderName], "a mesh retransmission must not duplicate a PONG")
+		replies[pong.senderName] = pong
+	end
+	assert(
+		replies[bridge.name] and replies[bridge.name].developer,
+		"the direct mesh recipient must return its authorized PONG"
+	)
+	assert(
+		replies[remote.name] and replies[remote.name].developer,
+		"the relayed mesh recipient must return its authorized PONG"
+	)
+	Eq(#dev.pongs, 3, "self plus both remote replies")
+	for _, peer in ipairs({ bridge, remote }) do
+		for _, packet in ipairs(peer.sent) do
+			local frame = peer:DecodeCommFrame(packet.wire)
+			if frame and frame.operation == "PONG" then
+				Eq(packet.route, "WHISPER")
+				Eq(packet.target, dev.name)
+			end
+		end
+	end
+end, { offline = true })
+
+QT:RegisterTest(
+	"ping protocol 3 diagnostic opt-out relays public authorization without sending its own data",
+	function()
+		local net, dev, bridge, remote = MeshSetup(false)
+		local sent, id = dev:SendPingRequest()
+		assert(sent)
+		net:Advance(120)
+		local entry = MeshPingPublication(remote, id)
+		assert(
+			entry and entry.verified and entry.signedVerified and not entry.nativeOwner,
+			"an opted-out bridge must still carry the public signed ping to consenting recipients"
+		)
+		local replies = {}
+		for _, pong in ipairs(dev.pongs) do
+			replies[pong.senderName] = pong
+		end
+		assert(
+			replies[remote.name] and replies[remote.name].developer,
+			"the consenting remote recipient must respond through the real reply producer"
+		)
+		Eq(replies[bridge.name], nil, "an opted-out peer must never send diagnostic data")
+		Eq(#dev.pongs, 2, "self plus consenting remote reply")
+		Eq(bridge.reportReads, nil)
+		for _, packet in ipairs(bridge.sent) do
+			local frame = bridge:DecodeCommFrame(packet.wire)
+			assert(
+				not frame or (frame.operation ~= "PONG" and frame.operation ~= "DREPORT"),
+				"public forwarding must not authorize a private diagnostic response"
+			)
+		end
+	end,
+	{ offline = true }
+)
+
+QT:RegisterTest(
+	"ping protocol 3 consent changes during mesh verification preserve relay but retire private replies",
+	function()
+		local net, dev, bridge, remote = MeshSetup(true)
+		local sent, id = dev:SendPingRequest()
+		assert(sent)
+		local admitted = false
+		for _ = 1, 2400 do
+			net:Step()
+			for _, job in ipairs(bridge.developerRequestState and bridge.developerRequestState.jobs or {}) do
+				if job.request.requestId == id then
+					admitted = true
+				end
+			end
+			if admitted then
+				break
+			end
+		end
+		assert(admitted, "the real broadcast signature verifier must be paused before its verdict")
+		bridge:SetOption("shareDeveloperDiagnostics", false)
+		bridge:SetOption("shareDeveloperDiagnostics", true)
+		net:Advance(120)
+		local entry = MeshPingPublication(remote, id)
+		assert(
+			entry and entry.verified and entry.signedVerified and not entry.nativeOwner,
+			"consent withdrawal must not interrupt forwarding the public authorization"
+		)
+		local replies = {}
+		for _, pong in ipairs(dev.pongs) do
+			replies[pong.senderName] = pong
+		end
+		assert(
+			replies[remote.name] and replies[remote.name].developer,
+			"the downstream consenting recipient must still receive and answer the signed ping"
+		)
+		Eq(replies[bridge.name], nil, "re-enabling consent must not revive a previously admitted private reply")
+		Eq(#dev.pongs, 2, "self plus downstream reply")
+		Eq(bridge.reportReads, nil)
+	end,
+	{ offline = true }
+)
+
 -- Full signed, repeated, and multi-minute diagnostic exchanges run offline.
 QT:RegisterTest("ping protocol 3 real signature returns complete private snapshot only to its developer", function()
 	local net, dev, peer = Setup(true)

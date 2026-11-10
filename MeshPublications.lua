@@ -830,9 +830,8 @@ function QT:VerifyMeshSignedPublication(publication, data, callback)
 	end
 	local developerState = operation == "DEVANN" and self:InitializeDeveloperAnnouncements() or nil
 	local generation = developerState and developerState.generation
-	local diagnosticGeneration = rawget(self, "diagnosticReplyGeneration") or 0
 	local verify = operation == "DEVANN" and self.QueueDeveloperAnnouncementVerification
-		or self.QueueDeveloperPingVerification
+		or self.QueueDeveloperBroadcastPingVerification
 	return verify(self, data, publication.origin, function(verified)
 		if
 			developerState
@@ -841,10 +840,6 @@ function QT:VerifyMeshSignedPublication(publication, data, callback)
 				or developerState.generation ~= generation
 			)
 		then
-			callback(operation, false)
-			return
-		end
-		if operation == "PING" and (rawget(self, "diagnosticReplyGeneration") or 0) ~= diagnosticGeneration then
 			callback(operation, false)
 			return
 		end

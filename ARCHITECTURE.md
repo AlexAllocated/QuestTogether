@@ -498,6 +498,12 @@ from its own retained public outbox, or they expire. Confirmations are batched;
 exact verified copies and direct owner payloads avoid redundant authentication.
 Existing pinned-key DEVANN, authorized broadcast PING and VIP proofs use their
 signed identity fields for ordering and expiry instead of unsigned outer fields.
+Broadcast PING verification and forwarding do not require diagnostics consent.
+The reply handler consumes the verifier's sanitized request, and creates a private
+Pong only with current consent and the diagnostic generation captured at admission.
+Opt-out preserves pending public signature checks while cancelling private work;
+turning consent back on cannot revive those retired replies. Session shutdown
+still cancels all verification and relay work.
 Private replies, hidden locations, developer mirrors, party snapshots, focus and
 waypoints never relay. There is no discovery or delivery guarantee across islands.
 Renewed interests rotate destinations independently per requester and scope, with

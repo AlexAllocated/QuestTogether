@@ -76,10 +76,22 @@ function QT:SendPingRequest(target, debugRequest)
 	return true, id
 end
 function QT:HandlePingRequest(data, context)
-	if not data.developerRequest then
+	-- Mesh verification returns a sanitized request carrying the authorization.
+	-- Keep that request, not the decoded copy which deliberately has no trust flags.
+	if context and context.meshSignedKind == "PING" and type(context.meshSignedVerified) == "table" then
+		data = context.meshSignedVerified
+	end
+	if
+		not data.developerRequest
+		or self:GetOption("shareDeveloperDiagnostics") ~= true
+		or (
+			data.diagnosticReplyGeneration ~= nil
+			and data.diagnosticReplyGeneration ~= (rawget(self, "diagnosticReplyGeneration") or 0)
+		)
+	then
 		return false
 	end
-	if not data.developerVerified and not (context and context.meshSignedVerified) then
+	if not data.developerVerified then
 		return self:QueueDeveloperPingVerification(data, data.requesterName, function(verified)
 			self:HandlePingRequest(verified)
 		end)
@@ -300,7 +312,7 @@ function QT:CancelDeveloperDiagnosticReplies()
 	self.diagnosticReplyGeneration = (rawget(self, "diagnosticReplyGeneration") or 0) + 1
 	local state = rawget(self, "pingReplyState")
 	self.pingReplyState = nil
-	self.developerRequestState = nil
+	self:CancelDeveloperDiagnosticVerifications()
 	for _, job in pairs(state and state.jobs or {}) do
 		self:CancelTransportOwner(job, "cancelled")
 		self:CancelCommTransferOwner(job, "cancelled")

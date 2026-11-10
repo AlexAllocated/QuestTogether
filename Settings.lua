@@ -525,7 +525,6 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 		Invoke(self, "ClearPlayerMapSelection")
 	end
 	if all or (changed.shareDeveloperDiagnostics and self:GetOption("shareDeveloperDiagnostics") ~= true) then
-		self.developerRequestState = nil
 		Invoke(self, "CancelDeveloperDiagnosticReplies")
 	end
 	if Has("enabled") and (not all or self.hasLoggedIn) then

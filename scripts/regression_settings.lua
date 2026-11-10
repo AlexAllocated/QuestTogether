@@ -25,13 +25,16 @@ local function Fixture()
 		"UpdatePartyChatReminder",
 		"BroadcastQuestPartnerStatus",
 		"AnnounceQuestPartnerSearch",
-		"CancelDeveloperDiagnosticReplies",
 		"CloseQuestLogChatFrame",
 	}) do
 		local name = method
 		a[name] = function()
 			a.effects[name] = (a.effects[name] or 0) + 1
 		end
+	end
+	function a:CancelDeveloperDiagnosticReplies()
+		self.effects.CancelDeveloperDiagnosticReplies = (self.effects.CancelDeveloperDiagnosticReplies or 0) + 1
+		return QT.CancelDeveloperDiagnosticReplies(self)
 	end
 	function a:Debugf() end
 	return a
@@ -58,7 +61,7 @@ QT:RegisterTest("profile activation applies the same appearance privacy and navi
 	local a = Fixture()
 	a.isEnabled = true
 	a.hasLoggedIn = false
-	a.developerRequestState = {}
+	a.developerRequestState = { jobs = {}, seen = {}, pendingSenders = {}, failures = {} }
 	a.db.profile.lightMode, a.db.profile.reduceMotion, a.db.profile.windowScale = true, true, 125
 	assert(a:ApplyActiveProfileState("test"))
 	assert(a.effects.RefreshWindowThemes == 1 and a.effects.RefreshManagedWindowLayouts == 1)
@@ -135,7 +138,7 @@ QT:RegisterTest(
 	"settings diagnostics revocation cancels requests and never reuses an old permission lifetime",
 	function()
 		local a = Fixture()
-		a.developerRequestState = {}
+		a.developerRequestState = { jobs = {}, seen = {}, pendingSenders = {}, failures = {} }
 		assert(a:SetOption("shareDeveloperDiagnostics", false))
 		assert(a.developerRequestState == nil and a.effects.CancelDeveloperDiagnosticReplies == 1)
 		assert(a:SetOption("shareDeveloperDiagnostics", true))

@@ -97,11 +97,15 @@ function QT:PrepareDeveloperAnnouncementSubscription(request, target)
 end
 
 local function VerificationEnabled(addon, purpose)
-	-- Public signed identity can be authenticated by every client. Diagnostic
-	-- requests still require consent before entering the same bounded verifier.
+	-- Public identity and broadcast authorization can cross nonconsenting peers.
+	-- Private requests still require consent before entering this bounded verifier.
 	return addon.isEnabled
 		and not addon.isLoggingOut
-		and (purpose == "announcements" or addon:GetOption("shareDeveloperDiagnostics") == true)
+		and (
+			purpose == "announcements"
+			or purpose == "broadcastPing"
+			or addon:GetOption("shareDeveloperDiagnostics") == true
+		)
 end
 
 local function ProfileMilliseconds(addon)
@@ -139,6 +143,30 @@ function QT:CancelIgnoredDeveloperRequests()
 		if self:IsIgnoredPlayerName(job.sender) then
 			job.request.cancelled = true
 		end
+	end
+end
+
+function QT:CancelDeveloperDiagnosticVerifications()
+	local state = rawget(self, "developerRequestState")
+	if not state then
+		return
+	end
+	local jobs, seen, senders = {}, {}, {}
+	for _, job in ipairs(state.jobs) do
+		if job.request.developerPurpose == "broadcastPing" then
+			-- A public signature check can finish for downstream peers. The captured
+			-- diagnostic generation still prevents this client reviving an old reply.
+			jobs[#jobs + 1] = job
+			local key = job.sender .. "|" .. job.request.requestId
+			seen[key], senders[job.sender] = state.seen[key], true
+		else
+			job.request.cancelled = true
+		end
+	end
+	if #jobs == 0 then
+		self.developerRequestState = nil
+	else
+		state.jobs, state.seen, state.pendingSenders, state.failures = jobs, seen, senders, {}
 	end
 end
 
@@ -318,6 +346,9 @@ local function QueueVerification(self, request, sender, callback, purpose)
 	end
 	copy.developerPurpose = purpose
 	copy.requesterName = senderName
+	if purpose == "broadcastPing" then
+		copy.diagnosticReplyGeneration = rawget(self, "diagnosticReplyGeneration") or 0
+	end
 	state.metrics.admitted = (state.metrics.admitted or 0) + 1
 	state.seen[key], state.pendingSenders[senderName] = now, true
 	state.jobs[#state.jobs + 1] = {
@@ -334,6 +365,18 @@ end
 
 function QT:QueueDeveloperPingVerification(request, sender, callback)
 	return QueueVerification(self, request, sender, callback, "ping")
+end
+
+function QT:QueueDeveloperBroadcastPingVerification(request, sender, callback)
+	if
+		type(request) ~= "table"
+		or request.developerRequest ~= true
+		or request.debugRequest == true
+		or request.targetName
+	then
+		return false
+	end
+	return QueueVerification(self, request, sender, callback, "broadcastPing")
 end
 
 function QT:QueueDeveloperAnnouncementVerification(request, sender, callback)
