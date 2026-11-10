@@ -4,6 +4,14 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.0.6
+
+The map legend now explains VIP and developer icons.
+
+### Map legend
+
+- Hover the QT button on the world map to see the VIP star and developer gear, alongside their matching QT logos.
+
 ## 9.0.5
 
 Choose when QuestTogether appears below player tooltips, with further fixes for unwanted whisper failure notices.

@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.6
+
+Les icônes VIP et développeur figurent désormais dans la légende de la carte.
+
+### Légende de la carte
+
+- Survolez le bouton QT de la carte du monde pour retrouver dans la légende l’étoile VIP et la roue dentée du développeur, accompagnées de leurs logos QT respectifs.
+
 ## 9.0.5
 
 Choisis quand afficher le complément QuestTogether des infobulles. Cette mise à jour corrige aussi plusieurs messages d’erreur liés aux chuchotements invisibles de QT.

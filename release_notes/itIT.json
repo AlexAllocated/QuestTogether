@@ -1,21 +1,13 @@
 {
-  "source_sha256": "490c7b978ccb549f900798a4c9eafab308f5cfe5152f61202dae4c21cfb55215",
+  "source_sha256": "d302a096d479ea21896dde2a35b24742e889ef2d8f1a15c95c9d12af45a55a6a",
   "notes": {
-    "version": "9.0.5",
-    "welcome": "Ora puoi scegliere quando vedere la sezione QuestTogether nelle descrizioni dei giocatori. Risolti anche diversi casi di avvisi causati dai sussurri nascosti di QT.",
+    "version": "9.0.6",
+    "welcome": "La legenda della mappa ora include le icone VIP e dello sviluppatore.",
     "sections": [
       {
-        "title": "Visibilità delle descrizioni",
+        "title": "Legenda della mappa",
         "items": [
-          "In Targhette giocatori > Descrizioni dei giocatori > Descrizione di QuestTogether puoi regolare la visibilità della sezione QT. L’impostazione predefinita è «Nascondi per gli amici»; puoi anche mostrare la sezione per tutti o nasconderla per i membri del gruppo, per amici e membri del gruppo oppure per tutti.",
-          "La scelta riguarda l’intera sezione QT sotto la normale descrizione del giocatore: logo, indicazione dell’uso di QT, stato «In cerca di compagni di missione» e note private. Per il tuo personaggio questa sezione resta sempre nascosta.",
-          "Le note salvate e le preferenze di condivisione restano invariate."
-        ]
-      },
-      {
-        "title": "Avvisi dei sussurri",
-        "items": [
-          "Corretti diversi casi in cui i sussurri nascosti dell’addon QT facevano comparire avvisi di giocatore non trovato, anche in ritardo o dopo una risposta. Se l’origine non è chiara, gli errori dei normali sussurri rimangono visibili."
+          "Passando il mouse sul pulsante QT della mappa del mondo, la legenda mostra anche la stella VIP e l’ingranaggio dello sviluppatore, affiancati dai rispettivi loghi QT."
         ]
       }
     ]

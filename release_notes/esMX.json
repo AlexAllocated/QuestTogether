@@ -1,20 +1,13 @@
 {
-  "source_sha256": "490c7b978ccb549f900798a4c9eafab308f5cfe5152f61202dae4c21cfb55215",
+  "source_sha256": "d302a096d479ea21896dde2a35b24742e889ef2d8f1a15c95c9d12af45a55a6a",
   "notes": {
-    "version": "9.0.5",
-    "welcome": "Elige cuándo ver la información de QT en las descripciones de jugadores y recibe menos avisos de susurros internos.",
+    "version": "9.0.6",
+    "welcome": "Ahora puedes identificar los iconos de VIP y del desarrollador en la leyenda del mapa.",
     "sections": [
       {
-        "title": "Descripciones de jugadores a tu gusto",
+        "title": "Leyenda del mapa",
         "items": [
-          "Configura la visibilidad en Placas de jugadores > Descripciones de jugadores > Descripción de QuestTogether. Ocultar para amigos es la opción predeterminada; también puedes elegir Mostrar para todos, Ocultar para miembros del grupo, Ocultar para amigos y miembros del grupo u Ocultar para todos.",
-          "Se muestra u oculta toda la sección de QT debajo de la descripción de WoW, incluido el logotipo y el identificador, el estado «Buscando compañeros para hacer misiones» y las notas privadas. En tu propio personaje siempre queda oculta. Tus notas guardadas y preferencias para compartir se conservan."
-        ]
-      },
-      {
-        "title": "Avisos de susurros",
-        "items": [
-          "Se corrigieron varios avisos de jugador no encontrado provocados por los susurros internos de QT, incluidos los que llegaban tarde o después de una respuesta. Cuando el origen no está claro, el aviso sigue visible para que puedas ver los errores de tus susurros normales."
+          "Coloca el cursor sobre el botón de QT en el mapa del mundo: la leyenda incluye la estrella de VIP y el engranaje del desarrollador, cada uno con su logotipo de QT."
         ]
       }
     ]

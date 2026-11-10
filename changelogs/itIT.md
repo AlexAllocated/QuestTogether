@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.6
+
+La legenda della mappa ora include le icone VIP e dello sviluppatore.
+
+### Legenda della mappa
+
+- Passando il mouse sul pulsante QT della mappa del mondo, la legenda mostra anche la stella VIP e l’ingranaggio dello sviluppatore, affiancati dai rispettivi loghi QT.
+
 ## 9.0.5
 
 Ora puoi scegliere quando vedere la sezione QuestTogether nelle descrizioni dei giocatori. Risolti anche diversi casi di avvisi causati dai sussurri nascosti di QT.

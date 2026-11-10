@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.6
+
+Os ícones de VIP e do desenvolvedor agora estão na legenda do mapa.
+
+### Legenda do mapa
+
+- Passe o cursor sobre o botão do QT no mapa-múndi para ver a estrela de VIP e a engrenagem do desenvolvedor na legenda, acompanhadas dos respectivos logotipos do QT.
+
 ## 9.0.5
 
 Escolha quando ver as informações do QT nas dicas de jogadores e tenha menos avisos de erro dos sussurros internos.

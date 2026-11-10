@@ -1,21 +1,13 @@
 {
-  "source_sha256": "490c7b978ccb549f900798a4c9eafab308f5cfe5152f61202dae4c21cfb55215",
+  "source_sha256": "d302a096d479ea21896dde2a35b24742e889ef2d8f1a15c95c9d12af45a55a6a",
   "notes": {
-    "version": "9.0.5",
-    "welcome": "Passe den QuestTogether-Zusatz in Spielertooltips an. Außerdem wurden mehrere Ursachen störender Flüster-Fehlermeldungen behoben.",
+    "version": "9.0.6",
+    "welcome": "Die Kartenlegende erklärt jetzt auch die VIP- und Entwicklersymbole.",
     "sections": [
       {
-        "title": "QuestTogether im Spielertooltip",
+        "title": "Kartenlegende",
         "items": [
-          "Unter Spieler-Namensplaketten > Spielertooltips > QuestTogether-Tooltip bestimmst du, bei wem der Zusatz erscheint. Standard ist „Bei Freunden ausblenden“. Du kannst ihn bei allen anzeigen oder bei Freunden, Gruppenmitgliedern, Freunden und Gruppenmitgliedern oder allen ausblenden.",
-          "Die Auswahl gilt für den gesamten QT-Zusatz unter dem normalen Spielertooltip: Logo, QT-Kennzeichnung, Status „Suche nach Questpartnern“ und private Notizen. Bei deinem eigenen Charakter bleibt dieser Zusatz immer ausgeblendet.",
-          "Gespeicherte Notizen und deine Freigabeeinstellungen bleiben unverändert."
-        ]
-      },
-      {
-        "title": "Fehlermeldungen beim Flüstern",
-        "items": [
-          "Mehrere Fälle behoben, in denen versteckte Addon-Flüsternachrichten von QT „Spieler nicht gefunden“-Meldungen im Chat auslösten, auch verspätet oder nach einer Antwort. Fehler deiner normalen Flüsternachrichten bleiben bei unklarer Zuordnung sichtbar."
+          "Wenn du mit der Maus über die QT-Schaltfläche auf der Weltkarte fährst, zeigt die Legende auch den VIP-Stern und das Entwicklerzahnrad mit den passenden QT-Logos."
         ]
       }
     ]

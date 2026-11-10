@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.6
+
+Die Kartenlegende erklärt jetzt auch die VIP- und Entwicklersymbole.
+
+### Kartenlegende
+
+- Wenn du mit der Maus über die QT-Schaltfläche auf der Weltkarte fährst, zeigt die Legende auch den VIP-Stern und das Entwicklerzahnrad mit den passenden QT-Logos.
+
 ## 9.0.5
 
 Passe den QuestTogether-Zusatz in Spielertooltips an. Außerdem wurden mehrere Ursachen störender Flüster-Fehlermeldungen behoben.

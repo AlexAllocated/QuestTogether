@@ -3,6 +3,224 @@
   "releases": [
     {
       "enUS": {
+        "version": "9.0.5",
+        "welcome": "Choose when QuestTogether appears below player tooltips, with further fixes for unwanted whisper failure notices.",
+        "sections": [
+          {
+            "title": "Player tooltip visibility",
+            "items": [
+              "Under Player Plates > Player tooltips, use QuestTogether tooltip to show the section for everyone or hide it for friends, party members, both, or everyone. Hide for friends is the default.",
+              "The choice covers the entire section: logo, quest-partner status, and private notes. The section is always hidden on your own character. Your saved notes and sharing preferences are unchanged."
+            ]
+          },
+          {
+            "title": "Whisper notices",
+            "items": [
+              "Fixed several cases where hidden addon whispers could still produce “No player named…” messages, including delayed failures after a reply. Errors that could belong to your ordinary whispers remain visible."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "9.0.5",
+        "welcome": "Passe den QuestTogether-Zusatz in Spielertooltips an. Außerdem wurden mehrere Ursachen störender Flüster-Fehlermeldungen behoben.",
+        "sections": [
+          {
+            "title": "QuestTogether im Spielertooltip",
+            "items": [
+              "Unter Spieler-Namensplaketten > Spielertooltips > QuestTogether-Tooltip bestimmst du, bei wem der Zusatz erscheint. Standard ist „Bei Freunden ausblenden“. Du kannst ihn bei allen anzeigen oder bei Freunden, Gruppenmitgliedern, Freunden und Gruppenmitgliedern oder allen ausblenden.",
+              "Die Auswahl gilt für den gesamten QT-Zusatz unter dem normalen Spielertooltip: Logo, QT-Kennzeichnung, Status „Suche nach Questpartnern“ und private Notizen. Bei deinem eigenen Charakter bleibt dieser Zusatz immer ausgeblendet.",
+              "Gespeicherte Notizen und deine Freigabeeinstellungen bleiben unverändert."
+            ]
+          },
+          {
+            "title": "Fehlermeldungen beim Flüstern",
+            "items": [
+              "Mehrere Fälle behoben, in denen versteckte Addon-Flüsternachrichten von QT „Spieler nicht gefunden“-Meldungen im Chat auslösten, auch verspätet oder nach einer Antwort. Fehler deiner normalen Flüsternachrichten bleiben bei unklarer Zuordnung sichtbar."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "9.0.5",
+        "welcome": "Choisis quand afficher le complément QuestTogether des infobulles. Cette mise à jour corrige aussi plusieurs messages d’erreur liés aux chuchotements invisibles de QT.",
+        "sections": [
+          {
+            "title": "Affichage des infobulles",
+            "items": [
+              "Dans Barres d’info des joueurs > Infobulles des joueurs > Infobulle QuestTogether, « Masquer pour les amis » est sélectionné par défaut. Tu peux afficher le complément pour tout le monde ou le masquer pour les amis, les membres du groupe, les deux ou tout le monde.",
+              "Ce choix porte sur tout le complément QT sous l’infobulle habituelle : logo, indication d’utilisation de QT, statut « Recherche de partenaires de quête » et notes privées. Il reste toujours masqué sur ton propre personnage.",
+              "Tes notes enregistrées et tes préférences de partage ne changent pas."
+            ]
+          },
+          {
+            "title": "Erreurs de chuchotement",
+            "items": [
+              "Plusieurs causes de messages « joueur introuvable » liés aux chuchotements invisibles de QT ont été corrigées, notamment lorsque l’erreur arrivait en retard ou après une réponse. En cas de doute sur leur origine, les erreurs de tes chuchotements habituels restent visibles."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "9.0.5",
+        "welcome": "Más control sobre las descripciones de jugadores y menos avisos de error de los susurros internos de QT.",
+        "sections": [
+          {
+            "title": "Visibilidad de las descripciones",
+            "items": [
+              "En Placas de jugadores > Descripciones de jugadores > Descripción de QuestTogether, elige entre Mostrar para todos, Ocultar para amigos (predeterminado), Ocultar para miembros del grupo, Ocultar para amigos y miembros del grupo u Ocultar para todos.",
+              "El ajuste afecta a todo el bloque de QT bajo la descripción de WoW: logotipo e identificador, estado «Buscando compañeros para misiones» y notas privadas. Siempre se oculta en tu propio personaje. Las notas guardadas y los ajustes para compartir no cambian."
+            ]
+          },
+          {
+            "title": "Avisos de susurros",
+            "items": [
+              "Corregidos varios casos en los que los susurros internos de QT mostraban avisos de jugador no encontrado, incluso con retraso o tras recibir una respuesta. Si no se puede distinguir el origen, el aviso se mantiene para no ocultar errores de tus susurros normales."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "9.0.5",
+        "welcome": "Elige cuándo ver la información de QT en las descripciones de jugadores y recibe menos avisos de susurros internos.",
+        "sections": [
+          {
+            "title": "Descripciones de jugadores a tu gusto",
+            "items": [
+              "Configura la visibilidad en Placas de jugadores > Descripciones de jugadores > Descripción de QuestTogether. Ocultar para amigos es la opción predeterminada; también puedes elegir Mostrar para todos, Ocultar para miembros del grupo, Ocultar para amigos y miembros del grupo u Ocultar para todos.",
+              "Se muestra u oculta toda la sección de QT debajo de la descripción de WoW, incluido el logotipo y el identificador, el estado «Buscando compañeros para hacer misiones» y las notas privadas. En tu propio personaje siempre queda oculta. Tus notas guardadas y preferencias para compartir se conservan."
+            ]
+          },
+          {
+            "title": "Avisos de susurros",
+            "items": [
+              "Se corrigieron varios avisos de jugador no encontrado provocados por los susurros internos de QT, incluidos los que llegaban tarde o después de una respuesta. Cuando el origen no está claro, el aviso sigue visible para que puedas ver los errores de tus susurros normales."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "9.0.5",
+        "welcome": "Escolha quando ver as informações do QT nas dicas de jogadores e tenha menos avisos de erro dos sussurros internos.",
+        "sections": [
+          {
+            "title": "Visibilidade das dicas de jogadores",
+            "items": [
+              "Em Placas de Nome dos Jogadores > Dicas de jogadores > Dica do QuestTogether, a opção padrão é Ocultar para amigos. Você também pode escolher Mostrar para todos, Ocultar para membros do grupo, Ocultar para amigos e membros do grupo ou Ocultar para todos.",
+              "A opção controla toda a seção do QT abaixo da dica do WoW: logotipo e identificação, status Procurando parceiros de missão e notas privadas. Essa seção fica sempre oculta no seu próprio personagem. As notas salvas e as preferências de compartilhamento permanecem como estão."
+            ]
+          },
+          {
+            "title": "Avisos de sussurros",
+            "items": [
+              "Corrigidos vários casos de avisos de jogador não encontrado causados pelos sussurros internos do QT, inclusive avisos atrasados ou recebidos após uma resposta. Quando a origem é incerta, o aviso continua visível para não esconder erros dos seus sussurros normais."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "9.0.5",
+        "welcome": "Новая настройка подсказок игроков и исправления лишних уведомлений об ошибках.",
+        "sections": [
+          {
+            "title": "Подсказки игроков",
+            "items": [
+              "В настройках «Индикаторы игроков» > «Подсказки игроков» > «Подсказка QuestTogether» доступны пять вариантов: «Показывать у всех», «Скрывать у друзей» (по умолчанию), «Скрывать у участников группы», «Скрывать у друзей и участников группы» и «Скрывать у всех».",
+              "Настройка управляет всем блоком QT под стандартной подсказкой игрока: логотипом и отметкой QT, статусом «Ищу партнеров для заданий» и личными заметками. Для собственного персонажа этот блок всегда скрыт.",
+              "Сохранённые заметки и настройки обмена данными не меняются."
+            ]
+          },
+          {
+            "title": "Ошибки личных сообщений",
+            "items": [
+              "Исправлено несколько случаев появления сообщений о том, что игрок не найден из-за скрытых служебных сообщений QT, в том числе с задержкой и после получения ответа. Если нельзя отличить такую ошибку от ошибки обычного личного сообщения, уведомление остаётся видимым."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "9.0.5",
+        "welcome": "Ora puoi scegliere quando vedere la sezione QuestTogether nelle descrizioni dei giocatori. Risolti anche diversi casi di avvisi causati dai sussurri nascosti di QT.",
+        "sections": [
+          {
+            "title": "Visibilità delle descrizioni",
+            "items": [
+              "In Targhette giocatori > Descrizioni dei giocatori > Descrizione di QuestTogether puoi regolare la visibilità della sezione QT. L’impostazione predefinita è «Nascondi per gli amici»; puoi anche mostrare la sezione per tutti o nasconderla per i membri del gruppo, per amici e membri del gruppo oppure per tutti.",
+              "La scelta riguarda l’intera sezione QT sotto la normale descrizione del giocatore: logo, indicazione dell’uso di QT, stato «In cerca di compagni di missione» e note private. Per il tuo personaggio questa sezione resta sempre nascosta.",
+              "Le note salvate e le preferenze di condivisione restano invariate."
+            ]
+          },
+          {
+            "title": "Avvisi dei sussurri",
+            "items": [
+              "Corretti diversi casi in cui i sussurri nascosti dell’addon QT facevano comparire avvisi di giocatore non trovato, anche in ritardo o dopo una risposta. Se l’origine non è chiara, gli errori dei normali sussurri rimangono visibili."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "9.0.5",
+        "welcome": "플레이어 툴팁 표시 설정을 추가하고 불필요한 귓속말 오류 알림을 수정했습니다.",
+        "sections": [
+          {
+            "title": "플레이어 툴팁 표시 설정",
+            "items": [
+              "설정의 ‘플레이어 이름표’ > ‘플레이어 툴팁’ > ‘QuestTogether 툴팁’에서 표시 방식을 선택하세요. ‘모두 표시’, ‘친구는 숨기기’(기본값), ‘파티원은 숨기기’, ‘친구와 파티원은 숨기기’, ‘모두 숨기기’를 지원합니다.",
+              "설정은 기본 플레이어 툴팁 아래의 QT 영역 전체에 적용됩니다. 로고와 QT 표식, ‘퀘스트 동료 찾는 중’ 상태, 개인 메모가 모두 포함되며, 자신의 캐릭터에서는 이 영역이 항상 숨겨집니다.",
+              "저장된 메모와 공유 설정은 그대로 유지됩니다."
+            ]
+          },
+          {
+            "title": "귓속말 오류 알림",
+            "items": [
+              "QT가 백그라운드에서 보내는 애드온 귓속말 때문에 플레이어를 찾을 수 없다는 알림이 표시되던 몇 가지 문제를 수정했습니다. 늦게 도착하거나 답장을 받은 뒤 나타나는 알림도 포함됩니다. 일반 귓속말 오류와 구분할 수 없는 경우에는 알림을 계속 표시합니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "9.0.5",
+        "welcome": "现在可以调整玩家提示中 QT 内容的显示范围，并修复了部分多余的密语错误提示。",
+        "sections": [
+          {
+            "title": "玩家提示显示设置",
+            "items": [
+              "在设置中的“玩家姓名板” > “玩家提示” > “QuestTogether 提示”下，可选择“对所有人显示”、“对好友隐藏”（默认）、“对队伍成员隐藏”、“对好友和队伍成员隐藏”或“对所有人隐藏”。",
+              "此设置控制原生玩家提示下方的整个 QT 区域，包括标志和 QT 标识、“寻找任务伙伴”状态及私人备注。自己的角色始终不显示这一区域。",
+              "已保存的备注和共享设置不受影响。"
+            ]
+          },
+          {
+            "title": "密语错误提示",
+            "items": [
+              "修复了 QT 在后台发送的插件密语导致“找不到玩家”提示的部分情况，包括延迟出现或收到回复后才出现的提示。若无法判断是否属于普通密语的错误，仍会保留提示。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "9.0.5",
+        "welcome": "新增玩家提示的 QT 顯示選項，並修正部分不必要的密語錯誤通知。",
+        "sections": [
+          {
+            "title": "玩家提示的顯示範圍",
+            "items": [
+              "前往設定的「玩家名條」 > 「玩家提示」 > 「QuestTogether 提示」，即可選擇「對所有人顯示」、「對好友隱藏」（預設）、「對隊伍成員隱藏」、「對好友和隊伍成員隱藏」或「對所有人隱藏」。",
+              "選項會套用到原生玩家提示下方的整個 QT 區域，包含標誌與 QT 識別標記、「尋找任務夥伴」狀態及私人備註。自己的角色一律隱藏此區域。",
+              "已儲存的備註與分享設定維持不變。"
+            ]
+          },
+          {
+            "title": "密語錯誤通知",
+            "items": [
+              "修正 QT 在背景傳送的插件密語仍會觸發「找不到玩家」通知的部分情況，涵蓋延遲出現，以及收到回覆後才出現的通知。若無法確認是否為一般密語的錯誤，仍會顯示通知。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "9.0.4",
         "welcome": "This patch improves player discovery and update delivery, and fixes missing addon versions in map tooltips.",
         "sections": [

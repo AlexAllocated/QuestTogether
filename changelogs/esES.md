@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.6
+
+La leyenda del mapa ya incluye los iconos de VIP y del desarrollador.
+
+### Leyenda del mapa
+
+- Al pasar el cursor sobre el botón de QT en el mapa del mundo, la leyenda muestra la estrella de VIP y el engranaje del desarrollador junto a sus respectivos logotipos de QT.
+
 ## 9.0.5
 
 Más control sobre las descripciones de jugadores y menos avisos de error de los susurros internos de QT.
