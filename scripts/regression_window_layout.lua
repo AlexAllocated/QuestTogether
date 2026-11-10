@@ -205,7 +205,7 @@ local function ProfileFixture()
 		"RefreshPlayerLocationPins", "RefreshWindowThemes", "UpdatePartyChatReminder", "BroadcastQuestPartnerStatus",
 		"RefreshMinimapPartnerGlow", "OnPlayerLocationOptionsChanged", "RefreshMinimapButton", "EnsureQuestLogChatFrame",
 		"CloseQuestLogChatFrame", "RefreshActiveAnnouncementBubbles", "RefreshPersonalBubbleAnchorVisualState",
-		"RefreshPersonalBubbleEditModeDialog", "RefreshNameplateAugmentation", "RefreshOptionsWindow",
+		"RefreshPersonalBubbleEditModeDialog", "RefreshNameplateAugmentation", "UpdatePlayerTooltipBadge", "RefreshOptionsWindow",
 		"RefreshProfilesWindow", "Debugf", "QueuePartyNavigationUpdate" }) do
 		a[name] = function() end
 	end

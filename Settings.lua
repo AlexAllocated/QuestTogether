@@ -386,6 +386,7 @@ end
 
 local validators = {
 	ownChatBubbleMode = function(a, v) return a:IsOwnChatBubbleMode(v) and v or nil end,
+	playerTooltipIdentifierMode = function(a, v) return a:IsPlayerTooltipIdentifierMode(v) and v or nil end,
 	brokerLeftClick = function(a, v) return a:IsDataBrokerAction(v) and v or nil end,
 	brokerRightClick = function(a, v) return a:IsDataBrokerAction(v) and v or nil end,
 	questTrackerMode = function(a, v)
@@ -599,6 +600,9 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 		Invoke(self, "RefreshActiveAnnouncementBubbles")
 		Invoke(self, "RefreshPersonalBubbleAnchorVisualState")
 		Invoke(self, "RefreshPersonalBubbleEditModeDialog")
+	end
+	if Has("playerTooltipIdentifierMode") then
+		Invoke(self, "UpdatePlayerTooltipBadge")
 	end
 	if
 		Has(

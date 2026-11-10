@@ -413,6 +413,7 @@ QuestTogether.DEFAULTS = {
 		emoteOnNearbyPlayerLevelUp = true,
 		nameplateQuestIconEnabled = true,
 		nameplatePlayerIconEnabled = true,
+		playerTooltipIdentifierMode = "friends",
 		nameplatePlayerIconStyle = "left",
 		nameplateQuestIconStyle = "left",
 		nameplateQuestHealthColorEnabled = true,
@@ -3389,6 +3390,24 @@ QuestTogether.API = QuestTogether.API
 				return false
 			end
 			return QuestTogether:NormalizeMemberName(friendName) == QuestTogether:NormalizeMemberName(name)
+		end,
+		IsPlayerTooltipFriend = function(guid, name)
+			if not CanAccessForeignValue(guid) or type(guid) ~= "string" or guid == ""
+				or not CanAccessForeignValue(name) or type(name) ~= "string" then
+				return false
+			end
+			-- Native GUID lookups cover character and Battle.net friendships without
+			-- rescanning either list or retaining a second social roster for tooltips.
+			local friend = MeshSocialCall(C_FriendList, "IsFriend", guid)
+			if CanAccessForeignValue(friend) and friend == true then return true end
+			local account = MeshSocialCall(C_BattleNet, "GetAccountInfoByGUID", guid)
+			if CanAccessForeignTable(account) and CanAccessForeignValue(account.isFriend)
+				and account.isFriend == true then return true end
+			-- Older clients may expose only the exact character-name lookup.
+			local info = MeshSocialCall(C_FriendList, "GetFriendInfo", name)
+			return CanAccessForeignTable(info) and CanAccessForeignValue(info.name)
+				and type(info.name) == "string"
+				and QuestTogether:NormalizeMemberName(info.name) == QuestTogether:NormalizeMemberName(name)
 		end,
 		InviteUnit = function(name)
 			if

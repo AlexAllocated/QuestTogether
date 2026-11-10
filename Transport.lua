@@ -22,6 +22,7 @@ local METRICS = {
 	nativeUnknown = true,
 	nativeBooleanSuccess = true,
 	whisperUnavailable = true,
+	whisperCorrelationFull = true,
 }
 local NATIVE_RESULTS = {}
 local NATIVE_ROUTES = { PARTY = true, RAID = true, INSTANCE_CHAT = true, WHISPER = true }
@@ -125,6 +126,11 @@ local function WhisperUnavailable(a, route)
 		and a.IsAddonWhisperTargetUnavailable
 		and a:IsAddonWhisperTargetUnavailable(route.target) == true
 end
+local function WhisperTrackable(a, route)
+	return route.distribution ~= "WHISPER"
+		or not a.CanRecordAddonWhisperAttempt
+		or a:CanRecordAddonWhisperAttempt(route.target, route.meshTraffic) ~= false
+end
 local function Take(s, now, cost, mesh)
 	Refill(s, now)
 	if s.departing or (s.blockedUntil and now < s.blockedUntil) or s.tokens < 1 or s.byteTokens < cost then
@@ -182,10 +188,13 @@ local function NativeSend(a, s, wire, context, route)
 		Count(s, "whisperUnavailable")
 		return false, "unavailable"
 	end
-	Count(s, "attempts")
 	if route.distribution == "WHISPER" and a.RecordAddonWhisperAttempt then
-		a:RecordAddonWhisperAttempt(target)
+		if a:RecordAddonWhisperAttempt(target, route.meshTraffic) == false then
+			Count(s, "whisperCorrelationFull")
+			return false, "capacity"
+		end
 	end
+	Count(s, "attempts")
 	local ok, result = pcall(a.API.SendAddonMessage, a.commPrefix, wire, route.distribution, target)
 	local code = ok and a:SafeToNumber(result) or nil
 	local nativeKey, nativeLabel = "nativeUnknown", "unknown"
@@ -346,6 +355,10 @@ function QT:SendTransportNow(wire, context, route, mode)
 		Count(s, "whisperUnavailable")
 		return false, "unavailable"
 	end
+	if not WhisperTrackable(self, route) then
+		Count(s, "whisperCorrelationFull")
+		return false, "capacity"
+	end
 	if s.departing then
 		if (s.blockedUntil and now < s.blockedUntil) or s.tokens < 1 or s.byteTokens < cost then
 			return false, "paced"
@@ -475,7 +488,13 @@ local function SelectClass(a, s, now, cursor, lastFlow, eligible, reserveTurn, f
 		local class, flows, seen = CLASSES[slot], {}, {}
 		for _, row in ipairs(s.queue) do
 			local flow = flowKey and flowKey(row) or row.flow
-			if row.priority == class and eligible(row) and not seen[flow] then
+			local trackable = true
+			if row.priority == class then
+				trackable = WhisperTrackable(a, row.route)
+				if not trackable and not row.correlationBlocked then Count(s, "whisperCorrelationFull") end
+				row.correlationBlocked = not trackable or nil
+			end
+			if row.priority == class and trackable and eligible(row) and not seen[flow] then
 				seen[flow] = true
 				flows[#flows + 1] = row
 			end

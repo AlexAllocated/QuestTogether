@@ -275,6 +275,159 @@ QuestTogether:RegisterTest(
 )
 
 QuestTogether:RegisterTest(
+	"delayed offline whisper notices survive successful replies without retiring a recovered peer",
+	function()
+		for _, failedFirst in ipairs({ false, true }) do
+			local a, name = WhisperFailureFixture(true), "Chronic Exhaustion"
+			a:Attempt(name)
+			if failedFirst then
+				assert(a:Filter(a:Notice(name)))
+				assert(a:IsAddonWhisperTargetUnavailable(name))
+			end
+			a.now = a.now + 1
+			a:ClearAddonWhisperFailure(name)
+			assert(not a:IsAddonWhisperTargetUnavailable(name))
+			a.now = a.now + 35
+			assert(a:Filter(a:Notice(name)), "a reply must not erase correlation for earlier native attempts")
+			assert(a:Filter(a:Notice(name)), "every chat window must suppress the delayed notice")
+			Equal(#a.retired, failedFirst and 1 or 0)
+			Equal(a:GetCommsDiagnostics().whisperUnavailable, 1, "delayed failures stay in QT diagnostics")
+			assert(not a:IsAddonWhisperTargetUnavailable(name), "an older failure must not retire a recovered address")
+			a:Attempt(name)
+			assert(a:Filter(a:Notice(name)))
+			assert(a:IsAddonWhisperTargetUnavailable(name), "a subsequent failed attempt still installs the barrier")
+			Equal(#a.retired, failedFirst and 2 or 1)
+		end
+	end
+)
+
+QuestTogether:RegisterTest(
+	"late whisper failures stay bounded and preserve ordinary whisper feedback for the same window",
+	function()
+		local a, name = WhisperFailureFixture(true), "Chronic Exhaustion"
+		a:Attempt(name)
+		local sentAt = a.now
+		a.now = sentAt + 90
+		assert(a:Filter(a:Notice(name)), "server failures can arrive after the original 30-second window")
+		assert(a:IsAddonWhisperTargetUnavailable(name))
+		a.now = sentAt + 121
+		Equal(a:Filter(a:Notice(name)), false, "notice correlation still has a finite lifetime")
+		assert(a:IsAddonWhisperTargetUnavailable(name), "notice expiry must not truncate the separate send hold")
+		a.now = sentAt + 151
+		assert(not a:IsAddonWhisperTargetUnavailable(name))
+		for _, target in ipairs({ name, "secret-target" }) do
+			local b = WhisperFailureFixture(true)
+			function b:CanAccessValue(value) return value ~= "secret-target" end
+			b:Attempt(name)
+			b.ordinaryObserver("WHISPER", target)
+			b.now = b.now + 90
+			Equal(b:Filter(b:Notice(name)), false, "late ordinary whisper errors must remain visible")
+		end
+	end
+)
+
+QuestTogether:RegisterTest(
+	"full whisper correlation ledger reserves private capacity without spending budget or blocking party traffic",
+	function()
+		local a = WhisperFailureFixture()
+		local firstSent
+		for index = 1, 112 do
+			a.now = a.now + 0.6
+			assert(a:SendTransportNow("probe", "MHEL", {
+				distribution = "WHISPER", target = "Peer" .. index .. "-Realm", meshTraffic = true,
+			}))
+			firstSent = firstSent or a.now
+		end
+		a:DrainTransport()
+		local s, sent = a:GetTransportState(), #a.wire
+		local credits = { s.tokens, s.byteTokens, s.meshTokens, s.meshByteTokens }
+		local route = { distribution = "WHISPER", target = "New-Realm", meshTraffic = true }
+		local accepted, reason = a:SendTransportNow("untracked", "MHEL", route)
+		Equal(accepted, false)
+		Equal(reason, "capacity")
+		Equal(#a.wire, sent)
+		Equal(s.metrics.attempts, sent)
+		Equal(s.tokens, credits[1])
+		Equal(s.byteTokens, credits[2])
+		Equal(s.meshTokens, credits[3])
+		Equal(s.meshByteTokens, credits[4])
+		local completed = 0
+		local queued, _, ticket = a:QueueTransportWire("later", "MHEL", route, {
+			expires = a.now + 100,
+			onComplete = function(success)
+				assert(success)
+				completed = completed + 1
+			end,
+		})
+		assert(queued)
+		assert(a:QueueTransportWire("party", "QCMP", { distribution = "PARTY" }))
+		assert(a:QueueTransportWire("private", "QTHQ", { distribution = "WHISPER", target = "Private1-Realm" }))
+		a:DrainTransport()
+		Equal(#a.wire, sent + 2, "public receipts must leave room for both party and targeted private work")
+		local partySent, privateSent = false, false
+		for index = sent + 1, #a.wire do
+			partySent = partySent or a.wire[index][3] == "PARTY"
+			privateSent = privateSent or a.wire[index][4] == "Private1-Realm"
+		end
+		assert(partySent and privateSent)
+		Equal(ticket.status, "queued")
+		Equal(completed, 0)
+		for index = 2, 16 do
+			a.now = a.now + 0.6
+			assert(a:SendTransportNow("private", "QTHQ", {
+				distribution = "WHISPER", target = "Private" .. index .. "-Realm",
+			}))
+		end
+		local tracked = 0
+		for _ in pairs(a.addonWhisperState.targets) do tracked = tracked + 1 end
+		Equal(tracked, 128)
+		credits = { s.tokens, s.byteTokens, s.meshTokens, s.meshByteTokens }
+		sent = #a.wire
+		accepted, reason = a:SendTransportNow("private", "QTHQ", { distribution = "WHISPER", target = "Private17-Realm" })
+		assert(not accepted and reason == "capacity", "private reserve does not expand the total ledger bound")
+		Equal(#a.wire, sent)
+		Equal(s.tokens, credits[1])
+		Equal(s.byteTokens, credits[2])
+		Equal(s.meshTokens, credits[3])
+		Equal(s.meshByteTokens, credits[4])
+		a.now = a.now + 1
+		assert(a:SendTransportNow("existing", "MHEL", {
+			distribution = "WHISPER", target = "Peer112-Realm", meshTraffic = true,
+		}))
+		assert(a:Filter(a:Notice("Peer1")), "capacity pressure must not evict outstanding receipts")
+		a.now = firstSent + 132
+		a:DrainTransport()
+		Equal(ticket.status, "accepted")
+		Equal(completed, 1)
+		Equal(a.wire[#a.wire][4], "New-Realm")
+		assert(a:Filter(a:Notice("New")))
+	end
+)
+
+QuestTogether:RegisterTest(
+	"world departure whisper notices are filtered without changing retired routing or hiding ordinary whispers",
+	function()
+		local a, name = WhisperFailureFixture(), "Departed-Realm"
+		a.now = a.now + 2
+		a:EndTransportSession()
+		local frames = WireEvent(a, "BYE", { reason = "departure" })
+		assert(#frames == 1)
+		assert(a:SendTransportNow(frames[1], "BYE", { distribution = "WHISPER", target = name }, "departure"))
+		assert(a:Filter(a:Notice(name)), "departure is an actual native whisper attempt")
+		Equal(#a.retired, 0)
+		assert(not a:IsAddonWhisperTargetUnavailable(name))
+		a.ordinaryObserver("WHISPER", name)
+		Equal(a:Filter(a:Notice(name)), false, "ordinary intent stays observable during the world transition")
+		a = WhisperFailureFixture()
+		a:Attempt(name)
+		a.isLoggingOut = true
+		Equal(a:Filter(a:Notice(name)), false, "filter cannot outlive ordinary-whisper observation")
+		a.isLoggingOut, a.isEnabled = false, false
+		Equal(a:Filter(a:Notice(name)), false)
+	end
+)
+
+QuestTogether:RegisterTest(
 	"whisper notice matching respects localized templates exact identities expiry and lifecycle",
 	function()
 		local a = WhisperFailureFixture(true)
@@ -286,15 +439,15 @@ QuestTogether:RegisterTest(
 		Equal(a:Filter("Chronic Exhaustion"), false)
 		a.failureFormat = nil
 		a.now = a.now + 31
-		Equal(a:Filter(a:Notice("Chronic Exhaustion")), false)
-		assert(a:IsAddonWhisperTargetUnavailable("Chronic Exhaustion"), "cooldown outlasts notice correlation")
+		assert(a:Filter(a:Notice("Chronic Exhaustion")))
+		assert(a:IsAddonWhisperTargetUnavailable("Chronic Exhaustion"))
 		a.now = a.now + 30
 		Equal(a:IsAddonWhisperTargetUnavailable("Chronic Exhaustion"), false)
 		a:Attempt("Chronic Exhaustion")
 		assert(a:Filter(a:Notice("Chronic Exhaustion")))
 		a:EndTransportSession()
 		assert(a:IsAddonWhisperTargetUnavailable("Chronic Exhaustion"), "departure cleanup must keep the send barrier")
-		Equal(a:Filter(a:Notice("Chronic Exhaustion")), false)
+		assert(a:Filter(a:Notice("Chronic Exhaustion")))
 		a:ResetTransport()
 		a:InitializeTransport()
 		Equal(a:Filter(a:Notice("Chronic Exhaustion")), false)
@@ -341,7 +494,7 @@ QuestTogether:RegisterTest(
 		end
 		assert(targets <= 128 and ordinary <= 128)
 		Equal(a:Filter(a:Notice("Peer1")), false, "manual guard overflow must fail open")
-		a.now = a.now + 61
+		a.now = a.now + 121
 		a:Attempt("Peer1-Realm")
 		assert(a:Filter(a:Notice("Peer1")))
 		a.now = a.now - 5

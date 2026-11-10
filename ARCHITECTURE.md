@@ -524,11 +524,22 @@ for explicit local troubleshooting.
 
 Native whispers can be accepted locally and later produce a player-not-found
 system notice. A bounded, transport-lifetime ledger correlates the localized
-notice with actual QT whisper attempts for 30 seconds. Ordinary whisper intent
-keeps ambiguous notices visible. Correlated failures retire only routing state,
+notice with actual QT whisper attempts for 120 seconds. Ordinary whisper intent
+keeps ambiguous notices visible for that same interval. Correlated failures retire only routing state,
 cancel that target's queued whispers, and hold further sends for 60 seconds;
 discovery retains its existing candidate backoff. An eligible native-origin
-packet clears the send hold before replies, without renewing domain data.
+packet clears the send hold before replies, without renewing domain data or
+discarding notice correlation. A failure arriving after a reply but before any
+new attempt is logged and hidden without retiring the recovered address. The
+128-target ledger never evicts a live receipt to send to another address: new
+targets wait within the existing bounded queue until capacity returns or their
+work expires. Sixteen receipt slots are reserved for non-mesh whispers so public
+fanout cannot exhaust admission for targeted private requests. Existing targets
+and party routes continue using the shared budget.
+Best-effort world-departure whispers are recorded too; their notices can be
+hidden without mutating retired routing while ordinary-whisper observation
+remains active. Disable/reset unregisters the filter rather than preserving it
+past its ordinary-whisper observer.
 Chat filters suppress only correlated notices; failures remain counted in QT's
 diagnostics. Missing hooks, unreadable values, and uncertain matches fail open.
 

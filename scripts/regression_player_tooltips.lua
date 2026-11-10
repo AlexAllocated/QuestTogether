@@ -16,6 +16,8 @@ local function Fixture()
 		invalid = 0,
 		frames = {},
 		reads = 0,
+		db = { profile = QT:DeepCopy(QT.DEFAULTS.profile), global = {} },
+		partyMembers = {},
 	}, { __index = QT })
 	local function Frame(parent, owned)
 		local f = { parent = parent, owned = owned, shown = true, width = 180, bottom = 180, scale = 1, points = {} }
@@ -132,6 +134,12 @@ local function Fixture()
 		UnitIsPlayer = function()
 			return a.player
 		end,
+		UnitIsUnit = function()
+			return a.selfUnit == true
+		end,
+		IsPlayerTooltipFriend = function()
+			return a.friend == true or a.bnetFriend == true
+		end,
 		UnitGUID = function()
 			return a.guid
 		end,
@@ -176,6 +184,86 @@ local function Fixture()
 	end
 	return a
 end
+
+QT:RegisterTest("whole player tooltip section follows current friendship and group membership", function()
+	local a = Fixture()
+	function a:GetPlayerNoteTooltipText() return "Private note: A helpful healer" end
+	a.qtPlayerPresenceState = { peers = {}, questPartners = { [a.name] = { receivedAt = 100, looking = true } } }
+	Equal(a:GetPlayerTooltipIdentifierMode(), "friends")
+	for _, mode in ipairs({ "all", "friends", "party", "friends_party", "hidden" }) do
+		a.db.profile.playerTooltipIdentifierMode = mode
+		for _, friendKind in ipairs({ "neither", "character", "bnet" }) do
+			for _, grouped in ipairs({ false, true }) do
+				a.friend, a.bnetFriend = friendKind == "character", friendKind == "bnet"
+				a.partyMembers = grouped and { [a.name] = {} } or {}
+				local expected = mode ~= "hidden"
+					and not ((mode == "friends" or mode == "friends_party") and friendKind ~= "neither")
+					and not ((mode == "party" or mode == "friends_party") and grouped)
+				Equal(a:UpdatePlayerTooltipBadge(), expected)
+				if a.playerTooltipBadge then Equal(a.playerTooltipBadge.frame.shown, expected) end
+			end
+		end
+	end
+	-- Restricted or unavailable friend information cannot cause a UI exception.
+	a.db.profile.playerTooltipIdentifierMode, a.partyMembers = "friends", {}
+	a.API.IsPlayerTooltipFriend = function() error("unavailable") end
+	assert(a:UpdatePlayerTooltipBadge())
+	a.API.IsPlayerTooltipFriend = nil
+	assert(a:UpdatePlayerTooltipBadge())
+	Equal(a.invalid, 0)
+end)
+
+QT:RegisterTest("whole player tooltip section stays hidden on your own character through any unit alias", function()
+	local a = Fixture()
+	function a:GetPlayerNoteTooltipText() return "Private note: Saved note" end
+	function a:IsPlayerLookingForQuestPartners() return true end
+	a.db.profile.playerTooltipIdentifierMode = "all"
+	assert(a:UpdatePlayerTooltipBadge())
+	for _, identify in ipairs({ "token", "name", "native" }) do
+		a.unit, a.name, a.selfUnit = "mouseover", "Friend-Realm", false
+		if identify == "token" then a.unit = "player" end
+		if identify == "name" then a.name = "Me-Realm" end
+		if identify == "native" then a.selfUnit = true end
+		assert(not a:UpdatePlayerTooltipBadge())
+		assert(not a.playerTooltipBadge.frame.shown)
+	end
+	Equal(a.invalid, 0)
+end)
+
+QT:RegisterTest("hiding the player tooltip section clears its partner glow and restores all content when shown", function()
+	local a = Fixture()
+	a.db.profile.playerTooltipIdentifierMode = "hidden"
+	assert(not a:UpdatePlayerTooltipBadge())
+	Equal(#a.frames, 0)
+	function a:GetPlayerNoteTooltipText() return self.note end
+	a.note = "Private note: A helpful healer"
+	a.qtPlayerPresenceState = { peers = {}, questPartners = { [a.name] = { receivedAt = 100, looking = true } } }
+	assert(not a:UpdatePlayerTooltipBadge())
+	Equal(#a.frames, 0)
+	a.db.profile.playerTooltipIdentifierMode = "all"
+	assert(a:UpdatePlayerTooltipBadge())
+	local state = a.playerTooltipBadge
+	assert(state.label.text:find("Looking for questing partners", 1, true))
+	assert(state.label.text:find(a.note, 1, true))
+	assert(state.label.text:find("This player is using QuestTogether", 1, true))
+	assert(state.icon.qtLookingForPartners)
+	a.db.profile.playerTooltipIdentifierMode = "friends"
+	a.friend = true
+	assert(not a:UpdatePlayerTooltipBadge())
+	assert(not state.frame.shown and not state.icon.qtLookingForPartners)
+	Equal(a.note, "Private note: A helpful healer")
+	a.db.profile.playerTooltipIdentifierMode = "all"
+	assert(a:UpdatePlayerTooltipBadge())
+	assert(state.label.text:find(a.note, 1, true))
+	assert(state.icon.qtLookingForPartners)
+	a.note = nil
+	a.qtPlayerPresenceState.questPartners[a.name].looking = false
+	assert(a:UpdatePlayerTooltipBadge())
+	Equal(state.label.text, "This player is using QuestTogether")
+	Equal(state.label.points[1][4], 46)
+	assert(not state.icon.qtLookingForPartners)
+	Equal(a.invalid, 0)
+end)
 
 QT:RegisterTest("native player tooltip uses the same fresh cached display evidence without creating presence", function()
 	local a = Fixture()

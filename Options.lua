@@ -1049,6 +1049,9 @@ function QuestTogether:RefreshQuestPlatesWindow(playerPlates)
 
 	local controls = self[playerPlates and "playerPlateControls" or "questPlateControls"]
 	RefreshCheckboxOptions(controls)
+	if controls.playerTooltipIdentifierDropdown then
+		RefreshDropdownControl(controls.playerTooltipIdentifierDropdown, self:GetPlayerTooltipIdentifierModeLabel())
+	end
 
 	if controls.nameplateQuestIconStyleDropdown then
 		RefreshDropdownControl(
@@ -1729,6 +1732,17 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory, playerPlates)
 		-82
 	)
 	local nameplateQuestIconStyleDropdown = CreateNameplateIconStyleDropdown(content, 36, -108, playerPlates)
+	local playerTooltipIdentifierDropdown
+	if playerPlates then
+		local tooltipHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+		tooltipHeader:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -428)
+		tooltipHeader:SetText(L("Player tooltips"))
+		playerTooltipIdentifierDropdown = CreateOptionDropdown(content, L("QuestTogether tooltip"),
+			L("Choose when to show the QuestTogether section below player tooltips, including its logo, quest-partner status, and private notes. It is always hidden on your own character."),
+			16, -456, 320, { "all", "friends", "party", "friends_party", "hidden" },
+			function(value) return QuestTogether:GetPlayerTooltipIdentifierModeLabel(value) end,
+			"playerTooltipIdentifierMode", function() return QuestTogether:GetPlayerTooltipIdentifierMode() end)
+	end
 	local nameplateQuestHealthColorEnabled, nameplateQuestHealthColor, resetNameplateQuestHealthColor
 	if not playerPlates then
 		nameplateQuestHealthColorEnabled = CreateCheckbox(
@@ -1902,6 +1916,7 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory, playerPlates)
 		playerPlates = playerPlates == true,
 		[enabledKey] = nameplateQuestIconEnabled,
 		nameplateQuestIconStyleDropdown = nameplateQuestIconStyleDropdown,
+		playerTooltipIdentifierDropdown = playerTooltipIdentifierDropdown,
 		nameplateQuestHealthColorEnabled = nameplateQuestHealthColorEnabled,
 		nameplateQuestHealthColor = nameplateQuestHealthColor,
 		resetNameplateQuestHealthColor = resetNameplateQuestHealthColor,

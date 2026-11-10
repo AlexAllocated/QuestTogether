@@ -18,6 +18,7 @@ local function Fixture()
 		"RefreshOptionsWindow",
 		"RefreshProfilesWindow",
 		"RefreshNameplateAugmentation",
+		"UpdatePlayerTooltipBadge",
 		"QueuePartyNavigationUpdate",
 		"RefreshActiveAnnouncementBubbles",
 		"RefreshPersonalBubbleAnchorVisualState",
@@ -55,6 +56,25 @@ QT:RegisterTest("settings batches validate all inputs before persistence or effe
 	assert(a.effects.OnPlayerLocationOptionsChanged == 1)
 	assert(a:SetOptions({ lightMode = true, reduceMotion = true }))
 	assert(a.effects.RefreshWindowThemes == 1)
+end)
+
+QT:RegisterTest("player tooltip identifier modes default to hiding friends and persist through profile normalization", function()
+	local a = Fixture()
+	assert(a:GetPlayerTooltipIdentifierMode() == "friends")
+	for index, mode in ipairs({ "all", "friends", "party", "friends_party", "hidden" }) do
+		assert(a:SetOption("playerTooltipIdentifierMode", mode))
+		a:NormalizeSettingsProfile()
+		assert(a:GetPlayerTooltipIdentifierMode() == mode)
+		assert(a.effects.UpdatePlayerTooltipBadge == index)
+	end
+	for _, invalid in ipairs({ false, true, 3, {}, "unsupported" }) do
+		assert(not a:SetOption("playerTooltipIdentifierMode", invalid))
+	end
+	assert(a:GetPlayerTooltipIdentifierMode() == "hidden")
+	a.db.profile.playerTooltipIdentifierMode = nil
+	a:NormalizeSettingsProfile()
+	assert(a:GetPlayerTooltipIdentifierMode() == "friends")
+	assert(not a.effects.OnPlayerLocationOptionsChanged and not a.effects.BroadcastQuestPartnerStatus)
 end)
 
 QT:RegisterTest("profile activation applies the same appearance privacy and navigation effects as edits", function()

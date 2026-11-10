@@ -133,6 +133,37 @@ return pushable end or nil,
 				assert(addon.API.GetMeshBattleNetGameAccountCount(1) == 0)
 				assert(addon.API.GetMeshBattleNetFriendName(1, 2) == nil)
 				assert(inaccessibleReads == before)
+				-- Tooltip preferences use current native friendship, not an old
+				-- mesh candidate's source or a second cached social roster.
+				local tooltipFriend, tooltipAccount, tooltipInfo = false, nil, nil
+				C_FriendList = {
+					IsFriend = function(guid) assert(guid == "Player-1"); return tooltipFriend end,
+					GetFriendInfo = function(name) assert(name == "Mira Dawn"); return tooltipInfo end,
+				}
+				C_BattleNet = { GetAccountInfoByGUID = function(guid)
+					assert(guid == "Player-1"); return tooltipAccount
+				end }
+				assert(not addon.API.IsPlayerTooltipFriend("Player-1", "Mira Dawn"))
+				tooltipFriend = true
+				assert(addon.API.IsPlayerTooltipFriend("Player-1", "Mira Dawn"))
+				tooltipFriend, tooltipAccount = false, { isFriend = true, battleTag = inaccessible }
+				assert(addon.API.IsPlayerTooltipFriend("Player-1", "Mira Dawn"))
+				tooltipAccount.isFriend = false
+				assert(not addon.API.IsPlayerTooltipFriend("Player-1", "Mira Dawn"))
+				tooltipInfo = { name = "Mira Dawn" }
+				assert(addon.API.IsPlayerTooltipFriend("Player-1", "Mira Dawn"))
+				tooltipInfo.name = "Mira Other"
+				assert(not addon.API.IsPlayerTooltipFriend("Player-1", "Mira Dawn"))
+				for _, value in ipairs({ secret, inaccessible }) do
+					tooltipFriend, tooltipAccount, tooltipInfo = value, value, value
+					assert(not addon.API.IsPlayerTooltipFriend("Player-1", "Mira Dawn"))
+					tooltipAccount, tooltipInfo = { isFriend = value }, { name = value }
+					assert(not addon.API.IsPlayerTooltipFriend("Player-1", "Mira Dawn"))
+					assert(not addon.API.IsPlayerTooltipFriend(value, "Mira Dawn"))
+				end
+				C_FriendList, C_BattleNet = inaccessible, inaccessible
+				assert(not addon.API.IsPlayerTooltipFriend("Player-1", "Mira Dawn"))
+				assert(inaccessibleReads == before, "tooltip friendship must not inspect hidden account data")
 				UnitExists, UnitIsVisible, UnitIsPlayer, UnitIsFriend = function() return true end,
 					function() return true end, function() return true end, function() return true end
 				local name, realm = "Mira", "Dawn"

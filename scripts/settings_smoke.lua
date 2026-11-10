@@ -467,6 +467,32 @@ ownBubble.Dropdown.menu[1].func()
 assert(QuestTogether:GetOwnChatBubbleMode() == "always")
 print("Personal bubble dropdown preserves profile choices and follows the bubble master switch")
 
+local playerTooltip = QuestTogether.playerPlateControls.playerTooltipIdentifierDropdown
+assert(playerTooltip.title.text == "QuestTogether tooltip")
+assert(playerTooltip.Dropdown.text == "Hide for friends")
+local tooltipChoices = {
+	{ "all", "Show for everyone" }, { "friends", "Hide for friends" },
+	{ "party", "Hide for party members" }, { "friends_party", "Hide for friends and party members" },
+	{ "hidden", "Hide for everyone" },
+}
+assert(#playerTooltip.Dropdown.menu == #tooltipChoices)
+for index, choice in ipairs(tooltipChoices) do
+	assert(playerTooltip.Dropdown.menu[index].text == choice[2])
+	playerTooltip.Dropdown.menu[index].func()
+	assert(QuestTogether:GetPlayerTooltipIdentifierMode() == choice[1])
+	assert(playerTooltip.Dropdown.text == choice[2] and playerTooltip.Dropdown.menu[index].selected())
+end
+QuestTogether:SetOption("nameplatePlayerIconEnabled", false)
+QuestTogether:RefreshQuestPlatesWindow(true)
+assert(playerTooltip.Dropdown:IsEnabled(), "tooltip visibility is independent of nameplate icons")
+assert(QuestTogether:SetActiveProfile("Dropdown test profile"))
+assert(playerTooltip.Dropdown.text == "Hide for friends")
+assert(QuestTogether:SetActiveProfile(firstProfile))
+assert(playerTooltip.Dropdown.text == "Hide for everyone")
+playerTooltip.Dropdown.menu[2].func()
+QuestTogether:SetOption("nameplatePlayerIconEnabled", true)
+print("Player tooltip identifier controls preserve profile choices independently of nameplate visibility")
+
 local checkboxCount, scrollbarCount, swatch = 0, 0
 for _, region in ipairs(regions) do
 	if region.kind == "CheckButton" then

@@ -1,5 +1,24 @@
 local QT = _G.QuestTogether
 local L = QT.Translate
+local IDENTIFIER_MODES = { all = true, friends = true, party = true, friends_party = true, hidden = true }
+
+function QT:IsPlayerTooltipIdentifierMode(value)
+	return self:CanAccessValue(value) and type(value) == "string" and IDENTIFIER_MODES[value] == true
+end
+
+function QT:GetPlayerTooltipIdentifierMode()
+	local mode = self:GetOption("playerTooltipIdentifierMode")
+	return self:IsPlayerTooltipIdentifierMode(mode) and mode or "friends"
+end
+
+function QT:GetPlayerTooltipIdentifierModeLabel(mode)
+	mode = mode or self:GetPlayerTooltipIdentifierMode()
+	if mode == "all" then return L("Show for everyone") end
+	if mode == "party" then return L("Hide for party members") end
+	if mode == "friends_party" then return L("Hide for friends and party members") end
+	if mode == "hidden" then return L("Hide for everyone") end
+	return L("Hide for friends")
+end
 
 local function Native(addon, fn, ...)
 	if not addon:CanAccessValue(fn) or type(fn) ~= "function" then
@@ -20,6 +39,21 @@ local function Owned(addon, frame, method, ...)
 		return nil
 	end
 	return Foreign(addon, frame, method, ...)
+end
+
+function QT:ShouldShowPlayerTooltipBadge(unit, name, guid)
+	local mode = self:GetPlayerTooltipIdentifierMode()
+	if mode == "hidden" or unit == "player" or name == self:NormalizeMemberName(self:GetPlayerFullName()) then
+		return false
+	end
+	local same = Native(self, self.API.UnitIsUnit, unit, "player")
+	if self:CanAccessValue(same) and same == true then return false end
+	if (mode == "party" or mode == "friends_party") and self:IsGroupedSender(name) then return false end
+	if mode == "friends" or mode == "friends_party" then
+		local friend = Native(self, self.API.IsPlayerTooltipFriend, guid, name)
+		if self:CanAccessValue(friend) and friend == true then return false end
+	end
+	return true
 end
 
 function QT:GetPlayerTooltipHost()
@@ -66,8 +100,12 @@ function QT:ReadPlayerTooltipUnit()
 	if not self:HasQTPlayerDisplayEvidence(name) then
 		return nil
 	end
+	if not self:ShouldShowPlayerTooltipBadge(unit, name, guid) then
+		return nil
+	end
 	local looking = self:IsPlayerLookingForQuestPartners(name) == true
-	return { host = host, unit = unit, guid = guid, name = name, looking = looking }
+	local note = self:GetPlayerNoteTooltipText(name)
+	return { host = host, unit = unit, guid = guid, name = name, looking = looking, note = note }
 end
 
 function QT:HidePlayerTooltipBadge()
@@ -168,14 +206,13 @@ function QT:UpdatePlayerTooltipBadge()
 			end
 		end
 	end
-	local text = L("This player is using QuestTogether")
+	local lines = { L("This player is using QuestTogether") }
 	if row.looking then
-		text = text .. "\n|cffffd34d" .. L("Looking for questing partners") .. "|r"
+		lines[#lines + 1] = "|cffffd34d" .. L("Looking for questing partners") .. "|r"
 	end
-	local note = self:GetPlayerNoteTooltipText(row.name)
-	if note then text = text .. "\n" .. note end
+	if row.note then lines[#lines + 1] = row.note end
 	Owned(self, state.label, "SetWidth", width - 58)
-	Owned(self, state.label, "SetText", text)
+	Owned(self, state.label, "SetText", table.concat(lines, "\n"))
 	local height = self:SafeToNumber(Owned(self, state.label, "GetStringHeight"))
 	if not height then
 		self:HidePlayerTooltipBadge()
