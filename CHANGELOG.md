@@ -4,6 +4,22 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.0.4
+
+This patch improves player discovery and update delivery, and fixes missing addon versions in map tooltips.
+
+### Player discovery and communication
+
+- QT looks for more connections sooner when your network is sparse and bandwidth is available. Connection attempts also handle simultaneous logins more reliably.
+- QT avoids sending duplicate public updates along the same connections. New connections can receive recent verified updates, and interrupted update requests recover more reliably.
+- Party and private messages keep priority within the same overall sending limits. Sharing preferences and source verification remain in place.
+- Earlier 9.0 clients remain compatible. Coverage builds over time, with further improvements as more players update; it does not guarantee every player will appear.
+
+### Map tooltip versions
+
+- Addon versions now arrive with public location updates and confirmed connections, so map tooltips no longer need to wait for a full player-details request to show them.
+- Recent version information stays with cached map locations across reloads. Delayed updates cannot make an old version appear current again.
+
 ## 9.0.3
 
 This patch improves player discovery, fixes lost party-chat reminder choices, and improves map compatibility.

@@ -1,29 +1,23 @@
 {
-  "source_sha256": "bf337a19964b5e8bc4bb0205b592a29146fa28dc84335ba73c0da5567f2a219d",
+  "source_sha256": "ef16b7d4180752e66a624d0f51457cb39e5959f4bbc67c8afcecf0e1a65d64f0",
   "notes": {
-    "version": "9.0.3",
-    "welcome": "Améliorations de la découverte des joueurs, du rappel des annonces de groupe et de la navigation sur la carte.",
+    "version": "9.0.4",
+    "welcome": "Cette mise à jour améliore la découverte des joueurs QT, les échanges de données et les versions affichées sur la carte.",
     "sections": [
       {
-        "title": "Découverte et connexions",
+        "title": "Découverte des joueurs et échanges",
         "items": [
-          "QT cherche aussi des contacts parmi les amis en ligne, les personnages WoW compatibles des amis Battle.net, les expéditeurs du chat et les joueurs amicaux visibles. Un nom seul ne crée aucun repère ; vos réglages restent inchangés.",
-          "Les contacts déjà sollicités ont davantage de chances de se connecter malgré la découverte continue de nouveaux joueurs.",
-          "Les demandes à un destinataire occupé peuvent patienter avant une nouvelle tentative. Les deux joueurs devraient mettre QT à jour. Les limites habituelles restent applicables, sans connexion immédiate garantie.",
-          "Les diagnostics distinguent mieux les destinataires occupés, le manque de capacité locale, les échecs d’envoi, les joueurs indisponibles et les délais de réponse dépassés."
+          "QT établit plus vite de nouvelles connexions lorsqu’elles sont encore peu nombreuses et que les échanges en arrière-plan le permettent. Des problèmes de connexion au démarrage ont aussi été corrigés.",
+          "Les clients à jour peuvent mutualiser l’envoi des mises à jour publiques pour éviter les doublons. Les données déjà vérifiées peuvent aussi parvenir à de nouveaux destinataires, et les demandes en attente comme les relais interrompus sont repris plus fiablement.",
+          "Les échanges du groupe et les échanges privés restent prioritaires, sans modifier les limites globales d’envoi. Vos choix de partage, la vérification de l’origine des données et le retrait des données partagées restent respectés.",
+          "La compatibilité avec les versions précédentes de la série 9.0.x est conservée. La mutualisation profite davantage aux joueurs à mesure qu’ils mettent QT à jour. La découverte reste progressive et ne garantit pas l’affichage de tous les joueurs."
         ]
       },
       {
-        "title": "Rappel des annonces de groupe",
+        "title": "Versions dans les infobulles de la carte",
         "items": [
-          "« Laisser activé » enregistre « Ne plus me le rappeler » même si QT reconnaît un membre pendant le clic. L’arrivée d’autres membres ne réaffiche plus le rappel après cet enregistrement.",
-          "La case reste cochée lorsque la liste des membres est actualisée dans le rappel ouvert. Les nouveaux rappels, les autres profils et les aperçus ne reprennent pas une sélection non confirmée."
-        ]
-      },
-      {
-        "title": "Navigation sur la carte",
-        "items": [
-          "La navigation vers la carte et le journal de quêtes a été ajustée pour réduire les erreurs d’action bloquée en ouvrant ensuite la carte en combat."
+          "La version de l’addon accompagne désormais les mises à jour publiques de position. QT l’apprend aussi lorsqu’une connexion est confirmée : elle manque donc moins souvent dans les infobulles de la carte avant l’arrivée des autres informations du joueur.",
+          "Les versions encore valides sont conservées avec les positions mémorisées après un rechargement de l’interface. Des données reçues en retard ne peuvent pas faire passer une ancienne version pour une information récente."
         ]
       }
     ]

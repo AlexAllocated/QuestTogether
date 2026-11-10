@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.4
+
+Esta actualización agiliza la búsqueda de jugadores y mejora la información de versión que ves en el mapa.
+
+### Búsqueda de jugadores y comunicación
+
+- Ahora se buscan otros jugadores con más rapidez cuando hay pocas conexiones y queda capacidad disponible. También se corrigieron problemas que podían afectar las conexiones iniciales.
+- Los jugadores con versiones compatibles pueden compartir la misma información pública sin enviarla varias veces y ofrecer datos verificados aún válidos a quienes empiezan a recibirlos. También se mejoró la recuperación de envíos pendientes y retransmisiones.
+- Los datos del grupo y las comunicaciones privadas conservan su prioridad, con los mismos límites totales de envío. Se siguen respetando tus opciones para compartir información, la verificación de su origen y las solicitudes para dejar de compartirla.
+- QuestTogether sigue siendo compatible con las versiones anteriores de la serie 9.0. Más jugadores podrán aprovechar estas mejoras conforme actualicen. La búsqueda avanza de forma gradual y no garantiza que aparezcan todos los jugadores.
+
+### Versiones en la información del mapa
+
+- Ahora la versión de QuestTogether se obtiene tanto de las actualizaciones públicas de ubicación como de las conexiones confirmadas. Esto reduce los casos en que el mapa no muestra una versión mientras espera el resto de la información.
+- Las ubicaciones guardadas conservan la información de versión vigente al recargar la interfaz. Los datos que llegan con retraso no vuelven a dar por actualizada una versión antigua.
+
 ## 9.0.3
 
 Mejoras para encontrar jugadores, guardar la preferencia del recordatorio de grupo y navegar por el mapa.

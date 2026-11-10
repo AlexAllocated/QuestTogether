@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.4
+
+Dieses Update verbessert die Suche nach anderen QT-Spielern, den Datenaustausch und die Versionsangaben auf der Karte.
+
+### Spielersuche und Datenaustausch
+
+- QT knüpft schneller neue Verbindungen, solange noch wenige bestehen und im Hintergrund Kapazität frei ist. Verbindungsprobleme beim Start wurden behoben.
+- Aktualisierte Clients können öffentliche Updates gemeinsam weitergeben und doppelte Übertragungen vermeiden. Bereits geprüfte Daten stehen auch neu hinzukommenden Empfängern zur Verfügung; ausstehende Anfragen und unterbrochene Weiterleitungen werden zuverlässiger erneut versucht.
+- Gruppen- und private Daten behalten Vorrang. Die gesamten Sendelimits bleiben gleich; deine Freigabeeinstellungen, die Prüfung der Datenherkunft und das Zurückziehen von Freigaben werden weiterhin berücksichtigt.
+- Frühere Versionen der Reihe 9.0.x bleiben kompatibel. Je mehr Spieler aktualisieren, desto stärker wirkt die gemeinsame Weitergabe. QT findet Spieler weiterhin nach und nach; es werden nicht zwangsläufig alle angezeigt.
+
+### Versionsangaben in Karten-Tooltips
+
+- Öffentliche Positionsupdates enthalten jetzt auch die Addon-Version. QT erfährt sie außerdem beim bestätigten Verbindungsaufbau, sodass sie im Karten-Tooltip seltener bis zum Eintreffen weiterer Spielerangaben fehlt.
+- Noch gültige Versionsangaben bleiben zusammen mit gespeicherten Kartenpositionen auch nach dem Neuladen der Benutzeroberfläche erhalten. Verspätete Daten können veraltete Angaben nicht wieder aktuell erscheinen lassen.
+
 ## 9.0.3
 
 Verbesserungen bei der Spielersuche, der Gruppenchat-Erinnerung und der Kartennavigation.

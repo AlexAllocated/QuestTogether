@@ -1,29 +1,23 @@
 {
-  "source_sha256": "bf337a19964b5e8bc4bb0205b592a29146fa28dc84335ba73c0da5567f2a219d",
+  "source_sha256": "ef16b7d4180752e66a624d0f51457cb39e5959f4bbc67c8afcecf0e1a65d64f0",
   "notes": {
-    "version": "9.0.3",
-    "welcome": "Miglioramenti alla ricerca dei giocatori, al promemoria della chat di gruppo e alla navigazione sulla mappa.",
+    "version": "9.0.4",
+    "welcome": "Questo aggiornamento migliora la ricerca degli altri giocatori QT, lo scambio di dati e le versioni mostrate sulla mappa.",
     "sections": [
       {
-        "title": "Ricerca dei giocatori e connessioni",
+        "title": "Ricerca dei giocatori e comunicazioni",
         "items": [
-          "QT cerca ora contatti anche tra i personaggi amici online, i personaggi WoW compatibili degli amici Battle.net, i mittenti della chat di gioco e i giocatori amichevoli visibili. Un nome rilevato non basta a creare un indicatore; le impostazioni di condivisione e visualizzazione restano invariate.",
-          "I contatti con tentativi precedenti hanno più possibilità di collegarsi nonostante la continua scoperta di nuovi giocatori.",
-          "Le richieste a un destinatario occupato possono attendere in una coda limitata prima di un nuovo tentativo. Entrambi i giocatori dovrebbero aggiornare QT. Restano validi i limiti abituali, senza garanzia di collegamento immediato.",
-          "La diagnostica distingue meglio tra destinatari occupati, capacità locale esaurita, errori di invio, giocatori non disponibili e tempi di attesa scaduti."
+          "QT stabilisce più rapidamente nuove connessioni quando ce ne sono ancora poche e c’è capacità disponibile in background. Sono stati corretti anche alcuni problemi di connessione all’avvio.",
+          "I client aggiornati possono condividere l’inoltro degli aggiornamenti pubblici, evitando invii duplicati. I dati già verificati possono raggiungere anche nuovi destinatari; le richieste in attesa e gli inoltri interrotti vengono ripresi con maggiore affidabilità.",
+          "Le comunicazioni del gruppo e quelle private mantengono la priorità, entro gli stessi limiti complessivi di invio. Restano rispettate le tue preferenze di condivisione, la verifica dell’origine dei dati e il ritiro delle informazioni condivise.",
+          "QT resta compatibile con le versioni precedenti della serie 9.0.x. I vantaggi dell’inoltro condiviso aumentano man mano che i giocatori aggiornano l’addon. La ricerca rimane graduale e non garantisce che vengano mostrati tutti i giocatori."
         ]
       },
       {
-        "title": "Promemoria della chat di gruppo",
+        "title": "Versioni nei tooltip della mappa",
         "items": [
-          "«Lascia attivo» salva ora «Non ricordarmelo più» nel profilo anche se QT riconosce un membro durante il clic. Dopo il salvataggio, l’arrivo di altri membri non fa ricomparire il promemoria.",
-          "La casella resta selezionata quando l’elenco dei membri viene aggiornato nel promemoria aperto. Nuovi avvisi, altri profili e anteprime non ereditano scelte non confermate."
-        ]
-      },
-      {
-        "title": "Navigazione sulla mappa",
-        "items": [
-          "La navigazione sulla mappa e nel registro missioni è stata adeguata per ridurre gli errori di azione bloccata quando la mappa viene aperta successivamente in combattimento."
+          "La versione dell’addon accompagna ora gli aggiornamenti pubblici della posizione e viene appresa anche quando una connessione è confermata. Nei tooltip della mappa mancherà quindi meno spesso in attesa delle altre informazioni del giocatore.",
+          "Le versioni ancora valide vengono conservate con le posizioni memorizzate anche dopo aver ricaricato l’interfaccia. I dati arrivati in ritardo non possono far apparire recenti informazioni ormai scadute."
         ]
       }
     ]

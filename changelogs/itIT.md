@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.4
+
+Questo aggiornamento migliora la ricerca degli altri giocatori QT, lo scambio di dati e le versioni mostrate sulla mappa.
+
+### Ricerca dei giocatori e comunicazioni
+
+- QT stabilisce più rapidamente nuove connessioni quando ce ne sono ancora poche e c’è capacità disponibile in background. Sono stati corretti anche alcuni problemi di connessione all’avvio.
+- I client aggiornati possono condividere l’inoltro degli aggiornamenti pubblici, evitando invii duplicati. I dati già verificati possono raggiungere anche nuovi destinatari; le richieste in attesa e gli inoltri interrotti vengono ripresi con maggiore affidabilità.
+- Le comunicazioni del gruppo e quelle private mantengono la priorità, entro gli stessi limiti complessivi di invio. Restano rispettate le tue preferenze di condivisione, la verifica dell’origine dei dati e il ritiro delle informazioni condivise.
+- QT resta compatibile con le versioni precedenti della serie 9.0.x. I vantaggi dell’inoltro condiviso aumentano man mano che i giocatori aggiornano l’addon. La ricerca rimane graduale e non garantisce che vengano mostrati tutti i giocatori.
+
+### Versioni nei tooltip della mappa
+
+- La versione dell’addon accompagna ora gli aggiornamenti pubblici della posizione e viene appresa anche quando una connessione è confermata. Nei tooltip della mappa mancherà quindi meno spesso in attesa delle altre informazioni del giocatore.
+- Le versioni ancora valide vengono conservate con le posizioni memorizzate anche dopo aver ricaricato l’interfaccia. I dati arrivati in ritardo non possono far apparire recenti informazioni ormai scadute.
+
 ## 9.0.3
 
 Miglioramenti alla ricerca dei giocatori, al promemoria della chat di gruppo e alla navigazione sulla mappa.

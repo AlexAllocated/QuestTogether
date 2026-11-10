@@ -1,29 +1,23 @@
 {
-  "source_sha256": "bf337a19964b5e8bc4bb0205b592a29146fa28dc84335ba73c0da5567f2a219d",
+  "source_sha256": "ef16b7d4180752e66a624d0f51457cb39e5959f4bbc67c8afcecf0e1a65d64f0",
   "notes": {
-    "version": "9.0.3",
-    "welcome": "Esta atualização melhora as conexões entre jogadores, salva a escolha do lembrete do grupo com mais segurança e ajusta a abertura do mapa.",
+    "version": "9.0.4",
+    "welcome": "Esta atualização agiliza a descoberta de jogadores e melhora a exibição de versões no mapa.",
     "sections": [
       {
-        "title": "Encontrar e conectar jogadores",
+        "title": "Descoberta de jogadores e comunicação",
         "items": [
-          "O QT agora também usa a lista de amigos do personagem, personagens de WoW compatíveis de amigos do Battle.net, remetentes do chat e jogadores aliados visíveis para encontrar conexões. Só amigos online são considerados, e suas opções de localização continuam valendo.",
-          "As novas descobertas não deixam mais os contatos anteriores esperando indefinidamente por outra tentativa. A falta de espaço nas suas conexões também não atrasa a próxima tentativa como se o outro jogador estivesse inacessível.",
-          "Pedidos a jogadores com conexões lotadas podem aguardar e tentar novamente quando houver espaço ou uma troca de conexões. Ambos devem atualizar o addon; os limites continuam valendo e a conexão pode demorar.",
-          "Os diagnósticos diferenciam conexões lotadas, falta de espaço local, falhas de envio, jogadores indisponíveis e tempo esgotado."
+          "A busca por outros jogadores fica mais rápida quando há poucas conexões e capacidade disponível. Também foram corrigidas falhas no estabelecimento das primeiras conexões.",
+          "Versões compatíveis evitam enviar a mesma informação pública várias vezes e podem fornecer dados verificados ainda válidos a quem começa a recebê-los. Envios pendentes e retransmissões também se recuperam com mais confiabilidade.",
+          "Os dados do grupo e as comunicações privadas mantêm a prioridade, sem aumentar os limites totais de envio. Suas preferências de compartilhamento, a verificação da origem dos dados e os pedidos para deixar de compartilhá-los continuam sendo respeitados.",
+          "A compatibilidade com versões anteriores da série 9.0 foi mantida. Os benefícios aumentam conforme os jogadores atualizam. A descoberta continua sendo gradual, sem garantir que todos os jogadores apareçam."
         ]
       },
       {
-        "title": "Lembrete do chat do grupo",
+        "title": "Versões nas dicas do mapa",
         "items": [
-          "Marcar “Não me lembrar novamente” e clicar em “Manter ativado” agora salva a preferência mesmo que o QT reconheça um membro durante o clique, evitando que a entrada de outro membro reabra o lembrete.",
-          "A caixa “Não me lembrar novamente” permanece marcada quando a lista de membros é atualizada no mesmo lembrete aberto."
-        ]
-      },
-      {
-        "title": "Abertura do mapa",
-        "items": [
-          "Ajustamos a navegação no mapa e no registro de missões para reduzir erros de ação bloqueada que podem aparecer ao abrir o mapa em combate mais tarde."
+          "As atualizações públicas de localização e as conexões confirmadas agora informam a versão do QuestTogether. Isso reduz os casos em que a dica de um jogador no mapa fica sem versão enquanto os demais dados ainda não chegaram.",
+          "Ao recarregar a interface, as localizações salvas mantêm a informação de versão enquanto ela ainda estiver válida. Dados recebidos com atraso não fazem uma versão antiga parecer recente novamente."
         ]
       }
     ]

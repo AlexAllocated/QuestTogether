@@ -3,28 +3,23 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "9.0.3",
-	welcome = "This patch improves player discovery, fixes lost party-chat reminder choices, and improves map compatibility.",
+	version = "9.0.4",
+	welcome = "This patch improves player discovery and update delivery, and fixes missing addon versions in map tooltips.",
 	sections = {
 		{
-			title = "Finding other players",
+			title = "Player discovery and communication",
 			items = {
-				"QT now uses online friends, compatible Battle.net characters, in-game chat and visible friendly players as additional ways to discover other QT users. Your sharing preferences still apply.",
-				"Busy clients can remember incoming connection requests and give them a turn when space becomes available. Previously tried contacts also get a fairer turn in crowded areas. Both players should update for the connection fix.",
-				"Connection diagnostics now distinguish a busy client from a failed send or an unanswered request.",
+				"QT looks for more connections sooner when your network is sparse and bandwidth is available. Connection attempts also handle simultaneous logins more reliably.",
+				"QT avoids sending duplicate public updates along the same connections. New connections can receive recent verified updates, and interrupted update requests recover more reliably.",
+				"Party and private messages keep priority within the same overall sending limits. Sharing preferences and source verification remain in place.",
+				"Earlier 9.0 clients remain compatible. Coverage builds over time, with further improvements as more players update; it does not guarantee every player will appear.",
 			},
 		},
 		{
-			title = "Party chat reminders",
+			title = "Map tooltip versions",
 			items = {
-				"Checking “Don’t remind me again” and choosing “Keep enabled” now saves your choice even if QT recognizes a party member at that moment. Inviting another member afterward will not reopen the reminder.",
-				"The checkbox also stays checked when QT refreshes the member list inside the same open dialog.",
-			},
-		},
-		{
-			title = "Map navigation",
-			items = {
-				"Adjusted QT’s map and quest-log navigation to reduce blocked-action errors when opening the map in combat afterward.",
+				"Addon versions now arrive with public location updates and confirmed connections, so map tooltips no longer need to wait for a full player-details request to show them.",
+				"Recent version information stays with cached map locations across reloads. Delayed updates cannot make an old version appear current again.",
 			},
 		},
 	},

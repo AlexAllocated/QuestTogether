@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.4
+
+Cette mise à jour améliore la découverte des joueurs QT, les échanges de données et les versions affichées sur la carte.
+
+### Découverte des joueurs et échanges
+
+- QT établit plus vite de nouvelles connexions lorsqu’elles sont encore peu nombreuses et que les échanges en arrière-plan le permettent. Des problèmes de connexion au démarrage ont aussi été corrigés.
+- Les clients à jour peuvent mutualiser l’envoi des mises à jour publiques pour éviter les doublons. Les données déjà vérifiées peuvent aussi parvenir à de nouveaux destinataires, et les demandes en attente comme les relais interrompus sont repris plus fiablement.
+- Les échanges du groupe et les échanges privés restent prioritaires, sans modifier les limites globales d’envoi. Vos choix de partage, la vérification de l’origine des données et le retrait des données partagées restent respectés.
+- La compatibilité avec les versions précédentes de la série 9.0.x est conservée. La mutualisation profite davantage aux joueurs à mesure qu’ils mettent QT à jour. La découverte reste progressive et ne garantit pas l’affichage de tous les joueurs.
+
+### Versions dans les infobulles de la carte
+
+- La version de l’addon accompagne désormais les mises à jour publiques de position. QT l’apprend aussi lorsqu’une connexion est confirmée : elle manque donc moins souvent dans les infobulles de la carte avant l’arrivée des autres informations du joueur.
+- Les versions encore valides sont conservées avec les positions mémorisées après un rechargement de l’interface. Des données reçues en retard ne peuvent pas faire passer une ancienne version pour une information récente.
+
 ## 9.0.3
 
 Améliorations de la découverte des joueurs, du rappel des annonces de groupe et de la navigation sur la carte.
