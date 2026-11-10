@@ -1,27 +1,15 @@
 {
-  "source_sha256": "5d34a78c5e890ccc65cca8bd412c923a0a779ca5d1127edf814bb6a9381d92ec",
+  "source_sha256": "1e317780265fa5e082c603f9ca790c7503bf5df9e1ef0ad65f50bdf4030a80c5",
   "notes": {
-    "version": "9.0.1",
-    "welcome": "Questo aggiornamento riduce gli errori di chat dovuti ai messaggi in background e corregge i tooltip e i riscontri sulla condivisione delle missioni.",
+    "version": "9.0.2",
+    "welcome": "Questo aggiornamento corregge le risposte alle richieste generali di /qt ping, rispettando le tue scelte sulla condivisione dei dati diagnostici.",
     "sections": [
       {
-        "title": "Comunicazione in background",
+        "title": "Diagnostica con ping",
         "items": [
-          "QuestTogether nasconde gli avvisi di giocatore non trovato che riesce ad associare ai propri sussurri in background. Gli invii in coda a quel giocatore vengono annullati e i nuovi tentativi sospesi per poco tempo. Le ultime informazioni note sulle missioni vengono conservate e gli errori restano nella diagnostica.",
-          "Se un avviso potrebbe dipendere da un sussurro inviato da te, rimane visibile."
-        ]
-      },
-      {
-        "title": "Tooltip delle missioni",
-        "items": [
-          "“Nascondi il tooltip missione di Blizzard” è ora attivo per impostazione predefinita nei nuovi profili e dopo il ripristino della disposizione del tracciamento. Le scelte già effettuate vengono mantenute.",
-          "Il tooltip di Blizzard viene nascosto solo quando il tracciamento obiettivi del gruppo è visibile e mostra la stessa missione sotto il cursore. Il tracciamento nascosto, la modalità Modifica e gli altri tooltip non attivano questa funzione."
-        ]
-      },
-      {
-        "title": "Condivisione delle missioni",
-        "items": [
-          "Corretta la ricezione in QuestTogether dei messaggi di Blizzard sulla condivisione delle missioni."
+          "Risolto un problema che impediva ai giocatori che consentono la condivisione dei dati diagnostici di rispondere alle richieste generali di /qt ping.",
+          "I giocatori che non condividono i dati diagnostici possono comunque inoltrare queste richieste verificate senza rispondere. Se disattivi la condivisione durante la verifica di una richiesta, la tua risposta viene annullata anche se la riattivi in seguito.",
+          "Anche i giocatori che rispondono devono aggiornare alla versione 9.0.2. Non basta che si aggiorni soltanto lo sviluppatore che esegue il comando."
         ]
       }
     ]

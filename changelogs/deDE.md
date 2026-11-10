@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.2
+
+Dieses Update behebt ausbleibende Antworten auf Rundfragen mit /qt ping und berücksichtigt weiterhin deine Diagnoseeinstellungen.
+
+### Ping-Diagnose
+
+- Spieler, die Diagnosedaten freigeben, können nun wieder auf Rundfragen mit /qt ping antworten.
+- Auch mit deaktivierter Diagnosefreigabe können Spieler diese geprüften Anfragen weiterleiten, ohne selbst zu antworten. Schaltest du die Freigabe während der Prüfung einer Anfrage aus, wird deine Antwort verworfen – auch wenn du die Freigabe danach wieder einschaltest.
+- Auch die antwortenden Spieler müssen auf Version 9.0.2 aktualisieren. Es genügt nicht, wenn nur der Entwickler, der den Befehl ausführt, das Update installiert.
+
 ## 9.0.1
 
 Dieses Update verringert Fehlermeldungen durch Hintergrundnachrichten und korrigiert Quest-Tooltips sowie Rückmeldungen beim Teilen von Quests.

@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.2
+
+Ce correctif rétablit les réponses aux requêtes générales /qt ping tout en respectant vos choix de partage des diagnostics.
+
+### Diagnostic par ping
+
+- Les joueurs qui autorisent le partage des diagnostics peuvent à nouveau répondre aux requêtes générales /qt ping.
+- Les joueurs qui désactivent ce partage peuvent toujours relayer ces requêtes vérifiées sans y répondre eux-mêmes. Si vous désactivez le partage pendant la vérification d’une requête, votre réponse est annulée, même si vous le réactivez ensuite.
+- Les joueurs qui répondent doivent eux aussi installer la version 9.0.2. Mettre à jour QT uniquement sur le client du développeur qui lance la commande ne suffit pas.
+
 ## 9.0.1
 
 Ce correctif réduit les erreurs de discussion en arrière-plan et corrige les infobulles de quête ainsi que les retours de partage.

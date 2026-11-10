@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.2
+
+Esta atualização corrige as respostas às consultas gerais de /qt ping e mantém suas escolhas sobre o compartilhamento de diagnósticos.
+
+### Diagnóstico por ping
+
+- Corrigido um problema que impedia jogadores com o compartilhamento de diagnósticos ativado de responder às consultas gerais de /qt ping.
+- Mesmo com o compartilhamento desativado, os jogadores podem encaminhar essas consultas verificadas sem responder. Se você desativar o compartilhamento durante a verificação de uma consulta, sua resposta será cancelada, mesmo que você o reative depois.
+- Os jogadores que respondem também precisam atualizar para a versão 9.0.2. Não basta atualizar o QT apenas no cliente do desenvolvedor que executa o comando.
+
 ## 9.0.1
 
 Esta atualização reduz erros de bate-papo em segundo plano e corrige dicas de missão e avisos de compartilhamento.

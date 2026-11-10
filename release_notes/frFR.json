@@ -1,27 +1,15 @@
 {
-  "source_sha256": "5d34a78c5e890ccc65cca8bd412c923a0a779ca5d1127edf814bb6a9381d92ec",
+  "source_sha256": "1e317780265fa5e082c603f9ca790c7503bf5df9e1ef0ad65f50bdf4030a80c5",
   "notes": {
-    "version": "9.0.1",
-    "welcome": "Ce correctif réduit les erreurs de discussion en arrière-plan et corrige les infobulles de quête ainsi que les retours de partage.",
+    "version": "9.0.2",
+    "welcome": "Ce correctif rétablit les réponses aux requêtes générales /qt ping tout en respectant vos choix de partage des diagnostics.",
     "sections": [
       {
-        "title": "Communication en arrière-plan",
+        "title": "Diagnostic par ping",
         "items": [
-          "QuestTogether masque les messages « joueur introuvable » liés à ses chuchotements en arrière-plan. Les envois en attente vers ce joueur sont annulés et les nouvelles tentatives suspendues brièvement. Les dernières informations de quête connues sont conservées et les échecs restent consignés dans les diagnostics.",
-          "Si une erreur peut provenir de vos propres chuchotements, elle reste visible."
-        ]
-      },
-      {
-        "title": "Infobulles de quête",
-        "items": [
-          "« Masquer l’infobulle de quête de Blizzard » est désormais activé par défaut pour les nouveaux profils et après une réinitialisation de la disposition du suivi. Vos choix existants sont conservés.",
-          "L’infobulle de Blizzard est masquée uniquement lorsque le suivi des objectifs du groupe est visible et présente la même quête survolée. Un suivi masqué, le mode Édition et les autres infobulles ne déclenchent pas ce masquage."
-        ]
-      },
-      {
-        "title": "Partage de quêtes",
-        "items": [
-          "Correction de la réception des messages de Blizzard relatifs au partage de quêtes dans QuestTogether."
+          "Les joueurs qui autorisent le partage des diagnostics peuvent à nouveau répondre aux requêtes générales /qt ping.",
+          "Les joueurs qui désactivent ce partage peuvent toujours relayer ces requêtes vérifiées sans y répondre eux-mêmes. Si vous désactivez le partage pendant la vérification d’une requête, votre réponse est annulée, même si vous le réactivez ensuite.",
+          "Les joueurs qui répondent doivent eux aussi installer la version 9.0.2. Mettre à jour QT uniquement sur le client du développeur qui lance la commande ne suffit pas."
         ]
       }
     ]

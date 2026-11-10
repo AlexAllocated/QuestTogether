@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.2
+
+Esta actualización corrige las respuestas a las consultas generales de /qt ping y respeta tus preferencias para compartir diagnósticos.
+
+### Diagnóstico con ping
+
+- Los jugadores que permiten compartir diagnósticos ya pueden responder correctamente a las consultas generales de /qt ping.
+- Aunque tengan desactivado el uso compartido de diagnósticos, los jugadores pueden reenviar estas consultas verificadas sin responder ellos mismos. Si lo desactivas mientras se verifica una consulta, tu respuesta se cancela, incluso si vuelves a activarlo después.
+- Los jugadores que responden también necesitan actualizar a la versión 9.0.2. No es suficiente con que solo actualice el desarrollador que usa el comando.
+
 ## 9.0.1
 
 Esta actualización reduce los errores de chat en segundo plano y corrige las descripciones de misión y los avisos al compartir misiones.

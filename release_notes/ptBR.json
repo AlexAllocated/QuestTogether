@@ -1,27 +1,15 @@
 {
-  "source_sha256": "5d34a78c5e890ccc65cca8bd412c923a0a779ca5d1127edf814bb6a9381d92ec",
+  "source_sha256": "1e317780265fa5e082c603f9ca790c7503bf5df9e1ef0ad65f50bdf4030a80c5",
   "notes": {
-    "version": "9.0.1",
-    "welcome": "Esta atualização reduz erros de bate-papo em segundo plano e corrige dicas de missão e avisos de compartilhamento.",
+    "version": "9.0.2",
+    "welcome": "Esta atualização corrige as respostas às consultas gerais de /qt ping e mantém suas escolhas sobre o compartilhamento de diagnósticos.",
     "sections": [
       {
-        "title": "Comunicação em segundo plano",
+        "title": "Diagnóstico por ping",
         "items": [
-          "QuestTogether oculta avisos de jogador não encontrado quando consegue associá-los aos próprios sussurros em segundo plano. Os envios pendentes para esse jogador são cancelados e novas tentativas ficam pausadas por um breve período. As últimas informações de missão conhecidas são mantidas, e as falhas continuam registradas nos diagnósticos.",
-          "Avisos que também possam ter sido causados por um sussurro seu continuam visíveis."
-        ]
-      },
-      {
-        "title": "Dicas de missão",
-        "items": [
-          "“Ocultar a dica de missão da Blizzard” agora fica ativado por padrão em perfis novos e ao redefinir a posição e os ajustes do rastreador. Suas escolhas anteriores são preservadas.",
-          "A dica da Blizzard só é ocultada enquanto o rastreador de objetivos do grupo está visível e mostra a mesma missão sob o cursor. Isso não ocorre com o rastreador oculto, no modo de edição ou com outras dicas."
-        ]
-      },
-      {
-        "title": "Compartilhamento de missões",
-        "items": [
-          "Corrigido o recebimento, pelo QuestTogether, dos avisos da Blizzard sobre compartilhamento de missões."
+          "Corrigido um problema que impedia jogadores com o compartilhamento de diagnósticos ativado de responder às consultas gerais de /qt ping.",
+          "Mesmo com o compartilhamento desativado, os jogadores podem encaminhar essas consultas verificadas sem responder. Se você desativar o compartilhamento durante a verificação de uma consulta, sua resposta será cancelada, mesmo que você o reative depois.",
+          "Os jogadores que respondem também precisam atualizar para a versão 9.0.2. Não basta atualizar o QT apenas no cliente do desenvolvedor que executa o comando."
         ]
       }
     ]

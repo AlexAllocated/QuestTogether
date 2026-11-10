@@ -1,27 +1,15 @@
 {
-  "source_sha256": "5d34a78c5e890ccc65cca8bd412c923a0a779ca5d1127edf814bb6a9381d92ec",
+  "source_sha256": "1e317780265fa5e082c603f9ca790c7503bf5df9e1ef0ad65f50bdf4030a80c5",
   "notes": {
-    "version": "9.0.1",
-    "welcome": "Esta actualización reduce los errores de chat en segundo plano y corrige las descripciones de misión y los avisos al compartir misiones.",
+    "version": "9.0.2",
+    "welcome": "Esta actualización corrige las respuestas a las consultas generales de /qt ping y respeta tus preferencias para compartir diagnósticos.",
     "sections": [
       {
-        "title": "Comunicación en segundo plano",
+        "title": "Diagnóstico con ping",
         "items": [
-          "Cuando QuestTogether identifica que un aviso de jugador no encontrado corresponde a sus susurros en segundo plano, lo oculta, cancela los envíos pendientes a ese jugador y espera un momento antes de volver a intentarlo. La última información de misiones conocida se conserva y los fallos quedan en los diagnósticos.",
-          "Los avisos que también podrían corresponder a un susurro tuyo siguen visibles."
-        ]
-      },
-      {
-        "title": "Descripciones de misión",
-        "items": [
-          "La opción «Ocultar la descripción de misión de Blizzard» ahora viene activada en perfiles nuevos y al restablecer la posición y los ajustes del seguimiento. Las preferencias que ya elegiste se conservan.",
-          "Solo se oculta la descripción de Blizzard si el seguimiento de objetivos del grupo está visible y muestra la misma misión que está bajo el cursor. Si el seguimiento está oculto, estás en modo de edición o se muestra otra descripción emergente, no se aplica este cambio."
-        ]
-      },
-      {
-        "title": "Compartir misiones",
-        "items": [
-          "Se corrigió la recepción de los avisos de Blizzard sobre misiones compartidas en QuestTogether."
+          "Los jugadores que permiten compartir diagnósticos ya pueden responder correctamente a las consultas generales de /qt ping.",
+          "Aunque tengan desactivado el uso compartido de diagnósticos, los jugadores pueden reenviar estas consultas verificadas sin responder ellos mismos. Si lo desactivas mientras se verifica una consulta, tu respuesta se cancela, incluso si vuelves a activarlo después.",
+          "Los jugadores que responden también necesitan actualizar a la versión 9.0.2. No es suficiente con que solo actualice el desarrollador que usa el comando."
         ]
       }
     ]

@@ -1,27 +1,15 @@
 {
-  "source_sha256": "5d34a78c5e890ccc65cca8bd412c923a0a779ca5d1127edf814bb6a9381d92ec",
+  "source_sha256": "1e317780265fa5e082c603f9ca790c7503bf5df9e1ef0ad65f50bdf4030a80c5",
   "notes": {
-    "version": "9.0.1",
-    "welcome": "Este parche reduce los errores de chat en segundo plano y corrige las descripciones de misión y los avisos al compartir misiones.",
+    "version": "9.0.2",
+    "welcome": "Este parche corrige las respuestas a las consultas generales de /qt ping y sigue respetando tus preferencias de diagnóstico.",
     "sections": [
       {
-        "title": "Comunicación en segundo plano",
+        "title": "Diagnóstico con ping",
         "items": [
-          "QuestTogether oculta los avisos de jugador no encontrado que puede vincular a sus susurros en segundo plano. Cancela los envíos pendientes a ese jugador y pausa brevemente los siguientes intentos. Conserva la última información de misiones conocida y registra los fallos en los diagnósticos.",
-          "Si el aviso también podría deberse a un susurro enviado por ti, sigue mostrándose."
-        ]
-      },
-      {
-        "title": "Descripciones de misión",
-        "items": [
-          "«Ocultar la descripción de misión de Blizzard» se activa por defecto en los perfiles nuevos y al restablecer la posición y los ajustes del seguimiento. Se respetan las opciones que ya habías elegido.",
-          "La descripción de Blizzard solo se oculta cuando el seguimiento de objetivos del grupo está visible y muestra esa misma misión bajo el cursor. No se oculta si el seguimiento está oculto, durante el modo de edición ni cuando se trata de otra descripción emergente."
-        ]
-      },
-      {
-        "title": "Compartir misiones",
-        "items": [
-          "Corregida la recepción en QuestTogether de los avisos de Blizzard al compartir misiones."
+          "Se ha corregido un fallo que impedía responder a las consultas generales de /qt ping a los jugadores que permiten compartir diagnósticos.",
+          "Los jugadores que no comparten diagnósticos pueden seguir retransmitiendo estas consultas verificadas sin responder ellos mismos. Si desactivas el uso compartido mientras se comprueba una consulta, se cancela tu respuesta aunque lo vuelvas a activar después.",
+          "Los jugadores que responden también deben actualizar a la versión 9.0.2. No basta con que se actualice el desarrollador que ejecuta el comando."
         ]
       }
     ]

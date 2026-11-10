@@ -1,25 +1,13 @@
 {
-  "version": "9.0.1",
-  "welcome": "This patch reduces background chat errors and fixes quest tooltips and sharing feedback.",
+  "version": "9.0.2",
+  "welcome": "This patch fixes replies to broadcast /qt ping requests while preserving your diagnostics choices.",
   "sections": [
     {
-      "title": "Background communication",
+      "title": "Ping diagnostics",
       "items": [
-        "QuestTogether hides “player not found” notices caused by its background whispers, cancels queued messages to that player and briefly pauses further attempts. Last-known quest information is kept, and failures remain in diagnostics.",
-        "Errors from your own whispers remain visible when their source is uncertain."
-      ]
-    },
-    {
-      "title": "Quest tooltips",
-      "items": [
-        "“Hide Blizzard quest tooltip” is now on by default for new profiles and after resetting the tracker layout. Existing choices are preserved.",
-        "Blizzard’s quest tooltip is hidden only while the Party Objective Tracker is visible and showing that same hovered quest. Hidden trackers, Edit Mode and unrelated tooltips are left alone."
-      ]
-    },
-    {
-      "title": "Quest sharing",
-      "items": [
-        "Fixed how QuestTogether handles Blizzard’s quest-sharing feedback."
+        "Fixed missing replies to broadcast /qt ping requests from players who allow diagnostics sharing.",
+        "Players with diagnostics sharing off can still pass these verified requests along without replying themselves. Turning sharing off while a request is being checked cancels your reply, even if you turn it back on.",
+        "Players sending replies also need version 9.0.2. Updating QT only on the developer’s client is not enough."
       ]
     }
   ]

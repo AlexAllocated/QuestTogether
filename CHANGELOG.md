@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.0.2
+
+This patch fixes replies to broadcast /qt ping requests while preserving your diagnostics choices.
+
+### Ping diagnostics
+
+- Fixed missing replies to broadcast /qt ping requests from players who allow diagnostics sharing.
+- Players with diagnostics sharing off can still pass these verified requests along without replying themselves. Turning sharing off while a request is being checked cancels your reply, even if you turn it back on.
+- Players sending replies also need version 9.0.2. Updating QT only on the developer’s client is not enough.
+
 ## 9.0.1
 
 This patch reduces background chat errors and fixes quest tooltips and sharing feedback.
