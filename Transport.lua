@@ -5,7 +5,7 @@ local CLASSES = { "control", "event", "active", "active", "active", "bulk", "bul
 local VALID_CLASSES = { control = true, event = true, active = true, bulk = true, background = true }
 local MAX_QUEUE, CONTROL_RESERVE, MAX_MESH_QUEUE = 96, 16, 24
 local BYTE_RATE, BYTE_BURST, PACKET_RATE, PACKET_BURST = 800, 1600, 4, 4
-local MESH_BYTE_RATE, MESH_BYTE_BURST, MESH_PACKET_RATE, MESH_PACKET_BURST = 200, 400, 1, 2
+local MESH_BYTE_RATE, MESH_BYTE_BURST, MESH_PACKET_RATE, MESH_PACKET_BURST = 400, 400, 2, 2
 local METRICS = {
 	attempts = true,
 	queued = true,
@@ -624,6 +624,9 @@ function QT:GetTransportMetrics()
 		return result
 	end
 	result.packetRate, result.packetTokens, result.byteTokens = s.packetRate, s.tokens, s.byteTokens
+	result.byteRate, result.byteBurst, result.packetBurst = BYTE_RATE, BYTE_BURST, PACKET_BURST
+	result.meshPacketRate, result.meshByteRate = MESH_PACKET_RATE, MESH_BYTE_RATE
+	result.meshPacketBurst, result.meshByteBurst = MESH_PACKET_BURST, MESH_BYTE_BURST
 	local now = Now(self)
 	result.meshPacketTokens, result.meshByteTokens = s.meshTokens, s.meshByteTokens
 	for key, value in pairs(s.metrics) do

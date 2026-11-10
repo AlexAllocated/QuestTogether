@@ -10,9 +10,11 @@ local MAX_SEEDS, SEED_LIFETIME = 64, 86400
 local LEASE_SECONDS, RENEW_SECONDS, MAX_INTERESTS = 120, 40, 32
 local NEIGHBOR_SECONDS, CHALLENGE_SECONDS = 180, 120
 local FANOUT, MAX_HOPS, DIRECTORY_INTERVAL = 3, 8, 300
+local MAX_PENDING_INTERESTS = 24
 local MAX_DIRECTORY_ROWS, ROWS_PER_TICK = 1500, 32
 local CONTACT_SECONDS, CONTACT_EVENT_SECONDS, CONTACT_EVENT_LIMIT = 300, 10, 16
 local CONTACT_SOURCES = { friend = true, bnet = true, chat = true, visible = true }
+local RetirePeerRoutes
 local function Now(a)
 	return a:SafeToNumber(a.API.GetTime()) or 0
 end
@@ -103,15 +105,21 @@ end
 local function RetireOldestCandidate(s, now)
 	local oldest, at
 	for name, candidate in pairs(s.candidates) do
-		if not s.neighbors[name] and not s.pending[name] and not s.reservations[name]
+		if
+			not s.neighbors[name]
+			and not s.pending[name]
+			and not s.reservations[name]
 			and not (s.admissionIntents and s.admissionIntents[name])
 			and candidate.retryAt <= now
 			and (not candidate.contactAt or now - candidate.contactAt >= CONTACT_SECONDS)
-			and (not at or candidate.heardAt < at) then
+			and (not at or candidate.heardAt < at)
+		then
 			oldest, at = name, candidate.heardAt
 		end
 	end
-	if not oldest then return false end
+	if not oldest then
+		return false
+	end
 	s.candidates[oldest] = nil
 	return true
 end
@@ -245,6 +253,7 @@ function QT:InitializeMeshNetwork()
 		reservations = {},
 		admissionIntents = {},
 		pending = {},
+		pendingInterests = {},
 		localInterests = {},
 		localHistory = {},
 		interests = {},
@@ -341,7 +350,9 @@ function QT:ObserveMeshContact(value, source, zone)
 		-- Do not reset triedAt, retryAt, delay, or promote to a neighbor.
 		-- A repeated sighting is not evidence of a successful QT handshake.
 		local validZone = ValidZone(self, zone)
-		if validZone then row.zone = validZone end
+		if validZone then
+			row.zone = validZone
+		end
 	end
 	row.contactAt, row.contactSource = now, source
 	return true
@@ -349,9 +360,14 @@ end
 
 function QT:ObserveMeshUnit(unitToken)
 	local s = rawget(self, "meshNetworkState")
-	if not s or not Current(self, s) or not Allowed(self)
-		or not self:CanAccessValue(unitToken) or type(unitToken) ~= "string"
-		or not (unitToken == "target" or unitToken == "mouseover" or unitToken:match("^nameplate%d+$")) then
+	if
+		not s
+		or not Current(self, s)
+		or not Allowed(self)
+		or not self:CanAccessValue(unitToken)
+		or type(unitToken) ~= "string"
+		or not (unitToken == "target" or unitToken == "mouseover" or unitToken:match("^nameplate%d+$"))
+	then
 		return false
 	end
 	local result = Native(self, "GetMeshUnitPlayerName", unitToken)
@@ -365,16 +381,24 @@ function QT:ScheduleMeshContactScan()
 		s.nextContacts = math.min(s.nextContacts, math.max(Now(self), (s.lastContactScan or -30) + 30))
 	end
 end
-local function Confirm(a, s, name, context)
+local function Confirm(a, s, name, context, sharedDelivery)
 	local row = s.neighbors[name]
 	local fresh = row == nil
 	if not row and (not Reserved(a, s, name) or Count(s.neighbors) >= MAX_NEIGHBORS) then
 		return nil
 	end
+	if row and row.session and context and context.session ~= row.session then
+		RetirePeerRoutes(a, s, name)
+		if not Current(a, s) then
+			return nil
+		end
+		Metric(s, "neighborSessionChanges")
+	end
 	a:RememberMeshCandidate(name, "confirmed")
 	local now = Now(a)
 	row = row or { name = name, connectedAt = now }
 	row.at, row.expires, row.session = now, now + NEIGHBOR_SECONDS, context and context.session
+	row.sharedDelivery = sharedDelivery == true
 	s.neighbors[name] = row
 	s.reservations[name] = nil
 	s.admissionIntents[name] = nil
@@ -391,7 +415,31 @@ local function Confirm(a, s, name, context)
 		end
 	end
 	Metric(s, "handshakesConfirmed")
+	local waiting = s.pendingInterests[name]
+	s.pendingInterests[name] = nil
+	for _, item in ipairs(waiting or {}) do
+		if not Current(a, s) then
+			break
+		end
+		-- Reserved senders are not graph peers. Their early control messages
+		-- become eligible only after our independent challenge confirms the
+		-- same native session, and the normal handler rechecks every field.
+		if item.session == row.session then
+			a:HandleMeshInterest(item.record, name, { distribution = "WHISPER", session = row.session })
+		else
+			Metric(s, "pendingInterestDrops")
+		end
+	end
 	return row
+end
+
+local function DiscoveryPressure(a)
+	local transport = a:GetTransportMetrics()
+	local publications = rawget(a, "meshPublicationState")
+	return (transport.queuedPackets or 0) >= 8
+		or (transport.oldestAge or 0) >= 4
+		or (transport.packetRate or 4) < 4
+		or publications and (publications.pending or 0) >= 8
 end
 local function Introductions(a, s, target)
 	local names = {}
@@ -412,8 +460,13 @@ end
 local function PruneAdmissionIntents(a, s, now)
 	for name, intent in pairs(s.admissionIntents) do
 		local candidate = s.candidates[name]
-		if now >= intent.expiresAt or not candidate or Neighbor(a, s, name)
-			or a:IsIgnoredPlayerName(name) or (candidate.failureSerial or 0) ~= intent.failureSerial then
+		if
+			now >= intent.expiresAt
+			or not candidate
+			or Neighbor(a, s, name)
+			or a:IsIgnoredPlayerName(name)
+			or (candidate.failureSerial or 0) ~= intent.failureSerial
+		then
 			s.admissionIntents[name] = nil
 			Metric(s, now >= intent.expiresAt and "admissionIntentsExpired" or "admissionIntentsCancelled")
 		end
@@ -421,7 +474,9 @@ local function PruneAdmissionIntents(a, s, now)
 end
 local function QueueAdmissionIntent(a, s, name, candidate, now)
 	PruneAdmissionIntents(a, s, now)
-	if s.admissionIntents[name] then return end
+	if s.admissionIntents[name] then
+		return
+	end
 	if Count(s.admissionIntents) >= MAX_PENDING then
 		Metric(s, "admissionIntentDrops")
 		return
@@ -429,7 +484,8 @@ local function QueueAdmissionIntent(a, s, name, candidate, now)
 	-- Remember an explicit native protocol request, not a trusted edge. Do not
 	-- let repeated hellos extend this wait or jump ahead of another caller.
 	s.admissionIntents[name] = {
-		queuedAt = now, expiresAt = now + ADMISSION_INTENT_SECONDS,
+		queuedAt = now,
+		expiresAt = now + ADMISSION_INTENT_SECONDS,
 		failureSerial = candidate.failureSerial or 0,
 	}
 	Metric(s, "admissionIntentsQueued")
@@ -472,6 +528,11 @@ function QT:HandleMeshHello(record, sender, context)
 	if admitted or not previous.triedAt then
 		previous.retryAt = math.min(previous.retryAt, now)
 	end
+	if admitted then
+		-- Finish an admitted reciprocal exchange promptly. This only makes it
+		-- eligible for the shared scheduler; it does not bypass send budgets.
+		s.nextHandshake = math.min(s.nextHandshake, math.max(now, (s.lastHandshakeAt or now - 1) + 1))
+	end
 	return self:Respond(
 		"MACK",
 		{
@@ -479,6 +540,7 @@ function QT:HandleMeshHello(record, sender, context)
 			version = self.version or self.VERSION or "3",
 			protocol = 3,
 			capabilities = "mesh1",
+			sharedDelivery = true,
 			admitted = admitted,
 			peers = admitted and Introductions(self, s, sender) or {},
 		},
@@ -517,22 +579,33 @@ local function StartHandshake(a, s, candidate)
 		end
 		s.pending[name] = nil
 		candidate.lastHandshakeOutcome, candidate.lastHandshakeAt = outcome, Now(a)
-		candidate.lastHandshakeReason = a:CanAccessValue(reason) and type(reason) == "string"
-			and #reason <= 64 and not reason:find("[%c|]") and reason or nil
-		candidate.lastHandshakeCode = a:CanAccessValue(detail) and type(detail) == "number"
-			and a:SafeToNumber(detail) or nil
+		candidate.lastHandshakeReason = a:CanAccessValue(reason)
+				and type(reason) == "string"
+				and #reason <= 64
+				and not reason:find("[%c|]")
+				and reason
+			or nil
+		candidate.lastHandshakeCode = a:CanAccessValue(detail) and type(detail) == "number" and a:SafeToNumber(detail)
+			or nil
 		if not success then
 			RetryCandidate(candidate, Now(a))
-			local metric = ({ busy = "handshakeBusy", timeout = "handshakeTimeouts",
-				admission_failed = "handshakeAdmissionFailures", send_failed = "handshakeSendFailures",
-				queue_expired = "handshakeQueueExpiries", confirmation_failed = "handshakeConfirmationFailures",
-				cancelled = "handshakeCancelled" })[outcome]
-			if metric then Metric(s, metric) end
+			local metric = ({
+				busy = "handshakeBusy",
+				timeout = "handshakeTimeouts",
+				admission_failed = "handshakeAdmissionFailures",
+				send_failed = "handshakeSendFailures",
+				queue_expired = "handshakeQueueExpiries",
+				confirmation_failed = "handshakeConfirmationFailures",
+				cancelled = "handshakeCancelled",
+			})[outcome]
+			if metric then
+				Metric(s, metric)
+			end
 		end
 	end
 	local admitted, admissionReason, _, requestId = a:Request(
 		"MHEL",
-		{ version = a.version or a.VERSION or "3", protocol = 3, capabilities = "mesh1" },
+		{ version = a.version or a.VERSION or "3", protocol = 3, capabilities = "mesh1", sharedDelivery = true },
 		Route(name),
 		{
 			owner = pending,
@@ -550,7 +623,8 @@ local function StartHandshake(a, s, candidate)
 			onExpire = function(reason, detail)
 				local outcome = reason == "expired" and (pending.sentAt and "timeout" or "queue_expired")
 					or reason == "cancelled" and "cancelled"
-					or pending.submitting and "admission_failed" or "send_failed"
+					or pending.submitting and "admission_failed"
+					or "send_failed"
 				Finish(false, outcome, reason, detail)
 			end,
 			onResponse = function(record, sender, context)
@@ -564,12 +638,15 @@ local function StartHandshake(a, s, candidate)
 				then
 					return false
 				end
+				if a.RememberPlayerHandshakeVersion then
+					a:RememberPlayerHandshakeVersion(sender, record.version, context)
+				end
 				if record.admitted ~= true then
 					Finish(false, "busy", "busy")
 					a:CancelCommRequest(record.requestId, "rejected")
 					return true
 				end
-				local confirmed = Confirm(a, s, name, context)
+				local confirmed = Confirm(a, s, name, context, record.sharedDelivery)
 				if not confirmed then
 					Finish(false, "confirmation_failed", "confirmation_failed")
 					return false
@@ -592,11 +669,16 @@ local function StartHandshake(a, s, candidate)
 		Finish(false, "admission_failed", admissionReason)
 	end
 	Metric(s, "handshakesStarted")
-	local delay = 4
-	if s.metrics.handshakesStarted >= 3 then
-		local random = Native(a, "Random", 20, 30)
-		delay = a:SafeToNumber(random and random[1]) or 25
-		delay = math.min(30, math.max(20, delay))
+	s.lastHandshakeAt = now
+	local random = Native(a, "Random", 20, 30)
+	local delay = math.min(30, math.max(20, a:SafeToNumber(random and random[1]) or 25))
+	s.regularHandshakeAt = now + delay
+	if s.metrics.handshakesStarted < 3 then
+		delay = 4
+	elseif Count(s.neighbors) < MAX_NEIGHBORS and not DiscoveryPressure(a) then
+		local bootstrap = Native(a, "Random", 4, 6)
+		delay = math.min(6, math.max(4, a:SafeToNumber(bootstrap and bootstrap[1]) or 5))
+		Metric(s, "bootstrapProbes")
 	end
 	s.nextHandshake = now + delay
 end
@@ -899,15 +981,21 @@ local function ContactCount(a, method, ...)
 end
 
 local function ContactStep(a, s, now, budget)
-	if budget < 1 then return end
+	if budget < 1 then
+		return
+	end
 	local job = s.contactDirectory
 	if not job then
-		if now < s.nextContacts then return end
+		if now < s.nextContacts then
+			return
+		end
 		s.lastContactScan, s.nextContacts = now, now + CONTACT_SECONDS
 		job = {
 			friends = ContactCount(a, "GetMeshFriendCount"),
 			bnet = ContactCount(a, "GetMeshBattleNetFriendCount"),
-			friendVisited = 0, bnetVisited = 0, rows = 0,
+			friendVisited = 0,
+			bnetVisited = 0,
+			rows = 0,
 		}
 		s.contactDirectory = job
 		Metric(s, "contactScans")
@@ -920,7 +1008,9 @@ local function ContactStep(a, s, now, budget)
 		if job.friendVisited < job.friends then
 			local index = (s.contactCursors.friend - 1) % job.friends + 1
 			local result = Native(a, "GetMeshFriendName", index)
-			if result then a:ObserveMeshContact(result[1], "friend") end
+			if result then
+				a:ObserveMeshContact(result[1], "friend")
+			end
 			s.contactCursors.friend, job.friendVisited = index + 1, job.friendVisited + 1
 		elseif job.bnetVisited < job.bnet then
 			local index = (s.contactCursors.bnet - 1) % job.bnet + 1
@@ -931,7 +1021,9 @@ local function ContactStep(a, s, now, budget)
 				job.accountIndex = 1
 			elseif job.accountIndex <= job.accounts then
 				local result = Native(a, "GetMeshBattleNetFriendName", index, job.accountIndex)
-				if result then a:ObserveMeshContact(result[1], "bnet") end
+				if result then
+					a:ObserveMeshContact(result[1], "bnet")
+				end
 				job.accountIndex = job.accountIndex + 1
 			end
 			if job.accountIndex > job.accounts then
@@ -994,40 +1086,137 @@ local function NeighborTargets(a, s, exclude, destination, limit, zone)
 	end
 	return result
 end
+local function LocalInterestCovers(a, s, zone, exclude)
+	if not s.localInterests[zone] then
+		return false
+	end
+	-- A renewal is queued while the preceding immutable generation remains
+	-- usable. Keep that coverage until its actual expiry, avoiding a new query
+	-- flood every forty seconds while the replacement waits its send turn.
+	for _, lease in pairs(s.localHistory) do
+		if lease.zone == zone and Server(a) < lease.expiresAt then
+			for target in pairs(lease.coveredDownstreams or {}) do
+				if target ~= exclude and Neighbor(a, s, target) then
+					return true
+				end
+			end
+		end
+	end
+	return false
+end
+local function InterestCurrent(a, s, lease)
+	return Current(a, s)
+		and Server(a) < lease.expiresAt
+		and (
+			s.localHistory[Key(lease.destination, lease.id)] == lease
+			or s.interests[Key(lease.destination, lease.id)] == lease
+		)
+end
+local function SendInterestTarget(a, s, lease, target, job)
+	if
+		not InterestCurrent(a, s, lease)
+		or not Neighbor(a, s, target)
+		or job.pending
+		or job.attempts >= 3
+		or Now(a) < (job.retryAt or 0)
+	then
+		return
+	end
+	job.attempts, job.pending = job.attempts + 1, true
+	local session = Neighbor(a, s, target).session
+	local function Live()
+		local peer = Neighbor(a, s, target)
+		return InterestCurrent(a, s, lease) and peer ~= nil and peer.session == session
+	end
+	local called = false
+	local function Complete(sent, reason)
+		if called then
+			return
+		end
+		called, job.pending = true, false
+		if not Live() then
+			return
+		end
+		if sent then
+			job.done, lease.downstreams[target] = true, true
+			lease.coveredDownstreams = lease.coveredDownstreams or {}
+			lease.coveredDownstreams[target] = true
+		elseif reason ~= "cancelled" and job.attempts < 3 then
+			if lease.coveredDownstreams then
+				lease.coveredDownstreams[target] = nil
+			end
+			job.retryAt = Now(a) + 2 ^ job.attempts
+			Metric(s, "interestRetries")
+		else
+			job.done = true
+			if lease.coveredDownstreams then
+				lease.coveredDownstreams[target] = nil
+			end
+		end
+	end
+	local accepted, reason = a:Emit(
+		"MINT",
+		{
+			leaseId = lease.id,
+			destination = lease.destination,
+			zone = lease.zone,
+			expiresAt = lease.expiresAt,
+			hops = lease.hops,
+		},
+		Route(target),
+		{
+			owner = lease,
+			meshTraffic = true,
+			priority = "background",
+			key = "interest:" .. lease.id,
+			expires = Now(a) + math.min(30, math.max(0, lease.expiresAt - Server(a))),
+			isCurrent = Live,
+			onStarted = function()
+				if Live() then
+					lease.downstreams[target] = true
+				end
+			end,
+			onComplete = Complete,
+		}
+	)
+	if not accepted then
+		Complete(false, reason)
+	end
+end
 local function SendInterest(a, s, lease)
 	if lease.hops <= 0 then
 		return
 	end
-	-- Fanout is an upper bound, not a target to saturate. A renewed immutable
-	-- query rotates its path, while forwarding just one branch leaves room for
-	-- public data and authentication under the shared mesh allowance.
+	local upstream = lease.upstream and Neighbor(a, s, lease.upstream)
+	if upstream and upstream.sharedDelivery and LocalInterestCovers(a, s, lease.zone, lease.upstream) then
+		lease.aggregated = true
+		Metric(s, "interestsAggregated")
+		return
+	end
+	lease.aggregated = nil
+	-- A locally owned query supplies shared same-scope demand. Uncovered
+	-- scopes still rotate two origin branches and one branch per relay.
 	local targets = NeighborTargets(a, s, lease.upstream, lease.destination, lease.upstream and 1 or 2, lease.zone)
-	lease.downstreams = lease.downstreams or {}
+	lease.downstreams, lease.interestSends = lease.downstreams or {}, lease.interestSends or {}
 	for _, target in ipairs(targets) do
-		lease.downstreams[target] = true
-		a:Emit(
-			"MINT",
-			{
-				leaseId = lease.id,
-				destination = lease.destination,
-				zone = lease.zone,
-				expiresAt = lease.expiresAt,
-				hops = lease.hops,
-			},
-			Route(target),
-			{
-				owner = lease,
-				meshTraffic = true,
-				priority = "background",
-				key = "interest:" .. lease.id,
-				expires = Now(a) + 10,
-				isCurrent = function()
-					return Current(a, s) and Server(a) < lease.expiresAt and Neighbor(a, s, target) ~= nil
-				end,
-			}
-		)
+		local job = { attempts = 0 }
+		lease.interestSends[target] = job
+		SendInterestTarget(a, s, lease, target, job)
 	end
 	Metric(s, "interestForwards")
+end
+local function RetryInterests(a, s, lease)
+	if lease.aggregated then
+		if not LocalInterestCovers(a, s, lease.zone, lease.upstream) then
+			SendInterest(a, s, lease)
+		end
+		return
+	end
+	for target, job in pairs(lease.interestSends or {}) do
+		if not job.done then
+			SendInterestTarget(a, s, lease, target, job)
+		end
+	end
 end
 local function CancelInterest(a, s, lease)
 	a:CancelCommunicationOwner(lease, "cancelled")
@@ -1074,7 +1263,7 @@ function QT:HandleMeshInterest(record, sender, context)
 		or not context
 		or context.distribution ~= "WHISPER"
 		or not sender
-		or not Neighbor(self, s, sender)
+		or not (Neighbor(self, s, sender) or Reserved(self, s, sender))
 		or not destination
 		or self:IsSelfSender(destination)
 		or self:IsIgnoredPlayerName(destination)
@@ -1092,6 +1281,53 @@ function QT:HandleMeshInterest(record, sender, context)
 		or hops ~= math.floor(hops)
 	then
 		return false
+	end
+	local confirmed = Neighbor(self, s, sender)
+	if confirmed and confirmed.session and context.session and context.session ~= confirmed.session then
+		return false
+	end
+	if not Neighbor(self, s, sender) then
+		-- A reciprocal challenge can still be queued when the other endpoint
+		-- sends its first interests. Hold only bounded, validated control data;
+		-- no route or publication is admitted before native confirmation.
+		if
+			type(context.session) ~= "string"
+			or #context.session == 0
+			or #context.session > 64
+			or context.session:find("[^%w%-]")
+		then
+			return false
+		end
+		local waiting = s.pendingInterests[sender] or {}
+		for _, item in ipairs(waiting) do
+			if item.record.leaseId == record.leaseId and item.record.destination == destination then
+				return item.session == context.session
+					and item.record.zone == zone
+					and item.record.expiresAt == expires
+					and item.record.hops == hops
+			end
+		end
+		local total = 0
+		for _, items in pairs(s.pendingInterests) do
+			total = total + #items
+		end
+		if #waiting >= 3 or total >= MAX_PENDING_INTERESTS then
+			Metric(s, "pendingInterestDrops")
+			return false
+		end
+		waiting[#waiting + 1] = {
+			session = context.session,
+			record = {
+				leaseId = record.leaseId,
+				destination = destination,
+				zone = zone,
+				expiresAt = expires,
+				hops = hops,
+			},
+		}
+		s.pendingInterests[sender] = waiting
+		Metric(s, "pendingInterestsQueued")
+		return true
 	end
 	local key = Key(destination, record.leaseId)
 	local lease = s.interests[key]
@@ -1111,17 +1347,31 @@ function QT:HandleMeshInterest(record, sender, context)
 		Metric(s, "interestReplays")
 		return false
 	end
+	-- Native delivery can precede this frame's periodic expiry pass. Retire
+	-- elapsed generations before counting capacity for their renewal.
+	for expiredKey, existing in pairs(s.interests) do
+		if now >= existing.expiresAt then
+			s.interests[expiredKey] = nil
+			CancelInterest(self, s, existing)
+		end
+	end
 	if Count(s.interests) >= MAX_INTERESTS then
 		Metric(s, "interestCapacity")
 		return false
 	end
-	local owned = 0
+	local audiences, generations = {}, 0
 	for _, existing in pairs(s.interests) do
 		if existing.upstream == sender then
-			owned = owned + 1
+			audiences[Key(existing.destination, tostring(existing.zone))] = true
+		end
+		if existing.destination == destination and existing.zone == zone then
+			generations = generations + 1
 		end
 	end
-	if owned >= 8 then
+	-- Immutable renewal generations keep their old reverse paths alive, but
+	-- are one audience for upstream fairness, not three competing listeners.
+	local audience = Key(destination, tostring(zone))
+	if generations >= 3 or not audiences[audience] and Count(audiences) >= 8 then
 		Metric(s, "interestCapacity")
 		return false
 	end
@@ -1150,6 +1400,42 @@ local function Alternative(a, s, lease, exclude)
 	for name in pairs(lease.alternates or {}) do
 		if name ~= exclude and Neighbor(a, s, name) then
 			return name
+		end
+	end
+end
+RetirePeerRoutes = function(a, s, name)
+	for key, lease in pairs(s.interests) do
+		lease.alternates[name] = nil
+		if lease.upstream == name then
+			local alternate = Alternative(a, s, lease, name)
+			if alternate then
+				lease.upstream = alternate
+				lease.alternates[alternate] = nil
+			end
+		end
+		if lease.destination == name or lease.upstream == name then
+			s.interests[key] = nil
+			CancelInterest(a, s, lease)
+		else
+			lease.downstreams[name] = nil
+			if lease.coveredDownstreams then
+				lease.coveredDownstreams[name] = nil
+			end
+			if lease.interestSends then
+				lease.interestSends[name] = nil
+			end
+		end
+	end
+	for _, lease in pairs(s.localHistory) do
+		lease.downstreams[name] = nil
+		if lease.coveredDownstreams then
+			lease.coveredDownstreams[name] = nil
+		end
+		if lease.interestSends then
+			lease.interestSends[name] = nil
+		end
+		if Count(lease.downstreams) == 0 then
+			lease.renewAt = math.min(lease.renewAt or Now(a), Now(a))
 		end
 	end
 end
@@ -1248,6 +1534,12 @@ local function UpdateInterests(a, s, now)
 			CancelInterest(a, s, lease)
 		end
 	end
+	for _, lease in pairs(s.localHistory) do
+		RetryInterests(a, s, lease)
+	end
+	for _, lease in pairs(s.interests) do
+		RetryInterests(a, s, lease)
+	end
 	for key, expires in pairs(s.interestHistory) do
 		if Server(a) >= expires then
 			s.interestHistory[key] = nil
@@ -1256,6 +1548,15 @@ local function UpdateInterests(a, s, now)
 end
 local function IncomingLease(a, s, sender, metadata, scope, origin)
 	if type(metadata) ~= "table" or not sender or not Neighbor(a, s, sender) then
+		return nil
+	end
+	if
+		metadata.sharedDelivery ~= nil
+		and (
+			type(metadata.sharedDelivery) ~= "boolean"
+			or metadata.sharedDelivery and not Neighbor(a, s, sender).sharedDelivery
+		)
+	then
 		return nil
 	end
 	local destination, zone = Name(a, metadata.destination), ValidZone(a, metadata.zone)
@@ -1293,8 +1594,57 @@ function QT:CanAcceptMeshPublicationRoute(sender, metadata, scope, origin)
 	return s ~= nil and Current(self, s) and IncomingLease(self, s, Name(self, sender), metadata, scope, origin) ~= nil
 end
 function QT:ShouldConsumeMeshPublicationRoute(sender, metadata, scope, origin)
-	return self:CanAcceptMeshPublicationRoute(sender, metadata, scope, origin)
-		and self:IsSelfSender(metadata.destination)
+	if not self:CanAcceptMeshPublicationRoute(sender, metadata, scope, origin) then
+		return false
+	end
+	local s = self.meshNetworkState
+	local localLease = s.localInterests[Zone(scope)]
+	return self:IsSelfSender(metadata.destination) or localLease ~= nil and Server(self) < localLease.expiresAt
+end
+local function PublicationTarget(a, s, publication, lease)
+	local direct = a:IsSelfSender(publication.origin) and Neighbor(a, s, lease.destination)
+	return direct and lease.destination or lease.upstream
+end
+local function PublicationDeliveryKey(a, s, publication, lease, target)
+	local peer = Neighbor(a, s, target)
+	if not peer then
+		return nil
+	end
+	return table.concat(
+		{
+			publication.origin,
+			publication.session,
+			publication.id,
+			publication.digest,
+			tostring(lease.zone),
+			target,
+			tostring(peer.session or ""),
+			peer.sharedDelivery and "shared" or lease.destination,
+		},
+		":"
+	)
+end
+function QT:HasDeliveredMeshPublicationForInterest(publication, lease)
+	local s = rawget(self, "meshNetworkState")
+	if
+		not s
+		or not Current(self, s)
+		or type(publication) ~= "table"
+		or type(publication.digest) ~= "string"
+		or not lease
+		or s.interests[Key(lease.destination, lease.id)] ~= lease
+		or lease.zone ~= Zone(publication.scope)
+		or Server(self) >= lease.expiresAt
+	then
+		return false
+	end
+	local target = PublicationTarget(self, s, publication, lease)
+	if not target or target == publication.origin then
+		return false
+	end
+	local key = PublicationDeliveryKey(self, s, publication, lease, target)
+	local previous = key and s.forwarded[key]
+	return previous ~= nil and previous.completed == true and Server(self) < previous.expiresAt
 end
 function QT:ForwardMeshPublication(publication, descriptor)
 	descriptor = descriptor or {}
@@ -1305,16 +1655,58 @@ function QT:ForwardMeshPublication(publication, descriptor)
 		return false, "cancelled"
 	end
 	local selected = {}
-	if descriptor.relaySender then
-		local metadata = descriptor.relaymeta
-		local lease = IncomingLease(self, s, Name(self, descriptor.relaySender), metadata, publication.scope)
-		if lease and lease.upstream and metadata.hops > 1 then
-			selected[1] = { lease = lease, target = lease.upstream, hops = metadata.hops - 1 }
+	local function LeaseCurrent(lease)
+		return s.interests[Key(lease.destination, lease.id)] == lease
+			and lease.zone == zone
+			and Server(self) < lease.expiresAt
+	end
+	if descriptor.meshInterest then
+		local lease = descriptor.meshInterest
+		local hops = descriptor.meshReplayHops
+		if hops == nil and self:IsSelfSender(publication.origin) then
+			hops = MAX_HOPS
+		end
+		if
+			type(hops) ~= "number"
+			or hops < 1
+			or hops > MAX_HOPS
+			or hops ~= math.floor(hops)
+			or not LeaseCurrent(lease)
+			or not Neighbor(self, s, lease.upstream)
+		then
+			Invoke(descriptor.onComplete, false, "cancelled")
+			return false, "cancelled"
+		end
+		local target = PublicationTarget(self, s, publication, lease)
+		if target ~= publication.origin then
+			selected[1] = { lease = lease, target = target, hops = hops }
 		end
 	else
+		local hops = MAX_HOPS
+		if descriptor.relaySender then
+			local metadata = descriptor.relaymeta
+			local incoming = IncomingLease(
+				self,
+				s,
+				Name(self, descriptor.relaySender),
+				metadata,
+				publication.scope,
+				publication.origin
+			)
+			if not incoming or metadata.hops <= 1 then
+				Invoke(descriptor.onComplete, false, "no-interest")
+				return false, "no-interest"
+			end
+			hops = metadata.hops - 1
+		end
 		local newest = {}
 		for _, lease in pairs(s.interests) do
-			if lease.zone == zone and Server(self) < lease.expiresAt and Neighbor(self, s, lease.upstream) then
+			if
+				lease.zone == zone
+				and Server(self) < lease.expiresAt
+				and Neighbor(self, s, lease.upstream)
+				and lease.destination ~= publication.origin
+			then
 				local previous = newest[lease.destination]
 				if not previous or lease.expiresAt > previous.expiresAt then
 					newest[lease.destination] = lease
@@ -1322,9 +1714,10 @@ function QT:ForwardMeshPublication(publication, descriptor)
 			end
 		end
 		for _, lease in pairs(newest) do
-			local direct = self:IsSelfSender(publication.origin) and Neighbor(self, s, lease.destination)
-			selected[#selected + 1] =
-				{ lease = lease, target = direct and lease.destination or lease.upstream, hops = MAX_HOPS }
+			local target = PublicationTarget(self, s, publication, lease)
+			if target ~= descriptor.relaySender and target ~= publication.origin then
+				selected[#selected + 1] = { lease = lease, target = target, hops = hops }
+			end
 		end
 	end
 	if #selected == 0 then
@@ -1339,6 +1732,25 @@ function QT:ForwardMeshPublication(publication, descriptor)
 		end
 		return lkey < rkey
 	end)
+	-- One authenticated object satisfies every matching reverse subscription
+	-- on an upgraded next hop. Legacy next hops retain destination envelopes.
+	local grouped, byLink = {}, {}
+	for _, item in ipairs(selected) do
+		local peer = Neighbor(self, s, item.target)
+		local link = peer and peer.sharedDelivery and item.target
+		if link and byLink[link] then
+			local group = byLink[link]
+			group.leases[#group.leases + 1] = item.lease
+			Metric(s, "publicationSharedCopiesSaved")
+		else
+			item.leases = { item.lease }
+			grouped[#grouped + 1] = item
+			if link then
+				byLink[link] = item
+			end
+		end
+	end
+	selected = grouped
 	local remaining, any, failed, finished = #selected, false, nil, false
 	local function Complete(sent, reason)
 		remaining = remaining - 1
@@ -1370,129 +1782,198 @@ function QT:ForwardMeshPublication(publication, descriptor)
 			s.serviceSerial = s.serviceSerial + 1
 			s.destinations[serviceKey] = s.serviceSerial
 		end
-		local duplicateKey = tostring(publication.origin)
-			.. ":"
-			.. tostring(publication.session)
-			.. ":"
-			.. tostring(publication.id)
-			.. ":"
-			.. tostring(publication.digest)
-			.. ":"
-			.. Key(lease.destination, tostring(zone))
+		local duplicateKey = PublicationDeliveryKey(self, s, publication, lease, target)
 		local pendingKey = duplicateKey
-		duplicateKey = duplicateKey .. ":" .. lease.id
-		local previous = s.forwarded[duplicateKey] or s.pendingPublications[pendingKey]
-		if previous and Server(self) < previous.expiresAt then
-			if previous.completed then
-				Complete(true, "duplicate")
-				admitted = true
-			elseif #previous.waiters < 8 then
-				previous.waiters[#previous.waiters + 1] = Complete
-				admitted = true
-			else
-				Complete(false, "capacity")
-			end
-			Metric(s, "publicationDuplicates")
+		if not duplicateKey then
+			Complete(false, "cancelled")
 		else
-			if Count(s.forwarded) >= 512 then
-				local oldest, at
-				for key, entry in pairs(s.forwarded) do
-					if not at or entry.at < at then
-						oldest, at = key, entry.at
-					end
+			local previous = s.forwarded[duplicateKey] or s.pendingPublications[pendingKey]
+			if previous and Server(self) < previous.expiresAt then
+				if previous.completed then
+					Complete(true, "duplicate")
+					admitted = true
+				elseif previous.destination ~= lease.destination then
+					Complete(false, "pending")
+				elseif #previous.waiters < 8 then
+					previous.waiters[#previous.waiters + 1] = Complete
+					admitted = true
+				else
+					Complete(false, "capacity")
 				end
-				if oldest then
-					s.forwarded[oldest] = nil
-				end
-			end
-			local reservation = {
-				at = Now(self),
-				expiresAt = math.min(publication.expiresAt or Server(self) + 15, lease.expiresAt),
-				waiters = {},
-			}
-			s.forwarded[duplicateKey] = reservation
-			s.pendingPublications[pendingKey] = reservation
-			local copy = {}
-			for key, value in pairs(descriptor) do
-				copy[key] = value
-			end
-			copy.owner, copy.meshTraffic = lease, true
-			copy.expires =
-				math.min(descriptor.expires or Now(self) + 15, Now(self) + math.max(0, lease.expiresAt - Server(self)))
-			copy.key = descriptor.key and (descriptor.key .. ":" .. lease.destination .. ":" .. lease.zone) or nil
-			local complete = false
-			local tried = {}
-			local function Send(nextTarget)
-				tried[nextTarget] = true
-				local attempt = {}
-				for key, value in pairs(copy) do
-					attempt[key] = value
-				end
-				attempt.isCurrent = function()
-					return Current(self, s)
-						and IsCurrent(descriptor.isCurrent)
-						and Server(self) < lease.expiresAt
-						and Neighbor(self, s, nextTarget) ~= nil
-				end
-				local called = false
-				attempt.onComplete = function(sent, reason)
-					if complete or called then
-						return
-					end
-					called = true
-					local retryable = reason ~= "capacity"
-						and reason ~= "superseded"
-						and reason ~= "cancelled"
-						and reason ~= "expired"
-					if
-						not sent
-						and retryable
-						and Current(self, s)
-						and IsCurrent(descriptor.isCurrent)
-						and Server(self) < lease.expiresAt
-					then
-						for alternate in pairs(lease.alternates or {}) do
-							if
-								not tried[alternate]
-								and alternate ~= descriptor.relaySender
-								and Neighbor(self, s, alternate)
-							then
-								Metric(s, "publicationFailovers")
-								Send(alternate)
-								return
-							end
+				Metric(s, "publicationDuplicates")
+			else
+				if Count(s.forwarded) >= 512 then
+					local oldest, at
+					for key, entry in pairs(s.forwarded) do
+						if not at or entry.at < at then
+							oldest, at = key, entry.at
 						end
 					end
+					if oldest then
+						s.forwarded[oldest] = nil
+					end
+				end
+				local reservation = {
+					at = Now(self),
+					destination = lease.destination,
+					expiresAt = Neighbor(self, s, target).sharedDelivery and publication.expiresAt
+						or math.min(publication.expiresAt or Server(self) + 15, lease.expiresAt),
+					waiters = {},
+					pendingKeys = {},
+				}
+				s.forwarded[duplicateKey] = reservation
+				s.pendingPublications[pendingKey] = reservation
+				local copy = {}
+				for key, value in pairs(descriptor) do
+					copy[key] = value
+				end
+				copy.owner, copy.meshTraffic = lease, true
+				copy.expires = math.min(
+					descriptor.expires or Now(self) + 15,
+					Now(self) + math.max(0, lease.expiresAt - Server(self))
+				)
+				copy.key = descriptor.key and (descriptor.key .. ":" .. lease.destination .. ":" .. lease.zone) or nil
+				local complete = false
+				local tried, attempts = {}, 0
+				local function FinishDelivery(sent, reason, deliveryKey, peer)
+					if complete then
+						return
+					end
 					complete = true
+					for key in pairs(reservation.pendingKeys) do
+						if s.pendingPublications[key] == reservation then
+							s.pendingPublications[key] = nil
+						end
+					end
 					if s.pendingPublications[pendingKey] == reservation then
 						s.pendingPublications[pendingKey] = nil
 					end
 					reservation.completed = sent == true
-					if not sent and s.forwarded[duplicateKey] == reservation then
+					if (not sent or deliveryKey ~= duplicateKey) and s.forwarded[duplicateKey] == reservation then
 						s.forwarded[duplicateKey] = nil
+					end
+					if sent then
+						reservation.expiresAt = peer.sharedDelivery and publication.expiresAt
+							or math.min(publication.expiresAt or Server(self) + 15, lease.expiresAt)
+						s.forwarded[deliveryKey] = reservation
 					end
 					Complete(sent, reason)
 					local waiters = reservation.waiters
 					reservation.waiters = {}
 					for _, waiter in ipairs(waiters) do
-						waiter(sent, reason)
+						local matched = sent and lease.destination == reservation.destination
+						waiter(matched, matched and reason or reason == "acknowledged" and "pending" or reason)
 					end
 				end
-				local accepted, reason = self:SendMeshPublicationToPeer(
-					publication,
-					nextTarget,
-					{ leaseId = lease.id, destination = lease.destination, zone = lease.zone, hops = item.hops },
-					attempt
-				)
-				admitted = admitted or accepted
-				if accepted then
-					Served()
+				local function Send(nextTarget)
+					attempts = attempts + 1
+					tried[nextTarget] = true
+					local routeLease = lease
+					local deliveryKey = PublicationDeliveryKey(self, s, publication, lease, nextTarget)
+					local peer = Neighbor(self, s, nextTarget)
+					if not deliveryKey or not peer then
+						FinishDelivery(false, "cancelled")
+						return
+					end
+					local peerSession = peer.session
+					local attempt = {}
+					for key, value in pairs(copy) do
+						attempt[key] = value
+					end
+					attempt.owner = routeLease
+					attempt.key = descriptor.key
+							and (descriptor.key .. ":" .. routeLease.destination .. ":" .. routeLease.zone)
+						or nil
+					attempt.expires = math.min(
+						descriptor.expires or Now(self) + 15,
+						Now(self) + math.max(0, routeLease.expiresAt - Server(self))
+					)
+					attempt.isCurrent = function()
+						return Current(self, s)
+							and IsCurrent(descriptor.isCurrent)
+							and LeaseCurrent(routeLease)
+							and Neighbor(self, s, nextTarget) ~= nil
+							and Neighbor(self, s, nextTarget).session == peerSession
+					end
+					local called = false
+					attempt.onComplete = function(sent, reason)
+						if complete or called then
+							return
+						end
+						called = true
+						if sent and not attempt.isCurrent() then
+							sent, reason = false, "cancelled"
+						end
+						local retryable = reason ~= "capacity"
+							and reason ~= "superseded"
+							and reason ~= "cancelled"
+							and reason ~= "expired"
+							and reason ~= "pending"
+						if not sent and attempts < 3 and Current(self, s) and IsCurrent(descriptor.isCurrent) then
+							-- A queued representative can disappear while another
+							-- subscriber still needs this same common link.
+							if not LeaseCurrent(routeLease) then
+								for _, candidate in ipairs(item.leases) do
+									if
+										candidate ~= routeLease
+										and LeaseCurrent(candidate)
+										and Neighbor(self, s, target)
+									then
+										lease = candidate
+										Send(target)
+										return
+									end
+								end
+							elseif retryable then
+								for _, candidate in ipairs(item.leases) do
+									if LeaseCurrent(candidate) then
+										for alternate in pairs(candidate.alternates or {}) do
+											if
+												not tried[alternate]
+												and alternate ~= descriptor.relaySender
+												and alternate ~= publication.origin
+												and Neighbor(self, s, alternate)
+											then
+												lease = candidate
+												Metric(s, "publicationFailovers")
+												Send(alternate)
+												return
+											end
+										end
+									end
+								end
+							end
+						end
+						FinishDelivery(sent, reason, deliveryKey, peer)
+					end
+					local prior = s.forwarded[deliveryKey] or s.pendingPublications[deliveryKey]
+					if prior and prior ~= reservation and Server(self) < prior.expiresAt then
+						attempt.onComplete(prior.completed == true, prior.completed and "duplicate" or "pending")
+						return
+					end
+					s.pendingPublications[deliveryKey], reservation.pendingKeys[deliveryKey] = reservation, true
+					local accepted, reason = self:SendMeshPublicationToPeer(
+						publication,
+						nextTarget,
+						{
+							leaseId = lease.id,
+							destination = lease.destination,
+							zone = lease.zone,
+							hops = item.hops,
+							sharedDelivery = peer.sharedDelivery and true or nil,
+						},
+						attempt
+					)
+					admitted = admitted or accepted
+					if accepted then
+						Served()
+					end
+					if not accepted then
+						attempt.onComplete(false, reason)
+					end
 				end
-				if not accepted then
-					attempt.onComplete(false, reason)
-				end
+				Send(target)
 			end
-			Send(target)
 		end
 	end
 	Metric(s, descriptor.relaySender and "publicationRelays" or "publicationFanouts")
@@ -1506,6 +1987,7 @@ function QT:RetireMeshPeer(value, reason)
 	end
 	local pending, peer = s.pending[name], s.neighbors[name]
 	s.admissionIntents[name] = nil
+	s.pendingInterests[name] = nil
 	s.pending[name], s.neighbors[name], s.reservations[name] = nil, nil, nil
 	if pending then
 		self:CancelCommunicationOwner(pending, "cancelled")
@@ -1513,30 +1995,15 @@ function QT:RetireMeshPeer(value, reason)
 	if peer then
 		self:CancelCommunicationOwner(peer, "cancelled")
 	end
-	for key, lease in pairs(s.interests) do
-		lease.alternates[name] = nil
-		if lease.upstream == name then
-			local alternate = Alternative(self, s, lease, name)
-			if alternate then
-				lease.upstream = alternate
-				lease.alternates[alternate] = nil
-			end
-		end
-		if lease.destination == name or lease.upstream == name then
-			s.interests[key] = nil
-			CancelInterest(self, s, lease)
-		else
-			lease.downstreams[name] = nil
-		end
-	end
-	for _, lease in pairs(s.localHistory) do
-		lease.downstreams[name] = nil
-	end
+	RetirePeerRoutes(self, s, name)
 	local candidate = s.candidates[name]
 	if candidate then
 		local now = Now(self)
-		local retirement = self:CanAccessValue(reason) and type(reason) == "string"
-			and ({ unavailable = true, rotated = true, expired = true, ignored = true })[reason] and reason or "retired"
+		local retirement = self:CanAccessValue(reason)
+				and type(reason) == "string"
+				and ({ unavailable = true, rotated = true, expired = true, ignored = true })[reason]
+				and reason
+			or "retired"
 		candidate.lastRetirementReason, candidate.lastRetiredAt = retirement, now
 		if pending and retirement == "unavailable" then
 			candidate.lastHandshakeOutcome, candidate.lastHandshakeReason = "unavailable", "unavailable"
@@ -1574,19 +2041,24 @@ local function RotateNeighbor(a, s, now)
 	PruneAdmissionIntents(a, s, now)
 	local waiting, queuedAt
 	for name, intent in pairs(s.admissionIntents) do
-		if not s.pending[name] and (not queuedAt or intent.queuedAt < queuedAt
-			or intent.queuedAt == queuedAt and name < waiting) then
+		if
+			not s.pending[name]
+			and (not queuedAt or intent.queuedAt < queuedAt or intent.queuedAt == queuedAt and name < waiting)
+		then
 			waiting, queuedAt = name, intent.queuedAt
 		end
 	end
 	local function AdmitWaiting()
-		if not waiting then return false end
+		if not waiting then
+			return false
+		end
 		local reserved, reason = Reserve(a, s, waiting, true)
 		if reserved then
 			-- The caller's native hello permits the same reciprocal retry as an
 			-- immediately admitted hello. A failure after it arrived was pruned.
 			local candidate = s.candidates[waiting]
 			candidate.retryAt = math.min(candidate.retryAt, now)
+			s.nextHandshake = math.min(s.nextHandshake, math.max(now, (s.lastHandshakeAt or now - 1) + 1))
 			s.admissionIntents[waiting] = nil
 			Metric(s, "admissionReservations")
 		end
@@ -1595,20 +2067,28 @@ local function RotateNeighbor(a, s, now)
 	-- Reservation expiry can make space without retiring a healthy neighbor.
 	-- Claim it before generic candidates run through the handshake scheduler.
 	local admitted, blocked = AdmitWaiting()
-	if admitted or blocked == "reciprocal_capacity" then return end
+	if admitted or blocked == "reciprocal_capacity" then
+		return
+	end
 	if now < s.nextRotation or not waiting and Count(s.neighbors) < MAX_NEIGHBORS then
 		return
 	end
 	if not waiting then
 		local alternate = false
 		for name, candidate in pairs(s.candidates) do
-			if not s.neighbors[name] and not s.pending[name] and candidate.retryAt <= now
-				and not a:IsIgnoredPlayerName(name) then
+			if
+				not s.neighbors[name]
+				and not s.pending[name]
+				and candidate.retryAt <= now
+				and not a:IsIgnoredPlayerName(name)
+			then
 				alternate = true
 				break
 			end
 		end
-		if not alternate then return end
+		if not alternate then
+			return
+		end
 	end
 	local victim, usefulness, age
 	for name, peer in pairs(s.neighbors) do
@@ -1622,7 +2102,9 @@ local function RotateNeighbor(a, s, now)
 	end
 	if victim then
 		a:RetireMeshPeer(victim, "rotated")
-		if not Current(a, s) then return end
+		if not Current(a, s) then
+			return
+		end
 		Metric(s, "neighborRotations")
 		s.nextRotation = now + 120
 		AdmitWaiting()
@@ -1673,6 +2155,24 @@ function QT:UpdateMeshNetwork(now)
 			s.reservations[name] = nil
 		end
 	end
+	for name, items in pairs(s.pendingInterests) do
+		if not Reserved(self, s, name) then
+			s.pendingInterests[name] = nil
+			for _ = 1, #items do
+				Metric(s, "pendingInterestDrops")
+			end
+		else
+			for index = #items, 1, -1 do
+				if Server(self) >= items[index].record.expiresAt then
+					table.remove(items, index)
+					Metric(s, "pendingInterestDrops")
+				end
+			end
+			if #items == 0 then
+				s.pendingInterests[name] = nil
+			end
+		end
+	end
 	for key, entry in pairs(s.forwarded) do
 		if Server(self) >= entry.expiresAt then
 			s.forwarded[key] = nil
@@ -1709,19 +2209,29 @@ function QT:UpdateMeshNetwork(now)
 		end
 		local function Tier(candidate)
 			local reservation = Reserved(self, s, candidate.name)
-			if reservation and reservation.reciprocal then return 2 end
-			if preferContact and candidate.contactAt and now - candidate.contactAt < CONTACT_SECONDS then return 1 end
+			if reservation and reservation.reciprocal then
+				return 2
+			end
+			if preferContact and candidate.contactAt and now - candidate.contactAt < CONTACT_SECONDS then
+				return 1
+			end
 			return 0
 		end
 		local function Prefer(candidate, previous)
-			if not previous then return true end
+			if not previous then
+				return true
+			end
 			local tier, previousTier = Tier(candidate), Tier(previous)
-			if tier ~= previousTier then return tier > previousTier end
+			if tier ~= previousTier then
+				return tier > previousTier
+			end
 			-- A newly heard stranger must not jump ahead of every retried contact.
 			-- Discovery time remains fixed when later chat/roster sightings arrive.
 			local waiting = candidate.triedAt or candidate.discoveredAt or s.startedAt
 			local previousWaiting = previous.triedAt or previous.discoveredAt or s.startedAt
-			if waiting ~= previousWaiting then return waiting < previousWaiting end
+			if waiting ~= previousWaiting then
+				return waiting < previousWaiting
+			end
 			return Rank(candidate) < Rank(previous)
 		end
 		for name, candidate in pairs(s.candidates) do
@@ -1738,7 +2248,19 @@ function QT:UpdateMeshNetwork(now)
 			end
 		end
 		if selected then
-			StartHandshake(self, s, selected)
+			if
+				(s.metrics.handshakesStarted or 0) >= 3
+				and now < (s.regularHandshakeAt or 0)
+				and DiscoveryPressure(self)
+			then
+				-- Optional bootstrap acceleration yields to queued payloads,
+				-- authentication and native throttling. Normal maintenance still
+				-- runs at its existing paced deadline.
+				s.nextHandshake = math.min(s.regularHandshakeAt, now + 2)
+				Metric(s, "bootstrapPressureDeferrals")
+			else
+				StartHandshake(self, s, selected)
+			end
 		end
 	end
 end
@@ -1764,7 +2286,16 @@ function QT:GetMeshNetworkMetrics()
 	metrics.neighbors, metrics.candidates, metrics.handshakes, metrics.interests =
 		Count(s.neighbors), Count(s.candidates), Count(s.pending), Count(s.interests)
 	metrics.admissionIntents, metrics.reservations = Count(s.admissionIntents), Count(s.reservations)
+	metrics.pendingInterests = 0
+	for _, items in pairs(s.pendingInterests) do
+		metrics.pendingInterests = metrics.pendingInterests + #items
+	end
 	metrics.localInterests = Count(s.localInterests)
+	local audiences = {}
+	for _, lease in pairs(s.interests) do
+		audiences[Key(lease.destination, tostring(lease.zone))] = true
+	end
+	metrics.interestAudiences = Count(audiences)
 	metrics.localRoutes = Count(s.localHistory)
 	metrics.queryHistory = Count(s.interestHistory)
 	metrics.querySelections = Count(s.interestSelections)

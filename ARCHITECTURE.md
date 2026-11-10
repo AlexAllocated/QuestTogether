@@ -474,9 +474,13 @@ current display indices, and yields to a user's intervening selection.
 
 A node keeps at most 512 candidates, 8 confirmed neighbors and 3 simultaneous
 handshakes. Introductions carry at most 8 addresses, without establishing presence,
-location, credentials or party membership. New probes run every 20–30 seconds after
-three staggered initial probes; unanswered candidates wait 5–30 minutes. Directory
-scans refresh every 5 minutes, processing 32 rows per paced tick and 1,500 per cycle.
+location, credentials or party membership. After three staggered initial probes,
+an underfilled node probes every 4–6 seconds while transport and authentication
+have spare capacity. Full or pressured nodes use the 20–30-second maintenance
+cadence; unanswered candidates still wait 5–30 minutes. Reciprocal reservations
+become eligible after one second, through the same scheduler and handshake limit.
+Directory scans refresh every 5 minutes, processing 32 rows per paced tick and
+1,500 per cycle.
 Cycles share the row allowance across active directories and rotate both the
 first directory and each directory's starting roster row. A large global roster
 cannot permanently exclude zone rosters or members beyond its first 1,500 rows.
@@ -500,6 +504,10 @@ not names or message text.
 Admission reserves slots for reciprocal handshakes before acknowledging them;
 busy peers decline without offering unusable introductions. Reservations expire
 and do not establish a confirmed edge or accepted player data.
+Early interests from reserved peers may wait in a bounded holding area (three per
+peer, 24 total). They establish no paths until the independent native challenge
+confirms the same session; normal validation then runs again. Expiry, retirement
+and runtime reset discard them.
 A full recipient retains at most three declined native hello requests for up to
 480 seconds, ordered by original arrival. Repeated requests do not renew their
 expiry or priority. When capacity opens, or the normal 120-second rotation frees
@@ -526,12 +534,34 @@ diagnostics. Missing hooks, unreadable values, and uncertain matches fail open.
 
 Interests have 120-second leases renewed every 40 seconds with new immutable query
 identities. Each query forwards once, to at most 3 neighbors with an 8-hop limit;
-duplicate arrivals may provide alternate paths. Public payloads follow subscribed
-reverse paths. The origin, session, publication identity, source timestamps,
+duplicate arrivals may provide alternate paths. The 32-lease limit remains shared.
+Per-upstream fairness counts at most eight distinct requester/scope audiences,
+with at most three immutable renewal generations per audience; renewals do not
+consume new audience slots. Public payloads follow subscribed reverse paths.
+Subscription sends use up to 30 seconds of queue lifetime, bounded by the
+original lease, with at most three runtime-owned attempts per selected neighbor.
+No retry rewrites a query's identity, scope, expiry or hop allowance.
+Confirmed peers negotiate shared delivery through an optional handshake field;
+the protocol-3 capability token and existing field IDs stay unchanged. A native
+correlated reply establishes support for that neighbor session. Older protocol-3
+peers continue receiving individual destination envelopes.
+After validating an incoming reverse route and authenticating its author, a
+shared-delivery client can consume the bundle for a matching local interest and
+branch it to matching upstream subscriptions. Several subscribers through the
+same capable neighbor receive one physical copy. Successful hop receipts are
+reused by exact publication digest, directed link and neighbor session across
+query renewals; pending or failed transfers are not delivery receipts. Every
+branch consumes the incoming hop allowance, and source timestamps and expiry
+never change. Locally requested scopes can supply common downstream demand
+instead of forwarding another subscriber's identical scope request; demand that
+loses this coverage resumes its bounded query path.
+The origin, session, publication identity, source timestamps,
 expiry, scope and payload remain unchanged across all hops. Ordinary unknown
 bundles stay quarantined until their author directly confirms the exact digest
 from its own retained public outbox, or they expire. Confirmations are batched;
 exact verified copies and direct owner payloads avoid redundant authentication.
+Confirmation exchanges allow up to 60 seconds for shared queues and hop recovery;
+they never extend a publication's original expiry or its observation freshness.
 Existing pinned-key DEVANN, authorized broadcast PING and VIP proofs use their
 signed identity fields for ordering and expiry instead of unsigned outer fields.
 Broadcast PING verification and forwarding do not require diagnostics consent.
@@ -546,6 +576,29 @@ Renewed interests rotate destinations independently per requester and scope, wit
 at most 64 selection histories expiring after 120 seconds. An interest received
 while an owner publication is hashing or sending waits for that exact publication
 to become ready; cancellation and expiry still prevent replay.
+New interests can also receive retained, authenticated foreign public STATE
+bundles. Replay rotates interests and origins, binds each send to its installed
+lease, and preserves the remaining hop allowance. The new recipient still needs
+the author's own digest confirmation; a bridge's cached verification is not
+transferable proof. Foreign events and private data are never offered through
+this cache. Replacement and withdrawal retire obsolete replay work without
+renewing any observation.
+Replay waits for transfer completion rather than treating queue admission as
+delivery. Failures retry with bounded backoff, retired lease callbacks cannot
+finish a replacement lease, and already-confirmed shared-link copies do not
+consume the next useful replay slot. Withdrawal fences also gate local
+consumption when a previously relayed scope becomes locally relevant.
+If fence capacity denies a mixed state bundle, local delivery can still apply
+its authenticated location/presence clears with their original topic ordering;
+positive records remain suppressed, and the denied bundle is never forwarded.
+Verified withdrawals and retired sessions also retain bounded routing fences for
+330 seconds, beyond the maximum public-bundle lifetime plus permitted clock skew.
+These guard queued forwarding and delayed native copies even after the clear's
+payload expires. Up to 128 fences reserve 512 bytes each inside the mesh memory
+budget. Overflow uses a fixed 4 KiB table of expiring name-hash deny buckets;
+collisions only suppress additional sources. If that metadata cannot be reserved,
+cached foreign forwarding pauses conservatively. Live fences are never evicted
+to admit old state, and aggregate diagnostics expose this pressure.
 
 Developer announcement subscriptions use the separate `QTDEVFEED2` signature
 domain, binding sender, request identity, issue time, action, session and target.
@@ -600,6 +653,14 @@ Both zones advertise mesh interests and supply directory membership. Public
 state coalesces into windows of at least 5 seconds; events become eligible
 immediately and can expire under congestion. Slower global baselines preserve
 progressive background coverage and original per-field source freshness.
+Their public bundles remain available for 300 seconds, spanning the ordinary
+150–210-second renewal interval. Public movement includes the small QTVR
+version/count record using its original source time and revision; it cannot
+renew quest or party counts.
+The shared version store orders this evidence independently from full QTVR
+statistics and accepts correlated native handshake versions without inventing
+presence. Cached locations retain independently expiring version evidence across
+reloads; restoring either does not establish live presence or badges.
 Nearby streams keep four leases, with
 replaceable per-recipient samples that expire after two seconds. UI settings and
 presentation consumers do not drive network progression.
@@ -643,13 +704,18 @@ backoff and ambiguous results are not reported as definite send failures. A
 rejected request ends its loading state without waiting for a remote timeout.
 Directory refusal notices update bounded discovery diagnostics. They never
 produce channel-send retries or global error popups. Mesh traffic, including
-fragment control and origin confirmations, has a sub-budget of 1 packet/s and
-200 bytes/s within the shared budget (burst 2 packets/400 bytes). At most 24 queued
-mesh packets and 8 outgoing mesh transfers (at most 6 for replaceable state) leave capacity for actual party and
-private work. Public bundles are at most 8 KiB; retained mesh payloads reserve up
+fragment control and origin confirmations, has a sub-budget of 2 packets/s and
+400 bytes/s within the unchanged shared budget (burst 2 packets/400 bytes).
+At most 24 queued mesh packets and 8 outgoing mesh transfers (at most 6 for
+replaceable state) leave capacity for actual party and private work. Public
+bundles are at most 8 KiB; retained mesh payloads reserve up
 to 128 KiB inside the existing 512 KiB aggregate transfer/cache ceiling. Routing
 history is bounded and expires. Diagnostics report counts, ages, hash time,
 authentication latency, queue bytes and outcomes without names or payload text.
+Location diagnostics distinguish current and restored public records, map-eligible
+records and missing version evidence. Eligibility counts are not literal rendered
+map-pin counts. Routing diagnostics distinguish neighbors from accepted owner and
+relayed records; neither count alone establishes world-map coverage.
 Mesh assembly requires a confirmed edge or a correlated response where applicable.
 Unknown peers may occupy at most four discovery/authentication request assemblies,
 leaving the other mesh slots available. Fragment arrival never extends a mesh
@@ -820,6 +886,16 @@ client profiles, crypto, localization, release-note and packaging checks are CI
 requirements. `scripts/check_architecture.py` protects key ownership boundaries;
 behavioral tests cover cancellation, incomplete observations, replay, recovery
 and the protocol upgrade boundary. Do not replace those with only source-pattern tests.
+
+`scripts/benchmark_mesh_coverage.lua` runs actual independent coordinators with
+full, overlapping or sparse directory membership, multiple deterministic seeds,
+and optional five-player full quest logs. It measures accepted location origins,
+including records actually delivered through another sender, rather than treating
+neighbor count as coverage. Reports include first-location latency, authentication,
+encoded traffic, budget conservation and party update progress. Host CPU and heap
+measurements include the entire simulated network; they are not live-client frame
+or memory measurements. Run matching baseline and candidate scenarios before
+claiming better coverage; real Retail/Forever delivery still needs live validation.
 
 Keep a test when the failure it catches justifies its fixture and maintenance
 cost; uniqueness alone is not enough. Prefer the real producer/receiver or

@@ -267,13 +267,15 @@ end
 
 -- Discovery records carry addresses, never accepted player observations.
 Add("MPEER", "record", "background", { F("name", S, 120, true) })
-Add(
-	"MHEL",
-	"request",
-	"background",
-	{ F("requestId", S, 80, true), F("version", S, 40), F("protocol", N, nil, true), F("capabilities", S, 64, true) },
-	{ meshOnly = true, responses = { MACK = true }, lifetime = 30, maxBytes = 256 }
-)
+-- Optional capabilities append fields; the existing mesh1 token and field IDs
+-- remain compatible with peers that ignore unknown trailing schema fields.
+Add("MHEL", "request", "background", {
+	F("requestId", S, 80, true),
+	F("version", S, 40),
+	F("protocol", N, nil, true),
+	F("capabilities", S, 64, true),
+	F("sharedDelivery", B),
+}, { meshOnly = true, responses = { MACK = true }, lifetime = 30, maxBytes = 256 })
 Add("MACK", "response", "background", {
 	F("requestId", S, 80, true),
 	F("admitted", B, nil, true),
@@ -281,6 +283,7 @@ Add("MACK", "response", "background", {
 	F("protocol", N, nil, true),
 	F("capabilities", S, 64, true),
 	F("peers", "MPEER[]", 8),
+	F("sharedDelivery", B),
 }, { meshOnly = true, lifetime = 30, maxBytes = 1536 })
 Add("MINT", "event", "background", {
 	F("leaseId", S, 80, true),
@@ -308,6 +311,8 @@ Add("MPUB", "event", "active", {
 	F("destination", S, 120),
 	F("zone", N),
 	F("hops", N),
+	-- Hop routing metadata, excluded from the immutable owner bundle digest.
+	F("sharedDelivery", B),
 }, { meshOnly = true, lifetime = 30, maxBytes = 8192 })
 Add("MPID", "record", "background", {
 	F("id", S, 64, true),

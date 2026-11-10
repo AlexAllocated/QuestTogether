@@ -65,6 +65,49 @@ QT:RegisterTest("party quest snapshots repair over native group and targeted pri
 	end
 end, { offline = true })
 
+QT:RegisterTest("mesh public discovery covers a population beyond direct neighbors with authenticated relays", function()
+	local net = QT:CreateTestNetwork({ fps = 5, seed = 42, latency = 0.08, joinDelay = 0.3, directoryDelay = 0.5 })
+	local peers, relayed = {}, {}
+	for index = 1, 20 do
+		local peer = net:AddPeer(string.format("Crowd%03d-Realm", index), {
+			mapID = 12, x = 0.05 + (index % 20) / 25, y = 0.05,
+		})
+		peers[index], relayed[index] = peer, {}
+		local origins, dispatch = relayed[index], peer.DispatchVerifiedMeshRecord
+		function peer:DispatchVerifiedMeshRecord(frame, data, origin, context)
+			local before = self:GetPlayerLocationState().peers[origin]
+			local accepted = dispatch(self, frame, data, origin, context)
+			local after = self:GetPlayerLocationState().peers[origin]
+			-- Former neighbors can leave visible records after rotation. Only a
+			-- different native relay carrying an authenticated publication that
+			-- actually installs LOC counts as beyond-owner delivery here.
+			if accepted and context.relaySender ~= origin and context.relaySender
+				and after and after ~= before and after.mask ~= 0 then
+				origins[origin] = true
+			end
+			return accepted
+		end
+	end
+	for _, peer in ipairs(peers) do net:StartPeer(peer) end
+	net:Advance(300)
+	local visible, relayedPairs = 0, 0
+	for index, peer in ipairs(peers) do
+		local origins = 0
+		for _ in pairs(relayed[index]) do origins = origins + 1 end
+		assert(origins >= 1, "every reachable client must install an authenticated relayed location")
+		relayedPairs = relayedPairs + origins
+		visible = visible + #peer:GetVisiblePlayerLocations("map")
+		local mesh, transport = peer:GetMeshNetworkMetrics(), peer:GetTransportMetrics()
+		assert(mesh.neighbors <= 8 and mesh.candidates <= 512 and mesh.handshakes <= 3)
+		assert((transport.meshPackets or 0) <= 602 and (transport.meshBytes or 0) <= 120400)
+	end
+	-- Multi-seed offline benchmarks provide substantial margin over these
+	-- floors. The old neighbor-centric behavior averaged roughly six visible
+	-- origins and fewer than one relayed origin per client in this scenario.
+	assert(visible >= #peers * 9, "public coverage must extend beyond an eight-neighbor-sized view: " .. visible)
+	assert(relayedPairs >= #peers * 3, "discovery must carry distinct authenticated relay origins: " .. relayedPairs)
+end, { offline = true })
+
 QT:RegisterTest("five player quest views and objective updates finish when whisper and channel sends are rejected", function()
 	local net = QT:CreateTestNetwork({ fps = 10 })
 	local party, quests = {}, {}
@@ -902,8 +945,8 @@ QT:RegisterTest("mesh two hundred simultaneous clients retain bounded progressiv
 		for _, peer in ipairs(peers) do
 			local transport, mesh, publications = peer:GetTransportMetrics(), peer:GetMeshNetworkMetrics(), peer:GetMeshPublicationMetrics()
 			assert(transport.queuedPackets <= 96 and (transport.highWater or 0) <= 96)
-			assert((transport.meshBytes or 0) <= second * 200 + 400)
-			assert((transport.meshPackets or 0) <= second + 2)
+			assert((transport.meshBytes or 0) <= second * 400 + 400)
+			assert((transport.meshPackets or 0) <= second * 2 + 2)
 			assert(mesh.neighbors <= 8 and mesh.candidates <= 512 and mesh.handshakes <= 3 and mesh.interests <= 32)
 			assert(publications.retainedBytes <= 131072, "publication memory must remain bounded under simultaneous discovery")
 			maxQueue = math.max(maxQueue, transport.highWater or 0)

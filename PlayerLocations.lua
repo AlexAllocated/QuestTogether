@@ -86,6 +86,7 @@ function QT:SavePlayerLocationCache()
 			if data then
 				local row = { name = name, data = data, sampledAt = wall - age, expiresAt = wall + remaining }
 				row.party = self:SavePlayerPartyCacheEntry(name, now, wall)
+				row.addonVersion = self:SavePlayerAddonVersionCacheEntry(name, now, wall, row.expiresAt)
 				-- Preserve independently fresh LFQP status for the existing map filter.
 				-- Neither saving nor restoring it establishes a new live presence.
 				local partner = presence and presence.questPartners and presence.questPartners[name]
@@ -178,6 +179,7 @@ function QT:RestorePlayerLocationCache()
 				state.peers[name] = data
 				count = count + 1
 				self:RestorePlayerPartyCacheEntry(name, row.party, now, wall)
+				self:RestorePlayerAddonVersionCacheEntry(name, row.addonVersion, now, wall)
 				local partner = row.partner
 				if
 					type(partner) == "table"
@@ -589,6 +591,29 @@ function QT:GetVisiblePlayerLocations(surface)
 	table.sort(result, function(a, b)
 		return a.name < b.name
 	end)
+	return result
+end
+
+-- Counts use accepted public records and the same presentation eligibility
+-- queries as map consumers. They disclose no identity or coordinate data.
+function QT:GetPlayerLocationDiagnostics()
+	local result = { currentPublicMapRecords = 0, cachedPublicMapRecords = 0, mapEligibleRecords = 0,
+		mapEligibleCachedRecords = 0, mapEligiblePrivateRecords = 0, mapVersionKnown = 0, mapVersionMissing = 0 }
+	local state = rawget(self, "playerLocationState")
+	for name in pairs(state and state.peers or {}) do
+		local row = self:GetFreshPlayerLocation(name, "map")
+		if row then
+			local key = row.cached and "cachedPublicMapRecords" or "currentPublicMapRecords"
+			result[key] = result[key] + 1
+		end
+	end
+	for _, row in ipairs(self:GetVisiblePlayerLocations("map")) do
+		result.mapEligibleRecords = result.mapEligibleRecords + 1
+		if row.cached then result.mapEligibleCachedRecords = result.mapEligibleCachedRecords + 1 end
+		if row.developerOnly then result.mapEligiblePrivateRecords = result.mapEligiblePrivateRecords + 1 end
+		local key = self:GetPlayerAddonVersion(row.name) and "mapVersionKnown" or "mapVersionMissing"
+		result[key] = result[key] + 1
+	end
 	return result
 end
 

@@ -276,9 +276,9 @@ function QT:HandlePingResponse(data)
 	if observation then
 		self:RecordPeerPresenceFromSnapshot(name, observation.sampledAt)
 	end
-	if data.addonVersion then
+	if data.addonVersion and observation then
 		self:ObserveAddonVersion(data.addonVersion)
-		self:RememberPlayerAddonVersion(name, data.addonVersion)
+		self:RememberPlayerAddonVersion(name, data.addonVersion, observation)
 	end
 	self:RecordCommsDiagnostic("pingReplies", string.format("response %.3fs", now - pending.startedAt))
 	return true

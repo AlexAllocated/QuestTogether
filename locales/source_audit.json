@@ -1,7 +1,11 @@
 {
   "exemptions": {
     "AddonUpdates.lua": [
-      "QTVR"
+      "MACK",
+      "MHEL",
+      "QTVER",
+      "QTVR",
+      "WHISPER"
     ],
     "Ads.lua": [
       " This msg is a macro, but I am not a bot. Just spreading the word :)",
@@ -393,11 +397,13 @@
     "MeshPublications.lua": [
       "BYE",
       "DEVANN",
+      "LOC",
       "MAPRF",
       "MAUTH",
       "MESH",
       "MPUB",
       "PING",
+      "QTPR",
       "STATE",
       "VIP",
       "WHISPER",

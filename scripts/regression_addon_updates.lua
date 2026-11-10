@@ -210,7 +210,7 @@ QT:RegisterTest("monitored quest and party counts share version heartbeats and e
 	Equal(a:GetLocalPartySize(), nil)
 end)
 
-QT:RegisterTest("peer tooltip stats validate payloads and clear with unknown reports departures and ignores", function()
+QT:RegisterTest("peer tooltip stats validate payloads and compact versions preserve counts until departure or expiry", function()
 	local a = Peer()
 	assert(
 		ObserveState(
@@ -234,9 +234,13 @@ QT:RegisterTest("peer tooltip stats validate payloads and clear with unknown rep
 		Equal(ObserveState(a, "HandleAddonVersionMessage", "QTVR", payload, "Stranger-Realm"), false)
 		Equal(a:IsKnownQTPlayer("Stranger-Realm"), false)
 	end
+	local stats = a:GetPlayerTooltipStats("Friend-Realm")
+	a.now = a.now + 1
 	assert(ObserveState(a, "HandleAddonVersionMessage", "QTVR", { version = "5.12.0" }, "Friend-Realm"))
-	Equal(a:GetPlayerMonitoredQuestCount("Friend-Realm"), nil)
-	Equal(a:GetPlayerPartySize("Friend-Realm"), nil)
+	Equal(a:GetPlayerMonitoredQuestCount("Friend-Realm"), 0)
+	Equal(a:GetPlayerPartySize("Friend-Realm"), 0)
+	Equal(a:GetPlayerTooltipStats("Friend-Realm"), stats)
+	Equal(stats.sampledAt, 100, "a compact version must not refresh party/count evidence")
 	assert(
 		ObserveState(
 			a,
@@ -559,4 +563,64 @@ QT:RegisterTest("version heartbeat failures remain paced and invalid versions re
 	Equal(#a.sent, 7)
 	Equal(a.sent[7].operation, "QTPR")
 	Equal(a.sent[7].record.active, true)
+end)
+
+QT:RegisterTest("correlated handshake versions retain source ordering without inventing public presence or party stats", function()
+	local a = Peer("9.0.3")
+	local current = true
+	local ok, _, _, id = a:Request("MHEL", { version = a.version, protocol = 3, capabilities = "mesh1" },
+		{ { distribution = "WHISPER", target = "Friend-Realm" } }, { isCurrent = function() return current end })
+	assert(ok and id)
+	local context = { distribution = "WHISPER", requestId = id, session = "1700000100-2",
+		sequence = 3, stamp = a:GetAnnouncementServerTime() }
+	assert(not a:RememberPlayerHandshakeVersion("Stranger-Realm", "9.0.4", context))
+	assert(not a:RememberPlayerHandshakeVersion("Friend-Realm", "garbage", context))
+	context.distribution = "MESH"
+	assert(not a:RememberPlayerHandshakeVersion("Friend-Realm", "9.0.4", context))
+	context.distribution = "WHISPER"
+	assert(a:RememberPlayerHandshakeVersion("Friend-Realm", "9.0.4", context))
+	assert(not a:IsKnownQTPlayer("Friend-Realm"), "a version observation is not public presence")
+	Equal(a:GetPlayerAddonVersion("Friend-Realm"), nil)
+	Equal(a.qtPlayerPresenceState.peerTooltipStats, nil)
+	assert(ObserveState(a, "HandleQTPlayerPresenceMessage", "QTPR", { active = true }, "Friend-Realm"))
+	Equal(a:GetPlayerAddonVersion("Friend-Realm"), "9.0.4")
+	a.now = 101
+	context.session, context.sequence, context.stamp = "1700000101-2", 1, a:GetAnnouncementServerTime()
+	assert(a:RememberPlayerHandshakeVersion("Friend-Realm", "9.0.5", context))
+	context.session, context.sequence = "1700000100-2", 100
+	assert(not a:RememberPlayerHandshakeVersion("Friend-Realm", "9.9.9", context), "a retired session cannot overwrite the current version")
+	Equal(a:GetPlayerAddonVersion("Friend-Realm"), "9.0.5")
+	context.session, context.sequence = "1700000101-2", 2
+	current = false
+	assert(not a:RememberPlayerHandshakeVersion("Friend-Realm", "9.9.9", context))
+	current = true
+	a:CancelCommRequest(id, "cancelled")
+	assert(not a:RememberPlayerHandshakeVersion("Friend-Realm", "9.9.9", context), "stale callbacks must not supply version evidence")
+	a:RecordQTPlayerPresence("Friend-Realm", false)
+	Equal(a:GetPlayerAddonVersion("Friend-Realm"), nil)
+end)
+
+QT:RegisterTest("compact version evidence cannot postpone missing full details or block independently newer counts", function()
+	local a = Peer("9.0.3")
+	local session = "1700000100-5"
+	local function Apply(version, count, party, stamp, sequence)
+		return a:ApplyCommunicationState({ { topic = "QTVR", data = { version = version, count = count, partySize = party },
+			sampledAt = stamp, revision = sequence } }, "Friend-Realm", { session = session, stamp = stamp, sequence = sequence })
+	end
+	assert(Apply("9.0.3", 2, 2, 1700000100, 1))
+	a.now = 120
+	assert(Apply("9.0.4", nil, nil, 1700000120, 3))
+	Equal(a:GetPlayerAddonVersion("Friend-Realm"), "9.0.4")
+	Equal(a:GetPlayerTooltipStats("Friend-Realm").sampledAt, 100)
+	assert(Apply("9.0.3", 4, 3, 1700000110, 2), "version freshness must not block separately ordered count metadata")
+	Equal(a:GetPlayerAddonVersion("Friend-Realm"), "9.0.4")
+	Equal(a:GetPlayerMonitoredQuestCount("Friend-Realm"), 4)
+	Equal(a:GetPlayerPartySize("Friend-Realm"), 3)
+	a.now = 141
+	assert(Apply("9.0.4", nil, nil, 1700000141, 4))
+	assert(not a:ArePeerFieldsFresh("Friend-Realm", { "QTVR" }, 30), "a version-only sample is not a fresh full details response")
+	local latePong = a:CreatePeerObservation("Friend-Realm", "LOC", { source = "pong", age = 41,
+		sourceSampledAt = 1700000100, lifetime = 600 })
+	assert(not a:RememberPlayerAddonVersion("Friend-Realm", "9.0.2", latePong))
+	Equal(a:GetPlayerAddonVersion("Friend-Realm"), "9.0.4", "a late Pong cannot replace a newer reported version")
 end)

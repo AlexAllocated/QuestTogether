@@ -4,7 +4,11 @@
 local QT = _G.QuestTogether
 local MAX_BYTES, MAX_ENTRIES, MAX_PENDING, MAX_HASH_JOBS = 131072, 128, 32, 16
 local MAX_BODY, MAX_CANONICAL, MAX_LIFETIME = 7000, 8192, 300
-local AUTH_BATCH, AUTH_REQUESTS, AUTH_LIFETIME = 8, 8, 30
+local AUTH_BATCH, AUTH_REQUESTS, AUTH_LIFETIME = 8, 8, 60
+-- Logical reservations include primitive epoch/withdrawal metadata. A fence
+-- must outlive every bundle it can retire, including permitted source skew.
+local MAX_REPLAY_FENCES, REPLAY_FENCE_BYTES, REPLAY_FENCE_LIFETIME = 128, 512, MAX_LIFETIME + 30
+local REPLAY_DENY_BUCKETS, REPLAY_DENY_BYTES = 256, 4096
 local PUBLIC_TOPICS = {
 	QTPR = true,
 	QTVR = true,
@@ -116,6 +120,8 @@ local function State(a)
 			replay = {},
 			nextReplay = 0,
 			active = {},
+			replayFences = {},
+			replayFenceCount = 0,
 		}
 		a.meshPublicationState = s
 	end
@@ -232,6 +238,7 @@ local function FitsEnvelope(a, publication)
 	-- for the complete encoded object, not only its inner public record.
 	wire.leaseId, wire.destination = string.rep("x", 80), string.rep("x", 120)
 	wire.zone, wire.hops = 1000000, 8
+	wire.sharedDelivery = true
 	local encoded = a:EncodeCommRecord("MPUB", wire)
 	return encoded ~= nil and #encoded <= 8192
 end
@@ -416,6 +423,16 @@ function QT:GetMeshPublicationMetrics()
 	local result = Copy(s and s.metrics)
 	result.retainedBytes, result.retained, result.pending = s and s.bytes or 0, s and s.count or 0, s and s.pending or 0
 	result.hashJobs, result.confirmations, result.oldestQuarantineAge = s and #s.jobs or 0, 0, 0
+	result.replayFences = s and s.replayFenceCount or 0
+	result.replayFenceBytes = result.replayFences * REPLAY_FENCE_BYTES
+	result.cachedReplayBlockedFor = s and math.max(0, (s.replayBlockedUntil or 0) - Now(self)) or 0
+	result.cachedReplayBlocked = result.cachedReplayBlockedFor > 0 and 1 or 0
+	result.replayDeniedBuckets, result.replayDenyBytes = 0, s and s.replayDenyReservation and REPLAY_DENY_BYTES or 0
+	for _, untilAt in pairs(s and s.replayDeny or {}) do
+		if Now(self) < untilAt then
+			result.replayDeniedBuckets = result.replayDeniedBuckets + 1
+		end
+	end
 	for _ in pairs(s and s.requests or {}) do
 		result.confirmations = result.confirmations + 1
 	end
@@ -434,7 +451,7 @@ function QT:SendMeshPublicationToPeer(publication, target, relaymeta, descriptor
 	end
 	local wire = Copy(publication)
 	wire.scope = tostring(wire.scope)
-	for _, field in ipairs({ "leaseId", "destination", "zone", "hops" }) do
+	for _, field in ipairs({ "leaseId", "destination", "zone", "hops", "sharedDelivery" }) do
 		wire[field] = relaymeta and relaymeta[field]
 	end
 	local options = Copy(descriptor)
@@ -538,6 +555,7 @@ function QT:QueueMeshPublication(context, data, scope, descriptor)
 	return true, "queued"
 end
 
+local ReplayFenceAllows
 local function Deliver(a, s, entry, route)
 	if
 		not EntryCurrent(a, s, entry)
@@ -552,6 +570,30 @@ local function Deliver(a, s, entry, route)
 		return
 	end
 	local p = entry.publication
+	-- A cached carrier may have seen a withdrawal that this local presentation
+	-- never consumed. Widening local subscription delivery must not revive the
+	-- retired state just because its exact digest remains authenticated.
+	local retiredState = p.operation == "STATE" and (entry.replayRetired or not ReplayFenceAllows(a, s, entry))
+	local deliveryData = entry.data
+	if retiredState then
+		-- Resource pressure must still allow authenticated privacy withdrawal.
+		-- Project only negative records; other fields in the same immutable
+		-- bundle remain suppressed. Original topic revisions/times are retained.
+		deliveryData = { records = {} }
+		for _, row in ipairs(entry.data.records or {}) do
+			if row.topic == "LOC" and row.data.mask == 0 or row.topic == "QTPR" and row.data.active == false then
+				local clear = Copy(row)
+				clear.data = Copy(row.data)
+				deliveryData.records[#deliveryData.records + 1] = clear
+			end
+		end
+		if #deliveryData.records == 0 then
+			return
+		end
+	end
+	-- Cached redistribution consumes the same hop allowance as immediate
+	-- forwarding. A new subscriber must not reset an old bundle's path budget.
+	entry.replayHops = math.max(entry.replayHops or 0, route.meta.hops - 1)
 	local hops = 9 - route.meta.hops
 	s.metrics.verifiedDeliveryHopsLast = hops
 	s.metrics.verifiedDeliveryHopsMax = math.max(s.metrics.verifiedDeliveryHopsMax or 0, hops)
@@ -572,9 +614,14 @@ local function Deliver(a, s, entry, route)
 			part = 1,
 			total = 1,
 		}
-		a:DispatchVerifiedMeshRecord(frame, Copy(entry.data), p.origin, context)
+		if a:DispatchVerifiedMeshRecord(frame, Copy(deliveryData), p.origin, context) then
+			Count(s, route.sender == p.origin and "acceptedOwnerRecords" or "acceptedRelayedRecords")
+		end
 	end
 	if not EntryCurrent(a, s, entry) then
+		return
+	end
+	if retiredState then
 		return
 	end
 	a:ForwardMeshPublication(p, {
@@ -587,6 +634,7 @@ local function Deliver(a, s, entry, route)
 		priority = p.operation == "VIP" and "event" or "background",
 		isCurrent = function()
 			return EntryCurrent(a, s, entry)
+				and (p.operation ~= "STATE" or not entry.replayRetired and ReplayFenceAllows(a, s, entry))
 		end,
 	})
 end
@@ -625,6 +673,305 @@ local function ForwardOwned(a, s, entry)
 		descriptor.onComplete(false, reason)
 	end
 end
+local function NewerPublication(left, right)
+	if left.session == right.session then
+		local first, second = tonumber(left.id), tonumber(right.id)
+		if first and second and first ~= second then
+			return first > second
+		end
+	end
+	return left.stamp > right.stamp
+end
+local function WithdrawsState(entry)
+	if entry.publication.operation == "BYE" then
+		return true
+	end
+	if entry.publication.operation ~= "STATE" then
+		return false
+	end
+	for _, row in ipairs(entry.data and entry.data.records or {}) do
+		if row.topic == "LOC" and row.data.mask == 0 or row.topic == "QTPR" and row.data.active == false then
+			return true
+		end
+	end
+	return false
+end
+local function ReleaseReplayFence(a, s, origin, fence)
+	if s.replayFences[origin] ~= fence then
+		return
+	end
+	s.replayFences[origin] = nil
+	s.replayFenceCount, s.bytes = s.replayFenceCount - 1, s.bytes - REPLAY_FENCE_BYTES
+	a:ReleaseCommResponseBytes(fence.reservation)
+end
+local function PruneReplayFences(a, s, now)
+	for origin, fence in pairs(s.replayFences) do
+		if now >= fence.untilAt then
+			ReleaseReplayFence(a, s, origin, fence)
+		else
+			for session, untilAt in pairs(fence.retired) do
+				if now >= untilAt then
+					fence.retired[session] = nil
+				end
+			end
+		end
+	end
+	for bucket, untilAt in pairs(s.replayDeny or {}) do
+		if now >= untilAt then
+			s.replayDeny[bucket] = nil
+		end
+	end
+end
+local function ReplayBucket(origin)
+	local hash = 0
+	for index = 1, #origin do
+		hash = (hash * 33 + origin:byte(index)) % REPLAY_DENY_BUCKETS
+	end
+	return hash + 1
+end
+ReplayFenceAllows = function(a, s, entry)
+	if entry.owned then
+		return true
+	end
+	local p, now = entry.publication, Now(a)
+	local fence = s.replayFences[p.origin]
+	if
+		now < (s.replayBlockedUntil or 0)
+		or now < (s.replayDeny and s.replayDeny[ReplayBucket(p.origin)] or 0)
+		or not fence
+		or now >= fence.untilAt
+		or now < (fence.blockedUntil or 0)
+		or fence.session ~= p.session
+		or fence.retired[p.session]
+		or p.stamp <= (fence.ambiguousStamp or -1)
+	then
+		return false
+	end
+	local withdrawal = fence.withdrawal
+	if withdrawal and not NewerPublication(p, withdrawal) and not (p.id == withdrawal.id and WithdrawsState(entry)) then
+		return false
+	end
+	return true
+end
+local function ReserveReplayMetadata(a, s, entry, bytes)
+	local reservation
+	for _ = 1, MAX_ENTRIES + 1 do
+		if not Installed(a, s, entry) then
+			return nil
+		end
+		if s.bytes + bytes <= MAX_BYTES then
+			reservation = a:ReserveCommResponseBytes(bytes)
+			if reservation then
+				break
+			end
+		end
+		-- Prefer shedding a cached payload to losing the evidence that an old
+		-- session or location was withdrawn. Existing fences remain untouched.
+		local oldest
+		for _, candidate in pairs(s.entries) do
+			if
+				candidate ~= entry
+				and candidate.verified
+				and not candidate.owned
+				and (not oldest or candidate.at < oldest.at)
+			then
+				oldest = candidate
+			end
+		end
+		if not oldest then
+			break
+		end
+		Remove(a, s, oldest, "replayFenceReclaimed")
+		if not Installed(a, s, entry) then
+			return nil
+		end
+	end
+	if not EntryCurrent(a, s, entry) then
+		if reservation then
+			a:ReleaseCommResponseBytes(reservation)
+		end
+		return nil
+	end
+	return reservation
+end
+local function BlockReplayOrigin(a, s, entry, now)
+	-- Fixed buckets retain overflow withdrawals without suspending every
+	-- established origin. Collisions only deny extra replay; they never erase
+	-- retirement evidence or make an unauthenticated origin authoritative.
+	if not s.replayDenyReservation then
+		local reservation = ReserveReplayMetadata(a, s, entry, REPLAY_DENY_BYTES)
+		if not EntryCurrent(a, s, entry) then
+			if reservation then
+				a:ReleaseCommResponseBytes(reservation)
+			end
+			return
+		end
+		if reservation then
+			s.replayDenyReservation, s.replayDeny = reservation, {}
+			s.bytes = s.bytes + REPLAY_DENY_BYTES
+			s.metrics.retainedBytesHighWater = math.max(s.metrics.retainedBytesHighWater or 0, s.bytes)
+		end
+	end
+	if s.replayDenyReservation then
+		local bucket = ReplayBucket(entry.publication.origin)
+		s.replayDeny[bucket] = math.max(s.replayDeny[bucket] or 0, now + REPLAY_FENCE_LIFETIME)
+	else
+		-- If even fixed metadata cannot be reserved, retain the conservative
+		-- global guard rather than forget an authenticated withdrawal.
+		s.replayBlockedUntil = math.max(s.replayBlockedUntil or 0, now + REPLAY_FENCE_LIFETIME)
+		Count(s, "replayFenceGlobalFallback")
+	end
+	Count(s, "replayFenceCapacity")
+end
+local function ReserveReplayFence(a, s, entry)
+	local now = Now(a)
+	PruneReplayFences(a, s, now)
+	if
+		s.replayFenceCount >= MAX_REPLAY_FENCES
+		or now < (s.replayDeny and s.replayDeny[ReplayBucket(entry.publication.origin)] or 0)
+	then
+		BlockReplayOrigin(a, s, entry, now)
+		return nil
+	end
+	local reservation = ReserveReplayMetadata(a, s, entry, REPLAY_FENCE_BYTES)
+	if not EntryCurrent(a, s, entry) then
+		if reservation then
+			a:ReleaseCommResponseBytes(reservation)
+		end
+		return nil
+	end
+	if not reservation then
+		BlockReplayOrigin(a, s, entry, now)
+		return nil
+	end
+	local fence = {
+		session = entry.publication.session,
+		stamp = entry.publication.stamp,
+		retired = {},
+		untilAt = now + REPLAY_FENCE_LIFETIME,
+		reservation = reservation,
+	}
+	s.replayFences[entry.publication.origin] = fence
+	s.replayFenceCount, s.bytes = s.replayFenceCount + 1, s.bytes + REPLAY_FENCE_BYTES
+	s.metrics.retainedBytesHighWater = math.max(s.metrics.retainedBytesHighWater or 0, s.bytes)
+	return fence
+end
+local function RecordReplayFence(a, s, entry)
+	local p, now = entry.publication, Now(a)
+	if entry.owned or p.operation ~= "STATE" and p.operation ~= "BYE" then
+		return true
+	end
+	local fence = s.replayFences[p.origin]
+	if fence and now >= fence.untilAt then
+		ReleaseReplayFence(a, s, p.origin, fence)
+		fence = nil
+	end
+	fence = fence or ReserveReplayFence(a, s, entry)
+	if not fence or not EntryCurrent(a, s, entry) then
+		return false
+	end
+	if fence.retired[p.session] and now >= fence.retired[p.session] then
+		fence.retired[p.session] = nil
+	end
+	if fence.retired[p.session] or now < (fence.blockedUntil or 0) then
+		return false
+	end
+	if p.session ~= fence.session then
+		-- Whole-second source stamps cannot order two unknown epochs in a tie.
+		-- A tied clear also suspends older cached state until a later sample.
+		if p.stamp <= fence.stamp then
+			if p.stamp == fence.stamp and WithdrawsState(entry) then
+				fence.ambiguousStamp = math.max(fence.ambiguousStamp or -1, p.stamp)
+				fence.untilAt = now + REPLAY_FENCE_LIFETIME
+			end
+			return false
+		end
+		local retired = 0
+		for session, untilAt in pairs(fence.retired) do
+			if now >= untilAt then
+				fence.retired[session] = nil
+			else
+				retired = retired + 1
+			end
+		end
+		if retired >= 8 then
+			fence.blockedUntil, fence.untilAt = now + REPLAY_FENCE_LIFETIME, now + REPLAY_FENCE_LIFETIME
+			Count(s, "replayEpochCapacity")
+			return false
+		end
+		fence.retired[fence.session] = now + REPLAY_FENCE_LIFETIME
+		fence.session, fence.stamp, fence.withdrawal = p.session, p.stamp, nil
+	end
+	if WithdrawsState(entry) and (not fence.withdrawal or NewerPublication(p, fence.withdrawal)) then
+		fence.withdrawal = { session = p.session, id = p.id, stamp = p.stamp }
+	end
+	fence.stamp, fence.untilAt = math.max(fence.stamp, p.stamp), now + REPLAY_FENCE_LIFETIME
+	return ReplayFenceAllows(a, s, entry)
+end
+local function SupersedesReplay(newer, older)
+	local first, second = newer.publication, older.publication
+	if
+		first.origin ~= second.origin
+		or second.operation ~= "STATE"
+		or (first.operation ~= "STATE" and first.operation ~= "BYE")
+		or not NewerPublication(first, second)
+	then
+		return false
+	end
+	if first.session ~= second.session or WithdrawsState(newer) then
+		return true
+	end
+	if first.scope ~= second.scope then
+		return false
+	end
+	-- Movement-only records do not replace the other fields of a full
+	-- snapshot. Retain that independently timed metadata until a complete
+	-- replacement arrives; every replay still requires the author's proof.
+	local topics = {}
+	for _, row in ipairs(newer.data and newer.data.records or {}) do
+		topics[row.topic] = row
+	end
+	for _, row in ipairs(older.data and older.data.records or {}) do
+		local replacement = topics[row.topic]
+		if not replacement or (replacement.sampledAt or first.stamp) < (row.sampledAt or second.stamp) then
+			return false
+		end
+		for field in pairs(row.data) do
+			if replacement.data[field] == nil then
+				return false
+			end
+		end
+	end
+	return true
+end
+local function RecordReplayOrdering(a, s, entry)
+	-- This is cache retirement, not a fresh player observation. Keep the exact
+	-- immutable object for in-flight deliveries, but never offer superseded
+	-- state to a new subscriber, including after a short-lived clear expires.
+	if not RecordReplayFence(a, s, entry) then
+		if not entry.replayRetired then
+			Count(s, "replayFenceDrops")
+		end
+		entry.replayRetired = true
+	end
+	if not EntryCurrent(a, s, entry) then
+		return
+	end
+	for _, other in pairs(s.entries) do
+		if other ~= entry and other.verified then
+			if
+				not other.owned
+				and other.publication.operation == "STATE"
+				and (not ReplayFenceAllows(a, s, other) or not entry.replayRetired and SupersedesReplay(entry, other))
+			then
+				other.replayRetired = true
+			end
+			if not entry.owned and not other.replayRetired and SupersedesReplay(other, entry) then
+				entry.replayRetired = true
+			end
+		end
+	end
+end
 local function Verified(a, s, entry)
 	if not EntryCurrent(a, s, entry) then
 		return
@@ -637,6 +984,10 @@ local function Verified(a, s, entry)
 			s.metrics.authenticationLatencyLast = elapsed
 			s.metrics.authenticationLatencyMax = math.max(s.metrics.authenticationLatencyMax or 0, elapsed)
 		end
+	end
+	RecordReplayOrdering(a, s, entry)
+	if not EntryCurrent(a, s, entry) then
+		return
 	end
 	if entry.owned then
 		ForwardOwned(a, s, entry)
@@ -661,7 +1012,13 @@ function QT:HandleMeshPublication(data, sender, context)
 	then
 		return false
 	end
-	local meta = { leaseId = data.leaseId, destination = data.destination, zone = data.zone, hops = data.hops }
+	local meta = {
+		leaseId = data.leaseId,
+		destination = data.destination,
+		zone = data.zone,
+		hops = data.hops,
+		sharedDelivery = data.sharedDelivery,
+	}
 	if not self:CanAcceptMeshPublicationRoute(sender, meta, p.scope, p.origin) then
 		Count(s, "routeRejected")
 		return false
@@ -997,21 +1354,47 @@ function QT:ReplayMeshPublicationsForInterest(lease)
 	if not Current(self, s) then
 		return
 	end
-	local count = 0
-	for _ in pairs(s.replay) do
-		count = count + 1
+	local count, previous = 0, nil
+	for oldLease, replay in pairs(s.replay) do
+		if oldLease.destination == lease.destination and oldLease.zone == lease.zone then
+			-- Renewing an immutable query changes its route, not its audience.
+			-- Keep fair origin rotation, while a stale transfer callback retains
+			-- no ownership of the new lease. The routing layer separately checks
+			-- whether a confirmed delivery covers this replacement path.
+			previous = previous or replay
+			s.replay[oldLease] = nil
+		else
+			count = count + 1
+		end
 	end
 	if count >= 32 then
 		return
 	end
-	s.replay[lease] = { lease = lease, seen = {} }
+	s.replaySerial = (s.replaySerial or 0) + 1
+	local replay =
+		{ lease = lease, seen = {}, origins = {}, attempts = {}, retryAt = {}, pending = {}, turn = s.replaySerial }
+	if previous then
+		for _, entry in pairs(s.entries) do
+			local origin = entry.publication.origin
+			replay.origins[origin] = previous.origins[origin]
+		end
+	end
+	s.replay[lease] = replay
 end
 local function ReplayOne(a, s, now)
 	if now < s.nextReplay then
 		return
 	end
 	s.nextReplay = now + 1
-	for lease, replay in pairs(s.replay) do
+	local replays = {}
+	for _, replay in pairs(s.replay) do
+		replays[#replays + 1] = replay
+	end
+	table.sort(replays, function(left, right)
+		return left.turn < right.turn
+	end)
+	for _, replay in ipairs(replays) do
+		local lease = replay.lease
 		if not lease.expiresAt or lease.expiresAt <= Wall(a) then
 			s.replay[lease] = nil
 		else
@@ -1019,18 +1402,47 @@ local function ReplayOne(a, s, now)
 			for key, entry in pairs(s.entries) do
 				local scope = entry.publication.scope == "global" and 0 or entry.publication.scope
 				if
-					entry.owned
+					entry.verified
+					and scope == lease.zone
+					and not replay.seen[key]
+					and a.HasDeliveredMeshPublicationForInterest
+					and a:HasDeliveredMeshPublicationForInterest(entry.publication, lease)
+				then
+					replay.seen[key] = true
+					Count(s, "replayDeliveryReused")
+				end
+				if
+					(
+						entry.owned
+						or entry.verified
+							and entry.publication.operation == "STATE"
+							and not entry.replayRetired
+							and (entry.replayHops or 0) > 0
+							and ReplayFenceAllows(a, s, entry)
+					)
 					and not entry.superseded
+					and entry.publication.origin ~= lease.destination
 					and not replay.seen[key]
 					and scope == lease.zone
 					and EntryCurrent(a, s, entry)
 				then
-					if not entry.verified or not entry.completed then
+					if
+						replay.pending[key]
+						or now < (replay.retryAt[key] or 0)
+						or not entry.verified
+						or entry.owned and not entry.completed
+					then
 						-- A new interest can arrive while the first fanout is in
 						-- flight. Keep its replay until that immutable object is
 						-- ready; it was not included in the original audience.
 						waiting = true
-					elseif not chosen or entry.at > chosen.at then
+					elseif
+						not chosen
+						or (replay.origins[entry.publication.origin] or 0) < (replay.origins[chosen.publication.origin] or 0)
+						or (replay.origins[entry.publication.origin] or 0)
+								== (replay.origins[chosen.publication.origin] or 0)
+							and (entry.at > chosen.at or entry.at == chosen.at and entry.key < chosen.key)
+					then
 						chosen = entry
 					end
 				end
@@ -1048,17 +1460,58 @@ local function ReplayOne(a, s, now)
 					s.replay[lease] = nil
 				end
 			else
+				s.replaySerial = (s.replaySerial or 0) + 1
+				replay.turn = s.replaySerial
+				local descriptor = chosen.descriptor or {}
+				local origin = chosen.publication.origin
+				local key, called = chosen.key, false
+				replay.pending[key] = true
+				local function Completed(sent, reason)
+					if called then
+						return
+					end
+					called = true
+					if not Current(a, s) or s.replay[lease] ~= replay then
+						return
+					end
+					replay.pending[key] = nil
+					if sent then
+						replay.seen[key], replay.retryAt[key] = true, nil
+					elseif reason == "capacity" or reason == "pending" then
+						replay.retryAt[key] = Now(a) + 2
+					else
+						replay.attempts[key] = (replay.attempts[key] or 0) + 1
+						if replay.attempts[key] >= 3 or not EntryCurrent(a, s, chosen) then
+							replay.seen[key] = true
+						else
+							replay.retryAt[key] = Now(a) + 2 ^ replay.attempts[key]
+							Count(s, "replayRetries")
+						end
+					end
+				end
 				local admitted, reason = a:ForwardMeshPublication(chosen.publication, {
 					owner = chosen,
+					meshInterest = lease,
+					meshReplayHops = not chosen.owned and chosen.replayHops or nil,
 					expires = chosen.untilAt,
-					key = chosen.descriptor.key,
-					priority = chosen.descriptor.priority or "background",
+					key = descriptor.key,
+					priority = descriptor.priority or "background",
+					onComplete = Completed,
 					isCurrent = function()
 						return EntryCurrent(a, s, chosen)
+							and not chosen.replayRetired
+							and not chosen.superseded
+							and ReplayFenceAllows(a, s, chosen)
 					end,
 				})
-				if admitted or (reason ~= "capacity" and reason ~= "pending") then
-					replay.seen[chosen.key] = true
+				if not admitted then
+					Completed(false, reason)
+				end
+				if admitted then
+					replay.origins[origin] = replay.turn
+					if admitted and not chosen.owned then
+						Count(s, "cachedStateReplays")
+					end
 				end
 				return
 			end
@@ -1072,6 +1525,7 @@ function QT:UpdateMeshPublications(now)
 		return
 	end
 	now = now or Now(self)
+	PruneReplayFences(self, s, now)
 	for _, entry in pairs(s.entries) do
 		if not EntryCurrent(self, s, entry) then
 			Remove(self, s, entry, "expired")
@@ -1172,6 +1626,13 @@ function QT:ResetMeshPublications()
 	self:CancelCommunicationOwner(s, "cancelled")
 	for _, entry in pairs(s.entries) do
 		Remove(self, s, entry, "cancelled")
+	end
+	for origin, fence in pairs(s.replayFences) do
+		ReleaseReplayFence(self, s, origin, fence)
+	end
+	if s.replayDenyReservation then
+		self:ReleaseCommResponseBytes(s.replayDenyReservation)
+		s.replayDenyReservation, s.replayDeny, s.bytes = nil, nil, s.bytes - REPLAY_DENY_BYTES
 	end
 end
 function QT:RetireMeshPublicationPeer(name)

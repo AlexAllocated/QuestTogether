@@ -119,7 +119,9 @@ QT:RegisterTest("protocol v3 rejects malformed bounded schema payloads without r
 		Equal(a:DecodeCommFrame(wire), nil)
 	end
 	local private = {
-		subscriptionSession = "developer-session", subscriptionId = "offer-1", locationShared = false,
+		subscriptionSession = "developer-session",
+		subscriptionId = "offer-1",
+		locationShared = false,
 		location = { mask = 3, mapID = 12, x = 0.4, y = 0.5 },
 	}
 	local payload = assert(a:EncodeCommRecord("DLOC", private))
@@ -129,13 +131,127 @@ QT:RegisterTest("protocol v3 rejects malformed bounded schema payloads without r
 	end
 	local forgedTopics = Cell(Cell("DLOC") .. Cell("100") .. Cell("1") .. Cell(payload))
 	for _, parent in ipairs({ { "STATE", 1 }, { "BYE", 2 }, { "QTHD", 2 } }) do
-		Equal(a:EncodeCommRecord(parent[1], {
-			requestId = "details", records = { { topic = "DLOC", data = private, sampledAt = 100 } },
-		}), nil, "private coordinates cannot be embedded in " .. parent[1])
-		Equal(a:DecodeCommRecord(parent[1], parent[2] .. "=" .. Cell(forgedTopics)), nil,
-			"forged private topic cannot enter through " .. parent[1])
+		Equal(
+			a:EncodeCommRecord(parent[1], {
+				requestId = "details",
+				records = { { topic = "DLOC", data = private, sampledAt = 100 } },
+			}),
+			nil,
+			"private coordinates cannot be embedded in " .. parent[1]
+		)
+		Equal(
+			a:DecodeCommRecord(parent[1], parent[2] .. "=" .. Cell(forgedTopics)),
+			nil,
+			"forged private topic cannot enter through " .. parent[1]
+		)
 	end
 end)
+
+QT:RegisterTest("protocol shared delivery flags preserve legacy fields and require explicit booleans", function()
+	local _, a = Fixture()
+	local records = {
+		MHEL = { requestId = "r1", version = "9.0.3", protocol = 3, capabilities = "mesh1" },
+		MACK = {
+			requestId = "r1",
+			admitted = true,
+			version = "9.0.3",
+			protocol = 3,
+			capabilities = "mesh1",
+			peers = { { name = "Peer-Realm" } },
+		},
+		MPUB = {
+			origin = "Owner-Realm",
+			session = "session",
+			id = "1",
+			operation = "STATE",
+			scope = "global",
+			stamp = 100,
+			expiresAt = 200,
+			body = "opaque owner data",
+			digest = string.rep("a", 128),
+			leaseId = "lease",
+			destination = "Viewer-Realm",
+			zone = 0,
+			hops = 8,
+		},
+	}
+	local flagIDs = { MHEL = 5, MACK = 7, MPUB = 15 }
+	for operation, record in pairs(records) do
+		local spec = a:GetCommOperation(operation)
+		Equal(#spec.fields, flagIDs[operation])
+		Equal(spec.fields[flagIDs[operation]].name, "sharedDelivery")
+		local legacy = assert(a:EncodeCommRecord(operation, record))
+		Equal(
+			assert(a:DecodeCommRecord(operation, legacy)).sharedDelivery,
+			nil,
+			"an absent flag must not opt an old peer into shared delivery"
+		)
+		for _, enabled in ipairs({ false, true }) do
+			record.sharedDelivery = enabled
+			local wire = assert(a:EncodeCommRecord(operation, record))
+			Equal(wire, legacy .. flagIDs[operation] .. "=1:" .. (enabled and "1" or "0"))
+			local decoded = assert(a:DecodeCommRecord(operation, wire))
+			Equal(decoded.sharedDelivery, enabled)
+			Equal(decoded.capabilities, record.capabilities)
+			Equal(decoded.body, record.body)
+			Equal(decoded.digest, record.digest)
+		end
+		record.sharedDelivery = "true"
+		Equal(a:EncodeCommRecord(operation, record), nil)
+		Equal(a:DecodeCommRecord(operation, legacy .. flagIDs[operation] .. "=4:true"), nil)
+	end
+end)
+
+-- Offline-only: temporarily present the actual decoder with its old field
+-- catalog. Restore the shared schema before assertions or any other work.
+QT:RegisterTest("protocol legacy mesh schemas ignore appended shared delivery flags", function()
+	local _, a = Fixture()
+	local records = {
+		MHEL = { requestId = "r1", version = "9.0.3", protocol = 3, capabilities = "mesh1" },
+		MACK = {
+			requestId = "r1",
+			admitted = true,
+			version = "9.0.3",
+			protocol = 3,
+			capabilities = "mesh1",
+			peers = { { name = "Peer-Realm" } },
+		},
+		MPUB = {
+			origin = "Owner-Realm",
+			session = "session",
+			id = "1",
+			operation = "STATE",
+			scope = "global",
+			stamp = 100,
+			expiresAt = 200,
+			body = "opaque owner data",
+			digest = string.rep("a", 128),
+			leaseId = "lease",
+			destination = "Viewer-Realm",
+			zone = 0,
+			hops = 8,
+		},
+	}
+	for operation, record in pairs(records) do
+		record.sharedDelivery = true
+		local wire = assert(a:EncodeCommRecord(operation, record))
+		local spec, legacyFields = a:GetCommOperation(operation), {}
+		local fields = spec.fields
+		for index = 1, #fields - 1 do
+			legacyFields[index] = fields[index]
+		end
+		spec.fields = legacyFields
+		local ok, decoded = pcall(a.DecodeCommRecord, a, operation, wire)
+		spec.fields = fields
+		assert(ok and decoded, "legacy mesh record must remain decodable")
+		Equal(decoded.sharedDelivery, nil)
+		Equal(decoded.requestId, record.requestId)
+		Equal(decoded.capabilities, record.capabilities)
+		Equal(decoded.body, record.body)
+		Equal(decoded.digest, record.digest)
+		Equal(decoded.leaseId, record.leaseId)
+	end
+end, { offline = true })
 
 QT:RegisterTest("protocol private locations enforce exclusive authorization and bounded delivery", function()
 	local net, sender, developer, partner = Fixture()
@@ -143,13 +259,20 @@ QT:RegisterTest("protocol private locations enforce exclusive authorization and 
 	sender.db.profile.sharePlayerLocation = false
 	local state = sender:InitializeDeveloperAnnouncements()
 	local lease = {
-		sender = developer.name, session = developer:GetCommunicationSession(), requestId = "offer-1",
-		active = true, expires = 240, retireAt = 330, sampledAt = sender.now,
+		sender = developer.name,
+		session = developer:GetCommunicationSession(),
+		requestId = "offer-1",
+		active = true,
+		expires = 240,
+		retireAt = 330,
+		sampledAt = sender.now,
 	}
 	state.subscribers[developer.name] = lease
 	assert(sender:RecordPeerEpoch(developer.name, lease.session, sender.API.GetServerTime()))
 	local record = {
-		subscriptionSession = lease.session, subscriptionId = lease.requestId, locationShared = false,
+		subscriptionSession = lease.session,
+		subscriptionId = lease.requestId,
+		locationShared = false,
 		location = { mask = 3, mapID = 12, x = 0.4, y = 0.5 },
 	}
 	local route = { distribution = "WHISPER", target = developer.name, developerAnnouncement = lease }
@@ -178,8 +301,13 @@ QT:RegisterTest("protocol private locations enforce exclusive authorization and 
 	sender.db.profile.shareDeveloperDiagnostics = true
 	Equal(sender:Publish("DLOC", record, { route }), false, "restoring consent must not revive an old lease")
 	lease = {
-		sender = developer.name, session = developer:GetCommunicationSession(), requestId = "offer-2",
-		active = true, expires = 240, retireAt = 330, sampledAt = sender.now,
+		sender = developer.name,
+		session = developer:GetCommunicationSession(),
+		requestId = "offer-2",
+		active = true,
+		expires = 240,
+		retireAt = 330,
+		sampledAt = sender.now,
 	}
 	state.subscribers[developer.name] = lease
 	route.developerAnnouncement = lease
@@ -202,29 +330,43 @@ QT:RegisterTest("protocol private locations enforce exclusive authorization and 
 
 	local receiver = developer:InitializeDeveloperAnnouncements()
 	local large = {
-		subscriptionSession = developer:GetCommunicationSession(), subscriptionId = "offer-pool",
+		subscriptionSession = developer:GetCommunicationSession(),
+		subscriptionId = "offer-pool",
 		locationShared = false,
-		location = { mask = 3, mapID = 12, x = 0.4, y = 0.5,
-			className = string.rep("c", 90), race = string.rep("r", 90) },
+		location = {
+			mask = 3,
+			mapID = 12,
+			x = 0.4,
+			y = 0.5,
+			className = string.rep("c", 90),
+			race = string.rep("r", 90),
+		},
 	}
 	local function Frames(peer, operation)
 		local body = operation == "DLOC" and large
 			or { eventType = "QUEST_PROGRESS", senderName = peer.name, text = string.rep("x", 900) }
 		local frames = assert(peer:BuildCommFrames(operation, body, {
-			session = peer:GetCommunicationSession(), messageId = tostring(peer:NextCommunicationSequence()),
+			session = peer:GetCommunicationSession(),
+			messageId = tostring(peer:NextCommunicationSequence()),
 			stamp = peer.API.GetServerTime(),
 		}))
 		assert(#frames > 1, "capacity checks need actual partial objects")
 		return frames
 	end
 	local function Partial(peer, operation, distribution)
-		return developer:ReceiveCommunication(developer.commPrefix, Frames(peer, operation)[1],
-			distribution or "WHISPER", peer.name)
+		return developer:ReceiveCommunication(
+			developer.commPrefix,
+			Frames(peer, operation)[1],
+			distribution or "WHISPER",
+			peer.name
+		)
 	end
 	Equal(Partial(sender, "DLOC"), false)
 	Equal(developer:GetCommTransferMetrics().incoming, 0, "ordinary clients cannot retain diagnostic fragments")
 	developer.isLocalDeveloper = true
-	function developer:SignDeveloperRequest() return string.rep("s", 64) end
+	function developer:SignDeveloperRequest()
+		return string.rep("s", 64)
+	end
 	Equal(Partial(sender, "DLOC"), false)
 	Equal(developer:GetCommTransferMetrics().incoming, 0, "a private signer alone is not an active subscription")
 	receiver.locationSubscriptions[large.subscriptionId] = { startedAt = developer.now, expires = developer.now + 240 }
@@ -236,7 +378,9 @@ QT:RegisterTest("protocol private locations enforce exclusive authorization and 
 	-- Location samples and event copies share one small assembly allowance,
 	-- separate from normal party responses and the global ingress allowance.
 	for index = 1, 8 do
-		if index % 4 == 1 then net:Advance(0.5) end
+		if index % 4 == 1 then
+			net:Advance(0.5)
+		end
 		Partial(index % 2 == 0 and sender or partner, index <= 2 and "ANN" or "DLOC")
 	end
 	Equal(developer:GetCommTransferMetrics().incoming, 8)
@@ -246,15 +390,30 @@ QT:RegisterTest("protocol private locations enforce exclusive authorization and 
 	assert(developer:GetCommTransferMetrics().capacity >= 1)
 	net:Advance(1)
 	local dropped = developer:GetDeveloperAnnouncementMetrics().ingressDropped or 0
-	for _ = 1, 24 do Partial(extra, "DLOC") end
+	for _ = 1, 24 do
+		Partial(extra, "DLOC")
+	end
 	assert(developer:GetDeveloperAnnouncementMetrics().ingressDropped >= dropped + 16)
 	local partyEvents = 0
-	function developer:HandleAnnouncementEvent() partyEvents = partyEvents + 1 end
+	function developer:HandleAnnouncementEvent()
+		partyEvents = partyEvents + 1
+	end
 	-- An actual group packet retains its normal allowance in this same frame.
-	local party = assert(extra:BuildCommFrames("ANN", {
-		eventType = "QUEST_PROGRESS", senderName = extra.name, text = "Party progress",
-	}, { session = extra:GetCommunicationSession(), messageId = tostring(extra:NextCommunicationSequence()),
-		stamp = extra.API.GetServerTime() }))
+	local party = assert(
+		extra:BuildCommFrames(
+			"ANN",
+			{
+				eventType = "QUEST_PROGRESS",
+				senderName = extra.name,
+				text = "Party progress",
+			},
+			{
+				session = extra:GetCommunicationSession(),
+				messageId = tostring(extra:NextCommunicationSequence()),
+				stamp = extra.API.GetServerTime(),
+			}
+		)
+	)
 	for _, wire in ipairs(party) do
 		developer:ReceiveCommunication(developer.commPrefix, wire, "PARTY", extra.name)
 	end
@@ -278,7 +437,11 @@ QT:RegisterTest("protocol v3 normalizes duplicate audiences before conserving co
 	}))
 	net:Advance(1)
 	local sent = 0
-	for _, packet in ipairs(a.sent) do if packet.wire:find("3|QTPR|", 1, true) == 1 then sent = sent + 1 end end
+	for _, packet in ipairs(a.sent) do
+		if packet.wire:find("3|QTPR|", 1, true) == 1 then
+			sent = sent + 1
+		end
+	end
 	Equal(sent, 2)
 	Equal(#completions, 1)
 	Equal(completions[1][1], true)
@@ -311,7 +474,11 @@ QT:RegisterTest(
 		Equal(completions[1][1], false)
 		Equal(completions[1][2], "ambiguous")
 		local attempts = 0
-		for _, packet in ipairs(a.attempts) do if packet.wire:find("3|QTPR|", 1, true) == 1 then attempts = attempts + 1 end end
+		for _, packet in ipairs(a.attempts) do
+			if packet.wire:find("3|QTPR|", 1, true) == 1 then
+				attempts = attempts + 1
+			end
+		end
 		Equal(attempts, 2)
 	end
 )

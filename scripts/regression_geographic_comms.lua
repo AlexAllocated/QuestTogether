@@ -532,8 +532,9 @@ QT:RegisterTest("slow public baselines retain metadata while current locations r
 	local older = submitted[2]
 	Equal(older.options.expires - older.at, 30)
 	assert(baseline.options.key ~= older.options.key)
-	Equal(#older.record.records, 1)
-	Equal(older.record.records[1].data.x, 0.5)
+	Equal(#older.record.records, 2)
+	Equal(Topic(older.record.records, "LOC").data.x, 0.5)
+	Equal(Topic(older.record.records, "QTVR").data.count, 13)
 	a.now, a.position.x = 110, 0.6
 	a:UpdateGeographicComms()
 	Equal(#submitted, 3)
@@ -541,8 +542,8 @@ QT:RegisterTest("slow public baselines retain metadata while current locations r
 	Equal(latest.options.key, older.options.key)
 	Equal(older.options.isCurrent(), false)
 	Equal(baseline.options.isCurrent(), true)
-	Equal(latest.record.records[1].data.x, 0.6)
-	assert(latest.record.records[1].sampledAt > baseline.record.records[#baseline.record.records].sampledAt)
+	Equal(Topic(latest.record.records, "LOC").data.x, 0.6)
+	assert(Topic(latest.record.records, "LOC").sampledAt > Topic(baseline.record.records, "LOC").sampledAt)
 	latest.options.onComplete(true, "accepted")
 	local nextLocation = route.nextLocation
 	a.now = 111
@@ -963,7 +964,11 @@ QT:RegisterTest(
 			Equal(rows[i].scope, 12)
 			assert(Topic(rows[i].data.records, "LOC"))
 			if rows[i].frame.stamp - rows[1].frame.stamp < 20 then
-				Equal(Topic(rows[i].data.records, "QTVR"), nil)
+				local version = assert(Topic(rows[i].data.records, "QTVR"))
+				Equal(version.data.version, "6.0.0")
+				Equal(version.data.count, 13)
+				Equal(version.data.partySize, 1)
+				Equal(version.sampledAt, Topic(rows[1].data.records, "QTVR").sampledAt)
 			end
 		end
 		a.sendFails = true
@@ -1842,10 +1847,13 @@ QT:RegisterTest(
 		a:IGNORELIST_UPDATE()
 		Equal(Member().state, "unavailable")
 		Equal(next(Member().entries), nil)
-		before = #b.packets
+		local beforeRequests = #a.packets
 		AutoRefresh()
 		Equal(Member().state, "unavailable")
-		Equal(#b.packets, before) -- No request is sent while the member stays ignored.
+		for index = beforeRequests + 1, #a.packets do
+			local frame = assert(a:DecodeCommFrame(a.packets[index]))
+			assert(frame.operation ~= "QCMP", "no comparison request may target an ignored member")
+		end
 		a.ignored[b.name] = nil
 		a:IGNORELIST_UPDATE()
 		before = #b.packets
@@ -2304,4 +2312,129 @@ QT:RegisterTest("departure cancels old work then spends only existing budget on 
 	assert(a:Emit("QTPR", { active = true }, { { distribution = "WHISPER", target = b.name } }))
 	advance(3)
 	assert(#a.sent > before + 1)
+end)
+
+QT:RegisterTest("movement snapshots carry compatible owner version fields without renewing old party metadata", function()
+	local a, b = Fixture("Alice-Realm"), Fixture("Bob-Realm")
+	Stage(a)
+	local full = a:BuildCommunicationStateRecords(false)
+	local version = assert(Topic(full, "QTVR"))
+	a.now = a.now + 5
+	a.position.x = 0.45
+	a:BroadcastPlayerLocation(true)
+	local movement = a:BuildCommunicationStateRecords(true)
+	Equal(#movement, 2)
+	Equal(#a:BuildCommunicationStateRecords(true, nil, false), 1,
+		"direct party movement must not repeat version context on every high-frequency sample")
+	local identity = assert(Topic(movement, "QTVR"))
+	Equal(identity.data.version, "6.0.0")
+	Equal(identity.data.count, 13)
+	Equal(identity.data.partySize, 1)
+	Equal(identity.sampledAt, version.sampledAt)
+	Equal(identity.revision, version.revision)
+	local body = assert(a:EncodeCommRecord("STATE", { records = movement }))
+	local locationOnly = assert(a:EncodeCommRecord("STATE", { records = { assert(Topic(movement, "LOC")) } }))
+	assert(#body - #locationOnly < 80, "version context must not drag the full metadata snapshot into movement")
+	b.now = a.now
+	assert(b:ApplyCommunicationState(movement, a.name, { session = a:GetCommunicationSession(),
+		stamp = a:GetAnnouncementServerTime(), sequence = a:NextCommunicationSequence() }))
+	Equal(b:GetPlayerAddonVersion(a.name), "6.0.0")
+	assert(b:GetFreshPlayerLocation(a.name))
+	local stats = assert(b:GetPlayerTooltipStats(a.name))
+	Equal(stats.count, 13)
+	Equal(stats.partySize, 1)
+	Equal(stats.sampledAt, 100)
+	Equal(stats.lifetime, 595)
+	a.now, b.now = 110, 110
+	a:Publish("QTVR", { version = "6.0.0", count = 14, partySize = 0 })
+	assert(b:ApplyCommunicationState(a:BuildCommunicationStateRecords(true), a.name,
+		{ session = a:GetCommunicationSession(), stamp = a:GetAnnouncementServerTime(),
+			sequence = a:NextCommunicationSequence() }))
+	a.now, b.now = 115, 115
+	b:ApplyCommunicationState(movement, a.name, { session = a:GetCommunicationSession(),
+		stamp = a:GetAnnouncementServerTime(), sequence = a:NextCommunicationSequence() })
+	Equal(b:GetPlayerPartySize(a.name), 0, "late movement cannot restore a previously left party")
+	Equal(b:GetPlayerMonitoredQuestCount(a.name), 14)
+	Equal(b:GetPlayerTooltipStats(a.name).sampledAt, 110)
+	b.now = 710
+	Equal(b:GetPlayerTooltipStats(a.name), nil)
+end)
+
+QT:RegisterTest("reload versions follow original cached location expiry without establishing presence or party data", function()
+	local a = CachedLocationFixture()
+	AddCachePosition(a)
+	assert(Observe(a, "QTVR", { version = "9.0.3" }, "Peer-Realm", 2, 180))
+	a.now, a.wall = 110, 1700000110
+	a:SavePlayerLocationCache()
+	local saved = QT:DeepCopy(a.db.global)
+	local b = CachedLocationFixture(nil, 5, 1700000115, QT:DeepCopy(saved))
+	b:RestorePlayerLocationCache()
+	Equal(b:GetPlayerAddonVersion("Peer-Realm"), "9.0.3")
+	assert(not b:IsKnownQTPlayer("Peer-Realm"))
+	Equal(b:GetPlayerTooltipStats("Peer-Realm"), nil)
+	Equal(b.qtPlayerPresenceState.peerTooltipStats, nil)
+	local diagnostics = b:GetPlayerLocationDiagnostics()
+	Equal(diagnostics.currentPublicMapRecords, 0)
+	Equal(diagnostics.cachedPublicMapRecords, 1)
+	Equal(diagnostics.mapEligibleRecords, 1)
+	Equal(diagnostics.mapEligibleCachedRecords, 1)
+	Equal(diagnostics.mapVersionKnown, 1)
+	Equal(diagnostics.mapVersionMissing, 0)
+	b.now, b.wall = 15, 1700000125
+	b:SavePlayerLocationCache()
+	Equal(b.db.global.playerLocationCache.rows[1].addonVersion.expiresAt,
+		saved.playerLocationCache.rows[1].addonVersion.expiresAt, "repeated reloads cannot renew version evidence")
+	local c = CachedLocationFixture(nil, 2, 1700000130, QT:DeepCopy(b.db.global))
+	c:RestorePlayerLocationCache()
+	Equal(c:GetPlayerAddonVersion("Peer-Realm"), "9.0.3")
+	c.now = 92
+	Equal(c:GetPlayerAddonVersion("Peer-Realm"), nil)
+	Equal(c:GetFreshPlayerLocation("Peer-Realm"), nil)
+	Equal(c:GetPlayerLocationDiagnostics().mapEligibleRecords, 0)
+	for _, mutate in ipairs({
+		function(v) v.version = "|Hforged|h" end,
+		function(v) v.expiresAt = 1700009999 end,
+		function(v) v.sampledAt = 1700000999 end,
+		function(v) v.sourceSampledAt = "invalid" end,
+		function(v) v.session = "invalid|session" end,
+		function(v) v.sequence = -1 end,
+	}) do
+		local db = QT:DeepCopy(saved)
+		mutate(db.playerLocationCache.rows[1].addonVersion)
+		local bad = CachedLocationFixture(nil, 5, 1700000115, db)
+		bad:RestorePlayerLocationCache()
+		Equal(bad:GetPlayerAddonVersion("Peer-Realm"), nil)
+		assert(bad:GetFreshPlayerLocation("Peer-Realm"), "bad optional version metadata must not discard a valid location")
+	end
+end)
+
+QT:RegisterTest("global baselines remain replayable until renewal without refreshing original field observations", function()
+	local a, b, submitted = Fixture("Alice-Realm"), Fixture("Bob-Realm"), {}
+	a.API.Random = function(low) return low end
+	a:UpdateGeographicSubscriptions()
+	Stage(a, true)
+	a.geographicCommsState.nextGlobal = a.now
+	function a:Emit(operation, record, routes, options)
+		if operation == "STATE" and routes[1].scope == "global" then
+			submitted[#submitted + 1] = { record = record, options = options, at = self.now }
+		end
+		return true
+	end
+	a:UpdateGeographicComms()
+	Equal(#submitted, 1)
+	local baseline = submitted[1]
+	Equal(baseline.options.expires - baseline.at, 300)
+	baseline.options.onComplete(true, "accepted")
+	assert(baseline.options.expires > a.geographicCommsState.nextGlobal,
+		"a global replay must not expire before the ordinary replacement publication is due")
+	local location = assert(Topic(baseline.record.records, "LOC"))
+	b.now = baseline.at + 180
+	assert(b:ApplyCommunicationState(baseline.record.records, a.name, { session = a:GetCommunicationSession(),
+		stamp = location.sampledAt, sequence = 1 }))
+	local received = assert(b:GetFreshPlayerLocation(a.name))
+	Equal(received.sampledAt, baseline.at)
+	Equal(received.sourceSampledAt, location.sampledAt)
+	Equal(received.lifetime, 420, "late replay subtracts transit age instead of restarting field freshness")
+	b.now = baseline.at + 600
+	Equal(b:GetFreshPlayerLocation(a.name), nil)
 end)

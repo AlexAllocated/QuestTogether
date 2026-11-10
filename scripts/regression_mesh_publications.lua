@@ -548,6 +548,160 @@ QT:RegisterTest("mesh publication moving sources keep exposed proofs while coale
 	assert(owner:GetMeshPublicationMetrics().retainedBytes == 0, "original expiry bounds immutable proof retention")
 end, { offline = true })
 
+QT:RegisterTest(
+	"mesh shared delivery authenticates each consumer and cannot revive withdrawn data with a delayed proof",
+	function()
+		local net = QT:CreateTestNetwork({ now = 10000, fps = 20, latency = 0.03, seed = 1921 })
+		local owner, hub, first, last =
+			net:AddPeer("Owner-Realm"), net:AddPeer("Hub-Realm"), net:AddPeer("First-Realm"), net:AddPeer("Last-Realm")
+		local peers = { owner, hub, first, last }
+		for _, peer in ipairs(peers) do
+			-- Fix only the confirmed topology and producer for this adversarial case.
+			-- Actual routing, encoding, hashing, authentication, transfers and native
+			-- delivery still run through independent coordinators and their clocks.
+			peer.UpdatePlayerCommunications = function() end
+			peer.UpdateMeshNetwork = function() end
+			net:StartPeer(peer)
+			peer:InitializeMeshNetwork()
+		end
+		local function Neighbor(a, b)
+			a.meshNetworkState.neighbors[b.name] = {
+				name = b.name,
+				session = b:GetCommunicationSession(),
+				sharedDelivery = true,
+				expires = a.now + 500,
+			}
+		end
+		for _, edge in ipairs({ { owner, hub }, { hub, first }, { hub, last } }) do
+			Neighbor(edge[1], edge[2])
+			Neighbor(edge[2], edge[1])
+		end
+		local wall = owner:GetAnnouncementServerTime()
+		local function LocalInterest(peer, id, downstream)
+			local lease = {
+				id = id,
+				destination = peer.name,
+				zone = 0,
+				expiresAt = wall + 120,
+				downstreams = { [downstream.name] = true },
+				hops = 8,
+				renewAt = peer.now + 120,
+			}
+			peer.meshNetworkState.localInterests[0] = lease
+			peer.meshNetworkState.localHistory[peer.name .. ":" .. id] = lease
+			return lease
+		end
+		local h = LocalInterest(hub, "hub-interest", owner)
+		local c = LocalInterest(first, "first-interest", hub)
+		local d = LocalInterest(last, "last-interest", hub)
+		local function ForeignInterest(peer, lease, upstream, downstream)
+			peer.meshNetworkState.interests[lease.destination .. ":" .. lease.id] = {
+				id = lease.id,
+				destination = lease.destination,
+				zone = 0,
+				expiresAt = lease.expiresAt,
+				upstream = upstream.name,
+				downstreams = downstream and { [downstream.name] = true } or {},
+				alternates = {},
+				hops = 7,
+			}
+		end
+		ForeignInterest(owner, h, hub)
+		ForeignInterest(owner, c, hub)
+		ForeignInterest(owner, d, hub)
+		ForeignInterest(hub, c, first, owner)
+		ForeignInterest(hub, d, last, owner)
+		local received, sharedStates = {}, 0
+		for _, peer in ipairs({ hub, first, last }) do
+			received[peer.name] = {}
+			local dispatch = peer.DispatchVerifiedMeshRecord
+			function peer:DispatchVerifiedMeshRecord(frame, data, sender, context)
+				if sender == owner.name and frame.operation == "STATE" then
+					for _, record in ipairs(data.records) do
+						if record.topic == "LOC" then
+							received[self.name][#received[self.name] + 1] = record.data.mask
+						end
+					end
+				end
+				return dispatch(self, frame, data, sender, context)
+			end
+		end
+		local handle = hub.HandleMeshPublication
+		function hub:HandleMeshPublication(data, sender, context)
+			if sender == owner.name and data.operation == "STATE" then
+				sharedStates = sharedStates + 1
+				assert(data.sharedDelivery == true)
+			end
+			return handle(self, data, sender, context)
+		end
+		local blockProof, savedProof = true, {}
+		net.deliveryRule = function(packet, receiver)
+			local frame = owner:DecodeCommFrame(packet.wire)
+			if
+				frame
+				and frame.operation == "MAPRF"
+				and packet.sender == owner.name
+				and receiver == last
+				and blockProof
+			then
+				savedProof[#savedProof + 1] = packet
+				return { drop = true }
+			end
+		end
+		local function PublishLocation(mask, revision)
+			local data = { mask = mask }
+			if mask == 3 then
+				data.mapID, data.x, data.y = 12, 0.4, 0.6
+			end
+			assert(owner:Publish("STATE", {
+				records = {
+					{ topic = "LOC", data = data, sampledAt = owner:GetAnnouncementServerTime(), revision = revision },
+				},
+			}, { { distribution = "MESH", scope = "global" } }, {
+				owner = "shared-security",
+				key = "shared-security",
+				publishesLocation = mask ~= 0,
+				expires = owner.now + 110,
+			}))
+		end
+		PublishLocation(3, 1)
+		net:Advance(20)
+		assert(sharedStates == 1, "three matching consumers must share one authenticated owner-to-hub bundle")
+		assert(#received[hub.name] == 1 and #received[first.name] == 1)
+		assert(
+			#received[last.name] == 0 and #savedProof > 0,
+			"the hub's authentication cannot authorize another consumer with a delayed owner proof"
+		)
+		assert(hub:GetPlayerLocationState().peers[owner.name] and first:GetPlayerLocationState().peers[owner.name])
+		assert(not last:GetPlayerLocationState().peers[owner.name])
+		for _, packet in ipairs(savedProof) do
+			net:Inject(last, packet.prefix, packet.wire, "WHISPER", hub.name)
+		end
+		net:Advance(2)
+		assert(#received[last.name] == 0, "copying a native owner proof through the hub cannot authenticate it")
+		blockProof = false
+		owner.db.profile.sharePlayerLocation = false
+		owner:CancelMeshPublicationsWhere(function(descriptor)
+			return descriptor.publishesLocation
+		end)
+		PublishLocation(0, 2)
+		net:Advance(20)
+		assert(
+			#received[last.name] == 1 and received[last.name][1] == 0,
+			"the recipient must accept the authenticated withdrawal while the old location is still quarantined"
+		)
+		for _, packet in ipairs(savedProof) do
+			net:Inject(last, packet.prefix, packet.wire, "WHISPER", owner.name)
+		end
+		net:Advance(3)
+		assert(
+			#received[last.name] == 1 and not last:GetFreshPlayerLocation(owner.name, "map"),
+			"even the real owner's delayed original proof must not revive withdrawn location data"
+		)
+	end,
+	{ offline = true }
+)
+
 QT:RegisterTest("mesh publication one emission reaches global and zone audiences with scoped native proofs", function()
 	local net = QT:CreateTestNetwork({ fps = 20, latency = 0.03, seed = 515 })
 	local owner, bridge, viewer =
@@ -585,6 +739,28 @@ QT:RegisterTest("mesh publication one emission reaches global and zone audiences
 	end
 	net:Advance(45)
 	assert(not owner.meshNetworkState.neighbors[viewer.name])
+	local ready
+	for _ = 1, 90 do
+		local viewerGlobal, viewerZone, bridgeGlobal = false, false, false
+		for _, lease in pairs(owner.meshNetworkState.interests) do
+			if lease.expiresAt > owner:GetAnnouncementServerTime() then
+				viewerZone = viewerZone or lease.destination == viewer.name and lease.zone == 12
+				bridgeGlobal = bridgeGlobal or lease.destination == bridge.name and lease.zone == 0
+			end
+		end
+		for _, lease in pairs(bridge.meshNetworkState.interests) do
+			viewerGlobal = viewerGlobal
+				or lease.expiresAt > bridge:GetAnnouncementServerTime()
+					and lease.destination == viewer.name
+					and lease.zone == 0
+		end
+		ready = viewerGlobal and viewerZone and bridgeGlobal
+		if ready then
+			break
+		end
+		net:Advance(1)
+	end
+	assert(ready, "both scopes need live reverse paths; common global demand may terminate at the bridge")
 	assert(
 		owner:Emit(
 			"QTCHAT",
@@ -785,6 +961,37 @@ QT:RegisterTest("mesh publication expiry releases authentication batches and sus
 	assert(hashing:GetMeshPublicationMetrics().retainedBytes == 0 and hashing:GetCommTransferMetrics().bytes == 0)
 end)
 
+QT:RegisterTest("mesh authentication tolerates delayed owner proofs without extending publication expiry", function()
+	local owner, receiver = Peer("Owner-Realm"), Peer("Receiver-Realm")
+	local current = Publish(owner, "QTCHAT", { text = "Still current" }, { expires = owner.now + 90 })
+	local expired = Publish(owner, "QTCHAT", { text = "Expired while waiting" }, { expires = owner.now + 35 })
+	assert(receiver:HandleMeshPublication(Wire(current), "Relay-Realm"))
+	assert(receiver:HandleMeshPublication(Wire(expired), "Relay-Realm"))
+	local request = AwaitAuth(receiver)
+	owner.now, receiver.now = 41, 41
+	owner.serverOffset, receiver.serverOffset = 41, 41
+	assert(
+		receiver.now > 30 and receiver.now < request.options.expires and request.options.isCurrent(),
+		"a congested two-way proof exchange should remain eligible beyond thirty seconds"
+	)
+	function owner:Respond(_, data)
+		self.reply = data
+		return true
+	end
+	request.data.requestId = "delayed-proof"
+	assert(owner:HandleMeshAuthenticationRequest(request.data, receiver.name))
+	assert(
+		#owner.reply.items == 1 and owner.reply.items[1].id == current.id,
+		"an owner must stop confirming the original bundle when its lifetime ends"
+	)
+	owner.reply.items[#owner.reply.items + 1] = Proof(expired)
+	assert(request.options.onResponse(owner.reply, owner.name))
+	assert(
+		#receiver.delivered == 1 and receiver.delivered[1].data.text == "Still current",
+		"even an already queued valid proof cannot extend its publication's original expiry"
+	)
+end)
+
 QT:RegisterTest("mesh publication cancelled public requests retire exposed hops and cannot replay", function()
 	local owner = Peer("Developer-Realm")
 	owner.Request = QT.Request
@@ -940,5 +1147,527 @@ QT:RegisterTest("mesh publication late interests wait for pending renewals witho
 		owner.now = owner.now + 2
 		owner:UpdateMeshPublications(owner.now)
 		assert(#owner.forwarded == (boundary == "complete" and 2 or 1))
+	end
+end)
+
+QT:RegisterTest("mesh cached public state serves new interests without lending its authentication", function()
+	local owner, bridge = Peer("Owner-Realm"), Peer("Bridge-Realm")
+	local publication = Publish(owner, "STATE", {
+		records = {
+			{
+				topic = "QTVR",
+				data = { version = "9.0.3" },
+				sampledAt = owner:GetAnnouncementServerTime(),
+				revision = 1,
+			},
+		},
+	})
+	assert(bridge:HandleMeshPublication(Wire(publication), owner.name))
+	Finish(bridge)
+	local forwarded, options = 0, nil
+	function bridge:ForwardMeshPublication(copy, descriptor)
+		assert(copy.digest == publication.digest and copy.body == publication.body)
+		assert(copy.origin == owner.name and copy.expiresAt == publication.expiresAt)
+		forwarded, options = forwarded + 1, descriptor
+		return true, "queued"
+	end
+	local lease = {
+		id = "new-interest",
+		destination = "Newcomer-Realm",
+		zone = 0,
+		expiresAt = bridge:GetAnnouncementServerTime() + 120,
+	}
+	bridge:ReplayMeshPublicationsForInterest(lease)
+	bridge.now = bridge.now + 2
+	bridge:UpdateMeshPublications(bridge.now)
+	assert(forwarded == 1 and options.meshInterest == lease and options.meshReplayHops == 7)
+	assert(options.isCurrent())
+	local receiver = Peer("Receiver-Realm")
+	assert(receiver:HandleMeshPublication(Wire(publication), bridge.name))
+	local request = AwaitAuth(receiver)
+	assert(#receiver.delivered == 0, "a relay's cached verification is not recipient authentication")
+	local proof = { session = publication.session, items = { Proof(publication) } }
+	assert(not request.options.onResponse(proof, bridge.name))
+	assert(request.options.onResponse(proof, owner.name))
+	assert(#receiver.delivered == 1)
+	bridge.now = bridge.now + 31
+	assert(not options.isCurrent(), "cached redistribution cannot renew source expiry")
+end)
+
+QT:RegisterTest("mesh cached replay retries failed transfers and ignores retired lease callbacks", function()
+	local owner, bridge = Peer("Owner-Realm"), Peer("Bridge-Realm")
+	local publication = Publish(owner, "STATE", {
+		records = {
+			{
+				topic = "QTVR",
+				data = { version = "9.0.3" },
+				sampledAt = owner:GetAnnouncementServerTime(),
+				revision = 1,
+			},
+		},
+	}, { owner = owner, expires = owner.now + 120 })
+	assert(bridge:HandleMeshPublication(Wire(publication), owner.name))
+	Finish(bridge)
+	local calls = {}
+	function bridge:ForwardMeshPublication(_, descriptor)
+		calls[#calls + 1] = descriptor
+		return true, "queued"
+	end
+	local lease = {
+		id = "first",
+		destination = "Newcomer-Realm",
+		zone = 0,
+		expiresAt = bridge:GetAnnouncementServerTime() + 120,
+	}
+	bridge:ReplayMeshPublicationsForInterest(lease)
+	bridge.now = bridge.now + 2
+	bridge:UpdateMeshPublications(bridge.now)
+	assert(#calls == 1)
+	bridge.now = bridge.now + 2
+	bridge:UpdateMeshPublications(bridge.now)
+	assert(#calls == 1, "an admitted replay waits for its real completion")
+	calls[1].onComplete(false, "expired")
+	bridge.now = bridge.now + 3
+	bridge:UpdateMeshPublications(bridge.now)
+	assert(#calls == 2, "a failed queued transfer must be offered again")
+	local renewal = { id = "second", destination = lease.destination, zone = 0, expiresAt = lease.expiresAt + 1 }
+	bridge:ReplayMeshPublicationsForInterest(renewal)
+	calls[2].onComplete(true, "accepted")
+	bridge.now = bridge.now + 2
+	bridge:UpdateMeshPublications(bridge.now)
+	assert(
+		#calls == 3 and calls[3].meshInterest == renewal,
+		"retired lease completion cannot consume a new path's replay"
+	)
+	calls[3].onComplete(true, "accepted")
+	calls[3].onComplete(false, "expired")
+	bridge.now = bridge.now + 3
+	bridge:UpdateMeshPublications(bridge.now)
+	assert(#calls == 3, "successful replay completion is final")
+end)
+
+QT:RegisterTest("mesh replay skips confirmed shared-link copies without wasting its useful send slot", function()
+	local owner, bridge = Peer("Owner-Realm"), Peer("Bridge-Realm")
+	local publications = {}
+	for index = 1, 2 do
+		local publisher = index == 1 and owner or Peer("Another-Realm")
+		publications[index] = Publish(publisher, "STATE", {
+			records = {
+				{
+					topic = "QTVR",
+					data = { version = "9.0.3" },
+					sampledAt = publisher:GetAnnouncementServerTime(),
+					revision = 1,
+				},
+			},
+		})
+		assert(bridge:HandleMeshPublication(Wire(publications[index]), publisher.name))
+		Finish(bridge)
+	end
+	function bridge:HasDeliveredMeshPublicationForInterest(publication)
+		return publication.origin == owner.name
+	end
+	local copies = {}
+	function bridge:ForwardMeshPublication(publication, descriptor)
+		copies[#copies + 1] = publication
+		descriptor.onComplete(true, "accepted")
+		return true, "queued"
+	end
+	local lease = {
+		id = "shared",
+		destination = "Newcomer-Realm",
+		zone = 0,
+		expiresAt = bridge:GetAnnouncementServerTime() + 120,
+	}
+	bridge:ReplayMeshPublicationsForInterest(lease)
+	bridge.now = bridge.now + 2
+	bridge:UpdateMeshPublications(bridge.now)
+	assert(#copies == 1 and copies[1].origin == "Another-Realm")
+	assert(bridge:GetMeshPublicationMetrics().replayDeliveryReused == 1)
+end)
+
+QT:RegisterTest("mesh cached replay excludes unverified events exhausted hops and superseded state", function()
+	for _, scenario in ipairs({ "unverified", "event", "hops", "withdrawal", "replacement", "expired" }) do
+		local owner, bridge = Peer("Owner-Realm"), Peer("Bridge-Realm")
+		local operation = scenario == "event" and "QTCHAT" or "STATE"
+		local data = operation == "QTCHAT" and { text = "Do not replay foreign events" }
+			or {
+				records = {
+					{
+						topic = "QTPR",
+						data = { active = true },
+						sampledAt = owner:GetAnnouncementServerTime(),
+						revision = 1,
+					},
+				},
+			}
+		local original = Publish(owner, operation, data)
+		local wire = Wire(original)
+		if scenario == "hops" then
+			wire.hops = 1
+		end
+		assert(bridge:HandleMeshPublication(wire, scenario == "unverified" and "OtherRelay-Realm" or owner.name))
+		Finish(bridge)
+		if scenario == "withdrawal" or scenario == "replacement" then
+			owner.now, bridge.now = owner.now + 2, bridge.now + 2
+			local newer = Publish(owner, "STATE", {
+				records = {
+					{
+						topic = "QTPR",
+						data = { active = scenario ~= "withdrawal" },
+						sampledAt = owner:GetAnnouncementServerTime(),
+						revision = 2,
+					},
+				},
+			})
+			assert(bridge:HandleMeshPublication(Wire(newer), owner.name))
+			Finish(bridge)
+		end
+		local seen = {}
+		function bridge:ForwardMeshPublication(publication)
+			seen[#seen + 1] = publication
+			assert(publication.id ~= original.id, scenario .. " revived superseded or ineligible state")
+			return true, "queued"
+		end
+		bridge:ReplayMeshPublicationsForInterest({
+			id = "later",
+			destination = "Newcomer-Realm",
+			zone = 0,
+			expiresAt = bridge:GetAnnouncementServerTime() + 120,
+		})
+		bridge.now = bridge.now + (scenario == "expired" and 31 or 2)
+		bridge:UpdateMeshPublications(bridge.now)
+		assert(#seen == ((scenario == "withdrawal" or scenario == "replacement") and 1 or 0), scenario)
+	end
+end)
+
+QT:RegisterTest("mesh replay withdrawal fences outlive clears and cancel queued cached locations", function()
+	local owner, bridge, late = Peer("Owner-Realm"), Peer("Bridge-Realm"), Peer("Late-Realm")
+	local old = Publish(owner, "STATE", {
+		records = {
+			{
+				topic = "LOC",
+				data = { mask = 3, mapID = 12, x = 0.4, y = 0.6 },
+				sampledAt = owner:GetAnnouncementServerTime(),
+				revision = 1,
+			},
+		},
+	}, { owner = owner, expires = owner.now + 120 })
+	assert(bridge:HandleMeshPublication(Wire(old), owner.name))
+	Finish(bridge)
+	local queued
+	function bridge:ForwardMeshPublication(_, options)
+		if options.meshInterest then
+			queued = options
+		end
+		return true, "queued"
+	end
+	bridge:ReplayMeshPublicationsForInterest({
+		id = "before-clear",
+		destination = "Viewer-Realm",
+		zone = 0,
+		expiresAt = bridge:GetAnnouncementServerTime() + 120,
+	})
+	owner.now, bridge.now, late.now = owner.now + 1, bridge.now + 1, late.now + 1
+	bridge:UpdateMeshPublications(bridge.now)
+	assert(queued and queued.isCurrent())
+	local clear = Publish(owner, "STATE", {
+		records = {
+			{ topic = "LOC", data = { mask = 0 }, sampledAt = owner:GetAnnouncementServerTime(), revision = 2 },
+		},
+	}, { owner = owner, expires = owner.now + 5 })
+	for _, receiver in ipairs({ bridge, late }) do
+		assert(receiver:HandleMeshPublication(Wire(clear), owner.name))
+		Finish(receiver)
+	end
+	assert(not queued.isCurrent(), "withdrawal must invalidate an already queued cached redistribution")
+	for _, receiver in ipairs({ bridge, late }) do
+		receiver.now = receiver.now + 6
+		receiver:UpdateMeshPublications(receiver.now)
+		assert(receiver:GetMeshPublicationMetrics().replayFences == 1)
+	end
+	-- The native API had already accepted these old bytes before withdrawal;
+	-- late direct delivery needs no new proof request to the owner's outbox.
+	local forwardedBefore, deliveredBefore = #late.forwarded, #late.delivered
+	assert(late:HandleMeshPublication(Wire(old), owner.name))
+	Finish(late)
+	assert(#late.forwarded == forwardedBefore, "retired data must not escape through immediate forwarding either")
+	assert(#late.delivered == deliveredBefore, "a newly matching local interest cannot consume retired state")
+	local replays = 0
+	function late:ForwardMeshPublication(_, options)
+		if options.meshInterest then
+			replays = replays + 1
+		end
+		return true, "queued"
+	end
+	late:ReplayMeshPublicationsForInterest({
+		id = "after-clear",
+		destination = "Newcomer-Realm",
+		zone = 0,
+		expiresAt = late:GetAnnouncementServerTime() + 120,
+	})
+	late.now = late.now + 1
+	late:UpdateMeshPublications(late.now)
+	assert(
+		replays == 0 and (late:GetMeshPublicationMetrics().replayFenceDrops or 0) > 0,
+		"an expired clear must not let delayed native owner data repopulate another client's map"
+	)
+	late.now = late.now + 331
+	late:UpdateMeshPublications(late.now)
+	assert(late:GetMeshPublicationMetrics().replayFences == 0 and late:GetMeshPublicationMetrics().retainedBytes == 0)
+end)
+
+QT:RegisterTest("mesh replay epochs reject ties retired sessions and unverified controls", function()
+	local owner, bridge = Peer("Owner-Realm"), Peer("Bridge-Realm")
+	local function Data(active)
+		return {
+			records = {
+				{
+					topic = "QTPR",
+					data = { active = active },
+					sampledAt = owner:GetAnnouncementServerTime(),
+					revision = owner:NextCommunicationSequence(),
+				},
+			},
+		}
+	end
+	local old = Publish(owner, "STATE", Data(true), { owner = owner, expires = owner.now + 120 })
+	assert(bridge:HandleMeshPublication(Wire(old), owner.name))
+	Finish(bridge)
+	local oldSession = owner.communicationState.session
+	owner.communicationState.session = "new-session"
+	local tied = Publish(owner, "STATE", Data(false), { owner = owner, expires = owner.now + 5 })
+	local unverified = Peer("Unverified-Realm")
+	assert(unverified:HandleMeshPublication(Wire(tied), "Relay-Realm"))
+	Finish(unverified)
+	assert(
+		unverified:GetMeshPublicationMetrics().replayFences == 0,
+		"a claimed clear cannot create privacy or epoch authority before origin verification"
+	)
+	assert(bridge:HandleMeshPublication(Wire(tied), owner.name))
+	Finish(bridge)
+	local fence = bridge.meshPublicationState.replayFences[owner.name]
+	assert(
+		fence.session == oldSession and fence.ambiguousStamp == tied.stamp,
+		"a same-second session change cannot win ordering, and a tied clear must suspend old replay"
+	)
+	owner.now, bridge.now = owner.now + 1, bridge.now + 1
+	owner.serverOffset, bridge.serverOffset = 1, 1
+	local newest = Publish(owner, "STATE", Data(true), { owner = owner, expires = owner.now + 5 })
+	assert(bridge:HandleMeshPublication(Wire(newest), owner.name))
+	Finish(bridge)
+	assert(fence.session == "new-session" and fence.retired[oldSession])
+	bridge.now, owner.now = bridge.now + 6, owner.now + 6
+	owner.serverOffset, bridge.serverOffset = 7, 7
+	bridge:UpdateMeshPublications(bridge.now)
+	owner.communicationState.session = oldSession
+	local retired = Publish(owner, "STATE", Data(true), { owner = owner, expires = owner.now + 120 })
+	assert(bridge:HandleMeshPublication(Wire(retired), owner.name))
+	Finish(bridge)
+	assert(fence.session == "new-session", "even a later stamp cannot revive a retired epoch")
+	local replays = 0
+	function bridge:ForwardMeshPublication(_, options)
+		if options.meshInterest then
+			replays = replays + 1
+		end
+		return true, "queued"
+	end
+	bridge:ReplayMeshPublicationsForInterest({
+		id = "new-listener",
+		destination = "Newcomer-Realm",
+		zone = 0,
+		expiresAt = bridge:GetAnnouncementServerTime() + 120,
+	})
+	bridge.now = bridge.now + 1
+	bridge:UpdateMeshPublications(bridge.now)
+	assert(replays == 0)
+	bridge:ResetMeshPublications()
+	assert(
+		bridge:GetMeshPublicationMetrics().replayFences == 0 and bridge:GetCommTransferMetrics().bytes == 0,
+		"reset must release payload and fence reservations without reviving old ordering state"
+	)
+end)
+
+QT:RegisterTest(
+	"mesh replay fence capacity preserves live retirements and fails closed within reserved memory",
+	function()
+		local owner, bridge = Peer("Owner-Realm"), Peer("Bridge-Realm")
+		local first
+		for index = 1, 128 do
+			owner.name = "Origin" .. index .. "-Realm"
+			local publication = Publish(owner, "STATE", {
+				records = {
+					{
+						topic = "QTVR",
+						data = { version = "9.0.3" },
+						sampledAt = owner:GetAnnouncementServerTime(),
+						revision = 1,
+					},
+				},
+			}, { owner = owner, expires = owner.now + 120 })
+			assert(bridge:HandleMeshPublication(Wire(publication), owner.name))
+			Finish(bridge)
+			first = first or bridge.meshPublicationState.replayFences[owner.name]
+			owner:ResetMeshPublications()
+			assert(bridge:GetMeshPublicationMetrics().retainedBytes <= 131072)
+		end
+		assert(bridge:GetMeshPublicationMetrics().replayFences == 128)
+		for index = 2, 128 do
+			bridge:RetireMeshPublicationPeer("Origin" .. index .. "-Realm")
+		end
+		local queued
+		function bridge:ForwardMeshPublication(_, options)
+			if options.meshInterest then
+				queued = options
+			end
+			return true, "queued"
+		end
+		bridge:ReplayMeshPublicationsForInterest({
+			id = "before-overflow",
+			destination = "Newcomer-Realm",
+			zone = 0,
+			expiresAt = bridge:GetAnnouncementServerTime() + 120,
+		})
+		bridge.now = bridge.now + 1
+		bridge:UpdateMeshPublications(bridge.now)
+		assert(queued and queued.isCurrent())
+		owner.name, owner.now = "Untracked-Realm", bridge.now
+		local clear = Publish(owner, "STATE", {
+			records = {
+				{ topic = "LOC", data = { mask = 0 }, sampledAt = owner:GetAnnouncementServerTime(), revision = 1 },
+				{
+					topic = "QTPR",
+					data = { active = false },
+					sampledAt = owner:GetAnnouncementServerTime(),
+					revision = 2,
+				},
+				{
+					topic = "QTVR",
+					data = { version = "9.0.3" },
+					sampledAt = owner:GetAnnouncementServerTime(),
+					revision = 3,
+				},
+			},
+		})
+		assert(bridge:HandleMeshPublication(Wire(clear), owner.name))
+		Finish(bridge)
+		local receivedClear = bridge.delivered[#bridge.delivered].data.records
+		assert(
+			#receivedClear == 2
+				and receivedClear[1].topic == "LOC"
+				and receivedClear[1].data.mask == 0
+				and receivedClear[2].topic == "QTPR"
+				and receivedClear[2].data.active == false,
+			"fence capacity must still deliver verified withdrawals while suppressing positive fields in the same bundle"
+		)
+		assert(
+			receivedClear[1].sampledAt == owner:GetAnnouncementServerTime()
+				and receivedClear[1].revision == 1
+				and receivedClear[2].sampledAt == owner:GetAnnouncementServerTime()
+				and receivedClear[2].revision == 2,
+			"withdrawal projection must retain the owner's original field time and ordering"
+		)
+		local metrics = bridge:GetMeshPublicationMetrics()
+		assert(metrics.replayFences == 128 and metrics.replayFenceBytes == 65536)
+		assert(
+			bridge.meshPublicationState.replayFences["Origin1-Realm"] == first,
+			"capacity pressure must not evict a live privacy or epoch retirement fence"
+		)
+		assert(
+			metrics.cachedReplayBlocked == 0 and metrics.replayDeniedBuckets == 1 and metrics.replayDenyBytes == 4096
+		)
+		assert(queued.isCurrent(), "an overflow origin must not suspend unrelated established subscribers")
+		assert(metrics.replayFenceCapacity == 1 and metrics.retainedBytes <= 131072)
+		-- A freed record slot must not erase the untracked clear. A colliding
+		-- origin is conservatively suppressed by the same bounded timestamp.
+		first.untilAt = bridge.now
+		bridge:UpdateMeshPublications(bridge.now)
+		local late = Publish(owner, "STATE", {
+			records = {
+				{
+					topic = "LOC",
+					data = { mask = 3, mapID = 12, x = 0.4, y = 0.6 },
+					sampledAt = owner:GetAnnouncementServerTime(),
+					revision = 2,
+				},
+			},
+		}, { owner = owner, expires = owner.now + 120 })
+		local deliveredBeforeLate = #bridge.delivered
+		assert(bridge:HandleMeshPublication(Wire(late), owner.name))
+		Finish(bridge)
+		assert(
+			#bridge.delivered == deliveredBeforeLate,
+			"capacity failure cannot permit subsequent positive state into local presentation"
+		)
+		assert(
+			not bridge.meshPublicationState.replayFences[owner.name],
+			"an untracked retirement remains denied when an ordinary fence slot becomes available"
+		)
+		assert(bridge:GetMeshPublicationMetrics().replayFenceDrops >= 2)
+		bridge:ResetMeshPublications()
+		assert(bridge:GetCommTransferMetrics().bytes == 0 and bridge:GetMeshPublicationMetrics().retainedBytes == 0)
+	end,
+	{ offline = true }
+)
+
+QT:RegisterTest("mesh replay metadata reservation survives synchronous payload retirement and reset", function()
+	for _, scenario in ipairs({ "reclaim", "reserve", "reset" }) do
+		local owner, bridge = Peer("Earlier-Realm"), Peer("Bridge-Realm")
+		local function Data()
+			return {
+				records = {
+					{
+						topic = "QTVR",
+						data = { version = "9.0.3" },
+						sampledAt = owner:GetAnnouncementServerTime(),
+						revision = 1,
+					},
+				},
+			}
+		end
+		local earlier = Publish(owner, "STATE", Data(), { expires = owner.now + 120 })
+		assert(bridge:HandleMeshPublication(Wire(earlier), owner.name))
+		Finish(bridge)
+		owner.name = "Current-Realm"
+		local current = Publish(owner, "STATE", Data(), { expires = owner.now + 120 })
+		assert(bridge:HandleMeshPublication(Wire(current), owner.name))
+		local reserve, cancel = bridge.ReserveCommResponseBytes, bridge.CancelTransportWhere
+		local fired = false
+		function bridge:ReserveCommResponseBytes(bytes)
+			if bytes ~= 512 or fired then
+				return reserve(self, bytes)
+			end
+			if scenario == "reclaim" then
+				return nil
+			end
+			local reservation = reserve(self, bytes)
+			fired = true
+			if scenario == "reset" then
+				self:ResetMeshPublications()
+			else
+				self:RetireMeshPublicationPeer(owner.name)
+			end
+			return reservation
+		end
+		function bridge:CancelTransportWhere(predicate, reason)
+			if scenario == "reclaim" and reason == "replayFenceReclaimed" and not fired then
+				fired = true
+				self:RetireMeshPublicationPeer(owner.name)
+			end
+			return cancel(self, predicate, reason)
+		end
+		Finish(bridge)
+		assert(fired, scenario)
+		local state = bridge.meshPublicationState
+		assert(
+			not state or not state.replayFences[owner.name],
+			"a synchronous cancellation cannot leave newly reserved metadata for its retired payload"
+		)
+		assert(
+			bridge:GetMeshPublicationMetrics().retainedBytes == bridge:GetCommTransferMetrics().bytes,
+			"reservations returned after cancellation or reset must still be released"
+		)
+		bridge:ResetMeshPublications()
+		assert(bridge:GetCommTransferMetrics().bytes == 0)
 	end
 end)

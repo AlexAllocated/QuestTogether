@@ -91,13 +91,19 @@ local function MeshSetup(relayConsent)
 	assert(dev:IsConfirmedMeshNeighbor(bridge.name) and bridge:IsConfirmedMeshNeighbor(dev.name))
 	assert(remote:IsConfirmedMeshNeighbor(bridge.name) and bridge:IsConfirmedMeshNeighbor(remote.name))
 	assert(not dev:IsConfirmedMeshNeighbor(remote.name), "the remote recipient must require a relay")
-	local interested = false
+	local interested, bridgeInterested = false, false
 	for _, lease in pairs(dev.meshNetworkState.interests) do
-		if lease.destination == remote.name and lease.zone == 0 then
-			interested = true
+		if lease.expiresAt > dev:GetAnnouncementServerTime() and lease.zone == 0 then
+			interested = interested or lease.destination == bridge.name
 		end
 	end
-	assert(interested, "the remote global interest must reach the developer before publication")
+	for _, lease in pairs(bridge.meshNetworkState.interests) do
+		bridgeInterested = bridgeInterested
+			or lease.expiresAt > bridge:GetAnnouncementServerTime()
+				and lease.destination == remote.name
+				and lease.zone == 0
+	end
+	assert(interested and bridgeInterested, "shared global demand needs a live reverse path across both links")
 	return net, dev, bridge, remote
 end
 
@@ -358,37 +364,41 @@ QT:RegisterTest(
 	{ offline = true }
 )
 -- Full signed, repeated, and multi-minute diagnostic exchanges run offline.
-QT:RegisterTest("ping protocol 3 initial response precedes report and neither duplicates nor reorder open it twice", function()
-	local net, dev, peer = Setup()
-	net.deliveryRule = function(packet)
-		local frame = peer:DecodeCommFrame(packet.wire)
-		return { copies = 2, delay = frame and frame.part % 3 * 0.1 or 0.1 }
-	end
-	local opened = 0
-	function dev:GetDebugController()
-		return {
-			ShowReport = function(_, text, name)
-				opened = opened + 1
-				self.report = text
-				self.reportName = name
-			end,
-		}
-	end
-	assert(dev:SendPingRequest(peer.name, true))
-	for _ = 1, 1800 do
-		net:Step()
-		if #dev.pongs > 0 then
-			break
+QT:RegisterTest(
+	"ping protocol 3 initial response precedes report and neither duplicates nor reorder open it twice",
+	function()
+		local net, dev, peer = Setup()
+		net.deliveryRule = function(packet)
+			local frame = peer:DecodeCommFrame(packet.wire)
+			return { copies = 2, delay = frame and frame.part % 3 * 0.1 or 0.1 }
 		end
-	end
-	Eq(#dev.pongs, 1, "initial")
-	Eq(dev.report, nil, "report must follow initial")
-	net:Advance(150)
-	Eq(opened, 1)
-	Eq(dev.reportName, peer.name)
-	Eq(dev.report, string.rep("任務 100% | data\n", 500))
-	Eq(#dev.pongs, 1)
-end, { offline = true })
+		local opened = 0
+		function dev:GetDebugController()
+			return {
+				ShowReport = function(_, text, name)
+					opened = opened + 1
+					self.report = text
+					self.reportName = name
+				end,
+			}
+		end
+		assert(dev:SendPingRequest(peer.name, true))
+		for _ = 1, 1800 do
+			net:Step()
+			if #dev.pongs > 0 then
+				break
+			end
+		end
+		Eq(#dev.pongs, 1, "initial")
+		Eq(dev.report, nil, "report must follow initial")
+		net:Advance(150)
+		Eq(opened, 1)
+		Eq(dev.reportName, peer.name)
+		Eq(dev.report, string.rep("任務 100% | data\n", 500))
+		Eq(#dev.pongs, 1)
+	end,
+	{ offline = true }
+)
 -- Full signed, repeated, and multi-minute diagnostic exchanges run offline.
 QT:RegisterTest("ping protocol 3 no response time cutoff retains only bounded owned correlations", function()
 	local net, dev, peer = Setup()
@@ -447,40 +457,44 @@ QT:RegisterTest("ping protocol 3 retired protocol messages never import data or 
 end)
 
 -- Full signed, repeated, and multi-minute diagnostic exchanges run offline.
-QT:RegisterTest("ping protocol 3 completed replies release producer capacity while retaining immutable recovery", function()
-	local net, dev, peer = Setup()
-	peer.API.Random = function(low)
-		return low
-	end
-	for index = 1, 20 do
-		assert(dev:SendPingRequest(peer.name))
-		net:Advance(8)
-		Eq(#dev.pongs, index)
-		Eq(next(peer.pingReplyState.jobs), nil, "completed producer slot")
-	end
-	local drop = true
-	net.deliveryRule = function(packet)
-		local frame = peer:DecodeCommFrame(packet.wire)
-		if packet.sender == peer.name and frame and frame.operation == "PONG" and drop then
-			return { drop = true }
+QT:RegisterTest(
+	"ping protocol 3 completed replies release producer capacity while retaining immutable recovery",
+	function()
+		local net, dev, peer = Setup()
+		peer.API.Random = function(low)
+			return low
 		end
-	end
-	local builds = 0
-	local original = peer.BuildPingResponse
-	function peer:BuildPingResponse(id)
-		builds = builds + 1
-		return original(self, id)
-	end
-	assert(dev:SendPingRequest(peer.name))
-	net:Advance(3)
-	Eq(next(peer.pingReplyState.jobs), nil)
-	Eq(#dev.pongs, 20)
-	Eq(builds, 1)
-	drop = false
-	net:Advance(20)
-	Eq(#dev.pongs, 21)
-	Eq(builds, 1, "retry must reuse retained immutable snapshot")
-end, { offline = true })
+		for index = 1, 20 do
+			assert(dev:SendPingRequest(peer.name))
+			net:Advance(8)
+			Eq(#dev.pongs, index)
+			Eq(next(peer.pingReplyState.jobs), nil, "completed producer slot")
+		end
+		local drop = true
+		net.deliveryRule = function(packet)
+			local frame = peer:DecodeCommFrame(packet.wire)
+			if packet.sender == peer.name and frame and frame.operation == "PONG" and drop then
+				return { drop = true }
+			end
+		end
+		local builds = 0
+		local original = peer.BuildPingResponse
+		function peer:BuildPingResponse(id)
+			builds = builds + 1
+			return original(self, id)
+		end
+		assert(dev:SendPingRequest(peer.name))
+		net:Advance(3)
+		Eq(next(peer.pingReplyState.jobs), nil)
+		Eq(#dev.pongs, 20)
+		Eq(builds, 1)
+		drop = false
+		net:Advance(20)
+		Eq(#dev.pongs, 21)
+		Eq(builds, 1, "retry must reuse retained immutable snapshot")
+	end,
+	{ offline = true }
+)
 
 -- Full signed, repeated, and multi-minute diagnostic exchanges run offline.
 QT:RegisterTest(

@@ -134,6 +134,7 @@ function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 		{ "communication", self:GetCommunicationMetrics() },
 		{ "meshNetwork", self:GetMeshNetworkMetrics() },
 		{ "meshPublications", self:GetMeshPublicationMetrics() },
+		{ "playerLocations", self:GetPlayerLocationDiagnostics() },
 		{ "questCompare", self:GetQuestCompareCommunicationDiagnostics() },
 		{ "partyQuestSync", self:GetPartyQuestSyncDiagnostics() },
 		{ "transfer", self:GetCommTransferMetrics() },

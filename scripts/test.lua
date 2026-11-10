@@ -172,7 +172,7 @@ QuestTogether.isInitialized = true
 assert(loadfile(addonRoot .. "/scripts/offline_numeric_tests.lua"))()(QuestTogether)
 local mode = arg[2] or "normal"
 assert(
-	({ normal = true, reverse = true, live = true, ["live-reverse"] = true, locale = true })[mode],
+	({ normal = true, reverse = true, live = true, ["live-reverse"] = true, locale = true, bootstrap = true })[mode],
 	"unknown test mode: " .. mode
 )
 local selectedTestLocale = os.getenv("QT_TEST_LOCALE") or "enUS"
@@ -279,6 +279,16 @@ local function CheckLiveStructuredStores()
 	assert(QuestTogether.locationTargetState == liveTargetState, "target owner replaced by test fixture")
 	assert(QuestTogether.partyQuestSyncState == livePartySync, "party sync owner replaced by test fixture")
 	assert(QuestTogether.partyQuestProgressNextRequest == 999999, "party pacing changed by test fixture")
+end
+
+-- Offline benchmarks reuse the same manifest, private network fixture and
+-- native-call tripwires without running unrelated regression cases. Returning
+-- the check keeps benchmark cleanup subject to the normal isolation boundary.
+if mode == "bootstrap" then
+	return QuestTogether, function()
+		CheckLiveStructuredStores()
+		assert(#engineBoundaryCalls == 0, "benchmark crossed engine boundary: " .. table.concat(engineBoundaryCalls, ", "))
+	end
 end
 
 -- Exercise the same controller and QT-owned isolation used by the live command.

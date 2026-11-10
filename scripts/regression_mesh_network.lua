@@ -24,6 +24,691 @@ local function NoChannels(net)
 	end
 end
 
+QT:RegisterTest("mesh shared links reuse completed bundles across subscribers and renewals but not sessions", function()
+	local net = QT:CreateTestNetwork({ now = 10000 })
+	local peer = Peer(net, "Owner-Realm")
+	net:StartPeer(peer)
+	local state, wall = peer:InitializeMeshNetwork(), peer:GetAnnouncementServerTime()
+	state.neighbors["Hub-Realm"] =
+		{ name = "Hub-Realm", session = "hub-one", sharedDelivery = true, expires = peer.now + 1000 }
+	state.neighbors["Old-Realm"] = { name = "Old-Realm", session = "old-one", expires = peer.now + 1000 }
+	local leases = {}
+	local function AddLease(destination, target, id, expires)
+		local lease = {
+			id = id,
+			destination = destination,
+			zone = 12,
+			upstream = target,
+			expiresAt = expires,
+			downstreams = {},
+			alternates = {},
+		}
+		state.interests[destination .. ":" .. id] = lease
+		return lease
+	end
+	for index = 1, 4 do
+		leases[index] = AddLease(
+			"Viewer" .. index .. "-Realm",
+			index <= 2 and "Hub-Realm" or "Old-Realm",
+			"lease" .. index,
+			wall + 120
+		)
+	end
+	local sends = {}
+	function peer:SendMeshPublicationToPeer(_, target, metadata, options)
+		sends[#sends + 1] = { target = target, metadata = metadata, options = options }
+		options.onComplete(true, "acknowledged")
+		return true, "queued"
+	end
+	local publication =
+		{ origin = peer.name, session = "source", id = "1", digest = "digest", scope = 12, expiresAt = wall + 300 }
+	assert(
+		not peer:HasDeliveredMeshPublicationForInterest({ scope = 12 }, leases[1]),
+		"unhashed state is not delivered"
+	)
+	assert(peer:ForwardMeshPublication(publication))
+	assert(#sends == 3, "two subscribers on a shared link need one bundle; legacy destinations remain separate")
+	for _, sent in ipairs(sends) do
+		assert((sent.metadata.sharedDelivery == true) == (sent.target == "Hub-Realm"))
+	end
+	assert(peer:HasDeliveredMeshPublicationForInterest(publication, leases[2]))
+	local renewed = AddLease(leases[1].destination, "Hub-Realm", "renewed", wall + 240)
+	assert(peer:HasDeliveredMeshPublicationForInterest(publication, renewed))
+	assert(peer:ForwardMeshPublication(publication, { meshInterest = renewed }))
+	assert(#sends == 3, "renewing a lease must not resend a completed shared-link bundle")
+	state.neighbors["Hub-Realm"].session = "hub-two"
+	assert(not peer:HasDeliveredMeshPublicationForInterest(publication, renewed))
+	assert(peer:ForwardMeshPublication(publication, { meshInterest = renewed }))
+	assert(#sends == 4, "a restarted peer must receive the bundle in its new native session")
+	local oldRenewal = AddLease(leases[3].destination, "Old-Realm", "legacy-renewed", wall + 240)
+	assert(peer:HasDeliveredMeshPublicationForInterest(publication, oldRenewal))
+	net.now, peer.now = net.now + 121, peer.now + 121
+	assert(
+		not peer:HasDeliveredMeshPublicationForInterest(publication, oldRenewal),
+		"a legacy hop receipt cannot suppress recovery after its original reverse lease expires"
+	)
+	assert(peer:ForwardMeshPublication(publication, { meshInterest = oldRenewal }))
+	assert(#sends == 5)
+end, { offline = true })
+
+QT:RegisterTest("mesh authenticated shared routing matches scopes and consumes hops without echoing origins", function()
+	local net = QT:CreateTestNetwork({ now = 10000 })
+	local peer = Peer(net, "Bridge-Realm")
+	net:StartPeer(peer)
+	local state, wall = peer:InitializeMeshNetwork(), peer:GetAnnouncementServerTime()
+	for _, name in ipairs({ "Origin-Realm", "Shared-Realm", "Legacy-Realm" }) do
+		state.neighbors[name] =
+			{ name = name, session = "native", sharedDelivery = name ~= "Legacy-Realm", expires = peer.now + 1000 }
+	end
+	local route = {
+		id = "incoming",
+		destination = "Viewer1-Realm",
+		zone = 12,
+		upstream = "Shared-Realm",
+		expiresAt = wall + 120,
+		downstreams = { ["Origin-Realm"] = true },
+		alternates = {},
+	}
+	state.interests[route.destination .. ":" .. route.id] = route
+	state.localInterests[12] = { expiresAt = wall + 120 }
+	for index, target in ipairs({ "Shared-Realm", "Legacy-Realm", "Origin-Realm" }) do
+		local lease = {
+			id = "more" .. index,
+			destination = "Other" .. index .. "-Realm",
+			zone = 12,
+			upstream = target,
+			expiresAt = wall + 120,
+			downstreams = {},
+			alternates = {},
+		}
+		state.interests[lease.destination .. ":" .. lease.id] = lease
+	end
+	local meta = { leaseId = route.id, destination = route.destination, zone = 12, hops = 4, sharedDelivery = true }
+	assert(
+		peer:ShouldConsumeMeshPublicationRoute("Origin-Realm", meta, 12, "Origin-Realm"),
+		"a valid authenticated public route can also satisfy the relay's own live same-scope interest"
+	)
+	assert(not peer:CanAcceptMeshPublicationRoute("Legacy-Realm", meta, 12, "Origin-Realm"))
+	assert(not peer:CanAcceptMeshPublicationRoute("Origin-Realm", meta, 99, "Origin-Realm"))
+	local sends = {}
+	function peer:SendMeshPublicationToPeer(_, target, metadata, options)
+		sends[#sends + 1] = target
+		assert(target ~= "Origin-Realm" and metadata.hops == 3)
+		options.onComplete(true, "acknowledged")
+		return true
+	end
+	local publication = {
+		origin = "Origin-Realm",
+		session = "source",
+		id = "1",
+		digest = "digest",
+		scope = 12,
+		expiresAt = wall + 120,
+	}
+	assert(peer:ForwardMeshPublication(publication, { relaySender = "Origin-Realm", relaymeta = meta }))
+	assert(#sends == 2, "matching shared subscribers use one link; a separate legacy route still receives its copy")
+	meta.hops = 1
+	assert(not peer:ForwardMeshPublication(publication, { relaySender = "Origin-Realm", relaymeta = meta }))
+	assert(#sends == 2, "new subscriptions cannot restart an exhausted publication hop budget")
+end, { offline = true })
+
+QT:RegisterTest(
+	"mesh interests aggregate live local demand and retry expired sends with bounded runtime work",
+	function()
+		local net = QT:CreateTestNetwork({ now = 10000 })
+		local peer = Peer(net, "Bridge-Realm")
+		net:StartPeer(peer)
+		local state, wall = peer:InitializeMeshNetwork(), peer:GetAnnouncementServerTime()
+		state.nextDirectory, state.nextGuild, state.nextHandshake = math.huge, math.huge, math.huge
+		peer.geographicCommsState = { currentZone = 12, viewZone = 12 }
+		for _, name in ipairs({ "Upstream-Realm", "Downstream-Realm" }) do
+			state.neighbors[name] =
+				{ name = name, session = "native", sharedDelivery = true, expires = peer.now + 1000 }
+		end
+		local own = {
+			id = "local",
+			destination = peer.name,
+			zone = 12,
+			expiresAt = wall + 120,
+			renewAt = peer.now + 120,
+			hops = 8,
+			downstreams = { ["Downstream-Realm"] = true },
+			coveredDownstreams = { ["Downstream-Realm"] = true },
+		}
+		state.localInterests[12], state.localHistory[peer.name .. ":local"] = own, own
+		local renewal = {
+			id = "pending-local",
+			destination = peer.name,
+			zone = 12,
+			expiresAt = wall + 120,
+			renewAt = peer.now + 120,
+			hops = 8,
+			downstreams = {},
+		}
+		state.localInterests[12], state.localHistory[peer.name .. ":pending-local"] = renewal, renewal
+		local sends, attempts, first = 0, 0
+		function peer:Emit(operation, data, _, options)
+			if operation ~= "MINT" then
+				return true
+			end
+			if data.destination == "Viewer-Realm" then
+				sends, attempts = sends + 1, attempts + 1
+				assert(options.expires == peer.now + 30, "interest queues need room for measured congestion")
+				if attempts == 1 then
+					first = options
+					options.onComplete(false, "expired")
+				else
+					options.onStarted()
+					options.onComplete(true, "accepted")
+				end
+			elseif options.onStarted then
+				options.onStarted()
+				options.onComplete(true, "accepted")
+			end
+			return true
+		end
+		local request =
+			{ leaseId = "shared-demand", destination = "Viewer-Realm", zone = 12, expiresAt = wall + 120, hops = 8 }
+		assert(
+			not peer:HandleMeshInterest(request, "Upstream-Realm", { distribution = "WHISPER", session = "retired" })
+		)
+		assert(peer:HandleMeshInterest(request, "Upstream-Realm", { distribution = "WHISPER", session = "native" }))
+		local incoming = state.interests["Viewer-Realm:shared-demand"]
+		assert(
+			incoming.aggregated and sends == 0,
+			"an unsent renewal must preserve coverage from its preceding live query"
+		)
+		peer.geographicCommsState = { currentZone = 99, viewZone = 99 }
+		peer:UpdateMeshNetwork(peer.now)
+		assert(not incoming.aggregated and sends == 1, "remaining foreign demand resumes when local scope is removed")
+		net.now, peer.now = net.now + 2, peer.now + 2
+		peer:UpdateMeshNetwork(peer.now)
+		assert(
+			sends == 2 and incoming.downstreams["Downstream-Realm"],
+			"failed interest delivery retries from the runtime"
+		)
+		state.interests["Viewer-Realm:shared-demand"] = nil
+		assert(not first.isCurrent(), "retired query callbacks cannot recreate a route")
+	end,
+	{ offline = true }
+)
+
+QT:RegisterTest("mesh shared cycles deliver authenticated public data once within native budgets", function()
+	local net = QT:CreateTestNetwork({ now = 10000, fps = 20, latency = 0.02, seed = 92 })
+	local peers, deliveries = {}, {}
+	for index = 1, 4 do
+		local peer = Peer(net, "Cycle" .. index .. "-Realm", { mapID = 12 })
+		peers[index], deliveries[index] = peer, 0
+		net:StartPeer(peer)
+		peer:InitializeMeshNetwork()
+		peer.UpdateMeshNetwork = function() end
+		peer.UpdatePlayerCommunications = function() end
+		peer:UpdateGeographicSubscriptions()
+		function peer:HandleQTMeshChat(data, origin)
+			if data.text == "Shared cycle" then
+				assert(origin == peers[1].name)
+				deliveries[index] = deliveries[index] + 1
+			end
+			return true
+		end
+	end
+	for index, peer in ipairs(peers) do
+		local s, wall = peer.meshNetworkState, peer:GetAnnouncementServerTime()
+		local localLease = {
+			id = "cycle" .. index,
+			destination = peer.name,
+			zone = 12,
+			expiresAt = wall + 120,
+			downstreams = {},
+			hops = 8,
+		}
+		s.localInterests[12], s.localHistory[peer.name .. ":" .. localLease.id] = localLease, localLease
+		for _, neighborIndex in ipairs({ (index + 2) % 4 + 1, index % 4 + 1 }) do
+			local neighbor = peers[neighborIndex]
+			s.neighbors[neighbor.name] = {
+				name = neighbor.name,
+				session = neighbor:GetCommunicationSession(),
+				sharedDelivery = true,
+				expires = peer.now + 180,
+			}
+			localLease.downstreams[neighbor.name] = true
+			local lease = {
+				id = "cycle" .. neighborIndex,
+				destination = neighbor.name,
+				zone = 12,
+				expiresAt = wall + 120,
+				upstream = neighbor.name,
+				downstreams = {},
+				alternates = {},
+			}
+			s.interests[neighbor.name .. ":" .. lease.id] = lease
+		end
+	end
+	assert(
+		peers[1]:Emit(
+			"QTCHAT",
+			{ text = "Shared cycle" },
+			{ { distribution = "MESH", scope = 12 } },
+			{ owner = peers[1], expires = peers[1].now + 90 }
+		)
+	)
+	net:Advance(60)
+	for index, peer in ipairs(peers) do
+		assert(
+			deliveries[index] == (index == 1 and 0 or 1),
+			"cycles must not duplicate accepted public events: index=" .. index .. " received=" .. deliveries[index]
+		)
+		local metrics = peer:GetTransportMetrics()
+		assert((metrics.meshPackets or 0) <= 122 and (metrics.meshBytes or 0) <= 24400)
+		assert(peer:GetMeshNetworkMetrics().pendingPublications == 0)
+	end
+	assert(
+		(peers[3]:GetMeshPublicationMetrics().authenticationLatencyLast or -1) >= 0,
+		"the non-neighbor recipient must independently authenticate the original owner"
+	)
+	NoChannels(net)
+end, { offline = true })
+
+QT:RegisterTest(
+	"mesh correlated capability changes retire old routes and stale callbacks cannot restore them",
+	function()
+		local net = QT:CreateTestNetwork({ now = 10000 })
+		local peer = Peer(net, "Local-Realm")
+		net:StartPeer(peer)
+		local s, wall = peer:InitializeMeshNetwork(), peer:GetAnnouncementServerTime()
+		peer.API.GetNumDisplayChannels = function()
+			return 0
+		end
+		s.nextDirectory, s.nextGuild = math.huge, math.huge
+		s.neighbors["Remote-Realm"] = {
+			name = "Remote-Realm",
+			session = "old-session",
+			sharedDelivery = true,
+			at = peer.now - 121,
+			expires = peer.now + 180,
+		}
+		local lease = {
+			id = "old-query",
+			destination = "Remote-Realm",
+			zone = 12,
+			expiresAt = wall + 120,
+			upstream = "Remote-Realm",
+			downstreams = {},
+			alternates = {},
+		}
+		s.interests["Remote-Realm:old-query"] = lease
+		local queued
+		function peer:SendMeshPublicationToPeer(_, _, _, options)
+			queued = options
+			return true
+		end
+		assert(
+			peer:ForwardMeshPublication({
+				origin = peer.name,
+				session = "source",
+				id = "1",
+				digest = "digest",
+				scope = 12,
+				expiresAt = wall + 120,
+			})
+		)
+		assert(queued and queued.isCurrent())
+		peer:RememberMeshCandidate("Remote-Realm", "friend")
+		local candidate = s.candidates["Remote-Realm"]
+		candidate.retryAt, candidate.triedAt, s.nextHandshake = peer.now, nil, peer.now
+		local challenge
+		function peer:Request(_, _, _, options)
+			challenge = options
+			return true, "queued", {}, "challenge"
+		end
+		peer:UpdateMeshNetwork(peer.now)
+		assert(challenge)
+		local response = { protocol = 3, capabilities = "mesh1", admitted = true, peers = {}, requestId = "challenge" }
+		assert(challenge.onResponse(response, "Remote-Realm", { distribution = "WHISPER", session = "new-session" }))
+		assert(
+			s.neighbors["Remote-Realm"].sharedDelivery == false,
+			"a new correlated session without the extension must not inherit the previous capability"
+		)
+		assert(not s.interests["Remote-Realm:old-query"] and not queued.isCurrent())
+		queued.onComplete(true, "acknowledged")
+		assert(s.pendingPublications and not next(s.pendingPublications))
+		response.sharedDelivery = true
+		assert(
+			not challenge.onResponse(response, "Remote-Realm", { distribution = "WHISPER", session = "old-session" })
+		)
+		assert(s.neighbors["Remote-Realm"].session == "new-session" and not s.neighbors["Remote-Realm"].sharedDelivery)
+	end,
+	{ offline = true }
+)
+
+QT:RegisterTest("mesh shared groups preserve other subscribers when the representative fails or retires", function()
+	for _, scenario in ipairs({ "alternate", "retired" }) do
+		local net = QT:CreateTestNetwork({ now = 10000 })
+		local peer = Peer(net, "Owner-Realm")
+		net:StartPeer(peer)
+		local s, wall = peer:InitializeMeshNetwork(), peer:GetAnnouncementServerTime()
+		for _, name in ipairs({ "Hub-Realm", "Alternate-Realm" }) do
+			s.neighbors[name] = { name = name, session = "native", sharedDelivery = true, expires = peer.now + 180 }
+		end
+		local first = {
+			id = "a",
+			destination = "A-Realm",
+			zone = 12,
+			upstream = "Hub-Realm",
+			expiresAt = wall + 120,
+			downstreams = {},
+			alternates = {},
+		}
+		local second = {
+			id = "b",
+			destination = "B-Realm",
+			zone = 12,
+			upstream = "Hub-Realm",
+			expiresAt = wall + 120,
+			downstreams = {},
+			alternates = { ["Alternate-Realm"] = true },
+		}
+		s.interests["A-Realm:a"], s.interests["B-Realm:b"] = first, second
+		local sends, queued, completions = {}, nil, 0
+		function peer:SendMeshPublicationToPeer(_, target, meta, options)
+			sends[#sends + 1] = { target = target, destination = meta.destination }
+			if #sends == 1 then
+				queued = options
+				if scenario == "alternate" then
+					options.onComplete(false, "unacknowledged")
+				end
+			else
+				options.onComplete(true, "acknowledged")
+			end
+			return true
+		end
+		local publication = {
+			origin = peer.name,
+			session = "source",
+			id = "one",
+			digest = "digest",
+			scope = 12,
+			expiresAt = wall + 120,
+		}
+		assert(peer:ForwardMeshPublication(publication, {
+			onComplete = function(ok)
+				assert(ok)
+				completions = completions + 1
+			end,
+		}))
+		if scenario == "retired" then
+			s.interests["A-Realm:a"] = nil
+			assert(not queued.isCurrent())
+			queued.onComplete(false, "cancelled")
+		end
+		assert(#sends == 2 and sends[2].destination == "B-Realm" and completions == 1)
+		assert(sends[2].target == (scenario == "alternate" and "Alternate-Realm" or "Hub-Realm"))
+		if scenario == "alternate" then
+			assert(
+				not peer:HasDeliveredMeshPublicationForInterest(publication, first),
+				"an alternate used for B must not claim delivery on A's failed common hop"
+			)
+			second.upstream = "Alternate-Realm"
+		end
+		assert(peer:HasDeliveredMeshPublicationForInterest(publication, second))
+		queued.onComplete(true, "late")
+		assert(completions == 1 and not next(s.pendingPublications))
+	end
+end, { offline = true })
+
+QT:RegisterTest("mesh failed provisional interests cannot suppress unrelated subscriber demand", function()
+	local net = QT:CreateTestNetwork({ now = 10000 })
+	local peer = Peer(net, "Bridge-Realm")
+	net:StartPeer(peer)
+	local s = peer:InitializeMeshNetwork()
+	s.nextDirectory, s.nextGuild, s.nextContacts, s.nextHandshake = math.huge, math.huge, math.huge, math.huge
+	peer.geographicCommsState = { currentZone = 12, viewZone = 12 }
+	for _, name in ipairs({ "Upstream-Realm", "Downstream-Realm" }) do
+		s.neighbors[name] = { name = name, session = "native", sharedDelivery = true, expires = peer.now + 1000 }
+	end
+	function peer:Emit(operation, _, _, options)
+		if operation == "MINT" then
+			options.onStarted()
+			options.onComplete(false, "expired")
+		end
+		return true
+	end
+	for _, elapsed in ipairs({ 0, 2, 4 }) do
+		net.now, peer.now = net.now + elapsed, peer.now + elapsed
+		peer:UpdateMeshNetwork(peer.now)
+	end
+	local localLease = s.localInterests[12]
+	for _, job in pairs(localLease.interestSends) do
+		assert(job.attempts == 3 and job.done)
+	end
+	assert(next(localLease.downstreams), "provisional route claims remain available to a possible late valid response")
+	assert(not next(localLease.coveredDownstreams or {}))
+	local request = {
+		leaseId = "foreign",
+		destination = "Viewer-Realm",
+		zone = 12,
+		expiresAt = peer:GetAnnouncementServerTime() + 120,
+		hops = 8,
+	}
+	assert(peer:HandleMeshInterest(request, "Upstream-Realm", { distribution = "WHISPER", session = "native" }))
+	assert(
+		not s.interests["Viewer-Realm:foreign"].aggregated,
+		"three failed sends provide no completed local coverage for another subscriber"
+	)
+end, { offline = true })
+
+QT:RegisterTest("mesh bootstrap fills spare capacity faster and yields acceleration under pressure", function()
+	local counts = {}
+	for _, pressured in ipairs({ false, true }) do
+		local net = QT:CreateTestNetwork({ fps = 10, now = 10000 })
+		local peer = Peer(net, "Bootstrap-Realm")
+		peer.UpdatePlayerCommunications = function() end
+		peer.API.GetNumDisplayChannels = function()
+			return 0
+		end
+		peer.API.Random = function(low)
+			return low
+		end
+		net:StartPeer(peer)
+		peer:InitializeMeshNetwork()
+		local metrics = peer.GetTransportMetrics
+		if pressured then
+			function peer:GetTransportMetrics()
+				return { queuedPackets = 8, oldestAge = 5, packetRate = 4 }
+			end
+		end
+		function peer:Request(operation, _, routes, options)
+			assert(operation == "MHEL")
+			assert(
+				options.onResponse(
+					{ protocol = 3, capabilities = "mesh1", admitted = true, peers = {}, requestId = "bootstrap" },
+					routes[1].target,
+					{ distribution = "WHISPER", session = "remote-session" }
+				)
+			)
+			return true, "queued", nil, "bootstrap"
+		end
+		for index = 1, 20 do
+			peer:RememberMeshCandidate("Candidate" .. index .. "-Realm", "directory")
+		end
+		for _ = 1, 32 do
+			net:Advance(1)
+			assert(peer:GetMeshNetworkMetrics().handshakes <= 3)
+		end
+		local measured = metrics(peer)
+		assert((measured.meshPackets or 0) <= 32 * 2 + 2 and (measured.meshBytes or 0) <= 32 * 400 + 400)
+		counts[pressured and "busy" or "idle"] = peer:GetMeshNetworkMetrics().handshakesStarted or 0
+	end
+	assert(
+		counts.idle >= 6 and counts.busy <= 4,
+		"underfilled discovery must accelerate only with spare capacity, not change the shared budget: idle="
+			.. counts.idle
+			.. " busy="
+			.. counts.busy
+	)
+end, { offline = true })
+
+QT:RegisterTest("mesh early interests wait for correlated native session confirmation", function()
+	for _, sameSession in ipairs({ true, false }) do
+		local net = QT:CreateTestNetwork({ now = 10000 })
+		local peer = Peer(net, "Receiver-Realm")
+		peer.UpdatePlayerCommunications = function() end
+		peer.API.GetNumDisplayChannels = function()
+			return 0
+		end
+		net:StartPeer(peer)
+		local state = peer:InitializeMeshNetwork()
+		state.metrics.handshakesStarted, state.nextHandshake = 3, peer.now + 30
+		peer.Respond = function()
+			return true
+		end
+		local challenge
+		function peer:Request(_, _, _, options)
+			challenge = options
+			return true, "queued", nil, "reciprocal"
+		end
+		assert(
+			peer:HandleMeshHello(
+				{ protocol = 3, capabilities = "mesh1", requestId = "hello" },
+				"Sender-Realm",
+				{ distribution = "WHISPER", session = "old-session" }
+			)
+		)
+		assert(state.nextHandshake <= peer.now + 1, "a reserved reciprocal caller must not wait for a generic probe")
+		local record = {
+			leaseId = "early-interest",
+			destination = "Sender-Realm",
+			zone = 12,
+			expiresAt = peer:GetAnnouncementServerTime() + 120,
+			hops = 8,
+		}
+		assert(peer:HandleMeshInterest(record, "Sender-Realm", { distribution = "WHISPER", session = "old-session" }))
+		for index = 2, 4 do
+			local extra = {
+				leaseId = "early" .. index,
+				destination = "Sender-Realm",
+				zone = 10 + index,
+				expiresAt = record.expiresAt,
+				hops = 8,
+			}
+			assert(
+				peer:HandleMeshInterest(extra, "Sender-Realm", { distribution = "WHISPER", session = "old-session" })
+					== (index <= 3),
+				"unconfirmed control storage must stay bounded"
+			)
+		end
+		assert(Count(state.interests) == 0 and not peer:IsConfirmedMeshNeighbor("Sender-Realm"))
+		peer:UpdateMeshNetwork(peer.now)
+		assert(
+			challenge
+				and challenge.onResponse(
+					{ protocol = 3, capabilities = "mesh1", admitted = true, requestId = "reciprocal", peers = {} },
+					"Sender-Realm",
+					{
+						distribution = "WHISPER",
+						session = sameSession and "old-session" or "new-session",
+					}
+				)
+		)
+		assert(peer:IsConfirmedMeshNeighbor("Sender-Realm") and not state.pendingInterests["Sender-Realm"])
+		assert(
+			Count(state.interests) == (sameSession and 3 or 0),
+			"early routing control must not cross a remote reload before the challenge completes"
+		)
+	end
+end, { offline = true })
+
+QT:RegisterTest("mesh interest renewals share audience fairness without evicting live reverse paths", function()
+	local net = QT:CreateTestNetwork({ now = 10000 })
+	local peer = Peer(net, "Relay-Realm")
+	local state = peer:InitializeMeshNetwork()
+	state.neighbors["Upstream-Realm"] = { name = "Upstream-Realm", expires = peer.now + 1000 }
+	peer.Emit = function()
+		return true
+	end
+	local old
+	for audience = 1, 8 do
+		for generation = 1, 3 do
+			local record = {
+				leaseId = "query" .. audience .. "x" .. generation,
+				destination = "Viewer" .. audience .. "-Realm",
+				zone = 12,
+				expiresAt = peer:GetAnnouncementServerTime() + 120,
+				hops = 8,
+			}
+			assert(peer:HandleMeshInterest(record, "Upstream-Realm", { distribution = "WHISPER" }))
+			if not old then
+				old = state.interests[record.destination .. ":" .. record.leaseId]
+			end
+		end
+	end
+	assert(Count(state.interests) == 24 and state.interests[old.destination .. ":" .. old.id] == old)
+	for _, record in ipairs({
+		{ leaseId = "fourth", destination = "Viewer1-Realm" },
+		{ leaseId = "ninth", destination = "Viewer9-Realm" },
+	}) do
+		record.zone, record.hops, record.expiresAt = 12, 8, peer:GetAnnouncementServerTime() + 120
+		assert(not peer:HandleMeshInterest(record, "Upstream-Realm", { distribution = "WHISPER" }))
+	end
+	state.neighbors["Other-Realm"] = { name = "Other-Realm", expires = peer.now + 1000 }
+	for audience = 9, 17 do
+		local record = {
+			leaseId = "other" .. audience,
+			destination = "Viewer" .. audience .. "-Realm",
+			zone = 12,
+			hops = 8,
+			expiresAt = peer:GetAnnouncementServerTime() + 120,
+		}
+		assert(peer:HandleMeshInterest(record, "Other-Realm", { distribution = "WHISPER" }) == (audience <= 16))
+	end
+	assert(Count(state.interests) == 32, "renewal accounting must preserve the aggregate lease bound")
+end, { offline = true })
+
+QT:RegisterTest("mesh cached replay targets only its live subscribed reverse path and remaining hops", function()
+	local peer = Peer(QT:CreateTestNetwork({ now = 10000 }), "Relay-Realm")
+	local state = peer:InitializeMeshNetwork()
+	local selected
+	for index, name in ipairs({ "Upstream-Realm", "Other-Realm" }) do
+		state.neighbors[name] = { name = name, expires = peer.now + 1000 }
+		local lease = {
+			id = "lease" .. index,
+			destination = "Viewer" .. index .. "-Realm",
+			zone = 12,
+			upstream = name,
+			expiresAt = peer:GetAnnouncementServerTime() + 120,
+			downstreams = {},
+			alternates = {},
+		}
+		state.interests[lease.destination .. ":" .. lease.id] = lease
+		if index == 1 then
+			selected = lease
+		end
+	end
+	local sends = {}
+	function peer:SendMeshPublicationToPeer(_, target, metadata, options)
+		sends[#sends + 1] = { target = target, metadata = metadata, options = options }
+		return true, "queued"
+	end
+	local publication = {
+		origin = "Owner-Realm",
+		session = "owner-session",
+		id = "42",
+		scope = 12,
+		digest = "digest",
+		expiresAt = peer:GetAnnouncementServerTime() + 120,
+	}
+	assert(peer:ForwardMeshPublication(publication, { meshInterest = selected, meshReplayHops = 3 }))
+	assert(#sends == 1 and sends[1].target == "Upstream-Realm" and sends[1].metadata.hops == 3)
+	assert(sends[1].options.isCurrent())
+	state.interests[selected.destination .. ":" .. selected.id] = nil
+	assert(not sends[1].options.isCurrent(), "retired lease objects must cancel queued cached delivery")
+	assert(not peer:ForwardMeshPublication(publication, { meshInterest = selected, meshReplayHops = 3 }))
+	state.interests[selected.destination .. ":" .. selected.id] = selected
+	assert(not peer:ForwardMeshPublication(publication, { meshInterest = selected, meshReplayHops = 0 }))
+	assert(not peer:ForwardMeshPublication(publication, { meshInterest = selected }))
+	assert(#sends == 1, "a foreign cached publication cannot restart its hop budget")
+end, { offline = true })
+
 QT:RegisterTest("mesh observed contacts connect disjoint directories only after native verification", function()
 	for _, source in ipairs({ "friend", "bnet", "chat", "visible" }) do
 		local net = QT:CreateTestNetwork({ fps = 20, latency = 0.03 })
@@ -94,74 +779,96 @@ QT:RegisterTest("mesh observed contacts connect disjoint directories only after 
 	end
 end, { offline = true })
 
-QT:RegisterTest("mesh established neighborhoods discover retried contacts despite continuous new chat candidates", function()
-	local net = QT:CreateTestNetwork({ fps = 5, now = 10000 })
-	local peers = {
-		Peer(net, "Owner-Realm", { backingRealm = "IslandA" }),
-		Peer(net, "Friend-Realm", { backingRealm = "IslandB" }),
-	}
-	local probes, deadlines = { 0, 0 }, {}
-	for index, peer in ipairs(peers) do
-		-- Isolate discovery from unrelated quest/location producers. Existing
-		-- neighbor records model active connections; no complete directory or
-		-- preverified friend edge is handed to either coordinator.
-		peer.UpdatePlayerCommunications = function() end
-		peer.API.GetNumDisplayChannels = function() return 0 end
-		peer.API.GetChannelRosterInfo = function() end
-		net:StartPeer(peer)
-		local state = peer:InitializeMeshNetwork()
-		for slot = 1, 8 do
-			local name = "Existing" .. index .. "x" .. slot .. "-Realm"
-			state.neighbors[name] = {
-				name = name, expires = peer.now + 10000, at = peer.now + 10000, connectedAt = peer.now,
-			}
-		end
-		local other = peers[3 - index].name
-		assert(peer:ObserveMeshContact(other, "friend"))
-		local candidate = state.candidates[other]
-		deadlines[index] = peer.now + 60
-		candidate.triedAt, candidate.retryAt, candidate.delay = peer.now - 400, deadlines[index], 300
-		state.metrics.handshakesStarted = 3
-		local request = peer.Request
-		function peer:Request(operation, data, routes, options)
-			if operation == "MHEL" and routes[1].target == other then
-				assert(self.now >= deadlines[index], "a fresh observation must not bypass active backoff")
-				probes[index] = probes[index] + 1
-			end
-			return request(self, operation, data, routes, options)
-		end
-	end
-	local delivered, submitted, receiver = 0, false, peers[2]
-	function receiver:HandleQTMeshChat(data, sender, context)
-		assert(sender == peers[1].name and context.meshVerified and data.text == "Busy neighborhood bridge")
-		delivered = delivered + 1
-		return true
-	end
-	for second = 1, 360 do
+QT:RegisterTest(
+	"mesh established neighborhoods discover retried contacts despite continuous new chat candidates",
+	function()
+		local net = QT:CreateTestNetwork({ fps = 5, now = 10000 })
+		local peers = {
+			Peer(net, "Owner-Realm", { backingRealm = "IslandA" }),
+			Peer(net, "Friend-Realm", { backingRealm = "IslandB" }),
+		}
+		local probes, deadlines = { 0, 0 }, {}
 		for index, peer in ipairs(peers) do
-			assert(peer:ObserveMeshContact(peers[3 - index].name, "friend"))
-			peer:ObserveMeshContact("Chat" .. index .. "x" .. second .. "-Realm", "chat")
+			-- Isolate discovery from unrelated quest/location producers. Existing
+			-- neighbor records model active connections; no complete directory or
+			-- preverified friend edge is handed to either coordinator.
+			peer.UpdatePlayerCommunications = function() end
+			peer.API.GetNumDisplayChannels = function()
+				return 0
+			end
+			peer.API.GetChannelRosterInfo = function() end
+			net:StartPeer(peer)
+			local state = peer:InitializeMeshNetwork()
+			for slot = 1, 8 do
+				local name = "Existing" .. index .. "x" .. slot .. "-Realm"
+				state.neighbors[name] = {
+					name = name,
+					expires = peer.now + 10000,
+					at = peer.now + 10000,
+					connectedAt = peer.now,
+				}
+			end
+			local other = peers[3 - index].name
+			assert(peer:ObserveMeshContact(other, "friend"))
+			local candidate = state.candidates[other]
+			deadlines[index] = peer.now + 60
+			candidate.triedAt, candidate.retryAt, candidate.delay = peer.now - 400, deadlines[index], 300
+			state.metrics.handshakesStarted = 3
+			local request = peer.Request
+			function peer:Request(operation, data, routes, options)
+				if operation == "MHEL" and routes[1].target == other then
+					assert(self.now >= deadlines[index], "a fresh observation must not bypass active backoff")
+					probes[index] = probes[index] + 1
+				end
+				return request(self, operation, data, routes, options)
+			end
 		end
-		net:Advance(1)
-		for _, peer in ipairs(peers) do
-			local metrics = peer:GetMeshNetworkMetrics()
-			assert(metrics.neighbors <= 8 and metrics.candidates <= 512 and metrics.handshakes <= 3)
-			local transport = peer:GetTransportMetrics()
-			assert((transport.meshPackets or 0) <= second + 2 and (transport.meshBytes or 0) <= second * 200 + 400)
+		local delivered, submitted, receiver = 0, false, peers[2]
+		function receiver:HandleQTMeshChat(data, sender, context)
+			assert(sender == peers[1].name and context.meshVerified and data.text == "Busy neighborhood bridge")
+			delivered = delivered + 1
+			return true
 		end
-		if not submitted and peers[1]:IsConfirmedMeshNeighbor(peers[2].name)
-			and peers[2]:IsConfirmedMeshNeighbor(peers[1].name)
-			and Count(peers[1].meshNetworkState.interests) > 0 then
-			assert(peers[1]:Emit("QTCHAT", { text = "Busy neighborhood bridge" },
-				{ { distribution = "MESH", scope = "global" } }, { owner = peers[1], expires = peers[1].now + 60 }))
-			submitted = true
+		for second = 1, 360 do
+			for index, peer in ipairs(peers) do
+				assert(peer:ObserveMeshContact(peers[3 - index].name, "friend"))
+				peer:ObserveMeshContact("Chat" .. index .. "x" .. second .. "-Realm", "chat")
+			end
+			net:Advance(1)
+			for _, peer in ipairs(peers) do
+				local metrics = peer:GetMeshNetworkMetrics()
+				assert(metrics.neighbors <= 8 and metrics.candidates <= 512 and metrics.handshakes <= 3)
+				local transport = peer:GetTransportMetrics()
+				assert(
+					(transport.meshPackets or 0) <= second * 2 + 2 and (transport.meshBytes or 0) <= second * 400 + 400
+				)
+			end
+			if
+				not submitted
+				and peers[1]:IsConfirmedMeshNeighbor(peers[2].name)
+				and peers[2]:IsConfirmedMeshNeighbor(peers[1].name)
+				and Count(peers[1].meshNetworkState.interests) > 0
+			then
+				assert(
+					peers[1]:Emit(
+						"QTCHAT",
+						{ text = "Busy neighborhood bridge" },
+						{ { distribution = "MESH", scope = "global" } },
+						{ owner = peers[1], expires = peers[1].now + 60 }
+					)
+				)
+				submitted = true
+			end
+			if delivered > 0 then
+				break
+			end
 		end
-		if delivered > 0 then break end
-	end
-	assert(probes[1] > 0 and probes[2] > 0, "never-tried strangers must not starve an eligible observed contact")
-	assert(delivered == 1, "discovery must lead to authenticated public delivery, not just candidate admission")
-	NoChannels(net)
-end, { offline = true })
+		assert(probes[1] > 0 and probes[2] > 0, "never-tried strangers must not starve an eligible observed contact")
+		assert(delivered == 1, "discovery must lead to authenticated public delivery, not just candidate admission")
+		NoChannels(net)
+	end,
+	{ offline = true }
+)
 
 QT:RegisterTest("mesh passive contact bursts preserve failed probes and bounded candidate memory", function()
 	local net = QT:CreateTestNetwork()
@@ -600,7 +1307,7 @@ QT:RegisterTest(
 	{ offline = true }
 )
 
-QT:RegisterTest("mesh probes stagger three startup candidates then use the sustained discovery cadence", function()
+QT:RegisterTest("mesh accelerated discovery preserves failed-peer backoff and reservation bounds", function()
 	local net = QT:CreateTestNetwork()
 	local peer = Peer(net, "Owner-Realm")
 	peer:InitializeCommunications()
@@ -623,11 +1330,16 @@ QT:RegisterTest("mesh probes stagger three startup candidates then use the susta
 		peer.now = began + second
 		peer:UpdateMeshNetwork(peer.now)
 	end
-	assert(#probes >= 6 and #probes <= 7, "continuous missing candidates must not sustain startup probe frequency")
+	assert(#probes >= 9 and #probes <= 12, "spare capacity can probe new addresses without retrying failed ones")
 	assert(probes[2] - probes[1] == 4 and probes[3] - probes[2] == 4)
 	for index = 4, #probes do
 		local gap = probes[index] - probes[index - 1]
-		assert(gap >= 20 and gap <= 30, "sustained discovery is paced independently of sender rejection")
+		assert(gap >= 4, "failed submissions must not bypass the paced bootstrap interval")
+	end
+	for _, candidate in pairs(peer.meshNetworkState.candidates) do
+		if candidate.triedAt then
+			assert(candidate.retryAt >= candidate.triedAt + 300)
+		end
 	end
 	assert(peer:GetMeshNetworkMetrics().handshakes == 0)
 end, { offline = true })
@@ -809,10 +1521,13 @@ QT:RegisterTest("mesh unanswered candidates back off and public fanout completes
 	assert(sends == 1 and completions == 3, "each submission completes once while duplicate pending content sends once")
 	assert(alice:GetMeshNetworkMetrics().pendingPublications == 0, "ACK must retire cross-query pending reservations")
 	assert(alice:ForwardMeshPublication(publication, options))
-	assert(sends == 2 and completions == 3, "first-hop ACK must not suppress end-to-end recovery on a renewed query")
+	assert(
+		sends == 1 and completions == 4,
+		"a completed native destination receipt may satisfy overlapping renewal generations"
+	)
 	pending(true, "acknowledged")
 	assert(alice:ForwardMeshPublication(publication, options))
-	assert(sends == 2 and completions == 5, "completed duplicates are suppressed only within the same query")
+	assert(sends == 1 and completions == 5, "completed duplicates remain suppressed during the original valid lease")
 end, { offline = true })
 
 QT:RegisterTest(
@@ -978,8 +1693,10 @@ QT:RegisterTest("mesh full neighbors decline admission without creating unusable
 	net:Advance(35)
 	assert(not newcomer:IsConfirmedMeshNeighbor(full.name) and not full:IsConfirmedMeshNeighbor(newcomer.name))
 	assert((newcomer:GetMeshNetworkMetrics().handshakeBusy or 0) > 0)
-	assert((newcomer:GetMeshNetworkMetrics().handshakeTimeouts or 0) == 0,
-		"an explicit busy reply is not a response timeout")
+	assert(
+		(newcomer:GetMeshNetworkMetrics().handshakeTimeouts or 0) == 0,
+		"an explicit busy reply is not a response timeout"
+	)
 	assert(newcomer.meshNetworkState.candidates[full.name].lastHandshakeOutcome == "busy")
 	assert(
 		newcomer.meshNetworkState.candidates[full.name].retryAt > newcomer.now,
@@ -996,32 +1713,40 @@ QT:RegisterTest("mesh local reservation pressure waits without backing off an un
 	local owner, contact = Peer(net, "Owner-Realm"), Peer(net, "Contact-Realm")
 	for _, peer in ipairs({ owner, contact }) do
 		peer.UpdatePlayerCommunications = function() end
-		peer.API.GetNumDisplayChannels = function() return 0 end
+		peer.API.GetNumDisplayChannels = function()
+			return 0
+		end
 		peer.API.GetChannelRosterInfo = function() end
 		net:StartPeer(peer)
 	end
 	local state = owner:InitializeMeshNetwork()
 	for slot = 1, 7 do
 		local name = "Existing" .. slot .. "-Realm"
-		state.neighbors[name] = { name = name, expires = owner.now + 10000, at = owner.now + 10000,
-			connectedAt = owner.now }
+		state.neighbors[name] =
+			{ name = name, expires = owner.now + 10000, at = owner.now + 10000, connectedAt = owner.now }
 	end
 	state.reservations["OtherProbe-Realm"] = { expires = owner.now + 10 }
 	assert(owner:ObserveMeshContact(contact.name, "friend"))
 	local candidate, due = state.candidates[contact.name], owner.now
 	local probes, request = 0, owner.Request
 	function owner:Request(operation, data, routes, options)
-		if operation == "MHEL" and routes[1].target == contact.name then probes = probes + 1 end
+		if operation == "MHEL" and routes[1].target == contact.name then
+			probes = probes + 1
+		end
 		return request(self, operation, data, routes, options)
 	end
 	net:Advance(5)
-	assert(probes == 0 and candidate.triedAt == nil and candidate.retryAt == due and candidate.delay == nil,
-		"local reservations must not create an attempted handshake or failed-peer cooldown")
+	assert(
+		probes == 0 and candidate.triedAt == nil and candidate.retryAt == due and candidate.delay == nil,
+		"local reservations must not create an attempted handshake or failed-peer cooldown"
+	)
 	assert(candidate.lastHandshakeOutcome == "local_capacity" and candidate.lastHandshakeAt <= owner.now)
 	assert((owner:GetMeshNetworkMetrics().handshakeTimeouts or 0) == 0)
 	net:Advance(35)
-	assert(probes > 0 and owner:IsConfirmedMeshNeighbor(contact.name),
-		"the eligible peer must be probed when the local slot becomes available")
+	assert(
+		probes > 0 and owner:IsConfirmedMeshNeighbor(contact.name),
+		"the eligible peer must be probed when the local slot becomes available"
+	)
 	assert(candidate.lastHandshakeOutcome == "confirmed")
 end, { offline = true })
 
@@ -1031,16 +1756,20 @@ QT:RegisterTest("mesh saturated recipients give waiting native callers the next 
 	local full = Peer(net, "Full-Realm", { backingRealm = "IslandB" })
 	for index, peer in ipairs({ requester, full }) do
 		peer.UpdatePlayerCommunications = function() end
-		peer.API.GetNumDisplayChannels = function() return 0 end
+		peer.API.GetNumDisplayChannels = function()
+			return 0
+		end
 		peer.API.GetChannelRosterInfo = function() end
-		peer.API.Random = function(low) return low end
+		peer.API.Random = function(low)
+			return low
+		end
 		net:StartPeer(peer)
 		local state = peer:InitializeMeshNetwork()
 		state.metrics.handshakesStarted = 3
 		for slot = 1, peer == full and 8 or 4 do
 			local name = "Existing" .. index .. "x" .. slot .. "-Realm"
-			state.neighbors[name] = { name = name, expires = peer.now + 10000,
-				at = peer.now + 10000, connectedAt = peer.now }
+			state.neighbors[name] =
+				{ name = name, expires = peer.now + 10000, at = peer.now + 10000, connectedAt = peer.now }
 		end
 	end
 	local state = full.meshNetworkState
@@ -1052,9 +1781,15 @@ QT:RegisterTest("mesh saturated recipients give waiting native callers the next 
 		full:RememberMeshCandidate(name, "directory")
 		state.candidates[name].discoveredAt = full.now - 10
 	end
-	state.interests.protected = { id = "protected", destination = "Watcher-Realm", zone = 0,
-		expiresAt = full:GetAnnouncementServerTime() + 1000, upstream = "Existing2x1-Realm",
-		downstreams = {}, alternates = {} }
+	state.interests.protected = {
+		id = "protected",
+		destination = "Watcher-Realm",
+		zone = 0,
+		expiresAt = full:GetAnnouncementServerTime() + 1000,
+		upstream = "Existing2x1-Realm",
+		downstreams = {},
+		alternates = {},
+	}
 	assert(requester:ObserveMeshContact(full.name, "friend"))
 	net:Advance(35)
 	local busy = requester.meshNetworkState.candidates[full.name]
@@ -1070,16 +1805,27 @@ QT:RegisterTest("mesh saturated recipients give waiting native callers the next 
 			lastRotationAt, rotations = net.now, metrics.neighborRotations
 		end
 		local occupied = {}
-		for name in pairs(state.neighbors) do occupied[name] = true end
+		for name in pairs(state.neighbors) do
+			occupied[name] = true
+		end
 		for name, reservation in pairs(state.reservations) do
-			if reservation.expires > full.now then occupied[name] = true end
+			if reservation.expires > full.now then
+				occupied[name] = true
+			end
 		end
 		assert(Count(occupied) <= 8 and metrics.handshakes <= 3 and metrics.admissionIntents <= 3)
-		if requester:IsConfirmedMeshNeighbor(full.name) and full:IsConfirmedMeshNeighbor(requester.name) then break end
+		if requester:IsConfirmedMeshNeighbor(full.name) and full:IsConfirmedMeshNeighbor(requester.name) then
+			break
+		end
 	end
-	assert(requester:IsConfirmedMeshNeighbor(full.name) and full:IsConfirmedMeshNeighbor(requester.name),
-		"a full recipient must initiate the normal reciprocal exchange instead of waiting for coincident free slots")
-	assert(requester.now < originalRetry, "a new native hello may recover the caller without waiting for its old busy deadline")
+	assert(
+		requester:IsConfirmedMeshNeighbor(full.name) and full:IsConfirmedMeshNeighbor(requester.name),
+		"a full recipient must initiate the normal reciprocal exchange instead of waiting for coincident free slots"
+	)
+	assert(
+		requester.now < originalRetry,
+		"a new native hello may recover the caller without waiting for its old busy deadline"
+	)
 	assert(not state.admissionIntents[requester.name] and (state.metrics.admissionReservations or 0) == 1)
 	assert(state.neighbors["Existing2x1-Realm"], "rotation must preserve the more useful existing path")
 	assert((state.metrics.neighborRotations or 0) == 1)
@@ -1092,8 +1838,14 @@ QT:RegisterTest("mesh saturated recipients give waiting native callers the next 
 	-- Let the new neighbors exchange their ordinary scoped interests before
 	-- asking the actual publication path to deliver owner-authenticated data.
 	net:Advance(30)
-	assert(full:Emit("QTCHAT", { text = "Newly admitted public owner" },
-		{ { distribution = "MESH", scope = "global" } }, { owner = full, expires = full.now + 60 }))
+	assert(
+		full:Emit(
+			"QTCHAT",
+			{ text = "Newly admitted public owner" },
+			{ { distribution = "MESH", scope = "global" } },
+			{ owner = full, expires = full.now + 60 }
+		)
+	)
 	net:Advance(30)
 	assert(delivered == 1, "admission must lead to authenticated public delivery rather than only a neighbor edge")
 	NoChannels(net)
@@ -1104,24 +1856,33 @@ QT:RegisterTest("mesh queued admission intents remain bounded ordered and owned 
 		local net = QT:CreateTestNetwork({ fps = 5, now = 10000 })
 		local peer = Peer(net, "Owner-Realm")
 		peer.UpdatePlayerCommunications = function() end
-		peer.API.GetNumDisplayChannels = function() return 0 end
+		peer.API.GetNumDisplayChannels = function()
+			return 0
+		end
 		peer.API.GetChannelRosterInfo = function() end
-		peer.Respond = function() return true end
+		peer.Respond = function()
+			return true
+		end
 		net:StartPeer(peer)
 		local state = peer:InitializeMeshNetwork()
 		state.nextHandshake, state.nextRotation = math.huge, math.huge
 		for slot = 1, 8 do
 			local name = "Existing" .. slot .. "-Realm"
-			state.neighbors[name] = { name = name, expires = peer.now + 10000,
-				at = peer.now + 10000, connectedAt = peer.now }
+			state.neighbors[name] =
+				{ name = name, expires = peer.now + 10000, at = peer.now + 10000, connectedAt = peer.now }
 		end
 		return peer, state
 	end
 	local serial = 0
 	local function Hello(peer, name)
 		serial = serial + 1
-		assert(peer:HandleMeshHello({ requestId = "admission" .. serial, protocol = 3, capabilities = "mesh1" },
-			name, { distribution = "WHISPER", session = "native" }))
+		assert(
+			peer:HandleMeshHello(
+				{ requestId = "admission" .. serial, protocol = 3, capabilities = "mesh1" },
+				name,
+				{ distribution = "WHISPER", session = "native" }
+			)
+		)
 	end
 	local peer, state = Fixture()
 	for _, name in ipairs({ "Zeta-Realm", "Alpha-Realm", "Gamma-Realm", "Overflow-Realm" }) do
@@ -1133,17 +1894,25 @@ QT:RegisterTest("mesh queued admission intents remain bounded ordered and owned 
 	local queuedAt, expiry = oldest.queuedAt, oldest.expiresAt
 	peer.now = peer.now + 20
 	Hello(peer, "Zeta-Realm")
-	assert(oldest.queuedAt == queuedAt and oldest.expiresAt == expiry and expiry - queuedAt == 480,
-		"duplicate hellos must not extend the queue lifetime or replace its order")
+	assert(
+		oldest.queuedAt == queuedAt and oldest.expiresAt == expiry and expiry - queuedAt == 480,
+		"duplicate hellos must not extend the queue lifetime or replace its order"
+	)
 	peer:RetireMeshPeer("Existing8-Realm")
 	peer:UpdateMeshNetwork(peer.now)
-	assert(state.reservations["Zeta-Realm"] and not state.admissionIntents["Zeta-Realm"]
-		and not state.neighbors["Zeta-Realm"], "the oldest caller gets a reservation, not a trusted edge")
+	assert(
+		state.reservations["Zeta-Realm"]
+			and not state.admissionIntents["Zeta-Realm"]
+			and not state.neighbors["Zeta-Realm"],
+		"the oldest caller gets a reservation, not a trusted edge"
+	)
 	state.reservations["Zeta-Realm"].expires = peer.now
 	peer.now = peer.now + 1
 	peer:UpdateMeshNetwork(peer.now)
-	assert(state.reservations["Alpha-Realm"] and not state.admissionIntents["Alpha-Realm"],
-		"expired reservations must make room for queued callers without another rotation")
+	assert(
+		state.reservations["Alpha-Realm"] and not state.admissionIntents["Alpha-Realm"],
+		"expired reservations must make room for queued callers without another rotation"
+	)
 	assert((state.metrics.neighborRotations or 0) == 0)
 
 	local capped, capState = Fixture()
@@ -1154,8 +1923,12 @@ QT:RegisterTest("mesh queued admission intents remain bounded ordered and owned 
 	Hello(capped, "Caller-Realm")
 	capState.nextRotation = capped.now
 	capped:UpdateMeshNetwork(capped.now)
-	assert(Count(capState.neighbors) == 5 and Count(capState.reservations) == 3
-		and (capState.metrics.neighborRotations or 0) == 0, "reciprocal capacity must not evict a healthy path")
+	assert(
+		Count(capState.neighbors) == 5
+			and Count(capState.reservations) == 3
+			and (capState.metrics.neighborRotations or 0) == 0,
+		"reciprocal capacity must not evict a healthy path"
+	)
 	capState.reservations["Reserved6-Realm"].expires = capped.now
 	capped.now = capped.now + 1
 	capped:UpdateMeshNetwork(capped.now)
@@ -1177,67 +1950,105 @@ QT:RegisterTest("mesh queued admission intents remain bounded ordered and owned 
 			-- A delayed native callback can outlive its original slot. Refill
 			-- that slot before the incoming hello to exercise the queued fence.
 			current.reservations["Caller-Realm"] = nil
-			current.neighbors["Existing8-Realm"] = { name = "Existing8-Realm", expires = owner.now + 10000,
-				at = owner.now + 10000, connectedAt = owner.now }
+			current.neighbors["Existing8-Realm"] = {
+				name = "Existing8-Realm",
+				expires = owner.now + 10000,
+				at = owner.now + 10000,
+				connectedAt = owner.now,
+			}
 		end
 		Hello(owner, "Caller-Realm")
 		assert(current.admissionIntents["Caller-Realm"])
-		if boundary == "expiry" then owner.now = owner.now + 481
-		elseif boundary == "ignore" then owner.ignored["Caller-Realm"] = true
-		elseif boundary == "retirement" then owner:RetireMeshPeer("Caller-Realm", "unavailable")
-		elseif boundary == "profile" then owner.db.profile = {}
-		elseif boundary == "reset" then owner:ResetMeshNetwork()
-		elseif boundary == "later_failure" then callback("rejected", 7) end
+		if boundary == "expiry" then
+			owner.now = owner.now + 481
+		elseif boundary == "ignore" then
+			owner.ignored["Caller-Realm"] = true
+		elseif boundary == "retirement" then
+			owner:RetireMeshPeer("Caller-Realm", "unavailable")
+		elseif boundary == "profile" then
+			owner.db.profile = {}
+		elseif boundary == "reset" then
+			owner:ResetMeshNetwork()
+		elseif boundary == "later_failure" then
+			callback("rejected", 7)
+		end
 		owner.now = owner.now + 1
 		owner:UpdateMeshNetwork(owner.now)
 		local replacement = owner.meshNetworkState
-		assert(not replacement.admissionIntents["Caller-Realm"] and not replacement.neighbors["Caller-Realm"],
-			boundary .. " must not let an old admission intent establish a connection")
+		assert(
+			not replacement.admissionIntents["Caller-Realm"] and not replacement.neighbors["Caller-Realm"],
+			boundary .. " must not let an old admission intent establish a connection"
+		)
 		if boundary == "later_failure" then
-			assert(current.candidates["Caller-Realm"].retryAt > owner.now and not current.reservations["Caller-Realm"],
-				"a failure after the intent arrived must retain its normal backoff")
+			assert(
+				current.candidates["Caller-Realm"].retryAt > owner.now and not current.reservations["Caller-Realm"],
+				"a failure after the intent arrived must retain its normal backoff"
+			)
 		end
 	end
 end, { offline = true })
 
-QT:RegisterTest("mesh handshake diagnostics distinguish admission native rejection retirement queue expiry and timeout", function()
-	for _, outcome in ipairs({ "admission_failed", "send_failed", "unavailable", "queue_expired", "timeout" }) do
-		local net = QT:CreateTestNetwork({ fps = 5 })
-		local peer = Peer(net, "Owner-Realm")
-		peer.UpdatePlayerCommunications = function() end
-		peer.API.GetNumDisplayChannels = function() return 0 end
-		peer.API.GetChannelRosterInfo = function() end
-		if outcome == "admission_failed" then
-			peer.Request = function() return false, "capacity" end
-		elseif outcome == "send_failed" then
-			net.sendRule = function() return 7 end
-		elseif outcome == "queue_expired" then
-			net.sendRule = function() return 3 end
+QT:RegisterTest(
+	"mesh handshake diagnostics distinguish admission native rejection retirement queue expiry and timeout",
+	function()
+		for _, outcome in ipairs({ "admission_failed", "send_failed", "unavailable", "queue_expired", "timeout" }) do
+			local net = QT:CreateTestNetwork({ fps = 5 })
+			local peer = Peer(net, "Owner-Realm")
+			peer.UpdatePlayerCommunications = function() end
+			peer.API.GetNumDisplayChannels = function()
+				return 0
+			end
+			peer.API.GetChannelRosterInfo = function() end
+			if outcome == "admission_failed" then
+				peer.Request = function()
+					return false, "capacity"
+				end
+			elseif outcome == "send_failed" then
+				net.sendRule = function()
+					return 7
+				end
+			elseif outcome == "queue_expired" then
+				net.sendRule = function()
+					return 3
+				end
+			end
+			net:StartPeer(peer)
+			peer:InitializeMeshNetwork()
+			assert(peer:ObserveMeshContact("Unavailable-Realm", "chat"))
+			if outcome == "unavailable" then
+				net:Advance(2)
+				assert(peer.meshNetworkState.pending["Unavailable-Realm"])
+				peer:RetireMeshPeer("Unavailable-Realm", "unavailable")
+				net:Advance(23)
+			else
+				net:Advance(25)
+			end
+			local candidate = peer.meshNetworkState.candidates["Unavailable-Realm"]
+			assert(
+				candidate.lastHandshakeOutcome == outcome,
+				"handshake failure must retain its actual stage: expected "
+					.. outcome
+					.. ", got "
+					.. tostring(candidate.lastHandshakeOutcome)
+			)
+			assert(candidate.lastHandshakeAt >= candidate.triedAt and candidate.retryAt > peer.now)
+			assert(
+				(peer:GetMeshNetworkMetrics().handshakeTimeouts or 0) == (outcome == "timeout" and 1 or 0),
+				"only an attempted request with no response counts as a timeout"
+			)
+			if outcome == "send_failed" then
+				assert(candidate.lastHandshakeCode == 7)
+			end
+			if outcome == "unavailable" then
+				assert(
+					candidate.lastRetirementReason == "unavailable"
+						and candidate.lastRetiredAt == candidate.lastHandshakeAt
+				)
+			end
 		end
-		net:StartPeer(peer)
-		peer:InitializeMeshNetwork()
-		assert(peer:ObserveMeshContact("Unavailable-Realm", "chat"))
-		if outcome == "unavailable" then
-			net:Advance(2)
-			assert(peer.meshNetworkState.pending["Unavailable-Realm"])
-			peer:RetireMeshPeer("Unavailable-Realm", "unavailable")
-			net:Advance(23)
-		else
-			net:Advance(25)
-		end
-		local candidate = peer.meshNetworkState.candidates["Unavailable-Realm"]
-		assert(candidate.lastHandshakeOutcome == outcome,
-			"handshake failure must retain its actual stage: expected " .. outcome .. ", got " .. tostring(candidate.lastHandshakeOutcome))
-		assert(candidate.lastHandshakeAt >= candidate.triedAt and candidate.retryAt > peer.now)
-		assert((peer:GetMeshNetworkMetrics().handshakeTimeouts or 0) == (outcome == "timeout" and 1 or 0),
-			"only an attempted request with no response counts as a timeout")
-		if outcome == "send_failed" then assert(candidate.lastHandshakeCode == 7) end
-		if outcome == "unavailable" then
-			assert(candidate.lastRetirementReason == "unavailable"
-				and candidate.lastRetiredAt == candidate.lastHandshakeAt)
-		end
-	end
-end, { offline = true })
+	end,
+	{ offline = true }
+)
 
 QT:RegisterTest("mesh reserved reciprocal probes beat candidate backoff without exceeding neighbor slots", function()
 	local net = QT:CreateTestNetwork({ fps = 10 })
@@ -1266,9 +2077,11 @@ QT:RegisterTest("mesh reserved reciprocal probes beat candidate backoff without 
 	end
 	local started = net.now
 	net:Advance(20)
-	assert(Count(state.reservations) == 3)
 	for _, peer in ipairs(peers) do
-		assert(not owner:IsConfirmedMeshNeighbor(peer.name), "reserved admission must not authenticate a native peer")
+		assert(
+			owner:IsConfirmedMeshNeighbor(peer.name) or state.reservations[peer.name],
+			"a reciprocal caller must retain its slot until its independent challenge completes"
+		)
 	end
 	for _ = 1, 95 do
 		net:Advance(1)

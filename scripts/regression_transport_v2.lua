@@ -207,7 +207,7 @@ QT:RegisterTest("mesh budget charges full packets while party traffic retains ca
 			bytes = bytes + #sent.wire + #a.commPrefix + 40
 		end
 	end
-	assert(party and packets > 0 and packets <= 10 and bytes <= 2000)
+	assert(party and packets > 0 and packets <= 20 and bytes <= 4000)
 	Equal(done, packets)
 	Equal(a:GetTransportMetrics().meshBytes, bytes)
 end)
@@ -285,7 +285,7 @@ QT:RegisterTest("mesh traffic classes progress while private traffic continuousl
 	for _, class in ipairs(classes) do
 		assert(delivered[class] == 3, "starved mesh class: " .. class)
 	end
-	assert(a:GetTransportMetrics().meshBytes <= 60 * 200)
+	assert(a:GetTransportMetrics().meshBytes <= 60 * 400)
 end)
 
 QT:RegisterTest("mesh large proofs earn byte credit despite continuous cheap traffic", function()
@@ -342,8 +342,8 @@ QT:RegisterTest("mesh large proofs earn byte credit despite continuous cheap tra
 		running = false
 		Equal(proofs, 3)
 		assert(cheap > 0 and party >= 15, "reserving mesh bytes must allow other traffic to progress")
-		assert(a:GetTransportMetrics().meshBytes <= 15 * 200)
-		assert(a:GetTransportMetrics().meshPackets <= 15)
+		assert(a:GetTransportMetrics().meshBytes <= 15 * 400)
+		assert(a:GetTransportMetrics().meshPackets <= 30)
 	end
 end)
 

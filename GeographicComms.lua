@@ -269,7 +269,7 @@ function QT:StageCommunicationState(topic, record, options)
 	return true
 end
 
-function QT:BuildCommunicationStateRecords(locationOnly, topics)
+function QT:BuildCommunicationStateRecords(locationOnly, topics, includeVersion)
 	local s, now = rawget(self, "geographicCommsState"), Now(self)
 	local records, entries = {}, {}
 	if not s then
@@ -281,14 +281,21 @@ function QT:BuildCommunicationStateRecords(locationOnly, topics)
 		if
 			entry
 			and (not topics or topics[topic])
-			and (not locationOnly or topic == "LOC")
+			and (not locationOnly or topic == "LOC" or topic == "QTVR" and includeVersion ~= false)
 			and now >= entry.at
 			and now - entry.at <= maxAge
 			and (not entry.options.isCurrent or entry.options.isCurrent())
 		then
+			-- Every public location carries its owner's version, including when a
+			-- recipient missed the slower full baseline. Preserve its source time
+			-- and existing counts: protocol-3 receivers treat omitted counts as
+			-- unknown. The original revision/time prevent renewing old party data.
+			local data = Copy(entry.data)
 			records[#records + 1] =
-				{ topic = topic, data = Copy(entry.data), sampledAt = entry.sampledAt, revision = entry.revision }
-			entries[#entries + 1] = { topic = topic, receipt = entry.receipt }
+				{ topic = topic, data = data, sampledAt = entry.sampledAt, revision = entry.revision }
+			if not locationOnly or topic ~= "QTVR" then
+				entries[#entries + 1] = { topic = topic, receipt = entry.receipt }
+			end
 		end
 	end
 	return records, entries
@@ -419,7 +426,7 @@ function QT:UpdateGeographicComms()
 				staged, sampledLocation = self:BroadcastPlayerLocation(self:CanPublishPlayerLocation())
 				sampled = true
 			end
-			local records, entries = self:BuildCommunicationStateRecords(not full)
+			local records, entries = self:BuildCommunicationStateRecords(not full, nil, public)
 			local location = s.latest.LOC and Copy(s.latest.LOC.data)
 			-- Envelope sequencing owns order. Position equality ignores producer-local
 			-- counters, so stationary dots do not generate one-second traffic.
@@ -447,7 +454,10 @@ function QT:UpdateGeographicComms()
 					owner = "geography:" .. key,
 					key = "geography:" .. key .. (not full and ":location" or ":full"),
 					priority = full and "background" or "active",
-					expires = now + (public and (full and 120 or 30) or (full and 15 or 2)),
+					-- The slow global baseline renews after 150--210 seconds.
+					-- Retain its source proof through that interval so newly joined
+					-- interests can still receive it; timestamps remain unchanged.
+					expires = now + (public and (full and (item.global and 300 or 120) or 30) or (full and 15 or 2)),
 					publishesLocation = publishesLocation,
 					isCurrent = function()
 						return rawget(self, "geographicCommsState") == s

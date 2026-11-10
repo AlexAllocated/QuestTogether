@@ -117,30 +117,131 @@ function QT:ObserveAddonVersion(version)
 	return true
 end
 
-function QT:RememberPlayerAddonVersion(sender, version)
+local VERSION_LIFETIME, VERSION_LIMIT, VERSION_CACHE_LIFETIME = 600, 512, 180
+local function VersionNow(a)
+	return a.API.GetTime and a:SafeToNumber(a.API.GetTime())
+end
+local function VersionRecord(a, name)
+	local state, now = rawget(a, "qtPlayerPresenceState"), VersionNow(a)
+	local record = state and state.peerVersions and state.peerVersions[name]
+	if not a.isEnabled or a.isLoggingOut or not name or a:IsIgnoredPlayerName(name)
+		or type(record) ~= "table" or not now or now < record.receivedAt or now >= record.expiresAt then
+		return nil
+	end
+	if record.observationSession and not a:CanAcceptPeerEpoch(name, record.observationSession, record.sourceSampledAt) then
+		return nil
+	end
+	if not a:CanAcceptPeerUpdate(name, nil, record.sampledAt, record.observationSession,
+		record.observationSequence, record.sourceSampledAt) then return nil end
+	if record.cached and not a:GetFreshPlayerLocation(name) then return nil end
+	return record
+end
+local function StoreVersion(a, name, record)
+	local state = a:GetQTPlayerPresenceState()
+	state.peerVersions = state.peerVersions or {}
+	if not state.peerVersions[name] then
+		local count, oldest, at = 0
+		for peer, value in pairs(state.peerVersions) do
+			count = count + 1
+			if not at or value.receivedAt < at then oldest, at = peer, value.receivedAt end
+		end
+		if count >= VERSION_LIMIT then state.peerVersions[oldest] = nil end
+	end
+	state.peerVersions[name] = record
+end
+local function VersionObservation(name, observation)
+	if type(observation) ~= "table" or observation.name ~= name then return nil end
+	-- Version evidence has its own ordering. A compact identity update cannot
+	-- refresh quest/party counts or prevent an older full snapshot filling them.
+	local result = {}
+	for key, value in pairs(observation) do result[key] = value end
+	result.field = "QTVER"
+	return result
+end
+function QT:RememberPlayerAddonVersion(sender, version, observation, establishesPresence)
 	local name = self:NormalizeMemberName(sender)
-	if not name or not self:ParseAddonVersion(version) or not self:IsKnownQTPlayer(name) then
+	if not name or not self:ParseAddonVersion(version) then return false end
+	if not observation then
+		if not self:IsKnownQTPlayer(name) then return false end
+		observation = self:CreatePeerObservation(name, "QTVER", { source = "version", lifetime = VERSION_LIFETIME })
+	else
+		observation = VersionObservation(name, observation)
+	end
+	local record = { version = version }
+	if not self:CommitPeerObservation(observation, record, establishesPresence == true) then return false end
+	StoreVersion(self, name, record)
+	return true
+end
+
+-- Only a still-correlated native MACK may supply handshake identity evidence.
+-- This stores the version in its domain without inventing presence or stats.
+function QT:RememberPlayerHandshakeVersion(sender, version, context)
+	local name = self:NormalizeMemberName(sender)
+	local state = rawget(self, "communicationState")
+	local request = type(context) == "table" and state and state.requests[context.requestId]
+	local stamp = type(context) == "table" and self:SafeToNumber(context.stamp)
+	local sequence = type(context) == "table" and self:SafeToNumber(context.sequence)
+	local serverNow = self:GetAnnouncementServerTime()
+	if not name or type(context) ~= "table" or context.distribution ~= "WHISPER" or context.meshVerified
+		or not request or request.operation ~= "MHEL" or request.target ~= name
+		or not self:IsCommResponseExpected({ operation = "MACK", requestId = context.requestId }, name)
+		or type(context.session) ~= "string" or #context.session > 40 or not context.session:match("^[%w%-]+$")
+		or not sequence or sequence < 1 or sequence > 1e12 or sequence ~= math.floor(sequence)
+		or not stamp or stamp <= 0 or not serverNow or serverNow - stamp < -1 or serverNow - stamp >= VERSION_LIFETIME then
 		return false
 	end
-	local state = self:GetQTPlayerPresenceState()
-	state.peerVersions = state.peerVersions or {}
-	state.peerVersions[name] = version
-	return true
+	local observation = self:CreatePeerObservation(name, "QTVER", {
+		source = "handshake", session = context.session, sequence = sequence, stamp = stamp,
+		sourceSampledAt = stamp, age = math.max(0, serverNow - stamp), lifetime = VERSION_LIFETIME,
+	})
+	return self:RememberPlayerAddonVersion(name, version, observation, false)
 end
 
 function QT:GetPlayerAddonVersion(sender)
 	local name = self:NormalizeMemberName(sender)
-	if not name then
-		return nil
+	if not name then return nil end
+	if self:IsSelfSender(name) then return self:GetAddonVersion() end
+	local record = VersionRecord(self, name)
+	if record and (self:IsKnownQTPlayer(name) or self:GetFreshPlayerLocation(name)) then return record.version end
+end
+
+function QT:SavePlayerAddonVersionCacheEntry(name, now, wall, locationExpires)
+	name = self:NormalizeMemberName(name)
+	local record = VersionRecord(self, name)
+	if not record or not self:ParseAddonVersion(record.version) then return nil end
+	local age = now - record.sampledAt
+	local remaining = math.min(record.expiresAt - now, VERSION_LIFETIME - age, locationExpires - wall)
+	if age < 0 or remaining <= 0 then return nil end
+	return { version = record.version, sampledAt = wall - age, expiresAt = wall + remaining,
+		sourceSampledAt = record.sourceSampledAt,
+		session = record.observationSession, sequence = record.observationSequence }
+end
+
+function QT:RestorePlayerAddonVersionCacheEntry(name, cached, now, wall)
+	name = self:NormalizeMemberName(name)
+	local location = name and self:GetFreshPlayerLocation(name)
+	if not self.isEnabled or not location or not location.cached or self:IsIgnoredPlayerName(name)
+		or self:IsSelfSender(name) or type(cached) ~= "table" or not self:ParseAddonVersion(cached.version)
+		or VersionRecord(self, name) then return false end
+	local sampled, expires = self:SafeToNumber(cached.sampledAt), self:SafeToNumber(cached.expiresAt)
+	local sequence, session = self:SafeToNumber(cached.sequence), cached.session
+	local sourceStamp = cached.sourceSampledAt == nil and sampled or self:SafeToNumber(cached.sourceSampledAt)
+	if not sampled or sampled > wall or wall - sampled >= VERSION_LIFETIME
+		or not expires or expires <= wall or expires > wall + VERSION_CACHE_LIFETIME
+		or (session ~= nil and (type(session) ~= "string" or #session > 40 or not session:match("^[%w%-]+$")))
+		or (cached.sequence ~= nil and (not sequence or sequence < 1 or sequence > 1e12 or sequence ~= math.floor(sequence)))
+		or not sourceStamp or sourceStamp > wall + 1 or sourceStamp <= 0
+		or (session and not self:CanAcceptPeerEpoch(name, session, sourceStamp)) then return false end
+	local remaining = math.min(expires - wall, VERSION_LIFETIME - (wall - sampled),
+		(location.receivedAt + location.lifetime) - now)
+	if remaining <= 0 or not self:CanAcceptPeerUpdate(name, nil, now - (wall - sampled), session, sequence, sourceStamp) then
+		return false
 	end
-	if self:IsSelfSender(name) then
-		return self:GetAddonVersion()
-	end
-	if not self:IsKnownQTPlayer(name) then
-		return nil
-	end
-	local state = rawget(self, "qtPlayerPresenceState")
-	return state and state.peerVersions and state.peerVersions[name] or nil
+	StoreVersion(self, name, { version = cached.version, cached = true, sampledAt = now - (wall - sampled),
+		receivedAt = now, expiresAt = now + remaining, lifetime = remaining, sourceSampledAt = sourceStamp,
+		observationName = name, observationSession = session, observationSequence = sequence,
+		observationSource = "cache" })
+	return true
 end
 
 function QT:GetLocalPartySize()
@@ -199,7 +300,7 @@ function QT:HandleAddonVersionMessage(payload, sender, observation)
 		return false
 	end
 	local version, count, partySize = payload.version, payload.count, payload.partySize
-	local extended = true
+	local extended = count ~= nil or partySize ~= nil
 	if count ~= nil and (type(count) ~= "number" or count < 0 or count > 20000 or count ~= math.floor(count)) then
 		return false
 	end
@@ -213,16 +314,19 @@ function QT:HandleAddonVersionMessage(payload, sender, observation)
 	local name = self:NormalizeMemberName(sender)
 	observation = self:ResolvePeerObservation(name, "QTVR", observation)
 	local record = { count = count, partySize = partySize, at = now }
-	if not now or not self:ParseAddonVersion(version) or not self:CommitPeerObservation(observation, record, true) then
-		return false
+	if not now or not self:ParseAddonVersion(version) or not observation then return false end
+	if extended then
+		if not self:CommitPeerObservation(observation, record, true) then return false end
+		self:RememberPlayerAddonVersion(sender, version, observation)
+	else
+		if not self:RememberPlayerAddonVersion(sender, version, observation, true) then return false end
 	end
-	self:RememberPlayerAddonVersion(sender, version)
 	if extended then
 		local state = self:GetQTPlayerPresenceState()
 		state.peerTooltipStats = state.peerTooltipStats or {}
 		state.peerTooltipStats[self:NormalizeMemberName(sender)] = record
+		self:InvalidatePartyVisualMembership(name, record.partySize, record.sampledAt, record)
 	end
-	self:InvalidatePartyVisualMembership(name, record.partySize, record.sampledAt, record)
 	self:ObserveAddonVersion(version)
 	return true
 end
