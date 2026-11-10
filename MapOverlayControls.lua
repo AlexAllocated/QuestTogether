@@ -54,6 +54,8 @@ end
 local function MapLegend()
 	return {
 		{ kind = "player", label = L("QT players (class color)") },
+		{ kind = "vip", label = L("QuestTogether VIP") },
+		{ kind = "developer", label = L("QuestTogether developer") },
 		{ kind = "partners", label = L("Looking for Questing Partners") },
 		{ kind = "selected", label = L("Selected player") },
 		{ kind = "phase", label = L("Likely different layer (experimental)") },
@@ -99,6 +101,9 @@ local function DrawLegendSample(a, item, entry)
 	if kind == "player" or kind == "partners" then
 		Symbol({ looking = kind == "partners" }, -14)
 		Texture(kind == "partners" and "QuestTogetherPartnerIcon" or "QuestTogetherIcon", 14)
+	elseif kind == "vip" or kind == "developer" then
+		Symbol({ vip = kind == "vip", developer = kind == "developer" }, -14)
+		Texture(kind == "vip" and "QuestTogetherVIPIcon" or "QuestTogetherDeveloperIcon", 14)
 	elseif kind == "cluster" then
 		Symbol({ clusterCount = 3, r = 0.16, g = 0.13, b = 0.06 })
 	elseif kind == "party" then
