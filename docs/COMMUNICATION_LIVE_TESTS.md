@@ -41,6 +41,18 @@ client or scenario as passed.
   origin, hop and receipt evidence locally; redact names from shared reports.
 - [ ] Repeat in Retail and Forever. Directory visibility, cross-backing-realm
   whisper addressing and actual addon receipt must each be verified.
+- [ ] With unpartied A and B on different layers and unable to discover one
+  another through directories, test an online character friend, a compatible
+  Battle.net character, and an ordinary whisper separately. Confirm a verified
+  connection and eligible public location data, not just candidate admission.
+  Repeat with a friendly visible player's target/mouseover/nameplate. Verify
+  that a non-QT contact remains only a candidate, and offline/incompatible
+  Battle.net accounts do not create contacts. Ordinary chat must still work.
+- [ ] Repeat when the recipient's neighbor slots are occupied. Confirm its busy
+  reply retains a bounded admission request, a normal rotation or freed slot
+  permits a fresh handshake, and eligible public data follows. Repeat with both
+  clients full and staggered rotation timing. Observe actual remote receipts;
+  a remembered request alone is not a confirmed connection.
 - [ ] Remove a bridge while an alternate path exists; confirm recovery. Repeat
   without an alternate path and confirm honest isolation and bounded retries.
 - [ ] Open the channel UI while a roster scan is pending. Confirm QT preserves

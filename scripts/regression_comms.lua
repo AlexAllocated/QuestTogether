@@ -3367,6 +3367,10 @@ local function ReminderFixture()
 		end
 		return true
 	end
+	function a:SetOptions(values)
+		for key, value in pairs(values) do self:SetOption(key, value) end
+		return true
+	end
 	return a
 end
 
@@ -3415,7 +3419,7 @@ QuestTogether:RegisterTest("party reminder choices persist only on valid acknowl
 		a:ResetPartyChatReminder()
 		Equal(a:UpdatePartyChatReminder(), not off)
 	end
-	for _, stale in ipairs({ "profile", "leave", "known", "off", "disabled", "restricted", "unreadable" }) do
+	for _, stale in ipairs({ "profile", "leave", "known", "off", "disabled", "restricted", "unreadable", "logout" }) do
 		local a = ReminderFixture()
 		a:UpdatePartyChatReminder()
 		a.now = 110
@@ -3433,12 +3437,17 @@ QuestTogether:RegisterTest("party reminder choices persist only on valid acknowl
 			a.isEnabled = false
 		elseif stale == "restricted" then
 			a.blocked = true
+		elseif stale == "logout" then
+			a.isLoggingOut = true
 		else
 			a.API.UnitExists = function()
 				return nil
 			end
 		end
-		Equal(a:AcknowledgePartyChatReminder(old, true, false), false)
+		-- Plain roster acknowledgement stays strict. A displayed settings choice
+		-- is roster-independent, covered with the actual UI/settings above.
+		local persistent = stale ~= "leave" and stale ~= "known" and stale ~= "unreadable"
+		Equal(a:AcknowledgePartyChatReminder(old, persistent, false), false)
 		Equal(a.db.profile.hidePartyChatReminder, false)
 	end
 end)

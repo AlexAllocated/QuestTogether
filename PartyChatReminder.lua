@@ -85,18 +85,35 @@ function QT:AcknowledgePartyChatReminder(request, hideFuture, turnOff)
 		return true
 	end
 	local s = rawget(self, "partyChatReminderState")
-	-- Recheck native membership at click time, never consent for a replacement
-	-- profile, changed party, or a request retired by newly discovered presence.
 	if not s or not request or s.request ~= request then return false end
 	if self:IsRuntimeRestricted() or self:IsRuntimeRestrictionTypeActive("chat") then return false end
+	local profile = self.db and self.db.profile
+	local now = self:SafeToNumber(self.API.GetTime())
+	if not self.isEnabled or self.isLoggingOut or self.suppressLocalAnnouncementDisplayDuringTests
+		or s.profile ~= profile or request.profile ~= profile
+		or not now or self:GetOption("announceToNonQTParty") ~= true then return false end
+	if now < s.at then self:UpdatePartyChatReminder(); return false end
+	-- These are explicit profile preferences, not consent for the displayed
+	-- roster. Discovery can recognize a member between rendering and clicking;
+	-- refreshing first would dismiss the prompt without saving the checked box.
+	if hideFuture or turnOff then
+		local changes = {}
+		if hideFuture then changes.hidePartyChatReminder = true end
+		if turnOff then changes.announceToNonQTParty = false end
+		if not self:SetOptions(changes) then return false end
+		self:ResetPartyChatReminder()
+		self:RenderPartyChatReminder(nil)
+		if self.RefreshOptionsWindow then self:RefreshOptionsWindow() end
+		return true
+	end
+	-- An ordinary acknowledgement still applies only to the current roster,
+	-- never to newly joined members or requests retired by discovery.
 	local members = self:GetNonQTPartyMembers()
 	if not members then return false end
 	self:UpdatePartyChatReminder(members)
 	if self:IsRuntimeRestricted() or self:IsRuntimeRestrictionTypeActive("chat")
 		or rawget(self, "partyChatReminderState") ~= s or s.request ~= request then return false end
 	for _, name in ipairs(request.names) do s.acknowledged[name] = true end
-	if hideFuture then self:SetOption("hidePartyChatReminder", true) end
-	if turnOff then self:SetOption("announceToNonQTParty", false) end
 	s.request = nil
 	self:RenderPartyChatReminder(nil)
 	if self.RefreshOptionsWindow then self:RefreshOptionsWindow() end

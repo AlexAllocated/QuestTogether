@@ -592,7 +592,7 @@ function QuestTogether:HandleAddonWhisperSystemMessage(message)
 		row.expires = row.unavailableUntil
 		self:RecordCommsDiagnostic("whisperUnavailable", "route=WHISPER notice=PLAYER_NOT_FOUND")
 		if self.RetireMeshPeer then
-			self:RetireMeshPeer(row.name)
+			self:RetireMeshPeer(row.name, "unavailable")
 		end
 		if WhisperState(self) ~= s then return true end
 		self:CancelCommunicationWhere(function(work)

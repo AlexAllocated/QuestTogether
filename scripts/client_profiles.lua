@@ -48,6 +48,124 @@ return pushable end or nil,
 	end or nil
 	return function(addon)
 		do
+			-- Only plain character addresses may escape social APIs. These fixtures
+			-- deliberately contain account data and inaccessible fields that the
+			-- discovery adapters must never inspect or serialize.
+			local keys = { "C_FriendList", "C_BattleNet", "BNGetNumFriends", "WOW_PROJECT_ID",
+				"RegionalUniqueNamesEnabled", "UnitExists", "UnitIsVisible", "UnitIsPlayer",
+				"UnitIsFriend", "UnitFullName", "GetRealmName" }
+			local saved = {}
+			for _, key in ipairs(keys) do saved[key] = _G[key] end
+			local ok, err = pcall(function()
+				local friend = { connected = true, name = "Mira-Other Realm", notes = inaccessible }
+				C_FriendList = {
+					GetNumFriends = function() return 2 end,
+					GetFriendInfoByIndex = function(index) assert(index == 1); return friend end,
+				}
+				assert(addon.API.GetMeshFriendCount() == 2)
+				assert(addon.API.GetMeshFriendName(1) == "Mira-Other Realm")
+				for _, value in ipairs({ false, secret, inaccessible, 1 }) do
+					friend.connected = value
+					assert(addon.API.GetMeshFriendName(1) == nil)
+				end
+				friend.connected = true
+				for _, value in ipairs({ secret, inaccessible, "", "bad|name", "line\nbreak", string.rep("x", 121) }) do
+					friend.name = value
+					assert(addon.API.GetMeshFriendName(1) == nil)
+				end
+				friend = inaccessible
+				local before = inaccessibleReads
+				assert(addon.API.GetMeshFriendName(1) == nil and inaccessibleReads == before)
+				C_FriendList = inaccessible
+				assert(addon.API.GetMeshFriendCount() == 0 and addon.API.GetMeshFriendName(1) == nil)
+				assert(inaccessibleReads == before)
+				C_FriendList = { GetNumFriends = function() error("unavailable") end }
+				assert(addon.API.GetMeshFriendCount() == 0)
+				assert(addon.API.GetMeshFriendName(secret) == nil and addon.API.GetMeshFriendName(0) == nil)
+				WOW_PROJECT_ID = 42
+				RegionalUniqueNamesEnabled = function() return false end
+				local account = {
+					isOnline = true, isAppearOffline = false, clientProgram = "WoW", isInCurrentRegion = true,
+					wowProjectID = 42, characterName = "Mira", realmName = "Other Realm",
+					gameAccountID = inaccessible, accountName = inaccessible, battleTag = inaccessible,
+				}
+				BNGetNumFriends = function() return 2 end
+				C_BattleNet = {
+					GetFriendNumGameAccounts = function(index) assert(index == 1); return 2 end,
+					GetFriendGameAccountInfo = function(index, accountIndex)
+						assert(index == 1 and accountIndex == 2); return account
+					end,
+				}
+				assert(addon.API.GetMeshBattleNetFriendCount() == 2)
+				assert(addon.API.GetMeshBattleNetGameAccountCount(1) == 2)
+				assert(addon.API.GetMeshBattleNetFriendName(1, 2) == "Mira-OtherRealm")
+				for _, change in ipairs({
+					{ "isOnline", false }, { "isAppearOffline", true }, { "clientProgram", "D3" },
+					{ "isInCurrentRegion", false }, { "wowProjectID", 43 }, { "realmName", "" },
+				}) do
+					local previous = account[change[1]]
+					account[change[1]] = change[2]
+					assert(addon.API.GetMeshBattleNetFriendName(1, 2) == nil)
+					account[change[1]] = previous
+				end
+				for _, field in ipairs({ "isOnline", "isAppearOffline", "clientProgram", "isInCurrentRegion",
+					"wowProjectID", "characterName", "realmName" }) do
+					local previous = account[field]
+					for _, value in ipairs({ secret, inaccessible }) do
+						account[field] = value
+						assert(addon.API.GetMeshBattleNetFriendName(1, 2) == nil)
+					end
+					account[field] = previous
+				end
+				RegionalUniqueNamesEnabled = function() return true end
+				account.characterName, account.realmName = "Mira Dawn", inaccessible
+				assert(addon.API.GetMeshBattleNetFriendName(1, 2) == "Mira Dawn")
+				assert(inaccessibleReads == before, "BNet account identity and Forever backing realm must not be read")
+				account = inaccessible
+				assert(addon.API.GetMeshBattleNetFriendName(1, 2) == nil)
+				for _, value in ipairs({ -1, 1.5, math.huge, secret, inaccessible }) do
+					BNGetNumFriends = function() return value end
+					assert(addon.API.GetMeshBattleNetFriendCount() == 0)
+					assert(addon.API.GetMeshBattleNetGameAccountCount(value) == 0)
+					assert(addon.API.GetMeshBattleNetFriendName(value, 2) == nil)
+				end
+				C_BattleNet = inaccessible
+				assert(addon.API.GetMeshBattleNetGameAccountCount(1) == 0)
+				assert(addon.API.GetMeshBattleNetFriendName(1, 2) == nil)
+				assert(inaccessibleReads == before)
+				UnitExists, UnitIsVisible, UnitIsPlayer, UnitIsFriend = function() return true end,
+					function() return true end, function() return true end, function() return true end
+				local name, realm = "Mira", "Dawn"
+				UnitFullName = function() return name, realm end
+				assert(addon.API.GetMeshUnitPlayerName("target") == "Mira Dawn")
+				name, realm = "Mira Dawn", "Dawn"
+				assert(addon.API.GetMeshUnitPlayerName("mouseover") == "Mira Dawn")
+				RegionalUniqueNamesEnabled = function() return false end
+				name, realm = "Mira", "Other Realm"
+				assert(addon.API.GetMeshUnitPlayerName("nameplate1") == "Mira-OtherRealm")
+				GetRealmName = function() return "Home Realm" end
+				realm = nil
+				assert(addon.API.GetMeshUnitPlayerName("target") == "Mira-HomeRealm")
+				for _, value in ipairs({ secret, inaccessible, 7, "bad|realm" }) do
+					realm = value
+					assert(addon.API.GetMeshUnitPlayerName("target") == nil)
+				end
+				realm = "Other Realm"
+				for _, key in ipairs({ "UnitExists", "UnitIsVisible", "UnitIsPlayer", "UnitIsFriend" }) do
+					for _, value in ipairs({ false, secret, inaccessible }) do
+						_G[key] = function() return value end
+						assert(addon.API.GetMeshUnitPlayerName("target") == nil)
+					end
+					_G[key] = function() return true end
+				end
+				for _, value in ipairs({ secret, inaccessible, "", "target|invalid", string.rep("x", 33) }) do
+					assert(addon.API.GetMeshUnitPlayerName(value) == nil)
+				end
+			end)
+			for _, key in ipairs(keys) do _G[key] = saved[key] end
+			assert(ok, err)
+		end
+		do
 			-- These native adapter checks are offline-only: live tests must never
 			-- install real secure hooks or alter Blizzard's shared filter registry.
 			local saved = {}
@@ -1161,6 +1279,19 @@ return rawRow end
 			for _, key in ipairs(keys) do _G[key] = saved[key] end
 			addon.IsRuntimeRestricted, C_QuestLog.GetLogIndexForQuestID = originalRestricted, originalIndex
 		end
+		-- Check the native entry-point contract only; standalone Lua cannot
+		-- reproduce the game engine's taint tracking. These fixtures are offline.
+		local originalSecureCall, activeSecureFunction = securecallfunction, nil
+		local function SecureNativeDispatch(fn, ...)
+			assert(fn == QuestMapFrame_OpenToQuestDetails or fn == OpenQuestLog,
+				"dispatch the actual native function, never an addon closure")
+			activeSecureFunction = fn
+			local ok, result = pcall(fn, ...)
+			activeSecureFunction = nil
+			if not ok then error(result) end
+			return result
+		end
+		securecallfunction = SecureNativeDispatch
 		-- Journal navigation uses Blizzard's quest-ID entry point and verifies
 		-- visible details. All native frames/functions here exist only offline.
 		do
@@ -1174,6 +1305,7 @@ return rawRow end
 				QuestMapFrame = { DetailsFrame = details, IsShown = function() return shown end }
 				QuestMapFrame_GetDetailQuestID = function() return selectedID end
 				QuestMapFrame_OpenToQuestDetails = function(id)
+					assert(activeSecureFunction == QuestMapFrame_OpenToQuestDetails, "details need the native secure dispatcher")
 					assert(id == 12345, "journal requires quest ID, not log index")
 					opens = opens + 1
 					if throws then error("journal unavailable") end
@@ -1182,6 +1314,13 @@ return rawRow end
 				end
 				assert(addon.API.CanOpenQuestJournal() == true)
 				assert(addon.API.OpenQuestJournal("12345") == true)
+				assert(opens == 1)
+				for _, dispatcher in ipairs({ false, secret, inaccessible }) do
+					securecallfunction = dispatcher or nil
+					assert(addon.API.CanOpenQuestJournal() == false)
+					assert(addon.API.OpenQuestJournal(12345) == false, "missing secure boundary must not fall back to an ordinary call")
+				end
+				securecallfunction = SecureNativeDispatch
 				assert(opens == 1)
 				for _, id in ipairs({ 0, -1, 12345.5, math.huge, secret, inaccessible }) do
 					assert(addon.API.OpenQuestJournal(id) == false)
@@ -1243,6 +1382,7 @@ return rawRow end
 				}, readOnly)
 				WorldMapFrame, QuestMapFrame = map, journal
 				local function OpenNativeJournal(...)
+					assert(activeSecureFunction == OpenQuestLog, "journal needs the native secure dispatcher")
 					assert(select("#", ...) == 0, "generic opener must not select a quest or map")
 					calls = calls + 1
 					if throws then error("native journal unavailable") end
@@ -1255,6 +1395,13 @@ return rawRow end
 				assert(addon.API.OpenQuestJournalWindow() == true)
 				assert(addon.API.OpenQuestJournalWindow() == true, "reopening must not toggle the journal closed")
 				assert(calls == 2 and selected == 7, "opening must preserve quest selection")
+				for _, dispatcher in ipairs({ false, secret, inaccessible }) do
+					securecallfunction = dispatcher or nil
+					assert(addon.API.CanOpenQuestJournalWindow() == false)
+					assert(addon.API.OpenQuestJournalWindow() == false, "missing secure boundary must not fall back to an ordinary call")
+				end
+				securecallfunction = SecureNativeDispatch
+				assert(calls == 2)
 				restricted = true
 				assert(addon.API.OpenQuestJournalWindow() == false)
 				restricted = false
@@ -1305,10 +1452,12 @@ return rawRow end
 			assert(addon.API.CanOpenQuestJournalWindow() == false)
 			assert(addon.API.OpenQuestJournalWindow() == false)
 		end
+		securecallfunction = originalSecureCall
 		-- Find-player navigation uses one guarded native map opener. These
 		-- foreign globals are replaced only in this offline client harness.
 		do
-			local originalBlocked = addon.IsWorkBlocked
+			local originalBlocked, originalMap = addon.IsWorkBlocked, C_Map
+			C_Map = {}
 			local restricted, shown, mapID, calls, decline = false, false, nil, 0, false
 			addon.IsWorkBlocked = function(_, workClass)
 				assert(workClass == "foreign_frame_mutation")
@@ -1320,12 +1469,28 @@ return rawRow end
 				GetMapID = function() return mapID end,
 			}, { __newindex = function() error("map navigation cannot write addon state to foreign frames") end })
 			WorldMapFrame = map
-			OpenWorldMap = function(id)
+			local unsafeCalls = 0
+			OpenWorldMap = function() unsafeCalls = unsafeCalls + 1; error("addon must not enter the Lua map opener") end
+			C_Map.OpenWorldMap = function(id)
 				calls = calls + 1
 				if not decline then shown, mapID = true, id end
 			end
+			assert(addon.API.CanOpenPlayerLocationMap() == true)
 			assert(addon.API.OpenPlayerLocationMap(85) == true and mapID == 85)
 			assert(addon.API.OpenPlayerLocationMap(86) == true and shown and mapID == 86)
+			local nativeOpen = C_Map.OpenWorldMap
+			for _, unavailable in ipairs({ false, secret, inaccessible }) do
+				C_Map.OpenWorldMap = unavailable or nil
+				assert(addon.API.CanOpenPlayerLocationMap() == false)
+				assert(addon.API.OpenPlayerLocationMap(85) == false)
+			end
+			for _, unavailable in ipairs({ false, secret, inaccessible }) do
+				C_Map = unavailable or nil
+				assert(addon.API.CanOpenPlayerLocationMap() == false)
+				assert(addon.API.OpenPlayerLocationMap(85) == false)
+			end
+			C_Map = { OpenWorldMap = nativeOpen }
+			assert(calls == 2 and unsafeCalls == 0, "no legacy map fallback when native API is unavailable")
 			for _, invalid in ipairs({ 0, -1, 1.5, 2147483648, math.huge, secret, inaccessible }) do
 				assert(addon.API.OpenPlayerLocationMap(invalid) == false)
 			end
@@ -1344,14 +1509,16 @@ return rawRow end
 			assert(addon.API.OpenPlayerLocationMap(85) == false, "wrong selected map must fail")
 			shown = false
 			assert(addon.API.OpenPlayerLocationMap(86) == false, "native decline cannot report success")
-			OpenWorldMap = function() WorldMapFrame = forbidden end
+			C_Map.OpenWorldMap = function() WorldMapFrame = forbidden end
 			assert(addon.API.OpenPlayerLocationMap(85) == false, "post-open map must be revalidated")
 			WorldMapFrame = map
-			OpenWorldMap = function() error("unavailable") end
+			C_Map.OpenWorldMap = function() error("unavailable") end
 			assert(addon.API.OpenPlayerLocationMap(85) == false)
-			OpenWorldMap, WorldMapFrame = nil, nil
+			C_Map.OpenWorldMap, WorldMapFrame = nil, nil
 			assert(addon.API.OpenPlayerLocationMap(85) == false)
-			addon.IsWorkBlocked = originalBlocked
+			assert(unsafeCalls == 0, "native failures must never call the Lua opener")
+			OpenWorldMap = nil
+			addon.IsWorkBlocked, C_Map = originalBlocked, originalMap
 		end
 		-- Standalone Lua can construct NaN; Forever's arithmetic raises instead.
 		-- Keep this boundary check offline so /qt test never attempts 0 / 0.

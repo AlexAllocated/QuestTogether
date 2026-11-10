@@ -1811,6 +1811,19 @@ function QuestTogether:RenderPartyChatReminder(request)
 	local buttonWidth = (bodyWidth - 12) / 2
 	local frameKey = request and request.preview and "partyChatReminderPreviewFrame" or "partyChatReminderFrame"
 	local frame = rawget(self, frameKey)
+	local state = rawget(self, "partyChatReminderState")
+	local remember = false
+	-- Discovery may replace the displayed member list without ending this
+	-- prompt. Preserve its unfinished choice only across that visible redraw,
+	-- never across a dismissal, preview, profile change, or reminder reset.
+	if request and not request.preview and state and state.request == request and request.profile == state.profile
+		and state.profile == (self.db and self.db.profile)
+		and frame and frame.reminderState == state and frame.request
+		and not frame.request.preview and frame.request.profile == request.profile
+		and self.LibChev.CanMutateOwnedRegion(frame) and self.LibChev.CanMutateOwnedRegion(frame.remember)
+		and frame:IsShown() then
+		remember = frame.remember:GetChecked() == true
+	end
 	self:HideRetiredPartyRequestPrompt(frame, request)
 	if not request or self:IsWorkBlocked("foreign_frame_mutation") then
 		return
@@ -1946,7 +1959,8 @@ function QuestTogether:RenderPartyChatReminder(request)
 	end
 	if frame.request ~= request then
 		frame.request = request
-		frame.remember:SetChecked(false)
+		frame.reminderState = not request.preview and state or nil
+		frame.remember:SetChecked(remember)
 		frame.preview:SetText(request.preview and L("Preview - no settings will change.") or "")
 		frame.members:SetText(table.concat(request.names, "\n"):gsub("|", "||"))
 		frame:LayoutManagedWindow()

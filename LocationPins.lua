@@ -397,8 +397,7 @@ function QuestTogether:GetPlayerLocationClusterNavigationAction(cluster, geometr
 	local target, x, y = self:GetPlayerLocationMapNavigationTarget(cluster.members, mapID)
 	if not target then return "unavailable" end
 	if target ~= mapID then
-		local setter = self:GetAccessibleFrameMember(map, "SetMapID")
-		return type(setter) == "function" and "navigate" or "unavailable", target, x, y
+		return self.API.CanOpenPlayerLocationMap() and "navigate" or "unavailable", target, x, y
 	end
 	return "expand", nil, x, y
 end
@@ -413,13 +412,11 @@ function QuestTogether:TryNavigatePlayerLocationCluster(cluster, geometry)
 		local map = WorldMapFrame
 		if self:IsWorkBlocked("foreign_frame_mutation") or not self:CanAccessForeignFrame(map, true)
 			or Method(self, map, "IsVisible") ~= true then return true end
-		local method = self:GetAccessibleFrameMember(map, "SetMapID")
-		if type(method) ~= "function" then return true end
 		local intent = self:BeginPlayerLocationClusterNavigation(cluster, geometry, target)
 		if not intent then return true end
-		local ok, result = pcall(method, map, target)
+		local ok, result = pcall(self.API.OpenPlayerLocationMap, target)
 		intent.navigating = false
-		if not ok or not self:CanAccessValue(result) or result == false or not self.isEnabled
+		if not ok or not self:CanAccessValue(result) or result ~= true or not self.isEnabled
 			or self:IsWorkBlocked("foreign_frame_mutation") or ID(self, Method(self, map, "GetMapID")) ~= target
 			or Method(self, map, "IsVisible") ~= true then self:CancelPlayerLocationClusterNavigation(intent) end
 	end

@@ -10,6 +10,41 @@ Responsibilities in this file:
 
 local QuestTogether = _G.QuestTogether
 
+-- These are native sender fields, never names parsed from message contents.
+-- Battle.net chat is deliberately excluded: its sender is an account identity,
+-- not necessarily an address reachable through an in-game addon whisper.
+local function ObserveChatContact(self, _, _, sender)
+	return self:ObserveMeshContact(sender, "chat")
+end
+for _, event in ipairs({
+	"CHAT_MSG_SAY", "CHAT_MSG_YELL", "CHAT_MSG_WHISPER", "CHAT_MSG_WHISPER_INFORM",
+	"CHAT_MSG_PARTY", "CHAT_MSG_PARTY_LEADER", "CHAT_MSG_RAID", "CHAT_MSG_RAID_LEADER",
+	"CHAT_MSG_RAID_WARNING", "CHAT_MSG_INSTANCE_CHAT", "CHAT_MSG_INSTANCE_CHAT_LEADER",
+	"CHAT_MSG_GUILD", "CHAT_MSG_OFFICER", "CHAT_MSG_CHANNEL", "CHAT_MSG_EMOTE", "CHAT_MSG_TEXT_EMOTE",
+}) do
+	QuestTogether[event] = ObserveChatContact
+end
+
+function QuestTogether:PLAYER_TARGET_CHANGED()
+	self:ObserveMeshUnit("target")
+end
+function QuestTogether:UPDATE_MOUSEOVER_UNIT()
+	self:ObserveMeshUnit("mouseover")
+end
+function QuestTogether:NAME_PLATE_UNIT_ADDED(_, unitToken)
+	self:ObserveMeshUnit(unitToken)
+end
+
+local function ScheduleContactScan(self)
+	self:ScheduleMeshContactScan()
+end
+for _, event in ipairs({
+	"FRIENDLIST_UPDATE", "BN_FRIEND_LIST_SIZE_CHANGED", "BN_FRIEND_INFO_CHANGED",
+	"BN_FRIEND_ACCOUNT_ONLINE", "BN_FRIEND_ACCOUNT_OFFLINE",
+}) do
+	QuestTogether[event] = ScheduleContactScan
+end
+
 function QuestTogether:CHAT_MSG_SYSTEM(_, message, ...)
 	if self.isEnabled and not self.isLoggingOut then
 		if self.HandleAddonWhisperSystemMessage then

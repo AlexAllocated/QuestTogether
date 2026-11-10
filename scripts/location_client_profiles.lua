@@ -289,8 +289,17 @@ C_Map.GetMapInfo = function(mapID)
 end
 function WorldMapFrame:IsZoomingIn() magnificationReads = magnificationReads + 1; return true end
 function WorldMapFrame:IsAtMaxZoom() magnificationReads = magnificationReads + 1; return false end
-function WorldMapFrame:SetMapID(mapID)
-	ReadFrame(self)
+local unsafeNavigationCalls = 0
+function WorldMapFrame:SetMapID()
+	unsafeNavigationCalls = unsafeNavigationCalls + 1
+	error("cluster navigation must not call Blizzard's Lua SetMapID")
+end
+OpenWorldMap = function()
+	unsafeNavigationCalls = unsafeNavigationCalls + 1
+	error("cluster navigation must not call Blizzard's Lua map opener")
+end
+function C_Map.OpenWorldMap(mapID)
+	ReadFrame(WorldMapFrame)
 	local intent = rawget(addon, "playerLocationClusterNavigation")
 	assert(intent and intent.targetMapID == mapID and intent.key == cluster.key,
 		"the expansion intent must exist before synchronous native callbacks")
@@ -413,11 +422,15 @@ end
 C_Map.GetMapInfoAtPosition = nil
 assert(addon:GetPlayerLocationClusterNavigationAction(cluster, g) == "unavailable")
 C_Map.GetMapInfoAtPosition = PositionInfo
-local mapSetter = WorldMapFrame.SetMapID
+local nativeMapOpen = C_Map.OpenWorldMap
 positionInfo = { mapID = 2, parentMapID = 1 }
-WorldMapFrame.SetMapID = nil
-assert(addon:GetPlayerLocationClusterNavigationAction(cluster, g) == "unavailable")
-WorldMapFrame.SetMapID = mapSetter
+for _, unavailable in ipairs({ false, secret, inaccessible }) do
+	C_Map.OpenWorldMap = unavailable or nil
+	assert(addon:GetPlayerLocationClusterNavigationAction(cluster, g) == "unavailable")
+	assert(addon:TryNavigatePlayerLocationCluster(cluster, g) and #nativeActions == 2)
+end
+C_Map.OpenWorldMap = nativeMapOpen
+assert(unsafeNavigationCalls == 0, "missing native opener must not fall back to Lua map mutation")
 positionInfo = nil
 local savedX = cluster.members[1].x
 cluster.members[1].x = secret
@@ -445,8 +458,8 @@ end
 positionInfo = { mapID = 2, parentMapID = 1 }
 for _, mode in ipairs({ "consume", "decline", "throw", "unchanged", "wrong-map", "consume-then-throw", "consume-then-restrict" }) do
 	local callbackConsumed = false
-	WorldMapFrame.SetMapID = function(self, mapID)
-		ReadFrame(self)
+	C_Map.OpenWorldMap = function(mapID)
+		ReadFrame(WorldMapFrame)
 		local intent = rawget(addon, "playerLocationClusterNavigation")
 		assert(intent and intent.targetMapID == mapID and intent.navigating)
 		if mode == "decline" then return false end
@@ -477,7 +490,8 @@ for _, mode in ipairs({ "consume", "decline", "throw", "unchanged", "wrong-map",
 	addon:ClearPlayerLocationClusterExpansion()
 	displayedMapID, restricted = 1, false
 end
-WorldMapFrame.SetMapID = mapSetter
+C_Map.OpenWorldMap = nativeMapOpen
+assert(unsafeNavigationCalls == 0, "failed native navigation must not fall back to Lua map mutation")
 
 -- Forever's Tirisfal Glades (18) and Undercity (998) are sibling zone maps
 -- under Eastern Kingdoms (13). Art hierarchy cannot decide which contains all
@@ -646,7 +660,7 @@ do
 	C_Map.GetWorldPosFromMapPos, C_Map.GetMapWorldSize = geographicWorldProjection, geographicWorldSize
 end
 displayedMapID = 1
-assert(forbiddenReads == 0 and inaccessibleReads == 0 and magnificationReads == 0)
+assert(forbiddenReads == 0 and inaccessibleReads == 0 and magnificationReads == 0 and unsafeNavigationCalls == 0)
 C_Map.GetMapPosFromWorldPos = ordinaryMapProjection
 C_Map.GetWorldPosFromMapPos, C_Map.GetMapWorldSize = ordinaryWorldProjection, ordinaryWorldSize
 local x, y = addon:ProjectPlayerLocationPin("map", { mapID = 1, x = 0.5, y = 0.6 }, g)

@@ -458,8 +458,16 @@ directories only. Display-list indices and native channel IDs remain distinct.
 Directory selection is guarded, restored and deferred while unsafe. Missing,
 suspended or incomplete directories are degraded discovery, not a reason to send
 channel payloads. `Transport` does not admit the CHANNEL distribution. Bootstrap
-also uses party/guild contacts and up to 64 public peers saved for 24 hours per
-character/client/region. Private diagnostics never supply saved seeds.
+also uses party/guild contacts, online character friends, compatible online WoW
+characters on Battle.net, ordinary native chat sender fields, and friendly
+visible players observed through target, mouseover or nameplate events. These
+are untrusted candidate addresses, not QT presence, locations or identity badges.
+Correlated native handshakes still gate neighbor admission; public records retain
+their existing source-verification requirements.
+Battle.net account identities, notes and chat contents are never harvested;
+other games, projects, regions and offline accounts are excluded. Up to 64
+confirmed public peers are saved for 24 hours per character/client/region.
+Private diagnostics never supply saved seeds.
 If combat interrupts selection restoration, one bounded cleanup record retains
 channel names across graph resets. A native event retries it when safe, resolves
 current display indices, and yields to a user's intervening selection.
@@ -474,9 +482,37 @@ first directory and each directory's starting roster row. A large global roster
 cannot permanently exclude zone rosters or members beyond its first 1,500 rows.
 Geographically useful contacts coexist with randomly selected connecting contacts.
 An eligible connection rotates at most once per 120 seconds.
+Friend-list scans share the 32-row runtime allowance with directories and guild
+rosters, with at most 1,500 rows per contact scan and five game accounts per
+Battle.net friend. Scans run every five minutes; friend-change events coalesce
+to no more than one scan per 30 seconds. Chat and visibility events admit at
+most 16 new candidates per ten seconds. Reciprocal reservations are served first;
+every third probe then favors recently observed contacts. Within a tier, the
+oldest attempt or original discovery time wins, with geographic/random ranking
+breaking ties. Later sightings do not reset discovery time, and a continuous
+stream of new strangers cannot indefinitely outrank an eligible retried contact.
+All admission sources preserve active
+failed-probe backoff and fresh contacts under capacity pressure. Once those
+windows expire, the oldest eligible candidate can be replaced, so a full pool
+cannot permanently exclude new contacts. Observing the same name never resets
+its retry or refreshes accepted player data. Diagnostics expose counts and drops,
+not names or message text.
 Admission reserves slots for reciprocal handshakes before acknowledging them;
 busy peers decline without offering unusable introductions. Reservations expire
 and do not establish a confirmed edge or accepted player data.
+A full recipient retains at most three declined native hello requests for up to
+480 seconds, ordered by original arrival. Repeated requests do not renew their
+expiry or priority. When capacity opens, or the normal 120-second rotation frees
+a slot, the oldest eligible caller receives a reciprocal reservation ahead of
+generic discovery. It must still complete a fresh correlated handshake. Ignore,
+retirement, a subsequent failed attempt, or a new runtime lifetime cancels the
+waiting request. This queue neither increases the eight-neighbor limit nor adds
+extra rotations or a separate send path. Aggregate diagnostics expose its depth,
+age, expiry, drops, and reservations.
+Waiting for a local reservation slot does not classify a peer as unreachable or
+apply failed-peer backoff. Handshake diagnostics distinguish confirmed, busy,
+timed-out and failed submissions; a candidate retains its last bounded outcome
+for explicit local troubleshooting.
 
 Native whispers can be accepted locally and later produce a player-not-found
 system notice. A bounded, transport-lifetime ledger correlates the localized
@@ -702,6 +738,16 @@ Never write QT state onto Blizzard frames, children, mixins or shared tables.
 Use owned regions, GUID records and weak side tables. Guard foreign reads for
 secrecy, accessibility and forbidden state; defer protected mutation until all
 applicable restrictions clear. Treat a forbidden frame as quarantined.
+
+Map navigation, including cluster descent, uses `C_Map.OpenWorldMap` so the
+engine hands the request to Blizzard through `WORLD_MAP_OPEN`. Do not invoke
+the Lua `OpenWorldMap` or `WorldMapFrame:SetMapID` helpers directly: their pin
+pool writes can retain QT taint until a later native map open in combat.
+Quest-journal Lua entry points run through `securecallfunction`, passing the
+actual Blizzard function rather than an addon closure. These boundaries retain
+combat/access guards, reject unavailable dispatchers, and verify the visible
+map or selected quest afterward. `pcall` alone is error handling, not taint
+isolation; offline fixtures validate dispatch contracts, not engine security.
 
 Inherited hiding (including Alt+Z) suspends interaction without dismissing the
 window's session. Explicit close retires it even if its parent is already hidden.

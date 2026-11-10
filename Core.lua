@@ -745,6 +745,30 @@ QuestTogether.runtimeEvents = {
 	"CHAT_MSG_ADDON",
 	"CHAT_MSG_CHANNEL_NOTICE",
 	"CHAT_MSG_SYSTEM",
+	"CHAT_MSG_SAY",
+	"CHAT_MSG_YELL",
+	"CHAT_MSG_WHISPER",
+	"CHAT_MSG_WHISPER_INFORM",
+	"CHAT_MSG_PARTY",
+	"CHAT_MSG_PARTY_LEADER",
+	"CHAT_MSG_RAID",
+	"CHAT_MSG_RAID_LEADER",
+	"CHAT_MSG_RAID_WARNING",
+	"CHAT_MSG_INSTANCE_CHAT",
+	"CHAT_MSG_INSTANCE_CHAT_LEADER",
+	"CHAT_MSG_GUILD",
+	"CHAT_MSG_OFFICER",
+	"CHAT_MSG_CHANNEL",
+	"CHAT_MSG_EMOTE",
+	"CHAT_MSG_TEXT_EMOTE",
+	"PLAYER_TARGET_CHANGED",
+	"UPDATE_MOUSEOVER_UNIT",
+	"NAME_PLATE_UNIT_ADDED",
+	"FRIENDLIST_UPDATE",
+	"BN_FRIEND_LIST_SIZE_CHANGED",
+	"BN_FRIEND_INFO_CHANGED",
+	"BN_FRIEND_ACCOUNT_ONLINE",
+	"BN_FRIEND_ACCOUNT_OFFLINE",
 	"CHANNEL_COUNT_UPDATE",
 	"CHANNEL_UI_UPDATE",
 	"PLAYER_LEVEL_UP",
@@ -780,7 +804,54 @@ Why this exists:
 ]]
 -- API wrapper layer:
 -- Guard Blizzard calls that can throw (invalid token, secure context, or transient data race)
--- so runtime features fail soft instead of tainting shared execution paths.
+-- so runtime features fail soft. pcall alone does not prevent taint propagation.
+local function CanCallNativeMapLua(func)
+	return CanAccessForeignValue(func) and type(func) == "function"
+		and CanAccessForeignValue(securecallfunction) and type(securecallfunction) == "function"
+end
+
+local function CallNativeMapLua(func, ...)
+	if QuestTogether:IsWorkBlocked("foreign_frame_mutation") or not CanCallNativeMapLua(func) then
+		return false
+	end
+	-- Pass Blizzard's function itself, never a QT closure. Its Lua helpers write
+	-- map/pin state that the native UI later reuses in combat. A direct call can
+	-- contaminate that state even though the original action was out of combat.
+	return pcall(securecallfunction, func, ...)
+end
+
+-- Social discovery only exposes character addresses. Never return Battle.net
+-- account identities, friend notes, or chat contents to the network layer.
+local function MeshSocialCall(owner, method, ...)
+	if not CanAccessForeignTable(owner) then
+		return nil
+	end
+	local getter = owner[method]
+	if not CanAccessForeignValue(getter) or type(getter) ~= "function" then
+		return nil
+	end
+	local ok, value = pcall(getter, ...)
+	return ok and CanAccessForeignValue(value) and value or nil
+end
+local function MeshSocialCount(value, maximum)
+	if not CanAccessForeignValue(value) or type(value) ~= "number"
+		or value ~= value or value < 0 or value == math.huge or value ~= math.floor(value) then
+		return 0
+	end
+	return math.min(value, maximum)
+end
+local function MeshSocialIndex(value)
+	return CanAccessForeignValue(value) and type(value) == "number"
+		and value >= 1 and value <= 2048 and value == math.floor(value)
+end
+local function MeshSocialName(value)
+	local name = ReadOptionalString(value)
+	if not name or name == "" or #name > 120 or name:find("[%c|,:]") then
+		return nil
+	end
+	return name
+end
+
 local ordinaryWhisperObserver = { hooks = {} }
 local function ObserveOrdinaryChatSend(_, distribution, language, target)
 	-- Never retain or forward the message text. Secure post-hooks cannot be
@@ -945,6 +1016,85 @@ QuestTogether.API = QuestTogether.API
 				return nil
 			end
 			return type(name) == "string" and name or nil, online == true
+		end,
+		GetMeshFriendCount = function()
+			return MeshSocialCount(MeshSocialCall(C_FriendList, "GetNumFriends"), 2048)
+		end,
+		GetMeshFriendName = function(index)
+			if not MeshSocialIndex(index) then
+				return nil
+			end
+			local info = MeshSocialCall(C_FriendList, "GetFriendInfoByIndex", index)
+			if not CanAccessForeignTable(info) or not CanAccessForeignValue(info.connected) or info.connected ~= true then
+				return nil
+			end
+			return MeshSocialName(info.name)
+		end,
+		GetMeshBattleNetFriendCount = function()
+			return MeshSocialCount(MeshSocialCall(_G, "BNGetNumFriends"), 2048)
+		end,
+		GetMeshBattleNetGameAccountCount = function(friendIndex)
+			if not MeshSocialIndex(friendIndex) then
+				return 0
+			end
+			return MeshSocialCount(MeshSocialCall(C_BattleNet, "GetFriendNumGameAccounts", friendIndex), 16)
+		end,
+		GetMeshBattleNetFriendName = function(friendIndex, accountIndex)
+			if not MeshSocialIndex(friendIndex) or not MeshSocialIndex(accountIndex) or accountIndex > 16 then
+				return nil
+			end
+			local info = MeshSocialCall(C_BattleNet, "GetFriendGameAccountInfo", friendIndex, accountIndex)
+			if not CanAccessForeignTable(info)
+				or not CanAccessForeignValue(info.isOnline) or info.isOnline ~= true
+				or not CanAccessForeignValue(info.isAppearOffline) or info.isAppearOffline ~= false
+				or not CanAccessForeignValue(info.clientProgram) or info.clientProgram ~= "WoW"
+				or not CanAccessForeignValue(info.isInCurrentRegion) or info.isInCurrentRegion ~= true
+				or not CanAccessForeignValue(WOW_PROJECT_ID) or type(WOW_PROJECT_ID) ~= "number"
+				or not CanAccessForeignValue(info.wowProjectID) or info.wowProjectID ~= WOW_PROJECT_ID then
+				return nil
+			end
+			local name = MeshSocialName(info.characterName)
+			if not name then
+				return nil
+			end
+			if QuestTogether:UsesRegionalPlayerNames() then
+				return name
+			end
+			local realm = MeshSocialName(info.realmName)
+			if not realm then
+				return nil
+			end
+			return QuestTogether:NormalizeMemberName(name .. "-" .. realm)
+		end,
+		GetMeshUnitPlayerName = function(unitToken)
+			if not CanAccessForeignValue(unitToken) or type(unitToken) ~= "string"
+				or #unitToken > 32 or not unitToken:match("^[%a]+%d*$") then
+				return nil
+			end
+			for _, query in ipairs({ "UnitExists", "UnitIsVisible", "UnitIsPlayer" }) do
+				if MeshSocialCall(_G, query, unitToken) ~= true then
+					return nil
+				end
+			end
+			if MeshSocialCall(_G, "UnitIsFriend", "player", unitToken) ~= true
+				or not CanAccessForeignValue(UnitFullName) or type(UnitFullName) ~= "function" then
+				return nil
+			end
+			local ok, rawName, rawRealm = pcall(UnitFullName, unitToken)
+			if not ok or not CanAccessForeignValue(rawRealm) then
+				return nil
+			end
+			local name, realm = MeshSocialName(rawName), MeshSocialName(rawRealm)
+			if not name or rawRealm ~= nil and rawRealm ~= "" and not realm then
+				return nil
+			end
+			if QuestTogether:UsesRegionalPlayerNames() then
+				if realm and not name:find(" ", 1, true) then
+					name = name .. " " .. realm
+				end
+				return QuestTogether:NormalizeMemberName(name)
+			end
+			return QuestTogether:NormalizeMemberName(realm and name .. "-" .. realm or name)
 		end,
 		GetNumDisplayChannels = function()
 			if type(GetNumDisplayChannels) ~= "function" then
@@ -2545,7 +2695,7 @@ QuestTogether.API = QuestTogether.API
 		end,
 		CanOpenQuestJournal = function()
 			if
-				type(QuestMapFrame_OpenToQuestDetails) ~= "function"
+				not CanCallNativeMapLua(QuestMapFrame_OpenToQuestDetails)
 				or type(QuestMapFrame_GetDetailQuestID) ~= "function"
 				or not QuestTogether:CanAccessForeignFrame(QuestMapFrame)
 			then
@@ -2568,7 +2718,7 @@ QuestTogether.API = QuestTogether.API
 			end
 			-- Use the same quest-by-ID entry point as Blizzard's tracker. It opens
 			-- the journal and selects the details without writing our own frame state.
-			local ok = pcall(QuestMapFrame_OpenToQuestDetails, id)
+			local ok = CallNativeMapLua(QuestMapFrame_OpenToQuestDetails, id)
 			if
 				not ok
 				or not QuestTogether:CanAccessForeignFrame(WorldMapFrame, true)
@@ -2580,6 +2730,11 @@ QuestTogether.API = QuestTogether.API
 			local selectedOK, selectedID = pcall(QuestMapFrame_GetDetailQuestID)
 			return selectedOK and QuestTogether:SafeToNumber(selectedID) == id
 		end,
+		CanOpenPlayerLocationMap = function()
+			return CanAccessForeignTable(C_Map) and CanAccessForeignValue(C_Map.OpenWorldMap)
+				and type(C_Map.OpenWorldMap) == "function"
+				and QuestTogether:CanAccessForeignFrame(WorldMapFrame)
+		end,
 		OpenPlayerLocationMap = function(mapID)
 			local id = QuestTogether:SafeToNumber(mapID)
 			if
@@ -2588,14 +2743,14 @@ QuestTogether.API = QuestTogether.API
 				or id > 2147483647
 				or id ~= math.floor(id)
 				or QuestTogether:IsWorkBlocked("foreign_frame_mutation")
-				or type(OpenWorldMap) ~= "function"
-				or not QuestTogether:CanAccessForeignFrame(WorldMapFrame)
+				or not QuestTogether.API.CanOpenPlayerLocationMap()
 			then
 				return false
 			end
-			-- The native opener owns map selection and panel visibility. A silent
-			-- decline (for example WorldMapDisabled) is not a successful navigation.
-			local ok = pcall(OpenWorldMap, id)
+			-- The engine dispatches WORLD_MAP_OPEN to Blizzard's own handler. Do
+			-- not call the Lua OpenWorldMap/SetMapID helpers from QT: they can
+			-- taint reused native pins and break later map opens in combat.
+			local ok = pcall(C_Map.OpenWorldMap, id)
 			if not ok or not QuestTogether:CanAccessForeignFrame(WorldMapFrame, true) then
 				return false
 			end
@@ -2607,7 +2762,7 @@ QuestTogether.API = QuestTogether.API
 			return readOK and QuestTogether:SafeToNumber(currentID) == id
 		end,
 		CanOpenQuestJournalWindow = function()
-			return type(OpenQuestLog) == "function"
+			return CanCallNativeMapLua(OpenQuestLog)
 				and QuestTogether:CanAccessForeignFrame(WorldMapFrame)
 				and QuestTogether:CanAccessForeignFrame(QuestMapFrame)
 		end,
@@ -2617,7 +2772,7 @@ QuestTogether.API = QuestTogether.API
 			end
 			-- Retail/Forever expose this non-toggle opener with the world map.
 			-- Leave the user's selected quest and journal tab to the native UI.
-			local ok = pcall(OpenQuestLog)
+			local ok = CallNativeMapLua(OpenQuestLog)
 			-- The native opener returns nil and can decline to show its panel.
 			return ok
 				and QuestTogether:CanAccessForeignFrame(WorldMapFrame, true)

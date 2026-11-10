@@ -760,7 +760,7 @@ QuestTogether:RegisterTest(
 	function()
 		local a = Fixture()
 		AttachUI(a)
-		a.db = { profile = {} }
+		a.db = { profile = a.options }
 		a.options.announceToNonQTParty = true
 		a.suppressLocalAnnouncementDisplayDuringTests = false
 		function a:GetNonQTPartyMembers()
@@ -799,6 +799,113 @@ QuestTogether:RegisterTest(
 		Equal(a.options.announceToNonQTParty, false)
 		Equal(frame:IsShown(), false)
 		a:RenderPartyChatReminder(nil)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"party chat reminder saves explicit preferences despite discovery before the button click",
+	function()
+		for _, turnOff in ipairs({ false, true }) do
+			local a = Fixture()
+			AttachUI(a)
+			a.db = { profile = { announceToNonQTParty = true, hidePartyChatReminder = false } }
+			-- Exercise real validation, persistence, and the synchronous settings
+			-- callback that retires the reminder when its preference changes.
+			a.GetOption = QuestTogether.GetOption
+			a.SetOption = QuestTogether.SetOption
+			a.suppressLocalAnnouncementDisplayDuringTests = false
+			local members = { "Friend-Realm" }
+			function a:GetNonQTPartyMembers() return members end
+			function a:IsRuntimeRestrictionTypeActive() return false end
+			function a:RefreshOptionsWindow() end
+			a:UpdatePartyChatReminder()
+			a.now = a.now + 10
+			a:UpdatePartyChatReminder()
+			local frame = a.partyChatReminderFrame
+			assert(frame:IsShown())
+			frame.remember:SetChecked(true)
+			-- Presence arrives after the displayed roster, before the click's
+			-- membership recheck. Discovery must not discard a settings choice.
+			members = {}
+			local button = turnOff and frame.disable or frame.keep
+			button.scripts.OnClick()
+			Equal(a:GetOption("hidePartyChatReminder"), true)
+			Equal(a:GetOption("announceToNonQTParty"), not turnOff)
+			Equal(frame:IsShown(), false)
+			members = { "New-Realm" }
+			a:UpdatePartyChatReminder()
+			a.now = a.now + 10
+			a:UpdatePartyChatReminder()
+			Equal(frame:IsShown(), false)
+			a:ResetPartyChatReminder()
+			a:UpdatePartyChatReminder()
+			Equal(frame:IsShown(), false)
+		end
+	end
+)
+
+QuestTogether:RegisterTest(
+	"party chat reminder preserves a visible roster redraw but resets choices across prompt lifetimes",
+	function()
+		local function Reminder()
+			local a = Fixture()
+			AttachUI(a)
+			a.db = { profile = { announceToNonQTParty = true, hidePartyChatReminder = false } }
+			a.GetOption, a.SetOption = QuestTogether.GetOption, QuestTogether.SetOption
+			a.suppressLocalAnnouncementDisplayDuringTests = false
+			a.reminderMembers = { "A-Realm", "B-Realm" }
+			function a:GetNonQTPartyMembers() return self.reminderMembers end
+			function a:IsRuntimeRestrictionTypeActive() return false end
+			function a:RefreshOptionsWindow() end
+			a:UpdatePartyChatReminder()
+			a.now = a.now + 10
+			a:UpdatePartyChatReminder()
+			local frame = a.partyChatReminderFrame
+			assert(frame:IsShown())
+			frame.remember:SetChecked(true)
+			return a, frame
+		end
+		local a, frame = Reminder()
+		a.reminderMembers = { "B-Realm" }
+		a:UpdatePartyChatReminder()
+		Equal(frame:IsShown(), true)
+		Equal(frame.remember:GetChecked(), true)
+		Equal(frame.members.text, "B-Realm")
+		frame.keep.scripts.OnClick()
+		Equal(a:GetOption("hidePartyChatReminder"), true)
+		a.reminderMembers = { "B-Realm", "C-Realm" }
+		a:UpdatePartyChatReminder()
+		a.now = a.now + 10
+		a:UpdatePartyChatReminder()
+		Equal(frame:IsShown(), false)
+
+		for _, boundary in ipairs({ "hidden", "reset", "profile", "clock", "preview" }) do
+			local owner, prompt = Reminder()
+			if boundary == "hidden" then
+				owner.reminderMembers = {}
+				owner:UpdatePartyChatReminder()
+			elseif boundary == "reset" then owner:ResetPartyChatReminder()
+			elseif boundary == "profile" then
+				owner.db.profile = { announceToNonQTParty = true, hidePartyChatReminder = false }
+			elseif boundary == "clock" then owner.now = 1
+			elseif boundary == "preview" then
+				owner:ShowPartyChatReminderPreview()
+				local preview = owner.partyChatReminderPreviewFrame
+				Equal(preview.remember:GetChecked(), false)
+				preview.remember:SetChecked(true)
+				owner:ShowPartyChatReminderPreview()
+				Equal(preview.remember:GetChecked(), false)
+				owner:ClosePartyChatReminderPreview()
+				owner:ResetPartyChatReminder()
+			end
+			owner.reminderMembers = { "B-Realm" }
+			owner:UpdatePartyChatReminder()
+			owner.now = owner.now + 10
+			owner:UpdatePartyChatReminder()
+			Equal(prompt:IsShown(), true)
+			Equal(prompt.remember:GetChecked(), false)
+			Equal(owner:GetOption("hidePartyChatReminder"), false)
+		end
 	end
 )
 

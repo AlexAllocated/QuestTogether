@@ -3,11 +3,16 @@
 local QT = _G.QuestTogether
 local MAX_NEIGHBORS, MAX_CANDIDATES, MAX_PENDING = 8, 512, 3
 local RESERVATION_SECONDS, RECIPROCAL_SECONDS = 30, 120
+-- Three callers can wait through three 120s rotation turns plus a paced
+-- reciprocal exchange. Repeated hellos never extend this queue lifetime.
+local ADMISSION_INTENT_SECONDS = 480
 local MAX_SEEDS, SEED_LIFETIME = 64, 86400
 local LEASE_SECONDS, RENEW_SECONDS, MAX_INTERESTS = 120, 40, 32
 local NEIGHBOR_SECONDS, CHALLENGE_SECONDS = 180, 120
 local FANOUT, MAX_HOPS, DIRECTORY_INTERVAL = 3, 8, 300
 local MAX_DIRECTORY_ROWS, ROWS_PER_TICK = 1500, 32
+local CONTACT_SECONDS, CONTACT_EVENT_SECONDS, CONTACT_EVENT_LIMIT = 300, 10, 16
+local CONTACT_SOURCES = { friend = true, bnet = true, chat = true, visible = true }
 local function Now(a)
 	return a:SafeToNumber(a.API.GetTime()) or 0
 end
@@ -93,6 +98,22 @@ end
 local function RetryCandidate(row, now)
 	row.delay = math.min(1800, math.max(300, (row.delay or 150) * 2))
 	row.retryAt = now + row.delay
+	row.failureSerial = (row.failureSerial or 0) + 1
+end
+local function RetireOldestCandidate(s, now)
+	local oldest, at
+	for name, candidate in pairs(s.candidates) do
+		if not s.neighbors[name] and not s.pending[name] and not s.reservations[name]
+			and not (s.admissionIntents and s.admissionIntents[name])
+			and candidate.retryAt <= now
+			and (not candidate.contactAt or now - candidate.contactAt >= CONTACT_SECONDS)
+			and (not at or candidate.heardAt < at) then
+			oldest, at = name, candidate.heardAt
+		end
+	end
+	if not oldest then return false end
+	s.candidates[oldest] = nil
+	return true
 end
 local function Retry(row, now)
 	row.delay = math.min(900, math.max(5, (row.delay or 2.5) * 2))
@@ -125,7 +146,7 @@ local function Reserve(a, s, name, reciprocal)
 			end
 		end
 		if waiting >= MAX_PENDING then
-			return false
+			return false, "reciprocal_capacity"
 		end
 	end
 	if existing then
@@ -146,7 +167,7 @@ local function Reserve(a, s, name, reciprocal)
 		end
 	end
 	if Count(occupied) >= MAX_NEIGHBORS then
-		return false
+		return false, "capacity"
 	end
 	s.reservations[name] = {
 		expires = Now(a) + (reciprocal and RECIPROCAL_SECONDS or RESERVATION_SECONDS),
@@ -214,12 +235,15 @@ function QT:InitializeMeshNetwork()
 		nextHandshake = now + 1,
 		nextDirectory = now + 2,
 		nextGuild = now + 2,
+		nextContacts = now + 2,
+		contactCursors = { friend = 1, bnet = 1 },
 		nextRotation = now + 120,
 		directoryCursors = {},
 		directoryCycle = 0,
 		candidates = {},
 		neighbors = {},
 		reservations = {},
+		admissionIntents = {},
 		pending = {},
 		localInterests = {},
 		localHistory = {},
@@ -260,20 +284,13 @@ function QT:RememberMeshCandidate(value, source, zone)
 	local now, row = Now(self), s.candidates[name]
 	if not row then
 		if Count(s.candidates) >= MAX_CANDIDATES then
-			local oldest, at
-			for key, candidate in pairs(s.candidates) do
-				if not s.neighbors[key] and not s.pending[key] and (not at or candidate.heardAt < at) then
-					oldest, at = key, candidate.heardAt
-				end
-			end
-			if not oldest then
+			if not RetireOldestCandidate(s, now) then
 				Metric(s, "candidateCapacity")
 				return false
 			end
-			s.candidates[oldest] = nil
 		end
 		local random = Native(self, "Random", 1, 1000000)
-		row = { name = name, retryAt = now, heardAt = now, rank = random and random[1] or 0 }
+		row = { name = name, retryAt = now, heardAt = now, discoveredAt = now, rank = random and random[1] or 0 }
 		s.candidates[name] = row
 		Metric(s, "candidatesAdded")
 	end
@@ -282,6 +299,71 @@ function QT:RememberMeshCandidate(value, source, zone)
 		row.zone = zone
 	end
 	return true
+end
+-- Native sightings provide addresses only. In particular, neither an ordinary
+-- chat message nor a friend-list entry proves that this character uses QT.
+function QT:ObserveMeshContact(value, source, zone)
+	local s = rawget(self, "meshNetworkState")
+	if not CONTACT_SOURCES[source] or not s or not Current(self, s) or not Allowed(self) then
+		return false
+	end
+	local name = Name(self, value)
+	if not name or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then
+		return false
+	end
+	local now, row = Now(self), s.candidates[name]
+	if not row then
+		-- Bound event-driven work even on a busy city chat/nameplate stream.
+		-- Roster reads already share the runtime's paced row budget.
+		if source == "chat" or source == "visible" then
+			if not s.contactEventAt or now - s.contactEventAt >= CONTACT_EVENT_SECONDS then
+				s.contactEventAt, s.contactEventCount = now, 0
+			end
+			if s.contactEventCount >= CONTACT_EVENT_LIMIT then
+				Metric(s, "contactRateDrops")
+				return false
+			end
+			s.contactEventCount = s.contactEventCount + 1
+		end
+		if Count(s.candidates) >= MAX_CANDIDATES then
+			if not RetireOldestCandidate(s, now) then
+				Metric(s, "contactCapacityDrops")
+				return false
+			end
+		end
+		if not self:RememberMeshCandidate(name, source, ValidZone(self, zone)) then
+			return false
+		end
+		row = s.candidates[name]
+		Metric(s, "contactsAdded_" .. source)
+	else
+		row.heardAt = now
+		-- Do not reset triedAt, retryAt, delay, or promote to a neighbor.
+		-- A repeated sighting is not evidence of a successful QT handshake.
+		local validZone = ValidZone(self, zone)
+		if validZone then row.zone = validZone end
+	end
+	row.contactAt, row.contactSource = now, source
+	return true
+end
+
+function QT:ObserveMeshUnit(unitToken)
+	local s = rawget(self, "meshNetworkState")
+	if not s or not Current(self, s) or not Allowed(self)
+		or not self:CanAccessValue(unitToken) or type(unitToken) ~= "string"
+		or not (unitToken == "target" or unitToken == "mouseover" or unitToken:match("^nameplate%d+$")) then
+		return false
+	end
+	local result = Native(self, "GetMeshUnitPlayerName", unitToken)
+	local geo = rawget(self, "geographicCommsState")
+	return result and self:ObserveMeshContact(result[1], "visible", geo and geo.currentZone) or false
+end
+
+function QT:ScheduleMeshContactScan()
+	local s = rawget(self, "meshNetworkState")
+	if s and Current(self, s) and Allowed(self) then
+		s.nextContacts = math.min(s.nextContacts, math.max(Now(self), (s.lastContactScan or -30) + 30))
+	end
 end
 local function Confirm(a, s, name, context)
 	local row = s.neighbors[name]
@@ -295,6 +377,7 @@ local function Confirm(a, s, name, context)
 	row.at, row.expires, row.session = now, now + NEIGHBOR_SECONDS, context and context.session
 	s.neighbors[name] = row
 	s.reservations[name] = nil
+	s.admissionIntents[name] = nil
 	local candidate = s.candidates[name]
 	if candidate then
 		candidate.delay, candidate.retryAt = nil, now + CHALLENGE_SECONDS
@@ -326,6 +409,31 @@ local function Introductions(a, s, target)
 	end
 	return peers
 end
+local function PruneAdmissionIntents(a, s, now)
+	for name, intent in pairs(s.admissionIntents) do
+		local candidate = s.candidates[name]
+		if now >= intent.expiresAt or not candidate or Neighbor(a, s, name)
+			or a:IsIgnoredPlayerName(name) or (candidate.failureSerial or 0) ~= intent.failureSerial then
+			s.admissionIntents[name] = nil
+			Metric(s, now >= intent.expiresAt and "admissionIntentsExpired" or "admissionIntentsCancelled")
+		end
+	end
+end
+local function QueueAdmissionIntent(a, s, name, candidate, now)
+	PruneAdmissionIntents(a, s, now)
+	if s.admissionIntents[name] then return end
+	if Count(s.admissionIntents) >= MAX_PENDING then
+		Metric(s, "admissionIntentDrops")
+		return
+	end
+	-- Remember an explicit native protocol request, not a trusted edge. Do not
+	-- let repeated hellos extend this wait or jump ahead of another caller.
+	s.admissionIntents[name] = {
+		queuedAt = now, expiresAt = now + ADMISSION_INTENT_SECONDS,
+		failureSerial = candidate.failureSerial or 0,
+	}
+	Metric(s, "admissionIntentsQueued")
+end
 function QT:HandleMeshHello(record, sender, context)
 	local s = self:InitializeMeshNetwork()
 	sender = Name(self, sender)
@@ -355,6 +463,9 @@ function QT:HandleMeshHello(record, sender, context)
 	local admitted = Reserve(self, s, sender, true)
 	if not admitted then
 		Metric(s, "handshakeBusyReplies")
+		QueueAdmissionIntent(self, s, sender, previous, now)
+	else
+		s.admissionIntents[sender] = nil
 	end
 	-- A hello is only an address hint. A correlated reply to our independent
 	-- challenge is required before that sender owns any graph edge.
@@ -389,25 +500,37 @@ end
 local function StartHandshake(a, s, candidate)
 	local name, now = candidate.name, Now(a)
 	if not Reserve(a, s, name) then
-		RetryCandidate(candidate, now)
+		-- Local occupancy says nothing about this peer. Wait for a slot instead
+		-- of imposing an unreachable-peer cooldown before any packet is sent.
+		candidate.lastHandshakeOutcome, candidate.lastHandshakeAt = "local_capacity", now
+		candidate.lastHandshakeReason, candidate.lastHandshakeCode = "capacity", nil
 		s.nextHandshake = now + 1
 		Metric(s, "handshakeCapacity")
 		return
 	end
-	local pending = {}
+	local pending = { submitting = true }
 	s.pending[name] = pending
 	candidate.triedAt = now
-	local function Finish(success)
+	local function Finish(success, outcome, reason, detail)
 		if not Current(a, s) or s.pending[name] ~= pending then
 			return
 		end
 		s.pending[name] = nil
+		candidate.lastHandshakeOutcome, candidate.lastHandshakeAt = outcome, Now(a)
+		candidate.lastHandshakeReason = a:CanAccessValue(reason) and type(reason) == "string"
+			and #reason <= 64 and not reason:find("[%c|]") and reason or nil
+		candidate.lastHandshakeCode = a:CanAccessValue(detail) and type(detail) == "number"
+			and a:SafeToNumber(detail) or nil
 		if not success then
 			RetryCandidate(candidate, Now(a))
-			Metric(s, "handshakeTimeouts")
+			local metric = ({ busy = "handshakeBusy", timeout = "handshakeTimeouts",
+				admission_failed = "handshakeAdmissionFailures", send_failed = "handshakeSendFailures",
+				queue_expired = "handshakeQueueExpiries", confirmation_failed = "handshakeConfirmationFailures",
+				cancelled = "handshakeCancelled" })[outcome]
+			if metric then Metric(s, metric) end
 		end
 	end
-	local admitted, _, _, requestId = a:Request(
+	local admitted, admissionReason, _, requestId = a:Request(
 		"MHEL",
 		{ version = a.version or a.VERSION or "3", protocol = 3, capabilities = "mesh1" },
 		Route(name),
@@ -419,8 +542,16 @@ local function StartHandshake(a, s, candidate)
 			isCurrent = function()
 				return Current(a, s) and s.pending[name] == pending and not a:IsIgnoredPlayerName(name)
 			end,
-			onExpire = function()
-				Finish(false)
+			onComplete = function(sent, reason, _, _, outcomes)
+				if sent or reason == "ambiguous" or outcomes and (outcomes.accepted or outcomes.ambiguous) then
+					pending.sentAt = Now(a)
+				end
+			end,
+			onExpire = function(reason, detail)
+				local outcome = reason == "expired" and (pending.sentAt and "timeout" or "queue_expired")
+					or reason == "cancelled" and "cancelled"
+					or pending.submitting and "admission_failed" or "send_failed"
+				Finish(false, outcome, reason, detail)
 			end,
 			onResponse = function(record, sender, context)
 				if
@@ -434,14 +565,13 @@ local function StartHandshake(a, s, candidate)
 					return false
 				end
 				if record.admitted ~= true then
-					Metric(s, "handshakeBusy")
-					Finish(false)
+					Finish(false, "busy", "busy")
 					a:CancelCommRequest(record.requestId, "rejected")
 					return true
 				end
 				local confirmed = Confirm(a, s, name, context)
 				if not confirmed then
-					Finish(false)
+					Finish(false, "confirmation_failed", "confirmation_failed")
 					return false
 				end
 				for index, peer in ipairs(record.peers or {}) do
@@ -450,15 +580,16 @@ local function StartHandshake(a, s, candidate)
 					end
 					a:RememberMeshCandidate(peer.name, "introduction")
 				end
-				Finish(true)
+				Finish(true, "confirmed", "accepted")
 				a:CancelCommRequest(record.requestId, "completed")
 				return true
 			end,
 		}
 	)
+	pending.submitting = false
 	pending.requestId = requestId
 	if not admitted then
-		Finish(false)
+		Finish(false, "admission_failed", admissionReason)
 	end
 	Metric(s, "handshakesStarted")
 	local delay = 4
@@ -728,33 +859,91 @@ local function DirectoryStep(a, s, now)
 end
 local function GuildStep(a, s, now, budget)
 	if budget < 1 then
-		return
+		return 0
 	end
 	local job = s.guildDirectory
 	if not job then
 		if now < s.nextGuild then
-			return
+			return 0
 		end
 		s.nextGuild = now + DIRECTORY_INTERVAL
 		local total = Native(a, "GetNumGuildMembers")
 		total = total and a:SafeToNumber(total[1])
 		if not total or total < 1 then
-			return
+			return 0
 		end
 		job = { index = 1, total = math.min(total, MAX_DIRECTORY_ROWS) }
 		s.guildDirectory = job
 	end
+	local read = 0
 	for _ = 1, budget do
 		if job.index > job.total then
 			s.guildDirectory = nil
-			return
+			return read
 		end
 		local member = Native(a, "GetGuildRosterInfo", job.index)
 		if member and member[2] == true then
 			a:RememberMeshCandidate(member[1], "guild")
 		end
 		job.index = job.index + 1
+		read = read + 1
 		Metric(s, "guildRows")
+	end
+	return read
+end
+
+local function ContactCount(a, method, ...)
+	local result = Native(a, method, ...)
+	local count = result and a:SafeToNumber(result[1])
+	return count and math.max(0, math.min(MAX_DIRECTORY_ROWS, math.floor(count))) or 0
+end
+
+local function ContactStep(a, s, now, budget)
+	if budget < 1 then return end
+	local job = s.contactDirectory
+	if not job then
+		if now < s.nextContacts then return end
+		s.lastContactScan, s.nextContacts = now, now + CONTACT_SECONDS
+		job = {
+			friends = ContactCount(a, "GetMeshFriendCount"),
+			bnet = ContactCount(a, "GetMeshBattleNetFriendCount"),
+			friendVisited = 0, bnetVisited = 0, rows = 0,
+		}
+		s.contactDirectory = job
+		Metric(s, "contactScans")
+	end
+	for _ = 1, budget do
+		if job.rows >= MAX_DIRECTORY_ROWS then
+			s.contactDirectory = nil
+			return
+		end
+		if job.friendVisited < job.friends then
+			local index = (s.contactCursors.friend - 1) % job.friends + 1
+			local result = Native(a, "GetMeshFriendName", index)
+			if result then a:ObserveMeshContact(result[1], "friend") end
+			s.contactCursors.friend, job.friendVisited = index + 1, job.friendVisited + 1
+		elseif job.bnetVisited < job.bnet then
+			local index = (s.contactCursors.bnet - 1) % job.bnet + 1
+			if not job.accounts then
+				-- Each account-count lookup also consumes one row of work. An
+				-- offline/empty friend list cannot create an unbounded inner loop.
+				job.accounts = math.min(5, ContactCount(a, "GetMeshBattleNetGameAccountCount", index))
+				job.accountIndex = 1
+			elseif job.accountIndex <= job.accounts then
+				local result = Native(a, "GetMeshBattleNetFriendName", index, job.accountIndex)
+				if result then a:ObserveMeshContact(result[1], "bnet") end
+				job.accountIndex = job.accountIndex + 1
+			end
+			if job.accountIndex > job.accounts then
+				s.contactCursors.bnet, job.bnetVisited = index + 1, job.bnetVisited + 1
+				job.accounts = nil
+			end
+		else
+			s.contactDirectory = nil
+			return
+		end
+		job.rows = job.rows + 1
+		Metric(s, "contactRows")
 	end
 end
 local function NeighborTargets(a, s, exclude, destination, limit, zone)
@@ -1309,13 +1498,14 @@ function QT:ForwardMeshPublication(publication, descriptor)
 	Metric(s, descriptor.relaySender and "publicationRelays" or "publicationFanouts")
 	return admitted, admitted and "queued" or failed or "rejected"
 end
-function QT:RetireMeshPeer(value)
+function QT:RetireMeshPeer(value, reason)
 	local s = rawget(self, "meshNetworkState")
 	local name = Name(self, value)
 	if not s or not name then
 		return
 	end
 	local pending, peer = s.pending[name], s.neighbors[name]
+	s.admissionIntents[name] = nil
 	s.pending[name], s.neighbors[name], s.reservations[name] = nil, nil, nil
 	if pending then
 		self:CancelCommunicationOwner(pending, "cancelled")
@@ -1344,7 +1534,16 @@ function QT:RetireMeshPeer(value)
 	end
 	local candidate = s.candidates[name]
 	if candidate then
-		RetryCandidate(candidate, Now(self))
+		local now = Now(self)
+		local retirement = self:CanAccessValue(reason) and type(reason) == "string"
+			and ({ unavailable = true, rotated = true, expired = true, ignored = true })[reason] and reason or "retired"
+		candidate.lastRetirementReason, candidate.lastRetiredAt = retirement, now
+		if pending and retirement == "unavailable" then
+			candidate.lastHandshakeOutcome, candidate.lastHandshakeReason = "unavailable", "unavailable"
+			candidate.lastHandshakeAt, candidate.lastHandshakeCode = now, nil
+			Metric(s, "handshakeUnavailable")
+		end
+		RetryCandidate(candidate, now)
 	end
 	if self:IsIgnoredPlayerName(name) then
 		s.candidates[name] = nil
@@ -1372,23 +1571,44 @@ local function UsefulPeer(s, name)
 	return useful
 end
 local function RotateNeighbor(a, s, now)
-	if now < s.nextRotation or Count(s.neighbors) < MAX_NEIGHBORS then
-		return
-	end
-	local alternate = false
-	for name, candidate in pairs(s.candidates) do
-		if
-			not s.neighbors[name]
-			and not s.pending[name]
-			and candidate.retryAt <= now
-			and not a:IsIgnoredPlayerName(name)
-		then
-			alternate = true
-			break
+	PruneAdmissionIntents(a, s, now)
+	local waiting, queuedAt
+	for name, intent in pairs(s.admissionIntents) do
+		if not s.pending[name] and (not queuedAt or intent.queuedAt < queuedAt
+			or intent.queuedAt == queuedAt and name < waiting) then
+			waiting, queuedAt = name, intent.queuedAt
 		end
 	end
-	if not alternate then
+	local function AdmitWaiting()
+		if not waiting then return false end
+		local reserved, reason = Reserve(a, s, waiting, true)
+		if reserved then
+			-- The caller's native hello permits the same reciprocal retry as an
+			-- immediately admitted hello. A failure after it arrived was pruned.
+			local candidate = s.candidates[waiting]
+			candidate.retryAt = math.min(candidate.retryAt, now)
+			s.admissionIntents[waiting] = nil
+			Metric(s, "admissionReservations")
+		end
+		return reserved, reason
+	end
+	-- Reservation expiry can make space without retiring a healthy neighbor.
+	-- Claim it before generic candidates run through the handshake scheduler.
+	local admitted, blocked = AdmitWaiting()
+	if admitted or blocked == "reciprocal_capacity" then return end
+	if now < s.nextRotation or not waiting and Count(s.neighbors) < MAX_NEIGHBORS then
 		return
+	end
+	if not waiting then
+		local alternate = false
+		for name, candidate in pairs(s.candidates) do
+			if not s.neighbors[name] and not s.pending[name] and candidate.retryAt <= now
+				and not a:IsIgnoredPlayerName(name) then
+				alternate = true
+				break
+			end
+		end
+		if not alternate then return end
 	end
 	local victim, usefulness, age
 	for name, peer in pairs(s.neighbors) do
@@ -1401,10 +1621,12 @@ local function RotateNeighbor(a, s, now)
 		end
 	end
 	if victim then
-		a:RetireMeshPeer(victim)
+		a:RetireMeshPeer(victim, "rotated")
+		if not Current(a, s) then return end
 		Metric(s, "neighborRotations")
+		s.nextRotation = now + 120
+		AdmitWaiting()
 	end
-	s.nextRotation = now + 120
 end
 function QT:UpdateMeshNetwork(now)
 	self:RestoreMeshDirectorySelection()
@@ -1441,8 +1663,9 @@ function QT:UpdateMeshNetwork(now)
 		end
 	end
 	for name, peer in pairs(s.neighbors) do
-		if now >= peer.expires or self:IsIgnoredPlayerName(name) then
-			self:RetireMeshPeer(name)
+		local ignored = self:IsIgnoredPlayerName(name)
+		if now >= peer.expires or ignored then
+			self:RetireMeshPeer(name, ignored and "ignored" or "expired")
 		end
 	end
 	for name, reservation in pairs(s.reservations) do
@@ -1467,12 +1690,15 @@ function QT:UpdateMeshNetwork(now)
 	end
 	local directoryRows = s.metrics.directoryRows or 0
 	DirectoryStep(self, s, now)
-	GuildStep(self, s, now, ROWS_PER_TICK - ((s.metrics.directoryRows or 0) - directoryRows))
+	local remainingRows = ROWS_PER_TICK - ((s.metrics.directoryRows or 0) - directoryRows)
+	remainingRows = remainingRows - GuildStep(self, s, now, remainingRows)
+	ContactStep(self, s, now, remainingRows)
 	UpdateInterests(self, s, now)
 	RotateNeighbor(self, s, now)
 	if now >= s.nextHandshake and Count(s.pending) < MAX_PENDING then
 		local selected
 		local geo = rawget(self, "geographicCommsState")
+		local preferContact = (s.metrics.handshakesStarted or 0) % 3 == 0
 		local function Rank(candidate)
 			local zone = candidate.zone
 			local relevant = zone and geo and (zone == geo.currentZone or zone == geo.viewZone)
@@ -1481,9 +1707,22 @@ function QT:UpdateMeshNetwork(now)
 			local preferZone = (s.metrics.handshakesStarted or 0) % 2 == 0
 			return (preferZone and relevant and -2000000 or 0) + (candidate.rank or 0)
 		end
-		local function Reciprocal(candidate)
+		local function Tier(candidate)
 			local reservation = Reserved(self, s, candidate.name)
-			return reservation and reservation.reciprocal and 1 or 0
+			if reservation and reservation.reciprocal then return 2 end
+			if preferContact and candidate.contactAt and now - candidate.contactAt < CONTACT_SECONDS then return 1 end
+			return 0
+		end
+		local function Prefer(candidate, previous)
+			if not previous then return true end
+			local tier, previousTier = Tier(candidate), Tier(previous)
+			if tier ~= previousTier then return tier > previousTier end
+			-- A newly heard stranger must not jump ahead of every retried contact.
+			-- Discovery time remains fixed when later chat/roster sightings arrive.
+			local waiting = candidate.triedAt or candidate.discoveredAt or s.startedAt
+			local previousWaiting = previous.triedAt or previous.discoveredAt or s.startedAt
+			if waiting ~= previousWaiting then return waiting < previousWaiting end
+			return Rank(candidate) < Rank(previous)
 		end
 		for name, candidate in pairs(s.candidates) do
 			local peer = s.neighbors[name]
@@ -1493,14 +1732,7 @@ function QT:UpdateMeshNetwork(now)
 				and now >= candidate.retryAt
 				and (renew or not peer and Count(s.neighbors) < MAX_NEIGHBORS)
 				and not self:IsIgnoredPlayerName(name)
-				and (
-					not selected
-					or Reciprocal(candidate) > Reciprocal(selected)
-					or Reciprocal(candidate) == Reciprocal(selected)
-						and ((candidate.triedAt or -1) < (selected.triedAt or -1) or (candidate.triedAt or -1) == (selected.triedAt or -1) and Rank(
-							candidate
-						) < Rank(selected))
-				)
+				and Prefer(candidate, selected)
 			then
 				selected = candidate
 			end
@@ -1531,6 +1763,7 @@ function QT:GetMeshNetworkMetrics()
 	end
 	metrics.neighbors, metrics.candidates, metrics.handshakes, metrics.interests =
 		Count(s.neighbors), Count(s.candidates), Count(s.pending), Count(s.interests)
+	metrics.admissionIntents, metrics.reservations = Count(s.admissionIntents), Count(s.reservations)
 	metrics.localInterests = Count(s.localInterests)
 	metrics.localRoutes = Count(s.localHistory)
 	metrics.queryHistory = Count(s.interestHistory)
@@ -1539,6 +1772,10 @@ function QT:GetMeshNetworkMetrics()
 	metrics.pendingPublications = Count(s.pendingPublications)
 	metrics.oldestNeighborIdle, metrics.oldestHandshakeAge = 0, 0
 	local now = Now(self)
+	metrics.oldestAdmissionIntentAge = 0
+	for _, intent in pairs(s.admissionIntents) do
+		metrics.oldestAdmissionIntentAge = math.max(metrics.oldestAdmissionIntentAge, now - intent.queuedAt)
+	end
 	for _, peer in pairs(s.neighbors) do
 		metrics.oldestNeighborIdle = math.max(metrics.oldestNeighborIdle, now - (peer.expires - NEIGHBOR_SECONDS))
 	end
