@@ -3,23 +3,20 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "9.0.4",
-	welcome = "This patch improves player discovery and update delivery, and fixes missing addon versions in map tooltips.",
+	version = "9.0.5",
+	welcome = "Choose when QuestTogether appears below player tooltips, with further fixes for unwanted whisper failure notices.",
 	sections = {
 		{
-			title = "Player discovery and communication",
+			title = "Player tooltip visibility",
 			items = {
-				"QT looks for more connections sooner when your network is sparse and bandwidth is available. Connection attempts also handle simultaneous logins more reliably.",
-				"QT avoids sending duplicate public updates along the same connections. New connections can receive recent verified updates, and interrupted update requests recover more reliably.",
-				"Party and private messages keep priority within the same overall sending limits. Sharing preferences and source verification remain in place.",
-				"Earlier 9.0 clients remain compatible. Coverage builds over time, with further improvements as more players update; it does not guarantee every player will appear.",
+				"Under Player Plates > Player tooltips, use QuestTogether tooltip to show the section for everyone or hide it for friends, party members, both, or everyone. Hide for friends is the default.",
+				"The choice covers the entire section: logo, quest-partner status, and private notes. The section is always hidden on your own character. Your saved notes and sharing preferences are unchanged.",
 			},
 		},
 		{
-			title = "Map tooltip versions",
+			title = "Whisper notices",
 			items = {
-				"Addon versions now arrive with public location updates and confirmed connections, so map tooltips no longer need to wait for a full player-details request to show them.",
-				"Recent version information stays with cached map locations across reloads. Delayed updates cannot make an old version appear current again.",
+				"Fixed several cases where hidden addon whispers could still produce “No player named…” messages, including delayed failures after a reply. Errors that could belong to your ordinary whispers remain visible.",
 			},
 		},
 	},

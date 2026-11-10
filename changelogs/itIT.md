@@ -2,6 +2,20 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.5
+
+Ora puoi scegliere quando vedere la sezione QuestTogether nelle descrizioni dei giocatori. Risolti anche diversi casi di avvisi causati dai sussurri nascosti di QT.
+
+### Visibilità delle descrizioni
+
+- In Targhette giocatori > Descrizioni dei giocatori > Descrizione di QuestTogether puoi regolare la visibilità della sezione QT. L’impostazione predefinita è «Nascondi per gli amici»; puoi anche mostrare la sezione per tutti o nasconderla per i membri del gruppo, per amici e membri del gruppo oppure per tutti.
+- La scelta riguarda l’intera sezione QT sotto la normale descrizione del giocatore: logo, indicazione dell’uso di QT, stato «In cerca di compagni di missione» e note private. Per il tuo personaggio questa sezione resta sempre nascosta.
+- Le note salvate e le preferenze di condivisione restano invariate.
+
+### Avvisi dei sussurri
+
+- Corretti diversi casi in cui i sussurri nascosti dell’addon QT facevano comparire avvisi di giocatore non trovato, anche in ritardo o dopo una risposta. Se l’origine non è chiara, gli errori dei normali sussurri rimangono visibili.
+
 ## 9.0.4
 
 Questo aggiornamento migliora la ricerca degli altri giocatori QT, lo scambio di dati e le versioni mostrate sulla mappa.

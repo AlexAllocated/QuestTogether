@@ -2,6 +2,20 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.5
+
+Choisis quand afficher le complément QuestTogether des infobulles. Cette mise à jour corrige aussi plusieurs messages d’erreur liés aux chuchotements invisibles de QT.
+
+### Affichage des infobulles
+
+- Dans Barres d’info des joueurs > Infobulles des joueurs > Infobulle QuestTogether, « Masquer pour les amis » est sélectionné par défaut. Tu peux afficher le complément pour tout le monde ou le masquer pour les amis, les membres du groupe, les deux ou tout le monde.
+- Ce choix porte sur tout le complément QT sous l’infobulle habituelle : logo, indication d’utilisation de QT, statut « Recherche de partenaires de quête » et notes privées. Il reste toujours masqué sur ton propre personnage.
+- Tes notes enregistrées et tes préférences de partage ne changent pas.
+
+### Erreurs de chuchotement
+
+- Plusieurs causes de messages « joueur introuvable » liés aux chuchotements invisibles de QT ont été corrigées, notamment lorsque l’erreur arrivait en retard ou après une réponse. En cas de doute sur leur origine, les erreurs de tes chuchotements habituels restent visibles.
+
 ## 9.0.4
 
 Cette mise à jour améliore la découverte des joueurs QT, les échanges de données et les versions affichées sur la carte.

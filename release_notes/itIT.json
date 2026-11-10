@@ -1,23 +1,21 @@
 {
-  "source_sha256": "ef16b7d4180752e66a624d0f51457cb39e5959f4bbc67c8afcecf0e1a65d64f0",
+  "source_sha256": "490c7b978ccb549f900798a4c9eafab308f5cfe5152f61202dae4c21cfb55215",
   "notes": {
-    "version": "9.0.4",
-    "welcome": "Questo aggiornamento migliora la ricerca degli altri giocatori QT, lo scambio di dati e le versioni mostrate sulla mappa.",
+    "version": "9.0.5",
+    "welcome": "Ora puoi scegliere quando vedere la sezione QuestTogether nelle descrizioni dei giocatori. Risolti anche diversi casi di avvisi causati dai sussurri nascosti di QT.",
     "sections": [
       {
-        "title": "Ricerca dei giocatori e comunicazioni",
+        "title": "Visibilità delle descrizioni",
         "items": [
-          "QT stabilisce più rapidamente nuove connessioni quando ce ne sono ancora poche e c’è capacità disponibile in background. Sono stati corretti anche alcuni problemi di connessione all’avvio.",
-          "I client aggiornati possono condividere l’inoltro degli aggiornamenti pubblici, evitando invii duplicati. I dati già verificati possono raggiungere anche nuovi destinatari; le richieste in attesa e gli inoltri interrotti vengono ripresi con maggiore affidabilità.",
-          "Le comunicazioni del gruppo e quelle private mantengono la priorità, entro gli stessi limiti complessivi di invio. Restano rispettate le tue preferenze di condivisione, la verifica dell’origine dei dati e il ritiro delle informazioni condivise.",
-          "QT resta compatibile con le versioni precedenti della serie 9.0.x. I vantaggi dell’inoltro condiviso aumentano man mano che i giocatori aggiornano l’addon. La ricerca rimane graduale e non garantisce che vengano mostrati tutti i giocatori."
+          "In Targhette giocatori > Descrizioni dei giocatori > Descrizione di QuestTogether puoi regolare la visibilità della sezione QT. L’impostazione predefinita è «Nascondi per gli amici»; puoi anche mostrare la sezione per tutti o nasconderla per i membri del gruppo, per amici e membri del gruppo oppure per tutti.",
+          "La scelta riguarda l’intera sezione QT sotto la normale descrizione del giocatore: logo, indicazione dell’uso di QT, stato «In cerca di compagni di missione» e note private. Per il tuo personaggio questa sezione resta sempre nascosta.",
+          "Le note salvate e le preferenze di condivisione restano invariate."
         ]
       },
       {
-        "title": "Versioni nei tooltip della mappa",
+        "title": "Avvisi dei sussurri",
         "items": [
-          "La versione dell’addon accompagna ora gli aggiornamenti pubblici della posizione e viene appresa anche quando una connessione è confermata. Nei tooltip della mappa mancherà quindi meno spesso in attesa delle altre informazioni del giocatore.",
-          "Le versioni ancora valide vengono conservate con le posizioni memorizzate anche dopo aver ricaricato l’interfaccia. I dati arrivati in ritardo non possono far apparire recenti informazioni ormai scadute."
+          "Corretti diversi casi in cui i sussurri nascosti dell’addon QT facevano comparire avvisi di giocatore non trovato, anche in ritardo o dopo una risposta. Se l’origine non è chiara, gli errori dei normali sussurri rimangono visibili."
         ]
       }
     ]

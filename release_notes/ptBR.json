@@ -1,23 +1,20 @@
 {
-  "source_sha256": "ef16b7d4180752e66a624d0f51457cb39e5959f4bbc67c8afcecf0e1a65d64f0",
+  "source_sha256": "490c7b978ccb549f900798a4c9eafab308f5cfe5152f61202dae4c21cfb55215",
   "notes": {
-    "version": "9.0.4",
-    "welcome": "Esta atualização agiliza a descoberta de jogadores e melhora a exibição de versões no mapa.",
+    "version": "9.0.5",
+    "welcome": "Escolha quando ver as informações do QT nas dicas de jogadores e tenha menos avisos de erro dos sussurros internos.",
     "sections": [
       {
-        "title": "Descoberta de jogadores e comunicação",
+        "title": "Visibilidade das dicas de jogadores",
         "items": [
-          "A busca por outros jogadores fica mais rápida quando há poucas conexões e capacidade disponível. Também foram corrigidas falhas no estabelecimento das primeiras conexões.",
-          "Versões compatíveis evitam enviar a mesma informação pública várias vezes e podem fornecer dados verificados ainda válidos a quem começa a recebê-los. Envios pendentes e retransmissões também se recuperam com mais confiabilidade.",
-          "Os dados do grupo e as comunicações privadas mantêm a prioridade, sem aumentar os limites totais de envio. Suas preferências de compartilhamento, a verificação da origem dos dados e os pedidos para deixar de compartilhá-los continuam sendo respeitados.",
-          "A compatibilidade com versões anteriores da série 9.0 foi mantida. Os benefícios aumentam conforme os jogadores atualizam. A descoberta continua sendo gradual, sem garantir que todos os jogadores apareçam."
+          "Em Placas de Nome dos Jogadores > Dicas de jogadores > Dica do QuestTogether, a opção padrão é Ocultar para amigos. Você também pode escolher Mostrar para todos, Ocultar para membros do grupo, Ocultar para amigos e membros do grupo ou Ocultar para todos.",
+          "A opção controla toda a seção do QT abaixo da dica do WoW: logotipo e identificação, status Procurando parceiros de missão e notas privadas. Essa seção fica sempre oculta no seu próprio personagem. As notas salvas e as preferências de compartilhamento permanecem como estão."
         ]
       },
       {
-        "title": "Versões nas dicas do mapa",
+        "title": "Avisos de sussurros",
         "items": [
-          "As atualizações públicas de localização e as conexões confirmadas agora informam a versão do QuestTogether. Isso reduz os casos em que a dica de um jogador no mapa fica sem versão enquanto os demais dados ainda não chegaram.",
-          "Ao recarregar a interface, as localizações salvas mantêm a informação de versão enquanto ela ainda estiver válida. Dados recebidos com atraso não fazem uma versão antiga parecer recente novamente."
+          "Corrigidos vários casos de avisos de jogador não encontrado causados pelos sussurros internos do QT, inclusive avisos atrasados ou recebidos após uma resposta. Quando a origem é incerta, o aviso continua visível para não esconder erros dos seus sussurros normais."
         ]
       }
     ]

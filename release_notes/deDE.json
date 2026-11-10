@@ -1,23 +1,21 @@
 {
-  "source_sha256": "ef16b7d4180752e66a624d0f51457cb39e5959f4bbc67c8afcecf0e1a65d64f0",
+  "source_sha256": "490c7b978ccb549f900798a4c9eafab308f5cfe5152f61202dae4c21cfb55215",
   "notes": {
-    "version": "9.0.4",
-    "welcome": "Dieses Update verbessert die Suche nach anderen QT-Spielern, den Datenaustausch und die Versionsangaben auf der Karte.",
+    "version": "9.0.5",
+    "welcome": "Passe den QuestTogether-Zusatz in Spielertooltips an. Außerdem wurden mehrere Ursachen störender Flüster-Fehlermeldungen behoben.",
     "sections": [
       {
-        "title": "Spielersuche und Datenaustausch",
+        "title": "QuestTogether im Spielertooltip",
         "items": [
-          "QT knüpft schneller neue Verbindungen, solange noch wenige bestehen und im Hintergrund Kapazität frei ist. Verbindungsprobleme beim Start wurden behoben.",
-          "Aktualisierte Clients können öffentliche Updates gemeinsam weitergeben und doppelte Übertragungen vermeiden. Bereits geprüfte Daten stehen auch neu hinzukommenden Empfängern zur Verfügung; ausstehende Anfragen und unterbrochene Weiterleitungen werden zuverlässiger erneut versucht.",
-          "Gruppen- und private Daten behalten Vorrang. Die gesamten Sendelimits bleiben gleich; deine Freigabeeinstellungen, die Prüfung der Datenherkunft und das Zurückziehen von Freigaben werden weiterhin berücksichtigt.",
-          "Frühere Versionen der Reihe 9.0.x bleiben kompatibel. Je mehr Spieler aktualisieren, desto stärker wirkt die gemeinsame Weitergabe. QT findet Spieler weiterhin nach und nach; es werden nicht zwangsläufig alle angezeigt."
+          "Unter Spieler-Namensplaketten > Spielertooltips > QuestTogether-Tooltip bestimmst du, bei wem der Zusatz erscheint. Standard ist „Bei Freunden ausblenden“. Du kannst ihn bei allen anzeigen oder bei Freunden, Gruppenmitgliedern, Freunden und Gruppenmitgliedern oder allen ausblenden.",
+          "Die Auswahl gilt für den gesamten QT-Zusatz unter dem normalen Spielertooltip: Logo, QT-Kennzeichnung, Status „Suche nach Questpartnern“ und private Notizen. Bei deinem eigenen Charakter bleibt dieser Zusatz immer ausgeblendet.",
+          "Gespeicherte Notizen und deine Freigabeeinstellungen bleiben unverändert."
         ]
       },
       {
-        "title": "Versionsangaben in Karten-Tooltips",
+        "title": "Fehlermeldungen beim Flüstern",
         "items": [
-          "Öffentliche Positionsupdates enthalten jetzt auch die Addon-Version. QT erfährt sie außerdem beim bestätigten Verbindungsaufbau, sodass sie im Karten-Tooltip seltener bis zum Eintreffen weiterer Spielerangaben fehlt.",
-          "Noch gültige Versionsangaben bleiben zusammen mit gespeicherten Kartenpositionen auch nach dem Neuladen der Benutzeroberfläche erhalten. Verspätete Daten können veraltete Angaben nicht wieder aktuell erscheinen lassen."
+          "Mehrere Fälle behoben, in denen versteckte Addon-Flüsternachrichten von QT „Spieler nicht gefunden“-Meldungen im Chat auslösten, auch verspätet oder nach einer Antwort. Fehler deiner normalen Flüsternachrichten bleiben bei unklarer Zuordnung sichtbar."
         ]
       }
     ]

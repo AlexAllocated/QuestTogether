@@ -2,6 +2,20 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.5
+
+Passe den QuestTogether-Zusatz in Spielertooltips an. Außerdem wurden mehrere Ursachen störender Flüster-Fehlermeldungen behoben.
+
+### QuestTogether im Spielertooltip
+
+- Unter Spieler-Namensplaketten > Spielertooltips > QuestTogether-Tooltip bestimmst du, bei wem der Zusatz erscheint. Standard ist „Bei Freunden ausblenden“. Du kannst ihn bei allen anzeigen oder bei Freunden, Gruppenmitgliedern, Freunden und Gruppenmitgliedern oder allen ausblenden.
+- Die Auswahl gilt für den gesamten QT-Zusatz unter dem normalen Spielertooltip: Logo, QT-Kennzeichnung, Status „Suche nach Questpartnern“ und private Notizen. Bei deinem eigenen Charakter bleibt dieser Zusatz immer ausgeblendet.
+- Gespeicherte Notizen und deine Freigabeeinstellungen bleiben unverändert.
+
+### Fehlermeldungen beim Flüstern
+
+- Mehrere Fälle behoben, in denen versteckte Addon-Flüsternachrichten von QT „Spieler nicht gefunden“-Meldungen im Chat auslösten, auch verspätet oder nach einer Antwort. Fehler deiner normalen Flüsternachrichten bleiben bei unklarer Zuordnung sichtbar.
+
 ## 9.0.4
 
 Dieses Update verbessert die Suche nach anderen QT-Spielern, den Datenaustausch und die Versionsangaben auf der Karte.

@@ -1,23 +1,20 @@
 {
-  "source_sha256": "ef16b7d4180752e66a624d0f51457cb39e5959f4bbc67c8afcecf0e1a65d64f0",
+  "source_sha256": "490c7b978ccb549f900798a4c9eafab308f5cfe5152f61202dae4c21cfb55215",
   "notes": {
-    "version": "9.0.4",
-    "welcome": "Esta actualización agiliza la búsqueda de jugadores y mejora la información de versión que ves en el mapa.",
+    "version": "9.0.5",
+    "welcome": "Elige cuándo ver la información de QT en las descripciones de jugadores y recibe menos avisos de susurros internos.",
     "sections": [
       {
-        "title": "Búsqueda de jugadores y comunicación",
+        "title": "Descripciones de jugadores a tu gusto",
         "items": [
-          "Ahora se buscan otros jugadores con más rapidez cuando hay pocas conexiones y queda capacidad disponible. También se corrigieron problemas que podían afectar las conexiones iniciales.",
-          "Los jugadores con versiones compatibles pueden compartir la misma información pública sin enviarla varias veces y ofrecer datos verificados aún válidos a quienes empiezan a recibirlos. También se mejoró la recuperación de envíos pendientes y retransmisiones.",
-          "Los datos del grupo y las comunicaciones privadas conservan su prioridad, con los mismos límites totales de envío. Se siguen respetando tus opciones para compartir información, la verificación de su origen y las solicitudes para dejar de compartirla.",
-          "QuestTogether sigue siendo compatible con las versiones anteriores de la serie 9.0. Más jugadores podrán aprovechar estas mejoras conforme actualicen. La búsqueda avanza de forma gradual y no garantiza que aparezcan todos los jugadores."
+          "Configura la visibilidad en Placas de jugadores > Descripciones de jugadores > Descripción de QuestTogether. Ocultar para amigos es la opción predeterminada; también puedes elegir Mostrar para todos, Ocultar para miembros del grupo, Ocultar para amigos y miembros del grupo u Ocultar para todos.",
+          "Se muestra u oculta toda la sección de QT debajo de la descripción de WoW, incluido el logotipo y el identificador, el estado «Buscando compañeros para hacer misiones» y las notas privadas. En tu propio personaje siempre queda oculta. Tus notas guardadas y preferencias para compartir se conservan."
         ]
       },
       {
-        "title": "Versiones en la información del mapa",
+        "title": "Avisos de susurros",
         "items": [
-          "Ahora la versión de QuestTogether se obtiene tanto de las actualizaciones públicas de ubicación como de las conexiones confirmadas. Esto reduce los casos en que el mapa no muestra una versión mientras espera el resto de la información.",
-          "Las ubicaciones guardadas conservan la información de versión vigente al recargar la interfaz. Los datos que llegan con retraso no vuelven a dar por actualizada una versión antigua."
+          "Se corrigieron varios avisos de jugador no encontrado provocados por los susurros internos de QT, incluidos los que llegaban tarde o después de una respuesta. Cuando el origen no está claro, el aviso sigue visible para que puedas ver los errores de tus susurros normales."
         ]
       }
     ]

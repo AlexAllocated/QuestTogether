@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.5
+
+Elige cuándo ver la información de QT en las descripciones de jugadores y recibe menos avisos de susurros internos.
+
+### Descripciones de jugadores a tu gusto
+
+- Configura la visibilidad en Placas de jugadores > Descripciones de jugadores > Descripción de QuestTogether. Ocultar para amigos es la opción predeterminada; también puedes elegir Mostrar para todos, Ocultar para miembros del grupo, Ocultar para amigos y miembros del grupo u Ocultar para todos.
+- Se muestra u oculta toda la sección de QT debajo de la descripción de WoW, incluido el logotipo y el identificador, el estado «Buscando compañeros para hacer misiones» y las notas privadas. En tu propio personaje siempre queda oculta. Tus notas guardadas y preferencias para compartir se conservan.
+
+### Avisos de susurros
+
+- Se corrigieron varios avisos de jugador no encontrado provocados por los susurros internos de QT, incluidos los que llegaban tarde o después de una respuesta. Cuando el origen no está claro, el aviso sigue visible para que puedas ver los errores de tus susurros normales.
+
 ## 9.0.4
 
 Esta actualización agiliza la búsqueda de jugadores y mejora la información de versión que ves en el mapa.

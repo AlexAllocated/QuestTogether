@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.5
+
+Escolha quando ver as informações do QT nas dicas de jogadores e tenha menos avisos de erro dos sussurros internos.
+
+### Visibilidade das dicas de jogadores
+
+- Em Placas de Nome dos Jogadores > Dicas de jogadores > Dica do QuestTogether, a opção padrão é Ocultar para amigos. Você também pode escolher Mostrar para todos, Ocultar para membros do grupo, Ocultar para amigos e membros do grupo ou Ocultar para todos.
+- A opção controla toda a seção do QT abaixo da dica do WoW: logotipo e identificação, status Procurando parceiros de missão e notas privadas. Essa seção fica sempre oculta no seu próprio personagem. As notas salvas e as preferências de compartilhamento permanecem como estão.
+
+### Avisos de sussurros
+
+- Corrigidos vários casos de avisos de jogador não encontrado causados pelos sussurros internos do QT, inclusive avisos atrasados ou recebidos após uma resposta. Quando a origem é incerta, o aviso continua visível para não esconder erros dos seus sussurros normais.
+
 ## 9.0.4
 
 Esta atualização agiliza a descoberta de jogadores e melhora a exibição de versões no mapa.

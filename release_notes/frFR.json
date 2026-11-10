@@ -1,23 +1,21 @@
 {
-  "source_sha256": "ef16b7d4180752e66a624d0f51457cb39e5959f4bbc67c8afcecf0e1a65d64f0",
+  "source_sha256": "490c7b978ccb549f900798a4c9eafab308f5cfe5152f61202dae4c21cfb55215",
   "notes": {
-    "version": "9.0.4",
-    "welcome": "Cette mise à jour améliore la découverte des joueurs QT, les échanges de données et les versions affichées sur la carte.",
+    "version": "9.0.5",
+    "welcome": "Choisis quand afficher le complément QuestTogether des infobulles. Cette mise à jour corrige aussi plusieurs messages d’erreur liés aux chuchotements invisibles de QT.",
     "sections": [
       {
-        "title": "Découverte des joueurs et échanges",
+        "title": "Affichage des infobulles",
         "items": [
-          "QT établit plus vite de nouvelles connexions lorsqu’elles sont encore peu nombreuses et que les échanges en arrière-plan le permettent. Des problèmes de connexion au démarrage ont aussi été corrigés.",
-          "Les clients à jour peuvent mutualiser l’envoi des mises à jour publiques pour éviter les doublons. Les données déjà vérifiées peuvent aussi parvenir à de nouveaux destinataires, et les demandes en attente comme les relais interrompus sont repris plus fiablement.",
-          "Les échanges du groupe et les échanges privés restent prioritaires, sans modifier les limites globales d’envoi. Vos choix de partage, la vérification de l’origine des données et le retrait des données partagées restent respectés.",
-          "La compatibilité avec les versions précédentes de la série 9.0.x est conservée. La mutualisation profite davantage aux joueurs à mesure qu’ils mettent QT à jour. La découverte reste progressive et ne garantit pas l’affichage de tous les joueurs."
+          "Dans Barres d’info des joueurs > Infobulles des joueurs > Infobulle QuestTogether, « Masquer pour les amis » est sélectionné par défaut. Tu peux afficher le complément pour tout le monde ou le masquer pour les amis, les membres du groupe, les deux ou tout le monde.",
+          "Ce choix porte sur tout le complément QT sous l’infobulle habituelle : logo, indication d’utilisation de QT, statut « Recherche de partenaires de quête » et notes privées. Il reste toujours masqué sur ton propre personnage.",
+          "Tes notes enregistrées et tes préférences de partage ne changent pas."
         ]
       },
       {
-        "title": "Versions dans les infobulles de la carte",
+        "title": "Erreurs de chuchotement",
         "items": [
-          "La version de l’addon accompagne désormais les mises à jour publiques de position. QT l’apprend aussi lorsqu’une connexion est confirmée : elle manque donc moins souvent dans les infobulles de la carte avant l’arrivée des autres informations du joueur.",
-          "Les versions encore valides sont conservées avec les positions mémorisées après un rechargement de l’interface. Des données reçues en retard ne peuvent pas faire passer une ancienne version pour une information récente."
+          "Plusieurs causes de messages « joueur introuvable » liés aux chuchotements invisibles de QT ont été corrigées, notamment lorsque l’erreur arrivait en retard ou après une réponse. En cas de doute sur leur origine, les erreurs de tes chuchotements habituels restent visibles."
         ]
       }
     ]
