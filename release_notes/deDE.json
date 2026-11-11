@@ -1,13 +1,15 @@
 {
-  "source_sha256": "26ba0a4e794e82268fb080debeb96dccc2cc0b6ad0bbe964512d0bf03de11956",
+  "source_sha256": "fe70acab61a1485a53de039e17b7303bce1bb59354d5d148d36192429947b6a3",
   "notes": {
-    "version": "9.0.8",
-    "welcome": "Dieser Patch behebt einen Fehler beim Laden von Gruppendaten.",
+    "version": "9.0.9",
+    "welcome": "Dieser Patch verbessert die Spielersuche und behebt weitere störende Chatmeldungen.",
     "sections": [
       {
-        "title": "Fehlerbehebungen",
+        "title": "Spielersuche und Chatmeldungen",
         "items": [
-          "Ein mit 9.0.7 eingeführter Fehler konnte beim Zusammenschließen mit anderen QuestTogether-Nutzern auftreten und das Laden der Questdaten verhindern. Die Questdaten der Gruppe werden jetzt wieder ohne diesen Fehler geladen."
+          "Ein weiterer Fehler wurde behoben, durch den fehlgeschlagene Hintergrundanfragen als Flüsterfehlermeldungen im Chat erscheinen konnten. Fehler beim Versenden deiner eigenen Flüsternachrichten bleiben sichtbar.",
+          "Die Wartezeit nach einem fehlgeschlagenen Kontaktversuch bleibt auch nach einem Gebietswechsel oder dem Neuladen der Benutzeroberfläche erhalten. Veraltete Hinweise führen nicht mehr zu ständigen neuen Versuchen. Funktionierende Verbindungen bleiben bestehen, bis ein Ersatz antwortet.",
+          "Lassen sich die Fehlermeldungen von Hintergrundanfragen nicht sicher zuordnen und ausblenden, pausiert QT diese Anfragen. Die Diagnose unterscheidet nun tatsächlich ausgeblendete Meldungen von solchen, die wegen möglicher eigener Flüsternachrichten sichtbar bleiben."
         ]
       }
     ]

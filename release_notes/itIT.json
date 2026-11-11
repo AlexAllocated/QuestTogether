@@ -1,13 +1,15 @@
 {
-  "source_sha256": "26ba0a4e794e82268fb080debeb96dccc2cc0b6ad0bbe964512d0bf03de11956",
+  "source_sha256": "fe70acab61a1485a53de039e17b7303bce1bb59354d5d148d36192429947b6a3",
   "notes": {
-    "version": "9.0.8",
-    "welcome": "Corretto un errore durante il caricamento dei dati del gruppo.",
+    "version": "9.0.9",
+    "welcome": "Connessioni in background più affidabili e meno tentativi inutili verso giocatori non disponibili.",
     "sections": [
       {
-        "title": "Correzioni",
+        "title": "Correzioni alle comunicazioni",
         "items": [
-          "Corretto un errore che poteva verificarsi entrando in gruppo con un altro utente di QT e impedire il caricamento dei dati delle missioni del gruppo. Un sussurro in background non riuscito non interferisce più con lo scambio di dati del gruppo."
+          "Corretti altri casi in cui i sussurri automatici di QuestTogether lasciavano in chat un errore relativo a un giocatore non trovato. Gli errori dei sussurri inviati personalmente restano visibili.",
+          "Le attese tra i tentativi di connessione vengono mantenute anche dopo un caricamento o un ricaricamento dell’interfaccia. Le informazioni obsolete sui giocatori non causano più tentativi continui e le connessioni funzionanti rimangono attive finché non risponde un sostituto.",
+          "Le comunicazioni automatiche attendono quando non è possibile filtrare in modo sicuro gli errori in chat. La diagnostica è stata migliorata per individuare eventuali problemi ancora presenti."
         ]
       }
     ]

@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.9
+
+Dieser Patch verbessert die Spielersuche und behebt weitere störende Chatmeldungen.
+
+### Spielersuche und Chatmeldungen
+
+- Ein weiterer Fehler wurde behoben, durch den fehlgeschlagene Hintergrundanfragen als Flüsterfehlermeldungen im Chat erscheinen konnten. Fehler beim Versenden deiner eigenen Flüsternachrichten bleiben sichtbar.
+- Die Wartezeit nach einem fehlgeschlagenen Kontaktversuch bleibt auch nach einem Gebietswechsel oder dem Neuladen der Benutzeroberfläche erhalten. Veraltete Hinweise führen nicht mehr zu ständigen neuen Versuchen. Funktionierende Verbindungen bleiben bestehen, bis ein Ersatz antwortet.
+- Lassen sich die Fehlermeldungen von Hintergrundanfragen nicht sicher zuordnen und ausblenden, pausiert QT diese Anfragen. Die Diagnose unterscheidet nun tatsächlich ausgeblendete Meldungen von solchen, die wegen möglicher eigener Flüsternachrichten sichtbar bleiben.
+
 ## 9.0.8
 
 Dieser Patch behebt einen Fehler beim Laden von Gruppendaten.

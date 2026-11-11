@@ -1,13 +1,15 @@
 {
-  "source_sha256": "26ba0a4e794e82268fb080debeb96dccc2cc0b6ad0bbe964512d0bf03de11956",
+  "source_sha256": "fe70acab61a1485a53de039e17b7303bce1bb59354d5d148d36192429947b6a3",
   "notes": {
-    "version": "9.0.8",
-    "welcome": "Ce correctif rétablit le chargement des données du groupe.",
+    "version": "9.0.9",
+    "welcome": "Ce correctif améliore la recherche de joueurs et réduit les messages d’erreur indésirables dans le chat.",
     "sections": [
       {
-        "title": "Corrections",
+        "title": "Recherche de joueurs et messages du chat",
         "items": [
-          "Un problème apparu en 9.0.7 pouvait provoquer une erreur et empêcher le chargement des données de quêtes après avoir rejoint un groupe avec un autre utilisateur de QuestTogether. Les données du groupe se chargent à nouveau sans cette erreur."
+          "Une erreur pouvait encore laisser apparaître dans le chat les échecs de chuchotements envoyés en arrière-plan par QT. Elle a été corrigée. Les erreurs concernant vos propres chuchotements restent affichées.",
+          "Les délais avant de recontacter un joueur injoignable sont conservés lors des changements de zone et après un rechargement de l’interface. Les anciennes informations ne relancent plus les tentatives en boucle. QT garde les connexions qui fonctionnent jusqu’à ce qu’un remplaçant réponde.",
+          "QT suspend ses demandes en arrière-plan lorsqu’il ne peut pas en masquer les erreurs sans risquer de cacher celles de vos propres messages. Le diagnostic distingue désormais les messages réellement masqués des cas où cette distinction est incertaine."
         ]
       }
     ]

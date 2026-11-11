@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.0.9
+
+More reliable background connections and quieter handling of unavailable players.
+
+### Communication fixes
+
+- Fixed more cases where QuestTogether’s background whispers could leave “No player named…” messages in chat. Errors from whispers you send yourself remain visible.
+- Connection retries now remember unavailable players across loading screens and reloads. Old address hints no longer cause endless retries, and working connections stay in place until a replacement responds.
+- Background communication waits when chat errors cannot be safely filtered. Improved diagnostics help identify any remaining cases.
+
 ## 9.0.8
 
 This patch fixes an error that could interrupt party quest-data updates.

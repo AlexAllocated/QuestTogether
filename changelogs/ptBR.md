@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.9
+
+Este patch corrige avisos indevidos no bate-papo e melhora a busca por outros jogadores.
+
+### Busca de jogadores e avisos no bate-papo
+
+- Corrigimos mais uma situação em que erros de sussurros enviados pelo QT em segundo plano apareciam no bate-papo. Os avisos de falha dos sussurros que você envia continuam visíveis.
+- O tempo de espera antes de tentar falar novamente com um jogador inacessível agora é mantido ao mudar de zona ou recarregar a interface. Informações antigas não provocam mais tentativas sem parar, e conexões que funcionam são mantidas até que uma substituta responda.
+- O QT pausa as solicitações em segundo plano quando não consegue ocultar seus erros com segurança. O diagnóstico agora diferencia os avisos realmente ocultos daqueles que podem ser de sussurros enviados por você.
+
 ## 9.0.8
 
 Este patch corrige um erro no carregamento dos dados do grupo.

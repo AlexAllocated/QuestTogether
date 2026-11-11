@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.9
+
+Connessioni in background più affidabili e meno tentativi inutili verso giocatori non disponibili.
+
+### Correzioni alle comunicazioni
+
+- Corretti altri casi in cui i sussurri automatici di QuestTogether lasciavano in chat un errore relativo a un giocatore non trovato. Gli errori dei sussurri inviati personalmente restano visibili.
+- Le attese tra i tentativi di connessione vengono mantenute anche dopo un caricamento o un ricaricamento dell’interfaccia. Le informazioni obsolete sui giocatori non causano più tentativi continui e le connessioni funzionanti rimangono attive finché non risponde un sostituto.
+- Le comunicazioni automatiche attendono quando non è possibile filtrare in modo sicuro gli errori in chat. La diagnostica è stata migliorata per individuare eventuali problemi ancora presenti.
+
 ## 9.0.8
 
 Corretto un errore durante il caricamento dei dati del gruppo.

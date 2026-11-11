@@ -3,6 +3,140 @@
   "releases": [
     {
       "enUS": {
+        "version": "9.0.8",
+        "welcome": "This patch fixes an error that could interrupt party quest-data updates.",
+        "sections": [
+          {
+            "title": "Fixes",
+            "items": [
+              "Fixed an error that could occur after grouping with another QuestTogether user when a background whisper failed. Party quest data can now continue loading normally."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "9.0.8",
+        "welcome": "Dieser Patch behebt einen Fehler beim Laden von Gruppendaten.",
+        "sections": [
+          {
+            "title": "Fehlerbehebungen",
+            "items": [
+              "Ein mit 9.0.7 eingeführter Fehler konnte beim Zusammenschließen mit anderen QuestTogether-Nutzern auftreten und das Laden der Questdaten verhindern. Die Questdaten der Gruppe werden jetzt wieder ohne diesen Fehler geladen."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "9.0.8",
+        "welcome": "Ce correctif rétablit le chargement des données du groupe.",
+        "sections": [
+          {
+            "title": "Corrections",
+            "items": [
+              "Un problème apparu en 9.0.7 pouvait provoquer une erreur et empêcher le chargement des données de quêtes après avoir rejoint un groupe avec un autre utilisateur de QuestTogether. Les données du groupe se chargent à nouveau sans cette erreur."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "9.0.8",
+        "welcome": "Este parche corrige un error al cargar los datos del grupo.",
+        "sections": [
+          {
+            "title": "Correcciones",
+            "items": [
+              "Se ha corregido un problema introducido en la versión 9.0.7 que podía provocar un error e impedir que se cargaran los datos de misiones al formar grupo con otro usuario de QuestTogether. Los datos del grupo vuelven a cargarse sin ese error."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "9.0.8",
+        "welcome": "Este parche soluciona un error en la carga de datos del grupo.",
+        "sections": [
+          {
+            "title": "Correcciones",
+            "items": [
+              "Se corrigió un problema de la versión 9.0.7 que podía causar un error e impedir la carga de datos de misiones al agruparte con otra persona que usa QuestTogether. Los datos del grupo vuelven a cargar sin ese error."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "9.0.8",
+        "welcome": "Este patch corrige um erro no carregamento dos dados do grupo.",
+        "sections": [
+          {
+            "title": "Correções",
+            "items": [
+              "Corrigido um problema introduzido na versão 9.0.7 que podia causar um erro e impedir o carregamento dos dados de missões ao formar grupo com outro usuário do QuestTogether. Os dados do grupo voltam a carregar sem esse erro."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "9.0.8",
+        "welcome": "Исправлена ошибка при загрузке данных группы.",
+        "sections": [
+          {
+            "title": "Исправления",
+            "items": [
+              "Исправлена ошибка, которая могла возникать после объединения в группу с другим пользователем QT и мешать загрузке данных заданий группы. Неудачная отправка фонового шёпота больше не нарушает обмен данными группы."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "9.0.8",
+        "welcome": "Corretto un errore durante il caricamento dei dati del gruppo.",
+        "sections": [
+          {
+            "title": "Correzioni",
+            "items": [
+              "Corretto un errore che poteva verificarsi entrando in gruppo con un altro utente di QT e impedire il caricamento dei dati delle missioni del gruppo. Un sussurro in background non riuscito non interferisce più con lo scambio di dati del gruppo."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "9.0.8",
+        "welcome": "파티 데이터 로딩 중 발생하던 오류를 수정했습니다.",
+        "sections": [
+          {
+            "title": "오류 수정",
+            "items": [
+              "다른 QT 사용자와 파티를 맺은 뒤 오류가 발생해 파티 퀘스트 데이터가 불러와지지 않던 문제를 수정했습니다. 이제 백그라운드 귓속말 전송이 실패해도 파티 데이터 교환에 영향을 주지 않습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "9.0.8",
+        "welcome": "修复了加载队伍数据时出现的错误。",
+        "sections": [
+          {
+            "title": "问题修复",
+            "items": [
+              "修复了与其他 QT 用户组队后可能报错、导致队伍任务数据无法加载的问题。后台密语发送失败不再影响队伍数据传输。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "9.0.8",
+        "welcome": "修正了載入隊伍資料時發生的錯誤。",
+        "sections": [
+          {
+            "title": "問題修正",
+            "items": [
+              "修正了與其他 QT 使用者組隊後可能出現錯誤，導致隊伍任務資料無法載入的問題。背景密語傳送失敗不再影響隊伍資料傳輸。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "9.0.7",
         "welcome": "This patch improves background communication and fixes several map and profile issues.",
         "sections": [

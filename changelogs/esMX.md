@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.9
+
+Este parche reduce los avisos molestos del chat y mejora la búsqueda de otros jugadores.
+
+### Búsqueda de jugadores y errores de susurros
+
+- Se corrigió un caso que todavía dejaba pasar al chat los errores de susurros enviados automáticamente por QT. Si falla un susurro que tú enviaste, el aviso se sigue mostrando.
+- QT conserva la espera antes de volver a contactar a un jugador que no responde, incluso al cambiar de zona o recargar la interfaz. La información desactualizada ya no provoca intentos constantes. Las conexiones activas se mantienen hasta que su reemplazo contesta.
+- Cuando no es seguro distinguir y ocultar los errores de sus solicitudes en segundo plano, QT las pausa. El diagnóstico ahora separa los avisos realmente ocultos de los que podrían deberse a tus propios susurros.
+
 ## 9.0.8
 
 Este parche soluciona un error en la carga de datos del grupo.

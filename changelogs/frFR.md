@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.9
+
+Ce correctif améliore la recherche de joueurs et réduit les messages d’erreur indésirables dans le chat.
+
+### Recherche de joueurs et messages du chat
+
+- Une erreur pouvait encore laisser apparaître dans le chat les échecs de chuchotements envoyés en arrière-plan par QT. Elle a été corrigée. Les erreurs concernant vos propres chuchotements restent affichées.
+- Les délais avant de recontacter un joueur injoignable sont conservés lors des changements de zone et après un rechargement de l’interface. Les anciennes informations ne relancent plus les tentatives en boucle. QT garde les connexions qui fonctionnent jusqu’à ce qu’un remplaçant réponde.
+- QT suspend ses demandes en arrière-plan lorsqu’il ne peut pas en masquer les erreurs sans risquer de cacher celles de vos propres messages. Le diagnostic distingue désormais les messages réellement masqués des cas où cette distinction est incertaine.
+
 ## 9.0.8
 
 Ce correctif rétablit le chargement des données du groupe.

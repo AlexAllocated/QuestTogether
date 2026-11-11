@@ -1,13 +1,15 @@
 {
-  "source_sha256": "26ba0a4e794e82268fb080debeb96dccc2cc0b6ad0bbe964512d0bf03de11956",
+  "source_sha256": "fe70acab61a1485a53de039e17b7303bce1bb59354d5d148d36192429947b6a3",
   "notes": {
-    "version": "9.0.8",
-    "welcome": "Este parche soluciona un error en la carga de datos del grupo.",
+    "version": "9.0.9",
+    "welcome": "Este parche reduce los avisos molestos del chat y mejora la búsqueda de otros jugadores.",
     "sections": [
       {
-        "title": "Correcciones",
+        "title": "Búsqueda de jugadores y errores de susurros",
         "items": [
-          "Se corrigió un problema de la versión 9.0.7 que podía causar un error e impedir la carga de datos de misiones al agruparte con otra persona que usa QuestTogether. Los datos del grupo vuelven a cargar sin ese error."
+          "Se corrigió un caso que todavía dejaba pasar al chat los errores de susurros enviados automáticamente por QT. Si falla un susurro que tú enviaste, el aviso se sigue mostrando.",
+          "QT conserva la espera antes de volver a contactar a un jugador que no responde, incluso al cambiar de zona o recargar la interfaz. La información desactualizada ya no provoca intentos constantes. Las conexiones activas se mantienen hasta que su reemplazo contesta.",
+          "Cuando no es seguro distinguir y ocultar los errores de sus solicitudes en segundo plano, QT las pausa. El diagnóstico ahora separa los avisos realmente ocultos de los que podrían deberse a tus propios susurros."
         ]
       }
     ]
