@@ -1,23 +1,13 @@
 {
-  "source_sha256": "341374a591c1614fe4357d3e494ea12efe75f3a4547a7ec7dfcf7d8bff1ebeca",
+  "source_sha256": "26ba0a4e794e82268fb080debeb96dccc2cc0b6ad0bbe964512d0bf03de11956",
   "notes": {
-    "version": "9.0.7",
-    "welcome": "Questa patch migliora le comunicazioni in background, gli avvisi di fase e il passaggio tra profili.",
+    "version": "9.0.8",
+    "welcome": "Corretto un errore durante il caricamento dei dati del gruppo.",
     "sections": [
       {
-        "title": "Comunicazioni",
+        "title": "Correzioni",
         "items": [
-          "Corretti altri casi di avvisi indesiderati di giocatore non trovato causati dai sussurri di QT in background, anche dopo un cambio di zona o dopo aver disattivato e riattivato l’addon. Gli errori relativi ai tuoi normali sussurri restano visibili.",
-          "Quando WoW segnala un giocatore offline, QT sospende i tentativi e annulla gli invii in attesa. Scrivere lo stesso indirizzo completo con maiuscole e minuscole diverse non permette più di aggirare la pausa prima di riprovare.",
-          "/qt diagnostics aiuta a individuare i problemi dei sussurri in background. I nuovi contatori non contengono nomi di giocatori né contenuti dei messaggi."
-        ]
-      },
-      {
-        "title": "Mappe e profili",
-        "items": [
-          "Con «Rileva livelli di mondo diversi» attivo, QT dà precedenza alle indicazioni esplicite di WoW. La descrizione distingue «Fase diversa», confermata da WoW, dalla stima «Probabile livello di mondo diverso (sperimentale)».",
-          "L’area cliccabile per selezionare i giocatori sulla minimappa segue ora il proprio indicatore o menu e non intercetta più i clic destinati alle finestre sovrapposte.",
-          "Il cambio di profilo scarta i confronti delle missioni in attesa e gli annunci tradotti ancora da mostrare del profilo precedente. I risultati tardivi non influiscono sul nuovo profilo."
+          "Corretto un errore che poteva verificarsi entrando in gruppo con un altro utente di QT e impedire il caricamento dei dati delle missioni del gruppo. Un sussurro in background non riuscito non interferisce più con lo scambio di dati del gruppo."
         ]
       }
     ]

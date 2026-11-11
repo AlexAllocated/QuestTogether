@@ -1,23 +1,13 @@
 {
-  "source_sha256": "341374a591c1614fe4357d3e494ea12efe75f3a4547a7ec7dfcf7d8bff1ebeca",
+  "source_sha256": "26ba0a4e794e82268fb080debeb96dccc2cc0b6ad0bbe964512d0bf03de11956",
   "notes": {
-    "version": "9.0.7",
-    "welcome": "Ce correctif améliore les échanges en arrière-plan, les indications de phase et le changement de profil.",
+    "version": "9.0.8",
+    "welcome": "Ce correctif rétablit le chargement des données du groupe.",
     "sections": [
       {
-        "title": "Communication",
+        "title": "Corrections",
         "items": [
-          "D’autres cas de messages indésirables signalant un joueur introuvable ont été corrigés pour les chuchotements de QT en arrière-plan, notamment après un changement de zone ou une désactivation suivie d’une réactivation. Les erreurs liées à vos propres chuchotements restent visibles.",
-          "Quand WoW signale un joueur hors ligne, QT suspend les nouvelles tentatives et annule les envois en attente. Changer les majuscules d’une même adresse complète ne permet plus de contourner ce délai.",
-          "/qt diagnostics aide à résoudre les problèmes de chuchotements en arrière-plan. Les nouveaux compteurs ne contiennent ni noms de joueurs ni contenu de messages."
-        ]
-      },
-      {
-        "title": "Cartes et profils",
-        "items": [
-          "Avec « Détecter les couches différentes » activé, les indications explicites de WoW sont désormais prioritaires. L’infobulle distingue « Phase différente », confirmée par WoW, de l’estimation « Couche probablement différente (expérimental) ».",
-          "La zone de clic pour cibler un joueur sur la minicarte suit désormais son repère ou son menu. Elle ne bloque plus les clics destinés aux fenêtres situées au-dessus.",
-          "Changer de profil abandonne les comparaisons de quêtes en attente et les annonces traduites différées de l’ancien profil. Les résultats tardifs n’affectent plus le nouveau profil."
+          "Un problème apparu en 9.0.7 pouvait provoquer une erreur et empêcher le chargement des données de quêtes après avoir rejoint un groupe avec un autre utilisateur de QuestTogether. Les données du groupe se chargent à nouveau sans cette erreur."
         ]
       }
     ]

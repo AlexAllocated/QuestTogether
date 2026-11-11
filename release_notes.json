@@ -1,21 +1,11 @@
 {
-  "version": "9.0.7",
-  "welcome": "This patch improves background communication and fixes several map and profile issues.",
+  "version": "9.0.8",
+  "welcome": "This patch fixes an error that could interrupt party quest-data updates.",
   "sections": [
     {
-      "title": "Communication",
+      "title": "Fixes",
       "items": [
-        "Fixed more causes of unwanted \"No player named...\" messages from QT's background whispers, including delayed errors after zoning or disabling QT. Errors from ordinary whispers remain visible.",
-        "QT stops sending to unavailable players sooner and prevents alternate capitalization of the same name from bypassing retry delays.",
-        "Added details to /qt diagnostics to help identify any remaining whisper-notice problems, without including player names or message contents in those counters."
-      ]
-    },
-    {
-      "title": "Maps and profiles",
-      "items": [
-        "The existing layer-detection option now uses WoW's own phase information when available. Player tooltips distinguish a reported phase difference from an estimated layer difference; a player being out of sight alone does not imply another phase.",
-        "Fixed minimap player-targeting controls intercepting clicks meant for windows displayed above them.",
-        "Changing profiles now cancels pending quest comparisons and delayed localized announcements from the previous profile."
+        "Fixed an error that could occur after grouping with another QuestTogether user when a background whisper failed. Party quest data can now continue loading normally."
       ]
     }
   ]

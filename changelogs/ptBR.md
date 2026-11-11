@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.8
+
+Este patch corrige um erro no carregamento dos dados do grupo.
+
+### Correções
+
+- Corrigido um problema introduzido na versão 9.0.7 que podia causar um erro e impedir o carregamento dos dados de missões ao formar grupo com outro usuário do QuestTogether. Os dados do grupo voltam a carregar sem esse erro.
+
 ## 9.0.7
 
 Mais correções na comunicação em segundo plano, na indicação de fases e no comportamento do minimapa e dos perfis.

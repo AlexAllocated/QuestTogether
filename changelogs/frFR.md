@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.8
+
+Ce correctif rétablit le chargement des données du groupe.
+
+### Corrections
+
+- Un problème apparu en 9.0.7 pouvait provoquer une erreur et empêcher le chargement des données de quêtes après avoir rejoint un groupe avec un autre utilisateur de QuestTogether. Les données du groupe se chargent à nouveau sans cette erreur.
+
 ## 9.0.7
 
 Ce correctif améliore les échanges en arrière-plan, les indications de phase et le changement de profil.

@@ -1,23 +1,13 @@
 {
-  "source_sha256": "341374a591c1614fe4357d3e494ea12efe75f3a4547a7ec7dfcf7d8bff1ebeca",
+  "source_sha256": "26ba0a4e794e82268fb080debeb96dccc2cc0b6ad0bbe964512d0bf03de11956",
   "notes": {
-    "version": "9.0.7",
-    "welcome": "Mais correções na comunicação em segundo plano, na indicação de fases e no comportamento do minimapa e dos perfis.",
+    "version": "9.0.8",
+    "welcome": "Este patch corrige um erro no carregamento dos dados do grupo.",
     "sections": [
       {
-        "title": "Comunicação",
+        "title": "Correções",
         "items": [
-          "Corrigidos mais casos de avisos de jogador não encontrado causados pelos sussurros internos do QT, inclusive avisos atrasados após trocar de área ou desativar e reativar o addon. Os avisos de erro dos seus sussurros normais continuam aparecendo.",
-          "Quando WoW informa que um jogador está offline, o QT interrompe os envios pendentes e espera antes de tentar novamente. Diferenças de maiúsculas no mesmo nome completo não provocam mais novas tentativas antes da hora.",
-          "/qt diagnostics traz mais informações para investigar esses avisos. Os novos contadores não incluem nomes de jogadores nem conteúdo de mensagens."
-        ]
-      },
-      {
-        "title": "Mapas e perfis",
-        "items": [
-          "Com Detectar camadas diferentes ativado, o QT prioriza as informações de fase do WoW. A dica diferencia Fase diferente da estimativa Provavelmente em outra camada (experimental). Não ver ou não conseguir selecionar um jogador, por si só, não indica outra fase.",
-          "A área de seleção de jogadores no minimapa acompanha o marcador ou menu, deixando de interceptar cliques destinados às janelas que estão por cima.",
-          "Ao trocar de perfil, comparações de missões pendentes e anúncios traduzidos ainda em espera do perfil anterior são descartados, sem aparecer nem alterar o novo perfil."
+          "Corrigido um problema introduzido na versão 9.0.7 que podia causar um erro e impedir o carregamento dos dados de missões ao formar grupo com outro usuário do QuestTogether. Os dados do grupo voltam a carregar sem esse erro."
         ]
       }
     ]

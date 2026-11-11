@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.8
+
+Corretto un errore durante il caricamento dei dati del gruppo.
+
+### Correzioni
+
+- Corretto un errore che poteva verificarsi entrando in gruppo con un altro utente di QT e impedire il caricamento dei dati delle missioni del gruppo. Un sussurro in background non riuscito non interferisce più con lo scambio di dati del gruppo.
+
 ## 9.0.7
 
 Questa patch migliora le comunicazioni in background, gli avvisi di fase e il passaggio tra profili.

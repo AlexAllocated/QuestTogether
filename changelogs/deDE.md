@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.8
+
+Dieser Patch behebt einen Fehler beim Laden von Gruppendaten.
+
+### Fehlerbehebungen
+
+- Ein mit 9.0.7 eingeführter Fehler konnte beim Zusammenschließen mit anderen QuestTogether-Nutzern auftreten und das Laden der Questdaten verhindern. Die Questdaten der Gruppe werden jetzt wieder ohne diesen Fehler geladen.
+
 ## 9.0.7
 
 Dieser Patch verbessert die Hintergrundkommunikation, Phasenhinweise und das Verhalten beim Profilwechsel.

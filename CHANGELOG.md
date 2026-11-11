@@ -4,6 +4,14 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.0.8
+
+This patch fixes an error that could interrupt party quest-data updates.
+
+### Fixes
+
+- Fixed an error that could occur after grouping with another QuestTogether user when a background whisper failed. Party quest data can now continue loading normally.
+
 ## 9.0.7
 
 This patch improves background communication and fixes several map and profile issues.
