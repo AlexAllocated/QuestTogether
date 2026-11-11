@@ -5,6 +5,8 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import posixpath
+import re
 import subprocess
 import tempfile
 import unittest
@@ -16,6 +18,56 @@ import check_architecture
 ROOT = Path(__file__).resolve().parents[1]
 
 class PackagingTests(unittest.TestCase):
+    def test_source_package_moves_thin_companion_and_resolves_shared_tests(self):
+        # Simulate CurseForge's documented ignore-before-directory-move order
+        # against real source bytes, without invoking an upload or a model.
+        metadata = (ROOT / ".pkgmeta").read_text()
+        self.assertRegex(metadata, r"(?m)^package-as: QuestTogether$")
+        source, destination = re.search(r"(?m)^  (QuestTogether/\S+): (\S+)$", metadata).groups()
+        ignored = re.findall(r"(?m)^  - (\S+)$", metadata)
+        self.assertIn("QuestTogether_Tests.toc", ignored)
+        names = set(subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).splitlines())
+        names.update(package.source_companion_files((ROOT / "QuestTogether_Tests.toc").read_text()))
+        installed = {}
+        for name in names:
+            if name in ignored or any(part.startswith(".") for part in name.split("/")):
+                continue
+            path = "QuestTogether/" + name
+            if path.startswith(source + "/"):
+                path = destination + path[len(source):]
+            installed[path] = (ROOT / name).read_bytes()
+        self.assertEqual(destination, "QuestTogether_Tests")
+        self.assertEqual({name for name in installed if name.startswith(destination + "/")},
+                         {destination + "/QuestTogether_Tests.toc", destination + "/Bindings.xml"})
+        self.assertNotIn("QuestTogether/QuestTogether_Tests.toc", installed)
+        self.assertNotIn(source + "/QuestTogether_Tests.toc", installed)
+        self.assertEqual(installed[destination + "/Bindings.xml"], package.TEST_BINDINGS)
+        canonical = (ROOT / "QuestTogether_Tests.toc").read_text()
+        generated = installed[destination + "/QuestTogether_Tests.toc"].decode()
+        package.check_source_companion(lambda name: (ROOT / name).read_bytes(), canonical)
+        self.assertEqual(package.version_from_toc(generated), package.version_from_toc(canonical))
+        references = [line.strip().replace("\\", "/") for line in generated.splitlines()
+                      if line.strip() and not line.lstrip().startswith("#")]
+        entries = package.validate_test_manifest(canonical, (ROOT / "QuestTogether.toc").read_text())
+        self.assertEqual(references, ["../QuestTogether/" + name for name in entries])
+        main_entries = set(package.toc_entries((ROOT / "QuestTogether.toc").read_text()))
+        for reference, name in zip(references, entries):
+            resolved = posixpath.normpath(destination + "/" + reference)
+            self.assertEqual(resolved, "QuestTogether/" + name)
+            self.assertEqual(installed[resolved], (ROOT / name).read_bytes())
+            self.assertNotIn(name, main_entries)
+        vendor = json.loads(installed["QuestTogether/Libs/libchev/manifest.json"])
+        for name, expected in vendor["files"].items():
+            self.assertEqual(package.digest(installed["QuestTogether/Libs/libchev/" + name]), expected)
+
+    def test_source_companion_rejects_stale_version_and_new_modules(self):
+        canonical = (ROOT / "QuestTogether_Tests.toc").read_text()
+        saved = package.source_companion_files(canonical)
+        for changed in (canonical.replace("## Version: " + package.version_from_toc(canonical), "## Version: 99.0.0"),
+                        canonical.replace("scripts/test_complete.lua", "scripts/regression_new.lua\nscripts/test_complete.lua")):
+            with self.assertRaisesRegex(package.PackageError, "stale source companion"):
+                package.check_source_companion(saved.__getitem__, changed)
+
     def test_live_manifest_and_repeatable_archives(self):
         with tempfile.TemporaryDirectory() as directory:
             first, second = (Path(directory) / name for name in ("first.zip", "second.zip"))

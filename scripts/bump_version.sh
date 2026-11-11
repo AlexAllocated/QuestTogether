@@ -56,6 +56,7 @@ fi
 release_files=("$toc_file" release_notes.json ReleaseNotes.lua)
 if [[ -f QuestTogether_Tests.toc ]]; then
 	release_files+=(QuestTogether_Tests.toc)
+	release_files+=(QuestTogether_Tests/QuestTogether_Tests.toc)
 fi
 if [[ -f release_notes/context.json ]]; then
 	release_files+=(release_notes/context.json)
@@ -107,6 +108,7 @@ PY
 
 # Validate the authored files before any repository mutation or remote access.
 python3 scripts/check_release_notes.py --check
+if [[ -f QuestTogether_Tests.toc ]]; then python3 scripts/package.py --check-source-companion; fi
 toc_version="$(sed -n 's/^## Version:[[:space:]]*//p' "$toc_file" | head -n 1)"
 notes_baseline_ref="refs/tags/v${toc_version}"
 if ! git rev-parse -q --verify "${notes_baseline_ref}^{commit}" >/dev/null; then
@@ -237,6 +239,7 @@ END {
 mv "$tmp_file" "$manifest_file"
 done
 
+if [[ -f QuestTogether_Tests.toc ]]; then python3 scripts/package.py --write-source-companion; fi
 python3 scripts/check_release_notes.py --write --set-version "$new_version" --baseline-ref "$notes_baseline_ref" "${notes_reuse_args[@]}"
 python3 scripts/check_release_notes.py --check --baseline-ref "$notes_baseline_ref"
 

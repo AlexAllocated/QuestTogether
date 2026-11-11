@@ -211,6 +211,7 @@ Both preflight and publication reject staged, unstaged or unignored untracked
 changes outside this explicit allowlist:
 
 - `QuestTogether.toc`
+- `QuestTogether_Tests.toc` and generated `QuestTogether_Tests/QuestTogether_Tests.toc`
 - `CHANGELOG.md`, `changelogs/history.json`, and `changelogs/<locale>.md` for the ten supported non-English locales
 - `release_notes.json`
 - `release_notes/context.json` and `changelogs/localized_revisions.json` when present
@@ -409,6 +410,18 @@ does not compile or register test fixtures. `/qt test` loads it before starting
 the staggered test runner. Both TOCs must have matching version/interface metadata;
 the bump script updates both version fields. Keep both folders when installing
 the release if in-game tests are wanted; QT gameplay does not depend on the companion.
+
+CurseForge's repository webhook packages source directly. `.pkgmeta` moves the
+checked-in `QuestTogether_Tests/` directory beside the main addon and excludes the
+canonical root companion TOC. Its generated TOC uses sibling-relative paths to
+the original QA files in `QuestTogether`, which remain unloaded during normal
+play. The pinned vendor tree stays intact; no test sources are duplicated.
+After editing the canonical `QuestTogether_Tests.toc`, regenerate this source
+manifest with `python3 scripts/package.py --write-source-companion`.
+`--check-source-companion`, ordinary package builds and release preflight reject
+stale manifests. The bump script regenerates the source manifest after updating
+the two canonical versions. Package tests simulate the source folder move and
+resolve every companion entry against the actual packaged files.
 
 For a development checkout, keep the main addon linked to the repository. Create
 `QuestTogether_Tests` as a separate directory with these links into the checkout:

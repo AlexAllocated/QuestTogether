@@ -1,0 +1,8 @@
+package-as: QuestTogether
+enable-nolib-creation: no
+
+move-folders:
+  QuestTogether/QuestTogether_Tests: QuestTogether_Tests
+
+ignore:
+  - QuestTogether_Tests.toc
